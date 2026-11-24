@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Projective
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.InnerAut
 
 /-!
 # The conjugation representation of `PU(p, q)` is a closed embedding
@@ -35,8 +36,6 @@ carries Haar measures.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.continuous_innerAut`: conjugation by invertible matrices is
-  continuous.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.norm_innerAut_single_apply_self`: the diagonal entry at
   `a` of `g E_bb g⁻¹` has norm `‖g_ab‖²`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.isProperMap_innerAut`: conjugation by elements of
@@ -55,19 +54,6 @@ public section
 
 open Filter Matrix Topology
 
-namespace Matrix.GeneralLinearGroup
-
-/-- Conjugation by invertible matrices over a topological commutative ring is continuous, as a
-map to the space of maps of the matrix algebra with the topology of pointwise convergence. -/
-theorem continuous_innerAut {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
-    [TopologicalSpace R] [IsTopologicalRing R] :
-    Continuous fun g : GL n R => ⇑(innerAut g) := by
-  refine continuous_pi fun X => ?_
-  simp only [innerAut_apply]
-  exact (Units.continuous_val.matrix_mul continuous_const).matrix_mul Units.continuous_coe_inv
-
-end Matrix.GeneralLinearGroup
-
 namespace TauCeti
 
 namespace Matrix
@@ -84,12 +70,10 @@ theorem norm_innerAut_single_apply_self (g : indefiniteUnitaryGroup p q 𝕜) (a
       ‖((g : GL (p ⊕ q) 𝕜) : Matrix (p ⊕ q) (p ⊕ q) 𝕜) a b‖ ^ 2 := by
   have hd (i : p ⊕ q) : ‖Sum.elim (fun _ => (1 : 𝕜)) (fun _ => -1) i‖ = 1 := by
     rcases i with i | i <;> simp
+  -- Only the summand at `b` of the product with the matrix unit `E_bb` survives.
   rw [GeneralLinearGroup.innerAut_apply, val_inv_of_mem_indefiniteUnitaryGroup g.property,
-    LieAlgebra.Orthogonal.indefiniteDiagonal, Matrix.mul_apply,
-    Finset.sum_eq_single b (fun k _ hk => by rw [mul_single_apply_of_ne _ _ _ _ _ hk, zero_mul])
-      (by simp), mul_single_apply_same, mul_one, mul_diagonal, diagonal_mul, star_apply, norm_mul,
-    norm_mul, norm_mul, norm_star, hd, hd]
-  ring
+    Matrix.mul_apply, Finset.sum_eq_single b (fun k _ hk => by simp [hk]) (by simp)]
+  simp [LieAlgebra.Orthogonal.indefiniteDiagonal, mul_diagonal, diagonal_mul, hd, sq]
 
 /-- **Conjugation by elements of `U(p, q)` is a proper map** to the space of maps of the matrix
 algebra with the topology of pointwise convergence. If the conjugations by `g` converge along an

@@ -143,9 +143,6 @@ theorem isCompact_range_fromBlocksHom {𝕜 : Type*} [RCLike 𝕜] :
 (`Matrix.unitaryGroupOf.isClosedEmbedding_val`). -/
 instance instLocallyCompactSpace {𝕜 : Type*} [RCLike 𝕜] :
     LocallyCompactSpace (indefiniteUnitaryGroup p q 𝕜) :=
-  -- The topology of `Matrix` is by definition the product topology on `p ⊕ q → p ⊕ q → 𝕜`.
-  haveI : LocallyCompactSpace (Matrix (p ⊕ q) (p ⊕ q) 𝕜) :=
-    inferInstanceAs (LocallyCompactSpace (p ⊕ q → p ⊕ q → 𝕜))
   (unitaryGroupOf.isClosedEmbedding_val
     LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal).locallyCompactSpace
 

@@ -21,7 +21,8 @@ holomorphic isometries of complex hyperbolic `n`-space.
 Conjugation `X ↦ g X g⁻¹` by a lift `g ∈ U(p, q)` defines the **conjugation representation**
 `Ad : PU(p, q) →* Aut(M_{p ⊕ q}(K))` on the matrix algebra; it does not depend on the lift since
 scalars act trivially, and it is injective: an element of `U(p, q)` whose conjugation is trivial is
-central in the general linear group, hence a scalar, hence central in `U(p, q)`. It is the
+central in the general linear group, hence central in `U(p, q)`
+(`TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_comap_center`). It is the
 representation through which neat subgroups of `PU(1, n)` are defined, by the eigenvalues of
 `Ad(γ)`. The topological statements about `Ad` over `ℝ` and `ℂ` (it is a closed embedding) are in
 `TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup.Projective`.
@@ -35,9 +36,6 @@ representation through which neat subgroups of `PU(1, n)` are defined, by the ei
 
 ## Main results
 
-* `TauCeti.Matrix.indefiniteUnitaryGroup.mem_center_iff_val_mem_center`: over a field of
-  characteristic zero, an element of `U(p, q)` is central in `U(p, q)` exactly when it is central
-  in the general linear group.
 * `TauCeti.Matrix.ProjectiveIndefiniteUnitaryGroup.innerAut_injective`: the conjugation
   representation of `PU(p, q)` is faithful.
 
@@ -70,23 +68,6 @@ abbrev ProjectiveIndefiniteUnitaryGroup :=
 
 variable {p q} {K : Type*} [Field K] [StarRing K] [CharZero K]
 
-namespace indefiniteUnitaryGroup
-
-/-- **Central elements of `U(p, q)`.** Over a field of characteristic zero, an element of
-`U(p, q)` commutes with every element of `U(p, q)` exactly when it commutes with every invertible
-matrix: both say that it is a scalar matrix. -/
-theorem mem_center_iff_val_mem_center {g : indefiniteUnitaryGroup p q K} :
-    g ∈ Subgroup.center (indefiniteUnitaryGroup p q K) ↔
-      (g : GL (p ⊕ q) K) ∈ Subgroup.center (GL (p ⊕ q) K) := by
-  refine ⟨fun hg => ?_, fun hg => Subgroup.mem_center_iff.mpr fun h =>
-    Subtype.ext (Subgroup.mem_center_iff.mp hg h)⟩
-  rw [center_eq_range_scalarHom] at hg
-  obtain ⟨u, rfl⟩ := hg
-  exact GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.mpr
-    ⟨u, (unitaryGroupOf.val_scalarHom u).symm⟩
-
-end indefiniteUnitaryGroup
-
 namespace ProjectiveIndefiniteUnitaryGroup
 
 /-- The **conjugation representation** `Ad` of `PU(p, q)` on the matrix algebra: the class of
@@ -97,8 +78,8 @@ noncomputable def innerAut :
     ProjectiveIndefiniteUnitaryGroup p q K →*
       (Matrix (p ⊕ q) (p ⊕ q) K ≃ₐ[K] Matrix (p ⊕ q) (p ⊕ q) K) :=
   QuotientGroup.lift _ (GeneralLinearGroup.innerAut.comp (indefiniteUnitaryGroup p q K).subtype)
-    fun _ hg => MonoidHom.mem_ker.mpr <| (GeneralLinearGroup.innerAut_eq_one_iff _).mpr
-      (indefiniteUnitaryGroup.mem_center_iff_val_mem_center.mp hg)
+    (by rw [← MonoidHom.comap_ker, GeneralLinearGroup.ker_innerAut,
+      indefiniteUnitaryGroup.center_eq_comap_center])
 
 /-- The conjugation representation of `PU(p, q)` on the class of `g ∈ U(p, q)` is conjugation by
 `g`. -/
@@ -111,14 +92,10 @@ theorem innerAut_mk (g : indefiniteUnitaryGroup p q K) :
 /-- **The conjugation representation of `PU(p, q)` is faithful**: an element of `U(p, q)` acting
 trivially by conjugation on the matrix algebra is central in the general linear group, hence
 central in `U(p, q)`, hence trivial in `PU(p, q)`. -/
-theorem innerAut_injective : Function.Injective (innerAut (p := p) (q := q) (K := K)) := by
-  rw [injective_iff_map_eq_one]
-  intro γ hγ
-  induction γ using QuotientGroup.induction_on with
-  | H g =>
-    rw [innerAut_mk, GeneralLinearGroup.innerAut_eq_one_iff] at hγ
-    exact (QuotientGroup.eq_one_iff g).mpr
-      (indefiniteUnitaryGroup.mem_center_iff_val_mem_center.mpr hγ)
+theorem innerAut_injective : Function.Injective (innerAut (p := p) (q := q) (K := K)) :=
+  (QuotientGroup.injective_lift_iff _ _ _).2 <| by
+    rw [← MonoidHom.comap_ker, GeneralLinearGroup.ker_innerAut,
+      indefiniteUnitaryGroup.center_eq_comap_center]
 
 end ProjectiveIndefiniteUnitaryGroup
 
