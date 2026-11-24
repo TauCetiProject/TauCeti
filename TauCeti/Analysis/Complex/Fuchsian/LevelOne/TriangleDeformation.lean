@@ -9,12 +9,12 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
 public import TauCeti.GroupTheory.TriangleGroup.Basic
-import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
+import TauCeti.NumberTheory.Modular.Relations
 
 /-!
 # The deformation of the modular group into the triangle groups `Δ(3, 2, p)`
@@ -390,20 +390,17 @@ theorem L_zero : L 0 = !![1, 0; 1, 1] := by
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
 
-private theorem tendsto_pi_div_natCast : Tendsto (fun p : ℕ ↦ π / p) atTop (𝓝 0) :=
-  tendsto_const_nhds.div_atTop tendsto_natCast_atTop_atTop
-
 /-- **`U (π / p)` tends to `T`**: as `p → ∞` the deformed matrix converges to the parabolic
 `!![1, 1; 0, 1]`. -/
 theorem tendsto_U_pi_div : Tendsto (fun p : ℕ ↦ U (π / p)) atTop (𝓝 !![1, 1; 0, 1]) := by
   rw [← U_zero]
-  exact (continuous_U.tendsto 0).comp tendsto_pi_div_natCast
+  exact (continuous_U.tendsto 0).comp (tendsto_const_div_atTop_nhds_zero_nat π)
 
 /-- **`L (π / p)` tends to `Tᵀ`**: as `p → ∞` the deformed matrix converges to the parabolic
 `!![1, 0; 1, 1]`. -/
 theorem tendsto_L_pi_div : Tendsto (fun p : ℕ ↦ L (π / p)) atTop (𝓝 !![1, 0; 1, 1]) := by
   rw [← L_zero]
-  exact (continuous_L.tendsto 0).comp tendsto_pi_div_natCast
+  exact (continuous_L.tendsto 0).comp (tendsto_const_div_atTop_nhds_zero_nat π)
 
 /-- The height of the fixed point of `U θ` is `1 / θ` up to `4 θ`, for `0 < θ ≤ 1` with
 `4 sin² θ ≤ 1`. -/
@@ -512,12 +509,8 @@ theorem orderOf_pslRep_x {p : ℕ} (hp : 6 ≤ p) :
 /-- The image of `y` under `pslRep` has order exactly `2`. -/
 theorem orderOf_pslRep_y {p : ℕ} (hp : 6 ≤ p) :
     orderOf (pslRep p hp (TriangleGroup.y 3 2 p)) = 2 := by
-  rw [pslRep_y, TauCeti.pslS_eq_mk]
-  exact Matrix.ProjectiveSpecialLinearGroup.orderOf_mk_of_trace_sq_eq_two_mul_cos_pi_div_sq le_rfl
-    (by
-      rw [Matrix.SpecialLinearGroup.coe_modularGroup_S, Matrix.trace_fin_two_of, Nat.cast_ofNat,
-        Real.cos_pi_div_two]
-      norm_num)
+  rw [pslRep_y, TauCeti.pslS_def, orderOf_injective _ psl2zToPSL2R_injective,
+    TauCeti.ModularGroup.orderOf_coe_S]
 
 /-- The image of `z` under `pslRep` has order exactly `p`. -/
 theorem orderOf_pslRep_z {p : ℕ} (hp : 6 ≤ p) :
