@@ -11,7 +11,7 @@ public import Mathlib.NumberTheory.Padics.AddChar
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Norm
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.SpecificLimits.Normed
-import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+import TauCeti.Analysis.Normed.Algebra.Logarithm.Basic
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -51,8 +51,9 @@ which is strictly smaller than `‖x‖` for `n ≥ 2` and `x ≠ 0`. The ultram
 gives the norm identities without any multiplicativity of the norm. The bound is attained at every
 power of `p`, so the exponent `n - 1` cannot be lowered; it is sharper than the bound
 `r₀ ^ n ≤ ‖n!‖` of `TauCeti.amiceRadius_pow_le_norm_factorial`. Since `‖n‖ ≥ ‖n!‖`, the terms
-`zⁿ / n` of the logarithm series obey the same bound, and since `‖n‖ ≥ 1 / n`
-(`Padic.inv_natCast_le_norm_natCast`) they tend to zero whenever `‖z‖ < 1`. The two inverse
+`zⁿ / n` of the logarithm series obey the same bound. The convergence of the logarithm series on
+`‖z‖ < 1` (`NormedSpace.logSeries_summable_of_norm_lt_one`) and `exp (n • x) = exp x ^ n` need no
+ultrametric hypothesis on `A`. The two inverse
 identities evaluate the formal identities `log (exp X) = X` and `exp (log (1 + X)) = 1 + X`
 through `PowerSeries.eq_of_hasSum_of_subst_eq_X`.
 
@@ -189,6 +190,13 @@ private theorem mem_eball_radius_expSeries {x : A} (hx : ‖x‖ < amiceRadius p
   rw [edist_zero_right, ← ofReal_norm]
   exact (ENNReal.ofReal_lt_ofReal_iff (amiceRadius_pos 0)).mpr hx
 
+/-- For `‖x‖ < r₀` and every natural number `n`, `‖n • x‖ < r₀`. -/
+private theorem norm_nsmul_lt_amiceRadius {x : A} (hx : ‖x‖ < amiceRadius p 0) (n : ℕ) :
+    ‖n • x‖ < amiceRadius p 0 := by
+  rw [← Nat.cast_smul_eq_nsmul ℚ_[p]]
+  exact (norm_smul_le _ _).trans_lt <| (mul_le_of_le_one_left (norm_nonneg _)
+    (IsUltrametricDist.norm_natCast_le_one ℚ_[p] n)).trans_lt hx
+
 variable [CompleteSpace A]
 
 /-- **The exponential as a series on its disc.** For `‖x‖ < r₀`, `exp x = ∑ xⁿ / n!`. -/
@@ -212,28 +220,23 @@ private theorem hasSum_exp_sub_one {x : A} (hx : ‖x‖ < amiceRadius p 0) :
   · simp
   · simp [hn, PowerSeries.coeff_exp_sub_one_of_ne_zero hn]
 
-variable [IsUltrametricDist A]
-
 /-- **The logarithm series on the open unit disc about `1`.** For `‖y - 1‖ < 1`,
-`log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`: the terms tend to zero because `‖n‖ ≥ 1 / n` in
-`ℚ_[p]`. -/
+`log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`. -/
 theorem hasSum_log_of_norm_sub_one_lt_one {y : A} (hy : ‖y - 1‖ < 1) :
     HasSum (fun n : ℕ ↦ ((-1) ^ (n + 1) / n : ℚ_[p]) • (y - 1) ^ n) (log y) := by
-  -- The `n`-th term has norm at most `n ‖y - 1‖ ^ n`.
-  have hle (n : ℕ) : ‖((-1) ^ (n + 1) / n : ℚ_[p]) • (y - 1) ^ n‖ ≤ n * ‖y - 1‖ ^ n := by
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    refine (norm_smul_le _ _).trans (mul_le_mul ?_ (norm_pow_le' _ (Nat.pos_of_ne_zero hn))
-      (norm_nonneg _) (Nat.cast_nonneg _))
-    simp only [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div]
-    exact inv_le_of_inv_le₀ (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn))
-      (Padic.inv_natCast_le_norm_natCast n)
-  have hsum : Summable fun n : ℕ ↦ ((-1) ^ (n + 1) / n : ℚ_[p]) • (y - 1) ^ n := by
-    refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
-    rw [Nat.cofinite_eq_atTop]
-    exact squeeze_zero_norm hle (tendsto_self_mul_const_pow_of_lt_one (norm_nonneg _) hy)
-  convert hsum.hasSum using 1
   rw [log_eq_tsum ℚ_[p]]
+  exact (logSeries_summable_of_norm_lt_one ℚ_[p] A hy).hasSum
+
+/-- For `‖x‖ < r₀` and every natural number `n`, `exp (n • x) = exp x ^ n`. -/
+theorem exp_nsmul_of_norm_lt (n : ℕ) {x : A} (hx : ‖x‖ < amiceRadius p 0) :
+    exp (n • x) = exp x ^ n := by
+  induction n with
+  | zero => rw [zero_smul, pow_zero, exp_zero]
+  | succ n ih =>
+    rw [succ_nsmul, pow_succ, exp_add_of_commute_of_norm_lt ((Commute.refl x).smul_left n)
+      (norm_nsmul_lt_amiceRadius hx n) hx, ih]
+
+variable [IsUltrametricDist A]
 
 omit [NormedAlgebra ℚ_[p] A] [CompleteSpace A] in
 /-- A convergent series `∑ tₙ` with `t₀ = 0` and `t₁ = z`, whose later terms satisfy
@@ -346,15 +349,6 @@ theorem exp_sum_of_commute_of_norm_lt {ι : Type*} (s : Finset ι) {f : ι → A
       exp_add_of_commute_of_norm_lt hcomm (hf a (Finset.mem_insert_self a s)) hsum,
       ih (h.mono <| Finset.subset_insert _ _) hs]
 
-/-- For `‖x‖ < r₀` and every natural number `n`, `exp (n • x) = exp x ^ n`. -/
-theorem exp_nsmul_of_norm_lt (n : ℕ) {x : A} (hx : ‖x‖ < amiceRadius p 0) :
-    exp (n • x) = exp x ^ n := by
-  induction n with
-  | zero => rw [zero_smul, pow_zero, exp_zero]
-  | succ n ih =>
-    rw [succ_nsmul, pow_succ, exp_add_of_commute_of_norm_lt ((Commute.refl x).smul_left n)
-      ((IsUltrametricDist.norm_nsmul_le x n).trans_lt hx) hx, ih]
-
 /-- **The logarithm turns products of commuting elements into sums on the disc of radius `r₀`
 about `1`.** If `y` and `w` commute, `‖y - 1‖ < r₀` and `‖w - 1‖ < r₀`, then
 `log (y * w) = log y + log w`. -/
@@ -451,11 +445,10 @@ end NormedCommRing
 division ring over `ℚ_[p]`. -/
 theorem exp_zsmul_of_norm_lt {L : Type*} [NormedDivisionRing L] [NormedAlgebra ℚ_[p] L]
     [CompleteSpace L] (n : ℤ) {x : L} (hx : ‖x‖ < amiceRadius p 0) : exp (n • x) = exp x ^ n := by
-  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
   obtain ⟨n, rfl | rfl⟩ := n.eq_nat_or_neg
   · simpa using exp_nsmul_of_norm_lt n hx
   · rw [neg_smul, natCast_zsmul, exp_neg_of_mem_ball ℚ_[p]
-      (mem_eball_radius_expSeries ((IsUltrametricDist.norm_nsmul_le x n).trans_lt hx)),
+      (mem_eball_radius_expSeries (norm_nsmul_lt_amiceRadius hx n)),
       exp_nsmul_of_norm_lt n hx, zpow_neg, zpow_natCast]
 
 end TauCeti
