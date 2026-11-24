@@ -89,43 +89,33 @@ private theorem coe_unitY (hb : b ≠ 0) :
 
 /-- Conjugation `z ↦ x⁻¹ * z * x` by the unit `x`. -/
 private noncomputable def conjX (ha : a ≠ 0) : SymbolAlgebra n ζ a b →ₗ[K] SymbolAlgebra n ζ a b :=
-  LinearMap.mulLeft K ((unitX ha)⁻¹ : (SymbolAlgebra n ζ a b)ˣ).val ∘ₗ
-    LinearMap.mulRight K (unitX ha : (SymbolAlgebra n ζ a b)ˣ).val
+  LinearMap.mulLeftRight K
+    (((unitX ha)⁻¹ : (SymbolAlgebra n ζ a b)ˣ).val, (unitX ha : (SymbolAlgebra n ζ a b)ˣ).val)
 
 /-- Conjugation `z ↦ y * z * y⁻¹` by the unit `y`. -/
 private noncomputable def conjY (hb : b ≠ 0) : SymbolAlgebra n ζ a b →ₗ[K] SymbolAlgebra n ζ a b :=
-  LinearMap.mulLeft K (unitY hb : (SymbolAlgebra n ζ a b)ˣ).val ∘ₗ
-    LinearMap.mulRight K ((unitY hb)⁻¹ : (SymbolAlgebra n ζ a b)ˣ).val
-
-private theorem conjX_apply (ha : a ≠ 0) (z : SymbolAlgebra n ζ a b) :
-    conjX ha z = ((unitX (n := n) (ζ := ζ) (b := b) ha)⁻¹ : (SymbolAlgebra n ζ a b)ˣ).val *
-      (z * (unitX (n := n) (ζ := ζ) (b := b) ha : (SymbolAlgebra n ζ a b)ˣ).val) :=
-  rfl
-
-private theorem conjY_apply (hb : b ≠ 0) (z : SymbolAlgebra n ζ a b) :
-    conjY hb z = (unitY (n := n) (ζ := ζ) (a := a) hb : (SymbolAlgebra n ζ a b)ˣ).val *
-      (z * ((unitY (n := n) (ζ := ζ) (a := a) hb)⁻¹ : (SymbolAlgebra n ζ a b)ˣ).val) :=
-  rfl
+  LinearMap.mulLeftRight K
+    ((unitY hb : (SymbolAlgebra n ζ a b)ˣ).val, ((unitY hb)⁻¹ : (SymbolAlgebra n ζ a b)ˣ).val)
 
 private theorem conjX_basis (hζ : ζ ^ n = 1) (ha : a ≠ 0) (p : Fin n × Fin n) :
     conjX (b := b) ha (basis hζ p) = ζ ^ (p.2 : ℕ) • basis hζ p := by
-  rw [conjX_apply, basis_apply, coe_unitX, x_pow_mul_y_pow_mul_x, mul_smul_comm, ← coe_unitX ha,
-    Units.inv_mul_cancel_left]
+  rw [conjX, LinearMap.mulLeftRight_apply, mul_assoc, basis_apply,
+    coe_unitX, x_pow_mul_y_pow_mul_x, mul_smul_comm, ← coe_unitX ha, Units.inv_mul_cancel_left]
 
 private theorem conjY_basis (hζ : ζ ^ n = 1) (hb : b ≠ 0) (p : Fin n × Fin n) :
     conjY (a := a) hb (basis hζ p) = ζ ^ (p.1 : ℕ) • basis hζ p := by
-  rw [conjY_apply, basis_apply, ← mul_assoc, coe_unitY, y_mul_x_pow_mul_y_pow, smul_mul_assoc,
-    ← coe_unitY hb, Units.mul_inv_cancel_right]
+  rw [conjY, LinearMap.mulLeftRight_apply, basis_apply,
+    coe_unitY, y_mul_x_pow_mul_y_pow, smul_mul_assoc, ← coe_unitY hb, Units.mul_inv_cancel_right]
 
 private theorem conjX_mem (ha : a ≠ 0) (I : TwoSidedIdeal (SymbolAlgebra n ζ a b)) {z}
     (hz : z ∈ I) : conjX ha z ∈ I := by
-  rw [conjX_apply]
-  exact I.mul_mem_left _ _ (I.mul_mem_right _ _ hz)
+  rw [conjX, LinearMap.mulLeftRight_apply]
+  exact I.mul_mem_right _ _ (I.mul_mem_left _ _ hz)
 
 private theorem conjY_mem (hb : b ≠ 0) (I : TwoSidedIdeal (SymbolAlgebra n ζ a b)) {z}
     (hz : z ∈ I) : conjY hb z ∈ I := by
-  rw [conjY_apply]
-  exact I.mul_mem_left _ _ (I.mul_mem_right _ _ hz)
+  rw [conjY, LinearMap.mulLeftRight_apply]
+  exact I.mul_mem_right _ _ (I.mul_mem_left _ _ hz)
 
 /-- The two conjugations act diagonally on the monomial basis: conjugation by `x` scales
 `x ^ i * y ^ j` by `ζ ^ j` and conjugation by `y` scales it by `ζ ^ i`. -/
@@ -152,7 +142,8 @@ theorem isSimpleRing (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b ≠ 0) 
     IsSimpleRing (SymbolAlgebra n ζ a b) :=
   have := nontrivial (a := a) (b := b) hζ.pow_eq_one
   .of_eq_bot_or_eq_top fun I => or_iff_not_imp_left.2 fun hI => by
-    obtain ⟨z, hzI, hz : z ≠ 0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.2 hI)
+    obtain ⟨z, hzI, hz⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.2 hI)
+    rw [TwoSidedIdeal.mem_bot] at hz
     set B := basis (a := a) (b := b) hζ.pow_eq_one
     obtain ⟨p, hpz⟩ := Finsupp.ne_iff.1 (B.repr.map_ne_zero_iff.2 hz)
     -- `I` is invariant under both conjugations, which jointly separate the monomials, so it
@@ -182,9 +173,9 @@ theorem isCentral (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b ≠ 0) :
     set B := basis (a := a) (b := b) hζ.pow_eq_one
     rw [Subalgebra.mem_center_iff] at hz
     have hx : conjX (b := b) ha z = z := by
-      rw [conjX_apply, ← hz, Units.inv_mul_cancel_left]
+      rw [conjX, LinearMap.mulLeftRight_apply, mul_assoc, ← hz, Units.inv_mul_cancel_left]
     have hy : conjY (a := a) hb z = z := by
-      rw [conjY_apply, ← mul_assoc, hz, Units.mul_inv_cancel_right]
+      rw [conjY, LinearMap.mulLeftRight_apply, hz, Units.mul_inv_cancel_right]
     -- `z` is fixed by both conjugations, so its coordinates off the monomial `1`, whose joint
     -- eigenvalue is not `(1, 1)`, vanish
     have h0 : ∀ r : Fin n × Fin n, r ≠ 0 → B.repr z r = 0 := fun r hr =>
