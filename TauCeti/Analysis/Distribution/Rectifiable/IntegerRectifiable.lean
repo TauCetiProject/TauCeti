@@ -186,8 +186,8 @@ theorem IsIntegerRectifiable.add {T₁ T₂ : 𝓓^{n}(Ω, V [⋀^Fin k]→L[ℝ
     hx (by simp only [mem_union, mem_ofPred_eq, not_or, not_not] at h; simp [θ, h.1, h.2])
   -- At almost every point of the supports, the two frames span the plane of the union.
   have hU := hS₁.ae_densityZeroOutsideCones_union Ω.isOpen hS₁m.nullMeasurableSet
-    (fun _ ↦ hθ₁.measure_setOf_intCast_ne_zero_inter_ne_top hθ₁m) hS₂ hS₂m.nullMeasurableSet
-    (fun _ ↦ hθ₂.measure_setOf_intCast_ne_zero_inter_ne_top hθ₂m)
+    (fun _ ↦ hθ₁.measure_setOf_intCast_ne_zero_inter_ne_top) hS₂ hS₂m.nullMeasurableSet
+    (fun _ ↦ hθ₂.measure_setOf_intCast_ne_zero_inter_ne_top)
     (P₁ := fun x ↦ Submodule.span ℝ (range (τ₁ x)))
     (P₂ := fun x ↦ Submodule.span ℝ (range (τ₂ x)))
     (fun x hx ↦ by simpa using finrank_span_eq_card (hτo₁ x hx).linearIndependent)

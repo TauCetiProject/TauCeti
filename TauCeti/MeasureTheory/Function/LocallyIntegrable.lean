@@ -562,22 +562,16 @@ theorem bdd_mul_of_ne_zero {𝕜 : Type*} [NormedRing 𝕜] {u v : X → 𝕜} {
   · simp [h]
   · exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hy h) (norm_nonneg _))
 
-/-- A measurable integer-valued function that is locally integrable on `s` as a real function has
-support of finite measure in every compact subset of `s`, since its absolute value is at least one
-on its support. -/
+/-- An integer-valued function that is locally integrable on `s` as a real function has support of
+finite measure in every compact subset of `s`, since its absolute value is at least one on its
+support: a consequence of Mathlib's `MeasureTheory.Integrable.measure_norm_ge_lt_top`. -/
 theorem measure_setOf_intCast_ne_zero_inter_ne_top {θ : X → ℤ}
-    (hθ : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) s μ) (hθm : Measurable θ) {K : Set X}
+    (hθ : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) s μ) {K : Set X}
     (hK : IsCompact K) (hKs : K ⊆ s) : μ ({x | θ x ≠ 0} ∩ K) ≠ ∞ := by
-  have hS : MeasurableSet {x | θ x ≠ 0} := hθm (measurableSet_singleton 0).compl
-  refine ne_top_of_le_ne_top (hθ.integrableOn_compact_subset hKs hK).2.ne ?_
-  rw [← Measure.restrict_apply hS, ← lintegral_indicator_one hS]
-  refine lintegral_mono fun x ↦ ?_
-  by_cases hx : θ x = 0
-  · simp [hx]
-  · rw [indicator_of_mem (show x ∈ {x | θ x ≠ 0} from hx), Pi.one_apply,
-      Real.eNorm_eq_ofReal_abs]
-    have h1 : (1 : ℝ) ≤ |((θ x : ℤ) : ℝ)| := by exact_mod_cast Int.one_le_abs hx
-    exact ENNReal.one_le_ofReal.2 h1
+  refine ((Measure.le_restrict_apply _ _).trans (measure_mono ?_)).trans_lt
+    ((hθ.integrableOn_compact_subset hKs hK).measure_norm_ge_lt_top one_pos) |>.ne
+  intro x (hx : θ x ≠ 0)
+  simpa [Real.norm_eq_abs] using (Int.cast_le (R := ℝ)).2 (Int.one_le_abs hx)
 
 end MeasureTheory.LocallyIntegrableOn
 
