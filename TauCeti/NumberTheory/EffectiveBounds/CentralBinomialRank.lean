@@ -145,9 +145,7 @@ private theorem pow_four_lt_four_pow_floor_three_mul_log_add_one {n : ℕ} (hn :
     (n : ℝ) ^ 4 < 4 ^ (⌊3 * Real.log n⌋₊ + 1) := by
   have hlog4 : (4 : ℝ) / 3 < Real.log 4 := by
     have h2 := Real.log_two_gt_d9
-    have : Real.log 4 = 2 * Real.log 2 := by
-      rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.log_pow, Nat.cast_ofNat]
-    rw [this]
+    rw [Real.log_four_eq]
     linarith
   have hfloor := Nat.lt_floor_add_one (3 * Real.log n)
   rw [← Real.log_lt_log_iff (by positivity) (by positivity), Real.log_pow, Real.log_pow]
