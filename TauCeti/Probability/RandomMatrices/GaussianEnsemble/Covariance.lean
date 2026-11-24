@@ -14,11 +14,11 @@ import Mathlib.Analysis.Matrix.Hermitian
 
 The Gaussian ensemble `gaussianEnsemble β n g` is real-linear in the array `g`, so it is the
 combination `∑ ab, g ab • E ab` of the coordinate directions `E ab = gaussianEnsemble β n
-(Pi.single ab 1)` (`gaussianEnsemble_eq_sum_smul_single`). With independent standard Gaussian
-coordinates, or with independent standard Brownian coordinates as in matrix Brownian motion
-`H(t) = H₀ + ∑ ab, B ab t • E ab`, every covariance and every quadratic covariation of linear
-functionals of the matrix is therefore a sum over `ab` of products of the values of these
-functionals on the directions `E ab`. This file evaluates those sums.
+(Pi.single ab 1)` (`gaussianEnsemble_eq_sum_smul_single` in `GaussianEnsemble/Basic.lean`).
+With independent standard Gaussian coordinates, or with independent standard Brownian coordinates
+as in matrix Brownian motion `H(t) = H₀ + ∑ ab, B ab t • E ab`, every covariance and every
+quadratic covariation of linear functionals of the matrix is therefore a sum over `ab` of products
+of the values of these functionals on the directions `E ab`. This file evaluates those sums.
 
 The basic identities are the entry covariances. Summed over `ab`, the products
 `E ab k l * E ab k' l'` equal `n⁻¹` when `(k, l) = (l', k')` and vanish otherwise for `β ≠ 1`
@@ -30,8 +30,9 @@ matrices `X` and `Y` gives the trace identities
 * `∑ ab, tr (X E ab) * tr (Y E ab) = n⁻¹ tr (X Y)` for `β ≠ 1`,
 * `∑ ab, tr (X E ab) * tr (Y E ab) = n⁻¹ (tr (X Y) + tr (X Yᵀ))` for `β = 1`,
 
-which for Hermitian `X`, `Y` (real symmetric when `β = 1`) give the coefficient
-`(2 / (β n)) Re tr (X Y)` of the bracket formula
+which give the coefficient `n⁻¹ Re tr (X Y)` for Hermitian `X`, `Y` and `β ≠ 1`, and the
+coefficient `(2 / n) tr (X Y)` for real symmetric `X`, `Y` and `β = 1`. At `β = 2` and `β = 1`
+these are the coefficient `2 / (β n)` of the bracket formula
 `[tr (X H), tr (Y H)]_t = (2 / (β n)) Re tr (X Y) t` of matrix Brownian motion
 (Anderson–Guionnet–Zeitouni, Definition 4.3.1). Taking rank-one matrices `X = vecMulVec v w`
 gives the same identities for the bilinear expressions `w ⬝ᵥ E ab *ᵥ v`.
@@ -43,12 +44,12 @@ for an orthonormal eigenbasis `u`. The last four theorems evaluate the two sums 
 that this computation needs. For `β ≠ 1` and unit vectors `u`, `v`, the sum of `‖⟪u, E ab v⟫‖²` is
 `n⁻¹`, which turns the second derivatives into the drift `n⁻¹ ∑_{j ≠ i} (λᵢ - λⱼ)⁻¹`. The sum of
 `Re ⟪u, E ab u⟫ * Re ⟪v, E ab v⟫` is `n⁻¹ ‖⟪u, v⟫‖²` for `β ≠ 1`, so the martingale parts of
-distinct eigenvalues have zero bracket and each has bracket `2 / (β n)` per unit time. For `β = 1`
-both sums carry the extra term `n⁻¹ ‖u ⬝ᵥ v‖²`, which vanishes for real orthogonal vectors.
+distinct eigenvalues have zero bracket and each has bracket `n⁻¹` per unit time, which is the value
+`2 / (β n)` at `β = 2`. For `β = 1` both sums carry the extra term `n⁻¹ ‖u ⬝ᵥ v‖²`, which vanishes
+for real orthogonal vectors.
 
 ## Main results
 
-* `TauCeti.Probability.gaussianEnsemble_eq_sum_smul_single`: the expansion in the directions.
 * `TauCeti.Probability.sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one` and
   `TauCeti.Probability.sum_gaussianEnsemble_one_single_apply_mul_apply`: entry covariances.
 * `TauCeti.Probability.sum_trace_mul_gaussianEnsemble_single_mul_trace_mul_of_ne_one` and
@@ -82,19 +83,10 @@ namespace Probability
 
 variable {β n : ℕ}
 
-/-- The Gaussian ensemble of an array `g` is the combination, with coefficients `g ab`, of the
-ensembles of the unit arrays `Pi.single ab 1`. -/
-theorem gaussianEnsemble_eq_sum_smul_single (β n : ℕ) (g : Fin n × Fin n → ℝ) :
-    gaussianEnsemble β n g = ∑ ab, g ab • gaussianEnsemble β n (Pi.single ab 1) := by
-  let L : (Fin n × Fin n → ℝ) →ₗ[ℝ] Matrix (Fin n) (Fin n) ℂ :=
-    { toFun := gaussianEnsemble β n
-      map_add' := gaussianEnsemble_add
-      map_smul' := gaussianEnsemble_smul }
-  have hg : ∑ ab, g ab • Pi.single ab (1 : ℝ) = g := by
-    simp_rw [← Pi.single_smul', smul_eq_mul, mul_one]
-    exact Finset.univ_sum_single g
-  calc gaussianEnsemble β n g = L (∑ ab, g ab • Pi.single ab 1) := by simp [L, hg]
-    _ = _ := by simp [L]
+/-- The square of the normalization `(√n)⁻¹` of the Gaussian ensemble, as a complex number. -/
+private theorem inv_ofReal_sqrt_natCast_sq (n : ℕ) : ((Real.sqrt n : ℝ) : ℂ)⁻¹ ^ 2 = (n : ℂ)⁻¹ := by
+  rw [← Complex.ofReal_inv, ← Complex.ofReal_pow, inv_pow, Real.sq_sqrt (by positivity)]
+  simp
 
 /-- **Entry covariances of the complex Hermitian ensemble.** For `β ≠ 1`, summing the products
 `E ab k l * E ab k' l'` of entries of the directions `E ab = gaussianEnsemble β n (Pi.single ab 1)`
@@ -108,9 +100,7 @@ theorem sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one (hβ : β ≠ 1) (
   have hs : ((Real.sqrt 2 : ℝ) : ℂ)⁻¹ ^ 2 = 1 / 2 := by
     rw [← Complex.ofReal_inv, ← Complex.ofReal_pow, inv_pow, Real.sq_sqrt (by norm_num)]
     simp
-  have hn : ((Real.sqrt n : ℝ) : ℂ)⁻¹ ^ 2 = (n : ℂ)⁻¹ := by
-    rw [← Complex.ofReal_inv, ← Complex.ofReal_pow, inv_pow, Real.sq_sqrt (by positivity)]
-    simp
+  have hn := inv_ofReal_sqrt_natCast_sq n
   have hI := Complex.I_sq
   simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply]
   -- Split on the position of `(k, l)` and of `(k', l')` relative to the diagonal, evaluate the sum
@@ -135,9 +125,7 @@ theorem sum_gaussianEnsemble_one_single_apply_mul_apply (k l k' l' : Fin n) :
   have hs : ((Real.sqrt 2 : ℝ) : ℂ) ^ 2 = 2 := by
     rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num)]
     simp
-  have hn : ((Real.sqrt n : ℝ) : ℂ)⁻¹ ^ 2 = (n : ℂ)⁻¹ := by
-    rw [← Complex.ofReal_inv, ← Complex.ofReal_pow, inv_pow, Real.sq_sqrt (by positivity)]
-    simp
+  have hn := inv_ofReal_sqrt_natCast_sq n
   simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply]
   -- The same case analysis as for `β ≠ 1`, with real entries.
   split_ifs <;>
@@ -194,6 +182,11 @@ theorem sum_trace_mul_gaussianEnsemble_one_single_mul_trace_mul (X Y : Matrix (F
     exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
   · exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
 
+/-- A bilinear form `w ⬝ᵥ M *ᵥ v` is the trace of the rank-one matrix `vecMulVec v w` times `M`. -/
+private theorem dotProduct_mulVec_eq_trace_vecMulVec_mul (v w : Fin n → ℂ)
+    (M : Matrix (Fin n) (Fin n) ℂ) : w ⬝ᵥ M *ᵥ v = (vecMulVec v w * M).trace := by
+  rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
+
 /-- **Bilinear forms of the complex Hermitian directions.** For `β ≠ 1` and all vectors, the sum
 over the directions `E ab = gaussianEnsemble β n (Pi.single ab 1)` of
 `(w ⬝ᵥ E ab *ᵥ v) * (w' ⬝ᵥ E ab *ᵥ v')` is `n⁻¹ (w ⬝ᵥ v') (w' ⬝ᵥ v)`. -/
@@ -203,12 +196,10 @@ theorem sum_dotProduct_mulVec_gaussianEnsemble_single_mul_of_ne_one (hβ : β �
         (w' ⬝ᵥ gaussianEnsemble β n (Pi.single ab 1) *ᵥ v') =
       (n : ℂ)⁻¹ * ((w ⬝ᵥ v') * (w' ⬝ᵥ v)) := by
   -- Each bilinear form is the trace of a rank-one matrix times the direction.
-  have h (v w : Fin n → ℂ) (M : Matrix (Fin n) (Fin n) ℂ) :
-      w ⬝ᵥ M *ᵥ v = (vecMulVec v w * M).trace := by
-    rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
-  simp_rw [h]
-  rw [sum_trace_mul_gaussianEnsemble_single_mul_trace_mul_of_ne_one hβ, vecMulVec_mul_vecMulVec,
-    trace_vecMulVec, dotProduct_smul, smul_eq_mul, dotProduct_comm v w']
+  simp_rw [dotProduct_mulVec_eq_trace_vecMulVec_mul]
+  rw [sum_trace_mul_gaussianEnsemble_single_mul_trace_mul_of_ne_one hβ]
+  simp only [vecMulVec_mul_vecMulVec, trace_vecMulVec, smul_dotProduct, smul_eq_mul,
+    dotProduct_comm v]
 
 /-- **Bilinear forms of the real symmetric directions.** For `β = 1` and all vectors, the sum
 over the directions `E ab = gaussianEnsemble 1 n (Pi.single ab 1)` of
@@ -218,14 +209,16 @@ theorem sum_dotProduct_mulVec_gaussianEnsemble_one_single_mul (w v w' v' : Fin n
         (w' ⬝ᵥ gaussianEnsemble 1 n (Pi.single ab 1) *ᵥ v') =
       (n : ℂ)⁻¹ * ((w ⬝ᵥ v') * (w' ⬝ᵥ v) + (w ⬝ᵥ w') * (v ⬝ᵥ v')) := by
   -- Each bilinear form is the trace of a rank-one matrix times the direction.
-  have h (v w : Fin n → ℂ) (M : Matrix (Fin n) (Fin n) ℂ) :
-      w ⬝ᵥ M *ᵥ v = (vecMulVec v w * M).trace := by
-    rw [vecMulVec_mul, trace_vecMulVec, dotProduct_mulVec, dotProduct_comm]
-  simp_rw [h]
-  rw [sum_trace_mul_gaussianEnsemble_one_single_mul_trace_mul, transpose_vecMulVec,
-    vecMulVec_mul_vecMulVec, vecMulVec_mul_vecMulVec, trace_vecMulVec, trace_vecMulVec,
-    dotProduct_smul, dotProduct_smul, smul_eq_mul, smul_eq_mul, dotProduct_comm v w',
-    dotProduct_comm v v']
+  simp_rw [dotProduct_mulVec_eq_trace_vecMulVec_mul]
+  rw [sum_trace_mul_gaussianEnsemble_one_single_mul_trace_mul]
+  simp only [transpose_vecMulVec, vecMulVec_mul_vecMulVec, trace_vecMulVec, smul_dotProduct,
+    smul_eq_mul, dotProduct_comm v]
+
+/-- The self dot product `star x ⬝ᵥ x` is real: it is the complex number of its real part. -/
+private theorem star_dotProduct_self_eq_ofReal_re (x : Fin n → ℂ) :
+    star x ⬝ᵥ x = ((star x ⬝ᵥ x).re : ℂ) :=
+  Complex.eq_re_of_ofReal_le (r := 0)
+    (by rw [Complex.ofReal_zero]; exact dotProduct_star_self_nonneg x)
 
 /-- A sum of squared norms of the bilinear forms `star u ⬝ᵥ E ab *ᵥ v` of Hermitian directions,
 written as the sum of the products `(star u ⬝ᵥ E ab *ᵥ v) * (star v ⬝ᵥ E ab *ᵥ u)` in `ℂ`. -/
@@ -248,12 +241,8 @@ theorem sum_norm_star_dotProduct_mulVec_gaussianEnsemble_single_sq_of_ne_one (h�
       (n : ℝ)⁻¹ * (star u ⬝ᵥ u).re * (star v ⬝ᵥ v).re := by
   have h := ofReal_sum_norm_star_dotProduct_mulVec_gaussianEnsemble_single_sq β n u v
   rw [sum_dotProduct_mulVec_gaussianEnsemble_single_mul_of_ne_one hβ,
-    Complex.eq_re_of_ofReal_le (r := 0) (z := star u ⬝ᵥ u)
-      (by rw [Complex.ofReal_zero]; exact dotProduct_star_self_nonneg u),
-    Complex.eq_re_of_ofReal_le (r := 0) (z := star v ⬝ᵥ v)
-      (by rw [Complex.ofReal_zero]; exact dotProduct_star_self_nonneg v),
-    ← mul_assoc] at h
-  exact Complex.ofReal_injective (by rw [h]; push_cast; rfl)
+    star_dotProduct_self_eq_ofReal_re u, star_dotProduct_self_eq_ofReal_re v] at h
+  exact Complex.ofReal_injective (by rw [h]; push_cast; ring)
 
 /-- **The drift sum for the real symmetric ensemble.** For `β = 1`, the sum over the directions
 `E ab = gaussianEnsemble 1 n (Pi.single ab 1)` of `‖star u ⬝ᵥ E ab *ᵥ v‖²` is
@@ -265,11 +254,8 @@ theorem sum_norm_star_dotProduct_mulVec_gaussianEnsemble_one_single_sq (u v : Fi
   have h := ofReal_sum_norm_star_dotProduct_mulVec_gaussianEnsemble_single_sq 1 n u v
   rw [sum_dotProduct_mulVec_gaussianEnsemble_one_single_mul, star_dotProduct_star,
     dotProduct_comm v u, Complex.star_def, Complex.conj_mul'] at h
-  rw [Complex.eq_re_of_ofReal_le (r := 0) (z := star u ⬝ᵥ u)
-      (by rw [Complex.ofReal_zero]; exact dotProduct_star_self_nonneg u),
-    Complex.eq_re_of_ofReal_le (r := 0) (z := star v ⬝ᵥ v)
-      (by rw [Complex.ofReal_zero]; exact dotProduct_star_self_nonneg v)] at h
-  exact Complex.ofReal_injective (by rw [h]; push_cast; rfl)
+  rw [star_dotProduct_self_eq_ofReal_re u, star_dotProduct_self_eq_ofReal_re v] at h
+  exact Complex.ofReal_injective (by rw [h]; push_cast; ring)
 
 /-- For Hermitian directions, the sum of products of the real parts of the quadratic forms
 `star u ⬝ᵥ E ab *ᵥ u` and `star v ⬝ᵥ E ab *ᵥ v` is the real part of the sum of their products. -/
