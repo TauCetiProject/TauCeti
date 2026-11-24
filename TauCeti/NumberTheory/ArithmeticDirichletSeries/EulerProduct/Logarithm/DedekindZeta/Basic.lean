@@ -35,7 +35,7 @@ positive real number, and that sum is its real logarithm.
   which is therefore positive.
 * `TauCeti.log_dedekindZeta_re_eq_tsum_neg_log_one_sub`: that real sum is the real logarithm of
   `ζ_K(s)`.
-* `TauCeti.finprod_one_sub_inv_absNorm_eq_exp_primeSummatory`: the finite Euler product
+* `TauCeti.finprod_one_sub_inv_absNorm_inv_eq_exp_primeSummatory`: the finite Euler product
   `∏_{N(𝔭) ≤ x} (1 - N(𝔭)⁻¹)⁻¹` equals `exp (∑_{N(𝔭) ≤ x} -log (1 - N(𝔭)⁻¹))`.
 
 ## References
@@ -132,7 +132,7 @@ theorem dedekindZeta_re_pos {s : ℝ} (hs : 1 < s) : 0 < (dedekindZeta K s).re :
 
 /-- The finite Euler product up to `x` is the exponential of the summatory function of
 `-log (1 - N(𝔭)⁻¹)`. -/
-theorem finprod_one_sub_inv_absNorm_eq_exp_primeSummatory (x : ℝ) :
+theorem finprod_one_sub_inv_absNorm_inv_eq_exp_primeSummatory (x : ℝ) :
     (∏ᶠ 𝔭 : HeightOneSpectrum (𝓞 K),
       if (Ideal.absNorm 𝔭.asIdeal : ℝ) ≤ x then (1 - (Ideal.absNorm 𝔭.asIdeal : ℝ)⁻¹)⁻¹
       else 1) = Real.exp (primeSummatory K

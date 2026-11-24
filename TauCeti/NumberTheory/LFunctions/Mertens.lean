@@ -941,7 +941,7 @@ theorem isBigO_prod_one_sub_inv_absNorm_sub_mul_log :
         Real.log (Real.log x)) := by
     simp only [E]
     ring
-  rw [finprod_one_sub_inv_absNorm_eq_exp_primeSummatory (K := K) x, hsplit, Real.exp_add,
+  rw [finprod_one_sub_inv_absNorm_inv_eq_exp_primeSummatory (K := K) x, hsplit, Real.exp_add,
     Real.exp_add, Real.exp_add, Real.exp_log hκ, Real.exp_log hlog]
   ring
 
@@ -967,7 +967,7 @@ theorem tendsto_prod_one_sub_inv_absNorm_div_log :
   filter_upwards [eventually_gt_atTop 1] with x hx
   have hlog : 0 < Real.log x := Real.log_pos hx
   have hκ := dedekindZeta_residue_pos K
-  rw [Function.comp_apply, finprod_one_sub_inv_absNorm_eq_exp_primeSummatory (K := K) x,
+  rw [Function.comp_apply, finprod_one_sub_inv_absNorm_inv_eq_exp_primeSummatory (K := K) x,
     Real.exp_sub, Real.exp_sub, Real.exp_add, Real.exp_log hlog, Real.exp_log hκ, div_div,
     mul_comm (Real.log x)]
 

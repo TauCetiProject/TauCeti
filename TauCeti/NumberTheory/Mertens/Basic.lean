@@ -74,14 +74,8 @@ bounds when any finite set of primes is removed from the product.
   `|∏_{p ≤ x} (1 - p⁻¹)⁻¹ - e^γ log x| ≤ e^γ A e^(A / log 2)` for `x ≥ 2`, where
   `A = 2 (log 4 + 4) + 2`, with existential form
   `TauCeti.exists_abs_prod_primesLE_one_sub_inv_inv_sub_exp_mul_log_le`.
-* `TauCeti.exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds` and
-  `TauCeti.exists_pos_prod_primesLE_filter_notMem_one_sub_inv_inv_bounds`: two-sided `1 / log y`
-  comparison for `∏_{p ≤ y, p ∉ T} (1 - p⁻¹)` and `log y` comparison for its reciprocal on
-  `y ≥ 2` for any finite set `T`.
-* `TauCeti.hasSum_vonMangoldt_nonprime_div_mul_log`,
-  `TauCeti.summable_vonMangoldt_nonprime_div_mul_log`, and
-  `TauCeti.tsum_vonMangoldt_nonprime_div_mul_log`: the higher-prime-power series
-  `∑_{¬n.Prime} Λ(n) / (n log n)` sums to `γ - meisselMertensConstant`.
+* `TauCeti.exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds`: two-sided `1 / log y`
+  comparison for `∏_{p ≤ y, p ∉ T} (1 - p⁻¹)` on `y ≥ 2` for any finite set `T`.
 
 ## References
 
@@ -808,75 +802,5 @@ theorem exists_pos_prod_primesLE_one_sub_inv_bounds :
   obtain ⟨c₁, c₂, hc₁, hc₂, h⟩ := exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds ∅
   refine ⟨c₁, c₂, hc₁, hc₂, fun y hy ↦ ?_⟩
   simpa using h y hy
-
-/-- **Two-sided `log y` comparison for reciprocal partial Euler products with omitted primes.**
-For every finite set `T : Finset ℕ`, there exist positive constants `c₁, c₂ > 0` such that for
-all `y ≥ 2`,
-`c₁ * log y ≤ ∏_{p ≤ y, p ∉ T} (1 - p⁻¹)⁻¹ ≤ c₂ * log y`. -/
-theorem exists_pos_prod_primesLE_filter_notMem_one_sub_inv_inv_bounds (T : Finset ℕ) :
-    ∃ c₁ c₂ : ℝ, 0 < c₁ ∧ 0 < c₂ ∧ ∀ y : ℝ, 2 ≤ y →
-      c₁ * Real.log y ≤ (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹)⁻¹) ∧
-        (∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹)⁻¹) ≤ c₂ * Real.log y := by
-  obtain ⟨c₁, c₂, hc₁, hc₂, h⟩ := exists_pos_prod_primesLE_filter_notMem_one_sub_inv_bounds T
-  refine ⟨c₂⁻¹, c₁⁻¹, inv_pos.mpr hc₂, inv_pos.mpr hc₁, fun y hy ↦ ?_⟩
-  obtain ⟨hlo, hhi⟩ := h y hy
-  have hlogy : 0 < Real.log y := Real.log_pos (one_lt_two.trans_le hy)
-  have hprod_pos : 0 < ∏ p ∈ Nat.primesLE ⌊y⌋₊ with p ∉ T, (1 - (p : ℝ)⁻¹) :=
-    (div_pos hc₁ hlogy).trans_le hlo
-  rw [prod_inv_distrib]
-  exact ⟨(mul_le_inv_iff_le_div (inv_pos.mpr hc₂) hlogy hprod_pos).mpr (by simpa using hhi),
-    (inv_le_mul_iff_div_le (inv_pos.mpr hc₁) hlogy hprod_pos).mpr (by simpa using hlo)⟩
-
-/-! ### Series of higher-prime-power reciprocals -/
-
-/-- **Exact sum of the non-prime von Mangoldt reciprocal series.** Summing `Λ(n) / (n log n)` over
-non-prime `n : ℕ` (that is, `1 / (k p ^ k)` over prime powers `p ^ k` with `k ≥ 2`) converges to
-`γ - meisselMertensConstant`. -/
-theorem hasSum_vonMangoldt_nonprime_div_mul_log :
-    HasSum (fun n : ℕ ↦ if n.Prime then 0 else Λ n / ((n : ℝ) * Real.log n))
-      (Real.eulerMascheroniConstant - meisselMertensConstant) := by
-  set f : ℕ → ℝ := fun n ↦ if n.Prime then 0 else Λ n / ((n : ℝ) * Real.log n)
-  have hf_nonneg (n : ℕ) : 0 ≤ f n := by
-    simp only [f]
-    split_ifs
-    · exact le_rfl
-    · rcases eq_or_ne n 0 with rfl | hn0
-      · simp
-      · exact div_nonneg ArithmeticFunction.vonMangoldt_nonneg
-          (mul_nonneg (Nat.cast_nonneg n) (Real.log_nonneg (mod_cast Nat.pos_of_ne_zero hn0)))
-  rw [hasSum_iff_tendsto_nat_of_nonneg hf_nonneg, ← tendsto_add_atTop_iff_nat 1]
-  have hpart (N : ℕ) : ∑ n ∈ range (N + 1), f n =
-      (∑ n ∈ Icc 2 N, Λ n / ((n : ℝ) * Real.log n)) -
-        ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
-    have hrange : ∑ n ∈ range (N + 1), f n = ∑ n ∈ Icc 1 N, f n := by
-      rw [range_eq_Ico, sum_eq_sum_Ico_succ_bot (Nat.succ_pos _)]
-      simp [f, Ico_add_one_right_eq_Icc]
-    have hprime_sum :
-        (∑ n ∈ Icc 1 N, if n.Prime then Λ n / ((n : ℝ) * Real.log n) else 0) =
-          ∑ p ∈ Nat.primesLE N, (p : ℝ)⁻¹ := by
-      rw [← sum_filter, ← Nat.primesLE_eq_filter_Icc_one]
-      refine sum_congr rfl fun p hp ↦ ?_
-      simpa using vonMangoldt_div_mul_log_prime_pow (Nat.prime_of_mem_primesLE hp) 1
-    rw [hrange, sum_Icc_two_vonMangoldt_div_mul_log, ← hprime_sum, ← sum_sub_distrib]
-    refine sum_congr rfl fun n _ ↦ ?_
-    by_cases hn : n.Prime <;> simp [f, hn]
-  have hlim := (tendsto_sum_Icc_vonMangoldt_div_mul_log_sub_log_log.comp
-    tendsto_natCast_atTop_atTop).sub
-    (tendsto_sum_primesLE_inv_sub_log_log.comp tendsto_natCast_atTop_atTop)
-  refine hlim.congr fun N ↦ ?_
-  simp only [Function.comp_apply, Nat.floor_natCast, hpart]
-  ring
-
-/-- The non-prime von Mangoldt reciprocal series `∑_{¬n.Prime} Λ(n) / (n log n)` is summable. -/
-theorem summable_vonMangoldt_nonprime_div_mul_log :
-    Summable fun n : ℕ ↦ if n.Prime then 0 else Λ n / ((n : ℝ) * Real.log n) :=
-  hasSum_vonMangoldt_nonprime_div_mul_log.summable
-
-/-- Closed form of the non-prime von Mangoldt reciprocal series:
-`∑'_{¬n.Prime} Λ(n) / (n log n) = γ - meisselMertensConstant`. -/
-theorem tsum_vonMangoldt_nonprime_div_mul_log :
-    (∑' n : ℕ, if n.Prime then 0 else Λ n / ((n : ℝ) * Real.log n)) =
-      Real.eulerMascheroniConstant - meisselMertensConstant :=
-  hasSum_vonMangoldt_nonprime_div_mul_log.tsum_eq
 
 end TauCeti
