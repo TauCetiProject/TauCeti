@@ -281,7 +281,9 @@ lemma coweightToModified_apply (L : ℕ) (y : Y) (x : D.modifiedWeightLattice L)
 /-- Restricting the coweight `⟨-, y⟩` to `X*` is `D.coweightToModified L y`. -/
 @[simp]
 lemma dualRestrict_pairing_flip (L : ℕ) (y : Y) :
-    (D.modifiedWeightLattice L).dualRestrict (D.pairing.flip y) = D.coweightToModified L y := (rfl)
+    (D.modifiedWeightLattice L).dualRestrict (D.pairing.flip y) = D.coweightToModified L y := by
+  ext
+  simp [Submodule.dualRestrict_apply]
 
 /-- For `L > 0`, the coweight restriction map `Y →ₗ[ℤ] Hom(X*, ℤ)` is injective. -/
 theorem coweightToModified_injective {L : ℕ} (hL : 0 < L) :
