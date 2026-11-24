@@ -44,7 +44,10 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 `(a, b)`; integrating it gives such a step with slope at most `τ` whenever
 `v < τ (b - a)`, which is the best possible bound, since the mean slope of the step is
 `v / (b - a)`. Translating and reflecting the smooth transition also gives three cutoffs summing to
-one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded derivatives.
+one, supported near `+∞`, near `-∞` and on a bounded interval, with bounded derivatives. For
+`δ > 0` the smooth lower clamp `TauCeti.smoothLowerClamp δ` is at least `δ` everywhere and equal to
+`t` for `t ≥ 2 δ`; it keeps denominators such as `‖∇ψ‖²` away from zero without changing them
+where they are already large.
 
 The derivative supremum bounds are adapted from Giada Franz’s formalization in
 [ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory),
@@ -123,6 +126,8 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `TauCeti.exists_cutoffs_add_add_eq_one`: three smooth cutoffs summing to one, vanishing for
   `s ≤ R`, for `s ≥ -R` and outside `(-(R + 1), R + 1)`, with derivatives bounded by a common
   constant and supported in `[-(R + 1), R + 1]`.
+* `TauCeti.smoothLowerClamp`: a smooth function at least `δ` everywhere and equal to `t` for
+  `t ≥ 2 δ`.
 -/
 
 public section
@@ -1011,5 +1016,33 @@ theorem exists_contDiff_odd_truncation {r R : ℝ} (hrR : r < R) (hR : 0 < R) :
   · rw [← neg_neg t, hodd, hone (-t) (by linarith)]
   · rw [← neg_neg t, hodd, neg_lt_zero]
     exact hpos (-t) (by linarith)
+
+end TauCeti
+
+namespace TauCeti
+
+/-- The smooth lower clamp `δ + (t - δ) s ((t - δ) / δ)` at level `δ`, for the smooth transition
+`s`. For `δ > 0` it is at least `δ` everywhere (`TauCeti.le_smoothLowerClamp`) and equal to `t`
+for `t ≥ 2 δ` (`TauCeti.smoothLowerClamp_of_two_mul_le`). -/
+def smoothLowerClamp (δ t : ℝ) : ℝ :=
+  δ + (t - δ) * Real.smoothTransition ((t - δ) / δ)
+
+theorem contDiff_smoothLowerClamp (δ : ℝ) {n : ℕ∞} : ContDiff ℝ n (smoothLowerClamp δ) :=
+  contDiff_const.add ((contDiff_id.sub contDiff_const).mul
+    (Real.smoothTransition.contDiff.comp ((contDiff_id.sub contDiff_const).div_const δ)))
+
+theorem le_smoothLowerClamp {δ : ℝ} (hδ : 0 < δ) (t : ℝ) : δ ≤ smoothLowerClamp δ t := by
+  rw [smoothLowerClamp]
+  rcases le_or_gt t δ with ht | ht
+  · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
+      hδ.le)]
+    simp
+  · have := Real.smoothTransition.nonneg ((t - δ) / δ)
+    nlinarith
+
+theorem smoothLowerClamp_of_two_mul_le {δ t : ℝ} (hδ : 0 < δ) (ht : 2 * δ ≤ t) :
+    smoothLowerClamp δ t = t := by
+  rw [smoothLowerClamp, Real.smoothTransition.one_of_one_le ((le_div_iff₀ hδ).2 (by linarith))]
+  ring
 
 end TauCeti
