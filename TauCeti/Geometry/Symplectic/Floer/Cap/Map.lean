@@ -45,12 +45,21 @@ a linear map of the completed capped modules. This file proves:
   once to `(Φ, Ψ)` and once to `(Ψ, Φ)`, each with its own homotopy, this supplies the two
   hypotheses `hgf` and `hfg` under which `LinearMap.cohomologyEquiv` makes a PSS map an
   isomorphism of cohomology.
+* **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` for lifts `g₁, g₀ ∈ G`
+  changes the class of each counted configuration relative to them by `g₀ - g₁`. With the
+  generating series multiplied by `q^(g₀ - g₁)` accordingly, the kernel, hence the map, is
+  unchanged (`TauCeti.Floer.mapKernelOfMatrix_coefficientComparison_vadd`,
+  `TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_vadd`). This is the Floer form of
+  `TauCeti.NovikovModule.mapKernelOfMatrix_vadd_single_mul`, through `q^A ↦ e^(-q A)`.
 
 The index and boundary-count hypotheses are the ones the geometric moduli spaces are to supply; no
 moduli space, orientation or count is constructed here.
 
 ## References
 
+* H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
+  volume*, Progr. Math. 133 (1995), 483–524, for the independence from the choice of reference
+  caps.
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
   cohomology*, in *Contact and symplectic geometry*, Publ. Newton Inst. 8 (1996), 171–200.
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, the chapter on Floer
@@ -69,7 +78,10 @@ variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   {ι₁ ι₀ : Type*} {P₁ : ι₁ → Type*} {P₀ : ι₀ → Type*}
   [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
   (r₁ : ∀ i, P₁ i) (r₀ : ∀ k, P₀ k)
-  {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+
+section Monoid
+
+variable {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
 
 section MapKernel
@@ -206,6 +218,24 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm [Fintyp
   have h := congrArg (fun A => novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A a) hm
   simpa only [novikovMapOfMatrix_mul hF₁ hF₀ hF₀ r₁ r₀ r₀,
     novikovMapOfMatrix_mul hF₁ hF₀ hF₁ r₁ r₀ r₁, LinearMap.comp_apply] using h
+
+/-- The map of the comparison of the identity matrix of class-indexed series is the identity:
+the stationary cylinders act as the identity on the completed capped module. -/
+@[simp]
+theorem novikovMapOfMatrix_coefficientComparison_one_apply [Finite ι₁] [DecidableEq ι₁]
+    {F₁ : (Σ i, P₁ i) → ℝ} (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (x : NovikovModule R F₁) :
+    letI := module (R := R) hF₁
+    novikovMapOfMatrix hF₁ hF₁ r₁ r₁
+        (fun i i' => coefficientComparison q hq ((1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i i'))
+        x =
+      x := by
+  let := module (R := R) hF₁
+  have h1 : (fun i i' =>
+      coefficientComparison q hq ((1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i i')) =
+      (1 : Matrix ι₁ ι₁ _) :=
+    Matrix.map_one (coefficientComparison q hq) (map_zero _) (map_one _)
+  rw [h1, novikovMapOfMatrix_one, LinearMap.id_apply]
 
 end ChainMap
 
@@ -361,5 +391,46 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_cobo
     LinearMap.comp_apply, LinearMap.id_apply] at h
 
 end Homotopy
+
+end Monoid
+
+section Reference
+
+variable {G : Type*} [AddCommGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+  (hq : ∀ A, area ω c (q A) = ωG A)
+
+/-- **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` changes the class of a
+counted configuration relative to the reference caps by `g₀ - g₁`, so the generating series become
+`q^(g₀ - g₁) Φ`. The kernel on capped generators is unchanged. -/
+theorem mapKernelOfMatrix_coefficientComparison_vadd [Semiring R]
+    (Φ : ι₁ → ι₀ → NovikovSeries R G ωG) (g₁ : ι₁ → G) (g₀ : ι₀ → G) :
+    mapKernelOfMatrix (fun i => q (g₁ i) +ᵥ r₁ i) (fun k => q (g₀ k) +ᵥ r₀ k)
+        (fun i k => coefficientComparison q hq (NovikovSeries.single (g₀ k - g₁ i) 1 * Φ i k)) =
+      mapKernelOfMatrix r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) := by
+  refine Eq.trans ?_ (mapKernelOfMatrix_vadd_single_mul r₁ r₀
+    (fun i k => coefficientComparison q hq (Φ i k)) (fun i => q (g₁ i)) fun k => q (g₀ k))
+  congr 1
+  ext i k
+  simp [map_sub]
+
+/-- **A map of class-indexed counts does not depend on the reference caps.** Moving the reference
+caps to `q gₗ # rₗ` and the generating series to `q^(g₀ - g₁) Φ` gives the same map on capped
+generators. This applies to the differentials, continuation and PSS maps and the homotopies between
+them. -/
+theorem novikovMapOfMatrix_coefficientComparison_vadd [CommSemiring R] [Finite ι₁] [Finite ι₀]
+    {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+    (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+    (Φ : ι₁ → ι₀ → NovikovSeries R G ωG) (g₁ : ι₁ → G) (g₀ : ι₀ → G) :
+    novikovMapOfMatrix hF₁ hF₀ (fun i => q (g₁ i) +ᵥ r₁ i) (fun k => q (g₀ k) +ᵥ r₀ k)
+        (fun i k => coefficientComparison q hq (NovikovSeries.single (g₀ k - g₁ i) 1 * Φ i k)) =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) := by
+  refine Eq.trans ?_ (novikovMapOfMatrix_vadd_single_mul hF₁ hF₀ r₁ r₀
+    (fun i k => coefficientComparison q hq (Φ i k)) (fun i => q (g₁ i)) fun k => q (g₀ k))
+  congr 1
+  ext i k
+  simp [map_sub]
+
+end Reference
 
 end TauCeti.Floer

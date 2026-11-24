@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.Acyclic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 /-!
@@ -87,6 +88,20 @@ theorem diagramGraph_adj {i j : B} :
     (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0 ∧ A j i ≠ 0 := by
   rw [diagramGraph, SimpleGraph.fromRel_adj]
   tauto
+
+namespace SymmetrizableDatum
+
+variable {I : Type*} (A : SymmetrizableDatum I) {α : Type*}
+    (c : (diagramGraph A.cartan).Coloring α)
+
+/-- Two distinct vertices of the same colour have zero Cartan entry. -/
+theorem cartan_apply_eq_zero_of_color_eq {i j : I} (hij : i ≠ j) (hc : c i = c j) :
+    A.cartan i j = 0 := by
+  by_contra h
+  have hji : A.cartan j i ≠ 0 := fun hji ↦ h ((A.zero_comm i j).mpr hji)
+  exact c.valid (diagramGraph_adj.mpr ⟨hij, h, hji⟩) hc
+
+end SymmetrizableDatum
 
 instance [DecidableEq B] (A : Matrix B B ℤ) : DecidableRel (diagramGraph A).Adj :=
   fun _ _ ↦ decidable_of_iff _ diagramGraph_adj.symm

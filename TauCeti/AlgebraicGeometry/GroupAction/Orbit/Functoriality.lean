@@ -154,7 +154,7 @@ private theorem existsUnique_orbitSchemeSmulMap
     ∃! l : orbitScheme G y ⟶ orbitScheme G x,
       l ≫ orbitι G x = orbitι G y := by
   refine (orbitι G x).existsUnique_lift_of_surjective_of_isSchemeTheoreticallyDominant
-    (orbitι G y) (toOrbit G y) ((rightTranslation g).hom.left ≫ toOrbit G x) ?_
+    (orbitι G y) (toOrbit G y) ((GrpObj.mulRight g).hom.left ≫ toOrbit G x) ?_
   rw [Category.assoc, toOrbit_ι, toOrbit_ι, ← Over.comp_left, ← orbitMap_smul, h]
 
 /-- The ambient identity restricted to the orbit schemes of two translated base points. -/
@@ -200,7 +200,7 @@ theorem orbitSchemeIsoSmul_inv_ι (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
 @[reassoc]
 theorem toOrbit_orbitSchemeIsoSmul_hom (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
     toOrbit G (g • x) ≫ (orbitSchemeIsoSmul G x g).hom =
-      (rightTranslation g).hom.left ≫ toOrbit G x := by
+      (GrpObj.mulRight g).hom.left ≫ toOrbit G x := by
   apply (cancel_mono (orbitι G x)).mp
   simp only [Category.assoc, orbitSchemeIsoSmul_hom_ι, toOrbit_ι]
   rw [← Over.comp_left, ← orbitMap_smul]

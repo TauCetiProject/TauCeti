@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
 
 /-!

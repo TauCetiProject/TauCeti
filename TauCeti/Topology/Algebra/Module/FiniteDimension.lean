@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.Topology.Algebra.Star
 public import Mathlib.LinearAlgebra.Multilinear.Basic
@@ -14,6 +17,8 @@ public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+public import Mathlib.Topology.Algebra.Module.Star
+public import TauCeti.LinearAlgebra.Basis.Semilinear
 -- Private: `Subspace.dual_finrank_eq` is used only inside proofs.
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.Multilinear.Basis
@@ -34,6 +39,17 @@ continuous version.
 Since every linear functional on a finite-dimensional Hausdorff topological vector space is
 continuous, the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`:
 `ContinuousLinearMap.dual_finrank_eq`.
+
+A continuous linear map into a finite-dimensional Hausdorff topological vector space, from a space
+of the same `finrank`, is invertible as soon as it is injective
+(`ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq`): the inverse is linear on a
+finite-dimensional Hausdorff space, hence continuous.
+
+Continuous `𝕜`-linear maps from a finite-dimensional space into a space that is finite-dimensional
+over a second division ring `𝕜'`, acting continuously and commuting with `𝕜`, form a
+finite-dimensional space over `𝕜'`, for instance over `ℂ` for real-linear maps into a complex
+space (`ContinuousLinearMap.finiteDimensional_of_smulCommClass`). No topology on the scalars and
+no relation between `𝕜` and `𝕜'` is needed.
 
 A multilinear map `f : MultilinearMap (RingHom.id
 𝕜) M N` on finitely many finite-dimensional Hausdorff
@@ -67,7 +83,16 @@ topology given in advance.
 The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of a finite
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
-`Module.Basis.equivFun_symm_apply`.
+`Module.Basis.equivFun_symm_apply`. Over a field with a continuous star, the conjugation of the
+coordinates `Module.Basis.coordConj` is continuous: `Module.Basis.coordConjL`.
+The matrix of a continuous endomorphism in a finite basis `b` is a continuous linear map
+`ContinuousLinearMap.toMatrixCLM b : (E →L[𝕜] E) →L[𝕜] Matrix ι ι 𝕜`, whose determinant is the
+determinant of the endomorphism (`ContinuousLinearMap.det_toMatrixCLM`). On a finite free module
+over a stably finite semiring, a right inverse of a continuous endomorphism is a left inverse:
+`ContinuousLinearMap.comp_eq_one_comm`, the continuous companion of `LinearMap.comp_eq_id_comm`.
+A composition `S ∘ T` of continuous linear maps expands in the products `b l ∘ a k` of finite
+bases `b` and `a` of the spaces of continuous linear maps containing `S` and `T`, with the products
+of their coordinates as coefficients: `ContinuousLinearMap.comp_eq_sum_coord`.
 
 A closed subspace `S` of finite codimension has a topological complement inside every dense
 subspace `D`: `Submodule.exists_le_isTopCompl_of_dense`. Consequently `S ⊔ D` is the whole space
@@ -89,6 +114,13 @@ needed.
 An injective continuous affine map with finite-dimensional domain is a closed embedding, hence
 proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine companion of Mathlib's
 `LinearMap.isClosedEmbedding_of_injective`.
+
+Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over a
+complete nontrivially normed field `𝕜` is by continuous maps:
+`FiniteDimensional.continuousConstSMul`. This is not an instance, since the field cannot be inferred
+from the action. It is one for the action of the linear automorphisms themselves, where the type
+`E ≃ₗ[𝕜] E` names the field (`LinearEquiv.continuousConstSMul`), and so, through
+`TauCeti.Subgroup.continuousConstSMul`, for any of their subgroups.
 -/
 
 public section
@@ -143,6 +175,78 @@ theorem dual_finrank_eq : Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finra
     (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
   exact Subspace.dual_finrank_eq
 
+/-- The matrix in a basis `b` of a continuous endomorphism of a finite-dimensional space, as a
+continuous linear map. -/
+noncomputable def toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι 𝕜 E) : (E →L[𝕜] E) →L[𝕜] Matrix ι ι 𝕜 :=
+  LinearMap.toContinuousLinearMap
+    ((LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜))
+
+/-- `toMatrixCLM b` evaluates to `LinearMap.toMatrix b b`. -/
+@[simp]
+theorem toMatrixCLM_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
+    (f : E →L[𝕜] E) : toMatrixCLM b f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) :=
+  (rfl)
+
+/-- The determinant of the matrix of `f` in any basis is the determinant of `f`. -/
+theorem det_toMatrixCLM {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι 𝕜 E)
+    (f : E →L[𝕜] E) : (toMatrixCLM b f).det = LinearMap.det (f : E →ₗ[𝕜] E) :=
+  LinearMap.det_toMatrix b _
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {R M : Type*} [Semiring R] [IsStablyFiniteRing R] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M] [Module.Free R M] [Module.Finite R M]
+
+/-- On a finite free module over a stably finite semiring, such as a finite-dimensional vector
+space, continuous endomorphisms are inverse to each other on one side if and only if they are
+inverse to each other on the other side. -/
+theorem comp_eq_one_comm {f g : M →L[R] M} : f ∘L g = 1 ↔ g ∘L f = 1 := by
+  simp only [← coe_inj, one_def, coe_id]
+  exact LinearMap.comp_eq_id_comm R M
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 U G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup U] [TopologicalSpace U] [IsTopologicalAddGroup U]
+  [Module 𝕜 U] [ContinuousSMul 𝕜 U]
+  [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+  [Module 𝕜 G] [ContinuousSMul 𝕜 G] [T2Space G] [FiniteDimensional 𝕜 G]
+
+/-- A continuous linear map into a finite-dimensional Hausdorff topological vector space, from a
+topological vector space of the same `finrank`, is invertible exactly when it is injective. The
+domain need not be assumed finite-dimensional or Hausdorff: an injective continuous linear map
+embeds it into the codomain. -/
+theorem isInvertible_iff_injective_of_finrank_eq {A : U →L[𝕜] G}
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) : A.IsInvertible ↔ Function.Injective A := by
+  refine ⟨IsInvertible.injective, fun hinj ↦ ?_⟩
+  have : T2Space U := .of_injective_continuous hinj A.continuous
+  have := FiniteDimensional.of_injective (A : U →ₗ[𝕜] G) hinj
+  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, by ext; simp⟩
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 𝕜' E F : Type*} [DivisionRing 𝕜] [DivisionRing 𝕜']
+  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module 𝕜 F] [Module 𝕜' F]
+  [SMulCommClass 𝕜 𝕜' F] [ContinuousConstSMul 𝕜' F] [FiniteDimensional 𝕜' F]
+
+/-- Continuous `𝕜`-linear maps from a finite-dimensional topological module into a space
+that is finite-dimensional over a second division ring `𝕜'`, acting continuously and commuting with
+`𝕜`, form a finite-dimensional space over `𝕜'`. For instance real-linear maps into a
+finite-dimensional complex space form a finite-dimensional complex space. The two scalar rings
+need not be related: the maps embed `𝕜'`-linearly into the finite-dimensional space of
+`𝕜`-linear maps. This generalizes Mathlib's `ContinuousLinearMap.finiteDimensional`, the case
+`𝕜' = 𝕜` over a field. -/
+theorem finiteDimensional_of_smulCommClass : FiniteDimensional 𝕜' (E →L[𝕜] F) :=
+  .of_injective (coeLM 𝕜' : (E →L[𝕜] F) →ₗ[𝕜'] E →ₗ[𝕜] F) coe_injective
+
 end ContinuousLinearMap
 
 namespace Module.End
@@ -157,6 +261,22 @@ theorem toContinuousLinearMap_apply (f : E →ₗ[𝕜] E) (v : E) :
   rfl
 
 end Module.End
+
+/-- Every action by `𝕜`-linear maps on a finite-dimensional Hausdorff topological vector space over
+a complete nontrivially normed field `𝕜` is by continuous maps. -/
+theorem FiniteDimensional.continuousConstSMul (𝕜 G E : Type*) [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] [DistribSMul G E]
+    [SMulCommClass G 𝕜 E] : ContinuousConstSMul G E :=
+  ⟨fun g ↦ (DistribSMul.toLinearMap 𝕜 E g).continuous_of_finiteDimensional⟩
+
+/-- The linear automorphisms of a finite-dimensional Hausdorff topological vector space over a
+complete nontrivially normed field act by continuous maps. -/
+instance LinearEquiv.continuousConstSMul {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] :
+    ContinuousConstSMul (E ≃ₗ[𝕜] E) E :=
+  FiniteDimensional.continuousConstSMul 𝕜 _ E
 
 namespace MultilinearMap
 
@@ -299,7 +419,52 @@ vector `x` to the linear combination `∑ i, x i • v i`. -/
   v.equivFunL.symm_apply_eq.2 <| funext fun i ↦ by
     rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
 
+variable [StarRing 𝕜] [ContinuousStar 𝕜]
+
+/-- The conjugation of the coordinates `Module.Basis.coordConj` in a finite basis `v`, as a
+continuous conjugate-linear automorphism. -/
+noncomputable def coordConjL (v : Basis ι 𝕜 E) : E ≃SL[starRingEnd 𝕜] E :=
+  v.equivFunL.trans ((starL 𝕜 : (ι → 𝕜) ≃L⋆[𝕜] (ι → 𝕜)).trans v.equivFunL.symm)
+
+/-- Forgetting continuity in the continuous conjugation of the coordinates recovers the algebraic
+one. -/
+@[simp] theorem coordConjL_toLinearEquiv (v : Basis ι 𝕜 E) :
+    v.coordConjL.toLinearEquiv = v.coordConj :=
+  LinearEquiv.ext fun x ↦ by
+    simp [coordConjL, coordConj_apply]
+
+/-- The continuous conjugation of the coordinates evaluates as the algebraic one. -/
+@[simp] theorem coordConjL_apply (v : Basis ι 𝕜 E) (x : E) : v.coordConjL x = v.coordConj x :=
+  LinearEquiv.congr_fun v.coordConjL_toLinearEquiv x
+
+/-- The continuous conjugation of the coordinates is its own inverse. -/
+@[simp] theorem coordConjL_symm (v : Basis ι 𝕜 E) : v.coordConjL.symm = v.coordConjL :=
+  ContinuousLinearEquiv.ext <| funext fun x ↦ v.coordConjL.injective (by simp)
+
 end Module.Basis
+
+namespace ContinuousLinearMap
+
+variable {R F G H : Type*} [CommSemiring R]
+  [AddCommMonoid F] [Module R F] [TopologicalSpace F]
+  [AddCommMonoid G] [Module R G] [TopologicalSpace G] [ContinuousAdd G] [ContinuousConstSMul R G]
+  [AddCommMonoid H] [Module R H] [TopologicalSpace H] [ContinuousAdd H] [ContinuousConstSMul R H]
+
+/-- The composition `S ∘ T` expanded in the products `b l ∘ a k` of a finite basis `b` of
+`G →L[R] H` and a finite basis `a` of `F →L[R] G`, with the products of the coordinates of `S` and
+`T` as coefficients. -/
+theorem comp_eq_sum_coord {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (a : Module.Basis κ R (F →L[R] G)) (b : Module.Basis ι R (G →L[R] H)) (S : G →L[R] H)
+    (T : F →L[R] G) :
+    S.comp T = ∑ lk : ι × κ, (b.coord lk.1 S * a.coord lk.2 T) • (b lk.1).comp (a lk.2) := by
+  ext v
+  conv_lhs => rw [← a.sum_repr T, ← b.sum_repr S]
+  simp only [comp_apply, sum_apply, smul_apply, map_sum, map_smul, Finset.smul_sum, smul_smul,
+    Fintype.sum_prod_type, Module.Basis.coord_apply]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]
+
+end ContinuousLinearMap
 
 namespace Submodule
 

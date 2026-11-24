@@ -124,11 +124,11 @@ theorem mk_symbolIntRep_tmul (Γ : Subgroup SL(2, ℤ)) (δ : intEntries 2) (α 
     (P : homogeneousSubmodule (Fin 2) R w) :
     (Coinvariants.mk _ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R]
         ModularSymbols R Γ w)
-        (symbolIntRep R w δ (⟨_, single_sub_single_mem_degreeZero α β⟩ ⊗ₜ P)) =
+        (symbolIntRep R w δ (divisor R β α ⊗ₜ P)) =
       symbol Γ ((δ : GL (Fin 2) ℚ) • α) ((δ : GL (Fin 2) ℚ) • β)
         (binaryFormRep R w (op (adjugate (intMatrix 2 δ))) P) := by
   rw [symbolIntRep_tmul, symbol_apply, binaryFormAdjugateRep_apply]
-  rw [degreeZeroGLRep_single_sub_single]
+  rw [degreeZeroGLRep_divisor]
 
 /-! ### The Hecke operator of a double coset -/
 

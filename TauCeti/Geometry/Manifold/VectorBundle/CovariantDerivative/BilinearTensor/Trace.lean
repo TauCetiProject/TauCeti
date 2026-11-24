@@ -119,15 +119,15 @@ private theorem sum_hom_self_eq_zero_of_mdifferentiable
     exact MDifferentiableAt.inner_bundle (IB := I) (F := E)
       (E := fun y : M ↦ TangentSpace I y) hW
       ((hC.clm_bundle_apply hA).clm_bundle_apply hB)
-  have hzero : (fun y ↦ TauCeti.bilinFormTrace
+  have hzero : (fun y ↦ LinearMap.BilinMap.metricTrace
       (ContinuousLinearMap.toLinearMap₁₂ (lowerConnectionTensor C W y))) =ᶠ[𝓝 x]
       fun _ ↦ 0 := by
     filter_upwards [htrace] with y hy
-    rw [TauCeti.bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ (TangentSpace I y))]
+    rw [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ (TangentSpace I y))]
     simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
       lowerConnectionTensor_apply]
     rw [← inner_sum, hy, inner_zero_right]
-  have h := hcov.mvfderiv_bilinFormTrace hb e z
+  have h := hcov.mvfderiv_metricTrace_apply_eq_sum hb e z
   rw [hzero.mvfderiv_eq] at h
   simp only [mvfderiv_const, zero_apply,
     deriv_lowerConnectionTensor hcov hC hW, Finset.sum_add_distrib,

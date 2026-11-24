@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Product linear maps
@@ -39,7 +40,20 @@ quadratic forms with the subgroup preserving both summands.
   automorphisms, independently of the off-diagonal block.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
+* `LinearMap.det_eq_det_mul_det_of_fst_apply_inr`: a block lower triangular endomorphism
+  `(x, y) ↦ (a x, c x + d y)` of `M₁ × M₂` has determinant `det a * det d`, and
+  `LinearMap.det_eq_det_snd_comp_comp_inr` is the case `a = id`.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
+* `LinearMap.isCompl_graph_ker_fst`: the graph of a linear map `M → M₂` is a complement of
+  `0 × M₂`.
+* `TauCeti.antidiagDiagEquiv`: when `2` is invertible, the linear automorphism
+  `(x, y) ↦ (x, -x) + (y, y)` of `M × M`, carrying the two coordinate axes onto the antidiagonal
+  `(-LinearMap.id).graph` and the diagonal `LinearMap.id.graph`.
+* `TauCeti.isCompl_graph_neg_id_graph_id`: when `2` is invertible, `M × M` is the direct sum of
+  the antidiagonal and the diagonal.
+* `TauCeti.linearMap_ext_antidiag_diag`, `TauCeti.linearMap_ext₂_antidiag_diag`: a semilinear map,
+  respectively a sesquilinear form, on `M × M` is determined by its values on the antidiagonal and
+  the diagonal.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
   `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
 * `LinearMap.surjective_coprod_iff`, `LinearMap.surjective_coprod_neg_iff`: `f.coprod g` and
@@ -52,13 +66,19 @@ quadratic forms with the subgroup preserving both summands.
   fibre products of linear maps, with its components `LinearMap.fiberProductAssoc_apply_fst`,
   `LinearMap.fiberProductAssoc_apply_snd` and those of its inverse
   `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
-* `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
-  coercion of `f.prodMap g`.
+* `LinearMap.injective_prodMap`, `LinearMap.surjective_prodMap`: a product of injective, resp.
+  surjective, linear maps is injective, resp. surjective, stated for the coercion of
+  `f.prodMap g`.
+* `LinearMap.surjective_of_surjective_prod_right`: the second component of a surjective map
+  `(f, g)` to a product is surjective.
 * `LinearMap.prodMap_comp_append`: `f.prodMap g` sends an appended family of vectors of the two
   factors to the appended family of their images.
 * `LinearMap.prodMap_comp_inl`, `LinearMap.snd_comp_prodMap`: the commuting squares of the split
   rows `0 → M₁ → M₁ × M₂ → M₂ → 0` and `0 → M₃ → M₃ × M₄ → M₄ → 0` with vertical maps `f`,
   `f.prodMap g` and `g`.
+* `LinearMap.kerProdMapEquiv`: the kernel of `f.prodMap g` is `ker f × ker g`.
+* `LinearMap.finite_ker_prodMap`, `LinearMap.finrank_ker_prodMap`: the kernel of `f.prodMap g` is
+  finite when those of `f` and `g` are, with the summed rank.
 * `LinearMap.surjective_coprod_of_comp_left`, `LinearMap.surjective_coprod_of_comp_right`,
   `LinearMap.surjective_coprod_neg_of_comp_right`: surjectivity of `f.coprod g` survives
   removing a precomposition from either map. In particular transversality passes from `α ∘ h`
@@ -75,6 +95,8 @@ quadratic forms with the subgroup preserving both summands.
   ones follow from the previous item.
 * `LinearMap.fiberProductInclusionLeft`, `LinearMap.fiberProductInclusionRight`: for a subspace
   of one factor, the inclusion of the smaller fibre product in the fibre product of `α` and `β`.
+* `LinearMap.kerEquivKerIdProdMap`: the kernel of `g` is the kernel of `id × g`, embedded in the
+  second factor.
 * `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
   coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
   and fixes the third basis vector.
@@ -83,6 +105,45 @@ quadratic forms with the subgroup preserving both summands.
 -/
 
 public section
+
+namespace LinearMap
+
+section CommRing
+
+variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+  [Module R M₂] [Module.Free R M₁] [Module.Finite R M₁] [Module.Free R M₂] [Module.Finite R M₂]
+
+/-- **The determinant of a block lower triangular map.** An endomorphism `g` of `M₁ × M₂` that
+maps `0 × M₂` into itself, `g (x, y) = (a x, c x + d y)`, has determinant `det a * det d`, where
+`a = fst ∘ g ∘ inl` and `d = snd ∘ g ∘ inr` are its diagonal blocks, independently of the
+off-diagonal block `c`. -/
+theorem det_eq_det_mul_det_of_fst_apply_inr {g : Module.End R (M₁ × M₂)}
+    (hg : ∀ y, (g (0, y)).1 = 0) :
+    LinearMap.det g = LinearMap.det (fst R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂) *
+      LinearMap.det (snd R M₁ M₂ ∘ₗ g ∘ₗ inr R M₁ M₂) := by
+  classical
+  let b₁ := Module.Free.chooseBasis R M₁
+  let b₂ := Module.Free.chooseBasis R M₂
+  have hmat : LinearMap.toMatrix (b₁.prod b₂) (b₁.prod b₂) g =
+      Matrix.fromBlocks (LinearMap.toMatrix b₁ b₁ (fst R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂)) 0
+        (LinearMap.toMatrix b₁ b₂ (snd R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂))
+        (LinearMap.toMatrix b₂ b₂ (snd R M₁ M₂ ∘ₗ g ∘ₗ inr R M₁ M₂)) := by
+    ext (i | i) (j | j) <;> simp [LinearMap.toMatrix_apply, hg]
+  rw [← LinearMap.det_toMatrix (b₁.prod b₂), hmat, Matrix.det_fromBlocks_zero₁₂,
+    LinearMap.det_toMatrix, LinearMap.det_toMatrix]
+
+/-- An endomorphism `(x, y) ↦ (x, c x + d y)` of `M₁ × M₂`, whose first component is the first
+projection, has the determinant of its lower-right block `d = snd ∘ g ∘ inr`. -/
+theorem det_eq_det_snd_comp_comp_inr {g : Module.End R (M₁ × M₂)}
+    (hg : ∀ z, (g z).1 = z.1) :
+    LinearMap.det g = LinearMap.det (snd R M₁ M₂ ∘ₗ g ∘ₗ inr R M₁ M₂) := by
+  rw [det_eq_det_mul_det_of_fst_apply_inr fun y ↦ hg (0, y)]
+  have : fst R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂ = LinearMap.id := LinearMap.ext fun x ↦ hg (x, 0)
+  rw [this, LinearMap.det_id, one_mul]
+
+end CommRing
+
+end LinearMap
 
 namespace LinearEquiv
 
@@ -147,20 +208,12 @@ determinants of its diagonal blocks. -/
 @[simp]
 theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (f : M₁ →ₗ[R] M₂) :
     (e₁.skewProd e₂ f).det = e₁.det * e₂.det := by
-  classical
-  let b₁ := Module.Free.chooseBasis R M₁
-  let b₂ := Module.Free.chooseBasis R M₂
-  have hmat : LinearMap.toMatrix (b₁.prod b₂) (b₁.prod b₂)
-      (e₁.skewProd e₂ f).toLinearMap =
-      Matrix.fromBlocks (LinearMap.toMatrix b₁ b₁ e₁.toLinearMap) 0
-        (LinearMap.toMatrix b₁ b₂ f) (LinearMap.toMatrix b₂ b₂ e₂.toLinearMap) := by
-    ext i j
-    cases i <;> cases j <;>
-      simp [LinearMap.toMatrix_apply, LinearEquiv.skewProd_apply]
   apply Units.ext
   simp only [coe_det, Units.val_mul]
-  rw [← LinearMap.det_toMatrix (b₁.prod b₂), hmat, Matrix.det_fromBlocks_zero₁₂,
-    LinearMap.det_toMatrix, LinearMap.det_toMatrix]
+  rw [LinearMap.det_eq_det_mul_det_of_fst_apply_inr fun y ↦ by simp [LinearEquiv.skewProd_apply]]
+  exact congrArg₂ (· * ·)
+    (congrArg _ (LinearMap.ext fun x ↦ by simp [LinearEquiv.skewProd_apply]))
+    (congrArg _ (LinearMap.ext fun x ↦ by simp [LinearEquiv.skewProd_apply]))
 
 end CommRing
 
@@ -228,6 +281,144 @@ theorem finrank_graph {R M M₂ : Type*} [Semiring R] [AddCommMonoid M] [Module 
   intro x y h
   exact congr(($h).1)
 
+/-- The graph of a linear map `f : M → M₂` is a complement of the kernel `0 × M₂` of the first
+projection: every `(x, y)` splits uniquely as `(x, f x) + (0, y - f x)`. -/
+theorem isCompl_graph_ker_fst {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup M₂] [Module R M₂] (f : M →ₗ[R] M₂) : IsCompl (graph f) (ker (fst R M M₂)) := by
+  refine ⟨Submodule.disjoint_def.2 fun ⟨x, y⟩ hg hk ↦ ?_, codisjoint_iff.2 <| eq_top_iff.2
+    fun ⟨x, y⟩ _ ↦ ?_⟩
+  · simp only [mem_graph_iff, mem_ker, fst_apply] at hg hk
+    simp [hk, hg]
+  · have hxy : ((x, y) : M × M₂) = (x, f x) + (0, y - f x) := by simp
+    rw [hxy]
+    exact Submodule.add_mem_sup ((mem_graph_iff _ _).2 rfl) (by simp)
+
+/-- A product map `f × g` carries the graph of `φ` onto the graph of `ψ` when `f` is surjective
+and `g ∘ φ = ψ ∘ f`. For instance a surjective `f` acting diagonally, as `f × f`, carries the
+diagonal `LinearMap.id.graph` onto the diagonal and the antidiagonal `(-LinearMap.id).graph` onto
+the antidiagonal. -/
+theorem map_prodMap_graph {R M₁ M₂ M₃ M₄ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃] [AddCommMonoid M₄]
+    [Module R M₄] {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} {φ : M₁ →ₗ[R] M₂} {ψ : M₃ →ₗ[R] M₄}
+    (hf : Function.Surjective f) (h : g ∘ₗ φ = ψ ∘ₗ f) :
+    (graph φ).map (f.prodMap g) = graph ψ := by
+  ext ⟨a, b⟩
+  simp only [Submodule.mem_map, mem_graph_iff, prodMap_apply, Prod.exists, Prod.mk.injEq]
+  refine ⟨?_, fun hb ↦ ?_⟩
+  · rintro ⟨x, y, rfl, rfl, rfl⟩
+    exact LinearMap.congr_fun h x
+  · obtain ⟨x, rfl⟩ := hf a
+    exact ⟨x, φ x, rfl, rfl, (LinearMap.congr_fun h x).trans hb.symm⟩
+
+end LinearMap
+
+/-! ### The antidiagonal and the diagonal of `M × M` -/
+
+namespace TauCeti
+
+open LinearMap Submodule
+
+variable (R M : Type*) [CommRing R] [Invertible (2 : R)] [AddCommGroup M] [Module R M]
+
+/-- When `2` is invertible, the linear automorphism of `M × M` sending `(x, y)` to
+`(x, -x) + (y, y) = (x + y, y - x)`, that is, the first factor to the antidiagonal and the second
+to the diagonal. Its inverse is `(u, v) ↦ ((u - v) / 2, (u + v) / 2)`. -/
+def antidiagDiagEquiv : (M × M) ≃ₗ[R] M × M where
+  toFun p := (p.1 + p.2, p.2 - p.1)
+  invFun q := ((⅟2 : R) • (q.1 - q.2), (⅟2 : R) • (q.1 + q.2))
+  map_add' p q := by
+    ext <;> simp only [Prod.fst_add, Prod.snd_add] <;> abel
+  map_smul' c p := by
+    ext <;> simp [smul_add, smul_sub]
+  left_inv p := by
+    ext <;> dsimp only
+    · rw [show p.1 + p.2 - (p.2 - p.1) = (2 : R) • p.1 by module, invOf_smul_smul]
+    · rw [show p.1 + p.2 + (p.2 - p.1) = (2 : R) • p.2 by module, invOf_smul_smul]
+  right_inv q := by
+    ext <;> dsimp only
+    · rw [← smul_add, show q.1 - q.2 + (q.1 + q.2) = (2 : R) • q.1 by module, invOf_smul_smul]
+    · rw [← smul_sub, show q.1 + q.2 - (q.1 - q.2) = (2 : R) • q.2 by module, invOf_smul_smul]
+
+variable {R M}
+
+/-- The automorphism `antidiagDiagEquiv` sends `(x, y)` to `(x + y, y - x)`. -/
+@[simp]
+theorem antidiagDiagEquiv_apply (p : M × M) :
+    antidiagDiagEquiv R M p = (p.1 + p.2, p.2 - p.1) := (rfl)
+
+/-- The inverse of `antidiagDiagEquiv` sends `(u, v)` to `((u - v) / 2, (u + v) / 2)`. -/
+@[simp]
+theorem antidiagDiagEquiv_symm_apply (q : M × M) :
+    (antidiagDiagEquiv R M).symm q =
+      ((⅟2 : R) • (q.1 - q.2), (⅟2 : R) • (q.1 + q.2)) := (rfl)
+
+/-- The automorphism `antidiagDiagEquiv` decomposes a vector as an antidiagonal plus a diagonal
+vector. -/
+theorem antidiagDiagEquiv_apply_eq_add (x y : M) :
+    antidiagDiagEquiv R M (x, y) = (x, -x) + (y, y) := by
+  ext <;> simp [sub_eq_neg_add]
+
+/-- The automorphism `antidiagDiagEquiv` carries the first axis `M × 0` onto the antidiagonal. -/
+theorem map_antidiagDiagEquiv_range_inl :
+    (range (inl R M M)).map (antidiagDiagEquiv R M : (M × M) →ₗ[R] M × M) =
+      (-LinearMap.id : M →ₗ[R] M).graph := by
+  ext ⟨a, b⟩
+  simp only [mem_map, mem_range, inl_apply, mem_graph_iff, LinearMap.neg_apply, id_apply]
+  refine ⟨?_, fun h ↦ ⟨(a, 0), ⟨a, rfl⟩, by simp [h]⟩⟩
+  rintro ⟨_, ⟨x, rfl⟩, h⟩
+  simp only [LinearEquiv.coe_coe, antidiagDiagEquiv_apply, add_zero, zero_sub,
+    Prod.mk.injEq] at h
+  rw [← h.1, ← h.2]
+
+/-- The automorphism `antidiagDiagEquiv` carries the second axis `0 × M` onto the diagonal. -/
+theorem map_antidiagDiagEquiv_range_inr :
+    (range (inr R M M)).map (antidiagDiagEquiv R M : (M × M) →ₗ[R] M × M) =
+      (LinearMap.id : M →ₗ[R] M).graph := by
+  ext ⟨a, b⟩
+  simp only [mem_map, mem_range, inr_apply, mem_graph_iff, id_apply]
+  refine ⟨?_, fun h ↦ ⟨(0, a), ⟨a, rfl⟩, by simp [h]⟩⟩
+  rintro ⟨_, ⟨x, rfl⟩, h⟩
+  simp only [LinearEquiv.coe_coe, antidiagDiagEquiv_apply, zero_add, sub_zero,
+    Prod.mk.injEq] at h
+  rw [← h.1, ← h.2]
+
+/-- When `2` is invertible, `M × M` is the direct sum of the antidiagonal and the diagonal. -/
+theorem isCompl_graph_neg_id_graph_id :
+    IsCompl (-LinearMap.id : M →ₗ[R] M).graph (LinearMap.id : M →ₗ[R] M).graph := by
+  rw [← map_antidiagDiagEquiv_range_inl, ← map_antidiagDiagEquiv_range_inr]
+  exact (orderIsoMapComap (antidiagDiagEquiv R M)).isCompl_iff.1 isCompl_range_inl_inr
+
+/-- The automorphism `antidiagDiagEquiv` commutes with any linear map acting diagonally. -/
+theorem antidiagDiagEquiv_prodMap {M' : Type*} [AddCommGroup M'] [Module R M']
+    (f : M →ₗ[R] M') (p : M × M) :
+    antidiagDiagEquiv R M' (f.prodMap f p) =
+      f.prodMap f (antidiagDiagEquiv R M p) := by
+  simp
+
+/-- A semilinear map on `M × M` is determined by its values on the antidiagonal and on the
+diagonal. -/
+theorem linearMap_ext_antidiag_diag {S P : Type*} [Semiring S] [AddCommMonoid P] [Module S P]
+    {σ : R →+* S} {f g : M × M →ₛₗ[σ] P} (hA : ∀ x, f (x, -x) = g (x, -x))
+    (hD : ∀ x, f (x, x) = g (x, x)) : f = g :=
+  ext_on_codisjoint isCompl_graph_neg_id_graph_id.codisjoint
+    (fun ⟨x, y⟩ hp ↦ by rw [show y = -x by simpa using hp]; exact hA x)
+    fun ⟨x, y⟩ hp ↦ by rw [show y = x by simpa using hp]; exact hD x
+
+/-- A sesquilinear form on `M × M` is determined by its four blocks with respect to the
+antidiagonal and the diagonal. -/
+theorem linearMap_ext₂_antidiag_diag {N : Type*} [AddCommGroup N] [Module R N] {I₁ I₂ : R →+* R}
+    {C C' : M × M →ₛₗ[I₁] M × M →ₛₗ[I₂] N}
+    (hAA : ∀ x y, C (x, -x) (y, -y) = C' (x, -x) (y, -y))
+    (hAD : ∀ x y, C (x, -x) (y, y) = C' (x, -x) (y, y))
+    (hDA : ∀ x y, C (x, x) (y, -y) = C' (x, x) (y, -y))
+    (hDD : ∀ x y, C (x, x) (y, y) = C' (x, x) (y, y)) : C = C' :=
+  linearMap_ext_antidiag_diag (fun x ↦ linearMap_ext_antidiag_diag (hAA x) (hAD x))
+    fun x ↦ linearMap_ext_antidiag_diag (hDA x) (hDD x)
+
+end TauCeti
+
+namespace LinearMap
+
 section Semiring
 
 variable {R M₁ M₂ M₃ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
@@ -251,6 +442,18 @@ theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (h
     (hg : Function.Injective g) : Function.Injective (f.prodMap g) :=
   hf.prodMap hg
 
+/-- A product of surjective linear maps is surjective, stated for the coercion of
+`f.prodMap g`. -/
+theorem surjective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Surjective f)
+    (hg : Function.Surjective g) : Function.Surjective (f.prodMap g) :=
+  hf.prodMap hg
+
+/-- If `(f, g) : M₁ → M₂ × M₃` is surjective, then so is its second component `g`. -/
+theorem surjective_of_surjective_prod_right {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
+    (h : Function.Surjective (f.prod g)) : Function.Surjective g :=
+  -- `g` is `snd ∘ₗ f.prod g` by definition (`LinearMap.snd_prod` is proved by `rfl`).
+  Prod.snd_surjective.comp h
+
 /-- The product map `f × g` sends an appended family of vectors of the two factors to the appended
 family of their images. -/
 theorem prodMap_comp_append (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) {m n : ℕ} (p : Fin m → M₁)
@@ -271,6 +474,39 @@ theorem prodMap_comp_inl (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) :
 theorem snd_comp_prodMap (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) :
     snd R M₃ M₄ ∘ₗ f.prodMap g = g ∘ₗ snd R M₁ M₂ := by
   ext <;> simp
+variable (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄)
+
+/-- The kernel of `f.prodMap g` is `ker f × ker g`. -/
+def kerProdMapEquiv : ker (f.prodMap g) ≃ₗ[R] ker f × ker g :=
+  (LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv _ _)
+
+@[simp]
+theorem coe_kerProdMapEquiv_apply_fst (x : ker (f.prodMap g)) :
+    ((kerProdMapEquiv f g x).1 : M₁) = (x : M₁ × M₂).1 :=
+  (rfl)
+
+@[simp]
+theorem coe_kerProdMapEquiv_apply_snd (x : ker (f.prodMap g)) :
+    ((kerProdMapEquiv f g x).2 : M₂) = (x : M₁ × M₂).2 :=
+  (rfl)
+
+@[simp]
+theorem coe_kerProdMapEquiv_symm_apply (x : ker f × ker g) :
+    ((kerProdMapEquiv f g).symm x : M₁ × M₂) = ((x.1 : M₁), (x.2 : M₂)) :=
+  (rfl)
+
+variable {f g} in
+/-- The kernel of `f.prodMap g` is `ker f × ker g`, so it is finite when they are. -/
+instance finite_ker_prodMap [Module.Finite R (ker f)] [Module.Finite R (ker g)] :
+    Module.Finite R (ker (f.prodMap g)) :=
+  .equiv (kerProdMapEquiv f g).symm
+
+/-- The kernel of `f.prodMap g` has rank `finrank (ker f) + finrank (ker g)`. -/
+@[simp]
+theorem finrank_ker_prodMap [StrongRankCondition R] [Module.Free R (ker f)]
+    [Module.Free R (ker g)] [Module.Finite R (ker f)] [Module.Finite R (ker g)] :
+    Module.finrank R (ker (f.prodMap g)) = Module.finrank R (ker f) + Module.finrank R (ker g) := by
+  rw [(kerProdMapEquiv f g).finrank_eq, Module.finrank_prod]
 
 /-- If `(x, y) ↦ f (h x) + g y` is surjective, then so is `(x, y) ↦ f x + g y`. -/
 theorem surjective_coprod_of_comp_left {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₃} {h : M₄ →ₗ[R] M₁}
@@ -319,6 +555,35 @@ theorem subsingleton_quotient_range_of_surjective_prod {R M₁ M₂ M₃ : Type*
     Subsingleton (M₂ ⧸ range f) :=
   -- `f` is `fst ∘ₗ f.prod g` by definition (`LinearMap.fst_prod` is proved by `rfl`).
   Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr (Prod.fst_surjective.comp h))
+
+section KerProdMap
+
+variable {R L M N : Type*} [Semiring R] [AddCommMonoid L] [Module R L] [AddCommMonoid M]
+  [Module R M] [AddCommMonoid N] [Module R N]
+
+variable (L) in
+/-- The kernel of `id × g : L × M → L × N` is the kernel of `g`, embedded in the second factor. -/
+def kerEquivKerIdProdMap (g : M →ₗ[R] N) :
+    ker g ≃ₗ[R] ker ((LinearMap.id : L →ₗ[R] L).prodMap g) where
+  toFun x := ⟨(0, x), by simp⟩
+  invFun y := ⟨y.val.2, (Prod.mk_eq_zero.1 (mem_ker.1 y.property)).2⟩
+  map_add' _ _ := by ext <;> simp
+  map_smul' _ _ := by ext <;> simp
+  left_inv _ := rfl
+  right_inv y := Subtype.ext (Prod.ext (Prod.mk_eq_zero.1 (mem_ker.1 y.property)).1.symm rfl)
+
+@[simp]
+theorem coe_kerEquivKerIdProdMap_apply (g : M →ₗ[R] N) (x : ker g) :
+    (kerEquivKerIdProdMap L g x : L × M) = (0, (x : M)) :=
+  (rfl)
+
+@[simp]
+theorem coe_kerEquivKerIdProdMap_symm_apply (g : M →ₗ[R] N)
+    (y : ker ((LinearMap.id : L →ₗ[R] L).prodMap g)) :
+    ((kerEquivKerIdProdMap L g).symm y : M) = (y : L × M).2 :=
+  (rfl)
+
+end KerProdMap
 
 section Ring
 
