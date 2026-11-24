@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Slice
-import TauCeti.Geometry.Manifold.RegularValue.Scalar.RegularDomain
+import TauCeti.Geometry.Manifold.RegularValue.Scalar.SublevelTopology
 
 /-!
 # Vector fields transverse to a map
