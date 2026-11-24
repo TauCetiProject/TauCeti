@@ -84,15 +84,16 @@ private theorem sum_fst_smul_nonneg {n : ℕ} {M : CStarMatrix (Fin n) (Fin n) A
       ((star R * R) i j).fst = ∑ k, star (R k i).fst * (R k j).fst := by
     rw [CStarMatrix.mul_apply, ← Unitization.fstHom_apply ℂ, map_sum]
     simp [CStarMatrix.star_apply]
-  have h : ∑ i, ∑ j, star (w i) * (((star R * R) i j).fst • c) * w j =
-      ∑ k, star (∑ i, (R k i).fst • w i) * c * ∑ j, (R k j).fst • w j := by
-    simp only [hfst, Finset.sum_smul, Finset.mul_sum, Finset.sum_mul, Finset.smul_sum, star_sum,
-      star_smul, smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc]
-    refine (Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans <| Finset.sum_comm.trans <|
-      Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans <| Finset.sum_congr rfl fun _ _ =>
-        Finset.sum_congr rfl fun _ _ => by rw [mul_comm]
-  rw [h]
-  exact Finset.sum_nonneg fun k _ => star_left_conjugate_nonneg hc _
+  calc (0 : B⁺¹)
+      ≤ ∑ k, star (∑ i, (R k i).fst • w i) * c * ∑ j, (R k j).fst • w j :=
+        Finset.sum_nonneg fun k _ => star_left_conjugate_nonneg hc _
+    _ = ∑ k, ∑ i, ∑ j, (star (R k i).fst * (R k j).fst) • (star (w i) * c * w j) := by
+        simp_rw [star_sum, Finset.sum_mul, Finset.mul_sum]
+        simp [star_smul, smul_smul, mul_comm]
+    _ = ∑ i, ∑ j, ∑ k, (star (R k i).fst * (R k j).fst) • (star (w i) * c * w j) :=
+        Finset.sum_comm_cycle.symm
+    _ = ∑ i, ∑ j, star (w i) * (((star R * R) i j).fst • c) * w j := by
+        simp [hfst, Finset.sum_smul, Finset.mul_sum, Finset.sum_mul]
 
 /-- The extension `λ + a ↦ t λ + φ a` of an `n`-positive map `φ` with `‖φ p‖ ≤ t` for every
 positive contraction `p` is `n`-positive. -/
@@ -115,7 +116,7 @@ theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ :
     exact (Unitization.continuous_inr.comp hcont).tendsto _ |>.comp (hl.tendsto_mul_self _)
   refine ge_of_tendsto hlim ?_
   filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he0 he1
-  have hee0 : 0 ≤ e * e := by simpa [he0.star_eq] using star_mul_self_nonneg e
+  have hee0 : 0 ≤ e * e := he0.isSelfAdjoint.mul_self_nonneg
   have hee : 0 ≤ φ (e * e) := hφ.map_nonneg hn hee0
   have hc : 0 ≤ Unitization.inl (t : ℂ) - (φ (e * e) : B⁺¹) := by
     have h1 := IsSelfAdjoint.le_algebraMap_norm_self (φ (e * e) : B⁺¹)
@@ -148,6 +149,14 @@ theorem IsNPositive.norm_apply_le_of_forall_nonneg {φ : A →ₗ[ℂ] B} (hφ :
   simpa [Unitization.norm_inr, ← Unitization.algebraMap_eq_inl, norm_algebraMap',
     abs_of_nonneg h0] using (hφ.unitizationLinearMap ht).norm_apply_le (a : A⁺¹)
 
+/-- Compressing a positive contraction `p` by a positive contraction `e` gives `e p e ≤ e`. -/
+private theorem mul_mul_le_of_nonneg_of_norm_le_one {e p : A} (he0 : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (hp0 : 0 ≤ p) (hp1 : ‖p‖ ≤ 1) : e * p * e ≤ e := by
+  have h := CStarAlgebra.star_left_conjugate_le_norm_smul e p hp0.isSelfAdjoint
+  rw [he0.star_eq] at h
+  exact h.trans ((smul_le_of_le_one_left he0.isSelfAdjoint.mul_self_nonneg hp1).trans
+    (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he0 he1))
+
 /-- The norm of a continuous `2`-positive map `ψ` is the limit of `‖ψ e‖` along any increasing
 approximate unit. -/
 theorem IsNPositive.tendsto_norm_nhds_opNorm {ψ : A →L[ℂ] B} (hψ : IsNPositive 2 (ψ : A →ₗ[ℂ] B))
@@ -165,17 +174,12 @@ theorem IsNPositive.tendsto_norm_nhds_opNorm {ψ : A →L[ℂ] B} (hψ : IsNPosi
     filter_upwards [hlim.eventually (lt_mem_nhds hp), hl.eventually_nonneg, hl.eventually_norm]
       with e he he0 he1
     refine he.trans_le ?_
-    have hle : e * p * e ≤ e := by
-      have h := CStarAlgebra.star_left_conjugate_le_norm_smul e p hp0.isSelfAdjoint
-      rw [he0.star_eq] at h
-      have hee0 : 0 ≤ e * e := by simpa [he0.star_eq] using star_mul_self_nonneg e
-      exact h.trans ((smul_le_of_le_one_left hee0 hp1).trans
-        (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he0 he1))
-    have h0 : 0 ≤ e * p * e := by simpa [he0.star_eq] using star_left_conjugate_nonneg hp0 e
     simpa [hψ.toPositiveLinearMap_apply] using
       CStarAlgebra.norm_le_norm_of_le_of_nonneg
-        (OrderHomClass.mono (hψ.toPositiveLinearMap two_pos) hle)
-        (_root_.map_nonneg (hψ.toPositiveLinearMap two_pos) h0)
+        (OrderHomClass.mono (hψ.toPositiveLinearMap two_pos)
+          (mul_mul_le_of_nonneg_of_norm_le_one he0 he1 hp0 hp1))
+        (_root_.map_nonneg (hψ.toPositiveLinearMap two_pos)
+          (he0.isSelfAdjoint.conjugate_nonneg hp0))
   · filter_upwards [hl.eventually_norm] with e he
     exact (ψ.le_opNorm e).trans_lt <|
       (mul_le_of_le_one_right (norm_nonneg _) he).trans_lt hs
