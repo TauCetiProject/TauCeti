@@ -193,8 +193,8 @@ theorem inv_norm_sub_endCenter_sq_le_cylindricalWeight (q : Puncture) (z : ℝ �
 
 /-- **The inverse cylindrical weight on the ends.** On the part `±s ≥ 0` of the end `q`, the
 square distance `|z - c_q|²` to the center of the end is at most `5` times the inverse of the
-cylindrical weight: up to `4π²` the left side is the Jacobian of the end chart
-(`cylindricalWeight_endChart_mul_det_fderiv_mem_Icc`). -/
+cylindrical weight: up to `4π²` the left side is the weight in the end chart times the chart's
+Jacobian (`cylindricalWeight_endChart_mul_det_fderiv_mem_Icc`). -/
 theorem norm_sub_endCenter_sq_mul_cylindricalWeight_le (q : Puncture) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (h : 0 ≤ (positiveEndCoord q z).1) :
     ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 * cylindricalWeight z ≤ 5 := by

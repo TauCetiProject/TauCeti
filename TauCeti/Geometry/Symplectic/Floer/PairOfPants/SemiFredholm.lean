@@ -1150,7 +1150,7 @@ field `η` with compact support in `S` satisfies
 where `ρ` is the cylindrical weight `TauCeti.Floer.cylindricalWeight`. On the ends `ρ⁻¹` is
 comparable to `|z - c_q|²` (`TauCeti.Floer.norm_sub_endCenter_sq_mul_cylindricalWeight_le`), so
 that `∫ ρ⁻¹ ‖D_u^* η‖²` is the square of the `L²` norm of `D_u^* η` for the cylindrical metric,
-read as a `(0, 1)`-form. -/
+read as a `2`-form (an area density). -/
 theorem
   exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
