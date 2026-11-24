@@ -36,8 +36,8 @@ cardinalities over `G.edgeFinset` into ones over `{p : V × V | p.1 < p.2 ∧ G.
   graph it generates.
 * `SimpleGraph.edgeFinset_edge_of_ne`, `SimpleGraph.card_edgeFinset_edge_of_ne` — the edge finset
   and cardinality of a single-edge graph `SimpleGraph.edge u v` (`u ≠ v`).
-* `SimpleGraph.card_edgeFinset_congr` — `#G.edgeFinset` is independent of the `Fintype G.edgeSet`
-  instance.
+* `SimpleGraph.card_edgeFinset_congr`, `SimpleGraph.card_edgeFinset_congr_of_eq` — `#G.edgeFinset`
+  is preserved under graph equality and independent of the `Fintype G.edgeSet` instance.
 * `SimpleGraph.edgeFinset_inter_sym2_triple`, `SimpleGraph.edgeFinset_inter_sym2_triple_subset`,
   `SimpleGraph.card_edgeFinset_inter_sym2_triple`, and
   `SimpleGraph.edgeFinset_inter_sym2_triple_of_adj_of_not_adj` — edges of `G` spanned by a vertex
@@ -117,6 +117,14 @@ theorem card_edgeFinset_congr (G : SimpleGraph V) (h₁ h₂ : Fintype G.edgeSet
     rw [← Set.encard_coe_eq_coe_finsetCard, ← Set.encard_coe_eq_coe_finsetCard,
       @coe_edgeFinset V G h₁, @coe_edgeFinset V G h₂]
   exact Nat.cast_injective h
+
+/-- Equal graphs have the same edge finset cardinality, regardless of the `Fintype` instances on
+their edge sets. -/
+theorem card_edgeFinset_congr_of_eq {G H : SimpleGraph V} {h₁ : Fintype G.edgeSet}
+    {h₂ : Fintype H.edgeSet} (h : G = H) :
+    @Finset.card (Sym2 V) (@edgeFinset V G h₁) = @Finset.card (Sym2 V) (@edgeFinset V H h₂) := by
+  subst h
+  exact card_edgeFinset_congr G h₁ h₂
 
 /-- The edges of `G` spanned by three vertices `a`, `b`, `c` are the candidate pairs among
 `{s(a, b), s(a, c), s(b, c)}` that belong to `G.edgeSet`. -/

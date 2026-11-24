@@ -127,12 +127,12 @@ theorem h1_eq_of_forall_defect_eq_mul_gaugeDist {X : TwoComplex V} {ℓ : GroupN
 theorem h1_eq_zero_of_forall_gaugeDist_eq_zero {X : TwoComplex V} {ℓ : GroupNorm G}
     (h : ∀ α : Cochain X G, α.gaugeDist ℓ = 0) : h1 X ℓ = 0 := by simp [h1_def, h]
 
-/-- On `complete V` with `Fintype.card V ≤ 2`, every cochain is a coboundary, so
-`h1 (complete V) ℓ = 0`. -/
-@[simp] theorem h1_complete_of_card_le_two (hV : Fintype.card V ≤ 2) (ℓ : GroupNorm G) :
-    h1 (complete V) ℓ = 0 :=
+/-- On any two-complex on `V` with `Fintype.card V ≤ 2`, every cochain is a coboundary, so
+`h1 X ℓ = 0`. -/
+@[simp] theorem h1_of_card_le_two (hV : Fintype.card V ≤ 2) (X : TwoComplex V) (ℓ : GroupNorm G) :
+    h1 X ℓ = 0 :=
   h1_eq_zero_of_forall_gaugeDist_eq_zero fun α =>
-    (Cochain.isCoboundary_complete_of_card_le_two hV α).gaugeDist_eq_zero ℓ
+    (Cochain.isCoboundary_of_card_le_two hV α).gaugeDist_eq_zero ℓ
 
 /-- On `complete V` with a nontrivial coefficient group `G` and any group norm `ℓ`, if every
 cochain satisfies `α.defect ℓ = (Fintype.card V - 2 : ℕ) * α.gaugeDist ℓ`, then
@@ -156,7 +156,7 @@ theorem h1_complete_eq_card_sub_two_of_forall_defect_eq_mul_gaugeDist [Nontrivia
     exact h1_eq_of_forall_defect_eq_mul_gaugeDist ⟨α, hgd_pos⟩ fun γ _ => hdef γ
   · have hsub : Fintype.card V - 2 = 0 := by omega
     rw [hsub, Nat.cast_zero]
-    exact h1_complete_of_card_le_two (by omega) ℓ
+    exact h1_of_card_le_two (by omega) (complete V) ℓ
 
 /-- Over a trivial coefficient group every cochain is trivial, so `h1 X ℓ = 0`. -/
 @[simp] theorem h1_subsingleton [Subsingleton G] (X : TwoComplex V) (ℓ : GroupNorm G) :

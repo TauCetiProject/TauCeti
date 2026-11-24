@@ -33,8 +33,7 @@ theorem oddTripleFinset_symmDiff_top_between (G : SimpleGraph V) [DecidableRel G
   ext s
   by_cases hs : #s = 3
   · obtain ⟨a, b, c, -, -, -, rfl⟩ := card_eq_three.mp hs
-    simp only [triple_mem_oddTripleFinset_iff]
-    rw [(G ∆ _).adj_comm a c, G.adj_comm a c, xor_comm ((G ∆ _).Adj c a), xor_comm (G.Adj c a)]
+    simp only [triple_mem_oddTripleFinset_iff_cyclic]
     exact G.xor_symmDiff_top_between_compl_adj S a b c
   · simp [mem_oddTripleFinset, hs]
 

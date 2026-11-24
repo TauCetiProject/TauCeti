@@ -15,7 +15,6 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 import Mathlib.Tactic.Module
 import TauCeti.GroupTheory.Perm.Inversion
-import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.LinearAlgebra.Alternating.Alternatization
 

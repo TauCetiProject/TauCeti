@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Binary
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.ParityRetract
 public import TauCeti.Combinatorics.SimpleGraph.CutMinimal.Basic
-import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SingleEdge
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
@@ -122,11 +121,9 @@ theorem gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff [Fintype V] [L
     have hcard : #(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset ≤
         #(G ∆ (⊤ : SimpleGraph V).between T Tᶜ).edgeFinset := by
       classical
-      have heq : (G ∆ (⊤ : SimpleGraph V).between S Sᶜ ∆
-          (⊤ : SimpleGraph V).between (S ∆ T) (S ∆ T)ᶜ).edgeFinset =
-          (G ∆ (⊤ : SimpleGraph V).between T Tᶜ).edgeFinset :=
-        edgeFinset_inj.mpr (by rw [symmDiff_top_between_symmDiff, symmDiff_symmDiff_cancel_left])
-      exact heq ▸ hS.card_edgeFinset_le_symmDiff_top_between (S ∆ T)
+      exact (hS.card_edgeFinset_le_symmDiff_top_between (S ∆ T)).trans_eq
+        (card_edgeFinset_congr_of_eq <| by
+          rw [symmDiff_top_between_symmDiff, symmDiff_symmDiff_cancel_left])
     have hcardR : (2 : ℝ) * #(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset ≤
         2 * #(G ∆ (⊤ : SimpleGraph V).between T Tᶜ).edgeFinset := by
       exact_mod_cast Nat.mul_le_mul_left 2 hcard
@@ -156,8 +153,7 @@ theorem isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq [Fintype V] [LinearOrd
     have hG' : (G ∆ (⊤ : SimpleGraph V).between (∅ : Set V) (∅ : Set V)ᶜ).IsCutMinimal := by
       simpa using hG
     rw [G.gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff ht hG']
-    congr 2
-    exact congrArg card (coe_injective (by simp))
+    exact congrArg (fun n : ℕ ↦ (2 : ℝ) * n) (card_edgeFinset_congr_of_eq (by simp))
   · intro h
     rw [isCutMinimal_iff_forall_finset_card_edgeFinset_le_symmDiff_top_between]
     intro s
@@ -166,8 +162,8 @@ theorem isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq [Fintype V] [LinearOrd
       (G.cost_movedNorm_toCochain_ite_mem ht (s : Set V))
     rw [h] at hle
     norm_cast at hle
-    exact (G.card_edgeFinset_congr _ _).trans_le
-      ((Nat.le_of_mul_le_mul_left hle two_pos).trans_eq (card_edgeFinset_congr _ _ _))
+    exact (card_edgeFinset_congr_of_eq rfl).trans_le
+      ((Nat.le_of_mul_le_mul_left hle two_pos).trans_eq (card_edgeFinset_congr_of_eq rfl))
 
 /-- The `Equiv.Perm α` gauge distance of `G.toCochain ht.mul_self` vanishes if and only if `G` is a
 complete-graph cut. -/
@@ -183,31 +179,6 @@ end SwapGauge
 end SimpleGraph
 
 namespace TauCeti
-
-namespace Cochain
-
-section SingleEdge
-
-variable {V α : Type*} [Fintype V] [LinearOrder V] [Fintype α] [DecidableEq α]
-
-/-- On `TwoComplex.complete V`, the `Equiv.Perm.movedNorm α` defect of `Cochain.singleEdge` at any
-distinct vertices `u ≠ v` and transposition `t` equals `2 * (Fintype.card V - 2 : ℕ)`. -/
-theorem defect_movedNorm_singleEdge {u v : V} (huv : u ≠ v) {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (singleEdge (TwoComplex.complete V) u v t).defect (Equiv.Perm.movedNorm α) =
-      2 * ((Fintype.card V - 2 : ℕ) : ℝ) := by
-  rw [defect_singleEdge _ huv t, ht.movedNorm, mul_comm]
-
-/-- On `TwoComplex.complete V` with `3 ≤ Fintype.card V`, the `Equiv.Perm.movedNorm α` gauge
-distance of `Cochain.singleEdge` at `u ≠ v` and any transposition `t` equals `2`. -/
-theorem gaugeDist_movedNorm_singleEdge_of_three_le_card (hV : 3 ≤ Fintype.card V) {u v : V}
-    (huv : u ≠ v) {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (singleEdge (TwoComplex.complete V) u v t).gaugeDist (Equiv.Perm.movedNorm α) = 2 := by
-  rw [gaugeDist_singleEdge_of_three_le_card Equiv.Perm.isConjInvariant_movedNorm hV huv t,
-    ht.movedNorm]
-
-end SingleEdge
-
-end Cochain
 
 section PermFinTwo
 

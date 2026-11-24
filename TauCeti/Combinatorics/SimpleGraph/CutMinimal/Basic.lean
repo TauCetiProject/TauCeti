@@ -315,13 +315,8 @@ theorem exists_finset_isCutMinimal_symmDiff_top_between [Finite V] (G : SimpleGr
       G ∆ (⊤ : SimpleGraph V).between ((s ∆ t : Finset V) : Set V)
         ((s ∆ t : Finset V) : Set V)ᶜ := by
     rw [Finset.coe_symmDiff, symmDiff_top_between_symmDiff]
-  have hcard : ∀ {H₁ H₂ : SimpleGraph V} {inst₁ : Fintype H₁.edgeSet} {inst₂ : Fintype H₂.edgeSet}
-      (_ : H₁ = H₂), @Finset.card (Sym2 V) (@edgeFinset V H₁ inst₁) =
-        @Finset.card (Sym2 V) (@edgeFinset V H₂ inst₂) := by
-    rintro H₁ H₂ inst₁ inst₂ rfl
-    exact card_edgeFinset_congr _ _ _
   exact (card_edgeFinset_congr _ _ _).trans_le
-    ((hmin (s ∆ t) (Finset.mem_univ _)).trans_eq (hcard heq.symm))
+    ((hmin (s ∆ t) (Finset.mem_univ _)).trans_eq (card_edgeFinset_congr_of_eq heq.symm))
 
 /-- On at least three vertices, every single-edge graph `SimpleGraph.edge u v` is cut-minimal. -/
 theorem isCutMinimal_edge_of_three_le_card [Fintype V] (hV : 3 ≤ Fintype.card V) (u v : V) :

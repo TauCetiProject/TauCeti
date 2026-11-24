@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Invariance
+public import TauCeti.GroupTheory.Perm.MovedNorm
 import TauCeti.Order.Hom.PowersetCard
 
 /-!
@@ -16,12 +17,17 @@ Cost, defect, and gauge-distance formulas for `TauCeti.Cochain.singleEdge`:
 * `TauCeti.Cochain.cost_singleEdge_one`, `TauCeti.Cochain.cost_singleEdge_complete_one`: under the
   trivial gauge `1`, the cost of `singleEdge X u₀ v₀ g` along an edge `h : X.Adj u₀ v₀` (and in
   particular on `complete V` for `u₀ ≠ v₀`) equals `ℓ g`.
-* `TauCeti.Cochain.defect_singleEdge`: on `complete V`, for any group norm `ℓ`, the defect of
-  `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`) equals `((Fintype.card V - 2 : ℕ) : ℝ) * ℓ g`.
-* `TauCeti.Cochain.gaugeDist_singleEdge`, `TauCeti.Cochain.gaugeDist_singleEdge_of_three_le_card`:
-  under a conjugation-invariant group norm `ℓ`, the gauge distance of `singleEdge X u₀ v₀ g` equals
-  `ℓ g` whenever `(u₀, v₀)` belongs to a filled triangle `(u₀, v₀, w)` of `X`, and in particular on
-  `complete V` whenever `3 ≤ Fintype.card V` and `u₀ ≠ v₀`.
+* `TauCeti.Cochain.defect_singleEdge`, `TauCeti.Cochain.defect_singleEdge_complete`,
+  `TauCeti.Cochain.defect_movedNorm_singleEdge`: for any group norm `ℓ`, the defect of
+  `singleEdge X u₀ v₀ g` along `h : X.Adj u₀ v₀` equals
+  `#(X.triangles.filter fun t => {u₀, v₀} ⊆ t) * ℓ g`; on `complete V` (`u₀ ≠ v₀`) this
+  evaluates to `((Fintype.card V - 2 : ℕ) : ℝ) * ℓ g` and for a transposition under `movedNorm α`
+  to `2 * (Fintype.card V - 2 : ℕ)`.
+* `TauCeti.Cochain.gaugeDist_singleEdge`, `TauCeti.Cochain.gaugeDist_singleEdge_of_three_le_card`,
+  `TauCeti.Cochain.gaugeDist_movedNorm_singleEdge_of_three_le_card`: under a conjugation-invariant
+  group norm `ℓ`, the gauge distance of `singleEdge X u₀ v₀ g` equals `ℓ g` whenever `(u₀, v₀)`
+  belongs to a filled triangle `(u₀, v₀, w)` of `X`, and in particular on `complete V` whenever
+  `3 ≤ Fintype.card V` and `u₀ ≠ v₀` (evaluating to `2` for a transposition under `movedNorm α`).
 -/
 
 public section
@@ -90,66 +96,103 @@ theorem cost_singleEdge_complete_one (ℓ : GroupNorm G) {u₀ v₀ : V} (huv : 
     (singleEdge (complete V) u₀ v₀ g).cost ℓ 1 = ℓ g :=
   cost_singleEdge_one ℓ ((adj_complete u₀ v₀).mpr huv) g
 
-private theorem holonomy_singleEdge_norm_eq {u₀ v₀ a b c : V} (huv : u₀ ≠ v₀)
-    (hab : a < b) (hbc : b < c) (ℓ : GroupNorm G) (g : G) :
-    ℓ ((singleEdge (complete V) u₀ v₀ g).holonomy a b c) =
+omit [Fintype V] in
+private theorem holonomy_singleEdge_norm_eq {X : TwoComplex V} {u₀ v₀ a b c : V}
+    (h : X.Adj u₀ v₀) (hab : a ≠ b) (hac : a ≠ c) (hbc : b ≠ c) (ℓ : GroupNorm G) (g : G) :
+    ℓ ((singleEdge X u₀ v₀ g).holonomy a b c) =
       if ({u₀, v₀} : Finset V) ⊆ {a, b, c} then ℓ g else 0 := by
-  classical
-  have hadj := (adj_complete u₀ v₀).mpr huv
   split_ifs with hsub
-  · have hu : u₀ = a ∨ u₀ = b ∨ u₀ = c := by simpa using hsub (by simp)
+  · have hmatch {x y : V} (hxy : (x = u₀ ∧ y = v₀) ∨ (x = v₀ ∧ y = u₀)) :
+        ℓ (singleEdge X u₀ v₀ g x y) = ℓ g := by
+      rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+      · rw [singleEdge_apply_self h]
+      · rw [singleEdge_apply_swap h, map_inv_eq_map]
+    have hother {x y z : V} (hzx : z ≠ x) (hzy : z ≠ y)
+        (hxy : (x = u₀ ∧ y = v₀) ∨ (x = v₀ ∧ y = u₀)) :
+        singleEdge X u₀ v₀ g y z = 1 ∧ singleEdge X u₀ v₀ g z x = 1 := by
+      have hz : z ≠ u₀ ∧ z ≠ v₀ := by
+        rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+        · exact ⟨hzx, hzy⟩
+        · exact ⟨hzy, hzx⟩
+      exact ⟨singleEdge_apply_of_ne g (fun ⟨_, h2⟩ => hz.2 h2) (fun ⟨_, h2⟩ => hz.1 h2),
+        singleEdge_apply_of_ne g (fun ⟨h1, _⟩ => hz.1 h1) (fun ⟨h1, _⟩ => hz.2 h1)⟩
+    have hu : u₀ = a ∨ u₀ = b ∨ u₀ = c := by simpa using hsub (by simp)
     have hv : v₀ = a ∨ v₀ = b ∨ v₀ = c := by simpa using hsub (by simp)
-    have hac : a < c := hab.trans hbc
-    rcases hu with rfl | rfl | rfl <;> rcases hv with rfl | rfl | rfl
-    all_goals try exact (huv rfl).elim
-    all_goals simp [holonomy_def, hadj, hab.ne, hab.ne', hbc.ne, hbc.ne', hac.ne, hac.ne',
-      map_inv_eq_map]
-  · rw [insert_subset_iff, singleton_subset_iff, not_and_or] at hsub
-    have h1 : singleEdge (complete V) u₀ v₀ g a b = 1 :=
-      singleEdge_apply_of_ne g (by rintro ⟨rfl, rfl⟩; simp at hsub)
-        (by rintro ⟨rfl, rfl⟩; simp at hsub)
-    have h2 : singleEdge (complete V) u₀ v₀ g b c = 1 :=
-      singleEdge_apply_of_ne g (by rintro ⟨rfl, rfl⟩; simp at hsub)
-        (by rintro ⟨rfl, rfl⟩; simp at hsub)
-    have h3 : singleEdge (complete V) u₀ v₀ g c a = 1 :=
-      singleEdge_apply_of_ne g (by rintro ⟨rfl, rfl⟩; simp at hsub)
-        (by rintro ⟨rfl, rfl⟩; simp at hsub)
-    simp [holonomy_def, h1, h2, h3]
+    have hcases :
+        ((a = u₀ ∧ b = v₀) ∨ (a = v₀ ∧ b = u₀)) ∨
+        ((b = u₀ ∧ c = v₀) ∨ (b = v₀ ∧ c = u₀)) ∨
+        ((c = u₀ ∧ a = v₀) ∨ (c = v₀ ∧ a = u₀)) := by
+      rcases hu with rfl | rfl | rfl <;> rcases hv with rfl | rfl | rfl
+      · exact (h.ne rfl).elim
+      · exact Or.inl (Or.inl ⟨rfl, rfl⟩)
+      · exact Or.inr (Or.inr (Or.inr ⟨rfl, rfl⟩))
+      · exact Or.inl (Or.inr ⟨rfl, rfl⟩)
+      · exact (h.ne rfl).elim
+      · exact Or.inr (Or.inl (Or.inl ⟨rfl, rfl⟩))
+      · exact Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩))
+      · exact Or.inr (Or.inl (Or.inr ⟨rfl, rfl⟩))
+      · exact (h.ne rfl).elim
+    rcases hcases with hm | hm | hm
+    · obtain ⟨hbc1, hca1⟩ := hother hac.symm hbc.symm hm
+      rw [holonomy_def, hbc1, hca1, mul_one, mul_one, hmatch hm]
+    · obtain ⟨hca1, hab1⟩ := hother hab hac hm
+      rw [holonomy_def, hab1, hca1, one_mul, mul_one, hmatch hm]
+    · obtain ⟨hab1, hbc1⟩ := hother hbc hab.symm hm
+      rw [holonomy_def, hab1, hbc1, one_mul, one_mul, hmatch hm]
+  · have hside {x y : V} (hx : x ∈ ({a, b, c} : Finset V)) (hy : y ∈ ({a, b, c} : Finset V)) :
+        singleEdge X u₀ v₀ g x y = 1 :=
+      singleEdge_apply_of_ne g
+        (fun ⟨h1, h2⟩ => hsub (insert_subset_iff.mpr ⟨h1 ▸ hx, singleton_subset_iff.mpr (h2 ▸ hy)⟩))
+        (fun ⟨h1, h2⟩ => hsub (insert_subset_iff.mpr ⟨h2 ▸ hy, singleton_subset_iff.mpr (h1 ▸ hx)⟩))
+    rw [holonomy_def, hside (by simp) (by simp), hside (by simp) (by simp),
+      hside (by simp) (by simp), mul_one, mul_one, map_one_eq_zero]
+
+/-- For any group norm `ℓ` (even without conjugation invariance) and any edge `h : X.Adj u₀ v₀`,
+the defect of `singleEdge X u₀ v₀ g` equals `#(X.triangles.filter fun t => {u₀, v₀} ⊆ t) * ℓ g`. -/
+theorem defect_singleEdge {X : TwoComplex V} (ℓ : GroupNorm G) {u₀ v₀ : V}
+    (h : X.Adj u₀ v₀) (g : G) :
+    (singleEdge X u₀ v₀ g).defect ℓ =
+      (#(X.triangles.filter fun t => ({u₀, v₀} : Finset V) ⊆ t) : ℝ) * ℓ g := by
+  rw [defect_def]
+  have hterm :
+      ∑ p ∈ univ.filter (fun p : V × V × V =>
+          p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset V) ∈ X.triangles),
+        ℓ ((singleEdge X u₀ v₀ g).holonomy p.1 p.2.1 p.2.2) =
+      ∑ p ∈ univ.filter (fun p : V × V × V =>
+          p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset V) ∈ X.triangles),
+        if ({u₀, v₀} : Finset V) ⊆ {p.1, p.2.1, p.2.2} then ℓ g else 0 := by
+    refine sum_congr rfl fun p hp => ?_
+    obtain ⟨h1, h2, _⟩ := (mem_filter.mp hp).2
+    exact holonomy_singleEdge_norm_eq h h1.ne (h1.trans h2).ne h2.ne ℓ g
+  rw [hterm, ← sum_filter, filter_filter, sum_const, nsmul_eq_mul]
+  congr 1
+  norm_cast
+  let s : Finset (Finset V) := X.triangles.filter fun t => ({u₀, v₀} : Finset V) ⊆ t
+  have hflt :
+      univ.filter (fun p : V × V × V =>
+          (p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset V) ∈ X.triangles) ∧
+            ({u₀, v₀} : Finset V) ⊆ {p.1, p.2.1, p.2.2}) =
+        univ.filter (fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧
+          ({p.1, p.2.1, p.2.2} : Finset V) ∈ s) := by
+    ext ⟨a, b, c⟩
+    simp only [s, mem_filter, mem_univ, true_and]
+    tauto
+  rw [hflt]
+  exact Set.powersetCard.card_filter_lt_triple_eq_card_of_card_eq_three s
+    fun t ht => X.triangle_card t (mem_filter.mp ht).1
 
 /-- For any group norm `ℓ` (even without conjugation invariance), the defect of
 `singleEdge (complete V) u₀ v₀ g` (`u₀ ≠ v₀`) equals `((Fintype.card V - 2 : ℕ) : ℝ) * ℓ g`. -/
-theorem defect_singleEdge (ℓ : GroupNorm G) {u₀ v₀ : V} (huv : u₀ ≠ v₀) (g : G) :
+theorem defect_singleEdge_complete (ℓ : GroupNorm G) {u₀ v₀ : V} (huv : u₀ ≠ v₀) (g : G) :
     (singleEdge (complete V) u₀ v₀ g).defect ℓ = ((Fintype.card V - 2 : ℕ) : ℝ) * ℓ g := by
-  classical
-  rw [defect_complete]
-  have hterm :
-      ∑ p ∈ univ.filter (fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
-        ℓ ((singleEdge (complete V) u₀ v₀ g).holonomy p.1 p.2.1 p.2.2) =
-      ∑ p ∈ univ.filter (fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
-        if ({u₀, v₀} : Finset V) ⊆ {p.1, p.2.1, p.2.2} then ℓ g else 0 := by
-    refine sum_congr rfl fun p hp => ?_
-    obtain ⟨h1, h2⟩ := (mem_filter.mp hp).2
-    exact holonomy_singleEdge_norm_eq huv h1 h2 ℓ g
-  rw [hterm, ← sum_filter, filter_filter, sum_const, nsmul_eq_mul]
+  rw [defect_singleEdge ℓ ((adj_complete u₀ v₀).mpr huv) g]
   congr 1
-  let s : Finset (Finset V) := {t ∈ (univ : Finset V).powersetCard 3 | ({u₀, v₀} : Finset V) ⊆ t}
-  have hcard :
-      #{p : V × V × V | (p.1 < p.2.1 ∧ p.2.1 < p.2.2) ∧
-          ({u₀, v₀} : Finset V) ⊆ {p.1, p.2.1, p.2.2}} = #s := by
-    have hflt :
-        univ.filter (fun p : V × V × V => (p.1 < p.2.1 ∧ p.2.1 < p.2.2) ∧
-            ({u₀, v₀} : Finset V) ⊆ {p.1, p.2.1, p.2.2}) =
-          univ.filter (fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧
-            ({p.1, p.2.1, p.2.2} : Finset V) ∈ s) := by
-      ext ⟨a, b, c⟩
-      simp only [s, mem_filter, mem_univ, true_and, mem_powersetCard, subset_univ]
-      exact ⟨fun ⟨⟨hab, hbc⟩, hsub⟩ ↦ ⟨hab, hbc,
-          ⟨card_eq_three.mpr ⟨a, b, c, hab.ne, (hab.trans hbc).ne, hbc.ne, rfl⟩, hsub⟩⟩,
-        fun ⟨hab, hbc, _, hsub⟩ ↦ ⟨⟨hab, hbc⟩, hsub⟩⟩
-    rw [hflt]
-    exact Set.powersetCard.card_filter_lt_triple_eq_card_of_card_eq_three s
-      fun _ ht ↦ (mem_powersetCard.mp (mem_filter.mp ht).1).2
-  rw [hcard, card_filter_powersetCard_subset {u₀, v₀} univ 3 (subset_univ _)
+  norm_cast
+  have hsub : (complete V).triangles.filter (fun t => ({u₀, v₀} : Finset V) ⊆ t) =
+      {t ∈ (univ : Finset V).powersetCard 3 | ({u₀, v₀} : Finset V) ⊆ t} := by
+    ext t
+    simp [mem_triangles_complete, mem_powersetCard]
+  rw [hsub, card_filter_powersetCard_subset {u₀, v₀} univ 3 (subset_univ _)
     (by rw [card_pair huv]; decide), card_pair huv, card_univ, Nat.choose_one_right]
 
 /-- Under a conjugation-invariant group norm `ℓ`, the gauge distance of `singleEdge X u₀ v₀ g`
@@ -175,6 +218,27 @@ theorem gaugeDist_singleEdge_of_three_le_card {ℓ : GroupNorm G}
     (by rw [ENat.card_eq_coe_fintype_card]; exact_mod_cast hV) u₀ v₀
   exact gaugeDist_singleEdge hℓ ((adj_complete u₀ v₀).mpr huv)
     ((adj_complete v₀ w).mpr hwv.symm) ((adj_complete w u₀).mpr hwu) g
+
+section MovedNorm
+
+variable {α : Type*} [Fintype α] [DecidableEq α]
+
+/-- On `TwoComplex.complete V`, the `Equiv.Perm.movedNorm α` defect of `Cochain.singleEdge` at any
+distinct vertices `u ≠ v` and transposition `t` equals `2 * (Fintype.card V - 2 : ℕ)`. -/
+theorem defect_movedNorm_singleEdge {u v : V} (huv : u ≠ v) {t : Equiv.Perm α} (ht : t.IsSwap) :
+    (singleEdge (TwoComplex.complete V) u v t).defect (Equiv.Perm.movedNorm α) =
+      2 * ((Fintype.card V - 2 : ℕ) : ℝ) := by
+  rw [defect_singleEdge_complete _ huv t, ht.movedNorm, mul_comm]
+
+/-- On `TwoComplex.complete V` with `3 ≤ Fintype.card V`, the `Equiv.Perm.movedNorm α` gauge
+distance of `Cochain.singleEdge` at `u ≠ v` and any transposition `t` equals `2`. -/
+theorem gaugeDist_movedNorm_singleEdge_of_three_le_card (hV : 3 ≤ Fintype.card V) {u v : V}
+    (huv : u ≠ v) {t : Equiv.Perm α} (ht : t.IsSwap) :
+    (singleEdge (TwoComplex.complete V) u v t).gaugeDist (Equiv.Perm.movedNorm α) = 2 := by
+  rw [gaugeDist_singleEdge_of_three_le_card Equiv.Perm.isConjInvariant_movedNorm hV huv t,
+    ht.movedNorm]
+
+end MovedNorm
 
 end SingleEdge
 

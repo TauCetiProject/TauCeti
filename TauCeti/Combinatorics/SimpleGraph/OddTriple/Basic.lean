@@ -23,6 +23,7 @@ be triangles of `G` in the sense of `G.cliqueFinset 3`: a triple spanning a sing
 * `SimpleGraph.oddTripleFinset`, `SimpleGraph.oddTripleFinset_def`: the `3`-element vertex subsets
   spanning an odd number of edges of `G`.
 * `SimpleGraph.mem_oddTripleFinset`, `SimpleGraph.triple_mem_oddTripleFinset_iff`,
+  `SimpleGraph.triple_mem_oddTripleFinset_iff_cyclic`,
   `SimpleGraph.mem_oddTripleFinset_iff_induce`: membership characterizations.
 * `SimpleGraph.oddTripleFinset_bot`: the empty graph has no odd triples.
 * `SimpleGraph.Iso.map_oddTripleFinset`, `SimpleGraph.Iso.card_oddTripleFinset_eq`:
@@ -86,6 +87,13 @@ theorem triple_mem_oddTripleFinset_iff {a b c : V} :
         exact card_le_two.trans_lt (by omega)
     rw [mem_oddTripleFinset, iff_false_intro fun h3 : _ ∧ _ ↦ hlt.ne h3.1]
     rcases h with rfl | rfl | rfl <;> simp [G.adj_comm, xor_def]
+
+/-- Cyclic-orientation form of `SimpleGraph.triple_mem_oddTripleFinset_iff`: three vertices span an
+odd number of edges iff an odd number of the cyclic pairs `(a, b)`, `(b, c)`, and `(c, a)` are
+adjacent. -/
+theorem triple_mem_oddTripleFinset_iff_cyclic {a b c : V} :
+    {a, b, c} ∈ G.oddTripleFinset ↔ Xor (G.Adj a b) (Xor (G.Adj b c) (G.Adj c a)) := by
+  rw [triple_mem_oddTripleFinset_iff, G.adj_comm a c, xor_comm (G.Adj c a)]
 
 /-- Membership in `G.oddTripleFinset` in terms of the induced subgraph on `s`. -/
 theorem mem_oddTripleFinset_iff_induce {s : Finset V} :
@@ -187,12 +195,7 @@ theorem card_oddTripleFinset_eq_card_filter_lt :
         Xor (G.Adj p.1 p.2.1) (Xor (G.Adj p.2.1 p.2.2) (G.Adj p.2.2 p.1))} := by
   rw [← Set.powersetCard.card_filter_lt_triple_eq_card_of_card_eq_three G.oddTripleFinset
     fun _ ht ↦ (mem_oddTripleFinset.mp ht).1]
-  simp only [triple_mem_oddTripleFinset_iff, G.adj_comm _ _]
-  congr 2
-  ext ⟨u, v, w⟩
-  simp only [and_congr_right_iff]
-  intro _ _
-  rw [G.adj_comm u w, xor_comm (G.Adj w u)]
+  simp only [triple_mem_oddTripleFinset_iff_cyclic]
 
 /-- Over a linear order, the odd triples are counted by their increasing triples `u < v < w`:
 each odd triple is `{u, v, w}` for exactly one such triple. -/
