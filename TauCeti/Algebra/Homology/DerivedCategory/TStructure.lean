@@ -24,10 +24,10 @@ and factorization results inside the truncation range:
   `X ⟶ τ_{≥ n} X` induces an isomorphism on `H^i`.
 * `DerivedCategory.homologyFunctor_map_bijective_of_isLE_of_isGE`: when `X` is `≤ n` and `Y`
   is `≥ n`, the functor `H^n` induces a bijection `(X ⟶ Y) → (H^n(X) ⟶ H^n(Y))`.
-* `TauCeti.DerivedCategory.homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE`: in particular, under
+* `DerivedCategory.homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE`: in particular, under
   `X.IsLE n` and `Y.IsGE n`, a morphism `f : X ⟶ Y` vanishes if and only if `H^n(f) = 0`.
-* `TauCeti.DerivedCategory.exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero` and
-  `TauCeti.DerivedCategory.exists_truncGEπ_comp_of_isGE_of_homologyFunctor_map_eq_zero`: when
+* `DerivedCategory.exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero` and
+  `DerivedCategory.exists_truncGEπ_comp_of_isGE_of_homologyFunctor_map_eq_zero`: when
   `X.IsLE b₁` and `H^{b₁}(f) = 0`, `f : X ⟶ Y` factors through `τ_{≤ b₀} Y ⟶ Y` (`b₀ + 1 = b₁`);
   dually, when `Y.IsGE a₀` and `H^{a₀}(f) = 0`, `f` factors through `X ⟶ τ_{≥ a₁} X`
   (`a₀ + 1 = a₁`).
@@ -131,17 +131,9 @@ theorem homologyFunctor_map_bijective_of_isLE_of_isGE (X Y : DerivedCategory C) 
     rw [hmap]
     simp
 
-end DerivedCategory
-
-namespace TauCeti.DerivedCategory
-
-open _root_.DerivedCategory
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
-
 /-- If `X` is concentrated in degrees `≤ n` and `Y` in degrees `≥ n`, then a morphism `f : X ⟶ Y`
 is zero if and only if it induces zero on `H^n`. -/
-theorem homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE {X Y : _root_.DerivedCategory C}
+theorem homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE {X Y : DerivedCategory C}
     (f : X ⟶ Y) (n : ℤ) [X.IsLE n] [Y.IsGE n] :
     (homologyFunctor C n).map f = 0 ↔ f = 0 :=
   ⟨fun hf ↦ (homologyFunctor_map_bijective_of_isLE_of_isGE X Y n).injective (by simpa using hf),
@@ -149,7 +141,7 @@ theorem homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE {X Y : _root_.DerivedCat
 
 /-- If `X` is concentrated in degrees `≤ b₁` and `f : X ⟶ Y` induces zero on `H^{b₁}`, then `f`
 factors through `(τ_{≤ b₀} Y) ⟶ Y` whenever `b₀ + 1 = b₁`. -/
-theorem exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero {X Y : _root_.DerivedCategory C}
+theorem exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero {X Y : DerivedCategory C}
     (f : X ⟶ Y) (b₀ b₁ : ℤ) [X.IsLE b₁] (hf : (homologyFunctor C b₁).map f = 0)
     (hb : b₀ + 1 = b₁ := by lia) :
     ∃ g : X ⟶ (TStructure.t.truncLE b₀).obj Y,
@@ -162,7 +154,7 @@ theorem exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero {X Y : _roo
 
 /-- If `Y` is concentrated in degrees `≥ a₀` and `f : X ⟶ Y` induces zero on `H^{a₀}`, then `f`
 factors through `X ⟶ (τ_{≥ a₁} X)` whenever `a₀ + 1 = a₁`. -/
-theorem exists_truncGEπ_comp_of_isGE_of_homologyFunctor_map_eq_zero {X Y : _root_.DerivedCategory C}
+theorem exists_truncGEπ_comp_of_isGE_of_homologyFunctor_map_eq_zero {X Y : DerivedCategory C}
     (f : X ⟶ Y) (a₀ a₁ : ℤ) [Y.IsGE a₀] (hf : (homologyFunctor C a₀).map f = 0)
     (ha : a₀ + 1 = a₁ := by lia) :
     ∃ g : (TStructure.t.truncGE a₁).obj X ⟶ Y,
@@ -173,4 +165,4 @@ theorem exists_truncGEπ_comp_of_isGE_of_homologyFunctor_map_eq_zero {X Y : _roo
     (TStructure.t.triangleLEGE_distinguished a₀ a₁ ha X) f hcomp
   exact ⟨g, hg.symm⟩
 
-end TauCeti.DerivedCategory
+end DerivedCategory

@@ -46,22 +46,21 @@ Main declarations:
   * `DerivedCategory.ghostIdeal`: the two-sided ideal of ghosts in `End X`, defined via
     `TwoSidedIdeal.ker X.cohomologyActionRingHom` independently of any coefficient ring `R`.
 * **Ghost nilpotence and annihilator bounds**:
-  * In `TauCeti.DerivedCategory`,
-    `exists_comp_truncLEι_eq_mul_asHom_of_homologyFunctor_map_eq_zero` and
-    `exists_comp_truncLEι_eq_list_prod_asHom_of_isLE_of_homologyFunctor_map_eq_zero`:
+  * `DerivedCategory.exists_comp_truncLEι_eq_mul_asHom_of_homologyFunctor_map_eq_zero` and
+  `DerivedCategory.exists_comp_truncLEι_eq_list_prod_asHom_of_isLE_of_homologyFunctor_map_eq_zero`:
     for `X` concentrated in degrees `≤ b` (`X.IsLE b`), an ordered product `l.prod` of
     endomorphisms acting by zero on `H^i(X)` for `a < i ≤ b` (`a + l.length = b`) factors through
     `τ_{≤ a} X ⟶ X`.
-  * `TauCeti.DerivedCategory.list_prod_eq_zero_of_isGE_of_isLE_of_homologyFunctor_map_eq_zero` and
-    `TauCeti.DerivedCategory.list_prod_ofFn_eq_zero_of_isGE_of_isLE_of_isGhost`: if `X` is
+  * `DerivedCategory.list_prod_eq_zero_of_isGE_of_isLE_of_homologyFunctor_map_eq_zero` and
+    `DerivedCategory.list_prod_ofFn_eq_zero_of_isGE_of_isLE_of_isGhost`: if `X` is
     concentrated in `[a, b]`, every ordered product of more than `b - a` ghosts in `End X`
     vanishes (in particular, any ordered product of `(b - a).toNat + 1` ghosts vanishes).
-  * `TauCeti.DerivedCategory.actionGhostKer`,
-    `TauCeti.DerivedCategory.exists_comp_truncLEι_of_isLE_of_le_actionGhostKer_of_mem_pow`, and
-    `TauCeti.DerivedCategory.pow_le_ker_of_le_actionGhostKer`: for any ring homomorphism
+  * `DerivedCategory.actionGhostKer`,
+    `DerivedCategory.exists_comp_truncLEι_of_isLE_of_le_actionGhostKer_of_mem_pow`, and
+    `DerivedCategory.pow_le_ker_of_le_actionGhostKer`: for any ring homomorphism
     `α : F` (`[RingHomClass F H (End X)]`) and ideal `I ≤ actionGhostKer α`, `I ^ n ≤ RingHom.ker α`
     whenever `b < a + n`.
-  * `TauCeti.DerivedCategory.ghostIdeal_asIdeal_pow_eq_bot`,
+  * `DerivedCategory.ghostIdeal_asIdeal_pow_eq_bot`,
     `AlgHom.imageGhostIdeal`, `AlgHom.imageGhostIdeal_pow_eq_bot`,
     and `AlgHom.imageGhostIdealQuotientEquivCohomologyImage`: the ghost ideal on `α.range` is
     nilpotent of exponent at most `(b - a).toNat + 1`, and its quotient is isomorphic as an
@@ -191,9 +190,7 @@ end Ghost
 
 end CategoryTheory.End
 
-namespace TauCeti.DerivedCategory
-
-open _root_.DerivedCategory
+namespace DerivedCategory
 
 section GhostMembership
 
@@ -201,17 +198,17 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- An endomorphism belongs to `X.ghostIdeal` if and only if it is a ghost. -/
 @[simp]
-theorem mem_ghostIdeal_iff {X : _root_.DerivedCategory C} {f : End X} :
+theorem mem_ghostIdeal_iff {X : DerivedCategory C} {f : End X} :
     f ∈ X.ghostIdeal ↔ f.IsGhost := by
   rw [ghostIdeal, TwoSidedIdeal.mem_ker, End.isGhost_iff_cohomologyActionRingHom_eq_zero]
 
 section Linear
 
-variable (R : Type t) [CommSemiring R] [Linear R C] [Linear R (_root_.DerivedCategory C)]
+variable (R : Type t) [CommSemiring R] [Linear R C] [Linear R (DerivedCategory C)]
   [∀ i : ℤ, (homologyFunctor C i).Linear R]
 
 /-- Membership in `RingHom.ker (X.cohomologyAction R)` is equivalent to `End.IsGhost`. -/
-theorem mem_ringHom_ker_cohomologyAction_iff {X : _root_.DerivedCategory C} {f : End X} :
+theorem mem_ringHom_ker_cohomologyAction_iff {X : DerivedCategory C} {f : End X} :
     f ∈ RingHom.ker (X.cohomologyAction R) ↔ f.IsGhost := by
   rw [RingHom.mem_ker, End.isGhost_iff_cohomologyAction_eq_zero R]
 
@@ -226,7 +223,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 /-- If `e : End X` factors through `τ_{≤ b₁} X ⟶ X` and `f : End X` induces zero on `H^{b₁}(X)`,
 then `f * e` factors through `τ_{≤ b₀} X ⟶ X` whenever `b₀ + 1 = b₁`. -/
 theorem exists_comp_truncLEι_eq_mul_asHom_of_homologyFunctor_map_eq_zero
-    {X : _root_.DerivedCategory C}
+    {X : DerivedCategory C}
     (b₀ b₁ : ℤ) {f e : End X} (hf : (homologyFunctor C b₁).map f.asHom = 0)
     (he : ∃ g : X ⟶ (TStructure.t.truncLE b₁).obj X,
       g ≫ (TStructure.t.truncLEι b₁).app X = e.asHom)
@@ -245,7 +242,7 @@ theorem exists_comp_truncLEι_eq_mul_asHom_of_homologyFunctor_map_eq_zero
 `a < i ≤ b` (where `a + l.length = b`), then the ordered product `l.prod` factors through
 `τ_{≤ a} X ⟶ X`. -/
 theorem exists_comp_truncLEι_eq_list_prod_asHom_of_isLE_of_homologyFunctor_map_eq_zero
-    {X : _root_.DerivedCategory C} (a b : ℤ) [X.IsLE b] (l : List (End X))
+    {X : DerivedCategory C} (a b : ℤ) [X.IsLE b] (l : List (End X))
     (hl : ∀ f ∈ l, ∀ i : ℤ, a < i → i ≤ b → (homologyFunctor C i).map f.asHom = 0)
     (hab : a + l.length = b := by lia) :
     ∃ g : X ⟶ (TStructure.t.truncLE a).obj X,
@@ -269,7 +266,7 @@ theorem exists_comp_truncLEι_eq_list_prod_asHom_of_isLE_of_homologyFunctor_map_
 /-- Ghost nilpotence for arbitrary ordered lists: if `X` is concentrated in `[a, b]` and every
 `f ∈ l` acts by zero on `H^i(X)` for `a ≤ i ≤ b`, then `l.prod = 0` whenever `b < a + l.length`. -/
 theorem list_prod_eq_zero_of_isGE_of_isLE_of_homologyFunctor_map_eq_zero
-    {X : _root_.DerivedCategory C} (a b : ℤ) [X.IsGE a] [X.IsLE b] (l : List (End X))
+    {X : DerivedCategory C} (a b : ℤ) [X.IsGE a] [X.IsLE b] (l : List (End X))
     (hl : ∀ f ∈ l, ∀ i : ℤ, a ≤ i → i ≤ b → (homologyFunctor C i).map f.asHom = 0)
     (hlen : b < a + l.length) :
     l.prod = 0 := by
@@ -289,7 +286,7 @@ theorem list_prod_eq_zero_of_isGE_of_isLE_of_homologyFunctor_map_eq_zero
 
 /-- Ghost nilpotence (Allen et al., Lemma 2.2.4): if `X` is concentrated in `[a, b]`, then every
 ordered product of `(b - a).toNat + 1` ghost endomorphisms of `X` vanishes. -/
-theorem list_prod_ofFn_eq_zero_of_isGE_of_isLE_of_isGhost {X : _root_.DerivedCategory C}
+theorem list_prod_ofFn_eq_zero_of_isGE_of_isLE_of_isGhost {X : DerivedCategory C}
     (a b : ℤ) [X.IsGE a] [X.IsLE b] (fs : Fin ((b - a).toNat + 1) → End X)
     (hfs : ∀ j, (fs j).IsGhost) :
     (List.ofFn fs).prod = 0 := by
@@ -300,26 +297,26 @@ theorem list_prod_ofFn_eq_zero_of_isGE_of_isLE_of_isGhost {X : _root_.DerivedCat
 
 /-- The action ghost kernel of a ring homomorphism `α : F` (`[RingHomClass F H (End X)]`),
 consisting of all `h : H` whose image `α h` acts by zero on every cohomology object `H^i(X)`. -/
-noncomputable def actionGhostKer {H : Type t} [Semiring H] {X : _root_.DerivedCategory C}
+noncomputable def actionGhostKer {H : Type t} [Semiring H] {X : DerivedCategory C}
     {F : Type*} [FunLike F H (End X)] [RingHomClass F H (End X)] (α : F) : Ideal H :=
   Ideal.comap α X.ghostIdeal.asIdeal
 
 /-- An element belongs to `actionGhostKer α` if and only if its image under `α` is a ghost. -/
 @[simp]
-theorem mem_actionGhostKer_iff {H : Type t} [Semiring H] {X : _root_.DerivedCategory C}
+theorem mem_actionGhostKer_iff {H : Type t} [Semiring H] {X : DerivedCategory C}
     {F : Type*} [FunLike F H (End X)] [RingHomClass F H (End X)] {α : F} {h : H} :
     h ∈ actionGhostKer α ↔ (α h).IsGhost := by
   rw [actionGhostKer, Ideal.mem_comap, TwoSidedIdeal.mem_asIdeal, mem_ghostIdeal_iff]
 
 /-- The action ghost kernel of `α` is a two-sided ideal of `H`. -/
-instance actionGhostKer_isTwoSided {H : Type t} [Semiring H] {X : _root_.DerivedCategory C}
+instance actionGhostKer_isTwoSided {H : Type t} [Semiring H] {X : DerivedCategory C}
     {F : Type*} [FunLike F H (End X)] [RingHomClass F H (End X)] (α : F) :
     (actionGhostKer α).IsTwoSided := by
   unfold actionGhostKer
   infer_instance
 
 /-- The kernel of `α` is contained in the action ghost kernel of `α`. -/
-theorem ker_le_actionGhostKer {H : Type t} [Semiring H] {X : _root_.DerivedCategory C}
+theorem ker_le_actionGhostKer {H : Type t} [Semiring H] {X : DerivedCategory C}
     {F : Type*} [FunLike F H (End X)] [RingHomClass F H (End X)] (α : F) :
     RingHom.ker α ≤ actionGhostKer α := by
   intro h hh
@@ -329,7 +326,7 @@ theorem ker_le_actionGhostKer {H : Type t} [Semiring H] {X : _root_.DerivedCateg
 /-- If `X` is concentrated in degrees `≤ b` and `I ≤ actionGhostKer α`, then every `x ∈ I ^ n`
 acts via a morphism factoring through `τ_{≤ a} X ⟶ X` whenever `a + n = b`. -/
 theorem exists_comp_truncLEι_of_isLE_of_le_actionGhostKer_of_mem_pow {H : Type t} [Semiring H]
-    {X : _root_.DerivedCategory C} {F : Type*} [FunLike F H (End X)] [RingHomClass F H (End X)]
+    {X : DerivedCategory C} {F : Type*} [FunLike F H (End X)] [RingHomClass F H (End X)]
     (α : F) (I : Ideal H) (a b : ℤ) [X.IsLE b] (hI : I ≤ actionGhostKer α) (n : ℕ) {x : H}
     (hx : x ∈ I ^ n) (hab : a + n = b := by lia) :
     ∃ g : X ⟶ (TStructure.t.truncLE a).obj X,
@@ -360,7 +357,7 @@ theorem exists_comp_truncLEι_of_isLE_of_le_actionGhostKer_of_mem_pow {H : Type 
 
 /-- Action-annihilator bound (Allen et al., Lemma 2.2.4): if `X` is concentrated in `[a, b]` and
 `I ≤ actionGhostKer α`, then `I ^ n ≤ RingHom.ker α` whenever `b < a + n`. -/
-theorem pow_le_ker_of_le_actionGhostKer {H : Type t} [Semiring H] {X : _root_.DerivedCategory C}
+theorem pow_le_ker_of_le_actionGhostKer {H : Type t} [Semiring H] {X : DerivedCategory C}
     {F : Type*} [FunLike F H (End X)] [RingHomClass F H (End X)] (α : F) (I : Ideal H)
     (a b : ℤ) [X.IsGE a] [X.IsLE b] (n : ℕ) (hI : I ≤ actionGhostKer α) (hn : b < a + n) :
     I ^ n ≤ RingHom.ker α := by
@@ -374,7 +371,7 @@ theorem pow_le_ker_of_le_actionGhostKer {H : Type t} [Semiring H] {X : _root_.De
   rw [← hg, hz.eq_of_tgt g 0, zero_comp, End.zero_asHom]
 
 /-- If `X` is concentrated in `[a, b]` and `b < a + n`, then `X.ghostIdeal.asIdeal ^ n = ⊥`. -/
-theorem ghostIdeal_asIdeal_pow_eq_bot {X : _root_.DerivedCategory C} (a b : ℤ) [X.IsGE a] [X.IsLE b]
+theorem ghostIdeal_asIdeal_pow_eq_bot {X : DerivedCategory C} (a b : ℤ) [X.IsGE a] [X.IsLE b]
     (n : ℕ) (hn : b < a + n) :
     X.ghostIdeal.asIdeal ^ n = ⊥ := by
   refine le_bot_iff.mp <|
@@ -386,40 +383,40 @@ theorem ghostIdeal_asIdeal_pow_eq_bot {X : _root_.DerivedCategory C} (a b : ℤ)
 
 end GhostNilpotence
 
-end TauCeti.DerivedCategory
+end DerivedCategory
 
 namespace AlgHom
 
-open _root_.DerivedCategory TauCeti.DerivedCategory
+open DerivedCategory
 
 section ImageGhost
 
 variable {R : Type t} [CommSemiring R] {C : Type u} [Category.{v} C] [Abelian C]
-  [HasDerivedCategory.{w} C] [Linear R (_root_.DerivedCategory C)]
+  [HasDerivedCategory.{w} C] [Linear R (DerivedCategory C)]
 
 /-- The image ghost ideal of an `R`-algebra action `α : H →ₐ[R] CategoryTheory.End X`, consisting
 of all elements of `α.range` that act by zero on every cohomology object `H^i(X)`. -/
 noncomputable def imageGhostIdeal {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) : Ideal α.range :=
+    {X : DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) : Ideal α.range :=
   actionGhostKer α.range.val
 
 /-- An element of `α.range` belongs to `α.imageGhostIdeal` if and only if it is a ghost. -/
 @[simp]
 theorem mem_imageGhostIdeal_iff {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} {α : H →ₐ[R] CategoryTheory.End X} {x : α.range} :
+    {X : DerivedCategory C} {α : H →ₐ[R] CategoryTheory.End X} {x : α.range} :
     x ∈ α.imageGhostIdeal ↔ x.1.IsGhost := by
   rw [imageGhostIdeal, mem_actionGhostKer_iff, Subalgebra.coe_val]
 
 /-- The image ghost ideal of `α` is a two-sided ideal of `α.range`. -/
 instance imageGhostIdeal_isTwoSided {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) :
+    {X : DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) :
     α.imageGhostIdeal.IsTwoSided := by
   unfold imageGhostIdeal
   infer_instance
 
 /-- If `X` is concentrated in `[a, b]` and `b < a + n`, then `α.imageGhostIdeal ^ n = ⊥`. -/
 theorem imageGhostIdeal_pow_eq_bot {H : Type t'} [Semiring H] [Algebra R H]
-    {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) (a b : ℤ) [X.IsGE a]
+    {X : DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) (a b : ℤ) [X.IsGE a]
     [X.IsLE b] (n : ℕ) (hn : b < a + n) :
     α.imageGhostIdeal ^ n = ⊥ :=
   le_bot_iff.mp <|
@@ -431,14 +428,14 @@ end ImageGhost
 section CohomologyImageQuotient
 
 variable {R : Type t} [CommRing R] {C : Type u} [Category.{v} C] [Abelian C]
-  [HasDerivedCategory.{w} C] [Linear R C] [Linear R (_root_.DerivedCategory C)]
+  [HasDerivedCategory.{w} C] [Linear R C] [Linear R (DerivedCategory C)]
   [∀ i : ℤ, (homologyFunctor C i).Linear R]
 
 /-- The cohomology image quotient equivalence: the quotient of the derived image `α.range` by its
 image ghost ideal is isomorphic as an `R`-algebra to the cohomology image
 `((X.cohomologyAction R).comp α).range`. -/
 noncomputable def imageGhostIdealQuotientEquivCohomologyImage {H : Type t'} [Semiring H]
-    [Algebra R H] {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) :
+    [Algebra R H] {X : DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) :
     (α.range ⧸ α.imageGhostIdeal) ≃ₐ[R] ((X.cohomologyAction R).comp α).range :=
   (Ideal.quotientEquivAlgOfEq R (show α.imageGhostIdeal =
       RingHom.ker ((X.cohomologyAction R).comp α.range.val) by
@@ -452,7 +449,7 @@ noncomputable def imageGhostIdealQuotientEquivCohomologyImage {H : Type t'} [Sem
 `X.cohomologyAction R x.1`. -/
 @[simp]
 theorem imageGhostIdealQuotientEquivCohomologyImage_mk_val {H : Type t'} [Semiring H]
-    [Algebra R H] {X : _root_.DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X)
+    [Algebra R H] {X : DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X)
     (x : α.range) :
     (α.imageGhostIdealQuotientEquivCohomologyImage
       (Ideal.Quotient.mk α.imageGhostIdeal x)).1 = X.cohomologyAction R x.1 := by

@@ -110,7 +110,7 @@ theorem moduleFinite_hom_singleFunctor (X Y : ModuleCat.{v} A) [Module.Finite A 
   · let n : ℕ := (a - b).toNat
     have hn : a - b = n := by omega
     exact Module.Finite.equiv
-      (TauCeti.DerivedCategory.singleFunctorHomLinearEquivExt A X Y a b n hn).symm
+      (DerivedCategory.singleFunctorHomLinearEquivExt A X Y a b n hn).symm
   · have : Subsingleton ((singleFunctor (ModuleCat.{v} A) a).obj X ⟶
         (singleFunctor (ModuleCat.{v} A) b).obj Y) :=
       ⟨fun f g ↦ (TStructure.t.zero f a b (by omega)).trans

@@ -41,7 +41,7 @@ objects in `DerivedCategory (ModuleCat ℤ)`:
 
 public section
 
-open CategoryTheory Limits Pretriangulated Triangulated DerivedCategory TauCeti.DerivedCategory
+open CategoryTheory Limits Pretriangulated Triangulated DerivedCategory
 open ZeroObject
 
 namespace TauCeti.Examples.CohomologyAction
@@ -315,22 +315,36 @@ private theorem zmod2_two_smul_id_eq_zero :
 private theorem zmod2_ghost_sq : zmod2Ghost ^ 2 = 0 :=
   End.ext (by simp [sq, Category.assoc])
 
-private theorem zmod2Action_apply (p : Polynomial ℤ) :
-    zmod2Action p = (p.coeff 0 : ℤ) • 1 + (p.coeff 1 : ℤ) • zmod2Ghost := by
+private theorem zmod2_addOrderOf_id :
+    addOrderOf (𝟙 ((singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ (ZMod 2)))) = 2 := by
+  have ⟨_, _, h2s0, hid0⟩ := zmod2_two_smul_id_eq_zero
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  exact addOrderOf_eq_prime (by simpa [← natCast_zsmul] using h2s0) hid0
+
+private theorem zmod2_two_dvd_of_zsmul_id_eq_zero {m : ℤ}
+    (hm : m • 𝟙 ((singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ (ZMod 2))) = 0) :
+    (2 : ℤ) ∣ m := by
+  simpa [zmod2_addOrderOf_id] using addOrderOf_dvd_iff_zsmul_eq_zero.mpr hm
+
+private theorem poly_eq_two_term (p : Polynomial ℤ) :
+    p = Polynomial.C (p.coeff 0) + Polynomial.C (p.coeff 1) * Polynomial.X +
+      Polynomial.X ^ 2 * p.divX.divX := by
   have h1 : p = Polynomial.X * p.divX + Polynomial.C (p.coeff 0) :=
     (Polynomial.X_mul_divX_add p).symm
   have h2 : p.divX = Polynomial.X * p.divX.divX + Polynomial.C (p.coeff 1) := by
     simpa [Polynomial.coeff_divX] using (Polynomial.X_mul_divX_add p.divX).symm
   conv_lhs => rw [h1, h2]
-  simp [zmod2Action, mul_add, ← mul_assoc, ← sq, zmod2_ghost_sq, Int.cast_comm, add_comm]
+  ring
+
+private theorem zmod2Action_apply (p : Polynomial ℤ) :
+    zmod2Action p = (p.coeff 0 : ℤ) • 1 + (p.coeff 1 : ℤ) • zmod2Ghost := by
+  conv_lhs => rw [poly_eq_two_term p]
+  simp [zmod2Action, zmod2_ghost_sq, Int.cast_comm]
 
 private theorem zmod2_ghost_ker :
     RingHom.ker zmod2Action = Ideal.span {(2 : Polynomial ℤ), Polynomial.X ^ 2} := by
-  have ⟨h2M, h2δ, h2s0, hid0⟩ := zmod2_two_smul_id_eq_zero
+  have ⟨h2M, h2δ, _, _⟩ := zmod2_two_smul_id_eq_zero
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have hord0 :
-      addOrderOf (𝟙 ((singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ (ZMod 2)))) = 2 :=
-    addOrderOf_eq_prime (by simpa [← natCast_zsmul] using h2s0) hid0
   have hordδ : addOrderOf zmod2Ext1Map = 2 :=
     addOrderOf_eq_prime (by simpa [← natCast_zsmul] using h2δ) zmod2Ext1Map_ne_zero
   refine le_antisymm (fun p hp ↦ ?_) (Ideal.span_le.mpr ?_)
@@ -342,7 +356,7 @@ private theorem zmod2_ghost_ker :
           𝟙 ((singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ (ZMod 2))) = 0 := by
         simpa [End.intCast_asHom, Preadditive.comp_zsmul, Preadditive.zsmul_comp,
           Category.assoc] using hcomp
-      simpa [hord0] using (addOrderOf_dvd_iff_zsmul_eq_zero).mpr h0
+      exact zmod2_two_dvd_of_zsmul_id_eq_zero h0
     obtain ⟨k₁, hk₁⟩ : (2 : ℤ) ∣ p.coeff 1 := by
       have hcomp := congrArg (fun g : End zmod2M ↦ biprod.inr ≫ g.asHom ≫ biprod.fst) hp0
       have h1 : (p.coeff 1 : ℤ) • zmod2Ext1Map = 0 := by
@@ -351,11 +365,8 @@ private theorem zmod2_ghost_ker :
       simpa [hordδ] using (addOrderOf_dvd_iff_zsmul_eq_zero).mpr h1
     have hp_eq : p = Polynomial.C (2 * k₀) + Polynomial.C (2 * k₁) * Polynomial.X +
         Polynomial.X ^ 2 * p.divX.divX := by
-      have h1 := (Polynomial.X_mul_divX_add p).symm
-      have h2 : p.divX = Polynomial.X * p.divX.divX + Polynomial.C (p.coeff 1) := by
-        simpa [Polynomial.coeff_divX] using (Polynomial.X_mul_divX_add p.divX).symm
-      conv_lhs => rw [h1, h2, hk₀, hk₁]
-      ring
+      rw [← hk₀, ← hk₁]
+      exact poly_eq_two_term p
     have h2mem : (2 : Polynomial ℤ) ∈ Ideal.span {(2 : Polynomial ℤ), Polynomial.X ^ 2} :=
       Ideal.subset_span (by simp)
     have hX2mem : Polynomial.X ^ 2 ∈ Ideal.span {(2 : Polynomial ℤ), Polynomial.X ^ 2} :=
@@ -376,11 +387,7 @@ private theorem zmod2_ghost_ker :
 private theorem zmod2_action_ghost_ker :
     zmod2Ghost.IsGhost ∧
       actionGhostKer zmod2Action = Ideal.span {(2 : Polynomial ℤ), Polynomial.X} := by
-  have ⟨h2M, _, h2s0, hid0⟩ := zmod2_two_smul_id_eq_zero
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have hord0 :
-      addOrderOf (𝟙 ((singleFunctor (ModuleCat.{0} ℤ) 0).obj (ModuleCat.of ℤ (ZMod 2)))) = 2 :=
-    addOrderOf_eq_prime (by simpa [← natCast_zsmul] using h2s0) hid0
+  have ⟨h2M, _, _, _⟩ := zmod2_two_smul_id_eq_zero
   have hghostx : zmod2Ghost.IsGhost := End.isGhost_iff.mpr fun i ↦ by
     have hδi : (homologyFunctor (ModuleCat.{0} ℤ) i).map zmod2Ext1Map = 0 := by
       rcases lt_or_ge i 1 with hlt | hge'
@@ -399,8 +406,7 @@ private theorem zmod2_action_ghost_ker :
       rw [← homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE _ 0]
       simpa [zmod2Action_apply, hcohx, End.intCast_asHom, Preadditive.comp_zsmul,
         Preadditive.zsmul_comp, ← Functor.map_comp] using hcomp
-    obtain ⟨k₀, hk₀⟩ : (2 : ℤ) ∣ p.coeff 0 :=
-      by simpa [hord0] using (addOrderOf_dvd_iff_zsmul_eq_zero).mpr h0
+    obtain ⟨k₀, hk₀⟩ : (2 : ℤ) ∣ p.coeff 0 := zmod2_two_dvd_of_zsmul_id_eq_zero h0
     have hpX : p = Polynomial.C (2 * k₀) + Polynomial.X * p.divX := by
       rw [← hk₀, add_comm]
       exact (Polynomial.X_mul_divX_add p).symm
