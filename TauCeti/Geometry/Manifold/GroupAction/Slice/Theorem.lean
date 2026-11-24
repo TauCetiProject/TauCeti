@@ -66,8 +66,8 @@ variable {G : Type*} [Group G] {K : Subgroup G} {Z : Type*} [MulAction K Z]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [ChartedSpace F K] [LieGroup 𝓘(ℝ, F) ∞ K] [ContMDiffSMul 𝓘(ℝ, F) I ∞ K G]
   [ContMDiffSMul 𝓘(ℝ, F) IZ ∞ K Z]
-  {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [FiniteDimensional ℝ EM]
-  [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM} {M : Type*} [TopologicalSpace M]
+  {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
+  {IM : ModelWithCorners ℝ EM HM} {M : Type*} [TopologicalSpace M]
   [ChartedSpace HM M] [IsManifold IM ∞ M] [MulAction G M] [ContMDiffSMul I IM ∞ G M]
   {ι : Z →ₑ[((↑) : K → G)] M}
 
@@ -83,16 +83,20 @@ theorem isLocalDiffeomorphAt_liftRightTranslation (hι : ContMDiff IZ IM ∞ ι)
     IsLocalDiffeomorphAt 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM ∞
       (liftRightTranslation ι) (mk K (K.toRightTranslation g) z) := by
   let _ := rightTranslationChartedSpace K Z I IZ F
+  -- `M` is finite-dimensional, as the onto image of the tangent space `E × EZ` of `G × Z`.
+  have : FiniteDimensional ℝ (TangentSpace (I.prod IZ) (g, z)) :=
+    inferInstanceAs (FiniteDimensional ℝ (E × EZ))
+  have : FiniteDimensional ℝ EM := Module.Finite.of_surjective _ hsurj
   have := isManifold_rightTranslation (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)
   have hπ := isSubmersion_quotientMk_rightTranslation (K := K) (Z := Z) (I := I) (IZ := IZ)
     (F := F)
   have hΦ := contMDiff_liftRightTranslation (I := I) (F := F) hι
-  set π := Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z))
-  have hcomp : liftRightTranslation ι ∘ π = fun p : K.RightTranslation × Z ↦
-      K.toRightTranslation.symm p.1 • ι p.2 :=
+  have hcomp :
+      liftRightTranslation ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
+        fun p : K.RightTranslation × Z ↦ K.toRightTranslation.symm p.1 • ι p.2 :=
     funext fun p ↦ by
-      change liftRightTranslation ι (Quotient.mk _ p) = _
-      rw [quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
+      rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
+  set π := Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z))
   set p₀ : K.RightTranslation × Z := (K.toRightTranslation g, z)
   have hd := mfderiv_comp p₀ (hΦ.mdifferentiableAt (by simp))
     (hπ.contMDiff.mdifferentiableAt (by simp) : MDifferentiableAt _ _ π p₀)
@@ -101,10 +105,13 @@ theorem isLocalDiffeomorphAt_liftRightTranslation (hι : ContMDiff IZ IM ∞ ι)
   -- projection is.
   have hs : Surjective (mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM
       (liftRightTranslation ι) (π p₀)) := by
+    -- `K.RightTranslation` is a type synonym of `G` with the same charts, and
+    -- `K.toRightTranslation` is `Equiv.refl G`, so this is `hsurj` up to definitional unfolding.
     have hs' : Surjective (mfderiv (I.prod IZ) IM
         (fun p : K.RightTranslation × Z ↦ K.toRightTranslation.symm p.1 • ι p.2) p₀) := hsurj
     rw [hd] at hs'
-    exact fun w ↦ ⟨_, (hs' w).choose_spec⟩
+    exact Surjective.of_comp (g := mfderiv (I.prod IZ)
+      𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) π p₀) hs'
   have hdim' : finrank ℝ (ProperSMul.QuotientModelSpace F (E × EZ)) = finrank ℝ EM := by
     rw [ProperSMul.finrank_quotientModelSpace, finrank_prod]
     omega
@@ -120,17 +127,17 @@ whose differential at `z₀` is injective with range a complement of the orbit t
 `𝔤 · ι z₀`, and let `dim K = dim 𝔤_{ι z₀}`, as for the stabilizer `K = G_{ι z₀}` with its
 closed-subgroup structure. Then `[g, z] ↦ g • ι z` is a local diffeomorphism from `G ×_K Z` at
 `[1, z₀]`. -/
-theorem isLocalDiffeomorphAt_liftRightTranslation_one (hι : ContMDiff IZ IM ∞ ι) {z₀ : Z}
-    (hinj : Injective (mfderiv IZ IM ι z₀))
+theorem isLocalDiffeomorphAt_liftRightTranslation_one [CompleteSpace EM] (hι : ContMDiff IZ IM ∞ ι)
+    {z₀ : Z} (hinj : Injective (mfderiv IZ IM ι z₀))
     (hcompl : IsCompl ((InfinitesimalAction.fundamental I G IM M).orbitTangent (ι z₀))
       (LinearMap.range (mfderiv IZ IM ι z₀).toLinearMap))
     (hF : finrank ℝ F = finrank ℝ ((InfinitesimalAction.fundamental I G IM M).isotropy (ι z₀))) :
     letI := rightTranslationChartedSpace K Z I IZ F
     IsLocalDiffeomorphAt 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM ∞
       (liftRightTranslation ι) (mk K (K.toRightTranslation 1) z₀) := by
-  refine isLocalDiffeomorphAt_liftRightTranslation (g := 1) (z := z₀) hι
-    (fun (w : TangentSpace IM (ι z₀)) ↦ ?_) ?_
-  · -- Every tangent vector at `ι z₀` is `ξ_M(ι z₀) + dι v`, the differential at `(1, z₀)`.
+  -- Every tangent vector at `ι z₀` is `ξ_M(ι z₀) + dι v`, the differential at `(1, z₀)`.
+  have hsurj : Surjective (mfderiv (I.prod IZ) IM (fun p : G × Z ↦ p.1 • ι p.2) (1, z₀)) := by
+    intro (w : TangentSpace IM (ι z₀))
     have hw : w ∈ (InfinitesimalAction.fundamental I G IM M).orbitTangent (ι z₀) ⊔
         LinearMap.range (mfderiv IZ IM ι z₀).toLinearMap := by
       rw [hcompl.sup_eq_top]
@@ -139,15 +146,19 @@ theorem isLocalDiffeomorphAt_liftRightTranslation_one (hι : ContMDiff IZ IM ∞
     obtain ⟨ξ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ _).1 ha
     refine ⟨(ξ, v), ?_⟩
     rw [mfderiv_smul_slice_apply (hι.mdifferentiableAt (by simp)), ← hab,
-      InfinitesimalAction.fundamental_apply]
-    rfl
-  · have h₁ := Submodule.finrank_add_eq_of_isCompl hcompl
-    have h₂ := (InfinitesimalAction.fundamental I G IM M).finrank_orbitTangent_add_finrank_isotropy
-      (ι z₀)
-    have h₃ := LinearMap.finrank_range_of_inj hinj
-    have h₄ : finrank ℝ (TangentSpace IM (ι z₀)) = finrank ℝ EM := rfl
-    have h₅ : finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E := rfl
-    have h₆ : finrank ℝ (TangentSpace IZ z₀) = finrank ℝ EZ := rfl
-    omega
+      InfinitesimalAction.fundamental_apply, ContinuousLinearMap.coe_coe]
+  -- `M` is finite-dimensional, as the onto image of the tangent space `E × EZ` of `G × Z`.
+  have : FiniteDimensional ℝ (TangentSpace (I.prod IZ) ((1 : G), z₀)) :=
+    inferInstanceAs (FiniteDimensional ℝ (E × EZ))
+  have : FiniteDimensional ℝ (TangentSpace IM (ι z₀)) := Module.Finite.of_surjective _ hsurj
+  refine isLocalDiffeomorphAt_liftRightTranslation hι hsurj ?_
+  have h₁ := Submodule.finrank_add_eq_of_isCompl hcompl
+  have h₂ := (InfinitesimalAction.fundamental I G IM M).finrank_orbitTangent_add_finrank_isotropy
+    (ι z₀)
+  have h₃ := LinearMap.finrank_range_of_inj hinj
+  have h₄ : finrank ℝ (TangentSpace IM (ι z₀)) = finrank ℝ EM := rfl
+  have h₅ : finrank ℝ (GroupLieAlgebra I G) = finrank ℝ E := rfl
+  have h₆ : finrank ℝ (TangentSpace IZ z₀) = finrank ℝ EZ := rfl
+  omega
 
 end TauCeti.BalancedProduct
