@@ -27,7 +27,7 @@ If `χ` is `C^(n+1)` for some `n ≠ 0`, then `B` is `C^n` on the strip
 (`TauCeti.StrictConvexBilliardTable.nextCollisionPartialDiffeomorph`). One derivative is lost
 because the tangential components are inner products with the derivative `χ'`. That `B` and the
 billiard map `β` on `AddCircle L × (-1, 1)` are homeomorphisms needs no smoothness at all; see
-`TauCeti.Dynamics.Billiard.Continuous`.
+`TauCeti.Dynamics.Billiard.Homeomorph`.
 
 The proof is the implicit function theorem for the generating function
 `S(s, t) = -‖χ(t) - χ(s)‖` (`TauCeti.StrictConvexBilliardTable.generatingFunction`). On the domain

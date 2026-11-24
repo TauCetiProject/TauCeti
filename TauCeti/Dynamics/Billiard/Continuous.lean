@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Billiard.Inverse
-public import Mathlib.Topology.Algebra.Group.Quotient
+public import TauCeti.Dynamics.Billiard.NextCollision
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
@@ -15,17 +14,15 @@ import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.Deriv.Slope
 
 /-!
-# The billiard map is a homeomorphism
+# The next-collision map is continuous
 
 Let `χ` be an arclength parametrization of the boundary of a strictly convex billiard table
 (`TauCeti.StrictConvexBilliardTable`), with period `L`, and let `B(s, v) = (t, w)` be its
 next-collision map on the strip `ℝ × (-1, 1)`. This file proves that the unit tangent `χ'` is
 continuous (`TauCeti.StrictConvexBilliardTable.continuous_deriv`) and that `B` is continuous on the
-strip (`TauCeti.StrictConvexBilliardTable.continuousOn_nextCollision`). Its inverse is
-`τ⁻¹ ∘ ι ∘ B ∘ ι`, with `ι(s, v) = (s, -v)` and `τ(s, v) = (s + L, v)`, so `B` is a homeomorphism
-of the strip (`TauCeti.StrictConvexBilliardTable.nextCollisionHomeomorph`), and the billiard map `β`
-it induces on the space of collision states `AddCircle L × (-1, 1)` is a homeomorphism
-(`TauCeti.StrictConvexBilliardTable.billiardHomeomorph`).
+strip (`TauCeti.StrictConvexBilliardTable.continuousOn_nextCollision`). That `B` and the billiard
+map it induces on `AddCircle L × (-1, 1)` are homeomorphisms is proved in
+`TauCeti.Dynamics.Billiard.Homeomorph`.
 
 The unit tangent is continuous because strict convexity determines it: a cluster value `u` of `χ'`
 at `s` keeps the whole table weakly to its left, so `t ↦ ω(u, χ(t) - χ(s))` has a minimum at `s`,
@@ -50,12 +47,6 @@ put the next collision parameter of `y` in `(a, b)`. No second derivative of `χ
   `TauCeti.StrictConvexBilliardTable.continuousAt_nextTangential`,
   `TauCeti.StrictConvexBilliardTable.continuousOn_nextCollision`: the next-collision map is
   continuous on the strip.
-* `TauCeti.StrictConvexBilliardTable.continuous_nextCollisionEquiv`,
-  `TauCeti.StrictConvexBilliardTable.continuous_nextCollisionEquiv_symm`,
-  `TauCeti.StrictConvexBilliardTable.nextCollisionHomeomorph`: the next-collision map is a
-  homeomorphism of the strip.
-* `TauCeti.StrictConvexBilliardTable.billiardHomeomorph`: the billiard map is a homeomorphism of
-  `AddCircle L × (-1, 1)`.
 
 ## References
 
@@ -198,91 +189,6 @@ theorem continuousOn_nextCollision : ContinuousOn χ.nextCollision (univ ×ˢ Io
     funext χ.nextCollision_apply]
   exact ((χ.continuousAt_nextParam hv).prodMk
     (χ.continuousAt_nextTangential hv)).continuousWithinAt
-
-/-! ### The next-collision map and the billiard map are homeomorphisms -/
-
-/-- The next-collision map is continuous as a bijection of the strip. -/
-theorem continuous_nextCollisionEquiv : Continuous χ.nextCollisionEquiv := by
-  have hc : Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦ χ.nextCollision (x.1, x.2) :=
-    χ.continuousOn_nextCollision.comp_continuous
-      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
-      fun x ↦ ⟨trivial, x.2.property⟩
-  convert (continuous_fst.comp hc).prodMk ((continuous_snd.comp hc).subtype_mk
-    fun x ↦ χ.nextCollision_snd_mem_Ioo x.2.property) using 1
-  funext x
-  ext <;> simp
-
-/-- The time reversal `v ↦ -v` of tangential components is continuous on `(-1, 1)`. -/
-private theorem continuous_neg_Ioo :
-    Continuous fun v : Ioo (-1 : ℝ) 1 ↦
-      (⟨-v, by linarith [v.property.2], by linarith [v.property.1]⟩ : Ioo (-1 : ℝ) 1) :=
-  continuous_subtypeVal.neg.subtype_mk _
-
-/-- The inverse `τ⁻¹ ∘ ι ∘ B ∘ ι` of the next-collision map is continuous. -/
-theorem continuous_nextCollisionEquiv_symm : Continuous χ.nextCollisionEquiv.symm := by
-  convert ((continuous_fst.sub (continuous_const (y := χ.period))).prodMk
-    (continuous_neg_Ioo.comp continuous_snd)).comp
-      (χ.continuous_nextCollisionEquiv.comp
-        (continuous_fst.prodMk (continuous_neg_Ioo.comp continuous_snd))) using 1
-  funext x
-  ext <;> simp
-
-/-- The next-collision map is a homeomorphism of the strip `ℝ × (-1, 1)`. -/
-def nextCollisionHomeomorph : ℝ × Ioo (-1 : ℝ) 1 ≃ₜ ℝ × Ioo (-1 : ℝ) 1 where
-  toEquiv := χ.nextCollisionEquiv
-  continuous_toFun := χ.continuous_nextCollisionEquiv
-  continuous_invFun := χ.continuous_nextCollisionEquiv_symm
-
-@[simp]
-theorem nextCollisionHomeomorph_toEquiv :
-    χ.nextCollisionHomeomorph.toEquiv = χ.nextCollisionEquiv := by
-  rfl
-
-@[simp]
-theorem coe_nextCollisionHomeomorph : ⇑χ.nextCollisionHomeomorph = χ.nextCollisionEquiv := by
-  rfl
-
-@[simp]
-theorem coe_nextCollisionHomeomorph_symm :
-    ⇑χ.nextCollisionHomeomorph.symm = χ.nextCollisionEquiv.symm := by
-  rfl
-
-/-- The billiard map of `AddCircle L × (-1, 1)` is continuous. -/
-theorem continuous_billiardMap : Continuous χ.billiardMap := by
-  have hq : IsOpenQuotientMap
-      (Prod.map ((↑) : ℝ → AddCircle χ.period) (id : Ioo (-1 : ℝ) 1 → _)) :=
-    QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
-  rw [← hq.continuous_comp_iff]
-  convert hq.continuous.comp χ.continuous_nextCollisionEquiv using 1
-  ext ⟨s, v⟩ <;> simp
-
-/-- The inverse `ι ∘ β ∘ ι` of the billiard map is continuous. -/
-theorem continuous_billiardMap_symm : Continuous χ.billiardMap.symm := by
-  convert (continuous_id.prodMap continuous_neg_Ioo).comp
-    (χ.continuous_billiardMap.comp (continuous_id.prodMap continuous_neg_Ioo)) using 1
-  funext ⟨θ, v⟩
-  induction θ using QuotientAddGroup.induction_on with | H s => ?_
-  ext <;> simp
-
-/-- The billiard map is a homeomorphism of the space of collision states
-`AddCircle L × (-1, 1)`. -/
-def billiardHomeomorph :
-    AddCircle χ.period × Ioo (-1 : ℝ) 1 ≃ₜ AddCircle χ.period × Ioo (-1 : ℝ) 1 where
-  toEquiv := χ.billiardMap
-  continuous_toFun := χ.continuous_billiardMap
-  continuous_invFun := χ.continuous_billiardMap_symm
-
-@[simp]
-theorem billiardHomeomorph_toEquiv : χ.billiardHomeomorph.toEquiv = χ.billiardMap := by
-  rfl
-
-@[simp]
-theorem coe_billiardHomeomorph : ⇑χ.billiardHomeomorph = χ.billiardMap := by
-  rfl
-
-@[simp]
-theorem coe_billiardHomeomorph_symm : ⇑χ.billiardHomeomorph.symm = χ.billiardMap.symm := by
-  rfl
 
 end StrictConvexBilliardTable
 
