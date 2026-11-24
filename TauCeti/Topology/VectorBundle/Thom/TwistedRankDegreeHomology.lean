@@ -82,8 +82,9 @@ finite union of trivializing open sets
 * `TauCeti.thomPairTwistedHomology_hom_ext`: over a compact base, morphisms out of
   `Hᵣ(E, E₀; π^*o(E))` are determined by their values on the fibre classes.
 * `TauCeti.fiberThomPairSignIso`: the trivialization of `π^*o(E)` on the fibre pair over `b` by an
-  orientation of `E_b`, which is the trivialization along the constant lift to the orientation
-  cover (`TauCeti.fiberThomPairSignIso_hom`).
+  orientation of `E_b`. Its components evaluate at that orientation
+  (`TauCeti.fiberThomPairSignIso_hom_app`), so it is the trivialization along the constant lift to
+  the orientation cover (`TauCeti.fiberThomPairSignIso_hom`).
 * `TauCeti.thomPairSignFiberClass_eq_twistedHomologyMap`: the fibre class over `b` is the image of
   the point class of the fibre pair under the fibre inclusion `(E_b, E_b ∖ {0}) ⟶ (E, E₀)`, with
   the coefficients trivialized by `TauCeti.fiberThomPairSignIso`. Through it the Kronecker pairing
@@ -731,10 +732,6 @@ space, is that of the Thom pair `(E, E₀)`. -/
 private def overUnivIso (n : ℕ) :
     (thomPairOver F E univ).twistedHomology (thomPairOverSignLocalSystem F E R hι univ) n ≅
       (thomPair F E).twistedHomology (thomPairSignLocalSystem F E R hι) n :=
-  have hmap : (ContinuousMap.subtypeVal (π F E ⁻¹' univ) :
-      C((thomPairOver F E univ).fst, TotalSpace F E)) =
-        (TopPair.Hom.fst (thomPairOverUnivIso F E).hom).hom :=
-    ContinuousMap.ext fun v ↦ (thomPairOverUnivIso_hom_fst_apply F E v).symm
   have hiso : IsIso (TopPair.twistedHomologyMap (thomPairOverUnivIso F E).hom
       (thomPairSignLocalSystem F E R hι) n) :=
     (thomPairSignLocalSystem F E R hι).isIso_relativeTwistedHomologyMap_of_homotopyInverse
@@ -744,7 +741,7 @@ private def overUnivIso (n : ℕ) :
   (HomologicalComplex.homologyFunctor _ _ n).mapIso
       ((thomPairOver F E univ).twistedChainComplexCoefficientIso
         (eqToIso (congrArg (fun g ↦ (LocalCoefficientSystem.pullback g).obj
-          (thomPairSignLocalSystem F E R hι)) hmap))) ≪≫
+          (thomPairSignLocalSystem F E R hι)) (thomPairOverUnivIso_hom_fst_eq F E).symm))) ≪≫
     @asIso _ _ _ _ (TopPair.twistedHomologyMap (thomPairOverUnivIso F E).hom
       (thomPairSignLocalSystem F E R hι) n) hiso
 
@@ -868,15 +865,6 @@ end FiberClass
 
 section FiberInclusion
 
-omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E] in
-/-- The inclusion of the part of the total space over the whole base is the inclusion of the
-subtype. -/
-private theorem thomPairOverUnivIso_hom_fst_eq :
-    (TopPair.Hom.fst (thomPairOverUnivIso F E).hom).hom =
-      ContinuousMap.subtypeVal (π F E ⁻¹' univ) :=
-  ContinuousMap.ext fun v ↦ thomPairOverUnivIso_hom_fst_apply F E v
-
 variable (F E R) in
 /-- The orientation system `π^*o(E)` pulled back to the fibre pair `(E_b, E_b ∖ {0})` along the
 fibre inclusion `(E_b, E_b ∖ {0}) ⟶ (E, E₀)`, trivialized by evaluating at an orientation `o` of
@@ -896,8 +884,52 @@ def fiberThomPairSignIso (b : B) (o : Orientation ℝ (E b) ι) :
         (TopPair.Hom.fst (fiberThomPairOverMap F E (mem_univ b))).hom).mapIso
       (eqToIso (congrArg (fun g ↦ (LocalCoefficientSystem.pullback
         (X := (thomPairOver F E univ).fst) g).obj (thomPairSignLocalSystem F E R hι))
-          thomPairOverUnivIso_hom_fst_eq)) ≪≫
+          (thomPairOverUnivIso_hom_fst_eq F E))) ≪≫
     fiberSignIso hι (mem_univ b) o
+
+omit [FiniteDimensional ℝ F] in
+/-- The components of `fiberThomPairSignIso` at `o` are evaluation at the orientation `o` of the
+fibre `E_b` over the projection `b` of each point. -/
+theorem fiberThomPairSignIso_hom_app (b : B) (o : Orientation ℝ (E b) ι)
+    (x : FundamentalGroupoid (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).fst) :
+    (fiberThomPairSignIso F E R hι b o).hom.app x =
+      ((LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairMap F E b)).hom).map
+          (eqToHom (thomPairSignLocalSystem_def hι))).app x ≫
+        (VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩
+          (congrArg TotalSpace.proj
+            (fiberThomPairMap_fst_apply F E b x.as)).symm).toModuleIso.hom := by
+  rw [fiberThomPairSignIso]
+  simp only [Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app]
+  -- `erw`: the components live over the fibre pair, whose coefficient systems are pull-backs of
+  -- `thomPairSignLocalSystem` only after unfolding; every component except the evaluation at `o`
+  -- is an identity or a transport between fibres of `o(E)` over equal points.
+  erw [Iso.trans_hom, NatTrans.comp_app, TopPair.fstPullbackCompIso_hom_app, Functor.mapIso_hom,
+    eqToIso.hom, eqToHom_map, eqToHom_app, eqToHom_map, eqToHom_app, Category.id_comp,
+    eqToHom_trans_assoc, fiberSignIso_hom_app]
+  -- Both sides evaluate at the orientation `o`, after transporting along `π (j x) = b`.
+  refine ModuleCat.hom_ext (LinearMap.ext fun f ↦ ?_)
+  refine (VectorBundleOrientationCover.signLocalSystemFiberEquiv_apply (R := R) hι o _).trans ?_
+  refine Eq.trans ?_ (VectorBundleOrientationCover.liftFiberEquiv_apply hι _ _ _).symm
+  exact VectorBundleOrientationCover.signLocalSystemObjEquiv_eqToHom_apply (R := R) hι
+    (congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b x.as)) f ⟨b, o⟩ _ rfl
+
+omit [FiniteDimensional ℝ F] in
+/-- The inverse of `fiberThomPairSignIso` is the inverse of the trivialization `fiberSignIso` of the
+fibre over `b` as a fibre of the pair over the whole base, followed by the transports between the
+pull-backs along the two descriptions of the fibre inclusion. -/
+private theorem fiberThomPairSignIso_inv (b : B) (o : Orientation ℝ (E b) ι) :
+    (fiberThomPairSignIso F E R hι b o).inv =
+      (fiberSignIso hι (mem_univ b) o).inv ≫
+        (LocalCoefficientSystem.pullback
+            (TopPair.Hom.fst (fiberThomPairOverMap F E (mem_univ b))).hom).map
+          (eqToHom (congrArg (fun g : C((thomPairOver F E univ).fst, (thomPair F E).fst) ↦
+            (LocalCoefficientSystem.pullback g).obj (thomPairSignLocalSystem F E R hι))
+              (thomPairOverUnivIso_hom_fst_eq F E).symm)) ≫
+        (TopPair.fstPullbackCompIso _ _ _).inv ≫
+        eqToHom (congrArg (fun g : _ ⟶ (thomPair F E).fst ↦
+          (LocalCoefficientSystem.pullback g.hom).obj (thomPairSignLocalSystem F E R hι))
+          (congrArg TopPair.Hom.fst (fiberThomPairOverMap_comp_thomPairOverUnivIso_hom F E b))) :=
+  (rfl)
 
 omit [FiniteDimensional ℝ F] in
 /-- The identification `overUnivIso` is a change of coefficients followed by the map induced by the
@@ -905,9 +937,9 @@ inclusion of the pair over the whole base. -/
 private theorem overUnivIso_hom (n : ℕ) :
     (overUnivIso (R := R) hι n).hom =
       (thomPairOver F E univ).twistedHomologyCoefficientMap
-        (eqToHom (congrArg (fun g ↦ (LocalCoefficientSystem.pullback g).obj
-          (thomPairSignLocalSystem F E R hι))
-          (thomPairOverUnivIso_hom_fst_eq (F := F) (E := E)).symm))
+        (eqToHom (congrArg (fun g : C((thomPairOver F E univ).fst, (thomPair F E).fst) ↦
+          (LocalCoefficientSystem.pullback g).obj (thomPairSignLocalSystem F E R hι))
+          (thomPairOverUnivIso_hom_fst_eq F E).symm))
         n ≫
       TopPair.twistedHomologyMap (thomPairOverUnivIso F E).hom
         (thomPairSignLocalSystem F E R hι) n := by
@@ -958,13 +990,11 @@ theorem thomPairSignFiberClass_eq_twistedHomologyMap (e : Trivialization F (π F
   erw [TopPair.twistedHomologyMap_naturality_assoc]
   simp only [← TopPair.twistedHomologyCoefficientMap_comp_assoc]
   congr 2
-  rw [fiberThomPairSignIso]
-  simp only [Iso.trans_inv, eqToIso.inv, Category.assoc, eqToHom_trans_assoc,
-    eqToHom_refl, Category.id_comp, Iso.inv_hom_id, Category.comp_id]
-  -- The remaining `Iso.trans_inv` sits under the coefficient systems of two equal pair maps, where
-  -- `rw` does not see it; both sides then agree up to unfolding `eqToIso`.
-  refine Eq.trans ?_ (Iso.trans_inv _ _).symm
-  rfl
+  rw [fiberThomPairSignIso_inv]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Iso.inv_hom_id,
+    Category.comp_id]
+  -- The two transports are `eqToHom`s between the same pull-backs.
+  congr 1
 
 end FiberInclusion
 
@@ -993,22 +1023,17 @@ theorem fiberThomPairSignIso_hom (b : B) (o : Orientation ℝ (E b) ι) :
           (ContinuousMap.const _ ⟨b, o⟩)
           (fun x ↦ (congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b x)).symm)).hom := by
   refine NatTrans.ext (funext fun x ↦ ?_)
-  rw [fiberThomPairSignIso]
-  simp only [Iso.trans_hom, NatTrans.comp_app, eqToIso.hom, eqToHom_app]
-  -- `erw`: the components live over the fibre pair, whose coefficient systems are pull-backs of
-  -- `thomPairSignLocalSystem` only after unfolding; every component except the two evaluations is
-  -- an identity or a transport between fibres of `o(E)` over equal points.
-  erw [Iso.trans_hom, NatTrans.comp_app, TopPair.fstPullbackCompIso_hom_app, NatTrans.comp_app,
-    Iso.app_inv, LocalCoefficientSystem.pullbackCompIso_inv_app_app]
-  erw [Functor.mapIso_hom, eqToIso.hom, eqToHom_map, eqToHom_app, eqToHom_map, eqToHom_app]
-  erw [Category.id_comp, Category.id_comp, eqToHom_trans_assoc, fiberSignIso_hom_app]
-  -- Both sides evaluate at the orientation `o`, after transporting along `π (j x) = b`.
+  simp only [NatTrans.comp_app, fiberThomPairSignIso_hom_app]
+  congr 1
+  -- `erw`: the composite is one of local systems on the fibre pair, which is a functor category
+  -- only after unfolding `LocalCoefficientSystem`.
+  erw [NatTrans.comp_app, Iso.app_inv, LocalCoefficientSystem.pullbackCompIso_inv_app_app,
+    Category.id_comp]
+  -- Both sides evaluate at the orientation `o`.
   refine ModuleCat.hom_ext (LinearMap.ext fun f ↦ ?_)
-  refine (VectorBundleOrientationCover.signLocalSystemFiberEquiv_apply (R := R) hι o _).trans ?_
   refine Eq.trans ?_ (VectorBundleOrientationCover.pullbackSignLocalSystemIsoOfLift_hom_app_apply
     (R := R) (F := F) (E := E) hι _ _ _ x.as _).symm
-  exact VectorBundleOrientationCover.signLocalSystemObjEquiv_eqToHom_apply (R := R) hι
-    (congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E b x.as)) f ⟨b, o⟩ _ rfl
+  exact VectorBundleOrientationCover.liftFiberEquiv_apply hι _ _ f
 
 end FiberInclusionLift
 
