@@ -114,18 +114,18 @@ theorem mem_residueChars_iff_exists_charP :
     p ∈ X.residueChars ↔ p.Prime ∧ ∃ x : X, CharP (X.residueField x) p := by
   simp only [mem_residueChars, ringChar.eq_iff]
 
-/-- A point lies in the zero locus of a global section `a` exactly when `a` vanishes in its
-residue field. -/
-theorem mem_zeroLocus_singleton_iff (a : Γ(X, ⊤)) (x : X) :
-    x ∈ X.zeroLocus {a} ↔ X.evaluation ⊤ x trivial a = 0 := by
+/-- A point `x ∈ U` lies in the zero locus of a section `a` over `U` exactly when `a` vanishes in
+its residue field. -/
+theorem mem_zeroLocus_singleton_iff {U : X.Opens} (a : Γ(X, U)) {x : X} (hx : x ∈ U) :
+    x ∈ X.zeroLocus {a} ↔ X.evaluation U x hx a = 0 := by
   rw [zeroLocus_singleton, Set.mem_compl_iff, SetLike.mem_coe,
-    ← X.evaluation_ne_zero_iff_mem_basicOpen x trivial, not_not]
+    ← X.evaluation_ne_zero_iff_mem_basicOpen x hx, not_not]
 
-/-- A point lies in the zero locus of the global function `n` exactly when `n` vanishes in its
-residue field. -/
-theorem mem_zeroLocus_natCast_iff (n : ℕ) (x : X) :
-    x ∈ X.zeroLocus {(n : Γ(X, ⊤))} ↔ (n : X.residueField x) = 0 := by
-  rw [mem_zeroLocus_singleton_iff, map_natCast]
+/-- A point `x ∈ U` lies in the zero locus of the function `n` on `U` exactly when `n` vanishes in
+its residue field. -/
+theorem mem_zeroLocus_natCast_iff {U : X.Opens} (n : ℕ) {x : X} (hx : x ∈ U) :
+    x ∈ X.zeroLocus {(n : Γ(X, U))} ↔ (n : X.residueField x) = 0 := by
+  rw [mem_zeroLocus_singleton_iff _ hx, map_natCast]
 
 /-- A prime `p` is a residue characteristic exactly when it vanishes in some residue field. -/
 theorem mem_residueChars_iff_exists_natCast_eq_zero :
@@ -220,9 +220,9 @@ theorem Hom.finite_residueChars_diff {S : Scheme.{u}} (f : X ⟶ S) [IsNoetheria
   rintro p ⟨⟨hp, s, hs⟩, hpX⟩
   -- Take a maximal point `w` of the zero locus `V(p)` of `p`, a generization of `s`.
   have hsV : s ∈ S.zeroLocus {(p : Γ(S, ⊤))} := by
-    rw [mem_zeroLocus_natCast_iff, ← hs, ringChar.Nat.cast_ringChar]
+    rw [mem_zeroLocus_natCast_iff _ trivial, ← hs, ringChar.Nat.cast_ringChar]
   obtain ⟨w, hw, -⟩ := TauCeti.AlgebraicGeometry.Scheme.exists_maximal_mem_zeroLocus_specializes hsV
-  have hwp : (p : S.residueField w) = 0 := (mem_zeroLocus_natCast_iff p w).mp hw.prop
+  have hwp : (p : S.residueField w) = 0 := (mem_zeroLocus_natCast_iff p trivial).mp hw.prop
   -- The point `w` is not in the image of `f`, since `p` is not a residue characteristic of `X`.
   have hwZ : w ∈ Z := by
     rintro hwU
