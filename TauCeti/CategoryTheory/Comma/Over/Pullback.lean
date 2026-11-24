@@ -37,6 +37,9 @@ It also establishes faithfulness and epimorphism preservation for the base-chang
 * `CategoryTheory.Over.preservesEpimorphisms_star`: `Over.star X` preserves epimorphisms whenever
   `X ⨯ -` does (in particular when epimorphisms in `C` are stable under base change).
 
+For a monomorphism `g`, the unit of `Over.map g ⊣ Over.pullback g` is an isomorphism
+(`CategoryTheory.Over.isIso_mapPullbackAdj_unit_app`).
+
 Finally, `CategoryTheory.IsPullback.overPullbackCompMapIso` is the Beck–Chevalley isomorphism of a
 pullback square `fst ≫ f = snd ≫ g`: `Over.pullback fst ⋙ Over.map snd ≅ Over.map f ⋙
 Over.pullback g`.
@@ -117,6 +120,19 @@ instance preservesEpimorphisms_pullback {X Y : C} (f : X ⟶ Y) [HasPullbacksAlo
     (forget X).epi_of_epi_map <|
       MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
         (isPullback_pullback_map_left f k).flip ‹_›
+
+/-- For a monomorphism `g`, the unit `A ⟶ g^*(g_! A)` of `Over.map g ⊣ Over.pullback g` is an
+isomorphism: the square with sides `𝟙 A`, `A ⟶ X`, `A ⟶ Y` and `g` is a pullback. -/
+instance isIso_mapPullbackAdj_unit_app {X Y : C} (g : X ⟶ Y) [HasPullbacksAlong g] [Mono g]
+    (A : Over X) : IsIso ((mapPullbackAdj g).unit.app A) := by
+  have h : IsPullback (𝟙 A.left) A.hom (A.hom ≫ g) g :=
+    IsPullback.of_horiz_isIso_mono ⟨by simp⟩
+  have hl : ((mapPullbackAdj g).unit.app A).left = h.isoPullback.hom := by
+    apply pullback.hom_ext <;> simp
+  have : IsIso ((forget X).map ((mapPullbackAdj g).unit.app A)) := by
+    rw [forget_map, hl]
+    infer_instance
+  exact isIso_of_reflects_iso _ (forget X)
 
 section HasBinaryProducts
 

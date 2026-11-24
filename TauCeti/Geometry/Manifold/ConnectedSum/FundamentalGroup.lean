@@ -64,7 +64,7 @@ private theorem range_neckMap (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedd
     exact ⟨⟨_, rfl⟩, ⟨⟨_, apply_inversion_mem_puncture h₂.injective v.property⟩,
       (inl_eq_inr (v : E) _ _).symm⟩⟩
   · rintro ⟨⟨x, rfl⟩, y, hy⟩
-    obtain ⟨v, hv, hvx, -⟩ := (inl_eq_inr_iff h₁.injective h₂.injective).1 hy.symm
+    obtain ⟨v, hv, hvx, -⟩ := (inl_eq_inr_iff h₁.injective).1 hy.symm
     exact ⟨⟨v, hv⟩, congrArg (inl e₁ e₂) (Subtype.ext hvx)⟩
 
 /-- The overlap of the two punctured summands is simply connected in dimension at least three.

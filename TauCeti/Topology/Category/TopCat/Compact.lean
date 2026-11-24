@@ -18,8 +18,9 @@ This file shows that compact subsets of such a colimit cannot spread over infini
 and that the final topology is compactly generated as soon as the stages are.
 
 * In the colimit of any diagram of `T1` spaces, a set whose preimage in every stage is finite is
-  closed (`TauCeti.TopCat.isClosed_of_forall_finite_preimage`); since the same holds for all of
-  its subsets, it is discrete (`TauCeti.TopCat.isDiscrete_of_forall_finite_preimage`).
+  closed (`CategoryTheory.Limits.IsColimit.isClosed_of_forall_finite_preimage`), and since the
+  same holds for all of its subsets, it is discrete
+  (`TauCeti.TopCat.isDiscrete_of_forall_finite_preimage`).
 * For a sequence of `T1` spaces along injective maps, every compact subset of the colimit lies in
   the image of one stage (`TauCeti.TopCat.exists_subset_range_ι_of_isCompact`). If the maps from
   the stages to the colimit are embeddings, every continuous map from a compact space into the
@@ -58,17 +59,11 @@ section Colimit
 variable {J : Type w} [Category.{w'} J] {F : J ⥤ TopCat.{u}} {c : Cocone F}
 
 /-- In the colimit of a diagram of `T1` spaces in `TopCat`, a set meeting every stage in
-finitely many points is closed. -/
-theorem isClosed_of_forall_finite_preimage [∀ j, T1Space (F.obj j)] (hc : IsColimit c)
-    {S : Set c.pt} (hS : ∀ j, (c.ι.app j ⁻¹' S).Finite) : IsClosed S :=
-  (TopCat.isClosed_iff_of_isColimit _ hc S).2 fun j ↦ (hS j).isClosed
-
-/-- In the colimit of a diagram of `T1` spaces in `TopCat`, a set meeting every stage in
 finitely many points is discrete. -/
 theorem isDiscrete_of_forall_finite_preimage [∀ j, T1Space (F.obj j)] (hc : IsColimit c)
     {S : Set c.pt} (hS : ∀ j, (c.ι.app j ⁻¹' S).Finite) : IsDiscrete S :=
   isDiscrete_iff_forall_mem_exists_isClosed.2 fun t ht ↦
-    ⟨t, isClosed_of_forall_finite_preimage hc fun j ↦ (hS j).subset (preimage_mono ht),
+    ⟨t, hc.isClosed_of_forall_finite_preimage fun j ↦ (hS j).subset (preimage_mono ht),
       inter_eq_left.2 ht⟩
 
 /-- A colimit of compactly generated spaces in `TopCat` is compactly generated. -/
@@ -116,7 +111,7 @@ theorem exists_subset_range_ι_of_isCompact
     rintro y ⟨k, hk⟩
     exact ⟨k, (hidx.id_le k).trans_lt (hx ⟨y, hk.symm⟩), hk⟩
   have hcpt : IsCompact (range x) :=
-    hK.of_isClosed_subset (isClosed_of_forall_finite_preimage hc hfin)
+    hK.of_isClosed_subset (hc.isClosed_of_forall_finite_preimage hfin)
       (range_subset_iff.2 fun k ↦ hptK _)
   exact infinite_range_of_injective hinj
     (hcpt.finite (isDiscrete_of_forall_finite_preimage hc hfin))

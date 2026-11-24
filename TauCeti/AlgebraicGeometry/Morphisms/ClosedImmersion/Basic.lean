@@ -22,7 +22,8 @@ carried homeomorphically onto the closure of its image. So the dimension of the 
 can be computed in a closed subscheme or in the ambient scheme alike.
 
 The inclusion of an open subscheme is a closed immersion exactly when its underlying set is
-closed, so every member of a pairwise-disjoint open cover has a closed-immersion inclusion.
+closed (an instance when closedness is recorded by `Fact`), so every member of a
+pairwise-disjoint open cover has a closed-immersion inclusion.
 These inclusions support clopen decompositions.
 -/
 
@@ -93,6 +94,12 @@ theorem isClosedImmersion_ι_iff {X : Scheme} (U : X.Opens) :
     IsClosedImmersion U.ι ↔ IsClosed (U : Set X) := by
   rw [IsClosedImmersion.iff_isPreimmersion, range_ι]
   exact and_iff_right inferInstance
+
+/-- The inclusion of an open subscheme whose underlying set is closed is a closed immersion, as an
+instance for a clopen subscheme recorded by `Fact`. -/
+instance isClosedImmersion_ι_of_fact_isClosed {X : Scheme} (U : X.Opens)
+    [h : Fact (IsClosed (U : Set X))] : IsClosedImmersion U.ι :=
+  U.isClosedImmersion_ι_iff.mpr h.out
 
 end AlgebraicGeometry.Scheme.Opens
 

@@ -7,8 +7,14 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.Algebra.Subalgebra.Centralizer
+public import Mathlib.GroupTheory.DoubleCoset
+public import Mathlib.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.GroupTheory.DoubleCoset.Finite
+public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.GroupTheory.DoubleCoset.Cover
 
 /-!
 # Relative traces in a group algebra
@@ -28,6 +34,11 @@ for `Q = P`, it multiplies `P`-fixed elements by the index `|P : Q|`, it is tran
 of `R[G]^P` (`TauCeti.relTraceIdeal`), decreasing as `Q` shrinks and equal to `R[G]^P` for
 `Q = P`.
 
+Conjugation by `g ∈ G` is an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`
+(`TauCeti.conjInvariantsEquiv`), and it carries `Tr_Q^P` to `Tr_{gQg⁻¹}^{gPg⁻¹}`. For `T ≤ P`,
+the **Mackey formula** expresses `Tr_Q^P(a)`, viewed in `R[G]^T`, as the sum over the double
+cosets `TxQ` in `P` of the traces from `T ∩ xQx⁻¹` to `T` of `x a x⁻¹`.
+
 For a `p`-subgroup `P` of a finite group in characteristic `p`, the ideals `R[G]^P_Q` for `Q < P`
 lie in the kernel of the Brauer homomorphism of `P`, and the defect groups of the blocks of `R[G]`
 are described through them.
@@ -38,6 +49,7 @@ are described through them.
 * `TauCeti.conjInvariants R H`: the subalgebra `R[G]^H` of `H`-fixed elements.
 * `TauCeti.relTrace R Q P`: the relative trace `Tr_Q^P : R[G]^Q → R[G]^P`.
 * `TauCeti.relTraceIdeal R hQP`: its image `R[G]^P_Q`, a two-sided ideal of `R[G]^P`.
+* `TauCeti.conjInvariantsEquiv R g H`: conjugation by `g` as `R[G]^H ≃ₐ R[G]^{gHg⁻¹}`.
 
 ## Main results
 
@@ -50,6 +62,11 @@ are described through them.
 * `TauCeti.relTrace_mul`, `TauCeti.mul_relTrace`: the product formulas.
 * `TauCeti.relTraceIdeal_mono`, `TauCeti.relTraceIdeal_self`: `R[G]^P_S ≤ R[G]^P_Q` for
   `S ≤ Q ≤ P`, and `R[G]^P_P = R[G]^P`.
+* `TauCeti.conjInvariantsEquiv_relTrace`: `g Tr_Q^P(a) g⁻¹ = Tr_{gQg⁻¹}^{gPg⁻¹}(g a g⁻¹)`.
+* `TauCeti.inclusion_relTrace_eq_sum_relTrace_conj`,
+  `TauCeti.inclusion_relTrace_eq_sum_doubleCoset`: the Mackey formula
+  `Tr_Q^P(a) = ∑_{TxQ} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T` for `T ≤ P`, over any system of
+  double coset representatives and over the double coset quotient.
 
 ## References
 
@@ -81,6 +98,12 @@ theorem conjRepresentation_apply (g : G) (x : MonoidAlgebra R G) :
     conjRepresentation R G g x = MonoidAlgebra.domCongr R R (MulAut.conj g) x := by
   simp [conjRepresentation]
 
+/-- The algebra automorphism `MonoidAlgebra.domCongrAut` of the inner automorphism of `g` is the
+conjugation representation of `g`. -/
+theorem domCongrAut_conj_apply (g : G) (x : MonoidAlgebra R G) :
+    MonoidAlgebra.domCongrAut (R := R) (A := R) (MulAut.conj g) x = conjRepresentation R G g x := by
+  rw [conjRepresentation_apply, MonoidAlgebra.domCongrAut_apply]
+
 /-- The coefficient of `g x g⁻¹` at `h` is the coefficient of `x` at `g⁻¹ h g`. -/
 @[simp]
 theorem coeff_conjRepresentation (g : G) (x : MonoidAlgebra R G) (h : G) :
@@ -108,6 +131,12 @@ theorem conjRepresentation_apply_eq_mul (g : G) (x : MonoidAlgebra R G) :
 theorem conjRepresentation_mul (g : G) (x y : MonoidAlgebra R G) :
     conjRepresentation R G g (x * y) = conjRepresentation R G g x * conjRepresentation R G g y :=
   map_mul (MonoidAlgebra.domCongr R R (MulAut.conj g)) x y
+
+/-- Conjugating by `h` and then by `g` is conjugating by `g * h`. This is not a simp lemma: simp
+normalises `conjRepresentation R G (g * h)` the other way, with `map_mul`. -/
+theorem conjRepresentation_conjRepresentation (g h : G) (x : MonoidAlgebra R G) :
+    conjRepresentation R G g (conjRepresentation R G h x) = conjRepresentation R G (g * h) x := by
+  rw [map_mul, mul_apply_eq_comp]
 
 variable (R) in
 /-- The subalgebra `R[G]^H` of elements of `R[G]` fixed by conjugation by `H`: the centralizer in
@@ -339,5 +368,113 @@ theorem relTraceIdeal_mono (hSQ : S ≤ Q) [(S.subgroupOf Q).FiniteIndex]
   exact ⟨relTrace R S Q a, relTrace_relTrace hSQ hQP a⟩
 
 end RelTrace
+
+section Conj
+
+open scoped Pointwise
+
+variable {R : Type*} [CommSemiring R] {G : Type*} [Group G]
+
+/-- Conjugation by `g` carries `R[G]^H` into `R[G]^{gHg⁻¹}`. -/
+theorem conjRepresentation_mem_conjInvariants (g : G) {H : Subgroup G} {x : MonoidAlgebra R G}
+    (hx : x ∈ conjInvariants R H) :
+    conjRepresentation R G g x ∈ conjInvariants R (MulAut.conj g • H) := by
+  rw [mem_conjInvariants_iff] at hx ⊢
+  intro h hh
+  have := hx _ ((mem_conj_smul g H h).1 hh)
+  rw [conjRepresentation_conjRepresentation, show h * g = g * (g⁻¹ * h * g) by group,
+    ← conjRepresentation_conjRepresentation, this]
+
+/-- Conjugation by `g` maps `R[G]^H` onto `R[G]^{gHg⁻¹}`. -/
+theorem map_conjInvariants (g : G) (H : Subgroup G) :
+    (conjInvariants R H).map (MonoidAlgebra.domCongrAut (R := R) (A := R) (MulAut.conj g) :
+      MonoidAlgebra R G →ₐ[R] MonoidAlgebra R G) = conjInvariants R (MulAut.conj g • H) := by
+  refine le_antisymm ?_ fun y hy => ⟨conjRepresentation R G g⁻¹ y, ?_, ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩
+    exact conjRepresentation_mem_conjInvariants g hx
+  · simpa [map_inv, inv_smul_smul] using conjRepresentation_mem_conjInvariants g⁻¹ hy
+  · -- the `AlgHom` coercion of an `AlgEquiv` applies as the `AlgEquiv` (`AlgEquiv.coe_toAlgHom`)
+    exact (domCongrAut_conj_apply g _).trans (Representation.self_inv_apply _ g y)
+
+variable (R) in
+/-- Conjugation by `g` as an algebra isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}`, `x ↦ g x g⁻¹`. -/
+noncomputable def conjInvariantsEquiv (g : G) (H : Subgroup G) :
+    conjInvariants R H ≃ₐ[R] conjInvariants R (MulAut.conj g • H) :=
+  ((MonoidAlgebra.domCongrAut (MulAut.conj g)).subalgebraMap _).trans
+    (Subalgebra.equivOfEq _ _ (map_conjInvariants g H))
+
+/-- The isomorphism `R[G]^H ≃ R[G]^{gHg⁻¹}` is conjugation by `g`. -/
+@[simp]
+theorem coe_conjInvariantsEquiv (g : G) (H : Subgroup G) (x : conjInvariants R H) :
+    (conjInvariantsEquiv R g H x : MonoidAlgebra R G) = conjRepresentation R G g x := by
+  rw [conjInvariantsEquiv, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply,
+    AlgEquiv.subalgebraMap_apply_coe, domCongrAut_conj_apply]
+
+/-- The inverse of `R[G]^H ≃ R[G]^{gHg⁻¹}` is conjugation by `g⁻¹`. -/
+@[simp]
+theorem coe_conjInvariantsEquiv_symm (g : G) (H : Subgroup G)
+    (y : conjInvariants R (MulAut.conj g • H)) :
+    ((conjInvariantsEquiv R g H).symm y : MonoidAlgebra R G) = conjRepresentation R G g⁻¹ y := by
+  obtain ⟨x, rfl⟩ := (conjInvariantsEquiv R g H).surjective y
+  rw [AlgEquiv.symm_apply_apply, coe_conjInvariantsEquiv, Representation.inv_self_apply]
+
+attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex Fintype.ofFinite
+
+/-- **Conjugation of relative traces.** `g Tr_Q^P(a) g⁻¹ = Tr_{gQg⁻¹}^{gPg⁻¹}(g a g⁻¹)` (Webb,
+Lemma 11.3.1, p. 194). -/
+theorem conjInvariantsEquiv_relTrace (g : G) {Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
+    (a : conjInvariants R Q) :
+    conjInvariantsEquiv R g P (relTrace R Q P a) =
+      relTrace R (MulAut.conj g • Q) (MulAut.conj g • P) (conjInvariantsEquiv R g Q a) := by
+  let e : P ≃* (MulAut.conj g • P : Subgroup G) := Subgroup.equivSMul (MulAut.conj g) P
+  have he : ∀ x : P, e x ∈ (MulAut.conj g • Q).subgroupOf (MulAut.conj g • P) ↔
+      x ∈ Q.subgroupOf P := fun x => by
+    simp [e, Subgroup.mem_subgroupOf, mul_assoc]
+  ext1
+  rw [coe_conjInvariantsEquiv, coe_relTrace, map_sum,
+    relTrace_apply_eq_sum_of_bijective _ (Subgroup.mk_mulEquiv_out_bijective e he)]
+  refine Finset.sum_congr rfl fun q _ => ?_
+  rw [coe_conjInvariantsEquiv, conjRepresentation_conjRepresentation,
+    conjRepresentation_conjRepresentation]
+  congr 2
+  simp [e, MulAut.smul_def, MulAut.conj_apply]
+
+/-- **The Mackey formula for relative traces.** For `T ≤ P`, any subgroup `Q` with `Q ∩ P` of
+finite index in `P`, and elements `xᵢ ∈ P` representing each double coset `T x Q` in `P` exactly
+once, `Tr_Q^P(a) = ∑ᵢ Tr_{T ∩ xᵢQxᵢ⁻¹}^T(xᵢ a xᵢ⁻¹)` in `R[G]^T` (Webb, Lemma 11.3.1, p. 194). Here
+`Tr_{xQx⁻¹}^T` is the relative trace from `T ∩ xQx⁻¹`, applied to the `xQx⁻¹`-fixed element
+`x a x⁻¹`; `T ∩ xQx⁻¹` has finite index in `T` by `Subgroup.finiteIndex_conj_smul_subgroupOf`. -/
+theorem inclusion_relTrace_eq_sum_relTrace_conj {T Q P : Subgroup G}
+    [(Q.subgroupOf P).FiniteIndex] (hTP : T ≤ P) {ι : Type*} [Fintype ι] (x : ι → P)
+    (hx : ∀ y ∈ P, ∃! i, y ∈ DoubleCoset.doubleCoset (x i : G) T Q) (a : conjInvariants R Q) :
+    Subalgebra.inclusion (conjInvariants_anti hTP) (relTrace R Q P a) =
+      ∑ i, haveI := Subgroup.finiteIndex_conj_smul_subgroupOf Q hTP (x i).property
+        relTrace R (MulAut.conj (x i : G) • Q) T (conjInvariantsEquiv R (x i : G) Q a) := by
+  have := fun i => Subgroup.finiteIndex_conj_smul_subgroupOf Q hTP (x i).property
+  ext1
+  rw [Subalgebra.coe_inclusion, relTrace_apply_eq_sum_of_bijective _
+    (Subgroup.bijective_sigma_quotient_mul_of_existsUnique_doubleCoset hTP x hx),
+    Fintype.sum_sigma]
+  push_cast
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [coe_relTrace]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [coe_conjInvariantsEquiv, conjRepresentation_conjRepresentation]
+
+/-- **The Mackey formula over the double cosets.** For `T ≤ P` and any subgroup `Q` with `Q ∩ P`
+of finite index in `P`, `Tr_Q^P(a) = ∑_{TxQ ⊆ P} Tr_{T ∩ xQx⁻¹}^T(x a x⁻¹)` in `R[G]^T`, summed
+over the double cosets `T \ P / Q`, finite by `TauCeti.finite_doubleCosetQuotient`, with their
+chosen representatives `x` (Webb, Lemma 11.3.1, p. 194). -/
+theorem inclusion_relTrace_eq_sum_doubleCoset {T Q P : Subgroup G} [(Q.subgroupOf P).FiniteIndex]
+    (hTP : T ≤ P) (a : conjInvariants R Q) :
+    Subalgebra.inclusion (conjInvariants_anti hTP) (relTrace R Q P a) =
+      ∑ q : DoubleCoset.Quotient (T.subgroupOf P : Set P) (Q.subgroupOf P),
+        haveI := Subgroup.finiteIndex_conj_smul_subgroupOf Q hTP q.out.property
+        relTrace R (MulAut.conj (q.out : G) • Q) T (conjInvariantsEquiv R (q.out : G) Q a) :=
+  inclusion_relTrace_eq_sum_relTrace_conj (ι := DoubleCoset.Quotient (T.subgroupOf P : Set P)
+    (Q.subgroupOf P)) hTP (fun q => Quotient.out q)
+    (fun _ hy => Subgroup.existsUnique_mem_doubleCoset_out hTP hy) a
+
+end Conj
 
 end TauCeti
