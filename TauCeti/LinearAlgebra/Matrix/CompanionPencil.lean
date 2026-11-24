@@ -121,7 +121,7 @@ theorem companionPencil_eq_mul {p : A[X]} (hp : p.natDegree ≤ d) (z : A) :
   induction j using Fin.cases with
   | zero =>
     rw [vecMul_smul_superdiagonalShift_zero, sub_zero, Fin.val_rev, Fin.val_zero,
-      Nat.add_sub_cancel, iterate_divX_eq_C_of_natDegree_le hp, eval_C]
+      Nat.add_sub_cancel, iterate_divX_eq_C_iff.2 hp, eval_C]
   | succ j =>
     have hrev : (j.castSucc.rev : ℕ) = (j.succ.rev : ℕ) + 1 := by
       simp only [Fin.val_rev, Fin.val_castSucc, Fin.val_succ]

@@ -10,9 +10,10 @@ public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Uniform derivative bounds on compact sets
@@ -20,7 +21,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 This file collects bounds on iterated derivatives that follow from their continuity on compact
 sets: a uniform bound for a linear change of variables, and a bound by any power of the Japanese
 bracket near the zero frequency. It also records the Leibniz bound for a bilinear expression in two
-maps whose derivatives have uniform bounds, and the effect of a dilation on such bounds.
+maps whose derivatives are bounded at a point, and the effect of a dilation on such bounds.
 
 Fix maps `τ : E → F` and `L : E → (G →L H)` that are `C^n` on `s`. The operator
 `φ ↦ (z ↦ L z (φ (τ z)))` is linear in `φ`, and by the Leibniz and Faà di Bruno bounds its
@@ -44,6 +45,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `IsCompact.exists_norm_fderiv_le`: the derivative of a map that is `C^1` at every point of a
+  compact set is bounded on that set.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
   `C^n` jointly in `(p, x)`, the derivatives of order at most `n` of the partial maps `f p` are
   bounded on a compact set by one constant, uniformly for `p` in a compact set.
@@ -75,12 +78,13 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   Japanese bracket.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le`: composing on the left with a
   continuous linear map preserves a bound on the `k`-th derivative by a multiple of a weight.
-* `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
-  `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds;
+* `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound at a
+  point for `x ↦ B (f x) (g x)` from bounds on the derivatives of `f` and `g` at that point;
   `TauCeti.norm_iteratedFDeriv_mul_le_of_tsupport_subset` is the version for a product `f g`
   where `f` is only controlled near the support of `g`.
 * `ContDiff.norm_iteratedFDeriv_mul_le_two_pow`: the same for a product `f * g` in a normed
   algebra, with one bound for all orders at most `N`.
+* `ContDiff.norm_iteratedFDeriv_pow_le_two_pow`: the resulting bound for a power `f ^ j`.
 * `ContDiffAt.norm_iteratedFDeriv_smul_const_le`: the order-`k` derivative of `y ↦ f y • v` is at
   most that of `f` times `‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
@@ -93,6 +97,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   derivative of `f` is `O(ρ)`, then so is that of `y ↦ L (f y)`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le`: bounded derivatives of `f`
   up to order `N` give bounded derivatives of `L ∘ f`, with the bound multiplied by `‖L‖`.
+* `ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left`: the same with a separate bound for
+  each order, in existential form.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
 -/
@@ -100,6 +106,7 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 public section
 
 open Set
+open scoped NNReal
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -119,6 +126,15 @@ theorem ContDiffOn.exists_bound_iteratedFDerivWithin {u : E → F} {s K : Set E}
   refine ⟨A, fun i hi z hz ↦ ((Finset.single_le_sum (f := fun i ↦ ‖iteratedFDerivWithin 𝕜 i u s z‖)
     (fun _ _ ↦ norm_nonneg _) (Finset.mem_range_succ_iff.mpr hi)).trans (le_abs_self _)).trans ?_⟩
   simpa only [Real.norm_eq_abs] using hA z hz
+
+/-- The derivative of a map that is `C^n`, with `1 ≤ n`, at every point of a compact set `K` is
+bounded on `K` by a single constant. -/
+theorem IsCompact.exists_norm_fderiv_le {f : E → F} {K : Set E} {n : WithTop ℕ∞}
+    (hK : IsCompact K) (hn : 1 ≤ n) (hf : ∀ x ∈ K, ContDiffAt 𝕜 n f x) :
+    ∃ M : ℝ≥0, ∀ x ∈ K, ‖fderiv 𝕜 f x‖ ≤ M := by
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn fun x hx ↦
+    ((hf x hx).fderiv_right (m := 0) (by simpa using hn)).continuousAt.continuousWithinAt
+  exact ⟨M.toNNReal, fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)⟩
 
 /-- On a compact subset `K` of an open set `s`, the derivatives of order at most `n` of a map that
 is `C^n` on `s` are bounded by a single nonnegative constant. -/
@@ -271,8 +287,9 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {
       ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
     (hf.continuous_iteratedFDeriv le_rfl).continuousOn
-  obtain ⟨C', hC'0, hC'⟩ := TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le (E := F) C R r
-  exact ⟨C', hC'0, fun x hx ξ hξ ↦ (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (hC' ξ hξ)⟩
+  obtain ⟨C', hC'0, hC'⟩ := Real.exists_le_mul_one_add_sq_rpow_of_abs_le C R r
+  exact ⟨C', hC'0, fun x hx ξ hξ ↦ (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans
+    (hC' ‖ξ‖ ((abs_norm ξ).trans_le hξ))⟩
 
 /-- On a ball, a continuous function is bounded by every power of the Japanese bracket:
 `‖f ξ‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`. -/
@@ -280,8 +297,9 @@ theorem Continuous.exists_norm_le_one_add_norm_sq_rpow_of_norm_le {E F : Type*}
     [NormedAddCommGroup E] [ProperSpace E] [NormedAddCommGroup F] {f : E → F} (hf : Continuous f)
     (R r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ ξ, ‖ξ‖ ≤ R → ‖f ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn hf.continuousOn
-  obtain ⟨C, hC0, hC⟩ := TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le (E := E) M R r
-  exact ⟨C, hC0, fun ξ hξ ↦ (hM ξ (mem_closedBall_zero_iff.2 hξ)).trans (hC ξ hξ)⟩
+  obtain ⟨C, hC0, hC⟩ := Real.exists_le_mul_one_add_sq_rpow_of_abs_le M R r
+  exact ⟨C, hC0, fun ξ hξ ↦ (hM ξ (mem_closedBall_zero_iff.2 hξ)).trans
+    (hC ‖ξ‖ ((abs_norm ξ).trans_le hξ))⟩
 
 /-- A `C^n` map which agrees outside a ball with a map whose order-`n` derivative is bounded
 there has a bounded order-`n` derivative: on the closed ball the derivative is continuous, and
@@ -355,14 +373,14 @@ theorem ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le (L : F →L[
     _ ≤ ‖L‖ * (C * w x) := mul_le_mul_of_nonneg_left (hC x) (norm_nonneg L)
     _ = ‖L‖ * C * w x := (mul_assoc _ _ _).symm
 
-/-- **Leibniz bound with uniform constants.** If the derivatives of order at most `N` of `f` and
-`g` are bounded by `C` and `D` everywhere, those of `x ↦ B (f x) (g x)` of order `p ≤ N` are
-bounded by `2 ^ p * (C * D)`, for a bilinear map `B` of norm at most one. -/
+/-- **Leibniz bound at a point.** If the derivatives of order at most `N` of `f` and `g` at `x`
+are bounded by `C` and `D`, those of `y ↦ B (f y) (g y)` at `x` of order `p ≤ N` are bounded by
+`2 ^ p * (C * D)`, for a bilinear map `B` of norm at most one. -/
 theorem ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
     (B : F →L[𝕜] G →L[𝕜] H) (hB : ‖B‖ ≤ 1) {N : ℕ} {f : E → F} {g : E → G}
-    (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {C D : ℝ}
-    (hfC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C)
-    (hgD : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p g x‖ ≤ D) {p : ℕ} (hp : p ≤ N) (x : E) :
+    (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {x : E} {C D : ℝ}
+    (hfC : ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C)
+    (hgD : ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p g x‖ ≤ D) {p : ℕ} (hp : p ≤ N) :
     ‖iteratedFDeriv 𝕜 p (fun y ↦ B (f y) (g y)) x‖ ≤ 2 ^ p * (C * D) := by
   refine (B.norm_iteratedFDeriv_le_of_bilinear_of_le_one hf hg x (by exact_mod_cast hp)
     hB).trans ?_
@@ -371,29 +389,47 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
       ≤ ∑ i ∈ Finset.range (p + 1), (p.choose i : ℝ) * C * D := by
         refine Finset.sum_le_sum fun i hi ↦ ?_
         have hi : i ≤ p := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-        have hC : 0 ≤ C := (norm_nonneg _).trans (hfC 0 (Nat.zero_le _) x)
+        have hC : 0 ≤ C := (norm_nonneg _).trans (hfC 0 (Nat.zero_le _))
         gcongr
-        exacts [hfC i (hi.trans hp) x, hgD (p - i) ((Nat.sub_le p i).trans hp) x]
+        exacts [hfC i (hi.trans hp), hgD (p - i) ((Nat.sub_le p i).trans hp)]
     _ = 2 ^ p * (C * D) := by
         rw [← Finset.sum_mul, ← Finset.sum_mul]
         push_cast [← Nat.cast_sum, Nat.sum_range_choose]
         ring
 
-/-- **Leibniz bound for a product with uniform constants.** If the derivatives of order at most
-`N` of `f` and `g` are bounded by `C` and `D` everywhere, those of `f * g` of order at most `N` are
-bounded by `2 ^ N * (C * D)`. -/
+/-- **Leibniz bound for a product at a point.** If the derivatives of order at most `N` of `f` and
+`g` at `x` are bounded by `C` and `D`, those of `f * g` at `x` of order at most `N` are bounded by
+`2 ^ N * (C * D)`. -/
 theorem ContDiff.norm_iteratedFDeriv_mul_le_two_pow {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
-    {N : ℕ} {f g : E → A} (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {C D : ℝ}
-    (hfC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C)
-    (hgD : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p g x‖ ≤ D) :
-    ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p (f * g) x‖ ≤ 2 ^ N * (C * D) := by
-  intro p hp x
-  have hC : 0 ≤ C := (norm_nonneg _).trans (hfC 0 (Nat.zero_le _) x)
-  have hD : 0 ≤ D := (norm_nonneg _).trans (hgD 0 (Nat.zero_le _) x)
+    {N : ℕ} {f g : E → A} (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {x : E} {C D : ℝ}
+    (hfC : ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C)
+    (hgD : ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p g x‖ ≤ D) :
+    ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p (f * g) x‖ ≤ 2 ^ N * (C * D) := by
+  intro p hp
+  have hC : 0 ≤ C := (norm_nonneg _).trans (hfC 0 (Nat.zero_le _))
+  have hD : 0 ≤ D := (norm_nonneg _).trans (hgD 0 (Nat.zero_le _))
   refine ((ContinuousLinearMap.mul 𝕜 A).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
-    (ContinuousLinearMap.opNorm_mul_le _ _) hf hg hfC hgD hp x).trans ?_
+    (ContinuousLinearMap.opNorm_mul_le _ _) hf hg hfC hgD hp).trans ?_
   gcongr
   exact one_le_two
+
+/-- **Leibniz bound for a power at a point.** If the derivatives of order at most `N` of `f` at
+`x` are bounded by `C`, those of `f ^ j` at `x` of order at most `N` are bounded by
+`(2 ^ N * C) ^ j`, provided `‖1‖ ≤ 1`. -/
+theorem ContDiff.norm_iteratedFDeriv_pow_le_two_pow {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] (h1 : ‖(1 : A)‖ ≤ 1) {N : ℕ} {f : E → A} (hf : ContDiff 𝕜 N f) {x : E}
+    {C : ℝ} (hfC : ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C) (j : ℕ) :
+    ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p (f ^ j) x‖ ≤ (2 ^ N * C) ^ j := by
+  induction j with
+  | zero =>
+    intro p _
+    rw [pow_zero, pow_zero]
+    exact (TauCeti.norm_iteratedFDeriv_const_le p 1 x).trans h1
+  | succ j ih =>
+    intro p hp
+    have hfj : ContDiff 𝕜 N (f ^ j) := hf.pow j
+    rw [pow_succ, pow_succ]
+    exact (hfj.norm_iteratedFDeriv_mul_le_two_pow hf ih hfC p hp).trans_eq (by ring)
 
 /-- Rescaling the variable by `c` with `1 ≤ ‖c‖` multiplies uniform bounds for the derivatives
 of order at most `N` by at most `‖c‖ ^ N`. -/
@@ -468,6 +504,20 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le
     ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n (L ∘ f) x‖ ≤ ‖L‖ * M := fun n hn x ↦
   ((L.restrictScalars 𝕜).norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
     (mul_le_mul_of_nonneg_left (hbd n hn x) (norm_nonneg _))
+
+/-- **Uniform bounds on the derivatives of `L ∘ f`.** If each derivative of order at most `N` of a
+`C^N` map `f` is bounded, so is the corresponding derivative of `L ∘ f`, for a continuous linear map
+`L`. The map `L` may be linear over a normed `𝕜`-algebra `𝕜'`, such as `ℂ` over `ℝ`. -/
+theorem ContinuousLinearMap.exists_bound_iteratedFDeriv_comp_left
+    {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F]
+    [IsScalarTower 𝕜 𝕜' F] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G] (L : F →L[𝕜'] G)
+    {f : E → F} {N : ℕ} (hf : ContDiff 𝕜 N f)
+    (hbd : ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∀ n ≤ N, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n (L ∘ f) x‖ ≤ C := fun n hn ↦ by
+  obtain ⟨C, hC⟩ := hbd n hn
+  exact ⟨‖L‖ * C, fun x ↦
+    ((L.restrictScalars 𝕜).norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
+      (mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _))⟩
 
 namespace TauCeti
 
