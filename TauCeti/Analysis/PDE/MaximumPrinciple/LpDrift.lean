@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
-import TauCeti.Analysis.Sobolev.FiniteMeasure
+import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
 import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 import TauCeti.MeasureTheory.Function.UniformIntegrable
@@ -58,7 +58,7 @@ so `λ ≤ S ‖1_Γ W‖_p`. As `|Γ| → 0`, `‖1_Γ W‖_p → 0`, because `
 `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`.
 
 On a set of finite measure the Sobolev inequality holds with `q = 2p/(p - 2)` as soon as `p > n`
-(`TauCeti.W1p.exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top`), and bounded
+(`TauCeti.PDE.exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top`), and bounded
 drifts lie in `Lᵖ(Ω)`.
 
 ## Main declarations
@@ -429,7 +429,7 @@ regularity of `∂Ω` is needed. Since `Ω` has finite measure, bounded drifts l
 theorem UniformlyEllipticOn.value_le_const_of_memLp_drift_of_measure_ne_top [Nonempty ι]
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hb : MemLp b p (mu.restrict Omega))
-    (hp : p ≠ ∞) (hp2 : 2 < p) (hn : (Fintype.card ι : ℝ) < p.toReal)
+    (hp2 : 2 < p) (hn : (Fintype.card ι : ℝ) < p.toReal)
     (hc : AEStronglyMeasurable c (mu.restrict Omega))
     (he : AEStronglyMeasurable e (mu.restrict Omega))
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma) (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma)
@@ -445,9 +445,9 @@ theorem UniformlyEllipticOn.value_le_const_of_memLp_drift_of_measure_ne_top [Non
           ∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu +
           ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (φ : W1p mu Omega 2) x ∂mu ≤ 0) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
+  have hp : p ≠ ∞ := (ENNReal.toReal_pos_iff.1 ((Nat.cast_nonneg _).trans_lt hn)).2.ne
   obtain ⟨q, hpq, S, hsob⟩ :=
-    W1p.exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top hOmega hp2
-      (by rwa [finrank_euclideanSpace])
+    exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top hOmega hp2 hn
   exact h.value_le_const_of_memLp_drift_of_forall_eLpNorm_le ha hb.norm hp
     (beta := 0) (fun x _ ↦ (zero_add _).ge) hc he hc_bound he_bound hsign hpq hsob hk hboundary hu
 
@@ -458,7 +458,7 @@ problem for `L` has at most one solution. -/
 theorem UniformlyEllipticOn.value_le_of_memLp_drift_of_measure_ne_top [Nonempty ι]
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) (hb : MemLp b p (mu.restrict Omega))
-    (hp : p ≠ ∞) (hp2 : 2 < p) (hn : (Fintype.card ι : ℝ) < p.toReal)
+    (hp2 : 2 < p) (hn : (Fintype.card ι : ℝ) < p.toReal)
     (hc : AEStronglyMeasurable c (mu.restrict Omega))
     (he : AEStronglyMeasurable e (mu.restrict Omega))
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma) (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma)
@@ -477,9 +477,9 @@ theorem UniformlyEllipticOn.value_le_of_memLp_drift_of_measure_ne_top [Nonempty 
             ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu +
             ∫ x in Omega, ⟪b x, W1p.gradient v x⟫_ℝ * W1p.value (φ : W1p mu Omega 2) x ∂mu) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
+  have hp : p ≠ ∞ := (ENNReal.toReal_pos_iff.1 ((Nat.cast_nonneg _).trans_lt hn)).2.ne
   obtain ⟨q, hpq, S, hsob⟩ :=
-    W1p.exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top hOmega hp2
-      (by rwa [finrank_euclideanSpace])
+    exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top hOmega hp2 hn
   exact h.value_le_of_memLp_drift_of_forall_eLpNorm_le ha hb.aestronglyMeasurable hb.norm hp
     (beta := 0) (fun x _ ↦ (zero_add _).ge) hc he hc_bound he_bound hsign hpq hsob hboundary huv
 
