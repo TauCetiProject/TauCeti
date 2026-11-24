@@ -45,8 +45,8 @@ namespace Unitization
 
 /-- A nonunital algebra `A` is a left ideal of its unitization: `x * a` lies in `A`, with value
 `x.fst • a + x.snd * a`. -/
-theorem mul_inr {R A : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
-    (x : Unitization R A) (a : A) : x * inr a = inr (x.fst • a + x.snd * a) :=
+theorem mul_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring A]
+    [SMulWithZero R A] (x : Unitization R A) (a : A) : x * inr a = inr (x.fst • a + x.snd * a) :=
   Unitization.ext (by simp) (by simp)
 
 section Map

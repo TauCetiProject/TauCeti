@@ -136,10 +136,12 @@ variable (A H : Type*) [CommSemiring A] [NonUnitalSemiring H] [Module A H]
   [IsScalarTower A H H] [SMulCommClass A H H]
   (M : Type*) [AddCommMonoid M] [Module (Unitization A H) M]
 
+open Pointwise in
 /-- The *nondegenerate part* `H • M` of a module `M` over the unitization `A ⊕ H` of a nonunital
-`A`-algebra `H`: the submodule spanned by the elements `h • m` with `h : H` and `m : M`. -/
+`A`-algebra `H`: the submodule spanned by the elements `h • m` with `h : H` and `m : M`, that is,
+the pointwise action of `H ⊆ A ⊕ H` on the submodule `⊤`. -/
 def nondegeneratePart : Submodule (Unitization A H) M :=
-  Submodule.span (Unitization A H) (Set.range fun p : H × M ↦ (p.1 : Unitization A H) • p.2)
+  Set.range (Unitization.inr : H → Unitization A H) • (⊤ : Submodule (Unitization A H) M)
 
 /-- A module `M` over the unitization `A ⊕ H` of a nonunital `A`-algebra `H` is *nondegenerate*
 if `H • M = M`. -/
@@ -162,12 +164,13 @@ theorem IsNondegenerate.nondegeneratePart_eq_top (hM : IsNondegenerate A H M) :
 @[simp]
 theorem inr_smul_mem_nondegeneratePart (h : H) (m : M) :
     (h : Unitization A H) • m ∈ nondegeneratePart A H M :=
-  Submodule.subset_span ⟨(h, m), rfl⟩
+  Submodule.mem_set_smul_of_mem_mem ⟨h, rfl⟩ trivial
 
 /-- `H • M` is contained in a submodule `N` exactly when `N` contains every `h • m`. -/
 theorem nondegeneratePart_le_iff {N : Submodule (Unitization A H) M} :
     nondegeneratePart A H M ≤ N ↔ ∀ (h : H) (m : M), (h : Unitization A H) • m ∈ N := by
-  simp [nondegeneratePart, Submodule.span_le, Set.range_subset_iff]
+  rw [nondegeneratePart, Submodule.set_smul_le_iff]
+  exact ⟨fun hN h m ↦ hN ⟨h, rfl⟩ trivial, fun hN _ m ⟨h, hh⟩ _ ↦ hh ▸ hN h m⟩
 
 /-- The nondegenerate part vanishes exactly when `H` acts by zero. -/
 theorem nondegeneratePart_eq_bot_iff :
@@ -210,13 +213,13 @@ theorem IsNondegenerate.map_smul_of_map_inr_smul (hM : IsNondegenerate A H M) {N
     (hf : ∀ (h : H) (m : M), f ((h : Unitization A H) • m) = (h : Unitization A H) • f m)
     (r : Unitization A H) (m : M) : f (r • m) = r • f m := by
   have hm : m ∈ nondegeneratePart A H M := hM.nondegeneratePart_eq_top ▸ Submodule.mem_top
-  induction hm using Submodule.span_induction generalizing r with
-  | mem x hx =>
-    obtain ⟨⟨h, x⟩, rfl⟩ := hx
+  induction m, hm using Submodule.set_smul_inductionOn generalizing r with
+  | @smul₀ s x hs _ =>
+    obtain ⟨h, rfl⟩ := hs
     rw [smul_smul, Unitization.mul_inr, hf, hf, ← Unitization.mul_inr, smul_smul]
+  | @smul₁ s x _ hx => rw [smul_smul, hx, hx, smul_smul]
+  | @add x y _ _ hx hy => rw [smul_add, map_add, hx, hy, map_add, smul_add]
   | zero => simp
-  | add x y _ _ hx hy => rw [smul_add, map_add, hx, hy, map_add, smul_add]
-  | smul s x _ hx => rw [smul_smul, hx, hx, smul_smul]
 
 variable [IsIdempotented H]
 
@@ -227,25 +230,25 @@ theorem mem_nondegeneratePart_iff {m : M} :
       ∃ e : H, IsIdempotentElem e ∧ (e : Unitization A H) • m = m := by
   classical
   refine ⟨fun hm ↦ ?_, fun ⟨e, _, he⟩ ↦ he ▸ inr_smul_mem_nondegeneratePart e m⟩
-  induction hm using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨⟨h, m⟩, rfl⟩ := hx
+  induction m, hm using Submodule.set_smul_inductionOn with
+  | @smul₀ r m hr _ =>
+    obtain ⟨h, rfl⟩ := hr
     obtain ⟨f, hf, hfh⟩ := IsIdempotented.exists_isIdempotentElem {h}
     exact ⟨f, hf, by rw [smul_smul, ← Unitization.inr_mul, (hfh h (by simp)).1]⟩
-  | zero => exact ⟨0, .zero, smul_zero _⟩
-  | add x y _ _ hx hy =>
+  | @smul₁ r x _ hx =>
+    obtain ⟨e, -, he⟩ := hx
+    have hrx : r • x = ((r.fst • e + r.snd * e : H) : Unitization A H) • x := by
+      rw [← Unitization.mul_inr, ← smul_smul, he]
+    obtain ⟨f, hf, hfk⟩ := IsIdempotented.exists_isIdempotentElem {r.fst • e + r.snd * e}
+    exact ⟨f, hf, by rw [hrx, smul_smul, ← Unitization.inr_mul, (hfk _ (by simp)).1]⟩
+  | @add x y _ _ hx hy =>
     obtain ⟨e₁, -, he₁⟩ := hx
     obtain ⟨e₂, -, he₂⟩ := hy
     obtain ⟨f, hf, hs⟩ := IsIdempotented.exists_isIdempotentElem {e₁, e₂}
     refine ⟨f, hf, ?_⟩
     rw [smul_add, inr_smul_eq_of_mul_eq he₁ (hs e₁ (by simp)).1,
       inr_smul_eq_of_mul_eq he₂ (hs e₂ (by simp)).1]
-  | smul r x _ hx =>
-    obtain ⟨e, -, he⟩ := hx
-    have hrx : r • x = ((r.fst • e + r.snd * e : H) : Unitization A H) • x := by
-      rw [← Unitization.mul_inr, ← smul_smul, he]
-    obtain ⟨f, hf, hfk⟩ := IsIdempotented.exists_isIdempotentElem {r.fst • e + r.snd * e}
-    exact ⟨f, hf, by rw [hrx, smul_smul, ← Unitization.inr_mul, (hfk _ (by simp)).1]⟩
+  | zero => exact ⟨0, .zero, smul_zero _⟩
 
 /-- Over an idempotented algebra `H`, a module is nondegenerate exactly when each of its elements
 is fixed by some idempotent of `H`. -/
