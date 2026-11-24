@@ -231,16 +231,16 @@ theorem exists_ball_inter_support_codimensionGE_eq (C : FinitePolyhedralComplex 
   · rintro Q hQ ⟨y, hy, hyQ⟩
     exact (hball hy).2.2.2 Q hQ hyQ
 
-/-- A ball isolating an exact-codimension cell in the skeleton meets the skeleton
-only at its center in a complementary affine slice. The slice has the same
-dimension as the codimension of the cell.
+/-- If the skeleton in a ball lies in the span of an exact-codimension cell,
+a complementary affine slice meets the skeleton in the ball only at its center.
+The slice has dimension equal to the codimension of the cell.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Joint.lean`, commit
 `bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0; Mei contributors, author Codex). -/
 theorem finrank_eq_and_ball_inter_slice_inter_support_eq_singleton
     (C : FinitePolyhedralComplex h) {P : Set V} {k : ℕ}
     (hP : P ∈ C.cellsOfCodimension k) {x : V} (hx : x ∈ P) {r : ℝ} (hr : 0 < r)
-    (hskeleton : Metric.ball x r ∩ (C.codimensionGE k).support = Metric.ball x r ∩ P)
+    (hskeleton : Metric.ball x r ∩ (C.codimensionGE k).support ⊆ (affineSpan ℝ P : Set V))
     (W : Submodule ℝ V) (hW : IsCompl (affineSpan ℝ P).direction W) :
     Module.finrank ℝ W = k ∧
       (Metric.ball x r ∩ (AffineSubspace.mk' x W : Set V)) ∩
@@ -259,14 +259,13 @@ theorem finrank_eq_and_ball_inter_slice_inter_support_eq_singleton
   ext y
   constructor
   · rintro ⟨⟨hyball, hyW⟩, hys⟩
-    have hyP : y ∈ Metric.ball x r ∩ P := hskeleton ▸ ⟨hyball, hys⟩
-    exact hp ▸ ⟨subset_affineSpan ℝ P hyP.2, hyW⟩
+    exact hp ▸ ⟨hskeleton ⟨hyball, hys⟩, hyW⟩
   · intro hy
     have hyx := Set.mem_singleton_iff.mp hy
     subst y
     have hxball : x ∈ Metric.ball x r := Metric.mem_ball_self hr
-    have hxs : x ∈ Metric.ball x r ∩ (C.codimensionGE k).support :=
-      hskeleton.symm ▸ ⟨hxball, hx⟩
-    exact ⟨⟨hxball, hxW⟩, hxs.2⟩
+    have hPs : P ∈ (C.codimensionGE k).cells :=
+      mem_cells_codimensionGE.mpr ⟨(mem_cellsOfCodimension.mp hP).1, hdimP.le⟩
+    exact ⟨⟨hxball, hxW⟩, subset_support hPs hx⟩
 
 end TauCeti.FinitePolyhedralComplex
