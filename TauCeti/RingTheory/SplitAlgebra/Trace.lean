@@ -137,8 +137,6 @@ theorem SplitAlgebra.of_injective_of_algebraRat_of_localization {R S : Type*} [C
   -- injective by flatness of localization.
   refine splitAlgebra_iff_localized_maximal.2 fun m _ ↦ ?_
   obtain ⟨_, _⟩ := hR m
-  let : Algebra ℚ (Localization.AtPrime m) :=
-    ((algebraMap R (Localization.AtPrime m)).comp (algebraMap ℚ R)).toAlgebra
   exact SplitAlgebra.of_injective_of_algebraRat
     (Algebra.TensorProduct.includeLeft_injective (S := Localization.AtPrime m) h)
 
