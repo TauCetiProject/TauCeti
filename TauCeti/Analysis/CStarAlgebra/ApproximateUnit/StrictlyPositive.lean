@@ -518,7 +518,7 @@ theorem isStrictlyPositive_tfae {h : A} (hh : 0 ≤ h) :
     have hrr : r * r = h := CFC.sqrt_mul_sqrt_self h
     have hvanish : Set.EqOn (φ : A → ℂ) (fun _ => 0) (Set.range fun a : A => a * h) := by
       rintro _ ⟨a, rfl⟩
-      have h0 := PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_self_eq_zero φ (y := r)
+      have h0 := PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero φ (b := r)
         (by rwa [hr_star, hrr]) (a * r)
       rwa [mul_assoc, hrr] at h0
     have hzero_fn := Continuous.ext_on hd (map_continuous φ) continuous_const hvanish

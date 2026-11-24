@@ -150,21 +150,21 @@ variable {A : Type*} [NonUnitalRing A] [PartialOrder A] [Module ℂ A] [StarRing
   [StarOrderedRing A] [SelfAdjointDecompose A] [StarModule ℂ A] [IsScalarTower ℂ A A]
   {F : Type*} [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
 
-/-- By Cauchy–Schwarz, if a positive linear functional vanishes on `x * star x`, it vanishes on
-`x * y` for every `y`. -/
-theorem map_mul_eq_zero_of_map_mul_star_self_eq_zero (f : F) {x : A} (hx : f (x * star x) = 0)
-    (y : A) : f (x * y) = 0 := by
-  have hcs := norm_map_mul_star_le f x (star y)
-  rw [star_star, hx, norm_zero, Real.sqrt_zero, zero_mul] at hcs
-  exact norm_eq_zero.mp (le_antisymm hcs (norm_nonneg _))
+/-- A positive linear functional that vanishes at `b⋆ b` kills every product `a * b`, by the
+Cauchy–Schwarz inequality. -/
+theorem map_mul_eq_zero_of_map_star_mul_eq_zero (f : F) {b : A} (hb : f (star b * b) = 0)
+    (a : A) : f (a * b) = 0 := by
+  have h := norm_map_star_mul_le f (star a) b
+  simp only [star_star, hb, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
+  exact h
 
-/-- By Cauchy–Schwarz, if a positive linear functional vanishes on `star y * y`, it vanishes on
-`x * y` for every `x`. -/
-theorem map_mul_eq_zero_of_map_star_mul_self_eq_zero (f : F) {y : A} (hy : f (star y * y) = 0)
-    (x : A) : f (x * y) = 0 := by
-  have hcs := norm_map_star_mul_le f (star x) y
-  rw [star_star, hy, norm_zero, Real.sqrt_zero, mul_zero] at hcs
-  exact norm_eq_zero.mp (le_antisymm hcs (norm_nonneg _))
+/-- A positive linear functional that vanishes at `b b⋆` kills every product `b * a`, by the
+Cauchy–Schwarz inequality. -/
+theorem map_mul_eq_zero_of_map_mul_star_eq_zero (f : F) {b : A} (hb : f (b * star b) = 0)
+    (a : A) : f (b * a) = 0 := by
+  have h := norm_map_mul_star_le f b (star a)
+  simp only [star_star, hb, norm_zero, Real.sqrt_zero, zero_mul, norm_le_zero_iff] at h
+  exact h
 
 end StarOrdered
 
