@@ -23,6 +23,13 @@ smallest possible partial quotient, the denominators of the convergents of `φ` 
 those of an irrational number can: the bound `Real.fib_succ_le_den_convergent` is an equality
 for `φ`.
 
+The golden ratio is also the extremal case of Hurwitz's theorem
+(`Real.infinite_rat_abs_sub_lt_one_div_sqrt_five_mul_den_sq_of_irrational`): along the convergents
+`p / q` of `φ`, the quantity `q * |q * φ - p|` tends to `1 / √5`. That the constant `√5` cannot be
+improved for `φ` is `TauCeti.finite_setOf_abs_goldenRatio_sub_lt_of_sqrt_five_lt`, in
+`TauCeti.NumberTheory.DiophantineApproximation.Hurwitz`; its proof does not use continued
+fractions.
+
 ## Main results
 
 * `TauCeti.partDens_of_goldenRatio`: every partial denominator of `GenContFract.of φ` is `1`.
@@ -33,17 +40,21 @@ for `φ`.
   lowest terms.
 * `TauCeti.den_convergent_goldenRatio_mul_sub_num`, `TauCeti.goldenRatio_sub_convergent`: the
   exact error of the `n`-th convergent.
+* `TauCeti.den_convergent_goldenRatio_mul_abs`,
+  `TauCeti.tendsto_den_convergent_goldenRatio_mul_abs`: at the `n`-th convergent `p / q`,
+  `q * |q * φ - p| = (1 - (-ψ ^ 2) ^ (n + 1)) / √5`, which tends to `1 / √5`.
 
 ## References
 
 * A. Ya. Khinchin, *Continued Fractions*, ch. I, §4.
+* G. H. Hardy and E. M. Wright, *An Introduction to the Theory of Numbers*, ch. XI.
 -/
 
 public section
 
 open GenContFract (of IntFractPair)
 open scoped goldenRatio
-open Real
+open Real Filter Topology
 
 namespace TauCeti
 
@@ -141,5 +152,31 @@ theorem convergent_goldenRatio_lt_iff (n : ℕ) : (convergent φ n : ℝ) < φ �
   rcases Nat.even_or_odd n with h | h
   · exact iff_of_true (h.add_one.pow_neg goldenConj_neg) h
   · exact iff_of_false (not_lt.mpr (h.add_one.pow_nonneg ψ)) (Nat.not_even_iff_odd.mpr h)
+
+/-- The exact value of `q * |q * φ - p|` at the `n`-th convergent `p / q` of the golden ratio. -/
+theorem den_convergent_goldenRatio_mul_abs (n : ℕ) :
+    (convergent φ n).den * |(convergent φ n).den * φ - (convergent φ n).num| =
+      (1 - (-ψ ^ 2) ^ (n + 1)) / √5 := by
+  have h1 : φ * -ψ = 1 := by linarith [goldenRatio_mul_goldenConj]
+  have h2 : ψ * -ψ = -ψ ^ 2 := by ring
+  have habs : |(-ψ ^ (n + 1))| = (-ψ) ^ (n + 1) := by simp [abs_pow, abs_of_neg goldenConj_neg]
+  rw [den_convergent_goldenRatio_mul_sub_num, den_convergent_goldenRatio, coe_fib_eq, habs]
+  calc (φ ^ (n + 1) - ψ ^ (n + 1)) / √5 * (-ψ) ^ (n + 1)
+      = ((φ * -ψ) ^ (n + 1) - (ψ * -ψ) ^ (n + 1)) / √5 := by
+        simp only [mul_pow]; ring
+    _ = (1 - (-ψ ^ 2) ^ (n + 1)) / √5 := by rw [h1, h2, one_pow]
+
+/-- Along the convergents `p / q` of the golden ratio, `q * |q * φ - p|` tends to `1 / √5`: the
+constant `√5` in Hurwitz's theorem is attained in the limit by the convergents of `φ`. -/
+theorem tendsto_den_convergent_goldenRatio_mul_abs :
+    Tendsto (fun n : ℕ ↦
+      (convergent φ n).den * |(convergent φ n).den * φ - (convergent φ n).num|)
+      atTop (𝓝 (1 / √5)) := by
+  simp_rw [den_convergent_goldenRatio_mul_abs]
+  have hψ : |ψ| < 1 := abs_lt.mpr ⟨neg_one_lt_goldenConj, goldenConj_neg.trans one_pos⟩
+  have h : |(-ψ ^ 2)| < 1 := by
+    simpa only [abs_neg, abs_pow] using pow_lt_one₀ (abs_nonneg ψ) hψ two_ne_zero
+  have h0 := (tendsto_pow_atTop_nhds_zero_of_abs_lt_one h).comp (tendsto_add_atTop_nat 1)
+  simpa using (h0.const_sub 1).div_const √5
 
 end TauCeti

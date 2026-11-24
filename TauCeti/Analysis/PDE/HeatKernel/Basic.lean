@@ -168,7 +168,7 @@ theorem laplacian_heatKernel (t : ℝ) (x : E) :
     ring
   have hK : heatKernel t = fun y : E => ρ (‖y‖ ^ 2) := funext fun y => heatKernel_apply t y
   have hρc : ContDiff ℝ 2 ρ := contDiff_const.mul ((contDiff_id.neg.div_const _).exp)
-  rw [hK, hρc.laplacian_comp_norm_sq, hddρ, hdρ]
+  rw [hK, hρc.contDiffAt.laplacian_comp_norm_sq, hddρ, hdρ]
   ring
 
 /-- **The heat equation.** For `t > 0`, the heat kernel solves `∂ₜ K_t(x) = Δ K_t(x)`. -/

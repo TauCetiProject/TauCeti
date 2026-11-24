@@ -28,6 +28,8 @@ when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrice
 identifies the changes of orthonormal frame with the unitary group
 (`Orthonormal.orthonormal_sum_smul_iff_mem_unitaryGroup`), and a unitary change of frame
 preserves and reflects orthonormality (`TauCeti.orthonormal_sum_smul_iff_of_mem_unitaryGroup`).
+In particular two real orthonormal frames of the same subspace differ by the orthogonal overlap
+matrix `(⟪τ i, τ' j⟫)`, of determinant `±1` (`Orthonormal.det_inner_eq_one_or_eq_neg_one`).
 -/
 
 public section
@@ -198,6 +200,30 @@ theorem orthonormal_sum_smul_iff_mem_unitaryGroup [DecidableEq ι] (hv : Orthono
     (A : Matrix ι ι 𝕜) :
     Orthonormal 𝕜 (fun j ↦ ∑ i, A j i • v i) ↔ A ∈ Matrix.unitaryGroup ι 𝕜 := by
   rw [hv.orthonormal_sum_smul_iff, Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose]
+
+/-- A vector in the span of a finite orthonormal family is the sum of its coordinates against the
+family. -/
+theorem sum_inner_smul_eq_of_mem_span (hv : Orthonormal 𝕜 v) {x : E}
+    (hx : x ∈ Submodule.span 𝕜 (Set.range v)) : ∑ i, ⟪v i, x⟫_𝕜 • v i = x := by
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).1 hx
+  simp_rw [hv.inner_right_fintype]
+
+/-- The overlap matrix `(⟪τ i, τ' j⟫)` of two real orthonormal families with the same index, the
+second in the span of the first, is orthogonal, so its determinant is `±1`. -/
+theorem det_inner_eq_one_or_eq_neg_one {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [DecidableEq ι] {τ τ' : ι → F} (hτ : Orthonormal ℝ τ) (hτ' : Orthonormal ℝ τ')
+    (h : ∀ j, τ' j ∈ Submodule.span ℝ (Set.range τ)) :
+    (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ).det = 1 ∨ (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ).det = -1 := by
+  set A : Matrix ι ι ℝ := Matrix.of fun j i ↦ ⟪τ i, τ' j⟫_ℝ
+  -- The rows of `A` are the coordinates of the orthonormal vectors `τ' j`.
+  have hA : A ∈ Matrix.unitaryGroup ι ℝ := (hτ.orthonormal_sum_smul_iff_mem_unitaryGroup A).1 <| by
+    convert hτ' using 1
+    funext j
+    exact hτ.sum_inner_smul_eq_of_mem_span (h j)
+  -- The determinant of `A` is unitary, and the unitary reals are `±1`.
+  have hdet := Unitary.star_mul_self_of_mem (Matrix.det_of_mem_unitary hA)
+  rw [star_trivial] at hdet
+  exact mul_self_eq_one_iff.1 hdet
 
 end Orthonormal
 
