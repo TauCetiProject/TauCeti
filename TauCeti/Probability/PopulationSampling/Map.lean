@@ -243,11 +243,8 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_inject
         (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
       2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
-  have hle : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) ≤
-      (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
-    exact_mod_cast Nat.descFactorial_le_pow _ _
   rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective hx e]
-  simp [ENNReal.toReal_one_sub_div hle]
+  simp [toReal_one_sub_descFactorial_div_pow]
 
 end DistinctMeasurableSingletons
 
@@ -307,6 +304,20 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_le_update_
   simp only [sampleWithoutReplacement_def, sampleWithReplacement_def]
   exact iSup_samplePopulation_dirac_sub_le_update_id _ _ hxab
 
+/-- When an embedding `ι ↪ κ` exists, both sampling laws of a probability population law `ρ` are
+probability measures, so the largest eventwise excess of sampling with replacement over sampling
+without replacement equals the largest excess in the opposite direction. -/
+theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_eq
+    [Fintype ι] [Finite κ] (ρ : Measure (κ → α)) [IsProbabilityMeasure ρ] (e : ι ↪ κ) :
+    (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
+        sampleWithReplacement ρ A - sampleWithoutReplacement ρ A) =
+      ⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
+        sampleWithoutReplacement ρ A - sampleWithReplacement ρ A := by
+  have : Nonempty (ι → κ) := ⟨e⟩
+  have := isProbabilityMeasure_sampleWithReplacement (ι := ι) ρ
+  have := isProbabilityMeasure_sampleWithoutReplacement ρ e
+  exact iSup_measure_sub_comm (by rw [measure_univ, measure_univ])
+
 /-- When an embedding `ι ↪ κ` exists and `x a = x b`, the largest eventwise excess of sampling `x`
 with replacement over sampling `x` without replacement is also at most the without-over-with excess
 of the one-pair population `Function.update id b a`. -/
@@ -319,10 +330,7 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_le_update_
       ⨆ (B : Set (ι → κ)) (_ : MeasurableSet B),
         sampleWithoutReplacement (Measure.dirac (Function.update id b a)) B -
           sampleWithReplacement (Measure.dirac (Function.update id b a)) B := by
-  let : Nonempty (ι → κ) := ⟨fun _ => a⟩
-  let := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac x) e
-  let := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
-  rw [iSup_measure_sub_comm (by rw [measure_univ, measure_univ])]
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_eq _ e]
   exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_le_update_id hxab
 
 /-- If `x a = x b`, the extended total variation distance between sampling `x` without and with

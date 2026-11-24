@@ -232,10 +232,7 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_lt_of_not_
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
   obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-  have : Nonempty (ι → κ) := ⟨e⟩
-  have := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
-  have := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac x) e
-  rw [iSup_measure_sub_comm (by rw [measure_univ, measure_univ])]
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_eq _ e]
   exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective hx hm
 
 /-- **Strictness of the repeated-value bound, extended total-variation form.** For a sample of
@@ -259,13 +256,7 @@ theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_i
       (iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective hx hm)
   · rw [etvDist_eq_iSup_sub_add_iSup_sub, sampleWithoutReplacement_eq_zero_of_card_lt hnm,
       Nat.descFactorial_eq_zero_iff_lt.2 hnm]
-    simp only [Nat.cast_zero, ENNReal.zero_div, tsub_zero, mul_one, FunLike.coe_zero,
-      Pi.zero_apply, zero_tsub]
-    have h0 : (⨆ (A : Set (ι → α)) (_ : MeasurableSet A), (0 : ℝ≥0∞)) = 0 := by simp
-    have h1 : (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
-        sampleWithReplacement (Measure.dirac x) A) ≤ 1 := iSup₂_le fun _ _ => prob_le_one
-    rw [h0, zero_add]
-    exact h1.trans_lt (by norm_num : (1 : ℝ≥0∞) < 2)
+    simpa using (iSup₂_le fun _ _ => prob_le_one).trans_lt (by norm_num : (1 : ℝ≥0∞) < 2)
 
 /-- **Strictness of the repeated-value bound, real total-variation form.** For a sample of size
 `|ι| ≥ 2`, the real total variation distance between sampling a population with a repeated value
@@ -280,10 +271,7 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_in
   have h := ENNReal.toReal_strict_mono (by finiteness)
     (etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
       (ι := ι) hx hm)
-  have hle : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) ≤
-      (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
-    exact_mod_cast Nat.descFactorial_le_pow _ _
-  simpa [tvDist, ENNReal.toReal_one_sub_div hle] using h
+  simpa [tvDist, toReal_one_sub_descFactorial_div_pow] using h
 
 /-- **Distinct values are the only populations attaining the collision probability.** For
 `2 ≤ |ι| ≤ |κ|` and a measurable all-distinct event, the largest event excess of sampling
@@ -317,10 +305,7 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff_inj
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ↔ Injective x := by
   obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-  have : Nonempty (ι → κ) := ⟨e⟩
-  have := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
-  have := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac x) e
-  rw [iSup_measure_sub_comm (by rw [measure_univ, measure_univ])]
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_eq _ e]
   exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective hm hmn hI
 
 /-- **Total-variation form of the characterization.** For `2 ≤ |ι| ≤ |κ|` and a measurable
@@ -393,10 +378,7 @@ theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff
       1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ↔ Injective x := by
   obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
-  have : Nonempty (ι → κ) := ⟨e⟩
-  have := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
-  have := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac x) e
-  rw [iSup_measure_sub_comm (by rw [measure_univ, measure_univ])]
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_eq _ e]
   exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff hm hmn
 
 /-- **Attainment characterization under measurable singletons (`etvDist` form).** When `α` has
