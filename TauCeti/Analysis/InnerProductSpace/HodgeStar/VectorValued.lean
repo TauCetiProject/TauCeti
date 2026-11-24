@@ -160,6 +160,15 @@ theorem vectorFormInner_smulRight_smulRight (f g : ⋀[ℝ]^k E →ₗ[ℝ] ℝ)
     map_smul, LinearMap.smul_apply, smul_eq_mul, LinearMap.mul_apply', Finset.mul_sum]
   exact Finset.sum_congr rfl fun _ _ ↦ by ring
 
+/-- The pairing of the decomposable forms `X ⟪ω, ·⟫` and `Y ⟪η, ·⟫`, with `ω, η` `k`-vectors and
+`X, Y ∈ V`, is `B (X, Y) ⟪ω, η⟫`. -/
+theorem vectorFormInner_smulRight_innerₗ_smulRight_innerₗ (ω η : ⋀[ℝ]^k E) (X Y : V) :
+    vectorFormInner B k ((innerₗ (⋀[ℝ]^k E) ω).smulRight X) ((innerₗ (⋀[ℝ]^k E) η).smulRight Y) =
+      B X Y * ⟪ω, η⟫ := by
+  set c := stdOrthonormalBasis ℝ (⋀[ℝ]^k E)
+  rw [vectorFormInner_smulRight_smulRight, vectorFormInner_eq_sum c, ← c.sum_inner_mul_inner ω η]
+  simp [real_inner_comm η]
+
 /-- For real-valued forms, read as linear maps on `⋀ᵏ E`, the pairing for the product of real
 numbers is the inner product of forms `TauCeti.alternatingFormInner`. -/
 @[simp]
@@ -253,6 +262,14 @@ theorem vectorFormHodgeStar_smulRight (hkl : k + l = finrank ℝ E) (f : ⋀[ℝ
     o.vectorFormHodgeStar hkl (f.smulRight X) = (o.vectorFormHodgeStar hkl f).smulRight X := by
   refine LinearMap.ext fun x ↦ ?_
   simp
+
+/-- The Hodge star of the real-valued form `⟪ω, ·⟫` defined by a `k`-vector `ω` is `⟪⋆ω, ·⟫`. -/
+@[simp]
+theorem vectorFormHodgeStar_innerₗ (hkl : k + l = finrank ℝ E) (ω : ⋀[ℝ]^k E) :
+    o.vectorFormHodgeStar hkl (innerₗ (⋀[ℝ]^k E) ω) = innerₗ (⋀[ℝ]^l E) (o.hodgeStar hkl ω) := by
+  refine LinearMap.ext fun x ↦ ?_
+  rw [vectorFormHodgeStar_apply, innerₗ_apply_apply, innerₗ_apply_apply,
+    ← o.inner_hodgeStar_hodgeStar hkl, LinearEquiv.apply_symm_apply]
 
 /-- On real-valued forms, read as linear maps on `⋀ᵏ E`, the Hodge star of vector-valued forms is
 the Hodge star of forms. -/
