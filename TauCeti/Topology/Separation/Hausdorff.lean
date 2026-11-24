@@ -59,16 +59,17 @@ theorem isClosed_forall₂_eq {X : Type*} [TopologicalSpace X] {ι : Sort*} {κ 
   rw [Set.ofPred_forall]
   exact isClosed_iInter fun i => isClosed_forall_eq (hf i) (hg i)
 
-/-- If, for every neighbourhood `s` of `a`, the points `y ≠ b` with `g y ∈ f '' s` accumulate at
-`b`, then `g b = f a`, for maps `f` and `g` into a Hausdorff space continuous at `a` and `b`. -/
+/-- If, for every neighbourhood `s` of `a`, there are points `y` arbitrarily close to `b` with
+`g y ∈ f '' s`, then `g b = f a`, for maps `f` and `g` into a Hausdorff space continuous at `a` and
+`b`. -/
 theorem eq_of_frequently_mem_image {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [TopologicalSpace Z] [T2Space Z] {f : X → Z} {g : Y → Z} {a : X} {b : Y}
     (hf : ContinuousAt f a) (hg : ContinuousAt g b)
-    (hacc : ∀ s ∈ 𝓝 a, ∃ᶠ y in 𝓝[≠] b, g y ∈ f '' s) : g b = f a := by
+    (hacc : ∀ s ∈ 𝓝 a, ∃ᶠ y in 𝓝 b, g y ∈ f '' s) : g b = f a := by
   by_contra hne
   obtain ⟨V, W, hV, hW, hbV, haW, hVW⟩ := t2_separation hne
   obtain ⟨y, ⟨x, hx, hxy⟩, hyV⟩ := ((hacc _ (hf.preimage_mem_nhds (hW.mem_nhds haW))).and_eventually
-    (nhdsWithin_le_nhds (hg.preimage_mem_nhds (hV.mem_nhds hbV)))).exists
+    (hg.preimage_mem_nhds (hV.mem_nhds hbV))).exists
   exact Set.disjoint_left.1 hVW hyV (hxy ▸ hx)
 
 end TauCeti

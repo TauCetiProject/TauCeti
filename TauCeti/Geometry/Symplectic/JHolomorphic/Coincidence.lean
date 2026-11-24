@@ -188,7 +188,8 @@ theorem exists_analyticAt_eventuallyEq_comp_of_frequently_mem_image [FiniteDimen
   have := FiniteDimensional.completeSpace ℝ V
   have hub : u₁ b₀ = u₀ a₀ := eq_of_frequently_mem_image
     (hu₀.continuousOn.continuousAt (hU.mem_nhds ha₀))
-    (hu₁.continuousOn.continuousAt (hU₁.mem_nhds hb₀)) hacc
+    (hu₁.continuousOn.continuousAt (hU₁.mem_nhds hb₀))
+    fun S hS ↦ (hacc S hS).filter_mono nhdsWithin_le_nhds
   obtain ⟨n, W, hW, hbij⟩ :=
     exists_euclideanSpace_bijective_coprod
       (ContinuousLinearMap.ext fun v ↦ by simpa using hsq a₀ ha₀ v) (hCR₀ a₀ ha₀) hdu₀

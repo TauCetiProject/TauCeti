@@ -428,7 +428,8 @@ theorem germFactorsThrough_of_frequently_mem_image [T2Space N] (hu₀ : ContMDif
     (hdu₀ : mfderiv 𝓘(ℝ, ℂ) I u₀ a₀ ≠ 0)
     (hacc : ∀ s ∈ 𝓝 a₀, ∃ᶠ b in 𝓝[≠] b₀, u₁ b ∈ u₀ '' s) : GermFactorsThrough u₁ b₀ u₀ a₀ :=
   germFactorsThrough_of_frequently_mem_image_of_eq hu₀ hJu₀ hu₁ hJu₁ hdu₀
-    (eq_of_frequently_mem_image hu₀.continuous.continuousAt hu₁.continuous.continuousAt hacc) hacc
+    (eq_of_frequently_mem_image hu₀.continuous.continuousAt hu₁.continuous.continuousAt
+      fun s hs ↦ (hacc s hs).filter_mono nhdsWithin_le_nhds) hacc
 
 /-- **Accumulating coincidences factor a pseudoholomorphic curve**, for sequences
 (McDuff–Salamon, Lemma 2.4.3). Under the hypotheses on `u₀` and `u₁` of
