@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.Algebra.Algebra.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.SplitBaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Split.BaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
 import Mathlib.Tactic.FinCases
 import TauCeti.Algebra.Algebra.Hom

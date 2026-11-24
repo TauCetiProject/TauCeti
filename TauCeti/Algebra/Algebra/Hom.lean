@@ -113,6 +113,7 @@ theorem AlgHom.algebraMap_toAlgebra_apply {R A B : Type*} [CommSemiring R] [Comm
 /-- **`Algebra.ofId R A` is `algebraMap R A`** as a function. Mathlib's `Algebra.ofId_apply` is
 the pointwise form; this unapplied form rewrites the function itself, for instance inside
 `Matrix.map M ⇑(Algebra.ofId R A)` as produced by `AlgHom.mapMatrix_apply`. -/
+@[simp]
 theorem Algebra.coe_ofId (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A] :
     ⇑(Algebra.ofId R A) = algebraMap R A :=
   funext (Algebra.ofId_apply A)
