@@ -15,6 +15,7 @@ public import TauCeti.Analysis.Polynomial.L1Norm
 import Mathlib.Data.Nat.Choose.Bounds
 import TauCeti.Algebra.Polynomial.HasseDeriv
 import TauCeti.Data.Nat.Choose.Bounds
+import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.Algebra.Polynomial.Lifts
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Binomial
@@ -55,7 +56,6 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 
 * `TauCeti.degree_multichoose_X_add_one`: `Δ(X; k)` has degree `k`.
 * `TauCeti.multichoose_X_add_one_ne_zero`: Baker's binomial polynomials are nonzero.
-* `TauCeti.natDegree_multichoose_X_add_one_comp_C_mul_X_le`: `Δ(q X; k)` has degree at most `k`.
 * `TauCeti.multichoose_X_add_one_comp_C_add_C_mul_X_mem_lifts`: `Δ(a + L X; k)` has integral
   coefficients.
 * `TauCeti.pow_mul_eval_hasseDeriv_multichoose_X_add_one_pow_mem_range_intCast`: Baker's
@@ -74,8 +74,9 @@ Read at a single prime `p`, the denominator bound with `L = lcm(1, …, k)` says
 * `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_le`: the size bound.
 * `TauCeti.abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le`: the size bound for
   `Δ(q X; k)`, at points `x` with `|q x| ≤ n`.
-* `TauCeti.abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_le`: a bound on an operator
-  applied to `Δ(q X; τ)`, with rational rescaling and evaluation parameters.
+* `abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_multichoose_X_add_one_comp_C_mul_X_le`
+  (in `TauCeti`): a bound on a differential operator `P(d/dX)` applied to `Δ(q X; τ)`, with
+  rational rescaling and evaluation parameters.
 
 ## References
 
@@ -123,14 +124,6 @@ theorem multichoose_X_add_one_ne_zero (k : ℕ) : Ring.multichoose (X + 1 : ℚ[
 theorem natDegree_multichoose_X_add_one (k : ℕ) :
     (Ring.multichoose (X + 1 : ℚ[X]) k).natDegree = k :=
   natDegree_eq_of_degree_eq_some (degree_multichoose_X_add_one k)
-
-/-- The rescaled binomial polynomial `Δ(q X; k)` has natural degree at most `k`. -/
-theorem natDegree_multichoose_X_add_one_comp_C_mul_X_le (k : ℕ) (q : ℚ) :
-    ((Ring.multichoose (X + 1 : ℚ[X]) k).comp (C q * X)).natDegree ≤ k :=
-  natDegree_comp_le.trans (by
-    rw [natDegree_multichoose_X_add_one]
-    exact (Nat.mul_le_mul_left _ ((natDegree_C_mul_le _ _).trans natDegree_X_le)).trans
-      (by rw [mul_one]))
 
 /-- Composition with `q` is the binomial-ring specialisation `X ↦ q`: `Δ(q; n)` is
 `Ring.multichoose (q + 1) n`. -/
@@ -369,9 +362,14 @@ theorem abs_eval_hasseDeriv_multichoose_X_add_one_pow_comp_C_mul_X_le {q x : ℚ
   gcongr
   exact abs_eval_hasseDeriv_multichoose_X_add_one_pow_le hx k l m
 
-/-- The first factor of the rational factor: if `|q x| ≤ N` and `|P^{[k]}(t)| ≤ H` for `k ≤ τ`,
-then `|∑ₖ P⁽ᵏ⁾(t) (Δ(q X; τ))^{[k]}(x)| ≤ H (1 + τ |q|) ^ τ 2 ^ (N + τ + 1)`. -/
-theorem abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_le {q x : ℚ} {N : ℕ}
+/-- **A differential operator applied to `Δ(q X; τ)`.** Let `P` be a polynomial whose Hasse
+derivatives at `t` satisfy `|P^{[k]}(t)| ≤ H` for `k ≤ τ`. If `|q x| ≤ N`, then the sum
+`∑ₖ P⁽ᵏ⁾(t) (Δ(q X; τ))^{[k]}(x)`, pairing the iterated derivatives of `P` at `t` with the Hasse
+derivatives of `Δ(q X; τ)` at `x`, has absolute value at most
+`H (1 + τ |q|) ^ τ 2 ^ (N + τ + 1)`. Only the orders `k ≤ τ` contribute, since `Δ(q X; τ)` has
+degree at most `τ`. -/
+theorem abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_multichoose_X_add_one_comp_C_mul_X_le
+    {q x : ℚ} {N : ℕ}
     (hx : |q * x| ≤ N) {τ : ℕ} {t : ℚ} {P : Polynomial ℚ} {H : ℚ}
     (hP : ∀ k ≤ τ, |(Polynomial.hasseDeriv k P).eval t| ≤ H) :
     |∑ k ∈ Finset.range (P.natDegree + 1), (Polynomial.derivative^[k] P).eval t *
@@ -388,7 +386,7 @@ theorem abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_le {q x : ℚ} {N : 
     have hQ : Polynomial.hasseDeriv k Q = 0 := by
       refine Polynomial.hasseDeriv_eq_zero_of_lt_natDegree _ _
         (lt_of_le_of_lt ?_ (by simpa [Nat.lt_succ_iff] using hk))
-      exact natDegree_multichoose_X_add_one_comp_C_mul_X_le τ _
+      exact (natDegree_comp_C_mul_X_le _ _).trans (natDegree_multichoose_X_add_one τ).le
     simp [f, hQ]
   calc |∑ k ∈ Finset.range (P.natDegree + 1), f k|
       ≤ ∑ k ∈ Finset.range (P.natDegree + 1) ∪ Finset.range (τ + 1), |f k| :=

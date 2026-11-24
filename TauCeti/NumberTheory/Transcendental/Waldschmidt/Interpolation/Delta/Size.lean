@@ -41,7 +41,7 @@ case `q x₀ = 0` and `q xⱼ = aₘ sⱼ - aⱼ sₘ`
 `N₀ = 0` and `Nⱼ = |aₘ| Sⱼ + |aⱼ| Sₘ`
 (`TauCeti.abs_intCast_mul_waldschmidtPoint_waldschmidtNormalize_le`). For the delta-operator
 columns `δ_k(∂/∂z₀; σ)` and `|t| ≤ T₁`, the Hasse derivatives of the operator are bounded by
-`TauCeti.abs_eval_hasseDeriv_waldschmidtDeltaOperator_le`. All the integer grid, derivative,
+`TauCeti.abs_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le`. All the integer grid, derivative,
 degree and denominator parameters are kept separate.
 
 ## Main results
@@ -138,8 +138,10 @@ theorem abs_eval_waldschmidtEntryPolynomial_waldschmidtDelta_le {b : Fin (n + 1)
   rw [← hentry, waldschmidtDelta_def, waldschmidtOperatorEntry_prod_aeval_X]
   simp only [Algebra.algebraMap_self, Polynomial.map_id, one_zpow, prod_const_one, mul_one]
   rw [abs_mul, Fin.sum_univ_succ, pow_add, ← mul_assoc]
-  exact mul_le_mul (abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_le (hx 0) hP)
-    (hprod.trans_eq (prod_pow_eq_pow_sum _ _ _)) (abs_nonneg _) (by positivity)
+  have h0 :=
+    abs_sum_eval_iterate_derivative_mul_eval_hasseDeriv_multichoose_X_add_one_comp_C_mul_X_le
+      (hx 0) hP
+  exact mul_le_mul h0 (hprod.trans_eq (prod_pow_eq_pow_sum _ _ _)) (abs_nonneg _) (by positivity)
 
 /-- **The coefficient length of the delta rows.** The product `∏ᵢ Δ(q Xᵢ; τᵢ)` has length at
 most `∏ᵢ (τᵢ + 1) max(1, ‖q‖) ^ τᵢ`. -/
@@ -212,32 +214,25 @@ theorem l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_waldschmidtDeltaOpera
     (waldschmidtEntryPolynomial t s (waldschmidtDeltaOperator k σ) (waldschmidtDelta q τ)).l1Norm ≤
       (2 : ℝ) ^ (σ / k * (T₁ + k + 1) + (T₁ + σ % k + 1)) *
         (∏ i, ((τ i + 1 : ℝ) * max 1 ‖(q : ℚ)‖ ^ τ i)) *
-        (τ.degree + 2 * S + 1 : ℝ) ^ τ.degree := by
-  have htT : |(t : ℚ)| ≤ T₁ := by
-    rw [← Int.cast_abs, ← Nat.cast_natAbs]
-    exact_mod_cast ht
-  apply l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_le (s := s) (hs := hs)
-  intro κ
-  simpa only [← Rat.norm_cast_real, Real.norm_eq_abs, Rat.cast_abs, Rat.cast_pow,
-    Rat.cast_ofNat] using
-    (Rat.cast_le (K := ℝ)).2 (abs_eval_hasseDeriv_waldschmidtDeltaOperator_le htT k σ κ)
+        (τ.degree + 2 * S + 1 : ℝ) ^ τ.degree :=
+  l1Norm_waldschmidtEntryPolynomial_waldschmidtDelta_le
+    (norm_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le ht k σ) hs q τ
 
 /-- **The size of the delta-row entries with delta-operator columns.** Let the coefficients `b`
 be rational, let `q` be an integer with `|q xᵢ| ≤ Nᵢ` for the coordinates of the grid point
-`x = s · y`, and let `|t| ≤ T₁`. Write `σ = k p + r` with `0 ≤ r < k`. Then the rational factor
-of the entry of the operator `δ_k(∂/∂z₀; σ)` on the delta row `∏ᵢ Δ(q zᵢ; τᵢ)` has absolute value
-at most `2 ^ (p (T₁ + k + 1) + (T₁ + r + 1)) (1 + τ₀ |q|) ^ τ₀ 2 ^ (∑ᵢ (Nᵢ + τᵢ + 1))`. -/
+`x = s · y`, and let `|t| ≤ T₁`. Let `p = σ / k` and `r = σ % k` be the natural quotient and
+remainder, so `σ = k p + r` with `r < k` when `k > 0`, and `p = 0`, `r = σ` when `k = 0`. Then the
+rational factor of the entry of the operator `δ_k(∂/∂z₀; σ)` on the delta row `∏ᵢ Δ(q zᵢ; τᵢ)` has
+absolute value at most
+`2 ^ (p (T₁ + k + 1) + (T₁ + r + 1)) (1 + τ₀ |q|) ^ τ₀ 2 ^ (∑ᵢ (Nᵢ + τᵢ + 1))`. -/
 theorem abs_eval_waldschmidtEntryPolynomial_waldschmidtDelta_waldschmidtDeltaOperator_le
     {b : Fin (n + 1) → ℚ} {t : ℤ} {s : Fin (n + 1) → ℤ} {q : ℤ} {N : Fin (n + 1) → ℕ}
     (hx : ∀ i, |(q : ℚ) * waldschmidtPoint b s i| ≤ N i) {T₁ : ℕ} (ht : t.natAbs ≤ T₁)
     (k σ : ℕ) (τ : Fin (n + 1) →₀ ℕ) :
     |eval b (waldschmidtEntryPolynomial t s (waldschmidtDeltaOperator k σ) (waldschmidtDelta q τ))|
       ≤ 2 ^ (σ / k * (T₁ + k + 1) + (T₁ + σ % k + 1)) * (1 + τ 0 * |(q : ℚ)|) ^ τ 0 *
-        2 ^ ∑ i, (N i + τ i + 1) := by
-  have htT : |(t : ℚ)| ≤ T₁ := by
-    rw [← Int.cast_abs, ← Nat.cast_natAbs]
-    exact_mod_cast ht
-  exact abs_eval_waldschmidtEntryPolynomial_waldschmidtDelta_le hx
-    fun κ _ ↦ abs_eval_hasseDeriv_waldschmidtDeltaOperator_le htT k σ κ
+        2 ^ ∑ i, (N i + τ i + 1) :=
+  abs_eval_waldschmidtEntryPolynomial_waldschmidtDelta_le hx
+    fun κ _ ↦ abs_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le ht k σ κ
 
 end TauCeti

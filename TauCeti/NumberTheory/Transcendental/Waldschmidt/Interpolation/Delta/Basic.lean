@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Denominator
 import TauCeti.Algebra.MvPolynomial.Polynomial
+import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.RingTheory.Subring.Basic
 
 /-!
@@ -179,7 +180,8 @@ theorem mul_waldschmidtOperatorEntry_waldschmidtDelta_mem {α b : Fin (n + 1) �
     mem_bot.1 (mul_waldschmidtPoint_mem ⊥ (intCast_mem ⊥ q) (fun i ↦ mem_bot.2 (hb i)) s i)
   have hdeg : (((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) (τ 0)).comp
       (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K)).natDegree ≤ τ 0 :=
-    Polynomial.natDegree_map_le.trans (natDegree_multichoose_X_add_one_comp_C_mul_X_le _ _)
+    Polynomial.natDegree_map_le.trans ((Polynomial.natDegree_comp_C_mul_X_le _ _).trans
+      (natDegree_multichoose_X_add_one _).le)
   have h := mul_waldschmidtOperatorEntry_prod_aeval_X_mem A (b := b) (d := fun _ ↦ 1)
     (Q := fun i ↦ ((Ring.multichoose (Polynomial.X + 1 : Polynomial ℚ) (τ i)).comp
       (Polynomial.C (q : ℚ) * Polynomial.X)).map (algebraMap ℚ K))
