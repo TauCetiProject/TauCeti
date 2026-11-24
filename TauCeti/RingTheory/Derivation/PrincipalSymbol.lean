@@ -301,25 +301,6 @@ theorem _root_.Derivation.commutatorSymbol_derivation (δ : Derivation R A N) (f
 
 end CommSemiring
 
-/-! ### Transport along algebra isomorphisms -/
-
-section Conj
-
-variable {R A B : Type*} [CommSemiring R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
-  (e : A ≃ₐ[R] B)
-
-/-- The commutator symbol of the conjugate `e ∘ D ∘ e⁻¹` of `D` by an algebra isomorphism `e`, at
-the images `e aᵢ`, is the conjugate of the commutator symbol of `D` at the `aᵢ`. -/
-theorem _root_.AlgEquiv.commutatorSymbol_conjDifferentialOperators {m : ℕ}
-    (D : differentialOperators R A A A m) (a : Fin m → A) (y : B) :
-    commutatorSymbol R B B B m (e.conjDifferentialOperators m D) (fun i ↦ e (a i)) y =
-      e (commutatorSymbol R A A A m D a (e.symm y)) := by
-  rw [commutatorSymbol_apply_apply, AlgEquiv.coe_conjDifferentialOperators,
-    e.list_prod_smulCommutator_conj, commutatorSymbol_apply_apply]
-  rfl
-
-end Conj
-
 /-! ### Naturality under intertwining semilinear maps -/
 
 section Intertwining
@@ -351,6 +332,25 @@ theorem commutatorSymbol_apply_of_intertwining {m : ℕ} {D : differentialOperat
     simp only [smulCommutator_apply_apply, ← LinearMap.map_smulₛₗ, h, map_sub]
 
 end Intertwining
+
+/-! ### Transport along algebra isomorphisms -/
+
+section Conj
+
+variable {R A B : Type*} [CommSemiring R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+  (e : A ≃ₐ[R] B)
+
+/-- The commutator symbol of the conjugate `e ∘ D ∘ e⁻¹` of `D` by an algebra isomorphism `e`, at
+the images `e aᵢ`, is the conjugate of the commutator symbol of `D` at the `aᵢ`. -/
+theorem _root_.AlgEquiv.commutatorSymbol_conjDifferentialOperators {m : ℕ}
+    (D : differentialOperators R A A A m) (a : Fin m → A) (y : B) :
+    commutatorSymbol R B B B m (e.conjDifferentialOperators m D) (fun i ↦ e (a i)) y =
+      e (commutatorSymbol R A A A m D a (e.symm y)) := by
+  simpa using commutatorSymbol_apply_of_intertwining (e : A →+* B).toSemilinearMap
+    (e : A →+* B).toSemilinearMap (D' := e.conjDifferentialOperators m D)
+    (fun x ↦ by simp) a (e.symm y)
+
+end Conj
 
 /-! ### Descent to the cotangent module of an ideal -/
 

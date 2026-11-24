@@ -31,20 +31,21 @@ that at an interior point `y` of `N` whose image `g y` is interior, the commutat
 for all covectors `ηᵢ` at `g y`, the fibres of `g*V` and `g*W` at `y` being those of `V` and `W`
 at `g y` (`TauCeti.sectionCommutatorSymbol_comp_mfderiv_of_intertwining`), and likewise for the
 principal symbols (`TauCeti.sectionPrincipalSymbol_comp_mfderiv_of_intertwining`). No condition
-on `g` is needed. When `g` is a local diffeomorphism at `y`, for instance a diffeomorphism, an
-open embedding or a covering map, every covector at `y` is of the form `η ∘ dg_y`, so the
-principal symbol of `P'` at `y` is determined:
+on `g` is needed. When `g` is a local diffeomorphism at `y`, for instance a diffeomorphism or the
+inclusion of an open subset, every covector at `y` is of the form `η ∘ dg_y`, so the principal
+symbol of `P'` at `y` is determined:
 
 `σ(P')_y(ξ) = σ(P)_{g y}(ξ ∘ (dg_y)⁻¹)`
 
-(`TauCeti.sectionPrincipalSymbol_eq_comp_symm_of_intertwining`). In particular `P'` is elliptic at
-`y` exactly when `P` is elliptic at `g y`
-(`TauCeti.isSectionEllipticAt_iff_of_intertwining`).
+(`TauCeti.sectionPrincipalSymbol_eq_comp_symm_of_intertwining`). In particular, provided `y` and
+`g y` are both interior or both boundary points, `P'` is elliptic at `y` exactly when `P` is
+elliptic at `g y` (`TauCeti.isSectionEllipticAt_iff_of_intertwining`).
 
 Typical instances of `P'` are the transport `s' ↦ (P (s' ∘ g⁻¹)) ∘ g` of `P` along a
-diffeomorphism `g`, the restriction of `P` to an open subset, and the lift of `P` along a covering
-map. The intertwining relation is all that the statements use. The scalar analogue for functions,
-with conjugation by a diffeomorphism, is `TauCeti.smoothPrincipalSymbol_conjDifferentialOperators`.
+diffeomorphism `g`, the restriction of `P` to an open subset, and the lift of `P` along a smooth
+covering map that is a local diffeomorphism. The intertwining relation is all that the
+statements use. The scalar analogue for functions, with conjugation by a diffeomorphism, is
+`TauCeti.smoothPrincipalSymbol_conjDifferentialOperators`.
 
 ## Main results
 
@@ -87,13 +88,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
   [FiberBundle F' W] [VectorBundle ℝ F' W]
-
-/-- The pullback of the smooth bundle `V` along a smooth map is smooth. Sections are pulled back
-into the bundle `(g : C(N, M)) *ᵖ V`, whose base map is not syntactically the one of Mathlib's
-instance `ContMDiffVectorBundle.pullback`. -/
-local instance instContMDiffVectorBundlePullback (g : C^∞⟮J, N; I, M⟯) :
-    ContMDiffVectorBundle ∞ F ((g : C(N, M)) *ᵖ V) J :=
-  Bundle.Pullback.contMDiffVectorBundle (f := (g : C(N, M))) g.contMDiff
 
 variable (g : C^∞⟮J, N; I, M⟯) {m : ℕ}
   {P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m}
@@ -167,9 +161,8 @@ theorem sectionPrincipalSymbol_eq_comp_symm_of_intertwining {y : N}
   rw [← sectionPrincipalSymbol_comp_mfderiv_of_intertwining g hy hx h]
   congr 1
   ext v
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ← hg.mfderivToContinuousLinearEquiv_coe (by simp), ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+  simp [← hg.mfderivToContinuousLinearEquiv_coe (by simp),
+    -IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_coe]
 
 /-- **Ellipticity under pullback along a local diffeomorphism.** If `g` is a local diffeomorphism
 at `y` and `P' (s ∘ g) = (P s) ∘ g` for every smooth section `s`, then `P'` is elliptic at `y`
@@ -190,9 +183,8 @@ theorem isSectionEllipticAt_iff_of_intertwining {y : N} (hg : IsLocalDiffeomorph
     rw [← sectionPrincipalSymbol_comp_mfderiv_of_intertwining g hy hx h]
     refine hP hy _ fun h0 ↦ hη ?_
     ext v
-    have h0v := congr($h0 ((hg.mfderivToContinuousLinearEquiv (by simp)).symm v))
-    rwa [ContinuousLinearMap.comp_apply, ← he, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, zero_apply] at h0v
+    simpa [← he, -IsLocalDiffeomorphAt.mfderivToContinuousLinearEquiv_coe] using
+      congr($h0 ((hg.mfderivToContinuousLinearEquiv (by simp)).symm v))
   · intro hP hy ξ hξ
     have hx := hint.1 hy
     rw [sectionPrincipalSymbol_eq_comp_symm_of_intertwining g hg hy hx h]
