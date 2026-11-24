@@ -39,7 +39,8 @@ product over `a : ι` of the minors on `{j | j ≤ a}` raised to the power `m a`
 `TauCeti.leadingMinorWeight m j = ∑_{a ≥ j} m a`, which is antitone in `j`. Conversely, every
 antitone `c : ι → ℕ` is the weight of exactly one exponent vector,
 `TauCeti.leadingMinorExponent c`. For `ι = Fin u` and `λ = (c₁ ≥ ⋯ ≥ c_u)` the exponents are
-`m i = cᵢ - cᵢ₊₁` with `c_{u+1} = 0`.
+`m i = cᵢ - cᵢ₊₁` with `c_{u+1} = 0` (`TauCeti.leadingMinorExponent_of_covBy` and
+`TauCeti.leadingMinorExponent_of_isMax`).
 
 For a lower triangular `A` and an upper triangular `B`, the minor on an initial segment `p` of
 `X ↦ A * X * B` is the product of the minors of `A`, `X` and `B` on `p`. Hence substitution
@@ -62,6 +63,8 @@ multiplies a leading minor by the diagonal entries of `A` and `B` on that segmen
 * `TauCeti.leadingMinorWeight_leadingMinorExponent` and
   `TauCeti.leadingMinorExponent_leadingMinorWeight`: exponents and antitone weights correspond
   bijectively; in particular `TauCeti.leadingMinorWeight_injective`.
+* `TauCeti.leadingMinorExponent_of_covBy` and `TauCeti.leadingMinorExponent_of_isMax`: for an
+  antitone `c` the exponents are the differences `cᵢ - cᵢ₊₁`, and `c` itself at a maximal index.
 * `TauCeti.mvPolynomialMatrixRep_leadingMinorProd`: `(g₁, g₂) • Δ_λ` is the multiple of `Δ_λ` by
   `∏ⱼ ((g₁⁻¹) j j * g₂ j j) ^ cⱼ` for lower triangular `g₁` and upper triangular `g₂`;
   `TauCeti.mvPolynomialMatrixRep_leadingMinorProd_of_unitriangular` (both unipotent
@@ -203,6 +206,20 @@ def leadingMinorExponent (c : ι → ℕ) (a : ι) : ℕ :=
 /-- The defining formula of `TauCeti.leadingMinorExponent`. -/
 theorem leadingMinorExponent_def (c : ι → ℕ) (a : ι) :
     leadingMinorExponent c a = c a - (univ.filter fun b ↦ a < b).sup c := (rfl)
+
+/-- For an antitone `c`, the exponent at `a` is the difference `c a - c b` with the successor `b`
+of `a`, as in `cᵢ - cᵢ₊₁`. -/
+theorem leadingMinorExponent_of_covBy {c : ι → ℕ} (hc : Antitone c) {a b : ι} (h : a ⋖ b) :
+    leadingMinorExponent c a = c a - c b := by
+  rw [leadingMinorExponent_def]
+  congr 1
+  exact le_antisymm (Finset.sup_le fun x hx ↦ hc (h.lt_iff_le_right.1 (mem_filter.1 hx).2))
+    (le_sup (f := c) (mem_filter.2 ⟨mem_univ b, h.lt⟩))
+
+/-- At a maximal index the exponent is the weight itself: the convention `c_{u+1} = 0`. -/
+theorem leadingMinorExponent_of_isMax (c : ι → ℕ) {a : ι} (h : IsMax a) :
+    leadingMinorExponent c a = c a := by
+  simp [leadingMinorExponent_def, filter_eq_empty_iff.2 fun b _ ↦ h.not_lt (b := b)]
 
 /-- Every partition is the weight of a product of leading principal minors: the one with exponents
 `TauCeti.leadingMinorExponent c`. -/
