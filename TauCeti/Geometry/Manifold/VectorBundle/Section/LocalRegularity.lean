@@ -55,6 +55,8 @@ converse.
 
 * `Bundle.Trivialization.forall_chartComponent_iff`: for an invariant notion of local regularity,
   the regularity of all components does not depend on the chart and the frame.
+* `Bundle.Trivialization.chartComponent_of_basis`: the components along a basis of `F` control
+  the local regularity of all components.
 * `TauCeti.BundleTest.IsLocallyAt`: the functional `T` satisfies `P` near a point of `M`, and
   `TauCeti.BundleTest.isLocallyAt_iff`, its characterization in every chart and frame.
 * `TauCeti.BundleTest.isOpen_setOf_isLocallyAt`: the points near which `T` satisfies `P` form an
@@ -98,7 +100,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
 
 /-- Finitely many components, along a basis of `F`, control the local regularity of all
 components. -/
-private theorem chartComponent_of_basis (hP : IsLocalRegularity P) {ι : Type*} [Finite ι]
+theorem chartComponent_of_basis (hP : IsLocalRegularity P) {ι : Type*} [Finite ι]
     (b : Module.Basis ι ℝ F) (T : BundleTest I F V →L_c[ℝ] ℝ) {y : E} (hy : y ∈ c.target)
     (h : ∀ i, P _ (t.chartComponent c hc hct T (b i)) y) (v : F) :
     P _ (t.chartComponent c hc hct T v) y := by
