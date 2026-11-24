@@ -86,7 +86,8 @@ open CosetEnumeration
 /-! ### Unlabeled replay scheme and entry points -/
 
 /-- The `32`-bit replay scheme for unlabeled coset enumeration over an arbitrary subgroup, storing
-no subgroup-element labels (`Unit`) or global accumulator (`Unit`). -/
+no subgroup-element labels (`Unit`) or global accumulator (`Unit`). `canEncode` always returns
+`true`, and `Nat.setBitField` requires the encoded entry `q + 1 < 2 ^ 32`. -/
 @[expose]
 def unlabeledScheme : Scheme Unit Unit where
   width := 32
@@ -182,6 +183,7 @@ theorem wordValue_mem_of_checkWords (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)
     (hcheck : checkWords n rels subs ws parents steps = true) :
     ∀ w ∈ ws, wordValue x w ∈ H := by
+  rw [checkWords] at hcheck
   intro w hw
   have hmem := (smul_quotientGroup_mk_eq_self_iff H (wordValue x w) (pt x parents 0)).mp
     (closesAt_coset hrels hsubs (List.all_eq_true.mp hcheck w hw))
@@ -193,8 +195,10 @@ satisfies `wordValue x w = 1`. Neither generation by `x` nor table closure is re
 theorem wordValue_eq_one_of_checkRelators {ws : List (ℕ × List ℕ)}
     (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hcheck : checkRelators n rels ws parents steps = true) :
-    ∀ iw ∈ ws, wordValue x iw.2 = 1 := fun iw hiw ↦
-  (quotientBot_smul_eq_self_iff (wordValue x iw.2)
+    ∀ iw ∈ ws, wordValue x iw.2 = 1 := by
+  rw [checkRelators] at hcheck
+  intro iw hiw
+  exact (quotientBot_smul_eq_self_iff (wordValue x iw.2)
     (QuotientGroup.mk (pt x parents iw.1) : G ⧸ (⊥ : Subgroup G))).mp
     (closesAt_coset (H := (⊥ : Subgroup G)) hrels (by simp)
       (List.all_eq_true.mp hcheck iw hiw))
@@ -203,6 +207,7 @@ private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hsubs : ∀ s ∈ subs, wordValue x s ∈ H)
     (hrun : run n rels subs parents steps = some k) :
     ∃ f : Fin k → G ⧸ H, Function.Surjective f := by
+  rw [run] at hrun
   obtain ⟨⟨k', _⟩, hres, rfl⟩ := Option.map_eq_some_iff.mp hrun
   exact exists_surjective_of_result (unlabeledInterp H) hx H hrels (unlabeledInterp_sub hsubs)
     trivial hres fun h ↦ by

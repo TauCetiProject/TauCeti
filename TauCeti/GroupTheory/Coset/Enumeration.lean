@@ -32,8 +32,13 @@ the points (`w_0 = 1` and `w_p = g_t * w_j` with `j < p`) and a list of *steps*:
 point, scan a subgroup word at the point `0` with label `S.subLabel`, or scan a cyclic rotation of a
 relator at a point with label `S.zero`. Coincidences are merged union–find style, moving the edges
 of the merged point to its representative, and every edge is recorded together with its inverse.
-Whatever the certificate, each recorded fact is a true equation in `α`; a certificate that is wrong
-or incomplete only fails the final check that every surviving point has an edge along every letter.
+Replay can silently skip unusable or unencodable steps and entries (out-of-range letters or
+parents, failed walks, or entries exceeding `S.canEncode` or `S.width` bits) and still close if
+every surviving point ends up with an edge along every letter to a surviving point. Under an
+interpretation `I : Interp S G α` for which all relators evaluate to `1`, all subgroup words
+satisfy `wordValue x s • base = I.actR base S.subLabel`, and the initial accumulator satisfies
+`I.extraOk extra0`, every recorded edge, coincidence, and accumulator satisfies `I`, regardless
+of whether the table closes.
 
 The generic replay engine (`Scheme`, `State`, `Interp`, `Scheme.replay`) is parameterized by the
 label type `L`, global accumulator type `A`, and bit-field width:
@@ -56,8 +61,9 @@ replay over thousands of points stays within reach of kernel evaluation.
   bit-packed table state for coset-enumeration replay, with
   `TauCeti.CosetEnumeration.Scheme.replay`, `TauCeti.CosetEnumeration.State.closesAt`,
   `TauCeti.CosetEnumeration.State.isClosed`, and `TauCeti.CosetEnumeration.State.result`.
-* `TauCeti.CosetEnumeration.cyclicScheme`, `TauCeti.CosetEnumeration.replay`, and
-  `TauCeti.CosetEnumeration.run`: the `64`-bit cyclic-subgroup replay scheme and its entry points.
+* `TauCeti.CosetEnumeration.cyclicScheme`, `TauCeti.CosetEnumeration.replay`,
+  `TauCeti.CosetEnumeration.replayExponent`, and `TauCeti.CosetEnumeration.run`: the `64`-bit
+  cyclic-subgroup replay scheme, its entry points, and its recorded exponent accessor.
 * `TauCeti.CosetEnumeration.pt` and `TauCeti.CosetEnumeration.Interp`: point elements in `G` and
   soundness interpretations of a `Scheme` in a `G`-set `α`.
 
@@ -69,12 +75,14 @@ replay over thousands of points stays within reach of kernel evaluation.
   `Scheme.replay` satisfies the corresponding `I.actR` relation.
 * `TauCeti.CosetEnumeration.zero_mem_roots_and_exists_actR_of_isClosed_replay`: surviving-root
   closure of a closed `Scheme.replay` up to `I.actR`.
-* `TauCeti.CosetEnumeration.exists_surjective_of_result`: the `k` surviving points of a closed
-  `Scheme.replay` cover `G ⧸ H` when `I.actR`-related points have the same coset in `G ⧸ H`.
-* `TauCeti.CosetEnumeration.wordValue_pow_extra_replay_eq_one`: the exponent `N` recorded by any
-  cyclic replay satisfies `h ^ N = 1`;
-  `TauCeti.GroupPresentation.wordValue_pow_extra_replay_eq_one` is the same for the group defined
-  by a `TauCeti.GroupPresentation`.
+* `TauCeti.CosetEnumeration.exists_surjective_of_result`: when `x` generates `G` and any two
+  translates of `base` related by `I.actR` represent the same coset in `G ⧸ H` (under the
+  interpretation hypotheses on `rels`, `subs`, and `extra0`), the `k` surviving points of a
+  closed `Scheme.replay` cover `G ⧸ H`.
+* `TauCeti.CosetEnumeration.wordValue_pow_replayExponent_eq_one`: the exponent `N` recorded by
+  any cyclic replay satisfies `h ^ N = 1`;
+  `TauCeti.GroupPresentation.wordValue_pow_replayExponent_eq_one` is the same for the group
+  defined by a `TauCeti.GroupPresentation`.
 * `TauCeti.CosetEnumeration.index_zpowers_le_of_run` and
   `TauCeti.CosetEnumeration.wordValue_pow_eq_one_of_run`: a closed cyclic replay gives
   `[G : ⟨h⟩] ≤ k` and `h ^ N = 1`.
@@ -276,7 +284,8 @@ structure Scheme (L A : Type) where
   encode : ℕ → L → ℕ
   /-- Decode a packed field value, returning `none` on `0`. -/
   decode : ℕ → Option (ℕ × L)
-  /-- Whether a target point and label are eligible to be written into a field. -/
+  /-- Preliminary eligibility guard before attempting to write a target point and label into a
+  field; `Nat.setBitField` separately checks that `encode q e < 2 ^ width`. -/
   canEncode : ℕ → L → Bool
   /-- The identity label. -/
   zero : L
@@ -324,14 +333,19 @@ def edge (t j : ℕ) : Option (ℕ × L) :=
 def coin (j : ℕ) : Option (ℕ × L) :=
   S.decode (Nat.bitField S.width st.coins j)
 
-/-- Record the edge `(q, e)` from `j` along `t`. Entries that do not fit are dropped. -/
+/-- Record the edge `(q, e)` from `j` along `t`. Leaves `st` unchanged if `m ≤ t` or
+`S.canEncode q e = false`, and `Nat.setBitField` leaves `edges` unchanged if
+`2 ^ S.width ≤ S.encode q e`. -/
 @[expose]
 def setEdge (t j q : ℕ) (e : L) : State L A :=
   if t < m ∧ S.canEncode q e then
     { st with edges := Nat.setBitField S.width st.edges (j * m + t) (S.encode q e) }
   else st
 
-/-- Record the coincidence `(i, d)` of `j`, and schedule the edges of `j` to be moved. -/
+/-- When `S.canEncode i d = true`, queue `j` onto `pending` and record the coincidence `(i, d)` of
+`j` in `coins` provided `Nat.setBitField`'s separate width check `S.encode i d < 2 ^ S.width`
+succeeds (otherwise only `pending` changes). When `S.canEncode i d = false`, leave `st`
+unchanged. -/
 @[expose]
 def setCoin (j i : ℕ) (d : L) : State L A :=
   if S.canEncode i d then
@@ -513,8 +527,9 @@ def Scheme.replay {L A : Type} (S : Scheme L A) (n : ℕ) (rels subs : List (Lis
     (extra0 : A) (parents steps : List ℕ) : State L A :=
   runSteps S (2 * n) (rotations rels) subs steps ⟨1, 0, 0, extra0, [], parents⟩
 
-/-- The 64-bit replay scheme for coset enumeration over a cyclic subgroup, tracking integer
-exponents `e : ℤ` and a subgroup-generator exponent `N : ℕ`. -/
+/-- The `64`-bit replay scheme for coset enumeration over a cyclic subgroup, tracking integer
+exponents `e : ℤ` and a subgroup-generator exponent `N : ℕ`. `canEncode` requires `q < 2 ^ 32`,
+and `Nat.setBitField` requires `encodeEntry q e < 2 ^ 64`. -/
 @[expose]
 def cyclicScheme : Scheme ℤ ℕ where
   width := 64
@@ -538,6 +553,12 @@ exponent it records is a true equation, whatever the steps are. -/
 @[expose]
 def replay (n : ℕ) (rels : List (List ℕ)) (s : List ℕ) (parents steps : List ℕ) : State ℤ ℕ :=
   cyclicScheme.replay n rels [s] 0 parents steps
+
+/-- **The subgroup-generator exponent recorded by a cyclic replay**, extracted from
+`(replay n rels s parents steps).extra`. -/
+@[expose]
+def replayExponent (n : ℕ) (rels : List (List ℕ)) (s : List ℕ) (parents steps : List ℕ) : ℕ :=
+  (replay n rels s parents steps).extra
 
 /-- **Replay of coset enumeration** over the cyclic subgroup generated by the value of the word
 `s`, for the relators `rels` in `n` generators, with the certificate `parents` and `steps` of
@@ -974,8 +995,10 @@ theorem surjective_mk_pt_of_roots (hx : Subgroup.closure (Set.range x) = ⊤) (H
   obtain ⟨j', rfl⟩ := (Set.range_list_get roots).ge hr'
   exact ⟨j', h'.symm⟩
 
-/-- If a replay under `S` closes with `k` surviving points, and edges equated up to `I.actR`
-agree in `G ⧸ H`, then the cosets of the `k` surviving points cover `G ⧸ H`. -/
+/-- If `x` generates `G`, the relators `rels`, subgroup words `subs`, and initial accumulator
+`extra0` satisfy `I`, a replay under `S` closes with `k` surviving points, and any two elements
+`y, z : G` whose translates of `base` are related by `y • base = I.actR (z • base) e` represent
+the same coset in `G ⧸ H`, then the cosets of the `k` surviving points cover `G ⧸ H`. -/
 theorem exists_surjective_of_result (hx : Subgroup.closure (Set.range x) = ⊤) (H : Subgroup G)
     (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hsubs : ∀ s ∈ subs, wordValue x s • base = I.actR base S.subLabel)
@@ -1025,11 +1048,18 @@ private theorem cyclicInterp_sub (x : Fin n → G) (s : List ℕ) :
   subst hs'
   simp [cyclicInterp, cyclicScheme]
 
+private theorem run_eq_result (n : ℕ) (rels : List (List ℕ)) (s : List ℕ) (parents steps : List ℕ) :
+    run n rels s parents steps =
+      (cyclicScheme.replay n rels [s] 0 parents steps).result cyclicScheme (2 * n) := by
+  rw [run, replay]
+
 private theorem surjective_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
     (hrels : ∀ r ∈ rels, wordValue x r = 1) (hrun : run n rels s parents steps = some (k, N)) :
-    ∃ f : Fin k → G ⧸ Subgroup.zpowers (wordValue x s), Function.Surjective f :=
-  exists_surjective_of_result (cyclicInterp (wordValue x s)) hx (Subgroup.zpowers (wordValue x s))
-    hrels (cyclicInterp_sub x s) (by simp [cyclicInterp]) hrun fun {y z e} h ↦ by
+    ∃ f : Fin k → G ⧸ Subgroup.zpowers (wordValue x s), Function.Surjective f := by
+  rw [run_eq_result] at hrun
+  exact exists_surjective_of_result (cyclicInterp (wordValue x s)) hx
+    (Subgroup.zpowers (wordValue x s)) hrels (cyclicInterp_sub x s) (by simp [cyclicInterp]) hrun
+    fun {y z e} h ↦ by
       simp only [cyclicInterp, smul_eq_mul, mul_one] at h
       rw [h, QuotientGroup.mk_mul_of_mem _ (Subgroup.zpow_mem_zpowers (wordValue x s) e)]
 
@@ -1054,22 +1084,25 @@ theorem index_zpowers_le_of_run (hx : Subgroup.closure (Set.range x) = ⊤)
 a replay annihilates the value of `s`, whether or not the replay closes. A replay of a few steps
 thus proves a relation `h ^ N = 1` in a group given by a presentation, without bounding the group
 itself. -/
-theorem wordValue_pow_extra_replay_eq_one (hrels : ∀ r ∈ rels, wordValue x r = 1)
+theorem wordValue_pow_replayExponent_eq_one (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (s parents steps : List ℕ) :
-    wordValue x s ^ (replay n rels s parents steps).extra = 1 :=
-  extraOk_extra_replay (cyclicInterp (wordValue x s)) hrels (cyclicInterp_sub x s)
+    wordValue x s ^ replayExponent n rels s parents steps = 1 := by
+  rw [replayExponent, replay]
+  exact extraOk_extra_replay (cyclicInterp (wordValue x s)) hrels (cyclicInterp_sub x s)
     (by simp [cyclicInterp])
 
-/-- The exponent returned by a closed replay is the `extra` field of its final state. -/
-theorem extra_replay_of_run (hrun : run n rels s parents steps = some (k, N)) :
-    (replay n rels s parents steps).extra = N :=
-  (State.result_eq_some_iff.mp hrun).2.2
+/-- The exponent returned by a closed replay equals `replayExponent`. -/
+theorem replayExponent_eq_of_run (hrun : run n rels s parents steps = some (k, N)) :
+    replayExponent n rels s parents steps = N := by
+  rw [run_eq_result] at hrun
+  rw [replayExponent, replay]
+  exact (State.result_eq_some_iff.mp hrun).2.2
 
 /-- **Coset enumeration bounds the subgroup generator.** If the relators `rels` hold, the exponent
 returned by a closed replay annihilates the value of `s`. -/
 theorem wordValue_pow_eq_one_of_run (hrels : ∀ r ∈ rels, wordValue x r = 1)
     (hrun : run n rels s parents steps = some (k, N)) : wordValue x s ^ N = 1 :=
-  extra_replay_of_run hrun ▸ wordValue_pow_extra_replay_eq_one hrels s parents steps
+  replayExponent_eq_of_run hrun ▸ wordValue_pow_replayExponent_eq_one hrels s parents steps
 
 /-- **A finiteness certificate.** If the generators `x` generate `G` and the relators `rels` hold,
 a closed replay with a positive exponent shows that `G` is finite. -/
@@ -1121,12 +1154,12 @@ theorem _root_.TauCeti.GroupPresentation.wordValue_relatorLetters_eq_one (P : Gr
 /-- **A power relation in a presented group.** The exponent recorded by a replay for the relators
 of a presentation annihilates the value of `s` at the generators of the presented group, whether
 or not the replay closes. -/
-theorem _root_.TauCeti.GroupPresentation.wordValue_pow_extra_replay_eq_one
+theorem _root_.TauCeti.GroupPresentation.wordValue_pow_replayExponent_eq_one
     (P : GroupPresentation) (s parents steps : List ℕ) :
     wordValue (PresentedGroup.of (rels := P.relatorSet)) s ^
-      (replay P.generatorCount (P.relatorLetters.map (List.map signedLetter)) s parents
-        steps).extra = 1 :=
-  CosetEnumeration.wordValue_pow_extra_replay_eq_one P.wordValue_relatorLetters_eq_one s
+      replayExponent P.generatorCount (P.relatorLetters.map (List.map signedLetter)) s parents
+        steps = 1 :=
+  CosetEnumeration.wordValue_pow_replayExponent_eq_one P.wordValue_relatorLetters_eq_one s
     parents steps
 
 /-- **A finiteness certificate for a presented group.** A closed replay for the relators of a

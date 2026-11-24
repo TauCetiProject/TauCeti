@@ -495,11 +495,21 @@ private def stage4Steps : List ℕ :=
 
 /-! ### Kernel certificate checks -/
 
+private theorem generatorCount_m12 : M12.presentation.generatorCount = 2 := by
+  rw [presentation_M12, Sporadic.m12Presentation_generatorCount]
+
+private theorem m12Rels_eq :
+    m12Rels =
+      [[3, 0, 3, 0, 3, 0],
+       [0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2],
+       [0, 2, 2, 0, 3, 0, 0, 2, 0, 0, 2, 2]] := by
+  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_relatorLetters]
+  rfl
+
 private theorem check_stage1 :
     checkRelators M12.presentation.generatorCount
       m12Rels [(131, wordA5)] stage1Parents stage1Steps = true := by
-  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
-    Sporadic.m12Presentation_relatorLetters]
+  rw [generatorCount_m12, m12Rels_eq]
   decide +kernel
 
 private theorem check_stage2 :
@@ -507,23 +517,20 @@ private theorem check_stage2 :
       (m12Rels ++ [wordA5, wordB6])
       [(77, wordAB6), (72, wordAAB11)]
       stage2Parents stage2Steps = true := by
-  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
-    Sporadic.m12Presentation_relatorLetters]
+  rw [generatorCount_m12, m12Rels_eq]
   decide +kernel
 
 private theorem check_stage3 :
     checkRelators M12.presentation.generatorCount
       ((m12Rels ++ [wordA5, wordB6]) ++ [wordAB6, wordAAB11])
       [(25, wordConj)] stage3Parents stage3Steps = true := by
-  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
-    Sporadic.m12Presentation_relatorLetters]
+  rw [generatorCount_m12, m12Rels_eq]
   decide +kernel
 
 private theorem run_stage4 :
     run M12.presentation.generatorCount
       m12Rels [wordH, wordK] stage4Parents stage4Steps = some 1728 := by
-  rw [m12Rels, presentation_M12, Sporadic.m12Presentation_generatorCount,
-    Sporadic.m12Presentation_relatorLetters]
+  rw [generatorCount_m12, m12Rels_eq]
   decide +kernel
 
 /-! ### Upper bound on `M12.Group` -/
