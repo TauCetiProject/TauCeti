@@ -9,7 +9,6 @@ public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 public import TauCeti.NumberTheory.Hypergeometric.CyclotomicData
 public import TauCeti.NumberTheory.Hypergeometric.Parameters
 import TauCeti.Algebra.AddCircle
-import TauCeti.Algebra.Group.Coprime
 import TauCeti.Data.Int.Progression
 import TauCeti.GroupTheory.OrderOfElement.Basic
 
@@ -184,27 +183,16 @@ theorem lcm_map_addOrderOf_primitiveClasses {A : Multiset ℕ} (hA : 0 ∉ A) :
 /-- Scaling by an integer prime to `a` permutes the classes of order `a`. -/
 theorem map_zsmul_primitiveClasses_singleton {a : ℕ} {u : ℤ} (hu : IsCoprime u a) :
     (primitiveClasses {a}).map (u • ·) = primitiveClasses {a} := by
-  have hinj : ∀ x ∈ primitiveClasses {a}, ∀ y ∈ primitiveClasses {a}, u • x = u • y → x = y := by
-    intro x hx y hy h
-    rw [mem_primitiveClasses_singleton] at hx hy
-    refine hu.eq_of_zsmul_eq_zsmul h ?_
-    rw [natCast_zsmul, natCast_zsmul, ← hx, addOrderOf_nsmul_eq_zero, hx, ← hy,
-      addOrderOf_nsmul_eq_zero]
-  refine (Multiset.Nodup.ext ((nodup_primitiveClasses_singleton a).map_on hinj)
-    (nodup_primitiveClasses_singleton a)).mpr fun y ↦ ?_
-  rw [Multiset.mem_map, mem_primitiveClasses_singleton]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    rw [mem_primitiveClasses_singleton] at hx
-    exact (IsCoprime.addOrderOf_zsmul (hx ▸ hu)).trans hx
-  · intro hy
-    obtain ⟨v, w, hvw⟩ := hu
-    have hv : IsCoprime v (addOrderOf y) := ⟨u, w, by rw [hy]; linear_combination hvw⟩
-    refine ⟨v • y, mem_primitiveClasses_singleton.mpr (hv.addOrderOf_zsmul.trans hy), ?_⟩
-    have hay : (a : ℤ) • y = 0 := by rw [natCast_zsmul, ← hy, addOrderOf_nsmul_eq_zero]
-    calc u • v • y = (v * u + w * a) • y := by
-          rw [smul_smul, add_smul, mul_smul w, hay, smul_zero, add_zero, mul_comm]
-      _ = y := by rw [hvw, one_smul]
+  have hinj : ∀ x ∈ primitiveClasses {a}, ∀ y ∈ primitiveClasses {a}, u • x = u • y → x = y :=
+    fun x hx y hy ↦ hu.injOn_zsmul_of_addOrderOf_dvd
+      (mem_primitiveClasses_singleton.mp hx).dvd (mem_primitiveClasses_singleton.mp hy).dvd
+  have hnodup := (nodup_primitiveClasses_singleton a).map_on hinj
+  -- The image is a duplicate-free submultiset of the classes of order `a` of the same size.
+  refine Multiset.eq_of_le_of_card_le ((Multiset.le_iff_subset hnodup).mpr fun y hy ↦ ?_)
+    (Multiset.card_map _ _).ge
+  obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.mp hy
+  rw [mem_primitiveClasses_singleton] at hx ⊢
+  exact (IsCoprime.addOrderOf_zsmul (hx ▸ hu)).trans hx
 
 /-- Scaling by an integer prime to every index of `A` fixes `α(A)`. -/
 theorem map_zsmul_primitiveClasses {A : Multiset ℕ} {u : ℤ} (hu : ∀ a ∈ A, IsCoprime u a) :
@@ -257,10 +245,8 @@ theorem count_eq_count_of_map_zsmul_eq [DecidableEq (AddCircle (1 : ℚ))]
   obtain ⟨t, ht⟩ := hk.exists_isCoprime_add_mul (m := N) (Int.natCast_ne_zero.mpr hN)
   have hux : (k + t * addOrderOf x) • x = k • x := by
     rw [add_smul, mul_smul, natCast_zsmul, addOrderOf_nsmul_eq_zero, smul_zero, add_zero]
-  have hinj : Set.InjOn ((k + t * addOrderOf x) • ·) {z | z ∈ s} := fun z hz w hw hzw ↦
-    ht.eq_of_zsmul_eq_zsmul hzw <| by
-      rw [natCast_zsmul, natCast_zsmul, addOrderOf_dvd_iff_nsmul_eq_zero.mp (hsN z hz),
-        addOrderOf_dvd_iff_nsmul_eq_zero.mp (hsN w hw)]
+  have hinj : Set.InjOn ((k + t * addOrderOf x) • ·) {z | z ∈ s} :=
+    ht.injOn_zsmul_of_addOrderOf_dvd.mono fun z hz ↦ hsN z hz
   rw [← hux, ← Multiset.count_map_eq_count _ s hinj x hx, hs _ ht]
 
 /-! ### Roots of the cyclotomic products -/
@@ -344,6 +330,7 @@ theorem denominator_toParameters : D.toParameters.denominator = (D.A + D.B).lcm 
     lcm_map_addOrderOf_primitiveClasses fun h ↦ (D.pos 0 h).ne' rfl]
 
 /-- The parameter pair of a cyclotomic datum is Galois stable. -/
+@[simp]
 theorem isGaloisStable_toParameters : D.toParameters.IsGaloisStable := by
   rw [Parameters.isGaloisStable_iff, denominator_toParameters]
   intro u hu

@@ -10,6 +10,7 @@ public import Mathlib.Data.Nat.Totient
 public import Mathlib.RingTheory.Coprime.Basic
 public import TauCeti.Data.Nat.Factorization.MulDvd
 import Mathlib.FieldTheory.Finite.Basic
+import TauCeti.Algebra.Group.Coprime
 
 /-!
 # Orders of elements and cardinalities
@@ -149,19 +150,18 @@ theorem IsConj.orderOf_eq {G : Type*} [Monoid G] {a b : G} (h : IsConj a b) :
 is Mathlib's `Nat.Coprime.addOrderOf_nsmul` for integer coefficients. -/]
 theorem IsCoprime.orderOf_zpow {G : Type*} [Group G] {x : G} {u : ℤ}
     (h : IsCoprime u (orderOf x)) : orderOf (x ^ u) = orderOf x := by
-  obtain ⟨v, w, hvw⟩ := h
-  -- `v` inverts `u` on the powers of `x`, so `x` is in turn a power of `x ^ u`.
-  set y := x ^ u with hy
-  have hx : y ^ v = x := by
-    calc y ^ v = x ^ (v * u + w * orderOf x) := by
-          rw [zpow_add, mul_comm w, zpow_mul x (orderOf x : ℤ), zpow_natCast, pow_orderOf_eq_one,
-            one_zpow, mul_one, hy, ← zpow_mul, mul_comm]
-      _ = x := by rw [hvw, zpow_one]
-  refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one ?_) (orderOf_dvd_of_pow_eq_one ?_)
-  · rw [hy, ← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, pow_orderOf_eq_one,
-      one_zpow]
-  · rw [← hx, ← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, pow_orderOf_eq_one,
-      one_zpow]
+  rw [← orderOf_pow_natAbs]
+  exact Nat.Coprime.orderOf_pow (Nat.Coprime.symm (Int.isCoprime_iff_gcd_eq_one.mp h))
+
+/-- Raising to an integer power coprime to `N` is injective on the elements whose order divides
+`N`. -/
+@[to_additive /-- Scaling by an integer coprime to `N` is injective on the elements whose additive
+order divides `N`. -/]
+theorem IsCoprime.injOn_zpow_of_orderOf_dvd {G : Type*} [Group G] {u : ℤ} {N : ℕ}
+    (hu : IsCoprime u N) : Set.InjOn (· ^ u) {x : G | orderOf x ∣ N} := fun x hx y hy h ↦
+  hu.eq_of_zpow_eq_zpow h <| by
+    rw [zpow_natCast, zpow_natCast, orderOf_dvd_iff_pow_eq_one.mp hx,
+      orderOf_dvd_iff_pow_eq_one.mp hy]
 
 /-- The order of the image of `g` in `G ⧸ K` divides `n` exactly when `g ^ n` lies in `K`. -/
 @[to_additive

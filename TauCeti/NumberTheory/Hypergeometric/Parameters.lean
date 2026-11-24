@@ -429,6 +429,19 @@ theorem isGaloisStable_iff : P.IsGaloisStable ↔
     ∀ u : ℤ, IsCoprime u P.denominator → P.α.map (u • ·) = P.α ∧ P.β.map (u • ·) = P.β := by
   simp only [IsGaloisStable, Parameters.ext_iff, scale_α, scale_β]
 
+/-- A Galois-stable pair is fixed by every scaling by an integer prime to its denominator. -/
+theorem IsGaloisStable.scale_eq {P : Parameters} (hP : P.IsGaloisStable) {u : ℤ}
+    (hu : IsCoprime u P.denominator) : P.scale hu = P :=
+  hP u hu
+
+/-- Negating a pair preserves Galois stability, since negation commutes with every scaling. -/
+@[simp]
+theorem isGaloisStable_neg : (-P).IsGaloisStable ↔ P.IsGaloisStable := by
+  suffices h : ∀ Q : Parameters, Q.IsGaloisStable → (-Q).IsGaloisStable from
+    ⟨fun hP ↦ neg_neg P ▸ h _ hP, h P⟩
+  intro Q hQ u hu
+  rw [← Q.neg_scale (Q.denominator_neg ▸ hu), hQ.scale_eq]
+
 @[simp]
 theorem isGaloisStable_swap : P.swap.IsGaloisStable ↔ P.IsGaloisStable := by
   simp only [isGaloisStable_iff, swap_α, swap_β, denominator_swap, and_comm]
