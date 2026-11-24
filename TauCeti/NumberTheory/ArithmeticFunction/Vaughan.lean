@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
+public import TauCeti.NumberTheory.ArithmeticFunction.Misc
 
 /-!
 # Vaughan's identity
@@ -27,11 +26,15 @@ cutoff `U` gives Vaughan's identity
 an exact identity for all natural `U`, `V` and `n`, with the boundary term `1_{n ≤ V} Λ(n)` kept.
 
 Summed against an arbitrary weight `w`, it decomposes `∑_{n ≤ N} Λ(n) w(n)` into the short sum
-`∑_{n ≤ min(N, V)} Λ(n) w(n)`, a sum with Möbius coefficients on `m ≤ U` (of type I), and a
-bilinear sum of `μ(m)` on `U < m` against `λ_V(ℓ)` on `V < ℓ` (of type II). This is the
-decomposition used to bound exponential sums over primes such as `∑_{n ≤ N} Λ(n) e(nα)`, where
-`w(n) = e(nα)`. The coefficient energies `∑ λ_V(ℓ)² ≤ (M - L) (log M)²` and `∑ μ(m)² ≤ M - L` over
-`L < m ≤ M` are what the Cauchy–Schwarz step of the type II bound consumes.
+`∑_{n ≤ min(N, V)} Λ(n) w(n)`, a sum of `μ(m)` on the small range `m ≤ U` against `λ_V(ℓ)`,
+and a bilinear sum of `μ(m)` on `U < m` against `λ_V(ℓ)` on `V < ℓ` (of type II). The small-`m`
+sum is not yet of type I: its inner coefficient is still `λ_V(ℓ)`, and it splits into the type I
+sums of Vaughan's identity (a `log` sum and a sum over `md ≤ UV`) after rewriting `λ_V` with
+`TauCeti.SieveVaughan.incompleteLog_eq_log_sub`, as in `TauCeti.SieveVaughan.vaughan_identity`.
+This is the decomposition used to bound exponential sums over primes such as
+`∑_{n ≤ N} Λ(n) e(nα)`, where `w(n) = e(nα)`. The coefficient energies
+`∑ λ_V(ℓ)² ≤ (M - L) (log M)²` and `∑ μ(m)² ≤ M - L` over `L < m ≤ M` are what the
+Cauchy–Schwarz step of the type II bound consumes.
 
 ## Main declarations
 
@@ -42,11 +45,12 @@ decomposition used to bound exponential sums over primes such as `∑_{n ≤ N} 
   finite hyperbola `mℓ ≤ N`.
 * `TauCeti.SieveVaughan.sum_Ioc_vonMangoldt_smul_eq_typeI_add_typeII`: the finite type I–type II
   decomposition.
-* `TauCeti.SieveVaughan.sum_incompleteLog_sq_le`: the coefficient energy of `λ_V`; the Möbius
+* `TauCeti.SieveVaughan.sum_Ioc_incompleteLog_sq_le`: the coefficient energy of `λ_V`; the Möbius
   energy is `ArithmeticFunction.sum_Ioc_moebius_sq_le`.
-* `ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`: summing a Dirichlet convolution against
-  an arbitrary weight over `n ≤ N`, the weighted form of Mathlib's
-  `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum`.
+
+The weighted hyperbola sum `ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`, the weighted form of
+Mathlib's `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum` used here, is in
+`TauCeti.NumberTheory.ArithmeticFunction.Misc`.
 
 ## References
 
@@ -59,49 +63,6 @@ decomposition used to bound exponential sums over primes such as `∑_{n ≤ N} 
 public section
 
 open Finset
-
-namespace ArithmeticFunction
-
-variable {R A : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
-
-/-- Summing a Dirichlet convolution `f * g` against an arbitrary weight `w` over `0 < n ≤ N` is
-the sum of `f(m) g(ℓ) w(mℓ)` over the hyperbola `mℓ ≤ N`. The weight stays attached to the
-product `mℓ`; it need not be multiplicative. -/
-theorem sum_Ioc_mul_smul_eq_sum_sum (f g : ArithmeticFunction R) (w : ℕ → A) (N : ℕ) :
-    ∑ n ∈ Ioc 0 N, (f * g) n • w n =
-      ∑ m ∈ Ioc 0 N, f m • ∑ ℓ ∈ Ioc 0 (N / m), g ℓ • w (m * ℓ) := by
-  calc ∑ n ∈ Ioc 0 N, (f * g) n • w n
-      = ∑ n ∈ Ioc 0 N, ∑ x ∈ Ioc 0 N ×ˢ Ioc 0 N with x.1 * x.2 = n,
-          (f x.1 * g x.2) • w (x.1 * x.2) := by
-        refine sum_congr rfl fun n hn ↦ ?_
-        rw [mem_Ioc] at hn
-        rw [ArithmeticFunction.mul_apply, sum_smul,
-          Nat.divisorsAntidiagonal_eq_prod_filter_of_le hn.1.ne' hn.2]
-        exact sum_congr rfl fun x hx ↦ by rw [(mem_filter.1 hx).2]
-    _ = ∑ x ∈ Ioc 0 N ×ˢ Ioc 0 N with x.1 * x.2 ∈ Ioc 0 N, (f x.1 * g x.2) • w (x.1 * x.2) :=
-        sum_fiberwise_eq_sum_filter _ _ _ _
-    _ = ∑ m ∈ Ioc 0 N, ∑ ℓ ∈ Ioc 0 N with m * ℓ ≤ N, (f m * g ℓ) • w (m * ℓ) := by
-        rw [sum_filter, sum_product]
-        refine sum_congr rfl fun m hm ↦ ?_
-        rw [sum_filter]
-        refine sum_congr rfl fun ℓ hℓ ↦ ?_
-        simp only [mem_Ioc] at hm hℓ
-        have : 0 < m * ℓ := Nat.mul_pos hm.1 hℓ.1
-        simp [this]
-    _ = ∑ m ∈ Ioc 0 N, f m • ∑ ℓ ∈ Ioc 0 (N / m), g ℓ • w (m * ℓ) := by
-        refine sum_congr rfl fun m hm ↦ ?_
-        rw [smul_sum]
-        have hm : 0 < m := (mem_Ioc.1 hm).1
-        have : {ℓ ∈ Ioc 0 N | m * ℓ ≤ N} = Ioc 0 (N / m) := by
-          ext ℓ
-          simp only [mem_filter, mem_Ioc, Nat.le_div_iff_mul_le hm, mul_comm ℓ m]
-          constructor
-          · exact fun h ↦ ⟨h.1.1, h.2⟩
-          · exact fun h ↦ ⟨⟨h.1, h.2.trans' (Nat.le_mul_of_pos_left ℓ hm)⟩, h.2⟩
-        rw [this]
-        exact sum_congr rfl fun ℓ _ ↦ (smul_smul _ _ _).symm
-
-end ArithmeticFunction
 
 namespace TauCeti.SieveVaughan
 
@@ -236,8 +197,10 @@ arbitrary weight `w`,
 `∑_{0 < n ≤ N} Λ(n) w(n) = ∑_{0 < n ≤ min(N, V)} Λ(n) w(n)
   + ∑_{0 < m ≤ min(U, B)} μ(m) ∑_{V < ℓ ≤ N/m} λ_V(ℓ) w(mℓ)
   + ∑_{U < m ≤ B} μ(m) ∑_{V < ℓ ≤ N/m} λ_V(ℓ) w(mℓ)`.
-The second sum has small Möbius factor (type I), the third has both factors above their cutoffs
-(type II); the inner range still depends on `m`. -/
+The second sum has a small Möbius variable `m ≤ U`; its inner coefficient is still `λ_V(ℓ)`, and
+it becomes the type I sums of Vaughan's identity only after rewriting `λ_V` with
+`incompleteLog_eq_log_sub`, as in `vaughan_identity`. The third sum has both variables above their
+cutoffs (type II). In both, the inner range still depends on `m`. -/
 theorem sum_Ioc_vonMangoldt_smul_eq_typeI_add_typeII (U V N : ℕ) (w : ℕ → A) :
     ∑ n ∈ Ioc 0 N, Λ n • w n =
       ∑ n ∈ Ioc 0 (min N V), Λ n • w n +
@@ -273,7 +236,7 @@ theorem sum_Ioc_vonMangoldt_smul_eq_typeI_add_typeII (U V N : ℕ) (w : ℕ → 
 end Weighted
 
 /-- The incomplete-logarithm coefficient energy: `∑_{L < ℓ ≤ M} λ_V(ℓ)² ≤ (M - L) (log M)²`. -/
-theorem sum_incompleteLog_sq_le (V L M : ℕ) :
+theorem sum_Ioc_incompleteLog_sq_le (V L M : ℕ) :
     ∑ ℓ ∈ Ioc L M, incompleteLog V ℓ ^ 2 ≤ ((M - L : ℕ) : ℝ) * Real.log M ^ 2 := by
   rw [← Nat.card_Ioc, ← nsmul_eq_mul]
   refine sum_le_card_nsmul _ _ _ fun ℓ hℓ ↦ ?_
