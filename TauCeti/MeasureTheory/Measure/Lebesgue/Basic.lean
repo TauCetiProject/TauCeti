@@ -35,6 +35,9 @@ their lengths (`TauCeti.volume_biUnion_uIoc_eq_ofReal_sum`).
 Cutting a closed box `Set.Icc a b` in `ι → ℝ` along coordinate `k` at `t` produces two almost-
 everywhere disjoint sub-boxes (`TauCeti.aeDisjoint_Icc_update`), as their intersection lies in a
 coordinate hyperplane of measure zero.
+
+Lebesgue measure on `[0, 1]` is a probability measure
+(`TauCeti.isProbabilityMeasure_restrict_Icc_zero_one`).
 -/
 
 public section
@@ -62,6 +65,11 @@ theorem comap_volume_restrict_Ioc_univ (T : ℝ≥0) :
 end NNReal
 
 namespace TauCeti
+
+/-- Lebesgue measure on `[0, 1]` is a probability measure. -/
+instance isProbabilityMeasure_restrict_Icc_zero_one :
+    IsProbabilityMeasure (volume.restrict (Icc (0 : ℝ) 1)) :=
+  ⟨by simp⟩
 
 /-- Centering intervals can only decrease the length of a one-sided difference. -/
 theorem volume_eball_sdiff_le (s u : Set ℝ) :
