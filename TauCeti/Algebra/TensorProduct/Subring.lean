@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.Domain
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.TensorProduct.Maps
+import TauCeti.Algebra.TensorProduct.Subalgebra
 
 /-!
 # Tensor squares of subrings
@@ -62,19 +63,13 @@ theorem _root_.Subring.tensorSquareMap_tmul (S : Subring A) (x y : S) :
 `A ⊗[ℤ] A`, then the canonical map from the integral tensor square of `S` to `A ⊗[R] A` is
 injective. The second condition holds when `R` is `ℤ` or `ℚ`, and for a localization of `ℤ` by
 `IsLocalization.tensorProduct_compatibleSMul`. -/
--- Composing with the canonical map `A ⊗[R] A → A ⊗[ℤ] A` gives the tensor square of the
--- inclusion of `S`, which is injective because `S` is flat over the domain `ℤ`.
+-- This is `Subalgebra.tensorSquareMap_injective` for the `ℤ`-subalgebra `subalgebraOfSubring S`,
+-- whose tensor-square map is `Subring.tensorSquareMap R S` by definition.
 theorem _root_.Subring.tensorSquareMap_injective_of_flat {R : Type u} [CommRing R] [Algebra R A]
     [TensorProduct.CompatibleSMul ℤ R A A] (S : Subring A) [Module.Flat ℤ S] :
     Function.Injective (Subring.tensorSquareMap R S) := by
-  let f : S →ₗ[ℤ] A := S.subtype.toIntAlgHom.toLinearMap
-  have hcomp : TensorProduct.mapOfCompatibleSMul ℤ R ℤ A A ∘ₗ
-      (Subring.tensorSquareMap R S).toLinearMap = TensorProduct.map f f :=
-    TensorProduct.ext' fun x y => by simp [f]
-  refine .of_comp (f := TensorProduct.mapOfCompatibleSMul ℤ R ℤ A A) ?_
-  rw [← AlgHom.coe_toLinearMap, ← LinearMap.coe_comp, hcomp]
-  exact TensorProduct.map_injective_of_flat_flat_of_isDomain f f
-    S.subtype_injective S.subtype_injective
+  have : Module.Flat ℤ (subalgebraOfSubring S) := ‹Module.Flat ℤ S›
+  exact Subalgebra.tensorSquareMap_injective (R := ℤ) (K := R) (subalgebraOfSubring S)
 
 section Rational
 

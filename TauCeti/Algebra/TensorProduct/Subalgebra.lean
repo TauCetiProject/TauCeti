@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.RingTheory.TensorProduct.AlgEquiv
 import Mathlib.RingTheory.Flat.Domain
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
@@ -15,8 +16,8 @@ import TauCeti.Algebra.Module.LocalizedModule.Submodule
 # Tensor squares and base change of a subalgebra over a subring
 
 Let `H` be an algebra over `K`, and `A` an `R`-subalgebra of `H` for an `R`-algebra `K`. This file
-compares `A` with `H` when `K` is the localization of `R` at its non-zero-divisors (the fraction
-field when `R` is a domain).
+compares `A` with `H` when `K` is a localization of `R`, for instance the fraction field of a
+domain `R`.
 
 ## Main declarations
 
@@ -24,8 +25,13 @@ field when `R` is a domain).
   analogue of `Subring.tensorSquareMap`.
 * `Subalgebra.tensorSquareMap_injective`: it is injective when `A` is flat over the domain `R`
   and `K ⊗ -` is balanced over `R` on `H`, for instance when `K` is the fraction field of `R`.
-* `Subalgebra.isBaseChange_val`: when `A` spans `H` over the localization `K` of `R` at its
-  non-zero-divisors, the inclusion `A → H` is the base change of `A` to `K`.
+* `Subalgebra.isBaseChange_val`: when `A` spans `H` over a localization `K` of `R`, the
+  inclusion `A → H` is the base change of `A` to `K`;
+  `Subalgebra.map_algEquiv_tensorTensorTensorComm_one_tmul` compares its tensor square with
+  `tensorSquareMap`.
+* `Subalgebra.tensorCubeMap`: the canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)`, with
+  `Subalgebra.tensorCubeMap_injective` for flat `A` and `Subalgebra.tensorCubeMap_assoc_tmul`
+  relating the associators.
 -/
 
 public section
@@ -43,7 +49,7 @@ variable (K) in
 /-- The canonical map from the tensor square over `R` of an `R`-subalgebra `A` of a `K`-algebra
 `H` to the tensor square of `H` over `K`. On pure tensors it applies the inclusion of `A` in both
 factors. -/
-noncomputable def tensorSquareMap (A : Subalgebra R H) : A ⊗[R] A →ₐ[R] H ⊗[K] H :=
+@[expose] noncomputable def tensorSquareMap (A : Subalgebra R H) : A ⊗[R] A →ₐ[R] H ⊗[K] H :=
   Algebra.TensorProduct.lift
     ((Algebra.TensorProduct.includeLeft : H →ₐ[K] H ⊗[K] H).restrictScalars R |>.comp A.val)
     ((Algebra.TensorProduct.includeRight : H →ₐ[K] H ⊗[K] H).restrictScalars R |>.comp A.val)
@@ -59,14 +65,53 @@ theorem tensorSquareMap_tmul (A : Subalgebra R H) (x y : A) :
   rw [tensorSquareMap, Algebra.TensorProduct.lift_tmul]
   simp
 
-/-- An `R`-subalgebra `A` of an algebra `H` over the localization `K` of `R` at its
-non-zero-divisors which spans `H` over `K` has `H` as its localization at the non-zero-divisors of
-`R`: the inclusion `A → H` is the base change of `A` to `K`. -/
-theorem isBaseChange_val [IsFractionRing R K] (A : Subalgebra R H)
+/-- An `R`-subalgebra `A` of an algebra `H` over a localization `K` of `R` at a submonoid `M`
+which spans `H` over `K` has `H` as its localization at `M`: the inclusion `A → H` is the base
+change of `A` to `K`. -/
+theorem isBaseChange_val (M : Submonoid R) [IsLocalization M K] (A : Subalgebra R H)
     (hspan : Submodule.span K (A : Set H) = ⊤) :
     IsBaseChange K (A.val.toLinearMap : A →ₗ[R] H) :=
-  (isLocalizedModule_iff_isBaseChange (nonZeroDivisors R) K _).mp
-    (A.toSubmodule.isLocalizedModule_subtype_of_span_eq_top (nonZeroDivisors R) hspan)
+  (isLocalizedModule_iff_isBaseChange M K _).mp
+    (A.toSubmodule.isLocalizedModule_subtype_of_span_eq_top M hspan)
+
+/-- The tensor square of the base-change isomorphism `K ⊗[R] A ≃ H` of a spanning subalgebra,
+applied to `(1 ⊗ 1) ⊗ t`, is the canonical image of `t ∈ A ⊗[R] A` in `H ⊗[K] H`. -/
+theorem map_algEquiv_tensorTensorTensorComm_one_tmul (M : Submonoid R) [IsLocalization M K]
+    (A : Subalgebra R H) (hspan : Submodule.span K (A : Set H) = ⊤) (t : A ⊗[R] A) :
+    Algebra.TensorProduct.map (A.isBaseChange_val M hspan).algEquiv.toAlgHom
+        (A.isBaseChange_val M hspan).algEquiv.toAlgHom
+      (TensorProduct.AlgebraTensorModule.tensorTensorTensorComm R K R K K K A A
+        (((1 : K) ⊗ₜ[K] (1 : K)) ⊗ₜ[R] t)) = tensorSquareMap K A t := by
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simp only [TensorProduct.tmul_add, map_add, hs, ht]
+  | tmul x y => simp
+
+variable (K) in
+/-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` for an `R`-subalgebra `A` of a
+`K`-algebra `H`, when `K`-balanced and `R`-balanced tensors in `H ⊗ (H ⊗ H)` agree. On pure
+tensors it applies the inclusion of `A` and `tensorSquareMap`. -/
+noncomputable def tensorCubeMap [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)]
+    (A : Subalgebra R H) : A ⊗[R] (A ⊗[R] A) →ₗ[R] H ⊗[K] (H ⊗[K] H) :=
+  (TensorProduct.equivOfCompatibleSMul R K R H (H ⊗[K] H)).symm.toLinearMap ∘ₗ
+    TensorProduct.map A.val.toLinearMap (tensorSquareMap K A).toLinearMap
+
+/-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` on pure tensors. -/
+@[simp]
+theorem tensorCubeMap_tmul [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)] (A : Subalgebra R H)
+    (x : A) (t : A ⊗[R] A) :
+    tensorCubeMap K A (x ⊗ₜ t) = (x : H) ⊗ₜ[K] tensorSquareMap K A t := by
+  rw [tensorCubeMap, LinearMap.comp_apply, TensorProduct.map_tmul, LinearEquiv.coe_coe,
+    LinearEquiv.symm_apply_eq]
+  exact (TensorProduct.mapOfCompatibleSMul_tmul R K R H (H ⊗[K] H) _ _).symm
+
+/-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` intertwines the associators. -/
+theorem tensorCubeMap_assoc_tmul [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)]
+    (A : Subalgebra R H) (t : A ⊗[R] A) (z : A) :
+    tensorCubeMap K A (Algebra.TensorProduct.assoc R R R A A A (t ⊗ₜ z)) =
+      TensorProduct.assoc K H H H (tensorSquareMap K A t ⊗ₜ (z : H)) := by
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simp only [TensorProduct.add_tmul, map_add, hs, ht]
+  | tmul x y => simp
 
 end Semiring
 
@@ -89,5 +134,15 @@ theorem tensorSquareMap_injective [TensorProduct.CompatibleSMul R K H H] (A : Su
   rw [← AlgHom.coe_toLinearMap, ← LinearMap.coe_comp, hcomp]
   exact TensorProduct.map_injective_of_flat_flat_of_isDomain _ _
     Subtype.val_injective Subtype.val_injective
+
+/-- For a flat `R`-subalgebra `A` of a `K`-algebra `H` over the domain `R`, the canonical map
+`A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)` is injective when `K`-balanced and `R`-balanced tensors
+agree in `H ⊗ H` and in `H ⊗ (H ⊗ H)`, for instance when `K` is the fraction field of `R`. -/
+theorem tensorCubeMap_injective [TensorProduct.CompatibleSMul R K H H]
+    [TensorProduct.CompatibleSMul R K H (H ⊗[K] H)] (A : Subalgebra R H) [Module.Flat R A] :
+    Function.Injective (tensorCubeMap K A) := by
+  refine (TensorProduct.equivOfCompatibleSMul R K R H (H ⊗[K] H)).symm.injective.comp ?_
+  exact TensorProduct.map_injective_of_flat_flat_of_isDomain _ _
+    Subtype.val_injective (tensorSquareMap_injective A)
 
 end Subalgebra

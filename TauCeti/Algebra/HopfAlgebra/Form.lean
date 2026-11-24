@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import Mathlib.RingTheory.HopfAlgebra.Basic
 public import TauCeti.Algebra.TensorProduct.Subalgebra
 import TauCeti.Algebra.HopfAlgebra.Antipode
+import Mathlib.Algebra.Algebra.Subalgebra.MulOpposite
 import Mathlib.RingTheory.Flat.Domain
 import Mathlib.RingTheory.HopfAlgebra.Convolution
 import TauCeti.RingTheory.TensorProduct.AlgEquiv
@@ -82,6 +83,10 @@ variable [IsFractionRing R K] {A : Subalgebra R H} [Module.Flat R A]
 /-- Over the fraction field, `K`-balanced and `R`-balanced tensors in `H ⊗ H` agree. -/
 local instance : TensorProduct.CompatibleSMul R K H H :=
   IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors R) K H H
+
+/-- Over the fraction field, `K`-balanced and `R`-balanced tensors in `H ⊗ (H ⊗ H)` agree. -/
+local instance : TensorProduct.CompatibleSMul R K H (H ⊗[K] H) :=
+  IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors R) K H (H ⊗[K] H)
 variable (hA : A.IsStableUnderHopfOps K)
 include hA
 
@@ -103,6 +108,17 @@ theorem tensorSquareMap_comulAlgHom (x : A) :
   rw [AlgEquiv.apply_symm_apply] at h
   exact h.symm
 
+omit [IsDomain R] [Module.Flat R A] hA in
+/-- The equivalence `⊥ ≃ R` for an injective `algebraMap R K` is inverse to the inclusion: mapping
+its value back to `K` recovers the element of `⊥`. -/
+private theorem algebraMap_botEquivOfInjective (y : (⊥ : Subalgebra R K)) :
+    algebraMap R K (Algebra.botEquivOfInjective (IsFractionRing.injective R K) y) = y := by
+  set e := Algebra.botEquivOfInjective (IsFractionRing.injective R K)
+  calc algebraMap R K (e y) = ((algebraMap R (⊥ : Subalgebra R K) (e y) : _) : K) :=
+        (Subalgebra.coe_algebraMap _ _).symm
+    _ = ((e.symm (e y) : _) : K) := by rw [← e.symm.commutes, Algebra.algebraMap_self_apply]
+    _ = y := by rw [e.symm_apply_apply]
+
 /-- The counit of a flat Hopf form: the unique preimage in `R` of the counit of `H`. -/
 noncomputable def counitAlgHom : A →ₐ[R] R :=
   (Algebra.botEquivOfInjective (IsFractionRing.injective R K)).toAlgHom.comp
@@ -114,13 +130,8 @@ omit [IsDomain R] [Module.Flat R A] in
 @[simp]
 theorem algebraMap_counitAlgHom (x : A) :
     algebraMap R K (hA.counitAlgHom x) = Coalgebra.counit (R := K) (x : H) := by
-  set e := Algebra.botEquivOfInjective (IsFractionRing.injective R K)
-  set y := (((Bialgebra.counitAlgHom K H).restrictScalars R).comp A.val).codRestrict _
-    (fun x ↦ hA.counit_mem x.property) x
-  have hx : hA.counitAlgHom x = e y := by
-    rw [counitAlgHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply]
-  rw [hx, ← Subalgebra.coe_algebraMap (⊥ : Subalgebra R K) (e y), ← e.symm.commutes,
-    Algebra.algebraMap_self_apply, e.symm_apply_apply]
+  simp only [counitAlgHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    algebraMap_botEquivOfInjective]
   exact AlgHom.coe_codRestrict _ _ _ x
 
 /-- The restriction of the antipode of `H` to a Hopf form. -/
@@ -136,50 +147,21 @@ theorem coe_antipode_apply (x : A) : (hA.antipode x : H) = HopfAlgebra.antipode 
 
 /-! ### Reflecting identities into `H` -/
 
-omit hA in
-/-- The canonical map `A ⊗[R] (A ⊗[R] A) → H ⊗[K] (H ⊗[K] H)`. -/
-private noncomputable def tripleMap : A ⊗[R] (A ⊗[R] A) →ₗ[R] H ⊗[K] (H ⊗[K] H) :=
-  have : TensorProduct.CompatibleSMul R K H (H ⊗[K] H) :=
-    IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors R) K H (H ⊗[K] H)
-  (TensorProduct.equivOfCompatibleSMul R K R H (H ⊗[K] H)).symm.toLinearMap ∘ₗ
-    TensorProduct.map A.val.toLinearMap (tensorSquareMap K A).toLinearMap
-
-omit hA [IsDomain R] [Module.Flat R A] in
-private theorem tripleMap_tmul (x : A) (t : A ⊗[R] A) :
-    tripleMap (K := K) (A := A) (x ⊗ₜ t) = (x : H) ⊗ₜ[K] tensorSquareMap K A t :=
-  rfl
-
-omit hA in
-private theorem tripleMap_injective : Function.Injective (tripleMap (K := K) (A := A)) := by
-  have : TensorProduct.CompatibleSMul R K H (H ⊗[K] H) :=
-    IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors R) K H (H ⊗[K] H)
-  refine (TensorProduct.equivOfCompatibleSMul R K R H (H ⊗[K] H)).symm.injective.comp ?_
-  exact TensorProduct.map_injective_of_flat_flat_of_isDomain _ _
-    Subtype.val_injective (tensorSquareMap_injective A)
-
-omit hA [IsDomain R] [Module.Flat R A] in
-private theorem tripleMap_assoc_tmul (t : A ⊗[R] A) (z : A) :
-    tripleMap (K := K) (A := A) (Algebra.TensorProduct.assoc R R R A A A (t ⊗ₜ z)) =
-      TensorProduct.assoc K H H H (tensorSquareMap K A t ⊗ₜ (z : H)) := by
-  induction t using TensorProduct.inductionOn with
-  | add s t hs ht => simp only [TensorProduct.add_tmul, map_add, hs, ht]
-  | tmul x y => simp [tripleMap_tmul]
-
-private theorem tripleMap_assoc_rTensor (t : A ⊗[R] A) :
-    tripleMap (K := K) (A := A) (Algebra.TensorProduct.assoc R R R A A A
+private theorem tensorCubeMap_assoc_rTensor (t : A ⊗[R] A) :
+    tensorCubeMap K A (Algebra.TensorProduct.assoc R R R A A A
         (Algebra.TensorProduct.map hA.comulAlgHom (.id R A) t)) =
       TensorProduct.assoc K H H H
         ((Coalgebra.comul (R := K) (A := H)).rTensor H (tensorSquareMap K A t)) := by
   induction t using TensorProduct.inductionOn with
   | add s t hs ht => simp only [map_add, hs, ht]
-  | tmul x y => simp [tripleMap_assoc_tmul]
+  | tmul x y => simp [tensorCubeMap_assoc_tmul]
 
-private theorem tripleMap_lTensor (t : A ⊗[R] A) :
-    tripleMap (K := K) (A := A) (Algebra.TensorProduct.map (.id R A) hA.comulAlgHom t) =
+private theorem tensorCubeMap_lTensor (t : A ⊗[R] A) :
+    tensorCubeMap K A (Algebra.TensorProduct.map (.id R A) hA.comulAlgHom t) =
       (Coalgebra.comul (R := K) (A := H)).lTensor H (tensorSquareMap K A t) := by
   induction t using TensorProduct.inductionOn with
   | add s t hs ht => simp only [map_add, hs, ht]
-  | tmul x y => simp [tripleMap_tmul]
+  | tmul x y => simp
 
 omit [IsDomain R] [Module.Flat R A] in
 private theorem coe_lid_rTensor (t : A ⊗[R] A) :
@@ -226,20 +208,20 @@ noncomputable def bialgebra : Bialgebra R A :=
   Bialgebra.ofAlgHom hA.comulAlgHom hA.counitAlgHom
     (by
       ext a
-      rw [AlgHom.comp_apply, AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply]
-      apply tripleMap_injective (K := K)
-      rw [hA.tripleMap_assoc_rTensor, hA.tripleMap_lTensor, hA.tensorSquareMap_comulAlgHom]
+      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+      apply tensorCubeMap_injective (K := K) A
+      rw [hA.tensorCubeMap_assoc_rTensor, hA.tensorCubeMap_lTensor, hA.tensorSquareMap_comulAlgHom]
       exact Coalgebra.coassoc_apply (R := K) (a : H))
     (by
       ext a
-      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
       apply (Algebra.TensorProduct.lid R A).injective
       apply Subtype.val_injective
       rw [AlgEquiv.apply_symm_apply, hA.coe_lid_rTensor, hA.tensorSquareMap_comulAlgHom,
         Coalgebra.rTensor_counit_comul, TensorProduct.lid_tmul, one_smul])
     (by
       ext a
-      rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
+      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
       apply (Algebra.TensorProduct.rid R R A).injective
       apply Subtype.val_injective
       rw [AlgEquiv.apply_symm_apply, hA.coe_rid_lTensor, hA.tensorSquareMap_comulAlgHom,
@@ -255,6 +237,14 @@ private theorem counit_bialgebra (x : A) :
     Coalgebra.counit (R := R) x = hA.counitAlgHom x :=
   rfl
 
+omit [IsDomain R] [Module.Flat R A] in
+/-- The scalar side of the antipode identities: the counit of `A`, viewed in `A ⊆ H`, is the
+counit of `H` viewed in `H`. -/
+private theorem coe_algebraMap_counitAlgHom (x : A) :
+    ((algebraMap R A (hA.counitAlgHom x) : A) : H) =
+      algebraMap K H (Coalgebra.counit (R := K) (x : H)) := by
+  rw [Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply R K H, algebraMap_counitAlgHom]
+
 /-- The Hopf algebra structure over `R` on a flat Hopf form of `H`: comultiplication, counit and
 antipode are restricted from `H`. This is not an instance because it depends on the proof `hA`. -/
 @[expose, instance_reducible]
@@ -263,16 +253,14 @@ noncomputable def hopfAlgebra : HopfAlgebra R A :=
   { antipode := hA.antipode
     mul_antipode_rTensor_comul := by
       ext a
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-        hA.comul_bialgebra, hA.counit_bialgebra, Algebra.linearMap_apply, hA.coe_mul_rTensor,
-        hA.tensorSquareMap_comulAlgHom, HopfAlgebra.mul_antipode_rTensor_comul_apply,
-        Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply R K H, algebraMap_counitAlgHom]
+      simp only [LinearMap.comp_apply, hA.comul_bialgebra, hA.counit_bialgebra,
+        Algebra.linearMap_apply, hA.coe_mul_rTensor, hA.tensorSquareMap_comulAlgHom,
+        HopfAlgebra.mul_antipode_rTensor_comul_apply, hA.coe_algebraMap_counitAlgHom]
     mul_antipode_lTensor_comul := by
       ext a
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-        hA.comul_bialgebra, hA.counit_bialgebra, Algebra.linearMap_apply, hA.coe_mul_lTensor,
-        hA.tensorSquareMap_comulAlgHom, HopfAlgebra.mul_antipode_lTensor_comul_apply,
-        Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply R K H, algebraMap_counitAlgHom] }
+      simp only [LinearMap.comp_apply, hA.comul_bialgebra, hA.counit_bialgebra,
+        Algebra.linearMap_apply, hA.coe_mul_lTensor, hA.tensorSquareMap_comulAlgHom,
+        HopfAlgebra.mul_antipode_lTensor_comul_apply, hA.coe_algebraMap_counitAlgHom] }
 
 /-- The comultiplication of a flat Hopf form maps to that of `H`. -/
 @[simp]
@@ -304,7 +292,7 @@ noncomputable def baseChangeBialgEquiv (hspan : Submodule.span K (A : Set H) = �
     letI : HopfAlgebra R A := hA.hopfAlgebra
     K ⊗[R] A ≃ₐc[K] H :=
   letI : HopfAlgebra R A := hA.hopfAlgebra
-  BialgEquiv.ofAlgEquiv (A.isBaseChange_val hspan).algEquiv
+  BialgEquiv.ofAlgEquiv (A.isBaseChange_val (nonZeroDivisors R) hspan).algEquiv
     (by
       apply Algebra.TensorProduct.ext (by ext) ?_
       ext a
@@ -312,16 +300,8 @@ noncomputable def baseChangeBialgEquiv (hspan : Submodule.span K (A : Set H) = �
     (by
       apply Algebra.TensorProduct.ext (by ext) ?_
       ext a
-      set e := (A.isBaseChange_val hspan).algEquiv
-      have h (t : A ⊗[R] A) :
-          (Algebra.TensorProduct.map e.toAlgHom e.toAlgHom :
-              (K ⊗[R] A) ⊗[K] (K ⊗[R] A) →ₐ[K] H ⊗[K] H)
-            (TensorProduct.AlgebraTensorModule.tensorTensorTensorComm R K R K K K A A
-              (((1 : K) ⊗ₜ[K] (1 : K)) ⊗ₜ[R] t)) = tensorSquareMap K A t := by
-        induction t using TensorProduct.inductionOn with
-        | add s t hs ht => simp only [TensorProduct.tmul_add, map_add, hs, ht]
-        | tmul x y => simp [e]
-      simpa [e] using (h _).trans (hA.tensorSquareMap_comul a))
+      simpa using (A.map_algEquiv_tensorTensorTensorComm_one_tmul (nonZeroDivisors R) hspan
+        _).trans (hA.tensorSquareMap_comul a))
 
 /-- The base-change isomorphism of a flat Hopf form sends `k ⊗ a` to `k • a`. -/
 @[simp]
@@ -338,9 +318,8 @@ variable {R K : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
 /-- **Hopf forms from generators.** The `R`-subalgebra generated by a set `s` of a Hopf algebra
 `H` over `K` is a Hopf form as soon as the comultiplication, counit and antipode of each element of
 `s` satisfy the defining conditions. -/
--- The comultiplication and counit conditions define `R`-subalgebras, as preimages of subalgebras
--- under algebra maps; the antipode condition is closed under products since the antipode is
--- antimultiplicative.
+-- The three conditions define `R`-subalgebras, as preimages of subalgebras under algebra maps;
+-- for the antipode, an algebra map to the opposite algebra.
 theorem IsStableUnderHopfOps.adjoin {H : Type*} [Semiring H] [HopfAlgebra K H] [Algebra R H]
     [IsScalarTower R K H] {s : Set H}
     (hcomul : ∀ x ∈ s, Coalgebra.comul (R := K) x ∈
@@ -353,14 +332,11 @@ theorem IsStableUnderHopfOps.adjoin {H : Type*} [Semiring H] [HopfAlgebra K H] [
   counit_mem := Algebra.adjoin_le (S := (⊥ : Subalgebra R K).comap
     ((Bialgebra.counitAlgHom K H).restrictScalars R)) hcounit
   antipode_mem x hx := by
-    induction hx using Algebra.adjoin_induction with
-    | mem x hx => exact hantipode x hx
-    | algebraMap r =>
-      rw [IsScalarTower.algebraMap_apply R K H, TauCeti.HopfAlgebra.antipode_algebraMap,
-        ← IsScalarTower.algebraMap_apply]
-      exact Subalgebra.algebraMap_mem _ r
-    | add x y _ _ hx hy => simpa only [map_add] using add_mem hx hy
-    | mul x y _ _ hx hy =>
-      simpa only [HopfAlgebra.antipode_mul_antidistrib] using mul_mem hy hx
+    -- The antipode is an algebra map to the opposite algebra, so the condition defines an
+    -- `R`-subalgebra.
+    have := Algebra.adjoin_le (S := Subalgebra.comap
+      ((HopfAlgebra.antipodeAlgHomOp K H).restrictScalars R) (Algebra.adjoin R s).op)
+      (fun y hy ↦ by simpa [Subalgebra.mem_op] using hantipode y hy) hx
+    simpa [Subalgebra.mem_op] using this
 
 end Subalgebra
