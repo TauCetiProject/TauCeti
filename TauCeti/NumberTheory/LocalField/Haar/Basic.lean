@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.LocalField.Haar.Character
 public import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.RingTheory.Valuation.ValuationRing
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 
@@ -116,6 +115,16 @@ namespace MeasureTheory.Measure
 
 open TauCeti
 
+private theorem funUnique_image_univ_pi {E : Type*} [Semiring E] [TopologicalSpace E]
+    (S : Set E) :
+    ((ContinuousLinearEquiv.funUnique (Fin 1) E E).toAddMonoidHom : (Fin 1 → E) → E) ''
+        univ.pi (fun _ : Fin 1 ↦ S) = S := by
+  ext x
+  simp only [mem_image, mem_univ_pi, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
+    ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_funUnique, Function.eval,
+    Fin.default_eq_zero]
+  exact ⟨fun ⟨_, hf, hfx⟩ ↦ hfx ▸ hf 0, fun hx ↦ ⟨fun _ ↦ x, fun _ ↦ hx, rfl⟩⟩
+
 section LocalFieldMeasures
 
 variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
@@ -148,18 +157,11 @@ theorem measure_image_maximalIdeal_pow (μ : Measure E) [μ.IsAddLeftInvariant] 
   let ν : Measure (Fin 1 → E) := μ.comap e.toAddMonoidHom
   have _ : ν.IsAddLeftInvariant := IsAddLeftInvariant.comap μ he
   have hpow : e.toAddMonoidHom '' (univ.pi fun _ : Fin 1 ↦ ((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ n)) =
-      ((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ n) := by
-    ext x
-    simp only [mem_image, mem_univ_pi, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
-      ContinuousLinearEquiv.coe_toLinearEquiv, e, ContinuousLinearEquiv.coe_funUnique,
-      Function.eval, Fin.default_eq_zero]
-    exact ⟨fun ⟨_, hf, hfx⟩ ↦ hfx ▸ hf 0, fun hx ↦ ⟨fun _ ↦ x, fun _ ↦ hx, rfl⟩⟩
+      ((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ n) :=
+    funUnique_image_univ_pi (E := E) _
   have hint : e.toAddMonoidHom '' integerBox E (Fin 1) = (𝒪[E] : Set E) := by
-    ext x
-    simp only [mem_image, mem_integerBox, LinearMap.toAddMonoidHom_coe,
-      LinearEquiv.coe_toLinearMap, ContinuousLinearEquiv.coe_toLinearEquiv, e,
-      ContinuousLinearEquiv.coe_funUnique, Function.eval, Fin.default_eq_zero]
-    exact ⟨fun ⟨_, hf, hfx⟩ ↦ hfx ▸ hf 0, fun hx ↦ ⟨fun _ ↦ x, fun _ ↦ hx, rfl⟩⟩
+    rw [integerBox_def]
+    exact funUnique_image_univ_pi (E := E) _
   have h := measure_univ_pi_image_maximalIdeal_pow ν (fun _ : Fin 1 ↦ n)
   rw [he.comap_apply, he.comap_apply, hpow, hint, Finset.sum_const, Finset.card_fin,
     one_smul] at h
@@ -258,6 +260,11 @@ end Units
 
 namespace TauCeti
 
+/-- Casting `|x|_E` from `ℚ≥0` to `ℝ≥0` preserves nonvanishing for `x ≠ 0`. -/
+theorem coe_normalizedAbsoluteValue_ne_zero {x : E} (hx : x ≠ 0) :
+    (normalizedAbsoluteValue E x : ℝ≥0) ≠ 0 := by
+  simp [hx]
+
 /-- Every element of the depth-zero unit filtration `U(E, 0) = 𝒪[E]ˣ` has distributive Haar
 character `1`. -/
 @[grind =]
@@ -291,10 +298,8 @@ theorem addHaar_preimage_mul_left {a : E} (ha : a ≠ 0) (s : Set E) :
   have hpre : (a * ·) ⁻¹' s = a⁻¹ • s := by
     ext x
     simp [mem_smul_set, inv_mul_eq_iff_eq_mul₀ ha]
-  have h0 : (normalizedAbsoluteValue E a : ℝ≥0) ≠ 0 := by
-    exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 ha
   rw [hpre, addHaar_smul_eq_normalizedAbsoluteValue_mul, map_inv₀, NNRat.cast_inv,
-    ENNReal.coe_inv h0]
+    ENNReal.coe_inv (coe_normalizedAbsoluteValue_ne_zero ha)]
 
 /-- **Pushforward of additive Haar measure by a unit (valuation form).** For `a ∈ Eˣ` and any
 additive Haar measure `μ` on `E`, `Measure.map (a * ·) μ = q ^ (v_E(a)) • μ`, where
@@ -335,7 +340,7 @@ theorem lintegral_mul_left_addHaar {a : E} (ha : a ≠ 0) (f : E → ℝ≥0∞)
   rw [he, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, lintegral_smul_measure,
     ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv] at h
   · exact h.symm
-  · exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 ha
+  · exact coe_normalizedAbsoluteValue_ne_zero ha
 
 /-- Bochner integral change of variables on `E` under `x ↦ a * x` (`a ≠ 0`). -/
 theorem integral_mul_left_addHaar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]

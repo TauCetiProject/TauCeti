@@ -101,6 +101,14 @@ variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E] [AddCommGroup V] [Module E V] [Module.Finite E V]
   [TopologicalSpace V] [IsModuleTopology E V] [MeasurableSpace V] [BorelSpace V]
 
+private theorem map_apply_image {E V W : Type*} [Semiring E]
+    [AddCommMonoid V] [Module E V] [TopologicalSpace V] [MeasurableSpace V] [BorelSpace V]
+    [AddCommMonoid W] [Module E W] [TopologicalSpace W] [MeasurableSpace W] [BorelSpace W]
+    (μ : Measure V) (e : V ≃L[E] W) (T : Set V) :
+    μ.map e (e '' T) = μ T := by
+  rw [← ContinuousLinearEquiv.coe_toHomeomorph, e.toHomeomorph.measurableEmbedding.map_apply,
+    preimage_image_eq _ e.toHomeomorph.injective]
+
 /-- **Proper subspaces are Haar-null.** Any proper `E`-linear subspace `W ≠ ⊤` of a
 finite-dimensional `E`-vector space `V` carrying the module topology has additive Haar measure
 zero. -/
@@ -122,11 +130,7 @@ theorem addHaar_submodule_of_isNonarchimedeanLocalField (μ : Measure V) [μ.IsA
     have hfw : f w = 0 := hWker hw
     rw [hf_eq, LinearMap.smul_apply, smul_eq_mul, mul_eq_zero] at hfw
     simpa [e, Basis.equivFun_apply] using hfw.resolve_left hfv
-  have hmap : ν (e '' (W : Set V)) = μ (W : Set V) := by
-    dsimp only [ν]
-    rw [← ContinuousLinearEquiv.coe_toHomeomorph, e.toHomeomorph.measurableEmbedding.map_apply,
-      preimage_image_eq _ e.toHomeomorph.injective]
-  rw [← hmap]
+  rw [← map_apply_image μ e (W : Set V)]
   exact measure_mono_null hsub (measure_coord_eq_zero ν i)
 
 /-- **Linear Haar change of variables for arbitrary endomorphisms.** For any `E`-linear map
@@ -158,11 +162,8 @@ theorem addHaar_image_linearMap_of_isNonarchimedeanLocalField (μ : Measure V) [
       simp only [Function.comp_apply, e,
         LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, Basis.equivFun_apply]
       exact congrFun (LinearMap.toMatrix_mulVec_repr b b f x).symm _
-    have hmap (T : Set V) : ν (e '' T) = μ T := by
-      dsimp only [ν]
-      rw [← ContinuousLinearEquiv.coe_toHomeomorph, e.toHomeomorph.measurableEmbedding.map_apply,
-        preimage_image_eq _ e.toHomeomorph.injective]
-    rw [← hmap (f '' s), hcomm, addHaar_image_mulVec_of_isUnit_det ν hA, hAdet, hmap s]
+    rw [← map_apply_image μ e (f '' s), hcomm, addHaar_image_mulVec_of_isUnit_det ν hA, hAdet,
+      map_apply_image μ e s]
 
 /-- Image of a set under a continuous linear map `f : V →L[E] V` (invertible or singular) scales
 any additive Haar measure on `V` by `|det f|_E`. -/
@@ -198,10 +199,9 @@ theorem addHaar_preimage_linearEquiv_of_isNonarchimedeanLocalField (μ : Measure
     [μ.IsAddHaarMeasure] (T : V ≃ₗ[E] V) (s : Set V) :
     μ (T ⁻¹' s) =
       ((normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
-  have hdet0 : (normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0) ≠ 0 := by
-    exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 T.isUnit_det'.ne_zero
   rw [← T.image_symm_eq_preimage, addHaar_image_linearEquiv_of_isNonarchimedeanLocalField,
-    LinearEquiv.det_coe_symm, map_inv₀, NNRat.cast_inv, ENNReal.coe_inv hdet0]
+    LinearEquiv.det_coe_symm, map_inv₀, NNRat.cast_inv,
+    ENNReal.coe_inv (coe_normalizedAbsoluteValue_ne_zero T.isUnit_det'.ne_zero)]
 
 /-- Preimage of a set under a continuous linear equivalence `T : V ≃L[E] V` scales any additive
 Haar measure on `V` by `|det T|_E⁻¹`. -/
@@ -240,11 +240,10 @@ theorem map_linearEquiv_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] (T : V �
       ((normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0)⁻¹ : ℝ≥0) • μ := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
   have hT : Measurable T := (IsModuleTopology.continuous_of_linearMap (T : V →ₗ[E] V)).measurable
-  have h0 : (normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0) ≠ 0 := by
-    exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 T.isUnit_det'.ne_zero
   ext s hs
   rw [map_apply hT hs, addHaar_preimage_linearEquiv_of_isNonarchimedeanLocalField μ T s,
-    smul_apply, nnreal_smul_coe_apply, ENNReal.coe_inv h0]
+    smul_apply, nnreal_smul_coe_apply,
+    ENNReal.coe_inv (coe_normalizedAbsoluteValue_ne_zero T.isUnit_det'.ne_zero)]
 
 /-- Pushforward of additive Haar measure under a continuous linear equivalence `T : V ≃L[E] V`. -/
 theorem map_continuousLinearEquiv_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] (T : V ≃L[E] V) :
@@ -317,10 +316,8 @@ theorem lintegral_linearEquiv_addHaar (μ : Measure V) [μ.IsAddHaarMeasure] (T 
   let e : V ≃ᵐ V := T.toContinuousLinearEquivOfIsModuleTopology.toHomeomorph.toMeasurableEquiv
   have h := lintegral_map_equiv f e (μ := μ)
   have he : ⇑e = ⇑T := by simp [e]
-  have h0 : (normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0) ≠ 0 := by
-    exact_mod_cast (normalizedAbsoluteValue E).ne_zero_iff.2 T.isUnit_det'.ne_zero
   rw [he, map_linearEquiv_addHaar μ T, lintegral_smul_measure, ENNReal.smul_def, smul_eq_mul,
-    ENNReal.coe_inv h0] at h
+    ENNReal.coe_inv (coe_normalizedAbsoluteValue_ne_zero T.isUnit_det'.ne_zero)] at h
   exact h.symm
 
 /-- Bochner integral change of variables on `V` under `T : V ≃ₗ[E] V`. -/
@@ -574,24 +571,20 @@ theorem localAddHaar_self : localAddHaar L (L : Set V) = 1 := by
   rw [localAddHaar_def, ← coe_positiveCompacts L]
   exact addHaarMeasure_self
 
-/-- Every locally finite translation-invariant measure on `V` is its mass on `L` times
+/-- Every σ-finite translation-invariant measure on `V` is its mass on `L` times
 `Submodule.IsFullLattice.localAddHaar L`. -/
-theorem eq_smul_localAddHaar (μ : Measure V) [μ.IsAddLeftInvariant]
-    [IsFiniteMeasureOnCompacts μ] :
+theorem eq_smul_localAddHaar (μ : Measure V) [SigmaFinite μ] [μ.IsAddLeftInvariant] :
     μ = μ (L : Set V) • localAddHaar L := by
   let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
   have : Module.Finite E V := Module.Finite.of_isFullLattice (A := E) L
   have : SecondCountableTopology V :=
     TauCeti.ModuleTopology.secondCountableTopology (Module.finBasis E V)
-  have : LocallyCompactSpace V := (positiveCompacts L).locallyCompactSpace_of_addGroup
-  have : IsLocallyFiniteMeasure μ := inferInstance
   rw [localAddHaar_def, ← coe_positiveCompacts L]
   exact addHaarMeasure_unique μ (positiveCompacts L)
 
-/-- A locally finite translation-invariant measure on `V` equals
+/-- A σ-finite translation-invariant measure on `V` equals
 `Submodule.IsFullLattice.localAddHaar L` if and only if it gives `L` mass one. -/
-theorem eq_localAddHaar_iff (μ : Measure V) [μ.IsAddLeftInvariant]
-    [IsFiniteMeasureOnCompacts μ] :
+theorem eq_localAddHaar_iff (μ : Measure V) [SigmaFinite μ] [μ.IsAddLeftInvariant] :
     μ = localAddHaar L ↔ μ (L : Set V) = 1 := by
   refine ⟨fun h ↦ h ▸ localAddHaar_self L, fun h ↦ ?_⟩
   rw [eq_smul_localAddHaar L μ, h, one_smul]
@@ -610,6 +603,8 @@ theorem map_localAddHaar {W : Type*} [AddCommGroup W] [Module E W] [Module 𝒪[
   let ee : V ≃L[E] W := e.toContinuousLinearEquivOfIsModuleTopology
   have _ : ((localAddHaar L).map ee).IsAddHaarMeasure :=
     ee.isAddHaarMeasure_map (localAddHaar L)
+  have _ : SigmaFinite ((localAddHaar L).map ee) :=
+    ee.toHomeomorph.toMeasurableEquiv.sigmaFinite_map
   have hee : ⇑ee = ⇑e := LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology e
   let L' : Submodule 𝒪[E] W := L.map ((e : V →ₗ[E] W).restrictScalars 𝒪[E])
   rw [← hee, eq_localAddHaar_iff L']
@@ -684,17 +679,17 @@ theorem localAddHaar_span_range (b : Basis ι E V) :
     b.localAddHaar (Submodule.span 𝒪[E] (Set.range b) : Set V) = 1 :=
   Submodule.IsFullLattice.localAddHaar_self (Submodule.span 𝒪[E] (Set.range b))
 
-/-- Every locally finite translation-invariant measure on `V` is its mass on the `𝒪[E]`-span of
-`b` times `b.localAddHaar`. -/
-theorem eq_smul_localAddHaar (b : Basis ι E V) (μ : Measure V) [μ.IsAddLeftInvariant]
-    [IsFiniteMeasureOnCompacts μ] :
+/-- Every σ-finite translation-invariant measure on `V` is its mass on the `𝒪[E]`-span of `b`
+times `b.localAddHaar`. -/
+theorem eq_smul_localAddHaar (b : Basis ι E V) (μ : Measure V) [SigmaFinite μ]
+    [μ.IsAddLeftInvariant] :
     μ = μ (Submodule.span 𝒪[E] (Set.range b) : Set V) • b.localAddHaar :=
   Submodule.IsFullLattice.eq_smul_localAddHaar (Submodule.span 𝒪[E] (Set.range b)) μ
 
-/-- A locally finite translation-invariant measure on `V` equals `b.localAddHaar` if and only if
-it gives the `𝒪[E]`-span of `b` mass one. -/
-theorem eq_localAddHaar_iff (b : Basis ι E V) (μ : Measure V) [μ.IsAddLeftInvariant]
-    [IsFiniteMeasureOnCompacts μ] :
+/-- A σ-finite translation-invariant measure on `V` equals `b.localAddHaar` if and only if it
+gives the `𝒪[E]`-span of `b` mass one. -/
+theorem eq_localAddHaar_iff (b : Basis ι E V) (μ : Measure V) [SigmaFinite μ]
+    [μ.IsAddLeftInvariant] :
     μ = b.localAddHaar ↔ μ (Submodule.span 𝒪[E] (Set.range b) : Set V) = 1 :=
   Submodule.IsFullLattice.eq_localAddHaar_iff (Submodule.span 𝒪[E] (Set.range b)) μ
 
