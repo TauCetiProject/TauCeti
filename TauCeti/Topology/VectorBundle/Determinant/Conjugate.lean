@@ -31,8 +31,9 @@ including an empty base. Rank zero is included.
 * `conjugateLinearEquiv_naturality` is the square for every linear fibre map between equal-rank
   model presentations in independent universes, with their degree casts explicit. The corollary
   `conjugateLinearEquiv_bundleIso_naturality` derives rank equality at each given base point.
-* `conjugateSourcePullbackHomeomorph` and `conjugateTargetPullbackHomeomorph` use the canonical
-  determinant-pullback comparisons independently of conjugation. The full square is
+* The source side uses the canonical `pullbackHomeomorph` directly;
+  `conjugateTargetPullbackHomeomorph` conjugates that comparison on the target side.
+  The full square is
   `conjugateHomeomorph_pullback`.
 * `doubleConjugateLinearEquiv` is defined directly by the exterior functor on the canonical
   double-conjugation cancellation. Its native total-space form `doubleConjugateHomeomorph` agrees
@@ -93,6 +94,22 @@ theorem conjugateLinearEquiv_ιMulti (x : B)
     (finrank_complex (V := F)) a, exteriorPower.conjugateEquiv_ιMulti, ofConj_toConj]
   simp only [Function.comp_def]
 
+/-- The inverse native comparison sends a conjugated exterior generator to the conjugate
+vectors, with the inverse degree identification explicit. -/
+theorem conjugateLinearEquiv_symm_ιMulti (x : B) (a : Fin (finrank ℂ F) → E x) :
+    (conjugateLinearEquiv (F := F) (E := E) x).symm
+      (toConj ((linearEquiv ℂ F E x).symm (exteriorPower.ιMulti ℂ _ a))) =
+      (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) x).symm
+        (exteriorPower.ιMulti ℂ _
+          (fun i => toConj (a (Fin.cast (finrank_complex (V := F)) i)))) := by
+  simp only [conjugateLinearEquiv, LinearEquiv.symm_trans_apply,
+    LinearEquiv.conjugate_symm, LinearEquiv.symm_symm, LinearEquiv.conjugate_apply,
+    ofConj_toConj, LinearEquiv.apply_symm_apply,
+    exteriorPower.conjugateEquiv_symm_ιMulti]
+  rw [LinearEquiv.ofEq_symm, exteriorPower.ofEq_ιMulti
+    (finrank_complex (V := F)).symm]
+  simp only [Function.comp_def]
+
 /-- The native fibre comparison is a continuous linear equivalence for the actual module
 topologies on the determinant fibres and the inherited conjugate topology. -/
 def conjugateEquiv (x : B) :
@@ -107,6 +124,14 @@ def conjugateEquiv (x : B) :
     (v : DetBundle ℂ (Conjugate F) (ConjugateBundle E) x) :
     conjugateEquiv (F := F) (E := E) x v = conjugateLinearEquiv (F := F) (E := E) x v := by
   simp only [conjugateEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
+
+/-- The inverse continuous fibre comparison is the inverse algebraic comparison. -/
+@[simp] theorem conjugateEquiv_symm_apply (x : B)
+    (w : Conjugate (DetBundle ℂ F E x)) :
+    (conjugateEquiv (F := F) (E := E) x).symm w =
+      (conjugateLinearEquiv (F := F) (E := E) x).symm w := by
+  simp only [conjugateEquiv, LinearEquiv.symm_toContinuousLinearEquivOfIsModuleTopology,
+    LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
 
 /-- Naturality on actual native determinant fibres, for arbitrary linear maps and model
 presentations in independent universes. The two model ranks agree, but their bases need not. -/
@@ -127,7 +152,7 @@ theorem conjugateLinearEquiv_naturality {G : Type*} [NormedAddCommGroup G] [Norm
             (ofConj (conjugateLinearEquiv (F := F) (E := E) x v)))))) := by
   dsimp only
   have hc := (finrank_complex (V := F)).trans (h.trans (finrank_complex (V := G)).symm)
-  have hn := exteriorPower.conjugateEquiv_cast_naturality
+  have hn := exteriorPower.conjugateEquiv_ofEq_naturality
     (finrank_complex (V := F)) (finrank_complex (V := G)) h hc f
     (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) x v)
   have hn' := congrArg (fun a => toConj ((linearEquiv ℂ G E' x).symm (ofConj a))) hn
@@ -191,6 +216,22 @@ theorem doubleConjugateLinearEquiv_apply (x : B)
   simp only [doubleConjugateLinearEquiv, LinearEquiv.trans_apply,
     ← LinearEquiv.coe_toLinearMap, LinearEquiv.exteriorPower_toLinearMap]
 
+/-- The inverse double-conjugation transport uses the inverse fibre cancellation and reverses
+the identification of exterior degrees. -/
+theorem doubleConjugateLinearEquiv_symm_apply (x : B) (v : DetBundle ℂ F E x) :
+    (doubleConjugateLinearEquiv (F := F) (E := E) x).symm v =
+      (linearEquiv ℂ (Conjugate (Conjugate F))
+        (ConjugateBundle (ConjugateBundle E)) x).symm
+        (exteriorPower.map (finrank ℂ (Conjugate (Conjugate F)))
+          (TauCeti.Conjugate.doubleConjugateLinearEquiv :
+            Conjugate (Conjugate (E x)) ≃ₗ[ℂ] E x).symm.toLinearMap
+          ((LinearEquiv.ofEq _ _ (congrArg (fun n => ⋀[ℂ]^n (E x))
+            ((finrank_complex (V := Conjugate F)).trans (finrank_complex (V := F))))).symm
+              (linearEquiv ℂ F E x v))) := by
+  simp only [doubleConjugateLinearEquiv, LinearEquiv.symm_trans_apply,
+    LinearEquiv.symm_symm, LinearEquiv.exteriorPower_symm,
+    ← LinearEquiv.coe_toLinearMap, LinearEquiv.exteriorPower_toLinearMap]
+
 /-- Cancelling two conjugations of the native determinant agrees with taking the determinant
 of the canonical cancellation of two conjugations on the original fibre. -/
 theorem conjugateLinearEquiv_double (x : B)
@@ -200,7 +241,7 @@ theorem conjugateLinearEquiv_double (x : B)
       ((conjugateLinearEquiv (F := F) (E := E) x).conjugate
         (conjugateLinearEquiv (F := Conjugate F) (E := ConjugateBundle E) x v)) =
       doubleConjugateLinearEquiv (F := F) (E := E) x v := by
-  have hd := exteriorPower.conjugateEquiv_cast_double
+  have hd := exteriorPower.conjugateEquiv_ofEq_double
     (finrank_complex (V := Conjugate F)) (finrank_complex (V := F))
     (linearEquiv ℂ (Conjugate (Conjugate F)) (ConjugateBundle (ConjugateBundle E)) x v)
   simpa only [LinearEquiv.conjugate_apply,
@@ -219,6 +260,14 @@ def doubleConjugateEquiv (x : B) :
     doubleConjugateEquiv (F := F) (E := E) x v =
       doubleConjugateLinearEquiv (F := F) (E := E) x v := by
   simp only [doubleConjugateEquiv, LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
+
+/-- The inverse continuous double-conjugation map is the inverse algebraic transport. -/
+@[simp] theorem doubleConjugateEquiv_symm_apply (x : B) (v : DetBundle ℂ F E x) :
+    (doubleConjugateEquiv (F := F) (E := E) x).symm v =
+      (doubleConjugateLinearEquiv (F := F) (E := E) x).symm v := by
+  simp only [doubleConjugateEquiv,
+    LinearEquiv.symm_toContinuousLinearEquivOfIsModuleTopology,
+    LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
 
 /-- The continuous native fibre comparisons satisfy the full double-conjugation law. -/
 theorem conjugateEquiv_double (x : B)
@@ -244,7 +293,7 @@ def conjugateModelEquiv : ℂ ≃ₗ[ℂ] Conjugate ℂ :=
     (linearEquiv ℂ F (fun _ : Unit => F) ()).conjugate ≪≫ₗ
     (modelCoord F).conjugate
 
-theorem conjugateModelEquiv_formula (c : ℂ) :
+theorem conjugateModelEquiv_def (c : ℂ) :
     conjugateModelEquiv (F := F) c =
       toConj (modelCoord F (linearEquiv ℂ F (fun _ : Unit => F) () (ofConj
         (conjugateLinearEquiv (F := F) (E := fun _ : Unit => F) ()
@@ -286,7 +335,7 @@ theorem chartCoord_conjugateLinearEquiv (e : Trivialization F (π F E)) [e.IsLin
   rw [← Trivialization.linearEquivAt_conjugate e hx] at h
   have h' := congrArg (fun a : Conjugate (⋀[ℂ]^(finrank ℂ F) F) =>
     toConj (modelCoord F (ofConj a))) h
-  simp only [conjugateLinearEquiv_apply, conjugateModelEquiv_formula, chartCoord_apply,
+  simp only [conjugateLinearEquiv_apply, conjugateModelEquiv_def, chartCoord_apply,
     LinearEquiv.apply_symm_apply, LinearEquiv.symm_apply_apply,
     ofConj_toConj]
   simpa only [linearEquiv_apply, LinearMap.conjugate_apply, ofConj_toConj,
@@ -319,7 +368,7 @@ variable [TopologicalSpace B] [FiniteDimensional ℂ F]
   [FiberBundle F E] [VectorBundle ℂ F E]
 
 /-- Continuity of the actual native determinant-conjugation map on total spaces. -/
-theorem continuous_conjugate :
+theorem continuous_conjugateEquiv :
     Continuous (fun p : TotalSpace ℂ (DetBundle ℂ (Conjugate F) (ConjugateBundle E)) =>
       (TotalSpace.mk' (Conjugate ℂ) p.proj (conjugateEquiv (F := F) (E := E) p.proj p.snd) :
         TotalSpace (Conjugate ℂ) (ConjugateBundle (DetBundle ℂ F E)))) := by
@@ -351,7 +400,7 @@ as a homeomorphism on the actual total spaces and a linear equivalence on every 
 def conjugateHomeomorph :
     TotalSpace ℂ (DetBundle ℂ (Conjugate F) (ConjugateBundle E)) ≃ₜ
       TotalSpace (Conjugate ℂ) (ConjugateBundle (DetBundle ℂ F E)) :=
-  bundleHomeomorph (conjugateEquiv (F := F) (E := E)) continuous_conjugate
+  bundleHomeomorph (conjugateEquiv (F := F) (E := E)) continuous_conjugateEquiv
 
 @[simp] theorem conjugateHomeomorph_apply
     (p : TotalSpace ℂ (DetBundle ℂ (Conjugate F) (ConjugateBundle E))) :
@@ -370,54 +419,32 @@ theorem proj_conjugateHomeomorph
     (conjugateHomeomorph (F := F) (E := E) p).proj = p.proj := by
   rw [conjugateHomeomorph_apply]
 
-private def conjugateTwiceHomeomorph :
-    TotalSpace ℂ (DetBundle ℂ (Conjugate (Conjugate F))
-      (ConjugateBundle (ConjugateBundle E))) ≃ₜ TotalSpace ℂ (DetBundle ℂ F E) :=
-  (conjugateHomeomorph (F := Conjugate F) (E := ConjugateBundle E)).trans
-    (((ConjugateBundle.toConjHomeomorph ℂ
-      (DetBundle ℂ (Conjugate F) (ConjugateBundle E))).symm).trans
-      ((conjugateHomeomorph (F := F) (E := E)).trans
-        ((ConjugateBundle.toConjHomeomorph (Conjugate ℂ)
-          (ConjugateBundle (DetBundle ℂ F E))).trans
-            (ConjugateBundle.doubleConjugateHomeomorph ℂ (DetBundle ℂ F E)))))
-
-private theorem conjugateTwiceHomeomorph_eq_composition :
-    conjugateTwiceHomeomorph (F := F) (E := E) =
-  (conjugateHomeomorph (F := Conjugate F) (E := ConjugateBundle E)).trans
-    (((ConjugateBundle.toConjHomeomorph ℂ
-      (DetBundle ℂ (Conjugate F) (ConjugateBundle E))).symm).trans
-      ((conjugateHomeomorph (F := F) (E := E)).trans
-        ((ConjugateBundle.toConjHomeomorph (Conjugate ℂ)
-          (ConjugateBundle (DetBundle ℂ F E))).trans
-            (ConjugateBundle.doubleConjugateHomeomorph ℂ (DetBundle ℂ F E))))) := rfl
-
-private theorem conjugateTwiceHomeomorph_apply
-    (p : TotalSpace ℂ (DetBundle ℂ (Conjugate (Conjugate F))
-      (ConjugateBundle (ConjugateBundle E)))) :
-    conjugateTwiceHomeomorph (F := F) (E := E) p =
-      ⟨p.proj, doubleConjugateEquiv (F := F) (E := E) p.proj p.snd⟩ := by
-  simp only [conjugateTwiceHomeomorph, Homeomorph.trans_apply,
-    conjugateHomeomorph_apply, ConjugateBundle.toConjHomeomorph_symm_apply,
-    ConjugateBundle.toConjHomeomorph_apply, ConjugateBundle.doubleConjugateHomeomorph_apply,
-    ofConj_toConj]
-  exact congrArg (fun v => (⟨p.proj, v⟩ : TotalSpace ℂ (DetBundle ℂ F E)))
-    (conjugateEquiv_double p.proj p.snd)
-
 /-- Continuity of the independently defined native double-conjugation transport. -/
-theorem continuous_doubleConjugate :
+theorem continuous_doubleConjugateEquiv :
     Continuous (fun p : TotalSpace ℂ (DetBundle ℂ (Conjugate (Conjugate F))
       (ConjugateBundle (ConjugateBundle E))) =>
         (⟨p.proj, doubleConjugateEquiv (F := F) (E := E) p.proj p.snd⟩ :
-          TotalSpace ℂ (DetBundle ℂ F E))) :=
-  (conjugateTwiceHomeomorph (F := F) (E := E)).continuous.congr
-    (fun p => conjugateTwiceHomeomorph_apply p)
+          TotalSpace ℂ (DetBundle ℂ F E))) := by
+  refine ((conjugateHomeomorph (F := Conjugate F) (E := ConjugateBundle E)).trans
+    (((ConjugateBundle.toConjHomeomorph ℂ
+      (DetBundle ℂ (Conjugate F) (ConjugateBundle E))).symm).trans
+      ((conjugateHomeomorph (F := F) (E := E)).trans
+        ((ConjugateBundle.toConjHomeomorph (Conjugate ℂ)
+          (ConjugateBundle (DetBundle ℂ F E))).trans
+            (ConjugateBundle.doubleConjugateHomeomorph ℂ (DetBundle ℂ F E)))))).continuous.congr ?_
+  intro p
+  simp only [Homeomorph.trans_apply, conjugateHomeomorph_apply,
+    ConjugateBundle.toConjHomeomorph_symm_apply, ConjugateBundle.toConjHomeomorph_apply,
+    ConjugateBundle.doubleConjugateHomeomorph_apply, ofConj_toConj]
+  exact congrArg (fun v => (⟨p.proj, v⟩ : TotalSpace ℂ (DetBundle ℂ F E)))
+    (conjugateEquiv_double p.proj p.snd)
 
 /-- Taking the determinant of the canonical double-conjugation cancellation, on the actual
 native total spaces. Its fibre map is the independent exterior-functor transport above. -/
 def doubleConjugateHomeomorph :
     TotalSpace ℂ (DetBundle ℂ (Conjugate (Conjugate F))
       (ConjugateBundle (ConjugateBundle E))) ≃ₜ TotalSpace ℂ (DetBundle ℂ F E) :=
-  bundleHomeomorph (doubleConjugateEquiv (F := F) (E := E)) continuous_doubleConjugate
+  bundleHomeomorph (doubleConjugateEquiv (F := F) (E := E)) continuous_doubleConjugateEquiv
 
 @[simp] theorem doubleConjugateHomeomorph_apply
     (p : TotalSpace ℂ (DetBundle ℂ (Conjugate (Conjugate F))
@@ -443,9 +470,13 @@ theorem conjugateHomeomorph_double :
             (ConjugateBundle (DetBundle ℂ F E))).trans
               (ConjugateBundle.doubleConjugateHomeomorph ℂ (DetBundle ℂ F E))))) =
       doubleConjugateHomeomorph (F := F) (E := E) := by
-  rw [← conjugateTwiceHomeomorph_eq_composition]
   ext p : 1
-  exact (conjugateTwiceHomeomorph_apply p).trans (doubleConjugateHomeomorph_apply p).symm
+  simp only [Homeomorph.trans_apply, conjugateHomeomorph_apply,
+    ConjugateBundle.toConjHomeomorph_symm_apply, ConjugateBundle.toConjHomeomorph_apply,
+    ConjugateBundle.doubleConjugateHomeomorph_apply, doubleConjugateHomeomorph_apply,
+    ofConj_toConj]
+  exact congrArg (fun v => (⟨p.proj, v⟩ : TotalSpace ℂ (DetBundle ℂ F E)))
+    (conjugateEquiv_double p.proj p.snd)
 
 end TotalSpace
 
@@ -500,13 +531,6 @@ def pulledConjugateHomeomorph (f : X → B) :
 
 variable {K : Type*} [FunLike K X B] [ContinuousMapClass K X B]
 
-/-- The source-side determinant-pullback comparison is the canonical main comparison for
-the conjugate bundle. It does not use the conjugation determinant map. -/
-def conjugateSourcePullbackHomeomorph (f : K) :
-    TotalSpace ℂ ((f : X → B) *ᵖ (DetBundle ℂ (Conjugate F) (ConjugateBundle E))) ≃ₜ
-      TotalSpace ℂ (DetBundle ℂ (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E))) :=
-  pullbackHomeomorph (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E) f
-
 /-- The target-side comparison is the conjugate of the canonical determinant-pullback
 homeomorphism, using the independently defined conjugation homeomorphisms of total spaces. -/
 def conjugateTargetPullbackHomeomorph (f : K) :
@@ -516,15 +540,6 @@ def conjugateTargetPullbackHomeomorph (f : K) :
     (((ConjugateBundle.toConjHomeomorph ℂ ((f : X → B) *ᵖ (DetBundle ℂ F E))).symm.trans
       (pullbackHomeomorph (𝕜 := ℂ) (F := F) (E := E) f)).trans
         (ConjugateBundle.toConjHomeomorph ℂ (DetBundle ℂ F ((f : X → B) *ᵖ E))))
-
-@[simp] theorem conjugateSourcePullbackHomeomorph_apply (f : K)
-    (p : TotalSpace ℂ ((f : X → B) *ᵖ
-      (DetBundle ℂ (Conjugate F) (ConjugateBundle E)))) :
-    conjugateSourcePullbackHomeomorph (F := F) (E := E) f p =
-      ⟨p.proj, pullbackEquiv (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E)
-        (f : X → B) p.proj p.snd⟩ := by
-  exact pullbackHomeomorph_apply (𝕜 := ℂ) (F := Conjugate F)
-    (E := ConjugateBundle E) f p
 
 @[simp] theorem conjugateTargetPullbackHomeomorph_apply (f : K)
     (p : TotalSpace (Conjugate ℂ)
@@ -536,16 +551,6 @@ def conjugateTargetPullbackHomeomorph (f : K) :
     ConjugateBundle.pullbackHomeomorph_apply, Homeomorph.trans_apply,
     Homeomorph.trans_apply, ConjugateBundle.toConjHomeomorph_symm_apply,
     pullbackHomeomorph_apply, ConjugateBundle.toConjHomeomorph_apply]
-
-/-- The inverse source comparison is the inverse canonical determinant pullback. -/
-@[simp↓] theorem conjugateSourcePullbackHomeomorph_symm_apply (f : K)
-    (p : TotalSpace ℂ
-      (DetBundle ℂ (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E)))) :
-    (conjugateSourcePullbackHomeomorph (F := F) (E := E) f).symm p =
-      ⟨p.proj, (pullbackEquiv (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E)
-        (f : X → B) p.proj).symm p.snd⟩ := by
-  exact pullbackHomeomorph_symm_apply (𝕜 := ℂ) (F := Conjugate F)
-    (E := ConjugateBundle E) f p
 
 /-- The inverse target comparison conjugates the inverse canonical determinant pullback. -/
 @[simp↓] theorem conjugateTargetPullbackHomeomorph_symm_apply (f : K)
@@ -690,17 +695,23 @@ theorem conjugateEquiv_pullback (f : K) (y : X)
 
 /-- The full pullback square of native total-space homeomorphisms commutes. -/
 theorem conjugateHomeomorph_pullback (f : K) :
-    (conjugateSourcePullbackHomeomorph (F := F) (E := E) f).trans
+    (pullbackHomeomorph (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E) f).trans
       (conjugateHomeomorph (F := F) (E := (f : X → B) *ᵖ E)) =
     (pulledConjugateHomeomorph (F := F) (E := E) (f : X → B)).trans
       (conjugateTargetPullbackHomeomorph (F := F) (E := E) f) := by
   ext p : 1
-  simp only [Homeomorph.trans_apply, conjugateSourcePullbackHomeomorph_apply,
-    conjugateHomeomorph_apply, pulledConjugateHomeomorph_apply,
-    conjugateTargetPullbackHomeomorph_apply]
+  -- Fix the original fibre dictionaries before matching the canonical pullback carriers.
+  have h := @conjugateEquiv_pullback B F ‹_› ‹_› E ‹_› ‹_›
+    ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› X ‹_› K ‹_› ‹_› f p.proj p.snd
+  conv_rhs =>
+    rw [Homeomorph.trans_apply, pulledConjugateHomeomorph_apply,
+      conjugateTargetPullbackHomeomorph_apply]
+  erw [Homeomorph.trans_apply,
+    pullbackHomeomorph_apply (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E) f,
+    conjugateHomeomorph_apply (F := F) (E := (f : X → B) *ᵖ E)]
   exact congrArg (fun z => (⟨p.proj, z⟩ :
     TotalSpace (Conjugate ℂ) (ConjugateBundle (DetBundle ℂ F ((f : X → B) *ᵖ E)))))
-    (conjugateEquiv_pullback f p.proj p.snd)
+    h
 
 end Pullback
 

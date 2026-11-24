@@ -155,7 +155,7 @@ theorem conjugateEquiv_ofEq_map {U : Type*} {V : Type*}
 
 /-- The full conjugation square also commutes with changes of exterior degree along equalities.
 This keeps independent model-rank presentations explicit in native determinant comparisons. -/
-theorem conjugateEquiv_cast_naturality {n n' m m' : ℕ}
+theorem conjugateEquiv_ofEq_naturality {n n' m m' : ℕ}
     (hn : n = n') (hm : m = m') (h : n' = m') (hc : n = m)
     (f : V →ₗ[ℂ] W) (a : ⋀[ℂ]^n (Conjugate V)) :
     conjugateEquiv m'
@@ -172,7 +172,7 @@ theorem conjugateEquiv_cast_naturality {n n' m m' : ℕ}
     conjugateEquiv_naturality n f a
 
 /-- Double conjugation commutes with the rank transports of independent model presentations. -/
-theorem conjugateEquiv_cast_double {n m k : ℕ} (h : n = m) (h' : m = k)
+theorem conjugateEquiv_ofEq_double {n m k : ℕ} (h : n = m) (h' : m = k)
     (a : ⋀[ℂ]^n (Conjugate (Conjugate V))) :
     ofConj (conjugateEquiv k
       (LinearEquiv.ofEq _ _ (congrArg (fun j => ⋀[ℂ]^j (Conjugate V)) h')

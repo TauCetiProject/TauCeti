@@ -110,7 +110,8 @@ theorem zeroMap_independentModel_naturality
 /-- Pullback along `z ↦ z²` commutes on the actual native total spaces. -/
 theorem square_pullback :
     let f : C(ℂ, ℂ) := ⟨fun z => z ^ 2, continuous_id.pow 2⟩
-    (DetBundle.conjugateSourcePullbackHomeomorph (F := Plane) (E := Trivial ℂ Plane) f).trans
+    (DetBundle.pullbackHomeomorph (𝕜 := ℂ) (F := Conjugate Plane)
+      (E := ConjugateBundle (Trivial ℂ Plane)) f).trans
       (DetBundle.conjugateHomeomorph (F := Plane)
         (E := (f : ℂ → ℂ) *ᵖ (Trivial ℂ Plane))) =
     (DetBundle.pulledConjugateHomeomorph (F := Plane) (E := Trivial ℂ Plane)
@@ -212,22 +213,8 @@ theorem unitBase_bundleIso_naturality (x : Unit)
     (E' := Trivial Unit (ULift.{u} Plane))
     (fun _ => (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv) x v
 
-/-- The source inverse computes arbitrary rank-two vectors over the nonidentity map `z ↦ z²`.
-The base is nonempty and no forward/inverse cancellation is supplied to the simplifier. -/
-theorem square_pullback_source_inverse :
-    let f : C(ℂ, ℂ) := ⟨fun z => z ^ 2, continuous_id.pow 2⟩
-    ∀ p : TotalSpace ℂ (DetBundle ℂ (Conjugate Plane)
-      (ConjugateBundle ((f : ℂ → ℂ) *ᵖ (Trivial ℂ Plane)))),
-    (DetBundle.conjugateSourcePullbackHomeomorph (F := Plane)
-      (E := Trivial ℂ Plane) f).symm p =
-      ⟨p.proj, (DetBundle.pullbackEquiv (𝕜 := ℂ) (F := Conjugate Plane)
-        (E := ConjugateBundle (Trivial ℂ Plane)) (f : ℂ → ℂ) p.proj).symm p.snd⟩ := by
-  dsimp only
-  intro p
-  simp
-
-/-- The target inverse computes arbitrary conjugate determinant vectors on the same rank-two
-pullback, using the inverse comparison rather than an exposed definition body. -/
+/-- The inverse target comparison conjugates the inverse determinant pullback on arbitrary
+rank-two vectors over the pullback along `z ↦ z²`. -/
 theorem square_pullback_target_inverse :
     let f : C(ℂ, ℂ) := ⟨fun z => z ^ 2, continuous_id.pow 2⟩
     ∀ p : TotalSpace (Conjugate ℂ)
@@ -239,5 +226,18 @@ theorem square_pullback_target_inverse :
   dsimp only
   intro p
   simp
+
+/-- On the rank-two trivial bundle, the inverse determinant conjugation sends conjugated
+exterior generators to the exterior product of the conjugated vectors. -/
+theorem rankTwo_inverse_generator (a : Fin (finrank ℂ Plane) → Plane) :
+    (DetBundle.conjugateLinearEquiv (F := Plane) (E := Trivial Unit Plane) ()).symm
+      (toConj ((DetBundle.linearEquiv ℂ Plane (Trivial Unit Plane) ()).symm
+        (exteriorPower.ιMulti ℂ _ a))) =
+      (DetBundle.linearEquiv ℂ (Conjugate Plane)
+        (ConjugateBundle (Trivial Unit Plane)) ()).symm
+        (exteriorPower.ιMulti ℂ _
+          (fun i => toConj (a (Fin.cast (finrank_complex (V := Plane)) i)))) :=
+  DetBundle.conjugateLinearEquiv_symm_ιMulti
+    (F := Plane) (E := Trivial Unit Plane) () a
 
 end TauCeti.Examples.DetBundleConjugate
