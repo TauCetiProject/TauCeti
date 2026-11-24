@@ -96,6 +96,12 @@ instance : CoeFun (Determinant A R d) fun _ ↦ R → A := ⟨ground⟩
 theorem ground_toLaw : D.toLaw.ground = ⇑D :=
   (rfl)
 
+/-- The value `D x` read off the scalar extension of the law to `A` itself:
+`D x = lid (D(1 ⊗ x))`. -/
+theorem apply_eq_lid_toFun (x : R) :
+    D x = TensorProduct.lid A A (D.toLaw.toFun A (1 ⊗ₜ x)) := by
+  rw [← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun]
+
 /-- A determinant sends `1` to `1`. -/
 @[simp]
 theorem map_one : D 1 = 1 :=
@@ -142,8 +148,8 @@ theorem toFun_eq_one_of_dim_zero (D : Determinant A R 0) (S : Type*) [CommSemiri
 /-- A determinant of dimension zero is constantly `1`. -/
 @[simp]
 theorem apply_eq_one_of_dim_zero (D : Determinant A R 0) (x : R) : D x = 1 := by
-  rw [← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun,
-    toFun_eq_one_of_dim_zero, Algebra.TensorProduct.one_def, TensorProduct.lid_tmul, one_smul]
+  rw [apply_eq_lid_toFun, toFun_eq_one_of_dim_zero, Algebra.TensorProduct.one_def,
+    TensorProduct.lid_tmul, one_smul]
 
 /-- There is exactly one determinant of dimension zero, the constant law `1`. -/
 instance : Unique (Determinant A R 0) where
@@ -241,8 +247,7 @@ theorem map_smul_add_algebraMap (s t : A) (x : R) :
   simp only [TensorProduct.lid_tmul, smul_eq_mul] at h
   have h₁ (a : A) (y : R) : (1 : A) ⊗ₜ[A] (a • y) = a ⊗ₜ y := by
     rw [← smul_tmul, smul_eq_mul, mul_one]
-  rw [← h, ← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun, tmul_add,
-    h₁, Algebra.algebraMap_eq_smul_one, h₁]
+  rw [← h, apply_eq_lid_toFun, tmul_add, h₁, Algebra.algebraMap_eq_smul_one, h₁]
 
 /-- The characteristic coefficient `Λ₀` is `1`. -/
 @[simp]
@@ -394,16 +399,14 @@ of `φ` extended to `S`. -/
 theorem algHomPow_toFun (φ : R →ₐ[A] A) (d : ℕ) (S : Type*) [CommSemiring S] [Algebra A S]
     (x : S ⊗[A] R) :
     (algHomPow φ d).toLaw.toFun S x = Algebra.TensorProduct.map (AlgHom.id A S) φ x ^ d := by
-  obtain ⟨n, ψ, y, rfl⟩ := PolynomialLaw.exists_lift x
-  rw [← PolynomialLaw.isCompat_apply, ← PolynomialLaw.toFun'_eq_toFun, algHomPow_toFun',
-    AlgHom.rTensor_toLinearMap_apply, AlgHom.rTensor_toLinearMap_apply, map_pow,
-    ← AlgHom.comp_apply, ← AlgHom.comp_apply]
-  simp only [← Algebra.TensorProduct.map_comp, AlgHom.comp_id, AlgHom.id_comp]
+  rw [algHomPow, PolynomialLaw.toFun_comp_apply, PolynomialLaw.power_toFun,
+    LinearMap.toPolynomialLaw_toFun, LinearMap.baseChange_eq_lTensor,
+    AlgHom.lTensor_toLinearMap_apply]
 
 /-- The value of `algHomPow φ d` at `x` is `φ x ^ d`. -/
 @[simp]
 theorem algHomPow_apply (φ : R →ₐ[A] A) (d : ℕ) (x : R) : algHomPow φ d x = φ x ^ d := by
-  simp [← ground_toLaw, PolynomialLaw.ground_apply, algHomPow_toFun']
+  simp [apply_eq_lid_toFun]
 
 /-- The characteristic coefficients of `algHomPow φ d` at `x` are `d.choose i * φ x ^ i`. -/
 @[simp]
