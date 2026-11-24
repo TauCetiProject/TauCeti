@@ -127,7 +127,9 @@ theorem IsUniform.topologicalGeneratorRankNat_eq_log_index (hG : IsUniform p G) 
 
 /-- **The successive indices of the lower `p`-series of a powerful group are at most `p ^ d`**:
 for a topologically finitely generated powerful pro-`p` group, `[λ_k : λ_{k+1}] ≤ p ^ d` for every
-`k`, where `d` is the topological generator rank, with equality for `k = 0`. -/
+`k`, where `d` is the topological generator rank. At `k = 0` this is an equality, by
+`TauCeti.IsPowerful.index_closedPowerSubgroup` and
+`TauCeti.IsPowerful.closedPowerSubgroup_eq_pLowerCentralSeries_one`. -/
 theorem IsPowerful.relIndex_pLowerCentralSeries_le (hG : IsPowerful p G) (hP : IsProP p G)
     (hfg : IsTopologicallyFinitelyGenerated G) (k : ℕ) :
     (pLowerCentralSeries p G (k + 1)).relIndex (pLowerCentralSeries p G k) ≤

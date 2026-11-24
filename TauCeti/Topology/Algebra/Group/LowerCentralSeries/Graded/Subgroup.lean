@@ -123,18 +123,19 @@ theorem gradedPieceOf_closure_le {S : Set G} {k : ℕ} (hS : S ⊆ pLowerCentral
   rintro z hz
   obtain ⟨⟨x, hxk⟩, hx, rfl⟩ := mem_gradedPieceOf_iff.1 hz
   clear hz
-  replace hx : x ∈ Subgroup.closure S := hx
+  rw [Subgroup.coe_mk] at hx
   induction hx using Subgroup.closure_induction with
   | mem g hg => exact hW g hg
   | one =>
-    rw [show (⟨1, hxk⟩ : pLowerCentralSeries p G k) = 1 from rfl, gradedMk_one]
+    rw [show (⟨1, hxk⟩ : pLowerCentralSeries p G k) = 1 from Subtype.ext (coe_one _).symm,
+      gradedMk_one]
     exact W.zero_mem
   | mul x y hx hy ihx ihy =>
-    rw [show (⟨x * y, hxk⟩ : pLowerCentralSeries p G k) = ⟨x, hle hx⟩ * ⟨y, hle hy⟩ from rfl,
-      gradedMk_mul]
+    rw [← MulMemClass.mk_mul_mk _ x y (hle hx) (hle hy), gradedMk_mul]
     exact W.add_mem (ihx (hle hx)) (ihy (hle hy))
   | inv x hx ihx =>
-    rw [show (⟨x⁻¹, hxk⟩ : pLowerCentralSeries p G k) = (⟨x, hle hx⟩)⁻¹ from rfl, gradedMk_inv]
+    rw [show (⟨x⁻¹, hxk⟩ : pLowerCentralSeries p G k) = (⟨x, hle hx⟩)⁻¹ from
+      Subtype.ext (coe_inv _ ⟨x, hle hx⟩).symm, gradedMk_inv]
     exact W.neg_mem (ihx (hle hx))
 
 /-- **Closing up a subgroup does not change its graded piece** when `λ_{k+1}` is open: an element

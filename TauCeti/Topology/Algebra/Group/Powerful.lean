@@ -41,6 +41,8 @@ separately where it is needed, as in `TauCeti.IsUniform`.
 * `TauCeti.closedPowerSubgroup_le_iff`: a closed subgroup contains `Gⁿ` exactly when it contains
   every `n`-th power.
 * `TauCeti.closedPowerSubgroup_le_of_dvd`: `Gᵐ ≤ Gⁿ` when `n ∣ m`.
+* `TauCeti.closedPowerSubgroup_mul_le_map_subtype_closedPowerSubgroup`: `G^{mn} ≤ Kⁿ` for a closed
+  subgroup `K` containing every `m`-th power.
 * `TauCeti.commutator_le_closedPowerSubgroup_two`: the commutator subgroup always lies in `G²`.
 * `TauCeti.IsPowerful.closedPowerSubgroup_eq_pLowerCentralSeries_one`: in a powerful group,
   `Gᵖ = λ_1`.
@@ -123,6 +125,20 @@ theorem closedPowerSubgroup_le_of_dvd {m : ℕ} (h : n ∣ m) :
   refine (closedPowerSubgroup_le_iff isClosed_closedPowerSubgroup).mpr fun g ↦ ?_
   rw [pow_mul']
   exact pow_mem_closedPowerSubgroup _
+
+/-- The closed power subgroup `Kⁿ` of a closed subgroup `K`, computed in `K`, is closed in `G`. -/
+theorem isClosed_map_subtype_closedPowerSubgroup {K : Subgroup G} (hK : IsClosed (K : Set G)) :
+    IsClosed (((closedPowerSubgroup n K).map K.subtype : Subgroup G) : Set G) := by
+  rw [Subgroup.coe_map]
+  exact hK.isClosedEmbedding_subtypeVal.isClosedMap _ isClosed_closedPowerSubgroup
+
+/-- If a closed subgroup `K` contains every `m`-th power, then `G^{mn}` lies in the closed power
+subgroup `Kⁿ`, computed in `K`: an `mn`-th power is the `n`-th power of an `m`-th power. -/
+theorem closedPowerSubgroup_mul_le_map_subtype_closedPowerSubgroup {K : Subgroup G}
+    (hK : IsClosed (K : Set G)) {m : ℕ} (hm : ∀ g : G, g ^ m ∈ K) :
+    closedPowerSubgroup (m * n) G ≤ (closedPowerSubgroup n K).map K.subtype :=
+  (closedPowerSubgroup_le_iff (isClosed_map_subtype_closedPowerSubgroup hK)).mpr fun g ↦
+    ⟨⟨g ^ m, hm g⟩ ^ n, pow_mem_closedPowerSubgroup _, by simp [pow_mul]⟩
 
 /-- The closed power subgroup for the exponent `1` is the whole group. -/
 @[simp]
