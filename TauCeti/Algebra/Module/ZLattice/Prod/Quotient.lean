@@ -75,7 +75,11 @@ theorem span_toAddSubgroup'_comap_inl_eq_top [CompactSpace ((Multiplicative V ×
   set P := (Γ.map (MonoidHom.fst (Multiplicative V) K)).toAddSubgroup'
   have : CompactSpace (Multiplicative V ⧸ Γ.map (MonoidHom.fst (Multiplicative V) K)) :=
     Γ.compactSpace_quotient_map continuous_fst Prod.fst_surjective
-  have : CompactSpace (V ⧸ P) := ‹CompactSpace (Multiplicative V ⧸ _)›
+  -- `V ⧸ P` is `Multiplicative V ⧸ Γ.map fst` by definition: `Multiplicative V` carries the
+  -- topology of `V`, and `toAddSubgroup'` keeps the carrier, so both quotients are taken by the
+  -- same relation on the same space.
+  have : CompactSpace (V ⧸ P) :=
+    inferInstanceAs (CompactSpace (Multiplicative V ⧸ Γ.map (MonoidHom.fst (Multiplicative V) K)))
   have hP := AddSubgroup.span_eq_top_of_compactSpace_quotient (𝕜 := ℝ) P
   -- If the image of `Γ` in `K` has `m` elements, then `m • P ⊆ Λ`.
   set m := Nat.card (Γ.map (MonoidHom.snd (Multiplicative V) K))

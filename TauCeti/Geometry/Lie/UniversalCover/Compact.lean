@@ -15,7 +15,6 @@ import TauCeti.Geometry.Lie.Perfect
 import TauCeti.Geometry.Lie.Subgroup.Center
 import TauCeti.Geometry.Manifold.Topology
 import TauCeti.MeasureTheory.Group.RealCharacter
-import TauCeti.Topology.Algebra.Group.Quotient.Prod
 
 /-!
 # Weyl's theorem on compact semisimple Lie groups
@@ -44,24 +43,27 @@ compact universal cover has finite fundamental group
 The circle shows that the hypothesis on the centre is needed: its Lie algebra is abelian, its
 universal cover `ℝ` is not compact, and its fundamental group `ℤ` is infinite.
 
-The same argument shows that the semisimple factor of a compact quotient of a product is compact.
-Let `K` be a connected Lie group whose Lie algebra is perfect and has trivial centre, `A` a group,
-and `Γ` a subgroup of `A × K` whose image `Δ` in `K` is central. If `(A × K) ⧸ Γ` is compact, then
-so is `K ⧸ Δ`, as its image under the second projection
-(`Subgroup.compactSpace_quotient_map_snd`). The centre of `K` is discrete because its Lie algebra
-has trivial centre (`TauCeti.Lie.discreteTopology_center_of_center_eq_bot`), so `Δ` is a discrete
+The same argument shows that a central subgroup with compact quotient forces compactness. Let `K`
+be a connected Lie group whose Lie algebra is perfect and has trivial centre, and `Δ` a central
+subgroup of `K` with `K ⧸ Δ` compact. The centre of `K` is discrete because its Lie algebra has
+trivial centre (`TauCeti.Lie.discreteTopology_center_of_center_eq_bot`), so `Δ` is a discrete
 central subgroup with compact quotient, and `K` is compact
-(`Subgroup.compactSpace_of_compactSpace_quotient_prod`). Its centre is then finite, and so is `Δ`
-(`Subgroup.finite_map_snd_of_compactSpace_quotient_prod`). If moreover `Γ` is discrete, the part
-`Λ = {a | (a, 1) ∈ Γ}` of `Γ` in `A` is a full lattice when `A` is a real vector space
+(`Subgroup.compactSpace_of_le_center_of_derivedSeries_one_eq_top`). Its centre is then finite, and
+so is `Δ` (`Subgroup.finite_of_le_center_of_derivedSeries_one_eq_top`). `K = ℝ`, whose Lie algebra
+is abelian, with `Δ = ℤ` shows that the hypothesis on the Lie algebra is needed, and
+`K = SL₂(ℝ)`, whose Lie algebra is simple, with `Δ` a cocompact lattice, which is not central,
+shows that the centrality of `Δ` is needed.
+
+This applies to the semisimple factor of a compact quotient of a product. Let `A` be a group and
+`Γ` a subgroup of `A × K` whose image `Δ` in `K` is central. If `(A × K) ⧸ Γ` is compact, then so is
+`K ⧸ Δ`, as its image under the second projection (`Subgroup.compactSpace_quotient_map_snd`), so
+`K` is compact and `Δ` is finite. If moreover `Γ` is discrete, the part `Λ = {a | (a, 1) ∈ Γ}` of
+`Γ` in `A` is a full lattice when `A` is a real vector space
 (`Subgroup.isZLattice_toAddSubgroup'_comap_inl`), and the covering `(A ⧸ Λ) × K → (A × K) ⧸ Γ`
 (`Subgroup.isCoveringMap_prodQuotientMap`) has finite fibres
 (`Subgroup.finite_prodQuotientMap_preimage`). For a compact connected Lie group
 `G = (ℝʳ × K) ⧸ Γ`, presented through its universal cover with `K` integrating the derived algebra
-`[𝔤, 𝔤]`, this is the compactness of `K`. With `A` trivial, `K = ℝ`, whose Lie algebra is abelian,
-and `Γ = ℤ` show that the hypothesis on the Lie algebra is needed, and `K = SL₂(ℝ)`, whose Lie
-algebra is simple, with `Γ` a cocompact lattice, which is not central, shows that the centrality
-of `Δ` is needed.
+`[𝔤, 𝔤]`, this is the compactness of `K`.
 
 ## Main results
 
@@ -73,11 +75,10 @@ of `Δ` is needed.
   covering group of a compact Lie group whose Lie algebra has trivial centre is compact.
 * `TauCeti.Lie.finite_fundamentalGroup_of_center_eq_bot`: such a group has finite fundamental
   group.
-* `Subgroup.compactSpace_of_compactSpace_quotient_prod`: a connected Lie group `K` with perfect and
-  centreless Lie algebra is compact when some `(A × K) ⧸ Γ` is compact, with `Γ` having central
-  image in `K`.
-* `Subgroup.finite_map_snd_of_compactSpace_quotient_prod`: the image of `Γ` in such a `K` is
-  finite.
+* `Subgroup.compactSpace_of_le_center_of_derivedSeries_one_eq_top`: a connected Lie group `K` with
+  perfect and centreless Lie algebra is compact when it has a central subgroup `Δ` with compact
+  quotient `K ⧸ Δ`.
+* `Subgroup.finite_of_le_center_of_derivedSeries_one_eq_top`: such a subgroup `Δ` is finite.
 
 ## References
 
@@ -180,38 +181,35 @@ namespace Subgroup
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {K : Type*} [TopologicalSpace K] [ChartedSpace H K] [Group K] [LieGroup I ∞ K] [ConnectedSpace K]
-  {A : Type*} [Group A] [TopologicalSpace A]
 
-/-- **The semisimple factor of a compact quotient of a product is compact.** Let `K` be a
-connected Lie group whose Lie algebra is perfect and has trivial centre, for instance one with
-semisimple Lie algebra, and let `Γ` be a subgroup of `A × K` whose image in `K` is central. If
-`(A × K) ⧸ Γ` is compact, then `K` is compact. -/
-theorem compactSpace_of_compactSpace_quotient_prod (Γ : Subgroup (A × K))
-    [CompactSpace ((A × K) ⧸ Γ)]
+/-- **A Lie group with a cocompact central subgroup is compact.** Let `K` be a connected Lie group
+whose Lie algebra is perfect and has trivial centre, for instance one with semisimple Lie algebra,
+and let `Δ` be a central subgroup of `K`. If `K ⧸ Δ` is compact, then `K` is compact. -/
+theorem compactSpace_of_le_center_of_derivedSeries_one_eq_top (Δ : Subgroup K)
+    [CompactSpace (K ⧸ Δ)]
     (h : LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I K) 1 = ⊤)
     (hz : LieAlgebra.center ℝ (LeftInvariantDerivation I K) = ⊥)
-    (hΓ : Γ.map (MonoidHom.snd A K) ≤ center K) : CompactSpace K := by
+    (hΔ : Δ ≤ center K) : CompactSpace K := by
   have : IsTopologicalGroup K := topologicalGroup_of_lieGroup I ∞
   have : T2Space K := I.t2Space_of_lieGroup ∞
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : LocallyCompactSpace K := ChartedSpace.locallyCompactSpace H K
   have : DiscreteTopology (center K) := TauCeti.Lie.discreteTopology_center_of_center_eq_bot hz
-  have : DiscreteTopology (Γ.map (MonoidHom.snd A K)) := isDiscrete_iff_discreteTopology.1 <|
-    (isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology (center K)›).mono hΓ
-  exact (Γ.map (MonoidHom.snd A K)).compactSpace_of_forall_continuous_eq_one hΓ fun F hF ↦
+  have : DiscreteTopology Δ := isDiscrete_iff_discreteTopology.1 <|
+    (isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology (center K)›).mono hΔ
+  exact Δ.compactSpace_of_forall_continuous_eq_one hΔ fun F hF ↦
     F.eq_one_of_continuous_of_derivedSeries_one_eq_top_real hF h
 
-/-- **The image of `Γ` in the semisimple factor is finite.** Under the hypotheses of
-`Subgroup.compactSpace_of_compactSpace_quotient_prod`, the image of `Γ` in `K` is finite: `K` is
-compact and its Lie algebra has trivial centre, so its centre is finite. -/
-theorem finite_map_snd_of_compactSpace_quotient_prod (Γ : Subgroup (A × K))
-    [CompactSpace ((A × K) ⧸ Γ)]
+/-- **A cocompact central subgroup of such a Lie group is finite.** Under the hypotheses of
+`Subgroup.compactSpace_of_le_center_of_derivedSeries_one_eq_top`, the central subgroup `Δ` is
+finite: `K` is compact and its Lie algebra has trivial centre, so its centre is finite. -/
+theorem finite_of_le_center_of_derivedSeries_one_eq_top (Δ : Subgroup K) [CompactSpace (K ⧸ Δ)]
     (h : LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I K) 1 = ⊤)
     (hz : LieAlgebra.center ℝ (LeftInvariantDerivation I K) = ⊥)
-    (hΓ : Γ.map (MonoidHom.snd A K) ≤ center K) : Finite (Γ.map (MonoidHom.snd A K)) := by
-  have := Γ.compactSpace_of_compactSpace_quotient_prod h hz hΓ
+    (hΔ : Δ ≤ center K) : Finite Δ := by
+  have := Δ.compactSpace_of_le_center_of_derivedSeries_one_eq_top h hz hΔ
   have : T2Space K := I.t2Space_of_lieGroup ∞
   have := TauCeti.Lie.finite_center_of_center_eq_bot hz
-  exact Finite.of_injective (inclusion hΓ) (inclusion_injective hΓ)
+  exact Finite.of_injective (inclusion hΔ) (inclusion_injective hΔ)
 
 end Subgroup

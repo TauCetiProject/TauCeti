@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Lie.Interior
 import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 import TauCeti.AlgebraicTopology.UniversalCover.Torus.EilenbergMacLane
 import TauCeti.Geometry.Lie.UniversalCover.Compact
+import TauCeti.Topology.Algebra.Group.Quotient.Prod
 
 /-!
 # Aspherical compact Lie groups
@@ -29,11 +30,12 @@ a quotient `(A × K) ⧸ Γ`, where `A` is a contractible commutative group, suc
 space, `K` is a simply connected Lie group whose Lie algebra is perfect and has trivial centre, and
 `Γ` is a discrete normal subgroup with central image in `K`. A compact connected Lie group has such
 a presentation through its universal cover, with `A` the centre of its Lie algebra and `K`
-integrating the derived algebra (Bröcker–tom Dieck, Chapter V, Theorem 8.1). Then `K` is compact
-(`Subgroup.compactSpace_of_compactSpace_quotient_prod`), and the higher homotopy groups of `G` are
-those of `K` (`Subgroup.isAspherical_quotient_iff`). So if `G` is aspherical, then so is `K`, and
-`K` is trivial; then `G` is a quotient of the commutative group `A`, hence a compact connected
-commutative Lie group, which is a torus (`TauCeti.nonempty_continuousMulEquiv_pi_circle`).
+integrating the derived algebra (Bröcker–tom Dieck, Chapter V, Theorem 8.1). The quotient of `K`
+by the image of `Γ` is compact (`Subgroup.compactSpace_quotient_map_snd`), so `K` is compact
+(`Subgroup.compactSpace_of_le_center_of_derivedSeries_one_eq_top`), and the higher homotopy groups
+of `G` are those of `K` (`Subgroup.isAspherical_quotient_iff`). So if `G` is aspherical, then so is
+`K`, and `K` is trivial; then `G` is a quotient of the commutative group `A`, hence a compact
+connected commutative Lie group, which is a torus (`TauCeti.nonempty_continuousMulEquiv_pi_circle`).
 Conversely a torus is aspherical. Hence `G` is aspherical exactly when it is isomorphic to a torus
 `(S¹)ʳ` (`Subgroup.isAspherical_iff_exists_continuousMulEquiv_torus`).
 
@@ -106,7 +108,8 @@ theorem isAspherical_iff_exists_continuousMulEquiv_torus (Γ : Subgroup (A × K)
   have : IsTopologicalGroup K := topologicalGroup_of_lieGroup I' ∞
   have : T2Space K := I'.t2Space_of_lieGroup ∞
   have : CompactSpace ((A × K) ⧸ Γ) := e.surjective.compactSpace e.continuous
-  have : CompactSpace K := Γ.compactSpace_of_compactSpace_quotient_prod h hz hΓ
+  have : CompactSpace K :=
+    (Γ.map (MonoidHom.snd A K)).compactSpace_of_le_center_of_derivedSeries_one_eq_top h hz hΓ
   -- The higher homotopy groups of `K` are those of `G`, so the compact `K` is a point.
   have hK := ((Γ.isAspherical_quotient_iff (e 1)).1
     (hG.of_homotopyEquiv e.toHomeomorph.toHomotopyEquiv (e 1))).2
