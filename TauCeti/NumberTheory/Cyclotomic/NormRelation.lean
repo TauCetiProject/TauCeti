@@ -13,7 +13,6 @@ import TauCeti.Data.ZMod.Units
 import TauCeti.NumberTheory.Cyclotomic.Aut
 import TauCeti.NumberTheory.Cyclotomic.Basic
 import TauCeti.NumberTheory.Cyclotomic.DistributionRelation
-import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -27,7 +26,7 @@ of `N_{N/L}(1 - ζ)` in terms of `N_{M/K}(1 - η)`:
 * if `ℓ ∣ n`, then `N_{L/K}(N_{N/L}(1 - ζ)) = N_{M/K}(1 - η)`;
 * if `ℓ` is a prime not dividing `n` and `K = F(μ_m)` with `m ∣ n`, then
   `N_{L/K}(N_{N/L}(1 - ζ)) * σ_ℓ⁻¹(N_{M/K}(1 - η)) = N_{M/K}(1 - η)`, where `σ_ℓ ∈ Gal(K/F)` is the
-  arithmetic Frobenius `ζ_m ↦ ζ_m ^ ℓ`. Multiplicatively,
+  arithmetic Frobenius `ζ_m ↦ ζ_m ^ ℓ`. Multiplicatively, for `n > 1`,
   `N_{L/K}(N_{N/L}(1 - ζ)) = N_{M/K}(1 - η) ^ (1 - σ_ℓ⁻¹)`.
 
 For a prime `p`, take `n = m * p`, so that `M = F(μ_{mp})` and `N = F(μ_{mℓp})`, and let
@@ -76,22 +75,6 @@ section Prime
 
 variable [hℓ : Fact ℓ.Prime] {m : ℕ} [NeZero m]
 
-include M N in
-/-- If `Φ_{nℓ}` is irreducible over `F` for a prime `ℓ ∤ n`, then so is `Φ_n`: the degrees
-`[F(μ_{nℓ}) : F] = φ(n) (ℓ - 1)` and `[F(μ_{nℓ}) : F(μ_n)] = ℓ - 1` force `[F(μ_n) : F] = φ(n)`. -/
-private theorem irreducible_cyclotomic_of_not_dvd (hirr : Irreducible (cyclotomic (n * ℓ) F))
-    (hdvd : ¬ℓ ∣ n) : Irreducible (cyclotomic n F) := by
-  have : NeZero ℓ := ⟨hℓ.out.ne_zero⟩
-  have := IsCyclotomicExtension.finiteDimensional {n} F M
-  have : IsCyclotomicExtension {n * ℓ} M N := IsCyclotomicExtension.tower_top F M N
-  have := IsCyclotomicExtension.finiteDimensional {n * ℓ} M N
-  refine IsCyclotomicExtension.irreducible_cyclotomic_of_totient_le_finrank F M ?_
-  have h := IsCyclotomicExtension.finrank N hirr
-  rw [← Module.finrank_mul_finrank F M N,
-    IsCyclotomicExtension.finrank_eq_of_prime_not_dvd M N hirr hdvd,
-    Nat.totient_mul ((hℓ.out.coprime_iff_not_dvd.2 hdvd).symm), Nat.totient_prime hℓ.out] at h
-  exact (Nat.eq_of_mul_eq_mul_right (Nat.sub_pos_of_lt hℓ.out.one_lt) h).ge
-
 variable [Algebra F K] [IsScalarTower F K M] [IsCyclotomicExtension {m} F K]
 
 /-- **The norm relation for a prime `ℓ ∤ n`, with the arithmetic Frobenius.** For
@@ -99,8 +82,9 @@ variable [Algebra F K] [IsScalarTower F K M] [IsCyclotomicExtension {m} F K]
 primitive `nℓ`-th root of unity `ζ ∈ N` and `η = ζ ^ ℓ`:
 `N_{L/K}(N_{N/L}(1 - ζ)) * σ_ℓ⁻¹(N_{M/K}(1 - η)) = N_{M/K}(1 - η)`, where `σ_ℓ ∈ Gal(K/F)` is the
 arithmetic Frobenius `ζ_m ↦ ζ_m ^ ℓ`, whose inverse is the image of `ℓ⁻¹ ∈ (ZMod m)ˣ` under
-`(IsCyclotomicExtension.autEquivPow K h).symm`. Multiplicatively,
-`N_{L/K}(N_{N/L}(1 - ζ)) = N_{M/K}(1 - η) ^ (1 - σ_ℓ⁻¹)`. -/
+`(IsCyclotomicExtension.autEquivPow K h).symm`. Multiplicatively, for `n > 1`,
+`N_{L/K}(N_{N/L}(1 - ζ)) = N_{M/K}(1 - η) ^ (1 - σ_ℓ⁻¹)`; see
+`IsPrimitiveRoot.norm_norm_one_sub_eq_div_autEquivPow_symm_inv_apply`. -/
 theorem norm_norm_one_sub_mul_autEquivPow_symm_inv_apply
     (hirr : Irreducible (cyclotomic (n * ℓ) F)) (hζ : IsPrimitiveRoot ζ (n * ℓ))
     (hη : algebraMap M N η = ζ ^ ℓ) (h : Irreducible (cyclotomic m F)) (hmn : m ∣ n)
@@ -109,8 +93,9 @@ theorem norm_norm_one_sub_mul_autEquivPow_symm_inv_apply
         (IsCyclotomicExtension.autEquivPow K h).symm
           (ZMod.unitOfCoprime ℓ (hcop.coprime_dvd_right hmn))⁻¹ (Algebra.norm K (1 - η)) =
       Algebra.norm K (1 - η) := by
-  have hM := irreducible_cyclotomic_of_not_dvd (M := M) (N := N) hirr
-    (hℓ.out.coprime_iff_not_dvd.1 hcop)
+  have := IsCyclotomicExtension.neZero' (n * ℓ) F N
+  have hM :=
+    TauCeti.irreducible_cyclotomic_of_prime_not_dvd hirr (hℓ.out.coprime_iff_not_dvd.1 hcop)
   -- The inverse Frobenius `σ` of `M` restricts to that of `K`, and the norm `N_{M/K}` commutes
   -- with this pair.
   set σ := (IsCyclotomicExtension.autEquivPow M hM).symm (ZMod.unitOfCoprime ℓ hcop)⁻¹

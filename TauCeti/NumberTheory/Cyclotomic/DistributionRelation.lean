@@ -51,6 +51,8 @@ primitive `n`-th root of unity over a field where `Φ_n` is irreducible is `Φ_n
   `F(μ_m)`.
 * `IsCyclotomicExtension.finrank_eq_of_dvd`,
   `IsCyclotomicExtension.finrank_eq_of_prime_not_dvd`: `[F(μ_{mℓ}) : F(μ_m)]`.
+* `TauCeti.irreducible_cyclotomic_of_prime_not_dvd`: if `Φ_{mℓ}` is irreducible over `F` for a
+  prime `ℓ ∤ m`, then so is `Φ_m`.
 * `IsPrimitiveRoot.norm_one_sub_of_dvd`, `IsPrimitiveRoot.norm_one_sub_mul_one_sub_pow_of_not_dvd`
   and `IsPrimitiveRoot.norm_one_sub_eq_div_of_not_dvd`: the distribution relation.
 * `IsPrimitiveRoot.norm_one_sub_mul_autEquivPow_symm_inv_apply`: the same relation with the
@@ -244,6 +246,34 @@ theorem finrank_eq_of_prime_not_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F)
 end Prime
 
 end IsCyclotomicExtension
+
+namespace TauCeti
+
+/-- **Irreducibility of `Φ_m` from that of `Φ_{mℓ}`.** If `Φ_{mℓ}` is irreducible over `F` for a
+prime `ℓ ∤ m` with `mℓ ≠ 0` in `F`, then so is `Φ_m`: the degrees `[F(μ_{mℓ}) : F] = φ(m) (ℓ - 1)`
+and `[F(μ_{mℓ}) : F(μ_m)] = ℓ - 1` force `[F(μ_m) : F] = φ(m)`. -/
+theorem irreducible_cyclotomic_of_prime_not_dvd [hℓ : Fact ℓ.Prime] [NeZero ((m * ℓ : ℕ) : F)]
+    (hirr : Irreducible (cyclotomic (m * ℓ) F)) (hdvd : ¬ℓ ∣ m) :
+    Irreducible (cyclotomic m F) := by
+  have : NeZero ℓ := ⟨hℓ.out.ne_zero⟩
+  -- Realise `F(μ_m) ⊆ F(μ_{mℓ})` as `F(ζ ^ ℓ) ⊆ CyclotomicField (m * ℓ) F`.
+  let N := CyclotomicField (m * ℓ) F
+  let ζ := IsCyclotomicExtension.zeta (m * ℓ) F N
+  let M := IntermediateField.adjoin F {ζ ^ ℓ}
+  have : IsCyclotomicExtension {m} F M :=
+    ((IsCyclotomicExtension.zeta_spec (m * ℓ) F N).pow (NeZero.pos _)
+      (mul_comm m ℓ)).intermediateField_adjoin_isCyclotomicExtension F
+  have := IsCyclotomicExtension.finiteDimensional {m} F M
+  have : IsCyclotomicExtension {m * ℓ} M N := IsCyclotomicExtension.tower_top F M N
+  have := IsCyclotomicExtension.finiteDimensional {m * ℓ} M N
+  refine IsCyclotomicExtension.irreducible_cyclotomic_of_totient_le_finrank F M ?_
+  have h := IsCyclotomicExtension.finrank N hirr
+  rw [← Module.finrank_mul_finrank F M N,
+    IsCyclotomicExtension.finrank_eq_of_prime_not_dvd M N hirr hdvd,
+    Nat.totient_mul ((hℓ.out.coprime_iff_not_dvd.2 hdvd).symm), Nat.totient_prime hℓ.out] at h
+  exact (Nat.eq_of_mul_eq_mul_right (Nat.sub_pos_of_lt hℓ.out.one_lt) h).ge
+
+end TauCeti
 
 namespace IsPrimitiveRoot
 
