@@ -535,9 +535,9 @@ theorem normalizedTrace_ofMatrix_fromBlocks (A : Matrix n n ℂ) (b : Matrix n m
       (Fintype.card n * normalizedTrace (ofMatrix A) +
           Fintype.card m * normalizedTrace (ofMatrix D)) /
         (Fintype.card n + Fintype.card m) := by
-  rw [card_mul_normalizedTrace, card_mul_normalizedTrace, normalizedTrace_def,
-    Equiv.symm_apply_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
-    Matrix.trace_fromBlocks, Fintype.card_sum, Nat.cast_add, inv_mul_eq_div]
+  simp only [card_mul_normalizedTrace, Equiv.symm_apply_apply]
+  rw [normalizedTrace_def, Equiv.symm_apply_apply, Matrix.trace_fromBlocks, Fintype.card_sum,
+    Nat.cast_add, inv_mul_eq_div]
 
 /-- **Block additivity of the normalized trace.** For the block matrix with diagonal blocks
 `x ∈ M_k` and `y ∈ M_l`, `tr_{k+l} = (k tr_k(x) + l tr_l(y))/(k + l)`; the off-diagonal blocks do
@@ -547,7 +547,8 @@ theorem normalizedTrace_fromBlocks (x : CStarMatrix n n ℂ) (b : Matrix n m ℂ
     normalizedTrace (ofMatrix (Matrix.fromBlocks (ofMatrix.symm x) b c (ofMatrix.symm y))) =
       (Fintype.card n * normalizedTrace x + Fintype.card m * normalizedTrace y) /
         (Fintype.card n + Fintype.card m) := by
-  rw [normalizedTrace_ofMatrix_fromBlocks, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+  simpa only [Equiv.apply_symm_apply] using
+    normalizedTrace_ofMatrix_fromBlocks (ofMatrix.symm x) b c (ofMatrix.symm y)
 
 /-- **Block additivity of the normalized 2-norm**, for the block-diagonal matrix `A ⊕ D` with
 `A ∈ M_k` and `D ∈ M_l`: `‖A ⊕ D‖₂² = (k‖A‖₂² + l‖D‖₂²)/(k + l)`. -/
@@ -562,8 +563,8 @@ theorem normalizedTwoNorm_ofMatrix_fromBlocks_sq (A : Matrix n n ℂ) (D : Matri
         (ofMatrix.symm (star (ofMatrix D) * ofMatrix D))) := by
     apply ofMatrix.symm.injective
     simp [Matrix.fromBlocks_conjTranspose, Matrix.fromBlocks_multiply]
-  rw [normalizedTwoNorm_sq, h, normalizedTrace_fromBlocks, normalizedTrace_star_mul_self,
-    normalizedTrace_star_mul_self]
+  rw [normalizedTwoNorm_sq, h, normalizedTrace_fromBlocks]
+  simp only [normalizedTrace_star_mul_self]
   norm_cast
 
 /-- **Block additivity of the normalized 2-norm.** For the block-diagonal matrix `x ⊕ y` with
@@ -572,7 +573,8 @@ theorem normalizedTwoNorm_fromBlocks_sq (x : CStarMatrix n n ℂ) (y : CStarMatr
     normalizedTwoNorm (ofMatrix (Matrix.fromBlocks (ofMatrix.symm x) 0 0 (ofMatrix.symm y))) ^ 2 =
       (Fintype.card n * normalizedTwoNorm x ^ 2 + Fintype.card m * normalizedTwoNorm y ^ 2) /
         (Fintype.card n + Fintype.card m) := by
-  rw [normalizedTwoNorm_ofMatrix_fromBlocks_sq, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+  simpa only [Equiv.apply_symm_apply] using
+    normalizedTwoNorm_ofMatrix_fromBlocks_sq (ofMatrix.symm x) (ofMatrix.symm y)
 
 /-- **Tensor multiplicativity of the normalized trace**, for matrices `A ∈ M_k` and `B ∈ M_l`:
 `tr_{kl}(A ⊗ B) = tr_k(A) tr_l(B)`. -/
@@ -580,8 +582,8 @@ theorem normalizedTwoNorm_fromBlocks_sq (x : CStarMatrix n n ℂ) (y : CStarMatr
 theorem normalizedTrace_ofMatrix_kronecker (A : Matrix n n ℂ) (B : Matrix m m ℂ) :
     normalizedTrace (ofMatrix (A ⊗ₖ B)) =
       normalizedTrace (ofMatrix A) * normalizedTrace (ofMatrix B) := by
-  rw [normalizedTrace_def, normalizedTrace_def, normalizedTrace_def, Equiv.symm_apply_apply,
-    Equiv.symm_apply_apply, Equiv.symm_apply_apply, Matrix.trace_kronecker, Fintype.card_prod]
+  simp only [normalizedTrace_def, Equiv.symm_apply_apply, Matrix.trace_kronecker,
+    Fintype.card_prod]
   push_cast
   ring
 
@@ -590,7 +592,8 @@ and `y ∈ M_l`, `tr_{kl}(x ⊗ y) = tr_k(x) tr_l(y)`. -/
 theorem normalizedTrace_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m m ℂ) :
     normalizedTrace (ofMatrix (ofMatrix.symm x ⊗ₖ ofMatrix.symm y)) =
       normalizedTrace x * normalizedTrace y := by
-  rw [normalizedTrace_ofMatrix_kronecker, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+  simpa only [Equiv.apply_symm_apply] using
+    normalizedTrace_ofMatrix_kronecker (ofMatrix.symm x) (ofMatrix.symm y)
 
 /-- **Tensor multiplicativity of the normalized 2-norm**, for matrices `A ∈ M_k` and `B ∈ M_l`:
 `‖A ⊗ B‖₂ = ‖A‖₂‖B‖₂`. -/
@@ -605,8 +608,8 @@ theorem normalizedTwoNorm_ofMatrix_kronecker (A : Matrix n n ℂ) (B : Matrix m 
     simp [Matrix.conjTranspose_kronecker, Matrix.mul_kronecker_mul]
   rw [← sq_eq_sq₀ (normalizedTwoNorm_nonneg _)
     (mul_nonneg (normalizedTwoNorm_nonneg _) (normalizedTwoNorm_nonneg _)), mul_pow,
-    normalizedTwoNorm_sq, h, normalizedTrace_kronecker, normalizedTrace_star_mul_self,
-    normalizedTrace_star_mul_self]
+    normalizedTwoNorm_sq, h, normalizedTrace_kronecker]
+  simp only [normalizedTrace_star_mul_self]
   norm_cast
 
 /-- **Tensor multiplicativity of the normalized 2-norm.** For the Kronecker product of `x ∈ M_k`
@@ -614,7 +617,8 @@ and `y ∈ M_l`, `‖x ⊗ y‖₂ = ‖x‖₂‖y‖₂`. -/
 theorem normalizedTwoNorm_kronecker (x : CStarMatrix n n ℂ) (y : CStarMatrix m m ℂ) :
     normalizedTwoNorm (ofMatrix (ofMatrix.symm x ⊗ₖ ofMatrix.symm y)) =
       normalizedTwoNorm x * normalizedTwoNorm y := by
-  rw [normalizedTwoNorm_ofMatrix_kronecker, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+  simpa only [Equiv.apply_symm_apply] using
+    normalizedTwoNorm_ofMatrix_kronecker (ofMatrix.symm x) (ofMatrix.symm y)
 
 end BlockTensor
 
