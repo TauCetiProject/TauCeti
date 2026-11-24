@@ -19,7 +19,7 @@ vector bundle `FiniteRankVectorBundle.{u, v, w} 𝕜 X` from a small coordinate 
 `FiniteRankAtlas.toBundleStratumEquiv`, total-space homeomorphism
 `FiniteRankAtlas.toBundleTotalSpaceHomeomorph`, functorial action
 `FiniteRankAtlas.toBundleFunctor`, and preferred-chart identification
-`FiniteRankVectorBundle.preferredChartEquiv_toBundle`.
+`FiniteRankVectorBundle.continuousLinearEquivAt_toBundle`.
 
 ## References
 
@@ -143,11 +143,13 @@ end FiniteRankAtlas
 namespace FiniteRankVectorBundle
 /-- On `A.toBundle`, the preferred stratum chart equivalence at `x` is
 `Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)`. -/
-@[simp] theorem preferredChartEquiv_toBundle (A : FiniteRankAtlas 𝕜 X) [UnivLE.{v, w}] (x : X) :
-    (A.toBundle : FiniteRankVectorBundle.{u, v, w} 𝕜 X).preferredChartEquiv x =
+@[simp] theorem continuousLinearEquivAt_toBundle (A : FiniteRankAtlas 𝕜 X) [UnivLE.{v, w}]
+    (x : X) :
+    VectorBundle.continuousLinearEquivAt 𝕜 (Fin (A.rank x) → 𝕜)
+      ((A.toBundle : FiniteRankVectorBundle.{u, v, w} 𝕜 X).StratumFiber (A.rank x)) ⟨x, rfl⟩ =
       Shrink.continuousLinearEquiv 𝕜 (A.Fiber x) := by
   let C := A.charts (A.rank x); let V : FiniteRankVectorBundle.{u, v, w} 𝕜 X := A.toBundle
-  refine DFunLike.ext _ _ fun v ↦ ?_; rw [preferredChartEquiv_apply]
+  refine DFunLike.ext _ _ fun v ↦ ?_; rw [VectorBundle.continuousLinearEquivAt_apply]
   have htriv := congrArg (fun (e : Trivialization (Fin (A.rank x) → 𝕜)
       (π (Fin (A.rank x) → 𝕜) (V.StratumFiber (A.rank x)))) ↦ (e ⟨⟨x, rfl⟩, v⟩).2)
     (trivializationAt_fiberBundleOfHomeomorph (F := Fin (A.rank x) → 𝕜) (E := C.Fiber)

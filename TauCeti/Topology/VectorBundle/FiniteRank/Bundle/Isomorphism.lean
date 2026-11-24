@@ -42,7 +42,10 @@ theorem isIso_iff_bijective [CompleteSpace 𝕜] (f : V ⟶ W) :
       fun _ ↦ isIso_of_fully_faithful (toAtlasFunctor.{u, v, w} 𝕜 X) f⟩
   rw [hIso, FiniteRankAtlas.isIso_iff_bijective]
   refine forall_congr' fun x ↦ ?_
-  rw [coe_fiberMap_toAtlasFunctor_map, (W.preferredChartEquiv x).bijective.of_comp_iff',
-    (V.preferredChartEquiv x).symm.bijective.of_comp_iff]
+  rw [coe_fiberMap_toAtlasFunctor_map,
+    (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (W.rank x) → 𝕜)
+      (W.StratumFiber (W.rank x)) ⟨x, rfl⟩).bijective.of_comp_iff',
+    (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
+      (V.StratumFiber (V.rank x)) ⟨x, rfl⟩).symm.bijective.of_comp_iff]
 
 end TauCeti.FiniteRankVectorBundle

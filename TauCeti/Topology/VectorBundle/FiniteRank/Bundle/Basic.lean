@@ -15,9 +15,9 @@ public import Mathlib.Topology.Algebra.Module.TransferInstance
 `𝕜`-vector bundles over `X` with fibres in `Type w`: a locally constant rank `LocallyConstant X ℕ`,
 fibres `Fiber : X → Type w`, and Mathlib `VectorBundle 𝕜 (Fin n → 𝕜)` structures on all clopen rank
 strata `{x : X // rank x = n}` without bounded-rank, finite-cover, compactness, or separation
-hypotheses. Preferred charts (`preferredChartEquiv`) equip every fibre with `IsTopologicalAddGroup`,
-`ContinuousSMul`, and `Module.Finite`; glued total-space topology, morphisms, and preadditive
-category structure come from `TauCeti.VariableRankBundle`.
+hypotheses. Preferred stratum charts (`VectorBundle.continuousLinearEquivAt`) equip every fibre
+with `IsTopologicalAddGroup`, `ContinuousSMul`, and `Module.Finite`; glued total-space topology,
+morphisms, and preadditive category structure come from `TauCeti.VariableRankBundle`.
 
 ## References
 
@@ -56,25 +56,16 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
 /-- The fibre family restricted to the `n`th clopen rank stratum `{x : X // V.rank x = n}`. -/
 abbrev StratumFiber (n : ℕ) : {x : X // V.rank x = n} → Type w := fun x ↦ V.Fiber x.val
 
-/-- The continuous linear equivalence from `V.Fiber x` to `Fin (V.rank x) → 𝕜` read in the
-preferred stratum trivialization at `x`. -/
-noncomputable def preferredChartEquiv (x : X) : V.Fiber x ≃L[𝕜] (Fin (V.rank x) → 𝕜) :=
-  (trivializationAt (Fin (V.rank x) → 𝕜) (V.StratumFiber (V.rank x))
-    ⟨x, rfl⟩).continuousLinearEquivAt 𝕜 ⟨x, rfl⟩ (mem_baseSet_trivializationAt _ _ _)
-theorem preferredChartEquiv_apply (x : X) (v : V.Fiber x) : V.preferredChartEquiv x v =
-    (trivializationAt (Fin (V.rank x) → 𝕜) (V.StratumFiber (V.rank x))
-      ⟨x, rfl⟩ ⟨⟨x, rfl⟩, v⟩).2 := by rfl
-theorem preferredChartEquiv_symm_apply (x : X) (w : Fin (V.rank x) → 𝕜) :
-    (V.preferredChartEquiv x).symm w =
-      (trivializationAt (Fin (V.rank x) → 𝕜) (V.StratumFiber (V.rank x))
-        ⟨x, rfl⟩).symm ⟨x, rfl⟩ w := by rfl
-
 instance (x : X) : IsTopologicalAddGroup (V.Fiber x) :=
-  (V.preferredChartEquiv x).toContinuousAddEquiv.isTopologicalAddGroup
-instance (x : X) : ContinuousSMul 𝕜 (V.Fiber x) := (V.preferredChartEquiv x).continuousSMul
+  (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
+    (V.StratumFiber (V.rank x)) ⟨x, rfl⟩).toContinuousAddEquiv.isTopologicalAddGroup
+instance (x : X) : ContinuousSMul 𝕜 (V.Fiber x) :=
+  (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
+    (V.StratumFiber (V.rank x)) ⟨x, rfl⟩).continuousSMul
 instance (x : X) : Module.Finite 𝕜 (V.Fiber x) :=
-  Module.Finite.of_surjective (V.preferredChartEquiv x).symm.toLinearMap
-    (V.preferredChartEquiv x).symm.surjective
+  let e := VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
+    (V.StratumFiber (V.rank x)) ⟨x, rfl⟩
+  Module.Finite.of_surjective e.symm.toLinearMap e.symm.surjective
 
 /-- Variable-rank vector bundles implement `VariableRankBundle` directly through their native
 stratum bundles and identity fibre identifications. -/

@@ -21,7 +21,7 @@ namespace Homeomorph
 variable {ι : Type*} {X Y : ι → Type*} [∀ i, TopologicalSpace (X i)] [∀ i, TopologicalSpace (Y i)]
 
 /-- An indexed family of homeomorphisms induces a homeomorphism on disjoint unions. -/
-def sigmaCongrRight (e : ∀ i, X i ≃ₜ Y i) : (Σ i, X i) ≃ₜ Σ i, Y i where
+@[expose] def sigmaCongrRight (e : ∀ i, X i ≃ₜ Y i) : (Σ i, X i) ≃ₜ Σ i, Y i where
   toEquiv := Equiv.sigmaCongrRight fun i ↦ (e i).toEquiv
   continuous_toFun := continuous_sigma fun i ↦ continuous_sigmaMk.comp (e i).continuous
   continuous_invFun := continuous_sigma fun i ↦ continuous_sigmaMk.comp (e i).symm.continuous

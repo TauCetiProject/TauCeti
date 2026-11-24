@@ -72,49 +72,71 @@ noncomputable def ofFixedRank : FiniteRankVectorBundle.{u, v, w} 𝕜 X :=
 theorem rank_ofFixedRank_apply (x : X) : (ofFixedRank 𝕜 n E).rank x = n := by rfl
 @[simp] theorem fiber_ofFixedRank : (ofFixedRank 𝕜 n E).Fiber = E := by rfl
 @[simp] theorem topologicalSpaceStratumTotalSpace_ofFixedRank_self :
-    (ofFixedRank 𝕜 n E).topologicalSpaceStratumTotalSpace n =
+    VariableRankBundle.topologicalSpaceStratumTotalSpace (ofFixedRank 𝕜 n E) n =
       Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E
         (Subtype.val : {x : X // LocallyConstant.const X n x = n} → X) := by
+  change (ofFixedRank 𝕜 n E).topologicalSpaceStratumTotalSpace n = _
   dsimp only [ofFixedRank]
   rw [VariableRankBundle.constStratumRec_self]; rfl
 
-private theorem locallyConstant_const_eq (x : X) : LocallyConstant.const X n x = n := rfl
-
 private noncomputable def ofFixedRankStratumHomeomorph :
     TotalSpace (Fin n → 𝕜) (VariableRankBundle.StratumFiber (ofFixedRank 𝕜 n E) n) ≃ₜ
-      TotalSpace (Fin n → 𝕜) E :=
-  let eRaw := Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E (locallyConstant_const_eq n)
+      TotalSpace (Fin n → 𝕜) E := by
+  rw [topologicalSpaceStratumTotalSpace_ofFixedRank_self 𝕜 n E]
+  exact Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E
+    (fun x ↦ congrFun (LocallyConstant.coe_const (X := X) n) x)
     (FiberBundle.continuous_proj (Fin n → 𝕜) E)
-  have ht : VariableRankBundle.topologicalSpaceStratumTotalSpace (ofFixedRank 𝕜 n E) n =
-      Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E
-        (Subtype.val : {x : X // LocallyConstant.const X n x = n} → X) :=
-    topologicalSpaceStratumTotalSpace_ofFixedRank_self 𝕜 n E
-  { toFun p := ⟨p.proj.val, p.snd⟩
-    invFun r := ⟨⟨r.proj, locallyConstant_const_eq n r.proj⟩, r.snd⟩
-    left_inv _ := rfl
-    right_inv _ := rfl
-    continuous_toFun := by
-      rw [ht]
-      exact eRaw.continuous_toFun.congr fun p ↦
-        Bundle.Pullback.subtypeHomeomorph_apply _ _ _ _ _
-    continuous_invFun := by
-      rw [ht]
-      exact eRaw.continuous_invFun.congr fun r ↦
-        Bundle.Pullback.subtypeHomeomorph_symm_apply _ _ _ _ _ }
+
+private theorem ofFixedRankStratumHomeomorph_toEquiv :
+    (ofFixedRankStratumHomeomorph 𝕜 n E).toEquiv =
+      @Homeomorph.toEquiv _ _
+        (Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E
+          (Subtype.val : {x : X // LocallyConstant.const X n x = n} → X))
+        inferInstance
+        (Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E
+          (fun x ↦ congrFun (LocallyConstant.coe_const (X := X) n) x)
+          (FiberBundle.continuous_proj (Fin n → 𝕜) E)) := by
+  have hgen : ∀ (ts : TopologicalSpace
+      (TotalSpace (Fin n → 𝕜) (VariableRankBundle.StratumFiber (ofFixedRank 𝕜 n E) n)))
+      (h : ts = Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E
+        (Subtype.val : {x : X // LocallyConstant.const X n x = n} → X)),
+      @Homeomorph.toEquiv _ _ ts inferInstance
+        (Eq.mpr (congrArg (fun t ↦ @Homeomorph _ (TotalSpace (Fin n → 𝕜) E) t inferInstance) h)
+          (Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E
+            (fun x ↦ congrFun (LocallyConstant.coe_const (X := X) n) x)
+            (FiberBundle.continuous_proj (Fin n → 𝕜) E))) =
+        @Homeomorph.toEquiv _ _
+          (Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E
+            (Subtype.val : {x : X // LocallyConstant.const X n x = n} → X))
+          inferInstance
+          (Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E
+            (fun x ↦ congrFun (LocallyConstant.coe_const (X := X) n) x)
+            (FiberBundle.continuous_proj (Fin n → 𝕜) E)) := by
+    rintro _ rfl; rfl
+  exact hgen _ (topologicalSpaceStratumTotalSpace_ofFixedRank_self 𝕜 n E)
 
 private theorem ofFixedRankStratumHomeomorph_he (x : X) (u : (ofFixedRank 𝕜 n E).Fiber x) :
     ofFixedRankStratumHomeomorph 𝕜 n E
       ⟨⟨x, rank_ofFixedRank_apply 𝕜 n E x⟩,
         (VariableRankBundle.stratumFiberEquiv (ofFixedRank 𝕜 n E)
           ⟨x, rank_ofFixedRank_apply 𝕜 n E x⟩).symm u⟩ =
-      ⟨x, Equiv.refl ((ofFixedRank 𝕜 n E).Fiber x) u⟩ := rfl
+      ⟨x, Equiv.refl ((ofFixedRank 𝕜 n E).Fiber x) u⟩ := by
+  have h := congrFun
+    (congrArg Equiv.toFun (ofFixedRankStratumHomeomorph_toEquiv 𝕜 n E))
+    ⟨⟨x, rank_ofFixedRank_apply 𝕜 n E x⟩,
+      (VariableRankBundle.stratumFiberEquiv (ofFixedRank 𝕜 n E)
+        ⟨x, rank_ofFixedRank_apply 𝕜 n E x⟩).symm u⟩
+  exact h.trans (Bundle.Pullback.subtypeHomeomorph_apply _ _ _ _ _)
 
 private theorem ofFixedRankStratumHomeomorph_hesymm (x : X) (v : E x) :
     (ofFixedRankStratumHomeomorph 𝕜 n E).symm ⟨x, v⟩ =
       ⟨⟨x, rank_ofFixedRank_apply 𝕜 n E x⟩,
         (VariableRankBundle.stratumFiberEquiv (ofFixedRank 𝕜 n E)
           ⟨x, rank_ofFixedRank_apply 𝕜 n E x⟩).symm
-          ((Equiv.refl ((ofFixedRank 𝕜 n E).Fiber x)).symm v)⟩ := rfl
+          ((Equiv.refl ((ofFixedRank 𝕜 n E).Fiber x)).symm v)⟩ := by
+  have h := congrFun
+    (congrArg Equiv.invFun (ofFixedRankStratumHomeomorph_toEquiv 𝕜 n E)) ⟨x, v⟩
+  exact h.trans (Bundle.Pullback.subtypeHomeomorph_symm_apply _ _ _ _ _)
 
 /-- The glued total space of `ofFixedRank 𝕜 n E` is homeomorphic over `X` to the native Mathlib
 `TotalSpace (Fin n → 𝕜) E`. -/

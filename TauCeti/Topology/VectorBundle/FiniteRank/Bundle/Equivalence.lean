@@ -45,7 +45,10 @@ noncomputable def toAtlasToBundleIso : (toAtlasFunctor.{u, v, w} 𝕜 X).obj A.t
   isoOfTotalSpaceHomeomorph (fun x ↦ LinearEquiv.refl 𝕜 (A.Fiber x))
     (V.toAtlasTotalSpaceHomeomorph.symm.trans A.toBundleTotalSpaceHomeomorph) fun x v ↦ by
       simp only [V, Homeomorph.trans_apply, toAtlasTotalSpaceHomeomorph_symm_apply,
-        FiniteRankAtlas.toBundleTotalSpaceHomeomorph_apply, preferredChartEquiv_toBundle,
+        FiniteRankAtlas.toBundleTotalSpaceHomeomorph_apply]
+      rw [show VectorBundle.continuousLinearEquivAt 𝕜 (Fin (A.toBundle.rank x) → 𝕜)
+          (A.toBundle.StratumFiber (A.toBundle.rank x)) ⟨x, rfl⟩ =
+          Shrink.continuousLinearEquiv 𝕜 (A.Fiber x) from continuousLinearEquivAt_toBundle A x,
         ContinuousLinearEquiv.apply_symm_apply]
       exact congrArg (TotalSpace.mk x) (LinearEquiv.refl_apply (R := 𝕜) (v : A.Fiber x)).symm
 /-- The forward morphism of `toAtlasToBundleIso A` is the identity on every coordinate fibre. -/
@@ -63,7 +66,8 @@ private noncomputable def toBundleToAtlasIso (V : FiniteRankVectorBundle.{u, v, 
     V ≅ (FiniteRankAtlas.toBundleFunctor.{u, v, w} 𝕜 X).obj
       ((toAtlasFunctor.{u, v, w} 𝕜 X).obj V) :=
   isoOfTotalSpaceHomeomorph
-    (fun x ↦ (V.preferredChartEquiv x).toLinearEquiv.trans
+    (fun x ↦ (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
+      (V.StratumFiber (V.rank x)) ⟨x, rfl⟩).toLinearEquiv.trans
       (Shrink.continuousLinearEquiv 𝕜 (V.toAtlas.Fiber x)).symm.toLinearEquiv)
     (V.toAtlasTotalSpaceHomeomorph.trans V.toAtlas.toBundleTotalSpaceHomeomorph.symm)
     fun x v ↦ by
@@ -96,7 +100,13 @@ noncomputable def atlasEquivalence :
         fiberMap_comp, LinearMap.comp_apply, fiberMap_toAtlasToBundleIso_hom, LinearMap.id_apply,
         fiberMap_toAtlasFunctor_map_apply, FiniteRankAtlas.fiberMap_toBundleFunctor_map_apply]
       dsimp only [FiniteRankAtlas.toBundleFunctor]
-      simp only [preferredChartEquiv_toBundle, ContinuousLinearEquiv.apply_symm_apply]
+      rw [show VectorBundle.continuousLinearEquivAt 𝕜 (Fin (A.toBundle.rank x) → 𝕜)
+          (A.toBundle.StratumFiber (A.toBundle.rank x)) ⟨x, rfl⟩ =
+          Shrink.continuousLinearEquiv 𝕜 (A.Fiber x) from continuousLinearEquivAt_toBundle A x,
+        show VectorBundle.continuousLinearEquivAt 𝕜 (Fin (D.toBundle.rank x) → 𝕜)
+          (D.toBundle.StratumFiber (D.toBundle.rank x)) ⟨x, rfl⟩ =
+          Shrink.continuousLinearEquiv 𝕜 (D.Fiber x) from continuousLinearEquivAt_toBundle D x]
+      simp only [ContinuousLinearEquiv.apply_symm_apply]
   functor_unitIso_comp V := hom_ext fun x ↦ LinearMap.ext fun u ↦ by
     simp only [Functor.comp_obj, Functor.id_obj, NatIso.ofComponents_hom_app,
       fiberMap_comp, LinearMap.comp_apply, fiberMap_toAtlasToBundleIso_hom, LinearMap.id_apply,
@@ -104,7 +114,12 @@ noncomputable def atlasEquivalence :
       fiberMap_isoOfTotalSpaceHomeomorph_hom, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
       ContinuousLinearEquiv.coe_toLinearEquiv, fiberMap_id]
     dsimp only [FiniteRankAtlas.toBundleFunctor, toAtlasFunctor]
-    simp only [preferredChartEquiv_toBundle, ContinuousLinearEquiv.apply_symm_apply]
+    rw [show VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.toAtlas.toBundle.rank x) → 𝕜)
+        (V.toAtlas.toBundle.StratumFiber (V.toAtlas.toBundle.rank x)) ⟨x, rfl⟩ =
+        Shrink.continuousLinearEquiv 𝕜 (V.toAtlas.Fiber x) from
+          continuousLinearEquivAt_toBundle V.toAtlas x,
+      ContinuousLinearEquiv.apply_symm_apply]
+    simp only [ContinuousLinearEquiv.apply_symm_apply]
 instance : (toAtlasFunctor.{u, v, w} 𝕜 X).IsEquivalence :=
   (atlasEquivalence.{u, v, w} 𝕜 X).isEquivalence_functor
 @[simp] theorem atlasEquivalence_functor :

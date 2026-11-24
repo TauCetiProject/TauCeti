@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Additivity
 public import TauCeti.AlgebraicTopology.Singular.DiskSphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
+import TauCeti.Topology.Homeomorph.Sigma
 
 /-!
 # The cellular chain group is a coproduct of copies of the coefficients, one per cell
@@ -65,12 +66,7 @@ union of Euclidean disks to `(TauCeti.sigmaDiskPair ι n).fst`. -/
 private def sigmaDiskIso :
     TopCat.of (Σ _ : ι, TopCat.disk.{w} n) ≅
       TopCat.of (Σ _ : ι, closedBall (0 : Fin n → ℝ) 1) :=
-  TopCat.isoOfHomeo
-    { toEquiv := Equiv.sigmaCongrRight fun _ ↦ (diskHomeomorphClosedBall n).toEquiv
-      continuous_toFun := continuous_sigma fun _ ↦ continuous_sigmaMk.comp
-        (diskHomeomorphClosedBall n).continuous
-      continuous_invFun := continuous_sigma fun _ ↦ continuous_sigmaMk.comp
-        (diskHomeomorphClosedBall n).symm.continuous }
+  TopCat.isoOfHomeo (Homeomorph.sigmaCongrRight fun _ ↦ diskHomeomorphClosedBall n)
 
 /-- The map of pairs `∐ᵢ (Dⁿ, Sⁿ⁻¹) ⟶ TauCeti.sigmaDiskPair ι n` from the disjoint union of
 Euclidean disk pairs, given by `TauCeti.diskHomeomorphClosedBall` on every summand. -/
