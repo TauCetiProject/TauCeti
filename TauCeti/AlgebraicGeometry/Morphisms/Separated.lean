@@ -29,6 +29,8 @@ charts, such as the two-chart model of an algebraic function field, is separated
 
 Separated morphisms compose, so a scheme separated over a separated scheme is itself separated;
 in particular a scheme proper over a separated base, such as a field, is a separated scheme.
+A section of a separated morphism is a closed immersion, so a section with dense range is
+surjective.
 
 ## Main results
 
@@ -37,6 +39,8 @@ in particular a scheme proper over a separated base, such as a field, is a separ
   products over the target.
 * `AlgebraicGeometry.Scheme.IsSeparated.of_isSeparated`: the source of a separated morphism to a
   separated scheme is a separated scheme.
+* `AlgebraicGeometry.surjective_of_isDominant_of_comp_eq_id`: a section of a separated morphism
+  with dense range is surjective.
 * `AlgebraicGeometry.isAffineHom_hasOfPostcompProperty`: since affine morphisms are separated,
   `f` is affine whenever `f ≫ g` and `g` are; this gives finite limits of affine schemes over a
   base, computed in schemes.
@@ -83,6 +87,14 @@ separated morphism `S ⟶ ⊤_ Scheme`. For instance, a scheme proper over a fie
 theorem Scheme.IsSeparated.of_isSeparated (f : X ⟶ S) [IsSeparated f] [S.IsSeparated] :
     X.IsSeparated :=
   ⟨by rw [← terminal.comp_from f]; infer_instance⟩
+
+/-- A section of a separated morphism with dense range is surjective: it is a closed immersion,
+so its range is closed as well as dense. -/
+theorem surjective_of_isDominant_of_comp_eq_id {Y : Scheme.{u}} {s : X ⟶ Y} {r : Y ⟶ X}
+    [IsSeparated r] [IsDominant s] (hsr : s ≫ r = 𝟙 X) : Surjective s := by
+  have : IsClosedImmersion (s ≫ r) := hsr ▸ inferInstance
+  have : IsClosedImmersion s := IsClosedImmersion.of_comp s r
+  exact surjective_of_isDominant_of_isClosed_range s s.isClosedEmbedding.isClosed_range
 
 /-- If `f ≫ g` and `g` are affine, then so is `f`, because affine morphisms are separated. -/
 instance isAffineHom_hasOfPostcompProperty :

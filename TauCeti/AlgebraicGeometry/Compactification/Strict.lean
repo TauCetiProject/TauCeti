@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.Compactification.BaseChange
 public import TauCeti.AlgebraicGeometry.Compactification.Refinement
 public import TauCeti.AlgebraicGeometry.Compactification.Uniqueness
+public import TauCeti.AlgebraicGeometry.Morphisms.Separated
 
 /-!
 # Strict morphisms of scheme compactifications
@@ -35,8 +36,6 @@ are equalized by a strict morphism.
   multiplicative class of morphisms respecting isomorphisms.
 * `TauCeti.Compactification.strict_iff_isPullback`: strictness as a cartesian square.
 * `TauCeti.Compactification.strict_baseChangeMap`: base change preserves strictness.
-* `TauCeti.surjective_of_isDominant_of_comp_eq_id`: a section of a separated morphism with dense
-  range is surjective.
 * `TauCeti.Compactification.strict_of_isDominant`: morphisms out of a compactification with
   topologically dense interior are strict.
 * `TauCeti.Compactification.exists_strict_commonRefinement`,
@@ -63,14 +62,6 @@ universe u
 namespace TauCeti
 
 variable {X S T : Scheme.{u}} {f : X ⟶ S}
-
-/-- A section of a separated morphism with dense range is surjective: it is a closed immersion,
-so its range is closed as well as dense. -/
-theorem surjective_of_isDominant_of_comp_eq_id {Y : Scheme.{u}} {s : X ⟶ Y} {r : Y ⟶ X}
-    [IsSeparated r] [IsDominant s] (hsr : s ≫ r = 𝟙 X) : Surjective s := by
-  have : IsClosedImmersion (s ≫ r) := hsr ▸ inferInstance
-  have : IsClosedImmersion s := IsClosedImmersion.of_comp s r
-  exact surjective_of_isDominant_of_isClosed_range s s.isClosedEmbedding.isClosed_range
 
 namespace Compactification
 
@@ -197,12 +188,27 @@ variable (f)
 
 /-- The compactification of a proper morphism `f : X ⟶ S` by `X ⨿ X`, with the first summand as
 interior and a second copy of `X` as boundary. -/
-noncomputable abbrev coprodSelf [IsProper f] : Compactification f :=
+-- Exposure and implicit reducibility let the projection formulas below state its ambient scheme
+-- and maps as the coproduct and its maps.
+@[expose, implicit_reducible]
+noncomputable def coprodSelf [IsProper f] : Compactification f :=
   have : QuasiCompact ((coprod.inl : X ⟶ X ⨿ X) ≫ codiag X) := by
     rw [codiag, coprod.inl_desc]
     infer_instance
   have : QuasiCompact (coprod.inl : X ⟶ X ⨿ X) := QuasiCompact.of_comp _ (codiag X)
   ofHom coprod.inl (codiag X ≫ f) (by simp [codiag])
+
+@[simp]
+theorem coprodSelf_Xbar [IsProper f] : (coprodSelf f).Xbar = (X ⨿ X) :=
+  (rfl)
+
+@[simp]
+theorem coprodSelf_j [IsProper f] : (coprodSelf f).j = (coprod.inl : X ⟶ X ⨿ X) :=
+  (rfl)
+
+@[simp]
+theorem coprodSelf_p [IsProper f] : (coprodSelf f).p = codiag X ≫ f :=
+  (rfl)
 
 /-- The fold map from `coprodSelf f` to the identity compactification of `f`. -/
 noncomputable def coprodSelfCodiag [IsProper f] : coprodSelf f ⟶ identity f :=
