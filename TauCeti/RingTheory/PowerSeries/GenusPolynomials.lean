@@ -211,27 +211,13 @@ theorem coeff_multiset_prod_rescale_two_mul_rescale_half_hirzebruchLSeries (s : 
     ← map_ofNat (algebraMap ℚ A) 2, ← map_mul, mul_inv_cancel₀ (two_ne_zero' ℚ), map_one, one_pow,
     one_mul]
 
-/-- `X d/dX` commutes with `X ↦ X²` up to the factor `2`. -/
-private theorem X_mul_derivative_expand_two {R : Type*} [CommRing R] (f : R⟦X⟧) :
-    X * d⁄dX (expand 2 two_ne_zero f) = 2 * expand 2 two_ne_zero (X * d⁄dX f) := by
-  have h (g : R⟦X⟧) (m : ℕ) : coeff m (X * d⁄dX g) = m * coeff m g := by
-    simpa using coeff_X_pow_mul_iterate_derivative g 1 m
-  ext m
-  rw [h, ← map_ofNat C 2, coeff_C_mul]
-  rcases Nat.even_or_odd' m with ⟨j, rfl | rfl⟩
-  · rw [coeff_expand_mul, coeff_expand_mul, h]
-    push_cast
-    ring
-  · have hj : ¬ 2 ∣ 2 * j + 1 := by omega
-    rw [coeff_expand_of_not_dvd _ _ _ hj, coeff_expand_of_not_dvd _ _ _ hj, mul_zero, mul_zero]
-
 variable {n} in
 /-- **The indecomposable coefficient of the L polynomials**: for `k = i + 1 ≤ n`, the coefficient
 of the top Pontryagin class `pₖ` in `Lₖ` is
 `sₖ = (-1)ᵏ⁻¹ 2²ᵏ (2²ᵏ⁻¹ - 1) B₂ₖ / (2k)!`. For instance `s₁ = 1/3`, `s₂ = 7/45` and
-`s₃ = 62/945`. Modulo products of lower Pontryagin classes, `Lₖ` is therefore `sₖ pₖ`. The proof
-applies `PowerSeries.coeff_single_multiplicativeSequence` to the logarithmic derivative of the L
-series, `TauCeti.X_mul_derivative_hirzebruchLSeries`. -/
+`s₃ = 62/945`. Modulo products of lower Pontryagin classes, `Lₖ` is therefore `sₖ pₖ`. Here the
+Cartier component `cartier A 2 0 (hirzebruchLSeries A)` is the series `P` with `P(X²) = L(X)`, and
+the variable `i` of its multiplicative sequence stands for the Pontryagin class `pₖ`. -/
 theorem coeff_single_multiplicativeSequence_cartier_hirzebruchLSeries (i : Fin n) :
     ((cartier A 2 0 (hirzebruchLSeries A)).multiplicativeSequence n (i + 1)).coeff
         (Finsupp.single i 1) =
@@ -253,7 +239,7 @@ theorem coeff_single_multiplicativeSequence_cartier_hirzebruchLSeries (i : Fin n
   have hG : cartier A 2 0 L * (C (algebraMap ℚ A 2⁻¹) * cartier A 2 0 M) =
       X * d⁄dX (cartier A 2 0 L) := by
     refine expand_injective 2 two_ne_zero ?_
-    have hd := X_mul_derivative_expand_two (cartier A 2 0 L)
+    have hd := X_mul_derivative_expand 2 two_ne_zero (cartier A 2 0 L)
     rw [expand_cartier_hirzebruchLSeries, X_mul_derivative_hirzebruchLSeries] at hd
     rw [map_mul, map_mul, expand_cartier_hirzebruchLSeries, expand_C, hM]
     linear_combination C (algebraMap ℚ A 2⁻¹) * hd +

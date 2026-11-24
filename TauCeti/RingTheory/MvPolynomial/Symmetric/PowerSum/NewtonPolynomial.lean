@@ -48,6 +48,8 @@ into `(-1)ʲ cⱼ`, and the Newton polynomial changes by the sign `(-1)ᵏ`.
   multiplies `sₖ` by `(-1)ᵏ`.
 * `TauCeti.aeval_snoc_zero_newtonMvPolynomial`: in positive degree the Newton polynomial is
   unchanged by setting `eₙ₊₁ = 0` in the polynomial for `n + 1` variables.
+* `TauCeti.constantCoeff_newtonMvPolynomial`: in positive degree the Newton polynomial has no
+  constant term.
 * `TauCeti.newtonMvPolynomial_zero_right`, `TauCeti.newtonMvPolynomial_one_right`,
   `TauCeti.newtonMvPolynomial_two_right`, `TauCeti.newtonMvPolynomial_three_right`: `s₀ = n`,
   `s₁ = e₁`, `s₂ = e₁² - 2e₂` and `s₃ = e₁³ - 3e₁e₂ + 3e₃`.
@@ -186,6 +188,14 @@ theorem aeval_snoc_zero_newtonMvPolynomial {S : Type*} [CommSemiring S] [Algebra
   rw [← hX, comp_aeval_apply]
   refine congrArg (fun f => aeval f _) (funext fun j => ?_)
   refine Fin.lastCases ?_ (fun i => ?_) j <;> simp
+
+/-- In positive degree, the Newton polynomial has no constant term: the power sums of `n` zeros
+vanish. -/
+theorem constantCoeff_newtonMvPolynomial (hk : k ≠ 0) :
+    constantCoeff (newtonMvPolynomial R n k) = 0 := by
+  have h := Multiset.aeval_esymm_newtonMvPolynomial (R := R) (n := n) (k := k)
+    (Multiset.replicate n (0 : R)) (by simp)
+  simpa [zero_pow hk, ← Pi.zero_def, aeval_zero] using h
 
 variable (R n)
 

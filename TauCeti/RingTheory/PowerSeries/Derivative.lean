@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.Algebra.CharP.Invertible
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -50,6 +51,8 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
 * `PowerSeries.rescale_X_mul_derivative`, `PowerSeries.evalNegHom_X_mul_derivative`: rescaling
   and negating the variable commute with the Euler operator `X * d⁄dX`.
+* `PowerSeries.X_mul_derivative_expand`: the Euler operator `X * d⁄dX` commutes with `X ↦ Xᵖ` up to
+  the factor `p`.
 * `PowerSeries.iterate_derivative_coe`: iterated derivatives of a polynomial are computed as
   polynomials.
 * `PowerSeries.coeff_iterate_derivative_eq_descFactorial`: the `M`-th coefficient of `f⁽ⁱ⁾` is
@@ -249,6 +252,18 @@ variable {R : Type*} [CommRing R]
 theorem evalNegHom_X_mul_derivative (φ : R⟦X⟧) :
     evalNegHom (X * d⁄dX φ) = X * d⁄dX (evalNegHom φ) :=
   rescale_X_mul_derivative (-1) φ
+
+/-- The Euler operator `X * d⁄dX` commutes with the expansion `X ↦ Xᵖ` up to the factor `p`. -/
+theorem X_mul_derivative_expand (p : ℕ) (hp : p ≠ 0) (f : R⟦X⟧) :
+    X * d⁄dX (expand p hp f) = (p : R⟦X⟧) * expand p hp (X * d⁄dX f) := by
+  ext m
+  rw [coeff_X_mul_derivative, ← map_natCast C p, coeff_C_mul, coeff_expand, coeff_expand]
+  split_ifs with h
+  · obtain ⟨j, rfl⟩ := h
+    rw [Nat.mul_div_cancel_left j (Nat.pos_of_ne_zero hp), coeff_X_mul_derivative]
+    push_cast
+    ring
+  · rw [mul_zero, mul_zero]
 
 /-- An operator intertwined with the derivative by substitution satisfies the iterated chain
 rule. -/

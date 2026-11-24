@@ -11,7 +11,10 @@ public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.LinearAlgebra.Dimension.BaseChange
 
 /-!
-# Finiteness of `MvPolynomial.map`
+# Basic facts on multivariate polynomials
+
+The coefficient of a single variable `Xᵢ` in a product obeys the Leibniz rule at `0`, as for the
+linear coefficient of a univariate power series (`PowerSeries.coeff_one_mul`).
 
 `MvPolynomial.map f` is a finite ring map whenever `f` is: a family generating `S` over `R`
 generates `MvPolynomial σ S` over `MvPolynomial σ R` once its members are read as constants.
@@ -23,6 +26,8 @@ sits in this file rather than that one.
 
 ## Main results
 
+* `MvPolynomial.coeff_single_one_mul`: the coefficient of `Xᵢ` in `p * q` is
+  `pᵢ q(0) + p(0) qᵢ`.
 * `TauCeti.MvPolynomial.finite_map`: `MvPolynomial.map f` is finite when `f` is.
 
 ## Provenance
@@ -33,6 +38,17 @@ The argument is Stacks 10.161.13 (tag 032O), which is univariate and whose proof
 -/
 
 public section
+
+/-- **The linear coefficients of a product**: the coefficient of the variable `Xᵢ` in `p * q` is
+`pᵢ q(0) + p(0) qᵢ`, so taking it is a derivation at `0`. -/
+theorem MvPolynomial.coeff_single_one_mul {R σ : Type*} [CommSemiring R] (i : σ)
+    (p q : MvPolynomial σ R) :
+    (p * q).coeff (Finsupp.single i 1) =
+      p.coeff (Finsupp.single i 1) * constantCoeff q +
+        constantCoeff p * q.coeff (Finsupp.single i 1) := by
+  classical
+  rw [coeff_mul, Finsupp.antidiagonal_single, Finset.sum_map]
+  simp [Finset.Nat.antidiagonal_succ, constantCoeff_eq, add_comm]
 
 namespace TauCeti
 
