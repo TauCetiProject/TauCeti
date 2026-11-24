@@ -67,12 +67,13 @@ theorem exists_isLipschitzChart_of_ball_inter_eq {Ω : Set F} {x ν : F} {γ : F
   have hex : e x = 0 := by simp [e]
   have he : ∀ w, e.symm w = ((ψ.symm w.snd : (ℝ ∙ ν)ᗮ) : F) + w.fst • ν + x := fun w => by
     have hL : L.symm w = ((ψ.symm w.snd : (ℝ ∙ ν)ᗮ) : F) + w.fst • ν := by
+      -- Write `w` as the pair of its two coordinates.
+      obtain ⟨⟨t, y⟩⟩ := w
       rw [LinearIsometryEquiv.symm_apply_eq, ← orthogonalLineIsometry_apply ν hν]
       simp only [L, LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.symm_apply_apply,
-        LinearIsometryEquiv.withLpProdComm_apply, LinearIsometryEquiv.withLpProdCongr_apply]
-      -- `w` is the pair of its two coordinates.
-      simp
-      rfl
+        LinearIsometryEquiv.withLpProdComm_apply, LinearIsometryEquiv.withLpProdCongr_apply,
+        WithLp.toLp_fst, WithLp.toLp_snd, LinearIsometryEquiv.coe_refl, id_eq,
+        LinearIsometryEquiv.apply_symm_apply]
     rw [AffineIsometryEquiv.symm_apply_eq, ← hL]
     simp [e]
   set φ : E → ℝ := fun w => γ (x + ψ.symm w) - ⟪x, ν⟫_ℝ
