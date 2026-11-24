@@ -63,7 +63,8 @@ theorem quasiIso_map_Γ_of_isFlasque_of_isStrictlyGE
       (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex (.up ℤ)).map
         φ) :=
   (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).quasiIso_map_of_isStrictlyGE
-    (isFlasque X _) isFlasque_of_injective isFlasque_X₃ shortExact_map_Γ_of_isFlasque b φ
+    (isFlasque X _) isFlasque_of_injective isFlasque_X₃
+    (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁) b φ
     (fun q hq ↦ isFlasque_iff.mpr (hK₁ q hq)) (fun q hq ↦ isFlasque_iff.mpr (hK₂ q hq))
 
 section Derived
@@ -80,7 +81,8 @@ theorem isIso_rightDerivedFunctorPlusUnit_Γ_of_isFlasque
     IsIso ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerivedFunctorPlusUnit.app
       F) :=
   (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).isIso_rightDerivedFunctorPlusUnit_app
-    (isFlasque X _) isFlasque_of_injective isFlasque_X₃ shortExact_map_Γ_of_isFlasque F
+    (isFlasque X _) isFlasque_of_injective isFlasque_X₃
+    (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁) F
     (fun q ↦ isFlasque_iff.mpr (hF q))
 
 /-- Variant of `isIso_rightDerivedFunctorPlusUnit_Γ_of_isFlasque` assuming flasqueness only in the
@@ -93,7 +95,8 @@ theorem isIso_rightDerivedFunctorPlusUnit_Γ_of_isStrictlyGE_of_isFlasque
       F) :=
   (Γ (Opens.grothendieckTopology X)
     (ModuleCat.{u} R)).isIso_rightDerivedFunctorPlusUnit_app_of_isStrictlyGE
-    (isFlasque X _) isFlasque_of_injective isFlasque_X₃ shortExact_map_Γ_of_isFlasque F b
+    (isFlasque X _) isFlasque_of_injective isFlasque_X₃
+    (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁) F b
     (fun q hq ↦ isFlasque_iff.mpr (hF q hq))
 
 /-- **Derived global sections via a bounded-below flasque resolution (Stacks, §20.3, eq.
@@ -108,7 +111,8 @@ def rightDerivedFunctorPlusΓObjIsoOfIsFlasque
       ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapCochainComplexPlus.obj F) :=
   (Γ (Opens.grothendieckTopology X)
     (ModuleCat.{u} R)).rightDerivedFunctorPlusObjIsoOfResolution
-    (isFlasque X _) isFlasque_of_injective isFlasque_X₃ shortExact_map_Γ_of_isFlasque ι
+    (isFlasque X _) isFlasque_of_injective isFlasque_X₃
+    (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁) ι
     (fun q ↦ isFlasque_iff.mpr (hF q))
 
 @[reassoc (attr := simp)]
@@ -190,7 +194,8 @@ def rightDerivedFunctorPlusΓHomologyIsoOfIsFlasque
         F.obj) :=
   (Γ (Opens.grothendieckTopology X)
     (ModuleCat.{u} R)).rightDerivedFunctorPlusHomologyIsoOfResolution
-    (isFlasque X _) isFlasque_of_injective isFlasque_X₃ shortExact_map_Γ_of_isFlasque ι
+    (isFlasque X _) isFlasque_of_injective isFlasque_X₃
+    (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁) ι
     (fun q ↦ isFlasque_iff.mpr (hF q)) m
 
 /-- Naturality in cohomology of `rightDerivedFunctorPlusΓHomologyIsoOfIsFlasque` for morphisms of
@@ -295,18 +300,14 @@ lemma singleCompRightDerivedFunctorPlusΓHomologyIso_hom_comp_rightDerivedΓObjI
           (CochainComplex.Plus.extendNat _).map ι)
         (fun q ↦ Sheaf.isFlasque_iff.mp ((Sheaf.isFlasque X _).prop_extendNat_X
           Sheaf.isFlasque_of_injective (fun i ↦ Sheaf.isFlasque_iff.mpr (hK i)) q)) (n : ℤ)).hom ≫
-      (HomologicalComplex.homologyFunctor (ModuleCat.{u} R) (.up ℤ) (n : ℤ)).map
-        ((CochainComplex.Plus.ι (ModuleCat.{u} R)).map
-          ((Sheaf.Γ (Opens.grothendieckTopology X)
-            (ModuleCat.{u} R)).extendNatMapCochainComplexPlusIso.hom.app K)) ≫
-      (CochainComplex.Plus.extendNatHomologyIso (ModuleCat.{u} R) n).hom.app
-        (((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex
-          (.up ℕ)).obj K) := by
+      ((Sheaf.Γ (Opens.grothendieckTopology X)
+        (ModuleCat.{u} R)).extendNatMapCochainComplexPlusHomologyIso n).hom.app K := by
   rw [Sheaf.rightDerivedΓObjIsoOfIsFlasque_eq]
   exact Functor.singleCompRightDerivedFunctorPlusHomologyIso_hom_comp_rightDerivedObjIsoOfResolution
     (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
     (Sheaf.isFlasque X _) Sheaf.isFlasque_of_injective Sheaf.isFlasque_X₃
-    Sheaf.shortExact_map_Γ_of_isFlasque ι (fun i ↦ Sheaf.isFlasque_iff.mpr (hK i)) n
+    (fun S hS h₁ _ ↦ Sheaf.shortExact_map_Γ_of_isFlasque S hS h₁)
+    ι (fun i ↦ Sheaf.isFlasque_iff.mpr (hK i)) n
 
 /-- **Single sheaves in degree `0` recover Godement cohomology.** Placing a sheaf of `R`-modules in
 degree `0` in `DerivedCategory.Plus`, applying `R⁺Γ`, and taking `n`-th cohomology is naturally

@@ -79,7 +79,7 @@ lemma isFlasque_X₃
 satisfies `CategoryTheory.Sheaf.isFlasque`. -/
 lemma shortExact_map_Γ_of_isFlasque
     (S : ShortComplex (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))) (hS : S.ShortExact)
-    (h₁ : isFlasque X _ S.X₁) (_ : isFlasque X _ S.X₂) :
+    (h₁ : isFlasque X _ S.X₁) :
     (S.map (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))).ShortExact :=
   have : TopCat.Presheaf.IsFlasque S.X₁.obj := isFlasque_iff.mp h₁
   hS.map_Γ_of_isFlasque
@@ -95,7 +95,8 @@ theorem quasiIso_map_Γ_of_isFlasque (I : InjectiveResolution F) (φ : K ⟶ I.c
       φ) :=
   InjectiveResolution.quasiIso_map_of_comp_eq (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
     (isFlasque X _) isFlasque_of_injective isFlasque_X₃
-    shortExact_map_Γ_of_isFlasque ι (fun n ↦ isFlasque_iff.mpr (hK n)) I φ hφ
+    (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁)
+    ι (fun n ↦ isFlasque_iff.mpr (hK n)) I φ hφ
 
 include hK in
 /-- **`RⁿΓ(F) ≅ Hⁿ(Γ(K))` for a flasque resolution `K` of `F`.** The isomorphism is induced by
@@ -107,7 +108,8 @@ noncomputable def rightDerivedΓObjIsoOfIsFlasque (n : ℕ) :
         (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj K) :=
   Functor.rightDerivedObjIsoOfResolution (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
     (isFlasque X _) isFlasque_of_injective isFlasque_X₃
-    shortExact_map_Γ_of_isFlasque ι (fun n ↦ isFlasque_iff.mpr (hK n)) n
+    (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁)
+    ι (fun n ↦ isFlasque_iff.mpr (hK n)) n
 
 /-- Unfolding equation expressing `rightDerivedΓObjIsoOfIsFlasque` in terms of
 `Functor.rightDerivedObjIsoOfResolution`. -/
@@ -115,7 +117,8 @@ lemma rightDerivedΓObjIsoOfIsFlasque_eq (n : ℕ) :
     rightDerivedΓObjIsoOfIsFlasque ι hK n =
       Functor.rightDerivedObjIsoOfResolution (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
         (isFlasque X _) isFlasque_of_injective isFlasque_X₃
-        shortExact_map_Γ_of_isFlasque ι (fun n ↦ isFlasque_iff.mpr (hK n)) n :=
+        (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁)
+        ι (fun n ↦ isFlasque_iff.mpr (hK n)) n :=
   (rfl)
 
 /-- The isomorphism `rightDerivedΓObjIsoOfIsFlasque` is compatible with the identification of
@@ -142,7 +145,8 @@ noncomputable def rightDerivedΓIsoOfIsFlasque
         HomologicalComplex.homologyFunctor _ _ n :=
   Functor.rightDerivedIsoOfResolution (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))
     (isFlasque X _) isFlasque_of_injective isFlasque_X₃
-    shortExact_map_Γ_of_isFlasque K ι (fun F n ↦ isFlasque_iff.mpr (hK F n)) n
+    (fun S hS h₁ _ ↦ shortExact_map_Γ_of_isFlasque S hS h₁)
+    K ι (fun F n ↦ isFlasque_iff.mpr (hK F n)) n
 
 /-- Each component of the functorial flasque comparison is the comparison for that resolution.
 -/

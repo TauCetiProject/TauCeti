@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Abelian.RightDerived
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus
 public import TauCeti.Algebra.Homology.HomologicalComplex.Acyclic
 public import TauCeti.CategoryTheory.Abelian.AcyclicResolution
+import TauCeti.Algebra.Homology.Embedding.CochainComplex
 
 /-!
 # Computing bounded-below right derived functors from adapted resolutions
@@ -33,8 +34,7 @@ degrees.
 * `CategoryTheory.Functor.rightDerivedFunctorPlusObjIsoOfResolution` and
   `CategoryTheory.Functor.rightDerivedFunctorPlusHomologyIsoOfResolution`: computation of
   `R⁺F(Q(K))` and `Hᵐ(R⁺F(Q(K)))` from adapted resolutions, natural up to chain homotopy and
-  compatible with shifts, additive natural transformations, mapping cones, and short exact
-  sequences.
+  compatible with shifts, additive natural transformations, and short exact sequences.
 * `CategoryTheory.Functor.isGE_rightDerivedFunctorPlus_obj`: `F.rightDerivedFunctorPlus` preserves
   `IsGE b`, giving cohomology comparisons for `τ_{≤ n}` (`m ≤ n`) and `σ_{≤ n}` (iso for `m < n`,
   mono at `m = n`).
@@ -202,35 +202,6 @@ section ResolutionAPI
 variable {C D : Type*} [Category* C] [Category* D] [Abelian C] [Abelian D]
   [HasDerivedCategory C] [HasDerivedCategory D] [EnoughInjectives C]
   (F : C ⥤ D) [F.Additive]
-
-/-- Chain-homotopic morphisms in `CochainComplex.Plus C` induce the same morphism under
-`DerivedCategory.Plus.Q ⋙ F.rightDerivedFunctorPlus`. -/
-lemma rightDerivedFunctorPlus_Q_map_eq_of_homotopy {K L : CochainComplex.Plus C} {f₁ f₂ : K ⟶ L}
-    (h : Homotopy f₁.hom f₂.hom) :
-    F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map f₁) =
-      F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map f₂) :=
-  congrArg F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q_map_eq_of_homotopy h)
-
-/-- Chain-homotopic morphisms in `CochainComplex.Plus C` induce the same morphism on derived
-cohomology `Hᵐ(R⁺F(Q(-)))`. -/
-lemma homologyMap_rightDerivedFunctorPlus_Q_map_eq_of_homotopy
-    {K L : CochainComplex.Plus C} {f₁ f₂ : K ⟶ L} (h : Homotopy f₁.hom f₂.hom) (m : ℤ) :
-    (DerivedCategory.Plus.homologyFunctor D m).map
-        (F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map f₁)) =
-      (DerivedCategory.Plus.homologyFunctor D m).map
-        (F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map f₂)) :=
-  congrArg (DerivedCategory.Plus.homologyFunctor D m).map
-    (F.rightDerivedFunctorPlus_Q_map_eq_of_homotopy h)
-
-/-- `F.rightDerivedFunctorPlus` sends the mapping cone triangle of any morphism in
-`CochainComplex.Plus C` to a distinguished triangle in `DerivedCategory.Plus D`. -/
-lemma rightDerivedFunctorPlus_mappingCone_triangle_distinguished {K L : CochainComplex.Plus C}
-    (φ : K ⟶ L) :
-    F.rightDerivedFunctorPlus.mapTriangle.obj
-      (DerivedCategory.Plus.Q.mapTriangle.obj (CochainComplex.Plus.mappingConeTriangle φ)) ∈
-        distTriang (DerivedCategory.Plus D) :=
-  F.rightDerivedFunctorPlus.map_distinguished _
-    (DerivedCategory.Plus.mappingCone_triangle_distinguished φ)
 
 /-- `F.rightDerivedFunctorPlus` sends the triangle of any short exact sequence in
 `CochainComplex.Plus C` to a distinguished triangle in `DerivedCategory.Plus D`. -/
@@ -640,10 +611,7 @@ def isoSingleCompRightDerivedFunctorPlusHomology {X : C} (I : InjectiveResolutio
         ((CochainComplex.Plus.extendNat C).obj I.cocomplex))).symm) ≪≫
     (DerivedCategory.Plus.homologyFunctorFactors D (n : ℤ)).app
       (F.mapCochainComplexPlus.obj ((CochainComplex.Plus.extendNat C).obj I.cocomplex)) ≪≫
-    (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).mapIso
-      ((CochainComplex.Plus.ι D).mapIso (F.extendNatMapCochainComplexPlusIso.app I.cocomplex)) ≪≫
-    (CochainComplex.Plus.extendNatHomologyIso D n).app
-      ((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex) ≪≫
+    (F.extendNatMapCochainComplexPlusHomologyIso n).app I.cocomplex ≪≫
     (I.isoRightDerivedObj F n).symm
 
 @[reassoc]
@@ -659,16 +627,12 @@ lemma isoSingleCompRightDerivedFunctorPlusHomology_hom_naturality
     Functor.mapIso_hom, Iso.app_hom, Iso.symm_hom, asIso_hom, asIso_inv, assoc]
   rw [InjectiveResolution.isoRightDerivedObj_inv_naturality f I J φ comm F n]
   simp only [Functor.comp_map]
-  have hHom := (CochainComplex.Plus.extendNatHomologyIso D n).hom.naturality
-    ((F.mapHomologicalComplex (.up ℕ)).map φ)
-  have hExt' := congrArg (fun g ↦ (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
-    ((CochainComplex.Plus.ι D).map g)) (F.extendNatMapCochainComplexPlusIso.hom.naturality φ)
+  rw [← F.extendNatMapCochainComplexPlusHomologyIso_hom_naturality_assoc n φ]
   have hFact := (DerivedCategory.Plus.homologyFunctorFactors D (n : ℤ)).hom.naturality
     (F.mapCochainComplexPlus.map ((CochainComplex.Plus.extendNat C).map φ))
-  dsimp only [Functor.comp_obj, Functor.comp_map] at hHom hExt' hFact
-  simp only [Functor.map_comp] at hExt'
-  rw [reassoc_of% hHom.symm, reassoc_of% hExt'.symm, reassoc_of% hFact.symm,
-    ← Functor.map_comp_assoc, ← Functor.map_comp_assoc, ← Functor.map_comp_assoc]
+  dsimp only [Functor.comp_obj, Functor.comp_map] at hFact
+  rw [reassoc_of% hFact.symm, ← Functor.map_comp_assoc, ← Functor.map_comp_assoc,
+    ← Functor.map_comp_assoc]
   congr 2
   rw [← cancel_mono (F.rightDerivedFunctorPlusUnit.app
     ((CochainComplex.Plus.extendNat C).obj J.cocomplex))]
@@ -745,10 +709,7 @@ lemma singleCompRightDerivedFunctorPlusHomologyIso_hom_comp_rightDerivedObjIsoOf
         ((CochainComplex.Plus.extendNatSingle₀Iso C).inv.app X ≫
           (CochainComplex.Plus.extendNat C).map ι)
         (P.prop_extendNat_X hinj hK) (n : ℤ)).hom ≫
-      (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
-        ((CochainComplex.Plus.ι D).map (F.extendNatMapCochainComplexPlusIso.hom.app K)) ≫
-      (CochainComplex.Plus.extendNatHomologyIso D n).hom.app
-        ((F.mapHomologicalComplex (.up ℕ)).obj K) := by
+      (F.extendNatMapCochainComplexPlusHomologyIso n).hom.app K := by
   let I := injectiveResolution X
   let φ : K ⟶ I.cocomplex := InjectiveResolution.descOfQuasiIso (𝟙 X) I ι
   have hφ : ι ≫ φ = I.ι := by simp [φ]
@@ -761,24 +722,14 @@ lemma singleCompRightDerivedFunctorPlusHomologyIso_hom_comp_rightDerivedObjIsoOf
   rw [← cancel_mono ((F.mapHomologicalComplex (.up ℕ) ⋙
       HomologicalComplex.homologyFunctor D (.up ℕ) n).map φ)]
   simp only [assoc]
-  rw [F.rightDerivedObjIsoOfResolution_hom_comp_homologyMap P hinj hP hF ι hK n I φ hφ]
-  dsimp only [Functor.comp_map]
-  have hHom := (CochainComplex.Plus.extendNatHomologyIso D n).hom.naturality
-    ((F.mapHomologicalComplex (.up ℕ)).map φ)
-  have hExt' := congrArg (fun g ↦ (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
-    ((CochainComplex.Plus.ι D).map g)) (F.extendNatMapCochainComplexPlusIso.hom.naturality φ)
-  dsimp only [Functor.comp_obj, Functor.comp_map] at hHom hExt'
-  simp only [Functor.map_comp] at hExt'
-  have hMap : (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
-      ((CochainComplex.Plus.ι D).map
-        (F.mapCochainComplexPlus.map ((CochainComplex.Plus.extendNat C).map φ))) =
-    (F.mapHomologicalComplex (.up ℤ) ⋙ HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
-      ((CochainComplex.Plus.extendNat C).map φ).hom := rfl
   have hComp : (((CochainComplex.Plus.extendNatSingle₀Iso C).inv.app X ≫
       (CochainComplex.Plus.extendNat C).map ι) ≫ (CochainComplex.Plus.extendNat C).map φ) =
     I.ιPlus := by unfold InjectiveResolution.ιPlus; rw [assoc, ← Functor.map_comp, hφ]
-  rw [← hHom, ← reassoc_of% hExt', reassoc_of% hMap,
-    F.rightDerivedFunctorPlusHomologyIsoOfResolution_hom_comp_homologyMap_assoc P hinj hP hF
+  rw [F.rightDerivedObjIsoOfResolution_hom_comp_homologyMap P hinj hP hF ι hK n I φ hφ]
+  dsimp only [Functor.comp_map]
+  rw [← F.extendNatMapCochainComplexPlusHomologyIso_hom_naturality n φ]
+  dsimp only [ObjectProperty.ι_map, Functor.mapCochainComplexPlus_map_hom]
+  rw [F.rightDerivedFunctorPlusHomologyIsoOfResolution_hom_comp_homologyMap_assoc P hinj hP hF
       ((CochainComplex.Plus.extendNatSingle₀Iso C).inv.app X ≫
         (CochainComplex.Plus.extendNat C).map ι)
       (P.prop_extendNat_X hinj hK) I.ιPlus (fun _ ↦ hinj _ inferInstance)
@@ -813,16 +764,11 @@ lemma singleCompRightDerivedFunctorPlusHomologyIso_hom_naturality_natTrans (n : 
     Functor.mapIso_hom, Iso.app_hom, Iso.symm_hom, asIso_hom, asIso_inv, assoc]
   rw [← cancel_mono (I.isoRightDerivedObj F₂ n).hom]
   simp only [assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, comp_id]
-  have hHom := (CochainComplex.Plus.extendNatHomologyIso D n).hom.naturality
-    ((τ.mapHomologicalComplex (.up ℕ)).app I.cocomplex)
-  have hNatExt := congrArg (fun g ↦ (HomologicalComplex.homologyFunctor D (.up ℤ) (n : ℤ)).map
-    ((CochainComplex.Plus.ι D).map g)) (τ.mapCochainComplexPlus_extendNat_comp_hom I.cocomplex)
   have hFact := (DerivedCategory.Plus.homologyFunctorFactors D (n : ℤ)).hom.naturality
     (τ.mapCochainComplexPlus.app ((CochainComplex.Plus.extendNat C).obj I.cocomplex))
-  dsimp only [Functor.comp_obj, Functor.comp_map] at hHom hNatExt hFact
-  simp only [Functor.map_comp] at hNatExt
-  rw [← hHom, ← reassoc_of% hNatExt, ← reassoc_of% hFact, ← Functor.map_comp_assoc,
-    ← Functor.map_comp_assoc]
+  dsimp only [Functor.comp_obj, Functor.comp_map] at hFact
+  rw [← τ.extendNatMapCochainComplexPlusHomologyIso_hom_naturality n I.cocomplex,
+    ← reassoc_of% hFact, ← Functor.map_comp_assoc, ← Functor.map_comp_assoc]
   congr 2
   rw [← cancel_mono (F₂.rightDerivedFunctorPlusUnit.app
     ((CochainComplex.Plus.extendNat C).obj I.cocomplex))]
