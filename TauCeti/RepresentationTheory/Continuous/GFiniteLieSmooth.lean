@@ -52,9 +52,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
   {π : ContRepresentation 𝕜 G V}
 
-/-- **`G`-finite vectors are smooth.** A `G`-finite vector of a strongly continuous representation
-of a finite-dimensional real Lie group is a smooth vector: the representation restricted to the
-span of its orbit is a continuous finite-dimensional representation, hence smooth. -/
+/-- **`G`-finite vectors are smooth.** Every `G`-finite vector of a strongly continuous
+representation of a finite-dimensional real Lie group is a smooth vector. -/
 theorem Representation.IsGFinite.isLieSmoothVector (hπ : ∀ v, Continuous fun g ↦ π g v) {v : V}
     (hv : π.toRepresentation.IsGFinite v) : π.IsLieSmoothVector I v := by
   let W : Submodule 𝕜 V := Submodule.span 𝕜 (Set.range fun g : G ↦ π g v)
