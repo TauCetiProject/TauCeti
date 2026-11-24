@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Flux
+import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Decay
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics

@@ -10,7 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
-import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
@@ -53,9 +52,6 @@ inside the ball carry no data. The size of the derivatives is measured by the op
 * `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image` and
   `TauCeti.IsAsymptoticallyEuclideanEnd.isPathConnected_image`: in dimension at least two, the
   image of an end is open and path-connected.
-* `TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_pullbackMetricCoeff` and
-  `TauCeti.IsAsymptoticallyEuclideanEnd.isLittleO_fderiv_pullbackMetricCoeff`: on an end of
-  positive order, `g_ij → δ_ij` and `∂g_ij = o(|x|⁻¹)` as `|x| → ∞`.
 * `TauCeti.isAsymptoticallyEuclideanEnd_comp_iff` and
   `TauCeti.isFiniteEndedAsymptoticallyEuclidean_comp_iff`: both notions are invariant under
   Riemannian isometries.
@@ -236,42 +232,6 @@ theorem eventually_differentiableAt_pullbackMetricCoeff (h : IsAsymptoticallyEuc
   exact ((h.contDiffOn_pullbackMetricCoeff i j).contDiffAt
     (isClosed_closedBall.isOpen_compl.mem_nhds (by simpa using hx))).differentiableAt
       (by norm_num)
-
-/-- The metric coefficients of an end of positive order tend to `δ_ij` at infinity, since
-`|g_ij - δ_ij| ≤ C |x| ^ (-t)`. -/
-theorem tendsto_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht : 0 < t)
-    (i j : Fin n) :
-    Tendsto (fun x ↦ pullbackMetricCoeff I φ x i j) (Bornology.cobounded _)
-      (𝓝 (if i = j then 1 else 0)) := by
-  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
-  have hC0 := (tendsto_norm_rpow_cobounded (E := EuclideanSpace ℝ (Fin n))
-    (neg_lt_zero.2 ht)).const_mul C
-  rw [mul_zero] at hC0
-  have h0 : Tendsto (fun x ↦ (pullbackMetricCoeff I φ x - 1) i j) (Bornology.cobounded _)
-      (𝓝 0) := by
-    refine squeeze_zero_norm' ?_ hC0
-    filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop R)] with x hx
-    simpa using hC 0 (by norm_num) i j x (by simpa using hx)
-  simpa [Matrix.one_apply] using tendsto_sub_nhds_zero_iff.1 h0
-
-/-- The derivatives of the metric coefficients of an end of positive order are `o(|x|⁻¹)` at
-infinity, since `|∂g_ij| ≤ C |x| ^ (-t - 1)`. -/
-theorem isLittleO_fderiv_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ)
-    (ht : 0 < t) (i j : Fin n) :
-    (fun x ↦ fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x) =o[Bornology.cobounded _]
-      fun x ↦ ‖x‖⁻¹ := by
-  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
-  have h1 : (fun x ↦ fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x)
-      =O[Bornology.cobounded _] fun x ↦ ‖x‖ ^ (-t - 1) := by
-    refine Asymptotics.IsBigO.of_bound C ?_
-    filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop R)] with x hx
-    have hfd : fderiv ℝ (fun y ↦ (pullbackMetricCoeff I φ y - 1) i j) x =
-        fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x := by
-      simp only [Matrix.sub_apply, fderiv_sub_const]
-    rw [← hfd, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]
-    simpa using hC 1 (by norm_num) i j x (by simpa using hx)
-  exact h1.trans_isLittleO ((isLittleO_norm_rpow_norm_rpow_cobounded (by linarith)).congr_right
-    fun _ ↦ Real.rpow_neg_one _)
 
 /-- The image of an end is nonempty, since the exterior of a ball in positive dimension is. -/
 theorem nonempty_image (h : IsAsymptoticallyEuclideanEnd I t R φ) :
