@@ -62,6 +62,29 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Unique 
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ ℂ)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
 
+/-- `TensorProduct.lid ℂ F` intertwines `complexProdTensor` of `0 ⊕ W` (for `positiveOrientation`)
+with `ρ₂`. -/
+theorem lid_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z : ℂ ⊗[ℂ] F) :
+    TensorProduct.lid ℂ F
+        (complexProdTensor hQ positiveOrientation Q₁.eq_neg_norm_sq_of_subsingleton
+          Even.zero ρ₁ ρ₂ a z) =
+      ρ₂ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpUniqueProd hQ).baseChange ℂ) a)
+        (TensorProduct.lid ℂ F z) := by
+  have : Unique (ℂ ⊗[ℝ] V) := TensorProduct.uniqueRight
+  have hdiag : (map (QuadraticMap.IsometryEquiv.uniqueProd
+        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
+        (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
+      (equivOfIsometry
+        ((QuadraticMap.IsometryEquiv.withLpUniqueProd hQ).baseChange ℂ)).toAlgHom :=
+    CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
+      simp [equivOfIsometry_apply]
+  have hγ : ρ₁ (complexVolume Q₁ (positiveOrientation : Orientation ℝ V (Fin 0))) = 1 := by simp
+  rw [complexProdTensor_def,
+    AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂ hγ (one_mul 1)
+      (fun v ↦ by simp [Subsingleton.elim v 0]),
+    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.lid_cliffordProdTensor]
+  exact congrArg (ρ₂ · (TensorProduct.lid ℂ F z)) (DFunLike.congr_fun hdiag a)
+
 /-- **Left unit of `CliffordAlgebra.complexProdTensor`**: for the zero space `V` with
 `positiveOrientation`, conjugating by `TensorProduct.lid ℂ F` identifies `complexProdTensor` on
 `ℂ ⊗ F` with `ρ₂` pulled back along `QuadraticMap.IsometryEquiv.withLpUniqueProd`. -/
@@ -72,32 +95,9 @@ theorem conjAlgEquiv_complexProdTensor_uniqueProd :
       ρ₂.comp
         (equivOfIsometry
           ((QuadraticMap.IsometryEquiv.withLpUniqueProd hQ).baseChange ℂ)).toAlgHom := by
-  have : Unique (ℂ ⊗[ℝ] V) := TensorProduct.uniqueRight
-  have hdiag : (equivOfIsometry (QuadraticMap.IsometryEquiv.uniqueProd
-        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))).toAlgHom.comp
-        (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
-      (equivOfIsometry
-        ((QuadraticMap.IsometryEquiv.withLpUniqueProd hQ).baseChange ℂ)).toAlgHom :=
-    CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun z x ↦ by
-      simp [equivOfIsometry_apply]
-  have hγ : ρ₁ (complexVolume Q₁ (positiveOrientation : Orientation ℝ V (Fin 0))) = 1 := by simp
-  rw [complexProdTensor_def,
-    AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂ hγ (mul_one 1)
-      (fun v ↦ by simp [Subsingleton.elim v 0]),
-    ← AlgHom.comp_assoc, AlgHom.conjAlgEquiv_cliffordProdTensor_uniqueProd ρ₁ ρ₂,
-    AlgHom.comp_assoc, hdiag]
-
-/-- `TensorProduct.lid ℂ F` intertwines `complexProdTensor` of `0 ⊕ W` (for `positiveOrientation`)
-with `ρ₂`. -/
-theorem lid_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z : ℂ ⊗[ℂ] F) :
-    TensorProduct.lid ℂ F
-        (complexProdTensor hQ positiveOrientation Q₁.eq_neg_norm_sq_of_subsingleton
-          Even.zero ρ₁ ρ₂ a z) =
-      ρ₂ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpUniqueProd hQ).baseChange ℂ) a)
-        (TensorProduct.lid ℂ F z) := by
+  refine AlgHom.ext fun a ↦ LinearMap.ext fun f ↦ ?_
   simpa [LinearEquiv.conjAlgEquiv_apply] using
-    congrArg (fun g ↦ g a (TensorProduct.lid ℂ F z))
-      (conjAlgEquiv_complexProdTensor_uniqueProd hQ ρ₁ ρ₂)
+    lid_complexProdTensor hQ ρ₁ ρ₂ a ((TensorProduct.lid ℂ F).symm f)
 
 /-- For the negative orientation `-positiveOrientation` of the zero space `V`, `Γ_V = -1`, so a
 vector `(0, w)` acts under `TensorProduct.lid ℂ F` by `-c_W(w)` rather than `c_W(w)`. -/
@@ -149,6 +149,23 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ ℂ)
 
+/-- `TensorProduct.rid ℂ E` intertwines `complexProdTensor` of `V ⊕ 0` with `ρ₁`. -/
+theorem rid_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z : E ⊗[ℂ] ℂ) :
+    TensorProduct.rid ℂ E (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a z) =
+      ρ₁ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProdUnique hQ).baseChange ℂ) a)
+        (TensorProduct.rid ℂ E z) := by
+  have : Unique (ℂ ⊗[ℝ] W) := TensorProduct.uniqueRight
+  have hdiag : (map (QuadraticMap.IsometryEquiv.prodUnique
+        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).toIsometry).comp
+        (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
+      (equivOfIsometry
+        ((QuadraticMap.IsometryEquiv.withLpProdUnique hQ).baseChange ℂ)).toAlgHom :=
+    CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun c x ↦ by
+      simp [equivOfIsometry_apply]
+  rw [complexProdTensor_def, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    AlgHom.rid_cliffordProdTensor]
+  exact congrArg (ρ₁ · (TensorProduct.rid ℂ E z)) (DFunLike.congr_fun hdiag a)
+
 /-- **Right unit of `CliffordAlgebra.complexProdTensor`**: when `W` is trivial, conjugating by
 `TensorProduct.rid ℂ E` identifies `complexProdTensor` on `E ⊗ ℂ` with `ρ₁` pulled back along
 `QuadraticMap.IsometryEquiv.withLpProdUnique`, for any orientation `o₁` of `V`. -/
@@ -158,25 +175,9 @@ theorem conjAlgEquiv_complexProdTensor_prodUnique :
       ρ₁.comp
         (equivOfIsometry
           ((QuadraticMap.IsometryEquiv.withLpProdUnique hQ).baseChange ℂ)).toAlgHom := by
-  have : Unique (ℂ ⊗[ℝ] W) := TensorProduct.uniqueRight
-  have hdiag : (equivOfIsometry (QuadraticMap.IsometryEquiv.prodUnique
-        (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))).toAlgHom.comp
-        (equivOfIsometry (complexWithLpProd hQ)).toAlgHom =
-      (equivOfIsometry
-        ((QuadraticMap.IsometryEquiv.withLpProdUnique hQ).baseChange ℂ)).toAlgHom :=
-    CliffordAlgebra.hom_ext <| TensorProduct.AlgebraTensorModule.ext fun z x ↦ by
-      simp [equivOfIsometry_apply]
-  rw [complexProdTensor_def, ← AlgHom.comp_assoc,
-    AlgHom.conjAlgEquiv_cliffordProdTensor_prodUnique, AlgHom.comp_assoc, hdiag]
-
-/-- `TensorProduct.rid ℂ E` intertwines `complexProdTensor` of `V ⊕ 0` with `ρ₁`. -/
-theorem rid_complexProdTensor (a : CliffordAlgebra (Q.baseChange ℂ)) (z : E ⊗[ℂ] ℂ) :
-    TensorProduct.rid ℂ E (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a z) =
-      ρ₁ (equivOfIsometry ((QuadraticMap.IsometryEquiv.withLpProdUnique hQ).baseChange ℂ) a)
-        (TensorProduct.rid ℂ E z) := by
+  refine AlgHom.ext fun a ↦ LinearMap.ext fun e ↦ ?_
   simpa [LinearEquiv.conjAlgEquiv_apply] using
-    congrArg (fun g ↦ g a (TensorProduct.rid ℂ E z))
-      (conjAlgEquiv_complexProdTensor_prodUnique hQ o₁ hQ₁ hn ρ₁ ρ₂)
+    rid_complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a ((TensorProduct.rid ℂ E).symm e)
 
 /-- For `V ⊕ 0` with `positiveOrientation` on `0`, `TensorProduct.rid ℂ E` carries `Γ_(V ⊕ 0)` to
 `Γ_V`. -/

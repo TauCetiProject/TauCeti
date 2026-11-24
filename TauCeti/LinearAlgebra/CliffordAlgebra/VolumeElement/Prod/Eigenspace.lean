@@ -17,21 +17,21 @@ import TauCeti.LinearAlgebra.Dual.Lemmas
 Let `V` and `W` be even-dimensional oriented real inner product spaces of dimensions `n` and `m`
 with `Q₁ v = -‖v‖²` and `Q₂ w = -‖w‖²`, and equip `V ⊕ W` with `Orientation.prod o₁ o₂`. Since
 `Γ_(V ⊕ W)` acts on `E ⊗ F` as `Γ_V ⊗ Γ_W`, `Module.End.eigenspaceTensorMapEquiv` decomposes its
-`μ`-eigenspace (`μ * μ = 1`) as `(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^{-μ})` without finiteness
-assumptions on `E` or `F`. For finite-dimensional modules this gives the rank formula, and for
-spinor modules with `n + m ≠ 0` it gives `dim (S_V ⊗ S_W)^± = 2 ^ ((n + m) / 2 - 1)` (in
+`μ`-eigenspace (`μ * μ = 1`) as `(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^{-μ})` without frame choices or
+finiteness assumptions on `E` or `F`. For finite-dimensional modules this gives the rank formula,
+and for spinor modules with `n + m ≠ 0` it gives `dim (S_V ⊗ S_W)^± = 2 ^ ((n + m) / 2 - 1)` (in
 particular `1 + 1 = 2` inside `dim = 4` for two oriented planes `n = m = 2`).
 
 ## Main definitions
 
-* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv`:
+* `CliffordAlgebra.complexProdTensorEigenspaceEquiv`:
   `(E ⊗ F)^μ ≃ (E⁺ ⊗ F^μ) × (E⁻ ⊗ F^{-μ})` for `μ * μ = 1`.
 
 ## Main results
 
-* `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv_apply` and
-  `CliffordAlgebra.coe_complexProdTensorComplexVolumeEigenspaceEquiv_symm_apply`: projection and
-  inclusion formulas.
+* `CliffordAlgebra.complexProdTensorEigenspaceEquiv_apply` and
+  `CliffordAlgebra.coe_complexProdTensorEigenspaceEquiv_symm_apply`: projection and inclusion
+  formulas.
 * `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume` and
   `CliffordAlgebra.finrank_eigenspace_complexProdTensor_complexVolume_of_bijective_lsmul`: general
   and spinor half-rank formulas.
@@ -39,7 +39,7 @@ particular `1 + 1 = 2` inside `dim = 4` for two oriented planes `n = m = 2`).
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
-* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, the chapter on Clifford modules.
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed. (2007), Definition 2.2.42.
 -/
 
 public section
@@ -69,7 +69,7 @@ variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module 
 
 /-- **Half-spin decomposition of the graded tensor product**: for `μ * μ = 1`, the `μ`-eigenspace
 of the product chirality `Γ_(V ⊕ W)` on `E ⊗ F` is `(E⁺ ⊗ F^μ) × (E⁻ ⊗ F^{-μ})`. -/
-def complexProdTensorComplexVolumeEigenspaceEquiv {μ : ℂ} (hμ : μ * μ = 1) :
+def complexProdTensorEigenspaceEquiv {μ : ℂ} (hμ : μ * μ = 1) :
     (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ ≃ₗ[ℂ]
       ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1 ⊗[ℂ]
           (ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) ×
@@ -82,12 +82,12 @@ def complexProdTensorComplexVolumeEigenspaceEquiv {μ : ℂ} (hμ : μ * μ = 1)
       (ρ₁.involutive_complexVolume o₁ hQ₁)
       (ρ₂.involutive_complexVolume o₂ hQ₂) hμ)
 
-/-- The forward map of `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv` applies the
-tensor products of the chirality projections on `E` and `F`. -/
+/-- The forward map of `CliffordAlgebra.complexProdTensorEigenspaceEquiv` applies the tensor
+products of the chirality projections on `E` and `F`. -/
 @[simp]
-theorem complexProdTensorComplexVolumeEigenspaceEquiv_apply {μ : ℂ} (hμ : μ * μ = 1)
+theorem complexProdTensorEigenspaceEquiv_apply {μ : ℂ} (hμ : μ * μ = 1)
     (z : (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ) :
-    complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm o ρ₁ ρ₂ ho hμ z =
+    complexProdTensorEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm o ρ₁ ρ₂ ho hμ z =
       (TensorProduct.map
           (eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁) (one_mul 1))
           (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) hμ) z,
@@ -96,22 +96,22 @@ theorem complexProdTensorComplexVolumeEigenspaceEquiv_apply {μ : ℂ} (hμ : μ
             ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1)))
           (eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
             ((neg_mul_neg μ μ).trans hμ)) z) := by
-  rw [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.trans_apply,
+  rw [complexProdTensorEigenspaceEquiv, LinearEquiv.trans_apply,
     eigenspaceTensorMapEquiv_apply, LinearEquiv.coe_ofEq_apply]
 
-/-- The inverse of `CliffordAlgebra.complexProdTensorComplexVolumeEigenspaceEquiv` sums the two
-tensor products of the eigenspace inclusions. -/
+/-- The inverse of `CliffordAlgebra.complexProdTensorEigenspaceEquiv` sums the two tensor products
+of the eigenspace inclusions. -/
 @[simp]
-theorem coe_complexProdTensorComplexVolumeEigenspaceEquiv_symm_apply {μ : ℂ} (hμ : μ * μ = 1)
+theorem coe_complexProdTensorEigenspaceEquiv_symm_apply {μ : ℂ} (hμ : μ * μ = 1)
     (p : ((ρ₁ (complexVolume Q₁ o₁)).eigenspace 1 ⊗[ℂ]
           (ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) ×
         ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1) ⊗[ℂ]
           (ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ))) :
-    ((complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm o ρ₁ ρ₂ ho hμ).symm p :
+    ((complexProdTensorEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm o ρ₁ ρ₂ ho hμ).symm p :
         E ⊗[ℂ] F) =
       TensorProduct.map (Submodule.subtype _) (Submodule.subtype _) p.1 +
         TensorProduct.map (Submodule.subtype _) (Submodule.subtype _) p.2 := by
-  rw [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.trans_symm,
+  rw [complexProdTensorEigenspaceEquiv, LinearEquiv.trans_symm,
     LinearEquiv.trans_apply, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
     coe_eigenspaceTensorMapEquiv_symm_apply]
 
@@ -125,8 +125,7 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume [Module.Finite ℂ E]
           finrank ℂ ((ρ₂ (complexVolume Q₂ o₂)).eigenspace μ) +
         finrank ℂ ((ρ₁ (complexVolume Q₁ o₁)).eigenspace (-1)) *
           finrank ℂ ((ρ₂ (complexVolume Q₂ o₂)).eigenspace (-μ)) := by
-  rw [(complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm o ρ₁ ρ₂ ho
-      hμ).finrank_eq,
+  rw [(complexProdTensorEigenspaceEquiv hQ o₁ hQ₁ hn o₂ hQ₂ hm o ρ₁ ρ₂ ho hμ).finrank_eq,
     Module.finrank_prod, Module.finrank_tensorProduct, Module.finrank_tensorProduct]
 
 end Modules
@@ -155,8 +154,8 @@ theorem finrank_eigenspace_complexProdTensor_complexVolume_of_bijective_lsmul
     finrank ℂ ((complexProdTensor hQ o₁ hQ₁ hn (Algebra.lsmul ℂ ℂ S₁) (Algebra.lsmul ℂ ℂ S₂)
         (complexVolume Q o)).eigenspace μ) =
       2 ^ ((n + m) / 2 - 1) := by
-  have := Module.Finite.of_surjective_end _ h₁.2
-  have := Module.Finite.of_surjective_end _ h₂.2
+  have := Module.Finite.of_surjective_end _ h₁.surjective
+  have := Module.Finite.of_surjective_end _ h₂.surjective
   have hV : finrank ℂ (ℂ ⊗[ℝ] V) = n := by
     rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
   have hW : finrank ℂ (ℂ ⊗[ℝ] W) = m := by

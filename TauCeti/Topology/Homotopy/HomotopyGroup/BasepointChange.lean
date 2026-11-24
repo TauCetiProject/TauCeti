@@ -55,7 +55,8 @@ product as the class of a concatenation `GenLoop.transAt i` in any cube directio
 * `TauCeti.homotopyGroupMulEquivOfPath`: **a path from `x` to `y` induces a group isomorphism
   `HomotopyGroup N X x ≃* HomotopyGroup N X y`.**
 * `TauCeti.nonempty_homotopyGroupMulEquiv`: on a path-connected space, all the homotopy groups
-  in a fixed dimension are isomorphic.
+  in a fixed dimension are isomorphic; in particular one of them is trivial exactly when all are
+  (`TauCeti.subsingleton_homotopyGroup_of_pathConnectedSpace`).
 
 ## References
 
@@ -127,7 +128,7 @@ theorem homotopic_transport_of_homotopic (γ : Path x y) {f f' : Ω^ N X x}
   obtain ⟨K⟩ := h
   have hFG : ∀ s : I, ∀ z ∈ Cube.boundary N,
       K.toContinuousMap (s, z) = (γ.toContinuousMap.comp ContinuousMap.snd) (s, 0) :=
-    fun s z hz => (K.eq_fst s hz).trans ((f.2 z hz).trans γ.source.symm)
+    fun s z hz => (K.eq_fst s hz).trans ((f.property z hz).trans γ.source.symm)
   refine ⟨⟨⟨transportFamily K.toContinuousMap
     (γ.toContinuousMap.comp ContinuousMap.snd) hFG, ?_, ?_⟩, ?_⟩⟩
   · intro z
@@ -136,7 +137,7 @@ theorem homotopic_transport_of_homotopic (γ : Path x y) {f f' : Ω^ N X x}
     exact transportFamily_apply_eq_transport _ _ hFG (fun w => K.apply_one w) (fun _ => rfl) z
   · intro t z hz
     exact (transportFamily_apply_of_mem_boundary _ _ hFG t hz).trans
-      (γ.target.trans ((transport γ f).2 z hz).symm)
+      (γ.target.trans ((transport γ f).property z hz).symm)
 
 /-- Transport along homotopic paths gives homotopic generalized loops. -/
 theorem homotopic_transport_of_path_homotopic {γ δ : Path x y} (h : γ.Homotopic δ)
@@ -146,7 +147,7 @@ theorem homotopic_transport_of_path_homotopic {γ δ : Path x y} (h : γ.Homotop
   have h1 : (1 : I) ∈ ({0, 1} : Set I) := by simp
   have hFG : ∀ s : I, ∀ z ∈ Cube.boundary N,
       ((f : C(I^N, X)).comp ContinuousMap.snd) (s, z) = G.toContinuousMap (s, 0) :=
-    fun s z hz => (f.2 z hz).trans (γ.source.symm.trans (G.eq_fst s h0).symm)
+    fun s z hz => (f.property z hz).trans (γ.source.symm.trans (G.eq_fst s h0).symm)
   refine ⟨⟨⟨transportFamily ((f : C(I^N, X)).comp ContinuousMap.snd) G.toContinuousMap hFG,
     ?_, ?_⟩, ?_⟩⟩
   · intro w
@@ -155,7 +156,7 @@ theorem homotopic_transport_of_path_homotopic {γ δ : Path x y} (h : γ.Homotop
     exact transportFamily_apply_eq_transport _ _ hFG (fun _ => rfl) (fun u => G.apply_one u) w
   · intro t w hw
     exact (transportFamily_apply_of_mem_boundary _ _ hFG t hw).trans
-      ((G.eq_fst t h1).trans (γ.target.trans ((transport γ f).2 w hw).symm))
+      ((G.eq_fst t h1).trans (γ.target.trans ((transport γ f).property w hw).symm))
 
 /-! ### Functoriality of transport -/
 
@@ -551,5 +552,13 @@ theorem nonempty_homotopyGroupMulEquiv [Finite N] [Nonempty N] [DecidableEq N]
     Nonempty (HomotopyGroup N X x ≃* HomotopyGroup N X y) := by
   have : Fintype N := Fintype.ofFinite N
   exact ⟨homotopyGroupMulEquivOfPath (PathConnectedSpace.somePath x y)⟩
+
+omit [Fintype N] in
+/-- On a path-connected space, a homotopy group that is trivial at one base point is trivial at
+every base point. -/
+theorem subsingleton_homotopyGroup_of_pathConnectedSpace [Finite N] [PathConnectedSpace X]
+    (_ : Subsingleton (HomotopyGroup N X x)) : Subsingleton (HomotopyGroup N X y) :=
+  have : Fintype N := Fintype.ofFinite N
+  (homotopyGroupEquivOfPath (PathConnectedSpace.somePath y x)).subsingleton
 
 end TauCeti

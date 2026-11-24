@@ -164,7 +164,7 @@ private theorem iSup_iInf_eigenspace_semisimplePart_eq_top_of_finiteDimensional
   have hχ : ∀ g, χ g = g.ofConv c := by
     intro g
     have h1 : ρ (semisimplePart k H k g) w = χ g • (w : M) :=
-      Module.End.mem_eigenspace_iff.mp ((Submodule.mem_iInf _).mp w.2 g)
+      Module.End.mem_eigenspace_iff.mp ((Submodule.mem_iInf _).mp w.property g)
     have h2 : ρ (semisimplePart k H k g) w = g.ofConv c • (w : M) :=
       basePointsRepresentation_semisimplePart_of_mem_weightSpace k H g hc
     exact smul_left_injective k hw' (h1.symm.trans h2)

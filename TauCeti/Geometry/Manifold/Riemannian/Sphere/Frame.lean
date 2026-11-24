@@ -325,14 +325,14 @@ theorem contMDiff_tangentOrthonormalBasis_repr [Fintype ι] (hcard : Fintype.car
     (m : ℕ∞ω) :
     ContMDiff (𝓡 n).tangent 𝓘(ℝ, EuclideanSpace ℝ ι) m
       (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) ↦
-        (S.tangentOrthonormalBasis hcard p.proj).repr p.2) := by
+        (S.tangentOrthonormalBasis hcard p.proj).repr p.snd) := by
   have : IsManifold (𝓡 n) (m + 1) (sphere (0 : E) 1) :=
     IsManifold.of_le (le_top : m + 1 ≤ ω)
   let e : Fin n ≃ ι := (Fintype.equivFinOfCardEq hcard).symm
   let S' := S.reindex e
   have hfin : ContMDiff (𝓡 n).tangent 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) m
       (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) ↦
-        (S'.tangentOrthonormalBasis (Fintype.card_fin n) p.proj).repr p.2) := by
+        (S'.tangentOrthonormalBasis (Fintype.card_fin n) p.proj).repr p.snd) := by
     intro p
     exact (((Bundle.Trivialization.contMDiffAt_iff_of_mem_maximalAtlas
       (S'.tangentTrivialization_mem_maximalAtlas m) (f := id) (x₀ := p)
@@ -365,7 +365,7 @@ def tangentBundleTrivialDiffeomorph [Fintype ι] (hcard : Fintype.card ι = n) (
 theorem tangentBundleTrivialDiffeomorph_apply [Fintype ι] (hcard : Fintype.card ι = n) (m : ℕ∞ω)
     (p : TangentBundle (𝓡 n) (sphere (0 : E) 1)) :
     S.tangentBundleTrivialDiffeomorph hcard m p =
-      ⟨p.proj, (S.tangentOrthonormalBasis hcard p.proj).repr p.2⟩ := by
+      ⟨p.proj, (S.tangentOrthonormalBasis hcard p.proj).repr p.snd⟩ := by
   simp [tangentBundleTrivialDiffeomorph]
 
 /-- Inverse formula for `S.tangentBundleTrivialDiffeomorph hcard m` in terms of
@@ -376,7 +376,7 @@ theorem tangentBundleTrivialDiffeomorph_symm_apply [Fintype ι] (hcard : Fintype
     (p : TotalSpace (EuclideanSpace ℝ ι)
       (Bundle.Trivial (sphere (0 : E) 1) (EuclideanSpace ℝ ι))) :
     (S.tangentBundleTrivialDiffeomorph hcard m).symm p =
-      ⟨p.proj, (S.tangentOrthonormalBasis hcard p.proj).repr.symm p.2⟩ := by
+      ⟨p.proj, (S.tangentOrthonormalBasis hcard p.proj).repr.symm p.snd⟩ := by
   simp [tangentBundleTrivialDiffeomorph, LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv]
 
 /-- Inverse formula for `S.tangentBundleTrivialDiffeomorph hcard m` expanded as a linear
@@ -386,7 +386,7 @@ theorem tangentBundleTrivialDiffeomorph_symm_apply_eq_mk_sum [Fintype ι]
     (p : TotalSpace (EuclideanSpace ℝ ι)
       (Bundle.Trivial (sphere (0 : E) 1) (EuclideanSpace ℝ ι))) :
     (S.tangentBundleTrivialDiffeomorph hcard m).symm p =
-      ⟨p.proj, ∑ i : ι, p.2.ofLp i • S.tangentField i p.proj⟩ := by
+      ⟨p.proj, ∑ i : ι, p.snd.ofLp i • S.tangentField i p.proj⟩ := by
   rw [S.tangentBundleTrivialDiffeomorph_symm_apply, S.tangentOrthonormalBasis_repr_symm_apply]
 
 /-- The global `C^m` diffeomorphism `TangentBundle (𝓡 n) (sphere (0 : E) 1) ≃ₘ^m
@@ -406,7 +406,7 @@ def tangentBundleDiffeomorph [Fintype ι] (hcard : Fintype.card ι = n) (m : ℕ
 theorem tangentBundleDiffeomorph_apply [Fintype ι] (hcard : Fintype.card ι = n) (m : ℕ∞ω)
     (p : TangentBundle (𝓡 n) (sphere (0 : E) 1)) :
     S.tangentBundleDiffeomorph hcard m p =
-      (p.proj, (S.tangentOrthonormalBasis hcard p.proj).repr p.2) := by
+      (p.proj, (S.tangentOrthonormalBasis hcard p.proj).repr p.snd) := by
   simp [tangentBundleDiffeomorph]
 
 /-- Inverse formula for `S.tangentBundleDiffeomorph hcard m` in terms of

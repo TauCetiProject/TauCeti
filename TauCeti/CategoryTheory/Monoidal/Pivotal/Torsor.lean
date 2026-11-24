@@ -36,7 +36,9 @@ of the universal grading group.
 * `TauCeti.PivotalCategory.instSDiv`: the monoidal automorphism `φ /ₛ ψ` relating two pivotal
   structures, computed by `TauCeti.PivotalCategory.forgetAut_sdiv`;
 * `TauCeti.PivotalCategory.instTorsor`: the pivotal structures of `C`, if there are any, form a
-  torsor over `Aut_⊗(𝟭_C)`.
+  torsor over `Aut_⊗(𝟭_C)`, with `Nonempty`-free cancellation and fixed-point simp lemmas
+  `TauCeti.PivotalCategory.smul_left_inj`, `TauCeti.PivotalCategory.smul_eq_self_iff`, and
+  `TauCeti.PivotalCategory.self_eq_smul_iff`.
 
 ## References
 
@@ -126,5 +128,30 @@ noncomputable instance instTorsor [Nonempty (PivotalCategory C)] :
     apply LaxMonoidalFunctor.forgetAut_injective
     ext : 1
     simp
+
+/-- Acting on a pivotal structure `P` by two monoidal automorphisms of `𝟭 C` produces equal pivotal
+structures if and only if the automorphisms are equal, without needing an ambient `Nonempty`
+typeclass assumption. -/
+@[simp]
+theorem smul_left_inj (P : PivotalCategory C)
+    {v u : Aut (LaxMonoidalFunctor.of (𝟭 C))} :
+    v • P = u • P ↔ v = u := by
+  have : Nonempty (PivotalCategory C) := ⟨P⟩
+  exact smul_right_cancel_iff P
+
+/-- A torsor modification `u • P` fixes `P` if and only if `u = 1`. -/
+@[simp]
+theorem smul_eq_self_iff (P : PivotalCategory C)
+    {u : Aut (LaxMonoidalFunctor.of (𝟭 C))} :
+    u • P = P ↔ u = 1 :=
+  ⟨fun h ↦ (smul_left_inj P).mp (h.trans (one_smul _ P).symm),
+    fun h ↦ by rw [h, one_smul]⟩
+
+/-- Symmetric form of `PivotalCategory.smul_eq_self_iff`. -/
+@[simp]
+theorem self_eq_smul_iff (P : PivotalCategory C)
+    {u : Aut (LaxMonoidalFunctor.of (𝟭 C))} :
+    P = u • P ↔ u = 1 :=
+  eq_comm.trans (smul_eq_self_iff P)
 
 end TauCeti.PivotalCategory

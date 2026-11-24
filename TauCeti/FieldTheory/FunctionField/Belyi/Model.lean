@@ -264,7 +264,7 @@ pointwise lie in the stabilizer of `c`. -/
 theorem IsDefinedOver.fixingSubgroup_le_stabilizer {K : IntermediateField ℚ k}
     [Algebra.IsAlgebraic K k] {c : IsoClass k} (hc : c.IsDefinedOver K) :
     K.fixingSubgroup ≤ MulAction.stabilizer (k ≃ₐ[ℚ] k) c :=
-  fun g hg ↦ hc.smul_eq fun a ↦ (IntermediateField.mem_fixingSubgroup_iff K g).mp hg a a.2
+  fun g hg ↦ hc.smul_eq fun a ↦ (IntermediateField.mem_fixingSubgroup_iff K g).mp hg a a.property
 
 /-- **Every field of definition contains the field of moduli**: if a class `c` is defined over a
 subfield `K` of `k` over which `k` is Galois, such as a number field inside

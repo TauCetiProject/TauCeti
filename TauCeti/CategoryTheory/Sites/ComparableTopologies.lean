@@ -57,7 +57,7 @@ variable {C : Type u} [Category.{v} C] {J K : GrothendieckTopology C}
 from `J` to `K`. -/
 theorem isContinuous_id_of_le (h : J ≤ K) : (𝟭 C).IsContinuous J K where
   op_comp_isSheaf_of_types G :=
-    Presieve.isSheaf_of_le _ h ((isSheaf_iff_isSheaf_of_type _ _).1 G.2)
+    Presieve.isSheaf_of_le _ h ((isSheaf_iff_isSheaf_of_type _ _).1 G.property)
 
 variable (J K) (A : Type u') [Category.{v'} A] [(𝟭 C).IsContinuous J K]
 

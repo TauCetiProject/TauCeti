@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import TauCeti.Analysis.Normed.Lp.ProdLp.QuadraticForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
+import TauCeti.Analysis.Normed.Lp.ProdLp.Orientation
 
 /-!
 # Associativity of the graded tensor product of complex Clifford modules
@@ -25,13 +26,13 @@ When `W` is also oriented of dimension `p`, `withLpProdAssoc` carries `((o₁ ×
 * `CliffordAlgebra.conjAlgEquiv_complexProdTensor_assoc` and
   `CliffordAlgebra.assoc_complexProdTensor`: `TensorProduct.assoc ℂ E F G` intertwines the iterated
   graded tensor product actions.
-* `CliffordAlgebra.map_withLpProdAssoc_orientation` and
-  `CliffordAlgebra.map_withLpProdAssoc_complexVolume`: orientation and volume transport.
+* `CliffordAlgebra.map_withLpProdAssoc_complexVolume`: volume transport under `withLpProdAssoc`.
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
 * M. F. Atiyah, R. Bott and A. Shapiro, *Clifford modules*, Topology 3 (1964), §1.
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed. (2007), Definition 2.2.42.
 -/
 
 public section
@@ -41,60 +42,6 @@ noncomputable section
 open Module TensorProduct
 
 namespace CliffordAlgebra
-
-section Orientation
-
-variable {U V W : Type*} [SeminormedAddCommGroup U] [NormedSpace ℝ U]
-  [SeminormedAddCommGroup V] [NormedSpace ℝ V]
-  [SeminormedAddCommGroup W] [NormedSpace ℝ W]
-  [FiniteDimensional ℝ U] [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
-  {n m p : ℕ} [Fact (finrank ℝ U = n)] [Fact (finrank ℝ V = m)] [Fact (finrank ℝ W = p)]
-  [Fact (finrank ℝ (WithLp 2 (U × V)) = n + m)]
-  [Fact (finrank ℝ (WithLp 2 (V × W)) = m + p)]
-  (o₁ : Orientation ℝ U (Fin n)) (o₂ : Orientation ℝ V (Fin m)) (o₃ : Orientation ℝ W (Fin p))
-  (o₁₂ : Orientation ℝ (WithLp 2 (U × V)) (Fin (n + m)))
-  (o₂₃ : Orientation ℝ (WithLp 2 (V × W)) (Fin (m + p)))
-  (o₁₂_₃ : Orientation ℝ (WithLp 2 (WithLp 2 (U × V) × W)) (Fin (n + m + p)))
-  (o₁_₂₃ : Orientation ℝ (WithLp 2 (U × WithLp 2 (V × W))) (Fin (n + (m + p))))
-
-/-- `LinearIsometryEquiv.withLpProdAssoc` carries the left-associated ordered product orientation
-to the right-associated one, reindexed along `(add_assoc n m p).symm`. -/
-theorem map_withLpProdAssoc_orientation
-    (ho₁₂ : o₁₂.map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (U × V)) =
-      o₁.prod o₂ Fact.out Fact.out)
-    (ho₂₃ : o₂₃.map (Fin (m + p)) (WithLp.linearEquiv 2 ℝ (V × W)) =
-      o₂.prod o₃ Fact.out Fact.out)
-    (ho₁₂_₃ : o₁₂_₃.map (Fin (n + m + p))
-      (WithLp.linearEquiv 2 ℝ (WithLp 2 (U × V) × W)) =
-      o₁₂.prod o₃ Fact.out Fact.out)
-    (ho₁_₂₃ : o₁_₂₃.map (Fin (n + (m + p)))
-      (WithLp.linearEquiv 2 ℝ (U × WithLp 2 (V × W))) =
-      o₁.prod o₂₃ Fact.out Fact.out) :
-    o₁₂_₃.map (Fin (n + m + p)) (LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W).toLinearEquiv =
-      Orientation.reindex ℝ _ (finCongr (add_assoc n m p).symm) o₁_₂₃ := by
-  let eL := (WithLp.linearEquiv 2 ℝ (WithLp 2 (U × V) × W)).trans
-    ((WithLp.linearEquiv 2 ℝ (U × V)).prodCongr (LinearEquiv.refl ℝ W))
-  let eR := (WithLp.linearEquiv 2 ℝ (U × WithLp 2 (V × W))).trans
-    ((LinearEquiv.refl ℝ U).prodCongr (WithLp.linearEquiv 2 ℝ (V × W)))
-  have hcomm : (LinearIsometryEquiv.withLpProdAssoc 2 ℝ U V W).toLinearEquiv.trans eR =
-      eL.trans (LinearEquiv.prodAssoc ℝ U V W) := by ext x <;> rfl
-  have hL : o₁₂_₃.map (Fin (n + m + p)) eL =
-      (o₁.prod o₂ Fact.out Fact.out).prod o₃
-        (by rw [Module.finrank_prod, (Fact.out : finrank ℝ U = n), (Fact.out : finrank ℝ V = m)])
-        Fact.out := by
-    rw [Orientation.map_trans, ho₁₂_₃, Orientation.map_prod, ho₁₂, Orientation.map_refl,
-      Equiv.refl_apply]
-  have hR : o₁_₂₃.map (Fin (n + (m + p))) eR =
-      o₁.prod (o₂.prod o₃ Fact.out Fact.out) Fact.out
-        (by rw [Module.finrank_prod, (Fact.out : finrank ℝ V = m),
-          (Fact.out : finrank ℝ W = p)]) := by
-    rw [Orientation.map_trans, ho₁_₂₃, Orientation.map_prod, ho₂₃, Orientation.map_refl,
-      Equiv.refl_apply]
-  refine (Orientation.map (Fin (n + m + p)) eR).injective ?_
-  rw [← Orientation.map_trans, hcomm, Orientation.map_trans, hL, Orientation.map_prodAssoc_prod,
-    Orientation.map_reindex, hR]
-
-end Orientation
 
 variable {U V W : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V]
@@ -222,7 +169,8 @@ theorem map_withLpProdAssoc_complexVolume
   rw [map_complexVolume o₁₂_₃ (QuadraticMap.IsometryEquiv.withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃)
       (QuadraticMap.IsometryEquiv.norm_withLpProdAssoc hQ₁₂ hQ₂₃ hQ₁₂_₃ hQ₁_₂₃),
     QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdAssoc_eq_linearIsometryEquiv,
-    map_withLpProdAssoc_orientation o₁ o₂ o₃ o₁₂ o₂₃ o₁₂_₃ o₁_₂₃ ho₁₂ ho₂₃ ho₁₂_₃ ho₁_₂₃,
+    Orientation.map_withLpProdAssoc o₁ o₂ o₃ o₁₂ o₂₃ o₁₂_₃ o₁_₂₃ Fact.out Fact.out Fact.out
+      ho₁₂ ho₂₃ ho₁₂_₃ ho₁_₂₃,
     complexVolume_reindex_finCongr]
 
 end ComplexVolume

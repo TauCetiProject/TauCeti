@@ -343,7 +343,7 @@ private theorem span_real_mixedImage_of_span_eq_top {Λ : Submodule (𝓞 K) (ι
       ext1 i
       simp [Finset.sum_apply, map_sum]
     rw [this]
-    exact V.sum_mem fun k _ ↦ hsmul (f k) _ (g k).2
+    exact V.sum_mem fun k _ ↦ hsmul (f k) _ (g k).property
   refine eq_top_iff.mpr ?_
   rw [← (Pi.basis fun _ : ι ↦ latticeBasis K).span_eq, span_le]
   rintro _ ⟨⟨i, j⟩, rfl⟩

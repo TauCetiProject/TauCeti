@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Algebra.Algebra.Prod
 
 /-!
-# Algebra maps out of a product that factor through a coordinate
+# Algebra maps into and out of products
 
 An algebra map `φ : A × C →ₐ[F] B` does not restrict to the first factor on the nose, because
 `a ↦ (a, 0)` is not unital and so is not an algebra map.  It does restrict once `φ (1, 0) = 1`:
@@ -17,7 +17,8 @@ that hypothesis supplies exactly the missing unitality, and `a ↦ φ (a, 0)` is
 `A →ₐ[F] B`.
 
 This is why there is no `AlgHom.inl` upstream to compose with, and what
-`AlgHom.prodFirst` provides instead.
+`AlgHom.prodFirst` provides instead. The file also records the apply lemmas of Mathlib's
+`AlgHom.prodMap`.
 
 ## Main declarations
 
@@ -27,6 +28,7 @@ This is why there is no `AlgHom.inl` upstream to compose with, and what
 * `AlgHom.prodFirst_comp_fst`: the coordinate map is a factorisation -- precomposing with the first
   projection returns `φ`.
 * `AlgHom.prodFirst_surjective_iff`: it is surjective exactly when `φ` is.
+* `AlgHom.coe_prodMap`, `AlgHom.prodMap_apply`: `f.prodMap g` acts as `Prod.map f g`.
 -/
 
 public section
@@ -85,6 +87,17 @@ theorem prodFirst_surjective_iff (φ : (A × C) →ₐ[F] B) (hu : φ (1, 0) = 1
     Function.Surjective (prodFirst φ hu) ↔ Function.Surjective φ := by
   conv_rhs => rw [← prodFirst_comp_fst φ hu, AlgHom.coe_comp]
   exact (Function.Surjective.of_comp_iff _ Prod.fst_surjective).symm
+
+/-- The product map `f.prodMap g` is `Prod.map f g` as a function. -/
+@[simp]
+theorem coe_prodMap {D : Type*} [Semiring D] [Algebra F D] (f : A →ₐ[F] B) (g : C →ₐ[F] D) :
+    ⇑(f.prodMap g) = Prod.map f g :=
+  (rfl)
+
+/-- The product map `f.prodMap g` applies `f` and `g` coordinatewise. -/
+theorem prodMap_apply {D : Type*} [Semiring D] [Algebra F D] (f : A →ₐ[F] B) (g : C →ₐ[F] D)
+    (p : A × C) : f.prodMap g p = (f p.1, g p.2) :=
+  (rfl)
 
 end Semiring
 

@@ -7,18 +7,19 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Torus.CharacterLattice.Faithful
 public import TauCeti.Algebra.AlgebraicGroup.Torus.CharacterLattice.EssentialImage
-import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.Descent
+import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.SeparableDescent
 
 /-!
-# Tori and Galois lattices over perfect fields
+# Tori and Galois lattices over arbitrary fields
 
 The geometric character-lattice functor is an equivalence from coordinate Hopf algebras of
-tori over a perfect field to continuous integral Galois lattices. On the corresponding group
+tori over any field to continuous integral Galois lattices. On the corresponding group
 schemes this is the usual anti-equivalence. Fullness follows by descending equivariant geometric
-character maps; faithfulness and essential surjectivity hold over arbitrary fields.
+character maps through the separable closure; faithfulness and essential surjectivity already
+hold over arbitrary fields.
 
-The perfectness assumption is used only for descent from the algebraic closure. No choice of
-splitting field is needed to recover a morphism from its character map.
+The separable closure splits both tori and is Galois over the ground field. No choice of
+a finite splitting field is needed to recover a morphism from its character map.
 
 ## References
 
@@ -33,22 +34,25 @@ namespace TauCeti.TorusCommHopfAlgCat
 
 universe u
 
-variable {k : Type u} [Field k] [PerfectField k]
+variable {k : Type u} [Field k]
 
-/-- Over a perfect field, every equivariant morphism of character lattices is induced by
+/-- Over any field, every equivariant morphism of character lattices is induced by
 a morphism of torus coordinate Hopf algebras. -/
 noncomputable instance characterLatticeFunctor_full :
     (characterLatticeFunctor (k := k)).Full where
   map_surjective {S T} f := by
     let q := eqToHom (characterLatticeFunctor_obj_obj S).symm ≫ f.hom ≫
       eqToHom (characterLatticeFunctor_obj_obj T)
-    obtain ⟨g, hg⟩ := S.property.multiplicativeType.geometricCharacterRepresentationMap_surjective q
+    have hS := S.property.multiplicativeType
+    obtain ⟨g, hg⟩ :=
+      hS.geometricCharacterRepresentationMap_surjective_of_multiplicativeType
+        T.property.multiplicativeType q
     refine ⟨ObjectProperty.homMk (ObjectProperty.homMk g), ?_⟩
     apply ObjectProperty.hom_ext
     simp only [characterLatticeFunctor_map_hom, ObjectProperty.homMk_hom, hg, q]
     simp
 
-/-- The character-lattice functor classifies tori over a perfect field. Its variance here
+/-- The character-lattice functor classifies tori over any field. Its variance here
 is covariant because the source category consists of coordinate Hopf algebras. -/
 noncomputable instance characterLatticeFunctor_isEquivalence :
     (characterLatticeFunctor (k := k)).IsEquivalence where

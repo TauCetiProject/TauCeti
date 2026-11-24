@@ -9,24 +9,39 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
-# Unit laws for the graded tensor product of Clifford modules
+# Unit laws of the graded tensor product of Clifford modules
 
-When one quadratic summand in `Q₁.prod Q₂` is trivial, its generators vanish in the Clifford
-algebra, and `TensorProduct.lid` and `TensorProduct.rid` compare `AlgHom.cliffordProdTensor` with
-the action on the remaining factor:
+A zero space is a unit for the graded tensor product `AlgHom.cliffordProdTensor`, provided the
+first factor carries the trivial grading.
 
-* **Left unit** (`Unique M₁`): grading `R` by `1` makes `lid R F` intertwine `cliffordProdTensor`
-  with `ρ₂` along `QuadraticMap.IsometryEquiv.uniqueProd`
-  (`AlgHom.conjAlgEquiv_cliffordProdTensor_uniqueProd`, `AlgHom.lid_cliffordProdTensor`), whereas
-  grading `R` by `-1` negates every vector of `M₂` (`AlgHom.lid_cliffordProdTensor_neg_one_ι_inr`).
-* **Right unit** (`Unique M₂`): `rid R E` intertwines `cliffordProdTensor` with `ρ₁` along
-  `QuadraticMap.IsometryEquiv.prodUnique` for any grading `γ` on `E`
-  (`AlgHom.conjAlgEquiv_cliffordProdTensor_prodUnique`, `AlgHom.rid_cliffordProdTensor`).
+* **Left unit.** If `M₁` is the zero space, its vectors act by zero, so with the grading `γ = 1`
+  of `E` a vector `(0, w)` acts on `E ⊗ F` by `1 ⊗ c₂(w)`. The whole action is then
+  `1 ⊗ ρ₂`, after deleting the zero summand with `QuadraticMap.IsometryEquiv.uniqueProd`. For
+  `E = R` the left unitor `R ⊗ F ≃ F` intertwines the two actions.
+* **Right unit.** If `M₂` is the zero space, a vector `(v, 0)` acts by `c₁(v) ⊗ 1`, whatever the
+  grading `γ` of `E`, and the whole action is `ρ₁ ⊗ 1` after deleting the zero summand with
+  `QuadraticMap.IsometryEquiv.prodUnique`. For `F = R` the right unitor `E ⊗ R ≃ E` intertwines
+  the two actions.
+
+For the chirality grading of a spinor module, the zero space with its positive orientation has
+`Γ = 1` (`CliffordAlgebra.complexVolume_positiveOrientation`), so it is a two-sided unit. With the
+negative orientation, `Γ = -1` and `c(0, w) = -1 ⊗ c₂(w)`, which the left unitor carries to
+`-c₂(w)` rather than `c₂(w)`: the unit is the positively oriented point. No finiteness or
+invertibility of two is needed.
+
+## Main results
+
+* `AlgHom.cliffordProdTensor_eq_lTensor`: for `M₁ = 0` and `γ = 1`, the action is `1 ⊗ ρ₂`.
+* `AlgHom.lid_cliffordProdTensor`: for `M₁ = 0`, `E = R` and `γ = 1`, the left unitor intertwines
+  the actions.
+* `AlgHom.cliffordProdTensor_eq_rTensor`: for `M₂ = 0`, the action is `ρ₁ ⊗ 1`.
+* `AlgHom.rid_cliffordProdTensor`: for `M₂ = 0` and `F = R`, the right unitor intertwines the
+  actions.
 
 ## References
 
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed. (2007), Definition 2.2.42.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §1 and §5.
-* M. F. Atiyah, R. Bott and A. Shapiro, *Clifford modules*, Topology 3 (1964), §1.
 -/
 
 public section
@@ -40,77 +55,76 @@ variable {R M₁ M₂ E F : Type*} [CommRing R]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
   [AddCommGroup E] [Module R E] [AddCommGroup F] [Module R F]
 
-/-- **Left unit of the graded tensor product**: when `M₁` is trivial and `R` is graded by `1`,
-conjugating by the left unitor `TensorProduct.lid R F` identifies `AlgHom.cliffordProdTensor` with
-`ρ₂` transported along `QuadraticMap.IsometryEquiv.uniqueProd`. -/
-theorem conjAlgEquiv_cliffordProdTensor_uniqueProd [Unique M₁]
-    (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R)
-    (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F) :
-    ((TensorProduct.lid R F).conjAlgEquiv R).toAlgHom.comp
-        (cliffordProdTensor ρ₁ 1 (mul_one 1)
-          (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂) =
-      ρ₂.comp (equivOfIsometry (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂)).toAlgHom := by
-  refine CliffordAlgebra.hom_ext <| LinearMap.ext fun ⟨x₁, x₂⟩ ↦ LinearMap.ext fun f ↦ ?_
-  rw [Subsingleton.elim x₁ 0]
-  simp [LinearEquiv.conjAlgEquiv_apply, equivOfIsometry_apply]
+section Left
 
-/-- The left unitor `TensorProduct.lid R F` intertwines the positively graded left-unit tensor
-product action with `ρ₂`. -/
-theorem lid_cliffordProdTensor [Unique M₁]
-    (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R)
-    (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F)
+variable [Unique M₁] (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E)
+  (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F)
+
+/-- **Left unit law of the graded tensor product.** If `M₁` is the zero space and `E` carries the
+trivial grading `γ = 1`, then `CliffordAlgebra (Q₁.prod Q₂)` acts on `E ⊗ F` by `1 ⊗ ρ₂`, after
+deleting the zero summand with `QuadraticMap.IsometryEquiv.uniqueProd`. -/
+theorem cliffordProdTensor_eq_lTensor (a : CliffordAlgebra (Q₁.prod Q₂)) :
+    cliffordProdTensor ρ₁ 1 (one_mul 1)
+        (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂ a =
+      (ρ₂ (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry a)).lTensor E := by
+  induction a using CliffordAlgebra.induction with
+  | algebraMap r => simp [Algebra.algebraMap_eq_smul_one, Module.End.one_eq_id]
+  | ι x =>
+    simp [cliffordProdTensor_ι, Subsingleton.elim x.1 0, LinearMap.lTensor_def,
+      Module.End.one_eq_id]
+  | add a b ha hb => rw [map_add, ha, hb, map_add, map_add, LinearMap.lTensor_add]
+  | mul a b ha hb => rw [map_mul, ha, hb, map_mul, map_mul, LinearMap.lTensor_mul]
+
+/-- **The left unitor intertwines the graded tensor product with the second factor.** If `M₁` is
+the zero space acting on `E = R` with the trivial grading, then `R ⊗ F ≃ F`, `r ⊗ f ↦ r • f`,
+carries the action of `a` to that of its image in `CliffordAlgebra Q₂` under
+`QuadraticMap.IsometryEquiv.uniqueProd`. -/
+theorem lid_cliffordProdTensor (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R)
     (a : CliffordAlgebra (Q₁.prod Q₂)) (z : R ⊗[R] F) :
     TensorProduct.lid R F
-        (cliffordProdTensor ρ₁ 1 (mul_one 1)
+        (cliffordProdTensor ρ₁ 1 (one_mul 1)
           (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂ a z) =
-      ρ₂ (equivOfIsometry (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂) a)
+      ρ₂ (map (QuadraticMap.IsometryEquiv.uniqueProd Q₁ Q₂).toIsometry a)
         (TensorProduct.lid R F z) := by
-  simpa [LinearEquiv.conjAlgEquiv_apply] using
-    congrArg (fun g ↦ g a (TensorProduct.lid R F z))
-      (conjAlgEquiv_cliffordProdTensor_uniqueProd ρ₁ ρ₂)
-
-/-- Grading the trivial left factor `R` by `-1` instead of `1` negates the action of every vector
-of `M₂` under `TensorProduct.lid R F`, so the unitor does not intertwine the two actions when a
-vector acts nontrivially. -/
-theorem lid_cliffordProdTensor_neg_one_ι_inr [Subsingleton M₁]
-    (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R R)
-    (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F) (w : M₂) (z : R ⊗[R] F) :
-    TensorProduct.lid R F
-        (cliffordProdTensor ρ₁ (-1) (by ext; simp)
-          (fun v ↦ by simp [Subsingleton.elim v 0]) ρ₂
-          (ι (Q₁.prod Q₂) (0, w)) z) =
-      -ρ₂ (ι Q₂ w) (TensorProduct.lid R F z) := by
-  rw [cliffordProdTensor_ι_inr]
+  rw [cliffordProdTensor_eq_lTensor]
   induction z using TensorProduct.inductionOn with
   | tmul r f => simp
-  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add, neg_add]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
-/-- **Right unit of the graded tensor product**: when `M₂` is trivial, conjugating by the right
-unitor `TensorProduct.rid R E` identifies `AlgHom.cliffordProdTensor` with `ρ₁` transported along
-`QuadraticMap.IsometryEquiv.prodUnique`, for any grading `γ` on `E`. -/
-theorem conjAlgEquiv_cliffordProdTensor_prodUnique [Unique M₂]
-    (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E) (γ : Module.End R E)
-    (hγ : γ * γ = 1) (hγρ : ∀ v, γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ))
-    (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R R) :
-    ((TensorProduct.rid R E).conjAlgEquiv R).toAlgHom.comp
-        (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂) =
-      ρ₁.comp (equivOfIsometry (QuadraticMap.IsometryEquiv.prodUnique Q₁ Q₂)).toAlgHom := by
-  refine CliffordAlgebra.hom_ext <| LinearMap.ext fun ⟨x₁, x₂⟩ ↦ LinearMap.ext fun e ↦ ?_
-  rw [Subsingleton.elim x₂ 0]
-  simp [LinearEquiv.conjAlgEquiv_apply, equivOfIsometry_apply]
+end Left
 
-/-- The right unitor `TensorProduct.rid R E` intertwines the right-unit graded tensor product
-action with `ρ₁`. -/
-theorem rid_cliffordProdTensor [Unique M₂]
-    (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E) (γ : Module.End R E)
-    (hγ : γ * γ = 1) (hγρ : ∀ v, γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ))
-    (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R R)
+section Right
+
+variable [Unique M₂] (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E) (γ : Module.End R E)
+  (hγ : γ * γ = 1) (hγρ : ∀ v, γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ))
+  (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F)
+
+/-- **Right unit law of the graded tensor product.** If `M₂` is the zero space, then
+`CliffordAlgebra (Q₁.prod Q₂)` acts on `E ⊗ F` by `ρ₁ ⊗ 1`, after deleting the zero summand with
+`QuadraticMap.IsometryEquiv.prodUnique`, whatever the grading of `E`. -/
+theorem cliffordProdTensor_eq_rTensor (a : CliffordAlgebra (Q₁.prod Q₂)) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ a =
+      (ρ₁ (map (QuadraticMap.IsometryEquiv.prodUnique Q₁ Q₂).toIsometry a)).rTensor F := by
+  induction a using CliffordAlgebra.induction with
+  | algebraMap r => simp [Algebra.algebraMap_eq_smul_one, Module.End.one_eq_id]
+  | ι x =>
+    simp [cliffordProdTensor_ι, Subsingleton.elim x.2 0]
+  | add a b ha hb => rw [map_add, ha, hb, map_add, map_add, LinearMap.rTensor_add]
+  | mul a b ha hb => rw [map_mul, ha, hb, map_mul, map_mul, LinearMap.rTensor_mul]
+
+/-- **The right unitor intertwines the graded tensor product with the first factor.** If `M₂` is
+the zero space acting on `F = R`, then `E ⊗ R ≃ E`, `e ⊗ r ↦ r • e`, carries the action of `a` to
+that of its image in `CliffordAlgebra Q₁` under `QuadraticMap.IsometryEquiv.prodUnique`. -/
+theorem rid_cliffordProdTensor (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R R)
     (a : CliffordAlgebra (Q₁.prod Q₂)) (z : E ⊗[R] R) :
     TensorProduct.rid R E (cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ a z) =
-      ρ₁ (equivOfIsometry (QuadraticMap.IsometryEquiv.prodUnique Q₁ Q₂) a)
+      ρ₁ (map (QuadraticMap.IsometryEquiv.prodUnique Q₁ Q₂).toIsometry a)
         (TensorProduct.rid R E z) := by
-  simpa [LinearEquiv.conjAlgEquiv_apply] using
-    congrArg (fun g ↦ g a (TensorProduct.rid R E z))
-      (conjAlgEquiv_cliffordProdTensor_prodUnique ρ₁ γ hγ hγρ ρ₂)
+  rw [cliffordProdTensor_eq_rTensor]
+  induction z using TensorProduct.inductionOn with
+  | tmul e r => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+end Right
 
 end AlgHom

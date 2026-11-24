@@ -71,13 +71,13 @@ theorem const_eq_zero_iff (hg : g ∈ HomogeneousIdeal.irrelevant 𝒜) {i j : �
     const h r s hr hs _ hU = 0 ↔ ∃ N, g ^ N * r = 0 := by
   refine ⟨fun h0 ↦ ProjectiveSpectrum.exists_pow_mul_eq_zero hg hr fun x hx ↦ ?_,
     fun ⟨N, hN⟩ ↦ ext fun x ↦ ?_⟩
-  · have e := (const_apply ..).symm.trans (congr($h0.1 ⟨x, hx⟩).trans (zero_apply _))
+  · have e := (const_apply ..).symm.trans (congr(($h0).val ⟨x, hx⟩).trans (zero_apply _))
     rw [Localization.mk_eq_mk'_apply, IsLocalization.mk'_eq_zero_iff] at e
     obtain ⟨⟨c, hc⟩, hcr⟩ := e
     exact ⟨c, hc, hcr⟩
   · refine (const_apply ..).trans (Eq.trans ?_ (zero_apply x).symm)
     rw [Localization.mk_eq_mk'_apply, IsLocalization.mk'_eq_zero_iff]
-    exact ⟨⟨g ^ N, fun hgN ↦ x.2 (x.1.isPrime.mem_of_pow_mem N hgN)⟩, hN⟩
+    exact ⟨⟨g ^ N, fun hgN ↦ x.property (x.val.isPrime.mem_of_pow_mem N hgN)⟩, hN⟩
 
 /-- **Equality of fractions on a standard open.** For `g` in the irrelevant ideal, for instance
 homogeneous of positive degree, the sections `r / s` and `r' / s'` of `𝒪(n)` agree on `D₊(g)` iff
@@ -100,7 +100,7 @@ theorem exists_eq_const_basicOpen {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (hd : 0 
         (basicOpen 𝒜 f) (fun x hx ↦ fun hfk ↦ hx (x.isPrime.mem_of_pow_mem k hfk)) := by
   -- near each point `x` of `D₊(f)`, the section `s` is a fraction `r x / g x` on `D₊(g x)`
   choose i j h r g hr hg iU hi hxg H using
-    fun x : basicOpen 𝒜 f ↦ locally_const_basicOpen s x.1 x.2
+    fun x : basicOpen 𝒜 f ↦ locally_const_basicOpen s x.val x.property
   -- on `D₊(g x * g y)`, the fractions `r x / g x` and `r y / g y` agree
   have hN (x y : basicOpen 𝒜 f) : ∃ N, (g x * g y) ^ N * (g y * r x - g x * r y) = 0 := by
     have hle := (basicOpen_mul 𝒜 (g x) (g y)).le
@@ -115,10 +115,10 @@ theorem exists_eq_const_basicOpen {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (hd : 0 
   choose N hN using hN
   -- finitely many `D₊(g x)` cover `D₊(f)`; over them, normalize to a common exponent `M`
   obtain ⟨t, ht⟩ := (isAffineOpen_basicOpen 𝒜 f hf hd).isCompact.elim_finite_subcover
-    (fun x ↦ (basicOpen 𝒜 (g x) : Set (Proj 𝒜))) (fun _ ↦ (basicOpen 𝒜 _).2)
+    (fun x ↦ (basicOpen 𝒜 (g x) : Set (Proj 𝒜))) (fun _ ↦ (basicOpen 𝒜 _).is_open')
     (fun x hx ↦ Set.mem_iUnion_of_mem ⟨x, hx⟩ (hxg _))
-  have hcover (y : basicOpen 𝒜 f) : ∃ x : t, y.1 ∈ basicOpen 𝒜 (g x) := by
-    obtain ⟨x, hxt, hyx⟩ := Set.mem_iUnion₂.1 (ht y.2)
+  have hcover (y : basicOpen 𝒜 f) : ∃ x : t, y.val ∈ basicOpen 𝒜 (g x) := by
+    obtain ⟨x, hxt, hyx⟩ := Set.mem_iUnion₂.1 (ht y.property)
     exact ⟨⟨x, hxt⟩, hyx⟩
   let M := (t ×ˢ t).sup fun p ↦ N p.1 p.2
   have hnorm (x z : t) :
@@ -138,11 +138,11 @@ theorem exists_eq_const_basicOpen {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (hd : 0 
   refine ⟨k, J, hJ, R, hR, ext fun y ↦ ?_⟩
   obtain ⟨x, hyx⟩ := hcover y
   -- both values are fractions in the localization at `y`, by `res_apply` and `const_apply`
-  have e := res_apply (iU x) s ⟨y.1, hyx⟩
+  have e := res_apply (iU x) s ⟨y.val, hyx⟩
   rw [H x, const_apply] at e
   refine e.symm.trans (Eq.trans ?_ (const_apply hJ R (f ^ k) hR _ _ y).symm)
   refine Localization.mk_eq_mk_iff.2 (Localization.r_iff_exists.2
-    ⟨⟨g x ^ M, fun hgM ↦ hyx (y.1.isPrime.mem_of_pow_mem M hgM)⟩, ?_⟩)
+    ⟨⟨g x ^ M, fun hgM ↦ hyx (y.val.isPrime.mem_of_pow_mem M hgM)⟩, ?_⟩)
   linear_combination (hgR x).symm
 
 end AlgebraicGeometry.Proj.twistingSheaf

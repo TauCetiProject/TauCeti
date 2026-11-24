@@ -62,12 +62,12 @@ in the residue sequence gives this injectivity. -/
 theorem cohomologyδ_residueShortComplex_zero_injective_of_genus_pos (hgenus : 0 < X.genus k) :
     Function.Injective (Scheme.Modules.cohomologyδ
       (residueShortComplex_shortExact
-        (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out p.2) hg)
+        (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out p.property) hg)
       0 1 rfl) := by
   let S := residueShortComplex g hg
   have hS : S.ShortExact :=
     residueShortComplex_shortExact
-      (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out p.2) hg
+      (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out p.property) hg
   have hi : Function.Surjective (Scheme.Modules.cohomologyMap S.f 0) := by
     -- Transport the whole short complex, including the dependent cohomology carriers.
     exact (congrArg (fun C : ShortComplex X.Modules ↦
@@ -86,12 +86,12 @@ theorem cohomologyδ_residueShortComplex_zero_bijective_of_genus_eq_one
     (hgenus : X.genus k = 1) :
     Function.Bijective (Scheme.Modules.cohomologyδ
       (residueShortComplex_shortExact
-        (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out p.2) hg)
+        (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out p.property) hg)
       0 1 rfl) := by
   let S := residueShortComplex g hg
   have hS : S.ShortExact :=
     residueShortComplex_shortExact
-      (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out p.2) hg
+      (isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hX.out p.property) hg
   have : FiniteDimensional k (Scheme.Modules.Cohomology S.X₃ 0) := by
     dsimp only [S]
     rw [residueShortComplex_X₃]

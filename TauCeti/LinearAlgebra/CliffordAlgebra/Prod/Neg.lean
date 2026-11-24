@@ -8,18 +8,31 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 
 /-!
-# Negating the grading in a graded tensor product of Clifford modules
+# Negating the grading in the graded tensor product of Clifford modules
 
-Replacing the grading operator `γ` of `E` by `-γ` in `AlgHom.cliffordProdTensor` changes the
-generator action `c₁(v) ⊗ 1 + γ ⊗ c₂(w)` into `c₁(v) ⊗ 1 - γ ⊗ c₂(w)`. Whenever `F` carries an
-endomorphism `δ` anticommuting with every `c₂(w)`, `1 ⊗ δ` (`LinearMap.lTensor E δ`) intertwines
-the `-γ`-graded tensor product action with the `γ`-graded one on the entire Clifford algebra
-(`AlgHom.lTensor_comp_cliffordProdTensor_neg`), conjugating one into the other when `δ` is an
-involution (`AlgHom.conjAlgEquiv_cliffordProdTensor_neg`).
+The graded tensor product `AlgHom.cliffordProdTensor` of `E` and `F` depends on the grading `γ`
+of `E`: a vector `(v, w)` acts by `c₁(v) ⊗ 1 + γ ⊗ c₂(w)`. Replacing `γ` by `-γ` changes the sign
+of the second summand. If `δ` is an operator on `F` anticommuting with every `c₂(w)`, for instance
+a grading of `F`, then `1 ⊗ δ` commutes with `c₁(v) ⊗ 1` and carries `γ ⊗ c₂(w)` to
+`-γ ⊗ c₂(w)`, so it intertwines the two graded tensor products
+(`AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg`). When `δ` is an involution this is a
+conjugation (`AlgHom.cliffordProdTensor_of_eq_neg`).
+
+For spinor modules graded by their chirality, reversing the orientation of the first space negates
+its chirality, so this is the orientation-reversal law of the graded product; see
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod.lean`. No finiteness or invertibility of
+two is needed.
+
+## Main results
+
+* `AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg`: `1 ⊗ δ` intertwines the graded tensor
+  products for `γ` and `-γ`.
+* `AlgHom.cliffordProdTensor_of_eq_neg`: for an involution `δ`, the graded tensor product for
+  `-γ` is the conjugate of that for `γ` by `1 ⊗ δ`.
 
 ## References
 
-* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §1 and §5.
 * M. F. Atiyah, R. Bott and A. Shapiro, *Clifford modules*, Topology 3 (1964), §1.
 -/
 
@@ -35,50 +48,41 @@ variable {R M₁ M₂ E F : Type*} [CommRing R]
   [AddCommGroup E] [Module R E] [AddCommGroup F] [Module R F]
   (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E) (γ : Module.End R E)
   (hγ : γ * γ = 1) (hγρ : ∀ v, γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ))
-  (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F)
+  (γ' : Module.End R E) (hγ' : γ' * γ' = 1) (hγ'ρ : ∀ v, γ' * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ'))
+  (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F) {δ : Module.End R F}
+  (hδρ : ∀ w, δ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * δ))
 
-/-- With negated grading `-γ`, a vector `(v, w)` acts by `c₁(v) ⊗ 1 - γ ⊗ c₂(w)`. -/
-theorem cliffordProdTensor_neg_ι (x : M₁ × M₂) :
-    cliffordProdTensor ρ₁ (-γ) (by rw [neg_mul_neg, hγ])
-        (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]) ρ₂ (ι (Q₁.prod Q₂) x) =
-      (ρ₁ (ι Q₁ x.1)).rTensor F - TensorProduct.map γ (ρ₂ (ι Q₂ x.2)) :=
-  TensorProduct.ext' fun _ _ ↦ by simp [cliffordProdTensor_ι_tmul, neg_tmul, sub_eq_add_neg]
-
-/-- **Intertwining the negated-grading product action**: if `δ` anticommutes with every generator
-of `Q₂` on `F`, then `1 ⊗ δ` intertwines the `-γ`-graded tensor product action with the `γ`-graded
-one on every element of `CliffordAlgebra (Q₁.prod Q₂)`. No square-one assumption on `δ` is
-needed. -/
-theorem lTensor_comp_cliffordProdTensor_neg {δ : Module.End R F}
-    (hδρ : ∀ w, δ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * δ))
+include hδρ in
+/-- **Negating the grading of the first factor.** If `γ' = -γ` and `δ` anticommutes with every
+vector acting on `F`, then `1 ⊗ δ` intertwines the graded tensor product for the grading `γ` with
+that for `γ'`: on a vector, it carries `c₁(v) ⊗ 1 + γ ⊗ c₂(w)` to `c₁(v) ⊗ 1 - γ ⊗ c₂(w)`. -/
+theorem lTensor_mul_cliffordProdTensor_of_eq_neg (h : γ' = -γ)
     (a : CliffordAlgebra (Q₁.prod Q₂)) :
-    δ.lTensor E ∘ₗ cliffordProdTensor ρ₁ (-γ) (by rw [neg_mul_neg, hγ])
-        (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]) ρ₂ a =
-      cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ a ∘ₗ δ.lTensor E := by
+    δ.lTensor E * cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ a =
+      cliffordProdTensor ρ₁ γ' hγ' hγ'ρ ρ₂ a * δ.lTensor E := by
+  subst h
   induction a using CliffordAlgebra.induction with
-  | algebraMap r => ext z; simp [Algebra.algebraMap_eq_smul_one]
-  | ι v =>
+  | algebraMap r => simp [Algebra.algebraMap_eq_smul_one]
+  | ι x =>
     refine TensorProduct.ext' fun e f ↦ ?_
-    have hf := LinearMap.congr_fun (hδρ v.2) f
+    have hf := LinearMap.congr_fun (hδρ x.2) f
     simp only [mul_apply_eq_comp, LinearMap.neg_apply] at hf
-    simp [cliffordProdTensor_ι_tmul, hf, tmul_neg, neg_tmul]
-  | add a b ha hb => simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
-  | mul a b ha hb =>
-    simp only [map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ha]
-    rw [LinearMap.comp_assoc, hb, ← LinearMap.comp_assoc]
+    simp [cliffordProdTensor_ι_tmul, hf, TensorProduct.tmul_neg, TensorProduct.neg_tmul]
+  | add a b ha hb => rw [map_add, map_add, mul_add, add_mul, ha, hb]
+  | mul a b ha hb => rw [map_mul, map_mul, ← mul_assoc, ha, mul_assoc, hb, mul_assoc]
 
-/-- When `δ` is an involution of `F` anticommuting with every generator of `Q₂`, conjugating by
-`1 ⊗ δ` carries the `-γ`-graded tensor product action to the `γ`-graded one. -/
-theorem conjAlgEquiv_cliffordProdTensor_neg {δ : Module.End R F}
-    (hδ : Function.Involutive δ) (hδρ : ∀ w, δ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * δ)) :
-    (((LinearEquiv.ofInvolutive δ hδ).lTensor E).conjAlgEquiv R).toAlgHom.comp
-        (cliffordProdTensor ρ₁ (-γ) (by rw [neg_mul_neg, hγ])
-          (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]) ρ₂) =
-      cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ := by
-  refine AlgHom.ext fun a ↦ ?_
-  have he : ((LinearEquiv.ofInvolutive δ hδ).lTensor E).toLinearMap = δ.lTensor E :=
-    TensorProduct.ext' fun _ _ ↦ rfl
-  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearEquiv.conjAlgEquiv_apply,
-    ← LinearMap.comp_assoc, eq_comm, LinearEquiv.eq_comp_toLinearMap_symm, eq_comm, he]
-  exact lTensor_comp_cliffordProdTensor_neg ρ₁ γ hγ hγρ ρ₂ hδρ a
+include hδρ in
+/-- **Negating the grading of the first factor is a conjugation.** If `γ' = -γ` and `δ` is an
+involution anticommuting with every vector acting on `F`, then the graded tensor product for the
+grading `γ'` is the conjugate of that for `γ` by `1 ⊗ δ`. -/
+theorem cliffordProdTensor_of_eq_neg (hδ : δ * δ = 1) (h : γ' = -γ)
+    (a : CliffordAlgebra (Q₁.prod Q₂)) :
+    cliffordProdTensor ρ₁ γ' hγ' hγ'ρ ρ₂ a =
+      δ.lTensor E * cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ a * δ.lTensor E := by
+  have hδE : δ.lTensor E * δ.lTensor E = 1 := by
+    rw [← LinearMap.lTensor_mul, hδ]
+    exact LinearMap.lTensor_id E F
+  rw [lTensor_mul_cliffordProdTensor_of_eq_neg ρ₁ γ hγ hγρ γ' hγ' hγ'ρ ρ₂ hδρ h, mul_assoc, hδE,
+    mul_one]
 
 end AlgHom

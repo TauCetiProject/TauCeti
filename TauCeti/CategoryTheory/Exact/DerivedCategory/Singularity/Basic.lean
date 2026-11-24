@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Exact.Projective
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Projective.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.MappingCone
+public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Mk
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
 
 /-!
@@ -161,26 +162,27 @@ instance : E.boundedProjective.IsTriangulated where
 
 variable {E} in
 /-- **Splitting off the top term is inverted in the singularity category**: for a bounded complex
-`K` vanishing above degree `n` whose terms below `n` are projective, the inclusion of the top term
-`Kⁿ[-n] ⟶ K` lies in `E.boundedProjective.trW`. -/
+`K` vanishing above degree `n` whose terms below `n` are projective, the class of the inclusion
+`Kⁿ[-n] ⟶ K` of the top term lies in `E.boundedProjective.trW`. -/
 theorem boundedProjective_trW_Q_map_ιTop (K : CochainComplex C ℤ) (n : ℤ) [K.IsStrictlyLE n]
     (hK : CochainComplex.bounded C K) (hP : ∀ k < n, E.isProjective (K.X k)) :
-    E.boundedProjective.trW
-      ((BoundedDerivedCategory.Q E).map (HomotopyCategory.Bounded.ιTop K n hK)) := by
+    E.boundedProjective.trW ((BoundedDerivedCategory.Q E).map
+      (HomotopyCategory.Bounded.mkMap (K.ιTop n) :
+        HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (K.X n)) ⟶
+          HomotopyCategory.Bounded.mk K hK)) := by
   obtain ⟨b, rfl⟩ : ∃ b, n = b + 1 := ⟨n - 1, by lia⟩
   rw [← ObjectProperty.inverseImage_trW_iff]
-  obtain ⟨Z, g, h, hT⟩ :=
-    distinguished_cocone_triangle (HomotopyCategory.Bounded.ιTop K (b + 1) hK)
+  obtain ⟨Z, g, h, hT⟩ := distinguished_cocone_triangle
+    (HomotopyCategory.Bounded.mkMap (K.ιTop (b + 1)) :
+      HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single (b + 1) (K.X (b + 1))) ⟶
+        HomotopyCategory.Bounded.mk K hK)
   refine ((E.boundedProjective.inverseImage (BoundedDerivedCategory.Q E)).trW_iff_of_distinguished _
     hT).2 ?_
+  -- In `K(C)`, the triangle is the mapping cone triangle of `K.ιTop (b + 1)`, on the same first
+  -- two objects (`ι_map_mkMap`).
   have e := isoTriangleOfIso₁₂ _ _ ((HomotopyCategory.Bounded.ι C).map_distinguished _ hT)
     (_root_.HomotopyCategory.mappingCone_triangleh_distinguished (K.ιTop (b + 1)))
-    ((HomotopyCategory.Bounded.singleFunctorCompιIso C (b + 1)).app (K.X (b + 1)) ≪≫
-      eqToIso (_root_.HomotopyCategory.quotient_obj_singleFunctors_obj C _ _).symm)
-    (eqToIso (HomotopyCategory.Bounded.quotient_obj_obj C ⟨K, hK⟩)) (by
-      dsimp
-      rw [HomotopyCategory.Bounded.ιTop_hom]
-      simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id])
+    (Iso.refl _) (Iso.refl _) (by simp)
   obtain ⟨e'⟩ := K.nonempty_iso_quotient_obj_mappingCone_ιTop b
   let L : CochainComplex.Bounded C :=
     ⟨_, CochainComplex.bounded_stupidTrunc_embeddingUpIntLE hK b⟩

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
+public import TauCeti.ModelTheory.RelationalConfiguration.ClassIso
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.SetTheory.Descriptive.Antichain
 import TauCeti.SetTheory.Descriptive.Silver
@@ -102,17 +102,11 @@ variable {L : Language.{u, v}} [L.IsRelational] {ι : Type uι}
 
 variable (V : Type w) in
 /-- Isomorphism of decoded structures, restricted to the configurations on `V` that decode to
-models of `φ`. Its classes are the isomorphism classes of the models of `φ` with carrier `V`.
-It is an abbreviation, so results stated for the restriction of `isoSetoid L V` to an arbitrary
-set of configurations apply to it. -/
+models of `φ`: isomorphism on the class `modelsOf φ`. Its classes are the isomorphism classes of
+the models of `φ` with carrier `V`. It is an abbreviation, so results stated for `classIso` apply
+to it. -/
 abbrev isoSetoidOn (φ : L.SentenceInf ι) : Setoid (modelsOf (V := V) φ) :=
-  (isoSetoid L V).comap Subtype.val
-
-/-- Two models of `φ` are related exactly when their decoded structures are isomorphic. -/
-@[simp]
-theorem isoSetoidOn_apply {V : Type w} {φ : L.SentenceInf ι} {c d : modelsOf (V := V) φ} :
-    isoSetoidOn V φ c d ↔ isoSetoid L V c d :=
-  Iff.rfl
+  classIso (modelsOf φ)
 
 /-- If every model of `φ` on `V` is a model of `ψ`, the models of `φ` on `V` have at most as many
 isomorphism classes as those of `ψ`: the inclusion of model classes is injective on classes. -/
@@ -136,14 +130,14 @@ theorem mk_quotient_isoSetoidOn_le_continuum [∀ n, Countable (L.Relations n)] 
 square of the model class. -/
 theorem isClosed_setOf_isoSetoidOn {V : Type w} [Finite V] (φ : L.SentenceInf ι) :
     IsClosed {p : modelsOf (V := V) φ × modelsOf (V := V) φ | isoSetoidOn V φ p.1 p.2} :=
-  isClosed_setOf_isoSetoid.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
+  isClosed_setOf_isoSetoid.preimage (continuous_subtypeVal.prodMap continuous_subtypeVal)
 
 /-- On a finite carrier, in a language with countably many relation symbols of each arity,
 restricted isomorphism on the model class of `φ` has Borel graph. -/
 theorem measurableSet_setOf_isoSetoidOn [∀ n, Countable (L.Relations n)] {V : Type w} [Finite V]
     (φ : L.SentenceInf ι) :
     MeasurableSet {p : modelsOf (V := V) φ × modelsOf (V := V) φ | isoSetoidOn V φ p.1 p.2} :=
-  measurableSet_setOf_isoSetoid.preimage (measurable_subtype_coe.prodMap measurable_subtype_coe)
+  measurableSet_setOf_isoSetoid.preimage (measurable_subtypeVal.prodMap measurable_subtypeVal)
 
 /-- **Finite-carrier dichotomy (Cantor form).** On a finite carrier, in a language with countably
 many relation symbols of each arity, the models of an infinitary sentence with countable branching
@@ -299,9 +293,9 @@ theorem classOf_eq_inr [Countable M] {n : ℕ} (hM : φ.Realize M) (e : M ≃ Fi
 /-- The class of the structure decoded from a model of `φ` on `ℕ` is the class of that model. -/
 @[simp]
 theorem classOf_toStructure_nat (c : modelsOf (V := ℕ) φ) :
-    letI := c.1.toStructure
-    classOf φ (mem_modelsOf.1 c.2) = .inl ⟦c⟧ := by
-  let := c.1.toStructure
+    letI := c.val.toStructure
+    classOf φ (mem_modelsOf.1 c.property) = .inl ⟦c⟧ := by
+  let := c.val.toStructure
   rw [classOf_eq_inl _ (Equiv.refl ℕ)]
   congr
   simp
@@ -310,9 +304,9 @@ theorem classOf_toStructure_nat (c : modelsOf (V := ℕ) φ) :
 model. -/
 @[simp]
 theorem classOf_toStructure_fin {n : ℕ} (c : modelsOf (V := Fin n) φ) :
-    letI := c.1.toStructure
-    classOf φ (mem_modelsOf.1 c.2) = .inr ⟨n, ⟦c⟧⟩ := by
-  let := c.1.toStructure
+    letI := c.val.toStructure
+    classOf φ (mem_modelsOf.1 c.property) = .inr ⟨n, ⟦c⟧⟩ := by
+  let := c.val.toStructure
   rw [classOf_eq_inr _ (Equiv.refl (Fin n))]
   congr
   simp
@@ -372,13 +366,13 @@ theorem classOf_surjective (q : CountableModelClasses φ) :
   -- Transport the decoded structure `V` of a representative to `ULift V`, in universe `w`.
   have key {V : Type} [Countable V] (c : modelsOf (V := V) φ) :
       ∃ (M : Type w) (_ : L.Structure M) (_ : Countable M) (hM : φ.Realize M),
-        letI := c.1.toStructure
-        classOf φ hM = classOf φ (mem_modelsOf.1 c.2) := by
-    let := c.1.toStructure
+        letI := c.val.toStructure
+        classOf φ hM = classOf φ (mem_modelsOf.1 c.property) := by
+    let := c.val.toStructure
     let e : V ≃ ULift.{w} V := Equiv.ulift.symm
     let := e.inducedStructure (L := L)
     have hM : φ.Realize (ULift.{w} V) :=
-      (StrongHomClass.realize_sentenceInf e.inducedStructureEquiv φ).1 (mem_modelsOf.1 c.2)
+      (StrongHomClass.realize_sentenceInf e.inducedStructureEquiv φ).1 (mem_modelsOf.1 c.property)
     exact ⟨ULift.{w} V, _, inferInstance, hM, classOf_congr e.inducedStructureEquiv.symm hM _⟩
   rcases q with q | ⟨n, q⟩
   · induction q using Quotient.inductionOn with

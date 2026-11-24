@@ -22,6 +22,7 @@ between categories with topologies on their arrows is continuous.
 
 ## Main results
 
+* `Quiver.Path.vertices_cast`: casting the endpoints of a path does not change its vertex list.
 * `Prefunctor.length_mapPath`: pushing a path along a prefunctor preserves its length.
 * `Prefunctor.vertices_mapPath`: the vertices of the pushed path are the images of the vertices of
   the original path.
@@ -47,6 +48,19 @@ bounded networks in `TauCeti/Combinatorics/Network/Isomorphism/Basic.lean`.
 -/
 
 public section
+
+namespace Quiver.Path
+
+universe u v
+
+/-- Casting the endpoints of a path does not change its vertex list. -/
+@[simp]
+theorem vertices_cast {V : Type u} [Quiver.{v} V] {s t s' t' : V} (hs : s = s') (ht : t = t')
+    (p : Quiver.Path s t) : (p.cast hs ht).vertices = p.vertices := by
+  subst hs ht
+  rfl
+
+end Quiver.Path
 
 namespace Prefunctor
 

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Lp.ProdLp.QuadraticForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Comm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
+import TauCeti.Analysis.Normed.Lp.ProdLp.Orientation
 
 /-!
 # Graded symmetry of the tensor product of complex Clifford modules
@@ -23,8 +24,7 @@ chirality action on `E ⊗ F` to that on `F ⊗ E`.
 
 ## Main results
 
-* `CliffordAlgebra.map_withLpProdComm_orientation_of_even` and
-  `CliffordAlgebra.map_withLpProdComm_complexVolume`: orientation and volume compatibility.
+* `CliffordAlgebra.map_withLpProdComm_complexVolume`: volume compatibility under `withLpProdComm`.
 * `CliffordAlgebra.koszulComm_complexProdTensor`,
   `CliffordAlgebra.conjAlgEquiv_complexProdTensor_comm`, and
   `CliffordAlgebra.koszulComm_complexProdTensor_complexVolume`: Koszul-swap intertwining laws.
@@ -33,7 +33,7 @@ chirality action on `E ⊗ F` to that on `F ⊗ E`.
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §1 and §5.
 * M. F. Atiyah, R. Bott and A. Shapiro, *Clifford modules*, Topology 3 (1964), §1.
-* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, the chapter on Clifford modules.
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed. (2007), Definition 2.2.42.
 -/
 
 public section
@@ -43,32 +43,6 @@ noncomputable section
 open Module Module.End TensorProduct
 
 namespace CliffordAlgebra
-
-section Orientation
-
-variable {V W : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
-  [SeminormedAddCommGroup W] [NormedSpace ℝ W]
-  [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
-  {n m : ℕ} [Fact (finrank ℝ V = n)] [Fact (finrank ℝ W = m)]
-  (o₁ : Orientation ℝ V (Fin n)) (o₂ : Orientation ℝ W (Fin m))
-  (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
-  (o' : Orientation ℝ (WithLp 2 (W × V)) (Fin (m + n)))
-
-/-- When `n * m` is even, `LinearIsometryEquiv.withLpProdComm` carries the ordered product
-orientation of `V ⊕ W` to that of `W ⊕ V`, reindexed along `add_comm m n`. -/
-theorem map_withLpProdComm_orientation_of_even (heven : Even (n * m))
-    (ho : o.map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)) = o₁.prod o₂ Fact.out Fact.out)
-    (ho' : o'.map (Fin (m + n)) (WithLp.linearEquiv 2 ℝ (W × V)) = o₂.prod o₁ Fact.out Fact.out) :
-    o.map (Fin (n + m)) (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).toLinearEquiv =
-      Orientation.reindex ℝ _ (finCongr (add_comm m n)) o' := by
-  have hcomm : (LinearIsometryEquiv.withLpProdComm 2 ℝ V W).toLinearEquiv.trans
-      (WithLp.linearEquiv 2 ℝ (W × V)) =
-      (WithLp.linearEquiv 2 ℝ (V × W)).trans (LinearEquiv.prodComm ℝ V W) := by ext x <;> rfl
-  refine (Orientation.map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (W × V))).injective ?_
-  rw [← Orientation.map_trans, hcomm, Orientation.map_trans, ho,
-    Orientation.map_prodComm_prod_of_even _ _ _ _ heven, Orientation.map_reindex, ho']
-
-end Orientation
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W]
@@ -101,7 +75,7 @@ theorem map_withLpProdComm_complexVolume
   rw [map_complexVolume o (QuadraticMap.IsometryEquiv.withLpProdComm hQ hQ')
       (QuadraticMap.IsometryEquiv.norm_withLpProdComm hQ hQ'),
     QuadraticMap.IsometryEquiv.toLinearEquiv_withLpProdComm_eq_linearIsometryEquiv,
-    map_withLpProdComm_orientation_of_even o₁ o₂ o o' heven ho ho',
+    Orientation.map_withLpProdComm_of_even o₁ o₂ o o' Fact.out Fact.out heven ho ho',
     complexVolume_reindex_finCongr]
 
 end ComplexVolume

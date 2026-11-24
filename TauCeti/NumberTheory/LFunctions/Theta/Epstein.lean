@@ -62,7 +62,7 @@ theorem summable_epsteinZeta (L : Submodule ℤ (mixedSpace K)) [DiscreteTopolog
   refine Summable.of_norm_bounded
     ((ZLattice.summable_norm_rpow L (-2 * s.re) (by linarith)).subtype (· ≠ 0)) ?_
   intro x
-  have hx : (x : mixedSpace K) ≠ 0 := by simpa using x.2
+  have hx : (x : mixedSpace K) ≠ 0 := by simpa using x.property
   rw [norm_cpow_eq_rpow_re_of_pos (mixedInner_self_pos K hx), neg_re]
   calc
     mixedInner K x x ^ (-s.re) ≤ (‖(x : mixedSpace K)‖ ^ 2) ^ (-s.re) :=
@@ -94,12 +94,12 @@ theorem radialMellin_eq_epsteinZeta (L : Submodule ℤ (mixedSpace K)) [Discrete
   have hsum : Summable fun x : {x : L // x ≠ 0} ↦
       ‖(1 : ℂ)‖ / mixedInner K x x ^ s.re := by
     refine (summable_epsteinZeta L hs).norm.congr fun x ↦ ?_
-    rw [norm_cpow_eq_rpow_re_of_pos (mixedInner_self_pos K (by simpa using x.2)),
-      neg_re, Real.rpow_neg (mixedInner_self_pos K (by simpa using x.2)).le,
+    rw [norm_cpow_eq_rpow_re_of_pos (mixedInner_self_pos K (by simpa using x.property)),
+      neg_re, Real.rpow_neg (mixedInner_self_pos K (by simpa using x.property)).le,
       norm_one, one_div]
   have h := (hasSum_mellin_pi_mul (a := fun _ : {x : L // x ≠ 0} ↦ 1)
     (q := fun x ↦ mixedInner K x x)
-    (fun x ↦ Or.inr (mixedInner_self_pos K (by simpa using x.2))) hs0 hF hsum).tsum_eq.symm
+    (fun x ↦ Or.inr (mixedInner_self_pos K (by simpa using x.property))) hs0 hF hsum).tsum_eq.symm
   simpa only [epsteinZeta_def, cpow_neg, mul_one, div_eq_mul_inv, tsum_mul_left] using h
 
 end TauCeti.LFunctions

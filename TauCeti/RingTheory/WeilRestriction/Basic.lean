@@ -113,19 +113,18 @@ variable {A B} (T : Type*) [AddCommMonoid T] [Module A T]
 
 -- The `j`-th coordinate `B ⊗[A] T → T`, sending `x ⊗ t` to `φ j x • t`.
 private def Coords.coord (K : Coords A B) (j : Fin K.n) : B ⊗[A] T →ₗ[A] T :=
-  lift (LinearMap.lsmul A T ∘ₗ K.φ j)
+  LinearMap.tensorComponent (K.φ j) ∘ₗ (TensorProduct.comm A B T).toLinearMap
 
 variable {T}
 
 private lemma Coords.coord_tmul (K : Coords A B) (j : Fin K.n) (x : B) (t : T) :
-    K.coord T j (x ⊗ₜ t) = K.φ j x • t := rfl
+    K.coord T j (x ⊗ₜ t) = K.φ j x • t := by
+  simp [coord, LinearMap.tensorComponent_tmul]
 
 private lemma Coords.coord_eq_tensorComponent (K : Coords A B) (j : Fin K.n)
     (z : B ⊗[A] T) :
-    K.coord T j z = LinearMap.tensorComponent (K.φ j) (TensorProduct.comm A B T z) := by
-  induction z using TensorProduct.inductionOn with
-  | tmul x t => simp [coord_tmul]
-  | add z w hz hw => simp only [map_add, hz, hw]
+    K.coord T j z = LinearMap.tensorComponent (K.φ j) (TensorProduct.comm A B T z) :=
+  rfl
 
 private lemma Coords.sum_tmul_coord (K : Coords A B) (z : B ⊗[A] T) :
     ∑ j, K.b j ⊗ₜ K.coord T j z = z := by
@@ -346,7 +345,7 @@ theorem range_le_iff_range_homEquiv_le {g : WeilRestriction A B C →ₐ[A] T} {
     have hg : S.val.comp ((homEquiv A B C S).symm v) = g :=
       (homEquiv A B C T).injective <| by rw [homEquiv_comp, Equiv.apply_symm_apply, hv]
     rw [← hg, AlgHom.range_comp]
-    exact Subalgebra.map_le.2 fun x _ ↦ x.2
+    exact Subalgebra.map_le.2 fun x _ ↦ x.property
 
 section Map
 

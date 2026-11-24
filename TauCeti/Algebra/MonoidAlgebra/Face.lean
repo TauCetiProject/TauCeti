@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Saturation
 public import Mathlib.Algebra.MonoidAlgebra.Basic
-public import Mathlib.Algebra.MonoidAlgebra.Ideal
 public import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.Algebra.MonoidAlgebra.Ideal
 
 /-!
 # Monomial ideals of semigroup faces
@@ -24,6 +23,12 @@ by the coefficient-one monomials outside the face. The quotient is canonically t
 algebra of the face. For nontrivial coefficients with no zero divisors, the ideal of a face `F`
 with unique sums is prime. These are the coordinate-ring maps for closed face embeddings
 of affine semigroup schemes; no normality or finite generation is needed.
+
+All of these constructions commute with changing the coefficients along an arbitrary ring
+homomorphism `φ : R →+* S`: restriction commutes with `AddMonoidAlgebra.mapRingHom`, the face
+ideal over `R` extends to the face ideal over `S`, and the quotient equivalence is natural in `φ`.
+No flatness, injectivity or surjectivity of `φ` is needed, because the face ideal has a fixed
+monomial generating set; this is not an instance of kernels commuting with base change.
 
 ## References
 
@@ -116,16 +121,8 @@ include hF in
 /-- Membership in the face ideal means that every coefficient on the face vanishes. -/
 theorem mem_faceIdeal_iff (p : AddMonoidAlgebra R M) :
     p ∈ F.faceIdeal R ↔ ∀ a : F, p.coeff (a : M) = 0 := by
-  classical
-  rw [faceIdeal_def, mem_ideal_span_of'_image]
-  constructor
-  · intro hp a
-    by_contra ha
-    obtain ⟨b, hb, d, hd⟩ := hp a (Finsupp.mem_support_iff.mpr ha)
-    exact hb ((hF.add_mem_iff.mp (hd ▸ a.property)).2)
-  · intro hp a ha
-    refine ⟨a, ?_, 0, (zero_add a).symm⟩
-    exact fun h ↦ (Finsupp.mem_support_iff.mp ha) (hp ⟨a, h⟩)
+  rw [faceIdeal_def, mem_ideal_span_of'_image_iff fun d m (hm : m ∉ F) h ↦ hm (hF h).2]
+  simp
 
 /-- The monomial face ideal is exactly the kernel of restriction. -/
 theorem ker_faceRestriction : RingHom.ker (F.faceRestriction hF R) = F.faceIdeal R := by
@@ -164,6 +161,39 @@ theorem faceIdeal_le_faceIdeal_iff [Nontrivial R] (G : AddSubmonoid M)
     rintro _ ⟨a, ha, rfl⟩
     exact Ideal.subset_span ⟨a, fun hmem ↦ ha (h hmem), rfl⟩
 
+section CoefficientChange
+
+variable {S : Type*} [CommSemiring S] (φ : R →+* S)
+
+/-- Restricting to a face commutes with changing the coefficients. -/
+@[simp]
+theorem faceRestriction_mapRingHom (p : AddMonoidAlgebra R M) :
+    F.faceRestriction hF S (mapRingHom M φ p) = mapRingHom F φ (F.faceRestriction hF R p) := by
+  ext a
+  simp
+
+/-- Restricting to a face and changing the coefficients, in either order, give the same ring
+homomorphism. -/
+theorem faceRestriction_comp_mapRingHom :
+    (F.faceRestriction hF S : AddMonoidAlgebra S M →+* AddMonoidAlgebra S F).comp
+        (mapRingHom M φ) =
+      (mapRingHom F φ).comp (F.faceRestriction hF R) :=
+  RingHom.ext (F.faceRestriction_mapRingHom hF φ)
+
+/-- Changing the coefficients extends the monomial ideal of a submonoid over `R` to the monomial
+ideal of the same submonoid over `S`. -/
+@[simp]
+theorem faceIdeal_map : (F.faceIdeal R).map (mapRingHom M φ) = F.faceIdeal S :=
+  map_mapRingHom_ideal_span_of'_image φ _
+
+/-- Changing the coefficients maps the monomial ideal of a submonoid into the monomial ideal
+over the new coefficients. -/
+theorem faceIdeal_le_comap_mapRingHom :
+    F.faceIdeal R ≤ (F.faceIdeal S).comap (mapRingHom M φ) :=
+  Ideal.map_le_iff_le_comap.mp (F.faceIdeal_map φ).le
+
+end CoefficientChange
+
 section CommRing
 
 variable {S : Type*} [CommRing S]
@@ -189,6 +219,20 @@ theorem faceQuotientEquiv_symm_apply (p : AddMonoidAlgebra S F) :
   apply (F.faceQuotientEquiv hF).injective
   simpa only [AlgEquiv.apply_symm_apply, faceQuotientEquiv_mk] using
     (F.faceRestriction_mapDomain hF p).symm
+
+variable {T : Type*} [CommRing T] (ψ : S →+* T)
+
+/-- The face quotient equivalence is natural in the coefficient ring: the map of face quotients
+induced by a change of coefficients corresponds to changing the coefficients of the monoid
+algebra of the face. -/
+@[simp]
+theorem faceQuotientEquiv_quotientMap (x : AddMonoidAlgebra S M ⧸ F.faceIdeal S) :
+    F.faceQuotientEquiv hF
+        (Ideal.quotientMap (F.faceIdeal T) (mapRingHom M ψ) (F.faceIdeal_le_comap_mapRingHom ψ)
+          x) =
+      mapRingHom F ψ (F.faceQuotientEquiv hF x) := by
+  obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp
 
 end CommRing
 

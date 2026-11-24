@@ -104,7 +104,7 @@ variable {S T : Type*} [Semifield S] [Subsingleton (AddUnits S)] [Semifield T]
 /-- A nonzero natural-coefficient polynomial takes unit values at units. -/
 private theorem isUnit_aeval (y : K → Sˣ) (p : regulars (MvPolynomial K ℕ)) :
     IsUnit (MvPolynomial.aeval (fun i ↦ (y i : S)) (p : MvPolynomial K ℕ)) := by
-  refine isUnit_iff_ne_zero.mpr fun h ↦ mem_regulars_iff_ne_zero.mp p.2 ?_
+  refine isUnit_iff_ne_zero.mpr fun h ↦ mem_regulars_iff_ne_zero.mp p.property ?_
   rwa [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq_zero_iff (fun a ↦ by simp)
     fun i ↦ (y i).isUnit.mem_nonZeroDivisors] at h
 
@@ -234,7 +234,7 @@ def toFractionRing : QsfZero K →+* FractionRing (MvPolynomial K ℤ) :=
     rw [RingHom.comp_apply, ne_eq, IsFractionRing.to_map_eq_zero_iff,
       ← map_zero (MvPolynomial.map (Nat.castRingHom ℤ)),
       (MvPolynomial.map_injective _ Nat.cast_injective).eq_iff]
-    exact mem_regulars_iff_ne_zero.mp p.2
+    exact mem_regulars_iff_ne_zero.mp p.property
 
 @[simp]
 theorem toFractionRing_algebraMap (p : MvPolynomial K ℕ) :
@@ -276,7 +276,7 @@ theorem mem_range_toFractionRing_iff {z : FractionRing (MvPolynomial K ℤ)} :
   constructor
   · rintro ⟨a, rfl⟩
     obtain ⟨⟨p, q⟩, rfl⟩ := IsLocalization.mk'_surjective (regulars (MvPolynomial K ℕ)) a
-    exact ⟨p, q, mem_regulars_iff_ne_zero.mp q.2, toFractionRing_mk' p q⟩
+    exact ⟨p, q, mem_regulars_iff_ne_zero.mp q.property, toFractionRing_mk' p q⟩
   · rintro ⟨p, q, hq, rfl⟩
     exact ⟨IsLocalization.mk' _ p ⟨q, mem_regulars_iff_ne_zero.mpr hq⟩, toFractionRing_mk' _ _⟩
 
@@ -426,14 +426,14 @@ theorem exists_toFractionRing_eq_iff {z : FractionRing (MvPolynomial K ℤ)} :
     obtain ⟨⟨p, q⟩, h⟩ := IsLocalization.mk'_surjective (regulars (MvPolynomial K ℕ))
       (a : QsfZero K)
     refine ⟨p, q, IsLocalization.ne_zero_of_mk'_ne_zero (h ▸ a.ne_zero),
-      mem_regulars_iff_ne_zero.mp q.2, ?_⟩
+      mem_regulars_iff_ne_zero.mp q.property, ?_⟩
     rw [← h, QsfZero.toFractionRing_mk']
   · rintro ⟨p, q, hp, hq, rfl⟩
     have hq' : q ∈ regulars (MvPolynomial K ℕ) := mem_regulars_iff_ne_zero.mpr hq
     refine ⟨Units.mk0 (IsLocalization.mk' _ p ⟨q, hq'⟩) ?_, QsfZero.toFractionRing_mk' _ _⟩
     rw [ne_eq, IsLocalization.mk'_eq_zero_iff]
     rintro ⟨m, hm⟩
-    exact hp ((mem_regulars.mp m.2).left (by simpa using hm))
+    exact hp ((mem_regulars.mp m.property).left (by simpa using hm))
 
 end Qsf
 

@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 
 /-!
 # Orientation reversal in the graded tensor product of complex Clifford modules
 
 Reversing the orientation `o₁` of the even-dimensional space `V` negates `Γ_V`, so in
 `CliffordAlgebra.complexProdTensor` the vector action `c(0, w) = Γ_V ⊗ c_W(w)` becomes
-`-Γ_V ⊗ c_W(w)`. When `W` is also even-dimensional, `1 ⊗ Γ_W` intertwines the `-o₁` product action
-with the `o₁` product action on the entire complexified Clifford algebra (and conjugates one into
+`-Γ_V ⊗ c_W(w)`. When `W` is also even-dimensional, `1 ⊗ Γ_W` intertwines the `o₁` product action
+with the `-o₁` product action on the entire complexified Clifford algebra (and conjugates one into
 the other when `Q₂ w = -‖w‖²`), while reversing `o₁` or `o₂` negates the product chirality
 `Γ_V ⊗ Γ_W`.
 
@@ -23,17 +22,17 @@ the other when `Q₂ w = -‖w‖²`), while reversing `o₁` or `o₂` negates 
 
 * `CliffordAlgebra.complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr`: for `-o₁`, `(0, w)` acts
   by `-(Γ_V ⊗ c_W(w))`.
-* `CliffordAlgebra.lTensor_complexVolume_comp_complexProdTensor_neg` and
-  `CliffordAlgebra.conjAlgEquiv_complexProdTensor_neg`: `1 ⊗ Γ_W` intertwines (and, for
-  `Q₂ w = -‖w‖²`, conjugates) the `-o₁` and `o₁` product actions.
+* `CliffordAlgebra.lTensor_complexVolume_mul_complexProdTensor` and
+  `CliffordAlgebra.complexProdTensor_neg_orientation`: `1 ⊗ Γ_W` intertwines (and, for
+  `Q₂ w = -‖w‖²`, conjugates) the `o₁` and `-o₁` product actions.
 * `CliffordAlgebra.complexProdTensor_neg_orientation_complexVolume` and
   `CliffordAlgebra.complexProdTensor_complexVolume_neg_right`: reversing `o₁` or `o₂` negates the
-  product chirality.
+  product chirality `Γ_V ⊗ Γ_W` (covering rank zero as well).
 
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
-* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, the chapter on Clifford modules.
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed. (2007), Definition 2.2.42.
 -/
 
 public section
@@ -64,52 +63,38 @@ theorem complexProdTensor_neg_orientation_ι_one_tmul_toLp_inr (w : W) :
 section EvenRight
 
 variable [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)]
-  (o₂ : Orientation ℝ W (Fin m)) (hm : Even m)
+  (o₂ : Orientation ℝ W (Fin m))
 
-include hm in
-/-- **Intertwining under orientation reversal**: when `W` is even-dimensional, `1 ⊗ Γ_W`
-intertwines `complexProdTensor` for `-o₁` with `complexProdTensor` for `o₁` on the entire
-complexified Clifford algebra of `V ⊕ W`. No metric hypothesis on `Q₂` is required. -/
-theorem lTensor_complexVolume_comp_complexProdTensor_neg
-    (a : CliffordAlgebra (Q.baseChange ℂ)) :
-    (ρ₂ (complexVolume Q₂ o₂)).lTensor E ∘ₗ
-        complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ a =
-      complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ a ∘ₗ
+/-- **Reversing the orientation of `V`**: for `W` of even dimension, `1 ⊗ Γ_W` intertwines the
+graded tensor product for `o₁` with that for `-o₁`, on which a vector of `W` acts by
+`c(0, w) = -Γ_V ⊗ c_W(w)`. No metric hypothesis on `Q₂` is required. -/
+theorem lTensor_complexVolume_mul_complexProdTensor (hm : Even m)
+    (x : CliffordAlgebra (Q.baseChange ℂ)) :
+    (ρ₂ (complexVolume Q₂ o₂)).lTensor E * complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x =
+      complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ x * (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
+  rw [complexProdTensor_def, complexProdTensor_def, AlgHom.comp_apply, AlgHom.comp_apply]
+  exact AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg _ _ _ _ _ _ _ ρ₂
+    (map_complexVolume_mul_map_ι o₂ hm ρ₂) (by rw [complexVolume_neg_orientation, map_neg]) _
+
+/-- **Reversing the orientation of `V` is a conjugation**: for `W` of even dimension with
+`Q₂ w = -‖w‖²`, the graded tensor product for `-o₁` is the conjugate of that for `o₁` by the
+involution `1 ⊗ Γ_W`. -/
+theorem complexProdTensor_neg_orientation (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) (hm : Even m)
+    (x : CliffordAlgebra (Q.baseChange ℂ)) :
+    complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂ x =
+      (ρ₂ (complexVolume Q₂ o₂)).lTensor E * complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x *
         (ρ₂ (complexVolume Q₂ o₂)).lTensor E := by
-  have hneg : ρ₁ (complexVolume Q₁ (-o₁)) = -ρ₁ (complexVolume Q₁ o₁) := by
-    rw [complexVolume_neg_orientation, map_neg]
-  have hγ := map_complexVolume_mul_self o₁ hQ₁ ρ₁
-  have hγρ := map_complexVolume_mul_map_ι o₁ hn ρ₁
-  rw [complexProdTensor_def, complexProdTensor_def, AlgHom.comp_apply, AlgHom.comp_apply,
-    AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂ hneg (by rw [neg_mul_neg, hγ])
-      (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg])]
-  exact AlgHom.lTensor_comp_cliffordProdTensor_neg ρ₁ _ hγ hγρ ρ₂
-    (map_complexVolume_mul_map_ι o₂ hm ρ₂) _
-
-include hm in
-/-- When `Q₂ w = -‖w‖²` and `W` is even-dimensional, conjugating by the involution `1 ⊗ Γ_W`
-carries `complexProdTensor` for `-o₁` to `complexProdTensor` for `o₁`. -/
-theorem conjAlgEquiv_complexProdTensor_neg (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2) :
-    ((((LinearEquiv.ofInvolutive (ρ₂ (complexVolume Q₂ o₂))
-        (ρ₂.involutive_complexVolume o₂ hQ₂)).lTensor E).conjAlgEquiv ℂ).toAlgHom).comp
-      (complexProdTensor hQ (-o₁) hQ₁ hn ρ₁ ρ₂) =
-      complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ := by
-  have hneg : ρ₁ (complexVolume Q₁ (-o₁)) = -ρ₁ (complexVolume Q₁ o₁) := by
-    rw [complexVolume_neg_orientation, map_neg]
-  have hγ := map_complexVolume_mul_self o₁ hQ₁ ρ₁
-  have hγρ := map_complexVolume_mul_map_ι o₁ hn ρ₁
-  rw [complexProdTensor_def, complexProdTensor_def, ← AlgHom.comp_assoc,
-    AlgHom.cliffordProdTensor_congr_grading ρ₁ _ _ _ ρ₂ hneg (by rw [neg_mul_neg, hγ])
-      (fun v ↦ by rw [neg_mul, mul_neg, neg_neg, hγρ, neg_neg]),
-    AlgHom.conjAlgEquiv_cliffordProdTensor_neg ρ₁ _ hγ hγρ ρ₂
-      (ρ₂.involutive_complexVolume o₂ hQ₂) (map_complexVolume_mul_map_ι o₂ hm ρ₂)]
+  rw [complexProdTensor_def, complexProdTensor_def, AlgHom.comp_apply, AlgHom.comp_apply]
+  exact AlgHom.cliffordProdTensor_of_eq_neg _ _ _ _ _ _ _ ρ₂
+    (map_complexVolume_mul_map_ι o₂ hm ρ₂) (map_complexVolume_mul_self o₂ hQ₂ ρ₂)
+    (by rw [complexVolume_neg_orientation, map_neg]) _
 
 variable [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
-include hm
 
 /-- Reversing `o₁` reverses the ordered product orientation `(-o₁) × o₂` and negates the product
-chirality action `Γ_V ⊗ Γ_W`. -/
-theorem complexProdTensor_neg_orientation_complexVolume
+chirality action `Γ_V ⊗ Γ_W` (equivalently leaving it equal to `Γ_(V, -o₁) ⊗ Γ_W`), including in
+dimension zero. -/
+theorem complexProdTensor_neg_orientation_complexVolume (hm : Even m)
     (o' : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
     (ho' : o'.map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)) =
       (-o₁).prod o₂ Fact.out Fact.out) :
@@ -120,7 +105,7 @@ theorem complexProdTensor_neg_orientation_complexVolume
 
 /-- Reversing `o₂` reverses the ordered product orientation `o₁ × (-o₂)` and negates the product
 chirality action `Γ_V ⊗ Γ_W`. -/
-theorem complexProdTensor_complexVolume_neg_right
+theorem complexProdTensor_complexVolume_neg_right (hm : Even m)
     (o' : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + m)))
     (ho' : o'.map (Fin (n + m)) (WithLp.linearEquiv 2 ℝ (V × W)) =
       o₁.prod (-o₂) Fact.out Fact.out) :

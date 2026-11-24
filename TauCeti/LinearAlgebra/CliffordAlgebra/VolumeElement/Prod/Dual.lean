@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Dual
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Dual
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 
 /-!
 # Reverse duality of the graded tensor product of complex Clifford modules
@@ -136,15 +136,19 @@ theorem dualDistrib_comp_lTensor_complexProdTensor_of_odd (hℓ : Odd (n / 2))
   have hγ'ρ := AlgHom.dualMap_mul_cliffordReverseDual_ι ρ₁ _ hγρ
   have hdual : ρ₁.cliffordReverseDual (complexVolume Q₁ o₁) = -γ' := by
     ext φ; simp [AlgHom.cliffordReverseDual_complexVolume, hℓ.neg_one_pow, γ']
+  have hswap : (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E) ∘ₗ
+      AlgHom.cliffordProdTensor ρ₁.cliffordReverseDual
+        (ρ₁.cliffordReverseDual (complexVolume Q₁ o₁))
+        (map_complexVolume_mul_self o₁ hQ₁ ρ₁.cliffordReverseDual)
+        (map_complexVolume_mul_map_ι o₁ hn ρ₁.cliffordReverseDual)
+        ρ₂.cliffordReverseDual (equivOfIsometry (complexWithLpProd hQ) a) =
+      AlgHom.cliffordProdTensor ρ₁.cliffordReverseDual γ' hγ' hγ'ρ ρ₂.cliffordReverseDual
+        (equivOfIsometry (complexWithLpProd hQ) a) ∘ₗ
+        (ρ₂.cliffordReverseDual (complexVolume Q₂ o₂)).lTensor (Dual ℂ E) :=
+    AlgHom.lTensor_mul_cliffordProdTensor_of_eq_neg _ _ _ _ γ' hγ' hγ'ρ _
+      (map_complexVolume_mul_map_ι o₂ hm ρ₂.cliffordReverseDual) (neg_eq_iff_eq_neg.mp hdual.symm) _
   rw [complexProdTensor_def, complexProdTensor_def, AlgHom.cliffordReverseDual_comp_equivOfIsometry,
-    AlgHom.comp_apply, AlgHom.comp_apply,
-    AlgHom.cliffordProdTensor_congr_grading ρ₁.cliffordReverseDual _ _ _ ρ₂.cliffordReverseDual
-      hdual (LinearMap.ext fun φ ↦ by simpa using DFunLike.congr_fun hγ' φ)
-      (fun v ↦ LinearMap.ext fun φ ↦ by
-        simpa [neg_eq_iff_eq_neg] using DFunLike.congr_fun (hγ'ρ v) φ),
-    LinearMap.comp_assoc,
-    AlgHom.lTensor_comp_cliffordProdTensor_neg _ _ hγ' hγ'ρ _
-      (map_complexVolume_mul_map_ι o₂ hm ρ₂.cliffordReverseDual),
+    AlgHom.comp_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearMap.comp_assoc, hswap,
     ← LinearMap.comp_assoc, AlgHom.dualDistrib_cliffordProdTensor ρ₁ _ hγ hγρ ρ₂,
     LinearMap.comp_assoc]
 

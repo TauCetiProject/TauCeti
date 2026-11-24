@@ -264,18 +264,19 @@ private theorem popaZagierElement_one_add_S_fixed :
     Finsupp.add_apply, coeff_ofMulAction]
   simp only [smul_mk, inv_op_smul_mk, coeff_popaZagierElement_mk,
     FixedDetMatrices.smul_coe, val_traceFormulaMatrixRight]
-  rw [Matrix.eta_fin_two A.1]
+  rw [Matrix.eta_fin_two A.val]
   suffices hcoeff :
-      (symWeight (A.1 1 0) (A.1 1 1) (-A.1 0 0 + A.1 1 0) (-A.1 0 1 + A.1 1 1) : k) / 12 +
-          (symWeight (-A.1 1 1) (A.1 1 0) (-A.1 1 1 + A.1 0 1)
-            (-A.1 0 0 + A.1 1 0) : k) / 12 =
-        (symWeight (A.1 0 0) (A.1 0 1) (A.1 1 0) (A.1 1 1) : k) / 12 +
-          (symWeight (-A.1 0 1) (A.1 0 0) (-A.1 1 1) (A.1 1 0) : k) / 12 by
+      (symWeight (A.val 1 0) (A.val 1 1) (-A.val 0 0 + A.val 1 0) (-A.val 0 1 + A.val 1 1) : k) / 12
+          +
+          (symWeight (-A.val 1 1) (A.val 1 0) (-A.val 1 1 + A.val 0 1)
+            (-A.val 0 0 + A.val 1 0) : k) / 12 =
+        (symWeight (A.val 0 0) (A.val 0 1) (A.val 1 0) (A.val 1 1) : k) / 12 +
+          (symWeight (-A.val 0 1) (A.val 0 0) (-A.val 1 1) (A.val 1 0) : k) / 12 by
     simpa [symWeight, Int.cast_add, mul_inv_rev, Matrix.SpecialLinearGroup.coe_mul,
       Matrix.SpecialLinearGroup.coe_inv, ModularGroup.coe_T, ModularGroup.coe_S,
       Matrix.adjugate_fin_two] using hcoeff
   have hi := congrArg (fun z : ℤ ↦ (z : k) / 12)
-    (FirstExchange.weight_relation (A.1 0 0) (A.1 0 1) (A.1 1 0) (A.1 1 1))
+    (FirstExchange.weight_relation (A.val 0 0) (A.val 0 1) (A.val 1 0) (A.val 1 1))
   simp only [symWeight] at hi
   simp only [Int.cast_add, add_div, sub_eq_add_neg, neg_add_rev, neg_neg] at hi
   simp only [symWeight, Int.cast_add, add_div, neg_add_rev, neg_neg]
@@ -292,23 +293,23 @@ private theorem popaZagierElement_one_add_U_add_U_sq_fixed :
     Finsupp.add_apply, sq, mul_apply_eq_comp, coeff_ofMulAction]
   simp only [← QuotientGroup.mk_mul, smul_mk, inv_op_smul_mk, coeff_popaZagierElement_mk,
     FixedDetMatrices.smul_coe, val_traceFormulaMatrixRight]
-  rw [Matrix.eta_fin_two A.1]
+  rw [Matrix.eta_fin_two A.val]
   suffices hcoeff :
-      (symWeight (A.1 1 0) (A.1 1 1) (-A.1 0 0) (-A.1 0 1) : k) / 12 +
-          (symWeight (-A.1 1 1) (A.1 1 0 + A.1 1 1) (A.1 0 1)
-            (-A.1 0 0 + -A.1 0 1) : k) / 12 +
-          (symWeight (-A.1 1 1 + -A.1 1 0) (A.1 1 0) (A.1 0 1 + A.1 0 0)
-            (-A.1 0 0) : k) / 12 =
-        (symWeight (A.1 0 0) (A.1 0 1) (A.1 1 0) (A.1 1 1) : k) / 12 +
-          (symWeight (-A.1 0 1) (A.1 0 0 + A.1 0 1) (-A.1 1 1)
-            (A.1 1 0 + A.1 1 1) : k) / 12 +
-          (symWeight (-A.1 0 1 + -A.1 0 0) (A.1 0 0) (-A.1 1 1 + -A.1 1 0)
-            (A.1 1 0) : k) / 12 by
+      (symWeight (A.val 1 0) (A.val 1 1) (-A.val 0 0) (-A.val 0 1) : k) / 12 +
+          (symWeight (-A.val 1 1) (A.val 1 0 + A.val 1 1) (A.val 0 1)
+            (-A.val 0 0 + -A.val 0 1) : k) / 12 +
+          (symWeight (-A.val 1 1 + -A.val 1 0) (A.val 1 0) (A.val 0 1 + A.val 0 0)
+            (-A.val 0 0) : k) / 12 =
+        (symWeight (A.val 0 0) (A.val 0 1) (A.val 1 0) (A.val 1 1) : k) / 12 +
+          (symWeight (-A.val 0 1) (A.val 0 0 + A.val 0 1) (-A.val 1 1)
+            (A.val 1 0 + A.val 1 1) : k) / 12 +
+          (symWeight (-A.val 0 1 + -A.val 0 0) (A.val 0 0) (-A.val 1 1 + -A.val 1 0)
+            (A.val 1 0) : k) / 12 by
     simpa [symWeight, Int.cast_add, mul_inv_rev, Matrix.SpecialLinearGroup.coe_mul,
       Matrix.SpecialLinearGroup.coe_inv, ModularGroup.coe_T, ModularGroup.coe_S,
       Matrix.adjugate_fin_two] using hcoeff
   have hi := congrArg (fun z : ℤ ↦ (z : k) / 12)
-    (SecondExchange.weight_relation (A.1 0 0) (A.1 0 1) (A.1 1 0) (A.1 1 1))
+    (SecondExchange.weight_relation (A.val 0 0) (A.val 0 1) (A.val 1 0) (A.val 1 1))
   simp only [symWeight] at hi
   simp only [Int.cast_add, add_div, sub_eq_add_neg, neg_add_rev, neg_neg] at hi
   simp only [symWeight, Int.cast_add, add_div, neg_add_rev, neg_neg]

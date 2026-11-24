@@ -43,19 +43,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- At a fixed point `x` of `f` at which `df_x` preserves the inner product, the fixed-point
 derivative preserves the inner product of `T_x M`. -/
 theorem isIsometry_fixedPointDerivative {f : M → M} (x : {x // f x = x})
-    (hf : ∀ v w : TangentSpace I x.1,
-      inner ℝ (mfderiv I I f x.1 v) (mfderiv I I f x.1 w) = inner ℝ v w) :
-    BilinForm.IsIsometry (innerₗ (TangentSpace I x.1)) (fixedPointDerivative I f x) :=
+    (hf : ∀ v w : TangentSpace I x.val,
+      inner ℝ (mfderiv I I f x.val v) (mfderiv I I f x.val w) = inner ℝ v w) :
+    BilinForm.IsIsometry (innerₗ (TangentSpace I x.val)) (fixedPointDerivative I f x) :=
   BilinForm.isIsometry_iff.mpr fun v w ↦ by
     rw [innerₗ_apply_apply, innerₗ_apply_apply, fixedPointDerivative_apply,
       fixedPointDerivative_apply, ← hf v w]
-    exact inner_tangentSpace_congr x.2.symm rfl rfl
+    exact inner_tangentSpace_congr x.property.symm rfl rfl
 
 /-- At a fixed point `x` of `f` at which `df_x` preserves the inner product, a unipotent
 fixed-point derivative is the identity. -/
 theorem fixedPointDerivative_eq_one_of_isNilpotent_sub_one {f : M → M} (x : {x // f x = x})
-    (hf : ∀ v w : TangentSpace I x.1,
-      inner ℝ (mfderiv I I f x.1 v) (mfderiv I I f x.1 w) = inner ℝ v w)
+    (hf : ∀ v w : TangentSpace I x.val,
+      inner ℝ (mfderiv I I f x.val v) (mfderiv I I f x.val w) = inner ℝ v w)
     (h : IsNilpotent (fixedPointDerivative I f x - 1)) :
     fixedPointDerivative I f x = 1 :=
   (isIsometry_fixedPointDerivative x hf).eq_one_of_isNilpotent_sub_one
@@ -67,14 +67,14 @@ namespace RiemannianIsometry
 /-- At a fixed point of a Riemannian isometry, the differential preserves the inner product of the
 tangent space. -/
 theorem isIsometry_fixedPointDerivative (Φ : RiemannianIsometry I I M M) (x : {x // Φ x = x}) :
-    BilinForm.IsIsometry (innerₗ (TangentSpace I x.1)) (fixedPointDerivative I Φ x) :=
-  TauCeti.isIsometry_fixedPointDerivative x (Φ.inner_mfderiv x.1)
+    BilinForm.IsIsometry (innerₗ (TangentSpace I x.val)) (fixedPointDerivative I Φ x) :=
+  TauCeti.isIsometry_fixedPointDerivative x (Φ.inner_mfderiv x.val)
 
 /-- At a fixed point of a Riemannian isometry, a unipotent differential is the identity. -/
 theorem fixedPointDerivative_eq_one_of_isNilpotent_sub_one (Φ : RiemannianIsometry I I M M)
     (x : {x // Φ x = x}) (h : IsNilpotent (fixedPointDerivative I Φ x - 1)) :
     fixedPointDerivative I Φ x = 1 :=
-  TauCeti.fixedPointDerivative_eq_one_of_isNilpotent_sub_one x (Φ.inner_mfderiv x.1) h
+  TauCeti.fixedPointDerivative_eq_one_of_isNilpotent_sub_one x (Φ.inner_mfderiv x.val) h
 
 end RiemannianIsometry
 

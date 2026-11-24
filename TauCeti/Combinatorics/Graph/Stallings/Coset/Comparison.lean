@@ -52,7 +52,7 @@ theorem Hom.range_mapE_cosetGraph_eq_coreDarts
         SerreGraph.Path.IsReduced (S.subgroup S.base).cosetGraph.graph q ∧
           f.graphHom.mapE e ∈ SerreGraph.Path.darts (S.subgroup S.base).cosetGraph.graph q := by
       refine ⟨f.graphHom.toPrefunctor.mapPath p,
-        (f.graphHom.isReduced_mapPath_iff S.graph hfE p).mpr hp, ?_⟩
+        f.graphHom.isReduced_mapPath (fun _ _ _ h => hfE h) p hp, ?_⟩
       -- Substitution avoids `rw`'s transparency mismatch at the mapped path's endpoints.
       exact (f.graphHom.darts_mapPath S.graph p).symm ▸ List.mem_map_of_mem he
     apply ((S.subgroup S.base).cosetGraph.graph.mem_coreDarts_iff _ _).mpr
@@ -74,7 +74,7 @@ theorem Hom.range_mapE_cosetGraph_eq_coreDarts
     obtain ⟨q, hq, hread⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
     have hmap : f.graphHom.toPrefunctor.mapPath q = p :=
       (S.subgroup S.base).cosetGraph_isFolded.path_eq_of_read_eq _ _ _
-        ((f.graphHom.isReduced_mapPath_iff S.graph hfE q).mpr hq) hp
+        (f.graphHom.isReduced_mapPath (fun _ _ _ h => hfE h) q hq) hp
         ((f.read_mapPath q).trans hread)
     rw [← hmap] at he
     have he' := f.graphHom.darts_mapPath S.graph q ▸ he
@@ -99,12 +99,12 @@ theorem Hom.range_mapV_cosetGraph_eq_coreVertices
       exact ((S.subgroup S.base).cosetGraph.graph.mem_coreVertices_iff _ _).mpr
         (Or.inl f.map_base)
     | cons p e =>
-      have he : f.graphHom.mapE e.1 ∈ (S.subgroup S.base).cosetGraph.graph.coreDarts
+      have he : f.graphHom.mapE e.val ∈ (S.subgroup S.base).cosetGraph.graph.coreDarts
           (S.subgroup S.base).cosetGraph.base := by
         rw [← hE]
-        exact ⟨e.1, rfl⟩
+        exact ⟨e.val, rfl⟩
       have ht := (S.subgroup S.base).cosetGraph.graph.tgt_mem_coreVertices _ he
-      simpa only [f.graphHom.map_tgt, e.2.2] using ht
+      simpa only [f.graphHom.map_tgt, e.property.2] using ht
   · intro hv
     rcases ((S.subgroup S.base).cosetGraph.graph.mem_coreVertices_iff _ v).mp hv with
       rfl | ⟨e, he, rfl⟩
@@ -133,12 +133,12 @@ theorem nonempty_iso_subgroupGraph (hfold : S.IsFolded) (hcore : S.graph.IsCore 
   have hgV : Function.Bijective g.graphHom.mapV := by
     refine ⟨fun v w h => hfV (congrArg Subtype.val h), ?_⟩
     intro v
-    obtain ⟨w, hw⟩ := (Set.ext_iff.mp hV v.1).mpr v.2
+    obtain ⟨w, hw⟩ := (Set.ext_iff.mp hV v.val).mpr v.property
     exact ⟨w, Subtype.ext hw⟩
   have hgE : Function.Bijective g.graphHom.mapE := by
     refine ⟨fun e d h => hfE (congrArg Subtype.val h), ?_⟩
     intro e
-    obtain ⟨d, hd⟩ := (Set.ext_iff.mp hE e.1).mpr e.2
+    obtain ⟨d, hd⟩ := (Set.ext_iff.mp hE e.val).mpr e.property
     exact ⟨d, Subtype.ext hd⟩
   rw [Subgroup.subgroupGraph_def]
   exact ⟨g.toIso hgV hgE⟩

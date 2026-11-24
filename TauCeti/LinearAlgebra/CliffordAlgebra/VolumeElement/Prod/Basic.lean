@@ -45,10 +45,11 @@ basis-free form via `Orientation.prod o₁ o₂`). When
   `Γ_(V ⊕ W) = Γ_V ⊗ Γ_W`.
 
 When moreover `Q₂ w = -‖w‖²`, the factor `Γ_W` is the chirality of `W`, so the chirality of
-`V ⊕ W` is the tensor grading (decomposed into half-spin spaces in `Eigenspace.lean`). When `m` is
-odd the central volume element of `V ⊕ W` acts through the second factor alone, as `1 ⊗ ω_W`. Both
-follow from the action of the ordered frame product, `c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ)`, and
-the exponent identity `⌊(n + m + 1) / 2⌋ = ⌊(n + 1) / 2⌋ + ⌊(m + 1) / 2⌋` for even `n`.
+`V ⊕ W` is the tensor grading (decomposed into half-spin spaces in `Eigenspace.lean`; orientation
+reversal is treated in `Neg.lean`). When `m` is odd the central volume element of `V ⊕ W` acts
+through the second factor alone, as `1 ⊗ ω_W`. Both follow from the action of the ordered frame
+product, `c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ)`, and the exponent identity
+`⌊(n + m + 1) / 2⌋ = ⌊(n + 1) / 2⌋ + ⌊(m + 1) / 2⌋` for even `n`.
 
 ## Main definitions
 
@@ -73,7 +74,7 @@ the exponent identity `⌊(n + m + 1) / 2⌋ = ⌊(n + 1) / 2⌋ + ⌊(m + 1) / 
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
 * M. F. Atiyah, R. Bott and A. Shapiro, *Clifford modules*, Topology 3 (1964), §1.
-* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, the chapter on Clifford modules.
+* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 2nd ed. (2007), Definition 2.2.42.
 -/
 
 public section
@@ -112,31 +113,10 @@ end WithLpProd
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W]
   {Q₁ : QuadraticForm ℝ V} {Q₂ : QuadraticForm ℝ W} {Q : QuadraticForm ℝ (WithLp 2 (V × W))}
-
-variable (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
-
-private theorem complexWithLpProd_one_tmul (x : WithLp 2 (V × W)) :
-    complexWithLpProd hQ (1 ⊗ₜ x) = (1 ⊗ₜ (WithLp.ofLp x).1, 1 ⊗ₜ (WithLp.ofLp x).2) :=
-  complexWithLpProd_tmul hQ 1 x
-
-private theorem equivOfIsometry_complexWithLpProd_ι_inl (v : V) :
-    equivOfIsometry (complexWithLpProd hQ)
-        (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (v, 0))) =
-      map (QuadraticMap.Isometry.inl (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))
-        (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)) := by
-  simp [equivOfIsometry_apply]
-
-private theorem equivOfIsometry_complexWithLpProd_ι_inr (w : W) :
-    equivOfIsometry (complexWithLpProd hQ)
-        (ι (Q.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, w))) =
-      map (QuadraticMap.Isometry.inr (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))
-        (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) := by
-  simp [equivOfIsometry_apply]
-
-variable [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
+  (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+  [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
   (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hn : Even n)
-
-variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module ℂ F]
+  {E F : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module ℂ F]
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
 
@@ -162,13 +142,6 @@ theorem complexProdTensor_def :
       (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
           (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
         (equivOfIsometry (complexWithLpProd hQ)).toAlgHom :=
-  (rfl)
-
-private theorem complexProdTensor_apply (x : CliffordAlgebra (Q.baseChange ℂ)) :
-    complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x =
-      AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-        (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂
-        (equivOfIsometry (complexWithLpProd hQ) x) :=
   (rfl)
 
 /-- A real vector `(v, w)` of `V ⊕ W` acts on `E ⊗ F` by `c_V(v) ⊗ 1 + Γ_V ⊗ c_W(w)`. -/
@@ -261,7 +234,7 @@ private theorem complexProdTensor_complexVolume_eq_map (b₁ : OrthonormalBasis 
   -- Split the frame product of `V ⊕ W` into its `V` block and its `W` block.
   rw [complexVolume_eq o _ ho hQb, hl, List.map_append, List.prod_append]
   -- Move each block into its summand, where the two Clifford algebras act.
-  rw [map_smul, complexProdTensor_apply, map_mul, h₁, h₂]
+  rw [map_smul, complexProdTensor_def, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, map_mul, h₁, h₂]
   simp only [map_mul, AlgHom.cliffordProdTensor_map_inl, AlgHom.cliffordProdTensor_map_inr_prod,
     LinearMap.rTensor, ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
   simp [List.map_map, Function.comp_def]

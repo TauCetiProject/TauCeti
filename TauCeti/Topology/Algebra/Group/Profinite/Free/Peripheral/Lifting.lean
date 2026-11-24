@@ -178,7 +178,7 @@ private theorem mk_defect_mul_correction (hF : IsProP p F) (x : Fin r → F) (u 
   have hcen : ∀ i, (((b' i : F)) : F ⧸ N) ∈ Submonoid.center _ := fun i ↦
     Submonoid.mem_center_iff.mpr fun q ↦ by
       obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-      exact (commute_mk_of_mem_pLowerCentralSeries (b' i).2 g).eq
+      exact (commute_mk_of_mem_pLowerCentralSeries (b' i).property g).eq
   have hsplit :
       (((List.ofFn fun i ↦ w i * (b' i : F)).prod : F) : F ⧸ N) =
         ((List.ofFn w).prod : F ⧸ N) * ((List.ofFn fun i ↦ (b' i : F)).prod : F ⧸ N) := by
@@ -192,7 +192,7 @@ private theorem mk_defect_mul_correction (hF : IsProP p F) (x : Fin r → F) (u 
     intro t ht
     rw [List.mem_ofFn] at ht
     obtain ⟨i, rfl⟩ := ht
-    exact (b' i).2
+    exact (b' i).property
   simp only [QuotientGroup.mk_mul, hsplit]
   exact (commute_mk_of_mem_pLowerCentralSeries hbprod wz).symm.mul_mul_mul_comm _ _
 
@@ -309,8 +309,8 @@ private theorem exists_mem_level_succ_of_succ {k : ℕ} (hF : IsProP p F)
   have hc' (i : Fin (k + 1)) : c' i ∈ pLowerCentralSeries 0 F m := by
     induction i using Fin.cases with
     | zero => exact one_mem _
-    | succ i => exact (q i.castSucc).2
-  have hd' : d' ∈ pLowerCentralSeries 0 F m := (q (Fin.last k)).2
+    | succ i => exact (q i.castSucc).property
+  have hd' : d' ∈ pLowerCentralSeries 0 F m := (q (Fin.last k)).property
   let b' : Fin (k + 1) → pLowerCentralSeries 0 F (0 + m + 1) := fun i ↦
     ⟨⁅((c i)⁻¹ * hF.padicPow (basis e i) u * c i)⁻¹, (c' i)⁻¹⁆,
       commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero 0 _)

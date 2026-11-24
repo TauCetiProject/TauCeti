@@ -44,8 +44,8 @@ private theorem neg_two_inner_tangentEquiv_nonneg (x : closedBall (0 : E) 1)
   let f : EuclideanSpace ℝ (Fin (n + 1)) → E :=
     Subtype.val ∘ (extChartAt I x).symm
   have hy0 : y 0 = 0 := by
-    have h := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas
-      one_ne_zero (chart_mem_atlas _ x) (mem_chart_source _ x)).mp hx
+    have h := (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff
+      (mem_chart_source _ x)).mp hx
     simpa only [y, I, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
       modelWithCornersEuclideanHalfSpace_toFun] using h
   have hfy : f y = (x : E) := by

@@ -188,17 +188,17 @@ def initialPentagonDisjointCommuteEquiv {n : ℕ} (a s : Fin n) (x z : GridState
       D.toGridRectangleDecomposition.HasDisjointSides} ≃
     {D : GridInitialPentagonRectangleDecomposition a s x z //
       D.toGridRectangleDecomposition.HasDisjointSides} where
-  toFun D := ⟨D.1.commute D.2, D.1.hasDisjointSides_commute D.2⟩
-  invFun D := ⟨D.1.commute D.2, D.1.hasDisjointSides_commute D.2⟩
-  left_inv D := Subtype.ext (D.1.commute_commute D.2)
-  right_inv D := Subtype.ext (D.1.commute_commute D.2)
+  toFun D := ⟨D.val.commute D.property, D.val.hasDisjointSides_commute D.property⟩
+  invFun D := ⟨D.val.commute D.property, D.val.hasDisjointSides_commute D.property⟩
+  left_inv D := Subtype.ext (D.val.commute_commute D.property)
+  right_inv D := Subtype.ext (D.val.commute_commute D.property)
 
 /-- The forward equivalence reorders a rectangle followed by an initial-side pentagon. -/
 @[simp]
 theorem initialPentagonDisjointCommuteEquiv_apply {n : ℕ} (a s : Fin n) (x z : GridState n)
     (D : {D : GridRectangleInitialPentagonDecomposition a s x z //
       D.toGridRectangleDecomposition.HasDisjointSides}) :
-    (initialPentagonDisjointCommuteEquiv a s x z D).1 = D.1.commute D.2 :=
+    (initialPentagonDisjointCommuteEquiv a s x z D).val = D.val.commute D.property :=
   (rfl)
 
 /-- The inverse equivalence reorders an initial-side pentagon followed by a rectangle. -/
@@ -206,7 +206,7 @@ theorem initialPentagonDisjointCommuteEquiv_apply {n : ℕ} (a s : Fin n) (x z :
 theorem initialPentagonDisjointCommuteEquiv_symm_apply {n : ℕ} (a s : Fin n) (x z : GridState n)
     (D : {D : GridInitialPentagonRectangleDecomposition a s x z //
       D.toGridRectangleDecomposition.HasDisjointSides}) :
-    ((initialPentagonDisjointCommuteEquiv a s x z).symm D).1 = D.1.commute D.2 :=
+    ((initialPentagonDisjointCommuteEquiv a s x z).symm D).val = D.val.commute D.property :=
   (rfl)
 
 namespace GridDiagram
@@ -297,20 +297,20 @@ theorem sum_rectangleInitialPentagonWeight_disjoint_eq_sum_initialPentagonRectan
   classical
   let e := initialPentagonDisjointCommuteEquiv C.column C.turnRow x z
   refine Finset.sum_bij'
-    (fun D hD => (e ⟨D, (Finset.mem_filter.mp hD).2⟩).1)
-    (fun E hE => (e.symm ⟨E, (Finset.mem_filter.mp hE).2⟩).1) ?_ ?_ ?_ ?_ ?_
+    (fun D hD => (e ⟨D, (Finset.mem_filter.mp hD).2⟩).val)
+    (fun E hE => (e.symm ⟨E, (Finset.mem_filter.mp hE).2⟩).val) ?_ ?_ ?_ ?_ ?_
   · intro D hD
     have h := Finset.mem_filter.mp hD
     exact Finset.mem_filter.mpr
       ⟨by simpa only [e, initialPentagonDisjointCommuteEquiv_apply] using
           G.commute_mem_initialPentagonRectangleDecompositions C D h.2 h.1,
-        (e ⟨D, h.2⟩).2⟩
+        (e ⟨D, h.2⟩).property⟩
   · intro E hE
     have h := Finset.mem_filter.mp hE
     exact Finset.mem_filter.mpr
       ⟨by simpa only [e, initialPentagonDisjointCommuteEquiv_symm_apply] using
           G.commute_mem_rectangleInitialPentagonDecompositions C E h.2 h.1,
-        (e.symm ⟨E, h.2⟩).2⟩
+        (e.symm ⟨E, h.2⟩).property⟩
   · intro D hD
     exact congrArg Subtype.val (e.left_inv ⟨D, (Finset.mem_filter.mp hD).2⟩)
   · intro E hE
