@@ -550,8 +550,7 @@ Noetherian unique factorization domain `R`, `Cl(Spec R) ≃ Pic(Spec R) ≃ Pic 
 Picard group of a unique factorization domain is. Hartshorne, Proposition II.6.2. -/
 instance SchemeWeilDivisor.subsingleton_classGroup_of_uniqueFactorizationMonoid :
     Subsingleton (WeilDivisor.OrderSystem.ofScheme (Spec R)).ClassGroup :=
-  have : Subsingleton (LineBundleClass (Spec R)) :=
-    (LineBundleClass.specEquivPic R).toEquiv.subsingleton
+  have : Subsingleton (LineBundleClass (Spec R)) := LineBundleClass.subsingleton_spec (R := R)
   (SchemeWeilDivisor.classGroupAddEquivLineBundleClassOfUniqueFactorizationMonoid
     (Spec R)).toEquiv.subsingleton
 

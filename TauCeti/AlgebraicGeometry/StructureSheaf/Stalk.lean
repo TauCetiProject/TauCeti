@@ -38,6 +38,7 @@ variable {R : CommRingCat.{u}}
 
 /-- The image of `r ∈ R` in the stalk of `Spec R` at `x` lies in the maximal ideal of the stalk iff
 `r` lies in the prime ideal `x`. -/
+@[simp]
 lemma toStalk_mem_maximalIdeal_iff (x : Spec R) (r : R) :
     StructureSheaf.toStalk R x r ∈ IsLocalRing.maximalIdeal ((Spec R).presheaf.stalk x) ↔
       r ∈ x.asIdeal := by
@@ -72,6 +73,7 @@ instance uniqueFactorizationMonoid_stalk [UniqueFactorizationMonoid R] (x : Spec
   exact UniqueFactorizationMonoid.of_isLocalization x.asIdeal.primeCompl _
 
 /-- The algebra map `R → K(Spec R)` factors through the stalk at every point of `Spec R`. -/
+@[simp]
 lemma algebraMap_functionField_toStalk [IsDomain R] (x : Spec R) (r : R) :
     algebraMap ((Spec R).presheaf.stalk x) (Spec R).functionField
         (StructureSheaf.toStalk R x r) = algebraMap R (Spec R).functionField r := by
