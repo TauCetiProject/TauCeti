@@ -202,19 +202,17 @@ theorem Gammaℝ_neg_two_mul_nat_sub_one (k : ℕ) :
       (-1) ^ (k + 1) * 4 ^ (k + 1) * (k + 1)! * Real.pi ^ (k + 1) / (2 * k + 2)! := by
   -- the reflection formula `Γ_ℝ(1 - s) Γ_ℝ(1 + s) = 1 / cos (π s / 2)` at `s = 2k + 2`
   have h := Gammaℝ_one_sub_mul_Gammaℝ_one_add (2 * k + 2)
-  have hcos : cos (((k + 1 : ℕ) : ℂ) * Real.pi) = (-1) ^ (k + 1) := by
-    rw [← ofReal_natCast, ← ofReal_mul, ← ofReal_cos, Real.cos_nat_mul_pi]
+  have hΓ : Gammaℝ (1 + (2 * k + 2)) =
+      (2 * k + 2)! / (4 ^ (k + 1) * (k + 1)! * Real.pi ^ (k + 1)) := by
+    convert Gammaℝ_two_mul_nat_add_one (k + 1) using 2
     push_cast; ring
-  rw [show 1 - (2 * (k : ℂ) + 2) = -(2 * k) - 1 by ring,
-    show 1 + (2 * (k : ℂ) + 2) = 2 * ((k + 1 : ℕ) : ℂ) + 1 by push_cast; ring,
-    Gammaℝ_two_mul_nat_add_one,
-    show (Real.pi : ℂ) * (2 * k + 2) / 2 = ((k + 1 : ℕ) : ℂ) * Real.pi by push_cast; ring, hcos,
-    ← inv_pow, inv_neg, inv_one,
-    show 2 * (k + 1) = 2 * k + 2 by ring] at h
+  have hcos : (cos (Real.pi * (2 * k + 2) / 2))⁻¹ = (-1) ^ (k + 1) := by
+    convert congrArg (fun x : ℝ ↦ (x : ℂ)⁻¹) (Real.cos_nat_mul_pi (k + 1)) using 1
+    · push_cast; ring_nf
+    · simp [← inv_pow]
+  rw [show 1 - (2 * (k : ℂ) + 2) = -(2 * k) - 1 by ring, hΓ, hcos] at h
   have hπ : (Real.pi : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
-  have hk : ((k + 1)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (k + 1).factorial_ne_zero
-  rw [eq_div_iff (Nat.cast_ne_zero.mpr (2 * k + 2).factorial_ne_zero)]
-  field_simp at h
+  field_simp [Nat.factorial_ne_zero] at h ⊢
   linear_combination h
 
 end IntegerValues

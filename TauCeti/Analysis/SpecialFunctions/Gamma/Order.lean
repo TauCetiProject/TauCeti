@@ -31,8 +31,10 @@ nonpositive: none has a zero as a meromorphic germ. Their leading Laurent coeffi
 (`Complex.meromorphicTrailingCoeffAt_Gammaℝ_zero`,
 `Complex.meromorphicTrailingCoeffAt_Gammaℂ_zero`).
 
-For `n ≥ 1`, the product `Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂` has a pole of order `d = r₂` at `1 - n` when
-`n` is even and `d = r₁ + r₂` when `n` is odd
+At `1 - n`, `Γ_ℝ` is regular for even `n` and has a simple pole for odd `n`
+(`Complex.meromorphicOrderAt_Gammaℝ_one_sub_nat`). For `n ≥ 1`, the product
+`Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂` therefore has a pole of order `d = r₂` at `1 - n` when `n` is even and
+`d = r₁ + r₂` when `n` is odd
 (`TauCeti.meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat`), and its value at `n` is a
 nonzero rational multiple of `π ^ (d - (r₁ + 2 r₂) n)` times its leading coefficient at `1 - n`
 (`TauCeti.exists_rat_Gammaℝ_pow_mul_Gammaℂ_pow_eq_mul_meromorphicTrailingCoeffAt`). For the
@@ -344,6 +346,19 @@ theorem meromorphicOrderAt_Gammaℂ_eq_zero_iff (s : ℂ) :
     meromorphicOrderAt Gammaℂ s = 0 ↔ Gammaℂ s ≠ 0 :=
   (TauCeti.meromorphicNFOn_Gammaℂ (Set.mem_univ s)).meromorphicOrderAt_eq_zero_iff
 
+/-- The real archimedean factor at `1 - n` is regular for even `n` and has a simple pole for odd
+`n`. -/
+theorem meromorphicOrderAt_Gammaℝ_one_sub_nat (n : ℕ) :
+    meromorphicOrderAt Gammaℝ (1 - n) = if Even n then 0 else -1 := by
+  split_ifs with he
+  · rw [meromorphicOrderAt_Gammaℝ_eq_zero_iff, Ne, Gammaℝ_eq_zero_iff]
+    rintro ⟨m, hm⟩
+    obtain ⟨k, rfl⟩ := he
+    have : (1 : ℤ) - (k + k : ℕ) = -(2 * m) := by exact_mod_cast hm
+    omega
+  · obtain ⟨k, rfl⟩ := Nat.not_even_iff_odd.mp he
+    exact (meromorphicOrderAt_Gammaℝ_eq_neg_one_iff _).mpr ⟨k, by push_cast; ring⟩
+
 end Complex
 
 namespace TauCeti
@@ -363,27 +378,19 @@ private theorem exists_rat_Gammaℝ_eq_mul_meromorphicTrailingCoeffAt {n : ℕ} 
     have hv := Gammaℝ_neg_two_mul_nat_sub_one j
     have hne : Gammaℝ (-(2 * j) - 1) ≠ 0 := by
       rw [hv]; simp [hπ, Nat.factorial_ne_zero]
-    have hj : ((j + 1)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (j + 1).factorial_ne_zero
-    have hj' : ((2 * j + 2)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (2 * j + 2).factorial_ne_zero
-    have hif : (if Even (2 * (j + 1)) then 0 else 1 : ℤ) = 0 := by simp
     refine ⟨j ! * (2 * j + 2)! / ((-1) ^ (j + 1) * 4 ^ (j + 1) * (j + 1)!),
       by simp [Nat.factorial_ne_zero], ?_⟩
-    rw [hx, (analyticAt_Gammaℝ_of_ne_zero hne).meromorphicTrailingCoeffAt_of_ne_zero hne, hv, hif,
-      show ((0 : ℤ) - ((2 * (j + 1) : ℕ) : ℤ)) = -((2 * j + 2 : ℕ) : ℤ) by push_cast; ring,
-      zpow_neg, zpow_natCast,
-      show ((2 * (j + 1) : ℕ) : ℂ) = 2 * j + 2 by push_cast; ring, Gammaℝ_two_mul_nat_add_two]
-    push_cast
-    field_simp
+    rw [hx, (analyticAt_Gammaℝ_of_ne_zero hne).meromorphicTrailingCoeffAt_of_ne_zero hne, hv]
+    simp only [Nat.even_mul, even_two, true_or, ite_true, zpow_sub₀ hπ, zpow_zero, zpow_natCast]
+    push_cast [mul_add, Gammaℝ_two_mul_nat_add_two]
+    field_simp [Nat.factorial_ne_zero]
     ring
   · -- `n = 2k + 1`: `Γ_ℝ` has a simple pole at `1 - n = -2k`
     have hx : 1 - ((2 * k + 1 : ℕ) : ℂ) = -(2 * k : ℂ) := by push_cast; ring
-    have hif : (if Even (2 * k + 1) then 0 else 1 : ℤ) = 1 := by simp [parity_simps]
     refine ⟨(2 * k)! / (2 * (-1) ^ k * 4 ^ k), by simp [Nat.factorial_ne_zero], ?_⟩
-    rw [hx, meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat, hif,
-      show ((1 : ℤ) - ((2 * k + 1 : ℕ) : ℤ)) = -((2 * k : ℕ) : ℤ) by push_cast; ring, zpow_neg,
-      zpow_natCast, show ((2 * k + 1 : ℕ) : ℂ) = 2 * k + 1 by push_cast; ring,
-      Gammaℝ_two_mul_nat_add_one]
-    push_cast
+    rw [hx, meromorphicTrailingCoeffAt_Gammaℝ_neg_two_mul_nat]
+    simp only [Nat.not_even_bit1, ite_false, zpow_sub₀ hπ, zpow_one, zpow_natCast]
+    push_cast [Gammaℝ_two_mul_nat_add_one]
     field_simp
     ring
 
@@ -395,11 +402,8 @@ private theorem exists_rat_Gammaℂ_eq_mul_meromorphicTrailingCoeffAt {n : ℕ} 
   have hπ : (Real.pi : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   refine ⟨m ! ^ 2 / ((-1) ^ m * 2 ^ (2 * m + 1)), by simp [Nat.factorial_ne_zero], ?_⟩
-  rw [show 1 - ((m + 1 : ℕ) : ℂ) = -(m : ℂ) by push_cast; ring,
-    meromorphicTrailingCoeffAt_Gammaℂ_neg_nat,
-    show (1 - 2 * ((m + 1 : ℕ) : ℤ)) = -((2 * m + 1 : ℕ) : ℤ) by push_cast; ring, zpow_neg,
-    zpow_natCast, Nat.cast_succ, Gammaℂ_nat_add_one]
-  push_cast
+  simp only [zpow_sub₀ hπ, zpow_mul, zpow_natCast, zpow_ofNat]
+  push_cast [sub_add_cancel_right, Gammaℂ_nat_add_one, meromorphicTrailingCoeffAt_Gammaℂ_neg_nat]
   field_simp
   ring
 
@@ -412,30 +416,18 @@ theorem meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat (r₁ r₂ 
       -((if Even n then r₂ else r₁ + r₂ : ℕ) : ℤ) := by
   have hR := meromorphic_Gammaℝ (1 - n)
   have hC := meromorphic_Gammaℂ (1 - n)
-  have hCord : meromorphicOrderAt Gammaℂ (1 - n) = -1 :=
+  -- both orders as integers cast into `WithTop ℤ`, so that `norm_cast` reduces to `ℤ`
+  have hCord : meromorphicOrderAt Gammaℂ (1 - n) = ((-1 : ℤ) : WithTop ℤ) :=
     (meromorphicOrderAt_Gammaℂ_eq_neg_one_iff _).mpr ⟨n - 1, by push_cast [hn]; ring⟩
+  have hRord :
+      meromorphicOrderAt Gammaℝ (1 - n) = ((if Even n then 0 else -1 : ℤ) : WithTop ℤ) := by
+    rw [meromorphicOrderAt_Gammaℝ_one_sub_nat]; split_ifs <;> rfl
   have he : (fun s ↦ Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) = Gammaℝ ^ r₁ * Gammaℂ ^ r₂ := by
     ext; simp
   rw [he, meromorphicOrderAt_mul (hR.pow r₁) (hC.pow r₂), meromorphicOrderAt_pow hR,
-    meromorphicOrderAt_pow hC, hCord]
-  have hRord : meromorphicOrderAt Gammaℝ (1 - n) = if Even n then 0 else -1 := by
-    split_ifs with he
-    · rw [meromorphicOrderAt_Gammaℝ_eq_zero_iff, Ne, Gammaℝ_eq_zero_iff]
-      rintro ⟨m, hm⟩
-      have h : ((1 - n : ℤ) : ℂ) = ((-(2 * m) : ℤ) : ℂ) := by push_cast at hm ⊢; exact hm
-      have := Int.cast_injective h
-      obtain ⟨k, rfl⟩ := he
-      omega
-    · obtain ⟨k, rfl⟩ := Nat.not_even_iff_odd.mp he
-      exact (meromorphicOrderAt_Gammaℝ_eq_neg_one_iff _).mpr ⟨k, by push_cast; ring⟩
-  rw [hRord]
-  -- the identity is one of integers, cast into `WithTop ℤ`
-  split_ifs <;>
-  · simp only [← WithTop.coe_natCast, ← WithTop.coe_one, ← WithTop.coe_zero,
-      ← WithTop.LinearOrderedAddCommGroup.coe_neg, ← WithTop.coe_mul, ← WithTop.coe_add,
-      WithTop.coe_inj]
-    push_cast
-    ring
+    meromorphicOrderAt_pow hC, hCord, hRord]
+  norm_cast
+  split_ifs <;> push_cast <;> ring
 
 /-- **The leading coefficient of the archimedean factors at `1 - n`.** For `n ≥ 1`, the value at
 `n` of `Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂` is a nonzero rational multiple of `π ^ (d - (r₁ + 2 r₂) n)` times
