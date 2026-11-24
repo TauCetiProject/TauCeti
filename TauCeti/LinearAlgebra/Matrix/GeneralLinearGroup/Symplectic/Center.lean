@@ -75,7 +75,7 @@ theorem mem_range_scalar_of_commute_symplectic
       (hM (TauCeti.GLSymplecticFin.differenceShortRootUnit hiz (1 : R))).eq
     rw [TauCeti.GLSymplecticFin.coe_differenceShortRootUnit_eq_one_add_single_sub_single] at he
     have hcross (a b : Fin m) : Fin.castAdd m a ≠ b.addNat m := by
-      simpa using TauCeti.GLSymplecticFin.finSumFinEquiv_inl_ne_inr a b
+      simpa using Fin.finSumFinEquiv_inl_ne_inr a b
     simpa [mul_sub, sub_mul, mul_add, add_mul, hoff, hiz,
       mul_single_apply_of_ne _ _ _ _ _ (hcross z i),
       single_mul_apply_of_ne _ _ _ _ _ (hcross i z)] using he
@@ -145,7 +145,7 @@ instance instNontrivialQuotientCenter [Nontrivial R] [NeZero m] :
   obtain ⟨c, hc, -⟩ := (mem_center_iff _).mp hg
   have hij : Fin.castAdd m i ≠ i.addNat m := by
     simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-      Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i i
+      Fin.natAdd_eq_addNat] using Fin.finSumFinEquiv_inl_ne_inr i i
   have he := congrArg (fun M : Matrix (Fin (m + m)) (Fin (m + m)) R ↦
     M (Fin.castAdd m i) (i.addNat m)) hc
   simp only [coe_positiveLongRootTransvectionUnit,

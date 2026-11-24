@@ -17,7 +17,7 @@ public import TauCeti.RepresentationTheory.Tensor.Power
 import Mathlib.GroupTheory.Perm.Cycle.Type
 import TauCeti.LinearAlgebra.Determinant.FiniteOrder
 import TauCeti.LinearAlgebra.Matrix.Connected
-import TauCeti.RepresentationTheory.CharacterTable.Degree
+import TauCeti.RepresentationTheory.CharacterTable.Degree.Basic
 import TauCeti.RepresentationTheory.CharacterTable.TensorGeneration
 import TauCeti.RepresentationTheory.InvariantForm.Determinant
 import TauCeti.RepresentationTheory.Irreducible

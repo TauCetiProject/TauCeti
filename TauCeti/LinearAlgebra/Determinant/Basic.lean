@@ -89,6 +89,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   basis `b'` has determinant `b'.det b`.
 * `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
   under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
+* `Module.Basis.det_eq_det_of_det_eq_one`: a basis `b'` with `b.det b' = 1` has the same
+  determinant form as `b`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 * `LinearMap.injective_of_det_mem_nonZeroDivisors`: an endomorphism of a free module of finite
   rank whose determinant is a non-zero-divisor is injective.
@@ -328,6 +330,12 @@ theorem nondegenerate_detBilinForm : b.detBilinForm.Nondegenerate := by
         rw [LinearMap.zero_apply, ← b.isAlt_detBilinForm.neg_eq x y, hy x, neg_zero]⟩
 
 end FinTwo
+
+/-- If a basis `b'` has determinant `1` in the basis `b`, then `b` and `b'` have the same
+determinant form. -/
+theorem det_eq_det_of_det_eq_one {b b' : Basis ι R M} (h : b.det b' = 1) : b'.det = b.det := by
+  rw [AlternatingMap.eq_smul_basis_det b b'.det, ← mul_one (b'.det b), ← h, det_mul_det, det_self,
+    one_smul]
 
 end Module.Basis
 

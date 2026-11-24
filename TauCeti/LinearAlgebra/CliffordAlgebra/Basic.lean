@@ -21,6 +21,8 @@ linear equivalence with the exterior algebra, and the commutation rule
 `CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, together with the
 square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`) and the
 extensionality of algebra equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
+A vector squares to its scalar inside a product (`CliffordAlgebra.ι_mul_ι_mul_eq_algebraMap_mul`),
+and `(e f) (f e) = Q e Q f` (`CliffordAlgebra.ι_mul_ι_mul_ι_mul_ι_swap`).
 Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
 -/
@@ -79,6 +81,16 @@ theorem algebraMap_add_ι_mul_self (Q : QuadraticForm R M) (r : R) (t : M) :
   rw [add_mul, mul_add, mul_add, ι_sq_scalar, ← map_mul, ← Algebra.commutes r (ι Q t),
     ← Algebra.smul_def, map_add, map_smul, mul_smul, two_smul]
   abel
+
+/-- A vector squares to its quadratic form value, also inside a product: `x (x y) = Q x y`. -/
+theorem ι_mul_ι_mul_eq_algebraMap_mul {Q : QuadraticForm R M} (x : M) (y : CliffordAlgebra Q) :
+    ι Q x * (ι Q x * y) = algebraMap R _ (Q x) * y := by
+  rw [← mul_assoc, ι_sq_scalar]
+
+/-- The product `(e f) (f e)` of two vectors and their swap is the scalar `Q e * Q f`. -/
+theorem ι_mul_ι_mul_ι_mul_ι_swap {Q : QuadraticForm R M} (e f : M) :
+    ι Q e * ι Q f * (ι Q f * ι Q e) = algebraMap R _ (Q e * Q f) := by
+  rw [mul_assoc, ι_mul_ι_mul_eq_algebraMap_mul, Algebra.commutes, ← mul_assoc, ι_sq_scalar, map_mul]
 
 /-- Two algebra equivalences out of a Clifford algebra agree when they agree on the generators:
 the equivalence form of `CliffordAlgebra.hom_ext`. -/
