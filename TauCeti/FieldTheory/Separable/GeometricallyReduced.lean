@@ -11,6 +11,7 @@ import Mathlib.Algebra.CharP.Algebra
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
+import TauCeti.RingTheory.AlgebraicIndependent.BaseChange
 import TauCeti.RingTheory.TensorProduct.Reduced
 
 /-!
@@ -155,12 +156,7 @@ theorem isReduced_tensorProduct_of_isSeparablyGenerated [Algebra.IsSeparablyGene
   obtain ⟨s, hs, hsep⟩ := Algebra.IsSeparablyGenerated.isSeparable (k := k) (K := K)
   set R := Algebra.adjoin k s
   set E := IntermediateField.adjoin k s
-  let eR : MvPolynomial s k ≃ₐ[k] R :=
-    hs.1.aevalEquiv.trans (Subalgebra.equivOfEq _ _ (congrArg (Algebra.adjoin k) Subtype.range_coe))
-  let eRA : R ⊗[k] A ≃+* MvPolynomial s A :=
-    (Algebra.TensorProduct.congr eR.symm (AlgEquiv.refl : A ≃ₐ[k] A)).toRingEquiv.trans
-      ((Algebra.TensorProduct.comm k (MvPolynomial s k) A).toRingEquiv.trans
-        (MvPolynomial.algebraTensorAlgEquiv k A).toRingEquiv)
+  let eRA : R ⊗[k] A ≃ₐ[k] MvPolynomial s A := hs.1.adjoinTensorAlgEquiv A
   have : IsReduced (R ⊗[k] A) := isReduced_of_injective eRA eRA.injective
   have : IsReduced (E ⊗[k] A) :=
     isReduced_tensorProduct_of_isLocalization (nonZeroDivisors R) E A

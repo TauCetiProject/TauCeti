@@ -75,6 +75,7 @@ associated bilinear form and so requires `2` to be invertible in `R`, which fail
 * `TauCeti.BinaryQuadraticForm.smul_a`, `TauCeti.BinaryQuadraticForm.smul_b` and
   `TauCeti.BinaryQuadraticForm.smul_c`: the coefficients of `γ • f`.
 * `TauCeti.BinaryQuadraticForm.eval_smul`: `γ • f` is `f ∘ γ⁻¹`.
+* `TauCeti.BinaryQuadraticForm.exists_eval_smul_iff`: `γ • f` and `f` take the same values.
 * `TauCeti.BinaryQuadraticForm.discrim_smul`: the discriminant is invariant under `SL(2, R)`.
 * `TauCeti.BinaryQuadraticForm.smul_map`: mapping coefficients is equivariant for the entrywise
   map `SL(2, R) →* SL(2, S)`, so automorphs map to automorphs
@@ -459,6 +460,23 @@ theorem eval_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) (x y : R) :
     (γ • f).eval x y = f.eval (γ 1 1 * x - γ 0 1 * y) (-γ 1 0 * x + γ 0 0 * y) := by
   simp only [eval_def, smul_a, smul_b, smul_c]
   ring
+
+/-- `γ • f` takes at `γ (x, y) = (p x + q y, r x + s y)` the value of `f` at `(x, y)`, for
+`γ = !![p, q; r, s]`. -/
+theorem eval_smul_apply (γ : SL(2, R)) (f : BinaryQuadraticForm R) (x y : R) :
+    (γ • f).eval (γ 0 0 * x + γ 0 1 * y) (γ 1 0 * x + γ 1 1 * y) = f.eval x y := by
+  have hdet := γ.fin_two_mul_sub_mul_eq_one
+  rw [eval_smul]
+  congr 1
+  · linear_combination x * hdet
+  · linear_combination y * hdet
+
+/-- A form and its translate `γ • f` take the same values: some value of `γ • f` satisfies `P`
+exactly when some value of `f` does. -/
+theorem exists_eval_smul_iff (γ : SL(2, R)) (f : BinaryQuadraticForm R) (P : R → Prop) :
+    (∃ x y, P ((γ • f).eval x y)) ↔ ∃ x y, P (f.eval x y) :=
+  ⟨fun ⟨_, _, h⟩ ↦ ⟨_, _, by rwa [eval_smul] at h⟩,
+    fun ⟨x, y, h⟩ ↦ ⟨_, _, by rwa [eval_smul_apply γ f x y]⟩⟩
 
 /-- `f ↦ f ∘ γ⁻¹` is a left action of `SL(2, R)` on binary quadratic forms. -/
 instance : MulAction SL(2, R) (BinaryQuadraticForm R) where

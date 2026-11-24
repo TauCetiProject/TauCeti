@@ -186,7 +186,7 @@ private theorem comp_map_comulAlgHom_comp_conjugationCoactAlgHom {B : Type x} [C
         toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
           Algebra.TensorProduct.includeRight) := by
     rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight, ← AlgHom.comp_assoc,
-      Bialgebra.toConv_comp_comulAlgHom]
+      AlgHom.toConv_comp_comulAlgHom]
   have hleft : (ψ.comp (Algebra.TensorProduct.map (AlgHom.id R H)
       (Bialgebra.comulAlgHom R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeLeft =
       ψ.comp Algebra.TensorProduct.includeLeft := by
