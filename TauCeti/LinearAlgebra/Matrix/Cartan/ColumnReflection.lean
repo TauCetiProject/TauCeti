@@ -34,6 +34,10 @@ matrix of the equivalence is `Matrix.reflMatrix`.
 * `Matrix.columnReflection_apply_same_eq`: with the update matrix `2 - Aᵀ`, the changed coordinate
   is `∑ⱼ (2 - Aᵀ) i j * cⱼ - cᵢ`.
 * `Matrix.columnReflection_apply_eq_mulVec`: the equivalence is multiplication by `reflMatrix A i`.
+* `Matrix.columnReflection_mul_columnReflection_pow_apply_single`:
+  the Chebyshev formula for `(sᵢ sⱼ)ⁿ eᵢ`.
+* `Matrix.columnReflection_mul_columnReflection_mul_columnReflection_pow_apply_single`:
+  the Chebyshev formula for `sⱼ (sᵢ sⱼ)ⁿ eᵢ`.
 * `Matrix.sum_columnReflection_smul`: evaluation of a reflected column on any family.
 * `Matrix.columnReflection_comp_equiv`: compatibility with relabelling the index set.
 * `Matrix.comp_equiv_mem_orbit`: relabelling the index set carries orbits to orbits.
@@ -97,7 +101,7 @@ theorem columnReflection_apply_eq_mulVec (i : κ) (c : κ → ℤ) :
 
 /-- Chebyshev coordinates for the power of two column reflections applied to the first
 simple column. -/
-theorem columnReflection_mul_columnReflection_pow_single (i j : κ) (n : ℕ) :
+theorem columnReflection_mul_columnReflection_pow_apply_single (i j : κ) (n : ℕ) :
     let t := A j i * A i j - 2
     let s := (Polynomial.Chebyshev.S ℤ (n : ℤ)).eval t
     let p := (Polynomial.Chebyshev.S ℤ ((n : ℤ) - 1)).eval t
@@ -111,7 +115,7 @@ theorem columnReflection_mul_columnReflection_pow_single (i j : κ) (n : ℕ) :
 
 /-- Chebyshev coordinates after following a power of two column reflections with reflection
 at its second vertex. -/
-theorem columnReflection_mul_columnReflection_mul_columnReflection_pow_single (i j : κ)
+theorem columnReflection_mul_columnReflection_mul_columnReflection_pow_apply_single (i j : κ)
     (n : ℕ) :
     let t := A j i * A i j - 2
     let s := (Polynomial.Chebyshev.S ℤ (n : ℤ)).eval t

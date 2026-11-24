@@ -22,7 +22,7 @@ injective, giving the infinite-denominator step in the rank-two finite-type obst
 
 The closed form uses Mathlib's Chebyshev formulas for products of two linear reflections.
 Positivity and growth use `one_le_S_eval` and `nonneg_S_eval_sub_one` for the coordinate signs, and
-`S_eval_add_S_sub_one_eval_strictMono` for growth of the even first coordinates.
+`strictMono_S_eval_add_S_sub_one_eval` for growth of the even first coordinates.
 
 ## Reference
 
@@ -139,8 +139,8 @@ private theorem rankTwoReflectedPair_eq_chebyshev (b c : ℤ) (n : ℕ) :
   dsimp only
   rw [← mul_apply_eq_comp, mul_pow_mul]
   unfold rankTwoReflection
-  rw [Matrix.columnReflection_mul_columnReflection_pow_single,
-    Matrix.columnReflection_mul_columnReflection_mul_columnReflection_pow_single]
+  rw [Matrix.columnReflection_mul_columnReflection_pow_apply_single,
+    Matrix.columnReflection_mul_columnReflection_mul_columnReflection_pow_apply_single]
   simp [coordinates, rankTwoCartan, mul_comm]
 
 private theorem rankTwoReflectedPair_signs {b c : ℤ}
@@ -168,8 +168,7 @@ private theorem rankTwoDenominatorPair_eq_rankTwoReflectedPair {b c : ℤ}
   let o := r₀ (Pi.single 1 1)
   have coord_e : coordinates e = (1, 0) := by simp [coordinates, e]
   have coord_o : coordinates o = (b, 1) := by
-    change coordinates (rankTwoReflection b c 0 (Pi.single 1 1)) = (b, 1)
-    rw [coordinates_reflection_zero]
+    simp only [o, r₀, coordinates_reflection_zero]
     simp [coordinates]
   have he : c • o - e = T e := by
     apply coordinates.injective
@@ -179,15 +178,22 @@ private theorem rankTwoDenominatorPair_eq_rankTwoReflectedPair {b c : ℤ}
   have ho : b • T e - o = T o := by
     apply coordinates.injective
     simp only [map_sub, map_smul, T, r₀, r₁, mul_apply_eq_comp, coordinates_reflection_zero,
-      coordinates_reflection_one, coord_e, coord_o]
-    ext <;> simp <;> ring_nf
-    simp
+      coordinates_reflection_one, coord_e, coord_o, mul_one, sub_zero]
+    -- The product subtraction and integer action are coordinatewise.
+    refine Prod.ext ?_ ?_
+    · change b • (b * c - 1) - b = b * (c * b - 1) - b
+      rw [smul_eq_mul]
+      ring
+    · change b • c - 1 = c * b - 1
+      rw [smul_eq_mul]
+      ring
   have hs₀ (j : ℕ) : 0 ≤ coordinates ((T ^ j) e) :=
     ⟨(rankTwoReflectedPair_signs hb hbc j).1.1.le, (rankTwoReflectedPair_signs hb hbc j).1.2⟩
   have hs₁ (j : ℕ) : 0 ≤ coordinates ((T ^ j) o) :=
     ⟨(rankTwoReflectedPair_signs hb hbc j).2.1.le, (rankTwoReflectedPair_signs hb hbc j).2.2.le⟩
-  change rankTwoDenominatorPair b c (n + 1) =
-    (coordinates ((T ^ n) e), coordinates ((T ^ n) o))
+  suffices h : rankTwoDenominatorPair b c (n + 1) =
+      (coordinates ((T ^ n) e), coordinates ((T ^ n) o)) by
+    simpa only [rankTwoReflectedPair, T, e, o, r₀, r₁] using h
   induction n with
   | zero => simp [coord_e, coord_o]
   | succ n ih =>
@@ -244,7 +250,7 @@ theorem rankTwoDenominatorPair_even_fst_strictMono {b c : ℤ} (hb : 0 ≤ b) (h
   cases n with
   | zero => simp
   | succ n =>
-    have h := Polynomial.Chebyshev.S_eval_add_S_sub_one_eval_strictMono
+    have h := Polynomial.Chebyshev.strictMono_S_eval_add_S_sub_one_eval
       (R := ℤ) (t := b * c - 2) (by omega)
     simpa only [rankTwoDenominatorPair_succ_eq_chebyshev hb hbc] using h (Nat.lt_succ_self n)
 
