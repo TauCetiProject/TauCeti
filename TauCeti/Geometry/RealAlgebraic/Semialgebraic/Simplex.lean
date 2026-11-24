@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.LinearAlgebra.AffineSpace.Independent
-public import TauCeti.Analysis.Convex.StdSimplex
+public import TauCeti.Analysis.Convex.StdSimplex.Boundary
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 import TauCeti.Analysis.Convex.OpenSimplex
@@ -19,8 +19,8 @@ import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Function
 # Semialgebraicity of standard simplices and open simplices
 
 The closed standard simplex in `σ → R` (`Finite σ`) together with its open part
-`TauCeti.openStdSimplex R σ`, its open facets `TauCeti.openStdSimplexFacet R i`, and (over `ℝ`) its
-relative boundary `TauCeti.stdSimplexBoundary σ` are semialgebraic.  Over `ℝ`, intersecting the
+`TauCeti.openStdSimplex R σ`, its open facets `TauCeti.openStdSimplexFacet R i`, and its relative
+boundary `TauCeti.stdSimplexBoundary R σ` are semialgebraic.  Over `ℝ`, intersecting the
 affine span of an affinely independent finite family (`AffineSubspace.isSemialgebraic`) with the
 open half-spaces of its continuous barycentric coordinates (`AffineMap.isSemialgebraic_pos`) shows
 that every open simplex `intrinsicInterior ℝ (convexHull ℝ (range p))` is semialgebraic.
@@ -81,35 +81,35 @@ theorem isSemialgebraic_openStdSimplexFacet [Finite σ] (i : σ) :
     IsSemialgebraic (openStdSimplexFacet R i) := by
   have h : openStdSimplexFacet R i =
       (range fun s : StdSimplex R σ => ⇑s.weights) ∩
-        ({y | eval y (X i) = 0} ∩ ⋂ j : {j : σ // j ≠ i}, {y | 0 < eval y (X j.1)}) := by
+        ({y | eval y (X i) = 0} ∩ ⋂ j : {j : σ // j ≠ i}, {y | 0 < eval y (X j.val)}) := by
     ext y
     simp
   rw [h]
   exact isSemialgebraic_range_toFun_comp_weights.inter
     ((isSemialgebraic_eval_eq_zero (X i)).inter
-      (.iInter fun j => isSemialgebraic_eval_pos (X j.1)))
+      (.iInter fun j => isSemialgebraic_eval_pos (X j.val)))
+
+/-- The relative boundary `stdSimplexBoundary R σ` of the standard simplex in `σ → R` (`Finite σ`)
+is semialgebraic. -/
+theorem isSemialgebraic_stdSimplexBoundary [Finite σ] :
+    IsSemialgebraic (stdSimplexBoundary R σ) := by
+  have h : stdSimplexBoundary R σ =
+      (range fun s : StdSimplex R σ => ⇑s.weights) ∩ ⋃ i : σ, {x | eval x (X i) = 0} := by
+    ext x
+    simp
+  rw [h]
+  exact isSemialgebraic_range_toFun_comp_weights.inter
+    (.iUnion fun i => isSemialgebraic_eval_eq_zero (X i))
 
 end TauCeti
 
 end CommRing
 
-/-! ### Standard simplex boundary and open simplices over `ℝ` -/
+/-! ### Open simplices over `ℝ` -/
 
 section Real
 
 variable {σ : Type*} [Finite σ]
-
-/-- The relative boundary `stdSimplexBoundary σ` of the standard simplex in `σ → ℝ` (`Finite σ`) is
-semialgebraic. -/
-theorem TauCeti.isSemialgebraic_stdSimplexBoundary :
-    TauCeti.IsSemialgebraic (TauCeti.stdSimplexBoundary σ) := by
-  have h : TauCeti.stdSimplexBoundary σ =
-      (range fun s : StdSimplex ℝ σ => ⇑s.weights) ∩ ⋃ i : σ, {x | eval x (X i) = 0} := by
-    ext x
-    simp
-  rw [h]
-  exact TauCeti.isSemialgebraic_range_toFun_comp_weights.inter
-    (.iUnion fun i => TauCeti.isSemialgebraic_eval_eq_zero (X i))
 
 /-- **Open simplices are semialgebraic.** The intrinsic interior of the convex hull of a finite
 affinely independent family `p : ι → σ → ℝ` (`Finite σ`) is semialgebraic. -/

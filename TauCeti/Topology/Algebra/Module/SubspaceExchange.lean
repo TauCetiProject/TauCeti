@@ -100,10 +100,10 @@ theorem exists_continuousLinearEquiv_preimage_coordSubspace {n : ℕ}
     ← TauCeti.splitAt_snd_eq_zero_iff (𝕜 := 𝕜) hd]
   constructor
   · intro hz
-    refine ⟨(TauCeti.splitAt (𝕜 := 𝕜) hd (e z)).1, ?_⟩
+    refine ⟨(TauCeti.splitAt (𝕜 := 𝕜) hd (e z)).fst, ?_⟩
     exact (TauCeti.splitAt (𝕜 := 𝕜) hd).injective (by simp [f, Prod.ext_iff, hz])
   · rintro ⟨v, hv⟩
-    simpa [f] using congrArg (fun y ↦ (TauCeti.splitAt (𝕜 := 𝕜) hd y).2) hv.symm
+    simpa [f] using congrArg (fun y ↦ (TauCeti.splitAt (𝕜 := 𝕜) hd y).snd) hv.symm
 
 end Pi
 

@@ -231,16 +231,17 @@ theorem intrinsicInterior_convexHull_pi_single (t : Set ι) :
     · intro j _ hji
       simp [Pi.single_eq_of_ne' (fun h => hji (Subtype.ext h))]
     · simp
-  · obtain ⟨_, hsum, hzero⟩ := mem_convexHull_pi_single_iff.1 hx
+  · obtain ⟨hxS, hzero⟩ := mem_convexHull_pi_single_iff.mp hx
+    obtain ⟨-, hsum⟩ := StdSimplex.mem_range_toFun_comp_weights_iff.mp hxS
     rw [Set.image_eq_range, (affineIndependent_pi_single ℝ t).mem_intrinsicInterior_convexHull_iff]
-    have hw1 : ∑ j : t, x j.1 = 1 := by
-      have hsub : ∑ j : t, x j.1 = ∑ i ∈ univ.filter (· ∈ t), x i :=
+    have hw1 : ∑ j : t, x j.val = 1 := by
+      have hsub : ∑ j : t, x j.val = ∑ i ∈ univ.filter (· ∈ t), x i :=
         (Finset.sum_subtype _ (fun _ => by simp) x).symm
       rw [hsub, Finset.sum_filter_of_ne fun i _ hxi => by_contra fun hit => hxi (hzero i hit),
         hsum]
-    refine ⟨fun j => x j.1, fun j => hpos j.1 j.2, hw1, ?_⟩
+    refine ⟨fun j => x j.val, fun j => hpos j.val j.property, hw1, ?_⟩
     rw [Finset.affineCombination_eq_linear_combination _ _ _ hw1]
-    have hsub : ∑ j : t, x j.1 • (Pi.single (j : ι) 1 : ι → ℝ) =
+    have hsub : ∑ j : t, x j.val • (Pi.single (j : ι) 1 : ι → ℝ) =
         ∑ i ∈ univ.filter (· ∈ t), x i • (Pi.single i 1 : ι → ℝ) :=
       (Finset.sum_subtype _ (fun _ => by simp) (fun i => x i • (Pi.single i 1 : ι → ℝ))).symm
     rw [hsub, Finset.sum_filter_of_ne fun i _ hxi =>

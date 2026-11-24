@@ -35,7 +35,7 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 ## Main declarations
 
 * `TauCeti.ConstructionB.lattice`: the Construction B carrier, characterized by `mem_lattice`
-  and `intCast_mem_lattice`.
+  and `intCast_mem_lattice`; its vectors are integral by `exists_intCast_eq_of_mem`.
 * `TauCeti.ConstructionB.val_add_two_mul_mem_lattice_iff`: the parity description of membership
   for doubly even codes.
 * `TauCeti.ConstructionB.sumHalf`: half the coordinate sum modulo two, with kernel
@@ -46,9 +46,9 @@ Golay Construction A lattice from which the Leech lattice is obtained by gluing 
 
 ## References
 
-* J. Leech and N. J. A. Sloane, *Sphere packing and error-correcting codes*, Canadian Journal of
-  Mathematics 23 (1971), reprinted as Chapter 5 of J. H. Conway and N. J. A. Sloane,
-  *Sphere Packings, Lattices and Groups*.
+* J. Leech and N. J. A. Sloane, *Sphere Packings and Error-Correcting Codes*, Canadian Journal of
+  Mathematics 23 (1971), no. 4, 718-745, reprinted as Chapter 5 of J. H. Conway and N. J. A.
+  Sloane, *Sphere Packings, Lattices and Groups*.
 -/
 
 public section
@@ -101,6 +101,13 @@ theorem intCast_mem_lattice (z : ι → ℤ) :
   · exact_mod_cast hk
   · exact_mod_cast hk
 
+variable {C} in
+/-- Every vector of Construction B is an integer vector. -/
+theorem exists_intCast_eq_of_mem {x : ι → ℚ} (hx : x ∈ lattice C) :
+    ∃ z : ι → ℤ, x = fun i ↦ (z i : ℚ) := by
+  obtain ⟨z, -, rfl⟩ := (ConstructionA.mem_lattice 2).mp (lattice_le C hx)
+  exact ⟨z, rfl⟩
+
 /-- **The parity form of Construction B.** For a doubly even code, the Construction A vector
 `c + 2z`, with `c` the `0`/`1` lift of a codeword, lies in Construction B exactly when `∑ zᵢ` is
 even. Together with `ConstructionA.exists_eq_val_add_mul` this describes every Construction B
@@ -138,10 +145,11 @@ private theorem four_smul_mem_lattice {x : ι → ℚ}
 open scoped Pointwise in
 /-- The Construction B carrier is a full lattice: it lies in Construction A and contains four
 times every Construction A vector. -/
-instance isLattice : (lattice C).IsLattice ℚ := by
-  refine Submodule.IsLattice.of_le_of_isLattice_of_fg ℚ
+instance isFullLattice : (lattice C).IsFullLattice ℚ := by
+  refine Submodule.IsFullLattice.of_le_of_fg ℚ
     (M := Units.mk0 (4 : ℚ) (by norm_num) • ConstructionA.lattice 2 C.toAddSubgroup) ?_
-    (Submodule.FG.of_le Submodule.IsLattice.fg (lattice_le C))
+    (Submodule.FG.of_le (Submodule.IsLattice.fg ℚ (ConstructionA.lattice 2 C.toAddSubgroup))
+      (lattice_le C))
   intro x hx
   obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
   simpa only [Units.smul_mk0, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_ofNat] using
@@ -156,8 +164,8 @@ noncomputable def sumHalf (hC : BinaryCode.IsEven C) :
   toFun x := ⌊(∑ i, (x : ι → ℚ) i) / 2⌋
   map_zero' := by simp
   map_add' x y := by
-    obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.2
-    obtain ⟨l, hl⟩ := ConstructionA.exists_sum_eq_two_mul C hC y.2
+    obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.property
+    obtain ⟨l, hl⟩ := ConstructionA.exists_sum_eq_two_mul C hC y.property
     simp only [Submodule.coe_add, Pi.add_apply, Finset.sum_add_distrib, hk, hl]
     rw [show ((2 : ℚ) * k + 2 * l) / 2 = ((k + l : ℤ) : ℚ) by push_cast; ring,
       show (2 : ℚ) * k / 2 = k by ring, show (2 : ℚ) * l / 2 = l by ring]
@@ -174,11 +182,11 @@ theorem sumHalf_apply_of_sum_eq (hC : BinaryCode.IsEven C)
 theorem sumHalf_eq_zero_iff (hC : BinaryCode.IsEven C)
     (x : ConstructionA.lattice 2 C.toAddSubgroup) :
     sumHalf C hC x = 0 ↔ (x : ι → ℚ) ∈ lattice C := by
-  obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.2
+  obtain ⟨k, hk⟩ := ConstructionA.exists_sum_eq_two_mul C hC x.property
   rw [sumHalf_apply_of_sum_eq C hC hk, ZMod.intCast_zmod_eq_zero_iff_dvd, mem_lattice]
   constructor
   · rintro ⟨l, rfl⟩
-    exact ⟨x.2, l, by rw [hk]; push_cast; ring⟩
+    exact ⟨x.property, l, by rw [hk]; push_cast; ring⟩
   · rintro ⟨-, l, hl⟩
     refine ⟨l, ?_⟩
     have : (k : ℚ) = 2 * l := by linarith

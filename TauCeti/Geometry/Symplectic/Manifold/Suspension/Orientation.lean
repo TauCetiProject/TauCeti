@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Orientation.AddCircle
+public import TauCeti.Geometry.Manifold.Degree.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Leaf
 
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Symplectic.Manifold.Suspension.PeriodicTorus
 
 /-!
-# Orientation and area of the orbit-torus parametrization of a horizontal curve
+# Orientation, covering multiplicity and area of a horizontal curve over an orbit torus
 
 Let `φ` be a diffeomorphism of a locally compact Hausdorff smooth manifold `M`, let `Y_φ` be its
 smooth mapping torus, with suspension vector field `T = ∂_t`, and let `X_φ = (ℝ / ℤ)_s × Y_φ`. For
@@ -48,6 +49,37 @@ oriented torus is `d`. So the `Ω`-area `∫_C u^* Ω` of an embedded curve of z
 the least period `d` of its primitive closed orbit, a positive integer, while its `σ_v`-area is
 zero by hypothesis.
 
+Without injectivity, for a Hausdorff `C`, the number of sheets `k = |v⁻¹(p)|` of `v` is finite
+and does not depend on `p`: since `v` preserves orientation everywhere, `k` is the degree of `v`,
+which is constant because `v` has no critical values
+(`TauCeti.degreeAtRegularValue_eq_of_forall_isRegularValue`). The integral formula for the degree
+(`TauCeti.integralTopForm_mpullback_eq_degreeAtRegularValue_mul_of_forall_isRegularValue`) then
+says that `u` integrates every two-form `β` on `X_φ` whose pullback `τ^* β` is integrable as `k`
+copies of the embedded orbit torus, `∫_C u^* β = k ∫ τ^* β`
+(`TauCeti.SmoothMappingTorus.integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq`). As a
+current, an immersed curve of zero vertical area is therefore its image `(ℝ / ℤ) × γ` with
+multiplicity `k`, and its `Ω`-area is `k d`
+(`integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq`),
+a positive multiple of the least period
+(`TauCeti.SmoothMappingTorus.exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul`).
+
+For a nonconstant horizontal pseudoholomorphic curve `u`, critical points allowed, the factor `v`
+through the orbit torus of the primitive closed orbit need not be a local diffeomorphism. When `C`
+is modelled on the plane `ℝ × ℝ`, `v` has a mapping degree, and it is positive
+(`TauCeti.SmoothMappingTorus.exists_degree_pos_orbitTorus_comp_eq_of_isPseudoholomorphicAt`). It
+is the covering multiplicity of `u` over the embedded torus `(ℝ / ℤ) × γ` in two senses. It is the
+number of preimages under `v` of every regular value
+(`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd`). And as a current `u` is
+`deg(v)` times the orbit torus: for every smooth two-form `α` on `X_φ`,
+`∫_C u^* α = ∫_C v^*(τ^* α) = deg(v) ∫ τ^* α`, by the degree formula
+`TauCeti.integralTopForm_mpullback_eq_degree_mul` for `v` applied to the form `τ^* α`. In
+particular the `Ω`-area of `u` is `deg(v) · d`, a positive multiple of the least period
+(`TauCeti.SmoothMappingTorus.integralTopForm_mpullback_suspensionForm_eq_degree_mul`).
+For the `k`-fold cover `τ ∘ (id × coverMap)` of the orbit torus of a point of period `d`, through
+the covering map `ℝ / (k d)ℤ → ℝ / dℤ` of the time circles, the factor `id × coverMap` has degree
+`k` (`AddCircle.degree_prodMap_id_coverMap`), so the cover has `Ω`-area `k d`
+(`integralTopForm_mpullback_orbitTorus_comp_prodMap_coverMap_suspensionForm`).
+
 ## Main results
 
 * `mfderiv_apply_almostComplex_eq_of_orbitTorus_comp_eq`: for a factor `v` through the orbit
@@ -64,6 +96,21 @@ zero by hypothesis.
   `Ω`-area `d`.
 * `integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero`: an embedded curve of zero
   vertical area has `Ω`-area the least period of its closed orbit.
+* `integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq`: a curve factoring through the
+  orbit torus by an orientation-preserving local diffeomorphism with `k` sheets integrates every
+  two-form with integrable pullback to the orbit torus as `k` times the orbit torus.
+* `integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq`: a curve factoring
+  through the orbit torus by an orientation-preserving local diffeomorphism with `k` sheets has
+  `Ω`-area `k d`.
+* `exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul`: an immersed curve of zero
+  vertical area has `Ω`-area `k d`, where `k ≥ 1` is the number of sheets with which it covers its
+  image and `d` the least period of its closed orbit.
+* `exists_degree_pos_orbitTorus_comp_eq_of_isPseudoholomorphicAt`: the factor through the orbit
+  torus of a nonconstant horizontal pseudoholomorphic curve has positive degree.
+* `integralTopForm_mpullback_suspensionForm_eq_degree_mul`: a curve through the orbit torus of a
+  point of period `d` has `Ω`-area `deg(v) · d`.
+* `integralTopForm_mpullback_orbitTorus_comp_prodMap_coverMap_suspensionForm`: the `k`-fold cover
+  of an orbit torus of period `d` through the covering map of the time circles has `Ω`-area `k d`.
 
 ## References
 
@@ -181,6 +228,15 @@ theorem isOrientationPreservingAt_of_orbitTorus_comp_eq
 
 variable {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
 
+/-- The orbit torus pulls the suspension form `Ω` back to a form of total area `d` on the
+positively oriented torus. -/
+private theorem integralTopForm_mpullback_orbitTorus_suspensionForm :
+    integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
+      (SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
+        (suspensionForm φ σ hσ)).val = d := by
+  simpa only [periodicTorus_eq_orbitTorus] using
+    integralTopForm_mpullback_periodicTorus_suspensionForm h (σ := σ) (hσ := hσ)
+
 /-- **The `Ω`-area of an oriented orbit-torus parametrization.** Let `u = τ ∘ Φ` for the orbit
 torus `τ` of a point of period `d` and an orientation-preserving diffeomorphism
 `Φ : C ≃ (ℝ / ℤ) × (ℝ / dℤ)`, for the product of the positive orientations of the two circles.
@@ -190,13 +246,63 @@ theorem integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hτΦ : orbitTorus φ h ∘ Φ = u)
     (hΦ : ∀ c, Manifold.Orientation.IsOrientationPreservingAt o
       ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) Φ c) :
-    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 = d := by
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).val = d := by
   subst hτΦ
   have hΦe : Topology.IsOpenEmbedding Φ := Φ.coe_toHomeomorph ▸ Φ.toHomeomorph.isOpenEmbedding
   rw [← SmoothForm.mpullback_mpullback _ _ Φ.contMDiff (contMDiff_orbitTorus h),
     SmoothForm.coe_mpullback,
     hΦe.integralTopForm_mpullback_of_isOrientationPreservingAt hΦ (by simp),
-    mpullback_orbitTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
+    integralTopForm_mpullback_orbitTorus_suspensionForm h]
+
+omit [IsManifold I' ∞ C] in
+/-- **A horizontal curve is a multiple of its orbit torus.** Let `u = τ ∘ v` for the orbit torus
+`τ` of a point of period `d` and a `C¹` local diffeomorphism `v : C → (ℝ / ℤ) × (ℝ / dℤ)` from a
+compact Hausdorff `C¹` surface that preserves orientation at every point, for the product of the
+positive orientations of the two circles. Then for every point `p` of the torus, `u` integrates
+every two-form `β` on `X_φ` whose pullback `τ^* β` is integrable as `|v⁻¹(p)|` times the orbit
+torus does: `∫_C u^* β = |v⁻¹(p)| ∫ τ^* β`. Here `|v⁻¹(p)|` is the degree of `v`, so it does not
+depend on `p`. -/
+theorem integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq [IsManifold I' 1 C]
+    [CompactSpace C] [T2Space C] (hv : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) 1 v)
+    (hτv : orbitTorus φ h ∘ v = u)
+    (hor : ∀ c, Manifold.Orientation.IsOrientationPreservingAt o
+      ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v c)
+    {β : RoughForm (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (UnitAddCircle × SmoothMappingTorus φ) ℝ 2}
+    (hβ : IntegrableTopForm (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I))
+      (orbitTorus φ h) β)) (p : UnitAddCircle × AddCircle (d : ℝ)) :
+    integralTopForm o (mpullback I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u β) =
+      (v ⁻¹' {p}).ncard * integralTopForm
+        ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
+        (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (orbitTorus φ h) β) := by
+  -- `C` is boundaryless, since `v` is a local diffeomorphism into the boundaryless torus.
+  have := hv.boundarylessManifold (by simp)
+  rw [← hτv, mpullback_comp (hv.contMDiff.mdifferentiable (by simp))
+    ((contMDiff_orbitTorus h).mdifferentiable (by simp)),
+    hv.integralTopForm_mpullback_eq_ncard_mul o _ (by simp) hv.contMDiff.continuous.isProperMap hor
+      p hβ]
+
+omit [IsManifold I' ∞ C] in
+/-- **The `Ω`-area of a horizontal curve covering its orbit torus.** Let `u = τ ∘ v` for the orbit
+torus `τ` of a point of period `d` and a `C¹` local diffeomorphism `v : C → (ℝ / ℤ) × (ℝ / dℤ)`
+from a compact Hausdorff `C¹` surface that preserves orientation at every point, for the product of
+the positive orientations of the two circles. Then for every point `p` of the torus the pullback of
+the suspension form `Ω = ds ∧ dt + σ_v` integrates to `|v⁻¹(p)| d` over `C`. -/
+theorem integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq
+    [IsManifold I' 1 C] [CompactSpace C] [T2Space C]
+    (hv : IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) 1 v) (hτv : orbitTorus φ h ∘ v = u)
+    (hor : ∀ c, Manifold.Orientation.IsOrientationPreservingAt o
+      ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v c)
+    (p : UnitAddCircle × AddCircle (d : ℝ)) :
+    integralTopForm o (mpullback I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u (suspensionForm φ σ hσ).val) =
+      (v ⁻¹' {p}).ncard * d := by
+  have hβ : IntegrableTopForm (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I))
+      (orbitTorus φ h) (suspensionForm φ σ hσ).val) := by
+    rw [← SmoothForm.coe_mpullback _ (contMDiff_orbitTorus h)]
+    exact (SmoothForm.isSmoothForm _).integrableTopForm (isClosed_tsupport _).isCompact
+      (Module.Basis.finTwoProd ℝ)
+  rw [integralTopForm_mpullback_eq_ncard_mul_of_orbitTorus_comp_eq h hv hτv hor hβ p,
+    ← SmoothForm.coe_mpullback _ (contMDiff_orbitTorus h),
+    integralTopForm_mpullback_orbitTorus_suspensionForm h]
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [I'.Boundaryless] [CompactSpace C]
   [ConnectedSpace C]
@@ -222,7 +328,7 @@ theorem exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d) :
     ∃ v : C → UnitAddCircle × AddCircle (d : ℝ),
@@ -254,7 +360,7 @@ theorem exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d) :
     ∃ Φ : C ≃ₘ⟮I', 𝓘(ℝ).prod 𝓘(ℝ)⟯ UnitAddCircle × AddCircle (d : ℝ),
@@ -291,10 +397,10 @@ theorem integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero
       0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (h0 : integralTopForm o (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) :
-    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).1 =
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).val =
       minimalPeriod φ x := by
   have : Fact (0 < (minimalPeriod φ x : ℝ)) :=
     ⟨Nat.cast_pos.mpr (minimalPeriod_pos_of_integralTopForm_eq_zero hu ho hhol hS hV htame h0
@@ -303,6 +409,142 @@ theorem integralTopForm_mpullback_suspensionForm_of_integralTopForm_eq_zero
     (isPeriodicPt_minimalPeriod φ x) hu hu₁ ho hhol hS hV htame h0 hinj hc rfl
   exact integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq _ Φ hu hτΦ hΦ
 
+/-- **The `Ω`-area of an immersed curve of zero vertical area.** Under the hypotheses of
+`exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero`, with `C` moreover
+Hausdorff, let `(s, [t, x])` be a value of `u`, where `x` has least period `d`. Then `u = τ ∘ v` for
+the orbit torus `τ` of the primitive closed orbit through `x` and a surjective local diffeomorphism
+`v : C → (ℝ / ℤ) × (ℝ / dℤ)` that preserves orientation at every point, for the product of the
+positive orientations of the two circles, and for every point `p` of the torus the `Ω`-area of `u`
+is `k d`,
+where `k = |v⁻¹(p)| ≥ 1` is the number of sheets with which `u` covers its image `(ℝ / ℤ) × γ`. -/
+theorem exists_integralTopForm_mpullback_suspensionForm_eq_ncard_mul [T2Space C]
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
+    (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
+    (hS : ∀ c, J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
+    (hV : ∀ c, ∀ v ∈ suspensionVerticalSubspace φ (u c),
+      J (u c) v ∈ suspensionVerticalSubspace φ (u c))
+    (htame : ∀ c, ∀ v ∈ suspensionVerticalSubspace φ (u c), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
+        (fiberForm φ σ hσ)) (u c) v (J (u c) v))
+    (h0 : integralTopForm o (SmoothForm.mpullback u hu
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0)
+    (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
+    {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d) :
+    ∃ v : C → UnitAddCircle × AddCircle (d : ℝ),
+      IsLocalDiffeomorph I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v ∧ Surjective v ∧ orbitTorus φ h ∘ v = u ∧
+        (∀ c, Manifold.Orientation.IsOrientationPreservingAt o
+          ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ))) v c) ∧
+        ∀ p, 0 < (v ⁻¹' {p}).ncard ∧
+          integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).val =
+            (v ⁻¹' {p}).ncard * d := by
+  obtain ⟨v, hloc, hsurj, hτv, hor⟩ :=
+    exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero h hu ho hhol hS hV
+      htame h0 hinj hc hd
+  refine ⟨v, hloc, hsurj, hτv, hor, fun p ↦ ⟨?_, by
+    rw [SmoothForm.coe_mpullback]
+    exact integralTopForm_mpullback_suspensionForm_eq_ncard_mul_of_orbitTorus_comp_eq h
+      (hloc.of_le (by simp)) hτv hor p⟩⟩
+  -- The fibre is finite, as a fibre of a local diffeomorphism from a compact surface, and
+  -- nonempty since `v` is onto.
+  refine (ncard_pos (hloc.isLocalHomeomorph.isLocallyInjective.finite_preimage_singleton p)).2 ?_
+  obtain ⟨c', hc'⟩ := hsurj p
+  exact ⟨c', hc'⟩
+
 end SmoothMappingTorus
 
 end TauCeti
+
+/-! ### The covering degree of a horizontal curve -/
+
+namespace TauCeti.SmoothMappingTorus
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] {φ : M ≃ₘ⟮I, I⟯ M}
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ (ℝ × ℝ) H'} {C : Type*}
+  [TopologicalSpace C] [ChartedSpace H' C] [IsManifold I' ∞ C] [T2Space C] [CompactSpace C]
+  {o : Manifold.Orientation I' C (Fin 2)}
+  {u : C → UnitAddCircle × SmoothMappingTorus φ} {d : ℕ} [Fact (0 < (d : ℝ))] {x : M}
+  {v : C → UnitAddCircle × AddCircle (d : ℝ)}
+
+/-- **The area of a curve through an orbit torus.** Let `u = τ ∘ v` be a smooth map from a compact
+oriented boundaryless surface `C` through the orbit torus `τ` of a periodic point of period `d`,
+with `v` smooth and `C` modelled on the plane `ℝ × ℝ`. Orient the parameter torus as the product
+of the positive orientations of its circles. Then the area of `u` for the suspension form
+`Ω = ds ∧ dt + σ_v` is `deg(v) · d`, by the degree formula
+`TauCeti.integralTopForm_mpullback_eq_degree_mul` for `v` applied to `τ^* Ω`, whose integral over
+the parameter torus is `d`. When `v` is an orientation-preserving diffeomorphism this is
+`integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq`, which needs no compactness. -/
+theorem integralTopForm_mpullback_suspensionForm_eq_degree_mul
+    [BoundarylessManifold I' C] {σ : SmoothTwoForm I M}
+    {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hv : ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v)
+    (h : IsPeriodicPt φ d x) (hτv : orbitTorus φ h ∘ v = u) :
+    integralTopForm o (SmoothForm.mpullback u hu (suspensionForm φ σ hσ)).val =
+      degree o ((AddCircle.orientation 1).prod (AddCircle.orientation (d : ℝ))) v * d := by
+  subst hτv
+  rw [← SmoothForm.mpullback_mpullback _ _ hv (contMDiff_orbitTorus h),
+    mpullback_orbitTorus_suspensionForm, integralTopForm_mpullback_wedge_timeForm_eq_degree_mul hv,
+    one_mul]
+
+/-- **Multiple covers of an orbit torus.** Let `x` have period `d`, and let `m = k d` for a natural
+number `k`. The `k`-fold cover of the orbit torus `τ` of period `d`, parametrized by
+`τ ∘ (id × coverMap) : (ℝ / ℤ) × (ℝ / mℤ) → X_φ` through the covering map of the time circles, has
+`Ω`-area `k d` for the product of the positive orientations of the two circles: the map
+`id × coverMap` has degree `k` (`AddCircle.degree_prodMap_id_coverMap`). This cover is the orbit
+torus of `x` with period `m` (`orbitTorus_comp_prodMap_coverMap`); it has the image of `τ`, and
+its integral class is `k` times that of `τ` (`orbitTorusHomologyClass_const_mul`). -/
+theorem integralTopForm_mpullback_orbitTorus_comp_prodMap_coverMap_suspensionForm
+    {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ} {m k : ℕ}
+    [Fact (0 < (m : ℝ))] (h : IsPeriodicPt φ d x)
+    (hdm : (m : ℝ) ∈ AddSubgroup.zmultiples (d : ℝ)) (hmk : (m : ℝ) = k * d) :
+    integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (m : ℝ)))
+      (SmoothForm.mpullback (orbitTorus φ h ∘ Prod.map id (AddCircle.coverMap hdm))
+        ((contMDiff_orbitTorus h).comp (contMDiff_id.prodMap (AddCircle.contMDiff_coverMap hdm ∞)))
+        (suspensionForm φ σ hσ)).val = k * d := by
+  rw [integralTopForm_mpullback_suspensionForm_eq_degree_mul _
+    (contMDiff_id.prodMap (AddCircle.contMDiff_coverMap hdm ∞)) h rfl,
+    AddCircle.degree_prodMap_id_coverMap hdm _ hmk, Int.cast_natCast]
+
+/-- **Nonconstant pseudoholomorphic horizontal curves cover their orbit torus with positive
+degree.** Let `u` be a smooth pseudoholomorphic map from a compact connected boundaryless surface
+`C`, modelled on the plane `ℝ × ℝ` and oriented so that the frames `(e, j e)` are positive, into
+`X_φ` with an almost complex structure satisfying `J ∂_s = T` along the image of `u`, and let every
+tangent image of `u` lie in the horizontal plane `span(∂_s, T)`. Suppose the differential of `u` is
+nonzero somewhere, and let `(s, [t, x])` be a value of `u`, where `x` has least period `d`. Then
+`u = τ ∘ v` for the orbit torus `τ` and a smooth pseudoholomorphic map `v` of positive degree. By
+`TauCeti.degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd` this degree is the number of
+preimages under `v` of each regular value, and by the degree formula
+`TauCeti.integralTopForm_mpullback_eq_degree_mul` for `v` it is the multiplicity with which `u`
+covers the embedded torus `(ℝ / ℤ) × γ` as a current. -/
+theorem exists_degree_pos_orbitTorus_comp_eq_of_isPseudoholomorphicAt [I.Boundaryless]
+    [FiniteDimensional ℝ E] [I'.Boundaryless] [PreconnectedSpace C]
+    {J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
+      (UnitAddCircle × SmoothMappingTorus φ)} {j : SmoothAlmostComplexStructure I' C}
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
+    (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
+    (hS : ∀ c, J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
+    (hH : ∀ c (e : TangentSpace I' c),
+      mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c))
+    {c₀ : C} (hne : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c₀ ≠ 0)
+    {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (h : IsPeriodicPt φ d x)
+    (hd : minimalPeriod φ x = d) :
+    ∃ v : C → UnitAddCircle × AddCircle (d : ℝ), ContMDiff I' (𝓘(ℝ).prod 𝓘(ℝ)) ∞ v ∧
+      (∀ c, IsPseudoholomorphicAt j (SmoothAlmostComplexStructure.addCircleProd 1 d) v c) ∧
+      orbitTorus φ h ∘ v = u ∧
+      0 < degree o ((AddCircle.orientation 1).prod (AddCircle.orientation (d : ℝ))) v := by
+  obtain ⟨v, hv, hvhol, -, hτv⟩ :=
+    exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt hu ho hhol hS hH hne hc h hd
+  refine ⟨v, hv, hvhol, hτv, degree_pos_of_isPseudoholomorphicAt_addCircleProd ho hv hvhol
+    (c₀ := c₀) fun h0 ↦ hne ?_⟩
+  -- By the chain rule `du = dτ ∘ dv`, so `du` vanishes with `dv`.
+  rw [← hτv, mfderiv_comp c₀ ((contMDiff_orbitTorus h).mdifferentiableAt (by simp))
+    (hv.mdifferentiableAt (by simp)), h0, ContinuousLinearMap.comp_zero]
+
+end TauCeti.SmoothMappingTorus

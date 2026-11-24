@@ -7,6 +7,9 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
+import TauCeti.Algebra.CharP.Frobenius.Fixed
+import TauCeti.Algebra.GroupWithZero.Units.Finite
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The Frobenius over a finite base field
@@ -22,11 +25,12 @@ For a field extension `L` of `K` the range of the `q`-power map is a subfield ov
 purely inseparable: every `x : L` has `x ^ q` in that image, and `q` is a power of the exponential
 characteristic.
 
-On a finite field of order `p ^ 2` the Frobenius automorphism `frobeniusEquiv K p`, sending `x`
-to `x ^ p`, is an involution. This is the field automorphism behind Hermitian duality of codes
-over the field of four elements. More generally, on a field of order `p ^ (2 n)` the iterated
-Frobenius `x ↦ x ^ p ^ n` is an involution, the conjugation of the field with `q²` elements over
-the field with `q = p ^ n` elements behind the finite unitary groups.
+On a finite field of exponential characteristic `p` and order `p ^ 2` the Frobenius automorphism
+`frobeniusEquiv K p`, sending `x` to `x ^ p`, is an involution. This is the field automorphism
+behind Hermitian duality of codes over the field of four elements. More generally, on a field of
+exponential characteristic `p` and order `p ^ (2 n)` the iterated Frobenius `x ↦ x ^ p ^ n` is an
+involution, the conjugation of the field with `q²` elements over the field with `q = p ^ n`
+elements behind the finite unitary groups.
 
 ## Main definitions
 
@@ -44,10 +48,17 @@ the field with `q = p ^ n` elements behind the finite unitary groups.
   only finitely many elements.
 * `TauCeti.FiniteField.isPurelyInseparable_fieldRange_frobeniusAlgHom`: `L` is purely
   inseparable over the field range of `FiniteField.frobeniusAlgHom K L`.
-* `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of order `p ^ 2`, the Frobenius
+* `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of exponential characteristic `p`
+  with `Nat.card K = p ^ (n * 2)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution.
+* `TauCeti.FiniteField.frobeniusEquiv_involutive`: on a field of exponential characteristic `p`
+  with `Nat.card K = p ^ 2` and `[PerfectRing K p]` (automatic once `K` is finite), the Frobenius
   automorphism `x ↦ x ^ p` is an involution.
-* `TauCeti.FiniteField.iterateFrobenius_involutive`: on a field of order `p ^ (2 n)`, the iterated
-  Frobenius `x ↦ x ^ p ^ n` is an involution.
+* `TauCeti.FiniteField.exists_iterateFrobenius_ne_of_card_eq_sq`: on a field of exponential
+  characteristic `p` with `Nat.card K = (p ^ n) ^ 2`, the iterated Frobenius `x ↦ x ^ p ^ n` is not
+  the identity.
+
+None of these three assumes `[Finite K]`: the `Nat.card` equation implies it, by
+`TauCeti.finite_of_natCard_eq_pow`.
 
 ## Mathematical context
 
@@ -140,32 +151,37 @@ theorem isPurelyInseparable_fieldRange_frobeniusAlgHom :
 
 /-! ### The Frobenius of a field of order `p ^ 2` or `p ^ (2 n)` -/
 
-section Involutive
+variable {K : Type*} [Field K] {p : ℕ} [ExpChar K p]
 
-variable {K : Type*} [Field K] [Finite K] {p : ℕ} [Fact p.Prime] [CharP K p]
-
-/-- On a field of order `p ^ 2`, the Frobenius automorphism `x ↦ x ^ p` is an involution. -/
-theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
-    Function.Involutive (frobeniusEquiv K p) := by
-  let := Fintype.ofFinite K
-  have hcard : Fintype.card K = p ^ 2 := Nat.card_eq_fintype_card.symm.trans hK
-  intro x
-  simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
-    RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
-
-omit [Finite K] in
-/-- On a field of order `p ^ (2 n)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution. For
-the field with `q²` elements, `q = p ^ n`, this is the involution `x ↦ x ^ q`. -/
+/-- On a field of exponential characteristic `p` with `Nat.card K = p ^ (n * 2)`, the iterated
+Frobenius `x ↦ x ^ p ^ n` is an involution. For the field with `q²` elements, `q = p ^ n`, this is
+the involution `x ↦ x ^ q`. -/
 theorem iterateFrobenius_involutive {n : ℕ} (hK : Nat.card K = p ^ (n * 2)) :
     Function.Involutive (iterateFrobenius K p n) := by
-  have : Finite K := Nat.finite_of_card_ne_zero
-    (by rw [hK]; exact (pow_pos (Fact.out : p.Prime).pos _).ne')
-  let := Fintype.ofFinite K
+  have := finite_of_natCard_eq_pow (expChar_pos K p).ne' hK
   intro x
-  rw [iterateFrobenius_def, iterateFrobenius_def, ← pow_mul, ← pow_add, ← mul_two, ← hK,
-    Nat.card_eq_fintype_card, FiniteField.pow_card]
+  -- Two passes of the `p ^ n`-power map make the `Nat.card K`-power map, which fixes `x`.
+  rw [← iterateFrobenius_add_apply, ← mul_two, iterateFrobenius_def, ← hK, pow_natCard]
 
-end Involutive
+/-- On a field of exponential characteristic `p` with `Nat.card K = p ^ 2`, the Frobenius
+automorphism `x ↦ x ^ p` is an involution: the case `n = 1` of `iterateFrobenius_involutive`.
+The instance `[PerfectRing K p]` is needed to state `frobeniusEquiv K p`. Every finite field is
+perfect, so a caller with only the `Nat.card` equation obtains it after deriving `Finite K` by
+`TauCeti.finite_of_natCard_eq_pow`. -/
+theorem frobeniusEquiv_involutive [PerfectRing K p] (hK : Nat.card K = p ^ 2) :
+    Function.Involutive (frobeniusEquiv K p) := by
+  have h := iterateFrobenius_involutive (K := K) (p := p) (n := 1) (by rwa [one_mul])
+  rwa [iterateFrobenius_one, ← coe_frobeniusEquiv] at h
+
+/-- On a field of exponential characteristic `p` with `Nat.card K = (p ^ n) ^ 2`, the iterated
+Frobenius `x ↦ x ^ p ^ n` is not the identity. -/
+theorem exists_iterateFrobenius_ne_of_card_eq_sq {n : ℕ}
+    (hK : Nat.card K = (p ^ n) ^ 2) : ∃ s : K, iterateFrobenius K p n s ≠ s := by
+  have := finite_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
+  have hq := one_lt_of_natCard_eq_pow (expChar_pow_pos K p n).ne' hK
+  refine exists_iterateFrobenius_ne hq ?_
+  rw [← Nat.cast_card, hK]
+  exact_mod_cast lt_self_pow₀ hq one_lt_two
 
 end TauCeti.FiniteField
 

@@ -63,7 +63,7 @@ theorem exists_notMem_forall_stabilizer_eq_top_of_finrank_prime {L : Type} [Fiel
     [NumberField L] [Algebra K L] [IsGalois K L] (hL : (Module.finrank K L).Prime)
     (S : Finset (HeightOneSpectrum (𝓞 K))) :
     ∃ v ∉ S, ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      MulAction.stabilizer (L ≃ₐ[K] L) w.1.asIdeal = ⊤ := by
+      MulAction.stabilizer (L ≃ₐ[K] L) w.val.asIdeal = ⊤ := by
   have : Fact (Nat.card (L ≃ₐ[K] L)).Prime := ⟨(IsGalois.card_aut_eq_finrank K L).symm ▸ hL⟩
   have : IsCyclic (L ≃ₐ[K] L) := isCyclic_of_prime_card rfl
   -- Otherwise every place outside `S` has a place above it whose decomposition group, a proper

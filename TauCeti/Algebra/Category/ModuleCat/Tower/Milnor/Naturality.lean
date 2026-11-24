@@ -148,7 +148,6 @@ theorem productHomologyEquiv_naturality (f : C ⟶ D) (i : ι) :
     productComplexMap_comp_π]
   simp only [HomologicalComplex.homologyMap_comp, ModuleCat.comp_apply,
     HomologicalComplex.homologyFunctor_map]
-  rfl
 
 /-- The map from homology of the limit to the limit of homology is natural, without
 surjectivity assumptions on the towers. -/
@@ -165,7 +164,6 @@ theorem homologyToLim_naturality (f : C ⟶ D) (i : ι) :
     limComplexMap_comp_π]
   simp only [HomologicalComplex.homologyMap_comp, ModuleCat.comp_apply,
     HomologicalComplex.homologyFunctor_map]
-  rfl
 
 /-- The connecting map from `lim¹` to limit-complex homology is natural for towers
 whose difference maps on terms are surjective. -/

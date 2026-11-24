@@ -23,7 +23,7 @@ the rational barycentric formulas `TauCeti.stdSimplexExtension` and
 regularity properties are needed alongside continuity and strict ordering:
 
 1. **Semialgebraicity on the closed simplex:** if the boundary data `g` are semialgebraic on
-   `TauCeti.stdSimplexBoundary ι`, then `stdSimplexExtension α g` is semialgebraic on the whole
+   `TauCeti.stdSimplexBoundary ℝ ι`, then `stdSimplexExtension α g` is semialgebraic on the whole
    closed standard simplex (`TauCeti.isSemialgebraicOn_stdSimplexExtension`); likewise, if `a` and
    `b` are semialgebraic on the closed standard simplex and `c` is semialgebraic on its boundary,
    then `stdSimplexGapExtension a b c α` is semialgebraic on the closed standard simplex without
@@ -179,18 +179,18 @@ private theorem isSemialgebraicOn_stdSimplexExtension_of_subsingleton {ι : Type
       (isSemialgebraic_singleton _)).congr fun x hx => by rw [mem_singleton_iff.1 hx]
 
 /-- **Semialgebraicity of the rational simplex extension.** If `g` is semialgebraic on the
-relative boundary `stdSimplexBoundary ι` of the standard simplex (`Fintype ι`), then
+relative boundary `stdSimplexBoundary ℝ ι` of the standard simplex (`Fintype ι`), then
 `stdSimplexExtension α g` is semialgebraic on the whole closed standard simplex. -/
 theorem isSemialgebraicOn_stdSimplexExtension {ι : Type*} [Fintype ι] [DecidableEq ι]
     {g : (ι → ℝ) → ℝ} (α : ℝ)
-    (hg : IsSemialgebraicOn (fun x (_ : Unit) => g x) (stdSimplexBoundary ι)) :
+    (hg : IsSemialgebraicOn (fun x (_ : Unit) => g x) (stdSimplexBoundary ℝ ι)) :
     IsSemialgebraicOn (fun x (_ : Unit) => stdSimplexExtension α g x)
       (range fun s : StdSimplex ℝ ι => ⇑s.weights) := by
   rcases subsingleton_or_nontrivial ι with _ | _
   · exact isSemialgebraicOn_stdSimplexExtension_of_subsingleton α
   · set Δ : Set (ι → ℝ) := range fun s : StdSimplex ℝ ι => ⇑s.weights
     set P : Set (ι → ℝ) := {x | ∀ i, 0 < x i}
-    have hbdry : Δ \ P = stdSimplexBoundary ι := by
+    have hbdry : Δ \ P = stdSimplexBoundary ℝ ι := by
       ext x
       simp only [Set.mem_sdiff, P, mem_ofPred_eq, mem_stdSimplexBoundary, Δ]
       refine ⟨fun ⟨hx, hnot⟩ =>
@@ -288,20 +288,20 @@ end Extension
 section GapExtension
 
 /-- **Semialgebraicity of gap-height extensions.** If `a` and `b` are semialgebraic on the closed
-standard simplex (`Fintype ι`) and `c` is semialgebraic on `stdSimplexBoundary ι`, then
+standard simplex (`Fintype ι`) and `c` is semialgebraic on `stdSimplexBoundary ℝ ι`, then
 `stdSimplexGapExtension a b c α` is semialgebraic on the closed standard simplex. No non-collapse
 hypothesis on `a` and `b` is needed. -/
 theorem isSemialgebraicOn_stdSimplexGapExtension {ι : Type*} [Fintype ι] [DecidableEq ι]
     {a b c : (ι → ℝ) → ℝ} (α : ℝ)
     (ha : IsSemialgebraicOn (fun x (_ : Unit) => a x) (range fun s : StdSimplex ℝ ι => ⇑s.weights))
     (hb : IsSemialgebraicOn (fun x (_ : Unit) => b x) (range fun s : StdSimplex ℝ ι => ⇑s.weights))
-    (hc : IsSemialgebraicOn (fun x (_ : Unit) => c x) (stdSimplexBoundary ι)) :
+    (hc : IsSemialgebraicOn (fun x (_ : Unit) => c x) (stdSimplexBoundary ℝ ι)) :
     IsSemialgebraicOn (fun x (_ : Unit) => stdSimplexGapExtension a b c α x)
       (range fun s : StdSimplex ℝ ι => ⇑s.weights) := by
   have haB := ha.mono isSemialgebraic_stdSimplexBoundary stdSimplexBoundary_subset
   have hbB := hb.mono isSemialgebraic_stdSimplexBoundary stdSimplexBoundary_subset
   have hr : IsSemialgebraicOn (fun y (_ : Unit) => (c y - a y) / (b y - a y))
-      (stdSimplexBoundary ι) :=
+      (stdSimplexBoundary ℝ ι) :=
     ((hc.sub haB).div (hbB.sub haB)).congr fun y _ => by ext; simp
   exact (ha.add ((hb.sub ha).mul (isSemialgebraicOn_stdSimplexExtension α hr))).congr
     fun x _ => by ext; simp [stdSimplexGapExtension_def]

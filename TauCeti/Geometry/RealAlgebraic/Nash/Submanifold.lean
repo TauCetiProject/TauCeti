@@ -92,7 +92,7 @@ structure NashOnSubmanifold (d : ℕ) (f : (Fin n → ℝ) → τ → ℝ) (S : 
 /-- Unfolding `TauCeti.NashOnSubmanifold`. -/
 theorem nashOnSubmanifold_iff :
     NashOnSubmanifold d f S ↔ AnalyticOnSubmanifold d f S ∧ IsSemialgebraicOn f S :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  ⟨fun h ↦ ⟨h.analyticOnSubmanifold, h.isSemialgebraicOn⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 namespace NashOnSubmanifold
 
@@ -201,7 +201,7 @@ theorem eval_comp (hf : NashOnSubmanifold d f S) (p : υ → MvPolynomial τ ℝ
 /-- The pointwise sum of Nash maps is a Nash map. -/
 theorem add (hf : NashOnSubmanifold d f S) (hg : NashOnSubmanifold d g S) :
     NashOnSubmanifold d (f + g) S :=
-  ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := fun p : (τ → ℝ) × (τ → ℝ) ↦ p.1 + p.2)
+  ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := fun p : (τ → ℝ) × (τ → ℝ) ↦ p.fst + p.snd)
       (fun _ _ ↦ analyticAt_fst.add analyticAt_snd)
       (hf.analyticOnSubmanifold.prod hg.analyticOnSubmanifold) (mapsTo_univ _ _),
     hf.isSemialgebraicOn.add hg.isSemialgebraicOn⟩
@@ -220,7 +220,7 @@ theorem sub (hf : NashOnSubmanifold d f S) (hg : NashOnSubmanifold d g S) :
 /-- The pointwise product of Nash maps is a Nash map. -/
 theorem mul (hf : NashOnSubmanifold d f S) (hg : NashOnSubmanifold d g S) :
     NashOnSubmanifold d (f * g) S :=
-  ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := fun p : (τ → ℝ) × (τ → ℝ) ↦ p.1 * p.2)
+  ⟨AnalyticOnNhd.comp_analyticOnSubmanifold (g := fun p : (τ → ℝ) × (τ → ℝ) ↦ p.fst * p.snd)
       (fun _ _ ↦ analyticAt_fst.mul analyticAt_snd)
       (hf.analyticOnSubmanifold.prod hg.analyticOnSubmanifold) (mapsTo_univ _ _),
     hf.isSemialgebraicOn.mul hg.isSemialgebraicOn⟩
