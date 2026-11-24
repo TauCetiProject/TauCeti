@@ -322,6 +322,15 @@ theorem congr_symm (θ : P ≃ₗ[R] P') : (congr f θ).symm = congr f θ.symm :
 
 end Map
 
+/-- Conjugating `BalancedExtension.map f T` by `equivOfSemilinearEquiv j` gives
+`j.conjRingEquiv T`. -/
+@[simp]
+theorem conjRingEquiv_equivOfSemilinearEquiv_map {σ' : S →+* R} [RingHomInvPair f σ']
+    [RingHomInvPair σ' f] (j : P ≃ₛₗ[f] Q) (T : Module.End R P) :
+    (equivOfSemilinearEquiv j).conjRingEquiv (map f T) = j.conjRingEquiv T := by
+  ext q
+  simp
+
 /-- Transport balanced extension along equality of the scalar ring homomorphisms. -/
 def congrRingHom {g : R →+* S} (h : f = g) :
     BalancedExtension f P ≃ₗ[S] BalancedExtension g P := by

@@ -265,6 +265,12 @@ def coinvariantEnd (γ₀ : nonnegSubmonoid deg) : Module.End Λ (Coinvariants �
       Coinvariants.mk Λ G P (single γ₀ (1 : Λ) • p) := by simp [coinvariantEnd]
 @[simp] theorem coinvariantEnd_one : coinvariantEnd Λ ι deg hker hPG 1 = LinearMap.id := by
   ext p; simp [← one_def]
+@[simp] theorem coinvariantEnd_toNonnegSubmonoid (g : G) :
+    coinvariantEnd Λ ι deg hker hPG (toNonnegSubmonoid ι deg hker g) = LinearMap.id := by
+  ext p
+  have h : single (toNonnegSubmonoid ι deg hker g) (1 : Λ) • p = (single g (1 : Λ) : Λ[G]) • p := by
+    rw [hPG]; simp
+  simp [h]
 @[simp] theorem coinvariantEnd_mul (γ₁ γ₂ : nonnegSubmonoid deg) :
     coinvariantEnd Λ ι deg hker hPG (γ₁ * γ₂) =
       coinvariantEnd Λ ι deg hker hPG γ₁ ∘ₗ coinvariantEnd Λ ι deg hker hPG γ₂ := by
@@ -283,10 +289,9 @@ theorem map_coinvariantEnd [IsScalarTower Λ Λ[G] P]
 /-- Elements of `Γ` of the same degree induce the same endomorphism on `Coinvariants Λ G P`. -/
 theorem coinvariantEnd_eq_of_map_eq {γ₁ γ₀ : nonnegSubmonoid deg} (hdeg : deg γ₁.val = deg γ₀.val) :
     coinvariantEnd Λ ι deg hker hPG γ₁ = coinvariantEnd Λ ι deg hker hPG γ₀ := by
-  ext p; simp only [coinvariantEnd_mk]
   obtain ⟨g, hg⟩ := MonoidHom.mem_range.1 (hker.symm ▸ deg.div_mem_ker_iff.2 hdeg)
   have hγ₁ : γ₁ = toNonnegSubmonoid ι deg hker g * γ₀ := Subtype.ext (by simp [hg, div_mul_cancel])
-  rw [hγ₁, single_toNonnegSubmonoid_mul_smul hPG, Coinvariants.mk_single_one_smul]
+  simp [hγ₁]
 
 section CoinvariantTraceFormula
 variable {Λ ι deg hker} [IsScalarTower Λ Λ[G] P] [Module.Finite Λ[G] P] [Module.Projective Λ[G] P]
@@ -309,10 +314,7 @@ private theorem hattoriStallingsTrace_coinvariantEnd_of_retract
   have hsingle : (fun j : Fin r ↦ single (1 : G) ((Pi.single k (1 : Λ) : Fin r → Λ) j)) =
       (Pi.single k 1 : Fin r → Λ[G]) := by
     funext j; by_cases hjk : j = k <;> simp [hjk, one_def]
-  have haug (z : Λ[G]) : augmentation Λ G z = ∑ g : G, z.coeff g := by
-    conv_lhs => rw [← sum_coeff_single z]
-    rw [Finsupp.sum_fintype _ _ (by simp), map_sum]; simp
-  simp [i_bar, π_bar, ePi, Pi.basisFun_apply, hsingle, haug]
+  simp [i_bar, π_bar, ePi, Pi.basisFun_apply, hsingle, augmentation_eq_sum_coeff_of_fintype]
 
 omit [IsScalarTower Λ Λ[G] P] in
 private theorem conjClassGroupTrace_eq_mkQ_sum_cosets [Finite G] (hι : Function.Injective ι)

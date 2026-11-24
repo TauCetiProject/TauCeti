@@ -435,10 +435,6 @@ end TwoModules
 @[simp] theorem projectiveGroupTrace_regular (u : Module.End A[G] A[G]) :
     projectiveGroupTrace A G A[G] u = (u 1).coeff 1 := by simp [projectiveGroupTrace_apply]
 
-/-- `projectiveGroupTrace` is `A`-linear in the endomorphism. -/
-theorem projectiveGroupTrace_smul (a : A) (u : Module.End A[G] P) :
-    projectiveGroupTrace A G P (a • u) = a * projectiveGroupTrace A G P u := by simp
-
 section
 attribute [local instance low] TauCeti.BalancedExtension.moduleBase
 

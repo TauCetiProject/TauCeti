@@ -275,11 +275,10 @@ theorem hattoriStallingsTrace_eq_map (j : M ≃ₛₗ[σ] M') {T : M →ₗ[R] M
     (h : ∀ x, T' (j x) = j (T x)) :
     LinearMap.hattoriStallingsTrace S M' T' =
       TauCeti.cyclicQuotientRingHomMap σ (LinearMap.hattoriStallingsTrace R M T) := by
-  let e := TauCeti.BalancedExtension.equivOfSemilinearEquiv j
-  have hconj : e.conjRingEquiv (TauCeti.BalancedExtension.map σ T) = T' := by
-    ext y; simpa [e] using (h (j.symm y)).symm
-  rw [← hconj, LinearMap.hattoriStallingsTrace_conj,
-    LinearMap.hattoriStallingsTrace_balancedExtension_map]
+  have hconj : j.conjRingEquiv T = T' := by
+    ext y; simpa using (h (j.symm y)).symm
+  rw [← hconj, ← TauCeti.BalancedExtension.conjRingEquiv_equivOfSemilinearEquiv_map,
+    LinearMap.hattoriStallingsTrace_conj, LinearMap.hattoriStallingsTrace_balancedExtension_map]
 
 end LinearEquiv
 
