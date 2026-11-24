@@ -44,6 +44,10 @@ results go up only.
   divisible by `d`, `(a, b; d c, e) ↦ (a, d b; c, e)`.
 * `TauCeti.conjInvScale`: the inverse rearrangement, on an integral matrix whose upper-right entry
   is divisible by `d`, `(a, d b; c, e) ↦ (a, b; d c, e)`.
+* `TauCeti.conjScaleGamma0 hδ`: for `δ ∣ N`, the homomorphism `Γ₀(N) →* SL(2, ℤ)` sending
+  `(a, b; c, e)` to `(a, δ b; c / δ, e)`, the conjugation by `diag(δ, 1)` when `δ ≠ 0`; it fixes
+  `-1` and sends `Tⁿ` to `T^{δ n}` (`TauCeti.conjScaleGamma0_negOne`,
+  `TauCeti.conjScaleGamma0_T_zpow`).
 * `TauCeti.gamma1Conj q N`: the intersection of `SL(2, ℤ)` with the conjugate
   `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, a subgroup of `SL(2, ℤ)` of finite index for `N ≠ 0`; it is the
   whole conjugate when `q ∣ N`.
@@ -587,6 +591,83 @@ lemma mapGL_conjScale [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * 
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [Matrix.mul_apply, Fin.sum_univ_two, hc', mul_comm]
+
+/-- `conjScale` is multiplicative, since it is conjugation by `diag(d, 1)`. -/
+lemma conjScale_mul [NeZero d] (γ γ' : SL(2, ℤ)) {c c' c'' : ℤ} (hc : γ 1 0 = d * c)
+    (hc' : γ' 1 0 = d * c') (hc'' : (γ * γ') 1 0 = d * c'') :
+    conjScale d (γ * γ') c'' hc'' = conjScale d γ c hc * conjScale d γ' c' hc' := by
+  refine mapGL_injective (S := ℝ) ?_
+  rw [map_mul, ← mapGL_conjScale, ← mapGL_conjScale, ← mapGL_conjScale, map_mul]
+  group
+
+/-- `conjScale d γ` sends `d τ` to `d · γ τ`. -/
+lemma conjScale_smul_scaleGL_smul [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c)
+    (τ : ℍ) : conjScale d γ c hc • (scaleGL d • τ) = scaleGL d • (γ • τ) := by
+  rw [MulAction.compHom_smul_def, MulAction.compHom_smul_def, ← mapGL_conjScale, ← mul_smul,
+    ← mul_smul, inv_mul_cancel_right]
+
+/-- The automorphy factor of `conjScale d γ` at `d τ` is that of `γ` at `τ`. -/
+lemma denom_conjScale_scaleGL_smul [NeZero d] (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c)
+    (τ : ℍ) :
+    denom (mapGL ℝ (conjScale d γ c hc)) (scaleGL d • τ : ℍ) = denom (mapGL ℝ γ) τ := by
+  calc denom (mapGL ℝ (conjScale d γ c hc)) (scaleGL d • τ : ℍ)
+      = denom (mapGL ℝ (conjScale d γ c hc) * scaleGL d) τ := by
+        rw [denom_cocycle_σ, denom_scaleGL, mul_one, σ_eq_refl_of_det_pos val_det_scaleGL_pos,
+          ContinuousAlgEquiv.refl_apply]
+    _ = denom (scaleGL d * mapGL ℝ γ) τ := by rw [← mapGL_conjScale, inv_mul_cancel_right]
+    _ = denom (mapGL ℝ γ) τ := by rw [denom_cocycle_σ, denom_scaleGL, map_one, one_mul]
+
+/-- For a divisor `δ ∣ N`, the homomorphism `γ ↦ γ_δ = (a, δ b; c / δ, d)` from `Γ₀(N)` to
+`SL(2, ℤ)`, where `γ = (a b; c d)`. For `δ ≠ 0` it is the conjugation
+`conjScale δ γ (c / δ)` by `diag(δ, 1)`, integral since `δ ∣ N ∣ c`. For `δ = 0`, so `N = 0`,
+the matrix `diag(0, 1)` is singular and `γ_0 = (a, 0; 0, d)` is the diagonal part of the upper
+triangular matrix `γ`. -/
+def conjScaleGamma0 {N δ : ℕ} (hδ : δ ∣ N) : Gamma0 N →* SL(2, ℤ) where
+  toFun γ := conjScale δ γ ((γ : SL(2, ℤ)) 1 0 / δ)
+    (Int.mul_ediv_cancel'
+      ((Int.natCast_dvd_natCast.2 hδ).trans (mem_Gamma0_iff_dvd.1 γ.property))).symm
+  map_one' := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  map_mul' γ γ' := by
+    rcases eq_or_ne δ 0 with rfl | hδ0
+    · -- `Γ₀(0)` is upper triangular, and the diagonal parts multiply.
+      obtain rfl := Nat.eq_zero_of_zero_dvd hδ
+      have hγ := mem_Gamma0_iff_dvd.1 γ.property
+      have hγ' := mem_Gamma0_iff_dvd.1 γ'.property
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp_all [Matrix.mul_apply, Fin.sum_univ_two]
+    · have : NeZero δ := ⟨hδ0⟩
+      exact conjScale_mul _ _ _ _ _
+
+/-- `conjScaleGamma0` is `conjScale` at the quotient `c / δ` of the lower-left entry. -/
+lemma conjScaleGamma0_apply {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N) :
+    conjScaleGamma0 hδ γ = conjScale δ γ ((γ : SL(2, ℤ)) 1 0 / δ)
+      (Int.mul_ediv_cancel'
+        ((Int.natCast_dvd_natCast.2 hδ).trans (mem_Gamma0_iff_dvd.1 γ.property))).symm :=
+  (rfl)
+
+@[simp]
+lemma coe_conjScaleGamma0 {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N) :
+    ((conjScaleGamma0 hδ γ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![(γ : SL(2, ℤ)) 0 0, (δ : ℤ) * (γ : SL(2, ℤ)) 0 1; (γ : SL(2, ℤ)) 1 0 / δ,
+        (γ : SL(2, ℤ)) 1 1] := by
+  rw [conjScaleGamma0_apply, coe_conjScale]
+
+/-- Every conjugate of `-1 ∈ Γ₀(N)` is `-1`. -/
+@[simp]
+lemma conjScaleGamma0_negOne {N δ : ℕ} (hδ : δ ∣ N) :
+    conjScaleGamma0 hδ (Gamma0.negOne N) = -1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Gamma0.coe_negOne]
+
+/-- The conjugate of a translation `Tⁿ ∈ Γ₀(N)` by `diag(δ, 1)` is the translation `T^{δ n}`. -/
+@[simp]
+lemma conjScaleGamma0_T_zpow {N δ : ℕ} (hδ : δ ∣ N) (n : ℤ)
+    (h : ModularGroup.T ^ n ∈ Gamma0 N) :
+    conjScaleGamma0 hδ ⟨ModularGroup.T ^ n, h⟩ = ModularGroup.T ^ ((δ : ℤ) * n) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [ModularGroup.coe_T_zpow]
 
 /-- The `diag(d, 1)`-conjugate of a matrix `γ ∈ Γ₀(N)` lies in `Γ₀(M)` whenever `d * M ∣ N`, and
 the conjugation leaves the lower-right entry alone: the diamond label of `γ` is read along the
