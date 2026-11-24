@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Pullback Riemannian metrics
@@ -49,9 +50,9 @@ the metric that a manifold with a geometric structure receives through its chart
   `Bundle.ContMDiffRiemannianMetric.pullback_comp_inner`, and
   `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
 * `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_bilinearForm_pullback` and
-  `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_pullback`: the bilinear forms, and the
-  metrics, induced by a jointly `C^(n+1)` family of maps, respectively immersions, form a jointly
-  `C^n` family.
+  `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_pullback`: the bilinear forms induced by
+  a family of maps jointly `C^(n+1)` at a point are jointly `C^n` there, and so are the metrics
+  induced by a jointly `C^(n+1)` family of immersions.
 * `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
   rescaling, `f^* (h g) = (h ∘ f) f^* g`.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
@@ -236,23 +237,21 @@ theorem contMDiffAt_pullback
   contMDiffAt_bilinearForm_pullback (g.contMDiff (f x₀)) hf
 
 /-- **Joint regularity of pulled-back bilinear forms.** For a `C^n` Riemannian metric `g` and a
-jointly `C^(n+1)` family of maps `Φ_t`, parametrised by a manifold, the bilinear forms
-`(v, w) ↦ g_{Φ_t x}(dΦ_t v, dΦ_t w)` are `C^n` jointly in `(t, x)`. -/
+family of maps `Φ_t`, parametrised by a manifold and jointly `C^(n+1)` at `(t₀, x₀)`, the bilinear
+forms `(v, w) ↦ g_{Φ_t x}(dΦ_t v, dΦ_t w)` are `C^n` jointly in `(t, x)` at `(t₀, x₀)`. -/
 theorem contMDiffAt_uncurry_bilinearForm_pullback
     {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
     {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
     {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
     (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : P → M → N}
-    (hΦ : ContMDiff (IP.prod I) J (n + 1) (Function.uncurry Φ)) (p₀ : P × M) :
+    {p₀ : P × M} (hΦ : ContMDiffAt (IP.prod I) J (n + 1) (Function.uncurry Φ) p₀) :
     ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
       (fun p : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
         ((ContinuousLinearMap.precomp ℝ (mfderiv I J (Φ p.1) p.2)).comp
           ((g.inner (Φ p.1 p.2)).comp (mfderiv I J (Φ p.1) p.2)))) p₀ := by
-  have hb := (g.contMDiff (Φ p₀.1 p₀.2)).comp p₀ (hΦ.contMDiffAt.of_le le_self_add)
-  have hL := ContMDiffAt.mfderiv (fun (p : P × M) (x : M) ↦ Φ p.1 x) Prod.snd
-    ((hΦ (p₀.1, p₀.2)).comp (p₀, p₀.2)
-      ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)) contMDiffAt_snd le_rfl
+  have hb := (g.contMDiff (Φ p₀.1 p₀.2)).comp p₀ (hΦ.of_le le_self_add)
+  have hL := hΦ.mfderiv_right le_rfl
   exact contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_snd,
     contMDiffAt_trivializationAt_bilinearForm_pullback (g := Prod.snd)
       (f := fun p ↦ Φ p.1 p.2) (b := fun p ↦ g.inner (Φ p.1 p.2))
@@ -376,8 +375,9 @@ theorem contMDiffAt_uncurry_pullback
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
         ((g.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2)) p₀ :=
   -- The inner product of `pullback` is by definition the bilinear form of
-  -- `contMDiffAt_uncurry_bilinearForm_pullback`.
-  g.contMDiffAt_uncurry_bilinearForm_pullback hΦ p₀
+  -- `contMDiffAt_uncurry_bilinearForm_pullback`. Global smoothness and injectivity are needed
+  -- only to construct the metrics `F_t^* g`.
+  g.contMDiffAt_uncurry_bilinearForm_pullback hΦ.contMDiffAt
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
