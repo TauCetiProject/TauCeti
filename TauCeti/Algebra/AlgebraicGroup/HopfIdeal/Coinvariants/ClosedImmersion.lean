@@ -20,8 +20,8 @@ ideal `J`. This file proves that if `G` and `T` are geometrically reduced and th
 `T` has dimension at least that of `G ⧸ N`, then the composite is an isomorphism.
 
 Coordinate rings reverse arrows: `O(G ⧸ N)` is the Hopf subalgebra of right coinvariants, and
-the composite is the coordinate map `coinvariantsι ≫ mkQuotient G J`. The main case,
-`N = R_u(G)`, is in `TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.ClosedImmersion`.
+the composite is the coordinate map `coinvariantsι ≫ mkQuotient G J`. The main case is
+`N = R_u(G)`, taking `I` to be `isNormal_unipotentRadicalDefiningIdeal G`.
 
 ## Main declarations
 
