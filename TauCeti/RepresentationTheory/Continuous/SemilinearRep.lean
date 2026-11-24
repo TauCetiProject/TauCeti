@@ -43,9 +43,9 @@ character are different representations on the same line, with no nonzero equiva
 * `TauCeti.SemilinearRep.Hom`: equivariant continuous `B`-linear maps, with identities,
   composition, `TauCeti.SemilinearRep.Hom.ofLinearMap` for sources with the module topology, the
   kernel and image representations `TauCeti.SemilinearRep.Hom.kerRep` and
-  `TauCeti.SemilinearRep.Hom.rangeRep`, the lift `TauCeti.SemilinearRep.Hom.kerLift` into a kernel,
-  the maps `TauCeti.SemilinearRep.Hom.prod` and `TauCeti.SemilinearRep.Hom.pi` into products, and
-  the copairing `TauCeti.SemilinearRep.Hom.coprod` out of a direct sum.
+  `TauCeti.SemilinearRep.Hom.rangeRep`, the lift `TauCeti.SemilinearRep.Hom.liftKerRep` into a
+  kernel, the maps `TauCeti.SemilinearRep.Hom.prod` and `TauCeti.SemilinearRep.Hom.pi` into
+  products, and the copairing `TauCeti.SemilinearRep.Hom.coprod` out of a direct sum.
 
 ## Main results
 
@@ -519,7 +519,7 @@ theorem Hom.comp_kerι {ρ₁ : SemilinearRep G B W₁} {ρ₂ : SemilinearRep G
 
 /-- **The universal property of the kernel**: a morphism `h` into the source of `f` with `f ∘ h = 0`
 factors through the kernel representation of `f`. -/
-def Hom.kerLift {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+def Hom.liftKerRep {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
     {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) (h : Hom ρ ρ₁) (hh : f.comp h = 0) :
     Hom ρ f.kerRep :=
   ⟨h.toContinuousLinearMap.codRestrict _ fun w =>
@@ -527,15 +527,15 @@ def Hom.kerLift {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
     fun g w => Subtype.ext (by simp)⟩
 
 @[simp]
-theorem Hom.coe_kerLift_apply {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+theorem Hom.coe_liftKerRep_apply {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
     {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) (h : Hom ρ ρ₁) (hh : f.comp h = 0) (w : W) :
-    (f.kerLift h hh w : W₁) = h w :=
+    (f.liftKerRep h hh w : W₁) = h w :=
   (rfl)
 
 @[simp]
-theorem Hom.kerι_comp_kerLift {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+theorem Hom.kerι_comp_liftKerRep {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
     {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) (h : Hom ρ ρ₁) (hh : f.comp h = 0) :
-    f.kerι.comp (f.kerLift h hh) = h :=
+    f.kerι.comp (f.liftKerRep h hh) = h :=
   Hom.ext fun _ => rfl
 
 /-- **Uniqueness in the universal property of the kernel**: morphisms into the kernel
@@ -545,11 +545,11 @@ theorem Hom.kerRep_ext {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W�
     (h : f.kerι.comp k = f.kerι.comp k') : k = k' :=
   Hom.ext fun w => Subtype.ext (by simpa using DFunLike.congr_fun h w)
 
-/-- `Hom.kerLift` is the only factorization through the kernel representation. -/
-theorem Hom.kerLift_unique {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
+/-- `Hom.liftKerRep` is the only factorization through the kernel representation. -/
+theorem Hom.liftKerRep_unique {ρ : SemilinearRep G B W} {ρ₁ : SemilinearRep G B W₁}
     {ρ₂ : SemilinearRep G B W₂} (f : Hom ρ₁ ρ₂) (h : Hom ρ ρ₁) (hh : f.comp h = 0)
-    (k : Hom ρ f.kerRep) (hk : f.kerι.comp k = h) : k = f.kerLift h hh :=
-  Hom.kerRep_ext (by rw [hk, kerι_comp_kerLift])
+    (k : Hom ρ f.kerRep) (hk : f.kerι.comp k = h) : k = f.liftKerRep h hh :=
+  Hom.kerRep_ext (by rw [hk, kerι_comp_liftKerRep])
 
 variable (ρ₁ : SemilinearRep G B W₁) (ρ₂ : SemilinearRep G B W₂)
 
