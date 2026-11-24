@@ -297,7 +297,7 @@ theorem symbol_mul_right (a b₁ b₂ : Rˣ) : symbol a (b₁ * b₂) = symbol a
   isSteinbergPairing_symbol.map_mul_right a b₁ b₂
 
 /-- The Steinberg relation for `symbol`: complementary units give zero. -/
-theorem symbol_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) : symbol a b = 0 :=
+theorem symbol_eq_zero_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) : symbol a b = 0 :=
   isSteinbergPairing_symbol.map_add_eq_one a b h
 
 /-- The symbol `{1, b}` vanishes. -/
@@ -352,7 +352,7 @@ variable {F : Type u} [Field F]
 /-- Over a field, `{a, 1 - a} = 0` for `a ≠ 1`. -/
 theorem symbol_mk0_one_sub (a : Fˣ) (ha : (1 : F) - a ≠ 0) :
     symbol a (Units.mk0 (1 - a) ha) = 0 :=
-  symbol_add_eq_one (by simp)
+  symbol_eq_zero_of_add_eq_one (by simp)
 
 /-- Over a field, `{a, -a} = 0`. -/
 @[simp]

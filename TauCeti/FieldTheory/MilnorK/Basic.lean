@@ -13,7 +13,7 @@ public import TauCeti.FieldTheory.MilnorK.SteinbergPairing
 import Mathlib.Algebra.Group.Units.Hom
 import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
 import TauCeti.Algebra.Ring.Hom
-import TauCeti.LinearAlgebra.TensorAlgebra.Projection
+import TauCeti.LinearAlgebra.TensorAlgebra.Basic
 
 /-!
 # Native Milnor K-theory
@@ -123,6 +123,11 @@ theorem ofUnit_mul (a b : Rˣ) : ofUnit (a * b) = ofUnit a + ofUnit b := by
 theorem ofUnit_inv (a : Rˣ) : ofUnit a⁻¹ = -ofUnit a := by
   rw [← ofUnitHom_ofMul, ofMul_inv, map_neg, ofUnitHom_ofMul]
 
+/-- The degree-one generator sends quotients to differences. -/
+@[simp]
+theorem ofUnit_div (a b : Rˣ) : ofUnit (a / b) = ofUnit a - ofUnit b := by
+  rw [div_eq_mul_inv, ofUnit_mul, ofUnit_inv, sub_eq_add_neg]
+
 /-- The degree-one generator sends natural powers to scalar multiples. -/
 @[simp]
 theorem ofUnit_pow (a : Rˣ) (n : ℕ) : ofUnit (a ^ n) = n • ofUnit a := by
@@ -134,7 +139,7 @@ theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a := by
   rw [← ofUnitHom_ofMul, ofMul_zpow, map_zsmul, ofUnitHom_ofMul]
 
 /-- The Steinberg relation in `MilnorK R`: complementary units have zero product. -/
-theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
+theorem ofUnit_mul_ofUnit_eq_zero_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
   rw [ofUnit_def, ofUnit_def, ← map_mul]
   exact (RingQuot.mkRingHom_rel (r := milnorRel R) ⟨a, b, h, rfl, rfl⟩).trans (map_zero _)
@@ -147,7 +152,7 @@ theorem isSteinbergPairing_mul_ofUnit :
   map_mul_right a b₁ b₂ := by rw [ofUnit_mul, mul_add]
   map_one_left b := by simp
   map_one_right a := by simp
-  map_add_eq_one _ _ hab := ofUnit_mul_ofUnit_of_add_eq_one hab
+  map_add_eq_one _ _ hab := ofUnit_mul_ofUnit_eq_zero_of_add_eq_one hab
 
 /-- The Milnor symbol `{a₁, …, aₙ}`, defined as the ordered product of degree-one classes. -/
 def symbol (l : List Rˣ) : MilnorK R :=
@@ -185,8 +190,8 @@ theorem symbol_eq_zero_of_one_mem {l : List Rˣ} (h : (1 : Rˣ) ∈ l) : symbol 
 vanishes. -/
 theorem symbol_eq_zero_of_add_eq_one (l₁ l₂ : List Rˣ) {a b : Rˣ} (h : (a : R) + b = 1) :
     symbol (l₁ ++ a :: b :: l₂) = 0 := by
-  simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_of_add_eq_one h, zero_mul,
-    mul_zero]
+  simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_eq_zero_of_add_eq_one h,
+    zero_mul, mul_zero]
 
 /-- Evaluating the quotient map on a pure tensor in `TensorAlgebra ℤ (Additive Rˣ)` yields the
 corresponding Milnor symbol. -/
@@ -329,7 +334,7 @@ def map {S : Type w} [CommSemiring S] (f : R →+* S) : MilnorK R →ₐ[ℤ] Mi
     { toFun := fun a ↦ ofUnit (Units.map f.toMonoidHom (Additive.toMul a))
       map_zero' := by simp
       map_add' := fun a b ↦ by rw [toMul_add, map_mul, ofUnit_mul] }
-    (fun a b hab ↦ ofUnit_mul_ofUnit_of_add_eq_one (by simp [← map_add, hab]))
+    (fun a b hab ↦ ofUnit_mul_ofUnit_eq_zero_of_add_eq_one (by simp [← map_add, hab]))
 
 /-- `MilnorK.map f` sends `ofUnit a` to `ofUnit (Units.map f a)`. -/
 @[simp]
@@ -345,7 +350,7 @@ theorem map_symbol {S : Type w} [CommSemiring S] (f : R →+* S) (l : List Rˣ) 
 
 /-- If an additive homomorphism out of `MilnorK R` sends every length-`n` symbol into an additive
 subgroup `S`, then it maps all of `MilnorK.degree R n` into `S`. -/
-theorem map_mem_of_symbol_mem {A F : Type*} {σ : Type*} [AddGroup A] [SetLike σ A]
+theorem apply_mem_of_forall_symbol_mem {A F : Type*} {σ : Type*} [AddGroup A] [SetLike σ A]
     [AddSubgroupClass σ A] [FunLike F (MilnorK R) A] [AddMonoidHomClass F (MilnorK R) A]
     (g : F) {S : σ} {n : ℕ}
     (hg : ∀ l : List Rˣ, l.length = n → g (symbol l) ∈ S) {x : MilnorK R}
@@ -360,7 +365,7 @@ theorem map_mem_of_symbol_mem {A F : Type*} {σ : Type*} [AddGroup A] [SetLike �
 /-- `MilnorK.map f` preserves every homogeneous degree piece. -/
 theorem map_mem_degree {S : Type w} [CommSemiring S] (f : R →+* S) {n : ℕ} {x : MilnorK R}
     (hx : x ∈ degree R n) : map f x ∈ degree S n :=
-  map_mem_of_symbol_mem (map f) (fun l hl ↦ by
+  apply_mem_of_forall_symbol_mem (map f) (fun l hl ↦ by
     rw [map_symbol]
     simpa only [hl, List.length_map] using symbol_mem_degree (l.map (Units.map f.toMonoidHom)))
     hx
@@ -378,6 +383,41 @@ theorem map_comp {S : Type v} {T : Type w} [CommSemiring S] [CommSemiring T]
   algHom_ext fun a ↦ by
     simp only [map_ofUnit, AlgHom.comp_apply, RingHom.toMonoidHom_comp, Units.map_comp,
       MonoidHom.comp_apply]
+
+/-- Applying `MilnorK.map f` followed by `MilnorK.map g` equals `MilnorK.map (g.comp f)`. -/
+@[simp]
+theorem map_map {S : Type v} {T : Type w} [CommSemiring S] [CommSemiring T]
+    (g : S →+* T) (f : R →+* S) (x : MilnorK R) :
+    map g (map f x) = map (g.comp f) x := by
+  rw [map_comp, AlgHom.comp_apply]
+
+section Field
+
+variable {F : Type u} [Field F]
+
+/-- Over a field, `{a, -a} = 0` for every unit `a`. -/
+@[simp]
+theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
+  isSteinbergPairing_mul_ofUnit.map_neg_self a
+
+/-- Over a field, the degree-one classes anticommute: `{a, b} = -{b, a}`. -/
+theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
+  isSteinbergPairing_mul_ofUnit.map_swap a b
+
+/-- Over a field, `{a, a} = {a, -1}`. Unlike in an exterior algebra, this class need not vanish:
+`{-1, -1} ≠ 0` over `ℝ` (Weibel, Example III.7.2(c)). -/
+theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) :=
+  isSteinbergPairing_mul_ofUnit.map_self a
+
+/-- Over a field, interchanging two neighbouring entries negates a Milnor symbol. -/
+theorem symbol_append_cons_cons_swap (l₁ l₂ : List Fˣ) (a b : Fˣ) :
+    symbol (l₁ ++ b :: a :: l₂) = -symbol (l₁ ++ a :: b :: l₂) :=
+  eq_neg_of_add_eq_zero_left <| by
+    simp only [symbol_append, symbol_cons]
+    rw [← mul_assoc (ofUnit b), ← mul_assoc (ofUnit a), ← mul_add, ← add_mul,
+      ofUnit_mul_ofUnit_comm b a, neg_add_cancel, zero_mul, mul_zero]
+
+end Field
 
 end MilnorK
 

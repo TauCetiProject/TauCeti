@@ -127,6 +127,10 @@ theorem isInternal_degree (R : Type u) [CommSemiring R] :
     (RingQuot.mkRingHom (milnorRel R)).toIntAlgHom
     (RingQuot.mkRingHom_surjective (milnorRel R)) (isHomogeneous_ker_mkRingHom R)
 
+/-- Every element of the Milnor K-ring is a sum of elements of the degree submodules. -/
+theorem iSup_degree_eq_top (R : Type u) [CommSemiring R] : ⨆ n, degree R n = ⊤ :=
+  (isInternal_degree R).submodule_iSup_eq_top
+
 /-- Multiplication in `MilnorK R` is graded with respect to `MilnorK.degree R`. -/
 instance instGradedMonoidDegree (R : Type u) [CommSemiring R] :
     SetLike.GradedMonoid (degree R) where
@@ -157,7 +161,7 @@ def gradedLift {A : Type v} {σ : Type*} [Ring A] [SetLike σ A] [AddSubgroupCla
     degree R →+*ᵍ 𝒜 where
   __ := (lift f hf_rel).toRingHom
   map_mem {n x} hx := by
-    refine map_mem_of_symbol_mem (lift f hf_rel) (fun l hl ↦ ?_) hx
+    refine apply_mem_of_forall_symbol_mem (lift f hf_rel) (fun l hl ↦ ?_) hx
     clear hx
     subst hl
     induction l with
@@ -646,6 +650,12 @@ instance instNontrivial (R : Type u) [CommSemiring R] : Nontrivial (MilnorK R) :
     simpa [degreeZeroEquiv_one] using
       congrArg (degreeZeroEquiv R) (Subtype.ext h : (⟨1, one_mem_degree_zero⟩ : degree R 0) = 0)
 
+/-- The Milnor K-ring has characteristic zero: the natural numbers embed through degree zero. -/
+instance instCharZero (R : Type u) [CommSemiring R] : CharZero (MilnorK R) where
+  cast_injective m n h := Int.ofNat.inj <| by
+    simpa using congrArg (degreeZeroEquiv R)
+      (Subtype.ext (by simpa using h) : (m : degree R 0) = (n : degree R 0))
+
 /-- Canonical identification `MilnorK.degree R 1 ≃ₗ[ℤ] Additive Rˣ`. -/
 noncomputable def degreeOneEquiv (R : Type u) [CommSemiring R] : degree R 1 ≃ₗ[ℤ] Additive Rˣ :=
   (degreeEquivQuotTensorPower R 1).trans
@@ -674,6 +684,16 @@ theorem ofUnit_injective (R : Type u) [CommSemiring R] :
     simpa only [degreeOneEquiv_ofUnit] using congrArg (degreeOneEquiv R)
       (Subtype.ext h : (⟨ofUnit a, ofUnit_mem_degree_one a⟩ : degree R 1) =
         ⟨ofUnit b, ofUnit_mem_degree_one b⟩)
+
+/-- Two degree-one unit classes agree iff their underlying units agree. -/
+@[simp]
+theorem ofUnit_inj {a b : Rˣ} : ofUnit a = ofUnit b ↔ a = b :=
+  (ofUnit_injective R).eq_iff
+
+/-- A degree-one unit class vanishes iff the unit is `1`. -/
+@[simp]
+theorem ofUnit_eq_zero {a : Rˣ} : ofUnit a = 0 ↔ a = 1 := by
+  rw [← ofUnit_one, ofUnit_inj]
 
 /-- Canonical identification `MilnorK.degree R 2 ≃ₗ[ℤ] SymbolGroup R`. -/
 noncomputable def degreeTwoEquiv (R : Type u) [CommSemiring R] :
