@@ -40,8 +40,8 @@ The kernel of a surjection from a finite-dimensional space has dimension the dif
 dimensions, an endomorphism of a finite-dimensional space has kernel and cokernel of the same
 dimension, and the preimage of a submodule `p` inside another submodule `q` has the same
 `finrank` as the intersection `p ⊓ q` (`Submodule.finrank_comap_subtype`). An `R`-submodule of
-positive `R`-finrank has finite-dimensional `K`-span over any division ring `K` receiving `R`
-faithfully (`Submodule.finiteDimensional_span_of_finrank_pos`).
+rank less than `ℵ₀` has finite-dimensional `K`-span over any division ring `K` receiving `R`
+faithfully (`Submodule.finiteDimensional_span_of_rank_lt_aleph0`).
 -/
 
 public section
@@ -262,16 +262,15 @@ theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : T
       Cardinal.lift.{v} (Module.rank 𝕜 V) + Cardinal.lift.{u} (Module.rank 𝕜 W) := by
   rw [(V.prodEquiv W).rank_eq, _root_.rank_prod]
 
-/-- If an `R`-submodule `M` of a `K`-vector space has positive `R`-finrank, then its `K`-span is
-finite-dimensional over `K`. -/
-theorem finiteDimensional_span_of_finrank_pos
+/-- If an `R`-submodule `M` of a `K`-vector space has `R`-rank less than `ℵ₀`, then its `K`-span
+is finite-dimensional over `K`. -/
+theorem finiteDimensional_span_of_rank_lt_aleph0
     {R V : Type*} [CommRing R] [Nontrivial R] [AddCommGroup V] [Module R V]
     (M : Submodule R V) (K : Type*) [DivisionRing K] [SMulWithZero R K] [FaithfulSMul R K]
     [IsScalarTower R K K] [Module K V] [IsScalarTower R K V]
-    (hM : 0 < Module.finrank R M) :
+    (hM : Module.rank R M < Cardinal.aleph0) :
     FiniteDimensional K (span K (M : Set V)) :=
-  Module.rank_lt_aleph0_iff.mp
-    ((Submodule.rank_span_le_rank M).trans_lt (Cardinal.toNat_pos.1 hM).2)
+  Module.rank_lt_aleph0_iff.mp ((Submodule.rank_span_le_rank M).trans_lt hM)
 
 /-- The dimension of a submodule `p` pulled back to `q` via `q.subtype` equals the dimension of the
 intersection `p ⊓ q`. -/
