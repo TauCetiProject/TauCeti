@@ -41,9 +41,9 @@ A† ≃ K⟨X_σ⟩† ⧸ I · K⟨X_σ⟩†   and   Â† ≃ K⟨X_σ⟩ �
 ```
 
 the second for the affinoid completion (`genericFibrePresentationAlgEquiv`,
-`genericFibreCompletionEquiv`). Elements of `S†` have supremum seminorm at most one in `A†`
-(`supSeminorm_one_tmul_le_one`), and `S† → A†` is injective when `K°` is noetherian and `S` is
-flat over `K°` (`includeRight_injective_of_flat`).
+`genericFibreCompletionContinuousAlgEquiv`). Elements of `S†` have supremum seminorm at most
+one in `A†` (`supSeminorm_one_tmul_le_one`), and `S† → A†` is injective when `K°` is noetherian
+and `S` is flat over `K°` (`includeRight_injective_of_flat`).
 
 ## Main definitions
 
@@ -52,8 +52,8 @@ flat over `K°` (`includeRight_injective_of_flat`).
   of overconvergent series at a finite family of elements of `S`.
 * `TauCeti.Dagger.weakCompletion.genericFibrePresentationAlgEquiv`: the presentation
   `K⟨X_σ⟩† ⧸ I · K⟨X_σ⟩† ≃ₐ[K] K ⊗[K°] S†`.
-* `TauCeti.Dagger.weakCompletion.genericFibreCompletionEquiv`: the completion of the generic fibre
-  is `K⟨X_σ⟩ ⧸ I · K⟨X_σ⟩`.
+* `TauCeti.Dagger.weakCompletion.genericFibreCompletionContinuousAlgEquiv`: the completion of
+  the generic fibre is `K⟨X_σ⟩ ⧸ I · K⟨X_σ⟩`.
 
 ## Main results
 
@@ -249,7 +249,7 @@ generating family `x` of `S` with relation ideal `I = ker (aeval x)` identifies 
 completion of the dagger algebra `K ⊗[K°] S†` with `K⟨X_σ⟩ ⧸ I · K⟨X_σ⟩`, compatibly with the
 evaluation of overconvergent series. The dagger structure is supplied by
 `isDaggerAlgebra_genericFibre`. -/
-noncomputable def genericFibreCompletionEquiv [IsNoetherianRing O] {π : O}
+noncomputable def genericFibreCompletionContinuousAlgEquiv [IsNoetherianRing O] {π : O}
     [IsDaggerAlgebra K (genericFibre K π S)] (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) (x : σ → S)
     (hx : Algebra.adjoin O (Set.range x) = ⊤) :
     completion K (genericFibre K π S) ≃A[K]
@@ -270,24 +270,24 @@ noncomputable def genericFibreCompletionEquiv [IsNoetherianRing O] {π : O}
 /-- The completion of the generic fibre sends the completion of the evaluation of `f` to the class
 of `f` in the Tate algebra. -/
 @[simp]
-theorem genericFibreCompletionEquiv_toCompletion [IsNoetherianRing O] {π : O}
+theorem genericFibreCompletionContinuousAlgEquiv_toCompletion [IsNoetherianRing O] {π : O}
     [IsDaggerAlgebra K (genericFibre K π S)] (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) (x : σ → S)
     (hx : Algebra.adjoin O (Set.range x) = ⊤) (f : washnitzerAlgebra σ K) :
-    genericFibreCompletionEquiv hπ hπ1 x hx
+    genericFibreCompletionContinuousAlgEquiv hπ hπ1 x hx
       (toCompletion K (genericFibre K π S) (evalWashnitzerAlgebra hπ hπ1 x f)) =
       Ideal.Quotient.mk _ (washnitzerAlgebra.toTate σ K f) := by
-  simp [genericFibreCompletionEquiv]
+  simp [genericFibreCompletionContinuousAlgEquiv]
 
 /-- The inverse completion comparison sends the class of `f` in the Tate algebra to the
 completion of the evaluation of `f`. -/
 @[simp]
-theorem genericFibreCompletionEquiv_symm_mk_toTate [IsNoetherianRing O] {π : O}
+theorem genericFibreCompletionContinuousAlgEquiv_symm_mk_toTate [IsNoetherianRing O] {π : O}
     [IsDaggerAlgebra K (genericFibre K π S)] (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖ < 1) (x : σ → S)
     (hx : Algebra.adjoin O (Set.range x) = ⊤) (f : washnitzerAlgebra σ K) :
-    (genericFibreCompletionEquiv hπ hπ1 x hx).symm
+    (genericFibreCompletionContinuousAlgEquiv hπ hπ1 x hx).symm
       (Ideal.Quotient.mk _ (washnitzerAlgebra.toTate σ K f)) =
       toCompletion K (genericFibre K π S) (evalWashnitzerAlgebra hπ hπ1 x f) := by
-  rw [ContinuousAlgEquiv.symm_apply_eq, genericFibreCompletionEquiv_toCompletion]
+  rw [ContinuousAlgEquiv.symm_apply_eq, genericFibreCompletionContinuousAlgEquiv_toCompletion]
 
 /-- **The weak completion lies in the unit ball of the generic fibre.** Every `z ∈ S†` has
 supremum seminorm at most one in `K ⊗[K°] S†`. -/
