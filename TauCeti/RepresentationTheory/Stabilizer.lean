@@ -33,7 +33,8 @@ and subset stabilizers across standard constructions on representations:
 * restriction along a group homomorphism (`Representation.stabilizer_comp` and
   `Representation.map_stabilizer_comp_of_surjective`), trivial and subsingleton representations,
   binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`,
-  `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`);
+  `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`), and the kernel of a binary
+  product (`Representation.ker_prod`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
   `Representation.finite_stabilizer_leftRegular`) and trivial subgroup restrictions
   (`Representation.isTrivial_comp_subtype_iff` and
@@ -162,6 +163,14 @@ theorem stabilizer_prod (ρ : Representation A G V) (σ : Representation A G W) 
     (ρ.prod σ).stabilizer x = ρ.stabilizer x.fst ⊓ σ.stabilizer x.snd := by
   ext g
   simp [Prod.ext_iff]
+
+/-- The kernel of a binary product representation is the intersection of the kernels of the
+factors. -/
+@[simp]
+theorem ker_prod (ρ : Representation A G V) (σ : Representation A G W) :
+    (ρ.prod σ).ker = ρ.ker ⊓ σ.ker := by
+  ext g
+  simp [LinearMap.ext_iff, Prod.ext_iff, forall_and]
 
 /-- The stabilizer of a family in a product representation `Representation.pi ρ` is the infimum of
 the component stabilizers. -/
