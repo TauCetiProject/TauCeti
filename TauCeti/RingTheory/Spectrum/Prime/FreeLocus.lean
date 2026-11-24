@@ -281,10 +281,10 @@ theorem rankAtStalk_eq_add {R K X Y : Type*} [CommRing R] [AddCommGroup K] [Modu
     {g : X →ₗ[R] Y} (hfg : Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     Module.rankAtStalk (R := R) X = Module.rankAtStalk K + Module.rankAtStalk Y := by
   have : Module.Finite R Y := .of_surjective g hg
+  have : Module.Finite R K := hfg.moduleFinite_of_projective hf hg
   -- The sequence splits, so `K` is a direct summand of `X`, with retraction `π`.
   obtain ⟨e, -, -⟩ := hfg.exists_linearEquiv_prod_of_projective hf hg
   let π : X →ₗ[R] K := LinearMap.fst R K Y ∘ₗ e.toLinearMap
-  have : Module.Finite R K := .of_surjective π (Prod.fst_surjective.comp e.surjective)
   have : Module.Flat R K := .of_retract (e.symm.toLinearMap ∘ₗ LinearMap.inl R K Y) π
     (by ext x; simp [π])
   rw [Module.rankAtStalk_eq_of_equiv e, Module.rankAtStalk_prod]

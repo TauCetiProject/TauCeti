@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.RingTheory.Flat.LocallyFree
 import TauCeti.Algebra.Module.Projective.Complement
-import TauCeti.LinearAlgebra.Exact
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 -- Proof-only: the body of `Module.Grassmannian.baseChangeMkQ` is not exposed.
 import all Mathlib.RingTheory.Grassmannian

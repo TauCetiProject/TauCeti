@@ -16,7 +16,8 @@ projection onto it. In particular the range of an idempotent endomorphism of a p
 complemented by its kernel, is projective. So is the quotient by a complemented submodule, which is
 isomorphic to the complement. Conversely, the kernel of a surjection onto a projective module has a
 complement, the image of a section. Hence a linear map into a projective module with projective
-cokernel has complemented range and kernel.
+cokernel has complemented range and kernel, and every linear map out of a submodule with projective
+quotient extends to the ambient module.
 
 ## Main results
 
@@ -31,6 +32,8 @@ cokernel has complemented range and kernel.
 * `LinearMap.isComplemented_range_of_projective_quotient`,
   `LinearMap.isComplemented_ker_of_projective_quotient`: a map into a projective module with
   projective cokernel has complemented range and kernel.
+* `LinearMap.surjective_comp_subtype_of_projective_quotient`: linear maps extend from a submodule
+  with projective quotient.
 -/
 
 public section
@@ -86,5 +89,12 @@ theorem isComplemented_ker_of_projective_quotient [Module.Projective R N]
   obtain ⟨q, hq⟩ := f.isComplemented_range_of_projective_quotient
   have := Module.Projective.of_isCompl hq
   simpa using isComplemented_ker_of_surjective f.rangeRestrict f.surjective_rangeRestrict
+
+/-- **Linear maps extend from a submodule with projective quotient**, which is a direct summand:
+every linear map `W → N` is the restriction of a linear map `M → N`. -/
+theorem surjective_comp_subtype_of_projective_quotient {W : Submodule R M}
+    [Module.Projective R (M ⧸ W)] : Function.Surjective fun φ : M →ₗ[R] N ↦ φ ∘ₗ W.subtype :=
+  surjective_comp_subtype_of_isComplemented <| by
+    simpa using isComplemented_ker_of_surjective W.mkQ W.mkQ_surjective
 
 end LinearMap

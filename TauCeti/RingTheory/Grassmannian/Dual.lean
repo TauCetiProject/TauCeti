@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Dual.BaseChange
 public import TauCeti.RingTheory.Grassmannian.Basic
 
 import TauCeti.LinearAlgebra.Dual.Rank
-import TauCeti.LinearAlgebra.Dual.Restrict
+import TauCeti.Algebra.Module.Projective.Complement
 
 /-!
 # Duality of Grassmannians
@@ -48,8 +48,6 @@ functors underlying the isomorphism of Grassmannian schemes `G(k, M) ≅ G(l, M^
 
 ## Main results
 
-* `Module.Grassmannian.dualRestrict_surjective`: functionals on a point extend to the ambient
-  module.
 * `Module.Grassmannian.mem_baseChangeDualEquiv_iff` and
   `Module.Grassmannian.mem_baseChangeDualEquiv_symm_iff`: `baseChangeDualEquiv` and its inverse on
   points.
@@ -74,12 +72,6 @@ variable {A : Type*} [CommRing A] {P : Type*} [AddCommGroup P] [Module A P] {k l
 
 section Dual
 
-/-- Every functional on a point `N` of a Grassmannian extends to the ambient module, since `N` is
-a direct summand. -/
-theorem dualRestrict_surjective (N : G(k, P; A)) :
-    Function.Surjective N.toSubmodule.dualRestrict :=
-  N.toSubmodule.dualRestrict_surjective_of_projective
-
 variable [Module.Finite A P] [Module.Projective A P]
 
 /-- **The annihilator of a point.** If `P` is finite projective of constant rank `k + l`, the
@@ -87,7 +79,8 @@ annihilator `N^⊥ ⊆ P^∨` of `N ∈ G(k, P; A)` is a point of `G(l, P^∨; A
 surjective restriction `P^∨ → N^∨` onto a finite projective module of rank `l`. -/
 noncomputable def dualAnnihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l) (N : G(k, P; A)) :
     G(l, Module.Dual A P; A) :=
-  ofSurjective N.toSubmodule.dualRestrict (dualRestrict_surjective N) fun p ↦ by
+  ofSurjective N.toSubmodule.dualRestrict (show Function.Surjective N.toSubmodule.dualRestrict from
+    LinearMap.surjective_comp_subtype_of_projective_quotient) fun p ↦ by
     rw [TauCeti.Module.rankAtStalk_dual]
     exact rankAtStalk_toSubmodule h N p
 
