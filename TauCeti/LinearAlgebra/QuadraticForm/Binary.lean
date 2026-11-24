@@ -64,10 +64,10 @@ nondegenerate) exactly when `1 - 4 * a * b ≠ 0`. Conversely, these forms exhau
 with nonzero polar form: a quadratic form on a free module with basis `e₀, e₁` satisfying
 `polar Q e₀ e₁ = 1` is `[Q e₀, Q e₁]` in these coordinates, and over a field every quadratic form on
 a plane with nonzero polar form is isometric to some `[a, b]`. If the polar form is nondegenerate,
-any nonzero vector `v` with `polar Q v v = 0` can be taken as the first basis vector, so `Q` is
-isometric to `[Q v, b]` for some `b`. Applied to an isotropic vector, this shows that a nonsingular
-plane is isotropic exactly when it is isometric to the hyperbolic plane `[0, 0]`, in every
-characteristic.
+any nonzero vector `v` can be taken as the first basis vector, so `Q` is isometric to `[Q v, b]`
+for some `b`; in particular a nonsingular plane representing `a ≠ 0` is isometric to some `[a, b]`.
+Applied to an isotropic vector, this shows that a nonsingular plane is isotropic exactly when it is
+isometric to the hyperbolic plane `[0, 0]`, in every characteristic.
 
 ## Main definitions
 
@@ -111,8 +111,10 @@ characteristic.
   `polar Q e₀ e₁ = 1` presents `Q` as `[Q e₀, Q e₁]`.
 * `QuadraticMap.exists_equivalent_binaryQuadraticForm`: over a field, a quadratic form on a plane
   with nonzero polar form is isometric to some `[a, b]`.
-* `QuadraticMap.exists_equivalent_binaryQuadraticForm_of_polar_self_eq_zero`: on a nonsingular
-  plane, a nonzero vector `v` with `polar Q v v = 0` gives `Q ≅ [Q v, b]` for some `b`.
+* `QuadraticMap.exists_equivalent_binaryQuadraticForm_of_ne_zero`,
+  `QuadraticMap.exists_equivalent_binaryQuadraticForm_of_represents`: on a nonsingular plane, every
+  nonzero vector `v` gives `Q ≅ [Q v, b]` for some `b`, so a represented value `a ≠ 0` gives
+  `Q ≅ [a, b]` for some `b`.
 * `QuadraticMap.equivalent_binaryQuadraticForm_zero_iff_not_anisotropic`: a nonsingular plane is
   isotropic if and only if it is isometric to the hyperbolic plane `[0, 0]`.
 
@@ -630,11 +632,8 @@ theorem basisRepr_eq_binaryQuadraticForm (Q : QuadraticForm R M) (e : Basis (Fin
     (he : polar Q (e 0) (e 1) = 1) :
     Q.basisRepr e = binaryQuadraticForm R (Q (e 0)) (Q (e 1)) := by
   ext x
-  have hadd (y z : M) : Q (y + z) = Q y + Q z + polar Q y z := by
-    rw [polar]
-    abel
-  rw [basisRepr_apply, Fin.sum_univ_two, hadd, QuadraticMap.map_smul, QuadraticMap.map_smul,
-    polar_smul_left, polar_smul_right, he, binaryQuadraticForm_apply]
+  rw [basisRepr_apply, Fin.sum_univ_two, QuadraticMap.map_add Q, QuadraticMap.map_smul,
+    QuadraticMap.map_smul, polar_smul_left, polar_smul_right, he, binaryQuadraticForm_apply]
   simp only [smul_eq_mul]
   ring
 
@@ -676,18 +675,11 @@ theorem exists_equivalent_binaryQuadraticForm (h2 : finrank K V = 2) (hQ : Q.pol
     by_contra! h
     have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ h2
     let e := finBasisOfFinrankEq K V h2
-    have he : ∀ s t : K, s • e 0 + t • e 1 = 0 → s = 0 ∧ t = 0 := by
-      rw [← LinearIndependent.pair_iff]
-      convert e.linearIndependent
-      ext i
-      fin_cases i <;> rfl
-    have h01 := h (e 0) (e 1) (LinearIndependent.pair_iff.mpr he)
-    have h00 := h (e 0) (e 0 + e 1) <| LinearIndependent.pair_iff.mpr fun s t hst ↦ by
-      have := he (s + t) t (by rw [← hst]; module)
-      exact ⟨by simpa [this.2] using this.1, this.2⟩
-    have h11 := h (e 0 + e 1) (e 1) <| LinearIndependent.pair_iff.mpr fun s t hst ↦ by
-      have := he s (s + t) (by rw [← hst]; module)
-      exact ⟨this.1, by simpa [this.1] using this.2⟩
+    have hli : LinearIndependent K ![e 0, e 1] :=
+      (FinVec.etaExpand_eq ⇑e).symm ▸ e.linearIndependent
+    have h01 := h (e 0) (e 1) hli
+    have h00 := h (e 0) (e 0 + e 1) (LinearIndependent.pair_add_right_iff.mpr hli)
+    have h11 := h (e 0 + e 1) (e 1) (LinearIndependent.pair_add_left_iff.mpr hli)
     rw [polar_add_right, h01, add_zero] at h00
     rw [polar_add_left, h01, zero_add] at h11
     refine hQ (LinearMap.BilinForm.ext_basis e fun i j ↦ ?_)
@@ -695,20 +687,38 @@ theorem exists_equivalent_binaryQuadraticForm (h2 : finrank K V = 2) (hQ : Q.pol
   obtain ⟨b, hb⟩ := exists_equivalent_binaryQuadraticForm_of_linearIndependent h2 hvw hpol
   exact ⟨Q v, b, hb⟩
 
-/-- On a plane with nondegenerate polar form, a nonzero vector `v` with `polar Q v v = 0` can be
-taken as the first vector of a binary normal form: `Q` is isometric to `[Q v, b]` for some `b`. -/
-theorem exists_equivalent_binaryQuadraticForm_of_polar_self_eq_zero (h2 : finrank K V = 2)
-    (hQ : Q.polarBilin.Nondegenerate) {v : V} (hv : v ≠ 0) (hvv : polar Q v v = 0) :
+/-- In every characteristic, on a plane with nondegenerate polar form, every nonzero vector `v` can
+be taken as the first vector of a binary normal form: `Q` is isometric to `[Q v, b]` for some
+`b`. -/
+theorem exists_equivalent_binaryQuadraticForm_of_ne_zero (h2 : finrank K V = 2)
+    (hQ : Q.polarBilin.Nondegenerate) {v : V} (hv : v ≠ 0) :
     ∃ b, Q.Equivalent (binaryQuadraticForm K (Q v) b) := by
   obtain ⟨w, hw⟩ : ∃ w, polar Q v w ≠ 0 := by
     by_contra! h
     exact hv (hQ.1 v fun w ↦ by simpa [polarBilin_apply_apply] using h w)
-  refine exists_equivalent_binaryQuadraticForm_of_linearIndependent h2 ?_ hw
-  refine LinearIndependent.pair_iff.mpr fun s t hst ↦ ?_
-  have ht : t = 0 := by
-    simpa [hvv, hw] using congrArg (polar Q v) hst
-  subst ht
-  exact ⟨(smul_eq_zero.mp (by simpa using hst)).resolve_right hv, rfl⟩
+  by_cases hvw : LinearIndependent K ![v, w]
+  · exact exists_equivalent_binaryQuadraticForm_of_linearIndependent h2 hvw hw
+  -- Otherwise `w` is a multiple of `v`, so `polar Q v v ≠ 0`, and for any `u` independent of `v`
+  -- one of `u` and `v + u` pairs nontrivially with `v`.
+  obtain ⟨c, rfl⟩ : ∃ c : K, c • v = w := by simpa [LinearIndependent.pair_iff' hv] using hvw
+  rw [polar_smul_right, smul_eq_mul] at hw
+  have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ h2
+  obtain ⟨u, hu⟩ := exists_linearIndependent_pair_of_one_lt_finrank (by omega : 1 < finrank K V) hv
+  by_cases hvu : polar Q v u = 0
+  · refine exists_equivalent_binaryQuadraticForm_of_linearIndependent h2
+      (LinearIndependent.pair_add_right_iff.mpr hu) ?_
+    rw [polar_add_right, hvu, add_zero]
+    exact right_ne_zero_of_mul hw
+  · exact exists_equivalent_binaryQuadraticForm_of_linearIndependent h2 hu hvu
+
+/-- **Binary normal form from a represented value.** In every characteristic, a quadratic form on a
+plane with nondegenerate polar form that represents `a ≠ 0` is isometric to
+`binaryQuadraticForm K a b` for some `b`. -/
+theorem exists_equivalent_binaryQuadraticForm_of_represents (h2 : finrank K V = 2)
+    (hQ : Q.polarBilin.Nondegenerate) {a : K} (ha : a ≠ 0) (hQa : Q.Represents a) :
+    ∃ b, Q.Equivalent (binaryQuadraticForm K a b) := by
+  obtain ⟨v, rfl⟩ := (represents_iff Q a).mp hQa
+  exact exists_equivalent_binaryQuadraticForm_of_ne_zero h2 hQ fun hv ↦ ha (hv ▸ Q.map_zero)
 
 /-- In every characteristic, a plane with nondegenerate polar form is isotropic if and only if it
 is isometric to the hyperbolic plane `[0, 0]`. -/
@@ -716,11 +726,8 @@ theorem equivalent_binaryQuadraticForm_zero_iff_not_anisotropic (h2 : finrank K 
     (hQ : Q.polarBilin.Nondegenerate) :
     Q.Equivalent (binaryQuadraticForm K 0 0) ↔ ¬Q.Anisotropic := by
   refine ⟨fun h ↦ h.anisotropic_iff.not.mpr not_anisotropic_binaryQuadraticForm_zero, fun h ↦ ?_⟩
-  obtain ⟨v, hv0, hv⟩ : ∃ v, Q v = 0 ∧ v ≠ 0 := by
-    by_contra! h'
-    exact h fun v hv ↦ h' v hv
-  obtain ⟨b, hb⟩ := exists_equivalent_binaryQuadraticForm_of_polar_self_eq_zero h2 hQ hv
-    (by rw [polar_self, hv0, smul_zero])
+  obtain ⟨v, hv, hv0⟩ := (not_anisotropic_iff_exists Q).mp h
+  obtain ⟨b, hb⟩ := exists_equivalent_binaryQuadraticForm_of_ne_zero h2 hQ hv
   rw [hv0] at hb
   exact hb.trans ⟨isometryEquivBinaryQuadraticFormRight b⟩
 
