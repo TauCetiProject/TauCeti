@@ -167,35 +167,36 @@ theorem quarticGluingLate_same_left (p q : ι → ℝ) (ρ : ℝ) (u : ι → �
   · simp [quarticTrajectoryPoint_apply_of_eq _ h, h]
   · simp [quarticTrajectoryPoint_apply_of_ne _ h, h]
 
+/-- Scaling a coordinate `a` of the cube by a factor `t` with `|t| ≤ 1` keeps it in `[-1, 1]`. -/
+private theorem abs_mul_le_one_of_abs_le_one {a t : ℝ} (ha : |a| ≤ 1) (ht : |t| ≤ 1) :
+    |a * t| ≤ 1 :=
+  (abs_mul a t).trans_le ((mul_le_of_le_one_left (abs_nonneg t) ha).trans ht)
+
 /-- The early point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
 theorem quarticGluingEarly_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (ρ : ℝ)
     (u : ι → ℝ) : quarticGluingEarly p r q ρ u ∈ Icc (-1) 1 :=
   mem_Icc_neg_iff_forall_abs_le.2 fun i ↦ by
     have hq' := mem_Icc_neg_iff_forall_abs_le.1 hq i
-    have hmul {t : ℝ} (ht : |t| ≤ 1) : |q i * t| ≤ 1 :=
-      (abs_mul _ _).trans_le ((mul_le_of_le_one_left (abs_nonneg t) hq').trans ht)
     have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
     rw [quarticGluingEarly_apply]
     split_ifs with hpq
     · exact hpq ▸ hq'
-    · refine hmul ?_
+    · refine abs_mul_le_one_of_abs_le_one hq' ?_
       have h := Real.abs_div_sqrt_sq_add_le_one zero_le_one (Real.exp (u i) * ρ)
       rwa [add_comm, div_eq_mul_inv] at h
-    · exact hmul ((abs_of_pos ho.1).trans_le ho.2.le)
+    · exact abs_mul_le_one_of_abs_le_one hq' ((abs_of_pos ho.1).trans_le ho.2.le)
 
 /-- The late point lies in the cube `[-1, 1]^ι` when the endpoint `q` does. -/
 theorem quarticGluingLate_mem_Icc (p r : ι → ℝ) {q : ι → ℝ} (hq : q ∈ Icc (-1) 1) (ρ : ℝ)
     (u : ι → ℝ) : quarticGluingLate p r q ρ u ∈ Icc (-1) 1 :=
   mem_Icc_neg_iff_forall_abs_le.2 fun i ↦ by
     have hq' := mem_Icc_neg_iff_forall_abs_le.1 hq i
-    have hmul {t : ℝ} (ht : |t| ≤ 1) : |q i * t| ≤ 1 :=
-      (abs_mul _ _).trans_le ((mul_le_of_le_one_left (abs_nonneg t) hq').trans ht)
     have ho := intervalBaseOrbit_mem_Ioo 1 (u i)
     rw [quarticGluingLate_apply]
     split_ifs with hpq
     · exact hpq ▸ hq'
-    · exact hmul ((abs_of_pos ho.1).trans_le ho.2.le)
-    · refine hmul ?_
+    · exact abs_mul_le_one_of_abs_le_one hq' ((abs_of_pos ho.1).trans_le ho.2.le)
+    · refine abs_mul_le_one_of_abs_le_one hq' ?_
       rw [abs_inv, abs_of_nonneg (Real.sqrt_nonneg _)]
       exact inv_le_one_of_one_le₀ (Real.one_le_sqrt_one_add_sq _)
 

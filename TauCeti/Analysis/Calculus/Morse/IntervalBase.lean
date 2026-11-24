@@ -492,10 +492,11 @@ trajectory is `q(s) = 1 / √(1 + ε²)`: it depends on `ε` only through `ε²`
 theorem intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq (C s : ℝ) :
     intervalBaseOrbit C s = (√(1 + Real.exp (-(C * s)) ^ 2))⁻¹ := by
   rw [intervalBaseOrbit_apply, ← Real.exp_natCast_mul]
+  congr 4
   push_cast
-  ring_nf
+  ring
 
-/-- **The departing chart under a time shift.** Delaying the trajectory `q` by `log x / C`
+/-- **The departing chart under a time shift.** Shifting the time of `q` by `+log x / C`
 multiplies its departing gluing parameter `ε = e^{C t}`
 (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`) by `x > 0`. -/
 theorem intervalBaseOrbit_add_log_div {C x : ℝ} (hC : C ≠ 0) (hx : 0 < x) (t : ℝ) :
@@ -504,7 +505,7 @@ theorem intervalBaseOrbit_add_log_div {C x : ℝ} (hC : C ≠ 0) (hx : 0 < x) (t
   rw [intervalBaseOrbit_eq_exp_mul_inv_sqrt, mul_add, mul_div_cancel₀ _ hC, Real.exp_add,
     Real.exp_log hx]
 
-/-- **The arriving chart under a time shift.** Advancing the trajectory `q` by `log y / C`
+/-- **The arriving chart under a time shift.** Shifting the time of `q` by `-log y / C`
 multiplies its arriving gluing parameter `ε = e^{-C t}`
 (`TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`) by `y > 0`. -/
 theorem intervalBaseOrbit_sub_log_div {C y : ℝ} (hC : C ≠ 0) (hy : 0 < y) (t : ℝ) :
