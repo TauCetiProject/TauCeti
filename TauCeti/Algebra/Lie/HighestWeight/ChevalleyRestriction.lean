@@ -96,12 +96,8 @@ theorem lieCartanRestriction_mem_linearInvariants {p : _root_.SymmetricAlgebra K
         lam ∘ₗ ((rootSystem H).coreflection i).toLinearMap :=
       LinearMap.ext fun y ↦ by
         simp [RootPairing.reflection_apply, RootPairing.coreflection_apply, mul_comm]
-    have hlift :
-        _root_.SymmetricAlgebra.lift (lam ∘ₗ ((rootSystem H).coreflection i).toLinearMap) =
-          (_root_.SymmetricAlgebra.lift lam).comp
-            (_root_.SymmetricAlgebra.map K ((rootSystem H).coreflection i).toLinearMap) :=
-      _root_.SymmetricAlgebra.algHom_ext (LinearMap.ext fun y ↦ by simp)
-    rw [hs, hlift, AlgHom.comp_apply, map_coreflection_lieCartanRestriction i hp]
+    rw [hs, ← _root_.SymmetricAlgebra.lift_comp_map, AlgHom.comp_apply,
+      map_coreflection_lieCartanRestriction i hp]
   | one => simp
   | mul x y hx hy ihx ihy => rw [← MulMemClass.mk_mul_mk (hx := hx) (hy := hy), mul_smul, ihx, ihy]
 

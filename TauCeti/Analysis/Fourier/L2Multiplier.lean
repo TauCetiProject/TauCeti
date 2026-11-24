@@ -172,8 +172,10 @@ theorem norm_fourierMultiplierCLM_le : ‖fourierMultiplierCLM (E := E) F m‖ �
 /-- A symbol given by a function bounded by `C` almost everywhere gives a multiplier of operator
 norm at most `C`. -/
 theorem norm_fourierMultiplierCLM_toLp_le {g : E → ℂ} (hg : MemLp g ∞ volume) {C : ℝ}
-    (hC : 0 ≤ C) (h : ∀ᵐ ξ ∂volume, ‖g ξ‖ ≤ C) : ‖fourierMultiplierCLM F (hg.toLp g)‖ ≤ C :=
-  (norm_fourierMultiplierCLM_le _).trans (Lp.norm_top_le_of_ae_bound hC
+    (h : ∀ᵐ ξ ∂volume, ‖g ξ‖ ≤ C) : ‖fourierMultiplierCLM F (hg.toLp g)‖ ≤ C :=
+  -- `volume` on `E` is nonzero, so the bound is attained somewhere and `C ≥ 0`.
+  have ⟨_, hξ⟩ := h.exists
+  (norm_fourierMultiplierCLM_le _).trans (Lp.norm_le_of_ae_bound_top ((norm_nonneg _).trans hξ)
     (by filter_upwards [hg.coeFn_toLp, h] with ξ hξ hξ'; rwa [hξ]))
 
 /-- The `L²` operator norm of the multiplier with symbol `m` is exactly `‖m‖_∞`, for nonzero
@@ -246,6 +248,17 @@ theorem fourierMultiplierCLM_fourierMultiplierCLM_apply :
     fourierMultiplierCLM F m₁ (fourierMultiplierCLM F m₂ f) =
       fourierMultiplierCLM F (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) f := by
   rw [← fourierMultiplierCLM_compL_fourierMultiplierCLM, comp_apply]
+
+/-- Two multipliers commute, since their symbols do. -/
+theorem fourierMultiplierCLM_fourierMultiplierCLM_comm :
+    fourierMultiplierCLM F m₁ (fourierMultiplierCLM F m₂ f) =
+      fourierMultiplierCLM F m₂ (fourierMultiplierCLM F m₁ f) := by
+  have h : (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) = m₂ • m₁ := by
+    apply Lp.ext
+    filter_upwards [coeFn_lpSMul (r := ∞) m₁ m₂, coeFn_lpSMul (r := ∞) m₂ m₁] with ξ h₁ h₂
+    rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', smul_eq_mul, smul_eq_mul, mul_comm]
+  rw [fourierMultiplierCLM_fourierMultiplierCLM_apply,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply, h]
 
 /-- The adjoint of the multiplier with symbol `m` is the multiplier with the complex conjugate
 symbol `star m`. In particular a real symbol gives a self-adjoint multiplier. -/
@@ -465,7 +478,7 @@ theorem tendsto_fourierMultiplierCLM_apply_self {ι : Type*} {l : Filter ι}
     (f : Lp F 2 (volume : Measure E)) :
     Tendsto (fun i ↦ fourierMultiplierCLM F (m i) f) l (𝓝 f) := by
   have hC' : ∀ᶠ i in l, ‖m i‖ ≤ max C 0 := hC.mono fun i hi ↦
-    Lp.norm_top_le_of_ae_bound (le_max_right C 0) (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0))
+    Lp.norm_le_of_ae_bound_top (le_max_right C 0) (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0))
   have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
   have h := tendsto_fourierMultiplierCLM_apply (F := F) (m₀ := h1.toLp _) hC'
     (by filter_upwards [hm, h1.coeFn_toLp] with ξ h₁ h₂; rwa [h₂]) f
