@@ -33,6 +33,8 @@ representation with projective group-algebra module is a retract of Mathlib's fr
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
   identifications Mathlib leaves definitional, of `ρ.asModule` with `V` and of the intertwining
   map attached to a `k[G]`-linear map.
+* `Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff`: an intertwining map
+  is surjective exactly when its attached `k[G]`-linear map is.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
   scalars preserves the dimension of the representation.
 * `FDRep.finrank_end_eq_finrank_moduleEnd`: the categorical endomorphism space has
@@ -143,6 +145,21 @@ theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply
     ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ).symm f) v =
       σ.asModuleEquiv (f (ρ.asModuleEquiv.symm v)) :=
   (rfl)
+
+/-- **Surjectivity transfers across the module dictionary.** The `k[G]`-linear map that
+`Representation.IntertwiningMap.equivLinearMapAsModule` attaches to an intertwining map is
+surjective exactly when the intertwining map is. -/
+theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff
+    (f : _root_.Representation.IntertwiningMap ρ σ) :
+    Function.Surjective (_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f) ↔
+      Function.Surjective f := by
+  have h : ⇑(_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f) =
+      σ.asModuleEquiv.symm ∘ f ∘ ρ.asModuleEquiv := by
+    ext x
+    rw [Function.comp_apply, Function.comp_apply, _root_.Representation.asModuleEquiv_apply,
+      _root_.Representation.asModuleEquiv_symm_apply,
+      _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply]
+  rw [h, EquivLike.comp_surjective, EquivLike.surjective_comp]
 
 /-- **A `k[G]`-linear isomorphism of the attached modules is an equivalence of representations.**
 The underlying intertwining map is the one attached by

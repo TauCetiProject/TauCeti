@@ -33,6 +33,8 @@ in its function field is computed on affine opens.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.Scheme.genericPoint_mem`: the generic point of an irreducible scheme
+  lies in every nonempty open subset;
 * `TauCeti.AlgebraicGeometry.Scheme.isMax_genericPoint`: the generic point of an irreducible
   scheme is maximal for the specialization order;
 * `TauCeti.AlgebraicGeometry.Scheme.eq_genericPoint_of_isMax`: a point of an irreducible scheme
@@ -83,6 +85,10 @@ namespace Scheme
 universe u
 
 variable {X : Scheme.{u}} [IrreducibleSpace X]
+
+/-- The generic point of an irreducible scheme lies in every nonempty open subset. -/
+theorem genericPoint_mem (U : X.Opens) [Nonempty U] : genericPoint X ∈ U :=
+  ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
 
 /-- The generic point of an irreducible scheme is maximal for the specialization order: it
 generizes every point. -/
