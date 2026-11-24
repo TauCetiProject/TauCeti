@@ -31,8 +31,8 @@ that they lie in the universe of `E`, as `TauCeti.OrthonormalFrameLift` requires
 For `V = ℝⁿ` the inclusion of the reduced frames into all orthonormal frames makes the reduction
 a lift of the orthonormal frame bundle along `H → O(n) → GL(ℝⁿ)`
 (`TauCeti.OrthonormalFrameBundle.reductionLift`), where `O(n) → GL(ℝⁿ)` is
-`TauCeti.euclideanLinearEquivHom n`. For the unitary frames of a fibrewise orthogonal complex
-structure this is `TauCeti.OrthonormalFrameBundle.unitaryFrameLift`.
+`TauCeti.euclideanLinearEquivHom ℝ (Fin n)`. For the unitary frames of a fibrewise orthogonal
+complex structure this is `TauCeti.OrthonormalFrameBundle.unitaryFrameLift`.
 
 ## Main definitions
 
@@ -242,14 +242,14 @@ under `H → O(n) → GL(ℝⁿ)`. -/
 theorem ReductionFiber.frame_smul_apply {x : X} (φ : ReductionFiber S x) (g : H)
     (v : Fin n → ℝ) :
     (op g • φ).frame (WithLp.toLp 2 v) =
-      φ.frame (WithLp.toLp 2 ((euclideanLinearEquivHom n).comp H.subtype g v)) := by
+      φ.frame (WithLp.toLp 2 ((euclideanLinearEquivHom ℝ (Fin n)).comp H.subtype g v)) := by
   simp [← Unitary.coe_linearIsometryEquiv_apply]
 
 /-- **A locally trivial reduction of the orthonormal frame bundle modelled on `ℝⁿ` is a lift of
 the orthonormal frame bundle** along `H → O(n) → GL(ℝⁿ)`: its principal bundle is the reduction,
 and the frame of a point of the reduction is that point itself. -/
 @[expose] def reductionLift (hS : IsLocallyTrivialReduction H S) :
-    OrthonormalFrameLift F E n H ((euclideanLinearEquivHom n).comp H.subtype) where
+    OrthonormalFrameLift F E n H ((euclideanLinearEquivHom ℝ (Fin n)).comp H.subtype) where
   P := ReductionFiber S
   fiberBundle := reductionFiberBundle hS
   principal := principalBundle_reductionFiber hS
