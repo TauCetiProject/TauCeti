@@ -339,6 +339,17 @@ lemma frobeniusOrder_mul_modifiedDatum_cartan (L : ℕ) (hL : 0 < L) (i j : I) :
       A.frobeniusOrder L j * A.cartan i j :=
   Int.mul_ediv_cancel' (A.frobeniusOrder_dvd_frobeniusOrder_mul_cartan L i j)
 
+/-- The modified datum has the Cartan products of `A`: `aᵢⱼ* aⱼᵢ* = aᵢⱼ aⱼᵢ`. -/
+theorem modifiedDatum_cartan_mul_cartan (L : ℕ) (hL : 0 < L) (i j : I) :
+    (A.modifiedDatum L hL).cartan i j * (A.modifiedDatum L hL).cartan j i =
+      A.cartan i j * A.cartan j i := by
+  have hi := A.frobeniusOrder_mul_modifiedDatum_cartan L hL i j
+  have hj := A.frobeniusOrder_mul_modifiedDatum_cartan L hL j i
+  refine mul_left_cancel₀ (mul_ne_zero (Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL i))
+    (Int.natCast_ne_zero.mpr (A.frobeniusOrder_ne_zero hL j))) ?_
+  linear_combination (A.frobeniusOrder L j * (A.modifiedDatum L hL).cartan j i : ℤ) * hi +
+    (A.frobeniusOrder L j * A.cartan i j : ℤ) * hj
+
 /-- **Lusztig's modified inner product `i ∘ j = ℓᵢ ℓⱼ (i · j)`.** Entry `(i, j)` of the symmetrized
 matrix of the modified datum is `ℓᵢ ℓⱼ` times entry `(i, j)` of the original symmetrized matrix. -/
 theorem symmetrizedMatrix_modifiedDatum_apply (L : ℕ) (hL : 0 < L) (i j : I) :
