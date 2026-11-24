@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.KrullDimension.Regular
 import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.Data.ENat.Monoid
 import TauCeti.Order.KrullDimension
 import TauCeti.RingTheory.KrullDimension.Module
 
