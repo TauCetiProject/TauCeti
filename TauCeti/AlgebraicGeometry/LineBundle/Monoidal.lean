@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Skeleton
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # Symmetric monoidal structure on invertible sheaves
@@ -29,7 +30,8 @@ isomorphism classes therefore identifies the monoidal `Skeleton` of `InvertibleS
 
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isMonoidal_isInvertible`: `isInvertible X` is a
   monoidal object property on `X.Modules`, giving `InvertibleSheaf X` its inherited symmetric
-  monoidal category structure;
+  monoidal category structure; in particular the tensor powers of an invertible sheaf are
+  invertible (`AlgebraicGeometry.Scheme.Modules.isInvertible_tensorPow`);
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.toFiniteLocallyFreeMonoidal` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.toFiniteLocallyFreeBraided`: the inclusion into
   finite locally free sheaves is braided monoidal;
@@ -73,6 +75,13 @@ instance isMonoidal_isInvertible (X : Scheme.{u}) : (isInvertible X).IsMonoidal 
       TauCeti.SheafOfModules.IsInvertible.tensorProduct (R := X.sheaf) (M := M) (N := N)
     exact (isInvertible X).prop_of_iso
       (SheafOfModules.tensorProductIso X.sheaf M N ≪≫ (M.tensorUnderlyingIso N).symm) hprod
+
+/-- The tensor powers `M^{⊗n}` of an invertible sheaf `M` in `X.Modules` are invertible. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isInvertible_tensorPow {X : Scheme.{u}}
+    (M : X.Modules) [isInvertible X M] (n : ℕ) : isInvertible X (tensorPow M n) := by
+  induction n with
+  | zero => exact ObjectProperty.prop_unit _
+  | succ n ih => exact ObjectProperty.prop_tensor ‹_› ih
 
 end SheafOfModules
 
