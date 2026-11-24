@@ -135,15 +135,22 @@ private theorem isCompact_toGL : IsCompact (G.toGL : Set (Matrix n n 𝕜)ˣ) :=
 private def coeUnits (k : G.toGL) : Matrix n n 𝕜 :=
   ((k : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜)
 
+/-- A point of `G`, as a point of the units of `G`. -/
+private def toGLPoint (g : G) : G.toGL :=
+  ⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩
+
+private theorem coeUnits_toGLPoint (g : G) : G.coeUnits (G.toGLPoint g) = g :=
+  Unitary.val_toUnits_apply _
+
 private theorem range_coeUnits :
     range G.coeUnits = ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G := by
   ext M
   constructor
   · rintro ⟨⟨_, hu⟩, rfl⟩
     obtain ⟨g, hg, rfl⟩ := mem_toGL.mp hu
-    exact ⟨g, hg, rfl⟩
+    exact ⟨g, hg, (G.coeUnits_toGLPoint ⟨g, hg⟩).symm⟩
   · rintro ⟨g, hg, rfl⟩
-    exact ⟨⟨Unitary.toUnits g, toUnits_mem_toGL hg⟩, rfl⟩
+    exact ⟨G.toGLPoint ⟨g, hg⟩, G.coeUnits_toGLPoint ⟨g, hg⟩⟩
 
 private theorem injective_coeUnits : Injective G.coeUnits :=
   fun _ _ h ↦ Subtype.ext (Units.ext h)
@@ -185,9 +192,8 @@ private theorem injective_mfderiv_coeUnits (k : G.toGL) :
 private theorem mem_normalSubspace_of_mem_orthogonal (g : G) {v : Matrix n n 𝕜}
     (hv : v ∈ (G.matrixTangentSpace g)ᗮ) :
     v ∈ TauCeti.normalSubspace 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup
-      (I := 𝓘(ℝ, Matrix n n 𝕜)) G.toGL).toSubmodule) G.coeUnits
-        ⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩ := by
-  let k : G.toGL := ⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩
+      (I := 𝓘(ℝ, Matrix n n 𝕜)) G.toGL).toSubmodule) G.coeUnits (G.toGLPoint g) := by
+  let k : G.toGL := G.toGLPoint g
   let D : (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
       G.toGL).toSubmodule →L[ℝ] Matrix n n 𝕜 :=
     mfderiv 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
@@ -199,11 +205,10 @@ private theorem mem_normalSubspace_of_mem_orthogonal (g : G) {v : Matrix n n �
       simp only [TauCeti.mtangentConeAt_def, preimage_univ, univ_inter, modelWithCornersSelf_coe,
         range_id, tangentConeAt_univ]
       exact mem_univ _
-    rw [image_univ, TauCeti.mtangentConeAt_eq_tangentConeAt] at hu
+    rw [image_univ, TauCeti.mtangentConeAt_eq_tangentConeAt, G.coeUnits_toGLPoint,
+      G.range_coeUnits] at hu
     rw [← SetLike.mem_coe, ← tangentConeAt_eq_matrixTangentSpace]
-    refine tangentConeAt_mono ?_ hu
-    rintro _ ⟨y, rfl⟩
-    exact G.range_coeUnits ▸ ⟨_, rfl⟩
+    exact hu
   exact TauCeti.mem_normalSubspace_iff.mpr fun u ↦
     Submodule.inner_left_of_mem_orthogonal (htan u) hv
 
@@ -245,14 +250,14 @@ theorem exists_pos_contDiffOn_matrixNearestPoint :
     -- A vector orthogonal to `g 𝔤` is normal to `G` at `g`, so `r (g + v) = g`.
     have hrk := TauCeti.eq_fst_of_isMinOn_dist_of_mem_normalTube (hf.mdifferentiable (by simp))
       (injOn_iff_injective.mpr hemb.injective)
-      (p := (⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩, v))
+      (p := (G.toGLPoint g, v))
       (TauCeti.mem_normalTube.mpr ⟨G.mem_normalSubspace_of_mem_orthogonal g hv,
         hvδ.trans_le hδε⟩) (hmin _)
     have hM : (g : Matrix n n 𝕜) + v ∈ thickening δ (range G.coeUnits) :=
-      mem_thickening_iff.mpr ⟨g, ⟨⟨Unitary.toUnits g, toUnits_mem_toGL g.property⟩, rfl⟩,
+      mem_thickening_iff.mpr ⟨g, ⟨G.toGLPoint g, G.coeUnits_toGLPoint g⟩,
         by simpa [dist_eq_norm] using hvδ⟩
-    rw [hπ _ hM]
-    exact congrArg G.coeUnits hrk
+    simp only [G.coeUnits_toGLPoint] at hrk
+    rw [hπ _ hM, hrk, G.coeUnits_toGLPoint]
 
 end Manifold
 
