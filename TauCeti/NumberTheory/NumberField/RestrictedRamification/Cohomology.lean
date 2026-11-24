@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.RestrictedRamification.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Finiteness
 import Mathlib.FieldTheory.Galois.Profinite
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.BoundedIndex
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
@@ -69,9 +70,7 @@ theorem finite_setOf_isOpen_index_le [Normal K Ω] (S : Set (HeightOneSpectrum (
   refine Set.Finite.of_finite_image (f := φ)
     ((finite_unramifiedOutside_of_finrank_le (Ω := Ω) S hS n).subset ?_) fun W hW W' hW' h ↦ ?_
   · rintro _ ⟨W, hW, rfl⟩
-    have hc := InfiniteGalois.fixingSubgroup_fixedField
-      ⟨W, Subgroup.isClosed_of_isOpen W hW.1⟩
-    simp only at hc
+    have hc := TauCeti.fixingSubgroup_fixedField (Subgroup.isClosed_of_isOpen W hW.1)
     have hfin : FiniteDimensional K (fixedField W) :=
       (InfiniteGalois.isOpen_iff_finite _).1 (by
         rw [hc]
@@ -83,12 +82,9 @@ theorem finite_setOf_isOpen_index_le [Normal K Ω] (S : Set (HeightOneSpectrum (
     refine ⟨this, ?_, le_maxUnramifiedOutside_iff.1 (lift_le _)⟩
     rw [hrank, finrank_eq_fixingSubgroup_index, hc]
     exact hW.2
-  · have hc := InfiniteGalois.fixingSubgroup_fixedField
-      ⟨W, Subgroup.isClosed_of_isOpen W hW.1⟩
-    have hc' := InfiniteGalois.fixingSubgroup_fixedField
-      ⟨W', Subgroup.isClosed_of_isOpen W' hW'.1⟩
-    simp only at hc hc'
-    rw [← hc, ← hc', lift_injective _ h]
+  · rw [← TauCeti.fixingSubgroup_fixedField (Subgroup.isClosed_of_isOpen W hW.1),
+      ← TauCeti.fixingSubgroup_fixedField (Subgroup.isClosed_of_isOpen W' hW'.1),
+      lift_injective _ h]
 
 /-- **Finiteness of `H¹(G_{K,S}, M)`.** For `Ω` a normal extension of the number field `K`, such as
 a separable closure, `S` a finite set of finite places of `K` and `M` a finite discrete

@@ -42,6 +42,12 @@ namespace IntermediateField
 
 variable {K Ω : Type*} [Field K] [NumberField K] [Field Ω] [Algebra K Ω]
 
+omit [NumberField K] in
+/-- Restriction to an intermediate field `E` containing `L₁` and `L₂` preserves their compositum. -/
+private theorem restrict_sup {L₁ L₂ E : IntermediateField K Ω} (h₁ : L₁ ≤ E) (h₂ : L₂ ≤ E)
+    (h : L₁ ⊔ L₂ ≤ E) : restrict h = restrict h₁ ⊔ restrict h₂ :=
+  lift_injective _ (by rw [lift_sup, lift_restrict, lift_restrict, lift_restrict])
+
 /-- Unramifiedness in a compositum, inside a Galois extension `Ω / K`: the three fields are compared
 inside the normal closure of `L₁ ⊔ L₂`, a finite Galois extension of `K`, where unramifiedness is
 read on inertia groups. -/
@@ -54,11 +60,10 @@ private theorem isUnramifiedIn_sup_iff_of_isGalois [IsGalois K Ω] (L₁ L₂ : 
   have h : L₁ ⊔ L₂ ≤ M := le_normalClosure _
   have h₁ : L₁ ≤ M := le_sup_left.trans h
   have h₂ : L₂ ≤ M := le_sup_right.trans h
-  have hsup : restrict h = restrict h₁ ⊔ restrict h₂ :=
-    lift_injective _ (by rw [lift_sup, lift_restrict, lift_restrict, lift_restrict])
   rw [(mapAlgEquiv (restrictAlgEquiv h)).isUnramifiedIn_iff,
     (mapAlgEquiv (restrictAlgEquiv h₁)).isUnramifiedIn_iff,
-    (mapAlgEquiv (restrictAlgEquiv h₂)).isUnramifiedIn_iff, hsup, Ideal.isUnramifiedIn_sup_iff]
+    (mapAlgEquiv (restrictAlgEquiv h₂)).isUnramifiedIn_iff, restrict_sup h₁ h₂ h,
+    Ideal.isUnramifiedIn_sup_iff]
 
 /-- **Unramifiedness in a compositum.** For finite subextensions `L₁` and `L₂` of `Ω / K`, an
 ideal of `𝓞 K` is unramified in `L₁ ⊔ L₂` exactly when it is unramified in `L₁` and in `L₂`. -/
@@ -77,10 +82,9 @@ theorem isUnramifiedIn_sup_iff (L₁ L₂ : IntermediateField K Ω)
     (restrictAlgEquiv h).trans ((restrict h).equivMap ι)
   have : FiniteDimensional K ((restrict h₁).map ι) := (e h₁).toLinearEquiv.finiteDimensional
   have : FiniteDimensional K ((restrict h₂).map ι) := (e h₂).toLinearEquiv.finiteDimensional
-  have hsup : restrict (le_refl E) = restrict h₁ ⊔ restrict h₂ :=
-    lift_injective _ (by rw [lift_sup, lift_restrict, lift_restrict, lift_restrict])
   rw [(mapAlgEquiv (e (le_refl E))).isUnramifiedIn_iff,
-    (mapAlgEquiv (e h₁)).isUnramifiedIn_iff, (mapAlgEquiv (e h₂)).isUnramifiedIn_iff, hsup,
+    (mapAlgEquiv (e h₁)).isUnramifiedIn_iff, (mapAlgEquiv (e h₂)).isUnramifiedIn_iff,
+    restrict_sup h₁ h₂ (le_refl E),
     IntermediateField.map_sup, isUnramifiedIn_sup_iff_of_isGalois]
 
 /-- **Unramifiedness descends to subextensions.** For `L ≤ E` with `E` finite over `K`, an ideal of
