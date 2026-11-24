@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Basic
 public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.AlgebraicGeometry.Scheme.ConstantOnClosed
+import TauCeti.AlgebraicGeometry.Scheme.Basic
+import TauCeti.Topology.Irreducible
 
 /-!
 # Components contracted by a prestable map
@@ -32,9 +34,9 @@ forms (the map `F` itself is always locally of finite type, as the source curve 
   (`TauCeti.AlgebraicGeometry.PrestableMap.const`) is.
 
 Postcomposition with a morphism of targets can only contract more components, and contracts the
-same components when the morphism of targets is injective on points, for instance an
-immersion such as an isomorphism or a closed immersion. A constant map contracts every component
-of a curve over a one-point base.
+same components when the morphism of targets has discrete fibres, for instance when it is
+injective on points, such as an immersion (an isomorphism or a closed immersion). A constant
+map contracts every component of a curve over a one-point base.
 
 Contraction is invariant under extension of the algebraically closed base field. Let `F` be a
 prestable map over an algebraically closed field `K`, with target locally of finite type, and let
@@ -60,9 +62,10 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   restriction through the residue field of a point.
 * `isContractedComponent_iff_exists_subschemeι_comp_eq_section`: over an algebraically closed
   field, contraction is constancy through a rational point.
-* `isContractedComponent_postcomp_iff_of_injective`: postcomposition with a morphism of targets
-  that is injective on points contracts the same components; `isContractedComponent_postcomp_iff`
-  is the case of an immersion.
+* `isContractedComponent_postcomp_iff_of_isDiscrete`: postcomposition with a morphism of targets
+  with discrete fibres contracts the same components;
+  `isContractedComponent_postcomp_iff_of_injective` and `isContractedComponent_postcomp_iff` are
+  the cases of a morphism injective on points and of an immersion.
 * `isContractedComponent_const_iff`: a constant map over a one-point base contracts every
   component.
 * `isContractedComponent_pullback_iff` and `isContractedComponent_pullback_preimage_iff`: over an
@@ -164,15 +167,6 @@ theorem isContractedComponent_iff_exists_subschemeι_comp_eq_section {K : Type u
     F.map.subsingleton_image_iff_exists_subschemeι_comp_eq_section q hE.1.nonempty]
   simp only [w_assoc]
 
-/-- The image of a set under the map of a postcomposed prestable map is its image under the
-original map, pushed forward along the morphism of targets. -/
-theorem image_postcomp_map {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (E : Set F.curve.total) :
-    (F.postcomp h hh).map '' E = h '' (F.map '' E) := by
-  rw [Set.image_image]
-  -- The source curve of `F.postcomp h hh` is that of `F`, and its map is `F.map ≫ h`
-  -- (`postcomp_curve`, `postcomp_map`); the pointwise identity is stated on that curve.
-  exact Set.image_congr fun x _ ↦ Scheme.Hom.comp_apply F.map h x
-
 variable {F} in
 /-- Postcomposition with a morphism of targets contracts every component the map contracts. -/
 theorem IsContractedComponent.postcomp {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q)
@@ -180,12 +174,24 @@ theorem IsContractedComponent.postcomp {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r
     (F.postcomp h hh).IsContractedComponent E :=
   ⟨hF.1, (F.image_postcomp_map h hh E).symm ▸ hF.2.image _⟩
 
+/-- Postcomposition with a morphism of targets whose fibres are discrete contracts the same
+components: the image of a component is irreducible, so it is a point once its image under the
+morphism of targets is. -/
+theorem isContractedComponent_postcomp_iff_of_isDiscrete {r : W ⟶ S} (h : V ⟶ W)
+    (hdisc : ∀ w : W, _root_.IsDiscrete (h ⁻¹' {w})) (hh : h ≫ r = q) {E : Set F.curve.total} :
+    (F.postcomp h hh).IsContractedComponent E ↔ F.IsContractedComponent E :=
+  and_congr_right fun hE ↦ by
+    rw [image_postcomp_map]
+    exact (hE.1.isPreirreducible.image _ F.map.continuous.continuousOn).subsingleton_image_iff
+      hdisc
+
 /-- Postcomposition with a morphism of targets that is injective on points contracts the same
 components. -/
 theorem isContractedComponent_postcomp_iff_of_injective {r : W ⟶ S} (h : V ⟶ W)
     (hinj : Function.Injective h) (hh : h ≫ r = q) {E : Set F.curve.total} :
     (F.postcomp h hh).IsContractedComponent E ↔ F.IsContractedComponent E :=
-  and_congr Iff.rfl <| by rw [image_postcomp_map, hinj.subsingleton_image_iff]
+  F.isContractedComponent_postcomp_iff_of_isDiscrete h
+    (fun _ ↦ (Set.subsingleton_singleton.preimage hinj).isDiscrete) hh
 
 /-- Postcomposition with an immersion of targets, for instance an isomorphism or a closed
 immersion, contracts the same components. -/
@@ -202,9 +208,13 @@ theorem isContractedComponent_const_iff [Subsingleton S] (P : PointedPrestableFa
     (σ : S ⟶ V) (hσ : σ ≫ q = 𝟙 S) {E : Set P.total} :
     (const P σ hσ).IsContractedComponent E ↔ E ∈ irreducibleComponents P.total := by
   refine and_iff_left_of_imp fun _ ↦ ?_
-  rintro _ ⟨a, -, rfl⟩ _ ⟨b, -, rfl⟩
-  simp only [const_map]
-  exact congr(σ $(Subsingleton.elim _ _))
+  -- The map of `const P σ hσ` is `P.toBase ≫ σ` by definition; its image factors through the
+  -- one-point base. `rw [const_map]` is not used: the rewritten map would have source `P.total`
+  -- while `E` lives in `(const P σ hσ).curve.total`, which is `P.total` only definitionally.
+  have : ((P.toBase ≫ σ) '' E).Subsingleton := by
+    rw [Scheme.Hom.image_comp]
+    exact Set.subsingleton_of_subsingleton.image _
+  exact this
 
 section FieldExtension
 
