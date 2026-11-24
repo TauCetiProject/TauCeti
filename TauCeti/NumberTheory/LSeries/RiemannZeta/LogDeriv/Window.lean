@@ -92,8 +92,7 @@ theorem exists_finsum_analyticOrderAt_riemannZeta_le (σ₀ r : ℝ) :
   have ht : 0 < |s₀.im| + 2 := by positivity
   have hF := (differentiable_LFunctionTrivChar₁ 1).differentiableOn.analyticOnNhd isOpen_univ
   have hFc : LFunctionTrivChar₁ 1 c ≠ 0 :=
-    LFunctionTrivChar₁_one_ne_zero (fun h ↦ by simp [h] at hc)
-      (riemannZeta_ne_zero_of_one_lt_re (by simp [hc]))
+    LFunctionTrivChar₁_one_ne_zero (riemannZeta_ne_zero_of_one_lt_re (by simp [hc]))
   have hJ := (hF.mono (subset_univ _)).sum_divisor_le_log_div_log hR (lt_add_one R) hFc
     fun w hw ↦ hD c w hc (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le)
   rw [Real.log_rpow (by rwa [hcim]), hcim] at hJ

@@ -39,8 +39,8 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   `DirichletCharacter.LFunctionTrivChar₁_one_apply_one`, and
   `DirichletCharacter.analyticOrderAt_LFunctionTrivChar₁_one`: the values of the pole-removed
   function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
-  `(s - 1) ζ(s)` away from `1` and `1` at `1`; away from `1` it vanishes exactly where `ζ` does,
-  and its analytic orders agree with `ζ`.
+  `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
+  its analytic orders agree with `ζ`.
 * `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
   simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
 
@@ -68,9 +68,12 @@ theorem LFunctionTrivChar₁_one_apply_of_ne_one {s : ℂ} (hs : s ≠ 1) :
     LFunctionTrivChar₁ 1 s = (s - 1) * riemannZeta s := by
   simp [LFunctionTrivChar₁_apply_of_ne_one 1 hs]
 
-/-- Away from `s = 1`, the pole-removed zeta function `(s - 1) ζ(s)` is nonzero wherever `ζ` is. -/
-theorem LFunctionTrivChar₁_one_ne_zero {s : ℂ} (hs : s ≠ 1) (hζ : riemannZeta s ≠ 0) :
+/-- The pole-removed zeta function, `(s - 1) ζ(s)` away from `s = 1`, is nonzero wherever `ζ` is
+nonzero. -/
+theorem LFunctionTrivChar₁_one_ne_zero {s : ℂ} (hζ : riemannZeta s ≠ 0) :
     LFunctionTrivChar₁ 1 s ≠ 0 := by
+  rcases eq_or_ne s 1 with rfl | hs
+  · exact LFunctionTrivChar₁_apply_one_ne_zero 1
   rw [LFunctionTrivChar₁_one_apply_of_ne_one hs]
   exact mul_ne_zero (sub_ne_zero.mpr hs) hζ
 

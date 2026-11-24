@@ -80,9 +80,7 @@ theorem divisor_LFunctionTrivChar₁_one_closedBall_apply (s₀ ρ : ℂ) (r' : 
   · rw [ite_eq_right hρ]
     by_cases hmem : ρ ∈ closedBall s₀ r'
     · have hne : LFunctionTrivChar₁ 1 ρ ≠ 0 := by
-        rcases eq_or_ne ρ 1 with rfl | hρ1
-        · exact LFunctionTrivChar₁_apply_one_ne_zero 1
-        refine LFunctionTrivChar₁_one_ne_zero hρ1 fun h ↦ hρ ⟨?_, h⟩
+        refine LFunctionTrivChar₁_one_ne_zero fun h ↦ hρ ⟨?_, h⟩
         rwa [mem_closedBall, dist_eq_norm] at hmem
       exact (hF ρ trivial).divisor_apply_eq_zero hne
     · exact Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hmem
@@ -166,13 +164,12 @@ theorem riemannZeta_local_logDeriv {σ₀ r r' : ℝ} (hσ₀ : 1 < σ₀) (hr :
       ‖LFunctionTrivChar₁ 1 w‖ ≤ t ^ D * ‖LFunctionTrivChar₁ 1 s₀‖ :=
     hD s₀ w hs₀ (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le)
   have hFs₀ : LFunctionTrivChar₁ 1 s₀ ≠ 0 :=
-    LFunctionTrivChar₁_one_ne_zero (fun h ↦ by simp [h] at hs₀; linarith)
-      (riemannZeta_ne_zero_of_one_lt_re (by linarith))
+    LFunctionTrivChar₁_one_ne_zero (riemannZeta_ne_zero_of_one_lt_re (by linarith))
   have hM1 : 1 ≤ t ^ D :=
     (hFb.differentiableOn.diffContOnCl_ball Subset.rfl).one_le_of_forall_mem_sphere_norm_le_mul
       (by linarith) hFs₀ hsphere
   have key := hFb.norm_logDeriv_sub_finsum_divisor_le (lt_add_one r') hsphere (hs.trans_lt hrr')
-    (LFunctionTrivChar₁_one_ne_zero hs1 hζ)
+    (LFunctionTrivChar₁_one_ne_zero hζ)
   rw [← logDeriv_riemannZeta_add_inv_sub_one hs1 hζ, logDeriv_apply,
     ← finsum_subtype_riemannZeta_eq_finsum_divisor, ← one_div] at key
   have hA : 4 * (r' + ‖s - s₀‖) / (r' - ‖s - s₀‖) ^ 2 +
