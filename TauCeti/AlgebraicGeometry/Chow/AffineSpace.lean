@@ -10,7 +10,9 @@ public import TauCeti.AlgebraicGeometry.Chow.DivisorClass
 public import TauCeti.AlgebraicGeometry.Chow.Localization
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import Mathlib.RingTheory.KrullDimension.Polynomial
+import TauCeti.AlgebraicGeometry.CartierDivisor.Factorial
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk
 
 /-!
 # Chow groups of affine spaces in codimension one
@@ -65,7 +67,7 @@ theorem subsingleton_chowGroup_of_uniqueFactorizationMonoid {R : Type u} [CommRi
     (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim (R := R)).trans hn
   exact (classGroupEquivChowGroup κ hdim).symm.subsingleton
 
-/-- **Check.** The Chow group `CH_n(𝔸ⁿ⁺¹_κ)` of codimension-one cycles on affine space vanishes. -/
+/-- The Chow group `CH_n(𝔸ⁿ⁺¹_κ)` of codimension-one cycles on affine space vanishes. -/
 theorem subsingleton_chowGroup_affineSpace (n : ℕ) :
     Subsingleton (ChowGroup (Spec (.of (MvPolynomial (Fin (n + 1)) κ))) n) := by
   have := subsingleton_chowGroup_of_uniqueFactorizationMonoid κ
@@ -75,27 +77,27 @@ theorem subsingleton_chowGroup_affineSpace (n : ℕ) :
       simp)
   simpa using this
 
-/-- **Check.** On the affine line `𝔸¹_κ = Spec κ[X]`, the principal cycle of the coordinate `t`
-is the cycle of the origin `x = (t)`: `[0] = div(t)`. -/
+/-- On the affine line `𝔸¹_κ = Spec κ[X]`, the principal cycle of the coordinate `t`
+is the cycle of the origin `x = (t)`: `[0] = div(t)`. The coordinate is given as the image in the
+function field of the germ of `X` in the local ring at the origin. -/
 theorem div_X_affineLine [DecidableEq (Spec (.of κ[X]))] {x : Spec (.of κ[X])}
     (hx : x.asIdeal = Ideal.span {X}) {t : (Spec (.of κ[X])).functionFieldˣ}
-    -- The function field of `Spec R` as an `R`-algebra, rather than as an algebra over the base
-    -- ring of an `Over` structure (`Scheme.functionFieldBaseAlgebra`).
-    (ht : letI := instAlgebraCarrierFunctionFieldSpec (.of κ[X])
-      (t : (Spec (.of κ[X])).functionField) = algebraMap (CommRingCat.of κ[X]) _ X) :
+    (ht : (t : (Spec (.of κ[X])).functionField) =
+      algebraMap ((Spec (.of κ[X])).presheaf.stalk x) _ (StructureSheaf.toStalk κ[X] x X)) :
     AlgebraicCycle.div t = Function.locallyFinsuppWithin.single x 1 :=
-  AlgebraicCycle.div_eq_single_of_prime prime_X hx ht
+  AlgebraicCycle.div_eq_single_of_prime prime_X hx
+    (ht.trans (StructureSheaf.algebraMap_functionField_toStalk x X))
 
-/-- **Check.** The Chow group `CH_0(𝔸¹_κ)` of zero-cycles on the affine line vanishes: every closed
+/-- The Chow group `CH_0(𝔸¹_κ)` of zero-cycles on the affine line vanishes: every closed
 point is the zero locus of a prime polynomial `p`, and its cycle is `div(p)`. -/
 theorem subsingleton_chowGroup_zero_affineLine :
     Subsingleton (ChowGroup (Spec (.of κ[X])) 0) := by
   have := subsingleton_chowGroup_of_uniqueFactorizationMonoid κ (R := κ[X]) (n := 1) (by
     rw [Polynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field]
-    rfl)
+    norm_num)
   simpa using this
 
-/-- **Check.** The Chow group `CH_0(𝔾_m)` of zero-cycles on `𝔾_m = Spec κ[X][X⁻¹]` vanishes: the
+/-- The Chow group `CH_0(𝔾_m)` of zero-cycles on `𝔾_m = Spec κ[X][X⁻¹]` vanishes: the
 restriction `CH_0(𝔸¹_κ) → CH_0(𝔾_m) → 0` along the open immersion of the complement of the origin
 is surjective, and `CH_0(𝔸¹_κ) = 0`. -/
 theorem subsingleton_chowGroup_zero_multiplicativeGroup :
