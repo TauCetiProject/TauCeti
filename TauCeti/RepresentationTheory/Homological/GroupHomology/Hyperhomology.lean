@@ -78,16 +78,18 @@ degree `≤ n`. -/
 theorem exactAt_mapBifunctor_coinvariantsTensor (C P : ChainComplex (Rep.{u} k G) ℕ)
     [∀ q, Projective (P.X q)] (n : ℕ) (hC : ∀ p ≤ n, C.ExactAt p) :
     (mapBifunctor C P (Rep.coinvariantsTensor k G) (ComplexShape.down ℕ)).ExactAt n := by
+  -- `mapBifunctor C P F c` is by definition the total complex of the bicomplex
+  -- `((F.mapBifunctorHomologicalComplex _ _).obj C).obj P`.
   refine HomologicalComplex₂.exactAt_total_of_rows _ n fun p q hpq ↦ ?_
-  have : ((Rep.coinvariantsTensor k G).flip.obj (P.X q)).PreservesHomology :=
-    ((Functor.exact_tfae ((Rep.coinvariantsTensor k G).flip.obj (P.X q))).out 1 3).1
-      fun _ hS ↦ ShortComplex.ShortExact.map_coinvariantsTensor_projective hS _
+  -- Row `q` of that bicomplex is by definition `C` mapped by the functor `(- ⊗ P_q)_G`, which
+  -- preserves homology since `P_q` is projective
+  -- (`Rep.preservesHomology_coinvariantsTensor_flip_obj_of_projective`).
   exact (hC p (by omega)).map ((Rep.coinvariantsTensor k G).flip.obj (P.X q))
 
 /-- The **group hyperhomology** `H_n(G; C)` of a chain complex `C` of representations of `G`: the
 homology in degree `n` of the total complex of the bicomplex `(C_p ⊗ P_q)_G`, where `P` is the bar
 resolution of the trivial representation `k`. -/
-def groupHyperhomology (C : ChainComplex (Rep.{u} k G) ℕ) (n : ℕ) : ModuleCat.{u} k :=
+@[expose] def groupHyperhomology (C : ChainComplex (Rep.{u} k G) ℕ) (n : ℕ) : ModuleCat.{u} k :=
   (mapBifunctor C (Rep.barComplex k G) (Rep.coinvariantsTensor k G)
     (ComplexShape.down ℕ)).homology n
 
@@ -107,6 +109,15 @@ def groupHyperhomologyIso (C : ChainComplex (Rep.{u} k G) ℕ)
   (HomotopyEquiv.mapBifunctor (Rep.coinvariantsTensor k G) (ComplexShape.down ℕ)
     (HomotopyEquiv.refl C) ((Rep.barResolution k G).homotopyEquiv P)).toHomologyIso n
 
+/-- The computation of group hyperhomology from a projective resolution `P` is induced by the
+comparison map from the bar resolution to `P`. -/
+lemma groupHyperhomologyIso_hom (C : ChainComplex (Rep.{u} k G) ℕ)
+    (P : ProjectiveResolution (Rep.trivial k G k)) (n : ℕ) :
+    (C.groupHyperhomologyIso P n).hom = homologyMap (mapBifunctorMap (𝟙 C)
+      ((Rep.barResolution k G).homotopyEquiv P).hom (Rep.coinvariantsTensor k G)
+      (ComplexShape.down ℕ)) n :=
+  congrArg (homologyMap · n) (HomotopyEquiv.mapBifunctor_hom _ _)
+
 /-- **Group hyperhomology vanishes in degrees where the complex is acyclic.** If `C` is exact in
 every degree `≤ n`, then `H_n(G; C) = 0`. -/
 theorem isZero_groupHyperhomology_of_exactAt (C : ChainComplex (Rep.{u} k G) ℕ) (n : ℕ)
@@ -125,6 +136,20 @@ def groupHyperhomologyBicomplexXIso (C : ChainComplex (Rep.{u} k G) ℕ) (p : �
     C.groupHyperhomologyBicomplex.X p ≅ (Rep.barComplex k G).coinvariantsTensorObj (C.X p) :=
   Hom.isoOfComponents (fun _ ↦ Iso.refl _) (by simp)
 
+/-- The identification of a column of the bicomplex computing group hyperhomology is the identity
+in each degree. -/
+@[simp]
+lemma groupHyperhomologyBicomplexXIso_hom_f (C : ChainComplex (Rep.{u} k G) ℕ) (p q : ℕ) :
+    (C.groupHyperhomologyBicomplexXIso p).hom.f q = 𝟙 _ :=
+  (rfl)
+
+/-- The inverse of the identification of a column of the bicomplex computing group hyperhomology
+is the identity in each degree. -/
+@[simp]
+lemma groupHyperhomologyBicomplexXIso_inv_f (C : ChainComplex (Rep.{u} k G) ℕ) (p q : ℕ) :
+    (C.groupHyperhomologyBicomplexXIso p).inv.f q = 𝟙 _ :=
+  (rfl)
+
 /-- The **spectral sequence of group hyperhomology** obtained by filtering by the degree of `C`.
 In Mathlib's cohomological indexing, its object at `(-q - 2p, p)` on the first page (numbered `2`)
 is `H_q(G, C_p)` (`HomologicalComplex.groupHyperhomologySpectralSequenceFirstPageXIso`), and it
@@ -142,6 +167,18 @@ def groupHyperhomologySpectralSequenceFirstPageXIso (C : ChainComplex (Rep.{u} k
   C.groupHyperhomologyBicomplex.columnFiltrationSpectralSequenceFirstPageXIso p q ≪≫
     homologyMapIso (C.groupHyperhomologyBicomplexXIso p) q ≪≫
     (homologyMapIso (groupHomology.inhomogeneousChainsIso (C.X p)) q).symm
+
+/-- The identification of the first page of the spectral sequence of group hyperhomology is the
+identification `columnFiltrationSpectralSequenceFirstPageXIso` of the first page of the column
+filtration, followed by the identification of the columns with the complexes computing group
+homology. -/
+lemma groupHyperhomologySpectralSequenceFirstPageXIso_eq (C : ChainComplex (Rep.{u} k G) ℕ)
+    (p q : ℕ) :
+    C.groupHyperhomologySpectralSequenceFirstPageXIso p q =
+      C.groupHyperhomologyBicomplex.columnFiltrationSpectralSequenceFirstPageXIso p q ≪≫
+        homologyMapIso (C.groupHyperhomologyBicomplexXIso p) q ≪≫
+        (homologyMapIso (groupHomology.inhomogeneousChainsIso (C.X p)) q).symm :=
+  (rfl)
 
 /-- The abutment of the spectral sequence of group hyperhomology in degree `-n` is `H_n(G; C)`. -/
 def groupHyperhomologySpectralSequenceAbutmentIso (C : ChainComplex (Rep.{u} k G) ℕ) (n : ℕ) :
@@ -205,5 +242,18 @@ def groupHyperhomologySingleIso (A : Rep.{u} k G) (n : ℕ) :
     homologyMapIso (((single _ (ComplexShape.down ℕ) 0).obj A).groupHyperhomologyBicomplexXIso 0 ≪≫
       (Rep.barComplex k G).coinvariantsTensorFunctor.mapIso (singleObjXSelf _ 0 A) ≪≫
       (groupHomology.inhomogeneousChainsIso A).symm) n
+
+/-- The identification of the group hyperhomology of a representation placed in degree `0` with
+its group homology is induced by the augmentation of the total complex onto the column `0`,
+followed by the identification of that column with the inhomogeneous chains. -/
+lemma groupHyperhomologySingleIso_hom (A : Rep.{u} k G) (n : ℕ) :
+    (groupHyperhomologySingleIso A n).hom =
+      homologyMap (HomologicalComplex₂.totalAugmentation
+          ((single _ (ComplexShape.down ℕ) 0).obj A).groupHyperhomologyBicomplex (𝟙 _)
+          (by simp [groupHyperhomologyBicomplex_single_d_one_zero])) n ≫
+        homologyMap ((((single _ (ComplexShape.down ℕ) 0).obj A).groupHyperhomologyBicomplexXIso
+          0).hom ≫ (Rep.barComplex k G).coinvariantsTensorFunctor.map (singleObjXSelf _ 0 A).hom ≫
+          (groupHomology.inhomogeneousChainsIso A).inv) n :=
+  (rfl)
 
 end Rep
