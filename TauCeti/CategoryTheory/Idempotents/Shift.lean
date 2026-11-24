@@ -123,57 +123,41 @@ theorem toKaroubi_commShiftIso_inv_app_f (X : C) (a : A) :
 
 /- The components of the structure isomorphisms of the shift at objects of `C`, viewed in
 `Karoubi C` through the coercion (which is the form `natTrans_eq` produces), read off from
-Mathlib's description of an induced shift, which is stated at `(toKaroubi C).obj X`. -/
+Mathlib's description of an induced shift, which is stated at `(toKaroubi C).obj X`. In each proof
+the coercion of `X` is replaced by `(toKaroubi C).obj X`, which it is by definition, and the
+comparison isomorphisms of the induced shift are left as `_`, to be found by unification.
+Their components have identity underlying morphisms only up to unfolding, on objects that are
+not syntactically those of the neighbouring morphisms, so `id_comp` and `comp_id` are applied
+with `exact` (which unifies up to unfolding) rather than by `simp`. -/
 
 private theorem shiftFunctorZero_hom_app_coe_f (X : C) :
     ((shiftFunctorZero (Karoubi C) A).hom.app (X : Karoubi C)).f =
       (shiftFunctorZero C A).hom.app X := by
-  -- The coercion of `X` is `(toKaroubi C).obj X` by definition.
   change ((shiftFunctorZero (Karoubi C) A).hom.app ((toKaroubi C).obj X)).f = _
-  rw [congr_arg Karoubi.Hom.f (shiftFunctorZero_hom_app_obj_of_induced (toKaroubi C) A _
-    (fun a ↦ (functorExtension₂CompWhiskeringLeftToKaroubiIso C C).app (shiftFunctor C a)) X),
-    comp_f]
-  exact Category.id_comp _
+  rw [shiftFunctorZero_hom_app_obj_of_induced (toKaroubi C) A _ _ X]
+  exact id_comp _
 
 private theorem shiftFunctorZero_inv_app_coe_f (X : C) :
     ((shiftFunctorZero (Karoubi C) A).inv.app (X : Karoubi C)).f =
       (shiftFunctorZero C A).inv.app X := by
-  -- The coercion of `X` is `(toKaroubi C).obj X` by definition.
   change ((shiftFunctorZero (Karoubi C) A).inv.app ((toKaroubi C).obj X)).f = _
-  rw [congr_arg Karoubi.Hom.f (shiftFunctorZero_inv_app_obj_of_induced (toKaroubi C) A _
-    (fun a ↦ (functorExtension₂CompWhiskeringLeftToKaroubiIso C C).app (shiftFunctor C a)) X),
-    comp_f]
-  exact Category.comp_id _
+  rw [shiftFunctorZero_inv_app_obj_of_induced (toKaroubi C) A _ _ X]
+  exact comp_id _
 
 private theorem shiftFunctorAdd_hom_app_coe_f (X : C) (a b : A) :
     ((shiftFunctorAdd (Karoubi C) a b).hom.app (X : Karoubi C)).f =
       (shiftFunctorAdd C a b).hom.app X := by
-  -- The coercion of `X` is `(toKaroubi C).obj X` by definition.
   change ((shiftFunctorAdd (Karoubi C) a b).hom.app ((toKaroubi C).obj X)).f = _
-  rw [congr_arg Karoubi.Hom.f (shiftFunctorAdd_hom_app_obj_of_induced (toKaroubi C) _
-    (fun a ↦ (functorExtension₂CompWhiskeringLeftToKaroubiIso C C).app (shiftFunctor C a)) a b X)]
-  simp only [comp_obj, Iso.app_hom, Iso.app_inv, comp_f, toKaroubi_obj_X, toKaroubi_map_f,
-    functorExtension₂_obj_obj_X, functorExtension₂_obj_map_f,
-    functorExtension₂CompWhiskeringLeftToKaroubiIso_hom_app_app_f,
-    functorExtension₂CompWhiskeringLeftToKaroubiIso_inv_app_app_f, map_id, comp_id]
-  -- What remains is `𝟙 _ ≫ _`, where the identity is on an object only definitionally equal to
-  -- the source of the second morphism.
-  exact Category.id_comp _
+  rw [shiftFunctorAdd_hom_app_obj_of_induced (toKaroubi C) _ _ a b X]
+  exact (id_comp _).trans (by simp)
 
 private theorem shiftFunctorAdd_inv_app_coe_f (X : C) (a b : A) :
     ((shiftFunctorAdd (Karoubi C) a b).inv.app (X : Karoubi C)).f =
       (shiftFunctorAdd C a b).inv.app X := by
-  -- The coercion of `X` is `(toKaroubi C).obj X` by definition.
   change ((shiftFunctorAdd (Karoubi C) a b).inv.app ((toKaroubi C).obj X)).f = _
-  rw [congr_arg Karoubi.Hom.f (shiftFunctorAdd_inv_app_obj_of_induced (toKaroubi C) _
-    (fun a ↦ (functorExtension₂CompWhiskeringLeftToKaroubiIso C C).app (shiftFunctor C a)) a b X)]
-  simp only [comp_obj, Iso.app_hom, Iso.app_inv, comp_f, toKaroubi_obj_X, toKaroubi_map_f,
-    functorExtension₂_obj_obj_X, functorExtension₂_obj_map_f,
-    functorExtension₂CompWhiskeringLeftToKaroubiIso_hom_app_app_f,
-    functorExtension₂CompWhiskeringLeftToKaroubiIso_inv_app_app_f, map_id, comp_id, id_comp]
-  -- What remains is `𝟙 _ ≫ _`, where the identity is on an object only definitionally equal to
-  -- the source of the second morphism.
-  exact Category.id_comp _
+  rw [shiftFunctorAdd_inv_app_obj_of_induced (toKaroubi C) _ _ a b X]
+  -- The first factor is the shift by `b` of an identity morphism.
+  exact (congr_arg (· ≫ _) ((shiftFunctor C b).map_id _)).trans ((id_comp _).trans (by simp))
 
 @[simp]
 theorem shiftFunctorZero_hom_app_f (P : Karoubi C) :
