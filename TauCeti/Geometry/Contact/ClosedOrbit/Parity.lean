@@ -120,21 +120,51 @@ return map `A_γ` on the contact hyperplane. It is nonzero exactly when `γ` is 
 noncomputable def orbitParity (γ : Flow.ClosedOrbit (hα.reebFlow hc)) : SignType :=
   SignType.sign ((hα.returnCharpoly hc γ).eval 1)
 
+/-- The parity of a closed Reeb orbit is the sign of the characteristic polynomial of its return
+map evaluated at `1`. -/
+theorem orbitParity_def (γ : Flow.ClosedOrbit (hα.reebFlow hc)) :
+    hα.orbitParity hc γ = SignType.sign ((hα.returnCharpoly hc γ).eval 1) :=
+  (rfl)
+
 /-- The parity of the closed orbit of a periodic Reeb trajectory `δ` is the sign of
 `det (1 - A_δ)`. -/
 @[simp]
 theorem orbitParity_mk (δ : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
     hα.orbitParity hc (Flow.ClosedOrbit.mk δ) =
       SignType.sign (1 - hα.periodicLinearizedReturn hc δ).det := by
-  rw [orbitParity, returnCharpoly_mk, LinearMap.eval_charpoly, map_one]
+  rw [orbitParity_def, returnCharpoly_mk, LinearMap.eval_charpoly, map_one]
+
+/-- The parity of the `k`-fold iterate of the closed orbit of a periodic Reeb trajectory `δ` is the
+sign of `det (1 - A_δ ^ k)`. -/
+theorem orbitParity_iterate_mk (δ : Flow.PeriodicTrajectory (hα.reebFlow hc)) (k : ℕ+) :
+    hα.orbitParity hc ((Flow.ClosedOrbit.mk δ).iterate k) =
+      SignType.sign (1 - hα.periodicLinearizedReturn hc δ ^ (k : ℕ)).det := by
+  rw [orbitParity_def, returnCharpoly_iterate_mk, LinearMap.eval_charpoly, map_one]
 
 /-- The parity of a closed Reeb orbit is nonzero exactly when the orbit is nondegenerate. -/
 theorem orbitParity_ne_zero_iff (γ : Flow.ClosedOrbit (hα.reebFlow hc)) :
     hα.orbitParity hc γ ≠ 0 ↔ hα.IsNondegenerateOrbit hc γ := by
-  rw [orbitParity, sign_ne_zero, isNondegenerateOrbit_iff_eval_one_returnCharpoly_ne_zero]
+  rw [orbitParity_def, sign_ne_zero, isNondegenerateOrbit_iff_eval_one_returnCharpoly_ne_zero]
+
+/-- The closed orbit of a periodic Reeb trajectory `δ` is nondegenerate exactly when
+`det (1 - A_δ) ≠ 0`. -/
+theorem isNondegenerateOrbit_mk_iff_det_one_sub_ne_zero
+    (δ : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
+    hα.IsNondegenerateOrbit hc (Flow.ClosedOrbit.mk δ) ↔
+      (1 - hα.periodicLinearizedReturn hc δ).det ≠ 0 := by
+  rw [← orbitParity_ne_zero_iff, orbitParity_mk, sign_ne_zero]
+
+/-- The `k`-fold iterate of the closed orbit of a periodic Reeb trajectory `δ` is nondegenerate
+exactly when `det (1 - A_δ ^ k) ≠ 0`. -/
+theorem isNondegenerateOrbit_iterate_mk_iff_det_one_sub_ne_zero
+    (δ : Flow.PeriodicTrajectory (hα.reebFlow hc)) (k : ℕ+) :
+    hα.IsNondegenerateOrbit hc ((Flow.ClosedOrbit.mk δ).iterate k) ↔
+      (1 - hα.periodicLinearizedReturn hc δ ^ (k : ℕ)).det ≠ 0 := by
+  rw [← orbitParity_ne_zero_iff, orbitParity_iterate_mk, sign_ne_zero]
 
 /-- The linearized return map of a periodic Reeb trajectory is a linear symplectomorphism of the
 contact hyperplane, so its determinant is `1`. -/
+@[simp]
 theorem det_periodicLinearizedReturn (δ : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
     (hα.periodicLinearizedReturn hc δ).det = 1 := by
   rw [periodicLinearizedReturn_def, ← toLinearMap_linearizedReebReturnEquiv]
@@ -146,9 +176,9 @@ theorem orbitParity_eq_neg_one_pow {γ : Flow.ClosedOrbit (hα.reebFlow hc)}
     (hγ : hα.IsNondegenerateOrbit hc γ) :
     hα.orbitParity hc γ = (-1) ^ ((hα.returnCharpoly hc γ).roots.filter (1 < ·)).card := by
   induction γ using Flow.ClosedOrbit.ind with | h δ => _
-  rw [← orbitParity_ne_zero_iff, orbitParity_mk] at hγ
+  rw [isNondegenerateOrbit_mk_iff_det_one_sub_ne_zero] at hγ
   have h := LinearMap.sign_det_one_sub_pow (hα.periodicLinearizedReturn hc δ) 1
-    (by simpa using hγ)
+    (by rwa [pow_one])
   rw [pow_one, pow_mul, neg_one_sq, one_pow, mul_one] at h
   rw [orbitParity_mk, h, returnCharpoly_mk]
 
@@ -161,16 +191,11 @@ theorem orbitParity_iterate {γ : Flow.ClosedOrbit (hα.reebFlow hc)} {k : ℕ+}
       (-1) ^ (((k : ℕ) + 1) *
         ((hα.returnCharpoly hc γ).roots.filter (· ∈ Set.Ioo (-1) 0)).card) := by
   induction γ using Flow.ClosedOrbit.ind with | h δ => _
-  have h1 : (1 - hα.periodicLinearizedReturn hc δ).det ≠ 0 := by
-    have h := hα.isNondegenerateOrbit_of_iterate hc hγ
-    rwa [isNondegenerateOrbit_iff_eval_one_returnCharpoly_ne_zero, returnCharpoly_mk,
-      LinearMap.eval_charpoly, map_one] at h
-  rw [isNondegenerateOrbit_iff_eval_one_returnCharpoly_ne_zero, returnCharpoly_iterate_mk,
-    LinearMap.eval_charpoly, map_one] at hγ
-  have h1' := LinearMap.sign_det_one_sub_pow _ 1 (by rwa [pow_one])
-  rw [pow_one, pow_mul, neg_one_sq, one_pow, mul_one] at h1'
-  rw [orbitParity, returnCharpoly_iterate_mk, LinearMap.eval_charpoly, map_one,
-    LinearMap.sign_det_one_sub_pow _ k hγ, orbitParity_mk, h1', returnCharpoly_mk]
+  rw [orbitParity_iterate_mk,
+    hα.orbitParity_eq_neg_one_pow hc (hα.isNondegenerateOrbit_of_iterate hc hγ),
+    LinearMap.sign_det_one_sub_pow _ k
+      ((hα.isNondegenerateOrbit_iterate_mk_iff_det_one_sub_ne_zero hc δ k).1 hγ),
+    returnCharpoly_mk]
   congr 1
   rcases Nat.even_or_odd (k : ℕ) with he | ho
   · -- For even `k`, `-1` is not an eigenvalue of the return map `A`, and `det A = 1` relates its
@@ -182,9 +207,8 @@ theorem orbitParity_iterate {γ : Flow.ClosedOrbit (hα.reebFlow hc)} {k : ℕ+}
         congr 1
         module
       have hAk := hA.pow (k : ℕ)
-      rw [he.neg_one_pow, Module.End.hasEigenvalue_iff_isRoot_charpoly, IsRoot.def,
-        LinearMap.eval_charpoly, map_one] at hAk
-      exact hγ hAk
+      rw [he.neg_one_pow] at hAk
+      exact (hα.isNondegenerateOrbit_iterate_mk_iff hc δ k).1 hγ hAk
     rw [pow_mul', pow_mul', LinearMap.neg_one_pow_card_filter_lt_neg_one_of_det_pos _
       (by rw [hα.det_periodicLinearizedReturn hc δ]; exact one_pos) hneg]
   · -- For odd `k`, both sides are even powers of `-1`.

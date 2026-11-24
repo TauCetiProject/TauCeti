@@ -144,6 +144,9 @@ theorem neg_one_pow_card_roots_charpoly (A : Matrix n n ℝ) :
   rw [h, sign_pow] at this
   simpa using this.symm
 
+private theorem neg_one_pow_mul_neg_one_pow (m : ℕ) : (-1 : SignType) ^ m * (-1) ^ m = 1 := by
+  rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+
 /-- If `1 - A ^ 2` is invertible for a real `n × n` matrix `A`, so that no eigenvalue is `± 1`,
 then `(-1) ^ (i₊ + i₋) = (-1) ^ (n + i₀)`, where `i₊`, `i₋` and `i₀` count the real characteristic
 roots of `A` in `(1, ∞)`, in `(-∞, -1)` and in `(-1, 1)`, with algebraic multiplicity. -/
@@ -174,10 +177,8 @@ theorem neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one (A : Matrix n 
       · simp [hx1.not_gt, hx2.not_gt, abs_lt, hx1, hx2]
     · exact absurd rfl h1
     · simp [hx1, (by linarith : ¬ x < -1), abs_lt, hx1.not_gt]
-  have hsq (m : ℕ) : (-1 : SignType) ^ m * (-1) ^ m = 1 := by
-    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
   rw [pow_add, pow_add (-1 : SignType), ← neg_one_pow_card_roots_charpoly A, hroots, mul_assoc,
-    hsq, mul_one]
+    neg_one_pow_mul_neg_one_pow, mul_one]
 
 /-- If `0 < det A` for a real square matrix `A` and `1 + A` is invertible, the numbers of real
 characteristic roots of `A` in `(-∞, -1)` and in `(-1, 0)`, counted with algebraic multiplicity,
@@ -204,15 +205,13 @@ theorem neg_one_pow_card_filter_lt_neg_one_of_det_pos (A : Matrix n n ℝ) (hA :
   have hdet := sign_det_aeval A X hX
   rw [aeval_X, sign_pos hA, hsign, Multiset.prod_map_mul, Multiset.prod_map_ite_one,
     Multiset.prod_map_ite_one] at hdet
-  have hsq (m : ℕ) : (-1 : SignType) ^ m * (-1) ^ m = 1 := by
-    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
   calc (-1 : SignType) ^ (A.charpoly.roots.filter (· < -1)).card
       = (-1) ^ (A.charpoly.roots.filter (· < -1)).card *
           ((-1) ^ (A.charpoly.roots.filter (· < -1)).card *
             (-1) ^ (A.charpoly.roots.filter (· ∈ Set.Ioo (-1) 0)).card) := by
         rw [← hdet, mul_one]
     _ = (-1) ^ (A.charpoly.roots.filter (· ∈ Set.Ioo (-1) 0)).card := by
-        rw [← mul_assoc, hsq, one_mul]
+        rw [← mul_assoc, neg_one_pow_mul_neg_one_pow, one_mul]
 
 end Matrix
 
