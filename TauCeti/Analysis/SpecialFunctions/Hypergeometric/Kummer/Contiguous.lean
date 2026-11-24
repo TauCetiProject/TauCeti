@@ -24,6 +24,7 @@ Kummer solution of the incomplete Gamma continued fraction (DLMF 8.9.1).
 
 ## Main results
 
+* `Complex.regularizedHGFun_zero_singleton` — `𝐌(0, b, z) = (Γ b)⁻¹`.
 * `Complex.hasDerivAt_regularizedHGFun_singleton`, `Complex.deriv_regularizedHGFun_singleton` —
   `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.15).
 * `Complex.regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul` —
@@ -63,6 +64,13 @@ theorem regularizedHGFunCoeff_singleton (a b : ℂ) (n : ℕ) :
 theorem regularizedHGFunCoeff_singleton_zero (a b : ℂ) :
     regularizedHGFunCoeff {a} {b} 0 = (Gamma b)⁻¹ := by
   simp [regularizedHGFunCoeff]
+
+/-- At the upper parameter `0` the Kummer series terminates after its constant term:
+`𝐌(0, b, z) = (Γ b)⁻¹` for all `b` and `z`. -/
+@[simp]
+theorem regularizedHGFun_zero_singleton (b z : ℂ) : regularizedHGFun {0} {b} z = (Gamma b)⁻¹ := by
+  rw [regularizedHGFun_of_zero_mem (Multiset.mem_singleton_self 0), Multiset.map_singleton,
+    Multiset.prod_singleton]
 
 /-- The derivative of the regularized Kummer function in its argument (DLMF 13.3.15):
 `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)`, valid for all complex `a`, `b`, and `z`. -/
