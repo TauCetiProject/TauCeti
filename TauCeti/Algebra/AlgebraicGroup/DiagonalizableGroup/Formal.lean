@@ -289,6 +289,7 @@ noncomputable def formalPointsTorusTruncationMulEquiv (I : Ideal A) {n m : ℕ} 
       formalPoints R (Multiplicative (ι → ℤ)) I :=
   formalPointsMulEquivOfKerLe R I hn hI (ZMod.piReduction ι (n ^ m)).toMultiplicative
     (ZMod.piReduction_surjective ι _) fun x hx ↦ by
+      rw [MonoidHom.coe_toMultiplicative_ker, Multiplicative.mem_toSubgroup] at hx
       obtain ⟨y, hy⟩ := (ZMod.mem_ker_piReduction_iff ι _ x.toAdd).mp hx
       refine ⟨.ofAdd y, Multiplicative.toAdd.injective (funext fun i ↦ ?_)⟩
       simp [hy, mul_comm]
