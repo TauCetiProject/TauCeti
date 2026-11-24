@@ -258,6 +258,46 @@ lemma relativePicardToFppfSheafOfMul_app_mk {T : (Over S)ᵒᵖ}
       (relativePicardToFppfSheaf f).app T (relativePicardAddPresheafMk f T a) :=
   relativePicardToFppfSheafOfMulApp_mk f T a
 
+/-- The canonical map from the multiplicative relative Picard presheaf sends the trivial class to
+zero. -/
+@[simp]
+lemma relativePicardToFppfSheafOfMul_app_one {T : (Over S)ᵒᵖ} :
+    ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
+        (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
+        ((relativePicardToFppfSheafOfMul f).app T) 1 = 0 := by
+  rw [← map_zero ((relativePicardToFppfSheaf f).app T).hom, ← relativePicardAddPresheafMk_one,
+    ← relativePicardToFppfSheafOfMul_app_mk]
+  exact congrArg _ (QuotientGroup.mk_one _).symm
+
+/-- The canonical map from the multiplicative relative Picard presheaf turns products into
+sums. -/
+@[simp]
+lemma relativePicardToFppfSheafOfMul_app_mul {T : (Over S)ᵒᵖ}
+    (c d : (relativePicardPresheaf f).obj T) :
+    ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
+        (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
+        ((relativePicardToFppfSheafOfMul f).app T) (c * d) =
+      (relativePicardToFppfSheafOfMul f).app T c + (relativePicardToFppfSheafOfMul f).app T d := by
+  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
+  obtain ⟨b, rfl⟩ := QuotientGroup.mk_surjective d
+  rw [relativePicardToFppfSheafOfMul_app_mk, relativePicardToFppfSheafOfMul_app_mk, ← map_add,
+    ← relativePicardAddPresheafMk_mul, ← relativePicardToFppfSheafOfMul_app_mk]
+  exact congrArg _ (QuotientGroup.mk_mul _ a b)
+
+/-- The canonical map from the multiplicative relative Picard presheaf turns inverses into
+negatives. -/
+@[simp]
+lemma relativePicardToFppfSheafOfMul_app_inv {T : (Over S)ᵒᵖ}
+    (c : (relativePicardPresheaf f).obj T) :
+    ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
+        (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
+        ((relativePicardToFppfSheafOfMul f).app T) c⁻¹ =
+      -(relativePicardToFppfSheafOfMul f).app T c := by
+  obtain ⟨a, rfl⟩ := QuotientGroup.mk_surjective c
+  rw [relativePicardToFppfSheafOfMul_app_mk, ← map_neg, ← relativePicardAddPresheafMk_inv,
+    ← relativePicardToFppfSheafOfMul_app_mk]
+  exact congrArg _ (QuotientGroup.mk_inv _ a)
+
 /-- The canonical map from the multiplicative relative Picard presheaf turns quotients into
 differences. -/
 @[simp]
