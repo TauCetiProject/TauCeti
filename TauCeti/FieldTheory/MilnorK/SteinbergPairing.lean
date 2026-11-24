@@ -401,7 +401,11 @@ theorem induction_on {P : SymbolGroup R → Prop} (x : SymbolGroup R)
     (add : ∀ x y, P x → P y → P (x + y)) : P x := by
   induction x using Submodule.Quotient.induction_on with | _ t =>
   induction t using TensorProduct.inductionOn with
-  | tmul a b => exact symbol (Additive.toMul a) (Additive.toMul b)
+  | tmul a b =>
+    obtain ⟨x, rfl⟩ := Additive.ofMul.surjective a
+    obtain ⟨y, rfl⟩ := Additive.ofMul.surjective b
+    rw [mk_tmul]
+    exact symbol x y
   | add x y hx hy => simpa using add _ _ hx hy
 
 /-- Two `ℤ`-linear maps out of `SymbolGroup R` agree if they agree on all symbols. -/

@@ -418,8 +418,7 @@ private theorem mem_ker_mkRingHom_comp_toTensorAlgebra_iff {n : ℕ} {w : ⨂[�
       ((RingQuot.mkRingHom (milnorRel R)).toIntAlgHom.toLinearMap.comp
         (TensorPower.toTensorAlgebra (R := ℤ) (M := Additive Rˣ) (n := n))) ↔
       TensorPower.toTensorAlgebra w ∈ RingHom.ker (RingQuot.mkRingHom (milnorRel R)) := by
-  rw [LinearMap.mem_ker, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-    RingHom.toIntAlgHom_apply, RingHom.mem_ker]
+  simp
 
 /-- **Homogeneous kernel identification.** The kernel of the quotient map
 `TensorPower ℤ n (Additive Rˣ) → TensorAlgebra ℤ (Additive Rˣ) → MilnorK R` is exactly
@@ -511,9 +510,7 @@ of `TensorPower.toTensorAlgebra w` in `MilnorK R`. -/
 theorem coe_degreeEquivQuotTensorPower_symm_mk {n : ℕ} (w : ⨂[ℤ]^n (Additive Rˣ)) :
     ((degreeEquivQuotTensorPower R n).symm (Submodule.Quotient.mk w) : MilnorK R) =
       RingQuot.mkRingHom (milnorRel R) (TensorPower.toTensorAlgebra w) := by
-  rw [degreeEquivQuotTensorPower, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk,
-    coe_tensorPowerToDegree]
+  simp [degreeEquivQuotTensorPower]
 
 /-- The inverse of `degreeEquivQuotTensorPower` sends the class of a pure tensor to the
 corresponding Milnor symbol. -/
@@ -594,8 +591,7 @@ theorem quotTensorPowerMul_mk {i j : ℕ} (u : ⨂[ℤ]^i (Additive Rˣ))
     quotTensorPowerMul R i j (Submodule.Quotient.mk u) (Submodule.Quotient.mk v) =
       Submodule.Quotient.mk
         (GradedMonoid.GMul.mul (A := fun m ↦ ⨂[ℤ]^m (Additive Rˣ)) u v) := by
-  rw [quotTensorPowerMul, LinearMap.liftQ₂_mk, LinearMap.compr₂_apply, TensorProduct.mk_apply,
-    LinearMap.comp_apply, Submodule.mkQ_apply, LinearEquiv.coe_coe, ← TensorPower.gMul_def]
+  simp [quotTensorPowerMul, TensorPower.gMul_def]
 
 /-- `degreeEquivQuotTensorPower` carries homogeneous multiplication in `MilnorK R` to
 concatenation `quotTensorPowerMul` on tensor-power quotient classes. -/
@@ -660,9 +656,9 @@ noncomputable def degreeOneEquiv (R : Type u) [CommSemiring R] : degree R 1 ≃�
 @[simp]
 theorem degreeOneEquiv_ofUnit (a : Rˣ) :
     degreeOneEquiv R ⟨ofUnit a, ofUnit_mem_degree_one a⟩ = Additive.ofMul a := by
-  rw [degreeOneEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    degreeEquivQuotTensorPower_of_coe_eq_symbol _ (fun _ : Fin 1 ↦ a) (by simp),
-    Submodule.quotEquivOfEqBot_apply_mk, TauCeti.TensorPower.oneEquiv_tprod, Function.comp_apply]
+  have h := degreeEquivQuotTensorPower_of_coe_eq_symbol
+    ⟨ofUnit a, ofUnit_mem_degree_one a⟩ (fun _ : Fin 1 ↦ a) (by simp)
+  simp [degreeOneEquiv, h]
 
 /-- The inverse of `degreeOneEquiv` sends `Additive.ofMul a` to `ofUnit a`. -/
 @[simp]
@@ -684,8 +680,8 @@ noncomputable def degreeTwoEquiv (R : Type u) [CommSemiring R] :
     degree R 2 ≃ₗ[ℤ] SymbolGroup R :=
   (degreeEquivQuotTensorPower R 2).trans
     (Submodule.Quotient.equiv (steinbergRelations R) (tensorRel R 2)
-      (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ))
-      (map_steinbergRelations_eq_tensorRel_two R)).symm
+      (TauCeti.tensorProductEquivTensorSquare ℤ (Additive Rˣ)).toAddEquiv.toIntLinearEquiv
+      (by rw [← map_steinbergRelations_eq_tensorRel_two R]; congr 1)).symm
 
 /-- `degreeTwoEquiv` sends the product `ofUnit a * ofUnit b` to `SymbolGroup.symbol a b`. -/
 @[simp]
@@ -693,13 +689,10 @@ theorem degreeTwoEquiv_ofUnit_mul (a b : Rˣ) :
     degreeTwoEquiv R
       ⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩ =
       SymbolGroup.symbol a b := by
-  rw [degreeTwoEquiv, LinearEquiv.trans_apply,
-    degreeEquivQuotTensorPower_of_coe_eq_symbol _ ![a, b] (by simp),
-    LinearEquiv.symm_apply_eq, SymbolGroup.symbol_def]
-  symm
-  erw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
-    TauCeti.tensorProductEquivTensorSquare_tmul]
-  congr 2
+  have h := degreeEquivQuotTensorPower_of_coe_eq_symbol
+    ⟨ofUnit a * ofUnit b, mul_mem_degree (ofUnit_mem_degree_one a) (ofUnit_mem_degree_one b)⟩
+    ![a, b] (by simp)
+  simp [degreeTwoEquiv, h, AddEquiv.coe_symm_toIntLinearEquiv]
 
 /-- The inverse of `degreeTwoEquiv` sends `SymbolGroup.symbol a b` to `ofUnit a * ofUnit b`. -/
 @[simp]

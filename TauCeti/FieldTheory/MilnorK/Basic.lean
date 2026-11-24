@@ -220,7 +220,7 @@ theorem mem_degree_iff {n : ℕ} {x : MilnorK R} :
     x ∈ degree R n ↔ ∃ t ∈ (TensorAlgebra.ι ℤ :
       Additive Rˣ →ₗ[ℤ] TensorAlgebra ℤ (Additive Rˣ)).range ^ n,
       RingQuot.mkRingHom (milnorRel R) t = x := by
-  rfl
+  simp only [degree, Submodule.mem_map, AlgHom.toLinearMap_apply, RingHom.toIntAlgHom_apply]
 
 /-- The multiplicative identity `1` lies in degree `0`. -/
 theorem one_mem_degree_zero : (1 : MilnorK R) ∈ degree R 0 := by
@@ -232,7 +232,7 @@ theorem one_mem_degree_zero : (1 : MilnorK R) ∈ degree R 0 := by
 /-- Every degree-one unit class `ofUnit a` lies in `MilnorK.degree R 1`. -/
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 := by
   rw [mem_degree_iff]
-  refine ⟨TensorAlgebra.ι ℤ (Additive.ofMul a), ?_, rfl⟩
+  refine ⟨TensorAlgebra.ι ℤ (Additive.ofMul a), ?_, (ofUnit_def a).symm⟩
   rw [pow_one]
   exact LinearMap.mem_range_self _ _
 
@@ -284,7 +284,7 @@ theorem ringHom_ext {A : Type v} [Semiring A] {f g : MilnorK R →+* A}
       (RingHom.ext_int
         ((f.comp (RingQuot.mkRingHom (milnorRel R))).comp (algebraMap ℤ _))
         ((g.comp (RingQuot.mkRingHom (milnorRel R))).comp (algebraMap ℤ _))) r
-  | ι x => exact h (Additive.toMul x)
+  | ι x => simpa only [RingHom.comp_apply, ofUnit_def, ofMul_toMul] using h (Additive.toMul x)
   | mul x y hx hy => simp only [RingHom.comp_apply, map_mul] at hx hy ⊢; rw [hx, hy]
   | add x y hx hy => simp only [RingHom.comp_apply, map_add] at hx hy ⊢; rw [hx, hy]
 
