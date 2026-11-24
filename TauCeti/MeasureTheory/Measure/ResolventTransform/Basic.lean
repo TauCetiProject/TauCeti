@@ -39,6 +39,10 @@ open scoped ComplexConjugate
 
 namespace Complex
 
+/-- The real resolvent kernel is `(x - z)⁻¹`. -/
+theorem resolvent_real_eq_inv (z : ℂ) (x : ℝ) : resolvent (R := ℝ) z x = ((x : ℂ) - z)⁻¹ := by
+  rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
+
 /-- The imaginary part of the real resolvent kernel, with sign `(x - z)⁻¹`. -/
 theorem im_resolvent_real (z : ℂ) (x : ℝ) :
     (resolvent z x).im = z.im / ((x - z.re) ^ 2 + z.im ^ 2) := by
@@ -103,6 +107,14 @@ theorem Measure.resolventTransform_conj (μ : Measure ℝ) (z : ℂ) :
     _ = _ := by
       simpa only [RCLike.star_def] using (integral_conj (f := resolvent (R := ℝ) z))
 
+/-- The resolvent transform is `-∫ (z - x)⁻¹ dμ(x)`, the negative of the Cauchy–Stieltjes transform
+in the convention `(z - x)⁻¹`. -/
+theorem resolventTransform_eq_neg_integral_inv_sub (μ : Measure ℝ) (z : ℂ) :
+    resolventTransform μ z = -∫ x : ℝ, (z - x)⁻¹ ∂μ := by
+  rw [resolventTransform_apply, ← integral_neg]
+  congr 1 with x
+  rw [Complex.resolvent_real_eq_inv, ← inv_neg, neg_sub]
+
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
 /-- The real resolvent kernel is integrable for a finite measure off the real axis. -/
@@ -133,6 +145,14 @@ theorem norm_resolventTransform_le {z : ℂ} (hz : z.im ≠ 0) :
   rw [resolventTransform_apply]
   exact norm_integral_le_of_norm_le_const
     (ae_of_all _ fun x => Complex.norm_resolvent_real_le z x hz)
+
+/-- Along the imaginary axis, `y ‖m_μ(i y)‖ ≤ μ(ℝ)` for `y > 0`. -/
+theorem mul_norm_resolventTransform_ofReal_mul_I_le {y : ℝ} (hy : 0 < y) :
+    y * ‖resolventTransform μ (y * I)‖ ≤ μ.real Set.univ := by
+  have h := norm_resolventTransform_le (μ := μ) (z := y * I) (by simpa using hy.ne')
+  rw [show ((y : ℂ) * I).im = y by simp, abs_of_pos hy] at h
+  calc y * ‖resolventTransform μ (y * I)‖ ≤ y * (y⁻¹ * μ.real Set.univ) := by gcongr
+    _ = μ.real Set.univ := by field_simp
 
 /-- The transform of a finite measure is Lipschitz away from the real axis:
 `‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)`. -/

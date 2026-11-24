@@ -110,7 +110,7 @@ private lemma resolvent_add_sum_eq {z : ℂ} (hz : z.im ≠ 0) (x : ℝ) (r : �
   have hxz : (x : ℂ) - z ≠ 0 := fun h ↦ hz (by simpa using (congrArg Complex.im h).symm)
   have hg := geom_sum_mul ((x : ℂ) * z⁻¹) r
   simp_rw [pow_succ, ← mul_assoc, ← sum_mul, ← mul_pow]
-  rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
+  rw [resolvent_real_eq_inv]
   field_simp at hg ⊢
   linear_combination hg
 
@@ -175,7 +175,7 @@ private lemma tendsto_mul_I_mul_resolvent (x : ℝ) :
   refine h.congr' ?_
   filter_upwards [eventually_ne_atTop 0] with y hy
   have hy' : (y : ℂ) ≠ 0 := ofReal_ne_zero.2 hy
-  rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
+  rw [resolvent_real_eq_inv]
   field_simp
 
 /-- **Sharp remainder asymptotic along the imaginary axis.** If `μ` is a finite measure on `ℝ`

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Probability.Distributions.Cauchy
-public import TauCeti.Analysis.Complex.Pick.Herglotz
+public import TauCeti.Analysis.Complex.Pick.Herglotz.Basic
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions

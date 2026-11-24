@@ -5,33 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Pick.Herglotz
-public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
+public import TauCeti.Analysis.Complex.Pick.Herglotz.Basic
+public import TauCeti.MeasureTheory.Measure.ResolventTransform.Atoms
+public import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 
 /-!
 # Herglotz representations with a decaying imaginary-axis bound
 
 Let `F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` on the upper half-plane be a Herglotz
-representation (`TauCeti.exists_eq_subtractedResolventKernel_add`). If `y ‖F(i y)‖` stays bounded
-as `y → ∞`, as it does for the function `⟪v, (A - z)⁻¹ v⟫` of a self-adjoint operator `A`, then
+representation (`TauCeti.exists_eq_subtractedResolventKernel_add`). If `y |Im F(i y)|` stays
+bounded as `y → ∞`, then
 
 * the linear coefficient vanishes, `b = 0`;
-* `ν` has total mass `ν(ℝ) = lim y Im F(i y)`, and it is a finite measure when it has finite
-  weighted mass `∫ (1 + t ^ 2)⁻¹ dν`, as in the Herglotz representation;
-* `F` is the resolvent transform of `ν`: `F z = ∫ (t - z)⁻¹ dν(t)`.
+* `ν` is a finite measure when it has finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`, as in the
+  Herglotz representation, and then its total mass is `ν(ℝ) = lim y Im F(i y)`.
 
-Without finite weighted mass, the integrals in the last two points are zero by convention.
+If moreover `y ‖F(i y)‖` stays bounded, as it does for the function `⟪v, (A - z)⁻¹ v⟫` of a
+self-adjoint operator `A`, then `F` is the resolvent transform of `ν`: `F z = ∫ (t - z)⁻¹ dν(t)`.
+Without finite weighted mass, the real total mass `ν.real univ` and the integral are zero by
+convention, and the statements still hold.
 
-The second point follows from `y Im F(i y) = ∫ y ^ 2 / (t ^ 2 + y ^ 2) dν(t)` by Fatou's lemma and
-then by dominated convergence. For the third, a finite `ν` splits the subtracted kernel, so
+Finiteness follows from `y Im F(i y) = ∫ y ^ 2 / (t ^ 2 + y ^ 2) dν(t)` by Fatou's lemma, and the
+total mass is then the total-mass asymptotic `MeasureTheory.tendsto_mul_I_mul_resolventTransform`.
+For the resolvent transform, a finite `ν` splits the subtracted kernel, so
 `F z = c + ∫ (t - z)⁻¹ dν(t)` for a constant `c`, and both `F(i y)` and the transform tend to `0`.
 
 ## Main results
 
 * `TauCeti.eq_zero_of_eq_subtractedResolventKernel_add_of_bound`: `b = 0`.
-* `TauCeti.isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound`: `ν` is finite.
+* `TauCeti.isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound`: `ν` is finite when it
+  has finite weighted mass.
 * `TauCeti.tendsto_mul_im_of_eq_subtractedResolventKernel_add_of_bound`:
-  `y Im F(i y) → ν(ℝ)`.
+  `y Im F(i y) → ν.real univ`.
 * `TauCeti.eq_add_resolventTransform_of_eq_subtractedResolventKernel_add`: for finite `ν`, the
   unsubtracted form `F z = c + b z + ∫ (t - z)⁻¹ dν(t)`.
 * `TauCeti.eq_resolventTransform_of_eq_subtractedResolventKernel_add_of_bound`:
@@ -39,8 +44,8 @@ then by dominated convergence. For the third, a finite `ν` splits the subtracte
 
 ## References
 
-* TauCetiRoadmap, `AutomorphicSpectralTheory/README.md`, §0.5 (Herglotz representation, the
-  resolvent case).
+* G. Teschl, *Mathematical Methods in Quantum Mechanics*, §3.4, Theorem 3.20 (finiteness of the
+  measure and the resolvent-transform form) and Theorem 3.21 (the total-mass limit).
 -/
 
 public section
@@ -53,52 +58,18 @@ namespace TauCeti
 
 variable {F : ℂ → ℂ} {a b C : ℝ} {nu : Measure ℝ}
 
-/-- `y ^ 2 / (t ^ 2 + y ^ 2) → 1` as `y → ∞`. -/
-private theorem tendsto_sq_div_sq_add_sq (t : ℝ) :
-    Tendsto (fun y : ℝ ↦ y ^ 2 / (t ^ 2 + y ^ 2)) atTop (𝓝 1) := by
-  have hd : Tendsto (fun y : ℝ ↦ t ^ 2 + y ^ 2) atTop atTop :=
-    tendsto_atTop_add_const_left _ _ (tendsto_pow_atTop two_ne_zero)
-  have h : Tendsto (fun y : ℝ ↦ 1 - t ^ 2 / (t ^ 2 + y ^ 2)) atTop (𝓝 1) := by
-    simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub
-      ((tendsto_const_nhds (x := t ^ 2)).div_atTop hd)
-  refine h.congr' ?_
-  filter_upwards [eventually_gt_atTop 0] with y hy
-  have : 0 < t ^ 2 + y ^ 2 := by positivity
-  field_simp
-  ring
-
-/-- On the imaginary axis, the imaginary part of the subtracted resolvent kernel is
-`y / (t ^ 2 + y ^ 2)`. -/
-theorem subtractedResolventKernel_ofReal_mul_I_im (y t : ℝ) :
-    (subtractedResolventKernel (y * I) t).im = y / (t ^ 2 + y ^ 2) := by
-  rw [subtractedResolventKernel_im, normSq_apply]
-  simp
-  ring_nf
-
-/-- If the imaginary part of the subtracted resolvent kernel at a nonreal point is `ν`-integrable,
-then `ν` has finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. -/
-private theorem lintegral_lt_top_of_integrable_im {z : ℂ} (hz : z.im ≠ 0)
-    (h : Integrable (fun t ↦ (subtractedResolventKernel z t).im) nu) :
-    ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤ := by
-  refine Integrable.lintegral_lt_top ?_
-  refine (h.norm.const_mul (2 * (1 + ‖z‖ ^ 2) / |z.im|)).mono' (by fun_prop)
-    (.of_forall fun t ↦ ?_)
-  rw [Real.norm_of_nonneg (by positivity), Real.norm_eq_abs]
-  exact inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel hz t
-
-/-- If `y ‖F(i y)‖` is eventually bounded, the linear coefficient of a Herglotz representation of
-`F` vanishes. -/
+/-- If `y |Im F(i y)|` is eventually bounded, the linear coefficient of a Herglotz representation
+of `F` vanishes. -/
 theorem eq_zero_of_eq_subtractedResolventKernel_add_of_bound
     (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
-    (hbound : ∀ᶠ y : ℝ in atTop, y * ‖F (y * I)‖ ≤ C) : b = 0 := by
+    (hbound : ∀ᶠ y : ℝ in atTop, y * |(F (y * I)).im| ≤ C) : b = 0 := by
   refine tendsto_nhds_unique (tendsto_im_div_of_eq_subtractedResolventKernel_add hrep) ?_
   refine squeeze_zero_norm' ?_ (tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero) :
     Tendsto (fun y : ℝ ↦ C / y ^ 2) atTop (𝓝 0))
   filter_upwards [hbound, eventually_gt_atTop 0] with y hy hy0
-  rw [norm_div, Real.norm_of_nonneg hy0.le, div_le_div_iff₀ hy0 (by positivity)]
-  have := abs_im_le_norm (F (y * I))
-  rw [Real.norm_eq_abs]
+  rw [norm_div, Real.norm_of_nonneg hy0.le, div_le_div_iff₀ hy0 (by positivity),
+    Real.norm_eq_abs]
   nlinarith
 
 /-- On the imaginary axis, a Herglotz representation gives
@@ -126,13 +97,13 @@ theorem mul_im_eq_of_eq_subtractedResolventKernel_add
   · congr 1 with t
     ring
 
-/-- If `y ‖F(i y)‖` is eventually bounded, the measure of a Herglotz representation of `F` is
-finite. -/
+/-- If `y |Im F(i y)|` is eventually bounded, the measure `ν` of a Herglotz representation of `F`
+of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν < ∞` is finite. -/
 theorem isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound
     (hnu : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤)
     (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
-    (hbound : ∀ᶠ y : ℝ in atTop, y * ‖F (y * I)‖ ≤ C) : IsFiniteMeasure nu := by
+    (hbound : ∀ᶠ y : ℝ in atTop, y * |(F (y * I)).im| ≤ C) : IsFiniteMeasure nu := by
   have hb := eq_zero_of_eq_subtractedResolventKernel_add_of_bound hrep hbound
   subst hb
   let g : ℕ → ℝ → ℝ := fun n t ↦ ((n : ℝ) + 1) ^ 2 / (t ^ 2 + ((n : ℝ) + 1) ^ 2)
@@ -145,7 +116,7 @@ theorem isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound
     simp only [RCLike.im_to_complex, subtractedResolventKernel_ofReal_mul_I_im, g]
     ring
   have hlim (t : ℝ) : Tendsto (fun n : ℕ ↦ ENNReal.ofReal (g n t)) atTop (𝓝 1) := by
-    simpa using ENNReal.tendsto_ofReal ((tendsto_sq_div_sq_add_sq t).comp
+    simpa using ENNReal.tendsto_ofReal ((Real.tendsto_sq_div_sq_add_sq_atTop t).comp
       (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds))
   have hle : ∀ᶠ n : ℕ in atTop, ∫⁻ t, ENNReal.ofReal (g n t) ∂nu ≤ ENNReal.ofReal C := by
     have hN := tendsto_natCast_atTop_atTop.atTop_add (tendsto_const_nhds (x := (1 : ℝ)))
@@ -156,7 +127,7 @@ theorem isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound
       (by positivity : (0 : ℝ) < (n : ℝ) + 1)
     simp only [zero_mul, zero_add] at h
     rw [← h]
-    refine (mul_le_mul_of_nonneg_left (im_le_norm _) (by positivity)).trans ?_
+    refine (mul_le_mul_of_nonneg_left (le_abs_self _) (by positivity)).trans ?_
     exact_mod_cast hn
   refine ⟨?_⟩
   calc nu Set.univ = ∫⁻ t, Filter.liminf (fun n ↦ ENNReal.ofReal (g n t)) atTop ∂nu := by
@@ -166,12 +137,13 @@ theorem isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound
     _ ≤ ENNReal.ofReal C := Filter.liminf_le_of_frequently_le' hle.frequently
     _ < ⊤ := ENNReal.ofReal_lt_top
 
-/-- If `y ‖F(i y)‖` is eventually bounded, the total mass of the measure of a Herglotz
-representation of `F` is `lim y Im F(i y)`. -/
+/-- If `y |Im F(i y)|` is eventually bounded, the real total mass `ν.real univ` of the measure of
+a Herglotz representation of `F` is `lim y Im F(i y)`. This is the total mass `ν(ℝ)` when `ν` has
+finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν < ∞`; otherwise both sides are `0`. -/
 theorem tendsto_mul_im_of_eq_subtractedResolventKernel_add_of_bound
     (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
-    (hbound : ∀ᶠ y : ℝ in atTop, y * ‖F (y * I)‖ ≤ C) :
+    (hbound : ∀ᶠ y : ℝ in atTop, y * |(F (y * I)).im| ≤ C) :
     Tendsto (fun y : ℝ ↦ y * (F (y * I)).im) atTop (𝓝 (nu.real Set.univ)) := by
   have hb := eq_zero_of_eq_subtractedResolventKernel_add_of_bound hrep hbound
   subst hb
@@ -196,18 +168,15 @@ theorem tendsto_mul_im_of_eq_subtractedResolventKernel_add_of_bound
       ((h.const_mul y⁻¹).congr (.of_forall fun t ↦ ?_)))).symm
     simp only [subtractedResolventKernel_ofReal_mul_I_im]
     field_simp
+  -- With finite weighted mass, `ν` is finite and this is the total-mass asymptotic.
   have := isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound hnu hrep hbound
-  have h1 : nu.real Set.univ = ∫ _ : ℝ, (1 : ℝ) ∂nu := by simp
-  rw [h1]
-  refine tendsto_integral_filter_of_dominated_convergence (fun _ ↦ 1) ?_ ?_
-    (integrable_const 1) (.of_forall fun t ↦ ?_)
-  · exact .of_forall fun y ↦ (by fun_prop : Measurable fun t : ℝ ↦ y ^ 2 / (t ^ 2 + y ^ 2))
-      |>.aestronglyMeasurable
-  · filter_upwards [eventually_gt_atTop 0] with y hy
-    refine .of_forall fun t ↦ ?_
-    rw [Real.norm_of_nonneg (by positivity), div_le_one (by positivity)]
-    nlinarith [sq_nonneg t]
-  · exact tendsto_sq_div_sq_add_sq t
+  have h := ((continuous_re.tendsto _).comp
+    (tendsto_mul_I_mul_resolventTransform (μ := nu))).neg
+  refine (by simpa using h : Tendsto (fun y : ℝ ↦ -(y * I * resolventTransform nu (y * I)).re)
+    atTop (𝓝 (nu.real Set.univ))).congr fun y ↦ ?_
+  have hm := mul_im_resolventTransform (μ := nu) (a := 0) (η := y)
+  simp only [ofReal_zero, zero_add, sub_zero] at hm
+  simp [← hm]
 
 /-- **The unsubtracted form.** For a finite measure `ν`, a Herglotz representation
 `F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` splits as
@@ -228,17 +197,15 @@ theorem eq_add_resolventTransform_of_eq_subtractedResolventKernel_add [IsFiniteM
     nlinarith [abs_nonneg t, sq_abs t, sq_nonneg (|t| - 1)]
   have hint : Integrable (fun t : ℝ ↦ (t : ℂ) / (1 + (t : ℂ) ^ 2)) nu :=
     hr.ofReal.congr (.of_forall fun t ↦ (hcast t).symm)
-  have hres (z : ℂ) (t : ℝ) : resolvent (R := ℝ) z t = ((t : ℂ) - z)⁻¹ := by
-    rw [_root_.resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap]
   intro z hz
   have hi : Integrable (fun t : ℝ ↦ ((t : ℂ) - z)⁻¹) nu :=
     (integrable_resolvent_of_im_ne_zero (μ := nu) (ne_of_gt hz)).congr
-      (.of_forall fun t ↦ hres z t)
+      (.of_forall fun t ↦ resolvent_real_eq_inv z t)
   have hk : (fun t ↦ subtractedResolventKernel z t) =
       fun t : ℝ ↦ ((t : ℂ) - z)⁻¹ - (t : ℂ) / (1 + (t : ℂ) ^ 2) :=
     funext fun t ↦ subtractedResolventKernel_def z t
   rw [hrep z hz, resolventTransform_apply, hk, integral_sub hi hint]
-  simp_rw [hres]
+  simp_rw [resolvent_real_eq_inv]
   ring
 
 /-- **The resolvent case.** If `y ‖F(i y)‖` is eventually bounded, a function with a Herglotz
@@ -249,21 +216,24 @@ theorem eq_resolventTransform_of_eq_subtractedResolventKernel_add_of_bound
       F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
     (hbound : ∀ᶠ y : ℝ in atTop, y * ‖F (y * I)‖ ≤ C) :
     ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, F z = resolventTransform nu z := by
-  have hb := eq_zero_of_eq_subtractedResolventKernel_add_of_bound hrep hbound
+  have him : ∀ᶠ y : ℝ in atTop, y * |(F (y * I)).im| ≤ C := by
+    filter_upwards [hbound, eventually_gt_atTop 0] with y hy hy0
+    exact (mul_le_mul_of_nonneg_left (abs_im_le_norm _) hy0.le).trans hy
+  have hb := eq_zero_of_eq_subtractedResolventKernel_add_of_bound hrep him
   subst hb
   -- `F` is a constant plus the transform, which vanishes along the imaginary axis.
   obtain ⟨c, hrep', hm⟩ : ∃ c : ℂ, (∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = c + resolventTransform nu z) ∧
       Tendsto (fun y : ℝ ↦ resolventTransform nu (y * I)) atTop (𝓝 0) := by
     by_cases hnu : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤
-    · have := isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound hnu hrep hbound
+    · have := isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound hnu hrep him
       refine ⟨_, fun z hz ↦ by
         simpa using eq_add_resolventTransform_of_eq_subtractedResolventKernel_add hrep z hz, ?_⟩
-      refine squeeze_zero_norm' ?_ (show Tendsto (fun y : ℝ ↦ y⁻¹ * nu.real Set.univ) atTop
-        (𝓝 0) by simpa using tendsto_inv_atTop_zero.mul_const (nu.real Set.univ))
+      refine squeeze_zero_norm' ?_ (tendsto_const_nhds.div_atTop tendsto_id :
+        Tendsto (fun y : ℝ ↦ nu.real Set.univ / y) atTop (𝓝 0))
       filter_upwards [eventually_gt_atTop 0] with y hy
-      have := norm_resolventTransform_le (μ := nu) (z := y * I) (by simpa using hy.ne')
-      simpa [abs_of_pos hy] using this
+      rw [le_div_iff₀ hy, mul_comm]
+      exact mul_norm_resolventTransform_ofReal_mul_I_le hy
     · -- Without finite weighted mass, neither kernel is integrable.
       have hm (z : ℂ) (hz : z.im ≠ 0) : resolventTransform nu z = 0 := by
         rw [resolventTransform_apply]
