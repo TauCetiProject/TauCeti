@@ -201,7 +201,7 @@ noncomputable def jetTruncation : jetHopfAlgebra k H N →ₐc[k] jetHopfAlgebra
       refine WithConv.toConv_injective ((jetPointsMulEquiv k H k N).injective ?_)
       simp only [← Bialgebra.ofConv_one_eq_counitAlgHom, jetPointsMulEquiv_comp_jetTruncationAlgHom,
         toConv_ofConv, map_one])
-    (Bialgebra.map_comp_comulAlgHom_of_mul _ fun _ _ ↦ toConv_comp_jetTruncationAlgHom_mul N)
+    (AlgHom.map_comp_comulAlgHom_of_mul _ fun _ _ ↦ toConv_comp_jetTruncationAlgHom_mul N)
 
 variable {k H}
 
