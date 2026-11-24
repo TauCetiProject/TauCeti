@@ -39,8 +39,8 @@ has inverse induced by `g` (`TauCeti.isIso_coimageImageComparison_of_comp_comp_e
 For the decomposition, a nonzero object with no idempotent endomorphism besides `0` and `𝟙` is
 simple, because a nonzero monomorphism `f` into it with `f ≫ g ≫ f = f` has the idempotent
 `g ≫ f`, which must be `𝟙` (`TauCeti.simple_of_idempotent_eq_zero_or_id`). Semisimple rings are
-semiperfect, so the category is Krull–Schmidt, and its indecomposable summands, having local
-endomorphism rings, are simple.
+semiperfect, so the category is Krull–Schmidt (`TauCeti.isKrullSchmidt_of_isSemiperfectRing_end`),
+and its indecomposable summands, having local endomorphism rings, are simple.
 
 ## Main results
 
@@ -149,9 +149,7 @@ theorem isIso_coimageImageComparison_of_comp_comp_eq_self {X Y : C} {f : X ⟶ Y
 
 
 /-- **Jannsen's decomposition**: in an additive category with split idempotents and semisimple
-endomorphism rings, every object is a finite biproduct of simple objects. Semisimple rings are
-semiperfect, so the category is Krull–Schmidt (`TauCeti.isKrullSchmidt_of_isSemiperfectRing_end`),
-and a summand with local endomorphism ring has only the trivial idempotents, so it is simple. -/
+endomorphism rings, every object is a finite biproduct of simple objects. -/
 theorem exists_biproduct_simples_of_isSemisimpleRing_end [HasFiniteBiproducts C]
     [IsIdempotentComplete C] [∀ X : C, IsSemisimpleRing (End X)] (X : C) :
     ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
