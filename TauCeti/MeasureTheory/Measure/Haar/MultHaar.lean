@@ -16,8 +16,10 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 `TauCeti.multHaar` is the measure `dt / t` on `ℝ`, concentrated on `(0, ∞)`: Lebesgue measure on
 `(0, ∞)` with density `t⁻¹`. It is the image of Lebesgue measure under `Real.exp`
-(`TauCeti.map_volume_exp`), so it is invariant under every dilation `t ↦ c t` with `c > 0`
-(`TauCeti.map_multHaar_mul_left`, `TauCeti.eLpNorm_comp_mul_left_multHaar`), is invariant under
+(`TauCeti.map_volume_exp`); in particular `Real.exp` is quasi-measure-preserving from Lebesgue
+measure to Lebesgue measure on `(0, ∞)` (`TauCeti.quasiMeasurePreserving_exp`). It is invariant
+under every dilation `t ↦ c t` with `c > 0` (`TauCeti.map_multHaar_mul_left`,
+`TauCeti.eLpNorm_comp_mul_left_multHaar`), is invariant under
 inversion (`TauCeti.map_multHaar_inv`), and gives the interval `[1, e]` mass one. The power map
 `t ↦ t ^ γ`, `γ ≠ 0`, sends it to `|γ|⁻¹ dt / t` (`TauCeti.map_multHaar_rpow`), so it multiplies
 `L^q(dt / t)` seminorms by `|γ| ^ (-1 / q)` (`TauCeti.eLpNorm_comp_rpow_multHaar`).
@@ -92,6 +94,14 @@ theorem map_volume_exp : volume.map Real.exp = multHaar := by
   refine setLIntegral_congr_fun (Real.measurable_exp hs) fun u _ ↦ ?_
   rw [abs_of_pos (Real.exp_pos u), ← ENNReal.ofReal_mul (Real.exp_pos u).le,
     mul_inv_cancel₀ (Real.exp_ne_zero u), ENNReal.ofReal_one]
+
+/-- The exponential is quasi-measure-preserving from Lebesgue measure to Lebesgue measure on
+`(0, ∞)`: preimages under `Real.exp` of null subsets of `(0, ∞)` are null. -/
+theorem quasiMeasurePreserving_exp :
+    QuasiMeasurePreserving Real.exp volume (volume.restrict (Ioi (0 : ℝ))) :=
+  ⟨Real.measurable_exp.aemeasurable, by
+    rw [map_volume_exp, multHaar_def]
+    exact withDensity_absolutelyContinuous _ _⟩
 
 /-- `dt / t` gives an interval `[a, b]` with `0 < a ≤ b` mass `log b - log a`. -/
 theorem multHaar_Icc {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
