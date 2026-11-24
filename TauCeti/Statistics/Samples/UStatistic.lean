@@ -15,10 +15,12 @@ import TauCeti.MeasureTheory.Constructions.Pi
 
 For a kernel `h : (Fin m → E) → ℝ` of `m` arguments and a sample `x : Fin n → E`, the
 U-statistic `uStatistic m n h x` is the average of `h (x ∘ f)` over the `n.descFactorial m`
-injections `f : Fin m → Fin n`, that is, over the ordered `m`-tuples of distinct observations.
-It does not depend on the order of the observations, and under an i.i.d. sample of size `n ≥ m`
-from a law `P` it is an unbiased estimator of `∫ h d(Pᵐ)`: each term `h (x ∘ f)` has law
-`h` under `Pᵐ`, because the coordinates of `x` selected by an injection are again i.i.d.
+injections `f : Fin m → Fin n`, that is, over the ordered `m`-tuples of distinct sample indices;
+the observations at those indices may coincide. It does not depend on the order of the
+observations, and it is linear in the kernel. Under an i.i.d. sample of size `n ≥ m` from a law
+`P`, and for a kernel `h` integrable under `Pᵐ`, it is an unbiased estimator of `∫ h d(Pᵐ)`:
+the coordinates of `x` selected by an injection are again i.i.d. with law `P`, so each selected
+tuple `x ∘ f` has law `Pᵐ` and each summand `h (x ∘ f)` has mean `∫ h d(Pᵐ)`.
 
 For `m = 1` the U-statistic is the sample mean of `h`. If `n < m` there are no injections and
 the U-statistic is `0`; for `m = 0` it is the constant value of `h` at the empty tuple.
@@ -33,6 +35,11 @@ the U-statistic is `0`; for `m = 0` it is the constant value of `h` at the empty
   `Fin m ↪ Fin n`.
 * `TauCeti.uStatistic_comp_perm`: the U-statistic is a symmetric function of the sample.
 * `TauCeti.uStatistic_one`: for `m = 1` it is the sample mean of `h`.
+* `TauCeti.uStatistic_add`, `TauCeti.uStatistic_sub`, `TauCeti.uStatistic_smul`,
+  `TauCeti.uStatistic_const`: the U-statistic is linear in the kernel, and for `m ≤ n` a constant
+  kernel gives that constant.
+* `TauCeti.integrable_uStatistic`: under a finite law `P`, the U-statistic of a `Pᵐ`-integrable
+  kernel is `Pⁿ`-integrable.
 * `TauCeti.integral_uStatistic`: for `m ≤ n` and `h` integrable under `Pᵐ`, the mean of the
   U-statistic under `Pⁿ` is `∫ h d(Pᵐ)`.
 * `TauCeti.isUnbiasedEstimator_uStatistic`: the same statement for a parametric family, in terms
@@ -74,25 +81,23 @@ theorem uStatistic_def (m n : ℕ) (h : (Fin m → E) → ℝ) (x : Fin n → E)
 /-- The U-statistic as the average of `h (x ∘ f)` over the embeddings `f : Fin m ↪ Fin n`. -/
 theorem uStatistic_eq_sum_embedding (m n : ℕ) (h : (Fin m → E) → ℝ) (x : Fin n → E) :
     uStatistic m n h x = ((n.descFactorial m : ℕ) : ℝ)⁻¹ * ∑ f : Fin m ↪ Fin n, h (x ∘ f) := by
-  rw [uStatistic_def]
-  congr 1
-  refine Finset.sum_bij' (fun f hf ↦ ⟨f, (Finset.mem_filter.1 hf).2⟩) (fun f _ ↦ f)
-    (fun _ _ ↦ Finset.mem_univ _) (fun f _ ↦ ?_) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-  exact Finset.mem_filter.2 ⟨Finset.mem_univ _, f.injective⟩
+  rw [uStatistic_def, Finset.sum_subtype (p := Function.Injective) _ (fun _ ↦ by simp)]
+  exact congrArg _ (Fintype.sum_equiv (Equiv.subtypeInjectiveEquivEmbedding (Fin m) (Fin n)) _ _
+    fun _ ↦ rfl)
 
 /-- With fewer observations than arguments of the kernel there are no injections, and the
 U-statistic is `0`. -/
 @[simp]
 theorem uStatistic_of_lt (h : (Fin m → E) → ℝ) (x : Fin n → E) (hnm : n < m) :
     uStatistic m n h x = 0 := by
-  rw [uStatistic_def, Nat.descFactorial_eq_zero_iff_lt.2 hnm, Nat.cast_zero, inv_zero, zero_mul]
+  simp [uStatistic_def, Nat.descFactorial_eq_zero_iff_lt.2 hnm]
 
 /-- The U-statistic of order `0` is the value of `h` at the empty tuple. -/
 @[simp]
 theorem uStatistic_zero (n : ℕ) (h : (Fin 0 → E) → ℝ) (x : Fin n → E) :
     uStatistic 0 n h x = h Fin.elim0 := by
-  rw [uStatistic_eq_sum_embedding, Nat.descFactorial_zero, Nat.cast_one, inv_one, one_mul,
-    Fintype.sum_unique]
+  simp only [uStatistic_eq_sum_embedding, Nat.descFactorial_zero, Nat.cast_one, inv_one, one_mul]
+  rw [Fintype.sum_unique]
   exact congrArg h (Subsingleton.elim _ _)
 
 /-- **Symmetry.** The U-statistic does not depend on the order of the observations. -/
@@ -112,6 +117,36 @@ theorem uStatistic_one (h : (Fin 1 → E) → ℝ) (x : Fin n → E) :
   refine Fintype.sum_equiv Equiv.embeddingUnique _ _ fun f ↦ ?_
   exact congrArg h (funext fun j ↦ congrArg (x ∘ f) (Subsingleton.elim j default))
 
+/-- The U-statistic is additive in the kernel. -/
+@[simp]
+theorem uStatistic_add (h₁ h₂ : (Fin m → E) → ℝ) (x : Fin n → E) :
+    uStatistic m n (h₁ + h₂) x = uStatistic m n h₁ x + uStatistic m n h₂ x := by
+  simp only [uStatistic_eq_sum_embedding, Pi.add_apply, Finset.sum_add_distrib, mul_add]
+
+/-- The U-statistic of a difference of kernels is the difference of the U-statistics. -/
+@[simp]
+theorem uStatistic_sub (h₁ h₂ : (Fin m → E) → ℝ) (x : Fin n → E) :
+    uStatistic m n (h₁ - h₂) x = uStatistic m n h₁ x - uStatistic m n h₂ x := by
+  simp only [uStatistic_eq_sum_embedding, Pi.sub_apply, Finset.sum_sub_distrib, mul_sub]
+
+/-- The U-statistic is homogeneous in the kernel. -/
+@[simp]
+theorem uStatistic_smul (c : ℝ) (h : (Fin m → E) → ℝ) (x : Fin n → E) :
+    uStatistic m n (c • h) x = c * uStatistic m n h x := by
+  simp only [uStatistic_eq_sum_embedding, Pi.smul_apply, smul_eq_mul, ← Finset.mul_sum]
+  ring
+
+/-- For `m ≤ n` the U-statistic of a constant kernel is that constant: it averages
+`n.descFactorial m` copies of it. -/
+@[simp]
+theorem uStatistic_const (hmn : m ≤ n) (c : ℝ) (x : Fin n → E) :
+    uStatistic m n (fun _ ↦ c) x = c := by
+  have hpos : ((n.descFactorial m : ℕ) : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (Nat.descFactorial_pos.2 hmn).ne'
+  rw [uStatistic_eq_sum_embedding, Finset.sum_const, Finset.card_univ, Fintype.card_embedding_eq,
+    Fintype.card_fin, Fintype.card_fin, nsmul_eq_mul]
+  exact inv_mul_cancel_left₀ hpos c
+
 variable [MeasurableSpace E]
 
 /-- The U-statistic of a measurable kernel is measurable. -/
@@ -122,14 +157,34 @@ theorem measurable_uStatistic {h : (Fin m → E) → ℝ} (hh : Measurable h) :
   exact measurable_const.mul
     (Finset.measurable_sum _ fun f _ ↦ hh.comp (by fun_prop))
 
-/-- If the kernel is integrable under `Pᵐ`, then the U-statistic is integrable under `Pⁿ`. -/
-theorem integrable_uStatistic (P : Measure E) [IsProbabilityMeasure P] {h : (Fin m → E) → ℝ}
+/-- For a finite measure `P` on `E`, if the kernel is integrable under `Pᵐ`, then the U-statistic
+is integrable under `Pⁿ`. -/
+theorem integrable_uStatistic (P : Measure E) [IsFiniteMeasure P] {h : (Fin m → E) → ℝ}
     (hh : Integrable h (Measure.pi fun _ : Fin m ↦ P)) :
     Integrable (uStatistic m n h) (Measure.pi fun _ : Fin n ↦ P) := by
+  rcases eq_zero_or_neZero P with rfl | hP
+  · -- For `P = 0` the sample space carries the zero measure, or is a point if `n = 0`.
+    rcases n with _ | n
+    · exact (integrable_const (uStatistic m 0 h Fin.elim0)).congr
+        (.of_forall fun x ↦ congrArg _ (Subsingleton.elim _ _))
+    · have h0 : (Measure.pi fun _ : Fin (n + 1) ↦ (0 : Measure E)) = 0 :=
+        Measure.measure_univ_eq_zero.1 (by simp [Measure.pi_univ])
+      rw [h0]
+      exact integrable_zero_measure
+  -- Otherwise normalize `P` to the probability measure `Q`; this rescales `Pᵏ` by a positive
+  -- finite constant, which changes no integrability.
+  have hP0 := (measureUnivNNReal_pos (NeZero.ne P)).ne'
+  set Q := (measureUnivNNReal P)⁻¹ • P
+  have : IsProbabilityMeasure Q := ⟨by
+    rw [smul_apply, ENNReal.smul_def, smul_eq_mul, ← coe_measureUnivNNReal, ← ENNReal.coe_mul,
+      inv_mul_cancel₀ hP0, ENNReal.coe_one]⟩
+  have hQ (k : ℕ) (f : (Fin k → E) → ℝ) :
+      Integrable f (Measure.pi fun _ ↦ Q) ↔ Integrable f (Measure.pi fun _ ↦ P) := by
+    rw [Measure.pi_smul, ENNReal.smul_def, integrable_smul_measure (by simp [hP0]) (by simp)]
+  rw [← hQ] at hh ⊢
   refine funext (uStatistic_eq_sum_embedding m n h) ▸ ?_
   refine (integrable_finsetSum _ fun f _ ↦ ?_).const_mul _
-  exact (measurePreserving_pi_comp_embedding (fun _ : Fin n ↦ P) f).integrable_comp_of_integrable
-    hh
+  exact (measurePreserving_pi_comp_embedding (fun _ ↦ Q) f).integrable_comp_of_integrable hh
 
 /-- **Unbiasedness.** Under an i.i.d. sample of size `n ≥ m` from `P`, the U-statistic with a
 `Pᵐ`-integrable kernel `h` has mean `∫ h d(Pᵐ)`. -/
@@ -146,11 +201,14 @@ theorem integral_uStatistic (P : Measure E) [IsProbabilityMeasure P] (hmn : m �
       ∫ x, h (x ∘ f) ∂(Measure.pi fun _ : Fin n ↦ P) = ∫ y, h y ∂(Measure.pi fun _ : Fin m ↦ P) :=
     (integral_map (hf f).measurable.aemeasurable
       ((hf f).map_eq ▸ hh.aestronglyMeasurable)).symm.trans (by rw [(hf f).map_eq])
-  have hpos : ((n.descFactorial m : ℕ) : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.2 (Nat.descFactorial_eq_zero_iff_lt.not.2 (Nat.not_lt.2 hmn))
   simp_rw [uStatistic_eq_sum_embedding, integral_const_mul, integral_finsetSum _ fun f _ ↦ hint f,
-    hmean, Finset.sum_const, Finset.card_univ,
-    Fintype.card_embedding_eq, Fintype.card_fin, nsmul_eq_mul]
+    hmean]
+  -- There are `n.descFactorial m` embeddings, which cancels the normalization.
+  have hcard : (Finset.univ : Finset (Fin m ↪ Fin n)).card = n.descFactorial m := by
+    rw [Finset.card_univ, Fintype.card_embedding_eq, Fintype.card_fin, Fintype.card_fin]
+  have hpos : ((n.descFactorial m : ℕ) : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (Nat.descFactorial_pos.2 hmn).ne'
+  rw [Finset.sum_const, hcard, nsmul_eq_mul]
   exact inv_mul_cancel_left₀ hpos _
 
 /-- **Unbiasedness in a parametric family.** For a family of laws `P θ` on `E` and a measurable
