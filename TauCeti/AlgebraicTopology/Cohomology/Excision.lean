@@ -240,6 +240,20 @@ lemma singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict
   dsimp only [singularCohomologyComplRestrict]
   rw [← TopPair.singularCohomologyMap_comp_apply, TopPair.interPairMapOfSubset_comp_ofSubsetMap_id]
 
+/-- Restricting a class of `Hⁿ(X, X ∖ S)` to `Hⁿ(X, X ∖ T)`, `S ⊆ T`, and then along the excision
+map `(A, A ∖ T) ⟶ (X, X ∖ T)` is restricting it to `(A, A ∖ T)` directly. This is the form of
+`TopCat.singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict` reached after
+`TopPair.interPairMapOfSubset_eq_excisionMap` rewrites the inclusion. -/
+@[simp]
+lemma singularCohomologyMap_excisionMap_singularCohomologyComplRestrict (hST : S ⊆ T)
+    {A : Set X} {n : ℕ} (x : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (TopPair.excisionMap A Tᶜ) n
+        (singularCohomologyComplRestrict R k M hST n x) =
+      TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset
+        (Set.inter_subset_right.trans (Set.compl_subset_compl.2 hST))) n x := by
+  dsimp only [singularCohomologyComplRestrict]
+  rw [← TopPair.singularCohomologyMap_comp_apply, TopPair.excisionMap_comp_ofSubsetMap_id]
+
 /-- If moreover `A ⊆ X ∖ S`, that restriction vanishes: the inclusion of `(A, A ∩ B)` into
 `(X, X ∖ S)` factors through the subspace `X ∖ S`. -/
 lemma singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_eq_zero
