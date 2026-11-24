@@ -13,11 +13,11 @@ public import Mathlib.Topology.Homeomorph.Defs
 public import Mathlib.Topology.Irreducible
 public import Mathlib.Topology.NoetherianSpace
 import Mathlib.Algebra.MvPolynomial.Equiv
-import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.RingTheory.Polynomial.Basic
+import TauCeti.Algebra.MvPolynomial.Funext
 
 /-!
 # The polynomial Zariski topology on coordinate spaces
@@ -465,18 +465,6 @@ section Infinite
 
 variable [Infinite R]
 
-namespace MvPolynomial
-
-/-- Over an infinite integral domain, a multivariate polynomial has a nonempty nonvanishing locus
-iff it is nonzero. -/
-theorem nonempty_eval_ne_zero_iff (p : MvPolynomial σ R) :
-    {x : σ → R | MvPolynomial.eval x p ≠ 0}.Nonempty ↔ p ≠ 0 := by
-  refine not_iff_not.mp ?_
-  simp only [Set.not_nonempty_iff_eq_empty, eq_empty_iff_forall_notMem, mem_ofPred_eq, not_not]
-  exact ⟨fun h ↦ MvPolynomial.funext fun x ↦ by simpa using h x, fun hp x ↦ by simp [hp]⟩
-
-end MvPolynomial
-
 namespace TauCeti
 
 /-- Over an infinite integral domain, the polynomial Zariski topology on any coordinate space is
@@ -493,8 +481,8 @@ theorem irreducibleSpace_polynomialTopology :
     have hq : q ≠ 0 := by
       rintro rfl
       simp at hyq
-    obtain ⟨z, hz⟩ := (p * q).nonempty_eval_ne_zero_iff.mpr (mul_ne_zero hp hq)
-    rw [mem_ofPred_eq, map_mul, mul_ne_zero_iff] at hz
+    obtain ⟨z, hz⟩ := MvPolynomial.exists_eval_ne_zero (mul_ne_zero hp hq)
+    rw [map_mul, mul_ne_zero_iff] at hz
     exact ⟨z, mem_univ z, hpU hz.1, hqV hz.2⟩⟩
   exact ⟨⟨0⟩⟩
 
@@ -510,8 +498,11 @@ theorem dense_polynomialTopology_eval_ne_zero_iff (p : MvPolynomial σ R) :
     @Dense (σ → R) (polynomialTopology σ R) {x : σ → R | MvPolynomial.eval x p ≠ 0} ↔ p ≠ 0 := by
   let := polynomialTopology σ R
   have := irreducibleSpace_polynomialTopology (σ := σ) (R := R)
-  exact ⟨fun hd ↦ p.nonempty_eval_ne_zero_iff.mp hd.nonempty,
-    fun hp ↦ (p.isOpen_polynomialTopology_eval_ne_zero).dense (p.nonempty_eval_ne_zero_iff.mpr hp)⟩
+  refine ⟨fun hd ↦ ?_, fun hp ↦ (p.isOpen_polynomialTopology_eval_ne_zero).dense
+    (exists_eval_ne_zero hp)⟩
+  obtain ⟨x, hx⟩ := hd.nonempty
+  rintro rfl
+  simp at hx
 
 end MvPolynomial
 

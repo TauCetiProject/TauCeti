@@ -238,20 +238,6 @@ theorem induced_modulePolynomialTopology_of_leftInverse {f : M →ₗ[R] N} {g :
 
 end TauCeti
 
-namespace Submodule
-
-open TauCeti
-
-/-- If every linear functional on a submodule `S` extends to `M`, the subspace topology induced by
-`TauCeti.modulePolynomialTopology R M` coincides with `TauCeti.modulePolynomialTopology R S`. -/
-theorem induced_modulePolynomialTopology_of_dualMap_surjective (S : Submodule R M)
-    (hS : Function.Surjective S.subtype.dualMap) :
-    TopologicalSpace.induced (Subtype.val : S → M) (modulePolynomialTopology R M) =
-      modulePolynomialTopology R S :=
-  TauCeti.induced_modulePolynomialTopology_of_dualMap_surjective hS
-
-end Submodule
-
 namespace LinearEquiv
 
 open TauCeti
@@ -746,8 +732,7 @@ submodule coincides with the submodule's intrinsic polynomial Zariski topology. 
 theorem induced_modulePolynomialTopology (S : Submodule k V) :
     TopologicalSpace.induced (Subtype.val : S → V) (modulePolynomialTopology k V) =
       modulePolynomialTopology k S :=
-  S.induced_modulePolynomialTopology_of_dualMap_surjective
-    (LinearMap.dualMap_surjective_of_injective S.injective_subtype)
+  induced_modulePolynomialTopology_of_injective_linearMap S.injective_subtype
 
 end Submodule
 
