@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
-import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Lift
 
 /-!
 # The normal exponential of a smooth embedding
@@ -58,7 +57,7 @@ variable [IsManifold J ∞ N] [J.Boundaryless] [T2Space N]
 representatives lie in the domain of the ambient Riemannian exponential. -/
 def normalExpDomain (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) :
     Set (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
-  TauCeti.Bundle.liftExpDomain f (fun x ↦ f.normalRepresentative x hn)
+  {p | f.normalRepresentative p.proj hn p.snd ∈ Manifold.expDomain J N (f p.proj)}
 
 omit [J.Boundaryless] [T2Space N] in
 /-- Membership in the natural normal-exponential domain means that the orthogonal representative
@@ -68,8 +67,8 @@ theorem mem_normalExpDomain
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
     p ∈ f.normalExpDomain (P := P) hn ↔
-      f.normalRepresentative p.proj hn p.2 ∈ Manifold.expDomain J N (f p.proj) :=
-  TauCeti.Bundle.mem_liftExpDomain f (fun x ↦ f.normalRepresentative x hn) p
+      f.normalRepresentative p.proj hn p.snd ∈ Manifold.expDomain J N (f p.proj) :=
+  Iff.rfl
 
 omit [J.Boundaryless] [T2Space N] in
 /-- On an orthogonal normal fibre, the normal-exponential domain is the preimage of the
@@ -88,8 +87,12 @@ omit [J.Boundaryless] [T2Space N] in
 /-- The zero normal class at every point lies in the natural domain of the normal exponential. -/
 theorem zeroSection_mem_normalExpDomain
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
-    zeroSection P (fun x ↦ f.NormalSpace x hn) x ∈ f.normalExpDomain (P := P) hn :=
-  TauCeti.Bundle.zeroSection_mem_liftExpDomain f (fun x ↦ f.normalRepresentative x hn) x
+    zeroSection P (fun x ↦ f.NormalSpace x hn) x ∈ f.normalExpDomain (P := P) hn := by
+  -- The fibre value of the zero section is the zero of the fibre over its projection, which is
+  -- only definitionally the fibre over `x`; restate it over `x` so that `map_zero` applies.
+  change f.normalRepresentative x hn 0 ∈ Manifold.expDomain J N (f x)
+  rw [map_zero]
+  exact Manifold.zero_mem_expDomain (I := J) (M := N) (f x)
 
 omit [J.Boundaryless] [T2Space N] in
 /-- Every fibre slice of the natural normal-exponential domain is star-convex at zero. -/
@@ -98,15 +101,18 @@ theorem starConvex_normalExpDomain_fiber
     StarConvex ℝ 0
       {v : f.NormalSpace x hn |
         (⟨x, v⟩ : TotalSpace P (fun x ↦ f.NormalSpace x hn)) ∈
-          f.normalExpDomain (P := P) hn} :=
-  TauCeti.Bundle.starConvex_liftExpDomain_fiber f (fun x ↦ f.normalRepresentative x hn) x
+          f.normalExpDomain (P := P) hn} := by
+  intro v hv a b _ha hb _hab
+  simp only [mem_ofPred_eq, mem_normalExpDomain, smul_zero, zero_add, map_smul] at hv ⊢
+  exact (Manifold.starConvex_expDomain (I := J) (M := N) (f x)).smul_mem hv hb
+    (by linarith)
 
 /-- The normal exponential sends an intrinsic normal class to the ambient exponential of its
 orthogonal representative. It takes the base point as a junk value outside its natural domain,
 following `Manifold.riemannianExp`. -/
 def normalExp (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) : N :=
-  TauCeti.Bundle.liftExp f (fun x ↦ f.normalRepresentative x hn) p
+  Manifold.riemannianExp J N (f p.proj) (f.normalRepresentative p.proj hn p.snd)
 
 omit [J.Boundaryless] [T2Space N] in
 /-- The normal exponential is the ambient Riemannian exponential of the orthogonal
@@ -115,15 +121,19 @@ theorem normalExp_apply
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
     f.normalExp (P := P) hn p =
-      Manifold.riemannianExp J N (f p.proj) (f.normalRepresentative p.proj hn p.2) :=
-  TauCeti.Bundle.liftExp_apply f (fun x ↦ f.normalRepresentative x hn) p
+      Manifold.riemannianExp J N (f p.proj) (f.normalRepresentative p.proj hn p.snd) :=
+  (rfl)
 
 /-- The normal exponential sends the zero section to the original embedding. -/
 @[simp]
 theorem normalExp_zeroSection
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
-    f.normalExp (P := P) hn (zeroSection P (fun x ↦ f.NormalSpace x hn) x) = f x :=
-  TauCeti.Bundle.liftExp_zeroSection f (fun x ↦ f.normalRepresentative x hn) x
+    f.normalExp (P := P) hn (zeroSection P (fun x ↦ f.NormalSpace x hn) x) = f x := by
+  rw [normalExp_apply]
+  -- The fibre value of the zero section is the zero of the fibre over its projection, which is
+  -- only definitionally the fibre over `x`; restate it over `x` so that `map_zero` applies.
+  change Manifold.riemannianExp J N (f x) (f.normalRepresentative x hn 0) = f x
+  rw [map_zero, Manifold.riemannianExp_zero]
 
 omit [T2Space N] in
 /-- Outside its natural domain, the normal exponential takes its base point as a junk value. -/
@@ -132,8 +142,8 @@ theorem normalExp_of_notMem_normalExpDomain
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     {p : TotalSpace P (fun x ↦ f.NormalSpace x hn)}
     (hp : p ∉ f.normalExpDomain (P := P) hn) :
-    f.normalExp (P := P) hn p = f p.proj :=
-  TauCeti.Bundle.liftExp_of_notMem_liftExpDomain f (fun x ↦ f.normalRepresentative x hn) hp
+    f.normalExp (P := P) hn p = f p.proj := by
+  exact Manifold.riemannianExp_of_notMem_expDomain (mt (f.mem_normalExpDomain hn p).2 hp)
 
 omit [J.Boundaryless] [T2Space N] in
 /-- On the class of an ambient tangent vector, the normal exponential uses its orthogonal
@@ -145,7 +155,7 @@ theorem normalExp_normalClass
     f.normalExp (P := P) hn ⟨x, f.normalClass x hn v⟩ =
       Manifold.riemannianExp J N (f x)
         ((Submodule.orthogonal (f.tangentRange x hn)).starProjection v) := by
-  simp [normalExp_apply]
+  simp [normalExp]
 
 omit [J.Boundaryless] [T2Space N] in
 /-- On an orthogonal normal vector, the normal exponential agrees with the ambient

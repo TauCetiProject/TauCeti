@@ -98,7 +98,7 @@ theorem isQuotientCoveringMap_subgroupQuotientMap [LocallyPathConnectedSpace X]
     [SemilocallySimplyConnectedSpace X] (H : Subgroup (FundamentalGroup X x₀)) :
     IsQuotientCoveringMap (subgroupQuotientMap x₀ H) H where
   __ := isQuotientMap_quotient_mk'
-  continuous_const_smul g := continuous_const_smul g.1
+  continuous_const_smul g := continuous_const_smul g.val
   apply_eq_iff_mem_orbit := Quotient.eq''
   disjoint e := by
     obtain ⟨U, heU, hU⟩ := exists_nhds_smul_disjoint e
@@ -110,7 +110,7 @@ private theorem proj_eq_of_orbitRel (H : Subgroup (FundamentalGroup X x₀))
     proj e₁ = proj e₂ := by
   rw [MulAction.orbitRel_apply] at h
   obtain ⟨g, rfl⟩ := h
-  exact proj_smul g.1 _
+  exact proj_smul g.val _
 
 /-- The endpoint projection descended to the subgroup quotient. -/
 def subgroupQuotientProj (H : Subgroup (FundamentalGroup X x₀)) :

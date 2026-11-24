@@ -220,15 +220,15 @@ theorem presentationLimitPreAdicSpace_hom_ext_of_isCompletedPushout
     (hj : l₁ ≫ presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j =
       l₂ ≫ presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j) :
     l₁ = l₂ := by
-  refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.1)
+  refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.val)
     hX.isLocallyAffinoid.iSup_affinoidOpens_eq_top fun O ↦ ?_
   obtain ⟨D, _, _, _, _, _, _, _, V, PD, hD, hsheafD, ⟨e⟩⟩ :=
-    hX.isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens O.2
+    hX.isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens O.property
   rw [← cancel_epi e.inv]
-  have hcond : ((e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
+  have hcond : ((e.inv ≫ X.ofRestrict O.val.isOpenEmbedding ≫ l₂) ≫
         presentationLimitPreAdicSpacePairComap PB PE hB hE hsheafE i) ≫
           presentationLimitPreAdicSpacePairComap PA PB hA hB hsheafB f =
-      ((e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
+      ((e.inv ≫ X.ofRestrict O.val.isOpenEmbedding ≫ l₂) ≫
         presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j) ≫
           presentationLimitPreAdicSpacePairComap PA PC hA hC hsheafC g := by
     simp only [Category.assoc,
@@ -236,9 +236,9 @@ theorem presentationLimitPreAdicSpace_hom_ext_of_isCompletedPushout
         PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush]
   exact (existsUnique_presentationLimitPreAdicSpacePairComap_of_isCompletedPushout
     PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush PD V hD hsheafD
-    ((e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
+    ((e.inv ≫ X.ofRestrict O.val.isOpenEmbedding ≫ l₂) ≫
       presentationLimitPreAdicSpacePairComap PB PE hB hE hsheafE i)
-    ((e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ l₂) ≫
+    ((e.inv ≫ X.ofRestrict O.val.isOpenEmbedding ≫ l₂) ≫
       presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j)
     hcond).unique
     ⟨by simp only [Category.assoc, hi], by simp only [Category.assoc, hj]⟩ ⟨rfl, rfl⟩
@@ -262,20 +262,20 @@ theorem existsUnique_presentationLimitPreAdicSpace_lift_of_isCompletedPushout
   let hcov := hX.isLocallyAffinoid.iSup_affinoidOpens_eq_top
   -- Construct local lifts on each open affinoid subspace via complete Hausdorff models.
   have hloc (O : X.affinoidOpens) :
-      ∃ l : X.restrict O.1.isOpenEmbedding ⟶
+      ∃ l : X.restrict O.val.isOpenEmbedding ⟶
           presentationLimitPreAdicSpace PE W.plus
             W.isRingOfIntegralElements.isPowerBounded_of_mem hE,
         l ≫ presentationLimitPreAdicSpacePairComap PB PE hB hE hsheafE i =
-          X.ofRestrict O.1.isOpenEmbedding ≫ u ∧
+          X.ofRestrict O.val.isOpenEmbedding ≫ u ∧
         l ≫ presentationLimitPreAdicSpacePairComap PC PE hC hE hsheafE j =
-          X.ofRestrict O.1.isOpenEmbedding ≫ v := by
+          X.ofRestrict O.val.isOpenEmbedding ≫ v := by
     obtain ⟨D, _, _, _, _, _, _, _, V, PD, hD, hsheafD, ⟨e⟩⟩ :=
-      hX.isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens O.2
+      hX.isSheafy.exists_complete_isSheaf_of_mem_affinoidOpens O.property
     obtain ⟨l₀, ⟨hl₀i, hl₀j⟩, -⟩ :=
       existsUnique_presentationLimitPreAdicSpacePairComap_of_isCompletedPushout
         PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush PD V hD hsheafD
-        (e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ u)
-        (e.inv ≫ X.ofRestrict O.1.isOpenEmbedding ≫ v)
+        (e.inv ≫ X.ofRestrict O.val.isOpenEmbedding ≫ u)
+        (e.inv ≫ X.ofRestrict O.val.isOpenEmbedding ≫ v)
         (by simp only [Category.assoc, huv])
     exact ⟨e.hom ≫ l₀,
       by rw [Category.assoc, hl₀i, e.hom_inv_id_assoc],
@@ -284,25 +284,25 @@ theorem existsUnique_presentationLimitPreAdicSpace_lift_of_isCompletedPushout
   -- Overlaps of open affinoid subspaces are open subspaces of `X`, hence adic spaces, so local
   -- lifts agree on overlaps by joint monomorphicity.
   have hcompat : ∀ O₁ O₂ : X.affinoidOpens,
-      pullback.fst (X.ofRestrict O₁.1.isOpenEmbedding) (X.ofRestrict O₂.1.isOpenEmbedding) ≫
+      pullback.fst (X.ofRestrict O₁.val.isOpenEmbedding) (X.ofRestrict O₂.val.isOpenEmbedding) ≫
         loc O₁ = pullback.snd _ _ ≫ loc O₂ := by
     intro O₁ O₂
     have hP : isAdic
-        (pullback (X.ofRestrict O₁.1.isOpenEmbedding) (X.ofRestrict O₂.1.isOpenEmbedding)) :=
+        (pullback (X.ofRestrict O₁.val.isOpenEmbedding) (X.ofRestrict O₂.val.isOpenEmbedding)) :=
       isAdic_of_isOpenImmersion hX
-        (pullback.fst (X.ofRestrict O₁.1.isOpenEmbedding) (X.ofRestrict O₂.1.isOpenEmbedding) ≫
-          X.ofRestrict O₁.1.isOpenEmbedding)
+        (pullback.fst (X.ofRestrict O₁.val.isOpenEmbedding) (X.ofRestrict O₂.val.isOpenEmbedding) ≫
+          X.ofRestrict O₁.val.isOpenEmbedding)
     refine presentationLimitPreAdicSpace_hom_ext_of_isCompletedPushout
       PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush hP ?_ ?_
     · rw [Category.assoc, hloci, Category.assoc, hloci, pullback.condition_assoc]
     · rw [Category.assoc, hlocj, Category.assoc, hlocj, pullback.condition_assoc]
-  refine ⟨glueMorphisms hX.isSheafy (fun O : X.affinoidOpens ↦ O.1) hcov loc hcompat,
+  refine ⟨glueMorphisms hX.isSheafy (fun O : X.affinoidOpens ↦ O.val) hcov loc hcompat,
     ⟨?_, ?_⟩, fun l ⟨hli, hlj⟩ ↦ ?_⟩
-  · refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.1) hcov fun O ↦ ?_
+  · refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.val) hcov fun O ↦ ?_
     rw [ofRestrict_glueMorphisms_assoc, hloci]
-  · refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.1) hcov fun O ↦ ?_
+  · refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.val) hcov fun O ↦ ?_
     rw [ofRestrict_glueMorphisms_assoc, hlocj]
-  · refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.1) hcov fun O ↦ ?_
+  · refine hom_ext_of_ofRestrict hX.isSheafy (fun O : X.affinoidOpens ↦ O.val) hcov fun O ↦ ?_
     refine presentationLimitPreAdicSpace_hom_ext_of_isCompletedPushout
       PA PB PC PE hA hB hC hE hsheafB hsheafC hsheafE hpush (isAdic_restrict _ hX) ?_ ?_
     · rw [Category.assoc, hli, ofRestrict_glueMorphisms, hloci]

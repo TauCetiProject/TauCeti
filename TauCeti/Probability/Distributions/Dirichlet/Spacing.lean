@@ -71,7 +71,7 @@ private theorem map_dirichletCumulative_chart (n : ℕ) :
       r.measurable, hrvol, (measurePreserving_partialSumsLinearEquiv n).map_eq]
   -- The positive simplex chart corresponds exactly to the ordered open unit cube.
   let C := {y : Fin n → ℝ | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1}
-  have hC : MeasurableSet C := measurableSet_strictMono_mem_Ioo n 0 1
+  have hC : MeasurableSet C := measurableSet_setOf_strictMono_and_forall_mem measurableSet_Ioo
   have hpre : dirichletCumulative n ⁻¹' C = dirichletChartRegion (Fin.last n) := by
     ext z
     have hcube := strictMono_partialSumsLinearEquiv_and_mem_Ioo_iff (0 : ℝ) 1 (r z)

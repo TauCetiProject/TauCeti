@@ -34,6 +34,11 @@ automorphisms are computed.
 * `TauCeti.GroupAlgGeom.twistHom A e`: the `G`-endomorphism `v ↦ A ^ (e v).1 * v * A ^ (e v).2`.
 * `TauCeti.GroupAlgGeom.twist A e h₁ h₂`: the same substitution as an automorphism of `G[X]`,
   when the substitutions for `A` and for `A⁻¹` fix `A`.
+* `TauCeti.GroupAlgGeom.blockExp f e`: the exponents that are `e a` at the variable `f a` of an
+  injective family `f` and zero at the other variables, used to twist a block of variables.
+* `TauCeti.GroupAlgGeom.TwistData`: a word `A` with exponents `e` such that the substitutions for
+  `A` and for `A⁻¹` fix `A`, and its automorphism `TauCeti.GroupAlgGeom.TwistData.toMulAut`. The
+  automorphism forgets the word, which lifting a point along the twist needs.
 
 ## References
 
@@ -46,6 +51,33 @@ public section
 open Monoid.Coprod
 
 namespace TauCeti.GroupAlgGeom
+
+/-! ### Exponents supported on a family of variables -/
+
+section BlockExp
+
+variable {X : Type*} {ι : Sort*} {f : ι → X} {e : ι → ℤ × ℤ}
+
+/-- The exponents on `X` that are `e a` at the variable `f a` of an injective family `f`
+(`blockExp_apply`) and zero at the variables outside the family (`blockExp_eq_zero`). -/
+noncomputable def blockExp (f : ι → X) (e : ι → ℤ × ℤ) : X → ℤ × ℤ :=
+  Function.extend f e 0
+
+theorem blockExp_def (f : ι → X) (e : ι → ℤ × ℤ) : blockExp f e = Function.extend f e 0 := (rfl)
+
+theorem blockExp_apply (hf : f.Injective) (a : ι) : blockExp f e (f a) = e a :=
+  hf.extend_apply _ _ a
+
+theorem blockExp_eq_zero {v : X} (h : ∀ a, f a = v → e a = 0) : blockExp f e v = 0 := by
+  classical
+  rw [blockExp_def, Function.extend_def]
+  split_ifs with hv
+  · exact h _ (Classical.choose_spec hv)
+  · rfl
+
+end BlockExp
+
+/-! ### Twists -/
 
 variable {G X : Type*} [Group G] {A B C : GX G X} {e : X → ℤ × ℤ}
 
@@ -145,6 +177,8 @@ def twist (A : GX G X) (e : X → ℤ × ℤ) (h₁ : twistHom A e A = A) (h₂ 
     (by simpa using twistHom_comp h₂ (Commute.refl A).inv_left)
     (by simpa using twistHom_comp (C := A⁻¹) (by rw [map_inv, h₁]) (Commute.refl A).inv_right)
 
+section Twist
+
 variable (h₁ : twistHom A e A = A) (h₂ : twistHom A⁻¹ e A = A)
 include h₁ h₂
 
@@ -187,5 +221,54 @@ theorem twist_zpow_apply (k : ℤ) (w : GX G X) :
   · rw [zpow_neg, zpow_natCast, MulAut.inv_apply, eq_comm, MulEquiv.eq_symm_apply,
       twist_pow_apply, ← zpow_natCast, ← MonoidHom.comp_apply, twistHom_zpow_comp h₁ h₂,
       add_neg_cancel, zpow_zero, twistHom_one, MonoidHom.id_apply]
+
+end Twist
+
+/-! ### Twist data -/
+
+/-- A twist datum of `G[X]`: a word `A` and pairs of integers `e v = (l, r)` such that the
+substitutions `v ↦ A ^ l * v * A ^ r` and `v ↦ A⁻¹ ^ l * v * A⁻¹ ^ r` fix `A`. It determines the
+automorphism `twist A e _ _` of `G[X]` (`TwistData.toMulAut`) and records the word `A`, which the
+automorphism alone does not determine: lifting a point along the twist ([IFT], §7.2, (85))
+extends the centralizer of the value of `A`. -/
+@[ext]
+structure TwistData (G X : Type*) [Group G] where
+  /-- The word by which the variables are multiplied. -/
+  A : GX G X
+  /-- The exponents `(l, r)` of the left and the right factor at each variable. -/
+  e : X → ℤ × ℤ
+  /-- The substitution for `A` fixes `A`. -/
+  twistHom_self : twistHom A e A = A
+  /-- The substitution for `A⁻¹` fixes `A`. -/
+  twistHom_inv_self : twistHom A⁻¹ e A = A
+
+namespace TwistData
+
+/-- The automorphism `v ↦ A ^ l * v * A ^ r` of `G[X]` given by a twist datum. -/
+def toMulAut (d : TwistData G X) : MulAut (GX G X) :=
+  twist d.A d.e d.twistHom_self d.twistHom_inv_self
+
+@[simp]
+theorem toMulAut_apply (d : TwistData G X) (w : GX G X) : d.toMulAut w = twistHom d.A d.e w := (rfl)
+
+/-- The inverse of the automorphism of a twist datum is the substitution for `A⁻¹`. -/
+@[simp]
+theorem toMulAut_symm_apply (d : TwistData G X) (w : GX G X) :
+    d.toMulAut.symm w = twistHom d.A⁻¹ d.e w := (rfl)
+
+/-- The `n`-th power of the automorphism of a twist datum is the substitution for `A ^ n`. -/
+@[simp]
+theorem toMulAut_pow_apply (d : TwistData G X) (n : ℕ) (w : GX G X) :
+    (d.toMulAut ^ n) w = twistHom (d.A ^ n) d.e w :=
+  twist_pow_apply d.twistHom_self d.twistHom_inv_self n w
+
+/-- The `k`-th power of the automorphism of a twist datum is the substitution for `A ^ k`, for
+every integer `k`. -/
+@[simp]
+theorem toMulAut_zpow_apply (d : TwistData G X) (k : ℤ) (w : GX G X) :
+    (d.toMulAut ^ k) w = twistHom (d.A ^ k) d.e w :=
+  twist_zpow_apply d.twistHom_self d.twistHom_inv_self k w
+
+end TwistData
 
 end TauCeti.GroupAlgGeom

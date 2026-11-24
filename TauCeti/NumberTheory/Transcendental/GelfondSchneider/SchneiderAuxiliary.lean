@@ -567,7 +567,7 @@ namespace RingHom
 theorem map_pow_mul_pow_eq_exp {R : Type*} [Semiring R] (σ : R →+* ℂ) {l : ℂ} {α β γ : R}
     (hα : σ α = Complex.exp l) (hγ : σ γ = Complex.exp (σ β * l)) (u v j : ℕ) :
     σ (α ^ (u * j) * γ ^ (v * j)) = Complex.exp (j * l * (u + v * σ β)) := by
-  rw [map_mul, map_pow, map_pow, hα, hγ, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul,
+  rw [map_mul, map_pow, map_pow, hα, hγ, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul,
     ← Complex.exp_add]
   congr 1
   push_cast

@@ -41,7 +41,7 @@ namespace TauCeti
 Fourier coefficients vanish. -/
 theorem mapsTo_multiplicationOperator_hardySubmodule_iff
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
-    Set.MapsTo (Lp.multiplicationOperator (E := ℂ) a)
+    Set.MapsTo (Lp.multiplicationOperator (E := ℂ) (p := 2) a)
       (hardySubmodule : Set _) (hardySubmodule : Set _) ↔
       ∀ n : ℤ, n < 0 → fourierCoeff a n = 0 := by
   rw [← hankel_eq_zero_iff]
@@ -62,7 +62,7 @@ theorem mapsTo_multiplicationOperator_hardySubmodule_iff
 /-- The boundary H∞ algebra: the essentially bounded symbols preserving Hardy space under
 multiplication. Equivalently, these are the symbols with no negative Fourier coefficients. -/
 def hardyMultiplierAlgebra : Subalgebra ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) where
-  carrier := {a | Set.MapsTo (Lp.multiplicationOperator (E := ℂ) a)
+  carrier := {a | Set.MapsTo (Lp.multiplicationOperator (E := ℂ) (p := 2) a)
     (hardySubmodule : Set _) (hardySubmodule : Set _)}
   add_mem' ha hb f hf := by
     simpa only [Lp.multiplicationOperator_add, add_apply, SetLike.mem_coe] using

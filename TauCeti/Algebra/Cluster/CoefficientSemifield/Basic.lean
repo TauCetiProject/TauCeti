@@ -31,8 +31,8 @@ rational functions, and for the tropical examples it means that `+` denotes a mi
 
 * `TauCeti.CoefficientSemifield`: the class of coefficient semifields.
 * The `HasUniqueRoots` instance: a coefficient semifield is torsion-free as a group (Fomin and
-  Zelevinsky, *Cluster algebras I*, §5). With `HasUniqueRoots.to_twoUniqueProds` it follows that
-  the group ring `MonoidAlgebra ℤ P` is a domain, so that it has a field of fractions.
+  Zelevinsky, *Cluster algebras I*, §5). With `TauCeti.IsMulTorsionFree.to_twoUniqueProds` it
+  follows that the group ring `MonoidAlgebra ℤ P` is a domain, so that it has a field of fractions.
 * Instances for the one-element group, for products and indexed products, and for the unit
   group of a `Semifield` in which nonzero elements have nonzero sums, such as `ℚ≥0`.
 

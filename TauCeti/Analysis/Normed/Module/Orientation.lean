@@ -63,7 +63,7 @@ theorem Orientation.eventually_map_eq_map_of_continuousAt {X : Type*} [Topologic
   have hK : ContinuousAt K x₀ := ContinuousAt.clm_comp continuousAt_const (hL this)
   filter_upwards [(ContinuousLinearMap.continuous_det.continuousAt.comp hK).eventually
     (lt_mem_nhds (hK₀ ▸ one_pos))] with x hx f hf
-  refine Orientation.map_eq_map_of_det_pos c _ _ hι ?_
+  refine (Orientation.map_eq_map_iff_det_pos c _ _ hι).mpr ?_
   have hKf : K x = (f.trans f₀.symm : E →L[ℝ] E) := by
     ext v
     simp [K, ← hf]

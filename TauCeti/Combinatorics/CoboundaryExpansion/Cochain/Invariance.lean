@@ -18,7 +18,9 @@ Reversing an oriented edge inverts its gauge-transformed value `(β u)⁻¹ * α
 group norm assigns the same weight to both orientations of an edge. Consequently `Cochain.cost`
 equals an unoriented sum over `X.edges`, and hence `Cochain.cost` (with reindexed gauge) and its
 infimum `Cochain.gaugeDist` do not depend on the `LinearOrder` chosen on `V` and are invariant
-under relabelling vertices along any bijection `V ≃ W`.
+under relabelling vertices along any bijection `V ≃ W`. On complete complexes, relabelling is the
+special case of pulling a cochain back along an arbitrary vertex map (`Cochain.comapComplete`),
+which detects coboundaries when the map is surjective.
 
 When the group norm `ℓ` is conjugation invariant, cyclically rotating or reversing the vertices of a
 filled triangle also preserves the norm of `Cochain.holonomy`, and every holonomy norm around three
@@ -449,14 +451,56 @@ def relabelEquiv (X : TwoComplex V) (e : V ≃ W) : Cochain X G ≃ Cochain (X.r
     fun ⟨β, hβ⟩ => ⟨β ∘ e.symm, fun u v huv =>
       hβ (e.symm u) (e.symm v) ((X.adj_relabel e u v).mp huv)⟩⟩
 
+/-- Pull a cochain on `complete V` back along an arbitrary map `f : W → V` to `complete W`: the
+value on `(u, v)` is the value of `α` on `(f u, f v)`. Pairs with `f u = f v` carry `1`. -/
+def comapComplete [Fintype V] [Fintype W] (α : Cochain (complete V) G) (f : W → V) :
+    Cochain (complete W) G where
+  toFun u v := α (f u) (f v)
+  inv_symm u v _ := α.apply_swap (f u) (f v)
+  apply_eq_one_of_not_adj' u v huv := by
+    obtain rfl : u = v := not_ne_iff.mp (mt (adj_complete u v).mpr huv); simp
+
+@[simp, grind =] theorem comapComplete_apply [Fintype V] [Fintype W] (α : Cochain (complete V) G)
+    (f : W → V) (u v : W) : α.comapComplete f u v = α (f u) (f v) := (rfl)
+
+@[simp] theorem comapComplete_one [Fintype V] [Fintype W] (f : W → V) :
+    (1 : Cochain (complete V) G).comapComplete f = 1 := by ext u v _; rfl
+
+@[simp] theorem comapComplete_smul [Fintype V] [Fintype W] (β : V → G)
+    (α : Cochain (complete V) G) (f : W → V) :
+    (β • α).comapComplete f = (β ∘ f) • α.comapComplete f := by ext u v _; simp
+
+@[simp, grind =] theorem holonomy_comapComplete [Fintype V] [Fintype W]
+    (α : Cochain (complete V) G) (f : W → V) (u v w : W) :
+    (α.comapComplete f).holonomy u v w = α.holonomy (f u) (f v) (f w) := by
+  simp [holonomy_def]
+
+/-- Pulling back along a surjective map `f : W → V` detects coboundaries on the complete complex.
+Without surjectivity only the reverse implication holds. -/
+theorem isCoboundary_comapComplete_iff [Fintype V] [Fintype W] (α : Cochain (complete V) G)
+    {f : W → V} (hf : Function.Surjective f) :
+    (α.comapComplete f).IsCoboundary ↔ α.IsCoboundary := by
+  simp only [isCoboundary_complete, comapComplete_apply]
+  refine ⟨fun ⟨β, hβ⟩ => ⟨β ∘ Function.surjInv hf, fun u v => ?_⟩,
+    fun ⟨β, hβ⟩ => ⟨β ∘ f, fun u v => hβ _ _⟩⟩
+  simpa only [Function.surjInv_eq hf, Function.comp_apply] using
+    hβ (Function.surjInv hf u) (Function.surjInv hf v)
+
+@[simp] theorem comapComplete_id [Fintype V] (α : Cochain (complete V) G) :
+    α.comapComplete id = α := by ext u v _; rfl
+
+@[simp] theorem comapComplete_comapComplete {U : Type*} [Fintype V] [Fintype W] [Fintype U]
+    (α : Cochain (complete V) G) (f : W → V) (g : U → W) :
+    (α.comapComplete f).comapComplete g = α.comapComplete (f ∘ g) := by ext u v _; rfl
+
 /-- Transport a cochain on `complete V` along `e : V ≃ W` directly to `complete W`, avoiding casts
 along `relabel_complete`. -/
 def relabelComplete [Fintype V] [Fintype W] (α : Cochain (complete V) G) (e : V ≃ W) :
-    Cochain (complete W) G where
-  toFun u v := α (e.symm u) (e.symm v)
-  inv_symm u v _ := α.apply_swap (e.symm u) (e.symm v)
-  apply_eq_one_of_not_adj' u v huv := by
-    obtain rfl : u = v := not_ne_iff.mp (mt (adj_complete u v).mpr huv); simp
+    Cochain (complete W) G :=
+  α.comapComplete e.symm
+
+theorem relabelComplete_eq_comapComplete [Fintype V] [Fintype W] (α : Cochain (complete V) G)
+    (e : V ≃ W) : α.relabelComplete e = α.comapComplete e.symm := (rfl)
 
 @[simp, grind =] theorem relabelComplete_apply [Fintype V] [Fintype W] (α : Cochain (complete V) G)
     (e : V ≃ W) (u v : W) : α.relabelComplete e u v = α (e.symm u) (e.symm v) := (rfl)
@@ -563,6 +607,10 @@ theorem map_relabel {W : Type*} (φ : G →* H) (α : Cochain X G) (e : V ≃ W)
 theorem map_relabelComplete {W : Type*} [Fintype V] [Fintype W] (φ : G →* H)
     (α : Cochain (complete V) G) (e : V ≃ W) :
     (α.relabelComplete e).map φ = (α.map φ).relabelComplete e := by ext u v _; rfl
+
+theorem map_comapComplete {W : Type*} [Fintype V] [Fintype W] (φ : G →* H)
+    (α : Cochain (complete V) G) (f : W → V) :
+    (α.comapComplete f).map φ = (α.map φ).comapComplete f := by ext u v _; rfl
 
 @[simp, grind =] theorem holonomy_map (φ : G →* H) (α : Cochain X G) (u v w : V) :
     (α.map φ).holonomy u v w = φ (α.holonomy u v w) := by simp [holonomy_def]

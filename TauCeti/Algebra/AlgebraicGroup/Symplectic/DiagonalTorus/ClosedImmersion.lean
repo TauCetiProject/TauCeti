@@ -46,7 +46,7 @@ noncomputable def diagonalTorusClosedSubgroup : ClosedSubgroupScheme (groupSchem
 /-- The closed diagonal torus has the subobject represented by the diagonal morphism. -/
 @[simp]
 theorem coe_diagonalTorusClosedSubgroup :
-    (diagonalTorusClosedSubgroup R m).1 =
+    (diagonalTorusClosedSubgroup R m).val =
       Subobject.mk (diagonalTorus (R := R) (m := m)) :=
   ClosedSubgroupScheme.coe_mk _
 

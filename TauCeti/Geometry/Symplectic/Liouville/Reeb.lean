@@ -95,14 +95,14 @@ omit [IsManifold J (⊤ : ℕ∞) S] in
 /-- The time-`t` map of the Liouville flow of a completion composed with a smooth map is
 smooth. -/
 private theorem contMDiff_flowOf_comp (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (t : ℝ) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (t : ℝ) :
     ContMDiff J I (⊤ : ℕ∞) (flowOf Z t ∘ ι) := by
   rw [h.flowOf_eq_globalFlowDiffeomorph hZ t]
   exact (Diffeomorph.contMDiff _).comp hι
 
 /-- The Liouville flow rescales the restriction of the primitive, `(ψ_t ∘ ι)^* α = e^t ι^* α`. -/
 private theorem mpullback_flowOf_comp (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (t : ℝ) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (t : ℝ) :
     SmoothForm.mpullback (flowOf Z t ∘ ι) (h.contMDiff_flowOf_comp hZ hι t) α =
       Real.exp t • SmoothForm.mpullback ι hι α := by
   have hZs := h.contMDiff_of_interior_eq hZ
@@ -120,7 +120,7 @@ omit [TopologicalSpace S] in
 /-- For `t > 0` the Liouville flow carries the boundary of the Liouville domain into the
 cylindrical end. -/
 private theorem flowOf_comp_notMem (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hιW : ∀ s, ι s ∈ frontier W) (ht : 0 < t) (s : S) :
+    (hZ : RoughForm.interior Z ω.val = α.val) (hιW : ∀ s, ι s ∈ frontier W) (ht : 0 < t) (s : S) :
     flowOf Z t (ι s) ∉ W := by
   rw [← h.one_lt_liouvilleRadialCoordinate_iff hZ,
     h.liouvilleRadialCoordinate_flowOf hZ (hιW s) ht.le]
@@ -129,15 +129,15 @@ private theorem flowOf_comp_notMem (h : IsLiouvilleCompletion ω α W)
 omit [IsManifold J (⊤ : ℕ∞) S] in
 /-- The differential of `ψ_t ∘ ι` is injective when that of `ι` is. -/
 private theorem injective_mfderiv_flowOf_comp (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (t : ℝ) (s : S) :
     Function.Injective (mfderiv J I (flowOf Z t ∘ ι) s) := by
-  set ψ := globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
-    (h.contMDiff_of_interior_eq hZ) t
-  rw [h.flowOf_eq_globalFlowDiffeomorph hZ t, mfderiv_comp s
-    ((ψ.contMDiff (ι s)).mdifferentiableAt (by simp)) ((hι s).mdifferentiableAt (by simp)),
-    ContinuousLinearMap.coe_comp]
-  exact (ψ.isInvertible_mfderiv (by simp)).injective.comp (hιs s)
+  have hψ : MDifferentiableAt I I (flowOf Z t) (ι s) := by
+    rw [h.flowOf_eq_globalFlowDiffeomorph hZ t]
+    exact (Diffeomorph.contMDiff _ _).mdifferentiableAt (by simp)
+  rw [mfderiv_comp s hψ ((hι s).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
+  exact (injective_mfderiv_flowOf ((h.contMDiff_of_interior_eq hZ).of_le (by simp))
+    (h.isCompleteVectorField hZ) t (ι s)).comp (hιs s)
 
 omit [IsManifold J (⊤ : ℕ∞) S] in
 /-- **The flow-out of the boundary is a level of the radial coordinate, infinitesimally.** Let
@@ -145,7 +145,7 @@ omit [IsManifold J (⊤ : ℕ∞) S] in
 domain, from a manifold of one dimension less. For `t > 0` the image of the differential of
 `ψ_t ∘ ι` at `s` is the kernel of the differential of the radial coordinate at `ψ_t (ι s)`. -/
 theorem range_mfderiv_flowOf_comp (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
     (ht : 0 < t) (s : S) :
@@ -181,7 +181,7 @@ theorem range_mfderiv_flowOf_comp (h : IsLiouvilleCompletion ω α W)
 with injective differentials into the frontier of the Liouville domain `W`, from a manifold of one
 dimension less. Then the restriction `ι^* α` of the primitive is a contact form on `S`. -/
 theorem isContactForm_mpullback (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E) :
     (SmoothForm.mpullback ι hι α).IsContactForm := by
@@ -206,7 +206,7 @@ theorem isContactForm_mpullback (h : IsLiouvilleCompletion ω α W)
 domain, from a manifold of one dimension less. For `t > 0`, the differential of `ψ_t ∘ ι` sends
 the Reeb vector field of the contact form `ι^* α` to `-X_r` at `ψ_t (ι s)`. -/
 theorem mfderiv_flowOf_comp_reebVectorField (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
     (ht : 0 < t) (s : S) :
@@ -224,7 +224,7 @@ theorem mfderiv_flowOf_comp_reebVectorField (h : IsLiouvilleCompletion ω α W)
   have hcontact : (SmoothForm.mpullback (flowOf Z t ∘ ι) hg (-α)).IsContactForm := by
     rwa [hpull, SmoothForm.isContactForm_smul_iff (neg_ne_zero.2 het)]
   -- `-α(X_r) = r`.
-  have hθ : (-α).1 (flowOf Z t (ι s))
+  have hθ : (-α).val (flowOf Z t (ι s))
       ![ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) (flowOf Z t (ι s))] =
         liouvilleRadialCoordinate Z W (flowOf Z t (ι s)) := by
     rw [Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply,
@@ -248,7 +248,7 @@ Liouville domain, from a manifold of one dimension less, and let `γ` be an inte
 Reeb field of `ι^* α`. For `t > 0`, the curve `τ ↦ ψ_t (ι (γ (-τ)))`, on the level `e^t` of the
 radial coordinate, is an integral curve of `X_r`. -/
 theorem isMIntegralCurve_flowOf_comp_reebVectorField (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
     (ht : 0 < t) {γ : ℝ → S}
@@ -273,7 +273,7 @@ Liouville flow `ψ_{log c} ∘ ι` carries the reversed Reeb orbits onto the orb
 level `c`. -/
 theorem exists_periodic_hamiltonianVectorField_iff_reebVectorField [FiniteDimensional ℝ E']
     [BoundarylessManifold J S] [CompactSpace S] (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
     (hinj : Injective ι) (hWι : frontier W ⊆ range ι) {c T : ℝ} (hc : 1 < c) :
@@ -336,7 +336,7 @@ theorem IsLinearAtInfinity.exists_isCompact_forall_mem_of_reebVectorField {E H M
     [IsManifold J (⊤ : ℕ∞) S] [BoundarylessManifold J S] [CompactSpace S] {ω : SmoothTwoForm I M}
     {α : SmoothForm I M ℝ 1} {W : Set M} {Z : (x : M) → TangentSpace I x} {ι : S → M}
     {F : M → ℝ} {a : ℝ} (hF : IsLinearAtInfinity Z W F a) (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
     (hinj : Function.Injective ι) (hWι : frontier W ⊆ range ι) (ha : a ≠ 0)

@@ -72,14 +72,13 @@ theorem IsMaximalTorus.exists_mem_normalizer_conj {T : Subgroup G} (hT : IsMaxim
       S ≤ Subgroup.centralizer ({g * t * g⁻¹} : Set G) := fun hS' hmem ↦
     (Subgroup.le_centralizer_iff_isMulCommutative.mpr hS'.isMulCommutative).trans
       (Subgroup.centralizer_le (Set.singleton_subset_iff.mpr hmem))
-  obtain ⟨c, hc, hmap⟩ := hS.exists_mem_map_conj_eq_of_le I (Set.isClosed_centralizer _) hT
-    (hle hS.isTorus ⟨t, ht, rfl⟩) (hle hT.isTorus hu)
-  refine ⟨c * g, ?_, ?_⟩
-  · rw [Subgroup.mem_normalizer_iff_map_conj_eq, map_mul]
-    exact (Subgroup.map_map _ _ _).symm.trans hmap
-  · calc c * g * t * (c * g)⁻¹ = c * (g * t * g⁻¹) * c⁻¹ := by group
-      _ = g * t * g⁻¹ := by
-        rw [Subgroup.mem_centralizer_singleton_iff.mp hc, mul_inv_cancel_right]
+  obtain ⟨c, hc, hn⟩ := hT.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le I
+    (Set.isClosed_centralizer _) (hle hT.isTorus hu) (hle hS.isTorus ⟨t, ht, rfl⟩)
+  refine ⟨c * g, hn, ?_⟩
+  calc c * g * t * (c * g)⁻¹ = c * (g * t * g⁻¹) * c⁻¹ := by group
+    _ = g * t * g⁻¹ := by
+      rw [(Subgroup.mem_centralizer_singleton_iff.mp (connectedComponentIn_subset _ _ hc)).eq,
+        mul_inv_cancel_right]
 
 /-- For a compact connected Lie group, every conjugacy class meets a maximal torus in exactly one
 orbit of the normalizer. -/

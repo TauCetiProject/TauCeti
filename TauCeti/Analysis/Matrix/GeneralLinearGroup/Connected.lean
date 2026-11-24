@@ -53,7 +53,7 @@ instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL
     isPathConnected_iff_pathConnectedSpace.mp
       (convex_setOfPred_posDef.isPathConnected ⟨1, PosDef.one⟩)
   let f : {P : Matrix n n ℂ | P.PosDef} × unitaryGroup n ℂ → GL n ℂ :=
-    fun PU => PU.1.2.isUnit.unit * Unitary.toUnits PU.2
+    fun PU => PU.1.property.isUnit.unit * Unitary.toUnits PU.2
   have hf : Function.Surjective f := by
     intro A
     obtain ⟨⟨P, U⟩, ⟨hP, hPU⟩, _⟩ := A.existsUnique_posDef_mul_unitary
@@ -63,7 +63,7 @@ instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL
   apply Units.isOpenEmbedding_val.isEmbedding.isInducing.continuous_iff.mpr
   simpa only [f, Function.comp_def, Units.val_mul, IsUnit.unit_spec,
     Unitary.val_toUnits_apply] using
-    continuous_subtype_val.fst'.matrix_mul continuous_subtype_val.snd'
+    continuous_subtypeVal.fst'.matrix_mul continuous_subtypeVal.snd'
 
 /-- The realified complex general linear group, the subgroup of `GL (n ⊕ n) ℝ` of invertible real
 matrices commuting with `J`, is path connected. -/

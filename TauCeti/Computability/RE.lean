@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.RE
+public import TauCeti.Data.Nat.Pairing
+import TauCeti.Computability.Primrec.FiniteSet
+import TauCeti.Computability.Primrec.Pairing
 
 /-!
 # Closure properties of computable and c.e. predicates
@@ -21,7 +24,10 @@ computable pieces:
   computable, uniformly in the bound;
 * `ComputablePred.rePred_exists`: an unbounded existential quantifier over a computable predicate
   is c.e., by unbounded search;
-* `Computable.rePred_mem_range`: the range of a total computable function is c.e.
+* `Computable.rePred_mem_range`: the range of a total computable function is c.e.;
+* `Set.Finite.computablePred`, `Set.Infinite.of_not_computablePred`: membership in a finite set is
+  computable, so every noncomputable set is infinite;
+* `Nat.computablePred_mem_pairColumn`: membership in a fixed column `e.pairColumn` is computable.
 
 ## References
 
@@ -68,7 +74,7 @@ theorem exists_lt {p : α → ℕ → Prop} (hp : ComputablePred fun x : α × �
   obtain ⟨a, n⟩ := x
   induction n with
   | zero => simp
-  | succ n ih => simp [ih, Nat.lt_succ_iff_lt_or_eq, or_and_right, exists_or]
+  | succ n ih => simp [ih, Nat.le_iff_lt_or_eq, or_and_right, exists_or]
 
 /-- An unbounded existential quantifier over a computable predicate is c.e.: search for a
 witness. -/
@@ -104,3 +110,19 @@ theorem rePred_mem_range {β : Type*} [Primcodable β] {f : α → β} (hf : Com
     exact ⟨Encodable.encode a, by simp⟩
 
 end Computable
+
+namespace Set
+
+/-- Membership in a finite subset of a primitive-codable type is computable. -/
+theorem Finite.computablePred {A : Set α} (hA : A.Finite) : ComputablePred (· ∈ A) :=
+  hA.primrecPred.computablePred
+
+/-- Every set whose membership predicate is not computable is infinite. -/
+theorem Infinite.of_not_computablePred {A : Set α} (h : ¬ComputablePred (· ∈ A)) : A.Infinite :=
+  fun hfin => h hfin.computablePred
+
+end Set
+
+/-- Membership in a fixed column `e.pairColumn` is computable. -/
+theorem Nat.computablePred_mem_pairColumn (e : ℕ) : ComputablePred (· ∈ e.pairColumn) :=
+  (Primrec.mem_pairColumn.comp (.const e) .id).computablePred

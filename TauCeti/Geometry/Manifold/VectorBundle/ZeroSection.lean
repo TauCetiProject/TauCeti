@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
-public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
+public import TauCeti.Geometry.Manifold.VectorBundle.TotalSpaceMFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!

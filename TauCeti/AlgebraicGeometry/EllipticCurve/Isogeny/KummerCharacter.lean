@@ -77,7 +77,7 @@ noncomputable def kummerCharacter (g : W₁.FunctionFieldˣ)
   -- The kernel translations fix every pulled-back function, in particular `gⁿ`.
   (kerTranslationHom φ).kummerCharacter n g fun S ↦ by
     rw [kerTranslationHom_apply]
-    exact mem_ker_iff.mp (Multiplicative.toAdd S).2 _ hg
+    exact mem_ker_iff.mp (Multiplicative.toAdd S).property _ hg
 
 variable {φ n}
 
@@ -104,7 +104,8 @@ theorem kummerCharacter_eq_one_iff {g : W₁.FunctionFieldˣ}
     φ.kummerCharacter n g hg = 1 ↔ (g : W₁.FunctionField) ∈ translationFixedField W₁ φ.ker := by
   rw [kummerCharacter, MonoidHom.kummerCharacter_eq_one_iff, mem_translationFixedField_iff]
   simp only [kerTranslationHom_apply]
-  exact ⟨fun h S hS ↦ h (Multiplicative.ofAdd ⟨S, hS⟩), fun h S ↦ h _ (Multiplicative.toAdd S).2⟩
+  exact ⟨fun h S hS ↦ h (Multiplicative.ofAdd ⟨S, hS⟩), fun h S ↦ h _
+      (Multiplicative.toAdd S).property⟩
 
 /-- **The Kummer character of a pulled-back function is trivial**: the kernel translations fix
 every pullback. -/

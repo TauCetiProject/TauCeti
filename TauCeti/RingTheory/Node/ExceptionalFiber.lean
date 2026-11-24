@@ -142,7 +142,7 @@ private def divByMem : (maximalIdeal A).affineBlowup x S :=
 /-- Every element of `A[𝔪/x]` is `p + q (y/x)` with `p, q ∈ A`. -/
 private theorem exists_smul_add_smul_divByMem (u : (maximalIdeal A).affineBlowup x S) :
     ∃ p q : A, p • 1 + q • divByMem (S := S) hm = u := by
-  have hu : (u : S) ∈ Subalgebra.toSubmodule ((maximalIdeal A).affineBlowup x S) := u.2
+  have hu : (u : S) ∈ Subalgebra.toSubmodule ((maximalIdeal A).affineBlowup x S) := u.property
   rw [toSubmodule_affineBlowup_eq_span hm hrel] at hu
   obtain ⟨p, q, hpq⟩ := Submodule.mem_span_pair.mp hu
   exact ⟨p, q, Subtype.ext (by simpa [divByMem] using hpq)⟩

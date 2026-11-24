@@ -98,8 +98,9 @@ variable [NonarchimedeanRing K]
 its linear factors. -/
 private theorem valuation_eval₂RingHom_eq (x : closedPolydisc 1 K) {p : Polynomial K}
     (hroots : Multiset.card p.roots = p.natDegree) :
-    x.1.valuation (Polynomial.eval₂RingHom C T p) =
-      x.1.valuation (C p.leadingCoeff) * (p.roots.map fun α ↦ x.1.valuation (T - C α)).prod := by
+    x.val.valuation (Polynomial.eval₂RingHom C T p) =
+      x.val.valuation (C p.leadingCoeff) * (p.roots.map fun α ↦ x.val.valuation (T - C α)).prod
+          := by
   rw [Polynomial.coe_eval₂RingHom,
     Polynomial.Splits.eval₂_eq_prod_roots (Polynomial.splits_iff_card_roots.mpr hroots), map_mul,
     map_multiset_prod, Multiset.map_map, Function.comp_def]
@@ -108,8 +109,8 @@ private theorem valuation_eval₂RingHom_eq (x : closedPolydisc 1 K) {p : Polyno
 split polynomial is at most `x(u) ∏_α max (x(T - b)) (x(b - α))`. -/
 private theorem valuation_eval₂RingHom_le (x : closedPolydisc 1 K) {p : Polynomial K}
     (hroots : Multiset.card p.roots = p.natDegree) (b : K) :
-    x.1.valuation (Polynomial.eval₂RingHom C T p) ≤ x.1.valuation (C p.leadingCoeff) *
-      (p.roots.map fun α ↦ max (x.1.valuation (T - C b)) (x.1.valuation (C (b - α)))).prod := by
+    x.val.valuation (Polynomial.eval₂RingHom C T p) ≤ x.val.valuation (C p.leadingCoeff) *
+      (p.roots.map fun α ↦ max (x.val.valuation (T - C b)) (x.val.valuation (C (b - α)))).prod := by
   rw [valuation_eval₂RingHom_eq x hroots]
   refine mul_le_mul_right (Multiset.prod_map_le_prod_map _ _ fun α _ ↦ ?_) _
   rw [show T - C α = (T - C b) + C (b - α) by rw [map_sub]; ring]
@@ -120,9 +121,9 @@ then `x(T - α) = max (x(T - b)) (x(b - α))` for every root, and the bound at `
 the polynomial. -/
 theorem valuation_eval₂RingHom_eq_of_forall_le (x : closedPolydisc 1 K) {p : Polynomial K}
     (hroots : Multiset.card p.roots = p.natDegree) {b : K}
-    (hb : ∀ α ∈ p.roots, x.1.valuation (T - C b) ≤ x.1.valuation (T - C α)) :
-    x.1.valuation (Polynomial.eval₂RingHom C T p) = x.1.valuation (C p.leadingCoeff) *
-      (p.roots.map fun α ↦ max (x.1.valuation (T - C b)) (x.1.valuation (C (b - α)))).prod := by
+    (hb : ∀ α ∈ p.roots, x.val.valuation (T - C b) ≤ x.val.valuation (T - C α)) :
+    x.val.valuation (Polynomial.eval₂RingHom C T p) = x.val.valuation (C p.leadingCoeff) *
+      (p.roots.map fun α ↦ max (x.val.valuation (T - C b)) (x.val.valuation (C (b - α)))).prod := by
   refine (valuation_eval₂RingHom_le x hroots b).antisymm ?_
   rw [valuation_eval₂RingHom_eq x hroots]
   refine mul_le_mul_right (Multiset.prod_map_le_prod_map _ _ fun α hα ↦ max_le (hb α hα) ?_) _
@@ -134,11 +135,12 @@ theorem valuation_eval₂RingHom_eq_of_forall_le (x : closedPolydisc 1 K) {p : P
 roots satisfies the hypothesis of `valuation_eval₂RingHom_eq_of_forall_le`. -/
 private theorem exists_mem_roots_valuation_eval₂RingHom_eq (x : closedPolydisc 1 K)
     {p : Polynomial K} (hroots : Multiset.card p.roots = p.natDegree) (hp : 0 < p.natDegree) :
-    ∃ b ∈ p.roots, x.1.valuation (Polynomial.eval₂RingHom C T p) =
-      x.1.valuation (C p.leadingCoeff) *
-        (p.roots.map fun α ↦ max (x.1.valuation (T - C b)) (x.1.valuation (C (b - α)))).prod := by
+    ∃ b ∈ p.roots, x.val.valuation (Polynomial.eval₂RingHom C T p) =
+      x.val.valuation (C p.leadingCoeff) *
+        (p.roots.map fun α ↦ max (x.val.valuation (T - C b)) (x.val.valuation (C (b - α)))).prod
+            := by
   classical
-  obtain ⟨b, hb, hmin⟩ := p.roots.toFinset.exists_min_image (fun α ↦ x.1.valuation (T - C α))
+  obtain ⟨b, hb, hmin⟩ := p.roots.toFinset.exists_min_image (fun α ↦ x.val.valuation (T - C α))
     (Multiset.toFinset_nonempty.mpr (Multiset.card_pos.mp (hroots ▸ hp)))
   exact ⟨b, Multiset.mem_toFinset.mp hb, valuation_eval₂RingHom_eq_of_forall_le x hroots
     fun α hα ↦ hmin α (Multiset.mem_toFinset.mpr hα)⟩
@@ -150,38 +152,42 @@ omit [IsUltrametricDist K] in
 replacing `x(f)` by a larger `x(g)` strictly increases `x(u) ∏_{α ∈ S} max (x(f)) (x(b - α))`,
 since the factor at `α = b` is `x(f)` itself. -/
 private theorem valuation_mul_prod_map_max_lt (x : closedPolydisc 1 K) {S : Multiset K} {u b : K}
-    (hu : u ≠ 0) (hb : b ∈ S) {f g : 𝒯} (h : x.1.valuation f < x.1.valuation g) :
-    x.1.valuation (C u) * (S.map fun α ↦ max (x.1.valuation f) (x.1.valuation (C (b - α)))).prod <
-      x.1.valuation (C u) *
-        (S.map fun α ↦ max (x.1.valuation g) (x.1.valuation (C (b - α)))).prod := by
+    (hu : u ≠ 0) (hb : b ∈ S) {f g : 𝒯} (h : x.val.valuation f < x.val.valuation g) :
+    x.val.valuation (C u) * (S.map fun α ↦ max (x.val.valuation f) (x.val.valuation (C
+        (b - α)))).prod <
+      x.val.valuation (C u) *
+        (S.map fun α ↦ max (x.val.valuation g) (x.val.valuation (C (b - α)))).prod := by
   refine mul_lt_mul_of_pos_left ?_
-    (zero_lt_iff.mpr fun h0 ↦ hu ((closedPolydisc_valuation_weightedC_eq_zero_iff x u).mp h0))
+    (pos_iff_ne_zero.mpr fun h0 ↦ hu ((closedPolydisc_valuation_weightedC_eq_zero_iff x u).mp h0))
   obtain ⟨S, rfl⟩ := Multiset.exists_cons_of_mem hb
   simp only [Multiset.map_cons, Multiset.prod_cons, sub_self, map_zero, max_eq_left zero_le]
-  have hpos : 0 < (S.map fun α ↦ max (x.1.valuation g) (x.1.valuation (C (b - α)))).prod := by
-    refine zero_lt_iff.mpr (Multiset.prod_ne_zero fun h0 ↦ ?_)
+  have hpos : 0 < (S.map fun α ↦ max (x.val.valuation g) (x.val.valuation (C (b - α)))).prod := by
+    refine pos_iff_ne_zero.mpr (Multiset.prod_ne_zero fun h0 ↦ ?_)
     obtain ⟨α, -, hα⟩ := Multiset.mem_map.mp h0
-    exact (zero_le.trans_lt h).ne' (le_zero_iff.mp (hα ▸ le_max_left _ _))
-  calc x.1.valuation f * (S.map fun α ↦ max (x.1.valuation f) (x.1.valuation (C (b - α)))).prod
-      ≤ x.1.valuation f * (S.map fun α ↦ max (x.1.valuation g) (x.1.valuation (C (b - α)))).prod :=
+    exact (zero_le.trans_lt h).ne' (nonpos_iff_eq_zero.mp (hα ▸ le_max_left _ _))
+  calc x.val.valuation f * (S.map fun α ↦ max (x.val.valuation f) (x.val.valuation (C
+      (b - α)))).prod
+      ≤ x.val.valuation f * (S.map fun α ↦ max (x.val.valuation g) (x.val.valuation (C
+          (b - α)))).prod :=
         mul_le_mul_right (Multiset.prod_map_le_prod_map _ _ fun _ _ ↦ max_le_max_right _ h.le) _
-    _ < x.1.valuation g * (S.map fun α ↦ max (x.1.valuation g) (x.1.valuation (C (b - α)))).prod :=
+    _ < x.val.valuation g * (S.map fun α ↦ max (x.val.valuation g) (x.val.valuation (C
+        (b - α)))).prod :=
         mul_lt_mul_of_pos_right h hpos
 
 /-- **The bound at the radius**: if `‖u‖ ∏_{α ∈ S} max ‖d‖ ‖b - α‖ = ‖c‖`, then
 `x(u) ∏_{α ∈ S} max (x(d)) (x(b - α)) = x(c)`. -/
 private theorem valuation_mul_prod_map_max_eq (x : closedPolydisc 1 K) {S : Multiset K}
     {u b c d : K} (hd : ‖u‖ * (S.map fun α ↦ max ‖d‖ ‖b - α‖).prod = ‖c‖) :
-    x.1.valuation (C u) *
-        (S.map fun α ↦ max (x.1.valuation (C d)) (x.1.valuation (C (b - α)))).prod =
-      x.1.valuation (C c) := by
+    x.val.valuation (C u) *
+        (S.map fun α ↦ max (x.val.valuation (C d)) (x.val.valuation (C (b - α)))).prod =
+      x.val.valuation (C c) := by
   set e : K → K := fun α ↦ if ‖d‖ ≤ ‖b - α‖ then b - α else d
   have he (α : K) : ‖e α‖ = max ‖d‖ ‖b - α‖ := by
     simp only [e]
     split_ifs with h
     exacts [(max_eq_right h).symm, (max_eq_left (le_of_not_ge h)).symm]
-  have hprod : x.1.valuation (C u) * (S.map fun α ↦ x.1.valuation (C (e α))).prod =
-      x.1.valuation (C (u * (S.map e).prod)) := by
+  have hprod : x.val.valuation (C u) * (S.map fun α ↦ x.val.valuation (C (e α))).prod =
+      x.val.valuation (C (u * (S.map e).prod)) := by
     rw [map_mul, map_mul, map_multiset_prod, map_multiset_prod, Multiset.map_map, Multiset.map_map]
     simp only [Function.comp_def]
   simp only [closedPolydisc_max_valuation_weightedC]
@@ -202,7 +208,7 @@ theorem setOf_eval₂RingHom_vle_weightedC_eq_iUnion_closedSubdisc
     (hroots : Multiset.card p.roots = p.natDegree) (hp : 0 < p.natDegree) (hc : c ≠ 0)
     (hd : ∀ b ∈ p.roots,
       ‖p.leadingCoeff‖ * (p.roots.map fun α ↦ max ‖d b‖ ‖b - α‖).prod = ‖c‖) :
-    {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) (C c)} =
+    {x : closedPolydisc 1 K | x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) (C c)} =
       ⋃ b ∈ p.roots, closedSubdisc b (d b) := by
   have hu := Polynomial.leadingCoeff_ne_zero.mpr (Polynomial.ne_zero_of_natDegree_gt hp)
   ext x
@@ -216,7 +222,7 @@ theorem setOf_eval₂RingHom_vle_weightedC_eq_iUnion_closedSubdisc
       have key := valuation_mul_prod_map_max_lt x hu hb hlt
       rw [valuation_mul_prod_map_max_eq x (hd b hb), ← hval] at key
       exact key.not_ge ((valuation_le_iff _ _ _).mpr h)
-    · rw [← map_zero C, ← valuation_le_iff, map_zero C, map_zero, le_zero_iff,
+    · rw [← map_zero C, ← valuation_le_iff, map_zero C, map_zero, nonpos_iff_eq_zero,
         closedPolydisc_valuation_weightedC_eq_zero_iff] at h0
       exact ne_zero_of_norm_mul_prod_map_max_eq hb (hd b hb) hc h0
   · rintro ⟨b, hb, h, -⟩
@@ -234,8 +240,8 @@ theorem setOf_weightedC_vle_eval₂RingHom_eq_iInter
     (hroots : Multiset.card p.roots = p.natDegree) (hp : 0 < p.natDegree)
     (hd : ∀ b ∈ p.roots,
       ‖p.leadingCoeff‖ * (p.roots.map fun α ↦ max ‖d b‖ ‖b - α‖).prod = ‖c‖) :
-    {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C c) (Polynomial.eval₂RingHom C T p)} =
-      ⋂ b ∈ p.roots, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C (d b)) (T - C b)} := by
+    {x : closedPolydisc 1 K | x.val.toValuativeRel.vle (C c) (Polynomial.eval₂RingHom C T p)} =
+      ⋂ b ∈ p.roots, {x : closedPolydisc 1 K | x.val.toValuativeRel.vle (C (d b)) (T - C b)} := by
   have hu := Polynomial.leadingCoeff_ne_zero.mpr (Polynomial.ne_zero_of_natDegree_gt hp)
   ext x
   simp only [Set.mem_ofPred_eq, Set.mem_iInter, ← valuation_le_iff]
@@ -258,10 +264,10 @@ set of points with `x(d b) ≤ x(T - b)` for every root `b`. -/
 theorem exists_setOf_vle_eq_iUnion_closedSubdisc_and_setOf_vle_eq_iInter [IsAlgClosed K]
     (hp : 0 < p.natDegree) (hc : c ≠ 0) :
     ∃ d : K → K, (∀ b ∈ p.roots, d b ≠ 0) ∧
-      {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) (C c)} =
+      {x : closedPolydisc 1 K | x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) (C c)} =
         ⋃ b ∈ p.roots, closedSubdisc b (d b) ∧
-      {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C c) (Polynomial.eval₂RingHom C T p)} =
-        ⋂ b ∈ p.roots, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (C (d b)) (T - C b)} := by
+      {x : closedPolydisc 1 K | x.val.toValuativeRel.vle (C c) (Polynomial.eval₂RingHom C T p)} =
+        ⋂ b ∈ p.roots, {x : closedPolydisc 1 K | x.val.toValuativeRel.vle (C (d b)) (T - C b)} := by
   have hroots := IsAlgClosed.card_roots_eq_natDegree (p := p)
   have hu : p.leadingCoeff ≠ 0 :=
     Polynomial.leadingCoeff_ne_zero.mpr (Polynomial.ne_zero_of_natDegree_gt hp)

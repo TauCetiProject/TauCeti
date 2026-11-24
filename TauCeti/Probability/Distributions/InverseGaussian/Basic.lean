@@ -7,10 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
-public import TauCeti.Probability.Density
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Probability.Distributions.Affine
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The inverse Gaussian distribution
@@ -459,7 +459,8 @@ theorem integrable_inverseGaussianMeasure_iff (μ lam : ℝ) {g : ℝ → E} :
     Integrable g (inverseGaussianMeasure μ lam) ↔
       Integrable (fun x ↦ inverseGaussianPDFReal μ lam x • g x) := by
   rw [inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam)]
-  exact integrable_withDensity_ofReal_iff (measurable_inverseGaussianPDFReal μ lam).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
+    (measurable_inverseGaussianPDFReal μ lam).aemeasurable
     (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
 
 /-- **Integral transfer.** An integral against an inverse Gaussian law is the density-weighted
@@ -467,7 +468,8 @@ Lebesgue integral, at every parameter. -/
 theorem integral_inverseGaussianMeasure_eq (μ lam : ℝ) (g : ℝ → E) :
     ∫ x, g x ∂inverseGaussianMeasure μ lam = ∫ x, inverseGaussianPDFReal μ lam x • g x := by
   rw [inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam)]
-  exact integral_withDensity_ofReal (measurable_inverseGaussianPDFReal μ lam).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal
+    (measurable_inverseGaussianPDFReal μ lam).aemeasurable
     (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam)) g
 
 end Transfer
@@ -512,8 +514,8 @@ theorem cdf_inverseGaussianMeasure_of_pos (hμ : 0 < μ) (hlam : 0 < lam) (hx : 
   have := isProbabilityMeasure_inverseGaussianMeasure hμ hlam
   rw [cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ,
     inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam),
-    measureReal_withDensity_ofReal (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
-      measurableSet_Ioi (measurable_inverseGaussianPDFReal μ lam).aemeasurable,
+    MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (inverseGaussianPDFReal_nonneg μ lam))
+      nullMeasurableSet_Ioi (measurable_inverseGaussianPDFReal μ lam).aemeasurable,
     integral_Ioi_inverseGaussianPDFReal_of_pos hμ hlam hx, sub_sub_cancel, cdfFormula]
 
 /-- At positive parameters, the inverse Gaussian cdf vanishes on the nonpositive half-line. -/

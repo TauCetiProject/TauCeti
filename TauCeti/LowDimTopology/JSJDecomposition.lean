@@ -300,7 +300,7 @@ theorem JSJTheorem.card_eq {n n' : ℕ} {T : Fin n → C(Circle × Circle, M)}
       Nat.card (ConnectedComponents (⋃ i, range (S i))) = k := by
     refine (natCard_connectedComponents_eq_of_iUnion_eq_univ
       (U := fun i ↦ Subtype.val ⁻¹' range (S i))
-      (fun i ↦ (isCompact_range (S i).continuous).isClosed.preimage continuous_subtype_val)
+      (fun i ↦ (isCompact_range (S i).continuous).isClosed.preimage continuous_subtypeVal)
       (fun i j hij ↦ (hS hij).preimage _) ?_ fun i ↦ ?_).trans (Nat.card_fin k)
     · ext ⟨x, hx⟩
       simpa using hx
