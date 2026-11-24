@@ -231,9 +231,8 @@ private theorem norm_sum_curvature_le {σ : Π y : M, V y} (x : M) {ι : Type*} 
     rw [hAdef, Real.sq_sqrt (cov.innerCovariantDerivative_self_nonneg σ x),
       cov.innerCovariantDerivative_eq_sum σ σ x b]
     simp only [real_inner_self_eq_norm_sq]
-  -- `∇σ` has operator norm at most `A = |∇σ|`, so each `‖∇_{eᵢ} σ‖ ≤ A`.
-  have hop := (cov σ x).le_of_opNorm_le (cov.norm_le_sqrt_innerCovariantDerivative σ x)
-  have ha (i : ι) : ‖cov σ x (b i)‖ ≤ A := by simpa [b.orthonormal.1 i] using hop (b i)
+  have ha (i : ι) : ‖cov σ x (b i)‖ ≤ A :=
+    cov.norm_apply_orthonormalBasis_le_sqrt_innerCovariantDerivative σ x b i
   -- The curvature of `∇` acting on `∇_{eᵢ} σ`.
   have hRa (i j : ι) : ‖cov.curvatureTensor x (b j) (b i) (cov σ x (b i))‖ ≤ cR * A := by
     rcases le_or_gt 0 cR with hcR | hcR
@@ -250,7 +249,8 @@ private theorem norm_sum_curvature_le {σ : Π y : M, V y} (x : M) {ι : Type*} 
         simp [h0 (cov σ x _)]
       simp [h0 (cov σ x (b i)), hA]
   have hRT' (i j : ι) : ‖cov σ x ((∇ᵀ).curvatureTensor x (b j) (b i) (b i))‖ ≤ A * cT := by
-    refine (hop _).trans (mul_le_mul_of_nonneg_left ?_ hA0)
+    refine (cov.norm_apply_le_sqrt_innerCovariantDerivative σ x _).trans
+      (mul_le_mul_of_nonneg_left ?_ hA0)
     refine (hRT _ _ _).trans_eq ?_
     rw [b.orthonormal.1 j, b.orthonormal.1 i, mul_one, mul_one, mul_one]
   -- The bound on the curvature term `Kⱼ` of the Bochner formula.
@@ -296,9 +296,8 @@ theorem neg_laplaceBeltrami_innerCovariantDerivative_self_div_two_add_le
           √(cov.innerCovariantDerivative σ σ x) + D) * √(cov.innerCovariantDerivative σ σ x) := by
   rw [hcov.laplaceBeltrami_innerCovariantDerivative_self hσ x b]
   set A := √(cov.innerCovariantDerivative σ σ x)
-  have ha (i : ι) : ‖cov σ x (b i)‖ ≤ A := by
-    simpa [b.orthonormal.1 i] using
-      (cov σ x).le_of_opNorm_le (cov.norm_le_sqrt_innerCovariantDerivative σ x) (b i)
+  have ha (i : ι) : ‖cov σ x (b i)‖ ≤ A :=
+    cov.norm_apply_orthonormalBasis_le_sqrt_innerCovariantDerivative σ x b i
   have hK := norm_sum_curvature_le x b hR hRT hD
   have hKa : ∑ j, ⟪∑ i, ((2 : ℝ) • cov.curvatureTensor x (b j) (b i) (cov σ x (b i)) +
       cov.derivCurvatureTensor (∇ᵀ) x (b i) (b j) (b i) (σ x) -

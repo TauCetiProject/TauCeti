@@ -6,6 +6,7 @@ Authors: Otis Chodosh, The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Norm
 
 /-!
 # Differentiating the squared norm of a Riemannian gradient
@@ -48,11 +49,7 @@ theorem mvfderiv_norm_sq_mgradient (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
   have hG : MDiffAt (T% (mgradient I f)) x :=
     (contMDiffAt_mgradient (n := 1) hf).mdifferentiableAt (by simp)
-  have hm := (isMetricCompatible_leviCivitaConnection I (M := M)).mvfderiv_inner_eq
-    (FiberBundle.extend E v) hG hG
-  simp only [FiberBundle.extend_apply_self, real_inner_self_eq_norm_sq] at hm
-  rw [real_inner_comm (leviCivitaConnection I M (mgradient I f) x v)] at hm
-  linarith only [hm]
+  exact (isMetricCompatible_leviCivitaConnection I (M := M)).mvfderiv_norm_sq hG v
 
 /-- The gradient of the squared gradient norm is twice the covariant derivative of the
 original gradient in its own direction. -/

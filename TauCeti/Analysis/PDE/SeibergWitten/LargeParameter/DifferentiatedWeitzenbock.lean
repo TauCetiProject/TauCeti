@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.GradientBound
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Bochner
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.MaximumPrinciple
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Norm
 
 /-!
@@ -203,12 +204,10 @@ theorem neg_laplaceBeltrami_innerCovariantDerivative_self_div_two_add_le_of_roug
   set G := √(cov₂.innerCovariantDerivative β β x)
   refine (Finset.sum_le_card_nsmul _ _ (r / 4 * A ^ 2 + r / 2 * B ^ 2 * (A + G) * A + Da * A)
     fun j _ ↦ ?_).trans_eq (by simp [mul_add])
-  have ha : ‖cov₁ α x (b j)‖ ≤ A := by
-    simpa [b.orthonormal.1 j] using
-      (cov₁ α x).le_of_opNorm_le (cov₁.norm_le_sqrt_innerCovariantDerivative α x) (b j)
-  have hg : ‖cov₂ β x (b j)‖ ≤ G := by
-    simpa [b.orthonormal.1 j] using
-      (cov₂ β x).le_of_opNorm_le (cov₂.norm_le_sqrt_innerCovariantDerivative β x) (b j)
+  have ha : ‖cov₁ α x (b j)‖ ≤ A :=
+    cov₁.norm_apply_orthonormalBasis_le_sqrt_innerCovariantDerivative α x b j
+  have hg : ‖cov₂ β x (b j)‖ ≤ G :=
+    cov₂.norm_apply_orthonormalBasis_le_sqrt_innerCovariantDerivative β x b j
   have hB : 0 ≤ B := (norm_nonneg _).trans hαB
   have h1 : r / 4 * (1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2) * ‖cov₁ α x (b j)‖ ^ 2 ≤ r / 4 * A ^ 2 := by
     have : 1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2 ≤ 1 := by nlinarith [norm_nonneg (α x), norm_nonneg (β x)]
@@ -263,12 +262,10 @@ theorem neg_laplaceBeltrami_innerCovariantDerivative_self_div_two_add_le_of_roug
   set G := √(cov₂.innerCovariantDerivative β β x)
   refine (Finset.sum_le_card_nsmul _ _ (r / 2 * B * ‖β x‖ * (A + G) * G + Db * G)
     fun j _ ↦ ?_).trans_eq (by simp [mul_add])
-  have ha : ‖cov₁ α x (b j)‖ ≤ A := by
-    simpa [b.orthonormal.1 j] using
-      (cov₁ α x).le_of_opNorm_le (cov₁.norm_le_sqrt_innerCovariantDerivative α x) (b j)
-  have hg : ‖cov₂ β x (b j)‖ ≤ G := by
-    simpa [b.orthonormal.1 j] using
-      (cov₂ β x).le_of_opNorm_le (cov₂.norm_le_sqrt_innerCovariantDerivative β x) (b j)
+  have ha : ‖cov₁ α x (b j)‖ ≤ A :=
+    cov₁.norm_apply_orthonormalBasis_le_sqrt_innerCovariantDerivative α x b j
+  have hg : ‖cov₂ β x (b j)‖ ≤ G :=
+    cov₂.norm_apply_orthonormalBasis_le_sqrt_innerCovariantDerivative β x b j
   have hB : 0 ≤ B := (norm_nonneg _).trans hαB
   have h1 : r / 4 * (-1 - ‖β x‖ ^ 2 - ‖α x‖ ^ 2) * ‖cov₂ β x (b j)‖ ^ 2 ≤ 0 :=
     mul_nonpos_of_nonpos_of_nonneg (mul_nonpos_of_nonneg_of_nonpos (by positivity)
@@ -476,8 +473,7 @@ private theorem secondOrder_canonical_le (hcov₁ : cov₁.IsMetricCompatible)
     (Da := c * (N + A + G + 1)) fun j ↦ ((cov₁ 𝔞 y).le_opNorm (b j)).trans
       (by rw [b.orthonormal.1 j, mul_one]; exact h𝔞₁)
   -- The tangent space `TangentSpace I y` is the model space `E`, with the same dimension.
-  rw [show (Fintype.card (Fin (finrank ℝ (TangentSpace I y))) : ℝ) = finrank ℝ E by
-    rw [Fintype.card_fin]; rfl, hA, hG] at h
+  simp only [Fintype.card_fin, finrank_tangentSpace, hA, hG] at h
   have h2 := canonical_arith_le (n := finrank ℝ E) (B := B) (A := A) (G := G) (N := N)
     (by exact_mod_cast Nat.le_self_pow two_ne_zero (finrank ℝ E)) hr hc
     (hA ▸ Real.sqrt_nonneg _) (hG ▸ Real.sqrt_nonneg _) (hN ▸ Real.sqrt_nonneg _)
@@ -521,8 +517,7 @@ private theorem secondOrder_complement_le (hcov₁ : cov₁.IsMetricCompatible)
     (Db := c * (N + A + G + 1)) fun j ↦ ((cov₂ 𝔟 y).le_opNorm (b j)).trans
       (by rw [b.orthonormal.1 j, mul_one]; exact h𝔟₁)
   -- The tangent space `TangentSpace I y` is the model space `E`, with the same dimension.
-  rw [show (Fintype.card (Fin (finrank ℝ (TangentSpace I y))) : ℝ) = finrank ℝ E by
-    rw [Fintype.card_fin]; rfl, hA, hG] at h
+  simp only [Fintype.card_fin, finrank_tangentSpace, hA, hG] at h
   have h2 := complement_arith_le (n := finrank ℝ E) (B := B) (A := A) (G := G) (N := N)
     (Nat.cast_nonneg _) (by exact_mod_cast Nat.le_self_pow two_ne_zero (finrank ℝ E)) hr hc
     ((norm_nonneg _).trans hαB) (norm_nonneg (β y)) (hA ▸ Real.sqrt_nonneg _)
