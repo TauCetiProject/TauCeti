@@ -22,6 +22,7 @@ lemmas `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_refl`,
 `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_symm`,
 `LinearMap.BilinForm.IsometryEquiv.coe_symm_toLinearEquiv`,
 `LinearMap.BilinForm.IsometryEquiv.toLinearEquiv_trans`,
+`LinearMap.BilinForm.IsometryEquiv.refl_apply`,
 `LinearMap.BilinForm.IsometryEquiv.trans_apply`,
 `LinearMap.BilinForm.IsometryEquiv.symm_apply_apply` and
 `LinearMap.BilinForm.IsometryEquiv.apply_symm_apply` for Mathlib's isometric equivalences, which
@@ -182,6 +183,11 @@ their underlying linear equivalences. -/
 @[simp]
 theorem toLinearEquiv_trans (f : B₁.IsometryEquiv B₂) (g : B₂.IsometryEquiv B₃) :
     (f.trans g).toLinearEquiv = f.toLinearEquiv.trans g.toLinearEquiv :=
+  (rfl)
+
+/-- The identity isometric equivalence fixes every vector. -/
+@[simp]
+theorem refl_apply (B : BilinForm R M₁) (x : M₁) : IsometryEquiv.refl B x = x :=
   (rfl)
 
 /-- A composite of isometric equivalences applies the first and then the second. -/
