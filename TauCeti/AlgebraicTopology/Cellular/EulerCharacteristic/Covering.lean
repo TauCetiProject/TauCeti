@@ -46,7 +46,7 @@ space of finite CW type.
 * `TauCeti.eulerChar_preimage_of_card_fiber`: the same for the Euler characteristics of the spaces.
 * `TauCeti.eulerChar_eq_mul_of_isCoveringMap`: **finite-cover multiplicativity**, `χ(E) = d · χ(B)`
   for a `d`-sheeted cover of a space `B` of finite CW type.
-* `IsCoveringMap.genus_sub_one_eq_mul_add_emod`: when `χ(E), χ(B) ≤ 2`, the exact formula
+* `IsCoveringMap.genus_sub_one_eq_mul_add_emod`: when `χ(E) ≤ 2`, the exact formula
   `g(E) - 1 = d · (g(B) - 1) + d · (χ(B) % 2) / 2`, with integer division. The correction
   vanishes for even `χ(B)` and records the effect of rounding for odd `χ(B)`.
 
@@ -168,18 +168,24 @@ open TauCeti
 variable {E B : Type u} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 
 /-- **The genus formula with its parity correction.** For a `d`-sheeted finite cover with
-both Euler characteristics at most two, the discrepancy from `g(E) - 1 = d * (g(B) - 1)`
+total-space Euler characteristic at most two, the discrepancy from `g(E) - 1 = d * (g(B) - 1)`
 is `d * (χ(B) % 2) / 2`. In particular the discrepancy vanishes when `χ(B)` is even.
 No orientability or cap-duality hypothesis is needed for this corrected formula. -/
 theorem genus_sub_one_eq_mul_add_emod [FiniteCWType B] (hp : IsCoveringMap p)
     (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) {d : ℕ}
-    (hd : ∀ b, Nat.card ↥(p ⁻¹' {b}) = d) (hB : eulerChar B ≤ 2)
+    (hd : ∀ b, Nat.card ↥(p ⁻¹' {b}) = d)
     (hE : letI := hp.finiteCWType hfin; eulerChar E ≤ 2) :
     letI := hp.finiteCWType hfin
     (RiemannSurface.genus E : ℤ) - 1 =
       d * ((RiemannSurface.genus B : ℤ) - 1) + d * (eulerChar B % 2) / 2 := by
   let := hp.finiteCWType hfin
   have hχ := eulerChar_eq_mul_of_isCoveringMap hp hfin hd
+  by_cases hd0 : d = 0
+  · subst d
+    simp only [Nat.cast_zero, zero_mul] at hχ ⊢
+    simp [RiemannSurface.genus_def, hχ]
+  have hdpos : (1 : ℤ) ≤ d := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hd0
+  have hB : eulerChar B ≤ 2 := by nlinarith
   have hgenB := RiemannSurface.two_mul_genus_eq_sub_emod hB
   have hgenB' := congrArg ((d : ℤ) * ·) hgenB
   have hgenE := RiemannSurface.two_mul_genus_eq_sub_emod hE
