@@ -121,8 +121,6 @@ theorem BorelComplete.borelReducible {L' : Language.{u', v'}} [L'.IsRelational]
     (hK : BorelComplete K) (hm : MeasurableSet K') (hi : IsomorphismInvariant K') :
     (classIso K').BorelReducible (classIso K) := by
   let e := L'.smallPresentationEquiv
-  have : ∀ n, Countable (L'.smallPresentation.Relations n) := fun n =>
-    Countable.of_equiv _ (equivShrink.{0} (L'.Relations n))
   have hiso : ∀ c d, isoSetoid _ ℕ (e.onConfigurationMeasurableEquiv c)
       (e.onConfigurationMeasurableEquiv d) ↔ isoSetoid L' ℕ c d := fun _ _ => by
     rw [LEquiv.coe_onConfigurationMeasurableEquiv, e.isoSetoid_onConfiguration_iff]

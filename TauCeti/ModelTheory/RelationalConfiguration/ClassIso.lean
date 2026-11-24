@@ -154,20 +154,6 @@ theorem borelBireducible_classIso_image_relabel {β : Type w'} (e : α ≃ β)
   rw [← coe_relabelMeasurableEquiv]
   exact borelBireducible_classIso_image _ (fun _ _ => by simp) K
 
-/-- Relabelling along a bijection of carriers carries isomorphism-invariant classes to
-isomorphism-invariant classes. -/
-theorem IsomorphismInvariant.image_relabel {β : Type w'} (hK : IsomorphismInvariant K)
-    (e : α ≃ β) : IsomorphismInvariant (relabel e '' K) :=
-  hK.image (relabel e).toEquiv fun _ _ => isoSetoid_relabel_iff e
-
-omit [L.IsRelational] in
-/-- The relabelling of a class along a bijection of carriers is measurable exactly when the class
-is. -/
-@[simp]
-theorem measurableSet_image_relabel_iff {β : Type w'} (e : α ≃ β) :
-    MeasurableSet (relabel e '' K) ↔ MeasurableSet K := by
-  simpa using (relabelMeasurableEquiv (L := L) e).measurableSet_image (s := K)
-
 /-- Isomorphism on the empty class is Borel reducible to isomorphism on every class, through the
 empty map. -/
 theorem classIso_empty_borelReducible {L' : Language.{u', v'}} [L'.IsRelational] {β : Type w'}

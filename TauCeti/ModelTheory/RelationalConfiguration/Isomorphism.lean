@@ -322,6 +322,12 @@ theorem IsomorphismInvariant.image {L' : Language.{u', v'}} [L'.IsRelational] {W
   obtain ⟨d, rfl⟩ := f.surjective d
   exact ⟨d, hA ((hf c d).1 h) hc, rfl⟩
 
+/-- Relabelling along a bijection of carriers carries isomorphism-invariant classes to
+isomorphism-invariant classes. -/
+theorem IsomorphismInvariant.image_relabel {W : Type w'} (hA : IsomorphismInvariant A)
+    (e : V ≃ W) : IsomorphismInvariant (relabel e '' A) :=
+  hA.image (relabel e).toEquiv fun _ _ => isoSetoid_relabel_iff e
+
 omit [L.IsRelational] in
 /-- On a countable carrier the saturation of an analytic set of configurations under the logic
 action is analytic, for every language: the permutation group of the discrete carrier is Polish

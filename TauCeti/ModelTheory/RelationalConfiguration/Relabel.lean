@@ -32,7 +32,8 @@ isomorphism relations up to Borel bireducibility.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.relabel_trans` and
+* `TauCeti.RelationalConfiguration.relabel_trans`,
+  `TauCeti.RelationalConfiguration.relabel_relabel` and
   `TauCeti.RelationalConfiguration.relabel_refl`: relabelling is functorial.
 * `TauCeti.RelationalConfiguration.relabel_perm`: along a permutation it is the logic action.
 * `TauCeti.RelationalConfiguration.relabel_eq_encodeVia`: it encodes the transported decoded
@@ -88,12 +89,28 @@ theorem relabel_symm (e : α ≃ β) : (relabel (L := L) e).symm = relabel e.sym
 theorem relabel_refl : relabel (L := L) (Equiv.refl α) = Homeomorph.refl _ :=
   Homeomorph.ext fun c => by simp [coe_relabel]
 
+/-- Relabelling along `e` and then along `e'` is relabelling along the composite bijection. -/
+@[simp]
+theorem relabel_relabel (e : α ≃ β) (e' : β ≃ γ) (c : RelationalConfiguration L α) :
+    relabel e' (relabel e c) = relabel (e.trans e') c := by
+  simp [coe_relabel, restrict_comp]
+
 /-- Relabelling along a composite bijection is the composite of the relabellings. -/
 theorem relabel_trans (e : α ≃ β) (e' : β ≃ γ) :
     relabel (L := L) (e.trans e') = (relabel e).trans (relabel e') :=
-  Homeomorph.ext fun c => by
-    rw [Homeomorph.trans_apply, coe_relabel, coe_relabel, coe_relabel, Equiv.symm_trans,
-      Equiv.coe_trans, restrict_comp]
+  Homeomorph.ext fun c => (relabel_relabel e e' c).symm
+
+/-- Relabelling along `e.symm` undoes relabelling along `e`. Not `@[simp]`: `relabel_relabel`,
+`Equiv.self_trans_symm` and `relabel_refl` already simplify the round trip. -/
+theorem relabel_symm_relabel (e : α ≃ β) (c : RelationalConfiguration L α) :
+    relabel e.symm (relabel e c) = c :=
+  (relabel e).symm_apply_apply c
+
+/-- Relabelling along `e` undoes relabelling along `e.symm`. Not `@[simp]`: `relabel_relabel`,
+`Equiv.symm_trans_self` and `relabel_refl` already simplify the round trip. -/
+theorem relabel_relabel_symm (e : α ≃ β) (c : RelationalConfiguration L β) :
+    relabel e (relabel e.symm c) = c :=
+  (relabel e).apply_symm_apply c
 
 /-- Relabelling along a permutation of the carrier is the logic action. -/
 @[simp]
@@ -125,6 +142,13 @@ theorem coe_relabelMeasurableEquiv (e : α ≃ β) :
 theorem coe_relabelMeasurableEquiv_symm (e : α ≃ β) :
     ⇑(relabelMeasurableEquiv (L := L) e).symm = relabel e.symm :=
   (rfl)
+
+/-- The relabelling of a class along a bijection of carriers is measurable exactly when the class
+is. -/
+@[simp]
+theorem measurableSet_image_relabel_iff (e : α ≃ β) {K : Set (RelationalConfiguration L α)} :
+    MeasurableSet (relabel e '' K) ↔ MeasurableSet K := by
+  simpa using (relabelMeasurableEquiv (L := L) e).measurableSet_image (s := K)
 
 variable [L.IsRelational]
 

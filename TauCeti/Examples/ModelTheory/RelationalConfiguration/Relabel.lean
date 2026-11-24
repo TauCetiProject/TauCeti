@@ -30,10 +30,10 @@ example {L : Language} (R : L.Relations 1) (c : RelationalConfiguration L (Fin 3
   fin_cases i
   rfl
 
--- Relabelling along `e` and then along `e.symm` is the identity.
+-- Relabelling along `e` and then along `e.symm` is the identity, and `simp` sees it.
 example {L : Language} {α β : Type*} (e : α ≃ β) (c : RelationalConfiguration L α) :
     relabel e.symm (relabel e c) = c := by
-  rw [← relabel_symm, Homeomorph.symm_apply_apply]
+  simp
 
 -- Isomorphism on any class of configurations on `ℕ` is Borel bireducible with isomorphism on its
 -- relabelling to `ℤ`.
