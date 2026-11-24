@@ -285,14 +285,10 @@ theorem cauchySeq_of_eventually_dist_le_of_summable {α : Type*} [PseudoMetricSp
 
 end TauCeti
 
-/-- **Weierstrass genus selection** (extending the geometric-tail exponent choice of Rudin,
-Theorem 15.9, to arbitrary natural multiplicities). If `r : ι → ℝ` tends to infinity along the
-cofinite filter, then for any multiplicity function `m : ι → ℕ` there exist exponents `p : ι → ℕ`
-such that `∑' i, m i * (R / r i) ^ (p i + 1) < ∞` for every `R > 0`. Given an injection
-`idx : ι ↪ ℕ` (obtained from `hr` via `Filter.Tendsto.countable_compl_preimage_ker`), setting
-`p i := idx i + m i` augments Rudin's indexed exponent `idx i` with a multiplicity correction
-`m i` so that `m i * (1 / 2) ^ m i ≤ 1`, reducing the tail bound to
-`∑' i, (1 / 2) ^ (idx i + 1)`. -/
+/-- **Weierstrass genus selection** (Rudin, Theorem 15.9, with natural multiplicities). If
+`r : ι → ℝ` tends to infinity along the cofinite filter, then for any multiplicity function
+`m : ι → ℕ` there exist exponents `p : ι → ℕ` such that
+`∑' i, m i * (R / r i) ^ (p i + 1) < ∞` for every `R > 0`. -/
 theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
     (hr : Tendsto r cofinite atTop) (m : ι → ℕ) :
     ∃ p : ι → ℕ, ∀ R : ℝ, 0 < R → Summable fun i ↦ (m i : ℝ) * (R / r i) ^ (p i + 1) := by
@@ -301,6 +297,8 @@ theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
   have : Countable ι := Set.countable_univ_iff.mp <| by
     simpa [hker] using hr.countable_compl_preimage_ker
   obtain ⟨idx, hidx⟩ := Countable.exists_injective_nat ι
+  -- Rudin's exponent `idx i`, raised by `m i` so that `m i * (1 / 2) ^ m i ≤ 1` absorbs the
+  -- multiplicity and the tail is dominated by `∑' i, (1 / 2) ^ (idx i + 1)`.
   refine ⟨fun i ↦ idx i + m i, fun R hR ↦ ?_⟩
   have hgeom : Summable fun i ↦ (1 / 2 : ℝ) ^ (idx i + 1) :=
     ((summable_nat_add_iff 1).mpr summable_geometric_two).comp_injective hidx
@@ -320,4 +318,3 @@ theorem Filter.Tendsto.exists_summable_mul_div_pow {ι : Type*} {r : ι → ℝ}
         rw [add_right_comm, add_assoc, pow_add]; ring
     _ ≤ 1 * (1 / 2 : ℝ) ^ (idx i + 1) := by gcongr
     _ = (1 / 2 : ℝ) ^ (idx i + 1) := one_mul _
-

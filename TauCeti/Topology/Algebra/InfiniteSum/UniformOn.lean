@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
-import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
-import Mathlib.Order.Filter.AtTopBot.Finset
 import Mathlib.Topology.Algebra.InfiniteSum.Group
 import TauCeti.Order.Filter.AtTopBot.Finset
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -45,16 +43,6 @@ uniform and locally uniform infinite products and sums on a set `s`:
 * `Equiv.hasProdUniformlyOn_iff` / `Equiv.hasSumUniformlyOn_iff` and
   `Equiv.hasProdLocallyUniformlyOn_iff` / `Equiv.hasSumLocallyUniformlyOn_iff`: reindexing by an
   equivalence preserves uniform and locally uniform convergence to the same limit function.
-
-## Provenance
-
-* `HasProdUniformlyOn.sigma_of_finite`, `HasSumUniformlyOn.sigma_of_finite`,
-  `HasProdLocallyUniformlyOn.sigma_of_finite`, and `HasSumLocallyUniformlyOn.sigma_of_finite`
-  generalize the finite-fibre `tendsto_finset_sigma_univ_atTop` regrouping proofs formerly in
-  `TauCeti.Analysis.Complex.CanonicalProduct.Convergence`
-  (`hasProdUniformlyOn_weierstrassFactor_one_pow`) and
-  `TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv`
-  (`hasSumUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul`).
 -/
 
 public section
@@ -153,12 +141,6 @@ theorem vanishing {ι β G : Type*} [CommGroup G] [UniformSpace G] [IsUniformGro
 
 end MultipliableUniformlyOn
 
-private theorem tendstoUniformlyOn_comp_tendsto {ι ι' α β : Type*} [UniformSpace β]
-    {F : ι → α → β} {f : α → β} {p : Filter ι} {s : Set α} {g : ι' → ι} {q : Filter ι'}
-    (h : TendstoUniformlyOn F f p s) (hg : Tendsto g q p) :
-    TendstoUniformlyOn (F ∘ g) f q s :=
-  fun u hu ↦ hg.eventually (h u hu)
-
 /-- **Regrouping a uniformly convergent product along finite fibres.** If a family over a sigma
 type with finite fibres has product `g` uniformly on `s`, then so does the family of its fibre
 products. -/
@@ -173,18 +155,14 @@ theorem HasProdUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*
   classical
   rw [hasProdUniformlyOn_iff_tendstoUniformlyOn] at h ⊢
   simpa only [Function.comp_def, Finset.prod_sigma] using
-    tendstoUniformlyOn_comp_tendsto h TauCeti.tendsto_finset_sigma_univ_atTop
+    h.comp_tendsto TauCeti.tendsto_finset_sigma_univ_atTop
 
 /-- **Regrouping a locally uniformly convergent product along finite fibres.** If a family over a
 sigma type with finite fibres has product `g` locally uniformly on `s`, then so does the family of
-its fibre products. Generalizes the finite-fibre `tendsto_finset_sigma_univ_atTop` regrouping
-proofs in `TauCeti.Analysis.Complex.CanonicalProduct.Convergence` and
-`TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv`. -/
+its fibre products. -/
 @[to_additive /-- **Regrouping a locally uniformly convergent series along finite fibres.** If a
 family over a sigma type with finite fibres sums to `g` locally uniformly on `s`, then so does the
-family of its fibre sums. Generalizes the finite-fibre `tendsto_finset_sigma_univ_atTop` regrouping
-proofs in `TauCeti.Analysis.Complex.CanonicalProduct.Convergence` and
-`TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv`. -/]
+family of its fibre sums. -/]
 theorem HasProdLocallyUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι → Type*}
     [CommMonoid α] [UniformSpace α] [TopologicalSpace β] [∀ i, Fintype (γ i)]
     {f : (Σ i, γ i) → β → α} {g : β → α} {s : Set β}
@@ -195,40 +173,20 @@ theorem HasProdLocallyUniformlyOn.sigma_of_finite {ι β α : Type*} {γ : ι �
   simpa only [Function.comp_def, Finset.prod_sigma] using
     h.comp_tendsto TauCeti.tendsto_finset_sigma_univ_atTop
 
-private theorem tendsto_finset_map_atTop {ι κ : Type*} (e : κ ≃ ι) :
-    Tendsto (fun S : Finset κ ↦ S.map e.toEmbedding) atTop atTop := by
-  classical
-  simpa only [Finset.map_eq_image, Equiv.coe_toEmbedding] using
-    Filter.tendsto_finset_image_atTop_atTop e.apply_symm_apply
-
-@[to_additive]
-private theorem hasProdUniformlyOn_comp_equiv {ι κ β α : Type*} [CommMonoid α]
-    [UniformSpace α] (e : κ ≃ ι) {f : ι → β → α} {g : β → α} {s : Set β}
-    (h : HasProdUniformlyOn f g s) :
-    HasProdUniformlyOn (f ∘ e) g s := by
-  rw [hasProdUniformlyOn_iff_tendstoUniformlyOn] at h ⊢
-  simpa only [Function.comp_def, Finset.prod_map, Equiv.coe_toEmbedding] using
-    tendstoUniformlyOn_comp_tendsto h (tendsto_finset_map_atTop e)
-
 /-- Reindexing a family by an equivalence preserves uniform convergence of its infinite product to
 the same limit function. -/
 @[to_additive /-- Reindexing a family by an equivalence preserves uniform convergence of its
 infinite sum to the same limit function. -/]
 theorem Equiv.hasProdUniformlyOn_iff {ι κ β α : Type*} [CommMonoid α] [UniformSpace α]
     (e : κ ≃ ι) {f : ι → β → α} {g : β → α} {s : Set β} :
-    HasProdUniformlyOn (f ∘ e) g s ↔ HasProdUniformlyOn f g s :=
-  ⟨fun h ↦ by
-      simpa [Function.comp_assoc] using hasProdUniformlyOn_comp_equiv e.symm h,
-    hasProdUniformlyOn_comp_equiv e⟩
-
-@[to_additive]
-private theorem hasProdLocallyUniformlyOn_comp_equiv {ι κ β α : Type*} [CommMonoid α]
-    [UniformSpace α] [TopologicalSpace β] (e : κ ≃ ι) {f : ι → β → α} {g : β → α} {s : Set β}
-    (h : HasProdLocallyUniformlyOn f g s) :
-    HasProdLocallyUniformlyOn (f ∘ e) g s := by
-  rw [hasProdLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn] at h ⊢
-  simpa only [Function.comp_def, Finset.prod_map, Equiv.coe_toEmbedding] using
-    h.comp_tendsto (tendsto_finset_map_atTop e)
+    HasProdUniformlyOn (f ∘ e) g s ↔ HasProdUniformlyOn f g s := by
+  classical
+  simp only [hasProdUniformlyOn_iff_tendstoUniformlyOn]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa [Function.comp_def, Finset.prod_image] using
+      h.comp_tendsto (tendsto_finset_image_atTop_atTop e.symm_apply_apply)
+  · simpa [Function.comp_def, Finset.prod_image] using
+      h.comp_tendsto (tendsto_finset_image_atTop_atTop e.apply_symm_apply)
 
 /-- Reindexing a family by an equivalence preserves locally uniform convergence of its infinite
 product to the same limit function. -/
@@ -236,7 +194,11 @@ product to the same limit function. -/
 infinite sum to the same limit function. -/]
 theorem Equiv.hasProdLocallyUniformlyOn_iff {ι κ β α : Type*} [CommMonoid α] [UniformSpace α]
     [TopologicalSpace β] (e : κ ≃ ι) {f : ι → β → α} {g : β → α} {s : Set β} :
-    HasProdLocallyUniformlyOn (f ∘ e) g s ↔ HasProdLocallyUniformlyOn f g s :=
-  ⟨fun h ↦ by
-      simpa [Function.comp_assoc] using hasProdLocallyUniformlyOn_comp_equiv e.symm h,
-    hasProdLocallyUniformlyOn_comp_equiv e⟩
+    HasProdLocallyUniformlyOn (f ∘ e) g s ↔ HasProdLocallyUniformlyOn f g s := by
+  classical
+  simp only [hasProdLocallyUniformlyOn_iff_tendstoLocallyUniformlyOn]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa [Function.comp_def, Finset.prod_image] using
+      h.comp_tendsto (tendsto_finset_image_atTop_atTop e.symm_apply_apply)
+  · simpa [Function.comp_def, Finset.prod_image] using
+      h.comp_tendsto (tendsto_finset_image_atTop_atTop e.apply_symm_apply)

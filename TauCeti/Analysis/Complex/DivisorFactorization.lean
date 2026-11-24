@@ -22,7 +22,8 @@ function `L`, unique on any preconnected open domain up to an additive constant
 in `2πiℤ`. The equality includes common zeros of `f` and `g`. Specializing to
 `Set.univ` gives the entire equal-divisor factorization `f z = exp (g z) * F z`
 (either from equal whole-plane divisors or from equal `analyticOrderAt` at every
-point), with `g` entire and unique up to `2πiℤ`.
+point), with `g` entire and unique up to `2πiℤ`. The whole-plane divisor of an entire function
+at a point is its analytic order there.
 
 Equal divisors allow the zeros to cancel, reducing comparison of holomorphic
 functions to a nowhere-zero exponential factor. This is the step that separates
@@ -97,9 +98,7 @@ theorem exists_differentiableOn_eqOn_mul_exp_of_divisor_eq {U : Set ℂ} {f g : 
 
 /-- On a preconnected open domain, the holomorphic exponent in `g · * exp (L ·)` is unique up to
 an integer multiple of `2 * π * I` whenever `g` is continuous on the domain and not identically
-zero there. Cancels `g` near a nonzero point, extends equality of the exponentials to `U` via the
-analytic identity theorem (`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`), then applies
-`ContinuousOn.eqOn_of_eqOn_exp_comp` (`TauCeti.Analysis.Complex.BranchLogRoot`) on `U`. -/
+zero there. -/
 theorem exists_int_eqOn_add_mul_two_pi_I_of_eqOn_mul_exp {U : Set ℂ} {g L₁ L₂ : ℂ → ℂ}
     (hUc : IsPreconnected U) (hUo : IsOpen U) (hg : ContinuousOn g U) (hg0 : ∃ z ∈ U, g z ≠ 0)
     (hL₁ : DifferentiableOn ℂ L₁ U) (hL₂ : DifferentiableOn ℂ L₂ U)
@@ -164,6 +163,14 @@ theorem divisor_univ_eq_analyticOrderNatAt {E : Type*} [NormedAddCommGroup E] [N
     MeromorphicOn.divisor f Set.univ z = (analyticOrderNatAt f z : ℤ) :=
   (AnalyticOnNhd.meromorphicOn fun w _ ↦ hf.analyticAt w).divisor_eq_analyticOrderNatAt
     (hf.analyticAt z) (mem_univ z)
+
+/-- The whole-plane divisor of an entire function at `z` is `n` whenever its analytic order at `z`
+is the natural number `n`. -/
+theorem divisor_univ_eq_of_analyticOrderAt_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) {z : ℂ} {n : ℕ}
+    (hord : analyticOrderAt f z = n) :
+    MeromorphicOn.divisor f Set.univ z = (n : ℤ) := by
+  rw [hf.divisor_univ_eq_analyticOrderNatAt z, analyticOrderNatAt, hord, ENat.toNat_natCast]
 
 /-- Variant of `Differentiable.exists_differentiable_eq_exp_mul_of_divisor_eq` assuming equal
 `analyticOrderAt` at every complex point rather than equality of `MeromorphicOn.divisor`. -/

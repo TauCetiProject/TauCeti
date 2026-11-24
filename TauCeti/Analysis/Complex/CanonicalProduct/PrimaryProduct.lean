@@ -8,14 +8,11 @@ module
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Topology.Algebra.InfiniteSum.UniformOn
 public import TauCeti.Analysis.Complex.CanonicalProduct.ElementaryFactor
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.InfiniteProd
-import TauCeti.Analysis.Normed.Module.MultipliableUniformlyOn
 import TauCeti.Topology.Algebra.InfiniteSum.Real
-import TauCeti.Topology.Algebra.InfiniteSum.UniformOn
 
 /-!
 # Weierstrass canonical products of arbitrary genus and entire factorization
@@ -30,15 +27,16 @@ precisely the nonzero values `a i`, and at every `z : ℂ` its analytic order of
 and finiteness of each active fiber follow automatically from the summability hypothesis, with no
 countability assumption on `ι`.
 
-Reindexing by an equivalence `κ ≃ ι` and grouping finite multiplicity fibers `m : ι → ℕ` under
-`∑' i, m i * (R / ‖a i‖) ^ (p i + 1) < ∞` preserve the product and its compact-uniform convergence
-(via `HasProdUniformlyOn.sigma_of_finite`, whence locally uniform convergence follows by
-`hasProdLocallyUniformlyOn_of_forall_compact`).
+Grouping finite multiplicity fibers `m : ι → ℕ` under
+`∑' i, m i * (R / ‖a i‖) ^ (p i + 1) < ∞` gives the weighted product
+`∏' i, E_{p i}(z / a i) ^ m i`, equal to the primary product over `Σ i, Fin (m i)` and again
+convergent uniformly on compact sets and locally uniformly on `ℂ`. Reindexing the primary product
+by an equivalence `κ ≃ ι` is the generic `Equiv.hasProdUniformlyOn_iff` and
+`Equiv.hasProdLocallyUniformlyOn_iff`.
 
-Combining variable-genus products with `Filter.Tendsto.exists_summable_mul_div_pow` and
-`Differentiable.exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq` yields Weierstrass's
-general factorization theorem: every nonzero entire function `f : ℂ → ℂ` admits admissible genera
-`p` on its set of nonzero zeros and an entire function `g` (unique up to `2πiℤ`) such that
+Weierstrass's general factorization theorem follows: every nonzero entire function `f : ℂ → ℂ`
+admits admissible genera `p` on its set of nonzero zeros and an entire function `g` (unique up to
+`2πiℤ`) such that
 `f z = z ^ (analyticOrderNatAt f 0) * exp (g z) * ∏' a, E_{p a}(z / a) ^ (analyticOrderNatAt f a)`,
 without any growth hypothesis on `f`.
 
@@ -65,30 +63,10 @@ without any growth hypothesis on `f`.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow`: Weierstrass's entire
   factorization theorem for an arbitrary nonzero entire function without growth hypotheses.
 
-## Provenance
+## Implementation notes
 
-* Compact-uniform convergence, zero characterization, and root-fiber finiteness build on
-  `HasSumUniformlyOn.of_norm_le_summable_eventually` (Mathlib) together with
-  `SummableUniformlyOn.hasProdUniformlyOn_one_add_of_isCompact`,
-  `SummableUniformlyOn.tprod_one_add_eq_zero_iff`, and
-  `SummableUniformlyOn.finite_setOf_exists_mem_one_add_eq_zero` in
-  `TauCeti.Analysis.Normed.Module.MultipliableUniformlyOn`, plus
-  `hasProdLocallyUniformlyOn_of_forall_compact` (Mathlib).
-* Holomorphy and order additivity of the primary product are supplied by
-  `TauCeti.differentiableOn_tprod_one_add` and `TauCeti.analyticOrderAt_tprod_one_add` in
-  `TauCeti.Analysis.Complex.InfiniteProd`, with whole-plane divisor translation via
-  `Differentiable.divisor_univ_eq_analyticOrderNatAt` in
-  `TauCeti.Analysis.Complex.DivisorFactorization`.
-* The weighted sigma-fiber construction and multiplicity proofs generalize the genus-one
-  formalization in `TauCeti.Analysis.Complex.CanonicalProduct.Convergence` using
-  `TauCeti.summable_sigma_fin_iff` (`TauCeti.Topology.Algebra.InfiniteSum.Real`) and
-  `HasProdUniformlyOn.sigma_of_finite` (`TauCeti.Topology.Algebra.InfiniteSum.UniformOn`).
-* Weierstrass's general entire factorization combines these products with
-  `AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`
-  (`TauCeti.Analysis.Analytic.IsolatedZeros`), `Filter.Tendsto.exists_summable_mul_div_pow`
-  (`TauCeti.Topology.Algebra.InfiniteSum.Real`), and
-  `Differentiable.exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq`
-  (`TauCeti.Analysis.Complex.DivisorFactorization`).
+The genus-one products of `TauCeti.Analysis.Complex.CanonicalProduct.Convergence` and the genus-two
+lattice product `PeriodPair.weierstrassSigma` are specializations of the theorems here.
 
 ## References
 
@@ -103,11 +81,6 @@ open Complex Filter Function Metric Set Topology
 open scoped BigOperators
 
 namespace Complex
-
-private theorem divisor_univ_eq_of_analyticOrderAt_eq {f : ℂ → ℂ} (hf : Differentiable ℂ f)
-    {z : ℂ} {n : ℕ} (hord : analyticOrderAt f z = n) :
-    MeromorphicOn.divisor f Set.univ z = (n : ℤ) := by
-  rw [hf.divisor_univ_eq_analyticOrderNatAt z, analyticOrderNatAt, hord, ENat.toNat_natCast]
 
 section Unweighted
 
@@ -242,7 +215,7 @@ theorem divisor_tprod_weierstrassFactor_div
     (hsum : ∀ R : ℝ, 0 < R → Summable fun i ↦ (R / ‖a i‖) ^ (p i + 1)) (z : ℂ) :
     MeromorphicOn.divisor (fun w ↦ ∏' i, weierstrassFactor (p i) (w / a i)) Set.univ z =
       ({i | a i ≠ 0 ∧ a i = z}.ncard : ℤ) :=
-  divisor_univ_eq_of_analyticOrderAt_eq (differentiable_tprod_weierstrassFactor_div hsum)
+  (differentiable_tprod_weierstrassFactor_div hsum).divisor_univ_eq_of_analyticOrderAt_eq
     (analyticOrderAt_tprod_weierstrassFactor_div hsum z)
 
 end Unweighted
@@ -365,7 +338,7 @@ theorem divisor_tprod_weierstrassFactor_div_pow
     (hm : ∀ R : ℝ, 0 < R → Summable fun j ↦ (m j : ℝ) * (R / ‖a j‖) ^ (p j + 1)) (z : ℂ) :
     MeromorphicOn.divisor (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ z =
       ({q : Σ j, Fin (m j) | a q.1 ≠ 0 ∧ a q.1 = z}.ncard : ℤ) :=
-  divisor_univ_eq_of_analyticOrderAt_eq (differentiable_tprod_weierstrassFactor_div_pow hm)
+  (differentiable_tprod_weierstrassFactor_div_pow hm).divisor_univ_eq_of_analyticOrderAt_eq
     (analyticOrderAt_tprod_weierstrassFactor_div_pow hm z)
 
 /-- When `a` is injective and `a i ≠ 0` whenever `m i ≠ 0`, the whole-plane divisor of the
@@ -376,7 +349,7 @@ theorem divisor_tprod_weierstrassFactor_div_pow_of_injective (i : ι)
     (hinj : Function.Injective a) :
     MeromorphicOn.divisor (fun w ↦ ∏' j, weierstrassFactor (p j) (w / a j) ^ m j) Set.univ (a i) =
       (m i : ℤ) :=
-  divisor_univ_eq_of_analyticOrderAt_eq (differentiable_tprod_weierstrassFactor_div_pow hm)
+  (differentiable_tprod_weierstrassFactor_div_pow hm).divisor_univ_eq_of_analyticOrderAt_eq
     (analyticOrderAt_tprod_weierstrassFactor_div_pow_of_injective i ha hm hinj)
 
 end Weighted
@@ -460,22 +433,6 @@ theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable {f
   · simpa only [F, mul_left_comm (Complex.exp (g z)), mul_assoc] using hfg z
   · simpa only [F, mul_left_comm (Complex.exp (g' z)), mul_assoc] using hfg' z
 
-private theorem tendsto_norm_cofinite_atTop_nonzero_zeros {f : ℂ → ℂ}
-    (hf : Differentiable ℂ f) (hf0 : ∃ z, f z ≠ 0) :
-    Tendsto (fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦ ‖(a : ℂ)‖) cofinite atTop := by
-  obtain ⟨z₀, hz₀⟩ := hf0
-  have hfa : AnalyticOnNhd ℂ f Set.univ := fun w _ ↦ hf.analyticAt w
-  rw [Filter.tendsto_atTop]
-  intro R
-  have hfin : {a : {a : ℂ // a ≠ 0 ∧ f a = 0} | ‖(a : ℂ)‖ ≤ R}.Finite := by
-    refine (Set.finite_image_iff Subtype.val_injective.injOn).mp ?_
-    exact (hfa.finite_setOf_mem_and_eq_zero_of_isCompact isPreconnected_univ (mem_univ z₀) hz₀
-      (isCompact_closedBall 0 R) (subset_univ _)).subset fun w ⟨a, haR, hwa⟩ ↦
-        ⟨mem_closedBall_zero_iff.mpr (hwa ▸ haR), hwa ▸ a.property.2⟩
-  have hlt : ∀ᶠ a : {a : ℂ // a ≠ 0 ∧ f a = 0} in cofinite, R < ‖(a : ℂ)‖ := by
-    simpa only [eventually_cofinite, not_lt] using hfin
-  exact hlt.mono fun _ h ↦ h.le
-
 /-- **Weierstrass's entire factorization theorem** (Rudin, Theorem 15.10). Every entire function
 `f : ℂ → ℂ` that is not identically zero admits admissible genera
 `p : {a : ℂ // a ≠ 0 ∧ f a = 0} → ℕ` and an entire function `g : ℂ → ℂ` (unique up to `2πiℤ`)
@@ -502,11 +459,13 @@ theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow {f : ℂ → �
           ∏' a : {a : ℂ // a ≠ 0 ∧ f a = 0},
             weierstrassFactor (p a) (z / a) ^ analyticOrderNatAt f a) →
         ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
-  obtain ⟨p, hm_sum⟩ :=
-    (tendsto_norm_cofinite_atTop_nonzero_zeros hf hf0).exists_summable_mul_div_pow
-      fun a ↦ analyticOrderNatAt f a
+  obtain ⟨z₀, hz₀⟩ := hf0
+  have hzeros : Tendsto (fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦ ‖(a : ℂ)‖) cofinite atTop :=
+    AnalyticOnNhd.tendsto_norm_cofinite_atTop_of_injective_of_eq_zero
+      (fun w _ ↦ hf.analyticAt w) hz₀ Subtype.val_injective fun a ↦ a.property.2
+  obtain ⟨p, hm_sum⟩ := hzeros.exists_summable_mul_div_pow fun a ↦ analyticOrderNatAt f a
   obtain ⟨g, hg, hfg, huniq⟩ :=
-    hf.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable hf0 hm_sum
+    hf.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable ⟨z₀, hz₀⟩ hm_sum
   exact ⟨p, g, hm_sum, hasProdLocallyUniformlyOn_weierstrassFactor_div_pow hm_sum, hg, hfg, huniq⟩
 
 end Differentiable

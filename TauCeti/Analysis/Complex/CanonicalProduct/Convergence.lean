@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import TauCeti.Analysis.Analytic.Order
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.Analysis.Complex.CanonicalProduct.PrimaryProduct
 
 /-!
@@ -91,24 +92,18 @@ theorem summable_norm_weierstrassFactor_one_sub_one (z : ℂ) :
     summable_norm_weierstrassFactor_div_sub_one (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
       (summable_div_pow_inv a ha) z
 
-omit ha in
-private theorem inv_ne_zero_and_inv_eq_iff (i : ι) (z : ℂ) :
-    (a i)⁻¹ ≠ 0 ∧ (a i)⁻¹ = z ↔ a i * z = 1 :=
-  ⟨fun ⟨hai, hiz⟩ ↦ by rw [← hiz, mul_inv_cancel₀ (inv_eq_zero.not.mp hai)],
-    fun hiz ↦ ⟨inv_ne_zero (left_ne_zero_of_mul (by rw [hiz]; exact one_ne_zero)),
-      (eq_inv_of_mul_eq_one_right hiz).symm⟩⟩
-
 /-- The genus-one product vanishes exactly at a zero of one of its factors. -/
 theorem tprod_weierstrassFactor_one_eq_zero_iff (z : ℂ) :
     (∏' i, weierstrassFactor 1 (a i * z)) = 0 ↔ ∃ i, a i * z = 1 := by
-  simpa only [← weierstrassFactor_one_mul_eq_div_inv a, inv_ne_zero_and_inv_eq_iff] using
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a,
+    TauCeti.inv_ne_zero_and_inv_eq_iff_mul_eq_one] using
     tprod_weierstrassFactor_div_eq_zero_iff (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
       (summable_div_pow_inv a ha) z
 
 /-- Only finitely many factors can vanish at a fixed point. -/
 theorem finite_weierstrassFactor_one_roots (z : ℂ) :
     {i | a i * z = 1}.Finite := by
-  simpa only [inv_ne_zero_and_inv_eq_iff] using
+  simpa only [TauCeti.inv_ne_zero_and_inv_eq_iff_mul_eq_one] using
     finite_setOf_ne_zero_and_eq_of_summable_div_pow (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
       (summable_div_pow_inv a ha) z
 
@@ -116,7 +111,8 @@ theorem finite_weierstrassFactor_one_roots (z : ℂ) :
 theorem analyticOrderAt_tprod_weierstrassFactor_one (z : ℂ) :
     analyticOrderAt (fun w ↦ ∏' i, weierstrassFactor 1 (a i * w)) z =
       ({i | a i * z = 1}.ncard : ℕ∞) := by
-  simpa only [← weierstrassFactor_one_mul_eq_div_inv a, inv_ne_zero_and_inv_eq_iff] using
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a,
+    TauCeti.inv_ne_zero_and_inv_eq_iff_mul_eq_one] using
     analyticOrderAt_tprod_weierstrassFactor_div (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
       (summable_div_pow_inv a ha) z
 
@@ -171,7 +167,8 @@ natural multiplicities, represented by the finite fibers of the multiplicity fam
 theorem analyticOrderAt_tprod_weierstrassFactor_one_pow (z : ℂ) :
     analyticOrderAt (fun w ↦ ∏' j, weierstrassFactor 1 (a j * w) ^ m j) z =
       ({p : Σ j, Fin (m j) | a p.1 * z = 1}.ncard : ℕ∞) := by
-  simpa only [← weierstrassFactor_one_mul_eq_div_inv a, inv_ne_zero_and_inv_eq_iff] using
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a,
+    TauCeti.inv_ne_zero_and_inv_eq_iff_mul_eq_one] using
     analyticOrderAt_tprod_weierstrassFactor_div_pow (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1)
       (m := m) (summable_mul_div_pow_inv a m hm) z
 
@@ -215,7 +212,8 @@ theorem hasProdLocallyUniformlyOn_sigma_weierstrassFactor_one :
 theorem tprod_weierstrassFactor_one_pow_eq_zero_iff (z : ℂ) :
     (∏' i, weierstrassFactor 1 (a i * z) ^ m i) = 0 ↔
       ∃ i, m i ≠ 0 ∧ a i * z = 1 := by
-  simpa only [← weierstrassFactor_one_mul_eq_div_inv a, inv_ne_zero_and_inv_eq_iff] using
+  simpa only [← weierstrassFactor_one_mul_eq_div_inv a,
+    TauCeti.inv_ne_zero_and_inv_eq_iff_mul_eq_one] using
     tprod_weierstrassFactor_div_pow_eq_zero_iff (a := fun i ↦ (a i)⁻¹) (p := fun _ ↦ 1) (m := m)
       (summable_mul_div_pow_inv a m hm) z
 

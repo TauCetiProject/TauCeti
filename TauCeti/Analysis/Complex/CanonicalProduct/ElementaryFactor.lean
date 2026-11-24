@@ -20,6 +20,11 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Log.Taylor
 The primary factor `weierstrassFactor p z` is `(1 - z)` times the exponential of the
 first `p` positive logarithmic terms. Its only zero is a simple zero at one, for every genus.
 The definition uses Mathlib's `Complex.logTaylor`, with an equivalent finite-sum formula.
+Raising the genus by one multiplies the factor by `exp (z ^ (p + 1) / (p + 1))`
+(`weierstrassFactor_succ`), and factors at opposite points pair to a factor of half the genus,
+`E_p(z) * E_p(-z) = E_{p / 2}(z ^ 2)` (`weierstrassFactor_mul_weierstrassFactor_neg`). The
+rescaled factor `w ↦ E_p(w / a)` vanishes exactly at a nonzero `a`, with order one there
+(`analyticOrderAt_weierstrassFactor_div`).
 
 Every genus satisfies the sharp bound `‖E_p(z) - 1‖ ≤ ‖z‖ ^ (p + 1)` on the entire closed
 unit disk. Radial integration compares its derivative with a nonnegative real profile of
@@ -88,7 +93,7 @@ theorem weierstrassFactor_succ (p : ℕ) (z : ℂ) :
     ← weierstrassFactor_eq_mul_exp_sum]
 
 /-- Symmetric pairing for primary factors: `E_p(z) * E_p(-z) = E_{p / 2}(z ^ 2)`. -/
-theorem weierstrassFactor_mul_neg (p : ℕ) (z : ℂ) :
+theorem weierstrassFactor_mul_weierstrassFactor_neg (p : ℕ) (z : ℂ) :
     weierstrassFactor p z * weierstrassFactor p (-z) = weierstrassFactor (p / 2) (z ^ 2) := by
   induction p with
   | zero =>
