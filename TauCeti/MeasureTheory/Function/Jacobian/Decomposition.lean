@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
-public import TauCeti.Analysis.Normed.Module.RelativeApproximation
+import TauCeti.Analysis.Normed.Module.RelativeApproximation
 
 /-!
 # Injective pieces of a differentiable map
@@ -107,7 +107,7 @@ theorem exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt
   simp only [Subtype.dist_eq, domRestrict_apply, dist_eq_norm, NNReal.coe_mul, NNReal.coe_ofNat,
     coe_nnNorm]
   calc ‖f x - f y‖ ≤ (1 + 2⁻¹) * ‖A n x - A n y‖ :=
-        norm_sub_le_one_add_mul_norm_sub (happ n) x.2 y.2
+        norm_sub_le_one_add_mul_norm_sub (happ n) x.property y.property
     _ ≤ 2 * ‖A n x - A n y‖ := by linarith [norm_nonneg (A n x - A n y)]
     _ ≤ 2 * (‖A n‖ * ‖(x : U) - y‖) := by rw [← map_sub]; gcongr; exact (A n).le_opNorm _
     _ = 2 * ‖A n‖ * ‖(x : U) - y‖ := by ring

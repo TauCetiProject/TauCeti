@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.SpecialFunctions.Exp
@@ -17,11 +18,21 @@ The decay profile `exp (-c (t - R))`, normalised to equal `1` at `t = R`, is the
 estimates past a radius `R` are converted into bounds of the form `K exp (-c t)`. Conversely, a
 bound `K exp (-c ‖x‖)` outside a compact set extends to the whole space for a continuous
 function, after enlarging the constant. The analogous statement on a closed forward ray absorbs
-an initial compact time interval into the constant.
+an initial compact time interval into the constant. Squaring the profile doubles its rate, which
+turns decay bounds on two factors into a decay bound on a quadratic expression in them.
+
+For a positive rate `c` the profile `exp (-c ‖x‖)` tends to zero at infinity, and a faster profile
+is `O` of a slower one, so a decay estimate at one rate gives one at every slower rate.
 
 ## Main declarations
 
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
+* `TauCeti.exp_neg_half_mul_sq`: `exp (-(c / 2) t) ^ 2 = exp (-c t)`.
+* `TauCeti.tendsto_exp_neg_mul_norm_cocompact`: for `c > 0`, `exp (-c ‖x‖) → 0` at infinity.
+* `TauCeti.nonpos_of_forall_le_mul_exp`: a value at most `M exp (-b ρ)` for every `ρ`, with
+  `b > 0`, is nonpositive.
+* `TauCeti.isBigO_exp_neg_mul_norm_of_le`: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` for `c ≤ c'`, so a
+  decay estimate at a rate `c'` gives one at every slower rate `c`.
 * `TauCeti.exists_forall_le_mul_exp_of_eventually_le`: an exponential bound outside a compact set
   extends to the whole space for a continuous function, with a larger constant.
 * `TauCeti.abs_exp_mul_sub_le_exp`: a bound `|f x| ≤ M` bounds `|exp (t * (f x - I))|` by
@@ -39,6 +50,36 @@ theorem exp_neg_mul_sub (c t R : ℝ) :
     Real.exp (-(c * (t - R))) = Real.exp (c * R) * Real.exp (-(c * t)) := by
   rw [← Real.exp_add]
   ring_nf
+
+/-- Squaring an exponential profile doubles its rate: `exp (-(c / 2) t) ^ 2 = exp (-c t)`. -/
+theorem exp_neg_half_mul_sq (c t : ℝ) :
+    Real.exp (-(c / 2 * t)) ^ 2 = Real.exp (-(c * t)) := by
+  rw [← Real.exp_natCast_mul]
+  ring_nf
+
+open Filter Topology in
+/-- For a positive rate `c`, the radial exponential `exp (-c ‖x‖)` tends to zero at infinity. -/
+theorem tendsto_exp_neg_mul_norm_cocompact {E : Type*} [NormedAddCommGroup E] [ProperSpace E]
+    {c : ℝ} (hc : 0 < c) : Tendsto (fun x : E ↦ Real.exp (-(c * ‖x‖))) (cocompact E) (𝓝 0) :=
+  Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc)
+
+/-- A value bounded by `M exp (-(b ρ))` for every `ρ`, with `0 < b`, is nonpositive. -/
+theorem nonpos_of_forall_le_mul_exp {y M b : ℝ} (hb : 0 < b)
+    (h : ∀ ρ, y ≤ M * Real.exp (-(b * ρ))) : y ≤ 0 := by
+  refine ge_of_tendsto (x := Filter.atTop) ?_ (Filter.Eventually.of_forall h)
+  simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    (Filter.tendsto_id.const_mul_atTop hb)).const_mul M
+
+open Asymptotics in
+/-- A faster exponential decay is a stronger bound: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` along any
+filter when `c ≤ c'`. -/
+theorem isBigO_exp_neg_mul_norm_of_le {E : Type*} [SeminormedAddGroup E] {c c' : ℝ}
+    (hcc' : c ≤ c') (l : Filter E) :
+    (fun x : E ↦ Real.exp (-(c' * ‖x‖))) =O[l] fun x ↦ Real.exp (-(c * ‖x‖)) :=
+  isBigO_of_le _ fun x ↦ by
+    simp only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp, neg_le_neg_iff]
+    exact mul_le_mul_of_nonneg_right hcc' (norm_nonneg _)
 
 open Filter in
 /-- A continuous function bounded by `K exp (-c ‖x‖)` outside a compact set is bounded by

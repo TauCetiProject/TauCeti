@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 
 /-!
 # The augmentation of a monoid algebra
@@ -21,14 +22,17 @@ in `TauCeti.Algebra.MonoidAlgebra.Exactness`.
 
 ## Main declarations
 
-* `TauCeti.MonoidAlgebra.augmentation`: the coefficient-sum ring homomorphism.
-* `TauCeti.MonoidAlgebra.augmentation_comp_mapDomainRingHom`: naturality in the monoid.
+* `MonoidAlgebra.augmentation`: the coefficient-sum ring homomorphism.
+* `MonoidAlgebra.augmentation_comp_mapDomainRingHom`: naturality in the monoid.
 * `MonoidAlgebra.augmentation_mapDomainRingEquiv`: invariance under monoid isomorphisms.
+* `MonoidAlgebra.augmentation_mapRingHom`: naturality in the coefficients.
 * `MonoidAlgebra.augmentationLinearMap`: the coefficient-sum linear map.
 * `MonoidAlgebra.augmentationLinearMap_surjective`: surjectivity over any semiring.
 * `MonoidAlgebra.ker_augmentationLinearMap`: the linear kernel is the augmentation ideal.
 * `MonoidAlgebra.eq_sum_single_of_mul_single_eq_self`: over an additively torsion-free semiring,
   an element invariant under every right translation and with augmentation `|G|` is the norm.
+* `TauCeti.augmentation_subgroupCharSum`: the augmentation of the character sum
+  `∑_{h ∈ H} χ(h) h` is `∑_{h ∈ H} χ(h)`, so that of the norm element of `H` is its order.
 
 ## References
 
@@ -39,9 +43,7 @@ public section
 
 universe u v w
 
-namespace TauCeti.MonoidAlgebra
-
-open _root_.MonoidAlgebra
+namespace MonoidAlgebra
 
 variable (R : Type u) [Semiring R]
 
@@ -63,20 +65,25 @@ theorem augmentation_comp_mapDomainRingHom {M : Type v} {N : Type w} [Monoid M] 
     (augmentation R N).comp (mapDomainRingHom R f) = augmentation R M := by
   apply ringHom_ext <;> intro <;> simp
 
-end TauCeti.MonoidAlgebra
-
-namespace MonoidAlgebra
-
-open TauCeti.MonoidAlgebra
-
-variable (R : Type u) [Semiring R] (K : Type v) [Monoid K]
-
 /-- The coefficient-sum augmentation is invariant under an isomorphism of monoids. -/
 @[simp]
 theorem augmentation_mapDomainRingEquiv {M : Type v} {N : Type w} [Monoid M] [Monoid N]
     (e : M ≃* N) (x : MonoidAlgebra R M) :
     augmentation R N (mapDomainRingEquiv R e x) = augmentation R M x :=
   RingHom.congr_fun (augmentation_comp_mapDomainRingHom R (e : M →* N)) x
+
+/-- The coefficient-sum augmentation is natural with respect to homomorphisms of the
+coefficient semirings. -/
+@[simp]
+theorem augmentation_mapRingHom {S : Type w} [Semiring S] {K : Type v} [Monoid K] (f : R →+* S)
+    (x : MonoidAlgebra R K) :
+    augmentation S K (mapRingHom K f x) = f (augmentation R K x) := by
+  induction x using induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | single k r => simp
+
+variable (K : Type v) [Monoid K]
 
 /-- The coefficient-sum augmentation as an `R`-linear map `R[K] → R`. -/
 noncomputable def augmentationLinearMap :
@@ -126,3 +133,15 @@ theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [IsAddTor
   simp [coeff_sum, coeff_single, Finsupp.single_apply, hcoeff, hγ1]
 
 end MonoidAlgebra
+
+namespace TauCeti
+
+/-- The augmentation of the character sum `∑_{h ∈ H} χ(h) h` is `∑_{h ∈ H} χ(h)`; for the
+trivial character it is the order of `H`. -/
+@[simp]
+theorem augmentation_subgroupCharSum {k G : Type*} [Semiring k] [Group G] (χ : G →* k)
+    (H : Subgroup G) [Fintype H] :
+    MonoidAlgebra.augmentation k G (subgroupCharSum χ H) = ∑ h : H, χ (h : G) := by
+  simp [subgroupCharSum_def]
+
+end TauCeti

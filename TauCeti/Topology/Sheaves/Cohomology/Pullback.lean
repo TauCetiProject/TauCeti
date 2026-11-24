@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Map
 public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.ExactSequences
 public import TauCeti.Topology.Sheaves.Functors
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Pullback
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 
 /-!
 # Inverse image on the cohomology of abelian sheaves
@@ -23,7 +25,9 @@ in `TauCeti.Topology.Sheaves.Functors`). Since `Hⁿ(Y, F)` is `Extⁿ(ℤ, F)` 
 
 It is natural in `F`, commutes with the connecting maps of short exact sequences, and in degree
 zero it is the map on global sections given by the unit `F ⟶ f_* f⁻¹ F` of the adjunction. These
-three properties make it a morphism of cohomological δ-functors. Composed with a comparison map
+three properties make it a morphism of cohomological δ-functors. Under the terminal-open
+comparison it also agrees with pullback on the cohomology of the top open
+(`TopCat.Hom.cohomologyPresheafObjIsoH_hom_pullback`). Composed with a comparison map
 `f⁻¹ F ⟶ G`, it gives the pullback maps on the cohomology of sheaves of modules on schemes.
 
 ## Main declarations
@@ -70,6 +74,91 @@ lemma cohomologyPullback_apply
     f.cohomologyPullback F n x = (Ext.mk₀ (f.pullbackConstantSheafIso _).inv).comp
       (x.mapExactFunctor ((Opens.map f).sheafPullback AddCommGrpCat.{u} _ _)) (zero_add n) :=
   (rfl)
+
+private lemma freeYonedaSheafIsoConstant_inv_comp_pullback :
+    (isTerminalTop.freeYonedaSheafIsoConstant
+        (J := Opens.grothendieckTopology X)).inv ≫
+      ((Opens.map f).freeYonedaSheafToSheafPullback
+        (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).app ⊤ =
+    (f.pullbackConstantSheafIso _).inv ≫
+      ((Opens.map f).sheafPullback AddCommGrpCat.{u}
+          (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).map
+        (isTerminalTop.freeYonedaSheafIsoConstant
+          (J := Opens.grothendieckTopology Y)).inv := by
+  apply ((constantSheafAdj (Opens.grothendieckTopology X) AddCommGrpCat.{u}
+    isTerminalTop).homEquiv _ _).injective
+  apply (AddCommGrpCat.uliftZMultiplesAddEquiv _).injective
+  refine (isTerminalTop.freeYonedaSheafSectionsEquiv_inv_comp
+    (J := Opens.grothendieckTopology X) _ _).trans ?_
+  refine (Functor.freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app
+    (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X) (Opens.map f) ⊤).trans ?_
+  have h := isTerminalTop.freeYonedaSheafSectionsEquiv_inv_comp
+    (J := Opens.grothendieckTopology Y)
+    ((TauCeti.CategoryTheory.freeYonedaSheafFunctor
+      (Opens.grothendieckTopology Y)).obj ⊤) (𝟙 _)
+  rw [Category.comp_id] at h
+  have h' := f.constantSheafAdj_homEquiv_pullbackConstantSheafIso_inv
+    (isTerminalTop.freeYonedaSheafIsoConstant (J := Opens.grothendieckTopology Y)).inv
+  -- Evaluation at one commutes with composing homomorphisms. The section functors and
+  -- the free-sheaf comparison use different presentations of the preimage of the top open.
+  exact (congrArg (fun s ↦
+    (((Opens.map f).sheafAdjunctionContinuous AddCommGrpCat.{u}
+      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).unit.app
+        ((TauCeti.CategoryTheory.freeYonedaSheafFunctor
+          (Opens.grothendieckTopology Y)).obj ⊤)).hom.app (op ⊤) s) h).symm.trans
+    (congrArg (AddCommGrpCat.uliftZMultiplesAddEquiv _) h').symm
+
+/-- Pullback on cohomology over the top open agrees with pullback on cohomology of the
+whole space, under the terminal-object comparison. -/
+lemma cohomologyPresheafObjIsoH_hom_pullback
+    (F : CategoryTheory.Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u})
+    (n : ℕ) (x : CategoryTheory.Sheaf.H'.{u} F n ⊤) :
+    ((((Opens.map f).sheafPullback AddCommGrpCat.{u}
+        (Opens.grothendieckTopology Y)
+        (Opens.grothendieckTopology X)).obj F).cohomologyPresheafObjIsoH n isTerminalTop).hom
+      (CategoryTheory.Sheaf.H'.pullback
+        ((Opens.map f).sheafPullback AddCommGrpCat.{u}
+          (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X))
+        ((Opens.map f).freeYonedaSheafToSheafPullback
+          (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)) F n
+          (U := ⊤) (V := ⊤) (𝟙 (⊤ : Opens X)) x) =
+      f.cohomologyPullback F n ((F.cohomologyPresheafObjIsoH n isTerminalTop).hom x) := by
+  -- Mathlib's cohomology carrier is a bundled abelian group. Use its Ext presentation
+  -- so the extension-composition lemmas match without unfolding the group wrapper.
+  change Ext ((TauCeti.CategoryTheory.freeYonedaSheafFunctor
+    (Opens.grothendieckTopology Y)).obj ⊤) F n at x
+  let pb := (Opens.map f).sheafPullback AddCommGrpCat.{u}
+    (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)
+  let c := (Opens.map f).freeYonedaSheafToSheafPullback
+    (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)
+  -- Apply the computation equations as terms: the identity on the top open is also
+  -- typed as a map to its preimage, and rewriting across those presentations fails.
+  refine (CategoryTheory.Sheaf.cohomologyPresheafObjIsoH_hom_apply _ n isTerminalTop _).trans ?_
+  refine (congrArg (fun y ↦ (Ext.mk₀ (isTerminalTop.freeYonedaSheafIsoConstant
+    (J := Opens.grothendieckTopology X)).inv).comp y (zero_add n))
+      (CategoryTheory.Sheaf.H'.pullback_apply pb c F n (𝟙 _) x)).trans ?_
+  refine Eq.trans ?_ (congrArg (f.cohomologyPullback F n)
+    (CategoryTheory.Sheaf.cohomologyPresheafObjIsoH_hom_apply F n isTerminalTop x)).symm
+  let eX := isTerminalTop.freeYonedaSheafIsoConstant (J := Opens.grothendieckTopology X)
+  let eY := isTerminalTop.freeYonedaSheafIsoConstant (J := Opens.grothendieckTopology Y)
+  let d := (f.pullbackConstantSheafIso (AddCommGrpCat.of (ULift.{u} ℤ))).inv
+  let y := x.mapExactFunctor pb
+  have hid : (TauCeti.CategoryTheory.freeYonedaSheafFunctor
+      (Opens.grothendieckTopology X)).map (𝟙 ((Opens.map f).obj ⊤)) ≫ c.app ⊤ = c.app ⊤ := by
+    exact (congrArg (· ≫ c.app ⊤)
+      ((TauCeti.CategoryTheory.freeYonedaSheafFunctor
+        (Opens.grothendieckTopology X)).map_id ((Opens.map f).obj ⊤))).trans
+      (Category.id_comp _)
+  have hs := (congrArg (eX.inv ≫ ·) hid).trans
+    (f.freeYonedaSheafIsoConstant_inv_comp_pullback)
+  refine (Ext.mk₀_comp_mk₀_assoc eX.inv _ y).trans ?_
+  refine (congrArg (fun a ↦ (Ext.mk₀ a).comp y (zero_add n)) hs).trans ?_
+  have hr := congrArg ((Ext.mk₀ d).comp · (zero_add n))
+    (Ext.mapExactFunctor_comp pb (Ext.mk₀ eY.inv) x (zero_add n))
+  have hm := congrArg (fun a ↦ (Ext.mk₀ d).comp (a.comp y (zero_add n)) (zero_add n))
+    (Ext.mapExactFunctor_mk₀ pb eY.inv)
+  exact (hr.trans (hm.trans (Ext.mk₀_comp_mk₀_assoc d (pb.map eY.inv) y))).symm.trans
+    (f.cohomologyPullback_apply F _).symm
 
 /-- The inverse image map on cohomology is natural in the coefficient sheaf. -/
 lemma cohomologyPullback_map

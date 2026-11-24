@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Integrable
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
-import TauCeti.Geometry.Symplectic.Manifold.Opens
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # Planar central forces are completely integrable
@@ -47,6 +47,10 @@ completely integrable system there (`TauCeti.isIntegrableSystem_centralForceEner
   orbits `X_H = (L / (m ‖q‖²)) X_L`.
 * `TauCeti.image_centralForceEnergyMomentum_setOf_not_isRegularPoint`: the critical values.
 * `TauCeti.puncturedPhaseSpace`: the open set `{(q, p) | q ≠ 0}`.
+* `TauCeti.contMDiff_centralForceHamiltonian_comp_subtypeVal`: a central-force Hamiltonian is as
+  smooth on the punctured phase space as its potential is on `r > 0`.
+* `TauCeti.coe_smul_puncturedPhaseSpace`: a group acting linearly on `V` acts on the punctured
+  phase space by acting on positions and momenta alike, smoothly if it acts smoothly on `V`.
 * `TauCeti.poissonBracket_centralForceEnergyMomentum_comp_subtypeVal`: `H` and `L` Poisson-commute
   on every open set avoiding the collision set.
 * `TauCeti.isIntegrableSystem_centralForceEnergyMomentum`: `(H, L)` is a completely integrable
@@ -79,6 +83,57 @@ def puncturedPhaseSpace : TopologicalSpace.Opens (V × V) :=
 @[simp]
 theorem mem_puncturedPhaseSpace {x : V × V} : x ∈ puncturedPhaseSpace V ↔ x.1 ≠ 0 :=
   Iff.rfl
+
+/-! ### Linear group actions on the punctured phase space -/
+
+section PuncturedPhaseSpace
+
+variable {G : Type*} [Group G] [DistribMulAction G V]
+
+/-- A group acting linearly on `V` acts on the punctured phase space `{(q, p) | q ≠ 0}` by acting
+on positions and momenta alike: for instance, a rotation keeps the particle away from the centre
+of force. -/
+instance : MulAction G (puncturedPhaseSpace V) where
+  smul g x := ⟨g • (x : V × V), mem_puncturedPhaseSpace.2 <| by
+    simpa [smul_ne_zero_iff_ne] using mem_puncturedPhaseSpace.1 x.property⟩
+  one_smul x := Subtype.ext (one_smul G (x : V × V))
+  mul_smul g h x := Subtype.ext (mul_smul g h (x : V × V))
+
+@[simp]
+theorem coe_smul_puncturedPhaseSpace (g : G) (x : puncturedPhaseSpace V) :
+    ((g • x : puncturedPhaseSpace V) : V × V) = g • (x : V × V) :=
+  (rfl)
+
+variable [NormedSpace ℝ V] {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace G] [ChartedSpace H G]
+  {n : ℕ∞ω}
+
+/-- A group acting smoothly and linearly on `V` acts smoothly on the punctured phase space. -/
+instance [ContMDiffSMul I 𝓘(ℝ, V) n G V] :
+    ContMDiffSMul I 𝓘(ℝ, V × V) n G (puncturedPhaseSpace V) where
+  contMDiff_smul := by
+    have hx : ContMDiff (I.prod 𝓘(ℝ, V × V)) 𝓘(ℝ, V × V) n
+        fun p : G × puncturedPhaseSpace V ↦ (p.2 : V × V) :=
+      contMDiff_subtypeVal.comp contMDiff_snd
+    have hsmul := contMDiff_smul (I := I) (I' := 𝓘(ℝ, V)) (n := n) (G := G) (M := V)
+    have hfst : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.fst := contDiff_fst.contMDiff
+    have hsnd : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.snd := contDiff_snd.contMDiff
+    exact (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1 <|
+      (hsmul.comp (contMDiff_fst.prodMk (hfst.comp hx))).prodMk_space
+        (hsmul.comp (contMDiff_fst.prodMk (hsnd.comp hx)))
+
+/-- Each element of a group acting smoothly and linearly on `V` acts smoothly on the punctured
+phase space. -/
+instance [ContMDiffConstSMul 𝓘(ℝ, V) n G V] :
+    ContMDiffConstSMul 𝓘(ℝ, V × V) n G (puncturedPhaseSpace V) := by
+  refine ⟨fun g ↦ (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1 ?_⟩
+  have hsmul := ContMDiffConstSMul.contMDiff_const_smul (I := 𝓘(ℝ, V)) (n := n) (M := V) g
+  have hfst : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.fst := contDiff_fst.contMDiff
+  have hsnd : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.snd := contDiff_snd.contMDiff
+  exact (hsmul.comp (hfst.comp contMDiff_subtypeVal)).prodMk_space
+    (hsmul.comp (hsnd.comp contMDiff_subtypeVal))
+
+end PuncturedPhaseSpace
 
 variable [InnerProductSpace ℝ V] (b : OrthonormalBasis (Fin 2) ℝ V)
 
@@ -320,19 +375,24 @@ theorem contDiffAt_centralForceEnergyMomentum {m : ℝ} {U : ℝ → ℝ} {n : W
     ContDiffAt ℝ n (centralForceEnergyMomentum b m U) x := by
   refine contDiffAt_pi.2 fun i ↦ ?_
   fin_cases i
-  · have hn : ContDiffAt ℝ n (fun y : V × V ↦ U ‖y.1‖) x :=
-      hU.comp x ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst)
-    have h : (fun y : V × V ↦ centralForceEnergyMomentum b m U y 0) =
-        fun y ↦ ‖y.2‖ ^ 2 / (2 * m) + U ‖y.1‖ :=
-      funext fun y ↦ centralForceHamiltonian_apply m U y.1 y.2
-    rw [Fin.zero_eta, h]
-    exact ((contDiff_norm_sq ℝ).comp contDiff_snd).contDiffAt.div_const _ |>.add hn
+  · simp only [Fin.zero_eta, centralForceEnergyMomentum_zero]
+    exact contDiffAt_centralForceHamiltonian hU hq
   · have h : (fun y : V × V ↦ centralForceEnergyMomentum b m U y 1) =
         fun y ↦ ⟪y.1, b 0⟫_ℝ * ⟪y.2, b 1⟫_ℝ - ⟪y.1, b 1⟫_ℝ * ⟪y.2, b 0⟫_ℝ :=
       funext fun y ↦ angularMomentum_apply (b 0) (b 1) y.1 y.2
     rw [Fin.mk_one, h]
     exact (((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)).sub
       ((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const))).contDiffAt
+
+/-- A central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)` is `C^n` on the punctured phase space when
+the potential `U` is `C^n` on `r > 0`. -/
+theorem contMDiff_centralForceHamiltonian_comp_subtypeVal {m : ℝ} {U : ℝ → ℝ} {n : WithTop ℕ∞}
+    (hU : ∀ r, 0 < r → ContDiffAt ℝ n U r) :
+    ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ) n
+      (centralForceHamiltonian m U ∘ (Subtype.val : puncturedPhaseSpace V → V × V)) := fun x ↦
+  have hq := mem_puncturedPhaseSpace.1 x.property
+  (contDiffAt_centralForceHamiltonian (hU _ (norm_pos_iff.2 hq)) hq).contMDiffAt.comp x
+    (contMDiff_subtypeVal x)
 
 /-- The points of the punctured phase space with nonzero radial momentum, `⟪q, p⟫ ≠ 0`, are
 dense. -/
@@ -352,35 +412,22 @@ theorem dense_setOf_inner_ne_zero :
   filter_upwards [self_mem_nhdsWithin] with ε hε
   simpa [g, inner_add_right, inner_smul_right, h, hq'] using hε
 
-/-- **The energy and the angular momentum Poisson-commute off the collision set.** On every open
-set of `V × V` avoiding the collision set `q = 0`, with the restriction of the standard symplectic
-form, the components of the energy–momentum map of a potential differentiable on `(0, ∞)`
-Poisson-commute. -/
+/-- **The energy and the angular momentum Poisson-commute on open sets.** On every open set of
+`V × V`, with the restriction of the standard symplectic form, the components of the
+energy–momentum map Poisson-commute. -/
 theorem poissonBracket_centralForceEnergyMomentum_comp_subtypeVal [FiniteDimensional ℝ V]
-    {m : ℝ} {U : ℝ → ℝ} (hU : DifferentiableOn ℝ U (Ioi 0)) {W : TopologicalSpace.Opens (V × V)}
-    (hW : ∀ x ∈ W, x.1 ≠ 0) (i j : Fin 2) (x : W) :
+    {m : ℝ} {U : ℝ → ℝ} {W : TopologicalSpace.Opens (V × V)} (i j : Fin 2) (x : W) :
     SmoothTwoForm.poissonBracket
-      (SmoothForm.mpullback (Subtype.val : W → V × V) contMDiff_subtype_val
+      (SmoothForm.mpullback (Subtype.val : W → V × V) contMDiff_subtypeVal
         (stdSymplecticForm (V := V)).constSmooth)
       (fun y ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y i)
       (fun y ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y j) x = 0 := by
-  have hq : (x : V × V).1 ≠ 0 := hW x x.2
-  have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
-    (hU.differentiableAt (Ioi_mem_nhds (norm_pos_iff.2 hq))).hasDerivAt
-  have hdiff (k : Fin 2) :
-      MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ) (fun y ↦ centralForceEnergyMomentum b m U y k) x :=
-    (differentiableAt_pi.1
-      (hasFDerivAt_centralForceEnergyMomentum b hU' hq).differentiableAt k).mdifferentiableAt
   -- Each component of `F ∘ Subtype.val` is the corresponding component of `F` composed with
   -- `Subtype.val`, by definition of composition.
   have hcomp (k : Fin 2) : (fun y : W ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y k) =
       (fun y ↦ centralForceEnergyMomentum b m U y k) ∘ Subtype.val := rfl
   -- The bracket is computed on `V × V`, where `{H, L} = 0`.
-  rw [hcomp, hcomp,
-    ((SymplecticForm.isNondegenerate_constSmooth _).mpullback_subtype_val _).poissonBracket_comp
-      (SymplecticForm.isNondegenerate_constSmooth _) contMDiff_subtype_val rfl
-      (isRegularPoint_iff.1 (isRegularPoint_subtype_val x))
-      (hdiff i) (hdiff j),
+  rw [hcomp, hcomp, SmoothTwoForm.poissonBracket_comp_subtype_val,
     SymplecticForm.poissonBracket_constSmooth]
   have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)
     (U := U) (x := (x : V × V)) (b 0) (b 1)
@@ -398,21 +445,20 @@ independent away from the circular orbits, a nowhere dense set. -/
 theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] {m : ℝ}
     (hm : m ≠ 0) {U : ℝ → ℝ} (hU : ContDiffOn ℝ ∞ U (Ioi 0)) :
     SmoothTwoForm.IsIntegrableSystem
-      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtype_val
+      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
         (stdSymplecticForm (V := V)).constSmooth)
       (centralForceEnergyMomentum b m U ∘ Subtype.val) := by
   have hF (x : puncturedPhaseSpace V) := contDiffAt_centralForceEnergyMomentum b (m := m)
-    (hU.contDiffAt (Ioi_mem_nhds (norm_pos_iff.2 x.2))) x.2
-  refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtype_val x),
-    poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b (hU.differentiableOn (by simp))
-      (fun _ hx ↦ hx), ?_, ?_⟩
+    (hU.contDiffAt (Ioi_mem_nhds (norm_pos_iff.2 x.property))) x.property
+  refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtypeVal x),
+    poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b, ?_, ?_⟩
   · -- Points with nonzero radial momentum are regular, and they are dense.
     refine Dense.mono (s₁ := {x : puncturedPhaseSpace V | ⟪(x : V × V).1, (x : V × V).2⟫_ℝ ≠ 0})
       (fun x hx ↦ ?_) ?_
-    · have hr : 0 < ‖(x : V × V).1‖ := norm_pos_iff.2 x.2
+    · have hr : 0 < ‖(x : V × V).1‖ := norm_pos_iff.2 x.property
       have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
         ((hU.differentiableOn (by simp)).differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
-      refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU' x.2).2 ?_ |>.comp
+      refine (isRegularPoint_centralForceEnergyMomentum_iff b hm hU' x.property).2 ?_ |>.comp
         (isRegularPoint_subtype_val x)
       exact fun h ↦ hx h.1
     · exact dense_setOf_inner_ne_zero

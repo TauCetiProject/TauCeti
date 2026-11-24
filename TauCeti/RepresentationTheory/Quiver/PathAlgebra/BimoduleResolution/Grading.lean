@@ -89,7 +89,7 @@ theorem isHomogeneous_vertexTensorBimodule :
   exact hp
 
 /-- The internal total-weight grading of `kQ ⊗_{kQ₀} kQ`. -/
-noncomputable def vertexTensorGrading : InternalGrading k (vertexTensorBimodule k Q) :=
+noncomputable def vertexTensorGrading : InternalGrading k (vertexTensorBimodule k Q) ℤ :=
   (Ξ).submodule (vertexTensorBimodule k Q) (isHomogeneous_vertexTensorBimodule k Q wt)
 
 /-- A vertex tensor is homogeneous exactly when its underlying enveloping element is. -/
@@ -156,7 +156,7 @@ variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
 
 /-- The internal arrow-weight grading on `⨁_{b : i ⟶ j} kQ eⱼ ⊗_k eᵢ kQ`, with the generator
 of the `b` summand in degree `wt b`. It is pulled back along the injective boundary. -/
-noncomputable def arrowTensorGrading : InternalGrading k (arrowTensorBimodule k Q) where
+noncomputable def arrowTensorGrading : InternalGrading k (arrowTensorBimodule k Q) ℤ where
   piece n := ((vertexTensorGrading k Q wt).piece n).comap
     ((arrowTensorDifferential k Q).restrictScalars k)
   isInternal := by

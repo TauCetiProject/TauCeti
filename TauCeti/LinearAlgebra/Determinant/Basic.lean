@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Multilinear.Span
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
+import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
@@ -69,12 +70,15 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
 * `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
 * `Matrix.det_mul_column_intCast`: scaling every row `i` of an integer matrix by `d i`
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
-* `LinearMap.det_one_add_comp_comm`: the Weinstein–Aronszajn identity
-  `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
+* `LinearMap.det_one_add_comp_comm`, `LinearMap.det_one_sub_comp_comm`: the Weinstein–Aronszajn
+  identity `det (1 ± X ∘ₗ Y) = det (1 ± Y ∘ₗ X)` for linear maps between free modules of finite
+  rank.
 * `LinearEquiv.det_eq_pow_of_forall_eq_smul`: an automorphism acting as multiplication by a unit
   `c` has determinant `c ^ finrank R V`.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
+* `Module.Basis.det_comp_eq_mul`: `b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v` for a linear map
+  `f` between two modules with bases `b` and `b'`.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
@@ -86,8 +90,12 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
 * `Module.Basis.det_map_eq_det_toMatrix`: evaluating `b'.det` on the image `b.map e` of a basis `b`
   under a linear equivalence `e` gives the determinant of `LinearMap.toMatrix b b' e`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
+* `LinearMap.injective_of_det_mem_nonZeroDivisors`: an endomorphism of a free module of finite
+  rank whose determinant is a non-zero-divisor is injective.
 * `LinearMap.apply_eq_det_smul_of_finrank_eq_one`: on a free module of rank one, an endomorphism
   is multiplication by its determinant.
+* `LinearMap.det_eq_of_comp_eq`: endomorphisms intertwined by a linear equivalence have the same
+  determinant.
 
 ## Implementation notes
 
@@ -198,8 +206,8 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   have hσ : w ∘ σ = Sum.elim (LinearMap.inl R M M' ∘ fun k ↦ (w (σ (.inl k))).1)
       (LinearMap.inr R M M' ∘ fun l ↦ (w (σ (.inr l))).2) := by
     ext1 (k | l)
-    · exact Prod.ext (by simp) (by simpa using h₁ _ (by simpa [σ] using (e₁ k).2))
-    · exact Prod.ext (by simpa using h₂ _ (by simpa [σ] using (e₂ l).2)) (by simp)
+    · exact Prod.ext (by simp) (by simpa using h₁ _ (by simpa [σ] using (e₁ k).property))
+    · exact Prod.ext (by simpa using h₂ _ (by simpa [σ] using (e₂ l).property)) (by simp)
   refine ⟨σ, ?_⟩
   have h := (b.prod b').det.map_perm w σ
   rw [hσ, prod_det_sumElim] at h
@@ -231,6 +239,13 @@ linear equivalence `e` gives the determinant of the matrix of `e` with respect t
 theorem det_map_eq_det_toMatrix (b : Basis ι R M) (b' : Basis ι R M') (e : M ≃ₗ[R] M') :
     b'.det (b.map e) = (LinearMap.toMatrix b b' (e : M →ₗ[R] M')).det := by
   rw [det_apply, coe_map, ← LinearEquiv.coe_toLinearMap, ← LinearMap.toMatrix_eq_basisToMatrix]
+
+/-- Evaluating the determinant form of a basis `b'` of `M'` on the image `f ∘ v` of a family `v`
+under a linear map `f : M → M'` gives its value on `f ∘ b` times the determinant of `v` in a basis
+`b` of `M`. This is `Module.Basis.det_comp` for linear maps between two different modules. -/
+theorem det_comp_eq_mul (b : Basis ι R M) (b' : Basis ι R M') (f : M →ₗ[R] M') (v : ι → M) :
+    b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v :=
+  DFunLike.congr_fun (AlternatingMap.eq_smul_basis_det b (b'.det.compLinearMap f)) v
 
 end Module.Basis
 
@@ -301,6 +316,16 @@ theorem det_one_add_comp_comm {F F' : Type*} [AddCommGroup F] [Module R F] [Modu
     toMatrix_comp b b' b, toMatrix_comp b' b b']
   exact Matrix.det_one_add_mul_comm _ _
 
+/-- The Weinstein–Aronszajn identity with a minus sign: for linear maps `X : F' →ₗ[R] F` and
+`Y : F →ₗ[R] F'` between free modules of finite rank, `det (1 - X ∘ₗ Y) = det (1 - Y ∘ₗ X)`. This is
+`LinearMap.det_one_add_comp_comm` applied to `-X` and `Y`. -/
+theorem det_one_sub_comp_comm {F F' : Type*} [AddCommGroup F] [Module R F] [Module.Free R F]
+    [Module.Finite R F] [AddCommGroup F'] [Module R F'] [Module.Free R F'] [Module.Finite R F']
+    (X : F' →ₗ[R] F) (Y : F →ₗ[R] F') :
+    LinearMap.det (1 - X ∘ₗ Y) = LinearMap.det (1 - Y ∘ₗ X) := by
+  rw [sub_eq_add_neg, sub_eq_add_neg, ← neg_comp, ← comp_neg]
+  exact det_one_add_comp_comm (-X) Y
+
 /-- **Cramer's rule for an endomorphism.** The determinant of an endomorphism `φ` of a free
 module of finite rank multiplies every vector into the range of `φ`: `det φ • x = φ (adj φ x)`,
 for the adjugate `adj φ` of `φ`. -/
@@ -314,6 +339,19 @@ theorem det_smul_mem_range {F : Type*} [AddCommGroup F] [Module R F] [Module.Fre
     det_toMatrix] at h
   simpa using h
 
+/-- An endomorphism of a free module of finite rank whose determinant is a non-zero-divisor is
+injective. This is Mathlib's `Matrix.mulVec_injective_of_det_mem_nonZeroDivisors`, read through
+the matrix of the endomorphism in a basis. -/
+theorem injective_of_det_mem_nonZeroDivisors [Module.Free R M] [Module.Finite R M]
+    {f : M →ₗ[R] M} (hf : LinearMap.det f ∈ nonZeroDivisors R) : Function.Injective f := by
+  classical
+  let b := Free.chooseBasis R M
+  intro x y hxy
+  refine b.repr.injective (DFunLike.coe_injective <|
+    Matrix.mulVec_injective_of_det_mem_nonZeroDivisors (M := toMatrix b b f) ?_ ?_)
+  · rwa [det_toMatrix]
+  · simp only [toMatrix_mulVec_repr, hxy]
+
 /-- An endomorphism of a free module of rank one is multiplication by its determinant. -/
 theorem apply_eq_det_smul_of_finrank_eq_one [Module.Free R M] (hM : Module.finrank R M = 1)
     (f : M →ₗ[R] M) (x : M) : f x = LinearMap.det f • x := by
@@ -322,6 +360,14 @@ theorem apply_eq_det_smul_of_finrank_eq_one [Module.Free R M] (hM : Module.finra
     exact Subsingleton.elim _ _
   obtain ⟨c, rfl, -⟩ := f.existsUnique_eq_smul_id_of_finrank_eq_one hM
   rw [det_smul, det_id, mul_one, hM, pow_one, LinearMap.smul_apply, id_apply]
+
+/-- **Intertwined endomorphisms have the same determinant.** If a linear equivalence `e`
+intertwines endomorphisms `f` and `g`, that is `e ∘ₗ f = g ∘ₗ e`, then `det f = det g`. This is
+Mathlib's `LinearMap.det_conj` with the conjugation written as a commuting square. -/
+theorem det_eq_of_comp_eq {f : M →ₗ[R] M} {g : N →ₗ[R] N} (e : M ≃ₗ[R] N)
+    (h : (e : M →ₗ[R] N) ∘ₗ f = g ∘ₗ (e : M →ₗ[R] N)) : LinearMap.det f = LinearMap.det g := by
+  rw [← det_conj f e, ← comp_assoc, h, comp_assoc, LinearEquiv.comp_coe, e.symm_trans_self,
+    LinearEquiv.refl_toLinearMap, comp_id]
 
 end LinearMap
 

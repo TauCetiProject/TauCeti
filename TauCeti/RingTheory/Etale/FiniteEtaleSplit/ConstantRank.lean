@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
+import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Finiteness.Prod
+import Mathlib.RingTheory.Finiteness.Small
 
 /-!
 # Finite étale algebras of constant rank, and splitting after a faithfully flat extension
@@ -28,6 +30,9 @@ may vary), after base change to some faithfully flat finite étale `R`-algebra.
 
 * `TauCeti.Algebra.exists_etale_rankAtStalk_prod_pi_quotient_eq`: a finite étale algebra is a
   direct factor of a finite étale algebra of constant rank.
+* `TauCeti.Algebra.exists_faithfullyFlat_etale_algEquiv_pi`: a finite étale algebra of constant
+  rank `Nat.card ι` (in any universe) splits as `T ⊗[R] S ≃ₐ[T] (ι → T)` after a faithfully flat
+  finite étale extension `R → T`.
 * `TauCeti.Algebra.exists_faithfullyFlat_etale_isTotallySplit_tensorProduct`: a finite étale
   algebra is totally split after base change to a faithfully flat finite étale algebra.
 
@@ -63,6 +68,35 @@ theorem exists_etale_rankAtStalk_prod_pi_quotient_eq :
   have (j : Fin n) : Algebra.Etale R (R ⧸ Ideal.span {1 - e j}) :=
     Etale.quotient_span_singleton (he j).one_sub
   exact ⟨n, e, he, inferInstance, hrank⟩
+
+/-- **Constant-rank finite étale algebras split with matching index type after a faithfully flat
+finite étale extension.** If `S` is a finite étale `R`-algebra (in any universe) of constant stalk
+rank `Nat.card ι`, there is a faithfully flat finite étale `R`-algebra `T` in the universe of `R`
+such that `T ⊗[R] S ≃ₐ[T] (ι → T)`. -/
+theorem exists_faithfullyFlat_etale_algEquiv_pi {R : Type u} {S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Finite ι]
+    (h : Module.rankAtStalk (R := R) S = Nat.card ι) :
+    ∃ (T : Type u) (_ : CommRing T) (_ : Algebra R T) (_ : Module.FaithfullyFlat R T)
+      (_ : Module.Finite R T) (_ : Algebra.Etale R T), Nonempty (T ⊗[R] S ≃ₐ[T] (ι → T)) := by
+  cases subsingleton_or_nontrivial R
+  · have : Subsingleton (R ⊗[R] S) := Module.subsingleton R _
+    exact ⟨R, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+      ⟨default⟩⟩
+  have : Small.{u} S := Module.Finite.small R S
+  let e : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
+  have : Algebra.Etale R (Shrink.{u} S) := .of_equiv e.symm
+  have : Module.Finite R (Shrink.{u} S) := .equiv e.symm.toLinearEquiv
+  have h' : Module.rankAtStalk (R := R) (Shrink.{u} S) = Nat.card ι :=
+    (Module.rankAtStalk_eq_of_equiv e.toLinearEquiv).trans h
+  obtain ⟨T, _, _, hff, hfin, het, _⟩ := Algebra.IsFiniteSplit.exists_tensorProduct_of_etale h'
+  obtain ⟨m, ⟨f⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T (T ⊗[R] Shrink.{u} S)
+  have : Nontrivial T := (FaithfulSMul.algebraMap_injective R T).nontrivial
+  obtain rfl : m = Nat.card ι := by
+    simpa using f.toLinearEquiv.finrank_eq.symm.trans
+      (TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq h')
+  exact ⟨T, _, _, hff, hfin, het,
+    ⟨((Algebra.TensorProduct.congr (AlgEquiv.refl : T ≃ₐ[T] T) e.symm).trans f).trans
+      (AlgEquiv.piCongrLeft' T (fun _ ↦ T) (Finite.equivFin ι).symm)⟩⟩
 
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [Algebra.Etale R S]
   [Module.Finite R S]

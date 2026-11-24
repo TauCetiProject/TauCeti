@@ -95,12 +95,12 @@ theorem supportMeasure_def (M : MetricMeasureSpace X) :
 /-- The mass of a set in the support is the reference mass of its image in the carrier. -/
 theorem supportMeasure_apply (M : MetricMeasureSpace X) (s : Set M.support) :
     M.supportMeasure s = M.reference (Subtype.val '' s) := by
-  rw [supportMeasure_def, comap_subtype_coe_apply M.isClosed_support.measurableSet]
+  rw [supportMeasure_def, comap_subtypeVal_apply M.isClosed_support.measurableSet]
 
 /-- Inclusion of the support pushes its restricted measure back to the original measure. -/
 theorem map_supportMeasure (M : MetricMeasureSpace X) :
     (M.supportMeasure).map (Subtype.val : M.support → X) = M.reference := by
-  rw [supportMeasure_def, map_comap_subtype_coe M.isClosed_support.measurableSet]
+  rw [supportMeasure_def, map_comap_subtypeVal M.isClosed_support.measurableSet]
   exact Measure.restrict_eq_self_of_ae_mem M.reference.support_mem_ae
 
 /-- Restrict the reference measure to its support, with the inherited metric and Borel
@@ -109,7 +109,7 @@ noncomputable def supportSpace (M : MetricMeasureSpace X) : MetricMeasureSpace M
   reference := M.supportMeasure
   finite_bounded s hs := by
     rw [supportMeasure_apply]
-    exact M.finite_bounded _ (isometry_subtype_coe.lipschitzWith.isBounded_image hs)
+    exact M.finite_bounded _ (isometry_subtypeVal.lipschitzWith.isBounded_image hs)
 
 @[simp]
 theorem reference_supportSpace (M : MetricMeasureSpace X) :
@@ -123,7 +123,7 @@ instance instIsOpenPosMeasureSupportMeasure (M : MetricMeasureSpace X) :
     obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.mp hU
     rw [supportMeasure_apply, Subtype.image_preimage_coe, Set.inter_comm,
       measure_inter_conull M.measure_compl_support]
-    exact ((M.mem_support_iff x).mp x.2 O (hO.mem_nhds hx)).ne'
+    exact ((M.mem_support_iff x).mp x.property O (hO.mem_nhds hx)).ne'
 
 /-- The reduced measure has full support: every point of the support of the reference
 measure lies in the support of its restriction. -/
@@ -204,8 +204,8 @@ measure back to the original one. -/
 noncomputable def supportInclusion (M : MetricMeasureSpace X) :
     MeasurePreservingIsometry M.supportSpace M where
   toFun := Subtype.val
-  isometry := isometry_subtype_coe
-  measurePreserving := ⟨measurable_subtype_coe, M.map_supportMeasure⟩
+  isometry := isometry_subtypeVal
+  measurePreserving := ⟨measurable_subtypeVal, M.map_supportMeasure⟩
 
 @[simp]
 theorem supportInclusion_apply (M : MetricMeasureSpace X) (x : M.support) :

@@ -76,12 +76,10 @@ theorem barDifferential_barMap (f : AInfinityRightModuleHom MM NN)
 /-- The suspended Taylor map: apply the coalgebra counit after the bar map. -/
 noncomputable def taylor (f : AInfinityRightModuleHom MM NN) :
     (M ⊗[R] TensorWords R A) →ₗ[R] N :=
-  (TensorProduct.rid R N).toLinearMap ∘ₗ
-    (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ f.barMap
+  Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ f.barMap
 
 theorem taylor_def (f : AInfinityRightModuleHom MM NN) :
-    f.taylor = (TensorProduct.rid R N).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ f.barMap := (rfl)
+    f.taylor = Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ f.barMap := (rfl)
 
 /-- The Taylor map preserves suspended degree. -/
 theorem isHomogeneous_taylor (f : AInfinityRightModuleHom MM NN) :
@@ -133,8 +131,7 @@ theorem barDifferential_comp_iff
       (AInfinityRightModule.barGrading AA NN.grading).piece 0) :
     NN.barDifferential ∘ₗ F.toLinearMap = F.toLinearMap ∘ₗ MM.barDifferential ↔
       NN.taylor ∘ₗ F.toLinearMap =
-        ((TensorProduct.rid R N).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ F.toLinearMap) ∘ₗ
+        (Comodule.cofreeCounit R (TensorWords R A) N ∘ₗ F.toLinearMap) ∘ₗ
             MM.barDifferential := by
   constructor
   · intro h
@@ -165,7 +162,7 @@ theorem isHomogeneous_cofreeLift {r : ℤ}
       (AInfinityRightModule.barGrading AA MM.grading).piece
       (AInfinityRightModule.barGrading AA NN.grading).piece r := by
   let W := TensorWords.grading (AA.grading.shift 1)
-  have hG (G : InternalGrading R M) : AInfinityRightModule.barGrading AA G =
+  have hG (G : InternalGrading R M ℤ) : AInfinityRightModule.barGrading AA G =
       (G.shift 1).tensorProduct W := by
     ext p
     rw [AInfinityRightModule.barGrading_piece]
@@ -236,8 +233,7 @@ theorem barMap_id (MM : AInfinityRightModule AA M) :
 /-- The Taylor map of the identity is the counit projection onto the module factor. -/
 @[simp]
 theorem taylor_id (MM : AInfinityRightModule AA M) :
-    (AInfinityRightModuleHom.id MM).taylor = (TensorProduct.rid R M).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M := by
+    (AInfinityRightModuleHom.id MM).taylor = Comodule.cofreeCounit R (TensorWords R A) M := by
   rw [taylor_def, barMap_id, LinearMap.comp_id]
 
 /-- Composition of module morphisms is composition of bar-comodule maps. -/

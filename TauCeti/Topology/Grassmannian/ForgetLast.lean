@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Snoc
 public import TauCeti.Topology.Grassmannian.Orthonormal
 
 /-!
@@ -20,8 +21,9 @@ space of dimension `N - r`. In particular, over the reals the fibre of
 `V_(r+1)(ℝ^N) → V_r(ℝ^N)` is `S^(N-r-1)` when `r < N`. The complement-sphere
 description also applies in rank zero and when there is no room for another vector;
 in the latter case the sphere and the fibre are empty. This is the fibre comparison
-used in the sphere-fibration tower of Stiefel spaces. Local triviality and homotopy
-group calculations are not asserted here.
+used in the sphere-fibration tower of Stiefel spaces. Local triviality and the resulting
+connectivity of Stiefel manifolds, over `ℝ` and `ℂ`, are in
+`TauCeti.Topology.Grassmannian.StiefelFibration.ForgetLast`.
 
 ## References
 
@@ -39,14 +41,14 @@ variable {𝕜 : Type*} [RCLike 𝕜] {r N : ℕ}
 /-- Delete the last vector, keeping the first `r` vectors in their given order. -/
 def forgetLast (f : finiteOrthonormalFrame 𝕜 (r + 1) N) :
     finiteOrthonormalFrame 𝕜 r N :=
-  ⟨fun i ↦ f.1 i.castSucc, f.2.comp _ (Fin.castSucc_injective r)⟩
+  ⟨fun i ↦ f.val i.castSucc, f.property.comp _ (Fin.castSucc_injective r)⟩
 
 @[simp] theorem forgetLast_apply (f : finiteOrthonormalFrame 𝕜 (r + 1) N) (i : Fin r) :
-    (forgetLast f).1 i = f.1 i.castSucc := (rfl)
+    (forgetLast f).val i = f.val i.castSucc := (rfl)
 
 @[fun_prop] theorem continuous_forgetLast :
     Continuous (forgetLast : finiteOrthonormalFrame 𝕜 (r + 1) N → _) :=
-  (continuous_pi fun i ↦ (continuous_apply i.castSucc).comp continuous_subtype_val).subtype_mk _
+  (continuous_pi fun i ↦ (continuous_apply i.castSucc).comp continuous_subtypeVal).subtype_mk _
 
 /-- Forgetting the last vector commutes with the ambient unitary action. -/
 @[simp] theorem forgetLast_unitaryMap (A : Matrix.unitaryGroup (Fin N) 𝕜)
@@ -58,23 +60,23 @@ def forgetLast (f : finiteOrthonormalFrame 𝕜 (r + 1) N) :
 
 /-- The Euclidean orthogonal complement of the span of a frame. -/
 def complement (f : finiteOrthonormalFrame 𝕜 r N) : Submodule 𝕜 (EuclideanSpace 𝕜 (Fin N)) :=
-  (Submodule.span 𝕜 (range fun i ↦ (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N))))ᗮ
+  (Submodule.span 𝕜 (range fun i ↦ (WithLp.toLp 2 (f.val i) : EuclideanSpace 𝕜 (Fin N))))ᗮ
 
 /-- Membership in the complement means orthogonality to every vector of the frame. -/
 @[simp] theorem mem_complement (f : finiteOrthonormalFrame 𝕜 r N)
     (v : EuclideanSpace 𝕜 (Fin N)) :
-    v ∈ f.complement ↔ ∀ i, inner 𝕜 (WithLp.toLp 2 (f.1 i)) v = 0 := by
+    v ∈ f.complement ↔ ∀ i, inner 𝕜 (WithLp.toLp 2 (f.val i)) v = 0 := by
   rw [complement, Submodule.mem_orthogonal]
   simpa only [Submodule.mem_orthogonalBilin, Set.forall_mem_range, innerₛₗ_apply_apply] using
     (Submodule.mem_orthogonalBilin_span (B := innerₛₗ 𝕜) (y := v)
-      (s := range fun i ↦ (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N))))
+      (s := range fun i ↦ (WithLp.toLp 2 (f.val i) : EuclideanSpace 𝕜 (Fin N))))
 
 /-- The complement has the dimension left over after the frame vectors are removed. -/
 @[simp] theorem finrank_complement (f : finiteOrthonormalFrame 𝕜 r N) :
     Module.finrank 𝕜 f.complement = N - r := by
   have h := Submodule.finrank_add_finrank_orthogonal (Submodule.span 𝕜
-    (range fun i ↦ (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N))))
-  rw [finrank_span_eq_card f.2.linearIndependent, Fintype.card_fin,
+    (range fun i ↦ (WithLp.toLp 2 (f.val i) : EuclideanSpace 𝕜 (Fin N))))
+  rw [finrank_span_eq_card f.property.linearIndependent, Fintype.card_fin,
     finrank_euclideanSpace, Fintype.card_fin] at h
   dsimp [complement]
   exact Nat.eq_sub_of_add_eq' h
@@ -82,26 +84,31 @@ def complement (f : finiteOrthonormalFrame 𝕜 r N) : Submodule 𝕜 (Euclidean
 /-- Append a unit vector perpendicular to the frame as its new last vector. -/
 def snoc (f : finiteOrthonormalFrame 𝕜 r N) (v : Metric.sphere (0 : f.complement) 1) :
     finiteOrthonormalFrame 𝕜 (r + 1) N :=
-  ⟨Fin.snoc f.1 (WithLp.ofLp v.1.1), by
-    classical
-    have hv : ‖(v.1.1 : EuclideanSpace 𝕜 (Fin N))‖ = 1 :=
-      mem_sphere_zero_iff_norm.1 v.2
-    have ho := (mem_complement f v.1.1).1 v.1.2
-    refine orthonormal_iff_ite.2 fun i j ↦ ?_
-    refine Fin.lastCases ?_ (fun i ↦ ?_) i <;>
-      refine Fin.lastCases ?_ (fun j ↦ ?_) j
-    · simp [inner_self_eq_norm_sq_to_K, hv]
-    · simpa [(Fin.castSucc_ne_last j).symm] using (inner_eq_zero_symm.2 (ho j))
-    · simpa using ho i
-    · simpa using orthonormal_iff_ite.1 f.2 i j⟩
+  ⟨Fin.snoc f.val (WithLp.ofLp v.val.val), by
+    simpa [← Function.comp_def, Fin.comp_snoc] using
+      f.property.snoc (mem_sphere_zero_iff_norm.1 v.property) ((mem_complement f v.val.val).1
+          v.val.property)⟩
 
 @[simp] theorem snoc_castSucc (f : finiteOrthonormalFrame 𝕜 r N)
     (v : Metric.sphere (0 : f.complement) 1) (i : Fin r) :
-    (f.snoc v).1 i.castSucc = f.1 i := by simp [snoc]
+    (f.snoc v).val i.castSucc = f.val i := by simp [snoc]
 
 @[simp] theorem snoc_last (f : finiteOrthonormalFrame 𝕜 r N)
     (v : Metric.sphere (0 : f.complement) 1) :
-    (f.snoc v).1 (Fin.last r) = WithLp.ofLp v.1.1 := by simp [snoc]
+    (f.snoc v).val (Fin.last r) = WithLp.ofLp v.val.val := by simp [snoc]
+
+/-- Appending a perpendicular unit vector keeps the earlier vectors, as unit vectors. -/
+@[simp] theorem toSphere_snoc_castSucc (f : finiteOrthonormalFrame 𝕜 r N)
+    (v : Metric.sphere (0 : f.complement) 1) (i : Fin r) :
+    (f.snoc v).toSphere i.castSucc = f.toSphere i :=
+  Subtype.ext <| by rw [coe_toSphere, coe_toSphere, snoc_castSucc]
+
+/-- The appended perpendicular unit vector is the last vector of the frame, as a unit vector. -/
+@[simp] theorem toSphere_snoc_last (f : finiteOrthonormalFrame 𝕜 r N)
+    (v : Metric.sphere (0 : f.complement) 1) :
+    (f.snoc v).toSphere (Fin.last r) =
+      ⟨v.val.val, mem_sphere_zero_iff_norm.2 (mem_sphere_zero_iff_norm.1 v.property)⟩ :=
+  Subtype.ext <| by rw [coe_toSphere, snoc_last, WithLp.toLp_ofLp]
 
 @[simp] theorem forgetLast_snoc (f : finiteOrthonormalFrame 𝕜 r N)
     (v : Metric.sphere (0 : f.complement) 1) : forgetLast (f.snoc v) = f := by
@@ -116,24 +123,24 @@ def snoc (f : finiteOrthonormalFrame 𝕜 r N) (v : Metric.sphere (0 : f.complem
   · simp only [Fin.snoc_last]
     fun_prop
   · simpa only [snoc, Fin.snoc_castSucc] using
-      (continuous_const : Continuous (fun _ : Metric.sphere (0 : f.complement) 1 ↦ f.1 i))
+      (continuous_const : Continuous (fun _ : Metric.sphere (0 : f.complement) 1 ↦ f.val i))
 
 /-- The last vector of a frame in the fibre, as a unit vector in the complement. -/
 def lastVector (f : finiteOrthonormalFrame 𝕜 r N)
     (g : {g : finiteOrthonormalFrame 𝕜 (r + 1) N // forgetLast g = f}) :
     Metric.sphere (0 : f.complement) 1 :=
-  ⟨⟨WithLp.toLp 2 (g.1.1 (Fin.last r)), by
+  ⟨⟨WithLp.toLp 2 (g.val.val (Fin.last r)), by
     apply (mem_complement f _).2
     intro i
-    have hi := congrArg (fun h : finiteOrthonormalFrame 𝕜 r N ↦ h.1 i) g.2
+    have hi := congrArg (fun h : finiteOrthonormalFrame 𝕜 r N ↦ h.val i) g.property
     rw [← hi, forgetLast_apply]
-    exact g.1.2.2 (Fin.castSucc_ne_last i)⟩,
-    mem_sphere_zero_iff_norm.2 (g.1.2.1 (Fin.last r))⟩
+    exact g.val.property.2 (Fin.castSucc_ne_last i)⟩,
+    mem_sphere_zero_iff_norm.2 (g.val.property.1 (Fin.last r))⟩
 
 @[simp] theorem coe_lastVector (f : finiteOrthonormalFrame 𝕜 r N)
     (g : {g : finiteOrthonormalFrame 𝕜 (r + 1) N // forgetLast g = f}) :
-    ((f.lastVector g).1 : EuclideanSpace 𝕜 (Fin N)) =
-      WithLp.toLp 2 (g.1.1 (Fin.last r)) := (rfl)
+    ((f.lastVector g).val : EuclideanSpace 𝕜 (Fin N)) =
+      WithLp.toLp 2 (g.val.val (Fin.last r)) := (rfl)
 
 /-- Reading the last vector identifies a forgetful fibre with the complement's unit sphere. -/
 def forgetLastFiberHomeomorph (f : finiteOrthonormalFrame 𝕜 r N) :
@@ -148,14 +155,14 @@ def forgetLastFiberHomeomorph (f : finiteOrthonormalFrame 𝕜 r N) :
     refine Fin.lastCases ?_ (fun i ↦ ?_) i
     · simp [lastVector]
     · simpa only [snoc_castSucc, forgetLast_apply] using
-        (congrArg (fun h : finiteOrthonormalFrame 𝕜 r N ↦ h.1 i) g.2).symm
+        (congrArg (fun h : finiteOrthonormalFrame 𝕜 r N ↦ h.val i) g.property).symm
   right_inv v := by ext; simp [lastVector]
   continuous_toFun := by
     apply Continuous.subtype_mk
     apply Continuous.subtype_mk
     exact (PiLp.continuous_toLp 2 _).comp
       ((continuous_apply (Fin.last r)).comp
-        (continuous_subtype_val.comp continuous_subtype_val))
+        (continuous_subtypeVal.comp continuous_subtypeVal))
   continuous_invFun := (continuous_snoc f).subtype_mk _
 
 @[simp] theorem forgetLastFiberHomeomorph_apply (f : finiteOrthonormalFrame 𝕜 r N)

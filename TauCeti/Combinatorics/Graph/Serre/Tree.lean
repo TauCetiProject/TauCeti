@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Serre.Iso
 public import TauCeti.Combinatorics.Graph.Serre.Reduction
 
 /-!
@@ -15,16 +16,32 @@ moreover nonempty and connected. Equivalently, an acyclic graph has at most one 
 between two vertices, and a tree has exactly one. These unique reduced paths are the tree paths
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
-An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and a
+An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and no two
+darts with the same endpoints, so the target map identifies the outgoing darts at any vertex with
+its adjacent vertices and a finite set of vertices induces finitely many darts. A
 restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
 all its darts in `S`.
 
-The one-vertex graph without edges and the segment are trees. A rose with a petal is not a tree,
-since its petal is a reduced loop.
+A morphism `f : Γ → Δ` that is locally injective, in the sense that two darts with a common source
+and the same image are equal, maps reduced paths to reduced paths. So its source is acyclic when its
+target is (`SerreGraph.IsAcyclic.comap`). When its target is acyclic, it is injective on the
+vertices of each connected component (`SerreGraph.Hom.eq_of_mapV_eq_of_isAcyclic`), so from a
+preconnected graph it is injective on vertices and on darts
+(`SerreGraph.Hom.mapV_injective_of_isAcyclic`, `SerreGraph.Hom.mapE_injective_of_isAcyclic`). Hence
+a morphism from a nonempty preconnected graph to a preconnected acyclic graph that maps the darts
+issuing from each vertex bijectively onto those issuing from its image is an isomorphism
+(`SerreGraph.Iso.ofLocallyBijective`). In the structure of groups acting on trees, this compares a
+tree with the Bass–Serre tree of its quotient graph of groups. Isomorphic graphs are acyclic
+together and trees together (`SerreGraph.Iso.isAcyclic_iff`, `SerreGraph.Iso.isTree_iff`).
+
+A graph without darts, such as the graph `noEdge V` without edges, is acyclic, and it is a tree
+exactly when it has one vertex. A graph without vertices is not a tree. The segment is a tree,
+its dart being the unique reduced path from one vertex to the other.
+A rose with a petal is not a tree, since its petal is a reduced loop.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §2.2.
+* J.-P. Serre, *Trees*, Chapter I, §2.2 and §5.4.
 -/
 
 public section
@@ -93,6 +110,57 @@ theorem IsAcyclic.isEmpty_dart_of_subsingleton (h : Γ.IsAcyclic) [Subsingleton 
     IsEmpty Γ.E :=
   ⟨fun e => h.src_ne_tgt e (Subsingleton.elim _ _)⟩
 
+variable {Γ} in
+/-- In an acyclic graph, a reduced path only crosses darts of any other path with the same
+endpoints, in the same order. -/
+theorem IsAcyclic.darts_sublist (h : Γ.IsAcyclic) {a b : Γ.V} {p : Γ.Path a b}
+    (hp : Path.IsReduced Γ p) (q : Γ.Path a b) : (Path.darts Γ p).Sublist (Path.darts Γ q) := by
+  rw [h.eq_of_isReduced hp (Path.isReduced_reduce Γ q)]
+  exact Path.darts_reduce_sublist Γ q
+
+variable {Γ} in
+/-- An acyclic graph has no parallel darts: a dart is determined by its endpoints. -/
+theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
+    (hs : Γ.src e = Γ.src f) (ht : Γ.tgt e = Γ.tgt f) : e = f := by
+  have key : ∀ {a b : Γ.V} (x y : Quiver.Hom a b), x.val = y.val := fun x y => by
+    simpa using congrArg (Path.darts Γ)
+      (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
+  exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
+
+variable {Γ} in
+/-- In an acyclic Serre graph, the target map identifies the outgoing darts at any vertex `u` with
+the adjacent vertices `{w // Nonempty (u ⟶ w)}`. -/
+noncomputable def IsAcyclic.starEquivAdjacent (h : Γ.IsAcyclic) (u : Γ.V) :
+    {e : Γ.E // Γ.src e = u} ≃ {w : Γ.V // Nonempty (u ⟶ w)} :=
+  Equiv.ofBijective (fun e => ⟨Γ.tgt e.val, ⟨⟨e.val, e.property, rfl⟩⟩⟩)
+    ⟨fun ⟨_, h₁⟩ ⟨_, h₂⟩ h' =>
+      Subtype.ext (h.eq_of_src_eq_of_tgt_eq (h₁.trans h₂.symm) (congrArg Subtype.val h')),
+     fun ⟨_, ⟨f⟩⟩ => ⟨⟨f.val, f.property.1⟩, Subtype.ext f.property.2⟩⟩
+
+variable {Γ} in
+@[simp] theorem IsAcyclic.starEquivAdjacent_apply_val {h : Γ.IsAcyclic} (u : Γ.V)
+    (e : {e : Γ.E // Γ.src e = u}) :
+    (h.starEquivAdjacent u e).val = Γ.tgt e.val :=
+  (rfl)
+
+variable {Γ} in
+/-- In an acyclic graph, a single vertex induces no dart. -/
+@[simp] theorem IsAcyclic.inducedDarts_singleton (h : Γ.IsAcyclic) (v : Γ.V) :
+    Γ.inducedDarts {v} = ∅ :=
+  Set.eq_empty_of_forall_notMem fun e he => by
+    obtain ⟨hs, ht⟩ := mem_inducedDarts_iff.mp he
+    exact h.src_ne_tgt e (hs.trans ht.symm)
+
+variable {Γ} in
+/-- In an acyclic graph, a finite set of vertices induces finitely many darts. -/
+theorem IsAcyclic.finite_inducedDarts (h : Γ.IsAcyclic) {C : Set Γ.V} (hC : C.Finite) :
+    (Γ.inducedDarts C).Finite := by
+  refine Set.Finite.of_finite_image (f := fun e => (Γ.src e, Γ.tgt e))
+    ((hC.prod hC).subset ?_) fun e _ f _ hef =>
+      h.eq_of_src_eq_of_tgt_eq (congrArg Prod.fst hef) (congrArg Prod.snd hef)
+  rintro _ ⟨e, he, rfl⟩
+  exact mem_inducedDarts_iff.mp he
+
 /-- A graph is acyclic exactly when any two reduced paths with the same endpoints are equal. -/
 theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔
     ∀ ⦃a b : Γ.V⦄ (p q : Γ.Path a b), Path.IsReduced Γ p → Path.IsReduced Γ q → p = q :=
@@ -122,6 +190,23 @@ theorem isTree_iff_existsUnique_isReduced : Γ.IsTree ↔
     ?_⟩
   exact (Γ.isAcyclic_iff_eq_of_isReduced).mpr fun a b p q hp hq => (h a b).unique hp hq
 
+/-- A Serre graph without darts is acyclic: its only closed paths are empty. -/
+theorem isAcyclic_of_isEmpty_dart [IsEmpty Γ.E] : Γ.IsAcyclic := by
+  refine (isAcyclic_iff Γ).mpr fun u p _ => ?_
+  cases p with
+  | nil => rfl
+  | cons p e => exact isEmptyElim e.val
+
+/-- A Serre graph without darts is a tree exactly when it has exactly one vertex. -/
+theorem isTree_iff_of_isEmpty_dart [IsEmpty Γ.E] :
+    Γ.IsTree ↔ Nonempty Γ.V ∧ Subsingleton Γ.V := by
+  rw [isTree_iff, Γ.connected_iff_of_forall_src_eq_tgt isEmptyElim,
+    and_iff_left Γ.isAcyclic_of_isEmpty_dart]
+
+/-- A Serre graph without vertices is not a tree: a tree is connected. -/
+theorem not_isTree_of_isEmpty [IsEmpty Γ.V] : ¬Γ.IsTree :=
+  fun h => Γ.not_connected_of_isEmpty h.connected
+
 section Restrict
 
 variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
@@ -144,27 +229,147 @@ theorem isAcyclic_restrict_iff : (Γ.restrict S hS).IsAcyclic ↔
 
 /-- The restriction to the empty set of darts is acyclic. -/
 theorem isAcyclic_restrict_empty : (Γ.restrict ∅ fun _ h => h.elim).IsAcyclic :=
-  (Γ.isAcyclic_restrict_iff _ _).mpr fun _ p _ hp => Quiver.Path.eq_nil_of_length_zero _ (by
-    rw [← Path.length_darts, List.eq_nil_iff_forall_not_mem.mpr fun e he => hp e he,
-      List.length_nil])
+  isAcyclic_of_isEmpty_dart _
 
 end Restrict
 
+section Morphism
+
+variable {Γ} {Δ : SerreGraph}
+
+/-- The source of a morphism into an acyclic graph that is injective on the darts issuing from
+each vertex is acyclic. -/
+theorem IsAcyclic.comap (f : Γ.Hom Δ)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    (h : Δ.IsAcyclic) : Γ.IsAcyclic := by
+  refine (isAcyclic_iff Γ).mpr fun a p hp => ?_
+  have hd := congrArg (Path.darts Δ) ((isAcyclic_iff Δ).mp h _ _ (f.isReduced_mapPath hf p hp))
+  rw [Hom.darts_mapPath, Path.darts_nil, List.map_eq_nil_iff] at hd
+  exact Quiver.Path.eq_nil_of_length_zero p (by rw [← Path.length_darts, hd, List.length_nil])
+
+namespace Hom
+
+/-- A morphism to an acyclic graph that is injective on the darts issuing from each vertex is
+injective on the vertices of each connected component: two vertices joined by a path and with the
+same image are equal. -/
+theorem eq_of_mapV_eq_of_isAcyclic (f : Γ.Hom Δ) (hΔ : Δ.IsAcyclic)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') {a b : Γ.V}
+    (p : Γ.Path a b) (hab : f.mapV a = f.mapV b) : a = b := by
+  -- A reduced path of `Δ` whose ends coincide is empty.
+  have key {x y : Δ.V} (q : Δ.Path x y) (hq : Path.IsReduced Δ q) (hxy : x = y) :
+      Path.darts Δ q = [] := by
+    subst hxy
+    rw [(isAcyclic_iff Δ).mp hΔ _ q hq, Path.darts_nil]
+  -- The image of the reduction of `p` is a reduced closed path, hence empty.
+  have hd := key _ (f.isReduced_mapPath hf _ (Path.isReduced_reduce Γ p)) hab
+  rw [Hom.darts_mapPath, List.map_eq_nil_iff] at hd
+  exact Path.eq_of_darts_eq_nil Γ _ hd
+
+/-- A morphism from a preconnected graph to an acyclic graph that is injective on the darts
+issuing from each vertex is injective on vertices. -/
+theorem mapV_injective_of_isAcyclic (f : Γ.Hom Δ) (hΓ : Γ.Preconnected) (hΔ : Δ.IsAcyclic)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') :
+    Function.Injective f.mapV := fun a b hab =>
+  f.eq_of_mapV_eq_of_isAcyclic hΔ hf (Γ.preconnected_iff.mp hΓ a b).some hab
+
+/-- A morphism from a preconnected graph to an acyclic graph that is injective on the darts
+issuing from each vertex is injective on darts. -/
+theorem mapE_injective_of_isAcyclic (f : Γ.Hom Δ) (hΓ : Γ.Preconnected) (hΔ : Δ.IsAcyclic)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') :
+    Function.Injective f.mapE := fun e e' h =>
+  hf e e' (f.mapV_injective_of_isAcyclic hΓ hΔ hf (by rw [← f.map_src, h, f.map_src])) h
+
+end Hom
+
+namespace Iso
+
+/-- A morphism from a nonempty preconnected graph to a preconnected acyclic graph is an
+isomorphism if it is injective on the darts issuing from each vertex and every dart issuing from a
+vertex of its image is the image of a dart. This holds when it maps the darts issuing from each
+vertex bijectively onto the darts issuing from its image. -/
+noncomputable def ofLocallyBijective (f : Γ.Hom Δ) [Nonempty Γ.V] (hΓ : Γ.Preconnected)
+    (hΔ : Δ.Preconnected) (hΔ' : Δ.IsAcyclic)
+    (hinj : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    (hsurj : ∀ d : Δ.E, Δ.src d ∈ Set.range f.mapV → d ∈ Set.range f.mapE) : Γ.Iso Δ :=
+  f.toIso ⟨f.mapV_injective_of_isAcyclic hΓ hΔ' hinj, f.mapV_surjective_of_preconnected hΔ hsurj⟩
+    ⟨f.mapE_injective_of_isAcyclic hΓ hΔ' hinj, f.mapE_surjective_of_preconnected hΔ hsurj⟩
+
+section ofLocallyBijective
+
+variable (f : Γ.Hom Δ) [Nonempty Γ.V] (hΓ : Γ.Preconnected) (hΔ : Δ.Preconnected)
+  (hΔ' : Δ.IsAcyclic) (hinj : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+  (hsurj : ∀ d : Δ.E, Δ.src d ∈ Set.range f.mapV → d ∈ Set.range f.mapE)
+
+@[simp] theorem ofLocallyBijective_equivV_apply (a : Γ.V) :
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivV a = f.mapV a :=
+  Hom.toIso_equivV_apply f _ _ a
+
+@[simp] theorem ofLocallyBijective_equivE_apply (e : Γ.E) :
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivE e = f.mapE e :=
+  Hom.toIso_equivE_apply f _ _ e
+
+@[simp] theorem ofLocallyBijective_toHom :
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).toHom = f :=
+  Hom.toIso_toHom f _ _
+
+@[simp] theorem ofLocallyBijective_equivV_symm_apply_apply (a : Γ.V) :
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivV.symm (f.mapV a) = a := by
+  simpa only [ofLocallyBijective_equivV_apply] using
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivV.symm_apply_apply a
+
+@[simp] theorem ofLocallyBijective_equivV_apply_symm_apply (b : Δ.V) :
+    f.mapV ((ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivV.symm b) = b := by
+  simpa only [ofLocallyBijective_equivV_apply] using
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivV.apply_symm_apply b
+
+@[simp] theorem ofLocallyBijective_equivE_symm_apply_apply (e : Γ.E) :
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivE.symm (f.mapE e) = e := by
+  simpa only [ofLocallyBijective_equivE_apply] using
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivE.symm_apply_apply e
+
+@[simp] theorem ofLocallyBijective_equivE_apply_symm_apply (d : Δ.E) :
+    f.mapE ((ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivE.symm d) = d := by
+  simpa only [ofLocallyBijective_equivE_apply] using
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).equivE.apply_symm_apply d
+
+@[simp] theorem comp_ofLocallyBijective_symm_toHom :
+    f.comp (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).symm.toHom = Hom.id Δ := by
+  simpa only [ofLocallyBijective_toHom] using
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).toHom_comp_symm_toHom
+
+@[simp] theorem ofLocallyBijective_symm_toHom_comp :
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).symm.toHom.comp f = Hom.id Γ := by
+  simpa only [ofLocallyBijective_toHom] using
+    (ofLocallyBijective f hΓ hΔ hΔ' hinj hsurj).symm_toHom_comp_toHom
+
+end ofLocallyBijective
+
+/-- Isomorphic Serre graphs are acyclic together. -/
+theorem isAcyclic_iff (φ : Γ.Iso Δ) : Γ.IsAcyclic ↔ Δ.IsAcyclic :=
+  ⟨.comap φ.symm.toHom fun _ _ _ h => by simpa using h,
+    .comap φ.toHom fun _ _ _ h => by simpa using h⟩
+
+/-- Isomorphic Serre graphs are trees together. -/
+theorem isTree_iff (φ : Γ.Iso Δ) : Γ.IsTree ↔ Δ.IsTree :=
+  (SerreGraph.isTree_iff Γ).trans <|
+    (and_congr φ.connected_iff.symm φ.isAcyclic_iff).trans (SerreGraph.isTree_iff Δ).symm
+
+end Iso
+
+end Morphism
+
+/-- A graph without edges is acyclic. -/
+@[simp] theorem noEdge_isAcyclic {V : Type u} : (noEdge.{u, v} V).IsAcyclic :=
+  isAcyclic_of_isEmpty_dart _
+
+/-- A graph without edges is a tree exactly when it has exactly one vertex. -/
+@[simp] theorem noEdge_isTree_iff {V : Type u} :
+    (noEdge.{u, v} V).IsTree ↔ Nonempty V ∧ Subsingleton V :=
+  isTree_iff_of_isEmpty_dart _
+
 /-- The graph with one vertex and no edges is a tree. -/
-theorem single_vertex_isTree : point.{u, v}.IsTree := by
-  rw [isTree_iff]
-  refine ⟨?_, ?_⟩
-  · rw [point.{u, v}.connected_iff]
-    refine ⟨⟨PUnit.unit⟩, ?_⟩
-    rw [point.{u, v}.preconnected_iff]
-    intro u v
-    cases u
-    cases v
-    exact ⟨(@Quiver.Path.nil point.{u, v}.V point.{u, v}.toQuiver PUnit.unit)⟩
-  · intro u p _
-    cases p with
-    | nil => rfl
-    | cons p e => exact e.1.elim
+theorem single_vertex_isTree : (noEdge.{u, v} PUnit).IsTree :=
+  noEdge_isTree_iff.mpr ⟨inferInstance, inferInstance⟩
 
 /-- The segment, two vertices joined by a single pair of darts, is a tree. -/
 theorem segment_isTree : segment.IsTree := by
@@ -184,10 +389,17 @@ theorem segment_isTree : segment.IsTree := by
       cases p with
       | nil =>
         -- The vertices and darts of the segment are both `Bool`, with `tgt f = !f`.
-        exact absurd (f.2.2.trans f.2.1.symm) (Bool.not_ne_self f.1)
+        exact absurd (f.property.2.trans f.property.1.symm) (Bool.not_ne_self f.val)
       | cons p e =>
         refine absurd ?_ ((Path.isReduced_cons_cons segment p e f).mp hp).2
-        exact f.2.1.trans e.2.2.symm
+        exact f.property.1.trans e.property.2.symm
+
+/-- A path in the segment from the vertex `false` to the vertex `true` is reduced exactly when it
+is the dart `false`: the segment has a unique reduced path between its two vertices. -/
+theorem isReduced_segment_iff_eq_toPath {p : segment.Path false true} :
+    Path.IsReduced segment p ↔ p = (segment.dart false).toPath :=
+  ⟨fun hp => segment_isTree.isAcyclic.eq_of_isReduced hp (Path.isReduced_toPath _ _),
+    fun h => h ▸ Path.isReduced_toPath _ _⟩
 
 /-- A rose with a petal is not a tree. -/
 theorem rose_not_isTree {α : Type*} (a : α) : ¬(rose α).IsTree := by

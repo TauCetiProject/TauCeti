@@ -18,8 +18,9 @@ the exponential of its negation. This file packages that fact as a units-valued 
 `TauCeti.expUnit : R → Rˣ`. For real algebras, it also bundles the exponential along a line as a
 continuous one-parameter subgroup.
 
-This is the Banach-algebra model for the exponential map of a Lie group. The later abstract
-construction should recover `expUnit` when specialized to the Lie group `Rˣ`.
+This is the Banach-algebra model for the exponential map of a Lie group. On the Lie group `Rˣ`,
+the abstract construction recovers `expUnit`; see
+`TauCeti.Geometry.Lie.Exponential.Units.Compatibility`.
 
 ## Main definitions
 
@@ -35,11 +36,6 @@ construction should recover `expUnit` when specialized to the Lie group `Rˣ`.
 * `TauCeti.expUnit_add_smul`: the one-parameter subgroup law as an equality of units.
 * `TauCeti.coe_expUnitHom_real`, `TauCeti.coe_expUnitHom_complex`: on `ℝ` and `ℂ`, the
   one-parameter subgroup is `t ↦ exp (t * x)` for the scalar exponential.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 0, "The matrix and circle shadows".
 -/
 
 public section

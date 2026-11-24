@@ -31,8 +31,9 @@ built.
 * `TauCeti.GroupAlgGeom.V_singleton_malcevWord`,
   `TauCeti.GroupAlgGeom.V_singleton_malcevOrWord`: intersections and unions of the solution sets
   of two equations are solution sets of one equation.
-* `TauCeti.GroupAlgGeom.exists_V_singleton_eq_of_finite`: a finite system has the same solutions
-  as a single equation.
+* `TauCeti.GroupAlgGeom.exists_forall_V_singleton_eq_of_finite`,
+  `TauCeti.GroupAlgGeom.exists_V_singleton_eq_of_finite`: a finite system has the same solutions
+  as a single equation, witnessed by one word independent of the target group.
 * `TauCeti.GroupAlgGeom.exists_V_singleton_eq_biUnion`: a finite union of algebraic sets of
   finite systems is the algebraic set of a single equation.
 
@@ -76,18 +77,27 @@ theorem V_singleton_malcevOrWord (hV : IsVaught H) (hH : IsCSA H) (hab : ¬Commu
   ext v
   simp [hV.malcevOrWord_eq_one_iff hH hab]
 
+/-- For fixed `a, b : G`, every finite system of equations `S ⊆ G[X]` is cut out by a single word
+`s ∈ G[X]` simultaneously in every torsion-free CSA group satisfying Vaught's condition in which
+the images of `a` and `b` do not commute. -/
+theorem exists_forall_V_singleton_eq_of_finite.{w} (a b : G) {S : Set (GX G X)} (hS : S.Finite) :
+    ∃ s, ∀ {K : Type w} [Group K] [IsMulTorsionFree K] (κ : G →* K),
+      IsVaught K → IsCSA K → ¬Commute (κ a) (κ b) → V κ {s} = V κ S := by
+  induction S, hS using Set.Finite.induction_on with
+  | empty => exact ⟨1, fun _ _ _ _ => by ext v; simp⟩
+  | @insert u T _ _ ih =>
+    obtain ⟨s, hs⟩ := ih
+    refine ⟨malcevWord (inl a) (inl b) u s, fun κ hV hK hab => ?_⟩
+    rw [V_singleton_malcevWord hV hK hab]
+    simp only [Set.insert_eq, V_union, hs κ hV hK hab]
+
 /-- Over a torsion-free CSA group satisfying Vaught's condition in which two coefficients do not
 commute, every finite system of equations has the same solutions as a single equation. -/
 theorem exists_V_singleton_eq_of_finite (hV : IsVaught H) (hH : IsCSA H)
     (hab : ¬Commute (ι a) (ι b)) {S : Set (GX G X)} (hS : S.Finite) :
-    ∃ s, V ι {s} = V ι S := by
-  induction S, hS using Set.Finite.induction_on with
-  | empty => exact ⟨1, by ext v; simp⟩
-  | @insert u T _ _ ih =>
-    obtain ⟨s, hs⟩ := ih
-    refine ⟨malcevWord (inl a) (inl b) u s, ?_⟩
-    rw [V_singleton_malcevWord hV hH hab]
-    simp only [Set.insert_eq, V_union, hs]
+    ∃ s, V ι {s} = V ι S :=
+  let ⟨s, hs⟩ := exists_forall_V_singleton_eq_of_finite a b hS
+  ⟨s, hs ι hV hH hab⟩
 
 /-- Over a torsion-free CSA group satisfying Vaught's condition in which two coefficients do not
 commute, every finite union of algebraic sets of finite systems is the algebraic set of a single

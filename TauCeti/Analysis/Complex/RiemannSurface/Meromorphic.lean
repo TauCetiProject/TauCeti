@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Meromorphic functions on a Riemann surface and their orders
@@ -63,6 +64,8 @@ and products add the two divisor bounds.
 * `TauCeti.RiemannSurface.meromorphicOrderAt_const`, `_add`, `_neg`, `_smul`, `_const_smul`, and
   `_mul`:
   arithmetic of their orders.
+* `TauCeti.RiemannSurface.not_eventuallyConst_of_meromorphicOrderAt_ne_zero`: a function of finite
+  nonzero order is not locally constant.
 
 ## References
 
@@ -138,7 +141,7 @@ theorem meromorphicOrderAt_congr (h : f =ᶠ[𝓝[≠] x] g) :
 when its order at `x` is positive. -/
 theorem tendsto_zero_iff_meromorphicOrderAt_pos (hf : MeromorphicAt f x) :
     Tendsto f (𝓝[≠] x) (𝓝 0) ↔ 0 < meromorphicOrderAt f x := by
-  rw [← tendsto_comp_chartAt_symm_nhdsNE_iff (H := ℂ)]
+  rw [← (chartAt ℂ x).tendsto_comp_symm_nhdsNE_iff (mem_chart_source ℂ x)]
   exact _root_.tendsto_zero_iff_meromorphicOrderAt_pos hf
 
 section IsManifold
@@ -261,6 +264,16 @@ theorem meromorphicAt_const (c : E) (x : X) : MeromorphicAt (fun _ ↦ c) x :=
 theorem meromorphicOrderAt_const (c : E) (x : X) [Decidable (c = 0)] :
     meromorphicOrderAt (fun _ ↦ c) x = if c = 0 then ⊤ else 0 :=
   _root_.meromorphicOrderAt_const _ c
+
+/-- A function of finite nonzero order at `x` is not constant on any punctured neighbourhood of
+`x`. -/
+theorem not_eventuallyConst_of_meromorphicOrderAt_ne_zero (h0 : meromorphicOrderAt f x ≠ 0)
+    (htop : meromorphicOrderAt f x ≠ ⊤) : ¬ EventuallyConst f (𝓝[≠] x) := by
+  classical
+  intro h
+  obtain ⟨c, hc⟩ := eventuallyConst_iff_exists_eventuallyEq.1 h
+  rw [meromorphicOrderAt_congr hc, meromorphicOrderAt_const] at h0 htop
+  split_ifs at h0 htop <;> contradiction
 
 /-- The sum of functions meromorphic at a point of a Riemann surface is meromorphic there. -/
 @[to_fun]

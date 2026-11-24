@@ -16,13 +16,13 @@ public import Mathlib.Algebra.Group.End
 /-!
 # Subgroups read by labelled graphs
 
-A labelled Serre graph assigns inverse letters to reversed darts. Reading the labels of
-closed paths at a vertex gives a subgroup of the free group. Based label-preserving morphisms
-send the accepted subgroup into that of the target. Moving the base vertex along a path
-conjugates the accepted subgroup. Every accepted word also has a reduced-path witness, so a
-labelled graph without nonempty reduced closed paths accepts only the identity.
-A path whose label is a freely reduced word is reduced. A graph with finitely many darts
-accepts a finitely generated subgroup at every vertex.
+A labelled Serre graph assigns inverse letters to reversed darts, so the darts labelled by a
+basis letter form an orientation. Reading the labels of closed paths at a vertex gives a
+subgroup of the free group. Based label-preserving morphisms send the accepted subgroup into
+that of the target. Moving the base vertex along a path conjugates the accepted subgroup. Every
+accepted word also has a reduced-path witness, so a labelled graph without nonempty reduced
+closed paths accepts only the identity. A path whose label is a freely reduced word is reduced.
+A graph with finitely many darts accepts a finitely generated subgroup at every vertex.
 
 The accepted subgroup is bounded by a subgroup `H` as soon as some assignment `r` of group
 elements to the vertices puts `r` of the base vertex in `H`, together with
@@ -54,20 +54,25 @@ namespace StallingsGraph
 
 variable {α : Type*} (S : StallingsGraph α)
 
+/-- The darts labelled by a basis letter, rather than by its inverse, form an orientation:
+reversal swaps the two signs. -/
+theorem isOrientation_setOf_label_snd : S.graph.IsOrientation {e | (S.label e).2 = true} :=
+  (S.graph.isOrientation_iff _).mpr fun e => by simp [S.label_rev]
+
 /-- The label word of a path, in traversal order. -/
 def word {a : S.graph.V} : ∀ {b : S.graph.V}, S.graph.Path a b → List (α × Bool)
   | _, .nil => []
-  | _, .cons p e => word p ++ [S.label e.1]
+  | _, .cons p e => word p ++ [S.label e.val]
 
 @[simp] theorem word_nil (a : S.graph.V) :
     S.word (Quiver.Path.nil : S.graph.Path a a) = [] := by simp [word]
 
 @[simp] theorem word_cons {a b c : S.graph.V} (p : S.graph.Path a b)
-    (e : Quiver.Hom b c) : S.word (p.cons e) = S.word p ++ [S.label e.1] := by
+    (e : Quiver.Hom b c) : S.word (p.cons e) = S.word p ++ [S.label e.val] := by
   simp [word]
 
 @[simp] theorem word_toPath {a b : S.graph.V} (e : Quiver.Hom a b) :
-    S.word e.toPath = [S.label e.1] := by simp [Quiver.Hom.toPath]
+    S.word e.toPath = [S.label e.val] := by simp [Quiver.Hom.toPath]
 
 @[simp] theorem word_comp {a b c : S.graph.V} (p : S.graph.Path a b)
     (q : S.graph.Path b c) : S.word (p.comp q) = S.word p ++ S.word q := by
@@ -85,15 +90,15 @@ theorem word_eq_map_darts {a b : S.graph.V} (p : S.graph.Path a b) :
 /-- The free-group element represented by the word of a path. -/
 def read {a b : S.graph.V} (p : S.graph.Path a b) : FreeGroup α :=
   p.weight fun {i j} (e : @Quiver.Hom S.graph.V S.graph.toQuiver i j) =>
-    FreeGroup.mk [S.label e.1]
+    FreeGroup.mk [S.label e.val]
 
 /-- Reading a path is its weight under the signed-letter labelling. -/
 theorem read_eq_weight {a b : S.graph.V} (p : S.graph.Path a b) :
     S.read p = p.weight (fun {i j : S.graph.V} (e : i ⟶ j) =>
-      FreeGroup.mk [S.label e.1]) := (rfl)
+      FreeGroup.mk [S.label e.val]) := (rfl)
 
 @[simp] theorem read_cons {a b c : S.graph.V} (p : S.graph.Path a b)
-    (e : Quiver.Hom b c) : S.read (p.cons e) = S.read p * FreeGroup.mk [S.label e.1] := by
+    (e : Quiver.Hom b c) : S.read (p.cons e) = S.read p * FreeGroup.mk [S.label e.val] := by
   simp only [read, Quiver.Path.weight_cons]
 
 theorem read_eq_mk_word {a b : S.graph.V} (p : S.graph.Path a b) :
@@ -103,7 +108,7 @@ theorem read_eq_mk_word {a b : S.graph.V} (p : S.graph.Path a b) :
   | cons p e ih => simp only [read_cons, word_cons, ih, FreeGroup.mul_mk]
 
 @[simp] theorem read_toPath {a b : S.graph.V} (e : Quiver.Hom a b) :
-    S.read e.toPath = FreeGroup.mk [S.label e.1] := by simp [Quiver.Hom.toPath, read]
+    S.read e.toPath = FreeGroup.mk [S.label e.val] := by simp [Quiver.Hom.toPath, read]
 
 @[simp] theorem read_nil (a : S.graph.V) :
     S.read (Quiver.Path.nil : S.graph.Path a a) = 1 := by
@@ -172,15 +177,15 @@ theorem exists_reduced_path_read_eq
       · simpa only [Quiver.Hom.toPath] using
           (SerreGraph.Path.isReduced_toPath S.graph e)
       simpa only [read_cons, read_nil] using congrArg
-        (fun x => x * FreeGroup.mk [S.label e.1]) hread
+        (fun x => x * FreeGroup.mk [S.label e.val]) hread
     | @cons d b' r f =>
       -- If the last two darts reverse one another, remove the pair. Otherwise append.
-      by_cases h : e.1 = S.graph.rev f.1
+      by_cases h : e.val = S.graph.rev f.val
       · have hcd : c = d := by
           calc
-            c = S.graph.tgt e.1 := e.2.2.symm
-            _ = S.graph.tgt (S.graph.rev f.1) := by rw [h]
-            _ = d := by simpa only [S.graph.tgt_rev] using f.2.1
+            c = S.graph.tgt e.val := e.property.2.symm
+            _ = S.graph.tgt (S.graph.rev f.val) := by rw [h]
+            _ = d := by simpa only [S.graph.tgt_rev] using f.property.1
         cases hcd
         have hef : e = Quiver.reverse f := by
           apply Subtype.ext
@@ -201,7 +206,7 @@ theorem exists_reduced_path_read_eq
         · exact (SerreGraph.Path.isReduced_cons_cons S.graph r f e).mpr
             ⟨hq, h⟩
         · simpa only [read_cons] using congrArg
-            (fun x => x * FreeGroup.mk [S.label e.1]) hread
+            (fun x => x * FreeGroup.mk [S.label e.val]) hread
 
 /-- Membership in the accepted subgroup can be witnessed by a reduced closed path. -/
 theorem mem_subgroup_iff_exists_reduced_path {a : S.graph.V} {g : FreeGroup α} :
@@ -223,6 +228,14 @@ theorem subgroup_eq_bot_of_isAcyclic (h : S.graph.IsAcyclic) (a : S.graph.V) :
   intro g hg
   obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
   simp [(S.graph.isAcyclic_iff.mp h) a p hp]
+
+/-- A labelled graph without darts accepts only the trivial subgroup, at every vertex. -/
+@[simp] theorem subgroup_eq_bot_of_isEmpty [IsEmpty S.graph.E] (a : S.graph.V) :
+    S.subgroup a = ⊥ :=
+  S.subgroup_eq_bot_of_isAcyclic (S.graph.isAcyclic_iff.mpr fun _ p _ => by
+    cases p with
+    | nil => rfl
+    | cons _ e => exact isEmptyElim e.val) a
 
 /-- Moving the base vertex along a path conjugates the accepted subgroup by its label. -/
 theorem subgroup_conj {a b : S.graph.V} (p : S.graph.Path a b) :
@@ -266,8 +279,8 @@ theorem mul_read_mul_inv_mem {H : Subgroup (FreeGroup α)} (r : S.graph.V → Fr
   induction p with
   | nil => simp
   | @cons b c p e ih =>
-    have he := h' e.1
-    rw [e.2.1, e.2.2] at he
+    have he := h' e.val
+    rw [e.property.1, e.property.2] at he
     simpa [mul_assoc] using H.mul_mem ih he
 
 /-- A bound on the subgroup accepted at a vertex `a`: if `r a` lies in a subgroup `H`, and so
@@ -297,14 +310,14 @@ private theorem exists_read_eq_readTo {a b : S.graph.V} (h : Nonempty (S.graph.P
 crossing the dart, and returning along the chosen path from its target. -/
 private noncomputable def dartLoop (a : S.graph.V)
     (e : {e : S.graph.E // Nonempty (S.graph.Path a (S.graph.src e))}) : FreeGroup α :=
-  S.readTo a (S.graph.src e.1) * FreeGroup.mk [S.label e.1] * (S.readTo a (S.graph.tgt e.1))⁻¹
+  S.readTo a (S.graph.src e.val) * FreeGroup.mk [S.label e.val] * (S.readTo a (S.graph.tgt e.val))⁻¹
 
 private theorem dartLoop_mem_subgroup (a : S.graph.V)
     (e : {e : S.graph.E // Nonempty (S.graph.Path a (S.graph.src e))}) :
     S.dartLoop a e ∈ S.subgroup a := by
-  obtain ⟨p, hp⟩ := S.exists_read_eq_readTo e.2
-  obtain ⟨q, hq⟩ := S.exists_read_eq_readTo ⟨p.cons (S.graph.dart e.1)⟩
-  refine ⟨(p.cons (S.graph.dart e.1)).comp q.reverse, ?_⟩
+  obtain ⟨p, hp⟩ := S.exists_read_eq_readTo e.property
+  obtain ⟨q, hq⟩ := S.exists_read_eq_readTo ⟨p.cons (S.graph.dart e.val)⟩
+  refine ⟨(p.cons (S.graph.dart e.val)).comp q.reverse, ?_⟩
   simp [dartLoop, hp, hq]
 
 /-- Reading a path from `a`, conjugated by the chosen paths at its ends, is a product of dart
@@ -314,9 +327,9 @@ private theorem readTo_mul_read_mul_inv_mem_closure {a b : S.graph.V} (p : S.gra
   induction p with
   | nil => simp
   | @cons b c p e ih =>
-    have hloop : S.dartLoop a ⟨e.1, by rw [e.2.1]; exact ⟨p⟩⟩ =
-        S.readTo a b * FreeGroup.mk [S.label e.1] * (S.readTo a c)⁻¹ := by
-      simp only [dartLoop, e.2.1, e.2.2]
+    have hloop : S.dartLoop a ⟨e.val, by rw [e.property.1]; exact ⟨p⟩⟩ =
+        S.readTo a b * FreeGroup.mk [S.label e.val] * (S.readTo a c)⁻¹ := by
+      simp only [dartLoop, e.property.1, e.property.2]
     have hmem := Subgroup.mul_mem _ ih (Subgroup.subset_closure ⟨_, hloop⟩)
     convert hmem using 1
     simp only [read_cons, mul_assoc, inv_mul_cancel_left]
@@ -341,6 +354,11 @@ vertex. -/
 theorem subgroup_fg [Finite S.graph.E] (a : S.graph.V) : (S.subgroup a).FG :=
   (Subgroup.fg_iff _).mpr
     ⟨_, (S.subgroup_eq_closure_range_dartLoop a).symm, Set.finite_range _⟩
+
+/-- A labelled graph with finitely many darts accepts a finitely generated group at each vertex;
+the instance form of `subgroup_fg`. -/
+instance instFGSubgroup [Finite S.graph.E] (a : S.graph.V) : Group.FG (S.subgroup a) :=
+  (Group.fg_iff_subgroup_fg _).mpr (S.subgroup_fg a)
 
 /-- A based Serre-graph morphism preserving dart labels. -/
 structure Hom (T : StallingsGraph α) where
@@ -472,12 +490,12 @@ theorem rose_subgroup_top (α : Type*) :
   | one => exact Subgroup.one_mem _
   | of x =>
     exact ⟨((rose α).graph.dart (x, true)).toPath, by
-      have hd : (((rose α).graph.dart (x, true)).1) = (x, true) :=
+      have hd : (((rose α).graph.dart (x, true)).val) = (x, true) :=
         SerreGraph.dart_val (rose α).graph (x, true)
       have hl : (rose α).label (x, true) = (x, true) := rose_label α (x, true)
       calc
         (rose α).read ((rose α).graph.dart (x, true)).toPath =
-            FreeGroup.mk [(rose α).label (((rose α).graph.dart (x, true)).1)] :=
+            FreeGroup.mk [(rose α).label (((rose α).graph.dart (x, true)).val)] :=
           (rose α).read_toPath ((rose α).graph.dart (x, true))
         _ = FreeGroup.of x := by simp only [hd, hl, FreeGroup.of]⟩
   | inv_of x hx => exact Subgroup.inv_mem _ (hx (by simp))

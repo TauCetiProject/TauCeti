@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.KoszulComplex.Basic
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Koszul complexes of weakly regular sequences
@@ -17,9 +18,9 @@ For a weakly regular sequence `x = (x₁, …, xₙ)` in a commutative ring `R`,
 complex of finite free modules `K(x)ₖ = ⋀ᵏ Rⁿ` resolves `R ⧸ (x₁, …, xₙ)`.
 
 The proof adjoins one element at a time. For a linear functional `φ : M → R` and `x : R`, the
-functional `(m, r) ↦ φ(m) + r x` on `M × R` is the Koszul complex `K(φ, x)` of `φ` with `x`
-adjoined. Writing `e = (0, 1)`, every element of `⋀ᵏ⁺¹ (M × R)` is uniquely `a + e ∧ b` with
-`a ∈ ⋀ᵏ⁺¹ M` and `b ∈ ⋀ᵏ M`, and the Koszul differential is
+functional `(m, r) ↦ φ(m) + r x` on `M × R` has a Koszul complex, written `K(φ, x)`: the Koszul
+complex of `φ` with `x` adjoined. Writing `e = (0, 1)`, every element of `⋀ᵏ⁺¹ (M × R)` is
+uniquely `a + e ∧ b` with `a ∈ ⋀ᵏ⁺¹ M` and `b ∈ ⋀ᵏ M`, and the Koszul differential is
 `d(a + e ∧ b) = (d a + x b) - e ∧ d b`. Hence a cycle `a + e ∧ b` of `K(φ, x)` has `d b = 0` and
 `x b = -d a`. If `K(φ)` is exact at `⋀ᵏ⁺¹ M` and `b` is a boundary, then `a + e ∧ b` is a
 boundary. In degree `k + 2` the cycle `b` is a boundary when `Hₖ₊₁(K(φ)) = 0`; in degree one,
@@ -39,7 +40,7 @@ of the shorter sequence vanishes, and the last element is a nonzerodivisor on it
 
 ## References
 
-* [The Stacks Project, Tags 0626 and 062F](https://stacks.math.columbia.edu/tag/062F)
+* [The Stacks Project, Tags 0628 and 062F](https://stacks.math.columbia.edu/tag/062F)
 -/
 
 public section
@@ -47,8 +48,6 @@ public section
 noncomputable section
 
 universe u v
-
-open CategoryTheory CliffordAlgebra
 
 namespace TauCeti
 
@@ -142,14 +141,7 @@ theorem exactAt_of_isWeaklyRegular {n : ℕ} (x : Fin n → R)
     (koszulComplex (Fintype.linearCombination R x)).ExactAt (k + 1) := by
   rw [exactAt_succ_iff]
   induction n generalizing k with
-  | zero =>
-    intro z
-    obtain rfl : z = 0 := by
-      rcases subsingleton_or_nontrivial R with _ | _
-      · exact (Module.subsingleton R _).elim z 0
-      · exact exteriorPower.eq_zero_of_finrank_lt _
-          (by rw [Module.finrank_zero_of_subsingleton]; omega) z
-    exact ⟨fun _ ↦ ⟨0, map_zero _⟩, fun _ ↦ map_zero _⟩
+  | zero => exact exact_koszulDifferential_of_subsingleton k
   | succ n ih =>
     rw [List.ofFn_succ', List.concat_eq_append, RingTheory.Sequence.isWeaklyRegular_append_iff,
       RingTheory.Sequence.isWeaklyRegular_singleton_iff] at hx
@@ -157,10 +149,7 @@ theorem exactAt_of_isWeaklyRegular {n : ℕ} (x : Fin n → R)
     set x' : Fin n → R := fun i ↦ x i.castSucc
     have hrange : (Ideal.ofList (List.ofFn x') • ⊤ : Submodule R R) =
         LinearMap.range (Fintype.linearCombination R x') := by
-      rw [Fintype.range_linearCombination, smul_eq_mul, Ideal.mul_top, Ideal.ofList]
-      congr 1
-      ext r
-      simp [List.mem_ofFn]
+      rw [Fintype.range_linearCombination, smul_eq_mul, Ideal.mul_top, Ideal.ofList_ofFn]
     rw [hrange] at hx₂
     have hexact : ∀ k, Function.Exact
         (koszulDifferential ((Fintype.linearCombination R x').coprod

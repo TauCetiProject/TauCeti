@@ -67,16 +67,7 @@ def cohomologyEquiv (N : ModuleCat.{w} ℤ) :
   let H := localHomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) (finrank ℝ E)
   let e₀ := singularHomologyComplSingletonFinrankIso
     (ModuleCat.of ℤ (ULift.{w} ℤ)) φ hx
-  have hinj : Function.Injective (LinearMap.toSpanSingleton ℤ H o.val) := by
-    apply (LinearMap.ker_eq_bot).mp
-    apply LinearMap.ker_eq_bot'.mpr
-    intro c hc
-    exact (o.property.zsmul_eq_zero_iff e₀).mp
-      ((int_smul_eq_zsmul _ c o.val).symm.trans hc)
-  let e : ℤ ≃ₗ[ℤ] H := LinearEquiv.ofBijective
-    (LinearMap.toSpanSingleton ℤ H o.val) ⟨hinj, fun y => by
-      obtain ⟨c, hc⟩ := (isLocalOrientation_iff _ _ _).mp o.property y
-      exact ⟨c, (int_smul_eq_zsmul _ c o.val).trans hc⟩⟩
+  let e : ℤ ≃ₗ[ℤ] H := o.property.linearEquiv e₀
   let P := TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))
   let L : P.singularCohomology (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ N (finrank ℝ E) →+ N :=
     { toFun α := (P.singularKronecker ℤ (finrank ℝ E) α).hom o.val
@@ -99,10 +90,7 @@ def cohomologyEquiv (N : ModuleCat.{w} ℤ) :
     let f : H →ₗ[ℤ] N := (LinearMap.toSpanSingleton ℤ N y).comp e.symm.toLinearMap
     obtain ⟨α, hα⟩ := hk.surjective (ModuleCat.ofHom f)
     refine ⟨α, ?_⟩
-    have he : e.symm o.val = 1 := by
-      apply e.injective
-      rw [e.apply_symm_apply]
-      exact (LinearMap.toSpanSingleton_apply_one ℤ H o.val).symm
+    have he : e.symm o.val = 1 := IsLocalOrientation.linearEquiv_symm_self _ _
     dsimp only [L, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
     rw [hα]
     exact (congrArg (fun g : H →ₗ[ℤ] N => g o.val) (ModuleCat.hom_ofHom f)).trans (by
@@ -229,7 +217,7 @@ private def dualClass [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = 
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) d := by
   subst hd
   exact o.cohomologyClass (OpenPartialHomeomorph.refl F)
-    (by rw [OpenPartialHomeomorph.refl_source]; exact Set.mem_univ _)
+    (OpenPartialHomeomorph.mem_refl_source _)
 
 private theorem eq_dualClass_iff [FiniteDimensional ℝ F] {d : ℕ} (hd : finrank ℝ F = d)
     (o : LocalOrientation F 0 d)
@@ -318,23 +306,23 @@ theorem singularCohomologyMap_localCohomologyClass (f : F ≃L[ℝ] G)
 real topological vector space `V`, not necessarily normed. Pulling back, along a continuous linear
 equivalence `f : V ≃L[ℝ] F` onto a normed space of dimension `n + 1`, the generator of
 `Hⁿ⁺¹(F, F ∖ {0}; ℤ)` selected by the transported orientation `ω.map f` gives a class of
-`Hⁿ⁺¹(V, V ∖ {0}; ℤ)` that does not depend on `f`. This is how an orientation of a fibre of a
-vector bundle selects a generator through any trivialization. -/
+`Hⁿ⁺¹(V, V ∖ {0}; ℤ)` that does not depend on `f`, nor on the target `F`. This is how an
+orientation of a fibre of a vector bundle selects a generator through any trivialization. -/
 theorem singularCohomologyMap_localCohomologyClass_map_eq {V : Type w} [TopologicalSpace V]
-    [AddCommMonoid V] [Module ℝ V] (ω : Orientation ℝ V (Fin (n + 1))) (f f' : V ≃L[ℝ] F)
-    (hF : finrank ℝ F = n + 1) :
+    [AddCommMonoid V] [Module ℝ V] (ω : Orientation ℝ V (Fin (n + 1))) (f : V ≃L[ℝ] F)
+    (f' : V ≃L[ℝ] G) (hF : finrank ℝ F = n + 1) (hG : finrank ℝ G = n + 1) :
     TopPair.singularCohomologyMap f.complZeroPairIso.hom (n + 1)
         ((ω.map _ f.toLinearEquiv).localCohomologyClass hF) =
       TopPair.singularCohomologyMap f'.complZeroPairIso.hom (n + 1)
-        ((ω.map _ f'.toLinearEquiv).localCohomologyClass hF) := by
-  -- `f'` is `f` followed by the automorphism `h = f⁻¹ ≫ f'` of `F`, which carries the generator
+        ((ω.map _ f'.toLinearEquiv).localCohomologyClass hG) := by
+  -- `f'` is `f` followed by the isomorphism `h = f⁻¹ ≫ f' : F ≃ G`, which carries the generator
   -- selected by `ω.map f'` back to the one selected by `ω.map f`.
-  obtain ⟨h, rfl⟩ : ∃ h : F ≃L[ℝ] F, f' = f.trans h := ⟨f.symm.trans f', by ext; simp⟩
+  obtain ⟨h, rfl⟩ : ∃ h : F ≃L[ℝ] G, f' = f.trans h := ⟨f.symm.trans f', by ext; simp⟩
   have hmap : ω.map _ (f.trans h).toLinearEquiv =
       (ω.map _ f.toLinearEquiv).map _ h.toLinearEquiv :=
     Orientation.map_trans f.toLinearEquiv h.toLinearEquiv ω
   rw [hmap, ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom,
     TopPair.singularCohomologyMap_comp_apply,
-    singularCohomologyMap_localCohomologyClass h _ hF hF]
+    singularCohomologyMap_localCohomologyClass h _ hF hG]
 
 end Orientation

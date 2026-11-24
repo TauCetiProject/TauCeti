@@ -156,13 +156,17 @@ theorem ord_sub_pow_sub_self_le_of_ord_neg_of_not_dvd {n : ℕ} (hn : 1 < n) {u 
   (ord_sub_pow_sub_self_eq_min hn hu w (ord_sub_pow_le_of_not_dvd hdiv w)).trans_le
     (min_le_left _ _)
 
-/-- Let `n > 1` divide the negative order of `u`, and suppose that `w ^ n` does not agree
+/-- Let `n` divide the negative order of `u`, and suppose that `w ^ n` does not agree
 with `u` beyond the leading order of `u`. Then the representative `u - (w ^ n - w)` has a pole
 whose order is divisible by `n`: this substitution neither makes `u` integral nor produces a
 pole of order prime to `n`. -/
-theorem ord_sub_pow_sub_self_neg_and_dvd {n : ℕ} (hn : 1 < n) {u : R} (hu : v.ord u < 0)
+theorem ord_sub_pow_sub_self_neg_and_dvd {n : ℕ} {u : R} (hu : v.ord u < 0)
     (hdvd : (n : ℤ) ∣ v.ord u) (w : R) (hroot : v.ord (u - w ^ n) ≤ v.ord u) :
     v.ord (u - (w ^ n - w)) < 0 ∧ (n : ℤ) ∣ v.ord (u - (w ^ n - w)) := by
+  obtain rfl | rfl | hn : n = 0 ∨ n = 1 ∨ 1 < n := by omega
+  · rw [Nat.cast_zero] at hdvd
+    exact absurd (zero_dvd_iff.mp hdvd) hu.ne
+  · simpa only [pow_one, sub_self, sub_zero, Nat.cast_one, one_dvd, and_true] using hu
   rw [ord_sub_pow_sub_self_eq_min hn hu w hroot]
   refine ⟨(min_le_left _ _).trans_lt hu, ?_⟩
   rcases min_choice (v.ord u) (n * v.ord w) with h | h <;> rw [h]
@@ -184,7 +188,7 @@ theorem ne_pow_sub_self_of_exists_reduced_artinSchreier_pole
       ¬ (p : ℤ) ∣ v.ord (u - (w₀ ^ p - w₀))) :
     ∀ w : R, w ^ p - w ≠ u := by
   obtain ⟨w₀, hneg, hdiv⟩ := hpole
-  have hp := one_lt_expChar_of_not_dvd R hdiv
+  have hp : 1 < p := one_lt_expChar_of_ne_one R (by rintro rfl; simp at hdiv)
   intro w hw
   apply v.ne_pow_sub_self_of_ord_neg_of_not_dvd
     hp hneg hdiv (w - w₀)
@@ -201,7 +205,7 @@ theorem ord_reduced_artinSchreier_representative_eq (p : ℕ) [ExpChar R p]
     (hz : v.ord (u - (z ^ p - z)) < 0)
     (hzdiv : ¬(p : ℤ) ∣ v.ord (u - (z ^ p - z))) :
     v.ord (u - (w ^ p - w)) = v.ord (u - (z ^ p - z)) := by
-  have hp := one_lt_expChar_of_not_dvd R hwdiv
+  have hp : 1 < p := one_lt_expChar_of_ne_one R (by rintro rfl; simp at hwdiv)
   have heq (a b : R) : (u - (a ^ p - a)) - ((b - a) ^ p - (b - a)) =
       u - (b ^ p - b) := by
     rw [sub_pow_expChar]

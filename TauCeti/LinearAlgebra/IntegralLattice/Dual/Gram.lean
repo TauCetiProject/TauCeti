@@ -25,7 +25,7 @@ the integral basis hypothesis is what makes the change-of-basis determinant have
 
 ## Main results
 
-* `TauCeti.IntegralLattice.extendOfIsLattice_dualCarrierBasis`: the extended dual-carrier basis
+* `TauCeti.IntegralLattice.extendOfIsFullLattice_dualCarrierBasis`: the extended dual-carrier basis
   is the bilinear dual of the extended carrier basis.
 * `TauCeti.IntegralLattice.toMatrix_dualCarrierBasis`: the inverse Gram matrix identity.
 * `TauCeti.IntegralLattice.det_toMatrix_dualCarrier`: the reciprocal determinant in any
@@ -52,32 +52,32 @@ open Classical in
 /-- Extending the integral basis of the dual carrier gives the bilinear dual basis of the
 extended original carrier basis. -/
 @[simp]
-theorem extendOfIsLattice_dualCarrierBasis {ι : Type*} [Finite ι]
+theorem extendOfIsFullLattice_dualCarrierBasis {ι : Type*} [Finite ι]
     (b : Basis ι ℤ L) :
-    (L.dualCarrierBasis b).extendOfIsLattice ℚ =
-      L.form.dualBasis L.form_nondegenerate (b.extendOfIsLattice ℚ) := by
+    (L.dualCarrierBasis b).extendOfIsFullLattice ℚ =
+      L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ) := by
   classical
   ext i
-  simp only [Basis.extendOfIsLattice_apply, dualCarrierBasis_apply, coe_dualBasisElem]
+  simp only [Basis.extendOfIsFullLattice_apply, dualCarrierBasis_apply, coe_dualBasisElem]
 
 /-- The rational Gram matrix in the actual dual-carrier basis is the inverse of the
 integral Gram matrix, with its entries cast to `ℚ`. -/
 theorem toMatrix_dualCarrierBasis {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Basis ι ℤ L) :
-    LinearMap.BilinForm.toMatrix ((L.dualCarrierBasis b).extendOfIsLattice ℚ) L.form =
+    LinearMap.BilinForm.toMatrix ((L.dualCarrierBasis b).extendOfIsFullLattice ℚ) L.form =
       ((L.gramMatrix b).map (algebraMap ℤ ℚ))⁻¹ := by
   -- The dual-carrier basis uses classical equality on its index type.
   cases Subsingleton.elim ‹DecidableEq ι› (Classical.decEq ι)
   classical
-  rw [L.extendOfIsLattice_dualCarrierBasis,
-    LinearMap.BilinForm.toMatrix_dualBasis L.form L.form_nondegenerate (b.extendOfIsLattice ℚ),
+  rw [L.extendOfIsFullLattice_dualCarrierBasis,
+    LinearMap.BilinForm.toMatrix_dualBasis L.form L.form_nondegenerate (b.extendOfIsFullLattice ℚ),
     ← L.map_gramMatrix b, ← Matrix.transpose_map, (L.isSymm_gramMatrix b).eq]
 
 /-- In any integral basis of the dual carrier, the rational Gram determinant is the
 reciprocal of the original signed determinant. No definiteness assumption is needed. -/
 theorem det_toMatrix_dualCarrier {ι : Type*} [Fintype ι] [DecidableEq ι]
     (c : Basis ι ℤ L.dualCarrier) :
-    (LinearMap.BilinForm.toMatrix (c.extendOfIsLattice ℚ) L.form).det =
+    (LinearMap.BilinForm.toMatrix (c.extendOfIsFullLattice ℚ) L.form).det =
       (L.determinant : ℚ)⁻¹ := by
   -- Align the matrix operations with the classical index equality used by the dual basis.
   cases Subsingleton.elim ‹DecidableEq ι› (Classical.decEq ι)
@@ -87,9 +87,9 @@ theorem det_toMatrix_dualCarrier {ι : Type*} [Fintype ι] [DecidableEq ι]
     L.dualCarrier.subtype L.dualCarrier.subtype
   -- Use integral change of basis on the rational-valued restriction, rather than treating
   -- the dual as an integral lattice (its self-pairings may have denominators).
-  have hdet : (LinearMap.BilinForm.toMatrix (c.extendOfIsLattice ℚ) L.form).det =
+  have hdet : (LinearMap.BilinForm.toMatrix (c.extendOfIsFullLattice ℚ) L.form).det =
       (LinearMap.BilinForm.toMatrix
-        ((L.dualCarrierBasis b).extendOfIsLattice ℚ) L.form).det := by
+        ((L.dualCarrierBasis b).extendOfIsFullLattice ℚ) L.form).det := by
     convert LinearMap.det_toMatrix₂Aux_eq_det_toMatrix₂Aux B (L.dualCarrierBasis b) c
       using 1 <;> congr 1 <;> ext i j <;>
       simp [B, LinearMap.BilinForm.toMatrix_apply, LinearMap.toMatrix₂Aux_apply]

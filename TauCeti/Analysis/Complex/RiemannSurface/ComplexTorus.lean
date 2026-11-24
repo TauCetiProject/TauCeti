@@ -10,11 +10,14 @@ public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import Mathlib.Tactic.LinearCombination
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Algebra.Module.ZLattice.Quotient
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Diffeomorphism.RelativeCongr
 import TauCeti.Topology.Covering.Quotient
 
@@ -30,7 +33,9 @@ projection `ℂ → ℂ / L` through the covering `ℂ → ℂ / L'` to a holomo
 `l ∈ L` the difference `F (z + l) - F z` is a continuous function with values in the discrete set
 `L'`, hence constant, so `F'` is `L`-periodic and bounded, and constant by Liouville's theorem.
 
-For a biholomorphism of `ℂ / L` the factor `a` is a unit with `a L = L`, an element of the lattice
+If `f` is injective, then `a ≠ 0`, since `L` is not all of `ℂ`, and `a⁻¹ L' ⊆ L`, so `a L = L'`
+and the two lattices are homothetic (`ContMDiff.exists_units_smul_eq_of_injective`). In particular,
+for a biholomorphism of `ℂ / L` the factor `a` is a unit with `a L = L`, an element of the lattice
 stabilizer `MulAction.stabilizer ℂˣ L` (`Diffeomorph.exists_apply_mk_eq_mul_add`). So every
 automorphism of `ℂ / L` is a translation composed with a linear automorphism `[z] ↦ [u z]`, and
 the stabilizer, which contains `-1`, is finite (`Submodule.finite_stabilizer_units`). An
@@ -39,6 +44,10 @@ biholomorphisms fixing any nonempty set of points form a finite group, while the
 the full automorphism group infinite (`Diffeomorph.finite_fixingSubgroup_iff_nonempty`). For a
 genus-one component of a marked nodal curve, this is the statement that the component is stable,
 `2 g - 2 + n > 0`, exactly when its automorphisms fixing its special points form a finite group.
+
+A submodule containing the horizontal exponential period `2π` also gives a continuous
+logarithmic quotient coordinate `z ↦ [-i log z]` off zero. This remains continuous across the
+principal branch cut and requires neither discreteness nor a full lattice.
 
 ## Main results
 
@@ -97,8 +106,8 @@ theorem ContMDiff.exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
     linear_combination this
   -- Hence `F'` is `L`-periodic, so bounded, and constant by Liouville's theorem.
   have hFd' : Differentiable ℂ (deriv F) := hFd.deriv
-  have hderiv (z l : ℂ) (hl : l ∈ L) : deriv F (z + l) = deriv F z := by
-    rw [← deriv_comp_add_const, funext (hper l hl), deriv_add_const]
+  have hderiv (z l : ℂ) (hl : l ∈ L) : deriv F (z + l) = deriv F z :=
+    TauCeti.periodic_deriv_of_apply_add_eq_add (hper l hl) z
   have hbdd : Bornology.IsBounded (range (deriv F)) :=
     (IsZLattice.isCompact_range_of_periodic L _ hFd'.continuous hderiv).isBounded
   have hFa (z : ℂ) : F z = deriv F 0 * z + F 0 := by
@@ -112,6 +121,36 @@ theorem ContMDiff.exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
   have := hmem (z := l) (w := 0) (by simpa using hl)
   rwa [hFa l, add_sub_cancel_right] at this
 
+/-- **Injective holomorphic maps of complex tori.** An injective holomorphic map
+`f : ℂ / L → ℂ / L'` between one-dimensional complex tori, with `L` a full lattice, is induced by
+an affine map `z ↦ u * z + b` of `ℂ` whose linear part is a unit carrying `L` onto `L'`,
+`u • L = L'`. In particular the two lattices are homothetic. -/
+theorem ContMDiff.exists_units_smul_eq_of_injective [IsZLattice ℝ L]
+    {f : AddAction.orbitRel.Quotient L ℂ → AddAction.orbitRel.Quotient L' ℂ}
+    (hf : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n f) (hn : n ≠ 0) (hinj : Function.Injective f) :
+    ∃ u : ℂˣ, u • L = L' ∧ ∃ b : ℂ,
+      ∀ z, f (Quotient.mk _ z) = Quotient.mk (AddAction.orbitRel L' ℂ) (u * z + b) := by
+  obtain ⟨a, b, ha, hfa⟩ := hf.exists_apply_mk_eq_mul_add hn
+  -- Injectivity: if `a z` and `a w` agree modulo `L'`, then `z` and `w` agree modulo `L`.
+  have hmem {z w : ℂ} (h : a * z - a * w ∈ L') : z - w ∈ L := by
+    rw [← L.orbitRelQuotient_mk_eq_mk_iff]
+    refine hinj ?_
+    rw [hfa, hfa, L'.orbitRelQuotient_mk_eq_mk_iff]
+    convert h using 1
+    ring
+  -- For `a = 0` every point of `ℂ` would lie in the discrete subgroup `L`.
+  have ha0 : a ≠ 0 := by
+    rintro rfl
+    exact one_ne_zero <| isPreconnected_univ.constant_of_mapsTo (T := (L : Set ℂ))
+      (isDiscrete_iff_discreteTopology.mpr ‹_›) (continuousOn_id (s := univ))
+      (fun z _ ↦ by simpa using hmem (z := z) (w := 0) (by simp)) (mem_univ 1) (mem_univ 0)
+  refine ⟨Units.mk0 a ha0, le_antisymm ?_ fun l hl ↦ ?_, b, hfa⟩
+  · rintro _ ⟨l, hl, rfl⟩
+    exact ha l hl
+  · refine Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mpr ⟨a⁻¹ * l, ?_, ?_⟩
+    · simpa using hmem (z := a⁻¹ * l) (w := 0) (by simpa [mul_inv_cancel_left₀ ha0] using hl)
+    · simp [Units.smul_def, mul_inv_cancel_left₀ ha0]
+
 namespace Diffeomorph
 
 /-- **Biholomorphisms of a complex torus.** Every biholomorphism of a one-dimensional complex torus
@@ -122,20 +161,8 @@ theorem exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
     (hn : n ≠ 0) :
     ∃ u ∈ MulAction.stabilizer ℂˣ L, ∃ b : ℂ,
       ∀ z, φ (Quotient.mk _ z) = Quotient.mk (AddAction.orbitRel L ℂ) (u * z + b) := by
-  obtain ⟨a, b, ha, hφ⟩ := φ.contMDiff.exists_apply_mk_eq_mul_add hn
-  obtain ⟨a', b', ha', hφ'⟩ := φ.symm.contMDiff.exists_apply_mk_eq_mul_add hn
-  -- `φ⁻¹ ∘ φ = id` lifts to `z ↦ (a' * a - 1) * z + (a' * b + b')`, with values in `L`.
-  have hmem (z : ℂ) : (a' * a - 1) * z + (a' * b + b') ∈ L := by
-    have := φ.symm_apply_apply (Quotient.mk _ z)
-    rw [hφ, hφ', L.orbitRelQuotient_mk_eq_mk_iff] at this
-    convert this using 1
-    ring
-  have haa : a' * a = 1 := by
-    linear_combination isPreconnected_univ.constant_of_mapsTo
-      (isDiscrete_iff_discreteTopology.mpr ‹_›) (by fun_prop) (fun z _ ↦ hmem z) (mem_univ 1)
-      (mem_univ 0)
-  let u : ℂˣ := ⟨a, a', by linear_combination haa, haa⟩
-  exact ⟨u, Submodule.mem_stabilizer_units_iff.mpr ⟨ha, ha'⟩, b, hφ⟩
+  simpa only [MulAction.mem_stabilizer_iff] using
+    φ.contMDiff.exists_units_smul_eq_of_injective hn φ.injective
 
 /-- The biholomorphisms of a complex torus fixing a point are finite in number: such a map is
 `[z] ↦ [u * (z - p) + p]`, determined by its linear part `u` in the finite lattice stabilizer. -/
@@ -154,8 +181,8 @@ private theorem finite_fixingSubgroup_of_nonempty [IsZLattice ℝ L] (hn : n ≠
   -- Both maps fix `[p]`, so their translation parts agree modulo `L`.
   have hbb : b φ - b ψ ∈ L := by
     have := L.orbitRelQuotient_mk_eq_mk_iff.mp
-      (((hb φ p).symm.trans (apply_eq_of_mem_fixingSubgroup φ.2 hx)).trans
-        ((hb ψ p).symm.trans (apply_eq_of_mem_fixingSubgroup ψ.2 hx)).symm)
+      (((hb φ p).symm.trans (apply_eq_of_mem_fixingSubgroup φ.property hx)).trans
+        ((hb ψ p).symm.trans (apply_eq_of_mem_fixingSubgroup ψ.property hx)).symm)
     rw [hu] at this
     convert this using 1
     ring
@@ -174,10 +201,49 @@ give infinitely many. -/
 theorem finite_fixingSubgroup_iff_nonempty [IsZLattice ℝ L]
     (e : M ≃ₘ^n⟮I, 𝓘(ℂ)⟯ AddAction.orbitRel.Quotient L ℂ) (hn : n ≠ 0) {s : Set M} :
     Finite (fixingSubgroup (I := I) (n := n) s) ↔ s.Nonempty := by
-  refine ⟨fun h ↦ nonempty_iff_ne_empty.mpr fun hs ↦ ?_, fun hs ↦ ?_⟩
+  refine ⟨fun h ↦ Set.ne_empty_iff_nonempty.mp fun hs ↦ ?_, fun hs ↦ ?_⟩
   · rw [hs] at h
     exact not_finite_iff_infinite.mpr e.infinite_fixingSubgroup_empty h
   · have := finite_fixingSubgroup_of_nonempty (n := n) hn (hs.image e)
     exact Finite.of_equiv _ (relativeDiffCongr e s).symm.toEquiv
 
 end Diffeomorph
+
+noncomputable section
+
+open Complex Filter Topology
+open scoped Real
+
+/-- A submodule containing the horizontal exponential period identifies logarithmic lifts with
+the same exponential. No discreteness assumption is required for this algebraic statement. -/
+theorem Submodule.orbitRelQuotient_mk_eq_of_exp_I_mul_eq (L : Submodule ℤ ℂ)
+    (hL : (2 * π : ℂ) ∈ L) {z w : ℂ} (h : exp (I * z) = exp (I * w)) :
+    _root_.Quotient.mk (AddAction.orbitRel L ℂ) z = _root_.Quotient.mk _ w := by
+  apply L.orbitRelQuotient_mk_eq_mk_iff.mpr
+  obtain ⟨m, hm⟩ := exp_eq_exp_iff_exists_int.mp h
+  have hd : z - w = (m : ℂ) * (2 * π) := by
+    apply mul_left_cancel₀ I_ne_zero
+    linear_combination hm
+  rw [hd, ← zsmul_eq_mul]
+  exact L.smul_mem m hL
+
+/-- The logarithm multiplied by `-i`, read modulo a horizontal period `2π`, is continuous off
+zero, including across the principal logarithm's branch cut. -/
+theorem Submodule.continuousOn_orbitRelQuotient_mk_neg_I_mul_log
+    (L : Submodule ℤ ℂ) (hL : (2 * π : ℂ) ∈ L) :
+    ContinuousOn (fun z : ℂ ↦ _root_.Quotient.mk (AddAction.orbitRel L ℂ) (-I * log z)) {0}ᶜ := by
+  intro z hz
+  have hz0 : z ≠ 0 := by simpa using hz
+  have hslit : z / z ∈ slitPlane := by simp [hz0]
+  have hc : ContinuousAt (fun w : ℂ ↦ -I * log (w / z) + -I * log z) z :=
+    (continuousAt_const.mul ((continuousAt_clog hslit).comp (f := fun w : ℂ ↦ w / z)
+      (continuousAt_id.div_const z))).add continuousAt_const
+  have heq : (fun w : ℂ ↦ _root_.Quotient.mk (AddAction.orbitRel L ℂ) (-I * log w)) =ᶠ[𝓝 z]
+      fun w ↦ _root_.Quotient.mk _ (-I * log (w / z) + -I * log z) := by
+    filter_upwards [isOpen_compl_singleton.mem_nhds hz] with w hw
+    have hw0 : w ≠ 0 := by simpa using hw
+    apply L.orbitRelQuotient_mk_eq_of_exp_I_mul_eq hL
+    simp only [mul_add, ← mul_assoc, mul_neg, I_mul_I, neg_neg, one_mul, exp_add]
+    rw [exp_log hw0, exp_log (div_ne_zero hw0 hz0), exp_log hz0, div_mul_cancel₀ _ hz0]
+  have hcont := (continuous_quotient_mk'.continuousAt.comp hc).congr_of_eventuallyEq heq
+  exact hcont.continuousWithinAt

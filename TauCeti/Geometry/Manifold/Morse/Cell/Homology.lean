@@ -179,33 +179,10 @@ theorem IsMorse.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseInde
   refine ⟨ε, hε, hεδ, fun R n hn ↦ ?_⟩
   -- No critical point of the level has index `n`, so the coproduct is empty.
   have : IsEmpty {p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) // manifoldMorseIndex I f p = n} :=
-    ⟨fun p ↦ by have := hd p.1 p.1.2; omega⟩
+    ⟨fun p ↦ by have := hd p.val p.val.property; omega⟩
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso (hiso R n).some
 
 /-! ### Bands with a single critical value -/
-
-/-- Around the only critical value `c` of a compact band `f⁻¹[a, b]`, with `a < c < b`, a width
-`ε ≤ min (c - a) (b - c)` leaves the collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]` compact and
-without critical points, so that `({f ≤ b}, {f ≤ a})` has the relative homology of
-`({f ≤ c + ε}, {f ≤ c - ε})`. -/
-private def singularHomologySublevelPairIsoOfCriticalValue (hf : IsMorse I f) {a b ε : ℝ}
-    (hcompact : IsCompact (f ⁻¹' Icc a b))
-    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) (hε : 0 < ε)
-    (hεa : ε ≤ c - a) (hεb : ε ≤ b - c) {A : Type*} [Category A] [Abelian A]
-    [HasCoproducts.{u} A] (R : A) (n : ℕ) :
-    (sublevelPair f (a := a) (b := b) (by linarith)).singularHomology R n ≅
-      (sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology R n :=
-  have hsub {s t : ℝ} (has : a ≤ s) (htb : t ≤ b) : IsCompact (f ⁻¹' Icc s t) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
-      (preimage_mono (Icc_subset_Icc has htb))
-  have hreg {s t : ℝ} (has : a ≤ s) (htb : t ≤ b) (hc : c ∉ Icc s t) :
-      ∀ x, s ≤ f x → f x ≤ t → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x hs ht h0 ↦
-    hc (hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h0)
-      ⟨has.trans hs, ht.trans htb⟩ ▸ ⟨hs, ht⟩)
-  singularHomologySublevelPairIsoOfCollars hf.contMDiff (a := a) (b := b) (by linarith)
-    (by linarith) (by linarith) (hsub le_rfl (by linarith)) (hsub (by linarith) le_rfl)
-    (hreg le_rfl (by linarith) fun h ↦ by linarith [h.2])
-    (hreg (by linarith) le_rfl fun h ↦ by linarith [h.1]) R n
 
 /-- **The relative homology of a band with one critical value is free on its critical points.**
 Let `f` be a Morse function and `a < c < b`, such that the band `f⁻¹[a, b]` is compact and `c` is
@@ -220,11 +197,9 @@ theorem IsMorse.nonempty_singularHomology_sublevelPair_iso_sigma (hf : IsMorse I
       ∐ fun _ : {p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) // manifoldMorseIndex I f p = n} ↦ R) := by
   have hδ : 0 < min (c - a) (b - c) := lt_min (by linarith) (by linarith)
   obtain ⟨ε, hε, hεδ, hiso⟩ := hf.exists_singularHomology_sublevelPair_iso_sigma (c := c) hδ
-    (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
-      (preimage_mono (Icc_subset_Icc (by linarith [min_le_left (c - a) (b - c)])
-        (by linarith [min_le_right (c - a) (b - c)]))))
-  exact ⟨singularHomologySublevelPairIsoOfCriticalValue hf hcompact hcrit hε
-    (hεδ.trans (min_le_left _ _)) (hεδ.trans (min_le_right _ _)) R n ≪≫ (hiso R n).some⟩
+    (Icc_subset_and_isCompact_preimage_Icc hf.contMDiff.continuous hcompact le_rfl).2
+  exact ⟨singularHomologySublevelPairIsoSymmetricBand hf.contMDiff hac hcb hcompact hcrit hε hεδ R
+    n ≪≫ (hiso R n).some⟩
 
 /-- **The Morse numbers of a band with one critical value.** Let `f` be a Morse function and
 `a < c < b`, such that the band `f⁻¹[a, b]` is compact and `c` is the only critical value of `f` in
@@ -239,11 +214,10 @@ theorem IsMorse.finrank_singularHomology_sublevelPair_eq (hf : IsMorse I f) {a b
         finrank k V := by
   have hδ : 0 < min (c - a) (b - c) := lt_min (by linarith) (by linarith)
   obtain ⟨ε, hε, hεδ, hrank⟩ := hf.exists_finrank_singularHomology_sublevelPair_eq (c := c) hδ
-    (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
-      (preimage_mono (Icc_subset_Icc (by linarith [min_le_left (c - a) (b - c)])
-        (by linarith [min_le_right (c - a) (b - c)]))))
-  rw [(singularHomologySublevelPairIsoOfCriticalValue hf hcompact hcrit hε
-    (hεδ.trans (min_le_left _ _)) (hεδ.trans (min_le_right _ _)) V n).toLinearEquiv.finrank_eq]
+    (Icc_subset_and_isCompact_preimage_Icc hf.contMDiff.continuous hcompact le_rfl).2
+  have e := singularHomologySublevelPairIsoSymmetricBand hf.contMDiff hac hcb hcompact hcrit hε hεδ
+    V n
+  rw [e.toLinearEquiv.finrank_eq]
   exact (hrank k V n).2
 
 end TauCeti

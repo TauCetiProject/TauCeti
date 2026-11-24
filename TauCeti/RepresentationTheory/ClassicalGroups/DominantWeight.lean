@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Sort
+public import TauCeti.Algebra.Order.BigOperators.Dominance
 public import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
@@ -42,8 +43,13 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
 
 ## Main definitions
 
-* `TauCeti.DominantWeight`: the weakly decreasing sequences `Fin n → ℤ`.
+* `TauCeti.DominantWeight`: the weakly decreasing sequences `Fin n → ℤ`, forming an additive
+  commutative monoid under pointwise addition.
 * `TauCeti.DominantWeight.shift`: translating a weight by an integer multiple of `(1, …, 1)`.
+* `TauCeti.DominantWeight.dual`: the contragredient weight `λ*ᵢ = -λₙ₋₁₋ᵢ`.
+* `TauCeti.DominantWeight.Dominates`: the `GL n` dominance partial-sum order (`μ` dominates `ν` when
+  `TauCeti.Dominates ν.1 μ.1`, i.e., they have the same total degree and every leading partial sum
+  of `ν` is at most that of `μ`).
 * `TauCeti.DominantWeight.detShift`: the last entry `λₙ`, the determinant-twist exponent.
 * `TauCeti.DominantWeight.IsPolynomial`: having nonnegative entries.
 * `TauCeti.DominantWeight.shape` and `TauCeti.weightOfShape`: the two directions of the
@@ -88,16 +94,16 @@ namespace DominantWeight
 
 variable {n : ℕ}
 
-theorem antitone (l : DominantWeight n) : Antitone l.1 := l.2
+theorem antitone (l : DominantWeight n) : Antitone l.val := l.property
 
 /-- Translating a dominant weight by `m·(1, …, 1)`.  On representations this is tensoring with
 the `m`-th power of the determinant. -/
 @[expose]
 def shift (l : DominantWeight n) (m : ℤ) : DominantWeight n :=
-  ⟨fun i => l.1 i + m, fun _ _ h => by simpa using l.antitone h⟩
+  ⟨fun i => l.val i + m, fun _ _ h => by simpa using l.antitone h⟩
 
 @[simp]
-theorem shift_apply (l : DominantWeight n) (m : ℤ) (i : Fin n) : (l.shift m).1 i = l.1 i + m :=
+theorem shift_apply (l : DominantWeight n) (m : ℤ) (i : Fin n) : (l.shift m).val i = l.val i + m :=
   rfl
 
 @[simp]
@@ -109,21 +115,112 @@ theorem shift_shift (l : DominantWeight n) (m m' : ℤ) :
     (l.shift m).shift m' = l.shift (m + m') := by
   ext i; simp [add_assoc]
 
+/-- The **contragredient** (or **dual**) dominant weight `λ*ᵢ = -λₙ₋₁₋ᵢ`: negating and reversing
+an antitone integer sequence keeps it antitone. On representations this is passing to the dual
+module. -/
+def dual (l : DominantWeight n) : DominantWeight n :=
+  ⟨fun i => -l.val i.rev, fun _ _ h => Int.neg_le_neg (l.antitone (Fin.rev_le_rev.mpr h))⟩
+
+@[simp] theorem dual_apply (l : DominantWeight n) (i : Fin n) : l.dual.val i = -l.val i.rev := (rfl)
+
+/-- Contragredient duality is an involution on dominant weights. -/
+@[simp] theorem dual_dual (l : DominantWeight n) : l.dual.dual = l := by ext i; simp
+
+theorem dual_involutive : Function.Involutive (dual (n := n)) := dual_dual
+theorem dual_injective : Function.Injective (dual (n := n)) := dual_involutive.injective
+
+@[simp] theorem dual_shift (l : DominantWeight n) (m : ℤ) :
+    (l.shift m).dual = l.dual.shift (-m) := by ext i; simp [neg_add_rev, add_comm]
+
+/-- The entries of `λ*` sum to the negative of the entries of `λ`. -/
+theorem sum_dual (l : DominantWeight n) : (∑ i, l.dual.val i) = -∑ i, l.val i := by
+  rw [← Finset.sum_neg_distrib]; exact Equiv.sum_comp Fin.revPerm fun i => -l.val i
+
+instance : Zero (DominantWeight n) := ⟨⟨0, fun _ _ _ => le_rfl⟩⟩
+instance : Add (DominantWeight n) :=
+  ⟨fun l₁ l₂ => ⟨l₁.val + l₂.val, fun _ _ h => Int.add_le_add (l₁.antitone h) (l₂.antitone h)⟩⟩
+instance : SMul ℕ (DominantWeight n) :=
+  ⟨fun k l => ⟨k • l.val, fun _ _ h => nsmul_le_nsmul_right (l.antitone h) k⟩⟩
+@[simp] theorem coe_zero : ((0 : DominantWeight n) : Fin n → ℤ) = 0 := (rfl)
+@[simp] theorem coe_add (l₁ l₂ : DominantWeight n) :
+    ((l₁ + l₂ : DominantWeight n) : Fin n → ℤ) = l₁.val + l₂.val := (rfl)
+@[simp] theorem coe_nsmul (k : ℕ) (l : DominantWeight n) :
+    ((k • l : DominantWeight n) : Fin n → ℤ) = k • l.val := (rfl)
+
+instance : AddCommMonoid (DominantWeight n) :=
+  Subtype.coe_injective.addCommMonoid Subtype.val coe_zero coe_add fun _ _ => coe_nsmul _ _
+
+theorem zero_apply (i : Fin n) : (0 : DominantWeight n).val i = 0 := (rfl)
+theorem add_apply (l₁ l₂ : DominantWeight n) (i : Fin n) :
+    (l₁ + l₂).val i = l₁.val i + l₂.val i := (rfl)
+theorem nsmul_apply (k : ℕ) (l : DominantWeight n) (i : Fin n) :
+    (k • l).val i = k • l.val i := (rfl)
+@[simp] theorem dual_zero : (0 : DominantWeight n).dual = 0 := by ext i; simp
+@[simp] theorem dual_add (l₁ l₂ : DominantWeight n) : (l₁ + l₂).dual = l₁.dual + l₂.dual := by
+  ext i; simp [neg_add_rev, add_comm]
+
+/-- A dominant weight `μ` **dominates** `ν` (`ν ≤ μ` in the `GL n` dominance order) when `μ` and `ν`
+have the same total sum and every leading partial sum of `ν` is at most that of `μ`. Since
+dominant weights are antitone while `TauCeti.Dominates` is oriented so the dominated vector has
+larger leading partial sums, this is `TauCeti.Dominates ν.1 μ.1`. -/
+def Dominates (μ ν : DominantWeight n) : Prop :=
+  TauCeti.Dominates ν.val μ.val
+
+/-- Unfold `DominantWeight.Dominates` to `TauCeti.Dominates` on the underlying sequences (with
+arguments reversed). -/
+theorem dominates_def {μ ν : DominantWeight n} :
+    μ.Dominates ν ↔ TauCeti.Dominates ν.val μ.val := Iff.rfl
+
+/-- Leading partial sums stabilize at index `n`, so `Dominates` only needs to test `k : Fin (n + 1)`
+and is decidable. -/
+theorem dominates_iff_forall_fin {μ ν : DominantWeight n} :
+    μ.Dominates ν ↔ (∑ i, ν.val i) = (∑ i, μ.val i) ∧ ∀ k : Fin (n + 1),
+      (∑ i : Fin n with i.val < k.val, ν.val i) ≤ ∑ i : Fin n with i.val < k.val, μ.val i := by
+  rw [dominates_def, TauCeti.dominates_def, eq_comm]
+  refine Iff.and Iff.rfl ⟨fun h k => ?_, fun h k hk => ?_⟩
+  · simpa only [← prefixSum_eq_sum_castLE (Nat.lt_succ_iff.mp k.isLt), prefixSum_def] using
+      h k.val (Nat.lt_succ_iff.mp k.isLt)
+  · simpa only [← prefixSum_eq_sum_castLE hk, prefixSum_def] using h ⟨k, Nat.lt_succ_of_le hk⟩
+
+/-- Partial-sum characterization of `Dominates` over all filtered prefixes
+`{i : Fin n | i.val < k}`. -/
+theorem dominates_iff {μ ν : DominantWeight n} :
+    μ.Dominates ν ↔ (∑ i, ν.val i) = (∑ i, μ.val i) ∧
+      ∀ k : ℕ, (∑ i : Fin n with i.val < k, ν.val i) ≤ ∑ i : Fin n with i.val < k, μ.val i := by
+  simp only [dominates_def, TauCeti.dominates_iff_forall_prefixSum_le, prefixSum_def, eq_comm]
+
+instance (μ ν : DominantWeight n) : Decidable (μ.Dominates ν) :=
+  decidable_of_iff _ dominates_iff_forall_fin.symm
+
+/-- Every dominant weight dominates itself. -/
+@[simp, refl] theorem dominates_refl (μ : DominantWeight n) : μ.Dominates μ :=
+  TauCeti.Dominates.refl μ.val
+
+/-- Dominance on dominant weights is transitive. -/
+@[trans] theorem Dominates.trans {μ ν ξ : DominantWeight n}
+    (hμν : μ.Dominates ν) (hνξ : ν.Dominates ξ) : μ.Dominates ξ :=
+  TauCeti.Dominates.trans hνξ hμν
+
+/-- Dominance on dominant weights is antisymmetric. -/
+theorem Dominates.antisymm {μ ν : DominantWeight n} (hμν : μ.Dominates ν) (hνμ : ν.Dominates μ) :
+    μ = ν :=
+  Subtype.ext (TauCeti.Dominates.antisymm hνμ hμν)
+
 /-- The **determinant-twist exponent** of a dominant weight: its last entry `λₙ`, and `0` for the
 empty weight. -/
 @[expose]
 def detShift : {n : ℕ} → DominantWeight n → ℤ
   | 0, _ => 0
-  | _ + 1, l => l.1 (Fin.last _)
+  | _ + 1, l => l.val (Fin.last _)
 
 @[simp]
 theorem detShift_eq_zero_of_isEmpty (l : DominantWeight 0) : l.detShift = 0 := rfl
 
 @[simp]
-theorem detShift_succ (l : DominantWeight (n + 1)) : l.detShift = l.1 (Fin.last n) := rfl
+theorem detShift_succ (l : DominantWeight (n + 1)) : l.detShift = l.val (Fin.last n) := rfl
 
 /-- The determinant-twist exponent is the smallest entry of a dominant weight. -/
-theorem detShift_le (l : DominantWeight n) (i : Fin n) : l.detShift ≤ l.1 i := by
+theorem detShift_le (l : DominantWeight n) (i : Fin n) : l.detShift ≤ l.val i := by
   match n, l, i with
   | 0, _, i => exact i.elim0
   | _ + 1, l, i => exact l.antitone (Fin.le_last i)
@@ -138,10 +235,10 @@ theorem detShift_shift (l : DominantWeight (n + 1)) (m : ℤ) :
 /-- A dominant weight is **polynomial** when all its entries are nonnegative.  These are the
 weights of the representations occurring in tensor powers of the standard representation, as
 opposed to the general rational ones, which need a negative power of the determinant. -/
-def IsPolynomial (l : DominantWeight n) : Prop := ∀ i, 0 ≤ l.1 i
+def IsPolynomial (l : DominantWeight n) : Prop := ∀ i, 0 ≤ l.val i
 
 /-- Unfold `IsPolynomial` to its entrywise nonnegativity condition. -/
-theorem isPolynomial_def (l : DominantWeight n) : l.IsPolynomial ↔ ∀ i, 0 ≤ l.1 i := Iff.rfl
+theorem isPolynomial_def (l : DominantWeight n) : l.IsPolynomial ↔ ∀ i, 0 ≤ l.val i := Iff.rfl
 
 /-- Since a dominant weight decreases, only its last entry has to be tested for polynomiality.
 This is not a `simp` lemma: rewriting `IsPolynomial` away would put the `simp` lemmas whose
@@ -162,17 +259,17 @@ theorem isPolynomial_shift_neg_detShift (l : DominantWeight n) :
   omega
 
 /-- The entries of a dominant weight, truncated to `ℕ`, are still weakly decreasing. -/
-theorem toNat_antitone (l : DominantWeight n) : Antitone fun i => (l.1 i).toNat :=
+theorem toNat_antitone (l : DominantWeight n) : Antitone fun i => (l.val i).toNat :=
   fun _ _ h => Int.toNat_le_toNat (l.antitone h)
 
 /-- The Young diagram of a dominant weight: its `i`-th row has length `λᵢ`.  Negative entries are
 truncated to `0`, so this reads off the intended diagram exactly on the polynomial weights, where
 `TauCeti.DominantWeight.natCast_rowLen_shape` recovers the entries. -/
 def shape (l : DominantWeight n) : YoungDiagram :=
-  YoungDiagram.ofRowLensFin (fun i => (l.1 i).toNat) l.toNat_antitone
+  YoungDiagram.ofRowLensFin (fun i => (l.val i).toNat) l.toNat_antitone
 
 @[simp]
-theorem rowLen_shape (l : DominantWeight n) (i : Fin n) : l.shape.rowLen i = (l.1 i).toNat :=
+theorem rowLen_shape (l : DominantWeight n) (i : Fin n) : l.shape.rowLen i = (l.val i).toNat :=
   YoungDiagram.rowLen_ofRowLensFin _ _ i
 
 @[simp]
@@ -186,13 +283,13 @@ theorem colLen_zero_shape_le (l : DominantWeight n) : l.shape.colLen 0 ≤ n :=
 
 /-- On a polynomial weight the row lengths of its Young diagram are the entries themselves. -/
 theorem natCast_rowLen_shape {l : DominantWeight n} (hl : l.IsPolynomial) (i : Fin n) :
-    (l.shape.rowLen i : ℤ) = l.1 i := by
+    (l.shape.rowLen i : ℤ) = l.val i := by
   rw [rowLen_shape, Int.toNat_of_nonneg (hl i)]
 
 /-- The Young diagram of a polynomial weight has `∑ λᵢ` cells. -/
 theorem natCast_card_shape {l : DominantWeight n} (hl : l.IsPolynomial) :
-    (l.shape.card : ℤ) = ∑ i, l.1 i := by
-  have hcard : l.shape.card = ∑ i, (l.1 i).toNat := YoungDiagram.card_ofRowLensFin _ _
+    (l.shape.card : ℤ) = ∑ i, l.val i := by
+  have hcard : l.shape.card = ∑ i, (l.val i).toNat := YoungDiagram.card_ofRowLensFin _ _
   rw [hcard]
   push_cast
   exact Finset.sum_congr rfl fun i _ => Int.toNat_of_nonneg (hl i)
@@ -207,7 +304,7 @@ def weightOfShape (n : ℕ) (μ : YoungDiagram) : DominantWeight n :=
 
 @[simp]
 theorem weightOfShape_apply (n : ℕ) (μ : YoungDiagram) (i : Fin n) :
-    (weightOfShape n μ).1 i = (μ.rowLen i : ℤ) :=
+    (weightOfShape n μ).val i = (μ.rowLen i : ℤ) :=
   rfl
 
 @[simp]
@@ -232,20 +329,20 @@ are exactly the dominant weights of `GL n` with nonnegative entries. -/
 @[expose]
 def shapeEquivPolynomialWeight (n : ℕ) :
     {μ : YoungDiagram // μ.colLen 0 ≤ n} ≃ {l : DominantWeight n // l.IsPolynomial} where
-  toFun μ := ⟨weightOfShape n μ.1, isPolynomial_weightOfShape n μ.1⟩
-  invFun l := ⟨l.1.shape, DominantWeight.colLen_zero_shape_le l.1⟩
-  left_inv μ := Subtype.ext (shape_weightOfShape μ.2)
-  right_inv l := Subtype.ext (weightOfShape_shape l.2)
+  toFun μ := ⟨weightOfShape n μ.val, isPolynomial_weightOfShape n μ.val⟩
+  invFun l := ⟨l.val.shape, DominantWeight.colLen_zero_shape_le l.val⟩
+  left_inv μ := Subtype.ext (shape_weightOfShape μ.property)
+  right_inv l := Subtype.ext (weightOfShape_shape l.property)
 
 @[simp]
 theorem shapeEquivPolynomialWeight_apply_coe (n : ℕ) (μ : {μ : YoungDiagram // μ.colLen 0 ≤ n}) :
-    (shapeEquivPolynomialWeight n μ).1 = weightOfShape n μ.1 :=
+    (shapeEquivPolynomialWeight n μ).val = weightOfShape n μ.val :=
   rfl
 
 @[simp]
 theorem shapeEquivPolynomialWeight_symm_apply_coe (n : ℕ)
     (l : {l : DominantWeight n // l.IsPolynomial}) :
-    ((shapeEquivPolynomialWeight n).symm l).1 = l.1.shape :=
+    ((shapeEquivPolynomialWeight n).symm l).val = l.val.shape :=
   rfl
 
 namespace DominantWeight
@@ -259,7 +356,7 @@ def detShiftShape (l : DominantWeight n) : YoungDiagram := (l.shift (-l.detShift
 
 @[simp]
 theorem rowLen_detShiftShape (l : DominantWeight n) (i : Fin n) :
-    l.detShiftShape.rowLen i = (l.1 i - l.detShift).toNat := by
+    l.detShiftShape.rowLen i = (l.val i - l.detShift).toNat := by
   rw [detShiftShape, rowLen_shape, shift_apply, ← sub_eq_add_neg]
 
 @[simp]
@@ -269,7 +366,7 @@ theorem rowLen_detShiftShape_eq_zero_of_le (l : DominantWeight n) {i : ℕ} (hi 
 
 /-- The polynomial part of a dominant weight recovers it after shifting back by `λₙ`. -/
 theorem natCast_rowLen_detShiftShape_add_detShift (l : DominantWeight n) (i : Fin n) :
-    (l.detShiftShape.rowLen i : ℤ) + l.detShift = l.1 i := by
+    (l.detShiftShape.rowLen i : ℤ) + l.detShift = l.val i := by
   have h := l.detShift_le i
   rw [rowLen_detShiftShape]
   omega
@@ -294,14 +391,11 @@ theorem colLen_zero_detShiftShape_le_pred (l : DominantWeight n) :
   cases n with
   | zero => exact colLen_zero_shape_le _
   | succ n =>
-    by_contra h
-    have hmem : ((n, 0) : ℕ × ℕ) ∈ l.detShiftShape :=
-      YoungDiagram.mem_iff_lt_colLen.mpr (Nat.lt_of_not_le h)
-    have hpos : 0 < l.detShiftShape.rowLen n := YoungDiagram.mem_iff_lt_rowLen.mp hmem
-    have hzero : l.detShiftShape.rowLen n = (l.1 (Fin.last n) - l.detShift).toNat :=
+    have hzero : l.detShiftShape.rowLen n = (l.val (Fin.last n) - l.detShift).toNat :=
       rowLen_detShiftShape l (Fin.last n)
     rw [detShift_succ, sub_self, Int.toNat_zero] at hzero
-    omega
+    rw [Nat.add_sub_cancel]
+    exact YoungDiagram.rowLen_eq_zero_iff.mp hzero
 
 /-- The polynomial part of a dominant weight for `GL n` has at most `n` rows, the bound in the
 form consumed by the dictionary between weights and Young diagrams. -/
@@ -337,7 +431,7 @@ theorem detShiftShape_weightOfShape {μ : YoungDiagram} (hμ : μ.colLen 0 ≤ n
     | n + 1, hμ =>
       have hμ' : μ.colLen 0 ≤ n := by simpa using hμ
       rw [detShift_succ, weightOfShape_apply, Fin.val_last,
-        YoungDiagram.rowLen_eq_zero_of_colLen_le hμ', Nat.cast_zero]
+        YoungDiagram.rowLen_eq_zero_iff.mpr hμ', Nat.cast_zero]
   rw [detShiftShape, hdet, neg_zero, shift_zero,
     shape_weightOfShape (hμ.trans (Nat.sub_le n 1))]
 
@@ -367,24 +461,24 @@ theorem detShiftShape_eq_detShiftShape_iff (l l' : DominantWeight n) :
 namely `m = λₙ₊₁` and `μ` its polynomial part.  The row bound is essential: dropping it lets `μ`
 and `m` trade a constant against each other. -/
 theorem eq_detShift_and_eq_detShiftShape (l : DominantWeight (n + 1)) {μ : YoungDiagram}
-    (hμ : μ.colLen 0 ≤ n) {m : ℤ} (hm : ∀ i : Fin (n + 1), (μ.rowLen i : ℤ) + m = l.1 i) :
+    (hμ : μ.colLen 0 ≤ n) {m : ℤ} (hm : ∀ i : Fin (n + 1), (μ.rowLen i : ℤ) + m = l.val i) :
     m = l.detShift ∧ μ = l.detShiftShape := by
   have hm' : m = l.detShift := by
     have h := hm (Fin.last n)
     have hlast : μ.rowLen ((Fin.last n : Fin (n + 1)) : ℕ) = 0 :=
-      YoungDiagram.rowLen_eq_zero_of_colLen_le hμ
+      YoungDiagram.rowLen_eq_zero_iff.mpr hμ
     rw [hlast, Nat.cast_zero, zero_add] at h
     rw [detShift_succ, ← h]
   refine ⟨hm', YoungDiagram.rowLen_injective (funext fun i => ?_)⟩
   by_cases hi : i < n + 1
-  · have h : (μ.rowLen i : ℤ) + m = l.1 ⟨i, hi⟩ := hm ⟨i, hi⟩
-    have h' : l.detShiftShape.rowLen i = (l.1 ⟨i, hi⟩ - l.detShift).toNat :=
+  · have h : (μ.rowLen i : ℤ) + m = l.val ⟨i, hi⟩ := hm ⟨i, hi⟩
+    have h' : l.detShiftShape.rowLen i = (l.val ⟨i, hi⟩ - l.detShift).toNat :=
       rowLen_detShiftShape l ⟨i, hi⟩
     rw [hm'] at h
     omega
   · have hni : n ≤ i := Nat.le_of_succ_le (Nat.le_of_not_lt hi)
     rw [rowLen_detShiftShape_eq_zero_of_le _ (Nat.le_of_not_lt hi),
-      YoungDiagram.rowLen_eq_zero_of_colLen_le (hμ.trans hni)]
+      YoungDiagram.rowLen_eq_zero_iff.mpr (hμ.trans hni)]
 
 end DominantWeight
 

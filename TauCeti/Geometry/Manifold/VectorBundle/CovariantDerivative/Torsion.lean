@@ -15,10 +15,13 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 This file names the pointwise torsion-free condition for a covariant derivative on the tangent
 bundle.  When the bundled torsion tensor is available, `isTorsionFree_iff_torsion_eq_zero`
 identifies this condition with its vanishing. The condition is available without finite
-dimensionality or completeness, and supplies the torsion hypothesis for curvature identities
-such as the first Bianchi identity. `isTorsionFree_addOneForm` shows that adding a symmetric
-endomorphism-valued one-form to a torsion-free connection keeps it torsion-free, as used for the
-conformally changed Levi-Civita connection.
+dimensionality or completeness, shows that vector fields whose covariant derivatives vanish at a
+point have vanishing Lie bracket there (`IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero`), and
+supplies the torsion hypothesis for curvature identities such as the first Bianchi identity.
+`isTorsionFree_addOneForm` shows that adding a symmetric endomorphism-valued one-form to a
+torsion-free connection keeps it torsion-free, as used for the conformally changed Levi-Civita
+connection. Conversely, the difference of two torsion-free connections is symmetric
+(`IsTorsionFree.difference_apply_comm`).
 -/
 
 public section
@@ -61,13 +64,22 @@ theorem isTorsionFree_addOneForm
   rw [← ht hX hY, hA x (Y x)]
   abel
 
+/-- For a torsion-free connection, two differentiable vector fields whose covariant derivatives
+vanish at `x` have vanishing Lie bracket at `x`. -/
+theorem IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero
+    {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)} (ht : cov.IsTorsionFree)
+    {X Y : Π y : M, TangentSpace I y} {x : M}
+    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
+    (hX0 : cov X x = 0) (hY0 : cov Y x = 0) :
+    mlieBracket I X Y x = 0 := by
+  rw [← (isTorsionFree_iff cov).mp ht hX hY, hY0, hX0]
+  simp
+
 section TorsionFree
 
-variable [CompleteSpace E]
-  {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)}
+variable {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)}
   [cov.ContMDiffCovariantDerivative ∞]
 
-omit [CompleteSpace E] in
 /-- Applying a torsion-free connection to the Lie bracket of smooth vector fields gives the
 difference of applying it to their two covariant derivatives. -/
 theorem covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free
@@ -90,6 +102,21 @@ theorem covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free
 end TorsionFree
 
 variable [CompleteSpace 𝕜] [CompleteSpace E] [FiniteDimensional 𝕜 E] [IsManifold I 2 M]
+
+omit [CompleteSpace E] in
+/-- **The difference of two torsion-free connections is symmetric.** If `cov` and `cov'` are
+torsion-free, their difference tensor `CovariantDerivative.difference` satisfies
+`Δ(v, w) = Δ(w, v)`: both connections evaluate the same Lie bracket. -/
+theorem IsTorsionFree.difference_apply_comm
+    {cov cov' : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (ht : cov.IsTorsionFree) (ht' : cov'.IsTorsionFree) (x : M) (v w : TangentSpace I x) :
+    cov.difference cov' x v w = cov.difference cov' x w v := by
+  have hv := FiberBundle.mdifferentiableAt_extend I E v
+  have hw := FiberBundle.mdifferentiableAt_extend I E w
+  have h := (ht hw hv).trans (ht' hw hv).symm
+  simp only [FiberBundle.extend_apply_self] at h
+  rw [difference_apply_eq_extend, difference_apply_eq_extend, sub_apply, sub_apply,
+    sub_eq_sub_iff_sub_eq_sub, h]
 
 /-- The named torsion-free condition is equivalent to vanishing of the bundled torsion tensor. -/
 theorem isTorsionFree_iff_torsion_eq_zero

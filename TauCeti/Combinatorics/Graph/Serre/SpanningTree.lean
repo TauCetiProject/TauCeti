@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Tree
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.Zorn
 
@@ -16,18 +17,26 @@ A spanning tree of `Γ` is a reversal-closed set of darts whose subgraph is a tr
 Serre graph has one, and every acyclic reversal-closed set of darts extends to one, by Zorn's
 lemma: a maximal acyclic set of darts reaches every vertex, since a dart leaving the vertices it
 reaches could be added without creating a reduced closed path. Loops and parallel darts are
-allowed throughout, and no finiteness is assumed. A rose has exactly one spanning tree, with no
-darts.
+allowed throughout, and no finiteness is assumed. A tree is a spanning tree of itself, with all
+of its darts, and a rose has exactly one spanning tree, with no darts.
 
 Any two vertices are joined by a unique reduced path whose darts lie in a spanning tree `T`, the
-tree path `T.path a b`. The tree paths from a base vertex `v` give a free basis of the
-fundamental group of a graph: choose one dart `e` from each reversal pair outside `T`; the basis
-consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
+tree path `T.path a b`. Dart weights that agree on `T` agree along tree paths, so a weight that is
+trivial on `T` is trivial along them. For a group-valued weight compatible with reversal on `T`,
+the weights of the tree paths from `a` to `b` and from `b` to `c` multiply to the weight of the
+tree path from `a` to `c` (`weight_path_mul_weight_path`). The weights of the tree paths from `a`
+to the two ends of a dart of `T` differ by the weight of that dart, as soon as the weight is
+compatible with reversal at that dart (`weight_path_tgt`). The tree paths from a base vertex `v`
+give a free basis of the fundamental group of a graph: choose one dart `e` from each reversal pair
+outside `T`; the basis consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
 
 ## Main definitions
 
 * `TauCeti.SerreGraph.SpanningTree`: a spanning tree of a Serre graph.
 * `TauCeti.SerreGraph.SpanningTree.path`: the reduced path between two vertices in a spanning tree.
+* `TauCeti.SerreGraph.IsTree.spanningTree`: a tree as a spanning tree of itself.
+* `TauCeti.SerreGraph.SpanningTree.restrict`: a spanning tree contained in a subgraph, as a
+  spanning tree of the subgraph.
 
 ## Main results
 
@@ -36,6 +45,11 @@ consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
 * `TauCeti.SerreGraph.nonempty_spanningTree_iff`: a graph has a spanning tree exactly when it is
   connected.
 * `TauCeti.SerreGraph.SpanningTree.eq_path`: the tree path is the only reduced path in the tree.
+* `TauCeti.SerreGraph.SpanningTree.mapPath_path_of_injective`: a morphism injective on the darts
+  issuing from each vertex and carrying one spanning tree into another sends tree paths to tree
+  paths.
+* `TauCeti.SerreGraph.SpanningTree.path_eq_cons_or_path_eq_cons_reverse`: the tree paths from a
+  vertex to the two ends of a tree dart differ by that dart.
 
 ## References
 
@@ -73,7 +87,7 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
   induction p with
   | nil => exact Or.inl (by simp)
   | @cons b c p f ih =>
-    have hf : f.1 = e ∨ f.1 = Γ.rev e ∨ f.1 ∈ S := hpS f.1 (by simp)
+    have hf : f.val = e ∨ f.val = Γ.rev e ∨ f.val ∈ S := hpS f.val (by simp)
     rcases ih (hp.of_cons Γ) (fun d hd => hpS d (by simp [hd])) with
       hpS' | ⟨x, hx, q, r, rfl, hq, hr⟩
     · rcases hf with hf | hf | hf
@@ -87,7 +101,7 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
         simp only [Path.darts_cons, List.mem_append, List.mem_singleton]
         rintro d (hd | rfl)
         exacts [hpS' d hd, hf]
-    · by_cases hfS : f.1 ∈ S
+    · by_cases hfS : f.val ∈ S
       · -- A dart of `S` extends the final segment `r`.
         refine Or.inr ⟨x, hx, q, r.cons f, rfl, hq, ?_⟩
         simp only [Path.darts_cons, List.mem_append, List.mem_singleton]
@@ -95,12 +109,12 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
         exacts [hr d hd, hfS]
       · -- The crossing darts `e` and `rev e` cannot follow `r`.
         exfalso
-        have hf : f.1 = e ∨ f.1 = Γ.rev e := hf.imp_right fun h => h.resolve_right hfS
+        have hf : f.val = e ∨ f.val = Γ.rev e := hf.imp_right fun h => h.resolve_right hfS
         have hside := Path.mem_iff_mem_of_forall_mem_darts _ hS hR r hr
-        rw [← f.2.1] at hside
+        rw [← f.property.1] at hside
         -- The darts `x` and `f` both cross between `R` and its complement, in opposite
         -- directions, so `f` reverses `x`.
-        have hfx : f.1 = Γ.rev x := by
+        have hfx : f.val = Γ.rev x := by
           rcases hx with rfl | rfl <;> rcases hf with hf | hf
           · rw [hf] at hside
             exact absurd (hside.mpr he) he'
@@ -108,7 +122,7 @@ private theorem darts_subset_or_eq_comp {S : Set Γ.E} {R : Set Γ.V}
           · rw [hf, rev_rev]
           · rw [hf, src_rev, tgt_rev] at hside
             exact absurd (hside.mp he) he'
-        have hb : b = Γ.tgt x := by rw [← f.2.1, hfx, src_rev]
+        have hb : b = Γ.tgt x := by rw [← f.property.1, hfx, src_rev]
         subst hb
         obtain rfl := hSa _ r ((hp.of_cons Γ).of_comp_right Γ) hr
         exact ((Path.isReduced_cons_cons Γ q (Γ.dart x) f).mp hp).2 (by rw [dart_val]; exact hfx)
@@ -237,6 +251,26 @@ theorem eq_path {a b : Γ.V} {p : Γ.Path a b} (hp : Path.IsReduced Γ p)
     (hpT : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : p = T.path a b :=
   T.eq_of_isReduced hp (T.isReduced_path a b) hpT fun _ => T.mem_of_mem_darts_path
 
+/-- A path whose darts lie in a spanning tree reduces to the tree path between its endpoints. -/
+theorem reduce_eq_path {a b : Γ.V} (p : Γ.Path a b)
+    (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : Path.reduce Γ p = T.path a b :=
+  T.eq_path (Path.isReduced_reduce Γ p) fun e he =>
+    hp e ((Path.darts_reduce_sublist Γ p).subset he)
+
+/-- A path whose darts lie in a spanning tree is backtrack homotopic to the tree path between
+its endpoints. -/
+theorem homotopic_path {a b : Γ.V} (p : Γ.Path a b)
+    (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) : Path.Homotopic Γ p (T.path a b) := by
+  simpa only [T.reduce_eq_path p hp] using Path.homotopic_reduce Γ p
+
+/-- Consecutive tree paths compose, up to backtrack homotopy, to the tree path between the
+outer endpoints. -/
+theorem homotopic_path_comp_path (a b c : Γ.V) :
+    Path.Homotopic Γ ((T.path a b).comp (T.path b c)) (T.path a c) :=
+  T.homotopic_path _ fun e he => by
+    rw [Path.darts_comp, List.mem_append] at he
+    exact he.elim T.mem_of_mem_darts_path T.mem_of_mem_darts_path
+
 @[simp] theorem path_self (a : Γ.V) : T.path a a = Quiver.Path.nil :=
   (T.eq_path (Path.isReduced_nil Γ a) (by simp)).symm
 
@@ -245,6 +279,30 @@ theorem eq_path {a b : Γ.V} {p : Γ.Path a b} (hp : Path.IsReduced Γ p)
     simp only [Path.darts_reverse, List.mem_map, List.mem_reverse] at he
     obtain ⟨f, hf, rfl⟩ := he
     exact T.rev_mem f (T.mem_of_mem_darts_path hf)
+
+/-- The tree paths from a vertex `c` to the two ends of a tree dart `f` differ by that dart: the
+tree path to the target of `f` is the tree path to its source followed by `f`, or the tree path
+to the source of `f` is the tree path to its target followed by the reverse of `f`. -/
+theorem path_eq_cons_or_path_eq_cons_reverse (c : Γ.V) {a b : Γ.V} (f : Quiver.Hom a b)
+    (hf : f.val ∈ T.darts) :
+    T.path c b = (T.path c a).cons f ∨ T.path c a = (T.path c b).cons (Quiver.reverse f) := by
+  have hmem : ∀ e ∈ Path.darts Γ (T.path c a), e ∈ T.darts := fun _ => T.mem_of_mem_darts_path
+  by_cases h : Path.IsReduced Γ ((T.path c a).cons f)
+  · refine Or.inl (T.eq_path h fun e he => ?_).symm
+    rw [Path.darts_cons, List.mem_append, List.mem_singleton] at he
+    exact he.elim (hmem e) fun he => he ▸ hf
+  -- Otherwise the tree path to `a` ends with the reverse of `f`.
+  refine Or.inr ?_
+  have hred := T.isReduced_path c a
+  generalize T.path c a = p at h hred hmem ⊢
+  cases p with
+  | nil => exact absurd (Path.isReduced_toPath Γ f) h
+  | @cons d _ r g =>
+    have hfg : f.val = Γ.rev g.val :=
+      of_not_not fun hne => h ((Path.isReduced_cons_cons Γ r g f).mpr ⟨hred, hne⟩)
+    obtain rfl : b = d := f.property.2.symm.trans (by rw [hfg, tgt_rev, g.property.1])
+    rw [T.eq_path (hred.of_cons Γ) fun e he => hmem e (by simp [he])]
+    exact congrArg _ (Subtype.ext (by rw [reverse_val, hfg, rev_rev]))
 
 /-- The tree path between the endpoints of a tree dart is that dart. -/
 @[simp] theorem path_src_tgt {e : Γ.E} (he : e ∈ T.darts) :
@@ -262,7 +320,151 @@ theorem eq_of_src_eq_of_tgt_eq {e f : Γ.E} (he : e ∈ T.darts) (hf : f ∈ T.d
 theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e :=
   T.isTree.isAcyclic.src_ne_tgt ⟨e, he⟩
 
+/-- A spanning tree of a graph with at most one vertex, such as a rose, has no darts. -/
+instance [Subsingleton Γ.V] : IsEmpty T.darts :=
+  T.isTree.isAcyclic.isEmpty_dart_of_subsingleton
+
+section Map
+
+variable {Δ : SerreGraph} (f : Γ.Hom Δ) (T' : Δ.SpanningTree)
+  (hT : ∀ e ∈ T.darts, f.mapE e ∈ T'.darts)
+include hT
+
+/-- A morphism of Serre graphs carrying a spanning tree `T` into a spanning tree `T'` sends the
+darts of the tree paths of `T` into `T'`. -/
+theorem mem_of_mem_darts_mapPath_path {a b : Γ.V} {e : Δ.E}
+    (he : e ∈ Path.darts Δ (f.toPrefunctor.mapPath (T.path a b))) : e ∈ T'.darts := by
+  rw [Hom.darts_mapPath] at he
+  obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
+  exact hT d (T.mem_of_mem_darts_path hd)
+
+/-- A morphism of Serre graphs carrying a spanning tree `T` into a spanning tree `T'` sends the
+tree paths of `T` to paths backtrack homotopic to the tree paths of `T'`. -/
+theorem homotopic_mapPath_path (a b : Γ.V) :
+    Path.Homotopic Δ (f.toPrefunctor.mapPath (T.path a b))
+      (T'.path (f.toPrefunctor.obj a) (f.toPrefunctor.obj b)) :=
+  T'.homotopic_path _ fun _ => T.mem_of_mem_darts_mapPath_path f T' hT
+
+/-- A morphism of Serre graphs injective on the darts issuing from each vertex and carrying a
+spanning tree `T` into a spanning tree `T'` sends the tree paths of `T` to the tree paths of
+`T'`. -/
+theorem mapPath_path_of_injective
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') (a b : Γ.V) :
+    f.toPrefunctor.mapPath (T.path a b) =
+      T'.path (f.toPrefunctor.obj a) (f.toPrefunctor.obj b) :=
+  T'.eq_path (f.isReduced_mapPath hf _ (T.isReduced_path a b)) fun _ =>
+    T.mem_of_mem_darts_mapPath_path f T' hT
+
+end Map
+
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- A spanning tree whose darts lie in a subgraph is a spanning tree of that subgraph. -/
+def restrict (hTS : T.darts ⊆ S) : (Γ.restrict S hS).SpanningTree where
+  darts := {e | e.val ∈ T.darts}
+  rev_mem e he := T.rev_mem e.val he
+  isTree := by
+    refine (isTree_iff _).mpr ⟨(connected_iff _).mpr ⟨((connected_iff _).mp T.isTree.connected).1,
+      (preconnected_restrict_iff _ _ _).mpr fun a b => ?_⟩,
+      (isAcyclic_restrict_iff _ _ _).mpr fun u p hp hpT => ?_⟩
+    · obtain ⟨p, hp⟩ := Γ.exists_restrict_path S hS (T.path a b)
+        fun e he => hTS (T.mem_of_mem_darts_path he)
+      have hmem (e : (Γ.restrict S hS).E) (he : e ∈ Path.darts (Γ.restrict S hS) p) :
+          e.val ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath p) := by
+        rw [Hom.darts_mapPath]
+        exact List.mem_map.mpr ⟨e, he, rfl⟩
+      exact ⟨p, fun e he => T.mem_of_mem_darts_path (a := a) (b := b) (hp ▸ hmem e he)⟩
+    · have hq := T.eq_path ((Γ.isReduced_restrictInclusion_mapPath_iff S hS p).mpr hp)
+        fun e he => by
+          rw [Hom.darts_mapPath] at he
+          obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
+          exact hpT d hd
+      refine Quiver.Path.eq_nil_of_length_zero p ?_
+      rw [← Prefunctor.length_mapPath (Γ.restrictInclusion S hS).toPrefunctor, hq, T.path_self,
+        Quiver.Path.length_nil]
+
+@[simp] theorem mem_restrict_darts (hTS : T.darts ⊆ S) {e : (Γ.restrict S hS).E} :
+    e ∈ (T.restrict S hS hTS).darts ↔ e.val ∈ T.darts := Iff.rfl
+
+/-- The inclusion of a subgraph containing a spanning tree sends the tree paths of the restricted
+tree to the tree paths of the tree. -/
+@[simp] theorem mapPath_path_restrict (hTS : T.darts ⊆ S) (a b : Γ.V) :
+    (Γ.restrictInclusion S hS).toPrefunctor.mapPath ((T.restrict S hS hTS).path a b) =
+      T.path a b :=
+  (T.restrict S hS hTS).mapPath_path_of_injective (Γ.restrictInclusion S hS) T
+    (fun _ he => (T.mem_restrict_darts S hS hTS).mp he) (fun _ _ _ h => Subtype.val_injective h)
+    a b
+
+end Restrict
+
+/-- Two dart weights that agree on the darts of a spanning tree agree along every tree path. -/
+theorem weight_path_congr {M : Type*} [Monoid M] {wt wt' : Γ.E → M}
+    (hwt : ∀ e ∈ T.darts, wt e = wt' e) (a b : Γ.V) :
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) =
+      (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt' e.val) :=
+  Path.weight_congr Γ _ fun _ he => hwt _ (T.mem_of_mem_darts_path he)
+
+/-- A dart weight that is trivial on the darts of a spanning tree is trivial along every tree
+path. -/
+theorem weight_path_eq_one {M : Type*} [Monoid M] {wt : Γ.E → M} (hwt : ∀ e ∈ T.darts, wt e = 1)
+    (a b : Γ.V) : (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) = 1 :=
+  Path.weight_eq_one Γ _ fun _ he => hwt _ (T.mem_of_mem_darts_path he)
+
+/-- For a dart weight compatible with reversal on the darts of a spanning tree, the weights of the
+tree paths from `a` to `b` and from `b` to `c` multiply to the weight of the tree path from `a` to
+`c`. -/
+theorem weight_path_mul_weight_path {G : Type*} [Group G] {wt : Γ.E → G}
+    (hwt : ∀ e ∈ T.darts, wt (Γ.rev e) = (wt e)⁻¹) (a b c : Γ.V) :
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) *
+        (T.path b c).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) =
+      (T.path a c).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) := by
+  classical
+  -- Extended by `1` off the tree, the weight is compatible with reversal on every dart.
+  have hrev (e : Γ.E) : (if Γ.rev e ∈ T.darts then wt (Γ.rev e) else 1) =
+      (if e ∈ T.darts then wt e else 1)⁻¹ := by
+    by_cases he : e ∈ T.darts
+    · simp [he, T.rev_mem e he, hwt e he]
+    · have hr : Γ.rev e ∉ T.darts := fun h => he (Γ.rev_rev e ▸ T.rev_mem _ h)
+      simp [he, hr]
+  have h (e : Γ.E) (he : e ∈ T.darts) : wt e = if e ∈ T.darts then wt e else 1 := by simp [he]
+  rw [T.weight_path_congr h, T.weight_path_congr h, T.weight_path_congr h,
+    ← Quiver.Path.weight_comp]
+  exact Path.Homotopic.weight_eq Γ (fun e => if e ∈ T.darts then wt e else 1) hrev
+    (T.homotopic_path_comp_path a b c)
+
+/-- For a dart weight compatible with reversal at a tree dart `e`, the weight of the tree path
+from `a` to the target of `e` is the weight of the tree path from `a` to its source times the
+weight of `e`. -/
+theorem weight_path_tgt {G : Type*} [Group G] {wt : Γ.E → G} (a : Γ.V) {e : Γ.E}
+    (he : e ∈ T.darts) (hwt : wt (Γ.rev e) = (wt e)⁻¹) :
+    (T.path a (Γ.tgt e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) =
+      (T.path a (Γ.src e)).weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) * wt e := by
+  rcases T.path_eq_cons_or_path_eq_cons_reverse a (Γ.dart e) (by simpa using he) with h | h
+  · simp [h]
+  · simp [h, hwt]
+
 end SpanningTree
+
+variable {Γ} in
+/-- A tree is a spanning tree of itself: all of its darts form a spanning tree. -/
+def IsTree.spanningTree (h : Γ.IsTree) : Γ.SpanningTree where
+  darts := Set.univ
+  rev_mem _ _ := Set.mem_univ _
+  isTree := by
+    have hΓ := Γ.connected_iff.mp (IsTree.connected _ h)
+    refine (isTree_iff _).mpr ⟨(connected_iff _).mpr ⟨hΓ.1, (preconnected_iff _).mpr fun a b => ?_⟩,
+      (Γ.isAcyclic_restrict_iff _ _).mpr fun _ p hp _ => h.eq_nil_of_isReduced _ p hp⟩
+    -- Every path of the tree lies in the subgraph of all darts.
+    obtain ⟨p⟩ := Γ.preconnected_iff.mp hΓ.2 a b
+    obtain ⟨q, -⟩ := Γ.exists_restrict_path Set.univ (fun _ _ => Set.mem_univ _) p
+      fun _ _ => Set.mem_univ _
+    exact ⟨q⟩
+
+variable {Γ} in
+@[simp] theorem IsTree.spanningTree_darts (h : Γ.IsTree) : h.spanningTree.darts = Set.univ :=
+  (rfl)
 
 /-- The spanning tree of a rose, with no darts. -/
 def roseTree (α : Type*) : (rose α).SpanningTree where
@@ -276,12 +478,22 @@ def roseTree (α : Type*) : (rose α).SpanningTree where
 
 @[simp] theorem roseTree_darts (α : Type*) : (roseTree α).darts = ∅ := (rfl)
 
-/-- A rose has exactly one spanning tree, with no darts: each petal is a reduced loop. -/
+/-- Every spanning tree of the segment contains both of its darts: the tree path between the two
+vertices crosses the edge. -/
+@[simp] theorem segment_spanningTree_darts (T : segment.SpanningTree) : T.darts = Set.univ := by
+  obtain ⟨e, he⟩ : ∃ e, e ∈ Path.darts _ (T.path false true) := by
+    generalize T.path false true = q
+    cases q with
+    | cons q e => exact ⟨e.val, (Path.darts_cons _ q e).symm ▸
+        List.mem_append_right _ (List.mem_singleton_self _)⟩
+  refine Set.eq_univ_of_forall fun b => ?_
+  rcases Bool.eq_or_eq_not b e with rfl | rfl
+  · exact T.mem_of_mem_darts_path he
+  · exact T.rev_mem _ (T.mem_of_mem_darts_path he)
+
+/-- A rose has exactly one spanning tree, the one with no darts. -/
 instance (α : Type*) : Unique (rose α).SpanningTree where
   default := roseTree α
-  uniq T := by
-    ext e
-    simp only [roseTree_darts, Set.mem_empty_iff_false, iff_false]
-    exact fun he => T.src_ne_tgt he rfl
+  uniq T := SpanningTree.ext ((Set.eq_empty_of_isEmpty T.darts).trans (roseTree_darts α).symm)
 
 end TauCeti.SerreGraph

@@ -18,6 +18,8 @@ nonedges as well as edges. No finiteness assumption on the vertex type or palett
 Restriction along a vertex embedding is provided by `Colored3Graph.comap`.
 `Colored3Graph.extend` adds vertices on top of a background coloring, which colors every new
 triple; padding by one default color is the case of a constant background.
+`Colored3Graph.split` refines the palette by a labelling of the triples, pairing the color of
+each triple with its label.
 -/
 
 public section
@@ -53,13 +55,13 @@ theorem color_comap (H : Colored3Graph κ V) (f : W ↪ V)
 @[simp]
 theorem comap_refl (H : Colored3Graph κ V) : H.comap (Function.Embedding.refl V) = H := by
   ext s
-  simp [Set.powersetCard.map]
+  simp
 
 @[simp]
 theorem comap_comap (H : Colored3Graph κ V) (f : W ↪ V) (g : U ↪ W) :
     (H.comap f).comap g = H.comap (g.trans f) := by
   ext s
-  simp [Set.powersetCard.map, Finset.map_map]
+  simp
 
 @[simp]
 theorem comap_const (c : κ) (f : W ↪ V) : (const c).comap f = const c := by
@@ -117,6 +119,16 @@ theorem extend_comap_self (B : Colored3Graph κ W) (f : V ↪ W) : (B.comap f).e
 theorem extend_const (c : κ) (f : V ↪ W) :
     (const c : Colored3Graph κ V).extend f (const c) = const c := by
   simpa only [comap_const] using (const c : Colored3Graph κ W).extend_comap_self f
+
+/-- Split every color `c` of `H` into the colors `(c, i)` by a labelling `f` of the triples: the
+color of a triple becomes its original color together with its label. -/
+def split {ι : Type*} (H : Colored3Graph κ V) (f : Set.powersetCard V 3 → ι) :
+    Colored3Graph (κ × ι) V where
+  color s := (H.color s, f s)
+
+@[simp]
+theorem color_split {ι : Type*} (H : Colored3Graph κ V) (f : Set.powersetCard V 3 → ι)
+    (s : Set.powersetCard V 3) : (H.split f).color s = (H.color s, f s) := (rfl)
 
 end Colored3Graph
 

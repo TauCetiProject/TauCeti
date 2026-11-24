@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 
 /-!
@@ -25,6 +27,9 @@ need it. The constant-structure API is recovered by specializing both functions 
 * `TauCeti.IsJHolomorphicWithinAt`: the corresponding within-set predicate.
 * `TauCeti.IsJHolomorphicOn` and `TauCeti.IsJHolomorphic`: setwise and global predicates.
 * `TauCeti.IsJHolomorphicAt.comp`: composition of J-holomorphic maps.
+* `TauCeti.isJHolomorphicAt_iff_fderiv_one_add_apply_fderiv_I_eq_zero`: a curve `u : ℂ → V`
+  differentiable at `z` is J-holomorphic there for the standard structure of `ℂ` exactly when it
+  solves the Cauchy--Riemann equation `∂ₛu + J(u) ∂ₜu = 0` at `z`.
 
 The within-set predicate carries the same two structural lemmas as the constant-structure one:
 `IsJHolomorphicWithinAt.mono` shrinks the set and `isJHolomorphicWithinAt_univ` identifies the
@@ -399,5 +404,51 @@ lemma IsJHolomorphic.comp {J : U → AlmostComplexStructure U}
     {f : U → V} {g : V → W} (hg : IsJHolomorphic J' J'' g)
     (hf : IsJHolomorphic J J' f) : IsJHolomorphic J J'' (g ∘ f) :=
   fun x ↦ (hg (f x)).comp (hf x)
+
+/-! ### Curves from `ℂ` -/
+
+section Curve
+
+variable {J : V → AlmostComplexStructure V} {u : ℂ → V} {z : ℂ}
+
+/-- A curve that is `J`-holomorphic at `z` for the standard complex structure of `ℂ` satisfies
+the Cauchy--Riemann equation in the form `∂ₜu = J(u) ∂ₛu`. -/
+theorem IsJHolomorphicAt.fderiv_I_eq
+    (h : IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z) :
+    fderiv ℝ u z Complex.I = J (u z) (fderiv ℝ u z 1) := by
+  simpa [AlmostComplexStructure.ofComplexModule_apply] using h.fderiv_apply_commute (v := 1)
+
+/-- A curve `u : ℂ → V` differentiable at `z` is `J`-holomorphic there for the standard structure
+of `ℂ = {s + i t}` exactly when it solves the Cauchy--Riemann equation `∂ₛu + J(u) ∂ₜu = 0`
+at `z`. -/
+theorem isJHolomorphicAt_iff_fderiv_one_add_apply_fderiv_I_eq_zero
+    (hu : DifferentiableAt ℝ u z) :
+    IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) J u z ↔
+      fderiv ℝ u z 1 + J (u z) (fderiv ℝ u z Complex.I) = 0 := by
+  constructor
+  · intro h
+    -- `∂ₜu = J(u) ∂ₛu`, and `J(u)² = -1`.
+    rw [h.fderiv_I_eq, AlmostComplexStructure.apply_apply, add_neg_cancel]
+  · intro h
+    refine isJHolomorphicAt_of_hasFDerivAt hu.hasFDerivAt
+      ((isComplexLinearMap_iff_apply _ _ _).mpr fun v ↦ ?_)
+    set D := fderiv ℝ u z
+    have hJI : J (u z) (D Complex.I) = -D 1 := eq_neg_of_add_eq_zero_right h
+    have hJ1 : J (u z) (D 1) = D Complex.I := by
+      rw [eq_neg_of_add_eq_zero_left h]
+      simp
+    -- Both sides are real-linear in `v = re v + (im v) i`, and `i v = -(im v) + (re v) i`.
+    have hv : v = v.re • (1 : ℂ) + v.im • Complex.I := by simp
+    have hIv : Complex.I * v = (-v.im) • (1 : ℂ) + v.re • Complex.I := by
+      simp [Complex.ext_iff]
+    simp only [AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul,
+      ContinuousLinearMap.coe_coe]
+    rw [hIv, map_add, map_smul, map_smul]
+    conv_rhs => rw [hv, map_add, map_smul, map_smul]
+    rw [AlmostComplexStructure.apply_add, AlmostComplexStructure.apply_smul,
+      AlmostComplexStructure.apply_smul, hJ1, hJI, smul_neg, neg_smul]
+    abel
+
+end Curve
 
 end TauCeti

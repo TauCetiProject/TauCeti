@@ -33,7 +33,7 @@ variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R]
 
 /-- The tensor-trick homotopy preserves the filtration by tensor length. -/
 theorem reducedTensorWordsHomotopy_filtration (c : LinearSpecialContraction dM dN)
-    (G : InternalGrading R M) (n : ℕ) :
+    (G : InternalGrading R M ℤ) (n : ℕ) :
     Submodule.map (c.reducedTensorWordsHomotopy G)
       (ReducedTensorWords.filtration R M n) ≤ ReducedTensorWords.filtration R M n := by
   rw [Submodule.map_le_iff_le_comap, ReducedTensorWords.filtration_le_iff]

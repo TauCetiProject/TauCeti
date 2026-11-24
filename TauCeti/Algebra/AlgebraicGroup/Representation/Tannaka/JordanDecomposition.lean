@@ -269,17 +269,18 @@ section PerfectField
 
 variable [PerfectField K]
 
-/-- The natural semisimple-factor automorphism preserves the tensor unit and tensor products. -/
+/-- The natural semisimple-factor automorphism is monoidal. -/
 theorem isMonoidal_fgPointSemisimplePartNatIso_hom
     (g : WithConv (H →ₐ[k] K)) :
     NatTrans.IsMonoidal (fgPointSemisimplePartNatIso k H K g).asIso.hom := by
-  apply isMonoidal_of_linear_components k H K
-    (fun M ↦ GeneralLinearGroup.semisimplePart
-      (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)))
-    (fgPointSemisimplePartNatIso k H K g)
-  · exact fgPointSemisimplePartNatIso_hom_app k H K g
-  · rw [ofLinearEquiv_pointsAction_tensorUnit_eq_one k H K g,
-      GeneralLinearGroup.semisimplePart_eq_self GeneralLinearGroup.isSemisimple_one]
+  apply FGComoduleCat.isMonoidal_of_endomorphism_components k H K
+    (fun M ↦ (GeneralLinearGroup.semisimplePart
+      (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)) :
+        Module.End K (K ⊗[k] M)))
+    (fgPointSemisimplePartNatIso k H K g).asIso.hom
+  · intro M
+    rw [fgPointSemisimplePartNatIso_hom_app k H K g M, LinearEquiv.toModuleIsoₛ_hom]
+    rfl
   · intro M N
     simpa only [GeneralLinearGroup.coe_tensorProduct] using
       distribBaseChange_comp_pointFactor k H K
@@ -287,17 +288,18 @@ theorem isMonoidal_fgPointSemisimplePartNatIso_hom
         GeneralLinearGroup.comp_semisimplePart_eq_of_comp_eq
         GeneralLinearGroup.semisimplePart_tensorProduct g M N
 
-/-- The natural unipotent-factor automorphism preserves the tensor unit and tensor products. -/
+/-- The natural unipotent-factor automorphism is monoidal. -/
 theorem isMonoidal_fgPointUnipotentPartNatIso_hom
     (g : WithConv (H →ₐ[k] K)) :
     NatTrans.IsMonoidal (fgPointUnipotentPartNatIso k H K g).asIso.hom := by
-  apply isMonoidal_of_linear_components k H K
-    (fun M ↦ GeneralLinearGroup.unipotentPart
-      (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)))
-    (fgPointUnipotentPartNatIso k H K g)
-  · exact fgPointUnipotentPartNatIso_hom_app k H K g
-  · rw [ofLinearEquiv_pointsAction_tensorUnit_eq_one k H K g,
-      GeneralLinearGroup.unipotentPart_eq_self GeneralLinearGroup.isUnipotent_one]
+  apply FGComoduleCat.isMonoidal_of_endomorphism_components k H K
+    (fun M ↦ (GeneralLinearGroup.unipotentPart
+      (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g)) :
+        Module.End K (K ⊗[k] M)))
+    (fgPointUnipotentPartNatIso k H K g).asIso.hom
+  · intro M
+    rw [fgPointUnipotentPartNatIso_hom_app k H K g M, LinearEquiv.toModuleIsoₛ_hom]
+    rfl
   · intro M N
     simpa only [GeneralLinearGroup.coe_tensorProduct] using
       distribBaseChange_comp_pointFactor k H K

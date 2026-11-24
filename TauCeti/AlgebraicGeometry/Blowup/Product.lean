@@ -55,7 +55,7 @@ theorem isEffectiveCartier_comap_toSpecCoeff_mul_left {R : Type u} [CommRing R]
     (I J : Ideal R) :
     ((ofIdealTop (I.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
       (Proj.toSpecCoeff (grade (I * J)))).IsEffectiveCartier := by
-  let s : I × J → R := fun p ↦ p.1.1 * p.2.1
+  let s : I × J → R := fun p ↦ p.1.val * p.2.val
   have hs : Ideal.span (Set.range s) = I * J := by
     have hrange : Set.range s = (I : Set R) * (J : Set R) := by
       ext x
@@ -68,18 +68,18 @@ theorem isEffectiveCartier_comap_toSpecCoeff_mul_left {R : Type u} [CommRing R]
     ((iSup_opensRange_affineBlowupι hs).ge (Set.mem_univ x))
   let B := (I * J).affineBlowup (s p) (Localization.Away (s p))
   let φ := algebraMap R B
-  have hp : s p ∈ I * J := Ideal.mul_mem_mul p.1.2 p.2.2
-  have hreg : IsRegular (φ p.1.1 * φ p.2.1) := by
+  have hp : s p ∈ I * J := Ideal.mul_mem_mul p.1.property p.2.property
+  have hreg : IsRegular (φ p.1.val * φ p.2.val) := by
     rw [← map_mul]
     exact Ideal.isRegular_algebraMap_affineBlowup
   refine ⟨_, inferInstance, affineBlowupι (Localization.Away (s p)) hp,
-    inferInstance, hx, (Scheme.ΓSpecIso (.of B)).inv (φ p.1.1),
+    inferInstance, hx, (Scheme.ΓSpecIso (.of B)).inv (φ p.1.val),
     (isSMulRegular_map_iff (Scheme.ΓSpecIso _).symm.commRingCatIsoToRingEquiv _).mpr
       hreg.of_mul_left.left.isSMulRegular, ?_⟩
   rw [← comap_comp, toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero,
     comap_ofIdealTop_map_ΓSpecIso_inv]
   rw [CommRingCat.hom_ofHom,
-    Ideal.map_algebraMap_affineBlowup_mul_left (I := I) J _ p.1.2 p.2.2,
+    Ideal.map_algebraMap_affineBlowup_mul_left (I := I) J _ p.1.property p.2.property,
     Ideal.map_span, Set.image_singleton]
 
 end Ideal

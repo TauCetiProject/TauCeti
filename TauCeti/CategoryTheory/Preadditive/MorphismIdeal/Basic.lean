@@ -62,6 +62,8 @@ faithfulness of precomposition with the quotient functor — applies to `C/I` un
 * `⊤` and `⊥`: the ideal of all morphisms and the zero ideal, the top and bottom of the order.
 * `TauCeti.MorphismIdeal.isZero_quotientFunctor_obj_iff`: an object becomes zero in `C/I` exactly
   when its identity belongs to `I`.
+* `TauCeti.MorphismIdeal.not_isSplitMono_of_mem`: an ideal not containing `𝟙 X` contains no split
+  monomorphism, in particular no isomorphism, out of `X`.
 * `TauCeti.MorphismIdeal.isIso_quotientFunctor_map_iff`: a morphism becomes invertible in `C/I`
   exactly when it admits a two-sided inverse modulo `I`.
 
@@ -125,12 +127,8 @@ instance : Top (MorphismIdeal C) where
 instance : Bot (MorphismIdeal C) where
   bot :=
     { hom _ _ := ⊥
-      comp_mem_left := fun _ _ h ↦ by
-        rw [AddSubgroup.mem_bot] at h ⊢
-        simp [h]
-      comp_mem_right := fun _ h ↦ by
-        rw [AddSubgroup.mem_bot] at h ⊢
-        simp [h] }
+      comp_mem_left := fun _ _ h ↦ by simp [AddSubgroup.mem_bot.mp h]
+      comp_mem_right := fun _ h ↦ by simp [AddSubgroup.mem_bot.mp h] }
 
 @[simp]
 theorem top_hom (X Y : C) : (⊤ : MorphismIdeal C).hom X Y = ⊤ :=
@@ -141,8 +139,7 @@ theorem bot_hom (X Y : C) : (⊥ : MorphismIdeal C).hom X Y = ⊥ :=
   (rfl)
 
 theorem mem_top {X Y : C} (f : X ⟶ Y) : f ∈ (⊤ : MorphismIdeal C).hom X Y := by
-  rw [top_hom]
-  exact AddSubgroup.mem_top f
+  simp
 
 theorem mem_bot {X Y : C} {f : X ⟶ Y} : f ∈ (⊥ : MorphismIdeal C).hom X Y ↔ f = 0 := by
   rw [bot_hom, AddSubgroup.mem_bot]
@@ -151,9 +148,7 @@ instance : OrderTop (MorphismIdeal C) where
   le_top _ := le_def.mpr fun _ _ f _ ↦ mem_top f
 
 instance : OrderBot (MorphismIdeal C) where
-  bot_le _ := le_def.mpr fun _ _ f hf ↦ by
-    rw [mem_bot.mp hf]
-    exact zero_mem _
+  bot_le _ := le_def.mpr fun _ _ _ hf ↦ by simp [mem_bot.mp hf]
 
 /-- Over an `R`-linear category an ideal is automatically stable under the scalar action, since
 `a • f = (a • 𝟙 X) ≫ f`. -/
@@ -173,14 +168,12 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] {D : Type u'} [Category.{
 /-- The **kernel** of an additive functor `F`: the ideal of morphisms that `F` sends to zero. -/
 def kerIdeal (F : C ⥤ D) [F.Additive] : TauCeti.MorphismIdeal C where
   hom _ _ := F.mapAddHom.ker
-  comp_mem_left := by
-    intro _ _ _ f g hg
+  comp_mem_left := fun _ _ hg ↦ by
     rw [AddMonoidHom.mem_ker, coe_mapAddHom] at hg ⊢
-    rw [F.map_comp, hg, Limits.comp_zero]
-  comp_mem_right := by
-    intro _ _ _ f g hf
+    simp [hg]
+  comp_mem_right := fun _ hf ↦ by
     rw [AddMonoidHom.mem_ker, coe_mapAddHom] at hf ⊢
-    rw [F.map_comp, hf, Limits.zero_comp]
+    simp [hf]
 
 @[simp]
 theorem mem_kerIdeal_hom (F : C ⥤ D) [F.Additive] {X Y : C} {f : X ⟶ Y} :
@@ -242,6 +235,10 @@ abbrev Quotient : Type u :=
 abbrev quotientFunctor : C ⥤ I.Quotient :=
   CategoryTheory.Quotient.functor I.rel
 
+/-- Every object of the quotient category is the class of its representative. -/
+theorem quotientFunctor_obj_as (X : I.Quotient) : I.quotientFunctor.obj X.as = X :=
+  (rfl)
+
 noncomputable instance : Preadditive I.Quotient :=
   CategoryTheory.Quotient.preadditive I.rel fun _ _ _ _ _ _ hf hg ↦ I.rel_add hf hg
 
@@ -269,22 +266,20 @@ the ideal. The lift of the inverse need not be invertible in the original catego
 theorem isIso_quotientFunctor_map_iff {X Y : C} (f : X ⟶ Y) :
     IsIso (I.quotientFunctor.map f) ↔
       ∃ g : Y ⟶ X, f ≫ g - 𝟙 X ∈ I.hom X X ∧ g ≫ f - 𝟙 Y ∈ I.hom Y Y := by
+  -- Both conditions on `g` are the two inverse identities in the quotient category.
+  simp_rw [← quotientFunctor_map_eq_iff, Functor.map_comp, I.quotientFunctor.map_id]
   constructor
   · intro hf
     obtain ⟨g, hg⟩ := I.quotientFunctor.map_surjective (inv (I.quotientFunctor.map f))
-    refine ⟨g, ?_, ?_⟩
-    · rw [← I.quotientFunctor_map_eq_iff, I.quotientFunctor.map_comp, hg,
-        I.quotientFunctor.map_id]
-      exact IsIso.hom_inv_id _
-    · rw [← I.quotientFunctor_map_eq_iff, I.quotientFunctor.map_comp, hg,
-        I.quotientFunctor.map_id]
-      exact IsIso.inv_hom_id _
+    exact ⟨g, by simp [hg], by simp [hg]⟩
   · rintro ⟨g, hfg, hgf⟩
-    refine ⟨⟨I.quotientFunctor.map g, ?_, ?_⟩⟩
-    · rw [← I.quotientFunctor.map_comp, ← I.quotientFunctor.map_id]
-      exact I.quotientFunctor_map_eq_iff.mpr hfg
-    · rw [← I.quotientFunctor.map_comp, ← I.quotientFunctor.map_id]
-      exact I.quotientFunctor_map_eq_iff.mpr hgf
+    exact ⟨⟨I.quotientFunctor.map g, hfg, hgf⟩⟩
+
+/-- An ideal not containing the identity of `X` contains no split monomorphism out of `X`, in
+particular no isomorphism out of `X`. -/
+theorem not_isSplitMono_of_mem {X Y : C} (hX : 𝟙 X ∉ I.hom X X) {f : X ⟶ Y}
+    (hf : f ∈ I.hom X Y) : ¬ IsSplitMono f :=
+  fun _ ↦ hX (by simpa using I.comp_mem_right (retraction f) hf)
 
 /-- Every ideal is the kernel of its quotient functor. -/
 @[simp]
@@ -306,11 +301,11 @@ theorem homAddEquiv_mk {X Y : C} (f : X ⟶ Y) :
     I.homAddEquiv X Y (f : (X ⟶ Y) ⧸ I.hom X Y) = I.quotientFunctor.map f :=
   QuotientAddGroup.liftEquiv_coe _ _ _ f
 
-/-! ### The universal property -/
-
 end MorphismIdeal
 
 end TauCeti
+
+/-! ### The universal property -/
 
 namespace CategoryTheory.Functor
 
@@ -349,12 +344,11 @@ unique such functor by `CategoryTheory.Quotient.lift_unique`. -/
 abbrev lift (hF : I ≤ F.kerIdeal) : I.Quotient ⥤ D :=
   CategoryTheory.Quotient.lift I.rel F fun _ _ _ _ h ↦ I.map_eq_of_rel F hF h
 
-instance (hF : I ≤ F.kerIdeal) : (I.lift F hF).Additive where
-  map_add {X Y} f g := by
-    obtain ⟨f, rfl⟩ := I.quotientFunctor.map_surjective f
-    obtain ⟨g, rfl⟩ := I.quotientFunctor.map_surjective g
-    rw [← I.quotientFunctor.map_add]
-    simp only [CategoryTheory.Quotient.lift_map_functor_map, F.map_add]
+instance (hF : I ≤ F.kerIdeal) : (I.lift F hF).Additive :=
+  -- The lift restricts to the additive functor `F` along the full, essentially surjective
+  -- quotient functor.
+  have := Functor.additive_of_iso (CategoryTheory.Quotient.lift.isLift I.rel F _).symm
+  Functor.additive_of_full_essSurj_comp I.quotientFunctor _
 
 /-- **An additive functor factors through the quotient category exactly when it kills the
 ideal.** -/
@@ -386,11 +380,9 @@ instance : I.quotientFunctor.Linear R :=
 
 /-- The factorization of an `R`-linear functor through the quotient category is `R`-linear. -/
 instance {D : Type u'} [Category.{v'} D] [Preadditive D] [Linear R D] {F : C ⥤ D} [F.Additive]
-    [F.Linear R] (hF : I ≤ F.kerIdeal) : (I.lift F hF).Linear R where
-  map_smul {X Y} f a := by
-    obtain ⟨f, rfl⟩ := I.quotientFunctor.map_surjective f
-    rw [← I.quotientFunctor.map_smul]
-    simp only [CategoryTheory.Quotient.lift_map_functor_map, F.map_smul]
+    [F.Linear R] (hF : I ≤ F.kerIdeal) : (I.lift F hF).Linear R :=
+  have := Functor.linear_of_iso R (CategoryTheory.Quotient.lift.isLift I.rel F _).symm
+  Functor.linear_of_full_essSurj_comp I.quotientFunctor _
 
 end Linear
 

@@ -19,7 +19,7 @@ in both spaces, and it sends degenerate chains to degenerate chains in each vari
 descends to the normalized chains.  The boundary is a derivation for it, with the Koszul sign:
 `∂ (a × b) = ∂ a × b + (-1) ^ p • (a × ∂ b)` for `a` of degree `p`.
 
-The boundary `CubicalChain.boundary X R n` is defined on `(n + 1)`-chains, so the Leibniz rule is
+The boundary `CubicalChain.boundary X R R n` is defined on `(n + 1)`-chains, so the Leibniz rule is
 stated for factors of positive degree `p + 1` and `q + 1`, where the product has degree
 `(p + 1) + (q + 1) = (p + q + 1) + 1` after the reindexing `CubicalChain.cast`; the two cases where
 a factor has degree `0` are stated separately.
@@ -32,6 +32,8 @@ a factor has degree `0` are stated separately.
 ## Main results
 
 * `TauCeti.CubicalChain.crossProduct_single`: the cross product of two cubes.
+* `TauCeti.NormalizedCubicalChain.map_appendHomeomorph_crossProduct_ofCube_id`: the cross product
+  of the identity cubes of `Iᵖ` and `I^q` is the identity cube of `I^(p + q)`.
 * `TauCeti.CubicalChain.map_crossProduct`: naturality.
 * `TauCeti.CubicalChain.crossProduct_left_mem_degenerate`,
   `TauCeti.CubicalChain.crossProduct_right_mem_degenerate`: degenerate chains go to degenerate
@@ -164,12 +166,12 @@ theorem boundaryCube_crossProduct (c : SingularCube X (p + 1)) (d : SingularCube
 /-- **The Leibniz rule for cubical chains**: for `a` of degree `p + 1` and `b` of degree `q + 1`,
 `∂ (a × b) = ∂ a × b + (-1) ^ (p + 1) • (a × ∂ b)`, in degree `p + q + 1`. -/
 theorem boundary_crossProduct (a : CubicalChain X R (p + 1)) (b : CubicalChain Y R (q + 1)) :
-    boundary (X × Y) R (p + q + 1)
+    boundary (X × Y) R R (p + q + 1)
         (cast R (by omega : (p + 1) + (q + 1) = (p + q + 1) + 1)
           (crossProduct X Y R (p + 1) (q + 1) a b)) =
-      crossProduct X Y R p (q + 1) (boundary X R p a) b +
+      crossProduct X Y R p (q + 1) (boundary X R R p a) b +
         (-1 : R) ^ (p + 1) • cast R (by omega : (p + 1) + q = p + q + 1)
-          (crossProduct X Y R (p + 1) q a (boundary Y R q b)) := by
+          (crossProduct X Y R (p + 1) q a (boundary Y R R q b)) := by
   induction a using Finsupp.induction_linear with
   | zero => simp
   | add a a' ha ha' =>
@@ -227,8 +229,8 @@ theorem boundaryCube_crossProduct_zero_left (c : SingularCube X 0) (d : Singular
 /-- The Leibniz rule for chains when the second factor has degree `0`. -/
 theorem boundary_crossProduct_zero_right (a : CubicalChain X R (p + 1))
     (b : CubicalChain Y R 0) :
-    boundary (X × Y) R p (crossProduct X Y R (p + 1) 0 a b) =
-      crossProduct X Y R p 0 (boundary X R p a) b := by
+    boundary (X × Y) R R p (crossProduct X Y R (p + 1) 0 a b) =
+      crossProduct X Y R p 0 (boundary X R R p a) b := by
   induction a using Finsupp.induction_linear with
   | zero => simp
   | add a a' ha ha' => simp only [map_add, LinearMap.add_apply, ha, ha']
@@ -243,9 +245,9 @@ theorem boundary_crossProduct_zero_right (a : CubicalChain X R (p + 1))
 
 /-- The Leibniz rule for chains when the first factor has degree `0`. -/
 theorem boundary_crossProduct_zero_left (a : CubicalChain X R 0) (b : CubicalChain Y R (q + 1)) :
-    boundary (X × Y) R q (cast R (by omega : 0 + (q + 1) = q + 1)
+    boundary (X × Y) R R q (cast R (by omega : 0 + (q + 1) = q + 1)
         (crossProduct X Y R 0 (q + 1) a b)) =
-      cast R (by omega : 0 + q = q) (crossProduct X Y R 0 q a (boundary Y R q b)) := by
+      cast R (by omega : 0 + q = q) (crossProduct X Y R 0 q a (boundary Y R R q b)) := by
   induction a using Finsupp.induction_linear with
   | zero => simp
   | add a a' ha ha' => simp only [map_add, LinearMap.add_apply, ha, ha']
@@ -299,6 +301,19 @@ theorem crossProduct_ofCube {p q : ℕ} (c : SingularCube X p) (d : SingularCube
       ofCube (X × Y) R (SingularCube.crossProduct c d) := by
   rw [ofCube_def, ofCube_def, ofCube_def, crossProduct_mk, CubicalChain.crossProduct_single,
     mul_one]
+
+/-- **The cross product of the fundamental chains of `Iᵖ` and `I^q` is the fundamental chain of
+`I^(p + q)`**: pushed to `I^(p + q)` along `Fin.appendHomeomorph : Iᵖ × I^q ≃ₜ I^(p + q)`, the cross
+product of the identity cubes of `Iᵖ` and `I^q` is the identity cube of `I^(p + q)`, on the
+nose. -/
+theorem map_appendHomeomorph_crossProduct_ofCube_id (p q : ℕ) :
+    map R (Fin.appendHomeomorph (X := I) p q : C((Fin p → I) × (Fin q → I), Fin (p + q) → I))
+        (p + q) (crossProduct (Fin p → I) (Fin q → I) R p q
+          (ofCube (Fin p → I) R (ContinuousMap.id _))
+          (ofCube (Fin q → I) R (ContinuousMap.id _))) =
+      ofCube (Fin (p + q) → I) R (ContinuousMap.id _) := by
+  rw [crossProduct_ofCube, map_ofCube, SingularCube.crossProduct_id_id,
+    Homeomorph.toContinuousMap_comp_symm]
 
 /-- The cross product of normalized chains is natural in both spaces. -/
 theorem map_crossProduct {p q : ℕ} (f : C(X, Z)) (g : C(Y, W)) (a : NormalizedCubicalChain X R p)

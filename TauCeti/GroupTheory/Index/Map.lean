@@ -15,20 +15,51 @@ Under a surjective homomorphism, the index of a subgroup factors into the index 
 image and its relative index in the kernel. This counts the contribution lost on passing to a
 quotient, for instance the contribution of principal ideles to an idele-class index.
 
+For an arbitrary homomorphism `f : G → G'` and a subgroup `H ≤ G`, the index of `f(H)` is
+related to the index of `H`, the index of the image of `f` and the two kernels:
+
+`[G' : f(G)] · [G : H] · #(H ⊓ ker f) = [G' : f(H)] · #ker f`.
+
+When all these numbers are finite, this says that the cokernel/kernel ratio
+`[G' : f(G)] / #ker f` of `f` is the ratio `[G' : f(H)] / #(H ⊓ ker f)` of its restriction to
+`H`, divided by `[G : H]`. This is how such a ratio is computed on subgroups of finite index,
+for instance the local factor `[E₂(K) : φ E₁(K)] / #E₁(K)[φ]` of an isogeny `φ` over a local field
+`K`, which is computed on deep levels of the formal groups.
+
 ## Main results
 
 * `Subgroup.index_map_mul_relIndex_ker`: the image-index factorization for groups.
 * `AddSubgroup.index_map_mul_relIndex_ker`: the same factorization for additive groups.
+* `Subgroup.index_smul`: pointwise action by a group preserves subgroup index.
+* `Subgroup.finiteIndex_normalizer_map_subtype`: the image of a normal subgroup of a
+  finite-index subgroup has a finite-index normalizer in the ambient group.
+* `MonoidHom.index_range_mul_index_mul_card_inf_ker` and its additive form
+  `AddMonoidHom.index_range_mul_index_mul_card_inf_ker`: the identity displayed above.
 
 For a subgroup `H` and a surjective homomorphism `f` with proof `hf`, use
 `H.index_map_mul_relIndex_ker f hf`. The same dot notation works for additive subgroups.
 -/
+
+open scoped Pointwise
 
 public section
 
 namespace Subgroup
 
 variable {G G' : Type*} [Group G] [Group G']
+
+/-- The image in `G` of a normal subgroup of a finite-index subgroup `H` has a finite-index
+normalizer: it is normalized by `H`. The normal subgroup need not have finite index in `H`. -/
+@[to_additive /-- The image in `G` of a normal additive subgroup of a finite-index additive
+subgroup `H` has a finite-index normalizer: it is normalized by `H`. The normal additive subgroup
+need not have finite index in `H`. -/]
+theorem finiteIndex_normalizer_map_subtype (H : Subgroup G) [H.FiniteIndex]
+    (V : Subgroup H) [V.Normal] :
+    (normalizer (V.map H.subtype : Set G)).FiniteIndex := by
+  have : ((V.map H.subtype).subgroupOf H).Normal := by
+    rw [← comap_subtype, comap_map_eq_self_of_injective H.subtype_injective]
+    infer_instance
+  exact finiteIndex_of_le (le_normalizer_of_normal_subgroupOf (map_subtype_le _))
 
 /-- The index of a subgroup under a surjection factors into the image index and the
 relative index in the kernel. Infinite indices have the usual value zero. -/
@@ -44,4 +75,42 @@ theorem index_map_mul_relIndex_ker (H : Subgroup G) (f : G →* G')
       (H := H) (N := f.ker) _root_.Subgroup.le_normalizer_of_normal, mul_comm]
   exact _root_.Subgroup.relIndex_mul_index (H := H) (K := H ⊔ f.ker) le_sup_left
 
+/-- Pointwise action by a `MulDistribMulAction` preserves subgroup index (the multiplicative
+counterpart of `AddSubgroup.index_smul`). -/
+@[simp]
+theorem index_smul {α : Type*} [Group α] [MulDistribMulAction α G] (a : α)
+    (H : Subgroup G) : (a • H).index = H.index :=
+  index_map_of_bijective (MulAction.bijective a) H
+
 end Subgroup
+
+namespace MonoidHom
+
+variable {G G' : Type*} [Group G] [Group G']
+
+/-- **The index of the image of a subgroup**: for a homomorphism `f : G →* G'` and a subgroup
+`H` of `G`,
+
+`[G' : f(G)] · [G : H] · #(H ⊓ ker f) = [G' : f(H)] · #ker f`.
+
+No finiteness is required: infinite orders and indices are read as `0`. When all of them are
+finite, this says that the cokernel/kernel ratio of `f` is that of its restriction to `H`, divided
+by `[G : H]`. -/
+@[to_additive AddMonoidHom.index_range_mul_index_mul_card_inf_ker
+  /-- **The index of the image of a subgroup**: for a homomorphism `f : G →+ G'` and a subgroup
+  `H` of `G`,
+
+  `[G' : f(G)] · [G : H] · #(H ⊓ ker f) = [G' : f(H)] · #ker f`.
+
+  No finiteness is required: infinite orders and indices are read as `0`. When all of them are
+  finite, this says that the cokernel/kernel ratio of `f` is that of its restriction to `H`, divided
+  by `[G : H]`. -/]
+theorem index_range_mul_index_mul_card_inf_ker (f : G →* G') (H : Subgroup G) :
+    f.range.index * H.index * Nat.card ↥(H ⊓ f.ker) = (H.map f).index * Nat.card f.ker := by
+  -- `[G : H] = [H ⊔ ker f : H] · [G : H ⊔ ker f]` and `[H ⊔ ker f : H] = [ker f : H ⊓ ker f]`
+  rw [H.index_map f, ← Subgroup.relIndex_mul_index (le_sup_left : H ≤ H ⊔ f.ker),
+    Subgroup.relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal,
+    ← Subgroup.relIndex_mul_card (H := H) (K := f.ker)]
+  ac_rfl
+
+end MonoidHom

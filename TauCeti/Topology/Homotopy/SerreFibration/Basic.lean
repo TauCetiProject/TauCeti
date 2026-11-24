@@ -43,12 +43,15 @@ of a fibration along a map `g : B' ⟶ B` is again a fibration
   the inclusions `ι₀ : Dⁿ ⟶ Dⁿ ⊗ I`.
 * `TauCeti.TopCat.exists_path_lift_of_mem_serreFibrations`: a Serre fibration lifts paths. In
   particular a point joined in the base to a point with path-connected fibre is joined to it in
-  the total space (`TauCeti.TopCat.joined_of_mem_serreFibrations`), and a point of the base
+  the total space (`TauCeti.TopCat.joined_of_mem_serreFibrations`), so the total space is
+  path-connected when the base and one fibre are
+  (`TauCeti.TopCat.pathConnectedSpace_of_mem_serreFibrations`), and a point of the base
   joined to the image has a nonempty fibre
   (`TauCeti.TopCat.nonempty_fiber_of_mem_serreFibrations`).
 * `TauCeti.TopCat.mem_serreFibrations_iff` and `TauCeti.TopCat.mem_serreFibrations_iff_cube`:
   Serre fibrations are the maps with the homotopy lifting property for every disk, equivalently
-  for every cube.
+  for every cube. In particular they lift homotopies of paths
+  (`TauCeti.TopCat.hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations`).
 * `IsCoveringMap.mem_serreFibrations` and `TauCeti.TopCat.mem_serreFibrations_fst`: covering
   maps and product projections are Serre fibrations.
 * `TauCeti.TopCat.mem_serreFibrations_pullbackFst`: the base change of a Serre fibration is a
@@ -168,6 +171,12 @@ theorem exists_path_lift_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrati
     {b : B} (γ : Path (p e) b) : ∃ Γ : C(I, E), Γ 0 = e ∧ p ∘ Γ = γ :=
   (mem_serreFibrations_iff_cube.1 hp 0).exists_path_lift γ
 
+/-- A Serre fibration has the homotopy lifting property with respect to the interval: it lifts
+homotopies of paths. -/
+theorem hasHomotopyLiftingProperty_unitInterval_of_mem_serreFibrations {p : E ⟶ B}
+    (hp : serreFibrations p) : HasHomotopyLiftingProperty p I :=
+  (mem_serreFibrations_iff_cube.1 hp 1).of_homeomorph (Homeomorph.funUnique (Fin 1) I).symm
+
 /-- **Path lifting into a path-connected fibre.** If the fibre of a Serre fibration `p` over
 `p y` is path-connected, then a point `x` whose projection is joined to `p y` is joined to `y`. -/
 theorem joined_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) {x y : E}
@@ -175,7 +184,19 @@ theorem joined_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) {x 
   obtain ⟨Γ, hΓ0, hΓ⟩ := exists_path_lift_of_mem_serreFibrations hp h.somePath
   have hΓ1 : p (Γ 1) = p y := (congrFun hΓ 1).trans h.somePath.target
   exact Joined.trans ⟨⟨Γ, hΓ0, rfl⟩⟩ ((PathConnectedSpace.joined (⟨Γ 1, hΓ1⟩ : p.fiber (p y))
-    ⟨y, rfl⟩).map continuous_subtype_val)
+    ⟨y, rfl⟩).map continuous_subtypeVal)
+
+/-- **The total space is path-connected when the base and one fibre are.** For a Serre fibration
+`p : E → B` over a path-connected base, if the fibre over `b` is path-connected, then so is `E`:
+a path from the projection of a point of `E` to `b` lifts to a path from that point into the
+fibre over `b`. -/
+theorem pathConnectedSpace_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) (b : B)
+    [PathConnectedSpace B] [PathConnectedSpace (p.fiber b)] : PathConnectedSpace E := by
+  obtain ⟨⟨y, hy⟩⟩ := (inferInstance : Nonempty (p.fiber b))
+  obtain rfl : p y = b := Set.mem_singleton_iff.1 hy
+  refine ⟨⟨y⟩, fun x z ↦ ?_⟩
+  exact (joined_of_mem_serreFibrations hp (PathConnectedSpace.joined (p x) (p y))).trans
+    (joined_of_mem_serreFibrations hp (PathConnectedSpace.joined (p z) (p y))).symm
 
 /-- **Lifting the end point of a path.** If a point `b` of the base of a Serre fibration `p` is
 joined to a point of the image of `p`, then the fibre of `p` over `b` is nonempty. -/

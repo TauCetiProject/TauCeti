@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.OptionalStopping
+public import TauCeti.Probability.Martingale.Basic
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
@@ -37,16 +38,28 @@ this is how the running maximum of an exponential martingale is shown to be inte
 
 ## Main declarations
 
-* `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_setIntegral`: the finite-set
-  inequality retaining the crossing event in the terminal expectation.
-* `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le`: the maximal inequality over a finite
-  set of times.
-* `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_setIntegral_of_countable`: the
-  event-refined inequality over a countable set of times.
-* `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le_setIntegral`: the event-refined
-  inequality over all times `t ≤ T`, for right-continuous paths.
-* `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le`: the maximal inequality over all times
-  `t ≤ T`, for right-continuous paths.
+* `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_setIntegral`,
+  `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_setIntegral_posPart`: the finite-set
+  inequalities retaining the crossing event in the terminal expectation, for nonnegative and
+  general real submartingales.
+* `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le`,
+  `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_integral_posPart`: the maximal
+  inequalities over a finite set of times.
+* `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_setIntegral_of_countable`,
+  `MeasureTheory.Submartingale.mul_measure_exists_mem_lt_le_setIntegral_posPart_of_countable`: the
+  event-refined inequalities over a countable set of times.
+* `MeasureTheory.Submartingale.ae_biSup_ofReal_lt_top`,
+  `MeasureTheory.Martingale.ae_biSup_eNorm_lt_top`: almost sure finiteness of the supremum over a
+  countable set of times `≤ T`.
+* `MeasureTheory.Submartingale.aemeasurable_iSup_ofReal`,
+  `MeasureTheory.Martingale.aemeasurable_iSup_eNorm`: almost everywhere measurability of the running
+  supremum for right-continuous submartingales and martingales.
+* `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le_setIntegral`,
+  `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le_setIntegral_posPart`: the event-refined
+  inequalities over all times `t ≤ T`, for right-continuous paths.
+* `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le`,
+  `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le_integral_posPart`: the maximal
+  inequalities over all times `t ≤ T`, for right-continuous paths.
 * `MeasureTheory.Submartingale.lintegral_iSup_sqrt_le`: the bound on `E[sup_{t ≤ T} √f_t]`.
 * `MeasureTheory.Martingale.submartingale_norm`: the norm of a Banach-valued martingale is a
   submartingale, using Mathlib's conditional Jensen inequality `norm_condExp_le`.
@@ -96,10 +109,8 @@ theorem mul_measure_exists_mem_le_le_setIntegral [IsFiniteMeasure μ]
   have hmem (j : ℕ) : τ j ∈ F := F.orderEmbOfFin_mem hcard _
   have hτn : τ n = F.max' hne := by
     simpa [τ, e] using Finset.orderEmbOfFin_last hcard (Nat.succ_pos n)
-  let 𝒢 : Filtration ℕ m0 := ⟨fun j ↦ ℱ (τ j), fun _ _ hij ↦ ℱ.mono (hτ hij), fun _ ↦ ℱ.le _⟩
-  have hg : Submartingale (fun j ↦ f (τ j)) 𝒢 μ :=
-    ⟨fun j ↦ hf.stronglyAdapted (τ j), fun _ _ hij ↦ hf.ae_le_condExp (hτ hij),
-      fun j ↦ hf.integrable (τ j)⟩
+  let 𝒢 : Filtration ℕ m0 := ℱ.comp hτ
+  have hg : Submartingale (fun j ↦ f (τ j)) 𝒢 μ := hf.comp hτ
   have hset : {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} = {ω | (ε : ℝ) ≤
       (Finset.range (n + 1)).sup' Finset.nonempty_range_add_one fun k ↦ f (τ k) ω} := by
     ext ω
@@ -109,7 +120,7 @@ theorem mul_measure_exists_mem_le_le_setIntegral [IsFiniteMeasure μ]
       obtain ⟨i, rfl⟩ : t ∈ range e := by
         rw [Finset.range_orderEmbOfFin]
         exact ht
-      exact ⟨i, Finset.mem_range.2 i.2, by simpa [τ, min_eq_left (by omega : (i : ℕ) ≤ n)]⟩
+      exact ⟨i, Finset.mem_range.2 i.isLt, by simpa [τ, min_eq_left (by omega : (i : ℕ) ≤ n)]⟩
     · rintro ⟨j, _, hεj⟩
       exact ⟨τ j, hmem j, hεj⟩
   have hmeas : MeasurableSet[ℱ (τ n)] {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} := by
@@ -195,9 +206,83 @@ theorem mul_measure_exists_mem_lt_le_setIntegral_of_countable [IsFiniteMeasure �
       (hf.integrable T).integrableOn (Eventually.of_forall (fun _ ↦ hnonneg T _))
       (Eventually.of_forall (by rw [hUnion]; exact hsub n)))
 
+/-- **Event-refined positive-part Doob inequality on a finite set.** No sign assumption on `f` or
+positivity side condition on `ε` is needed. -/
+theorem mul_measure_exists_mem_le_le_setIntegral_posPart [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) (ε : ℝ≥0) {F : Finset ι} {T : ι} (hF : ∀ t ∈ F, t ≤ T) :
+    ε * μ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} ≤
+      ENNReal.ofReal (∫ ω in {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω}, (f⁺) T ω ∂μ) := by
+  rcases eq_or_ne ε 0 with rfl | hε
+  · simp
+  have hε_pos : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  have hset : {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} = {ω | ∃ t ∈ F, (ε : ℝ) ≤ (f⁺) t ω} := by
+    ext ω
+    simp only [mem_ofPred_eq, Pi.posPart_apply, posPart_def, le_max_iff]
+    exact exists_congr fun t ↦ and_congr_right fun _ ↦
+      ⟨Or.inl, fun h ↦ h.resolve_right hε_pos.not_ge⟩
+  rw [hset]
+  exact hf.pos.mul_measure_exists_mem_le_le_setIntegral (fun _ _ ↦ posPart_nonneg _) ε hF
+
+/-- **Positive-part Doob maximal inequality on a finite set.** -/
+theorem mul_measure_exists_mem_le_le_integral_posPart [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) (ε : ℝ≥0) {F : Finset ι} {T : ι} (hF : ∀ t ∈ F, t ≤ T) :
+    ε * μ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} ≤ ENNReal.ofReal (∫ ω, (f⁺) T ω ∂μ) :=
+  (hf.mul_measure_exists_mem_le_le_setIntegral_posPart ε hF).trans
+    (ENNReal.ofReal_le_ofReal (setIntegral_le_integral (hf.pos.integrable T)
+      (Eventually.of_forall fun _ ↦ posPart_nonneg _)))
+
+/-- **Event-refined positive-part Doob inequality for strict crossings on a countable set.** -/
+theorem mul_measure_exists_mem_lt_le_setIntegral_posPart_of_countable [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) (ε : ℝ≥0) {S : Set ι} (hS : S.Countable) {T : ι}
+    (hST : ∀ t ∈ S, t ≤ T) :
+    ε * μ {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} ≤
+      ENNReal.ofReal (∫ ω in {ω | ∃ t ∈ S, (ε : ℝ) < f t ω}, (f⁺) T ω ∂μ) := by
+  have hset : {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} = {ω | ∃ t ∈ S, (ε : ℝ) < (f⁺) t ω} := by
+    ext ω
+    simp only [mem_ofPred_eq, Pi.posPart_apply, posPart_def, lt_max_iff]
+    exact exists_congr fun t ↦ and_congr_right fun _ ↦
+      ⟨Or.inl, fun h ↦ h.resolve_right (not_lt_of_ge ε.coe_nonneg)⟩
+  rw [hset]
+  exact hf.pos.mul_measure_exists_mem_lt_le_setIntegral_of_countable
+    (fun _ _ ↦ posPart_nonneg _) ε hS hST
+
+/-- **Almost sure finiteness of the supremum of a submartingale on a countable set.** Any real
+submartingale on a finite measure space has almost everywhere finite supremum
+`⨆ t ∈ S, ENNReal.ofReal (f t ω) < ∞` over any countable set `S` of times `≤ T`. -/
+theorem ae_biSup_ofReal_lt_top [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) {S : Set ι} (hS : S.Countable) {T : ι} (hST : ∀ t ∈ S, t ≤ T) :
+    ∀ᵐ ω ∂μ, (⨆ t ∈ S, ENNReal.ofReal (f t ω)) < ∞ := by
+  rw [ae_iff]
+  set A : Set Ω := {ω | ¬ (⨆ t ∈ S, ENNReal.ofReal (f t ω)) < ∞}
+  by_contra hA
+  set C : ℝ≥0∞ := ENNReal.ofReal (∫ ω, (f⁺) T ω ∂μ)
+  have hle (n : ℕ) : (n : ℝ≥0∞) ≤ C / μ A := by
+    refine (ENNReal.le_div_iff_mul_le (.inl hA) (.inl (measure_ne_top μ A))).2 ?_
+    have hsub : A ⊆ {ω | ∃ t ∈ S, ((n : ℝ≥0) : ℝ) < f t ω} := fun ω hω ↦ by
+      rw [mem_ofPred_eq, not_lt, top_le_iff] at hω
+      have hlt : ((n : ℝ≥0) : ℝ≥0∞) < ⨆ t ∈ S, ENNReal.ofReal (f t ω) := by
+        rw [hω]
+        exact ENNReal.coe_lt_top
+      simpa only [mem_ofPred_eq, lt_iSup_iff, exists_prop, ENNReal.coe_lt_ofReal] using hlt
+    exact (mul_le_mul_of_nonneg_left (measure_mono hsub) zero_le).trans
+      ((hf.mul_measure_exists_mem_lt_le_setIntegral_posPart_of_countable n hS hST).trans
+        (ENNReal.ofReal_le_ofReal (setIntegral_le_integral (hf.pos.integrable T)
+          (Eventually.of_forall fun _ ↦ posPart_nonneg _))))
+  have htop : C / μ A = ∞ :=
+    top_unique (le_of_tendsto' ENNReal.tendsto_nat_nhds_top hle)
+  exact (ENNReal.div_lt_top ENNReal.ofReal_ne_top hA).ne htop
+
 section ContinuousTime
 
 variable [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
+
+/-- **Almost everywhere measurability of the running positive-part supremum of a right-continuous
+submartingale.** -/
+theorem aemeasurable_iSup_ofReal (hf : Submartingale f ℱ μ) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) :
+    AEMeasurable (fun ω ↦ ⨆ t ≤ T, ENNReal.ofReal (f t ω)) μ :=
+  aemeasurable_iSup_le_ofReal
+    (fun t ↦ ((hf.stronglyAdapted t).measurable.mono (ℱ.le t) le_rfl).aemeasurable) hcont
 
 /-- **Event-refined Doob inequality in continuous time.** Almost surely right-continuous paths
 allow all times before the terminal time, retaining the same strict crossing event in the
@@ -231,6 +316,31 @@ theorem mul_measure_exists_le_lt_le [IsFiniteMeasure μ] (hf : Submartingale f �
   (hf.mul_measure_exists_le_lt_le_setIntegral hnonneg hcont ε).trans
     (ENNReal.ofReal_le_ofReal
       (setIntegral_le_integral (hf.integrable T) (Eventually.of_forall (hnonneg T))))
+
+/-- **Event-refined positive-part Doob inequality for strict crossings in continuous time.** -/
+theorem mul_measure_exists_le_lt_le_setIntegral_posPart [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) (ε : ℝ≥0) :
+    ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤
+      ENNReal.ofReal (∫ ω in {ω | ∃ t ≤ T, (ε : ℝ) < f t ω}, (f⁺) T ω ∂μ) := by
+  have hset : {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} = {ω | ∃ t ≤ T, (ε : ℝ) < (f⁺) t ω} := by
+    ext ω
+    simp only [mem_ofPred_eq, Pi.posPart_apply, posPart_def, lt_max_iff]
+    exact exists_congr fun t ↦ and_congr_right fun _ ↦
+      ⟨Or.inl, fun h ↦ h.resolve_right (not_lt_of_ge ε.coe_nonneg)⟩
+  rw [hset]
+  refine hf.pos.mul_measure_exists_le_lt_le_setIntegral (fun _ _ ↦ posPart_nonneg _)
+    (hcont.mono fun _ hω t ht ↦ ?_) ε
+  simpa only [Pi.posPart_apply, posPart_def] using (hω t ht).sup continuousWithinAt_const
+
+/-- **Positive-part Doob maximal inequality for strict crossings in continuous time.** -/
+theorem mul_measure_exists_le_lt_le_integral_posPart [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) (ε : ℝ≥0) :
+    ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ ENNReal.ofReal (∫ ω, (f⁺) T ω ∂μ) :=
+  (hf.mul_measure_exists_le_lt_le_setIntegral_posPart hcont ε).trans
+    (ENNReal.ofReal_le_ofReal (setIntegral_le_integral (hf.pos.integrable T)
+      (Eventually.of_forall fun _ ↦ posPart_nonneg _)))
 
 /-- **The running maximum of the square root of a submartingale, in `L¹`.** For a nonnegative
 submartingale `f` whose paths are almost surely right-continuous before `T`, the extended integral
@@ -285,6 +395,7 @@ theorem lintegral_iSup_sqrt_le (hf : Submartingale f ℱ μ)
         gcongr with k
         split_ifs with h
         · rw [indicator_of_mem (subset_toMeasurable μ _ h)]
+          exact pow_le_pow_right₀ one_le_two k.le_succ
         · exact bot_le
     _ = μ univ + ∑' k : ℕ, 2 ^ (k + 1) * μ {ω | 2 ^ k < Y ω} := by
         rw [lintegral_add_left measurable_const, lintegral_const, one_mul,
@@ -316,8 +427,26 @@ theorem submartingale_norm [Preorder ι] {ℱ : Filtration ι mΩ}
   filter_upwards [norm_condExp_le (m := ℱ s) (M t), hM.condExp_ae_eq hst] with ω h₁ h₂
   simpa only [h₂] using h₁
 
+/-- **Almost sure finiteness of the supremum of a martingale's extended norm on a countable set.**
+Requires no `MemLp` assumption beyond martingale integrability. -/
+theorem ae_biSup_eNorm_lt_top [LinearOrder ι] [IsFiniteMeasure μ] {ℱ : Filtration ι mΩ}
+    {M : ι → Ω → E} (hM : Martingale M ℱ μ) {S : Set ι} (hS : S.Countable) {T : ι}
+    (hST : ∀ t ∈ S, t ≤ T) :
+    ∀ᵐ ω ∂μ, (⨆ t ∈ S, ‖M t ω‖ₑ) < ∞ := by
+  simp_rw [← ofReal_norm]
+  exact hM.submartingale_norm.ae_biSup_ofReal_lt_top hS hST
+
 variable [LinearOrder ι] [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
   [IsFiniteMeasure μ] {ℱ : Filtration ι mΩ} {M : ι → Ω → E}
+
+omit [CompleteSpace E] [IsFiniteMeasure μ] in
+/-- **Almost everywhere measurability of the running extended norm of a right-continuous
+martingale.** -/
+theorem aemeasurable_iSup_eNorm (hM : Martingale M ℱ μ) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ M u ω) (Ioi t) t) :
+    AEMeasurable (fun ω ↦ ⨆ t ≤ T, ‖M t ω‖ₑ) μ :=
+  aemeasurable_iSup_le_eNorm
+    (fun t _ ↦ ((hM.stronglyAdapted t).mono (ℱ.le t)).aestronglyMeasurable.eNorm) hcont
 
 /-- **Doob's weak maximal inequality for the norm of a martingale.** A terminal L¹
 bound controls the outer probability of a uniform path error. -/

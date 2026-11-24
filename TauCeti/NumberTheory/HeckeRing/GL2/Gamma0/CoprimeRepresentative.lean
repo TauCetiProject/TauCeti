@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Basic
 import Mathlib.Data.Nat.ChineseRemainder
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import Mathlib.RingTheory.Int.Basic
 
 /-!
@@ -215,21 +216,22 @@ theorem exists_gamma0_mul_mul_coprime_upperLeft
           (N : ℤ) ∣ A' 1 0 ∧ Int.gcd (A' 0 0) N = 1 ∧ Int.gcd (A' 0 0) c = 1 := by
   obtain ⟨l₀, t₀, hlt⟩ := exists_coprime_entry A (N : ℤ) c hc hprim
     (fun p hp hpc ↦ not_intCast_dvd_of_coprime N c p hp hcN hpc)
-  set L : Matrix (Fin 2) (Fin 2) ℤ := Matrix.of ![![1, l₀], ![0, 1]] with hL
-  have hL_det : L.det = 1 := by
-    simp [hL, Matrix.det_fin_two]
-  set R : Matrix (Fin 2) (Fin 2) ℤ := Matrix.of ![![1, 0], ![(N : ℤ) * t₀, 1]] with hR
-  have hR_det : R.det = 1 := by
-    simp [hR, Matrix.det_fin_two]
-  have hL_Gamma0 : (⟨L, hL_det⟩ : SpecialLinearGroup (Fin 2) ℤ) ∈ Gamma0 N :=
-    Gamma0_mem.mpr (by simp [hL])
-  have hR_Gamma0 : (⟨R, hR_det⟩ : SpecialLinearGroup (Fin 2) ℤ) ∈ Gamma0 N :=
-    Gamma0_mem.mpr (by simp [hR])
+  set L : SL(2, ℤ) := ModularGroup.T ^ l₀
+  set R : SL(2, ℤ) :=
+    Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) ((N : ℤ) * t₀)
+  have hL : (L : Matrix (Fin 2) (Fin 2) ℤ) = Matrix.of ![![1, l₀], ![0, 1]] :=
+    ModularGroup.coe_T_zpow l₀
+  have hR : (R : Matrix (Fin 2) (Fin 2) ℤ) = Matrix.of ![![1, 0], ![(N : ℤ) * t₀, 1]] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [R, Matrix.SpecialLinearGroup.transvection_coe]
+  have hL_Gamma0 : L ∈ Gamma0 N := Gamma1_le_Gamma0 N (T_zpow_mem_Gamma1 N l₀)
+  have hR_Gamma0 : R ∈ Gamma0 N := Gamma0_mem.mpr (by simp [hR])
   obtain ⟨h00, h10⟩ := unipotent_translate_entries A l₀ ((N : ℤ) * t₀)
   rw [← hL, ← hR] at h00 h10
-  refine ⟨⟨mapGL ℚ ⟨L, hL_det⟩, Subgroup.mem_map_of_mem _ hL_Gamma0⟩,
-    ⟨mapGL ℚ ⟨R, hR_det⟩, Subgroup.mem_map_of_mem _ hR_Gamma0⟩, L * A * R, ?_, ?_, ?_, ?_⟩
-  · exact mapGL_mul_coe_eq_intMatrix 2 ⟨L, hL_det⟩ ⟨R, hR_det⟩ g A hA
+  refine ⟨⟨mapGL ℚ L, Subgroup.mem_map_of_mem _ hL_Gamma0⟩,
+    ⟨mapGL ℚ R, Subgroup.mem_map_of_mem _ hR_Gamma0⟩, (L : Matrix (Fin 2) (Fin 2) ℤ) * A * R,
+    ?_, ?_, ?_, ?_⟩
+  · exact mapGL_mul_coe_eq_intMatrix 2 L R g A hA
   · -- the translate adds a multiple of `N` to the lower-left entry
     have hlow : A 1 0 + A 1 1 * ((N : ℤ) * t₀) = A 1 0 + (N : ℤ) * (A 1 1 * t₀) := by ring
     rw [h10, hlow]
