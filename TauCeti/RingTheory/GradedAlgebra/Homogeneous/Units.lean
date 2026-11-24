@@ -307,7 +307,7 @@ theorem existsUnique_shift_linearEquiv_of_exists_linearEquiv (ℳ : ι → σM)
   obtain ⟨d₀, rfl⟩ := QuotientAddGroup.mk_surjective c
   refine ⟨d₀, (hc d₀).mpr rfl, fun d hd ↦ ?_⟩
   have hmk : (d : ShiftClassGroup 𝒜) = d₀ := (hc d).mp hd
-  rwa [QuotientAddGroup.eq, hbot, AddSubgroup.mem_bot, neg_add_eq_zero] at hmk
+  simpa [QuotientAddGroup.eq, hbot, neg_add_eq_zero] using hmk
 
 /-- When `homogeneousUnitDegrees 𝒜 = ⊥`, a compatible grading `ℳ` of `A` with a homogeneous unit
 `u ∈ ℳ c` is graded-isomorphic to a shift `A(d)` for a unique degree `d`. -/

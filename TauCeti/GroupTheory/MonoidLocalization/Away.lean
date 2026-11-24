@@ -102,8 +102,11 @@ theorem exists_unit_mul_zpow_of_prime {p : M} (F : AwayMap p N) (hp : Prime p)
     (p := fun _ ↦ p) (fun _ _ ↦ hp) (by simp) hreg).mp x.isUnit
   refine ⟨u, (k () : ℤ) - n, ?_⟩
   have hunit : x * (F.map_units ⟨p, Submonoid.mem_powers p⟩).unit ^ (n : ℤ) =
-      Units.map F.toMonoidHom u * (F.map_units ⟨p, Submonoid.mem_powers p⟩).unit ^ (k () : ℤ) :=
-    Units.ext (by simpa [map_mul, map_pow] using h)
+      Units.map F.toMonoidHom u * (F.map_units ⟨p, Submonoid.mem_powers p⟩).unit ^ (k () : ℤ) := by
+    apply Units.ext
+    simpa only [Units.val_mul, Units.val_zpow_eq_zpow_val, zpow_natCast, Units.val_pow_eq_pow_val,
+      IsUnit.unit_spec, Units.coe_map, toMonoidHom_apply, ← map_pow, ← map_mul,
+      Finset.prod_singleton] using h
   rw [eq_mul_inv_iff_mul_eq.mpr hunit, mul_assoc, ← zpow_sub]
 
 /-- An element of a monoid localization away from a regular prime `p` is a unit if and only if it

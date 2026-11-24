@@ -87,9 +87,8 @@ class of `d` to `d`. -/
 theorem shiftClassGroupWeightedEquiv_mk (R : Type*) [CommSemiring R] [Nontrivial R]
     (w : σ → M) (d : M) :
     shiftClassGroupWeightedEquiv R w d = d := by
-  rw [shiftClassGroupWeightedEquiv, AddEquiv.trans_apply,
-    QuotientAddGroup.quotientAddEquivOfEq_mk, ← AddEquiv.eq_symm_apply,
-    QuotientAddGroup.quotientBot_symm_apply]
+  simpa [shiftClassGroupWeightedEquiv] using
+    (QuotientAddGroup.quotientBot (G := M)).apply_symm_apply d
 
 attribute [local instance] WeightedHomogeneousSubmodule.gradedMonoid
 

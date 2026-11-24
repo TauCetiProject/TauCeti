@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.GradedAlgebra.Localization.Away
 import TauCeti.Algebra.BigOperators.Associated
 import TauCeti.Algebra.Regular.Basic
 import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Generator
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Homogeneous units of a localization away from a homogeneous element
@@ -164,18 +165,17 @@ theorem homogeneousUnitDegrees_awayGrading_of_associated_prod {β : Type*}
   refine le_antisymm ?_ (sup_le (homogeneousUnitDegrees_le_awayGrading 𝒜 hf) ?_)
   · rw [homogeneousUnitDegrees_awayGrading, AddSubgroup.closure_le]
     rintro d ⟨a, ha, n, hdvd⟩
-    obtain ⟨k, hk, u, hu⟩ :=
+    obtain ⟨k, -, u, hu⟩ :=
       TauCeti.exists_associated_finsetProd_pow_of_dvd_pow hp hassoc hreg hdvd
     have hpk_mem : ∏ i ∈ s, p i ^ k i ∈ 𝒜 (∑ i ∈ s, k i • e i) :=
       SetLike.prod_mem_graded 𝒜 (fun i ↦ k i • e i) (fun i ↦ p i ^ k i)
         fun i hi ↦ SetLike.pow_mem_graded (k i) (hmem i hi)
+    have hau : (∏ i ∈ s, p i ^ k i) * (u⁻¹ : Aˣ) = a := by
+      rw [← hu, mul_assoc, Units.mul_inv, mul_one]
     have hpk_reg : IsLeftRegular (∏ i ∈ s, p i ^ k i) :=
-      (hreg.pow n).of_dvd ((Finset.prod_dvd_prod_of_dvd _ _ fun i hi ↦
-        pow_dvd_pow (p i) (hk i hi)).trans (by rw [Finset.prod_pow]; exact hassoc.symm.pow_pow.dvd))
+      (hreg.pow n).of_dvd (dvd_trans ⟨(u⁻¹ : Aˣ), hau.symm⟩ hdvd)
     have hu_mem : ((u⁻¹ : Aˣ) : A) ∈ 𝒜 (d - ∑ i ∈ s, k i • e i) := by
       refine mem_of_mul_mem_add_of_isLeftRegular 𝒜 hpk_mem hpk_reg ?_
-      have hau : (∏ i ∈ s, p i ^ k i) * (u⁻¹ : Aˣ) = a := by
-        rw [← hu, mul_assoc, Units.mul_inv, mul_one]
       rwa [hau, add_sub_cancel]
     have hsum : ∑ i ∈ s, k i • e i ∈ AddSubgroup.closure (e '' (s : Set β)) :=
       sum_mem fun i hi ↦
@@ -229,12 +229,9 @@ theorem existsUnique_shiftClass_awayGrading_of_isPreconnected {f : A} {e : ℤ} 
         (∃ φ : Localization.Away f ≃ₗ[Localization.Away f] Localization.Away f,
           ∀ n x, φ x ∈ ℳ n ↔ x ∈ awayGrading 𝒜 hf (n + d)) ↔
         (d : ShiftClassGroup (awayGrading 𝒜 hf)) = c := by
-  have : PreconnectedSpace (PrimeSpectrum (Localization.Away f)) := by
-    have hind :=
-      (PrimeSpectrum.localization_away_isOpenEmbedding (Localization.Away f) f).isInducing
-    rw [preconnectedSpace_iff_univ, ← hind.isPreconnected_image, Set.image_univ,
-      PrimeSpectrum.localization_away_comap_range (Localization.Away f) f]
-    exact hconn
+  have : PreconnectedSpace (PrimeSpectrum (Localization.Away f)) :=
+    (PrimeSpectrum.preconnectedSpace_iff_isPreconnected_basicOpen
+      (Localization.Away f) f).mpr hconn
   exact existsUnique_shiftClass_of_connected (awayGrading 𝒜 hf) ℳ
 
 /-- Over a `ℤ`-graded ring `A` with preirreducible prime spectrum, every localization
@@ -253,9 +250,7 @@ theorem existsUnique_shiftClass_awayGrading_of_preirreducible
         (d : ShiftClassGroup (awayGrading 𝒜 hf)) = c := by
   have : PreirreducibleSpace (PrimeSpectrum (Localization.Away f)) :=
     (PrimeSpectrum.localization_away_isOpenEmbedding (Localization.Away f) f).preirreducibleSpace
-  refine existsUnique_shiftClass_awayGrading_of_isPreconnected 𝒜 hf ℳ ?_
-  rw [← PrimeSpectrum.localization_away_comap_range (Localization.Away f) f, ← Set.image_univ]
-  exact isPreconnected_univ.image _ (PrimeSpectrum.continuous_comap _).continuousOn
+  exact existsUnique_shiftClass_of_connected (awayGrading 𝒜 hf) ℳ
 
 end Connected
 
