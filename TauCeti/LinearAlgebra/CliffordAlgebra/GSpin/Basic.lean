@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Norm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Action
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.BaseChange
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
@@ -60,6 +62,9 @@ This file defines the group and the structure attached to it.
 * `CliffordAlgebra.gSpinNorm_gSpinGroupBaseChange` and
   `QuadraticMap.Isometry.gSpinNorm_gSpinGroupMap`: the Clifford norm is compatible with extension
   of scalars and with quadratic isometries.
+* `CliffordAlgebra.gSpinGroupBaseChange_spinToGSpin` and
+  `QuadraticMap.Isometry.gSpinGroupMap_spinToGSpin`: the inclusion of the Spin group is compatible
+  with extension of scalars and with quadratic isometries.
 
 ## References
 
@@ -336,6 +341,23 @@ theorem gSpinNorm_comp_gSpinGroupBaseChange [Invertible (2 : A)] :
       (Units.map (algebraMap R A)).comp (gSpinNorm Q) :=
   MonoidHom.ext gSpinNorm_gSpinGroupBaseChange
 
+/-- **Extension of scalars is compatible with the inclusion of Spin**: it sends a Spin element,
+viewed in `GSpin(Q)`, to its scalar extension in the Spin group of `Q_A`. -/
+@[simp]
+theorem gSpinGroupBaseChange_spinToGSpin (x : spinGroup Q) :
+    gSpinGroupBaseChange (A := A) Q (spinToGSpin Q x) =
+      spinToGSpin (Q.baseChange A) (spinGroupBaseChange (A := A) Q x) :=
+  Subtype.ext <| Units.ext <| by
+    rw [coe_gSpinGroupBaseChange_apply, coe_spinToGSpin_apply, coe_spinToGSpin_apply,
+      coe_spinGroupBaseChange_apply]
+
+/-- The inclusion of Spin followed by extension of scalars on `GSpin` is extension of scalars on
+Spin followed by the inclusion of Spin. -/
+theorem gSpinGroupBaseChange_comp_spinToGSpin :
+    (gSpinGroupBaseChange (A := A) Q).comp (spinToGSpin Q) =
+      (spinToGSpin (Q.baseChange A)).comp (spinGroupBaseChange (A := A) Q) :=
+  MonoidHom.ext gSpinGroupBaseChange_spinToGSpin
+
 end BaseChange
 
 end CliffordAlgebra
@@ -419,6 +441,21 @@ Clifford norm. -/
 theorem gSpinNorm_comp_gSpinGroupMap [Invertible (2 : R)] (f : Q₁ →qᵢ Q₂) :
     (gSpinNorm Q₂).comp f.gSpinGroupMap = gSpinNorm Q₁ :=
   MonoidHom.ext (gSpinNorm_gSpinGroupMap f)
+
+/-- **The map induced on `GSpin` by a quadratic isometry is compatible with the inclusion of
+Spin**: it restricts to the induced map of Spin groups. -/
+@[simp]
+theorem gSpinGroupMap_spinToGSpin (f : Q₁ →qᵢ Q₂) (x : spinGroup Q₁) :
+    f.gSpinGroupMap (spinToGSpin Q₁ x) = spinToGSpin Q₂ (f.spinGroupMap x) :=
+  Subtype.ext <| Units.ext <| by
+    rw [coe_gSpinGroupMap_apply, coe_spinToGSpin_apply, coe_spinToGSpin_apply,
+      coe_spinGroupMap_apply]
+
+/-- The inclusion of Spin followed by the map induced on `GSpin` by a quadratic isometry is the
+induced map of Spin groups followed by the inclusion of Spin. -/
+theorem gSpinGroupMap_comp_spinToGSpin (f : Q₁ →qᵢ Q₂) :
+    f.gSpinGroupMap.comp (spinToGSpin Q₁) = (spinToGSpin Q₂).comp f.spinGroupMap :=
+  MonoidHom.ext (gSpinGroupMap_spinToGSpin f)
 
 end QuadraticMap.Isometry
 
