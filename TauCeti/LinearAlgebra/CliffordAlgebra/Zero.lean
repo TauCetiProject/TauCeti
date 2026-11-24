@@ -111,8 +111,8 @@ universe u v
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M] [Subsingleton M]
   (Q : QuadraticForm R M)
 
-/-- When `M` is subsingleton, an algebra map out of `CliffordAlgebra Q` is determined by its
-values on generators, all of which are `0`. -/
+/-- When `M` is subsingleton, there is at most one `R`-algebra map from `CliffordAlgebra Q` into
+any `R`-algebra `A`. -/
 instance subsingleton_algHom_of_subsingleton {A : Type*} [Semiring A] [Algebra R A] :
     Subsingleton (CliffordAlgebra Q →ₐ[R] A) :=
   ⟨fun _ _ ↦ CliffordAlgebra.hom_ext <| Subsingleton.elim _ _⟩

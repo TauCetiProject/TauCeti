@@ -89,7 +89,6 @@ def mapEquivHom : (M ≃ₗ[R] M) →* (tsze R M ≃ₐ[R] tsze R M) where
   map_mul' e e' := mapEquiv_trans e' e
 
 @[simp]
-theorem coe_mapEquivHom : ⇑(mapEquivHom R M) = mapEquiv := by
-  rw [mapEquivHom, MonoidHom.coe_mk, OneHom.coe_mk]
+theorem coe_mapEquivHom : ⇑(mapEquivHom R M) = mapEquiv := (rfl)
 
 end TauCeti.TrivSqZeroExt
