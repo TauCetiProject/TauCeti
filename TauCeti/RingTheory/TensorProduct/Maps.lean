@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Maps
 
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Maps between tensor products of algebras
@@ -175,9 +176,16 @@ theorem AlgHom.lTensor_rTensor_comm {R B C D E : Type*} [CommSemiring R]
     (φ : D →ₐ[R] E) (ρ : B →ₐ[R] C) (x : B ⊗[R] D) :
     Algebra.TensorProduct.lTensor (S := C) C φ (Algebra.TensorProduct.rTensor D ρ x) =
       Algebra.TensorProduct.rTensor E ρ (Algebra.TensorProduct.lTensor (S := B) B φ x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul b d => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
+  have hC : (Algebra.TensorProduct.lTensor (S := C) C φ).restrictScalars R =
+      Algebra.TensorProduct.map (AlgHom.id R C) φ := by ext <;> simp
+  have hB : (Algebra.TensorProduct.lTensor (S := B) B φ).restrictScalars R =
+      Algebra.TensorProduct.map (AlgHom.id R B) φ := by ext <;> simp
+  rw [← AlgHom.coe_restrictScalars' R (Algebra.TensorProduct.lTensor (S := C) C φ), hC,
+    ← AlgHom.coe_restrictScalars' R (Algebra.TensorProduct.lTensor (S := B) B φ), hB,
+    ← AlgHom.lTensor_toLinearMap_apply, ← AlgHom.lTensor_toLinearMap_apply,
+    Algebra.TensorProduct.rTensor, Algebra.TensorProduct.rTensor,
+    ← AlgHom.rTensor_toLinearMap_apply, ← AlgHom.rTensor_toLinearMap_apply]
+  exact LinearMap.lTensor_rTensor_comm ρ.toLinearMap φ.toLinearMap x
 
 namespace Algebra.TensorProduct
 
@@ -192,26 +200,21 @@ ring-homomorphism form of `Algebra.TensorProduct.lift`: no `R`-algebra structure
 involved, and `T` need not be commutative. -/
 noncomputable def liftRingHomOfCommute (x : A →+* T) (y : B →+* T)
     (h : x.comp (algebraMap R A) = y.comp (algebraMap R B))
-    (hxy : ∀ a b, Commute (x a) (y b)) : A ⊗[R] B →+* T where
-  toFun := liftAddHom ((AddMonoidHom.mul.comp (x : A →+ T)).compl₂ (y : B →+ T))
-    fun r a b ↦ by
-      -- `x (algebraMap R A r)` commutes with `x a`, and equals `y (algebraMap R B r)`
-      have hc := (Algebra.commute_algebraMap_left r a).map x
-      have hr : x (algebraMap R A r) = y (algebraMap R B r) := congr($h r)
-      simp [Algebra.smul_def, ← hr, hc.eq, mul_assoc]
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_one' := by simp [one_def]
-  map_mul' z w := by
-    induction z using TensorProduct.inductionOn with
-    | add z z' hz hz' => rw [add_mul, map_add, map_add, hz, hz', add_mul]
-    | tmul a b =>
-      induction w using TensorProduct.inductionOn with
-      | add w w' hw hw' => rw [mul_add, map_add, map_add, hw, hw', mul_add]
-      | tmul a' b' =>
-        simp only [tmul_mul_tmul, liftAddHom_tmul, AddMonoidHom.compl₂_apply,
-          AddMonoidHom.comp_apply, AddMonoidHom.mul_apply, AddMonoidHom.coe_ofClass, map_mul]
-        rw [(hxy a' b).symm.mul_mul_mul_comm]
+    (hxy : ∀ a b, Commute (x a) (y b)) : A ⊗[R] B →+* T :=
+  let C := Subsemiring.centralizer (Set.range (x.comp (algebraMap R A)))
+  let x' : A →+* C := x.codRestrict C fun a ↦ by
+    rintro _ ⟨r, rfl⟩
+    exact ((Algebra.commute_algebraMap_left r a).map x).eq
+  let y' : B →+* C := y.codRestrict C fun b ↦ by
+    rintro _ ⟨r, rfl⟩
+    have hr : x (algebraMap R A r) = y (algebraMap R B r) := congr($h r)
+    rw [RingHom.comp_apply, hr]
+    exact ((Algebra.commute_algebraMap_left r b).map y).eq
+  letI : Algebra R C := (x'.comp (algebraMap R A)).toAlgebra' fun r c ↦
+    Subtype.ext (c.property _ ⟨r, rfl⟩)
+  C.subtype.comp (lift (S := R) { x' with commutes' := fun _ ↦ rfl }
+    { y' with commutes' := fun r ↦ Subtype.ext (congr($h r).symm) }
+    fun a b ↦ Subtype.ext (hxy a b).eq).toRingHom
 
 variable (x : A →+* T) (y : B →+* T) (h : x.comp (algebraMap R A) = y.comp (algebraMap R B))
   (hxy : ∀ a b, Commute (x a) (y b))
@@ -219,7 +222,9 @@ variable (x : A →+* T) (y : B →+* T) (h : x.comp (algebraMap R A) = y.comp (
 @[simp]
 theorem liftRingHomOfCommute_tmul (a : A) (b : B) :
     liftRingHomOfCommute x y h hxy (a ⊗ₜ b) = x a * y b := by
-  simp [liftRingHomOfCommute]
+  -- `lift_tmul` gives `x' a * y' b` in the centralizer, whose subtype coercion is `x a * y b`.
+  unfold liftRingHomOfCommute
+  rfl
 
 @[simp]
 theorem liftRingHomOfCommute_comp_includeLeftRingHom :
