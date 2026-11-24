@@ -279,6 +279,19 @@ theorem sq_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) 
     T.hilbertSchmidtNorm ^ 2 = (T.hilbertSchmidtEnergy b).toReal := by
   rw [T.hilbertSchmidtNorm_eq_sqrt b, Real.sq_sqrt ENNReal.toReal_nonneg]
 
+omit [CompleteSpace E] in
+/-- In a finite orthonormal basis, the squared Hilbert–Schmidt norm is the sum of squared
+output norms. Completeness is supplied by the finite basis. -/
+theorem sq_hilbertSchmidtNorm_eq_sum [Fintype ι] (T : E →L[𝕜] F)
+    (b : OrthonormalBasis ι 𝕜 E) :
+    letI := b.toBasis.finiteDimensional_of_finite
+    letI := FiniteDimensional.completeSpace 𝕜 E
+    T.hilbertSchmidtNorm ^ 2 = ∑ i, ‖T (b i)‖ ^ 2 := by
+  let := b.toBasis.finiteDimensional_of_finite
+  let := FiniteDimensional.completeSpace 𝕜 E
+  rw [T.sq_hilbertSchmidtNorm b.toHilbertBasis, hilbertSchmidtEnergy_def, tsum_fintype]
+  simp [ENNReal.toReal_sum, ENNReal.toReal_pow]
+
 /-- For an operator of finite energy, the square of the Hilbert–Schmidt norm recovers the energy
 without loss. -/
 theorem ofReal_sq_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)

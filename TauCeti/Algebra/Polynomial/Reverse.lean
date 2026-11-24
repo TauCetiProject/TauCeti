@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Taylor
@@ -45,7 +46,10 @@ factors into such binomials, and that reflection at a sum of degree bounds is mu
 finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
 polynomials term by term. The reverse of a scalar multiple of a product of linear factors with
 nonzero roots is again such a product in the reciprocal roots
-(`Polynomial.reverse_C_mul_prod_X_sub_C`). Reflection at a degree bound stays within that bound,
+(`Polynomial.reverse_C_mul_prod_X_sub_C`), unit-scalar multiplication preserves the leading-
+coefficient-normalised reversal (`Polynomial.C_inverse_leadingCoeff_mul_reverse_C_mul`), and
+evaluating a unit-rescaled reversal in an algebra scales the evaluation
+(`Polynomial.aeval_C_mul_reverse`). Reflection at a degree bound stays within that bound,
 also after a coefficient map, and its coefficient at the bound is the constant coefficient; when a
 coefficient map does not kill the leading coefficient, or when the leading coefficient is a unit, it
 commutes with reversal (`Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
@@ -53,6 +57,12 @@ commutes with reversal (`Polynomial.reverse_map_of_leadingCoeff_ne_zero`,
 The reverse of
 `(X - C a) ^ n` is `(1 - C a * X) ^ n`, and over a nontrivial ring its factor `1 - X` (for `a = 1`)
 is nonzero.
+
+A monic polynomial over a ring without zero divisors is reciprocal up to sign, `p.reverse = ±p`,
+exactly when `p.reverse = C (p.coeff 0) * p` (`Polynomial.Monic.reverse_eq_C_coeff_zero_mul_iff`);
+this is the shape in which the minimal polynomial of an inverse presents itself. The constant
+coefficient of such a `p` is then `1` or `-1` (`Polynomial.Monic.coeff_zero_eq_one_of_reverse_eq`
+and `Polynomial.Monic.coeff_zero_eq_neg_one_of_reverse_eq_neg`).
 
 Finally, reflecting the difference `p(X) - p(X - a)` at a bound on the degree of `p`, its first
 coefficient past the degree drop is `natDegree p * a * leadingCoeff p`: the top terms cancel and
@@ -64,6 +74,9 @@ composing the degree-`d` reflection with `X - C a₀` evaluates to `(z - a₀) ^
 with degree at most `d` and degree-`d` coefficient `P.eval 0`
 (`Polynomial.eval_reflect_comp_X_sub_C`, `Polynomial.natDegree_reflect_comp_X_sub_C_le`,
 `Polynomial.coeff_reflect_comp_X_sub_C`).
+
+Over a field, reversal and reflection at a bound on the degree preserve splitting
+(`Polynomial.Splits.reverse`, `Polynomial.Splits.reflect`).
 -/
 
 public section
@@ -214,10 +227,62 @@ theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
   nontriviality S
   exact reverse_map_of_leadingCoeff_ne_zero f (hp.map f).ne_zero
 
+/-- Reversing a polynomial scaled on the left by a unit pulls the unit scalar out. -/
+@[simp]
+theorem reverse_C_mul_of_isUnit [Semiring R] {a : R} (ha : IsUnit a) (p : R[X]) :
+    (C a * p).reverse = C a * p.reverse := by
+  rw [reverse, reverse, natDegree_C_mul_of_isUnit ha, reflect_C_mul]
+
+/-- Scaling a polynomial by a unit leaves the normalised reverse polynomial `lc(p)⁻¹ * p*`
+unchanged. -/
+theorem C_inverse_leadingCoeff_mul_reverse_C_mul [Semiring R] {a : R} (ha : IsUnit a)
+    (p : R[X]) :
+    C (Ring.inverse (C a * p).leadingCoeff) * (C a * p).reverse =
+      C (Ring.inverse p.leadingCoeff) * p.reverse := by
+  calc C (Ring.inverse (C a * p).leadingCoeff) * (C a * p).reverse
+      = C (Ring.inverse p.leadingCoeff * Ring.inverse a) * (C a * p.reverse) := by
+        rw [leadingCoeff_C_mul_of_isUnit ha, reverse_C_mul_of_isUnit ha,
+          Ring.inverse_mul (Or.inl ha)]
+    _ = C (Ring.inverse p.leadingCoeff) * (C (Ring.inverse a * a) * p.reverse) := by
+        simp only [map_mul, mul_assoc]
+    _ = C (Ring.inverse p.leadingCoeff) * p.reverse := by
+        rw [Ring.inverse_mul_cancel _ ha, map_one, one_mul]
+
+/-- Evaluating the reversal of a unit-scalar multiple `C a * p` in an `R`-algebra scales the
+evaluation of `p.reverse` by `a`. -/
+theorem aeval_C_mul_reverse [CommSemiring R] {A : Type*} [Semiring A] [Algebra R A]
+    (x : A) {a : R} (ha : IsUnit a) (p : R[X]) :
+    aeval x (C a * p).reverse = a • aeval x p.reverse := by
+  rw [reverse_C_mul_of_isUnit ha, map_mul, aeval_C, Algebra.smul_def]
+
 /-- The reversal of `1` is `1`. -/
 @[simp]
 theorem reverse_one [Semiring R] : (1 : R[X]).reverse = 1 := by
   rw [← C_1, reverse_C, C_1]
+
+/-- A monic polynomial `p` with `p.reverse = p` has constant coefficient `1`. -/
+theorem Monic.coeff_zero_eq_one_of_reverse_eq [Semiring R] {p : R[X]} (hp : p.Monic)
+    (h : p.reverse = p) : p.coeff 0 = 1 := by
+  rw [← h, coeff_zero_reverse, hp.leadingCoeff]
+
+/-- A monic polynomial `p` with `p.reverse = -p` has constant coefficient `-1`. -/
+theorem Monic.coeff_zero_eq_neg_one_of_reverse_eq_neg [Ring R] {p : R[X]} (hp : p.Monic)
+    (h : p.reverse = -p) : p.coeff 0 = -1 := by
+  rw [← neg_eq_iff_eq_neg, ← coeff_neg, ← h, coeff_zero_reverse, hp.leadingCoeff]
+
+/-- A monic polynomial `p` without zero divisors in its coefficients satisfies
+`p.reverse = C (p.coeff 0) * p` exactly when it is reciprocal up to sign: `p.reverse = p` or
+`p.reverse = -p`. -/
+theorem Monic.reverse_eq_C_coeff_zero_mul_iff [Ring R] [NoZeroDivisors R] {p : R[X]}
+    (hp : p.Monic) : p.reverse = C (p.coeff 0) * p ↔ p.reverse = p ∨ p.reverse = -p := by
+  constructor
+  · intro h
+    have hc : p.coeff 0 * p.coeff 0 = 1 := by
+      rw [← coeff_C_mul, ← h, coeff_zero_reverse, hp.leadingCoeff]
+    rcases mul_self_eq_one_iff.mp hc with hc | hc <;> simp [h, hc]
+  · rintro (h | h)
+    · rw [hp.coeff_zero_eq_one_of_reverse_eq h, C_1, one_mul, h]
+    · rw [hp.coeff_zero_eq_neg_one_of_reverse_eq_neg h, C_neg, C_1, neg_one_mul, h]
 
 /-- Reflection exchanges an invertible root with its inverse, preserving its multiplicity.
 The degree bound can exceed the actual degree, and the zero polynomial is included. -/
@@ -463,5 +528,25 @@ theorem coeff_reflect_comp_X_sub_C [Ring R] (a₀ : R) {d : ℕ} {Q : R[X]}
   rw [sub_eq_add_neg, ← C_neg, ← taylor_apply,
     coeff_taylor_eq_coeff_of_natDegree_le (natDegree_reflect_le_of_natDegree_le hQ),
     coeff_reflect_self, coeff_zero_eq_eval_zero]
+
+/-- Over a field, the reverse of a split polynomial splits: each linear factor `X + C a` reverses
+to `1 + C a * X`, of degree at most one. -/
+theorem Splits.reverse {K : Type*} [Field K] {p : K[X]} (hp : p.Splits) : p.reverse.Splits := by
+  obtain ⟨m, hm⟩ := splits_iff_exists_multiset'.mp hp
+  rw [hm, reverse_mul_of_domain, reverse_C,
+    reverse_multiset_prod_of_monic (by simp [monic_X_add_C]), Multiset.map_map]
+  refine (Splits.C _).mul (.multisetProd fun q hq ↦ ?_)
+  obtain ⟨a, -, rfl⟩ := Multiset.mem_map.mp hq
+  exact .of_natDegree_le_one ((reverse_natDegree_le _).trans (natDegree_X_add_C a).le)
+
+/-- Over a field, the reflection of a split polynomial at a bound on its degree splits: it is
+the reverse times a power of `X`. -/
+theorem Splits.reflect {K : Type*} [Field K] {p : K[X]} (hp : p.Splits) {N : ℕ}
+    (hN : p.natDegree ≤ N) : (p.reflect N).Splits := by
+  have h := reflect_mul p 1 le_rfl (natDegree_one.trans_le (Nat.zero_le (N - p.natDegree)))
+  -- `reverse p` is by definition `reflect p.natDegree p`.
+  rw [mul_one, Nat.add_sub_cancel' hN, reflect_one, ← Polynomial.reverse] at h
+  rw [h]
+  exact hp.reverse.mul (.X_pow _)
 
 end Polynomial

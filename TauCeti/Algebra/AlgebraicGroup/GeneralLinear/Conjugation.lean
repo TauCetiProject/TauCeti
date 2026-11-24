@@ -38,6 +38,8 @@ automorphism carries it there, and on points that is conjugation by the change-o
   point-conjugation algebra map at the point of `P`.
 * `TauCeti.GeneralLinear.comapOfSurjective_conjCoordinateIso_eq_conjugate`: pulling a Hopf ideal
   back along the coordinate automorphism is conjugating it by the point of `P`.
+* `TauCeti.GeneralLinear.conjCoordinateIso_eq_innerConjugationIso`: the coordinate automorphism
+  is inner conjugation by the rational point of `P`.
 * `TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso` and
   `TauCeti.GeneralLinear.pointsMulEquiv_toConv_comp_conjCoordinateIso`: on algebra-valued points
   the coordinate automorphism is conjugation by the base-changed matrix.
@@ -88,6 +90,14 @@ theorem comapOfSurjective_conjCoordinateIso_eq_conjugate (P : Matrix.GeneralLine
   ext x
   rw [HopfIdeal.mem_conjugate, HopfIdeal.mem_comapOfSurjective,
     ← conjCoordinateIso_hom_toAlgHom, BialgHom.coe_toAlgHom]
+
+/-- The coordinate automorphism of conjugation by `P` is inner conjugation by the `R`-valued
+point of `GLₙ` given by `P`. -/
+theorem conjCoordinateIso_eq_innerConjugationIso (P : Matrix.GeneralLinearGroup (Fin n) R) :
+    conjCoordinateIso P =
+      (coordinateHopfAlgebra R n).innerConjugationIso
+        ((pointsMulEquiv (R := R) (A := R) n).symm P) := by
+  rw [conjCoordinateIso]
 
 /-- The `R`-valued point underlying a constant matrix, extended to an `R`-algebra `A`, is the
 image of that matrix over `A`. -/

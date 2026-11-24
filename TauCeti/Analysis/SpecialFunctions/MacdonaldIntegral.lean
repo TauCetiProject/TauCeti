@@ -142,11 +142,11 @@ theorem hasMellin_integral_cpow_mul_exp_neg_add_div_Ioi {a t : ℂ} (ht : 0 < t.
   have hf : MellinConvergent (fun s : ℝ ↦ (s : ℂ) ^ a • (Real.exp (-s) : ℂ)) t :=
     MellinConvergent.cpow_smul.mpr <|
       (GammaIntegral_convergent hta).congr_fun (fun _ _ ↦ mul_comm _ _) measurableSet_Ioi
-  have h := TauCeti.hasMellin_integral_mul_div hf (TauCeti.hasMellin_exp_neg ht).1
+  have h := TauCeti.hasMellin_mellinConv hf (TauCeti.hasMellin_exp_neg ht).1
   rw [mellin_cpow_smul, (TauCeti.hasMellin_exp_neg hta).2, (TauCeti.hasMellin_exp_neg ht).2,
     mul_comm] at h
-  refine (TauCeti.hasMellin_congr fun c _ ↦ setIntegral_congr_fun measurableSet_Ioi
-    fun s (hs : 0 < s) ↦ ?_).mp h
+  refine (TauCeti.hasMellin_congr fun c _ ↦ (TauCeti.mellinConv_def _ _ c).trans <|
+    setIntegral_congr_fun measurableSet_Ioi fun s (hs : 0 < s) ↦ ?_).mp h
   rw [smul_eq_mul, cpow_sub _ _ (ofReal_ne_zero.mpr hs.ne'), cpow_one, neg_add, Real.exp_add]
   push_cast
   ring
