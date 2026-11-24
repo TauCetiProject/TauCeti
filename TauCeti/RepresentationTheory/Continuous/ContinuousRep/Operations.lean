@@ -33,8 +33,9 @@ isomorphism `M ≅ M^∨∨`, the isomorphism `M^∨ ⊗ N ≅ Hom_A(M, N)` (Mat
 `dualTensorHomEquiv`, which is equivariant by `Representation.dualTensorHom_comm`), and the
 identification of the twist `M(χ)` with the tensor product `M ⊗ A(χ)`. Twisting by `1` does
 nothing and twisting twice multiplies the characters. The invariants of the Hom representation are
-the morphisms of continuous representations, and evaluation `M^∨ ⊗ M → A` and the scalar map
-`A → Hom_A(M, M)`, `a ↦ a • id`, are morphisms to and from the trivial representation.
+the morphisms of continuous representations. Evaluation `M^∨ ⊗ M → A` is a morphism to the trivial
+representation, and the scalar map `A → Hom_A(M, M)`, `a ↦ a • id`, and coevaluation
+`A → M ⊗ M^∨` are morphisms from it.
 Restriction is functorial and commutes with products, tensor products, Hom, the contragredient,
 twists and character lines.
 
@@ -53,6 +54,7 @@ twists and character lines.
   `ρ ⟶ σ` of continuous representations.
 * `TauCeti.ContinuousRep.evaluation` and `TauCeti.ContinuousRep.scalarToLinHom`: the evaluation
   morphism `M^∨ ⊗ M → A` and the scalar morphism `A → Hom_A(M, M)`, `a ↦ a • id`.
+* `TauCeti.ContinuousRep.coevaluation`: the coevaluation morphism `A → M ⊗ M^∨`.
 
 ## Main results
 
@@ -141,6 +143,10 @@ def Iso.res (e : Iso ρ σ) (φ : Γ' →ₜ* Γ) : Iso (ρ.res φ) (σ.res φ) 
 @[simp]
 theorem Iso.res_apply (e : Iso ρ σ) (φ : Γ' →ₜ* Γ) (x : M) : e.res φ x = e x :=
   e.toRepresentationEquiv.res_apply φ.toMonoidHom x
+
+@[simp]
+theorem Iso.res_symm (e : Iso ρ σ) (φ : Γ' →ₜ* Γ) : (e.res φ).symm = e.symm.res φ :=
+  Iso.ext fun x => (e.res φ).injective (by simp)
 
 /-- Restriction commutes with products. -/
 @[simp]
@@ -473,8 +479,8 @@ variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
   [TopologicalSpace (M →ₗ[A] M)] [IsModuleTopology A (M →ₗ[A] M)]
 
 /-- **The scalar morphism** `A → Hom_A(M, M)`, `a ↦ a • id`, from the trivial
-representation. Composed with the inverse of `TauCeti.ContinuousRep.dualTensorIsoHom` it is the
-coevaluation `A → M^∨ ⊗ M`. -/
+representation. Composed with the inverse of `TauCeti.ContinuousRep.dualTensorIsoHom` it gives
+the coevaluation `TauCeti.ContinuousRep.coevaluation`. -/
 noncomputable def scalarToLinHom (ρ : ContinuousRep Γ A M) : Hom (trivial Γ A A) (ρ.linHom ρ) :=
   haveI := IsModuleTopology.toContinuousAdd A (M →ₗ[A] M)
   haveI := IsModuleTopology.toContinuousSMul A (M →ₗ[A] M)
@@ -489,6 +495,37 @@ theorem scalarToLinHom_apply (ρ : ContinuousRep Γ A M) (a : A) :
   simp [scalarToLinHom]
 
 end ScalarToLinHom
+
+section Coevaluation
+
+variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
+  [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [AddCommGroup M] [Module A M] [TopologicalSpace M] [IsModuleTopology A M]
+  [Module.Finite A M] [Module.Projective A M]
+  [TopologicalSpace (Module.Dual A M)] [IsModuleTopology A (Module.Dual A M)]
+  [TopologicalSpace (Module.Dual A M ⊗[A] M)] [IsModuleTopology A (Module.Dual A M ⊗[A] M)]
+  [TopologicalSpace (M ⊗[A] Module.Dual A M)] [IsModuleTopology A (M ⊗[A] Module.Dual A M)]
+  [TopologicalSpace (M →ₗ[A] M)] [IsModuleTopology A (M →ₗ[A] M)]
+
+/-- **The coevaluation morphism** `A → M ⊗ M^∨` from the trivial representation, for a finite
+projective `M`: the element of `M ⊗ M^∨` corresponding to `a • id` under
+`Hom_A(M, M) ≅ M^∨ ⊗ M ≅ M ⊗ M^∨`. As for Mathlib's `coevaluation`, the target is `M ⊗ M^∨`, so
+that it pairs with the evaluation `TauCeti.ContinuousRep.evaluation` on `M^∨ ⊗ M`. -/
+noncomputable def coevaluation (ρ : ContinuousRep Γ A M) : Hom (trivial Γ A A) (ρ.tprod ρ.dual) :=
+  let e := Representation.TensorProduct.comm ρ.dual.toRepresentation ρ.toRepresentation
+  (Iso.ofEquiv <| .mk e.toLinearEquiv fun g => by
+    rw [toRepresentation_tprod, toRepresentation_tprod]
+    exact e.toIntertwiningMap.isIntertwining' g).toHom.comp
+    ((dualTensorIsoHom ρ ρ).symm.toHom.comp (scalarToLinHom ρ))
+
+/-- Under `M ⊗ M^∨ ≅ M^∨ ⊗ M ≅ Hom_A(M, M)`, the coevaluation of `a` is `a • id`. -/
+@[simp]
+theorem dualTensorIsoHom_comm_coevaluation (ρ : ContinuousRep Γ A M) (a : A) :
+    dualTensorIsoHom ρ ρ (TensorProduct.comm A M (Module.Dual A M) (coevaluation ρ a)) =
+      a • LinearMap.id := by
+  simp [coevaluation]
+
+end Coevaluation
 
 end ContinuousRep
 
