@@ -226,7 +226,7 @@ theorem norm_toStrongDual_pullbackFunctional_le_one (f : F) {φ : WeakDual ℂ B
 
 /-- The restriction of a state along a star homomorphism is a state exactly when it has norm
 `1`. -/
-theorem mem_stateSpace_pullbackFunctional_iff (f : F) {φ : WeakDual ℂ B}
+theorem pullbackFunctional_mem_stateSpace_iff (f : F) {φ : WeakDual ℂ B}
     (hφ : φ ∈ stateSpace B) :
     pullbackFunctional A f φ ∈ stateSpace A ↔ ‖toStrongDual (pullbackFunctional A f φ)‖ = 1 :=
   mem_stateSpace_iff.trans
@@ -243,7 +243,7 @@ theorem mem_stateSpace_of_pullbackFunctional_mem_stateSpace (f : F) {χ : WeakDu
 
 /-- If the restriction of a state of `C` along a composite `A → B → C` of star homomorphisms is a
 state of `A`, then its restriction to `B` is a state of `B`. -/
-theorem mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace
+theorem pullbackFunctional_mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace
     {C G : Type*} [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C]
     [FunLike G B C] [NonUnitalAlgHomClass G ℂ B C] [StarHomClass G B C] (f : F) (g : G)
     {ψ : WeakDual ℂ C} (hψ : ψ ∈ stateSpace C)

@@ -113,8 +113,8 @@ theorem isExtreme_stateSpace_inter_preimage_pullbackFunctional (f : F) {φ : Wea
     calc (1 : ℝ) = ‖toStrongDual φ‖ := (norm_toStrongDual_of_mem_stateSpace hφ.1).symm
       _ ≤ _ := hsplit ▸ norm_add_le _ _
       _ = _ := by simp [norm_smul, abs_of_pos ha, abs_of_pos hb]
-  exact hφ.2 ((mem_stateSpace_pullbackFunctional_iff f hψ₁).2 (by nlinarith))
-    ((mem_stateSpace_pullbackFunctional_iff f hψ₂).2 (by nlinarith)) ⟨a, b, ha, hb, hab, hcomb⟩
+  exact hφ.2 ((pullbackFunctional_mem_stateSpace_iff f hψ₁).2 (by nlinarith))
+    ((pullbackFunctional_mem_stateSpace_iff f hψ₂).2 (by nlinarith)) ⟨a, b, ha, hb, hab, hcomb⟩
 
 end Face
 
@@ -124,8 +124,7 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 
 /-- A state of `Unitization ℂ A` is determined by its restriction to `A`: it takes the value
 `λ + ψ a` at `λ + a`. The restriction need not be a state (it may have norm less than one), so
-this is not a case of `PositiveContinuousLinearMap.eq_unitization_of_mem_stateSpace`. Private
-under this name pending the public `injOn_pullbackFunctional_inr_stateSpace` of an open PR. -/
+this is not a case of `PositiveContinuousLinearMap.eq_unitization_of_mem_stateSpace`. -/
 private theorem injOn_pullbackFunctional_inr_stateSpace_aux :
     InjOn (pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A))
       (stateSpace (Unitization ℂ A)) := by
@@ -236,8 +235,9 @@ theorem surjOn_pullbackFunctional_stateSpace (f : F) (hf : Function.Injective f)
   obtain ⟨ψ', hψ', rfl⟩ := surjOn_pullbackFunctional_stateSpace_of_unital
     (Unitization.starMap (.ofClass f : A →⋆ₙₐ[ℂ] B)) (Unitization.starMap_injective hf) hφ'
   rw [← pullbackFunctional_pullbackFunctional_inr] at hφ ⊢
-  exact ⟨_, mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace f _ hψ' hφ,
-    rfl⟩
+  exact ⟨_,
+    pullbackFunctional_mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace f _
+      hψ' hφ, rfl⟩
 
 /-- **Extension of pure states.** Along an injective star homomorphism `f : A → B` of C⋆-algebras,
 every pure state of `A` is the restriction `φ ∘ f` of a pure state `φ` of `B`. Neither `A`, `B`
@@ -252,7 +252,8 @@ theorem surjOn_pullbackFunctional_extremePoints_stateSpace (f : F) (hf : Functio
     (mem_extremePoints_stateSpace_of_pullbackFunctional_inr hφ hφ' rfl)
   rw [← pullbackFunctional_pullbackFunctional_inr] at hφ ⊢
   exact ⟨_, pullbackFunctional_inr_mem_extremePoints_stateSpace hψ'
-    (mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace f _ hψ'.1 hφ.1), rfl⟩
+    (pullbackFunctional_mem_stateSpace_of_pullbackFunctional_pullbackFunctional_mem_stateSpace f _
+      hψ'.1 hφ.1), rfl⟩
 
 end Extension
 
