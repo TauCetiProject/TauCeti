@@ -135,8 +135,8 @@ theorem centerAugmentation_principalBlockIdempotent :
 /-- The principal block idempotent has augmentation `1`, as an element of `k[G]`. -/
 @[simp]
 theorem augmentation_principalBlockIdempotent :
-    augmentation k G (principalBlockIdempotent k G : MonoidAlgebra k G) = 1 :=
-  centerAugmentation_principalBlockIdempotent k G
+    augmentation k G (principalBlockIdempotent k G : MonoidAlgebra k G) = 1 := by
+  rw [← centerAugmentation_apply, centerAugmentation_principalBlockIdempotent]
 
 variable {k G}
 
@@ -194,11 +194,12 @@ theorem coe_principalBlockIdempotent_eq_average :
   let a : Subalgebra.center k (MonoidAlgebra k G) := ⟨_, GroupAlgebra.average_mem_center⟩
   have ha : IsBlockIdempotent a := by
     refine isPrimitiveIdempotent_of_eq_zero_or_eq
-      (Subtype.ext (GroupAlgebra.isIdempotentElem_average k G)) (fun h ↦ ?_) fun f hf h _ ↦ ?_
+      (Subtype.ext (by rw [Subalgebra.coe_mul]; exact GroupAlgebra.isIdempotentElem_average k G))
+      (fun h ↦ ?_) fun f hf h _ ↦ ?_
     · simpa [a] using congrArg (augmentation k G ∘ Subtype.val) h
     · have hf' : (f : MonoidAlgebra k G) = augmentation k G f • GroupAlgebra.average k G := by
         rw [← GroupAlgebra.average_mul]
-        exact congrArg Subtype.val h.symm
+        simpa [a, Subalgebra.coe_mul] using congrArg Subtype.val h.symm
       rcases centerAugmentation_eq_zero_or_one hf with h0 | h1
       · exact Or.inl (Subtype.ext (by
           rw [hf', ← centerAugmentation_apply, h0, zero_smul, ZeroMemClass.coe_zero]))
