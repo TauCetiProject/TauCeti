@@ -220,7 +220,7 @@ theorem map_universalShift_comp_prodComparison {D : Type u'} [Category.{v'} D]
     [CartesianMonoidalCategory D] (F : C ⥤ D) [F.Monoidal] (c : X ⟶ G) :
     F.map (universalShift c) ≫ prodComparison F G G =
       prodComparison F G X ≫ universalShift (F.map c) := by
-  rw [universalShift, Functor.map_lift_comp_prodComparison]
+  rw [universalShift, Functor.map_lift_prodComparison]
   ext <;> simp [Functor.map_mul, MonObj.comp_mul]
 
 end TauCeti.GrpObj

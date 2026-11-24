@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Basic
-public import TauCeti.CategoryTheory.Monoidal.Grp.Difference
 
 /-!
 # Faltings–Zhang coordinates of maps to a group object

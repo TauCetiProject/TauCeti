@@ -28,7 +28,7 @@ variable {C D : Type*} [Category* C] [Category* D] [CartesianMonoidalCategory C]
 
 /-- The product comparison map sends the image of a lift to the lift of the images. -/
 @[reassoc (attr := simp)]
-lemma map_lift_comp_prodComparison {T A B : C} (f : T ⟶ A) (g : T ⟶ B) :
+lemma map_lift_prodComparison {T A B : C} (f : T ⟶ A) (g : T ⟶ B) :
     F.map (lift f g) ≫ prodComparison F A B = lift (F.map f) (F.map g) := by
   ext <;> simp [← Functor.map_comp]
 
