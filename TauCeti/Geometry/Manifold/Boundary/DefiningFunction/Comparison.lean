@@ -81,8 +81,8 @@ private theorem exists_eq_normal_mul (hρ : IsBoundaryDefiningFunctionOn n ρ U)
     have h := extChartAt_preimage_mem_nhdsWithin (I := 𝓡∂ (n + 1)) (s := univ) (x := q₀) (t := U)
       (by rw [nhdsWithin_univ]; exact hρ.isOpen.mem_nhds hq₀U)
     rwa [preimage_univ, univ_inter] at h
-  have hf : ContDiffOn ℝ ∞ (ρ ∘ φ.symm) T := by
-    simpa [T, φ] using (contMDiffOn_iff.1 hρ.contMDiffOn).2 q₀ (0 : ℝ)
+  have hf : ContDiffOn ℝ ∞ (ρ ∘ φ.symm) T := contMDiffOn_iff_contDiffOn.1 <|
+    hρ.contMDiffOn.comp ((contMDiffOn_extChartAt_symm q₀).mono inter_subset_left) fun _ hy ↦ hy.2
   obtain ⟨s, hs, hqs, hsT⟩ := mem_nhdsWithin.1 hT
   have hsT' : {y | 0 ≤ ℓ y} ∩ s ⊆ T := fun y hy ↦ hsT ⟨hy.2, hrange ▸ hy.1⟩
   -- `ρ` read in the chart vanishes on the boundary hyperplane.

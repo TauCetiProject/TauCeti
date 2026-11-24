@@ -70,11 +70,11 @@ private theorem exists_radii_mapsTo {ℓ : E →L[ℝ] ℝ} {v : E} (hv : ℓ v 
     simp only [map_sub, hq, sub_zero]
     abel
   rw [hfoot]
-  have h1 : ‖(w - q) - ℓ (w - q) • v‖ ≤ (1 + ‖ℓ‖ * ‖v‖) * ‖w - q‖ := by
-    refine (norm_sub_le _ _).trans ?_
-    rw [norm_smul, Real.norm_eq_abs]
-    nlinarith [ℓ.le_opNorm (w - q), abs_nonneg (ℓ (w - q)), norm_nonneg v,
-      Real.norm_eq_abs (ℓ (w - q)), norm_nonneg (w - q), norm_nonneg ℓ]
+  have h1 : ‖(w - q) - ℓ (w - q) • v‖ ≤ (1 + ‖ℓ‖ * ‖v‖) * ‖w - q‖ :=
+    calc ‖(w - q) - ℓ (w - q) • v‖ ≤ ‖w - q‖ + ‖ℓ (w - q)‖ * ‖v‖ := by
+          rw [← norm_smul]; exact norm_sub_le _ _
+      _ ≤ ‖w - q‖ + ‖ℓ‖ * ‖w - q‖ * ‖v‖ := by gcongr; exact ℓ.le_opNorm (w - q)
+      _ = (1 + ‖ℓ‖ * ‖v‖) * ‖w - q‖ := by ring
   have h2 : ‖a • v‖ ≤ ε * ‖v‖ := by
     rw [norm_smul, Real.norm_of_nonneg ha0]
     exact mul_le_mul_of_nonneg_right haε.le (norm_nonneg v)
