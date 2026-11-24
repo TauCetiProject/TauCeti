@@ -210,13 +210,36 @@ def hochschildCoeff (D : Derivation R A A) (a : A) : ℕ → ℕ → A
   | _ + 1, 0 => 0
   | n + 1, k + 1 => a * D (hochschildCoeff D a n (k + 1)) + a * hochschildCoeff D a n k
 
+/-- `hochschildCoeff D a 0 0 = 1`. -/
+theorem hochschildCoeff_zero_zero (D : Derivation R A A) (a : A) :
+    hochschildCoeff D a 0 0 = 1 :=
+  (rfl)
+
+/-- `hochschildCoeff D a 0 (k + 1) = 0`. -/
+@[simp]
+theorem hochschildCoeff_zero_succ (D : Derivation R A A) (a : A) (k : ℕ) :
+    hochschildCoeff D a 0 (k + 1) = 0 :=
+  (rfl)
+
+/-- `hochschildCoeff D a (n + 1) 0 = 0`. -/
+@[simp]
+theorem hochschildCoeff_succ_zero (D : Derivation R A A) (a : A) (n : ℕ) :
+    hochschildCoeff D a (n + 1) 0 = 0 :=
+  (rfl)
+
+/-- Recursion step for `hochschildCoeff`. -/
+theorem hochschildCoeff_succ_succ (D : Derivation R A A) (a : A) (n k : ℕ) :
+    hochschildCoeff D a (n + 1) (k + 1) =
+      a * D (hochschildCoeff D a n (k + 1)) + a * hochschildCoeff D a n k :=
+  (rfl)
+
 /-- `hochschildCoeff D a n k` vanishes whenever `n < k`. -/
 theorem hochschildCoeff_eq_zero_of_lt (D : Derivation R A A) (a : A) :
     ∀ {n k : ℕ}, n < k → hochschildCoeff D a n k = 0
-  | 0, _ + 1, _ => rfl
+  | 0, _ + 1, _ => hochschildCoeff_zero_succ D a _
   | n + 1, k + 1, h => by
-    simp [hochschildCoeff, hochschildCoeff_eq_zero_of_lt D a (by omega : n < k + 1),
-      hochschildCoeff_eq_zero_of_lt D a (by omega : n < k)]
+    rw [hochschildCoeff_succ_succ, hochschildCoeff_eq_zero_of_lt D a (by omega : n < k + 1),
+      hochschildCoeff_eq_zero_of_lt D a (by omega : n < k), map_zero, mul_zero, add_zero]
 
 /-- The diagonal Hochschild coefficient `hochschildCoeff D a n n` equals `a ^ n`. -/
 @[simp]
@@ -224,7 +247,7 @@ theorem hochschildCoeff_self (D : Derivation R A A) (a : A) :
     ∀ n : ℕ, hochschildCoeff D a n n = a ^ n
   | 0 => (pow_zero a).symm
   | n + 1 => by
-    simp only [hochschildCoeff, hochschildCoeff_eq_zero_of_lt D a (Nat.lt_succ_self n),
+    rw [hochschildCoeff_succ_succ, hochschildCoeff_eq_zero_of_lt D a (Nat.lt_succ_self n),
       map_zero, mul_zero, zero_add, hochschildCoeff_self D a n, pow_succ']
 
 /-- For `0 < n`, the zeroth Hochschild coefficient `hochschildCoeff D a n 0` vanishes. -/
@@ -232,15 +255,15 @@ theorem hochschildCoeff_zero_right_eq_zero_of_pos (D : Derivation R A A) (a : A)
     (hn : 0 < n) : hochschildCoeff D a n 0 = 0 := by
   cases n with
   | zero => omega
-  | succ m => rfl
+  | succ m => exact hochschildCoeff_succ_zero D a m
 
 /-- The first-column Hochschild coefficient `hochschildCoeff D a (n + 1) 1` equals
 `(⇑(a • D))^[n] a`. -/
 theorem hochschildCoeff_one (D : Derivation R A A) (a : A) :
     ∀ n : ℕ, hochschildCoeff D a (n + 1) 1 = (⇑(a • D))^[n] a
-  | 0 => by simp [hochschildCoeff]
+  | 0 => by rw [hochschildCoeff_succ_succ]; simp
   | n + 1 => by
-    rw [hochschildCoeff, hochschildCoeff_zero_right_eq_zero_of_pos D a (Nat.succ_pos n),
+    rw [hochschildCoeff_succ_succ, hochschildCoeff_zero_right_eq_zero_of_pos D a (Nat.succ_pos n),
       mul_zero, add_zero, hochschildCoeff_one D a n, Function.iterate_succ_apply', smul_apply,
       smul_eq_mul]
 
@@ -248,7 +271,7 @@ private theorem map_hochschildCoeff_zero (D : Derivation R A A) (a : A) (n : ℕ
     D (hochschildCoeff D a n 0) = 0 := by
   cases n with
   | zero => exact D.map_one_eq_zero
-  | succ m => exact map_zero D
+  | succ m => simp
 
 /-- Universal triangular expansion of `(f a • E)^[n] y` along any ring homomorphism
 `f : A →+* B` and derivation `E : Derivation S B B` intertwining `D` via `f`. -/
@@ -258,7 +281,7 @@ theorem iterate_smul_eq_sum_hochschildCoeff {S B : Type*} [CommSemiring S] [Comm
     ∀ (n : ℕ) (y : B),
       (⇑(f a • E))^[n] y =
         ∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a n k) * E^[k] y
-  | 0, y => by simp [hochschildCoeff]
+  | 0, y => by simp
   | n + 1, y => by
     calc
       (⇑(f a • E))^[n + 1] y
@@ -285,7 +308,7 @@ theorem iterate_smul_eq_sum_hochschildCoeff {S B : Type*} [CommSemiring S] [Comm
       _ = ∑ k ∈ Finset.range (n + 1), f (hochschildCoeff D a (n + 1) (k + 1)) * E^[k + 1] y := by
             rw [← Finset.sum_add_distrib]
             refine Finset.sum_congr rfl fun k _ => ?_
-            simp [hochschildCoeff, add_mul]
+            rw [hochschildCoeff_succ_succ, map_add, map_mul, map_mul, add_mul]
       _ = ∑ k ∈ Finset.range (n + 2), f (hochschildCoeff D a (n + 1) k) * E^[k] y := by
             symm
             rw [Finset.sum_range_succ']
@@ -333,5 +356,18 @@ theorem conjAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
   (rfl)
 
 end ConjAlgEquiv
+
+section CompDer
+
+variable {R A M N : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M]
+  [AddCommMonoid N] [Algebra R A] [Module A M] [Module R M] [IsScalarTower R A M]
+  [Module A N] [Module R N] [IsScalarTower R A N]
+
+/-- Pushing a derivation forward along an `A`-linear map evaluates pointwise as composition. -/
+theorem _root_.LinearMap.compDer_apply (f : M →ₗ[A] N) (D : Derivation R A M) (a : A) :
+    (f.compDer D) a = f (D a) :=
+  (rfl)
+
+end CompDer
 
 end Derivation

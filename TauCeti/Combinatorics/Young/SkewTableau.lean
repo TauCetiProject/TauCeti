@@ -260,7 +260,7 @@ theorem rowCount_def (T : SkewSemistandardYoungTableau inner outer) (i k : ℕ) 
 /-- A row past the last row of the outer diagram is empty. -/
 theorem rowCount_eq_zero_of_colLen_le (T : SkewSemistandardYoungTableau inner outer) {i : ℕ}
     (hi : outer.colLen 0 ≤ i) (k : ℕ) : T.rowCount i k = 0 := by
-  simp [rowCount, YoungDiagram.rowLen_eq_zero_of_colLen_le hi]
+  simp [rowCount, YoungDiagram.rowLen_eq_zero_iff.mpr hi]
 
 /-- Summing the row counts over the letters below `x` counts the entries smaller than `x`. -/
 theorem sum_range_rowCount (T : SkewSemistandardYoungTableau inner outer) (i x : ℕ) :
@@ -429,7 +429,7 @@ theorem flatMap_range_rowReadingWord (T : SkewSemistandardYoungTableau inner out
   have hnil : ((List.range d).map (outer.colLen 0 + ·)).flatMap T.rowReadingWord = [] := by
     refine List.flatMap_eq_nil_iff.mpr fun r hr => ?_
     obtain ⟨r, -, rfl⟩ := List.mem_map.mp hr
-    simp [rowReadingWord_def, YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.le_add_right _ r)]
+    simp [rowReadingWord_def, YoungDiagram.rowLen_eq_zero_iff.mpr (Nat.le_add_right _ r)]
   rw [readingWord_def, List.range_add, List.flatMap_append, hnil, List.append_nil]
 
 /-- The rows above row `x`, followed by a prefix of row `x`, form a prefix of the reading word. -/

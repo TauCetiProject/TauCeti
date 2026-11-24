@@ -36,6 +36,13 @@ It also establishes faithfulness and epimorphism preservation for the base-chang
   family `U` whose second projections are jointly epimorphic);
 * `CategoryTheory.Over.preservesEpimorphisms_star`: `Over.star X` preserves epimorphisms whenever
   `X ⨯ -` does (in particular when epimorphisms in `C` are stable under base change).
+
+For a monomorphism `g`, the unit of `Over.map g ⊣ Over.pullback g` is an isomorphism
+(`CategoryTheory.Over.isIso_mapPullbackAdj_unit_app`).
+
+Finally, `CategoryTheory.IsPullback.overPullbackCompMapIso` is the Beck–Chevalley isomorphism of a
+pullback square `fst ≫ f = snd ≫ g`: `Over.pullback fst ⋙ Over.map snd ≅ Over.map f ⋙
+Over.pullback g`.
 -/
 
 public section
@@ -114,6 +121,19 @@ instance preservesEpimorphisms_pullback {X Y : C} (f : X ⟶ Y) [HasPullbacksAlo
       MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
         (isPullback_pullback_map_left f k).flip ‹_›
 
+/-- For a monomorphism `g`, the unit `A ⟶ g^*(g_! A)` of `Over.map g ⊣ Over.pullback g` is an
+isomorphism: the square with sides `𝟙 A`, `A ⟶ X`, `A ⟶ Y` and `g` is a pullback. -/
+instance isIso_mapPullbackAdj_unit_app {X Y : C} (g : X ⟶ Y) [HasPullbacksAlong g] [Mono g]
+    (A : Over X) : IsIso ((mapPullbackAdj g).unit.app A) := by
+  have h : IsPullback (𝟙 A.left) A.hom (A.hom ≫ g) g :=
+    IsPullback.of_horiz_isIso_mono ⟨by simp⟩
+  have hl : ((mapPullbackAdj g).unit.app A).left = h.isoPullback.hom := by
+    apply pullback.hom_ext <;> simp
+  have : IsIso ((forget X).map ((mapPullbackAdj g).unit.app A)) := by
+    rw [forget_map, hl]
+    infer_instance
+  exact isIso_of_reflects_iso _ (forget X)
+
 section HasBinaryProducts
 
 variable [HasBinaryProducts C]
@@ -147,5 +167,35 @@ instance preservesEpimorphisms_star (X : C) [(prod.functor.obj X).PreservesEpimo
 end HasBinaryProducts
 
 end Over
+
+namespace IsPullback
+
+variable {C : Type u} [Category.{v} C] {P X Y Z : C} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ Z}
+  {g : Y ⟶ Z} [HasPullbacksAlong fst] [HasPullbacksAlong g]
+
+/-- The Beck–Chevalley isomorphism of a pullback square `fst ≫ f = snd ≫ g`: base change along
+`fst` followed by composition with `snd` is composition with `f` followed by base change along
+`g`. On an object `A ⟶ X` it identifies `A ×_X P`, regarded over `Y` through `snd`, with
+`A ×_Z Y`. -/
+noncomputable def overPullbackCompMapIso (sq : IsPullback fst snd f g) :
+    Over.pullback fst ⋙ Over.map snd ≅ Over.map f ⋙ Over.pullback g :=
+  NatIso.ofComponents
+    (fun A ↦ Over.isoMk ((IsPullback.of_hasPullback A.hom fst).paste_vert sq).isoPullback
+      (by simp))
+    (fun u ↦ by ext1; apply pullback.hom_ext <;> simp)
+
+@[reassoc (attr := simp)]
+theorem overPullbackCompMapIso_hom_app_left_fst (sq : IsPullback fst snd f g) (A : Over X) :
+    (sq.overPullbackCompMapIso.hom.app A).left ≫ pullback.fst (A.hom ≫ f) g =
+      pullback.fst A.hom fst := by
+  simp [overPullbackCompMapIso]
+
+@[reassoc (attr := simp)]
+theorem overPullbackCompMapIso_hom_app_left_snd (sq : IsPullback fst snd f g) (A : Over X) :
+    (sq.overPullbackCompMapIso.hom.app A).left ≫ pullback.snd (A.hom ≫ f) g =
+      pullback.snd A.hom fst ≫ snd := by
+  simp [overPullbackCompMapIso]
+
+end IsPullback
 
 end CategoryTheory

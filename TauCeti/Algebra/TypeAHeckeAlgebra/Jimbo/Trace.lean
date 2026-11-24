@@ -12,6 +12,7 @@ public import TauCeti.KnotTheory.Jimbo.Trace
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.KnotTheory.Jimbo.Stabilization
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # The Turaev–Jimbo weighted trace on the type-A Hecke algebra
@@ -145,8 +146,8 @@ theorem commute_jimboEnhancement_jimbo (N : ℕ) (q : Rˣ) {n : ℕ} (x : TypeAH
     Commute (KnotTheory.jimboEnhancement (N := N) q) (jimbo (Fin N) q x) := by
   have hx : jimbo (Fin N) q x ∈
       Algebra.adjoin R (Set.range (jimbo (Fin N) q ∘ T (n := n) q)) := by
-    rw [Set.range_comp, ← AlgHom.map_adjoin, adjoin_range_T]
-    exact ⟨x, trivial, rfl⟩
+    rw [Set.range_comp, Algebra.adjoin_image_eq_range _ adjoin_range_T]
+    exact AlgHom.mem_range_self _ x
   refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx ?_
   rintro _ ⟨i, rfl⟩
   simpa only [Function.comp_apply, jimbo_T] using
