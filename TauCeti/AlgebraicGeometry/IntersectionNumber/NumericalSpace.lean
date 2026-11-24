@@ -19,8 +19,9 @@ likewise `N¹(X/k)_ℚ` and `N¹(X/k)_ℝ` for a proper scheme `X` over a field 
 groups are torsion-free, hence flat over `ℤ`, the maps `Num ⟶ N¹_ℚ ⟶ N¹_ℝ` are injective.
 
 Over a field, the intersection number `(α · C)` of a numerical class with an integral closed curve
-`C ⊆ X` extends to a `ℚ`-linear form on `N¹(X/k)_ℚ` and an `ℝ`-linear form on `N¹(X/k)_ℝ`,
-compatible with the inclusion `N¹(X/k)_ℚ ⟶ N¹(X/k)_ℝ`.
+`C ⊆ X` extends to an `A`-linear form on `A ⊗ Num(X/k)` for every commutative ring `A`, compatible
+with changes of coefficients; for `A = ℚ` and `A = ℝ` these are the `ℚ`-linear form on `N¹(X/k)_ℚ`
+and the `ℝ`-linear form on `N¹(X/k)_ℝ`, compatible with the inclusion `N¹(X/k)_ℚ ⟶ N¹(X/k)_ℝ`.
 
 ## Main definitions
 
@@ -30,9 +31,8 @@ compatible with the inclusion `N¹(X/k)_ℚ ⟶ N¹(X/k)_ℝ`.
   `N¹(X/S)_ℚ` and `N¹(X/S)_ℝ`;
 * `LineBundleClass.toRatNumericalClasses` and `LineBundleClass.ratToRealNumericalClasses`, and
   their relative versions: the maps `Num ⟶ N¹_ℚ ⟶ N¹_ℝ`;
-* `LineBundleClass.ratNumericalIntersectionNumber` and
-  `LineBundleClass.realNumericalIntersectionNumber`: the linear extensions of the intersection
-  number with a curve.
+* `LineBundleClass.numericalIntersectionNumberBaseChange`: the `A`-linear extension of the
+  intersection number with a curve to `A ⊗ Num(X/k)`, for any commutative ring `A`.
 
 ## Main results
 
@@ -93,60 +93,51 @@ theorem ratToRealNumericalClasses_tmul (q : ℚ)
 
 /-- **`Num(X/k)` embeds in `N¹(X/k)_ℚ`**, since `Num(X/k)` is torsion-free, hence flat over
 `ℤ`. -/
-theorem toRatNumericalClasses_injective : Function.Injective (toRatNumericalClasses k x) := by
-  have h := Module.Flat.rTensor_preserves_injective_linearMap
-    (M := Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x))
-    (Algebra.linearMap ℤ ℚ) (algebraMap ℤ ℚ).injective_int
-  convert h.comp (TensorProduct.lid ℤ _).symm.injective using 1
-  funext α
-  simp
+theorem toRatNumericalClasses_injective : Function.Injective (toRatNumericalClasses k x) :=
+  Module.Flat.tensorProduct_mk_injective ℤ _ ℚ
 
 /-- **`N¹(X/k)_ℚ` embeds in `N¹(X/k)_ℝ`**, since `Num(X/k)` is flat over `ℤ`. -/
 theorem ratToRealNumericalClasses_injective :
-    Function.Injective (ratToRealNumericalClasses k x) :=
-  Module.Flat.rTensor_preserves_injective_linearMap
-    (M := Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x))
-    ((Algebra.linearMap ℚ ℝ).restrictScalars ℤ) (algebraMap ℚ ℝ).injective
+    Function.Injective (ratToRealNumericalClasses k x) := by
+  rw [ratToRealNumericalClasses, AlgebraTensorModule.coe_rTensor]
+  exact Module.Flat.rTensor_preserves_injective_linearMap _ (algebraMap ℚ ℝ).injective
 
 variable {k} {C : Scheme.{u}} [IsIntegral C] [C.Over (Spec (.of k))] {i : C ⟶ X}
   [IsClosedImmersion i] (hi : C ↘ Spec (.of k) = i ≫ x) (hC : topologicalKrullDim C = 1)
 
-/-- The `ℚ`-linear intersection number `N¹(X/k)_ℚ ⟶ ℚ` with an integral closed curve `C ⊆ X`, the
-base change of the intersection number on `Num(X/k)`. -/
-def ratNumericalIntersectionNumber : RatNumericalClasses k x →ₗ[ℚ] ℚ :=
-  (Algebra.TensorProduct.rid ℤ ℚ ℚ).toLinearMap ∘ₗ
-    (numericalIntersectionNumberHom k hi hC).toIntLinearMap.baseChange ℚ
+/-- The intersection number `A ⊗ Num(X/k) ⟶ A` with an integral closed curve `C ⊆ X`, for a
+commutative ring `A`: the `A`-linear base change of the intersection number on `Num(X/k)`. For
+`A = ℚ` and `A = ℝ` it is the intersection number on `N¹(X/k)_ℚ` and `N¹(X/k)_ℝ`. -/
+def numericalIntersectionNumberBaseChange (A : Type*) [CommRing A] :
+    A ⊗[ℤ] Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x) →ₗ[A] A :=
+  (Algebra.TensorProduct.rid ℤ A A).toLinearMap ∘ₗ
+    (numericalIntersectionNumberHom k hi hC).toIntLinearMap.baseChange A
 
-/-- The `ℚ`-linear intersection number of `q ⊗ α` is `q · (α · C)`. -/
+/-- The base-changed intersection number of `a ⊗ α` is `a · (α · C)`. -/
 @[simp]
-theorem ratNumericalIntersectionNumber_tmul (q : ℚ)
+theorem numericalIntersectionNumberBaseChange_tmul {A : Type*} [CommRing A] (a : A)
     (α : Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x)) :
-    ratNumericalIntersectionNumber x hi hC (q ⊗ₜ α) =
-      q * numericalIntersectionNumber k hi hC α.toMul := by
-  simp [ratNumericalIntersectionNumber, mul_comm]
+    numericalIntersectionNumberBaseChange x hi hC A (a ⊗ₜ α) =
+      a * numericalIntersectionNumber k hi hC α.toMul := by
+  simp [numericalIntersectionNumberBaseChange, mul_comm]
 
-/-- The `ℝ`-linear intersection number `N¹(X/k)_ℝ ⟶ ℝ` with an integral closed curve `C ⊆ X`, the
-base change of the intersection number on `Num(X/k)`. -/
-def realNumericalIntersectionNumber : RealNumericalClasses k x →ₗ[ℝ] ℝ :=
-  (Algebra.TensorProduct.rid ℤ ℝ ℝ).toLinearMap ∘ₗ
-    (numericalIntersectionNumberHom k hi hC).toIntLinearMap.baseChange ℝ
-
-/-- The `ℝ`-linear intersection number of `r ⊗ α` is `r · (α · C)`. -/
-@[simp]
-theorem realNumericalIntersectionNumber_tmul (r : ℝ)
-    (α : Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x)) :
-    realNumericalIntersectionNumber x hi hC (r ⊗ₜ α) =
-      r * numericalIntersectionNumber k hi hC α.toMul := by
-  simp [realNumericalIntersectionNumber, mul_comm]
+/-- The base-changed intersection number is compatible with a change of coefficients `A ⟶ B`. -/
+theorem numericalIntersectionNumberBaseChange_rTensor {A B : Type*} [CommRing A] [CommRing B]
+    [Algebra A B] (v : A ⊗[ℤ] Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x)) :
+    numericalIntersectionNumberBaseChange x hi hC B
+        (AlgebraTensorModule.rTensor ℤ _ (Algebra.linearMap A B) v) =
+      algebraMap A B (numericalIntersectionNumberBaseChange x hi hC A v) := by
+  induction v using TensorProduct.inductionOn with
+  | tmul a α => simp
+  | add v w hv hw => simp only [map_add, hv, hw]
 
 /-- The real intersection number of the image of a rational numerical class is its rational
 intersection number. -/
-theorem realNumericalIntersectionNumber_ratToRealNumericalClasses (v : RatNumericalClasses k x) :
-    realNumericalIntersectionNumber x hi hC (ratToRealNumericalClasses k x v) =
-      ratNumericalIntersectionNumber x hi hC v := by
-  induction v using TensorProduct.inductionOn with
-  | tmul q α => simp
-  | add v w hv hw => simp only [map_add, hv, hw, Rat.cast_add]
+theorem numericalIntersectionNumberBaseChange_ratToRealNumericalClasses
+    (v : RatNumericalClasses k x) :
+    numericalIntersectionNumberBaseChange x hi hC ℝ (ratToRealNumericalClasses k x v) =
+      numericalIntersectionNumberBaseChange x hi hC ℚ v := by
+  rw [ratToRealNumericalClasses, numericalIntersectionNumberBaseChange_rTensor, eq_ratCast]
 
 end Absolute
 
@@ -189,20 +180,14 @@ theorem ratToRealRelNumericalClasses_tmul (q : ℚ)
 /-- **`Num(X/S)` embeds in `N¹(X/S)_ℚ`**, since `Num(X/S)` is torsion-free, hence flat over
 `ℤ`. -/
 theorem toRelRatNumericalClasses_injective :
-    Function.Injective (toRelRatNumericalClasses f) := by
-  have h := Module.Flat.rTensor_preserves_injective_linearMap
-    (M := Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f))
-    (Algebra.linearMap ℤ ℚ) (algebraMap ℤ ℚ).injective_int
-  convert h.comp (TensorProduct.lid ℤ _).symm.injective using 1
-  funext α
-  simp
+    Function.Injective (toRelRatNumericalClasses f) :=
+  Module.Flat.tensorProduct_mk_injective ℤ _ ℚ
 
 /-- **`N¹(X/S)_ℚ` embeds in `N¹(X/S)_ℝ`**, since `Num(X/S)` is flat over `ℤ`. -/
 theorem ratToRealRelNumericalClasses_injective :
-    Function.Injective (ratToRealRelNumericalClasses f) :=
-  Module.Flat.rTensor_preserves_injective_linearMap
-    (M := Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f))
-    ((Algebra.linearMap ℚ ℝ).restrictScalars ℤ) (algebraMap ℚ ℝ).injective
+    Function.Injective (ratToRealRelNumericalClasses f) := by
+  rw [ratToRealRelNumericalClasses, AlgebraTensorModule.coe_rTensor]
+  exact Module.Flat.rTensor_preserves_injective_linearMap _ (algebraMap ℚ ℝ).injective
 
 end Relative
 
