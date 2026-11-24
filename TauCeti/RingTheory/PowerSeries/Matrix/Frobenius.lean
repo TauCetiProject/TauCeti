@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.IsAlgClosed.FrobeniusFixedPoints
 public import TauCeti.RingTheory.PowerSeries.Matrix.Gauge
+import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -59,9 +60,11 @@ variable {k n : Type*} [Field k] [Fintype n] [DecidableEq n]
 private noncomputable def artinSchreierRoot (q : ℕ) (c : k) : k :=
   open Classical in if h : ∃ x : k, x ^ q - x = c then h.choose else 0
 
-private theorem artinSchreierRoot_spec [IsAlgClosed k] {q : ℕ} (hq : q ≠ 1) (c : k) :
-    artinSchreierRoot q c ^ q - artinSchreierRoot q c = c := by
-  have h := IsAlgClosed.exists_pow_sub_self_eq hq c
+private theorem artinSchreierRoot_spec [IsAlgClosed k] (p : ℕ) [CharP k p] {q : ℕ} (hpq : p ∣ q)
+    (hq : 2 ≤ q) (c : k) : artinSchreierRoot q c ^ q - artinSchreierRoot q c = c := by
+  obtain ⟨x, hx⟩ :=
+    IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C' p q 1 (-1) (-c) hpq hq (by simp)
+  have h : ∃ x : k, x ^ q - x = c := ⟨x, by linear_combination hx⟩
   rw [artinSchreierRoot, dite_eq_left_of_eq_true (eq_true h)]
   exact h.choose_spec
 
@@ -82,8 +85,9 @@ variable {p f}
 
 /-- If `A₀ σ(B₀) = B₀` with `B₀` invertible, the recursion `langCoeff` solves the equation
 `∑_{i + j = m + 1} Aᵢ σ(Bⱼ) = Bₘ₊₁` in every positive degree `m + 1`. -/
-private theorem langCoeff_succ [IsAlgClosed k] (hq : 1 < p ^ f) {A : Matrix n n k⟦X⟧}
-    {B₀ : Matrix n n k} (hAB₀ : A.map constantCoeff * B₀.map (iterateFrobenius k p f) = B₀)
+private theorem langCoeff_succ [IsAlgClosed k] [CharP k p] (hf : f ≠ 0) (hq : 1 < p ^ f)
+    {A : Matrix n n k⟦X⟧} {B₀ : Matrix n n k}
+    (hAB₀ : A.map constantCoeff * B₀.map (iterateFrobenius k p f) = B₀)
     (hdet : IsUnit B₀.det) (m : ℕ) :
     A.map constantCoeff * (langCoeff p f A B₀ (m + 1)).map (iterateFrobenius k p f) +
       ∑ x ∈ antidiagonal m,
@@ -104,7 +108,7 @@ private theorem langCoeff_succ [IsAlgClosed k] (hq : 1 < p ^ f) {A : Matrix n n 
     ext i j
     simp only [hY_def, Matrix.map_apply, Matrix.sub_apply, Matrix.neg_apply]
     rw [show σ _ = _ ^ p ^ f from iterateFrobenius_def p f _]
-    linear_combination artinSchreierRoot_spec hq.ne' (-((B₀⁻¹ * S) i j))
+    linear_combination artinSchreierRoot_spec p (dvd_pow_self p hf) hq (-((B₀⁻¹ * S) i j))
   have hlang : langCoeff p f A B₀ (m + 1) = B₀ * Y := by rw [langCoeff]
   rw [hS, hlang, Matrix.map_mul, ← Matrix.mul_assoc, hAB₀, hY, Matrix.mul_sub,
     ← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hdet, Matrix.one_mul, sub_add_cancel]
@@ -147,6 +151,6 @@ theorem exists_isUnit_mul_map_iterateFrobenius_eq (hf : f ≠ 0) {A : Matrix n n
   · rw [Finset.Nat.antidiagonal_zero, sum_singleton, hB 0, coeff_zero_eq_constantCoeff]
     simpa only [langCoeff] using hAB₀
   · rw [Finset.Nat.sum_antidiagonal_succ, hB, coeff_zero_eq_constantCoeff]
-    exact langCoeff_succ hq hAB₀ hdet m
+    exact langCoeff_succ hf hq hAB₀ hdet m
 
 end PowerSeries

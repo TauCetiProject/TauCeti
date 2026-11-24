@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.FixedPoints.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Perfect
 import TauCeti.LinearAlgebra.LinearIndependent.Iterate
 import TauCeti.LinearAlgebra.LinearMap.FixedPoints
@@ -43,8 +44,6 @@ trivial.
 
 ## Main results
 
-* `IsAlgClosed.exists_pow_sub_self_eq`: over an algebraically closed field the Artin–Schreier
-  type equation `x ^ n - x = c`, for `n ≠ 1`, has a solution.
 * `LinearMap.exists_ne_zero_isFixedPt_of_injective`: an injective Frobenius-semilinear map on a
   nonzero finite-dimensional space has a nonzero fixed vector.
 * `LinearMap.span_fixedPoints_eq_top_of_injective`: its fixed vectors span the space.
@@ -68,19 +67,6 @@ open Function Polynomial Submodule Module Finset
 namespace IsAlgClosed
 
 variable {k : Type*} [Field k] [IsAlgClosed k]
-
-/-- Over an algebraically closed field, the equation `x ^ n - x = c` has a solution for every `c`
-and every `n ≠ 1`. -/
-theorem exists_pow_sub_self_eq {n : ℕ} (hn : n ≠ 1) (c : k) : ∃ x : k, x ^ n - x = c := by
-  obtain _ | _ | n := n
-  · exact ⟨1 - c, by ring⟩
-  · exact absurd rfl hn
-  have hn : 1 < n + 2 := by omega
-  obtain ⟨x, hx⟩ := exists_root (X ^ (n + 2) - X - C c) (by
-    rw [degree_sub_C (by rw [degree_X_pow_sub_X hn]; exact_mod_cast (by omega : 0 < n + 2)),
-      degree_X_pow_sub_X hn]
-    exact_mod_cast (by omega : n + 2 ≠ 0))
-  exact ⟨x, by simpa [sub_eq_zero] using hx⟩
 
 /-- Over an algebraically closed field, for `q > 1` and coefficients `a₀, …, aₙ` not all zero, the
 equation `∑ aᵢ ^ (q ^ (n - i)) t ^ (q ^ (n - i + 1)) = t` has a nonzero solution `t`. -/
@@ -204,7 +190,8 @@ theorem span_fixedPoints_eq_top_of_injective [FiniteDimensional k V] (hf : f ≠
     rwa [IsFixedPt, mapQ_apply, ← sub_eq_zero, ← Submodule.Quotient.mk_sub,
       Submodule.Quotient.mk_eq_zero] at hy
   obtain ⟨n, c, g, hcg⟩ := mem_span_set'.1 hw
-  choose s hs using fun i ↦ IsAlgClosed.exists_pow_sub_self_eq hq.ne' (-c i)
+  choose s hs using fun i ↦ IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C' p (p ^ f) 1 (-1)
+    (c i) (dvd_pow_self p hf) hq (by simp)
   -- correcting `w` by the Artin–Schreier solutions gives a fixed vector
   have hfix : IsFixedPt F (w + ∑ i, s i • (g i : V)) := by
     have hg (i : Fin n) : F (g i) = g i := (g i).property
