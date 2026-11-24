@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Cone
-public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Reaction.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Data.Fin.Tuple.Reflection
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
