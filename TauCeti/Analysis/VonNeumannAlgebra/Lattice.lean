@@ -346,9 +346,8 @@ theorem eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant {M : VonNeumannAlgebr
   set L : Submodule ℂ H := L₀.topologicalClosure
   have hrange : ∀ w ∈ M.commutant, Set.MapsTo w (Set.range a) (Set.range a) := by
     rintro w hw _ ⟨ξ, rfl⟩
-    have hcomm : a * w = w * a := mem_commutant_iff.mp hw a ha
-    exact ⟨w ξ, (mul_apply_eq_comp a w ξ).symm.trans
-      ((DFunLike.congr_fun hcomm ξ).trans (mul_apply_eq_comp w a ξ))⟩
+    exact ⟨w ξ, by
+      simpa [mul_apply_eq_comp] using DFunLike.congr_fun (mem_commutant_iff.mp hw a ha) ξ⟩
   have hp_bot : L.starProjection ∈ (⊥ : VonNeumannAlgebra H) :=
     hM ▸ mem_inf.mpr
       ⟨M.starProjection_topologicalClosure_span_mem hrange,
@@ -363,20 +362,14 @@ theorem eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant {M : VonNeumannAlgebr
     rw [← L.starProjection_eq_self_iff.mpr hξ, hp0, zero_apply, zero_apply]
   · right
     have hker : L ≤ LinearMap.ker b.toLinearMap := by
-      refine Submodule.topologicalClosure_minimal _ ?_ (isClosed_singleton.preimage b.continuous)
-      rw [Submodule.span_le]
+      refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.mpr ?_)
+        (isClosed_singleton.preimage b.continuous)
       rintro _ ⟨x, hx, _, ⟨ξ, rfl⟩, rfl⟩
-      rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-      have hxb : x * b = b * x := mem_commutant_iff.mp hb x hx
       have hab' : b * a = 0 := (mem_commutant_iff.mp hb a ha).symm.trans hab
-      calc
-        b (x (a ξ)) = ((b * x) * a) ξ := by simp [mul_assoc]
-        _ = (x * (b * a)) ξ := by rw [← hxb, mul_assoc]
-        _ = 0 := by simp [hab']
+      simpa [SetLike.mem_coe, LinearMap.mem_ker, mul_apply_eq_comp, mul_assoc, hab'] using
+        DFunLike.congr_fun (congrArg (· * a) (mem_commutant_iff.mp hb x hx).symm) ξ
     ext v
-    have hvL : v ∈ L := by
-      rw [← L.starProjection_eq_self_iff, hp1, one_apply_eq_self]
-    exact hker hvL
+    exact hker (L.starProjection_eq_self_iff.mp (by rw [hp1, one_apply_eq_self]))
 
 /-- In a von Neumann algebra with scalar center, a product `a * b` with `a ∈ M` and
 `b ∈ M.commutant` vanishes if and only if `a = 0` or `b = 0`. -/

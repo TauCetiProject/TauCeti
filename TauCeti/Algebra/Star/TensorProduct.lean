@@ -55,7 +55,7 @@ noncomputable def mulStarAlgEquivOfCommute (S T : StarSubalgebra R A)
     apply Subtype.ext
     rw [TensorProduct.star_tmul, StarMemClass.coe_star, hf, hf, StarMemClass.coe_star,
       StarMemClass.coe_star, star_mul]
-    exact (hcomm (star (a : A)) (star_mem a.2) (star (b : A)) (star_mem b.2)).eq
+    exact (hcomm (star (a : A)) (star_mem a.property) (star (b : A)) (star_mem b.property)).eq
   | add x y hx hy =>
     rw [star_add, map_add, hx, hy, map_add, star_add]
 

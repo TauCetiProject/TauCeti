@@ -37,7 +37,8 @@ ray-class reciprocity.
   Picard class of the contraction to `O` of a prime `𝔭` of `𝓞 K` prime to `𝔣` maps to an
   arithmetic Frobenius at every prime above `𝔭` (`isArithFrobAt_ringClassArtinEquiv_picClass`).
   Hence `Gal(ringClassField O / K) ≃* Pic O` (`gal_ringClassField_equiv_pic`) and
-  `[ringClassField O : K] = #Pic O` (`finrank_ringClassField`), and the decomposition of
+  `[ringClassField O : K] = #Pic O` (`finrank_ringClassField`), so the ring class field
+  is `K` exactly when `Pic O` is trivial (`ringClassField_eq_bot_iff`). The decomposition of
   such a prime `𝔭` is read off `Pic O`: its residue degree in the ring class field is the order
   `f` of the Picard class of `𝔭 ∩ O` (`orderOf_picClass_eq_inertiaDeg`), and it has `#Pic O / f`
   primes above it (`ncard_primesOver_ringClassField_mul_orderOf_picClass`). In particular `𝔭`
@@ -85,6 +86,8 @@ one, cut out by ideals with a generator congruent to a rational integer modulo `
 * `TauCeti.ClassFieldTheory.gal_ringClassField_equiv_pic`: the Galois group of the ring class
   field is the Picard group of the order.
 * `TauCeti.ClassFieldTheory.finrank_ringClassField`: the degree is the order of `Pic O`.
+* `TauCeti.ClassFieldTheory.ringClassField_eq_bot_iff`: the ring class field is `K` itself exactly
+  when `Pic O` is trivial.
 * `TauCeti.ClassFieldTheory.orderOf_picClass_eq_inertiaDeg`,
   `TauCeti.ClassFieldTheory.ncard_primesOver_ringClassField_mul_orderOf_picClass`: the
   decomposition law of a prime not dividing the conductor.
@@ -122,7 +125,7 @@ def ringClassNormSubgroup : GlobalNormSubgroups K :=
 /-- The subgroup underlying `ringClassNormSubgroup O` is the kernel of the ring-class quotient. -/
 @[simp]
 theorem ringClassNormSubgroup_toSubgroup :
-    (ringClassNormSubgroup O).1.toSubgroup = (ringClassIdeleQuotient O).ker :=
+    (ringClassNormSubgroup O).val.toSubgroup = (ringClassIdeleQuotient O).ker :=
   (rfl)
 
 variable {O} in
@@ -139,12 +142,12 @@ kernel of the ring-class quotient `C_K → Pic O` under the global class-field c
 is, the unique finite abelian extension of `K` in `Kˢ` whose idele-class norm group is that kernel
 (`range_ideleClassNormMap_ringClassField`). -/
 def ringClassField : IntermediateField K (SeparableClosure K) :=
-  classField K (globalClassField (ringClassNormSubgroup O)).1
+  classField K (globalClassField (ringClassNormSubgroup O)).val
 
 /-- The ring class field of `O` is the class field of the value of the global correspondence at
 the kernel of the ring-class quotient. -/
 theorem ringClassField_def :
-    ringClassField O = classField K (globalClassField (ringClassNormSubgroup O)).1 :=
+    ringClassField O = classField K (globalClassField (ringClassNormSubgroup O)).val :=
   (rfl)
 
 /-- The ring class field of `O` is a finite extension of `K`. -/
@@ -157,7 +160,7 @@ instance numberField_ringClassField : NumberField (ringClassField O) :=
 
 /-- The ring class field of `O` is an abelian extension of `K`. -/
 instance isAbelianGalois_ringClassField : IsAbelianGalois K (ringClassField O) :=
-  isAbelianGalois_classField_iff.2 (globalClassField (ringClassNormSubgroup O)).2
+  isAbelianGalois_classField_iff.2 (globalClassField (ringClassNormSubgroup O)).property
 
 /-- **The norm group of the ring class field is the kernel of the ring-class quotient**: an idele
 class of `K` is a norm from the ring class field of `O` exactly when its ray class modulo the
@@ -270,6 +273,11 @@ theorem gal_ringClassField_equiv_pic : Nonempty (Gal(ringClassField O/K) ≃* Pi
 theorem finrank_ringClassField :
     Module.finrank K (ringClassField O) = Nat.card (Pic O) := by
   rw [← IsGalois.card_aut_eq_finrank, Nat.card_congr (ringClassArtinEquiv O).toEquiv]
+
+/-- **The ring class field of `O` is trivial exactly when `Pic O` is.** -/
+theorem ringClassField_eq_bot_iff : ringClassField O = ⊥ ↔ Subsingleton (Pic O) := by
+  rw [← IntermediateField.finrank_eq_one_iff, finrank_ringClassField, Nat.card_eq_one_iff_unique,
+    and_iff_left (One.instNonempty)]
 
 /-! ### The decomposition of primes -/
 

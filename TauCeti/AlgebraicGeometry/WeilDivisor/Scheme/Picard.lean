@@ -173,7 +173,7 @@ theorem exists_rationalTrivializationHom_app_eq
     exact ⟨0, Subsingleton.elim _ _⟩
   choose V t hV using fun x : W ↦ M.exists_mem_trivialization (x : X)
   let W' : W → X.Opens := fun x ↦ W ⊓ V x
-  have hW' : ∀ x, Nonempty (W' x) := fun x ↦ ⟨⟨x, x.2, hV x⟩⟩
+  have hW' : ∀ x, Nonempty (W' x) := fun x ↦ ⟨⟨x, x.property, hV x⟩⟩
   have hV' : ∀ x, Nonempty (V x) := fun x ↦ ⟨⟨x, hV x⟩⟩
   -- a local preimage of `q` over each `W' x`
   have hloc : ∀ x : W, ∃ s : Γ(M, W' x),

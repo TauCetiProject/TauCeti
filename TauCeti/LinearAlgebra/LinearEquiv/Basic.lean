@@ -26,6 +26,8 @@ Linear maps conjugate under linear equivalences have linearly equivalent kernels
 `LinearMap.kerEquivOfComp` and `LinearMap.cokerEquivOfComp`.
 Coordinate relabelling of function modules (`LinearEquiv.funCongrLeft`) is injective in the
 coordinate equivalence over a nontrivial target module.
+Following the identification of equal submodules by an inclusion is the other inclusion,
+`Submodule.subtype_comp_ofEq`.
 -/
 
 public section
@@ -105,6 +107,18 @@ theorem funCongrLeft_injective (R M : Type*) [Semiring R] [AddCommMonoid M] [Mod
   exact hm hj
 
 end LinearEquiv
+
+namespace Submodule
+
+/-- Following the identification `p ≃ q` of equal submodules by the inclusion of `q` is the
+inclusion of `p`. -/
+@[simp]
+theorem subtype_comp_ofEq {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {p q : Submodule R M} (h : p = q) :
+    q.subtype ∘ₗ (LinearEquiv.ofEq p q h).toLinearMap = p.subtype :=
+  LinearMap.ext fun x ↦ LinearEquiv.coe_ofEq_apply h x
+
+end Submodule
 
 namespace LinearMap
 

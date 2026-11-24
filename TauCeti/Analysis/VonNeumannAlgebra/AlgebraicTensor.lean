@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Star.TensorProduct
-public import TauCeti.Analysis.VonNeumannAlgebra.Density
 public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.Analysis.InnerProductSpace.RankOne
+import TauCeti.Analysis.VonNeumannAlgebra.Density
 
 /-!
 # Algebraic tensor products of a factor and its commutant
@@ -31,9 +31,9 @@ bimodule/subfactor tensor products.
   then every `v i` is `0`. Induction on the support uses the nonzero-product theorem
   (`VonNeumannAlgebra.eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant`) and reduces to the
   sandwich identity `u * x * v = v * x * u` for all `x ∈ M`, which extends by strong-operator
-  density of `M ⊔ M.commutant = ⊤` (`VonNeumannAlgebra.eq_of_mem_adjoin`) to all bounded operators
-  `T : H →L[ℂ] H`; evaluating against normalized rank-one operators (`TauCeti.rankOneDivNormSq`)
-  forces `v` to be a scalar multiple of `u`.
+  density of `M ⊔ M.commutant = ⊤` (`VonNeumannAlgebra.inner_apply_eq_of_mem_adjoin`) to all bounded
+  operators `T : H →L[ℂ] H`; evaluating against normalized rank-one operators
+  (`TauCeti.rankOneDivNormSq`) forces `v` to be a scalar multiple of `u`.
 * **Linear disjointness** (`VonNeumannAlgebra.linearDisjoint_commutant`,
   `VonNeumannAlgebra.linearDisjoint_of_subset_commutant`): `M` and `M.commutant`—and hence any
   `ℂ`-linear subspaces `V ≤ M` and `W ≤ M.commutant`, with no finite-dimensionality assumption—
@@ -79,33 +79,29 @@ private theorem exists_smul_eq_of_forall_mul_mul_eq {M : VonNeumannAlgebra H}
       (fun x hx y hy => by
         have hyu : y * u = u * y := (mem_commutant_iff.mp hy u hu).symm
         have hyv : y * v = v * y := (mem_commutant_iff.mp hy v hv).symm
-        calc
-          u * (x * y) * v = u * x * (y * v) := by simp only [mul_assoc]
-          _ = (u * x * v) * y := by rw [hyv]; simp only [mul_assoc]
+        calc u * (x * y) * v = (u * x * v) * y := by simp only [mul_assoc, hyv]
           _ = (v * x * u) * y := by rw [huv x hx]
-          _ = v * x * (u * y) := by simp only [mul_assoc]
-          _ = v * x * (y * u) := by rw [← hyu]
-          _ = v * (x * y) * u := by simp only [mul_assoc])
-      fun p₁ p₂ hp₁ hp₂ => by rw [mul_add, add_mul, hp₁, hp₂, mul_add, add_mul]
+          _ = v * (x * y) * u := by simp only [mul_assoc, ← hyu])
+      fun _ _ hp₁ hp₂ => by rw [mul_add, add_mul, hp₁, hp₂, mul_add, add_mul]
   let s : Set (H →L[ℂ] H) := (M : Set (H →L[ℂ] H)) ∪ M.commutant
-  have hadj_le : StarAlgebra.adjoin ℂ s ≤ M.toStarSubalgebra ⊔ M.commutant.toStarSubalgebra := by
-    refine StarAlgebra.adjoin_le ?_
-    rintro z (hz | hz)
-    · exact StarSubalgebra.mem_sup_left hz
-    · exact StarSubalgebra.mem_sup_right hz
-  have hadj_top : adjoin s = ⊤ := by
-    rw [← sup_eq_adjoin, sup_commutant_eq_top_iff]
-    exact hM
-  -- By strong-operator density (`eq_of_mem_adjoin`), the sandwich identity holds for all `T`.
+  have hadj_le : StarAlgebra.adjoin ℂ s ≤ M.toStarSubalgebra ⊔ M.commutant.toStarSubalgebra :=
+    StarAlgebra.adjoin_le <| Set.union_subset
+      (fun _ hz => StarSubalgebra.mem_sup_left hz) (fun _ hz => StarSubalgebra.mem_sup_right hz)
+  have hadj_top : adjoin s = ⊤ := by rwa [← sup_eq_adjoin, sup_commutant_eq_top_iff]
+  -- By strong-operator density (`inner_apply_eq_of_mem_adjoin`), the sandwich identity holds.
   have hB (T : H →L[ℂ] H) (ξ : H) : (u * T * v) ξ = (v * T * u) ξ :=
-    eq_of_mem_adjoin (hadj_top ▸ mem_top : T ∈ adjoin s) ![v ξ, u ξ]
-      (u.continuous.comp (continuous_apply 0)) (v.continuous.comp (continuous_apply 1))
-      fun t ht => by
+    ext_inner_left ℂ fun η => by
+      rw [mul_apply_eq_comp, mul_apply_eq_comp, ← u.adjoint_inner_left,
+        mul_apply_eq_comp, mul_apply_eq_comp, ← v.adjoint_inner_left]
+      exact inner_apply_eq_of_mem_adjoin (fun t ht => by
         have htP : t ∈ M.toStarSubalgebra.toSubmodule *
             M.commutant.toStarSubalgebra.toSubmodule := by
           rw [← StarSubalgebra.toSubmodule_sup_of_commute hcomm]
           exact hadj_le ht
-        simpa using DFunLike.congr_fun (hP t htP) ξ
+        rw [u.adjoint_inner_left, v.adjoint_inner_left, ← mul_apply_eq_comp u t,
+          ← mul_apply_eq_comp (u * t) v, ← mul_apply_eq_comp v t, ← mul_apply_eq_comp (v * t) u,
+          hP t htP])
+        (hadj_top ▸ mem_top : T ∈ adjoin s)
   -- Evaluate on normalized rank-one operators `R = |ξ⟩⟨u ξ₀| / ‖u ξ₀‖²` sending `u ξ₀ ↦ ξ`.
   obtain ⟨ξ₀, hξ₀⟩ : ∃ ξ₀ : H, u ξ₀ ≠ 0 := by
     by_contra! hall
@@ -130,17 +126,13 @@ private theorem sum_sub_mul_succ_eq_zero {M : VonNeumannAlgebra H} {n : ℕ}
     (hsum : ∑ k, v k * w k = 0) {x : H →L[ℂ] H} (hx : x ∈ M) :
     ∑ j : Fin n, (v 0 * x * v j.succ - v j.succ * x * v 0) * w j.succ = 0 := by
   have hleft : ∑ k : Fin (n + 1), (v 0 * x * v k) * w k = 0 := by
-    have := congrArg ((v 0 * x) * ·) hsum
-    simpa only [Finset.mul_sum, mul_zero, mul_assoc] using this
+    simpa only [Finset.mul_sum, mul_zero, mul_assoc] using congrArg ((v 0 * x) * ·) hsum
   have hright : ∑ k : Fin (n + 1), (v k * x * v 0) * w k = 0 := by
-    have := congrArg (· * (x * v 0)) hsum
-    rw [Finset.sum_mul, zero_mul] at this
-    refine (Finset.sum_congr rfl fun k _ => ?_).trans this
-    have hcomm : (x * v 0) * w k = w k * (x * v 0) :=
-      mem_commutant_iff.mp (hw k) (x * v 0) (M.mul_mem hx hv0)
-    calc
-      (v k * x * v 0) * w k = v k * ((x * v 0) * w k) := by simp only [mul_assoc]
-      _ = v k * (w k * (x * v 0)) := by rw [hcomm]
+    refine (Finset.sum_congr rfl fun k _ => ?_).trans
+      (by simpa only [Finset.sum_mul, zero_mul] using congrArg (· * (x * v 0)) hsum)
+    calc (v k * x * v 0) * w k = v k * ((x * v 0) * w k) := by simp only [mul_assoc]
+      _ = v k * (w k * (x * v 0)) := by
+        rw [mem_commutant_iff.mp (hw k) (x * v 0) (M.mul_mem hx hv0)]
       _ = v k * w k * (x * v 0) := by simp only [mul_assoc]
   have hsub := sub_eq_zero.mpr (hleft.trans hright.symm)
   rw [← Finset.sum_sub_distrib] at hsub
@@ -157,22 +149,14 @@ private theorem false_of_forall_succ_eq_smul_of_sum_mul_eq_zero {M : VonNeumannA
   have hw_comb : w 0 + ∑ j : Fin n, c j • w j.succ ∈ M.commutant :=
     add_mem (hw 0) (sum_mem fun j _ => SMulMemClass.smul_mem (c j) (hw j.succ))
   have hprod : v 0 * (w 0 + ∑ j : Fin n, c j • w j.succ) = 0 := by
-    calc
-      v 0 * (w 0 + ∑ j : Fin n, c j • w j.succ)
-          = v 0 * w 0 + ∑ j : Fin n, (c j • v 0) * w j.succ := by
-            rw [mul_add, Finset.mul_sum]
-            congr 1
-            refine Finset.sum_congr rfl fun j _ => ?_
-            rw [mul_smul_comm, smul_mul_assoc]
-      _ = v 0 * w 0 + ∑ j : Fin n, v j.succ * w j.succ := by simp_rw [← hc]
-      _ = ∑ k : Fin (n + 1), v k * w k := (Fin.sum_univ_succ fun k => v k * w k).symm
-      _ = 0 := hsum
+    rw [mul_add, Finset.mul_sum, Finset.sum_congr rfl fun j _ => by
+      rw [mul_smul_comm, ← smul_mul_assoc, ← hc]]
+    exact (Fin.sum_univ_succ fun k => v k * w k).symm.trans hsum
   have hw0 : w 0 + ∑ j : Fin n, c j • w j.succ = 0 :=
     (eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant hM hv0_mem hw_comb hprod).resolve_left hv0
   let coeff : Fin (n + 1) → ℂ := @Fin.cons n (fun _ => ℂ) 1 c
-  have hdep : ∑ k : Fin (n + 1), coeff k • w k = 0 := by
-    simpa [coeff, Fin.sum_univ_succ] using hw0
-  exact one_ne_zero (Fintype.linearIndependent_iff.mp hli coeff hdep 0)
+  exact one_ne_zero (Fintype.linearIndependent_iff.mp hli coeff
+    (by simpa [coeff, Fin.sum_univ_succ] using hw0) 0)
 
 /-- Finite-tuple form of linear disjointness: if `w : Fin n → H →L[ℂ] H` is a linearly independent
 tuple in `M.commutant` and `v : Fin n → H →L[ℂ] H` is a tuple in `M` with `∑ i, v i * w i = 0`,
@@ -187,20 +171,16 @@ private theorem eq_zero_of_sum_fin_mul_eq_zero {M : VonNeumannAlgebra H}
     -- `sum_sub_mul_succ_eq_zero`, deduce `v j.succ = c j • v 0` from the induction hypothesis and
     -- `exists_smul_eq_of_forall_mul_mul_eq`, and contradict linear independence of `w`.
     by_cases hv0 : v 0 = 0
-    · have hsum' : ∑ j : Fin n, v j.succ * w j.succ = 0 := by
-        simpa [Fin.sum_univ_succ, hv0] using hsum
-      have hall : ∀ j : Fin n, v j.succ = 0 :=
-        eq_zero_of_sum_fin_mul_eq_zero hM (fun j => hv j.succ) (fun j => hw j.succ)
-          (hli.comp Fin.succ (Fin.succ_injective n)) hsum'
-      exact Fin.cases hv0 hall i
+    · exact Fin.cases hv0 (eq_zero_of_sum_fin_mul_eq_zero hM (fun j => hv j.succ)
+        (fun j => hw j.succ) (hli.comp Fin.succ (Fin.succ_injective n))
+        (by simpa [Fin.sum_univ_succ, hv0] using hsum)) i
     · have hprop : ∀ j : Fin n, ∃ c : ℂ, v j.succ = c • v 0 := fun j =>
-        exists_smul_eq_of_forall_mul_mul_eq hM (hv 0) (hv j.succ) hv0 fun x hx => by
-          have hzero := eq_zero_of_sum_fin_mul_eq_zero hM
+        exists_smul_eq_of_forall_mul_mul_eq hM (hv 0) (hv j.succ) hv0 fun x hx =>
+          sub_eq_zero.mp <| eq_zero_of_sum_fin_mul_eq_zero hM
             (fun k => sub_mem (M.mul_mem (M.mul_mem (hv 0) hx) (hv k.succ))
               (M.mul_mem (M.mul_mem (hv k.succ) hx) (hv 0)))
             (fun k => hw k.succ) (hli.comp Fin.succ (Fin.succ_injective n))
-            (sum_sub_mul_succ_eq_zero (hv 0) hw hsum hx)
-          exact sub_eq_zero.mp (hzero j)
+            (sum_sub_mul_succ_eq_zero (hv 0) hw hsum hx) j
       choose c hc using hprop
       exact False.elim
         (false_of_forall_succ_eq_smul_of_sum_mul_eq_zero hM (hv 0) hv0 hw hli hsum c hc)
@@ -213,16 +193,12 @@ theorem eq_zero_of_sum_mul_eq_zero {M : VonNeumannAlgebra H} (hM : M ⊓ M.commu
     (hw : ∀ i ∈ s, w i ∈ M.commutant) (hli : LinearIndependent ℂ (fun i : s => w i))
     (hsum : ∑ i ∈ s, v i * w i = 0) : ∀ i ∈ s, v i = 0 := by
   let e : Fin s.card ≃ s := s.equivFin.symm
-  have hsum' : ∑ k : Fin s.card, v (e k) * w (e k) = 0 := by
-    calc
-      ∑ k : Fin s.card, v (e k) * w (e k) = ∑ x : s, v x * w x :=
-        e.sum_comp (fun x : s => v x * w x)
-      _ = ∑ i ∈ s, v i * w i := Finset.sum_coe_sort s (fun i => v i * w i)
-      _ = 0 := hsum
-  have hall := eq_zero_of_sum_fin_mul_eq_zero hM (fun k => hv (e k) (e k).2)
-    (fun k => hw (e k) (e k).2) (hli.comp e e.injective) hsum'
-  intro i hi
-  simpa using hall (e.symm ⟨i, hi⟩)
+  have hsum' : ∑ k : Fin s.card, v (e k) * w (e k) = 0 :=
+    (e.sum_comp fun x : s => v x * w x).trans
+      ((Finset.sum_coe_sort s fun i => v i * w i).trans hsum)
+  have hall := eq_zero_of_sum_fin_mul_eq_zero hM (fun k => hv (e k) (e k).property)
+    (fun k => hw (e k) (e k).property) (hli.comp e e.injective) hsum'
+  exact fun i hi => by simpa using hall (e.symm ⟨i, hi⟩)
 
 /-! ### Algebraic tensor product multiplication equivalences -/
 
@@ -238,8 +214,8 @@ theorem linearDisjoint_commutant {M : VonNeumannAlgebra H} (hM : M ⊓ M.commuta
   have hliW : LinearIndependent ℂ (fun i => (ℬ i : H →L[ℂ] H)) :=
     ℬ.linearIndependent.map' M.commutant.toStarSubalgebra.toSubmodule.subtype
       M.commutant.toStarSubalgebra.toSubmodule.ker_subtype
-  have hzero := eq_zero_of_sum_mul_eq_zero hM (fun i _ => (b i).2) (fun i _ => (ℬ i).2)
-    (hliW.comp Subtype.val Subtype.val_injective) hsum
+  have hzero := eq_zero_of_sum_mul_eq_zero hM (fun i _ => (b i).property)
+    (fun i _ => (ℬ i).property) (hliW.comp Subtype.val Subtype.val_injective) hsum
   refine Finsupp.ext fun i => ?_
   by_cases hi : i ∈ b.support
   · exact Subtype.ext (hzero i hi)

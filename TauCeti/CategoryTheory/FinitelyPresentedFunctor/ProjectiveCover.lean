@@ -326,7 +326,7 @@ private theorem exists_isRepresentableProjectiveCover_of_biproduct (n : ℕ) :
     classical
     obtain ⟨j, hj⟩ := exists_epi_of_not_isRepresentableProjectiveCover P hP p hmin
     exact ih _ (hn ▸ Fintype.card_subtype_lt (x := j) (by simp))
-      (Subtype.restrict (· ≠ j) P) rfl (fun k ↦ hP k.1) _ hj
+      (Subtype.restrict (· ≠ j) P) rfl (fun k ↦ hP k.val) _ hj
 
 /-- A quotient of the representable functor `(-, P₁ ⊞ ⋯ ⊞ Pₙ)` of a finite biproduct of objects
 with local endomorphism rings has a projective cover. -/

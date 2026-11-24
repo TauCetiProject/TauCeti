@@ -58,7 +58,7 @@ theorem continuous_smul {s : ∀ y, A.Fiber (b y)} {c : Y → 𝕜}
   have hb : Continuous b := A.continuous_proj.comp hs
   rw [A.continuous_mk_iff_rankStrata hb] at hs ⊢
   intro n
-  exact (hc.comp continuous_subtype_val).smul_totalSpace (hs n)
+  exact (hc.comp continuous_subtypeVal).smul_totalSpace (hs n)
 
 variable {A} {D : FiniteRankAtlas 𝕜 X}
 
@@ -126,6 +126,30 @@ instance : Preadditive (FiniteRankAtlas 𝕜 X) where
 
 @[simp] theorem fiberMap_zsmul (n : ℤ) (f : A ⟶ D) (x : X) :
     (n • f).fiberMap x = n • f.fiberMap x := (rfl)
+
+@[simp] theorem fiberCLM_zero (x : X) :
+    Hom.fiberCLM (0 : A ⟶ D) x = 0 := by
+  ext; simp
+
+@[simp] theorem fiberCLM_add (f g : A ⟶ D) (x : X) :
+    Hom.fiberCLM (f + g) x = f.fiberCLM x + g.fiberCLM x := by
+  ext; simp
+
+@[simp] theorem fiberCLM_neg (f : A ⟶ D) (x : X) :
+    Hom.fiberCLM (-f) x = -f.fiberCLM x := by
+  ext; simp
+
+@[simp] theorem fiberCLM_sub (f g : A ⟶ D) (x : X) :
+    Hom.fiberCLM (f - g) x = f.fiberCLM x - g.fiberCLM x := by
+  ext; simp
+
+@[simp] theorem fiberCLM_nsmul (n : ℕ) (f : A ⟶ D) (x : X) :
+    Hom.fiberCLM (n • f) x = n • f.fiberCLM x := by
+  ext; simp
+
+@[simp] theorem fiberCLM_zsmul (n : ℤ) (f : A ⟶ D) (x : X) :
+    Hom.fiberCLM (n • f) x = n • f.fiberCLM x := by
+  ext; simp
 
 /-- Evaluation on a fibre preserves the addition of bundle morphisms. -/
 instance (x : X) : (fiberFunctor (𝕜 := 𝕜) x).Additive where

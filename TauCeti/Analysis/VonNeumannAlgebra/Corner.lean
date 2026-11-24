@@ -124,12 +124,9 @@ private theorem norm_sum_apply_le_of_mem_centralizer {N : VonNeumannAlgebra H}
   have hX_apply (η : PiLp 2 (fun _ : Fin n ↦ U)) : X η = ∑ i : Fin n, x i (η i) := by
     simp only [X, sum_apply, comp_apply, U.coe_subtypeL, Submodule.coe_subtype, PiLp.proj_apply]
   have hX_single (j : Fin n) (w : U) : X (PiLp.single 2 j w) = x j w := by
-    rw [hX_apply, Finset.sum_eq_single j]
-    · simp
-    · intro i _ hij
-      simp [hij]
-    · intro hj
-      exact False.elim (hj (Finset.mem_univ j))
+    rw [hX_apply, Finset.sum_eq_single j (fun i _ hij ↦ by simp [hij])
+      (fun hj ↦ absurd (Finset.mem_univ j) hj)]
+    simp
   -- Every matrix entry of `X† ∘L X` is a compression from `N.commutant`, so `X† ∘L X` commutes
   -- with the diagonal amplification `Sₙ`.
   let A : PiLp 2 (fun _ : Fin n ↦ U) →L[ℂ] PiLp 2 (fun _ : Fin n ↦ U) := X.adjoint ∘L X
@@ -137,12 +134,9 @@ private theorem norm_sum_apply_le_of_mem_centralizer {N : VonNeumannAlgebra H}
       A.piLpEntry i j = (star (x i) * x j).compression U.subtypeL := by
     refine ContinuousLinearMap.ext fun w ↦ ext_inner_left ℂ fun v ↦ ?_
     have hsingle (ξ : PiLp 2 (fun _ : Fin n ↦ U)) : ⟪v, ξ i⟫_ℂ = ⟪PiLp.single 2 i v, ξ⟫_ℂ := by
-      rw [PiLp.inner_apply, Finset.sum_eq_single i]
-      · simp
-      · intro k _ hki
-        simp [hki]
-      · intro hi
-        exact False.elim (hi (Finset.mem_univ i))
+      rw [PiLp.inner_apply, Finset.sum_eq_single i (fun k _ hki ↦ by simp [hki])
+        (fun hi ↦ absurd (Finset.mem_univ i) hi)]
+      simp
     rw [piLpEntry_apply, hsingle, comp_apply, adjoint_inner_right, hX_single, hX_single,
       inner_compression_apply, mul_def, comp_apply, star_eq_adjoint, adjoint_inner_right,
       U.coe_subtypeL, Submodule.coe_subtype]
@@ -155,16 +149,14 @@ private theorem norm_sum_apply_le_of_mem_centralizer {N : VonNeumannAlgebra H}
   -- Conclude from the modulus norm inequality for `X` and contractivity of `diagStarAlgHom`.
   let η : PiLp 2 (fun _ : Fin n ↦ U) := WithLp.toLp 2 u
   have hSₙ_η : X (Sₙ η) = ∑ i : Fin n, x i (S (u i)) := by
-    rw [hX_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [PiLp.diagStarAlgHom_apply]
+    simp only [hX_apply, Sₙ, PiLp.diagStarAlgHom_apply, η]
   calc
     ‖∑ i : Fin n, x i (S (u i))‖ = ‖X (Sₙ η)‖ := by rw [hSₙ_η]
     _ ≤ ‖Sₙ‖ * ‖X η‖ := X.norm_apply_le_of_commute_adjoint_comp_self hAS η
     _ ≤ ‖S‖ * ‖X η‖ :=
       mul_le_mul_of_nonneg_right
         (NonUnitalStarAlgHom.norm_apply_le (PiLp.diagStarAlgHom ℂ U (Fin n)) S) (norm_nonneg _)
-    _ = ‖S‖ * ‖∑ i : Fin n, x i (u i)‖ := by rw [hX_apply]
+    _ = ‖S‖ * ‖∑ i : Fin n, x i (u i)‖ := by simp only [hX_apply, η]
 
 /-- Linear combination map `d ↦ ∑ x, x (d x)` from finitely supported `U`-valued tuples on
 `N.commutant` to `H`. -/
@@ -187,13 +179,13 @@ private theorem commutantOrbitMap_mapRange (N : VonNeumannAlgebra H) {U : Submod
 
 private theorem commutantOrbitMap_mapDomain_mul {N : VonNeumannAlgebra H} {U : Submodule ℂ H}
     {z : H →L[ℂ] H} (hz : z ∈ N.commutant) (d : N.commutant →₀ U) :
-    commutantOrbitMap N U (Finsupp.mapDomain (fun x : N.commutant ↦ ⟨z * x, mul_mem hz x.2⟩) d) =
+    commutantOrbitMap N U
+        (Finsupp.mapDomain (fun x : N.commutant ↦ ⟨z * x, mul_mem hz x.property⟩) d) =
       z (commutantOrbitMap N U d) := by
   rw [commutantOrbitMap, Finsupp.lsum_apply, Finsupp.lsum_apply,
     Finsupp.sum_mapDomain_index (fun _ ↦ by simp) (fun _ _ _ ↦ by simp [map_add]),
     Finsupp.sum, Finsupp.sum, map_sum]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  simp [LinearMap.comp_apply]
+  exact Finset.sum_congr rfl fun _ _ ↦ by simp [LinearMap.comp_apply]
 
 /-- Closed subspace of `H` spanned by the `N.commutant`-orbit of `U`. -/
 private noncomputable abbrev commutantOrbitClosure (N : VonNeumannAlgebra H) (U : Submodule ℂ H) :
@@ -217,13 +209,12 @@ private theorem starProjection_commutantOrbitClosure_mem (N : VonNeumannAlgebra 
     (commutantOrbitClosure N U).starProjection ∈ N := by
   have hrange : LinearMap.range (commutantOrbitMap N U) =
       Submodule.span ℂ {w : H | ∃ x ∈ N.commutant, ∃ v ∈ (U : Set H), x v = w} := by
-    refine le_antisymm ?_ ?_
-    · rintro _ ⟨d, rfl⟩
-      rw [commutantOrbitMap_apply]
-      exact sum_mem fun x _ ↦ Submodule.subset_span ⟨x.1, x.2, d x, (d x).2, rfl⟩
-    · rw [Submodule.span_le]
-      rintro _ ⟨x, hx, v, hv, rfl⟩
-      exact ⟨Finsupp.single ⟨x, hx⟩ ⟨v, hv⟩, by simp [commutantOrbitMap]⟩
+    refine le_antisymm (by
+        rintro _ ⟨d, rfl⟩; rw [commutantOrbitMap_apply]
+        exact sum_mem fun x _ ↦ Submodule.subset_span ⟨x.val, x.property, d x, (d x).property, rfl⟩)
+      (Submodule.span_le.mpr ?_)
+    rintro _ ⟨x, hx, v, hv, rfl⟩
+    exact ⟨Finsupp.single ⟨x, hx⟩ ⟨v, hv⟩, by simp [commutantOrbitMap]⟩
   unfold commutantOrbitClosure
   rw [hrange]
   simpa only [N.commutant_commutant] using
@@ -242,22 +233,19 @@ private theorem exists_apply_commutantOrbitCodRestrict_eq_of_mem_centralizer
     eK.comp (Finsupp.mapRange.linearMap S.toLinearMap)
   have h_norm (d : N.commutant →₀ U) : ‖fK d‖ ≤ ‖S‖ * ‖eK d‖ := by
     let e : Fin d.support.card ≃ d.support := d.support.equivFin.symm
-    have hΦ_fin : commutantOrbitMap N U d =
-        ∑ k : Fin d.support.card, ((e k).1 : H →L[ℂ] H) (d (e k).1) := by
-      rw [commutantOrbitMap_apply, ← Finset.sum_coe_sort d.support]
-      exact (e.sum_comp fun x : d.support ↦ (x.1 : H →L[ℂ] H) (d x.1)).symm
-    have hΨ_fin : commutantOrbitMap N U (d.mapRange S S.map_zero) =
-        ∑ k : Fin d.support.card, ((e k).1 : H →L[ℂ] H) (S (d (e k).1)) := by
-      rw [commutantOrbitMap_mapRange, ← Finset.sum_coe_sort d.support]
-      exact (e.sum_comp fun x : d.support ↦ (x.1 : H →L[ℂ] H) (S (d x.1))).symm
+    have hΦ : commutantOrbitMap N U d = ∑ k, ((e k).val : H →L[ℂ] H) (d (e k).val) := by
+      rw [commutantOrbitMap_apply, ← Finset.sum_coe_sort, ← e.sum_comp]
+    have hΨ : commutantOrbitMap N U (d.mapRange S S.map_zero) =
+        ∑ k, ((e k).val : H →L[ℂ] H) (S (d (e k).val)) := by
+      rw [commutantOrbitMap_mapRange, ← Finset.sum_coe_sort, ← e.sum_comp]
     rw [← Submodule.norm_coe (fK d), ← Submodule.norm_coe (eK d)]
     simpa only [eK, fK, commutantOrbitCodRestrict, LinearMap.comp_apply,
       Finsupp.mapRange.linearMap_apply, ContinuousLinearMap.coe_coe, LinearMap.codRestrict_apply,
-      hΨ_fin, hΦ_fin] using
-      norm_sum_apply_le_of_mem_centralizer hS (fun k ↦ ((e k).1 : H →L[ℂ] H))
-        (fun k ↦ (e k).1.2) (fun k ↦ d (e k).1)
-  refine ⟨fK.extendOfNorm eK, fun d ↦ ?_⟩
-  exact LinearMap.extendOfNorm_eq (denseRange_commutantOrbitCodRestrict N U) ⟨‖S‖, h_norm⟩ d
+      hΨ, hΦ] using
+      norm_sum_apply_le_of_mem_centralizer hS (fun k ↦ ((e k).val : H →L[ℂ] H))
+        (fun k ↦ (e k).val.property) (fun k ↦ d (e k).val)
+  exact ⟨fK.extendOfNorm eK, fun d ↦
+    LinearMap.extendOfNorm_eq (denseRange_commutantOrbitCodRestrict N U) ⟨‖S‖, h_norm⟩ d⟩
 
 /-- The dense extension `Y` on `commutantOrbitClosure N U` commutes with the compression of every
 operator in `N.commutant`. -/
@@ -282,7 +270,7 @@ private theorem commute_compression_of_forall_apply_commutantOrbitCodRestrict
   obtain ⟨d, rfl⟩ := hv
   apply Subtype.ext
   simp only [mul_apply_eq_comp]
-  let mulDom : N.commutant → N.commutant := fun x ↦ ⟨z * x, mul_mem hz x.2⟩
+  let mulDom : N.commutant → N.commutant := fun x ↦ ⟨z * x, mul_mem hz x.property⟩
   have heK_zd : z.compression K.subtypeL (commutantOrbitCodRestrict N U d) =
       commutantOrbitCodRestrict N U (Finsupp.mapDomain mulDom d) := by
     apply Subtype.ext
@@ -308,31 +296,26 @@ private theorem centralizer_image_compression_commutant_of_mem_commutant {N : Vo
     have hyN : y ∈ N := by
       rw [← N.commutant_commutant, mem_commutant_iff]
       intro z hz
-      exact (K.commute_extendByZero_iff_of_commute Y
-        (mem_commutant_iff.mp hz K.starProjection
-          (starProjection_commutantOrbitClosure_mem N U))).mpr
-        (commute_compression_of_forall_apply_commutantOrbitCodRestrict hY hz)
+      exact ((K.commute_extendByZero_iff_of_commute
+        (mem_commutant_iff.mp hz K.starProjection (starProjection_commutantOrbitClosure_mem N U))
+        Y).mpr (by
+          rw [← compression_subtypeL]
+          exact (commute_compression_of_forall_apply_commutantOrbitCodRestrict hY hz).symm)).symm.eq
     -- On `U ⊆ K` (`x = 1`), `y` agrees with `S`, so `y.compression U.subtypeL = S`.
     refine ⟨y, hyN, compression_eq_of_isometry_of_forall_apply_eq U.subtypeₗᵢ.isometry fun u ↦ ?_⟩
     let d₀ : N.commutant →₀ U := Finsupp.single ⟨1, N.commutant.one_mem⟩ u
-    have hΦ₀ : (commutantOrbitCodRestrict N U d₀ : H) = u := by
+    have h₀ : y (U.subtypeL u) = y (commutantOrbitCodRestrict N U d₀) := by
       simp [commutantOrbitCodRestrict, commutantOrbitMap, d₀]
-    have hΨ₀ : (commutantOrbitCodRestrict N U (d₀.mapRange S S.map_zero) : H) = S u := by
-      simp [commutantOrbitCodRestrict, commutantOrbitMap, d₀]
-    calc
-      y (U.subtypeL u) = y (commutantOrbitCodRestrict N U d₀) := by
-        rw [U.coe_subtypeL, Submodule.coe_subtype, hΦ₀]
-      _ = (Y (commutantOrbitCodRestrict N U d₀) : H) := K.extendByZero_apply_coe Y _
-      _ = U.subtypeL (S u) := by rw [hY, hΨ₀, U.coe_subtypeL, Submodule.coe_subtype]
+    rw [h₀, K.extendByZero_apply_coe, hY]
+    simp [commutantOrbitCodRestrict, commutantOrbitMap, d₀]
   · -- Conversely, compressing any `y ∈ N` commutes with compressing `N.commutant` since `U`
     -- reduces `N`.
     rintro _ ⟨y, hy, rfl⟩
     rw [Set.mem_centralizer_iff]
     rintro _ ⟨x, hx, rfl⟩
     have hpy : Commute U.starProjection y := (mem_commutant_iff.mp hp y hy).symm
-    have hxy : x * y = y * x := (mem_commutant_iff.mp hx y hy).symm
-    rw [← U.compression_subtypeL_mul_of_commute_right x hpy, hxy,
-      U.compression_subtypeL_mul_of_commute_left x hpy]
+    rw [← U.compression_subtypeL_mul_of_commute_right x hpy,
+      (mem_commutant_iff.mp hx y hy).symm, U.compression_subtypeL_mul_of_commute_left x hpy]
 
 private theorem centralizer_image_compression_commutant {M : VonNeumannAlgebra H}
     {U : Submodule ℂ H} [CompleteSpace U]
@@ -420,31 +403,24 @@ theorem corner_bot (U : Submodule ℂ H) [CompleteSpace U]
   ext T
   simp only [Set.mem_image, Set.mem_range, Algebra.algebraMap_eq_smul_one]
   constructor
-  · rintro ⟨_, ⟨c, rfl⟩, rfl⟩
-    exact ⟨c, by rw [compression_smul, compression_one_subtypeL]⟩
-  · rintro ⟨c, rfl⟩
-    exact ⟨c • 1, ⟨c, rfl⟩, by rw [compression_smul, compression_one_subtypeL]⟩
+  · rintro ⟨_, ⟨c, rfl⟩, rfl⟩; exact ⟨c, by rw [compression_smul, compression_one_subtypeL]⟩
+  · rintro ⟨c, rfl⟩; exact ⟨c • 1, ⟨c, rfl⟩, by rw [compression_smul, compression_one_subtypeL]⟩
 
 /-- The corner of `⊤ = B(H)` on `U` is `⊤ = B(U)`. -/
 @[simp]
 theorem corner_top (U : Submodule ℂ H) [CompleteSpace U]
     (hU : U.starProjection ∈ (⊤ : VonNeumannAlgebra H) ∨
       U.starProjection ∈ (⊤ : VonNeumannAlgebra H).commutant) :
-    (⊤ : VonNeumannAlgebra H).corner U hU = ⊤ := by
-  apply SetLike.coe_injective
-  rw [coe_corner, coe_top, coe_top]
-  ext T
-  simp only [Set.mem_image, Set.mem_univ, true_and, iff_true]
-  exact ⟨U.extendByZero T, U.compression_extendByZero_subtypeL T⟩
+    (⊤ : VonNeumannAlgebra H).corner U hU = ⊤ :=
+  eq_top_iff.mpr fun T _ ↦
+    mem_corner_iff.mpr ⟨U.extendByZero T, mem_top, U.compression_extendByZero_subtypeL T⟩
 
 /-- Passing to a corner on `U` is monotone in the von Neumann algebra. -/
 theorem corner_mono {M N : VonNeumannAlgebra H} {U : Submodule ℂ H} [CompleteSpace U]
     {hM : U.starProjection ∈ M ∨ U.starProjection ∈ M.commutant}
     {hN : U.starProjection ∈ N ∨ U.starProjection ∈ N.commutant} (hMN : M ≤ N) :
-    M.corner U hM ≤ N.corner U hN := by
-  intro T hT
-  obtain ⟨x, hx, rfl⟩ := mem_corner_iff.mp hT
-  exact mem_corner_iff.mpr ⟨x, hMN hx, rfl⟩
+    M.corner U hM ≤ N.corner U hN :=
+  fun _ hT ↦ let ⟨x, hx, hTx⟩ := mem_corner_iff.mp hT; mem_corner_iff.mpr ⟨x, hMN hx, hTx⟩
 
 /-- Auxiliary witness that `U.starProjection ∈ (M ⊓ M.commutant).commutant` whenever
 `U.starProjection ∈ M ∨ U.starProjection ∈ M.commutant`. -/
@@ -510,30 +486,26 @@ private theorem corner_inf_commutant_of_mem {M : VonNeumannAlgebra H} {U : Submo
       have hyL : y * L.starProjection = L.starProjection * y :=
         (mem_commutant_iff.mp hy L.starProjection hL_M').symm
       have hcomm_comp : Commute (b.compression U.subtypeL) (y.compression U.subtypeL) := by
-        have hb_mem : b.compression U.subtypeL ∈ (M.corner U (.inl hp)).commutant := by
-          rw [commutant_corner]
-          exact compression_mem_corner _ hb
         rw [commute_iff_eq]
-        exact (mem_commutant_iff.mp hb_mem _ hTM).symm
+        exact (mem_commutant_iff.mp (commutant_corner M U (.inl hp) ▸ compression_mem_corner _ hb)
+          _ hTM).symm
       have eqOnL := mul_eqOn_topologicalClosure_span_of_commute_compression hp hb hy hcomm_comp
       refine ContinuousLinearMap.ext fun ξ ↦ ?_
-      have hb_z : (b * z) ξ = (b * y) (L.starProjection ξ) := by
-        rw [hz_def, ← hyL, ← mul_assoc, mul_apply_eq_comp]
-      have hz_b : (z * b) ξ = (y * b) (L.starProjection ξ) := by
-        rw [hz_def, ← hyL, mul_assoc, ← hbL, ← mul_assoc, mul_apply_eq_comp]
-      rw [hb_z, hz_b, eqOnL _ (L.starProjection_apply_mem ξ)]
+      rw [show (b * z) ξ = (b * y) (L.starProjection ξ) by
+          rw [hz_def, ← hyL, ← mul_assoc, mul_apply_eq_comp],
+        show (z * b) ξ = (y * b) (L.starProjection ξ) by
+          rw [hz_def, ← hyL, mul_assoc, ← hbL, ← mul_assoc, mul_apply_eq_comp],
+        eqOnL _ (L.starProjection_apply_mem ξ)]
     -- Since `U ⊆ L`, `z` and `y` have the same compression to `U`.
     rw [mem_corner_iff]
     refine ⟨z, mem_inf.mpr ⟨hzM, hzM'⟩, compression_eq_of_forall_apply_eq fun u ↦ ?_⟩
     have huL : (u : H) ∈ L := Submodule.le_topologicalClosure _
-      (Submodule.subset_span ⟨1, M.one_mem, u, u.2, one_apply_eq_self _⟩)
-    have hyL : L.starProjection * y = y * L.starProjection :=
-      mem_commutant_iff.mp hy L.starProjection hL_M'
-    rw [U.coe_subtypeL, Submodule.coe_subtype, hz_def, hyL, mul_apply_eq_comp,
+      (Submodule.subset_span ⟨1, M.one_mem, u, u.property, one_apply_eq_self _⟩)
+    rw [U.coe_subtypeL, Submodule.coe_subtype, hz_def,
+      mem_commutant_iff.mp hy L.starProjection hL_M', mul_apply_eq_comp,
       L.starProjection_eq_self_iff.mpr huL]
-  · refine le_inf (corner_mono inf_le_left) ?_
-    rw [commutant_corner]
-    exact corner_mono inf_le_right
+  · exact le_inf (corner_mono inf_le_left)
+      (commutant_corner M U (.inl hp) ▸ corner_mono inf_le_right)
 
 /-- **The center of a corner is the corner of the center.** -/
 theorem corner_inf_commutant (M : VonNeumannAlgebra H) (U : Submodule ℂ H) [CompleteSpace U]
@@ -542,14 +514,13 @@ theorem corner_inf_commutant (M : VonNeumannAlgebra H) (U : Submodule ℂ H) [Co
       (M ⊓ M.commutant).corner U (.inr (starProjection_mem_commutant_inf_commutant hU)) := by
   rcases hU with hp | hp
   · exact corner_inf_commutant_of_mem hp
-  · have h1 := corner_inf_commutant_of_mem (M := M.commutant) hp
-    have hcomm : (M.corner U (.inr hp)).commutant = M.commutant.corner U (.inl hp) := by
+  · have hcomm : (M.corner U (.inr hp)).commutant = M.commutant.corner U (.inl hp) := by
       simpa using commutant_corner M U (.inr hp)
-    have hcomm2 : (M.commutant.corner U (.inl hp)).commutant = M.corner U (.inr hp) := by
-      rw [← hcomm, commutant_commutant]
-    rw [hcomm2, inf_comm] at h1
-    rw [hcomm, h1]
-    exact corner_congr (by rw [M.commutant_commutant, inf_comm])
+    have h1 := corner_inf_commutant_of_mem (M := M.commutant) hp
+    rw [show (M.commutant.corner U (.inl hp)).commutant = M.corner U (.inr hp) by
+      rw [← hcomm, commutant_commutant], inf_comm] at h1
+    exact (congrArg (M.corner U (.inr hp) ⊓ ·) hcomm).trans <|
+      h1.trans <| corner_congr (by rw [M.commutant_commutant, inf_comm])
 
 /-- **Corners preserve having scalar center:** if `M ⊓ M.commutant = ⊥`, then any corner
 `M.corner U hU` also has scalar center `M.corner U hU ⊓ (M.corner U hU).commutant = ⊥` (so
@@ -573,7 +544,7 @@ noncomputable def compressionStarAlgHom (M : VonNeumannAlgebra H) (U : Submodule
   map_one' := compression_one_subtypeL U
   map_mul' x y :=
     U.compression_subtypeL_mul_of_commute_left (y : H →L[ℂ] H)
-      (mem_commutant_iff.mp hp x x.2).symm
+      (mem_commutant_iff.mp hp x x.property).symm
   map_zero' := compression_zero U.subtypeL
   map_add' x y := compression_add (x : H →L[ℂ] H) U.subtypeL (y : H →L[ℂ] H)
   commutes' c := by
@@ -595,7 +566,7 @@ theorem compressionStarAlgHom_range (M : VonNeumannAlgebra H) (U : Submodule ℂ
     (M.compressionStarAlgHom U hp).range = (M.corner U (.inr hp)).toStarSubalgebra := by
   ext T
   rw [mem_carrier, SetLike.mem_coe, mem_corner_iff]
-  exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, x.2, by simpa using hx⟩,
+  exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.val, x.property, by simpa using hx⟩,
     fun ⟨x, hx, hTx⟩ ↦ ⟨⟨x, hx⟩, by simpa using hTx⟩⟩
 
 /-- `compressionStarAlgHom` is continuous with respect to the ultraweak operator topologies on `M`
@@ -604,9 +575,10 @@ and `U →L[ℂ] U`. -/
 theorem continuous_ultraweak_compressionStarAlgHom (M : VonNeumannAlgebra H) (U : Submodule ℂ H)
     [CompleteSpace U] (hp : U.starProjection ∈ M.commutant) :
     Continuous fun A : {A : ContinuousLinearMapUltraweak ℂ H H // A.toCLM ∈ M} ↦
-      ContinuousLinearMapUltraweak.ofCLM (M.compressionStarAlgHom U hp ⟨A.1.toCLM, A.2⟩) := by
+      ContinuousLinearMapUltraweak.ofCLM
+        (M.compressionStarAlgHom U hp ⟨A.val.toCLM, A.property⟩) := by
   simp only [compressionStarAlgHom_apply]
-  exact (ContinuousLinearMapUltraweak.continuous_compression U.subtypeL).comp continuous_subtype_val
+  exact (ContinuousLinearMapUltraweak.continuous_compression U.subtypeL).comp continuous_subtypeVal
 
 /-- `compressionStarAlgHom` is continuous with respect to the weak operator topologies on `M` and
 `U →L[ℂ] U`. -/
@@ -614,9 +586,9 @@ theorem continuous_ultraweak_compressionStarAlgHom (M : VonNeumannAlgebra H) (U 
 theorem continuous_wot_compressionStarAlgHom (M : VonNeumannAlgebra H) (U : Submodule ℂ H)
     [CompleteSpace U] (hp : U.starProjection ∈ M.commutant) :
     Continuous fun A : {A : H →WOT[ℂ] H // A.toCLM ∈ M} ↦
-      ContinuousLinearMapWOT.ofCLM (M.compressionStarAlgHom U hp ⟨A.1.toCLM, A.2⟩) := by
+      ContinuousLinearMapWOT.ofCLM (M.compressionStarAlgHom U hp ⟨A.val.toCLM, A.property⟩) := by
   simp only [compressionStarAlgHom_apply]
-  exact (ContinuousLinearMapWOT.continuous_compression U.subtypeL).comp continuous_subtype_val
+  exact (ContinuousLinearMapWOT.continuous_compression U.subtypeL).comp continuous_subtypeVal
 
 /-- **Faithfulness of induction for factors.** If `M ⊓ M.commutant = ⊥`, `U` is a nontrivial closed
 subspace, and `U.starProjection ∈ M.commutant`, then `M.compressionStarAlgHom U hp` is injective. -/
@@ -628,12 +600,12 @@ theorem compressionStarAlgHom_injective {M : VonNeumannAlgebra H} (hM : M ⊓ M.
   have hp0 : U.starProjection ≠ 0 := U.starProjection_ne_zero_iff.mpr ‹_›
   have hprod : (x : H →L[ℂ] H) * U.starProjection = 0 := by
     have hpx : Commute U.starProjection (x : H →L[ℂ] H) :=
-      (mem_commutant_iff.mp hp x x.2).symm
+      (mem_commutant_iff.mp hp x x.property).symm
     have hce := U.extendByZero_compression_subtypeL (x : H →L[ℂ] H)
     rw [hx, map_zero, hpx.eq, mul_assoc, U.isIdempotentElem_starProjection.eq] at hce
     exact hce.symm
   exact Subtype.ext
-    ((eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant hM x.2 hp hprod).resolve_right hp0)
+    ((eq_zero_or_eq_zero_of_mul_eq_zero_of_mem_commutant hM x.property hp hprod).resolve_right hp0)
 
 /-- When `M ⊓ M.commutant = ⊥`, `U` is nontrivial, and `U.starProjection ∈ M.commutant`, compression
 gives a unital `⋆`-algebra isomorphism `M ≃⋆ₐ[ℂ] M.corner U (.inr hp)`. -/
@@ -689,8 +661,7 @@ theorem adjoin_image_compression_of_mem_commutant {s : Set (H →L[ℂ] H)} {U :
   apply commutant_involutive.injective
   rw [commutant_corner]
   apply SetLike.coe_injective
-  have hp' : U.starProjection ∈ (s ∪ star s).centralizer := by
-    rwa [← coe_commutant_adjoin]
+  have hp' : U.starProjection ∈ (s ∪ star s).centralizer := coe_commutant_adjoin s ▸ hp
   ext T
   rw [coe_commutant_adjoin, star_image_compression, ← Set.image_union,
     U.mem_centralizer_image_compression_subtypeL_iff_of_commute (fun y hy ↦ (hp' y hy).symm),
@@ -708,45 +679,33 @@ theorem adjoin_image_compression_of_mul_mem {s : Set (H →L[ℂ] H)} (hstar : s
     (hU : U.starProjection ∈ adjoin s ∨ U.starProjection ∈ (adjoin s).commutant) :
     adjoin ((·.compression U.subtypeL) '' s) = (adjoin s).corner U hU := by
   let W : VonNeumannAlgebra U := adjoin ((·.compression U.subtypeL) '' s)
-  refine le_antisymm (adjoin_le_iff.mpr ?_) ?_
-  · rintro _ ⟨x, hx, rfl⟩
-    exact compression_mem_corner hU (subset_adjoin s hx)
-  · intro T hT
-    obtain ⟨x, hx, rfl⟩ := mem_corner_iff.mp hT
-    have hx_cl : ContinuousLinearMapWOT.ofCLM x ∈
-        closure (ContinuousLinearMapWOT.ofCLM '' (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H))) := by
-      rw [← image_ofCLM_adjoin_eq_closure]
-      exact ⟨x, hx, rfl⟩
-    let f : (H →WOT[ℂ] H) → (U →WOT[ℂ] U) :=
-      fun A ↦ ContinuousLinearMapWOT.ofCLM (A.toCLM.compression U.subtypeL)
-    have hf : Continuous f := ContinuousLinearMapWOT.continuous_compression U.subtypeL
-    have hclosed : IsClosed (f ⁻¹' (ContinuousLinearMapWOT.ofCLM '' (W : Set (U →L[ℂ] U)))) :=
-      W.isClosed_image_ofCLM.preimage hf
-    have hspan : (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H)) =
-        (Submodule.span ℂ (insert 1 s) : Set (H →L[ℂ] H)) :=
-      congrArg SetLike.coe (StarAlgebra.adjoin_eq_span_of_mul_mem hstar hmul)
-    have hsub : ContinuousLinearMapWOT.ofCLM '' (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H)) ⊆
-        f ⁻¹' (ContinuousLinearMapWOT.ofCLM '' (W : Set (U →L[ℂ] U))) := by
-      rw [hspan]
-      rintro _ ⟨y, hy, rfl⟩
-      refine ⟨y.compression U.subtypeL, ?_, rfl⟩
-      induction hy using Submodule.span_induction with
-      | mem a ha =>
-        rcases ha with rfl | ha
-        · rw [compression_one_subtypeL]
-          exact W.one_mem
-        · exact subset_adjoin _ ⟨a, ha, rfl⟩
-      | zero =>
-        rw [compression_zero]
-        exact W.zero_mem
-      | add a b _ _ iha ihb =>
-        rw [compression_add]
-        exact W.add_mem iha ihb
-      | smul c a _ iha =>
-        rw [compression_smul]
-        exact SMulMemClass.smul_mem c iha
-    obtain ⟨T, hTW, hTf⟩ := closure_minimal hsub hclosed hx_cl
-    have hTx : T = x.compression U.subtypeL := ContinuousLinearMapWOT.ofCLM_injective hTf
-    exact hTx ▸ hTW
+  refine le_antisymm (adjoin_le_iff.mpr fun _ ⟨x, hx, hTx⟩ ↦
+    hTx ▸ compression_mem_corner hU (subset_adjoin s hx)) fun T hT ↦ ?_
+  obtain ⟨x, hx, rfl⟩ := mem_corner_iff.mp hT
+  have hx_cl : ContinuousLinearMapWOT.ofCLM x ∈
+      closure (ContinuousLinearMapWOT.ofCLM '' (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H))) :=
+    image_ofCLM_adjoin_eq_closure s ▸ ⟨x, hx, rfl⟩
+  let f : (H →WOT[ℂ] H) → (U →WOT[ℂ] U) :=
+    fun A ↦ ContinuousLinearMapWOT.ofCLM (A.toCLM.compression U.subtypeL)
+  have hclosed : IsClosed (f ⁻¹' (ContinuousLinearMapWOT.ofCLM '' (W : Set (U →L[ℂ] U)))) :=
+    W.isClosed_image_ofCLM.preimage (ContinuousLinearMapWOT.continuous_compression U.subtypeL)
+  have hspan : (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H)) =
+      (Submodule.span ℂ (insert 1 s) : Set (H →L[ℂ] H)) :=
+    congrArg SetLike.coe (StarAlgebra.adjoin_eq_span_of_mul_mem hstar hmul)
+  have hsub : ContinuousLinearMapWOT.ofCLM '' (StarAlgebra.adjoin ℂ s : Set (H →L[ℂ] H)) ⊆
+      f ⁻¹' (ContinuousLinearMapWOT.ofCLM '' (W : Set (U →L[ℂ] U))) := by
+    rw [hspan]
+    rintro _ ⟨y, hy, rfl⟩
+    refine ⟨y.compression U.subtypeL, ?_, rfl⟩
+    induction hy using Submodule.span_induction with
+    | mem a ha =>
+      exact ha.elim (fun h ↦ h ▸ compression_one_subtypeL U ▸ W.one_mem)
+        (fun ha ↦ subset_adjoin _ ⟨a, ha, rfl⟩)
+    | zero => simp
+    | add _ _ _ _ iha ihb => rw [SetLike.mem_coe, compression_add]; exact W.add_mem iha ihb
+    | smul c _ _ iha => rw [SetLike.mem_coe, compression_smul]; exact SMulMemClass.smul_mem c iha
+  obtain ⟨T, hTW, hTf⟩ := closure_minimal hsub hclosed hx_cl
+  have hTx : T = x.compression U.subtypeL := ContinuousLinearMapWOT.ofCLM_injective hTf
+  exact hTx ▸ hTW
 
 end VonNeumannAlgebra

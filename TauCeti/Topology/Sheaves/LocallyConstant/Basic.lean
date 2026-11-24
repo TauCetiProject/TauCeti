@@ -92,16 +92,16 @@ theorem isSheaf_locallyConstantRingCatPresheaf : (locallyConstantRingCatPresheaf
   -- The sections of `locallyConstantRingCatPresheaf X R` over `U i` are `LocallyConstant (U i) R`,
   -- but only up to unfolding `RingCat.of`; restate `sf` so that its members coerce to functions.
   change ∀ i, LocallyConstant (U i) R at sf
-  have hmem (x : ↥(iSup U)) : ∃ i, x.1 ∈ U i := Opens.mem_iSup.mp x.2
+  have hmem (x : ↥(iSup U)) : ∃ i, x.val ∈ U i := Opens.mem_iSup.mp x.property
   let g : ↥(iSup U) → R := fun x ↦ sf (hmem x).choose ⟨x, (hmem x).choose_spec⟩
-  have hg (i : ι) (x : ↥(iSup U)) (hx : x.1 ∈ U i) : g x = sf i ⟨x, hx⟩ := by
+  have hg (i : ι) (x : ↥(iSup U)) (hx : x.val ∈ U i) : g x = sf i ⟨x, hx⟩ := by
     have h := hsf (hmem x).choose i
     simp only [locallyConstantRingCatPresheaf_map_apply] at h
     exact DFunLike.congr_fun (F := LocallyConstant ↥(U (hmem x).choose ⊓ U i) R) h
       ⟨x, (hmem x).choose_spec, hx⟩
   have hj (i : ι) : Topology.IsOpenEmbedding
       (Set.inclusion (Opens.leSupr U i).le : U i → ↥(iSup U)) :=
-    .inclusion _ ((U i).isOpen.preimage continuous_subtype_val)
+    .inclusion _ ((U i).isOpen.preimage continuous_subtypeVal)
   have hgc : IsLocallyConstant g := by
     refine (IsLocallyConstant.iff_eventually_eq g).mpr fun x ↦ ?_
     obtain ⟨i, hx⟩ := hmem x
@@ -111,11 +111,11 @@ theorem isSheaf_locallyConstantRingCatPresheaf : (locallyConstantRingCatPresheaf
       Filter.eventually_map]
     filter_upwards [(IsLocallyConstant.iff_eventually_eq _).mp (sf i).isLocallyConstant
       ⟨x, hx⟩] with z hz
-    rw [hg i _ z.2, hg i _ hx]
+    rw [hg i _ z.property, hg i _ hx]
     exact hz
   refine ⟨(⟨g, hgc⟩ : LocallyConstant ↥(iSup U) R), fun i ↦ ?_, fun t ht ↦ ?_⟩
   · refine LocallyConstant.ext fun x ↦ ?_
-    exact hg i ⟨x.1, (Opens.leSupr U i).le x.2⟩ x.2
+    exact hg i ⟨x.val, (Opens.leSupr U i).le x.property⟩ x.property
   · refine LocallyConstant.ext fun x ↦ ?_
     obtain ⟨i, hx⟩ := hmem x
     have h := DFunLike.congr_fun (F := LocallyConstant (U i) R) (ht i) ⟨x, hx⟩
@@ -226,13 +226,13 @@ variable {X R} [Ring R]
 /-- The fiber of a locally constant function on an open `U` over `r`, as an open subset of `X`. -/
 private def fiberOpen {U : Opens X} (f : LocallyConstant U R) (r : R) : Opens X :=
   ⟨Subtype.val '' {x | f x = r},
-    U.isOpen.isOpenMap_subtype_val _ (f.isLocallyConstant.isOpen_fiber r)⟩
+    U.isOpen.isOpenMap_subtypeVal _ (f.isLocallyConstant.isOpen_fiber r)⟩
 
 omit [Ring R] in
 private lemma fiberOpen_le {U : Opens X} (f : LocallyConstant U R) (r : R) :
     fiberOpen f r ≤ U := by
   rintro _ ⟨x, -, rfl⟩
-  exact x.2
+  exact x.property
 
 omit [Ring R] in
 private lemma mem_fiberOpen {U : Opens X} (f : LocallyConstant U R) {x : X} (hx : x ∈ U) :
@@ -322,7 +322,7 @@ theorem map_smul_locallyConstant {U V : Opens X} (i : V ⟶ U) (f : LocallyConst
 /-- `f • s` is characterised by its restrictions: it is the section whose restriction to any open
 `V ⊆ U` on which `f` is constant with value `r` is the restriction of `r • s`. -/
 theorem eq_smul_iff {U : Opens X} (f : LocallyConstant U R) (s t : F.presheaf.obj (op U)) :
-    t = f • s ↔ ∀ (V : Opens X) (i : V ⟶ U) (r : R), (∀ x : V, f ⟨x.1, i.le x.2⟩ = r) →
+    t = f • s ↔ ∀ (V : Opens X) (i : V ⟶ U) (r : R), (∀ x : V, f ⟨x.val, i.le x.property⟩ = r) →
       F.presheaf.map i.op t = r • F.presheaf.map i.op s := by
   refine ⟨?_, fun h ↦ Presheaf.section_ext F _ _ _ fun x hx ↦ ?_⟩
   · rintro rfl V i r hr
@@ -330,7 +330,7 @@ theorem eq_smul_iff {U : Opens X} (f : LocallyConstant U R) (s t : F.presheaf.ob
     congr 1
     exact LocallyConstant.ext hr
   · have hV := h _ (homOfLE (fiberOpen_le f (f ⟨x, hx⟩))) _
-      fun y ↦ apply_eq_of_mem_fiberOpen f y.2 _
+      fun y ↦ apply_eq_of_mem_fiberOpen f y.property _
     rw [germ_smul, germ_eq_germ_res_fiberOpen F f t, hV, map_smul, ← germ_eq_germ_res_fiberOpen]
 
 variable {F} in

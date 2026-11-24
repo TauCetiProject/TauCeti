@@ -44,7 +44,8 @@ noncomputable def mulAlgEquivOfCommute (S T : Subalgebra R A)
     S ⊗[R] T ≃ₐ[R] ↥(S ⊔ T) :=
   Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct
     (H.mulMap.trans (LinearEquiv.ofEq _ _ (mul_toSubmodule_of_commute S T hcomm)))
-    (fun a₁ a₂ b₁ b₂ => Subtype.ext <| (hcomm a₂ a₂.2 b₁ b₁.2).mul_mul_mul_comm a₁ b₂)
+    (fun a₁ a₂ b₁ b₂ => Subtype.ext <|
+      (hcomm a₂ a₂.property b₁ b₁.property).mul_mul_mul_comm a₁ b₂)
     (Subtype.ext <| mul_one (1 : A))
 
 /-- `mulAlgEquivOfCommute` sends a pure tensor `a ⊗ₜ b` to the product `a * b`. -/

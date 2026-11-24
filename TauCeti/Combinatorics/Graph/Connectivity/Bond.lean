@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
-public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Restriction
 
 /-!
 # Bonds of multigraphs

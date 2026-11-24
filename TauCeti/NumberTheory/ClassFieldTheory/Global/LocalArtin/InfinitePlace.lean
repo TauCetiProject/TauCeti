@@ -247,7 +247,7 @@ theorem infiniteLocalArtinAt_eq_complexConjugationAt (hw : w.IsRamified K) {x : 
     simp only [ρ, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply] at h
     -- `τ'` is `τ`, read as an automorphism of the algebraic closure
     exact h.symm
-  rw [NumberField.eq_complexConjugationAt_of_mem_stabilizer_of_ne_one K w hw σ'.2
+  rw [NumberField.eq_complexConjugationAt_of_mem_stabilizer_of_ne_one K w hw σ'.property
     fun h ↦ hσ'1 (Subtype.ext h)]
 
 /-- **The image of the local Artin symbol is the decomposition group.** For `L/K` Galois and `w` a

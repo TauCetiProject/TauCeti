@@ -18,9 +18,9 @@ public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 # Weak operator limits of projections and finite-dimensional entry convergence
 
 On a complete inner product space `E`, order intervals `Set.Icc a b` of bounded operators, for
-the Loewner order, are closed in the weak operator topology. On an infinite-dimensional complex
-Hilbert space `H` the weak operator closure of the orthogonal projections is exactly the set of
-positive contractions `0 ≤ a ≤ 1`.
+the Loewner order, and the self-adjoint operators are closed in the weak operator topology. On an
+infinite-dimensional complex Hilbert space `H` the weak operator closure of the orthogonal
+projections is exactly the set of positive contractions `0 ≤ a ≤ 1`.
 
 Projections are positive contractions, and positive contractions form a weak operator closed
 set. Conversely, fix a positive contraction `a` and a finite-dimensional subspace `K`. When the
@@ -48,6 +48,8 @@ continuous linear maps is continuous because the operator space is finite-dimens
 * `ContinuousLinearMapWOT.isClosed_setOf_isPositive`: the positive operators form a weak
   operator closed set.
 * `ContinuousLinearMapWOT.isClosed_image_ofCLM_Icc`: order intervals are weak operator closed.
+* `ContinuousLinearMapWOT.isClosed_image_ofCLM_setOf_isSelfAdjoint`: the self-adjoint operators
+  form a weak operator closed set.
 * `ContinuousLinearMapWOT.continuous_compression`: compression along a bounded operator between
   Hilbert spaces is continuous in the weak operator topology.
 * `ContinuousLinearMapWOT.closure_isStarProjection_eq_positive_contractions`: on an
@@ -119,6 +121,20 @@ theorem isClosed_image_ofCLM_Iic {b : E →L[𝕜] E} :
   ext T
   obtain ⟨T, rfl⟩ := ofCLM_surjective T
   simp [ofCLM_injective.mem_set_image, ← ofCLM_neg]
+
+/-- Adjoints on the weak operator copy are computed on the underlying operators. -/
+@[simp]
+theorem ofCLM_star (T : E →L[𝕜] E) : ofCLM (star T) = star (ofCLM T) :=
+  rfl
+
+/-- The self-adjoint operators form a weak operator closed set. -/
+theorem isClosed_image_ofCLM_setOf_isSelfAdjoint :
+    IsClosed (ofCLM '' {T : E →L[𝕜] E | IsSelfAdjoint T}) := by
+  convert isClosed_setOfPred_isSelfAdjoint (α := E →WOT[𝕜] E) using 1
+  ext T
+  obtain ⟨T, rfl⟩ := ofCLM_surjective T
+  rw [ofCLM_injective.mem_set_image, Set.mem_ofPred_eq, Set.mem_ofPred_eq, IsSelfAdjoint,
+    IsSelfAdjoint, ← ofCLM_star, ofCLM_injective.eq_iff]
 
 /-- Order intervals of operators, for the Loewner order, are weak operator closed. -/
 theorem isClosed_image_ofCLM_Icc {a b : E →L[𝕜] E} :

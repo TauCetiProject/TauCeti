@@ -152,7 +152,7 @@ def equivOfEq (S T : StarSubalgebra R A) (h : S = T) : S ≃⋆ₐ[R] T :=
 
 @[simp]
 theorem equivOfEq_apply (S T : StarSubalgebra R A) (h : S = T) (x : S) :
-    equivOfEq S T h x = ⟨x, h ▸ x.2⟩ :=
+    equivOfEq S T h x = ⟨x, h ▸ x.property⟩ :=
   (rfl)
 
 @[simp]

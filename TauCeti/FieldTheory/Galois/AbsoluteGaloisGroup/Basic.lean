@@ -249,7 +249,7 @@ def intermediateFieldEquivClosedSubgroup :
   toFun M := ⟨(IntermediateField.lift M).fixingSubgroup,
     IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic _⟩
   invFun H := IntermediateField.restrict
-    (inf_le_right : IntermediateField.fixedField H.1 ⊓ _ ≤ separableClosure F E)
+    (inf_le_right : IntermediateField.fixedField H.toSubgroup ⊓ _ ≤ separableClosure F E)
   left_inv M := IntermediateField.lift_injective _ <| by
     rw [IntermediateField.lift_restrict,
       IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure]
@@ -281,7 +281,7 @@ the separable closure. -/
 theorem intermediateFieldEquivClosedSubgroup_symm_apply (H : ClosedSubgroup Gal(E/F)) :
     (intermediateFieldEquivClosedSubgroup (F := F) (E := E)).symm H =
       IntermediateField.restrict
-        (inf_le_right : IntermediateField.fixedField H.1 ⊓ _ ≤ separableClosure F E) :=
+        (inf_le_right : IntermediateField.fixedField H.toSubgroup ⊓ _ ≤ separableClosure F E) :=
   (rfl)
 
 /-! ### The fixed field of a normal extension -/
@@ -389,7 +389,7 @@ instance [IsSepClosed K] : Subsingleton (AbsoluteGaloisGroup K) := by
     (IsSepClosed.separableClosure_eq_bot_iff K (AlgebraicClosure K)).mpr ‹_›
   refine ⟨fun σ τ ↦ AlgEquiv.ext fun x ↦ ?_⟩
   have hxb : (x : AlgebraicClosure K) ∈ (⊥ : IntermediateField K (AlgebraicClosure K)) := by
-    rw [← hbot]; exact x.2
+    rw [← hbot]; exact x.property
   obtain ⟨y, hy⟩ := IntermediateField.mem_bot.mp hxb
   have hx : x = algebraMap K _ y := Subtype.ext hy.symm
   rw [hx, AlgEquiv.commutes, AlgEquiv.commutes]

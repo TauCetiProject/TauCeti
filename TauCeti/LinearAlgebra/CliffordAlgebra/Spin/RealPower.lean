@@ -120,6 +120,6 @@ theorem leftMulMatrixRpow_complexConj_reverse_mul_self_mem_spinGroup {V I : Type
   exact leftMulMatrixRpow_mem_spinGroup
     (QuadraticForm.Nondegenerate.baseChange (QuadraticMap.nondegenerate_of_isOrthoᵢ hb
       (by simp [hQ])))
-    _ (mul_mem (complexConj_reverse_mem_spinGroup g.2) g.2) hM t
+    _ (mul_mem (complexConj_reverse_mem_spinGroup g.property) g.property) hM t
 
 end CliffordAlgebra
