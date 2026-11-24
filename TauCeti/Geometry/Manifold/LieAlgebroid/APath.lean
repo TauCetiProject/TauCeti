@@ -213,7 +213,7 @@ end IsAPath
 
 section Tangent
 
-variable [FiniteDimensional ℝ E]
+variable [CompleteSpace E]
 
 /-- **The velocity lift of a path is an `A`-path of the tangent algebroid exactly when the path is
 `C²`.** The velocity is taken within `[0, 1]`. -/
