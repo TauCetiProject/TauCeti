@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.FDeriv.AddSnd
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Basic
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Submersion
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
-import TauCeti.Analysis.InnerProductSpace.ProdL2
 
 /-!
 # Pulling distributions back along smooth maps
@@ -26,7 +26,7 @@ over the fibres of `f` (`Distribution.pullback_eq_compCLMOfSubmersion`).
 ## The construction
 
 Hörmander reduces the pullback along `f` to a pullback along a submersion followed by a
-restriction. The map `g (x, y) = f x + y` on the open set
+restriction. The map `g (x, y) = f x + y` (`TauCeti.addSnd`) on the open set
 `W = {(x, y) | x ∈ Ω, f x + y ∈ Ω'}` of the Euclidean product `WithLp 2 (E × E')` is a submersion,
 so every distribution on `Ω'` pulls back along `g` (`Distribution.compCLMOfSubmersion`), and the
 wave front set pulls back with the transpose of the derivative
@@ -47,7 +47,7 @@ test functions `(x, y) ↦ ψ x ρₙ y` for shrinking normalized bumps `ρₙ`
 * `Distribution.pullback_ofFun`: for a continuous function `F` on `Ω'` satisfying the hypothesis,
   for instance a smooth one, `f^* F = F ∘ f`.
 * `Distribution.pullback_eq_pullbackInl`: `f^* T` is the restriction to `E × {0}` of the pullback
-  `Distribution.addSndPullback` of `T` along the submersion `Distribution.addSnd`.
+  `Distribution.addSndPullback` of `T` along the submersion `TauCeti.addSnd`.
 * `Distribution.pullback_add`, `Distribution.pullback_smul`,
   `Distribution.pullback_smul_of_ne_zero`, `Distribution.pullback_zero`,
   `Distribution.pullback_neg`, `Distribution.pullback_sub`: linearity in `T`.
@@ -68,7 +68,7 @@ public section
 
 noncomputable section
 
-open Filter Function Metric Set TopologicalSpace TestFunction MeasureTheory WithLp
+open Filter Function Metric Set TopologicalSpace TestFunction MeasureTheory WithLp TauCeti
 open scoped Distributions ContDiff Convolution Topology Pointwise
 
 namespace Distribution
@@ -76,91 +76,22 @@ namespace Distribution
 variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] {Ω : Opens E} {Ω' : Opens E'} {f : E → E'}
 
-/-! ### The submersion `(x, y) ↦ f x + y` -/
-
-/-- The submersion `g (x, y) = f x + y` through which `f` factors as `x ↦ g (x, 0)`. -/
-def addSnd (f : E → E') (p : WithLp 2 (E × E')) : E' :=
-  f p.fst + p.snd
-
-omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℝ E'] in
-/-- The value of `g (x, y) = f x + y`. -/
-@[simp]
-theorem addSnd_apply (f : E → E') (p : WithLp 2 (E × E')) : addSnd f p = f p.fst + p.snd :=
-  (rfl)
-
-private theorem addSnd_eq (f : E → E') :
-    addSnd f = f ∘ fstL 2 ℝ E E' + sndL 2 ℝ E E' :=
-  rfl
-
-/-- The open set `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}` on which `g` is a submersion into `Ω'`. -/
-def addSndDomain (hf : ContinuousOn f Ω) (Ω' : Opens E') : Opens (WithLp 2 (E × E')) :=
-  ⟨fstL 2 ℝ E E' ⁻¹' Ω ∩ addSnd f ⁻¹' Ω', by
-    refine ContinuousOn.isOpen_inter_preimage ?_ (Ω.isOpen.preimage (fstL 2 ℝ E E').continuous)
-      Ω'.isOpen
-    rw [addSnd_eq]
-    exact (hf.comp (fstL 2 ℝ E E').continuous.continuousOn (mapsTo_preimage _ _)).add
-      (sndL 2 ℝ E E').continuous.continuousOn⟩
-
-/-- Membership in `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
-@[simp]
-theorem mem_addSndDomain {hf : ContinuousOn f Ω} {p : WithLp 2 (E × E')} :
-    p ∈ addSndDomain hf Ω' ↔ p.fst ∈ Ω ∧ f p.fst + p.snd ∈ Ω' :=
-  Iff.rfl
-
-/-- The map `g (x, y) = f x + y` is smooth on `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
-theorem contDiffOn_addSnd (hf : ContDiffOn ℝ ∞ f Ω) :
-    ContDiffOn ℝ ∞ (addSnd f) (addSndDomain hf.continuousOn Ω') := by
-  rw [addSnd_eq]
-  exact ((hf.comp (fstL 2 ℝ E E').contDiff.contDiffOn (mapsTo_preimage _ _)).add
-    (sndL 2 ℝ E E').contDiff.contDiffOn).mono inter_subset_left
-
-/-- The map `g (x, y) = f x + y` maps `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}` into `Ω'`. -/
-theorem mapsTo_addSnd (hf : ContinuousOn f Ω) :
-    MapsTo (addSnd f) (addSndDomain hf Ω') Ω' := fun _ hp ↦ by
-  simpa using (mem_addSndDomain.1 hp).2
-
-/-- The derivative of `g (x, y) = f x + y` is `Dg(x, y) (u, v) = Df(x) u + v`. -/
-theorem fderiv_addSnd (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (E × E')} (hp : p.fst ∈ Ω) :
-    fderiv ℝ (addSnd f) p = (fderiv ℝ f p.fst).comp (fstL 2 ℝ E E') + sndL 2 ℝ E E' := by
-  have hfp : HasFDerivAt f (fderiv ℝ f p.fst) p.fst :=
-    (hf.differentiableOn (by simp) _ hp |>.differentiableAt (Ω.isOpen.mem_nhds hp)).hasFDerivAt
-  rw [addSnd_eq]
-  exact ((hfp.comp p (fstL 2 ℝ E E').hasFDerivAt).add (sndL 2 ℝ E E').hasFDerivAt).fderiv
-
-/-- The map `g (x, y) = f x + y` is a submersion on `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
-theorem surjective_fderiv_addSnd (hf : ContDiffOn ℝ ∞ f Ω) :
-    ∀ p ∈ addSndDomain hf.continuousOn Ω', Surjective (fderiv ℝ (addSnd f) p) := fun p hp w ↦
-  ⟨toLp 2 (0, w), by simp [fderiv_addSnd hf (mem_addSndDomain.1 hp).1]⟩
-
-/-- The inclusion `x ↦ (x, 0)` maps `Ω` into `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
-theorem mapsTo_inl_addSndDomain (hf : ContinuousOn f Ω) (hfΩ : MapsTo f Ω Ω') :
-    MapsTo (fun x ↦ toLp 2 (x, (0 : E'))) (Ω : Set E) (addSndDomain hf Ω') := fun x hx ↦
-  mem_addSndDomain.2 ⟨hx, by simpa using hfΩ hx⟩
+/-! ### The pullback along the submersion `(x, y) ↦ f x + y` -/
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+  [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
 
-/-- The transpose of `Dg(x, y)` is `η ↦ (Df(x)ᵀ η, η)`. -/
-theorem adjoint_fderiv_addSnd_apply (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (E × E')}
-    (hp : p.fst ∈ Ω) (η : E') :
-    (fderiv ℝ (addSnd f) p).adjoint η = toLp 2 ((fderiv ℝ f p.fst).adjoint η, η) := by
-  rw [fderiv_addSnd hf hp, map_add, ContinuousLinearMap.adjoint_comp, adjoint_fstL,
-    adjoint_sndL]
-  refine ofLp_injective 2 ?_
-  ext <;> simp
-
-variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
-
-/-- The pullback `g^* T` of `T` along the submersion `g (x, y) = f x + y`, by integration over
-the fibres of `g`. -/
-def addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) (T : 𝓓'(Ω', ℂ)) :
-    𝓓'(addSndDomain hf.continuousOn Ω', ℂ) :=
+/-- The pullback `T ↦ g^* T` along the submersion `g (x, y) = f x + y` (`TauCeti.addSnd`), by
+integration over the fibres of `g`, as a continuous linear map. -/
+def addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) :
+    𝓓'(Ω', ℂ) →L[ℝ] 𝓓'(addSndDomain hf.continuousOn Ω', ℂ) :=
   compCLMOfSubmersion volume volume (addSnd f) (contDiffOn_addSnd hf) (mapsTo_addSnd _)
-    (surjective_fderiv_addSnd hf) T
+    (surjective_fderiv_addSnd hf)
 
-/-- `g^* T` is the pullback `Distribution.compCLMOfSubmersion` of `T` along `g`. -/
-theorem addSndPullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) (T : 𝓓'(Ω', ℂ)) :
-    addSndPullback hf T = compCLMOfSubmersion volume volume (addSnd f) (contDiffOn_addSnd hf)
-      (mapsTo_addSnd _) (surjective_fderiv_addSnd hf) T :=
+/-- `g^*` is the pullback `Distribution.compCLMOfSubmersion` along `g`. -/
+theorem addSndPullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) :
+    addSndPullback (Ω' := Ω') hf = compCLMOfSubmersion volume volume (addSnd f)
+      (contDiffOn_addSnd hf) (mapsTo_addSnd _) (surjective_fderiv_addSnd hf) :=
   (rfl)
 
 /-- `g^* T` pairs a test function `φ` with `T` through `T (g_♯ φ)`. -/
