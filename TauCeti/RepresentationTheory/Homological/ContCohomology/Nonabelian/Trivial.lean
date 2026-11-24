@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
+-- Unfold the non-exposed `NonabelianH1` and `mk` locally: `equivOfTrivial` applies
+-- `Quotient.congr` to the underlying quotient so that its `mk` lemmas hold by `rfl`.
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 
 /-!

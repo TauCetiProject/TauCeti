@@ -203,12 +203,12 @@ theorem cls_eq_one_iff : P.cls = 1 ↔ ∃ x : P.carrier, ∀ g : G, g • x = x
     obtain ⟨a, ha⟩ := mk_eq_one_iff.mp (P.cls_eq x ▸ h)
     refine ⟨a • x, fun g ↦ ?_⟩
     have h1 : P.cocycle (a • x) g = 1 := by
-      rw [cocycle_smul, ha, mul_inv_cancel_left, mul_inv_cancel]
+      rw [cocycle_smul, ha]
+      group
     rw [cocycle_apply_eq_iff, inv_one, one_smul] at h1
     exact h1
   · rw [P.cls_eq x, mk_eq_one_iff]
-    exact ⟨1, fun g ↦ by rw [cocycle_apply_eq_iff, smul_one, inv_one, one_mul, inv_one, one_smul,
-      hx]⟩
+    exact ⟨1, fun g ↦ by simp [hx]⟩
 
 variable {P} {Q : SmoothTorsor.{u, v, w'} G A}
 
@@ -334,8 +334,7 @@ variable [ContinuousMul G]
 /-- The cocycle of the torsor of `f` at the point `1` is `f`. -/
 @[simp]
 theorem cocycle_torsor (f : Cocycle G A) : f.torsor.cocycle (⟨1⟩ : TorsorCarrier f) = f :=
-  ext fun g ↦ f.torsor.cocycle_apply_eq_iff.mpr <| TorsorCarrier.ext <| by
-    rw [TorsorCarrier.val_smul_G, TorsorCarrier.val_smul_A, smul_one, one_mul, mul_one]
+  ext fun g ↦ f.torsor.cocycle_apply_eq_iff.mpr <| TorsorCarrier.ext <| by simp
 
 end Cocycle
 
