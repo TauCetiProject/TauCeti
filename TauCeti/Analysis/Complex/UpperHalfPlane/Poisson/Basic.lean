@@ -439,6 +439,14 @@ theorem re_upperHalfPlaneSchwarzIntegral (ν : Measure ℝ) (z : ℂ) :
     · refine (upperHalfPlanePoissonIntegral_of_not_isPoissonFinite (fun hν ↦ hK ?_) z).symm
       exact integrable_subtractedResolventKernel ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν) hz
 
+/-- The imaginary part of the integrated Schwarz kernel `TauCeti.subtractedResolventKernel` is `π`
+times the Poisson integral; this is `TauCeti.re_upperHalfPlaneSchwarzIntegral` before the
+normalization by `(π i)⁻¹`. If `ν` is not Poisson-finite, both sides take the junk value `0`. -/
+theorem im_integral_subtractedResolventKernel (ν : Measure ℝ) (z : ℂ) :
+    (∫ t, subtractedResolventKernel z t ∂ν).im = π * upperHalfPlanePoissonIntegral ν z := by
+  rw [← re_upperHalfPlaneSchwarzIntegral, upperHalfPlaneSchwarzIntegral_def]
+  simp [← ofReal_inv]
+
 /-- **The Schwarz integral is holomorphic** on the upper half-plane, for every measure `ν`. For a
 measure that is not Poisson-finite it is the junk value `0` there
 (`TauCeti.upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite`). -/
