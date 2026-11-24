@@ -63,6 +63,8 @@ Everything here concerns one completion. The comparison of two completions along
   representative.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
   an element of `K` of valuation one maps to a unit of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.exists_mem_adicCompletionIntegers_inv_notMem`: `K_v` has a
+  unit in `𝒪_v` whose inverse is not in `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersSubmodule`: `𝒪_v` as an
   `R`-submodule of `K_v`, whose quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`.
 
@@ -218,6 +220,18 @@ theorem exists_unit_valued_eq_exp (n : ℤ) :
   obtain ⟨x, hx⟩ := v.valuedAdicCompletion_surjective K (exp n)
   exact ⟨Units.mk0 x fun h ↦ exp_ne_zero (hx.symm.trans (by rw [h, map_zero])), hx⟩
 
+variable (K) in
+/-- The completion `K_v` has a unit `x ∈ 𝒪_v` whose inverse is not in `𝒪_v`, for instance a unit
+of valuation `exp (-1)`. -/
+theorem exists_mem_adicCompletionIntegers_inv_notMem :
+    ∃ x : (v.adicCompletion K)ˣ, (x : v.adicCompletion K) ∈ v.adicCompletionIntegers K ∧
+      ((x⁻¹ : (v.adicCompletion K)ˣ) : v.adicCompletion K) ∉ v.adicCompletionIntegers K := by
+  obtain ⟨x, hx⟩ := exists_unit_valued_eq_exp K v (-1)
+  refine ⟨x, ?_, ?_⟩
+  · rw [mem_adicCompletionIntegers, hx]
+    exact exp_le_one_iff.2 (by norm_num)
+  · simp [mem_adicCompletionIntegers, hx]
+
 /-- An irreducible element of the ring of integers of a completion has valuation `exp (-1)`. -/
 theorem valued_algebraMap_eq_exp_neg_one_of_irreducible {π : v.adicCompletionIntegers K}
     (hπ : Irreducible π) :
@@ -304,6 +318,12 @@ theorem mem_asIdeal_pow_iff_valued_algebraMap_le {r : R} {n : ℕ} :
     r ∈ v.asIdeal ^ n ↔ Valued.v (algebraMap R (v.adicCompletion K) r) ≤ exp (-(n : ℤ)) := by
   rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
     valuation_of_algebraMap, intValuation_le_pow_iff_mem]
+
+/-- An element of `R` lies outside `v` exactly when its image in `K_v` has valuation `1`. -/
+theorem notMem_asIdeal_iff_valued_algebraMap_eq_one {r : R} :
+    r ∉ v.asIdeal ↔ Valued.v (algebraMap R (v.adicCompletion K) r) = 1 := by
+  rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation',
+    valuation_of_algebraMap, intValuation_eq_one_iff]
 
 /-- The maximal ideal of the ring of integers of an adic completion contains a nonzero element
 whose valuation is below the valuations of `a` and `b`, and below `1`. -/

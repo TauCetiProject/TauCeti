@@ -10,7 +10,7 @@ public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 public import TauCeti.Analysis.Matrix.Resolvent.SelfConsistency
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.Moments.QuadraticForm.SecondMoment
-import TauCeti.Probability.RandomMatrix.Wigner.Diagonal
+import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.SpectralMeasure
 import TauCeti.Analysis.Matrix.Resolvent.Semicircle
 import TauCeti.Analysis.Matrix.Resolvent.Measurable
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
