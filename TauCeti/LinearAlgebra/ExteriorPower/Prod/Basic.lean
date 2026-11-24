@@ -20,11 +20,18 @@ isomorphism `ExteriorAlgebra.prodEquivTensor` between `⋀ (M × N)` and the gra
 `⋀ M` and `⋀ N`. Restricting that isomorphism to degree `n` gives the exterior sum comparison
 `⋀ⁿ (M × N) ≃ ⨁ᵢ ⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N` for arbitrary modules over a commutative ring, the module form of
 the sum formula `λⁿ(x + y) = ∑ᵢ λⁱ(x) λⁿ⁻ⁱ(y)` for exterior powers. Its inverse is ordered: it
-wedges the factor from `M` before the factor from `N`.
+wedges the factor from `M` before the factor from `N`. Exchanging the two factors therefore
+introduces the Koszul sign `(-1) ^ (p q)`, while iterating the wedge products over a product of
+three modules does not depend on the bracketing. Compatibility with scalar extension is in
+`TauCeti.LinearAlgebra.ExteriorPower.Prod.BaseChange`.
 
 ## Main declarations
 
 * `TauCeti.exteriorPower.wedgeTensor`: the wedge product `⋀ᵖ M ⊗ ⋀^q N → ⋀ⁿ (M × N)`.
+* `TauCeti.exteriorPower.map_prodComm_wedgeTensor_tmul`: exchanging the factors of `M × N`
+  carries `a ∧ b` to `(-1) ^ (p q) (b ∧ a)`.
+* `TauCeti.exteriorPower.map_prodAssoc_comp_wedgeTensor`: the iterated wedge products
+  `(a ∧ b) ∧ c` and `a ∧ (b ∧ c)` agree under `(M × N) × P ≃ M × (N × P)`.
 * `TauCeti.exteriorPower.sum_coe_wedgeTensor_map_proj`: the degree-`n` component of an element
   of `⋀ (M × N)` is the sum of the wedge products of its bidegree-`(i, n - i)` components.
 * `TauCeti.exteriorPower.map_fst_comp_map_inl`, `TauCeti.exteriorPower.map_fst_comp_wedgeLeft`
@@ -110,6 +117,67 @@ theorem map_prodMap_wedgeTensor_apply {M' N' : Type*} [AddCommGroup M'] [Module 
       wedgeTensor R M' N' p q n h
         (TensorProduct.map (_root_.exteriorPower.map p f) (_root_.exteriorPower.map q g) z) :=
   DFunLike.congr_fun (map_prodMap_comp_wedgeTensor f g p q n h) z
+
+/-- **Graded symmetry of the ordered wedge products.** Exchanging the two factors of `M × N`
+carries `a ∧ b` to `(-1) ^ (p q) (b ∧ a)` for `a ∈ ⋀ᵖ M` and `b ∈ ⋀^q N`. For `M = N = R` in
+degree two it sends `(1, 0) ∧ (0, 1)` to `-((1, 0) ∧ (0, 1))`. -/
+theorem map_prodComm_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : ⋀[R]^p M)
+    (b : ⋀[R]^q N) :
+    _root_.exteriorPower.map n (LinearEquiv.prodComm R M N).toLinearMap
+        (wedgeTensor R M N p q n h (a ⊗ₜ b)) =
+      (-1 : ℤ) ^ (p * q) • wedgeTensor R N M q p n (by omega) (b ⊗ₜ a) := by
+  have hinl : (LinearEquiv.prodComm R M N).toLinearMap ∘ₗ LinearMap.inl R M N =
+      LinearMap.inr R N M := LinearMap.ext fun _ ↦ by simp
+  have hinr : (LinearEquiv.prodComm R M N).toLinearMap ∘ₗ LinearMap.inr R M N =
+      LinearMap.inl R N M := LinearMap.ext fun _ ↦ by simp
+  apply Subtype.ext
+  simp only [Submodule.coe_smul_of_tower, _root_.exteriorPower.coe_map, coe_wedgeTensor_tmul,
+    map_mul, ← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map, hinl, hinr]
+  rw [ExteriorAlgebra.map_inl_inr_anticomm, smul_smul, ← mul_pow]
+  simp
+
+section assoc
+
+variable {P : Type*} [AddCommGroup P] [Module R P]
+
+/-- **Associativity of the ordered wedge products.** Under `(M × N) × P ≃ M × (N × P)`, the
+wedge product `(a ∧ b) ∧ c` formed in two steps through `⋀^(p + q) (M × N)` agrees with
+`a ∧ (b ∧ c)` formed through `⋀^(q + r) (N × P)`. -/
+theorem map_prodAssoc_comp_wedgeTensor (p q r n : ℕ) (h : p + q + r = n) :
+    _root_.exteriorPower.map n (LinearEquiv.prodAssoc R M N P).toLinearMap ∘ₗ
+        wedgeTensor R (M × N) P (p + q) r n h ∘ₗ
+          TensorProduct.map (wedgeTensor R M N p q (p + q) rfl) LinearMap.id =
+      wedgeTensor R M (N × P) p (q + r) n (by omega) ∘ₗ
+        TensorProduct.map LinearMap.id (wedgeTensor R N P q r (q + r) rfl) ∘ₗ
+          (TensorProduct.assoc R (⋀[R]^p M) (⋀[R]^q N) (⋀[R]^r P)).toLinearMap := by
+  have h₁ : (LinearEquiv.prodAssoc R M N P).toLinearMap ∘ₗ
+      (LinearMap.inl R (M × N) P ∘ₗ LinearMap.inl R M N) = LinearMap.inl R M (N × P) :=
+    LinearMap.ext fun _ ↦ by simp
+  have h₂ : (LinearEquiv.prodAssoc R M N P).toLinearMap ∘ₗ
+      (LinearMap.inl R (M × N) P ∘ₗ LinearMap.inr R M N) =
+        LinearMap.inr R M (N × P) ∘ₗ LinearMap.inl R N P :=
+    LinearMap.ext fun _ ↦ by simp
+  have h₃ : (LinearEquiv.prodAssoc R M N P).toLinearMap ∘ₗ LinearMap.inr R (M × N) P =
+      LinearMap.inr R M (N × P) ∘ₗ LinearMap.inr R N P :=
+    LinearMap.ext fun _ ↦ by simp
+  refine TensorProduct.ext_threefold fun a b c ↦ Subtype.ext ?_
+  simp only [LinearMap.comp_apply, TensorProduct.map_tmul, LinearMap.id_apply,
+    LinearEquiv.coe_coe, TensorProduct.assoc_tmul, _root_.exteriorPower.coe_map,
+    coe_wedgeTensor_tmul, map_mul, ← AlgHom.comp_apply, ExteriorAlgebra.map_comp_map, h₁, h₂, h₃,
+    mul_assoc]
+
+/-- Pointwise form of `map_prodAssoc_comp_wedgeTensor`: for `a ∈ ⋀ᵖ M`, `b ∈ ⋀^q N` and
+`c ∈ ⋀ʳ P`, the iterated wedge products `(a ∧ b) ∧ c` and `a ∧ (b ∧ c)` correspond under
+`(M × N) × P ≃ M × (N × P)`. -/
+theorem map_prodAssoc_wedgeTensor_tmul (p q r n : ℕ) (h : p + q + r = n) (a : ⋀[R]^p M)
+    (b : ⋀[R]^q N) (c : ⋀[R]^r P) :
+    _root_.exteriorPower.map n (LinearEquiv.prodAssoc R M N P).toLinearMap
+        (wedgeTensor R (M × N) P (p + q) r n h (wedgeTensor R M N p q (p + q) rfl (a ⊗ₜ b) ⊗ₜ c)) =
+      wedgeTensor R M (N × P) p (q + r) n (by omega)
+        (a ⊗ₜ wedgeTensor R N P q r (q + r) rfl (b ⊗ₜ c)) :=
+  DFunLike.congr_fun (map_prodAssoc_comp_wedgeTensor p q r n h) (a ⊗ₜ b ⊗ₜ c)
+
+end assoc
 
 /-- In degree `n`, the wedge products of the bidegree-`(i, n - i)` components of an element of
 `⋀ M ⊗ ⋀ N` add up to the degree-`n` component of its image in `⋀ (M × N)` under
