@@ -42,7 +42,8 @@ the annulus and holomorphic inside it, are `o(r^{-n})`. On a circle of radius `R
   `ρ ≤ |z - c| ≤ r` and holomorphic off a countable set inside it.
 * `TauCeti.tendsto_zpow_smul_circleLaurentCoeff_sub`: Darboux's comparison theorem (DLMF 2.10.29).
 
-The roadmap checks for these results are in `TauCeti.Analysis.Complex.Laurent.Examples.Darboux`.
+Worked examples with explicit simple poles are in
+`TauCeti.Analysis.Complex.Laurent.Examples.Darboux`.
 
 ## References
 

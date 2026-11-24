@@ -249,8 +249,9 @@ theorem coeff_unique {f : ℂ → E} {a b : ℤ → E} {c : ℂ} {r : ℝ} {R : 
 
 end HasLaurentSeriesOnAnnulus
 
-/-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` that does
-not reach `a` are those of its geometric expansion `∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
+/-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` of radius
+less than `‖a - c‖` (so `a` lies outside the disc) are those of its geometric expansion
+`∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
 theorem circleLaurentCoeff_inv_sub_of_lt_norm {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖)
     (n : ℤ) :
     circleLaurentCoeff (fun z => (a - z)⁻¹) c ρ n = if 0 ≤ n then (a - c) ^ (-n - 1) else 0 := by
@@ -271,6 +272,9 @@ theorem circleLaurentCoeff_inv_sub_of_lt_norm {a c : ℂ} {ρ : ℝ} (hρ : 0 < 
   rw [(hp.congr hfun).circleLaurentCoeff_eq hρ hρa' n]
   split_ifs with hn
   · lift n to ℕ using hn
+    -- `hasFPowerSeriesOnBall_inverse_one_sub_smul` states its series as a bare lambda, which
+    -- `FormalMultilinearSeries.smul_apply` cannot match, so unfold `coeff`, the scalar action on
+    -- the series and `(n : ℤ).toNat = n` by definition.
     change (a - c)⁻¹ • ContinuousMultilinearMap.mkPiRing ℂ (Fin n) ((a - c)⁻¹ ^ n) 1 = _
     simp [ContinuousMultilinearMap.mkPiRing_apply, zpow_sub_one₀ hd, mul_comm]
   · rfl
