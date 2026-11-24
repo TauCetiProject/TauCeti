@@ -233,7 +233,7 @@ theorem IsometryEquiv.coe_maxIsotropicSubspacesEquiv_symm_apply (e : Q.IsometryE
     (W : Q'.maxIsotropicSubspaces) :
     (e.maxIsotropicSubspacesEquiv.symm W : Submodule R M) =
       (W : Submodule R M').map e.symm.toLinearMap :=
-  Submodule.comap_equiv_eq_map_symm e.toLinearEquiv W
+  Submodule.orderIsoMapComap_symm_apply' e.toLinearEquiv W
 
 /-- Isometric quadratic forms have the same number of maximal isotropic submodules. -/
 theorem IsometryEquiv.ncard_maxIsotropicSubspaces_eq (e : Q.IsometryEquiv Q') :

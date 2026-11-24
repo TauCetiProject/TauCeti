@@ -334,11 +334,8 @@ theorem _root_.QuadraticForm.equivalent_binaryQuadraticForm_zero_of_polar_eq_one
       by simpa [hw, hwf] using congrArg (polar Q w) hst⟩
   have hb : Q.basisRepr (basisOfLinearIndependentOfCardEqFinrank hli (by simp [hV])) =
       binaryQuadraticForm K 0 0 := QuadraticMap.ext fun c ↦ by
-    rw [basisRepr_apply, Fin.sum_univ_two, coe_basisOfLinearIndependentOfCardEqFinrank,
-      Matrix.cons_val_one, Matrix.cons_val_zero, Matrix.cons_val_zero, QuadraticMap.map_add Q,
-      Q.map_smul, Q.map_smul, polar_smul_left, polar_smul_right, hw, hf, hwf,
-      binaryQuadraticForm_apply]
-    ring
+    simp [basisRepr_apply, Fin.sum_univ_two, QuadraticMap.map_add, QuadraticMap.map_smul,
+      polar_smul_left, polar_smul_right, hw, hf, hwf, binaryQuadraticForm_apply, mul_comm]
   exact ⟨hb ▸ Q.isometryEquivBasisRepr _⟩
 
 /-- Two isotropic vectors `x, y` with `polar Q x y = 1` split `Q` as the orthogonal sum of the
