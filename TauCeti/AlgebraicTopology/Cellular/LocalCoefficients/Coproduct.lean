@@ -51,7 +51,6 @@ point, and the legs are the classes of coefficients over the centres of the `0`-
 * `TauCeti.twistedCellularChainGroupIso`: `Hₙ(Xⁿ, Xⁿ⁻¹; L) ≅ ∐ⱼ L(χⱼ(0))`.
 * `TauCeti.isColimitCofanTwistedHomologyMapCharacteristicCellPairMap`: the cellular chain group is
   the coproduct of the relative homology of the disks of the cells, along the characteristic maps.
-* `TauCeti.zeroCellCenter`: the centre of a `0`-cell, as a point of the `0`-skeleton.
 * `TauCeti.isColimitCofanιTwistedHomology₀ZeroCellCenter`: `H₀(X⁰, X⁻¹; L)` is the coproduct of
   the fibres of `L` over the centres of the `0`-cells, along the classes of coefficients.
 
@@ -192,21 +191,6 @@ private lemma isIso_ιTwistedHomology₀_comp_twistedHomologyπ_diskBoundaryPair
   have : IsIso (LocalCoefficientSystem.ιTwistedHomology₀ K (diskCenter 0)) :=
     (LocalCoefficientSystem.isColimitTwistedHomology₀Cocone K).isIso_ι_app_of_isTerminal _ hterm
   infer_instance
-
-/-- The centre of a `0`-cell, as a point of the `0`-skeleton. -/
--- The body is exposed so that the fibres over the centre, read in `X`, are those over `χₖ(0)`.
-@[expose] def zeroCellCenter (k : cell C 0) : skeletonObj C 1 :=
-  ⟨map 0 k 0, map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)⟩
-
-@[simp]
-lemma coe_zeroCellCenter (k : cell C 0) : (zeroCellCenter C k : X) = map 0 k 0 :=
-  (rfl)
-
-/-- The characteristic map of a `0`-cell sends the centre of the disk to the centre of the cell. -/
-lemma characteristicCellPairMap_fst_diskCenter (k : cell C 0) :
-    TopPair.Hom.fst (characteristicCellPairMap C k) (diskCenter 0) = zeroCellCenter C k :=
-  Subtype.ext ((coe_characteristicCellPairMap_fst_apply C k _).trans
-    (congrArg (map 0 k) (Subsingleton.elim _ _)))
 
 /-- **The cellular chain group in degree zero with local coefficients is the coproduct of the
 fibres over the `0`-cells.** The classes of coefficients over the centres of the `0`-cells exhibit

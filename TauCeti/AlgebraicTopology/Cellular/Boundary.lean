@@ -101,6 +101,12 @@ lemma characteristicCellPairMap_fst {n : ℕ} (j : cell C n) :
     (congrArg (map n j) (coe_diskHomeomorphClosedBall_apply x).symm).trans
       (coe_cellDiskHom_apply j x).symm
 
+/-- The characteristic map of a `0`-cell sends the centre of the disk to the centre of the cell. -/
+lemma characteristicCellPairMap_fst_diskCenter (k : cell C 0) :
+    TopPair.Hom.fst (characteristicCellPairMap C k) (diskCenter 0) = zeroCellCenter C k :=
+  Subtype.ext ((coe_characteristicCellPairMap_fst_apply C k _).trans
+    (congrArg (map 0 k) (Subsingleton.elim _ _)))
+
 /-- The subspace component of the single-cell pair map is the attaching map
 `TauCeti.cellAttachingMap` of the cell. -/
 lemma characteristicCellPairMap_snd {n : ℕ} (j : cell C n) :

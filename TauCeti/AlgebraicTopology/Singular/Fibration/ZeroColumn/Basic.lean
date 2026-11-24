@@ -181,11 +181,12 @@ variable (p) in
 /-- Over a `0`-cell `k`, the pullback `Pₖ` of `p` along the characteristic map is the fibre of `p`
 over the centre of the cell. -/
 private def cellZeroPullbackHomeomorph (k : cell C 0) :
-    p.fiber (map 0 k 0) ≃ₜ (cellDiskPullbackPair p C 0 k).fst where
+    p.fiber (zeroCellCenter C k) ≃ₜ (cellDiskPullbackPair p C 0 k).fst where
   toFun e := ⟨(⟨0, mem_closedBall_self zero_le_one⟩, e.val),
     (cellULiftMap_zero_apply k _).trans (p.apply_coe_fiber _ e).symm⟩
   invFun x := ⟨x.val.2, by
-    rw [mem_preimage, mem_singleton_iff, ← x.property, cellULiftMap_zero_apply]⟩
+    rw [mem_preimage, mem_singleton_iff, ← x.property, cellULiftMap_zero_apply,
+      coe_zeroCellCenter]⟩
   left_inv _ := rfl
   right_inv x := Subtype.ext (Prod.ext (Subsingleton.elim _ _) rfl)
   continuous_toFun := by fun_prop
@@ -198,7 +199,7 @@ variable (p) in
 homeomorphism of the fibre with the pullback `Pₖ`, whose part `∂Pₖ` over the boundary is empty. -/
 private def cellZeroFiberHomologyIso (q : ℕ) (k : cell C 0) :
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
-        (ModuleCat.of R R)).obj (p.fiber (map 0 k 0)) ≅
+        (ModuleCat.of R R)).obj (p.fiber (zeroCellCenter C k)) ≅
       (cellDiskPullbackPair p C 0 k).singularHomology (ModuleCat.of R R) q :=
   -- The two factors are isomorphisms; instance search does not see through the identification of
   -- the middle object as the singular homology of the ambient space, so they are supplied.
@@ -215,8 +216,7 @@ private lemma cellZeroFiberHomologyIso_hom_comp (q : ℕ) (k : cell C 0) :
     (cellZeroFiberHomologyIso p R q k).hom ≫
         (cellDiskPullbackPair p C 0 k).singularHomologyMap (cellDiskPullbackPairMap p C 0 k)
           (ModuleCat.of R R) q =
-      fiberHomologyToPreimageSkeletonZero p C R q
-        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)) := by
+      fiberHomologyToPreimageSkeletonZero p C R q (zeroCellCenter C k).property := by
   rw [cellZeroFiberHomologyIso, asIso_hom]
   -- The middle object is the ambient homology only up to unfolding `TopPair.toSSetPair`, so the
   -- composites are reassociated by unification rather than by rewriting.
@@ -226,8 +226,7 @@ private lemma cellZeroFiberHomologyIso_hom_comp (q : ℕ) (k : cell C 0) :
   refine (Category.assoc _ _ _).symm.trans ?_
   have hg : (_root_.TopCat.isoOfHomeo (cellZeroPullbackHomeomorph p k)).hom ≫
       TopPair.Hom.fst (cellDiskPullbackPairMap p C 0 k) =
-        fiberToPreimageSkeletonZero p C
-        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one)) := by
+        fiberToPreimageSkeletonZero p C (zeroCellCenter C k).property := by
     ext e
     exact Subtype.ext ((coe_cellDiskPullbackPairMap_fst_apply 0 k _).trans
       (coe_fiberToPreimageSkeletonZero_apply _ e).symm)
@@ -241,7 +240,7 @@ variable (C) (hp : serreFibrations p) in
 def isColimitCofanFiberHomologyToPreimageSkeletonZero (q : ℕ) :
     IsColimit (Cofan.mk ((preimageSkeletonPair p C 0).singularHomology (ModuleCat.of R R) q)
       fun k : cell C 0 ↦ fiberHomologyToPreimageSkeletonZero p C R q
-        (map_mem_skeletonLT_succ k (norm_zero.trans_le zero_le_one))) :=
+        (zeroCellCenter C k).property) :=
   ((IsColimit.precomposeHomEquiv (Discrete.natIso fun k ↦ cellZeroFiberHomologyIso p R q k.as)
     _).symm (isColimitCofanSingularHomologyPreimageSkeletonPair C hp R 0 q)).ofIsoColimit
     (Cofan.ext (Iso.refl _) fun k ↦ by simp [Cofan.inj, cellZeroFiberHomologyIso_hom_comp])
