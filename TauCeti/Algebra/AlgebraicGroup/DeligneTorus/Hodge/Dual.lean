@@ -27,7 +27,7 @@ two arguments by `X^{(-p,-q)}` and `X^{(-p',-q')}`. The converse uses the Hodge 
 ## Main results
 
 * `TauCeti.DeligneTorus.baseChangeEvaluation_eq_zero_of_mem_hodgeComponent`: a vector of
-  `(V^∨)^{p,q}` pairs trivially with `V^{p',q'}` unless `p + p' = 0` and `q + q' = 0`.
+  `(V^∨)^{p,q}` pairs trivially with `V^{p',q'}` unless `(p', q') = (-p, -q)`.
 * `TauCeti.DeligneTorus.mem_hodgeComponent_dual_iff`: `(V^∨)^{p,q}` consists of the vectors
   pairing trivially with every `V^{p',q'}` for `(p', q') ≠ (-p, -q)`.
 
@@ -48,31 +48,12 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] [Comodule ℝ S V] [Module.
 
 attribute [local instance] Comodule.dual
 
-omit [Comodule ℝ S V] [Module.Finite ℝ V] in
-/-- Extending scalars from `ℂ` to a complex algebra `A` commutes with the scalar-extended
-evaluation pairing. -/
-private theorem baseChangeEvaluation_rTensor {A : Type*} [CommRing A] [Algebra ℂ A]
-    (ξ : ℂ ⊗[ℝ] Module.Dual ℝ V) (v : ℂ ⊗[ℝ] V) :
-    TauCeti.Module.Dual.baseChangeEvaluation (R := ℝ) (M := V) (A := A)
-        (LinearMap.rTensor (Module.Dual ℝ V) (IsScalarTower.toAlgHom ℝ ℂ A).toLinearMap ξ)
-        (LinearMap.rTensor V (IsScalarTower.toAlgHom ℝ ℂ A).toLinearMap v) =
-      algebraMap ℂ A (TauCeti.Module.Dual.baseChangeEvaluation (R := ℝ) (M := V) (A := ℂ) ξ v) := by
-  induction ξ using TensorProduct.inductionOn with
-  | add ξ ξ' hξ hξ' => simp only [map_add, LinearMap.add_apply, hξ, hξ']
-  | tmul c φ =>
-    induction v using TensorProduct.inductionOn with
-    | add v v' hv hv' => simp only [map_add, hv, hv']
-    | tmul d x =>
-      simp only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply,
-        TauCeti.Module.Dual.baseChangeEvaluation_tmul, map_mul, IsScalarTower.coe_toAlgHom']
-      rw [IsScalarTower.algebraMap_apply ℝ ℂ A]
-
 /-- **Hodge types negate in the dual.** A vector of `(V^∨)^{p,q}` pairs trivially with every
-vector of `V^{p',q'}` unless `p + p' = 0` and `q + q' = 0`. -/
+vector of `V^{p',q'}` unless `(p', q') = (-p, -q)`. -/
 theorem baseChangeEvaluation_eq_zero_of_mem_hodgeComponent {p q p' q' : ℤ}
     {ξ : ℂ ⊗[ℝ] Module.Dual ℝ V} {v : ℂ ⊗[ℝ] V}
     (hξ : ξ ∈ hodgeComponent (Module.Dual ℝ V) p q) (hv : v ∈ hodgeComponent V p' q')
-    (hpq : (p + p', q + q') ≠ 0) :
+    (hpq : (p', q') ≠ (-p, -q)) :
     TauCeti.Module.Dual.baseChangeEvaluation (R := ℝ) (M := V) (A := ℂ) ξ v = 0 := by
   have h := TauCeti.Comodule.baseChangeEvaluation_dual_endOfPoint_invariant (R := ℝ) (H := S)
     (M := V) splittingPoint
@@ -82,19 +63,18 @@ theorem baseChangeEvaluation_eq_zero_of_mem_hodgeComponent {p q p' q' : ℤ}
       (IsScalarTower.toAlgHom ℝ ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))).toLinearMap v)
   rw [mem_hodgeComponent_iff] at hξ hv
   rw [hξ, hv] at h
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, baseChangeEvaluation_rTensor,
-    MonoidAlgebra.coe_algebraMap, Function.comp_apply, Algebra.algebraMap_self, RingHom.id_apply,
-    MonoidAlgebra.single_mul_single, mul_one, one_mul] at h
-  classical
+  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, AlgHom.baseChangeEvaluation_rTensor,
+    IsScalarTower.coe_toAlgHom', MonoidAlgebra.coe_algebraMap, Function.comp_apply,
+    Algebra.algebraMap_self, RingHom.id_apply, MonoidAlgebra.single_mul_single, mul_one,
+    one_mul] at h
   have hne : Multiplicative.ofAdd (-p', -q') * Multiplicative.ofAdd (-p, -q) ≠ 1 := by
     rw [← ofAdd_add, Ne, ← ofAdd_zero, Multiplicative.ofAdd.injective.eq_iff]
     intro h0
     apply hpq
     simp only [Prod.ext_iff, Prod.fst_add, Prod.snd_add, Prod.fst_zero, Prod.snd_zero] at h0 ⊢
     omega
-  simpa [MonoidAlgebra.coeff_single, Finsupp.single_apply, hne] using
-    congrArg (fun f : MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) ↦
-      f.coeff (Multiplicative.ofAdd (-p', -q') * Multiplicative.ofAdd (-p, -q))) h
+  by_contra h₀
+  exact hne ((MonoidAlgebra.single_left_inj h₀).mp h)
 
 /-- **The Hodge components of the dual.** `(V^∨)^{p,q}` consists of the vectors of
 `ℂ ⊗[ℝ] Module.Dual ℝ V` pairing trivially with `V^{p',q'}` for every `(p', q') ≠ (-p, -q)`. -/
@@ -102,10 +82,8 @@ theorem mem_hodgeComponent_dual_iff {p q : ℤ} {ξ : ℂ ⊗[ℝ] Module.Dual �
     ξ ∈ hodgeComponent (Module.Dual ℝ V) p q ↔
       ∀ p' q' : ℤ, (p', q') ≠ (-p, -q) → ∀ v ∈ hodgeComponent V p' q',
         TauCeti.Module.Dual.baseChangeEvaluation (R := ℝ) (M := V) (A := ℂ) ξ v = 0 := by
-  refine ⟨fun hξ p' q' hne v hv ↦ baseChangeEvaluation_eq_zero_of_mem_hodgeComponent hξ hv
-    fun h ↦ hne ?_, fun h ↦ ?_⟩
-  · simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at h ⊢
-    omega
+  refine ⟨fun hξ p' q' hne v hv ↦ baseChangeEvaluation_eq_zero_of_mem_hodgeComponent hξ hv hne,
+    fun h ↦ ?_⟩
   let D : ℤ × ℤ → Submodule ℂ (ℂ ⊗[ℝ] Module.Dual ℝ V) := fun ab ↦
     hodgeComponent (Module.Dual ℝ V) ab.1 ab.2
   have hξ : ξ ∈ D (p, q) ⊔ ⨆ (ab : ℤ × ℤ) (_ : ab ≠ (p, q)), D ab := by
@@ -119,7 +97,7 @@ theorem mem_hodgeComponent_dual_iff {p q : ℤ} {ξ : ℂ ⊗[ℝ] Module.Dual �
         (TauCeti.Module.Dual.baseChangeEvaluation (R := ℝ) (M := V) (A := ℂ)) :=
     iSup₂_le fun ab hab ξ' hξ' ↦ (Submodule.mem_dualAnnihilator _).mpr fun v hv ↦
       baseChangeEvaluation_eq_zero_of_mem_hodgeComponent hξ' hv fun h0 ↦ hab <| by
-        simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at h0 ⊢
+        simp only [Prod.ext_iff] at h0 ⊢
         omega
   have h₁ := (Submodule.mem_dualAnnihilator _).mp (hle hξ₁)
   -- hence `ξ₁` pairs trivially with everything
@@ -130,9 +108,7 @@ theorem mem_hodgeComponent_dual_iff {p q : ℤ} {ξ : ℂ ⊗[ℝ] Module.Dual �
     by_cases hab : ab = (-p, -q)
     · subst hab
       exact h₁ v hv
-    · have h₀ := baseChangeEvaluation_eq_zero_of_mem_hodgeComponent hξ₀ hv fun h0 ↦ hab <| by
-        simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at h0 ⊢
-        omega
+    · have h₀ := baseChangeEvaluation_eq_zero_of_mem_hodgeComponent hξ₀ hv hab
       have := h ab.1 ab.2 hab v hv
       rwa [map_add, LinearMap.add_apply, h₀, zero_add] at this
   have hz : ξ₁ = 0 := (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := ℝ) (M := V)

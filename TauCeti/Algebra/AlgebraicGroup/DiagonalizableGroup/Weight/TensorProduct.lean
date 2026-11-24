@@ -62,8 +62,12 @@ theorem tmul_mem_weightSpace_tensor (π : C →ₐc[R] MonoidAlgebra R X) {x y :
     (Comodule.coact (R := R) (C := C) (M := V) v ⊗ₜ[R] Comodule.coact (R := R) (C := C) (M := W) w)
   simp only [LinearMap.comp_apply, TensorProduct.map_tmul] at h
   rw [Comodule.tensor_coact, Comodule.tensorCoact_tmul]
-  erw [h, hv, hw]
-  rw [Comodule.tensorCombine_tmul_tmul, MonoidAlgebra.single_mul_single, one_mul]
+  -- `lTensor_comp_tensorCombine` takes `π` as an algebra map, while `weightSpace` uses `π` as a
+  -- coalgebra map; both underlying linear maps are `π` itself
+  have hπ : (π : C →ₐ[R] MonoidAlgebra R X).toLinearMap =
+      (π : C →ₗc[R] MonoidAlgebra R X).toLinearMap := rfl
+  rw [hπ] at h
+  rw [h, hv, hw, Comodule.tensorCombine_tmul_tmul, MonoidAlgebra.single_mul_single, one_mul]
 
 end Tensor
 
@@ -91,9 +95,8 @@ theorem apply_eq_zero_of_mem_weightSpace_dual (π : C →ₐc[R] MonoidAlgebra R
   simp only [TauCeti.Module.Dual.baseChangeEvaluation_tmul, AlgHom.coe_id, id_eq, one_mul,
     MonoidAlgebra.coe_algebraMap, Function.comp_apply, Algebra.algebraMap_self, RingHom.id_apply,
     MonoidAlgebra.single_mul_single, mul_one] at h
-  classical
-  simpa [MonoidAlgebra.coeff_single, Finsupp.single_apply, hxy] using
-    congrArg (fun f : MonoidAlgebra R X ↦ f.coeff (x * y)) h
+  by_contra h₀
+  exact hxy ((MonoidAlgebra.single_left_inj h₀).mp h)
 
 end Dual
 
