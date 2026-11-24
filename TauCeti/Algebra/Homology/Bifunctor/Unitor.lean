@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Single
+public import TauCeti.Algebra.Homology.Bifunctor.Single
 public import TauCeti.Algebra.Homology.Bifunctor.Support
 
 /-!
@@ -16,7 +16,7 @@ complex `X[0]` acts as the identity through the totalized bifunctor: for every c
 with tensor signs (`ComplexShape.TensorSigns`) and every complex `K`, there is an isomorphism
 `mapBifunctor X[0] K F c ≅ K`, natural in `K`.
 
-## Main definitions
+## Main definitions and results
 
 * `CategoryTheory.Functor.mapBifunctorLeftUnitor`: the isomorphism `mapBifunctor X[0] K F c ≅ K`
   attached to `e : F.obj X ≅ 𝟭 D`.
@@ -68,18 +68,10 @@ private lemma mapBifunctorLeftUnitorX_inv_comm (K : HomologicalComplex D c)
         (mapBifunctor ((single C c 0).obj X) K F c).d j j' =
       K.d j j' ≫ (mapBifunctorLeftUnitorX F X e K j').inv := by
   by_cases hjj' : c.Rel j j'
-  · -- The first-variable differential vanishes since `X[0]` has zero differential.
-    have hd₁ : mapBifunctor.d₁ ((single C c 0).obj X) K F c 0 j j' = 0 := by
-      by_cases h₁ : c.Rel 0 (c.next 0)
-      · by_cases h₂ : ComplexShape.π c c c (c.next 0, j) = j'
-        · rw [mapBifunctor.d₁_eq _ _ _ _ h₁ _ _ h₂, single_obj_d, Functor.map_zero,
-            NatTrans.app_zero, zero_comp, smul_zero]
-        · rw [mapBifunctor.d₁_eq_zero' _ _ _ _ h₁ _ _ h₂]
-      · rw [mapBifunctor.d₁_eq_zero _ _ _ _ _ _ _ h₁]
-    have hε : ComplexShape.ε₂ c c c (0, j) = 1 := by simp
+  · have hε : ComplexShape.ε₂ c c c (0, j) = 1 := by simp
     rw [mapBifunctorLeftUnitorX_inv, mapBifunctorLeftUnitorX_inv]
     simp only [assoc, mapBifunctor.d_eq, Preadditive.comp_add, mapBifunctor.ι_D₁,
-      mapBifunctor.ι_D₂, hd₁, comp_zero, zero_add,
+      mapBifunctor.ι_D₂, single_mapBifunctor_d₁, comp_zero, zero_add,
       mapBifunctor.d₂_eq _ _ _ _ _ hjj' _ (by simp : ComplexShape.π c c c (0, j') = j'), hε,
       one_smul]
     rw [← NatTrans.naturality_assoc, ← e.inv.naturality_assoc, Functor.id_map]

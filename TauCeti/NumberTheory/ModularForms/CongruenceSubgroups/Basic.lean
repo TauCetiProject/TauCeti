@@ -19,6 +19,8 @@ import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
 
 /-!
 # Congruence subgroups: the pair `Γ₁(N) ⊴ Γ₀(N)`, the index of `Γ₀(N)`, and the level
@@ -62,6 +64,7 @@ infrastructure independent of the diamond operators.
   `CongruenceSubgroup.Gamma_le_Gamma_of_dvd`: all three families are antitone in the level,
   `Γ(N) ≤ Γ(M)` whenever `M ∣ N`.
 * `CongruenceSubgroup.index_Gamma`: `[SL₂(ℤ) : Γ(N)] = |SL₂(ℤ/Nℤ)|`; in particular
+  `CongruenceSubgroup.index_Gamma_two`: `[SL₂(ℤ) : Γ(2)] = 6` and
   `CongruenceSubgroup.index_Gamma_three`: `[SL₂(ℤ) : Γ(3)] = 24`.
 * `CongruenceSubgroup.ker_map_intCast_zmod`, `CongruenceSubgroup.map_eq_one_of_mem_Gamma`,
   `CongruenceSubgroup.mem_Gamma_iff_dvd`: `Γ(N)` is the kernel of reduction modulo `N`, and its
@@ -240,6 +243,11 @@ theorem index_Gamma (N : ℕ) : (Gamma N).index = Nat.card SL(2, ZMod N) := by
   rw [Gamma, Subgroup.index_ker,
     MonoidHom.range_eq_top.mpr Matrix.SpecialLinearGroup.map_intCast_zmod_surjective,
     Subgroup.card_top]
+
+/-- `Γ(2)` has index `6 = |SL₂(𝔽₂)|` in `SL₂(ℤ)`. -/
+theorem index_Gamma_two : (Gamma 2).index = 6 := by
+  rw [index_Gamma, Matrix.card_SL_field]
+  simp [Fin.prod_univ_two, ZMod.card]
 
 /-- `Γ(3)` has index `24 = |SL₂(𝔽₃)|` in `SL₂(ℤ)`. -/
 theorem index_Gamma_three : (Gamma 3).index = 24 := by
@@ -502,13 +510,6 @@ lemma mul_inv_mem_Gamma1_iff_Gamma0Map_eq (g₁ g₂ : ↥(Gamma0 N)) :
   rw [← div_eq_mul_inv] at hker
   exact (MonoidHom.div_mem_ker_iff (Gamma0Map N)).mp hker
 
-/-- The diagonal matrix `!![u⁻¹, 0; 0, u]` as an element of `SL₂(ZMod N)`. -/
-private def diagUnit (u : (ZMod N)ˣ) : SpecialLinearGroup (Fin 2) (ZMod N) :=
-  ⟨!![(↑u⁻¹ : ZMod N), 0; 0, ↑u], by simp [det_fin_two_of]⟩
-
-private lemma coe_diagUnit (u : (ZMod N)ˣ) :
-    (diagUnit u : Matrix (Fin 2) (Fin 2) (ZMod N)) = !![(↑u⁻¹ : ZMod N), 0; 0, ↑u] := rfl
-
 /-- **The value of Mathlib's `Gamma0Map`**: the lower-right entry of the matrix, reduced mod `N`.
 
 `Gamma0Map` is a bare `MonoidHom.mk`, so this holds definitionally; naming it keeps that one
@@ -528,16 +529,17 @@ theorem mem_Gamma1_iff_toHomUnits_eq_one (g : ↥(Gamma0 N)) :
 lower-right entry of some `g ∈ Gamma0 N`, by strong approximation for `SL₂`. -/
 theorem Gamma0Map_toHomUnits_surjective :
     Function.Surjective ((Gamma0Map N).toHomUnits) := fun u ↦ by
-  obtain ⟨g, hg⟩ := map_intCast_zmod_surjective (diagUnit u)
-  have hentry : ∀ i j, ((g i j : ℤ) : ZMod N) =
-      (!![(↑u⁻¹ : ZMod N), 0; 0, ↑u] : Matrix (Fin 2) (Fin 2) (ZMod N)) i j := fun i j => by
+  -- the unit diagonal `diag(u⁻¹, u)` of `SL₂(ZMod N)` lifts to `SL₂(ℤ)`
+  let D := Matrix.SpecialLinearGroup.diag2nUnit (one_ne_zero : (1 : Fin 2) ≠ 0) u
+  obtain ⟨g, hg⟩ := map_intCast_zmod_surjective D
+  have hentry : ∀ i j, ((g i j : ℤ) : ZMod N) = D.val i j := fun i j => by
     have h := congrArg
       (fun A : SpecialLinearGroup (Fin 2) (ZMod N) => (A : Matrix (Fin 2) (Fin 2) (ZMod N)) i j)
       hg
-    simpa only [map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, Int.coe_castRingHom,
-      coe_diagUnit] using h
-  have h10 : ((g 1 0 : ℤ) : ZMod N) = 0 := by rw [hentry]; simp
-  have h11 : ((g 1 1 : ℤ) : ZMod N) = u := by rw [hentry]; simp
+    simpa only [map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, Int.coe_castRingHom]
+      using h
+  have h10 : ((g 1 0 : ℤ) : ZMod N) = 0 := by rw [hentry]; simp [D]
+  have h11 : ((g 1 1 : ℤ) : ZMod N) = u := by rw [hentry]; simp [D]
   exact ⟨⟨g, Gamma0_mem.mpr h10⟩, Units.ext (by simpa [Gamma0Map] using h11)⟩
 
 /-- The index of `Γ₁(N)` is the index of `Γ₀(N)` multiplied by the number of units modulo
@@ -787,7 +789,7 @@ section InductiveStep
 variable (p : ℕ)
 
 private def lowerTriRep (k : ℕ) (c : Fin p) : SL(2, ℤ) :=
-  ⟨!![1, 0; (c : ℤ) * (p : ℤ) ^ k, 1], by simp [det_fin_two_of]⟩
+  Matrix.SpecialLinearGroup.transvection (one_ne_zero : (1 : Fin 2) ≠ 0) ((c : ℤ) * (p : ℤ) ^ k)
 
 private lemma lowerTriRep_mem_Gamma0 (k : ℕ) (c : Fin p) :
     lowerTriRep p k c ∈ Gamma0 (p ^ k) := by
@@ -797,16 +799,15 @@ private lemma lowerTriRep_mem_Gamma0 (k : ℕ) (c : Fin p) :
 private lemma lowerTriRep_diff_entry (k : ℕ) (c₁ c₂ : Fin p) :
     ((lowerTriRep p k c₁)⁻¹ * lowerTriRep p k c₂).val 1 0 =
     ((c₂ : ℤ) - (c₁ : ℤ)) * (p : ℤ) ^ k := by
-  simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [inv_apply_one_zero, inv_apply_one_one]
-  simp [lowerTriRep]
+  rw [lowerTriRep, lowerTriRep, Matrix.SpecialLinearGroup.transvection_inv,
+    ← Matrix.SpecialLinearGroup.transvection_add]
+  simp
   ring
 
 private lemma lowerTriRep_inv_mul_10 (k : ℕ) (c : Fin p) (σ : SL(2, ℤ)) :
     ((lowerTriRep p k c)⁻¹ * σ).val 1 0 = σ.val 1 0 - (c : ℤ) * (p : ℤ) ^ k * σ.val 0 0 := by
-  simp only [Matrix.SpecialLinearGroup.coe_mul, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [inv_apply_one_zero, inv_apply_one_one]
-  simp [lowerTriRep]
+  rw [lowerTriRep, Matrix.SpecialLinearGroup.transvection_inv]
+  simp [Matrix.mul_apply, Fin.sum_univ_two]
   ring
 
 private def relindexRep (k : ℕ) (c : Fin p) : ↥(Gamma0 (p ^ k)) :=

@@ -111,9 +111,7 @@ theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
   refine ⟨g, hgc, fun n ↦ ?_, fun n ↦ ?_, fun n x ↦ ?_, ?_⟩
   · have hfs : tsupport f ⊆ closedBall c r :=
       closure_minimal hs isClosed_closedBall
-    have hρ : (ρ n).rOut ≤ 1 := by
-      rw [ContDiffBump.rOut_shrinking]
-      exact div_le_self zero_le_one (le_add_of_nonneg_left (Nat.cast_nonneg n))
+    have hρ : (ρ n).rOut ≤ 1 := ContDiffBump.rOut_shrinking_le zero_lt_one n
     intro x hx
     have hx' := (ρ n).tsupport_normed_convolution_subset (μ := μ)
       (subset_tsupport _ hx)
@@ -132,7 +130,7 @@ theorem exists_contDiff_support_subset_holderWith_tendstoUniformly
       rfl
     rw [heq]
     simpa only [hInt, Real.toNNReal_one, one_mul] using h
-  · exact (ρ n).norm_normed_convolution_le hM x
+  · exact (ρ n).norm_normed_convolution_le (Eventually.of_forall hM) x
   · exact ContDiffBump.tendstoUniformly_normed_convolution
       (ContDiffBump.tendsto_rOut_shrinking zero_lt_one) (hf.uniformContinuous hα)
 

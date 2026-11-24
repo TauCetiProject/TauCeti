@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
+public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 import Mathlib.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Normed.Ring.Ultra
@@ -35,6 +36,11 @@ root of `q` is a power of `q`; nor is a unit in the open annulus `‖q‖ < ‖u
 Over an ultrametric field the quotient `Kˣ ⧸ q^ℤ` has infinitely many squares
 (`infinite_range_sq_quotient_zpowers`), as the classes of the norm-one units `1 - qᵏ` show. This
 is the room needed to move a triple of points of the Tate curve into general position.
+
+In a proper normed division ring, such as `ℝ`, `ℂ` or `ℚ_[p]`, the powers of a unit `u` form a
+relatively compact subgroup of the units exactly when `‖u‖ = 1`
+(`isCompact_closure_zpowers_iff_norm_eq_one`). Both positive and negative powers matter: the
+positive powers of `p` are bounded in `ℚ_[p]`, while its negative powers are not.
 -/
 
 public section
@@ -159,6 +165,38 @@ theorem unitsQuotientZPowersEquivAnnulus_apply_mk (q : Kˣ) (hq : ‖(q : K)‖ 
     (u : Kˣ) (hu : ‖(q : K)‖ < ‖(u : K)‖ ∧ ‖(u : K)‖ ≤ 1) :
     unitsQuotientZPowersEquivAnnulus q hq (u : Kˣ ⧸ Subgroup.zpowers q) = ⟨u, hu⟩ :=
   (unitsQuotientZPowersEquivAnnulus q hq).apply_symm_apply ⟨u, hu⟩
+
+/-- In a proper normed division ring the powers of a unit `u` form a relatively compact subgroup
+of the units exactly when `‖u‖ = 1`. -/
+theorem isCompact_closure_zpowers_iff_norm_eq_one [ProperSpace K] (u : Kˣ) :
+    IsCompact (closure (Subgroup.zpowers u : Set Kˣ)) ↔ ‖(u : K)‖ = 1 := by
+  constructor
+  · intro h
+    -- The norms `‖u‖ ^ n`, `n : ℤ`, are bounded on the compact closure, which forces `‖u‖ = 1`.
+    obtain ⟨C, hC⟩ := h.exists_bound_of_continuousOn Units.continuous_val.continuousOn
+    have hb (n : ℤ) : ‖(u : K)‖ ^ n ≤ C := by
+      simpa [Units.val_zpow_eq_zpow_val, norm_zpow] using
+        hC _ (subset_closure (Subgroup.zpow_mem_zpowers u n))
+    have hu : 0 < ‖(u : K)‖ := norm_pos_iff.mpr u.ne_zero
+    by_contra hne
+    rcases Ne.lt_or_gt hne with hlt | hgt
+    · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt C (one_lt_inv₀ hu |>.mpr hlt)
+      exact (hb (-n)).not_gt (by simpa [zpow_neg] using hn)
+    · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt C hgt
+      exact (hb n).not_gt (by simpa using hn)
+  · intro hu
+    -- The units of norm one form a compact set: their values form the unit sphere of `K`.
+    have hS : IsCompact {x : Kˣ | ‖(x : K)‖ = 1} := by
+      rw [Units.isEmbedding_val₀.isCompact_iff]
+      convert isCompact_sphere (0 : K) 1 using 1
+      ext x
+      refine ⟨?_, fun hx ↦ ⟨Units.mk0 x (norm_ne_zero_iff.mp ?_), by simpa using hx, rfl⟩⟩
+      · rintro ⟨y, hy, rfl⟩
+        simpa using hy
+      · simp_all
+    refine hS.closure_of_subset ?_
+    rintro _ ⟨n, rfl⟩
+    simp [Units.val_zpow_eq_zpow_val, norm_zpow, hu]
 
 /-- Over an ultrametric field, the quotient `Kˣ ⧸ q^ℤ` by the powers of a unit with `‖q‖ < 1` has
 infinitely many squares. -/
