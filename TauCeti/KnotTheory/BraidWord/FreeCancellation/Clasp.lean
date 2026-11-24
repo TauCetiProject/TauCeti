@@ -175,33 +175,48 @@ private def readClaspWith {N : ℕ} (f₀ f₁ : Fin 4 ≃ Fin 4) (k₀ k₁ : �
     ((fun C => C.rotateCrossing 0)^[k₀] (D.relabel (claspHalfWith N f₀ f₁) (claspCross N)))
 
 private def readClasp {N : ℕ} (D : OrientedPDCode (N + 2)) : OrientedPDCode (N + 2) :=
-  ((D.relabel (claspHalf N) (claspCross N)).rotateCrossing 0).rotateCrossing 1
+  readClaspWith (finRotate 4).symm (finRotate 4).symm 1 1 D
 
 private def readLowerClasp {N : ℕ} (D : OrientedPDCode (N + 2)) : OrientedPDCode (N + 2) :=
-  ((D.relabel (lowerClaspHalf N) (claspCross N)).rotateCrossing 1).rotateCrossing 1
+  readClaspWith (Equiv.refl (Fin 4)) (Equiv.addRight 2) 0 2 D
 
-private theorem reidemeisterEquiv_readClasp {N : ℕ} (D : OrientedPDCode (N + 2)) :
-    OrientedPDCode.ReidemeisterEquiv D (readClasp D) :=
-  (OrientedPDCode.reidemeisterEquiv_relabel D (claspHalf N) (claspCross N)).trans
-    ((OrientedPDCode.reidemeisterEquiv_rotateCrossing _ 0).trans
-      (OrientedPDCode.reidemeisterEquiv_rotateCrossing _ 1))
+private theorem reidemeisterEquiv_iterate_rotateCrossing {M : ℕ} (C : OrientedPDCode M)
+    (c : Fin M) (k : ℕ) :
+    OrientedPDCode.ReidemeisterEquiv C
+      ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C) := by
+  induction k with
+  | zero => exact OrientedPDCode.ReidemeisterEquiv.refl C
+  | succ k ih =>
+    rw [Function.iterate_succ_apply']
+    exact ih.trans (OrientedPDCode.reidemeisterEquiv_rotateCrossing _ c)
 
-private theorem reidemeisterEquiv_readLowerClasp {N : ℕ} (D : OrientedPDCode (N + 2)) :
-    OrientedPDCode.ReidemeisterEquiv D (readLowerClasp D) :=
-  (OrientedPDCode.reidemeisterEquiv_relabel D (lowerClaspHalf N) (claspCross N)).trans
-    ((OrientedPDCode.reidemeisterEquiv_rotateCrossing _ 1).trans
-      (OrientedPDCode.reidemeisterEquiv_rotateCrossing _ 1))
+private theorem iterate_rotateCrossing_edgePair {M : ℕ} (C : OrientedPDCode M)
+    (c : Fin M) (k : ℕ) :
+    ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C).edgePair = C.edgePair := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply']
+    simpa using ih
 
-private theorem readClasp_edgePair_apply {N : ℕ} (D : OrientedPDCode (N + 2))
-    (x : Fin (4 * (N + 2))) :
-    (readClasp D).edgePair.val (claspHalf N x) = claspHalf N (D.edgePair.val x) := by
-  simp [readClasp]
+private theorem iterate_rotateCrossing_orientation {M : ℕ} (C : OrientedPDCode M)
+    (c : Fin M) (k : ℕ) :
+    ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C).orientation = C.orientation := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply']
+    simpa using ih
 
-private theorem readLowerClasp_edgePair_apply {N : ℕ} (D : OrientedPDCode (N + 2))
-    (x : Fin (4 * (N + 2))) :
-    (readLowerClasp D).edgePair.val (lowerClaspHalf N x) =
-      lowerClaspHalf N (D.edgePair.val x) := by
-  simp [readLowerClasp]
+private theorem iterate_rotateCrossing_crossinglessComponents {M : ℕ} (C : OrientedPDCode M)
+    (c : Fin M) (k : ℕ) :
+    ((fun E : OrientedPDCode M => E.rotateCrossing c)^[k] C).crossinglessComponents =
+      C.crossinglessComponents := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply']
+    simpa using ih
 
 private theorem iterate_rotateCrossing_halfEdge {M : ℕ} (C : OrientedPDCode M) (c : Fin M)
     (k : ℕ) (j : Fin M) (s : Fin 4) :
@@ -216,6 +231,45 @@ private theorem iterate_rotateCrossing_halfEdge {M : ℕ} (C : OrientedPDCode M)
     · subst hj
       simp [ih, succ_nsmul, add_assoc, add_comm]
     · simp [ih, hj]
+
+private theorem reidemeisterEquiv_readClaspWith {N : ℕ} (f₀ f₁ : Fin 4 ≃ Fin 4)
+    (k₀ k₁ : ℕ) (D : OrientedPDCode (N + 2)) :
+    OrientedPDCode.ReidemeisterEquiv D (readClaspWith f₀ f₁ k₀ k₁ D) :=
+  (OrientedPDCode.reidemeisterEquiv_relabel D (claspHalfWith N f₀ f₁) (claspCross N)).trans
+    ((reidemeisterEquiv_iterate_rotateCrossing _ 0 k₀).trans
+      (reidemeisterEquiv_iterate_rotateCrossing _ 1 k₁))
+
+private theorem reidemeisterEquiv_readClasp {N : ℕ} (D : OrientedPDCode (N + 2)) :
+    OrientedPDCode.ReidemeisterEquiv D (readClasp D) :=
+  reidemeisterEquiv_readClaspWith _ _ 1 1 D
+
+private theorem reidemeisterEquiv_readLowerClasp {N : ℕ} (D : OrientedPDCode (N + 2)) :
+    OrientedPDCode.ReidemeisterEquiv D (readLowerClasp D) :=
+  reidemeisterEquiv_readClaspWith _ _ 0 2 D
+
+private theorem readClaspWith_edgePair_apply {N : ℕ} (f₀ f₁ : Fin 4 ≃ Fin 4)
+    (k₀ k₁ : ℕ) (D : OrientedPDCode (N + 2)) (x : Fin (4 * (N + 2))) :
+    (readClaspWith f₀ f₁ k₀ k₁ D).edgePair.val (claspHalfWith N f₀ f₁ x) =
+      claspHalfWith N f₀ f₁ (D.edgePair.val x) := by
+  rw [readClaspWith, iterate_rotateCrossing_edgePair, iterate_rotateCrossing_edgePair]
+  simp
+
+private theorem readClasp_edgePair_apply {N : ℕ} (D : OrientedPDCode (N + 2))
+    (x : Fin (4 * (N + 2))) :
+    (readClasp D).edgePair.val (claspHalf N x) = claspHalf N (D.edgePair.val x) :=
+  readClaspWith_edgePair_apply _ _ 1 1 D x
+
+private theorem readLowerClasp_edgePair_apply {N : ℕ} (D : OrientedPDCode (N + 2))
+    (x : Fin (4 * (N + 2))) :
+    (readLowerClasp D).edgePair.val (lowerClaspHalf N x) =
+      lowerClaspHalf N (D.edgePair.val x) :=
+  readClaspWith_edgePair_apply _ _ 0 2 D x
+
+@[simp] private theorem readClaspWith_crossinglessComponents {N : ℕ} (f₀ f₁ : Fin 4 ≃ Fin 4)
+    (k₀ k₁ : ℕ) (D : OrientedPDCode (N + 2)) :
+    (readClaspWith f₀ f₁ k₀ k₁ D).crossinglessComponents = D.crossinglessComponents := by
+  rw [readClaspWith, iterate_rotateCrossing_crossinglessComponents,
+    iterate_rotateCrossing_crossinglessComponents, OrientedPDCode.relabel_crossinglessComponents]
 
 private theorem readClaspWith_halfEdge {N : ℕ} {f₀ f₁ : Fin 4 ≃ Fin 4} {k₀ k₁ : ℕ}
     {D : OrientedPDCode (N + 2)} (h : D.halfEdge = 1)
@@ -234,14 +288,12 @@ private theorem readClaspWith_halfEdge {N : ℕ} {f₀ f₁ : Fin 4 ≃ Fin 4} {
 
 private theorem readClasp_halfEdge {N : ℕ} {D : OrientedPDCode (N + 2)} (h : D.halfEdge = 1) :
     (readClasp D).halfEdge = 1 :=
-  readClaspWith_halfEdge (f₀ := (finRotate 4).symm) (f₁ := (finRotate 4).symm) (k₀ := 1) (k₁ := 1)
-    h (fun s => by simp) (fun s => by simp)
+  readClaspWith_halfEdge h (fun s => by simp) (fun s => by simp)
 
 private theorem readLowerClasp_halfEdge {N : ℕ} {D : OrientedPDCode (N + 2)}
     (h : D.halfEdge = 1) :
     (readLowerClasp D).halfEdge = 1 :=
-  readClaspWith_halfEdge (f₀ := Equiv.refl (Fin 4)) (f₁ := Equiv.addRight 2) (k₀ := 0) (k₁ := 2)
-    h (fun s => by simp) (fun s => by fin_cases s <;> decide)
+  readClaspWith_halfEdge h (fun s => by simp) (fun s => by fin_cases s <;> decide)
 
 private theorem halfEdge_eq_one_of_succ {N : ℕ} {D : OrientedPDCode (N + 2)}
     (hold : ∀ (j : Fin N) (s : Fin 4), D.halfEdge (halfEdgeSuccEquiv (N + 1)
@@ -262,8 +314,8 @@ private theorem halfEdge_eq_one_of_succ {N : ℕ} {D : OrientedPDCode (N + 2)}
       Equiv.Perm.one_apply] using h0 s
   · simpa only [← crossingSlotEquiv_succ_castSucc, Equiv.Perm.one_apply] using hold j s
 
-private theorem relabel_claspHalfWith_orientation_eq_closure
-    {v : BraidWord n} {i : Fin (n - 1)} {ε : ℤˣ} {f₀ f₁ : Fin 4 ≃ Fin 4}
+private theorem readClaspWith_orientation_eq_closure
+    {v : BraidWord n} {i : Fin (n - 1)} {ε : ℤˣ} {f₀ f₁ : Fin 4 ≃ Fin 4} {k₀ k₁ : ℕ}
     {D : OrientedPDCode (v.length + 2)}
     (h0 : ∀ s : Fin 4, D.orientation
         (halfEdgeSuccEquiv (v.length + 1)
@@ -276,8 +328,9 @@ private theorem relabel_claspHalfWith_orientation_eq_closure
         (halfEdgeSuccEquiv (v.length + 1)
           (.inl (halfEdgeSuccEquiv v.length (.inl (crossingSlotEquiv v.length (j, s)))))) =
       v.closure.orientation (crossingSlotEquiv v.length (j, s))) :
-    (D.relabel (claspHalfWith v.length f₀ f₁) (claspCross v.length)).orientation =
+    (readClaspWith f₀ f₁ k₀ k₁ D).orientation =
       (closure ((i, ε) :: (i, -ε) :: v)).orientation := by
+  rw [readClaspWith, iterate_rotateCrossing_orientation, iterate_rotateCrossing_orientation]
   funext x
   obtain ⟨⟨j, s⟩, rfl⟩ := (crossingSlotEquiv (v.length + 2)).surjective x
   have hori : (closure ((i, ε) :: (i, -ε) :: v)).orientation
@@ -296,38 +349,6 @@ private theorem relabel_claspHalfWith_orientation_eq_closure
       exact h1 s
     · rw [← claspHalfWith_old_crossing v.length f₀ f₁, OrientedPDCode.relabel_orientation,
         Equiv.symm_apply_apply, hold, orientation_closure]
-
-private theorem readClasp_orientation_eq_closure {v : BraidWord n} {i : Fin (n - 1)} {ε : ℤˣ}
-    {D : OrientedPDCode (v.length + 2)}
-    (h0 : ∀ s : Fin 4, D.orientation
-        (halfEdgeSuccEquiv (v.length + 1) (.inl (halfEdgeSuccEquiv v.length (.inr (s + 1))))) =
-      decide (s = 1 ∨ s = 2))
-    (h1 : ∀ s : Fin 4, D.orientation (halfEdgeSuccEquiv (v.length + 1) (.inr (s + 1))) =
-      decide (s = 1 ∨ s = 2))
-    (hold : ∀ (j : Fin v.length) (s : Fin 4), D.orientation
-        (halfEdgeSuccEquiv (v.length + 1)
-          (.inl (halfEdgeSuccEquiv v.length (.inl (crossingSlotEquiv v.length (j, s)))))) =
-      v.closure.orientation (crossingSlotEquiv v.length (j, s))) :
-    (readClasp D).orientation = (closure ((i, ε) :: (i, -ε) :: v)).orientation := by
-  simp only [readClasp, OrientedPDCode.rotateCrossing_orientation, claspHalf]
-  exact relabel_claspHalfWith_orientation_eq_closure
-    (fun s ↦ by simpa using h0 s) (fun s ↦ by simpa using h1 s) hold
-
-private theorem readLowerClasp_orientation_eq_closure {v : BraidWord n} {i : Fin (n - 1)} {ε : ℤˣ}
-    {D : OrientedPDCode (v.length + 2)}
-    (h0 : ∀ s : Fin 4, D.orientation
-        (halfEdgeSuccEquiv (v.length + 1) (.inl (halfEdgeSuccEquiv v.length (.inr s)))) =
-      decide (s = 1 ∨ s = 2))
-    (h1 : ∀ s : Fin 4, D.orientation (halfEdgeSuccEquiv (v.length + 1) (.inr (s - 2))) =
-      decide (s = 1 ∨ s = 2))
-    (hold : ∀ (j : Fin v.length) (s : Fin 4), D.orientation
-        (halfEdgeSuccEquiv (v.length + 1)
-          (.inl (halfEdgeSuccEquiv v.length (.inl (crossingSlotEquiv v.length (j, s)))))) =
-      v.closure.orientation (crossingSlotEquiv v.length (j, s))) :
-    (readLowerClasp D).orientation = (closure ((i, ε) :: (i, -ε) :: v)).orientation := by
-  simp only [readLowerClasp, OrientedPDCode.rotateCrossing_orientation, lowerClaspHalf]
-  exact relabel_claspHalfWith_orientation_eq_closure h0
-    (fun s ↦ by simpa [sub_eq_add_neg] using h1 s) hold
 
 private theorem overPair_eq_closure_cons_cons {v : BraidWord n} {i : Fin (n - 1)} {ε : ℤˣ}
     {C : OrientedPDCode (v.length + 2)}
@@ -371,16 +392,22 @@ private theorem fields_eq_of_adjoinCircle {N : ℕ} {core D : OrientedPDCode N} 
   · simpa using congrArg (fun C => C.overPair) h
   · simpa using congrArg OrientedPDCode.orientation h
 
+private theorem crossinglessComponents_eq_of_adjoinCircle {N : ℕ} {core D : OrientedPDCode N}
+    {o : Bool} {m : Multiset Bool} (hcore : core.adjoinCircle o = D)
+    (hm : D.crossinglessComponents = o ::ₘ m) :
+    core.crossinglessComponents = m := by
+  have h := congrArg OrientedPDCode.crossinglessComponents hcore
+  rw [hm] at h
+  simpa only [OrientedPDCode.crossinglessComponents_adjoinCircle,
+    Multiset.cons_inj_right] using h
+
 private theorem exists_adjoinCircle_core {N : ℕ} {D : OrientedPDCode N} {m : Multiset Bool}
     (hm : D.crossinglessComponents = true ::ₘ m) :
     ∃ core : OrientedPDCode N,
       core.adjoinCircle true = D ∧ core.crossinglessComponents = m := by
   obtain ⟨core, hcore⟩ :=
     OrientedPDCode.exists_eq_adjoinCircle_of_mem (o := true) (by rw [hm]; simp)
-  refine ⟨core, hcore.symm, ?_⟩
-  have h := congrArg OrientedPDCode.crossinglessComponents hcore
-  simpa only [hm, OrientedPDCode.crossinglessComponents_adjoinCircle,
-    Multiset.cons_inj_right] using h.symm
+  exact ⟨core, hcore.symm, crossinglessComponents_eq_of_adjoinCircle hcore.symm hm⟩
 
 private theorem crossinglessComponents_cons_cons_of_two_nil {v : BraidWord n} {i : Fin (n - 1)}
     {ε : ℤˣ} (hp₀ : v.crossingsAt (strand i) = []) (hq₀ : v.crossingsAt (strandSucc i) = []) :
@@ -515,10 +542,10 @@ private theorem readClosingClasp_eq :
       (fun _ _ => by simp [closingClasp]) (fun _ => by simp [closingClasp])
       (fun _ => by simp [closingClasp]))
   · refine overPair_eq_closure_cons_cons ?_ ?_ fun j ↦ ?_
-    · simp [readClasp, closingClasp]
-    · simp [readClasp, closingClasp, one_ne_zero]
-    · simp [readClasp, closingClasp, Fin.ext_iff]
-  · refine readClasp_orientation_eq_closure (fun s ↦ ?_) (fun s ↦ ?_) fun j s ↦ ?_
+    · simp [readClasp, readClaspWith, closingClasp]
+    · simp [readClasp, readClaspWith, closingClasp, one_ne_zero]
+    · simp [readClasp, readClaspWith, closingClasp, Fin.ext_iff]
+  · refine readClaspWith_orientation_eq_closure (fun s ↦ ?_) (fun s ↦ ?_) fun j s ↦ ?_
     · simp only [closingClasp, OrientedPDCode.orientation_insertClasp_inl_inr,
         orientation_closingHalfEdge]
       fin_cases s <;> decide
@@ -618,11 +645,10 @@ private theorem readTwoCircleDiagram_eq {v : BraidWord n} {i : Fin (n - 1)} {ε 
   have hover : core.overPair = v.closure.overPair := hover₁.trans hover₂
   have hori : core.orientation = v.closure.orientation := hori₁.trans hori₂
   have hc : core.crossinglessComponents =
-      (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents := by
-    have h := congrArg OrientedPDCode.crossinglessComponents hcore
-    rw [crossinglessComponents_cons_cons_of_two_nil (ε := ε) hp₀ hq₀] at h
-    simpa only [OrientedPDCode.crossinglessComponents_adjoinCircle,
-      Multiset.cons_inj_right] using h
+      (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents :=
+    crossinglessComponents_eq_of_adjoinCircle (rfl : core.adjoinCircle true = _)
+      (crossinglessComponents_eq_of_adjoinCircle hcore
+        (crossinglessComponents_cons_cons_of_two_nil hp₀ hq₀))
   refine eq_closure_cons_cons_of_fields ?_ (readTwoCircleDiagram_edgePair hp₀ hq₀ hedge) ?_ ?_ ?_
   · exact readClasp_halfEdge (by
       ext x
@@ -632,13 +658,14 @@ private theorem readTwoCircleDiagram_eq {v : BraidWord n} {i : Fin (n - 1)} {ε 
       apply Fin.ext; simp
     have hsecond : Fin.last (v.length + 1) = Fin.natAdd v.length (1 : Fin 2) := Fin.natAdd_last.symm
     refine overPair_eq_closure_cons_cons ?_ ?_ fun j ↦ ?_
-    · simp [readClasp, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def, hfirst]
-    · simp [readClasp, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def, hsecond,
-        one_ne_zero]
+    · simp [readClasp, readClaspWith, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
+        hfirst]
+    · simp [readClasp, readClaspWith, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
+        hsecond, one_ne_zero]
     · have hj : j.castSucc.castSucc = Fin.castAdd 2 j := Fin.castSucc_castAdd j
-      simp [readClasp, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def, hover, hj,
-        Fin.ext_iff]
-  · refine readClasp_orientation_eq_closure (fun s ↦ ?_) (fun s ↦ ?_) fun j s ↦ ?_
+      simp [readClasp, readClaspWith, twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def,
+        hover, hj, Fin.ext_iff]
+  · refine readClaspWith_orientation_eq_closure (fun s ↦ ?_) (fun s ↦ ?_) fun j s ↦ ?_
     · rw [twoCircleDiagram, OrientedPDCode.adjoinTwoCircleClasp_def, ← unionFirst,
         OrientedPDCode.orientation_disjointUnion_inr, OrientedPDCode.orientation_twoCircleClasp]
       fin_cases s <;> decide
@@ -748,20 +775,18 @@ private theorem readCircleArcDiagram_eq {v : BraidWord n} {i : Fin (n - 1)} {ε 
   obtain ⟨hhalf, hedge, hover, hori⟩ := fields_eq_of_adjoinCircle hcore
   rw [halfEdge_closure] at hhalf
   have hc : core.crossinglessComponents =
-      (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents := by
-    have h := congrArg OrientedPDCode.crossinglessComponents hcore
-    rw [crossinglessComponents_cons_cons_of_one_nil (ε := ε) (Or.inl ⟨hp, hq⟩)] at h
-    simpa only [OrientedPDCode.crossinglessComponents_adjoinCircle,
-      Multiset.cons_inj_right] using h
+      (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents :=
+    crossinglessComponents_eq_of_adjoinCircle hcore
+      (crossinglessComponents_cons_cons_of_one_nil (Or.inl ⟨hp, hq⟩))
   refine eq_closure_cons_cons_of_fields ?_ (readCircleArcDiagram_edgePair hp hq hedge) ?_ ?_ ?_
   · exact readClasp_halfEdge (halfEdge_eq_one_of_succ
       (fun _ _ => by simp [circleArcDiagram, hhalf]) (fun _ => by simp [circleArcDiagram])
       (fun _ => by simp [circleArcDiagram]))
   · refine overPair_eq_closure_cons_cons ?_ ?_ fun j ↦ ?_
-    · simp [readClasp, circleArcDiagram]
-    · simp [readClasp, circleArcDiagram, one_ne_zero]
-    · simp [readClasp, circleArcDiagram, hover, Fin.ext_iff]
-  · refine readClasp_orientation_eq_closure (fun s ↦ ?_) (fun s ↦ ?_) fun j s ↦ ?_
+    · simp [readClasp, readClaspWith, circleArcDiagram]
+    · simp [readClasp, readClaspWith, circleArcDiagram, one_ne_zero]
+    · simp [readClasp, readClaspWith, circleArcDiagram, hover, Fin.ext_iff]
+  · refine readClaspWith_orientation_eq_closure (fun s ↦ ?_) (fun s ↦ ?_) fun j s ↦ ?_
     · simp only [circleArcDiagram, OrientedPDCode.orientation_insertCircleClasp_first,
         hori, orientation_closingHalfEdge]
       fin_cases s <;> decide
@@ -815,20 +840,18 @@ private theorem readLowerCircleDiagram_eq {v : BraidWord n} {i : Fin (n - 1)} {�
   obtain ⟨hhalf, hedge, hover, hori⟩ := fields_eq_of_adjoinCircle hcore
   rw [halfEdge_closure] at hhalf
   have hc : core.crossinglessComponents =
-      (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents := by
-    have h := congrArg OrientedPDCode.crossinglessComponents hcore
-    rw [crossinglessComponents_cons_cons_of_one_nil (ε := ε) (Or.inr ⟨hp, hq⟩)] at h
-    simpa only [OrientedPDCode.crossinglessComponents_adjoinCircle,
-      Multiset.cons_inj_right] using h
+      (closure ((i, ε) :: (i, -ε) :: v)).crossinglessComponents :=
+    crossinglessComponents_eq_of_adjoinCircle hcore
+      (crossinglessComponents_cons_cons_of_one_nil (Or.inr ⟨hp, hq⟩))
   refine eq_closure_cons_cons_of_fields ?_ (readLowerCircleDiagram_edgePair hp hq hedge) ?_ ?_ ?_
   · exact readLowerClasp_halfEdge (halfEdge_eq_one_of_succ
       (fun _ _ => by simp [lowerCircleDiagram, hhalf]) (fun _ => by simp [lowerCircleDiagram])
       (fun _ => by simp [lowerCircleDiagram]))
   · refine overPair_eq_closure_cons_cons ?_ ?_ fun j ↦ ?_
-    · simp [readLowerClasp, lowerCircleDiagram]
-    · simp [readLowerClasp, lowerCircleDiagram]
-    · simp [readLowerClasp, lowerCircleDiagram, hover, Fin.ext_iff]
-  · refine readLowerClasp_orientation_eq_closure (fun s ↦ ?_) (fun s ↦ ?_) fun j s ↦ ?_
+    · simp [readLowerClasp, readClaspWith, lowerCircleDiagram]
+    · simp [readLowerClasp, readClaspWith, lowerCircleDiagram]
+    · simp [readLowerClasp, readClaspWith, lowerCircleDiagram, hover, Fin.ext_iff]
+  · refine readClaspWith_orientation_eq_closure (fun s ↦ ?_) (fun s ↦ ?_) fun j s ↦ ?_
     · simp only [lowerCircleDiagram, OrientedPDCode.orientation_insertCircleClasp_first,
         hori, orientation_closingHalfEdge]
       fin_cases s <;> decide
