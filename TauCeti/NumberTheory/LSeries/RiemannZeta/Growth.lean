@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.Analysis.Complex.GrowthOrder
+public import TauCeti.Analysis.Complex.VerticalStrip.Growth
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import TauCeti.Analysis.SpecialFunctions.Gamma.Reciprocal.Order
@@ -14,6 +15,7 @@ import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 import TauCeti.NumberTheory.LFunctions.GammaFactor.Vertical
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Growth
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
+import TauCeti.NumberTheory.LSeries.RiemannZeta.FunctionalEquation
 
 /-!
 # Growth of the pole-removed Riemann zeta function
@@ -30,14 +32,17 @@ On every closed vertical strip `a ≤ Re s ≤ b` the same function has polynomi
 `ζ(s) = ζ(1 - s) Γℝ(1 - s) / Γℝ(s)` reflects the linear bound
 `TauCeti.norm_riemannZeta_le_three_halves_add_norm`, and the Stirling estimate for the
 gamma quotient, `AnalyticLFunctionData.exists_norm_dual_gammaFactor_div_bounds` for the zeta
-record, is a power of `|Im s|`. Bounded heights are handled by compactness. No
-Phragmén–Lindelöf interpolation is used, so the exponent is not the convexity exponent.
+record, is a power of `|Im s|`. This gives `HasVerticalStripGrowth`, and continuity extends the
+bound to bounded heights. No Phragmén–Lindelöf interpolation is used, so the exponent is not
+the convexity exponent.
 
 ## Main results
 
 * `TauCeti.LFunctions.LFunctionTrivChar₁_one_eq_zetaEntireCompletion_mul_inv_Gammaℝ` and
   `TauCeti.orderLE_LFunctionTrivChar₁_one`: the factorization and order at most one.
-* `TauCeti.exists_norm_LFunctionTrivChar₁_one_le_rpow`: polynomial growth on vertical strips.
+* `TauCeti.hasVerticalStripGrowth_LFunctionTrivChar₁_one`: vertical-strip growth at large height.
+* `TauCeti.exists_norm_LFunctionTrivChar₁_one_le_rpow`: polynomial growth on vertical strips at
+  every height.
 
 ## References
 
@@ -89,18 +94,6 @@ theorem orderLE_LFunctionTrivChar₁_one : OrderLE (LFunctionTrivChar₁ 1) 1 :=
     (LFunctions.orderLE_zetaEntireCompletion.mul (orderLE_inv_Gammaℝ.comp_mul_add 1 2)).mul
       (orderLE_const ((2 * π : ℂ)⁻¹) 1)
 
-/-- Off the real axis, the functional equation in the form `ζ(s) = ζ(1 - s) Γℝ(1 - s) / Γℝ(s)`. -/
-private theorem riemannZeta_eq_riemannZeta_one_sub_mul_Gammaℝ_div {s : ℂ} (hs : s.im ≠ 0) :
-    riemannZeta s = riemannZeta (1 - s) * (Gammaℝ (1 - s) / Gammaℝ s) := by
-  have hs0 : s ≠ 0 := fun h ↦ hs (by simp [h])
-  have hs1 : (1 - s).im ≠ 0 := by simpa using hs
-  have hs1' : 1 - s ≠ 0 := fun h ↦ hs1 (by simp [h])
-  have hΓ := Gammaℝ_ne_zero_of_im_ne_zero hs
-  have hΓ' := Gammaℝ_ne_zero_of_im_ne_zero hs1
-  rw [riemannZeta_def_of_ne_zero hs0, riemannZeta_def_of_ne_zero hs1',
-    completedRiemannZeta_one_sub]
-  field_simp
-
 /-- On `1/2 ≤ Re s`, `‖(s - 1) ζ(s)‖ ≤ (‖s‖ + 3) ^ 2`. -/
 private theorem norm_sub_one_mul_riemannZeta_le_of_half_le_re {s : ℂ} (hre : 1 / 2 ≤ s.re) :
     ‖(s - 1) * riemannZeta s‖ ≤ (‖s‖ + 3) ^ 2 := by
@@ -128,72 +121,73 @@ private theorem norm_sub_one_mul_riemannZeta_le_of_re_le_half {s : ℂ} (hre : s
   have h1' : ‖1 - s‖ ≤ ‖s‖ + 1 := by
     rw [norm_sub_rev]; linarith [norm_sub_le s 1, norm_one (α := ℂ)]
   have hpole : 1 ≤ ‖1 - s - 1‖ := him.trans (by simpa using abs_im_le_norm s)
-  have hζ := norm_riemannZeta_le_three_halves_add_norm (by simp; linarith) hpole
-  rw [riemannZeta_eq_riemannZeta_one_sub_mul_Gammaℝ_div (abs_pos.1 (by linarith)), norm_mul,
-    norm_mul, sq, mul_assoc]
+  have hζ := norm_riemannZeta_le_three_halves_add_norm
+    (by rw [sub_re, one_re]; linarith) hpole
+  have him0 : s.im ≠ 0 := abs_pos.1 (by linarith)
+  rw [riemannZeta_eq_riemannZeta_one_sub_mul_Gammaℝ_div (fun h ↦ him0 (by simp [h]))
+    (Gammaℝ_ne_zero_of_im_ne_zero (by simpa using him0)), norm_mul, norm_mul, sq, mul_assoc]
   exact mul_le_mul h1 (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _))
     (by positivity) (by positivity)
 
-/-- Polynomial growth of `(s - 1) ζ(s)` on a vertical strip at sufficiently large height. -/
-private theorem exists_norm_sub_one_mul_riemannZeta_le_of_le_abs_im (a b : ℝ) :
-    ∃ T C B : ℝ, 1 ≤ T ∧ 0 ≤ C ∧ 0 ≤ B ∧ ∀ s : ℂ, a ≤ s.re → s.re ≤ b → T ≤ |s.im| →
-      ‖(s - 1) * riemannZeta s‖ ≤ C * (|s.im| + 2) ^ B := by
+/-- **`(s - 1) ζ(s)` has vertical-strip growth.** On every vertical strip, the entire function
+`LFunctionTrivChar₁ 1` is bounded by a power of `1 + |Im s|` at large height. -/
+theorem hasVerticalStripGrowth_LFunctionTrivChar₁_one :
+    HasVerticalStripGrowth (LFunctionTrivChar₁ 1) := by
+  refine hasVerticalStripGrowth_iff.2 fun a b _ ↦ ?_
   obtain ⟨_, _, C₂, _, T, _, hΓ⟩ :=
     LFunctions.riemannZetaData.exists_norm_dual_gammaFactor_div_bounds a b
   set E := max ((1 - 2 * a) / 2) 0
   set K := max |a| |b| + 3
-  refine ⟨max T 1, K ^ 2 * max C₂ 1, 2 + E, le_max_right _ _, by positivity, by positivity,
-    fun s ha hb ht ↦ ?_⟩
+  have hK0 : 0 < K := three_pos.trans_le (le_add_of_nonneg_left (le_max_of_le_left (abs_nonneg a)))
+  refine ⟨K ^ 2 * max C₂ 1, by positivity, 2 + E, by positivity, max T 1,
+    zero_le_one.trans (le_max_right _ _), fun s ⟨ha, hb⟩ ht ↦ ?_⟩
   have ht1 : 1 ≤ |s.im| := (le_max_right _ _).trans ht
-  have hx : 1 ≤ |s.im| + 2 := by linarith [abs_nonneg s.im]
-  have hX : (‖s‖ + 3) ^ 2 ≤ K ^ 2 * (|s.im| + 2) ^ (2 : ℝ) := by
+  have hs1 : s ≠ 1 := fun h ↦ by norm_num [h] at ht1
+  rw [LFunctionTrivChar₁, Function.update_of_ne hs1, LFunctionTrivChar, LFunction_modOne_eq]
+  have hx : 1 ≤ 1 + |s.im| := by linarith [abs_nonneg s.im]
+  have hX : (‖s‖ + 3) ^ 2 ≤ K ^ 2 * (1 + |s.im|) ^ (2 : ℝ) := by
     have hn := norm_le_abs_re_add_abs_im s
     have hr := abs_le_max_abs_abs ha hb
-    have hK : ‖s‖ + 3 ≤ K * (|s.im| + 2) := by
+    have hK : ‖s‖ + 3 ≤ K * (1 + |s.im|) := by
       nlinarith [abs_nonneg s.im, abs_nonneg a, le_max_left |a| |b|]
     rw [Real.rpow_two, ← mul_pow]
     exact pow_le_pow_left₀ (by positivity) hK 2
-  have hsplit : (|s.im| + 2) ^ (2 + E) = (|s.im| + 2) ^ (2 : ℝ) * (|s.im| + 2) ^ E :=
+  have hsplit : (1 + |s.im|) ^ (2 + E) = (1 + |s.im|) ^ (2 : ℝ) * (1 + |s.im|) ^ E :=
     Real.rpow_add (by linarith) _ _
-  have hE1 : 1 ≤ (|s.im| + 2) ^ E := Real.one_le_rpow hx (le_max_right _ _)
+  have hE1 : 1 ≤ (1 + |s.im|) ^ E := Real.one_le_rpow hx (le_max_right _ _)
   rcases le_or_gt (1 / 2) s.re with hre | hre
   · refine (norm_sub_one_mul_riemannZeta_le_of_half_le_re hre).trans (hX.trans ?_)
     rw [hsplit, mul_assoc]
     gcongr
-    calc (|s.im| + 2) ^ (2 : ℝ) = 1 * ((|s.im| + 2) ^ (2 : ℝ) * 1) := by ring
-      _ ≤ max C₂ 1 * ((|s.im| + 2) ^ (2 : ℝ) * (|s.im| + 2) ^ E) := by gcongr; simp
+    calc (1 + |s.im|) ^ (2 : ℝ) = 1 * ((1 + |s.im|) ^ (2 : ℝ) * 1) := by ring
+      _ ≤ max C₂ 1 * ((1 + |s.im|) ^ (2 : ℝ) * (1 + |s.im|) ^ E) := by
+        gcongr
+        exact le_max_right _ _
   obtain ⟨-, hQ⟩ := hΓ s ⟨ha, hb⟩ ((le_max_left _ _).trans ht)
   simp only [LFunctions.riemannZetaData_dual, LFunctions.riemannZetaData_gammaFactor,
     LFunctions.riemannZetaData_degree, Nat.cast_one] at hQ
-  have hpow : |s.im| ^ (1 / 2 * (1 - 2 * s.re)) ≤ (|s.im| + 2) ^ E :=
+  have hpow : |s.im| ^ (1 / 2 * (1 - 2 * s.re)) ≤ (1 + |s.im|) ^ E :=
     (Real.rpow_le_rpow (abs_nonneg _) (by linarith) (by nlinarith)).trans
       (Real.rpow_le_rpow_of_exponent_le hx (le_max_of_le_left (by linarith)))
   refine (norm_sub_one_mul_riemannZeta_le_of_re_le_half hre.le ht1).trans ?_
   rw [hsplit]
   calc (‖s‖ + 3) ^ 2 * ‖Gammaℝ (1 - s) / Gammaℝ s‖
-      ≤ (K ^ 2 * (|s.im| + 2) ^ (2 : ℝ)) * (max C₂ 1 * (|s.im| + 2) ^ E) := by
+      ≤ (K ^ 2 * (1 + |s.im|) ^ (2 : ℝ)) * (max C₂ 1 * (1 + |s.im|) ^ E) := by
         gcongr
         exact hQ.trans (by gcongr; exact le_max_left _ _)
     _ = _ := by ring
 
 /-- **Polynomial growth of `(s - 1) ζ(s)` on vertical strips.** On every closed vertical strip
 `a ≤ Re s ≤ b`, the entire function `LFunctionTrivChar₁ 1`, which is `(s - 1) ζ(s)` away from
-`s = 1` and the residue `1` at `s = 1`, satisfies `‖LFunctionTrivChar₁ 1 s‖ ≤ C (|Im s| + 2) ^ B`.
-The strip may reach into `Re s < 0`. -/
+`s = 1` and the residue `1` at `s = 1`, satisfies `‖LFunctionTrivChar₁ 1 s‖ ≤ C (|Im s| + 2) ^ B`
+at every height. The strip may reach into `Re s < 0`. -/
 theorem exists_norm_LFunctionTrivChar₁_one_le_rpow (a b : ℝ) :
     ∃ C B : ℝ, ∀ s : ℂ, a ≤ s.re → s.re ≤ b →
       ‖LFunctionTrivChar₁ 1 s‖ ≤ C * (|s.im| + 2) ^ B := by
-  obtain ⟨T, C₁, B, hT, hC₁, hB, hbig⟩ := exists_norm_sub_one_mul_riemannZeta_le_of_le_abs_im a b
-  obtain ⟨C₀, hC₀⟩ := (isCompact_Icc.reProdIm isCompact_Icc : IsCompact (Icc a b ×ℂ Icc (-T) T))
-    |>.exists_bound_of_continuousOn (differentiable_LFunctionTrivChar₁ 1).continuous.continuousOn
-  refine ⟨max C₀ 0 + C₁, B, fun s ha hb ↦ ?_⟩
-  have hx : 1 ≤ (|s.im| + 2) ^ B := Real.one_le_rpow (by linarith [abs_nonneg s.im]) hB
-  have hx0 : 0 ≤ (|s.im| + 2) ^ B := zero_le_one.trans hx
-  rcases le_or_gt |s.im| T with ht | ht
-  · have := hC₀ s (mem_reProdIm.2 ⟨⟨ha, hb⟩, abs_le.1 ht⟩)
-    nlinarith [le_max_left C₀ 0, le_max_right C₀ 0, mul_nonneg hC₁ hx0]
-  · have hs1 : s ≠ 1 := fun h ↦ by subst h; simp at ht; linarith
-    rw [LFunctionTrivChar₁, Function.update_of_ne hs1, LFunctionTrivChar, LFunction_modOne_eq]
-    nlinarith [hbig s ha hb ht.le, le_max_right C₀ 0, mul_nonneg (le_max_right C₀ 0) hx0]
+  obtain ⟨C, hC, B, hB, h⟩ :=
+    hasVerticalStripGrowth_LFunctionTrivChar₁_one.exists_bound_of_continuousOn
+      (differentiable_LFunctionTrivChar₁ 1).continuous.continuousOn (a := a) (b := b)
+  exact ⟨C, B, fun s ha hb ↦ (h s ⟨ha, hb⟩).trans (mul_le_mul_of_nonneg_left
+    (Real.rpow_le_rpow (by positivity) (by linarith) hB) hC.le)⟩
 
 end TauCeti
