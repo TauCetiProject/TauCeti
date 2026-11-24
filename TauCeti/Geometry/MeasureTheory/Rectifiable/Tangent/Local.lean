@@ -73,8 +73,8 @@ theorem CountablyRectifiable.ae_existsUnique_densityZeroOutsideCones {Ω S : Set
     have hSc : CountablyRectifiable k Sc := hS.mono inter_subset_left
     have hScm : NullMeasurableSet Sc μHE[k] :=
       hSm.inter isClosed_closedBall.measurableSet.nullMeasurableSet
-    filter_upwards [hSc.ae_exists_submodule_tendsto_measure_outside_cone_div hScm,
-      hSc.ae_eq_of_tendsto_measure_outside_cone_div hScm] with x hex huniq hxb hxS
+    filter_upwards [hSc.ae_exists_submodule_densityZeroOutsideCones hScm,
+      hSc.ae_eq_of_densityZeroOutsideCones hScm] with x hex huniq hxb hxS
     have hxSc : x ∈ Sc := ⟨hxS, ball_subset_closedBall hxb⟩
     have hδ : 0 < r c - dist x c := sub_pos.2 hxb
     have hiff (P : Submodule ℝ V) :

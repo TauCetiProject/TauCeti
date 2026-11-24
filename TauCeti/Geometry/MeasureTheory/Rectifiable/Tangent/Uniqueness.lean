@@ -25,7 +25,7 @@ condition.
 Let `E` be a countably `k`-rectifiable set that is `μHE[k]`-null-measurable and whose restricted
 measure `μHE[k].restrict E` is locally finite. Approximate tangent `k`-planes of such a set exist
 almost everywhere on it
-(`TauCeti.CountablyRectifiable.ae_exists_submodule_tendsto_measure_outside_cone_div`). This file
+(`TauCeti.CountablyRectifiable.ae_exists_submodule_densityZeroOutsideCones`). This file
 proves that they are almost everywhere unique.
 
 At almost every point `x` of such a set `E`, the set has density one, and `x = f u₀` lies on a
@@ -39,11 +39,11 @@ density less than one inside the cone, contradicting density one. Hence `P = D`.
 
 ## Main results
 
-* `LipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div`: let `f` be Lipschitz and
+* `LipschitzOnWith.eq_range_of_densityZeroOutsideCones`: let `f` be Lipschitz and
   inverse-Lipschitz on `A` in a `k`-dimensional space, with derivative `D` within `A` at `u₀ ∈ A`
   whose range has dimension `k`. At `f u₀`, if `E` has density one and `E \ f '' A` has density
   zero, every approximate tangent `k`-plane of `E` is the range of `D`.
-* `TauCeti.CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div`: approximate tangent
+* `TauCeti.CountablyRectifiable.ae_eq_of_densityZeroOutsideCones`: approximate tangent
   `k`-planes of a null-measurable, countably `k`-rectifiable set with locally finite `μHE[k]`
   measure are unique at almost every point.
 
@@ -127,7 +127,7 @@ space and `f : U → V` be Lipschitz and inverse-Lipschitz on `A`, with derivati
 `u₀ ∈ A` whose range has dimension `k`. If a set `E` has density one at `x = f u₀` and `E \ f '' A`
 has density zero there, then every approximate tangent `k`-plane of `E` at `x` is the range of
 `D`. -/
-theorem _root_.LipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
+theorem _root_.LipschitzOnWith.eq_range_of_densityZeroOutsideCones
     [FiniteDimensional ℝ U] [MeasurableSpace U] [BorelSpace U] (hU : Module.finrank ℝ U = k)
     {f : U → V} {A : Set U} {D : U →L[ℝ] V} {K L : ℝ≥0} (hf : LipschitzOnWith K f A)
     (hA : AntilipschitzWith L (A.domRestrict f)) {u₀ : U} (hu₀ : u₀ ∈ A)
@@ -221,9 +221,9 @@ theorem _root_.LipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
 /-- **Uniqueness of approximate tangent planes.** At almost every point of a null-measurable,
 countably `k`-rectifiable set with locally finite `μHE[k]` measure, any two `k`-planes outside
 every cone about which the set has density zero are equal. Together with
-`CountablyRectifiable.ae_exists_submodule_tendsto_measure_outside_cone_div`, the set has a unique
+`CountablyRectifiable.ae_exists_submodule_densityZeroOutsideCones`, the set has a unique
 approximate tangent plane almost everywhere. -/
-theorem CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div {E : Set V}
+theorem CountablyRectifiable.ae_eq_of_densityZeroOutsideCones {E : Set V}
     (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] :
     ∀ᵐ x ∂μHE[k], x ∈ E → ∀ P Q : Submodule ℝ V,
@@ -252,7 +252,7 @@ theorem CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div {E : Set 
   have h0 := hzero n fun h ↦ h.2 hxn
   have hone' := hone hxE
   have hchart (P : Submodule ℝ V) :=
-    (hLip n).lipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
+    (hLip n).lipschitzOnWith.eq_range_of_densityZeroOutsideCones
       (finrank_euclideanSpace_fin (𝕜 := ℝ)) (hAnti n) hu hd.hasFDerivAt.hasFDerivWithinAt hrange
       hone' h0 (P := P)
   rw [hchart P hP hPc, hchart Q hQ hQc]
