@@ -19,8 +19,8 @@ rectangles:
   (`two_pi_I_inv_smul_circleIntegral_sub_inv_smul_sub_of_differentiable_on_annulus_off_countable`);
 * the signed-kernel conversion `TauCeti.Contour.circleIntegral_sub_inv_smul_eq_neg`;
 * off-circle complex differentiability of `s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w`
-  (`TauCeti.Contour.hasDerivAt_circleIntegral_sub_inv_smul_left` and
-  `TauCeti.Contour.differentiableAt_circleIntegral_sub_inv_smul_left`);
+  (`TauCeti.Contour.differentiableAt_circleIntegral_sub_inv_smul_left`), and of finite sums of
+  such integrals outside their closed discs (`TauCeti.Contour.differentiableAt_sum_exteriorCauchy`);
 * the annulus subtraction formula
   (`TauCeti.Contour.sub_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq`) expressing
   `f w - (2πi)⁻¹ • ∮ z in C(c, r), (w - z)⁻¹ • f z` as the interior Cauchy integral over
@@ -31,8 +31,8 @@ rectangles:
 * `TauCeti.circleIntegral_dslope_eq`
 * `two_pi_I_inv_smul_circleIntegral_sub_inv_smul_sub_of_differentiable_on_annulus_off_countable`
 * `TauCeti.Contour.circleIntegral_sub_inv_smul_eq_neg`
-* `TauCeti.Contour.hasDerivAt_circleIntegral_sub_inv_smul_left`
 * `TauCeti.Contour.differentiableAt_circleIntegral_sub_inv_smul_left`
+* `TauCeti.Contour.differentiableAt_sum_exteriorCauchy`
 * `TauCeti.Contour.sub_two_pi_I_inv_smul_circleIntegral_sub_inv_smul_eq`
 
 ## Provenance
@@ -141,30 +141,25 @@ theorem circleIntegral_sub_inv_smul_eq_neg (f : ℂ → E) (c z : ℂ) (r : ℝ)
     _ = -(∮ w in C(c, r), (w - z)⁻¹ • f w) := neg_one_smul _ _
 
 omit [CompleteSpace E] in
-/-- Away from `sphere c |r|`, `s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w` has derivative
-`-(∮ w in C(c, r), (z - w) ^ (-2 : ℤ) • f w)` at `z`. -/
-theorem hasDerivAt_circleIntegral_sub_inv_smul_left {f : ℂ → E} {c z : ℂ} {r : ℝ}
-    (hf : CircleIntegrable f c r) (hz : z ∉ sphere c |r|) :
-    HasDerivAt (fun s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w)
-      (-(∮ w in C(c, r), (z - w) ^ (-2 : ℤ) • f w)) z := by
-  have heq : (fun s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w) =
-      fun s ↦ -(∮ w in C(c, r), (w - s)⁻¹ • f w) :=
-    funext fun s ↦ circleIntegral_sub_inv_smul_eq_neg f c s r
-  rw [heq]
-  refine (hasDerivAt_circleIntegral_sub_inv_smul hf hz).neg.congr_deriv ?_
-  congr 1
-  simp only [circleIntegral]
-  refine intervalIntegral.integral_congr fun θ _ ↦ ?_
-  congr 2
-  rw [← neg_sub z (circleMap c r θ), zpow_neg, zpow_neg, zpow_two, zpow_two, neg_mul_neg]
-
-omit [CompleteSpace E] in
 /-- The exterior Cauchy integral `s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w` is complex
 differentiable at every point off `sphere c |r|`. -/
 theorem differentiableAt_circleIntegral_sub_inv_smul_left {f : ℂ → E} {c z : ℂ} {r : ℝ}
     (hf : CircleIntegrable f c r) (hz : z ∉ sphere c |r|) :
-    DifferentiableAt ℂ (fun s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w) z :=
-  (hasDerivAt_circleIntegral_sub_inv_smul_left hf hz).differentiableAt
+    DifferentiableAt ℂ (fun s ↦ ∮ w in C(c, r), (s - w)⁻¹ • f w) z := by
+  rw [funext fun s ↦ circleIntegral_sub_inv_smul_eq_neg f c s r]
+  exact (hasDerivAt_circleIntegral_sub_inv_smul hf hz).differentiableAt.neg
+
+omit [CompleteSpace E] in
+/-- For `r ≥ 0` and `f` circle integrable on `C(ρ, r)` for every `ρ ∈ Q`, the sum of the exterior
+Cauchy integrals `s ↦ ∑ ρ ∈ Q, (2πi)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w` is complex
+differentiable at every point outside `⋃ ρ ∈ Q, closedBall ρ r`. -/
+theorem differentiableAt_sum_exteriorCauchy {f : ℂ → E} {Q : Finset ℂ} {r : ℝ} (hr : 0 ≤ r)
+    (hf : ∀ ρ ∈ Q, CircleIntegrable f ρ r) {z : ℂ} (hz : ∀ ρ ∈ Q, z ∉ closedBall ρ r) :
+    DifferentiableAt ℂ
+      (fun s ↦ ∑ ρ ∈ Q, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) z :=
+  DifferentiableAt.fun_sum fun ρ hρ ↦
+    (differentiableAt_circleIntegral_sub_inv_smul_left (hf ρ hρ)
+      fun hsp ↦ hz ρ hρ (sphere_subset_closedBall (abs_of_nonneg hr ▸ hsp))).const_smul _
 
 /-- **Annulus subtraction formula.** On the open annulus `ball c R \ closedBall c r` (`0 < r`), if
 `f` is continuous on `closedBall c R \ ball c r` and complex differentiable outside a countable

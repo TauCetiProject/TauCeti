@@ -43,13 +43,13 @@ this on `[-X, σ₂] ×ℂ [Im w, t₂]` with Cauchy's theorem on `[Re w, σ₂]
 
 * `TauCeti.Contour.integral_rectPolygon_sub_inv`: the cycle integral of the Cauchy kernel
   `z ↦ (z - w)⁻¹` around `(rectPolygon z₀ w₀).contourCycle` about an interior point `w` equals
-  `2πi`, with four-edge corollary `TauCeti.Contour.rectangle_boundary_integral_sub_inv`.
+  `2πi`, with four-edge corollary `TauCeti.Contour.integral_boundary_rect_sub_inv`.
 * `TauCeti.Contour.integral_rectPolygon_eq_sum_circleIntegral`: the cycle integral of `f` around
   `(rectPolygon z₀ w₀).contourCycle` equals the sum of circle integrals around pairwise disjoint
   discs enclosing the isolated singularities `P`, with four-edge corollary
   `TauCeti.Contour.rectangle_boundary_integral_eq_sum_circleIntegral`.
-* `TauCeti.Contour.vertical_integral_eq_truncated_lShaped_add_sum_circleIntegral`: finite-cutoff
-  L-shaped contour shift from `Re s = σ₂` to a left vertical edge at `Re s = σ₁`.
+* `TauCeti.Contour.intervalIntegral_vertical_eq_truncated_lShaped_add_sum_circleIntegral`:
+  finite-cutoff L-shaped contour shift from `Re s = σ₂` to a left vertical edge at `Re s = σ₁`.
 * `TauCeti.Contour.vertical_integral_eq_lShaped_add_sum_circleIntegral`: shifting a vertical
   segment integral to an L-shaped contour running to `Re s = -∞` plus circle integrals around
   isolated singularities in the upper half-strip.
@@ -63,9 +63,14 @@ this on `[-X, σ₂] ×ℂ [Im w, t₂]` with Cauchy's theorem on `[Re w, σ₂]
 
 The statements of `rectangle_boundary_integral_eq_sum_circleIntegral` and
 `vertical_integral_eq_lShaped_add_sum_circleIntegral` follow the contour-integration and L-shaped
-contour shift formulations in the `IEANTN` formalization (`ContourIntegration` and `CH2`), here
-generalized to arbitrary complex normed-space-valued functions and to continuity on the closed
-region with complex differentiability on its interior off the singular set.
+contour shift formulations in T. Tao and contributors, *IEANTN: Integrated Explicit Analytic Number
+Theory Network* (<https://github.com/teorth/IEANTN>, Apache-2.0), nodes ContourIntegration v1 and
+CH2 v4 at commit 466b41b28ecc224398cf53a99c5fe9618131398b:
+<https://github.com/teorth/IEANTN/blob/466b41b28ecc224398cf53a99c5fe9618131398b/IEANTN/Nodes/ContourIntegration/v1/Conclusions.lean>
+and
+<https://github.com/teorth/IEANTN/blob/466b41b28ecc224398cf53a99c5fe9618131398b/IEANTN/Nodes/CH2/v4/Conclusions.lean>,
+here generalized to arbitrary complex normed-space-valued functions and to continuity on the
+closed region with complex differentiability on its interior off the singular set.
 -/
 
 public section
@@ -106,7 +111,7 @@ theorem integral_rectPolygon_sub_inv {z₀ w₀ w : ℂ}
 /-- **Cauchy kernel integral on a rectangle boundary.** Four-edge corollary of
 `integral_rectPolygon_sub_inv`: for a point `w` in the open rectangle `(σ₁, σ₂) ×ℂ (t₁, t₂)`,
 Mathlib's four-edge boundary expression for `z ↦ (z - w)⁻¹` equals `2πi`. -/
-theorem rectangle_boundary_integral_sub_inv {σ₁ σ₂ t₁ t₂ : ℝ} {w : ℂ}
+theorem integral_boundary_rect_sub_inv {σ₁ σ₂ t₁ t₂ : ℝ} {w : ℂ}
     (hw : w ∈ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) :
     (∫ x : ℝ in σ₁..σ₂, ((x : ℂ) + t₁ * I - w)⁻¹) -
       (∫ x : ℝ in σ₁..σ₂, ((x : ℂ) + t₂ * I - w)⁻¹) +
@@ -290,7 +295,7 @@ integral along the left vertical edge `σ₁ + i Im w → σ₁ + it₂`, plus
 
 No holomorphy in the removed lower-left block and no decay at `-∞` are assumed, and the points
 of `P` may be essential singularities. -/
-theorem vertical_integral_eq_truncated_lShaped_add_sum_circleIntegral
+theorem intervalIntegral_vertical_eq_truncated_lShaped_add_sum_circleIntegral
     {σ₁ σ₂ t₁ t₂ r : ℝ} {w : ℂ} {P : Finset ℂ}
     (hr : 0 < r) (hσ₁ : σ₁ ≤ w.re) (hw : w.re ≤ σ₂)
     (ht₁ : t₁ ≤ w.im) (ht₂ : w.im ≤ t₂)
@@ -408,8 +413,8 @@ theorem vertical_integral_eq_lShaped_add_sum_circleIntegral
       have h2 := hP ρ hρ hs
       exact ⟨⟨hre, h2.1⟩, h2.2.1, h2.2.2⟩
     filter_upwards [eventually_ge_atTop (-w.re), hPev] with X hX hPX
-    exact vertical_integral_eq_truncated_lShaped_add_sum_circleIntegral hr (by linarith) hw ht₁ ht₂
-      hPX hdisj (hc.mono (sdiff_subset_sdiff_left fun _ h ↦ h.2))
+    exact intervalIntegral_vertical_eq_truncated_lShaped_add_sum_circleIntegral hr (by linarith) hw
+      ht₁ ht₂ hPX hdisj (hc.mono (sdiff_subset_sdiff_left fun _ h ↦ h.2))
       (hd.mono (sdiff_subset_sdiff_left (interior_mono fun _ h ↦ h.2)))
   -- Limits as `X → ∞`: improper horizontal ray integrals converge, vertical connector vanishes.
   have h1 : Tendsto (fun X : ℝ ↦ ∫ x : ℝ in (-X)..w.re, f (x + w.im * I)) atTop

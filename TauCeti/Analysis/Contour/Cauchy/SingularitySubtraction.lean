@@ -29,8 +29,6 @@ annulus.
 
 ## Main results
 
-* `TauCeti.Contour.differentiableAt_sum_exteriorCauchy`: complex differentiability of sums of
-  exterior Cauchy integrals outside their enclosing closed discs.
 * `TauCeti.Contour.exists_continuousOn_differentiableOn_sub_sum_circleIntegral`: finite-disc
   singularity removal for functions valued in a complete complex normed space.
 
@@ -49,21 +47,14 @@ namespace TauCeti.Contour
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
-omit [CompleteSpace E] in
-/-- For finitely many pairwise disjoint closed discs `closedBall ρ r'` in `U` (`0 < r ≤ r'`) and
-`f : ℂ → E` continuous on `U \ P`, the sum of the exterior Cauchy integrals over any
-subcollection `Q ⊆ P` is complex differentiable at every point outside
-`⋃ ρ ∈ Q, closedBall ρ r`. -/
-theorem differentiableAt_sum_exteriorCauchy {f : ℂ → E} {P Q : Finset ℂ} {U : Set ℂ} {r r' : ℝ}
-    (hr : 0 < r) (hrr' : r ≤ r') (hP' : ∀ ρ ∈ P, closedBall ρ r' ⊆ U)
+omit [NormedSpace ℂ E] [CompleteSpace E] in
+/-- If pairwise disjoint closed discs `closedBall ρ r'` (`ρ ∈ P`) lie in `U` and `f` is continuous
+on `U \ P`, then `f` is circle integrable on `C(ρ, r)` for every `ρ ∈ P` and `0 < r ≤ r'`. -/
+private theorem circleIntegrable_of_closedBall_subset {f : ℂ → E} {P : Finset ℂ} {U : Set ℂ}
+    {r r' : ℝ} (hr : 0 < r) (hrr' : r ≤ r') (hP' : ∀ ρ ∈ P, closedBall ρ r' ⊆ U)
     (hdisj' : (P : Set ℂ).Pairwise fun ρ ρ' ↦ Disjoint (closedBall ρ r') (closedBall ρ' r'))
-    (hc : ContinuousOn f (U \ P)) (hQ : Q ⊆ P) {z : ℂ} (hz : ∀ ρ ∈ Q, z ∉ closedBall ρ r) :
-    DifferentiableAt ℂ
-      (fun s ↦ ∑ ρ ∈ Q, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) z := by
-  refine DifferentiableAt.fun_sum fun ρ hρ ↦ ?_
-  have hcont := continuousOn_sphere_of_closedBall_subset hr hrr' hP' hdisj' hc (hQ hρ)
-  exact (differentiableAt_circleIntegral_sub_inv_smul_left (hcont.circleIntegrable hr.le)
-    fun hsp ↦ hz ρ hρ (sphere_subset_closedBall (abs_of_pos hr ▸ hsp))).const_smul _
+    (hc : ContinuousOn f (U \ P)) : ∀ ρ ∈ P, CircleIntegrable f ρ r := fun _ hρ ↦
+  (continuousOn_sphere_of_closedBall_subset hr hrr' hP' hdisj' hc hρ).circleIntegrable hr.le
 
 /-- The singularity-removed gluing of
 `f - ∑ ρ ∈ P, (2πi)⁻¹ • ∮ w in C(ρ, r), (z - w)⁻¹ • f w`: inside each closed disc
@@ -157,8 +148,9 @@ private theorem differentiableAt_gluedRegular_of_mem_ball {f : ℂ → E}
         (hcont_r'.circleIntegrable hr'.le) hz').differentiableAt.const_smul _
   have hsum : DifferentiableAt ℂ
       (fun s ↦ ∑ ρ' ∈ P.erase ρ, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ', r), (s - w)⁻¹ • f w) z :=
-    differentiableAt_sum_exteriorCauchy hr hrr'.le hP' hdisj' hd.continuousOn
-      (Finset.erase_subset ρ P) fun ρ' hρ' hzr' ↦
+    differentiableAt_sum_exteriorCauchy hr.le (fun ρ' hρ' ↦
+      circleIntegrable_of_closedBall_subset hr hrr'.le hP' hdisj' hd.continuousOn ρ'
+        (Finset.mem_of_mem_erase hρ')) fun ρ' hρ' hzr' ↦
         disjoint_left.1 (hdisj' hρ (Finset.mem_of_mem_erase hρ')
           (Finset.ne_of_mem_erase hρ').symm) (ball_subset_closedBall hz)
           (closedBall_subset_closedBall hrr'.le hzr')
@@ -187,7 +179,8 @@ private theorem continuousOn_gluedRegular {D : Set ℂ} {r r' : ℝ} (hr : 0 < r
     have hloc : ContinuousWithinAt
         (fun s ↦ f s - ∑ ρ ∈ P, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) D z :=
       ((hc.continuousWithinAt ⟨hz, hzP⟩).mono_of_mem_nhdsWithin hDP).sub
-        (differentiableAt_sum_exteriorCauchy hr hrr'.le hP' hdisj' hd.continuousOn Subset.rfl
+        (differentiableAt_sum_exteriorCauchy hr.le
+          (circleIntegrable_of_closedBall_subset hr hrr'.le hP' hdisj' hd.continuousOn)
           hex).continuousAt.continuousWithinAt
     have heq := gluedRegular_eventuallyEq_out (f := f) (r' := r') hex
     exact hloc.congr_of_eventuallyEq (nhdsWithin_le_nhds heq) heq.eq_of_nhds
@@ -209,7 +202,8 @@ private theorem differentiableOn_gluedRegular {D : Set ℂ} {r r' : ℝ}
         (fun s ↦ f s - ∑ ρ ∈ P, (2 * π * I : ℂ)⁻¹ • ∮ w in C(ρ, r), (s - w)⁻¹ • f w) z :=
       (hd.differentiableAt ((isOpen_interior.sdiff P.finite_toSet.isClosed).mem_nhds
         ⟨hz, fun hzP ↦ hex z hzP (mem_closedBall_self hr.le)⟩)).sub
-        (differentiableAt_sum_exteriorCauchy hr hrr'.le hP' hdisj' hd.continuousOn Subset.rfl hex)
+        (differentiableAt_sum_exteriorCauchy hr.le
+          (circleIntegrable_of_closedBall_subset hr hrr'.le hP' hdisj' hd.continuousOn) hex)
     exact (hloc.congr_of_eventuallyEq
       (gluedRegular_eventuallyEq_out (r' := r') hex)).differentiableWithinAt
 

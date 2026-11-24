@@ -38,20 +38,21 @@ contour shifts.
   differentiability on its interior off `P`.
 * `TauCeti.Contour.rectangle_boundary_integral_eq_residues`: the four-edge boundary integral of `f`
   around `[σ₁, σ₂] ×ℂ [t₁, t₂]` equals `2πi · ∑ p ∈ P, residue f p`, under the same hypotheses.
-* `TauCeti.Contour.vertical_integral_eq_uShaped_add_residues`: the finite-height U-shaped identity
-  expressing the right vertical edge in terms of the left vertical edge, the horizontal edges, and
-  the enclosed residues.
-* `TauCeti.Contour.integral_vertical_eq_uShaped_add_residues`: the infinite-line U-shaped contour
-  shift for an arbitrary vertical window `[t₁, t₂]`.
-* `TauCeti.Contour.integral_vertical_eq_uShaped_symm_add_residues`: the symmetric `[-T, T]` form
-  with tail integral over `{y : ℝ | T < |y|}`.
+* `TauCeti.Contour.intervalIntegral_vertical_eq_uShaped_add_two_pi_mul_sum_residue`: the
+  finite-height U-shaped identity expressing the right vertical edge in terms of the left vertical
+  edge, the horizontal edges, and the enclosed residues.
+* `TauCeti.Contour.integral_vertical_eq_uShaped_add_two_pi_mul_sum_residue`: the infinite-line
+  U-shaped contour shift for an arbitrary vertical window `[t₁, t₂]`.
+* `TauCeti.Contour.integral_vertical_eq_uShaped_symm_add_two_pi_mul_sum_residue`: the symmetric
+  `[-T, T]` form with tail integral over `{y : ℝ | T < |y|}`.
 
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 4, §5 (the residue theorem and improper integrals).
 * E. C. Titchmarsh, *The Theory of Functions*, §3.1 and §9.5.
 * S. Lang, *Complex Analysis* (GTM 103), Ch. VI.
-* A. Kontorovich and T. Tao, *PrimeNumberTheoremAnd* blueprint, §4.1 (Definitions 4.1.3–4.1.5,
+* A. Kontorovich and T. Tao, *PrimeNumberTheoremAnd* blueprint
+  (<https://github.com/AlexKontorovich/PrimeNumberTheoremAnd>), §4.1 (Definitions 4.1.3–4.1.5,
   Lemmas 4.1.1–4.1.4, and Theorem 4.1.2, for simple poles).
 -/
 
@@ -121,7 +122,8 @@ theorem classicalResidueTheorem_rectBoundary {f : ℂ → ℂ} {P : Finset ℂ} 
 `rectangle_boundary_integral_eq_residues` (with no integrability hypothesis), the right vertical
 edge integral equals the left vertical edge integral plus the horizontal difference
 `(top - bottom) / I` plus `2π · ∑ p ∈ P, residue f p`. -/
-theorem vertical_integral_eq_uShaped_add_residues {σ₁ σ₂ t₁ t₂ : ℝ} (hσ : σ₁ ≤ σ₂) (ht : t₁ ≤ t₂)
+theorem intervalIntegral_vertical_eq_uShaped_add_two_pi_mul_sum_residue {σ₁ σ₂ t₁ t₂ : ℝ}
+    (hσ : σ₁ ≤ σ₂) (ht : t₁ ≤ t₂)
     {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) {f : ℂ → ℂ}
     (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ \ P))
     (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P))
@@ -141,7 +143,8 @@ integrable on `ℝ` and `f` satisfies the hypotheses of `rectangle_boundary_inte
 `[σ₁, σ₂] ×ℂ [t₁, t₂]`, then `∫ y : ℝ, f (σ₂ + y * I)` splits into the complementary tails
 `∫ y in (Icc t₁ t₂)ᶜ, f (σ₂ + y * I)`, the left vertical edge, the horizontal term
 `(top - bottom) / I`, and `2π · ∑ p ∈ P, residue f p`. -/
-theorem integral_vertical_eq_uShaped_add_residues {σ₁ σ₂ t₁ t₂ : ℝ} (hσ : σ₁ ≤ σ₂) (ht : t₁ ≤ t₂)
+theorem integral_vertical_eq_uShaped_add_two_pi_mul_sum_residue {σ₁ σ₂ t₁ t₂ : ℝ}
+    (hσ : σ₁ ≤ σ₂) (ht : t₁ ≤ t₂)
     {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂) {f : ℂ → ℂ}
     (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc t₁ t₂ \ P))
     (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo t₁ t₂ \ P))
@@ -154,14 +157,15 @@ theorem integral_vertical_eq_uShaped_add_residues {σ₁ σ₂ t₁ t₂ : ℝ} 
       2 * π * ∑ p ∈ P, residue f p := by
   rw [← integral_add_compl measurableSet_Icc hint, integral_Icc_eq_integral_Ioc,
     ← intervalIntegral.integral_of_le ht,
-    vertical_integral_eq_uShaped_add_residues hσ ht hP hc hd hmer]
+    intervalIntegral_vertical_eq_uShaped_add_two_pi_mul_sum_residue hσ ht hP hc hd hmer]
   ring
 
 /-- **Symmetric U-shaped contour shift on an infinite vertical line.** Specialization of
-`integral_vertical_eq_uShaped_add_residues` to the symmetric vertical window `[-T, T]` (`0 ≤ T`),
-writing the tail set `(Icc (-T) T)ᶜ` as `{y : ℝ | T < |y|}` and the bottom edge as
-`x ↦ f (x - T * I)`. -/
-theorem integral_vertical_eq_uShaped_symm_add_residues {σ₁ σ₂ T : ℝ} (hσ : σ₁ ≤ σ₂) (hT : 0 ≤ T)
+`integral_vertical_eq_uShaped_add_two_pi_mul_sum_residue` to the symmetric vertical window
+`[-T, T]` (`0 ≤ T`), writing the tail set `(Icc (-T) T)ᶜ` as `{y : ℝ | T < |y|}` and the bottom
+edge as `x ↦ f (x - T * I)`. -/
+theorem integral_vertical_eq_uShaped_symm_add_two_pi_mul_sum_residue {σ₁ σ₂ T : ℝ}
+    (hσ : σ₁ ≤ σ₂) (hT : 0 ≤ T)
     {P : Finset ℂ} (hP : ∀ p ∈ P, p ∈ Ioo σ₁ σ₂ ×ℂ Ioo (-T) T) {f : ℂ → ℂ}
     (hc : ContinuousOn f (Icc σ₁ σ₂ ×ℂ Icc (-T) T \ P))
     (hd : DifferentiableOn ℂ f (Ioo σ₁ σ₂ ×ℂ Ioo (-T) T \ P))
@@ -180,6 +184,6 @@ theorem integral_vertical_eq_uShaped_symm_add_residues {σ₁ σ₂ T : ℝ} (h�
     refine intervalIntegral.integral_congr fun x _ ↦ ?_
     simp [sub_eq_add_neg]
   simpa only [hset, hbot] using
-    integral_vertical_eq_uShaped_add_residues hσ (by linarith) hP hc hd hmer hint
+    integral_vertical_eq_uShaped_add_two_pi_mul_sum_residue hσ (by linarith) hP hc hd hmer hint
 
 end TauCeti.Contour
