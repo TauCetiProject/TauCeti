@@ -7,9 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
+import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
-import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 
 /-!
 # Multiplication operators on `Lᵖ`
@@ -51,9 +51,9 @@ noncomputable section
 
 open scoped ENNReal ComplexInnerProductSpace InnerProductSpace
 
-namespace TauCeti
-
 open MeasureTheory
+
+namespace TauCeti
 
 variable {α F : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
   [NormedAddCommGroup F] [SecondCountableTopologyEither α F] {f : α → F} {s : Set α}
@@ -108,9 +108,8 @@ theorem holderL_mul_eq_multiplicationOperator :
       multiplicationOperator (E := ℂ) (p := 2) (μ := μ) := by
   funext a
   ext f
-  filter_upwards [(ContinuousLinearMap.mul ℂ ℂ).coeFn_holder (r := 2) a f,
-    multiplicationOperator_ae a f] with x h₁ h₂
-  rw [ContinuousLinearMap.holderL_apply_apply, h₁, h₂, ContinuousLinearMap.mul_apply', smul_eq_mul]
+  rw [ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holder_mul_eq_smul,
+    multiplicationOperator_apply]
 
 /-- Multiplication by `a` changes the `Lᵖ` norm by at most `‖a‖ * ‖f‖`. -/
 theorem norm_multiplicationOperator_apply_le (a : Lp 𝕜 ∞ μ) (f : Lp E p μ) :
@@ -234,8 +233,8 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
 theorem multiplicationOperator_linftyIndicator (hs : MeasurableSet s) :
     multiplicationOperator (E := E) (p := p) (TauCeti.linftyIndicator μ 𝕜 s hs) =
       indicatorMultiplication 𝕜 p hs :=
-  ContinuousLinearMap.ext fun f ↦ Lp.ext <|
-    (TauCeti.coeFn_linftyIndicator_smul hs f).trans (indicatorMultiplication_ae hs f).symm
+  ContinuousLinearMap.ext fun f ↦
+    (multiplicationOperator_apply _ _).trans (indicatorMultiplication_apply hs f).symm
 
 end Indicator
 
@@ -297,57 +296,31 @@ section ComplexInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
-/-- Pointwise lift of `StarAlgHom.ofId ℂ (E →L[ℂ] E)` to `Lp ℂ ∞ μ →⋆ₐ[ℂ] Lp (E →L[ℂ] E) ∞ μ`. -/
-private def algebraMapLinftyStarAlgHom (μ : Measure α) (E : Type*) [NormedAddCommGroup E]
+private theorem continuous_starAlgHom_ofId (E : Type*) [NormedAddCommGroup E]
     [InnerProductSpace ℂ E] [CompleteSpace E] :
-    Lp ℂ ∞ μ →⋆ₐ[ℂ] Lp (E →L[ℂ] E) ∞ μ where
-  toFun := (algebraMapCLM ℂ (E →L[ℂ] E)).compLpL ∞ μ
-  map_one' := Lp.ext <| by
-    filter_upwards [(algebraMapCLM ℂ (E →L[ℂ] E)).coeFn_compLpL (1 : Lp ℂ ∞ μ),
-      Lp.coeFn_one (E := ℂ) (μ := μ), Lp.coeFn_one (E := E →L[ℂ] E) (μ := μ)] with x hx h1 h1'
-    rw [hx, coe_algebraMapCLM, h1, h1', Pi.one_apply, Pi.one_apply, map_one]
-  map_mul' a b := Lp.ext <| by
-    filter_upwards [(algebraMapCLM ℂ (E →L[ℂ] E)).coeFn_compLpL (a * b),
-      Lp.coeFn_mul a b,
-      Lp.coeFn_mul ((algebraMapCLM ℂ (E →L[ℂ] E)).compLpL ∞ μ a)
-        ((algebraMapCLM ℂ (E →L[ℂ] E)).compLpL ∞ μ b),
-      (algebraMapCLM ℂ (E →L[ℂ] E)).coeFn_compLpL a,
-      (algebraMapCLM ℂ (E →L[ℂ] E)).coeFn_compLpL b] with x hx hab hmul ha hb
-    rw [hx, coe_algebraMapCLM, hab, hmul, Pi.mul_apply, Pi.mul_apply, ha, hb, map_mul]; rfl
-  map_zero' := map_zero _
-  map_add' := map_add _
-  commutes' c := Lp.ext <| by
-    filter_upwards [(algebraMapCLM ℂ (E →L[ℂ] E)).coeFn_compLpL (algebraMap ℂ (Lp ℂ ∞ μ) c),
-      coeFn_algebraMap (R := ℂ) (μ := μ) c,
-      Lp.coeFn_smul c (1 : Lp (E →L[ℂ] E) ∞ μ),
-      Lp.coeFn_one (E := E →L[ℂ] E) (μ := μ)] with x hx hc hsmul h1
-    conv_rhs => rw [Algebra.algebraMap_eq_smul_one]
-    rw [hx, coe_algebraMapCLM, hc, hsmul, Pi.smul_apply, h1, Pi.one_apply,
-      Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_self_apply]
-  map_star' a := Lp.ext <| by
-    filter_upwards [(algebraMapCLM ℂ (E →L[ℂ] E)).coeFn_compLpL (star a),
-      Lp.coeFn_star a, Lp.coeFn_star ((algebraMapCLM ℂ (E →L[ℂ] E)).compLpL ∞ μ a),
-      (algebraMapCLM ℂ (E →L[ℂ] E)).coeFn_compLpL a] with x hx hsa hs ha
-    rw [hx, hsa, Pi.star_apply, hs, Pi.star_apply, ha, coe_algebraMapCLM,
-      ← StarAlgHom.ofId_apply (R := ℂ) (A := E →L[ℂ] E),
-      ← StarAlgHom.ofId_apply (R := ℂ) (A := E →L[ℂ] E), map_star]
+    Continuous (StarAlgHom.ofId ℂ (E →L[ℂ] E)) :=
+  (algebraMapCLM ℂ (E →L[ℂ] E)).lipschitzWith.continuous.congr fun c ↦ by
+    rw [coe_algebraMapCLM, StarAlgHom.ofId_apply]
 
 /-- Pointwise multiplication by essentially bounded complex functions, bundled as a unital
 ⋆-algebra homomorphism into the bounded operators on `L²`. -/
 def multiplicationStarAlgHom (μ : Measure α) (E : Type*) [NormedAddCommGroup E]
     [InnerProductSpace ℂ E] [CompleteSpace E] : Lp ℂ ∞ μ →⋆ₐ[ℂ] (Lp E 2 μ →L[ℂ] Lp E 2 μ) :=
-  (operatorMultiplicationStarAlgHom ℂ E μ).comp (algebraMapLinftyStarAlgHom μ E)
+  (operatorMultiplicationStarAlgHom ℂ E μ).comp
+    ((StarAlgHom.ofId ℂ (E →L[ℂ] E)).compLpTop (continuous_starAlgHom_ofId E) μ)
 
 @[simp]
 theorem multiplicationStarAlgHom_apply (a : Lp ℂ ∞ μ) :
     multiplicationStarAlgHom μ E a = multiplicationOperator (E := E) a := by
   ext f
   rw [multiplicationStarAlgHom, StarAlgHom.comp_apply, operatorMultiplicationStarAlgHom_apply]
-  filter_upwards [operatorMultiplication_ae (algebraMapLinftyStarAlgHom μ E a) f,
-    (algebraMapCLM ℂ (E →L[ℂ] E)).coeFn_compLpL a, multiplicationOperator_ae a f]
-    with x hx hcomp hmul
-  rw [hx, show ⇑(algebraMapLinftyStarAlgHom μ E a) x = algebraMap ℂ (E →L[ℂ] E) (a x) from hcomp,
-    Algebra.algebraMap_eq_smul_one, smul_apply, ContinuousLinearMap.one_def, id_apply, hmul]
+  filter_upwards
+    [operatorMultiplication_ae
+      ((StarAlgHom.ofId ℂ (E →L[ℂ] E)).compLpTop (continuous_starAlgHom_ofId E) μ a) f,
+    (StarAlgHom.ofId ℂ (E →L[ℂ] E)).coeFn_compLpTop (continuous_starAlgHom_ofId E) a,
+    multiplicationOperator_ae a f] with x hx hcomp hmul
+  rw [hx, hcomp, StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one, smul_apply,
+    ContinuousLinearMap.one_def, id_apply, hmul]
 
 /-- The range of `multiplicationStarAlgHom μ E` as a set equals the range of
 `multiplicationOperator (E := E) (p := 2) (μ := μ)`. -/

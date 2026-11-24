@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -26,12 +27,13 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
 * `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
 
 Multiplication by the indicator of a measurable set `s` is the operator
-`MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from the class of `1_s` in
-scalar `L∞`. It acts as `f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`,
-`indicatorMultiplication_eq_iff`), it is the identity for `univ`, zero for `∅` and composes by
-intersection (`indicatorMultiplication_comp_indicatorMultiplication`), cut-offs to a set and its
-complement add up to the identity (`indicatorMultiplication_add_compl`), it restricts constant
-indicator classes (`indicatorMultiplication_indicatorConstLp`), it is a contraction
+`MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from
+`TauCeti.linftyIndicator μ 𝕜 s hs` in scalar `L∞` (`indicatorMultiplication_apply`). It acts as
+`f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`, `indicatorMultiplication_eq_iff`,
+`indicatorMultiplication_eq_self_of_ae_notMem`), it is the identity for `univ`, zero for `∅` and
+composes by intersection (`indicatorMultiplication_comp_indicatorMultiplication`), cut-offs to a
+set and its complement add up to the identity (`indicatorMultiplication_add_compl`), it restricts
+constant indicator classes (`indicatorMultiplication_indicatorConstLp`), it is a contraction
 (`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
 (`eLpNorm_indicatorMultiplication`), and it is self-adjoint on `L²`
 (`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
@@ -192,26 +194,43 @@ variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
 
 variable (𝕜 p) in
 /-- Multiplication by the indicator of a measurable set `s`, as a bounded operator on `Lp E p μ`:
-the Hölder product with the class of `1_s` in `L∞`. -/
+the Hölder product with `TauCeti.linftyIndicator μ 𝕜 s hs`. -/
 def indicatorMultiplication (hs : MeasurableSet s) : Lp E p μ →L[𝕜] Lp E p μ :=
-  (ContinuousLinearMap.lsmul 𝕜 𝕜).holderL μ ∞ p p
-    (((memLp_top_const (1 : 𝕜)).indicator hs.nullMeasurableSet).toLp (s.indicator fun _ ↦ 1))
+  (ContinuousLinearMap.lsmul 𝕜 𝕜).holderL μ ∞ p p (TauCeti.linftyIndicator μ 𝕜 s hs)
+
+/-- Applying `indicatorMultiplication` is heterogeneous `Lp` scalar multiplication by
+`TauCeti.linftyIndicator μ 𝕜 s hs`. -/
+theorem indicatorMultiplication_apply (hs : MeasurableSet s) (f : Lp E p μ) :
+    indicatorMultiplication 𝕜 p hs f = TauCeti.linftyIndicator μ 𝕜 s hs • f := by
+  rw [indicatorMultiplication, holderL_apply_apply, ContinuousLinearMap.holder_lsmul_eq_smul]
 
 /-- `indicatorMultiplication` multiplies by the indicator of `s` almost everywhere. -/
 theorem indicatorMultiplication_ae (hs : MeasurableSet s) (f : Lp E p μ) :
     indicatorMultiplication 𝕜 p hs f =ᵐ[μ] s.indicator f := by
-  filter_upwards [(ContinuousLinearMap.lsmul 𝕜 𝕜).coeFn_holder (r := p)
-    (((memLp_top_const (1 : 𝕜)).indicator hs.nullMeasurableSet).toLp (s.indicator fun _ ↦ 1)) f,
-    MemLp.coeFn_toLp ((memLp_top_const (1 : 𝕜) (μ := μ)).indicator hs.nullMeasurableSet)]
-    with x h h₁
-  rw [indicatorMultiplication, holderL_apply_apply, h, h₁]
-  by_cases hx : x ∈ s <;> simp [hx]
+  rw [indicatorMultiplication_apply]
+  exact TauCeti.coeFn_linftyIndicator_smul hs f
 
 /-- `indicatorMultiplication` is characterized by its almost-everywhere pointwise action. -/
 theorem indicatorMultiplication_eq_iff {hs : MeasurableSet s} {f g : Lp E p μ} :
     indicatorMultiplication 𝕜 p hs f = g ↔ s.indicator f =ᵐ[μ] g :=
   ⟨fun h ↦ h ▸ (indicatorMultiplication_ae hs f).symm,
     fun h ↦ Lp.ext ((indicatorMultiplication_ae hs f).trans h)⟩
+
+/-- If `f` vanishes almost everywhere outside `s`, then `indicatorMultiplication 𝕜 p hs f = f`. -/
+theorem indicatorMultiplication_eq_self_of_ae_notMem (hs : MeasurableSet s) {f : Lp E p μ}
+    (hf : ∀ᵐ x ∂μ, x ∉ s → f x = 0) :
+    indicatorMultiplication 𝕜 p hs f = f := by
+  refine indicatorMultiplication_eq_iff.mpr ?_
+  filter_upwards [hf] with x hfx
+  by_cases hxs : x ∈ s
+  · rw [Set.indicator_of_mem hxs]
+  · rw [Set.indicator_of_notMem hxs, hfx hxs]
+
+/-- Commuting with `indicatorMultiplication` commutes its action on `Lp` functions. -/
+theorem _root_.Commute.indicatorMultiplication_apply {T : Lp E p μ →L[𝕜] Lp E p μ}
+    {hs : MeasurableSet s} (h : Commute T (indicatorMultiplication 𝕜 p hs)) (f : Lp E p μ) :
+    T (indicatorMultiplication 𝕜 p hs f) = indicatorMultiplication 𝕜 p hs (T f) := by
+  simpa only [mul_apply_eq_comp] using congr($h.eq f)
 
 /-- Multiplication by the indicator of the whole space is the identity. -/
 @[simp] theorem indicatorMultiplication_univ :
@@ -251,13 +270,8 @@ theorem indicatorMultiplication_indicatorConstLp {t : Set α} (hs : MeasurableSe
     indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
       indicatorConstLp p (hs.inter ht)
         ((measure_mono Set.inter_subset_right).trans_lt hμt.lt_top).ne v := by
-  rw [indicatorMultiplication_eq_iff]
-  filter_upwards [indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt) (c := v),
-    indicatorConstLp_coeFn (p := p) (hs := hs.inter ht)
-      (hμs := ((measure_mono Set.inter_subset_right).trans_lt hμt.lt_top).ne) (c := v)]
-    with x htx hstx
-  rw [hstx]
-  by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp [hxs, hxt, htx]
+  rw [indicatorMultiplication_apply]
+  exact TauCeti.linftyIndicator_smul_indicatorConstLp hs ht hμt v
 
 /-- If `s ⊆ t`, multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` restricts
 it to `s`. -/

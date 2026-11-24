@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Function.UniformIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Holder
 
 /-!
 # Indicator classes in `Lᵖ`
@@ -72,10 +73,10 @@ supporting sets.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory
 open scoped ENNReal
+
+namespace TauCeti
 
 section Zero
 
@@ -349,27 +350,18 @@ section Holder
 
 variable {p : ℝ≥0∞}
 
-private theorem holder_mul_linftyIndicator_eq_smul (hs : MeasurableSet s) (f : Lp ℝ p μ) :
-    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ ℝ s hs) f =
-      linftyIndicator μ ℝ s hs • f := by
-  apply Lp.ext
-  filter_upwards [(ContinuousLinearMap.mul ℝ ℝ).coeFn_holder
-      (r := p) (linftyIndicator μ ℝ s hs) f,
-    Lp.coeFn_lpSMul (r := p) (linftyIndicator μ ℝ s hs) f] with x hx hy
-  rw [hx, ContinuousLinearMap.mul_apply', hy, Pi.smul_apply', smul_eq_mul]
-
 /-- Hölder multiplication by an `L∞` indicator is almost everywhere the indicator cutoff. -/
 theorem coeFn_holder_mul_linftyIndicator (hs : MeasurableSet s) (f : Lp ℝ p μ) :
     (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ ℝ s hs) f =ᵐ[μ]
       s.indicator f := by
-  rw [holder_mul_linftyIndicator_eq_smul]
+  rw [ContinuousLinearMap.holder_mul_eq_smul]
   exact coeFn_linftyIndicator_smul hs f
 
 /-- Hölder multiplication by an `L∞` indicator agrees with the `MemLp.toLp` cutoff. -/
 theorem holder_mul_linftyIndicator_eq_toLp (hs : MeasurableSet s) (f : Lp ℝ p μ) :
     (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ ℝ s hs) f =
       ((Lp.memLp f).indicator hs.nullMeasurableSet).toLp (s.indicator f) := by
-  rw [holder_mul_linftyIndicator_eq_smul]
+  rw [ContinuousLinearMap.holder_mul_eq_smul]
   exact linftyIndicator_smul_eq_toLp hs f
 
 /-- Cutting off a constant indicator class intersects its supporting set. -/
@@ -380,7 +372,7 @@ theorem holder_mul_linftyIndicator_indicatorConstLp (hs : MeasurableSet s)
         (indicatorConstLp p ht hμt c) =
       indicatorConstLp p (hs.inter ht)
         (ne_top_of_le_ne_top hμt (measure_mono inter_subset_right)) c := by
-  rw [holder_mul_linftyIndicator_eq_smul]
+  rw [ContinuousLinearMap.holder_mul_eq_smul]
   exact linftyIndicator_smul_indicatorConstLp hs ht hμt c
 
 end Holder

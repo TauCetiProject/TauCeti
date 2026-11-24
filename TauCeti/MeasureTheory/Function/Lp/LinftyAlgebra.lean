@@ -64,6 +64,7 @@ almost everywhere equalities in place of pointwise ones.
   set.
 * `MeasureTheory.Lp.lpSMul_mul_assoc` and `MeasureTheory.Lp.mul_lpSMul_comm`: heterogeneous `L∞`
   scalar multiplication associates and commutes with multiplication in `Lp R ∞ μ`.
+* `StarAlgHom.compLpTop`: pointwise lift of a continuous unital ⋆-algebra homomorphism to `L∞`.
 * The instances `NormedRing`, `NormedCommRing`, `NormedAlgebra`, `StarRing`, `CStarRing`,
   `CStarAlgebra` and `CommCStarAlgebra` on `Lp R ∞ μ`.
 * `MeasureTheory.Lp.reCLM_mul`, `MeasureTheory.Lp.imCLM_mul`, `MeasureTheory.Lp.normLp_mul_self_eq`:
@@ -243,6 +244,51 @@ end StarRing
 instance inftyCStarAlgebra [CStarAlgebra R] : CStarAlgebra (Lp R ∞ μ) where
 
 instance inftyCommCStarAlgebra [CommCStarAlgebra R] : CommCStarAlgebra (Lp R ∞ μ) where
+
+section StarAlgHom
+
+variable {A B : Type*} [NontriviallyNormedField 𝕜]
+  [NormedRing A] [StarRing A] [NormedStarGroup A] [NormedAlgebra 𝕜 A]
+  [NormedRing B] [StarRing B] [NormedStarGroup B] [NormedAlgebra 𝕜 B]
+
+/-- Pointwise lift of a continuous unital ⋆-algebra homomorphism `φ : A →⋆ₐ[𝕜] B` to
+`Lp A ∞ μ →⋆ₐ[𝕜] Lp B ∞ μ`. -/
+def _root_.StarAlgHom.compLpTop (φ : A →⋆ₐ[𝕜] B) (hφ : Continuous φ) (μ : Measure α) :
+    Lp A ∞ μ →⋆ₐ[𝕜] Lp B ∞ μ :=
+  let L : A →L[𝕜] B := { φ.toLinearMap with cont := hφ }
+  have hL (x : A) : L x = φ x := rfl
+  { toFun := L.compLpL ∞ μ
+    map_one' := Lp.ext <| by
+      filter_upwards [L.coeFn_compLpL (1 : Lp A ∞ μ), coeFn_one (E := A) (μ := μ),
+        coeFn_one (E := B) (μ := μ)] with x hx h1 h1'
+      rw [hx, h1, h1', Pi.one_apply, Pi.one_apply, hL, map_one]
+    map_mul' a b := Lp.ext <| by
+      filter_upwards [L.coeFn_compLpL (a * b), coeFn_mul a b,
+        coeFn_mul (L.compLpL ∞ μ a) (L.compLpL ∞ μ b),
+        L.coeFn_compLpL a, L.coeFn_compLpL b] with x hx hab hmul ha hb
+      rw [hx, hab, hmul, Pi.mul_apply, Pi.mul_apply, ha, hb, hL, hL, hL, map_mul]
+    map_zero' := Lp.ext <| by
+      filter_upwards [L.coeFn_compLpL (0 : Lp A ∞ μ), coeFn_zero A ∞ μ,
+        coeFn_zero B ∞ μ] with x hx h0A h0B
+      rw [hx, h0A, h0B, Pi.zero_apply, Pi.zero_apply, map_zero]
+    map_add' a b := (L.compLpL ∞ μ).map_add a b
+    commutes' c := Lp.ext <| by
+      filter_upwards [L.coeFn_compLpL (algebraMap 𝕜 (Lp A ∞ μ) c),
+        coeFn_algebraMap (R := A) (μ := μ) c,
+        coeFn_algebraMap (R := B) (μ := μ) c] with x hx hcA hcB
+      rw [hx, hcA, hcB, hL, AlgHomClass.commutes]
+    map_star' a := Lp.ext <| by
+      filter_upwards [L.coeFn_compLpL (star a), coeFn_star a,
+        coeFn_star (L.compLpL ∞ μ a), L.coeFn_compLpL a] with x hx hsa hs ha
+      rw [hx, hsa, Pi.star_apply, hs, Pi.star_apply, ha, hL, hL, map_star] }
+
+/-- `StarAlgHom.compLpTop` acts by pointwise application of `φ` almost everywhere. -/
+theorem _root_.StarAlgHom.coeFn_compLpTop (φ : A →⋆ₐ[𝕜] B) (hφ : Continuous φ)
+    (a : Lp A ∞ μ) :
+    ⇑(φ.compLpTop hφ μ a) =ᵐ[μ] fun x ↦ φ (a x) :=
+  ({ φ.toLinearMap with cont := hφ } : A →L[𝕜] B).coeFn_compLpL a
+
+end StarAlgHom
 
 section Count
 
