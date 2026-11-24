@@ -30,14 +30,13 @@ as measures on `Ω` (`TauCeti.variationMeasure_eq_comap_restrict_reducedBoundary
 (`TauCeti.variationMeasure_eq_euclideanHausdorffMeasure_image`). Consequently:
 
 * `TauCeti.perimeter_eq_euclideanHausdorffMeasure_reducedBoundary`: `P(s; Ω) = Hⁿ⁻¹(∂*s)`;
-* `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier_inter`: `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)`, for
-  the topological frontier `∂s`, since `∂*s ⊆ ∂s`;
 * `TauCeti.integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal`: the
   Gauss–Green formula with surface measure, `∫_s div φ = ∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹`, that is,
   `Dχ_s = -ν_s Hⁿ⁻¹ ⌊ ∂*s`.
 
-The statements about the perimeter require `s` to have locally finite perimeter in `Ω`; the
-criterion deducing finite perimeter from a finite measure of the boundary is not proved here.
+The statements about the perimeter require `s` to have locally finite perimeter in `Ω`. The bound
+`P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` for every set, with the criterion deducing locally finite perimeter from a
+frontier of locally finite measure, is in `TauCeti.Analysis.BoundedVariation.FrontierCriterion`.
 The rectifiability of the reduced boundary, the remaining part of De Giorgi's structure theorem,
 is not used.
 
@@ -472,16 +471,6 @@ theorem perimeter_eq_euclideanHausdorffMeasure_reducedBoundary (hn : 2 ≤ finra
     variationMeasure_eq_comap_restrict_reducedBoundary hn, hemb.comap_apply, image_univ,
     Subtype.range_coe, Measure.restrict_apply Ω.isOpen.measurableSet,
     inter_eq_right.2 reducedBoundary_subset]
-
-/-- **The perimeter is at most the Hausdorff measure of the frontier.** In dimension `n ≥ 2`, a set
-`s` of locally finite perimeter in `Ω` has `P(s; Ω) ≤ Hⁿ⁻¹(frontier s ∩ Ω)`. -/
-theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finrank ℝ E)
-    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
-    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞) :
-    perimeter volume Ω s ≤ μHE[finrank ℝ E - 1] (frontier s ∩ Ω) := by
-  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn hu hfin]
-  exact measure_mono (subset_inter reducedBoundary_subset_frontier reducedBoundary_subset)
 
 /-- **The Gauss–Green formula with surface measure, `Dχ_s = -ν_s Hⁿ⁻¹ ⌊ ∂*s`.** In dimension
 `n ≥ 2`, for a set `s` of locally finite perimeter in `Ω`,
