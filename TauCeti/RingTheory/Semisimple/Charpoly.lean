@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.CharP.Reduced
 public import TauCeti.LinearAlgebra.Charpoly.Pi
-public import TauCeti.RingTheory.Semisimple.DoubleCentralizer
+public import TauCeti.LinearAlgebra.Charpoly.Trace
+public import TauCeti.RingTheory.Semisimple.Burnside
 public import TauCeti.RingTheory.Semisimple.Trace.Basic
 
 /-!
@@ -23,10 +24,10 @@ suffice (`IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq`); in characterist
 determine the multiplicities modulo `p`
 (`IsSemisimpleModule.natCast_jordanHolderMultiplicity_eq_of_trace_eq`).
 
-The proof is the classical one. By Burnside's theorem and the isotypic projections, `A` maps onto
-`∏ j, End_k(T_j)` for a finite family of pairwise non-isomorphic finite-dimensional simple modules
-`T_j`
-(`IsSemisimpleModule.exists_forall_lsmul_eq`). An element acting on one `T_j` by an endomorphism of
+The proof is the classical one. By Burnside's theorem and the isotypic projections, `A` maps
+onto `∏ j, End_k(T_j)` for a finite family of pairwise non-isomorphic finite-dimensional simple
+modules `T_j` (`IsSemisimpleModule.exists_forall_lsmul_eq`, in
+`TauCeti.RingTheory.Semisimple.Burnside`). An element acting on one `T_j` by an endomorphism of
 trace `1` and by zero on the others therefore reads off the multiplicity of `T_j`, cast into `k`,
 from the trace. If two semisimple modules have equal characteristic polynomials, cancel their
 common simple summands. Their remaining multiplicities have disjoint supports and agree in `k`, so
@@ -36,14 +37,9 @@ modules with multiplicities divided by `p`, which again agree because Frobenius 
 
 ## Main results
 
-* `IsSemisimpleModule.exists_forall_lsmul_eq`: for a finite family of pairwise non-isomorphic
-  finite-dimensional simple modules `T_j` over an algebraically closed field,
-  `A → ∏ j, End_k(T_j)` is surjective.
 * `IsSemisimpleModule.natCast_jordanHolderMultiplicity_eq_of_trace_eq`: semisimple modules with
   the same trace on the elements of a spanning set have the same multiplicities of every simple
   module, cast into `k`.
-* `LinearMap.trace_eq_neg_charpoly_nextCoeff`: the trace of an endomorphism of a finite free
-  module is minus the next coefficient of its characteristic polynomial.
 * `IsSemisimpleModule.nonempty_linearEquiv_of_charpoly_eq`: **Brauer–Nesbitt.** Semisimple
   modules with the same characteristic polynomials on a spanning set of `A` are isomorphic.
 
@@ -145,14 +141,6 @@ section Generic
 
 variable {A : Type*} [Ring A]
 
-/-- A finitely generated semisimple module is a finite product of simple submodules. -/
-private theorem exists_linearEquiv_pi_submodule (M : Type*) [AddCommGroup M] [Module A M]
-    [IsSemisimpleModule A M] [Module.Finite A M] :
-    ∃ (n : ℕ) (Q : Fin n → Submodule A M), (∀ x, IsSimpleModule A (Q x)) ∧
-      Nonempty (M ≃ₗ[A] ∀ x, Q x) := by
-  obtain ⟨n, Q, eQ, hQ⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp A M
-  exact ⟨n, Q, hQ, ⟨eQ.trans DFinsupp.linearEquivFunOnFintype⟩⟩
-
 /-- Finitely many pairwise non-isomorphic simple submodules of `M × N` to which every simple
 submodule of `M` and of `N` is isomorphic. -/
 private theorem exists_simple_family (M N : Type*) [AddCommGroup M] [Module A M]
@@ -163,7 +151,7 @@ private theorem exists_simple_family (M N : Type*) [AddCommGroup M] [Module A M]
       (∀ P : Submodule A M, IsSimpleModule A P → ∃ i, Nonempty (P ≃ₗ[A] T i)) ∧
       ∀ P : Submodule A N, IsSimpleModule A P → ∃ i, Nonempty (P ≃ₗ[A] T i) := by
   classical
-  obtain ⟨r, Q, hQ, ⟨e⟩⟩ := exists_linearEquiv_pi_submodule (A := A) (M × N)
+  obtain ⟨r, Q, hQ, ⟨e⟩⟩ := exists_linearEquiv_pi_submodule (R := A) (M × N)
   let s : Setoid (Fin r) :=
     { r x y := Nonempty (Q x ≃ₗ[A] Q y)
       iseqv := ⟨fun _ => ⟨.refl A _⟩, fun ⟨f⟩ => ⟨f.symm⟩, fun ⟨f⟩ ⟨g⟩ => ⟨f.trans g⟩⟩ }
@@ -196,7 +184,7 @@ private theorem jordanHolderMultiplicity_eq_zero_of_forall_isEmpty {ι : Type*} 
     (hM : ∀ P : Submodule A M, IsSimpleModule A P → ∃ i, Nonempty (P ≃ₗ[A] T i))
     (S : Type*) [AddCommGroup S] [Module A S] (hS : ∀ i, IsEmpty (S ≃ₗ[A] T i)) :
     jordanHolderMultiplicity A M S = 0 := by
-  obtain ⟨n, Q, hQ, ⟨eM⟩⟩ := exists_linearEquiv_pi_submodule (A := A) M
+  obtain ⟨n, Q, hQ, ⟨eM⟩⟩ := exists_linearEquiv_pi_submodule (R := A) M
   rw [jordanHolderMultiplicity_eq_of_linearEquiv eM, jordanHolderMultiplicity_pi_eq_natCard,
     Nat.card_eq_zero]
   refine Or.inl ⟨fun ⟨x, ⟨e⟩⟩ => ?_⟩
@@ -226,14 +214,6 @@ end Generic
 
 variable {k A : Type*} [Field k] [Ring A] [Algebra k A]
 
-/-- The trace of an endomorphism of a finite free module is minus the next coefficient of its
-characteristic polynomial (Mathlib's `Matrix.trace_eq_neg_charpoly_nextCoeff`, read in a basis). -/
-theorem _root_.LinearMap.trace_eq_neg_charpoly_nextCoeff {R M : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M] (f : Module.End R M) :
-    LinearMap.trace R M f = -f.charpoly.nextCoeff := by
-  rw [LinearMap.trace_eq_matrix_trace R (Module.Free.chooseBasis R M),
-    Matrix.trace_eq_neg_charpoly_nextCoeff, LinearMap.charpoly_toMatrix]
-
 /-- The trace combination `∑ i, c i • tr(a | T i)` is minus the next coefficient of
 `∏ i, charpoly(a | T i) ^ c i`. -/
 private theorem sum_smul_trace_eq {ι : Type*} [Fintype ι] {T : ι → Type*}
@@ -262,7 +242,7 @@ private theorem charpoly_lsmul_eq_prod (hT : Pairwise fun i j => IsEmpty (T i �
     (Algebra.lsmul k k M a).charpoly =
       ∏ i, (Algebra.lsmul k k (T i) a).charpoly ^ jordanHolderMultiplicity A M (T i) := by
   classical
-  obtain ⟨n, Q, hQ, ⟨eM⟩⟩ := exists_linearEquiv_pi_submodule (A := A) M
+  obtain ⟨n, Q, hQ, ⟨eM⟩⟩ := exists_linearEquiv_pi_submodule (R := A) M
   have (x : Fin n) : FiniteDimensional k (Q x) :=
     .of_injective ((Q x).subtype.restrictScalars k) Subtype.val_injective
   have hprod : (Algebra.lsmul k k M a).charpoly = ∏ x, (Algebra.lsmul k k (Q x) a).charpoly := by
@@ -309,29 +289,6 @@ variable {ι : Type*} [Finite ι] {T : ι → Type*} [∀ i, AddCommGroup (T i)]
   [∀ i, Module A (T i)] [∀ i, IsScalarTower k A (T i)] [∀ i, IsSimpleModule A (T i)]
   [∀ i, FiniteDimensional k (T i)]
 
-/-- **Burnside's theorem for several simple modules.** Over an algebraically closed field, an
-algebra maps onto `∏ j, End_k(T_j)` for finitely many pairwise non-isomorphic finite-dimensional
-simple modules `T_j`: any family of `k`-linear endomorphisms is the action of one element. Each
-`T_j` alone is Burnside's theorem; the isotypic projections of `∏ j, T_j` separate the factors. -/
-theorem exists_forall_lsmul_eq (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ[A] T j))
-    (f : ∀ i, Module.End k (T i)) : ∃ a : A, ∀ i, Algebra.lsmul k k (T i) a = f i := by
-  classical
-  cases nonempty_fintype ι
-  have : Module.Finite (Module.End A (∀ i, T i)) (∀ i, T i) :=
-    Module.Finite.of_restrictScalars_finite k _ _
-  choose b hb using fun i => Algebra.lsmul_surjective_of_forall_end_eq_smul (K := k)
-    (fun g : Module.End A (T i) => ⟨endAlgEquivSelfOfIsSimpleModule (k := k) g,
-      fun m => (endAlgEquivSelfOfIsSimpleModule_smul g m).symm⟩) (f i)
-  choose e he using fun i => exists_forall_smul_eq_ite (R := A) (M := ∀ i, T i) (T i)
-  have hδ (i j : ι) (y : T j) : e i • y = if i = j then y else 0 := by
-    rw [smul_eq_ite_of_injective (he i) (LinearMap.single A T j) (Pi.single_injective j)]
-    by_cases hij : i = j
-    · subst hij
-      rw [ite_eq_left ⟨LinearEquiv.refl A _⟩, ite_eq_left rfl]
-    · rw [ite_eq_right fun ⟨e⟩ => (hT hij).false e, ite_eq_right hij]
-  refine ⟨∑ i, e i * b i, fun j => LinearMap.ext fun x => ?_⟩
-  simpa [Finset.sum_smul, mul_smul, hδ] using LinearMap.congr_fun (hb j) x
-
 /-- **Traces separate multiplicities.** Over an algebraically closed field, if the trace
 combinations `∑ i, c i • tr(a | T i)` and `∑ i, d i • tr(a | T i)` agree on a spanning set of `A`,
 for pairwise non-isomorphic simple `T i`, then `c i` and `d i` agree in `k`. -/
@@ -367,7 +324,8 @@ variable {M N : Type*} [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower
 /-- **Traces determine multiplicities modulo the characteristic.** Over an algebraically closed
 field, finite-dimensional semisimple modules on which every element of `A` acts with the same
 trace contain every simple module the same number of times, counted in `k`. In characteristic `p`
-the multiplicities are thus congruent modulo `p`, and need not be equal: over `𝔽₃`, three copies
+the multiplicities are thus congruent modulo `p`, and need not be equal: over an algebraic closure
+of `𝔽₃`, three copies
 of the trivial representation of `ℤ/2` and three copies of its sign representation have the same
 trace everywhere, and contain the trivial representation `3` and `0` times. -/
 theorem natCast_jordanHolderMultiplicity_eq_of_trace_eq [Module.Finite A M] [Module.Finite A N]
@@ -391,8 +349,9 @@ theorem natCast_jordanHolderMultiplicity_eq_of_trace_eq [Module.Finite A M] [Mod
 finite-dimensional semisimple modules over a `k`-algebra `A` are isomorphic if the elements of a
 spanning set `Set.range g` of `A` act on them with the same characteristic polynomials.
 
-Traces alone do not suffice in characteristic `p`: over `𝔽₃`, three copies of the trivial
-representation of `ℤ/2` and three copies of the sign representation have equal traces. -/
+Traces alone do not suffice in characteristic `p`: over an algebraic closure of `𝔽₃`, three copies
+of the trivial representation of `ℤ/2` and three copies of the sign representation have equal
+traces. -/
 theorem nonempty_linearEquiv_of_charpoly_eq {Γ : Type*} {g : Γ → A}
     (hg : Submodule.span k (Set.range g) = ⊤)
     (h : ∀ γ, (Algebra.lsmul k k M (g γ)).charpoly = (Algebra.lsmul k k N (g γ)).charpoly) :

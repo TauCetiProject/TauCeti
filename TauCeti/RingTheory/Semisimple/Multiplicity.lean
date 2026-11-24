@@ -344,6 +344,14 @@ universe u v w
 
 variable {R : Type u} [Ring R]
 
+/-- A finitely generated semisimple module is a finite product of simple submodules. -/
+theorem _root_.IsSemisimpleModule.exists_linearEquiv_pi_submodule (M : Type v) [AddCommGroup M]
+    [Module R M] [IsSemisimpleModule R M] [Module.Finite R M] :
+    ∃ (n : ℕ) (Q : Fin n → Submodule R M), (∀ i, IsSimpleModule R (Q i)) ∧
+      Nonempty (M ≃ₗ[R] ∀ i, Q i) := by
+  obtain ⟨n, Q, eQ, hQ⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp R M
+  exact ⟨n, Q, hQ, ⟨eQ.trans DFinsupp.linearEquivFunOnFintype⟩⟩
+
 /-- A finitely generated semisimple module is a finite product of quotients of the ring by maximal
 left ideals. This is `IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp` with each simple summand
 replaced by an isomorphic cyclic module, so that all the factors live in the universe of `R`. -/

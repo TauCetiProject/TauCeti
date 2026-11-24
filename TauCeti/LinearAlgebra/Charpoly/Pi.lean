@@ -40,6 +40,8 @@ private theorem charpoly_piMap_fin :
     let e := Fin.consLinearEquiv R M
     rw [← e.symm.charpoly_conj, Fin.prod_univ_succ,
       ← charpoly_piMap_fin n (fun i => M i.succ) fun i => f i.succ, ← charpoly_prodMap]
+    -- The conjugate of `piMap f` under `Fin.consLinearEquiv` is
+    -- `prodMap (f 0) (piMap fun i => f i.succ)` by definition.
     congr 1
 
 variable {ι : Type*} [Fintype ι] {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]

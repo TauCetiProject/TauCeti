@@ -54,25 +54,6 @@ section Trace
 variable {k : Type*} [Field k] {A : Type u} [Ring A] [Algebra k A]
 
 open scoped Classical in
-/-- An element acting as in `IsSemisimpleModule.exists_forall_smul_eq_ite` on the simple
-submodules of `X` acts in the same way on every simple module embedded in `X`. -/
-theorem smul_eq_ite_of_injective {X : Type*} [AddCommGroup X] [Module A X]
-    {S : Type*} [AddCommGroup S] [Module A S] {a : A}
-    (ha : ∀ T : Submodule A X, IsSimpleModule A T → ∀ x ∈ T,
-      a • x = if Nonempty (T ≃ₗ[A] S) then x else 0)
-    {Y : Type*} [AddCommGroup Y] [Module A Y] [IsSimpleModule A Y]
-    (f : Y →ₗ[A] X) (hf : Function.Injective f) (y : Y) :
-    a • y = if Nonempty (S ≃ₗ[A] Y) then y else 0 := by
-  let e := LinearEquiv.ofInjective f hf
-  have hT : IsSimpleModule A (LinearMap.range f) := IsSimpleModule.congr e.symm
-  have hiff : Nonempty (LinearMap.range f ≃ₗ[A] S) ↔ Nonempty (S ≃ₗ[A] Y) :=
-    ⟨fun ⟨e'⟩ => ⟨e'.symm.trans e.symm⟩, fun ⟨e'⟩ => ⟨(e'.trans e).symm⟩⟩
-  have hy := ha _ hT (f y) (LinearMap.mem_range_self f y)
-  rw [← map_smul, hiff] at hy
-  apply hf
-  split_ifs at hy ⊢ <;> simpa using hy
-
-open scoped Classical in
 /-- The trace of such an element on a module embedded in `X`, computed on a decomposition into
 simple submodules, adds up the dimensions of the summands isomorphic to `S`. -/
 private theorem trace_lsmul_eq_sum_ite {X : Type*} [AddCommGroup X] [Module A X]
