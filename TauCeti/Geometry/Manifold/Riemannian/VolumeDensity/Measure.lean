@@ -50,15 +50,12 @@ Proposition 2.44.
   orthonormal for the metric at the chart centre, the coordinate measure is the volume of
   Euclidean space divided by the chart density at the centre.
 * `TauCeti.exists_equiv_map_addHaar_eq_smul_volume`: such coordinates exist at every point.
-* `TauCeti.exists_map_restrict_preimage_eq_smul_addHaar`: a continuous linear equivalence onto the
-  model space maps an additive Haar measure, restricted to preimages, to a fixed positive multiple
-  of the restricted coordinate measure.
 -/
 
 public section
 
 open Bundle FiberBundle MeasureTheory Riemannian.Tensor Set
-open scoped ENNReal Manifold NNReal Topology
+open scoped ENNReal Manifold Topology
 
 noncomputable section
 
@@ -461,18 +458,5 @@ theorem exists_equiv_map_addHaar_eq_smul_volume (p : M) :
   refine ⟨L, ⟨O, fun ξ ↦ by rw [hLapp, e.symmL_continuousLinearMapAt hp]⟩, ?_⟩
   exact map_addHaar_eq_chartVolumeDensity_inv_smul_volume p L fun v w ↦ by
     rw [hLapp, hLapp, O.inner_map_map]
-
-/-- A continuous linear equivalence `L` onto the model space maps an additive Haar measure `μ`,
-restricted to the preimage of a set `s`, to a fixed positive multiple of the coordinate measure
-restricted to `s`. -/
-theorem exists_map_restrict_preimage_eq_smul_addHaar [MeasurableSpace E] [BorelSpace E]
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
-    (μ : Measure F) [μ.IsAddHaarMeasure] (L : F ≃L[ℝ] E) :
-    ∃ c : ℝ≥0, c ≠ 0 ∧ ∀ s : Set E,
-      (μ.restrict (L ⁻¹' s)).map L = c • (Module.finBasis ℝ E).addHaar.restrict s := by
-  refine ⟨Measure.addHaarScalarFactor (μ.map L) (Module.finBasis ℝ E).addHaar,
-    (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _).ne', fun s ↦ ?_⟩
-  rw [← Measure.restrict_smul, ← Measure.isAddLeftInvariant_eq_smul]
-  exact (L.toHomeomorph.toMeasurableEquiv.restrict_map μ s).symm
 
 end TauCeti

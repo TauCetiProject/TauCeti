@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.H1
 import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
 import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Elements of `H¹(M)` read in a chart
@@ -220,7 +221,7 @@ private theorem exists_compL_extChartAt_symm {p : M} {r m : ℝ} (L : E ≃L[ℝ
   let _ : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
   -- The image of the Haar measure of `F` is a multiple of the Haar measure of the model space.
-  obtain ⟨c, -, hc⟩ := exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F) L.symm
+  obtain ⟨c, -, hc⟩ := L.symm.exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F)
   have hres : ((volume : Measure F).restrict (coordBall (I := I) L p r : Set F)).map L.symm =
       c • (Module.finBasis ℝ E).addHaar.restrict (ball (extChartAt I p p) r) :=
     hc _

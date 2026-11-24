@@ -14,6 +14,7 @@ import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # The Rellich–Kondrachov theorem on a closed Riemannian manifold
@@ -100,7 +101,7 @@ private theorem exists_setLIntegral_le_mul_setLIntegral_comp (L : E ≃L[ℝ] F)
     ((continuousOn_chartVolumeDensity_extChartAt_symm (I := I) p).mono
       (mapsTo_iff_image_subset.1 hKt))
   -- The image of the Haar measure of `F` is a positive multiple `c` of the Haar measure of `E`.
-  obtain ⟨c, hc0, hc⟩ := exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F) L.symm
+  obtain ⟨c, hc0, hc⟩ := L.symm.exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F)
   replace hc0 : (c : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 hc0
   refine ⟨ENNReal.ofReal D * (c : ℝ≥0∞)⁻¹,
     ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.inv_ne_top.2 hc0), fun g ↦ ?_⟩
