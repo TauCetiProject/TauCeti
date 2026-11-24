@@ -395,7 +395,7 @@ theorem toDistr_resonantCLM_one_left [q₁.HolderTriple q₂ q] (N : ℕ) (hαβ
     (resonantCLM p₂ q N hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v).toDistr =
       (v.lowPass (N + 1) : 𝓢'(E, F)) :=
   (hasSum_resonantCLM (r := p₂) (q := q) N hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v).unique
-    (by simpa [resonantTerm_eq_smul_sum, coe_lowPass] using
+    (by simpa [resonantTerm_eq_smul_sum, coe_lowPass, littlewoodPaleyLowPass_apply] using
       hasSum_block_smul_sum_block_of_toDistr_eq_volume toDistr_one N v)
 
 /-- **Resonant remainder with `1` on the right (`F = ℂ`).** -/

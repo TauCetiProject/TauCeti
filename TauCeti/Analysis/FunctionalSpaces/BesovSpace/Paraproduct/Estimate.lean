@@ -649,7 +649,8 @@ theorem toDistr_paraproductLpCLM_one_left (hN : φ.rOut < 2 ^ N * φ.rIn)
       v.toDistr - (v.lowPass (N + 1) : 𝓢'(E, F)) :=
   (hasSum_paraproductLpCLM_of_toDistr_eq hN
     (u := (1 : BesovSpace ℂ φ 0 ∞ ∞)) (by simp) v).unique
-    (by simpa [coe_lowPass] using hasSum_lowPass_smul_block_of_toDistr_eq_volume toDistr_one N v)
+    (by simpa [coe_lowPass, littlewoodPaleyLowPass_apply] using
+      hasSum_lowPass_smul_block_of_toDistr_eq_volume toDistr_one N v)
 
 /-- **Left paraproduct with `1` at negative regularity.** -/
 theorem toDistr_paraproductNegCLM_one_left [q₁.HolderTriple q₂ q] (hN : φ.rOut < 2 ^ N * φ.rIn)
