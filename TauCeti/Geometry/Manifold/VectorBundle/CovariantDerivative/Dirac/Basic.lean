@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
-import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
 # The Dirac operator of a connection and a Clifford multiplication
