@@ -166,29 +166,20 @@ theorem eulerChar_page_eq_eulerChar_page_add_one [HasRankNullity.{v} R]
     rw [hχ pq, (E.iso r (r + 1) pq rfl hr).toLinearEquiv.finrank_eq]
 
 /-- **Invariance of Mathlib's `HomologicalComplex.eulerChar` across later pages** for a spectral
-sequence of modules over a Noetherian ring with rank-nullity, requiring
-`ComplexShape.EulerCharSigns` and compatibility of signs only on pages in `[r, r']`. -/
+sequence of modules over a Noetherian ring with rank-nullity, when signs agree on pages
+`t ∈ [r, r')`. -/
 theorem eulerChar_page_eq_eulerChar_page_of_le [HasRankNullity.{v} R]
-    (E : SpectralSequence (ModuleCat.{v} R) c r₀)
+    (E : SpectralSequence (ModuleCat.{v} R) c r₀) [∀ t, (c t).EulerCharSigns]
     (r : ℤ) (hr : r₀ ≤ r)
     (s : Finset κ) (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq))
     (hfg : ∀ pq ∈ s, Module.Finite R ((E.page r hr).X pq))
     (r' : ℤ) (hrr' : r ≤ r')
-    (signs : ∀ t : ℤ, r ≤ t → t ≤ r' → (c t).EulerCharSigns :=
-      by exact fun _ _ _ ↦ inferInstance)
-    (hχ : ∀ (t : ℤ) (ht : r ≤ t) (ht' : t < r') (pq : κ),
-      (signs t ht ht'.le).χ pq =
-        (signs (t + 1) (ht.trans (Int.le_add_one le_rfl)) ht').χ pq := by simp) :
-    @HomologicalComplex.eulerChar _ _ _ _ (signs r le_rfl hrr') (E.page r hr) =
-      @HomologicalComplex.eulerChar _ _ _ _ (signs r' hrr' le_rfl)
-        (E.page r' (hr.trans hrr')) := by
+    (hχ : ∀ (t : ℤ), r ≤ t → t < r' → ∀ pq : κ, (c t).χ pq = (c (t + 1)).χ pq := by simp) :
+    (E.page r hr).eulerChar = (E.page r' (hr.trans hrr')).eulerChar := by
   induction r', hrr' using Int.leInduction with
   | base => rfl
   | succ t hrt ih =>
-    let _ : (c t).EulerCharSigns := signs t hrt (Int.le_add_one le_rfl)
-    let _ : (c (t + 1)).EulerCharSigns := signs (t + 1) (hrt.trans (Int.le_add_one le_rfl)) le_rfl
-    refine (ih (fun u hu hut ↦ signs u hu (hut.trans (Int.le_add_one le_rfl)))
-      (fun u hu hut ↦ hχ u hu (lt_of_lt_of_le hut (Int.le_add_one le_rfl)))).trans ?_
+    refine (ih (fun u hu hut ↦ hχ u hu (lt_of_lt_of_le hut (Int.le_add_one le_rfl)))).trans ?_
     exact E.eulerChar_page_eq_eulerChar_page_add_one t (hr.trans hrt) s
       (fun pq hpq ↦ E.isZero_page_X_of_le hr (hs pq hpq) t hrt)
       (fun pq hpq ↦ E.finite_page_X_of_le hr (hfg pq hpq) t hrt)
