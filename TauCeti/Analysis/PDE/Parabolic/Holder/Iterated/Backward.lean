@@ -293,6 +293,18 @@ theorem timeReverseLIE_euclideanZerothOrderCoeff
       euclideanZerothOrderCoeff (timeReverseLIE T ha hb c) :=
   ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
 
+/-- Reversing the second-order scalar coefficients in time preserves uniform ellipticity, with the
+same constant. -/
+theorem ellipticity_timeReverseLIE [DecidableEq ι]
+    {c : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hab}
+    (hc : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ c i j p).toQuadraticForm' ξ) :
+    ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤
+        (Matrix.of fun i j ↦ timeReverseLIE T ha hb (c i j) p).toQuadraticForm' ξ :=
+  hc.imp fun _ h ↦ ⟨h.1, fun p ξ ↦ by
+    simpa only [timeReverseLIE_apply] using h.2 (slabTimeReverse T ha hb p) ξ⟩
+
 end Euclidean
 
 end ParabolicCkHolderSpace

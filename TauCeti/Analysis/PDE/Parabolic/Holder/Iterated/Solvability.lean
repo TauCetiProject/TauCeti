@@ -153,7 +153,7 @@ private theorem lower_elliptic (hα : α ≤ 1)
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
     ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ lower hα (a i j) p).toQuadraticForm' ξ := by
-  simpa [lower] using ha
+  simpa only [lower, equivHolderSpace_apply] using ellipticity_inclusionOfLEL hα k.zero_le ha
 
 /-- Uniqueness for the Cauchy problem in `C_{par,b}^{k+2+α}`. -/
 private theorem initialDataL_euclidean_injective (hα₀ : 0 < α) (hα₁ : α < 1)
@@ -320,7 +320,7 @@ theorem coe_euclideanInitialDataCLE_symm_of_le (hα₀ : 0 < α) (hα₁ : α < 
     {g' : CkHolderSpace (m + 2) α (EuclideanSpace ℝ ι) ℝ} (hf : ⇑f' = ⇑f) (hg : ⇑g' = ⇑g) :
     ⇑((euclideanInitialDataCLE hα₀ hα₁ (fun i j ↦ inclusionOfLEL hα₁.le hm (a i j))
         (fun i ↦ inclusionOfLEL hα₁.le hm (b i)) (inclusionOfLEL hα₁.le hm c)
-        (by simpa only [inclusionOfLEL_apply] using ha)).symm (f', g')) =
+        (ellipticity_inclusionOfLEL hα₁.le hm ha)).symm (f', g')) =
       ⇑((euclideanInitialDataCLE hα₀ hα₁ a b c ha).symm (f, g)) := by
   refine coe_symm_eq_of_inclusionOfLEL hα₁.le hm _ _ (fun u ↦ ?_) (fun u ↦ ?_) hf hg <;>
     rw [euclideanInitialDataCLE_apply, euclideanInitialDataCLE_apply,
@@ -356,8 +356,7 @@ theorem terminalDataL_euclidean_bijective (hα₀ : 0 < α) (hα₁ : α < 1)
   rw [bijective_terminalDataL_iff (T := T) (ha := (sub_self (T : ℝ)).symm)
     (hb := (sub_zero (T : ℝ)).symm), timeReverseLIE_euclideanSecondOrderCoeff,
     timeReverseLIE_euclideanFirstOrderCoeff, timeReverseLIE_euclideanZerothOrderCoeff]
-  exact initialDataL_euclidean_bijective hα₀ hα₁ _ _ _ (ha.imp fun _ h ↦ ⟨h.1, fun _ ξ ↦ by
-    simpa only [timeReverseLIE_apply] using h.2 _ ξ⟩)
+  exact initialDataL_euclidean_bijective hα₀ hα₁ _ _ _ (ellipticity_timeReverseLIE ha)
 
 /-- **The terminal-data isomorphism of order `k`.** For `0 < α < 1`, `T > 0` and coefficients in
 `C_{par,b}^{k+α}(ℝⁿ × [0, T])` with `a` uniformly elliptic, the map
@@ -452,8 +451,7 @@ theorem timeReverseLIE_euclideanTerminalDataCLE_symm_apply (hα₀ : 0 < α) (h�
         (fun i j ↦ timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm (a i j))
         (fun i ↦ timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm (b i))
         (timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm c)
-        (ha.imp fun _ h ↦ ⟨h.1, fun _ ξ ↦ by
-          simpa only [timeReverseLIE_apply] using h.2 _ ξ⟩)).symm
+        (ellipticity_timeReverseLIE ha)).symm
         (-timeReverseLIE (T : ℝ) (sub_self (T : ℝ)).symm (sub_zero (T : ℝ)).symm d.1, d.2) := by
   rw [ContinuousLinearEquiv.eq_symm_apply, euclideanInitialDataCLE_apply,
     ← timeReverseLIE_euclideanSecondOrderCoeff, ← timeReverseLIE_euclideanFirstOrderCoeff,
@@ -475,7 +473,7 @@ theorem coe_euclideanTerminalDataCLE_symm_of_le (hα₀ : 0 < α) (hα₁ : α <
     {g' : CkHolderSpace (m + 2) α (EuclideanSpace ℝ ι) ℝ} (hf : ⇑f' = ⇑f) (hg : ⇑g' = ⇑g) :
     ⇑((euclideanTerminalDataCLE hα₀ hα₁ (fun i j ↦ inclusionOfLEL hα₁.le hm (a i j))
         (fun i ↦ inclusionOfLEL hα₁.le hm (b i)) (inclusionOfLEL hα₁.le hm c)
-        (by simpa only [inclusionOfLEL_apply] using ha)).symm (f', g')) =
+        (ellipticity_inclusionOfLEL hα₁.le hm ha)).symm (f', g')) =
       ⇑((euclideanTerminalDataCLE hα₀ hα₁ a b c ha).symm (f, g)) := by
   refine coe_symm_eq_of_inclusionOfLEL hα₁.le hm _ _ (fun u ↦ ?_) (fun u ↦ ?_) hf hg <;>
     rw [euclideanTerminalDataCLE_apply, euclideanTerminalDataCLE_apply,

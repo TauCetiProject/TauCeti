@@ -599,6 +599,16 @@ theorem inclusionOfLEL_euclideanZerothOrderCoeff (hα : α ≤ 1) {m : ℕ} (h :
       euclideanZerothOrderCoeff (inclusionOfLEL hα h c) :=
   ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
 
+/-- Reading the coefficients `aⁱʲ` at a lower order preserves uniform ellipticity, with the same
+constant. -/
+theorem ellipticity_inclusionOfLEL (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
+    {a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht}
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
+    ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ inclusionOfLEL hα h (a i j) p).toQuadraticForm' ξ := by
+  simpa only [inclusionOfLEL_apply] using ha
+
 /- In the next statements, the order-zero coefficients `equivHolderSpace c` are elaborated without
 an expected type, as `(equivHolderSpace c :)`: unifying their type with that of the order-two
 coefficient spaces first makes elaboration time out. -/
