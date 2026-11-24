@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.NumberField.TotallyPositive
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
 import TauCeti.RingTheory.DedekindDomain.SInteger.Quotient
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
 # Moduli of a number field and multiplicative congruence
@@ -87,6 +88,8 @@ away from a finite set of primes.
   ideal prime to the modulus exactly when it is a unit at the finite part.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_iff_sup_eq_top`: being prime to the support is
   comaximality with the finite part.
+* `TauCeti.GlobalNumberFields.Modulus.isUnit_mk_iff_isCoprimeTo`: for a nonzero algebraic integer,
+  being a unit modulo the finite part is coprimality to the modulus.
 
 ## References
 
@@ -648,6 +651,13 @@ theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K
   · refine v.isPrime.ne_top (top_le_iff.mp ?_)
     rw [← h]
     exact sup_le (Ideal.le_of_dvd hdvd) (Ideal.le_of_dvd ((mem_support_iff _ _).mp hv))
+
+/-- For a nonzero algebraic integer `a`, its residue class modulo `𝔪.finitePart` is a unit
+exactly when `(a)` is coprime to `𝔪`. -/
+theorem Modulus.isUnit_mk_iff_isCoprimeTo {𝔪 : Modulus K} {a : 𝓞 K} (ha : a ≠ 0) :
+    IsUnit (Ideal.Quotient.mk 𝔪.finitePart a) ↔ 𝔪.IsCoprimeTo (Ideal.span {a}) := by
+  rw [Ideal.Quotient.isUnit_mk_iff, isCoprimeTo_iff_sup_eq_top]
+  exact (and_iff_right (Ideal.span_singleton_eq_bot.not.mpr ha)).symm
 
 /-- **The monoid of nonzero integral ideals prime to a modulus.**  There is one such monoid, the
 one built away from a finite set of primes; its membership predicate is `Modulus.IsCoprimeTo`. -/

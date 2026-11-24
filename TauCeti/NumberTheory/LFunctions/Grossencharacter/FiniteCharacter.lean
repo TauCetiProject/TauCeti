@@ -12,7 +12,6 @@ public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 import TauCeti.NumberTheory.MulChar.Lemmas
 import TauCeti.NumberTheory.MulChar.Real
 import TauCeti.NumberTheory.NumberField.Global.Approximation.Modulus
-import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
 /-!
@@ -589,8 +588,7 @@ theorem finiteCharacter_eq_residueCharacter (χ : Grossencharacter K 𝔪) {a : 
     rw [χ.finiteCharacter_eq_finiteCharacterK x hx.symm, ← residueCharacter_residue,
       residue_eq x (a := a) (b := 1) (by simp) (by rw [map_one, one_mul, hx])]
   · rw [χ.finiteCharacter_eq_zero_of_not_isCoprimeTo hcop, MulChar.map_nonunit]
-    exact fun hu ↦ hcop (Modulus.isCoprimeTo_iff_sup_eq_top.mpr
-      ⟨Ideal.span_singleton_eq_bot.not.mpr ha, Ideal.Quotient.isUnit_mk_iff.mp hu⟩)
+    exact fun hu ↦ hcop ((Modulus.isUnit_mk_iff_isCoprimeTo ha).mp hu)
 
 /-- **On nonzero algebraic integers, the finite character only depends on residues modulo `𝔪₀`**:
 nonzero integers congruent modulo the finite part of `𝔪` have the same finite character. -/
@@ -853,10 +851,9 @@ theorem residueCharacter_ofRayClassCharacter_one :
   rw [finiteCharacter_ofRayClassCharacter_one]
   split_ifs with hcop
   · have hunit : IsUnit (Ideal.Quotient.mk 𝔪.finitePart a) :=
-      Ideal.Quotient.isUnit_mk_iff.mpr (Modulus.isCoprimeTo_iff_sup_eq_top.mp hcop).2
+      (Modulus.isUnit_mk_iff_isCoprimeTo ha).mpr hcop
     rw [← hunit.unit_spec, MulChar.one_apply_coe]
-  · exact MulChar.map_nonunit _ fun hu ↦ hcop (Modulus.isCoprimeTo_iff_sup_eq_top.mpr
-      ⟨Ideal.span_singleton_eq_bot.not.mpr ha, Ideal.Quotient.isUnit_mk_iff.mp hu⟩)
+  · exact MulChar.map_nonunit _ fun hu ↦ hcop ((Modulus.isUnit_mk_iff_isCoprimeTo ha).mp hu)
 
 end Grossencharacter
 
