@@ -25,6 +25,28 @@ matrix `diag(p ^ e₁, …, p ^ eₙ)` for a uniquely determined monotone expone
   `M_n(ℤ_p)` under `GL_n(ℤ_p)` multiplication on both sides.
 * `Matrix.padic_smith_normal_form_unique`: uniqueness of the monotone `p`-power exponent tuple via
   leading-minor divisibility.
+
+## Provenance
+
+Both results specialize existing TauCeti matrix infrastructure to `ℤ_[p]`:
+
+* `Matrix.exists_padic_smith_normal_form` builds on the general discrete valuation ring Smith normal
+  form theorem `Matrix.exists_smith_normal_form_of_isDiscreteValuationRing`
+  (`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic`), normalizing each nonzero invariant factor
+  to a pure power of `p` via `PadicInt.unitCoeff` and `PadicInt.unitCoeff_spec` and absorbing the
+  resulting diagonal of units into the right `GL_n(ℤ_p)` factor.
+* `Matrix.padic_smith_normal_form_unique` builds on the two invariant-factor minor divisibility
+  lemmas `Matrix.prod_dvd_det_submatrix_of_mul_mul_eq_diagonal` and
+  `Matrix.dvd_prod_of_mul_mul_eq_diagonal` (`TauCeti.LinearAlgebra.Matrix.InvariantFactor`) to
+  equate all leading `k`-fold exponent partial sums, then recovers coordinatewise equality via
+  `TauCeti.eq_of_forall_prefixSum_eq` (`TauCeti.Algebra.BigOperators.Finset.PartialSum`).
+
+## References
+
+* N. Jacobson, *Basic Algebra I*, 2nd ed., W. H. Freeman, 1985, §3.9.
+* [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971], §3.2.
+* J. A. Rhodes and T. R. Shemanske, *Bruhat–Tits buildings and Hecke operators*, 12 June 1998
+  author manuscript, §3.1.
 -/
 
 public section
