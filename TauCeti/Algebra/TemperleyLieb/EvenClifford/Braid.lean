@@ -33,8 +33,9 @@ the `g_j`, and they define a representation `cliffordBraidRep m` of `BraidGroup 
   and fixes the other generators, so conjugation by `cliffordBraidRep m b` sends each `c_k` to
   `± c_{π_b(k)}`, where `π_b = BraidGroup.permHom m b` is the strand permutation of `b`.
 * **Kauffman bracket**: for a unit `a` with `a² = i u` (equivalently `a² = -u⁻¹`), the Jones loop
-  value `jonesDelta a` is `√2`, and `F_m` sends the Kauffman crossing `a • 1 + a⁻¹ • e j`, the value
-  of `TemperleyLieb.jonesUnit a j`, to `(-a / u) • g_j`.
+  value `jonesDelta a` is `√2`, and `F_m` sends the Kauffman crossing `a • 1 + a⁻¹ • e j` at
+  `δ = √2` to `(-a / u) • g_j`. This crossing has the shape of `TemperleyLieb.jonesUnit a j`, whose
+  loop value `jonesDelta a` equals `√2` only propositionally.
 * **Adding a strand**: the coordinate inclusion `cliffordIncl` intertwines the representations on
   `n + 1` and `n + 2` strands with `BraidGroup.strandIncl`.
 
@@ -62,7 +63,7 @@ the `g_j`, and they define a representation `cliffordBraidRep m` of `BraidGroup 
   permutes the Majorana generators up to sign, along the strand permutation.
 * `TauCeti.TemperleyLieb.jonesDelta_eq_sqrt_two` and
   `TauCeti.TemperleyLieb.coe_evenCliffordHom_crossing_eq_smul_cliffordBraidUnit`: comparison with
-  the Kauffman-bracket representation `TemperleyLieb.jones`.
+  the Kauffman-bracket crossing at `δ = √2`.
 * `TauCeti.TemperleyLieb.cliffordIncl_cliffordBraidRep`: compatibility with adding a strand.
 
 ## References
@@ -98,12 +99,12 @@ noncomputable def cliffordBraidUnit (m : ℕ) (j : Fin (m - 1)) :
   val_inv := by
     have hd := majorana_mul_majorana_mul_self_of_ne (strand_ne_strandSucc j)
     simp only [neg_mul_neg, smul_mul_smul_comm, add_mul, mul_sub, one_mul, mul_one, hd,
-      Complex.ofReal_sqrt_two_inv_mul_self]
+      Complex.inv_ofReal_sqrt_mul_self zero_le_two, Complex.ofReal_ofNat]
     module
   inv_val := by
     have hd := majorana_mul_majorana_mul_self_of_ne (strand_ne_strandSucc j)
     simp only [neg_mul_neg, smul_mul_smul_comm, sub_mul, mul_add, one_mul, mul_one, hd,
-      Complex.ofReal_sqrt_two_inv_mul_self]
+      Complex.inv_ofReal_sqrt_mul_self zero_le_two, Complex.ofReal_ofNat]
     module
 
 /-- The value of the Clifford braid unit. -/
@@ -150,10 +151,11 @@ theorem coe_evenCliffordHom_crossing_eq_cliffordBraidUnit (m : ℕ) (j : Fin (m 
         (crossing (Real.sqrt 2 : ℂ) (-((1 + Complex.I) / Real.sqrt 2)) Complex.I j) :
         CliffordAlgebra (cliffordForm m)) = cliffordBraidUnit m j := by
   rw [coe_evenCliffordHom_crossing, cliffordProjection_eq_strand, cliffordBraidUnit_val]
-  have hs := Complex.ofReal_sqrt_two_ne_zero
+  have hs := Complex.ofReal_sqrt_ne_zero two_pos
+  have h2 : (Real.sqrt 2 : ℂ) ^ 2 = 2 := mod_cast Complex.sq_ofReal_sqrt zero_le_two
   match_scalars <;> field_simp
-  · linear_combination Complex.I * Complex.ofReal_sqrt_two_sq
-  · linear_combination Complex.I ^ 2 * Complex.ofReal_sqrt_two_sq + 2 * Complex.I_sq
+  · linear_combination Complex.I * h2
+  · linear_combination Complex.I ^ 2 * h2 + 2 * Complex.I_sq
 
 /-- The Clifford braid unit in terms of the Clifford projection:
 `g_j = u • ((1 + i) • p_j - 1)` with `u = (1 + i) / √2 = exp (π i / 4)`. -/
@@ -161,7 +163,7 @@ theorem cliffordBraidUnit_val_eq_smul_cliffordProjection (m : ℕ) (j : Fin (m -
     (cliffordBraidUnit m j : CliffordAlgebra (cliffordForm m)) =
       ((1 + Complex.I) / Real.sqrt 2) • ((1 + Complex.I) • cliffordProjection m j - 1) := by
   rw [cliffordProjection_eq_strand, cliffordBraidUnit_val]
-  have hs := Complex.ofReal_sqrt_two_ne_zero
+  have hs := Complex.ofReal_sqrt_ne_zero two_pos
   match_scalars <;> field_simp
   · linear_combination -Complex.I_sq
   · linear_combination (-2 - Complex.I) * Complex.I_sq
@@ -193,7 +195,7 @@ theorem cliffordBraidUnit_mul_self (m : ℕ) (j : Fin (m - 1)) :
       majorana m (strand j) * majorana m (strandSucc j) := by
   have hd := majorana_mul_majorana_mul_self_of_ne (strand_ne_strandSucc j)
   simp only [cliffordBraidUnit_val, neg_mul_neg, smul_mul_smul_comm, add_mul, mul_add, one_mul,
-    mul_one, hd, Complex.ofReal_sqrt_two_inv_mul_self]
+    mul_one, hd, Complex.inv_ofReal_sqrt_mul_self zero_le_two, Complex.ofReal_ofNat]
   module
 
 /-- The fourth power of a Clifford braid unit is `-1`. -/
@@ -242,9 +244,10 @@ theorem cliffordBraidUnit_braid (m : ℕ) {i j : Fin (m - 1)}
   ext
   have hpoly : Complex.I * ((-((1 + Complex.I) / Real.sqrt 2)) ^ 2 +
       -((1 + Complex.I) / Real.sqrt 2) * Complex.I * Real.sqrt 2 + Complex.I ^ 2) = 0 := by
-    have hs := Complex.ofReal_sqrt_two_ne_zero
+    have hs := Complex.ofReal_sqrt_ne_zero two_pos
+    have h2 : (Real.sqrt 2 : ℂ) ^ 2 = 2 := mod_cast Complex.sq_ofReal_sqrt zero_le_two
     field_simp
-    linear_combination -Complex.I ^ 2 * Complex.ofReal_sqrt_two_sq + Complex.I * Complex.I_sq
+    linear_combination -Complex.I ^ 2 * h2 + Complex.I * Complex.I_sq
   have := congrArg (fun x ↦ (evenCliffordHom m x : CliffordAlgebra (cliffordForm m)))
     (crossing_braid (δ := (Real.sqrt 2 : ℂ)) hpoly h)
   simpa only [map_mul, Subalgebra.coe_mul, coe_evenCliffordHom_crossing_eq_cliffordBraidUnit,
@@ -380,17 +383,18 @@ theorem exists_cliffordBraidRep_mul_majorana_mul_inv (m : ℕ) (b : BraidGroup m
     rw [map_inv, inv_inv, map_inv, hk]
     simp only [mul_assoc, Units.inv_mul_cancel_left, Units.inv_mul, mul_one]
 
-/-! ### Comparison with the Kauffman-bracket representation -/
+/-! ### Comparison with the Kauffman-bracket crossing -/
 
 /-- If `a² = i u` with `u = (1 + i) / √2`, the Jones loop value `-(a² + a⁻²)` is `√2`. -/
 theorem jonesDelta_eq_sqrt_two {a : ℂˣ}
     (ha : (a : ℂ) ^ 2 = Complex.I * ((1 + Complex.I) / Real.sqrt 2)) :
     jonesDelta a = Real.sqrt 2 := by
-  have hs := Complex.ofReal_sqrt_two_ne_zero
+  have hs := Complex.ofReal_sqrt_ne_zero two_pos
+  have h2 : (Real.sqrt 2 : ℂ) ^ 2 = 2 := mod_cast Complex.sq_ofReal_sqrt zero_le_two
   have hI := Complex.one_add_I_ne_zero
   rw [jonesDelta_def, Units.val_inv_eq_inv_val, inv_pow, ha]
   field_simp
-  linear_combination (-1 - Complex.I - Complex.I ^ 2) * Complex.ofReal_sqrt_two_sq -
+  linear_combination (-1 - Complex.I - Complex.I ^ 2) * h2 -
     (Complex.I ^ 2 + 2 * Complex.I + 2) * Complex.I_sq
 
 /-- If `a² = i u` with `u = (1 + i) / √2`, then `evenCliffordHom` sends the Kauffman crossing
@@ -402,7 +406,7 @@ theorem coe_evenCliffordHom_crossing_eq_smul_cliffordBraidUnit (m : ℕ) {a : �
     (evenCliffordHom m (crossing (Real.sqrt 2 : ℂ) a ↑a⁻¹ j) : CliffordAlgebra (cliffordForm m)) =
       (-(a : ℂ) / ((1 + Complex.I) / Real.sqrt 2)) • (cliffordBraidUnit m j :
         CliffordAlgebra (cliffordForm m)) := by
-  have hs := Complex.ofReal_sqrt_two_ne_zero
+  have hs := Complex.ofReal_sqrt_ne_zero two_pos
   have hI := Complex.one_add_I_ne_zero
   rw [← coe_evenCliffordHom_crossing_eq_cliffordBraidUnit, coe_evenCliffordHom_crossing,
     coe_evenCliffordHom_crossing, Units.val_inv_eq_inv_val]

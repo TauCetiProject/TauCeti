@@ -20,10 +20,10 @@ for real `r ≥ 0`, records that the real square root of a nonnegative real, cas
 back to it, and packages the principal square root of a nonzero complex number as a unit,
 `Complex.sqrtUnit`.
 
-The real square root `√2`, cast to `ℂ`, is nonzero and squares to `2`
-(`Complex.ofReal_sqrt_two_sq`), and so its inverse squares to `2⁻¹`
-(`Complex.ofReal_sqrt_two_inv_mul_self`). Together with `1 + i ≠ 0`
-(`Complex.one_add_I_ne_zero`), these are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
+The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
+real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
+(`Complex.inv_ofReal_sqrt_mul_self`). Together with `1 + i ≠ 0` (`Complex.one_add_I_ne_zero`),
+these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
 -/
 
 public section
@@ -128,17 +128,19 @@ theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
 theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
   rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
 
-/-- The real square root `√2`, cast to `ℂ`, is nonzero. -/
-theorem ofReal_sqrt_two_ne_zero : (Real.sqrt 2 : ℂ) ≠ 0 := by
-  exact_mod_cast (Real.sqrt_pos.mpr two_pos).ne'
+/-- The real square root of a positive real, cast to `ℂ`, is nonzero. -/
+theorem ofReal_sqrt_ne_zero {x : ℝ} (hx : 0 < x) : (√x : ℂ) ≠ 0 := by
+  exact_mod_cast (Real.sqrt_pos.mpr hx).ne'
 
-/-- The real square root `√2`, cast to `ℂ`, squares to `2`. -/
-theorem ofReal_sqrt_two_sq : (Real.sqrt 2 : ℂ) ^ 2 = 2 := by
-  exact_mod_cast Real.sq_sqrt zero_le_two
+/-- The real square root of a nonnegative real, cast to `ℂ`, squares back to it:
+`(√x : ℂ) ^ 2 = x`. -/
+theorem sq_ofReal_sqrt {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) ^ 2 = x := by
+  exact_mod_cast Real.sq_sqrt hx
 
-/-- The inverse of the real square root `√2`, cast to `ℂ`, times itself is `2⁻¹`. -/
-theorem ofReal_sqrt_two_inv_mul_self : (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
-  rw [← mul_inv, mul_self_ofReal_sqrt zero_le_two, ofReal_ofNat]
+/-- The inverse of the real square root of a nonnegative real `x`, cast to `ℂ`, times itself is
+`x⁻¹`. -/
+theorem inv_ofReal_sqrt_mul_self {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ)⁻¹ * (√x : ℂ)⁻¹ = (x : ℂ)⁻¹ := by
+  rw [← mul_inv, mul_self_ofReal_sqrt hx]
 
 /-- The complex number `1 + i` is nonzero. -/
 theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
