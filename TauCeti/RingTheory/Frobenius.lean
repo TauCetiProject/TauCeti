@@ -43,8 +43,8 @@ each of them, which again carries hypotheses of its own, such as those of
   subgroup is again a Frobenius element.
 * `IsArithFrobAt.iff_mul_inv_mem_inertia` — given one Frobenius element at `Q`, the Frobenius
   elements at `Q` are exactly one coset of the inertia subgroup.
-* `IsArithFrobAt.mem_stabilizer_of_isIntegral` — over an integral extension of a domain, a
-  Frobenius element at any ideal `Q` stabilizes `Q`.
+* `IsArithFrobAt.mem_stabilizer_of_isIntegral` — when `S` is an integral extension of `R` that is a
+  domain, a Frobenius element at any ideal `Q` stabilizes `Q`.
 * `IsArithFrobAt.of_le` — a Frobenius element at `Q` is one at any larger ideal with the same
   contraction to the base.
 * `Ideal.exists_isArithFrobAt_smul` — translating a member of the fiber of `σ` by `c` gives a
@@ -156,10 +156,8 @@ theorem iff_mul_inv_mem_inertia {G : Type*} [Group G] [MulSemiringAction G S]
   have := Q.add_mem (Ideal.mem_inertia.mp h (σ • x)) (hσ x)
   simpa [mul_smul] using this
 
-/-- **An arithmetic Frobenius stabilizes its ideal**, for an integral extension of a domain and
-without assuming the ideal prime. The Frobenius congruence gives `σ • Q ≤ Q`; since every element
-is a root of a monic polynomial over `R`, whose roots `σ` permutes, every element has a finite
-`σ`-orbit, which gives the reverse inclusion. -/
+/-- **An arithmetic Frobenius stabilizes its ideal**, for an integral extension `S` of `R` that is a
+domain, without assuming the ideal prime. -/
 theorem mem_stabilizer_of_isIntegral {G : Type*} [Group G] [MulSemiringAction G S]
     [SMulCommClass G R S] [IsDomain S] [Algebra.IsIntegral R S] {σ : G}
     (h : IsArithFrobAt R σ Q) : σ ∈ MulAction.stabilizer G Q := by
@@ -170,11 +168,13 @@ theorem mem_stabilizer_of_isIntegral {G : Type*} [Group G] [MulSemiringAction G 
       intro y hy
       rw [pow_succ, mul_smul]
       exact ih _ (h.le_comap hy)
+  -- The Frobenius congruence gives `σ • Q ≤ Q`; the reverse inclusion holds because every element
+  -- has a finite `σ`-orbit.
   rw [MulAction.mem_stabilizer_iff]
   refine le_antisymm ?_ fun x hx ↦ ?_
   · rw [Ideal.pointwise_smul_def, Ideal.map_le_iff_le_comap]
     exact h.le_comap
-  · obtain ⟨n, hn⟩ := MulSemiringAction.exists_pow_succ_smul_eq_of_isIntegral R σ x
+  · obtain ⟨n, hn⟩ := TauCeti.MulSemiringAction.exists_pow_succ_smul_eq_of_isIntegral R σ x
     rw [← hn, pow_succ', mul_smul]
     exact Ideal.smul_mem_pointwise_smul σ _ Q (hle n x hx)
 
