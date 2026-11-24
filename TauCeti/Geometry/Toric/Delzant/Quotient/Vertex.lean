@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Basic
 public import TauCeti.Geometry.Toric.Delzant.TangentCone
 public import TauCeti.Geometry.Toric.Delzant.Torus
@@ -47,9 +48,10 @@ class of `φ` extended by zero. These are constructed in `TauCeti.Geometry.Toric
 `c j < ⟨v + Σ_k ½ |w_k|² ε_k, u j⟩` for every facet `j ∉ A`. Its inverse sends `w` to the class
 of the point `z ∈ Z` with `z_k = w_k` for `k ∈ A` and `z_j = √(2(⟨y, u j⟩ - c j))` for `j ∉ A`,
 where `y = v + Σ_k ½ |w_k|² ε_k` (`TauCeti.Toric.DelzantQuotient.vertexLift`,
-`TauCeti.Toric.DelzantQuotient.vertexChart_symm_apply`). In the other direction, a class `[z]` is
-sent to the coordinates in `A` of the unique representative of `[z]` whose coordinates outside
-`A` are positive reals (`TauCeti.Toric.DelzantQuotient.vertexChart_mk`). In this chart
+`TauCeti.Toric.DelzantQuotient.vertexChart_symm_apply`). In the other direction, a class `[z]` in
+the source of the chart is sent to the coordinates in `A` of the unique representative of `[z]`
+whose coordinates outside `A` are positive reals (`TauCeti.Toric.DelzantQuotient.vertexChart_mk`).
+In this chart
 
 * the moment map is the translate of the weight model at `v`:
   `μ_Δ = v + Σ_k ½ |w_k|² ε_k`
@@ -116,16 +118,18 @@ namespace DelzantQuotient
 
 section FixedPoints
 
-variable [Fintype ι] [FiniteDimensional ℝ V]
+variable [Fintype ι]
   (hβ : Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)))
 include hβ
 
 /-- **Fixed points are the points over the vertices.** A point of the Delzant quotient is fixed
 by the whole residual torus exactly when its moment value is a vertex of `Δ`. -/
 theorem mem_fixedPoints_iff (hi : IsIntegralLattice i) {q : DelzantQuotient i u c} :
+    haveI := hi.finiteDimensional
     q ∈ AddAction.fixedPoints ((ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker)
         (DelzantQuotient i u c) ↔
       reducedMomentMap hβ q ∈ (facetPolyhedron i u c).extremePoints ℝ := by
+  have := hi.finiteDimensional
   induction q using DelzantQuotient.inductionOn with | h x =>
   have hu : Submodule.span ℝ (range fun j ↦ i (u j)) = ⊤ := by
     rw [← Fintype.range_linearCombination, LinearMap.range_eq_top]
@@ -156,10 +160,12 @@ theorem mem_fixedPoints_iff (hi : IsIntegralLattice i) {q : DelzantQuotient i u 
 bijection from the fixed points of the residual torus onto the vertices of `Δ`. In particular
 exactly one point of the Delzant quotient lies over each vertex. -/
 theorem bijOn_reducedMomentMap_fixedPoints (hi : IsIntegralLattice i) :
+    haveI := hi.finiteDimensional
     BijOn (reducedMomentMap hβ)
       (AddAction.fixedPoints ((ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker)
         (DelzantQuotient i u c))
       ((facetPolyhedron i u c).extremePoints ℝ) := by
+  have := hi.finiteDimensional
   refine ⟨fun q hq ↦ (mem_fixedPoints_iff hβ hi).1 hq, fun q hq q' hq' h ↦ ?_, fun y hy ↦ ?_⟩
   · -- Two points with the same moment value lie in one orbit, and `q'` is fixed.
     obtain ⟨θ, rfl⟩ := (reducedMomentMap_eq_reducedMomentMap_iff hβ).1 h
@@ -187,10 +193,8 @@ private theorem vertexMoment_apply_active
     (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u k)) =
       (w.1 k ^ 2 + w.2 k ^ 2) / 2 + c k := by
   classical
-  have hk : v (i (u k)) = c k := by simpa only [facetPairing_apply] using mem_activeSet.1 k.property
-  simp only [add_apply, hk, weightMomentMap_apply, neg_apply, IsSmoothVertex.edgeBasis_apply,
-    neg_ite, neg_zero, ite_mul, neg_mul, one_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ,
-    ↓reduceIte]
+  have hk : v (i (u k)) = c k := by simpa using mem_activeSet.1 k.property
+  simp [weightMomentMap_apply, hk, IsSmoothVertex.edgeBasis_apply]
   ring
 
 open Classical in
@@ -300,38 +304,6 @@ end VertexLiftLevel
 
 /-! ### Normalization outside the active facets -/
 
-section ActiveCoords
-
-variable {v : StrongDual ℝ V}
-
-/-- The coordinates in `A` of a point of `ℂ^ι`. -/
-private def activeCoords (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
-      EuclideanSpace ℝ (activeSet (facetPairing i u) c v) :=
-  (WithLp.toLp 2 fun k : activeSet (facetPairing i u) c v ↦ x.1 k,
-    WithLp.toLp 2 fun k : activeSet (facetPairing i u) c v ↦ x.2 k)
-
-@[simp]
-private theorem activeCoords_apply_fst (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-    (j : activeSet (facetPairing i u) c v) :
-    (activeCoords (i := i) (u := u) (c := c) (v := v) x).1 j = x.1 j :=
-  PiLp.toLp_apply 2 _ _ j
-
-@[simp]
-private theorem activeCoords_apply_snd (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-    (j : activeSet (facetPairing i u) c v) :
-    (activeCoords (i := i) (u := u) (c := c) (v := v) x).2 j = x.2 j :=
-  PiLp.toLp_apply 2 _ _ j
-
-private theorem continuous_activeCoords [Finite ι] :
-    Continuous (activeCoords (i := i) (u := u) (c := c) (v := v)) := by
-  have := Fintype.ofFinite ι
-  have := Fintype.ofFinite (activeSet (facetPairing i u) c v)
-  exact ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun _ ↦ by fun_prop)).prodMk
-    ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun _ ↦ by fun_prop))
-
-end ActiveCoords
-
 section Normalizer
 
 variable [Fintype ι] {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v)
@@ -421,6 +393,30 @@ private theorem normalizer_eq_zero {x : EuclideanSpace ℝ ι × EuclideanSpace 
     Function.extend_const _ _
   rw [normalizer, harg, map_zero, hext, sub_zero]
 
+open Classical in
+/-- The coordinates in `A` of a point of `ℂ^ι`: the first factor of the splitting
+`EuclideanSpace.sumComplEquivProd` along `A`, applied to both real coordinates. -/
+private def activeCoords :
+    EuclideanSpace ℝ ι × EuclideanSpace ℝ ι →L[ℝ]
+      EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
+        EuclideanSpace ℝ (activeSet (facetPairing i u) c v) :=
+  (ContinuousLinearMap.fst ℝ _ _ ∘L (EuclideanSpace.sumComplEquivProd ℝ
+      (· ∈ activeSet (facetPairing i u) c v)).toContinuousLinearMap).prodMap
+    (ContinuousLinearMap.fst ℝ _ _ ∘L (EuclideanSpace.sumComplEquivProd ℝ
+      (· ∈ activeSet (facetPairing i u) c v)).toContinuousLinearMap)
+
+@[simp]
+private theorem activeCoords_apply_fst (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+    (j : activeSet (facetPairing i u) c v) :
+    (activeCoords (i := i) (u := u) (c := c) (v := v) x).1 j = x.1 j := by
+  simp [activeCoords]
+
+@[simp]
+private theorem activeCoords_apply_snd (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+    (j : activeSet (facetPairing i u) c v) :
+    (activeCoords (i := i) (u := u) (c := c) (v := v) x).2 j = x.2 j := by
+  simp [activeCoords]
+
 /-- The coordinates in `A` of the normalized representative do not change when the point is moved
 by the kernel torus. Both normalized representatives lie in one orbit of the kernel torus and
 have the same nonnegative real coordinates outside `A`. The element relating them therefore
@@ -453,8 +449,9 @@ private theorem activeCoords_torusRotation_normalizer_torusRotation (hi : IsInte
   rw [hb, hδ, torusRotation_zero, ContinuousLinearMap.id_apply]
 
 open Classical in
-/-- The vertex chart: the class of `z ∈ Z` is sent to the coordinates in `A` of its representative
-whose coordinates outside `A` are positive reals. -/
+/-- The vertex chart: a class `[z]` in the source (whose coordinates outside `A` do not vanish) is
+sent to the coordinates in `A` of its representative whose coordinates outside `A` are positive
+reals, and `0` outside the source. -/
 private def vertexChartFun (hi : IsIntegralLattice i) (q : DelzantQuotient i u c) :
     EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v) :=
@@ -480,16 +477,16 @@ private theorem vertexChartFun_mk_of_not (hi : IsIntegralLattice i) {x : delzant
     vertexChartFun hv hi (mk x) = 0 := by
   rw [vertexChartFun, lift_mk, ite_eq_right hx]
 
-/-- The coordinates outside `A` of a point over the source of the vertex chart do not vanish. -/
-private theorem pos_of_lt_reducedMomentMap_mk (hi : IsIntegralLattice i) {x : delzantLevel i u c}
-    (hx : ∀ j ∉ activeSet (facetPairing i u) c v,
+/-- A point of the level satisfies the strict facet inequalities outside `A` exactly when its
+coordinates outside `A` have positive squared modulus. -/
+private theorem lt_reducedMomentMap_mk_iff_pos (hi : IsIntegralLattice i) {x : delzantLevel i u c} :
+    (∀ j ∉ activeSet (facetPairing i u) c v,
       haveI := hi.finiteDimensional
-      c j < reducedMomentMap (hv.surjective_linearCombination_real hi) (mk x) (i (u j))) :
-    ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.val.1 j ^ 2 + x.val.2 j ^ 2 := fun j hj ↦ by
+      c j < reducedMomentMap (hv.surjective_linearCombination_real hi) (mk x) (i (u j))) ↔
+      ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.val.1 j ^ 2 + x.val.2 j ^ 2 := by
   have := hi.finiteDimensional
-  have h := hx j hj
-  rw [reducedMomentMap_mk_apply] at h
-  linarith
+  refine forall₂_congr fun j _ ↦ ?_
+  rw [reducedMomentMap_mk_apply, lt_add_iff_pos_left, div_pos_iff_of_pos_right two_pos]
 
 /-- The vertex chart is continuous on its source. -/
 private theorem continuousOn_vertexChartFun (hi : IsIntegralLattice i) :
@@ -499,7 +496,7 @@ private theorem continuousOn_vertexChartFun (hi : IsIntegralLattice i) :
         c j < reducedMomentMap (hv.surjective_linearCombination_real hi) q (i (u j))} := by
   refine fun q hq ↦ ContinuousAt.continuousWithinAt ?_
   induction q using DelzantQuotient.inductionOn with | h x =>
-  have hx := pos_of_lt_reducedMomentMap_mk hv hi hq
+  have hx := (lt_reducedMomentMap_mk_iff_pos hv hi).1 hq
   refine isOpenQuotientMap_mk.continuousAt_comp_iff.1 ?_
   -- Near `x`, the coordinates outside `A` still do not vanish, so the chart is given by the
   -- normalized representative.
@@ -513,7 +510,7 @@ private theorem continuousOn_vertexChartFun (hi : IsIntegralLattice i) :
       (torusRotation (normalizer hv y) y)) ?_
     (Filter.eventuallyEq_of_mem (hU.mem_nhds hx) fun y hy ↦
       (vertexChartFun_mk hv hi hy).symm)
-  exact (continuous_activeCoords (i := i) (u := u) (c := c) (v := v)).continuousAt.comp
+  exact (ContinuousLinearMap.continuous _).continuousAt.comp
     (continuous_torusRotation.continuousAt.comp
       (((continuousAt_normalizer hv hx).comp continuous_subtypeVal.continuousAt).prodMk
         continuous_subtypeVal.continuousAt))
@@ -567,7 +564,7 @@ private theorem vertexChartFun_mem_target {q : DelzantQuotient i u c}
   have := hi.finiteDimensional
   induction q using DelzantQuotient.inductionOn with | h x =>
   intro j hj
-  rw [vertexChartFun_mk hv hi (pos_of_lt_reducedMomentMap_mk hv hi hq),
+  rw [vertexChartFun_mk hv hi ((lt_reducedMomentMap_mk_iff_pos hv hi).1 hq),
     vertexMoment_activeCoords_normalizer]
   exact hq j hj
 
@@ -636,7 +633,7 @@ private theorem vertexChartSymm_vertexChartFun {q : DelzantQuotient i u c}
         (i (u j)) := fun j _ ↦ by
     rw [vertexMoment_activeCoords_normalizer]
     exact mem_facetPolyhedron.1 (reducedMomentMap_mem_facetPolyhedron _ _) j
-  rw [vertexChartFun_mk hv hi (pos_of_lt_reducedMomentMap_mk hv hi hq),
+  rw [vertexChartFun_mk hv hi ((lt_reducedMomentMap_mk_iff_pos hv hi).1 hq),
     vertexChartSymm_of_le hv hi hvP hle]
   -- The normalized representative is a rotation of `x` by the kernel torus.
   rw [← mk_vadd_of_mem_ker (normalizer_mem_ker hv hi x) x]
@@ -718,6 +715,12 @@ private theorem coe_vertexChart_symm :
     ⇑(vertexChart hv hi hvP).symm = vertexChartSymm hv hi hvP := by
   rw [vertexChart, OpenPartialHomeomorph.coe_mk_symm, PartialEquiv.coe_symm_mk]
 
+theorem vertexChart_source :
+    (vertexChart hv hi hvP).source = {q | ∀ j ∉ activeSet (facetPairing i u) c v,
+      haveI := hi.finiteDimensional
+      c j < reducedMomentMap (hv.surjective_linearCombination_real hi) q (i (u j))} :=
+  (rfl)
+
 theorem vertexChart_target :
     (vertexChart hv hi hvP).target = {w | ∀ j ∉ activeSet (facetPairing i u) c v,
       c j < (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j))} :=
@@ -731,6 +734,29 @@ theorem mem_vertexChart_target_iff
       c j < (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j)) :=
   Iff.rfl
 
+/-- **The source of the vertex chart.** A point of the Delzant quotient lies in the source of the
+chart at `v` exactly when every facet active at its moment value is active at `v`. -/
+theorem mem_vertexChart_source_iff {q : DelzantQuotient i u c} :
+    haveI := hi.finiteDimensional
+    q ∈ (vertexChart hv hi hvP).source ↔
+      activeSet (facetPairing i u) c (reducedMomentMap (hv.surjective_linearCombination_real hi) q)
+        ⊆ activeSet (facetPairing i u) c v := by
+  have := hi.finiteDimensional
+  have hq := mem_facetPolyhedron.1 (reducedMomentMap_mem_facetPolyhedron
+    (hv.surjective_linearCombination_real hi) q)
+  simp only [vertexChart_source, mem_ofPred_eq, subset_def, mem_activeSet, facetPairing_apply]
+  refine ⟨fun h j hj ↦ by_contra fun hjv ↦ (h j hjv).ne hj.symm, fun h j hj ↦ ?_⟩
+  exact (hq j).lt_of_ne fun he ↦ hj (h j he.symm)
+
+/-- The class of a point of the level lies in the source of the vertex chart exactly when its
+coordinates outside `A` do not vanish. -/
+theorem mk_mem_vertexChart_source_iff {x : delzantLevel i u c} :
+    mk x ∈ (vertexChart hv hi hvP).source ↔
+      ∀ j ∉ activeSet (facetPairing i u) c v, x.val.1 j ≠ 0 ∨ x.val.2 j ≠ 0 := by
+  rw [vertexChart_source, mem_ofPred_eq, lt_reducedMomentMap_mk_iff_pos hv hi]
+  refine forall₂_congr fun j _ ↦ ?_
+  rw [(add_nonneg (sq_nonneg _) (sq_nonneg _)).lt_iff_ne', ne_eq, sq_add_sq_eq_zero, not_and_or]
+
 /-- The vertex chart is centred at the point over `v`: `0` lies in its target. -/
 theorem zero_mem_vertexChart_target : 0 ∈ (vertexChart hv hi hvP).target := by
   rw [mem_vertexChart_target_iff]
@@ -739,101 +765,92 @@ theorem zero_mem_vertexChart_target : 0 ∈ (vertexChart hv hi hvP).target := by
   exact (mem_facetPolyhedron.1 hvP j).lt_of_ne fun h ↦
     hj (mem_activeSet.2 (by rw [facetPairing_apply, h]))
 
-/-- **The inverse of the vertex chart.** On the target it sends `w` to the class of the point
-`vertexLift w` of the level, with coordinates `w_k` in `A` and nonnegative real coordinates
-`√(2(⟨v + Σ_k ½ |w_k|² ε_k, u j⟩ - c j))` outside `A`. -/
+/-- **The inverse of the vertex chart.** Whenever the translated moment value of `w` satisfies
+the facet inequalities outside `A` (in particular on the target of the chart), the inverse chart
+sends `w` to the class of the point `vertexLift w` of the level, with coordinates `w_k` in `A`
+and nonnegative real coordinates `√(2(⟨v + Σ_k ½ |w_k|² ε_k, u j⟩ - c j))` outside `A`. -/
 theorem vertexChart_symm_apply
     {w : EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v)}
-    (hw : w ∈ (vertexChart hv hi hvP).target) :
+    (hw : ∀ j ∉ activeSet (facetPairing i u) c v,
+      c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j))) :
     (vertexChart hv hi hvP).symm w =
-      mk ⟨vertexLift hv hi w, vertexLift_mem_delzantLevel hv hi
-        fun j hj ↦ ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le⟩ := by
+      mk ⟨vertexLift hv hi w, vertexLift_mem_delzantLevel hv hi hw⟩ := by
   rw [coe_vertexChart_symm]
-  exact vertexChartSymm_of_le hv hi hvP fun j hj ↦
-    ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le
+  exact vertexChartSymm_of_le hv hi hvP hw
 
+/-- When the translated moment value of `w` violates some facet inequality outside `A`, the
+inverse of the vertex chart falls back to its value at `0`. -/
+theorem vertexChart_symm_of_not_forall_le
+    {w : EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
+      EuclideanSpace ℝ (activeSet (facetPairing i u) c v)}
+    (hw : ¬ ∀ j ∉ activeSet (facetPairing i u) c v,
+      c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j))) :
+    (vertexChart hv hi hvP).symm w = (vertexChart hv hi hvP).symm 0 := by
+  rw [coe_vertexChart_symm, vertexChartSymm_of_not_le hv hi hvP hw,
+    vertexChartSymm_of_le hv hi hvP fun j _ ↦ by simpa using mem_facetPolyhedron.1 hvP j]
+
+open Classical in
 /-- **The vertex chart on a normalized representative.** If the coordinates outside `A` of a point
 `x` of the level are positive reals, then the chart sends the class of `x` to the coordinates of
 `x` in `A`. That this class lies in the source of the chart is `mk_mem_vertexChart_source_iff`. -/
 theorem vertexChart_mk {x : delzantLevel i u c}
     (hx : ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.val.1 j ∧ x.val.2 j = 0) :
     vertexChart hv hi hvP (mk x) =
-      (WithLp.toLp 2 fun k : activeSet (facetPairing i u) c v ↦ x.val.1 k,
-        WithLp.toLp 2 fun k : activeSet (facetPairing i u) c v ↦ x.val.2 k) := by
+      ((EuclideanSpace.sumComplEquivProd ℝ (· ∈ activeSet (facetPairing i u) c v) x.val.1).1,
+        (EuclideanSpace.sumComplEquivProd ℝ (· ∈ activeSet (facetPairing i u) c v) x.val.2).1) := by
   have hpos : ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.val.1 j ^ 2 + x.val.2 j ^ 2 :=
     fun j hj ↦ by nlinarith [(hx j hj).1]
   rw [coe_vertexChart, vertexChartFun_mk hv hi hpos,
     normalizer_eq_zero hv fun j hj ↦ ⟨(hx j hj).1.le, (hx j hj).2⟩, torusRotation_zero,
-    ContinuousLinearMap.id_apply, activeCoords]
+    ContinuousLinearMap.id_apply]
+  ext j <;> simp
 
-section ReducedMomentMap
-
-variable [FiniteDimensional ℝ V]
-
-theorem vertexChart_source :
-    (vertexChart hv hi hvP).source = {q | ∀ j ∉ activeSet (facetPairing i u) c v,
-      c j < reducedMomentMap (hv.surjective_linearCombination_real hi) q (i (u j))} :=
-  (rfl)
-
-/-- **The source of the vertex chart.** A point of the Delzant quotient lies in the source of the
-chart at `v` exactly when every facet active at its moment value is active at `v`. -/
-theorem mem_vertexChart_source_iff {q : DelzantQuotient i u c} :
-    q ∈ (vertexChart hv hi hvP).source ↔
-      activeSet (facetPairing i u) c (reducedMomentMap (hv.surjective_linearCombination_real hi) q)
-        ⊆ activeSet (facetPairing i u) c v := by
-  have hq := mem_facetPolyhedron.1 (reducedMomentMap_mem_facetPolyhedron
-    (hv.surjective_linearCombination_real hi) q)
-  simp only [vertexChart_source, mem_ofPred_eq, subset_def, mem_activeSet, facetPairing_apply]
-  refine ⟨fun h j hj ↦ by_contra fun hjv ↦ (h j hjv).ne hj.symm, fun h j hj ↦ ?_⟩
-  exact (hq j).lt_of_ne fun he ↦ hj (h j he.symm)
+/-- Outside its source, the vertex chart takes the value `0`. -/
+theorem vertexChart_of_notMem_source {q : DelzantQuotient i u c}
+    (hq : q ∉ (vertexChart hv hi hvP).source) :
+    vertexChart hv hi hvP q = 0 := by
+  induction q using DelzantQuotient.inductionOn with | h x =>
+  rw [vertexChart_source, mem_ofPred_eq, lt_reducedMomentMap_mk_iff_pos hv hi] at hq
+  rw [coe_vertexChart, vertexChartFun_mk_of_not hv hi hq]
 
 /-- **The moment map in the vertex chart** is the weight model translated to the vertex:
-`μ_Δ = v + Σ_k ½ |w_k|² ε_k`. -/
+`μ_Δ = v + Σ_k ½ |w_k|² ε_k`, whenever the translated moment value satisfies the facet
+inequalities outside `A` (in particular on the target of the chart). -/
 theorem reducedMomentMap_vertexChart_symm
     {w : EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v)}
-    (hw : w ∈ (vertexChart hv hi hvP).target) :
+    (hw : ∀ j ∉ activeSet (facetPairing i u) c v,
+      c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j))) :
+    haveI := hi.finiteDimensional
     reducedMomentMap (hv.surjective_linearCombination_real hi) ((vertexChart hv hi hvP).symm w) =
       v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w := by
+  have := hi.finiteDimensional
   rw [vertexChart_symm_apply hv hi hvP hw,
-    (reducedMomentMap_mk_eq_iff _).2 (vertexLift_moment hv hi fun j hj ↦
-      ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le)]
+    (reducedMomentMap_mk_eq_iff _).2 (vertexLift_moment hv hi hw)]
 
 /-- The moment value of a point of the source is the translated weight model at its image under
 the vertex chart. -/
 theorem add_weightMomentMap_vertexChart {q : DelzantQuotient i u c}
     (hq : q ∈ (vertexChart hv hi hvP).source) :
+    haveI := hi.finiteDimensional
     v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) (vertexChart hv hi hvP q) =
       reducedMomentMap (hv.surjective_linearCombination_real hi) q := by
-  rw [← reducedMomentMap_vertexChart_symm hv hi hvP ((vertexChart hv hi hvP).map_source hq),
+  have := hi.finiteDimensional
+  rw [← reducedMomentMap_vertexChart_symm hv hi hvP fun j hj ↦
+      ((mem_vertexChart_target_iff hv hi hvP).1 ((vertexChart hv hi hvP).map_source hq) j hj).le,
     (vertexChart hv hi hvP).left_inv hq]
 
 /-- The point of the Delzant quotient at the centre of the vertex chart lies over `v`; it is the
 fixed point over `v` (`TauCeti.Toric.DelzantQuotient.bijOn_reducedMomentMap_fixedPoints`). -/
 theorem reducedMomentMap_vertexChart_symm_zero :
+    haveI := hi.finiteDimensional
     reducedMomentMap (hv.surjective_linearCombination_real hi) ((vertexChart hv hi hvP).symm 0) =
       v := by
-  rw [reducedMomentMap_vertexChart_symm hv hi hvP (zero_mem_vertexChart_target hv hi hvP),
-    weightMomentMap_zero, add_zero]
-
-end ReducedMomentMap
-
-/-- The class of a point of the level lies in the source of the vertex chart exactly when its
-coordinates outside `A` do not vanish. -/
-theorem mk_mem_vertexChart_source_iff {x : delzantLevel i u c} :
-    mk x ∈ (vertexChart hv hi hvP).source ↔
-      ∀ j ∉ activeSet (facetPairing i u) c v, x.val.1 j ≠ 0 ∨ x.val.2 j ≠ 0 := by
   have := hi.finiteDimensional
-  rw [vertexChart_source, mem_ofPred_eq]
-  refine forall₂_congr fun j _ ↦ ?_
-  rw [reducedMomentMap_mk_apply]
-  constructor
-  · intro h
-    by_contra! h0
-    simp only [h0.1, h0.2, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, add_zero,
-      zero_div, zero_add, lt_self_iff_false] at h
-  · rintro (h | h) <;> linarith [sq_pos_of_ne_zero h, sq_nonneg (x.val.1 j), sq_nonneg (x.val.2 j)]
+  rw [reducedMomentMap_vertexChart_symm hv hi hvP fun j hj ↦
+      ((mem_vertexChart_target_iff hv hi hvP).1 (zero_mem_vertexChart_target hv hi hvP) j hj).le,
+    weightMomentMap_zero, add_zero]
 
 /-- **Equivariance of the vertex chart.** The inverse of the chart intertwines the rotation
 `w_k ↦ exp(-i φ_k) w_k` of `ℂ^A` with the action of the residual torus through the isomorphism
@@ -844,19 +861,21 @@ theorem vertexChart_symm_torusRotation
     (φ : activeSet (facetPairing i u) c v → AddCircle (2 * π)) :
     (vertexChart hv hi hvP).symm (torusRotation φ w) =
       hv.vertexTorusEquiv (2 * π) hi φ +ᵥ (vertexChart hv hi hvP).symm w := by
-  rw [coe_vertexChart_symm, IsSmoothVertex.vertexTorusEquiv_apply]
   by_cases hw : ∀ j ∉ activeSet (facetPairing i u) c v,
       c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w) (i (u j))
   · have hφw : ∀ j ∉ activeSet (facetPairing i u) c v,
         c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) (torusRotation φ w)) (i (u j)) := by
       simpa only [weightMomentMap_torusRotation] using hw
-    rw [vertexChartSymm_of_le hv hi hvP hw, vertexChartSymm_of_le hv hi hvP hφw, coe_vadd_mk]
+    rw [vertexChart_symm_apply hv hi hvP hw, vertexChart_symm_apply hv hi hvP hφw,
+      IsSmoothVertex.vertexTorusEquiv_apply, coe_vadd_mk]
     exact congrArg mk (Subtype.ext (vertexLift_torusRotation hv hi φ w))
   · have hφw : ¬ ∀ j ∉ activeSet (facetPairing i u) c v,
         c j ≤ (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) (torusRotation φ w)) (i (u j)) := by
       simpa only [weightMomentMap_torusRotation] using hw
-    rw [vertexChartSymm_of_not_le hv hi hvP hw, vertexChartSymm_of_not_le hv hi hvP hφw,
-      coe_vadd_mk]
+    rw [vertexChart_symm_of_not_forall_le hv hi hvP hw,
+      vertexChart_symm_of_not_forall_le hv hi hvP hφw,
+      vertexChart_symm_apply hv hi hvP fun j _ ↦ by simpa using mem_facetPolyhedron.1 hvP j,
+      IsSmoothVertex.vertexTorusEquiv_apply, coe_vadd_mk]
     refine congrArg mk (Subtype.ext ?_)
     rw [coe_vadd_delzantLevel, ← vertexLift_torusRotation, map_zero]
 
@@ -872,17 +891,11 @@ theorem vertexChart_vadd (q : DelzantQuotient i u c)
       simpa only [mem_vertexChart_target_iff, weightMomentMap_torusRotation] using hw
     conv_lhs => rw [← (vertexChart hv hi hvP).left_inv hq]
     rw [← vertexChart_symm_torusRotation hv hi hvP, (vertexChart hv hi hvP).right_inv hφw]
-  · induction q using DelzantQuotient.inductionOn with | h x =>
-    have hx : ¬ ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.val.1 j ^ 2 + x.val.2 j ^ 2 :=
-      fun h ↦ hq ((mk_mem_vertexChart_source_iff hv hi hvP).2 fun j hj ↦ by
-        by_contra! h0
-        simpa [h0.1, h0.2] using h j hj)
-    have hφx : ¬ ∀ j ∉ activeSet (facetPairing i u) c v,
-        0 < ((Function.extend Subtype.val φ 0 +ᵥ x : delzantLevel i u c).val.1 j) ^ 2 +
-          ((Function.extend Subtype.val φ 0 +ᵥ x : delzantLevel i u c).val.2 j) ^ 2 := by
-      simpa only [coe_vadd_delzantLevel, torusRotation_apply_normSq] using hx
-    rw [IsSmoothVertex.vertexTorusEquiv_apply, coe_vadd_mk, coe_vertexChart,
-      vertexChartFun_mk_of_not hv hi hφx, vertexChartFun_mk_of_not hv hi hx, map_zero]
+  · have hφq : hv.vertexTorusEquiv (2 * π) hi φ +ᵥ q ∉ (vertexChart hv hi hvP).source := by
+      have := hi.finiteDimensional
+      simpa only [vertexChart_source, mem_ofPred_eq, reducedMomentMap_vadd] using hq
+    rw [vertexChart_of_notMem_source hv hi hvP hφq, vertexChart_of_notMem_source hv hi hvP hq,
+      map_zero]
 
 end VertexChart
 

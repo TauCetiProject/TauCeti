@@ -230,7 +230,8 @@ private theorem vertexChart_symm_comp_subtypeVal_eq :
       DelzantQuotient.mk ∘ fun w : vertexChartTargetOpens hv hi hvP ↦
         (⟨vertexLift hv hi w, vertexLift_mem_delzantLevel_of_mem_target hv hi hvP w⟩ :
           delzantLevel i u c) :=
-  funext fun w ↦ vertexChart_symm_apply hv hi hvP w.property
+  funext fun w ↦ vertexChart_symm_apply hv hi hvP fun j hj ↦
+    ((mem_vertexChart_target_iff hv hi hvP).1 w.property j hj).le
 
 end DelzantQuotient
 
