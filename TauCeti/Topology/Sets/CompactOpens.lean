@@ -22,9 +22,6 @@ union of the rectangles `{x | K_x = T} ×ˢ T` over its finitely many nonempty s
 bases. Conversely, any presentation of `K` as such a union determines its slices
 (`TopologicalSpace.CompactOpens.slice_eq_of_mem`).
 
-This file also records that a compact open set is nonempty exactly when it is not `⊥`
-(`TopologicalSpace.CompactOpens.coe_nonempty`), as Mathlib does for `TopologicalSpace.Compacts`.
-
 ## Main definitions
 
 * `TopologicalSpace.CompactOpens.slice`: the slice `{y | (x, y) ∈ K}` of a compact open set
@@ -51,11 +48,6 @@ open Set
 namespace TopologicalSpace.CompactOpens
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- A compact open set is nonempty exactly when it is not `⊥`. -/
-@[simp]
-theorem coe_nonempty {K : CompactOpens X} : (K : Set X).Nonempty ↔ K ≠ ⊥ := by
-  rw [← ne_empty_iff_nonempty, ← coe_bot, Ne, Ne, SetLike.coe_set_eq]
 
 /-- The slice `{y | (x, y) ∈ K}` of a compact open subset `K` of `X × Y` at `x : X`, a compact open
 subset of `Y` when the points of `X` are closed. -/

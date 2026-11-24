@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.Basic
 public import TauCeti.Topology.Sets.CompactOpens
+public import TauCeti.Topology.Sets.Compacts
 
 /-!
 # Products of Haar measures with values in a ring
