@@ -22,7 +22,9 @@ This file develops basic properties of Mathlib's `CategoryTheory.Functor.sheafPu
 * **Colimits and additivity**: `isLeftAdjoint_sheafPullback` and `sheafPullback_additive`.
 * **Functoriality**: mate transport yields `sheafPullbackId`, `sheafPullbackComp`,
   `sheafPullbackIso`, `sheafPullbackId'`, `sheafPullbackComp'`, and the coherence laws
-  `sheafPullback_id_comp`, `sheafPullback_comp_id`, and `sheafPullback_assoc`.
+  `sheafPullback_id_comp`, `sheafPullback_comp_id`, and `sheafPullback_assoc`;
+  `sheafAdjunctionContinuous_comp_unit_app` writes the unit of the adjunction for a composite
+  through `sheafPullbackComp`.
 * **Adjoint continuous functors**: an adjunction `adj : F ⊣ G` between continuous functors yields
   `CategoryTheory.Adjunction.sheafPullbackIso : G.sheafPullback A K J ≅
   F.sheafPushforwardContinuous A J K`.
@@ -179,6 +181,31 @@ lemma conjugateEquiv_sheafPullbackComp_inv :
   let := isContinuous_comp u v J K L
   have := isRightAdjoint_sheafPushforwardContinuous_comp u v A J K L
   simp [sheafPullbackComp]
+
+/-- The unit of `(u ⋙ v)^* ⊣ (u ⋙ v)_*` is the unit of `u^* ⊣ u_*`, followed by the unit of
+`v^* ⊣ v_*` and the isomorphism `v^* u^* ≅ (u ⋙ v)^*` of `sheafPullbackComp`. -/
+lemma sheafAdjunctionContinuous_comp_unit_app (G : Sheaf J A) :
+    let := isContinuous_comp u v J K L
+    have := isRightAdjoint_sheafPushforwardContinuous_comp u v A J K L
+    ((u ⋙ v).sheafAdjunctionContinuous A J L).unit.app G =
+      (u.sheafAdjunctionContinuous A J K).unit.app G ≫
+        (u.sheafPushforwardContinuous A J K).map
+          ((v.sheafAdjunctionContinuous A K L).unit.app _ ≫
+            (v.sheafPushforwardContinuous A K L).map
+              ((sheafPullbackComp u v A J K L).hom.app G)) := by
+  intro _ _
+  have h := unit_conjugateEquiv ((u.sheafAdjunctionContinuous A J K).comp
+    (v.sheafAdjunctionContinuous A K L)) ((u ⋙ v).sheafAdjunctionContinuous A J L)
+    (sheafPullbackComp u v A J K L).inv G
+  rw [conjugateEquiv_sheafPullbackComp_inv, Adjunction.comp_unit_app] at h
+  -- The isomorphism of pushforwards in `sheafPullbackComp` is the identity.
+  have h' := congrArg (· ≫ ((u ⋙ v).sheafPushforwardContinuous A J L).map
+    ((sheafPullbackComp u v A J K L).hom.app G)) h
+  simp only [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id_app, Functor.map_id] at h'
+  refine (Category.comp_id _).symm.trans (h'.symm.trans ?_)
+  rw [Functor.map_comp]
+  simp only [sheafPushforwardContinuousComp, Iso.refl_hom, NatTrans.id_app]
+  exact congrArg (fun φ ↦ _ ≫ _ ≫ φ) (Category.id_comp _)
 
 end Comp
 

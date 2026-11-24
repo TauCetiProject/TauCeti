@@ -362,16 +362,11 @@ singular symmetric matrices, which are `TauCeti.symmetricLebesgue`-null. -/
 theorem mutuallySingular_wishartGramMeasure_symmetricLebesgue (ν : ℕ)
     (S : Matrix (Fin p) (Fin p) ℝ) (hrank : min ν S.rank < p) :
     (wishartGramMeasure ν S).MutuallySingular (symmetricLebesgue p) := by
-  refine ⟨{A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-      (A : Matrix (Fin p) (Fin p) ℝ).det = 0}ᶜ, (measurableSet_setOfPred_det_eq_zero p).compl,
-    ?_, ?_⟩
-  · refine measure_mono_null (fun A hA ↦ ?_) (ae_iff.1 (ae_rank_le_wishartGramMeasure ν S))
-    have hdet : (A : Matrix (Fin p) (Fin p) ℝ).det ≠ 0 := hA
-    have hrk : (A : Matrix (Fin p) (Fin p) ℝ).rank = p := by
-      rw [Matrix.rank_of_isUnit _ ((Matrix.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2 hdet)),
-        Fintype.card_fin]
-    exact fun hle ↦ absurd (hrk.symm.trans_le hle) (not_le.2 hrank)
-  · rw [compl_compl, symmetricLebesgue_setOf_det_eq_zero]
+  refine mutuallySingular_symmetricLebesgue_of_ae_det_eq_zero
+    ((ae_rank_le_wishartGramMeasure ν S).mono fun A hle ↦ ?_)
+  by_contra hdet
+  rw [Matrix.rank_of_det_ne_zero hdet, Fintype.card_fin] at hle
+  omega
 
 /-! ### Convolution -/
 

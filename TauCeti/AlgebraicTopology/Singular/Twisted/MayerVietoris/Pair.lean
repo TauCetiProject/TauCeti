@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # The Mayer–Vietoris sequence of two pairs with local coefficients

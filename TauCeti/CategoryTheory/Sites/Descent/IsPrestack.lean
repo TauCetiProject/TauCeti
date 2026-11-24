@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.FunctorCategory
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
@@ -26,7 +27,9 @@ This file also shows that `pullHom` is compatible with composition and identitie
 hence sends isomorphisms to isomorphisms
 (`CategoryTheory.Pseudofunctor.LocallyDiscreteOpToCat.inv_pullHom`), and that it sends the
 pullback `f^* φ` of a morphism `φ` to its pullback along the composite
-(`CategoryTheory.Pseudofunctor.pullHom_map`).
+(`CategoryTheory.Pseudofunctor.pullHom_map`). Composition and identities of local morphisms are
+therefore morphisms of presheaves on `Over S`
+(`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`).
 
 It also shows that pulling back morphisms between pullbacks commutes with restricting `F` along a
 functor `p : D ⥤ C`: for the pseudofunctor `p.op.toPseudofunctor.comp F`, pulling back along `g`
@@ -117,6 +120,19 @@ lemma map_presheafHomObjHomEquiv_symm {M N : F.obj (.mk (op S))}
   rw [Equiv.apply_symm_apply] at this
   exact this.symm
 
+/-- The identification of morphisms of `F` over `S` with sections of `F.presheafHom` over the
+terminal object sends identities to identities. -/
+lemma presheafHomObjHomEquiv_id (M : F.obj (.mk (op S))) :
+    F.presheafHomObjHomEquiv (𝟙 M) = 𝟙 _ :=
+  (Iso.homCongr_apply _ _ _).trans (by simp)
+
+/-- The identification of morphisms of `F` over `S` with sections of `F.presheafHom` over the
+terminal object is compatible with composition. -/
+lemma presheafHomObjHomEquiv_comp {M N P : F.obj (.mk (op S))} (φ : M ⟶ N) (ψ : N ⟶ P) :
+    F.presheafHomObjHomEquiv (φ ≫ ψ) =
+      F.presheafHomObjHomEquiv φ ≫ F.presheafHomObjHomEquiv ψ :=
+  Iso.homCongr_comp _ _ _ φ ψ
+
 variable {F}
 
 /-- The pullback of a composite of local morphisms is the composite of their pullbacks. -/
@@ -138,6 +154,34 @@ lemma pullHom_id_self ⦃X : C⦄ ⦃M : F.obj (.mk (op X))⦄ ⦃Y : C⦄ (f : 
     (g : Y' ⟶ Y) (gf : Y' ⟶ X) (hgf : g ≫ f = gf) :
     pullHom (𝟙 ((F.map f.op.toLoc).toFunctor.obj M)) g gf gf hgf hgf = 𝟙 _ := by
   simp [pullHom]
+
+open MonoidalCategory in
+/-- Composition of local morphisms, as a morphism of presheaves on `Over S`. -/
+def presheafHomComp (M N P : F.obj (.mk (op S))) :
+    F.presheafHom M N ⊗ F.presheafHom N P ⟶ F.presheafHom M P where
+  app T := TypeCat.ofHom fun p ↦ p.1 ≫ p.2
+  naturality T T' g := by
+    ext ⟨f, g⟩
+    exact (pullHom_comp _ _ _ _ _ _).symm
+
+open MonoidalCategory in
+/-- Identities of local morphisms, as a morphism of presheaves on `Over S`. -/
+def presheafHomId (M : F.obj (.mk (op S))) :
+    𝟙_ ((Over S)ᵒᵖ ⥤ Type _) ⟶ F.presheafHom M M where
+  app T := TypeCat.ofHom fun _ ↦ 𝟙 _
+  naturality T T' g := by
+    ext p
+    simp
+
+open MonoidalCategory in
+lemma presheafHomComp_app_apply (M N P : F.obj (.mk (op S))) (T : (Over S)ᵒᵖ)
+    (p : (F.presheafHom M N ⊗ F.presheafHom N P).obj T) :
+    (presheafHomComp M N P).app T p = p.1 ≫ p.2 := (rfl)
+
+open MonoidalCategory in
+lemma presheafHomId_app_apply (M : F.obj (.mk (op S))) (T : (Over S)ᵒᵖ)
+    (p : (𝟙_ ((Over S)ᵒᵖ ⥤ Type _)).obj T) :
+    (presheafHomId M).app T p = 𝟙 _ := (rfl)
 
 /-- The pullback of `f^* φ` is `(g ≫ f)^* φ`. -/
 @[simp]

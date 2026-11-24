@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.Data.Nat.Cast.IsUnit
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Algebra
 import TauCeti.FieldTheory.IntermediateField.Adjoin.BaseChange
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic

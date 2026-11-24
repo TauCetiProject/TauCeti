@@ -34,6 +34,8 @@ every short exact sequence of finite-dimensional modules splits.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
 * `FGModuleCat.enoughProjectives`: every finitely generated module is a quotient of a finite free
   module.
+* `FGModuleCat.projective_obj_iff`: a finitely generated module is projective in `ModuleCat R`
+  exactly when it is projective in `FGModuleCat R`.
 * `FGModuleCat.moduleProjective_of_projective`: a projective object of `FGModuleCat R` is a
   projective `R`-module, provided `R` is small relative to the universe of the modules.
 * `CategoryTheory.Equivalence.moduleProjective_functor_obj_regular`: an equivalence between the
@@ -99,6 +101,14 @@ theorem moduleProjective_of_projective [Small.{v} R]
   apply LinearMap.ext
   intro x
   exact congrArg (fun g : X ⟶ X ↦ g.hom.hom x) (Projective.factorThru_comp (𝟙 X) p)
+
+variable {R} in
+/-- A finitely generated module is projective among all modules exactly when it is a projective
+object of `FGModuleCat R`. -/
+theorem projective_obj_iff [Small.{v} R] (X : FGModuleCat.{v} R) :
+    Projective X.obj ↔ Projective X :=
+  (IsProjective.iff_projective X).symm.trans
+    ⟨fun _ ↦ projective_of_moduleProjective R X, fun _ ↦ moduleProjective_of_projective X⟩
 
 /-- An equivalence between the categories of finitely generated modules carries the regular module
 to a projective module. -/
