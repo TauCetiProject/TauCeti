@@ -64,35 +64,6 @@ namespace TauCeti.Stack.Prestackification
 variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
   (F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'})
 
-section
-
-variable {F} {U : C}
-
-/-- Composition of local morphisms, as a morphism of presheaves on `Over U`. -/
-def presheafHomComp (M N P : F.obj (.mk (op U))) :
-    F.presheafHom M N ⊗ F.presheafHom N P ⟶ F.presheafHom M P where
-  app T := TypeCat.ofHom fun p ↦ p.1 ≫ p.2
-  naturality T T' g := by
-    ext ⟨f, g⟩
-    exact (pullHom_comp _ _ _ _ _ _).symm
-
-/-- Identities of local morphisms, as a morphism of presheaves on `Over U`. -/
-def presheafHomId (M : F.obj (.mk (op U))) : 𝟙_ ((Over U)ᵒᵖ ⥤ Type v') ⟶ F.presheafHom M M where
-  app T := TypeCat.ofHom fun _ ↦ 𝟙 _
-  naturality T T' g := by
-    ext p
-    simp
-
-lemma presheafHomComp_app_apply (M N P : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ)
-    (p : (F.presheafHom M N ⊗ F.presheafHom N P).obj T) :
-    (presheafHomComp M N P).app T p = p.1 ≫ p.2 := (rfl)
-
-lemma presheafHomId_app_apply (M : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ)
-    (p : (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')).obj T) :
-    (presheafHomId M).app T p = 𝟙 _ := (rfl)
-
-end
-
 /-- The fibre of `F` over `U`, as a type synonym carrying the enrichment in presheaves of types
 on `Over U` given by the presheaves of morphisms `F.presheafHom`. -/
 -- The body is exposed so that objects of `HomEnriched F U` are objects of `F` over `U`.
@@ -121,8 +92,7 @@ variable (U : C) [HasSheafify (J.over U) (Type v')]
 over the terminal object `Over.mk (𝟙 U)`. -/
 -- The body is exposed so that its values are the sections of a sheafification.
 @[expose] def sheafifySections : ((Over U)ᵒᵖ ⥤ Type v') ⥤ Type v' :=
-  presheafToSheaf (J.over U) (Type v') ⋙ sheafToPresheaf _ _ ⋙
-    (evaluation _ _).obj (op (Over.mk (𝟙 U)))
+  sheafification (J.over U) (Type v') ⋙ (evaluation _ _).obj (op (Over.mk (𝟙 U)))
 
 instance preservesFiniteProducts_sheafifySections :
     PreservesFiniteProducts (sheafifySections J U) := by
@@ -133,10 +103,9 @@ instance preservesFiniteProducts_sheafifySections :
 instance monoidalSheafifySections : (sheafifySections J U).Monoidal := .ofChosenFiniteProducts _
 
 /-- The value at the terminal object of the unit of sheafification. -/
-def toSheafifySections : (evaluation _ _).obj (op (Over.mk (𝟙 U))) ⟶ sheafifySections J U where
-  app P := (toSheafify (J.over U) P).app _
-  naturality P Q f := by
-    simp [sheafifySections, ← NatTrans.comp_app, toSheafify_naturality]
+def toSheafifySections : (evaluation _ _).obj (op (Over.mk (𝟙 U))) ⟶ sheafifySections J U :=
+  Functor.whiskerRight (toSheafification (J.over U) (Type v'))
+    ((evaluation _ _).obj (op (Over.mk (𝟙 U))))
 
 @[simp]
 lemma toSheafifySections_app (P : (Over U)ᵒᵖ ⥤ Type v') :
@@ -178,10 +147,10 @@ variable {J F} {U : C} [HasSheafify (J.over U) (Type v')]
 @[expose] def Fiber.obj (M : Fiber J F U) : F.obj (.mk (op U)) := M
 
 @[simp]
-lemma Fiber.mk_obj (M : F.obj (.mk (op U))) : (Fiber.mk (J := J) M).obj = M := (rfl)
+lemma Fiber.obj_mk (M : F.obj (.mk (op U))) : (Fiber.mk (J := J) M).obj = M := (rfl)
 
 @[simp]
-lemma Fiber.obj_mk (M : Fiber J F U) : Fiber.mk M.obj = M := (rfl)
+lemma Fiber.mk_obj (M : Fiber J F U) : Fiber.mk M.obj = M := (rfl)
 
 open Functor.LaxMonoidal Functor.OplaxMonoidal
 
@@ -295,7 +264,8 @@ lemma toFiber_map_bijective [F.IsPrestack J] (M N : F.obj (.mk (op U))) :
     Function.Bijective ((toFiber J F U).map : (M ⟶ N) → _) := by
   have := isIso_toSheafify (J.over U) (IsPrestack.isSheaf J M N)
   have hη : Function.Bijective ((toSheafifySections J U).app (F.presheafHom M N)) :=
-    (isIso_iff_bijective _).1 (inferInstanceAs (IsIso ((toSheafify (J.over U) _).app _)))
+    (isIso_iff_bijective _).1
+      (inferInstanceAs (IsIso ((toSheafify (J.over U) (F.presheafHom M N)).app _)))
   exact (Fiber.homEquiv (Fiber.mk M) (Fiber.mk N)).symm.bijective.comp
     (hη.comp F.presheafHomObjHomEquiv.bijective)
 
