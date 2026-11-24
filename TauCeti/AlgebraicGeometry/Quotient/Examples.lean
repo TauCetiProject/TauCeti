@@ -25,11 +25,11 @@ This file checks the invariant quotients `X // G = Spec O(X)^G` on three small e
   (`TauCeti.QuotientExamples.fixedPoints_negX_eq_adjoin`). Over a ring of characteristic two,
   such as `𝔽₂`, the action is trivial, so `x` is invariant
   (`TauCeti.QuotientExamples.fixedPoints_negX_eq_top`), while `x` does not lie in `R[x²]`
-  (`TauCeti.QuotientExamples.X_notMem_adjoin_X_sq`): the natural map `𝔽₂[x²] → 𝔽₂[x]` is not
-  surjective. Hence reduction from `ℤ_[2]` to `𝔽₂` does not carry the invariants onto the
-  invariants (`TauCeti.QuotientExamples.X_notMem_map_fixedPoints_padicInt`): forming invariants
-  does not commute with this non-flat base change. The group `C₂` is not linearly reductive over
-  `ℤ_[2]`, and this example does not treat it as reductive.
+  (`Polynomial.X_notMem_adjoin_X_sq`): the natural map `𝔽₂[x²] → 𝔽₂[x]` is not surjective.
+  Hence reduction from `ℤ_[2]` to `𝔽₂` does not carry the invariants onto the invariants: the
+  image misses `x` (`TauCeti.QuotientExamples.X_notMem_map_fixedPoints_padicInt`). Forming
+  invariants does not commute with this non-flat base change. The group `C₂` is not linearly
+  reductive over `ℤ_[2]`, and this example does not treat it as reductive.
 * **`𝔾ₐ` acting on itself by conjugation.** `𝔾ₐ` is commutative, so conjugation is trivial and
   every function on `𝔾ₐ` is invariant (`TauCeti.QuotientExamples.conjugationInvariants_ga`): the
   conjugation quotient `𝔾ₐ // 𝔾ₐ` is `𝔸¹` itself. Every conjugacy class `{x}` is a closed orbit,
@@ -60,7 +60,7 @@ theorem coinvariants_gm_one_neg_one :
   have hw (s : Fin 2 →₀ ℕ) :
       monomialWeight (![Multiplicative.ofAdd 1, Multiplicative.ofAdd (-1)] :
         Fin 2 → Multiplicative ℤ) s = Multiplicative.ofAdd ((s 0 : ℤ) - s 1) := by
-    rw [monomialWeight_def, Finsupp.prod_fintype _ _ (by simp), Fin.prod_univ_two]
+    rw [monomialWeight_eq_prod, Fin.prod_univ_two]
     simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, ← ofAdd_nsmul,
       ← ofAdd_add]
     congr 1
@@ -98,19 +98,13 @@ open Polynomial
 
 variable (R : Type*) [CommRing R]
 
-/-- The automorphism `p(X) ↦ p(-X)` is an involution. -/
-theorem algEquivAevalNegX_sq : (algEquivAevalNegX : R[X] ≃ₐ[R] R[X]) ^ 2 = 1 :=
-  AlgEquiv.ext fun p ↦ by
-    simp only [pow_two, AlgEquiv.mul_apply, algEquivAevalNegX_apply, ← comp_eq_aeval,
-      comp_neg_X_comp_neg_X, AlgEquiv.one_apply]
-
 /-- The group `C₂ = Multiplicative (ZMod 2)` acting on `R[X]` by `X ↦ -X`, as a homomorphism to
 the automorphisms of `R[X]`: the generator acts by `p(X) ↦ p(-X)`. -/
 noncomputable def negXHom : Multiplicative (ZMod 2) →* (R[X] ≃ₐ[R] R[X]) where
   toFun g := algEquivAevalNegX ^ g.toAdd.val
   map_one' := by simp
   map_mul' g h := by
-    rw [← pow_add, toAdd_mul, ZMod.val_add, ← pow_eq_pow_mod _ (algEquivAevalNegX_sq R)]
+    rw [← pow_add, toAdd_mul, ZMod.val_add, ← pow_eq_pow_mod _ algEquivAevalNegX_sq]
 
 /-- The action of `C₂ = Multiplicative (ZMod 2)` on `R[X]` by `X ↦ -X`.
 
@@ -119,15 +113,24 @@ This is not an instance: `R[X]` carries other actions of groups of order two. -/
 noncomputable def negXAction : MulSemiringAction (Multiplicative (ZMod 2)) R[X] :=
   MulSemiringAction.compHom R[X] (negXHom R)
 
+/-- The generator of `C₂` maps to the automorphism `p(X) ↦ p(-X)`. -/
+@[simp]
+theorem negXHom_ofAdd_one : negXHom R (Multiplicative.ofAdd 1) = algEquivAevalNegX := by
+  simp [negXHom, ZMod.val_one]
+
 variable {R}
+
+/-- An element of `C₂` acts on `R[X]` through `negXHom`. -/
+theorem negXAction_smul_def (g : Multiplicative (ZMod 2)) (p : R[X]) :
+    letI := negXAction R
+    g • p = negXHom R g p :=
+  (MulAction.compHom_smul_def (negXHom R) g p).trans (AlgEquiv.smul_def _ p)
 
 /-- The generator of `C₂` acts on `R[X]` by `p(X) ↦ p(-X)`. -/
 theorem negXAction_smul_ofAdd_one (p : R[X]) :
     letI := negXAction R
     Multiplicative.ofAdd (1 : ZMod 2) • p = p.comp (-X) := by
-  let := negXAction R
-  change negXHom R (Multiplicative.ofAdd 1) p = _
-  simp [negXHom, ZMod.val_one, comp_eq_aeval]
+  rw [negXAction_smul_def, negXHom_ofAdd_one, algEquivAevalNegX_apply, comp_eq_aeval]
 
 /-- A polynomial is invariant under `C₂` exactly when it is even: `p(-X) = p(X)`. -/
 theorem mem_fixedPoints_negX_iff {p : R[X]} :
@@ -164,31 +167,17 @@ theorem fixedPoints_negX_eq_top [CharP R 2] :
   refine eq_top_iff.2 fun p _ ↦ mem_fixedPoints_negX_iff.2 ?_
   rw [CharTwo.neg_eq, comp_X]
 
-/-- **The natural map `R[X²] → R[X]` is not surjective** over a nontrivial ring: `X` is not a
-polynomial in `X²`. -/
-theorem X_notMem_adjoin_X_sq [Nontrivial R] : (X : R[X]) ∉ Algebra.adjoin R {(X ^ 2 : R[X])} := by
-  rw [Algebra.adjoin_singleton_eq_range_aeval]
-  rintro ⟨r, hr⟩
-  have h : (expand R 2 r).coeff 1 = 1 := by
-    rw [expand_eq_comp_X_pow, comp_eq_aeval]
-    exact congrArg (·.coeff 1) hr |>.trans coeff_X_one
-  rw [coeff_expand two_pos] at h
-  simp at h
-
-/-- **Invariants do not commute with reduction modulo `2`.** Reducing the `C₂`-invariants of
-`ℤ_[2][X]` modulo `2` gives `𝔽₂[X²]`, which misses the invariant `X` of `𝔽₂[X]`. -/
+/-- **Invariants do not commute with reduction modulo `2`.** The reduction modulo `2` of the
+`C₂`-invariants of `ℤ_[2][X]` lies in `𝔽₂[X²]` and so misses `X`, which is invariant in `𝔽₂[X]`
+by `fixedPoints_negX_eq_top`. -/
 theorem X_notMem_map_fixedPoints_padicInt :
     letI := negXAction ℤ_[2]
-    letI := negXAction (ZMod 2)
-    (X : (ZMod 2)[X]) ∈ FixedPoints.subring (ZMod 2)[X] (Multiplicative (ZMod 2)) ∧
-      (X : (ZMod 2)[X]) ∉ (FixedPoints.subring ℤ_[2][X] (Multiplicative (ZMod 2))).map
-        (mapRingHom (PadicInt.toZMod (p := 2))) := by
+    (X : (ZMod 2)[X]) ∉ (FixedPoints.subring ℤ_[2][X] (Multiplicative (ZMod 2))).map
+      (mapRingHom (PadicInt.toZMod (p := 2))) := by
   let := negXAction ℤ_[2]
-  let := negXAction (ZMod 2)
-  refine ⟨by rw [fixedPoints_negX_eq_top]; trivial, ?_⟩
   rw [fixedPoints_negX_eq_adjoin]
   rintro ⟨q, hq, hqX⟩
-  have hq' : q ∈ Algebra.adjoin ℤ_[2] {(X ^ 2 : ℤ_[2][X])} := hq
+  have hq' := Subalgebra.mem_toSubring.1 hq
   rw [Algebra.adjoin_singleton_eq_range_aeval] at hq'
   obtain ⟨r, rfl⟩ := hq'
   refine X_notMem_adjoin_X_sq (R := ZMod 2) ?_
