@@ -55,9 +55,12 @@ the Picard lattice.
 * `TauCeti.AffineDynkinType.radical_rootLattice`: its radical is the line spanned by the marks.
 * `TauCeti.AffineDynkinType.mem_rootLattice_carrier_and_mem_radical_iff`: the lattice vectors of
   the radical are the integer multiples of the marks.
+* `TauCeti.AffineDynkinType.finrank_rootLattice`: its rank is the number of nodes.
 * `TauCeti.AffineDynkinType.signature_rootLattice` and
   `TauCeti.AffineDynkinType.isPosSemidef_rootLattice`: the lattice is positive semidefinite of
   signature `(rank, 1, 0)`, with `rank` the rank of the finite type.
+* `TauCeti.AffineDynkinType.isDegenerate_rootLattice` and
+  `TauCeti.AffineDynkinType.determinant_rootLattice`: it is degenerate, with determinant `0`.
 * `TauCeti.AffineDynkinType.radicalQuotientIsometry`: the radical quotient is isometric to the
   finite root lattice.
 * `TauCeti.AffineDynkinType.determinant_radicalQuotient_rootLattice`: the determinant of the
@@ -116,6 +119,11 @@ theorem rootLattice_form_single_single (i j : Fin t.nodes) :
     t.rootLattice.form (Pi.single i 1) (Pi.single j 1) = t.cartanMatrix i j := by
   have h := form_ofGramMatrix_basisFun_basisFun t.cartanMatrix t.isSymm_cartanMatrix i j
   rwa [Pi.basisFun_apply, Pi.basisFun_apply] at h
+
+/-- The affine root lattice has rank the number of nodes of the diagram. -/
+@[simp]
+theorem finrank_rootLattice : Module.finrank ℤ t.rootLattice = t.nodes := by
+  rw [finrank_carrier, Module.finrank_fin_fun]
 
 /-- The affine root lattice is even: every simple root has norm `2`. -/
 theorem isEven_rootLattice : t.rootLattice.IsEven :=
@@ -427,6 +435,19 @@ theorem signature_rootLattice (ht : t.Valid) :
 /-- The affine root lattice is positive semidefinite. -/
 theorem isPosSemidef_rootLattice (ht : t.Valid) : t.rootLattice.IsPosSemidef :=
   t.rootLattice.isPosSemidef_iff_sigNeg_eq_zero.2 (congrArg (·.2.2) (signature_rootLattice ht))
+
+/-- The affine root lattice is degenerate. -/
+theorem isDegenerate_rootLattice (ht : t.Valid) : t.rootLattice.IsDegenerate :=
+  t.rootLattice.isDegenerate_iff_sigNull_pos.2 <| by
+    rw [show t.rootLattice.sigNull = 1 from congrArg (·.2.1) (signature_rootLattice ht)]
+    exact one_pos
+
+/-- The determinant of the affine root lattice vanishes. -/
+@[simp]
+theorem determinant_rootLattice (ht : t.Valid) : t.rootLattice.determinant = 0 :=
+  not_not.1 fun h ↦
+    t.rootLattice.isDegenerate_iff_not_nondegenerate.1 (isDegenerate_rootLattice ht)
+      (t.rootLattice.determinant_ne_zero_iff.1 h)
 
 /-! ### The negated lattice -/
 

@@ -7,7 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
-public import TauCeti.LinearAlgebra.IntegralLattice.RadicalQuotient
+public import TauCeti.LinearAlgebra.IntegralLattice.Even
+public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 
 /-!
 # Basic examples of integral lattices
