@@ -253,11 +253,10 @@ theorem occurrenceGap_restrict_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMeasur
 origin carries mass strictly less than one. -/
 theorem occurrenceGap_zero_pos_iff (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
     0 < μ.occurrenceGap 0 ↔ μ {0} < 1 := by
-  have hIic : Iic (0 : ℝ≥0) = {0} := by
-    ext x
-    simp
-  rw [occurrenceGap_zero, lt_iff_not_ge, ← ENNReal.coe_zero,
-    μ.occurrenceTime_le_iff 0 0, hIic, Nat.cast_zero, zero_add, not_le]
+  have hIic : Iic (0 : ℝ≥0) = {0} := by ext x; simp
+  have hle : μ.occurrenceGap 0 ≤ 0 ↔ 1 ≤ μ {0} := by
+    simpa [occurrenceGap_zero, hIic] using μ.occurrenceTime_le_iff 0 0
+  simpa [pos_iff_ne_zero] using not_congr hle
 
 /-- A locally finite integer-valued measure is reconstructed from the partial sums of its
 interarrival gaps. -/

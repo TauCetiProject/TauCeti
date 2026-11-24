@@ -198,9 +198,8 @@ private theorem ae_toReal_occurrenceGap_succ_eq
       fun ω ↦ ((M ω).occurrenceTime (n + 1)).toReal - ((M ω).occurrenceTime n).toReal := by
   rcases eq_zero_or_pos r with rfl | hr
   · rw [ENNReal.coe_zero, zero_smul] at h
-    filter_upwards [h.ae_forall_occurrenceGap_eq_top_of_zero] with ω hgap
-    simp [hgap (n + 1), ((M ω).occurrenceGap_eq_top_iff (n + 1)).mp (hgap (n + 1)),
-      ((M ω).occurrenceGap_eq_top_iff n).mp (hgap n)]
+    filter_upwards [h.ae_eq_zero_measure] with ω hω
+    simp [hω]
   · filter_upwards [h.ae_forall_occurrenceGap_pos_lt_top hr] with ω hω
     exact Measure.toReal_occurrenceGap_succ
       ((Measure.occurrenceGap_lt_top_iff _ _).mp (hω (n + 1)).2).ne

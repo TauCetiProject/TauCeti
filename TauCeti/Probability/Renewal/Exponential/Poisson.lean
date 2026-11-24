@@ -106,11 +106,8 @@ theorem identDistrib_renewalCountNat_nat_count_of_isPoissonRandomMeasure
     (hM : IsPoissonRandomMeasure Q M ((r : ℝ≥0∞) • nnvolume)) :
     IdentDistrib (fun ω t ↦ renewalCountNat T t ω)
       (fun ω t ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) P Q := by
-  have hcountMap : Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ :=
-    measurable_pi_iff.mpr fun t ↦
-      (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
   have hcomp := (identDistrib_renewalArrivalMeasure_of_isPoissonRandomMeasure
-    hindep hlaw hM).comp hcountMap
+    hindep hlaw hM).comp measurable_nat_count_path
   have hae : (fun ω t ↦ ⌊(renewalArrivalMeasure T ω (Ioc 0 t)).toNNReal⌋₊) =ᵐ[P]
       fun ω t ↦ renewalCountNat T t ω := by
     filter_upwards [ae_renewalArrivalMeasure_Ioc_eq_of_expMeasure hindep hlaw] with ω hω
