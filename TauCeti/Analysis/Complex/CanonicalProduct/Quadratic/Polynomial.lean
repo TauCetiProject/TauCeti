@@ -95,8 +95,9 @@ theorem coeff_pairedPartialPoly_mono {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : �
           pairedPartialPoly c m γ u * (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2) := by
         simp only [pairedPartialPoly_def, Finset.prod_insert hn]; ring
       rw [hstep]
-      exact coeff_le_coeff_mul_one_add_C_mul_X_pow (coeff_pairedPartialPoly_nonneg hc m γ u)
-        (sq_nonneg _) 2 d
+      exact coeff_le_coeff_mul (coeff_pairedPartialPoly_nonneg hc m γ u)
+        (fun j ↦ by rw [coeff_add, coeff_one, coeff_C_mul_X_pow]; split_ifs <;> positivity)
+        (by simp) d
   exact hmono hts
 
 /-- If every `n ∈ t` has `γ n ≠ 0`, the degree-`(m + 2 * t.card)` coefficient of

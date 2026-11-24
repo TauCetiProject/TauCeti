@@ -64,9 +64,10 @@ Over a `ℚ≥0`-algebra, such as a division ring of characteristic zero, the de
 characteristic `p` it is not (`Polynomial.derivative_not_surjective_of_charP`), as `X ^ (p - 1)`
 has no antiderivative.
 
-Over an ordered semiring, iterated formal derivatives preserve nonnegativity of coefficients and
-hence take nonnegative values at nonnegative points (`Polynomial.coeff_iterate_derivative_nonneg`,
-`Polynomial.eval_iterate_derivative_nonneg`).
+Over an ordered semiring, polynomials with nonnegative coefficients evaluate to nonnegative values
+at nonnegative points (`Polynomial.eval_nonneg_of_coeff_nonneg`), and iterated formal derivatives
+preserve nonnegativity of coefficients and hence take nonnegative values at nonnegative points
+(`Polynomial.coeff_iterate_derivative_nonneg`, `Polynomial.eval_iterate_derivative_nonneg`).
 -/
 
 public section
@@ -347,6 +348,14 @@ theorem derivative_not_surjective_of_charP {R : Type*} [Semiring R] [Nontrivial 
     CharP.cast_eq_zero, mul_zero] at this
   exact zero_ne_one this
 
+/-- Evaluating a polynomial with nonnegative coefficients at a nonnegative element yields a
+nonnegative value. -/
+theorem eval_nonneg_of_coeff_nonneg {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) {x : R} (hx : 0 ≤ x) :
+    0 ≤ p.eval x := by
+  rw [eval_eq_sum]
+  exact Finset.sum_nonneg fun d _ ↦ mul_nonneg (hp d) (pow_nonneg hx d)
+
 /-- Every iterated formal derivative of a polynomial with nonnegative coefficients also has
 nonnegative coefficients. -/
 theorem coeff_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R]
@@ -357,12 +366,10 @@ theorem coeff_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R
 
 /-- Evaluating any iterated formal derivative of a polynomial with nonnegative coefficients at a
 nonnegative element yields a nonnegative value. -/
-theorem eval_iterate_derivative_nonneg {R : Type*} [CommSemiring R] [PartialOrder R]
+theorem eval_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R]
     [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k : ℕ) {x : R} (hx : 0 ≤ x) :
-    0 ≤ (derivative^[k] p).eval x := by
-  rw [eval_eq_sum]
-  exact Finset.sum_nonneg fun d _ ↦
-    mul_nonneg (coeff_iterate_derivative_nonneg hp k d) (pow_nonneg hx d)
+    0 ≤ (derivative^[k] p).eval x :=
+  eval_nonneg_of_coeff_nonneg (coeff_iterate_derivative_nonneg hp k) hx
 
 /-- **The derivative of a power, without commutativity.**  Over any semiring, the derivative of
 `f ^ n` is the sum over the `n` positions of the factor that is differentiated. Over a commutative

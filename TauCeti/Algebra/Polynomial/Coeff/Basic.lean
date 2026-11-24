@@ -22,8 +22,9 @@ If `p` has smaller degree than `q`, then the largest degree at which the coeffic
 lexicographic comparison of coefficient sequences, starting from the top degree.
 
 Over an ordered semiring, products of polynomials with nonnegative coefficients retain
-nonnegative coefficients (`Polynomial.coeff_mul_nonneg`), and multiplying by `1 + C a * X ^ k`
-(`0 ≤ a`) does not decrease any coefficient (`Polynomial.coeff_le_coeff_mul_one_add_C_mul_X_pow`).
+nonnegative coefficients (`Polynomial.coeff_mul_nonneg`), and multiplying on the right by a
+polynomial with nonnegative coefficients and constant term at least `1` does not decrease any
+coefficient (`Polynomial.coeff_le_coeff_mul`).
 -/
 
 public section
@@ -72,17 +73,16 @@ theorem coeff_mul_nonneg {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRin
   rw [coeff_mul]
   exact Finset.sum_nonneg fun _ _ ↦ mul_nonneg (hp _) (hq _)
 
-/-- Multiplying a polynomial with nonnegative coefficients by `1 + C a * X ^ k` (`0 ≤ a`) does not
-decrease any coefficient. -/
-theorem coeff_le_coeff_mul_one_add_C_mul_X_pow {R : Type*} [Semiring R] [PartialOrder R]
-    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) {a : R} (ha : 0 ≤ a) (k d : ℕ) :
-    p.coeff d ≤ (p * (1 + C a * X ^ k)).coeff d := by
-  rw [mul_add, mul_one, coeff_add]
-  refine le_add_of_nonneg_right ?_
-  rw [← mul_assoc, coeff_mul_X_pow']
-  split_ifs with hd
-  · rw [coeff_mul_C]
-    exact mul_nonneg (hp (d - k)) ha
-  · exact le_rfl
+/-- Multiplying a polynomial with nonnegative coefficients on the right by a polynomial with
+nonnegative coefficients and constant term at least `1` does not decrease any coefficient. -/
+theorem coeff_le_coeff_mul {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {p q : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (hq : ∀ d, 0 ≤ q.coeff d) (hq0 : 1 ≤ q.coeff 0)
+    (d : ℕ) : p.coeff d ≤ (p * q).coeff d := by
+  rw [coeff_mul]
+  calc p.coeff d ≤ p.coeff d * q.coeff 0 := le_mul_of_one_le_right (hp d) hq0
+    _ ≤ ∑ x ∈ Finset.antidiagonal d, p.coeff x.1 * q.coeff x.2 :=
+      Finset.single_le_sum (f := fun x : ℕ × ℕ ↦ p.coeff x.1 * q.coeff x.2)
+        (a := (d, 0)) (fun x _ ↦ mul_nonneg (hp x.1) (hq x.2))
+        (Finset.mem_antidiagonal.mpr (add_zero d))
 
 end Polynomial
