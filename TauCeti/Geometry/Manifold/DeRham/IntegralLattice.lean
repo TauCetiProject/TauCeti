@@ -159,6 +159,15 @@ theorem homologyPeriod_integralLatticeEquiv
     homologyPeriod (integralLatticeEquiv I M g : deRhamCohomology I M 1) c = g c :=
   homologyPeriod_integralLatticeMap g c
 
+/-- The homomorphism `H₁(M; ℤ) → ℤ` attached to an integral class `x` takes the periods of `x`. -/
+@[simp]
+theorem intCast_integralLatticeEquiv_symm_apply (x : integralLattice I M)
+    (c : ((singularChains ℤ).obj (.of M)).homology 1) :
+    (((integralLatticeEquiv I M).symm x c : ℤ) : ℝ) =
+      homologyPeriod (x : deRhamCohomology I M 1) c := by
+  conv_rhs => rw [← (integralLatticeEquiv I M).apply_symm_apply x]
+  rw [homologyPeriod_integralLatticeEquiv]
+
 /-- **Integral classes are the classes of gauge transformations.** On a path-connected σ-compact
 manifold, a class `x ∈ H¹_dR(M)` is integral exactly when there is a smooth circle-valued map `u`
 with `∫_c dlog u = 2πi ⟨x, c⟩` for every class `c ∈ H₁(M; ℤ)`, that is, when `2πi x` is the class
@@ -173,8 +182,8 @@ theorem mem_integralLattice_iff_exists_circle {x : deRhamCohomology I M 1} :
     obtain ⟨u, hu⟩ := circlePeriodHom_surjective (I := I) (Multiplicative.ofAdd g)
     have hxg : x = integralLatticeEquiv I M g := (congrArg Subtype.val hg).symm
     refine ⟨u, fun c ↦ ?_⟩
-    rw [u.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu, hxg,
-      homologyPeriod_integralLatticeEquiv, toAdd_ofAdd, Complex.ofReal_intCast]
+    rw [u.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom]
+    simp [hu, hxg]
   · -- The periods of `dlog u` are `2πi` times integers.
     refine ⟨Multiplicative.toAdd (circlePeriodHom I M u) c, Complex.ofReal_injective ?_⟩
     refine mul_right_cancel₀ Complex.two_pi_I_ne_zero ?_
@@ -267,6 +276,16 @@ def integralLatticeBasis :
 theorem coe_integralLatticeBasis (i : Fin (finrank ℝ (deRhamCohomology I M 1))) :
     (integralLatticeBasis I M i : deRhamCohomology I M 1) = integralBasis I M i := by
   simp [integralLatticeBasis]
+
+/-- The integer coordinates of an integral class in the integral lattice basis are its periods on
+the integral homology classes. -/
+@[simp]
+theorem intCast_integralLatticeBasis_repr_apply (x : integralLattice I M)
+    (i : Fin (finrank ℝ (deRhamCohomology I M 1))) :
+    ((integralLatticeBasis I M).repr x i : ℝ) =
+      homologyPeriod (x : deRhamCohomology I M 1) (integralHomologyClass I M i) := by
+  rw [← integralBasis_repr_apply, ← eq_intCast (algebraMap ℤ ℝ)]
+  exact (integralBasis I M).restrictScalars_repr_apply ℤ _ i
 
 instance : Module.Free ℤ (integralLattice I M) :=
   .of_basis (integralLatticeBasis I M)

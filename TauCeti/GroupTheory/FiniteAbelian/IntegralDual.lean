@@ -21,7 +21,8 @@ its values `f c₁, …, f c_n` at suitable elements `c₁, …, c_n` of `H`.
 
 Torsion elements of `H` contribute nothing: a homomorphism into a torsion-free group is determined
 by its values on the free part of a splitting `H ≃ ℤⁿ × T` with `T` finite
-(`AddMonoidHom.apply_eq_sum_zsmul_of_addEquiv`). The basis vectors are the coordinate functionals
+(`AddMonoidHom.apply_eq_apply_symm_fst`,
+`AddMonoidHom.apply_eq_sum_zsmul_of_addEquiv`). The basis vectors are the coordinate functionals
 of the free part of `H`, read through the structure theorem
 `AddCommGroup.equiv_free_prod_directSum_zmod`.
 
@@ -36,18 +37,28 @@ open Module Submodule
 
 namespace AddMonoidHom
 
-/-- **A homomorphism into a torsion-free group only sees the free part.** If
-`e : H ≃+ (Fin n →₀ ℤ) × T` splits `H` into a free part and a finite group `T`, as in the structure
-theorem `AddCommGroup.equiv_free_prod_directSum_zmod`, then a homomorphism `f` from `H` into an
-abelian group without torsion is determined by its values on the elements
-`e.symm (single i 1, 0)` of the free part. -/
-theorem apply_eq_sum_zsmul_of_addEquiv {H T G : Type*} [AddCommGroup H] [AddCommGroup T] [Finite T]
-    [AddCommGroup G] [HasUniqueDiv G] {n : ℕ} (e : H ≃+ (Fin n →₀ ℤ) × T) (f : H →+ G) (x : H) :
-    f x = ∑ i, (e x).1 i • f (e.symm (Finsupp.single i 1, 0)) := by
+/-- **A homomorphism into a torsion-free group only sees the free part.** If `e : H ≃+ F × T`
+splits `H` into a factor `F` and a finite group `T`, then a homomorphism `f` from `H` into an
+abelian group without torsion kills the `T`-component: `f x` only depends on the `F`-component of
+`e x`. -/
+theorem apply_eq_apply_symm_fst {H F T G : Type*} [AddCommGroup H] [AddCommGroup F]
+    [AddCommGroup T] [Finite T] [AddCommGroup G] [HasUniqueDiv G] (e : H ≃+ F × T) (f : H →+ G)
+    (x : H) : f x = f (e.symm ((e x).1, 0)) := by
   -- The torsion part of `x` is killed by `f`.
   have htors : f (e.symm (0, (e x).2)) = 0 :=
     (f.isOfFinAddOrder ((e.symm.toAddMonoidHom.comp (AddMonoidHom.inr _ _)).isOfFinAddOrder
       (isOfFinAddOrder_of_finite (e x).2))).eq_zero'
+  have hx : x = e.symm ((e x).1, 0) + e.symm (0, (e x).2) := by
+    rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, AddEquiv.symm_apply_apply]
+  conv_lhs => rw [hx, map_add, htors, add_zero]
+
+/-- If `e : H ≃+ (Fin n →₀ ℤ) × T` splits `H` into a free part and a finite group `T`, as in the
+structure theorem `AddCommGroup.equiv_free_prod_directSum_zmod`, then a homomorphism `f` from `H`
+into an abelian group without torsion is determined by its values on the elements
+`e.symm (single i 1, 0)` of the free part. -/
+theorem apply_eq_sum_zsmul_of_addEquiv {H T G : Type*} [AddCommGroup H] [AddCommGroup T] [Finite T]
+    [AddCommGroup G] [HasUniqueDiv G] {n : ℕ} (e : H ≃+ (Fin n →₀ ℤ) × T) (f : H →+ G) (x : H) :
+    f x = ∑ i, (e x).1 i • f (e.symm (Finsupp.single i 1, 0)) := by
   have hfree : e.symm ((e x).1, 0) = ∑ i, (e x).1 i • e.symm (Finsupp.single i 1, 0) := by
     apply e.injective
     simp only [AddEquiv.apply_symm_apply, map_sum, map_zsmul]
@@ -55,9 +66,7 @@ theorem apply_eq_sum_zsmul_of_addEquiv {H T G : Type*} [AddCommGroup H] [AddComm
     · simp only [Prod.fst_sum, Prod.smul_fst, Finsupp.smul_single, smul_eq_mul, mul_one]
       exact ((e x).1.univ_sum_single).symm
     · simp [Prod.snd_sum]
-  have hx : x = e.symm ((e x).1, 0) + e.symm (0, (e x).2) := by
-    rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, AddEquiv.symm_apply_apply]
-  conv_lhs => rw [hx, map_add, htors, add_zero, hfree, map_sum]
+  rw [f.apply_eq_apply_symm_fst e x, hfree, map_sum]
   simp
 
 end AddMonoidHom
