@@ -368,11 +368,7 @@ def lieExpCenterProdDerivedContinuousMulEquiv
       ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
         LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X
       ≃ₜ* G :=
-  let e := centerFactorContinuousMulEquiv hc
-  ContinuousMulEquiv.trans
-    { toMulEquiv := e.toMulEquiv.prodCongr (MulEquiv.refl _)
-      continuous_toFun := e.continuous.prodMap continuous_id
-      continuous_invFun := e.symm.continuous.prodMap continuous_id }
+  ((centerFactorContinuousMulEquiv hc).prodCongr (ContinuousMulEquiv.refl _)).trans
     (centerProdDerivedContinuousMulEquiv hc)
 
 @[simp]
@@ -388,6 +384,7 @@ theorem lieExpCenterProdDerivedContinuousMulEquiv_apply
           LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
             (I := I)).toHom p.2 := by
   simp only [lieExpCenterProdDerivedContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
+    ContinuousMulEquiv.prodCongr_apply, ContinuousMulEquiv.refl_apply,
     centerProdDerivedContinuousMulEquiv_apply]
   exact congrArg (· * _) (toHom_centerFactorContinuousMulEquiv hc p.1)
 
