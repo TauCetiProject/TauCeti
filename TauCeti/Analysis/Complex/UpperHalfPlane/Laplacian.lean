@@ -245,19 +245,6 @@ section Slash
 
 variable {g : GL (Fin 2) ℝ}
 
-/-- Read through `ofComplex`, a Möbius transformation of positive determinant is holomorphic at
-every point of `ℍ`. -/
-private theorem analyticAt_coe_smul_ofComplex (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
-    (z : ℍ) : AnalyticAt ℂ (fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) z := by
-  have hev : (fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) =ᶠ[𝓝 (z : ℂ)]
-      fun w ↦ ((g 0 0 : ℂ) * w + g 0 1) / ((g 1 0 : ℂ) * w + g 1 1) := by
-    rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
-    filter_upwards with τ
-    simp [coe_smul_of_det_pos (by simpa using hg), num, denom]
-  refine AnalyticAt.congr ?_ hev.symm
-  exact (by fun_prop : AnalyticAt ℂ _ _).div (by fun_prop)
-    (by simpa [denom] using denom_ne_zero g z)
-
 /-- Composing `f ∘ ofComplex` with the Möbius transformation read through `ofComplex` gives
 `τ ↦ f (g • τ)` read through `ofComplex`. -/
 private theorem comp_ofComplex_comp_coe_smul_ofComplex (f : ℍ → ℂ) :
@@ -274,7 +261,7 @@ theorem hyperbolicLaplacian_comp_smul (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ)
   have hmz : ((g • ofComplex (z : ℂ) : ℍ) : ℂ) = ((g • z : ℍ) : ℂ) := by simp [ofComplex_apply]
   rw [hyperbolicLaplacian_apply, hyperbolicLaplacian_apply,
     ← comp_ofComplex_comp_coe_smul_ofComplex, laplacian_comp_eq_norm_deriv_sq_smul (hmz ▸ hf)
-      (analyticAt_coe_smul_ofComplex hg z).contDiffAt, hmz, deriv_smul hg z,
+      (analyticAt_smul hg z).contDiffAt, hmz, deriv_smul hg z,
     im_smul_eq_div_normSq, abs_of_pos (by simpa using hg)]
   have := denom_ne_zero g z
   rw [norm_div, norm_pow, Complex.real_smul, Complex.norm_real, Real.norm_of_nonneg hg.le,
@@ -323,7 +310,7 @@ theorem weightLaplacian_slash (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (k
   set m : ℂ → ℂ := fun w ↦ ((g • ofComplex w : ℍ) : ℂ)
   set J : ℂ → ℂ := fun w ↦ ((|g.det.val| : ℝ) : ℂ) ^ (k - 1) * denom g w ^ (-k)
   have hmz : m z = ((g • z : ℍ) : ℂ) := by simp [m, ofComplex_apply]
-  have hm : AnalyticAt ℂ m z := analyticAt_coe_smul_ofComplex hg z
+  have hm : AnalyticAt ℂ m z := analyticAt_smul hg z
   have hFm : ContDiffAt ℝ 2 (f ∘ ofComplex) (m z) := hmz ▸ hf
   have hJ : ContDiffAt ℂ 2 J z := by
     refine (analyticAt_const.mul (AnalyticAt.zpow ?_ (denom_ne_zero g z))).contDiffAt
