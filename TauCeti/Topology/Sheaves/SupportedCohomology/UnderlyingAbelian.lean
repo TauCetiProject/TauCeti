@@ -31,11 +31,11 @@ faithful exact functor preserving injectives.
 
 For cohomology with supports this gives an additive equivalence from `H_Sⁿ(W, F)` computed with
 module coefficients to `H_Sⁿ(W, F)` computed with the underlying abelian sheaf
-(`CategoryTheory.Sheaf.supportedModuleHAddEquiv`). It is the identity on supported sections in
-degree zero, and it is compatible with restriction to smaller opens, with morphisms of coefficient
-sheaves and with the connecting maps of short exact sequences of coefficients. As presheaves,
-`W ↦ H_Sⁿ(W, F)` computed with module coefficients has underlying presheaf of abelian groups
-`W ↦ H_Sⁿ(W, F)` computed with abelian coefficients
+(`CategoryTheory.Sheaf.supportedModuleHForgetAddEquiv`). It is the identity on supported sections
+in degree zero, and it is compatible with restriction to smaller opens, with morphisms of
+coefficient sheaves and with the connecting maps of short exact sequences of coefficients. As
+presheaves, `W ↦ H_Sⁿ(W, F)` computed with module coefficients has underlying presheaf of abelian
+groups `W ↦ H_Sⁿ(W, F)` computed with abelian coefficients
 (`CategoryTheory.Sheaf.supportedModuleHPresheafForgetIso`). This is how statements about the
 abelian theory transfer to sheaves of modules, for instance the vanishing criterion
 `CategoryTheory.Sheaf.isZero_supportedHSheaf_iff_isZero_supportedModuleHSheaf` for `𝓗_Sⁿ(F)`.
@@ -43,11 +43,11 @@ abelian theory transfer to sheaves of modules, for instance the vanishing criter
 ## Main declarations
 
 * `TauCeti.CategoryTheory.relativeExtToForget_bijective`: the relative comparison is bijective;
-* `CategoryTheory.Sheaf.supportedModuleHAddEquiv`: `H_Sⁿ(W, F)` computed with module coefficients
-  is additively equivalent to `H_Sⁿ(W, F)` computed with the underlying abelian sheaf;
-* `CategoryTheory.Sheaf.supportedModuleHAddEquiv_supportedModuleHPresheaf_map`,
-  `CategoryTheory.Sheaf.supportedModuleHAddEquiv_comp`: compatibility with restriction and with
-  `Ext` classes between coefficient sheaves;
+* `CategoryTheory.Sheaf.supportedModuleHForgetAddEquiv`: `H_Sⁿ(W, F)` computed with module
+  coefficients is additively equivalent to `H_Sⁿ(W, F)` computed with the underlying abelian sheaf;
+* `CategoryTheory.Sheaf.supportedModuleHForgetAddEquiv_supportedModuleHPresheaf_map`,
+  `CategoryTheory.Sheaf.supportedModuleHForgetAddEquiv_comp`: compatibility with restriction and
+  with `Ext` classes between coefficient sheaves;
 * `CategoryTheory.Sheaf.supportedModuleHPresheafForgetIso`: the isomorphism of presheaves of
   abelian groups.
 
@@ -120,46 +120,46 @@ noncomputable section
 /-- Cohomology with supports in `S` of a sheaf of `R`-modules `F`, computed with module
 coefficients, is additively equivalent to the cohomology with supports in `S` of the underlying
 abelian sheaf of `F`. -/
-def supportedModuleHAddEquiv (S : Closeds X) (W : Opens X) (n : ℕ) :
+def supportedModuleHForgetAddEquiv (S : Closeds X) (W : Opens X) (n : ℕ) :
     F.supportedModuleH S W n ≃+
       ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedH S W n :=
   AddEquiv.ofBijective (relativeExtToForget _ R (S.complInclusion W) F n)
     (relativeExtToForget_bijective R (S.complInclusion W) F n)
 
-lemma supportedModuleHAddEquiv_apply (S : Closeds X) (W : Opens X) {n : ℕ}
+lemma supportedModuleHForgetAddEquiv_apply (S : Closeds X) (W : Opens X) {n : ℕ}
     (x : F.supportedModuleH S W n) :
-    F.supportedModuleHAddEquiv S W n x = relativeExtToForget _ R (S.complInclusion W) F n x :=
+    F.supportedModuleHForgetAddEquiv S W n x = relativeExtToForget _ R (S.complInclusion W) F n x :=
   (rfl)
 
-/-- In degree zero, the equivalence `supportedModuleHAddEquiv` is the identity on the sections of
-`F` supported in `S`. -/
-lemma coe_supportedHZeroEquiv_supportedModuleHAddEquiv (S : Closeds X) (W : Opens X)
+/-- In degree zero, the equivalence `supportedModuleHForgetAddEquiv` is the identity on the sections
+of `F` supported in `S`. -/
+lemma coe_supportedHZeroEquiv_supportedModuleHForgetAddEquiv (S : Closeds X) (W : Opens X)
     (x : F.supportedModuleH S W 0) :
     ((((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedHZeroEquiv S
-        W (F.supportedModuleHAddEquiv S W 0 x)).val : F.obj.obj (op W)) =
+        W (F.supportedModuleHForgetAddEquiv S W 0 x)).val : F.obj.obj (op W)) =
       (F.supportedModuleHZeroEquiv S W x).val := by
   rw [coe_supportedHZeroEquiv_apply, coe_supportedModuleHZeroEquiv_apply]
   exact coe_relativeH'_zeroEquiv_relativeExtToForget _ R (S.complInclusion W) F x
 
-/-- The equivalence `supportedModuleHAddEquiv` commutes with restriction to smaller opens. -/
-lemma supportedModuleHAddEquiv_supportedModuleHPresheaf_map (S : Closeds X) {n : ℕ}
+/-- The equivalence `supportedModuleHForgetAddEquiv` commutes with restriction to smaller opens. -/
+lemma supportedModuleHForgetAddEquiv_supportedModuleHPresheaf_map (S : Closeds X) {n : ℕ}
     {W W' : (Opens X)ᵒᵖ} (h : W ⟶ W') (x : F.supportedModuleH S W.unop n) :
-    F.supportedModuleHAddEquiv S W'.unop n ((F.supportedModuleHPresheaf S n).map h x) =
+    F.supportedModuleHForgetAddEquiv S W'.unop n ((F.supportedModuleHPresheaf S n).map h x) =
       ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedHRestrict S
-        (leOfHom h.unop) n (F.supportedModuleHAddEquiv S W.unop n x) := by
+        (leOfHom h.unop) n (F.supportedModuleHForgetAddEquiv S W.unop n x) := by
   rw [supportedHRestrict_apply, relativeH'.map_apply]
   exact relativeExtToForget_mk₀_relativeFreeModuleYonedaSheafMap_comp _ R
     (S.complInclusion W'.unop) (S.complInclusion W.unop) _ h.unop rfl F x
 
-/-- The equivalence `supportedModuleHAddEquiv` is natural in the coefficients: it carries the
+/-- The equivalence `supportedModuleHForgetAddEquiv` is natural in the coefficients: it carries the
 Yoneda product with an `Ext` class between sheaves of `R`-modules, such as a morphism of sheaves or
 the connecting class of a short exact sequence, to the Yoneda product with the underlying `Ext`
 class of abelian sheaves. -/
-lemma supportedModuleHAddEquiv_comp {G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)}
-    (S : Closeds X) (W : Opens X) {m n k : ℕ} (x : F.supportedModuleH S W m) (α : Ext F G n)
-    (h : m + n = k) :
-    G.supportedModuleHAddEquiv S W k (x.comp α h) =
-      (F.supportedModuleHAddEquiv S W m x).comp
+lemma supportedModuleHForgetAddEquiv_comp
+    {G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} (S : Closeds X) (W : Opens X)
+    {m n k : ℕ} (x : F.supportedModuleH S W m) (α : Ext F G n) (h : m + n = k) :
+    G.supportedModuleHForgetAddEquiv S W k (x.comp α h) =
+      (F.supportedModuleHForgetAddEquiv S W m x).comp
         (α.mapExactFunctor (sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}))) h :=
   relativeExtToForget_comp _ R _ x α h
 
@@ -169,16 +169,16 @@ def supportedModuleHPresheafForgetIso (S : Closeds X) (n : ℕ) :
     F.supportedModuleHPresheaf S n ⋙ forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u} ≅
       ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedHPresheaf
         S n :=
-  NatIso.ofComponents (fun W ↦ (F.supportedModuleHAddEquiv S W.unop n).toAddCommGrpIso)
+  NatIso.ofComponents (fun W ↦ (F.supportedModuleHForgetAddEquiv S W.unop n).toAddCommGrpIso)
     fun {W W'} h ↦ by
       ext x
-      exact F.supportedModuleHAddEquiv_supportedModuleHPresheaf_map S h x
+      exact F.supportedModuleHForgetAddEquiv_supportedModuleHPresheaf_map S h x
 
 @[simp↓]
 lemma supportedModuleHPresheafForgetIso_hom_app_apply (S : Closeds X) (n : ℕ) (W : (Opens X)ᵒᵖ)
     (x : F.supportedModuleH S W.unop n) :
     (F.supportedModuleHPresheafForgetIso S n).hom.app W x =
-      F.supportedModuleHAddEquiv S W.unop n x :=
+      F.supportedModuleHForgetAddEquiv S W.unop n x :=
   (rfl)
 
 @[simp↓]
@@ -186,7 +186,7 @@ lemma supportedModuleHPresheafForgetIso_inv_app_apply (S : Closeds X) (n : ℕ) 
     (x : ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F).supportedH S
       W.unop n) :
     (F.supportedModuleHPresheafForgetIso S n).inv.app W x =
-      (F.supportedModuleHAddEquiv S W.unop n).symm x :=
+      (F.supportedModuleHForgetAddEquiv S W.unop n).symm x :=
   (rfl)
 
 end

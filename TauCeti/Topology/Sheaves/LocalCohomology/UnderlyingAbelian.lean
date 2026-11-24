@@ -55,18 +55,18 @@ theorem isZero_supportedHSheaf_iff_isZero_supportedModuleHSheaf {n : ℕ} :
     -- the underlying abelian class of `c` vanishes locally, and the comparison is injective
     obtain ⟨V, hVW, hxV, hV⟩ :=
       exists_supportedHRestrict_eq_zero_of_isZero_supportedHSheaf _ S h
-        (F.supportedModuleHAddEquiv S W n c) hx
-    exact ⟨V, hVW, hxV, (F.supportedModuleHAddEquiv S V n).injective
-      ((F.supportedModuleHAddEquiv_supportedModuleHPresheaf_map S (homOfLE hVW).op c).trans
+        (F.supportedModuleHForgetAddEquiv S W n c) hx
+    exact ⟨V, hVW, hxV, (F.supportedModuleHForgetAddEquiv S V n).injective
+      ((F.supportedModuleHForgetAddEquiv_supportedModuleHPresheaf_map S (homOfLE hVW).op c).trans
         (hV.trans (map_zero _).symm))⟩
   · refine fun h ↦ (TopCat.Presheaf.isZero_presheafToSheaf_obj_iff _).2 fun x W c hx ↦ ?_
     -- `c` is the image of a module-valued class, which vanishes locally
-    obtain ⟨c, rfl⟩ := (F.supportedModuleHAddEquiv S W n).surjective c
+    obtain ⟨c, rfl⟩ := (F.supportedModuleHForgetAddEquiv S W n).surjective c
     obtain ⟨V, hVW, hxV, hV⟩ :=
       F.exists_supportedModuleHPresheaf_map_eq_zero_of_isZero_supportedModuleHSheaf S h c hx
     exact ⟨V, hVW, hxV,
-      (F.supportedModuleHAddEquiv_supportedModuleHPresheaf_map S (homOfLE hVW).op c).symm.trans
-        ((congrArg _ hV).trans (map_zero _))⟩
+      (F.supportedModuleHForgetAddEquiv_supportedModuleHPresheaf_map S (homOfLE hVW).op
+        c).symm.trans ((congrArg _ hV).trans (map_zero _))⟩
 
 end
 
