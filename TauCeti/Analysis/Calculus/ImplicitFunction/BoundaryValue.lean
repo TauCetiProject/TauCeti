@@ -32,7 +32,7 @@ in the form used for boundary-value problems; it has no PDE content of its own. 
 ## Main declarations
 
 * `ContDiffAt.exists_boundaryValue_implicitFunction`: the solution map, its uniqueness, its
-  derivative, its Lipschitz bound and its smoothness.
+  derivative, its linear bound at `(p₀, T u₀)` and its smoothness.
 -/
 
 public section
@@ -54,8 +54,9 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 bounded linear map such that `A v = (∂ᵤN(p₀, u₀) v, T v)` is invertible. Then there is a map
 `ψ : P × Z → X` with `ψ(p₀, T u₀) = u₀` such that, near `(p₀, T u₀)`, `u = ψ(p, φ)` solves
 `N(p, u) = 0`, `T u = φ`; near `((p₀, T u₀), u₀)` it is the only solution; `ψ` has strict
-derivative `(dp, dφ) ↦ A⁻¹(-∂ₚN(p₀, u₀) dp, dφ)` at `(p₀, T u₀)`; `ψ` is Lipschitz there, so
-that `‖ψ(p, φ) - u₀‖ ≤ C ‖(p, φ) - (p₀, T u₀)‖`; and `ψ` is `C^n` at `(p₀, T u₀)`. -/
+derivative `(dp, dφ) ↦ A⁻¹(-∂ₚN(p₀, u₀) dp, dφ)` at `(p₀, T u₀)`; the solution satisfies
+the linear bound `‖ψ(p, φ) - u₀‖ ≤ C ‖(p, φ) - (p₀, T u₀)‖` near `(p₀, T u₀)`; and `ψ` is
+`C^n` at `(p₀, T u₀)`. -/
 theorem exists_boundaryValue_implicitFunction {N : P × X → Y} {p₀ : P} {u₀ : X} {n : ℕ∞ω}
     (hN : ContDiffAt 𝕜 n N (p₀, u₀)) (hn : n ≠ 0) (hN₀ : N (p₀, u₀) = 0) (T : X →L[𝕜] Z)
     (hA : ((fderiv 𝕜 N (p₀, u₀) ∘L .inr 𝕜 P X).prod T).IsInvertible) :
@@ -98,15 +99,13 @@ theorem exists_boundaryValue_implicitFunction {N : P × X → Y} {p₀ : P} {u�
     have h := hf.hasStrictFDerivAt_implicitFunction hn hinv
     rwa [hinr, hinl, ContinuousLinearMap.comp_neg, neg_neg] at h
   have hψ₀ : ψ (p₀, T u₀) = u₀ := hf.implicitFunction_apply_self hn hinv
-  obtain ⟨K, s, hs, hK⟩ := hderiv.exists_lipschitzOnWith
   refine ⟨ψ, hψ₀, ?_, ?_, hderiv,
-    ⟨K, Filter.mem_of_superset hs fun q hq ↦ ?_⟩, hf.contDiffAt_implicitFunction hn hinv⟩
+    ?_, hf.contDiffAt_implicitFunction hn hinv⟩
   · filter_upwards [hf.eventually_apply_implicitFunction hn hinv] with q hq
     exact (hsol (q, ψ q)).1 hq
   · filter_upwards [hf.eventually_apply_eq_iff_implicitFunction hn hinv] with w hw
     rw [← hsol w]
     exact hw
-  · have h := hK.norm_sub_le hq (mem_of_mem_nhds hs)
-    rwa [hψ₀] at h
+  · simpa only [hψ₀] using hderiv.hasFDerivAt.isBigO_sub.bound
 
 end ContDiffAt
