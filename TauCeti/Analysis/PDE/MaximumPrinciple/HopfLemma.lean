@@ -64,6 +64,8 @@ over a preconnected set, `IsPreconnected.eqOn_const_of_eventually_eq`.
   constant.
 * `TauCeti.PDE.pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: the
   derivative form, the outer normal derivative is positive where it exists.
+* `TauCeti.PDE.pos_fderiv_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: the full derivative
+  form, `0 < fderiv ℝ u x₀ (x₀ - y)` when `u` is differentiable at `x₀`.
 * `TauCeti.PDE.eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax`: a
   subsolution with a nonnegative local maximum is constant near it.
 * `TauCeti.PDE.eqOn_const_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isMaxOn`: **the strong
