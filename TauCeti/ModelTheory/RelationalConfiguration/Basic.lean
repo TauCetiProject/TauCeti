@@ -84,13 +84,6 @@ variable {L : Language} {V W X : Type*}
 /-- The atom with relation symbol `R` and argument tuple `x`. -/
 def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
 
-/-- Two atoms of the same arity agree exactly when their relation symbols and tuples do. -/
-@[simp]
-theorem atom_inj {n : ℕ} {R S : L.Relations n} {x y : Fin n → V} :
-    atom R x = atom S y ↔ R = S ∧ x = y := by
-  refine ⟨fun h => ?_, fun h => h.1 ▸ h.2 ▸ rfl⟩
-  exact Prod.mk.inj (eq_of_heq (Sigma.mk.inj_iff.1 h).2)
-
 /-- Every atom is `atom R x` for its relation symbol and tuple. -/
 @[elab_as_elim]
 theorem Atom.induction_atom {motive : Atom L V → Prop}
@@ -188,8 +181,9 @@ instance [∀ n, Countable (L.Relations n)] [Countable V] : Countable (Atom L V)
 /-- On an infinite carrier, a relation symbol of positive arity gives infinitely many atoms. -/
 theorem Atom.infinite_of_relations [Infinite V] {n : ℕ} (hn : n ≠ 0) (R : L.Relations n) :
     Infinite (Atom L V) :=
-  Infinite.of_injective (fun v : V => atom R fun _ => v) fun _ _ h =>
-    congrFun (atom_inj.1 h).2 ⟨0, Nat.pos_of_ne_zero hn⟩
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
+  have : Nonempty (L.Relations n) := ⟨R⟩
+  Infinite.sigma_of_right (β := fun n => L.Relations n × (Fin n → V)) (a := n)
 
 /-- Configurations carry the product σ-algebra, one Boolean coordinate per atom. -/
 instance : MeasurableSpace (RelationalConfiguration L V) :=

@@ -19,13 +19,14 @@ permutation of the carrier is continuous. Restriction along a vertex map is cont
 jointly continuous in the vertex map when the target carrier is discrete. Specifying an atom's
 truth value gives a clopen, measurable cylinder, and so does specifying the truth values of a
 finite set of atoms (`SymbolicDynamics.FullShift.cylinder`, clopen by
-`TauCeti.RelationalConfiguration.isClopen_cylinder`); these finite cylinders form a
-basis of the topology (`TauCeti.RelationalConfiguration.isTopologicalBasis_cylinder`). On
-countable carriers in countable relational vocabularies the topology is Polish and its Borel
-σ-algebra is the existing product σ-algebra. There are at most continuum many configurations, and
-exactly continuum many on a countably infinite carrier when some relation symbol has positive
-arity (`TauCeti.RelationalConfiguration.mk_eq_continuum`). The same construction handles finite
-and empty carriers.
+`SymbolicDynamics.FullShift.isOpen_cylinder` and `SymbolicDynamics.FullShift.isClosed_cylinder`);
+these finite cylinders form a basis of the topology
+(`TauCeti.RelationalConfiguration.isTopologicalBasis_cylinder`). On countable carriers in
+countable relational vocabularies the topology is Polish and its Borel σ-algebra is the existing
+product σ-algebra. There are at most continuum many configurations, and exactly continuum many on
+a countably infinite carrier when some relation symbol has positive arity
+(`TauCeti.RelationalConfiguration.mk_eq_continuum`). The same construction handles finite and
+empty carriers.
 
 For a discrete carrier, the *logic action* of its permutation group, with the topology of
 pointwise convergence, is jointly continuous, for every language, so stabilizers of
@@ -111,48 +112,28 @@ theorem isClopen_setOf_eval (a : Atom L V) (b : Bool) :
   (isClopen_discrete {b}).preimage (continuous_eval a)
 
 /-- A finite cylinder `SymbolicDynamics.FullShift.cylinder s f` of configurations, those agreeing
-with `f` on the finite set `s` of atoms, is clopen. -/
-theorem isClopen_cylinder (s : Finset (Atom L V)) (f : Atom L V → Bool) :
-    IsClopen (SymbolicDynamics.FullShift.cylinder s f : Set (RelationalConfiguration L V)) :=
-  ⟨SymbolicDynamics.FullShift.isClosed_cylinder s f,
-    SymbolicDynamics.FullShift.isOpen_cylinder s f⟩
-
-/-- A finite cylinder is measurable. -/
+with `f` on the finite set `s` of atoms, is measurable. -/
 theorem measurableSet_cylinder (s : Finset (Atom L V)) (f : Atom L V → Bool) :
     MeasurableSet
       (SymbolicDynamics.FullShift.cylinder s f : Set (RelationalConfiguration L V)) := by
-  have h : (SymbolicDynamics.FullShift.cylinder s f : Set (RelationalConfiguration L V)) =
-      ⋂ a ∈ s, {c : RelationalConfiguration L V | c.eval a = f a} := by
-    ext c
-    exact ⟨fun h ↦ Set.mem_iInter₂.2 fun a ha ↦ (eval_def c a).trans (h a ha),
-      fun h a ha ↦ (eval_def c a).symm.trans (Set.mem_iInter₂.1 h a ha)⟩
-  rw [h]
-  exact s.measurableSet_biInter fun a _ => measurableSet_setOf_eval a (f a)
-
-/-- A configuration lies in the finite cylinder of its own values on any finite set of atoms. -/
-theorem mem_cylinder_eval (s : Finset (Atom L V)) (c : RelationalConfiguration L V) :
-    c ∈ (SymbolicDynamics.FullShift.cylinder s c.eval : Set (RelationalConfiguration L V)) :=
-  fun a _ => (eval_def c a).symm
+  rw [SymbolicDynamics.FullShift.cylinder_eq_set_pi]
+  exact MeasurableSet.pi s.countable_toSet fun a _ => measurableSet_singleton (f a)
 
 /-- The finite cylinders form a basis of the topology of the coding space. -/
 theorem isTopologicalBasis_cylinder :
     IsTopologicalBasis
       (Set.range fun p : Finset (Atom L V) × (Atom L V → Bool) =>
         (SymbolicDynamics.FullShift.cylinder p.1 p.2 : Set (RelationalConfiguration L V))) := by
-  refine isTopologicalBasis_of_isOpen_of_nhds ?_ fun c U hc hU => ?_
-  · rintro _ ⟨⟨s, f⟩, rfl⟩
-    exact (isClopen_cylinder s f).isOpen
-  · -- The topology on configurations is the product topology of `Atom L V → Bool` (the instance
-    -- is `inferInstanceAs`), so `isOpen_pi_iff` applies to `U` once its type is read as that
-    -- product.
-    obtain ⟨I, u, hu, hIU⟩ :=
-      isOpen_pi_iff.1 (show IsOpen (X := Atom L V → Bool) U from hU) c hc
-    refine ⟨SymbolicDynamics.FullShift.cylinder I (eval c), ⟨(I, eval c), rfl⟩, ?_,
-      fun d hd => hIU fun a ha => ?_⟩
-    · exact mem_cylinder_eval I c
-    have h : d a = c a := (hd a ha).trans (eval_def c a)
-    rw [h]
-    exact (hu a ha).2
+  convert isTopologicalBasis_pi fun _ : Atom L V => isTopologicalBasis_singletons Bool using 1
+  ext S
+  constructor
+  · rintro ⟨⟨s, f⟩, rfl⟩
+    exact ⟨fun a => {f a}, s, fun a _ => ⟨f a, rfl⟩,
+      SymbolicDynamics.FullShift.cylinder_eq_set_pi s f⟩
+  · rintro ⟨U, s, hU, rfl⟩
+    choose! f hf using hU
+    exact ⟨(s, f), (SymbolicDynamics.FullShift.cylinder_eq_set_pi s f).trans
+      (Set.pi_congr rfl fun a ha => (hf a ha).symm)⟩
 
 instance [∀ n, Countable (L.Relations n)] [Countable V] :
     SecondCountableTopology (RelationalConfiguration L V) :=
@@ -183,11 +164,8 @@ theorem mk_eq_continuum (L : FirstOrder.Language) (V : Type*)
     [∀ n, Countable (L.Relations n)] [Countable V] [Infinite V] {n : ℕ} (hn : n ≠ 0)
     (R : L.Relations n) :
     Cardinal.mk (RelationalConfiguration L V) = Cardinal.continuum := by
-  refine (mk_le_continuum L V).antisymm ?_
   have := Atom.infinite_of_relations (V := V) hn R
   rw [RelationalConfiguration, Cardinal.mk_arrow, Cardinal.mk_bool, Cardinal.lift_ofNat,
-    ← Cardinal.two_power_aleph0]
-  exact Cardinal.power_le_power_left two_ne_zero
-    (by simp)
+    Cardinal.mk_eq_aleph0 (Atom L V), Cardinal.lift_aleph0, Cardinal.two_power_aleph0]
 
 end TauCeti.RelationalConfiguration
