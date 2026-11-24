@@ -206,6 +206,7 @@ theorem homEquiv_apply_symm_homEquiv (e : N ≃ₙ N') (x y : W) (a : N'.Hom x y
   simp [h, homEquiv_homOfEq, inverseHomEquiv_apply]
 
 /-- The equivalence of all arrow identities, including their endpoints. -/
+@[expose]
 def totalHomEquiv (e : N ≃ₙ N') : (Σ x y, N.Hom x y) ≃ (Σ x y, N'.Hom x y) :=
   Equiv.sigmaCongr e.vertexEquiv fun x ↦ Equiv.sigmaCongr e.vertexEquiv (e.homEquiv x)
 
@@ -456,6 +457,7 @@ theorem isCirculation_assignmentEquiv_iff [Fintype V] [Fintype W]
     rw [e.excessAt_assignmentEquiv f x, hf x]
 
 /-- A network isomorphism as a prefunctor between its explicit arrow families. -/
+@[expose]
 def toPrefunctor (e : N ≃ₙ N') :
     @Prefunctor V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) :=
   @Prefunctor.mk V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.vertexEquiv
@@ -476,6 +478,7 @@ theorem toPrefunctor_trans {N'' : Network K X} (e : N ≃ₙ N') (f : N' ≃ₙ 
   rfl
 
 /-- Transport a directed path along a network isomorphism. -/
+@[expose]
 def mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
     ArrowWalk N'.Hom (e.vertexEquiv x) (e.vertexEquiv y) :=
   @Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) e.toPrefunctor x y p
