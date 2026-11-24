@@ -5,28 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Monoidal.Cup
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Cochain
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
 
 /-!
-# Koszul interchange of cochains and cup products
+# Koszul interchange of cup products
 
 For nonnegative chain complexes `A` and `B` in a braided preadditive monoidal category, the
 signed interchange `HomologicalComplex.tensorBraiding A B : A ⊗ B ≅ B ⊗ A` is, on the summand of
 bidegree `(p, q)`, the coefficient braiding multiplied by the Koszul sign `(-1)^(p*q)`
 (`HomologicalComplex.ιTensorObj_tensorBraiding_hom_f` with `ComplexShape.σ_down_ℕ`). This file
-computes how it acts on tensor products of cochains and on cup products.
+computes how it acts on cup products of cochains and on cohomology, building on the chain-level
+tensor-cochain interchange `ChainComplex.tensorBraiding_hom_f_comp_tensorCochain`.
 
-The tensor-cochain formula is the chain-level interchange needed to compare the Alexander–Whitney
-diagonal with its transpose, and hence to prove graded commutativity of cup products. The cup
-formulas give signed interchange along a transposed diagonal, with the braided coefficient
+The cup formulas give signed interchange along a transposed diagonal, with the braided coefficient
 pairing. No commutativity is asserted for the Alexander–Whitney diagonal itself.
 
 ## Main results
 
-* `ChainComplex.tensorBraiding_hom_f_comp_tensorCochain`: signed tensor-cochain
-  interchange in every output degree.
 * `ChainComplex.cupCochain_tensorBraiding_hom`: signed cup-cochain interchange.
 * `ChainComplex.cup_tensorBraiding_hom`: signed interchange on cohomology.
 
@@ -45,34 +42,8 @@ open CategoryTheory Limits MonoidalCategory HomologicalComplex TauCeti.ChainComp
 namespace ChainComplex
 
 variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
-  [MonoidalPreadditive C]
+  [MonoidalPreadditive C] [BraidedCategory C]
   (A B : ChainComplex C ℕ) [A.HasTensor B] [B.HasTensor A]
-
-section Cochain
-
-variable [BraidedCategory C]
-
-/-- Precomposing a tensor product of cochains with the signed interchange swaps the cochains and
-braids their coefficient pairing, with sign `(-1)^(p*q)`. This holds in every output degree,
-including `n ≠ p + q`, where both sides are zero. -/
-@[reassoc]
-lemma tensorBraiding_hom_f_comp_tensorCochain {M N P : C} (μ : N ⊗ M ⟶ P) {p q : ℕ}
-    (φ : A.X p ⟶ M) (ψ : B.X q ⟶ N) (n : ℕ) :
-    (tensorBraiding A B).hom.f n ≫ tensorCochain μ ψ φ n =
-      ((-1 : ℤ) ^ (p * q)) • tensorCochain ((β_ M N).hom ≫ μ) φ ψ n := by
-  refine mapBifunctor.hom_ext fun i j (h : i + j = n) ↦ ?_
-  rw [ιTensorObj_tensorBraiding_hom_f_assoc, ComplexShape.σ_down_ℕ, Units.smul_def,
-    Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, Preadditive.comp_zsmul]
-  by_cases hi : i = p
-  · subst i
-    by_cases hj : j = q
-    · subst j
-      simp only [ιTensorObj_tensorCochain, Preadditive.zsmul_comp, Category.assoc]
-      rw [BraidedCategory.braiding_naturality_assoc]
-    · simp [ιTensorObj_tensorCochain_of_ne_left _ _ _ _ hj,
-        ιTensorObj_tensorCochain_of_ne_right _ _ _ _ hj]
-  · simp [ιTensorObj_tensorCochain_of_ne_right _ _ _ _ hi,
-      ιTensorObj_tensorCochain_of_ne_left _ _ _ _ hi]
 
 /-- Transposing a diagonal swaps its cup product of cochains, braids the pairing, and
 introduces the Koszul sign. -/
@@ -83,8 +54,6 @@ lemma cupCochain_tensorBraiding_hom {E : ChainComplex C ℕ} {M N P : C} (k : Ty
       ((-1 : ℤ) ^ (p * q)) • cupCochain k D ((β_ M N).hom ≫ μ) p q n h φ ψ := by
   simp only [cupCochain_apply, HomologicalComplex.comp_f, Category.assoc,
     tensorBraiding_hom_f_comp_tensorCochain, Preadditive.comp_zsmul]
-
-end Cochain
 
 variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C]
   [MonoidalPreadditive C] [BraidedCategory C]

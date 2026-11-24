@@ -79,9 +79,8 @@ lemma tensorBraiding_hom_comp_shuffle :
         chainComplexMap (β_ K L).hom (S ⊗ R) := by
   ext n : 1
   refine mapBifunctor.hom_ext fun p q h ↦ tensorChainComplexX_hom_ext fun x y ↦ ?_
-  simp only [comp_f, ιTensorObj_tensorBraiding_hom_f_assoc, ComplexShape.σ_down_ℕ,
-    Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one,
-    Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
+  simp only [comp_f, ιTensorObj_tensorBraiding_hom_f_assoc, Units.smul_def,
+    ComplexShape.val_σ_down_ℕ, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
     BraidedCategory.braiding_naturality_assoc, ιChainComplex_tensorHom_ιChainComplex_shuffle_f,
     ιChainComplex_tensorHom_ιChainComplex_shuffle_f_assoc,
     chainComplexMap_f_chainComplexFunctor_map_app_f_assoc,
