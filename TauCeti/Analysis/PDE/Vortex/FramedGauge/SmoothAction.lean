@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.LieGroup
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge.RealChart
 
 /-!
 # The smooth action of the Sobolev gauge group on the framed vortex fields
@@ -29,7 +30,9 @@ functions of `u ∈ G_(k+1)`, the action is smooth in the affine coordinates of 
 (`TauCeti.Vortex.SobolevFieldSpace.contMDiff_smulCoord_reSubOne_imPart`); in particular every
 orbit map `u ↦ u · x` is smooth (`TauCeti.Vortex.SobolevFieldSpace.contMDiff_subRef_smul`). In
 exponential coordinates `u = exp (i F)`, the action is jointly smooth in the real phase `F` and
-the coordinates `y` (`TauCeti.Vortex.SobolevFieldSpace.contDiff_smulCoord_expGauge`).
+the coordinates `y` (`TauCeti.Vortex.SobolevFieldSpace.contDiff_smulCoord_expGauge`), and so in the
+real coordinates `realSubRef` of the fields
+(`TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_expGauge_smul_ofRealSubRef`).
 
 **The differential.** In the exponential chart at the identity, `R = cos F - 1` has derivative `0`
 and `J = sin F` has derivative `G ↦ G` at `F = 0`. Differentiating `smulCoord` there gives the
@@ -63,6 +66,8 @@ makes the slices charts of `A_m^k / G_(k+1)`; that slice theorem is not proved h
   smooth in the affine coordinates of `A_m^k`, and so are its orbit maps.
 * `TauCeti.Vortex.SobolevFieldSpace.contDiff_smulCoord_expGauge`: the action is smooth in
   exponential coordinates, jointly in the phase and the field.
+* `TauCeti.Vortex.SobolevFieldSpace.contDiff_realSubRef_expGauge_smul_ofRealSubRef`: the same in the
+  real coordinates of the fields.
 * `TauCeti.Vortex.SobolevFieldSpace.gaugeDirectionCoord`: the infinitesimal gauge action `d₀` in
   these coordinates, a bounded complex-linear map `H^(k+1)(ℂ) → H^k(ℂ)⁴`.
 * `TauCeti.Vortex.SobolevFieldSpace.hasFDerivAt_smulCoord_expGauge_zero`,
@@ -140,6 +145,41 @@ theorem contDiff_smulCoord_expGauge :
   have hJ := contMDiff_iff_contDiff.1 (contMDiff_imPart.comp (contMDiff_expGauge (hs := hs) ∞))
   exact (contDiff_smulCoord.restrict_scalars ℝ).comp
     ((hR.comp contDiff_fst).prodMk ((hJ.comp contDiff_fst).prodMk contDiff_snd))
+
+/-- **The action in exponential and real coordinates is smooth**: the real coordinates of
+`exp (i F) · x` depend smoothly on the real phase `F ∈ H^(k+1)` and on the real coordinates `u` of
+the field `x = x_m + u` (`ofRealSubRef`). -/
+theorem contDiff_realSubRef_expGauge_smul_ofRealSubRef :
+    ContDiff ℝ ∞ fun p : realSubmodule ℂ (zero_le_one.trans hs.le) ×
+        (Fin 4 → realSubmodule ℂ (k.cast_nonneg : (0 : ℝ) ≤ k)) ↦
+      realSubRef k.cast_nonneg
+        (expGauge hs p.1 • ofRealSubRef (f := f) (m := m) (Nat.one_lt_cast.2 Fact.out) p.2) := by
+  set L : (Fin 4 → H^{(k : ℝ)}(ℂ)) →L[ℝ] Fin 4 → realSubmodule ℂ (k.cast_nonneg : (0 : ℝ) ≤ k) :=
+    ContinuousLinearMap.pi fun j ↦ (realPartCLM ℂ k.cast_nonneg).comp
+      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 4 ↦ H^{(k : ℝ)}(ℂ)) j)
+  set ι : (Fin 4 → realSubmodule ℂ (k.cast_nonneg : (0 : ℝ) ≤ k)) →L[ℝ] Fin 4 → H^{(k : ℝ)}(ℂ) :=
+    ContinuousLinearMap.pi fun j ↦ (realSubmodule ℂ (k.cast_nonneg : (0 : ℝ) ≤ k)).subtypeL.comp
+      (ContinuousLinearMap.proj j)
+  -- The real coordinates are the real parts of the complex coordinates `subRef`, which are given
+  -- by `smulCoord` (`subRef_smul`).
+  have hfun : (fun p : realSubmodule ℂ (zero_le_one.trans hs.le) ×
+        (Fin 4 → realSubmodule ℂ (k.cast_nonneg : (0 : ℝ) ≤ k)) ↦
+      realSubRef k.cast_nonneg
+        (expGauge hs p.1 • ofRealSubRef (f := f) (m := m) (Nat.one_lt_cast.2 Fact.out) p.2)) =
+      fun p ↦
+        L (smulCoord f m (reSubOne (expGauge hs p.1)) (imPart (expGauge hs p.1)) (ι p.2)) := by
+    funext p
+    funext j
+    have hι : subRef (ofRealSubRef (f := f) (m := m) (Nat.one_lt_cast.2 Fact.out) p.2) = ι p.2 :=
+      funext fun a ↦ by
+        rw [← coe_realSubRef k.cast_nonneg, realSubRef_ofRealSubRef]
+        rfl
+    rw [← realPartCLM_coe (realSubRef k.cast_nonneg _ j), coe_realSubRef,
+      subRef_smul, hι]
+    rfl
+  rw [hfun]
+  exact L.contDiff.comp
+    (contDiff_smulCoord_expGauge.comp (contDiff_fst.prodMk (ι.contDiff.comp contDiff_snd)))
 
 variable (f m) in
 /-- **The infinitesimal gauge action in the coordinates of `A_m^k`.** At the field `x_m + y`, with
