@@ -20,6 +20,9 @@ and pointwise ramification conditions.
 The local-ring comparison uses Mathlib's
 `isIso_specMap_stalkMap_localization` on an affine neighbourhood.
 
+If a morphism `f` maps every point to `x`, every open neighbourhood of `x` pulls back to the whole
+source (`Scheme.Hom.top_le_preimage`), and a section whose basic open misses `x` pulls back to a
+global section with empty basic open (`Scheme.Hom.basicOpen_appLE_eq_bot`).
 Pulling sections back along `Spec 𝒪_{Y,y} ⟶ Y` takes germs at `y`
 (`Scheme.Hom.fromSpecStalk_comp_appLE`). Hence if a morphism `f` is constant on the generizations
 of `y`, the germ at `y` of the pullback of a section vanishing at `f y` is nilpotent
@@ -98,6 +101,19 @@ namespace Hom
 
 variable {X Y : Scheme.{u}} (f : Y ⟶ X)
 
+/-- If `f` maps every point to `x`, the preimage of any open neighbourhood of `x` is everything. -/
+theorem top_le_preimage {x : X} (hf : ∀ y, f y = x) {U : X.Opens} (hxU : x ∈ U) :
+    ⊤ ≤ f ⁻¹ᵁ U :=
+  fun y _ ↦ f.mem_preimage.mpr (hf y ▸ hxU)
+
+/-- If `f` maps every point to `x` and the basic open of `s` misses `x`, the pullback of `s` to
+the global sections of `Y` has empty basic open. -/
+theorem basicOpen_appLE_eq_bot {x : X} (hf : ∀ y, f y = x) {U : X.Opens} (e : ⊤ ≤ f ⁻¹ᵁ U)
+    {s : Γ(X, U)} (hs : x ∉ X.basicOpen s) : Y.basicOpen (f.appLE U ⊤ e s) = ⊥ := by
+  rw [Scheme.basicOpen_appLE, eq_bot_iff]
+  rintro y ⟨-, hy⟩
+  exact hs (hf y ▸ hy)
+
 /-- The pullback of a section `s` along `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` is the image of the germ at `y`
 of the pullback of `s` under `Γ(Spec 𝒪_{Y,y}, ⊤) ≅ 𝒪_{Y,y}`. -/
 theorem fromSpecStalk_comp_appLE {y : Y} {U : X.Opens} (hy : y ∈ f ⁻¹ᵁ U)
@@ -121,13 +137,9 @@ theorem isNilpotent_germ_app {y : Y} (hgen : ∀ y', y' ⤳ y → f y' = f y) {U
     refine hgen _ ?_
     have := Set.mem_range_self (f := Y.fromSpecStalk y) z
     rwa [range_fromSpecStalk] at this
-  have e : ⊤ ≤ (Y.fromSpecStalk y ≫ f) ⁻¹ᵁ U := fun z _ ↦
-    (Y.fromSpecStalk y ≫ f).mem_preimage.mpr (hg z ▸ f.mem_preimage.mp hy)
+  have e := top_le_preimage _ hg (f.mem_preimage.mp hy)
   -- Hence the pullback of `s` to `Spec 𝒪_{Y,y}` has empty basic open.
-  have h0 : (Spec (Y.presheaf.stalk y)).basicOpen ((Y.fromSpecStalk y ≫ f).appLE U ⊤ e s) = ⊥ := by
-    rw [Scheme.basicOpen_appLE, eq_bot_iff]
-    rintro z ⟨-, hz⟩
-    exact hs (hg z ▸ hz)
+  have h0 := basicOpen_appLE_eq_bot _ hg e hs
   rw [fromSpecStalk_comp_appLE f hy, CommRingCat.comp_apply, CommRingCat.comp_apply,
     basicOpen_eq_of_affine] at h0
   exact (PrimeSpectrum.basicOpen_eq_bot_iff _).mp h0

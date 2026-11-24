@@ -63,15 +63,6 @@ universe u
 
 variable {X Y : Scheme.{u}} (f : Y ⟶ X) {x : X}
 
-private lemma top_le_preimage (hf : ∀ y, f y = x) {U : X.Opens} (hxU : x ∈ U) : ⊤ ≤ f ⁻¹ᵁ U :=
-  fun y _ ↦ f.mem_preimage.mpr (hf y ▸ hxU)
-
-private lemma basicOpen_appLE_eq_bot (hf : ∀ y, f y = x) {U : X.Opens} (e : ⊤ ≤ f ⁻¹ᵁ U)
-    {s : Γ(X, U)} (hs : x ∉ X.basicOpen s) : Y.basicOpen (f.appLE U ⊤ e s) = ⊥ := by
-  rw [Scheme.basicOpen_appLE, eq_bot_iff]
-  rintro y ⟨-, hy⟩
-  exact hs (hf y ▸ hy)
-
 private lemma appLE_eq_zero_of_notMem_basicOpen [IsReduced Y] (hf : ∀ y, f y = x) {U : X.Opens}
     (e : ⊤ ≤ f ⁻¹ᵁ U) {s : Γ(X, U)} (hs : x ∉ X.basicOpen s) : f.appLE U ⊤ e s = 0 :=
   (basicOpen_eq_bot_iff _).mp (basicOpen_appLE_eq_bot f hf e hs)
