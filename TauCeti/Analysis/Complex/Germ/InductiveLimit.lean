@@ -215,12 +215,17 @@ end UniversalProperty
 /-- Restricting a bounded holomorphic function to a smaller neighbourhood of `K` does not change
 its germ along `K`. -/
 @[simp]
-theorem ofBounded_comp_restrict {U U' : Opens V} (h' : K ⊆ U') (hU : U' ≤ U) :
-    (ofBounded h').comp (restrict (E := ℂ) hU) = ofBounded (h'.trans hU) := by
-  ext f : 1
-  rw [ContinuousLinearMap.comp_apply, ofBounded_apply, ofBounded_apply]
+theorem ofBounded_restrict {U U' : Opens V} (h' : K ⊆ U') (hU : U' ≤ U)
+    (f : boundedHolomorphicFunctions ℂ U) :
+    ofBounded h' (restrict (E := ℂ) hU f) = ofBounded (h'.trans hU) f := by
+  rw [ofBounded_apply, ofBounded_apply]
   refine congrArg _ (ofFun_eq_of_eqOn _ _ U'.isOpen h' fun z hz => ?_)
   simp [extend_apply _ ⟨z, hz⟩, extend_apply _ ⟨z, hU hz⟩]
+
+@[simp]
+theorem ofBounded_comp_restrict {U U' : Opens V} (h' : K ⊆ U') (hU : U' ≤ U) :
+    (ofBounded h').comp (restrict (E := ℂ) hU) = ofBounded (h'.trans hU) :=
+  ContinuousLinearMap.ext (ofBounded_restrict h' hU)
 
 /-- **Identity theorem.** If every connected component of `U` meets `K`, a bounded holomorphic
 function on `U` is determined by its germ along `K`. -/
@@ -326,20 +331,16 @@ theorem eq_zero_of_forall_iteratedLineDeriv_eq_zero {g : HolomorphicGermSpace K}
   -- On a small ball `B` around `x`, `f` is a bounded holomorphic function whose jets at `x`
   -- vanish, so it vanishes near `x`.
   obtain ⟨ε, hε, hfε⟩ := Metric.eventually_nhds_iff_ball.1 (hf x hx).eventually_analyticAt
-  have hcl (z : V) (hz : z ∈ closedBall x (ε / 2)) : AnalyticAt ℂ f z :=
-    hfε z (closedBall_subset_ball (half_lt_self hε) hz)
-  obtain ⟨C, hC⟩ := (isCompact_closedBall x (ε / 2)).exists_bound_of_continuousOn
-    fun z hz => (hcl z hz).continuousAt.continuousWithinAt
   let B : Opens V := ⟨ball x (ε / 2), isOpen_ball⟩
+  obtain ⟨b, hb⟩ := exists_eqOn_extend_of_isCompact_closure (U := B)
+    isBounded_ball.isCompact_closure fun z hz =>
+      (hfε z (closedBall_subset_ball (half_lt_self hε) (closure_ball_subset_closedBall hz)))
+        |>.differentiableWithinAt
   have hB := extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero
-    (⟨x, mem_ball_self (half_pos hε)⟩ : B)
-    (f := of B f (fun z hz => (hcl z (ball_subset_closedBall hz)).differentiableAt
-      |>.differentiableWithinAt) C fun z hz => hC z (ball_subset_closedBall hz))
-    fun v n => (BoundedHolomorphicFunctions.iteratedLineDeriv_of ..).trans <| by
-      simpa using h x hx v n
+    (⟨x, mem_ball_self (half_pos hε)⟩ : B) (f := b)
+    fun v n => (iteratedLineDeriv_eq_of_eqOn _ v n hb).trans <| by simpa using h x hx v n
   filter_upwards [hB, ball_mem_nhds x (half_pos hε)] with z hz hzB
-  rw [extend_apply _ ⟨z, hzB⟩] at hz
-  exact (of_apply _ _ _ _ _).symm.trans hz
+  exact (hb hzB).symm.trans hz
 
 /-- Continuous linear functionals separate the points of `A[K]`. -/
 instance : SeparatingDual ℂ (HolomorphicGermSpace K) :=
@@ -407,17 +408,11 @@ theorem exists_ofBounded_eq (g : HolomorphicGermSpace K) :
     ∃ n, ∃ f : boundedHolomorphicFunctions ℂ (U n), ofBounded (hU.subset n) f = g := by
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   obtain ⟨n, hn⟩ := hU.exists_subset (isOpen_analyticAt ℂ f) hf
-  have hcl : closure (U (n + 1) : Set V) ⊆ {z | AnalyticAt ℂ f z} :=
-    (hU.closure_subset n).trans hn
-  obtain ⟨C, hC⟩ := (hU.isCompact_closure n).exists_bound_of_continuousOn
-    fun z hz => (hcl hz).continuousAt.continuousWithinAt
-  refine ⟨n + 1, of (U (n + 1)) f
-    (fun z hz => (hcl (subset_closure hz)).differentiableAt.differentiableWithinAt) C
-    fun z hz => hC z (subset_closure hz), ?_⟩
+  obtain ⟨b, hb⟩ := exists_eqOn_extend_of_isCompact_closure (hU.isCompact_closure n)
+    fun z hz => (((hU.closure_subset n).trans hn) hz : AnalyticAt ℂ f z).differentiableWithinAt
+  refine ⟨n + 1, b, ?_⟩
   rw [ofBounded_apply]
-  refine congrArg _ (ofFun_eq_of_eqOn _ _ (U (n + 1)).isOpen (hU.subset _) fun z hz => ?_)
-  rw [extend_apply _ ⟨z, hz⟩]
-  exact of_apply _ _ _ _ _
+  exact congrArg _ (ofFun_eq_of_eqOn _ _ (U (n + 1)).isOpen (hU.subset _) hb)
 
 /-- **Independence of the stage sequence.** The topology of `A[K]` is the final locally convex
 topology of the germ maps `H^∞(U n) → A[K]` along any stage sequence. -/
@@ -430,7 +425,7 @@ theorem topologicalSpace_eq :
   have hcomp : ⇑((ofBoundedₗ W.property).restrictScalars ℝ) =
       (ofBoundedₗ (hU.subset n)).restrictScalars ℝ ∘ restrict (E := ℂ) (U' := U n) hn := by
     ext f : 1
-    exact congr($(ofBounded_comp_restrict (hU.subset n) hn) f).symm
+    exact (ofBounded_restrict (hU.subset n) hn f).symm
   rw [hcomp]
   exact @Continuous.comp _ _ _ _ _ (finalLocallyConvexTopology _) _ _
     (FinalLocallyConvexTopology.continuous
