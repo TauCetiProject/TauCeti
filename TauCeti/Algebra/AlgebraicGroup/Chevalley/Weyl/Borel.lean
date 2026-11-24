@@ -20,9 +20,11 @@ element of `D.weylSubgroup A` decomposes as a positive word in the pinned simple
 representatives followed by an actual torus point.
 
 Over every nontrivial commutative ring `A`, combining this word decomposition with the Weyl-word
-separation criterion `geckWeylWordProd_eq_one_of_mem_borelSubgroup` shows that any Weyl word in
-`D.weylSubgroup A` lying in `D.borelSubgroup A` spells `1` in the Weyl group, hence lies in
-`T_D(A)` by `weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`. Together
+separation criterion `simplyConnectedWeylWordProd_eq_one_of_mem_borelSubgroup` shows that any Weyl
+word in `D.weylSubgroup A` lying in `D.borelSubgroup A` spells `1` in the Weyl group, hence lies in
+`T_D(A)` by `weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one`; so such a
+word lies in `D.borelSubgroup A` exactly when it spells `1`
+(`ChevalleyDatum.weylWord_mem_borelSubgroup_iff`). Together
 with `positivePoints_inf_range_torusPoints_eq_bot`, this yields the exact
 intersections `D.positivePoints A ⊓ D.weylSubgroup A = ⊥` and
 `D.borelSubgroup A ⊓ D.weylSubgroup A = (D.torusPoints A).range` over every commutative ring `A`.
@@ -104,15 +106,15 @@ theorem mem_weylSubgroup_iff_exists_list_prod_mul_torusPoints {g : D.points A} :
     exact mul_mem (D.list_prod_map_weylElement_mem_weylSubgroup A l)
       (D.torusPoints_mem_weylSubgroup A s)
 
-/-- Conjugating any point of the actual weight-lattice torus by an element of `D.weylSubgroup A`
-stays inside `D.borelSubgroup A`. -/
-theorem weylSubgroup_conj_torusPoints_mem_borelSubgroup (w : D.weylSubgroup A)
-    (s : Fin t.rank → Aˣ) :
-    (w : D.points A) * D.torusPoints A s * (w : D.points A)⁻¹ ∈ D.borelSubgroup A :=
-  D.range_torusPoints_le_borelSubgroup A <|
-    (Subgroup.mem_normalizer_iff.mp
-      (D.weylSubgroup_le_normalizer_range_torusPoints A w.property)
-      (D.torusPoints A s)).mp ⟨s, rfl⟩
+/-- **A Weyl word lies in the positive Borel subgroup if and only if it spells `1`.** Over any
+nontrivial commutative ring `A`, a product of pinned simple Weyl representatives belongs to
+`D.borelSubgroup A` precisely when its image in the Weyl group is the identity. -/
+theorem weylWord_mem_borelSubgroup_iff [Nontrivial A] (l : List (Fin t.rank)) :
+    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.borelSubgroup A ↔
+      t.simplyConnectedWeylWordProd ht l = 1 :=
+  ⟨D.simplyConnectedWeylWordProd_eq_one_of_mem_borelSubgroup A l, fun hl =>
+    D.range_torusPoints_le_borelSubgroup A
+      (D.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one A l hl)⟩
 
 /-- Over every commutative ring, the positive point subgroup intersects the Weyl subgroup
 trivially. -/
@@ -130,11 +132,11 @@ theorem positivePoints_inf_weylSubgroup_eq_bot :
       rw [eq_mul_inv_of_mul_eq hls]
       exact mul_mem (D.positivePoints_le_borelSubgroup A huP)
         (inv_mem (D.range_torusPoints_le_borelSubgroup A ⟨s, rfl⟩))
-    have hl := D.geckWeylWordProd_eq_one_of_mem_borelSubgroup A l hlB
+    have hl := D.simplyConnectedWeylWordProd_eq_one_of_mem_borelSubgroup A l hlB
     have huT : u ∈ (D.torusPoints A).range := by
       rw [← hls]
       exact mul_mem
-        (D.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one A l hl) ⟨s, rfl⟩
+        (D.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one A l hl) ⟨s, rfl⟩
     have hmem : u ∈ D.positivePoints A ⊓ (D.torusPoints A).range := ⟨huP, huT⟩
     rwa [D.positivePoints_inf_range_torusPoints_eq_bot A, Subgroup.mem_bot] at hmem
 
@@ -157,16 +159,22 @@ theorem borelSubgroup_inf_weylSubgroup_eq_range_torusPoints :
       rwa [D.positivePoints_inf_weylSubgroup_eq_bot A, Subgroup.mem_bot] at hmem
     rw [hu1, one_mul]
     exact ⟨s, rfl⟩
-  · refine le_inf (D.range_torusPoints_le_borelSubgroup A) ?_
-    rintro _ ⟨s, rfl⟩
-    exact D.torusPoints_mem_weylSubgroup A s
+  · exact le_inf (D.range_torusPoints_le_borelSubgroup A) (D.range_torusPoints_le_weylSubgroup A)
+
+/-- Read inside `D.weylSubgroup A`, the Borel subgroup cuts out the actual weight-lattice torus,
+over every commutative ring. -/
+@[simp]
+theorem borelSubgroup_subgroupOf_weylSubgroup :
+    (D.borelSubgroup A).subgroupOf (D.weylSubgroup A) =
+      ((D.torusPoints A).range).subgroupOf (D.weylSubgroup A) := by
+  rw [Subgroup.subgroupOf_inj, D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints,
+    inf_eq_left.mpr (D.range_torusPoints_le_weylSubgroup A)]
 
 /-- `B ∩ N` is normal in `N`: it is the actual torus, which `N` normalizes. This is the normality
 axiom of a Tits system with these subgroups. -/
 instance normal_borelSubgroup_subgroupOf_weylSubgroup :
     ((D.borelSubgroup A).subgroupOf (D.weylSubgroup A)).Normal := by
-  rw [← Subgroup.inf_subgroupOf_left, inf_comm,
-    D.borelSubgroup_inf_weylSubgroup_eq_range_torusPoints A]
+  rw [D.borelSubgroup_subgroupOf_weylSubgroup A]
   infer_instance
 
 /-- Over every commutative ring, an element of `D.weylSubgroup A` belongs to `D.borelSubgroup A`

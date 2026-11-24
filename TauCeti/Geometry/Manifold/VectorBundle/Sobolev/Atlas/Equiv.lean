@@ -206,12 +206,13 @@ private theorem chartValueL_ae_of_tendsto (h : TransfersTo A A' μ p k)
   filter_upwards [A.ae_restrict_image_chart_symm A' i' hA, himg, hae',
     ae_restrict_mem (A'.image i').isOpen.measurableSet] with y hy himg hae' hyU hdom
   obtain ⟨hyA, hyT⟩ := hy hdom
+  have hyB := A'.dom_subset_baseSet i' (A'.symm_mem_dom hyU)
   refine tendsto_nhds_unique (hae'.comp hms.tendsto_atTop) ?_
-  rw [A.coord_eq_coordChangeL_coord A' s hyU hdom]
+  rw [A.coord_eq_coordChangeL_coord A' s hyB hdom]
   refine ((((A.triv i).coordChangeL ℝ (A'.triv i') ((A'.chart i').symm y)).continuous.tendsto
     _).comp hyT).congr fun m ↦ ?_
   simp only [Function.comp_apply]
-  rw [himg, hyA, A.coord_eq_coordChangeL_coord A' _ hyU hdom]
+  rw [himg, hyA, A.coord_eq_coordChangeL_coord A' _ hyB hdom]
 
 /-- **Change of atlas.** Given the transfer property `h` from `A` to `A'`, the continuous linear map
 from `W^{k,p}(V)` for `A` to `W^{k,p}(V)` for `A'` sending an element to the element whose chart

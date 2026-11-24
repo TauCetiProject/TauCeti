@@ -145,9 +145,8 @@ theorem IsEntire.evalAt_sub (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
 
 /-- Evaluation commutes with scalar multiplication of entire series. -/
 theorem IsEntire.evalAt_smul (hf : f.IsEntire) (a : R) (b : A) :
-    (a • f).evalAt b = a • f.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [mul_smul] using (hf.hasSum_evalAt b).const_smul a)
+    (a • f).evalAt b = a • f.evalAt b :=
+  evalAt_smul_of_summable (hf.hasSum_evalAt b).summable a
 
 /-- Evaluation commutes with finite sums of entire series. -/
 theorem IsEntire.evalAt_sum {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}

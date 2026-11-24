@@ -36,8 +36,9 @@ Then a single subsequence of `Fₙ` converges locally uniformly on `(⋃ᵢ Uᵢ
 `Z` with `#Z * δ ≤ E`, and the energy `δ` concentrates at every point of `Z`
 (`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion`).
 
-The subsequence is the diagonal of the subsequences chosen successively on the windows
-(`TauCeti.extraction_forall`), so it is eventually a subsequence of each of them. The bubbling
+The subsequence is the diagonal of the subsequences chosen successively on the windows. Energy
+concentration and locally uniform convergence along a filter pass to finer filters, so the diagonal
+has the properties of every window (`TauCeti.extraction_forall_of_antitone`). The bubbling
 set `Z` is the union of the bubbling sets of the windows. Distinct bubbling points have disjoint
 neighbourhoods, each of which eventually carries energy at least `δ`, so every finite subset of
 `Z` has at most `E / δ` points (`TauCeti.card_mul_le_of_forall_eventually_le_measure`). Hence `Z`
@@ -89,31 +90,29 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion [T2Space X]
   · exact ⟨id, ∅, F 0, strictMono_id, by simp, by simp, by simp,
       fun _ _ _ hx ↦ by simp at hx⟩
   obtain ⟨e, he⟩ := exists_surjective_nat ι
-  -- The property of a subsequence `ψ` on the window `U (e m)`.
-  let P : ℕ → (ℕ → ℕ) → Prop := fun m ψ ↦ ∃ Z : Set X,
-    (∀ z ∈ Z, ∀ N ∈ 𝓝 z, ∀ᶠ n in atTop, δ ≤ μ (ψ n) N) ∧
-    ∃ v : X → α, TendstoLocallyUniformlyOn (fun n ↦ F (ψ n)) v atTop (U (e m) \ Z)
-  obtain ⟨D, hD, hDP⟩ := extraction_forall (P := P) fun m ψ hψ ↦ by
-    obtain ⟨φ, hφ, hZ⟩ := h (e m) hψ
-    exact ⟨φ, hφ, hZ⟩
-  choose ψ hψ hψD using hDP
-  choose Zw hconc vw hvw using hψ
+  -- The property of the filter of a subsequence on the window `U (e m)`; it passes to finer
+  -- filters.
+  let P : ℕ → Filter ℕ → Prop := fun m l ↦ ∃ Z : Set X,
+    (∀ z ∈ Z, ∀ N ∈ 𝓝 z, ∀ᶠ n in l, δ ≤ μ n N) ∧
+    ∃ v : X → α, TendstoLocallyUniformlyOn F v l (U (e m) \ Z)
+  obtain ⟨D, hD, hDP⟩ := extraction_forall_of_antitone (P := P)
+    (fun _ _ _ hl hP ↦ by
+      obtain ⟨Z, hconc, v, hv⟩ := hP
+      exact ⟨Z, fun z hz N hN ↦ (hconc z hz N hN).filter_mono hl, v,
+        hv.comp_tendsto (tendsto_id'.2 hl)⟩) fun m ψ hψ ↦ by
+    obtain ⟨φ, hφ, Z, hconc, v, hv⟩ := h (e m) hψ
+    exact ⟨φ, hφ, Z, fun z hz N hN ↦ eventually_map.2 (hconc z hz N hN), v,
+      tendstoLocallyUniformlyOn_map_iff.2 hv⟩
   -- Along the diagonal, energy concentrates at the bubbling points of every window, and the
   -- diagonal converges on every window off its bubbling points.
-  have hconcD (m : ℕ) (z : X) (hz : z ∈ Zw m) (N : Set X) (hN : N ∈ 𝓝 z) :
-      ∀ᶠ n in atTop, δ ≤ μ (D n) N :=
-    eventually_of_eq_apply_of_le (p := fun j ↦ δ ≤ μ j N) (hψD m) (hconc m z hz N hN)
-  have hvD (m : ℕ) : TendstoLocallyUniformlyOn (fun n ↦ F (D n)) (vw m) atTop (U (e m) \ Zw m) := by
-    obtain ⟨f, hf, hDf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le (hψD m)
-    exact ((hvw m).comp_tendsto hf).congr_inseparable
-      (hDf.mono fun n hn _ _ ↦ .of_eq (by simp [hn]))
+  choose Zw hconcD vw hvD using hDP
   -- The bubbling set is the union of the bubbling sets of the windows, inside the windows.
   set Z : Set X := ⋃ m, Zw m ∩ U (e m)
   have hZW : Z ⊆ ⋃ i, U i :=
     iUnion_subset fun m ↦ inter_subset_right.trans (subset_iUnion U (e m))
   have hZconc (z : X) (hz : z ∈ Z) (N : Set X) (hN : N ∈ 𝓝 z) : ∀ᶠ n in atTop, δ ≤ μ (D n) N := by
     obtain ⟨m, hm⟩ := mem_iUnion.1 hz
-    exact hconcD m z hm.1 N hN
+    exact eventually_map.1 (hconcD m z hm.1 N hN)
   -- Every finite subset of `Z` has at most `E / δ` points, so `Z` is finite.
   have hcard (T : Finset X) (hT : ↑T ⊆ Z) : T.card * δ ≤ E :=
     card_mul_le_of_forall_eventually_le_measure (l := atTop) (isOpen_iUnion hU)
@@ -121,7 +120,8 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion [T2Space X]
   have hZf : Z.Finite := Set.finite_of_forall_finset_card_mul_le hδ hE hcard
   obtain ⟨v, hv⟩ := exists_tendstoLocallyUniformlyOn_iUnion_sdiff (fun m ↦ hU (e m))
     hZf.toFinset.finite_toSet.isClosed
-    (fun m x hx ↦ by rw [hZf.coe_toFinset]; exact mem_iUnion_of_mem m hx) hvD
+    (fun m x hx ↦ by rw [hZf.coe_toFinset]; exact mem_iUnion_of_mem m hx)
+    fun m ↦ tendstoLocallyUniformlyOn_map_iff.1 (hvD m)
   rw [he.iUnion_comp U] at hv
   exact ⟨D, hZf.toFinset, v, hD, by simpa using hZW, hcard _ (by simp),
     fun z hz N hN ↦ hZconc z (by simpa using hz) N hN, hv⟩

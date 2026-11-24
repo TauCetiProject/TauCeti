@@ -45,7 +45,9 @@ case.
   `strictTransform_eq_of_isSchemeTheoreticallyDominant` is the same statement with the density
   asked of the opens of `X ×_S S'`.
 * `AlgebraicGeometry.Scheme.Hom.strictTransform_top` and `strictTransform_bot`: the open `U = S`
-  gives the zero ideal sheaf and `U = ∅` the unit ideal sheaf.
+  gives the zero ideal sheaf and `U = ∅` the unit ideal sheaf; more generally
+  `strictTransform_eq_bot_of_preimage_eq_top` and `strictTransform_eq_top_of_preimage_eq_bot` for
+  `f⁻¹(U) = X` and `f⁻¹(U) = ∅`.
 * `AlgebraicGeometry.Scheme.Hom.strictTransform_id`: for `S'` reduced and `φ⁻¹(U)` dense, as for a
   modification witness, the strict transform of the identity of `S` is the zero ideal sheaf on
   `S ×_S S' ≅ S'`.
@@ -100,15 +102,25 @@ theorem strictTransformOpen_mono {U U' : S.Opens} (h : U ≤ U') :
     strictTransformOpen f φ U ≤ strictTransformOpen f φ U' :=
   Scheme.Hom.preimage_mono _ h
 
+/-- If `f⁻¹(U)` is empty, so is the open lying over `U`. -/
+theorem strictTransformOpen_eq_bot_of_preimage_eq_bot (h : f ⁻¹ᵁ U = ⊥) :
+    strictTransformOpen f φ U = ⊥ := by
+  rw [strictTransformOpen_def, Scheme.Hom.comp_preimage, h, Scheme.Hom.preimage_bot]
+
+/-- If `f⁻¹(U)` is all of `X`, the open lying over `U` is everything. -/
+theorem strictTransformOpen_eq_top_of_preimage_eq_top (h : f ⁻¹ᵁ U = ⊤) :
+    strictTransformOpen f φ U = ⊤ := by
+  rw [strictTransformOpen_def, Scheme.Hom.comp_preimage, h, Scheme.Hom.preimage_top]
+
 /-- The open lying over `U = S` is everything. -/
 @[simp]
-theorem strictTransformOpen_top : strictTransformOpen f φ ⊤ = ⊤ := by
-  simp [strictTransformOpen_def]
+theorem strictTransformOpen_top : strictTransformOpen f φ ⊤ = ⊤ :=
+  strictTransformOpen_eq_top_of_preimage_eq_top f φ ⊤ (Scheme.Hom.preimage_top f)
 
 /-- The open lying over `U = ∅` is empty. -/
 @[simp]
-theorem strictTransformOpen_bot : strictTransformOpen f φ ⊥ = ⊥ := by
-  simp [strictTransformOpen_def]
+theorem strictTransformOpen_bot : strictTransformOpen f φ ⊥ = ⊥ :=
+  strictTransformOpen_eq_bot_of_preimage_eq_bot f φ ⊥ (Scheme.Hom.preimage_bot f)
 
 /-- The *strict transform* of `f : X ⟶ S` along `φ : S' ⟶ S` with respect to the open `U ⊆ S`: the
 ideal sheaf on `X ×_S S'` of the scheme-theoretic closure of the open `X ×_S φ⁻¹(U)`, that is,
@@ -171,17 +183,33 @@ theorem strictTransform_eq_of_le_of_isIso {U U' : S.Opens} (h : U ≤ U') (hU' :
     Scheme.Hom.comp_preimage, Scheme.Hom.comp_preimage]
   exact Scheme.Opens.ker_ι_eq_of_isSchemeTheoreticallyDominant hle
 
+/-- **`X` away from `U`.** If `f⁻¹(U)` is empty, the strict transform is the unit ideal sheaf. For
+`X` the origin of `𝔸¹`, `f` its inclusion, `φ` the identity and `U = 𝔾_m`, the strict transform
+is empty. -/
+theorem strictTransform_eq_top_of_preimage_eq_bot (h : f ⁻¹ᵁ U = ⊥) :
+    strictTransform f φ U = ⊤ := by
+  rw [strictTransform_def, Scheme.Hom.ker_eq_top_iff_isEmpty,
+    strictTransformOpen_eq_bot_of_preimage_eq_bot f φ U h]
+  exact ⟨fun x ↦ by simpa using x.property⟩
+
+/-- **`X` inside `U`.** If `f⁻¹(U)` is all of `X`, the strict transform is the zero ideal sheaf.
+For instance the strict transform of `X` along a blowup with centre disjoint from `X` is
+`X ×_S Bl_I S` itself. -/
+theorem strictTransform_eq_bot_of_preimage_eq_top (h : f ⁻¹ᵁ U = ⊤) :
+    strictTransform f φ U = ⊥ := by
+  rw [strictTransform_def, strictTransformOpen_eq_top_of_preimage_eq_top f φ U h,
+    ← Scheme.topIso_hom]
+  exact Scheme.Hom.ker_eq_bot_of_isIso _
+
 /-- For `U = S` the strict transform is the zero ideal sheaf: nothing is removed. -/
 @[simp]
-theorem strictTransform_top : strictTransform f φ ⊤ = ⊥ := by
-  rw [strictTransform_def, strictTransformOpen_top, ← Scheme.topIso_hom]
-  exact Scheme.Hom.ker_eq_bot_of_isIso _
+theorem strictTransform_top : strictTransform f φ ⊤ = ⊥ :=
+  strictTransform_eq_bot_of_preimage_eq_top f φ ⊤ (Scheme.Hom.preimage_top f)
 
 /-- For `U = ∅` the strict transform is the unit ideal sheaf: it cuts out the empty subscheme. -/
 @[simp]
-theorem strictTransform_bot : strictTransform f φ ⊥ = ⊤ := by
-  rw [strictTransform_def, Scheme.Hom.ker_eq_top_iff_isEmpty, strictTransformOpen_bot]
-  exact ⟨fun x ↦ by simpa using x.property⟩
+theorem strictTransform_bot : strictTransform f φ ⊥ = ⊤ :=
+  strictTransform_eq_top_of_preimage_eq_bot f φ ⊥ (Scheme.Hom.preimage_bot f)
 
 /-- **The strict transform of the identity.** For `S'` reduced, for instance integral, and `φ⁻¹(U)`
 dense in `S'`, as for a modification witness (`IsModification.Witness.dense_preimage`), the strict
