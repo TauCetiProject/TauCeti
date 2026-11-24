@@ -38,8 +38,8 @@ does on `V`.
   pairing is a nonzero multiple of the standard symplectic form.
 * `TauCeti.coe_apply_spinGroup_negOne`: `f` sends the scalar `-1` of `Spin(Q)` to `-I`.
 * `TauCeti.exists_eq_smul_reversalPairing_of_finrank_eq_five` and
-  `TauCeti.invariantForms_spinRep_of_finrank_eq_five`: in dimension five with `2 ≠ 0`, every
-  Spin-invariant bilinear form on `S` is a multiple of the reversal pairing.
+  `TauCeti.invariantForms_spinRep_eq_span_reversalPairing_of_finrank_eq_five`: in dimension five
+  with `2 ≠ 0`, every Spin-invariant bilinear form on `S` is a multiple of the reversal pairing.
 
 ## References
 
@@ -59,11 +59,11 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {P : SpinPolarizationData Q} {n : ℕ}
   {f : spinGroup Q ≃* Matrix.symplecticGroup (Fin n) K}
 
-/-- **Spin-invariant forms are symplectic.** Along an isomorphism `f : Spin(Q) ≃ Sp₂ₙ(K)` and an
-equivalence `E` of the spin representation with the standard representation of `Sp₂ₙ(K)`
-through `f`, every Spin-invariant bilinear form on the spinor module is a multiple of the
-standard symplectic form `ω(E s, E t)`. In dimension five over a field with `2 ≠ 0`, such `f`
-and `E` exist with `n = 2`, by
+/-- **Spin-invariant forms are multiples of the transported standard symplectic form.** Along an
+isomorphism `f : Spin(Q) ≃ Sp₂ₙ(K)` and an equivalence `E` of the spin representation with the
+standard representation of `Sp₂ₙ(K)` through `f`, every Spin-invariant bilinear form on the
+spinor module is a multiple of the standard symplectic form `ω(E s, E t)`. In dimension five over
+a field with `2 ≠ 0`, such `f` and `E` exist with `n = 2`, by
 `exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_finrank_eq_five`.
 -/
 theorem exists_eq_mul_stdSymplecticBilinForm_of_isInvariantForm
@@ -71,36 +71,24 @@ theorem exists_eq_mul_stdSymplecticBilinForm_of_isInvariantForm
     {B : LinearMap.BilinForm K (ExteriorAlgebra K P.W)}
     (hB : Representation.IsInvariantForm (spinRep Q P) B) :
     ∃ c : K, ∀ s t, B s t = c * stdSymplecticBilinForm K n (E s) (E t) := by
-  -- Work with the underlying linear equivalence `e`, whose values are those of `E`.
+  -- Transport `B` to `K^(2n)` along `E`; it is invariant under `Sp₂ₙ(K)` since `f` is onto.
+  obtain ⟨c, hc⟩ :=
+    exists_eq_smul_stdSymplecticBilinForm K n (hB.comp_equiv_symm E f.surjective)
   set e := E.toLinearEquiv
   have he (s : ExteriorAlgebra K P.W) : e s = E s := by
     rw [Representation.Equiv.toLinearEquiv_apply, Representation.Equiv.coe_toIntertwiningMap]
-  have hE (g : spinGroup Q) (s : ExteriorAlgebra K P.W) :
-      e (spinRep Q P g s) = stdSymplecticRep K n (f g) (e s) := by
-    rw [Representation.Equiv.toLinearEquiv_apply, Representation.Equiv.toLinearEquiv_apply]
-    exact Representation.IntertwiningMap.isIntertwining _ _ E.toIntertwiningMap g s
-  -- Transport `B` to `K^(2n)` along `e`; it is invariant under `Sp₂ₙ(K)` since `f` is onto.
-  obtain ⟨c, hc⟩ := exists_eq_smul_stdSymplecticBilinForm K n
-    (B := B.comp e.symm.toLinearMap e.symm.toLinearMap) <|
-    Representation.isInvariantForm_iff.mpr fun g x y => by
-      obtain ⟨g, rfl⟩ := f.surjective g
-      obtain ⟨s, rfl⟩ := e.surjective x
-      obtain ⟨t, rfl⟩ := e.surjective y
-      simp only [LinearMap.BilinForm.comp_apply, LinearEquiv.coe_coe, ← hE,
-        LinearEquiv.symm_apply_apply]
-      exact hB.apply g s t
   refine ⟨c, fun s t => ?_⟩
   have h := LinearMap.BilinForm.congr_fun hc (e s) (e t)
   simp only [LinearMap.BilinForm.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
     LinearMap.smul_apply, smul_eq_mul] at h
   rwa [he, he] at h
 
-/-- **The reversal pairing is the standard symplectic form.** Along an isomorphism
-`f : Spin(Q) ≃ Sp₂ₙ(K)` and an equivalence `E` of the spin representation with the standard
-representation of `Sp₂ₙ(K)` through `f`, the reversal pairing `[reverse s ∧ t]_top` of a basis of
-the rank-two isotropic summand `W` is a nonzero multiple of the standard symplectic form
-`ω(E s, E t)`. In dimension five over a field with `2 ≠ 0`, such `f` and `E` exist with
-`n = 2`, by
+/-- **The reversal pairing is a nonzero multiple of the transported standard symplectic form.**
+Along an isomorphism `f : Spin(Q) ≃ Sp₂ₙ(K)` and an equivalence `E` of the spin representation
+with the standard representation of `Sp₂ₙ(K)` through `f`, the reversal pairing
+`[reverse s ∧ t]_top` of a basis of the rank-two isotropic summand `W` is a nonzero multiple of
+the standard symplectic form `ω(E s, E t)`. In dimension five over a field with `2 ≠ 0`, such `f`
+and `E` exist with `n = 2`, by
 `exists_spinGroup_mulEquiv_symplecticGroup_and_spinRep_equiv_stdSymplecticRep_of_finrank_eq_five`.
 -/
 theorem exists_reversalPairing_eq_mul_stdSymplecticBilinForm
@@ -110,8 +98,7 @@ theorem exists_reversalPairing_eq_mul_stdSymplecticBilinForm
       ExteriorAlgebra.reversalPairing (b.ExteriorAlgebra.coord Finset.univ) s t =
         c * stdSymplecticBilinForm K n (E s) (E t) := by
   obtain ⟨c, hc⟩ := exists_eq_mul_stdSymplecticBilinForm_of_isInvariantForm E
-    (Representation.isInvariantForm_iff.mpr
-      (reversalPairing_coord_univ_spinRep P b (Or.inr (by simp))))
+    (isInvariantForm_reversalPairing_coord_univ P b (Or.inr (by simp)))
   refine ⟨c, fun h0 => ?_, hc⟩
   have h := hc 1 (ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 1))
   rw [ExteriorAlgebra.reversalPairing_coord_univ_one_ι_zero_mul_ι_one, h0, zero_mul] at h
@@ -155,15 +142,12 @@ theorem exists_eq_smul_reversalPairing_of_finrank_eq_five [NeZero (2 : K)]
 five-dimensional quadratic space over a field with `2 ≠ 0`, the Spin-invariant bilinear forms on
 the spinor module `⋀ W` are the multiples of the reversal pairing `[reverse s ∧ t]_top` of a basis
 of `W`. -/
-theorem invariantForms_spinRep_of_finrank_eq_five [NeZero (2 : K)] (hV : finrank K V = 5)
-    (b : Basis (Fin 2) K P.W) :
+theorem invariantForms_spinRep_eq_span_reversalPairing_of_finrank_eq_five [NeZero (2 : K)]
+    (hV : finrank K V = 5) (b : Basis (Fin 2) K P.W) :
     Representation.invariantForms (spinRep Q P) =
-      Submodule.span K {ExteriorAlgebra.reversalPairing (b.ExteriorAlgebra.coord Finset.univ)} := by
-  refine le_antisymm (fun B hB => ?_) (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr
-    (Representation.mem_invariantForms.mpr (Representation.isInvariantForm_iff.mpr
-      (reversalPairing_coord_univ_spinRep P b (Or.inr (by simp)))))))
-  obtain ⟨c, rfl⟩ := exists_eq_smul_reversalPairing_of_finrank_eq_five hV b
-    (Representation.mem_invariantForms.mp hB)
-  exact Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _)
+      Submodule.span K {ExteriorAlgebra.reversalPairing (b.ExteriorAlgebra.coord Finset.univ)} :=
+  Representation.IsInvariantForm.invariantForms_eq_span_of_forall_exists_eq_smul
+    (isInvariantForm_reversalPairing_coord_univ P b (Or.inr (by simp)))
+    fun _ => exists_eq_smul_reversalPairing_of_finrank_eq_five hV b
 
 end TauCeti

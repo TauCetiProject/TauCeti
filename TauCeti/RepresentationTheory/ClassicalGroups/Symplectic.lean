@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
-public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.InvariantForm
 import TauCeti.LinearAlgebra.BilinearForm.Isotropic
@@ -40,7 +39,8 @@ field the standard form spans its invariant bilinear forms.
 * `TauCeti.isInvariantForm_stdSymplecticBilinForm`: the standard form is invariant.
 * `TauCeti.toMatrix'_mem_symplecticGroup_iff`: a linear endomorphism of `k^(2n)` has a symplectic
   matrix exactly when it preserves the standard alternating form.
-* `TauCeti.exists_eq_smul_stdSymplecticBilinForm` and `TauCeti.invariantForms_stdSymplecticRep`:
+* `TauCeti.exists_eq_smul_stdSymplecticBilinForm` and
+  `TauCeti.invariantForms_stdSymplecticRep_eq_span_stdSymplecticBilinForm`:
   over a field, every `Sp₂ₙ(k)`-invariant bilinear form is a multiple of the standard one. Its
   invariance under the symplectic transvections already forces this
   (`LinearMap.BilinForm.exists_eq_smul_of_forall_isIsometry_transvection`).
@@ -365,14 +365,11 @@ theorem exists_eq_smul_stdSymplecticBilinForm {B : LinearMap.BilinForm k ((Fin n
 /-- **The invariant bilinear forms of the symplectic group**: over a field, the bilinear forms on
 `k^(2n)` invariant under `Sp₂ₙ(k)` are the multiples of the standard symplectic form, so they form
 the span of that form, which is a line when `n > 0`. -/
-theorem invariantForms_stdSymplecticRep :
+theorem invariantForms_stdSymplecticRep_eq_span_stdSymplecticBilinForm :
     Representation.invariantForms (stdSymplecticRep k n) =
-      Submodule.span k {stdSymplecticBilinForm k n} := by
-  refine le_antisymm (fun B hB => ?_) (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr
-    (Representation.mem_invariantForms.mpr (isInvariantForm_stdSymplecticBilinForm k n))))
-  obtain ⟨c, rfl⟩ :=
-    exists_eq_smul_stdSymplecticBilinForm k n (Representation.mem_invariantForms.mp hB)
-  exact Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _)
+      Submodule.span k {stdSymplecticBilinForm k n} :=
+  (isInvariantForm_stdSymplecticBilinForm k n).invariantForms_eq_span_of_forall_exists_eq_smul
+    fun _ => exists_eq_smul_stdSymplecticBilinForm k n
 
 end Field
 
