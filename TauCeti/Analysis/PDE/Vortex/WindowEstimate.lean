@@ -345,9 +345,7 @@ private theorem contDiff_vacuumField_and_exists_norm_iteratedFDeriv_le :
     funext fun z ↦ by rw [vacuumField_apply, vacuumField_apply]
   refine ⟨hc ▸ contDiff_const, fun i n ↦ ⟨‖vacuumField 0 i‖, fun z ↦ ?_⟩⟩
   rw [show (fun z ↦ vacuumField z i) = fun _ ↦ vacuumField 0 i by rw [hc]]
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · simp [iteratedFDeriv_const_of_ne hn]
+  exact norm_iteratedFDeriv_const_le n _ z
 
 /-- **The elliptic estimate for `L_x - A`, uniformly in the field.** For every order `k` and bound
 `B` there is a constant `K` with the following property. Let `x` be a smooth field and `A` a

@@ -302,10 +302,8 @@ theorem contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le {k : ℕ
     rw [he]
     refine ⟨hxa.sub contDiff_const, fun n hn z ↦ ?_⟩
     rw [iteratedFDeriv_sub_apply (hxa.contDiffAt.of_le (mod_cast le_top)) contDiffAt_const]
-    refine (norm_sub_le _ _).trans (add_le_add (hxb a n hn z) ?_)
-    rcases eq_or_ne n 0 with rfl | hn
-    · simpa using PiLp.norm_apply_le (vacuumField 0) a
-    · simp [iteratedFDeriv_const_of_ne hn]
+    exact (norm_sub_le _ _).trans (add_le_add (hxb a n hn z)
+      ((norm_iteratedFDeriv_const_le n _ z).trans (PiLp.norm_apply_le (vacuumField 0) a)))
   -- Each entry of the matrix is `0`, a coordinate `w a` of `w = x z - vacuumField z`, or `-w a`.
   fin_cases i <;> fin_cases j <;>
     simp only [gaugeFixedZerothOrderMatrix, Matrix.of_apply, Matrix.cons_val', Matrix.empty_val',
