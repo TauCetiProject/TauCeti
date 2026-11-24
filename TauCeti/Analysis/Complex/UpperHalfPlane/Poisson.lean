@@ -121,6 +121,12 @@ theorem upperHalfPlanePoissonKernel_nonneg {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ)
   rw [upperHalfPlanePoissonKernel_eq]
   exact div_nonneg hz (mul_nonneg Real.pi_pos.le (normSq_nonneg _))
 
+/-- The Poisson kernel is nonpositive for a pole in the closed lower half-plane. -/
+theorem upperHalfPlanePoissonKernel_nonpos {z : ℂ} (hz : z.im ≤ 0) (x : ℝ) :
+    upperHalfPlanePoissonKernel z x ≤ 0 := by
+  rw [upperHalfPlanePoissonKernel_eq]
+  exact div_nonpos_of_nonpos_of_nonneg hz (mul_nonneg Real.pi_pos.le (normSq_nonneg _))
+
 /-- The Poisson kernel is positive for a pole in the open upper half-plane. -/
 theorem upperHalfPlanePoissonKernel_pos {z : ℂ} (hz : 0 < z.im) (x : ℝ) :
     0 < upperHalfPlanePoissonKernel z x := by
@@ -162,11 +168,7 @@ theorem setOf_lt_upperHalfPlanePoissonKernel (z : ℂ) {t : ℝ} (ht : 0 < t) :
       have : z.im / (π * t) ≤ 0 := div_nonpos_of_nonpos_of_nonneg hz (by positivity)
       nlinarith [sq_nonneg z.im]
     rw [Real.sqrt_eq_zero'.2 hr, ball_zero, eq_empty_iff_forall_notMem]
-    intro s hs
-    have hP : upperHalfPlanePoissonKernel z s ≤ 0 := by
-      rw [upperHalfPlanePoissonKernel_eq]
-      exact div_nonpos_of_nonpos_of_nonneg hz (mul_nonneg Real.pi_pos.le (normSq_nonneg _))
-    exact (ht.trans hs).not_ge hP
+    exact fun s hs => (ht.trans hs).not_ge (upperHalfPlanePoissonKernel_nonpos hz s)
   ext s
   simp only [mem_ofPred_eq, mem_ball, Real.dist_eq, upperHalfPlanePoissonKernel_eq,
     normSq_ofReal_sub]
@@ -348,14 +350,6 @@ theorem upperHalfPlanePoissonIntegral_volume {z : ℂ} (hz : 0 < z.im) :
     upperHalfPlanePoissonIntegral volume z = 1 :=
   integral_upperHalfPlanePoissonKernel hz
 
-/-- The extended Poisson integral of Lebesgue measure has value one on the upper half-plane. -/
-theorem lintegral_ofReal_upperHalfPlanePoissonKernel {z : ℂ} (hz : 0 < z.im) :
-    ∫⁻ s, ENNReal.ofReal (upperHalfPlanePoissonKernel z s) = 1 := by
-  rw [← ofReal_integral_eq_lintegral_ofReal
-    (isPoissonFinite_volume.integrable_upperHalfPlanePoissonKernel z)
-    (.of_forall (upperHalfPlanePoissonKernel_nonneg hz.le)),
-    integral_upperHalfPlanePoissonKernel hz, ENNReal.ofReal_one]
-
 /-- The **extended Poisson integral** `P[ν](z) = ∫⁻ P(z, x) dν(x) ∈ [0, ∞]` of a measure `ν` on
 `ℝ`. On the upper half-plane it is finite exactly for Poisson-finite `ν`
 (`TauCeti.upperHalfPlanePoissonLIntegral_eq_top_iff`), where it agrees with the real-valued
@@ -387,10 +381,15 @@ theorem ofReal_upperHalfPlanePoissonIntegral {ν : Measure ℝ} (hν : IsPoisson
   rcases le_total 0 z.im with hz | hz
   · rw [ofReal_integral_eq_lintegral_ofReal (hν.integrable_upperHalfPlanePoissonKernel z)
       (.of_forall (upperHalfPlanePoissonKernel_nonneg hz))]
-  · have hP (x : ℝ) : upperHalfPlanePoissonKernel z x ≤ 0 := by
-      simpa using upperHalfPlanePoissonKernel_nonneg (z := conj z) (by simpa using hz) x
+  · have hP := upperHalfPlanePoissonKernel_nonpos hz
     rw [ENNReal.ofReal_of_nonpos (integral_nonpos hP)]
     simp [ENNReal.ofReal_of_nonpos, hP]
+
+/-- The extended Poisson integral of Lebesgue measure is `1` on the upper half-plane. -/
+theorem upperHalfPlanePoissonLIntegral_volume {z : ℂ} (hz : 0 < z.im) :
+    upperHalfPlanePoissonLIntegral volume z = 1 := by
+  rw [← ofReal_upperHalfPlanePoissonIntegral isPoissonFinite_volume,
+    upperHalfPlanePoissonIntegral_volume hz, ENNReal.ofReal_one]
 
 /-- The norm of the Poisson integral is at most the extended Poisson integral in the closed upper
 half-plane: they agree for a Poisson-finite measure, and otherwise the Poisson integral is `0`. -/

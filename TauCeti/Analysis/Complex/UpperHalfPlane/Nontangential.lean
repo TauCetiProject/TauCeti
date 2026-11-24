@@ -147,10 +147,8 @@ theorem upperHalfPlanePoissonLIntegral_withDensity_le_maximalFunction (g : ℝ �
     upperHalfPlanePoissonLIntegral (volume.withDensity fun s => ‖g s‖ₑ) z ≤
       maximalFunction volume g z.re := by
   rcases le_or_gt z.im 0 with hz | hz
-  · have hP (s : ℝ) : upperHalfPlanePoissonKernel z s ≤ 0 := by
-      rw [upperHalfPlanePoissonKernel_eq]
-      exact div_nonpos_of_nonpos_of_nonneg hz (mul_nonneg Real.pi_pos.le (normSq_nonneg _))
-    simp [upperHalfPlanePoissonLIntegral_def, ENNReal.ofReal_of_nonpos, hP]
+  · simp [upperHalfPlanePoissonLIntegral_def, ENNReal.ofReal_of_nonpos,
+      upperHalfPlanePoissonKernel_nonpos hz]
   have hnn := upperHalfPlanePoissonKernel_nonneg hz.le
   have hmeas := measurable_upperHalfPlanePoissonKernel z
   rw [upperHalfPlanePoissonLIntegral_def,
@@ -167,7 +165,7 @@ theorem upperHalfPlanePoissonLIntegral_withDensity_le_maximalFunction (g : ℝ �
           fun _ _ hab => measure_mono fun _ hs => lt_of_le_of_lt hab hs
         rw [lintegral_mul_const _ hanti.measurable,
           ← lintegral_eq_lintegral_meas_lt _ (.of_forall hnn) hmeas.aemeasurable,
-          lintegral_ofReal_upperHalfPlanePoissonKernel hz, one_mul]
+          ← upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonLIntegral_volume hz, one_mul]
 
 /-- **The nontangential maximal bound for the extended Poisson integral.** The nontangential
 maximal function of the Poisson integral of `‖g‖ dx`, over cones of aperture `α` and any height,
