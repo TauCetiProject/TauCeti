@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
 
 import Mathlib.Combinatorics.SimpleGraph.Acyclic
 import Mathlib.Order.Preorder.Finite
-import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 import TauCeti.Combinatorics.SimpleGraph.Connectivity.Fan
 import TauCeti.Combinatorics.SimpleGraph.Paths
 
@@ -32,7 +31,7 @@ This file proves both directions at their natural generality:
   `2`-vertex-connected (`SimpleGraph.EarDecomposition.IsOpen.isVertexConnected_two`).
 * **Completeness with finitely many edges.** In a `2`-vertex-connected simple graph with finitely
   many edges (`[Finite G.edgeSet]`), preconnectedness gives `Finite V` automatically
-  (`SimpleGraph.Preconnected.finite_of_finite_edgeSet`), so no separate `[Finite V]` instance is
+  (`SimpleGraph.Preconnected.finite_edgeSet_iff_finite`), so no separate `[Finite V]` instance is
   required. Any proper subgraph `H ≠ ⊤` with at least two vertices admits an open ear
   (`SimpleGraph.IsVertexConnected.exists_open_ear`), constructed via the fan lemma
   `SimpleGraph.IsVertexConnected.exists_fan` when `H` misses a vertex and as a single missing edge
@@ -77,7 +76,7 @@ In the soundness direction, deleting a set `s` of fewer than two vertices leaves
 undeleted internal vertex `w` yields two internally disjoint subwalks to `u` and `v`, at least one
 of which avoids `s` and lifts via `SimpleGraph.Walk.reachable_induce_coe_of_mem_support`. In the
 completeness direction, `[Finite G.edgeSet]` and `hG : G.IsVertexConnected 2` supply `Finite V`
-via `SimpleGraph.Preconnected.finite_of_finite_edgeSet`, giving `Finite G.Subgraph` and hence
+via `SimpleGraph.Preconnected.finite_edgeSet_iff_finite`, giving `Finite G.Subgraph` and hence
 `WellFoundedGT G.Subgraph`, so producing an open ear decomposition of `⊤` with the same initial
 subgraph along `Ear.lt_adjoin` requires no auxiliary edge-count measure or `[DecidableEq V]`
 assumption.
@@ -239,7 +238,9 @@ theorem IsVertexConnected.exists_open_ear [Finite G.edgeSet] (hG : G.IsVertexCon
     {H : G.Subgraph} (hH : H ≠ ⊤) (hverts : H.verts.Nontrivial) :
     ∃ e : G.Ear H, e.kind = .«open» := by
   classical
-  have : Finite V := (hG.isEdgeConnected.preconnected two_ne_zero).finite_of_finite_edgeSet
+  have : Finite V :=
+    (hG.preconnected two_ne_zero).finite_edgeSet_iff_finite.mp
+      (Set.toFinite G.edgeSet)
   by_cases hspan : ∀ x : V, x ∈ H.verts
   · exact Subgraph.IsSpanning.exists_open_ear hspan hH
   · push Not at hspan
@@ -252,7 +253,9 @@ subgraph. -/
 theorem IsVertexConnected.exists_isOpen_earDecomposition_of_earDecomposition [Finite G.edgeSet]
     (hG : G.IsVertexConnected 2) {H : G.Subgraph} (d₀ : G.EarDecomposition H) (hd₀ : d₀.IsOpen) :
     ∃ d : G.EarDecomposition (⊤ : G.Subgraph), d.IsOpen ∧ d.initial = d₀.initial := by
-  have : Finite V := (hG.isEdgeConnected.preconnected two_ne_zero).finite_of_finite_edgeSet
+  have : Finite V :=
+    (hG.preconnected two_ne_zero).finite_edgeSet_iff_finite.mp
+      (Set.toFinite G.edgeSet)
   induction H using WellFoundedGT.induction with
   | ind H ih =>
     by_cases htop : H = ⊤
