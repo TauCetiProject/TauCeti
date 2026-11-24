@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.Exponential
 public import TauCeti.Analysis.CStarAlgebra.Projection.Equivalence
+public import TauCeti.Topology.Algebra.Star.StarProjection
 import TauCeti.Analysis.CStarAlgebra.Unitary.Connected
 import TauCeti.Data.Matrix.Block
 
@@ -192,8 +193,8 @@ theorem stabilizedProjRot_half [Star A] [SMul ℂ A] : stabilizedProjRot v p q (
   rw [stabilizedProjRot_def, hθ]
   refine fromBlocks_inj.mpr ⟨?_, ?_, ?_, ?_⟩
   · rw [hc2]
-  · simp only [Real.sin_pi_div_four, ← Real.cos_pi_div_four, mul_assoc, ← sq, hc2]; rfl
-  · simp only [Real.sin_pi_div_four, ← Real.cos_pi_div_four, mul_assoc, ← sq, hc2]; rfl
+  · simp only [Real.sin_pi_div_four, ← Real.cos_pi_div_four, mul_assoc, ← sq, hc2, ← div_eq_mul_inv]
+  · simp only [Real.sin_pi_div_four, ← Real.cos_pi_div_four, mul_assoc, ← sq, hc2, ← div_eq_mul_inv]
   · rw [Real.sin_pi_div_four, ← Real.cos_pi_div_four, hc2]
 /-- `stabilizedProjRot v p q` is continuous on `ℝ` for any (possibly non-unital) C⋆-algebra `A`. -/
 @[fun_prop] theorem continuous_stabilizedProjRot [NonUnitalCStarAlgebra A] :
