@@ -31,7 +31,8 @@ Five facts about Mathlib's pullback bundle `f *ᵖ E`, whose fibre over `x` is t
   total space of `f *ᵖ E` is determined by its projection and its lift
   (`Bundle.Pullback.totalSpace_ext`).
 * A map into the total space of `f *ᵖ E` is continuous exactly when its projection and its lift to
-  the total space of `E` are (`Bundle.Pullback.continuous_iff`).
+  the total space of `E` are (`Bundle.Pullback.continuous_iff`); in particular continuous
+  fibrewise maps pull back to continuous fibrewise maps (`Bundle.Pullback.continuous_fiberwise`).
 * The canonical lift is the base change of `f` along the projection of `E`, so it inherits
   openness from `f` (`Bundle.Pullback.isOpenMap_lift`). If `f` is the quotient map of a covering
   action of a group `G` and `G` acts on the total space of `f *ᵖ E` over its action on the base,
@@ -107,6 +108,17 @@ theorem Bundle.Pullback.continuous_iff {Z : Type*} [TopologicalSpace Z] {f : B' 
     {g : Z → TotalSpace F (f *ᵖ E)} :
     Continuous g ↔ Continuous (fun z ↦ (g z).proj) ∧ Continuous (fun z ↦ Pullback.lift f (g z)) :=
   (inducing_pullbackTotalSpaceEmbedding F E f).continuous_iff.trans continuous_prodMk
+
+omit [TopologicalSpace B] in
+/-- Pulling back a continuous fibrewise map `Φ b : E b → E' b` of total spaces along any map
+`f : B' → B` gives a continuous fibrewise map of the total spaces of `f *ᵖ E` and `f *ᵖ E'`. -/
+theorem Bundle.Pullback.continuous_fiberwise {F' : Type*} {E' : B → Type*}
+    [TopologicalSpace (TotalSpace F' E')] {Φ : ∀ b, E b → E' b}
+    (hΦ : Continuous fun v : TotalSpace F E ↦ (⟨v.proj, Φ v.proj v.snd⟩ : TotalSpace F' E'))
+    (f : B' → B) :
+    Continuous fun v : TotalSpace F (f *ᵖ E) ↦
+      (⟨v.proj, Φ (f v.proj) v.snd⟩ : TotalSpace F' (f *ᵖ E')) :=
+  continuous_iff.2 ⟨Pullback.continuous_proj F E f, hΦ.comp (Pullback.continuous_lift F E f)⟩
 
 omit [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace (TotalSpace F E)] in
 /-- The canonical lift sends the points of the total space of `f *ᵖ E` over `U` whose lift lies in

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Basic
+public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -35,13 +36,22 @@ For scalar coordinates `q : F ≃L[𝕜] 𝕜` of a rank-one model,
 `Bundle.Trivialization.scalarCoordChange` computes the actual scalar transition. Its
 application, nonvanishing, identity and cocycle laws follow from the native linear changes.
 
-More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`), and likewise
+The fibre coordinate of a continuous section in any trivialization is continuous on its base set
+(`Bundle.Trivialization.continuousOn_snd_apply_mk`).
+
+Any linear trivialization sends a vector over its base set to a nonzero vector
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`,
+`Bundle.Trivialization.snd_apply_eq_zero_iff`), and likewise
 for its inverse over the base set (`Bundle.Trivialization.symm_apply_ne_zero_iff`); both commute
 with scalar multiplication over the base set (`Bundle.Trivialization.snd_apply_mk_smul`,
-`Bundle.Trivialization.symm_apply_smul`). Over the base set, its fibrewise linear inverse
-`e.symmₗ R b` is the inverse of the fibrewise linear equivalence
-(`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
+`Bundle.Trivialization.symm_apply_smul`). Near a point whose image under a map continuous there
+lies in the base set, a linear pretrivialization, in particular a linear trivialization, carries a
+fibrewise operation on sections along that map to an operation on their coordinates, provided every
+linear equivalence from a fibre to the model fibre carries the first operation to the second; the
+sum and the difference are examples
+(`Bundle.Pretrivialization.snd_apply_mk_op_eventuallyEq_and_eq`). Over the base set, the
+fibrewise linear inverse `e.symmₗ R b` of a linear trivialization is the inverse of the fibrewise
+linear equivalence (`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
 (`Bundle.Trivialization.symmₗ_injective`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
 of the first followed by the coordinate change from the first to the second
@@ -62,6 +72,12 @@ linear maps on the model fibre back to a fibre through a linear trivialization i
 Transport through a preferred fibre equivalence also shows that a family spanning a fibre with
 nontrivial model has a nonzero member (`VectorBundle.exists_ne_zero_of_span_range_eq_top`).
 The family and fibre may be infinite, with no continuity or manifold assumption on the family.
+
+Membership in both chart base sets gives membership in their product base set
+(`Bundle.Trivialization.mem_prod_baseSet`), also for pulled-back charts
+(`Bundle.Trivialization.mem_prod_pullback_baseSet`). For linear product charts the fibre
+linear equivalence is the product of the two chart equivalences
+(`Bundle.Trivialization.linearEquivAt_prod`).
 
 We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
@@ -95,6 +111,36 @@ noncomputable section
 
 open Bundle
 open scoped Topology
+
+namespace Bundle.Pretrivialization
+
+variable {B : Type*} [TopologicalSpace B] (R : Type*) [Semiring R] {F : Type*} [TopologicalSpace F]
+  [AddCommMonoid F] [Module R F] {E : B → Type*} [∀ b, AddCommMonoid (E b)] [∀ b, Module R (E b)]
+  (e : Pretrivialization F (π F E)) [e.IsLinear R]
+
+/-- Let `e` be a pretrivialization that is linear on the fibres, such as a linear trivialization
+read through `Bundle.Trivialization.toPretrivialization`, and `b` a map continuous at `x₀` within
+`u`, with `b x₀` in the base set of `e`. For a fibrewise operation `op` that every linear
+equivalence `E y ≃ₗ[R] F` carries to `opF`, the `e`-coordinate of `op (s x) (t x)` is `opF` of the
+`e`-coordinates of `s x` and `t x`, both for `x` near `x₀` within `u` and at `x₀` itself. Only
+linear equivalences are needed because over the base set `e` is the linear equivalence
+`e.linearEquivAt R`. No topology on the total space is needed. This is the coordinate step in the
+regularity of fibrewise sums and differences of sections along a map. -/
+theorem snd_apply_mk_op_eventuallyEq_and_eq {X : Type*} [TopologicalSpace X] {b : X → B}
+    {s t : ∀ x, E (b x)} {u : Set X} {x₀ : X} {op : ∀ y, E y → E y → E y} {opF : F → F → F}
+    (hop : ∀ y (g : E y ≃ₗ[R] F) v w, g (op y v w) = opF (g v) (g w))
+    (hb : ContinuousWithinAt b u x₀) (hx₀ : b x₀ ∈ e.baseSet) :
+    (fun x ↦ (e ⟨b x, op (b x) (s x) (t x)⟩).2) =ᶠ[𝓝[u] x₀]
+        (fun x ↦ opF (e ⟨b x, s x⟩).2 (e ⟨b x, t x⟩).2) ∧
+      (e ⟨b x₀, op (b x₀) (s x₀) (t x₀)⟩).2 = opF (e ⟨b x₀, s x₀⟩).2 (e ⟨b x₀, t x₀⟩).2 := by
+  have key {y : B} (hy : y ∈ e.baseSet) (v w : E y) :
+      (e ⟨y, op y v w⟩).2 = opF (e ⟨y, v⟩).2 (e ⟨y, w⟩).2 := by
+    simpa only [linearEquivAt_apply] using hop y (e.linearEquivAt R y hy) v w
+  refine ⟨?_, key hx₀ _ _⟩
+  filter_upwards [hb.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx₀)] with x hx
+  exact key hx _ _
+
+end Bundle.Pretrivialization
 
 namespace Bundle.Trivialization
 
@@ -140,6 +186,14 @@ theorem homeomorphTrivial_symm_apply (he : e.baseSet = Set.univ)
     (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.snd) := by
   rfl
 
+/-- The fibre coordinate of a continuous section in a trivialization is continuous on the base
+set of the trivialization. -/
+theorem continuousOn_snd_apply_mk {s : ∀ b, E b}
+    (hs : Continuous fun b ↦ TotalSpace.mk' F b (s b)) :
+    ContinuousOn (fun b ↦ (e (TotalSpace.mk' F b (s b))).2) e.baseSet :=
+  continuous_snd.comp_continuousOn
+    (e.continuousOn.comp hs.continuousOn fun _ hb ↦ e.mem_source.2 hb)
+
 section Linear
 
 variable (R : Type*) [Semiring R] {F : Type*} [TopologicalSpace F] [AddCommMonoid F] [Module R F]
@@ -152,6 +206,13 @@ vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
     (e v).2 ≠ 0 ↔ v.snd ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
+
+include R in
+/-- A linear trivialization sends a vector over its base set to zero exactly when the vector is
+zero. -/
+theorem snd_apply_eq_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
+    (e v).2 = 0 ↔ v.snd = 0 :=
+  not_iff_not.1 (e.snd_apply_ne_zero_iff R hv)
 
 include R in
 /-- Over its base set, the inverse of a linear trivialization sends a vector of the model fibre to
@@ -323,6 +384,57 @@ theorem prod_symm_apply' {F₁ F₂ : Type*} {E₁ E₂ : B → Type*} [Topologi
     (e₁.prod e₂).symm x w = (e₁.symm x w.1, e₂.symm x w.2) :=
   (TotalSpace.mk_inj (F := F₁ × F₂) (E := E₁ ×ᵇ E₂)).mp <|
     ((e₁.prod e₂).mk_symm hx w).trans (e₁.prod_symm_apply e₂ x w.1 w.2)
+
+section ProductBaseSet
+
+variable {F₁ : Type*} [TopologicalSpace F₁] {F₂ : Type*} [TopologicalSpace F₂]
+  {E₁ : B → Type*} {E₂ : B → Type*}
+  [∀ x, Zero (E₁ x)] [∀ x, Zero (E₂ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  {e₁ : Trivialization F₁ (π F₁ E₁)} {e₂ : Trivialization F₂ (π F₂ E₂)}
+
+/-- A point in both chart base sets belongs to the base set of their product chart. -/
+theorem mem_prod_baseSet {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet) :
+    x ∈ (e₁.prod e₂).baseSet := by
+  simpa only [Trivialization.prod_baseSet, Set.mem_inter_iff] using And.intro hx₁ hx₂
+
+variable {B' : Type*} [TopologicalSpace B']
+  {T : Type*} [FunLike T B' B] [ContinuousMapClass T B' B]
+
+/-- Membership in both original base sets gives membership in the product of pulled-back charts. -/
+theorem mem_prod_pullback_baseSet (f : T) {y : B'}
+    (hx₁ : f y ∈ e₁.baseSet) (hx₂ : f y ∈ e₂.baseSet) :
+    letI : ∀ x, Zero ((f *ᵖ E₁) x) := inferInstanceAs (∀ x, Zero (E₁ (f x)))
+    letI : ∀ x, Zero ((f *ᵖ E₂) x) := inferInstanceAs (∀ x, Zero (E₂ (f x)))
+    y ∈ ((e₁.pullback f).prod (e₂.pullback f)).baseSet := by
+  simpa only [Trivialization.prod_baseSet, Trivialization.pullback_baseSet,
+    Set.mem_inter_iff, Set.mem_preimage] using (mem_prod_baseSet hx₁ hx₂)
+
+end ProductBaseSet
+
+section LinearProduct
+
+variable {K : Type*} [NontriviallyNormedField K]
+  {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace K F₁]
+  [NormedAddCommGroup F₂] [NormedSpace K F₂]
+  {E₁ E₂ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module K (E₁ x)]
+  [∀ x, AddCommGroup (E₂ x)] [∀ x, Module K (E₂ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [∀ x, TopologicalSpace (E₂ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₁ E₁] [FiberBundle F₂ E₂]
+
+/-- The linear equivalence of the product chart is the product of the two fibre equivalences. -/
+theorem linearEquivAt_prod
+    (e₁ : Trivialization F₁ (π F₁ E₁)) (e₂ : Trivialization F₂ (π F₂ E₂))
+    [e₁.IsLinear K] [e₂.IsLinear K] {x : B} (hx₁ : x ∈ e₁.baseSet) (hx₂ : x ∈ e₂.baseSet) :
+    (e₁.prod e₂).linearEquivAt K x
+      (mem_prod_baseSet hx₁ hx₂) =
+      (e₁.linearEquivAt K x hx₁).prodCongr (e₂.linearEquivAt K x hx₂) := by
+  exact congrArg ContinuousLinearEquiv.toLinearEquiv
+    (Trivialization.continuousLinearEquivAt_prod (𝕜 := K)
+      (mem_prod_baseSet hx₁ hx₂))
+
+end LinearProduct
 
 /-- The preferred trivialization of `E₁ ×ᵇ E₂` at `b` is `(trivializationAt F₁ E₁ b).prod
 (trivializationAt F₂ E₂ b)`. -/

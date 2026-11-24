@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 import TauCeti.Analysis.Normed.Ring.Basic
-import TauCeti.RingTheory.MvPowerSeries.Rescale
 
 /-!
 # Rescaling restricted univariate power series
@@ -167,12 +166,8 @@ theorem norm_restrictedRescaleAlgHom (hu : ∀ x : R, ‖u * x‖ = ‖u‖ * �
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, PowerSeries.gaussNorm_eq, PowerSeries.gaussNorm_eq]
   congr 1
   funext n
-  rw [coe_restrictedRescaleAlgHom, coeff_rescale]
-  simpa [Finsupp.prod_single_index] using
-    TauCeti.MvPowerSeries.norm_prod_pow_smul_mul_prod (σ := Unit) (E := R)
-      (r := fun _ ↦ r) (s := fun _ ↦ s) (fun _ ↦ u)
-      (fun _ e ↦ by rw [smul_eq_mul, hu, mul_right_comm, hrs, mul_comm])
-      (Finsupp.single () n) (coeff n (f : R⟦X⟧))
+  rw [coe_restrictedRescaleAlgHom]
+  exact _root_.PowerSeries.norm_coeff_rescale_mul_pow (f : R⟦X⟧) hu hrs n
 
 /-- Rescaling between positive-radius closed-disc algebras with `‖u‖ * s ≤ r` is `1`-Lipschitz for
 the Gauss norms. -/

@@ -55,22 +55,6 @@ variable {B : Type u} [TopologicalSpace B] [T2Space B] (F : Type*) [NormedAddCom
 
 section ThomSpace
 
-/-- Collapsing the sphere bundle to a point is cellular: the part in `S(E)` of the boundary of an
-`n`-cell of `D(E)` is mapped into the skeleton of dimension `n` of the point. -/
-private theorem const_mem_skeletonLT_of_mem_cellFrontier (n : ℕ)
-    (c : letI := relCWComplexDiscBundleSphereBundle F E; cell (discBundle F E) n)
-    (x : sphereBundle F E)
-    (hx : letI := relCWComplexDiscBundleSphereBundle F E;
-      (x : TotalSpace F E) ∈ cellFrontier n c) :
-    TopCat.ofHom (ContinuousMap.const (sphereBundle F E) PUnit.unit) x ∈
-      (skeletonLT (univ : Set PUnit.{u + 1}) n : Set PUnit.{u + 1}) := by
-  let := relCWComplexDiscBundleSphereBundle F E
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · rw [cellFrontier_zero_eq_empty] at hx
-    exact hx.elim
-  · rw [skeletonLT_univ_eq_univ_of_ne_zero hn.ne']
-    exact mem_univ _
-
 /-- **The Thom space of a bundle over a CW complex is a CW complex.** If `B` is a CW complex, the
 Thom space `Th(E) = D(E)/S(E)` is a CW complex with one `0`-cell, the basepoint, and one
 `(m + r)`-cell for each `m`-cell of `B`, where `r` is the rank of the bundle
@@ -79,7 +63,7 @@ Thom space `Th(E) = D(E)/S(E)` is a CW complex with one `0`-cell, the basepoint,
 def thomSpaceCWComplex : CWComplex (univ : Set (thomSpace F E)) :=
   letI := relCWComplexDiscBundleSphereBundle F E
   (isPushout_thomSpace F E).cwComplexOfMapsToSkeletonLT
-    (const_mem_skeletonLT_of_mem_cellFrontier F E)
+    (mem_skeletonLT_univ_of_mem_cellFrontier _)
 
 /-- The `n`-cells of the Thom space are the `n`-cells of the point, a single `0`-cell for the
 basepoint, together with the `m`-cells of `B` with `m + r = n`, where `r` is the rank of the
@@ -91,7 +75,7 @@ def thomSpaceCWComplexCellEquiv (n : ℕ) :
         Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m :=
   letI := relCWComplexDiscBundleSphereBundle F E
   ((isPushout_thomSpace F E).cwComplexOfMapsToSkeletonLTCellEquiv
-    (const_mem_skeletonLT_of_mem_cellFrontier F E) n).trans
+    (mem_skeletonLT_univ_of_mem_cellFrontier _) n).trans
       (Equiv.sumCongr (.refl _) (relCWComplexDiscBundleSphereBundleCellEquiv F E n))
 
 /-- The cell of the point in the Thom space is the basepoint. -/
@@ -102,7 +86,7 @@ theorem thomSpaceCWComplex_map_inl {n : ℕ} (c : cell (univ : Set PUnit.{u + 1}
     map n ((thomSpaceCWComplexCellEquiv F E n).symm (.inl c)) x = thomSpaceBasepoint F E :=
   letI := relCWComplexDiscBundleSphereBundle F E
   (isPushout_thomSpace F E).cwComplexOfMapsToSkeletonLT_map_inl
-    (const_mem_skeletonLT_of_mem_cellFrontier F E) n c x
+    (mem_skeletonLT_univ_of_mem_cellFrontier _) n c x
 
 /-- The characteristic map of the cell of the Thom space over an `m`-cell of `B` is the
 characteristic map of the corresponding cell of the disc bundle, followed by the collapse map
@@ -118,7 +102,7 @@ theorem thomSpaceCWComplex_map_inr {n : ℕ}
         closedCell_subset_complex n _ (mem_image_of_mem _ x.property)⟩ :=
   letI := relCWComplexDiscBundleSphereBundle F E
   (isPushout_thomSpace F E).cwComplexOfMapsToSkeletonLT_map_inr
-    (const_mem_skeletonLT_of_mem_cellFrontier F E) n _ x
+    (mem_skeletonLT_univ_of_mem_cellFrontier _) n _ x
 
 /-- The Thom space of a bundle over a finite CW complex is a finite CW complex. -/
 theorem finite_thomSpaceCWComplex [RelCWComplex.Finite (univ : Set B)] :
@@ -127,7 +111,7 @@ theorem finite_thomSpaceCWComplex [RelCWComplex.Finite (univ : Set B)] :
   letI := relCWComplexDiscBundleSphereBundle F E
   haveI := finite_relCWComplexDiscBundleSphereBundle F E
   (isPushout_thomSpace F E).finite_cwComplexOfMapsToSkeletonLT
-    (const_mem_skeletonLT_of_mem_cellFrontier F E)
+    (mem_skeletonLT_univ_of_mem_cellFrontier _)
 
 end ThomSpace
 

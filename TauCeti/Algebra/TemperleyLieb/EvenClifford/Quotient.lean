@@ -10,6 +10,7 @@ public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 -- Private: functoriality of Clifford involutions and even subalgebras, grade-involution parity
 -- criteria, and `Fin.snoc` linear equivalences are used only inside proofs and internal
 -- constructions.
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.Pi
@@ -320,8 +321,6 @@ theorem isMarkovTrace_evenCliffordTrace :
       scalarTrace_cliffordIncl, pow_succ']
     ring
   map_strandIncl_mul_e_last n x := by
-    have hsqrt : (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
-      exact_mod_cast Real.mul_self_sqrt zero_le_two
     simp only [evenCliffordTrace_apply, map_mul, Subalgebra.coe_mul, evenCliffordHom_strandIncl,
       coe_evenCliffordIncl, coe_evenCliffordHom_e, mul_smul_comm, map_smul,
       scalarTrace_cliffordIncl_mul_cliffordProjection_last, smul_eq_mul]
@@ -337,7 +336,7 @@ theorem isMarkovTrace_evenCliffordTrace :
             ring
       _ = (Real.sqrt 2 : ℂ) ^ (n + 1) *
             CliffordAlgebra.scalarTrace (cliffordForm (n + 1)) (evenCliffordHom (n + 1) x) := by
-            rw [hsqrt]
+            rw [Complex.mul_self_ofReal_sqrt zero_le_two]
             norm_num
 
 namespace IsMarkovTrace
@@ -535,10 +534,9 @@ theorem exists_evenCliffordModel
 @[simp]
 theorem evenCliffordHom_jonesWenzl_three :
     evenCliffordHom 3 (jonesWenzl (Real.sqrt 2 : ℂ) 3) = 0 := by
-  have hsqrt : (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
-    exact_mod_cast Real.mul_self_sqrt zero_le_two
   have hq3 : qInt ℂ (Real.sqrt 2 : ℂ) 3 = 1 := by
-    rw [qInt_add_two (Real.sqrt 2 : ℂ) 1, qInt_two, qInt_one, hsqrt]
+    rw [qInt_add_two (Real.sqrt 2 : ℂ) 1, qInt_two, qInt_one,
+      Complex.mul_self_ofReal_sqrt zero_le_two]
     norm_num
   have hq4 : qInt ℂ (Real.sqrt 2 : ℂ) 4 = 0 := by
     rw [qInt_add_two (Real.sqrt 2 : ℂ) 2, hq3, qInt_two]
