@@ -43,6 +43,8 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_apply`: the convolution theorem
   `𝓕 (𝓕 K • 𝓕⁻ φ) y = ∫ x, K (x - y) * φ x` for an integrable kernel `K` and a test function `φ`.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
+* `SchwartzMap.fourier_convolution_fourierInv_apply`: the Fourier transform of the convolution of
+  `𝓕⁻ σ` with `f` is the bilinear multiplier `ξ ↦ B (σ ξ) (𝓕 f ξ)`.
 * `SchwartzMap.norm_fourierInv_bilin_fourier_apply_le`: the pointwise bound
   `‖𝓕⁻ (B (σ ·) (𝓕 f ·)) x‖ ≤ ‖B‖ ‖𝓕⁻ σ‖₁ sup ‖f‖` for a bilinear multiplier with a Schwartz
   symbol, such as an operator-valued one, and
@@ -210,6 +212,13 @@ theorem fourierInv_convolution [CompleteSpace F₃] (B : F₁ →L[ℂ] F₂ →
   ext ξ
   rw [fourierInv_convolution_apply, pairing_apply_apply]
 
+/-- The Fourier transform of the convolution of `𝓕⁻ σ` with `f` is the bilinear multiplier
+`ξ ↦ B (σ ξ) (𝓕 f ξ)`. -/
+theorem fourier_convolution_fourierInv_apply [CompleteSpace F₁] [CompleteSpace F₃]
+    (B : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (σ : 𝓢(E, F₁)) (f : 𝓢(E, F₂)) (ξ : E) :
+    𝓕 (convolution B (𝓕⁻ σ) f) ξ = B (σ ξ) (𝓕 f ξ) := by
+  rw [fourier_convolution, fourier_fourierInv_eq, pairing_apply_apply]
+
 /-- **Pointwise bound for a multiplier with a Schwartz symbol.** For a continuous bilinear map `B`,
 a Schwartz symbol `σ` and a Schwartz function `f` bounded by `M`, the function
 `𝓕⁻ (B (σ ·) (𝓕 f ·))`, which is the convolution of `𝓕⁻ σ` with `f`, is bounded by
@@ -229,9 +238,8 @@ theorem norm_fourierInv_bilin_fourier_apply_le [CompleteSpace F₁] (B : F₁ �
   by_cases hF₂ : CompleteSpace F₂
   swap
   · simpa [fourier_eq_zero_of_not_completeSpace hF₂, Real.fourierInv_eq] using hR
-  have h : (fun ξ ↦ B (σ ξ) (𝓕 f ξ)) = ⇑(𝓕 (convolution B (𝓕⁻ σ) f) : 𝓢(E, F₃)) := by
-    ext ξ
-    rw [fourier_convolution, fourier_fourierInv_eq, pairing_apply_apply]
+  have h : (fun ξ ↦ B (σ ξ) (𝓕 f ξ)) = ⇑(𝓕 (convolution B (𝓕⁻ σ) f) : 𝓢(E, F₃)) :=
+    funext fun ξ ↦ (fourier_convolution_fourierInv_apply B σ f ξ).symm
   have hM : ‖f.toLp ⊤‖ ≤ M := Lp.norm_le_of_ae_bound_top ((norm_nonneg _).trans (hf 0))
     ((f.coeFn_toLp ⊤ volume).mono fun y hy ↦ by rw [hy]; exact hf y)
   rw [h, ← fourierInv_coe, fourierInv_fourier_eq, convolution_apply,
@@ -259,9 +267,8 @@ theorem norm_integral_fourierChar_smul_bilin_fourier_le [CompleteSpace F₁]
   · rw [integral_of_not_completeSpace hF₃, norm_zero]
     exact h0
   set Z : 𝓢(E, F₃) := convolution B (𝓕⁻ σ) f
-  have hZ : (fun ξ ↦ B (σ ξ) (𝓕 f ξ)) = ⇑(𝓕 Z : 𝓢(E, F₃)) := by
-    ext ξ
-    rw [fourier_convolution, fourier_fourierInv_eq, pairing_apply_apply]
+  have hZ : (fun ξ ↦ B (σ ξ) (𝓕 f ξ)) = ⇑(𝓕 Z : 𝓢(E, F₃)) :=
+    funext fun ξ ↦ (fourier_convolution_fourierInv_apply B σ f ξ).symm
   have hZM (y : E) : ‖Z y‖ ≤ ‖B‖ * (∫ y, ‖𝓕⁻ σ y‖) * M := by
     have h := norm_fourierInv_bilin_fourier_apply_le B σ f hf y
     rwa [hZ, ← fourierInv_coe, fourierInv_fourier_eq] at h

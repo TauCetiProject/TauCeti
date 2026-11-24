@@ -291,10 +291,6 @@ private theorem HasCompactSpatialSupport.norm_integral_fourierChar_smul_le
     funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   have hσ : ⇑σS = fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ :=
     funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  -- On the support of `ψₖ` the enlarged cutoff `Ψₖ` is `1`.
-  have hΨ (ζ : CoordinateSpace n) : (φ.enlargedLittlewoodPaley L k ζ : ℂ) *
-      φ.inhomogeneousLittlewoodPaley k ζ = φ.inhomogeneousLittlewoodPaley k ζ := by
-    exact_mod_cast φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL k ζ
   have heq : ∫ ζ, 𝐞 ⟪ζ, x⟫ • (φ.inhomogeneousLittlewoodPaley j (ζ + θ) : ℂ) •
       g ζ (𝓕 (SchwartzMap.fourierMultiplierCLM V
         (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) =
@@ -305,19 +301,17 @@ private theorem HasCompactSpatialSupport.norm_integral_fourierChar_smul_le
         (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) =
         g ζ (𝓕 (SchwartzMap.fourierMultiplierCLM V
           (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) u) ζ) := by
-      rw [SchwartzMap.fourier_fourierMultiplierCLM_apply
-        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k), FunLike.coe_smul,
-        Pi.smul_apply, ← Complex.coe_smul, ← map_smul, smul_smul, hΨ]
+      -- On the support of `ψₖ` the enlarged cutoff `Ψₖ` is `1`.
+      simp [SchwartzMap.fourier_fourierMultiplierCLM_apply
+        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k), smul_smul,
+        φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL k ζ]
     rw [hρ, hσ]
     dsimp only
     rw [hpt]
   have hρn : ∫ y, ‖𝓕⁻ ρS y‖ = ∫ y, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) y‖ := by
-    refine integral_congr_ae (.of_forall fun y ↦ ?_)
-    have h := TauCeti.fourierInv_comp_sub_const
-      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) (-θ) y
-    simp only [sub_neg_eq_add] at h
-    dsimp only
-    rw [SchwartzMap.fourierInv_coe, hρ, h, Circle.norm_smul]
+    simpa only [sub_neg_eq_add, SchwartzMap.fourierInv_coe, hρ] using
+      TauCeti.integral_norm_fourierInv_comp_sub_const
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) (-θ)
   have hσn : ∫ y, ‖𝓕⁻ σS y‖ =
       ∫ y, ‖𝓕⁻ (fun ζ ↦ φ.enlargedLittlewoodPaley L k ζ • g ζ) y‖ := by
     rw [SchwartzMap.fourierInv_coe, hσ]
