@@ -194,8 +194,7 @@ end Filtration
 
 section Symbol
 
--- Symmetrization is only available for scalar rings in `Type`.
-variable {R : Type} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable {R : Type u} {L : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
 local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι R (L := L)

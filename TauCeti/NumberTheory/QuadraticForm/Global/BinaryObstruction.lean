@@ -69,7 +69,8 @@ theorem anisotropic_sumTwoSquares_atFinitePlace
     exact _root_.QuadraticForm.atFinitePlaceWeightedSumSquares v (![(1 : ℚ), 1])
   have hani : (weightedSumSquares (v.adicCompletion ℚ) fun i =>
       algebraMap ℚ (v.adicCompletion ℚ) (![(1 : ℚ), 1] i)).Anisotropic := by
-    convert TauCeti.anisotropic_binary_one_one_iff.mpr hneg using 1
+    convert (TauCeti.anisotropic_binary_iff (1 : v.adicCompletion ℚ) 1).mpr
+      (by rwa [mul_one]) using 1
     congr 1
     funext i
     fin_cases i <;> simp
@@ -127,7 +128,7 @@ theorem anisotropic_sumTwoSquares_atRealPlace
   have hani : (weightedSumSquares ℝ fun i =>
       InfinitePlace.embedding_of_isReal w.property (![(1 : ℚ), 1] i)).Anisotropic := by
     rw [hcoeff]
-    exact TauCeti.anisotropic_binary_one_one_iff.mpr hneg
+    exact (TauCeti.anisotropic_binary_iff 1 1).mpr (by rwa [mul_one])
   exact (QuadraticMap.Equivalent.anisotropic_iff ⟨he⟩).mpr hani
 
 end TauCeti.NumberField.QuadraticForm

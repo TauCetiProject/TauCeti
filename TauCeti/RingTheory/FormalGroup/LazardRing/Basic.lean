@@ -327,6 +327,11 @@ theorem lift_map (F : FormalGroup R) [F.IsComm] (g : R →+* S) :
     lift ⟨F.map g, inferInstance⟩ = g.comp (lift ⟨F, inferInstance⟩) :=
   hom_ext <| by rw [map_lift, ← FormalGroup.map_comp, map_lift]
 
+/-- The Lazard ring has characteristic zero, since the additive formal group law over `ℤ` is
+classified by a ring homomorphism `LazardRing →+* ℤ`. -/
+instance : CharZero LazardRing :=
+  (lift (R := ℤ) ⟨FormalGroup.𝔾ₐ, inferInstance⟩).charZero
+
 /-! ### The grading -/
 
 /-- The homological degree `2 (i + j - 1)` of the coefficient `aᵢⱼ` of `Xⁱ Yʲ` in a formal group

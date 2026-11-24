@@ -37,6 +37,8 @@ operators over an `RCLike` field, with the structure an instance provides in a c
   stated as a compatibility of the underlying ring isomorphism along `RingEquiv.refl R`.
 * `IsScalarTower.of_algHom_compHom`: pulling back a `K`-module along `j : O →ₐ[R] K` preserves the
   scalar tower over `R`.
+* `IsScalarTower.linearMap_eq_restrictScalars_comp`: in a tower `R → S → A`, the structure map
+  `R → A` is the composite of `R → S` and `S → A` as `R`-linear maps.
 -/
 
 public section
@@ -86,3 +88,11 @@ theorem IsScalarTower.of_algHom_compHom {R O K M : Type*} [CommSemiring R] [Semi
   IsScalarTower.of_algebraMap_smul fun r m ↦ by
     change j (algebraMap R O r) • m = r • m
     rw [j.commutes, algebraMap_smul]
+
+variable (R S A) in
+/-- In a tower `R → S → A`, the structure map `R → A` is the composite of `R → S` and `S → A`, as
+`R`-linear maps. -/
+theorem IsScalarTower.linearMap_eq_restrictScalars_comp :
+    Algebra.linearMap R A = (Algebra.linearMap S A).restrictScalars R ∘ₗ Algebra.linearMap R S := by
+  ext
+  simp

@@ -77,6 +77,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 /-! ### Injectivity and image of the flow-out -/
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Liouville trajectories through an injectively parametrized boundary are disjoint.** If
 the Liouville field of a Liouville domain is complete and `ι : S → M` is an injective map into
 the boundary, then `(t, s) ↦ ψₜ (ι s)` is injective on `ℝ × S`. -/

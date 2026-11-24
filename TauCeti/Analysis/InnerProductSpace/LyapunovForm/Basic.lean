@@ -58,6 +58,7 @@ in `TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic`.
 * `ContinuousLinearMap.HasLyapunovForm.neg_adjoint`: in finite dimensions, `-A†` has a Lyapunov
   form whenever `A` does. The formal adjoint of `d/ds + A` is `-d/ds + A†`; multiplying it by `-1`
   gives `d/ds - A†`, whose coefficient is `-A†`.
+* `ContinuousLinearMap.HasLyapunovForm.adjoint`: in finite dimensions, `A†` has a Lyapunov form.
 
 ## References
 
@@ -300,5 +301,12 @@ theorem HasLyapunovForm.neg_adjoint [FiniteDimensional ℝ E] (h : A.HasLyapunov
         gcongr
     _ = c * ‖x‖ ^ 2 := by field_simp
     _ ≤ ⟪S (A x), x⟫_ℝ := hcS x
+
+/-- **The adjoint has a Lyapunov form.** In finite dimensions, if `A` has a Lyapunov form, then so
+does `A†`. So the reversed coefficient `s ↦ A(-s)†` of a trajectory operator has hyperbolic limits
+whenever `A` does. -/
+theorem HasLyapunovForm.adjoint [FiniteDimensional ℝ E] (h : A.HasLyapunovForm) :
+    (adjoint A).HasLyapunovForm := by
+  simpa using h.neg_adjoint.neg
 
 end ContinuousLinearMap

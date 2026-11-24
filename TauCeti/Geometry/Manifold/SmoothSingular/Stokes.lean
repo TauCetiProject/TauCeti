@@ -294,15 +294,15 @@ end SmoothSimplex
 section Cochain
 
 variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] {R : Type} [Ring R] [Module R F]
 
 /-- **Stokes' theorem for smooth singular chains.** Integrating a `C¹` form over the boundary of a
-smooth singular chain is integrating its exterior derivative over the chain: the integration
-cochain of `φ`, precomposed with the differential of the smooth singular chain complex, is the
-integration cochain of `dφ`. -/
+smooth singular chain with coefficients in `R` is integrating its exterior derivative over the
+chain: the integration cochain of `φ`, precomposed with the differential of the smooth singular
+chain complex, is the integration cochain of `dφ`. -/
 @[reassoc]
 theorem d_comp_integrationCochain {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ) :
-    ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).d (p + 1) p ≫
+    ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).d (p + 1) p ≫
       integrationCochain φ = integrationCochain (mextDeriv φ) := by
   refine SSet.chainComplex_hom_ext fun σ ↦ ModuleCat.hom_ext (LinearMap.ext_ring ?_)
   simp only [SSet.ιChainComplex_d_assoc, Preadditive.sum_comp, ModuleCat.hom_comp,
@@ -316,7 +316,7 @@ theorem d_comp_integrationCochain {φ : RoughForm I M F p} (hφ : IsSmoothForm I
 /-- The integration cochain of a closed `C¹` form is a cocycle. -/
 theorem d_comp_integrationCochain_eq_zero {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) :
-    ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).d (p + 1) p ≫
+    ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).d (p + 1) p ≫
       integrationCochain φ = 0 := by
   rw [d_comp_integrationCochain hφ, hdφ, integrationCochain_zero]
 
@@ -324,8 +324,8 @@ theorem d_comp_integrationCochain_eq_zero {φ : RoughForm I M F p} (hφ : IsSmoo
 smooth singular `(p + 1)`-chain `c` vanishes, then `∫_c dφ = 0` for every `C¹` `p`-form `φ`. -/
 theorem integrationCochain_mextDeriv_apply_eq_zero {φ : RoughForm I M F p}
     (hφ : IsSmoothForm I 1 φ)
-    {c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).X (p + 1)}
-    (hc : (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).d
+    {c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).X (p + 1)}
+    (hc : (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).d
       (p + 1) p).hom c = 0) :
     (integrationCochain (mextDeriv φ)).hom c = 0 := by
   rw [← d_comp_integrationCochain hφ, ModuleCat.hom_comp, LinearMap.comp_apply, hc, map_zero]

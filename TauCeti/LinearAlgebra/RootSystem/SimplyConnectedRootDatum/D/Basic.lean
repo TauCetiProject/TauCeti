@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.Algebra.Group.Submonoid.Closure
@@ -30,8 +30,8 @@ The classical model is `ℤ ^ n` with the dot product: the `2 * n * (n - 1)` roo
 Bourbaki simple roots are `αᵢ = eᵢ - eᵢ₊₁` for `i + 1 < n` together with the fork root
 `α_{n-1} = e_{n-2} + e_{n-1}`. That model, its enumeration by `Fin (2 * n * (n - 1))` with the
 simple roots first, the expansion of every root in the simple roots, their linear independence and
-reflection in a root are all supplied by `TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD` and are
-consumed here rather than rebuilt.
+reflection in a root are all supplied by `TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic`
+and are consumed here rather than rebuilt.
 
 Type `Dₙ` is simply laced, so `α^∨ = α` under the dot product and both pinned lattices are images
 of the one classical model:
@@ -80,7 +80,7 @@ here.
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
 4--6*, Plate IV, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
 12.1. The layout of the file follows its sibling
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` (#2594), whose type-agnostic
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic` (#2594), whose type-agnostic
 scaffolding — the perfect pairing, the pinned support, the Cartan-type criterion and the coroot
 span — now lives in `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic` and is shared
 with this file.

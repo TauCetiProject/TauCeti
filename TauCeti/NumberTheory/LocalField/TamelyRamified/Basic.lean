@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.LocalField.Monogenic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.TotallyRamified
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # Tamely ramified extensions of local fields
@@ -47,9 +47,11 @@ root of unity of order prime to `p`.
 * `TauCeti.isTamelyRamified_of_finrank_eq_one`: a degree-one extension is tamely ramified.
 * `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_one`: for `L/K` Galois, the
   order of `G_1` is the residue-characteristic part of the ramification index.
-* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero_quotient_one` and
-  `TauCeti.LocalFieldsRamification.relIndex_lowerRamificationGroup_one_zero`: for `L/K` Galois,
-  the order of `G_0 / G_1` and the relative index of wild inertia are the tame index.
+* `TauCeti.LocalFieldsRamification.natCard_lowerRamificationGroup_zero_quotient_one`,
+  `TauCeti.LocalFieldsRamification.relIndex_lowerRamificationGroup_one_zero`, and
+  `TauCeti.LocalFieldsRamification.index_lowerRamificationGroup_one`: for `L/K` Galois,
+  the order of `G_0 / G_1` and the relative index of wild inertia are the tame index, and the
+  index `[Gal(L/K) : G_1]` is `f(L/K) · ε(L/K)`.
 * `TauCeti.tameRamificationIndex_dvd_card_residueField_sub_one` and
   `TauCeti.tameRamificationIndex_dvd_natCard_pow_inertiaDegree_sub_one`: for `L/K` Galois, the tame
   index divides `#𝓀[L] - 1 = #𝓀[K] ^ f(L/K) - 1`.
@@ -148,6 +150,15 @@ theorem relIndex_lowerRamificationGroup_one_zero [Module.Finite K L] :
       tameRamificationIndex K L := by
   rw [Subgroup.relIndex, Subgroup.index_eq_card,
     natCard_lowerRamificationGroup_zero_quotient_one]
+
+/-- In a finite Galois local-field extension, the index of wild inertia `G_1` is
+`inertiaDegree K L * tameRamificationIndex K L`. -/
+@[simp]
+theorem index_lowerRamificationGroup_one [Module.Finite K L] :
+    (lowerRamificationGroup K L 1).index = inertiaDegree K L * tameRamificationIndex K L := by
+  rw [← Subgroup.relIndex_mul_index
+      (lowerRamificationGroup_antitone K L (by omega : (0 : ℤ) ≤ 1)),
+    relIndex_lowerRamificationGroup_one_zero K L, index_lowerRamificationGroup_zero K L, mul_comm]
 
 end Indices
 

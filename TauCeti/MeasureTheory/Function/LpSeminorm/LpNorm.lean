@@ -12,7 +12,7 @@ import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
-# Pointwise bounds for the real-valued `Lᵖ` norm
+# Bounds for the real-valued `Lᵖ` norm
 
 A pointwise bound `‖f x‖ ≤ c ‖g x‖` almost everywhere bounds the real-valued `Lᵖ` norm:
 `lpNorm f p μ ≤ c * lpNorm g p μ` (`MeasureTheory.lpNorm_le_mul_lpNorm_of_ae_le_mul`). This is
@@ -27,6 +27,17 @@ most `c` (`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, th
 `Lᵖ` with norm at most `β ‖G‖ + γ ‖V‖` (`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so
 they can be moved to the right-hand side of an equation
 (`MeasureTheory.Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq`).
+
+For `p = 2`, the squared `L²` norm of an almost everywhere strongly measurable function is the
+integral of its squared pointwise norm (`MeasureTheory.lpNorm_two_sq_eq_integral_norm_sq`), the
+`p = 2` analogue of Mathlib's `MeasureTheory.lpNorm_one_eq_integral_norm`.
+
+Additional helpers convert `eLpNorm` estimates into bounds for the Bochner `L¹` integral
+`∫ x, ‖f x‖ ∂μ`:
+* `MeasureTheory.Integrable.integral_norm_le_integral_norm_of_eLpNorm_one_le` — transfers
+  `eLpNorm f 1 μ ≤ eLpNorm g 1 μ` to `∫ x, ‖f x‖ ∂μ ≤ ∫ x, ‖g x‖ ∂μ` when `g` is integrable.
+* `MeasureTheory.integral_norm_lt_of_eLpNorm_one_lt_ofReal` — transfers
+  `eLpNorm f 1 μ < ENNReal.ofReal η` to `∫ x, ‖f x‖ ∂μ < η` with no extra hypotheses.
 -/
 
 public section
@@ -50,6 +61,29 @@ theorem lpNorm_le_mul_lpNorm_of_ae_le_mul {f : α → F} {g : α → G} {c : ℝ
   rw [← toReal_eLpNorm, ← toReal_eLpNorm, ← ENNReal.toReal_ofReal hc, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hg.eLpNorm_ne_top)
     (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hf h p)
+
+/-- If `g` is integrable and `eLpNorm f 1 μ ≤ eLpNorm g 1 μ`, then
+`∫ x, ‖f x‖ ∂μ ≤ ∫ x, ‖g x‖ ∂μ`. No measurability hypothesis on `f` is needed: finiteness of
+`eLpNorm f 1 μ` follows from the inequality. -/
+theorem Integrable.integral_norm_le_integral_norm_of_eLpNorm_one_le {f : α → F} {g : α → G}
+    (hg : Integrable g μ) (h : eLpNorm f 1 μ ≤ eLpNorm g 1 μ) :
+    ∫ x, ‖f x‖ ∂μ ≤ ∫ x, ‖g x‖ ∂μ := by
+  have hg1 : MemLp g 1 μ := memLp_one_iff_integrable.mpr hg
+  have hf : AEStronglyMeasurable f μ :=
+    aestronglyMeasurable_of_eLpNorm_ne_top (ne_top_of_le_ne_top hg1.eLpNorm_ne_top h)
+  rw [← lpNorm_one_eq_integral_norm hf, ← lpNorm_one_eq_integral_norm hg.aestronglyMeasurable,
+    ← toReal_eLpNorm, ← toReal_eLpNorm]
+  exact ENNReal.toReal_mono hg1.eLpNorm_ne_top h
+
+/-- If `eLpNorm f 1 μ < ENNReal.ofReal η`, then `∫ x, ‖f x‖ ∂μ < η`. Neither integrability of `f`
+nor `0 ≤ η` is needed: both follow from the strict inequality. -/
+theorem integral_norm_lt_of_eLpNorm_one_lt_ofReal {f : α → F} {η : ℝ}
+    (h : eLpNorm f 1 μ < ENNReal.ofReal η) :
+    ∫ x, ‖f x‖ ∂μ < η := by
+  have hf : AEStronglyMeasurable f μ :=
+    aestronglyMeasurable_of_eLpNorm_ne_top (ne_top_of_lt h)
+  rw [← lpNorm_one_eq_integral_norm hf, ← toReal_eLpNorm]
+  exact ENNReal.toReal_lt_of_lt_ofReal h
 
 /-- **Multiplying by a bounded function.** If `f ∈ Lᵖ(μ)` and `‖ψ x‖ ≤ c` for almost every `x`,
 then `lpNorm (ψ • f) p μ ≤ c * lpNorm f p μ`. -/
@@ -106,5 +140,14 @@ theorem Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq {𝕜 E : Type*} [RCL
   filter_upwards [heq, Lp.coeFn_sub f (hL.toLp _), hL.coeFn_toLp] with x hx h1 h2
   rw [h1, Pi.sub_apply, h2, ← hx]
   ring
+
+/-- **The squared `L²` norm as an integral.** The squared `L²` norm of an almost everywhere
+strongly measurable function is the integral of its squared pointwise norm. -/
+theorem lpNorm_two_sq_eq_integral_norm_sq {f : α → F} (hf : AEStronglyMeasurable f μ) :
+    lpNorm f 2 μ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  rw [lpNorm_eq_integral_norm_rpow_toReal two_ne_zero ENNReal.ofNat_ne_top hf,
+    ENNReal.toReal_ofNat, ← Real.rpow_natCast,
+    ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
+  norm_num
 
 end MeasureTheory

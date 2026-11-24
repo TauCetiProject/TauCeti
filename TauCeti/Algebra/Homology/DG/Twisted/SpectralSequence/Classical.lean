@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.E2
 
 /-!
-# The entries of the classical complex on the cohomology of a DG module
+# The classical complex on the cohomology of a DG module
 
 The second page of the index spectral sequence of a twisted complex is the homology of the
 classical complex `TauCeti.TwistingCocycle.indexClassicalComplex`, whose terms are products of the
@@ -25,14 +26,26 @@ This file defines the class in `H(A)` of an entry `m x y` of index difference on
 `H⁰(A)`, and computes, under these identifications, the entries and the components of the
 differential of the classical complex in coefficient degree `k`: componentwise, the entry between
 generators `x` and `y` is `(-1)^k` times the action on `H^k(ℳ)` of the class of `m x y`
-(`TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalEntry`). It does not
-construct an `H⁰(A)`-module structure on `H^k(ℳ)`, nor an isomorphism of the classical complex
-with a complex built from `H^k(ℳ)`.
+(`TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalEntry`).
+
+It then assembles these identifications into an isomorphism of complexes. The complex
+`TauCeti.TwistingCocycle.indexCohomologyComplex` has in degree `q` the families indexed by the
+generators of index `q` with values in `H^k(ℳ)`, and as differential the matrix of the
+endomorphisms `(-1)^k [m x y]` of `H^k(ℳ)`. The classical complex is isomorphic to it
+(`TauCeti.TwistingCocycle.indexClassicalComplexIso`), so the second page of the index spectral
+sequence is its homology (`TauCeti.TwistingCocycle.indexSpectralSequenceSecondPageXIsoCohomology`).
+For the chains on Moore loops the entries are those of the truncated cocycle in the group ring of
+the fundamental group, acting on the local system `H^k(𝓕)`; see
+`TauCeti.AlgebraicTopology.DGLocalSystem.SecondPage`.
 
 ## Main definitions
 
 * `TauCeti.TwistingCocycle.indexClassicalClass`: the class in `H(A)` of an entry of index
   difference one.
+* `TauCeti.TwistingCocycle.indexCohomologyEntry`: the endomorphism `(-1)^k [m x y]` of `H^k(ℳ)`.
+* `TauCeti.TwistingCocycle.indexCohomologyComplex`: the complex of families in `H^k(ℳ)` with the
+  matrix of these endomorphisms as differential.
+* `TauCeti.TwistingCocycle.indexClassicalComplexIso`: the classical complex is isomorphic to it.
 
 ## Main results
 
@@ -43,11 +56,13 @@ with a complex built from `H^k(ℳ)`.
   twisting cocycle.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalD_π`: the components of
   the classical differential are `(-1)^k` times the sums of these actions.
+* `TauCeti.TwistingCocycle.indexSpectralSequenceSecondPageXIsoCohomology`: the second page of the
+  index spectral sequence is the homology of `indexCohomologyComplex`.
 
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, Definition 3.38.
+  Applications to cotangent bundles*, arXiv:2404.07953, Definition 3.38 and Theorem 3.39.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Morse homology with differential graded
   coefficients*, Progress in Mathematics 360, Birkhäuser, 2025, Chapter 3 and Section 4.2.
 -/
@@ -127,6 +142,186 @@ theorem shiftedModuleComplexHomologyEquiv_indexClassicalD_π (q : ℤ) (y : {y :
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [ModuleCat.hom_comp, LinearMap.comp_apply,
     shiftedModuleComplexHomologyEquiv_indexClassicalEntry]
+
+/-! ### The classical complex as a complex of families in `H^k(ℳ)` -/
+
+/-- The entry of index difference one as an endomorphism of `H^k(ℳ)`: `(-1)^k` times the action of
+the class of `m x y` in `H⁰(A)`, which preserves the degree `k`. -/
+noncomputable def indexCohomologyEntry {x y : P} (hxy : ind x = ind y + 1) :
+    hM.cohomologyGrading k →ₗ[R] hM.cohomologyGrading k :=
+  k.negOnePow • (hM.cohomologyAction (m.indexClassicalClass h hxy)).unop.restrict fun _ hc ↦ by
+    simpa only [add_zero] using hM.cohomologyAction_apply_mem_cohomologyGrading
+      (m.indexClassicalClass_mem_cohomologyGrading_zero h hxy) hc
+
+@[simp]
+theorem coe_indexCohomologyEntry_apply {x y : P} (hxy : ind x = ind y + 1)
+    (c : hM.cohomologyGrading k) :
+    (m.indexCohomologyEntry hM k hxy c : hM.Cohomology) =
+      k.negOnePow • (hM.cohomologyAction (m.indexClassicalClass h hxy)).unop c :=
+  (rfl)
+
+/-- The differential of the classical complex on families in `H^k(ℳ)`: a family `c` indexed by
+the generators of index `q + 1` goes to the family whose component at a generator `y` of index
+`q` is `∑ₓ indexCohomologyEntry (c x)`. -/
+noncomputable def indexCohomologyD (q : ℤ) :
+    ({x : P // ind x = q + 1} → hM.cohomologyGrading k) →ₗ[R]
+      ({y : P // ind y = q} → hM.cohomologyGrading k) :=
+  LinearMap.pi fun y ↦ ∑ x, m.indexCohomologyEntry hM k (x := x.val) (y := y.val)
+    (by rw [x.property, y.property]) ∘ₗ LinearMap.proj x
+
+@[simp]
+theorem indexCohomologyD_apply (q : ℤ)
+    (c : {x : P // ind x = q + 1} → hM.cohomologyGrading k) (y : {y : P // ind y = q}) :
+    m.indexCohomologyD hM k q c y =
+      ∑ x, m.indexCohomologyEntry hM k (x := x.val) (y := y.val)
+        (by rw [x.property, y.property]) (c x) := by
+  simp [indexCohomologyD]
+
+/-- The identification of a factor of the classical complex in degree `q`, the cohomology of
+`shiftedModuleComplex hM q` in degree `k - q`, with `H^k(ℳ)`. -/
+private noncomputable def factorEquiv (q : ℤ) :
+    (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q) ≃ₗ[R] hM.cohomologyGrading k :=
+  shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q) ≪≫ₗ
+    LinearEquiv.ofEq _ _ (by rw [sub_add_cancel])
+
+@[simp]
+private theorem coe_factorEquiv_apply (q : ℤ)
+    (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q)) :
+    (factorEquiv.{uR, uA, uM, uP} hM k q z : hM.Cohomology) =
+      shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q) z := by
+  rw [factorEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+
+/-- The degree-`q` term of the classical complex is the module of families indexed by the
+generators of index `q` with values in `H^k(ℳ)`, through the identifications
+`shiftedModuleComplexHomologyEquiv` of its factors with `H^k(ℳ)`. -/
+noncomputable def indexClassicalComplexXIsoPi (q : ℤ) :
+    (m.indexClassicalComplex hM k).X q ≅
+      ModuleCat.of R ({x : P // ind x = q} → hM.cohomologyGrading k) :=
+  m.indexClassicalComplexXIso hM k q ≪≫ ModuleCat.piIsoPi _ ≪≫
+    (LinearEquiv.piCongrRight fun _ ↦ factorEquiv.{uR, uA, uM, uP} hM k q).toModuleIso
+
+/-- The component at a generator `x` of the identification `indexClassicalComplexXIsoPi` is the
+identification `shiftedModuleComplexHomologyEquiv` of the factor at `x`. -/
+theorem coe_indexClassicalComplexXIsoPi_hom_apply (q : ℤ)
+    (c : (m.indexClassicalComplex hM k).X q) (x : {x : P // ind x = q}) :
+    ((m.indexClassicalComplexXIsoPi hM k q).hom c x : hM.Cohomology) =
+      shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q)
+        ((Pi.π (fun _ : {x : P // ind x = q} ↦
+          (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q)) x).hom
+            ((m.indexClassicalComplexXIso hM k q).hom c)) := by
+  simp only [indexClassicalComplexXIsoPi, Iso.trans_hom, ModuleCat.hom_comp, LinearMap.comp_apply,
+    LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom, LinearEquiv.coe_coe,
+    LinearEquiv.piCongrRight_apply, coe_factorEquiv_apply]
+  exact congrArg
+    (fun z ↦ (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q) z : hM.Cohomology))
+    (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (ModuleCat.piIsoPi_hom_ker_subtype _ x)) _)
+
+/-- **The differential of the classical complex on families in `H^k(ℳ)`**: under the
+identifications `indexClassicalComplexXIsoPi`, the differential of the classical complex is
+`indexCohomologyD`. -/
+theorem indexClassicalComplexXIsoPi_hom_comp_indexCohomologyD (q : ℤ) :
+    (m.indexClassicalComplexXIsoPi hM k (q + 1)).hom ≫ ModuleCat.ofHom (m.indexCohomologyD hM k q) =
+      (m.indexClassicalComplex hM k).d (q + 1) q ≫ (m.indexClassicalComplexXIsoPi hM k q).hom := by
+  have hd := m.indexClassicalComplexXIso_inv_comp_d_comp_hom hM k q
+  rw [Iso.inv_comp_eq] at hd
+  have hd' := fun z ↦ LinearMap.congr_fun (congrArg ModuleCat.Hom.hom hd) z
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hd'
+  rw [← cancel_epi (m.indexClassicalComplexXIso hM k (q + 1)).inv]
+  ext c y
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
+    indexCohomologyD_apply, Submodule.coe_sum, coe_indexCohomologyEntry_apply]
+  rw [coe_indexClassicalComplexXIsoPi_hom_apply, hd', Iso.inv_hom_id_apply]
+  have hπ := m.shiftedModuleComplexHomologyEquiv_indexClassicalD_π hM k q y c
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hπ
+  rw [hπ, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [coe_indexClassicalComplexXIsoPi_hom_apply, Iso.inv_hom_id_apply]
+
+/-- **The classical differential on families in `H^k(ℳ)` squares to zero.** -/
+theorem indexCohomologyD_comp_indexCohomologyD (q : ℤ) :
+    m.indexCohomologyD hM k q ∘ₗ m.indexCohomologyD hM k (q + 1) = 0 := by
+  have h₁ := m.indexClassicalComplexXIsoPi_hom_comp_indexCohomologyD hM k (q + 1)
+  have h₂ := m.indexClassicalComplexXIsoPi_hom_comp_indexCohomologyD hM k q
+  rw [← Iso.eq_inv_comp] at h₁
+  rw [← Iso.eq_inv_comp] at h₂
+  have h₃ : ModuleCat.ofHom (m.indexCohomologyD hM k q ∘ₗ m.indexCohomologyD hM k (q + 1)) = 0 := by
+    rw [ModuleCat.ofHom_comp, h₁, h₂]
+    simp
+  simpa using congrArg ModuleCat.Hom.hom h₃
+
+/-- **The classical complex on the cohomology of the module** in coefficient degree `k`: in degree
+`q`, the families indexed by the generators of index `q` with values in `H^k(ℳ)`, with the
+differential `indexCohomologyD`, the matrix of the actions of `(-1)^k` times the classes of the
+entries `m x y` in `H⁰(A)`. It is isomorphic to the classical complex `indexClassicalComplex`
+(`indexClassicalComplexIso`). -/
+-- The body is exposed so that the terms of the complex are, by definition, the modules of
+-- families, on which consumers compute.
+@[expose]
+noncomputable def indexCohomologyComplex : ChainComplex (ModuleCat.{max uM uP} R) ℤ :=
+  ChainComplex.of (fun q ↦ ModuleCat.of R ({x : P // ind x = q} → hM.cohomologyGrading k))
+    (fun q ↦ ModuleCat.ofHom (m.indexCohomologyD hM k q)) fun q ↦ by
+      rw [← ModuleCat.ofHom_comp, m.indexCohomologyD_comp_indexCohomologyD hM k q,
+        ModuleCat.ofHom_zero]
+
+@[simp]
+theorem indexCohomologyComplex_X (q : ℤ) :
+    (m.indexCohomologyComplex hM k).X q =
+      ModuleCat.of R ({x : P // ind x = q} → hM.cohomologyGrading k) :=
+  (rfl)
+
+@[simp]
+theorem indexCohomologyComplex_d (q : ℤ) :
+    (m.indexCohomologyComplex hM k).d (q + 1) q = ModuleCat.ofHom (m.indexCohomologyD hM k q) := by
+  simp only [indexCohomologyComplex, ChainComplex.of_d]
+
+/-- **The classical complex is the complex of families in `H^k(ℳ)`**: the classical complex in
+coefficient degree `k`, whose terms are products of cohomology objects of shifted complexes, is
+isomorphic to `indexCohomologyComplex`, whose terms are families indexed by the generators with
+values in `H^k(ℳ)` and whose differential is the matrix of the actions of the classes of the
+entries of index difference one of the twisting cocycle. -/
+noncomputable def indexClassicalComplexIso :
+    m.indexClassicalComplex hM k ≅ m.indexCohomologyComplex hM k :=
+  HomologicalComplex.Hom.isoOfComponents (m.indexClassicalComplexXIsoPi hM k) <| by
+    rintro _ q rfl
+    rw [indexCohomologyComplex_d]
+    exact m.indexClassicalComplexXIsoPi_hom_comp_indexCohomologyD hM k q
+
+@[simp]
+theorem indexClassicalComplexIso_hom_f (q : ℤ) :
+    (m.indexClassicalComplexIso hM k).hom.f q = (m.indexClassicalComplexXIsoPi hM k q).hom :=
+  (rfl)
+
+@[simp]
+theorem indexClassicalComplexIso_inv_f (q : ℤ) :
+    (m.indexClassicalComplexIso hM k).inv.f q = (m.indexClassicalComplexXIsoPi hM k q).inv :=
+  (rfl)
+
+section Page
+
+variable [DecidableEq P]
+
+/-- **The second page of the index spectral sequence with coefficients in `H(ℳ)`**: the object at
+`(a, b)` of the page `3` of the index spectral sequence (the classical `E₂` page, in Mathlib's
+numbering of pages) is the homology in degree `b + 1` of the complex of families with values in
+`H^{a + 2b + 1}(ℳ)` whose differential is the matrix of the actions of the classes of the entries
+of the twisting cocycle. -/
+noncomputable def indexSpectralSequenceSecondPageXIsoCohomology (a b : ℤ) :
+    ((m.indexSpectralSequence dM hM).page 3).X (a, b) ≅
+      (m.indexCohomologyComplex hM (a + 2 * b + 1)).homology (b + 1) :=
+  m.indexSpectralSequenceSecondPageXIso hM a b ≪≫
+    HomologicalComplex.homologyMapIso (m.indexClassicalComplexIso hM (a + 2 * b + 1)) (b + 1)
+
+/-- The second-page isomorphism with coefficients in `H(ℳ)` is the second-page isomorphism
+`indexSpectralSequenceSecondPageXIso` followed by the homology isomorphism of
+`indexClassicalComplexIso`. -/
+theorem indexSpectralSequenceSecondPageXIsoCohomology_eq (a b : ℤ) :
+    m.indexSpectralSequenceSecondPageXIsoCohomology hM a b =
+      m.indexSpectralSequenceSecondPageXIso hM a b ≪≫
+        HomologicalComplex.homologyMapIso (m.indexClassicalComplexIso hM (a + 2 * b + 1))
+          (b + 1) :=
+  (rfl)
+
+end Page
 
 end TwistingCocycle
 

@@ -14,7 +14,11 @@ A morphism of localizers `Φ : LocalizerMorphism W₁ W₂` induces an equivalen
 categories if and only if its opposite localizer morphism `Φ.op` does
 (`CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_iff_op`). The forward implication is an
 instance in Joël Riou's `Mathlib.CategoryTheory.Localization.LocalizerMorphism`; this file supplies
-the converse and equivalence.
+the converse and equivalence. Dualizing Mathlib's
+`CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_of_unit_of_unit`, a localizer morphism
+admitting an inverse up to natural transformations to the identities with components in `W₁` and
+`W₂` induces an equivalence on localized categories
+(`CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_of_counit_of_counit`).
 
 For morphisms of localizers `Φ : LocalizerMorphism W₁ W₂` and `Ψ : LocalizerMorphism W₂ W₃` and
 localization functors `L₁`, `L₂`, `L₃` for `W₁`, `W₂`, `W₃`, the composite of the induced functors
@@ -47,6 +51,19 @@ lemma isLocalizedEquivalence_iff_op :
     ⟨NatIso.op (CatCommSq.iso Φ.functor W₁.Q W₂.Q G).symm⟩
   have : G.op.IsEquivalence := Φ.op.isEquivalence W₁.Q.op W₂.Q.op G.op
   exact ⟨G.op.asEquivalence.unop.isEquivalence_functor⟩
+
+/-- If a localizer morphism `Φ : LocalizerMorphism W₁ W₂` admits a localizer morphism
+`Ψ : LocalizerMorphism W₂ W₁` in the opposite direction together with natural transformations
+`η₁ : Φ.functor ⋙ Ψ.functor ⟶ 𝟭 C₁` and `η₂ : Ψ.functor ⋙ Φ.functor ⟶ 𝟭 C₂` whose components lie
+in `W₁` and `W₂`, then `Φ` induces an equivalence on the localized categories. This is the dual
+of Mathlib's `CategoryTheory.LocalizerMorphism.isLocalizedEquivalence_of_unit_of_unit`. -/
+lemma isLocalizedEquivalence_of_counit_of_counit (Ψ : LocalizerMorphism W₂ W₁)
+    (η₁ : Φ.functor ⋙ Ψ.functor ⟶ 𝟭 C₁) (η₂ : Ψ.functor ⋙ Φ.functor ⟶ 𝟭 C₂)
+    (hη₁ : ∀ X₁, W₁ (η₁.app X₁)) (hη₂ : ∀ X₂, W₂ (η₂.app X₂)) :
+    Φ.IsLocalizedEquivalence :=
+  Φ.isLocalizedEquivalence_iff_op.2
+    (Φ.op.isLocalizedEquivalence_of_unit_of_unit Ψ.op (NatTrans.op η₁) (NatTrans.op η₂)
+      (fun X₁ ↦ hη₁ X₁.unop) (fun X₂ ↦ hη₂ X₂.unop))
 
 end Op
 

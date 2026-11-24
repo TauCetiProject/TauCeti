@@ -40,7 +40,7 @@ variable {R V P : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 simplex whose direction complements the tangent subspace. -/
 theorem conormal_apply_ne_zero (s : Simplex R P n) {W : Submodule R V}
     (hW : IsCompl W (vectorSpan R (range s.points)))
-    {α : V [⋀^Fin n]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin n)) (hα0 : α ≠ 0) :
+    {α : V [⋀^Fin n]→ₗ[R] R} (hα : α ∈ W.conormalForms (Fin n) R) (hα0 : α ≠ 0) :
     α (fun j : Fin n => s.points j.succ -ᵥ s.points 0) ≠ 0 := by
   classical
   let v : Fin n → V := fun j => s.points j.succ -ᵥ s.points 0

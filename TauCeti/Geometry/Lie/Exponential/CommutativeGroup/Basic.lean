@@ -30,6 +30,7 @@ its Lie algebra by a lattice.
 ## Main results
 
 * `TauCeti.lieExp_add`: the exponential of a commutative Lie group is a homomorphism.
+* `GroupLieAlgebra.mulInvariantExp_add`: so is its tangent-space exponential.
 * `TauCeti.lieExpAddMonoidHom`: that homomorphism, bundled.
 * `TauCeti.range_lieExp`: the exponential image is the identity component.
 * `TauCeti.lieExp_surjective_of_preconnectedSpace`: the exponential of a preconnected
@@ -80,6 +81,17 @@ the Lie algebra. -/
 theorem lieExp_add (X Y : LeftInvariantDerivation I G) :
     lieExp (X + Y) = lieExp X * lieExp Y :=
   lieExp_add_of_commute (I := I) (G := G) fun _ => mul_comm' _ _
+
+/-- **The tangent-space exponential of a commutative Lie group is a homomorphism** from the
+additive group of the tangent space at the identity. -/
+@[simp]
+theorem _root_.GroupLieAlgebra.mulInvariantExp_add (v w : GroupLieAlgebra I G) :
+    mulInvariantExp (v + w) = mulInvariantExp v * mulInvariantExp w := by
+  let e := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  have h (u : GroupLieAlgebra I G) : mulInvariantExp u = lieExp (e.symm u) := by
+    rw [lieExp_eq_mulInvariantExp, LinearEquiv.apply_symm_apply]
+  rw [h, h, h, map_add, lieExp_add]
 
 /-- The exponential of a commutative Lie group, as a homomorphism from the additive group of the
 Lie algebra to the group written additively. -/
@@ -231,16 +243,9 @@ variable [CompactSpace G]
 /-- **The Lie algebra modulo the kernel of the exponential is compact** when the group is: it is
 the identity component, which is closed. -/
 instance compactSpace_quotient_ker_lieExpAddMonoidHom :
-    CompactSpace (LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker) := by
-  -- The quotient is the range of the exponential homomorphism, as the exponential is strict.
-  have hcompact : IsCompact (Set.range (lieExpAddMonoidHom (I := I) (G := G))) := by
-    rw [coe_lieExpAddMonoidHom, Set.range_comp, range_lieExp, Equiv.image_eq_preimage_symm,
-      Additive.ofMul_symm_eq]
-    exact (isClosed_connectedComponent.preimage continuous_toMul).isCompact
-  rw [← AddMonoidHom.coe_range, isCompact_iff_compactSpace] at hcompact
-  exact (ContinuousAddEquiv.quotientKerEquivRange
-    ((isOpenMap_lieExpAddMonoidHom (I := I) (G := G)).isStrictMap
-      continuous_lieExpAddMonoidHom)).symm.toHomeomorph.compactSpace
+    CompactSpace (LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker) :=
+  AddMonoidHom.compactSpace_quotient_ker_of_isOpenMap _ continuous_lieExpAddMonoidHom
+    isOpenMap_lieExpAddMonoidHom
 
 /-- **The kernel of the exponential of a compact commutative Lie group spans the Lie
 algebra.** -/

@@ -174,6 +174,10 @@ def betaEquiv (g : D.Generator) : Equiv.Perm (Fin n) := g.1
 theorem point_apply (g : D.Generator) (i : Fin n) : D.point g i = g.2 i := by
   simp [point]
 
+/-- The matching of a generator is the permutation it stores. -/
+theorem betaEquiv_eq_fst (g : D.Generator) : D.betaEquiv g = g.1 :=
+  (rfl)
+
 /-- The matching index is the `β`-label of the chosen point. -/
 @[simp]
 theorem betaEquiv_apply (g : D.Generator) (i : Fin n) :

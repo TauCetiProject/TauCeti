@@ -60,6 +60,9 @@ instance when `V = F` (`TauCeti.instFactFinrankEqSelf`).
   frame bundle gives an equivariant trivialization of `Fiber 𝕜 F E V` exactly when it is
   equivariant over its base set.
 * `TauCeti.OrthonormalFrameBundle.division_eq`: the division map is `φ⁻¹ ∘ ψ`.
+* `TauCeti.OrthonormalFrameBundle.continuous_trivialFrame`: the identity frames
+  `TauCeti.OrthonormalFrameBundle.trivialFrame` form a continuous global section of the frame
+  bundle of a trivial bundle.
 
 ## References
 
@@ -110,8 +113,12 @@ variable [CompleteSpace V]
 
 /-- The right action of the unitary group `unitary (V →L[𝕜] V)` on the frames of a fibre by
 precomposition: `op g` carries the frame `φ` to `φ ∘ g`. -/
-instance instMulAction (b : B) : MulAction (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
+instance instSMul (b : B) : SMul (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
   smul g φ := ofFrame ((Unitary.linearIsometryEquiv g.unop).trans φ.frame)
+
+/-- The right precomposition action of `unitary (V →L[𝕜] V)` on `Fiber 𝕜 F E V b` is a monoid
+action. -/
+instance instMulAction (b : B) : MulAction (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
   -- By the definition of `smul`, both sides of each action law are points `ofFrame _`, so
   -- `congrArg ofFrame` reduces the law to an identity of linear isometric equivalences. In
   -- `mul_smul`, the frame of `h • φ` is by definition the composite that `trans_assoc` expects.
@@ -353,6 +360,14 @@ instance instPrincipalBundleFiber : PrincipalBundle (unitary (V →L[𝕜] V)) (
     obtain ⟨e, _, c, b, rfl⟩ := ht.out
     infer_instance
 
+variable (F) in
+/-- The Gram–Schmidt frame at `y` of the preferred trivialization of `E` at `b`, for the bases used
+by `TauCeti.OrthonormalFrameBundle.trivializationAtFiber`: the frame in which the preferred
+trivialization of `Fiber 𝕜 F E V` at `b` reads frames over its base set. -/
+abbrev chartFrame (b y : B) : V ≃ₗᵢ[𝕜] E y :=
+  (trivializationAt F E b).orthonormalFrameAt (Module.finBasisOfFinrankEq 𝕜 F hV.out.symm)
+    (stdOrthonormalBasis 𝕜 V) y
+
 end Principal
 
 section Division
@@ -373,6 +388,36 @@ theorem division_eq {b : B} (φ ψ : Fiber 𝕜 F E V b) :
   simp
 
 end Division
+
+section Trivial
+
+variable (B) in
+/-- The identity frame of the trivial bundle `B × V` at each point. -/
+def trivialFrame (b : B) : Fiber 𝕜 V (Trivial B V) V b :=
+  .ofFrame (LinearIsometryEquiv.refl 𝕜 V)
+
+/-- The identity frame of the trivial bundle is the identity of `V`. -/
+@[simp]
+theorem frame_trivialFrame (b : B) : (trivialFrame B b : Fiber 𝕜 V (Trivial B V) V b).frame =
+    LinearIsometryEquiv.refl 𝕜 V :=
+  (rfl)
+
+variable [CompleteSpace V] [TopologicalSpace B]
+
+/-- The identity frames form a continuous global section of the frame bundle of `B × V`. -/
+theorem continuous_trivialFrame :
+    Continuous fun b ↦
+      TotalSpace.mk' (unitary (V →L[𝕜] V)) b (trivialFrame (𝕜 := 𝕜) (V := V) B b) :=
+  totalSpaceHomeomorph.comp_continuous_iff.1 <|
+    OrthonormalFrameBundle.continuous_iff.2 fun v ↦ by
+      have h : Continuous fun x : B ↦ (Trivial.homeomorphProd B V).symm (x, v) :=
+        (Trivial.homeomorphProd B V).symm.continuous.comp (continuous_id.prodMk continuous_const)
+      refine h.congr fun x ↦ ?_
+      rw [Function.comp_apply, coe_totalSpaceHomeomorph, totalSpaceEquiv_apply,
+        Homeomorph.symm_apply_eq]
+      simp
+
+end Trivial
 
 end TauCeti.OrthonormalFrameBundle
 

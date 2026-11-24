@@ -218,6 +218,15 @@ protected theorem _root_.ContMDiff.dSmooth_prod_dom
     {f : M × N → P} (hf : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ, F)) 𝓘(ℝ, G) ∞ f) : DSmooth f :=
   fun _ _ hp ↦ isPlot_iff_contMDiff.mpr (hf.comp (isPlot_iff_contMDiff_prod_rng.mp hp))
 
+-- The model space `E` is determined by the compatibility instance, not by the statement.
+include E in
+/-- The D-topology of a compatible manifold is finer than its manifold topology: open sets of the
+manifold are D-open. This direction needs neither finite-dimensionality nor smooth atlas
+assumptions. -/
+theorem dTopology_le : (dTopology : TopologicalSpace M) ≤ tM :=
+  TopologicalSpace.le_def.mpr fun _ hs =>
+    isOpen_iff_preimages_plots.mpr fun _ _ hp => hs.preimage hp.contMDiff.continuous
+
 end
 
 instance : @IsContMDiffCompatible E _ _ M _ _ (manifoldDiffeology E M) := by

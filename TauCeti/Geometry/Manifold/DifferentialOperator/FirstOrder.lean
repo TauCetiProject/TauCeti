@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorField.ComplexDerivation
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
+public import TauCeti.RingTheory.Derivation.DifferentialOperator
 public import TauCeti.RingTheory.Derivation.FirstOrder
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -54,6 +55,11 @@ along `1 ⊗ X + i ⊗ Y`. For real `u` this is `du(X) + i du(Y)`, which is the 
 * `TauCeti.complexFirstOrderOperators.lie_mulLeft_apply`,
   `TauCeti.complexFirstOrderOperators.lie_mulLeft_ofReal_apply`: the commutators with
   multiplication by a complex, respectively real, smooth function.
+
+The same decomposition holds for operators of order at most one in Grothendieck's sense
+(`TauCeti.differentialOperators`): such an operator is differentiation along a smooth vector
+field plus multiplication by its value on one
+(`LinearMap.eq_vectorFieldDerivation_add_mulLeft_of_mem_differentialOperators_one`).
 
 ## References
 
@@ -155,6 +161,18 @@ theorem _root_.LinearMap.mem_firstOrderOperators_iff_existsUnique_vectorField_mu
   · rintro ⟨p, hp, -⟩
     rw [(hrep p).mp hp]
     exact (firstOrderOperatorsEquivSmoothVectorFieldProd.symm p).property
+
+/-- An operator of order at most one is differentiation along its vector field plus multiplication
+by its value on `1`. -/
+theorem _root_.LinearMap.eq_vectorFieldDerivation_add_mulLeft_of_mem_differentialOperators_one
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 1) :
+    D = (vectorFieldDerivation (derivationEquivSmoothVectorField
+      (D.derivationOfMemDifferentialOperatorsOne hD)) : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) +
+        LinearMap.mulLeft ℝ (D 1) := by
+  rw [← ContMDiffSection.derivationEquivSmoothVectorField_symm_apply, LinearEquiv.symm_apply_apply]
+  ext f x
+  simp [mul_comm]
 
 namespace firstOrderOperators
 

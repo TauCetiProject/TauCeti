@@ -172,6 +172,13 @@ def solutionSpace : Submodule ℂ (holomorphicFunctions U) where
   smul_mem' c f hf := (hf.const_smul c).congr (fun z hz ↦ by
     simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩])
 
+/-- Shortcut additive-group instance on `E.solutionSpace`, avoiding expensive ring-instance
+backtracking on `holomorphicFunctions U`. -/
+instance instAddCommGroupSolutionSpace : AddCommGroup E.solutionSpace :=
+  letI : AddCommGroup (holomorphicFunctions U) :=
+    AddSubgroupClass.toAddCommGroup (holomorphicFunctions U)
+  Submodule.addCommGroup E.solutionSpace
+
 /-- Membership in the solution subspace is the scalar equation for the zero extension. -/
 @[simp]
 theorem mem_solutionSpace (f : holomorphicFunctions U) :
@@ -325,6 +332,15 @@ def restrict (E : LinearEquation U n) {V : Opens ℂ} (h : V ≤ U) : LinearEqua
 theorem restrict_coeff (E : LinearEquation U n) {V : Opens ℂ} (h : V ≤ U) (j : Fin n) :
     (E.restrict h).coeff j = HolomorphicFunctions.restrict h (E.coeff j) := by rfl
 
+/-- At a point of the smaller domain, the zero extensions of the restricted coefficients agree
+with those of the original coefficients. -/
+theorem extend_restrict_coeff_of_mem (E : LinearEquation U n) {V : Opens ℂ} (h : V ≤ U)
+    {z : ℂ} (hz : z ∈ V) (j : Fin n) :
+    HolomorphicFunctions.extend ((E.restrict h).coeff j) z =
+      HolomorphicFunctions.extend (E.coeff j) z := by
+  simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩,
+    HolomorphicFunctions.extend_apply _ ⟨z, h hz⟩]
+
 /-- Restricting an equation to its own domain leaves it unchanged. -/
 @[simp]
 theorem restrict_refl (E : LinearEquation U n) :
@@ -345,21 +361,14 @@ theorem restrict_restrict (E : LinearEquation U n) {V W : Opens ℂ}
 theorem companion_restrict_eq_of_mem (E : LinearEquation U n) {V : Opens ℂ} (h : V ≤ U)
     {z : ℂ} (hz : z ∈ V) : (E.restrict h).companion z = E.companion z := by
   ext i j
-  simp only [companion_apply, restrict_coeff]
-  split_ifs
-  · rfl
-  · rfl
-  · simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩,
-      HolomorphicFunctions.extend_apply _ ⟨z, h hz⟩]
+  simp only [companion_apply, E.extend_restrict_coeff_of_mem h hz]
 
 /-- Any ambient scalar solution on `U` restricts to a scalar solution on `V ≤ U`. -/
 theorem IsSolution.restrict {V : Opens ℂ} (h : V ≤ U) (hy : E.IsSolution y) :
     (E.restrict h).IsSolution y := by
   refine ⟨hy.1.mono h, fun z hz ↦ ?_⟩
   convert hy.2 z (h hz) using 2
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩,
-    HolomorphicFunctions.extend_apply _ ⟨z, h hz⟩]
+  exact Finset.sum_congr rfl fun j _ ↦ by rw [E.extend_restrict_coeff_of_mem h hz]
 
 /-- Any ambient companion solution on `U` restricts to a companion solution on `V ≤ U`. -/
 theorem IsCompanionSolution.restrict {V : Opens ℂ} (h : V ≤ U) {v : ℂ → Fin n → ℂ}

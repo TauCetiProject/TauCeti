@@ -403,6 +403,14 @@ theorem mextDeriv_ofFunction_apply (f : M → F) (x : M) (v : TangentSpace I x) 
   rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     mvfderiv_apply_eq_mfderiv_apply, Matrix.cons_val_zero]
 
+/-- The differential `dt` of the coordinate of `ℝ` sends a tangent vector to itself. -/
+theorem mextDeriv_ofFunction_id_apply (z : ℝ) (v : Fin 1 → TangentSpace 𝓘(ℝ) z) :
+    mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) z v = v 0 := by
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_eq_fderiv, fderiv_id]
+  -- Tangent vectors of `ℝ` are real numbers, on which the identity of `ℝ` acts.
+  rfl
+
 /-- **The chain rule for the exterior derivative of a `0`-form.** If `f` is differentiable at `x`
 and `g` has derivative `g'` at `f x`, then `d (g ∘ f) = g' • df` at `x`. -/
 theorem mextDeriv_ofFunction_comp_of_hasDerivAt {f : M → ℝ} {g : ℝ → ℝ} {g' : ℝ} {x : M}

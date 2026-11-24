@@ -17,11 +17,15 @@ public import TauCeti.Topology.VectorBundle.Pullback
 
 The native `ContMDiffSection` carrier is a module over scalar-valued `ContMDiffMap`s,
 with pointwise multiplication. This extends its vector-space structure: constant functions
-act by the original scalar action, and the two actions form a scalar tower and commute.
+act by the original scalar action, and the two actions form a scalar tower and commute. The
+coercion to functions takes finite sums to pointwise sums (`ContMDiffSection.coe_sum`).
 These structures allow function-linear maps on sections, in particular tensorial bundle
 operators, to be expressed using the usual `LinearMap` API. The points of `M` separate sections
 modulo the kernels of evaluation (`ContMDiffSection.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`),
 as needed by the algebraic theory of differential operators between modules of sections.
+
+For `m ≤ n`, every `Cⁿ` section is a `Cᵐ` section (`ContMDiffSection.ofLE`), linearly over the
+ground field.
 
 Pullback along a `C^n` map takes values in the pullback bundle. It is linear over the
 ground field and intertwines multiplication with composition of scalar functions.
@@ -73,6 +77,12 @@ instance instIsScalarTowerContMDiffMap : IsScalarTower 𝕜 C^n⟮I, M; 𝕜⟯ 
 instance instSMulCommClassContMDiffMap : SMulCommClass 𝕜 C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ where
   smul_comm c f s := by ext x; simp [smul_comm c (f x)]
 
+/-- The coercion of a finite sum of sections is the pointwise sum. -/
+@[simp]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → Cₛ^n⟮I; F, V⟯) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum (coeAddHom I F n V) f s
+
 variable (I F n V) in
 /-- Evaluation of sections at a point as a ground-field linear map. -/
 def evalLinearMap (x : M) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] V x where
@@ -82,6 +92,16 @@ def evalLinearMap (x : M) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] V x where
 
 @[simp]
 theorem evalLinearMap_apply (x : M) (s : Cₛ^n⟮I; F, V⟯) : evalLinearMap I F n V x s = s x :=
+  (rfl)
+
+/-- For `m ≤ n`, `Cⁿ` sections as `Cᵐ` sections, as a ground-field linear map. -/
+def ofLE {m : ℕ∞ω} (hmn : m ≤ n) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^m⟮I; F, V⟯ where
+  toFun s := ⟨s, s.contMDiff.of_le hmn⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_ofLE {m : ℕ∞ω} (hmn : m ≤ n) (s : Cₛ^n⟮I; F, V⟯) : ⇑(ofLE hmn s) = s :=
   (rfl)
 
 /-- The points of `M` separate sections: a section lying in `ker (ev x) • Γ(V)` for every point

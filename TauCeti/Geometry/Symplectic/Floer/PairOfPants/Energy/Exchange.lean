@@ -161,16 +161,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {H : Puncture → ℝ → M → ℝ} {c : ℝ}
 
-/-- The member `c` of the family is `C¹` jointly in the domain point of `S` and the target
-point. -/
-private theorem contMDiffAt_exchangePerturbation_apply (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (c : ℝ) :
-    ∀ z ∈ thricePuncturedSphereReal, ∀ x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ exchangePerturbation H c p.1 p.2) (Complex.equivRealProdCLM.symm z, x) :=
-  fun _ hz x ↦
-    (contMDiffAt_exchangePerturbation hH hHs c ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
-      (f := fun p : ℂ × M ↦ (c, p)) _ (contMDiffAt_const.prodMk contMDiffAt_id)
-
 variable [IsManifold I ⊤ M] {ω : SmoothTwoForm I M}
 
 variable [FiniteDimensional ℝ E]
@@ -301,9 +291,8 @@ theorem IsNondegenerate.neg_sum_le_integral_add_of_exchangePerturbation_exchange
             (one.cylindricalEndLift (↑R + ↑t * Complex.I))))) -
           ∫ t in (0 : ℝ)..1, H inf t (u (Complex.equivRealProdCLM
             (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) := by
-  have hpos := setIntegral_nonneg (μ := volume) ((isClosed_exchangeTruncation c R).preimage
-    Complex.equivRealProdCLM.symm.continuous).measurableSet
-      fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have hpos := setIntegral_nonneg (μ := volume) (measurableSet_preimage_exchangeTruncation c R)
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := abs_le.1
     (hω.abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_sub_le hH hHs hB
       hc₀ hc₁ hu (by linarith : (1 : ℝ) ≤ R))
@@ -487,7 +476,7 @@ private theorem integral_floerEnergyDensity_exchangeTruncation_eq (ω : Symplect
   rw [← image_exchangeMap_truncation hc₀ hc₁ hR]
   simpa only [floerEnergyDensity_constSmooth] using
     ω.constSmooth.integral_floerEnergyDensity_image_exchangeMap
-      (SmoothTwoForm.contMDiffAt_exchangePerturbation_apply hH
+      (Floer.contMDiffAt_exchangePerturbation_apply hH
         (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c)
       (perturbationPullback_exchangeMap_exchangePerturbation hc₀ hc₁) hc₀ hc₁
       (contMDiffOn_iff_contDiffOn.mpr (hu.of_le one_le_two))
@@ -509,7 +498,7 @@ private theorem integral_hamiltonianCurvature_exchangePerturbation_eq (ω : Symp
   conv_lhs => rw [← image_exchangeMap_thricePuncturedSphereReal hc₀ hc₁]
   simpa only [hamiltonianCurvature_constSmooth] using
     ω.constSmooth.integral_hamiltonianCurvature_image_exchangeMap
-      (SmoothTwoForm.contMDiffAt_exchangePerturbation_apply hH
+      (Floer.contMDiffAt_exchangePerturbation_apply hH
         (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c)
       (perturbationPullback_exchangeMap_exchangePerturbation hc₀ hc₁) hc₀ hc₁ u
       isOpen_thricePuncturedSphereReal.measurableSet subset_rfl
@@ -655,9 +644,8 @@ theorem hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation (ω : Sympl
           (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) -
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t := by
   -- The energy over the truncation is nonnegative.
-  have hE := setIntegral_nonneg (μ := volume) ((isClosed_exchangeTruncation c R).preimage
-    Complex.equivRealProdCLM.symm.continuous).measurableSet fun z hz ↦
-      ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
+  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_exchangeTruncation c R)
+    fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have hcurv := sum_mul_integral_le_setIntegral_hamiltonianCurvature_exchangePerturbation
     ω hH hHs hh hhH hc₀ hc₁ hu.continuousOn
   rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR]
@@ -821,7 +809,7 @@ theorem lintegral_floerEnergyDensity_exchangePerturbation_eq (ω : SymplecticFor
     (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u
   set T : ℝ → Set (ℝ × ℝ) := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R
-  have hTS (R : ℝ) : T R ⊆ thricePuncturedSphereReal := fun z hz ↦ exchangeTruncation_subset c R hz
+  have hTS := preimage_exchangeTruncation_subset c
   have hKc (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
       (thricePuncturedSphereReal ×ˢ univ) :=
@@ -831,17 +819,11 @@ theorem lintegral_floerEnergyDensity_exchangePerturbation_eq (ω : SymplecticFor
       (hKc 1) (hKc Complex.I)
   -- The lower integrals over `T R` are the measures of `T R` for the density `ofReal ∘ e`, and the
   -- truncations increase to `S`, so these measures converge to the energy over `S`.
-  have hTm (R : ℝ) : MeasurableSet (T R) :=
-    ((isClosed_exchangeTruncation c R).preimage
-      Complex.equivRealProdCLM.symm.continuous).measurableSet
-  have hU : ⋃ R, T R = thricePuncturedSphereReal := by
-    ext z
-    simp only [T, ← preimage_iUnion, iUnion_exchangeTruncation, mem_preimage, mem_ofPred_eq,
-      mem_thricePuncturedSphereReal_iff]
   have hlim := tendsto_measure_iUnion_atTop
     (μ := volume.withDensity fun z ↦ ENNReal.ofReal (e z)) (s := T)
     fun R R' hRR' ↦ preimage_mono (exchangeTruncation_mono c hRR')
-  rw [hU, withDensity_apply _ isOpen_thricePuncturedSphereReal.measurableSet] at hlim
+  rw [iUnion_preimage_exchangeTruncation,
+    withDensity_apply _ isOpen_thricePuncturedSphereReal.measurableSet] at hlim
   refine tendsto_nhds_unique hlim ?_
   -- On `T R`, `R ≥ 2`, the energy is the change of action minus the curvature over `S`.
   refine ((ENNReal.continuous_ofReal.tendsto _).comp
@@ -851,9 +833,9 @@ theorem lintegral_floerEnergyDensity_exchangePerturbation_eq (ω : SymplecticFor
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
       (isCompact_exchangeTruncation c R)
   simp only [Function.comp_apply]
-  rw [withDensity_apply _ (hTm R), ← ofReal_integral_eq_lintegral_ofReal
-    ((he.mono (hTS R)).integrableOn_compact hTc)
-    (ae_restrict_of_forall_mem (hTm R) fun z hz ↦
+  rw [withDensity_apply _ (measurableSet_preimage_exchangeTruncation c R),
+    ← ofReal_integral_eq_lintegral_ofReal ((he.mono (hTS R)).integrableOn_compact hTc)
+    (ae_restrict_of_forall_mem (measurableSet_preimage_exchangeTruncation c R) fun z hz ↦
       ω.floerEnergyDensity_nonneg (hJ z (hTS R hz)) (hfloer z (hTS R hz))),
     integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR]
 

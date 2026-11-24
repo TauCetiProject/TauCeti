@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
 public import TauCeti.Analysis.Variational.BoundedSublevels
+import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Variational.DirectMethod
 import TauCeti.Topology.Algebra.Module.WeakSpace
 
@@ -27,6 +28,15 @@ a sequentially weakly closed set `S` suffices for attainment of the infimum
 (`TauCeti.exists_isMinOn_of_bounded_minimizing_sequence`), including when sequential closedness
 and sequential lower semicontinuity hold only on a single bounded sublevel containing the sequence,
 and when the minimizer is unique the entire minimizing sequence converges weakly to it.
+
+Without a lower bound or completeness of the codomain, a norm-bounded sequence in a sequentially
+weakly closed set `K`, on which the energy (valued in any linear order) is sequentially weakly
+lower semicontinuous, and minimizing for the energy on `S` in the sense that its values are
+eventually below every number exceeding a value on `S`, has a subsequence converging weakly to a
+point of `K` minimizing the energy on `S`
+(`TauCeti.exists_isMinOn_of_bounded_minimizing_sequence_of_eventually_lt`). Real energies on a
+nonempty set always admit such minimizing sequences
+(`TauCeti.exists_seq_forall_gt_eventually_lt`).
 
 Finally, combining sequential sublevel closedness with the sequential-closure form of
 Eberlein–Šmulian shows that bounded sublevels of a sequentially weakly lower semicontinuous energy
@@ -156,6 +166,35 @@ theorem exists_isMinOn_of_seqLowerSemicontinuousOn_of_bounded_minimizing_sequenc
     exists_subseq_tendsto_toWeakSpace_isMinOn_of_seqLowerSemicontinuousOn
       hV hbdd hS hE hu hb hmin
   exact ⟨v, hv, hminv⟩
+
+/-- **The direct method along sequences, for linearly ordered energies.** In a reflexive space,
+let `u` be a norm-bounded sequence in `K` that is minimizing for `E` on `S`: its energies are
+eventually below every number exceeding a value of `E` on `S`. If `K` is weakly sequentially
+closed and `E` is weakly sequentially lower semicontinuous on `K`, then a subsequence of `u`
+converges weakly to a point of `K` minimizing `E` on `S`.
+
+Taking for `K` a bounded sublevel of `E` on `S` containing the sequence, closedness and
+semicontinuity are only needed within that sublevel. -/
+theorem exists_isMinOn_of_bounded_minimizing_sequence_of_eventually_lt {β : Type*}
+    [LinearOrder β] {E : V → β} {S K : Set V}
+    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V))
+    (hK : IsSeqClosed (toWeakSpace 𝕜 V '' K))
+    (hE : SeqLowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' K))
+    {u : ℕ → V} (hu : ∀ n, u n ∈ K) (hb : IsBounded (range u))
+    (hmin : ∀ v ∈ S, ∀ c > E v, ∀ᶠ n in atTop, E (u n) < c) :
+    ∃ x ∈ K, IsMinOn E S x ∧ ∃ φ : ℕ → ℕ, StrictMono φ ∧
+      Tendsto (fun n ↦ toWeakSpace 𝕜 V (u (φ n))) atTop (𝓝 (toWeakSpace 𝕜 V x)) := by
+  obtain ⟨x, φ, hφ, hlim⟩ := tendsto_subseq_toWeakSpace_of_isBounded hV hb
+  have huK (n : ℕ) : toWeakSpace 𝕜 V (u (φ n)) ∈ toWeakSpace 𝕜 V '' K :=
+    mem_image_of_mem _ (hu _)
+  have hxK : toWeakSpace 𝕜 V x ∈ toWeakSpace 𝕜 V '' K := hK huK hlim
+  refine ⟨x, (toWeakSpace 𝕜 V).injective.mem_set_image.1 hxK, isMinOn_iff.2 fun v hv ↦ ?_, φ, hφ,
+    hlim⟩
+  simpa only [LinearEquiv.symm_apply_apply] using
+    hE.le_of_forall_gt_eventually_lt hxK huK hlim (b := E v) fun c hc ↦ by
+      simpa only [LinearEquiv.symm_apply_apply] using
+        hφ.tendsto_atTop.eventually (hmin v hv c hc)
 
 /-- When `v` is the unique minimizer of `E` on `S`, the entire norm-bounded minimizing sequence
 `u` converges weakly to `v` without passing to a subsequence. -/

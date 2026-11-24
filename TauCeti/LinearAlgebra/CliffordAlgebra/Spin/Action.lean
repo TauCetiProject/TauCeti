@@ -90,6 +90,12 @@ theorem spinVectorAction_mul (x y : spinGroup Q) :
     spinVectorAction Q (x * y) = spinVectorAction Q x * spinVectorAction Q y := by
   simp [spinVectorAction]
 
+/-- The vector actions of two commuting Spin elements commute. -/
+theorem spinVectorAction_apply_comm {x y : spinGroup Q} (h : Commute x y) (m : M) :
+    spinVectorAction Q x (spinVectorAction Q y m) =
+      spinVectorAction Q y (spinVectorAction Q x m) := by
+  simpa [mul_apply_eq_comp] using LinearEquiv.congr_fun (congrArg (spinVectorAction Q) h.eq) m
+
 /-- A spin element acts on a vector by conjugation inside the Clifford algebra. -/
 @[simp]
 theorem ι_spinVectorAction_apply (x : spinGroup Q) (m : M) :

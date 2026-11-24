@@ -41,7 +41,10 @@ contactomorphisms for every `t` exactly when `R_α f = 0`
 particular a complete Reeb flow consists of strict contactomorphisms
 (`IsContactForm.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorField`), and is packaged as
 a topological `Flow ℝ M` in `IsContactForm.reebFlow` without rest points
-(`IsContactForm.exists_reebFlow_ne`).
+(`IsContactForm.exists_reebFlow_ne`). The complete Reeb flow is jointly smooth
+(`IsContactForm.contMDiff_reebFlow_uncurry`) and preserves `α`, `R_α`, `ξ = ker α` and `dα`
+(`IsContactForm.mpullback_reebFlow_apply`, `IsContactForm.mfderiv_reebFlow_apply_self`,
+`IsContactForm.mfderiv_reebFlow_mem_kerDistribution`, `IsContactForm.mextDeriv_mfderiv_reebFlow`).
 
 ## Contact action, symplectic transport, and linearized Reeb return maps
 
@@ -58,11 +61,14 @@ a topological `Flow ℝ M` in `IsContactForm.reebFlow` without rest points
   `IsContactForm.conj_kerFlowEquiv_linearizedReebReturn`,
   `IsContactForm.charpoly_mfderiv_flowOf_reebVectorField`,
   `IsContactForm.charpoly_normalReturnDerivative_eq`,
-  `IsContactForm.hasEigenvalue_returnDerivative_iff`): when `Φ_T(p) = p`, restricting `dΦ_T(p)` to
-  `ξ_p` yields a linear symplectomorphism whose iterates obey the power law, whose conjugacy class
-  is invariant along the trajectory, whose full monodromy characteristic polynomial splits as
+  `IsContactForm.hasEigenvalue_returnDerivative_iff`):
+  when the maximal flow is defined at `(T, p)` and `Φ_T(p) = p`, restricting `dΦ_T(p)` to
+  `ξ_p` yields a linear symplectomorphism whose iterates obey the power law, whose conjugacy
+  class is invariant along the trajectory,
+  whose full monodromy characteristic polynomial splits as
   `(X - 1)` times its characteristic polynomial, and whose characteristic polynomial and eigenvalues
-  agree with those of any local transverse Poincaré section.
+  agree with those of the normal derivative on a transverse section for the return branch at
+  the specified time `T`, including when `T` exceeds the least period.
 
 ## References
 
@@ -107,7 +113,7 @@ theorem mpullback_flowOf_apply (hα : α.IsContactForm)
   have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
     ((ContMDiff.contMDiff_mvfderiv_apply hf (m := 0) (by norm_num)).comp
       (hα.contMDiff_reebVectorField.of_le (by simp))).continuous
-  exact mpullback_flowOf_apply_eq_exp_integral_smul hX2 hRf α.mdifferentiable
+  exact mpullback_flowOf_apply_eq_exp_integral_smul (hX2.of_le one_le_two) hRf α.mdifferentiable
     (hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero)) hx
 
 /-- **Contact Hamiltonian flows preserve the coorientation.** For a contact form `α` and the
@@ -134,7 +140,7 @@ theorem mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
   · intro h x
     -- The pullbacks `φₜ^* α` at `x` are constant for small `t`, and their velocity at `0` is
     -- `L_X α = (R_α f) α`.
-    have hd := hasDerivAt_mpullback_flowOf_zero hX2 x (α.mdifferentiable x)
+    have hd := hasDerivAt_mpullback_flowOf_zero (hX2.of_le one_le_two) x (α.mdifferentiable x)
     have hconst : (fun s ↦ TauCeti.mpullback I I (flowOf X s) α.val x) =ᶠ[𝓝 0]
         fun _ ↦ α.val x := by
       have hopen : {s | (s, x) ∈ flowDomain X} ∈ 𝓝 (0 : ℝ) :=
@@ -594,6 +600,28 @@ theorem IsContactForm.hasEigenvalue_returnDerivative_iff (hα : α.IsContactForm
     charpoly_returnDerivative_eq_X_mul hgv (h := hK), IsRoot.def, IsRoot.def, eval_mul, eval_X,
     mul_eq_zero, or_iff_right hμ]
 
+namespace IsContactForm
+
+/-- The linearized Reeb return map at a return time `T` has no eigenvalue `1` iff some local
+transverse section through `p` has a return derivative without eigenvalue `1` for the branch at
+time `T`. The branch uses the specified return time, which need not be the least period. -/
+theorem not_hasEigenvalue_one_linearizedReebReturn_iff_exists_not_hasEigenvalue_returnDerivative
+    (hα : α.IsContactForm) {T : ℝ} {p : M} (hT : (T, p) ∈ flowDomain α.reebVectorField)
+    (hp : flowOf α.reebVectorField T p = p) :
+    ¬(hα.linearizedReebReturn hT hp).HasEigenvalue 1 ↔
+      ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g p ∧
+        mvfderiv I g p (α.reebVectorField p) ≠ 0 ∧
+        ¬(returnDerivative α.reebVectorField g T p).HasEigenvalue 1 := by
+  constructor
+  · intro hnd
+    obtain ⟨g, hg, hgv⟩ := hα.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one 1 p
+    have hgv0 : mvfderiv I g p (α.reebVectorField p) ≠ 0 := hgv ▸ one_ne_zero
+    exact ⟨g, hg, hgv0, mt (hα.hasEigenvalue_returnDerivative_iff hT hp hg hgv0 one_ne_zero).1 hnd⟩
+  · rintro ⟨g, hg, hgv, hnd⟩
+    exact mt (hα.hasEigenvalue_returnDerivative_iff hT hp hg hgv one_ne_zero).2 hnd
+
+end IsContactForm
+
 /-- **Degeneracy of identity return in dimension at least `3`.** If `2 ≤ finrank ℝ E` (so the
 contact manifold has odd dimension `2 n + 1 ≥ 3` and `dim ξ_p ≥ 1`) and `dΦ_T(p) = id`, then
 `1` is an eigenvalue of the linearized Reeb return map. -/
@@ -646,6 +674,77 @@ theorem IsContactForm.isMIntegralCurve_reebFlow (hα : α.IsContactForm)
 theorem IsContactForm.isCompleteVectorField_reebVectorField [CompactSpace M]
     (hα : α.IsContactForm) : IsCompleteVectorField α.reebVectorField :=
   isCompleteVectorField_of_compactSpace (contMDiff_one_reebVectorField hα)
+
+namespace IsContactForm
+
+section Complete
+
+variable (hα : α.IsContactForm) (hc : IsCompleteVectorField α.reebVectorField)
+
+/-- Unfolds `IsContactForm.reebFlow` as `TauCeti.globalFlow` of `α.reebVectorField`. -/
+theorem reebFlow_def :
+    hα.reebFlow hc =
+      globalFlow α.reebVectorField (hα.contMDiff_reebVectorField.of_le (by simp)) hc :=
+  (rfl)
+
+/-- The Reeb flow equals the time-`t` global flow diffeomorphism at every point. -/
+theorem reebFlow_eq_globalFlowDiffeomorph (t : ℝ) (x : M) :
+    hα.reebFlow hc t x =
+      globalFlowDiffeomorph hc le_top hα.contMDiff_reebVectorField t x :=
+  (globalFlowDiffeomorph_apply hc le_top hα.contMDiff_reebVectorField t x).symm
+
+/-- As a function, the time-`t` map of `reebFlow` agrees with `globalFlowDiffeomorph`. -/
+theorem reebFlow_eq_coe_globalFlowDiffeomorph (t : ℝ) :
+    hα.reebFlow hc t = ⇑(globalFlowDiffeomorph hc le_top hα.contMDiff_reebVectorField t) :=
+  funext (hα.reebFlow_eq_globalFlowDiffeomorph hc t)
+
+/-- Every integral curve of the Reeb vector field is an orbit of the Reeb flow. -/
+theorem reebFlow_eq_of_isMIntegralCurve {γ : ℝ → M}
+    (hγ : IsMIntegralCurve γ α.reebVectorField) (t : ℝ) :
+    hα.reebFlow hc t (γ 0) = γ t :=
+  globalFlow_eq_of_isMIntegralCurve _ hc hγ t
+
+/-- The Reeb flow is jointly smooth in time and space. -/
+theorem contMDiff_reebFlow_uncurry :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (Function.uncurry (hα.reebFlow hc)) :=
+  contMDiff_globalFlow_uncurry hc le_top hα.contMDiff_reebVectorField
+
+/-- The time-`t` map of the Reeb flow is smooth. -/
+theorem contMDiff_reebFlow_apply (t : ℝ) :
+    ContMDiff I I ∞ (hα.reebFlow hc t) :=
+  contMDiff_globalFlow_apply hc le_top hα.contMDiff_reebVectorField t
+
+/-- Each time-`t` map of the Reeb flow pulls `α` back to `α`. -/
+theorem mpullback_reebFlow_apply (t : ℝ) (x : M) :
+    TauCeti.mpullback I I (hα.reebFlow hc t) α.val x = α.val x := by
+  rw [show hα.reebFlow hc t = flowOf α.reebVectorField t from funext (hα.reebFlow_apply hc t)]
+  exact hα.mpullback_flowOf_reebVectorField_apply (hc.mem_flowDomain t x)
+
+/-- The differential of the Reeb flow preserves the Reeb vector field. -/
+theorem mfderiv_reebFlow_apply_self (t : ℝ) (x : M) :
+    mfderiv I I (hα.reebFlow hc t) x (α.reebVectorField x) =
+      α.reebVectorField (hα.reebFlow hc t x) :=
+  mfderiv_globalFlow_apply_self _ hc t x
+
+/-- The differential of the Reeb flow maps the contact distribution `ξ = ker α` to itself. -/
+theorem mfderiv_reebFlow_mem_kerDistribution (t : ℝ) {x : M} {v : TangentSpace I x}
+    (hv : v ∈ α.kerDistribution x) :
+    mfderiv I I (hα.reebFlow hc t) x v ∈ α.kerDistribution (hα.reebFlow hc t x) := by
+  rw [show hα.reebFlow hc t = flowOf α.reebVectorField t from funext (hα.reebFlow_apply hc t)]
+  exact (hα.mfderiv_flowOf_reebVectorField_mem_kerDistribution_iff
+    (hc.mem_flowDomain t x) v).2 hv
+
+/-- The Reeb flow preserves the exterior derivative `dα` on tangent vectors. -/
+theorem mextDeriv_mfderiv_reebFlow (t : ℝ) (x : M) (v w : TangentSpace I x) :
+    mextDeriv α.val (hα.reebFlow hc t x)
+        ![mfderiv I I (hα.reebFlow hc t) x v, mfderiv I I (hα.reebFlow hc t) x w] =
+      mextDeriv α.val x ![v, w] := by
+  rw [show hα.reebFlow hc t = flowOf α.reebVectorField t from funext (hα.reebFlow_apply hc t)]
+  exact hα.mextDeriv_mfderiv_flowOf_reebVectorField (hc.mem_flowDomain t x) v w
+
+end Complete
+
+end IsContactForm
 
 end ReebFlow
 

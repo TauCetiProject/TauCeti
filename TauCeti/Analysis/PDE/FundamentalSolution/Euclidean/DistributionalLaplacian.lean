@@ -165,7 +165,7 @@ theorem hasWeakFDerivOn_newtonianKernel (Ω : Opens (EuclideanSpace ℝ (Fin n))
   hasWeakFDerivOn_of_forall_integral_fderiv_smul (locallyIntegrable_newtonianKernel n)
     (locallyIntegrable_fderiv_newtonianKernel n) (fun _ hg hc v ↦ by
       simpa only [smul_eq_mul, mul_comm] using
-        integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hg hc v) Ω
+        integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hg.of_le (by simp)) hc v) Ω
 
 /-- Away from the pole, the gradient pairing `∇Gₙ · ∇f` is `-(n ωₙ)⁻¹ ‖x‖⁻ⁿ f' x x`. -/
 private lemma sum_fderiv_newtonianKernel_mul_fderiv (hn : n ≠ 2)

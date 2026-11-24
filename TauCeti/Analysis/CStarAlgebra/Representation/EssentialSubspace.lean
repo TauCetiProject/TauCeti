@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
-public import TauCeti.Analysis.InnerProductSpace.Projection.ExtendByZero
+public import TauCeti.Analysis.InnerProductSpace.EssentialSubspace
 
 /-!
 # Essential subspaces of Hilbert-space representations
 
 Let `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` be a (not necessarily nondegenerate) Hilbert-space representation
 of a possibly nonunital C⋆-algebra `A`. Its *essential subspace* `π.essentialSubspace` is the
+essential subspace of its range (`NonUnitalStarSubalgebra.essentialSubspace`), equivalently the
 closed linear span of the ranges `Set.range (π a)`. Every operator `π a` maps `H` into
 `π.essentialSubspace` and annihilates its orthogonal complement `π.essentialSubspaceᗮ`, so
 compressing `π` to `π.essentialSubspace` yields a nondegenerate representation
@@ -21,13 +22,16 @@ extension by zero via `Submodule.extendByZero` recovers `π`.
 
 ## Main definitions and results
 
-* `NonUnitalStarAlgHom.essentialSubspace`: the closed span of all ranges `Set.range (π a)`, with
-  `mem_orthogonal_essentialSubspace_iff` characterizing its orthogonal complement as the common
-  kernel `⋂ a, ker (π a)` and `isNondegenerate_iff_essentialSubspace_eq_top` relating it to
+* `NonUnitalStarAlgHom.essentialSubspace`: the essential subspace of `NonUnitalStarAlgHom.range π`
+  (`essentialSubspace_def`), shown equal to the closed span of all ranges `Set.range (π a)` by
+  `essentialSubspace_eq_topologicalClosure_span`, with `mem_orthogonal_essentialSubspace_iff`
+  characterizing its orthogonal complement as the common kernel `⋂ a, ker (π a)` and
+  `isNondegenerate_iff_essentialSubspace_eq_top` relating it to
   `NonUnitalStarAlgHom.IsNondegenerate`.
 * `NonUnitalStarAlgHom.ext_of_orthogonal_essentialSubspace`: bounded operators agreeing after
   right multiplication by `π a` and on `π.essentialSubspaceᗮ` are equal on `H`.
-* `NonUnitalStarAlgHom.restrictEssentialSubspace` and
+* `NonUnitalStarAlgHom.restrictEssentialSubspace`,
+  `NonUnitalStarAlgHom.range_restrictEssentialSubspace`, and
   `NonUnitalStarAlgHom.isNondegenerate_restrictEssentialSubspace`: the nondegenerate compression of
   `π` to its essential subspace, with `extendByZero_restrictEssentialSubspace`.
 
@@ -49,47 +53,49 @@ variable {A H : Type*} [NonUnitalCStarAlgebra A]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
 /-- The *essential subspace* of a Hilbert-space representation `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)`: the
-closed linear span of all vectors `π a ξ`. -/
+essential subspace of its range, i.e., the closed linear span of all vectors `π a ξ`. -/
 def essentialSubspace (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) : Submodule ℂ H :=
-  (Submodule.span ℂ (⋃ a, Set.range (π a))).topologicalClosure
+  (NonUnitalStarAlgHom.range π).essentialSubspace
+
+/-- Unfolding formula identifying `π.essentialSubspace` with the essential subspace of the range of
+`π`. -/
+theorem essentialSubspace_def (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
+    π.essentialSubspace = (NonUnitalStarAlgHom.range π).essentialSubspace :=
+  (rfl)
+
+/-- `π.essentialSubspace` is the closed linear span of all ranges `Set.range (π a)`. -/
+theorem essentialSubspace_eq_topologicalClosure_span (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
+    π.essentialSubspace = (Submodule.span ℂ (⋃ a, Set.range (π a))).topologicalClosure := by
+  rw [essentialSubspace_def, NonUnitalStarSubalgebra.essentialSubspace_def]
+  congr 2
+  simpa only [← SetLike.mem_coe, NonUnitalStarAlgHom.coe_range] using
+    Set.biUnion_range (f := ⇑π) (g := fun T : H →L[ℂ] H => Set.range T)
 
 /-- The essential subspace of a representation is closed. -/
 theorem isClosed_essentialSubspace (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
     IsClosed (π.essentialSubspace : Set H) :=
-  Submodule.isClosed_topologicalClosure _
+  (NonUnitalStarAlgHom.range π).isClosed_essentialSubspace
 
 instance (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) : CompleteSpace π.essentialSubspace :=
-  π.isClosed_essentialSubspace.completeSpace_coe
+  (NonUnitalStarAlgHom.range π).instCompleteSpaceEssentialSubspace
 
 variable {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
 
 /-- Every vector in the range of `π a` belongs to `π.essentialSubspace`. -/
 theorem apply_mem_essentialSubspace (a : A) (ξ : H) : π a ξ ∈ π.essentialSubspace :=
-  Submodule.le_topologicalClosure _ <| Submodule.subset_span <| Set.mem_iUnion.2 ⟨a, ξ, rfl⟩
+  (NonUnitalStarAlgHom.range π).apply_mem_essentialSubspace (π.mem_range_self a) ξ
 
 /-- A closed submodule contains `π.essentialSubspace` if and only if it contains every vector
 `π a ξ`. -/
 theorem essentialSubspace_le_iff {K : Submodule ℂ H} (hK : IsClosed (K : Set H)) :
-    π.essentialSubspace ≤ K ↔ ∀ a ξ, π a ξ ∈ K := by
-  refine ⟨fun h a ξ => h (π.apply_mem_essentialSubspace a ξ), fun h => ?_⟩
-  exact hK.closure_subset_iff.2 <| Submodule.span_le.2 <|
-    Set.iUnion_subset fun a => Set.range_subset_iff.2 (h a)
+    π.essentialSubspace ≤ K ↔ ∀ a ξ, π a ξ ∈ K :=
+  ((NonUnitalStarAlgHom.range π).essentialSubspace_le_iff hK).trans (by simp)
 
 /-- A vector lies in the orthogonal complement of `π.essentialSubspace` if and only if it is
 annihilated by every operator `π a`. -/
 theorem mem_orthogonal_essentialSubspace_iff {ξ : H} :
-    ξ ∈ π.essentialSubspaceᗮ ↔ ∀ a, π a ξ = 0 := by
-  refine ⟨fun hξ a => ext_inner_left ℂ fun v => ?_, fun hξ => ?_⟩
-  · rw [inner_zero_right, ← ContinuousLinearMap.adjoint_inner_left,
-      ← ContinuousLinearMap.star_eq_adjoint, ← map_star]
-    exact (Submodule.mem_orthogonal _ _).1 hξ _ (π.apply_mem_essentialSubspace (star a) v)
-  · rw [Submodule.mem_orthogonal']
-    refine (innerSL ℂ ξ).isClosed_ker.closure_subset_iff.2 <|
-      (Submodule.span_le (p := (innerSL ℂ ξ).ker)).2 fun y hy => ?_
-    obtain ⟨a, v, rfl⟩ := Set.mem_iUnion.1 hy
-    simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, innerSL_apply_apply,
-      ← ContinuousLinearMap.adjoint_inner_left, ← ContinuousLinearMap.star_eq_adjoint,
-      ← map_star, hξ (star a), inner_zero_left]
+    ξ ∈ π.essentialSubspaceᗮ ↔ ∀ a, π a ξ = 0 :=
+  (NonUnitalStarAlgHom.range π).mem_orthogonal_essentialSubspace_iff.trans (by simp)
 
 /-- Every operator `π a` vanishes on `π.essentialSubspaceᗮ`. -/
 theorem apply_eq_zero_of_mem_orthogonal_essentialSubspace {ξ : H}
@@ -98,8 +104,9 @@ theorem apply_eq_zero_of_mem_orthogonal_essentialSubspace {ξ : H}
 
 /-- A representation is nondegenerate if and only if its essential subspace is `⊤`. -/
 theorem isNondegenerate_iff_essentialSubspace_eq_top :
-    π.IsNondegenerate ↔ π.essentialSubspace = ⊤ :=
-  π.isNondegenerate_iff_dense.trans Submodule.dense_iff_topologicalClosure_eq_top
+    π.IsNondegenerate ↔ π.essentialSubspace = ⊤ := by
+  rw [π.isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
+    π.essentialSubspace_eq_topologicalClosure_span]
 
 /-- The orthogonal complement of the essential subspace of a nondegenerate representation is `⊥`. -/
 theorem orthogonal_essentialSubspace_eq_bot_of_isNondegenerate (hπ : π.IsNondegenerate) :
@@ -110,64 +117,47 @@ theorem orthogonal_essentialSubspace_eq_bot_of_isNondegenerate (hπ : π.IsNonde
 agree on `π.essentialSubspaceᗮ` are equal everywhere on `H`. -/
 theorem ext_of_orthogonal_essentialSubspace {S T : H →L[ℂ] H}
     (hmul : ∀ a, S * π a = T * π a) (horth : ∀ ξ ∈ π.essentialSubspaceᗮ, S ξ = T ξ) :
-    S = T := by
-  have hess : ∀ η ∈ π.essentialSubspace, S η = T η := fun η hη =>
-    ContinuousLinearMap.eqOn_closure_span (R₁ := ℂ) (s := ⋃ a, Set.range (π a))
-      (fun _ hx => by obtain ⟨a, v, rfl⟩ := Set.mem_iUnion.1 hx; exact congr($(hmul a) v))
-      (by
-        simpa only [essentialSubspace, ← SetLike.mem_coe, Submodule.topologicalClosure_coe]
-          using hη)
-  ext ξ
-  have hdecomp : ξ = π.essentialSubspace.starProjection ξ +
-      (ξ - π.essentialSubspace.starProjection ξ) := (add_sub_cancel _ _).symm
-  rw [hdecomp, map_add, map_add,
-    hess _ (π.essentialSubspace.starProjection_apply_mem ξ),
-    horth _ (π.essentialSubspace.sub_starProjection_mem_orthogonal ξ)]
+    S = T :=
+  (NonUnitalStarAlgHom.range π).ext_of_orthogonal_essentialSubspace
+    (by rintro _ ⟨a, rfl⟩; exact hmul a) horth
 
 variable (π) in
 /-- Compression of a representation `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` to its closed essential subspace.
 Because `π.essentialSubspace` contains all ranges of `π` and its orthogonal complement is killed by
 `π`, this compression is a nondegenerate nonunital star-algebra homomorphism. -/
 def restrictEssentialSubspace :
-    A →⋆ₙₐ[ℂ] (π.essentialSubspace →L[ℂ] π.essentialSubspace) where
-  toFun a := π.essentialSubspace.orthogonalProjectionOnto ∘L π a ∘L π.essentialSubspace.subtypeL
-  map_smul' c a := by
-    ext ξ
-    simp
-  map_zero' := by
-    ext ξ
-    simp
-  map_add' a b := by
-    ext ξ
-    simp
-  map_mul' a b := by
-    ext ξ
-    simp [π.essentialSubspace.starProjection_eq_self_iff.2 (π.apply_mem_essentialSubspace b ξ)]
-  map_star' a := by
-    simp only [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_comp,
-      π.essentialSubspace.adjoint_subtypeL, π.essentialSubspace.adjoint_orthogonalProjectionOnto,
-      ContinuousLinearMap.comp_assoc]
-    rw [← ContinuousLinearMap.star_eq_adjoint, ← map_star]
+    A →⋆ₙₐ[ℂ] (π.essentialSubspace →L[ℂ] π.essentialSubspace) :=
+  let toRestrict (B : NonUnitalStarSubalgebra ℂ (H →L[ℂ] H)) :
+      B →⋆ₙₐ[ℂ] (B.essentialSubspace →L[ℂ] B.essentialSubspace) :=
+    (NonUnitalStarSubalgebraClass.subtype B.restrictEssentialSubspace).comp
+      B.restrictEssentialSubspaceEquiv.symm.toNonUnitalStarAlgHom
+  (toRestrict (NonUnitalStarAlgHom.range π)).comp π.rangeRestrict
 
 /-- Operator-composition unfolding of `restrictEssentialSubspace`. -/
 theorem restrictEssentialSubspace_def (a : A) :
     π.restrictEssentialSubspace a =
       π.essentialSubspace.orthogonalProjectionOnto ∘L π a ∘L π.essentialSubspace.subtypeL :=
-  (rfl)
+  (NonUnitalStarAlgHom.range π).coe_restrictEssentialSubspaceEquiv_symm_apply (π.rangeRestrict a)
 
 /-- Coercing `π.restrictEssentialSubspace a ξ` back to `H` gives `π a ξ`. -/
 @[simp]
 theorem coe_restrictEssentialSubspace_apply (a : A) (ξ : π.essentialSubspace) :
-    (π.restrictEssentialSubspace a ξ : H) = π a ξ :=
-  π.essentialSubspace.starProjection_eq_self_iff.2 (π.apply_mem_essentialSubspace a ξ)
+    (π.restrictEssentialSubspace a ξ : H) = π a ξ := by
+  rw [restrictEssentialSubspace_def]
+  exact π.essentialSubspace.starProjection_eq_self_iff.2 (π.apply_mem_essentialSubspace a ξ)
 
 /-- Extending `π.restrictEssentialSubspace a` by zero on `π.essentialSubspaceᗮ` recovers `π a`. -/
 @[simp]
 theorem extendByZero_restrictEssentialSubspace (a : A) :
-    π.essentialSubspace.extendByZero (π.restrictEssentialSubspace a) = π a :=
-  π.essentialSubspace.extendByZero_comp_orthogonalProjectionOnto_comp_subtypeL
-    (π.apply_mem_essentialSubspace a) fun _ hξ =>
-      π.apply_eq_zero_of_mem_orthogonal_essentialSubspace hξ a
+    π.essentialSubspace.extendByZero (π.restrictEssentialSubspace a) = π a := by
+  rw [π.restrictEssentialSubspace_def]
+  have h := congrArg Subtype.val
+    ((NonUnitalStarAlgHom.range π).restrictEssentialSubspaceEquiv.apply_symm_apply
+      (π.rangeRestrict a))
+  rw [NonUnitalStarSubalgebra.coe_restrictEssentialSubspaceEquiv_apply,
+    NonUnitalStarSubalgebra.coe_restrictEssentialSubspaceEquiv_symm_apply,
+    NonUnitalStarAlgHom.coe_codRestrict] at h
+  exact h
 
 /-- Composing `π.restrictEssentialSubspace` with `extendByZero` recovers `π`. -/
 @[simp]
@@ -180,14 +170,23 @@ theorem extendByZero_comp_restrictEssentialSubspace :
 theorem norm_restrictEssentialSubspace (a : A) : ‖π.restrictEssentialSubspace a‖ = ‖π a‖ := by
   rw [← π.essentialSubspace.norm_extendByZero, π.extendByZero_restrictEssentialSubspace]
 
+/-- The range of `π.restrictEssentialSubspace` consists of the operators on `π.essentialSubspace`
+whose zero extension belongs to `NonUnitalStarAlgHom.range π`. -/
+theorem range_restrictEssentialSubspace :
+    NonUnitalStarAlgHom.range π.restrictEssentialSubspace =
+      (NonUnitalStarAlgHom.range π).comap π.essentialSubspace.extendByZero := by
+  ext S
+  simp [NonUnitalStarAlgHom.mem_range, ← π.essentialSubspace.extendByZero_injective.eq_iff]
+
 /-- The compression of any representation to its essential subspace is nondegenerate. -/
 theorem isNondegenerate_restrictEssentialSubspace :
     π.restrictEssentialSubspace.IsNondegenerate := by
-  refine isNondegenerate_iff_forall_apply_eq_zero.2 fun ξ hξ => ?_
-  have horth : (ξ : H) ∈ π.essentialSubspaceᗮ :=
-    π.mem_orthogonal_essentialSubspace_iff.2 fun a => by
-      simpa using congrArg Subtype.val (hξ a)
-  exact Subtype.ext <| Submodule.mem_bot ℂ |>.1 <|
-    π.essentialSubspace.inf_orthogonal_eq_bot ▸ ⟨ξ.property, horth⟩
+  rw [isNondegenerate_iff_essentialSubspace_eq_top,
+    π.restrictEssentialSubspace.essentialSubspace_def, range_restrictEssentialSubspace]
+  -- Locally `π.essentialSubspace` is defeq to `(NonUnitalStarAlgHom.range π).essentialSubspace`.
+  change ((NonUnitalStarAlgHom.range π).comap
+    (NonUnitalStarAlgHom.range π).essentialSubspace.extendByZero).essentialSubspace = ⊤
+  rw [← (NonUnitalStarAlgHom.range π).restrictEssentialSubspace_def]
+  exact (NonUnitalStarAlgHom.range π).essentialSubspace_restrictEssentialSubspace
 
 end NonUnitalStarAlgHom

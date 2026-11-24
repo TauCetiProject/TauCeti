@@ -99,6 +99,7 @@ theorem finite_setOf_not_nondegenerate_toBilinForm (hc : ContinuousOn V (Icc a b
       with t ht htD
     exact htD.2 ht
 
+omit [FiniteDimensional ℝ E] in
 /-- The negative index of `V` is constant from a nondegenerate `s ∈ [a, b]` to `u ≤ b` when no
 crossing lies in `(s, u]`. -/
 private theorem sigNeg_toBilinForm_eq_of_forall_lt (hc : ContinuousOn V (Icc a b))
@@ -163,7 +164,7 @@ private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
     have ht₂I : t₂ ∈ Icc a b := ⟨hc'.1.le.trans ht₂.1.le, (ht₂.2.trans_le (min_le_right _ _)).le⟩
     -- The crossings after `s` are `c` and the crossings after `t₂`.
     have hsplit : {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} :=
-      Finset.filter_lt_eq_insert_of_forall_lt hcmem.1 hsc hcmin ht₂.1 fun t htS h ↦
+      Finset.filter_lt_eq_insert_of_forall_lt hcmem.1 hsc hcmin (hsc.trans ht₂.1).le fun t htS h ↦
         lt_of_not_ge fun htt₂ ↦ ((hS t).1 htS).2
           (hu ⟨h, htt₂.trans_lt (ht₂.2.trans_le (min_le_left _ _))⟩)
     have hcnot : c ∉ {t ∈ S | t₂ < t} := fun h ↦ (Finset.mem_filter.1 h).2.not_gt ht₂.1
@@ -244,7 +245,7 @@ private theorem eventually_nhdsWithin_sigPos_sub_sigNeg_eq {s : Set ℝ} (hc : C
       sigNeg (V t₀).toBilinForm.toQuadraticMap := by
     rw [nhdsWithin_eq_map_subtypeVal ht₀, eventually_map]
     exact eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := s.domRestrict V) (x := ⟨t₀, ht₀⟩)
-      (Eventually.of_forall fun u ↦ hsymm u u.property) hc.domRestrict.continuousAt hnd
+      (hsymm t₀ ht₀) hc.domRestrict.continuousAt hnd
   filter_upwards [hnd', hneg, self_mem_nhdsWithin] with t ht hnt hts
   exact ⟨sigPos_sub_sigNeg_eq_of_sigNeg_eq (hsymm t hts) ht (hsymm t₀ ht₀) hnd hnt, ht⟩
 

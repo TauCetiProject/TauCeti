@@ -214,14 +214,14 @@ theorem cup_dimensionShiftDownIso_hom {p q r' r : ℤ} (hq : q < 0) (h' : p + q 
   cases n with
   | zero =>
     obtain rfl : p = r := by simp at h; omega
-    rw [cupNeg_zero_apply, map_zsmul_unit, negOnePow_smul_negOnePow_smul,
+    rw [cupNeg_zero_apply, map_zsmul_unit, Int.negOnePow_smul_negOnePow_smul,
       Iso.inv_hom_id_apply]
     -- `Int.negSucc 0 + 1` is `0` by definition, so the left-hand side is `cup` in bidegree
     -- `(p, 0)`.
     exact LinearMap.congr_fun₂ (cup_zero_right M (dimensionShiftDown N) p _) x _
   | succ n =>
     obtain rfl : r = p - (n + 1 : ℕ) := by push_cast at h ⊢; omega
-    rw [cupNeg_succ_apply, map_zsmul_unit, negOnePow_smul_negOnePow_smul,
+    rw [cupNeg_succ_apply, map_zsmul_unit, Int.negOnePow_smul_negOnePow_smul,
       Iso.inv_hom_id_apply]
     exact LinearMap.congr_fun₂ (cup_negSucc M (dimensionShiftDown N) p n _) x _
 
@@ -247,7 +247,7 @@ theorem cup_dimensionShiftUpTwoIso_hom (p : ℤ) (x : tateCohomology M p)
     ((dimensionShiftUpIso (dimensionShiftUp N) 0).hom z)
   rw [dimensionShiftUpTwoIso_hom, ModuleCat.comp_apply]
   refine h₂.trans ?_
-  rw [h₁, map_zsmul_unit, negOnePow_smul_negOnePow_smul]
+  rw [h₁, map_zsmul_unit, Int.negOnePow_smul_negOnePow_smul]
 
 /-- The upward step in the proof of `cup_zero_left`: if `cup` agrees with `cup0H` in bidegree
 `(0, q)` for the upward shift of `N`, where `0 ≤ q`, then it does in bidegree `(0, q + 1)` for

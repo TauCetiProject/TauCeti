@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Adjoin.FG
 import TauCeti.LinearAlgebra.TensorProduct.Separation
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # Tensor products over a field that are domains
@@ -45,9 +46,10 @@ field.
 
 * `TauCeti.isDomain_tensorProduct_of_isLocalization`: localizing the first factor at nonzero
   divisors preserves domains.
-* `TauCeti.isDomain_tensorProduct_of_isLocalization_tensorProduct`: if `Q` is a localization of
-  `K ⊗[R] B` at nonzero divisors and `L ⊗[R] B` is a domain for a `K`-algebra `L`, then `Q ⊗[K] L`
-  is a domain.
+* `TauCeti.isDomain_tensorProduct_of_isLocalization_tensorProduct_left`,
+  `TauCeti.isDomain_tensorProduct_of_isLocalization_tensorProduct_right`: if a localization `Q` of
+  `K ⊗[R] B` (or `A ⊗[R] K`) at nonzero divisors is tensored over the field `K` with a `K`-algebra
+  `L`, the result is a domain whenever `L ⊗[R] B` (or `A ⊗[R] L`) is a domain.
 * `TauCeti.isDomain_fractionRing_mvPolynomial_tensorProduct`: a rational function field over `K`
   tensored with a domain is a domain.
 * `TauCeti.isDomain_tensorProduct_of_isAlgClosed`: over an algebraically closed field, the tensor
@@ -79,11 +81,7 @@ theorem isDomain_tensorProduct_of_isLocalization {A : Type*} [CommRing A] [Algeb
   let φ : A ⊗[K] L →ₐ[K] B ⊗[K] L :=
     Algebra.TensorProduct.map (IsScalarTower.toAlgHom K A B) (AlgHom.id K L)
   algebraize [φ.toRingHom]
-  have : IsScalarTower A (A ⊗[K] L) (B ⊗[K] L) := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, φ]
-  have : IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[K] L) M) (B ⊗[K] L) :=
-    IsLocalization.tensorProduct_tensorProduct K L M B
-      (by ext; simp [RingHom.algebraMap_toAlgebra, φ])
+  have := IsLocalization.tensorProduct_tensorProduct_of_algebraMap_eq K L M B rfl
   -- `A ⟶ A ⊗[K] L` is injective, so it carries the nonzero divisors `M` to nonzero elements.
   have hinj : Function.Injective (algebraMap A (A ⊗[K] L)) :=
     Algebra.TensorProduct.includeLeft_injective (S := K) (algebraMap K L).injective
@@ -93,7 +91,7 @@ theorem isDomain_tensorProduct_of_isLocalization {A : Type*} [CommRing A] [Algeb
 /-- Let `Q` be a localization of `K ⊗[R] B` at a submonoid of nonzero divisors (for instance, its
 fraction field), where `K` is a field over `R`. If `L` is a `K`-algebra such that `L ⊗[R] B` is a
 domain, then `Q ⊗[K] L` is a domain. -/
-theorem isDomain_tensorProduct_of_isLocalization_tensorProduct
+theorem isDomain_tensorProduct_of_isLocalization_tensorProduct_left
     {R B : Type*} [CommSemiring R] [CommSemiring B] [Algebra R K] [Algebra R B]
     (M : Submonoid (K ⊗[R] B)) (hM : M ≤ nonZeroDivisors (K ⊗[R] B))
     (Q : Type*) [CommRing Q] [Algebra K Q] [Algebra (K ⊗[R] B) Q] [IsScalarTower K (K ⊗[R] B) Q]
@@ -103,6 +101,25 @@ theorem isDomain_tensorProduct_of_isLocalization_tensorProduct
     (Algebra.TensorProduct.comm K (K ⊗[R] B) L).toRingEquiv.trans
       (Algebra.TensorProduct.cancelBaseChange R K K L B).toRingEquiv
   have : IsDomain ((K ⊗[R] B) ⊗[K] L) := e.toMulEquiv.isDomain
+  exact isDomain_tensorProduct_of_isLocalization M hM Q L
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- Let `Q` be a localization of `A ⊗[R] K` at a submonoid of nonzero divisors (for instance, its
+fraction field), where `K` is a field over `R`. If `L` is a `K`-algebra such that `A ⊗[R] L` is a
+domain, then `Q ⊗[K] L` is a domain. -/
+theorem isDomain_tensorProduct_of_isLocalization_tensorProduct_right
+    {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R K] [Algebra R A]
+    (M : Submonoid (A ⊗[R] K)) (hM : M ≤ nonZeroDivisors (A ⊗[R] K))
+    (Q : Type*) [CommRing Q] [Algebra K Q] [Algebra (A ⊗[R] K) Q] [IsScalarTower K (A ⊗[R] K) Q]
+    [IsLocalization M Q] (L : Type*) [CommRing L] [Algebra R L] [Algebra K L] [IsScalarTower R K L]
+    [IsDomain (A ⊗[R] L)] : IsDomain (Q ⊗[K] L) := by
+  let e : (A ⊗[R] K) ⊗[K] L ≃* A ⊗[R] L :=
+    (((Algebra.TensorProduct.comm K (A ⊗[R] K) L).trans
+      (Algebra.TensorProduct.congr (AlgEquiv.refl : L ≃ₐ[K] L)
+        (Algebra.TensorProduct.commRight R K A).symm)).trans
+      (Algebra.TensorProduct.cancelBaseChange R K K L A)).toMulEquiv.trans
+      (Algebra.TensorProduct.comm R L A).toMulEquiv
+  have : IsDomain ((A ⊗[R] K) ⊗[K] L) := e.isDomain
   exact isDomain_tensorProduct_of_isLocalization M hM Q L
 
 /-- The tensor product of a domain over a field `K` with a rational function field over `K` is a

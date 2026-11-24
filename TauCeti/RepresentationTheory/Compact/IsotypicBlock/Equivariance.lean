@@ -48,12 +48,13 @@ theorem peterWeylBlockAveraging_comp_leftRegularLp (model : IrrepModel 𝕜 G) (
   rw [ContRepresentation.character_mul_comm model.rep model.continuous_rep x g⁻¹]
 
 /-- Character averaging commutes with right translation on an arbitrary compact group. -/
-theorem peterWeylBlockAveraging_comp_rightRegularLp (model : IrrepModel 𝕜 G) (g : G) :
-    (peterWeylBlockAveraging model).comp (rightRegularLp 𝕜 G g) =
-      (rightRegularLp 𝕜 G g).comp (peterWeylBlockAveraging model) := by
+theorem peterWeylBlockAveraging_comp_rightRegular (model : IrrepModel 𝕜 G) (g : G) :
+    (peterWeylBlockAveraging model).comp ((haarProb G).rightRegular 𝕜 𝕜 2 g) =
+      ((haarProb G).rightRegular 𝕜 𝕜 2 g).comp (peterWeylBlockAveraging model) := by
   apply ContinuousLinearMap.ext
   intro f
-  simp only [ContinuousLinearMap.comp_apply, peterWeylBlockAveraging_def, rightRegularLp_apply]
+  simp only [ContinuousLinearMap.comp_apply, peterWeylBlockAveraging_def,
+    (haarProb G).rightRegular_apply]
   exact convolutionOperator_compMeasurePreserving_mul_right _ f g
 
 /-- The Peter-Weyl character averaging operator is equivariant for the biregular action of
@@ -66,8 +67,9 @@ theorem peterWeylBlockAveraging_comp_biRegularLp (model : IrrepModel 𝕜 G) (p 
   intro f
   simp only [ContinuousLinearMap.comp_apply, biRegularLp_apply_eq_left_right]
   have hleft := DFunLike.congr_fun
-    (peterWeylBlockAveraging_comp_leftRegularLp model p.1) (rightRegularLp 𝕜 G p.2 f)
-  have hright := DFunLike.congr_fun (peterWeylBlockAveraging_comp_rightRegularLp model p.2) f
+    (peterWeylBlockAveraging_comp_leftRegularLp model p.1)
+    ((haarProb G).rightRegular 𝕜 𝕜 2 p.2 f)
+  have hright := DFunLike.congr_fun (peterWeylBlockAveraging_comp_rightRegular model p.2) f
   simp only [ContinuousLinearMap.comp_apply] at hleft hright
   rw [hright] at hleft
   exact hleft

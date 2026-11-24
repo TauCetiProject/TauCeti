@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.FreeAlgebra
 public import Mathlib.Algebra.RingQuot
 public import Mathlib.Basic.Complex.Basic
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # The quantized enveloping algebra of sl₂
@@ -184,6 +185,16 @@ theorem k_mul_kInv_mul (x : UqSl2 q) : k q * (kInv q * x) = x :=
 theorem kInv_mul_k_mul (x : UqSl2 q) : kInv q * (k q * x) = x :=
   Units.inv_mul_cancel_left (kUnit q) x
 
+/-- Right multiplication by `K` cancels right multiplication by `K⁻¹`. -/
+@[simp]
+theorem mul_k_mul_kInv (x : UqSl2 q) : x * k q * kInv q = x :=
+  Units.mul_inv_cancel_right x (kUnit q)
+
+/-- Right multiplication by `K⁻¹` cancels right multiplication by `K`. -/
+@[simp]
+theorem mul_kInv_mul_k (x : UqSl2 q) : x * kInv q * k q = x :=
+  Units.inv_mul_cancel_right x (kUnit q)
+
 /-- Multiplying an integer power of `K` by `K` on the left raises the exponent by one. -/
 theorem k_mul_kUnit_zpow (b : ℤ) :
     k q * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) =
@@ -342,7 +353,7 @@ theorem lift_generator (x : GeneratorTuple q A) (g : Generator) :
 /-- Two algebra maps from `UqSl2 q` agreeing on `E`, `F` and `K` are equal; agreement on `K⁻¹`
 follows since it is the inverse of `K`. -/
 @[ext high]
-theorem hom_ext {F G : UqSl2 q →ₐ[ℂ] A}
+theorem hom_ext {A : Type*} [Semiring A] [Algebra ℂ A] {F G : UqSl2 q →ₐ[ℂ] A}
     (he : F (e q) = G (e q)) (hf : F (f q) = G (f q))
     (hk : F (k q) = G (k q)) : F = G := by
   have hkInv : F (kInv q) = G (kInv q) :=
@@ -417,17 +428,15 @@ theorem commute_of_commute_generators {z : UqSl2 q} (he : Commute (e q) z)
 
 /-- A complex subspace of a `UqSl2 q`-module that is stable under `E`, `F`, `K` and `K⁻¹` is
 stable under every element of `UqSl2 q`. -/
-theorem _root_.Submodule.smul_mem_of_uqSl2_generators {V : Type*} [AddCommGroup V] [Module ℂ V]
+theorem _root_.Submodule.smul_mem_of_uqSl2_generators {V : Type*} [AddCommMonoid V] [Module ℂ V]
     [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V] (W : Submodule ℂ V)
     (he : ∀ x ∈ W, e q • x ∈ W) (hf : ∀ x ∈ W, f q • x ∈ W) (hk : ∀ x ∈ W, k q • x ∈ W)
     (hkInv : ∀ x ∈ W, kInv q • x ∈ W) (a : UqSl2 q) {x : V} (hx : x ∈ W) : a • x ∈ W := by
-  induction a using UqSl2.induction generalizing x with
-  | generator g =>
-    cases g
-    exacts [he x hx, hf x hx, hk x hx, hkInv x hx]
-  | algebraMap c => rw [algebraMap_smul]; exact W.smul_mem c hx
-  | add a b ha hb => rw [add_smul]; exact W.add_mem (ha hx) (hb hx)
-  | mul a b ha hb => rw [mul_smul]; exact ha (hb hx)
+  refine W.smul_mem_of_mem_adjoin (s := Set.range (generator q)) ?_
+    (adjoin_range_generator (q := q) ▸ Algebra.mem_top) hx
+  rintro _ ⟨g, rfl⟩
+  cases g
+  exacts [he, hf, hk, hkInv]
 
 /-- Algebra maps from `UqSl2 q` are equivalent to tuples satisfying its defining relations. -/
 def liftEquiv : (UqSl2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where

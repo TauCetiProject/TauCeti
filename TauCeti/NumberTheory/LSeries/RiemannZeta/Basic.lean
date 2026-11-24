@@ -14,6 +14,7 @@ import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.PSeries
 import TauCeti.NumberTheory.LSeries.Convergence
+import TauCeti.NumberTheory.LSeries.Positivity
 import TauCeti.NumberTheory.LSeries.SumCoeff
 
 /-!
@@ -50,6 +51,9 @@ Siegel's theorem on real zeros.
 * `TauCeti.norm_riemannZeta_le`, `TauCeti.norm_riemannZeta_le_two`, and
   `TauCeti.riemannZeta_re_le_two`: `‖ζ(s)‖ ≤ Re ζ(Re s)` for `Re s > 1`, and `‖ζ(s)‖ ≤ 2` and
   `Re ζ(s) ≤ 2` for `Re s ≥ 2`;
+* `TauCeti.one_lt_riemannZeta_re` and `TauCeti.strictAntiOn_riemannZeta_re`: `1 < Re ζ(σ)` for
+  real `σ > 1`, and `σ ↦ Re ζ(σ)` is strictly decreasing on `(1, ∞)`.
+* `TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT`: `(x - 1) ζ(x) → 1` as real `x → 1⁺`.
 * `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable.
 * `TauCeti.LSeries_neg_one_pow_add_one_eq_mul_riemannZeta`: the alternating series
   `∑ (-1) ^ (n + 1) n⁻ˢ` is `(1 - 2 ^ (1 - s)) ζ(s)` for `Re s > 1`.
@@ -114,6 +118,26 @@ theorem norm_riemannZeta_le {s : ℂ} (hs : 1 < s.re) :
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, ← hsum.tsum_eq, ← hnorm]
   exact norm_tsum_le_tsum_norm (hnorm ▸ hsum.summable)
 
+/-- For real `σ > 1`, `1 < Re ζ(σ)`: the term `n = 1` of `∑ n ^ (-σ)` is `1` and the term `n = 2`
+is positive. -/
+theorem one_lt_riemannZeta_re {σ : ℝ} (hσ : 1 < σ) : 1 < (riemannZeta σ).re := by
+  have h := sum_le_hasSum ({0, 1} : Finset ℕ) (fun n _ ↦ by positivity)
+    (hasSum_nat_add_one_rpow_neg_riemannZeta_re hσ)
+  rw [Finset.sum_pair zero_ne_one] at h
+  have h2 : (0 : ℝ) < ((1 : ℕ) + 1 : ℝ) ^ (-σ) := by positivity
+  simp only [Nat.cast_zero, zero_add, Real.one_rpow] at h
+  linarith
+
+/-- `σ ↦ Re ζ(σ)` is strictly decreasing on `(1, ∞)`. -/
+theorem strictAntiOn_riemannZeta_re :
+    StrictAntiOn (fun σ : ℝ ↦ (riemannZeta σ).re) (Set.Ioi 1) := by
+  intro x (hx : 1 < x) y (hy : 1 < y) hxy
+  have h := LSeries.strictAntiOn_re_of_exists_pos (a := 1) (fun _ _ ↦ by simp)
+    ⟨2, le_rfl, by simp⟩ (LSeriesSummable_one_iff.mpr (by simpa using hx))
+    (LSeriesSummable_one_iff.mpr (by simpa using hy)) hxy
+  simpa only [LSeries_one_eq_riemannZeta (by simpa using hx : 1 < (x : ℂ).re),
+    LSeries_one_eq_riemannZeta (by simpa using hy : 1 < (y : ℂ).re)] using h
+
 /-- On `Re s ≥ 2`, `‖ζ(s)‖ ≤ 2`. -/
 theorem norm_riemannZeta_le_two {s : ℂ} (hs : 2 ≤ s.re) : ‖riemannZeta s‖ ≤ 2 := by
   have hs1 : 1 < s.re := one_lt_two.trans_le hs
@@ -124,6 +148,14 @@ theorem norm_riemannZeta_le_two {s : ℂ} (hs : 2 ≤ s.re) : ‖riemannZeta s�
 /-- On `Re s ≥ 2`, `Re ζ(s) ≤ 2`. -/
 theorem riemannZeta_re_le_two {s : ℂ} (hs : 2 ≤ s.re) : (riemannZeta s).re ≤ 2 :=
   (re_le_norm (riemannZeta s)).trans (norm_riemannZeta_le_two hs)
+
+/-- **The residue of `ζ` at `1` along the reals.** `(x - 1) ζ(x) → 1` as the real variable `x`
+tends to `1` from the right. -/
+theorem tendsto_sub_one_mul_riemannZeta_nhdsGT :
+    Tendsto (fun x : ℝ ↦ ((x : ℂ) - 1) * riemannZeta x) (𝓝[>] 1) (𝓝 1) :=
+  riemannZeta_residue_one.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+    ((continuous_ofReal.tendsto' 1 1 ofReal_one).mono_left nhdsWithin_le_nhds)
+    (eventually_nhdsWithin_of_forall fun x hx ↦ by simpa using (Set.mem_Ioi.mp hx).ne')
 
 /-- The Riemann zeta function is measurable: it is continuous away from its pole at `1`. -/
 @[fun_prop]

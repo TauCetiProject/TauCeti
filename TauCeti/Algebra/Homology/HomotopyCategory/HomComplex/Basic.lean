@@ -21,6 +21,9 @@ and records how the components of a cochain absorb the identifications `K.X p �
 `HomologicalComplex.XIsoOfEq` on the source side, complementing Mathlib's
 `CochainComplex.HomComplex.Cochain.v_comp_XIsoOfEq_hom` on the target side.
 
+The indexing type `CochainComplex.HomComplex.Triplet n` is countable, since its second
+coordinate is determined by its first.
+
 These are general facts about Mathlib's Hom complex, independent of any particular use.
 
 ## Main results
@@ -37,6 +40,8 @@ These are general facts about Mathlib's Hom complex, independent of any particul
   components of `z`.
 * `CochainComplex.HomComplex.Cochain.XIsoOfEq_hom_comp_v`: precomposing a component of a
   cochain with an `XIsoOfEq` identification of its source.
+* `CochainComplex.HomComplex.Cochain.v_eq_zero_of_isZero`: a cochain vanishes on a zero term of
+  its source.
 -/
 
 public section
@@ -44,6 +49,14 @@ public section
 open CategoryTheory CochainComplex CochainComplex.HomComplex
 
 universe v u
+
+/-- The pairs `(p, q)` with `p + n = q` form a countable type: `q` is determined by `p`. -/
+instance CochainComplex.HomComplex.Triplet.instCountable (n : ℤ) : Countable (Triplet n) :=
+  Function.Injective.countable (f := Triplet.p) fun T T' h ↦ by
+    obtain ⟨p, q, rfl⟩ := T
+    obtain ⟨p', q', rfl⟩ := T'
+    obtain rfl : p = p' := h
+    rfl
 
 namespace TauCeti
 
@@ -112,5 +125,10 @@ lemma XIsoOfEq_hom_comp_v {n : ℤ} (z : Cochain F G n) {p₁ p₂ q : ℤ} (h :
     (F.XIsoOfEq h).hom ≫ z.v p₂ q hpq = z.v p₁ q (by rw [h, hpq]) := by
   subst h
   simp
+
+/-- A cochain vanishes on every term of its source that is a zero object. -/
+theorem v_eq_zero_of_isZero {n i j : ℤ} (hij : i + n = j) (hF : Limits.IsZero (F.X i))
+    (z : Cochain F G n) : z.v i j hij = 0 :=
+  hF.eq_of_src _ _
 
 end CochainComplex.HomComplex.Cochain

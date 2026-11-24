@@ -39,10 +39,11 @@ Via `pullbackTotalSpaceDiffeomorph`, Mathlib's pullback universal property trans
   isomorphisms pull back along `C^n` maps to `C^n` total-space maps and diffeomorphisms without
   completeness or `IsContMDiff` hypotheses, while `FiniteRankBundleCore.pullbackMapDiffeomorph`
   glues pulled-back `C^n` chart-operator isomorphisms over a complete scalar field;
-* along a surjective `C^n` local diffeomorphism `f`, both `IsContMDiff` core regularity and `C^m`
-  total-space regularity of bundle morphisms (`m ≤ n`) descend from `X` to `Y`
+* along a surjective `C^n` local diffeomorphism `f`, `IsContMDiff` core regularity as well as `C^m`
+  total-space regularity of bundle morphisms and sections (`m ≤ n`) descend from `X` to `Y`
   (`IsLocalDiffeomorph.isContMDiff_pullback_iff`,
-  `IsLocalDiffeomorph.contMDiff_totalSpaceMap_pullbackMap_iff`);
+  `IsLocalDiffeomorph.contMDiff_totalSpaceMap_pullbackMap_iff`,
+  `IsLocalDiffeomorph.contMDiff_section_pullback_core_iff`);
 * `FiniteRankBundleCore.pullbackIdDiffeomorph` (built from `Bundle.Pullback.idDiffeomorph`) and the
   compatibility lemmas with `Bundle.Pullback.compDiffeomorph`,
   `FiniteRankBundleCore.whitneySumTotalSpaceDiffeomorph`, and
@@ -452,6 +453,35 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_totalSpaceMap_pullbackMap_iff {f : C
     fun ha ↦ contMDiff_totalSpaceMap_pullbackMap a ha (hf.contMDiff.of_le hm)⟩
   exact ((contMDiff_pullbackLift D (hf.contMDiff.of_le hm)).comp hpull).congr
     fun p ↦ (pullbackLift_totalSpaceMap a f p).symm
+
+/-- If `f : C(X, Y)` is a `C^n` local diffeomorphism at `x` and `m ≤ n`, a pulled-back section
+`x' ↦ σ (f x')` of `A.pullback f` is `C^m` at `x` if and only if the section `σ` of `A` is `C^m`
+at `f x`. -/
+theorem _root_.IsLocalDiffeomorphAt.contMDiffAt_section_pullback_core_iff {f : C(X, Y)} {x : X}
+    (hf : IsLocalDiffeomorphAt IX IY n f x) (hm : m ≤ n) (A : FiniteRankBundleCore 𝕜 Y)
+    {σ : ∀ y, A.core.Fiber y} :
+    ContMDiffAt IX (IX.prod 𝓘(𝕜, Fin (A.pullback f).rank → 𝕜)) m
+        (fun x' ↦ TotalSpace.mk' (Fin (A.pullback f).rank → 𝕜)
+          (E := (A.pullback f).core.Fiber) x' (σ (f x'))) x ↔
+      ContMDiffAt IY (IY.prod 𝓘(𝕜, Fin A.rank → 𝕜)) m
+        (fun y ↦ TotalSpace.mk' (Fin A.rank → 𝕜) y (σ y)) (f x) := by
+  rw [← (pullbackTotalSpaceDiffeomorph IX m A f).contMDiffAt_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, pullbackTotalSpaceDiffeomorph_apply]
+  exact (hf.contMDiffAt_section_iff_pullback hm).symm
+
+/-- Along a surjective `C^n` local diffeomorphism `f : C(X, Y)` with `m ≤ n`, a pulled-back section
+`x ↦ σ (f x)` of `A.pullback f` is `C^m` if and only if the section `σ` of `A` is `C^m`. -/
+theorem _root_.IsLocalDiffeomorph.contMDiff_section_pullback_core_iff {f : C(X, Y)}
+    (hf : IsLocalDiffeomorph IX IY n f) (hsurj : Function.Surjective f) (hm : m ≤ n)
+    (A : FiniteRankBundleCore 𝕜 Y) {σ : ∀ y, A.core.Fiber y} :
+    ContMDiff IX (IX.prod 𝓘(𝕜, Fin (A.pullback f).rank → 𝕜)) m
+        (fun x ↦ TotalSpace.mk' (Fin (A.pullback f).rank → 𝕜)
+          (E := (A.pullback f).core.Fiber) x (σ (f x))) ↔
+      ContMDiff IY (IY.prod 𝓘(𝕜, Fin A.rank → 𝕜)) m
+        (fun y ↦ TotalSpace.mk' (Fin A.rank → 𝕜) y (σ y)) := by
+  rw [← (pullbackTotalSpaceDiffeomorph IX m A f).contMDiff_diffeomorph_comp_iff le_rfl]
+  simp only [Function.comp_def, pullbackTotalSpaceDiffeomorph_apply]
+  exact (hf.contMDiff_section_iff_pullback hsurj hm).symm
 
 end LocalDiffeomorph
 

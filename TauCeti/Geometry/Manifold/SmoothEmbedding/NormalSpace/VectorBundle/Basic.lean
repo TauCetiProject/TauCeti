@@ -33,15 +33,25 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothEmbedding
 
-variable {𝕜 E V P H G M N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
-  [NormedAddCommGroup P] [NormedSpace 𝕜 P] [FiniteDimensional 𝕜 P]
+variable {𝕜 E V P H G M N : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [NormedAddCommGroup P] [NormedSpace 𝕜 P]
   [TopologicalSpace H] [TopologicalSpace G]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
+  [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω}
+
+section ChartData
+
+/-! ### Normal chart data
+
+A normal chart datum packages a base set, a complement to the differential, and the continuity
+of the resulting quotient coordinate. Its trivialization and transition formulas need neither
+completeness of the field nor finite-dimensionality. -/
+
+variable [IsManifold I 1 M] [IsManifold J 1 N]
 
 private structure NormalChartData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (x₀ : M) where
@@ -55,6 +65,122 @@ private structure NormalChartData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
   continuous_coordinate : ContinuousOn (fun x =>
     (inTangentCoordinates I J _root_.id (f : M → N)
       (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate complement) baseSet
+
+private theorem NormalChartData.continuous_coordinate_apply
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
+    Continuous (fun p : d.baseSet × V =>
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate d.complement p.2) :=
+  ((d.continuous_coordinate.domRestrict.comp continuous_fst).clm_apply continuous_snd)
+
+private def NormalChartData.trivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
+    Trivialization P (π P (fun x => f.NormalSpace x hn)) :=
+  f.normalSpaceTrivializationOfComplement hn x₀ d.baseSet d.isOpen_baseSet
+    d.subset_charts d.complement d.invertible
+    (d.continuous_coordinate_apply f hn)
+
+private theorem NormalChartData.baseSet_trivialization
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
+    (d.trivialization f hn).baseSet = d.baseSet := by
+  exact f.normalSpaceTrivializationOfComplement_baseSet hn x₀ d.baseSet d.isOpen_baseSet
+    d.subset_charts d.complement d.invertible _
+
+private instance NormalChartData.linear_trivialization
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
+    (d.trivialization f hn).IsLinear 𝕜 := by
+  exact f.instIsLinearNormalSpaceTrivializationOfComplement hn x₀ d.baseSet d.isOpen_baseSet
+    d.subset_charts d.complement d.invertible _
+
+private theorem NormalChartData.coordChangeL (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    {x₀ x₁ : M} (d₀ : NormalChartData (P := P) f hn x₀)
+    (d₁ : NormalChartData (P := P) f hn x₁) {x : M}
+    (hx : x ∈ d₀.baseSet ∩ d₁.baseSet) :
+    ((d₀.trivialization f hn).coordChangeL 𝕜 (d₁.trivialization f hn) x : P →L[𝕜] P) =
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₁ x).quotientRangeCoordinate d₁.complement ∘L
+        ((trivializationAt V (TangentSpace J) (f x₀)).coordChangeL 𝕜
+          (trivializationAt V (TangentSpace J) (f x₁)) (f x)).toContinuousLinearMap ∘L
+            d₀.complement := by
+  ext v
+  have hx' : x ∈ (d₀.trivialization f hn).baseSet ∩
+      (d₁.trivialization f hn).baseSet := by
+    simpa only [NormalChartData.baseSet_trivialization] using hx
+  rw [ContinuousLinearEquiv.coe_coe, Trivialization.coordChangeL_apply' _ _ hx']
+  simp only [NormalChartData.trivialization]
+  rw [f.normalSpaceTrivializationOfComplement_symm_apply hn x₀ d₀.baseSet
+    d₀.isOpen_baseSet d₀.subset_charts d₀.complement d₀.invertible _ (x, v) hx.1]
+  rw [f.normalSpaceTrivializationOfComplement_apply hn x₁ d₁.baseSet
+    d₁.isOpen_baseSet d₁.subset_charts d₁.complement d₁.invertible _
+      ⟨x, (f.normalSpaceEquivOfComplement hn
+        (d₀.subset_charts hx.1).1 (d₀.subset_charts hx.1).2 d₀.complement
+          (d₀.invertible x hx.1)).symm v⟩ hx.2]
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] using
+    f.normalSpaceEquivOfComplement_apply_symm_eq_quotientRangeCoordinate_coordChangeL
+      hn (d₀.subset_charts hx.1).1 (d₀.subset_charts hx.1).2
+      (d₁.subset_charts hx.2).1 (d₁.subset_charts hx.2).2
+      d₀.complement d₁.complement (d₀.invertible x hx.1) (d₁.invertible x hx.2) v
+
+private theorem NormalChartData.contMDiffOn_coordChangeL {m : ℕ∞ω}
+    [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 P]
+    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+    {x₀ x₁ : M} (d₀ : NormalChartData (P := P) f hn x₀)
+    (d₁ : NormalChartData (P := P) f hn x₁) :
+    ContMDiffOn I 𝓘(𝕜, P →L[𝕜] P) m
+      (fun x => ((d₀.trivialization f hn).coordChangeL 𝕜 (d₁.trivialization f hn) x :
+        P →L[𝕜] P)) (d₀.baseSet ∩ d₁.baseSet) := by
+  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+  let : CompleteSpace P := FiniteDimensional.completeSpace 𝕜 P
+  exact f.contMDiffOn_normalSpaceTrivializationOfComplement_coordChangeL
+    x₀ x₁ d₀.baseSet d₁.baseSet d₀.isOpen_baseSet d₁.isOpen_baseSet
+      d₀.subset_charts d₁.subset_charts d₀.complement d₁.complement hm
+      d₀.invertible d₁.invertible (d₀.continuous_coordinate_apply f hn)
+      (d₁.continuous_coordinate_apply f hn)
+
+/-- If a continuous map `g` sends `x` into the base set of a normal chart datum, then `g y` stays
+in that base set for all `y` near `x`. -/
+private theorem NormalChartData.eventually_mem_baseSet
+    {f : SmoothEmbedding I J n M N} {hn : n ≠ 0} {x₀ : M}
+    (d : NormalChartData (P := P) f hn x₀) {X : Type*} [TopologicalSpace X] {g : X → M}
+    (hg : Continuous g) {x : X} (hx : g x ∈ d.baseSet) : ∀ᶠ y in 𝓝 x, g y ∈ d.baseSet :=
+  hg.continuousAt.eventually_mem (d.isOpen_baseSet.mem_nhds hx)
+
+/-- On the base set of a normal chart datum, lifting a normal coordinate through the complement
+and the ambient tangent trivialization at the centre, then taking the normal class, returns the
+original normal vector. -/
+private theorem NormalChartData.normalClass_symm_complement_trivialization
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    {x₀ : M} (d : NormalChartData (P := P) f hn x₀)
+    {q : TotalSpace P (fun x => f.NormalSpace x hn)} (hq : q.proj ∈ d.baseSet) :
+    f.normalClass q.proj hn ((trivializationAt V (TangentSpace J) (f x₀)).symm (f q.proj)
+      (d.complement ((d.trivialization f hn) q).2)) = q.snd := by
+  have heq := normalSpaceTrivializationOfComplement_apply f hn x₀
+    d.baseSet d.isOpen_baseSet d.subset_charts d.complement d.invertible
+    (d.continuous_coordinate_apply f hn) q hq
+  have heq' : (d.trivialization f hn q).2 = f.normalSpaceEquivOfComplement hn
+      (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement
+      (d.invertible q.proj hq) q.snd := congrArg Prod.snd heq
+  rw [heq', ← f.normalSpaceEquivOfComplement_symm_apply hn
+    (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement (d.invertible q.proj hq),
+    ContinuousLinearEquiv.symm_apply_apply]
+
+end ChartData
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
+  [FiniteDimensional 𝕜 P]
+
+section Topological
+
+/-! ### The topological vector bundle
+
+In finite dimensions every point has a normal chart datum, and the chosen data give the
+preferred trivializations of the intrinsic normal bundle. -/
+
+variable [IsManifold I 1 M] [IsManifold J 1 N]
 
 private theorem nonempty_normalChartData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
@@ -98,45 +224,17 @@ private def normalChartData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     NormalChartData (P := P) f hn x₀ :=
   Classical.choice (nonempty_normalChartData f hn hdim x₀)
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
-  [FiniteDimensional 𝕜 P] in
-private theorem NormalChartData.continuous_coordinate_apply
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
-    Continuous (fun p : d.baseSet × V =>
-      (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₀ p.1).quotientRangeCoordinate d.complement p.2) :=
-  ((d.continuous_coordinate.domRestrict.comp continuous_fst).clm_apply continuous_snd)
-
-private def NormalChartData.trivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
-    Trivialization P (π P (fun x => f.NormalSpace x hn)) :=
-  f.normalSpaceTrivializationOfComplement hn x₀ d.baseSet d.isOpen_baseSet
-    d.subset_charts d.complement d.invertible
-    (d.continuous_coordinate_apply f hn)
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
-  [FiniteDimensional 𝕜 P] in
-private theorem NormalChartData.baseSet_trivialization
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
-    (d.trivialization f hn).baseSet = d.baseSet := by
-  exact f.normalSpaceTrivializationOfComplement_baseSet hn x₀ d.baseSet d.isOpen_baseSet
-    d.subset_charts d.complement d.invertible _
-
-private instance NormalChartData.linear_trivialization
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    {x₀ : M} (d : NormalChartData (P := P) f hn x₀) :
-    (d.trivialization f hn).IsLinear 𝕜 := by
-  exact f.instIsLinearNormalSpaceTrivializationOfComplement hn x₀ d.baseSet d.isOpen_baseSet
-    d.subset_charts d.complement d.invertible _
-
 /-- Preferred local coordinates on the intrinsic normal bundle in an arbitrary ambient
 manifold, using a fixed model of the codimension. The total space has its quotient topology. -/
 def normalSpaceTrivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
     Trivialization P (π P (fun x => f.NormalSpace x hn)) :=
   (normalChartData f hn hdim x₀).trivialization f hn
+
+private theorem normalSpaceTrivialization_eq (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
+    f.normalSpaceTrivialization hn hdim x₀ = (normalChartData f hn hdim x₀).trivialization f hn :=
+  rfl
 
 /-- The preferred intrinsic normal coordinates contain their reference point. -/
 @[simp] theorem mem_normalSpaceTrivialization_baseSet
@@ -180,37 +278,6 @@ instance instIsLinearNormalSpaceTrivialization
   unfold normalSpaceTrivialization
   infer_instance
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
-  [FiniteDimensional 𝕜 P] in
-private theorem NormalChartData.coordChangeL (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    {x₀ x₁ : M} (d₀ : NormalChartData (P := P) f hn x₀)
-    (d₁ : NormalChartData (P := P) f hn x₁) {x : M}
-    (hx : x ∈ d₀.baseSet ∩ d₁.baseSet) :
-    ((d₀.trivialization f hn).coordChangeL 𝕜 (d₁.trivialization f hn) x : P →L[𝕜] P) =
-      (inTangentCoordinates I J _root_.id (f : M → N)
-        (mfderiv I J (f : M → N)) x₁ x).quotientRangeCoordinate d₁.complement ∘L
-        ((trivializationAt V (TangentSpace J) (f x₀)).coordChangeL 𝕜
-          (trivializationAt V (TangentSpace J) (f x₁)) (f x)).toContinuousLinearMap ∘L
-            d₀.complement := by
-  ext v
-  have hx' : x ∈ (d₀.trivialization f hn).baseSet ∩
-      (d₁.trivialization f hn).baseSet := by
-    simpa only [NormalChartData.baseSet_trivialization] using hx
-  rw [ContinuousLinearEquiv.coe_coe, Trivialization.coordChangeL_apply' _ _ hx']
-  simp only [NormalChartData.trivialization]
-  rw [f.normalSpaceTrivializationOfComplement_symm_apply hn x₀ d₀.baseSet
-    d₀.isOpen_baseSet d₀.subset_charts d₀.complement d₀.invertible _ (x, v) hx.1]
-  rw [f.normalSpaceTrivializationOfComplement_apply hn x₁ d₁.baseSet
-    d₁.isOpen_baseSet d₁.subset_charts d₁.complement d₁.invertible _
-      ⟨x, (f.normalSpaceEquivOfComplement hn
-        (d₀.subset_charts hx.1).1 (d₀.subset_charts hx.1).2 d₀.complement
-          (d₀.invertible x hx.1)).symm v⟩ hx.2]
-  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] using
-    f.normalSpaceEquivOfComplement_apply_symm_eq_quotientRangeCoordinate_coordChangeL
-      hn (d₀.subset_charts hx.1).1 (d₀.subset_charts hx.1).2
-      (d₁.subset_charts hx.2).1 (d₁.subset_charts hx.2).2
-      d₀.complement d₁.complement (d₀.invertible x hx.1) (d₁.invertible x hx.2) v
-
 /-- Transition operators for the preferred intrinsic normal coordinates are continuous. -/
 theorem continuousOn_normalSpaceTrivialization_coordChangeL
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
@@ -232,78 +299,6 @@ theorem continuousOn_normalSpaceTrivialization_coordChangeL
     (continuousOn_const (c := d₀.complement))).congr ?_
   intro x hx
   exact d₀.coordChangeL f hn d₁ hx
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
-  [FiniteDimensional 𝕜 P] in
-/-- If a continuous map `g` sends `x` into the base set of a normal chart datum, then `g y` stays
-in that base set for all `y` near `x`. -/
-private theorem NormalChartData.eventually_mem_baseSet
-    {f : SmoothEmbedding I J n M N} {hn : n ≠ 0} {x₀ : M}
-    (d : NormalChartData (P := P) f hn x₀) {X : Type*} [TopologicalSpace X] {g : X → M}
-    (hg : Continuous g) {x : X} (hx : g x ∈ d.baseSet) : ∀ᶠ y in 𝓝 x, g y ∈ d.baseSet :=
-  hg.continuousAt.eventually_mem (d.isOpen_baseSet.mem_nhds hx)
-
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 V]
-  [FiniteDimensional 𝕜 P] in
-/-- On the base set of a normal chart datum, lifting a normal coordinate through the complement
-and the ambient tangent trivialization at the centre, then taking the normal class, returns the
-original normal vector. -/
-private theorem NormalChartData.normalClass_symm_complement_trivialization
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    {x₀ : M} (d : NormalChartData (P := P) f hn x₀)
-    {q : TotalSpace P (fun x => f.NormalSpace x hn)} (hq : q.proj ∈ d.baseSet) :
-    f.normalClass q.proj hn ((trivializationAt V (TangentSpace J) (f x₀)).symm (f q.proj)
-      (d.complement ((d.trivialization f hn) q).2)) = q.snd := by
-  have heq := normalSpaceTrivializationOfComplement_apply f hn x₀
-    d.baseSet d.isOpen_baseSet d.subset_charts d.complement d.invertible
-    (d.continuous_coordinate_apply f hn) q hq
-  have heq' : (d.trivialization f hn q).2 = f.normalSpaceEquivOfComplement hn
-      (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement
-      (d.invertible q.proj hq) q.snd := congrArg Prod.snd heq
-  rw [heq', ← f.normalSpaceEquivOfComplement_symm_apply hn
-    (d.subset_charts hq).1 (d.subset_charts hq).2 d.complement (d.invertible q.proj hq),
-    ContinuousLinearEquiv.symm_apply_apply]
-
-omit [FiniteDimensional 𝕜 V] in
-private theorem NormalChartData.contMDiffOn_coordChangeL {m : ℕ∞ω}
-    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    {x₀ x₁ : M} (d₀ : NormalChartData (P := P) f hn x₀)
-    (d₁ : NormalChartData (P := P) f hn x₁) :
-    ContMDiffOn I 𝓘(𝕜, P →L[𝕜] P) m
-      (fun x => ((d₀.trivialization f hn).coordChangeL 𝕜 (d₁.trivialization f hn) x :
-        P →L[𝕜] P)) (d₀.baseSet ∩ d₁.baseSet) := by
-  let : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
-  let : CompleteSpace P := FiniteDimensional.completeSpace 𝕜 P
-  exact f.contMDiffOn_normalSpaceTrivializationOfComplement_coordChangeL
-    x₀ x₁ d₀.baseSet d₁.baseSet d₀.isOpen_baseSet d₁.isOpen_baseSet
-      d₀.subset_charts d₁.subset_charts d₀.complement d₁.complement hm
-      d₀.invertible d₁.invertible (d₀.continuous_coordinate_apply f hn)
-      (d₁.continuous_coordinate_apply f hn)
-
-private theorem normalSpaceTrivialization_eq (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
-    f.normalSpaceTrivialization hn hdim x₀ = (normalChartData f hn hdim x₀).trivialization f hn :=
-  rfl
-
-omit [IsManifold I 1 M] [IsManifold J 1 N] in
-/-- Transition operators for the preferred intrinsic normal coordinates are `C^m` for a
-`C^n` embedding when `m + 1 ≤ n`. -/
-theorem contMDiffOn_normalSpaceTrivialization_coordChangeL {m : ℕ∞ω}
-    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ x₁ : M) :
-    haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-    haveI : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
-    ContMDiffOn I 𝓘(𝕜, P →L[𝕜] P) m
-      (fun x => ((f.normalSpaceTrivialization hn hdim x₀).coordChangeL 𝕜
-        (f.normalSpaceTrivialization hn hdim x₁) x : P →L[𝕜] P))
-      ((f.normalSpaceTrivialization hn hdim x₀).baseSet ∩
-        (f.normalSpaceTrivialization hn hdim x₁).baseSet) := by
-  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  have : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
-  simp only [normalSpaceTrivialization_eq, NormalChartData.baseSet_trivialization]
-  exact NormalChartData.contMDiffOn_coordChangeL f hn hm _ _
 
 private theorem inducing_normalBundle_mk (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x : M) :
@@ -374,7 +369,33 @@ theorem normalSpaceVectorBundle (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
   · rintro e e' ⟨x, rfl⟩ ⟨x', rfl⟩
     exact continuousOn_normalSpaceTrivialization_coordChangeL f hn hdim x x'
 
-omit [IsManifold I 1 M] [IsManifold J 1 N] in
+end Topological
+
+section ContMDiff
+
+/-! ### The `C^m` vector bundle
+
+Here the manifolds are assumed `C^(m + 1)`, and the `C^1` structures used by the normal spaces
+are derived from that assumption inside each statement. -/
+
+/-- Transition operators for the preferred intrinsic normal coordinates are `C^m` for a
+`C^n` embedding when `m + 1 ≤ n`. -/
+theorem contMDiffOn_normalSpaceTrivialization_coordChangeL {m : ℕ∞ω}
+    [IsManifold I (m + 1) M] [IsManifold J (m + 1) N]
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n)
+    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ x₁ : M) :
+    haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+    haveI : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
+    ContMDiffOn I 𝓘(𝕜, P →L[𝕜] P) m
+      (fun x => ((f.normalSpaceTrivialization hn hdim x₀).coordChangeL 𝕜
+        (f.normalSpaceTrivialization hn hdim x₁) x : P →L[𝕜] P))
+      ((f.normalSpaceTrivialization hn hdim x₀).baseSet ∩
+        (f.normalSpaceTrivialization hn hdim x₁).baseSet) := by
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  have : IsManifold J 1 N := .of_le (n := m + 1) le_add_self
+  simp only [normalSpaceTrivialization_eq, NormalChartData.baseSet_trivialization]
+  exact NormalChartData.contMDiffOn_coordChangeL f hn hm _ _
+
 /-- The intrinsic normal spaces of a `C^n` embedding form a `C^m` vector bundle when
 `m + 1 ≤ n`, retaining their quotient total-space topology. -/
 theorem normalSpaceContMDiffVectorBundle {m : ℕ∞ω}
@@ -393,5 +414,7 @@ theorem normalSpaceContMDiffVectorBundle {m : ℕ∞ω}
   constructor
   rintro e e' ⟨x, rfl⟩ ⟨x', rfl⟩
   exact contMDiffOn_normalSpaceTrivialization_coordChangeL f hn hm hdim x x'
+
+end ContMDiff
 
 end TauCeti.SmoothEmbedding

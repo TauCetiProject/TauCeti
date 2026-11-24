@@ -79,6 +79,10 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
   `TauCeti.Delineation.mk_mem_sectorSet_iff_of_sign_eval_eq`: when the derivative of every
   member is zero or a member, points of one fiber with the same signs are not separated by the
   stack.
+* `TauCeti.Delineation.signInvariant_of_mem_stackCells`,
+  `TauCeti.Delineation.signInvariant_eval_of_mem_stackCells`: every function agreeing on
+  `cylinder S` with the evaluations of a delineated family (in particular
+  `y ↦ (F k (Fin.tail y)).eval (y 0)`) is sign-invariant on every ambient stack cell in `ℝ^(n + 1)`.
 * `TauCeti.Delineation.signInvariant_eval₂_of_mem_stackCells`: the polynomials in `n + 1`
   variables behind a family are sign-invariant on every ambient cell of a delineation.
 
@@ -552,6 +556,26 @@ theorem mk_mem_sectorSet_iff_of_sign_eval_eq
 
 end Delineation
 
+/-- Any function on `Fin (n + 1) → ℝ` agreeing on `cylinder S` with the evaluations of a member of
+a delineated family `P : ι → S → ℝ[X]` is sign-invariant on each ambient stack cell. -/
+theorem Delineation.signInvariant_of_mem_stackCells {n : ℕ} {S : Set (Fin n → ℝ)}
+    {P : ι → S → ℝ[X]} (D : Delineation P) (k : ι) {g : (Fin (n + 1) → ℝ) → ℝ}
+    (hg : ∀ (x : S) (t : ℝ), g (Fin.cons t x.val) = (P k x).eval t)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
+    SignInvariant g E := by
+  have hcomp : g ∘ cylinder S = fun z : S × ℝ ↦ (P k z.1).eval z.2 :=
+    funext fun z ↦ by rw [Function.comp_apply, cylinder_def, hg]
+  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, hcomp]
+  exacts [D.signInvariant_sectionSet k i, D.signInvariant_sectorSet k j]
+
+/-- Every member of a delineated family `F : ι → (Fin n → ℝ) → ℝ[X]` is sign-invariant along
+`y ↦ (F k (Fin.tail y)).eval (y 0)` on each ambient stack cell in `ℝ^(n + 1)`. -/
+theorem Delineation.signInvariant_eval_of_mem_stackCells {n : ℕ} {S : Set (Fin n → ℝ)}
+    {F : ι → (Fin n → ℝ) → ℝ[X]} (D : Delineation fun k (x : S) ↦ F k x) (k : ι)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
+    SignInvariant (fun y : Fin (n + 1) → ℝ ↦ (F k (Fin.tail y)).eval (y 0)) E :=
+  D.signInvariant_of_mem_stackCells k (fun _ _ ↦ by simp) hE
+
 section MvPolynomial
 
 variable {A : Type*} [CommRing A] {n : ℕ} {φ : A →+* ℝ}
@@ -564,13 +588,9 @@ theorem Delineation.signInvariant_eval₂_of_mem_stackCells
     (D : Delineation fun (p : F) (x : S) ↦ p.val.map (MvPolynomial.eval₂Hom φ x.val))
     {f : MvPolynomial (Fin (n + 1)) A} (hf : MvPolynomial.finSuccEquiv A n f ∈ F)
     {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
-    SignInvariant (fun y ↦ MvPolynomial.eval₂ φ y f) E := by
-  have key : (fun y ↦ MvPolynomial.eval₂ φ y f) ∘ cylinder S =
-      fun z ↦ ((MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ z.1.val)).eval z.2 :=
-    funext fun z ↦ by
-      rw [Function.comp_apply, cylinder_def, MvPolynomial.polynomial_eval_map_finSuccEquiv]
-  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, key]
-  exacts [D.signInvariant_sectionSet ⟨_, hf⟩ i, D.signInvariant_sectorSet ⟨_, hf⟩ j]
+    SignInvariant (fun y ↦ MvPolynomial.eval₂ φ y f) E :=
+  D.signInvariant_of_mem_stackCells ⟨_, hf⟩
+    (fun x t ↦ (MvPolynomial.polynomial_eval_map_finSuccEquiv φ x.val t f).symm) hE
 
 end MvPolynomial
 

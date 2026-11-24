@@ -12,15 +12,17 @@ public import TauCeti.ModelTheory.ModelExistence.Types
 # Types and truth assignments relative to a fragment
 
 The fragment type of a tuple consists of the formulas in a fragment's arity slice that hold of
-that tuple. Equivalently, the tuple determines a truth assignment on the slice. These two views
-carry the same information, including for fragments that are not closed under negation.
+that tuple. Equivalently, the tuple determines a truth assignment on the slice, and varying the
+tuple gives the realized fragment `n`-types `A.realizedTypes M n` of a structure `M`. These two
+views carry the same information, including for fragments that are not closed under negation.
 
 Restriction to a smaller fragment intersects the type with its slice, or precomposes the truth
-assignment with the slice inclusion. Fragment-elementary embeddings preserve both descriptions;
-conversely, preservation of the fragment types characterizes fragment elementarity. In particular,
-isomorphisms preserve these types and truth assignments, and along an expansion by a language
-homomorphism `g`, fragment types pull back along `Fragment.comap g` and push forward along
-`Fragment.map g`. No countability, formation closure, injectivity of `g`, or nonemptiness
+assignment with the slice inclusion and surjects the realized fragment types onto those of the
+smaller fragment. Fragment-elementary embeddings preserve both descriptions; conversely,
+preservation of the fragment types characterizes fragment elementarity. In particular, isomorphisms
+preserve fragment types, truth assignments, and realized fragment types, and along an expansion by
+a language homomorphism `g`, fragment types pull back along `Fragment.comap g` and push forward
+along `Fragment.map g`. No countability, formation closure, injectivity of `g`, or nonemptiness
 assumption is needed.
 
 ## References
@@ -118,6 +120,47 @@ theorem truthAssignment_eq_iff {a : Fin n → M} {b : Fin n → N} :
   rw [fragmentType_eq_iff, funext_iff]
   simp only [truthAssignment_apply, Subtype.forall, propext_iff]
 
+/-- The fragment `n`-types realized in `M`: the truth assignments on `A.slice n` of the `n`-tuples
+of `M`. -/
+def realizedTypes (A : Fragment L) (M : Type w) [L.Structure M] (n : ℕ) :
+    Set (A.slice n → Prop) :=
+  Set.range (A.truthAssignment M (n := n))
+
+/-- `A.realizedTypes M n` is the range of `A.truthAssignment M` at arity `n`. -/
+theorem realizedTypes_def (A : Fragment L) (M : Type w) [L.Structure M] (n : ℕ) :
+    A.realizedTypes M n = Set.range (A.truthAssignment M (n := n)) :=
+  (rfl)
+
+/-- A truth assignment on `A.slice n` is realized in `M` exactly when it is the truth assignment of
+some `n`-tuple of `M`. -/
+@[simp]
+theorem mem_realizedTypes {p : A.slice n → Prop} :
+    p ∈ A.realizedTypes M n ↔ ∃ a : Fin n → M, A.truthAssignment M a = p :=
+  Iff.rfl
+
+/-- The truth assignment of any `n`-tuple of `M` belongs to `A.realizedTypes M n`. -/
+theorem truthAssignment_mem_realizedTypes (A : Fragment L) (a : Fin n → M) :
+    A.truthAssignment M a ∈ A.realizedTypes M n :=
+  ⟨a, rfl⟩
+
+/-- At arity `0`, the only realized fragment type is the truth assignment of the empty tuple. -/
+theorem realizedTypes_zero (A : Fragment L) (M : Type w) [L.Structure M] :
+    A.realizedTypes M 0 = {A.truthAssignment M Fin.elim0} := by
+  rw [realizedTypes_def, Set.range_unique, Subsingleton.elim default Fin.elim0]
+
+/-- On a countable carrier `M`, a structure realizes only countably many fragment `n`-types. -/
+theorem countable_realizedTypes (A : Fragment L) (M : Type w) [L.Structure M] [Countable M]
+    (n : ℕ) :
+    (A.realizedTypes M n).Countable :=
+  Set.countable_range _
+
+/-- Restricting along a fragment inclusion `A ≤ B` surjects `B.realizedTypes M n` onto
+`A.realizedTypes M n`. -/
+theorem image_restrict_realizedTypes (hAB : A ≤ B) (M : Type w) [L.Structure M] (n : ℕ) :
+    (· ∘ Set.inclusion (slice_mono hAB n)) '' B.realizedTypes M n = A.realizedTypes M n := by
+  rw [realizedTypes_def, realizedTypes_def, ← Set.range_comp]
+  exact congrArg Set.range (funext fun a => (truthAssignment_restrict hAB a).symm)
+
 end Fragment
 
 /-- An `A`-elementary embedding preserves the realized truth assignment on every arity slice. -/
@@ -137,6 +180,14 @@ theorem Equiv.fragmentType_comp (e : N ≃[L] M) (A : Fragment L) (a : Fin n →
 theorem Equiv.truthAssignment_comp (e : N ≃[L] M) (A : Fragment L) (a : Fin n → N) :
     A.truthAssignment M (e ∘ a) = A.truthAssignment N a :=
   (e.aElementary A).truthAssignment_comp a
+
+/-- Isomorphic structures realize the same fragment `n`-types. -/
+theorem Equiv.realizedTypes_eq (e : M ≃[L] N) (A : Fragment L) (n : ℕ) :
+    A.realizedTypes M n = A.realizedTypes N n := by
+  ext p
+  simp only [Fragment.mem_realizedTypes]
+  refine ⟨fun ⟨a, ha⟩ => ⟨e ∘ a, by rw [e.truthAssignment_comp, ha]⟩,
+    fun ⟨b, hb⟩ => ⟨e.symm ∘ b, by rw [e.symm.truthAssignment_comp, hb]⟩⟩
 
 /-! ### Transport along language maps -/
 
