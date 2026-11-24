@@ -94,7 +94,7 @@ protected theorem rateDampedField (hX : IsAdaptedPseudoGradient f X)
 /-- **The damped pseudo-gradient of a proper function is complete.** If `f` is smooth and proper
 and `X` is a pseudo-gradient adapted to `f`, the adapted pseudo-gradient
 `rateDamping (df(X)) • X` is complete. -/
-theorem isCompleteVectorField_rateDampedField [CompleteSpace E] [T2Space M]
+theorem isCompleteVectorField_rateDampedField [T2Space M]
     (hX : IsAdaptedPseudoGradient f X) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hfp : IsProperMap f) :
     IsCompleteVectorField (rateDampedField 𝓘(ℝ, E) f X) :=
   _root_.TauCeti.isCompleteVectorField_rateDampedField hfp (hf.of_le (by simp))
