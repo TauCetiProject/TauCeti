@@ -16,7 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.KulkarniNomizu
 For a metric-compatible torsion-free connection on a Riemannian tangent bundle, the
 metric-lowered curvature tensor `Rm(u, v, w, z) = ⟨R(u, v)w, z⟩` is antisymmetric in each pair of
 arguments and satisfies the first Bianchi identity. By the polarization identity
-`LinearMap.six_mul_apply_eq_of_cyclic_eq_zero` it is therefore determined by the numerators
+`LinearMap.six_nsmul_apply_eq_of_cyclic_eq_zero` it is therefore determined by the numerators
 `⟨R(u, v)v, u⟩` of the sectional curvatures, and in fact by their values on linearly independent
 pairs `u, v`, which are the pairs spanning a tangent two-plane
 (`CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent`).
