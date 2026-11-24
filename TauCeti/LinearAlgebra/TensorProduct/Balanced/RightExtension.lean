@@ -529,24 +529,20 @@ section RegularModule
 
 variable (f)
 
-/-- **Extension of the regular module.** `R ⊗_R S ≃ S`, sending `r ⊗ s` to `f r * s`. -/
-def lid : RightBalancedExtension f R ≃ₗ[Sᵐᵒᵖ] S :=
-  LinearEquiv.ofLinearMap
-    (lift { toFun := f, map_add' := f.map_add, map_smul' := fun r x ↦ by simp })
-    { toFun := fun s ↦ tmul f 1 s
-      map_add' := tmul_add 1
-      map_smul' := fun s x ↦ by simp }
-    (LinearMap.ext fun s ↦ by simp) (hom_ext fun r ↦ by
-      have h : tmul f (1 : R) (f r) = tmul f (op r • (1 : R)) 1 := by
-        rw [tmul_smul, unop_op, mul_one]
-      simp [h])
+/-- **Extension of the regular module.** `R ⊗_R S ≃ S`, sending `r ⊗ s` to `f r * s`. It is
+`TauCeti.BalancedTensorProduct.lid` for the left `R`-module `Scalars f`, which preserves the right
+action of `S` by `TauCeti.BalancedTensorProduct.lid_smul_right`. -/
+noncomputable def lid : RightBalancedExtension f R ≃ₗ[Sᵐᵒᵖ] S where
+  __ := (BalancedTensorProduct.lid ℤ R (Scalars f)).toAddEquiv.trans (Scalars.of f).symm
+  map_smul' s x := BalancedTensorProduct.lid_smul_right ℤ R (Scalars f) Sᵐᵒᵖ s x
 
 @[simp]
-theorem lid_tmul (r : R) (s : S) : lid f (tmul f r s) = f r * s := by
-  simp [lid]
+theorem lid_tmul (r : R) (s : S) : lid f (tmul f r s) = f r * s :=
+  BalancedTensorProduct.lid_tmul ℤ R (Scalars f) r (Scalars.of f s)
 
 @[simp]
-theorem lid_symm_apply (s : S) : (lid f).symm s = tmul f 1 s := (rfl)
+theorem lid_symm_apply (s : S) : (lid f).symm s = tmul f 1 s :=
+  BalancedTensorProduct.lid_symm_apply ℤ R (Scalars f) (Scalars.of f s)
 
 end RegularModule
 
