@@ -169,6 +169,7 @@ theorem tensorProductPowerSeriesLatticeEquiv_symm_single [Module.Free R V] [Modu
   exact Subtype.ext (by rw [coe_tensorProductPowerSeriesLatticeEquiv_tmul, one_smul])
 
 /-- The lattice comparisons at `a` and `a + k` differ by the lattice shift by `X ^ k`. -/
+@[simp]
 theorem powerSeriesLatticeShift_tensorProductPowerSeriesLatticeEquiv [Module.Free R V]
     [Module.Finite R V] (a k : ℤ) (z : R⟦X⟧ ⊗[R] V) :
     powerSeriesLatticeShift a k (tensorProductPowerSeriesLatticeEquiv R V a z) =
@@ -293,6 +294,7 @@ theorem tensorProductLatticeQuotientEquiv_one_tmul (a : ℤ) (n : ℕ) (v : V) :
   exact congrArg Submodule.Quotient.mk (Subtype.ext (one_smul _ _))
 
 /-- The inverse jet comparison reads off the coefficients of a jet at `a, …, a + n - 1`. -/
+@[simp]
 theorem tensorProductLatticeQuotientEquiv_symm_mk (a : ℤ) (n : ℕ) (f : lattice R V a) :
     (tensorProductLatticeQuotientEquiv R V a n).symm (Submodule.Quotient.mk f) = ∑ k : Fin n,
       Ideal.Quotient.mk _ (PowerSeries.X ^ (k : ℕ)) ⊗ₜ[R]
