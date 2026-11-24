@@ -68,8 +68,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   `Circle.expLoop` generates `π₁(Circle, 1)` and has infinite order.
 * `Circle.mapOfEq_toCircle_expLoop`: a loop `γ`, read as a map from the circle, sends the class
   of `Circle.expLoop` to the class of `γ`.
-* `Circle.mapOfEq_toCircle_apply`: a loop `γ`, read as a map from the circle, sends a class of
-  degree `k` to the `k`-th power of the class of `γ`.
+* `Circle.mapOfEq_toCircle`: a loop `γ`, read as a map from the circle, induces on fundamental
+  groups the homomorphism sending a class of degree `k` to the `k`-th power of the class of `γ`.
 * `Circle.bijective_mapOfEq_toCircle_of_zpowers_eq_top`: a loop generating an infinite
   fundamental group, read as a map from the circle, is bijective on fundamental groups.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
@@ -486,36 +486,43 @@ theorem mapOfEq_toCircle_expLoop {X : Type*} [TopologicalSpace X] {x : X} (γ : 
   exact FundamentalGroup.mapOfEq_apply _ _ _
 
 /-- **A loop, read as a map from the circle, induces the power map of its class.** The loop `γ`,
-read as a map from the circle by `Path.toCircle`, sends a class of `π₁(S¹, 1)` of degree `k` to the
-`k`-th power of the class of `γ`. -/
+read as a map from the circle by `Path.toCircle`, induces on fundamental groups the composite of
+the degree isomorphism `fundamentalGroupMulEquiv 1 : π₁(S¹, 1) ≃* ℤ` with the homomorphism
+`zpowersHom` sending `k` to the `k`-th power of the class of `γ`. -/
+theorem mapOfEq_toCircle {X : Type*} [TopologicalSpace X] {x : X} (γ : Path x x) :
+    FundamentalGroup.mapOfEq γ.toCircle (Path.toCircle_one _) =
+      (zpowersHom _ (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))).comp
+        (fundamentalGroupMulEquiv 1).toMonoidHom := by
+  -- Both sides are homomorphisms out of `π₁(S¹) ≅ ℤ`, so it suffices to compare them on the
+  -- counterclockwise loop, which the circle identification sends to the generator.
+  refine (MonoidHom.cancel_right (f := (fundamentalGroupMulEquiv 1).symm.toMonoidHom)
+    (fundamentalGroupMulEquiv 1).symm.surjective).1 (MonoidHom.ext_mint ?_)
+  have hgen : (fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd 1) =
+      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop) :=
+    (fundamentalGroupMulEquiv 1).symm_apply_eq.2 fundamentalGroupMulEquiv_expLoop.symm
+  simp [hgen, mapOfEq_toCircle_expLoop]
+
+/-- Pointwise form of `mapOfEq_toCircle`: the loop `γ`, read as a map from the circle by
+`Path.toCircle`, sends a class of `π₁(S¹, 1)` of degree `k` to the `k`-th power of the class of
+`γ`. -/
 theorem mapOfEq_toCircle_apply {X : Type*} [TopologicalSpace X] {x : X} (γ : Path x x)
     (δ : FundamentalGroup Circle 1) :
     FundamentalGroup.mapOfEq γ.toCircle (Path.toCircle_one _) δ =
       zpowersHom _ (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))
         (fundamentalGroupMulEquiv 1 δ) := by
-  -- Both sides are homomorphisms out of `π₁(S¹) ≅ ℤ`, so it suffices to compare them on the
-  -- counterclockwise loop, which the circle identification sends to the generator.
-  suffices h : (FundamentalGroup.mapOfEq γ.toCircle (Path.toCircle_one _)).comp
-      (fundamentalGroupMulEquiv 1).symm.toMonoidHom =
-        zpowersHom _ (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) by
-    simpa using congrArg (· (fundamentalGroupMulEquiv 1 δ)) h
-  refine MonoidHom.ext_mint ?_
-  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    (fundamentalGroupMulEquiv 1).symm_apply_eq.2 fundamentalGroupMulEquiv_expLoop.symm,
-    mapOfEq_toCircle_expLoop, zpowersHom_apply, toAdd_ofAdd, zpow_one]
+  simp [mapOfEq_toCircle]
 
-/-- **A generating loop, read as a map from the circle, induces the identity of `ℤ`.** Given an
-identification `e : π₁(X, x) ≃* ℤ` and a loop `γ` whose class is sent to the generator `ofAdd 1`,
-the loop `γ`, read as a map from the circle by `Path.toCircle`, induces on fundamental groups the
+/-- **A generating loop, read as a map from the circle, induces the identity of `ℤ`.** Given a
+homomorphism `e : π₁(X, x) →* ℤ` and a loop `γ` whose class is sent to the generator `ofAdd 1`,
+the loop `γ`, read as a map from the circle by `Path.toCircle`, induces on fundamental groups a
 map that `e` and `fundamentalGroupMulEquiv` identify with the identity of `ℤ`. -/
 theorem apply_mapOfEq_toCircle_of_apply_eq_ofAdd_one {X : Type*} [TopologicalSpace X] {x : X}
-    (e : FundamentalGroup X x ≃* Multiplicative ℤ) (γ : Path x x)
+    (e : FundamentalGroup X x →* Multiplicative ℤ) (γ : Path x x)
     (hγ : e (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = Multiplicative.ofAdd 1)
     (δ : FundamentalGroup Circle 1) :
     e (FundamentalGroup.mapOfEq γ.toCircle (Path.toCircle_one _) δ) =
       fundamentalGroupMulEquiv 1 δ := by
-  rw [mapOfEq_toCircle_apply, zpowersHom_apply, map_zpow, hγ, ← ofAdd_zsmul, smul_eq_mul,
-    mul_one, ofAdd_toAdd]
+  simp [mapOfEq_toCircle_apply, hγ, ← ofAdd_zsmul]
 
 /-- **A generating loop, read as a map from the circle, is bijective on fundamental groups.** A
 loop `γ` whose class generates an infinite fundamental group `π₁(X, x)`, read as a map from the
@@ -524,11 +531,7 @@ theorem bijective_mapOfEq_toCircle_of_zpowers_eq_top {X : Type*} [TopologicalSpa
     [Infinite (FundamentalGroup X x)] (γ : Path x x)
     (hγ : Subgroup.zpowers (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = ⊤) :
     Function.Bijective (FundamentalGroup.mapOfEq γ.toCircle (Path.toCircle_one _)) := by
-  have h : ⇑(FundamentalGroup.mapOfEq γ.toCircle (Path.toCircle_one _)) =
-      zpowersHom _ (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) ∘
-        fundamentalGroupMulEquiv 1 :=
-    funext (mapOfEq_toCircle_apply γ)
-  rw [h]
+  rw [mapOfEq_toCircle, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom]
   exact (zpowersHom_bijective hγ).comp (fundamentalGroupMulEquiv 1).bijective
 
 /-- A loop whose class is sent to the generator by an identification `π₁(X, x) ≃* ℤ`, read as a

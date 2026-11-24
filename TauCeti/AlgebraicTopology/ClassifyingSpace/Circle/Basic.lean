@@ -102,8 +102,10 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpac
     classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)
         (FundamentalGroup.mapOfEq circleToClassifyingSpace circleToClassifyingSpace_one γ) =
       Circle.fundamentalGroupMulEquiv 1 γ :=
-  Circle.apply_mapOfEq_toCircle_of_apply_eq_ofAdd_one _ _
-    (by rw [FundamentalGroup.fromPath_mk_out, MulEquiv.apply_symm_apply]) γ
+  Circle.apply_mapOfEq_toCircle_of_apply_eq_ofAdd_one
+    (classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)).toMonoidHom _
+    (by rw [MulEquiv.coe_toMonoidHom, FundamentalGroup.fromPath_mk_out,
+      MulEquiv.apply_symm_apply]) γ
 
 /-- **The map from the circle to the classifying space of `ℤ` is a weak homotopy equivalence.**
 Both spaces are aspherical and the map induces an isomorphism of fundamental groups. -/
