@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.MovingEnds
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.AssociativityPath
+import TauCeti.Topology.Separation.Basic
 
 /-!
 # Compactness of spheres with moving input ends
@@ -170,9 +171,8 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_pu
   refine ⟨δ, hδ, fun Ω p u A hΩ hΩD hpC hu hfl huK htop ↦ ?_⟩
   -- On the truncation `Σ_R` the energy density is integrable, and the energy over `Ω ⊆ Σ_R` is at
   -- most the topological energy plus `∑ i, B i + Bout`.
-  have hUo (k : ℕ) : IsOpen {z : ℝ × ℝ | ∀ i, equivRealProdCLM.symm z ≠ c (p k) i} := by
-    simp only [ofPred_forall]
-    exact isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const
+  have hUo (k : ℕ) : IsOpen {z : ℝ × ℝ | ∀ i, equivRealProdCLM.symm z ≠ c (p k) i} :=
+    isOpen_forall_ne equivRealProdCLM.symm.continuous
   have hTU (k : ℕ) : equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation (c (p k)) (a (p k)) R ⊆
       {z | ∀ i, equivRealProdCLM.symm z ≠ c (p k) i} := fun z hz i ↦
     ne_of_mem_puncturedSphereTruncation (ha₀ _ (hpC k) i) hz

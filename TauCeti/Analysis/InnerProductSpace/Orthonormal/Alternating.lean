@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 public import TauCeti.Analysis.InnerProductSpace.Comass
 import Mathlib.Analysis.InnerProductSpace.Dual
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 
 /-!
 # Alternating forms on orthonormal frames
@@ -25,6 +27,14 @@ represents a given covector `α` eliminates all but the first term of the altern
 `α ∧ ω = alternatizeUncurryFin (α.smulRight ω)`, giving the sharp comass inequality
 `‖α ∧ ω‖ ≤ ‖α‖ * ‖ω‖` without the `(k + 1)` factor of general normed spaces.
 No additional norm on alternating forms is introduced.
+
+Two orthonormal frames `τ` and `τ'` of the same `k`-plane differ by an orthogonal change of frame,
+whose matrix is the overlap matrix `(⟪τ i, τ' j⟫)`: every alternating map takes the value
+`det (⟪τ i, τ' j⟫) • f τ` on `τ'` (`AlternatingMap.map_eq_det_inner_smul_of_mem_span`), and this
+determinant is `±1` (`Orthonormal.det_inner_eq_one_or_eq_neg_one`). Its sign
+`TauCeti.frameSign τ τ'` is therefore the factor by which alternating maps change
+(`AlternatingMap.map_eq_frameSign_smul_of_mem_span`). This is how the two orientations of a plane
+enter the integration of forms over oriented rectifiable sets.
 
 ## References
 
@@ -165,3 +175,59 @@ theorem enorm_alternatizeUncurryFin_smulRight_le (α : E →L[ℝ] ℝ) (ω : E 
   exact_mod_cast norm_alternatizeUncurryFin_smulRight_le α ω
 
 end ContinuousAlternatingMap
+
+namespace TauCeti
+
+open scoped RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {ι : Type*} [Fintype ι]
+  [DecidableEq ι]
+
+/-- The sign `±1` of the change of frame from `τ` to `τ'`, read off from the determinant of the
+overlap matrix `(⟪τ i, τ' j⟫)`. For two orthonormal frames of the same subspace this determinant is
+`±1` (`Orthonormal.det_inner_eq_one_or_eq_neg_one`), so it is the sign itself, and alternating maps
+change by it (`AlternatingMap.map_eq_frameSign_smul_of_mem_span`). -/
+noncomputable def frameSign (τ τ' : ι → E) : ℤ :=
+  if 0 ≤ (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫).det then 1 else -1
+
+/-- `TauCeti.frameSign` is `1` when the overlap determinant is nonnegative and `-1` otherwise. -/
+theorem frameSign_def (τ τ' : ι → E) :
+    frameSign τ τ' = if 0 ≤ (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫).det then 1 else -1 :=
+  (rfl)
+
+/-- The sign of a change of frame has absolute value one. -/
+theorem abs_frameSign (τ τ' : ι → E) : |frameSign τ τ'| = 1 := by
+  by_cases h : 0 ≤ (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫).det <;> simp [frameSign, h]
+
+end TauCeti
+
+namespace AlternatingMap
+
+open scoped RealInnerProductSpace
+
+variable {E N : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [AddCommGroup N]
+  [Module ℝ N] {k : ℕ}
+
+/-- **Change of orthonormal frame.** If `τ` is an orthonormal family and every vector of `τ'` lies
+in its span, an alternating map takes on `τ'` the value `det (⟪τ i, τ' j⟫) • f τ`. For two
+orthonormal frames of the same plane the determinant is `±1`
+(`Orthonormal.det_inner_eq_one_or_eq_neg_one`). -/
+theorem map_eq_det_inner_smul_of_mem_span (f : E [⋀^Fin k]→ₗ[ℝ] N) {τ τ' : Fin k → E}
+    (hτ : Orthonormal ℝ τ) (h : ∀ j, τ' j ∈ Submodule.span ℝ (range τ)) :
+    f τ' = (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫).det • f τ := by
+  conv_lhs => rw [show τ' = fun j ↦ ∑ i, ⟪τ i, τ' j⟫ • τ i from
+    funext fun j ↦ (hτ.sum_inner_smul_eq_of_mem_span (h j)).symm]
+  simpa using f.map_sum_smul (Matrix.of fun j i ↦ ⟪τ i, τ' j⟫) τ
+
+/-- **Change of orthonormal frame by a sign.** If `τ` and `τ'` are orthonormal frames and every
+vector of `τ'` lies in the span of `τ`, an alternating map takes on `τ'` the value
+`TauCeti.frameSign τ τ' • f τ`. -/
+theorem map_eq_frameSign_smul_of_mem_span (f : E [⋀^Fin k]→ₗ[ℝ] N) {τ τ' : Fin k → E}
+    (hτ : Orthonormal ℝ τ) (hτ' : Orthonormal ℝ τ')
+    (h : ∀ j, τ' j ∈ Submodule.span ℝ (range τ)) : f τ' = TauCeti.frameSign τ τ' • f τ := by
+  rw [f.map_eq_det_inner_smul_of_mem_span hτ h]
+  rcases hτ.det_inner_eq_one_or_eq_neg_one hτ' h with hd | hd <;>
+    simp [TauCeti.frameSign, hd]
+
+end AlternatingMap
+

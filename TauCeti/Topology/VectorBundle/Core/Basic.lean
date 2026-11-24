@@ -25,7 +25,8 @@ the reconstruction step in a small coordinate presentation of finite-rank bundle
 No compactness, separation, or finite-dimensionality assumption is needed.
 
 The construction uses Mathlib's `Bundle.Trivialization.coordChangeL` and
-`VectorBundleCore` gluing construction.
+`VectorBundleCore` gluing construction. For any core, `VectorBundleCore.mk_eq_mk_iff` compares
+points of its total space by base point and vector in the model fibre.
 -/
 
 public section
@@ -181,3 +182,22 @@ theorem trivializationAt_pointIndexedCoreHomeomorph (b : B)
   trivializationAt_pointIndexedCoreTotalEquiv 𝕜 F E b p hp
 
 end TauCeti
+
+namespace VectorBundleCore
+
+variable {𝕜 B F ι : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Points of the total space of a vector bundle core agree exactly when their base points and
+their vectors in the model fibre do. Unlike `Bundle.TotalSpace.mk_inj`, the base points may
+differ, since every fibre of a core is the model fibre. -/
+theorem mk_eq_mk_iff (Z : VectorBundleCore 𝕜 B F ι) {x y : B} {v w : F} :
+    (⟨x, v⟩ : Z.TotalSpace) = ⟨y, w⟩ ↔ x = y ∧ v = w := by
+  constructor
+  · intro h
+    cases h
+    exact ⟨rfl, rfl⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+end VectorBundleCore

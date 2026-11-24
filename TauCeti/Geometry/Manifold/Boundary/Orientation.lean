@@ -12,6 +12,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.Boundary.TransitionNormal
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import Mathlib.Geometry.Manifold.MFDeriv.Tangent
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
 # Outward-pointing vectors at the boundary
@@ -20,17 +22,29 @@ For a manifold modeled on Mathlib's Euclidean half-space, this file records the 
 for an outward tangent vector.  Mathlib puts the boundary coordinate in slot `0`; outward vectors
 therefore have a negative slot-`0` derivative.  The definition uses the preferred chart through
 `mfderiv`; the positive normal derivative of actual chart transitions proves coordinate
-independence in `isOutwardPointing_iff_tangentCoordChange`. This is the interface used by boundary
-orientation and Stokes
-constructions. When the inward coordinate of the preferred chart is a nonzero multiple of `g - c`
-for a real function `g`, outwardness is the sign of the derivative of `g`
-(`isOutwardPointing_iff_mul_mvfderiv_neg`); this is how a boundary defining function, such as the
-function cutting out a sublevel, detects the outward direction.
+independence in `isOutwardPointing_iff_tangentCoordChange`; equivalently, minus the normal
+coordinate of any preferred chart increases along outward vectors
+(`isOutwardPointing_iff_mvfderiv_neg_chartAt_normal_pos`); this function is as smooth as the
+manifold on the chart source (`contMDiffAt_neg_chartAt_normal`, a case of
+`contMDiffAt_normal` for every chart of the maximal atlas). This is the interface used by
+boundary orientation and Stokes constructions. When the inward coordinate of the preferred chart
+is a nonzero multiple of `g - c` for a real function `g`, outwardness is the sign of the
+derivative of `g` (`isOutwardPointing_iff_mul_mvfderiv_neg`); this is how a boundary defining
+function, such as the function cutting out a sublevel, detects the outward direction.
 
 The same sign can be read in any chart `e` of the maximal atlas: the differentials at a boundary
 point of the normal coordinates `(e ·).1 0` of two such charts are positive multiples of each other
 (`exists_pos_mvfderiv_normal_eq_smul`), so a vector is outward exactly when the differential of
 the normal coordinate of `e` is negative on it (`isOutwardPointing_iff_mvfderiv_neg`).
+
+A function `f` with a local minimum at a boundary point `q` has `df_q v ≥ 0` for every vector `v`
+that is not outward (Fermat's theorem at a boundary point, `mvfderiv_nonneg_of_isLocalMin`). If
+also `df_q ≠ 0`, then `df_q` is a positive multiple of the differential of the normal coordinate of
+the preferred chart at `q` (`exists_pos_mvfderiv_eq_smul_chartAt_of_isLocalMin`), so `df_q v < 0`
+exactly for the outward vectors `v` (`isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin`). Applied
+to the normal coordinate of the preferred chart at the image point, this shows that local
+diffeomorphisms of manifolds with boundary preserve outward vectors
+(`IsLocalDiffeomorphAt.isOutwardPointing_mfderiv_iff`, `isOutwardPointing_mfderiv_iff`).
 
 The sign convention follows J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition
 15.33, adapted to Mathlib's convention that the constrained coordinate is in slot `0`.
@@ -100,6 +114,14 @@ private theorem normal_eq_proj_comp_extend
   ext y
   simp
 
+/-- The normal coordinate of a chart of the maximal atlas is as smooth as the atlas on the chart
+source. -/
+theorem contMDiffAt_normal {k : ℕ∞ω} {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
+    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) k M) {q : M} (hqe : q ∈ e.source) :
+    ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) k (fun y ↦ (e y).val 0) q := by
+  rw [normal_eq_proj_comp_extend]
+  exact (ContinuousLinearMap.contMDiff _).contMDiffAt.comp q (e.contMDiffAt_extend he hqe)
+
 /-- The differential at `x` of the normal coordinate of the preferred chart at `x` is the zeroth
 coordinate of the preferred-chart derivative, the quantity whose sign defines
 `IsOutwardPointing`. -/
@@ -118,6 +140,60 @@ theorem mvfderiv_chartAt_normal_apply (x : M) (v : TangentSpace (𝓡∂ (n + 1)
   -- evaluation in slot `0`; the tangent-space wrapper blocks the rewriting lemmas for both.
   rfl
 
+/-- The normal coordinate of the preferred chart at `x` is differentiable at `x`. -/
+theorem mdifferentiableAt_chartAt_normal (x : M) :
+    MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ)
+      (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).val 0) x := by
+  rw [normal_eq_proj_comp_extend]
+  exact (EuclideanSpace.proj (0 : Fin (n + 1)) :
+    EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp x
+      (TauCeti.hasMFDerivAt_extChartAt_self (I := 𝓡∂ (n + 1)) x).mdifferentiableAt
+
+/-- Minus the normal coordinate of a preferred chart is minus the zeroth coordinate of its extended
+chart. -/
+private theorem neg_normal_eq_neg_proj_comp_extChartAt (α : M) :
+    (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) =
+      (-EuclideanSpace.proj (0 : Fin (n + 1)) : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) ∘
+        extChartAt (𝓡∂ (n + 1)) α := by
+  ext y
+  simp
+
+/-- Minus the normal coordinate of a preferred chart is as smooth as the manifold on the chart
+source. -/
+theorem contMDiffAt_neg_chartAt_normal {k : ℕ∞ω} [IsManifold (𝓡∂ (n + 1)) k M] {α x : M}
+    (hx : x ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source) :
+    ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) k
+      (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) x :=
+  (contMDiffAt_normal (IsManifold.chart_mem_maximalAtlas α) hx).neg
+
+/-- Minus the normal coordinate of a preferred chart, read as a differential of a function on
+`M`, is minus the normal component of the tangent coordinate change into that chart. -/
+theorem mvfderiv_neg_chartAt_normal_apply [IsManifold (𝓡∂ (n + 1)) 1 M] {α q : M}
+    (hq : q ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source)
+    (v : TangentSpace (𝓡∂ (n + 1)) q) :
+    mvfderiv (𝓡∂ (n + 1)) (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) q v =
+      -tangentCoordChange (𝓡∂ (n + 1)) q α q v 0 := by
+  have hext := hasMFDerivAt_extChartAt (I := 𝓡∂ (n + 1)) hq
+  rw [neg_normal_eq_neg_proj_comp_extChartAt,
+    ContinuousLinearMap.mvfderiv_comp_apply _ hext.mdifferentiableAt,
+    mvfderiv_apply_eq_mfderiv_apply, hext.mfderiv, mfderiv_chartAt_eq_tangentCoordChange hq]
+  -- The tangent fibre of the half-space model is the model space itself, on which `-proj 0` is
+  -- minus evaluation in slot `0`. The tangent-space wrapper makes `neg_apply` fail to typecheck
+  -- and `simp` unfolds `tangentCoordChange` instead, so close the goal definitionally.
+  rfl
+
+/-- At a boundary point, a vector points outward exactly when minus the normal coordinate of a
+preferred chart increases along it. -/
+theorem isOutwardPointing_iff_mvfderiv_neg_chartAt_normal_pos [IsManifold (𝓡∂ (n + 1)) 1 M]
+    {α q : M} (hqb : q ∈ (𝓡∂ (n + 1)).boundary M)
+    (hq : q ∈ (chartAt (EuclideanHalfSpace (n + 1)) α).source)
+    (v : TangentSpace (𝓡∂ (n + 1)) q) :
+    IsOutwardPointing q v ↔
+      0 < mvfderiv (𝓡∂ (n + 1))
+        (fun y ↦ -(chartAt (EuclideanHalfSpace (n + 1)) α y).val 0) q v := by
+  rw [isOutwardPointing_iff_tangentCoordChange hqb (by rwa [extChartAt_source]),
+    mvfderiv_neg_chartAt_normal_apply hq, neg_pos]
+
 /-- Suppose that, near a boundary point `x`, the inward coordinate (slot `0`) of the preferred
 chart at `x` is `s * (g - c)` for a real function `g` and constants `c` and `s ≠ 0`. Then a
 tangent vector `v` at `x` points outward exactly when `s` times the derivative of `g` is negative
@@ -129,11 +205,7 @@ theorem isOutwardPointing_iff_mul_mvfderiv_neg {x : M}
     IsOutwardPointing x v ↔ s * mvfderiv (𝓡∂ (n + 1)) g x v < 0 := by
   -- The inward coordinate `t` of the preferred chart, and its derivative at `x`.
   set t : M → ℝ := fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).val 0 with ht
-  have hd : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) t x := by
-    rw [ht, normal_eq_proj_comp_extend]
-    exact (EuclideanSpace.proj (0 : Fin (n + 1)) :
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp x
-        (TauCeti.hasMFDerivAt_extChartAt_self (I := 𝓡∂ (n + 1)) x).mdifferentiableAt
+  have hd : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) t x := mdifferentiableAt_chartAt_normal x
   -- Near `x`, `g` is the affine function `c + s⁻¹ * t`.
   have hg : g =ᶠ[𝓝 x] (fun r : ℝ ↦ c + s⁻¹ * r) ∘ t := by
     filter_upwards [hchart] with w hw
@@ -309,6 +381,101 @@ theorem isOutwardPointing_neg_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1
 
 end PreferredChart
 
+/-! ### Functions with a local minimum at a boundary point -/
+
+section LocalMin
+
+/-- The differential at `x` of the normal coordinate of the preferred chart at `x` takes the value
+`1` on the first standard basis vector. -/
+private theorem mvfderiv_chartAt_normal_single (x : M) :
+    mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).val 0) x
+      (EuclideanSpace.single 0 1 : TangentSpace (𝓡∂ (n + 1)) x) = 1 := by
+  refine (mvfderiv_chartAt_normal_apply x _).trans ?_
+  rw [mfderiv_extChartAt_eq_id]
+  -- The preferred tangent fibre is the model space, and both identifications with it are the
+  -- identity.
+  change (EuclideanSpace.single (𝕜 := ℝ) (0 : Fin (n + 1)) 1) 0 = 1
+  simp
+
+/-- At a boundary point `x`, a vector is outward exactly when the differential at `x` of the
+normal coordinate of the preferred chart at `x` is negative on it. -/
+theorem isOutwardPointing_iff_mvfderiv_chartAt_normal_neg {x : M}
+    (hx : x ∈ (𝓡∂ (n + 1)).boundary M) (v : TangentSpace (𝓡∂ (n + 1)) x) :
+    IsOutwardPointing x v ↔
+      mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).val 0) x v < 0 := by
+  rw [mvfderiv_chartAt_normal_apply, isOutwardPointing_iff, and_iff_right hx]
+
+/-- At a boundary point, minus the first standard basis vector of the preferred chart is outward:
+the first standard basis vector is inward. -/
+theorem isOutwardPointing_neg_single_zero {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
+    IsOutwardPointing x (-(EuclideanSpace.single 0 1 : TangentSpace (𝓡∂ (n + 1)) x)) :=
+  (isOutwardPointing_neg_iff_proj hx).mpr (by simp)
+
+/-- **Fermat's theorem at a boundary point.** A function with a local minimum at a boundary point
+`q` has nonnegative differential on every tangent vector at `q` that is not outward. -/
+theorem mvfderiv_nonneg_of_isLocalMin {f : M → ℝ} {q : M}
+    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hmin : IsLocalMin f q) {v : TangentSpace (𝓡∂ (n + 1)) q}
+    (hv : ¬IsOutwardPointing q v) : 0 ≤ mvfderiv (𝓡∂ (n + 1)) f q v := by
+  by_cases hf : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) f q
+  swap
+  · exact not_lt.mp fun h ↦ hf (mdifferentiableAt_of_mvfderiv_apply_ne_zero h.ne)
+  -- Read `f` in the preferred chart at `q`, as a function on the model half-space.
+  have hd := hf.hasMFDerivAt.2
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    Function.id_comp] at hd
+  rw [isOutwardPointing_iff_proj hq, not_lt] at hv
+  rw [mvfderiv_apply_eq_mfderiv_apply]
+  -- The tangent space at `q` is the model space, in which `v` is a vector with `0 ≤ v 0`.
+  exact hasFDerivWithinAt_nonneg_of_isLocalMin (v := (v : EuclideanSpace ℝ (Fin (n + 1)))) hq
+    (mem_extChartAt_source q) hmin hd hv
+
+/-- A function with a local minimum and nonzero differential at a boundary point `q` has
+differential at `q` a positive multiple of the differential of the normal coordinate of the
+preferred chart at `q`. -/
+theorem exists_pos_mvfderiv_eq_smul_chartAt_of_isLocalMin {f : M → ℝ} {q : M}
+    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hmin : IsLocalMin f q)
+    (hne : mvfderiv (𝓡∂ (n + 1)) f q ≠ 0) :
+    ∃ a : ℝ, 0 < a ∧ mvfderiv (𝓡∂ (n + 1)) f q =
+      a • mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).val 0) q := by
+  let I := 𝓡∂ (n + 1)
+  set ℓ := mvfderiv I (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).val 0) q
+  set ℓf := mvfderiv I f q
+  let w : TangentSpace I q := EuclideanSpace.single 0 1
+  have hw : ℓ w = 1 := mvfderiv_chartAt_normal_single q
+  -- A vector is not outward exactly when `ℓ` is nonnegative on it.
+  have hnonneg (u : TangentSpace I q) (hu : 0 ≤ ℓ u) : 0 ≤ ℓf u :=
+    mvfderiv_nonneg_of_isLocalMin hq hmin fun h ↦
+      ((isOutwardPointing_iff_mvfderiv_chartAt_normal_neg hq u).mp h).not_ge hu
+  have hfactor (u : TangentSpace I q) : ℓf u = ℓf w * ℓ u :=
+    Module.Dual.apply_eq_mul_apply_of_nonneg (ℓ : TangentSpace I q →ₗ[ℝ] ℝ)
+      (ℓf : TangentSpace I q →ₗ[ℝ] ℝ) hw hnonneg u
+  refine ⟨ℓf w, (hnonneg w (hw ▸ zero_le_one)).lt_of_ne fun h0 ↦ hne ?_, ?_⟩
+  · ext u
+    rw [hfactor u, ← h0, zero_mul, zero_apply]
+  · ext u
+    rw [hfactor u, smul_apply, smul_eq_mul]
+
+/-- **Sign test.** A function with a local minimum and nonzero differential `df_q` at a boundary
+point `q` has `df_q v` strictly negative exactly for the outward vectors `v`. -/
+theorem isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin {f : M → ℝ} {q : M}
+    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hmin : IsLocalMin f q)
+    (hne : mvfderiv (𝓡∂ (n + 1)) f q ≠ 0) (v : TangentSpace (𝓡∂ (n + 1)) q) :
+    IsOutwardPointing q v ↔ mvfderiv (𝓡∂ (n + 1)) f q v < 0 := by
+  obtain ⟨a, ha, h⟩ := exists_pos_mvfderiv_eq_smul_chartAt_of_isLocalMin hq hmin hne
+  rw [h, smul_apply, smul_neg_iff_of_pos_left ha,
+    isOutwardPointing_iff_mvfderiv_chartAt_normal_neg hq]
+
+/-- **Sign test.** A function with a local minimum and nonzero differential `df_q` at a boundary
+point `q` has `df_q v` strictly positive exactly for the inward vectors `v`, those with `-v`
+outward. -/
+theorem isOutwardPointing_neg_iff_mvfderiv_pos_of_isLocalMin {f : M → ℝ} {q : M}
+    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hmin : IsLocalMin f q)
+    (hne : mvfderiv (𝓡∂ (n + 1)) f q ≠ 0) (v : TangentSpace (𝓡∂ (n + 1)) q) :
+    IsOutwardPointing q (-v) ↔ 0 < mvfderiv (𝓡∂ (n + 1)) f q v := by
+  rw [isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin hq hmin hne, map_neg, neg_lt_zero]
+
+end LocalMin
+
 /-! ### Outward vectors in an arbitrary chart of the maximal atlas -/
 
 section MaximalAtlas
@@ -317,11 +484,8 @@ section MaximalAtlas
 theorem mdifferentiableAt_normal
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
     (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M} (hqe : q ∈ e.source) :
-    MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) (fun y ↦ (e y).val 0) q := by
-  rw [normal_eq_proj_comp_extend]
-  exact (EuclideanSpace.proj (0 : Fin (n + 1)) :
-    EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp q
-      (e.mdifferentiableAt_extend he hqe)
+    MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) (fun y ↦ (e y).val 0) q :=
+  (contMDiffAt_normal he hqe).mdifferentiableAt one_ne_zero
 
 /-- The differential of the normal coordinate of a chart of the maximal atlas is nonzero on its
 source, since the chart has invertible differential and the zeroth coordinate projection is
@@ -339,38 +503,6 @@ theorem mvfderiv_normal_ne_zero
     hu, h0] at h
   simp at h
 
-variable [IsManifold (𝓡∂ (n + 1)) 1 M]
-
-/-- The differential of the normal coordinate of the preferred chart takes the value `1` on the
-first standard basis vector. -/
-private theorem mvfderiv_chartAt_normal_single (x : M) :
-    mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) x y).val 0) x
-      ((tangentSpaceCastModel (𝓡∂ (n + 1)) x).symm (EuclideanSpace.single 0 1)) = 1 := by
-  rw [mvfderiv_chartAt_normal_apply, mfderiv_extChartAt_self]
-  -- The preferred tangent fibre is the model space, and both identifications with it are the
-  -- identity.
-  change (EuclideanSpace.single (𝕜 := ℝ) (0 : Fin (n + 1)) 1) 0 = 1
-  simp
-
-/-- Fermat's theorem at a boundary point: the normal coordinate of any chart of the maximal atlas
-is nonnegative and vanishes at a boundary point, so its differential is nonnegative on the vectors
-that are inward or tangent in the preferred chart. -/
-private theorem mvfderiv_normal_nonneg {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
-    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M}
-    (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hqe : q ∈ e.source)
-    (v : TangentSpace (𝓡∂ (n + 1)) q)
-    (hv : 0 ≤ mvfderiv (𝓡∂ (n + 1))
-      (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).val 0) q v) :
-    0 ≤ mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).val 0) q v := by
-  -- The manifold derivative of the normal coordinate is the derivative within the model
-  -- half-space of its coordinate expression in the preferred chart.
-  have hf := (mdifferentiableAt_normal he hqe).hasMFDerivAt.2
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-    Function.id_comp] at hf
-  rw [mvfderiv_chartAt_normal_apply, mfderiv_extChartAt_self] at hv
-  rw [mvfderiv_apply_eq_mfderiv_apply]
-  exact hasFDerivWithinAt_normal_nonneg hq (mem_extChartAt_source q) hqe hf hv
-
 /-- The differential of the normal coordinate of a chart of the maximal atlas is a positive
 multiple of that of the preferred chart. -/
 private theorem exists_pos_mvfderiv_normal_eq_smul_chartAt
@@ -378,21 +510,10 @@ private theorem exists_pos_mvfderiv_normal_eq_smul_chartAt
     (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M}
     (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hqe : q ∈ e.source) :
     ∃ a : ℝ, 0 < a ∧ mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).val 0) q =
-      a • mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).val 0) q := by
-  let I := 𝓡∂ (n + 1)
-  set ℓ := mvfderiv I (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).val 0) q
-  set ℓe := mvfderiv I (fun y ↦ (e y).val 0) q
-  set w : TangentSpace I q := (tangentSpaceCastModel I q).symm (EuclideanSpace.single 0 1)
-  have hw : ℓ w = 1 := mvfderiv_chartAt_normal_single q
-  have hfactor (u : TangentSpace I q) : ℓe u = ℓe w * ℓ u :=
-    Module.Dual.apply_eq_mul_apply_of_nonneg (ℓ : TangentSpace I q →ₗ[ℝ] ℝ)
-      (ℓe : TangentSpace I q →ₗ[ℝ] ℝ) hw (mvfderiv_normal_nonneg he hq hqe) u
-  refine ⟨ℓe w, lt_of_le_of_ne (mvfderiv_normal_nonneg he hq hqe w (by rw [hw]; exact zero_le_one))
-    fun h0 ↦ mvfderiv_normal_ne_zero he hqe ?_, ?_⟩
-  · ext u
-    rw [hfactor u, ← h0, zero_mul, zero_apply]
-  · ext u
-    rw [hfactor u, smul_apply, smul_eq_mul]
+      a • mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) q y).val 0) q :=
+  exists_pos_mvfderiv_eq_smul_chartAt_of_isLocalMin hq
+    (Filter.Eventually.of_forall (normal_le_of_mem_boundary hq hqe))
+    (mvfderiv_normal_ne_zero he hqe)
 
 /-- At a boundary point, the differentials of the normal coordinates of two charts of the maximal
 atlas are positive multiples of each other. -/
@@ -415,12 +536,55 @@ theorem isOutwardPointing_iff_mvfderiv_neg
     (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) 1 M) {q : M}
     (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (hqe : q ∈ e.source)
     (v : TangentSpace (𝓡∂ (n + 1)) q) :
-    IsOutwardPointing q v ↔ mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).val 0) q v < 0 := by
-  obtain ⟨a, ha, h⟩ := exists_pos_mvfderiv_normal_eq_smul_chartAt he hq hqe
-  rw [h, smul_apply, smul_neg_iff_of_pos_left ha, mvfderiv_chartAt_normal_apply,
-    isOutwardPointing_iff, and_iff_right hq]
+    IsOutwardPointing q v ↔ mvfderiv (𝓡∂ (n + 1)) (fun y ↦ (e y).val 0) q v < 0 :=
+  isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin hq
+    (Filter.Eventually.of_forall (normal_le_of_mem_boundary hq hqe))
+    (mvfderiv_normal_ne_zero he hqe) v
 
 end MaximalAtlas
+
+/-! ### Local diffeomorphisms preserve outward vectors -/
+
+section LocalDiffeomorph
+
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace (EuclideanHalfSpace (n + 1)) M']
+
+/-- **Local diffeomorphisms preserve outward vectors.** For a local diffeomorphism `f` at `q` of
+manifolds with boundary, of class `C^k` with `k ≠ 0`, a tangent vector `v` at `q` is outward
+exactly when its image `df_q v` is outward at `f q`. -/
+theorem _root_.IsLocalDiffeomorphAt.isOutwardPointing_mfderiv_iff {k : WithTop ℕ∞} (hk : k ≠ 0)
+    {f : M → M'} {q : M} (hf : IsLocalDiffeomorphAt (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) k f q)
+    (v : TangentSpace (𝓡∂ (n + 1)) q) :
+    IsOutwardPointing (f q) (mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) f q v) ↔
+      IsOutwardPointing q v := by
+  by_cases hq : q ∈ (𝓡∂ (n + 1)).boundary M
+  swap
+  · exact iff_of_false (fun h ↦ hq ((hf.isBoundaryPoint_iff hk).mpr h.mem_boundary))
+      fun h ↦ hq h.mem_boundary
+  have hfq : f q ∈ (𝓡∂ (n + 1)).boundary M' := (hf.isBoundaryPoint_iff hk).mp hq
+  -- The normal coordinate of the preferred chart at `f q`, and its pullback along `f`.
+  let x₀ : M' → ℝ := fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) (f q) y).val 0
+  have hmin' : IsLocalMin x₀ (f q) := Filter.Eventually.of_forall fun y ↦
+    normal_le_of_mem_boundary hfq (mem_chart_source _ _) y
+  have hx₀ : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) x₀ (f q) := mdifferentiableAt_chartAt_normal (f q)
+  have hne' : mvfderiv (𝓡∂ (n + 1)) x₀ (f q) ≠ 0 := DFunLike.ne_iff.mpr
+    ⟨_, (mvfderiv_chartAt_normal_single (f q)).trans_ne one_ne_zero⟩
+  rw [isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin hfq hmin' hne',
+    isOutwardPointing_iff_mvfderiv_neg_of_isLocalMin hq
+      (hmin'.comp_continuous (hf.mdifferentiableAt hk).continuousAt)
+      (mt (mvfderiv_comp_eq_zero_iff_of_isInvertible hx₀ (hf.isInvertible_mfderiv hk)).mp hne'),
+    mvfderiv_comp_apply q hx₀ (hf.mdifferentiableAt hk)]
+
+/-- **Diffeomorphisms preserve outward vectors.** For a diffeomorphism `Φ` of manifolds with
+boundary, of class `C^k` with `k ≠ 0`, a tangent vector `v` at `q` is outward exactly when its
+image `dΦ_q v` is outward at `Φ q`. -/
+theorem isOutwardPointing_mfderiv_iff {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') {q : M} (v : TangentSpace (𝓡∂ (n + 1)) q) :
+    IsOutwardPointing (Φ q) (mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q v) ↔
+      IsOutwardPointing q v :=
+  (Φ.isLocalDiffeomorph q).isOutwardPointing_mfderiv_iff hk v
+
+end LocalDiffeomorph
 
 /-- On the standard half-space, the constant vector `-e₀` is outward at every boundary point. -/
 theorem isOutwardPointing_standard_halfSpace

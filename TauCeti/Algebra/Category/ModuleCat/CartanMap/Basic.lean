@@ -59,6 +59,8 @@ Artinian ring, in the indecomposable-projective and simple bases.
 * `ModuleCat.isFG` and `TauCeti.finiteProjectiveModules`: the two object properties.
 * `TauCeti.finiteProjectiveModulesRegular`: the regular module `R`, as a finitely generated
   projective `R`-module.
+* `TauCeti.FiniteProjectiveModules.of R P`: a finitely generated projective `R`-module `P` as an
+  object of the subcategory of finitely generated projective modules.
 * `TauCeti.finiteModulesExactStructure`, `TauCeti.finiteProjectiveModulesExactStructure` and
   `TauCeti.finiteProjectiveResolutionExactStructure`: the exact structures induced on them, and on
   the modules admitting finite resolutions by finitely generated projectives, by the canonical
@@ -84,7 +86,8 @@ Artinian ring, in the indecomposable-projective and simple bases.
   `TauCeti.finiteProjectiveResolutionExactStructure_conflation_iff`: the conflations of the three
   structures are the short exact sequences of modules with terms in the subcategory.
 * `TauCeti.finiteProjectiveModulesExactStructure_eq_split`: the exact structure of the finitely
-  generated projectives is the split one.
+  generated projectives is the split one, so the comparison from their split `K₀` is injective
+  (`TauCeti.fromSplit_finiteProjectiveModules_injective`).
 * `TauCeti.finiteModulesExactStructure_eq_abelian`: over a noetherian ring, the exact structure of
   the finitely generated modules is the canonical one of the abelian category `FGModuleCat R`.
 * `TauCeti.finiteModulesExactK0Equiv` and `TauCeti.finiteProjectiveModulesExactK0Equiv`: the
@@ -183,6 +186,16 @@ theorem finiteProjectiveModulesRegular_obj :
     (finiteProjectiveModulesRegular R).obj = ModuleCat.of R R :=
   (rfl)
 
+namespace FiniteProjectiveModules
+
+/-- A finitely generated projective module as an object of the subcategory of finitely generated
+projective modules. -/
+abbrev of (P : Type u) [AddCommGroup P] [Module R P] [Module.Finite R P]
+    [Module.Projective R P] : (finiteProjectiveModules R).FullSubcategory :=
+  ⟨ModuleCat.of R P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+
+end FiniteProjectiveModules
+
 /-! ### Essential smallness -/
 
 instance : ObjectProperty.EssentiallySmall.{u} (ModuleCat.isFG.{u} R) :=
@@ -239,6 +252,16 @@ theorem finiteProjectiveModulesExactStructure_eq_split :
     finiteProjectiveModulesExactStructure R =
       ExactStructure.split (finiteProjectiveModules R).FullSubcategory :=
   ExactStructure.fullSubcategory_eq_split (finiteProjectiveModules_le_isProjective R)
+
+/-- The comparison from split to exact `K₀` of the finitely generated projective modules is
+injective, because their exact structure is the split one. -/
+theorem fromSplit_finiteProjectiveModules_injective :
+    Function.Injective (ExactK0.fromSplit.{u} (finiteProjectiveModulesExactStructure R)) := by
+  intro x y h
+  apply (ExactK0.fromSplitEquiv.{u} (E := finiteProjectiveModulesExactStructure R)
+    (fun hS ↦ by simpa only [finiteProjectiveModulesExactStructure_eq_split,
+      ExactStructure.split_conflation] using hS)).injective
+  simpa only [ExactK0.fromSplitEquiv_apply] using h
 
 /-- The conflations of finitely generated modules are the short exact sequences of `R`-modules
 whose three terms are finitely generated. -/

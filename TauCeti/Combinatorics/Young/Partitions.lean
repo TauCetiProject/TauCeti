@@ -18,11 +18,11 @@ parts of a partition, and `YoungDiagram.toPartition`, which reads the row length
 diagram back as a partition; these are inverse to each other (`YoungDiagram.equivPartition`).
 
 This file adds the individual row and column lengths of `YoungDiagram.ofPartition` (column `j`
-has one cell for each part larger than `j`), row- and column-length bounds for the special shapes
-`Nat.Partition.ones`, `Nat.Partition.indiscrete` and `Nat.Partition.singletonSecondRow`, the parts
-of `YoungDiagram.toPartition`, the injectivity of `YoungDiagram.ofPartition`, and the
-**shape partition** `TauCeti.shapePartition` of a Young diagram, a partition of `μ.card` itself
-rather than of a number equal to it.
+has one cell for each part larger than `j`, and the first row is the largest part), row- and
+column-length bounds for the special shapes `Nat.Partition.ones`, `Nat.Partition.indiscrete` and
+`Nat.Partition.singletonSecondRow`, the parts of `YoungDiagram.toPartition`, the injectivity of
+`YoungDiagram.ofPartition`, and the **shape partition** `TauCeti.shapePartition` of a Young
+diagram, a partition of `μ.card` itself rather than of a number equal to it.
 
 ## References
 
@@ -70,6 +70,16 @@ theorem colLen_ofPartition {n : ℕ} (ν : n.Partition) (j : ℕ) :
     exact ⟨And.right, fun h => ⟨μ.up_left_mem le_rfl j.zero_le h, h⟩⟩
   rw [← Multiset.sort_eq ν.parts (· ≥ ·), ← rowLens_ofPartition_eq_sort_parts,
     card_filter_coe_rowLens, hrange, Finset.card_range]
+
+/-- **The first row of the Young diagram of a partition is its largest part**, with value `0` for
+the empty partition. -/
+theorem rowLen_zero_ofPartition {n : ℕ} (ν : n.Partition) :
+    (ofPartition ν).rowLen 0 = ν.parts.sup := by
+  -- Both sides exceed `j` exactly when some part exceeds `j`, that is, when `(0, j)` is a cell.
+  refine eq_of_forall_lt_iff fun j => ?_
+  rw [← mem_iff_lt_rowLen, mem_iff_lt_colLen, colLen_ofPartition, Multiset.card_pos_iff_exists_mem,
+    ← not_le, Multiset.sup_le]
+  simp
 
 /-- The Young diagram construction is injective on partitions of a fixed size. -/
 theorem ofPartition_injective {n : ℕ} : Function.Injective (ofPartition (n := n)) :=

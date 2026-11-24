@@ -145,7 +145,7 @@ private theorem encard_ratio_fiber_le {ι : Type v} [Fintype ι] [DecidableEq ι
         · have hb : b = fun i : {i // i ∉ I.erase i₁} ↦
               if (i : ι) = i₁ then 1 + ∑ j : ↥(I.erase i₁), (y j : K) / y i₁ else 1 := by
             simp only [b, ← hy.2.2, Units.val_div_eq_div_val]
-          simpa only [hb, hπ] using hy.2.1.merge I i₁
+          simpa only [hb, hπ, Pi.one_apply, one_mul] using hy.2.1.merge I i₁
         · have hyy' (i : ι) (hi : i ∉ I.erase i₁) : y i = y' i := by
             simpa [hπ] using congrFun h ⟨i, hi⟩
           by_cases hi : i ∈ I.erase i₁

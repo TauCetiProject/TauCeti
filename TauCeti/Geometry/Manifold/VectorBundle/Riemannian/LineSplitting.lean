@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.OrthogonalComplement
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Generic
-import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Geometry.Manifold.ContMDiff.Sqrt
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 
 /-!
@@ -93,7 +93,7 @@ theorem exists_orthonormal_contMDiffSection_of_finrank_lt
       simp [Module.finrank_pi_fintype, Complex.finrank_real_complex]
       omega
     obtain ⟨t, ht⟩ := exists_contMDiffSection_forall_ne_zero_of_finrank_lt
-      (V := fun x ↦ W x) (F := Fin (r + 1) → ℂ) hr
+      (n := ∞) (V := fun x ↦ W x) (F := Fin (r + 1) → ℂ) hr
     let u : ∀ x, V x := fun x ↦ (t x : V x)
     have hu : ContMDiff 𝓘(ℝ, X) (𝓘(ℝ, X).prod 𝓘(ℝ, F)) ∞
         (fun x ↦ (⟨x, u x⟩ : TotalSpace F V)) :=
@@ -102,15 +102,11 @@ theorem exists_orthonormal_contMDiffSection_of_finrank_lt
     -- Normalize it.
     let c : B → ℂ := fun x ↦ ((‖u x‖⁻¹ : ℝ) : ℂ)
     have hc : ContMDiff 𝓘(ℝ, X) 𝓘(ℝ, ℂ) ∞ c := by
-      refine Complex.ofRealCLM.contMDiff.comp (f := fun x ↦ ‖u x‖⁻¹) fun x ↦ ?_
-      have hd := hu.inner_bundle hu x
-      have hne : Inner.inner ℝ (u x) (u x) ≠ 0 := inner_self_ne_zero.mpr (hu₀ x)
-      refine (ContDiffAt.comp_contMDiffAt (f := fun y ↦ Inner.inner ℝ (u y) (u y))
-        ((Real.contDiffAt_sqrt hne).inv (Real.sqrt_ne_zero'.mpr
-        (lt_of_le_of_ne real_inner_self_nonneg hne.symm))) hd).congr_of_eventuallyEq
-        (Filter.Eventually.of_forall fun y ↦ ?_)
-      simp only [Function.comp_apply, Pi.inv_apply, real_inner_self_eq_norm_sq,
-        Real.sqrt_sq (norm_nonneg _)]
+      have hn : ContMDiff 𝓘(ℝ, X) 𝓘(ℝ, ℝ) ∞ (fun x ↦ ‖u x‖) := by
+        simpa only [real_inner_self_eq_norm_sq, Real.sqrt_sq_eq_abs, abs_norm] using
+          (hu.inner_bundle hu).sqrt (fun x ↦ inner_self_ne_zero.mpr (hu₀ x))
+      exact Complex.ofRealCLM.contMDiff.comp
+        (hn.inv₀ (fun x ↦ norm_ne_zero_iff.mpr (hu₀ x)))
     let s' : Fin (k + 1) → ∀ x, V x := Matrix.vecCons (fun x ↦ c x • u x) s
     refine ⟨s', fun i ↦ ?_, fun x ↦ ?_⟩
     · induction i using Fin.cases with

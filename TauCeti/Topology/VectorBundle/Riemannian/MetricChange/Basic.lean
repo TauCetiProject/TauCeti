@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Basic
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
+public import TauCeti.Topology.VectorBundle.Riemannian.WithFiberMetric
 
 /-!
 # Changing the metric of a Riemannian vector bundle
@@ -28,6 +29,11 @@ inverses. Together they give a homeomorphism of the total space over the identit
 isometry from the given metric to `h`. The construction uses no chart: it is defined fibrewise from
 the two metrics alone, over an arbitrary topological base.
 
+Read with values in the copy `TauCeti.WithFiberMetric h` of `E` whose fibres carry `h` as their
+inner product, the transports are linear isometric equivalences `E b ≃ₗᵢ[ℝ] WithFiberMetric h b`
+(`Bundle.ContinuousRiemannianMetric.metricChangeIsometry`), continuous in both directions on total
+spaces.
+
 Continuity is checked in the Gram–Schmidt orthonormal frames of linear trivializations. Read in such
 a frame `σ`, the transport of `h` is the transport of the bilinear form `h` read in `σ`, by the
 naturality `ContinuousLinearMap.metricChangeTransport_bilinearComp`; that bilinear form varies
@@ -42,6 +48,8 @@ continuously with the base point, and the transport is continuous in it
   on the total space.
 * `Bundle.ContinuousRiemannianMetric.metricChangeHomeomorph`: the transport as a homeomorphism of
   the total space, with inverse the fibrewise square root.
+* `Bundle.ContinuousRiemannianMetric.metricChangeIsometry`: the transport as a fibrewise isometry
+  from the given metric to `h`.
 
 ## References
 
@@ -173,5 +181,69 @@ theorem metricChangeHomeomorph_apply (p : TotalSpace F E) :
 theorem metricChangeHomeomorph_symm_apply (p : TotalSpace F E) :
     h.metricChangeHomeomorph.symm p = ⟨p.proj, CFC.sqrt (h.inner p.proj)♯ p.snd⟩ :=
   (rfl)
+
+omit [IsContinuousRiemannianBundle F E] in
+/-- The **metric change isometry** of a second continuous Riemannian metric `h`: on the fibre over
+`b`, the inverse square root of the Riesz operator of `h` for the given inner product, a linear
+isometric equivalence from the given inner product to the copy `WithFiberMetric h b` of the fibre
+carrying `h`. -/
+noncomputable def metricChangeIsometry (b : B) : E b ≃ₗᵢ[ℝ] WithFiberMetric h b :=
+  (((h.inner b).metricChangeEquiv
+      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner b)).toLinearEquiv.trans
+    (WithFiberMetric.toWithFiberMetric h b).toLinearEquiv).isometryOfInner fun u v ↦ by
+    simp
+
+omit [IsContinuousRiemannianBundle F E] in
+/-- The metric change isometry applies the metric change transport of `h`. -/
+@[simp]
+theorem metricChangeIsometry_apply (b : B) (v : E b) :
+    h.metricChangeIsometry b v =
+      WithFiberMetric.toWithFiberMetric h b ((h.inner b).metricChangeTransport v) := by
+  simp [metricChangeIsometry]
+
+omit [IsContinuousRiemannianBundle F E] in
+/-- As a linear equivalence, the metric change isometry is the metric change equivalence of `h`
+followed by the identification of `E b` with its copy carrying `h`. -/
+theorem toLinearEquiv_metricChangeIsometry (b : B) :
+    (h.metricChangeIsometry b).toLinearEquiv =
+      ((h.inner b).metricChangeEquiv
+          (h.isStrictlyPositive_continuousLinearMapOfBilin_inner b)).toLinearEquiv.trans
+        (WithFiberMetric.toWithFiberMetric h b).toLinearEquiv :=
+  (rfl)
+
+omit [IsContinuousRiemannianBundle F E] in
+/-- The inverse of the metric change isometry applies the square root of the Riesz operator of
+`h`. -/
+@[simp]
+theorem metricChangeIsometry_symm_apply (b : B) (v : WithFiberMetric h b) :
+    (h.metricChangeIsometry b).symm v =
+      CFC.sqrt (h.inner b)♯ ((WithFiberMetric.toWithFiberMetric h b).symm v) := by
+  rw [LinearIsometryEquiv.symm_apply_eq, metricChangeIsometry_apply,
+    ContinuousLinearMap.metricChangeTransport_apply_sqrt_apply
+      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner b),
+    ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The metric change isometries form a continuous map of total spaces. -/
+theorem continuous_metricChangeIsometry :
+    Continuous fun v : TotalSpace F E ↦
+      (⟨v.proj, h.metricChangeIsometry v.proj v.snd⟩ : TotalSpace F (WithFiberMetric h)) :=
+  ((WithFiberMetric.continuous_totalSpaceMk_toWithFiberMetric_iff h (p := TotalSpace.proj)
+    (s := fun v ↦ (h.inner v.proj).metricChangeTransport v.snd)).2
+    h.continuous_metricChangeTransport).congr fun v ↦ by rw [metricChangeIsometry_apply]
+
+/-- The inverses of the metric change isometries form a continuous map of total spaces. -/
+theorem continuous_metricChangeIsometry_symm :
+    Continuous fun v : TotalSpace F (WithFiberMetric h) ↦
+      (⟨v.proj, (h.metricChangeIsometry v.proj).symm v.snd⟩ : TotalSpace F E) := by
+  -- Both total spaces carry the topology of `TotalSpace F E`, so the identity is continuous.
+  have hid : Continuous fun v : TotalSpace F (WithFiberMetric h) ↦
+      (⟨v.proj, v.snd⟩ : TotalSpace F E) :=
+    (WithFiberMetric.continuous_totalSpaceMk_toWithFiberMetric_iff h (p := TotalSpace.proj)
+      (s := fun v ↦ (v.snd : E v.proj))).1
+      (continuous_id.congr fun v ↦ (congrArg (TotalSpace.mk' F (E := WithFiberMetric h) v.proj)
+        (WithFiberMetric.toWithFiberMetric_apply h v.proj v.snd)).symm)
+  refine (h.metricChangeHomeomorph.continuous_symm.comp hid).congr fun v ↦ ?_
+  rw [Function.comp_apply, metricChangeHomeomorph_symm_apply, metricChangeIsometry_symm_apply,
+    WithFiberMetric.toWithFiberMetric_symm_apply]
 
 end Bundle.ContinuousRiemannianMetric

@@ -70,36 +70,6 @@ private theorem exists_local_recoloring [Fintype κ] (hε : 0 < ε)
 
 variable (order : LinearOrder P.parts) (T : P.parts → P.parts → PairColorSystem κ V)
 
-private theorem exists_cellwise_recoloring
-    (hrev : ∀ A B, (T A B).rev = S.rev) :
-    ∃ R : PairColorSystem κ V, R.rev = S.rev ∧
-      ∀ A B : P.parts, order.le A B → ∀ x ∈ A.val, ∀ y ∈ B.val,
-        R.colorOfPair x y = (T A B).colorOfPair x y := by
-  classical
-  let : LinearOrder P.parts := order
-  let : LE P.parts := order.toLE
-  let cell (x : V) : P.parts := ⟨P.part x, P.part_mem.2 (mem_univ x)⟩
-  have hcell (A : P.parts) {x : V} (hx : x ∈ A.val) : cell x = A :=
-    Subtype.ext (P.part_eq_of_mem A.property hx)
-  -- The minimum and maximum select the same local system in both orientations.
-  let R : PairColorSystem κ V :=
-    { color := fun p ↦ (T (min (cell p.val.1) (cell p.val.2))
-        (max (cell p.val.1) (cell p.val.2))).color p
-      rev := S.rev
-      rev_involutive := S.rev_involutive
-      color_rev := fun p ↦ by
-        dsimp only [Prod.fst_swap, Prod.snd_swap]
-        rw [min_comm (cell p.val.2), max_comm (cell p.val.2)]
-        rw [(T _ _).color_rev, hrev] }
-  refine ⟨R, rfl, fun A B hAB x hx y hy ↦ ?_⟩
-  have hlocal (A B : P.parts) (hAB : A ≤ B) {x y : V} (hx : x ∈ A.val) (hy : y ∈ B.val) :
-      R.colorOfPair x y = (T A B).colorOfPair x y := by
-    by_cases hxy : x = y
-    · simp [hxy]
-    · simp [colorOfPair_of_ne _ hxy, R, hcell A hx, hcell B hy, min_eq_left hAB,
-        max_eq_right hAB]
-  exact hlocal A B hAB hx hy
-
 variable (R : PairColorSystem κ V)
   (hlocal : ∀ A B : P.parts, order.le A B → ∀ x ∈ A.val, ∀ y ∈ B.val,
     R.colorOfPair x y = (T A B).colorOfPair x y)
@@ -187,10 +157,17 @@ theorem exists_recoloring_regular_offDiag [Fintype κ] (hε : 0 < ε)
       #{p : V × V | T.colorOfPair p.1 p.2 ≠ S.colorOfPair p.1 p.2} ≤
         ∑ AB ∈ S.irregularPairs ε P, #AB.1 * #AB.2 := by
   classical
-  let order : LinearOrder P.parts := LinearOrder.lift' (Fintype.equivFin P.parts)
-    (Fintype.equivFin P.parts).injective
+  let e := Fintype.equivFin P.parts
+  let order : LinearOrder P.parts := LinearOrder.lift' e e.injective
   choose T hrev hkeep hreg using S.exists_local_recoloring P hε hsize
-  obtain ⟨R, hRrev, hlocal⟩ := S.exists_cellwise_recoloring P order T hrev
+  obtain ⟨R, hRrev, hlt, heq⟩ :=
+    S.exists_recoloring_colorOfPair_eq P e T fun A B _ ↦ hrev A B
+  have hlocal : ∀ A B : P.parts, order.le A B → ∀ x ∈ A.val, ∀ y ∈ B.val,
+      R.colorOfPair x y = (T A B).colorOfPair x y := by
+    intro A B hAB x hx y hy
+    rcases lt_or_eq_of_le (a := e A) (b := e B) hAB with h | h
+    · exact hlt A B h x hx y hy
+    · rw [heq A B h x hx y hy, hkeep A B (Or.inl (e.injective h))]
   have hagree := S.recoloring_agrees P order T R hlocal hRrev hkeep
   have hpairs := S.regular_density_of_cellwise P order T R hlocal hRrev hreg
   refine ⟨R, hRrev, hagree, ?_, ?_, S.card_edits_le_irregularPairs P R hagree⟩

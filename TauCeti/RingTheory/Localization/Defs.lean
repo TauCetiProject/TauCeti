@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Defs
+public import TauCeti.GroupTheory.MonoidLocalization.Basic
+import Mathlib.Algebra.Algebra.Tower
 
 /-!
 # Basic facts about localizations of commutative semirings
@@ -24,6 +26,11 @@ It also records that a localization of a commutative semiring in which sums vani
 every summand does inherits this property (`IsLocalization.subsingleton_addUnits`), and that a
 submonoid along which a semiring without zero divisors localizes to a nontrivial semiring consists
 of non-zero-divisors (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`).
+
+Finally, if a localization `Rₘ` of `C` acts by monoid actions on `S` and on `E`, `S` acts on `E`,
+and `C` acts on `S` and `E` so that `C, Rₘ, S`, `C, Rₘ, E` and `C, S, E` are scalar towers, then
+`IsScalarTower Rₘ S E` (`IsLocalization.isScalarTower_of_isScalarTower`, the case of
+`Submonoid.LocalizationMap.isScalarTower` for localizations of commutative semirings).
 -/
 
 public section
@@ -73,6 +80,20 @@ theorem map_injective_of_injective_of_le_nonZeroDivisors {R S : Type*} [CommRing
   injective_of_map_algebraMap_zero (M := M) Rₘ _ fun x hx ↦ by
     rw [map_eq, to_map_eq_zero_iff Sₘ hT, _root_.map_eq_zero_iff f hf] at hx
     rw [hx, map_zero]
+
+/-- **Scalar towers through a localization.** Let `Rₘ` be a localization of `C` at `M` that acts
+on `S` and on `E` by monoid actions, and let `S` act on `E`. If `C` also acts on `S` and `E` so
+that `C, Rₘ, S`, `C, Rₘ, E` and `C, S, E` are scalar towers, then `IsScalarTower Rₘ S E`. This is
+the case of `Submonoid.LocalizationMap.isScalarTower` for `IsLocalization.toLocalizationMap`. -/
+theorem isScalarTower_of_isScalarTower {C : Type*} [CommSemiring C] (M : Submonoid C)
+    (Rₘ S E : Type*) [CommSemiring Rₘ] [Algebra C Rₘ] [IsLocalization M Rₘ]
+    [SMul C S] [MulAction Rₘ S] [IsScalarTower C Rₘ S]
+    [SMul C E] [MulAction Rₘ E] [IsScalarTower C Rₘ E]
+    [SMul S E] [IsScalarTower C S E] :
+    IsScalarTower Rₘ S E :=
+  (toLocalizationMap M Rₘ).isScalarTower fun c s e ↦ by
+    rw [toLocalizationMap_apply, IsScalarTower.algebraMap_smul, IsScalarTower.algebraMap_smul,
+      smul_assoc]
 
 end IsLocalization
 
