@@ -16,13 +16,9 @@ If an integrable function `f` is supported in the closed ball of radius `r` abou
 Fourier transform at `b` is within `2π ‖b‖ r ∫ ‖f‖` of its integral
 (`Real.norm_fourier_sub_integral_le`). So the Fourier transforms of functions with bounded `L¹`
 norms whose supports shrink to `0` converge at every frequency to the limit of their integrals
-(`Real.tendsto_fourier_of_support_subset`).
-
-A mollifier is a nonnegative function `ρ` of integral one; its Fourier transform is bounded by
-one (`Real.norm_fourier_ofReal_le_one`). If `ρ` is supported in the closed ball of radius `r`
-about `0`, then `𝓕 ρ (b)` is within `2π ‖b‖ r` of one (`Real.norm_fourier_ofReal_sub_one_le`), so
-the Fourier transforms of mollifiers concentrating at `0` tend to one at every frequency
-(`Real.tendsto_fourier_ofReal_one`): in the Fourier picture, they approximate the point mass.
+(`Real.tendsto_fourier_of_support_subset`). In particular, the Fourier transforms of mollifiers,
+nonnegative functions of integral one, concentrating at `0` tend to one at every frequency: in the
+Fourier picture, they approximate the point mass.
 -/
 
 public section
@@ -94,35 +90,5 @@ theorem tendsto_fourier_of_support_subset {ι : Type*} {l : Filter ι} {f : ι �
           exact le_abs_self _
       _ ≤ 2 * π * ‖b‖ * |r i| * M := by gcongr
   simpa using hsub.add hv
-
-/-- The Fourier transform of a nonnegative function of integral one is bounded by one. -/
-theorem norm_fourier_ofReal_le_one {ρ : D → ℝ} (hρ0 : ∀ y, 0 ≤ ρ y)
-    (hρ1 : ∫ y, ρ y = 1) (b : D) : ‖𝓕 (fun y ↦ (ρ y : ℂ)) b‖ ≤ 1 := by
-  refine (Real.norm_fourier_le_integral_norm _ b).trans_eq ?_
-  simp_rw [Complex.norm_real, Real.norm_of_nonneg (hρ0 _), hρ1]
-
-/-- The Fourier transform of a nonnegative function of integral one supported in the closed ball
-of radius `r` about `0` is within `2π ‖b‖ r` of one at `b`. -/
-theorem norm_fourier_ofReal_sub_one_le {ρ : D → ℝ} (hρ0 : ∀ y, 0 ≤ ρ y)
-    (hρ1 : ∫ y, ρ y = 1) {r : ℝ} (hρr : support ρ ⊆ closedBall 0 r) (b : D) :
-    ‖𝓕 (fun y ↦ (ρ y : ℂ)) b - 1‖ ≤ 2 * π * ‖b‖ * r := by
-  have h := norm_fourier_sub_integral_le (f := fun y ↦ (ρ y : ℂ))
-    (fun y hy ↦ hρr (by simpa using hy)) b
-  simpa only [integral_complex_ofReal, hρ1, ofReal_one, Complex.norm_real,
-    Real.norm_of_nonneg (hρ0 _), mul_one] using h
-
-/-- The Fourier transforms of nonnegative functions of integral one whose supports shrink to `0`
-tend to one at every frequency. -/
-theorem tendsto_fourier_ofReal_one {ι : Type*} {l : Filter ι} {ρ : ι → D → ℝ}
-    {r : ι → ℝ} (hρ0 : ∀ᶠ i in l, ∀ y, 0 ≤ ρ i y) (hρ1 : ∀ᶠ i in l, ∫ y, ρ i y = 1)
-    (hρr : ∀ᶠ i in l, support (ρ i) ⊆ closedBall 0 (r i)) (hr : Tendsto r l (𝓝 0)) (b : D) :
-    Tendsto (fun i ↦ 𝓕 (fun y ↦ (ρ i y : ℂ)) b) l (𝓝 1) := by
-  refine tendsto_fourier_of_support_subset (M := 1)
-    (hρr.mono fun i hi y hy ↦ hi (by simpa using hy)) hr ?_ ?_ b
-  · filter_upwards [hρ0, hρ1] with i h0 h1
-    simp_rw [Complex.norm_real, Real.norm_of_nonneg (h0 _), h1, le_rfl]
-  · refine tendsto_const_nhds.congr' ?_
-    filter_upwards [hρ1] with i h1
-    rw [integral_complex_ofReal, h1, ofReal_one]
 
 end Real

@@ -309,25 +309,16 @@ private theorem exists_cutoff_decay (T : 𝓓'(W, ℂ)) {K : Set E} (hK : IsComp
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ D]
   [FiniteDimensional ℝ D] in
-/-- If `U × {0}` lies in `W`, every compact `K ⊆ U` has a tube around `K × {0}` inside `W`. -/
-private theorem exists_pos_tube_of_mapsTo (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
-    (K : Compacts E) (hK : (K : Set E) ⊆ U) :
-    ∃ δ > 0, ∀ x ∈ (K : Set E), ∀ (x' : E) (y : D), dist x' x < δ → ‖y‖ < δ →
-      toLp 2 (x', y) ∈ W :=
-  K.isCompact.exists_pos_forall_toLp_mem W.isOpen fun _ hx ↦ hU (hK hx)
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ D]
-  [FiniteDimensional ℝ D] in
 /-- The radius of a tube around `K × {0}` inside `W`. -/
 private def tubeRadius (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W) (K : Compacts E)
     (hK : (K : Set E) ⊆ U) : ℝ :=
-  (exists_pos_tube_of_mapsTo hU K hK).choose
+  (K.isCompact.exists_pos_forall_toLp_mem W.isOpen fun _ hx ↦ hU (hK hx)).choose
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ D]
   [FiniteDimensional ℝ D] in
 private theorem tubeRadius_pos (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     (K : Compacts E) (hK : (K : Set E) ⊆ U) : 0 < tubeRadius hU K hK :=
-  (exists_pos_tube_of_mapsTo hU K hK).choose_spec.1
+  (K.isCompact.exists_pos_forall_toLp_mem W.isOpen fun _ hx ↦ hU (hK hx)).choose_spec.1
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ D]
   [FiniteDimensional ℝ D] in
@@ -337,7 +328,8 @@ private theorem toLp_mem_of_lt_tubeRadius
     (hK : (K : Set E) ⊆ U) {x x' : E} (hx : x ∈ (K : Set E)) {y : D}
     (hx' : dist x' x < tubeRadius hU K hK) (hy : ‖y‖ < tubeRadius hU K hK) :
     toLp 2 (x', y) ∈ W :=
-  (exists_pos_tube_of_mapsTo hU K hK).choose_spec.2 x hx x' y hx' hy
+  (K.isCompact.exists_pos_forall_toLp_mem W.isOpen fun _ hx ↦ hU (hK hx)).choose_spec.2
+    x hx x' y hx' hy
 
 /-- The normalized bump `ρ_n` of the shrinking sequence `ContDiffBump.shrinking (δ / 2)`, of
 integral one and supported in the closed ball of radius `δ / (2 (n + 1))`, as a test function on
@@ -357,7 +349,9 @@ private def mollifier {δ : ℝ} (hδ : 0 < δ) (n : ℕ) :
 private theorem mollifier_apply [MeasurableSpace D] [BorelSpace D] {δ : ℝ} (hδ : 0 < δ) (n : ℕ)
     (y : D) :
     mollifier hδ n y = (ContDiffBump.shrinking (c := (0 : D)) (half_pos hδ) n).normed volume y := by
-  borelize D
+  -- `mollifier` is built with the instance `borel D`. Once the ambient instance is replaced by
+  -- `borel D`, both sides use the same `volume`, as the `BorelSpace` proofs are propositions.
+  obtain rfl := BorelSpace.measurable_eq (α := D)
   rfl
 
 /-- The mollified tensor products `φ ↦ ((x, y) ↦ φ x ρ_n y)` of the test functions supported in a
@@ -445,6 +439,22 @@ private theorem tendsto_pullbackInlValue [MeasurableSpace D] [BorelSpace D] (T :
   rw [pullbackInlValue, hcan.limUnder_eq]
   exact tendsto_apply_tsum T hδ hχ L hL hc hdecay hρM hρ1 hρr hr hf
 
+/-- `T (φ ⊗ ρ_n)` tends to the candidate value at `φ` for the normalized bumps `ρ_n`. -/
+private theorem tendsto_apply_tensorCLM (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) (K : Compacts E)
+    (hK : (K : Set E) ⊆ U) (φ : 𝓓_{K}(E, ℝ)) :
+    Tendsto (fun n ↦ T (tensorCLM hU K hK n φ)) atTop
+      (𝓝 (pullbackInlValue T hU (ofSupportedIn hK φ))) := by
+  borelize D
+  obtain ⟨hM, h1, hsupp, hlim⟩ :=
+    shrinking_normed_properties (D := D) (half_pos (tubeRadius_pos hU K hK))
+  exact tendsto_pullbackInlValue T hU h _ hM h1 hsupp hlim
+    (Eventually.of_forall fun n p ↦ by
+      rw [coe_ofSupportedIn]
+      exact tensorCLM_apply hU K hK n φ p)
+
 /-- **The pullback to `E × {0}`.** Let `T` be a distribution on an open set `W` of the Euclidean
 product `WithLp 2 (E × D)`, and `U` an open set of `E` with `U × {0} ⊆ W`. Suppose that no
 covector `((x, 0), (0, η))` with `x ∈ U` and `η ≠ 0`, conormal to `E × {0}`, lies in the wave
@@ -458,14 +468,8 @@ def pullbackInl (T : 𝓓'(W, ℂ)) (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D)))
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) : 𝓓'(U, ℂ) :=
   TestFunction.limitCLM ℝ (pullbackInlValue T hU)
     (fun K hK ↦ continuousLinearMapOfTendsto (fun n ↦ (T : 𝓓(W, ℝ) →L[ℝ] ℂ) ∘L tensorCLM hU K hK n)
-      (f := fun φ ↦ pullbackInlValue T hU (ofSupportedIn hK φ)) (tendsto_pi_nhds.2 fun φ ↦ by
-        borelize D
-        obtain ⟨hM, h1, hsupp, hlim⟩ :=
-          shrinking_normed_properties (D := D) (half_pos (tubeRadius_pos hU K hK))
-        exact tendsto_pullbackInlValue T hU h _ hM h1 hsupp hlim
-          (Eventually.of_forall fun n p ↦ by
-            rw [coe_ofSupportedIn]
-            exact tensorCLM_apply hU K hK n φ p)))
+      (f := fun φ ↦ pullbackInlValue T hU (ofSupportedIn hK φ))
+      (tendsto_pi_nhds.2 (tendsto_apply_tensorCLM T hU h K hK)))
     fun _ _ _ ↦ rfl
 
 private theorem pullbackInl_apply (T : 𝓓'(W, ℂ))
@@ -499,12 +503,8 @@ private theorem tendsto_apply_tensorCLM_pullbackInl (T : 𝓓'(W, ℂ))
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) (ψ : 𝓓(U, ℝ)) :
     Tendsto (fun n ↦ T (tensorCLM hU ⟨tsupport ψ, ψ.hasCompactSupport⟩ ψ.tsupport_subset n
       (ContDiffMapSupportedIn.of_support_subset ψ.contDiff (subset_tsupport _)))) atTop
-      (𝓝 (T.pullbackInl hU h ψ)) := by
-  borelize D
-  have hK := tubeRadius_pos hU ⟨tsupport ψ, ψ.hasCompactSupport⟩ ψ.tsupport_subset
-  obtain ⟨hM, h1, hsupp, hlim⟩ := shrinking_normed_properties (D := D) (half_pos hK)
-  exact tendsto_pullbackInl T hU h ψ hM h1 hsupp hlim (Eventually.of_forall fun n p ↦ by
-    rw [tensorCLM_apply, ContDiffMapSupportedIn.coe_of_support_subset])
+      (𝓝 (T.pullbackInl hU h ψ)) :=
+  tendsto_apply_tensorCLM T hU h _ ψ.tsupport_subset _
 
 omit [FiniteDimensional ℝ E] in
 /-- Every test function `ψ` on `U` has a sequence of test functions `(x, y) ↦ ψ x ρ_n y` on `W`
