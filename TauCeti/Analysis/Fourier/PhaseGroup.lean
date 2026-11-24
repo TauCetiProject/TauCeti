@@ -45,6 +45,9 @@ convergence on the Fourier side, since the difference quotients `t⁻¹ (exp(i t
 symbol are bounded by `|ω|` and tend to `i ω`; for the other, the difference quotients of `f`
 converge in `L²` to `A f`, so on the Fourier side they converge almost everywhere along a sequence
 of times, and the pointwise limit is `i ω 𝓕 f`.
+If the phase is positively homogeneous of degree `k`, as the Schrödinger phase is with `k = 2` and
+the half-wave phases are with `k = 1`, the propagator intertwines the normalized dilations `D_r` of
+`L²` with a rescaling of time: `exp(itω(D)) D_r = D_r exp(i(t / r ^ k)ω(D))`.
 
 ## Main declarations
 
@@ -71,6 +74,11 @@ of times, and the pointwise limit is `i ω 𝓕 f`.
 * `TauCeti.coeFn_fourier_complexGenerator_phaseGroup`,
   `TauCeti.complexGenerator_phaseGroup_apply_of_ae_eq`: the generator is `i ω(D)`,
   `𝓕 (A f) = i ω 𝓕 f`.
+* `TauCeti.phasePropagator_dilateLp`: for a phase positively homogeneous of degree `k`, the
+  scaling law `exp(itω(D)) D_r = D_r exp(i(t / r ^ k)ω(D))`, and
+  `TauCeti.eLpNorm_phasePropagator_dilateLp`, its effect on the `Lʳ` norms at a fixed time.
+* `TauCeti.eLpNorm_eLpNorm_phasePropagator_dilateLp`: its effect on the mixed norms
+  `L^q_t L^r_x`, multiplication by `l ^ (n/r - n/2 + k/q)`.
 
 ## References
 
@@ -568,5 +576,75 @@ theorem mem_domain_phaseGroup_iff (f : Lp F 2 (volume : Measure E)) :
     rw [hξ, Pi.smul_apply, smul_smul]
 
 end Generator
+/-! ### Scaling of homogeneous phases -/
+
+section Dilation
+
+open Measure Module
+
+variable {ω} {k : ℕ}
+
+/-- If the phase `ω` is positively homogeneous of degree `k`, dilating its phase symbol at time `t`
+by `r > 0` gives the phase symbol at time `t / r ^ k`. -/
+theorem dilateLp_toLp_phaseSymbol (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {r : ℝ}
+    (hr : 0 < r) (t : ℝ) :
+    dilateLp volume ℝ ∞ r hr ((memLp_phaseSymbol ω t).toLp _) =
+      (memLp_phaseSymbol ω (t / r ^ k)).toLp _ := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_dilateLp_top_of_ae_eq (𝕜 := ℝ) hr (memLp_phaseSymbol ω t).coeFn_toLp,
+    (memLp_phaseSymbol ω (t / r ^ k)).coeFn_toLp] with ξ h₁ h₂
+  rw [h₁, h₂, phaseSymbol_apply, phaseSymbol_apply, hω _ (inv_pos.2 hr), inv_pow, ← mul_assoc,
+    ← div_eq_mul_inv]
+
+/-- **Scaling of a homogeneous phase propagator.** If the phase `ω` is positively homogeneous of
+degree `k`, then for the normalized dilation `D_r f = r ^ (-n/2) • f (r⁻¹ • ·)` of `L²`, `r > 0`,
+
+`exp(itω(D)) (D_r f) = D_r (exp(i(t / r ^ k)ω(D)) f)`.
+
+This is the scaling symmetry `u(x, t) ↦ u(x / r, t / r ^ k)` of the equation `∂ₜu = iω(D)u`: of
+degree `2` for the Schrödinger equation and of degree `1` for the half-wave equation. -/
+theorem phasePropagator_dilateLp (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {r : ℝ}
+    (hr : 0 < r) (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    phasePropagator F ω t (dilateLp volume ℝ 2 r hr f) =
+      dilateLp volume ℝ 2 r hr (phasePropagator F ω (t / r ^ k) f) := by
+  rw [phasePropagator_def, Lp.fourierMultiplierCLM_dilateLp, dilateLp_toLp_phaseSymbol hω,
+    ← phasePropagator_def]
+
+/-- **Scaling of the `Lʳ` norms of a homogeneous phase propagator.** If the phase `ω` is
+positively homogeneous of degree `k`, the `Lʳ` norm of `exp(itω(D)) (D_l f)` is `l ^ (n/r - n/2)`
+times the `Lʳ` norm of `exp(i(t / l ^ k)ω(D)) f`, where `n / r` is `n / r.toReal`, which is `0`
+for `r = ∞`. -/
+theorem eLpNorm_phasePropagator_dilateLp (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ)
+    {l : ℝ} (hl : 0 < l) (t : ℝ) (f : Lp F 2 (volume : Measure E)) (r : ℝ≥0∞) :
+    eLpNorm (phasePropagator F ω t (dilateLp volume ℝ 2 l hl f)) r volume =
+      ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
+        eLpNorm (phasePropagator F ω (t / l ^ k) f) r volume := by
+  rw [phasePropagator_dilateLp hω, eLpNorm_dilateLp, ENNReal.toReal_ofNat]
+
+/-- **Scaling of the mixed norms of a homogeneous phase propagator.** If the phase `ω` is
+positively homogeneous of degree `k`, then for `q ≠ 0`, dilating the datum by `l` multiplies the
+mixed norm `‖exp(itω(D)) f‖_{L^q_t L^r_x}`, `t ∈ ℝ`, by `l ^ (n/r - n/2 + k/q)`, where `n / r`
+and `k / q` are `n / r.toReal` and `k / q.toReal`, which are `0` for an infinite exponent. -/
+theorem eLpNorm_eLpNorm_phasePropagator_dilateLp
+    (hω : ∀ c : ℝ, 0 < c → ∀ ξ, ω (c • ξ) = c ^ k * ω ξ) {l : ℝ} (hl : 0 < l)
+    (f : Lp F 2 (volume : Measure E)) {q : ℝ≥0∞} (hq : q ≠ 0) (r : ℝ≥0∞) :
+    eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t (dilateLp volume ℝ 2 l hl f)) r volume) q
+        volume =
+      ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2 + k / q.toReal)) *
+        eLpNorm (fun t ↦ eLpNorm (phasePropagator F ω t f) r volume) q volume := by
+  have h : (fun t ↦ eLpNorm (phasePropagator F ω t (dilateLp volume ℝ 2 l hl f)) r volume) =
+      fun t ↦ ENNReal.ofReal (l ^ ((finrank ℝ E : ℝ) / r.toReal - finrank ℝ E / 2)) *
+        eLpNorm (phasePropagator F ω ((l ^ k)⁻¹ • t) f) r volume := by
+    funext t
+    rw [eLpNorm_phasePropagator_dilateLp hω hl, smul_eq_mul, inv_mul_eq_div]
+  rw [h, eLpNorm_const_mul_ennreal_of_pos (pos_iff_ne_zero.2 hq),
+    eLpNorm_comp_inv_smul (volume : Measure ℝ)
+      (fun s ↦ eLpNorm (phasePropagator F ω s f) r volume) (pow_ne_zero k hl.ne'),
+    finrank_self, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), abs_of_pos (pow_pos hl k),
+    ← Real.rpow_natCast_mul hl.le, ← Real.rpow_add hl]
+  congr 3
+  ring
+
+end Dilation
 
 end TauCeti
