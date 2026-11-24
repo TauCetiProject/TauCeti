@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
-public import TauCeti.AlgebraicTopology.SimplicialSet.RealizationPiZero
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
 
 /-!
 # Fully faithful maps of simplicial sets

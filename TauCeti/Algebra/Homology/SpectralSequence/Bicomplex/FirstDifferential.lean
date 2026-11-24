@@ -246,19 +246,23 @@ private lemma rowFiltrationCokernelToTotalRowsGE_comp_extendMap_totalRowsGEMap (
 /-- The morphism from the short exact sequence `F_{s+1}/F_s ⟶ F_{s+2}/F_s ⟶ F_{s+2}/F_{s+1}` of
 graded pieces of the row filtration to `row s ⟶ Tot (rows ≥ s) ⟶ Tot (rows ≥ s + 1)`. -/
 private def rowFiltrationShortComplexHom (s : ℕ) :
-    (kernelCokernelCompSequence.snakeInput
+    TauCeti.cokernelCompSequence
       ((CochainComplex.filtrationFunctor K.rowFiltration K.monotone_rowFiltration).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : (s : ℤ) = s)
           (Nat.cast_succ s))))
       ((CochainComplex.filtrationFunctor K.rowFiltration K.monotone_rowFiltration).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one
-          (rfl : ((s + 1 : ℕ) : ℤ) = (s + 1 : ℕ)) rfl)))).L₃ ⟶
+          (rfl : ((s + 1 : ℕ) : ℤ) = (s + 1 : ℕ)) rfl))) ⟶
       (K.totalRowShortComplex s).map (embeddingDownNat.extendFunctor C) :=
   ShortComplex.homMk (K.rowFiltrationGradedToTotalRow s) (K.rowFiltrationCokernelToTotalRowsGE s)
     ((K.rowFiltrationGradedIso (s + 1)).hom ≫
       HomologicalComplex.extendMap (K.totalRowι (s + 1)) embeddingDownNat)
     (K.rowFiltrationGradedToTotalRow_comp_extendMap_totalRowι s)
     (K.rowFiltrationCokernelToTotalRowsGE_comp_extendMap_totalRowsGEMap s)
+
+private lemma rowFiltrationShortComplexHom_τ₁ (s : ℕ) :
+    (K.rowFiltrationShortComplexHom s).τ₁ = K.rowFiltrationGradedToTotalRow s :=
+  (rfl)
 
 private lemma rowFiltrationShortComplexHom_τ₃ (s : ℕ) :
     (K.rowFiltrationShortComplexHom s).τ₃ = (K.rowFiltrationGradedIso (s + 1)).hom ≫
@@ -284,7 +288,7 @@ lemma rowFiltrationSpectralSequence_page_two_d_totalRow (p : ℤ) (s : ℕ) :
     (s + 1 : ℕ) (s + 1) ((s + 1 : ℕ) + 1) (p + (s + 1 : ℕ)) (p + 2 + s) rfl
     (Nat.cast_succ s).symm rfl (Nat.cast_succ s) rfl (by push_cast; ring)
   have hφ := HomologicalComplex.HomologySequence.δ_naturality (K.rowFiltrationShortComplexHom s)
-    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _)
+    (TauCeti.cokernelCompSequence_shortExact _ _)
     ((K.totalRowShortComplex_shortExact s).extend embeddingDownNat) (p + (s + 1 : ℕ))
     (p + 2 + s) (by simp; omega)
   rw [rowFiltrationSpectralSequenceFirstPageXIsoTotalRow_eq,
@@ -303,17 +307,8 @@ lemma rowFiltrationSpectralSequence_page_two_d_totalRow (p : ℤ) (s : ℕ) :
     rw [rowFiltrationShortComplexHom_τ₃]
     exact (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
       (congrArg (HomologicalComplex.homologyMap · _) (Iso.inv_hom_id_assoc _ _))
-  -- The objects of the snake-input sequence are only definitionally the cokernels, so the goal
-  -- is not type-correct at reducible transparency and `rw`/`simp` cannot reassociate it; the
-  -- steps are given as terms, through the naturality `hφ` of the connecting maps.
-  calc _ = HomologicalComplex.homologyMap (K.rowFiltrationGradedIso (s + 1)).inv _ ≫ _ ≫
-        HomologicalComplex.homologyMap (K.rowFiltrationShortComplexHom s).τ₁ _ :=
-        congrArg _ ((Category.assoc _ _ _).trans
-          (congrArg _ (HomologicalComplex.homologyMap_comp _ _ _).symm))
-    _ = HomologicalComplex.homologyMap (K.rowFiltrationGradedIso (s + 1)).inv _ ≫
-        HomologicalComplex.homologyMap (K.rowFiltrationShortComplexHom s).τ₃ _ ≫ _ :=
-        congrArg _ hφ
-    _ = _ := (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hτ₃)
+  rw [← hτ₃, Category.assoc, ← hφ, rowFiltrationShortComplexHom_τ₁, rowFiltrationGradedToTotalRow,
+    ← HomologicalComplex.homologyMap_comp]
 
 /-- The form of `HomologicalComplex₂.rowFiltrationSpectralSequence_page_two_d_totalRow` in which
 the homology of the rows placed in the degrees of the total complex, regarded as cochain

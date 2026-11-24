@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
 
 /-!
 # Non-divergence-form equations under a change of variables
@@ -32,6 +33,14 @@ The second-order part transforms by conjugation, as for a linear change of varia
 curvature of `Ψ` contributes the first-order term `∑ᵢ D²Ψ(y) eᵢ (A(y)† eᵢ)`. Flattening the
 boundary of a domain of class `C²` by such a change of variables turns an equation near a curved
 boundary portion into one near a flat boundary portion, where the half-space estimates apply.
+
+The new coefficients keep the properties those estimates ask of the old ones: `A'` is elliptic
+where `A` is (`ContinuousLinearMap.mul_norm_sq_le_inner_comp_comp_adjoint`, with `M = DΨ(Φ x)` and
+its right inverse `N = DΦ(x)`) and continuous where `A` is
+(`TauCeti.PDE.continuousWithinAt_comp_comp_adjoint`), `A'` is measurable when `A` is
+(`TauCeti.PDE.aestronglyMeasurable_comp_comp_adjoint`), and `b'` is measurable when `A` and `b`
+are (`TauCeti.PDE.aestronglyMeasurable_fderiv_apply_add_sum`) and bounded when they are
+(`TauCeti.PDE.norm_fderiv_apply_add_sum_le`).
 
 The inverse change of variables is not needed: if `N(x)` is any right inverse of `DΦ(x)` on `U`,
 then `v` solves
@@ -85,6 +94,103 @@ open scoped InnerProductSpace
 namespace TauCeti.PDE
 
 open Wkp
+
+section Coefficients
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+  {U U' : Opens F} {Φ Ψ : F → F} {L L' c c' : ℝ}
+
+/-- Conjugating coefficients continuous within `Ω` at `Φ x` by `DΨ ∘ Φ`, for a change of
+variables `Ψ` of order at least one on `U ∋ Φ x` and `Φ` continuous within `Ω'` at `x` mapping
+`Ω'` into `Ω`, gives coefficients continuous within `Ω'` at `x`. -/
+theorem continuousWithinAt_comp_comp_adjoint {Ω Ω' : Set F} {k : ℕ}
+    (hΨ : IsChangeOfVariables (k + 1) U U' Ψ L' c') {A : F → F →L[ℝ] F} {x : F}
+    (hΦx : ContinuousWithinAt Φ Ω' x) (hΦxU : Φ x ∈ (U : Set F)) (hmaps : MapsTo Φ Ω' Ω)
+    (hA : ContinuousWithinAt A Ω (Φ x)) :
+    ContinuousWithinAt
+      (fun x => fderiv ℝ Ψ (Φ x) ∘L A (Φ x) ∘L (fderiv ℝ Ψ (Φ x)).adjoint) Ω' x := by
+  have hM : ContinuousWithinAt (fun x => fderiv ℝ Ψ (Φ x)) Ω' x :=
+    ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen U.isOpen (by simp)).continuousAt
+      (U.isOpen.mem_nhds hΦxU)).comp_continuousWithinAt hΦx
+  exact hM.clm_comp ((hA.comp hΦx hmaps).clm_comp
+    (ContinuousLinearMap.adjoint.continuous.continuousAt.comp_continuousWithinAt hM))
+
+/-- **The transformed principal part is measurable.** For a change of variables `Ψ` of order at
+least one from `U`, a map `Φ` continuous on a measurable set `s` and mapping it into `U`, and
+coefficients `A ∘ Φ` almost everywhere strongly measurable on `s`, the principal part
+`DΨ ∘ A ∘ DΨ†` of the transformed equation, evaluated at `Φ x`, is almost everywhere strongly
+measurable on `s`. -/
+theorem aestronglyMeasurable_comp_comp_adjoint {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
+    [BorelSpace F] {μ : Measure F} {U U' : Opens F} {Ψ : F → F} {k : ℕ} {L' c' : ℝ}
+    (hΨ : IsChangeOfVariables (k + 1) U U' Ψ L' c') {s : Set F} (hs : MeasurableSet s)
+    {Φ : F → F} (hΦc : ContinuousOn Φ s) (hΦU : MapsTo Φ s U) {A : F → F →L[ℝ] F}
+    (hA : AEStronglyMeasurable (fun x => A (Φ x)) (μ.restrict s)) :
+    AEStronglyMeasurable
+      (fun x => fderiv ℝ Ψ (Φ x) ∘L A (Φ x) ∘L (fderiv ℝ Ψ (Φ x)).adjoint) (μ.restrict s) := by
+  have hM : ContinuousOn (fun x => fderiv ℝ Ψ (Φ x)) s :=
+    (hΨ.contDiffOn.continuousOn_fderiv_of_isOpen U.isOpen (by simp)).comp hΦc hΦU
+  have hcomp := (isBoundedBilinearMap_comp (𝕜 := ℝ) (E := F) (F := F) (G := F)).continuous
+  exact hcomp.comp_aestronglyMeasurable₂ (hM.aestronglyMeasurable hs)
+    (hcomp.comp_aestronglyMeasurable₂ hA
+      ((ContinuousLinearMap.adjoint.continuous.comp_continuousOn hM).aestronglyMeasurable hs))
+
+/-- **The transformed first-order coefficient is measurable.** For a change of variables `Ψ` of
+order at least two from `U`, a map `Φ` continuous on a measurable set `s` and mapping it into `U`,
+coefficients `A ∘ Φ` and `b ∘ Φ` almost everywhere strongly measurable on `s`, and an orthonormal
+basis `(eᵢ)`, the first-order coefficient `DΨ b + ∑ᵢ D²Ψ eᵢ (A† eᵢ)` of the transformed equation,
+evaluated at `Φ x`, is almost everywhere strongly measurable on `s`. -/
+theorem aestronglyMeasurable_fderiv_apply_add_sum {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
+    [BorelSpace F] {μ : Measure F} {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ F)
+    {U U' : Opens F} {Ψ : F → F} {k : ℕ} {L' c' : ℝ}
+    (hΨ : IsChangeOfVariables (k + 2) U U' Ψ L' c') {s : Set F} (hs : MeasurableSet s)
+    {Φ : F → F} (hΦc : ContinuousOn Φ s) (hΦU : MapsTo Φ s U) {A : F → F →L[ℝ] F} {b : F → F}
+    (hA : AEStronglyMeasurable (fun x => A (Φ x)) (μ.restrict s))
+    (hb : AEStronglyMeasurable (fun x => b (Φ x)) (μ.restrict s)) :
+    AEStronglyMeasurable (fun x => fderiv ℝ Ψ (Φ x) (b (Φ x)) +
+      ∑ i, fderiv ℝ (fderiv ℝ Ψ) (Φ x) (e i) ((A (Φ x)).adjoint (e i))) (μ.restrict s) := by
+  -- The first and second derivatives of `Ψ` along `Φ` are continuous on `s`.
+  have hM : ContinuousOn (fun x => fderiv ℝ Ψ (Φ x)) s :=
+    (hΨ.contDiffOn.continuousOn_fderiv_of_isOpen U.isOpen (by norm_cast; omega)).comp hΦc hΦU
+  have hS : ContinuousOn (fun x => fderiv ℝ (fderiv ℝ Ψ) (Φ x)) s :=
+    (ContDiffOn.continuousOn_fderiv_of_isOpen
+      (hΨ.contDiffOn.fderiv_of_isOpen U.isOpen (m := 1) (by norm_cast; omega)) U.isOpen
+      le_rfl).comp hΦc hΦU
+  have happly := (isBoundedBilinearMap_apply (𝕜 := ℝ) (E := F) (F := F)).continuous
+  refine (happly.comp_aestronglyMeasurable₂ (hM.aestronglyMeasurable hs) hb).add
+    (Finset.aestronglyMeasurable_fun_sum _ fun i _ => ?_)
+  exact happly.comp_aestronglyMeasurable₂
+    ((hS.clm_apply continuousOn_const).aestronglyMeasurable hs)
+    ((ContinuousLinearMap.apply ℝ F (e i)).continuous.comp_aestronglyMeasurable
+      (ContinuousLinearMap.adjoint.continuous.comp_aestronglyMeasurable hA))
+
+/-- **The pulled-back drift is bounded.** For a change of variables `Ψ` of order at least two from
+`U` with constant `L'`, coefficients `‖A‖ ≤ Λ` and `‖b‖ ≤ β`, and an orthonormal basis `(eᵢ)`, the
+first-order coefficient `DΨ b + ∑ᵢ D²Ψ eᵢ (A† eᵢ)` of the transformed equation has norm at most
+`L' β + n L' Λ`. -/
+theorem norm_fderiv_apply_add_sum_le {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [CompleteSpace F] {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι ℝ F) {U U' : Opens F}
+    {Ψ : F → F} {k : ℕ} {L' c' : ℝ} (hΨ : IsChangeOfVariables (k + 2) U U' Ψ L' c') {y : F}
+    (hy : y ∈ (U : Set F)) {A₀ : F →L[ℝ] F} {b₀ : F} {Λ β : ℝ} (hA₀ : ‖A₀‖ ≤ Λ)
+    (hb₀ : ‖b₀‖ ≤ β) :
+    ‖fderiv ℝ Ψ y b₀ + ∑ i, fderiv ℝ (fderiv ℝ Ψ) y (e i) (A₀.adjoint (e i))‖ ≤
+      L' * β + Fintype.card ι * (L' * Λ) := by
+  have hD := hΨ.norm_fderiv_le y hy
+  have hD2 := hΨ.norm_fderiv_fderiv_le y hy
+  have hL' : 0 ≤ L' := (norm_nonneg _).trans hD
+  have hterm (i : ι) : ‖fderiv ℝ (fderiv ℝ Ψ) y (e i) (A₀.adjoint (e i))‖ ≤ L' * Λ := by
+    refine ((fderiv ℝ (fderiv ℝ Ψ) y).le_opNorm₂ _ _).trans ?_
+    rw [e.norm_eq_one, mul_one]
+    refine mul_le_mul hD2 ((A₀.adjoint.le_opNorm _).trans ?_) (norm_nonneg _) hL'
+    rw [LinearIsometryEquiv.norm_map, e.norm_eq_one, mul_one]
+    exact hA₀
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · exact ((fderiv ℝ Ψ y).le_opNorm _).trans (mul_le_mul hD hb₀ (norm_nonneg _) hL')
+  · refine (norm_sum_le _ _).trans ?_
+    simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) => hterm i
+
+end Coefficients
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 

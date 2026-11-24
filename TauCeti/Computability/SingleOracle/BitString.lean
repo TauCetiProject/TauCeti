@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Computability.SingleOracle.Primrec
 public import TauCeti.Computability.TuringDegree
+import TauCeti.Computability.Partrec.Search
 import TauCeti.Computability.RecursiveIn
 import TauCeti.Data.List.Infix
 
@@ -474,18 +475,14 @@ theorem mem_findConvergentExt_iff {c : Code} {x : ℕ} {β : List Bool} {w : Lis
         evaln (bitAnswers (β ++ w.1)) k c x = some w.2 ∧
         ∀ m < n, ∀ δ j, decode (α := List Bool × ℕ) m = some (δ, j) →
           evaln (bitAnswers (β ++ δ)) j c x = none := by
-  rw [findConvergentExt, Nat.rfindOpt, Part.mem_bind_iff]
+  simp only [findConvergentExt, Nat.mem_rfindOpt_iff, Option.bind_eq_some_iff,
+    Option.map_eq_some_iff]
   constructor
-  · rintro ⟨n, hn, hw⟩
-    obtain ⟨-, hmin⟩ := Nat.mem_rfind.1 hn
-    simp only [Part.mem_coe, Option.mem_def, Option.bind_eq_some_iff, Option.map_eq_some_iff] at hw
-    obtain ⟨⟨δ, k⟩, hdec, d, hd, hpair⟩ := hw
+  · rintro ⟨n, ⟨⟨δ, k⟩, hdec, d, hd, hpair⟩, hmin⟩
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj hpair.symm
-    refine ⟨n, k, hdec, hd, fun m hm δ' j hdecm => ?_⟩
-    have hfalse := hmin hm
-    simpa [hdecm] using hfalse
+    exact ⟨n, k, hdec, hd, fun m hm δ' j hdecm => by simpa [hdecm] using hmin m hm⟩
   · rintro ⟨n, k, hdec, hd, hmin⟩
-    refine ⟨n, Nat.mem_rfind.2 ⟨by simp [hdec, hd], fun {m} hm => ?_⟩, by simp [hdec, hd]⟩
+    refine ⟨n, ⟨(w.1, k), hdec, w.2, hd, Prod.eta w⟩, fun m hm => ?_⟩
     cases hdecm : decode (α := List Bool × ℕ) m with
     | none => simp
     | some p => simp [hmin m hm p.1 p.2 hdecm]

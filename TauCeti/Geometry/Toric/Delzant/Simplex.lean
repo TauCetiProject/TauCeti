@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Algebra.Group.Pi.Lemmas
 import Mathlib.LinearAlgebra.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # The standard simplex as a Delzant polytope
@@ -52,6 +53,8 @@ vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered as
 * `TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`: for `a > 0` its vertices are `0`
   and the points `a e k*`.
 * `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
+* `TauCeti.Toric.linearCombination_simplexNormal`: the combinations of the real normals.
+* `TauCeti.Toric.surjective_linearCombination_simplexNormal`: the real normals span `ℝ^κ`.
 
 ## References
 
@@ -153,11 +156,6 @@ private theorem span_simplexNormal_compl [Finite κ] (o : Option κ) :
     exact S.sum_mem fun m hm ↦ hsingle m (by simpa using Finset.ne_of_mem_erase hm)
   · exact hsingle k hk
 
-/-- A functional on `ℝ^κ` is determined by its values on the coordinate vectors `e k`. -/
-private theorem strongDual_ext [Finite κ] {x y : StrongDual ℝ (κ → ℝ)}
-    (h : ∀ k, x (Pi.single k 1) = y (Pi.single k 1)) : x = y :=
-  ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ κ).ext fun k ↦ by simpa using h k
-
 variable [Fintype κ]
 
 /-- A functional on `ℝ^κ` sends the image `1` of `1 ∈ ℤ^κ` to the sum of its values on the
@@ -256,11 +254,12 @@ private theorem eq_zero_or_eq_smul_proj_of_mem_extremePoints {a : ℝ} (ha : 0 <
   have hzero {k : κ} (hk : some k ≠ o) : x (Pi.single k 1) = 0 :=
     some_mem_activeSet_simplex_iff.1 (by rw [ho]; exact hk)
   rcases o with _ | p
-  · exact Or.inl (strongDual_ext fun k ↦ by simpa using hzero (Option.some_ne_none k))
+  · exact Or.inl <| ContinuousLinearMap.pi_ext_single_one fun k ↦ by
+      simpa using hzero (Option.some_ne_none k)
   · -- All values but the `p`-th vanish, and the values sum to `a`.
     have hsum := none_mem_activeSet_simplex_iff.1 (by rw [ho]; simp)
     rw [Fintype.sum_eq_single p fun k hk ↦ hzero fun h ↦ hk (Option.some_injective _ h)] at hsum
-    refine Or.inr ⟨p, strongDual_ext fun k ↦ ?_⟩
+    refine Or.inr ⟨p, ContinuousLinearMap.pi_ext_single_one fun k ↦ ?_⟩
     by_cases hk : k = p
     · subst hk
       simpa using hsum
@@ -288,7 +287,7 @@ theorem mem_extremePoints_facetPolyhedron_simplex_iff {a : ℝ} (ha : 0 < a)
       (simplexNormal κ)) (simplexSupport a) x) : w (Pi.single k 1) = 0 := by
     simpa using hw (some k) hk
   rcases hx with rfl | ⟨p, rfl⟩
-  · exact strongDual_ext fun k ↦ by
+  · exact ContinuousLinearMap.pi_ext_single_one fun k ↦ by
       simpa using hsome k (some_mem_activeSet_simplex_iff.2 (by simp))
   · -- The active normals are the `e k` with `k ≠ p` and `-1`.
     have hk (k : κ) (hk : k ≠ p) : w (Pi.single k 1) = 0 :=
@@ -297,7 +296,7 @@ theorem mem_extremePoints_facetPolyhedron_simplex_iff {a : ℝ} (ha : 0 < a)
       have hsum := hw none (none_mem_activeSet_simplex_iff.2 (by simp [Pi.single_apply]))
       rwa [simplexNormal_none, map_neg, map_neg, apply_compLeft_one, neg_eq_zero,
         Fintype.sum_eq_single p hk] at hsum
-    refine strongDual_ext fun k ↦ ?_
+    refine ContinuousLinearMap.pi_ext_single_one fun k ↦ ?_
     by_cases hkp : k = p
     · simpa [hkp] using hp
     · simpa using hk k hkp
@@ -344,5 +343,30 @@ theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
       · cases o with
         | none => simpa [apply_compLeft_one] using hsum.ne
         | some m => simp [hpt, hb.ne']
+
+/-! ### The real normals -/
+
+/-- The combination `∑ o, t_o u_o` of the real normals of the standard simplex is the vector
+`(t_(some k) - t_none)_k`. -/
+theorem linearCombination_simplexNormal (t : Option κ → ℝ) :
+    Fintype.linearCombination ℝ (fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) t =
+      fun k ↦ t (some k) - t none := by
+  ext k
+  simp [Fintype.linearCombination_apply, Fintype.sum_option, Pi.single_apply, sub_eq_neg_add]
+
+/-- The combination `∑ o, t_o u_o` of the real normals of the standard simplex has coordinates
+`t_(some k) - t_none`. -/
+theorem linearCombination_simplexNormal_apply (t : Option κ → ℝ) (k : κ) :
+    Fintype.linearCombination ℝ (fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) t k =
+      t (some k) - t none := by
+  rw [linearCombination_simplexNormal]
+
+/-- **The real normals of the standard simplex span `ℝ^κ`**, since the coordinate vectors are among
+them. This is the hypothesis under which the Delzant quotient carries its reduced moment map. -/
+theorem surjective_linearCombination_simplexNormal :
+    Function.Surjective (Fintype.linearCombination ℝ
+      fun o ↦ (Int.castAddHom ℝ).compLeft κ (simplexNormal κ o)) := fun v ↦
+  ⟨fun o ↦ o.elim 0 v, funext fun k ↦ by
+    rw [linearCombination_simplexNormal_apply, Option.elim_some, Option.elim_none, sub_zero]⟩
 
 end TauCeti.Toric

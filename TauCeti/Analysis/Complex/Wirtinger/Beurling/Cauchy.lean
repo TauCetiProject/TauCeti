@@ -202,8 +202,6 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   rw [← hc.toSchwartzMap_toLp hf]
   set G := beurlingL2 F ((hc.toSchwartzMap hf).toLp 2 volume)
   set u := cauchyTransform f
-  have hwu : Continuous fun x ↦ wirtingerDeriv u x 1 :=
-    hc.continuous_wirtingerDeriv_cauchyTransform (hf.of_le (by simp))
   -- The support radius `r` and the decay constant `M`.
   obtain ⟨r₀, hr₀⟩ := hc.isCompact.isBounded.subset_closedBall (0 : ℂ)
   set r := max r₀ 1
@@ -234,8 +232,8 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   set b : ℕ → ℂ → ℝ := fun n ↦ (closedBall (0 : ℂ) (2 * R n)).indicator
     fun _ ↦ C₀ * (R n)⁻¹ * (M / R n)
   have hb (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ * ‖u x‖ ≤ b n x :=
-    norm_fderiv_mul_norm_le_indicator (hR n) hM (hχ1 n) (hχ0 n) (hχfd n)
-      (fun x hx ↦ norm_mul_norm_cauchyTransform_le hsupp
+    norm_fderiv_mul_norm_le_indicator hM (hχ1 n) (hχ0 n) (hχfd n)
+      (fun x hx _ ↦ norm_mul_norm_cauchyTransform_le hsupp
         (hf.continuous.integrable_of_hasCompactSupport hc) ((hrR n).trans hx)) x
   obtain ⟨Cb, hCb⟩ := exists_eLpNorm_beurlingL2_le (F := F) (p := 2) (by norm_num)
     ENNReal.ofNat_ne_top
@@ -254,9 +252,7 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
     have := (Nat.le_ceil ‖x‖).trans (Nat.cast_le.2 hn)
     simp only [R]
     linarith
-  have hzero := ae_eq_zero_of_tendsto_of_eLpNorm_le two_ne_zero
-    (fun n ↦ (Lp.aestronglyMeasurable G).sub ((hχs n 0).continuous.smul hwu).aestronglyMeasurable)
-    ((Lp.aestronglyMeasurable G).sub hwu.aestronglyMeasurable) (.of_forall hlim)
+  have hzero := ae_eq_zero_of_tendsto_of_eLpNorm_le two_ne_zero (.of_forall hlim)
     (fun n ↦ eLpNorm_beurlingL2_sub_smul_wirtingerDeriv_cauchyTransform_le hc hf hCb (hχs n ⊤)
       (hχc n) (hχf n) (hb n)) htend
   filter_upwards [hzero] with x hx

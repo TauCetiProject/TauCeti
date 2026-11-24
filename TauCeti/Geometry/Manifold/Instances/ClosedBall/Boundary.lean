@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Boundary.SmoothMap
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The sphere as the actual smooth boundary of the closed ball

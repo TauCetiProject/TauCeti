@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
@@ -24,7 +25,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
@@ -100,6 +101,8 @@ allowing the entire path or loop to be read in one stereographic chart.
   on the unit sphere.
 * `Circle.instContMDiffSMul`, `Circle.instContMDiffConstSMul`: the circle acts smoothly on every
   complex normed space by scalar multiplication.
+* `Circle.instContMDiffSMulSphere`: the circle acts smoothly on the unit sphere of a complex inner
+  product space.
 * `TauCeti.contMDiff_circleExp_two_pi_mul`: the standard loop `t ↦ exp (2π i t)` of the circle is
   smooth.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
@@ -145,7 +148,8 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `TauCeti.contMDiff_coe_sphere_compl_zero`, `TauCeti.contMDiff_normalize_sphere`: the inclusion
   of the unit sphere into the punctured space `E \ {0}` and the radial projection
   `x ↦ x / ‖x‖` back onto the sphere are smooth; `TauCeti.contMDiff_normalize_compl_zero` is the
-  radial projection read in `E`.
+  radial projection read in `E`, and `TauCeti.contDiffAt_sphereExtend` pulls back `C^m` regularity
+  along the radial projection to the `0`-homogeneous radial extension.
 * `TauCeti.conjSphere`, `TauCeti.contMDiff_conjSphere`: complex conjugation on the unit circle
   of `ℂ`, a smooth involution.
 * `TauCeti.contMDiff_zpow_sphere`, `TauCeti.mvfderiv_coe_zpow_sphere_apply`: the power maps
@@ -520,6 +524,23 @@ instance instContMDiffSMul {n : ℕ∞ω} : ContMDiffSMul (𝓡 1) 𝓘(ℝ, V) 
 /-- Each element of the circle acts smoothly on every complex normed space. -/
 instance instContMDiffConstSMul {n : ℕ∞ω} : ContMDiffConstSMul 𝓘(ℝ, V) n Circle V :=
   ContMDiffSMul.contMDiffConstSMul (𝓡 1)
+
+/-- The circle acts smoothly, by scalar multiplication, on the unit sphere of a complex normed
+space whose norm comes from a real inner product. For `ℂⁿ⁺¹` this is the circle action on
+`S²ⁿ⁺¹` whose orbit space is complex projective space. -/
+instance instContMDiffSMulSphere {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [NormedSpace ℂ W] [IsScalarTower ℝ ℂ W] {d : ℕ} [Fact (finrank ℝ W = d + 1)] {n : ℕ∞ω} :
+    ContMDiffSMul (𝓡 1) (𝓡 d) n Circle (sphere (0 : W) 1) where
+  contMDiff_smul := by
+    -- The action on the sphere is the restriction of the action on `W`.
+    have hcoe (p : Circle × sphere (0 : W) 1) :
+        ((p.1 • p.2 : sphere (0 : W) 1) : W) = p.1 • (p.2 : W) :=
+      (coe_smul_sphere p.1 p.2).trans (smul_def p.1 (p.2 : W)).symm
+    refine (((contMDiff_smul (I := 𝓡 1) (I' := 𝓘(ℝ, W))).comp
+      (contMDiff_fst.prodMk (contMDiff_coe_sphere.comp contMDiff_snd))).codRestrict_sphere
+      fun p ↦ ?_).congr fun p ↦ Subtype.ext (hcoe p)
+    simp only [comp_apply, ← hcoe p]
+    exact (p.1 • p.2).property
 
 end Circle
 
@@ -1020,6 +1041,19 @@ theorem contMDiff_normalize_sphere :
       (⟨NormedSpace.normalize (x : E), mem_sphere_zero_iff_norm.2
         (NormedSpace.norm_normalize_eq_one_iff.2 x.property)⟩ : sphere (0 : E) 1)) :=
   contMDiff_normalize_compl_zero.codRestrict_sphere _
+
+/-- Away from the origin, `sphereExtend f` inherits `C^m` regularity from `f` at `x / ‖x‖`. -/
+theorem contDiffAt_sphereExtend {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : sphere (0 : E) 1 → G} {x : E} (hx : x ≠ 0)
+    (hf : ContMDiffAt (𝓡 n) 𝓘(ℝ, G) m f
+      ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
+    ContDiffAt ℝ m (sphereExtend f) x := by
+  let U : TopologicalSpace.Opens E := ⟨{0}ᶜ, isOpen_compl_singleton⟩
+  let xU : U := ⟨x, hx⟩
+  have hcomp : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, G) m (sphereExtend f ∘ (Subtype.val : U → E)) xU := by
+    refine (hf.comp xU (contMDiff_normalize_sphere xU)).congr_of_eventuallyEq ?_
+    exact .of_forall fun y ↦ sphereExtend_of_ne_zero f y.property
+  exact contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 hcomp)
 
 end Punctured
 
