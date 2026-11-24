@@ -602,7 +602,7 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff_equati
             ⋀[ℝ]^2 V)) ↔
       Vortex.equation X (normalCoord e (√(2 * r) • y)) = 0 := by
   have hz : √(2 * r) • normalCoord e y = normalCoord e (√(2 * r) • y) := (map_smul _ _ _).symm
-  have hd := Vortex.coupledEquation_dilateField_eq_zero_iff 1 (√(2 * r))
+  have hd := Vortex.coupledEquation_dilateField_apply_eq_zero_iff 1 (√(2 * r))
     (Real.sqrt_pos.2 (by positivity)).ne' X (normalCoord e y)
   rw [mul_one, Real.sq_sqrt (by positivity), Vortex.coupledEquation_one, hz] at hd
   rw [sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff hQ hkl he h₀ h₂₃ hr.le h₂
