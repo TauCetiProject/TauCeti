@@ -164,17 +164,12 @@ theorem closure_simpleRootPair_le_normalizer_puncturedPositivePoints (i : Fin t.
         Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
           (t.simpleIndex ht i) (t.simpleIndex ht i)) A)) ≤
       Subgroup.normalizer (D.puncturedPositivePoints A i : Set (D.points A)) := by
-  have h := DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
+  rw [← D.subsystemPoints_pair, D.puncturedPositivePoints_def]
+  refine D.subsystemPoints_le_normalizer_of_subsystemSubgroup ?_
+  rw [D.subsystemSubgroup_pair, D.subsystemSubgroup_eq_iSup]
+  exact DynkinType.closure_simpleRootPair_le_normalizer_posRoots_diff_singleton
     D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator i (CommAlgCat.of ℤ A)
-  rw [← MonoidHom.coe_range, ← MonoidHom.coe_range, ← Subgroup.sup_eq_closure,
-    ← D.subsystemSubgroup_singleton, ← D.subsystemSubgroup_singleton,
-    ← D.subsystemSubgroup_union, ← Set.insert_eq, ← D.subsystemSubgroup_eq_iSup] at h
-  have hpts := D.subsystemPoints_le_normalizer_of_subsystemSubgroup h
-  rw [Set.insert_eq, D.subsystemPoints_union, D.subsystemPoints_singleton,
-    D.subsystemPoints_singleton, ← D.puncturedPositivePoints_def, Subgroup.sup_eq_closure,
-    MonoidHom.coe_range, MonoidHom.coe_range] at hpts
-  exact hpts
 
 /-- The simple root subgroup `X_{αᵢ}` normalizes the punctured positive subgroup `U⁽ⁱ⁾`. -/
 theorem range_rootSubgroupPoints_le_normalizer_puncturedPositivePoints (i : Fin t.rank) :

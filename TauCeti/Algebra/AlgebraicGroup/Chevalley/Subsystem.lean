@@ -108,6 +108,18 @@ theorem subsystemSubgroup_singleton (γ : Fin t.numRoots) (A : CommAlgCat.{v} �
         D.isNilpotent_representation_rootGenerator γ A).range := by
   rw [D.subsystemSubgroup_eq_iSup, iSup_singleton]
 
+/-- A pair of roots generates the closure of the union of their root-subgroup ranges on the
+lattice. -/
+theorem subsystemSubgroup_pair (α β : Fin t.numRoots) (A : CommAlgCat.{v} ℤ) :
+    D.subsystemSubgroup {α, β} A = Subgroup.closure
+      (Set.range (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator α A) ∪
+       Set.range (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator β A)) := by
+  rw [Set.insert_eq, D.subsystemSubgroup_union, D.subsystemSubgroup_singleton,
+    D.subsystemSubgroup_singleton, Subgroup.sup_eq_closure, MonoidHom.coe_range,
+    MonoidHom.coe_range]
+
 /-- Each root element indexed by `S` belongs to the corresponding lattice subgroup. -/
 theorem chevalleyRootSubgroup_mem_subsystemSubgroup {S : Set (Fin t.numRoots)}
     (A : CommAlgCat.{v} ℤ) {γ : Fin t.numRoots} (hγ : γ ∈ S) (u : Multiplicative A) :
@@ -259,6 +271,15 @@ theorem subsystemPoints_union (T : Set (Fin t.numRoots)) (A : Type v) [CommRing 
 theorem subsystemPoints_singleton (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
     D.subsystemPoints {γ} A = (D.rootSubgroupPoints γ A).range := by
   rw [D.subsystemPoints_eq_iSup, iSup_singleton]
+
+/-- A pair of roots generates the closure of the union of their root-subgroup ranges inside datum
+points. -/
+theorem subsystemPoints_pair (α β : Fin t.numRoots) (A : Type v) [CommRing A] :
+    D.subsystemPoints {α, β} A = Subgroup.closure
+      (Set.range (D.rootSubgroupPoints α A) ∪ Set.range (D.rootSubgroupPoints β A)) := by
+  rw [Set.insert_eq, D.subsystemPoints_union, D.subsystemPoints_singleton,
+    D.subsystemPoints_singleton, Subgroup.sup_eq_closure, MonoidHom.coe_range,
+    MonoidHom.coe_range]
 
 /-- Each root element indexed by `S` belongs to its point subgroup. -/
 @[simp]
