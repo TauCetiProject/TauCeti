@@ -112,10 +112,7 @@ theorem cubicalChainModuleFinsuppEquiv_op_smul (g : G) (m : cubicalChainModule Y
   | zero => simp
   | add a b ha hb => rw [map_add, smul_add, map_add, ha, hb, map_add, Finsupp.mapDomain_add]
   | single y r =>
-    rw [cubicalChainModuleFinsuppEquiv_symm_single, smul_comm, op_lof_smul_cubicalChainModuleLof,
-      act_ofCube_point, map_smul, map_smul, cubicalChainModuleFinsuppEquiv_lof_ofCube_point,
-      cubicalChainModuleFinsuppEquiv_lof_ofCube_point, Finsupp.smul_single_one,
-      Finsupp.smul_single_one, Finsupp.mapDomain_single]
+    simp [smul_comm, op_lof_smul_cubicalChainModuleLof]
 
 end Action
 
