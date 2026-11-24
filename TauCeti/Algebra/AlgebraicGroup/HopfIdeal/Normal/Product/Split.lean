@@ -74,9 +74,12 @@ private theorem bijective_mapPointsFunctor_productMapOfNormal_comp_app
   let p := BialgHom.mapDomain (A := A) π.hom
   have hmul (q) : (mapPointsFunctor φ).app A (e q) =
       ιI (a (q ≫ fst _ _)) * ιJ (b (q ≫ snd _ _)) :=
-    mapPointsFunctor_productMapOfNormal_app_grpObjPointsMulEquiv H I J hI A q
+    mapPointsFunctor_productMapOfNormal_comp_hom_app_grpObjPointsMulEquiv H I J hI A q
   have hker (u) : p (ιI u) = 1 := mapDomain_quotientPointsHom_eq_one π hπ.le A u
-  -- On the acting factor, `π` is the bijective point map of `π ≫ mkQuotient H J`.
+  -- On the acting factor, `π` is the bijective point map of `π ≫ mkQuotient H J`. This is
+  -- `mapPointsFunctor_comp_app_apply` read through two definitions, both `@[expose]`d:
+  -- `quotientPointsHom H J A` is `(mapPointsFunctor (mkQuotient H J)).app A`, and
+  -- `(mapPointsFunctor π).app A` is `BialgHom.mapDomain π.hom`.
   have hcomp (t) : p (ιJ t) = (mapPointsFunctor (π ≫ mkQuotient H J)).app A t :=
     (mapPointsFunctor_comp_app_apply π (mkQuotient H J) A t).symm
   constructor

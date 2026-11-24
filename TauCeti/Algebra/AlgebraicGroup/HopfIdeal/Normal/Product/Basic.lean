@@ -31,8 +31,8 @@ and unipotence of the image remain subsequent steps.
 * `TauCeti.CommHopfAlgCat.normalSemidirectProduct`: the coordinate Hopf algebra of the
   resulting semidirect product.
 * `TauCeti.CommHopfAlgCat.productMapOfNormal`: the coordinate morphism dual to multiplication.
-  On points it is `(u, t) ↦ u * t`
-  (`TauCeti.CommHopfAlgCat.mapPointsFunctor_productMapOfNormal_app_grpObjPointsMulEquiv`).
+  Composed with `normalSemidirectProductIso`, on points it is `(u, t) ↦ u * t`
+  (`TauCeti.CommHopfAlgCat.mapPointsFunctor_productMapOfNormal_comp_hom_app_grpObjPointsMulEquiv`).
 * `TauCeti.CommHopfAlgCat.productOfNormal`: the coordinate Hopf algebra of the product image.
 * `TauCeti.CommHopfAlgCat.productOfNormalGrpObjInclusion`: its categorical closed-subgroup
   inclusion.
@@ -291,9 +291,10 @@ theorem mapPointsFunctor_app_grpObjPointsMulEquiv_normalSemidirect
           (CommHopfAlgCat.grpObj (quotient H J)))
       simpa only [Category.assoc] using congrArg₂ (· * ·) hleft hright
 
-/-- Multiplication from the normal semidirect product sends a pair `(u, t)` of points of the two
-factors to the product `u * t` of their inclusions into the ambient group. -/
-theorem mapPointsFunctor_productMapOfNormal_app_grpObjPointsMulEquiv
+/-- Multiplication from the normal semidirect product, `productMapOfNormal` composed with
+`normalSemidirectProductIso`, sends a pair `(u, t)` of points of the two factors to the product
+`u * t` of their inclusions into the ambient group. -/
+theorem mapPointsFunctor_productMapOfNormal_comp_hom_app_grpObjPointsMulEquiv
     (H : _root_.CommHopfAlgCat.{u} R) (I J : HopfIdeal R H) (hI : I.IsNormal)
     (A : CommAlgCat.{u} R)
     (q : op A ⟶ (quotientNormalConjugation H I J hI).coordinateHopfAlgebra.grpObj) :
