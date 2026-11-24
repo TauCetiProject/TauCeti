@@ -131,10 +131,6 @@ theorem grading_eq_bot_of_lt_zero (N : ℕ) {d : ℤ} (hd : d < 0) : grading N d
   rw [grading_def]
   exact MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero ℤ (weight_nonneg N) hd
 
-/-- `EquivariantRing N` vanishes in all strictly negative degrees. -/
-theorem grading_neg_eq_bot (N : ℕ) (d : ℤ) (hd : d < 0) : grading N d = ⊥ :=
-  grading_eq_bot_of_lt_zero N hd
-
 private theorem weight_eq_two_mul (N : ℕ) (c : Fin N →₀ ℕ) :
     Finsupp.weight (weight N) c =
       2 * (Finsupp.weight (fun i : Fin N ↦ (i : ℕ) + 1) c : ℤ) := by

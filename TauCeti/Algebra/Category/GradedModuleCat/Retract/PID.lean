@@ -275,6 +275,23 @@ private theorem freeHeadCoord_eq_zero_of_mem_ker_freeLift (hneg : ∀ i < 0, �
       (hL_zero.trans (map_zero _).symm)
   rwa [freePieceQuotientEquiv_mk] at hzero_quot
 
+omit [FaithfulSMul k A] in
+/-- A graded retract of a finite shifted free module over a nonnegatively graded algebra whose
+homogeneous pieces all lie in `A₊ M` is trivial. -/
+private theorem retract_subsingleton_of_piece_le_positive_smul_top (hneg : ∀ i < 0, 𝒜 i = ⊥)
+    {I : Type uI} [Finite I] {d : I → ℤ} {M : GradedModuleCat.{max uA uI} 𝒜}
+    (r : Retract M (free 𝒜 d))
+    (h : ∀ q : ℤ, M.grading.piece q ≤ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
+    Subsingleton M := by
+  let _ := M.gradedSMul
+  obtain ⟨b, hb⟩ := exists_piece_eq_bot_of_lt_free (𝒜 := 𝒜) hneg d
+  have hbelow : ∀ p < b, M.grading.piece p = ⊥ := fun p hp ↦ r.piece_eq_bot (hb p hp)
+  have htop : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) = ⊤ := by
+    have hle := iSup_le h
+    rw [(DirectSum.Decomposition.isInternal M.grading.piece).submodule_iSup_eq_top] at hle
+    exact top_unique hle
+  exact InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 b hbelow htop
+
 end RetractHead
 
 section PIDRetract
@@ -327,27 +344,16 @@ theorem exists_iso_free_of_retract (hneg : ∀ i < 0, 𝒜 i = ⊥)
     inferInstance inferInstance).splittingOfProjective
   let K : GradedModuleCat.{max uA uI} 𝒜 := Limits.kernel Φ
   let rK : Retract K (free 𝒜 d') := ⟨Limits.kernel.ι Φ, sp.r, sp.f_r⟩
-  -- The split kernel is bounded below with vanishing head coordinates, hence `0`.
-  let _ := K.gradedSMul
-  obtain ⟨bK, hbK⟩ := exists_piece_eq_bot_of_lt_free (𝒜 := 𝒜) hneg d'
-  have hbelowK : ∀ p < bK, K.grading.piece p = ⊥ := fun p hp ↦
-    rK.piece_eq_bot (hbK p hp)
-  have hker_pos : ∀ q : ℤ, K.grading.piece q ≤
-      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k K) := fun q z hz ↦ by
-    have hz_ker : Φ.hom ((Limits.kernel.ι Φ).hom z) = 0 :=
-      LinearMap.congr_fun (congrArg Hom.hom (Limits.kernel.condition Φ)) z
-    exact rK.mem_positive_smul_top_iff.mp
-      ((freeHeadCoord_eq_zero_iff hneg hzero d' q ⟨(Limits.kernel.ι Φ).hom z,
-        map_mem (Limits.kernel.ι Φ) hz⟩).mp
-        (freeHeadCoord_eq_zero_of_mem_ker_freeLift hneg hzero nq bq liftGen hliftGen ev q
-          (map_mem (Limits.kernel.ι Φ) hz) hz_ker))
-  have htopK : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k K) = ⊤ := by
-    have hle := iSup_le hker_pos
-    rw [(DirectSum.Decomposition.isInternal K.grading.piece).submodule_iSup_eq_top]
-      at hle
-    exact top_unique hle
+  -- The split kernel is a retract of `free 𝒜 d'` with vanishing head coordinates, hence `0`.
   have : Subsingleton K :=
-    InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 bK hbelowK htopK
+    retract_subsingleton_of_piece_le_positive_smul_top hneg rK fun q z hz ↦ by
+      have hz_ker : Φ.hom ((Limits.kernel.ι Φ).hom z) = 0 :=
+        LinearMap.congr_fun (congrArg Hom.hom (Limits.kernel.condition Φ)) z
+      exact rK.mem_positive_smul_top_iff.mp
+        ((freeHeadCoord_eq_zero_iff hneg hzero d' q ⟨(Limits.kernel.ι Φ).hom z,
+          map_mem (Limits.kernel.ι Φ) hz⟩).mp
+          (freeHeadCoord_eq_zero_of_mem_ker_freeLift hneg hzero nq bq liftGen hliftGen ev q
+            (map_mem (Limits.kernel.ι Φ) hz) hz_ker))
   have : Mono Φ := Abelian.mono_of_kernel_ι_eq_zero Φ
     (hom_ext <| LinearMap.ext fun (z : K) ↦ by simp [Subsingleton.elim z 0])
   have : IsIso Φ := isIso_of_mono_of_epi Φ

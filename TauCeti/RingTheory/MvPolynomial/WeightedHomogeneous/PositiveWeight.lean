@@ -102,16 +102,12 @@ theorem weight_pos_of_connected {w : σ → M}
   · have hX : (X i : MvPolynomial σ R) ∈ weightedHomogeneousSubmodule R w (w i) :=
       isWeightedHomogeneous_X R w i
     rw [hneg (w i) hlt, Submodule.mem_bot] at hX
-    have h1 := congrArg (·.coeff (Finsupp.single i 1)) hX
-    rw [coeff_X_same, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply] at h1
-    exact absurd h1 one_ne_zero
+    exact absurd hX (X_ne_zero i)
   · have hX : (X i : MvPolynomial σ R) ∈ weightedHomogeneousSubmodule R w 0 :=
       h0 ▸ isWeightedHomogeneous_X R w i
     obtain ⟨c, hc⟩ := hzero (X i) hX
     have h1 := congrArg (·.coeff (Finsupp.single i 1)) hc
-    rw [Algebra.linearMap_apply, algebraMap_eq, coeff_C, coeff_X_same,
-      ite_eq_right (Finsupp.single_ne_zero.mpr one_ne_zero).symm] at h1
-    exact absurd h1 zero_ne_one
+    simp [eq_comm (a := (0 : σ →₀ ℕ))] at h1
   · exact hgt
 
 end LinearOrder

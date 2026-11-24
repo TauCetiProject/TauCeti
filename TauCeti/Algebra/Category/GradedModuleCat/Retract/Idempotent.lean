@@ -47,15 +47,6 @@ universe uk uA uI
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
-private theorem retract_ofIso_trans_r_comp_i {C : Type*} [Category C] {X Y Z : C}
-    (Φ : X ≅ Y) (r : Retract Y Z) :
-    ((Retract.ofIso Φ).trans r).r ≫ ((Retract.ofIso Φ).trans r).i = r.r ≫ r.i := by
-  -- Unfold `(Retract.ofIso Φ).trans r` so `Φ.inv ≫ Φ.hom` cancels in the middle.
-  calc ((Retract.ofIso Φ).trans r).r ≫ ((Retract.ofIso Φ).trans r).i
-      = (r.r ≫ Φ.inv) ≫ (Φ.hom ≫ r.i) := rfl
-    _ = r.r ≫ (Φ.inv ≫ Φ.hom) ≫ r.i := by simp only [Category.assoc]
-    _ = r.r ≫ r.i := by rw [Φ.inv_hom_id, Category.id_comp]
-
 /-- **Homogeneous splitting of a degree-zero idempotent on a finite shifted free module `I → A`.**
 Over a connected nonnegatively graded algebra `A` over a PID `k`, any degree-zero idempotent
 `p : (I → A) →ₗ[A] (I → A)` (`[Finite I]`) splits homogeneously through a finite shifted free
@@ -83,7 +74,7 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
   let eD : GradedModuleCat.free 𝒜 (d ∘ ULift.down) ≃ₗ[A] (Fin n → A) :=
     (DirectSum.linearEquivFunOnFintype A (ULift.{uI} (Fin n)) (fun _ ↦ A)).trans
       (LinearEquiv.piCongrLeft A (fun _ ↦ A) Equiv.ulift)
-  let rD := (Retract.ofIso Φ).trans rR
+  let rD := Φ.retract.trans rR
   let ι : (Fin n → A) →ₗ[A] (I → A) :=
     eF.toLinearMap ∘ₗ rD.i.hom ∘ₗ eD.symm.toLinearMap
   let π : (I → A) →ₗ[A] (Fin n → A) :=
@@ -95,9 +86,8 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
       LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom rD.retract) _
     simp [ι, π, hret]
   -- 2. Idempotent factorization: `ι ∘ₗ π = p`, from `rD.r ≫ rD.i = freeEndOfPiEnd s p hhom`.
-  · have hri : rD.r ≫ rD.i = GradedModuleCat.freeEndOfPiEnd s p hhom :=
-      (retract_ofIso_trans_r_comp_i Φ rR).trans
-        (GradedModuleCat.retractRangeOfPiIdempotent_r_comp_i s p hp hhom)
+  · have hri : rD.r ≫ rD.i = GradedModuleCat.freeEndOfPiEnd s p hhom := by
+      simp [rD, rR, GradedModuleCat.retractRangeOfPiIdempotent_r_comp_i]
     refine LinearMap.ext fun v ↦ ?_
     have hv : rD.i.hom (rD.r.hom (eF.symm v)) =
         (GradedModuleCat.freeEndOfPiEnd s p hhom).hom (eF.symm v) :=
