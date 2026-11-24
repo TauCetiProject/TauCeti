@@ -124,6 +124,7 @@ theorem orderTop_pow [Nontrivial R] (x : HahnSeries Γ R) (n : ℕ) :
 
 /-- Over a commutative semiring without zero divisors, the leading coefficient of a finite
 product is the product of the leading coefficients. -/
+@[simp]
 theorem leadingCoeff_prod {R ι : Type*} [CommSemiring R] [NoZeroDivisors R] (s : Finset ι)
     (f : ι → HahnSeries Γ R) :
     (∏ i ∈ s, f i).leadingCoeff = ∏ i ∈ s, (f i).leadingCoeff := by

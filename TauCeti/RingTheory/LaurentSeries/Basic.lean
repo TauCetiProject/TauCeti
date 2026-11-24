@@ -272,7 +272,7 @@ variable {R : Type*} [CommRing R] [IsDomain R] {x : R⸨X⸩}
 the leading term of a nonzero polynomial `Q` dominates in `Q(x)`: the order of `Q(x)` is
 `deg Q` times that of `x`, and its leading coefficient is the leading coefficient of `Q` times
 that of `x` to the power `deg Q`. -/
-theorem orderTop_eval₂_C_and_leadingCoeff (hx : x.orderTop < 0) {Q : R[X]} (hQ : Q ≠ 0) :
+private theorem orderTop_eval₂_C_and_leadingCoeff (hx : x.orderTop < 0) {Q : R[X]} (hQ : Q ≠ 0) :
     (Q.eval₂ HahnSeries.C x).orderTop = Q.natDegree • x.orderTop ∧
       (Q.eval₂ HahnSeries.C x).leadingCoeff = Q.leadingCoeff * x.leadingCoeff ^ Q.natDegree := by
   obtain ⟨o, ho⟩ := WithTop.ne_top_iff_exists.mp hx.ne_top

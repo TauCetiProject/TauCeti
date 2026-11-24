@@ -36,7 +36,8 @@ the cusp function at `0`, so it vanishes exactly when the cusp function vanishes
 a periodic function it converges to the function sufficiently high in the upper half-plane. This
 gives the `q`-expansion principle: two periodic functions meromorphic at `i∞` have the same
 Laurent `q`-expansion exactly when they agree near `i∞`. Passing from the period `h` to a multiple
-`d * h` substitutes `q ^ d` for `q`.
+`d * h` substitutes `q ^ d` for `q`. Meromorphy at `i∞` passes to the multiple `d * h` of the
+period and, for holomorphic `h`-periodic functions, descends back from `d * h` to `h`.
 
 These are the expansions at `i∞` through which modular functions, and fields of modular
 functions with prescribed Fourier coefficients, are described. Compare
@@ -47,7 +48,8 @@ expansion here of the function read in the scaling coordinate of the cusp.
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.laurentQExpansion`: the Laurent `q`-expansion at `i∞`.
+* `TauCeti.UpperHalfPlane.laurentQExpansion`: the Laurent `q`-expansion at `i∞`, built from the
+  pole order `TauCeti.UpperHalfPlane.cuspPoleOrder` of the cusp function at `0`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq`: its description through any admissible twisting
   exponent, `TauCeti.UpperHalfPlane.laurentQExpansion_eq_of_analyticAt_qParam_pow_mul` for any
   exponent making the twisted cusp function analytic, and
@@ -61,6 +63,9 @@ expansion here of the function read in the scaling coordinate of the cusp.
   principle.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul`: the expansion at period `d * h` is the
   expansion at period `h` in the variable `q ^ d`.
+* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_pnat_mul` and
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_of_pnat_mul`: meromorphy at `i∞` passes to a
+  multiple of the period and, for holomorphic functions, descends to a smaller period.
 * `TauCeti.Subgroup.CuspDatum.laurentQExpansion_eq_upperHalfPlane_laurentQExpansion`: agreement
   with the Laurent expansion at a cusp of a Fuchsian group.
 
@@ -118,11 +123,11 @@ theorem analyticAt_cuspFunction_qParam_pow_mul {k : ℕ}
 
 /-- The pole order of `f` at `i∞`, as a natural number: the order of the pole at `0` of the cusp
 function of `f`, and `0` if there is no pole. -/
-private def cuspPoleOrder (h : ℝ) (f : ℍ → ℂ) : ℕ :=
+def cuspPoleOrder (h : ℝ) (f : ℍ → ℂ) : ℕ :=
   (-(meromorphicOrderAt (cuspFunction h f) 0).untop₀).toNat
 
 /-- The pole order bounds the order of the cusp function from below. -/
-private theorem neg_cuspPoleOrder_le (h : ℝ) (f : ℍ → ℂ) :
+theorem neg_cuspPoleOrder_le (h : ℝ) (f : ℍ → ℂ) :
     ((-(cuspPoleOrder h f : ℤ) : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction h f) 0 := by
   cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
   | top => exact le_top
@@ -536,6 +541,52 @@ theorem laurentQExpansion_pnat_mul (hfper : Periodic (f ∘ ofComplex) h)
     TauCeti.qExpansion_nat_mul hh.ne' d.pos hgper han,
     laurentQExpansion_eq_of_analyticAt_qParam_pow_mul hh han, map_mul, LaurentSeries.expand_single,
     LaurentSeries.expand_coe, mul_neg, Nat.cast_mul]
+
+/-- Meromorphy at `i∞` passes to a multiple of the period: if `f` is `h`-periodic with cusp
+function meromorphic at `0`, then its cusp function at period `d h` is meromorphic at `0`. -/
+theorem meromorphicAt_cuspFunction_pnat_mul (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+    (hf : MeromorphicAt (cuspFunction h f) 0) (d : ℕ+) :
+    MeromorphicAt (cuspFunction ((d : ℕ) * h) f) 0 :=
+  (MeromorphicAt.comp_analyticAt (g := (· ^ (d : ℕ))) (by rwa [zero_pow d.ne_zero])
+    (by fun_prop)).congr
+    (TauCeti.cuspFunction_nat_mul_eventuallyEq_nhdsNE hh.ne' d.ne_zero hfper).symm
+
+/-- **Meromorphy at `i∞` descends to a smaller period.** If `f` is holomorphic and `h`-periodic
+and its cusp function at period `d h` is meromorphic at `0`, then so is its cusp function at
+period `h`. -/
+theorem meromorphicAt_cuspFunction_of_pnat_mul (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+    (hfhol : MDiff f) (d : ℕ+) (hf : MeromorphicAt (cuspFunction ((d : ℕ) * h) f) 0) :
+    MeromorphicAt (cuspFunction h f) 0 := by
+  set k := cuspPoleOrder ((d : ℕ) * h) f
+  have hk : ((-((d : ℕ) * k : ℕ) : ℤ) : WithTop ℤ) ≤
+      meromorphicOrderAt (cuspFunction ((d : ℕ) * h) f) 0 := by
+    refine le_trans (WithTop.coe_le_coe.mpr ?_) (neg_cuspPoleOrder_le _ f)
+    have : (1 : ℤ) ≤ (d : ℕ) := by exact_mod_cast d.pos
+    push_cast
+    nlinarith [Int.natCast_nonneg k]
+  -- twisting by `𝕢 (d h) ^ (d k) = 𝕢 h ^ k` makes the cusp function at period `d h` analytic,
+  -- so the twist `g = 𝕢 h ^ k * f` is bounded at `i∞`
+  set g : ℍ → ℂ := fun τ ↦ 𝕢 h τ ^ k * f τ
+  have htw : (fun τ : ℍ ↦ 𝕢 ((d : ℕ) * h) τ ^ ((d : ℕ) * k) * f τ) = g := by
+    funext τ
+    rw [pow_mul, TauCeti.Periodic.qParam_nat_mul_pow d.ne_zero]
+  have han := analyticAt_cuspFunction_qParam_pow_mul hf hk
+  rw [htw] at han
+  have hgper : Periodic (g ∘ ofComplex) h := fun z ↦ by
+    simpa [g] using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
+  have hdh : (0 : ℝ) < (d : ℕ) * h := mul_pos (by exact_mod_cast d.pos) hh
+  have hgbdd : IsBoundedAtImInfty g := by
+    refine Tendsto.isBigO_one ℝ (c := cuspFunction ((d : ℕ) * h) g 0) ?_
+    refine (han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty hdh)).congr fun τ ↦ ?_
+    exact eq_cuspFunction τ hdh.ne' (by simpa using hgper.nat_mul d)
+  have hghol : MDiff g :=
+    ((Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe).pow k).mul hfhol
+  have hg : AnalyticAt ℂ (cuspFunction h g) 0 := analyticAt_cuspFunction_zero hh hgper hghol hgbdd
+  have heq : cuspFunction h f =ᶠ[𝓝[≠] 0] fun q ↦ (q ^ k)⁻¹ * cuspFunction h g q := by
+    filter_upwards [cuspFunction_qParam_pow_mul_eventuallyEq hh k f, self_mem_nhdsWithin]
+      with q h₁ hq
+    rw [h₁, inv_mul_cancel_left₀ (pow_ne_zero k hq)]
+  exact ((analyticAt_id.pow k).meromorphicAt.inv.mul hg.meromorphicAt).congr heq.symm
 
 end TauCeti.UpperHalfPlane
 

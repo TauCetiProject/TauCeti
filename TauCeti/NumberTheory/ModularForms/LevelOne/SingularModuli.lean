@@ -22,8 +22,8 @@ integer (`TauCeti.ModularForm.isIntegral_j_of_quadratic`). In particular the sin
 every negative discriminant are algebraic integers, and the Hilbert class polynomial has
 algebraic integer coefficients
 (`TauCeti.BinaryQuadraticForm.isIntegral_coeff_hilbertClassPolynomial`).
-This integrality is what makes the values of modular functions at imaginary quadratic points
-algebraic integers, as needed for the norms of Siegel functions in the class number one problem.
+It discharges the hypothesis `IsIntegral ℤ (j τ)` for modular functions integral over `ℤ[j]`,
+such as the Siegel-function norms used in the class number one problem.
 
 The proof is the classical one through the modular equation. For a positive integer `n`, let
 `Φ_n(X, j(τ)) = ∏ (X - j(A τ))` be the polynomial over the cyclic `n`-isogenies
@@ -98,6 +98,11 @@ private theorem laurentQExpansion_j_toGLReal_smul (hA : A ∈ reps (n : ℤ)) :
   laurentQExpansion_comp_toGLReal_smul natCast_pos hA
     periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j
 
+/-- The entry `d` of a representative `(a b; 0 d)` is positive. -/
+private theorem toNat_val_one_one_pos (hA : A ∈ reps (n : ℤ)) : 0 < (A.val 1 1).toNat := by
+  have := pos_val_one_one_of_mem_reps natCast_pos hA
+  omega
+
 /-- The twist `exp (2 π i b / d)` of a representative `(a b; 0 d)` is a `d`-th root of unity. -/
 private theorem repsTwist_pow (hA : A ∈ reps (n : ℤ)) :
     (repsTwist A : ℂ) ^ (A.val 1 1).toNat = 1 := by
@@ -111,6 +116,18 @@ private theorem repsTwist_pow (hA : A ∈ reps (n : ℤ)) :
   push_cast at hd' ⊢
   field_simp
 
+/-- The twist `exp (2 π i b / d)` of a representative `(a b; 0 d)`, a root of unity, as a unit
+of the algebraic integers. -/
+private noncomputable def repsTwistUnit (hA : A ∈ reps (n : ℤ)) : (integralClosure ℤ ℂ)ˣ :=
+  Units.ofPowEqOne
+    ⟨repsTwist A, IsIntegral.of_pow (toNat_val_one_one_pos hA) (repsTwist_pow hA ▸ isIntegral_one)⟩
+    _ (Subtype.ext (by simpa using repsTwist_pow hA)) (toNat_val_one_one_pos hA).ne'
+
+/-- The unit `repsTwistUnit hA` is the twist `exp (2 π i b / d)` in `ℂ`. -/
+private theorem map_repsTwistUnit (hA : A ∈ reps (n : ℤ)) :
+    Units.map (algebraMap (integralClosure ℤ ℂ) ℂ) (repsTwistUnit hA) = repsTwist A :=
+  Units.ext (by simp [repsTwistUnit])
+
 /-- **The Laurent `q`-expansion of `j` along a cyclic isogeny has algebraic integer
 coefficients**: they are integers times roots of unity. -/
 theorem isIntegral_coeff_laurentQExpansion_j_toGLReal_smul (hA : A ∈ reps (n : ℤ)) (k : ℤ) :
@@ -123,14 +140,9 @@ theorem isIntegral_coeff_laurentQExpansion_j_toGLReal_smul (hA : A ∈ reps (n :
     obtain ⟨z, hz⟩ := exists_laurentQExpansion_j_coeff_eq_intCast m
     rw [hz]
     refine IsIntegral.mul ?_ (isIntegral_intCast z)
-    -- a power of a root of unity is a root of unity, hence integral
-    have hd : 0 < (A.val 1 1).toNat := by
-      have := pos_val_one_one_of_mem_reps natCast_pos hA
-      omega
-    refine IsIntegral.of_pow hd ?_
-    rw [Units.val_zpow_eq_zpow_val, ← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul,
-      zpow_natCast, repsTwist_pow hA, one_zpow]
-    exact isIntegral_one
+    -- a power of a root of unity is a unit of the algebraic integers
+    rw [← map_repsTwistUnit hA, ← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
+    exact (integralClosure.isIntegral _).algebraMap
   · rw [LaurentSeries.coeff_expand_of_not_dvd _ _ hk]
     exact isIntegral_zero
 
@@ -274,27 +286,18 @@ theorem exists_aeval_j_eq_eval_cyclicIsogenyPolynomial :
 
 /-! ### The leading coefficient for a nonsquare `n` -/
 
-/-- The Laurent `q`-expansion of `j` has leading coefficient `1`. -/
-private theorem leadingCoeff_laurentQExpansion_j : (laurentQExpansion 1 j).leadingCoeff = 1 := by
+/-- The Laurent `q`-expansion of `j` has order `-1`. -/
+private theorem order_laurentQExpansion_j : (laurentQExpansion 1 j).order = -1 := by
   have hne : laurentQExpansion 1 j ≠ 0 := by
     rw [← HahnSeries.orderTop_ne_top, orderTop_laurentQExpansion_j]
     exact WithTop.coe_ne_top
-  have hord : (laurentQExpansion 1 j).order = -1 := by
-    apply WithTop.coe_injective
+  exact WithTop.coe_injective (by
     rw [HahnSeries.order_eq_orderTop_of_ne_zero hne, orderTop_laurentQExpansion_j]
-    rfl
-  rw [HahnSeries.leadingCoeff_eq, hord, laurentQExpansion_j_coeff_neg_one]
+    norm_num)
 
-/-- A root of unity, as a unit of the ring of algebraic integers. -/
-private def unitOfPowEqOne {u : ℂˣ} {d : ℕ} (hd : 0 < d) (hu : (u : ℂ) ^ d = 1) :
-    (integralClosure ℤ ℂ)ˣ where
-  val := ⟨u, IsIntegral.of_pow hd (hu ▸ isIntegral_one)⟩
-  inv := ⟨(u⁻¹ : ℂˣ), IsIntegral.of_pow hd (by
-    rw [← Units.val_pow_eq_pow_val, inv_pow, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val,
-      hu, inv_one]
-    exact isIntegral_one)⟩
-  val_inv := Subtype.ext (by simp)
-  inv_val := Subtype.ext (by simp)
+/-- The Laurent `q`-expansion of `j` has leading coefficient `1`. -/
+private theorem leadingCoeff_laurentQExpansion_j : (laurentQExpansion 1 j).leadingCoeff = 1 := by
+  rw [HahnSeries.leadingCoeff_eq, order_laurentQExpansion_j, laurentQExpansion_j_coeff_neg_one]
 
 /-- For `n` not a square, the leading coefficient of the Laurent expansion of `j(τ) - j(A τ)` at
 period `n` is a unit of the algebraic integers: it is `1` if `a ^ 2 < n` and `-e^{-2πib/d}` if
@@ -325,28 +328,17 @@ private theorem exists_units_eq_leadingCoeff (hn : ¬ IsSquare n)
       rw [hxo, hyo, WithTop.coe_lt_coe, neg_lt_neg_iff]
       exact_mod_cast hlt
     rw [HahnSeries.leadingCoeff_sub hxy, LaurentSeries.leadingCoeff_expand,
-      leadingCoeff_laurentQExpansion_j]
-    rfl
+      leadingCoeff_laurentQExpansion_j, Units.val_one, OneMemClass.coe_one]
   · -- the pole of `j(A τ)` dominates
-    have hd : 0 < (A.val 1 1).toNat := by
-      have := pos_val_one_one_of_mem_reps natCast_pos hA
-      omega
-    have hu : ((repsTwist A)⁻¹ : ℂˣ).val ^ (A.val 1 1).toNat = 1 := by
-      rw [← Units.val_pow_eq_pow_val, inv_pow, Units.val_inv_eq_inv_val,
-        Units.val_pow_eq_pow_val, repsTwist_pow hA, inv_one]
-    refine ⟨-unitOfPowEqOne hd hu, ?_⟩
+    refine ⟨-(repsTwistUnit hA)⁻¹, ?_⟩
     have hyx : y.orderTop < x.orderTop := by
       rw [hxo, hyo, WithTop.coe_lt_coe, neg_lt_neg_iff]
       exact_mod_cast hgt
-    have hord : L.order = -1 := by
-      have hne : L ≠ 0 := by
-        rw [← HahnSeries.orderTop_ne_top, hLo]
-        exact WithTop.coe_ne_top
-      exact WithTop.coe_injective (by rw [HahnSeries.order_eq_orderTop_of_ne_zero hne, hLo])
     rw [← neg_sub, HahnSeries.leadingCoeff_neg, HahnSeries.leadingCoeff_sub hyx,
-      LaurentSeries.leadingCoeff_expand, LaurentSeries.leadingCoeff_rescale, hord,
-      leadingCoeff_laurentQExpansion_j, mul_one]
-    simp [unitOfPowEqOne]
+      LaurentSeries.leadingCoeff_expand, LaurentSeries.leadingCoeff_rescale,
+      order_laurentQExpansion_j, leadingCoeff_laurentQExpansion_j, mul_one, ← map_repsTwistUnit hA,
+      zpow_neg_one, Units.coe_map_inv, MonoidHom.coe_ofClass, Subalgebra.algebraMap_apply,
+      Units.val_neg, NegMemClass.coe_neg]
 
 /-- **For `n` not a square, `Φ_n(j(τ), j(τ))` is a polynomial in `j(τ)` with unit leading
 coefficient.** Any polynomial `P` over the algebraic integers with `P(j(τ)) = Φ_n(j(τ), j(τ))`
@@ -362,7 +354,8 @@ theorem isUnit_leadingCoeff_of_aeval_j_eq_eval_cyclicIsogenyPolynomial (hn : ¬ 
   have hLo : (laurentQExpansion 1 j).orderTop < 0 := by
     rw [orderTop_laurentQExpansion_j]
     exact WithTop.coe_lt_coe.mpr (by norm_num)
-  have hinj : Function.Injective (algebraMap (integralClosure ℤ ℂ) ℂ) := Subtype.val_injective
+  have hinj : Function.Injective (algebraMap (integralClosure ℤ ℂ) ℂ) :=
+    FaithfulSMul.algebraMap_injective _ _
   -- the leading coefficient at `i∞`, read from `P(j)`
   have h1 : (laurentQExpansion n fun τ ↦ (cyclicIsogenyPolynomial n j τ).eval (j τ)).leadingCoeff =
       algebraMap _ ℂ P.leadingCoeff := by
@@ -379,8 +372,8 @@ theorem isUnit_leadingCoeff_of_aeval_j_eq_eval_cyclicIsogenyPolynomial (hn : ¬ 
       meromorphicAt_cuspFunction_sub_j_toGLReal_smul (hreps hA), HahnSeries.leadingCoeff_prod,
       ← Finset.prod_attach, Units.coe_prod, map_prod]
     refine Finset.prod_congr rfl fun A _ ↦ ?_
-    rw [laurentQExpansion_sub_j_toGLReal_smul (hreps A.property), ← hw]
-    rfl
+    rw [laurentQExpansion_sub_j_toGLReal_smul (hreps A.property), ← hw,
+      Subalgebra.algebraMap_apply]
   rw [hinj (h1.symm.trans h2)]
   exact Units.isUnit _
 
