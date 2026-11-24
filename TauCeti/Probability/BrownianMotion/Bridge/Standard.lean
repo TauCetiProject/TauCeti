@@ -162,13 +162,14 @@ variance `t (1 - t)`. -/
 theorem hasLaw_eval_standardBrownianBridgeMeasure (t : I) :
     HasLaw (fun x : C(I, ℝ) ↦ x t) (gaussianReal 0 (toNNReal t * toNNReal (σ t)))
       standardBrownianBridgeMeasure := by
-  have hG := isGaussianProcess_eval_standardBrownianBridgeMeasure.hasGaussianLaw_eval t
-  refine ⟨hG.aemeasurable, ?_⟩
-  rw [hG.map_eq_gaussianReal, integral_eval_standardBrownianBridgeMeasure,
-    variance_eval_standardBrownianBridgeMeasure]
-  congr 1
-  ext
-  simp [mul_nonneg t.property.1 (sub_nonneg.2 t.property.2)]
+  have hv : toNNReal t * (1 - toNNReal t) / 1 = toNNReal t * toNNReal (σ t) := by
+    rw [div_one, ← toNNReal_add_toNNReal_symm t, add_tsub_cancel_left]
+  have h := isPreBrownianReal_eval_wienerMeasure.hasLaw_brownianBridge
+    (T := 1) (t := toNNReal t) (by exact_mod_cast t.property.2)
+  rw [hv] at h
+  exact HasLaw.comp_of_hasLaw_comp (f := fun x : C(I, ℝ) ↦ x t)
+    (ContinuousMap.measurable_eval t).aemeasurable
+    hasLaw_standardBrownianBridgePath HasLaw.id h
 
 /-- Almost every path of the standard Brownian bridge starts at `0`. -/
 theorem ae_eval_zero_standardBrownianBridgeMeasure :
