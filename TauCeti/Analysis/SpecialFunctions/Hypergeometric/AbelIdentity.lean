@@ -29,10 +29,12 @@ nonzero at one point span all solutions.
 The statements are about arbitrary solutions, so they do not need a definition of the Gauss
 function. The Wronskian is written out as `f z * deriv g z - deriv f z * g z`.
 
-Abel's identity is the case of `HasDerivAt.wronskian_of_secondOrderLinearEquation` for the
-normalized equation `w′′ + p w′ + q w = 0`. The other two results compare solutions of the
-first-order equation `y′ = −p y` by `IsOpen.exists_eq_const_mul_of_hasDerivAt_mul`: the Wronskian
-with the power product `z^{−c} (1 − z)^{c−a−b−1}`, and two Wronskians with each other.
+Abel's identity is the case `P = z (1 − z)` of
+`DifferentiableAt.hasDerivAt_wronskian_of_secondOrderLinearEquation`, and the span criterion is
+the case of `IsOpen.exists_eq_mul_add_mul_of_secondOrderLinearEquation` whose leading coefficient
+`z (1 − z)` is nonzero off `{0, 1}`. The cut-plane formula compares the Wronskian with the power
+product `z^{−c} (1 − z)^{c−a−b−1}`, both solutions of `y′ = −p y` with
+`p = (c − (a + b + 1) z)/(z (1 − z))`, by `IsOpen.exists_eq_const_mul_of_hasDerivAt_mul`.
 
 ## Main results
 
@@ -66,26 +68,10 @@ theorem hasDerivAt_wronskian_of_hypergeometricEquation {f g : ℂ → ℂ} {z : 
     (hg' : z * (1 - z) * deriv (deriv g) z + (c - (a + b + 1) * z) * deriv g z - a * b * g z = 0) :
     HasDerivAt (fun ζ => f ζ * deriv g ζ - deriv f ζ * g ζ)
       (-((c - (a + b + 1) * z) / (z * (1 - z))) * (f z * deriv g z - deriv f z * g z)) z := by
-  have : z * (1 - z) ≠ 0 := mul_ne_zero hz₀ (sub_ne_zero.mpr hz₁.symm)
-  -- Divided by `z (1 − z)`, 15.10.1 is `w′′ + p w′ + q w = 0`.
-  refine hf.hasDerivAt.wronskian_of_secondOrderLinearEquation (q := -(a * b) / (z * (1 - z)))
-    hdf.hasDerivAt hg.hasDerivAt hdg.hasDerivAt ?_ ?_
-  · field_simp
-    linear_combination hf'
-  · field_simp
-    linear_combination hg'
-
-/-- Abel's identity at a point `z ≠ 0, 1` of an open set on which `f` and `g` are holomorphic. -/
-private theorem hasDerivAt_wronskian_of_hypergeometricEquation_of_mem {f g : ℂ → ℂ}
-    (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U) {z : ℂ}
-    (hz : z ∈ U) (hz₀ : z ≠ 0) (hz₁ : z ≠ 1)
-    (hf' : z * (1 - z) * deriv (deriv f) z + (c - (a + b + 1) * z) * deriv f z - a * b * f z = 0)
-    (hg' : z * (1 - z) * deriv (deriv g) z + (c - (a + b + 1) * z) * deriv g z - a * b * g z = 0) :
-    HasDerivAt (fun ζ => f ζ * deriv g ζ - deriv f ζ * g ζ)
-      (-((c - (a + b + 1) * z) / (z * (1 - z))) * (f z * deriv g z - deriv f z * g z)) z :=
-  hasDerivAt_wronskian_of_hypergeometricEquation hz₀ hz₁ (hf.differentiableAt (hU.mem_nhds hz))
-    ((hf.deriv hU).differentiableAt (hU.mem_nhds hz)) (hg.differentiableAt (hU.mem_nhds hz))
-    ((hg.deriv hU).differentiableAt (hU.mem_nhds hz)) hf' hg'
+  refine hf.hasDerivAt_wronskian_of_secondOrderLinearEquation
+    (mul_ne_zero hz₀ (sub_ne_zero.mpr hz₁.symm)) hdf hg hdg (R := -(a * b)) ?_ ?_
+  · linear_combination hf'
+  · linear_combination hg'
 
 /-- The power product `z^{−c} (1 − z)^{c−a−b−1}` satisfies `y′ = −p y` with the coefficient
 `p = (c − (a + b + 1) z)/(z (1 − z))` of 15.10.1, where `z` and `1 − z` lie in the slit plane. -/
@@ -129,8 +115,10 @@ theorem _root_.IsOpen.exists_wronskian_eq_mul_cpow_mul_one_sub_cpow_of_hypergeom
       (hUs z hz).2).differentiableAt.differentiableWithinAt)) hz₀
     (mul_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero (hUs z₀ hz₀).1)))
       (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero (hUs z₀ hz₀).2))))
-    (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation_of_mem hU hf hg hz.1
-      (hne z hz.1).1 (hne z hz.1).2 (hf' z hz.1) (hg' z hz.1))
+    (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation (hne z hz.1).1 (hne z hz.1).2
+      (hf.differentiableAt (hU.mem_nhds hz.1)) ((hf.deriv hU).differentiableAt (hU.mem_nhds hz.1))
+      (hg.differentiableAt (hU.mem_nhds hz.1)) ((hg.deriv hU).differentiableAt (hU.mem_nhds hz.1))
+      (hf' z hz.1) (hg' z hz.1))
     (fun z hz => hasDerivAt_cpow_mul_one_sub_cpow (hUs z hz.1).1 (hUs z hz.1).2)
   exact ⟨C, fun z hz => (hC z hz).trans (mul_assoc _ _ _).symm⟩
 
@@ -150,36 +138,13 @@ theorem _root_.IsOpen.exists_eq_mul_add_mul_of_hypergeometricEquation {f₁ f₂
       a * b * w z = 0)
     {z₀ : ℂ} (hz₀ : z₀ ∈ U) (hW : f₁ z₀ * deriv f₂ z₀ - deriv f₁ z₀ * f₂ z₀ ≠ 0) :
     ∃ A B : ℂ, ∀ z ∈ U, w z = A * f₁ z + B * f₂ z := by
-  -- On the dense subset `U ∩ {0, 1}ᶜ` every Wronskian of two solutions satisfies Abel's
-  -- identity, so it is a constant multiple of `𝒲{f₁, f₂}`, which is nonzero at `z₀`.
+  -- The leading coefficient `z (1 − z)` vanishes only at `0` and `1`.
   have hS : Dense ({0}ᶜ ∩ {1}ᶜ : Set ℂ) := by
     simpa only [Set.sdiff_eq] using (dense_compl_singleton (0 : ℂ)).sdiff_singleton 1
-  have hW₁₂ := (hf₁.mul (hf₂.deriv hU)).sub ((hf₁.deriv hU).mul hf₂)
-  have hratio {g₁ g₂ : ℂ → ℂ} (hg₁ : DifferentiableOn ℂ g₁ U) (hg₂ : DifferentiableOn ℂ g₂ U)
-      (hg₁' : ∀ z ∈ U, z * (1 - z) * deriv (deriv g₁) z + (c - (a + b + 1) * z) * deriv g₁ z -
-        a * b * g₁ z = 0)
-      (hg₂' : ∀ z ∈ U, z * (1 - z) * deriv (deriv g₂) z + (c - (a + b + 1) * z) * deriv g₂ z -
-        a * b * g₂ z = 0) :
-      ∃ K : ℂ, ∀ z ∈ U, g₁ z * deriv g₂ z - deriv g₁ z * g₂ z =
-        K * (f₁ z * deriv f₂ z - deriv f₁ z * f₂ z) :=
-    hU.exists_eq_const_mul_of_hasDerivAt_mul hUc hS
-      ((hg₁.mul (hg₂.deriv hU)).sub ((hg₁.deriv hU).mul hg₂)) hW₁₂ hz₀ hW
-      (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation_of_mem hU hg₁ hg₂ hz.1
-        (mem_compl_singleton_iff.1 hz.2.1) (mem_compl_singleton_iff.1 hz.2.2) (hg₁' z hz.1)
-        (hg₂' z hz.1))
-      (fun z hz => hasDerivAt_wronskian_of_hypergeometricEquation_of_mem hU hf₁ hf₂ hz.1
-        (mem_compl_singleton_iff.1 hz.2.1) (mem_compl_singleton_iff.1 hz.2.2) (hf₁' z hz.1)
-        (hf₂' z hz.1))
-  obtain ⟨A, hA⟩ := hratio hw hf₂ hw' hf₂'
-  obtain ⟨B, hB⟩ := hratio hf₁ hw hf₁' hw'
-  -- `𝒲{f₁, f₂} w = 𝒲{f₁, f₂} (A f₁ + B f₂)` on `U`, so `w = A f₁ + B f₂` near `z₀`, where
-  -- `𝒲{f₁, f₂}` has no zero; the identity theorem extends this to `U`.
-  refine ⟨A, B, fun z hz => (hw.analyticOnNhd hU).eqOn_of_preconnected_of_eventuallyEq
-    (((hf₁.const_mul A).add (hf₂.const_mul B)).analyticOnNhd hU) hUc hz₀ ?_ hz⟩
-  filter_upwards [((hW₁₂.differentiableAt (hU.mem_nhds hz₀)).continuousAt).eventually_ne hW,
-    hU.mem_nhds hz₀] with z hWz hz
-  simp only [Pi.sub_apply, Pi.mul_apply, Pi.add_apply] at hWz ⊢
-  apply mul_right_cancel₀ hWz
-  linear_combination f₁ z * hA z hz + f₂ z * hB z hz
+  exact hU.exists_eq_mul_add_mul_of_secondOrderLinearEquation hUc hS (P := fun z => z * (1 - z))
+    (Q := fun z => c - (a + b + 1) * z) (R := fun _ => -(a * b))
+    (fun z hz => mul_ne_zero hz.2.1 (sub_ne_zero.mpr (Ne.symm hz.2.2))) hf₁ hf₂ hw
+    (fun z hz => by linear_combination hf₁' z hz) (fun z hz => by linear_combination hf₂' z hz)
+    (fun z hz => by linear_combination hw' z hz) hz₀ hW
 
 end TauCeti

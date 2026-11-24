@@ -16,7 +16,8 @@ fundamental pair with `φ(a) = 0`, `φ'(a) = 1` and `ψ(a) = 1` it is identicall
 
 With a first-order term, Abel's identity holds pointwise over any nontrivially normed field: if
 `f` and `g` satisfy `y'' + p y' + q y = 0` at a point `t`, the Wronskian `f g' - f' g` has
-derivative `-p (f g' - f' g)` at `t`.
+derivative `-p (f g' - f' g)` at `t`. For `P y'' + Q y' + R y = 0` at a point `t` with
+`P t ≠ 0` this gives `-(Q t / P t) (f g' - f' g)`.
 
 ## Main results
 
@@ -25,6 +26,8 @@ derivative `-p (f g' - f' g)` at `t`.
 * `TauCeti.wronskian_eq_one_of_hasDerivAt`: the Wronskian of the fundamental pair is one.
 * `HasDerivAt.wronskian_of_secondOrderLinearEquation`: Abel's identity at a point, for
   `y'' + p y' + q y = 0`.
+* `DifferentiableAt.hasDerivAt_wronskian_of_secondOrderLinearEquation`: Abel's identity at a
+  point `t` for `P y'' + Q y' + R y = 0` with `P t ≠ 0`, written with `deriv`.
 -/
 
 public section
@@ -41,6 +44,26 @@ theorem _root_.HasDerivAt.wronskian_of_secondOrderLinearEquation {𝕜 : Type*}
     (hfe : f'' + p * f' t + q * f t = 0) (hge : g'' + p * g' t + q * g t = 0) :
     HasDerivAt (fun s ↦ f s * g' s - f' s * g s) (-p * (f t * g' t - f' t * g t)) t :=
   ((hf.mul hg').sub (hf'.mul hg)).congr_deriv (by linear_combination f t * hge - g t * hfe)
+
+/-- **Abel's identity** at a point `t` for the equation `P y'' + Q y' + R y = 0` with leading
+coefficient `P t ≠ 0`: if `f`, `g`, `f'` and `g'` are differentiable at `t` and `f`, `g` satisfy
+the equation at `t`, then the Wronskian `f g' - f' g` has derivative
+`-(Q t / P t) (f g' - f' g)` at `t`. -/
+theorem _root_.DifferentiableAt.hasDerivAt_wronskian_of_secondOrderLinearEquation {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] {f g : 𝕜 → 𝕜} {P Q R t : 𝕜} (hP : P ≠ 0)
+    (hf : DifferentiableAt 𝕜 f t) (hdf : DifferentiableAt 𝕜 (deriv f) t)
+    (hg : DifferentiableAt 𝕜 g t) (hdg : DifferentiableAt 𝕜 (deriv g) t)
+    (hfe : P * deriv (deriv f) t + Q * deriv f t + R * f t = 0)
+    (hge : P * deriv (deriv g) t + Q * deriv g t + R * g t = 0) :
+    HasDerivAt (fun s ↦ f s * deriv g s - deriv f s * g s)
+      (-(Q / P) * (f t * deriv g t - deriv f t * g t)) t := by
+  -- Divided by `P`, the equation is `y'' + p y' + q y = 0`.
+  refine hf.hasDerivAt.wronskian_of_secondOrderLinearEquation (q := R / P) hdf.hasDerivAt
+    hg.hasDerivAt hdg.hasDerivAt ?_ ?_
+  · field_simp
+    linear_combination hfe
+  · field_simp
+    linear_combination hge
 
 variable {𝕜 : Type*} [RCLike 𝕜] {q φ φ' ψ ψ' : 𝕜 → 𝕜}
 
