@@ -79,21 +79,33 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-! ### The submersion `(x, y) ↦ f x + y` -/
 
 /-- The submersion `g (x, y) = f x + y` through which `f` factors as `x ↦ g (x, 0)`. -/
-@[expose] def addSnd (f : E → E') (p : WithLp 2 (E × E')) : E' :=
+def addSnd (f : E → E') (p : WithLp 2 (E × E')) : E' :=
   f p.fst + p.snd
+
+omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [InnerProductSpace ℝ E'] in
+/-- The value of `g (x, y) = f x + y`. -/
+@[simp]
+theorem addSnd_apply (f : E → E') (p : WithLp 2 (E × E')) : addSnd f p = f p.fst + p.snd :=
+  (rfl)
 
 private theorem addSnd_eq (f : E → E') :
     addSnd f = f ∘ fstL 2 ℝ E E' + sndL 2 ℝ E E' :=
   rfl
 
 /-- The open set `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}` on which `g` is a submersion into `Ω'`. -/
-@[expose] def addSndDomain (hf : ContinuousOn f Ω) (Ω' : Opens E') : Opens (WithLp 2 (E × E')) :=
+def addSndDomain (hf : ContinuousOn f Ω) (Ω' : Opens E') : Opens (WithLp 2 (E × E')) :=
   ⟨fstL 2 ℝ E E' ⁻¹' Ω ∩ addSnd f ⁻¹' Ω', by
     refine ContinuousOn.isOpen_inter_preimage ?_ (Ω.isOpen.preimage (fstL 2 ℝ E E').continuous)
       Ω'.isOpen
     rw [addSnd_eq]
     exact (hf.comp (fstL 2 ℝ E E').continuous.continuousOn (mapsTo_preimage _ _)).add
       (sndL 2 ℝ E E').continuous.continuousOn⟩
+
+/-- Membership in `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
+@[simp]
+theorem mem_addSndDomain {hf : ContinuousOn f Ω} {p : WithLp 2 (E × E')} :
+    p ∈ addSndDomain hf Ω' ↔ p.fst ∈ Ω ∧ f p.fst + p.snd ∈ Ω' :=
+  Iff.rfl
 
 /-- The map `g (x, y) = f x + y` is smooth on `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
 theorem contDiffOn_addSnd (hf : ContDiffOn ℝ ∞ f Ω) :
@@ -104,8 +116,8 @@ theorem contDiffOn_addSnd (hf : ContDiffOn ℝ ∞ f Ω) :
 
 /-- The map `g (x, y) = f x + y` maps `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}` into `Ω'`. -/
 theorem mapsTo_addSnd (hf : ContinuousOn f Ω) :
-    MapsTo (addSnd f) (addSndDomain hf Ω') Ω' :=
-  fun _ hp ↦ hp.2
+    MapsTo (addSnd f) (addSndDomain hf Ω') Ω' := fun _ hp ↦ by
+  simpa using (mem_addSndDomain.1 hp).2
 
 /-- The derivative of `g (x, y) = f x + y` is `Dg(x, y) (u, v) = Df(x) u + v`. -/
 theorem fderiv_addSnd (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (E × E')} (hp : p.fst ∈ Ω) :
@@ -118,12 +130,12 @@ theorem fderiv_addSnd (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (E × E')} (h
 /-- The map `g (x, y) = f x + y` is a submersion on `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
 theorem surjective_fderiv_addSnd (hf : ContDiffOn ℝ ∞ f Ω) :
     ∀ p ∈ addSndDomain hf.continuousOn Ω', Surjective (fderiv ℝ (addSnd f) p) := fun p hp w ↦
-  ⟨toLp 2 (0, w), by simp [fderiv_addSnd hf hp.1]⟩
+  ⟨toLp 2 (0, w), by simp [fderiv_addSnd hf (mem_addSndDomain.1 hp).1]⟩
 
 /-- The inclusion `x ↦ (x, 0)` maps `Ω` into `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
 theorem mapsTo_inl_addSndDomain (hf : ContinuousOn f Ω) (hfΩ : MapsTo f Ω Ω') :
     MapsTo (fun x ↦ toLp 2 (x, (0 : E'))) (Ω : Set E) (addSndDomain hf Ω') := fun x hx ↦
-  ⟨hx, by simpa [addSnd] using hfΩ hx⟩
+  mem_addSndDomain.2 ⟨hx, by simpa using hfΩ hx⟩
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
 
@@ -140,10 +152,31 @@ variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
 
 /-- The pullback `g^* T` of `T` along the submersion `g (x, y) = f x + y`, by integration over
 the fibres of `g`. -/
-@[expose] def addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) (T : 𝓓'(Ω', ℂ)) :
+def addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) (T : 𝓓'(Ω', ℂ)) :
     𝓓'(addSndDomain hf.continuousOn Ω', ℂ) :=
   compCLMOfSubmersion volume volume (addSnd f) (contDiffOn_addSnd hf) (mapsTo_addSnd _)
     (surjective_fderiv_addSnd hf) T
+
+/-- `g^* T` is the pullback `Distribution.compCLMOfSubmersion` of `T` along `g`. -/
+theorem addSndPullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) (T : 𝓓'(Ω', ℂ)) :
+    addSndPullback hf T = compCLMOfSubmersion volume volume (addSnd f) (contDiffOn_addSnd hf)
+      (mapsTo_addSnd _) (surjective_fderiv_addSnd hf) T :=
+  (rfl)
+
+/-- `g^* T` pairs a test function `φ` with `T` through `T (g_♯ φ)`. -/
+@[simp]
+theorem addSndPullback_apply (hf : ContDiffOn ℝ ∞ f Ω) (T : 𝓓'(Ω', ℂ))
+    (φ : 𝓓(addSndDomain hf.continuousOn Ω', ℝ)) :
+    addSndPullback hf T φ = T (fiberIntegralCLM volume volume (addSnd f) (contDiffOn_addSnd hf)
+      (mapsTo_addSnd _) (surjective_fderiv_addSnd hf) φ) := by
+  rw [addSndPullback_eq_compCLMOfSubmersion, compCLMOfSubmersion_apply]
+
+/-- The pullback `g^* T` is homogeneous in `T`. -/
+@[simp]
+theorem addSndPullback_smul (hf : ContDiffOn ℝ ∞ f Ω) (c : ℂ) (T : 𝓓'(Ω', ℂ)) :
+    addSndPullback hf (c • T) = c • addSndPullback hf T := by
+  ext φ
+  simp
 
 /-- **The wave front set of `g^* T` over `E × {0}`.** If no covector of `WF(T)` lies in the
 normal set of `f`, then no covector of `WF(g^* T)` over `Ω × {0}` is conormal to `E × {0}`. -/
@@ -152,13 +185,13 @@ theorem notMem_waveFrontSet_addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) {T : �
     ∀ x ∈ Ω, ∀ η : E', η ≠ 0 →
       (toLp 2 (x, (0 : E')), toLp 2 ((0 : E), η)) ∉ (addSndPullback hf T).waveFrontSet := by
   intro x hx η' _ hmem
-  rw [addSndPullback, waveFrontSet_compCLMOfSubmersion] at hmem
+  rw [addSndPullback_eq_compCLMOfSubmersion, waveFrontSet_compCLMOfSubmersion] at hmem
   obtain ⟨-, η, hη, hadj⟩ := hmem
   dsimp only at hη hadj
   rw [adjoint_fderiv_addSnd_apply hf (by simpa using hx)] at hadj
   have hfst := congrArg WithLp.fst hadj
   simp only [toLp_fst] at hfst
-  exact h x hx η (by simpa [addSnd] using hη) hfst
+  exact h x hx η (by simpa using hη) hfst
 
 /-! ### The pullback -/
 
@@ -204,7 +237,7 @@ theorem pullback_ofFun (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω') {
     hF.comp (contDiffOn_addSnd hf).continuousOn (mapsTo_addSnd _)
   rw [pullback_eq_pullbackInl hf hfΩ h hg (hg ▸ notMem_waveFrontSet_addSndPullback hf h),
     pullbackInl_ofFun _ hFg]
-  simp [addSnd]
+  simp
 
 omit [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E'] in
 /-- The hypothesis of `Distribution.pullback` holds for every distribution when `f` is a
@@ -236,11 +269,9 @@ theorem pullback_smul (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω') (c
     (c • T).pullback f hf hfΩ (fun x hx η hm ↦ hT x hx η (waveFrontSet_smul_subset c T hm)) =
       c • T.pullback f hf hfΩ hT := by
   have hT' := notMem_waveFrontSet_addSndPullback hf hT
-  have hcT : addSndPullback hf (c • T) = c • addSndPullback hf T := by
-    ext φ
-    simp [addSndPullback]
   rw [pullback_eq_pullbackInl hf hfΩ hT rfl hT']
-  exact (pullback_eq_pullbackInl hf hfΩ _ hcT _).trans (pullbackInl_smul _ c hT')
+  exact (pullback_eq_pullbackInl hf hfΩ _ (addSndPullback_smul hf c T) _).trans
+    (pullbackInl_smul _ c hT')
 
 /-- **Homogeneity of the pullback in the distribution**, for a nonzero scalar `c`, with the
 hypothesis on the wave front set stated for `c • T`. -/
@@ -357,7 +388,7 @@ private theorem fiberIntegralCLM_eq_mollify (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ
   have hint₁ := integrable_uncurry_mul_sub hf.continuousOn ψ σ hh.continuous hhc
   have hint₂ := integrable_mul_add hf.continuousOn ψ σ hh.continuous
   simp_rw [mollify_fiberIntegralCLM_apply hf hfΩ hsurj ψ σ hσ, smul_eq_mul, ← integral_mul_const,
-    hF, addSnd]
+    hF, addSnd_apply]
   rw [integral_integral_swap hint₁,
     ← (volume_preserving_symm_measurableEquiv_toLp_prod E E').symm.integral_comp']
   simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
@@ -383,7 +414,7 @@ theorem pullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : M
       tsupport (fiberIntegralCLM volume volume f hf hfΩ hsurj ψ) ⊆ (Ω' : Set E') := by
     rintro _ ⟨y, hy, w, hw, rfl⟩
     obtain ⟨x, hx, rfl⟩ := tsupport_fiberIntegralCLM_subset volume volume hf hfΩ hsurj ψ hw
-    simpa [addSnd, add_comm] using (hσW n x hx y hy).2
+    simpa [add_comm] using (mem_addSndDomain.1 (hσW n x hx y hy)).2
   -- The values of `g^* T` at `ψ ⊗ ρ n` tend both to the pullback at `ψ` and to `T (f_♯ ψ)`.
   have hT := notMem_waveFrontSet_addSndPullback hf
     (adjoint_fderiv_apply_ne_zero_of_surjective hsurj T)
@@ -400,7 +431,7 @@ theorem pullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : M
     rw [compCLMOfSubmersion_apply]
     refine (((map_continuous T).tendsto _).comp (tendsto_mollify _ volume hσ0 hσφ)).congr
       fun n ↦ ?_
-    rw [Function.comp_apply, addSndPullback, compCLMOfSubmersion_apply,
+    rw [Function.comp_apply, addSndPullback_apply,
       fiberIntegralCLM_eq_mollify hf hfΩ hsurj ψ (σ n) (hF n) (hσφ n)]
   rw [pullback_eq_pullbackInl hf hfΩ _ rfl hT]
   exact tendsto_nhds_unique h₁ h₂
