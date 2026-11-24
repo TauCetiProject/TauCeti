@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
+public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Jet.VanishingIdeal
 
 /-!
@@ -27,8 +29,16 @@ for every smooth section `s`, where `jʳs(x)` is the `r`-jet of `s` at `x`. Conv
 also has finite rank, a linear map `P` of this form is a differential operator of order at most
 `r`. So for operators between sections of finite-rank bundles, the algebraic order filtration by
 iterated commutators agrees with the order filtration by fibrewise factorization through jets.
-Smoothness of `x ↦ A_x`, which would make the factorization one by a smooth bundle morphism
-`JᵣV → W`, is not established here.
+
+The family `x ↦ A_x` is moreover smooth: it is a smooth section of the bundle `Hom(JᵣV, W)`, so
+that `P` factors through `jʳ` by a smooth bundle map `JᵣV → W`
+(`LinearMap.jetFactorSection`). Conversely every smooth bundle map `A : JᵣV → W` defines the
+differential operator `s ↦ (x ↦ A_x (jʳs(x)))` of order at most `r`. For `W` of finite rank this
+identifies the differential operators `Γ(V) → Γ(W)` of order at most `r` with the smooth sections
+of `Hom(JᵣV, W)` (`TauCeti.differentialOperatorsEquivJetHom`). Smoothness is local: near a point
+`x₀`, the jets of finitely many smooth sections `sₖ` whose jets at `x₀` form a basis of `(JᵣV)_x₀`
+form a local frame of `JᵣV` (`IsLocalFrameOn.exists_of_linearIndependent`), and a smooth section of
+`JᵣV` with coefficients `cₖ` in this frame is sent by `A` to the smooth section `∑ₖ cₖ P sₖ`.
 
 The proof combines two identifications of the same filtration. An operator of order at most `r`
 sends `I_x ^ (r + 1) Γ(V)` into `I_x Γ(W)`, where `I_x` is the ideal of smooth functions vanishing
@@ -53,6 +63,10 @@ at `x`, and the sections of `W` in `I_x Γ(W)` vanish at `x`
 * `TauCeti.mem_differentialOperators_section_iff_exists_linearMap`: for `W` of finite rank, the
   differential operators of order at most `r` are exactly the linear maps that factor at each point
   through a linear map on the fibre of `JᵣV`.
+* `LinearMap.jetFactorSection`: the jet factors of a differential operator of order at most `r`,
+  as a smooth section of `Hom(JᵣV, W)`; it is unique (`LinearMap.eq_jetFactorSection`).
+* `TauCeti.differentialOperatorsEquivJetHom`: for `W` of finite rank, the differential operators
+  of order at most `r` are the smooth bundle maps `JᵣV → W`.
 
 ## References
 
@@ -166,5 +180,158 @@ theorem mem_differentialOperators_section_iff_exists_linearMap
   refine mem_differentialOperators_section_iff_forall_jet_eq.2 fun x s t hst ↦ ?_
   obtain ⟨A, hA⟩ := h x
   rw [hA, hA, hst]
+
+/-! ### Smoothness of the jet factor -/
+
+section Smooth
+
+variable [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  [ContMDiffVectorBundle ∞ F' W I]
+
+/-- **Differential operators factor through jets by a smooth bundle map.** The jet factors
+`A_x : (JᵣV)_x → W_x` of a differential operator `P : Γ(V) → Γ(W)` of order at most `r`
+(`LinearMap.jetFactorOfMemDifferentialOperators`) form a smooth section of the bundle
+`Hom(JᵣV, W)`, so that `(P s)(x) = A_x (jʳs(x))` for a smooth bundle map `A : JᵣV → W`
+(`LinearMap.jetFactorSection_apply_jet`). -/
+def _root_.LinearMap.jetFactorSection (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯)
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r) :
+    Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯ where
+  toFun x :=
+    -- The fibre of `JᵣV` is finite-dimensional and Hausdorff, so linear maps out of it are
+    -- continuous.
+    haveI := FiberBundle.t2Space (SymmetricJet ℝ E F r) (JetBundle I F V r) x
+    haveI := VectorBundle.finiteDimensional ℝ (SymmetricJet ℝ E F r) (JetBundle I F V r) x
+    (P.jetFactorOfMemDifferentialOperators hP x).toContinuousLinearMap
+  contMDiff_toFun := by
+    refine (Manifold.contMDiff_hom_iff _).2 fun j hj x₀ ↦ ?_
+    -- The jets at `x₀` of finitely many smooth sections `s k` form a basis of the fibre.
+    let c := (Module.finBasis ℝ (SymmetricJet ℝ E F r)).map
+      ((trivializationAt (SymmetricJet ℝ E F r) (JetBundle I F V r) x₀).linearEquivAt ℝ x₀
+        (FiberBundle.mem_baseSet_trivializationAt' x₀)).symm
+    choose s hs using fun k ↦ jetLinearMap_surjective (I := I) (V := V) (r := r) x₀ (c k)
+    have hc : (fun k ↦ jet I F r (s k) x₀) = ⇑c :=
+      funext fun k ↦ (jetLinearMap_apply x₀ (s k)).symm.trans (hs k)
+    -- Their jets form a local frame of `JᵣV` near `x₀`, in which `j` has smooth coefficients.
+    obtain ⟨U, -, hU, hx₀, hfr⟩ := IsLocalFrameOn.exists_of_linearIndependent isOpen_univ
+      (fun k ↦ (contMDiff_infty_jet (s k).contMDiff).contMDiffOn) (Set.mem_univ x₀)
+      (hc ▸ c.linearIndependent) (hc ▸ c.span_eq.ge)
+    have hsum : ContMDiffAt I (I.prod 𝓘(ℝ, F')) ∞ (fun x ↦ TotalSpace.mk' F' x
+        (∑ k, hfr.coeff k x (j x) • P (s k) x)) x₀ :=
+      ContMDiffAt.sum_section fun k _ ↦
+        ((hfr.contMDiffOn_coeff hU le_rfl hj.contMDiffOn k).contMDiffAt (hU.mem_nhds hx₀))
+          |>.smul_section ((P (s k)).contMDiff x₀)
+    refine hsum.congr_of_eventuallyEq ?_
+    filter_upwards [hU.mem_nhds hx₀] with x hx
+    conv_lhs => rw [hfr.coeff_sum_eq j hx]
+    simp
+
+/-- The smooth bundle map through which a differential operator `P` of order at most `r` factors
+sends the `r`-jet at `x` of a smooth section `s` to `(P s)(x)`. -/
+@[simp]
+theorem _root_.LinearMap.jetFactorSection_apply_jet
+    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r) (x : M)
+    (s : Cₛ^∞⟮I; F, V⟯) : P.jetFactorSection hP x (jet I F r s x) = P s x := by
+  simp [LinearMap.jetFactorSection]
+
+/-- At every point, the smooth bundle map through which a differential operator factors is its
+jet factor at that point. -/
+@[simp]
+theorem _root_.LinearMap.coe_jetFactorSection_apply
+    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r) (x : M) :
+    (P.jetFactorSection hP x : JetBundle I F V r x →ₗ[ℝ] W x) =
+      P.jetFactorOfMemDifferentialOperators hP x := by
+  simp [LinearMap.jetFactorSection]
+
+/-- **Uniqueness of the smooth jet factor.** A smooth bundle map `A : JᵣV → W` sending the
+`r`-jet at `x` of every smooth section `s` to `(P s)(x)` is the smooth jet factor of `P`. -/
+theorem _root_.LinearMap.eq_jetFactorSection {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r)
+    {A : Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯}
+    (hA : ∀ x (s : Cₛ^∞⟮I; F, V⟯), A x (jet I F r s x) = P s x) : A = P.jetFactorSection hP := by
+  ext x j
+  obtain ⟨s, rfl⟩ := jetLinearMap_surjective x j
+  rw [jetLinearMap_apply, hA, LinearMap.jetFactorSection_apply_jet]
+
+/-- The operator `s ↦ (x ↦ A_x (jʳs(x)))` defined by a smooth bundle map `A : JᵣV → W`. -/
+private def jetOperator
+    (A : Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯) :
+    Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯ where
+  toFun s := ⟨fun x ↦ A x (jet I F r s x), A.contMDiff.clm_bundle_apply
+    (contMDiff_infty_jet s.contMDiff)⟩
+  map_add' s t := by
+    ext x
+    simp only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_add, Pi.add_apply]
+    rw [← ContMDiffSection.coe_add, ← jetLinearMap_apply, ← jetLinearMap_apply,
+      ← jetLinearMap_apply, map_add, map_add]
+  map_smul' c s := by
+    ext x
+    simp only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_smul, Pi.smul_apply,
+      RingHom.id_apply]
+    rw [← ContMDiffSection.coe_smul, ← jetLinearMap_apply, ← jetLinearMap_apply, map_smul,
+      map_smul]
+
+omit [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle ∞ F' W I] in
+private theorem jetOperator_apply
+    (A : Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯)
+    (s : Cₛ^∞⟮I; F, V⟯) (x : M) : jetOperator A s x = A x (jet I F r s x) :=
+  (rfl)
+
+variable [FiniteDimensional ℝ F']
+
+private theorem jetOperator_mem_differentialOperators
+    (A : Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯) :
+    jetOperator A ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r :=
+  mem_differentialOperators_section_iff_exists_linearMap.2 fun x ↦
+    ⟨(A x : JetBundle I F V r x →ₗ[ℝ] W x), fun s ↦ jetOperator_apply A s x⟩
+
+variable (I F V F' W r) in
+/-- **Differential operators are the smooth bundle maps out of the jet bundle.** For a smooth real
+vector bundle `W` of finite rank, sending a differential operator `P : Γ(V) → Γ(W)` of order at
+most `r`, in Grothendieck's sense of iterated commutators with multiplication operators, to the
+smooth bundle map `A : JᵣV → W` with `(P s)(x) = A_x (jʳs(x))` (`LinearMap.jetFactorSection`) is a
+real-linear equivalence onto the smooth sections of `Hom(JᵣV, W)`. Its inverse sends `A` to the
+operator `s ↦ (x ↦ A_x (jʳs(x)))` (`TauCeti.differentialOperatorsEquivJetHom_symm_apply_apply`). -/
+def differentialOperatorsEquivJetHom :
+    differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r ≃ₗ[ℝ]
+      Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯ :=
+  LinearEquiv.symm
+    { toFun A := ⟨jetOperator A, jetOperator_mem_differentialOperators A⟩
+      map_add' A B := by
+        ext s x
+        simp only [Submodule.coe_add, LinearMap.add_apply, ContMDiffSection.coe_add,
+          Pi.add_apply, jetOperator_apply, add_apply]
+      map_smul' c A := by
+        ext s x
+        simp only [Submodule.coe_smul, LinearMap.smul_apply, ContMDiffSection.coe_smul,
+          Pi.smul_apply, jetOperator_apply, smul_apply, RingHom.id_apply]
+      invFun P := P.val.jetFactorSection P.property
+      left_inv A :=
+        (LinearMap.eq_jetFactorSection _ fun x s ↦ (jetOperator_apply A s x).symm).symm
+      right_inv P := by
+        ext s x
+        rw [jetOperator_apply, LinearMap.jetFactorSection_apply_jet] }
+
+/-- The equivalence `TauCeti.differentialOperatorsEquivJetHom` sends a differential operator to
+its smooth jet factor. -/
+@[simp]
+theorem differentialOperatorsEquivJetHom_apply
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r) :
+    differentialOperatorsEquivJetHom I F V F' W r P = P.val.jetFactorSection P.property :=
+  (rfl)
+
+/-- The differential operator corresponding to a smooth bundle map `A : JᵣV → W` sends a smooth
+section `s` to `x ↦ A_x (jʳs(x))`. -/
+@[simp]
+theorem differentialOperatorsEquivJetHom_symm_apply_apply
+    (A : Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯)
+    (s : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    ((differentialOperatorsEquivJetHom I F V F' W r).symm A : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ]
+      Cₛ^∞⟮I; F', W⟯) s x = A x (jet I F r s x) :=
+  (rfl)
+
+end Smooth
 
 end TauCeti

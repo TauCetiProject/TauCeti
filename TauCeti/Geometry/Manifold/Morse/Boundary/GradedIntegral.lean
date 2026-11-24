@@ -103,8 +103,7 @@ noncomputable def signedMorseBoundaryAt (R : Type*) [Ring R] (n : ℕ) :
     ({p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ R) →ₗ[R]
       ({q : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f q = n} →₀ R) :=
   haveI := hf.finite_criticalPoints.to_subtype
-  Finsupp.linearCombination R fun p ↦
-    Finsupp.ofSupportFinite (fun q ↦ (hX.signedMorseBoundaryCoeff 𝔬 p q : R)) (toFinite _)
+  Finsupp.intMatrixMap R fun p q ↦ hX.signedMorseBoundaryCoeff 𝔬 p q
 
 variable {hX 𝔬} {R : Type*} [Ring R] {n : ℕ}
 
@@ -115,8 +114,9 @@ theorem signedMorseBoundaryAt_apply
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ R)
     (q : {q : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f q = n}) :
     hX.signedMorseBoundaryAt 𝔬 hf R n c q =
-      c.sum fun p a ↦ a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) := by
-  simp [signedMorseBoundaryAt, Finsupp.linearCombination_apply, Finsupp.ofSupportFinite_coe]
+      c.sum fun p a ↦ a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) :=
+  haveI := hf.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_apply _ c q
 
 /-- The coefficient of `q` in the graded boundary of `a • p` is `a` times the boundary coefficient
 of `q` in the boundary of `p`. -/
@@ -125,8 +125,9 @@ theorem signedMorseBoundaryAt_single_apply
     (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1}) (a : R)
     (q : {q : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f q = n}) :
     hX.signedMorseBoundaryAt 𝔬 hf R n (Finsupp.single p a) q =
-      a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) := by
-  rw [signedMorseBoundaryAt_apply, Finsupp.sum_single_index (zero_mul _)]
+      a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) :=
+  haveI := hf.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_single_apply _ p a q
 
 /-- **The graded and total boundaries agree.** Including the chains of index `n + 1` and of index
 `n` into all Morse chains intertwines the graded boundary with the total boundary
@@ -197,11 +198,9 @@ theorem mapRange_signedMorseBoundaryAt {R' G : Type*} [Ring R'] [FunLike G R R']
     [AddMonoidHomClass G R R'] (g : G)
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1} →₀ R) :
     Finsupp.mapRange g (map_zero g) (hX.signedMorseBoundaryAt 𝔬 hf R n c) =
-      hX.signedMorseBoundaryAt 𝔬 hf R' n (Finsupp.mapRange g (map_zero g) c) := by
-  ext q
-  rw [Finsupp.mapRange_apply, signedMorseBoundaryAt_apply, signedMorseBoundaryAt_apply,
-    Finsupp.sum_mapRange_index (fun _ ↦ zero_mul _), map_finsuppSum]
-  simp only [← zsmul_eq_mul', map_zsmul]
+      hX.signedMorseBoundaryAt 𝔬 hf R' n (Finsupp.mapRange g (map_zero g) c) :=
+  haveI := hf.finite_criticalPoints.to_subtype
+  Finsupp.mapRange_intMatrixMap _ g c
 
 /-- **Reversing orientations conjugates the graded boundary.** The graded boundary for the
 orientations reversed at the critical points of `S` is the conjugate of the original graded
@@ -212,13 +211,9 @@ theorem signedMorseBoundaryAt_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f))
     hX.signedMorseBoundaryAt (𝔬.reverse S) hf R n =
       (Finsupp.signReversal R {p | ↑p ∈ S}).toLinearMap ∘ₗ
         hX.signedMorseBoundaryAt 𝔬 hf R n ∘ₗ
-          (Finsupp.signReversal R {p | ↑p ∈ S}).toLinearMap := by
-  refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-  rw [signedMorseBoundaryAt_single_apply, Finsupp.signReversal_single, Finsupp.signReversal_apply,
-    signedMorseBoundaryCoeff_reverse]
-  by_cases hp : (p : criticalPoints 𝓘(ℝ, E) f) ∈ S <;>
-    by_cases hq : (q : criticalPoints 𝓘(ℝ, E) f) ∈ S <;> simp [hp, hq]
+          (Finsupp.signReversal R {p | ↑p ∈ S}).toLinearMap :=
+  haveI := hf.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_eq_signReversal_comp _ _ _ fun p q ↦ signedMorseBoundaryCoeff_reverse S p q
 
 namespace IsMorseSmale
 

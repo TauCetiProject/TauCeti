@@ -203,6 +203,12 @@ lemma toLinearMap_mul_self (J : AlmostComplexStructure V) :
   ext v
   exact J.apply_apply v
 
+/-- `a + b J` inverts `a - b J` up to the factor `a² + b²`: `(a + b J) (a - b J) = a² + b²`. -/
+lemma smul_add_smul_apply_smul_sub_smul (J : AlmostComplexStructure V) (a b : ℝ) (v : V) :
+    a • (a • v - b • J v) + b • J (a • v - b • J v) = (a ^ 2 + b ^ 2) • v := by
+  rw [apply_sub, apply_smul, apply_smul, apply_apply]
+  module
+
 /-- The underlying linear map of an almost complex structure is injective. -/
 lemma injective (J : AlmostComplexStructure V) : Function.Injective J := by
   intro v w h

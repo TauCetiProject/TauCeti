@@ -56,6 +56,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression, and the resulting transfer of injectivity.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
+* `TauCeti.mdifferentiable_of_mem_maximalAtlas`: a chart of the `C^1` maximal atlas and its inverse
+  are differentiable.
 * `TauCeti.isInvertible_mvfderiv_extend`: the derivative of an extended chart of the maximal
   atlas, read as a map into the model space, is invertible on the chart source.
 * `TauCeti.mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
@@ -158,6 +160,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.hasMFDerivAt_extChartAt_symm_self`: on a boundaryless manifold, the inverse extended
   chart at `x` has the identity as its manifold derivative at `extChartAt I x x`, with no
   smoothness hypothesis on the atlas.
+* `TauCeti.writtenInExtChartAt_self_eq`, `MDifferentiableAt.mfderiv_eq_fderivWithin_self`: a map
+  of model spaces reads in charts as `I' ∘ g ∘ I.symm`, with `mfderiv` its derivative on `range I`.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -296,8 +300,7 @@ theorem ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt [I'.Boundaryless]
     {n : WithTop ℕ∞} {g : E → E'} {x : M} {y : M'} (hg : ContDiffAt 𝕜 n g (extChartAt I x x))
     (hgx : g (extChartAt I x x) = extChartAt I' y y) :
     ContMDiffAt I I' n (fun z ↦ (extChartAt I' y).symm (g (extChartAt I x z))) x := by
-  have hy : (extChartAt I' y).symm (g (extChartAt I x x)) = y := by
-    rw [hgx, extChartAt_to_inv]
+  have hy : (extChartAt I' y).symm (g (extChartAt I x x)) = y := by rw [hgx, extChartAt_to_inv]
   have htarget : ∀ᶠ w in 𝓝 (extChartAt I x x), g w ∈ (extChartAt I' y).target :=
     hg.continuousAt.preimage_mem_nhds (hgx ▸ extChartAt_target_mem_nhds y)
   rw [contMDiffAt_iff, hy]
@@ -355,6 +358,14 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · obtain ⟨w, rfl⟩ := L.surjective v
     exact DFunLike.congr_fun h w
   · exact DFunLike.congr_fun h (L w)
+
+omit [IsManifold I 1 M] in
+/-- `mdifferentiable_of_mem_atlas` for the maximal atlas: a chart of the `C^1` maximal atlas is
+differentiable on its source, and its inverse on its target. -/
+theorem mdifferentiable_of_mem_maximalAtlas {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) : e.MDifferentiable I I :=
+  ⟨fun _ hy ↦ (mdifferentiableAt_of_mem_maximalAtlas he hy).mdifferentiableWithinAt,
+    fun _ hz ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas he hz).mdifferentiableWithinAt⟩
 
 omit [IsManifold I 1 M] in
 /-- The derivative of an extended chart of the `C¹` maximal atlas, read as a map into the model
@@ -1155,8 +1166,7 @@ theorem _root_.ContMDiffAt.hasStrictFDerivAt_extChartAt_conj {f : M → M'} {y :
     (hf : ContMDiffAt I I' 1 f y) :
     HasStrictFDerivAt (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm)
       (fderiv 𝕜 (extChartAt I' (f y) ∘ f ∘ (extChartAt I y).symm) (extChartAt I y y))
-      (extChartAt I y y) :=
-  hf.contDiffAt_writtenInExtChartAt.hasStrictFDerivAt_fderiv one_ne_zero
+      (extChartAt I y y) := hf.contDiffAt_writtenInExtChartAt.hasStrictFDerivAt_fderiv one_ne_zero
 
 end RCLikeCharts
 
@@ -1340,6 +1350,19 @@ theorem hasMFDerivAt_extChartAt_symm_self [I.Boundaryless] (x : M) :
     (Filter.eventuallyEq_of_mem (nhdsWithin_le_nhds (extChartAt_target_mem_nhds x))
       fun _ h ↦ (extChartAt I x).right_inv h)
     ((extChartAt I x).right_inv (mem_extChartAt_target x))
+
+/-- A map between model spaces, read in their preferred extended charts at `z` and at `g z`, is the
+map read through the models, `I' ∘ g ∘ I.symm`. -/
+theorem writtenInExtChartAt_self_eq (g : H → H') (z : H) :
+    writtenInExtChartAt I I' z g = I' ∘ g ∘ I.symm := rfl
+
+/-- The manifold derivative at `z` of a map between model spaces, differentiable at `z`, is the
+Fréchet derivative at `I z` within `range I` of `I' ∘ g ∘ I.symm`, the map read in the models. -/
+theorem _root_.MDifferentiableAt.mfderiv_eq_fderivWithin_self {g : H → H'} {z : H}
+    (hg : MDifferentiableAt I I' g z) :
+    mfderiv I I' g z = fderivWithin 𝕜 (I' ∘ g ∘ I.symm) (range I) (I z) := by
+  -- The tangent-space casts `tangentSpaceCastModel` are the identity maps of the model spaces.
+  rw [hg.mfderiv, writtenInExtChartAt_self_eq, extChartAt_self_apply]; rfl
 
 end ExtChartAtSelf
 

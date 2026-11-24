@@ -22,7 +22,9 @@ Thus the criterion detects the equations on nonreduced bases, not merely stabili
 geometric points.
 
 `grpObjOfClosedImmersion` constructs the group law from these three conditions, and
-`exists_grpObj_isMonHom_iff_ker_le` proves the converse. The compatible group structure is unique,
+`exists_grpObj_isMonHom_iff_ker_le` proves the converse; `exists_grpObj_isMonHom_iff_le` states
+the criterion for the closed subscheme `V(D)` cut out by an ideal sheaf `D`, whose ideal is `D`
+itself. The compatible group structure is unique,
 and is commutative if the ambient group scheme is commutative. The resulting inclusion
 can be used with `ClosedSubgroupScheme.mk`. A subgroup scheme is stable under translation by its
 own points (`ker_comap_leftTranslation_le`).
@@ -124,6 +126,22 @@ theorem exists_grpObj_isMonHom_iff_ker_le (i : H ⟶ G) [IsClosedImmersion i.lef
   · rintro ⟨he, hm, hj⟩
     exact ⟨grpObjOfClosedImmersion i he hm hj,
       isMonHom_grpObjOfClosedImmersion i he hm hj⟩
+
+/-- **The closed-subgroup criterion for an ideal sheaf.** The closed subscheme `V(D)` of a group
+scheme `G` is a subgroup scheme if and only if `D` vanishes on the identity, on the product of two
+points of `V(D)`, and on the inverse of a point of `V(D)`. -/
+theorem exists_grpObj_isMonHom_iff_le (D : G.left.IdealSheafData) :
+    (∃ _ : GrpObj (Over.mk (D.subschemeι ≫ G.hom)),
+        IsMonHom (Over.homMk D.subschemeι : Over.mk (D.subschemeι ≫ G.hom) ⟶ G)) ↔
+      D ≤ η[G].left.ker ∧
+      D ≤ (Limits.pullback.map (D.subschemeι ≫ G.hom) (D.subschemeι ≫ G.hom) G.hom G.hom
+        D.subschemeι D.subschemeι (𝟙 S) (by simp) (by simp) ≫ μ[G].left).ker ∧
+      D ≤ (D.subschemeι ≫ ι[G].left).ker := by
+  let i : Over.mk (D.subschemeι ≫ G.hom) ⟶ G := Over.homMk D.subschemeι
+  have : IsClosedImmersion i.left := inferInstanceAs (IsClosedImmersion D.subschemeι)
+  rw [exists_grpObj_isMonHom_iff_ker_le i]
+  simp only [i, Over.comp_left, Over.homMk_left, Over.tensorHom_left, Over.tensorObj_left,
+    Over.mk_hom, Scheme.IdealSheafData.ker_subschemeι]
 
 /-- The compatible group structure supplied by the closed-subgroup criterion is unique. -/
 theorem eq_grpObjOfClosedImmersion (i : H ⟶ G) [IsClosedImmersion i.left]

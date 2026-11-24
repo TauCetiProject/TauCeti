@@ -18,7 +18,8 @@ is a square (`TauCeti.isSquare_zpow_or_isSquare_zpow_or_isSquare_zpow_mul_zpow`)
 `m`, `n` and `m + n` is even.
 
 A unit square factor does not change whether an element is a square
-(`IsUnit.isSquare_sq_mul_iff`).
+(`IsUnit.isSquare_sq_mul_iff`), and neither does a multiplicative equivalence
+(`MulEquiv.isSquare_apply_iff`, with additive version `AddEquiv.even_apply_iff`).
 
 If all but the last entries of two finite families agree modulo squares, agreement of their
 products modulo squares determines the last entry. This is useful when prescribing the last
@@ -61,3 +62,11 @@ theorem IsUnit.isSquare_sq_mul_iff {M : Type*} [CommMonoid M] {u x : M} (hu : Is
   refine ⟨fun h ↦ ?_, fun ⟨r, hr⟩ ↦ ⟨u * r, by rw [hr, mul_mul_mul_comm, sq]⟩⟩
   have := (IsSquare.sq (↑hu.unit⁻¹ : M)).mul h
   rwa [← mul_assoc, ← mul_pow, hu.val_inv_mul, one_pow, one_mul] at this
+
+/-- A multiplicative equivalence preserves and reflects squares. -/
+@[to_additive (attr := simp) /-- An additive equivalence preserves and reflects even elements. -/]
+theorem MulEquiv.isSquare_apply_iff {F α β : Type*} [Mul α] [Mul β] [EquivLike F α β]
+    [MulEquivClass F α β] (e : F) {a : α} : IsSquare (e a) ↔ IsSquare a :=
+  ⟨fun ⟨r, hr⟩ ↦ ⟨EquivLike.inv e r, EquivLike.injective e <| by
+      rw [map_mul, EquivLike.apply_inv_apply, hr]⟩,
+    fun ⟨r, hr⟩ ↦ ⟨e r, by rw [hr, map_mul]⟩⟩
