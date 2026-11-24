@@ -24,8 +24,9 @@ A closed immersion also preserves the height of every point for the specializati
 carried homeomorphically onto the closure of its image. So the dimension of the closure of a point
 can be computed in a closed subscheme or in the ambient scheme alike.
 
-An open subscheme with closed underlying set has a closed-immersion inclusion, as does every
-member of a pairwise-disjoint open cover. These inclusions support clopen decompositions.
+An open subscheme with closed underlying set has a closed-immersion inclusion (an instance
+when closedness is recorded by `Fact`), as does every member of a pairwise-disjoint open cover.
+These inclusions support clopen decompositions.
 -/
 
 public section
@@ -126,6 +127,12 @@ theorem isClosedImmersion_ι_of_isClosed {X : Scheme} (U : X.Opens)
     (hU : IsClosed (U : Set X)) : IsClosedImmersion U.ι :=
   IsClosedImmersion.of_isPreimmersion _
     (by simpa only [AlgebraicGeometry.Scheme.Opens.range_ι] using hU)
+
+/-- The inclusion of an open subscheme whose underlying set is closed is a closed immersion, as an
+instance for a clopen subscheme recorded by `Fact`. -/
+instance isClosedImmersion_ι_of_fact_isClosed {X : Scheme} (U : X.Opens)
+    [h : Fact (IsClosed (U : Set X))] : IsClosedImmersion U.ι :=
+  U.isClosedImmersion_ι_of_isClosed h.out
 
 end AlgebraicGeometry.Scheme.Opens
 
