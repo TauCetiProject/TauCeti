@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
+import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
@@ -32,7 +33,9 @@ functions `g j` — all independent of `f` — satisfying
 `sup_{z ∈ K} ‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B`
 
 for every `U`-holomorphic function `f` and every upper bound `B ≥ 0` of `‖f‖` on `L`
-(`TauCeti.exists_finite_rank_runge_operator`). Choosing `ζ j`, `w j`, and `g j` independently of
+(`TauCeti.exists_finite_rank_runge_operator`). With the same nodes, weights and functions the
+estimate holds for holomorphic functions with values in any complex normed space
+(`TauCeti.norm_sub_sum_smul_le_of_scalar`). Choosing `ζ j`, `w j`, and `g j` independently of
 `f` makes `f ↦ ∑ j, w j * f (ζ j) * g j` a finite-rank linear evaluation operator, so applying it
 fiberwise preserves continuous, smooth, or holomorphic dependence on external parameters in
 addition to yielding scalar uniform Runge approximation
@@ -44,6 +47,7 @@ addition to yielding scalar uniform Runge approximation
   `TauCeti.IsFilledIn K Ω`, with projection eliminators and `@[simp]` empty-set normal forms.
 * `TauCeti.exists_finite_rank_runge_operator`: existence of the compact neighbourhood `L ⊆ U ∩ Ω`
   and `f`-independent finite-rank evaluation approximants with operator norm bound `ε * B`.
+* `TauCeti.norm_sub_sum_smul_le_of_scalar`: the same estimate for vector-valued functions.
 
 ## References
 
@@ -251,5 +255,28 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
         norm_sub_le_norm_sub_add_norm_sub _ _ _
     _ ≤ (ε / 2) * B + (ε / 2) * B := add_le_add herr₁ herr₂
     _ = ε * B := by ring
+
+/-- **The finite-rank Runge estimate for vector-valued functions.** If a finite-rank evaluation
+operator `f ↦ ∑ j, w j * f (ζ j) * g j` satisfies the Runge estimate on `K` for every scalar
+function holomorphic on `U`, then with the same nodes, weights and output functions it satisfies
+it for every function holomorphic on `U` with values in a complex normed space. -/
+theorem norm_sub_sum_smul_le_of_scalar {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    {U L K : Set ℂ} {N : ℕ} {ζ w : Fin N → ℂ} {g : Fin N → ℂ → ℂ} {ε : ℝ}
+    (hA : ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U → ∀ B : ℝ, 0 ≤ B → (∀ z ∈ L, ‖f z‖ ≤ B) →
+      ∀ z ∈ K, ‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B)
+    {f : ℂ → W} (hf : DifferentiableOn ℂ f U) {B : ℝ} (hB : 0 ≤ B)
+    (hfB : ∀ z ∈ L, ‖f z‖ ≤ B) {z : ℂ} (hz : z ∈ K) :
+    ‖f z - ∑ j, (w j * g j z) • f (ζ j)‖ ≤ ε * B := by
+  -- The estimate for the zero function shows that the bound `ε * B` is nonnegative.
+  have hεB : 0 ≤ ε * B := (norm_nonneg _).trans <|
+    hA 0 (differentiableOn_const 0) B hB (fun _ _ ↦ by simpa using hB) z hz
+  refine NormedSpace.norm_le_dual_bound ℂ _ hεB fun φ ↦ ?_
+  have hφ := hA (fun z ↦ φ (f z)) (φ.differentiable.comp_differentiableOn hf) (‖φ‖ * B)
+    (by positivity) (fun z' hz' ↦ (φ.le_opNorm _).trans (by gcongr; exact hfB z' hz')) z hz
+  calc ‖φ (f z - ∑ j, (w j * g j z) • f (ζ j))‖
+      = ‖φ (f z) - ∑ j, w j * φ (f (ζ j)) * g j z‖ := by
+        simp only [map_sub, map_sum, map_smul, smul_eq_mul, mul_right_comm]
+    _ ≤ ε * (‖φ‖ * B) := hφ
+    _ = ε * B * ‖φ‖ := by ring
 
 end TauCeti
