@@ -54,8 +54,8 @@ nilpotents.
 * `TruncatedWittVector.map_wittVector_truncate_ideal`: truncation maps `W(I)` onto `W_n(I)`.
 * `WittVector.mul_p_pow_mem_ideal`: in characteristic `p`, if `a ^ p ^ c ∈ I` for all `a ∈ J`,
   then `x * p ^ c ∈ W(I)` for all `x ∈ W(J)`.
-* `WittVector.exponentExists_ideal`: the Witt ideal of a nil ideal of bounded exponent has an
-  additive exponent.
+* `WittVector.exponentExists_ideal`: in characteristic `p`, the Witt ideal of a nil ideal `N`
+  with `a ^ p ^ c = 0` for all `a ∈ N` has an additive exponent.
 
 ## References
 
