@@ -110,15 +110,8 @@ theorem exists_tendsto_sum_gaussTerm_of_neg_one_lt_re {a b c z : ℂ} (hz : ‖z
       ordinaryHypergeometricCoefficient a b c n‖ :=
     summable_of_isBigO_nat (Real.summable_nat_rpow.mpr (by linarith))
       (isBigO_ordinaryHypergeometricCoefficient_add_one_sub a b c).norm_left
-  have hz0 : 0 < ‖z - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz₁)
-  have hgeom (n : ℕ) : ‖∑ i ∈ Finset.range n, z ^ i‖ ≤ 2 / ‖z - 1‖ := by
-    rw [geom_sum_eq hz₁, norm_div, div_le_div_iff_of_pos_right hz0]
-    calc ‖z ^ n - 1‖ ≤ ‖z ^ n‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
-      _ ≤ 2 := by
-        rw [norm_pow, norm_one]
-        linarith [pow_le_one₀ (norm_nonneg z) hz (n := n)]
   obtain ⟨L, hL⟩ := cauchySeq_tendsto_of_complete
-    (hf0.cauchySeq_series_smul_of_summable_norm_sub hvar hgeom)
+    (hf0.cauchySeq_series_smul_of_summable_norm_sub hvar (TauCeti.norm_geom_sum_le hz hz₁))
   exact ⟨L, by simpa only [smul_eq_mul, TauCeti.ordinaryHypergeometricCoefficient_eq_div] using hL⟩
 
 /-- **No absolute convergence on and outside the circle** (DLMF §15.2(i)). On `|z| ≥ 1` the
