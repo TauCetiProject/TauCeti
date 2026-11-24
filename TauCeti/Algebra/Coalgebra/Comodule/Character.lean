@@ -120,6 +120,7 @@ theorem character_corestrict {H' : Type*} [CommSemiring H'] [Algebra k H'] [Coal
 attribute [local instance] Prod in
 /-- **Characters are additive.** The character of the product of two comodules is the sum of their
 characters. -/
+@[simp]
 theorem character_prod {N : Type*} [AddCommMonoid N] [Module k N] [Comodule k H N]
     [Module.Free k N] [Module.Finite k N] :
     character k H (M × N) = character k H M + character k H N := by
@@ -149,6 +150,7 @@ theorem character_groupLike [CommSemiring H] [Algebra k H] [Coalgebra k H] [Stro
 
 attribute [local instance] trivial in
 /-- The character of a trivial comodule is its rank. -/
+@[simp]
 theorem character_trivial [CommSemiring H] [Bialgebra k H] [StrongRankCondition k] :
     character k H M = (finrank k M : H) := by
   rw [character_groupLike, GroupLike.val_one, nsmul_eq_mul, mul_one]
@@ -185,6 +187,24 @@ theorem charpoly_endOfPoint_mul_mul_inv [Module.Free k M] [Module.Finite k M]
 
 end HopfAlgebra
 
+section Isomorphism
+
+variable {k : Type u} {H : Type v} {M : Type w}
+variable [CommSemiring k] [Semiring H] [Algebra k H] [Coalgebra k H]
+variable [AddCommMonoid M] [Module k M] [Comodule k H M]
+
+/-- A comodule isomorphism conjugates the point actions: after scalar extension along any point,
+the action on the target is the conjugate of the action on the source. -/
+theorem endOfPoint_eq_conj_of_bijective {N : Type*} [AddCommMonoid N] [Module k N]
+    [Comodule k H N] (f : Hom k H M N) (hf : Function.Bijective f) {A : Type*} [CommSemiring A]
+    [Algebra k A] (g : H →ₐ[k] A) :
+    endOfPoint N g =
+      ((LinearEquiv.ofBijective f.toLinearMap hf).baseChange k A M N).conj (endOfPoint M g) := by
+  rw [LinearEquiv.conj_apply, LinearEquiv.eq_comp_toLinearMap_symm]
+  exact (baseChange_comp_endOfPoint f g).symm
+
+end Isomorphism
+
 section RingCoalgebra
 
 variable {k : Type u} {H : Type v} {M : Type w}
@@ -195,12 +215,8 @@ variable [AddCommMonoid M] [Module k M] [Comodule k H M]
 theorem character_eq_of_bijective {N : Type*} [AddCommMonoid N] [Module k N] [Comodule k H N]
     (f : Hom k H M N) (hf : Function.Bijective f) :
     character k H N = character k H M := by
-  let e : H ⊗[k] M ≃ₗ[H] H ⊗[k] N :=
-    (LinearEquiv.ofBijective f.toLinearMap hf).baseChange k H M N
-  have he : endOfPoint N (AlgHom.id k H) = e.conj (endOfPoint M (AlgHom.id k H)) := by
-    rw [LinearEquiv.conj_apply, LinearEquiv.eq_comp_toLinearMap_symm]
-    exact (baseChange_comp_endOfPoint f (AlgHom.id k H)).symm
-  rw [character_def, character_def, he, LinearMap.trace_conj']
+  rw [character_def, character_def, endOfPoint_eq_conj_of_bijective f hf,
+    LinearMap.trace_conj']
 
 variable [Module.Free k M] [Module.Finite k M]
 
@@ -233,6 +249,7 @@ theorem map_charpoly {A : Type*} [CommRing A] [Algebra k A] (g : H →ₐ[k] A) 
 
 /-- The coefficient of the characteristic polynomial of a comodule, evaluated at a point, is the
 corresponding coefficient of the characteristic polynomial of the point action. -/
+@[simp]
 theorem apply_coeff_charpoly {A : Type*} [CommRing A] [Algebra k A] (g : H →ₐ[k] A) (n : ℕ) :
     g ((charpoly k H M).coeff n) = (endOfPoint M g).charpoly.coeff n := by
   rw [← map_charpoly, coeff_map, AlgHom.coe_toRingHom]
@@ -266,6 +283,7 @@ theorem character_eq_neg_coeff_charpoly [StrongRankCondition k] (h : 0 < finrank
 attribute [local instance] Prod in
 /-- The characteristic polynomial of the product of two comodules is the product of their
 characteristic polynomials. -/
+@[simp]
 theorem charpoly_prod {N : Type*} [AddCommMonoid N] [Module k N] [Comodule k H N]
     [Module.Free k N] [Module.Finite k N] :
     charpoly k H (M × N) = charpoly k H M * charpoly k H N := by
@@ -281,12 +299,8 @@ comodules. -/
 theorem charpoly_eq_of_bijective {N : Type*} [AddCommMonoid N] [Module k N] [Comodule k H N]
     [Module.Free k N] [Module.Finite k N] (f : Hom k H M N) (hf : Function.Bijective f) :
     charpoly k H N = charpoly k H M := by
-  let e : H ⊗[k] M ≃ₗ[H] H ⊗[k] N :=
-    (LinearEquiv.ofBijective f.toLinearMap hf).baseChange k H M N
-  have he : endOfPoint N (AlgHom.id k H) = e.conj (endOfPoint M (AlgHom.id k H)) := by
-    rw [LinearEquiv.conj_apply, LinearEquiv.eq_comp_toLinearMap_symm]
-    exact (baseChange_comp_endOfPoint f (AlgHom.id k H)).symm
-  rw [charpoly_def, charpoly_def, he, LinearEquiv.charpoly_conj]
+  rw [charpoly_def, charpoly_def, endOfPoint_eq_conj_of_bijective f hf,
+    LinearEquiv.charpoly_conj]
 
 end RingCoalgebra
 
@@ -299,6 +313,7 @@ variable [AddCommMonoid M] [Module k M] [Comodule k H M] [Module.Free k M] [Modu
 attribute [local instance] tensor in
 /-- **Characters are multiplicative.** The character of the diagonal tensor product of two
 comodules is the product of their characters. -/
+@[simp]
 theorem character_tensor {N : Type*} [AddCommMonoid N] [Module k N] [Comodule k H N]
     [Module.Free k N] [Module.Finite k N] :
     character k H (M ⊗[k] N) = character k H M * character k H N := by
@@ -321,9 +336,8 @@ theorem charpoly_corestrict {H' : Type*} [CommRing H'] [Bialgebra k H'] (φ : H 
   let _ : Comodule k H' M := Corestrict φ.toCoalgHom
   let b := Free.chooseBasis k M
   rw [charpoly_eq_charpoly_coefficientMatrix b, charpoly_eq_charpoly_coefficientMatrix b,
-    coefficientMatrix_corestrict, ← Matrix.charpoly_map]
-  -- `⇑φ.toCoalgHom` and `⇑(φ : H →+* H')` are both the underlying function of `φ`, by definition.
-  rfl
+    coefficientMatrix_corestrict, ← Matrix.charpoly_map, RingHom.coe_coe]
+  exact congrArg (fun F ↦ ((coefficientMatrix b).map F).charpoly) (funext φ.toCoalgHom_apply)
 
 end RingBialgebra
 
