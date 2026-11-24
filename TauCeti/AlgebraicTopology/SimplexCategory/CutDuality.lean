@@ -132,6 +132,7 @@ lemma cutOrderHom_id : cutOrderHom (OrderHom.id : Fin n →o Fin n) = OrderHom.i
   ext j : 2
   exact ((eq_cutOrderHom_apply_iff _ j j).2 fun i ↦ Iff.rfl).symm
 
+@[simp]
 lemma cutOrderHom_comp (f : Fin n →o Fin m) (g : Fin m →o Fin p) :
     cutOrderHom (g.comp f) = (cutOrderHom f).comp (cutOrderHom g) := by
   ext j : 2
@@ -282,7 +283,7 @@ def cut : AugmentedSimplexCategoryᵒᵖ ⥤ EndpointPreserving where
   map f := EndpointPreserving.homMk (mkHom (cutOrderHom (toOrderHom f.unop))) (cutOrderHom_zero _)
     (cutOrderHom_last _)
   map_id X := EndpointPreserving.hom_ext' (by simp)
-  map_comp f g := EndpointPreserving.hom_ext' (by simp [cutOrderHom_comp])
+  map_comp f g := EndpointPreserving.hom_ext' (by simp)
 
 @[simp]
 lemma cut_map_hom_toOrderHom {X Y : AugmentedSimplexCategoryᵒᵖ} (f : X ⟶ Y) :

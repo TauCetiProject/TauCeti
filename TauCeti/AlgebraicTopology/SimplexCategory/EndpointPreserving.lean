@@ -88,19 +88,23 @@ instance : preservesEndpoints.IsMultiplicative :=
 
 /-! ### Faces and degeneracies -/
 
+lemma toOrderHom_δ_apply {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) :
+    (δ i).toOrderHom j = i.succAbove j := rfl
+
+lemma toOrderHom_σ_apply {n : ℕ} (i : Fin (n + 1)) (j : Fin (n + 2)) :
+    (σ i).toOrderHom j = i.predAbove j := rfl
+
 lemma preservesBot_σ {n : ℕ} (i : Fin (n + 1)) : preservesBot (σ i) := by
-  simp [preservesBot_iff, σ]
+  simp [preservesBot_iff, toOrderHom_σ_apply]
 
 lemma preservesTop_σ {n : ℕ} (i : Fin (n + 1)) : preservesTop (σ i) := by
-  simp [preservesTop_iff, σ]
+  simp [preservesTop_iff, toOrderHom_σ_apply]
 
 lemma preservesEndpoints_σ {n : ℕ} (i : Fin (n + 1)) : preservesEndpoints (σ i) :=
   ⟨preservesBot_σ i, preservesTop_σ i⟩
 
 lemma preservesBot_δ_iff {n : ℕ} (i : Fin (n + 2)) : preservesBot (δ i) ↔ i ≠ 0 := by
-  rw [preservesBot_iff]
-  simp only [δ, mkHom, Hom.toOrderHom_mk, OrderEmbedding.toOrderHom_coe,
-    Fin.succAboveOrderEmb_apply]
+  rw [preservesBot_iff, toOrderHom_δ_apply]
   constructor
   · rintro h rfl
     simp at h
@@ -110,8 +114,7 @@ lemma preservesBot_δ_iff {n : ℕ} (i : Fin (n + 2)) : preservesBot (δ i) ↔ 
 lemma preservesTop_δ_iff {n : ℕ} (i : Fin (n + 2)) :
     preservesTop (δ i) ↔ i ≠ Fin.last _ := by
   rw [preservesTop_iff]
-  simp only [δ, mkHom, Hom.toOrderHom_mk, OrderEmbedding.toOrderHom_coe,
-    Fin.succAboveOrderEmb_apply, len_mk]
+  simp only [toOrderHom_δ_apply, len_mk]
   constructor
   · rintro h rfl
     simp at h
