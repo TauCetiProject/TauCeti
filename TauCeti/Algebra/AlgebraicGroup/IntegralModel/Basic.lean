@@ -117,7 +117,7 @@ noncomputable abbrev toCostructuredArrow :
 algebras over the identity of `H`: a morphism `𝒢.toCostructuredArrow ⟶ 𝒢'.toCostructuredArrow`,
 with identity `𝟙`, composition `≫`, underlying Hopf map `CostructuredArrow.Hom.left` and
 compatibility `CostructuredArrow.w`. -/
-abbrev Hom (𝒢 𝒢' : SmoothModel O K H) :=
+abbrev Hom (𝒢 𝒢' : SmoothModel O K H) : Type u :=
   𝒢.toCostructuredArrow ⟶ 𝒢'.toCostructuredArrow
 
 namespace Hom
