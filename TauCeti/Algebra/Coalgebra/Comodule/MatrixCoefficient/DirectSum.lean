@@ -26,11 +26,10 @@ two of which are isomorphic: each summand embeds by Burnside's theorem
 non-isomorphic simple comodules are independent
 (`TauCeti.Comodule.iSupIndep_matrixCoefficientSubmodule`). Neither step uses linear reductivity,
 so this holds in every characteristic and for every coalgebra; what can fail without linear
-reductivity is surjectivity. Over every field, a family of simple comodules containing exactly one
-copy of each simple right coideal of `C` up to isomorphism exists
-(`TauCeti.Comodule.exists_simple_family_pairwise_complete`). For a linearly reductive coalgebra
-the map on such a family is bijective; this algebraic Peter–Weyl theorem is
-`TauCeti.Coalgebra.IsLinearlyReductive.peterWeylEquiv`.
+reductivity is surjectivity. For a linearly reductive coalgebra the map is bijective on a family
+containing exactly one copy of each simple right coideal of `C` up to isomorphism (such a family
+exists by `TauCeti.Comodule.exists_simple_family_pairwise_complete`); this algebraic Peter–Weyl
+theorem is `TauCeti.Coalgebra.IsLinearlyReductive.peterWeylEquiv`.
 
 ## Main declarations
 
@@ -38,8 +37,6 @@ the map on such a family is bijective; this algebraic Peter–Weyl theorem is
 * `TauCeti.Comodule.range_directSumMatrixCoefficientTensor`: its range is `⨆ᵢ C(Mᵢ)`.
 * `TauCeti.Comodule.directSumMatrixCoefficientTensor_injective`: injectivity over an
   algebraically closed field for pairwise non-isomorphic simple comodules.
-* `TauCeti.Comodule.exists_simple_family_pairwise_complete`: a family of representatives of the
-  simple comodules exists.
 
 ## References
 
@@ -112,8 +109,6 @@ universe u v
 
 variable {k : Type u} {C : Type v} [Field k] [AddCommGroup C] [Module k C] [Coalgebra k C]
 
-attribute [local instance] convolutionModule
-
 /-- **The coefficient maps of non-isomorphic simple comodules are jointly injective.** Over an
 algebraically closed field, for a family of simple comodules with no nonzero morphism between
 distinct members, the map `⨁ᵢ Mᵢ* ⊗ Mᵢ → C` is injective. -/
@@ -129,30 +124,6 @@ theorem directSumMatrixCoefficientTensor_injective [IsAlgClosed k] {ι : Type*} 
   intro x y h
   exact matrixCoefficientTensor_injective
     (by simpa [matrixCoefficientTensorCodRestrict] using congrArg Subtype.val h)
-
-/-- **Representatives of the simple comodules.** Over any field there is a family of simple
-comodules, indexed in the universe of the coalgebra, with no nonzero morphism between distinct
-members, such that every simple right coideal of `C` admits a nonzero morphism, necessarily an
-isomorphism, to one of them. The family is indexed by the distinct simple coefficient spaces. -/
-theorem exists_simple_family_pairwise_complete :
-    ∃ (ι : Type v) (M : ι → ComoduleCat.{u, v, v} k C),
-      (∀ i, IsSimpleOrder (Subcomodule k C (M i))) ∧
-      (Pairwise fun i j ↦ ∀ f : Hom k C (M i) (M j), f = 0) ∧
-      ∀ S : Subcomodule k C C, IsAtom S → ∃ i, ∃ f : Hom k C S (M i), f ≠ 0 := by
-  choose M hM hMeq using fun P : simpleCoefficientSubmodules k C ↦
-    mem_simpleCoefficientSubmodules.mp P.property
-  refine ⟨simpleCoefficientSubmodules k C, M, hM, fun P Q hPQ ↦ ?_, fun S hS ↦ ?_⟩
-  · have := hM P
-    have := hM Q
-    refine hom_eq_zero_of_matrixCoefficientSubmodule_ne fun h ↦ hPQ (Subtype.ext ?_)
-    rw [hMeq P, hMeq Q, h]
-  · have : IsSimpleModule (WithConv (C →ₗ[k] k)) S :=
-      S.isSimpleModule_convolution_iff_isAtom.mpr hS
-    have : IsSimpleOrder (Subcomodule k C S) := isSimpleModule_convolution_iff.mp inferInstance
-    let P : simpleCoefficientSubmodules k C :=
-      ⟨_, matrixCoefficientSubmodule_mem_simpleCoefficientSubmodules (C := C) (M := S)⟩
-    have := hM P
-    exact ⟨P, matrixCoefficientSubmodule_eq_iff.mp (hMeq P)⟩
 
 end Field
 

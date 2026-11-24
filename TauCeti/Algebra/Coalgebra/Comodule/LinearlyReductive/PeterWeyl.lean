@@ -47,6 +47,8 @@ decomposition into the actual simple coefficient spaces is
 * `TauCeti.Coalgebra.IsLinearlyReductive.directSumMatrixCoefficientTensor_surjective`: the
   coefficient maps of a complete family of simple comodules are jointly surjective.
 * `TauCeti.Coalgebra.IsLinearlyReductive.peterWeylEquiv`: the algebraic Peter–Weyl isomorphism.
+* `TauCeti.Coalgebra.IsLinearlyReductive.peterWeylEquiv_symm_matrixCoefficient`: its inverse on a
+  matrix coefficient.
 * `TauCeti.Coalgebra.IsLinearlyReductive.exists_peterWeylEquiv`: such an isomorphism exists for
   some family of simple comodules.
 * `TauCeti.Coalgebra.IsLinearlyReductive.finrank_eq_sum_sq`: the dimension formula.
@@ -71,8 +73,6 @@ variable {k : Type u} [Field k]
   {ι : Type*} [DecidableEq ι] (V : ι → Type*) [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   [∀ i, Comodule k C (V i)] [∀ i, IsSimpleOrder (Subcomodule k C (V i))]
 
-attribute [local instance] Comodule.convolutionModule
-
 /-- For a linearly reductive coalgebra over any field, the coefficient maps of a family of simple
 comodules to which every simple right coideal admits a nonzero morphism are jointly
 surjective. -/
@@ -82,9 +82,7 @@ theorem directSumMatrixCoefficientTensor_surjective (hC : IsLinearlyReductive.{u
   rw [← LinearMap.range_eq_top, Comodule.range_directSumMatrixCoefficientTensor, eq_top_iff,
     ← hC.iSup_matrixCoefficientSubmodule_eq_top]
   refine iSup₂_le fun S hS ↦ ?_
-  have : IsSimpleModule (WithConv (C →ₗ[k] k)) S := S.isSimpleModule_convolution_iff_isAtom.mpr hS
-  have : IsSimpleOrder (Subcomodule k C S) :=
-    Comodule.isSimpleModule_convolution_iff.mp inferInstance
+  have := Subcomodule.isSimpleOrder_of_isAtom hS
   obtain ⟨i, f, hf⟩ := hV S hS
   rw [Comodule.matrixCoefficientSubmodule_eq_of_ne_zero hf]
   exact le_iSup (fun i ↦ Comodule.matrixCoefficientSubmodule (R := k) (C := C) (M := V i)) i
@@ -109,6 +107,19 @@ theorem coe_peterWeylEquiv [IsAlgClosed k] (hC : IsLinearlyReductive.{u, v, u} k
     (hV' : ∀ S : Subcomodule k C C, IsAtom S → ∃ i, ∃ f : Comodule.Hom k C S (V i), f ≠ 0) :
     ⇑(peterWeylEquiv V hC hV hV') = Comodule.directSumMatrixCoefficientTensor (R := k) (C := C) V :=
   (rfl)
+
+/-- The inverse Peter–Weyl isomorphism sends the matrix coefficient of `φ ⊗ v` to `φ ⊗ v` in the
+summand of `Vᵢ`. -/
+@[simp]
+theorem peterWeylEquiv_symm_matrixCoefficient [IsAlgClosed k]
+    (hC : IsLinearlyReductive.{u, v, u} k C)
+    (hV : Pairwise fun i j ↦ ∀ f : Comodule.Hom k C (V i) (V j), f = 0)
+    (hV' : ∀ S : Subcomodule k C C, IsAtom S → ∃ i, ∃ f : Comodule.Hom k C S (V i), f ≠ 0)
+    (i : ι) (φ : Module.Dual k (V i)) (v : V i) :
+    (peterWeylEquiv V hC hV hV').symm (Comodule.matrixCoefficient (C := C) φ v) =
+      DirectSum.lof k ι (fun i ↦ Module.Dual k (V i) ⊗[k] V i) i (φ ⊗ₜ v) := by
+  rw [LinearEquiv.symm_apply_eq, coe_peterWeylEquiv,
+    Comodule.directSumMatrixCoefficientTensor_lof, Comodule.matrixCoefficientTensor_tmul]
 
 omit [DecidableEq ι] in
 /-- **Dimension formula.** Over an algebraically closed field, the dimension of a linearly
