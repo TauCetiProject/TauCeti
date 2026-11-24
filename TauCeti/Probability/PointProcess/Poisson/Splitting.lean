@@ -24,7 +24,10 @@ counts use `(s,t]`.
 
 For product intensity `ν.prod Q` with locally finite `ν`, finite-mass measurable mark selections
 have independent increments and simultaneous monotonicity and additivity. If `Q` is s-finite,
-their Poisson parameters are ground interval intensity times mark mass. Homogeneous intensity
+their Poisson parameters are ground interval intensity times mark mass. For composition-product
+intensity `Λ ⊗ₘ κ` with locally finite `Λ` and finite kernel `κ`, measurable mark-set interval and
+increment counts have Poisson parameters `∫⁻ x in Ioc s t, κ x B ∂Λ`, and complement counts add
+simultaneously to any almost-sure ground projection. Homogeneous intensity
 `r dt ⊗ Q` gives rate `r * Q A`. Bernoulli mark intensities give rates `p*r` and `(1-p)*r`,
 including `p = 0, 1` and zero ground rate. These statements start from a marked Poisson measure;
 they do not construct independent marks on a given uncoloured realization.
@@ -204,6 +207,69 @@ theorem ae_nat_count_prod_union_eq_add_of_measure_Ioc_prod_lt_top
       (by intro b _; cases b <;> assumption)
 
 end MarkSelection
+
+section CoupledTemporal
+
+variable {E : Type*} [MeasurableSpace E] {N : Ω → Measure ℝ≥0} {Λ : Measure ℝ≥0}
+  {κ : Kernel ℝ≥0 E} {M : Ω → Measure (ℝ≥0 × E)}
+
+/-- For any marked temporal Poisson random measure `M` whose ground projection equals `N` almost
+surely and whose intensity is finite on every bounded positive-time cylinder `Ioc 0 t ×ˢ univ`,
+the cumulative natural count paths of a measurable mark set `B` and its complement `Bᶜ` add to the
+ground count path of `N` simultaneously at every time `t : ℝ≥0` on a single full-measure event. -/
+theorem ae_nat_count_eq_add_compl_of_ae_map_fst {Γ : Measure (ℝ≥0 × E)}
+    (hM : IsPoissonRandomMeasure P M Γ) (hproj : ∀ᵐ ω ∂P, (M ω).map Prod.fst = N ω)
+    {B : Set E} (hB : MeasurableSet B) (hfin : ∀ t : ℝ≥0, Γ (Ioc 0 t ×ˢ univ) < ∞) :
+    ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
+      ⌊(N ω (Ioc 0 t)).toNNReal⌋₊ =
+        ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ +
+          ⌊(M ω (Ioc 0 t ×ˢ Bᶜ)).toNNReal⌋₊ := by
+  have hadd := hM.ae_nat_count_prod_union_eq_add_of_measure_Ioc_prod_lt_top hB hB.compl
+    disjoint_compl_right
+    (fun t => (measure_mono (prod_mono Subset.rfl (subset_univ _))).trans_lt (hfin t))
+    (fun t => (measure_mono (prod_mono Subset.rfl (subset_univ _))).trans_lt (hfin t))
+  filter_upwards [hproj, hadd] with ω hω hωadd t
+  have hground : M ω (Ioc 0 t ×ˢ univ) = N ω (Ioc 0 t) := by
+    rw [← hω, Measure.map_apply measurable_fst measurableSet_Ioc, ← prod_univ]
+  simpa only [union_compl_self, hground] using hωadd t
+
+/-- For any marked temporal Poisson random measure `M` of composition-product intensity `Λ ⊗ₘ κ`
+with locally finite `Λ` and finite kernel `κ` whose ground projection equals `N` almost surely,
+the cumulative natural count paths of a measurable mark set `B` and its complement `Bᶜ` add to the
+ground count path of `N` simultaneously at every time `t : ℝ≥0` on a single full-measure event. -/
+theorem ae_nat_count_eq_add_compl_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) (hproj : ∀ᵐ ω ∂P, (M ω).map Prod.fst = N ω)
+    {B : Set E} (hB : MeasurableSet B) :
+    ∀ᵐ ω ∂P, ∀ t : ℝ≥0,
+      ⌊(N ω (Ioc 0 t)).toNNReal⌋₊ =
+        ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ +
+          ⌊(M ω (Ioc 0 t ×ˢ Bᶜ)).toNNReal⌋₊ :=
+  hM.ae_nat_count_eq_add_compl_of_ae_map_fst hproj hB (Λ.compProd_Ioc_prod_lt_top κ univ 0)
+
+/-- Each measurable mark-set interval count of a temporal Poisson random measure with
+composition-product intensity `Λ ⊗ₘ κ` has Poisson law with parameter `∫⁻ x in Ioc s t, κ x B ∂Λ`,
+including empty intervals and atomic intensities. -/
+theorem hasLaw_nat_count_prod_Ioc_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {B : Set E} (hB : MeasurableSet B) (s t : ℝ≥0) :
+    HasLaw (fun ω => ⌊(M ω (Ioc s t ×ˢ B)).toNNReal⌋₊)
+      (poissonMeasure (∫⁻ x in Ioc s t, κ x B ∂Λ).toNNReal) P := by
+  simpa only [Measure.compProd_apply_prod measurableSet_Ioc hB] using
+    hM.hasLaw_nat_count_prod_Ioc_of_lt_top hB s t (Λ.compProd_Ioc_prod_lt_top κ B s t)
+
+/-- Each measurable mark-set count increment over `(s, t]` of a temporal Poisson random measure
+with composition-product intensity `Λ ⊗ₘ κ` has Poisson law with parameter
+`∫⁻ x in Ioc s t, κ x B ∂Λ`. -/
+theorem hasLaw_nat_count_prod_sub_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
+    (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {B : Set E} (hB : MeasurableSet B)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    HasLaw (fun ω => ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ -
+      ⌊(M ω (Ioc 0 s ×ˢ B)).toNNReal⌋₊)
+      (poissonMeasure (∫⁻ x in Ioc s t, κ x B ∂Λ).toNNReal) P := by
+  simpa only [Measure.compProd_apply_prod measurableSet_Ioc hB] using
+    hM.hasLaw_nat_count_prod_sub_of_measure_Ioc_prod_lt_top hB hst
+      (Λ.compProd_Ioc_prod_lt_top κ B 0 t)
+
+end CoupledTemporal
 
 /-- All singleton-mark count paths are mutually independent, without finiteness assumptions. -/
 theorem iIndepFun_nat_count_prod_singleton {E : Type*} [MeasurableSpace E]
