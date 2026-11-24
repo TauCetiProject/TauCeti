@@ -18,7 +18,8 @@ involving sums of principal roots. The file also records the values `√i = e^{�
 `√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane and the splitting `√(r z) = √r √z`
 for real `r ≥ 0`, records that the real square root of a nonnegative real, cast to `ℂ`, squares
 back to it, and packages the principal square root of a nonzero complex number as a unit,
-`Complex.sqrtUnit`.
+`Complex.sqrtUnit`. A complex unit of absolute value one has a square root of absolute value one,
+`Complex.exists_sq_eq_and_star_mul_self_eq_one`.
 -/
 
 public section
@@ -122,5 +123,14 @@ theorem val_sqrtUnit {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) = sqrt z :=
 /-- The unit principal square root of `z` squares to `z`. -/
 theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) : (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
   rw [← _root_.sq, val_sqrtUnit, sq_sqrt]
+
+/-- A complex unit of absolute value one is `s ^ 2` for a unit `s` of absolute value one, that is,
+with `conj s * s = 1`. -/
+theorem exists_sq_eq_and_star_mul_self_eq_one {z : ℂˣ} (hz : normSq z = 1) :
+    ∃ s : ℂˣ, s ^ 2 = z ∧ star s * s = 1 := by
+  refine ⟨sqrtUnit z.ne_zero, Units.ext (by simp), Units.ext ?_⟩
+  simp only [Units.val_mul, Units.coe_star, val_sqrtUnit, Units.val_one, star_def]
+  rw [← normSq_eq_conj_mul_self, ofReal_eq_one,
+    ← pow_eq_one_iff_of_nonneg (normSq_nonneg _) two_ne_zero, ← map_pow, sq_sqrt, hz]
 
 end Complex

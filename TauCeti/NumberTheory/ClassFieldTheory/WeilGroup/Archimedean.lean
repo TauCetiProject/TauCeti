@@ -7,12 +7,12 @@ module
 
 public import Mathlib.Algebra.Order.Ring.Units
 public import Mathlib.Analysis.Quaternion
-public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.GroupWithZero
 import TauCeti.Algebra.Quaternion.ComplexSubfield
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 import TauCeti.Topology.Algebra.Group.Quotient.Basic
@@ -211,9 +211,9 @@ theorem inv_j : j⁻¹ = j * includeComplex (-1) := by
 @[simp]
 theorem j_mul_includeComplex_mul_inv_j (z : WeilGroupComplex) :
     j * includeComplex z * j⁻¹ = includeComplex (star z) := by
-  rw [ext_iff, Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul, Units.val_mul,
-    val_j, coe_includeComplex, coe_includeComplex]
-  exact (TauCeti.Quaternion.ofComplex_conjAe (z : ℂ)).symm
+  rw [ext_iff]
+  simpa [val_j, Complex.star_def, ← Complex.conjAe_coe] using
+    (TauCeti.Quaternion.ofComplex_conjAe (z : ℂ)).symm
 
 /-- Moving `j` past `z ∈ ℂˣ` conjugates `z`. -/
 @[simp]
@@ -516,23 +516,13 @@ theorem commutatorElement_j_includeComplex (z : WeilGroupComplex) :
     (⁅j, includeComplex z⁆ : WeilGroupReal) = includeComplex (star z * z⁻¹) := by
   rw [commutatorElement_def, j_mul_includeComplex_mul_inv_j, map_mul, map_inv]
 
-/-- A complex unit of absolute value one is `s ^ 2` for a unit `s` with `conj s * s = 1`. -/
-private theorem exists_sq_eq_and_star_mul_self_eq_one {z : ℂˣ} (hz : Complex.normSq z = 1) :
-    ∃ s : ℂˣ, s ^ 2 = z ∧ star s * s = 1 := by
-  obtain ⟨s, hs⟩ : ∃ s : ℂ, s ^ 2 = z := ⟨_, Complex.cpow_nat_inv_pow (z : ℂ) two_ne_zero⟩
-  have hs₀ : s ≠ 0 := by rintro rfl; exact z.ne_zero (by simp [← hs])
-  refine ⟨Units.mk0 s hs₀, Units.ext (by simpa using hs), Units.ext ?_⟩
-  simp only [Units.val_mul, Units.coe_star, Units.val_mk0, Units.val_one, Complex.star_def]
-  rw [← Complex.normSq_eq_conj_mul_self, Complex.ofReal_eq_one,
-    ← pow_eq_one_iff_of_nonneg (Complex.normSq_nonneg _) two_ne_zero, ← map_pow, hs, hz]
-
 /-- **The norm induces the abelianization**: its kernel is the commutator subgroup of `W_ℝ`. -/
 theorem ker_norm : norm.ker = commutator WeilGroupReal := by
   refine le_antisymm (fun w hw ↦ ?_) (Group.Abelianization.commutator_le_ker norm)
   rw [MonoidHom.mem_ker] at hw
   -- The kernel is the unit circle in `ℂˣ`.
   obtain ⟨z, rfl⟩ := coe_norm_pos_iff.1 (by rw [hw, Units.val_one]; exact one_pos)
-  obtain ⟨s, rfl, hs⟩ := exists_sq_eq_and_star_mul_self_eq_one (z := z)
+  obtain ⟨s, rfl, hs⟩ := Complex.exists_sq_eq_and_star_mul_self_eq_one (z := z)
     (by rw [← coe_norm_includeComplex, hw, Units.val_one])
   -- `s ^ 2 = s / conj s = ⁅j, conj s⁆`, since `conj s = s⁻¹`.
   have h : ⁅j, includeComplex (star s)⁆ = includeComplex (s ^ 2) := by
@@ -552,9 +542,7 @@ def abelianizationEquiv : Group.Abelianization WeilGroupReal ≃* ℝˣ :=
 @[simp]
 theorem abelianizationEquiv_of (w : WeilGroupReal) :
     abelianizationEquiv (Group.Abelianization.of w) = norm w := by
-  rw [abelianizationEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    QuotientGroup.quotientKerEquivOfSurjective_symm_apply, QuotientGroup.quotientMulEquivOfEq_mk,
-    QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+  simp [abelianizationEquiv]
 
 /-- The inverse of `abelianizationEquiv` sends the norm of `w` to the class of `w`. -/
 @[simp]
@@ -578,9 +566,7 @@ def topologicalAbelianizationEquiv : TopologicalAbelianization WeilGroupReal ≃
 @[simp]
 theorem topologicalAbelianizationEquiv_mk (w : WeilGroupReal) :
     topologicalAbelianizationEquiv (w : TopologicalAbelianization WeilGroupReal) = norm w := by
-  rw [topologicalAbelianizationEquiv, ContinuousMulEquiv.trans_apply,
-    Subgroup.quotientContinuousMulEquivOfEq_mk,
-    ContinuousMulEquiv.quotientKerEquivOfSurjective_apply_mk]
+  simp [topologicalAbelianizationEquiv]
 
 /-- The inverse of `topologicalAbelianizationEquiv` sends the norm of `w` to the class of
 `w`. -/
