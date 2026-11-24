@@ -11,7 +11,6 @@ import TauCeti.Algebra.CharP.Two
 import TauCeti.Algebra.GroupWithZero.Units.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
-import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Restrict
 import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
