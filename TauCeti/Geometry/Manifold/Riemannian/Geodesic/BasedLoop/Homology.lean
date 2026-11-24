@@ -107,13 +107,13 @@ def basedCyclicDistanceCutCocone (hlt : ∀ n i, δ n i < r) (h0 : 0 ≤ δ 0 0)
         ext q : 2
         refine MooreLoopSpace.toFreeLoop_injective ?_
         -- Read as free loops, both sides are broken geodesics of the free cocone, which is
-        -- compatible with the maps of the sequence of distance cuts. The legs of both cocones
-        -- and the identity of the apex unfold to the continuous maps they are built from.
-        have h := ConcreteCategory.congr_hom ((cyclicDistanceCutCocone hr hlt h0 hδ).w f) q.val
-        rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply]
-        exact (toFreeLoop_basedCyclicDistanceCutBrokenGeodesic_apply hr (hlt m) x _).trans
-          ((congrArg _ (coe_basedCyclicDistanceCutFunctor_map_apply M h0 hδ x f q)).trans
-            (h.trans (toFreeLoop_basedCyclicDistanceCutBrokenGeodesic_apply hr (hlt n) x q).symm)) }
+        -- compatible with the maps of the sequence of distance cuts.
+        simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.comp_id, TopCat.hom_comp,
+          ConcreteCategory.hom_ofHom, ContinuousMap.comp_apply,
+          toFreeLoop_basedCyclicDistanceCutBrokenGeodesic_apply hr (hlt m) x,
+          toFreeLoop_basedCyclicDistanceCutBrokenGeodesic_apply hr (hlt n) x,
+          coe_basedCyclicDistanceCutFunctor_map_apply]
+        exact (cyclicDistanceCutCocone hr hlt h0 hδ).w_apply f q.val }
 
 /-- The leg of the cocone of based broken geodesics at the stage `n` is the broken-geodesic map
 `geoⁿ : 𝓛ⁿ_x M → Ω_x M`. -/
@@ -158,11 +158,9 @@ theorem exists_comp_homotopic_basedCyclicDistanceCutFunctor_map (hpos : 0 < δ 0
       (basedCyclicDistanceCutSampleBrokenGeodesic hr (hlt n) (n + (N + 1)) hm x).comp
         (ContinuousMap.subtypeVal K) := by
     ext q : 3
-    rw [ContinuousMap.comp_apply, he, ContinuousMap.comp_apply,
-      coe_basedCyclicDistanceCutSampleBrokenGeodesic_apply,
-      ← toFreeLoop_basedCyclicDistanceCutBrokenGeodesic_apply hr (hlt n) x,
-      MooreLoopSpace.toMoorePath_toFreeLoop, ContinuousMap.coe_mk,
-      MapsTo.val_restrict_apply, ContinuousMap.subtypeVal_apply]
+    simp [he, coe_basedCyclicDistanceCutSampleBrokenGeodesic_apply,
+      ← toFreeLoop_basedCyclicDistanceCutBrokenGeodesic_apply,
+      -cyclicDistanceCutBrokenGeodesic_apply]
   rw [he', basedCyclicDistanceCutFunctor_map_homOfLE M hpos.le hδ x n (N + 1)
     (cutoff_sub_le_of_forall_le_succ hδ n (N + 1))]
   exact ((homotopic_basedCyclicDistanceCutRepeatFirstIterate_sampleBrokenGeodesic hr (hlt n)

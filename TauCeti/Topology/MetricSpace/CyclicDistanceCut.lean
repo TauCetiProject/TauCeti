@@ -584,10 +584,7 @@ def basedCyclicDistanceCutFunctor (h0 : 0 ≤ δ 0 0) (hδ : ∀ n i j, δ n i �
         (ConcreteCategory.congr_hom ((cyclicDistanceCutFunctor X h0 hδ).map_id n) q.val)
   map_comp f g := by
     ext q : 2
-    refine (coe_basedCyclicDistanceCutRestrict_apply _
-      (coe_cyclicDistanceCutFunctor_map_apply_zero X h0 hδ _) x q).trans ?_
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.hom_ofHom,
-      coe_basedCyclicDistanceCutRestrict_apply, ConcreteCategory.hom_ofHom,
+    simp only [ConcreteCategory.comp_apply, ConcreteCategory.hom_ofHom,
       coe_basedCyclicDistanceCutRestrict_apply]
     exact ConcreteCategory.congr_hom ((cyclicDistanceCutFunctor X h0 hδ).map_comp f g) q.val
 
