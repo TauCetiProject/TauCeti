@@ -41,8 +41,6 @@ vectors indexed by `ι`.
   on `U`.
 * `Module.Basis.range_eq_span_comp`: the range of a linear map is spanned by its values on a basis.
 * `Module.Basis.ofSpanEq`: a linearly independent family spanning a submodule `U` is a basis of `U`.
-* `Module.Basis.coe_eq_sum_span_equivFun`: an element of the span of a linearly independent finite
-  family `v` is the sum of its coordinates in `Basis.span` times the members of `v`.
 * `Module.Basis.eq_sum_repr_smul_of_mem`: an ambient vector in a submodule `U` expands as the
   coordinate sum of any finite basis of `U`.
 * `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
@@ -207,14 +205,6 @@ noncomputable def ofSpanEq {v : n → M} (hv : LinearIndependent R v)
 theorem coe_ofSpanEq {v : n → M} (hv : LinearIndependent R v)
     (h : Submodule.span R (Set.range v) = U) (i : n) : (ofSpanEq hv h i : M) = v i := by
   simp [ofSpanEq, Basis.span_apply]
-
-/-- An element `y` of the span of a linearly independent finite family `v` is, in the ambient
-module, the sum of its coordinates in the basis `Basis.span hv` times the members of `v`. -/
-theorem coe_eq_sum_span_equivFun [Fintype n] {v : n → M} (hv : LinearIndependent R v)
-    (y : Submodule.span R (Set.range v)) :
-    (y : M) = ∑ i, (Basis.span hv).equivFun y i • v i := by
-  conv_lhs => rw [← (Basis.span hv).sum_equivFun y]
-  simp only [Submodule.coe_sum, Submodule.coe_smul, Basis.span_apply]
 
 /-- An ambient vector belonging to a submodule `U` expands in any finite basis of `U`. -/
 theorem eq_sum_repr_smul_of_mem [Fintype n] (b : Module.Basis n R U) {x : M} (hx : x ∈ U) :

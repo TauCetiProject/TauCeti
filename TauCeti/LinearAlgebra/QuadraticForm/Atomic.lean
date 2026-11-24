@@ -239,13 +239,6 @@ section Split
 
 variable {q : QuadraticForm R M}
 
-omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- Vectors of a submodule are orthogonal for the polar pairing to vectors of its orthogonal
-complement. -/
-private theorem polar_eq_zero_of_mem_orthogonal {S : Submodule R M} {x y : M} (hx : x ∈ S)
-    (hy : y ∈ LinearMap.BilinForm.orthogonal q.polarBilin S) : polar q x y = 0 :=
-  LinearMap.BilinForm.mem_orthogonal_iff.mp hy x hx
-
 /-- The restriction of `q` to the line spanned by a linearly independent vector `v` is a unary
 atomic block or zero. -/
 private theorem hasAtomicDecomposition_span_singleton (hπ : Irreducible π) {v : M}
@@ -253,7 +246,8 @@ private theorem hasAtomicDecomposition_span_singleton (hπ : Irreducible π) {v 
     HasAtomicDecomposition π (q.comp (Submodule.span R (Set.range ![v])).subtype) := by
   let b := Basis.span hv
   have hy (y : Submodule.span R (Set.range ![v])) : (y : M) = b.equivFun y 0 • v := by
-    rw [Module.Basis.coe_eq_sum_span_equivFun hv y, Fin.sum_univ_one, Matrix.cons_val_zero]
+    simpa only [Subtype.coe_eta, Basis.equivFun_apply, Basis.span_apply, Fin.sum_univ_one,
+      Matrix.cons_val_zero] using (Basis.span hv).eq_sum_repr_smul_of_mem y.property
   by_cases hq : q v = 0
   · exact .of_forall_eq_zero π b fun y ↦ by
       rw [comp_apply, Submodule.subtype_apply, hy y, QuadraticMap.map_smul, hq, smul_zero]
@@ -295,7 +289,7 @@ private theorem splitsOff_of_apply_self_dvd (hπ : Irreducible π) {x : M}
       (LinearMap.BilinForm.orthogonal q.polarBilin (Submodule.span R (Set.range ![x]))) := by
     simpa using LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd q.polarBilin
       (mem_nonZeroDivisors_of_ne_zero hx) (by simpa using hdvd)
-  exact .of_linearIndependent hli hc (fun _ ha _ hb ↦ polar_eq_zero_of_mem_orthogonal ha hb)
+  exact .of_linearIndependent hli hc (fun _ ha _ hb ↦ hb _ ha)
     (hasAtomicDecomposition_span_singleton hπ hli)
 
 /-- Let `u, w` have a nonzero mutual pairing `β` dividing every value of the polar pairing, with
@@ -309,7 +303,7 @@ private theorem splitsOff_of_apply_pair (hπ : Irreducible π) (h2 : ¬IsUnit (2
     (u := u) (w := w) (mem_nonZeroDivisors_of_ne_zero hd) rfl hs ht
     (fun h ↦ hs' (isUnit_of_mul_isUnit_left h))
   have hc := hmod.isCompl_orthogonal (mem_nonZeroDivisors_of_ne_zero hd) (by simpa using hdvd)
-  refine .of_linearIndependent hli hc (fun _ ha _ hb ↦ polar_eq_zero_of_mem_orthogonal ha hb) ?_
+  refine .of_linearIndependent hli hc (fun _ ha _ hb ↦ hb _ ha) ?_
   -- Normalize the coefficients `[q u, polar q u w, q w]` by their content `g = ε π ^ m`.
   obtain ⟨g, a₀, b₀, hg, ha₀, hb₀, hunit⟩ : ∃ g a₀ b₀ : R,
       g ≠ 0 ∧ q u = g * a₀ ∧ polar q u w = g * b₀ ∧ (IsUnit a₀ ∨ IsUnit b₀) := by
@@ -328,8 +322,9 @@ private theorem splitsOff_of_apply_pair (hπ : Irreducible π) (h2 : ¬IsUnit (2
   let b := Basis.span hli
   have hy (y : Submodule.span R (Set.range ![u, w])) :
       (y : M) = b.equivFun y 0 • u + b.equivFun y 1 • w := by
-    rw [Module.Basis.coe_eq_sum_span_equivFun hli y, Fin.sum_univ_two, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_zero]
+    simpa only [Subtype.coe_eta, Basis.equivFun_apply, Basis.span_apply, Fin.sum_univ_two,
+      Matrix.cons_val_zero, Matrix.cons_val_one] using
+      (Basis.span hli).eq_sum_repr_smul_of_mem y.property
   refine .of_isAtomic (m := m) (Q := QuadraticMap.weightedSumSquares R ![ε * a₀, ε * (a₀ * k)] +
       (ε * b₀) • QuadraticMap.linMulLin (LinearMap.proj 0) (LinearMap.proj 1))
     (.of_binary h2 (a := ε * a₀) (b := ε * b₀) (c := ε * (a₀ * k)) (LinearEquiv.refl R _)
