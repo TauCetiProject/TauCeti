@@ -26,6 +26,9 @@ Natural multiplicities can also be expressed by repeating each nonnegative real 
 through a finite fiber. Summability of the repeated family is equivalent to summability of
 the original family weighted by those multiplicities.
 
+A summable real family times a bounded one is summable. Mixing families `ν i`, each nonnegative
+and summing to one, with nonnegative weights `a i` summing to `A` gives a family summing to `A`.
+
 A square-summable real family is eventually small: `b i * C ≤ 1` for all but finitely many
 `i`, for any fixed real `C`.
 
@@ -36,6 +39,10 @@ analogue of the power-rule integral identity for tails.
 
 * `Summable.exists_tendsto_atTop_summable_mul`: weights `c n ≥ 1` with `c n → ∞` and
   `∑ n, c n * a n` summable.
+* `Summable.mul_of_abs_le`: a summable family times a bounded family is summable.
+* `Summable.prod_mul_of_hasSum_one`, `HasSum.tsum_mul_of_hasSum_one`: mixing nonnegative
+  families `ν i` summing to one with nonnegative summable weights `a i` gives a summable family
+  on the product, and the mixture `∑' i, a i * ν i m` sums to `∑' i, a i`.
 * `Summable.antitone_tsum_Ioi`: the tails `∑_{m > n} a m` of a nonnegative summable sequence
   decrease with `n`.
 * `Summable.mul_pow_tsum_Ioi`: the sequence `a m * (∑_{j > m} a j) ^ k` is summable for a
@@ -142,6 +149,34 @@ theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summa
     gcongr with k
     simp only [hb_def]
     split_ifs <;> simp
+
+/-- A summable real family times a bounded real family is summable. -/
+theorem Summable.mul_of_abs_le {ι : Type*} {f g : ι → ℝ} {C : ℝ} (hf : Summable f)
+    (hg : ∀ i, |g i| ≤ C) : Summable fun i ↦ f i * g i :=
+  summable_abs_iff.1 <| (hf.abs.mul_right C).of_nonneg_of_le (fun i ↦ abs_nonneg _) fun i ↦ by
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left (hg i) (abs_nonneg _)
+
+/-- Mixing nonnegative families `ν i`, each summing to one, with nonnegative summable weights
+`a i` gives a summable family `a i * ν i m` on the product. -/
+theorem Summable.prod_mul_of_hasSum_one {ι κ : Type*} {a : ι → ℝ} (ha : Summable a)
+    (ha0 : ∀ i, 0 ≤ a i) {ν : ι → κ → ℝ} (hν0 : ∀ i m, 0 ≤ ν i m)
+    (hν : ∀ i, HasSum (ν i) 1) : Summable fun p : ι × κ ↦ a p.1 * ν p.1 p.2 :=
+  (summable_prod_of_nonneg fun p ↦ mul_nonneg (ha0 _) (hν0 _ _)).2
+    ⟨fun i ↦ (hν i).summable.mul_left (a i), by
+      simpa only [tsum_mul_left, fun i ↦ (hν i).tsum_eq, mul_one] using ha⟩
+
+/-- Mixing nonnegative families `ν i`, each summing to one, with nonnegative weights `a i`
+summing to `A` gives a family `∑' i, a i * ν i m` summing to `A`. -/
+theorem HasSum.tsum_mul_of_hasSum_one {ι κ : Type*} {a : ι → ℝ} {A : ℝ} (ha : HasSum a A)
+    (ha0 : ∀ i, 0 ≤ a i) {ν : ι → κ → ℝ} (hν0 : ∀ i m, 0 ≤ ν i m)
+    (hν : ∀ i, HasSum (ν i) 1) : HasSum (fun m ↦ ∑' i, a i * ν i m) A := by
+  have hh := ha.summable.prod_mul_of_hasSum_one ha0 hν0 hν
+  have hsw : Summable fun p : κ × ι ↦ a p.2 * ν p.2 p.1 := hh.prod_symm
+  -- Nonnegative Fubini: sum over `m` first, then exchange the order of summation.
+  refine ((summable_prod_of_nonneg fun p ↦ mul_nonneg (ha0 _) (hν0 _ _)).1 hsw).2.hasSum_iff.2 ?_
+  rw [Summable.tsum_comm' hh (fun i ↦ hh.prod_factor i) fun m ↦ hsw.prod_factor m, ← ha.tsum_eq]
+  exact tsum_congr fun i ↦ by simp only [tsum_mul_left, (hν i).tsum_eq, mul_one]
 
 section Tail
 

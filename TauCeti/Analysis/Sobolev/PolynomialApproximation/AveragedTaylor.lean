@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.IntegrationByParts
-public import TauCeti.Analysis.MvPolynomial.TaylorPolynomial
+public import TauCeti.Analysis.Calculus.Taylor.Polynomial
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
@@ -22,7 +22,7 @@ import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 Classically, the pointwise Taylor expansion `T^m_y u (x)` requires `m` derivatives of `u` at the
 expansion center `y`, which need not exist for a general Sobolev or integrable function. (In Lean,
-`TauCeti.taylorPolynomial ℝ m u y` is a total function built from `iteratedFDeriv`, where each
+`TauCeti.taylorPolynomial m u y` is a total function built from `iteratedFDeriv`, where each
 Fréchet derivative step defaults to `0` if its input map is not differentiable there, though a
 later step can still be nonzero; the integration-by-parts identification below requires `u` to be
 `C^m` at every point of `tsupport φ` (ambient `ContDiffAt`).) Following Sobolev and
@@ -50,7 +50,7 @@ Consequently, whenever `φ` is `C^m` with compact support:
 3. On an additive Haar measure `μ`, if `u` is `C^m` at every point of `tsupport φ`, iterated
    integration by parts recovers the literal cutoff average of the classical Taylor polynomial
    (`TauCeti.integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial`):
-   `∫ y, u y * Ψ_m(x, y) ∂μ = ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ`,
+   `∫ y, u y * Ψ_m(x, y) ∂μ = ∫ y, taylorPolynomial m u y x * φ y ∂μ`,
    with immediate corollaries for `averagedTaylorPolynomial` and `averagedTaylorPolynomialLp`
    both on `μ` and on `μ.restrict Ω` (`tsupport φ ⊆ Ω`).
 4. Combining (3) with polynomial reproduction of `taylorPolynomial` shows that for an additive Haar
@@ -158,8 +158,8 @@ def averagedTaylorKernelTerm (φ : EuclideanSpace ℝ ι → ℝ) (j : ℕ)
 
 /-- **Averaged Taylor kernel.** For a cutoff `φ : EuclideanSpace ℝ ι → ℝ`, order `m : ℕ`, target
 point `x`, and integration variable `y`, `y ↦ averagedTaylorKernel φ m x y` is the formal adjoint
-of `u ↦ (y ↦ taylorPolynomial ℝ m u y x)` applied to `φ` (so on an additive Haar measure `μ`,
-`∫ y, u y * averagedTaylorKernel φ m x y ∂μ = ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ` for
+of `u ↦ (y ↦ taylorPolynomial m u y x)` applied to `φ` (so on an additive Haar measure `μ`,
+`∫ y, u y * averagedTaylorKernel φ m x y ∂μ = ∫ y, taylorPolynomial m u y x * φ y ∂μ` for
 maps `u` that are `C^m` at every point of `tsupport φ` (ambient `ContDiffAt`) when `φ` is `C^m`
 and compactly supported). -/
 def averagedTaylorKernel (φ : EuclideanSpace ℝ ι → ℝ) (m : ℕ) (x y : EuclideanSpace ℝ ι) : ℝ :=
@@ -586,7 +586,7 @@ theorem integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial
     (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
     (hu : ∀ y ∈ tsupport φ, ContDiffAt ℝ m u y) (x : EuclideanSpace ℝ ι) :
     ∫ y, u y * averagedTaylorKernel φ m x y ∂μ =
-      ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
+      ∫ y, taylorPolynomial m u y x * φ y ∂μ := by
   rw [integral_mul_averagedTaylorKernel_eq_sum_ibp hφ hsupp hu x]
   calc
     -- Move derivatives from `kernelTestTerm` onto `u` term by term.
@@ -610,8 +610,8 @@ theorem integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial
           (fun j I y ↦ iteratedFDeriv ℝ j u y (fun l ↦ EuclideanSpace.basisFun ι ℝ (I l)) *
             kernelTestTerm φ x I y)
           fun j hj I ↦ integrable_iteratedFDeriv_mul_kernelTestTerm hφ hsupp hu hj x I).symm
-    -- Reassemble the coordinate sums into `taylorPolynomial ℝ m u y x * φ y`.
-    _ = ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
+    -- Reassemble the coordinate sums into `taylorPolynomial m u y x * φ y`.
+    _ = ∫ y, taylorPolynomial m u y x * φ y ∂μ := by
         congr 1; ext y; rw [taylorPolynomial_apply, Finset.sum_mul]
         refine Finset.sum_congr rfl fun j _ ↦ ?_
         have hcoord : iteratedFDeriv ℝ j u y (fun _ ↦ x - y) =
@@ -636,7 +636,7 @@ theorem averagedTaylorPolynomial_eq_integral_taylorPolynomial
     (hu : ∀ y ∈ tsupport φ, ContDiffAt ℝ m u y)
     {f : Lp ℝ 1 μ} (hf : (f : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ] u) (x : EuclideanSpace ℝ ι) :
     (averagedTaylorPolynomial μ m φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
-      ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
+      ∫ y, taylorPolynomial m u y x * φ y ∂μ := by
   rw [averagedTaylorPolynomial_apply, integral_congr_ae (hf.mono fun y hy ↦ by rw [hy])]
   exact integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial hφ hsupp hu x
 
@@ -652,7 +652,7 @@ theorem averagedTaylorPolynomial_restrict_eq_integral_taylorPolynomial
     {f : Lp ℝ 1 (μ.restrict B)} (hf : (f : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ.restrict B] u)
     (x : EuclideanSpace ℝ ι) :
     (averagedTaylorPolynomial (μ.restrict B) m φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
-      ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
+      ∫ y, taylorPolynomial m u y x * φ y ∂μ := by
   rw [averagedTaylorPolynomial_apply, integral_congr_ae (hf.mono fun y hy ↦ by rw [hy]),
     setIntegral_mul_averagedTaylorKernel_eq_integral hB]
   exact integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial hφ hsupp hu x
@@ -670,7 +670,7 @@ theorem averagedTaylorPolynomial_toLp_eq_self
   ext x
   rw [averagedTaylorPolynomial_restrict_eq_integral_taylorPolynomial hφ hsupp hB
     (fun _ _ ↦ (contDiff_of_mem_polynomialsDegLE hq).contDiffAt) hqL1.coeFn_toLp]
-  simp [taylorPolynomial_eq_self_of_mem_polynomialsDegLE hq, integral_const_mul, hint1]
+  simp [taylorPolynomial_eq_of_mem_polynomialsDegLE hq, integral_const_mul, hint1]
 
 end AddHaar
 
@@ -721,7 +721,7 @@ theorem averagedTaylorPolynomialLp_eq_integral_taylorPolynomial
     (hu : ∀ y ∈ tsupport φ, ContDiffAt ℝ m u y)
     {f : Lp ℝ p μ} (hf : (f : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ] u) (x : EuclideanSpace ℝ ι) :
     (averagedTaylorPolynomialLp μ p m φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
-      ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
+      ∫ y, taylorPolynomial m u y x * φ y ∂μ := by
   rw [averagedTaylorPolynomialLp_apply, integral_congr_ae (hf.mono fun y hy ↦ by rw [hy])]
   exact integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial hφ hsupp hu x
 
@@ -739,7 +739,7 @@ theorem averagedTaylorPolynomialLp_restrict_eq_integral_taylorPolynomial
     {f : Lp ℝ p (μ.restrict Ω)} (hf : (f : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ.restrict Ω] u)
     (x : EuclideanSpace ℝ ι) :
     (averagedTaylorPolynomialLp (μ.restrict Ω) p m φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
-      ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
+      ∫ y, taylorPolynomial m u y x * φ y ∂μ := by
   rw [averagedTaylorPolynomialLp_apply, integral_congr_ae (hf.mono fun y hy ↦ by rw [hy]),
     setIntegral_mul_averagedTaylorKernel_eq_integral hΩ]
   exact integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial hφ hsupp hu x
@@ -762,7 +762,7 @@ theorem averagedTaylorPolynomialLp_toLp_eq_self
   ext x
   rw [averagedTaylorPolynomialLp_restrict_eq_integral_taylorPolynomial p hφ hsupp hΩ
     (fun _ _ ↦ (contDiff_of_mem_polynomialsDegLE hq).contDiffAt) hqLp.coeFn_toLp]
-  simp [taylorPolynomial_eq_self_of_mem_polynomialsDegLE hq, integral_const_mul, hint1]
+  simp [taylorPolynomial_eq_of_mem_polynomialsDegLE hq, integral_const_mul, hint1]
 
 end LpDomain
 
@@ -793,7 +793,7 @@ theorem averagedTaylorPolynomial_sq_one_of_even
   rw [averagedTaylorPolynomial_restrict_eq_integral_taylorPolynomial hφ hsupp hB
     (fun _ _ ↦ hq₂_smooth.contDiffAt) hqL1.coeFn_toLp]
   have htaylor (y : EuclideanSpace ℝ ι) :
-      taylorPolynomial ℝ 1 q₂ y x = 2 * x i * y i - (y i) ^ 2 := by
+      taylorPolynomial 1 q₂ y x = 2 * x i * y i - (y i) ^ 2 := by
     have hderiv := (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 y i).pow 2
     simp [taylorPolynomial_succ, iteratedFDeriv_one_apply, q₂, hderiv.fderiv]
     ring

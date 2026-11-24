@@ -29,7 +29,8 @@ The positivity condition cannot be dropped, and global nontriviality of `A` does
 * the zero matrix algebra over a field has bijective `mulLeftRight` but is not Azumaya
   (`TauCeti.not_isAzumaya_matrix_fin_zero`, `TauCeti.mulLeftRight_matrix_fin_zero_bijective`);
 * the algebra `k` over `k × k` through the first projection is nonzero, but not faithful and so
-  not Azumaya (`TauCeti.not_isAzumaya_prod_fst`);
+  not Azumaya (`TauCeti.not_isAzumaya_prod_fst`): its fibre over the second point of
+  `Spec (k × k)` has rank zero (`TauCeti.finrank_residueField_ker_snd_tensorProduct_prod_fst`);
 * the zero ring is Azumaya over itself, as every ring is (Mathlib's `IsAzumaya.id`): this is the
   empty-base case, in which positivity is vacuous.
 
@@ -103,6 +104,31 @@ theorem not_isAzumaya_prod_fst :
   have := (FaithfulSMul.algebraMap_injective (k × k) k) (a₁ := (0, 1)) (a₂ := 0)
     (by simp [RingHom.algebraMap_toAlgebra])
   simpa using congrArg Prod.snd this
+
+/-- The algebra `k` over `k × k` through the first projection has rank zero at the second point of
+`Spec (k × k)`, the kernel of the second projection: the idempotent `(1, 0)` acts on `k` by one and
+on the residue field by zero, so the fibre vanishes. This is where the positivity condition of
+`TauCeti.Brauer.isAzumaya_iff_positive_fibres_mulLeftRight` fails. -/
+theorem finrank_residueField_ker_snd_tensorProduct_prod_fst :
+    letI := (RingHom.fst k k).toAlgebra
+    letI := RingHom.ker_isPrime (RingHom.snd k k)
+    Module.finrank (RingHom.ker (RingHom.snd k k)).ResidueField
+      ((RingHom.ker (RingHom.snd k k)).ResidueField ⊗[k × k] k) = 0 := by
+  let := (RingHom.fst k k).toAlgebra
+  let := RingHom.ker_isPrime (RingHom.snd k k)
+  let P := RingHom.ker (RingHom.snd k k)
+  have hP : algebraMap (k × k) P.ResidueField (1, 0) = 0 :=
+    (Ideal.algebraMap_residueField_eq_zero).2 (by simp [P])
+  have : Subsingleton (P.ResidueField ⊗[k × k] k) := by
+    refine subsingleton_of_forall_eq 0 fun t ↦ ?_
+    induction t using TensorProduct.inductionOn with
+    | tmul x y =>
+      have hy : ((1, 0) : k × k) • y = y := by
+        simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+      rw [← hy, ← TensorProduct.smul_tmul, Algebra.smul_def, hP, zero_mul,
+        TensorProduct.zero_tmul]
+    | add t t' ht ht' => rw [ht, ht', add_zero]
+  exact Module.finrank_zero_of_subsingleton
 
 /-- The dual numbers over a field are not Azumaya: they are commutative, so `ε` is central, but `ε`
 is not a scalar, while an Azumaya algebra has centre `k`. -/

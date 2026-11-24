@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 
 /-!
@@ -77,6 +78,13 @@ For `0 < b` and `0 ≤ ε ≤ 1`, `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε`. With `b
 length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which a sharp cutoff at
 `X` and its smoothing at scale `ε` differ.
 
+For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`. This bounds
+all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the sign of `p`.
+
+For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. Unlike Mathlib's `Real.log_le_rpow_div`
+for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a coefficient bound
+`log (n + 1)` becomes a power bound `n ^ ε / ε` at every `n ≥ 0`.
+
 ## Main results
 
 * `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
@@ -102,6 +110,9 @@ length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which
 * `Real.add_rpow_le_max_two_rpow_mul`: `(x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β` for `0 ≤ t ≤ x`
   and every real `β`.
 * `Real.rpow_sub_rpow_neg_le`: `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε` for `0 < b` and `0 ≤ ε ≤ 1`.
+* `Real.natCast_rpow_le_max_one_rpow`: `n ^ p ≤ max 1 (x ^ p)` for a natural number `n ≤ x` and
+  every real `p`.
+* `Real.log_add_one_le_rpow_div`: `log (x + 1) ≤ x ^ ε / ε` for `0 ≤ x` and `0 < ε ≤ 1`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -362,6 +373,25 @@ theorem rpow_sub_rpow_neg_le {b ε : ℝ} (hb : 0 < b) (hε0 : 0 ≤ ε) (hε1 :
     · nlinarith [mul_le_mul_of_nonneg_left h1 h, sq_nonneg ((b - 1) * ε)]
     · nlinarith
   linarith
+
+/-- For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`, whatever
+the sign of `p`. -/
+theorem natCast_rpow_le_max_one_rpow {n : ℕ} {x : ℝ} (hnx : (n : ℝ) ≤ x) (p : ℝ) :
+    (n : ℝ) ^ p ≤ max 1 (x ^ p) := by
+  rcases le_total p 0 with h | h
+  · refine le_trans ?_ (le_max_left _ _)
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simpa using zero_rpow_le_one p
+    · exact rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) h
+  · exact (rpow_le_rpow (by positivity) hnx h).trans (le_max_right _ _)
+
+/-- For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. -/
+theorem log_add_one_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (hε₁ : ε ≤ 1) :
+    log (x + 1) ≤ x ^ ε / ε := by
+  have hsub : (x + 1) ^ ε ≤ x ^ ε + 1 := by
+    simpa using rpow_add_le_add_rpow hx zero_le_one hε.le hε₁
+  rw [le_div_iff₀ hε, mul_comm, ← log_rpow (by linarith)]
+  linarith [log_le_sub_one_of_pos (rpow_pos_of_pos (by linarith : 0 < x + 1) ε)]
 
 end Real
 

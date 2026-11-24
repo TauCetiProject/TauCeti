@@ -36,8 +36,8 @@ the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`),
 partial sum of a real formal multilinear series belongs to `polynomialsDegLE ι (N - 1)`
 (`FormalMultilinearSeries.partialSum_mem_polynomialsDegLE`). Polynomial functions of bounded degree
 are closed under pointwise products (`TauCeti.mul_mem_polynomialsDegLE`,
-`TauCeti.finset_prod_mem_polynomialsDegLE`), translations (`TauCeti.comp_add_mem_polynomialsDegLE`,
-`TauCeti.comp_sub_mem_polynomialsDegLE`), and precomposition with affine maps
+`TauCeti.finset_prod_mem_polynomialsDegLE`), subtracting a fixed translation vector
+(`TauCeti.comp_sub_mem_polynomialsDegLE`), and precomposition with affine maps
 (`TauCeti.comp_affineMap_mem_polynomialsDegLE`).
 
 The file also develops the foundational calculus of these polynomial functions on
@@ -262,21 +262,15 @@ theorem prod_coord_mem_polynomialsDegLE {α : Type*} (S : Finset α) (I : α →
   · simp
   · ext x; simp
 
-/-- Translating the input by adding a fixed vector preserves the total-degree bound. -/
-theorem comp_add_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}
-    (a : EuclideanSpace ℝ ι) (hf : f ∈ polynomialsDegLE ι m) :
-    (fun x ↦ f (x + a)) ∈ polynomialsDegLE ι m := by
-  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
-  refine (mem_polynomialsDegLE_iff ι).2 ⟨taylor (fun i ↦ a i) p,
-    (totalDegree_taylor_le (fun i ↦ a i) p).trans hp, ?_⟩
-  ext x
-  simp [eval_taylor, Pi.add_def]
-
 /-- Translating the input by subtracting a fixed vector preserves the total-degree bound. -/
 theorem comp_sub_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}
     (a : EuclideanSpace ℝ ι) (hf : f ∈ polynomialsDegLE ι m) :
     (fun x ↦ f (x - a)) ∈ polynomialsDegLE ι m := by
-  simpa only [sub_eq_add_neg] using comp_add_mem_polynomialsDegLE (-a) hf
+  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
+  refine (mem_polynomialsDegLE_iff ι).2 ⟨taylor (fun i ↦ -a i) p,
+    (totalDegree_taylor_le (fun i ↦ -a i) p).trans hp, ?_⟩
+  ext x
+  simp [eval_taylor, sub_eq_add_neg, Pi.add_def]
 
 /-- Precomposing a polynomial function of degree at most `m` with an affine map preserves the
 total-degree bound. -/
