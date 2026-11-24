@@ -14,6 +14,7 @@ import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.TwistingSheaf
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 import TauCeti.CategoryTheory.Limits.Lattice
@@ -72,6 +73,8 @@ Laurent coefficients.
 
 * `TauCeti.SymmetricAlgebra.negativeExponents`: the exponents `e : κ → ℤ` of total degree `m` whose
   entries are all negative.
+* `TauCeti.SymmetricAlgebra.negativeExponentsCongr`: reindexing equivalence on `negativeExponents`
+  induced by an equivalence of coordinate index types.
 
 ## Main results
 
@@ -82,9 +85,10 @@ Laurent coefficients.
 * `Module.Basis.nonempty_linearEquiv_cohomology_top_twistingSheaf`: for `n ≥ 1`,
   `Hⁿ(ℙⁿ_R, 𝒪(m))` is isomorphic to the free `R`-module on `negativeExponents κ m`.
 * `Module.Basis.free_cohomology_top_twistingSheaf`,
-  `Module.Basis.finite_cohomology_top_twistingSheaf`,
-  `Module.Basis.finrank_cohomology_top_twistingSheaf`: for `n ≥ 1`, `Hⁿ(ℙⁿ_R, 𝒪(m))` is a free
-  finitely generated `R`-module of rank `Nat.card (negativeExponents κ m)`.
+  `Module.Basis.finite_cohomology_top_twistingSheaf`: for `n ≥ 1`, `Hⁿ(ℙⁿ_R, 𝒪(m))` is a free
+  finitely generated `R`-module.
+* `Module.Basis.finrank_cohomology_top_twistingSheaf`: for `n ≥ 1` and `[Nontrivial R]`,
+  `Hⁿ(ℙⁿ_R, 𝒪(m))` has rank `Nat.card (negativeExponents κ m)`.
 * `Module.Basis.finite_cohomology_twistingSheaf`: for `n ≥ 1`, `Hᵠ(ℙⁿ_R, 𝒪(m))` is a finitely
   generated `R`-module for every `q` and `m`.
 
@@ -150,11 +154,11 @@ private lemma chartExponents_mono {m : ℤ} {S S' : Finset κ} (h : S ⊆ S') :
     chartExponents m S ⊆ chartExponents m S' :=
   fun _ he ↦ ⟨he.1, he.2.trans h⟩
 
-private lemma nonneg_of_mem_chartExponents {m : ℤ} {S : Finset κ} {e : κ → ℤ}
-    (he : e ∈ chartExponents m S) {i : κ} (hi : i ∉ S) : 0 ≤ e i :=
-  not_lt.1 fun h ↦ hi (he.2 (mem_negSupport.2 h))
+private lemma nonneg_of_negSupport_subset {S : Finset κ} {e : κ → ℤ}
+    (he : negSupport e ⊆ S) {i : κ} (hi : i ∉ S) : 0 ≤ e i :=
+  not_lt.1 fun h ↦ hi (he (mem_negSupport.2 h))
 
-/-- A denominator exponent making every entry of `e + j 1_S` nonnegative. -/
+/-- A nonnegative bound `j` satisfying `0 ≤ e i + j` for every coordinate `i`. -/
 private def exponentBound (e : κ → ℤ) : ℕ := ∑ i, (-e i).toNat
 
 private lemma le_exponentBound (e : κ → ℤ) (i : κ) : 0 ≤ e i + exponentBound e := by
@@ -172,20 +176,20 @@ private instance (m : ℤ) (S : Finset κ) : DecidablePred (· ∈ chartExponent
 private def numeratorExponent (e : κ → ℤ) (S : Finset κ) (j : ℕ) : κ →₀ ℕ :=
   Finsupp.equivFunOnFinite.symm fun i ↦ (e i + if i ∈ S then (j : ℤ) else 0).toNat
 
-private lemma coe_numeratorExponent {m : ℤ} {S : Finset κ} {e : κ → ℤ} (he : e ∈ chartExponents m S)
+private lemma coe_numeratorExponent {S : Finset κ} {e : κ → ℤ} (he : negSupport e ⊆ S)
     {j : ℕ} (hj : ∀ i ∈ S, 0 ≤ e i + j) (i : κ) :
     (numeratorExponent e S j i : ℤ) = e i + if i ∈ S then (j : ℤ) else 0 := by
   simp only [numeratorExponent, Finsupp.equivFunOnFinite_symm_apply_apply]
   refine Int.toNat_of_nonneg ?_
   split_ifs with hi
   · exact hj i hi
-  · simpa using nonneg_of_mem_chartExponents he hi
+  · simpa using nonneg_of_negSupport_subset he hi
 
 private lemma degree_numeratorExponent {m : ℤ} {S : Finset κ} {e : κ → ℤ}
     (he : e ∈ chartExponents m S) {j : ℕ} (hj : ∀ i ∈ S, 0 ≤ e i + j) :
     ((numeratorExponent e S j).degree : ℤ) = j * S.card + m := by
   rw [Finsupp.degree_eq_sum, Nat.cast_sum]
-  simp_rw [coe_numeratorExponent he hj, Finset.sum_add_distrib, he.1, Finset.sum_ite_mem,
+  simp_rw [coe_numeratorExponent he.2 hj, Finset.sum_add_distrib, he.1, Finset.sum_ite_mem,
     Finset.univ_inter, Finset.sum_const, nsmul_eq_mul]
   ring
 
@@ -208,15 +212,11 @@ private lemma shiftExponent_mem_chartExponents {m : ℤ} {S : Finset κ} {k : �
     simp only [shiftExponent, hiS, ite_false, sub_zero] at this
     omega
 
-private lemma numeratorExponent_shiftExponent {m : ℤ} {S : Finset κ} {k : ℕ} {d : κ →₀ ℕ}
-    (hd : (d.degree : ℤ) = (k * S.card : ℕ) + m) :
+private lemma numeratorExponent_shiftExponent (S : Finset κ) (k : ℕ) (d : κ →₀ ℕ) :
     numeratorExponent (shiftExponent S k d) S k = d := by
   ext i
-  refine Nat.cast_injective (R := ℤ) ?_
-  rw [coe_numeratorExponent (shiftExponent_mem_chartExponents hd)
-    (add_shiftExponent_nonneg S k d)]
-  simp only [shiftExponent]
-  split_ifs <;> ring
+  simp only [numeratorExponent, shiftExponent, Finsupp.equivFunOnFinite_symm_apply_apply]
+  split_ifs <;> omega
 
 end Exponents
 
@@ -262,10 +262,6 @@ private lemma basicOpen_coordProd (S : Finset κ) :
   | insert a S ha ih =>
     rw [coordProd, Finset.prod_insert ha, ← coordProd, Proj.basicOpen_mul, ih, Finset.inf_insert]
 
-private lemma basicOpen_le_basicOpen_pow (S : Finset κ) (j : ℕ) :
-    Proj.basicOpen 𝒜 (coordProd b S) ≤ Proj.basicOpen 𝒜 (coordProd b S ^ j) :=
-  fun x hx hpow ↦ hx (x.isPrime.mem_of_pow_mem j hpow)
-
 end Monomials
 
 /-! ### Laurent monomials as sections over the standard charts -/
@@ -290,7 +286,7 @@ private def chartSection (S : Finset κ) {e : κ → ℤ} (he : e ∈ chartExpon
     (Submodule.smul_mem _ c
       (degree_numeratorExponent_eq_toNat he hj ▸ b.symmetricAlgebra_mem_homogeneousSubmodule _))
     (by simpa [mul_comm] using SetLike.pow_mem_graded j (coordProd_mem b S))
-    _ (basicOpen_le_basicOpen_pow b S j)
+    _ (Proj.basicOpen_le_basicOpen_pow 𝒜 (coordProd b S) j)
 
 /-- The two ways of writing the Laurent monomial `xᵉ` as a fraction with denominators the powers of
 coordinate products agree after cross-multiplication. -/
@@ -306,8 +302,8 @@ private lemma coordProd_pow_mul_symmetricAlgebra {S S' : Finset κ} {e : κ → 
   ext i
   refine Nat.cast_injective (R := ℤ) ?_
   simp only [Finsupp.coe_add, Finsupp.coe_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
-    Nat.cast_add, Nat.cast_mul, indicatorExponent_apply, coe_numeratorExponent he hj,
-    coe_numeratorExponent he' hj']
+    Nat.cast_add, Nat.cast_mul, indicatorExponent_apply, coe_numeratorExponent he.2 hj,
+    coe_numeratorExponent he'.2 hj']
   split_ifs <;> push_cast <;> ring
 
 /-- The restriction of the Laurent monomial `c xᵉ` from one standard open to a smaller one is
@@ -373,7 +369,7 @@ private lemma chartSectionsHom_eq_const {S : Finset κ}
           (degree_numeratorExponent_eq_toNat ((Finsupp.mem_supported R f.val).1 f.property he)
             (hj e he) ▸ b.symmetricAlgebra_mem_homogeneousSubmodule _))
         (by simpa [mul_comm] using SetLike.pow_mem_graded j (coordProd_mem b S)) _
-        (basicOpen_le_basicOpen_pow b S j) := by
+        (Proj.basicOpen_le_basicOpen_pow 𝒜 (coordProd b S) j) := by
   refine Proj.twistingSheaf.ext fun x ↦ ?_
   rw [chartSectionsHom_eq_sum]
   refine (Proj.twistingSheaf.sum_apply _ _ x).trans <| (Finset.sum_congr rfl fun e he ↦ ?_).trans <|
@@ -417,8 +413,8 @@ private lemma chartSectionsHom_injective {S : Finset κ} (hS : S.Nonempty) :
       have hD : N • indicatorExponent S + numeratorExponent e S j ≠
           N • indicatorExponent S + numeratorExponent e₀ S j := fun h ↦ hne <| funext fun i ↦ by
         have := congrArg (fun d : κ →₀ ℕ ↦ (d i : ℤ)) (add_left_cancel h)
-        rw [coe_numeratorExponent (hmem e he) (hj e he),
-          coe_numeratorExponent (hmem e₀ he₀) (hj e₀ he₀)] at this
+        rw [coe_numeratorExponent (hmem e he).2 (hj e he),
+          coe_numeratorExponent (hmem e₀ he₀).2 (hj e₀ he₀)] at this
         omega
       simp [MvPolynomial.coeff_monomial, hD]
     · exact fun h ↦ (h he₀).elim
@@ -459,7 +455,7 @@ private lemma chartSectionsHom_surjective {S : Finset κ} (hS : S.Nonempty) :
   rw [chartSectionHom_apply b (shiftExponent_mem_chartExponents (hdeg d hd))
     (add_shiftExponent_nonneg S k d), chartSection]
   refine (Proj.twistingSheaf.const_apply _ _ _ _ _ _ x).trans ?_
-  rw [numeratorExponent_shiftExponent (hdeg d hd)]
+  rw [numeratorExponent_shiftExponent]
 
 variable (m) in
 /-- The Laurent monomial `(r c) xᵉ` is the multiple of `c xᵉ` by the constant function `r`. -/
@@ -505,25 +501,6 @@ open Limits OrderDual
 chart. -/
 private abbrev coordCover (κ : Type*) (i : κ) : (Finset κ)ᵒᵈ := toDual {i}
 
-/-- The product of the charts of the coordinates `a 0, …, a n` in the category of finite sets of
-coordinates is the set of these coordinates, by
-`CategoryTheory.Limits.CompleteLattice.finite_product_eq_finset_image_inf`. -/
-private lemma ofDual_pi_coordCover {κ : Type u} [DecidableEq κ] {n : ℕ} (a : Fin (n + 1) → κ) :
-    ofDual (∏ᶜ fun j ↦ coordCover κ (a j)) = Finset.univ.image a := by
-  rw [CompleteLattice.finite_product_eq_finset_image_inf (coordCover κ) a, Finset.ofDual_inf]
-  exact Finset.sup_singleton_eq_self _
-
-open scoped Classical in
-/-- The product of the charts of the coordinates of a tuple, which is the set of its entries, is
-the set of all coordinates exactly when the tuple is surjective. -/
-private lemma ofDual_pi_coordCover_eq_univ_iff {κ : Type u} [Fintype κ] {q : ℕ}
-    (a : Fin (q + 1) → κ) :
-    ofDual (∏ᶜ fun j ↦ coordCover κ (a j)) = Finset.univ ↔ Function.Surjective a := by
-  rw [ofDual_pi_coordCover]
-  refine ⟨fun h x ↦ ?_, Finset.image_univ_of_surjective⟩
-  have hx : x ∈ Finset.univ.image a := h ▸ Finset.mem_univ x
-  simpa using hx
-
 variable {R M : Type u} [CommRing R] [AddCommMonoid M] [Module R M] {κ : Type u}
   (b : Module.Basis κ R M)
 
@@ -563,7 +540,7 @@ open scoped Classical in
 private lemma isIso_piComparison_chartFunctor {n : ℕ} (a : Fin (n + 1) → κ) :
     IsIso (piComparison (chartFunctor b) fun j ↦ coordCover κ (a j)) := by
   apply (iso_of_both_ways _ (homOfLE ?_)).isIso_hom
-  rw [chartFunctor_obj, basicOpen_coordProd, ofDual_pi_coordCover]
+  rw [chartFunctor_obj, basicOpen_coordProd, CompleteLattice.ofDual_finite_product_toDual_singleton]
   refine Finset.le_inf fun i hi ↦ ?_
   obtain ⟨j, -, rfl⟩ := Finset.mem_image.1 hi
   exact (leOfHom (Pi.π _ j)).trans (chartCover_apply b (a j)).le
@@ -576,7 +553,7 @@ section LaurentCech
 
 open Limits Opposite OrderDual TauCeti.CategoryTheory
 
-variable {R : Type u} [CommRing R] {κ : Type u} [Fintype κ] [DecidableEq κ] (m : ℤ)
+variable {R : Type u} [CommRing R] {κ : Type u} [Fintype κ] (m : ℤ)
 
 /-- The Laurent polynomials of degree `m` whose monomials are negative only in coordinates of `S`,
 as a presheaf on the finite sets of coordinates ordered by reverse inclusion. -/
@@ -585,11 +562,22 @@ private def laurentPresheaf : ((Finset κ)ᵒᵈ)ᵒᵖ ⥤ AddCommGrpCat.{u} wh
   map f := AddCommGrpCat.ofHom (Submodule.inclusion
     (Finsupp.supported_mono (chartExponents_mono (leOfHom f.unop)))).toAddMonoidHom
 
+/-- Restriction in `laurentPresheaf` acts as the identity on underlying Laurent polynomials. -/
+private lemma val_laurentPresheaf_map {S S' : ((Finset κ)ᵒᵈ)ᵒᵖ} (f : S ⟶ S')
+    (x : (laurentPresheaf (R := R) m).obj S) :
+    ((laurentPresheaf m).map f x).val = x.val :=
+  rfl
+
 /-- Multiplication by `r` on Laurent polynomials. -/
 private def laurentSmul (r : R) :
     laurentPresheaf (R := R) (κ := κ) m ⟶ laurentPresheaf (R := R) m where
   app _ := AddCommGrpCat.ofHom (DistribSMul.toAddMonoidHom _ r)
-  naturality _ _ _ := AddCommGrpCat.hom_ext (AddMonoidHom.ext fun _ ↦ rfl)
+  naturality S _ f := AddCommGrpCat.hom_ext (AddMonoidHom.ext
+    fun x : Finsupp.supported R R (chartExponents m (ofDual S.unop)) ↦
+      (map_smul (Submodule.inclusion (Finsupp.supported_mono
+        (chartExponents_mono (leOfHom f.unop)))) r x).symm)
+
+variable [DecidableEq κ]
 
 /-- The Čech complex of Laurent polynomials for the cover of the standard charts. -/
 private abbrev laurentCech : CochainComplex AddCommGrpCat.{u} ℕ :=
@@ -612,7 +600,17 @@ private lemma val_cechπ_d (q : ℕ) (k : Fin (q + 2) → κ)
   refine (congrArg Subtype.val (h.trans ((DFunLike.congr_fun
     (map_sum AddCommGrpCat.homAddEquiv _ _) x).trans
       (AddMonoidHom.finsetSum_apply _ _ x)))).trans ?_
-  exact map_sum (Submodule.subtype _).toAddMonoidHom _ _
+  let ι := (Finsupp.supported R R
+    (chartExponents m (ofDual (∏ᶜ fun j ↦ coordCover κ (k j))))).subtype.toAddMonoidHom
+  refine (map_sum ι _ _).trans (Finset.sum_congr rfl fun p _ ↦ ?_)
+  let f := (Pi.lift fun j ↦ Pi.π (fun j ↦ coordCover κ (k j)) (p.succAbove j)).op
+  have hzsmul : (AddCommGrpCat.homAddEquiv
+      ((-1 : ℤ) ^ (p : ℕ) • (cechπ m (k ∘ p.succAbove) ≫ (laurentPresheaf m).map f))) x =
+      (-1 : ℤ) ^ (p : ℕ) • (laurentPresheaf m).map f (cechπ m (k ∘ p.succAbove) x) := by
+    rw [map_zsmul, AddMonoidHom.zsmul_apply, AddCommGrpCat.homAddEquiv_apply,
+      ConcreteCategory.comp_apply]
+  exact (congrArg ι hzsmul).trans ((map_zsmul ι _ _).trans
+    (congrArg ((-1 : ℤ) ^ (p : ℕ) • ·) (val_laurentPresheaf_map m f _)))
 
 /-! #### Splitting Laurent polynomials by negative support -/
 
@@ -628,12 +626,6 @@ private def negSupportProj (T : Finset κ) :
       (Finsupp.inclusion_comp_filterSupported (negSupport · = T) (fun _ he _ ↦ he)
         (chartExponents_mono (leOfHom f.unop))).symm))
 
-private lemma sum_filterSupported_negSupport {s : Set (κ → ℤ)}
-    (f : Finsupp.supported R R s) :
-    ∑ T : Finset κ, Finsupp.filterSupported (negSupport · = T) (fun _ he _ ↦ he) f = f := by
-  refine Subtype.ext (Finsupp.ext fun e ↦ ?_)
-  simp [Finsupp.finsetSum_apply, Finsupp.filter_apply]
-
 private lemma sum_negSupportProj :
     ∑ T : Finset κ, negSupportProj (R := R) (κ := κ) m T = 𝟙 _ := by
   refine NatTrans.ext (funext fun S ↦ ?_)
@@ -642,14 +634,16 @@ private lemma sum_negSupportProj :
   -- a morphism of abelian groups acts through `AddCommGrpCat.homAddEquiv`, which is additive
   change AddCommGrpCat.homAddEquiv (∑ T : Finset κ, (negSupportProj (R := R) m T).app S) f = f
   rw [map_sum, AddMonoidHom.finsetSum_apply]
-  exact sum_filterSupported_negSupport f
+  exact Finsupp.sum_filterSupported_eq negSupport f
 
 /-- Restriction of Laurent polynomials to the intersection with the chart of `c`. -/
 private def restrictToChart (c : κ) :
     laurentPresheaf (R := R) (κ := κ) m ⟶
       (prod.functor.obj (coordCover κ c)).op ⋙ laurentPresheaf (R := R) (κ := κ) m where
   app S := (laurentPresheaf m).map (prod.snd : coordCover κ c ⨯ S.unop ⟶ S.unop).op
-  naturality _ _ _ := rfl
+  naturality _ _ f := by
+    simp only [Functor.comp_map, Functor.op_map, ← Functor.map_comp]
+    exact congrArg (laurentPresheaf m).map (Quiver.Hom.op_inj.eq_iff.2 (Subsingleton.elim _ _))
 
 /-- A Laurent monomial with negative support `T` which is negative only in coordinates of
 `{c} ∪ S`, for a coordinate `c ∉ T`, is negative only in coordinates of `S`. -/
@@ -738,7 +732,8 @@ private lemma homologyMap_negSupportProj_univ {q : ℕ}
       negSupport e ≠ Finset.univ := by
     rintro e ⟨hsum, hneg⟩ huniv
     rcases h with h | h
-    · have := (Finset.card_le_card (hneg.trans (ofDual_pi_coordCover (n := q) a).le)).trans
+    · have := (Finset.card_le_card
+        (hneg.trans (CompleteLattice.ofDual_finite_product_toDual_singleton a).le)).trans
         Finset.card_image_le
       rw [huniv, Finset.card_univ, Finset.card_fin] at this
       omega
@@ -797,11 +792,27 @@ instance (κ : Type*) [Fintype κ] (m : ℤ) : Finite (negativeExponents κ m) :
 
 /-- Reindexing the coordinates identifies the exponents of degree `m` with all entries
 negative. -/
-private def negativeExponentsCongr {κ κ' : Type*} [Fintype κ] [Fintype κ'] (e : κ ≃ κ') (m : ℤ) :
+def negativeExponentsCongr {κ κ' : Type*} [Fintype κ] [Fintype κ'] (e : κ ≃ κ') (m : ℤ) :
     negativeExponents κ m ≃ negativeExponents κ' m :=
   (e.arrowCongr (Equiv.refl ℤ)).subtypeEquiv fun x ↦ and_congr
     (by simp [Equiv.sum_comp e.symm x])
     ⟨fun h i ↦ h _, fun h i ↦ by simpa using h (e i)⟩
+
+/-- `negativeExponentsCongr e m` transports coordinates along `e.symm`. -/
+@[simp]
+theorem coe_negativeExponentsCongr_apply_apply {κ κ' : Type*} [Fintype κ] [Fintype κ']
+    (e : κ ≃ κ') (m : ℤ) (x : negativeExponents κ m) (i : κ') :
+    (negativeExponentsCongr e m x : κ' → ℤ) i = (x : κ → ℤ) (e.symm i) := by
+  unfold negativeExponentsCongr
+  rfl
+
+/-- The inverse of `negativeExponentsCongr e m` transports coordinates along `e`. -/
+@[simp]
+theorem coe_negativeExponentsCongr_symm_apply_apply {κ κ' : Type*} [Fintype κ] [Fintype κ']
+    (e : κ ≃ κ') (m : ℤ) (x : negativeExponents κ' m) (i : κ) :
+    ((negativeExponentsCongr e m).symm x : κ → ℤ) i = (x : κ' → ℤ) (e i) := by
+  unfold negativeExponentsCongr
+  rfl
 
 section NegativePart
 
@@ -863,6 +874,15 @@ private lemma negEmb_negPart [DecidableEq κ] {S : Finset κ} {w : (κ → ℤ) 
         fun i ↦ mem_negSupport.1 (h ▸ Finset.mem_univ i)⟩).symm
     · rw [Finsupp.filter_apply_neg (fun x ↦ negSupport x = Finset.univ) w h]
 
+/-- The coefficients at the monomials with all exponents negative vanish on every Čech factor
+indexed by a nonsurjective tuple of coordinates. -/
+private lemma negPart_cechπ_eq_zero [DecidableEq κ] {q : ℕ} {c : Fin (q + 1) → κ}
+    (hc : ¬Function.Surjective c) (z : (laurentCech (R := R) (κ := κ) m).X q) :
+    negPart m (cechπ m c z).val = 0 :=
+  negPart_eq_zero m
+    (mt (Limits.CompleteLattice.ofDual_finite_product_toDual_singleton_eq_univ_iff c).1 hc)
+    (cechπ m c z).property
+
 end NegativePart
 
 /-! ### The top Čech cohomology of the Laurent polynomials -/
@@ -884,7 +904,7 @@ private def topCochainComponent (a : Fin (n + 2) → κ) :
     · -- the carrier of `laurentPresheaf` at a chart is a module of Laurent polynomials by
       -- definition, but its membership predicate is only visible after unfolding it
       change _ ∈ Finsupp.supported R R (chartExponents m (ofDual (∏ᶜ fun j ↦ coordCover κ (a j))))
-      rw [(ofDual_pi_coordCover_eq_univ_iff a).2 ha]
+      rw [(CompleteLattice.ofDual_finite_product_toDual_singleton_eq_univ_iff a).2 ha]
       exact Submodule.smul_of_tower_mem _ _ (negEmb_mem_supported m f)
     · rw [e.tupleSign_eq_zero_of_not_surjective ℤ ha, zero_smul]
       exact zero_mem _⟩
@@ -945,18 +965,12 @@ private lemma d_comp_topCoefficient :
   refine AddCommGrpCat.ext fun x ↦ ?_
   rw [ConcreteCategory.comp_apply, topCoefficient_apply, val_cechπ_d, map_sum]
   refine Finset.sum_eq_zero fun p _ ↦ ?_
-  have hnotSurj : ¬Function.Surjective (e.symm ∘ p.succAbove) := fun h ↦ by
-    have := Fintype.card_le_of_surjective _ h
-    rw [Fintype.card_fin, Fintype.card_congr e, Fintype.card_fin] at this
-    omega
-  rw [map_zsmul, negPart_eq_zero m (mt (ofDual_pi_coordCover_eq_univ_iff _).1 hnotSurj)
-    (cechπ m _ x).property, smul_zero]
+  have hnotSurj : ¬Function.Surjective (e.symm ∘ p.succAbove) := fun h ↦
+    let ⟨j, hj⟩ := h (e.symm p)
+    Fin.succAbove_ne p j (e.symm.injective hj)
+  rw [map_zsmul, negPart_cechπ_eq_zero m hnotSurj, smul_zero]
 
 /-! #### Cocycles of top degree are alternating -/
-
-private lemma negPart_cechπ_eq_zero {c : Fin (n + 2) → κ} (hc : ¬Function.Surjective c)
-    (z : (laurentCech (R := R) (κ := κ) m).X (n + 1)) : negPart m (cechπ m c z).val = 0 :=
-  negPart_eq_zero m (mt (ofDual_pi_coordCover_eq_univ_iff c).1 hc) (cechπ m c z).property
 
 private lemma sum_negPart_cechπ {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
     (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (k : Fin (n + 3) → κ) :
@@ -964,6 +978,38 @@ private lemma sum_negPart_cechπ {z : (laurentCech (R := R) (κ := κ) m).X (n +
   have h := congrArg (fun y ↦ negPart m (cechπ m k y).val) hz
   simp only [val_cechπ_d, map_sum, map_zsmul] at h
   exact h.trans (by rw [map_zero]; rfl)
+
+/-- Inserting `i.castSucc` at position `i.succ.succ` into `id : Fin (n + 2) → Fin (n + 2)` and then
+deleting position `i.castSucc.castSucc` swaps `i.castSucc` and `i.succ`. -/
+private lemma insertNth_comp_succAbove_eq_swap {n : ℕ} (i : Fin (n + 1)) :
+    (i.succ.succ.insertNth (α := fun _ ↦ Fin (n + 2)) i.castSucc id) ∘
+      i.castSucc.castSucc.succAbove = Equiv.swap i.castSucc i.succ := by
+  let p₀ : Fin (n + 3) := i.castSucc.castSucc
+  let p₂ : Fin (n + 3) := i.succ.succ
+  funext j
+  rcases lt_trichotomy j i.castSucc with hj | rfl | hj
+  · have hlt : (j : ℕ) < i := by simpa [Fin.lt_def] using hj
+    have h1 : p₀.succAbove j = p₂.succAbove j := by
+      rw [Fin.succAbove_of_castSucc_lt p₀ j (by simp [p₀, Fin.lt_def]; omega),
+        Fin.succAbove_of_castSucc_lt p₂ j (by simp [p₂, Fin.lt_def]; omega)]
+    rw [Function.comp_apply, h1, Fin.insertNth_apply_succAbove, id_eq,
+      Equiv.swap_apply_of_ne_of_ne hj.ne (hj.trans (Fin.castSucc_lt_succ (i := i))).ne]
+  · have h1 : p₀.succAbove i.castSucc = p₂.succAbove i.succ := by
+      rw [Fin.succAbove_of_le_castSucc p₀ i.castSucc le_rfl,
+        Fin.succAbove_of_castSucc_lt p₂ i.succ (by simp [p₂, Fin.lt_def])]
+      exact Fin.ext (by simp)
+    rw [Function.comp_apply, h1, Fin.insertNth_apply_succAbove, id_eq, Equiv.swap_apply_left]
+  · have hgt : (i : ℕ) < j := by simpa [Fin.lt_def] using hj
+    rcases eq_or_lt_of_le (show i.succ ≤ j by simp [Fin.le_def]; omega) with rfl | hj'
+    · have h1 : p₀.succAbove i.succ = p₂ :=
+        Fin.succAbove_of_le_castSucc p₀ i.succ (by simp [p₀, Fin.le_def])
+      rw [Function.comp_apply, h1, Fin.insertNth_apply_same, Equiv.swap_apply_right]
+    · have hgt' : (i : ℕ) + 1 < j := by simpa [Fin.lt_def] using hj'
+      have h1 : p₀.succAbove j = p₂.succAbove j := by
+        rw [Fin.succAbove_of_le_castSucc p₀ j (by simp [p₀, Fin.le_def]; omega),
+          Fin.succAbove_of_le_castSucc p₂ j (by simp [p₂, Fin.le_def]; omega)]
+      rw [Function.comp_apply, h1, Fin.insertNth_apply_succAbove, id_eq,
+        Equiv.swap_apply_of_ne_of_ne hj.ne' hj'.ne']
 
 include e in
 /-- The coefficients of a cocycle of top degree at the monomials with all exponents negative
@@ -973,23 +1019,16 @@ private lemma negPart_cechπ_comp_swap {z : (laurentCech (R := R) (κ := κ) m).
     (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (c : Fin (n + 2) → κ) (i : Fin (n + 1)) :
     negPart m (cechπ m (c ∘ Equiv.swap i.castSucc i.succ) z).val = -negPart m (cechπ m c z).val
         := by
-  let s : Fin (n + 3) → Fin (n + 2) := fun p ↦
-    ⟨if (p : ℕ) = i + 2 then i else if (p : ℕ) < i + 2 then p else p - 1, by
-      have := p.isLt; have := i.isLt; split_ifs <;> omega⟩
-  let p₀ : Fin (n + 3) := ⟨i, by omega⟩
-  let p₂ : Fin (n + 3) := ⟨i + 2, by omega⟩
-  have h₀ : c ∘ s ∘ p₀.succAbove = c ∘ Equiv.swap i.castSucc i.succ := by
-    funext j
-    refine congrArg c (Fin.ext ?_)
-    have hc : (i.castSucc : ℕ) = i := Fin.val_castSucc i
-    have hs : (i.succ : ℕ) = i + 1 := Fin.val_succ i
-    simp only [s, p₀, Function.comp_apply, Fin.val_succAbove, Equiv.swap_apply_def, Fin.ext_iff]
-    split_ifs <;> omega
-  have h₂ : c ∘ s ∘ p₂.succAbove = c := by
-    funext j
-    refine congrArg c (Fin.ext ?_)
-    simp only [s, p₂, Function.comp_apply, Fin.val_succAbove]
-    split_ifs <;> omega
+  let p₀ : Fin (n + 3) := i.castSucc.castSucc
+  let p₂ : Fin (n + 3) := i.succ.succ
+  let s : Fin (n + 3) → Fin (n + 2) := p₂.insertNth (α := fun _ ↦ Fin (n + 2)) i.castSucc id
+  have hp₀ : p₂.succAbove i.castSucc = p₀ :=
+    Fin.succAbove_of_castSucc_lt p₂ i.castSucc (by simp [p₂, Fin.lt_def])
+  have h₀ : c ∘ s ∘ p₀.succAbove = c ∘ Equiv.swap i.castSucc i.succ :=
+    congrArg (c ∘ ·) (insertNth_comp_succAbove_eq_swap i)
+  have h₂ : c ∘ s ∘ p₂.succAbove = c :=
+    funext fun j ↦ congrArg c (Fin.insertNth_apply_succAbove (α := fun _ ↦ Fin (n + 2))
+      p₂ i.castSucc id j)
   have hzero (p : Fin (n + 3)) (hp : p ≠ p₀ ∧ p ≠ p₂) :
       (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m ((c ∘ s) ∘ p.succAbove) z).val = 0 := by
     obtain ⟨j₀, hj₀⟩ := Fin.exists_succAbove_eq hp.1.symm
@@ -998,14 +1037,22 @@ private lemma negPart_cechπ_comp_swap {z : (laurentCech (R := R) (κ := κ) m).
     have hinj := (Finite.injective_iff_surjective_of_equiv e.symm).2 hsurj
     have hj : j₀ = j₂ := hinj (by
       simp only [Function.comp_apply, hj₀, hj₂]
-      refine congrArg c (Fin.ext ?_)
-      simp [s, p₀, p₂])
-    have := congrArg Fin.val (hj₀.symm.trans (hj ▸ hj₂))
-    simp [p₀, p₂] at this
+      exact congrArg c (by
+        dsimp only [s]
+        rw [← hp₀, Fin.insertNth_apply_succAbove, id_eq, Fin.insertNth_apply_same]))
+    have hval := congrArg Fin.val (hj₀.symm.trans (hj ▸ hj₂))
+    simp only [p₀, p₂, Fin.val_castSucc, Fin.val_succ] at hval
+    omega
+  have hp₀₂ : p₀ ≠ p₂ := fun h ↦ by
+    have hval := congrArg Fin.val h
+    simp only [p₀, p₂, Fin.val_castSucc, Fin.val_succ] at hval
+    omega
+  have hsign : (-1 : ℤ) ^ (p₂ : ℕ) = (-1 : ℤ) ^ (p₀ : ℕ) := by
+    simp only [p₀, p₂, Fin.val_castSucc, Fin.val_succ, pow_succ]
+    ring
   have hsum := sum_negPart_cechπ m hz (c ∘ s)
-  rw [Fintype.sum_eq_add p₀ p₂ (fun h ↦ by simpa [p₀, p₂] using congrArg Fin.val h) hzero,
-    Function.comp_assoc, Function.comp_assoc, h₀, h₂] at hsum
-  simp only [p₀, p₂, pow_add, neg_one_sq, mul_one, ← smul_add] at hsum
+  rw [Fintype.sum_eq_add p₀ p₂ hp₀₂ hzero, Function.comp_assoc, Function.comp_assoc, h₀, h₂,
+    hsign, ← smul_add] at hsum
   exact eq_neg_of_add_eq_zero_left (((isUnit_neg_one (α := ℤ)).pow _).smul_eq_zero.1 hsum)
 
 /-- The coefficients of a cocycle of top degree at the monomials with all exponents negative are
@@ -1407,8 +1454,9 @@ theorem finite_cohomology_top_twistingSheaf {κ : Type*} [Fintype κ] (b : Modul
   have ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf m hn
   .equiv φ.symm
 
-/-- The rank of the top cohomology `H^{n+1}(ℙ^{n+1}_R, 𝒪(m))` of a twisting sheaf on projective
-space is the number of monomials of degree `m` with all exponents negative. -/
+/-- Over a nontrivial commutative ring `R`, the rank of the top cohomology
+`H^{n+1}(ℙ^{n+1}_R, 𝒪(m))` of a twisting sheaf on projective space is the number of monomials of
+degree `m` with all exponents negative. -/
 theorem finrank_cohomology_top_twistingSheaf [Nontrivial R] {κ : Type*} [Fintype κ]
     (b : Module.Basis κ R M) (m : ℤ) {n : ℕ} (hn : Fintype.card κ = n + 2) :
     Module.finrank R (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) =
