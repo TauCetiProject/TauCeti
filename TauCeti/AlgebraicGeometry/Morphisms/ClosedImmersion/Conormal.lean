@@ -19,15 +19,15 @@ import TauCeti.RingTheory.Ideal.Cotangent.ExtendScalars
 Let `j : X ⟶ Z` be a closed immersion with ideal sheaf `I`, and `U` an affine open of `Z`. On the
 affine chart `Spec (Γ(Z, U) ⧸ I(U))` of `X` (`Scheme.Hom.affineChart`), the pullback `j^* I` of
 `I` is the sheaf associated with the conormal module `I(U) ⧸ I(U)²`
-(`Scheme.Hom.pullbackAffineChartIsoTilde`). In particular it is free when `I(U) ⧸ I(U)²` is
-(`Scheme.Hom.nonempty_pullback_affineChart_iso_free`).
+(`Scheme.Hom.pullbackConormalAffineChartIsoTilde`). In particular it is free when `I(U) ⧸ I(U)²`
+is (`Scheme.Hom.nonempty_pullback_conormal_affineChart_iso_free`).
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.pullbackAffineChartIsoTilde j U`: the pullback of `j^* I` to the
-  affine chart over `U` is `(I(U) ⧸ I(U)²)~`.
-* `AlgebraicGeometry.Scheme.Hom.nonempty_pullback_affineChart_iso_free`: if `I(U) ⧸ I(U)²` is free,
-  so is the pullback of `j^* I` to the affine chart over `U`.
+* `AlgebraicGeometry.Scheme.Hom.pullbackConormalAffineChartIsoTilde j U`: the pullback of `j^* I`
+  to the affine chart over `U` is `(I(U) ⧸ I(U)²)~`.
+* `AlgebraicGeometry.Scheme.Hom.nonempty_pullback_conormal_affineChart_iso_free`: if
+  `I(U) ⧸ I(U)²` is free, so is the pullback of `j^* I` to the affine chart over `U`.
 -/
 
 public section
@@ -44,8 +44,11 @@ variable {X Z : Scheme.{u}} (j : X ⟶ Z) [IsClosedImmersion j] (U : Z.affineOpe
 
 /-- For a closed immersion `j : X ⟶ Z` with ideal sheaf `I` and an affine open `U` of `Z`, the
 pullback of `j^* I` to the affine chart `Spec (Γ(Z, U) ⧸ I(U))` of `X` is the sheaf associated with
-the conormal module `I(U) ⧸ I(U)²`. -/
-noncomputable def pullbackAffineChartIsoTilde :
+the conormal module `I(U) ⧸ I(U)²`. The pullback along `Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U)`,
+which is `Spec.map` of the quotient map, is turned into extension of scalars along the quotient
+map by `tildeFunctorCompPullbackIso`, and that extension of scalars is `I(U) ⧸ I(U)²` by
+`Ideal.extendScalarsMkEquivCotangent`. -/
+noncomputable def pullbackConormalAffineChartIsoTilde :
     (Scheme.Modules.pullback (j.affineChart U)).obj ((Scheme.Modules.pullback j).obj j.ker.sheaf) ≅
       tilde (ModuleCat.of _ (Ideal.Cotangent (j.ker.ideal U))) :=
   -- Pull `I` back along `Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U) ⟶ Z`: the open immersion
@@ -64,11 +67,11 @@ noncomputable def pullbackAffineChartIsoTilde :
 /-- For a closed immersion `j : X ⟶ Z` with ideal sheaf `I`, and an affine open `U` of `Z` on
 which the conormal module `I(U) ⧸ I(U)²` is free over `Γ(Z, U) ⧸ I(U)`, the pullback of
 `j^* I` to the affine chart `Spec (Γ(Z, U) ⧸ I(U))` of `X` is free on the same index type. -/
-theorem nonempty_pullback_affineChart_iso_free {ι : Type u}
+theorem nonempty_pullback_conormal_affineChart_iso_free {ι : Type u}
     (b : Module.Basis ι (Γ(Z, U) ⧸ j.ker.ideal U) (Ideal.Cotangent (j.ker.ideal U))) :
     Nonempty ((Scheme.Modules.pullback (j.affineChart U)).obj
       ((Scheme.Modules.pullback j).obj j.ker.sheaf) ≅ SheafOfModules.free ι) :=
-  ⟨j.pullbackAffineChartIsoTilde U ≪≫ (tilde.functor _).mapIso b.repr.toModuleIso ≪≫
+  ⟨j.pullbackConormalAffineChartIsoTilde U ≪≫ (tilde.functor _).mapIso b.repr.toModuleIso ≪≫
     tildeFinsupp ι⟩
 
 end AlgebraicGeometry.Scheme.Hom

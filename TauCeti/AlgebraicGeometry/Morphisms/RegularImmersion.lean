@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Regular
-public import TauCeti.AlgebraicGeometry.Morphisms.Immersion
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 
 /-!
 # Regular immersions

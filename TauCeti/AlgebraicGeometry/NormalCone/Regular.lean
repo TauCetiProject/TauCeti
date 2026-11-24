@@ -20,7 +20,7 @@ The conormal sheaf `I/I²` of a regular immersion of codimension `d`
 Stacks, Tags 063K and 063M; Fulton, Appendix B.7.1). Over an affine open `U` on which
 `I(U) = (f₁, …, f_d)` for a regular sequence, the conormal sheaf restricted to
 `Spec (Γ(U) ⧸ I(U))` is the sheaf associated with `I(U) ⧸ I(U)²`
-(`Scheme.Hom.pullbackAffineChartIsoTilde`), which is free on the classes of `f₁, …, f_d`
+(`Scheme.Hom.pullbackConormalAffineChartIsoTilde`), which is free on the classes of `f₁, …, f_d`
 (`RingTheory.Sequence.IsWeaklyRegular.cotangentBasis`).
 
 ## Main declarations
@@ -68,7 +68,7 @@ theorem exists_pullback_conormal_iso_free (h : i.IsRegularImmersion d) (x : X) :
       (Ideal.Cotangent (i.liftCoborder.ker.ideal U)) := by
     rw [hI]
     exact hrs.cotangentBasis.reindex Equiv.ulift.symm
-  obtain ⟨e⟩ := i.liftCoborder.nonempty_pullback_affineChart_iso_free U b
+  obtain ⟨e⟩ := i.liftCoborder.nonempty_pullback_conormal_affineChart_iso_free U b
   exact ⟨_, i.liftCoborder.affineChart U, inferInstance,
     (i.liftCoborder.mem_range_affineChart_iff U).mpr hxU,
     ⟨(Scheme.Modules.pullback _).mapIso (eqToIso i.conormal_obj) ≪≫ e⟩⟩

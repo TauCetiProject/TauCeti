@@ -17,7 +17,8 @@ records the corresponding open immersion
 `j.affineChart U : Spec (Γ(Z, U) ⧸ I(U)) ⟶ X`,
 
 the chart of Mathlib's cover `I.subschemeCover` of the closed subscheme `V(I)`, transported to `X`
-along the isomorphism `j.toImage : X ≅ V(I)`. Composed with `j`, it is the closed immersion
+along `j.toImage : X ⟶ V(I)`, which is an isomorphism because `j` is a closed immersion
+(`asIso j.toImage : X ≅ V(I)`). Composed with `j`, it is the closed immersion
 `Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U)` followed by the open immersion `U.fromSpec` into `Z`
 (`affineChart_comp`), and its image is `j⁻¹ U` (`mem_range_affineChart_iff`).
 
@@ -68,27 +69,19 @@ theorem affineChart_comp :
       (congrArg (_ ≫ ·) ((IsIso.inv_comp_eq _).mpr j.toImage_imageι.symm))
   exact h.trans ((j.ker.subschemeCover_map_subschemeι U).trans (Category.assoc _ _ _))
 
+/-- The open image of the affine chart over `U` is the preimage of `U`. -/
+@[simp]
+theorem opensRange_affineChart : (j.affineChart U).opensRange = j ⁻¹ᵁ U.val := by
+  have := j.ker.subschemeCover.map_prop U
+  refine (Scheme.Hom.opensRange_comp (j.ker.subschemeCover.f U) (inv j.toImage)).trans ?_
+  -- Transport the image of the cover member, computed by Mathlib, along `j.toImage`.
+  refine (congrArg ((asIso j.toImage).inv ''ᵁ ·) (j.ker.opensRange_subschemeCover_map U)).trans ?_
+  rw [Scheme.Hom.inv_image, asIso_hom, ← Scheme.Hom.comp_preimage, j.toImage_imageι]
+
 /-- A point of `X` lies in the image of the affine chart over `U` exactly when its image under `j`
 lies in `U`. -/
 theorem mem_range_affineChart_iff {x : X} : x ∈ Set.range (j.affineChart U) ↔ j x ∈ U.val := by
-  constructor
-  · rintro ⟨y, rfl⟩
-    rw [← Scheme.Hom.comp_apply, affineChart_comp, Scheme.Hom.comp_apply]
-    exact U.property.range_fromSpec.le ⟨_, rfl⟩
-  · intro hx
-    have := j.ker.subschemeCover.map_prop U
-    have hx' : j.imageι (j.toImage x) ∈ U.val := by
-      rwa [← Scheme.Hom.comp_apply, j.toImage_imageι]
-    -- `j.imageι` is the closed immersion `(ker j).subschemeι`
-    obtain ⟨y, hy⟩ : j.toImage x ∈ (j.ker.subschemeCover.f U).opensRange := by
-      rwa [IdealSheafData.opensRange_subschemeCover_map, Scheme.Hom.mem_preimage]
-    refine ⟨y, (Scheme.Hom.comp_apply (j.ker.subschemeCover.f U) (inv j.toImage) y).trans ?_⟩
-    rw [hy, ← Scheme.Hom.comp_apply, IsIso.hom_inv_id]
-    rfl
-
-/-- The open image of the affine chart over `U` is the preimage of `U`. -/
-@[simp]
-theorem opensRange_affineChart : (j.affineChart U).opensRange = j ⁻¹ᵁ U.val :=
-  TopologicalSpace.Opens.ext (Set.ext fun _ ↦ j.mem_range_affineChart_iff U)
+  rw [← Scheme.Hom.coe_opensRange, SetLike.mem_coe, opensRange_affineChart,
+    Scheme.Hom.mem_preimage]
 
 end AlgebraicGeometry.Scheme.Hom

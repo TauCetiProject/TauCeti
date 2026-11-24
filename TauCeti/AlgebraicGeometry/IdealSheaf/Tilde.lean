@@ -11,10 +11,12 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 /-!
 # The ideal sheaf of an ideal on an affine scheme
 
-For an ideal `J` of a commutative ring `R`, the ideal sheaf `ofIdealTop J` on `Spec R`, viewed as
-an `𝒪`-module, is the quasi-coherent sheaf `J~` associated with the `R`-module `J`
-(`ofIdealTopSheafIsoTilde`). Its global sections are `J` (`ofIdealTopSectionsEquiv`), and a
-quasi-coherent module on `Spec R` is the sheaf associated with its global sections.
+For an ideal `J` of a commutative ring `R`, transport `J` along the isomorphism
+`Scheme.ΓSpecIso R : Γ(Spec R, ⊤) ≅ R` to an ideal of global sections. Its ideal sheaf
+`ofIdealTop (J.map (Scheme.ΓSpecIso R).inv.hom)` on `Spec R`, viewed as an `𝒪`-module, is the
+quasi-coherent sheaf `J~` associated with the `R`-module `J` (`ofIdealTopSheafIsoTilde`). Its
+global sections are `J` (`ofIdealTopSectionsEquiv`), and a quasi-coherent module on `Spec R` is
+the sheaf associated with its global sections.
 
 ## Main declarations
 
@@ -75,9 +77,9 @@ noncomputable def ofIdealTopSectionsEquiv :
         -- `J.map φ⁻¹ = J.comap φ` for the ring isomorphism `φ : Γ(Spec R, ⊤) ≅ R`.
         have key (x : Γ(Spec R, ⊤)) (hx : x ∈ J.map (Scheme.ΓSpecIso R).inv.hom) :
             (Scheme.ΓSpecIso R).hom x ∈ J := by
-          rw [show J.map (Scheme.ΓSpecIso R).inv.hom =
-              J.map (Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv.symm from rfl,
-            Ideal.map_symm] at hx
+          have hφ : (Scheme.ΓSpecIso R).inv.hom =
+              ((Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv.symm : R →+* Γ(Spec R, ⊤)) := rfl
+          rw [hφ, Ideal.map_coe, Ideal.map_symm] at hx
           exact hx
         have ht := sheafι_app_mem _ ⊤ t
         rw [sections_ofIdealTop_top] at ht
