@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Nat.Set
 import TauCeti.Data.Set.Prod
 import TauCeti.Logic.Function.Fiber
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -28,7 +29,8 @@ For `n > 0`, every natural number `j` is the quotient `i / n` of exactly the `n`
 repeat each term `n` times, such as the singular values of a block sum of `n` copies of one map.
 
 Adding a fresh element to a set removes one element from its complement
-(`Set.encard_compl_insert_add_one`).
+(`Set.encard_compl_insert_add_one`). A set of naturals containing `0` has one more element, in
+`ℕ∞`, than the set of indices whose successor lies in it (`Set.encard_preimage_succ_add_one`).
 
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
 are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
@@ -100,6 +102,13 @@ theorem encard_compl_insert_add_one {α : Type*} {s : Set α} {x : α} (hx : x �
     (insert x s)ᶜ.encard + 1 = sᶜ.encard := by
   rw [← encard_sdiff_singleton_add_one (mem_compl hx), insert_eq, compl_union, sdiff_eq,
     inter_comm]
+
+/-- A set of natural numbers containing `0` has one more element than the set of indices `n` with
+`n + 1 ∈ s`; both sides are `⊤` when `s` is infinite. -/
+theorem encard_preimage_succ_add_one {s : Set ℕ} (hs : 0 ∈ s) :
+    (Nat.succ ⁻¹' s).encard + 1 = s.encard := by
+  rw [← Nat.succ_injective.encard_image, image_preimage_eq_inter_range, ← compl_compl (range _),
+    Nat.compl_range_succ, ← sdiff_eq, encard_sdiff_singleton_add_one hs]
 
 /-- The points of the range of an injective map into a sigma type lying over the index `i` are
 counted by the arguments mapped over `i`. -/

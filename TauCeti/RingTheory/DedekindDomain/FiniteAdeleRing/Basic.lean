@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import Mathlib.Topology.Algebra.Algebra
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+public import TauCeti.Topology.Algebra.Algebra.Subalgebra
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Approximation
 import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
@@ -53,7 +54,8 @@ approximates `a`.
 ## Main results
 
 * `IsDedekindDomain.FiniteAdeleRing.integralAdeles`: the `R`-subalgebra of integral finite adeles,
-  with `isOpen_integralAdeles`, `isClosed_integralAdeles`, and `isCompact_integralAdeles`.
+  with `isOpen_integralAdeles`, `isClosed_integralAdeles`, `isCompact_integralAdeles`, and the
+  instance `compactSpace_integralAdeles`.
 * `IsDedekindDomain.FiniteAdeleRing.integralEmbedding`: the continuous embedding of the product of
   the local integer rings into the finite adeles, with range `integralAdeles`.
 * `IsDedekindDomain.FiniteAdeleRing.one_apply`, `add_apply`, `sub_apply`, and `mul_apply`: the
@@ -209,6 +211,12 @@ theorem isCompact_integralAdeles
     IsCompact (integralAdeles R K : Set (FiniteAdeleRing R K)) := by
   rw [← range_integralEmbedding]
   exact isCompact_range (continuous_integralEmbedding (R := R) (K := K))
+
+/-- The integral finite adeles form a compact space when every local integer ring is compact. -/
+instance compactSpace_integralAdeles
+    [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)] :
+    CompactSpace (integralAdeles R K) :=
+  isCompact_iff_compactSpace.mp isCompact_integralAdeles
 
 /-! ### `S`-integral finite adeles -/
 

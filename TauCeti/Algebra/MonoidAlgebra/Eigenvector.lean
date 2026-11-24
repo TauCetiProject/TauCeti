@@ -49,6 +49,8 @@ is not a zero divisor of `R[G]` when `G` is cancellative.
 * `TauCeti.isRegular_single_sub_one_of_not_isOfFinOrder`: over a ring, if `g` is an element of
   infinite order of a cancellative monoid, then `g - 1` is regular; for `G = ℤ` this says that
   `t - 1` is not a zero divisor in `R[t, t⁻¹]`.
+* `TauCeti.mul_eq_smul_of_mul_of_eq_smul`: over a commutative semiring, for a finite monoid `G`,
+  if every `g` acts on `b` by a scalar, `b g = c(g) b`, then `b x = (∑ g, x(g) c(g)) b`.
 -/
 
 public section
@@ -181,5 +183,20 @@ theorem isRegular_single_sub_one_of_not_isOfFinOrder [CancelMonoid G] {g : G}
   simpa using isRightRegular_single_sub_one_of_not_isOfFinOrder hg' h
 
 end Ring
+
+/-- If every `g ∈ G` acts on `b` by a scalar, `b * g = c(g) b`, then `b * x = (∑ g, x(g) c(g)) • b`
+for every `x`. -/
+theorem mul_eq_smul_of_mul_of_eq_smul {k G : Type*} [CommSemiring k] [Monoid G] [Fintype G]
+    {b : MonoidAlgebra k G} {c : G → k} (hc : ∀ g, b * of k G g = c g • b)
+    (x : MonoidAlgebra k G) :
+    b * x = (∑ g, x.coeff g * c g) • b := by
+  classical
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [mul_add, hx, hy, add_mul, add_smul, Finset.sum_add_distrib]
+  | single g r =>
+    have : single g r = r • of k G g := by simp [smul_single]
+    rw [this, mul_smul_comm, hc, smul_smul]
+    simp [Finsupp.single_apply]
 
 end TauCeti

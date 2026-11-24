@@ -17,7 +17,15 @@ show that the algebraic convolution equivalences `AlgHom.prodValueMulEquiv` and
 `AlgHom.piValueMulEquiv` are multiplicative homeomorphisms (`≃ₜ*`) for the point topology, with
 coordinates given by post-composition with the coefficient projections (and isomorphisms of
 topological monoids, or of topological groups when `H` is a Hopf algebra, whenever the coefficient
-algebras are topological semirings).
+algebras are topological semirings), and `TauCeti.PointTopology.piProdContinuousMulEquiv` is the
+combined identification for `(∀ i, A i) × B`. Together with the isomorphism of topological monoids
+of points induced by an isomorphism of topological coefficient algebras
+(`ContinuousAlgEquiv.mapValueContinuousMulEquiv`), these transport a decomposition of a coefficient
+ring into a product to the points.
+
+This is how the points of an algebraic group over the adele ring `𝔸_K = K_∞ × 𝔸_{K,f}` split into
+archimedean and finite components, and those over the finite adeles into the components at a finite
+set of places and the components away from it.
 
 ## Main declarations
 
@@ -28,6 +36,8 @@ algebras are topological semirings).
   points valued in `∀ i, R i` and `∀ i, WithConv (H →ₐ[k] R i)` (an isomorphism of topological
   monoids, or topological groups when `H` is a Hopf algebra, if each `R i` is a topological
   semiring).
+* `TauCeti.PointTopology.piProdContinuousMulEquiv`: points with values in `(∀ i, A i) × B` are
+  pairs of a family of points and a point, as topological monoids.
 
 ## References
 
@@ -41,9 +51,11 @@ open Topology WithConv
 
 namespace TauCeti.PointTopology
 
+variable {k H : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
+
 section BialgebraProd
 
-variable {k H R₁ R₂ : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
+variable {R₁ R₂ : Type*}
   [CommSemiring R₁] [Algebra k R₁] [TopologicalSpace R₁]
   [CommSemiring R₂] [Algebra k R₂] [TopologicalSpace R₂]
 
@@ -81,51 +93,78 @@ theorem prodContinuousMulEquiv_symm_apply_apply
 
 end BialgebraProd
 
-section BialgebraPi
+section Pi
 
-variable (k H : Type*) {ι : Type*} (R : ι → Type*) [CommSemiring k] [Semiring H] [Bialgebra k H]
-  [∀ i, CommSemiring (R i)] [∀ i, Algebra k (R i)] [∀ i, TopologicalSpace (R i)]
+variable {ι : Type*} (R : ι → Type*) [∀ i, CommSemiring (R i)] [∀ i, Algebra k (R i)]
+  [∀ i, TopologicalSpace (R i)]
 
-/-- Multiplicative homeomorphism identifying convolution points of a bialgebra `H` valued in
-`∀ i, R i`, with the point topology, with `∀ i, WithConv (H →ₐ[k] R i)`. When each `R i` is a
-topological semiring, this is an isomorphism of topological monoids (and of topological groups when
-`H` is a Hopf algebra). -/
+variable (k H) in
+/-- Points with values in a product `∀ i, R i` of coefficient algebras are families of points, as
+topological monoids for the convolution product and the point topology: a point is sent to its
+images under the projections, and a family of points `x` to the point `h ↦ (x i h)_i`. This is
+`AlgHom.piValueMulEquiv` with its continuity in both directions. -/
 noncomputable def piContinuousMulEquiv :
     WithConv (H →ₐ[k] ∀ i, R i) ≃ₜ* ∀ i, WithConv (H →ₐ[k] R i) where
   toMulEquiv := AlgHom.piValueMulEquiv
-  continuous_toFun := continuous_pi fun i ↦
-    (AlgHom.continuous_mapValue (ψ := Pi.evalAlgHom k R i) (continuous_apply i)).congr
-      fun x ↦ WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
-        simp [AlgHom.mapValue_apply]
-  continuous_invFun := continuous_withConv_iff.2 fun h ↦
-    (continuous_pi fun i ↦ (continuous_eval_ofConv h).comp (continuous_apply i)).congr fun f ↦ by
-      funext i
-      simp only [Function.comp_apply, MulEquiv.invFun_eq_symm, AlgHom.piValueMulEquiv_symm_apply]
+  continuous_toFun := continuous_pi fun i ↦ continuous_withConv_iff.2 fun h ↦ by
+    simp only [MulEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, MulEquiv.coe_toEquiv,
+      AlgHom.piValueMulEquiv_apply]
+    exact (continuous_apply i).comp (continuous_eval_ofConv h)
+  continuous_invFun := continuous_withConv_iff.2 fun h ↦ continuous_pi fun i ↦ by
+    simp only [MulEquiv.toEquiv_eq_coe, Equiv.invFun_as_coe, MulEquiv.coe_toEquiv_symm,
+      AlgHom.piValueMulEquiv_symm_apply]
+    exact (continuous_eval_ofConv h).comp (continuous_apply i)
 
-/-- The underlying `MulEquiv` of `piContinuousMulEquiv k H R` is `AlgHom.piValueMulEquiv`. -/
 @[simp]
-theorem coe_piContinuousMulEquiv :
-    (piContinuousMulEquiv k H R :
-      WithConv (H →ₐ[k] ∀ i, R i) ≃* ∀ i, WithConv (H →ₐ[k] R i)) =
-      AlgHom.piValueMulEquiv := (rfl)
+theorem piContinuousMulEquiv_apply_apply (x : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) (h : H) :
+    (piContinuousMulEquiv k H R x i).ofConv h = x.ofConv h i :=
+  AlgHom.piValueMulEquiv_apply x i h
 
-variable {k H R}
-
-/-- Evaluating `piContinuousMulEquiv k H R x` at `i` applies `AlgHom.mapValue`. -/
 @[simp]
-theorem piContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) :
-    piContinuousMulEquiv k H R x i = AlgHom.mapValue (Pi.evalAlgHom k R i) x :=
-  WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
-    rw [piContinuousMulEquiv, ContinuousMulEquiv.coe_mk, AlgHom.piValueMulEquiv_apply]
-    simp [AlgHom.mapValue_apply]
+theorem piContinuousMulEquiv_symm_apply_apply (x : ∀ i, WithConv (H →ₐ[k] R i)) (h : H) (i : ι) :
+    ((piContinuousMulEquiv k H R).symm x).ofConv h i = (x i).ofConv h :=
+  AlgHom.piValueMulEquiv_symm_apply x h i
 
-/-- Evaluating `(piContinuousMulEquiv k H R).symm f` on `h : H` at `i` gives `(f i).ofConv h`. -/
+variable (B : Type*) [CommSemiring B] [Algebra k B] [TopologicalSpace B]
+
+variable (k H) in
+/-- Points with values in a product `(∀ i, R i) × B` of coefficient algebras are pairs of a family
+of points and a point, as topological monoids: `prodContinuousMulEquiv` followed by
+`piContinuousMulEquiv` on the first factor. -/
+noncomputable def piProdContinuousMulEquiv :
+    WithConv (H →ₐ[k] (∀ i, R i) × B) ≃ₜ* (∀ i, WithConv (H →ₐ[k] R i)) × WithConv (H →ₐ[k] B) :=
+  (prodContinuousMulEquiv k H _ B).trans
+    { toMulEquiv := MulEquiv.prodCongr (piContinuousMulEquiv k H R).toMulEquiv (MulEquiv.refl _)
+      continuous_toFun := (piContinuousMulEquiv k H R).continuous.prodMap continuous_id
+      continuous_invFun := (piContinuousMulEquiv k H R).symm.continuous.prodMap continuous_id }
+
+theorem piProdContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] (∀ i, R i) × B)) :
+    piProdContinuousMulEquiv k H R B x =
+      (piContinuousMulEquiv k H R (AlgHom.mapValue (AlgHom.fst k (∀ i, R i) B) x),
+        AlgHom.mapValue (AlgHom.snd k (∀ i, R i) B) x) :=
+  Prod.ext (congrArg (piContinuousMulEquiv k H R) (AlgHom.prodValueMulEquiv_apply_fst x))
+    (AlgHom.prodValueMulEquiv_apply_snd x)
+
 @[simp]
-theorem piContinuousMulEquiv_symm_apply_ofConv
-    (f : ∀ i, WithConv (H →ₐ[k] R i)) (h : H) (i : ι) :
-    ((piContinuousMulEquiv k H R).symm f).ofConv h i = (f i).ofConv h :=
-  AlgHom.piValueMulEquiv_symm_apply f h i
+theorem piProdContinuousMulEquiv_apply_fst (x : WithConv (H →ₐ[k] (∀ i, R i) × B)) (i : ι)
+    (h : H) : ((piProdContinuousMulEquiv k H R B x).1 i).ofConv h = (x.ofConv h).1 i := by
+  simp [piProdContinuousMulEquiv_apply]
 
-end BialgebraPi
+@[simp]
+theorem piProdContinuousMulEquiv_apply_snd (x : WithConv (H →ₐ[k] (∀ i, R i) × B)) (h : H) :
+    (piProdContinuousMulEquiv k H R B x).2.ofConv h = (x.ofConv h).2 := by
+  simp [piProdContinuousMulEquiv_apply]
+
+/-- The point assembled from a family of points `p.1` and a point `p.2` takes the value
+`((p.1 i h)_i, p.2 h)` at `h`. -/
+@[simp]
+theorem piProdContinuousMulEquiv_symm_apply_apply
+    (p : (∀ i, WithConv (H →ₐ[k] R i)) × WithConv (H →ₐ[k] B)) (h : H) :
+    ((piProdContinuousMulEquiv k H R B).symm p).ofConv h =
+      (fun i ↦ (p.1 i).ofConv h, p.2.ofConv h) := by
+  obtain ⟨x, rfl⟩ := (piProdContinuousMulEquiv k H R B).surjective p
+  simp
+
+end Pi
 
 end TauCeti.PointTopology

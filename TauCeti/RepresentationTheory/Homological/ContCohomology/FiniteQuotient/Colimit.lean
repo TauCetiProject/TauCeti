@@ -57,6 +57,8 @@ isomorphisms.
   level is inflating directly, which is the cocone condition.
 * `TauCeti.ContCohomology.exists_openNormalSubgroup_apply_eq_zero`: a continuous `1`-cocycle of a
   profinite group with discrete coefficients vanishes on an open normal subgroup.
+* `TauCeti.ContCohomology.exists_openNormalSubgroup_explicitRes1_eq_zero`: every continuous
+  degree-one class with discrete coefficients restricts to zero on some open normal subgroup.
 * `TauCeti.ContCohomology.exists_explicitInfl1_eq`: every class in `H¹(G, M)` is inflated from a
   finite level.
 * `TauCeti.ContCohomology.subsingleton_H1_of_forall_openNormalSubgroup`: if every finite layer has
@@ -524,6 +526,17 @@ theorem exists_explicitInfl1_eq (x : H1 G M) :
   | _ z =>
     obtain ⟨U, hU⟩ := exists_openNormalSubgroup_apply_eq_zero G M z
     exact ⟨U, descendZ1 z fun n => hU (n : G) n.property, explicitInfl1_descendZ1 z _⟩
+
+/-- Every continuous degree-one class of a profinite group with discrete coefficients restricts
+to zero on some open normal subgroup. -/
+theorem exists_openNormalSubgroup_explicitRes1_eq_zero
+    {A : Type v} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
+    [DistribMulAction G A] [ContinuousSMul G A] (x : H1 G A) :
+    ∃ U : OpenNormalSubgroup G, explicitRes1 G A U.toSubgroup x = 0 := by
+  obtain ⟨U, y, hy⟩ := exists_explicitInfl1_eq x
+  refine ⟨U, ?_⟩
+  rw [← AddMonoidHom.mem_ker, ← explicitInfRes_exact]
+  exact ⟨y, hy⟩
 
 /-- The descent of a cocone to `H¹(G, M)`, as a bare function: a class is inflated from some
 finite level, and its value is the cocone leg applied to any such witness. -/
