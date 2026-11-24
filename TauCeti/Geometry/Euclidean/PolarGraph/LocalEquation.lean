@@ -41,6 +41,25 @@ def planeProjection (p : PolarPoint) : EuclideanSpace ℝ (Fin 2) :=
 theorem planeProjection_def (p : PolarPoint) :
     planeProjection p = Complex.orthonormalBasisOneI.repr (projection p) := (rfl)
 
+@[simp, grind =] theorem planeProjection_apply_zero (p : PolarPoint) :
+    planeProjection p 0 = radius p * Real.cos (angle p) := by
+  simp [planeProjection_def, Complex.orthonormalBasisOneI_repr_apply]
+
+@[simp, grind =] theorem planeProjection_apply_one (p : PolarPoint) :
+    planeProjection p 1 = radius p * Real.sin (angle p) := by
+  simp [planeProjection_def, Complex.orthonormalBasisOneI_repr_apply]
+
+/-- The Euclidean norm of the Cartesian projection is the polar radius. -/
+@[simp, grind =] theorem norm_planeProjection (p : PolarPoint) :
+    ‖planeProjection p‖ = radius p := by
+  simp [planeProjection_def]
+
+/-- The Cartesian projection is continuous on the polar cover. -/
+@[fun_prop] theorem continuous_planeProjection : Continuous planeProjection := by
+  apply (continuous_congr planeProjection_def).mpr
+  simp only [projection_def, radius_def, angle_def]
+  fun_prop
+
 @[simp, grind =] theorem planeProjection_deckShift (k : ℤ) (p : PolarPoint) :
     planeProjection (deckShift k p) = planeProjection p := by
   simp only [planeProjection_def, projection_deckShift]
