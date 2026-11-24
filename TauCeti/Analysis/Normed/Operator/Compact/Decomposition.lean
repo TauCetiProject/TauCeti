@@ -52,9 +52,11 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
       simpa only [V, LinearMap.mem_ker, pow_succ, _root_.mul_apply_eq_comp,
         ContinuousLinearMap.coe_coe] using hx
     simpa only [A, _root_.sub_apply, one_apply_eq_self, one_smul, neg_sub] using (V n).neg_mem hAx
+  have hmono (n : ℕ) : V n ≤ V (n + 1) := by
+    simpa only [V, LinearMap.iterateKer_coe] using
+      (A : X →ₗ[𝕜] X).iterateKer.monotone (Nat.le_succ n)
   exact hK.exists_succ_eq_of_ascending_chain (μ := fun _ ↦ (1 : 𝕜)) one_pos (fun _ ↦ norm_one.ge)
-    (fun n ↦ (A : X →ₗ[𝕜] X).iterateKer.monotone (Nat.le_succ n))
-    (fun n ↦ (hclosed n).preimage continuous_subtypeVal) hstep
+    hmono (fun n ↦ (hclosed n).preimage continuous_subtypeVal) hstep
 
 variable [CompleteSpace 𝕜]
 

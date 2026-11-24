@@ -84,10 +84,11 @@ variable (R) in
 /-- A **`t`-orthogonal basis** of a seminormed module is a `t`-orthogonal family of nonzero
 vectors whose span is dense.
 
-In a seminormed module that is not `T0Space`, the family may contain or repeat nonzero vectors of
-norm zero and need not be linearly independent; linear independence for `0 < t` follows only when
-null vectors are excluded, for example in a normed module (`NormedAddCommGroup`, see
-`IsTOrthogonalFamily.linearIndependent`). -/
+In a seminormed module that is not `T0Space`, nonzero vectors of seminorm zero can prevent
+`t`-orthogonality from implying linear independence (and the family may repeat such a vector).
+When `M` is normed (`NormedAddCommGroup M`), `0 < t`, and `R` acts without zero divisors
+(`[NoZeroSMulDivisors R M]`), linear independence follows from
+`IsTOrthogonalFamily.linearIndependent`. -/
 structure IsTOrthogonalBasis (t : ℝ≥0) (e : I → M) : Prop where
   /-- A `t`-orthogonal basis is a `t`-orthogonal family. -/
   isTOrthogonalFamily : IsTOrthogonalFamily R t e
@@ -145,8 +146,9 @@ theorem comp (he : IsTOrthogonalFamily R t e) {f : J → I} (hf : Function.Injec
   simpa [Finset.sum_map, Finset.sup_map, Function.comp_def, hf.extend_apply] using
     he (s.map ⟨f, hf⟩) (Function.extend f a 0)
 
-/-- If `e ∘ f` is `t`-orthogonal and `e` has zero norm outside the range of `f`, then `e` is
-`t`-orthogonal. -/
+/-- If scalar multiplication by each fixed element of `R` is continuous
+(`[ContinuousConstSMul R M]`), `e ∘ f` is `t`-orthogonal, and `e` has zero seminorm outside the
+range of `f`, then `e` is `t`-orthogonal. -/
 theorem of_comp_of_norm_eq_zero [ContinuousConstSMul R M] {f : J → I}
     (he : IsTOrthogonalFamily R t (e ∘ f)) (h0 : ∀ i, i ∉ Set.range f → ‖e i‖ = 0) :
     IsTOrthogonalFamily R t e := by
@@ -156,9 +158,11 @@ theorem of_comp_of_norm_eq_zero [ContinuousConstSMul R M] {f : J → I}
     simpa only [smul_zero] using
       (inseparable_zero_iff_norm.2 (h0 i hi)).map (continuous_const_smul (a i))
   -- Choose a right inverse `g` of `f` on `Set.range f` to pull back the supported indices to `J`.
-  let g : {i // i ∈ Set.range f} → J := fun i ↦ i.property.choose
-  have hfg (i : {i // i ∈ Set.range f}) : f (g i) = i := i.property.choose_spec
-  have hg : Function.Injective g := fun i₁ i₂ h ↦ Subtype.ext (by rw [← hfg i₁, ← hfg i₂, h])
+  let g : Set.range f → J := Function.surjInv Set.rangeFactorization_surjective
+  have hrinv : Function.RightInverse g (Set.rangeFactorization f) :=
+    Function.rightInverse_surjInv Set.rangeFactorization_surjective
+  have hfg (i : Set.range f) : f (g i) = i := congrArg Subtype.val (hrinv i)
+  have hg : Function.Injective g := hrinv.injective
   let s' : Finset J := (s.subtype (· ∈ Set.range f)).map ⟨g, hg⟩
   have hsup : (s.sup fun i ↦ ‖a i • e i‖₊) ≤ s'.sup fun j ↦ ‖a (f j) • (e ∘ f) j‖₊ := by
     refine Finset.sup_le fun i hi ↦ ?_

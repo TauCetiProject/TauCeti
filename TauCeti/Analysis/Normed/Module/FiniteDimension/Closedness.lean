@@ -22,7 +22,7 @@ closed (`Submodule.isClosed_of_finiteDimensional`).
 
 For normed spaces, the same closedness results hold over a trivially normed field
 (`[DiscreteTopology 𝕜]`): adding a single vector to a closed subspace preserves closedness because
-points of the enlarged subspace within distance `infDist v W` of zero already lie in `W`, so the
+the enlarged subspace agrees with `W` on the open ball of radius `infDist v W` around zero, so the
 enlarged subspace is locally closed at zero. Combining the discrete and nontrivial cases yields
 closedness over any complete normed field.
 

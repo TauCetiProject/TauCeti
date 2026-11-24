@@ -15,7 +15,6 @@ public import TauCeti.Analysis.Normed.Group.RieszLemma
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Analysis.Normed.Module.FiniteDimension.Closedness
 import TauCeti.LinearAlgebra.Span.Basic
-import TauCeti.Topology.MetricSpace.Ultra.SeparationQuotient
 
 /-!
 # `t`-orthogonal bases and subspaces of normed spaces of countable type
@@ -35,8 +34,9 @@ nontrivially normed field and a normed space.
   approximation of `w n` in the span of the previous vectors (`TauCeti.riesz_lemma_translate`);
   the losses at the successive steps are chosen with product at least `t`. This holds in any
   ultrametric seminormed space over any complete normed field, trivially normed or not.
-* `TauCeti.exists_isTOrthogonalBasis_of_dense_span`: a seminormed space of countable type over any
-  complete normed field has a `t`-orthogonal basis indexed by a set of natural numbers.
+* `TauCeti.exists_isTOrthogonalBasis_of_dense_span`: an ultrametric seminormed space of countable
+  type over any complete normed field has a `t`-orthogonal basis indexed by a set of natural
+  numbers.
 * `TauCeti.exists_basis_isTOrthogonalFamily`: a finite-dimensional ultrametric seminormed space
   over any complete normed field has a `t`-orthogonal basis in the sense of `Module.Basis`, indexed
   by `Fin (finrank K E)`.
@@ -50,20 +50,20 @@ nontrivially normed field and a normed space.
 * `Submodule.exists_linearMap_comp_subtype_eq_norm_le`: any continuous linear map `φ` from a closed
   subspace `D` into a seminormed space extends to a linear map `ψ` on `E` satisfying
   `‖ψ x‖ ≤ c * ‖φ‖ * ‖x‖` on `D ⊔ G` for any finite-dimensional subspace `G` and `c > 1`.
-* `TauCeti.exists_isTOrthogonalBasis_nat_of_dense_span`: an infinite-dimensional seminormed space
-  of countable type over any complete normed field has a `t`-orthogonal basis indexed by `ℕ`;
-  in a seminormed space that is not `T0Space`, the family may repeat a nonzero vector of norm zero
-  and need not be injective or linearly independent.
+* `TauCeti.exists_isTOrthogonalBasis_nat_of_dense_span`: an infinite-dimensional ultrametric
+  seminormed space of countable type over any complete normed field has a `t`-orthogonal basis
+  indexed by `ℕ`; in a seminormed space that is not `T0Space`, the family may repeat a nonzero
+  vector of norm zero and need not be injective or linearly independent.
 * `Submodule.exists_finiteDimensional_le_infDist_le`: for a closed subspace `D`, a
   finite-dimensional subspace `G` and `c > 1`, some finite-dimensional `W ≤ D` satisfies
   `infDist g W ≤ c * infDist g D` for every `g ∈ G`. The subspace `W` is cut out of `D` by lifts
   of a `t`-orthogonal basis of the image of `G` in `E ⧸ D`.
-* `Submodule.exists_dense_span_of_dense_span`: every subspace of a seminormed space of countable
-  type over any complete normed field, closed or not, is of countable type. The approximation
-  theorem is applied to the closed subspace `closure D`: the finite-dimensional subspaces
-  `W ≤ closure D` attached to the initial spans of a densely spanning sequence together span a
-  dense subspace of `closure D`, and each of their countably many spanning vectors is then replaced
-  by a sequence in `D` converging to it.
+* `Submodule.exists_dense_span_of_dense_span`: every subspace of an ultrametric seminormed space
+  of countable type over any complete normed field, closed or not, is of countable type. The
+  approximation theorem is applied to the closed subspace `closure D`: the finite-dimensional
+  subspaces `W ≤ closure D` attached to the initial spans of a densely spanning sequence together
+  span a dense subspace of `closure D`, and each of their countably many spanning vectors is then
+  replaced by a sequence in `D` converging to it.
 * `TauCeti.separatingDual_of_dense_span` and `Submodule.separatingDual_span_of_countable`: the
   coordinate functionals of a `t`-orthogonal basis separate points on any ultrametric normed space
   of countable type, and in particular on the span of any countable set.

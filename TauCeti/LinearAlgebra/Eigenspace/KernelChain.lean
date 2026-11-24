@@ -47,6 +47,7 @@ theorem ker_aeval_prod_range_le_succ (f : Module.End 𝕜 E) (μ : ℕ → 𝕜)
 
 /-- A vector `x` lies in the kernel of `aeval f (∏ i < n + 1, (X - C (μ i)))` iff
 `f x - μ n • x` lies in the kernel of `aeval f (∏ i < n, (X - C (μ i)))`. -/
+@[simp high]
 theorem mem_ker_aeval_prod_range_succ_iff (f : Module.End 𝕜 E) (μ : ℕ → 𝕜) (n : ℕ) {x : E} :
     x ∈ LinearMap.ker (aeval f (∏ i ∈ Finset.range (n + 1), (X - C (μ i)))) ↔
       f x - μ n • x ∈
