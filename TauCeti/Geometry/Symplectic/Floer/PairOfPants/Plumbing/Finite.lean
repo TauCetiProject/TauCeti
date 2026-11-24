@@ -27,11 +27,10 @@ For a map `u` into a symplectic vector space `(V, ω)`, the energy identity of
 `R ≥ L/2`, of the plumbed sphere. This file passes to the whole plumbed sphere, as
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Finite` does for the pair of pants.
 
-* **The curvature is supported in `Σ_{L/2}`.** Off `Σ_{L/2}` every point of `Σ` lies on the part
-  `±s > L/2` of one of the four outer ends, where `K` is the cylindrical datum `H(t) dt`
+* **The curvature is supported in `Σ_2`.** Off `Σ_R`, `R ≥ 2`, every point of `Σ` lies on the
+  part `±s > R` of one of the four outer ends, where `K` is the cylindrical datum `H(t) dt`
   (`SymplecticForm.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`).
-  So the curvature `R_K(u)` is integrable over `Σ` as soon as `u` is continuous there, and its
-  integral over `Σ_R` is its integral over `Σ` for every `R ≥ L/2`
+  So the integral of the curvature `R_K(u)` over `Σ_R` is its integral over `Σ` for every `R ≥ 2`
   (`SymplecticForm.setIntegral_hamiltonianCurvature_plumbedTruncation_eq`).
 * **The end actions are monotone.** For a solution of the Floer equation `(du - X_K)^{0,1} = 0`
   with tame almost complex structures, the signed actions `±A_{Hb r}(ℓ_r(R))` and the actions
@@ -86,21 +85,21 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-! ### The support of the curvature -/
 
-/-- **The curvature of the plumbed perturbation is supported in `Σ_{L/2}`.** At a point of the
-plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}` outside the truncation
-`Σ_{L/2} = S_{L/2} ∪ ψ(S_{L/2})`, the curvature of the plumbed perturbation vanishes: such a point
-lies on the part `±s > L/2` of one of the four outer ends, where the plumbed datum is the
-cylindrical datum `H(t) dt` of that end. This is
+/-- **The curvature of the plumbed perturbation is supported in `Σ_2`.** At a point of the
+plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}` outside the truncation `Σ_R = S_R ∪ ψ(S_R)` at
+an outer height `R ≥ 2`, the curvature of the plumbed perturbation vanishes: such a point lies on
+the part `±s > R` of one of the four outer ends, where the plumbed datum is the cylindrical datum
+`H(t) dt` of that end. This is
 `SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation` for
 the constant two-form `ω`. -/
 theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation
     (ω : SymplecticForm V)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
+    (hab : Hb q = Ha inf) (hL : 4 < L) {R : ℝ} (hR : 2 ≤ R) {z : ℝ × ℝ}
     (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1)
-    (hzT : Complex.equivRealProdCLM.symm z ∉ q.plumbedTruncation L (L / 2)) (x : V) :
+    (hzT : Complex.equivRealProdCLM.symm z ∉ q.plumbedTruncation L R) (x : V) :
     ω.hamiltonianCurvature
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -108,43 +107,15 @@ theorem hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTrunca
   rw [← hamiltonianCurvature_constSmooth]
   exact ω.constSmooth.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation
     hq hHa hHb (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
-    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL (by linarith) hz
-    hzT x
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hR hz hzT x
 
-/-- **The curvature along a map on the plumbed sphere is integrable.** For a map `u` continuous on
-the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, the curvature `R_K(z, u(z))` of the plumbed
-perturbation is integrable over it: it is continuous there and vanishes off the compact
-truncation `Σ_{L/2}`. -/
-theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SymplecticForm V)
-    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L)
-    (hu : ContinuousOn u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
-    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z))
-      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-  have hK := contDiffOn_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
-  exact (((ω.continuousOn_hamiltonianCurvature_comp (isOpen_plumbedSphere q L) hu (hK 1)
-    (hK Complex.I)).mono fun z hz ↦
-      plumbedTruncation_subset hq (by linarith) _ hz).integrableOn_compact
-      (isCompact_preimage_plumbedTruncation q L (L / 2))).of_forall_sdiff_eq_zero
-    (isOpen_plumbedSphere q L).measurableSet fun z hz ↦
-      ω.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation hq hHa hHb hHas
-        hHbs hab hL hz.1 hz.2 (u z)
-
-/-- **The integrated curvature over a truncation of the plumbed sphere.** For `R ≥ L/2` and every
+/-- **The integrated curvature over a truncation of the plumbed sphere.** For `R ≥ 2` and every
 map `u`, the integral of the curvature `R_K(z, u(z))` of the plumbed perturbation over the
 truncation `Σ_R` is its integral over the whole plumbed four-punctured sphere. -/
 theorem setIntegral_hamiltonianCurvature_plumbedTruncation_eq (ω : SymplecticForm V)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {R : ℝ} (hR : L / 2 ≤ R) (u : ℝ × ℝ → V) :
+    (hab : Hb q = Ha inf) (hL : 4 < L) {R : ℝ} (hR : 2 ≤ R) (u : ℝ × ℝ → V) :
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R, ω.hamiltonianCurvature
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -155,7 +126,7 @@ theorem setIntegral_hamiltonianCurvature_plumbedTruncation_eq (ω : SymplecticFo
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z) := by
-  -- Both integrals are the integral over `Σ_{L/2}`.
+  -- Both integrals are the integral over `Σ_2`.
   have hsub (R' : ℝ) : Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R' ⊆
       {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
@@ -164,18 +135,18 @@ theorem setIntegral_hamiltonianCurvature_plumbedTruncation_eq (ω : SymplecticFo
   have hzero {t : Set (ℝ × ℝ)} (ht : t ⊆ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1) ∧
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
-      ∀ z ∈ t \ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L (L / 2),
+      ∀ z ∈ t \ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L 2,
         ω.hamiltonianCurvature
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) = 0 := fun z hz ↦
     ω.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation hq hHa hHb hHas
-      hHbs hab hL (ht hz.1) hz.2 (u z)
+      hHbs hab hL le_rfl (ht hz.1) hz.2 (u z)
   rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
       (measurableSet_preimage_plumbedTruncation q L R)
       (preimage_mono (plumbedTruncation_mono q L hR)) (hzero (hsub R)),
     setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (isOpen_plumbedSphere q L).measurableSet
-      (hsub (L / 2)) (hzero subset_rfl)]
+      (hsub 2) (hzero subset_rfl)]
 
 /-! ### Monotonicity of the end actions -/
 
@@ -355,7 +326,8 @@ private theorem lintegral_floerEnergyDensity_plumbedTruncation_eq (ω : Symplect
         ω.floerEnergyDensity_nonneg (hJ z (hPS hz)) (hfloer z (hPS hz))),
     integral_floerEnergyDensity_plumbedTruncation_eq_sum_hamiltonianAction ω hq hHa hHb hHas hHbs
       hab hL hR hu,
-    setIntegral_hamiltonianCurvature_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL hR u]
+    setIntegral_hamiltonianCurvature_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL
+      (by linarith) u]
 
 /-- **The energy identity on the plumbed four-punctured sphere.** Let `u` be `C²` on the plumbed
 four-punctured sphere `Σ = ℂ ∖ {0, 1, ψ(1)}` and solve the Floer equation `(du - X_K)^{0,1} = 0`
@@ -469,7 +441,8 @@ theorem sum_add_sum_sub_integral_hamiltonianCurvature_nonneg_of_plumbedPerturbat
     (hb r (Finset.ne_of_mem_erase hr)).const_mul r.endSign).add
       (tendsto_finsetSum _ fun r hr ↦ ha r (Finset.ne_of_mem_erase hr))).sub_const _) ?_
   filter_upwards [eventually_ge_atTop (L / 2)] with R hR
-  rw [← setIntegral_hamiltonianCurvature_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL hR u,
+  rw [← setIntegral_hamiltonianCurvature_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL
+      (by linarith) u,
     ← integral_floerEnergyDensity_plumbedTruncation_eq_sum_hamiltonianAction ω hq hHa hHb hHas hHbs
       hab hL hR hu]
   exact setIntegral_nonneg (measurableSet_preimage_plumbedTruncation q L R) fun z hz ↦

@@ -675,24 +675,8 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap (ω : Symp
     ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu (htgt 1)
     (htgt Complex.I) (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _)) h
   -- The pulled-back datum is the datum of the inserted pair of pants.
-  have hs : perturbationPullback (realChart (q.plumbingMap L))
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      stdComplexLineReal w =
-        fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x 1 :=
-    funext fun x ↦ by
-      rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
-        equivRealProdCLM_symm_stdComplexLineReal,
-        plumbedPerturbation_plumbingMap hq hab hw.1.1 hw.2.le]
-  have ht : perturbationPullback (realChart (q.plumbingMap L))
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      stdComplexLineImag w =
-        fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x Complex.I :=
-    funext fun x ↦ by
-      rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
-        equivRealProdCLM_symm_stdComplexLineImag,
-        plumbedPerturbation_plumbingMap hq hab hw.1.1 hw.2.le]
+  obtain ⟨hs, ht⟩ := perturbationPullback_realChart_plumbedPerturbation_stdComplexLine hq hab
+    hw.1.1 (by rw [endSign_inf, neg_one_mul]; linarith [hw.2])
   rwa [ω.perturbedFDeriv_congr (Ks' := fun z x ↦
       pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
     (Kt' := fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I) _

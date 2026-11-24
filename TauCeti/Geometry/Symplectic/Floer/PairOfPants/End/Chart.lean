@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
-import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -558,8 +557,12 @@ theorem fderiv_endChart_apply (q : Puncture) (z v : ℝ × ℝ) :
 theorem isComplexLinearMap_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
       (fderiv ℝ (endChart q) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [endChart_eq_realChart]
-  exact isComplexLinearMap_fderiv_realChart (q.hasDerivAt_cylindricalEndLift _)
+  rw [isComplexLinearMap_iff_apply]
+  intro v
+  simp only [ContinuousLinearMap.coe_coe, fderiv_endChart_apply,
+    AlmostComplexStructure.product_apply]
+  apply Prod.ext <;>
+    simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
 
 theorem contDiff_endChart (q : Puncture) (n : WithTop ℕ∞) : ContDiff ℝ n (endChart q) := by
   exact Complex.equivRealProdCLM.contDiff.comp
