@@ -66,8 +66,8 @@ records the Gaussian normalization `√(4/π) = 2/√π`.
 * `Real.setOf_sq_le_eq_Icc`: for `0 ≤ a`, `{x | x² ≤ a} = [-√a, √a]`.
 * `Real.setOf_le_sq_eq_union`: `{x | a ≤ x²} = (-∞, -√a] ∪ [√a, ∞)`.
 * `Real.sqrt_sq_add_sq_le`, `Real.sqrt_sq_add_sq_add_sq_le`, `Real.div_sqrt_sq_add_sq_add_le`,
-  `Real.abs_sqrt_sq_add_sq_sub_sqrt_sq_add_sq_le`: triangle, regularized-quotient, and
-  coordinate-difference bounds for Euclidean square roots.
+  `Real.div_sqrt_sq_add_sq_add_sq_mem_Icc`, `Real.abs_sqrt_sq_add_sq_sub_sqrt_sq_add_sq_le`:
+  triangle, regularized-quotient, and coordinate-difference bounds for Euclidean square roots.
 * `TauCeti.sqrt_four_div_pi`: `√(4/π) = 2/√π`.
 
 ## References
@@ -440,6 +440,12 @@ theorem div_sqrt_sq_add_sq_add_le (x y : ℝ) {p : ℝ} (hp : 0 ≤ p) :
         _ ≤ √(x ^ 2 + y ^ 2) * √(x ^ 2 + y ^ 2 + p) :=
             mul_le_mul_of_nonneg_left (sqrt_le_sqrt (le_add_of_nonneg_right hp)) (sqrt_nonneg _)
   exact h1.trans (sqrt_sq_add_sq_le x y)
+
+/-- Normalized component bound: `x / √(x² + y² + z²) ∈ [0, 1]` for `0 ≤ x`. -/
+theorem div_sqrt_sq_add_sq_add_sq_mem_Icc {x : ℝ} (hx : 0 ≤ x) (y z : ℝ) :
+    x / √(x ^ 2 + y ^ 2 + z ^ 2) ∈ Set.Icc (0 : ℝ) 1 :=
+  ⟨div_nonneg hx (sqrt_nonneg _),
+    div_le_one_of_le₀ (le_sqrt_of_sq_le (by linarith [sq_nonneg y, sq_nonneg z])) (sqrt_nonneg _)⟩
 
 /-- In any second coordinate `g`, `a ↦ √(a² + g²)` is `1`-Lipschitz:
 `|√(a² + g²) - √(b² + g²)| ≤ |a - b|`. -/

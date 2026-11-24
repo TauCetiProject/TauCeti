@@ -46,7 +46,8 @@ the semicontinuity half of the direct method for perimeter problems.
 * `TauCeti.perimeter_eq_zero_of_disjoint_frontier` and
   `TauCeti.perimeter_eq_of_frontier_inter_subset`: the perimeter is carried by the frontier.
 * `TauCeti.perimeter_union_of_disjoint_closure`: additivity for sets with disjoint closures.
-* `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
+* `TauCeti.perimeter_le_liminf` and `TauCeti.perimeter_le_liminf_of_tendsto_measure_symmDiff`:
+  lower semicontinuity of the perimeter under local and global convergence in measure.
 
 ## References
 
@@ -273,5 +274,16 @@ theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
   simp_rw [hpt]
   exact (lintegral_indicator_one_le _).trans
     (Measure.restrict_apply' hK.isClosed.measurableSet).le
+
+/-- **Lower semicontinuity of the perimeter under global convergence in measure.** If
+`μ (s i ∆ s₀) → 0`, then `P(s₀; Ω) ≤ liminf P(s i; Ω)`. -/
+theorem perimeter_le_liminf_of_tendsto_measure_symmDiff [OpensMeasurableSpace E]
+    [IsLocallyFiniteMeasure μ] {ι : Type*} {l : Filter ι} {s : ι → Set E} {s₀ : Set E}
+    (hs : ∀ᶠ i in l, NullMeasurableSet (s i) μ) (hs₀ : NullMeasurableSet s₀ μ)
+    (h : Tendsto (fun i => μ (s i ∆ s₀)) l (𝓝 0)) :
+    perimeter μ Ω s₀ ≤ liminf (fun i => perimeter μ Ω (s i)) l :=
+  perimeter_le_liminf hs hs₀ fun _ _ _ =>
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ => zero_le)
+      fun _ => measure_mono inter_subset_left
 
 end TauCeti
