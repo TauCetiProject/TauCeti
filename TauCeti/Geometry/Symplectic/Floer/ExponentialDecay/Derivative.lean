@@ -5,15 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
-import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
-import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
-import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Exponential decay of the derivatives at a nondegenerate end
@@ -46,7 +44,7 @@ mean-value inequality for the nonlinear equation, this needs no smallness of the
 **From energy to pointwise decay.** A disc of radius at most `1 / 2` centred in `[s, ∞) × [0, 1]`
 lies over `[s - 1 / 2, ∞)`, and by periodicity in `t` the integral of `‖v‖²` over it is at most
 twice its integral over `[s - 1 / 2, ∞) × [0, 1]`
-(`Function.Periodic.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo`), which the energy
+(`TauCeti.setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo`), which the energy
 controls. So `‖v(s, t)‖² ≤ D e^{-κ s}`. Finally
 `∂ₜu - X_{H_t}(x) = J ∂ₛu + X_{H_t}(u) - X_{H_t}(x)`, and the last difference is at most a
 Lipschitz constant times `‖u - x‖`.
@@ -91,7 +89,7 @@ variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 /-- **The `s`-derivative of a Floer solution solves a linear Cauchy–Riemann equation.** On an open
 set where `u` is a `C²` solution of `∂ₛu + J (∂ₜu - X_{H_t}(u)) = 0` and `J` is a `C¹` family, the
 derivative `v = ∂ₛu` satisfies `∂ₜv = J ∂ₛv + B v` with
-`B z = ∂ₛJ z + dX_{H_t}(u z)`, the second term being the derivative in the target of the
+`B z = ∂ₛJ z + dX_{H_t}(u z)`, the second term being the spatial Jacobian `spatialFDeriv` of the
 Hamiltonian vector field `X(t, y) = X_{H_t}(y)`. -/
 theorem fderiv_fderiv_apply_one_zero_apply_zero_one_eq_of_floer (hH : ContDiff ℝ 2 (uncurry H))
     {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
@@ -102,8 +100,8 @@ theorem fderiv_fderiv_apply_one_zero_apply_zero_one_eq_of_floer (hH : ContDiff �
     fderiv ℝ (fun w ↦ fderiv ℝ u w (1, 0)) z (0, 1) =
       J z (fderiv ℝ (fun w ↦ fderiv ℝ u w (1, 0)) z (1, 0)) +
         (fderiv ℝ (fun w ↦ (J w).toLinearMap.toContinuousLinearMap) z (1, 0) +
-          (fderiv ℝ (fun p : ℝ × V ↦ ω.hamiltonianVectorField (H p.1) p.2) (z.2, u z)).comp
-            (ContinuousLinearMap.inr ℝ ℝ V)) (fderiv ℝ u z (1, 0)) := by
+          spatialFDeriv (𝕜 := ℝ) (fun p : ℝ × V ↦ ω.hamiltonianVectorField (H p.1) p.2) (u z) z.2)
+          (fderiv ℝ u z (1, 0)) := by
   set Jc : ℝ × ℝ → V →L[ℝ] V := fun w ↦ (J w).toLinearMap.toContinuousLinearMap with hJc_def
   set X : ℝ × V → V := fun p ↦ ω.hamiltonianVectorField (H p.1) p.2 with hX_def
   have hX : ContDiff ℝ 1 X := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
@@ -138,24 +136,10 @@ theorem fderiv_fderiv_apply_one_zero_apply_zero_one_eq_of_floer (hH : ContDiff �
     (g := X ∘ fun w ↦ (w.2, u w)) (hJz.clm_apply hvs) hXg',
     fderiv_clm_apply hJz hvs] at h
   rw [fderiv_clm_apply_const_apply hDu, hsymm, h, add_apply, hcomp]
-  simp only [add_apply, ContinuousLinearMap.comp_apply, fderiv_clm_apply_const_apply hDu,
-    LinearMap.coe_toContinuousLinearMap', ContinuousLinearMap.flip_apply,
-    ContinuousLinearMap.inr_apply, Jc]
+  simp only [add_apply, ContinuousLinearMap.comp_apply, spatialFDeriv_apply,
+    fderiv_clm_apply_const_apply hDu, LinearMap.coe_toContinuousLinearMap',
+    ContinuousLinearMap.flip_apply, Jc]
   abel
-
-/-- The derivative in the target `dX_{H_t}(y)` of the Hamiltonian vector field
-`X(t, y) = X_{H_t}(y)`, as a function of `(t, y)`. -/
-private noncomputable def hamiltonianSpatialFDeriv (ω : SymplecticForm V) (H : ℝ → V → ℝ) :
-    ℝ × V → V →L[ℝ] V :=
-  fun p ↦ (fderiv ℝ (fun q : ℝ × V ↦ ω.hamiltonianVectorField (H q.1) q.2) p).comp
-    (ContinuousLinearMap.inr ℝ ℝ V)
-
-/-- For a `C³` Hamiltonian, the derivative in the target of its Hamiltonian vector field is `C¹`
-in `(t, y)`. -/
-private theorem contDiff_hamiltonianSpatialFDeriv (hH : ContDiff ℝ 3 (uncurry H)) :
-    ContDiff ℝ 1 (hamiltonianSpatialFDeriv ω H) :=
-  ((ω.contDiff_hamiltonianVectorField_uncurry (n := 2) hH).fderiv_right (m := 1)
-    (by norm_num)).clm_comp contDiff_const
 
 /-- The coefficient `B z = ∂ₛJ z + dX_{H_t}(u z)` of the linear equation `∂ₜv = J ∂ₛv + B v`
 solved by `v = ∂ₛu`
@@ -163,7 +147,7 @@ solved by `v = ∂ₛu`
 private noncomputable def floerCoeff (ω : SymplecticForm V) (H : ℝ → V → ℝ) (u : ℝ × ℝ → V)
     (J : ℝ × ℝ → AlmostComplexStructure V) : ℝ × ℝ → V →L[ℝ] V :=
   fun z ↦ fderiv ℝ (fun w ↦ (J w).toLinearMap.toContinuousLinearMap) z (1, 0) +
-    hamiltonianSpatialFDeriv ω H (z.2, u z)
+    spatialFDeriv (𝕜 := ℝ) (fun p : ℝ × V ↦ ω.hamiltonianVectorField (H p.1) p.2) (u z) z.2
 
 /-- **The integral of `‖∂ₛu‖²` over a disc is controlled by the energy of a half-cylinder.** If a
 disc of the complex coordinate of radius `r ≤ 1 / 2` lies over `[s, ∞)`, with `s > a`, then the
@@ -179,56 +163,25 @@ private theorem ofReal_setIntegral_ball_le_mul_setLIntegral
     ENNReal.ofReal (∫ w in ball y r, ‖fderiv ℝ u (Complex.equivRealProdCLM w) (1, 0)‖ ^ 2) ≤
       ENNReal.ofReal (2 * (2 / c)) * ∫⁻ z in Ici s ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
-  set F : ℝ × ℝ → ℝ≥0∞ := fun z ↦ ENNReal.ofReal (‖fderiv ℝ u z (1, 0)‖ ^ 2)
-  -- Cut `F` off at `s = a`, so that it is periodic in `t` on the whole plane.
-  set S : Set ℂ := {w | a < w.re}
-  set g : ℂ → ℝ≥0∞ := S.indicator fun w ↦ F (Complex.measurableEquivRealProd w)
-  have hg : Periodic g Complex.I := fun w ↦ by
-    by_cases hw : w ∈ S
-    · have hw' : w + Complex.I ∈ S := by simpa [S] using hw
-      -- Over `s > a`, the derivative of `u` is `1`-periodic in `t`.
-      have hperw : fderiv ℝ u (w.re, w.im + 1) = fderiv ℝ u (w.re, w.im) :=
-        periodic_fderiv_mk_of_isOpen isOpen_Ioi hper hw w.im
-      simp only [g, indicator_of_mem hw', indicator_of_mem hw, F,
-        Complex.measurableEquivRealProd_apply, Complex.add_re, Complex.add_im, Complex.I_re,
-        Complex.I_im, add_zero]
-      rw [hperw]
-    · have hw' : w + Complex.I ∉ S := by simpa [S] using hw
-      simp only [g, indicator_of_notMem hw', indicator_of_notMem hw]
   have hint : IntegrableOn (fun w ↦ ‖fderiv ℝ u (Complex.equivRealProdCLM w) (1, 0)‖ ^ 2)
       (ball y r) :=
     ((hcont.norm.pow 2).integrableOn_compact (isCompact_closedBall _ _)).mono_set
       ball_subset_closedBall
   rw [ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun _ ↦ by positivity)]
   calc ∫⁻ w in ball y r, ENNReal.ofReal (‖fderiv ℝ u (Complex.equivRealProdCLM w) (1, 0)‖ ^ 2)
-      = ∫⁻ w in ball y r, F (Complex.measurableEquivRealProd w) := by
-        simp only [F, Complex.measurableEquivRealProd_apply, Complex.equivRealProdCLM_apply]
-    _ = ∫⁻ w in ball y r, g w := by
-        refine setLIntegral_congr_fun measurableSet_ball fun w hw ↦ ?_
-        have h := Complex.abs_re_le_norm (w - y)
-        rw [← dist_eq_norm, Complex.sub_re] at h
-        have h' := abs_le.1 (h.trans (mem_ball.1 hw).le)
-        have hre : a < w.re := by linarith
-        have hwS : w ∈ S := by simpa [S] using hre
-        exact (indicator_of_mem hwS fun w ↦ F (Complex.measurableEquivRealProd w)).symm
-    _ ≤ 2 * ∫⁻ w in Ioo (y.re - r) (y.re + r) ×ℂ Icc 0 1, g w :=
-        hg.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo y hr
-    _ ≤ 2 * ∫⁻ w in Ici s ×ℂ Icc 0 1, g w := by
+      = ∫⁻ w in ball y r, ‖fderiv ℝ u (w.re, w.im) stdComplexLineReal‖ₑ ^ 2 := by
+        simp only [Complex.equivRealProdCLM_apply, stdComplexLineReal_eq,
+          ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    -- Over `s > a`, the derivative of `u` is `1`-periodic in `t`.
+    _ ≤ 2 * ∫⁻ z in Ioo (y.re - r) (y.re + r) ×ˢ Icc 0 1,
+          ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 :=
+        setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo
+          (g := fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2)
+          (fun s hs t ↦ congrArg (fun L : ℝ × ℝ →L[ℝ] V ↦ ‖L stdComplexLineReal‖ₑ ^ 2)
+            (periodic_fderiv_mk_of_isOpen isOpen_Ioi hper hs t)) y hr (hs.le.trans hsy)
+    _ ≤ 2 * ∫⁻ z in Ici s ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 := by
         gcongr
-        exact Complex.reProdIm_subset_iff.2 (prod_mono (fun t ht ↦ hsy.trans ht.1.le) le_rfl)
-    _ = 2 * ∫⁻ w in Ici s ×ℂ Icc 0 1, F (Complex.measurableEquivRealProd w) := by
-        congr 1
-        refine setLIntegral_congr_fun (measurableSet_Ici.reProdIm measurableSet_Icc)
-          fun w hw ↦ ?_
-        have hwS : w ∈ S := by simpa [S] using hs.trans_le hw.1
-        exact indicator_of_mem hwS fun w ↦ F (Complex.measurableEquivRealProd w)
-    -- The rectangle `[s, ∞) ×ℂ [0, 1]` is the preimage of `[s, ∞) × [0, 1]` under `ℂ ≃ ℝ × ℝ`.
-    _ = 2 * ∫⁻ z in Ici s ×ˢ Icc 0 1, F z := by
-        rw [← Complex.preimage_equivRealProd_prod]
-        exact congrArg _ (Complex.volume_preserving_equiv_real_prod.setLIntegral_comp_preimage_emb
-          Complex.measurableEquivRealProd.measurableEmbedding _ _)
-    _ = 2 * ∫⁻ z in Ici s ×ˢ Icc 0 1, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 := by
-        simp only [F, stdComplexLineReal_eq, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+        exact fun t ht ↦ hsy.trans ht.1.le
     -- `‖∂ₛu‖² ≤ (2 / c) e` on `[s, ∞) × [0, 1]`.
     _ ≤ 2 * (ENNReal.ofReal (2 / c) * ∫⁻ z in Ici s ×ˢ Icc 0 1,
           ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)) := by
@@ -248,13 +201,16 @@ private theorem norm_fderiv_floerCoeff_le (hH : ContDiff ℝ 3 (uncurry H)) {U :
     (hJ : ContDiffOn ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) U) {z : ℝ × ℝ}
     (hz : z ∈ U) {b G L : ℝ} (hb : 0 ≤ b) (hG : 0 ≤ G)
     (hJ₂ : ‖iteratedFDeriv ℝ 2 (fun z ↦ (J z).toLinearMap.toContinuousLinearMap) z‖ ≤ b)
-    (hX : ‖fderiv ℝ (hamiltonianSpatialFDeriv ω H) (z.2, u z)‖ ≤ G)
+    (hX : ‖fderiv ℝ (fun p : ℝ × V ↦ spatialFDeriv (𝕜 := ℝ)
+      (fun q : ℝ × V ↦ ω.hamiltonianVectorField (H q.1) q.2) p.2 p.1) (z.2, u z)‖ ≤ G)
     (hL : 1 ≤ L) (hDu : ‖fderiv ℝ u z‖ ≤ L) :
     ‖fderiv ℝ (floerCoeff ω H u J) z‖ ≤ b + G * L := by
   unfold floerCoeff
   set Jc : ℝ × ℝ → V →L[ℝ] V := fun w ↦ (J w).toLinearMap.toContinuousLinearMap
-  set Y : ℝ × V → V →L[ℝ] V := hamiltonianSpatialFDeriv ω H
-  have hY : ContDiff ℝ 1 Y := contDiff_hamiltonianSpatialFDeriv hH
+  set Y : ℝ × V → V →L[ℝ] V := fun p ↦ spatialFDeriv (𝕜 := ℝ)
+    (fun q : ℝ × V ↦ ω.hamiltonianVectorField (H q.1) q.2) p.2 p.1
+  have hY : ContDiff ℝ 1 Y := contDiff_iff_contDiffAt.2 fun _ ↦
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) hH).contDiffAt.spatialFDeriv (by norm_num)
   have h10 : ‖((1 : ℝ), (0 : ℝ))‖ ≤ 1 := by simp [Prod.norm_def]
   have hDJ : DifferentiableAt ℝ (fderiv ℝ Jc) z :=
     ((hJ.fderiv_of_isOpen (m := 1) hU (by norm_num)).contDiffAt
@@ -275,11 +231,9 @@ private theorem norm_fderiv_floerCoeff_le (hH : ContDiff ℝ 3 (uncurry H)) {U :
     exact ((fderiv ℝ (fderiv ℝ Jc) z).le_of_opNorm₂_le_of_le hJ₂ le_rfl h10).trans_eq (mul_one _)
   · -- The derivative of `Y(t, u)` is bounded by the chain rule.
     have hnorm_g : ‖fderiv ℝ (fun w : ℝ × ℝ ↦ (w.2, u w)) z‖ ≤ L := by
-      have hsnd : ‖ContinuousLinearMap.snd ℝ ℝ ℝ‖ ≤ 1 :=
-        ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun w ↦ by simpa using norm_snd_le w
       rw [DifferentiableAt.fderiv_prodMk differentiableAt_snd hud, fderiv_snd,
         ContinuousLinearMap.opNorm_prod, Prod.norm_def]
-      exact max_le (hsnd.trans hL) hDu
+      exact max_le ((ContinuousLinearMap.norm_snd_le ℝ ℝ ℝ).trans hL) hDu
     rw [fderiv_fun_comp z hYd hg]
     exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (mul_le_mul hX hnorm_g (norm_nonneg _) hG)
 
@@ -304,9 +258,10 @@ private theorem exists_bounds_of_floer {L b : ℝ} (hH : ContDiff ℝ 3 (uncurry
       ‖floerCoeff ω H u J z‖ ≤ β ∧ ‖fderiv ℝ (floerCoeff ω H u J) z‖ ≤ γ := by
   set Jc : ℝ × ℝ → V →L[ℝ] V := fun w ↦ (J w).toLinearMap.toContinuousLinearMap
   set X : ℝ × V → V := fun p ↦ ω.hamiltonianVectorField (H p.1) p.2
-  set Y : ℝ × V → V →L[ℝ] V := hamiltonianSpatialFDeriv ω H
+  set Y : ℝ × V → V →L[ℝ] V := fun p ↦ spatialFDeriv (𝕜 := ℝ) X p.2 p.1
   have hX : ContDiff ℝ 2 X := ω.contDiff_hamiltonianVectorField_uncurry (n := 2) hH
-  have hY : ContDiff ℝ 1 Y := contDiff_hamiltonianSpatialFDeriv hH
+  have hY : ContDiff ℝ 1 Y :=
+    contDiff_iff_contDiffAt.2 fun _ ↦ hX.contDiffAt.spatialFDeriv (by norm_num)
   -- Bounds for `X`, `Y` and the derivative of `Y` on a compact neighbourhood of the orbit.
   set Kc : Set (ℝ × V) := (fun q : ℝ × V ↦ (q.1, x q.1 + q.2)) '' (Icc (-1) 2 ×ˢ closedBall 0 1)
   have hKc : IsCompact Kc := (isCompact_Icc.prod (isCompact_closedBall _ _)).image
@@ -413,8 +368,9 @@ private theorem pi_mul_sq_mul_norm_fderiv_apply_one_zero_sq_le_of_floer
     rw [hB]
     unfold floerCoeff
     exact ((hJ.fderiv_of_isOpen hU (by norm_num)).clm_apply contDiffOn_const).add
-      ((contDiff_hamiltonianSpatialFDeriv hH).comp_contDiffOn
-        (contDiffOn_snd.prodMk (hu.of_le (by norm_num))))
+      ((contDiff_iff_contDiffAt.2 fun _ ↦
+        (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) hH).contDiffAt.spatialFDeriv
+          (by norm_num)).comp_contDiffOn (contDiffOn_snd.prodMk (hu.of_le (by norm_num))))
   have hv' : ContDiffOn ℝ 2 (fun w ↦ fderiv ℝ u (e w) (1, 0)) (e ⁻¹' U) :=
     hv.comp e.contDiff.contDiffOn fun _ h ↦ h
   refine pi_mul_sq_mul_norm_sq_le_fifteen_mul_setIntegral_ball_of_fderiv_I_eq
@@ -434,7 +390,7 @@ private theorem pi_mul_sq_mul_norm_fderiv_apply_one_zero_sq_le_of_floer
     have he1 : e 1 = (1, 0) := by simp [e]
     have heI : e Complex.I = (0, 1) := by simp [e]
     rw [hcomp, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, he1, heI]
-    simpa only [B, Jc, floerCoeff, hamiltonianSpatialFDeriv, Function.comp_apply,
+    simpa only [B, Jc, floerCoeff, Function.comp_apply,
       LinearMap.coe_toContinuousLinearMap'] using h
   · simp [Jc, AlmostComplexStructure.apply_apply]
   · have hcomp : fderiv ℝ (Jc ∘ e) w = (fderiv ℝ Jc (e w)).comp e :=

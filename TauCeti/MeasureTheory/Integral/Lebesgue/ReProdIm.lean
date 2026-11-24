@@ -34,7 +34,9 @@ periodic functions on half-strips.
   of the vertical strip of the same width
   (`Function.Periodic.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo`), and the same holds
   for the Bochner integral of a nonnegative real function
-  (`Function.Periodic.setIntegral_ball_le_two_mul`).
+  (`Function.Periodic.setIntegral_ball_le_two_mul`). For a function on `ℝ × ℝ` that is
+  `1`-periodic in `t` only over a half-plane `s > a`, the same bound holds for discs over
+  `[a, ∞)` (`TauCeti.setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo`).
 * If the integral over the half-strip `(a, ∞) ×ℂ t` is finite, then the integrals over the
   half-strips `(R, ∞) ×ℂ t` tend to zero as `R → ∞`
   (`TauCeti.tendsto_setLIntegral_reProdIm_Ioi_atTop`). This is the strip lemma
@@ -160,6 +162,48 @@ theorem setIntegral_ball_le_two_mul {g : ℂ → ℝ} (hg : Periodic g I) (hg0 :
 end Function.Periodic
 
 namespace TauCeti
+
+/-- **A disc over a half-plane, periodic in `t` there.** Let `g` on `ℝ × ℝ` be `1`-periodic in
+`t` over `s > a`. For a disc of radius `r ≤ 1/2` about `z₀` lying over `[a, ∞)`, the integral of
+`g` over the disc, read in the coordinate `z = s + i t`, is at most twice its integral over one
+period `(z₀.re - r, z₀.re + r) × [0, 1]` of the vertical strip of the same width. -/
+theorem setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo {g : ℝ × ℝ → ℝ≥0∞} {a : ℝ}
+    (hg : ∀ s, a < s → Periodic (fun t ↦ g (s, t)) 1) (z₀ : ℂ) {r : ℝ} (hr : r ≤ 1 / 2)
+    (ha : a ≤ z₀.re - r) :
+    ∫⁻ w in ball z₀ r, g (w.re, w.im) ≤
+      2 * ∫⁻ p in Ioo (z₀.re - r) (z₀.re + r) ×ˢ Icc 0 1, g p := by
+  -- Cut `g` off at `re = a`, so that it is periodic under `I` on the whole plane.
+  set S : Set ℂ := re ⁻¹' Ioi a
+  set f : ℂ → ℝ≥0∞ := S.indicator fun w ↦ g (w.re, w.im)
+  have hf : Periodic f I := fun w ↦ by
+    by_cases hw : w ∈ S
+    · have hw' : w + I ∈ S := by simpa [S] using hw
+      simp only [f, indicator_of_mem hw', indicator_of_mem hw, add_re, add_im, I_re, I_im,
+        add_zero]
+      exact hg w.re hw w.im
+    · have hw' : w + I ∉ S := by simpa [S] using hw
+      simp only [f, indicator_of_notMem hw', indicator_of_notMem hw]
+  have hball : ball z₀ r ⊆ S := fun w hw ↦ by
+    have h := abs_lt.1 ((abs_re_le_norm (w - z₀)).trans_lt (mem_ball_iff_norm.1 hw))
+    rw [sub_re] at h
+    exact mem_Ioi.2 (by linarith)
+  have hstrip : Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1 ⊆ S := fun w hw ↦ ha.trans_lt hw.1.1
+  calc ∫⁻ w in ball z₀ r, g (w.re, w.im)
+      = ∫⁻ w in ball z₀ r, f w :=
+        setLIntegral_congr_fun measurableSet_ball fun w hw ↦
+          (indicator_of_mem (hball hw) fun w ↦ g (w.re, w.im)).symm
+    _ ≤ 2 * ∫⁻ w in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1, f w :=
+        hf.setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo z₀ hr
+    _ = 2 * ∫⁻ w in Ioo (z₀.re - r) (z₀.re + r) ×ℂ Icc 0 1, g (measurableEquivRealProd w) := by
+        congr 1
+        exact setLIntegral_congr_fun (measurableSet_Ioo.reProdIm measurableSet_Icc)
+          fun w hw ↦ indicator_of_mem (hstrip hw) fun w ↦ g (w.re, w.im)
+    -- The band `(z₀.re - r, z₀.re + r) ×ℂ [0, 1]` is the preimage of its product under
+    -- `ℂ ≃ ℝ × ℝ`.
+    _ = 2 * ∫⁻ p in Ioo (z₀.re - r) (z₀.re + r) ×ˢ Icc 0 1, g p := by
+        rw [← preimage_equivRealProd_prod]
+        exact congrArg _ (volume_preserving_equiv_real_prod.setLIntegral_comp_preimage_emb
+          measurableEquivRealProd.measurableEmbedding _ _)
 
 variable {f : ℂ → ℝ≥0∞}
 

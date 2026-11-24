@@ -834,7 +834,7 @@ theorem exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensi
   -- The solution `v` in the complex coordinate, for data that do not depend on `re z`.
   obtain ⟨Jc, Xc, Wc, hWc, hJc, hXc, hKWc, hJsq, hJτ, hJI, hXτ, hXI, hcoord⟩ :=
     exists_complexCoordinate (ω := ω) hH hHper hW hJ hJper hKW
-  obtain ⟨v, hv3, hvper, hvCR, hvK, hderiv, -, hEv⟩ := hcoord isOpen_Ioi hu hper huK hfloer
+  obtain ⟨v, hv3, -, hvCR, hvK, hderiv, -, -⟩ := hcoord isOpen_Ioi hu hper huK hfloer
   set S : Set ℂ := re ⁻¹' Ioi a
   have hS : IsOpen S := isOpen_Ioi.preimage continuous_re
   set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
@@ -886,11 +886,15 @@ theorem exists_forall_ofReal_norm_fderiv_sq_le_mul_setLIntegral_floerEnergyDensi
       (isCompact_closedBall y r) |>.mono_set ball_subset_closedBall
   have hdisc : ENNReal.ofReal (∫ w in ball y r, ‖fderiv ℝ v w 1‖ ^ 2) ≤
       2 * ∫⁻ p in Ioo (z.1 - r) (z.1 + r) ×ˢ Icc 0 1, ‖fderiv ℝ u p stdComplexLineReal‖ₑ ^ 2 := by
-    rw [ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun _ ↦ sq_nonneg _),
-      ← hEv _ measurableSet_Ioo hband, ← hyre]
-    simp_rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    exact ((hvper.fderiv (𝕜 := ℝ)).comp fun L : ℂ →L[ℝ] V ↦ ‖L 1‖ₑ ^ 2
-      ).setLIntegral_ball_le_two_mul_setLIntegral_reProdIm_Ioo y hr2
+    rw [ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun _ ↦ sq_nonneg _), ← hyre]
+    -- On the disc `∂ₛv(w) = ∂ₛu(re w, im w)`, and `∂ₛu` is `1`-periodic in `t` over `s > a`.
+    refine (setLIntegral_congr_fun measurableSet_ball fun w hw ↦ ?_).trans_le
+      (setLIntegral_ball_le_two_mul_setLIntegral_prod_Ioo
+        (g := fun p ↦ ‖fderiv ℝ u p stdComplexLineReal‖ₑ ^ 2)
+        (fun s hs t ↦ congrArg (fun L : ℝ × ℝ →L[ℝ] V ↦ ‖L stdComplexLineReal‖ₑ ^ 2)
+          (periodic_fderiv_mk_of_isOpen isOpen_Ioi hper hs t)) y hr2 (by linarith))
+    rw [hderiv w (hbS (hball (ball_subset_closedBall hw))), stdComplexLineReal_eq,
+      ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
   -- Combine with `‖∂ₛu‖² ≤ (2 / c) e` on the band.
   have hstrip := ω.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le hc
     (measurableSet_Ioo.prod measurableSet_Icc)
