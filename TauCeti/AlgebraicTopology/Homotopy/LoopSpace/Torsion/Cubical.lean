@@ -16,12 +16,13 @@ and reduced singular homology agrees with normalized cubical homology in positiv
 `TauCeti.singularCubicalHomologyIso`. Consequently, any non-`S`-torsion higher homotopy group
 `π_{m + 2}(Q, q)` produces a positive-degree normalized cubical homology class (`1 ≤ k < m + 2`)
 not annihilated by any `s ∈ S`
-(`TauCeti.MooreLoopSpace.exists_forall_smul_ne_zero_doubleCubicalHomology`).
+(`TauCeti.exists_forall_smul_ne_zero_homology_normalizedCubicalChainComplex_doubleMooreLoopSpace`).
 
 ## Main results
 
-* `TauCeti.MooreLoopSpace.exists_forall_smul_ne_zero_doubleCubicalHomology`: positive-degree
-  non-`S`-torsion class in the normalized cubical homology of `ΩᴹΩᴹQ` when `π₂(Q, q)` vanishes.
+* `TauCeti.exists_forall_smul_ne_zero_homology_normalizedCubicalChainComplex_doubleMooreLoopSpace`:
+  positive-degree non-`S`-torsion class in the normalized cubical homology of `ΩᴹΩᴹQ` when
+  `π₂(Q, q)` vanishes.
 
 ## References
 
@@ -38,23 +39,22 @@ open scoped Topology Topology.Homotopy
 
 namespace TauCeti
 
-namespace MooreLoopSpace
-
 variable {Q : Type} [TopologicalSpace Q]
 
 /-- **Normalized cubical homology version when `π₂(Q, q)` vanishes.** When
 `Subsingleton (π_ 2 Q q)`, `ΩᴹΩᴹQ` is path-connected so `H~₀(ΩᴹΩᴹQ; ℤ) = 0`, and any
 non-`S`-torsion higher homotopy group `π_{m + 2}(Q, q)` produces a positive-degree normalized
 cubical homology class (`1 ≤ k < m + 2`) not annihilated by any `s ∈ S`. -/
-theorem exists_forall_smul_ne_zero_doubleCubicalHomology
+theorem exists_forall_smul_ne_zero_homology_normalizedCubicalChainComplex_doubleMooreLoopSpace
     (q : Q) [Subsingleton (π_ 2 Q q)] (S : Submonoid ℤ) (m : ℕ)
     (hπ : ¬ Module.IsTorsion' (Additive (π_ (m + 2) Q q)) S) :
     ∃ k, 1 ≤ k ∧ k < m + 2 ∧
       ∃ x : ((normalizedCubicalChainComplex ℤ).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace Q q) 1))).homology k,
         ∀ s ∈ S, s • x ≠ 0 := by
-  obtain ⟨k, hk, x, hx⟩ := exists_forall_smul_ne_zero_doubleReducedHomology q S m hπ
-  have := pathConnectedSpace_double q
+  obtain ⟨k, hk, x, hx⟩ :=
+    exists_forall_smul_ne_zero_reducedSingularHomology_doubleMooreLoopSpace q S m hπ
+  have := MooreLoopSpace.pathConnectedSpace_double q
   cases k with
   | zero =>
     have := ModuleCat.isZero_iff_subsingleton.mp
@@ -68,7 +68,5 @@ theorem exists_forall_smul_ne_zero_doubleCubicalHomology
     exact ⟨r + 1, Nat.succ_le_succ (Nat.zero_le r), hk, e.hom.hom x, fun s hs h0 ↦
       hx s hs <| e.toLinearEquiv.toAddEquiv.injective
         (by rw [map_zsmul]; exact h0.trans (map_zero _).symm)⟩
-
-end MooreLoopSpace
 
 end TauCeti

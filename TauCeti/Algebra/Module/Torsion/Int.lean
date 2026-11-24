@@ -29,8 +29,12 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 * `TauCeti.isOfFinAddOrder_iff_exists_nonZeroDivisors`,
   `TauCeti.not_isOfFinAddOrder_iff_forall_nonZeroDivisors`: elementwise characterizations of
   finite and infinite additive order via `nonZeroDivisors ℤ`.
+* `AddMonoidHom.map_mem_torsion'`: an additive homomorphism maps `S`-torsion elements to
+  `S`-torsion elements.
 * `AddMonoidHom.zero_mem_of_injective_of_isTorsion'`: if an `S`-torsion `ℤ`-module contains a
   copy of `ℤ`, then `0 ∈ S`.
+* `Module.isTorsion'_of_intModule`: `S`-torsion is preserved between any two `ℤ`-module
+  structures on the same abelian group.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 -/
@@ -123,6 +127,13 @@ end TauCeti
 
 namespace AddMonoidHom
 
+/-- An additive homomorphism sends an `S`-torsion element to an `S`-torsion element. -/
+theorem map_mem_torsion' {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+    (f : M →+ N) {S : Submonoid ℤ} {x : M} (hx : x ∈ Submodule.torsion' ℤ M S) :
+    f x ∈ Submodule.torsion' ℤ N S :=
+  let ⟨s, hs⟩ := hx
+  ⟨s, by rw [Submonoid.smul_def, ← map_zsmul]; exact (congrArg f hs).trans (map_zero f)⟩
+
 /-- If an `S`-torsion `ℤ`-module admits an injective additive homomorphism from `ℤ`, then
 `0 ∈ S`. -/
 theorem zero_mem_of_injective_of_isTorsion' {M : Type*} [AddCommGroup M]
@@ -136,3 +147,15 @@ theorem zero_mem_of_injective_of_isTorsion' {M : Type*} [AddCommGroup M]
   exact hs0 ▸ s.property
 
 end AddMonoidHom
+
+namespace Module
+
+/-- Transport `S`-torsion between two `ℤ`-module structures on the same abelian group. -/
+theorem isTorsion'_of_intModule {G : Type*} [AddCommGroup G]
+    (m₁ m₂ : Module ℤ G) {S : Submonoid ℤ}
+    (h : @Module.IsTorsion' G _ S (@Submonoid.smul ℤ G _ m₁.toSMul S)) :
+    @Module.IsTorsion' G _ S (@Submonoid.smul ℤ G _ m₂.toSMul S) := by
+  obtain rfl := Subsingleton.elim m₁ m₂
+  exact h
+
+end Module

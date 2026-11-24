@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SerreClass.Torsion
 import TauCeti.Algebra.Module.Torsion.Finite
+import TauCeti.Algebra.Module.Torsion.Int
 
 /-!
 # The Serre class of `S`-torsion abelian groups
@@ -59,13 +60,6 @@ lemma prop_isSubmonoidTorsion_iff (S : Submonoid ℤ) (M : AddCommGrpCat.{u}) :
     isSubmonoidTorsion S M ↔ Module.IsTorsion' M S :=
   Iff.rfl
 
-/-- An additive homomorphism sends an `S`-torsion element to an `S`-torsion element. -/
-private lemma map_mem_torsion' {M N : Type u} [AddCommGroup M] [AddCommGroup N]
-    (S : Submonoid ℤ) (f : M →+ N) {x : M} (hx : x ∈ Submodule.torsion' ℤ M S) :
-    f x ∈ Submodule.torsion' ℤ N S :=
-  let ⟨s, hs⟩ := hx
-  ⟨s, by rw [Submonoid.smul_def, ← map_zsmul]; exact (congrArg f hs).trans (map_zero f)⟩
-
 /-- `S`-torsion abelian groups contain the zero group and are closed under subgroups, quotients,
 and extensions, so they form a Serre class. -/
 instance (S : Submonoid ℤ) : (isSubmonoidTorsion.{u} S).IsSerreClass where
@@ -77,12 +71,12 @@ instance (S : Submonoid ℤ) : (isSubmonoidTorsion.{u} S).IsSerreClass where
     exact hs
   prop_of_epi {M N} f hf hM y := by
     obtain ⟨x, rfl⟩ := (AddCommGrpCat.epi_iff_surjective f).1 hf y
-    exact map_mem_torsion' S f.hom (@hM x)
+    exact f.hom.map_mem_torsion' (@hM x)
   prop_X₂_of_shortExact {C} hC h₁ h₃ x₂ := by
     obtain ⟨s₃, hs₃⟩ := @h₃ (C.g x₂)
     obtain ⟨x₁, hx₁⟩ := (ShortComplex.ab_exact_iff C).1 hC.exact (s₃ • x₂)
       (by rw [Submonoid.smul_def, map_zsmul]; exact hs₃)
-    obtain ⟨s₁, hs₁⟩ := map_mem_torsion' S C.f.hom (@h₁ x₁)
+    obtain ⟨s₁, hs₁⟩ := C.f.hom.map_mem_torsion' (@h₁ x₁)
     exact ⟨s₁ * s₃, by rw [mul_smul, ← hx₁, hs₁]⟩
 
 /-- For the submonoid of nonzero integers, `isSubmonoidTorsion` is the class of torsion abelian
@@ -142,7 +136,7 @@ instance isClosedUnderColimitsOfShape_discrete_inverseImage_isSubmonoidTorsion (
   rintro x -
   induction x using DirectSum.induction_on with
   | zero => exact zero_mem _
-  | of j a => exact map_mem_torsion' S (DirectSum.of (fun j ↦ F.obj ⟨j⟩) j) (@hF ⟨j⟩ a)
+  | of j a => exact (DirectSum.of (fun j ↦ F.obj ⟨j⟩) j).map_mem_torsion' (@hF ⟨j⟩ a)
   | add _ _ hx hy => exact add_mem hx hy
 
 end AddCommGrpCat

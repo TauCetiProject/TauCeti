@@ -463,7 +463,7 @@ theorem not_isTorsion'_iff {R M : Type*} [MulOneClass R] [AddCommMonoid M] [SMul
 /-- If `S`-torsion on a family `F` over all indices satisfying `p` implies `S`-torsion on `G`,
 then a failure of `S`-torsion on `G` produces an index `i` with `p i` and an element of `F i`
 annihilated by no scalar in `S`. -/
-theorem exists_forall_smul_ne_zero_of_not_isTorsion'_of_imp {ι R G : Type*} {F : ι → Type*}
+theorem exists_forall_smul_ne_zero_of_imp_of_not_isTorsion' {ι R G : Type*} {F : ι → Type*}
     {p : ι → Prop} [MulOneClass R] [AddCommMonoid G] [SMul R G]
     [∀ i, AddCommMonoid (F i)] [∀ i, SMul R (F i)] {S : Submonoid R}
     (himp : (∀ i, p i → IsTorsion' (F i) S) → IsTorsion' G S)

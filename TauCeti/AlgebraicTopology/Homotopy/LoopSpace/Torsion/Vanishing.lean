@@ -168,7 +168,8 @@ theorem isTorsion'_homotopyGroup_of_isTorsion'_singularHomology_doubleLoopSpace
   have : Subsingleton ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
       (TopCat.of (Ω (Ω X x) (Path.refl x)))) :=
     ModuleCat.isZero_iff_subsingleton.mp (isZero_reducedSingularHomologyFunctor_zero _ _)
-  isTorsion'_homotopyGroup_of_forall_isTorsion'_doubleLoopSpaceReducedHomology x S (n + 1) fun
+  isTorsion'_homotopyGroup_of_forall_isTorsion'_reducedSingularHomology_doubleLoopSpace x S (n + 1)
+    fun
     | 0, _ => fun _ ↦ ⟨1, Subsingleton.elim _ _⟩
     | i + 1, _ => ((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) i).app
         (TopCat.of (Ω (Ω X x) (Path.refl x)))).toLinearEquiv.toAddEquiv.isTorsion'_iff.2 (hX i)
@@ -186,7 +187,7 @@ theorem exists_not_isTorsion'_reducedSingularHomology_doubleLoopSpace (hS : (0 :
     obtain ⟨f, hf⟩ := exists_injective_doubleLoopSpaceReducedHomology₀ (R := ℤ) x
     exact hS (f.toAddMonoidHom.zero_mem_of_injective_of_isTorsion' hf hT)
   · obtain ⟨k, _, y, hy⟩ :=
-      exists_forall_smul_ne_zero_doubleLoopSpaceReducedHomology x S (n + 1) hn
+      exists_forall_smul_ne_zero_reducedSingularHomology_doubleLoopSpace x S (n + 1) hn
     exact ⟨k, Module.not_isTorsion'_iff.2 ⟨y, hy⟩⟩
 
 /-- **The reduced homology of the double loop space is not torsion.** If `π₂(X, x)` is
