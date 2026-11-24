@@ -664,14 +664,10 @@ bundle. -/
 theorem finite_relCWComplexDiscBundleSphereBundle [RelCWComplex.Finite (univ : Set B)] :
     letI := relCWComplexDiscBundleSphereBundle F E
     RelCWComplex.Finite (discBundle F E) :=
-  letI := relCWComplexDiscBundleSphereBundle F E
   letI := relCWComplexDiscBundle F E (univ : Set B)
   have := finite_relCWComplexDiscBundle (F := F) (E := E) (C := (univ : Set B))
-  have := RelCWComplex.finite_cells_of_finite (C := discBundle F E ∩ TotalSpace.proj ⁻¹' univ)
-  -- The cells are those of the disc bundle over the whole of `B`.
-  RelCWComplex.finite_of_finite_cells (.of_equiv _
-    (Equiv.sigmaCongrRight fun n ↦ (IsClosedEmbedding.id.relCWComplexCellEquiv
-      (image_id_discBundle_inter_preimage_univ F E) (image_id_sphereBundle_union F E) n).symm))
+  IsClosedEmbedding.id.finite_relCWComplex (image_id_discBundle_inter_preimage_univ F E)
+    (image_id_sphereBundle_union F E)
 
 end DiscBundle
 

@@ -17,7 +17,9 @@ Every rectangle `r` counted by the `X`-marking homotopy `H_k` is empty and cover
 (`componentPathXHomotopy_mem_bigradedChainMinusPiece`) and specialization `hat H_k` at `V_i = 0`
 (`simplyBlockedXHomotopy_mem_bigradedChainHatPiece`), over any commutative semiring. In
 characteristic two, summing along a link component gives a bidegree-`(-1, -1)` homotopy between
-`V_i` and `V_j` (`exists_unblockedDifferential_comp_add_comp_eq_of_sameCycle`).
+`V_i` and `V_j` (`exists_unblockedDifferential_comp_add_comp_eq_of_sameCycle`); on a knot grid,
+the explicit null-homotopy `GridDiagram.IsKnot.XSmulHomotopy` of `V_c + V_{c'}` has bidegree
+`(-1, -1)` (`GridDiagram.IsKnot.XSmulHomotopy_mem_bigradedChainMinusPiece`).
 
 ## References
 
@@ -142,3 +144,19 @@ theorem isHomogeneous_XHomotopy_bigradedChainMinusGrading (R : Type*) [CommRing 
     simpa only [sub_eq_add_neg] using G.XHomotopy_mem_bigradedChainMinusPiece k hc
 
 end TauCeti.OddComponentGridDiagram
+
+namespace TauCeti.GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
+
+/-- On a knot grid, the null-homotopy `IsKnot.XSmulHomotopy` of multiplication by
+`V_c + V_c'` has bidegree `(-1, -1)`. -/
+theorem XSmulHomotopy_mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R] (c c' : Fin n)
+    {g : ℤ × ℤ} {a : GridChainMinus R n}
+    (ha : a ∈ hG.toOddComponentGridDiagram.bigradedChainMinusPiece R g) :
+    hG.XSmulHomotopy R c c' a ∈
+      hG.toOddComponentGridDiagram.bigradedChainMinusPiece R (g - (1, 1)) := by
+  rw [hG.XSmulHomotopy_eq_componentPathXHomotopy R]
+  exact hG.toOddComponentGridDiagram.componentPathXHomotopy_mem_bigradedChainMinusPiece c _ ha
+
+end TauCeti.GridDiagram.IsKnot
