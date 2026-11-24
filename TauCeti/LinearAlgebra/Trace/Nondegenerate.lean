@@ -22,7 +22,7 @@ counterpart of `Matrix.ext_iff_trace_mul_right`.
 * `LinearMap.forall_trace_mul_eq_zero_iff`: an endomorphism is zero exactly when its products
   with every endomorphism have zero trace.
 * `LinearMap.det_trace_mul_ne_zero`: over an integral domain, the Gram matrix of the trace pairing
-  on a basis of the endomorphisms is invertible.
+  on a basis of the endomorphisms has nonzero determinant.
 -/
 
 public section
@@ -50,7 +50,7 @@ theorem forall_trace_mul_eq_zero_iff {f : Module.End K V} :
   simp [ext_iff_trace_mul_right (g := 0)]
 
 /-- Over an integral domain, the Gram matrix `(trace (bᵢ * bⱼ))` of the trace pairing on a basis
-`b` of the endomorphisms is invertible. -/
+`b` of the endomorphisms has nonzero determinant. -/
 theorem det_trace_mul_ne_zero {K V : Type*} [CommRing K] [IsDomain K] [AddCommGroup V]
     [Module K V] [Module.Free K V] [Module.Finite K V] {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι K (Module.End K V)) :
