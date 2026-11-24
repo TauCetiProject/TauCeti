@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Order.CompositionLift
+public import TauCeti.Analysis.Convex.Lifting.Basic
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Tactic.Linarith
 
 /-!
 # Examples of exact composition lifts
 
-Small real examples for `TauCeti.CompositionLift.originalSet` and
-`TauCeti.CompositionLift.liftedSet`, showing which hypotheses of the exact projection theorem
-`TauCeti.CompositionLift.fst_image_liftedSet` matter.
+Small real examples for `TauCeti.ConvexLifting.originalSet` and
+`TauCeti.ConvexLifting.liftedSet`, showing which hypotheses of the exact projection theorem
+`TauCeti.ConvexLifting.projection_eq` matter.
 
 * For `g x = |x|`, `h = id` and budget zero the original set is `{0}`; no differentiability of
   `g` is involved.
@@ -33,7 +33,7 @@ public section
 
 open Set
 
-namespace TauCeti.CompositionLift
+namespace TauCeti.ConvexLifting
 
 /-- With `g = |·|`, `h = id` and budget zero, only `0` is originally feasible. -/
 theorem originalSet_abs_id_zero : originalSet univ (fun x : ℝ => |x|) id 0 = {0} := by
@@ -73,7 +73,7 @@ theorem one_mem_originalSet_Icc_sq :
 `one_mem_originalSet_Icc_sq`, the minimum `-1` is attained there. -/
 theorem isMinOn_neg_originalSet_Icc_sq :
     IsMinOn (fun x : ℝ => -x) (originalSet (Icc (-1) 1) (fun x : ℝ => x ^ 2) id 1) 1 :=
-  isMinOn_iff.2 fun _ hx => neg_le_neg (mem_originalSet.1 hx).1.2
+  isMinOn_iff.2 fun _ hx => neg_le_neg (mem_originalSet_iff.1 hx).1.2
 
 /-- The graph point `(1, 1)` lies in the lift of `x ^ 2 ≤ 1` on `[-1, 1]`. -/
 theorem mk_one_one_mem_liftedSet_Icc_sq :
@@ -102,7 +102,7 @@ theorem isMinOn_neg_liftedSet_Icc_sq_Iic :
       (liftedSet (Icc (-1) 1) (Iic (1 / 4)) (fun x : ℝ => x ^ 2) id 1)
       ((1 / 2 : ℝ), (1 / 4 : ℝ)) := by
   refine isMinOn_iff.2 fun p hp => ?_
-  obtain ⟨-, hy, hxy, -⟩ := mem_liftedSet.1 hp
+  obtain ⟨-, hy, hxy, -⟩ := mem_liftedSet_iff.1 hp
   have : p.1 ^ 2 ≤ 1 / 4 := hxy.trans hy
   simp only [Function.comp_apply, neg_le_neg_iff]
   nlinarith [sq_nonneg (p.1 - 1 / 2)]
@@ -111,25 +111,17 @@ theorem isMinOn_neg_liftedSet_Icc_sq_Iic :
 theorem one_notMem_fst_image_liftedSet_Icc_sq_Iic :
     (1 : ℝ) ∉ Prod.fst '' liftedSet (Icc (-1) 1) (Iic (1 / 4)) (fun x : ℝ => x ^ 2) id 1 := by
   rintro ⟨p, hp, hp1⟩
-  obtain ⟨-, hy, hxy, -⟩ := mem_liftedSet.1 hp
+  obtain ⟨-, hy, hxy, -⟩ := mem_liftedSet_iff.1 hp
   have : p.1 ^ 2 ≤ 1 / 4 := hxy.trans hy
   rw [hp1] at this
   norm_num at this
 
-/-- For the empty domain the original set is empty. -/
-theorem originalSet_empty_sq : originalSet (∅ : Set ℝ) (fun x : ℝ => x ^ 2) id 1 = ∅ := by
-  ext x
-  simp
-
-/-- For the empty domain the lift is empty as well. -/
-theorem liftedSet_empty_sq : liftedSet (∅ : Set ℝ) univ (fun x : ℝ => x ^ 2) id 1 = ∅ :=
-  (liftedSet_eq_empty_iff (mapsTo_univ _ _) (monotone_id.monotoneOn _)).2 originalSet_empty_sq
-
-/-- For the empty domain the lift has no feasible minimum. -/
+/-- For the empty domain the lift is empty (`liftedSet_empty_left`), so it has no feasible
+minimum. -/
 theorem not_exists_isMinOn_liftedSet_empty_sq :
     ¬∃ p ∈ liftedSet (∅ : Set ℝ) univ (fun x : ℝ => x ^ 2) id 1,
       IsMinOn (id ∘ Prod.fst) (liftedSet (∅ : Set ℝ) univ (fun x : ℝ => x ^ 2) id 1) p := by
-  simp [liftedSet_empty_sq]
+  simp
 
 /-- On the open interval `(0, 1)` with trivial constraints, the objective `x` has infimum zero on
 the original set. -/
@@ -154,9 +146,9 @@ theorem not_exists_isMinOn_originalSet_Ioo :
     ¬∃ x ∈ originalSet (Ioo (0 : ℝ) 1) (fun _ => (0 : ℝ)) (fun _ => (0 : ℝ)) 0,
       IsMinOn id (originalSet (Ioo (0 : ℝ) 1) (fun _ => (0 : ℝ)) (fun _ => (0 : ℝ)) 0) x := by
   rintro ⟨x, hx, hmin⟩
-  obtain ⟨⟨hx0, hx1⟩, -⟩ := mem_originalSet.1 hx
+  obtain ⟨⟨hx0, hx1⟩, -⟩ := mem_originalSet_iff.1 hx
   have hx' : x / 2 ∈ originalSet (Ioo (0 : ℝ) 1) (fun _ => (0 : ℝ)) (fun _ => (0 : ℝ)) 0 :=
-    mem_originalSet.2 ⟨⟨by linarith, by linarith⟩, le_rfl⟩
+    mem_originalSet_iff.2 ⟨⟨by linarith, by linarith⟩, le_rfl⟩
   have := isMinOn_iff.1 hmin _ hx'
   simp only [id] at this
   linarith
@@ -166,7 +158,7 @@ theorem not_exists_isMinOn_liftedSet_Ioo :
     ¬∃ p ∈ liftedSet (Ioo (0 : ℝ) 1) univ (fun _ => (0 : ℝ)) (fun _ => (0 : ℝ)) 0,
       IsMinOn (id ∘ Prod.fst)
         (liftedSet (Ioo (0 : ℝ) 1) univ (fun _ => (0 : ℝ)) (fun _ => (0 : ℝ)) 0) p := by
-  rw [exists_isMinOn_liftedSet_iff (mapsTo_univ _ _) monotoneOn_const]
+  rw [attainment_iff (mapsTo_univ _ _) monotoneOn_const]
   exact not_exists_isMinOn_originalSet_Ioo
 
-end TauCeti.CompositionLift
+end TauCeti.ConvexLifting
