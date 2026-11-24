@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Second
 public import TauCeti.Probability.RandomMatrix.SpectralMoment.Variance
 import Mathlib.Analysis.PSeries
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Almost-sure convergence of Wigner spectral moments
@@ -224,10 +225,12 @@ theorem ae_tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
   have hmean := tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
     (fun _ ↦ hindep) (fun _ ↦ hξzero) (fun _ ↦ hηzero)
     (fun _ ij ↦ (hξp ij).mono_exponent hle) (fun _ i ↦ (hηp i).mono_exponent hle)
-    (fun _ ij ↦ (hξp ij).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-      (Real.sqrt_le_sqrt (hξ ij)))
-    (fun _ i ↦ (hηp i).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
-      (Real.sqrt_le_sqrt (hη i)))
+    (fun _ ij ↦ ((hξp ij).integrable_norm_pow'
+      |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
+        (Real.sqrt_le_sqrt (hξ ij)))
+    (fun _ i ↦ ((hηp i).integrable_norm_pow'
+      |>.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
+        (Real.sqrt_le_sqrt (hη i)))
   filter_upwards [ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean
     hindep hξzero hηzero hξp hηp hξ hη] with ω hω
   simpa only [sub_add_cancel, zero_add] using hω.add hmean
