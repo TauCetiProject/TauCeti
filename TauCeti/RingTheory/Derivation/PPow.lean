@@ -83,9 +83,10 @@ the middle coefficients `c p k`, `2 ≤ k < p`, of the expansion `(a • D)^[p] 
 
 Expanding `(a • D)^[p] = ∑ k ≤ p, c k • D^[k]` with coefficients `c k` computed from `a` and `D`,
 Hochschild's formula says that the coefficients `c k` with `2 ≤ k < p` vanish. These coefficients
-do not depend on the ring, so it suffices to show that they vanish after extending `D` to `A[X]`
-by `X ↦ 1`. There the operator `∑ 2 ≤ k < p, c k • D^[k]` is a derivation killing `X`, so it
-kills every `X ^ k`, while its value at `X ^ k` is `k ! • c k` once the lower coefficients vanish.
+are natural along ring homomorphisms that intertwine the derivations (`map_smulIterCoeff`), so it
+suffices to show that they vanish after extending `D` to `A[X]` by `X ↦ 1`. There the operator
+`∑ 2 ≤ k < p, c k • D^[k]` is a derivation killing `X`, so it kills every `X ^ k`, while its value
+at `X ^ k` is `k ! • c k` once the lower coefficients vanish.
 
 ## References
 
@@ -315,10 +316,10 @@ private theorem smulIterCoeff_eq_zero_of_apply_eq_one (D : Derivation ℤ A A) {
 
 open Polynomial in
 /-- In characteristic `p`, the middle coefficients `c p k`, `2 ≤ k < p`, of the expansion
-`(b • D)^[p] = ∑ k ≤ p, c p k * D^[k]` (`iterate_smul_apply_eq_sum`) vanish. The proof extends
-`D` to `A[X]` by `X ↦ 1` and transports the vanishing back along the injective `Polynomial.C`. -/
+`(b • D)^[p] = ∑ k ≤ p, c p k * D^[k]` (`iterate_smul_apply_eq_sum`) vanish. -/
 theorem smulIterCoeff_eq_zero_of_mem_Ico (D : Derivation R A A) (b : A) {k : ℕ}
     (hk : k ∈ Finset.Ico 2 p) : smulIterCoeff D b p k = 0 := by
+  -- Extend `D` to `A[X]` by `X ↦ 1` and transport the vanishing back along the injective `C`.
   let : Differential A := ⟨D.restrictScalars ℤ⟩
   -- With this instance, `Differential.deriv y` is `D.restrictScalars ℤ y`, that is, `D y`.
   have hderiv (y : A) : Differential.deriv y = D y := D.restrictScalars_apply ℤ y
