@@ -19,9 +19,11 @@ algebraic tensor product `A ⊗ Aᵐᵒᵖ`, `a ⊗ bᵒᵖ ↦ π_f(a) π_fᵒ�
 `[c] ↦ [a c b]`.
 
 The *tensor functional* `PositiveLinearMap.gnsTensorFunctional` is the linear functional
-`μ_f(a ⊗ bᵒᵖ) = f (a b)` on `A ⊗ Aᵐᵒᵖ`. It is defined for every positive functional, and for
-tracial `f` it is positive: `μ_f(t⋆ t) = f (s⋆ s)` for `s` the image of `t` under multiplication
-`A ⊗ Aᵐᵒᵖ → A`, `PositiveLinearMap.gnsTensorFunctional_star_mul_self_nonneg`.
+`μ_f(a ⊗ bᵒᵖ) = f (a b)` on `A ⊗ Aᵐᵒᵖ`, that is `f` composed with the multiplication map
+`LinearMap.mulUnop' : A ⊗ Aᵐᵒᵖ → A`. It is defined for every positive functional. For tracial `f`,
+`μ_f(s⋆ t) = f ((m s)⋆ (m t))` with `m` the multiplication map
+(`PositiveLinearMap.gnsTensorFunctional_star_mul`), so `μ_f` is positive
+(`PositiveLinearMap.gnsTensorFunctional_star_mul_self_nonneg`).
 
 For unital `A`, the product representation is unital, `PositiveLinearMap.gnsProductStarAlgHom`,
 and `μ_f` is its vector functional at the GNS vector `Ω = [1]`,
@@ -38,6 +40,19 @@ public section
 
 open scoped InnerProductSpace ComplexOrder TensorProduct
 open MulOpposite
+
+/-- Multiplication `A ⊗ Aᵐᵒᵖ → A`, `a ⊗ bᵒᵖ ↦ a b`. -/
+noncomputable def LinearMap.mulUnop' (R A : Type*) [CommSemiring R] [NonUnitalSemiring A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] : A ⊗[R] Aᵐᵒᵖ →ₗ[R] A :=
+  LinearMap.mul' R A ∘ₗ
+    TensorProduct.map LinearMap.id (MulOpposite.opLinearEquiv R).symm.toLinearMap
+
+/-- `LinearMap.mulUnop'` on elementary tensors. -/
+@[simp]
+theorem LinearMap.mulUnop'_tmul {R A : Type*} [CommSemiring R] [NonUnitalSemiring A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] (a : A) (b : Aᵐᵒᵖ) :
+    LinearMap.mulUnop' R A (a ⊗ₜ b) = a * b.unop :=
+  (rfl)
 
 namespace PositiveLinearMap
 
@@ -73,8 +88,7 @@ theorem gnsProductNonUnitalStarAlgHom_tmul_apply_toGNS (hf : ∀ a b, f (a * b) 
 `A ⊗ Aᵐᵒᵖ` with `μ_f(a ⊗ bᵒᵖ) = f (a b)`, that is, `f` composed with multiplication
 `A ⊗ Aᵐᵒᵖ → A`. -/
 noncomputable def gnsTensorFunctional : A ⊗[ℂ] Aᵐᵒᵖ →ₗ[ℂ] ℂ :=
-  (f : A →ₗ[ℂ] ℂ) ∘ₗ LinearMap.mul' ℂ A ∘ₗ
-    TensorProduct.map LinearMap.id (MulOpposite.opLinearEquiv ℂ).symm.toLinearMap
+  (f : A →ₗ[ℂ] ℂ) ∘ₗ LinearMap.mulUnop' ℂ A
 
 omit [StarOrderedRing A] in
 /-- The tensor functional on elementary tensors: `μ_f(a ⊗ bᵒᵖ) = f (a b)`. -/
@@ -83,26 +97,28 @@ theorem gnsTensorFunctional_tmul (a : A) (b : Aᵐᵒᵖ) :
     f.gnsTensorFunctional (a ⊗ₜ b) = f (a * b.unop) :=
   (rfl)
 
-/-- For tracial `f`, the tensor functional is positive: `μ_f(t⋆ t) = f (s⋆ s)` for `s` the image
-of `t` under multiplication `A ⊗ Aᵐᵒᵖ → A`. -/
+omit [StarOrderedRing A] in
+/-- For tracial `f`, the tensor functional at `s⋆ t` is `f` at `(m s)⋆ (m t)`, for `m` the
+multiplication map `A ⊗ Aᵐᵒᵖ → A`. -/
+theorem gnsTensorFunctional_star_mul (hf : ∀ a b, f (a * b) = f (b * a))
+    (s t : A ⊗[ℂ] Aᵐᵒᵖ) :
+    f.gnsTensorFunctional (star s * t) =
+      f (star (LinearMap.mulUnop' ℂ A s) * LinearMap.mulUnop' ℂ A t) := by
+  induction s using TensorProduct.inductionOn with
+  | add s s' hs hs' => simp [star_add, add_mul, hs, hs']
+  | tmul a b =>
+    induction t using TensorProduct.inductionOn with
+    | add t t' ht ht' => rw [mul_add, map_add, ht, ht', map_add, mul_add, map_add]
+    | tmul a' b' =>
+      rw [TensorProduct.star_tmul, Algebra.TensorProduct.tmul_mul_tmul, gnsTensorFunctional_tmul,
+        LinearMap.mulUnop'_tmul, LinearMap.mulUnop'_tmul, unop_mul, unop_star, ← mul_assoc, hf,
+        star_mul]
+      simp only [mul_assoc]
+
+/-- For tracial `f`, the tensor functional is positive: `0 ≤ μ_f(t⋆ t)`. -/
 theorem gnsTensorFunctional_star_mul_self_nonneg (hf : ∀ a b, f (a * b) = f (b * a))
     (t : A ⊗[ℂ] Aᵐᵒᵖ) : 0 ≤ f.gnsTensorFunctional (star t * t) := by
-  let m : A ⊗[ℂ] Aᵐᵒᵖ →ₗ[ℂ] A := LinearMap.mul' ℂ A ∘ₗ
-    TensorProduct.map LinearMap.id (MulOpposite.opLinearEquiv ℂ).symm.toLinearMap
-  have hm (a : A) (b : Aᵐᵒᵖ) : m (a ⊗ₜ b) = a * b.unop := rfl
-  have key (s t : A ⊗[ℂ] Aᵐᵒᵖ) :
-      f.gnsTensorFunctional (star s * t) = f (star (m s) * m t) := by
-    induction s using TensorProduct.inductionOn with
-    | add s s' hs hs' =>
-      rw [star_add, add_mul, map_add, hs, hs', map_add, star_add, add_mul, map_add]
-    | tmul a b =>
-      induction t using TensorProduct.inductionOn with
-      | add t t' ht ht' => rw [mul_add, map_add, ht, ht', map_add, mul_add, map_add]
-      | tmul a' b' =>
-        rw [TensorProduct.star_tmul, Algebra.TensorProduct.tmul_mul_tmul, gnsTensorFunctional_tmul,
-          hm, hm, unop_mul, unop_star, ← mul_assoc, hf, star_mul]
-        simp only [mul_assoc]
-  rw [key]
+  rw [f.gnsTensorFunctional_star_mul hf]
   exact f.map_nonneg (star_mul_self_nonneg _)
 
 end NonUnital
@@ -114,11 +130,8 @@ variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] (f : 
 /-- The product representation of a tracial functional on a unital C⋆-algebra is unital. -/
 @[simp]
 theorem gnsProductNonUnitalStarAlgHom_one (hf : ∀ a b, f (a * b) = f (b * a)) :
-    f.gnsProductNonUnitalStarAlgHom hf 1 = 1 := by
-  rw [Algebra.TensorProduct.one_def, gnsProductNonUnitalStarAlgHom_tmul,
-    gnsRightNonUnitalStarAlgHom_one, mul_one, ← map_one f.gnsStarAlgHom,
-    gnsStarAlgHom_apply]
-  rfl
+    f.gnsProductNonUnitalStarAlgHom hf 1 = 1 :=
+  f.gns_continuousLinearMap_ext fun c ↦ by simp [Algebra.TensorProduct.one_def]
 
 /-- **The unital product representation** of a tracial positive functional on a unital
 C⋆-algebra: `π_f × π_fᵒᵖ` as a unital star homomorphism `A ⊗ Aᵐᵒᵖ → B(L²(A, f))`. -/
@@ -126,10 +139,7 @@ noncomputable def gnsProductStarAlgHom (hf : ∀ a b, f (a * b) = f (b * a)) :
     A ⊗[ℂ] Aᵐᵒᵖ →⋆ₐ[ℂ] (f.GNS →L[ℂ] f.GNS) :=
   { f.gnsProductNonUnitalStarAlgHom hf with
     map_one' := f.gnsProductNonUnitalStarAlgHom_one hf
-    commutes' r := by
-      simp only [Algebra.algebraMap_eq_smul_one]
-      exact (map_smul (f.gnsProductNonUnitalStarAlgHom hf) r 1).trans
-        (congrArg (r • ·) (f.gnsProductNonUnitalStarAlgHom_one hf)) }
+    commutes' r := by simp [Algebra.algebraMap_eq_smul_one] }
 
 @[simp]
 theorem coe_gnsProductStarAlgHom (hf : ∀ a b, f (a * b) = f (b * a)) :

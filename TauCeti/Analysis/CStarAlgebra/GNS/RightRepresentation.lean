@@ -51,15 +51,6 @@ section NonUnital
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   (f : A →ₚ[ℂ] ℂ)
 
-/-- Two bounded operators on the GNS space are equal when they agree on the classes of the
-pre-GNS space, which are dense. -/
-theorem gns_continuousLinearMap_ext {T S : f.GNS →L[ℂ] f.GNS}
-    (h : ∀ c : f.PreGNS, T c = S c) : T = S := by
-  ext x
-  induction x using Completion.induction_on with
-  | hp => apply isClosed_eq <;> fun_prop
-  | ih c => exact h c
-
 /-- For a tracial positive functional `f`, right multiplication by `b` on the GNS pre-Hilbert
 space, `[c] ↦ [c b]`, as a bounded operator of norm at most `‖b‖`. -/
 noncomputable def rightMulMapPreGNS (hf : ∀ a b, f (a * b) = f (b * a)) (b : A) :
@@ -69,7 +60,8 @@ noncomputable def rightMulMapPreGNS (hf : ∀ a b, f (a * b) = f (b * a)) (b : A
     set c := f.ofPreGNS x
     have key : ((‖f.toPreGNS (c * b)‖ ^ 2 : ℝ) : ℂ) ≤ (((‖b‖ * ‖x‖) ^ 2 : ℝ) : ℂ) :=
       calc ((‖f.toPreGNS (c * b)‖ ^ 2 : ℝ) : ℂ)
-          = f (star (c * b) * (c * b)) := by rw [Complex.ofReal_pow, preGNS_norm_sq]; rfl
+          = f (star (c * b) * (c * b)) := by
+            rw [Complex.ofReal_pow, preGNS_norm_sq, ofPreGNS_toPreGNS]
         _ = f (c * (b * star b) * star c) := by
           rw [star_mul, hf]
           simp only [mul_assoc]
@@ -135,6 +127,7 @@ section Unital
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] (f : A →ₚ[ℂ] ℂ)
 
 /-- The right representation of a tracial functional on a unital C⋆-algebra preserves the unit. -/
+@[simp]
 theorem gnsRightNonUnitalStarAlgHom_one (hf : ∀ a b, f (a * b) = f (b * a)) :
     f.gnsRightNonUnitalStarAlgHom hf 1 = 1 :=
   f.gns_continuousLinearMap_ext fun c ↦ by simp
@@ -145,14 +138,18 @@ noncomputable def gnsRightStarAlgHom (hf : ∀ a b, f (a * b) = f (b * a)) :
     Aᵐᵒᵖ →⋆ₐ[ℂ] (f.GNS →L[ℂ] f.GNS) :=
   { f.gnsRightNonUnitalStarAlgHom hf with
     map_one' := f.gnsRightNonUnitalStarAlgHom_one hf
-    commutes' r := by
-      simp only [Algebra.algebraMap_eq_smul_one]
-      exact (map_smul (f.gnsRightNonUnitalStarAlgHom hf) r 1).trans
-        (congrArg (r • ·) (f.gnsRightNonUnitalStarAlgHom_one hf)) }
+    commutes' r := by simp [Algebra.algebraMap_eq_smul_one] }
 
 @[simp]
 theorem coe_gnsRightStarAlgHom (hf : ∀ a b, f (a * b) = f (b * a)) :
     ⇑(f.gnsRightStarAlgHom hf) = f.gnsRightNonUnitalStarAlgHom hf :=
+  (rfl)
+
+/-- The unital right representation has underlying non-unital star homomorphism
+`gnsRightNonUnitalStarAlgHom`. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_gnsRightStarAlgHom (hf : ∀ a b, f (a * b) = f (b * a)) :
+    (f.gnsRightStarAlgHom hf).toNonUnitalStarAlgHom = f.gnsRightNonUnitalStarAlgHom hf :=
   (rfl)
 
 /-- The right representation maps the GNS vector `Ω = [1]` to the class of the acting element:
