@@ -185,7 +185,9 @@ theorem contractionPullback_injective : Function.Injective (contractionPullback 
 variable (R n)
 
 /-- The polynomial functions on pairs `(A, B)` of square matrices that are invariant under the
-action `h • (A, B) = (A * h⁻¹, h * B)` of `GL n R`. -/
+action `h • (A, B) = (A * h⁻¹, h * B)` of `GL n R`. This is invariance at points, not as
+polynomials: over an infinite field the two agree, but over a finite ring this subalgebra can be
+larger. -/
 def rightInvariants : Subalgebra R (MvPolynomial (n × n ⊕ n × n) R) where
   carrier := {P | ∀ (h : GL n R) (A B : Matrix n n R),
     eval (Sum.elim (fun p => (A * (h⁻¹ : GL n R)) p.1 p.2)
@@ -196,7 +198,9 @@ def rightInvariants : Subalgebra R (MvPolynomial (n × n ⊕ n × n) R) where
   algebraMap_mem' c h A B := by simp
 
 /-- The polynomial functions on pairs `(A, B)` of square matrices that are invariant under the
-action `(g, h) • (A, B) = (g * A * h⁻¹, h * B * g⁻¹)` of `GL n R × GL n R`. -/
+action `(g, h) • (A, B) = (g * A * h⁻¹, h * B * g⁻¹)` of `GL n R × GL n R`. This is invariance
+at points, not as polynomials: over an infinite field the two agree, but over a finite ring this
+subalgebra can be larger. -/
 def invariants : Subalgebra R (MvPolynomial (n × n ⊕ n × n) R) where
   carrier := {P | ∀ (g h : GL n R) (A B : Matrix n n R),
     eval (Sum.elim (fun p => ((g : Matrix n n R) * A * (h⁻¹ : GL n R)) p.1 p.2)
