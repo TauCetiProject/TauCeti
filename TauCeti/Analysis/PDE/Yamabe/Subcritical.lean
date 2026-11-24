@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Sobolev
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.AbsRpow
 
 /-!
@@ -110,6 +109,18 @@ private theorem rpow_integral_abs_toLp_rpow_le_of_riemannianTotalVolume_eq_one
       (∫ x, |SobolevH1.toLp w x| ^ q' ∂riemannianVolume I M) ^ (2 / q') := by
   simpa only [hV, Real.one_rpow, mul_one] using rpow_integral_abs_toLp_rpow_le hq hqq' hq' w
 
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- **Hölder comparison with the `L²` norm.** For `2 ≤ q ≤ pₙ` and `w ∈ H¹(M)`,
+`‖w‖²_{L²} ≤ (∫ |w| ^ q dV) ^ (2 / q) V ^ (1 - 2 / q)`. -/
+private theorem norm_toLp_sq_le {q : ℝ} (hq : 2 ≤ q) (hqp : q ≤ criticalExponent (finrank ℝ E))
+    (w : SobolevH1 I M) :
+    ‖SobolevH1.toLp w‖ ^ 2 ≤
+      (∫ x, |SobolevH1.toLp w x| ^ q ∂riemannianVolume I M) ^ (2 / q) *
+        riemannianTotalVolume I M ^ (1 - 2 / q) := by
+  have h := rpow_integral_abs_toLp_rpow_le two_pos hq hqp w
+  rw [div_self two_ne_zero, Real.rpow_one] at h
+  simpa only [Real.rpow_two, sq_abs, SobolevH1.integral_toLp_sq_eq_norm_sq] using h
+
 /-- The denominator of a nonzero `w ∈ H¹(M)` is positive for `0 < q ≤ pₙ`. -/
 private theorem rpow_integral_abs_toLp_rpow_pos {q : ℝ} (hq : 0 < q)
     (hqp : q ≤ criticalExponent (finrank ℝ E)) {w : SobolevH1 I M} (hw : w ≠ 0) :
@@ -119,30 +130,6 @@ private theorem rpow_integral_abs_toLp_rpow_pos {q : ℝ} (hq : 0 < q)
     (hqp.trans (criticalExponent_def _).le)).2 hw) _
 
 /-! ### Lower bounds -/
-
-omit [I.Boundaryless] in
-/-- If `Scal_g ≥ -K`, then the scalar-curvature term of `E_g(w, w)` is at least `-K ∫ w² dV`. -/
-private theorem neg_mul_integral_sq_le_integral_scalarCurvature_mul {K : ℝ}
-    (hS : ∀ x, -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)
-    (w : SobolevH1 I M) :
-    -K * ∫ x, SobolevH1.toLp w x ^ 2 ∂riemannianVolume I M ≤
-      ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
-        SobolevH1.toLp w x * SobolevH1.toLp w x ∂riemannianVolume I M := by
-  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.continuousOn
-  have hsq : Integrable (fun x ↦ SobolevH1.toLp w x ^ 2) (riemannianVolume I M) :=
-    (Lp.memLp (SobolevH1.toLp w)).integrable_sq
-  have hSff : Integrable (fun x ↦ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x *
-      SobolevH1.toLp w x * SobolevH1.toLp w x) (riemannianVolume I M) := by
-    simpa only [mul_assoc, ← sq] using hsq.bdd_mul
-      (Continuous.aestronglyMeasurable
-        (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous)
-      (.of_forall fun x ↦ hC x (mem_univ x))
-  rw [← integral_const_mul]
-  refine integral_mono (hsq.const_mul _) hSff fun x ↦ ?_
-  dsimp only
-  rw [mul_assoc, ← sq]
-  exact mul_le_mul_of_nonneg_right (hS x) (sq_nonneg _)
 
 /-- **Lower bound for the subcritical Yamabe quotient.** If `Scal_g ≥ -K` with `K ≥ 0`, then for
 `2 ≤ q ≤ pₙ` every `w ∈ H¹(M)` satisfies `Q^q(w) ≥ -K V ^ (1 - 2 / q)`. -/
@@ -156,24 +143,21 @@ theorem neg_mul_rpow_le_subcriticalYamabeQuotient {q K : ℝ} (hq : 2 ≤ q)
   · rw [subcriticalYamabeQuotient_zero]
     exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 hK) (Real.rpow_nonneg hV _)
   set f := ⇑(SobolevH1.toLp w)
-  -- The energy is at least `-K ∫ w²`, since the Dirichlet term is nonnegative.
-  have hE : -K * ∫ x, f x ^ 2 ∂riemannianVolume I M ≤ energyForm I w w := by
+  -- The energy is at least `-K ‖w‖²_{L²}`, since the Dirichlet term is nonnegative.
+  have hE : -K * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
     rw [energyForm_apply]
     exact le_add_of_nonneg_of_le (mul_nonneg (conformalCoefficient_nonneg _)
       (SobolevH1.dirichletForm_self_nonneg w))
-      (neg_mul_integral_sq_le_integral_scalarCurvature_mul hS w)
-  -- Hölder's inequality compares `∫ w²` with the `q`-th moment.
-  have h2 := rpow_integral_abs_toLp_rpow_le two_pos hq hqp w
-  have hf2 : ∫ x, |f x| ^ (2 : ℝ) ∂riemannianVolume I M = ∫ x, f x ^ 2 ∂riemannianVolume I M :=
-    integral_congr_ae (.of_forall fun x ↦ by simp only [Real.rpow_two, sq_abs])
-  rw [div_self two_ne_zero, Real.rpow_one, hf2] at h2
+      (neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul hS w)
+  -- Hölder's inequality compares `‖w‖²_{L²}` with the `q`-th moment.
+  have h2 := norm_toLp_sq_le hq hqp w
   rw [subcriticalYamabeQuotient_def,
     le_div_iff₀ (rpow_integral_abs_toLp_rpow_pos (two_pos.trans_le hq) hqp hw)]
   calc -K * riemannianTotalVolume I M ^ (1 - 2 / q) *
         (∫ x, |f x| ^ q ∂riemannianVolume I M) ^ (2 / q) =
       -K * ((∫ x, |f x| ^ q ∂riemannianVolume I M) ^ (2 / q) *
         riemannianTotalVolume I M ^ (1 - 2 / q)) := by ring
-    _ ≤ -K * ∫ x, f x ^ 2 ∂riemannianVolume I M :=
+    _ ≤ -K * ‖SobolevH1.toLp w‖ ^ 2 :=
       mul_le_mul_of_nonpos_left h2 (neg_nonpos.2 hK)
     _ ≤ energyForm I w w := hE
 
@@ -386,40 +370,6 @@ theorem tendsto_sInf_subcriticalYamabeQuotient_nhdsLT (hn : 2 < finrank ℝ E)
 
 /-! ### The sign of the subcritical Yamabe constants -/
 
-omit [I.Boundaryless] in
-/-- **An `L²` lower bound makes the energy form coercive.** In dimension `n > 2`, if
-`μ ‖w‖²_{L²} ≤ E_g(w, w)` for some `μ > 0` and every `w ∈ H¹(M)`, then `E_g` is coercive on
-`H¹(M)`. -/
-theorem isCoercive_energyForm_of_forall_mul_norm_toLp_sq_le (hn : 2 < finrank ℝ E) {μ : ℝ}
-    (hμ : 0 < μ) (h : ∀ w : SobolevH1 I M, μ * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w) :
-    IsCoercive (energyForm I (M := M)) := by
-  rcases isEmpty_or_nonempty M with hM | hM
-  · exact ⟨1, one_pos, fun w ↦ by simp [Subsingleton.elim w 0]⟩
-  -- The scalar curvature is bounded below, so `E_g` controls the Dirichlet energy.
-  have hSc := (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
-  obtain ⟨K, hK⟩ := isCompact_univ.exists_bound_of_continuousOn hSc.continuousOn
-  have hK0 : 0 ≤ K := (norm_nonneg _).trans (hK (Classical.arbitrary M) (mem_univ _))
-  have hS (x : M) : -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x :=
-    neg_le_of_abs_le (by simpa only [Real.norm_eq_abs] using hK x (mem_univ x))
-  have ha := conformalCoefficient_pos hn
-  set B := (1 + K / μ) / conformalCoefficient (finrank ℝ E) + 1 / μ
-  refine ⟨B⁻¹, inv_pos.2 (by positivity), fun w ↦ ?_⟩
-  have hf : ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w / μ := (le_div_iff₀' hμ).2 (h w)
-  have hD : SobolevH1.dirichletForm w w ≤
-      (energyForm I w w + K * (energyForm I w w / μ)) / conformalCoefficient (finrank ℝ E) := by
-    have hpot := neg_mul_integral_sq_le_integral_scalarCurvature_mul hS w
-    rw [show ∫ x, SobolevH1.toLp w x ^ 2 ∂riemannianVolume I M = ‖SobolevH1.toLp w‖ ^ 2 by
-      simpa only [Real.norm_eq_abs, sq_abs] using Lp.integral_norm_sq_eq_norm_sq (SobolevH1.toLp w)]
-      at hpot
-    rw [le_div_iff₀' ha]
-    rw [energyForm_apply] at hf ⊢
-    nlinarith [mul_le_mul_of_nonneg_left hf hK0]
-  rw [mul_assoc, ← sq, SobolevH1.norm_sq_eq_dirichletForm_add, inv_mul_le_iff₀ (by positivity)]
-  calc SobolevH1.dirichletForm w w + ‖SobolevH1.toLp w‖ ^ 2 ≤
-      (energyForm I w w + K * (energyForm I w w / μ)) / conformalCoefficient (finrank ℝ E) +
-        energyForm I w w / μ := add_le_add hD hf
-    _ = B * energyForm I w w := by ring
-
 /-- If `Y_q > 0` for some `2 ≤ q ≤ pₙ`, then `E_g(w, w) ≥ μ ‖w‖²_{L²}` with
 `μ = Y_q / V ^ (1 - 2 / q) > 0`. -/
 private theorem forall_mul_norm_toLp_sq_le_energyForm [Nonempty M] {q : ℝ} (hq : 2 ≤ q)
@@ -437,12 +387,7 @@ private theorem forall_mul_norm_toLp_sq_le_energyForm [Nonempty M] {q : ℝ} (hq
     csInf_le (bddBelow_image_subcriticalYamabeQuotient hq hqp) ⟨w, hw, rfl⟩
   rw [subcriticalYamabeQuotient_def, le_div_iff₀ hden] at hQ
   -- Hölder's inequality compares `‖w‖²_{L²}` with the `q`-th moment.
-  have h2 := rpow_integral_abs_toLp_rpow_le two_pos hq hqp w
-  have hf2 : ∫ x, |SobolevH1.toLp w x| ^ (2 : ℝ) ∂riemannianVolume I M =
-      ‖SobolevH1.toLp w‖ ^ 2 := by
-    simpa only [Real.norm_eq_abs, Real.rpow_two] using
-      Lp.integral_norm_sq_eq_norm_sq (SobolevH1.toLp w)
-  rw [div_self two_ne_zero, Real.rpow_one, hf2] at h2
+  have h2 := norm_toLp_sq_le hq hqp w
   have hV : 0 < riemannianTotalVolume I M ^ (1 - 2 / q) :=
     Real.rpow_pos_of_pos riemannianTotalVolume_pos _
   calc Y / riemannianTotalVolume I M ^ (1 - 2 / q) * ‖SobolevH1.toLp w‖ ^ 2 ≤

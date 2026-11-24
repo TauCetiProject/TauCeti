@@ -9,10 +9,11 @@ public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
-import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
@@ -373,6 +374,17 @@ theorem inner_toLp_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ⟯
   rw [toLp_ofSmooth, L2.inner_toLp_continuousMap]
   simp only [ContinuousMap.coe_ofClass, conj_trivial, mul_comm (φ _)]
 
+/-- The integral of the square of the value of `w ∈ H¹(M)` is its squared `L²` norm. -/
+theorem integral_toLp_sq_eq_norm_sq (w : SobolevH1 I M) :
+    ∫ x, toLp w x ^ 2 ∂riemannianVolume I M = ‖toLp w‖ ^ 2 := by
+  simpa only [Real.norm_eq_abs, sq_abs] using Lp.integral_norm_sq_eq_norm_sq (toLp w)
+
+/-- The squared `L²` norm of the constant function `1` is the total volume. -/
+theorem norm_toLp_ofSmooth_one_sq :
+    ‖toLp (ofSmooth (1 : C^∞⟮I, M; ℝ⟯))‖ ^ 2 = riemannianTotalVolume I M := by
+  rw [← real_inner_self_eq_norm_sq, inner_toLp_ofSmooth]
+  simp [riemannianTotalVolume_def]
+
 /-! ### The Dirichlet form -/
 
 /-- The **Dirichlet form** `D(w, v) = ⟪w, v⟫_{H¹} - ⟪w, v⟫_{L²}` on `H¹(M)`, the continuous
@@ -461,6 +473,15 @@ theorem toLp_injective : Function.Injective (toLp (I := I) (M := M)) := by
   -- By Green's identity `w` is orthogonal to the dense set of smooth functions.
   refine denseRange_ofSmooth.eq_zero_of_inner_left ℝ fun φ ↦ ?_
   rw [inner_ofSmooth_right_eq_inner, hw, inner_zero_left]
+
+/-- The value of `w ∈ H¹(M)` in `L²(M)` vanishes exactly when `w` does. -/
+@[simp]
+theorem toLp_eq_zero_iff {w : SobolevH1 I M} : toLp w = 0 ↔ w = 0 :=
+  toLp_injective.eq_iff' (map_zero _)
+
+/-- The value of `w ∈ H¹(M)` has positive `L²` norm exactly when `w ≠ 0`. -/
+theorem norm_toLp_pos_iff {w : SobolevH1 I M} : 0 < ‖toLp w‖ ↔ w ≠ 0 := by
+  rw [norm_pos_iff, Ne, toLp_eq_zero_iff]
 
 /-- **The Dirichlet form against a smooth function.** On a closed manifold with a `C¹` metric,
 `D(w, φ) = ∫ w Δ⁺φ dV` for `w ∈ H¹(M)` and a smooth function `φ`, where `Δ⁺ = -div grad` is the

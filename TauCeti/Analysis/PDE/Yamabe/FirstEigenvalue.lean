@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Yamabe.Subcritical
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
@@ -34,17 +33,18 @@ is the variational form of the first eigenvalue of `L_g`. This file develops the
   `E_g(w, v) = λ₁ ⟪w, v⟫_{L²}` for every `v ∈ H¹(M)`
   (`energyForm_eq_sInf_subcriticalYamabeQuotient_two_mul_inner`): the quadratic
   `t ↦ E_g(w + t v, w + t v) - λ₁ ‖w + t v‖²_{L²}` is nonnegative and vanishes at `t = 0`.
-* **The mean scalar curvature bounds `λ₁`.** On a nonempty `M`, testing with the constant function
-  gives `λ₁ ≤ ∫ Scal_g dV / Vol(M, g)`
-  (`sInf_subcriticalYamabeQuotient_two_le_integral_scalarCurvature_div`), with equality exactly when
-  `Scal_g` is constant (`sInf_subcriticalYamabeQuotient_two_eq_integral_scalarCurvature_div_iff`).
-  In the equality case the constant function is a minimizer, hence a weak eigenfunction, and
-  `L_g 1 = Scal_g`.
 * **Positive eigenfunctions.** If a smooth positive `u` solves `L_g u = c u`, then `c = λ₁`
   (`sInf_subcriticalYamabeQuotient_two_eq_of_conformalLaplacian_eq_mul`). Writing a smooth `φ` as
   `u v`, the pointwise identity `|∇(u v)|² = ⟪∇(u v²), ∇u⟫ + u² |∇v|²` gives
   `E_g(φ, φ) ≥ E_g(u v², u) = c ‖φ‖²_{L²}`, and density of smooth functions extends this to
   `H¹(M)`.
+* **The mean scalar curvature bounds `λ₁`.** On a nonempty `M`, testing with the constant function
+  gives `λ₁ ≤ ∫ Scal_g dV / Vol(M, g)`
+  (`sInf_subcriticalYamabeQuotient_two_le_integral_scalarCurvature_div`), with equality exactly when
+  `Scal_g` is constant (`sInf_subcriticalYamabeQuotient_two_eq_integral_scalarCurvature_div_iff`).
+  If `Scal_g` is constant, then the constant function is a positive eigenfunction. Conversely, in
+  the equality case the constant function is a minimizer, hence a weak eigenfunction, and
+  `L_g 1 = Scal_g`.
 * **The sign of the Yamabe invariant.** The Yamabe invariant `Y = inf {Q_g(w) | w ≠ 0}` has the
   sign of `λ₁(L_g)` (`sign_sInf_weakYamabeQuotient_eq`), by
   `TauCeti.Yamabe.sign_sInf_subcriticalYamabeQuotient_eq` at the exponents `pₙ` and `2`.
@@ -82,12 +82,7 @@ Yamabe quotient of `w ∈ H¹(M)` is `E_g(w, w) / ‖w‖²_{L²}`. -/
 theorem subcriticalYamabeQuotient_two (w : SobolevH1 I M) :
     subcriticalYamabeQuotient I 2 w = energyForm I w w / ‖SobolevH1.toLp w‖ ^ 2 := by
   rw [subcriticalYamabeQuotient_def, div_self two_ne_zero, Real.rpow_one]
-  simpa only [Real.norm_eq_abs, Real.rpow_two] using
-    congrArg (energyForm I w w / ·) (Lp.integral_norm_sq_eq_norm_sq (SobolevH1.toLp w))
-
-/-- A nonzero `w ∈ H¹(M)` has positive `L²` norm. -/
-private theorem norm_toLp_sq_pos {w : SobolevH1 I M} (hw : w ≠ 0) : 0 < ‖SobolevH1.toLp w‖ ^ 2 :=
-  pow_pos (norm_pos_iff.2 fun h ↦ hw (SobolevH1.toLp_injective (h.trans (map_zero _).symm))) 2
+  simp only [Real.rpow_two, sq_abs, SobolevH1.integral_toLp_sq_eq_norm_sq]
 
 /-- **The Rayleigh inequality.** On a closed manifold of dimension `n > 2`, the infimum `λ₁` of the
 Rayleigh quotient of the conformal Laplacian satisfies `λ₁ ‖w‖²_{L²} ≤ E_g(w, w)` for every
@@ -98,7 +93,7 @@ theorem sInf_subcriticalYamabeQuotient_two_mul_le_energyForm (hn : 2 < finrank �
         ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w := by
   rcases eq_or_ne w 0 with rfl | hw
   · simp
-  rw [← le_div_iff₀ (norm_toLp_sq_pos hw), ← subcriticalYamabeQuotient_two]
+  rw [← le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2), ← subcriticalYamabeQuotient_two]
   exact csInf_le (bddBelow_image_subcriticalYamabeQuotient le_rfl (two_lt_criticalExponent hn).le)
     ⟨w, hw, rfl⟩
 
@@ -133,93 +128,6 @@ theorem energyForm_eq_sInf_subcriticalYamabeQuotient_two_mul_inner (hn : 2 < fin
     exact pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm h (sq_nonneg b))
   simp only [b, mul_eq_zero, two_ne_zero, false_or, sub_eq_zero] at hb
   exact hb
-
-omit [I.Boundaryless] in
-/-- The weak energy of the constant function `1` is the total scalar curvature. -/
-private theorem energyForm_ofSmooth_one_self :
-    energyForm I (SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) (SobolevH1.ofSmooth 1) =
-      ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
-        ∂riemannianVolume I M := by
-  rw [energyForm_ofSmooth_self]
-  simp [ContMDiffMap.coe_one, Pi.one_def, mgradient_const]
-
-omit [I.Boundaryless] [T2Space M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The squared `L²` norm of the constant function `1` is the total volume. -/
-private theorem norm_toLp_ofSmooth_one_sq :
-    ‖SobolevH1.toLp (SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯))‖ ^ 2 = riemannianTotalVolume I M := by
-  rw [← real_inner_self_eq_norm_sq, SobolevH1.inner_toLp_ofSmooth]
-  simp [riemannianTotalVolume_def]
-
-/-- **The mean scalar curvature bounds the bottom of the spectrum.** On a nonempty closed manifold
-of dimension `n > 2`, the infimum `λ₁` of the Rayleigh quotient of the conformal Laplacian is at
-most the mean scalar curvature `∫ Scal_g dV / Vol(M, g)`. -/
-theorem sInf_subcriticalYamabeQuotient_two_le_integral_scalarCurvature_div [Nonempty M]
-    (hn : 2 < finrank ℝ E) :
-    sInf (subcriticalYamabeQuotient I 2 '' {w : SobolevH1 I M | w ≠ 0}) ≤
-      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
-        ∂riemannianVolume I M) / riemannianTotalVolume I M := by
-  rw [le_div_iff₀ riemannianTotalVolume_pos, ← norm_toLp_ofSmooth_one_sq,
-    ← energyForm_ofSmooth_one_self]
-  exact sInf_subcriticalYamabeQuotient_two_mul_le_energyForm hn _
-
-/-- **Equality case of the mean scalar curvature bound.** On a nonempty closed manifold of
-dimension `n > 2`, the infimum `λ₁` of the Rayleigh quotient of the conformal Laplacian equals the
-mean scalar curvature `∫ Scal_g dV / Vol(M, g)` if and only if `Scal_g` is constant. -/
-theorem sInf_subcriticalYamabeQuotient_two_eq_integral_scalarCurvature_div_iff [Nonempty M]
-    (hn : 2 < finrank ℝ E) :
-    sInf (subcriticalYamabeQuotient I 2 '' {w : SobolevH1 I M | w ≠ 0}) =
-        (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
-          ∂riemannianVolume I M) / riemannianTotalVolume I M ↔
-      ∃ c : ℝ, ∀ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x = c := by
-  set S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
-  set l := sInf (subcriticalYamabeQuotient I 2 '' {w : SobolevH1 I M | w ≠ 0})
-  have hV := riemannianTotalVolume_pos (I := I) (M := M)
-  have hS : Continuous S :=
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
-  constructor
-  · intro h
-    -- The constant function `1` attains `λ₁`, so it is a weak eigenfunction: `∫ Scal φ = λ₁ ∫ φ`.
-    have h1 : energyForm I (SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) (SobolevH1.ofSmooth 1) =
-        l * ‖SobolevH1.toLp (SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯))‖ ^ 2 := by
-      rw [energyForm_ofSmooth_one_self, norm_toLp_ofSmooth_one_sq, h, div_mul_cancel₀ _ hV.ne']
-    have hcont : Continuous fun x ↦ S x - l := hS.sub continuous_const
-    have hae : ∀ᵐ x ∂riemannianVolume I M, S x - l = 0 := by
-      refine ae_eq_zero_of_integral_contMDiff_smul_eq_zero I hcont.locallyIntegrable
-        fun φ hφ _ ↦ ?_
-      let φ' : C^∞⟮I, M; ℝ⟯ := ⟨φ, hφ⟩
-      have he := energyForm_eq_sInf_subcriticalYamabeQuotient_two_mul_inner hn h1
-        (SobolevH1.ofSmooth φ')
-      rw [energyForm_ofSmooth, SobolevH1.inner_toLp_ofSmooth] at he
-      simp only [φ', ContMDiffMap.coe_one, Pi.one_def, mgradient_const, Pi.zero_apply,
-        inner_zero_left, mul_zero, zero_add, one_mul, ContMDiffMap.coeFn_mk] at he
-      simp only [smul_eq_mul, mul_sub]
-      rw [integral_sub (f := fun x ↦ φ x * S x) (g := fun x ↦ φ x * l)
-        (hφ.continuous.mul hS).integrable_of_compactSpace
-        (hφ.continuous.mul continuous_const).integrable_of_compactSpace, integral_mul_const,
-        sub_eq_zero]
-      simp only [mul_comm (φ _)]
-      rw [mul_comm]
-      exact he
-    exact ⟨l, fun x ↦ sub_eq_zero.1 (congrFun ((hcont.ae_eq_iff_eq _ continuous_zero).1 hae) x)⟩
-  · rintro ⟨c, hc⟩
-    have hmean : (∫ x, S x ∂riemannianVolume I M) / riemannianTotalVolume I M = c := by
-      simp only [hc, integral_const_riemannianVolume, mul_div_cancel_right₀ _ hV.ne']
-    rw [hmean]
-    refine le_antisymm (hmean ▸ sInf_subcriticalYamabeQuotient_two_le_integral_scalarCurvature_div
-      hn) ?_
-    obtain ⟨w₀, hw₀⟩ := exists_ne (0 : SobolevH1 I M)
-    refine le_csInf ⟨_, w₀, hw₀, rfl⟩ fun _ ⟨w, hw, h⟩ ↦ h ▸ ?_
-    -- With constant scalar curvature `c`, `E_g(w, w) = aₙ D(w, w) + c ‖w‖²_{L²} ≥ c ‖w‖²_{L²}`.
-    rw [subcriticalYamabeQuotient_two, le_div_iff₀ (norm_toLp_sq_pos hw), energyForm_apply]
-    have hsq : ∫ x, S x * SobolevH1.toLp w x * SobolevH1.toLp w x ∂riemannianVolume I M =
-        c * ‖SobolevH1.toLp w‖ ^ 2 := by
-      simp only [hc, mul_assoc, integral_const_mul, ← sq]
-      rw [← Lp.integral_norm_sq_eq_norm_sq]
-      simp only [Real.norm_eq_abs, sq_abs]
-    rw [hsq]
-    exact le_add_of_nonneg_left (mul_nonneg (conformalCoefficient_nonneg _)
-      (SobolevH1.dirichletForm_self_nonneg w))
 
 /-! ### Positive eigenfunctions -/
 
@@ -302,9 +210,79 @@ theorem sInf_subcriticalYamabeQuotient_two_eq_of_conformalLaplacian_eq_mul [None
     (two_lt_criticalExponent hn).le) ⟨_, hU0, rfl⟩).trans_eq ?_)
     (le_csInf ⟨_, _, hU0, rfl⟩ fun _ ⟨w, hw, h⟩ ↦ h ▸ ?_)
   · rw [subcriticalYamabeQuotient_two, energyForm_ofSmooth_eq_mul_inner (u := U) hc,
-      real_inner_self_eq_norm_sq, mul_div_cancel_right₀ _ (norm_toLp_sq_pos hU0).ne']
-  · rw [subcriticalYamabeQuotient_two, le_div_iff₀ (norm_toLp_sq_pos hw)]
+      real_inner_self_eq_norm_sq,
+      mul_div_cancel_right₀ _ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hU0) 2).ne']
+  · rw [subcriticalYamabeQuotient_two, le_div_iff₀ (pow_pos (SobolevH1.norm_toLp_pos_iff.2 hw) 2)]
     exact hle w
+
+/-! ### The mean scalar curvature -/
+
+omit [I.Boundaryless] in
+/-- The weak energy of the constant function `1` is the total scalar curvature. -/
+private theorem energyForm_ofSmooth_one_self :
+    energyForm I (SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) (SobolevH1.ofSmooth 1) =
+      ∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+        ∂riemannianVolume I M := by
+  rw [energyForm_ofSmooth_self]
+  simp [ContMDiffMap.coe_one, Pi.one_def, mgradient_const]
+
+/-- **The mean scalar curvature bounds the bottom of the spectrum.** On a nonempty closed manifold
+of dimension `n > 2`, the infimum `λ₁` of the Rayleigh quotient of the conformal Laplacian is at
+most the mean scalar curvature `∫ Scal_g dV / Vol(M, g)`. -/
+theorem sInf_subcriticalYamabeQuotient_two_le_integral_scalarCurvature_div [Nonempty M]
+    (hn : 2 < finrank ℝ E) :
+    sInf (subcriticalYamabeQuotient I 2 '' {w : SobolevH1 I M | w ≠ 0}) ≤
+      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+        ∂riemannianVolume I M) / riemannianTotalVolume I M := by
+  rw [le_div_iff₀ riemannianTotalVolume_pos, ← SobolevH1.norm_toLp_ofSmooth_one_sq,
+    ← energyForm_ofSmooth_one_self]
+  exact sInf_subcriticalYamabeQuotient_two_mul_le_energyForm hn _
+
+/-- **Equality case of the mean scalar curvature bound.** On a nonempty closed manifold of
+dimension `n > 2`, the infimum `λ₁` of the Rayleigh quotient of the conformal Laplacian equals the
+mean scalar curvature `∫ Scal_g dV / Vol(M, g)` if and only if `Scal_g` is constant. -/
+theorem sInf_subcriticalYamabeQuotient_two_eq_integral_scalarCurvature_div_iff [Nonempty M]
+    (hn : 2 < finrank ℝ E) :
+    sInf (subcriticalYamabeQuotient I 2 '' {w : SobolevH1 I M | w ≠ 0}) =
+        (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+          ∂riemannianVolume I M) / riemannianTotalVolume I M ↔
+      ∃ c : ℝ, ∀ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x = c := by
+  set S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
+  set l := sInf (subcriticalYamabeQuotient I 2 '' {w : SobolevH1 I M | w ≠ 0})
+  have hV := riemannianTotalVolume_pos (I := I) (M := M)
+  have hS : Continuous S :=
+    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous
+  constructor
+  · intro h
+    -- The constant function `1` attains `λ₁`, so it is a weak eigenfunction: `∫ Scal φ = λ₁ ∫ φ`.
+    have h1 : energyForm I (SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯)) (SobolevH1.ofSmooth 1) =
+        l * ‖SobolevH1.toLp (SobolevH1.ofSmooth (1 : C^∞⟮I, M; ℝ⟯))‖ ^ 2 := by
+      rw [energyForm_ofSmooth_one_self, SobolevH1.norm_toLp_ofSmooth_one_sq, h,
+        div_mul_cancel₀ _ hV.ne']
+    have hcont : Continuous fun x ↦ S x - l := hS.sub continuous_const
+    have hae : ∀ᵐ x ∂riemannianVolume I M, S x - l = 0 := by
+      refine ae_eq_zero_of_integral_contMDiff_smul_eq_zero I hcont.locallyIntegrable
+        fun φ hφ _ ↦ ?_
+      let φ' : C^∞⟮I, M; ℝ⟯ := ⟨φ, hφ⟩
+      have he := energyForm_eq_sInf_subcriticalYamabeQuotient_two_mul_inner hn h1
+        (SobolevH1.ofSmooth φ')
+      rw [energyForm_ofSmooth, SobolevH1.inner_toLp_ofSmooth] at he
+      simp only [φ', ContMDiffMap.coe_one, Pi.one_def, mgradient_const, Pi.zero_apply,
+        inner_zero_left, mul_zero, zero_add, one_mul, ContMDiffMap.coeFn_mk] at he
+      simp only [smul_eq_mul, mul_sub]
+      rw [integral_sub (f := fun x ↦ φ x * S x) (g := fun x ↦ φ x * l)
+        (hφ.continuous.mul hS).integrable_of_compactSpace
+        (hφ.continuous.mul continuous_const).integrable_of_compactSpace, integral_mul_const,
+        sub_eq_zero, mul_comm _ l]
+      simpa only [mul_comm (φ _)] using he
+    exact ⟨l, fun x ↦ sub_eq_zero.1 (congrFun ((hcont.ae_eq_iff_eq _ continuous_zero).1 hae) x)⟩
+  · rintro ⟨c, hc⟩
+    have hmean : (∫ x, S x ∂riemannianVolume I M) / riemannianTotalVolume I M = c := by
+      simp only [hc, integral_const_riemannianVolume, mul_div_cancel_right₀ _ hV.ne']
+    -- The constant function `1` is a positive eigenfunction: `L_g 1 = Scal_g = c`.
+    rw [hmean]
+    exact sInf_subcriticalYamabeQuotient_two_eq_of_conformalLaplacian_eq_mul hn contMDiff_const
+      (fun _ ↦ one_pos) fun x ↦ by rw [conformalLaplacian_const, mul_one, mul_one]; exact hc x
 
 /-- **The sign of the Yamabe invariant is the sign of the first eigenvalue.** On a closed manifold
 of dimension `n > 2`, the Yamabe invariant `Y = inf {Q_g(w) | w ≠ 0}` has the same sign as the
