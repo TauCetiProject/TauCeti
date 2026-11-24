@@ -36,12 +36,14 @@ an integral closure, which makes `O` a `G_F`-ring. For an ideal `Q` of `O` this 
 All four are reducible, so Mathlib's and Tau Ceti's API for stabilizers, inertia subgroups and
 Frobenius elements applies to them directly: `MulAction.stabilizer_smul_eq_stabilizer_map_conj`,
 `Ideal.inertia_smul` and `Ideal.wildInertia_smul` give `D_{τQ} = τ D_Q τ⁻¹` and its analogues,
-`Ideal.wildInertia_le_inertia` and `Ideal.inertia_le_stabilizer` give `P_Q ≤ I_Q ≤ D_Q`,
-`I_Q` and `P_Q` are normal in `D_Q` by instances, `IsArithFrobAt.mem_stabilizer_of_isIntegral`
-puts the Frobenius elements at `Q` in `D_Q`, `IsArithFrobAt.iff_mul_inv_mem_inertia` says that,
-given one Frobenius element at `Q`, the Frobenius elements at `Q` are exactly its coset of `I_Q`,
-and `IsArithFrobAt.conj` moves them to `τ • Q`. Existence of a Frobenius element at `Q` is not
-proved here.
+`Ideal.wildInertia_le_inertia` and `Ideal.inertia_le_stabilizer` give `P_Q ≤ I_Q ≤ D_Q`, `I_Q` and
+`P_Q` are normal in `D_Q` (Mathlib's instance for `Q.inertia D_Q` and
+`Ideal.normal_wildInertia_stabilizer`, transported along `AddSubgroup.subgroupOf_inertia` and
+`Ideal.subgroupOf_wildInertia`), `IsArithFrobAt.mem_stabilizer_of_isIntegral` puts the Frobenius
+elements at `Q` in `D_Q`, `IsArithFrobAt.iff_mul_inv_mem_inertia` says that, given one Frobenius
+element at `Q`, the Frobenius elements at `Q` are exactly its coset of `I_Q`, and
+`IsArithFrobAt.conj` moves them to `τ • Q`. Existence of a Frobenius element at `Q` is not proved
+here.
 
 At a maximal ideal `Q` above a finite place of a number field, `P_Q` is the inverse limit of the
 first lower ramification groups of the finite Galois subextensions at the primes below `Q`

@@ -33,7 +33,8 @@ the converse can fail, since a denominator outside `Q` need not be invertible mo
 * `Ideal.wildInertia_smul`: `P_{τQ} = τ P_Q τ⁻¹`.
 * `Ideal.subgroupOf_wildInertia`: the wild inertia subgroup of a subgroup `H` is the trace of the
   wild inertia subgroup of `G` on `H`.
-* The instances that the inertia and wild inertia subgroups are normal in the stabilizer of `Q`.
+* `Ideal.normal_wildInertia_stabilizer`: the wild inertia subgroup of `Q` for the action of the
+  stabilizer of `Q` is normal, like Mathlib's instance for `Ideal.inertia`.
 
 ## References
 
@@ -122,22 +123,11 @@ theorem subgroupOf_wildInertia (H : Subgroup G) :
   ext σ
   exact Iff.rfl
 
-/-- The inertia subgroup of `Q` is normal in the stabilizer of `Q`: the trace of Mathlib's
-`Ideal.inertia` on the stabilizer is the inertia subgroup for the stabilizer's action. -/
-instance normal_inertia_subgroupOf_stabilizer :
-    ((Q.inertia G).subgroupOf (MulAction.stabilizer G Q)).Normal := by
-  rw [AddSubgroup.subgroupOf_inertia]
-  infer_instance
-
-/-- The wild inertia subgroup of `Q` is normal in the stabilizer of `Q`. -/
-instance normal_wildInertia_subgroupOf_stabilizer :
-    ((Q.wildInertia G).subgroupOf (MulAction.stabilizer G Q)).Normal := by
-  refine ⟨fun σ hσ τ ↦ ?_⟩
-  rw [Subgroup.mem_subgroupOf] at hσ ⊢
-  have hτ : (τ : G) • Q = Q := MulAction.mem_stabilizer_iff.mp τ.property
-  have : (τ : G) * σ * (τ : G)⁻¹ ∈ ((τ : G) • Q).wildInertia G := by
-    rw [wildInertia_smul]
-    exact ⟨σ, hσ, rfl⟩
-  rwa [hτ] at this
+/-- The wild inertia subgroup of `Q` is normal in the stabilizer of `Q`, stated like Mathlib's
+instance for `Ideal.inertia`. -/
+instance normal_wildInertia_stabilizer :
+    (Q.wildInertia (MulAction.stabilizer G Q)).Normal := by
+  simp_rw [Subgroup.normal_iff_map_conj_eq, ← wildInertia_smul]
+  exact fun g ↦ congrArg (wildInertia _) g.property
 
 end Ideal

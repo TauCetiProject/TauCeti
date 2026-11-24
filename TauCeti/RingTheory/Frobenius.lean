@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Frobenius
 
+import TauCeti.RingTheory.Invariant.Basic
+
 /-!
 # Frobenius elements for a group acting on a ring extension
 
@@ -41,8 +43,6 @@ each of them, which again carries hypotheses of its own, such as those of
   subgroup is again a Frobenius element.
 * `IsArithFrobAt.iff_mul_inv_mem_inertia` — given one Frobenius element at `Q`, the Frobenius
   elements at `Q` are exactly one coset of the inertia subgroup.
-* `MulSemiringAction.exists_pow_succ_smul_eq_of_isIntegral` — in an integral extension of a domain,
-  every element has a finite orbit under each automorphism over the base.
 * `IsArithFrobAt.mem_stabilizer_of_isIntegral` — over an integral extension of a domain, a
   Frobenius element at any ideal `Q` stabilizes `Q`.
 * `IsArithFrobAt.of_le` — a Frobenius element at `Q` is one at any larger ideal with the same
@@ -155,36 +155,6 @@ theorem iff_mul_inv_mem_inertia {G : Type*} [Group G] [MulSemiringAction G S]
   refine ⟨fun hτ ↦ hτ.mul_inv_mem_inertia hσ, fun h x ↦ ?_⟩
   have := Q.add_mem (Ideal.mem_inertia.mp h (σ • x)) (hσ x)
   simpa [mul_smul] using this
-
-/-- **Finite orbits in an integral extension.** If a group `G` acts on an integral extension `S`
-of `R` by `R`-algebra automorphisms and `S` is a domain, then every `x : S` has a finite orbit
-under each `σ : G`: some positive power of `σ` fixes `x`, since `σ` permutes the finitely many
-roots in `S` of a monic polynomial over `R` satisfied by `x`. -/
-theorem _root_.MulSemiringAction.exists_pow_succ_smul_eq_of_isIntegral (R : Type*) {S G : Type*}
-    [CommRing R] [CommRing S] [Algebra R S] [IsDomain S] [Algebra.IsIntegral R S] [Group G]
-    [MulSemiringAction G S] [SMulCommClass G R S] (σ : G) (x : S) :
-    ∃ n, (σ ^ (n + 1)) • x = x := by
-  classical
-  obtain ⟨p, hpm, hp⟩ := Algebra.IsIntegral.isIntegral (R := R) x
-  rw [← Polynomial.aeval_def] at hp
-  let s := (p.map (algebraMap R S)).roots.toFinset
-  have hmem (k : ℕ) : (σ ^ k) • x ∈ s := by
-    rw [Multiset.mem_toFinset (s := (p.map (algebraMap R S)).roots),
-      Polynomial.mem_roots (hpm.map _).ne_zero, Polynomial.IsRoot,
-      Polynomial.eval_map_algebraMap]
-    have := Polynomial.aeval_algHom_apply (MulSemiringAction.toAlgHom R S (σ ^ k)) x p
-    rw [hp, map_zero] at this
-    exact this
-  obtain ⟨i, j, hij, heq⟩ := Finite.exists_ne_map_eq_of_infinite
-    (fun k : ℕ ↦ (⟨(σ ^ k) • x, hmem k⟩ : s))
-  simp only [Subtype.mk.injEq] at heq
-  rcases hij.lt_or_gt with hij | hij
-  · refine ⟨j - i - 1, ?_⟩
-    rw [show j = i + (j - i - 1 + 1) by omega, pow_add, mul_smul] at heq
-    exact (smul_left_cancel_iff _).mp heq.symm
-  · refine ⟨i - j - 1, ?_⟩
-    rw [show i = j + (i - j - 1 + 1) by omega, pow_add, mul_smul] at heq
-    exact (smul_left_cancel_iff _).mp heq
 
 /-- **An arithmetic Frobenius stabilizes its ideal**, for an integral extension of a domain and
 without assuming the ideal prime. The Frobenius congruence gives `σ • Q ≤ Q`; since every element
