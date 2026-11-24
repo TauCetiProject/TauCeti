@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 public import TauCeti.Topology.VectorBundle.UnitSection
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
 # The normal collar of a two-sided compact hypersurface
@@ -101,15 +102,11 @@ private theorem exists_isOpenEmbedding_normalExp_comp
         isCompact_univ.exists_isMinOn univ_nonempty r.contMDiff.continuous.continuousOn
       exact ⟨r x₀, hr x₀, fun x ↦ hx₀ (mem_univ x)⟩
   let Φ := TauCeti.VectorBundle.unitSectionHomeomorph P ν hP hu hu1
-  have hnorm (x : M) (t : ℝ) (ht : |t| < ε) : ‖t • u x‖ < r x := by
-    rw [norm_smul, hu1, mul_one, Real.norm_eq_abs]
-    exact ht.trans_le (hεr x)
-  refine ⟨ε, hε, fun x t ht ↦ hdom (le_of_lt (hnorm x t ht)), fun {X} _ h hh hhε ↦ ?_⟩
   let D := {p : TotalSpace P ν | ‖p.snd‖ < r p.proj}
   have hmem (p : M × ℝ) (hp : |p.2| < ε) : Φ p ∈ D := by
-    change ‖(Φ p).snd‖ < r (Φ p).proj
-    rw [TauCeti.VectorBundle.unitSectionHomeomorph_apply]
-    exact hnorm p.1 p.2 hp
+    simpa [D, Φ, norm_smul, hu1] using hp.trans_le (hεr p.1)
+  refine ⟨ε, hε, fun x t ht ↦ hdom (by simpa [norm_smul, hu1] using (ht.trans_le (hεr x)).le),
+    fun {X} _ h hh hhε ↦ ?_⟩
   -- the map `y ↦ (h y).2 • u (h y).1` into the disc bundle `D`
   let g : X → D := fun y ↦ ⟨Φ (h y), hmem (h y) (hhε y)⟩
   have hΦh : IsOpenEmbedding (Φ ∘ h) := Φ.isOpenEmbedding.comp hh
@@ -122,8 +119,7 @@ private theorem exists_isOpenEmbedding_normalExp_comp
     exact hΦh.isOpen_range.preimage continuous_subtypeVal
   convert hopen.comp hg using 1
   funext y
-  change _ = f.normalExp _ (Φ (h y))
-  rw [TauCeti.VectorBundle.unitSectionHomeomorph_apply]
+  simp only [comp_apply, domRestrict_apply, g, Φ, TauCeti.VectorBundle.unitSectionHomeomorph_apply]
 
 /-- **The normal collar is an open embedding.** Let `f : M → N` be a smooth embedding of a compact
 manifold, of codimension one, into a Riemannian manifold, and `ν` a continuous unit normal field
@@ -148,22 +144,6 @@ theorem exists_isOpenEmbedding_normalCollar
     (IsOpenEmbedding.id.prodMap isOpen_Ioo.isOpenEmbedding_subtypeVal) fun p ↦ ?_⟩
   exact abs_lt.mpr p.2.property
 
-/-- The reparametrization `s ↦ (2ε / π) arctan s` of the real line onto `(-ε, ε)`. -/
-private theorem isOpenEmbedding_mul_arctan {ε : ℝ} (hε : 0 < ε) :
-    IsOpenEmbedding (fun s : ℝ ↦ 2 * ε / Real.pi * Real.arctan s) := by
-  have hc : 0 < 2 * ε / Real.pi := by positivity
-  have hrange : range (fun s : ℝ ↦ 2 * ε / Real.pi * Real.arctan s) = Ioo (-ε) ε := by
-    rw [range_comp' (fun t ↦ 2 * ε / Real.pi * t) Real.arctan, Real.range_arctan,
-      image_mul_left_Ioo hc]
-    congr 1 <;> field_simp
-  have hmono : StrictMono (fun s : ℝ ↦ 2 * ε / Real.pi * Real.arctan s) :=
-    Real.arctan_strictMono.const_mul hc
-  refine ⟨hmono.isEmbedding_of_ordConnected ?_, ?_⟩
-  · rw [hrange]
-    exact ordConnected_Ioo
-  · rw [hrange]
-    exact isOpen_Ioo
-
 /-- **The normal collar is a bicollar.** Let `f : M → N` be a smooth embedding of a compact
 manifold, of codimension one, into a Riemannian manifold, and `ν` a continuous unit normal field
 along `f`. For some `ε > 0`, the normal collar `c_ν (x, t) = exp_{f x} (t ν x)` reparametrized by
@@ -182,17 +162,17 @@ theorem exists_isBicollar_normalCollar
         f.normalExp hn (TotalSpace.mk' P p.1 ((2 * ε / Real.pi * Real.arctan p.2) • u p.1))) := by
   intro hn ν u hu hu1
   obtain ⟨ε, hε, -, hemb⟩ := exists_isOpenEmbedding_normalExp_comp f hdim hP u hu hu1
+  have hc : 0 < 2 * ε / Real.pi := by positivity
+  -- `s ↦ (2ε / π) arctan s` is the inverse of `tan` followed by a homothety
+  have harctan : IsOpenEmbedding (fun s : ℝ ↦ 2 * ε / Real.pi * Real.arctan s) :=
+    (Homeomorph.mulLeft₀ _ hc.ne').isOpenEmbedding.comp
+      (Real.tanPartialHomeomorph.symm.isOpenEmbedding rfl)
   refine ⟨ε, hε, hemb (fun p : M × ℝ ↦ (p.1, 2 * ε / Real.pi * Real.arctan p.2))
-    (IsOpenEmbedding.id.prodMap (isOpenEmbedding_mul_arctan hε)) fun p ↦ ?_, fun x ↦ ?_⟩
-  · have := Real.pi_pos
-    rw [abs_lt]
-    constructor
-    · have := Real.neg_pi_div_two_lt_arctan p.2
-      calc -ε = 2 * ε / Real.pi * (-(Real.pi / 2)) := by field_simp
-        _ < 2 * ε / Real.pi * Real.arctan p.2 := by gcongr
-    · have := Real.arctan_lt_pi_div_two p.2
-      calc 2 * ε / Real.pi * Real.arctan p.2 < 2 * ε / Real.pi * (Real.pi / 2) := by gcongr
-        _ = ε := by field_simp
+    (IsOpenEmbedding.id.prodMap harctan) fun p ↦ ?_, fun x ↦ ?_⟩
+  · rw [abs_mul, abs_of_pos hc]
+    calc 2 * ε / Real.pi * |Real.arctan p.2| < 2 * ε / Real.pi * (Real.pi / 2) :=
+          mul_lt_mul_of_pos_left (Real.abs_arctan_lt_pi_div_two p.2) hc
+      _ = ε := by field_simp
   · simp only [Real.arctan_zero, mul_zero, zero_smul]
     exact f.normalExp_zeroSection hn x
 

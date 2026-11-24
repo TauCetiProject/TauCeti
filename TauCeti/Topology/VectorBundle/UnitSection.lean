@@ -93,18 +93,16 @@ theorem unitSectionHomeomorph_symm_apply (p : TotalSpace F E) :
 /-- The vector `t • u b` has norm `|t|`. -/
 theorem norm_snd_unitSectionHomeomorph (p : B × ℝ) :
     ‖(unitSectionHomeomorph F E hF hu hu1 p).snd‖ = |p.2| := by
-  change ‖p.2 • u p.1‖ = |p.2|
-  rw [norm_smul, hu1, mul_one, Real.norm_eq_abs]
+  rw [unitSectionHomeomorph_apply]
+  exact (norm_smul p.2 (u p.1)).trans (by rw [hu1, mul_one, Real.norm_eq_abs])
 
 /-- The unit section trivialization carries `B × (-ε, ε)` onto the vectors of norm less than `ε`.
 -/
 theorem unitSectionHomeomorph_image_prod_Ioo (ε : ℝ) :
     unitSectionHomeomorph F E hF hu hu1 '' (univ ×ˢ Ioo (-ε) ε) = {p | ‖p.snd‖ < ε} := by
-  rw [← (unitSectionHomeomorph F E hF hu hu1).preimage_symm]
   ext p
-  simp only [mem_preimage, unitSectionHomeomorph_symm_apply, mem_prod, mem_univ, true_and,
-    mem_Ioo, mem_ofPred_eq, ← abs_lt]
-  conv_rhs => rw [← inner_smul_eq_of_finrank_eq_one F hF (hu1 p.proj) p.snd]
-  rw [norm_smul, hu1, mul_one, Real.norm_eq_abs]
+  obtain ⟨q, rfl⟩ := (unitSectionHomeomorph F E hF hu hu1).surjective p
+  simp only [(unitSectionHomeomorph F E hF hu hu1).injective.mem_set_image, mem_ofPred_eq,
+    norm_snd_unitSectionHomeomorph, mem_prod, mem_univ, true_and, mem_Ioo, abs_lt]
 
 end TauCeti.VectorBundle
