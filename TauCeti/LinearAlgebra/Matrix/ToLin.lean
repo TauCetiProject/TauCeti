@@ -60,8 +60,9 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `Matrix.toLin_bijective_iff`, and `Matrix.toLin_bijective_iff_isUnit_det`: for bases of two
   modules indexed by the same finite type, the representing matrix (and, over a commutative ring,
   its determinant) is a unit if and only if the linear map is bijective.
-* `LinearEquiv.map_toMatrix_mul_map_toMatrix_symm`: the matrices of a linear equivalence and of its
-  inverse, even after applying a ring homomorphism to their entries, are inverse to each other.
+* `LinearEquiv.map_toMatrix_mul_map_toMatrix_symm`: even after applying a ring homomorphism to
+  their entries, the matrix of a linear equivalence is a left inverse of the matrix of its inverse;
+  applying the lemma to `T.symm` gives the product in the other order.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
 * `Matrix.mulVecBilin_mul` and `IsIdempotentElem.mulVecBilin`: over a possibly noncommutative
