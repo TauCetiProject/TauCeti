@@ -122,7 +122,7 @@ theorem neg_U_pow_three : (-U) ^ 3 = (-1 : SL(2, ℤ)) := by
 
 /-- Recovering the translation from `-U` and `S`. -/
 theorem neg_U_inv_mul_S_inv : (-U)⁻¹ * S⁻¹ = T := by
-  rw [eq_comm, eq_mul_inv_iff_mul_eq, eq_inv_iff_mul_eq_one, mul_neg, T_mul_S_mul_U, neg_neg]
+  decide
 
 /-- `-U` is the product `T (S T S⁻¹)` of the unipotent generators `[[1, 1], [0, 1]]` and
 `[[1, 0], [-1, 1]]`. -/

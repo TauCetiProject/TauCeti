@@ -75,19 +75,6 @@ theorem coe_symplecticTransvection (v : Fin 2 → ℤ) :
       !![1 - v 0 * v 1, v 0 ^ 2; -v 1 ^ 2, 1 + v 0 * v 1] :=
   Matrix.SpecialLinearGroup.coe_mk _
 
-/-- The special linear group `SL(2, R)` is the symplectic group `Sp(2, R)`: every matrix of
-determinant one preserves the alternating form `J = [[0, -1], [1, 0]]`, since `Aᵀ J A = det A • J`
-for `2 × 2` matrices. -/
-private theorem toGL_mem_GLSymplecticFin {R : Type*} [CommRing R] (g : SL(2, R)) :
-    Matrix.SpecialLinearGroup.toGL g ∈ GLSymplecticFin 1 R := by
-  have h (A : Matrix (Fin 2) (Fin 2) R) :
-      Aᵀ * !![0, -1; 1, 0] * A = A.det • (!![0, -1; 1, 0] : Matrix (Fin 2) (Fin 2) R) := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.det_fin_two, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-  rw [GLSymplecticFin.mem_iff', JFin_one_eq, Matrix.SpecialLinearGroup.coe_GL_coe_matrix, h,
-    g.prop, one_smul]
-
 /-- The symplectic transvection `τ_v` is the general symplectic transvection
 `TauCeti.GLSymplecticFin.symplecticTransvection v (-1)` of `Sp(2, ℤ)`. The parameter is `-1`
 because the general one is built from the form `vᵀ J x = v₁ x₀ - v₀ x₁ = -ω(v, x)`. -/
@@ -119,13 +106,14 @@ theorem toLin'_symplecticTransvection (v : Fin 2 → ℤ) :
   simp
 
 /-- **Conjugating a transvection moves its vector**: `g τ_v g⁻¹ = τ_{g v}` in `SL(2, ℤ)`. This is
-`TauCeti.GLSymplecticFin.mul_symplecticTransvection_mul_inv`, since `SL(2, ℤ) = Sp(2, ℤ)`. -/
+`TauCeti.GLSymplecticFin.mul_symplecticTransvection_mul_inv`, since `SL(2, ℤ) = Sp(2, ℤ)`
+(`Matrix.SpecialLinearGroup.toGL_mem_GLSymplecticFin`). -/
 theorem mul_symplecticTransvection_mul_inv (g : SL(2, ℤ)) (v : Fin 2 → ℤ) :
     g * symplecticTransvection v * g⁻¹ =
       symplecticTransvection ((g : Matrix (Fin 2) (Fin 2) ℤ) *ᵥ v) := by
   refine Matrix.SpecialLinearGroup.toGL_injective ?_
   have h := GLSymplecticFin.mul_symplecticTransvection_mul_inv
-    (⟨Matrix.SpecialLinearGroup.toGL g, toGL_mem_GLSymplecticFin g⟩ : GLSymplecticFin 1 ℤ) v (-1)
+    (⟨Matrix.SpecialLinearGroup.toGL g, g.toGL_mem_GLSymplecticFin⟩ : GLSymplecticFin 1 ℤ) v (-1)
   rw [map_mul, map_mul, map_inv, toGL_symplecticTransvection, toGL_symplecticTransvection]
   exact congrArg Subtype.val h
 
@@ -165,14 +153,12 @@ theorem symplecticTransvection_one_zero_mul_zero_one_pow_six :
 `τ_v = g T g⁻¹` for any `g ∈ SL(2, ℤ)` with first column `v`. -/
 theorem isConj_T_symplecticTransvection {v : Fin 2 → ℤ} (hv : IsCoprime (v 0) (v 1)) :
     IsConj T (symplecticTransvection v) := by
-  obtain ⟨a, b, h⟩ := hv
-  let g : SL(2, ℤ) := .mk !![v 0, -b; v 1, a] (by
-    rw [Matrix.det_fin_two_of]; linear_combination h)
+  obtain ⟨g, hg0, hg1⟩ := hv.exists_SL2_col 0
   refine isConj_iff.2 ⟨g, ?_⟩
   rw [← symplecticTransvection_one_zero, mul_symplecticTransvection_mul_inv]
   congr 1
   ext i
-  fin_cases i <;> simp [g, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_two, hg0, hg1]
 
 /-- Under the abelianization `SL(2, ℤ)ᵃᵇ ≅ ℤ/12`, every transvection along a primitive vector,
 the homology action of a positive Dehn twist, goes to `1`. -/

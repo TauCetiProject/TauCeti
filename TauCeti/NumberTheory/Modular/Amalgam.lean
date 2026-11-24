@@ -138,8 +138,10 @@ private instance : centralSq.Normal :=
 /-- The map of the amalgam modulo `s²` onto `PSL(2, ℤ)`. -/
 private def quotientToPSL : PresentedGroup sl2zRelators ⧸ centralSq →* PSL(2, ℤ) :=
   QuotientGroup.lift _ ((QuotientGroup.mk' _).comp presentationHom) <| by
-    rw [centralSq, Subgroup.zpowers_le, MonoidHom.mem_ker, MonoidHom.comp_apply, map_pow,
-      presentationHom_of_zero, QuotientGroup.mk'_apply, QuotientGroup.mk_pow, coe_S_sq]
+    -- Unfold `centralSq` by `rw`, not `simp`, so the proof keeps its stated type
+    -- `centralSq ≤ _` and `QuotientGroup.lift_mk` still applies to `quotientToPSL` below.
+    rw [centralSq, Subgroup.zpowers_le]
+    simp [presentationHom_of_zero]
 
 /-- The triangle group `Δ(3, 2, ∞)` maps to the amalgam modulo `s²`, sending `x` and `y` to the
 classes of `v` and `s`. -/

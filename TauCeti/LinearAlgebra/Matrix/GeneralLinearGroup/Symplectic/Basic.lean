@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+import TauCeti.LinearAlgebra.Matrix.SymplecticMultiplier
 
 /-!
 # The symplectic group as a subgroup of the general linear group
@@ -68,6 +69,8 @@ symplectic coordinate Hopf algebra and group scheme live in
   coordinate ring is `Fin`-indexed.
 * `TauCeti.nondegenerate_JFin`: the transported alternating form is nondegenerate.
 * `TauCeti.GLSymplecticFin.det_eq_one`: a `Fin`-indexed symplectic matrix has determinant one.
+* `Matrix.SpecialLinearGroup.toGL_mem_GLSymplecticFin`: conversely, `SL(2, R)` lies in
+  `Sp(2, R)`.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
 * `TauCeti.GLSymplecticFin.differenceShortRootHom`, `positiveSumShortRootHom`, and
@@ -510,6 +513,17 @@ theorem det_eq_one (M : GLSymplecticFin m R) :
   have h := GLSymplectic.mem_iff_mem_symplecticGroup.mp (mulEquivGLSymplectic m R M).property
   rw [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL, Equiv.symm_symm] at h
   rw [← SymplecticGroup.det_eq_one h, Matrix.det_submatrix_equiv_self]
+
+variable {R} in
+/-- **`SL(2, R)` is `Sp(2, R)`**: a `2 × 2` matrix of determinant one preserves the alternating
+form, since `Aᵀ J A = det A • J` in rank two (`Matrix.transpose_mul_J_mul_eq_det_smul`). This is
+the converse of `TauCeti.GLSymplecticFin.det_eq_one` for `m = 1`. -/
+theorem _root_.Matrix.SpecialLinearGroup.toGL_mem_GLSymplecticFin
+    (g : Matrix.SpecialLinearGroup (Fin 2) R) :
+    Matrix.SpecialLinearGroup.toGL g ∈ GLSymplecticFin 1 R := by
+  rw [GLSymplecticFin, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, GLSymplectic.mem_iff',
+    Equiv.coe_reindexGL, Matrix.transpose_mul_J_mul_eq_det_smul, Matrix.det_submatrix_equiv_self,
+    Matrix.SpecialLinearGroup.coe_GL_coe_matrix, g.prop, one_smul]
 
 /-- A ring morphism carries `Fin`-indexed symplectic matrices to symplectic matrices. -/
 def map {S : Type*} [CommRing S] (f : R →+* S) :
