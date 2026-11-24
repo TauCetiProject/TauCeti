@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Field.WithAbs
 public import Mathlib.NumberTheory.Height.NumberField
-public import Mathlib.RingTheory.Nilpotent.GeometricallyReduced
 public import TauCeti.RingTheory.TensorProduct.Reduced
 import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
 # Generalized global fields
@@ -24,7 +24,7 @@ nonarchimedean absolute value is discrete with an excellent valuation ring.
 already provides the product formula, the finiteness of the multiset `archAbsVal` of archimedean
 absolute values (counted with multiplicity) and the set `nonarchAbsVal` of nonarchimedean ones.
 The archimedean absolute values are genuine absolute values satisfying the triangle inequality,
-so a complex place is recorded as the ordinary modulus with multiplicity two. The extra fields are:
+so a complex place is recorded once with multiplicity two. The extra fields are:
 
 * every member of `archAbsVal` is archimedean (not nonarchimedean), so in particular nontrivial;
 * a member of `archAbsVal` occurs with multiplicity `2` if its completion is isomorphic to `ℂ` (a
@@ -43,8 +43,9 @@ determine their scale. For a number field, `ofNumberField` normalizes the finite
 absolute norm of their prime.
 
 `Height.GeneralizedGlobalField.ofNumberField` is the instance for a number field, extending
-Mathlib's `NumberField.instAdmissibleAbsValues`: infinite places with their multiplicities, and
-finite places normalized by the absolute norm of their prime.
+Mathlib's `NumberField.instAdmissibleAbsValues`: infinite places with their multiplicities, a
+complex place being the ordinary modulus, and finite places normalized by the absolute norm of
+their prime.
 
 ## References
 
@@ -71,14 +72,14 @@ class GeneralizedGlobalField (K : Type*) [Field K] extends AdmissibleAbsValues K
   not_isNonarchimedean_of_mem_archAbsVal {v : AbsoluteValue K ℝ} (hv : v ∈ archAbsVal) :
     ¬ IsNonarchimedean v
   /-- Equivalent archimedean absolute values are equal; they may still occur with multiplicity. -/
-  eq_of_isEquiv_of_mem_archAbsVal {v w : AbsoluteValue K ℝ} (hv : v ∈ archAbsVal)
+  eq_of_mem_archAbsVal_of_isEquiv {v w : AbsoluteValue K ℝ} (hv : v ∈ archAbsVal)
     (hw : w ∈ archAbsVal) (h : v.IsEquiv w) : v = w
   /-- An archimedean absolute value occurs twice if its completion is isomorphic to `ℂ` (a
   complex place) and once otherwise (a real place). -/
   count_archAbsVal {v : AbsoluteValue K ℝ} (hv : v ∈ archAbsVal) :
     archAbsVal.count v = if Nonempty (v.Completion ≃+* ℂ) then 2 else 1
   /-- Equivalent nonarchimedean absolute values are equal. -/
-  eq_of_isEquiv_of_mem_nonarchAbsVal {v w : AbsoluteValue K ℝ} (hv : v ∈ nonarchAbsVal)
+  eq_of_mem_nonarchAbsVal_of_isEquiv {v w : AbsoluteValue K ℝ} (hv : v ∈ nonarchAbsVal)
     (hw : w ∈ nonarchAbsVal) (h : v.IsEquiv w) : v = w
   /-- There are infinitely many nonarchimedean absolute values. -/
   infinite_nonarchAbsVal : nonarchAbsVal.Infinite
@@ -93,16 +94,6 @@ class GeneralizedGlobalField (K : Type*) [Field K] extends AdmissibleAbsValues K
 
 namespace GeneralizedGlobalField
 
-open NumberField in
-/-- The completion of a number field at a real place is not isomorphic to `ℂ`. -/
-theorem not_nonempty_ringEquiv_complex_of_isReal {K : Type*} [Field K] {w : InfinitePlace K}
-    (hw : w.IsReal) : ¬ Nonempty (w.val.Completion ≃+* ℂ) := by
-  rintro ⟨e⟩
-  have h := congrArg ((InfinitePlace.Completion.ringEquivRealOfIsReal hw).toRingHom.comp
-    e.symm.toRingHom) Complex.I_sq
-  simp only [RingHom.coe_comp, Function.comp_apply, map_pow, map_neg, map_one] at h
-  nlinarith [sq_nonneg ((InfinitePlace.Completion.ringEquivRealOfIsReal hw) (e.symm Complex.I))]
-
 variable (K : Type*) [Field K] [NumberField K]
 
 open NumberField in
@@ -112,35 +103,26 @@ instance ofNumberField : GeneralizedGlobalField K where
   toAdmissibleAbsValues := NumberField.instAdmissibleAbsValues
   not_isNonarchimedean_of_mem_archAbsVal {v} hv h := by
     obtain ⟨w, rfl⟩ := (isInfinitePlace_iff v).1 (mem_multisetInfinitePlace.1 hv)
-    have h2 := h 1 1
-    have h2' := w.map_natCast 2
-    rw [one_add_one_eq_two] at h2
-    simp only [InfinitePlace.coe_apply, Nat.cast_ofNat, map_one, max_self] at h2 h2'
-    linarith
-  eq_of_isEquiv_of_mem_archAbsVal {v w} hv hw h := by
+    exact w.not_isNonarchimedean h
+  eq_of_mem_archAbsVal_of_isEquiv {v w} hv hw h := by
     obtain ⟨v, rfl⟩ := (isInfinitePlace_iff _).1 (mem_multisetInfinitePlace.1 hv)
     obtain ⟨w, rfl⟩ := (isInfinitePlace_iff _).1 (mem_multisetInfinitePlace.1 hw)
     exact congrArg Subtype.val (InfinitePlace.eq_iff_isEquiv.2 h)
   count_archAbsVal {v} hv := by
     classical
     obtain ⟨w, rfl⟩ := (isInfinitePlace_iff v).1 (mem_multisetInfinitePlace.1 hv)
-    change (multisetInfinitePlace K).count w.val = _
+    simp only [archAbsVal]
     rw [count_multisetInfinitePlace_eq_mult, InfinitePlace.mult]
     rcases w.isReal_or_isComplex with h | h
-    · simp [h, not_nonempty_ringEquiv_complex_of_isReal h]
+    · simp [h, h.not_nonempty_ringEquiv_complex]
     · simp [InfinitePlace.not_isReal_iff_isComplex.2 h,
         (⟨InfinitePlace.Completion.ringEquivComplexOfIsComplex h⟩ : Nonempty (_ ≃+* ℂ))]
-  eq_of_isEquiv_of_mem_nonarchAbsVal {v w} hv hw h := by
+  eq_of_mem_nonarchAbsVal_of_isEquiv {v w} hv hw h := by
     obtain ⟨v, rfl⟩ := (isFinitePlace_iff _).1 hv
     obtain ⟨w, rfl⟩ := (isFinitePlace_iff _).1 hw
     exact congrArg Subtype.val (FinitePlace.eq_iff_isEquiv.2 h)
   infinite_nonarchAbsVal := by
-    have : Set.range (fun v : FinitePlace K ↦ v.val) = {v | IsFinitePlace v} := by
-      ext v
-      simp [isFinitePlace_iff]
-    change Set.Infinite {v : AbsoluteValue K ℝ | IsFinitePlace v}
-    rw [← this]
-    exact Set.infinite_range_of_injective Subtype.val_injective
+    exact Set.infinite_coe_iff.mp (inferInstance : Infinite (FinitePlace K))
   exists_uniformizer {v} hv := by
     obtain ⟨v, rfl⟩ := (isFinitePlace_iff _).1 hv
     have hN : (1 : ℝ) < v.maximalIdeal.asIdeal.absNorm := mod_cast
