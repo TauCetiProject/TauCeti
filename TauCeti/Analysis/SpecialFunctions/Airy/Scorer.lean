@@ -47,8 +47,9 @@ Airy's equation, a combination of `Ai` and `Bi` (DLMF 9.12.2). On the real line 
 * `TauCeti.scorerGi_ode` — `Gi'' = z Gi − 1/π` (DLMF 9.12.3), and
   `TauCeti.scorerHi_rotation_ode` — `z ↦ ν Hi(ν z)` solves `w'' = z w + 1/π` when `ν³ = 1`
   (DLMF 9.12.3).
-* `TauCeti.exists_eq_scorerHi_add_airy_combination` — every entire solution of
-  `w'' = z w + 1/π` is `Hi + c₁ Ai + c₂ Bi` (DLMF 9.12.2).
+* DLMF 9.12.2, every entire solution `w` of `w'' = z w + 1/π` is `Hi + c₁ Ai + c₂ Bi`, is the
+  application `exists_eq_add_airy_combination differentiable_scorerHi hw scorerHi_ode hode` of
+  `TauCeti.exists_eq_add_airy_combination` in `TauCeti.Analysis.SpecialFunctions.Airy.Equation`.
 * `Nat.iterate_deriv_scorerHi_zero` — `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`, and
   `TauCeti.scorerHi_zero` — `Hi(0) = 3^{−2/3} Γ(1/3) / π`.
 
@@ -61,7 +62,9 @@ product differential equation `TauCeti.airyAi_sq_add_airyBi_sq_differential_equa
 `TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral`. The rotation argument is adapted from
 the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/Airy/Scorer/Representations.lean`, whose `Hi` is defined by its Maclaurin series rather
-than by the integral used here.
+than by the integral used here. The equation for `Gi` and the general solution (DLMF 9.12.2) are
+adapted from `scorerGi_ode` and `scorer_general_solution` in lean-DLMF's file
+`DLMF/Airy/Basic/Scorer.lean`.
 
 ## References
 
@@ -251,19 +254,11 @@ theorem scorerHi_rotation_ode {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
 
 /-- `Gi` solves the inhomogeneous Airy equation `Gi'' = z Gi − 1/π` (DLMF 9.12.3). -/
 theorem scorerGi_ode (z : ℂ) : deriv^[2] scorerGi z = z * scorerGi z - (π : ℂ)⁻¹ := by
-  rw [show scorerGi = airyBi - scorerHi from funext Complex.scorerGi_def,
-    ← iteratedDeriv_eq_iterate,
-    iteratedDeriv_sub differentiable_airyBi.contDiff.contDiffAt
-      differentiable_scorerHi.contDiff.contDiffAt,
-    iteratedDeriv_eq_iterate, iteratedDeriv_eq_iterate, airyBi_ode, scorerHi_ode, Pi.sub_apply]
+  have h := airy_inhomogeneous_ode_sub (c := 0) differentiable_airyBi.contDiff.contDiffAt
+    differentiable_scorerHi.contDiff.contDiffAt (by rw [airyBi_ode, add_zero]) (scorerHi_ode z)
+  have hGi : scorerGi = airyBi - scorerHi := funext Complex.scorerGi_def
+  rw [hGi, h, Pi.sub_apply]
   ring
-
-/-- **The general solution** of `w'' = z w + 1/π` (DLMF 9.12.2): every entire solution is
-`Hi + c₁ Ai + c₂ Bi`. -/
-theorem exists_eq_scorerHi_add_airy_combination {w : ℂ → ℂ} (hw : Differentiable ℂ w)
-    (hode : ∀ z, deriv^[2] w z = z * w z + (π : ℂ)⁻¹) :
-    ∃ c₁ c₂ : ℂ, w = fun z => scorerHi z + c₁ * airyAi z + c₂ * airyBi z :=
-  exists_eq_add_airy_combination differentiable_scorerHi hw scorerHi_ode hode
 
 /-! ### The value at the origin -/
 

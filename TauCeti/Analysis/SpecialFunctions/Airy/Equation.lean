@@ -33,7 +33,9 @@ solution satisfies the Riccati equation `W' = z − W²`.
   Riccati form (DLMF 9.2.16), pointwise and for entire solutions;
 * `TauCeti.airy_inhomogeneous_ode_rotation`: for a cube root of unity `ν`, the rotation
   `f ↦ (z ↦ ν f(ν z))` preserves every equation `w'' = z w + c`;
-* `TauCeti.exists_eq_add_airy_combination`: every entire solution of `w'' = z w + c` is a given
+* `TauCeti.airy_inhomogeneous_ode_sub`: the difference of solutions of `w'' = z w + c` and
+  `w'' = z w + d` solves `w'' = z w + (c − d)`;
+* `TauCeti.exists_eq_add_airy_combination`: every entire solution of `w'' = z w + g(z)` is a given
   entire solution plus a combination of `Ai` and `Bi`.
 
 ## Implementation notes
@@ -271,22 +273,32 @@ theorem airy_inhomogeneous_ode_rotation {f : ℂ → ℂ} {c ν : ℂ}
   rw [iteratedDeriv_eq_iterate, hf]
   linear_combination (ν * z * f (ν * z) + c) * hν
 
-/-- **The inhomogeneous Airy equation**: if `p` and `w` are entire solutions of `w'' = z w + c`,
-then `w` is `p` plus a combination of `Ai` and `Bi`. With `p = Hi` and `c = 1/π` this is
-DLMF 9.12.2 (`TauCeti.exists_eq_scorerHi_add_airy_combination`). -/
-theorem exists_eq_add_airy_combination {c : ℂ} {p w : ℂ → ℂ} (hp : Differentiable ℂ p)
-    (hw : Differentiable ℂ w) (hp' : ∀ z, deriv^[2] p z = z * p z + c)
-    (hw' : ∀ z, deriv^[2] w z = z * w z + c) :
+/-- The difference of a solution of `w'' = z w + c` and a solution of `w'' = z w + d`, both twice
+continuously differentiable at `z`, solves `w'' = z w + (c − d)` at `z`. -/
+theorem airy_inhomogeneous_ode_sub {f g : ℂ → ℂ} {c d z : ℂ} (hf : ContDiffAt ℂ 2 f z)
+    (hg : ContDiffAt ℂ 2 g z) (hf' : deriv^[2] f z = z * f z + c)
+    (hg' : deriv^[2] g z = z * g z + d) :
+    deriv^[2] (f - g) z = z * (f - g) z + (c - d) := by
+  rw [← iteratedDeriv_eq_iterate, iteratedDeriv_sub hf hg, iteratedDeriv_eq_iterate,
+    iteratedDeriv_eq_iterate, hf', hg', Pi.sub_apply]
+  ring
+
+/-- **The inhomogeneous Airy equation**: if `p` and `w` are entire solutions of
+`w'' = z w + g(z)` with the same forcing `g`, then `w` is `p` plus a combination of `Ai` and `Bi`.
+With `p = Hi` and `g = 1/π` this is DLMF 9.12.2: every entire solution of `w'' = z w + 1/π` is
+`Hi + c₁ Ai + c₂ Bi`. -/
+theorem exists_eq_add_airy_combination {g p w : ℂ → ℂ} (hp : Differentiable ℂ p)
+    (hw : Differentiable ℂ w) (hp' : ∀ z, deriv^[2] p z = z * p z + g z)
+    (hw' : ∀ z, deriv^[2] w z = z * w z + g z) :
     ∃ c₁ c₂ : ℂ, w = fun z => p z + c₁ * airyAi z + c₂ * airyBi z := by
   have hode (z : ℂ) : deriv^[2] (w - p) z = z * (w - p) z := by
-    rw [← iteratedDeriv_eq_iterate,
-      iteratedDeriv_sub hw.contDiff.contDiffAt hp.contDiff.contDiffAt,
-      iteratedDeriv_eq_iterate, iteratedDeriv_eq_iterate, hw', hp', Pi.sub_apply]
-    ring
-  refine ⟨π * ((w - p) 0 * deriv airyBi 0 - deriv (w - p) 0 * airyBi 0),
-    π * (deriv (w - p) 0 * airyAi 0 - (w - p) 0 * deriv airyAi 0), funext fun z => ?_⟩
-  have h := congrFun (eq_airy_combination (hw.sub hp) hode) z
-  rw [Pi.sub_apply] at h
-  linear_combination h
+    simpa using airy_inhomogeneous_ode_sub hw.contDiff.contDiffAt hp.contDiff.contDiffAt (hw' z)
+      (hp' z)
+  obtain ⟨c₁, c₂, h⟩ : ∃ c₁ c₂ : ℂ, w - p = fun z => c₁ * airyAi z + c₂ * airyBi z :=
+    ⟨_, _, eq_airy_combination (hw.sub hp) hode⟩
+  refine ⟨c₁, c₂, funext fun z => ?_⟩
+  have hz := congrFun h z
+  rw [Pi.sub_apply] at hz
+  linear_combination hz
 
 end TauCeti
