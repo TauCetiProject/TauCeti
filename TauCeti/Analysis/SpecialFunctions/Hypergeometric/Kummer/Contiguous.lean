@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
-# Contiguous relations and derivative of the regularized Kummer function
+# Contiguous relations, derivative and Kummer's equation of the regularized Kummer function
 
 Mathlib represents Olver's regularized confluent hypergeometric function
 `𝐌(a, b, z) = ∑_{n ≥ 0} (a)ₙ zⁿ / (n! Γ(b + n))` as `Complex.regularizedHGFun {a} {b} z`.
@@ -17,7 +17,8 @@ in `z` for every pair of complex parameters `a` and `b`, including nonpositive i
 `b`.
 
 This file establishes the derivative `∂𝐌(a, b, z)/∂z = a 𝐌(a + 1, b + 1, z)` and the contiguous
-relations of `𝐌(a, b, z)` in `a` and `b` unconditionally for all `a, b, z : ℂ`. In particular,
+relations of `𝐌(a, b, z)` in `a` and `b` unconditionally for all `a, b, z : ℂ`, and deduces
+Kummer's differential equation from them. In particular,
 `regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul`, `regularizedHGFun_singleton_sub_mul`, and
 `regularizedHGFun_singleton_sub_mul_add_one_left` drive the three-term recurrence for the explicit
 Kummer solution of the incomplete Gamma continued fraction (DLMF 8.9.1).
@@ -36,6 +37,8 @@ Kummer solution of the incomplete Gamma continued fraction (DLMF 8.9.1).
   `𝐌(a, b, z) - b 𝐌(a + 1, b + 1, z) = (a - b) z 𝐌(a + 1, b + 2, z)`.
 * `Complex.regularizedHGFun_singleton_eq_sub_mul_add_mul` —
   `𝐌(a, b, z) = (b - a) 𝐌(a, b + 1, z) + a 𝐌(a + 1, b + 1, z)` (DLMF 13.3.3).
+* `Complex.regularizedHGFun_kummer_equation` —
+  `z 𝐌″(a, b, z) + (b - z) 𝐌′(a, b, z) - a 𝐌(a, b, z) = 0` (Kummer's equation, DLMF 13.2.1).
 
 ## References
 
@@ -168,5 +171,21 @@ theorem regularizedHGFun_singleton_eq_sub_mul_add_mul (a b z : ℂ) :
   have hb : b + 1 + 1 = b + 2 := by ring
   rw [hb] at h1
   linear_combination h2 - a * h1
+
+/-- Kummer's equation for the regularized Kummer function (DLMF 13.2.1):
+`z 𝐌″(a, b, z) + (b - z) 𝐌′(a, b, z) - a 𝐌(a, b, z) = 0`, for all `a, b, z : ℂ`.
+
+It is a linear combination of `regularizedHGFun_singleton_sub_mul_add_one_left` at `(a, b)` and
+`regularizedHGFun_singleton_eq_sub_mul_add_mul` at `(a + 1, b + 1)`, once the derivatives are
+rewritten with `deriv_regularizedHGFun_singleton`. -/
+theorem regularizedHGFun_kummer_equation (a b z : ℂ) :
+    z * deriv (deriv (fun w => regularizedHGFun {a} {b} w)) z +
+      (b - z) * deriv (fun w => regularizedHGFun {a} {b} w) z -
+        a * regularizedHGFun {a} {b} z = 0 := by
+  have h1 := regularizedHGFun_singleton_sub_mul_add_one_left a b z
+  have h2 := regularizedHGFun_singleton_eq_sub_mul_add_mul (a + 1) (b + 1) z
+  simp only [deriv_regularizedHGFun_singleton, deriv_const_mul_field']
+  rw [show a + 1 + 1 = a + 2 by ring, show b + 1 + 1 = b + 2 by ring] at h2 ⊢
+  linear_combination -(a * z * h2) - a * h1
 
 end Complex
