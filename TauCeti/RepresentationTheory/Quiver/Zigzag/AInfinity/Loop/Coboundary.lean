@@ -821,8 +821,11 @@ private theorem hochschildDifferential_coordCochain_volume {n p : ℕ} (hp : p �
   -- Only the volume slot carries a backtrack term.
   have harrow : ∀ i ≤ n, i ≠ p → ∀ y y' : nonisolatedZigzagQuotient k G,
       backtrackTerm hns y y' (β i) = 0 := fun i hi hip y y' ↦ by
-    have := hβa i hi hip
-    rcases h : β i with j | e | j <;> rw [h] at this <;> simp_all [backtrackTerm]
+    have hdeg := hβa i hi hip
+    rcases h : β i with j | e | j <;> rw [h] at hdeg
+    · simp only [zigzagBasisDegree_inl, zero_ne_one] at hdeg
+    · simp only [backtrackTerm]
+    · simp only [zigzagBasisDegree_inr_inr, OfNat.ofNat_ne_one] at hdeg
   have hBT := Finset.sum_eq_single (f := fun q ↦ prefixSign k β q *
       ((∏ i ∈ Finset.range q, κ (β i) (x i)) * backtrackTerm hns (x q) (x (q + 1)) (β q) *
         ∏ i ∈ Finset.Ico (q + 1) (n + 1), κ (β i) (x (i + 1)))) (s := Finset.range (n + 1)) p
@@ -1061,7 +1064,9 @@ theorem exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_
     exact ((Units.isUnit _).map (Int.castRingHom k)).mul_right_eq_zero.mp h0
   intro h
   obtain ⟨φ, hφ, hφl, hφc⟩ := (isZigzagCoboundary_linearCombination_of_mem_loopRelations
-    (hns := hns) (mem_loopRelations_of_forall hc h)).smul
+    (hns := hns) (mem_loopRelations_of_forall
+      (fun w hw ↦ by simpa only [IsClosedWord] using hc w hw)
+      fun a hrot hrel ↦ h a hrot (by simpa only [backtrackWord] using hrel))).smul
       (((∏ i : Fin (n + 2), ((n + 1 - i : ℕ) : ℤ).negOnePow : ℤˣ) : ℤ) : k)
   exact ⟨φ, hφ, hφl, by rw [hφc, obstruction_zigzagLoopAInfinityAlgebra_eq hn]⟩
 
