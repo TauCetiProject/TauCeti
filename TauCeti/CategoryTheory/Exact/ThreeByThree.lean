@@ -147,36 +147,57 @@ theorem exists_conflation_comp_of_conflation {A A' B U V Q : C} {a : A ⟶ Q} {b
 
 variable {E}
 
+/-- The common setup of the `3 × 3` lemma. In a `3 × 3` diagram whose middle column and top row
+are conflations, let `c : B ⟶ Q` be a cokernel of the composite inflation from the top left corner
+to the centre, through either of its two factorisations. Then the Noether conflation
+`C' ⟶ Q ⟶ B''` exists, and the map `β₁ : Q ⟶ C` induced by the middle row is compatible with the
+right column and the bottom row. -/
+private theorem exists_threeByThree_cokernel {D : ShortComplex (ShortComplex C)}
+    (h₂ : E.Conflation (D.map ShortComplex.π₂)) (hX₁ : E.Conflation D.X₁) :
+    ∃ (Q : C) (c : D.X₂.X₂ ⟶ Q) (hc : (D.f.τ₁ ≫ D.X₂.f) ≫ c = 0)
+      (hc' : (D.X₁.f ≫ D.f.τ₂) ≫ c = 0) (α₂ : D.X₁.X₃ ⟶ Q) (β₂ : Q ⟶ D.X₃.X₂)
+      (hαβ₂ : α₂ ≫ β₂ = 0) (β₁ : Q ⟶ D.X₂.X₃),
+      E.Conflation (ShortComplex.mk (D.f.τ₁ ≫ D.X₂.f) c hc) ∧
+      E.Conflation (ShortComplex.mk (D.X₁.f ≫ D.f.τ₂) c hc') ∧
+      E.Conflation (ShortComplex.mk α₂ β₂ hαβ₂) ∧ c ≫ β₂ = D.g.τ₂ ∧ c ≫ β₁ = D.X₂.g ∧
+      α₂ ≫ β₁ = D.f.τ₃ ∧ β₂ ≫ D.X₃.g = β₁ ≫ D.g.τ₃ := by
+  replace h₂ : E.Conflation (ShortComplex.mk D.f.τ₂ D.g.τ₂ (D.map ShortComplex.π₂).zero) := h₂
+  have : Epi D.X₁.g := (E.isKernelCokernelPair _ hX₁).epi_g
+  obtain ⟨Q, c, hc', hQ'⟩ := (ConflationClass.isInflation_iff _ (D.X₁.f ≫ D.f.τ₂)).1
+    (E.isInflation_comp D.X₁.f D.f.τ₂ (E.isInflation_f hX₁) (E.isInflation_f h₂))
+  have hpairQ := E.isKernelCokernelPair _ hQ'
+  have : Epi c := hpairQ.epi_g
+  have hc : (D.f.τ₁ ≫ D.X₂.f) ≫ c = 0 := by rw [D.f.comm₁₂]; exact hc'
+  have hQ : E.Conflation (ShortComplex.mk (D.f.τ₁ ≫ D.X₂.f) c hc) :=
+    E.conflation_of_iso (S := ShortComplex.mk (D.X₁.f ≫ D.f.τ₂) c hc')
+      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [D.f.comm₁₂])
+        (by simp)) hQ'
+  obtain ⟨α₂, β₂, hαβ₂, hII, hα₂, hβ₂⟩ := E.exists_conflation_of_conflation_comp hX₁ h₂ hQ'
+  have hz : (D.X₁.f ≫ D.f.τ₂) ≫ D.X₂.g = 0 := by
+    rw [← D.f.comm₁₂, Category.assoc, D.X₂.zero, comp_zero]
+  obtain ⟨β₁, hβ₁⟩ : ∃ β₁ : Q ⟶ D.X₂.X₃, c ≫ β₁ = D.X₂.g := ⟨_, hpairQ.g_desc D.X₂.g hz⟩
+  refine ⟨Q, c, hc, hc', α₂, β₂, hαβ₂, β₁, hQ, hQ', hII, hβ₂, hβ₁, ?_, ?_⟩
+  · rw [← cancel_epi D.X₁.g, ← reassoc_of% hα₂, hβ₁, D.f.comm₂₃]
+  · rw [← cancel_epi c, reassoc_of% hβ₂, reassoc_of% hβ₁, D.g.comm₂₃]
+
 /-- **The `3 × 3` lemma, top to bottom.** In a `3 × 3` diagram whose three columns and middle
 row are conflations, if the top row is a conflation then so is the bottom row. -/
 theorem conflation_X₃_of_conflation_X₁ {D : ShortComplex (ShortComplex C)}
     (h₁ : E.Conflation (D.map ShortComplex.π₁)) (h₂ : E.Conflation (D.map ShortComplex.π₂))
     (h₃ : E.Conflation (D.map ShortComplex.π₃)) (hX₁ : E.Conflation D.X₁)
     (hX₂ : E.Conflation D.X₂) : E.Conflation D.X₃ := by
-  -- Unfold the columns to their three components.
   replace h₁ : E.Conflation (ShortComplex.mk D.f.τ₁ D.g.τ₁ (D.map ShortComplex.π₁).zero) := h₁
-  replace h₂ : E.Conflation (ShortComplex.mk D.f.τ₂ D.g.τ₂ (D.map ShortComplex.π₂).zero) := h₂
   have : Epi D.g.τ₁ := (E.isKernelCokernelPair _ h₁).epi_g
-  have : Epi D.X₁.g := (E.isKernelCokernelPair _ hX₁).epi_g
-  -- `Q` is a cokernel of the composite inflation from the top left corner to the centre.
-  obtain ⟨Q, c, hc, hQ⟩ := (ConflationClass.isInflation_iff _ (D.f.τ₁ ≫ D.X₂.f)).1
-    (E.isInflation_comp D.f.τ₁ D.X₂.f (E.isInflation_f h₁) (E.isInflation_f hX₂))
+  -- The two Noether conflations `A'' ⟶ Q ⟶ C` and `C' ⟶ Q ⟶ B''` through the cokernel `Q` of the
+  -- composite inflation from the top left corner to the centre.
+  obtain ⟨Q, c, hc, -, α₂, β₂, hαβ₂, β₁, hQ, -, hII, hβ₂, hβ₁, e₁, e₃⟩ :=
+    exists_threeByThree_cokernel h₂ hX₁
   have : Epi c := (E.isKernelCokernelPair _ hQ).epi_g
-  have hc' : (D.X₁.f ≫ D.f.τ₂) ≫ c = 0 := by rw [← D.f.comm₁₂]; exact hc
-  have hQ' : E.Conflation (ShortComplex.mk (D.X₁.f ≫ D.f.τ₂) c hc') :=
-    E.conflation_of_iso (S := ShortComplex.mk (D.f.τ₁ ≫ D.X₂.f) c hc)
-      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [D.f.comm₁₂])
-        (by simp)) hQ
-  -- The two Noether conflations `A'' ⟶ Q ⟶ C` and `C' ⟶ Q ⟶ B''` through `Q`.
-  obtain ⟨α₁, β₁, hαβ₁, hI, hα₁, hβ₁⟩ := E.exists_conflation_of_conflation_comp h₁ hX₂ hQ
-  obtain ⟨α₂, β₂, hαβ₂, hII, hα₂, hβ₂⟩ := E.exists_conflation_of_conflation_comp hX₁ h₂ hQ'
   have : Epi β₂ := (E.isKernelCokernelPair _ hII).epi_g
-  have e₁ : α₂ ≫ β₁ = D.f.τ₃ := by
-    rw [← cancel_epi D.X₁.g, ← reassoc_of% hα₂, hβ₁, D.f.comm₂₃]
+  obtain ⟨α₁, β₁', hαβ₁, hI, hα₁, hβ₁'⟩ := E.exists_conflation_of_conflation_comp h₁ hX₂ hQ
+  obtain rfl : β₁ = β₁' := by rw [← cancel_epi c, hβ₁, hβ₁']
   have e₂ : α₁ ≫ β₂ = D.X₃.f := by
     rw [← cancel_epi D.g.τ₁, ← reassoc_of% hα₁, hβ₂, ← D.g.comm₁₂]
-  have e₃ : β₂ ≫ D.X₃.g = β₁ ≫ D.g.τ₃ := by
-    rw [← cancel_epi c, reassoc_of% hβ₂, reassoc_of% hβ₁, D.g.comm₂₃]
   -- The third column is `C' ⟶ Q ⟶ C ⟶ C''`; exchanging the quotients of `Q` by `A''` and by `C'`
   -- gives the bottom row.
   have h₃' : E.Conflation (ShortComplex.mk (α₂ ≫ β₁) D.g.τ₃
@@ -223,36 +244,17 @@ theorem conflation_X₂_of_conflation_X₁_of_conflation_X₃ {D : ShortComplex 
     (h₁ : E.Conflation (D.map ShortComplex.π₁)) (h₂ : E.Conflation (D.map ShortComplex.π₂))
     (h₃ : E.Conflation (D.map ShortComplex.π₃)) (hX₁ : E.Conflation D.X₁)
     (hX₃ : E.Conflation D.X₃) : E.Conflation D.X₂ := by
-  -- Unfold the columns to their three components.
   replace h₁ : E.Conflation (ShortComplex.mk D.f.τ₁ D.g.τ₁ (D.map ShortComplex.π₁).zero) := h₁
-  replace h₂ : E.Conflation (ShortComplex.mk D.f.τ₂ D.g.τ₂ (D.map ShortComplex.π₂).zero) := h₂
   have hpair₁ := E.isKernelCokernelPair _ h₁
   have : Epi D.g.τ₁ := hpair₁.epi_g
-  have : Epi D.X₁.g := (E.isKernelCokernelPair _ hX₁).epi_g
-  -- `Q` is a cokernel of the composite inflation from the top left corner to the centre.
-  obtain ⟨Q, c, hc, hQ⟩ := (ConflationClass.isInflation_iff _ (D.X₁.f ≫ D.f.τ₂)).1
-    (E.isInflation_comp D.X₁.f D.f.τ₂ (E.isInflation_f hX₁) (E.isInflation_f h₂))
-  have hpairQ := E.isKernelCokernelPair _ hQ
-  have : Epi c := hpairQ.epi_g
-  have hc' : (D.f.τ₁ ≫ D.X₂.f) ≫ c = 0 := by rw [D.f.comm₁₂]; exact hc
-  have hQ' : E.Conflation (ShortComplex.mk (D.f.τ₁ ≫ D.X₂.f) c hc') :=
-    E.conflation_of_iso (S := ShortComplex.mk (D.X₁.f ≫ D.f.τ₂) c hc)
-      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [D.f.comm₁₂])
-        (by simp)) hQ
-  -- The Noether conflation `C' ⟶ Q ⟶ B''`, and the maps `A'' ⟶ Q ⟶ C` induced by the middle
-  -- row.
-  obtain ⟨α₂, β₂, hαβ₂, hII, hα₂, hβ₂⟩ := E.exists_conflation_of_conflation_comp hX₁ h₂ hQ
+  -- The Noether conflation `C' ⟶ Q ⟶ B''` through the cokernel `Q` of the composite inflation
+  -- from the top left corner to the centre, and the maps `A'' ⟶ Q ⟶ C` induced by the middle row.
+  obtain ⟨Q, c, hc, -, α₂, β₂, hαβ₂, β₁, hQ, -, hII, hβ₂, hβ₁, e₁, e₃⟩ :=
+    exists_threeByThree_cokernel h₂ hX₁
   obtain ⟨α₁, hα₁⟩ : ∃ α₁ : D.X₃.X₁ ⟶ Q, D.g.τ₁ ≫ α₁ = D.X₂.f ≫ c :=
-    ⟨_, hpair₁.g_desc (D.X₂.f ≫ c) (by rw [← Category.assoc]; exact hc')⟩
-  have hz : (D.X₁.f ≫ D.f.τ₂) ≫ D.X₂.g = 0 := by
-    rw [← D.f.comm₁₂, Category.assoc, D.X₂.zero, comp_zero]
-  obtain ⟨β₁, hβ₁⟩ : ∃ β₁ : Q ⟶ D.X₂.X₃, c ≫ β₁ = D.X₂.g := ⟨_, hpairQ.g_desc D.X₂.g hz⟩
-  have e₁ : α₂ ≫ β₁ = D.f.τ₃ := by
-    rw [← cancel_epi D.X₁.g, ← reassoc_of% hα₂, hβ₁, D.f.comm₂₃]
+    ⟨_, hpair₁.g_desc (D.X₂.f ≫ c) (by rw [← Category.assoc]; exact hc)⟩
   have e₂ : α₁ ≫ β₂ = D.X₃.f := by
     rw [← cancel_epi D.g.τ₁, reassoc_of% hα₁, hβ₂, ← D.g.comm₁₂]
-  have e₃ : β₂ ≫ D.X₃.g = β₁ ≫ D.g.τ₃ := by
-    rw [← cancel_epi c, reassoc_of% hβ₂, reassoc_of% hβ₁, D.g.comm₂₃]
   have e₄ : α₁ ≫ β₁ = 0 := by
     rw [← cancel_epi D.g.τ₁, reassoc_of% hα₁, hβ₁, D.X₂.zero, comp_zero]
   -- The square `Q ⟶ C`, `Q ⟶ B''`, `C ⟶ C''`, `B'' ⟶ C''` is a pullback, so `A'' ⟶ Q ⟶ C` is the
@@ -269,7 +271,7 @@ theorem conflation_X₂_of_conflation_X₁_of_conflation_X₃ {D : ShortComplex 
   have hα₁' : α₁ = baseChangeι D.X₃ sq.flip :=
     sq.flip.hom_ext (by rw [baseChangeι_fst, e₂]) (by rw [baseChangeι_snd, e₄])
   subst hα₁'
-  refine E.conflation_of_iso ?_ (E.conflation_of_conflation_comp h₁ hQ' hB hα₁.symm)
+  refine E.conflation_of_iso ?_ (E.conflation_of_conflation_comp h₁ hQ hB hα₁.symm)
   exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp [hβ₁])
 
 end ExactStructure
