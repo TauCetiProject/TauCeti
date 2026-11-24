@@ -339,6 +339,17 @@ theorem sum_Ioc_sigma_zero_le_mul_one_add_log {Z : ℝ} (hZ : 1 ≤ Z) :
 
 end ArithmeticFunction
 
+namespace Int
+
+open Finset
+
+/-- An integer has twice as many integer divisors as its absolute value has natural divisors,
+one of each sign. -/
+theorem card_divisors (z : ℤ) : #z.divisors = 2 * #z.natAbs.divisors := by
+  rw [Int.divisors, card_disjUnion, card_map, card_map, two_mul]
+
+end Int
+
 namespace TauCeti
 
 open Finset
@@ -375,9 +386,9 @@ theorem ncard_setOf_ne_zero_and_abs_lt_and_dvd_le {Y : ℝ} (hY : 1 ≤ Y) :
       (finite_toSet _)).trans ?_
     rw [Set.ncard_coe_finset]
     refine card_biUnion_le.trans (sum_le_sum fun a _ ↦ ?_)
-    rw [card_product, Int.divisors, card_disjUnion, card_map, card_map, Int.natAbs_natCast,
+    rw [card_product, Int.card_divisors, Int.natAbs_natCast,
       ArithmeticFunction.sigma_zero_apply]
-    have := Nat.mul_le_mul_right (#a.divisors + #a.divisors)
+    have := Nat.mul_le_mul_right (2 * #a.divisors)
       (card_le_two : #({(a : ℤ), -(a : ℤ)} : Finset ℤ) ≤ 2)
     omega
   calc ({p : ℤ × ℤ | p.1 ≠ 0 ∧ |(p.1 : ℝ)| < Y ∧ p.2 ∣ p.1}.ncard : ℝ)

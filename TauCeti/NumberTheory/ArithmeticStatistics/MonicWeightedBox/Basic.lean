@@ -21,7 +21,8 @@ integer polynomials `x^n + a₁ x^(n-1) + ⋯ + aₙ` of degree `n` with `|aᵢ|
 Giving the coefficient `aᵢ` weight `i` makes the discriminant of a monic polynomial weighted
 homogeneous of weight `n(n-1)`, so this box is the natural height ball over which monic
 polynomials with local or Galois conditions are counted. Indexed by the power of `x`, the
-coefficient of `x^i` is bounded by `X^(n-i)`.
+coefficient of `x^i` is bounded by `X^(n-i)`; `TauCeti.mem_monicWeightedBox_iff_descending`
+lists the coefficients from `x^(n-1)` down instead.
 
 Removing the constant term, `Polynomial.divX` maps the degree `n + 1` box into the degree `n`
 box. The box lies in the coefficient box of `TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_pi`,
@@ -44,6 +45,19 @@ theorem mem_monicWeightedBox {n : ℕ} {X : ℝ} {f : ℤ[X]} :
     f ∈ monicWeightedBox n X ↔
       f.Monic ∧ f.natDegree = n ∧ ∀ i < n, |(f.coeff i : ℝ)| < X ^ (n - i) :=
   Iff.rfl
+
+/-- Membership in the weighted box with the coefficients listed from `x^(n-1)` down, as
+`x^n + a₁ x^(n-1) + ⋯ + aₙ` with `|aᵢ| < X^i`: the coefficient of `x^(n-1-i)` has absolute value
+less than `X^(i+1)` for every `i < n`. -/
+theorem mem_monicWeightedBox_iff_descending {n : ℕ} {X : ℝ} {f : ℤ[X]} :
+    f ∈ monicWeightedBox n X ↔
+      f.Monic ∧ f.natDegree = n ∧ ∀ i : Fin n, |(f.coeff (n - 1 - i) : ℝ)| < X ^ ((i : ℕ) + 1) := by
+  refine mem_monicWeightedBox.trans (and_congr_right' (and_congr_right' ⟨fun h i ↦ ?_,
+    fun h i hi ↦ ?_⟩))
+  · have := h (n - 1 - i) (by omega)
+    rwa [show n - (n - 1 - i) = i + 1 by omega] at this
+  · have := h ⟨n - 1 - i, by omega⟩
+    rwa [show n - 1 - (n - 1 - i) = i by omega, show n - 1 - i + 1 = n - i by omega] at this
 
 /-- The only monic polynomial of degree zero is `1`. -/
 @[simp]
@@ -91,6 +105,18 @@ theorem finite_monicWeightedBox (n : ℕ) (X : ℝ) : (monicWeightedBox n X).Fin
   (TauCeti.Polynomial.finite_setOf_natDegree_le_coeff_mem_pi n
     fun i ↦ (coeffBox n X i).finite_toSet).subset (monicWeightedBox_subset n X)
 
+/-- The exponents `n - i` for `i < n` are `1, …, n`, which sum to `n(n+1)/2`. -/
+private theorem sum_fin_sub_eq (n : ℕ) : ∑ i : Fin n, (n - (i : ℕ)) = n * (n + 1) / 2 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Fin.sum_univ_succ]
+    simp only [Fin.val_zero, Fin.val_succ, Nat.add_sub_add_right, Nat.sub_zero, ih]
+    have := Nat.triangle_succ (n + 1)
+    rw [Nat.add_sub_cancel, Nat.add_sub_cancel] at this
+    rw [Nat.mul_comm (n + 1 + 1), Nat.mul_comm (n + 1) n] at this
+    omega
+
 /-- For `X ≥ 1`, the degree `n` weighted box has at most `3^n X^(n(n+1)/2)` elements. -/
 theorem ncard_monicWeightedBox_le (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
     ((monicWeightedBox n X).ncard : ℝ) ≤ 3 ^ n * X ^ (n * (n + 1) / 2) := by
@@ -98,13 +124,6 @@ theorem ncard_monicWeightedBox_le (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
     simp only [coeffBox, Fin.val_castSucc, i.isLt, ↓reduceIte]
     rw [← Set.ncard_coe_finset, ← setOf_abs_intCast_lt_eq_Ioo]
     exact ncard_setOf_abs_intCast_lt_le (one_le_pow₀ hX)
-  -- The exponents `n - i` for `i < n` are `1, …, n`, which sum to `n(n+1)/2`.
-  have hsum : ∑ i : Fin n, (n - (i : ℕ)) = n * (n + 1) / 2 := by
-    have hshift : ∑ i ∈ Finset.range n, (i + 1) = ∑ i ∈ Finset.range (n + 1), i := by
-      simp [Finset.sum_range_succ']
-    rw [Fin.sum_univ_eq_sum_range (n - ·), ← Finset.sum_range_reflect, Finset.sum_congr rfl
-      fun i hi ↦ show n - (n - 1 - i) = i + 1 by rw [Finset.mem_range] at hi; omega,
-      hshift, Finset.sum_range_id, Nat.add_sub_cancel, mul_comm]
   calc ((monicWeightedBox n X).ncard : ℝ)
       ≤ (∏ i, (coeffBox n X i).card : ℕ) := by
         exact_mod_cast (Set.ncard_le_ncard (monicWeightedBox_subset n X)
@@ -118,6 +137,6 @@ theorem ncard_monicWeightedBox_le (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
         Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦ hcard i
     _ = 3 ^ n * X ^ (n * (n + 1) / 2) := by
         rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-          Finset.prod_pow_eq_pow_sum, hsum]
+          Finset.prod_pow_eq_pow_sum, sum_fin_sub_eq]
 
 end TauCeti
