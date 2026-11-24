@@ -8,6 +8,8 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Comm
+
 /-!
 # The connecting maps and the explicit low-degree cup products
 

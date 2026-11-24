@@ -16,6 +16,7 @@ public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
 import Mathlib.Data.FunLike.Fintype
 import TauCeti.Algebra.Group.Hom.Instances
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Naturality
+import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Comm
 
 /-!
 # Evaluation cups for finite discrete modules
