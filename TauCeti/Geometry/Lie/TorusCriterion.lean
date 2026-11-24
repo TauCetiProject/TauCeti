@@ -134,7 +134,7 @@ theorem exists_not_nullhomotopic_of_not_isLieAbelian {H : Type} [TopologicalSpac
       ((map_ne_zero_iff _ suTwoEquiv.injective).mpr fun h ↦ ?_)
     have h0 := congrFun h 0
     simp [cross_apply] at h0
-  refine ψ.integrate.not_nullhomotopic_of_lie_eq_of_apply_ne_zero SU2.finrank_model B'
+  refine ψ.integrate.not_nullhomotopic_of_lie_eq_of_apply_ne_zero SU2.finrank_lieAlgebra B'
     (fun x y z ↦ ?_) (x := eK ⁅Y, Z⁆) (y := eK Y) (z := eK Z) (LieEquiv.map_lie _ _ _).symm ?_
   · simp only [B', LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv,
       LieEquiv.map_lie]

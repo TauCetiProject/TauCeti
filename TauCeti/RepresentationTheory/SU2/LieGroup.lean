@@ -42,7 +42,6 @@ for the entrywise topology first and then used under the operator-norm instances
 ## Main results
 
 * `TauCeti.SU2.instSimplyConnectedSpace`: `SU(2)` is simply connected.
-* `TauCeti.SU2.finrank_model`: the model space `𝔰𝔲(2)` is three-dimensional.
 -/
 
 public section
@@ -110,10 +109,6 @@ instance instSimplyConnectedSpaceOperatorNorm : SimplyConnectedSpace (GLSpecialU
 instance instSecondCountableTopologyOperatorNorm :
     SecondCountableTopology (GLSpecialUnitary (Fin 2) ℂ) :=
   GLSpecialUnitary.instSecondCountableTopology
-
-/-- The Lie group `SU(2)` is three-dimensional: its model space `𝔰𝔲(2)` has dimension three. -/
-theorem finrank_model : Module.finrank ℝ lieAlgebra.toSubmodule = 3 :=
-  finrank_lieAlgebra
 
 /-- **The native Lie algebra of `SU(2)` is `𝔰𝔲(2)`.** The differential of the inclusion of
 `SU(2)` into `GL(2, ℂ)` identifies the left-invariant derivations of the Lie group `SU(2)` with
