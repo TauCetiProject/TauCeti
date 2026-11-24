@@ -109,8 +109,8 @@ def log : FormalCoordinate ExponentTwoLazardRing :=
 
 /-- The universal normalised logarithm has the generator `aᵢ` as its coefficient of `X^(i + 1)`. -/
 @[simp]
-theorem coeff_succ_log (i : Index) : PowerSeries.coeff (i.1 + 1) log.toPowerSeries = X i := by
-  simp [log, logCoeffs, i.2]
+theorem coeff_succ_log (i : Index) : PowerSeries.coeff (i.val + 1) log.toPowerSeries = X i := by
+  simp [log, logCoeffs, i.property]
 
 /-- The coefficient of `X^(n + 2)` in the universal normalised logarithm is the generator
 `a_(n + 1)` when `n + 2` is not a power of two. -/
@@ -176,14 +176,14 @@ theorem hom_ext {f g : ExponentTwoLazardRing →+* R}
     congr 1
   refine ringHom_ext (fun r ↦ RingHom.congr_fun (RingHom.ext_zmod (f.comp C) (g.comp C)) r)
     fun i ↦ ?_
-  simpa using congrArg (PowerSeries.coeff ((i.1 : ℕ) + 1)) key
+  simpa using congrArg (PowerSeries.coeff ((i.val : ℕ) + 1)) key
 
 /-- The base change of the universal normalised logarithm along `f` is the series `g = X + ⋯`
 without terms of degree `2ᵏ`, `k ≥ 1`, whose coefficient of `X^(i + 1)` is `f (aᵢ)`. -/
 private theorem toPowerSeries_map_log_eq (f : ExponentTwoLazardRing →+* R) {g : PowerSeries R}
     (h₀ : PowerSeries.constantCoeff g = 0) (h₁ : PowerSeries.coeff 1 g = 1)
     (hp : ∀ k, 0 < k → PowerSeries.coeff (2 ^ k) g = 0)
-    (hX : ∀ i : Index, f (X i) = PowerSeries.coeff ((i.1 : ℕ) + 1) g) :
+    (hX : ∀ i : Index, f (X i) = PowerSeries.coeff ((i.val : ℕ) + 1) g) :
     (FormalCoordinate.map f log).toPowerSeries = g := by
   ext (_ | _ | n)
   · simp [h₀]
@@ -198,7 +198,7 @@ normalised logarithm of `F`. It is defined on `𝔽₂`-coefficients since `2 = 
 private def liftHom (F : FormalGroup R) [F.IsComm] (hF : F.nsmulSeries 2 = 0) :
     ExponentTwoLazardRing →+* R :=
   eval₂Hom (ZMod.castHom (ringChar.dvd (F.natCast_eq_zero_of_nsmulSeries_eq_zero hF)) R)
-    fun i ↦ PowerSeries.coeff ((i.1 : ℕ) + 1) (F.exponentTwoLog hF)
+    fun i ↦ PowerSeries.coeff ((i.val : ℕ) + 1) (F.exponentTwoLog hF)
 
 private theorem map_liftHom (F : FormalGroup R) [F.IsComm] (hF : F.nsmulSeries 2 = 0) :
     formalGroup.map (liftHom F hF) = F := by
@@ -214,9 +214,9 @@ logarithm of `F` (`TauCeti.ExponentTwoLazardRing.lift_X`), and the formal group 
 `2 = 0` in `R`. -/
 def lift : {F : FormalGroup R // F.IsComm ∧ F.nsmulSeries 2 = 0} ≃ (ExponentTwoLazardRing →+* R)
     where
-  toFun F := have := F.2.1; liftHom F.1 F.2.2
+  toFun F := have := F.property.1; liftHom F.val F.property.2
   invFun f := ⟨formalGroup.map f, inferInstance, nsmulSeries_two_map_formalGroup f⟩
-  left_inv F := have := F.2.1; Subtype.ext (map_liftHom F.1 F.2.2)
+  left_inv F := have := F.property.1; Subtype.ext (map_liftHom F.val F.property.2)
   right_inv _ := hom_ext (map_liftHom _ _)
 
 /-- The homomorphism classifying `F` sends `aᵢ` to the coefficient of `X^(i + 1)` in the
@@ -224,28 +224,29 @@ normalised logarithm of `F`. -/
 @[simp]
 theorem lift_X (F : {F : FormalGroup R // F.IsComm ∧ F.nsmulSeries 2 = 0}) (i : Index) :
     lift F (X i) =
-      PowerSeries.coeff ((i.1 : ℕ) + 1) (@FormalGroup.exponentTwoLog _ _ F.1 F.2.1 F.2.2) :=
+      PowerSeries.coeff ((i.val : ℕ) + 1) (@FormalGroup.exponentTwoLog _ _ F.val F.property.1
+          F.property.2) :=
   eval₂Hom_X' _ _ i
 
 /-- The formal group law classified by `f` is the base change of the universal formal group law
 along `f`. -/
 @[simp]
 theorem coe_lift_symm (f : ExponentTwoLazardRing →+* R) :
-    (lift.symm f).1 = formalGroup.map f :=
+    (lift.symm f).val = formalGroup.map f :=
   (rfl)
 
 /-- The universal formal group law base-changes along `lift F` to `F`. -/
 @[simp]
 theorem map_lift (F : {F : FormalGroup R // F.IsComm ∧ F.nsmulSeries 2 = 0}) :
-    formalGroup.map (lift F) = F.1 := by
+    formalGroup.map (lift F) = F.val := by
   rw [← coe_lift_symm, Equiv.symm_apply_apply]
 
 /-- **Naturality of `lift`**: the homomorphism classifying the base change of `F` along
 `g : R →+* S` is `g` composed with the homomorphism classifying `F`. -/
 theorem lift_map {S : Type*} [CommRing S]
     (F : {F : FormalGroup R // F.IsComm ∧ F.nsmulSeries 2 = 0}) (g : R →+* S) :
-    lift ⟨F.1.map g, have := F.2.1; inferInstance,
-      by rw [← FormalGroup.map_nsmulSeries, F.2.2, map_zero]⟩ = g.comp (lift F) :=
+    lift ⟨F.val.map g, have := F.property.1; inferInstance,
+      by rw [← FormalGroup.map_nsmulSeries, F.property.2, map_zero]⟩ = g.comp (lift F) :=
   hom_ext <| by rw [map_lift, ← FormalGroup.map_comp, map_lift]
 
 section Graded
@@ -256,12 +257,12 @@ open MvPolynomial
 the coefficient of `X^(i + 1)` in the normalised logarithm of the formal group law of a real
 orientation, in homological degrees. -/
 abbrev grading (n : ℕ) : Submodule (ZMod 2) ExponentTwoLazardRing :=
-  weightedHomogeneousSubmodule (ZMod 2) (fun i : Index ↦ (i.1 : ℕ)) n
+  weightedHomogeneousSubmodule (ZMod 2) (fun i : Index ↦ (i.val : ℕ)) n
 
 /-- An element of `ExponentTwoLazardRing` has degree `n` exactly when it is a polynomial in the
 `aᵢ` that is homogeneous of degree `n` when `aᵢ` has degree `i`. -/
 theorem mem_grading_iff {n : ℕ} {x : ExponentTwoLazardRing} :
-    x ∈ grading n ↔ x.IsWeightedHomogeneous (fun i : Index ↦ (i.1 : ℕ)) n :=
+    x ∈ grading n ↔ x.IsWeightedHomogeneous (fun i : Index ↦ (i.val : ℕ)) n :=
   mem_weightedHomogeneousSubmodule _ _ _ _
 
 /-- `ExponentTwoLazardRing` is graded by `TauCeti.ExponentTwoLazardRing.grading`. -/
@@ -296,7 +297,7 @@ variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A] {�
 in `𝒜 (d 0 + d 1 - 1)`, that is, when the formal parameter of `F` has degree one. -/
 theorem lift_mem_iff (F : {F : FormalGroup A // F.IsComm ∧ F.nsmulSeries 2 = 0}) :
     (∀ ⦃n : ℕ⦄ ⦃x : ExponentTwoLazardRing⦄, x ∈ grading n → lift F x ∈ 𝒜 n) ↔
-      ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.1.toPowerSeries ∈ 𝒜 (d.degree - 1) := by
+      ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.val.toPowerSeries ∈ 𝒜 (d.degree - 1) := by
   obtain ⟨F, hc, hF⟩ := F
   rw [← FormalGroup.forall_coeff_exponentTwoLog_mem_iff F hF]
   refine ⟨fun h n ↦ ?_, fun h n x hx ↦ ?_⟩
@@ -313,7 +314,7 @@ theorem lift_mem_iff (F : {F : FormalGroup A // F.IsComm ∧ F.nsmulSeries 2 = 0
     refine (mem_grading_iff.1 hx).eval₂_mem (fun r ↦ ?_) fun i ↦ ?_
     · rw [← ZMod.natCast_zmod_val r, RingHom.comp_apply, map_natCast, map_natCast]
       exact SetLike.natCast_mem_graded _ _
-    · simpa using h ((i.1 : ℕ) + 1)
+    · simpa using h ((i.val : ℕ) + 1)
 
 /-- The coefficient of `X^(d 0) Y^(d 1)` in the universal formal group law has degree
 `d 0 + d 1 - 1`. -/
@@ -334,11 +335,11 @@ def gradedLift :
       ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.toPowerSeries ∈ 𝒜 (d.degree - 1)} ≃
       (grading →+*ᵍ 𝒜) where
   toFun F :=
-    { toRingHom := lift ⟨F.1, F.2.1, F.2.2.1⟩
-      map_mem := fun hx ↦ (lift_mem_iff ⟨F.1, F.2.1, F.2.2.1⟩).2 F.2.2.2 hx }
-  invFun φ := ⟨formalGroup.map φ.toRingHom, inferInstance, (lift.symm φ.toRingHom).2.2,
+    { toRingHom := lift ⟨F.val, F.property.1, F.property.2.1⟩
+      map_mem := fun hx ↦ (lift_mem_iff ⟨F.val, F.property.1, F.property.2.1⟩).2 F.property.2.2 hx }
+  invFun φ := ⟨formalGroup.map φ.toRingHom, inferInstance, (lift.symm φ.toRingHom).property.2,
     (lift_mem_iff (lift.symm φ.toRingHom)).1 (by simpa using fun _ _ ↦ φ.map_mem)⟩
-  left_inv F := Subtype.ext <| map_lift ⟨F.1, F.2.1, F.2.2.1⟩
+  left_inv F := Subtype.ext <| map_lift ⟨F.val, F.property.1, F.property.2.1⟩
   right_inv φ := GradedRingHom.ext fun x ↦
     DFunLike.congr_fun (lift.apply_symm_apply φ.toRingHom) x
 
@@ -346,21 +347,21 @@ def gradedLift :
 @[simp]
 theorem toRingHom_gradedLift (F : {F : FormalGroup A // F.IsComm ∧ F.nsmulSeries 2 = 0 ∧
       ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.toPowerSeries ∈ 𝒜 (d.degree - 1)}) :
-    (gradedLift F).toRingHom = lift ⟨F.1, F.2.1, F.2.2.1⟩ :=
+    (gradedLift F).toRingHom = lift ⟨F.val, F.property.1, F.property.2.1⟩ :=
   (rfl)
 
 /-- The graded homomorphism attached to `F` is, as a function, the homomorphism classifying `F`. -/
 @[simp]
 theorem coe_gradedLift (F : {F : FormalGroup A // F.IsComm ∧ F.nsmulSeries 2 = 0 ∧
       ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.toPowerSeries ∈ 𝒜 (d.degree - 1)}) :
-    ⇑(gradedLift F) = lift ⟨F.1, F.2.1, F.2.2.1⟩ :=
+    ⇑(gradedLift F) = lift ⟨F.val, F.property.1, F.property.2.1⟩ :=
   (rfl)
 
 /-- The formal group law attached to a graded homomorphism `φ` is the base change of the universal
 formal group law along `φ`. -/
 @[simp]
 theorem coe_gradedLift_symm (φ : grading →+*ᵍ 𝒜) :
-    (gradedLift.symm φ).1 = formalGroup.map φ.toRingHom :=
+    (gradedLift.symm φ).val = formalGroup.map φ.toRingHom :=
   (rfl)
 
 end Graded

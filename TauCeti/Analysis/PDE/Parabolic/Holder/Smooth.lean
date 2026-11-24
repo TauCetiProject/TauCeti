@@ -113,7 +113,7 @@ theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
     have hd : HasDerivAt (fun s : ℝ ↦ f (x - z.1, s - z.2)) (ft (x - z.1, (t : ℝ) - z.2)) t :=
       HasDerivAt.comp_sub_const (t : ℝ) z.2 (hdt (x - z.1, (t : ℝ) - z.2))
     exact hd.hasDerivWithinAt.congr_of_mem (f₁ := timeExtension hab.le u x) (fun s hs ↦ by
-      simp [timeExtension_def, hu, projIcc_of_mem hab.le hs]) t.2
+      simp [timeExtension_def, hu, projIcc_of_mem hab.le hs]) t.property
   let g := mk (hab := hab) u.toBoundedContinuousFunction ux.toBoundedContinuousFunction uxx ut
     (by simpa only [HolderSpace.toBoundedContinuousFunction_apply] using hx)
     (by simpa only [HolderSpace.toBoundedContinuousFunction_apply] using hxx)

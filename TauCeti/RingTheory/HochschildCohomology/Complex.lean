@@ -46,6 +46,7 @@ coboundaries and the cocycles are the traces.
 * `TauCeti.hochschildCohomology.mk`: the class of a Hochschild cocycle.
 * `TauCeti.hochschildCohomology.desc`: the linear map out of Hochschild cohomology induced by a
   linear map on Hochschild cocycles vanishing on Hochschild coboundaries.
+* `TauCeti.hochschildCohomology.map`: contravariant pullback along nonunital algebra homomorphisms.
 
 ## Main results
 
@@ -126,6 +127,30 @@ variable {R A M} in
 theorem mem_hochschildCocycles_zero_iff {φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M} :
     φ ∈ hochschildCocycles R A M 0 ↔ ∀ x y : A, φ (fun _ ↦ x * y) = φ (fun _ ↦ y * x) := by
   rw [mem_hochschildCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
+
+variable {R A M} {B : Type*} [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B]
+  [SMulCommClass R B B]
+
+/-- Pulling a Hochschild cocycle back along a nonunital algebra homomorphism yields a cocycle. -/
+theorem compLinearMap_mem_hochschildCocycles (f : A →ₙₐ[R] B) {n : ℕ}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M}
+    (hφ : φ ∈ hochschildCocycles R B M n) :
+    (φ.compLinearMap fun _ ↦ (f : A →ₗ[R] B)) ∈ hochschildCocycles R A M n := by
+  rw [mem_hochschildCocycles_iff, hochschildCoboundary_compLinearMap,
+    mem_hochschildCocycles_iff.1 hφ]; rfl
+
+/-- Pulling a Hochschild coboundary back along a nonunital algebra homomorphism yields a
+coboundary. -/
+theorem compLinearMap_mem_hochschildCoboundaries (f : A →ₙₐ[R] B) {n : ℕ}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M}
+    (hφ : φ ∈ hochschildCoboundaries R B M n) :
+    (φ.compLinearMap fun _ ↦ (f : A →ₗ[R] B)) ∈ hochschildCoboundaries R A M n := by
+  cases n with
+  | zero => rw [hochschildCoboundaries_zero, Submodule.mem_bot] at hφ ⊢; subst hφ; rfl
+  | succ n =>
+    obtain ⟨ψ, rfl⟩ := mem_hochschildCoboundaries_succ_iff.1 hφ
+    exact mem_hochschildCoboundaries_succ_iff.2
+      ⟨ψ.compLinearMap fun _ ↦ (f : A →ₗ[R] B), hochschildCoboundary_compLinearMap f ψ⟩
 
 end Cocycles
 
@@ -282,6 +307,33 @@ theorem desc_comp_mk (n : ℕ) (f : hochschildCocycles R A M n →ₗ[R] N)
   LinearMap.ext (desc_mk n f hf)
 
 end Desc
+
+section Map
+variable {R A M} {B : Type*} [NonUnitalSemiring B] [Module R B] [IsScalarTower R B B]
+  [SMulCommClass R B B]
+
+variable (M) in
+/-- Pullback on Hochschild cohomology along a homomorphism of nonunital algebras. -/
+def map (f : A →ₙₐ[R] B) (n : ℕ) :
+    hochschildCohomology R B M n →ₗ[R] hochschildCohomology R A M n :=
+  desc n (mk R A M n ∘ₗ (MultilinearMap.compLinearMapₗ fun _ : Fin (n + 1) ↦
+      (f : A →ₗ[R] B)).restrict fun _ ↦ compLinearMap_mem_hochschildCocycles f)
+    fun _ hφ ↦ (mk_eq_zero_iff R A M n _).2 (compLinearMap_mem_hochschildCoboundaries f hφ)
+
+/-- `map` sends `[φ]` to the class of its pullback along `f`. -/
+@[simp] theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : hochschildCocycles R B M n) :
+    map M f n (mk R B M n φ) = mk R A M n ⟨φ.val.compLinearMap fun _ ↦ (f : A →ₗ[R] B),
+      compLinearMap_mem_hochschildCocycles f φ.property⟩ := desc_mk _ _ _ φ
+/-- Pulling back along the identity nonunital algebra homomorphism is the identity. -/
+@[simp] theorem map_id (n : ℕ) :
+    map (R := R) (A := A) M (NonUnitalAlgHom.id R A) n = LinearMap.id := by
+  ext φ; simp only [LinearMap.comp_apply, map_mk, LinearMap.id_apply]; congr 1
+/-- Pullback on Hochschild cohomology is contravariantly functorial. -/
+theorem map_comp {C : Type*} [NonUnitalSemiring C] [Module R C] [IsScalarTower R C C]
+    [SMulCommClass R C C] (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) (n : ℕ) :
+    map M (g.comp f) n = (map M f n).comp (map M g n) := by
+  ext φ; simp only [LinearMap.comp_apply, map_mk]; congr 1
+end Map
 
 end hochschildCohomology
 

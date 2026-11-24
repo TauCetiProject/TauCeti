@@ -27,6 +27,9 @@ Indeed `L` has an open neighbourhood `W` meeting every level of `F` in a compact
 first integral of the others. Every maximal integral curve of their Hamiltonian vector fields
 therefore stays in one compact level of `F` in `W`, and these vector fields are complete
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_isCompleteVectorField_hamiltonianVectorField`).
+The same holds on any open set meeting the levels of `F` in compact sets, for the Hamiltonian vector
+field of every function Poisson-commuting there with the `F_i`
+(`isCompleteVectorField_hamiltonianVectorField_of_isCompact_inter_preimage_singleton`).
 Since `L ⊆ W`, the set `L` is also the connected component of its level in `W`
 (`Topology.IsInducing.image_connectedComponentIn_preimage`), and it is compact and regular there
 when it is so in `M`
@@ -40,6 +43,9 @@ completeness hypothesis: they are applied on `W` and transported along the inclu
 
 In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
+* `isCompleteVectorField_hamiltonianVectorField_of_isCompact_inter_preimage_singleton`: on an open
+  set with compact levels of `F`, the Hamiltonian vector field of a function Poisson-commuting with
+  the `F_i` is complete.
 * `exists_opens_isCompleteVectorField_hamiltonianVectorField`: a compact component of a level of
   a family of commuting functions has an open neighbourhood with compact levels on which their
   Hamiltonian vector fields are complete.
@@ -69,6 +75,34 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I ∞ M] {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate)
 include hσ
 
+/-- **Hamiltonian flows are complete on an open set with compact levels.** Let `U` be an open set
+of a finite-dimensional boundaryless Hausdorff manifold with a nondegenerate form `σ`, meeting every
+level of a family `F : M → (ι → ℝ)` of differentiable functions in a compact set. On the open
+submanifold `U`, with the restriction of `σ`, the Hamiltonian vector field of every `C²` function
+`f` which Poisson-commutes on `U` with every `F_i` is complete: its integral curves stay in the
+compact levels of `F` in `U`. -/
+theorem isCompleteVectorField_hamiltonianVectorField_of_isCompact_inter_preimage_singleton
+    [T2Space M] [BoundarylessManifold I M] {ι : Type*} {F : M → ι → ℝ} {U : Opens M}
+    (hF : ∀ i, MDifferentiableOn I 𝓘(ℝ) (F · i) U) (hU : ∀ c, IsCompact ((U : Set M) ∩ F ⁻¹' {c}))
+    {f : M → ℝ} (hf : ContMDiffOn I 𝓘(ℝ) 2 f U)
+    (hfF : ∀ y ∈ U, ∀ i, σ.poissonBracket (F · i) f y = 0) :
+    IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) fun y : U ↦ f y) := by
+  have := Manifold.locallyCompact_of_finiteDimensional (M := M) I
+  -- the levels of `F` restricted to `U` are the compact sets `U ∩ F⁻¹(c)`
+  have hlev (c : ι → ℝ) : IsCompact ((fun y : U ↦ F y) ⁻¹' {c}) := by
+    have hc := hU c
+    rw [← Subtype.image_preimage_coe] at hc
+    exact Subtype.isCompact_iff.2 hc
+  have hσU := hσ.mpullback_subtype_val U
+  -- each restricted `F_i` is a first integral of the restricted `f`
+  exact hσU.isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton
+    (hf.comp_contMDiff contMDiff_subtypeVal Subtype.prop) (fun _ ↦ hlev _)
+    (fun i ↦ isFirstIntegral_iff.2 fun y ↦
+      (poissonBracket_comp_subtype_val σ (F · i) f y).trans (hfF y y.property i))
+    fun i y ↦ ((hF i y y.property).mdifferentiableAt (U.isOpen.mem_nhds y.property)).comp y
+      (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
+
 /-- **Commuting Hamiltonian flows are complete near a compact component of a level.** Let `F` be
 a family of pairwise Poisson-commuting `C²` functions for a nondegenerate form `σ` on a
 finite-dimensional boundaryless Hausdorff manifold, and let the connected component of `x` in its
@@ -82,10 +116,10 @@ theorem exists_opens_isCompleteVectorField_hamiltonianVectorField [T2Space M]
     ∃ W : Opens M, connectedComponentIn (F ⁻¹' {F x}) x ⊆ W ∧
       (∀ c, IsCompact ((fun y : W ↦ F y) ⁻¹' {c})) ∧
       (∀ i j y, SmoothTwoForm.poissonBracket
-        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ)
         (fun y : W ↦ F y i) (fun y : W ↦ F y j) y = 0) ∧
       ∀ i, IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
-        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ)
         fun y : W ↦ F y i) := by
   have := Manifold.locallyCompact_of_finiteDimensional (M := M) I
   obtain ⟨W, hWo, hLW, hWc⟩ :=
@@ -99,13 +133,10 @@ theorem exists_opens_isCompleteVectorField_hamiltonianVectorField [T2Space M]
     exact Subtype.isCompact_iff.2 hc
   have hcommU (i j : ι) (y : U) :=
     (poissonBracket_comp_subtype_val σ (F · i) (F · j) y).trans (hcomm i j y)
-  refine ⟨U, hLW, hlev, hcommU, fun i ↦ ?_⟩
-  have hσU := hσ.mpullback_subtype_val U
-  -- each restricted `F_j` is a first integral of the restricted `F_i`
-  exact hσU.isCompleteVectorField_hamiltonianVectorField_of_isCompact_preimage_singleton
-    ((hFi i).comp contMDiff_subtype_val) (fun _ ↦ hlev _)
-    (fun j ↦ isFirstIntegral_iff.2 (hcommU j i))
-    fun j ↦ ((hFi j).comp contMDiff_subtype_val).mdifferentiable (by simp)
+  exact ⟨U, hLW, hlev, hcommU, fun i ↦
+    hσ.isCompleteVectorField_hamiltonianVectorField_of_isCompact_inter_preimage_singleton
+      (fun j ↦ ((hFi j).mdifferentiable (by simp)).mdifferentiableOn) hWc
+      (hFi i).contMDiffOn fun y _ j ↦ hcomm j i y⟩
 
 /-- **Restriction to a neighbourhood of a compact regular component of a level.** Let `F` be a
 family of pairwise Poisson-commuting `C²` functions for a nondegenerate form `σ` on a
@@ -127,10 +158,10 @@ theorem exists_opens_isCompact_connectedComponentIn_isCompleteVectorField [T2Spa
       (∀ z ∈ connectedComponentIn ((fun z : W ↦ F z) ⁻¹' {F x}) ⟨x, hxW⟩,
         IsRegularPoint I 𝓘(ℝ, ι → ℝ) (fun z : W ↦ F z) z) ∧
       (∀ i j y, SmoothTwoForm.poissonBracket
-        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ)
         (fun y : W ↦ F y i) (fun y : W ↦ F y j) y = 0) ∧
       ∀ i, IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
-        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val σ)
+        (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ)
         fun y : W ↦ F y i) := by
   obtain ⟨W, hLW, -, hcommW, hcW⟩ :=
     hσ.exists_opens_isCompleteVectorField_hamiltonianVectorField hF hcomm hK

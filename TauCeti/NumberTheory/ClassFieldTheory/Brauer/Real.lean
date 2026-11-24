@@ -66,8 +66,6 @@ def realBrEquivRelative :
     Br ℝ ≃+ groupCohomology.H2 (Rep.ofMulDistribMulAction (ℂ ≃ₐ[ℝ] ℂ) ℂˣ) := by
   letI : IsAlgClosure ℝ ℂ := ⟨inferInstance, inferInstance⟩
   let eC := IsSepClosure.equiv ℝ (SeparableClosure ℝ) ℂ
-  letI : Finite (AbsoluteGaloisGroup ℝ) :=
-    Finite.of_equiv (ℂ ≃ₐ[ℝ] ℂ) eC.autCongr.toEquiv.symm
   letI : TopologicalSpace (Additive ℂˣ) := ⊥
   letI : DiscreteTopology (Additive ℂˣ) := ⟨rfl⟩
   letI : ContinuousSMul (ℂ ≃ₐ[ℝ] ℂ) (Additive ℂˣ) := ⟨continuous_of_discreteTopology⟩

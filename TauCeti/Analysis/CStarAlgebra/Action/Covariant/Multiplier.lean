@@ -231,16 +231,16 @@ end Basic
 
 namespace CovariantMultiplierHom
 
-variable {G A B C : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [MeasurableSpace G] [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra C]
+variable {G A B C : Type*} [Group G] [TopologicalSpace G]
+  [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] [NonUnitalCStarAlgebra C]
   {α : CStarAction G A}
 
-section Integrated
+section Integrand
 
-variable [OpensMeasurableSpace G] (M : CovariantMultiplierHom α B)
-  (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+/-! Continuity, support and norm bounds of the integrand, before any measure is fixed. -/
 
-omit [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G] in
+variable (M : CovariantMultiplierHom α B)
+
 /-- The left centralizer integrand `r ↦ (π(f r) u_r).fst b` is norm continuous in `B`. -/
 @[fun_prop]
 theorem continuous_integrand_fst (f : C_c(G, A)) (b : B) :
@@ -249,28 +249,37 @@ theorem continuous_integrand_fst (f : C_c(G, A)) (b : B) :
   exact ((DoubleCentralizer.continuous_toProd.fst.comp
     ((map_continuous M.coefficient).comp f.continuous))).clm_apply (M.continuous_group_fst b)
 
-omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The right centralizer integrand `r ↦ (π(f r) u_r).snd b` is norm continuous in `B`. -/
 @[fun_prop]
-theorem continuous_integrand_snd (f : C_c(G, A)) (b : B) :
+theorem continuous_integrand_snd [IsTopologicalGroup G] (f : C_c(G, A)) (b : B) :
     Continuous fun r => (M.coefficient (f r) * M.group r).snd b := by
   simp_rw [M.coefficient_mul_group, DoubleCentralizer.mul_snd, mul_apply_eq_comp]
   exact ((DoubleCentralizer.continuous_toProd.snd.comp ((map_continuous M.coefficient).comp
     (α.continuous_apply continuous_inv f.continuous)))).clm_apply (M.continuous_group_snd b)
 
-omit [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The left centralizer integrand vanishes outside the support of `f`. -/
 theorem hasCompactSupport_integrand_fst (f : C_c(G, A)) (b : B) :
     HasCompactSupport fun r => (M.coefficient (f r) * M.group r).fst b :=
   f.hasCompactSupport.mono fun _ hg hzero => hg (by simp [hzero])
 
-omit [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The right centralizer integrand vanishes outside the support of `f`. -/
 theorem hasCompactSupport_integrand_snd (f : C_c(G, A)) (b : B) :
     HasCompactSupport fun r => (M.coefficient (f r) * M.group r).snd b :=
   f.hasCompactSupport.mono fun _ hg hzero => hg (by simp [hzero])
 
-omit [IsTopologicalGroup G] in
+private theorem norm_integrand_le (f : C_c(G, A)) (r : G) :
+    ‖M.coefficient (f r) * (M.group r : 𝓜(ℂ, B))‖ ≤ ‖f r‖ :=
+  (CStarRing.norm_mul_coe_unitary _ _).trans_le (NonUnitalStarAlgHom.norm_apply_le _ _)
+
+end Integrand
+
+variable [MeasurableSpace G]
+
+section Integrated
+
+variable [OpensMeasurableSpace G] (M : CovariantMultiplierHom α B)
+  (μ : Measure G) [IsFiniteMeasureOnCompacts μ]
+
 /-- The left centralizer integrand is Bochner integrable. -/
 theorem integrable_integrand_fst (f : C_c(G, A)) (b : B) :
     Integrable (fun r => (M.coefficient (f r) * M.group r).fst b) μ :=
@@ -278,17 +287,11 @@ theorem integrable_integrand_fst (f : C_c(G, A)) (b : B) :
     (M.hasCompactSupport_integrand_fst f b)
 
 /-- The right centralizer integrand is Bochner integrable. -/
-theorem integrable_integrand_snd (f : C_c(G, A)) (b : B) :
+theorem integrable_integrand_snd [IsTopologicalGroup G] (f : C_c(G, A)) (b : B) :
     Integrable (fun r => (M.coefficient (f r) * M.group r).snd b) μ :=
   (M.continuous_integrand_snd f b).integrable_of_hasCompactSupport
     (M.hasCompactSupport_integrand_snd f b)
 
-omit [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G] in
-private theorem norm_integrand_le (f : C_c(G, A)) (r : G) :
-    ‖M.coefficient (f r) * (M.group r : 𝓜(ℂ, B))‖ ≤ ‖f r‖ :=
-  (CStarRing.norm_mul_coe_unitary _ _).trans_le (NonUnitalStarAlgHom.norm_apply_le _ _)
-
-omit [IsTopologicalGroup G] in
 private theorem norm_integral_clm_le (L : 𝓜(ℂ, B) → B →L[ℂ] B) (hL : ∀ m, ‖L m‖ = ‖m‖)
     (f : C_c(G, A)) (b : B) :
     ‖∫ r, L (M.coefficient (f r) * M.group r) b ∂μ‖ ≤ (∫ r, ‖f r‖ ∂μ) * ‖b‖ := by
@@ -297,7 +300,6 @@ private theorem norm_integral_clm_le (L : 𝓜(ℂ, B) → B →L[ℂ] B) (hL : 
   exact ((L _).le_opNorm b).trans <| (hL _).symm ▸
     mul_le_mul_of_nonneg_right (M.norm_integrand_le f r) (norm_nonneg b)
 
-omit [IsTopologicalGroup G] in
 private def integratedFst (f : C_c(G, A)) : B →L[ℂ] B :=
   LinearMap.mkContinuous
     { toFun b := ∫ r, (M.coefficient (f r) * M.group r).fst b ∂μ
@@ -306,6 +308,9 @@ private def integratedFst (f : C_c(G, A)) : B →L[ℂ] B :=
           (M.integrable_integrand_fst μ f c)
       map_smul' z _ := by simpa using integral_smul z _ }
     (∫ r, ‖f r‖ ∂μ) (M.norm_integral_clm_le μ (·.fst) DoubleCentralizer.norm_fst f)
+
+-- The right centralizer component needs `continuous_group_snd`, hence a topological group.
+variable [IsTopologicalGroup G]
 
 private def integratedSnd (f : C_c(G, A)) : B →L[ℂ] B :=
   LinearMap.mkContinuous
@@ -491,8 +496,8 @@ end Integrated
 
 section Uniqueness
 
-variable [LocallyCompactSpace G] [OpensMeasurableSpace G] [MeasurableMul G]
-  {M N : CovariantMultiplierHom α B}
+variable [IsTopologicalGroup G] [LocallyCompactSpace G] [OpensMeasurableSpace G]
+  [MeasurableMul G] {M N : CovariantMultiplierHom α B}
   (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant] [μ.IsOpenPosMeasure]
 
 /-- Nondegenerate covariant multiplier homomorphisms are determined by `integratedMultiplier`. -/
@@ -515,7 +520,8 @@ end Uniqueness
 
 section Haar
 
-variable [LocallyCompactSpace G] [BorelSpace G] (M : CovariantMultiplierHom α B)
+variable [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G]
+  (M : CovariantMultiplierHom α B)
   (μ : Measure G) [μ.IsHaarMeasure]
 
 /-- Under a left Haar measure, `integratedMultiplier` maps `twistedInvolution` to `star`. -/

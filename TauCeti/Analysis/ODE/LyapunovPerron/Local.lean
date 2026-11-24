@@ -223,7 +223,7 @@ theorem hasFDerivAt_localStableGraphMap_zero (hN0 : N 0 = 0)
   rcases hr.eq_or_lt with rfl | hr0
   · have hconst : N ∘ TauCeti.radialRetraction 0 = fun _ : X ↦ (0 : X) := by
       ext x
-      simp [TauCeti.radialRetraction_def, hN0]
+      simp [hN0]
     simpa [hconst] using hasFDerivAt_const (0 : X) (0 : X)
   · have hretract : TauCeti.radialRetraction r =ᶠ[𝓝 (0 : X)] id :=
       TauCeti.radialRetraction_eventuallyEq_id (by simpa using hr0)

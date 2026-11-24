@@ -38,14 +38,14 @@ variable {n : ℕ}
 /-- The homogeneous ratio `X_j / X_k`. Outside the chart `X_k ≠ 0` it is zero, following
 the convention for division in `ℂ`. -/
 def ratio (k j : Fin (n + 1)) : ComplexProjectiveSpace n → ℂ :=
-  ComplexProjectiveSpace.lift n (fun v ↦ v.1 j / v.1 k) fun c _ ↦
+  ComplexProjectiveSpace.lift n (fun v ↦ v.val j / v.val k) fun c _ ↦
     mul_div_mul_left _ _ (ne_zero_of_mem_unit_sphere c)
 
 /-- Homogeneous ratios can be computed on any unit-vector representative. -/
 @[simp]
 theorem ratio_mk (k j : Fin (n + 1))
     (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    ratio k j (mk n v) = v.1 j / v.1 k :=
+    ratio k j (mk n v) = v.val j / v.val k :=
   ComplexProjectiveSpace.lift_mk n _ _ v
 
 /-- The standard affine open where the `k`th homogeneous coordinate is nonzero. -/
@@ -61,7 +61,7 @@ theorem mem_affineOpen_iff (k : Fin (n + 1)) (p : ComplexProjectiveSpace n) :
 nonzero. -/
 theorem mk_mem_affineOpen_iff (k : Fin (n + 1))
     (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    mk n v ∈ affineOpen k ↔ v.1 k ≠ 0 := by
+    mk n v ∈ affineOpen k ↔ v.val k ≠ 0 := by
   simp
 
 /-- The normalizing homogeneous ratio is one on its affine chart domain. -/
@@ -69,14 +69,14 @@ theorem mk_mem_affineOpen_iff (k : Fin (n + 1))
 theorem ratio_self_eq_one (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}
     (hp : p ∈ affineOpen k) : ratio k k p = 1 := by
   obtain ⟨v, rfl⟩ := mk_surjective n p
-  have hk : v.1 k ≠ 0 := by simpa using hp
+  have hk : v.val k ≠ 0 := by simpa using hp
   simpa only [ratio_mk] using div_self hk
 
 /-- The homogeneous-coordinate chart domains are open for the sphere-quotient topology. -/
 theorem isOpen_affineOpen (k : Fin (n + 1)) : IsOpen (affineOpen k) := by
   apply (isOpenQuotientMap_mk n).isQuotientMap.isOpen_preimage.mp
   convert (isOpen_ne_fun
-    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp continuous_subtype_val)
+    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp continuous_subtypeVal)
     (continuous_const (y := (0 : ℂ)))) using 1
   ext v
   simp
@@ -87,22 +87,22 @@ theorem exists_mem_affineOpen (p : ComplexProjectiveSpace n) :
   induction p using ComplexProjectiveSpace.inductionOn with
   | h v =>
     by_contra! h
-    have hv : v.1 = 0 := by
+    have hv : v.val = 0 := by
       ext k
       simpa using h k
-    simpa [hv] using v.2
+    simpa [hv] using v.property
 
 /-- Homogeneous ratios are continuous on any chart where their denominator is nonzero. -/
 theorem continuousOn_ratio (k j : Fin (n + 1)) : ContinuousOn (ratio k j) (affineOpen k) := by
   intro p hp
   obtain ⟨v, rfl⟩ := mk_surjective n p
-  have hk : v.1 k ≠ 0 := by simpa using hp
+  have hk : v.val k ≠ 0 := by simpa using hp
   apply ContinuousAt.continuousWithinAt
   apply continuousAt_lift
   exact ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) j).comp
-    continuous_subtype_val).continuousAt.div
+    continuous_subtypeVal).continuousAt.div
     (((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp
-      continuous_subtype_val).continuousAt) hk
+      continuous_subtypeVal).continuousAt) hk
 
 /-- The homogeneous coordinate vector `(z₀, …, 1, …, z_{n-1})` of the point with affine
 coordinates `z` in the chart `X_k ≠ 0`, with the entry `1` in position `k`. -/
@@ -133,6 +133,42 @@ theorem affineVector_ne_zero (k : Fin (n + 1)) (z : Fin n → ℂ) :
 theorem continuous_affineVector (k : Fin (n + 1)) : Continuous (affineVector (n := n) k) :=
   (PiLp.continuous_toLp 2 (fun _ : Fin (n + 1) ↦ ℂ)).comp
     (continuous_const.finInsertNth k continuous_id)
+
+/-- The squared norm of the homogeneous coordinate vector of the point with affine coordinates `z`
+is `1 + ∑ |z_j|²`. -/
+theorem norm_affineVector_sq (k : Fin (n + 1)) (z : Fin n → ℂ) :
+    ‖affineVector k z‖ ^ 2 = 1 + ∑ j, ‖z j‖ ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_succAbove _ k]
+  simp
+
+/-- Inserting a zero coordinate in position `k`, as a continuous linear map into
+`EuclideanSpace ℂ (Fin (n + 1))`. It is the derivative of `affineVector k`. -/
+def insertZeroL (k : Fin (n + 1)) : (Fin n → ℂ) →L[ℂ] EuclideanSpace ℂ (Fin (n + 1)) :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun v ↦ WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v)
+      map_add' := fun v w ↦ by
+        ext i
+        induction i using Fin.succAboveCases k <;> simp
+      map_smul' := fun c v ↦ by
+        ext i
+        induction i using Fin.succAboveCases k <;> simp }
+
+/-- The value of `insertZeroL k` at `v` is `v` with a zero inserted in position `k`. -/
+theorem insertZeroL_apply (k : Fin (n + 1)) (v : Fin n → ℂ) :
+    insertZeroL k v = WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℂ) k 0 v) :=
+  (rfl)
+
+/-- Inserting a zero coordinate in position `k` gives the entry `0` in position `k`. -/
+@[simp]
+theorem insertZeroL_apply_self (k : Fin (n + 1)) (v : Fin n → ℂ) : insertZeroL k v k = 0 := by
+  simp [insertZeroL_apply]
+
+/-- Inserting a zero coordinate in position `k` keeps the coordinates of `v` away from
+position `k`. -/
+@[simp]
+theorem insertZeroL_apply_succAbove (k : Fin (n + 1)) (v : Fin n → ℂ) (j : Fin n) :
+    insertZeroL k v (k.succAbove j) = v j := by
+  simp [insertZeroL_apply]
 
 /-- The unit representative `w / ‖w‖` of the point with affine coordinates `z` in the chart
 `X_k ≠ 0`, for its homogeneous coordinate vector `w = affineVector k z`. -/
@@ -194,23 +230,23 @@ theorem affineParam_ratio (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}
     (hp : p ∈ affineOpen k) :
     affineParam k (fun j ↦ ratio k (k.succAbove j) p) = p := by
   obtain ⟨v, rfl⟩ := mk_surjective n p
-  have hk : v.1 k ≠ 0 := by simpa using hp
+  have hk : v.val k ≠ 0 := by simpa using hp
   simp only [ratio_mk]
-  let z := fun j ↦ v.1 (k.succAbove j) / v.1 k
+  let z := fun j ↦ v.val (k.succAbove j) / v.val k
   let w := affineUnitVector k z
-  have hw (j) : w.1 j = (‖affineVector k z‖⁻¹ : ℝ) • (v.1 j / v.1 k) := by
+  have hw (j) : w.val j = (‖affineVector k z‖⁻¹ : ℝ) • (v.val j / v.val k) := by
     induction j using k.succAboveCases with
     | x => simp [w, affineUnitVector, NormedSpace.normalize, affineVector, hk]
     | p j => simp [w, affineUnitVector, NormedSpace.normalize, affineVector, z]
-  let c : ℂ := (‖affineVector k z‖⁻¹ : ℝ) / v.1 k
-  have hsmul : c • v.1 = w.1 := by
+  let c : ℂ := (‖affineVector k z‖⁻¹ : ℝ) / v.val k
+  have hsmul : c • v.val = w.val := by
     ext j
     rw [hw]
     simp [c, div_mul_eq_mul_div, mul_div_assoc]
   have hc : ‖c‖ = 1 := by
     have h := congrArg norm hsmul
-    simpa only [norm_smul, mem_sphere_zero_iff_norm.1 v.2,
-      mem_sphere_zero_iff_norm.1 w.2, mul_one] using h
+    simpa only [norm_smul, mem_sphere_zero_iff_norm.1 v.property,
+      mem_sphere_zero_iff_norm.1 w.property, mul_one] using h
   exact (mk_eq_mk_iff n w v).2 ⟨⟨c, mem_sphere_zero_iff_norm.2 hc⟩, Subtype.ext hsmul⟩
 
 /-- The standard homogeneous-ratio chart on the sphere-quotient projective space. -/
@@ -261,6 +297,17 @@ theorem insertNth_affineChart (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}
 theorem affineParam_mem_affineOpen_iff (k l : Fin (n + 1)) (z : Fin n → ℂ) :
     affineParam k z ∈ affineOpen l ↔ Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l ≠ 0 := by
   simp [mem_affineOpen_iff]
+
+/-- The point `affineParam k 0`, whose only nonzero homogeneous coordinate is the coordinate `k`,
+lies in the affine open `X_l ≠ 0` exactly when `l = k`. -/
+@[simp↓ high]
+theorem affineParam_zero_mem_affineOpen_iff (k l : Fin (n + 1)) :
+    affineParam k 0 ∈ affineOpen l ↔ l = k := by
+  rw [affineParam_mem_affineOpen_iff]
+  rcases eq_or_ne l k with rfl | h
+  · simp
+  · obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq h
+    simp
 
 /-- The transition between standard affine charts is the usual homogeneous-ratio formula. -/
 @[simp↓]

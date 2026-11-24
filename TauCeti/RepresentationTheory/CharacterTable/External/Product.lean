@@ -43,14 +43,14 @@ variable {k G H : Type*} [Semiring k] [Group G] [Group H]
 class function `(x, y) ↦ f(x) g(y)` of `G × H`. For two characters it is the character of the
 external tensor product (`TauCeti.ClassFunction.ofCharacter_externalTensor`). -/
 def externalProduct (f : ClassFunction k G) (g : ClassFunction k H) : ClassFunction k (G × H) :=
-  ⟨fun p => f.1 p.1 * g.1 p.2, mem_iff.2 fun p c => by
-    simp only [Prod.fst_mul, Prod.snd_mul, Prod.fst_inv, Prod.snd_inv, mem_iff.1 f.2 p.1 c.1,
-      mem_iff.1 g.2 p.2 c.2]⟩
+  ⟨fun p => f.val p.1 * g.val p.2, mem_iff.2 fun p c => by
+    simp only [Prod.fst_mul, Prod.snd_mul, Prod.fst_inv, Prod.snd_inv, mem_iff.1 f.property p.1 c.1,
+      mem_iff.1 g.property p.2 c.2]⟩
 
 /-- The external product evaluates to the product of the values on the two components. -/
 @[simp]
 theorem externalProduct_apply (f : ClassFunction k G) (g : ClassFunction k H) (p : G × H) :
-    (externalProduct f g).1 p = f.1 p.1 * g.1 p.2 :=
+    (externalProduct f g).val p = f.val p.1 * g.val p.2 :=
   (rfl)
 
 /-- The external product with the zero class function on the left is zero. -/
@@ -122,7 +122,7 @@ theorem characterPairing_externalProduct {k G H : Type*} [Semifield k] [Group G]
       characterPairing f₁ f₂ * characterPairing g₁ g₂ := by
   simp only [characterPairing_apply, externalProduct_apply, Nat.card_prod, Nat.cast_mul, mul_inv,
     Fintype.sum_prod_type, Prod.fst_inv, Prod.snd_inv]
-  simp_rw [mul_mul_mul_comm (f₁.1 _), ← Finset.mul_sum, ← Finset.sum_mul]
+  simp_rw [mul_mul_mul_comm (f₁.val _), ← Finset.mul_sum, ← Finset.sum_mul]
   ring
 
 end ClassFunction

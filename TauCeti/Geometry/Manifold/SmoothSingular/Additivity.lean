@@ -81,16 +81,16 @@ theorem smoothSingularSubcomplexMap_inclusion_app_bijective (hs : Pairwise (Disj
   have hcont := toSSet_map_inclusion_app_bijective n s hs
   refine ⟨?_, fun τ ↦ ?_⟩
   · rintro ⟨i, σ⟩ ⟨j, σ'⟩ h
-    obtain ⟨rfl, h'⟩ := Sigma.mk.inj_iff.1 (hcont.1 (a₁ := ⟨i, σ.1⟩) (a₂ := ⟨j, σ'.1⟩)
+    obtain ⟨rfl, h'⟩ := Sigma.mk.inj_iff.1 (hcont.1 (a₁ := ⟨i, σ.val⟩) (a₂ := ⟨j, σ'.val⟩)
       ((coe_smoothSingularSubcomplexMap_app _ σ).symm.trans
         ((congrArg Subtype.val h).trans (coe_smoothSingularSubcomplexMap_app _ σ'))))
     exact Sigma.ext rfl (heq_of_eq (Subtype.ext (eq_of_heq h')))
-  · obtain ⟨⟨i, σ⟩, hσ⟩ := hcont.2 τ.1
+  · obtain ⟨⟨i, σ⟩, hσ⟩ := hcont.2 τ.val
     dsimp only at hσ
     have hσs : σ ∈ (smoothSingularSubcomplex I (s i)).obj n :=
       (smoothSingularSubcomplex_preimage_inclusion (le_iSup s i)).le n (by
         rw [SSet.Subcomplex.preimage_obj, Set.mem_preimage, hσ]
-        exact τ.2)
+        exact τ.property)
     exact ⟨⟨i, ⟨σ, hσs⟩⟩, Subtype.ext ((coe_smoothSingularSubcomplexMap_app _ _).trans hσ)⟩
 
 variable (I) in

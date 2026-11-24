@@ -74,7 +74,7 @@ theorem splits : ((X ^ p - X - C u).map (algebraMap K L)).Splits := by
   · have := Fact.mk hp
     have : CharP L p := charP_of_injective_algebraMap (algebraMap K L).injective p
     have h0 : (X ^ p - X : L[X]).Splits := by
-      simpa using (Subfield.splits_bot L p).map (Subfield.subtype _)
+      exact Polynomial.splits_X_pow_char_sub_X L p
     have he : (X ^ p - X : L[X]).comp (X - C y) = (X ^ p - X - C u).map (algebraMap K L) := by
       simp only [sub_comp, pow_comp, X_comp, Polynomial.map_sub, Polynomial.map_pow,
         Polynomial.map_X]

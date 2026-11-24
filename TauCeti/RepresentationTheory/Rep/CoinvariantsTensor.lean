@@ -40,7 +40,8 @@ all three variables: in `X`, in `N` (postcomposition with a linear map correspon
 map of internal homs) and, contravariantly, in `A` (precomposition with the map induced by
 `f : A ⟶ A'` corresponds to Mathlib's `MonoidalClosed.pre f`). It also commutes with change of
 group, with precomposition by the compatible coefficient map on the internal-hom side
-(`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`).
+(`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`). Being a left adjoint followed by a left
+adjoint, `X ↦ (A ⊗ X)_G` preserves colimits (`Rep.preservesColimits_coinvariantsTensor_obj`).
 
 ## Main definitions
 
@@ -259,6 +260,15 @@ theorem coinvariantsTensorHomLinearEquiv_coinvariantsTensor_map_app_comp {A' : R
         (MonoidalClosed.pre f).app (Rep.trivial k G N)
   rw [Adjunction.homEquiv_naturality_left]
   exact (MonoidalClosed.curry_pre_app f _).symm
+
+variable (A) in
+/-- **Tensor coinvariants preserve colimits** in the second representation: `X ↦ (A ⊗ X)_G` is
+tensoring with `A`, a left adjoint since the representations of a group form a closed monoidal
+category, followed by taking coinvariants, which is left adjoint to the trivial representation
+(`Rep.coinvariantsAdjunction`). -/
+instance preservesColimits_coinvariantsTensor_obj :
+    Limits.PreservesColimits ((coinvariantsTensor k G).obj A) :=
+  inferInstanceAs (Limits.PreservesColimits (tensorLeft A ⋙ coinvariantsFunctor k G))
 
 end Group
 

@@ -98,6 +98,23 @@ def prodTrivial : Comodule k H (M × k) :=
 
 attribute [local instance] prodTrivial
 
+/-- Corestriction commutes with adjoining the trivial coordinate used to realize vector
+orbits as projective orbits. -/
+theorem corestrict_prodTrivial {K : Type*} [CommRing K] [HopfAlgebra k K]
+    (f : H →ₐc[k] K) :
+    (letI : Comodule k K M := Corestrict f.toCoalgHom
+     prodTrivial k K (M := M)) =
+      (letI := prodTrivial k H (M := M)
+       Corestrict f.toCoalgHom) := by
+  apply Comodule.ext
+  apply LinearMap.ext
+  rintro ⟨x, c⟩
+  simp only [Prod_coact, corestrict_coact_apply, prodCoact_apply,
+    trivial_coact_apply, map_add, TensorProduct.map_map, TensorProduct.map_tmul,
+    LinearMap.id_comp, LinearMap.comp_id, LinearMap.id_apply]
+  congr 2
+  exact f.map_one.symm
+
 /-- The Hopf ideal of the stabilizer of a vector `v` of a comodule `M`.
 
 It is the stabilizer Hopf ideal of the line through `(v, 1)` in `M × k`, where `k` carries the

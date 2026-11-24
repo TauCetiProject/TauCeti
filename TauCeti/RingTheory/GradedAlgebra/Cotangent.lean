@@ -77,7 +77,7 @@ theorem span_image_toCotangent_irrelevant_eq_top :
   obtain ⟨x, rfl⟩ := Ideal.toCotangent_surjective _ y
   -- Split `x` into its homogeneous components, all of positive degree.
   have hcomp (n : ℕ) : (decompose 𝒜 (x : A) n : A) ∈ (irrelevant 𝒜).toIdeal :=
-    (irrelevant 𝒜).isHomogeneous n x.2
+    (irrelevant 𝒜).isHomogeneous n x.property
   have hx : x = ∑ n ∈ (decompose 𝒜 (x : A)).support, ⟨_, hcomp n⟩ :=
     Subtype.ext <| by
       rw [Submodule.coe_sum]
@@ -87,7 +87,7 @@ theorem span_image_toCotangent_irrelevant_eq_top :
   refine Nat.pos_of_ne_zero fun hn0 ↦ DFinsupp.mem_support_iff.1 hn ?_
   subst hn0
   -- Membership in `𝒜₊` says that the degree-zero projection vanishes.
-  have h0 := (mem_irrelevant_iff 𝒜 (x : A)).1 x.2
+  have h0 := (mem_irrelevant_iff 𝒜 (x : A)).1 x.property
   rw [GradedRing.proj_apply] at h0
   exact Subtype.ext h0
 

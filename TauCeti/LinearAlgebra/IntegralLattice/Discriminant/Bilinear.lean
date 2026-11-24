@@ -87,7 +87,7 @@ private theorem carrierInDual_le_ker_dualCarrierFormModOne (L : IntegralLattice 
   rw [LinearMap.zero_apply, dualCarrierFormModOne_apply]
   apply (AddCircle.coe_eq_zero_iff_mem_one _).mpr
   have hyx : L.form y x ∈ (1 : Submodule ℤ ℚ) :=
-    y.2 x ((L.mem_carrierInDual_iff x).mp hx)
+    y.property x ((L.mem_carrierInDual_iff x).mp hx)
   rw [L.isSymm.eq]
   exact hyx
 

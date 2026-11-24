@@ -108,11 +108,11 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 /-- Pointed homotopy, homotopy relative to the base point, as an equivalence relation on the
 pointed maps `(Y, y₀) → (X, x)`.  Its classes are the pointed homotopy classes of maps. -/
 def pointedHomotopySetoid (y₀ : Y) (x : X) : Setoid {f : C(Y, X) // f y₀ = x} where
-  r f g := f.1.HomotopicRel g.1 {y₀}
-  iseqv := ⟨fun f ↦ .refl f.1, fun h ↦ h.symm, fun h₁ h₂ ↦ h₁.trans h₂⟩
+  r f g := f.val.HomotopicRel g.val {y₀}
+  iseqv := ⟨fun f ↦ .refl f.val, fun h ↦ h.symm, fun h₁ h₂ ↦ h₁.trans h₂⟩
 
 lemma pointedHomotopySetoid_iff {y₀ : Y} {x : X} {f g : {f : C(Y, X) // f y₀ = x}} :
-    pointedHomotopySetoid y₀ x f g ↔ f.1.HomotopicRel g.1 {y₀} :=
+    pointedHomotopySetoid y₀ x f g ↔ f.val.HomotopicRel g.val {y₀} :=
   Iff.rfl
 
 end TauCeti

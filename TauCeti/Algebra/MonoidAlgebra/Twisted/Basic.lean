@@ -41,11 +41,16 @@ a basis and the multiplication table above holds on the nose.
   one of its arguments lies in a normal subgroup `N` is pulled back from a factor set on `G ⧸ N`;
 * `TauCeti.twistedMonoidAlgebra k G α`: the twisted monoid algebra `k_α[G]`;
 * `TauCeti.TwistedMonoidAlgebra.of`: its basis elements, with the multiplication table
-  `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, and the
-  dimension count `TauCeti.TwistedMonoidAlgebra.finrank_eq_natCard`;
+  `TauCeti.TwistedMonoidAlgebra.of_mul_of`, the basis `TauCeti.TwistedMonoidAlgebra.basis`, the
+  dimension count `TauCeti.TwistedMonoidAlgebra.finrank_eq_natCard`, and the embedding of
+  scalars `TauCeti.TwistedMonoidAlgebra.algebraMap_injective`;
 * `TauCeti.TwistedMonoidAlgebra.lift`: the universal property. A family `u : G → A` in a
   `k`-algebra `A` with `u 1 = 1` and `u g * u h = α g h • u (g * h)` -- that is, a projective
-  representation with factor set `α` -- extends uniquely to an algebra map `k_α[G] →ₐ[k] A`;
+  representation with factor set `α` -- extends uniquely to an algebra map `k_α[G] →ₐ[k] A`.
+  For a group `G`, such a map is already determined on a generating set
+  (`TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top`);
+* `TauCeti.TwistedMonoidAlgebra.repr_mul_apply_one_comm`: for a group `G`, the coefficient at the
+  identity is a trace on `k_α[G]`;
 * `TauCeti.TwistedMonoidAlgebra.monoidAlgebraEquiv`: for the trivial factor set, `k_α[G]` is the
   monoid algebra `MonoidAlgebra k G`;
 * `TauCeti.TwistedMonoidAlgebra.equivOfCoboundary`: two factor sets related by
@@ -71,7 +76,9 @@ representations.
 Nothing in the construction uses inverses in `G`, so `IsFactorSet`, the twisted algebra, its basis,
 the universal property and the two comparison isomorphisms are all stated for a monoid `G`. A group
 is assumed for descent to a quotient group and where an inverse appears, in
-`TauCeti.IsFactorSet.apply_inv_eq_inv_apply` and `TauCeti.TwistedMonoidAlgebra.isUnit_of`.
+`TauCeti.IsFactorSet.apply_inv_eq_inv_apply`, `TauCeti.TwistedMonoidAlgebra.isUnit_of`,
+`TauCeti.TwistedMonoidAlgebra.algHom_ext_of_closure_eq_top` and
+`TauCeti.TwistedMonoidAlgebra.repr_mul_apply_one_comm`.
 The twisted translations themselves need only a multiplication on `G`; they are linearly
 independent whenever `G` has a two-sided identity, without any factor-set identities on `α`.
 
@@ -345,6 +352,17 @@ theorem isUnit_of (g : G) : IsUnit (of g : twistedMonoidAlgebra k G α) := by
 
 end Group
 
+section Ring
+
+variable {R : Type*} [CommRing R] (β : G → G → Rˣ) [IsFactorSet β]
+
+/-- With ring coefficients, the twisted monoid algebra is a ring. -/
+noncomputable instance : Ring (twistedMonoidAlgebra R G β) :=
+  -- Specify the ambient type: inference cannot recover it through the ring-to-semiring map.
+  Subalgebra.toRing (A := Module.End R (G →₀ R)) _
+
+end Ring
+
 variable (k G α)
 
 /-- The twisted translations form a basis of `k_α[G]` indexed by `G`: the twisted monoid algebra is
@@ -367,11 +385,97 @@ theorem finrank_eq_natCard [StrongRankCondition k] :
 
 variable {k G α}
 
+/-- Cancellation of addition transfers from the coefficients to a twisted monoid algebra. -/
+instance [IsCancelAdd k] : IsCancelAdd (twistedMonoidAlgebra k G α) :=
+  (basis k G α).repr.injective.isCancelAdd _ (map_add _)
+
+@[simp]
+theorem repr_of (g : G) : (basis k G α).repr (of g) = Finsupp.single g 1 := by
+  rw [← basis_apply, Module.Basis.repr_self]
+
+@[simp]
+theorem repr_one : (basis k G α).repr 1 = Finsupp.single 1 1 := by
+  rw [← of_one, repr_of]
+
+/-- The coefficients of a product are the twisted convolution of the two coefficient families. -/
+theorem repr_mul (f g : twistedMonoidAlgebra k G α) :
+    (basis k G α).repr (f * g) =
+      ((basis k G α).repr f).sum fun a r ↦
+        ((basis k G α).repr g).sum fun b s ↦
+          Finsupp.single (a * b) (r * s * (α a b : k)) := by
+  classical
+  conv_lhs =>
+    rw [← (basis k G α).linearCombination_repr f, ← (basis k G α).linearCombination_repr g]
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Finset.sum_mul_sum, smul_mul_smul_comm,
+    map_sum, map_smul, basis_apply, of_mul_of, repr_of, Finsupp.smul_single, smul_eq_mul, mul_one]
+
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
 theorem algHom_ext {A : Type*} [Semiring A] [Algebra k A]
     {f g : twistedMonoidAlgebra k G α →ₐ[k] A} (h : ∀ x : G, f (of x) = g (of x)) : f = g :=
   AlgHom.toLinearMap_injective <| (basis k G α).ext fun x ↦ by simpa using h x
+
+/-- The scalar semiring embeds in `k_α[G]`, as the coefficients at the identity. -/
+theorem algebraMap_injective :
+    Function.Injective (algebraMap k (twistedMonoidAlgebra k G α)) := by
+  have key (r : k) : (basis k G α).repr (algebraMap k _ r) 1 = r := by
+    rw [Algebra.algebraMap_eq_smul_one, ← of_one, ← basis_apply, map_smul, Basis.repr_self,
+      Finsupp.smul_single_one, Finsupp.single_eq_same]
+  intro r s h
+  rw [← key r, h, key s]
+
+instance : FaithfulSMul k (twistedMonoidAlgebra k G α) :=
+  (faithfulSMul_iff_algebraMap_injective k _).mpr algebraMap_injective
+
+section Group
+
+variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFactorSet α]
+
+/-- An algebra map out of `k_α[G]` is determined by its values on the basis elements at a
+generating set of the group. -/
+theorem algHom_ext_of_closure_eq_top {A : Type*} [Semiring A] [Algebra k A]
+    {f g : twistedMonoidAlgebra k G α →ₐ[k] A} {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ x ∈ s, f (of x) = g (of x)) : f = g := by
+  refine algHom_ext fun x ↦ ?_
+  induction hs ▸ Subgroup.mem_top x using Subgroup.closure_induction with
+  | mem x hx => exact h x hx
+  | one => simp
+  | mul x y _ _ hx hy =>
+    -- `of x * of y = α x y • of (x * y)`, so `of (x * y)` is a scalar multiple of a product.
+    have key : (of (x * y) : twistedMonoidAlgebra k G α) =
+        (((α x y)⁻¹ : kˣ) : k) • (of x * of y) := by
+      rw [of_mul_of, smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
+    rw [key, map_smul, map_smul, map_mul, map_mul, hx, hy]
+  | inv x _ hx =>
+    -- `of x⁻¹ * of x = α x⁻¹ x • 1`, so `of x⁻¹` is a scalar multiple of the inverse of `of x`.
+    obtain ⟨U, hU⟩ := isUnit_of (α := α) x
+    have key : (of x⁻¹ : twistedMonoidAlgebra k G α) = (α x⁻¹ x : k) • (↑U⁻¹ : _) := by
+      rw [← smul_one_mul, ← of_one, ← inv_mul_cancel x, ← of_mul_of, mul_assoc, ← hU,
+        Units.mul_inv, mul_one]
+    have hfg : Units.map (f : _ →* A) U = Units.map (g : _ →* A) U :=
+      Units.ext <| by simpa [hU] using hx
+    rw [key, map_smul, map_smul]
+    congr 1
+    simpa using congrArg (fun v : Aˣ ↦ ((v⁻¹ : Aˣ) : A)) hfg
+
+/-- **The coefficient at the identity is a trace** on a twisted group algebra: `f * g` and `g * f`
+have the same coefficient at `1`. -/
+theorem repr_mul_apply_one_comm (f g : twistedMonoidAlgebra k G α) :
+    (basis k G α).repr (f * g) 1 = (basis k G α).repr (g * f) 1 := by
+  classical
+  -- Both sides are bilinear in `(f, g)`, so it suffices to compare them on basis elements.
+  have key : (LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ ((basis k G α).coord 1) =
+      ((LinearMap.mul k (twistedMonoidAlgebra k G α)).compr₂ ((basis k G α).coord 1)).flip := by
+    refine (basis k G α).ext fun a ↦ (basis k G α).ext fun b ↦ ?_
+    simp only [LinearMap.compr₂_apply, LinearMap.flip_apply, LinearMap.mul_apply', basis_apply,
+      of_mul_of, map_smul, Module.Basis.coord_apply, repr_of, smul_eq_mul, Finsupp.single_apply]
+    by_cases hab : a * b = 1
+    · obtain rfl : b = a⁻¹ := eq_inv_of_mul_eq_one_right hab
+      simp [IsFactorSet.apply_inv_eq_inv_apply α a]
+    · simp [hab, mt mul_eq_one_comm.mp hab]
+  exact LinearMap.congr_fun₂ key f g
+
+end Group
 
 section Lift
 

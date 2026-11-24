@@ -36,7 +36,7 @@ theorem card_powerClasses_real {n : ℕ} (hn : n ≠ 0) :
     (MonoidHom.ker_eq_bot_iff _).2 (pow_left_injective hn)
   have hrange : (powMonoidHom n : Units.posSubgroup ℝ →* Units.posSubgroup ℝ).range = ⊤ := by
     refine MonoidHom.range_eq_top.2 fun x ↦ ?_
-    have hx : (0 : ℝ) < ((x : ℝˣ) : ℝ) := (Units.mem_posSubgroup _).1 x.2
+    have hx : (0 : ℝ) < ((x : ℝˣ) : ℝ) := (Units.mem_posSubgroup _).1 x.property
     have hy : (0 : ℝ) < ((x : ℝˣ) : ℝ) ^ (n⁻¹ : ℝ) := Real.rpow_pos_of_pos hx _
     refine ⟨⟨Units.mk0 _ hy.ne', (Units.mem_posSubgroup _).2 hy⟩, ?_⟩
     ext

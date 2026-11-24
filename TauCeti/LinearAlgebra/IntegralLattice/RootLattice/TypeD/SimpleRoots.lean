@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Basic
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 
 /-!
 # The simple-root basis of the checkerboard lattice
@@ -24,7 +24,7 @@ This file supplies that bridge, for `4 ≤ n`.  The Bourbaki-numbered simple roo
 ```
 
 are already pinned in classical orthogonal coordinates by
-`TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD`, together with their Gram matrix and their
+`TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic`, together with their Gram matrix and their
 linear independence.  Read in the rational ambient space `ℚⁿ` they lie in the checkerboard
 carrier, and they are proved here to be a `ℤ`-basis of it.  Consequently the Gram matrix of the
 checkerboard lattice in that basis is exactly `CartanMatrix.D n`, which is what makes the name
@@ -89,7 +89,7 @@ theorem checkerboardSimpleRoot_apply (hn : 4 ≤ n) (i j : Fin n) :
 
 /-- The coordinatewise cast of an integer vector into the rational ambient space, as a
 `ℤ`-linear map.  It is the comparison used to transport the classical root-system statements of
-`TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD` into the ambient space of the lattice. -/
+`TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic` into the ambient space of the lattice. -/
 private def ratOfIntVec (n : ℕ) : (Fin n → ℤ) →ₗ[ℤ] Fin n → ℚ :=
   (Algebra.linearMap ℤ ℚ).compLeft (Fin n)
 
@@ -117,11 +117,7 @@ theorem checkerboardSimpleRoot_mem_checkerboardCarrier (hn : 4 ≤ n) (i : Fin n
 /-! ## The Gram matrix -/
 
 /-- **The Gram matrix of the Bourbaki simple roots in the checkerboard lattice is the Cartan
-matrix of type `Dₙ`.**
-
-Not a `simp` lemma: `checkerboardLattice_form` is `@[simp]`, so `simp` rewrites the head of the
-left-hand side to `Matrix.toBilin' 1` before this equation can fire.  Every sibling
-`checkerboardLattice_form_*` lemma is untagged for the same reason. -/
+matrix of type `Dₙ`.** -/
 theorem checkerboardLattice_form_checkerboardSimpleRoot_checkerboardSimpleRoot
     (hn : 4 ≤ n) (i j : Fin n) :
     (checkerboardLattice n).form (checkerboardSimpleRoot n hn i) (checkerboardSimpleRoot n hn j) =

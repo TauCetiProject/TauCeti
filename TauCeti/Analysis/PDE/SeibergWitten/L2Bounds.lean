@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # `L²` bounds on `β` and `∂bar_a α` at large parameter
@@ -54,6 +56,11 @@ On a closed Riemannian manifold this is the divergence theorem, and
 `β` bound with the Laplace–Beltrami operator itself, for sections with `|β|²` of class `C²` and
 `|α|²` and `|∇_a α|²` continuous. The norm forms take the integrated `β` bound as a hypothesis,
 so they apply to both.
+
+The component `α` satisfies a projected Weitzenböck inequality of the same shape,
+`-Δ|α|² / 2 + |∇_a α|² - (r / 4) (1 - |α|²) |α|² ≤ K₁`. On a closed manifold the Laplacian again
+integrates to zero, so `∫ |∇_a α|² ≤ K₁ Vol(M) + (r / 4) ∫ (1 - |α|²) |α|²`
+(`TauCeti.SeibergWitten.integral_norm_sq_le_mul_add_mul_integral_of_laplaceBeltrami`).
 
 ## References
 
@@ -322,13 +329,49 @@ theorem integral_norm_sq_add_mul_integral_norm_sq_le_of_laplaceBeltrami
         r / 16 * ∫ x, ‖β x‖ ^ 2 ∂riemannianVolume I M ≤
       8 * c ^ 2 / r * (∫ x, ‖Dα x‖ ^ 2 ∂riemannianVolume I M +
         ∫ x, ‖α x‖ ^ 2 ∂riemannianVolume I M) := by
-  have hcpt (f : M → ℝ) (hf : Continuous f) : Integrable f (riemannianVolume I M) :=
-    hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
   exact integral_norm_sq_add_mul_integral_norm_sq_le hr hcr
-    (hcpt _ (continuous_laplaceBeltrami hβ))
+    (continuous_laplaceBeltrami hβ).integrable_of_compactSpace
     (integral_laplaceBeltrami_eq_zero hβ (HasCompactSupport.of_compactSpace _))
-    (hcpt _ hα) (hcpt _ hDα)
+    hα.integrable_of_compactSpace hDα.integrable_of_compactSpace
     (Filter.Eventually.of_forall hW)
+
+/-- **The integrated Weitzenböck inequality for `α`.** On a compact Riemannian manifold without
+boundary, with a `C¹` Riemannian metric, let `α` and `Dα` be sections of families of seminormed
+groups, standing for `α` and `∇_a α`, such that `|α|²` is of class `C²` and `|∇_a α|²` is
+continuous, satisfying the projected Weitzenböck inequality
+`-Δ|α|² / 2 + |∇_a α|² - (r / 4) (1 - |α|²) |α|² ≤ K₁` with the Laplace–Beltrami operator
+`Δ = div ∘ grad`. Then
+
+`∫ |∇_a α|² ≤ K₁ Vol(M) + (r / 4) ∫ (1 - |α|²) |α|²`
+
+for the Riemannian volume. -/
+theorem integral_norm_sq_le_mul_add_mul_integral_of_laplaceBeltrami {α : (x : M) → A x}
+    {Dα : (x : M) → F₁ x} {K₁ : ℝ} (hα : ContMDiff I 𝓘(ℝ) 2 fun x ↦ ‖α x‖ ^ 2)
+    (hDα : Continuous fun x ↦ ‖Dα x‖ ^ 2)
+    (hW : ∀ x, -(laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2) + ‖Dα x‖ ^ 2 -
+      r / 4 * (1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2 ≤ K₁) :
+    ∫ x, ‖Dα x‖ ^ 2 ∂riemannianVolume I M ≤
+      K₁ * riemannianTotalVolume I M +
+        r / 4 * ∫ x, (1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2 ∂riemannianVolume I M := by
+  have hΔ := integral_laplaceBeltrami_eq_zero hα (HasCompactSupport.of_compactSpace _)
+  have hΔc := continuous_laplaceBeltrami hα
+  have hs : Continuous fun x ↦ ‖α x‖ ^ 2 := hα.continuous
+  -- Integrate `|∇_a α|² ≤ (K₁ + Δ|α|² / 2) + (r / 4) (1 - |α|²) |α|²`.
+  have h₁ : Integrable (fun x ↦ K₁ + laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2)
+      (riemannianVolume I M) := Continuous.integrable_of_compactSpace (by fun_prop)
+  have h₂ : Integrable (fun x ↦ r / 4 * ((1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2)) (riemannianVolume I M) :=
+    Continuous.integrable_of_compactSpace (by fun_prop)
+  have h₃ : Integrable (fun x ↦ K₁ + laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2 +
+      r / 4 * ((1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2)) (riemannianVolume I M) :=
+    Continuous.integrable_of_compactSpace (by fun_prop)
+  have hpt (x : M) : ‖Dα x‖ ^ 2 ≤ K₁ + laplaceBeltrami I (fun y ↦ ‖α y‖ ^ 2) x / 2 +
+      r / 4 * ((1 - ‖α x‖ ^ 2) * ‖α x‖ ^ 2) := by
+    linarith [hW x]
+  have hle := integral_mono hDα.integrable_of_compactSpace h₃ hpt
+  rwa [integral_add h₁ h₂,
+    integral_add (integrable_const K₁) (Continuous.integrable_of_compactSpace (by fun_prop)),
+    integral_div, hΔ, integral_const_riemannianVolume, integral_const_mul, zero_div,
+    add_zero] at hle
 
 end Manifold
 

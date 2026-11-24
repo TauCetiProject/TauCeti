@@ -130,7 +130,7 @@ def zmod2Equiv : TwistingCocycle (ZMod 2) R ≃ { u : Rˣ // u * u = 1 } where
   toFun c' := ⟨c'.ω 1 1 1, by
     have hc := c'.cocycle 1 1 1 1; rw [CharTwo.add_self_eq_zero (1 : ZMod 2)] at hc
     simpa using hc.symm⟩
-  invFun u := zmod2 u.1 u.2
+  invFun u := zmod2 u.val u.property
   left_inv c' := by
     ext a b d; rcases a.eq_zero_or_eq_one with rfl | rfl <;>
       rcases b.eq_zero_or_eq_one with rfl | rfl <;> rcases d.eq_zero_or_eq_one with rfl | rfl <;>
@@ -141,7 +141,7 @@ def zmod2Equiv : TwistingCocycle (ZMod 2) R ≃ { u : Rˣ // u * u = 1 } where
     (zmod2Equiv c' : Rˣ) = c'.ω 1 1 1 := (rfl)
 
 @[simp] lemma zmod2Equiv_symm_apply (u : { u : Rˣ // u * u = 1 }) :
-    zmod2Equiv.symm u = zmod2 u.1 u.2 := (rfl)
+    zmod2Equiv.symm u = zmod2 u.val u.property := (rfl)
 
 @[simp] lemma zmod2Equiv_zmod2 (u : Rˣ) (hu : u * u = 1) :
     zmod2Equiv (zmod2 u hu) = ⟨u, hu⟩ := zmod2Equiv.apply_symm_apply ⟨u, hu⟩
@@ -150,8 +150,23 @@ def zmod2Equiv : TwistingCocycle (ZMod 2) R ≃ { u : Rˣ // u * u = 1 } where
     (hc : c'.ω 1 1 1 * c'.ω 1 1 1 = 1) : zmod2 (c'.ω 1 1 1) hc = c' :=
   zmod2Equiv.symm_apply_apply c'
 
-lemma zmod2_zmod2Equiv (c' : TwistingCocycle (ZMod 2) R) :
-    zmod2 (zmod2Equiv c').1 (zmod2Equiv c').2 = c' := zmod2Equiv.symm_apply_apply c'
+end TwistingCocycle
+
+namespace TwistingCocycle
+
+variable {I : Type*} [AddGroup I] {R : Type*} [Monoid R] (c : TwistingCocycle I R)
+
+/-- The values of a twisting cocycle on a group at `(i, -i, i)` and `(-i, i, -i)` are mutually
+inverse: this is the cocycle identity at `(-i, i, -i, i)`, using the normalization. -/
+lemma ω_mul_ω_neg_eq_one (i : I) : c.ω i (-i) i * c.ω (-i) i (-i) = 1 := by
+  simpa using (c.cocycle (-i) i (-i) i).symm
+
+/-- The inverses of the values of a twisting cocycle on a group at `(i, -i, i)` and `(-i, i, -i)`
+multiply to `1` in `R`. -/
+lemma inv_ω_mul_inv_ω_neg (i : I) :
+    (((c.ω i (-i) i)⁻¹ : Rˣ) : R) * ((c.ω (-i) i (-i))⁻¹ : Rˣ) = 1 := by
+  rw [← Units.val_mul, ← mul_inv_rev, mul_eq_one_comm.1 (c.ω_mul_ω_neg_eq_one i), inv_one,
+    Units.val_one]
 
 end TwistingCocycle
 

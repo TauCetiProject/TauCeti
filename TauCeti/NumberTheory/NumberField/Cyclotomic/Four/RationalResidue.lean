@@ -8,7 +8,9 @@ module
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Cyclotomic
 import TauCeti.Data.Nat.ModEq
+import TauCeti.RingTheory.Ideal.Int
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # Quartic residue symbols of rational integers
@@ -112,13 +114,11 @@ theorem powerResidueSymbolIdeal_intCast_four {m n : ℤ} (h : IsCoprime n m) :
       powerResidueSymbolIdeal_mul_right_intCast hp0 hm0, ih hnm, mul_one]
     -- Reduce to the rational prime `q = |p|`.
     have hq := Int.prime_iff_natAbs_prime.mp hp
-    have hpq : span {(p : 𝓞 K)} = span {(p.natAbs : 𝓞 K)} := by
-      rcases Int.natAbs_eq p with hp' | hp' <;> rw [hp'] <;> simp
     have hnq : IsCoprime n p.natAbs := by
       rcases Int.natAbs_eq p with hp' | hp' <;> rw [hp'] at hnp
       · exact hnp
       · exact (IsCoprime.neg_right_iff _ _).mp hnp
-    rw [hpq]
+    rw [span_singleton_intCast_eq_natAbs]
     by_cases hq3 : p.natAbs % 4 = 3
     · exact powerResidueSymbolIdeal_natCast_four_of_mod_four_eq_three hq hq3 hnq
     · exact powerResidueSymbolIdeal_natCast_four_of_mod_four_ne_three hq hq3 hnq

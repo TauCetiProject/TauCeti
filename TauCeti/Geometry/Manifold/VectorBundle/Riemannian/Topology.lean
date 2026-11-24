@@ -142,7 +142,7 @@ theorem antitone_chartCkTopology :
     Antitone (chartCkTopology (I := I) (M := M)) := fun _ l hkl ↦
   let _ := chartCkTopology (I := I) (M := M) l
   continuous_iff_le_induced.1 (continuous_pi fun x ↦ continuous_pi fun m ↦
-    continuous_chartMetricDerivative l x (m.2.trans hkl))
+    continuous_chartMetricDerivative l x (m.property.trans hkl))
 
 /-- A family is continuous in the chart Cᵏ topology exactly when its coordinate derivatives of
 order at most `k` depend jointly continuously on the parameter and chart variable. -/
@@ -177,7 +177,7 @@ theorem continuousAt_iteratedFDeriv_chartMetric [LocallyCompactSpace E] (x : M) 
   have hmap : map (Prod.map id Subtype.val) (𝓝 (g₀, (⟨z₀, hz₀⟩ : (extChartAt I x).target))) =
       𝓝 (g₀, z₀) := by
     rw [nhds_prod_eq, nhds_prod_eq, ← prod_map_map_eq', map_id,
-      map_nhds_subtype_coe_eq_nhds hz₀ ((isOpen_extChartAt_target x).mem_nhds hz₀)]
+      map_nhds_subtypeVal_eq_nhds hz₀ ((isOpen_extChartAt_target x).mem_nhds hz₀)]
   rw [ContinuousAt, ← hmap, tendsto_map'_iff]
   exact h.continuousAt
 
@@ -204,7 +204,7 @@ theorem tendsto_chartMetricDerivative_iff {P : Type*} {l : Filter P}
     exact (congrArg₂ dist (chartMetricDerivative_apply g₀ x m ⟨z, hKx hz⟩)
       (chartMetricDerivative_apply (g p) x m ⟨z, hKx hz⟩)).symm.trans_lt (hp ⟨z, hKx hz⟩ hz)
   · intro h K hK
-    exact ((((h _ (image_subset_iff.mpr fun z _ ↦ z.2) (hK.image continuous_subtype_val)).comp
+    exact ((((h _ (image_subset_iff.mpr fun z _ ↦ z.property) (hK.image continuous_subtypeVal)).comp
       Subtype.val).mono (subset_preimage_image _ _)).congr (Eventually.of_forall fun p z _ ↦
         (chartMetricDerivative_apply (g p) x m z).symm)).congr_right fun z _ ↦
           (chartMetricDerivative_apply g₀ x m z).symm

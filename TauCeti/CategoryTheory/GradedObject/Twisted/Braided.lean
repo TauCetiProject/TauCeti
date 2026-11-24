@@ -11,12 +11,14 @@ import Mathlib.Algebra.CharP.Two
 import TauCeti.Data.ZMod.Two
 
 /-!
-# Pointed braidings (abelian `3`-cocycles) and `ℤ/2` classification
+# Scalar braiding data (abelian `3`-cocycles) and `ℤ/2` classification
 
 For a commutative additive monoid `I` and a monoid `K`, a scalar braiding datum extending a
 normalized `3`-cocycle `c : TauCeti.GradedObject.TwistingCocycle I K` is a function
-`r : I → I → Kˣ` satisfying the two scalar hexagon identities with `c.ω`, i.e., an
-Eilenberg–MacLane abelian `3`-cocycle extending `c` (Joyal–Street, §3; Quinn, §5).
+`r : I → I → Kˣ` satisfying the two scalar hexagon identities with `c.ω`. When `I` is an abelian
+group, this is an Eilenberg–MacLane abelian `3`-cocycle extending `c`, describing a braiding on the
+pointed category of `I`-graded objects (Joyal–Street, §3; Quinn, §5); the structure
+`PointedBraiding` records the same equations over any commutative additive monoid `I`.
 
 * `TauCeti.GradedObject.PointedBraiding c`: scalar braiding data `r : I → I → Kˣ` extending `c`,
   with derived unit laws `r_zero_right` and `r_zero_left` and coefficient pushforward
@@ -40,8 +42,9 @@ namespace TauCeti.GradedObject
 universe u v
 
 /-- A scalar braiding datum `r : I → I → Kˣ` on a commutative additive monoid `I` compatible with
-a normalized `3`-cocycle `c : TwistingCocycle I K`, i.e., an Eilenberg–MacLane abelian `3`-cocycle
-extending `c` (Joyal–Street, *Braided tensor categories*, §3). -/
+a normalized `3`-cocycle `c : TwistingCocycle I K`. When `I` is an abelian group, this is an
+Eilenberg–MacLane abelian `3`-cocycle extending `c` (Joyal–Street, *Braided tensor categories*,
+§3), parametrizing braidings in the pointed case. -/
 @[ext]
 structure PointedBraiding {I : Type u} [AddCommMonoid I] {K : Type v} [Monoid K]
     (c : TwistingCocycle I K) where
@@ -65,7 +68,7 @@ variable {I : Type u} [AddCommMonoid I] {K : Type v} [Monoid K] {c : TwistingCoc
 @[simp] theorem r_zero_left (B : PointedBraiding c) (a : I) : B.r 0 a = 1 := by
   simpa using (B.hexagon_reverse 0 0 a).symm
 
-/-- Push a pointed braiding forward along a monoid homomorphism `f : K →* L`. -/
+/-- Push a scalar braiding datum forward along a monoid homomorphism `f : K →* L`. -/
 def map {L : Type*} [Monoid L] (f : K →* L) (B : PointedBraiding c) :
     PointedBraiding (c.map f) where
   r a b := Units.map f (B.r a b)
@@ -118,7 +121,7 @@ def zmod2Equiv (u : Kˣ) (hu : u * u = 1) :
     have h₂ : (B.r 1 1)⁻¹ * u = B.r 1 1 := by rw [← h₁, mul_assoc, hu, mul_one]
     calc B.r 1 1 * B.r 1 1 = B.r 1 1 * ((B.r 1 1)⁻¹ * u) := by rw [h₂]
       _ = u := by rw [← mul_assoc, mul_inv_cancel, one_mul]⟩
-  invFun r := zmod2 hu r.1 r.2
+  invFun r := zmod2 hu r.val r.property
   left_inv B := by
     ext a b; rcases a.eq_zero_or_eq_one with rfl | rfl <;>
       rcases b.eq_zero_or_eq_one with rfl | rfl <;> simp
@@ -128,16 +131,12 @@ def zmod2Equiv (u : Kˣ) (hu : u * u = 1) :
     (B : PointedBraiding (TwistingCocycle.zmod2 u hu)) :
     (zmod2Equiv u hu B : Kˣ) = B.r 1 1 := (rfl)
 @[simp] theorem zmod2Equiv_symm_apply (u : Kˣ) (hu : u * u = 1) (r : { r : Kˣ // r * r = u }) :
-    (zmod2Equiv u hu).symm r = zmod2 hu r.1 r.2 := (rfl)
+    (zmod2Equiv u hu).symm r = zmod2 hu r.val r.property := (rfl)
 @[simp] theorem zmod2Equiv_zmod2 {u : Kˣ} (hu : u * u = 1) (r : Kˣ) (hr : r * r = u) :
     zmod2Equiv u hu (zmod2 hu r hr) = ⟨r, hr⟩ := (zmod2Equiv u hu).apply_symm_apply ⟨r, hr⟩
 @[simp] theorem zmod2_r_one_one {u : Kˣ} (hu : u * u = 1)
     (B : PointedBraiding (TwistingCocycle.zmod2 u hu)) (hr : B.r 1 1 * B.r 1 1 = u) :
     zmod2 hu (B.r 1 1) hr = B := (zmod2Equiv u hu).symm_apply_apply B
-theorem zmod2_zmod2Equiv (u : Kˣ) (hu : u * u = 1)
-    (B : PointedBraiding (TwistingCocycle.zmod2 u hu)) :
-    zmod2 hu (zmod2Equiv u hu B).1 (zmod2Equiv u hu B).2 = B :=
-  (zmod2Equiv u hu).symm_apply_apply B
 
 end ZMod2
 

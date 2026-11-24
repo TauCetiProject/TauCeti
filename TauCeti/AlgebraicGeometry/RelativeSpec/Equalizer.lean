@@ -148,12 +148,12 @@ theorem isLocalization_equalizerSections_basicOpen
     -- `r ^ m * x` lies in the equalizer for some `m`.
     intro z
     let := (A.restrictSections i).toAlgebra
-    obtain ⟨⟨x, _, n, rfl⟩, hx⟩ := IsLocalization.surj (Submonoid.powers a) z.1
+    obtain ⟨⟨x, _, n, rfl⟩, hx⟩ := IsLocalization.surj (Submonoid.powers a) z.val
     simp only [RingHom.algebraMap_toAlgebra] at hx
     have hfg : B.restrictSections i (CommMon.sectionsAlgHom f U x) =
         B.restrictSections i (CommMon.sectionsAlgHom g U x) := by
       rw [← CommMon.sectionsAlgHom_restrictSections, ← CommMon.sectionsAlgHom_restrictSections,
-        ← hx, map_mul, map_mul, z.2, CommMon.sectionsAlgHom_restrictSections,
+        ← hx, map_mul, map_mul, z.property, CommMon.sectionsAlgHom_restrictSections,
         CommMon.sectionsAlgHom_restrictSections, hfa, hga]
     let := (B.restrictSections i).toAlgebra
     obtain ⟨⟨_, m, rfl⟩, hm⟩ := IsLocalization.exists_of_eq (M := Submonoid.powers b) hfg

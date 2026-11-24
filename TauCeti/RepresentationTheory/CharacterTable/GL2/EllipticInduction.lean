@@ -293,8 +293,8 @@ theorem indClassFun_gl2NonSplitTorusHom (f : GL2NonSplitTorus F E → k)
   -- the torus is abelian, so every function on it is invariant under conjugation
   have hcomm : ∀ y z : (GL2NonSplitTorus F E), z * y * z⁻¹ = y := by
     intro y z
-    obtain ⟨p, hp⟩ := mem_iff.mp y.2
-    obtain ⟨r, hr⟩ := mem_iff.mp z.2
+    obtain ⟨p, hp⟩ := mem_iff.mp y.property
+    obtain ⟨r, hr⟩ := mem_iff.mp z.property
     refine Subtype.ext ?_
     rw [Subgroup.coe_mul, Subgroup.coe_mul, Subgroup.coe_inv, ← hp, ← hr, ← map_inv, ← map_mul,
       ← map_mul, mul_comm r p, mul_assoc, mul_inv_cancel, mul_one]

@@ -49,5 +49,5 @@ theorem Subgroup.continuous_normalizerOrbitMap {G : Type*} [Group G] [Topologica
   refine isQuotientMap_quotient_mk'.continuous_iff.mpr ?_
   have h : Continuous fun t : H ↦
       (Quotient.mk'' (t : G) : MulAction.orbitRel.Quotient (ConjAct G) G) :=
-    continuous_quot_mk.comp continuous_subtype_val
+    continuous_quot_mk.comp continuous_subtypeVal
   exact h.congr fun t ↦ (H.normalizerOrbitMap_mk t).symm

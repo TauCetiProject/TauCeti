@@ -42,7 +42,7 @@ instance subsingleton_continuousCohomology_succ_of_subsingleton [Subsingleton G]
   set K := homogeneousCochains X
   obtain ⟨z, rfl⟩ := K.homologyπ_surjective (n + 1) x
   set c := K.iCycles (n + 1) z
-  set f : C(G, (resolutionX X (n + 1)).V) := c.1
+  set f : C(G, (resolutionX X (n + 1)).V) := c.val
   -- the cocycle condition `dₙ₊₂ f = 0`
   have hcocycle : (d X (n + 2)).hom f = 0 := by
     have h := ConcreteCategory.congr_hom (K.iCycles_d (n + 1) (n + 2)) z

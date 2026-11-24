@@ -63,7 +63,7 @@ theorem flat_restrictedMvPowerSeriesSubring :
   have : CompleteSpace I := (isClosed_of_isNoetherian I).completeSpace_coe
   have : Module.Finite A I := Module.Finite.iff_fg.mpr (IsNoetherian.noetherian I)
   have : IsModuleTopology A I := IsTateRing.isModuleTopology
-  have hι : ContinuousAt (I.subtype : I → A) 0 := continuous_subtype_val.continuousAt
+  have hι : ContinuousAt (I.subtype : I → A) 0 := continuous_subtypeVal.continuousAt
   intro x y hxy
   apply (restrictedMvPowerSeriesBaseChange_bijective (k := k) (A := A) (M := I)).injective
   apply restrictedMvPowerSeriesSubmoduleMap_injective (k := k) I.subtype hι I.injective_subtype

@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-!
@@ -15,9 +16,13 @@ This expresses the functoriality of special orthogonal groups under coefficient-
 supports their base-change constructions. The construction is modelled on Mathlib's
 `Matrix.SpecialLinearGroup.map`.
 
+Over an index type with at most one element the special orthogonal group is trivial, as is
+Mathlib's special linear group (`Matrix.SpecialLinearGroup.subsingleton_of_subsingleton`).
+
 ## Main declarations
 
 * `Matrix.SpecialOrthogonalGroup.map`: entrywise mapping of special orthogonal matrices.
+* `Matrix.SpecialOrthogonalGroup.subsingleton_of_subsingleton`: `SO(n)` is trivial for `n ≤ 1`.
 -/
 
 public section
@@ -38,14 +43,14 @@ theorem map_mem (f : R →+* S) {M : Matrix n n R} (hM : M ∈ specialOrthogonal
 
 /-- A ring homomorphism maps special orthogonal matrices entrywise. -/
 def map (f : R →+* S) : specialOrthogonalGroup n R →* specialOrthogonalGroup n S where
-  toFun M := ⟨M.1.map f, map_mem f M.2⟩
+  toFun M := ⟨M.val.map f, map_mem f M.property⟩
   map_one' := Subtype.ext (Matrix.map_one f f.map_zero f.map_one)
   map_mul' _ _ := Subtype.ext Matrix.map_mul
 
 /-- Entrywise mapping of a special orthogonal matrix has the expected underlying matrix. -/
 @[simp]
 theorem coe_map (f : R →+* S) (M : specialOrthogonalGroup n R) :
-    (map f M : Matrix n n S) = M.1.map f :=
+    (map f M : Matrix n n S) = M.val.map f :=
   (rfl)
 
 /-- A coefficient-ring map acts entrywise on special orthogonal matrices. -/
@@ -65,5 +70,12 @@ theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
     map (n := n) (g.comp f) = (map (n := n) g).comp (map (n := n) f) := by
   ext
   simp
+
+/-- Over an index type with at most one element the special orthogonal group is trivial: a special
+orthogonal matrix is in particular a special linear one. -/
+instance subsingleton_of_subsingleton [Subsingleton n] :
+    Subsingleton (specialOrthogonalGroup n R) :=
+  ⟨fun A B ↦ Subtype.ext <| congrArg (fun M : SpecialLinearGroup n R ↦ (M : Matrix n n R))
+    (Subsingleton.elim ⟨A, A.property.2⟩ ⟨B, B.property.2⟩)⟩
 
 end Matrix.SpecialOrthogonalGroup
