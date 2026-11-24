@@ -211,14 +211,22 @@ omit [Fintype ι] [DecidableEq ι] in
 the span of the columns of the matrix. -/
 theorem ker_toEuclideanLin_conjTranspose (A : Matrix κ ι 𝕜) :
     LinearMap.ker (toEuclideanLin Aᴴ) =
-      (Submodule.span 𝕜 (Set.range fun j ↦ WithLp.toLp 2 fun i ↦ A i j))ᗮ := by
+      (Submodule.span 𝕜 (Set.range fun j ↦ WithLp.toLp 2 (A.col j)))ᗮ := by
+  -- The `j`th coordinate of the map of `Aᴴ` is the inner product with the `j`th column of `A`,
+  -- since the `j`th row of `Aᴴ` is the conjugate of that column.
+  have hcoord (x : EuclideanSpace 𝕜 κ) (j : ι) :
+      (toEuclideanLin Aᴴ x).ofLp j = ⟪WithLp.toLp 2 (A.col j), x⟫_𝕜 := by
+    have hrow : Aᴴ.row j = star (A.col j) := by
+      ext k
+      simp only [row_apply, conjTranspose_apply, Pi.star_apply, col_apply]
+    rw [ofLp_toLpLin, toLin'_apply, mulVec_apply, hrow, EuclideanSpace.inner_eq_star_dotProduct,
+      WithLp.ofLp_toLp, dotProduct_comm]
   ext x
   -- A vector is orthogonal to a span exactly when it is orthogonal to each spanning column.
   rw [LinearMap.mem_ker, ← Submodule.span_singleton_le_iff_mem, ← Submodule.isOrtho_iff_le,
     Submodule.isOrtho_comm, Submodule.isOrtho_span]
   simp only [Set.forall_mem_range, Set.mem_singleton_iff, forall_eq]
-  simp [WithLp.ext_iff, funext_iff, EuclideanSpace.inner_eq_star_dotProduct, mulVec, dotProduct,
-    mul_comm]
+  simp only [WithLp.ext_iff, funext_iff, hcoord, WithLp.ofLp_zero, Pi.zero_apply]
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/

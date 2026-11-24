@@ -171,9 +171,12 @@ namespace TauCeti.Probability
 
 open ProbabilityTheory.iIndepFun
 
-/-- The compressible-vector exceptional probability is exponentially small in the row
-count, uniformly for matrices with at least half as many rows as columns. The constants
-depend only on the common sub-Gaussian variance proxy. -/
+/-- For a real random matrix with independent, uniformly sub-Gaussian entries of second moments
+at least one and at least half as many rows as columns, the outer probability that the matrix
+maps some compressible unit vector to a vector of norm below `√(card m) / 4` is exponentially
+small in the row count. Compressible means within `ρ` of a vector supported on at most
+`⌊δ * card n⌋₊` coordinates. The theorem supplies the sparsity fraction `δ`, the radius `ρ` and
+the rate `a`, which depend only on the common sub-Gaussian variance proxy `K`. -/
 theorem exists_measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le (K : ℝ≥0) :
     ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∃ ρ : ℝ≥0, 0 < ρ ∧ ρ ≤ 1 / 4 ∧ ∃ a : ℝ, 0 < a ∧
       ∀ {Ω m n : Type*} [MeasurableSpace Ω] [Fintype m] [Fintype n] [DecidableEq n]

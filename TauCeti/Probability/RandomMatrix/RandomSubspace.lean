@@ -18,6 +18,11 @@ columns is incompressible. The same holds for the unit normals to the span of th
 than a fixed one, as long as those columns still number at least half the rows. Both bounds are
 stated for outer probabilities, so the exceptional events need not be measurable.
 
+The caller does not choose the incompressibility parameters: each theorem supplies a sparsity
+fraction `δ`, an approximation radius `ρ` and an exponential rate that depend only on the common
+variance proxy `K`. A unit vector is compressible when it lies within `ρ` of a vector supported on
+at most `⌊δ * card m⌋₊` coordinates, where `card m` is the number of rows.
+
 Small-ball estimates for the inner product of a column with such a normal need its mass spread
 over many coordinates, so this is the first step in bounding the distance of a column from the
 span of the other columns. The proof applies invertibility on compressible vectors to the
@@ -44,7 +49,9 @@ namespace TauCeti.Probability
 /-- For a real random matrix with independent, uniformly sub-Gaussian entries of second moments
 at least one and at least half as many columns as rows, the outer probability that some
 compressible unit vector is orthogonal to every column is exponentially small in the number of
-columns. The constants depend only on the common variance proxy `K`. -/
+columns. Compressible means within `ρ` of a vector supported on at most `⌊δ * card m⌋₊`
+coordinates. The theorem supplies the sparsity fraction `δ`, the radius `ρ` and the rate `a`,
+which depend only on the common variance proxy `K`. -/
 theorem exists_measureReal_exists_mem_orthogonal_span_isCompressibleVector_le (K : ℝ≥0) :
     ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∃ ρ : ℝ≥0, 0 < ρ ∧ ρ ≤ 1 / 4 ∧ ∃ a : ℝ, 0 < a ∧
       ∀ {Ω m n : Type*} [MeasurableSpace Ω] [Fintype m] [Fintype n]
@@ -54,7 +61,7 @@ theorem exists_measureReal_exists_mem_orthogonal_span_isCompressibleVector_le (K
         (∀ i j, 1 ≤ ∫ ω, (A ω i j) ^ 2 ∂P) →
         Fintype.card m ≤ 2 * Fintype.card n →
         P.real {ω | ∃ x ∈ (Submodule.span ℝ (range fun j : n ↦
-            (WithLp.toLp 2 fun r ↦ A ω r j : EuclideanSpace ℝ m)))ᗮ,
+            (WithLp.toLp 2 ((A ω).col j) : EuclideanSpace ℝ m)))ᗮ,
           TauCeti.IsCompressibleVector ⌊δ * Fintype.card m⌋₊ ρ x} ≤
           4 * Real.exp (-a * Fintype.card n) := by
   obtain ⟨δ, hδ, hδ₁, ρ, hρ, hρ₄, a, ha, hcomp⟩ :=
@@ -84,8 +91,11 @@ theorem exists_measureReal_exists_mem_orthogonal_span_isCompressibleVector_le (K
 at least one, whose columns other than a fixed one number at least half its rows, the outer
 probability that some compressible unit vector is orthogonal to every column other than the
 fixed one is exponentially small in the number of columns. A matrix with a single column needs
-no bound on its rows. The constants depend only on the common variance proxy `K`. -/
-theorem exists_measureReal_exists_mem_orthogonal_span_ne_isCompressibleVector_le (K : ℝ≥0) :
+no bound on its rows. Compressible means within `ρ` of a vector supported on at most
+`⌊δ * card m⌋₊` coordinates. The theorem supplies the sparsity fraction `δ`, the radius `ρ` and
+the rate `a`, which depend only on the common variance proxy `K`. -/
+theorem exists_measureReal_exists_mem_orthogonal_span_col_subtype_ne_isCompressibleVector_le
+    (K : ℝ≥0) :
     ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∃ ρ : ℝ≥0, 0 < ρ ∧ ρ ≤ 1 / 4 ∧ ∃ a : ℝ, 0 < a ∧
       ∀ {Ω m n : Type*} [MeasurableSpace Ω] [Fintype m] [Fintype n]
         {P : Measure Ω} {A : Ω → Matrix m n ℝ},
@@ -94,7 +104,7 @@ theorem exists_measureReal_exists_mem_orthogonal_span_ne_isCompressibleVector_le
         (∀ i j, 1 ≤ ∫ ω, (A ω i j) ^ 2 ∂P) →
         (Fintype.card n = 1 ∨ Fintype.card m ≤ 2 * (Fintype.card n - 1)) → ∀ i : n,
         P.real {ω | ∃ x ∈ (Submodule.span ℝ (range fun j : {j // j ≠ i} ↦
-            (WithLp.toLp 2 fun r ↦ A ω r j : EuclideanSpace ℝ m)))ᗮ,
+            (WithLp.toLp 2 ((A ω).col j) : EuclideanSpace ℝ m)))ᗮ,
           TauCeti.IsCompressibleVector ⌊δ * Fintype.card m⌋₊ ρ x} ≤
           4 * Real.exp (-a * Fintype.card n) := by
   obtain ⟨δ, hδ, hδ₁, ρ, hρ, hρ₄, a, ha, hspan⟩ :=
@@ -108,9 +118,9 @@ theorem exists_measureReal_exists_mem_orthogonal_span_ne_isCompressibleVector_le
   rcases hn.eq_or_lt with hn₁ | hn₂
   · -- With one column the rate is at most `1 / 2`, so the bound is at least one.
     rw [← hn₁, Nat.cast_one, mul_one]
-    have hexp : 1 - 1 / 2 ≤ Real.exp (-min (a / 2) (1 / 2)) := by
-      have := Real.add_one_le_exp (-min (a / 2) (1 / 2))
-      linarith [min_le_right (a / 2) (1 / 2)]
+    have hexp : 1 - 1 / 2 ≤ Real.exp (-min (a / 2) (1 / 2)) :=
+      (Real.one_sub_le_exp_neg (1 / 2)).trans
+        (Real.exp_le_exp.mpr (neg_le_neg (min_le_right _ _)))
     exact measureReal_le_one.trans (by linarith)
   -- Remove the fixed column; the remaining columns number at least half the rows.
   let B : Ω → Matrix m {j // j ≠ i} ℝ := fun ω ↦ (A ω).submatrix id Subtype.val
@@ -124,7 +134,7 @@ theorem exists_measureReal_exists_mem_orthogonal_span_ne_isCompressibleVector_le
     have hn' : (2 : ℝ) ≤ Fintype.card n := by exact_mod_cast hn₂
     rw [hcard, Nat.cast_sub hn, Nat.cast_one]
     nlinarith [min_le_left (a / 2) (1 / 2)]
-  simpa only [B, submatrix_apply, id_eq] using
+  simpa only [B, col_submatrix_eq_comp, Function.comp_id] using
     (hspan hindB (fun r j ↦ by simpa only [B, submatrix_apply, id_eq] using hA r j)
       (fun r j ↦ by simpa only [B, submatrix_apply, id_eq] using hmom r j) hdimB).trans
       (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr hrate) (by norm_num))
