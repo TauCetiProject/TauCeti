@@ -29,8 +29,9 @@ quotient norm `1`, and the family `(aₙ / n)` has quotient norm `0`.
 * `lp.isClosed_c0Ideal`: the `c₀` ideal is closed.
 * `lp.star_mem_c0Ideal`: the `c₀` ideal is closed under `star`.
 * `lp.norm_mk_c0Ideal`: the quotient norm is the limit superior of the coordinate norms.
-* `lp.norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one`, `lp.norm_mk_c0Ideal_one`: a family of
-  norm-one elements, such as the unit, has quotient norm `1`.
+* `lp.norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one`: a family of norm-one elements has quotient
+  norm `1`.
+* `lp.normOneClass_quotient_c0Ideal`: in particular, the unit of the quotient has norm `1`.
 * `lp.nontrivial_quotient_c0Ideal`: over an infinite index type the quotient by the `c₀` ideal of
   a bounded product of normed rings with `‖1‖ = 1` is nonzero.
 
@@ -169,15 +170,14 @@ namespace lp
 variable {ι : Type*} {A : ι → Type*} [∀ i, NormedRing (A i)] [∀ i, NormOneClass (A i)]
   [Infinite ι]
 
-/-- Over an infinite index type, the unit of a bounded product of normed rings with `‖1‖ = 1` has
-quotient norm one modulo the `c₀` ideal. -/
-theorem norm_mk_c0Ideal_one : ‖TwoSidedIdeal.Quotient.mk (c0Ideal A) 1‖ = 1 :=
-  norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one 1 fun _ ↦ by simp
+/-- Over an infinite index type, the unit of the quotient of a bounded product of normed rings
+with `‖1‖ = 1` by the `c₀` ideal has norm one. -/
+instance normOneClass_quotient_c0Ideal : NormOneClass (lp A ∞ ⧸ c0Ideal A) :=
+  ⟨by simpa using norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one (A := A) 1 fun _ ↦ by simp⟩
 
 /-- The quotient of a bounded product of normed rings with `‖1‖ = 1`, over an infinite index type,
 by the `c₀` ideal is nonzero. -/
 instance nontrivial_quotient_c0Ideal : Nontrivial (lp A ∞ ⧸ c0Ideal A) :=
-  nontrivial_of_ne (TwoSidedIdeal.Quotient.mk (c0Ideal A) 1) 0 fun h ↦ by
-    simpa [h] using (norm_mk_c0Ideal_one (A := A)).symm
+  nontrivial_of_ne 1 0 fun h ↦ by simpa [h] using (norm_one (α := lp A ∞ ⧸ c0Ideal A)).symm
 
 end lp

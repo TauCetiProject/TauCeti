@@ -22,6 +22,7 @@ composite `A i →⋆ₐ[R] A j` of `f i, …, f (j - 1)`. These composites form
 
 ## Main statements
 
+* `StarAlgHom.natLERec_self_succ`: the composite from a stage to the next one is `f`.
 * `StarAlgHom.natLERec_comp`: the composites compose.
 * `StarAlgHom.natLERec.directedSystem`: the composites form a directed system.
 * `StarAlgHom.natLERec_injective`: the composites of injective maps are injective.
@@ -48,6 +49,11 @@ theorem natLERec_self (i : ℕ) : natLERec f i i le_rfl = StarAlgHom.id R _ :=
 theorem natLERec_succ {i k : ℕ} (h : i ≤ k) :
     natLERec f i (k + 1) (h.trans k.le_succ) = (f k).comp (natLERec f i k h) :=
   Nat.leRecOn_succ h _
+
+/-- The composite from a stage to the next one is the map `f` at that stage. -/
+@[simp]
+theorem natLERec_self_succ (n : ℕ) (h : n ≤ n + 1) : natLERec f n (n + 1) h = f n := by
+  rw [natLERec_succ f le_rfl, natLERec_self, StarAlgHom.comp_id]
 
 /-- The composites compose. -/
 theorem natLERec_comp {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
