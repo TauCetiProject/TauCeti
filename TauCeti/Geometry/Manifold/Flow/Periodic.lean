@@ -101,10 +101,10 @@ rotates the orbit at that end.
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
-* `TauCeti.mfderiv_timeDependentFlowOf_add_period_apply`: in finite dimensions, the derivative of
-  the flow over one more period factors through the derivative of the return map, wherever both
-  are defined. At a fixed point of the return map in its domain, a vector fixed by the derivative
-  of the return map therefore spreads to a periodic solution of the linearized flow
+* `TauCeti.mfderiv_timeDependentFlowOf_add_period_apply`: the derivative of the flow over one
+  more period factors through the derivative of the return map, wherever both are defined. At a
+  fixed point of the return map in its domain, a vector fixed by the derivative of the return map
+  therefore spreads to a periodic solution of the linearized flow
   (`TauCeti.mfderiv_timeDependentFlowOf_add_period_apply_of_eq`).
 * `TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`,
   `TauCeti.IsNondegenerateFixedPt.eventually_forall_mem_periodicSolutions_eq`: periodic solutions
@@ -441,13 +441,12 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
       timeDependentFlowOf X s t x :=
   (rfl)
 
-omit [CompleteSpace E] in
 /-- **The derivative of the flow over one more period.** Let `X` be a `T`-periodic jointly `C¹`
-field on a finite-dimensional manifold, and let the flow from `(s, x)` be defined at time `s + T`,
-and the flow from `s` at time `t` at the image `φ_{s, s + T}(x)`. Then the derivative of the flow
-to time `t + T` is that of the return map followed by that of the flow to time `t`:
+field, let the flow from `(s, x)` be defined at time `s + T`, and the flow from `s` at time `t` at
+the image `φ_{s, s + T}(x)`. Then the derivative of the flow to time `t + T` is that of the return
+map followed by that of the flow to time `t`:
 `dφ_{s, t + T} v = dφ_{s, t} (dφ_{s, s + T} v)`. -/
-theorem mfderiv_timeDependentFlowOf_add_period_apply [FiniteDimensional ℝ E] (hT : Periodic X T)
+theorem mfderiv_timeDependentFlowOf_add_period_apply (hT : Periodic X T)
     (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
     (ht : ((s, t), timeDependentFlowOf X s (s + T) x) ∈ timeDependentFlowDomain X)
     (v : TangentSpace I x) :
@@ -466,12 +465,11 @@ theorem mfderiv_timeDependentFlowOf_add_period_apply [FiniteDimensional ℝ E] (
   -- whereas rewriting with `comp_apply` fails on the mismatched codomain.
   rfl
 
-omit [CompleteSpace E] in
 /-- **Periodic solutions of the linearized flow.** If `X` is `T`-periodic, `x` is a fixed point of
 the return map `φ_{s, s + T}` in its domain, and `v` is fixed by its derivative, then
 `t ↦ dφ_{s, t} v` along the periodic orbit of `x` is `T`-periodic. -/
-theorem mfderiv_timeDependentFlowOf_add_period_apply_of_eq [FiniteDimensional ℝ E]
-    (hT : Periodic X T) (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
+theorem mfderiv_timeDependentFlowOf_add_period_apply_of_eq (hT : Periodic X T)
+    (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
     (hfix : IsFixedPt (timeDependentFlowOf X s (s + T)) x) {v : TangentSpace I x}
     (hv : mfderiv I I (timeDependentFlowOf X s (s + T)) x v = v) (t : ℝ) :
     mfderiv I I (timeDependentFlowOf X s (t + T)) x v =

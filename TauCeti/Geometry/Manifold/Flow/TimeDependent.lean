@@ -1040,21 +1040,22 @@ theorem mem_timeDependentFlowPartialDiffeomorph_target_iff {s t : ℝ} {x : M} :
 
 end PartialDiffeomorph
 
-/-- In finite dimensions, each map of the time-dependent flow of a `C¹` field is differentiable at
-every point at which it is defined. -/
-theorem mdifferentiableAt_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Space M]
+/-- On a complete normed model space, each map of the time-dependent flow of a `C¹` field is
+differentiable at every point at which it is defined. -/
+theorem mdifferentiableAt_timeDependentFlowOf [CompleteSpace E] [T2Space M]
     [BoundarylessManifold I M] [IsManifold I 1 M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
-  (timeDependentFlowPartialDiffeomorph le_rfl hX s t).mdifferentiableAt one_ne_zero h
+  (contMDiffAt_timeDependentFlowOf_comp le_rfl hX contMDiffAt_const contMDiffAt_const
+    contMDiffAt_id h).mdifferentiableAt one_ne_zero
 
-/-- **The chain rule for the two-time composition law.** In finite dimensions, if the flow of a
-`C¹` field is defined from time `s` to time `t` at `x`, and from time `t` to time `u` at its image,
-then the differential of the flow map from `s` to `u` at `x` is the composite of the differentials
-of the two steps. -/
-theorem mfderiv_timeDependentFlowOf_trans_of_mem [FiniteDimensional ℝ E] [T2Space M]
+/-- **The chain rule for the two-time composition law.** On a complete normed model space, if the
+flow of a `C¹` field is defined from time `s` to time `t` at `x`, and from time `t` to time `u` at
+its image, then the differential of the flow map from `s` to `u` at `x` is the composite of the
+differentials of the two steps. -/
+theorem mfderiv_timeDependentFlowOf_trans_of_mem [CompleteSpace E] [T2Space M]
     [BoundarylessManifold I M] [IsManifold I 1 M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
