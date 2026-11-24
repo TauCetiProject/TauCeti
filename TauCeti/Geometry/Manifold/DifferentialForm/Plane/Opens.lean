@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Plane.Complex
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
@@ -175,8 +174,7 @@ private theorem planarCoordEquiv_symm_apply {U : Opens ℂ} (z : U) (a : ℂ) :
     (planarCoordEquiv z).symm a =
       (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, ℂ)) z).symm
         ((NormedSpace.fromTangentSpace (z : ℂ)).symm a) :=
-  -- By definition of `ContinuousLinearEquiv.trans`.
-  rfl
+  ContinuousLinearEquiv.symm_trans_apply _ _ a
 
 end Helpers
 
@@ -512,9 +510,15 @@ theorem planarTwoFormCoeff_mextDeriv_wedgeWith_complexDz {U : Opens ℂ} {W : Ty
     ((SmoothForm.isClosed_def _).2 SmoothForm.mextDeriv_complexDz)]
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.lsmul_apply,
     SmoothForm.complexDz_apply, Matrix.cons_val_zero, ContinuousLinearEquiv.apply_symm_apply,
-    conjWirtingerDeriv_apply, smul_smul, smul_add, smul_eq_mul, mul_one, mul_assoc,
-    mul_left_comm Complex.I (2⁻¹ : ℂ) Complex.I]
-  simp only [Complex.I_mul_I]
+    conjWirtingerDeriv_apply, smul_eq_mul, mul_one, smul_add, smul_smul]
+  have hI : (2 * Complex.I) * (2⁻¹ : ℂ) = Complex.I := by
+    calc (2 * Complex.I) * (2⁻¹ : ℂ) = (2 * (2⁻¹ : ℂ)) * Complex.I := by ring
+      _ = Complex.I := by norm_num
+  have hII : (2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I) = -1 := by
+    calc (2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I)
+        = (2 * (2⁻¹ : ℂ)) * (Complex.I * Complex.I) := by ring
+      _ = -1 := by norm_num [Complex.I_mul_I]
+  rw [hI, hII]
   module
 
 /-- For a differentiable function `f : U → W` into a complex normed space `W` with ambient
@@ -534,10 +538,16 @@ theorem planarTwoFormCoeff_mextDeriv_wedgeWith_complexDzBar {U : Opens ℂ} {W :
     ((SmoothForm.isClosed_def _).2 SmoothForm.mextDeriv_complexDzBar)]
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.lsmul_apply,
     SmoothForm.complexDzBar_apply, Matrix.cons_val_zero, ContinuousLinearEquiv.apply_symm_apply,
-    conj_I, (starRingEnd ℂ).map_one, wirtingerDeriv_apply, smul_smul, smul_sub, smul_eq_mul,
-    mul_one, mul_assoc, mul_left_comm Complex.I (2⁻¹ : ℂ) Complex.I]
-  simp only [Complex.I_mul_I]
-  module
+    conj_I, (starRingEnd ℂ).map_one, wirtingerDeriv_apply, smul_eq_mul, mul_one, smul_sub,
+    smul_smul]
+  have hI : (-2 * Complex.I) * (2⁻¹ : ℂ) = -Complex.I := by
+    calc (-2 * Complex.I) * (2⁻¹ : ℂ) = -(2 * (2⁻¹ : ℂ)) * Complex.I := by ring
+      _ = -Complex.I := by norm_num
+  have hII : (-2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I) = 1 := by
+    calc (-2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I)
+        = -(2 * (2⁻¹ : ℂ)) * (Complex.I * Complex.I) := by ring
+      _ = 1 := by norm_num [Complex.I_mul_I]
+  rw [hI, hII]
 
 /-- For differentiable functions `a, b : U → F` into a real normed space `F` with ambient
 representatives `a', b' : ℂ → F`, the `dx ∧ dy` coefficient of `d(a dx + b dy)` at `z` is
