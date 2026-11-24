@@ -48,13 +48,10 @@ theorem blockFiniteInclusion_apply (r n : ℕ)
 @[simp] theorem blockFiniteInclusion_single (r n : ℕ) (i : Fin (n + 1) × Fin r) :
     blockFiniteInclusion r n (EuclideanSpace.single i 1) =
       blockHardyBasis r (i.1, i.2) := by
-  rw [blockFiniteInclusion_apply]
-  rw [Finset.sum_eq_single i]
-  · simp [EuclideanSpace.single]
-  · intro j _ hji
-    rw [EuclideanSpace.single, PiLp.single_eq_of_ne 2 hji]
-    exact zero_smul ℂ (blockHardyBasis r (j.1, j.2))
-  · simp
+  unfold blockFiniteInclusion
+  rw [← LinearIsometry.coe_toLinearMap, Orthonormal.synthesisMapIsometry_toLinearMap,
+    synthesisMap_single, one_smul]
+  rfl
 
 /-- The adjoint inclusion reads the selected block Hardy coefficients. -/
 @[simp] theorem adjoint_blockFiniteInclusion_apply (r n : ℕ) (f : BlockHardySpace r)
@@ -110,18 +107,15 @@ def blockFiniteSectionIndexEquiv (r n : ℕ) [NeZero r] :
 @[simp] theorem blockFiniteSectionIndexEquiv_symm_fst (r n : ℕ) [NeZero r]
     (m : Fin ((n + 1) * r - 1 + 1)) :
     ((blockFiniteSectionIndexEquiv r n).symm m).1.val = m.val / r := by
-  obtain ⟨p, rfl⟩ := (blockFiniteSectionIndexEquiv r n).surjective m
-  rw [Equiv.symm_apply_apply, blockFiniteSectionIndexEquiv_val]
-  simp only [Nat.mul_comm p.1.val r, Nat.mul_add_div (NeZero.pos r),
-    Nat.div_eq_of_lt p.2.isLt, Nat.add_zero]
+  rw [blockFiniteSectionIndexEquiv, Equiv.symm_trans_apply]
+  rfl
 
 /-- The inverse flattened index recovers its remainder coordinate. -/
 @[simp] theorem blockFiniteSectionIndexEquiv_symm_snd (r n : ℕ) [NeZero r]
     (m : Fin ((n + 1) * r - 1 + 1)) :
     ((blockFiniteSectionIndexEquiv r n).symm m).2.val = m.val % r := by
-  obtain ⟨p, rfl⟩ := (blockFiniteSectionIndexEquiv r n).surjective m
-  rw [Equiv.symm_apply_apply, blockFiniteSectionIndexEquiv_val]
-  rw [Nat.mul_add_mod_of_lt p.2.isLt]
+  rw [blockFiniteSectionIndexEquiv, Equiv.symm_trans_apply]
+  rfl
 
 /-- Flattening block coordinates gives the matrix of the native Hilbert-basis finite section. -/
 theorem reindex_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
@@ -150,8 +144,8 @@ theorem det_finiteSection_eq_blockFiniteSectionMatrix {r : ℕ} [NeZero r]
     (T : BlockHardySpace r →L[ℂ] BlockHardySpace r) (n : ℕ) :
     (T.finiteSection (blockHardyBasisNat r) ((n + 1) * r - 1)).toLinearMap.det =
       (blockFiniteSectionMatrix T n).det := by
-  rw [← LinearMap.det_toMatrix (EuclideanSpace.basisFun _ ℂ).toBasis,
-    ← ContinuousLinearMap.toEuclideanCLM_symm_eq_toMatrix,
-    ← reindex_blockFiniteSectionMatrix, Matrix.det_reindex_self]
+  rw [← Matrix.det_reindex_self (blockFiniteSectionIndexEquiv r n),
+    reindex_blockFiniteSectionMatrix, ← Matrix.det_toEuclideanCLM,
+    StarAlgEquiv.apply_symm_apply]
 
 end TauCeti

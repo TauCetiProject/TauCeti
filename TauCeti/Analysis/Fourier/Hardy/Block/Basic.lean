@@ -546,8 +546,9 @@ theorem blockSymbolEntry_smul_one {r : ℕ} (a : Lp ℂ ∞ (haarAddCircle (T :=
   rw [blockSymbolEntry_toLp]
   congr 1
   ext t
-  exact congrArg (fun v : EuclideanSpace ℂ (Fin r) => v i)
-    (Matrix.toEuclideanCLM_apply_single (F t) j)
+  simpa only [PiLp.toLp_apply, ContinuousMap.coe_mk] using
+    congrArg (fun v : EuclideanSpace ℂ (Fin r) => v i)
+      (Matrix.toEuclideanCLM_apply_single (F t) j)
 
 /-- Entry `(i, j)` of `star A` is `star` of entry `(j, i)` of `A`. -/
 @[simp] theorem blockSymbolEntry_star {r : ℕ} (A : BlockSymbol r) (i j : Fin r) :
