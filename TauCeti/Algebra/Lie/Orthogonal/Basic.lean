@@ -45,10 +45,11 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   `LieAlgebra.Orthogonal.inv_indefiniteDiagonal`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_apply_self_eq_one_or_eq_neg_one`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_apply_self_ne_zero`,
-  `LieAlgebra.Orthogonal.indefiniteDiagonal_eq_fromBlocks` and
-  `LieAlgebra.Orthogonal.isHermitian_indefiniteDiagonal`: it squares to one, so is its own inverse,
+  `LieAlgebra.Orthogonal.indefiniteDiagonal_eq_fromBlocks`,
+  `LieAlgebra.Orthogonal.isHermitian_indefiniteDiagonal` and
+  `LieAlgebra.Orthogonal.star_indefiniteDiagonal`: it squares to one, so is its own inverse,
   its diagonal entries are `±1`, hence nonzero, it is the block matrix `fromBlocks 1 0 0 (-1)`, and
-  it is Hermitian.
+  it is Hermitian, that is, self-adjoint.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mulVec_apply` and
   `LieAlgebra.Orthogonal.vecMul_indefiniteDiagonal_apply`: it scales the coordinates of a vector by
   its diagonal entries.
@@ -153,6 +154,13 @@ theorem isHermitian_indefiniteDiagonal [StarRing R] : (indefiniteDiagonal p q R)
   rw [Matrix.IsHermitian, indefiniteDiagonal, diagonal_conjTranspose]
   congr 1
   ext (i | i) <;> simp
+
+omit [Fintype p] [Fintype q] in
+/-- The Gram matrix of the indefinite form is self-adjoint. -/
+@[simp]
+theorem star_indefiniteDiagonal [StarRing R] :
+    star (indefiniteDiagonal p q R) = indefiniteDiagonal p q R :=
+  isHermitian_indefiniteDiagonal
 
 variable {ι : Type*} [DecidableEq ι]
 

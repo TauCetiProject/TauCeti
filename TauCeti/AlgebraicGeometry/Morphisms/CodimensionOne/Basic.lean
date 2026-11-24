@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 
 /-!
 # Codimension-one points under quasi-finite morphisms

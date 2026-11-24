@@ -59,7 +59,9 @@ arguments here follow the proofs there.
   (`gradedSectionsPresheafMap`); its graded form is
   `CategoryTheory.CommMon.gradedSectionsGradedHom`, which is surjective onto a homogeneous
   component over an affine open when the morphism is an epimorphism of quasicoherent sheaves in
-  that degree (`grade_subset_range_gradedSectionsGradedHom_of_epi`).
+  that degree (`grade_subset_range_gradedSectionsGradedHom_of_epi`), so `gradedSectionsMap` is
+  surjective there when the morphism is an epimorphism in every degree
+  (`range_gradedSectionsMap_eq_top_of_epi`).
 -/
 
 public section
@@ -553,6 +555,22 @@ theorem grade_subset_range_gradedSectionsGradedHom_of_epi
     (φ.hom.hom i) hφ hA hB U hU x
   exact ⟨DirectSum.of _ i y, (gradedSectionsGradedHom_apply φ U _).trans
     (gradedSectionsMap_of φ U i y)⟩
+
+/-- Over an affine open, a morphism of graded algebras that is an epimorphism of quasicoherent
+module sheaves in every degree is surjective on graded rings of sections. -/
+theorem range_gradedSectionsMap_eq_top_of_epi
+    (φ : A ⟶ B) (U : X.Opens) (hU : IsAffineOpen U) [∀ n, Epi (φ.hom.hom n)]
+    [∀ n, (A.X n).IsQuasicoherent] [∀ n, (B.X n).IsQuasicoherent] :
+    (gradedSectionsMap φ U).range = ⊤ := by
+  refine eq_top_iff.mpr ?_
+  rintro x -
+  induction x using DirectSum.induction_on with
+  | zero => exact zero_mem _
+  | of i x =>
+    obtain ⟨y, hy⟩ := grade_subset_range_gradedSectionsGradedHom_of_epi φ U hU i
+      (DirectSum.mem_summand.mpr ⟨x, rfl⟩)
+    exact ⟨y, (gradedSectionsGradedHom_apply φ U y).symm.trans hy⟩
+  | add x y hx hy => exact add_mem hx hy
 
 /-- The morphism of presheaves of graded rings of sections induced by a morphism of graded
 algebras: on each open `U` it is `gradedSectionsMap`. -/

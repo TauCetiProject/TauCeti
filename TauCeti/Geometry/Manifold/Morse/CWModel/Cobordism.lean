@@ -187,9 +187,9 @@ theorem IsMorse.exists_relCWComplex_homotopyEquiv_upperBand (hf : IsMorse I f) {
       IsClosedEmbedding j ∧ RelCWComplex.Finite (univ : Set X) ∧ (∀ x, (h (j x) : M) = x) ∧
       Nonempty (∀ m, cell (univ : Set X) m ≃ ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ico a b |
         manifoldMorseIndex I f x + m = Module.finrank ℝ E}) := by
-  obtain ⟨X, _, _, j, C, h, hj, hfin, hh, ⟨e⟩⟩ := hf.neg.exists_relCWComplex_homotopyEquiv_band
-    (neg_le_neg hab) (by rwa [preimage_neg_Icc_neg]) (isRegularValue_neg_iff.2 (by rwa [neg_neg]))
-    (isRegularValue_neg_iff.2 (by rwa [neg_neg]))
+  obtain ⟨h₁, h₂, h₃, h₄⟩ := hf.neg_band hcompact ha hb
+  obtain ⟨X, _, _, j, C, h, hj, hfin, hh, ⟨e⟩⟩ :=
+    h₁.exists_relCWComplex_homotopyEquiv_band (neg_le_neg hab) h₂ h₃ h₄
   -- The outgoing boundary of the band is the incoming boundary of the band of `-f`.
   have hL : f ⁻¹' {b} = (-f) ⁻¹' {-b} := by
     ext

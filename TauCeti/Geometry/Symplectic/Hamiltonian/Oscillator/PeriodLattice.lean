@@ -135,19 +135,17 @@ theorem hasFDerivAt_oscillatorEnergies_apply [DecidableEq ι] (m ν : ι → ℝ
     HasFDerivAt (oscillatorEnergies m ν · i)
       ((innerSL ℝ (EuclideanSpace.single i (m i * ν i ^ 2 * x.1 i))).coprod
         (innerSL ℝ (EuclideanSpace.single i (x.2 i / m i)))) x := by
-  have hq := (coordFst (ι := ι) i).hasFDerivAt (x := x)
-  have hp := (coordSnd (ι := ι) i).hasFDerivAt (x := x)
-  simp only [funext (coordFst_apply i), funext (coordSnd_apply i)] at hq hp
-  have h := ((hp.pow 2).mul_const (2 * m i)⁻¹).add
-    (((hq.pow 2).const_mul (m i * ν i ^ 2)).mul_const 2⁻¹)
+  -- `Eᵢ` is the oscillator energy composed with the projection to the `i`-th phase plane.
   have hE : (oscillatorEnergies m ν · i) =
-      fun y : 𝕍 × 𝕍 ↦ y.2 i ^ 2 * (2 * m i)⁻¹ + m i * ν i ^ 2 * y.1 i ^ 2 * 2⁻¹ := by
+      oscillatorHamiltonian (m i) (ν i) ∘ ((coordFst i).prod (coordSnd i)) := by
     ext y
-    simp [oscillatorEnergies_apply, oscillatorHamiltonian_apply, div_eq_mul_inv]
+    rw [oscillatorEnergies_apply, Function.comp_apply, ContinuousLinearMap.prod_apply,
+      coordFst_apply, coordSnd_apply]
   rw [hE]
-  refine h.congr_fderiv (ContinuousLinearMap.ext fun w ↦ ?_)
+  refine ((hasFDerivAt_oscillatorHamiltonian (m i) (ν i) (x.1 i, x.2 i)).comp x
+    ((coordFst i).prod (coordSnd i)).hasFDerivAt).congr_fderiv
+      (ContinuousLinearMap.ext fun w ↦ ?_)
   simp [EuclideanSpace.inner_single_left, coordFst_apply, coordSnd_apply]
-  ring
 
 /-- **Hamilton's equations of uncoupled oscillators.** The Hamiltonian vector field of `Eᵢ` is
 `qᵢ' = pᵢ / mᵢ`, `pᵢ' = -mᵢ νᵢ² qᵢ` in the `i`-th phase plane, and zero in the others. -/

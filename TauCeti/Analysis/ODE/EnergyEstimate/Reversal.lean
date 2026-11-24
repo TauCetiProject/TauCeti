@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # Time reversal of trajectory operators
@@ -69,7 +70,7 @@ private theorem adjoint_comp_neg_hypotheses (hA : Continuous A) {Aminus Aplus : 
     Continuous (fun s ↦ adjoint (A (-s))) ∧
       Tendsto (fun s ↦ adjoint (A (-s))) atBot (𝓝 (adjoint Aplus)) ∧
       Tendsto (fun s ↦ adjoint (A (-s))) atTop (𝓝 (adjoint Aminus)) :=
-  ⟨adjoint.continuous.comp (hA.comp continuous_neg),
+  ⟨(hA.comp continuous_neg).clm_adjoint,
     (adjoint.continuous.tendsto Aplus).comp (htop.comp tendsto_neg_atBot_atTop),
     (adjoint.continuous.tendsto Aminus).comp (hbot.comp tendsto_neg_atTop_atBot)⟩
 
@@ -117,7 +118,7 @@ theorem index_trajectoryOperator_adjoint_comp_neg (hA : Continuous A)
       fun s ↦ -(fun t ↦ -adjoint (A t)) (-s) :=
     hRL.trans (.of_forall fun s ↦ (neg_neg _).symm)
   have hker := finrank_ker_trajectoryOperator_neg_comp_neg (A := fun t ↦ -adjoint (A t))
-    (adjoint.continuous.comp hA).neg (-BL) RL hnegBL hRadj
+    hA.clm_adjoint.neg (-BL) RL hnegBL hRadj
   have hcoker := finrank_ker_trajectoryOperator_neg_comp_neg hA AL (-SL) hAL hnegSL
   have hR' := index_trajectoryOperator_of_hasLyapunovForm hR hplus.adjoint hminus.adjoint hRbot
     hRtop RL SL hRL hSL
