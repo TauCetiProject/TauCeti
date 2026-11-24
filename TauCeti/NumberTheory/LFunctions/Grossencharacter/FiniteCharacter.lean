@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
-import Mathlib.NumberTheory.MulChar.Lemmas
 import TauCeti.NumberTheory.MulChar.Real
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Quotient.Representative

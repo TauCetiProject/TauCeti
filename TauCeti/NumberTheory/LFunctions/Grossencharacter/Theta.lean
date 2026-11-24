@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Grossencharacter.ArchWeight
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Conductor
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.FiniteCharacter
+public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic
 public import TauCeti.NumberTheory.LFunctions.Theta.Decay
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
@@ -19,18 +19,23 @@ For a presented algebraic Hecke character `χ : Grossencharacter K 𝔪`, an inv
 `I : (FractionalIdeal (𝓞 K)⁰ K)ˣ`, and archimedean parameters `y : realSpace K`, Hecke's twisted
 theta series (Neukirch VII (8.1)) is
 
-`θ_χ(I, y) = ε(χ) + ∑_{a ∈ I} χ_f(a) * χ.harmonicFactor (σ a) * archGaussian y (σ a)`,
+`θ_χ(I, y) = ε(χ) + ∑_{a ∈ I} χ.heckeCoeff a * χ.harmonicFactor (σ a) * archGaussian y (σ a)`,
 
 where `σ = mixedEmbedding K`, `ε(χ) = χ.heckeEpsilon` is `1` when `χ` has trivial finite conductor
-and `χ.harmonicDegree = 0` (and `0` otherwise), and `χ_f` is the primitive finite character
-`χ.primitive.finiteCharacterK` extended by `0` outside `primeToSubgroup χ.conductor`.
+and `χ.harmonicDegree = 0` (and `0` otherwise), and `χ.heckeCoeff` is the primitive finite
+character `χ.primitive.finiteCharacterK` extended by `0` outside `primeToSubgroup χ.conductor`.
 
 ## Main definitions
 
+* `TauCeti.LFunctions.Grossencharacter.heckeCoeff`: the primitive finite character extended by `0`
+  outside fractions prime to `χ.conductor`.
 * `TauCeti.LFunctions.Grossencharacter.heckeTheta`: Hecke's twisted theta series `θ_χ(I, y)`.
 
 ## Main results
 
+* `TauCeti.LFunctions.Grossencharacter.norm_heckeCoeff_le_one` and
+  `TauCeti.LFunctions.Grossencharacter.heckeCoeff_unit_mul`: norm bound and unit multiplicativity
+  of `heckeCoeff`.
 * `TauCeti.LFunctions.Grossencharacter.heckeTheta_congr`,
   `TauCeti.LFunctions.Grossencharacter.heckeTheta_primitive`, and
   `TauCeti.LFunctions.Grossencharacter.heckeTheta_mk0`: modulus independence and specialization to
@@ -70,61 +75,119 @@ open GlobalNumberFields
 variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
 
 open scoped Classical in
+/-- **The coefficient of Hecke's twisted theta series** attached to `χ`: the primitive finite
+character `χ.primitive.finiteCharacterK` on fractions `a : K` prime to `χ.conductor`, extended by
+`0` elsewhere. -/
+def heckeCoeff (χ : Grossencharacter K 𝔪) (a : K) : ℂ :=
+  if h : ∃ ha : a ≠ 0, Units.mk0 a ha ∈ primeToSubgroup χ.conductor then
+    (χ.primitive.finiteCharacterK ⟨Units.mk0 a h.1, h.2⟩ : ℂ)
+  else 0
+
+open scoped Classical in
+/-- The defining equation of `Grossencharacter.heckeCoeff`. -/
+theorem heckeCoeff_def (χ : Grossencharacter K 𝔪) (a : K) :
+    χ.heckeCoeff a =
+      if h : ∃ ha : a ≠ 0, Units.mk0 a ha ∈ primeToSubgroup χ.conductor then
+        (χ.primitive.finiteCharacterK ⟨Units.mk0 a h.1, h.2⟩ : ℂ)
+      else 0 :=
+  (rfl)
+
+/-- `χ.heckeCoeff` vanishes at `0`. -/
+@[simp]
+theorem heckeCoeff_zero (χ : Grossencharacter K 𝔪) : χ.heckeCoeff 0 = 0 := by
+  classical
+  simp [heckeCoeff_def]
+
+/-- Every coefficient `χ.heckeCoeff a` has norm at most `1`. -/
+theorem norm_heckeCoeff_le_one (χ : Grossencharacter K 𝔪) (a : K) :
+    ‖χ.heckeCoeff a‖ ≤ 1 := by
+  classical
+  rw [heckeCoeff_def]
+  split_ifs
+  · simp
+  · norm_num
+
+/-- Two presentations of the same Hecke character have the same `heckeCoeff`. -/
+theorem heckeCoeff_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
+    {ψ : Grossencharacter K 𝔫} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) (a : K) :
+    χ.heckeCoeff a = ψ.heckeCoeff a := by
+  classical
+  have hcond : χ.conductor = ψ.conductor := conductor_congr h
+  rw [heckeCoeff_def, heckeCoeff_def]
+  by_cases ha : ∃ ha0 : a ≠ 0, Units.mk0 a ha0 ∈ primeToSubgroup χ.conductor
+  · have ha' : ∃ ha0 : a ≠ 0, Units.mk0 a ha0 ∈ primeToSubgroup ψ.conductor :=
+      ⟨ha.1, hcond ▸ ha.2⟩
+    simp only [ha, ha', ↓reduceDIte]
+    exact congrArg Units.val (finiteCharacterK_congr
+      (χ.toHeckeCharacter_primitive.trans (h.trans ψ.toHeckeCharacter_primitive.symm)) rfl)
+  · have ha' : ¬ ∃ ha0 : a ≠ 0, Units.mk0 a ha0 ∈ primeToSubgroup ψ.conductor :=
+      fun ⟨ha0, hmem⟩ ↦ ha ⟨ha0, hcond.symm ▸ hmem⟩
+    simp only [ha, ha', ↓reduceDIte]
+
+/-- Multiplying `a : K` by a global unit `u : (𝓞 K)ˣ` multiplies `χ.heckeCoeff a` by
+`χ.primitive.finiteCharacter (u : 𝓞 K)`. -/
+theorem heckeCoeff_unit_mul (χ : Grossencharacter K 𝔪) (u : (𝓞 K)ˣ) (a : K) :
+    χ.primitive.finiteCharacter (u : 𝓞 K) * χ.heckeCoeff a = χ.heckeCoeff ((u : K) * a) := by
+  classical
+  let uK : Kˣ := Units.map (algebraMap (𝓞 K) K).toMonoidHom u
+  rw [heckeCoeff_def, heckeCoeff_def]
+  by_cases ha : ∃ ha0 : a ≠ 0, Units.mk0 a ha0 ∈ primeToSubgroup χ.conductor
+  · have ha' : ∃ ha0 : (u : K) * a ≠ 0,
+        Units.mk0 ((u : K) * a) ha0 ∈ primeToSubgroup χ.conductor := by
+      refine ⟨mul_ne_zero uK.ne_zero ha.1, ?_⟩
+      have hmk : Units.mk0 ((u : K) * a) (mul_ne_zero uK.ne_zero ha.1) =
+          uK * Units.mk0 a ha.1 := by
+        ext1; rfl
+      rw [hmk]
+      exact (primeToSubgroup χ.conductor).mul_mem (unitsMap_mem_primeToSubgroup _ u) ha.2
+    simp only [ha, ha', ↓reduceDIte]
+    rw [χ.primitive.finiteCharacter_unit u,
+      ← χ.primitive.finiteCharacterK_unitsToPrimeToSubgroup u, ← Units.val_mul, ← map_mul]
+    congr 2
+    ext
+    simp
+  · have ha' : ¬ ∃ ha0 : (u : K) * a ≠ 0,
+        Units.mk0 ((u : K) * a) ha0 ∈ primeToSubgroup χ.conductor := by
+      rintro ⟨hb0, hbmem⟩
+      have ha0 : a ≠ 0 := right_ne_zero_of_mul hb0
+      have hmk : Units.mk0 a ha0 = uK⁻¹ * Units.mk0 ((u : K) * a) hb0 := by
+        ext1
+        simp [uK]
+      refine ha ⟨ha0, ?_⟩
+      rw [hmk]
+      exact (primeToSubgroup χ.conductor).mul_mem
+        ((primeToSubgroup χ.conductor).inv_mem (unitsMap_mem_primeToSubgroup _ u)) hbmem
+    simp only [ha, ha', ↓reduceDIte, mul_zero]
+
 /-- **Hecke's twisted theta series** (Neukirch VII (8.1)) attached to a presentation `χ` of an
 algebraic Hecke character, an invertible fractional ideal `I` of `K`, and archimedean parameters
-`y : realSpace K`. The finite character is evaluated on the primitive reduction `χ.primitive`,
-extended by `0` outside fractions prime to `χ.conductor`. -/
+`y : realSpace K`. The finite character is evaluated via `χ.heckeCoeff`. -/
 def heckeTheta (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     (y : realSpace K) : ℂ :=
   χ.heckeEpsilon +
     ∑' a : (I : Submodule (𝓞 K) K),
-      (if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-        (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-      χ.harmonicFactor (mixedEmbedding K (a : K)) *
-      archGaussian y (mixedEmbedding K (a : K))
+      χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
+        archGaussian y (mixedEmbedding K (a : K))
 
-open scoped Classical in
 /-- The defining equation of `Grossencharacter.heckeTheta`. -/
 theorem heckeTheta_def (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     (y : realSpace K) :
     χ.heckeTheta I y =
       χ.heckeEpsilon +
         ∑' a : (I : Submodule (𝓞 K) K),
-          (if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-            (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-          χ.harmonicFactor (mixedEmbedding K (a : K)) *
-          archGaussian y (mixedEmbedding K (a : K)) :=
+          χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
+            archGaussian y (mixedEmbedding K (a : K)) :=
   (rfl)
-
-open scoped Classical in
-private theorem norm_heckeCoeff_le_one (χ : Grossencharacter K 𝔪) (a : K) :
-    ‖if h : ∃ ha : a ≠ 0, Units.mk0 a ha ∈ primeToSubgroup χ.conductor then
-      (χ.primitive.finiteCharacterK ⟨Units.mk0 a h.1, h.2⟩ : ℂ) else 0‖ ≤ 1 := by
-  split_ifs
-  · simp
-  · norm_num
 
 /-- Two presentations of the same Hecke character have the same twisted theta series. -/
 theorem heckeTheta_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
     {ψ : Grossencharacter K 𝔫} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter)
     (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (y : realSpace K) :
     χ.heckeTheta I y = ψ.heckeTheta I y := by
-  classical
-  have hcond : χ.conductor = ψ.conductor := conductor_congr h
   rw [heckeTheta_def, heckeTheta_def, heckeEpsilon_congr h]
   congr 1
   refine tsum_congr fun a ↦ ?_
-  rw [harmonicFactor_congr h]
-  congr 2
-  by_cases ha : ∃ ha0 : (a : K) ≠ 0, Units.mk0 (a : K) ha0 ∈ primeToSubgroup χ.conductor
-  · have ha' : ∃ ha0 : (a : K) ≠ 0, Units.mk0 (a : K) ha0 ∈ primeToSubgroup ψ.conductor :=
-      ⟨ha.1, hcond ▸ ha.2⟩
-    simp only [ha, ha', ↓reduceDIte]
-    exact congrArg Units.val (finiteCharacterK_congr
-      (χ.toHeckeCharacter_primitive.trans (h.trans ψ.toHeckeCharacter_primitive.symm)) rfl)
-  · have ha' : ¬ ∃ ha0 : (a : K) ≠ 0, Units.mk0 (a : K) ha0 ∈ primeToSubgroup ψ.conductor :=
-      fun ⟨ha0, hmem⟩ ↦ ha ⟨ha0, hcond.symm ▸ hmem⟩
-    simp only [ha, ha', ↓reduceDIte]
+  rw [heckeCoeff_congr h, harmonicFactor_congr h]
 
 /-- Passing to `χ.primitive` does not change `heckeTheta`. -/
 @[simp]
@@ -151,7 +214,7 @@ theorem heckeTheta_mk0 (χ : Grossencharacter K 𝔪) (𝔞 : (Ideal (𝓞 K))�
   rw [heckeTheta_def, ← e.tsum_eq]
   congr 1
   refine tsum_congr fun a ↦ ?_
-  rw [he_coe a]
+  rw [he_coe a, heckeCoeff_def]
   congr 2
   split_ifs with ha
   · exact (χ.primitive.finiteCharacter_eq_finiteCharacterK
@@ -167,15 +230,12 @@ theorem heckeTheta_mk0 (χ : Grossencharacter K 𝔪) (𝔞 : (Ideal (𝓞 K))�
       exact hx.symm
     exact ha ⟨hx0, hmem⟩
 
-open scoped Classical in
 /-- For positive archimedean parameters `y`, the norms of the terms of `χ.heckeTheta I y` are
 summable. -/
 theorem summable_norm_heckeTheta (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     {y : realSpace K} (hy : ∀ w, 0 < y w) :
     Summable fun a : (I : Submodule (𝓞 K) K) ↦
-      ‖(if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-          (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-        χ.harmonicFactor (mixedEmbedding K (a : K)) *
+      ‖χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
         archGaussian y (mixedEmbedding K (a : K))‖ := by
   let f : idealLattice K I → ℂ := fun x ↦
     χ.harmonicFactor (x : mixedSpace K) * archGaussian y (x : mixedSpace K)
@@ -189,28 +249,22 @@ theorem summable_norm_heckeTheta (χ : Grossencharacter K 𝔪) (I : (Fractional
   exact mul_le_of_le_one_left (norm_nonneg (χ.harmonicFactor _ * archGaussian y _))
     (χ.norm_heckeCoeff_le_one (a : K))
 
-open scoped Classical in
 /-- For positive archimedean parameters `y`, the defining series of `χ.heckeTheta I y` is
 summable. -/
 theorem summable_heckeTheta (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     {y : realSpace K} (hy : ∀ w, 0 < y w) :
     Summable fun a : (I : Submodule (𝓞 K) K) ↦
-      (if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-        (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-      χ.harmonicFactor (mixedEmbedding K (a : K)) *
-      archGaussian y (mixedEmbedding K (a : K)) :=
+      χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
+        archGaussian y (mixedEmbedding K (a : K)) :=
   (χ.summable_norm_heckeTheta I hy).of_norm
 
-open scoped Classical in
 /-- Monotone domination of `‖χ.heckeTheta I y‖` by the absolute series majorant at any smaller
 positive parameter `y' ≤ y`. -/
 theorem norm_heckeTheta_le (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     {y y' : realSpace K} (hy' : ∀ w, 0 < y' w) (h : ∀ w, y' w ≤ y w) :
     ‖χ.heckeTheta I y‖ ≤ ‖χ.heckeEpsilon‖ +
       ∑' a : (I : Submodule (𝓞 K) K),
-        ‖(if h0 : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-            (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h0.1, h0.2⟩ : ℂ) else 0) *
-          χ.harmonicFactor (mixedEmbedding K (a : K)) *
+        ‖χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
           archGaussian y' (mixedEmbedding K (a : K))‖ := by
   have hy : ∀ w, 0 < y w := fun w ↦ (hy' w).trans_le (h w)
   rw [heckeTheta_def]
@@ -257,49 +311,10 @@ theorem archWeight_mul_heckeTheta_unitScale (χ : Grossencharacter K 𝔪)
        fun h ↦ by
          simpa [uK, Algebra.smul_def, ← mul_assoc, ← map_mul] using
            (I : Submodule (𝓞 K) K).smul_mem ((u⁻¹ : (𝓞 K)ˣ) : 𝓞 K) h⟩
-  have hcoeff (a : K) :
-      (χ.primitive.finiteCharacter (u : 𝓞 K)) *
-          (if h : ∃ ha : a ≠ 0, Units.mk0 a ha ∈ primeToSubgroup χ.conductor then
-            (χ.primitive.finiteCharacterK ⟨Units.mk0 a h.1, h.2⟩ : ℂ) else 0) =
-        if h : ∃ ha : (u : K) * a ≠ 0, Units.mk0 ((u : K) * a) ha ∈ primeToSubgroup χ.conductor then
-          (χ.primitive.finiteCharacterK ⟨Units.mk0 ((u : K) * a) h.1, h.2⟩ : ℂ) else 0 := by
-    by_cases ha : ∃ ha0 : a ≠ 0, Units.mk0 a ha0 ∈ primeToSubgroup χ.conductor
-    · have ha' : ∃ ha0 : (u : K) * a ≠ 0,
-          Units.mk0 ((u : K) * a) ha0 ∈ primeToSubgroup χ.conductor := by
-        refine ⟨mul_ne_zero uK.ne_zero ha.1, ?_⟩
-        have hmk : Units.mk0 ((u : K) * a) (mul_ne_zero uK.ne_zero ha.1) =
-            uK * Units.mk0 a ha.1 := by
-          ext1; rfl
-        rw [hmk]
-        exact (primeToSubgroup χ.conductor).mul_mem (unitsMap_mem_primeToSubgroup _ u) ha.2
-      simp only [ha, ha', ↓reduceDIte]
-      rw [χ.primitive.finiteCharacter_unit u,
-        ← χ.primitive.finiteCharacterK_unitsToPrimeToSubgroup u, ← Units.val_mul, ← map_mul]
-      congr 2
-      ext
-      simp
-    · have ha' : ¬ ∃ ha0 : (u : K) * a ≠ 0,
-          Units.mk0 ((u : K) * a) ha0 ∈ primeToSubgroup χ.conductor := by
-        rintro ⟨hb0, hbmem⟩
-        have ha0 : a ≠ 0 := right_ne_zero_of_mul hb0
-        have hmk : Units.mk0 a ha0 = uK⁻¹ * Units.mk0 ((u : K) * a) hb0 := by
-          ext1
-          simp [uK]
-        refine ha ⟨ha0, ?_⟩
-        rw [hmk]
-        exact (primeToSubgroup χ.conductor).mul_mem
-          ((primeToSubgroup χ.conductor).inv_mem (unitsMap_mem_primeToSubgroup _ u)) hbmem
-      simp only [ha, ha', ↓reduceDIte, mul_zero]
   have hterm (a : (I : Submodule (𝓞 K) K)) :
-      P * ((if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-            (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-          χ.harmonicFactor (mixedEmbedding K (a : K)) *
+      P * (χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
           archGaussian (unitScale u y) (mixedEmbedding K (a : K))) =
-        (if h : ∃ ha : ((e a : (I : Submodule (𝓞 K) K)) : K) ≠ 0,
-            Units.mk0 ((e a : (I : Submodule (𝓞 K) K)) : K) ha ∈
-              primeToSubgroup χ.conductor then
-          (χ.primitive.finiteCharacterK
-            ⟨Units.mk0 ((e a : (I : Submodule (𝓞 K) K)) : K) h.1, h.2⟩ : ℂ) else 0) *
+        χ.heckeCoeff ((e a : (I : Submodule (𝓞 K) K)) : K) *
           χ.harmonicFactor (mixedEmbedding K ((e a : (I : Submodule (𝓞 K) K)) : K)) *
           archGaussian y (mixedEmbedding K ((e a : (I : Submodule (𝓞 K) K)) : K)) := by
     have hP : P = χ.primitive.finiteCharacter (u : 𝓞 K) *
@@ -309,31 +324,24 @@ theorem archWeight_mul_heckeTheta_unitScale (χ : Grossencharacter K 𝔪)
         (χ.primitive.finiteCharacter_mul_harmonicFactor_unit u).symm
     have hcoe : ((e a : (I : Submodule (𝓞 K) K)) : K) = (u : K) * (a : K) := rfl
     rw [hP, hcoe, map_mul (mixedEmbedding K), ← unitSMul_smul, archGaussian_unit_smul,
-      χ.harmonicFactor_unit_smul, ← hcoeff (a : K)]
+      χ.harmonicFactor_unit_smul, ← χ.heckeCoeff_unit_mul u (a : K)]
     ring
   set S₁ : ℂ := ∑' a : (I : Submodule (𝓞 K) K),
-    (if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-      (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-    χ.harmonicFactor (mixedEmbedding K (a : K)) *
-    archGaussian (unitScale u y) (mixedEmbedding K (a : K))
+    χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
+      archGaussian (unitScale u y) (mixedEmbedding K (a : K))
   set S₂ : ℂ := ∑' a : (I : Submodule (𝓞 K) K),
-    (if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-      (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-    χ.harmonicFactor (mixedEmbedding K (a : K)) *
-    archGaussian y (mixedEmbedding K (a : K))
+    χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
+      archGaussian y (mixedEmbedding K (a : K))
   have htsum : P * S₁ = S₂ := by
     rw [← tsum_mul_left, tsum_congr hterm]
     exact e.tsum_eq fun b ↦
-      (if h : ∃ ha : (b : K) ≠ 0, Units.mk0 (b : K) ha ∈ primeToSubgroup χ.conductor then
-        (χ.primitive.finiteCharacterK ⟨Units.mk0 (b : K) h.1, h.2⟩ : ℂ) else 0) *
-      χ.harmonicFactor (mixedEmbedding K (b : K)) *
-      archGaussian y (mixedEmbedding K (b : K))
+      χ.heckeCoeff (b : K) * χ.harmonicFactor (mixedEmbedding K (b : K)) *
+        archGaussian y (mixedEmbedding K (b : K))
   rw [χ.archWeight_unitScale u y, ofReal_mul, heckeTheta_def, heckeTheta_def]
   calc (P * (χ.archWeight y : ℂ)) * (χ.heckeEpsilon + S₁)
       = (χ.archWeight y : ℂ) * (P * χ.heckeEpsilon + P * S₁) := by ring
     _ = (χ.archWeight y : ℂ) * (χ.heckeEpsilon + S₂) := by rw [hPeps, htsum]
 
-open scoped Classical in
 /-- Hecke's twisted theta series is continuous at every positive parameter `y₀ : realSpace K`. -/
 theorem continuousAt_heckeTheta (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     {y₀ : realSpace K} (hy₀ : ∀ w, 0 < y₀ w) : ContinuousAt (χ.heckeTheta I) y₀ := by
@@ -341,9 +349,7 @@ theorem continuousAt_heckeTheta (χ : Grossencharacter K 𝔪) (I : (FractionalI
   refine continuousAt_const.add ?_
   simpa only [mul_assoc] using continuousAt_tsum_mul_archGaussian
     (fun a : (I : Submodule (𝓞 K) K) ↦
-      (if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-        (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-      χ.harmonicFactor (mixedEmbedding K (a : K)))
+      χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)))
     (fun a ↦ mixedEmbedding K (a : K))
     (fun δ hδ ↦ by simpa only [mul_assoc] using χ.summable_norm_heckeTheta I fun _ ↦ hδ) hy₀
 
@@ -355,18 +361,12 @@ theorem heckeTheta_eq_heckeEpsilon_add (χ : Grossencharacter K 𝔪)
     χ.heckeTheta I y =
       χ.heckeEpsilon +
         ∑' a : {a : (I : Submodule (𝓞 K) K) // a ≠ 0},
-          (if h : ∃ ha : ((a : (I : Submodule (𝓞 K) K)) : K) ≠ 0,
-              Units.mk0 ((a : (I : Submodule (𝓞 K) K)) : K) ha ∈
-                primeToSubgroup χ.conductor then
-            (χ.primitive.finiteCharacterK
-              ⟨Units.mk0 ((a : (I : Submodule (𝓞 K) K)) : K) h.1, h.2⟩ : ℂ) else 0) *
-          χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)) *
-          archGaussian y (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)) := by
+          χ.heckeCoeff ((a : (I : Submodule (𝓞 K) K)) : K) *
+            χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)) *
+            archGaussian y (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)) := by
   have hsupp : Function.support (fun a : (I : Submodule (𝓞 K) K) ↦
-      (if h : ∃ ha : (a : K) ≠ 0, Units.mk0 (a : K) ha ∈ primeToSubgroup χ.conductor then
-        (χ.primitive.finiteCharacterK ⟨Units.mk0 (a : K) h.1, h.2⟩ : ℂ) else 0) *
-      χ.harmonicFactor (mixedEmbedding K (a : K)) *
-      archGaussian y (mixedEmbedding K (a : K))) ⊆
+      χ.heckeCoeff (a : K) * χ.harmonicFactor (mixedEmbedding K (a : K)) *
+        archGaussian y (mixedEmbedding K (a : K))) ⊆
       {a : (I : Submodule (𝓞 K) K) | a ≠ 0} := by
     intro a ha h0
     simp [h0] at ha
@@ -382,24 +382,16 @@ theorem exists_norm_heckeTheta_sub_heckeEpsilon_le (χ : Grossencharacter K 𝔪
   classical
   obtain ⟨δ, hδ, hL⟩ := exists_pos_le_mixedInner (idealLattice K I)
   have ha : Summable fun a : {a : (I : Submodule (𝓞 K) K) // a ≠ 0} ↦
-      ‖((if h : ∃ ha : ((a : (I : Submodule (𝓞 K) K)) : K) ≠ 0,
-            Units.mk0 ((a : (I : Submodule (𝓞 K) K)) : K) ha ∈
-              primeToSubgroup χ.conductor then
-          (χ.primitive.finiteCharacterK
-            ⟨Units.mk0 ((a : (I : Submodule (𝓞 K) K)) : K) h.1, h.2⟩ : ℂ) else 0) *
-        χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K))) *
+      ‖(χ.heckeCoeff ((a : (I : Submodule (𝓞 K) K)) : K) *
+          χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K))) *
         archGaussian (fun _ ↦ (1 / 2 : ℝ))
           (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K))‖ := by
     simpa only [mul_assoc, Function.comp_def] using
       (χ.summable_norm_heckeTheta I (fun _ ↦ by norm_num)).comp_injective Subtype.coe_injective
   obtain ⟨c, hc, C, hC, h⟩ := exists_norm_tsum_mul_archGaussian_le
     (fun a : {a : (I : Submodule (𝓞 K) K) // a ≠ 0} ↦
-      (if h : ∃ ha : ((a : (I : Submodule (𝓞 K) K)) : K) ≠ 0,
-          Units.mk0 ((a : (I : Submodule (𝓞 K) K)) : K) ha ∈
-            primeToSubgroup χ.conductor then
-        (χ.primitive.finiteCharacterK
-          ⟨Units.mk0 ((a : (I : Submodule (𝓞 K) K)) : K) h.1, h.2⟩ : ℂ) else 0) *
-      χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)))
+      χ.heckeCoeff ((a : (I : Submodule (𝓞 K) K)) : K) *
+        χ.harmonicFactor (mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)))
     (fun a ↦ mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K)) hδ
     (fun a ↦ by
       simpa only [coe_fractionalIdealEquivIdealLattice] using
@@ -437,12 +429,11 @@ theorem heckeTheta_ofRayClassCharacter_one (I : (FractionalIdeal (𝓞 K)⁰ K)�
     rw [finitePart_conductor, hcond_hecke]
   have : Subsingleton (𝓞 K ⧸ χ.conductor.finitePart) :=
     Ideal.Quotient.subsingleton_iff.mpr hcond_fin
-  have hfin {a : K} (ha : a ≠ 0) :
-      (if h : ∃ ha0 : a ≠ 0, Units.mk0 a ha0 ∈ primeToSubgroup χ.conductor then
-        (χ.primitive.finiteCharacterK ⟨Units.mk0 a h.1, h.2⟩ : ℂ) else 0) = 1 := by
+  have hfin {a : K} (ha : a ≠ 0) : χ.heckeCoeff a = 1 := by
     have hmem : Units.mk0 a ha ∈ primeToSubgroup χ.conductor :=
       mem_primeToSubgroup.mpr fun v hv ↦
         False.elim (v.prime.not_dvd_one (by simpa [hcond_hecke] using hv))
+    rw [heckeCoeff_def]
     split_ifs with h
     · rw [χ.primitive.finiteCharacterK_eq_one_of_residueHom_eq_one (Subsingleton.elim _ _),
         Units.val_one]
