@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.FieldTheory.SplittingField.IsSplittingField
+public import TauCeti.Algebra.Polynomial.XPow.SubC
+public import TauCeti.Analysis.Complex.Basic
+public import TauCeti.FieldTheory.SplittingField.Basic
 public import TauCeti.NumberTheory.NumberField.CMField.Basic
 
 /-!
@@ -53,17 +54,6 @@ open Polynomial NumberField ComplexEmbedding
 
 namespace NumberField.IsCMField
 
-/-- If `w = zⁿ` with `n ≠ 0` and `w * conj w = 1`, then `conj z = z⁻¹`. -/
-private theorem star_eq_inv_of_pow_eq {z w : ℂ} {n : ℕ} (hn : n ≠ 0) (hz : z ^ n = w)
-    (hw : w * star w = 1) : star z = z⁻¹ := by
-  have hw' : ‖w‖ = 1 := by
-    have h := congrArg norm hw
-    rw [norm_mul, norm_star, norm_one] at h
-    nlinarith [norm_nonneg w]
-  have hz' : ‖z‖ = 1 :=
-    (pow_eq_one_iff_of_nonneg (norm_nonneg z) hn).mp (by rw [← norm_pow, hz, hw'])
-  exact (Complex.inv_eq_conj hz').symm
-
 section CMField
 
 variable {L : Type*} [Field L] [CharZero L] [IsCMField L] [Algebra.IsIntegral ℚ L]
@@ -75,13 +65,13 @@ local notation3 "L⁺" => maximalRealSubfield L
 theorem mul_complexConj_eq_one_of_pow_eq {β x : L} {n : ℕ} (hn : n ≠ 0) (hβ : β ^ n = x)
     (hx : x * complexConj L x = 1) : β * complexConj L β = 1 := by
   let φ : L →+* ℂ := Classical.choice (inferInstance : Nonempty _)
-  have h := star_eq_inv_of_pow_eq hn (z := φ β) (w := φ x) (by rw [← map_pow, hβ])
-    (by rw [← starRingEnd_apply, ← complexEmbedding_complexConj, ← map_mul, hx, map_one])
+  have h := Complex.conj_eq_inv_of_pow_eq hn (z := φ β) (w := φ x) (by rw [← map_pow, hβ])
+    (by rw [← complexEmbedding_complexConj, ← map_mul, hx, map_one])
   have hβ0 : β ≠ 0 := by
     rintro rfl
     simp [← hβ, zero_pow hn] at hx
   apply φ.injective
-  rw [map_mul, complexEmbedding_complexConj, starRingEnd_apply, h, map_one,
+  rw [map_mul, complexEmbedding_complexConj, h, map_one,
     mul_inv_cancel₀ ((map_ne_zero φ).2 hβ0)]
 
 /-- **Real-times-power decomposition in a CM field.** A unit `x` of a CM field is a totally real
@@ -119,27 +109,6 @@ end CMField
 
 section SplittingField
 
-/-- A subfield of a splitting field containing the base field and the roots is everything. -/
-private theorem forall_mem_of_isSplittingField {K L : Type*} [Field K] [Field L] [Algebra K L]
-    (f : K[X]) [IsSplittingField K L f]
-    (S : Subfield L) (hK : ∀ k, algebraMap K L k ∈ S) (hroots : ∀ β ∈ f.rootSet L, β ∈ S)
-    (x : L) : x ∈ S := by
-  let T : Subalgebra K L := { S.toSubsemiring with algebraMap_mem' := hK }
-  have hT : Algebra.adjoin K (f.rootSet L) ≤ T := Algebra.adjoin_le hroots
-  rw [IsSplittingField.adjoin_rootSet] at hT
-  exact hT (Algebra.mem_top (x := x))
-
-/-- A root of `Xⁿ - u` is an `n`-th root of `u`, and its existence forces `n ≠ 0`. -/
-private theorem ne_zero_and_pow_eq_of_mem_rootSet {K L : Type*} [Field K] [Field L] [Algebra K L]
-    {n : ℕ} {u : K} {β : L} (hβ : β ∈ (X ^ n - C u).rootSet L) :
-    n ≠ 0 ∧ β ^ n = algebraMap K L u := by
-  rw [mem_rootSet, map_sub, aeval_X_pow, aeval_C, sub_eq_zero] at hβ
-  obtain ⟨hne, hpow⟩ := hβ
-  refine ⟨fun hn ↦ hne ?_, hpow⟩
-  subst hn
-  rw [pow_zero, eq_comm, ← map_one (algebraMap K L), (algebraMap K L).injective.eq_iff] at hpow
-  rw [hpow, pow_zero, C_1, sub_self]
-
 variable {K L : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K] [IsCMField K] [Field L]
   [Algebra K L] {n : ℕ} {u : K}
 
@@ -152,13 +121,14 @@ private theorem star_algebraMap (φ : L →+* ℂ) (k : K) :
 to its inverse. -/
 private theorem star_eq_inv_of_mem_rootSet (hu : u * complexConj K u = 1) (φ : L →+* ℂ) {β : L}
     (hβ : β ∈ (X ^ n - C u).rootSet L) : star (φ β) = φ β⁻¹ := by
-  obtain ⟨hn, hβ⟩ := ne_zero_and_pow_eq_of_mem_rootSet hβ
+  have hn := ne_zero_of_mem_rootSet_X_pow_sub_C hβ
+  rw [mem_rootSet_X_pow_sub_C hn] at hβ
   rw [map_inv₀]
-  refine star_eq_inv_of_pow_eq hn (w := φ (algebraMap K L u)) (by rw [← map_pow, hβ]) ?_
-  rw [star_algebraMap, ← map_mul, ← map_mul, hu, map_one, map_one]
+  refine Complex.conj_eq_inv_of_pow_eq hn (w := φ (algebraMap K L u)) (by rw [← map_pow, hβ]) ?_
+  rw [starRingEnd_apply, star_algebraMap, ← map_mul, ← map_mul, hu, map_one, map_one]
 
 /-- **Radical extensions by unit-modulus radicands stay CM.** If `K` is CM and `u * conj u = 1`, the
-splitting field of `Xⁿ - u` over `K` is CM; its complex conjugation inverts every root. -/
+splitting field of `Xⁿ - u` over `K` is CM. -/
 theorem of_isSplittingField_X_pow_sub_C [CharZero L] (hu : u * complexConj K u = 1)
     [IsSplittingField K L (X ^ n - C u)] : IsCMField L := by
   have : FiniteDimensional K L := IsSplittingField.finiteDimensional L (X ^ n - C u)
@@ -169,9 +139,9 @@ theorem of_isSplittingField_X_pow_sub_C [CharZero L] (hu : u * complexConj K u =
   -- The conjugate embedding `ψ` takes values in the image of `φ₀`.
   have hrange : ψ.fieldRange ≤ φ₀.fieldRange := by
     rintro _ ⟨x, rfl⟩
-    refine forall_mem_of_isSplittingField (X ^ n - C u) (φ₀.fieldRange.comap ψ)
-      (fun k ↦ ⟨_, (star_algebraMap φ₀ k).symm⟩)
-      (fun β hβ ↦ ⟨_, (star_eq_inv_of_mem_rootSet hu φ₀ hβ).symm⟩) x
+    exact eq_top_iff.1 (IsSplittingField.subfield_eq_top (X ^ n - C u)
+      (S := φ₀.fieldRange.comap ψ) (fun k ↦ ⟨_, (star_algebraMap φ₀ k).symm⟩)
+      (fun β hβ ↦ ⟨_, (star_eq_inv_of_mem_rootSet hu φ₀ hβ).symm⟩)) (Subfield.mem_top x)
   -- Hence `ψ = φ₀ ∘ σ` for a field endomorphism `σ` of `L`, which is an automorphism.
   let σ₀ : L →+* L := (φ₀.rangeRestrictFieldEquiv.symm : φ₀.fieldRange →+* L).comp
     ((Subfield.inclusion hrange).comp ψ.rangeRestrictField)
@@ -185,9 +155,9 @@ theorem of_isSplittingField_X_pow_sub_C [CharZero L] (hu : u * complexConj K u =
   have hσβ {β : L} (hβ : β ∈ (X ^ n - C u).rootSet L) : σ β = β⁻¹ :=
     φ₀.injective ((hσ₀ _).trans (star_eq_inv_of_mem_rootSet hu φ₀ hβ))
   -- `σ` is the conjugation of every complex embedding.
-  refine of_isTotallyComplex_of_forall_isConj L (σ := σ) fun φ ↦ RingHom.ext fun x ↦ ?_
-  refine forall_mem_of_isSplittingField (X ^ n - C u) (RingHom.eqLocusField _ _) (fun k ↦ ?_)
-    (fun β hβ ↦ ?_) x
+  refine TauCeti.NumberField.IsCMField.of_forall_isConj L (σ := σ) fun φ ↦ RingHom.ext fun x ↦
+    eq_top_iff.1 (IsSplittingField.subfield_eq_top (X ^ n - C u) (S := RingHom.eqLocusField _ _)
+      (fun k ↦ ?_) (fun β hβ ↦ ?_)) (Subfield.mem_top x)
   · exact (star_algebraMap φ k).trans (congrArg φ (hσK k).symm)
   · exact (star_eq_inv_of_mem_rootSet hu φ hβ).trans (congrArg φ (hσβ hβ).symm)
 
