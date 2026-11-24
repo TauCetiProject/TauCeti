@@ -116,6 +116,11 @@ theorem one_le_liouvilleRadialCoordinate (Z : (x : M) → TangentSpace I x) (W :
   rw [liouvilleRadialCoordinate, Real.one_le_exp_iff]
   exact Real.sInf_nonneg fun _ ht ↦ ht.1
 
+/-- The radial coordinate is positive. -/
+theorem liouvilleRadialCoordinate_pos (Z : (x : M) → TangentSpace I x) (W : Set M) (x : M) :
+    0 < liouvilleRadialCoordinate Z W x :=
+  Real.exp_pos _
+
 /-- A function `F` on a completion of the Liouville domain `W` with Liouville field `Z` is
 **linear at infinity** with slope `a` when `F = a r + b` outside a compact set, for a constant `b`,
 where `r` is the radial coordinate `TauCeti.liouvilleRadialCoordinate Z W`. -/
