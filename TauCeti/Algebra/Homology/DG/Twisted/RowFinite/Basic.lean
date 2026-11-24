@@ -242,18 +242,6 @@ end GradingDecomposition
 
 /-! ### Koszul-signed extension -/
 
-/-- Acting by the degree-one Koszul twist of a homogeneous element of degree `q` multiplies
-by `(-1)^q`, even when the acting graded module is only an `AddCommMonoid`. -/
-private theorem koszulTwist_one_smul {R : Type uR} {A : Type uA} {M : Type uM}
-    [Ring R] [AddCommMonoid A] [Module R A] {𝒜 : ℤ → Submodule R A}
-    [DirectSum.Decomposition 𝒜] [AddCommGroup M] [Module R M] [SMul A M] [IsScalarTower R A M]
-    {q : ℤ} {a : A} (ha : a ∈ 𝒜 q) (y : M) :
-    (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • y = q.negOnePow • (a • y) := by
-  have ha' : a ∈ (InternalGrading.ofDecomposition 𝒜).piece q := by
-    rwa [InternalGrading.ofDecomposition_piece]
-  rw [InternalGrading.koszulTwist_one_apply_of_mem _ ha', smul_assoc,
-    Int.cast_smul_eq_zsmul R, ← Units.smul_def]
-
 section SignedMap
 
 variable {R : Type uR} {A : Type uA} {P : Type uP}
@@ -359,7 +347,7 @@ theorem rowFiniteSignedMap_sub (h h' : P → M) :
 theorem rowFiniteSignedMap_single (h : P → M) (x : P)
     {q : ℤ} {a : A} (ha : a ∈ 𝒜 q) :
     rowFiniteSignedMap (𝒜 := 𝒜) h (Finsupp.single x a) = q.negOnePow • (a • h x) := by
-  simp [rowFiniteSignedMap, Finsupp.lsum_single, koszulTwist_one_smul ha]
+  simp [rowFiniteSignedMap, Finsupp.lsum_single, koszulTwist_one_smul_eq_negOnePow_smul ha]
 
 /-- A generator maps to its specified image. -/
 @[simp]
@@ -561,7 +549,7 @@ theorem rowFiniteTwistedDifferential_apply_of_mem (m : P → P →₀ A) {deg : 
       Finsupp.mapRange.linearMap d r + r.sum (fun y a ↦ (deg y).negOnePow • (a • m y)) := by
   rw [rowFiniteTwistedDifferential_apply]
   congr 1
-  exact Finsupp.sum_congr fun y _ ↦ koszulTwist_one_smul (hr y) (m y)
+  exact Finsupp.sum_congr fun y _ ↦ koszulTwist_one_smul_eq_negOnePow_smul (hr y) (m y)
 
 /-- The twisting equation of a single row says exactly that the row is a cycle of the twisted
 differential: a vector `r` of total degree `1 - k`, read as the prospective row of a generator of
