@@ -169,11 +169,12 @@ theorem mem_smul_lattice_iff {g : GL (Fin 2) A} {x : Fin 2 → A} :
 
 /-- Every element of `K₀(I)` carries `A ⊕ I` into itself. -/
 theorem smul_lattice_le {g : GL (Fin 2) A} (hg : g ∈ GL2K0 I) : g • lattice I ≤ lattice I := by
-  rintro _ ⟨x, hx, rfl⟩
+  intro y hy
+  obtain ⟨x, hx, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hy
   rw [mem_iff] at hg
-  rw [SetLike.mem_coe, mem_lattice] at hx
-  simp only [DistribSMul.toLinearMap_apply, mem_lattice, Matrix.smul_eq_mulVec,
-    Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  rw [mem_lattice] at hx
+  rw [mem_lattice, Units.smul_def, Matrix.smul_eq_mulVec]
+  simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_two]
   exact I.add_mem (I.mul_mem_right _ hg) (I.mul_mem_left _ hx)
 
 variable (I)
@@ -190,7 +191,9 @@ theorem stabilizer_lattice : MulAction.stabilizer (GL (Fin 2) A) (lattice I) = G
     rw [hg, mem_lattice, Units.smul_def, Matrix.smul_eq_mulVec, Matrix.mulVec_single_one] at h
     simpa using h
   · calc lattice I = g • g⁻¹ • lattice I := (smul_inv_smul g _).symm
-      _ ≤ g • lattice I := Submodule.map_mono (smul_lattice_le (inv_mem hg))
+      _ ≤ g • lattice I := fun x hx ↦ by
+        obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hx
+        exact Submodule.smul_mem_pointwise_smul _ _ _ (smul_lattice_le (inv_mem hg) hy)
 
 /-! ### The quotient `A² ⧸ (A ⊕ I)` -/
 
