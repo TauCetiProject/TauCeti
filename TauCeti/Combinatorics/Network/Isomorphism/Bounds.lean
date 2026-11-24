@@ -81,8 +81,10 @@ theorem replaceBounds_homEquiv_apply (e : N ≃ₙ N') (lower upper : N.Assignme
     @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceBounds lower upper h).homEquiv x y a)
       (congrArg (fun f : V ≃ W => f x) (e.replaceBounds_vertexEquiv lower upper h))
       (congrArg (fun f : V ≃ W => f y) (e.replaceBounds_vertexEquiv lower upper h)) =
-        e.homEquiv x y a :=
-  (rfl)
+        e.homEquiv x y a := by
+  change @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) rfl rfl =
+    e.homEquiv x y a
+  exact @Quiver.homOfEq_rfl W ⟨N'.Hom⟩ _ _ (e.homEquiv x y a)
 
 /-- Assignment transport is unchanged after replacing both bounds. -/
 @[simp]
@@ -126,8 +128,10 @@ theorem replaceLower_homEquiv_apply (e : N ≃ₙ N') (lower : N.Assignment K)
     @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceLower lower h).homEquiv x y a)
       (congrArg (fun f : V ≃ W => f x) (e.replaceLower_vertexEquiv lower h))
       (congrArg (fun f : V ≃ W => f y) (e.replaceLower_vertexEquiv lower h)) =
-        e.homEquiv x y a :=
-  (rfl)
+        e.homEquiv x y a := by
+  change @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) rfl rfl =
+    e.homEquiv x y a
+  exact @Quiver.homOfEq_rfl W ⟨N'.Hom⟩ _ _ (e.homEquiv x y a)
 
 /-- Assignment transport is unchanged after replacing lower bounds. -/
 @[simp]
@@ -171,8 +175,10 @@ theorem replaceUpper_homEquiv_apply (e : N ≃ₙ N') (upper : N.Assignment K)
     @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ ((e.replaceUpper upper h).homEquiv x y a)
       (congrArg (fun f : V ≃ W => f x) (e.replaceUpper_vertexEquiv upper h))
       (congrArg (fun f : V ≃ W => f y) (e.replaceUpper_vertexEquiv upper h)) =
-        e.homEquiv x y a :=
-  (rfl)
+        e.homEquiv x y a := by
+  change @Quiver.homOfEq W ⟨N'.Hom⟩ _ _ _ _ (e.homEquiv x y a) rfl rfl =
+    e.homEquiv x y a
+  exact @Quiver.homOfEq_rfl W ⟨N'.Hom⟩ _ _ (e.homEquiv x y a)
 
 /-- Assignment transport is unchanged after replacing upper bounds. -/
 @[simp]
