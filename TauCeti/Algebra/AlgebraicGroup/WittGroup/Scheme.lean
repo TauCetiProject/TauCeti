@@ -79,6 +79,15 @@ lemma groupScheme_X_left :
   rw [groupScheme_def]
   exact hopfSpec_obj_X_left R (coordinateHopfAlgebra p n R)
 
+/-- The structural morphism of the Witt vector group scheme is induced by the algebra structure
+map of its coordinate algebra. -/
+lemma groupScheme_X_hom :
+    (groupScheme p n R).X.hom =
+      eqToHom (groupScheme_X_left p n R) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap R (coordinateHopfAlgebra p n R))) := by
+  unfold groupScheme
+  convert hopfSpec_obj_X_hom R (coordinateHopfAlgebra p n R) using 1
+
 /-- The Witt vector group scheme is affine. -/
 instance isAffine_groupScheme : IsAffine (groupScheme p n R).X.left := by
   rw [groupScheme_X_left]
@@ -107,6 +116,14 @@ def groupSchemePointMulEquiv :
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶ (groupScheme p n R).X) :=
   CommHopfAlgCat.mapMulEquivOfPresentation (coordinateHopfAlgebra p n R) A (groupScheme_def p n R)
 
+/-- The underlying map of the spectrum point associated to an algebra point. -/
+lemma groupSchemePointMulEquiv_apply_left
+    (f : WithConv (coordinateHopfAlgebra p n R →ₐ[R] A)) :
+    (groupSchemePointMulEquiv A f).left =
+      Spec.map (CommRingCat.ofHom f.ofConv) ≫ eqToHom (groupScheme_X_left p n R).symm :=
+  CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
+    (coordinateHopfAlgebra p n R) A (groupScheme_def p n R) (groupScheme_X_left p n R) f
+
 /-- **The points of the Witt vector group scheme.** Morphisms `Spec A ⟶ W_n` over `Spec R` form
 a group isomorphic to the additive group of truncated Witt vectors `W_n(A)`, written
 multiplicatively to match the group law on a hom-set into a group object. -/
@@ -122,6 +139,22 @@ theorem schemePointsMulEquiv_groupSchemePointMulEquiv
     (q : WithConv (coordinateHopfAlgebra p n R →ₐ[R] A)) :
     schemePointsMulEquiv A (groupSchemePointMulEquiv A q) = pointsMulEquiv q := by
   simp [schemePointsMulEquiv]
+
+/-- The Witt vector of a scheme point is the Witt vector of its algebra point. -/
+theorem schemePointsMulEquiv_apply
+    (x : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶ (groupScheme p n R).X) :
+    schemePointsMulEquiv A x = pointsMulEquiv ((groupSchemePointMulEquiv A).symm x) :=
+  (rfl)
+
+/-- The coordinates of the Witt vector of a scheme point are the values of its algebra point on
+the coordinates `X₀, …, X_{n-1}` of `W_n`. -/
+@[simp]
+theorem coeff_toAdd_schemePointsMulEquiv
+    (x : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶ (groupScheme p n R).X)
+    (i : Fin n) :
+    (schemePointsMulEquiv A x).toAdd.coeff i =
+      ((groupSchemePointMulEquiv A).symm x).ofConv (coordinateAlgEquiv p n R (MvPolynomial.X i)) :=
+  coeff_toAdd_pointsMulEquiv _ i
 
 /-- The inverse scheme-points equivalence sends a Witt vector to the spectrum map of the
 corresponding algebra point. -/

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.RingTheory.FinitePresentation
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
-public import TauCeti.RingTheory.WittVector.Truncated
+public import TauCeti.RingTheory.WittVector.Truncated.MvPolynomial
 
 /-!
 # The coordinate Hopf algebra of the Witt vector group `W_n`
@@ -18,7 +18,7 @@ Fix a prime `p` and a length `n`. For a commutative ring `R`, the truncated Witt
 form a group-valued functor whose underlying set-valued functor is corepresented by the
 polynomial ring `R[X₀, …, X_{n-1}]`: an `R`-algebra map `f` out of the polynomial ring is the
 same as the truncated Witt vector with coordinates `f(X₀), …, f(X_{n-1})`
-(`TauCeti.WittGroup.algHomEquiv`). Transporting the Witt vector addition along this bijection
+(`TruncatedWittVector.algHomEquiv`). Transporting the Witt vector addition along this bijection
 equips the polynomial ring with a commutative Hopf algebra structure, the coordinate Hopf
 algebra of the additive group scheme `W_n` of Witt vectors of length `n`:
 
@@ -47,8 +47,6 @@ is the bundled object.
 
 ## Main declarations
 
-* `TauCeti.WittGroup.algHomEquiv`: algebra maps out of `R[X₀, …, X_{n-1}]` are truncated Witt
-  vectors, naturally in the value algebra (`TauCeti.WittGroup.algHomEquiv_comp`).
 * `TauCeti.WittGroup.comul`, `TauCeti.WittGroup.counit`, `TauCeti.WittGroup.antipode`: the Hopf
   structure maps, characterized on points by `TauCeti.WittGroup.algHomEquiv_comp_comul`,
   `TauCeti.WittGroup.algHomEquiv_counit` and `TauCeti.WittGroup.algHomEquiv_antipode`.
@@ -73,6 +71,7 @@ noncomputable section
 open scoped TensorProduct
 
 open MvPolynomial Algebra.TensorProduct WithConv
+open TruncatedWittVector (algHomEquiv algHomEquiv_comp)
 
 namespace TauCeti
 
@@ -80,60 +79,7 @@ namespace WittGroup
 
 universe u v w
 
-variable (p : ℕ) (n : ℕ)
-
-section AlgHomEquiv
-
-variable (R : Type u) [CommSemiring R] {A : Type v} [CommRing A] [Algebra R A]
-
-/-- An `R`-algebra map out of the polynomial ring `R[X₀, …, X_{n-1}]` is the same as the
-truncated Witt vector of length `n` whose coordinates are its values on the variables. -/
-def algHomEquiv : (MvPolynomial (Fin n) R →ₐ[R] A) ≃ TruncatedWittVector p n A where
-  toFun f := TruncatedWittVector.mk p fun i ↦ f (X i)
-  invFun x := aeval fun i ↦ x.coeff i
-  left_inv f := by
-    apply MvPolynomial.algHom_ext
-    intro i
-    simp
-  right_inv x := by
-    ext i
-    simp
-
-/-- The coordinates of the Witt vector of an algebra map are its values on the variables. -/
-@[simp]
-theorem coeff_algHomEquiv (f : MvPolynomial (Fin n) R →ₐ[R] A) (i : Fin n) :
-    (algHomEquiv p n R f).coeff i = f (X i) :=
-  TruncatedWittVector.coeff_mk _ _
-
-/-- The algebra map attached to a Witt vector sends the variable `X_i` to the `i`-th
-coordinate. -/
-@[simp]
-theorem algHomEquiv_symm_apply_X (x : TruncatedWittVector p n A) (i : Fin n) :
-    (algHomEquiv p n R).symm x (X i) = x.coeff i :=
-  aeval_X _ _
-
-/-- Two algebra maps out of the polynomial ring agree when their Witt vectors agree. -/
-theorem algHom_ext {f g : MvPolynomial (Fin n) R →ₐ[R] A}
-    (h : algHomEquiv p n R f = algHomEquiv p n R g) : f = g :=
-  (algHomEquiv p n R).injective h
-
-end AlgHomEquiv
-
-variable [Fact p.Prime] (R : Type u) [CommRing R]
-
-section Naturality
-
-variable {A : Type v} [CommRing A] [Algebra R A] {B : Type w} [CommRing B] [Algebra R B]
-
-/-- The Witt vector of an algebra map is natural in the value algebra: post-composing with
-`φ : A →ₐ[R] B` changes the coefficients of the Witt vector along `φ`. -/
-theorem algHomEquiv_comp (φ : A →ₐ[R] B) (f : MvPolynomial (Fin n) R →ₐ[R] A) :
-    algHomEquiv p n R (φ.comp f) =
-      TruncatedWittVector.map n φ.toRingHom (algHomEquiv p n R f) := by
-  ext i
-  simp
-
-end Naturality
+variable (p : ℕ) [Fact p.Prime] (n : ℕ) (R : Type u) [CommRing R]
 
 /-- The comultiplication of the coordinate Hopf algebra of `W_n`: the algebra map
 corresponding to the sum of the two generic Witt vectors `(X_j ⊗ 1)_j` and `(1 ⊗ X_j)_j`. -/
@@ -153,6 +99,7 @@ def antipode : MvPolynomial (Fin n) R →ₐ[R] MvPolynomial (Fin n) R :=
 
 /-- The Witt vector of the comultiplication is the sum of the two generic Witt vectors of the
 tensor square. -/
+@[simp]
 theorem algHomEquiv_comul :
     algHomEquiv p n R (comul p n R) =
       algHomEquiv p n R includeLeft +
@@ -165,6 +112,7 @@ theorem algHomEquiv_counit : algHomEquiv p n R (counit p n R) = 0 :=
   Equiv.apply_symm_apply _ _
 
 /-- The antipode corresponds to the negative of the generic Witt vector. -/
+@[simp]
 theorem algHomEquiv_antipode :
     algHomEquiv p n R (antipode p n R) = -algHomEquiv p n R (AlgHom.id R _) :=
   Equiv.apply_symm_apply _ _
@@ -175,18 +123,18 @@ theorem comul_X (i : Fin n) :
     comul p n R (X i) =
       (algHomEquiv p n R includeLeft +
         algHomEquiv p n R (includeRight (A := MvPolynomial (Fin n) R))).coeff i :=
-  algHomEquiv_symm_apply_X _ _ _ _ _
+  TruncatedWittVector.algHomEquiv_symm_apply_X _ _ _ _ _
 
 /-- The counit sends every variable to zero. -/
 @[simp]
 theorem counit_X (i : Fin n) : counit p n R (X i) = 0 := by
-  rw [counit, algHomEquiv_symm_apply_X, TruncatedWittVector.coeff_zero]
+  rw [counit, TruncatedWittVector.algHomEquiv_symm_apply_X, TruncatedWittVector.coeff_zero]
 
 /-- The antipode sends the variable `X_i` to the `i`-th coordinate of the negative of the
 generic Witt vector. -/
 theorem antipode_X (i : Fin n) :
     antipode p n R (X i) = (-algHomEquiv p n R (AlgHom.id R _)).coeff i :=
-  algHomEquiv_symm_apply_X _ _ _ _ _
+  TruncatedWittVector.algHomEquiv_symm_apply_X _ _ _ _ _
 
 variable {p n R} in
 /-- **Comultiplication on points.** Precomposing an algebra map `F` out of the tensor square
@@ -201,8 +149,8 @@ private theorem comul_coassoc :
     (Algebra.TensorProduct.assoc R R R _ _ _).toAlgHom.comp
         ((Algebra.TensorProduct.map (comul p n R) (.id R _)).comp (comul p n R)) =
       (Algebra.TensorProduct.map (.id R _) (comul p n R)).comp (comul p n R) := by
-  refine algHom_ext p n R
-    (A := MvPolynomial (Fin n) R ⊗[R] (MvPolynomial (Fin n) R ⊗[R] MvPolynomial (Fin n) R)) ?_
+  refine (algHomEquiv p n R (A := MvPolynomial (Fin n) R ⊗[R]
+    (MvPolynomial (Fin n) R ⊗[R] MvPolynomial (Fin n) R))).injective ?_
   rw [← AlgHom.comp_assoc, algHomEquiv_comp_comul, algHomEquiv_comp_comul, AlgHom.comp_assoc,
     map_comp_includeLeft, ← AlgHom.comp_assoc, algHomEquiv_comp_comul]
   simp only [AlgHom.comp_assoc, map_comp_includeLeft, map_comp_includeRight, AlgHom.comp_id]
@@ -223,7 +171,7 @@ private theorem comul_rTensor_counit :
     ext
     simp
   rw [h]
-  apply algHom_ext p n R
+  apply (algHomEquiv p n R).injective
   rw [algHomEquiv_comp_comul, map_comp_includeLeft, map_comp_includeRight, AlgHom.comp_id,
     algHomEquiv_comp, algHomEquiv_counit, map_zero, zero_add]
 
@@ -235,7 +183,7 @@ private theorem comul_lTensor_counit :
     ext
     simp
   rw [h]
-  apply algHom_ext p n R
+  apply (algHomEquiv p n R).injective
   rw [algHomEquiv_comp_comul, map_comp_includeLeft, map_comp_includeRight, AlgHom.comp_id,
     algHomEquiv_comp, algHomEquiv_counit, map_zero, add_zero]
 
@@ -244,7 +192,7 @@ vector addition is commutative. -/
 theorem comm_comp_comul :
     (Algebra.TensorProduct.comm R (MvPolynomial (Fin n) R) (MvPolynomial (Fin n) R)).toAlgHom.comp
       (comul p n R) = comul p n R := by
-  apply algHom_ext p n R
+  apply (algHomEquiv p n R).injective
   rw [algHomEquiv_comp_comul, comm_comp_includeLeft,
     comm_comp_includeRight, algHomEquiv_comul, add_comm]
 
@@ -261,7 +209,7 @@ private theorem mul_antipode_rTensor_comul :
     (Algebra.TensorProduct.lift (antipode p n R) (.id R (MvPolynomial (Fin n) R))
       fun _ _ ↦ Commute.all _ _).comp (comul p n R) =
         (Algebra.ofId R (MvPolynomial (Fin n) R)).comp (counit p n R) := by
-  apply algHom_ext p n R
+  apply (algHomEquiv p n R).injective
   rw [algHomEquiv_comp_comul, lift_comp_includeLeft, lift_comp_includeRight', algHomEquiv_comp,
     algHomEquiv_counit, map_zero, algHomEquiv_antipode, neg_add_cancel]
 
@@ -269,7 +217,7 @@ private theorem mul_antipode_lTensor_comul :
     (Algebra.TensorProduct.lift (.id R (MvPolynomial (Fin n) R)) (antipode p n R)
       fun _ _ ↦ Commute.all _ _).comp (comul p n R) =
         (Algebra.ofId R (MvPolynomial (Fin n) R)).comp (counit p n R) := by
-  apply algHom_ext p n R
+  apply (algHomEquiv p n R).injective
   rw [algHomEquiv_comp_comul, lift_comp_includeLeft, lift_comp_includeRight', algHomEquiv_comp,
     algHomEquiv_counit, map_zero, algHomEquiv_antipode, add_neg_cancel]
 
