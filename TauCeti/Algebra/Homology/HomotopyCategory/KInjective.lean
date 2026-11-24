@@ -15,7 +15,8 @@ public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 
 A cochain complex `L` in an abelian category is K-injective (Mathlib's
 `CochainComplex.IsKInjective`) if every morphism from an acyclic complex to `L` is null-homotopic.
-This file proves two closure properties of this class:
+This file proves that contractible complexes are K-injective
+(`CochainComplex.isKInjective_of_homotopy_id_zero`), and two closure properties of this class:
 
 * a product of K-injective complexes is K-injective (`CochainComplex.isKInjective_of_isLimit_fan`);
 * in a degreewise split short exact sequence `0 → X₁ → X₂ → X₃ → 0` of cochain complexes with
@@ -51,6 +52,12 @@ namespace CochainComplex
 open CategoryTheory Limits
 
 variable {C : Type*} [Category* C] [Abelian C]
+
+/-- A contractible cochain complex, one whose identity is null-homotopic, is K-injective. -/
+theorem isKInjective_of_homotopy_id_zero {L : CochainComplex C ℤ} (h : Homotopy (𝟙 L) 0) :
+    L.IsKInjective where
+  nonempty_homotopy_zero f _ :=
+    ⟨(Homotopy.ofEq (Category.comp_id f).symm).trans ((h.compLeft f).trans (.ofEq (by simp)))⟩
 
 /-- **Products of K-injective complexes are K-injective.** If `c` is a product of a family of
 K-injective cochain complexes, then its cone point is K-injective. -/

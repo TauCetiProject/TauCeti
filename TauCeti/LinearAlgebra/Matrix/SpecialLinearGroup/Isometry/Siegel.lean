@@ -55,8 +55,7 @@ private theorem exists_mem_elementary_w_hyperbolic (hσ : Function.Involutive σ
         (σ ∘ f) ⬝ᵥ (Q *ᵥ x) = 0 → (w : Matrix n n K) *ᵥ x = x := by
   have ha₂ : -(ε * u⁻¹ * d⁻¹) + ε * σ (-(ε * u⁻¹ * d⁻¹)) = 0 := by
     have hσd : σ d ≠ 0 := (map_ne_zero σ).mpr hd
-    rw [map_neg, map_mul, map_mul, map_inv₀, map_inv₀, hσε, hσu]
-    field_simp
+    rw [map_neg, map_mul, map_mul, map_inv₀, map_inv₀, hσε, hσu]; field_simp
     linear_combination -hdε - d * hε
   obtain ⟨t₁, ht₁, hc₁⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ he
     (a := u * d) (by rw [map_mul, hσu]; linear_combination u * hdε)
@@ -154,7 +153,7 @@ private theorem siegelTransvection_mem_elementary_of_exists_param {c c₀ : K}
     MemElemSiegel Q σ ε e w₀ c := fun {s} hs hcs ↦ by
   have he₀ : e ≠ 0 := fun h0 ↦ (one_ne_zero : (1 : K) ≠ 0) (by simpa [h0] using hef.symm)
   have hc₀ := (exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff hσ hQ hdet he₀ he
-    hew₀ c₀).mp ⟨s₀, s₀.2, hcs₀⟩
+    hew₀ c₀).mp ⟨s₀, s₀.property, hcs₀⟩
   obtain ⟨t₀, ht₀, hct₀⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ he
     (a := c - c₀) (by rw [map_sub]; linear_combination hc - hc₀)
   exact specialIsometryGroup_ext (g₁ := ⟨s, hs⟩) (g₂ := t₀ * s₀) (by
@@ -182,8 +181,8 @@ private theorem siegelTransvection_mem_elementary_of_fixed_ne {a : K} (ha0 : a �
   have hconj : (↑(h * s₁ * h⁻¹) : Matrix n n K) =
       Q.siegelTransvection σ ε e (a • w') (c' * a * a) := by
     rw [Subgroup.coe_mul, Subgroup.coe_mul, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul,
-      Subgroup.coe_inv, hcs₁, coe_mul_siegelTransvection_mul_coe_inv h.2, hhe, hhx w' hew' hfw',
-      siegelTransvection_smul_left hσ, hσa]
+      Subgroup.coe_inv, hcs₁, coe_mul_siegelTransvection_mul_coe_inv h.property, hhe,
+      hhx w' hew' hfw', siegelTransvection_smul_left hσ, hσa]
   have hw_sum : a • w' + -w' = w₀ := by
     have hsub : a • w' + -w' = (a - 1) • w' := by module
     rw [hsub, smul_inv_smul₀ (sub_ne_zero.mpr ha1)]
@@ -194,10 +193,9 @@ private theorem siegelTransvection_mem_elementary_of_fixed_ne {a : K} (ha0 : a �
       siegelTransvection_mul_siegelTransvection he (by simp [mulVec_neg, hew'])
         (by simp [TauCeti.map_comp_smul, hw'e]), hw_sum]
   have hmem₂ : (h * s₁ * h⁻¹) * s₁⁻¹ ∈ Q.elementaryUnitaryGroup σ := by
-    simpa [mul_assoc] using
-      mul_mem hh (normal_elementaryUnitaryGroup.conj_mem _ (inv_mem hh) s₁)
-  exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc
-    hmem₂ hcs₂ hs hcs
+    simpa [mul_assoc] using mul_mem hh (normal_elementaryUnitaryGroup.conj_mem _ (inv_mem hh) s₁)
+  exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc hmem₂ hcs₂ hs
+    hcs
 
 include hε he hf hef hfe hew₀ in
 private theorem siegelTransvection_mem_elementary_of_card_le_two (hcard : Fintype.card n ≤ 2)
@@ -215,9 +213,8 @@ private theorem siegelTransvection_mem_elementary_of_card_le_two (hcard : Fintyp
           Matrix.head_cons, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul, smul_eq_mul,
           hfe, hf, hfw₀, mul_zero, add_zero, mulVec_zero, dotProduct_zero] at h0
         linear_combination ε * h0 - g 0 * hε
-      have hg2 : g 2 • w₀ = 0 := by simpa [hg0, hg1] using hg
-      intro i
-      fin_cases i <;> [exact hg0; exact hg1; exact (smul_eq_zero.mp hg2).resolve_right hw₀_ne]
+      have hg2 : g 2 = 0 := (smul_eq_zero.mp (by simpa [hg0, hg1] using hg)).resolve_right hw₀_ne
+      intro i; fin_cases i <;> assumption
     exact absurd hli.fintype_card_le_finrank (by simp [Module.finrank_fintype_fun_eq_card]; omega)
   exact mk_mem_elementaryUnitaryGroup_of_coe_eq_unitaryTransvection hs he
     (by rwa [hw₀, siegelTransvection_zero_eq_unitaryTransvection] at hcs)
@@ -257,8 +254,7 @@ private theorem siegelTransvection_mem_elementary_of_witt_two {u w : n → K} (h
     rw [Subgroup.coe_mul, Subgroup.coe_mul, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul,
       hc₁, hc₂, hc₃, siegelTransvection_mul_siegelTransvection he hex₂ hx₁e,
       siegelTransvection_mul_siegelTransvection he hex₃
-        (by rw [comp_add_dotProduct_mulVec, hx₁e, hx₂e, add_zero]),
-      hx_sum]
+        (by rw [comp_add_dotProduct_mulVec, hx₁e, hx₂e, add_zero]), hx_sum]
   exact siegelTransvection_mem_elementary_of_exists_param hσ hQ hdet he hef hew₀ hc
     (mul_mem (mul_mem ht₁ ht₂) ht₃) hcs₀ hs hcs
 

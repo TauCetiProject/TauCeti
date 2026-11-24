@@ -21,7 +21,8 @@ On a manifold `M` without boundary, the **universal differential** is the sectio
 `f`, and a function is a regular parameter of `S` exactly when its critical points are
 nondegenerate. Genericity of such functions is then an instance of parametric transversality for
 Fredholm sections (`TauCeti.isMeagre_setOf_not_isRegularSectionParameter`). This file establishes
-the regularity, linearization and transversality of `S` that this application uses.
+the regularity, linearization and transversality of `S` that this application uses; the
+application itself is `TauCeti.mem_residual_setOf_isRegularSectionParameter_universalDifferential`.
 
 * The differential `df` of a single function, read as a section of the cotangent bundle, has
   intrinsic linearization the critical Hessian, which is onto exactly at nondegenerate critical
@@ -111,6 +112,22 @@ theorem contMDiff_universalDifferential {m : WithTop ℕ∞} (hm : m + 1 ≤ k) 
   exact h.comp (contMDiff_snd.prodMk contMDiff_fst)
 
 include hK in
+/-- For `k ≥ 2`, the coordinates of the universal differential in the trivialization of the
+cotangent bundle at `x` are differentiable at every point `z = (x, f)`, since the universal
+differential is then `C¹`. -/
+theorem mdifferentiableAt_trivializationAt_universalDifferential (hk : 2 ≤ k)
+    (z : M × C^k⟮I, M; 𝓘(ℝ), ℝ⟯) :
+    letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := ℝ) k hK
+    letI := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
+    MDifferentiableAt (I.prod 𝓘(ℝ, C^k⟮I, M; 𝓘(ℝ), ℝ⟯)) 𝓘(ℝ, E →L[ℝ] ℝ)
+      (fun w ↦ (trivializationAt (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) z.1
+        ⟨w.1, universalDifferential I w⟩).2) z := by
+  let := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := ℝ) k hK
+  let := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
+  exact ((contMDiffAt_totalSpace_iff.1 (contMDiff_universalDifferential k hK (m := 1)
+    (by exact_mod_cast hk) z)).2).mdifferentiableAt one_ne_zero
+
+include hK in
 /-- **The linearization of the universal differential.** For `k ≥ 2`, at every point `(x, f)` of
 `M × C^k(M, ℝ)`, the intrinsic linearization of the universal differential sends `(v, h)` to
 `Hess_x f (v) + dh_x`: the critical Hessian of `f` in the direction of the point, and the
@@ -129,12 +146,9 @@ theorem sectionLinearization_universalDifferential_apply (hk : 2 ≤ k)
   obtain ⟨x, f⟩ := z
   intro p
   set e := trivializationAt (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) x
-  -- The coordinates of the section in the trivialization at `x` are differentiable, since the
-  -- section is `C¹`.
   have hd : MDifferentiableAt (I.prod 𝓘(ℝ, C^k⟮I, M; 𝓘(ℝ), ℝ⟯)) 𝓘(ℝ, E →L[ℝ] ℝ)
       (fun w ↦ (e ⟨w.1, universalDifferential I w⟩).2) (x, f) :=
-    ((contMDiffAt_totalSpace_iff.1 (contMDiff_universalDifferential k hK (m := 1)
-      (by exact_mod_cast hk) (x, f))).2).mdifferentiableAt one_ne_zero
+    mdifferentiableAt_trivializationAt_universalDifferential k hK hk (x, f)
   -- In the function direction the coordinates are `h ↦ dh_x`, a continuous linear map: the
   -- finite-atlas norm induces the weak Whitney topology, for which `h ↦ dh_x` is continuous.
   let L : C^k⟮I, M; 𝓘(ℝ), ℝ⟯ →L[ℝ] E →L[ℝ] ℝ :=
@@ -164,6 +178,7 @@ theorem sectionLinearization_universalDifferential_apply (hk : 2 ≤ k)
 
 end FiniteRegularity
 
+omit [LocallyCompactSpace E] in
 include hK in
 /-- **The universal differential is transverse to the zero section.** On a smooth Hausdorff
 manifold and for `k ≥ 2`, its intrinsic linearization is surjective at every point of

@@ -15,7 +15,6 @@ import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 
 /-!
 # Flat Riemannian metrics and local Euclidean isometries
@@ -166,9 +165,10 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
   let b₀ := stdOrthonormalBasis ℝ (TangentSpace I x₀)
   have hLC := isLeviCivitaConnection_leviCivitaConnection I (M := M)
   have htors : (leviCivitaConnection I M).IsTorsionFree :=
-    (isTorsionFree_iff_torsion_eq_zero (leviCivitaConnection I M)).2 hLC.2
+    (isTorsionFree_iff_torsion_eq_zero (leviCivitaConnection I M)).2 hLC.torsion
   obtain ⟨s, W₁, hs_smooth, hW₁open, hx₀W₁, hW₁U, hframe₁, hs_x₀, hpar₁, horth₁⟩ :=
-    hLC.1.exists_orthonormal_isLocalFrameOn_parallel_of_isInteriorPoint hx₀ hflat hU b₀
+    hLC.isMetricCompatible.exists_orthonormal_isLocalFrameOn_parallel_of_isInteriorPoint hx₀ hflat
+        hU b₀
   -- Step 2: Form the dual coframe 1-forms `α i (y) = ⟪s i y, ·⟫` and prove they are closed on `W₁`.
   let g := Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun y : M ↦ TangentSpace I y)
@@ -238,9 +238,7 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
       (L.inner_map_map _ _).trans (orthonormal_iff_ite.1 b₀.orthonormal i j)
   refine exists_riemannianIsometry_ball_of_inner_mfderiv_eq hx₀ hW₂open hx₀W₂
     (inter_subset_left.trans hW₁U) L hΦ_smooth (by simp [Φ]) hΦ_mv_x₀ fun {y} hy v w ↦ ?_
-  rw [Manifold.inner_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace_apply,
-    NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply, hΦ_mv hy v, hΦ_mv hy w]
+  rw [Manifold.inner_mfderiv_eq_inner_mvfderiv, hΦ_mv hy v, hΦ_mv hy w]
   simpa only [OrthonormalBasis.coe_mk] using
     (OrthonormalBasis.mk (horth₁ y hy.1) (hframe₁.generating hy.1)).inner_sum_inner_smul
       hLb_orth v w

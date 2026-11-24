@@ -116,7 +116,7 @@ theorem finite_quotient_of_isOpen
     Quotient.lift (fun σ ↦ (σ : L →ₐ[K] L).comp E.val) fun σ τ h ↦ by
       refine AlgHom.ext fun x ↦ ?_
       have := (IntermediateField.mem_fixingSubgroup_iff _ _).mp
-        (QuotientGroup.leftRel_apply.mp h) x x.2
+        (QuotientGroup.leftRel_apply.mp h) x x.property
       exact (by simpa using congrArg σ this : τ x = σ x).symm
   have hf : Function.Injective f := by
     refine Quotient.ind₂ fun σ τ h ↦ Quotient.sound <| QuotientGroup.leftRel_apply.mpr ?_

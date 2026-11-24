@@ -63,7 +63,7 @@ variable (K) in
 /-- The **derivative `d/dt` of Puiseux series**, `d/dt (t ^ q) = q t ^ (q - 1)`: the restriction of
 the derivative of rational-exponent Hahn series to the Puiseux field. -/
 noncomputable def derivation : Derivation K (puiseuxField K) (puiseuxField K) where
-  toFun x := ⟨ratHahnSeriesDerivation K x, ratHahnSeriesDerivation_mem_puiseuxField x.2⟩
+  toFun x := ⟨ratHahnSeriesDerivation K x, ratHahnSeriesDerivation_mem_puiseuxField x.property⟩
   map_add' x y := Subtype.ext ((ratHahnSeriesDerivation K).map_add x y)
   map_smul' r x := Subtype.ext <| by
     -- The scalar action of `K` on the Puiseux field is multiplication by the image of `K`.

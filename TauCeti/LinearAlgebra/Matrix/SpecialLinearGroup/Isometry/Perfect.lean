@@ -68,7 +68,7 @@ private theorem unitaryTransvection_mem_commutator_of_mulVec_eq_smul {g : Q.spec
   rw [commutatorElement_def, Subgroup.coe_mul, SpecialLinearGroup.coe_mul,
     coe_inv_specialIsometryGroup_eq_unitaryTransvection he hct₀, Subgroup.coe_mul,
     Subgroup.coe_mul, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul, Subgroup.coe_inv,
-    hct₀, coe_mul_unitaryTransvection_mul_coe_inv g.2, hge, unitaryTransvection_smul,
+    hct₀, coe_mul_unitaryTransvection_mul_coe_inv g.property, hge, unitaryTransvection_smul,
     unitaryTransvection_mul_unitaryTransvection he]
   congr 1; simp only [b]; field_simp; ring
 
@@ -131,8 +131,7 @@ private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic {v
     fun w hew hfw ↦ by simp [hM₁x, hew, hfw]
   have hd₂ : M₂.det = σ c * c⁻¹ := by
     have hM₂ : M₂ = 1 - vecMulVec (-((σ c * c⁻¹ - 1) * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v))⁻¹) • v)
-        ((σ ∘ v) ᵥ* Q) := by
-      simp [M₂, unitaryTransvection_def, sub_eq_add_neg, smul_vecMulVec]
+        ((σ ∘ v) ᵥ* Q) := by simp [M₂, unitaryTransvection_def, sub_eq_add_neg, smul_vecMulVec]
     rw [hM₂, TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, smul_eq_mul]
     field_simp; ring
   have hB₁ (x y : n → K) : (σ ∘ (M₁ *ᵥ x)) ⬝ᵥ (Q *ᵥ (M₁ *ᵥ y)) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y) := by
@@ -146,10 +145,11 @@ private theorem exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic {v
       apply_comp_dotProduct_mulVec hσ hQ v v, apply_comp_dotProduct_mulVec hσ hQ v x,
       add_dotProduct, smul_dotProduct, mulVec_add, mulVec_smul, dotProduct_add, dotProduct_smul,
       smul_eq_mul]; rcases mul_self_eq_one_iff.mp hε with rfl | rfl <;> (field_simp; ring)
-  refine ⟨⟨⟨M₁ * M₂, by rw [det_mul, hd₁, hd₂]; field_simp⟩,
-    mem_specialIsometryGroup_iff.mpr (transpose_map_mul_mul_eq_self fun x y ↦ by
+  let g₀ : SpecialLinearGroup n K := .mk (M₁ * M₂)
+    (by rw [det_mul, hd₁, hd₂, mul_assoc, inv_mul_cancel_left₀ hσc, mul_inv_cancel₀ hc])
+  refine ⟨⟨g₀, mem_specialIsometryGroup_iff.mpr (transpose_map_mul_mul_eq_self fun x y ↦ by
       rw [SpecialLinearGroup.coe_mk, ← mulVec_mulVec, ← mulVec_mulVec, hB₁, hB₂])⟩, ?_⟩
-  simpa [M₂, Subgroup.coe_mk (Q.specialIsometryGroup σ), ← mulVec_mulVec,
+  simpa [g₀, M₂, Subgroup.coe_mk (Q.specialIsometryGroup σ), ← mulVec_mulVec,
     unitaryTransvection_mulVec, (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hev] using hM₁e
 
 include hσ hQ hdet hε hσε htr he hf hef hfe in
@@ -163,14 +163,14 @@ private theorem unitaryTransvection_mem_commutator_of_card_three_le (hcard : 3 �
     simpa [Module.finrank_prod, Module.finrank_self] using Submodule.finrank_le (LinearMap.range φ)
   obtain ⟨v, hv_mem, hv0⟩ := (Submodule.ne_bot_iff (LinearMap.ker φ)).mp fun hbot ↦ by
     rw [Module.finrank_fintype_fun_eq_card, hbot, finrank_bot] at hrk; omega
-  have hφv : (σ ∘ e) ⬝ᵥ (Q *ᵥ v) = 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ v) = 0 := by
+  obtain ⟨hev, hfv⟩ : (σ ∘ e) ⬝ᵥ (Q *ᵥ v) = 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ v) = 0 := by
     simpa [φ, LinearMap.mem_ker, Prod.ext_iff, toBilin'_apply'] using hv_mem
   by_cases hvv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0
   · exact unitaryTransvection_mem_commutator_of_witt_two hσ hQ hdet hε htr he hf hef he₀
-      (notMem_span_of_dotProduct_mulVec_of_ne_zero hφv.2
-        (hfe ▸ left_ne_zero_of_mul (hε ▸ one_ne_zero)) hv0) he hvv hφv.1 ha
+      (notMem_span_of_dotProduct_mulVec_of_ne_zero hfv
+        (hfe ▸ left_ne_zero_of_mul (hε ▸ one_ne_zero)) hv0) he hvv hev ha
   · obtain ⟨g, hge⟩ := exists_mem_specialIsometryGroup_mulVec_eq_smul_of_anisotropic hσ hQ hε hσε
-      he hf hef hfe hφv.1 hvv hc
+      he hf hef hfe hev hvv hc
     exact unitaryTransvection_mem_commutator_of_mulVec_eq_smul hσ hQ he hc1 hge ha
 
 end Helpers
@@ -222,12 +222,11 @@ theorem commutator_specialIsometryGroup_eq_top (hσ : Function.Involutive σ)
         hu hw huw ha
     · exact unitaryTransvection_mem_commutator_of_card_three_le hσ hQ hdet hε hσε htr he hf hef
         hfe hcard hc0 hc1 ha
-  let p₀ : Q.isotropicPoints σ :=
-    ⟨Projectivization.mk K e he₀, (mk_mem_isotropicPoints_iff he₀).mpr he⟩
+  let p₀ : Q.isotropicPoints σ := ⟨_, (mk_mem_isotropicPoints_iff he₀).mpr he⟩
   have hp₀ : Q.unitaryTransvectionSubgroup σ p₀ ≤ commutator (Q.specialIsometryGroup σ) := by
-    intro g hg; obtain ⟨a, hga⟩ := (mem_unitaryTransvectionSubgroup_mk_iff he₀ p₀.2).mp hg
-    have hiso := (comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.2) f
-      f).trans hf
+    intro g hg; obtain ⟨a, hga⟩ := (mem_unitaryTransvectionSubgroup_mk_iff he₀ p₀.property).mp hg
+    have hiso := (comp_mulVec_dotProduct_mulVec_mulVec (mem_specialIsometryGroup_iff.mp g.property)
+      f f).trans hf
     rw [hga, unitaryTransvection_mulVec, hef, mul_one] at hiso
     simp only [map_comp_add, TauCeti.map_comp_smul, add_dotProduct, smul_dotProduct, mulVec_add,
       mulVec_smul, dotProduct_add, dotProduct_smul, smul_eq_mul, hf, hef, hfe, he] at hiso

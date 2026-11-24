@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The rough Laplacian of a connection
@@ -32,18 +33,26 @@ the Leibniz rule `∇*∇(f σ) = f ∇*∇ σ - 2 ∇_{grad f} σ - (Δ f) σ`,
 `TauCeti.Manifold.laplaceBeltrami`. For the canonical flat connection on the trivial line bundle
 this gives `∇*∇ f = -Δ f`.
 
-The trace is the contraction of the bilinear map `∇²σ` against the canonical covariant tensor
-`InnerProductSpace.canonicalCovariantTensor`, so the definition involves no choice of basis.
+The trace is the metric trace `LinearMap.BilinMap.metricTrace` of the vector-valued bilinear map
+`∇²σ`, its contraction against the canonical covariant tensor, so the definition involves no choice
+of basis.
 
 ## Main definitions and results
 
 * `CovariantDerivative.roughLaplacian`: the rough Laplacian `∇*∇ σ` at a point.
+* `CovariantDerivative.roughLaplacian_def`: it is the negative metric trace of `∇²σ`.
 * `CovariantDerivative.roughLaplacian_eq_sum`: its value in an orthonormal basis.
+* `CovariantDerivative.roughLaplacian_eq_zero_of_apply_eq_zero`: parallel sections have zero rough
+  Laplacian.
 * `CovariantDerivative.roughLaplacian_smul_smul_sub`: the double commutator of `∇*∇` with
   multiplication by two functions is `-2 ⟪grad f, grad g⟫ σ`.
 * `CovariantDerivative.roughLaplacian_smul`: the Leibniz rule for the rough Laplacian of the
   Levi-Civita second covariant derivative.
 * `CovariantDerivative.roughLaplacian_trivial`: on the trivial line bundle, `∇*∇ f = -Δ f`.
+* `CovariantDerivative.roughLaplacian_eq_neg_laplaceBeltrami_sub_add`: the rough Laplacian of a
+  smooth connection `∇` on the trivial line, `∇*∇ f = -Δ f - 2 ω(grad f) + f ∇*∇ 1` for `ω = ∇ 1`.
+* `CovariantDerivative.roughLaplacian_trivialAddInner`: the rough Laplacian of the connection
+  `d + ⟪Y, ·⟫`, `∇*∇ f = -Δ f - 2 df(Y) - (div Y + ‖Y‖²) f`.
 
 ## References
 
@@ -82,43 +91,54 @@ trace of the second covariant derivative of `σ` for the connections `∇` on `V
 tangent bundle. In an orthonormal basis it is `-∑ᵢ ∇²σ(eᵢ, eᵢ)` (`roughLaplacian_eq_sum`). It is
 zero when `σ` is not smooth. -/
 def roughLaplacian (σ : Π y : M, V y) (x : M) : V x :=
-  -TensorProduct.lift.equiv (.id ℝ) (TangentSpace I x) (TangentSpace I x) (V x)
-    (cov.secondCovariantDerivative covT σ x)
-    (InnerProductSpace.canonicalCovariantTensor (TangentSpace I x))
+  -LinearMap.BilinMap.metricTrace (cov.secondCovariantDerivative covT σ x)
+
+/-- The rough Laplacian is the negative metric trace of the second covariant derivative. -/
+theorem roughLaplacian_def (σ : Π y : M, V y) (x : M) :
+    cov.roughLaplacian covT σ x =
+      -LinearMap.BilinMap.metricTrace (cov.secondCovariantDerivative covT σ x) :=
+  (rfl)
+
+/-- The rough Laplacian only depends on the values of the connection on smooth sections. -/
+theorem roughLaplacian_congr (cov' : _root_.CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ τ : Π y : M, V y, CMDiff ∞ (T% τ) → cov τ = cov' τ) :
+    cov.roughLaplacian covT σ = cov'.roughLaplacian covT σ := by
+  funext x
+  rw [roughLaplacian_def, roughLaplacian_def, secondCovariantDerivative_congr cov covT cov' h]
 
 /-- The rough Laplacian in an orthonormal basis: `∇*∇ σ = -∑ᵢ ∇²σ(eᵢ, eᵢ)`. -/
 theorem roughLaplacian_eq_sum (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     cov.roughLaplacian covT σ x = -∑ i, cov.secondCovariantDerivative covT σ x (b i) (b i) := by
-  rw [roughLaplacian, InnerProductSpace.canonicalCovariantTensor_eq_sum _ b, map_sum]
-  simp only [TensorProduct.lift.equiv_apply]
+  rw [roughLaplacian_def, LinearMap.BilinMap.metricTrace_eq_sum _ b]
 
 /-- The rough Laplacian of a section which is not smooth is zero. -/
 @[simp]
 theorem roughLaplacian_of_not_contMDiff (hσ : ¬CMDiff ∞ (T% σ)) (x : M) :
     cov.roughLaplacian covT σ x = 0 := by
-  simp [roughLaplacian, hσ]
+  simp [roughLaplacian_def, hσ]
 
 /-- The rough Laplacian of the zero section is zero. -/
 @[simp]
 theorem roughLaplacian_zero (x : M) :
     cov.roughLaplacian covT (0 : Π y : M, V y) x = 0 := by
-  simp [roughLaplacian]
+  simp [roughLaplacian_def]
 
 /-- The rough Laplacian is additive on smooth sections. -/
 theorem roughLaplacian_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
     (x : M) :
     cov.roughLaplacian covT (σ + τ) x =
       cov.roughLaplacian covT σ x + cov.roughLaplacian covT τ x := by
-  simp only [roughLaplacian, secondCovariantDerivative_add cov covT hσ hτ x, map_add,
-    LinearMap.add_apply, neg_add]
+  simp only [roughLaplacian_def, secondCovariantDerivative_add cov covT hσ hτ x, map_add,
+    neg_add]
 
 /-- The rough Laplacian commutes with multiplication of a section by a constant. -/
 @[simp]
 theorem roughLaplacian_const_smul (c : ℝ) (x : M) :
     cov.roughLaplacian covT (c • σ) x = c • cov.roughLaplacian covT σ x := by
-  simp only [roughLaplacian, secondCovariantDerivative_const_smul cov covT c x, map_smul,
-    LinearMap.smul_apply, smul_neg]
+  simp only [roughLaplacian_def, secondCovariantDerivative_const_smul cov covT c x, map_smul,
+    smul_neg]
 
 /-- The rough Laplacian commutes with negation of a section. -/
 @[simp]
@@ -135,6 +155,17 @@ theorem roughLaplacian_sub {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ 
     simpa using (hτ.const_smul_section (a := (-1 : ℝ)) :)
   rw [sub_eq_add_neg, roughLaplacian_add cov covT hσ hτ' x, roughLaplacian_neg cov covT x,
     sub_eq_add_neg]
+
+/-- The rough Laplacian of a smooth parallel section is zero: `∇σ = 0` implies `∇*∇ σ = 0`. -/
+theorem roughLaplacian_eq_zero_of_apply_eq_zero (hσ : CMDiff ∞ (T% σ)) (h : cov σ = 0) :
+    cov.roughLaplacian covT σ = 0 := by
+  funext x
+  rw [cov.roughLaplacian_eq_sum covT σ x (stdOrthonormalBasis ℝ _)]
+  refine neg_eq_zero.2 (Finset.sum_eq_zero fun i _ ↦ ?_)
+  obtain ⟨W, hW, hWx⟩ := exists_contMDiff_section_eq I E ∞ (stdOrthonormalBasis ℝ _ i)
+  have hW0 : (fun y ↦ cov σ y (W y)) = 0 := funext fun y ↦ by simp [h]
+  rw [← hWx, cov.secondCovariantDerivative_apply covT hσ x hW, hW0]
+  simp [h]
 
 /-- **The principal symbol of the rough Laplacian.** For smooth functions `f`, `g` and a smooth
 section `σ`, the double commutator of `∇*∇` with multiplication by `f` and `g` is
@@ -207,11 +238,15 @@ theorem roughLaplacian_smul (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hσ : CMDiff ∞
     rw [hYx] at hS
     rw [hS, hH]
     module
-  -- `∑ᵢ df(eᵢ) ∇_{eᵢ} σ = ∇_{grad f} σ`, since `grad f = ∑ᵢ df(eᵢ) eᵢ`.
+  -- `∑ᵢ df(eᵢ) ∇_{eᵢ} σ = ∇_{grad f} σ`: the metric trace of the rank-one map
+  -- `(v, w) ↦ ⟪grad f, v⟫ • ∇_w σ`.
   have hgrad : ∑ i, d% f x (b i) • cov σ x (b i) =
       cov σ x (TauCeti.Manifold.mgradient I f x) := by
-    conv_rhs => rw [← b.sum_repr' (TauCeti.Manifold.mgradient I f x)]
-    simp only [map_sum, map_smul, TauCeti.Manifold.inner_mgradient_right]
+    rw [← ContinuousLinearMap.coe_coe (cov σ x),
+      ← LinearMap.BilinMap.metricTrace_innerₗ_smulRight,
+      ← TauCeti.Manifold.toLinearMap_mvfderiv_eq_innerₗ_mgradient,
+      LinearMap.BilinMap.metricTrace_eq_sum _ b]
+    simp only [LinearMap.smulRight_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe]
   rw [roughLaplacian_eq_sum cov _ _ x b, roughLaplacian_eq_sum cov _ _ x b,
     TauCeti.Manifold.laplaceBeltrami_eq_sum_hessian I f x b, ← hgrad]
   simp only [hterm, Finset.sum_add_distrib, ← Finset.smul_sum, ← Finset.sum_smul, mul_smul,
@@ -247,9 +282,81 @@ theorem roughLaplacian_trivial (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
     simp [one]
   have h := roughLaplacian_smul (trivial (I := I) (M := M) ℝ) hf hone x
   rw [hf1] at h
-  rw [h, roughLaplacian, hsecond, hpar]
+  rw [h, roughLaplacian_def, hsecond, hpar]
   simp [one]
 
+/-- **The rough Laplacian on the trivial line.** For a smooth connection `∇` on the trivial line
+bundle with connection form `ω = ∇ 1`, and the Levi-Civita connection on the tangent bundle,
+`∇*∇ f = -Δ f - 2 ω(grad f) + f ∇*∇ 1` for every smooth function `f`. -/
+theorem roughLaplacian_eq_neg_laplaceBeltrami_sub_add
+    (cov : CovariantDerivative I ℝ (Bundle.Trivial M ℝ)) [ContMDiffCovariantDerivative cov ∞]
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
+    cov.roughLaplacian (leviCivitaConnection I M) f x =
+      -TauCeti.Manifold.laplaceBeltrami I f x -
+        2 * cov (1 : M → ℝ) x (TauCeti.Manifold.mgradient I f x) +
+        f x * cov.roughLaplacian (leviCivitaConnection I M) (1 : M → ℝ) x := by
+  have h := cov.roughLaplacian_smul hf (σ := (1 : M → ℝ)) (Trivial.contMDiff_mk_const 1) x
+  rw [Trivial.smul_one] at h
+  rw [h]
+  simp only [smul_eq_mul, Pi.one_apply, mul_one]
+  ring
+
 end LeviCivita
+
+section TrivialAddInner
+
+variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- The rough Laplacian of the constant function `1` for `d + ⟪Y, ·⟫` is `-(div Y + ‖Y‖²)`. -/
+theorem roughLaplacian_trivialAddInner_one (Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (x : M) :
+    (trivialAddInner (Y : Π x : M, TangentSpace I x)).roughLaplacian
+        (leviCivitaConnection I M) (1 : M → ℝ) x =
+      -(TauCeti.Manifold.divergence I Y x + ⟪Y x, Y x⟫) := by
+  set cov := trivialAddInner (Y : Π x : M, TangentSpace I x)
+  set covT := leviCivitaConnection I M
+  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  have hYd : MDiffAt (T% (Y : Π x : M, TangentSpace I x)) x :=
+    (Y.contMDiff x).mdifferentiableAt (by simp)
+  -- Each diagonal term is `∇²1(eᵢ, eᵢ) = ⟪∇_{eᵢ} Y, eᵢ⟫ + ⟪Y, eᵢ⟫²`.
+  have hterm (i) : cov.secondCovariantDerivative covT (1 : M → ℝ) x (b i) (b i) =
+      ⟪covT Y x (b i), b i⟫ + ⟪Y x, b i⟫ ^ 2 := by
+    obtain ⟨W, hW, hWx⟩ := exists_contMDiff_section_eq I E ∞ (b i)
+    have hWd : MDiffAt (T% W) x := hW.mdifferentiable (by simp) x
+    have hS := cov.secondCovariantDerivative_apply covT (σ := (1 : M → ℝ))
+      (Trivial.contMDiff_mk_const 1) x hW (b i)
+    -- The function `y ↦ ∇_{W y} 1 = ⟪Y y, W y⟫` and its derivative.
+    have hfun : (fun y ↦ cov (1 : M → ℝ) y (W y)) = fun y ↦ ⟪Y y, W y⟫ := by
+      funext y
+      simp only [cov, trivialAddInner_one, innerSL_apply_apply]
+    have hφd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ ⟪Y y, W y⟫) x :=
+      MDifferentiableAt.inner_bundle (F := E) (E := fun y : M ↦ TangentSpace I y) hYd hWd
+    have hLC := (isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+      (FiberBundle.extend E (b i)) hYd hWd
+    simp only [FiberBundle.extend_apply_self] at hLC
+    rw [hfun, cov.apply_eq_mvfderiv_add_smul_one hφd, trivialAddInner_one] at hS
+    rw [hWx] at hS hLC
+    rw [hS]
+    simp only [add_apply, smul_apply, innerSL_apply_apply, smul_eq_mul]
+    rw [mvfderiv_apply_eq_mfderiv_apply] at hLC ⊢
+    rw [hLC]
+    ring
+  rw [roughLaplacian_eq_sum cov covT _ x b, TauCeti.Manifold.divergence_eq_sum_inner I _ x b,
+    real_inner_self_eq_norm_sq, ← b.sum_sq_inner_right (Y x)]
+  simp only [hterm, Finset.sum_add_distrib, real_inner_comm (b _) (Y x), covT]
+
+/-- **The rough Laplacian of `d + ⟪Y, ·⟫`.** With the Levi-Civita connection on the tangent bundle,
+`∇*∇ f = -Δ f - 2 df(Y) - (div Y + ‖Y‖²) f` for every smooth function `f`. -/
+theorem roughLaplacian_trivialAddInner (Y : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
+    (trivialAddInner (Y : Π x : M, TangentSpace I x)).roughLaplacian
+        (leviCivitaConnection I M) f x =
+      -TauCeti.Manifold.laplaceBeltrami I f x - 2 * mvfderiv I f x (Y x) -
+        (TauCeti.Manifold.divergence I Y x + ⟪Y x, Y x⟫) * f x := by
+  rw [roughLaplacian_eq_neg_laplaceBeltrami_sub_add _ hf, roughLaplacian_trivialAddInner_one,
+    trivialAddInner_one, innerSL_apply_apply, TauCeti.Manifold.inner_mgradient_right]
+  ring
+
+end TrivialAddInner
 
 end CovariantDerivative

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Birational.Birational
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 
 /-!
 # Modifications
@@ -30,6 +31,7 @@ target.
   birational over `Y`, comparing `f` with the identity of `Y`.
 * `TauCeti.AlgebraicGeometry.IsModification.birational`: the source and target of a modification
   are birational.
+* `TauCeti.AlgebraicGeometry.IsModification.isDominant`: every modification is dominant.
 
 ## References
 
@@ -69,6 +71,12 @@ theorem birationalOver (f : X ⟶ Y) [IsModification f] : Scheme.BirationalOver 
 /-- The source and target of a modification are birational. -/
 theorem birational (f : X ⟶ Y) [IsModification f] : X.Birational Y :=
   ⟨(birationalOver f).choose⟩
+
+/-- Every modification `f : X ⟶ Y` is dominant: it restricts to an isomorphism, hence a dominant
+morphism, over a dense open of `Y`. -/
+instance isDominant (f : X ⟶ Y) [IsModification f] : IsDominant f := by
+  obtain ⟨U, hU, -, _⟩ := exists_isIso_morphismRestrict (f := f)
+  exact (isDominant_morphismRestrict_iff f hU).mp inferInstance
 
 end IsModification
 

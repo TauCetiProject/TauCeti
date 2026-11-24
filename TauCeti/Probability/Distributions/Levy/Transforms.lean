@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Levy.Basic
 public import Mathlib.Probability.Moments.Basic
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.InverseGaussian.Transforms
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Moment-generating function of the Lévy distribution
@@ -56,7 +57,7 @@ private theorem mgf_id_levyMeasure_zero_one (ht : t ≤ 0) :
       rw [hcrit, zero_mul, exp_zero, mul_one, one_div_one_div] at h
       rw [h, ← mul_assoc, ← exp_add, neg_add_cancel, exp_zero, one_mul]
     rw [mgf, levyMeasure_eq_withDensity, funext (levyPDF_eq_ofReal 0 1),
-      integral_withDensity_ofReal (measurable_levyPDFReal 0 1).aemeasurable
+      MeasureTheory.integral_withDensity_ofReal (measurable_levyPDFReal 0 1).aemeasurable
         (ae_of_all _ (levyPDFReal_nonneg 0 1))]
     simp only [id_eq, smul_eq_mul, hpoint, integral_const_mul,
       integral_inverseGaussianPDFReal hμ one_pos, mul_one]

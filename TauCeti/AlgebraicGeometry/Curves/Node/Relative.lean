@@ -23,8 +23,8 @@ nodal curves in families over nonaffine bases.
 
 Étale neighbourhoods of nodal relative curves are nodal
 (`TauCeti.AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne.comp_of_etale`). Conversely, for a
-curve already known to be syntomic of relative dimension one, nodality can be checked after an
-étale surjection of the source
+curve locally of finite presentation, nodality is detected by étale surjections of the source:
+it can be checked after an étale surjection of the source
 (`TauCeti.AlgebraicGeometry.atWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective`).
 
 On an affine open `U` of a nodal relative curve over `Spec R`, the quotient of `Γ(X, U)` by the
@@ -208,8 +208,8 @@ instance : affineAtWorstNodalOfRelativeDimensionOne.IsLocal where
     affineAtWorstNodalOfRelativeDimensionOne_of_isPullback
       (isPullback_morphismRestrict f (Y.basicOpen r)) hf
   of_basicOpenCover {X Y} _ f s hs h := by
-    let U : s → X.Opens := fun r ↦ f ⁻¹ᵁ Y.basicOpen r.1
-    have hbasic : ⨆ r : s, Y.basicOpen r.1 = ⊤ :=
+    let U : s → X.Opens := fun r ↦ f ⁻¹ᵁ Y.basicOpen r.val
+    have hbasic : ⨆ r : s, Y.basicOpen r.val = ⊤ :=
       (isAffineOpen_top Y).iSup_basicOpen_eq_self_iff.mpr hs
     have hU : ⨆ r, U r = ⊤ := by
       rw [← f.preimage_iSup, hbasic]
@@ -218,13 +218,13 @@ instance : affineAtWorstNodalOfRelativeDimensionOne.IsLocal where
       (X.openCoverOfIsOpenCover U hU)
     intro r
     have hr := affineAtWorstNodalOfRelativeDimensionOne_postcomp_of_isOpenImmersion
-      (f ∣_ Y.basicOpen r.1) (Y.basicOpen r.1).ι (h r)
+      (f ∣_ Y.basicOpen r.val) (Y.basicOpen r.val).ι (h r)
     -- By definition of `Scheme.openCoverOfIsOpenCover`, the `r`-th component of the cover is
     -- the open subscheme `U r = f ⁻¹ᵁ Y.basicOpen r` with map its inclusion `(U r).ι` (see
     -- `Scheme.openCoverOfIsOpenCover_X` and `Scheme.openCoverOfIsOpenCover_f`). The source
     -- scheme depends on the component, so we unfold both at once rather than rewriting.
     change affineAtWorstNodalOfRelativeDimensionOne
-      ((f ⁻¹ᵁ Y.basicOpen r.1).ι ≫ f)
+      ((f ⁻¹ᵁ Y.basicOpen r.val).ι ≫ f)
     -- `morphismRestrict_ι` identifies this composite with `(f ∣_ Y.basicOpen r) ≫ ι`.
     simpa only [morphismRestrict_ι] using hr
 
@@ -290,7 +290,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.syntomic
     (P := @AtWorstNodalOfRelativeDimensionOne.{u})
     (Q := affineAtWorstNodalOfRelativeDimensionOne) h U
   rw [← MorphismProperty.cancel_right_of_respectsIso
-    (P := @SyntomicOfRelativeDimension 1) (f ∣_ U.1) e.hom]
+    (P := @SyntomicOfRelativeDimension 1) (f ∣_ U.val) e.hom]
   exact he.syntomic
 
 /-- An étale neighbourhood of a nodal relative curve is a nodal relative curve. -/
@@ -301,51 +301,52 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_etale
   rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top
     (P := @AtWorstNodalOfRelativeDimensionOne.{u}) _ (iSup_affineOpens_eq_top S)] at h ⊢
   intro U
-  have : Etale (g ∣_ f ⁻¹ᵁ U.1) :=
-    MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.1)).flip ‹_›
-  have hU := (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.1 : Scheme).isoSpec).mp
+  have : Etale (g ∣_ f ⁻¹ᵁ U.val) :=
+    MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.val)).flip ‹_›
+  have hU := (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.val : Scheme).isoSpec).mp
     (h U)
   rw [morphismRestrict_comp]
-  refine (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.1 : Scheme).isoSpec).mpr ?_
-  have hc := hU.comp_of_etale (g ∣_ f ⁻¹ᵁ U.1)
+  refine (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.val : Scheme).isoSpec).mpr ?_
+  have hc := hU.comp_of_etale (g ∣_ f ⁻¹ᵁ U.val)
   -- The sources `g ⁻¹ᵁ f ⁻¹ᵁ U` of `hc` and `(g ≫ f) ⁻¹ᵁ U` of the goal agree definitionally,
   -- so `hc` is reassociated and closes the goal by `exact`.
   rw [← Category.assoc] at hc
   exact hc
 
-/-- For a syntomic relative curve over an arbitrary base, nodality descends along an étale
-surjection of the source. The syntomicity hypothesis concerns the original curve. -/
+/-- For a relative curve over an arbitrary base, locally of finite presentation, nodality descends
+along an étale surjection of the source. -/
 theorem AtWorstNodalOfRelativeDimensionOne.of_comp_surjective
-    {X Y S : Scheme.{u}} {f : Y ⟶ S} [SyntomicOfRelativeDimension 1 f]
+    {X Y S : Scheme.{u}} {f : Y ⟶ S} [LocallyOfFinitePresentation f]
     (g : X ⟶ Y) [Etale g] [Surjective g]
     (h : AtWorstNodalOfRelativeDimensionOne (g ≫ f)) :
     AtWorstNodalOfRelativeDimensionOne f := by
   rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top
     (P := @AtWorstNodalOfRelativeDimensionOne.{u}) _ (iSup_affineOpens_eq_top S)] at h ⊢
   intro U
-  have : Etale (g ∣_ f ⁻¹ᵁ U.1) :=
-    MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.1)).flip ‹_›
-  have : Surjective (g ∣_ f ⁻¹ᵁ U.1) :=
-    MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.1)).flip ‹_›
-  have hs : SyntomicOfRelativeDimension 1 ((f ∣_ U.1) ≫ (U.1 : Scheme).isoSpec.hom) := by
-    rw [MorphismProperty.cancel_right_of_respectsIso (P := @SyntomicOfRelativeDimension 1)]
-    exact MorphismProperty.of_isPullback (isPullback_morphismRestrict f U.1).flip ‹_›
+  have : Etale (g ∣_ f ⁻¹ᵁ U.val) :=
+    MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.val)).flip ‹_›
+  have : Surjective (g ∣_ f ⁻¹ᵁ U.val) :=
+    MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.val)).flip ‹_›
+  have hs : LocallyOfFinitePresentation ((f ∣_ U.val) ≫ (U.val : Scheme).isoSpec.hom) :=
+    inferInstance
   have hU := h U
   rw [morphismRestrict_comp] at hU
-  have hU' := (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.1 : Scheme).isoSpec).mp hU
-  -- The spectrum `Spec Γ(U, ⊤)` is only `Spec (.of Γ(U, ⊤))` up to unfolding, so the syntomicity
-  -- instance is passed explicitly.
-  refine (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.1 : Scheme).isoSpec).mpr
+  have hU' := (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.val : Scheme).isoSpec).mp hU
+  -- The spectrum `Spec Γ(U, ⊤)` is only `Spec (.of Γ(U, ⊤))` up to unfolding, so the finite
+  -- presentation instance is passed explicitly.
+  refine (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.val : Scheme).isoSpec).mpr
     (@AffineAtWorstNodalOfRelativeDimensionOne.of_comp_surjective _ _ _ _ _ hs
-      (g ∣_ f ⁻¹ᵁ U.1) _ _ ?_)
+      (g ∣_ f ⁻¹ᵁ U.val) _ _ ?_)
   -- As in `comp_of_etale`, the two sources of the composite agree definitionally.
   rw [← Category.assoc]
   exact hU'
 
-/-- Among syntomic relative curves over an arbitrary base, nodality can be checked after an
-étale surjection of the source. No quasi-compactness condition is imposed on the cover. -/
+/-- **For curves locally of finite presentation, nodality is detected by étale surjections of the
+source.** Among relative curves over an arbitrary base locally of finite presentation, nodality
+can be checked after an étale surjection of the source. No quasi-compactness condition is imposed
+on the cover. -/
 theorem atWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective
-    {X Y S : Scheme.{u}} (f : Y ⟶ S) [SyntomicOfRelativeDimension 1 f]
+    {X Y S : Scheme.{u}} (f : Y ⟶ S) [LocallyOfFinitePresentation f]
     (g : X ⟶ Y) [Etale g] [Surjective g] :
     AtWorstNodalOfRelativeDimensionOne f ↔ AtWorstNodalOfRelativeDimensionOne (g ≫ f) :=
   ⟨fun h ↦ h.comp_of_etale g, fun h ↦ h.of_comp_surjective g⟩
@@ -370,7 +371,7 @@ theorem _root_.AlgebraicGeometry.Scheme.formallyUnramified_quotient_singularLocu
   have hP : ((I.subschemeι ≫ (X ↘ Spec (.of R))).appLE ⊤ (I.subschemeι ⁻¹ᵁ U)
       (by simp)).hom.FormallyUnramified :=
     HasRingHomProperty.appLE (P := @FormallyUnramified) _ hu ⟨⊤, isAffineOpen_top _⟩
-      ⟨I.subschemeι ⁻¹ᵁ U, U.2.preimage _⟩ _
+      ⟨I.subschemeι ⁻¹ᵁ U, U.property.preimage _⟩ _
   have key : (X ↘ Spec (.of R)).appLE ⊤ U (by simp) ≫ I.subschemeι.app U =
       (I.subschemeι ≫ (X ↘ Spec (.of R))).appLE ⊤ (I.subschemeι ⁻¹ᵁ U) (by simp) := by
     rw [Scheme.Hom.app_eq_appLE]
@@ -386,7 +387,7 @@ theorem _root_.AlgebraicGeometry.Scheme.formallyUnramified_quotient_singularLocu
   rw [← RingHom.formallyUnramified_algebraMap]
   convert h using 1
   ext r
-  have hb := ConcreteCategory.congr_hom (X.baseRingToStructurePresheaf_app_eq_appLE R U.1) r
+  have hb := ConcreteCategory.congr_hom (X.baseRingToStructurePresheaf_app_eq_appLE R U.val) r
   simp only [CommRingCat.comp_apply, RingHom.comp_apply] at hb ⊢
   rw [Iso.inv_hom_id_apply]
   exact congrArg (Ideal.Quotient.mk (I.ideal U)) hb
@@ -399,20 +400,20 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_smooth
     (@AtWorstNodalOfRelativeDimensionOne.{u})
     (Q := affineAtWorstNodalOfRelativeDimensionOne)]
   intro U
-  refine ⟨Γ(U.1, ⊤), inferInstance, U.1.toScheme.isoSpec, ?_⟩
-  let _ : (f ⁻¹ᵁ U.1).toScheme.Over (Spec (.of Γ(U.1, ⊤))) :=
-    ⟨(f ∣_ U.1) ≫ U.1.toScheme.isoSpec.hom⟩
-  have hfU : SmoothOfRelativeDimension 1 (f ∣_ U.1) :=
+  refine ⟨Γ(U.val, ⊤), inferInstance, U.val.toScheme.isoSpec, ?_⟩
+  let _ : (f ⁻¹ᵁ U.val).toScheme.Over (Spec (.of Γ(U.val, ⊤))) :=
+    ⟨(f ∣_ U.val) ≫ U.val.toScheme.isoSpec.hom⟩
+  have hfU : SmoothOfRelativeDimension 1 (f ∣_ U.val) :=
     MorphismProperty.of_isPullback (P := @SmoothOfRelativeDimension 1)
-      (isPullback_morphismRestrict f U.1).flip inferInstance
-  let _ : SmoothOfRelativeDimension 1 (f ∣_ U.1) := hfU
+      (isPullback_morphismRestrict f U.val).flip inferInstance
+  let _ : SmoothOfRelativeDimension 1 (f ∣_ U.val) := hfU
   have hf : SmoothOfRelativeDimension 1
-      ((f ∣_ U.1) ≫ U.1.toScheme.isoSpec.hom) := by
+      ((f ∣_ U.val) ≫ U.val.toScheme.isoSpec.hom) := by
     have : SmoothOfRelativeDimension (1 + 0)
-        ((f ∣_ U.1) ≫ U.1.toScheme.isoSpec.hom) := inferInstance
+        ((f ∣_ U.val) ≫ U.val.toScheme.isoSpec.hom) := inferInstance
     simpa using this
   let _ : SmoothOfRelativeDimension 1
-      ((f ⁻¹ᵁ U.1).toScheme ↘ Spec (.of Γ(U.1, ⊤))) := hf
+      ((f ⁻¹ᵁ U.val).toScheme ↘ Spec (.of Γ(U.val, ⊤))) := hf
   exact AffineAtWorstNodalOfRelativeDimensionOne.of_smooth
 
 /-- The standard node chart is a nodal relative curve. -/

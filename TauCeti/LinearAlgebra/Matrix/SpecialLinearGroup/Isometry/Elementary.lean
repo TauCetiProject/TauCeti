@@ -168,7 +168,7 @@ theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_n
   obtain ⟨g, hga, hgx⟩ :=
     exists_elementaryUnitaryGroup_coe_eq_unitaryTransvection_sub_and_mulVec_eq
       hσ hQ hx hcy (hcyx ▸ (map_ne_zero σ).mpr hd) hxcy
-  refine ⟨g, g.2, c, hc, fun u hu ↦ ?_, hgx⟩
+  refine ⟨g, g.property, c, hc, fun u hu ↦ ?_, hgx⟩
   simp [hga, unitaryTransvection_mulVec, (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hxU u hu),
     (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hyU u hu)]
 
@@ -232,7 +232,7 @@ theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_smul (hσ : Function.Involut
   obtain ⟨g, c, hc, -, hgx⟩ :=
     exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
       hσ hQ hdet htr hadm (u := 0) hx hy (by simp [hx₀]) (by simp [hy₀]) (by simp) (by simp)
-  exact ⟨g, g.2, c, hc, hgx⟩
+  exact ⟨g, g.property, c, hc, hgx⟩
 
 /-- The elementary unitary group acts transitively on isotropic projective points of a
 nondegenerate ε-Hermitian form when the trace map is onto the ε-fixed scalars and has

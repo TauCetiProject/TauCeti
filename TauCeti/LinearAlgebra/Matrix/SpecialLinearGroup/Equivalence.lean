@@ -44,7 +44,7 @@ theorem prod_eq_det_of_mul_mul_eq_diagonal {S : Type*} [CommRing S]
     (h : (L : Matrix ι ι S) * A * (R : Matrix ι ι S) = Matrix.diagonal d) :
     ∏ i, d i = A.det := by
   have hdet := congrArg Matrix.det h
-  simp only [Matrix.det_mul, L.2, R.2, one_mul, mul_one, Matrix.det_diagonal] at hdet
+  simp only [Matrix.det_mul, L.property, R.property, one_mul, mul_one, Matrix.det_diagonal] at hdet
   exact hdet.symm
 
 /-- **Matrices sharing an `SL`-transform are `SL`-equivalent.** If `L_A A R_A = L_B B R_B`

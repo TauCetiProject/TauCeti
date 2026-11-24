@@ -81,7 +81,7 @@ private lemma norm_setIntegral_ballPoissonKernel_mul_le
     ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) * (delta / 2) ^ n)
   have hs : MeasurableSet s := by
     exact (isClosed_le continuous_const
-      (continuous_subtype_val.dist continuous_const)).measurableSet
+      (continuous_subtypeVal.dist continuous_const)).measurableSet
   let nu : Measure (sphere (0 : EuclideanSpace ℝ (Fin n)) 1) := volume.toSphere
   have hg : Integrable (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
       B * ‖f y‖) (nu.restrict s) := hf.norm.const_mul (B)

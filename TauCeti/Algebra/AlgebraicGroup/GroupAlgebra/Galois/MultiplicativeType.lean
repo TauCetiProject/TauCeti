@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Connected
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Connected.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.Galois.Torus
 public import TauCeti.Algebra.MonoidAlgebra.Etale
 import Mathlib.LinearAlgebra.Dimension.Constructions

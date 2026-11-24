@@ -104,21 +104,29 @@ coordinate and `α` is pulled back along the projection to `M`. When `α` is a c
 exterior derivative is a symplectic form
 (`TauCeti.SmoothForm.isSymplectic_mextDerivₗ_symplectization_iff`). -/
 def symplectization (α : SmoothForm I M ℝ 1) : SmoothForm (𝓘(ℝ).prod I) (ℝ × M) ℝ 1 :=
-  ⟨fun p ↦ Real.exp p.1 • (mpullback Prod.snd contMDiff_snd α).1 p,
+  ⟨fun p ↦ Real.exp p.1 • (mpullback Prod.snd contMDiff_snd α).val p,
     ((mpullback Prod.snd contMDiff_snd α).isSmoothForm.fun_smul
       (Real.contDiff_exp.contMDiff.comp contMDiff_fst)).mem_smoothBundleForms⟩
 
 /-- The symplectization form is `eᵗ` times the pullback of the form along the projection. -/
 theorem coe_symplectization (α : SmoothForm I M ℝ 1) :
-    α.symplectization.1 = fun p ↦ Real.exp p.1 • (mpullback Prod.snd contMDiff_snd α).1 p :=
+    α.symplectization.val = fun p ↦ Real.exp p.1 • (mpullback Prod.snd contMDiff_snd α).val p :=
   (rfl)
+
+/-- The symplectization form of `-α` is minus that of `α`. -/
+@[simp]
+theorem symplectization_neg (α : SmoothForm I M ℝ 1) :
+    (-α).symplectization = -α.symplectization := by
+  apply Subtype.ext
+  funext p
+  simp only [coe_symplectization, map_neg, NegMemClass.coe_neg, Pi.neg_apply, smul_neg]
 
 /-- The symplectization form sends a tangent vector `(s, v)` at `(t, x)` to `eᵗ α_x(v)`. -/
 @[simp]
 theorem symplectization_apply (α : SmoothForm I M ℝ 1) (p : ℝ × M)
     (v : TangentSpace (𝓘(ℝ).prod I) p) :
-    α.symplectization.1 p ![v] =
-      Real.exp p.1 * α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] := by
+    α.symplectization.val p ![v] =
+      Real.exp p.1 * α.val p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] := by
   simp only [coe_symplectization, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
     mpullback_snd_apply, Matrix.vec_single_eq_const]
 
@@ -128,22 +136,22 @@ value `eᵗ (s α_x(w) - s' α_x(v) + dα_x(v, w))` on tangent vectors `(s, v)` 
 `(t, x)`. -/
 theorem mextDeriv_symplectization_apply (α : SmoothForm I M ℝ 1) (p : ℝ × M)
     (v w : TangentSpace (𝓘(ℝ).prod I) p) :
-    mextDeriv α.symplectization.1 p ![v, w] =
+    mextDeriv α.symplectization.val p ![v, w] =
       Real.exp p.1 *
         (NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p v).1 *
-            α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
+            α.val p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
           NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p w).1 *
-            α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
-          mextDeriv α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2,
+            α.val p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
+          mextDeriv α.val p.2 ![(Manifold.tangentSpaceProdEquiv p v).2,
             (Manifold.tangentSpaceProdEquiv p w).2]) := by
   set β : SmoothForm (𝓘(ℝ).prod I) (ℝ × M) ℝ 1 := mpullback Prod.snd contMDiff_snd α
   -- The pulled-back form evaluates on the second components.
   have hβ (u : TangentSpace (𝓘(ℝ).prod I) p) :
-      β.1 p ![u] = α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p u).2] := by
+      β.val p ![u] = α.val p.2 ![(Manifold.tangentSpaceProdEquiv p u).2] := by
     simp only [β, mpullback_snd_apply, Matrix.vec_single_eq_const]
   -- Its exterior derivative is `dα` on the second components, by naturality.
-  have hdβ : mextDeriv β.1 p ![v, w] =
-      mextDeriv α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2,
+  have hdβ : mextDeriv β.val p ![v, w] =
+      mextDeriv α.val p.2 ![(Manifold.tangentSpaceProdEquiv p v).2,
         (Manifold.tangentSpaceProdEquiv p w).2] := by
     have := eval₂_mpullback_snd (mextDerivₗ I 1 α) p v w
     rwa [← mextDerivₗ_mpullback, SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply,
@@ -169,9 +177,9 @@ theorem eval₂_mextDerivₗ_symplectization (α : SmoothForm I M ℝ 1) (p : �
     (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization).eval₂ p v w =
       Real.exp p.1 *
         (NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p v).1 *
-            α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
+            α.val p.2 ![(Manifold.tangentSpaceProdEquiv p w).2] -
           NormedSpace.fromTangentSpace p.1 (Manifold.tangentSpaceProdEquiv p w).1 *
-            α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
+            α.val p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] +
           (mextDerivₗ I 1 α).eval₂ p.2 (Manifold.tangentSpaceProdEquiv p v).2
             (Manifold.tangentSpaceProdEquiv p w).2) := by
   rw [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, mextDeriv_symplectization_apply,
@@ -199,6 +207,17 @@ private theorem bilinFormAt_mextDerivₗ_symplectization (α : SmoothForm I M �
     ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_symm,
     ContinuousLinearEquiv.coe_refl', id_eq]
 
+/-- **The symplectization is nondegenerate over the contact points.** At a point `(t, x)`, the
+exterior derivative `d(eᵗ α)` of the symplectization form is nondegenerate exactly when `α` is a
+contact form at `x`. -/
+theorem nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff (α : SmoothForm I M ℝ 1)
+    (p : ℝ × M) :
+    ((mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization).bilinFormAt p).Nondegenerate ↔
+      IsContactFormAt α.val p.2 := by
+  rw [bilinFormAt_mextDerivₗ_symplectization, LinearMap.BilinForm.nondegenerate_congr_iff,
+    TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero (Real.exp_pos p.1).ne'),
+    isContactFormAt_iff_isContact, Module.Dual.isContact_iff_nondegenerate_symplectizationForm]
+
 /-- **The symplectization is symplectic.** The exterior derivative `d(eᵗ α)` of the
 symplectization form is nondegenerate exactly when `α` is a contact form. -/
 theorem isNondegenerate_mextDerivₗ_symplectization_iff {α : SmoothForm I M ℝ 1} :
@@ -207,16 +226,12 @@ theorem isNondegenerate_mextDerivₗ_symplectization_iff {α : SmoothForm I M �
   have key (p : ℝ × M) :
       (∀ v, (∀ w, SmoothBundleForm.eval₂
         (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization) p v w = 0) → v = 0) ↔
-        Module.Dual.IsContact (degreeOneEquiv α p.2 : TangentSpace I p.2 →ₗ[ℝ] ℝ)
-          ((mextDerivₗ I 1 α).bilinFormAt p.2) := by
-    trans ((mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization).bilinFormAt p).Nondegenerate
-    · rw [LinearMap.BilinForm.Nondegenerate,
-        (isAlt_bilinFormAt _ p).isRefl.nondegenerate_iff_separatingLeft]
-      simp only [LinearMap.SeparatingLeft, bilinFormAt_apply]
-    rw [bilinFormAt_mextDerivₗ_symplectization, LinearMap.BilinForm.nondegenerate_congr_iff,
-      TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero (Real.exp_pos p.1).ne'),
-      Module.Dual.isContact_iff_nondegenerate_symplectizationForm]
-  rw [SmoothTwoForm.isNondegenerate_iff_separatingLeft, isContactForm_def]
+        IsContactFormAt α.val p.2 := by
+    rw [← nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff,
+      LinearMap.BilinForm.Nondegenerate,
+      (isAlt_bilinFormAt _ p).isRefl.nondegenerate_iff_separatingLeft]
+    simp only [LinearMap.SeparatingLeft, bilinFormAt_apply]
+  rw [SmoothTwoForm.isNondegenerate_iff_separatingLeft, isContactForm_iff_forall_isContactFormAt]
   exact ⟨fun h x ↦ (key ((0 : ℝ), x)).1 (h ((0 : ℝ), x)), fun h p ↦ (key p).2 (h p.2)⟩
 
 /-- **The symplectization is symplectic.** The exterior derivative `d(eᵗ α)` of the
@@ -238,9 +253,9 @@ theorem IsContactForm.isSymplectic_mextDerivₗ_symplectization {α : SmoothForm
 /-- **The Liouville field of the symplectization.** The unit vector field `∂_t` along the real
 factor of `ℝ × M` satisfies `ι_(∂_t) d(eᵗ α) = eᵗ α`. -/
 theorem interior_mextDeriv_symplectization (α : SmoothForm I M ℝ 1) :
-    (mextDeriv α.symplectization.1).interior
+    (mextDeriv α.symplectization.val).interior
         (Manifold.prodVectorField (constVectorField (1 : ℝ)) (0 : (x : M) → TangentSpace I x)) =
-      α.symplectization.1 := by
+      α.symplectization.val := by
   funext p
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
@@ -250,10 +265,10 @@ theorem interior_mextDeriv_symplectization (α : SmoothForm I M ℝ 1) :
     (rfl)
   rw [RoughForm.interior_apply, hv, hcons, mextDeriv_symplectization_apply,
     symplectization_apply]
-  have h₀ : α.1 p.2 ![(0 : TangentSpace I p.2)] = 0 := (α.1 p.2).map_coord_zero 0 rfl
-  have h₀' : mextDeriv α.1 p.2 ![(0 : TangentSpace I p.2),
+  have h₀ : α.val p.2 ![(0 : TangentSpace I p.2)] = 0 := (α.val p.2).map_coord_zero 0 rfl
+  have h₀' : mextDeriv α.val p.2 ![(0 : TangentSpace I p.2),
       (Manifold.tangentSpaceProdEquiv p (v 0)).2] = 0 :=
-    (mextDeriv α.1 p.2).map_coord_zero 0 rfl
+    (mextDeriv α.val p.2).map_coord_zero 0 rfl
   simp only [Z, Manifold.tangentSpaceProdEquiv_prodVectorField, Pi.zero_apply, h₀, h₀', mul_zero,
     sub_zero, add_zero]
   rw [constVectorField_apply, ContinuousLinearEquiv.apply_symm_apply, one_mul]
@@ -261,7 +276,7 @@ theorem interior_mextDeriv_symplectization (α : SmoothForm I M ℝ 1) :
 /-- **The Liouville field of the symplectization.** The unit vector field `∂_t` along the real
 factor of `ℝ × M` is a Liouville vector field of `d(eᵗ α)`. -/
 theorem isLiouvilleVectorField_symplectization (α : SmoothForm I M ℝ 1) :
-    IsLiouvilleVectorField (mextDeriv α.symplectization.1)
+    IsLiouvilleVectorField (mextDeriv α.symplectization.val)
       (Manifold.prodVectorField (constVectorField (1 : ℝ)) (0 : (x : M) → TangentSpace I x)) := by
   have hω := fun p ↦ by
     simpa only [mextDerivₗ_apply] using
@@ -309,19 +324,19 @@ only through its exponential. No derivative of that component occurs. -/
 theorem mpullback_symplectization_apply_of_snd_eq {F : M → M'}
     (hF : ContMDiff I I' ∞ F) {f : M → ℝ} {α : SmoothForm I M ℝ 1}
     {α' : SmoothForm I' M' ℝ 1}
-    (hα : ∀ x, (mpullback F hF α').1 x = f x • α.1 x)
+    (hα : ∀ x, (mpullback F hF α').val x = f x • α.val x)
     {Ψ : ℝ × M → ℝ × M'} (hΨ : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I') ∞ Ψ)
     (hcover : ∀ p, (Ψ p).2 = F p.2) (p : ℝ × M)
     (v : TangentSpace (𝓘(ℝ).prod I) p) :
-    (mpullback Ψ hΨ α'.symplectization).1 p ![v] =
-      Real.exp (Ψ p).1 * f p.2 * α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] := by
+    (mpullback Ψ hΨ α'.symplectization).val p ![v] =
+      Real.exp (Ψ p).1 * f p.2 * α.val p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] := by
   have hcomp : TauCeti.mpullback (𝓘(ℝ).prod I) (𝓘(ℝ).prod I') Ψ
-      (mpullback Prod.snd contMDiff_snd α').1 =
-        TauCeti.mpullback (𝓘(ℝ).prod I) I Prod.snd (mpullback F hF α').1 := by
+      (mpullback Prod.snd contMDiff_snd α').val =
+        TauCeti.mpullback (𝓘(ℝ).prod I) I Prod.snd (mpullback F hF α').val := by
     rw [coe_mpullback, coe_mpullback,
       ← TauCeti.mpullback_comp (hΨ.mdifferentiable (by simp)) mdifferentiable_snd,
       ← TauCeti.mpullback_comp mdifferentiable_snd (hF.mdifferentiable (by simp))]
-    exact congrArg (fun G ↦ TauCeti.mpullback (𝓘(ℝ).prod I) I' G α'.1) (funext hcover)
+    exact congrArg (fun G ↦ TauCeti.mpullback (𝓘(ℝ).prod I) I' G α'.val) (funext hcover)
   have h := congrArg (fun φ ↦ φ p ![v]) hcomp
   rw [← coe_mpullback Prod.snd contMDiff_snd, mpullback_snd_apply, hα p.2] at h
   simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul,
@@ -339,7 +354,7 @@ contactomorphism `F` preserving coorientations, this is its exact symplectic lif
 symplectizations. -/
 theorem mpullback_symplectizationLift_symplectization {F : M → M'} (hF : ContMDiff I I' ∞ F)
     {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, 0 < f x) {α : SmoothForm I M ℝ 1}
-    {α' : SmoothForm I' M' ℝ 1} (hα : ∀ x, (mpullback F hF α').1 x = f x • α.1 x) :
+    {α' : SmoothForm I' M' ℝ 1} (hα : ∀ x, (mpullback F hF α').val x = f x • α.val x) :
     mpullback (symplectizationLift F f)
         (contMDiff_symplectizationLift hF hf fun x ↦ (hf₀ x).ne') α'.symplectization =
       α.symplectization := by
@@ -358,7 +373,7 @@ cooriented form back to `eᵗ α`. In terms of annihilator lines, it interchange
 theorem mpullback_symplectizationLift_neg_symplectization {F : M → M'}
     (hF : ContMDiff I I' ∞ F) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, f x < 0)
     {α : SmoothForm I M ℝ 1} {α' : SmoothForm I' M' ℝ 1}
-    (hα : ∀ x, (mpullback F hF α').1 x = f x • α.1 x) :
+    (hα : ∀ x, (mpullback F hF α').val x = f x • α.val x) :
     mpullback (symplectizationLift F (-f))
         (contMDiff_symplectizationLift hF hf.neg fun x ↦ neg_ne_zero.2 (hf₀ x).ne)
         (-α').symplectization =
@@ -373,7 +388,7 @@ symplectization form `eᵗ α'` back to `eᵗ α`, then `f` is positive and the 
 symplectizations has no free additive constant. -/
 theorem eq_symplectizationLift_of_mpullback_symplectization_eq {F : M → M'}
     (hF : ContMDiff I I' ∞ F) {f : M → ℝ} {α : SmoothForm I M ℝ 1} {α' : SmoothForm I' M' ℝ 1}
-    (hα : ∀ x, (mpullback F hF α').1 x = f x • α.1 x) (hα₀ : ∀ x, α.1 x ≠ 0)
+    (hα : ∀ x, (mpullback F hF α').val x = f x • α.val x) (hα₀ : ∀ x, α.val x ≠ 0)
     {φ : ℝ × M → ℝ} (hφ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ φ)
     (h : mpullback (fun p ↦ (φ p, F p.2)) (hφ.prodMk (hF.comp contMDiff_snd))
         α'.symplectization = α.symplectization) :
@@ -394,7 +409,7 @@ theorem eq_symplectizationLift_of_mpullback_symplectization_eq {F : M → M'}
       rw [show (fun y ↦ (φ y, (F ∘ Prod.snd) y).2) = F ∘ Prod.snd from rfl,
         mfderiv_comp_apply p ((hF p.2).mdifferentiableAt (by simp)) mdifferentiableAt_snd,
         mfderiv_snd_apply, ← hu, Manifold.tangentSpaceProdEquiv_apply]
-    have hp := congrArg (fun θ : SmoothForm (𝓘(ℝ).prod I) (ℝ × M) ℝ 1 ↦ θ.1 p ![u]) h
+    have hp := congrArg (fun θ : SmoothForm (𝓘(ℝ).prod I) (ℝ × M) ℝ 1 ↦ θ.val p ![u]) h
     have hF' := congrArg (fun A ↦ A ![v]) (hα p.2)
     simp only [mpullback_apply, Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
       symplectization_apply, hsnd, hu, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at hp hF'

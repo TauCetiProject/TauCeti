@@ -29,6 +29,8 @@ at least two which is unramified away from the closed point is étale by the dis
 
 * `TauCeti.IsLocalRing.purityHolds_of_ringKrullDim_eq_two`: purity holds for a regular local ring
   of dimension two.
+* `TauCeti.IsLocalRing.purityHolds_of_two_le_of_le`: the same for every regular local ring of
+  dimension between two and some `d ≤ 2`, the form in which purity hypotheses are stated.
 
 ## References
 
@@ -55,5 +57,12 @@ theorem purityHolds_of_ringKrullDim_eq_two (hdim : ringKrullDim A = 2) : PurityH
   obtain ⟨_, _, hnormal, het⟩ := (finiteNormalPuncturedEtale_iff A _).mp B.property
   exact TauCeti.Algebra.etale_of_finiteNormal_of_ringKrullDim_eq_two hdim (fun 𝔮 _ ↦ hnormal 𝔮)
     fun q _ hq ↦ have := het q hq; inferInstance
+
+/-- **Purity in dimension at most two.** For `d ≤ 2`, purity holds for every regular local ring
+of dimension at least two and at most `d`: such a ring has dimension exactly two. -/
+theorem purityHolds_of_two_le_of_le {d : WithBot ℕ∞} (hd : d ≤ 2) :
+    ∀ (B : Type u) [CommRing B] [IsRegularLocalRing B], 2 ≤ ringKrullDim B →
+      ringKrullDim B ≤ d → PurityHolds B :=
+  fun _ _ _ h₂ hle ↦ purityHolds_of_ringKrullDim_eq_two (le_antisymm (hle.trans hd) h₂)
 
 end TauCeti.IsLocalRing

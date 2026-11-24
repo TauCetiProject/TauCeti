@@ -86,10 +86,7 @@ theorem isCompactOperator_integralOperatorLp_sum_indicator {ι : Type*} [Fintype
   classical
   have : CompleteSpace 𝕜 := IsLeftUniformAddGroup.completeSpace_of_weaklyLocallyCompactSpace 𝕜
   have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
-  let ind (i : ι) : G →ₗ[𝕜] Lp G p μ :=
-    { toFun := indicatorConstLp p (hPm i) (hμP i)
-      map_add' _ _ := indicatorConstLp_add.symm
-      map_smul' a v := indicatorConstLp_smul (hPm i) (hμP i) a v }
+  let ind (i : ι) : G →ₗ[𝕜] Lp G p μ := indicatorConstLpₗ 𝕜 p (hPm i) (hμP i)
   let Λ : (ι → G) →ₗ[𝕜] Lp G p μ := ∑ i, ind i ∘ₗ LinearMap.proj i
   set T := integralOperatorLp (fun x y ↦ ∑ i, (P i).indicator (fun _ ↦ L i y) x) p hK hA hB
   have hrange : LinearMap.range (T : Lp F p ν →ₗ[𝕜] Lp G p μ) ≤ LinearMap.range Λ := by

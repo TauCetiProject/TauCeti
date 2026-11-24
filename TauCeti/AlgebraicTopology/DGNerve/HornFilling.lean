@@ -213,8 +213,9 @@ private lemma card_filter_of_lt {S : Finset (Fin (n + 1))} {t u : Fin (n + 1)} (
   have h (P Q₁ Q₂ : Fin (n + 1) → Prop) [DecidablePred P] [DecidablePred Q₁] [DecidablePred Q₂]
       (k₁ k₂ : ℕ) (hP : ∀ s, (if P s then 1 else 0) = (if Q₁ s then 1 else 0) +
         (if Q₂ s then 1 else 0) + k₁ * (if s = t then 1 else 0) + k₂ * (if s = u then 1 else 0)) :
-      #{s ∈ S | P s} = #{s ∈ S | Q₁ s} + #{s ∈ S | Q₂ s} + k₁ + k₂ :=
-    card_filter_eq_of_ite_eq ht hu P Q₁ Q₂ k₁ k₂ fun s _ ↦ hP s
+      #{s ∈ S | P s} = #{s ∈ S | Q₁ s} + #{s ∈ S | Q₂ s} + k₁ + k₂ := by
+    simp only [card_filter, sum_congr rfl fun s _ ↦ hP s, sum_add_distrib, ← mul_sum,
+      sum_ite_eq' S, ht, hu, ite_true, mul_one]
   have h' (P Q : Fin (n + 1) → Prop) [DecidablePred P] [DecidablePred Q] (k₁ k₂ : ℕ)
       (hP : ∀ s, (if P s then 1 else 0) = (if Q s then 1 else 0) +
         k₁ * (if s = t then 1 else 0) + k₂ * (if s = u then 1 else 0)) :
@@ -459,9 +460,9 @@ private lemma boundary_eq_bd (f : Coherences R X)
     boundary R f i j S d hij hS hd = bd F i j S (d + 1) := by
   rw [boundary_def, bd, ← sum_attach S]
   refine sum_congr rfl fun t _ ↦ ?_
-  have hc := card_filter_lt_add_card_filter_gt_add_one t.2
+  have hc := card_filter_lt_add_card_filter_gt_add_one t.property
   simp only [hF]
-  rw [dgComp_congr F rfl rfl rfl (q' := d + 1 + #{s ∈ S | s < t.1}) (by omega)]
+  rw [dgComp_congr F rfl rfl rfl (q' := d + 1 + #{s ∈ S | s < t.val}) (by omega)]
 
 /-- The defect of the dg nerve equation vanishes on coherences satisfying it. -/
 private lemma defect_get_eq_zero {f : Coherences R X} {i j : Fin (n + 1)}

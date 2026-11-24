@@ -13,16 +13,14 @@ import TauCeti.FieldTheory.Finite.PowNeOne
 /-!
 # Simplicity of the twisted type-`A` groups on the classification list
 
-For every valid `²A_r(q)` (`2 ≤ r`, and `3 ≤ q` when `r = 2`), this file proves that the finite
-special unitary group `SU_{r+1}(q)` is perfect
-(`TauCeti.TypeALieIndex.commutator_specialUnitary_eq_top`), identifies `(ofTwistedA r q hv).Group`
-with `PSU_{r+1}(q)` (`TauCeti.TypeALieIndex.projectiveSpecialUnitaryEquivGroup`) via
-`TauCeti.TypeALieIndex.specialUnitaryEquivFixedPoints` and
-`TauCeti.DerivedCentralQuotient.quotientCenterEquivOfPerfect`, and deduces from
-`Matrix.isSimpleGroup_quotient_center_specialIsometryGroup` that every `²A_r(q)` on the
-classification list is simple (`TauCeti.TypeALieIndex.isSimpleGroup_group_ofTwistedA` and
-`TauCeti.ValidLieTypeIndex.isSimpleGroup_twistedA`), following the transport pattern of
-`TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.TypeA`.
+For every valid `²A_r(q)` (`2 ≤ r`, and `3 ≤ q` when `r = 2`), this file proves perfectness of
+`SU_{r+1}(q)` (`TauCeti.TypeALieIndex.commutator_specialUnitary_eq_top`), identifies
+`(ofTwistedA r q hv).Group` with `PSU_{r+1}(q)`
+(`TauCeti.TypeALieIndex.projectiveSpecialUnitaryEquivGroup`) via
+`TauCeti.DerivedCentralQuotient.quotientCenterEquivOfPerfect`, and deduces simplicity of every
+`²A_r(q)` (`TauCeti.TypeALieIndex.isSimpleGroup_group_ofTwistedA`,
+`TauCeti.ValidLieTypeIndex.isSimpleGroup_twistedA`) from
+`Matrix.isSimpleGroup_quotient_center_specialIsometryGroup`.
 
 ## References
 
@@ -42,7 +40,7 @@ namespace TauCeti.TypeALieIndex
 
 private theorem isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA (r : ℕ)
     (q : PrimePower) (hv : (LieTypeIndex.twistedA r q).Valid) :
-    let d := (ofTwistedA r q hv).1
+    let d := (ofTwistedA r q hv).val
     let G := (typeAGraphConjugator d.rank
       (GaloisField d.characteristic (d.fieldExponent * 2))).val.specialIsometryGroup
       (iterateFrobenius _ d.characteristic d.fieldExponent)
@@ -53,7 +51,8 @@ private theorem isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA (r 
   have hr_eq : d.rank = r := by simp [d, ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType]
   have hpow_eq : d.characteristic ^ d.fieldExponent = q.card := by
     simp [d, ValidLieTypeIndex.characteristic, ValidLieTypeIndex.fieldExponent, PrimePower.card_def]
-  obtain ⟨hr2, hq3⟩ := (LieTypeIndex.inStandardRange_iff _).mp ((LieTypeIndex.valid_iff _).mp hv).1
+  obtain ⟨hr2, hq3⟩ :=
+    (LieTypeIndex.inStandardRange_iff _).mp ((LieTypeIndex.valid_iff _).mp hv).left
   have : NeZero d.rank := ⟨by omega⟩; have := d.nonempty_isotropicPoints_galoisField (r := d.rank)
   have hperf : (∃ c : K, c ≠ 0 ∧ c ^ 2 ≠ 1 ∧ σ c = c) ∨
       (∃ u w : Fin (d.rank + 1) → K, u ≠ 0 ∧ w ∉ K ∙ u ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0 ∧
@@ -79,16 +78,16 @@ private theorem isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA (r 
 theorem commutator_specialUnitary_eq_top (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid) :
     commutator (fixedSubgroup
-      ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank)) = ⊤ := by
-  rw [(ofTwistedA r q hv).1.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup]
-  exact (isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA r q hv).1
+      ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank)) = ⊤ := by
+  rw [(ofTwistedA r q hv).val.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup]
+  exact (isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA r q hv).left
 
 /-- **The group attached to `²A_r(q)` is the projective special unitary group `PSU_{r+1}(q)`.** -/
 def projectiveSpecialUnitaryEquivGroup (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid) :
-    (fixedSubgroup ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank) ⧸
-      Subgroup.center (fixedSubgroup
-        ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank))) ≃*
+    (fixedSubgroup ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius
+      (ofTwistedA r q hv).val.rank) ⧸ Subgroup.center (fixedSubgroup
+        ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank))) ≃*
       (ofTwistedA r q hv).Group :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect (commutator_specialUnitary_eq_top r q hv)
     (specialUnitaryEquivFixedPoints r q hv)
@@ -99,10 +98,10 @@ derived subgroup to the class of the corresponding Steinberg fixed point. -/
 theorem projectiveSpecialUnitaryEquivGroup_mk (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid)
     (x : commutator (fixedSubgroup
-      ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank))) :
+      ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank))) :
     projectiveSpecialUnitaryEquivGroup r q hv (QuotientGroup.mk (s := Subgroup.center _)
         (x : fixedSubgroup
-          ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank))) =
+          ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank))) =
       ((MulEquiv.commutatorCongr (specialUnitaryEquivFixedPoints r q hv) x :
         commutator (ofTwistedA r q hv).FixedPoints) : (ofTwistedA r q hv).Group) :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
@@ -112,10 +111,10 @@ theorem isSimpleGroup_group_ofTwistedA (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.twistedA r q).Valid) :
     IsSimpleGroup (ofTwistedA r q hv).Group := by
   have : IsSimpleGroup (fixedSubgroup
-      ((ofTwistedA r q hv).1.galoisFieldTwistedFrobenius (ofTwistedA r q hv).1.rank) ⧸
+      ((ofTwistedA r q hv).val.galoisFieldTwistedFrobenius (ofTwistedA r q hv).val.rank) ⧸
         Subgroup.center _) :=
-    (ofTwistedA r q hv).1.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup _ ▸
-      (isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA r q hv).2
+    (ofTwistedA r q hv).val.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup _ ▸
+      (isSimpleGroup_and_commutator_specialIsometryGroup_ofTwistedA r q hv).right
   exact (projectiveSpecialUnitaryEquivGroup r q hv).symm.isSimpleGroup
 
 end TauCeti.TypeALieIndex

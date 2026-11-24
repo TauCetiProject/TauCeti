@@ -10,6 +10,7 @@ public import TauCeti.Probability.PointProcess.Poisson.Count
 public import TauCeti.Probability.PointProcess.Poisson.Independence
 public import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 
 /-!
 # Splitting marked temporal Poisson measures
@@ -52,12 +53,9 @@ theorem iIndepFun_nat_count_prod {E ι : Type*} [MeasurableSpace E]
     (hA : ∀ i, MeasurableSet (A i)) (hd : Pairwise fun i j ↦ Disjoint (A i) (A j)) :
     ProbabilityTheory.iIndepFun
       (fun i ω (t : ℝ≥0) ↦ ⌊(M ω (Ioc 0 t ×ˢ A i)).toNNReal⌋₊) P := by
-  let f (μ : Measure ℝ≥0) (t : ℝ≥0) := ⌊(μ (Ioc 0 t)).toNNReal⌋₊
-  have hf : Measurable f := Measurable.of_eval fun t ↦
-    (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
-  simpa only [f, Function.comp_def, Measure.map_fst_restrict_prod_apply _ _ _
+  simpa only [Function.comp_def, Measure.map_fst_restrict_prod_apply _ _ _
     measurableSet_Ioc, inter_univ] using
-    (h.iIndepFun_map_fst_restrict_univ_prod hA hd).comp (fun _ ↦ f) (fun _ ↦ hf)
+    (h.iIndepFun_map_fst_restrict_univ_prod hA hd).comp _ (fun _ ↦ measurable_nat_count_path)
 
 /-- Two disjoint measurable mark sets give independent complete temporal count paths,
 without product-intensity or local-finiteness assumptions. -/
@@ -159,11 +157,8 @@ private theorem ae_nat_count_prod_cast (h : IsPoissonRandomMeasure P M Λ)
   have hP := (h.restrict (s := Ioi 0 ×ˢ A) (measurableSet_Ioi.prod hA)).map measurable_fst
   filter_upwards [hP.ae_isIntegerValued, hP.ae_isLocallyFiniteMeasure] with ω hi hf t
   let := hf
-  obtain ⟨n, hn⟩ := hi.exists_eq_natCast measurableSet_Ioc
-    (measure_Ioc_lt_top (a := 0) (b := t))
-  simp only [Measure.map_fst_restrict_prod_apply _ _ _ measurableSet_Ioc,
-    inter_eq_left.mpr Ioc_subset_Ioi_self] at hn
-  simp [hn]
+  simpa only [Measure.map_fst_restrict_prod_apply _ _ _ measurableSet_Ioc,
+    inter_eq_left.mpr Ioc_subset_Ioi_self] using hi.natCast_nat_count_Ioc 0 t
 
 /-- Counts on a finite disjoint family of measurable mark sets add simultaneously at every
 time if each selection has finite intensity on bounded positive-time windows. -/

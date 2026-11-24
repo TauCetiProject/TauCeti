@@ -82,11 +82,11 @@ def cuspOrbitFiberEquivBoundaryOrbitFiber (C : Γ.CuspOrbit) :
     {D : Δ.CuspOrbit // cuspOrbitMap h D = C} ≃
       {q : Δ.BoundaryOrbit //
         Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
-          (X := OnePoint ℝ) h) q = C.1} where
-  toFun D := ⟨D.1.1, by simpa only [cuspOrbitMap_val] using congrArg Subtype.val D.2⟩
-  invFun q := ⟨⟨q.1, (isCuspOrbit_iff_of_isFiniteRelIndex h q.1).mpr
-    (q.2.symm ▸ C.property)⟩, Subtype.ext (by
-      simpa only [cuspOrbitMap_val] using q.2)⟩
+          (X := OnePoint ℝ) h) q = C.val} where
+  toFun D := ⟨D.val.val, by simpa only [cuspOrbitMap_val] using congrArg Subtype.val D.property⟩
+  invFun q := ⟨⟨q.val, (isCuspOrbit_iff_of_isFiniteRelIndex h q.val).mpr
+    (q.property.symm ▸ C.property)⟩, Subtype.ext (by
+      simpa only [cuspOrbitMap_val] using q.property)⟩
   left_inv D := by cases D; rfl
   right_inv q := by cases q; rfl
 
@@ -94,7 +94,7 @@ def cuspOrbitFiberEquivBoundaryOrbitFiber (C : Γ.CuspOrbit) :
 @[simp]
 theorem cuspOrbitFiberEquivBoundaryOrbitFiber_apply (C : Γ.CuspOrbit)
     (D : {D : Δ.CuspOrbit // cuspOrbitMap h D = C}) :
-    (cuspOrbitFiberEquivBoundaryOrbitFiber h C D).1 = D.1.1 :=
+    (cuspOrbitFiberEquivBoundaryOrbitFiber h C D).val = D.val.val :=
   (rfl)
 
 end Subgroup

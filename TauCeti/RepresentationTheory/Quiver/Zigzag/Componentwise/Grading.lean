@@ -25,7 +25,9 @@ zero to integer degrees, in which internal grading shifts are stated.
 
 The signed `GradedAlgebra` bundle follows `TauCeti.zigzagIntegerGradedAlgebra` for the
 relation quotient. `TauCeti.zigzagAlgebraInternalGrading` packages these same signed pieces
-for internally graded modules and bimodule tensor products.
+for internally graded modules and bimodule tensor products. On a connected graph with at least
+two vertices, `TauCeti.zigzagAlgebraEquivNonisolated` preserves and reflects both the
+nonnegative and integer-indexed gradings.
 
 See Huerfano–Khovanov, *A category for the adjoint representation*, Section 3, for the
 path grading and singleton convention.
@@ -141,11 +143,9 @@ private theorem zigzagComponentBasis_mem (C : G.ConnectedComponent)
     · simp
     · exact (C.toSimpleGraph.ne_of_adj d.adj (Subsingleton.elim _ _)).elim
     · simp
-  · have hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i =>
-      SimpleGraph.exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
-    rw [mem_zigzagComponentGrade_of_nontrivial,
-      zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns, zigzagBasis_apply]
+  · rw [mem_zigzagComponentGrade_of_nontrivial,
+      zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C
+        C.exists_adj_toSimpleGraph, zigzagBasis_apply]
     rcases b with i | d | i
     · simp only [zigzagBasisFun_inl, Sum.elim_inl]
       exact zigzagMk_mem_zigzagGrade k C.toSimpleGraph
@@ -290,5 +290,39 @@ noncomputable def zigzagAlgebraIntegerGradedAlgebra :
 /-- The signed path-length grading of the public zigzag algebra as an internal grading. -/
 noncomputable abbrev zigzagAlgebraInternalGrading : InternalGrading k (zigzagAlgebra k G) ℤ :=
   ⟨zigzagAlgebraIntegerGrade k G, isInternal_zigzagAlgebraIntegerGrade k G⟩
+
+/-! ### Comparison with the relation quotient -/
+
+/-- On a connected graph with at least two vertices, the canonical comparison with the uniform
+relation quotient preserves and reflects each nonnegative graded piece. -/
+@[simp]
+theorem zigzagAlgebraEquivNonisolated_mem_zigzagGrade_iff (hconn : G.Connected) [Nontrivial V]
+    {n : ℕ} {x : zigzagAlgebra k G} :
+    zigzagAlgebraEquivNonisolated k G hconn x ∈ zigzagGrade k G n ↔
+      x ∈ zigzagAlgebraGrade k G n := by
+  obtain ⟨v⟩ := hconn.nonempty
+  let C : G.ConnectedComponent := G.connectedComponentMk v
+  let _ : Nontrivial C := nontrivial_connectedComponent G hconn C
+  have hsub : Subsingleton G.ConnectedComponent :=
+    hconn.preconnected.subsingleton_connectedComponent
+  rw [zigzagAlgebraEquivNonisolated_apply k G hconn x C,
+    nonisolatedZigzagQuotientEquiv_mem_zigzagGrade_iff,
+    ← mem_zigzagComponentGrade_of_nontrivial, mem_zigzagAlgebraGrade]
+  exact ⟨fun hx D ↦ hsub.elim D C ▸ hx, fun hx ↦ hx C⟩
+
+/-- On a connected graph with at least two vertices, the canonical comparison with the uniform
+relation quotient preserves and reflects the signed integer grading. -/
+@[simp]
+theorem zigzagAlgebraEquivNonisolated_mem_zigzagIntegerGrade_iff (hconn : G.Connected)
+    [Nontrivial V] {d : ℤ} {x : zigzagAlgebra k G} :
+    zigzagAlgebraEquivNonisolated k G hconn x ∈ zigzagIntegerGrade k G d ↔
+      x ∈ zigzagAlgebraIntegerGrade k G d := by
+  by_cases hd : 0 ≤ d
+  · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hd
+    simp only [zigzagIntegerGrade_ofNat, zigzagAlgebraIntegerGrade_ofNat,
+      zigzagAlgebraEquivNonisolated_mem_zigzagGrade_iff]
+  · simp only [zigzagIntegerGrade_eq_bot_of_neg _ _ (lt_of_not_ge hd),
+      zigzagAlgebraIntegerGrade_eq_bot_of_neg _ _ (lt_of_not_ge hd),
+      Submodule.mem_bot, EmbeddingLike.map_eq_zero_iff]
 
 end TauCeti
