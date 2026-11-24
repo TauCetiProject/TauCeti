@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+import TauCeti.LinearAlgebra.Matrix.SymplecticMultiplier
 
 /-!
 # The symplectic group as a subgroup of the general linear group
@@ -67,6 +68,7 @@ symplectic coordinate Hopf algebra and group scheme live in
   `Fin`-indexed form is what the symplectic coordinate Hopf algebra cuts out of `GLₘ₊ₘ`, whose
   coordinate ring is `Fin`-indexed.
 * `TauCeti.nondegenerate_JFin`: the transported alternating form is nondegenerate.
+* `TauCeti.mul_JFin_one_mul_transpose`: a `2 × 2` matrix `M` satisfies `M J Mᵀ = det(M) J`.
 * `TauCeti.GLSymplecticFin.det_eq_one`: a `Fin`-indexed symplectic matrix has determinant one.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
@@ -314,6 +316,27 @@ theorem nondegenerate_JFin : (JFin m R).Nondegenerate :=
   .of_det_mem_nonZeroDivisors <| by
     rw [JFin_eq_submatrix, det_submatrix_equiv_self]
     exact (isUnit_det_J _ _).mem_nonZeroDivisors
+
+/-- The transported alternating form of `Sp₂`, written out. -/
+theorem JFin_one_eq : JFin 1 R = !![0, -1; 1, 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [JFin, Matrix.J, finSumFinEquiv, Fin.addCases, Matrix.fromBlocks]
+
+variable {R} in
+/-- A `2 × 2` matrix scales the transported alternating form by its determinant:
+`M J Mᵀ = det(M) J`. This is `Matrix.transpose_mul_J_mul_eq_det_smul` read through the
+reindexing. -/
+theorem mul_JFin_one_mul_transpose (M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) R) :
+    M * JFin 1 R * Mᵀ = M.det • JFin 1 R := by
+  -- Apply the `Fin 1 ⊕ Fin 1` statement to `Mᵀ` read in those coordinates, then reindex back.
+  have h := transpose_mul_J_mul_eq_det_smul (Mᵀ.submatrix finSumFinEquiv finSumFinEquiv)
+  rw [transpose_submatrix, transpose_transpose, det_submatrix_equiv_self, det_transpose] at h
+  have h' := congrArg (submatrix · finSumFinEquiv.symm finSumFinEquiv.symm) h
+  rwa [← submatrix_mul_equiv _ _ _ finSumFinEquiv.symm,
+    ← submatrix_mul_equiv _ _ _ finSumFinEquiv.symm, submatrix_submatrix, submatrix_submatrix,
+    Equiv.self_comp_symm, submatrix_id_id, submatrix_smul, Pi.smul_apply, Pi.smul_apply,
+    ← JFin_eq_submatrix] at h'
 
 /-- The transported alternating form of `Sp₄`, written out. -/
 theorem JFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 0, 0] := by

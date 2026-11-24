@@ -67,6 +67,8 @@ a relation between `C` and `Cᵀ`.
 
 ## Main declarations
 
+* `TauCeti.ConstantForm.formRelation`: the form relation `X C Xᵀ - C` of a matrix `X` over any
+  `R`-algebra, with `span_formRelation_le_ker_iff` saying when an algebra morphism kills it.
 * `TauCeti.ConstantForm.relationMatrix`: the matrix of defining relations `X C Xᵀ - C`.
 * `TauCeti.ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff`: a coordinate morphism kills the
   defining ideal exactly when its generic matrix `X` satisfies `X C Xᵀ = C`.
@@ -110,14 +112,52 @@ variable (R : Type u) [CommRing R] (n : ℕ)
 
 variable (C : Matrix (Fin n) (Fin n) R)
 
+section FormRelation
+
+variable {R n} {A : Type*} [Ring A] [Algebra R A]
+
+/-- **The form relation** `X C Xᵀ - C` of a square matrix `X` over an `R`-algebra, with the
+constant matrix `C` read through the structure map. Its entries vanish exactly when `X`
+preserves `C`. -/
+noncomputable def formRelation (X : Matrix (Fin n) (Fin n) A) : Matrix (Fin n) (Fin n) A :=
+  X * C.map (algebraMap R A) * Xᵀ - C.map (algebraMap R A)
+
+/-- The form relation of `X` is `X C Xᵀ - C`. -/
+theorem formRelation_def (X : Matrix (Fin n) (Fin n) A) :
+    formRelation C X = X * C.map (algebraMap R A) * Xᵀ - C.map (algebraMap R A) := by
+  rw [formRelation]
+
+/-- Mapping a form relation through an algebra morphism gives the form relation of the image:
+the matrix maps entrywise, and the constant form maps to the constant form. -/
+@[simp] theorem formRelation_map {T : Type*} [Ring T] [Algebra R T]
+    (X : Matrix (Fin n) (Fin n) A) (phi : A →ₐ[R] T) :
+    (formRelation C X).map phi = formRelation C (X.map phi) := by
+  have hC : (C.map (algebraMap R A)).map phi = C.map (algebraMap R T) := by
+    rw [Matrix.map_map]
+    exact congrArg _ (funext fun r => phi.commutes r)
+  rw [formRelation, formRelation, Matrix.map_sub, Matrix.map_mul, Matrix.map_mul, hC,
+    Matrix.transpose_map]
+  exact fun a b => map_sub phi a b
+
+/-- An algebra morphism kills the entries of the form relation of `X` exactly when the image of
+`X` preserves `C`. -/
+theorem span_formRelation_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
+    (X : Matrix (Fin n) (Fin n) A) (phi : A →ₐ[R] T) :
+    Ideal.span (Set.range fun ij : Fin n × Fin n => formRelation C X ij.1 ij.2) ≤
+        RingHom.ker (phi : A →+* T) ↔
+      X.map phi * C.map (algebraMap R T) * (X.map phi)ᵀ = C.map (algebraMap R T) := by
+  rw [Ideal.span_le, ← sub_eq_zero, ← formRelation_def, ← formRelation_map]
+  refine ⟨fun h ↦ Matrix.ext fun i j ↦ h ⟨(i, j), rfl⟩, ?_⟩
+  rintro h _ ⟨ij, rfl⟩
+  exact congrFun (congrFun h ij.1) ij.2
+
+end FormRelation
+
 /-- **The matrix of defining relations** of the subgroup scheme preserving `C`:
 `X C Xᵀ - C` over the coordinate Hopf algebra of `GL n`. -/
 noncomputable def relationMatrix :
     Matrix (Fin n) (Fin n) (GeneralLinear.coordinateHopfAlgebra R n) :=
-  GeneralLinear.genericMatrix R n *
-      C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
-      (GeneralLinear.genericMatrix R n)ᵀ -
-    C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))
+  formRelation C (GeneralLinear.genericMatrix R n)
 
 /-- The relation matrix is the constant form transported by the generic matrix, minus the
 form: `X C Xᵀ - C`. -/
@@ -127,7 +167,7 @@ theorem relationMatrix_def :
           C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
           (GeneralLinear.genericMatrix R n)ᵀ -
         C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) := by
-  rw [relationMatrix]
+  rw [relationMatrix, formRelation_def]
 
 /-- The set of defining relations: the entries of the relation matrix. -/
 noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
@@ -151,12 +191,7 @@ the generic matrix maps entrywise, and the constant form maps to the constant fo
       (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
           ((GeneralLinear.genericMatrix R n).map phi)ᵀ -
         C.map (algebraMap R T) := by
-  have hC : (C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))).map phi =
-      C.map (algebraMap R T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun r => phi.commutes r)
-  rw [relationMatrix, Matrix.map_sub, Matrix.map_mul, Matrix.map_mul, hC, Matrix.transpose_map]
-  exact fun a b => map_sub phi a b
+  rw [relationMatrix, formRelation_map, formRelation_def]
 
 /-! ### The three Hopf-ideal closure conditions -/
 
@@ -225,7 +260,7 @@ private theorem relationMatrix_map_antipode :
           C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
           ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ := by
     have h := GeneralLinear.isUnit_det_genericMatrix R n
-    rw [relationMatrix, Matrix.mul_sub, Matrix.sub_mul]
+    rw [relationMatrix_def, Matrix.mul_sub, Matrix.sub_mul]
     simp only [Matrix.mul_assoc, ← Matrix.transpose_mul, Matrix.nonsing_inv_mul _ h,
       Matrix.transpose_one, Matrix.mul_one, Matrix.nonsing_inv_mul_cancel_left _ _ h]
   rw [relationMatrix_map R n C, GeneralLinear.map_antipode_genericMatrix, hkey, neg_sub]
@@ -273,10 +308,8 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
     (definingHopfIdeal R n C).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
           ((GeneralLinear.genericMatrix R n).map phi)ᵀ = C.map (algebraMap R T) := by
-  rw [definingHopfIdeal_toIdeal, Ideal.span_le, ← sub_eq_zero, ← relationMatrix_map]
-  refine ⟨fun h ↦ Matrix.ext fun i j ↦ h (relationMatrix_mem_relationSet R n C i j), ?_⟩
-  rintro h _ ⟨ij, rfl⟩
-  exact congrFun (congrFun h ij.1) ij.2
+  rw [definingHopfIdeal_toIdeal, relationSet, relationMatrix]
+  exact span_formRelation_le_ker_iff C _ phi
 
 /-- The coordinate Hopf algebra of the subgroup scheme of `GL n` preserving `C`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
