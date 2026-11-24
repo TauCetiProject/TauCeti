@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Quaternion
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
@@ -21,7 +22,9 @@ import TauCeti.Topology.Algebra.ContinuousMulEquiv
 The unitary Hamilton quaternions are exactly the unit sphere in the four-dimensional real normed
 space of quaternions. This gives a canonical homeomorphism between the two subtype presentations.
 The algebraic equivalence `Quaternion.unitaryEquivSpecialUnitaryGroup` with the special unitary
-group of degree two is an isomorphism of topological groups.
+group of degree two is an isomorphism of topological groups. Reading off the unique entry of a
+`1 × 1` quaternionic unitary matrix extends both identifications to the rank-one compact symplectic
+group `Sp(1) = unitary (Matrix ι ι ℍ)` for any singleton index type `ι`.
 The group of unit Hamilton quaternions is simply connected.
 
 ## Main definitions and results
@@ -34,6 +37,11 @@ The group of unit Hamilton quaternions is simply connected.
   connected.
 * `Matrix.instSimplyConnectedSpaceSpecialUnitaryGroupFinTwoComplex`: the complex special
   unitary group of degree two is simply connected.
+* `TauCeti.unitaryMatrixQuaternionUniqueHomeomorphSphere`: for a singleton index type `ι`, the
+  homeomorphism `unitary (Matrix ι ι ℍ) ≃ₜ sphere (0 : ℍ) 1`.
+* `TauCeti.unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup`: for a singleton
+  index type `ι`, the topological group isomorphism
+  `unitary (Matrix ι ι ℍ) ≃ₜ* Matrix.specialUnitaryGroup (Fin 2) ℂ`.
 * `ContinuousMulEquiv.toQuaternionSpecialUnitaryProd` and
   `ContinuousMulEquiv.toQuaternionSphereProdHomeomorph`: transport any topological group
   isomorphism `G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]` to `SU(2) × SU(2)` and `S³ × S³`.
@@ -118,7 +126,7 @@ noncomputable def unitaryContinuousMulEquivSpecialUnitaryGroup :
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, coe_unitaryEquivSpecialUnitaryGroup_apply,
       AlgHom.coe_toLinearMap, StarAlgHom.coe_toAlgHom] using
-      (toComplexMatrix.toLinearMap.continuous_of_finiteDimensional.comp continuous_subtype_val)
+      (toComplexMatrix.toLinearMap.continuous_of_finiteDimensional.comp continuous_subtypeVal)
   exact { __ := unitaryEquivSpecialUnitaryGroup
           __ := unitaryEquivSpecialUnitaryGroup.toEquiv.toHomeomorphOfContinuousClosed
             hf hf.isClosedMap }
@@ -147,88 +155,138 @@ instance _root_.Matrix.instSimplyConnectedSpaceSpecialUnitaryGroupFinTwoComplex 
 
 end Quaternion
 
+namespace TauCeti
+
+section RankOne
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] [Unique ι]
+
+variable (ι) in
+/-- **Rank-one symplectic group and the `3`-sphere**: on a singleton index type `ι`, reading off the
+unique entry identifies `Sp(1) = unitary (Matrix ι ι ℍ)` homeomorphically with the unit quaternion
+sphere `S³ ⊆ ℍ`. -/
+noncomputable def unitaryMatrixQuaternionUniqueHomeomorphSphere :
+    unitary (Matrix ι ι ℍ) ≃ₜ sphere (0 : ℍ) 1 :=
+  (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).toHomeomorph.trans
+    Quaternion.unitaryHomeomorphSphere
+
+@[simp]
+theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_apply
+    (A : unitary (Matrix ι ι ℍ)) :
+    (unitaryMatrixQuaternionUniqueHomeomorphSphere ι A : ℍ) = A.val default default := by
+  rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.trans_apply,
+    Quaternion.coe_unitaryHomeomorphSphere_apply, ContinuousMulEquiv.toHomeomorph_eq_coe]
+  exact Matrix.coe_unitaryUniqueContinuousMulEquiv_apply A
+
+@[simp]
+theorem coe_unitaryMatrixQuaternionUniqueHomeomorphSphere_symm_apply
+    (q : sphere (0 : ℍ) 1) :
+    ((unitaryMatrixQuaternionUniqueHomeomorphSphere ι).symm q).val =
+      Matrix.of fun _ _ ↦ (q : ℍ) := by
+  rw [unitaryMatrixQuaternionUniqueHomeomorphSphere, Homeomorph.symm_trans_apply,
+    ContinuousMulEquiv.toHomeomorph_eq_coe, ContinuousMulEquiv.coe_toHomeomorph_symm]
+  exact (Matrix.coe_unitaryUniqueContinuousMulEquiv_symm_apply _).trans (by simp)
+
+variable (ι) in
+/-- **Rank-one symplectic group and `SU(2)`**: on a singleton index type `ι`, `Sp(1)` is isomorphic
+as a topological group to `Matrix.specialUnitaryGroup (Fin 2) ℂ`. -/
+noncomputable def unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup :
+    unitary (Matrix ι ι ℍ) ≃ₜ* Matrix.specialUnitaryGroup (Fin 2) ℂ :=
+  (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).trans
+    Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup
+
+@[simp]
+theorem unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup_apply
+    (A : unitary (Matrix ι ι ℍ)) :
+    unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup ι A =
+      Quaternion.unitaryEquivSpecialUnitaryGroup
+        (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ A) := by
+  simp [unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup]
+
+@[simp]
+theorem unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup_symm_apply
+    (g : Matrix.specialUnitaryGroup (Fin 2) ℂ) :
+    (unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup ι).symm g =
+      (Matrix.unitaryUniqueContinuousMulEquiv ι ℍ).symm
+        (Quaternion.unitaryEquivSpecialUnitaryGroup.symm g) := by
+  simp [unitaryMatrixQuaternionUniqueContinuousMulEquivSpecialUnitaryGroup]
+
+end RankOne
+
+end TauCeti
+
 namespace ContinuousMulEquiv
 
-/-- Transports a topological group isomorphism `G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]` to
-`G ≃ₜ* SU(2) × SU(2)` via `Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup`. -/
-noncomputable def toQuaternionSpecialUnitaryProd
-    {G : Type*} [TopologicalSpace G] [Mul G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) :
+section QuaternionProd
+
+variable {G : Type*} [TopologicalSpace G]
+
+section Mul
+
+variable [Mul G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ])
+
+/-- Transports `G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]` to `G ≃ₜ* SU(2) × SU(2)`. -/
+noncomputable def toQuaternionSpecialUnitaryProd :
     G ≃ₜ* Matrix.specialUnitaryGroup (Fin 2) ℂ × Matrix.specialUnitaryGroup (Fin 2) ℂ :=
   e.trans (Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup.prodCongr
     Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup)
 
-/-- Evaluating `toQuaternionSpecialUnitaryProd` applies `Quaternion.unitaryEquivSpecialUnitaryGroup`
-to each unit-quaternion factor. -/
+/-- Forward evaluation of `toQuaternionSpecialUnitaryProd`. -/
 @[simp]
-theorem toQuaternionSpecialUnitaryProd_apply
-    {G : Type*} [TopologicalSpace G] [Mul G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) (g : G) :
+theorem toQuaternionSpecialUnitaryProd_apply (g : G) :
     e.toQuaternionSpecialUnitaryProd g =
       (Quaternion.unitaryEquivSpecialUnitaryGroup (e g).1,
         Quaternion.unitaryEquivSpecialUnitaryGroup (e g).2) := by
   simp [toQuaternionSpecialUnitaryProd]
 
-/-- The inverse of `toQuaternionSpecialUnitaryProd` applies
-`Quaternion.unitaryEquivSpecialUnitaryGroup.symm` coordinatewise followed by `e.symm`. -/
+/-- Inverse evaluation of `toQuaternionSpecialUnitaryProd`. -/
 @[simp]
 theorem toQuaternionSpecialUnitaryProd_symm_apply
-    {G : Type*} [TopologicalSpace G] [Mul G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ])
     (M : Matrix.specialUnitaryGroup (Fin 2) ℂ × Matrix.specialUnitaryGroup (Fin 2) ℂ) :
     e.toQuaternionSpecialUnitaryProd.symm M =
       e.symm (Quaternion.unitaryEquivSpecialUnitaryGroup.symm M.1,
         Quaternion.unitaryEquivSpecialUnitaryGroup.symm M.2) := by
   simp [toQuaternionSpecialUnitaryProd]
 
-/-- Transports a topological group isomorphism `G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]` to a
-homeomorphism `G ≃ₜ sphere (0 : ℍ[ℝ]) 1 × sphere (0 : ℍ[ℝ]) 1` via
-`Quaternion.unitaryHomeomorphSphere`. -/
-noncomputable def toQuaternionSphereProdHomeomorph
-    {G : Type*} [TopologicalSpace G] [Mul G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) :
+/-- Transports `G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]` to `G ≃ₜ S³ × S³`. -/
+noncomputable def toQuaternionSphereProdHomeomorph :
     G ≃ₜ sphere (0 : ℍ[ℝ]) 1 × sphere (0 : ℍ[ℝ]) 1 :=
   e.toHomeomorph.trans
     (Quaternion.unitaryHomeomorphSphere.prodCongr Quaternion.unitaryHomeomorphSphere)
 
 /-- First quaternion coordinate of `toQuaternionSphereProdHomeomorph`. -/
 @[simp]
-theorem coe_fst_toQuaternionSphereProdHomeomorph_apply
-    {G : Type*} [TopologicalSpace G] [Mul G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) (g : G) :
+theorem coe_fst_toQuaternionSphereProdHomeomorph_apply (g : G) :
     ((e.toQuaternionSphereProdHomeomorph g).1 : ℍ[ℝ]) = (e g).1 := by
-  rw [toQuaternionSphereProdHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
-    Prod.map_fst, Quaternion.coe_unitaryHomeomorphSphere_apply]
-  rfl
+  simp [toQuaternionSphereProdHomeomorph]; rfl
 
 /-- Second quaternion coordinate of `toQuaternionSphereProdHomeomorph`. -/
 @[simp]
-theorem coe_snd_toQuaternionSphereProdHomeomorph_apply
-    {G : Type*} [TopologicalSpace G] [Mul G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) (g : G) :
+theorem coe_snd_toQuaternionSphereProdHomeomorph_apply (g : G) :
     ((e.toQuaternionSphereProdHomeomorph g).2 : ℍ[ℝ]) = (e g).2 := by
-  rw [toQuaternionSphereProdHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
-    Prod.map_snd, Quaternion.coe_unitaryHomeomorphSphere_apply]
-  rfl
+  simp [toQuaternionSphereProdHomeomorph]; rfl
 
 /-- Inverse of `toQuaternionSphereProdHomeomorph`. -/
 theorem toQuaternionSphereProdHomeomorph_symm_apply
-    {G : Type*} [TopologicalSpace G] [Mul G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ])
     (q : sphere (0 : ℍ[ℝ]) 1 × sphere (0 : ℍ[ℝ]) 1) :
     e.toQuaternionSphereProdHomeomorph.symm q =
       e.symm (Quaternion.unitaryHomeomorphSphere.symm q.1,
-        Quaternion.unitaryHomeomorphSphere.symm q.2) := by
-  rw [toQuaternionSphereProdHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
-    Homeomorph.coe_prodCongr, Prod.map_apply, toHomeomorph_eq_coe, coe_toHomeomorph_symm]
-  rfl
+        Quaternion.unitaryHomeomorphSphere.symm q.2) := (rfl)
+
+end Mul
 
 /-- `toQuaternionSphereProdHomeomorph` sends `1` to `(1, 1)`. -/
 @[simp]
-theorem toQuaternionSphereProdHomeomorph_one
-    {G : Type*} [TopologicalSpace G] [MulOneClass G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) :
-    e.toQuaternionSphereProdHomeomorph 1 = 1 := by
+theorem toQuaternionSphereProdHomeomorph_one [MulOneClass G]
+    (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) : e.toQuaternionSphereProdHomeomorph 1 = 1 := by
   apply Prod.ext <;> apply Subtype.ext <;> simp
 
 /-- `toQuaternionSphereProdHomeomorph.symm` sends `(1, 1)` to `1`. -/
 @[simp]
-theorem toQuaternionSphereProdHomeomorph_symm_one
-    {G : Type*} [TopologicalSpace G] [MulOneClass G] (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) :
-    e.toQuaternionSphereProdHomeomorph.symm 1 = 1 :=
-  e.toQuaternionSphereProdHomeomorph.symm_apply_eq.mpr
-    (toQuaternionSphereProdHomeomorph_one e).symm
+theorem toQuaternionSphereProdHomeomorph_symm_one [MulOneClass G]
+    (e : G ≃ₜ* unitary ℍ[ℝ] × unitary ℍ[ℝ]) : e.toQuaternionSphereProdHomeomorph.symm 1 = 1 :=
+  e.toQuaternionSphereProdHomeomorph.symm_apply_eq.mpr (toQuaternionSphereProdHomeomorph_one e).symm
+
+end QuaternionProd
 
 end ContinuousMulEquiv

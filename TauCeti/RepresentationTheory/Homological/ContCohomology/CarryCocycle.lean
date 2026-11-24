@@ -169,7 +169,7 @@ private theorem characterCarry_smul_mem_Z2 {χ : Additive G →+ AddCircle (1 : 
   refine mem_Z2_iff.2
     ⟨((isLocallyConstant_characterCarry hχ).comp fun k : ℤ ↦ k • (a : M)).continuous,
       fun g h j ↦ ?_⟩
-  have hfix : g • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).1 a.2 g
+  have hfix : g • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).1 a.property g
   simp only [smul_comm g _ (a : M), hfix, ← add_smul, characterCarry_mul_add]
 
 /-- **The carry cocycle of a character** `χ : G → ℚ/ℤ` with open kernel and an invariant
@@ -223,7 +223,7 @@ theorem characterCarryCocycle_add_character
       AddCircle.equivIco 1 0 (χ₂ (.ofMul g)) -
         AddCircle.equivIco 1 0 ((χ₁ + χ₂) (.ofMul g)) :=
     AddCircle.intCast_floor_equivIco_add _ _
-  have hfix (g : G) : g • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).1 a.2 g
+  have hfix (g : G) : g • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).1 a.property g
   refine mem_B2_iff.2 ⟨fun g ↦ (-e g) • (a : M),
     ((((χ₁.isLocallyConstant_of_isOpen_ker hχ₁).comp_continuous continuous_ofMul).comp₂
       ((χ₂.isLocallyConstant_of_isOpen_ker hχ₂).comp_continuous continuous_ofMul) fun x y ↦

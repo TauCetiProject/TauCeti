@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.Analysis.Real.Sqrt
-public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Reflection
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Algebra.Quaternion.NormForm
@@ -33,15 +33,11 @@ factors: here they are the division algebra `ℍ`, so `Cl⁺(4,0)` is not `M₂(
 contrast the hyperbolic space `H ⟂ H`, whose centre is also split
 (`TauCeti.hyperbolicFourCenterEvenEquivProd`), has two matrix-algebra factors.
 
-When `ℝ⁴` is instead identified with `ℍ` in the standard ordered basis `(1, i, j, k)`
-(`TauCeti.realCliffordFourZeroCalibratedQuaternionEquiv`), swapping the two native quaternion
-factors and conjugating them by the unit quaternion `u = (1 + j) / √2` and its inverse `star u`
-(`TauCeti.realCliffordFourZeroCalibrationUnitary`,
-`TauCeti.realCliffordFourZeroQuaternionProdCalibrationEquiv`) produces the calibrated even-algebra
-equivalence `TauCeti.realCliffordFourZeroCalibratedEvenEquivQuaternionProd` under which a bilinear
-generator `ι(m) ι(n)` has coordinates `(m * star n, star m * n)` in `(1, i, j, k)` quaternion
-coordinates, the chirality volume element `-(e₀ e₁)(e₂ e₃)` has coordinates `(1, -1)`, and
-first-coordinate reflection swaps the two quaternion factors.
+In the standard ordered `(1, i, j, k)` quaternion identification of `ℝ⁴`
+(`TauCeti.realCliffordFourZeroCalibratedQuaternionEquiv`), swapping and conjugating the native
+factors by `u = (1 + j) / √2` gives `TauCeti.realCliffordFourZeroCalibratedEvenEquivQuaternionProd`
+with generator formula `(m * star n, star m * n)`, chirality volume element `(1, -1)`, and
+factor-swapping first-coordinate reflection (`TauCeti.realCliffordCoordReflection 0`).
 
 ## Main definitions and results
 
@@ -61,16 +57,9 @@ first-coordinate reflection swaps the two quaternion factors.
   two real matrix algebras of degree two.
 * `TauCeti.realCliffordFourZeroQuaternionEquiv` identifies the underlying quadratic space of
   `Cl(4,0)` with the Hamilton quaternion norm form.
-* `TauCeti.realCliffordFourZeroCalibratedQuaternionEquiv` identifies `ℝ⁴` with `ℍ` in the standard
-  ordered basis `(1, i, j, k)`.
-* `TauCeti.realCliffordFourZeroCalibratedEvenEquivQuaternionProd` and
-  `TauCeti.realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι` give the calibrated
-  `Cl⁺(4,0) ≃ₐ[ℝ] ℍ × ℍ` equivalence, its generator formula `(m * star n, star m * n)`,
-  its `e₀`-anchor evaluations, and all six coordinate bivector evaluations.
-* `TauCeti.realCliffordFourZeroCalibratedQuaternionEquiv_firstReflection` and
-  `TauCeti.realCliffordFourZeroCalibratedEvenEquivQuaternionProd_firstReflection` show that
-  first-coordinate reflection acts as `-star` on `ℍ` and swaps the two factors of
-  `Cl⁺(4,0) ≃ ℍ × ℍ`.
+* `TauCeti.realCliffordFourZeroCalibratedQuaternionEquiv` and
+  `TauCeti.realCliffordFourZeroCalibratedEvenEquivQuaternionProd`: calibrated `(1, i, j, k)` models
+  of `ℝ⁴` and `Cl⁺(4,0)`, generator evaluations, and reflection swap.
 
 ## References
 
@@ -333,12 +322,10 @@ theorem realCliffordFourZeroQuaternionEquiv_symm_apply (q : ℍ[ℝ]) :
 `Fin 4 → ℝ` under `realCliffordForm 4 0` with `ℍ[ℝ]` in the standard ordered basis `(1, i, j, k)`,
 sending `v` to `⟨v 0, v 1, v 2, v 3⟩`. -/
 noncomputable def realCliffordFourZeroCalibratedQuaternionEquiv :
-    (realCliffordForm 4 0).IsometryEquiv
-      (QuaternionAlgebra.normForm (-1 : ℝ) 0 (-1 : ℝ)) where
+    (realCliffordForm 4 0).IsometryEquiv (QuaternionAlgebra.normForm (-1 : ℝ) 0 (-1 : ℝ)) where
   __ := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1 : ℝ)).symm
   map_app' v := by
-    have hw : realCliffordWeight 4 0 = ![(1 : ℝ), -(-1), -(-1), (-1) * (-1)] := by
-      ext i
+    have hw : realCliffordWeight 4 0 = ![(1 : ℝ), -(-1), -(-1), (-1) * (-1)] := funext fun i ↦ by
       rw [realCliffordWeight_of_lt (by omega)]
       fin_cases i <;> norm_num
     simpa [realCliffordForm_def, hw] using
@@ -347,18 +334,15 @@ noncomputable def realCliffordFourZeroCalibratedQuaternionEquiv :
 /-- The `(1, i, j, k)` quaternion coordinates of a vector in `ℝ⁴`. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedQuaternionEquiv_apply (v : Fin 4 → ℝ) :
-    realCliffordFourZeroCalibratedQuaternionEquiv v = ⟨v 0, v 1, v 2, v 3⟩ :=
-  (rfl)
+    realCliffordFourZeroCalibratedQuaternionEquiv v = ⟨v 0, v 1, v 2, v 3⟩ := (rfl)
 
 /-- The vector coordinates recovered from a Hamilton quaternion in the `(1, i, j, k)` model. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedQuaternionEquiv_symm_apply (q : ℍ[ℝ]) :
-    realCliffordFourZeroCalibratedQuaternionEquiv.symm q =
-      ![q.re, q.imI, q.imJ, q.imK] :=
-  (rfl)
+    realCliffordFourZeroCalibratedQuaternionEquiv.symm q = ![q.re, q.imI, q.imJ, q.imK] := (rfl)
 
-/-- The unit quaternion `(1 + j) / √2` relating the native coordinate model of `Cl⁺(4,0)` to the
-standard `(1, i, j, k)` quaternion coordinate model. -/
+/-- The unit quaternion `(1 + j) / √2` relating the native and `(1, i, j, k)` models of
+`Cl⁺(4,0)`. -/
 noncomputable def realCliffordFourZeroCalibrationUnitary : unitary ℍ[ℝ] :=
   ⟨⟨(Real.sqrt 2)⁻¹, 0, (Real.sqrt 2)⁻¹, 0⟩, by
     rw [QuaternionAlgebra.mem_unitary_iff_normForm_eq_one,
@@ -369,12 +353,10 @@ noncomputable def realCliffordFourZeroCalibrationUnitary : unitary ℍ[ℝ] :=
 /-- The underlying quaternion of `realCliffordFourZeroCalibrationUnitary` is `(1 + j) / √2`. -/
 @[simp]
 theorem coe_realCliffordFourZeroCalibrationUnitary :
-    (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) =
-      ⟨(Real.sqrt 2)⁻¹, 0, (Real.sqrt 2)⁻¹, 0⟩ :=
+    (realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) = ⟨(Real.sqrt 2)⁻¹, 0, (Real.sqrt 2)⁻¹, 0⟩ :=
   (rfl)
 
-/-- The calibrated `(1, i, j, k)` vector-to-quaternion isometry is obtained from the native one by
-conjugating and multiplying on both sides by `(1 + j) / √2` with a sign. -/
+/-- Relation between the calibrated and native vector-to-quaternion isometries. -/
 theorem realCliffordFourZeroCalibratedQuaternionEquiv_eq_neg_mul_star_mul (v : Fin 4 → ℝ) :
     realCliffordFourZeroCalibratedQuaternionEquiv v =
       -((realCliffordFourZeroCalibrationUnitary : ℍ[ℝ]) *
@@ -385,32 +367,21 @@ theorem realCliffordFourZeroCalibratedQuaternionEquiv_eq_neg_mul_star_mul (v : F
       coe_realCliffordFourZeroCalibrationUnitary, realCliffordFourZeroQuaternionEquiv_apply,
       QuaternionAlgebra.star_mk, QuaternionAlgebra.mk_mul_mk, QuaternionAlgebra.re_neg,
       QuaternionAlgebra.imI_neg, QuaternionAlgebra.imJ_neg, QuaternionAlgebra.imK_neg] <;>
-    ring_nf <;>
-    simp only [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)] <;>
-    ring
+    ring_nf <;> simp only [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)] <;> ring
 
-/-- The involutive `ℝ`-`⋆`-algebra equivalence on `ℍ × ℍ` sending `(n₁, n₂)` to
-`(u * n₂ * star u, star u * n₁ * u)` for `u = (1 + j) / √2`. Note that a bare factor swap without
-`u`-conjugation would send `ι(e₀) ι(e₁)` to `(-k, -k)` instead of `(-i, i)`, failing to match the
-`(1, i, j, k)` basis on `ℝ⁴`. -/
+/-- The involutive `ℝ`-`⋆`-algebra equivalence `(n₁, n₂) ↦ (u * n₂ * star u, star u * n₁ * u)` on
+`ℍ × ℍ` for `u = (1 + j) / √2`. -/
 noncomputable def realCliffordFourZeroQuaternionProdCalibrationEquiv :
-    ℍ[ℝ] × ℍ[ℝ] ≃⋆ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ] where
-  toFun p :=
-    (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary p.2,
-      (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).symm p.1)
-  invFun p :=
-    (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary p.2,
-      (Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).symm p.1)
-  left_inv p := Prod.ext
-    ((Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).apply_symm_apply p.1)
-    ((Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).symm_apply_apply p.2)
-  right_inv p := Prod.ext
-    ((Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).apply_symm_apply p.1)
-    ((Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary).symm_apply_apply p.2)
-  map_mul' p q := Prod.ext (map_mul _ p.2 q.2) (map_mul _ p.1 q.1)
-  map_add' p q := Prod.ext (map_add _ p.2 q.2) (map_add _ p.1 q.1)
-  map_smul' r p := Prod.ext (map_smul _ r p.2) (map_smul _ r p.1)
-  map_star' p := Prod.ext (map_star _ p.2) (map_star _ p.1)
+    ℍ[ℝ] × ℍ[ℝ] ≃⋆ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ] :=
+  let c := Unitary.conjStarAlgAut ℝ ℍ[ℝ] realCliffordFourZeroCalibrationUnitary
+  { toFun p := (c p.2, c.symm p.1)
+    invFun p := (c p.2, c.symm p.1)
+    left_inv p := Prod.ext (c.apply_symm_apply p.1) (c.symm_apply_apply p.2)
+    right_inv p := Prod.ext (c.apply_symm_apply p.1) (c.symm_apply_apply p.2)
+    map_mul' p q := Prod.ext (map_mul _ p.2 q.2) (map_mul _ p.1 q.1)
+    map_add' p q := Prod.ext (map_add _ p.2 q.2) (map_add _ p.1 q.1)
+    map_smul' r p := Prod.ext (map_smul _ r p.2) (map_smul _ r p.1)
+    map_star' p := Prod.ext (map_star _ p.2) (map_star _ p.1) }
 
 /-- Coordinates of `realCliffordFourZeroQuaternionProdCalibrationEquiv`. -/
 @[simp]
@@ -427,20 +398,15 @@ theorem realCliffordFourZeroQuaternionProdCalibrationEquiv_apply (p : ℍ[ℝ] �
 @[simp]
 theorem realCliffordFourZeroQuaternionProdCalibrationEquiv_symm :
     realCliffordFourZeroQuaternionProdCalibrationEquiv.symm =
-      realCliffordFourZeroQuaternionProdCalibrationEquiv :=
-  (rfl)
+      realCliffordFourZeroQuaternionProdCalibrationEquiv := (rfl)
 
-/-- **Calibrated `Cl⁺(4,0) ≃ₐ[ℝ] ℍ × ℍ` equivalence**: the even Clifford algebra of the
-positive-definite four-dimensional real form identified with `ℍ × ℍ` compatibly with the standard
-`(1, i, j, k)` quaternion coordinates on `ℝ⁴`. -/
+/-- **Calibrated `Cl⁺(4,0) ≃ₐ[ℝ] ℍ × ℍ` equivalence** for `(1, i, j, k)` coordinates on `ℝ⁴`. -/
 noncomputable def realCliffordFourZeroCalibratedEvenEquivQuaternionProd :
     CliffordAlgebra.even (realCliffordForm 4 0) ≃ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ] :=
   realCliffordFourZeroEvenEquivQuaternionProd.trans
     realCliffordFourZeroQuaternionProdCalibrationEquiv.toAlgEquiv
 
-/-- `realCliffordFourZeroCalibratedEvenEquivQuaternionProd` is obtained from
-`realCliffordFourZeroEvenEquivQuaternionProd` by applying
-`realCliffordFourZeroQuaternionProdCalibrationEquiv`. -/
+/-- `realCliffordFourZeroCalibratedEvenEquivQuaternionProd` factors through the native model. -/
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_eq_calibrationEquiv
     (x : CliffordAlgebra.even (realCliffordForm 4 0)) :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd x =
@@ -448,8 +414,7 @@ theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_eq_calibrationEqui
         (realCliffordFourZeroEvenEquivQuaternionProd x) := by
   simp [realCliffordFourZeroCalibratedEvenEquivQuaternionProd]
 
-/-- In the calibrated compact four-dimensional quaternion-pair model, Clifford reversal is
-componentwise quaternion conjugation. -/
+/-- In the calibrated quaternion-pair model, Clifford reversal is componentwise conjugation. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_reverseEven
     (x : CliffordAlgebra.even (realCliffordForm 4 0)) :
@@ -460,9 +425,7 @@ theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_reverseEven
     AlgEquiv.trans_apply, realCliffordFourZeroEvenEquivQuaternionProd_reverseEven,
     StarAlgEquiv.coe_toAlgEquiv, map_star]
 
-/-- **Calibrated bilinear-generator formula**: under
-`realCliffordFourZeroCalibratedEvenEquivQuaternionProd`, a product `ι(m) ι(n)` of two vectors in
-`ℝ⁴` maps to `(m * star n, star m * n)` in `(1, i, j, k)` quaternion coordinates. -/
+/-- **Calibrated bilinear-generator formula**: `ι(m) ι(n)` maps to `(m * star n, star m * n)`. -/
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι (m n : Fin 4 → ℝ) :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin m n) =
@@ -473,93 +436,81 @@ theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι (m n : Fin 4 �
   simp only [realCliffordFourZeroCalibratedEvenEquivQuaternionProd, AlgEquiv.trans_apply,
     StarAlgEquiv.coe_toAlgEquiv, realCliffordFourZeroEvenEquivQuaternionProd_ι,
     realCliffordFourZeroQuaternionProdCalibrationEquiv_apply,
-    coe_realCliffordFourZeroCalibrationUnitary,
-    realCliffordFourZeroCalibratedQuaternionEquiv_apply]
-  apply Prod.ext <;> ext <;>
-    simp only [mul_neg, neg_mul, QuaternionAlgebra.star_mk, QuaternionAlgebra.mk_mul_mk,
-      QuaternionAlgebra.re_neg, QuaternionAlgebra.imI_neg, QuaternionAlgebra.imJ_neg,
-      QuaternionAlgebra.imK_neg] <;>
-    ring_nf <;>
-    simp only [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)] <;>
-    ring
+    coe_realCliffordFourZeroCalibrationUnitary, realCliffordFourZeroCalibratedQuaternionEquiv_apply]
+  ext <;>
+    simp only [mul_neg, neg_mul, QuaternionAlgebra.star_mk,
+      QuaternionAlgebra.mk_mul_mk, QuaternionAlgebra.re_neg, QuaternionAlgebra.imI_neg,
+      QuaternionAlgebra.imJ_neg, QuaternionAlgebra.imK_neg] <;>
+    ring_nf <;> simp only [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)] <;> ring
 
-/-- Multiplying a vector `v ∈ ℝ⁴` on the right by the reference basis vector `e₀` embeds `v` into
-`Cl⁺(4,0)` with calibrated quaternion-pair coordinates `(φ v, star (φ v))`. -/
-theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_zero_right
-    (v : Fin 4 → ℝ) :
+/-- Right-multiplying `v ∈ ℝ⁴` by `e₀` gives calibrated coordinates `(φ v, star (φ v))`. -/
+theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_zero_right (v : Fin 4 → ℝ) :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin v (Pi.single 0 1)) =
       (realCliffordFourZeroCalibratedQuaternionEquiv v,
         star (realCliffordFourZeroCalibratedQuaternionEquiv v)) := by
-  have he₀ : realCliffordFourZeroCalibratedQuaternionEquiv (Pi.single 0 1) = 1 := by
-    ext <;> simp
+  have he₀ : realCliffordFourZeroCalibratedQuaternionEquiv (Pi.single 0 1) = 1 := by ext <;> simp
   rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι, he₀, star_one, mul_one, mul_one]
 
-/-- Multiplying a vector `v ∈ ℝ⁴` on the left by the reference basis vector `e₀` embeds `v` into
-`Cl⁺(4,0)` with calibrated quaternion-pair coordinates `(star (φ v), φ v)`. -/
-theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_zero_left
-    (v : Fin 4 → ℝ) :
+/-- Left-multiplying `v ∈ ℝ⁴` by `e₀` gives calibrated coordinates `(star (φ v), φ v)`. -/
+theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_zero_left (v : Fin 4 → ℝ) :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 0 1) v) =
       (star (realCliffordFourZeroCalibratedQuaternionEquiv v),
         realCliffordFourZeroCalibratedQuaternionEquiv v) := by
-  have he₀ : realCliffordFourZeroCalibratedQuaternionEquiv (Pi.single 0 1) = 1 := by
-    ext <;> simp
+  have he₀ : realCliffordFourZeroCalibratedQuaternionEquiv (Pi.single 0 1) = 1 := by ext <;> simp
   rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι, he₀, star_one, one_mul, one_mul]
 
-/-- In the calibrated model, the coordinate bivector `e₀ e₁` maps to `(-i, i)`. -/
+/-- In the calibrated model, `e₀ e₁` maps to `(-i, i)`. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_zero_one :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 0 1) (Pi.single 1 1)) =
-      ((⟨0, -1, 0, 0⟩ : ℍ[ℝ]), (⟨0, 1, 0, 0⟩ : ℍ[ℝ])) := by
-  rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι]
-  apply Prod.ext <;> ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+      ((⟨0, -1, 0, 0⟩ : ℍ[ℝ]), (⟨0, 1, 0, 0⟩ : ℍ[ℝ])) :=
+  (realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι _ _).trans <| by ext <;> simp
 
-/-- In the calibrated model, the coordinate bivector `e₀ e₂` maps to `(-j, j)`. -/
+/-- In the calibrated model, `e₀ e₂` maps to `(-j, j)`. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_zero_two :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 0 1) (Pi.single 2 1)) =
-      ((⟨0, 0, -1, 0⟩ : ℍ[ℝ]), (⟨0, 0, 1, 0⟩ : ℍ[ℝ])) := by
-  rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι]
-  apply Prod.ext <;> ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+      ((⟨0, 0, -1, 0⟩ : ℍ[ℝ]), (⟨0, 0, 1, 0⟩ : ℍ[ℝ])) :=
+  (realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι _ _).trans <| by ext <;> simp
 
-/-- In the calibrated model, the coordinate bivector `e₀ e₃` maps to `(-k, k)`. -/
+/-- In the calibrated model, `e₀ e₃` maps to `(-k, k)`. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_zero_three :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 0 1) (Pi.single 3 1)) =
-      ((⟨0, 0, 0, -1⟩ : ℍ[ℝ]), (⟨0, 0, 0, 1⟩ : ℍ[ℝ])) := by
-  rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι]
-  apply Prod.ext <;> ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+      ((⟨0, 0, 0, -1⟩ : ℍ[ℝ]), (⟨0, 0, 0, 1⟩ : ℍ[ℝ])) :=
+  (realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι _ _).trans <| by ext <;> simp
 
-/-- In the calibrated model, the coordinate bivector `e₁ e₂` maps to `(-k, -k)`. -/
+/-- In the calibrated model, `e₁ e₂` maps to `(-k, -k)`. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_one_two :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 1 1) (Pi.single 2 1)) =
-      ((⟨0, 0, 0, -1⟩ : ℍ[ℝ]), (⟨0, 0, 0, -1⟩ : ℍ[ℝ])) := by
-  rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι]
-  apply Prod.ext <;> ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+      ((⟨0, 0, 0, -1⟩ : ℍ[ℝ]), (⟨0, 0, 0, -1⟩ : ℍ[ℝ])) :=
+  (realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι _ _).trans <| by
+    ext <;> simp [QuaternionAlgebra.mk_mul_mk]
 
-/-- In the calibrated model, the coordinate bivector `e₁ e₃` maps to `(j, j)`. -/
+/-- In the calibrated model, `e₁ e₃` maps to `(j, j)`. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_one_three :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 1 1) (Pi.single 3 1)) =
-      ((⟨0, 0, 1, 0⟩ : ℍ[ℝ]), (⟨0, 0, 1, 0⟩ : ℍ[ℝ])) := by
-  rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι]
-  apply Prod.ext <;> ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+      ((⟨0, 0, 1, 0⟩ : ℍ[ℝ]), (⟨0, 0, 1, 0⟩ : ℍ[ℝ])) :=
+  (realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι _ _).trans <| by
+    ext <;> simp [QuaternionAlgebra.mk_mul_mk]
 
-/-- In the calibrated model, the coordinate bivector `e₂ e₃` maps to `(-i, -i)`. -/
+/-- In the calibrated model, `e₂ e₃` maps to `(-i, -i)`. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_two_three :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
         ((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 2 1) (Pi.single 3 1)) =
-      ((⟨0, -1, 0, 0⟩ : ℍ[ℝ]), (⟨0, -1, 0, 0⟩ : ℍ[ℝ])) := by
-  rw [realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι]
-  apply Prod.ext <;> ext <;> simp [QuaternionAlgebra.mk_mul_mk]
+      ((⟨0, -1, 0, 0⟩ : ℍ[ℝ]), (⟨0, -1, 0, 0⟩ : ℍ[ℝ])) :=
+  (realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι _ _).trans <| by
+    ext <;> simp [QuaternionAlgebra.mk_mul_mk]
 
 /-- In the calibrated model, the chirality volume element `-(e₀ e₁)(e₂ e₃)` has coordinates
 `(1, -1)`. -/
@@ -573,47 +524,30 @@ theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_symm_one_neg_one :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι_single_two_three]
   ext <;> simp [QuaternionAlgebra.mk_mul_mk]
 
-/-- First-coordinate reflection `v ↦ Fin.cons (-v 0) (Fin.tail v)` on `ℝ⁴` corresponds to `-star`
-in the standard `(1, i, j, k)` quaternion model. -/
+/-- First-coordinate reflection on `ℝ⁴` corresponds to `-star` in `(1, i, j, k)` coordinates. -/
 theorem realCliffordFourZeroCalibratedQuaternionEquiv_firstReflection (v : Fin 4 → ℝ) :
-    realCliffordFourZeroCalibratedQuaternionEquiv (realCliffordFirstReflectionIsometry 3 v) =
-      -star (realCliffordFourZeroCalibratedQuaternionEquiv v) := by
-  rw [realCliffordFirstReflectionIsometry_apply,
-    realCliffordFourZeroCalibratedQuaternionEquiv_apply,
-    realCliffordFourZeroCalibratedQuaternionEquiv_apply]
-  refine QuaternionAlgebra.ext ?_ ?_ ?_ ?_
-  · simp
-  · simp [Fin.tail_def]
-  · simpa [Fin.tail_def] using Fin.cons_succ (-v 0) (Fin.tail v) 1
-  · simpa [Fin.tail_def] using Fin.cons_succ (-v 0) (Fin.tail v) 2
+    realCliffordFourZeroCalibratedQuaternionEquiv (realCliffordCoordReflection 0 v) =
+      -star (realCliffordFourZeroCalibratedQuaternionEquiv v) := by ext <;> simp
 
-/-- In the calibrated `Cl⁺(4,0) ≃ ℍ × ℍ` model, the algebra automorphism induced by
-first-coordinate reflection swaps the two quaternion factors. -/
+/-- First-coordinate reflection swaps the two quaternion factors of `Cl⁺(4,0) ≃ ℍ × ℍ`. -/
 @[simp]
 theorem realCliffordFourZeroCalibratedEvenEquivQuaternionProd_firstReflection
     (x : CliffordAlgebra.even (realCliffordForm 4 0)) :
     realCliffordFourZeroCalibratedEvenEquivQuaternionProd
-        (CliffordAlgebra.evenEquivOfIsometry (realCliffordFirstReflectionIsometry 3) x) =
+        (CliffordAlgebra.evenEquivOfIsometry (realCliffordCoordReflection 0) x) =
       Prod.swap (realCliffordFourZeroCalibratedEvenEquivQuaternionProd x) := by
   let swapAlgHom : ℍ[ℝ] × ℍ[ℝ] →ₐ[ℝ] ℍ[ℝ] × ℍ[ℝ] :=
     (AlgHom.snd ℝ ℍ[ℝ] ℍ[ℝ]).prod (AlgHom.fst ℝ ℍ[ℝ] ℍ[ℝ])
-  have h :
-       realCliffordFourZeroCalibratedEvenEquivQuaternionProd.toAlgHom.comp
-          (CliffordAlgebra.evenEquivOfIsometry (realCliffordFirstReflectionIsometry 3)).toAlgHom =
-        swapAlgHom.comp realCliffordFourZeroCalibratedEvenEquivQuaternionProd.toAlgHom := by
-    apply CliffordAlgebra.even.algHom_ext
-    apply CliffordAlgebra.EvenHom.ext
-    apply LinearMap.ext₂
-    intro m n
-    simp only [CliffordAlgebra.EvenHom.compr₂_bilin, LinearMap.compr₂_apply,
-      AlgHom.toLinearMap_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.prod_apply,
-      AlgHom.snd_apply, AlgHom.fst_apply, swapAlgHom]
-    rw [CliffordAlgebra.evenEquivOfIsometry_ι,
-      realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι,
-      realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι,
-      realCliffordFourZeroCalibratedQuaternionEquiv_firstReflection,
-      realCliffordFourZeroCalibratedQuaternionEquiv_firstReflection]
-    simp
+  have h : realCliffordFourZeroCalibratedEvenEquivQuaternionProd.toAlgHom.comp
+      (CliffordAlgebra.evenEquivOfIsometry (realCliffordCoordReflection 0)).toAlgHom =
+      swapAlgHom.comp realCliffordFourZeroCalibratedEvenEquivQuaternionProd.toAlgHom :=
+    CliffordAlgebra.even.algHom_ext _ <| CliffordAlgebra.EvenHom.ext <| LinearMap.ext₂ fun m n ↦ by
+      simp only [CliffordAlgebra.EvenHom.compr₂_bilin, LinearMap.compr₂_apply,
+        AlgHom.toLinearMap_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.prod_apply,
+        AlgHom.snd_apply, AlgHom.fst_apply, swapAlgHom, CliffordAlgebra.evenEquivOfIsometry_ι,
+        realCliffordFourZeroCalibratedEvenEquivQuaternionProd_ι,
+        realCliffordFourZeroCalibratedQuaternionEquiv_firstReflection, star_neg, star_star, neg_mul,
+        mul_neg, neg_neg]
   simpa [swapAlgHom, Prod.ext_iff] using DFunLike.congr_fun h x
 
 end TauCeti

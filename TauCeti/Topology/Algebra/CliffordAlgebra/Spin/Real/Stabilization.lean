@@ -66,8 +66,8 @@ homomorphisms on the closed unit-range carriers in `(CliffordAlgebra (realCliffo
   `TauCeti.realCliffordSpinToSpecialOrthogonalRange_comp_blockSum`: compatibility
   of the unit-range stabilization and block-sum homomorphisms with the native Spin-to-`SO` carrier
   projection.
-* `TauCeti.realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv`: conjugation by
-  first-coordinate reflection bundled as a topological group automorphism of `SO(n + 1)`.
+* `TauCeti.realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv`: conjugation by a
+  coordinate reflection bundled as a topological group automorphism of `SO(n)`.
 
 ## References
 
@@ -452,36 +452,35 @@ theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
           (realCliffordSpinToSpecialOrthogonalRange q)) :=
   ContinuousMonoidHom.ext fun _ ↦ by simp
 
-/-! ### First-coordinate reflection on `SO(n + 1)` -/
+/-! ### Coordinate reflection on `SO(n)` -/
 
-/-- **Conjugation by first-coordinate reflection on `SO(n + 1)` is continuous.** -/
+/-- **Conjugation by a coordinate reflection on `SO(n)` is continuous.** -/
 @[fun_prop]
-theorem continuous_specialOrthogonalGroupCongr_realCliffordFirstReflectionIsometry (n : ℕ) :
-    Continuous (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr :=
-  (realCliffordFirstReflectionIsometry n).continuous_specialOrthogonalGroupCongr_pi
+theorem continuous_specialOrthogonalGroupCongr_realCliffordCoordReflection {n : ℕ} (i : Fin n) :
+    Continuous (realCliffordCoordReflection i).specialOrthogonalGroupCongr :=
+  (realCliffordCoordReflection i).continuous_specialOrthogonalGroupCongr_pi
 
-/-- **First-coordinate reflection conjugation on `SO(n + 1)`, bundled as a topological group
-automorphism.** -/
-def realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv (n : ℕ) :
-    QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0) ≃ₜ*
-      QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0) :=
-  (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongrContinuousMulEquivPi
+/-- **Coordinate-reflection conjugation on `SO(n)`, as a topological group automorphism.** -/
+def realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv {n : ℕ} (i : Fin n) :
+    QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+      QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) :=
+  (realCliffordCoordReflection i).specialOrthogonalGroupCongrContinuousMulEquivPi
 
-/-- Evaluating `realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv` applies
-`(realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr`. -/
+/-- Evaluating `realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv` applies
+`(realCliffordCoordReflection i).specialOrthogonalGroupCongr`. -/
 @[simp]
-theorem realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv_apply (n : ℕ)
-    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0)) :
-    realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n g =
-      (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr g :=
-  (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongrContinuousMulEquivPi_apply g
+theorem realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv_apply {n : ℕ} (i : Fin n)
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
+    realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv i g =
+      (realCliffordCoordReflection i).specialOrthogonalGroupCongr g :=
+  (realCliffordCoordReflection i).specialOrthogonalGroupCongrContinuousMulEquivPi_apply g
 
-/-- `realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv` is an involution. -/
+/-- `realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv` is an involution. -/
 @[simp]
-theorem realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv_symm (n : ℕ) :
-    (realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n).symm =
-      realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n := by
-  simp [realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv]
+theorem realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv_symm {n : ℕ} (i : Fin n) :
+    (realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv i).symm =
+      realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv i := by
+  simp [realCliffordCoordReflectionSpecialOrthogonalContinuousMulEquiv]
 
 end
 

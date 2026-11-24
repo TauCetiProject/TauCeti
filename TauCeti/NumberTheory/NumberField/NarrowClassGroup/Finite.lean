@@ -52,7 +52,7 @@ theorem isPGroup_two_ker_toClassGroup :
     IsPGroup 2 (MonoidHom.ker (toClassGroup (K := K))) := fun g =>
   ⟨1, Subtype.ext <| by
     rw [pow_one, SubmonoidClass.coe_pow, OneMemClass.coe_one]
-    exact sq_eq_one_of_mem_ker_toClassGroup g.2⟩
+    exact sq_eq_one_of_mem_ker_toClassGroup g.property⟩
 
 /-- The narrow class number is the ordinary class number times the order of the kernel of the
 forgetful map `Cl⁺(K) → Cl(K)`. -/

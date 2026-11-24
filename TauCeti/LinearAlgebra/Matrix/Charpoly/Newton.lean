@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 
@@ -39,12 +40,22 @@ the traces of the first `d` powers of a `d × d` matrix determine its characteri
   same statement for an endomorphism of a finite free module.
 * `Matrix.trace_pow_eq_of_charpolyRev_eq`: over any commutative ring, `det (1 - X A)` determines
   the traces of all positive powers of `A`.
+* `Matrix.trace_pow_eq_of_charpoly_eq`: over any commutative ring, the characteristic polynomial
+  determines the traces of all powers of `A`.
 * `Matrix.coeff_charpolyRev_eq_of_trace_pow_eq`, `Matrix.charpolyRev_eq_iff_trace_pow_eq`,
   `Matrix.charpoly_eq_iff_trace_pow_eq`: conversely, without additive torsion, the traces of the
   positive powers determine `det (1 - X A)` and the characteristic polynomial.
 * `Matrix.charpoly_eq_of_trace_pow_eq`, `LinearMap.charpoly_eq_of_trace_pow_eq`: without additive
   torsion, the traces of `A ^ j` for `0 < j ≤ d` already determine the characteristic polynomial
   of a `d × d` matrix, or of an endomorphism of a free module of rank `d`.
+* `LinearMap.trace_pow_eq_of_charpoly_eq`, `LinearMap.charpoly_eq_iff_trace_pow_eq`: the same
+  comparisons for endomorphisms of finite free modules.
+* `Matrix.charpoly_eq_of_sq_eq_one`, `LinearMap.charpoly_eq_of_sq_eq_one`: without additive
+  torsion, an involution has characteristic polynomial `(X - 1) ^ a * (X + 1) ^ b` whenever
+  `a + b = d` and `a - b` is its trace.
+* `Matrix.pow_card_eq_zero_of_trace_pow_eq_zero` and
+  `LinearMap.pow_finrank_eq_zero_of_trace_pow_eq_zero`: without additive torsion, if these traces
+  all vanish then `A ^ d = 0`, by `Matrix.pow_eq_zero_of_charpoly_eq_X_pow`.
 
 ## References
 
@@ -136,6 +147,17 @@ theorem trace_pow_eq_of_charpolyRev_eq {A : Matrix n n R} {B : Matrix m m R}
     sum_congr rfl fun i hi ↦ by rw [ih (i + 1) (by have := mem_range.1 hi; omega) (by omega)]
   linear_combination hA - hB - hsum
 
+/-- Over any commutative ring, matrices with the same characteristic polynomial, possibly of
+different sizes, have the same traces of all powers. -/
+theorem trace_pow_eq_of_charpoly_eq {A : Matrix n n R} {B : Matrix m m R}
+    (h : A.charpoly = B.charpoly) (j : ℕ) : (A ^ j).trace = (B ^ j).trace := by
+  nontriviality R
+  rcases j.eq_zero_or_pos with rfl | hj
+  · have hnm := congrArg natDegree h
+    rw [charpoly_natDegree_eq_dim, charpoly_natDegree_eq_dim] at hnm
+    simp [hnm]
+  exact trace_pow_eq_of_charpolyRev_eq (by rw [← reverse_charpoly, ← reverse_charpoly, h]) hj
+
 /-- Without additive torsion in the scalars, the traces of `A ^ j` for `0 < j ≤ r` determine the
 `r`-th coefficient of `det (1 - X A)`. -/
 theorem coeff_charpolyRev_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R}
@@ -183,6 +205,34 @@ theorem charpoly_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R} {B :
     · rw [coeff_charpolyRev_eq_zero A hr, coeff_charpolyRev_eq_zero B (hnm ▸ hr)]
   exact (charpolyRev_eq_charpolyRev_iff hnm).1 hrev
 
+/-- Without additive torsion in the scalars, a `d × d` matrix `A` whose powers `A ^ j` for
+`0 < j ≤ d` all have trace zero satisfies `A ^ d = 0`. Its characteristic polynomial is then
+`X ^ d`, so this is the Cayley–Hamilton theorem. -/
+theorem pow_card_eq_zero_of_trace_pow_eq_zero [IsAddTorsionFree R] {A : Matrix n n R}
+    (h : ∀ j, 0 < j → j ≤ Fintype.card n → (A ^ j).trace = 0) : A ^ Fintype.card n = 0 := by
+  refine pow_eq_zero_of_charpoly_eq_X_pow ?_
+  rw [← charpoly_zero]
+  exact charpoly_eq_of_trace_pow_eq rfl fun j hj hjn ↦ by
+    rw [h j hj hjn, zero_pow hj.ne', trace_zero]
+
+/-- Without additive torsion in the scalars, if `A ^ 2 = 1`, then the characteristic polynomial of
+`A` is `(X - 1) ^ a * (X + 1) ^ b` for any `a` and `b` with `a + b = d` and `a - b = tr A`. -/
+theorem charpoly_eq_of_sq_eq_one [IsAddTorsionFree R] {A : Matrix n n R} (hA : A ^ 2 = 1)
+    {a b : ℕ} (hab : a + b = Fintype.card n) (htr : (a : R) - b = A.trace) :
+    A.charpoly = (X - 1) ^ a * (X + 1) ^ b := by
+  -- Compare `A` with the diagonal matrix with `a` entries `1` and `b` entries `-1`.
+  let D : Matrix (Fin a ⊕ Fin b) (Fin a ⊕ Fin b) R := diagonal (Sum.elim (fun _ ↦ 1) fun _ ↦ -1)
+  have hD : D.charpoly = (X - 1) ^ a * (X + 1) ^ b := by
+    simp [D, charpoly_diagonal, Fintype.prod_sum_type, sub_eq_add_neg]
+  have hDtrace (j : ℕ) : (D ^ j).trace = a + (-1) ^ j * b := by
+    simp [D, diagonal_pow, trace_diagonal, Fintype.sum_sum_type, mul_comm]
+  rw [← hD]
+  refine charpoly_eq_of_trace_pow_eq (by simp [hab]) fun j _ _ ↦ ?_
+  rw [hDtrace]
+  obtain ⟨m, rfl | rfl⟩ := Nat.even_or_odd' j
+  · simp [pow_mul, hA, ← hab]
+  · simp [pow_succ, pow_mul, hA, ← htr, sub_eq_add_neg]
+
 end Matrix
 
 namespace LinearMap
@@ -200,6 +250,16 @@ theorem mul_coeff_reverse_charpoly_eq_neg_sum (f : Module.End R M) (r : ℕ) :
   simp only [trace_eq_matrix_trace R (Module.Free.chooseBasis R M), ← LinearMap.toMatrix_pow]
   exact Matrix.mul_coeff_charpolyRev_eq_neg_sum _ r
 
+/-- Over any commutative ring, endomorphisms of finite free modules with the same characteristic
+polynomial have the same traces of all powers. The modules may be different. -/
+theorem trace_pow_eq_of_charpoly_eq {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
+    [Module.Finite R N] {f : Module.End R M} {g : Module.End R N} (h : f.charpoly = g.charpoly)
+    (j : ℕ) : trace R M (f ^ j) = trace R N (g ^ j) := by
+  rw [charpoly_def, charpoly_def] at h
+  simp only [trace_eq_matrix_trace R (Module.Free.chooseBasis R M),
+    trace_eq_matrix_trace R (Module.Free.chooseBasis R N), ← LinearMap.toMatrix_pow]
+  exact Matrix.trace_pow_eq_of_charpoly_eq h j
+
 /-- Without additive torsion in the scalars, the traces of `f ^ j` for `0 < j ≤ d` determine the
 characteristic polynomial of an endomorphism `f` of a free module of rank `d`. -/
 theorem charpoly_eq_of_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
@@ -213,5 +273,42 @@ theorem charpoly_eq_of_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [M
     Module.finrank_eq_card_chooseBasisIndex] at h hMN
   rw [charpoly_def, charpoly_def]
   exact Matrix.charpoly_eq_of_trace_pow_eq hMN h
+
+/-- Without additive torsion in the scalars, an endomorphism `f` of a free module of rank `d`
+whose powers `f ^ j` for `0 < j ≤ d` all have trace zero satisfies `f ^ d = 0`. -/
+theorem pow_finrank_eq_zero_of_trace_pow_eq_zero [IsAddTorsionFree R] {f : Module.End R M}
+    (h : ∀ j, 0 < j → j ≤ Module.finrank R M → trace R M (f ^ j) = 0) :
+    f ^ Module.finrank R M = 0 := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have := Module.subsingleton R M
+    exact Subsingleton.elim _ _
+  let b := Module.Free.chooseBasis R M
+  simp only [trace_eq_matrix_trace R b, ← LinearMap.toMatrix_pow,
+    Module.finrank_eq_card_chooseBasisIndex] at h ⊢
+  rw [← (toMatrix b b).map_eq_zero_iff, ← LinearMap.toMatrix_pow]
+  exact Matrix.pow_card_eq_zero_of_trace_pow_eq_zero h
+
+/-- Without additive torsion in the scalars, endomorphisms of free modules of the same finite rank
+have the same characteristic polynomial if and only if they have the same traces of all positive
+powers. -/
+theorem charpoly_eq_iff_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
+    [Module.Finite R N] [IsAddTorsionFree R] {f : Module.End R M} {g : Module.End R N}
+    (hMN : Module.finrank R M = Module.finrank R N) :
+    f.charpoly = g.charpoly ↔ ∀ j, 0 < j → trace R M (f ^ j) = trace R N (g ^ j) :=
+  ⟨fun h j _ ↦ trace_pow_eq_of_charpoly_eq h j, fun h ↦
+    charpoly_eq_of_trace_pow_eq hMN fun j hj _ ↦ h j hj⟩
+
+/-- Without additive torsion in the scalars, if `f ^ 2 = 1`, then the characteristic polynomial of
+`f` is `(X - 1) ^ a * (X + 1) ^ b` for any `a` and `b` with `a + b = finrank R M` and
+`a - b = tr f`. -/
+theorem charpoly_eq_of_sq_eq_one [IsAddTorsionFree R] {f : Module.End R M} (hf : f ^ 2 = 1)
+    {a b : ℕ} (hab : a + b = Module.finrank R M) (htr : (a : R) - b = trace R M f) :
+    f.charpoly = (X - 1) ^ a * (X + 1) ^ b := by
+  nontriviality R
+  let e := Module.Free.chooseBasis R M
+  rw [charpoly_def]
+  refine Matrix.charpoly_eq_of_sq_eq_one ?_ (by rw [hab, Module.finrank_eq_card_chooseBasisIndex])
+    (by rw [htr, trace_eq_matrix_trace R e])
+  rw [LinearMap.toMatrix_pow, hf, LinearMap.toMatrix_one]
 
 end LinearMap

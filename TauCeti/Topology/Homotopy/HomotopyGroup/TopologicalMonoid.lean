@@ -38,13 +38,9 @@ image of `φ` by the image of `g_*`, as for the loop space of a quaternionic pro
 For loops, `f = g = id`, the formula is the first half of the Eckmann--Hilton argument, the
 fundamental-group case of which is `FundamentalGroup.cast_map_prod_mul`.
 
-In a topological group `G`, two elements joined by a path induce homotopic inner automorphisms
-relative to `{1}` (`Joined.homotopicRel_conj`, `Joined.homotopicRel_id_conj` in
-`TauCeti.Topology.Homotopy.Homotopic.Conjugation`), so they induce the same action on `π_N(G, 1)`
-(`HomotopyGroup.map_conj_eq_of_joined`, `HomotopyGroup.mapHom_conj_eq_of_joined`). Inner
-conjugation by an element in the identity path component — and in particular by every element when
-`G` is path-connected — therefore acts as the identity on `π_N(G, 1)` in every dimension `N`
-(`HomotopyGroup.map_conj_eq_id_of_joined`, `HomotopyGroup.map_conj_eq_id`).
+In a topological group `G`, path-connected elements induce homotopic inner automorphisms relative
+to `{1}` (`Joined.homotopicRel_conj`), hence equal actions on `π_N(G, 1)`. Inner conjugation by an
+element joined to `1` therefore acts trivially on `π_N(G, 1)` in every dimension `N`.
 
 ## Main results
 
@@ -55,12 +51,9 @@ conjugation by an element in the identity path component — and in particular b
 * `HomotopyGroup.bijective_map_mul_of_bijective_comp`: the pointwise product is bijective on a
   homotopy group if `g_*` is injective with image the kernel of a homomorphism `φ`, and
   `φ ∘ f_*` is bijective.
-* `HomotopyGroup.map_conj_eq_of_joined`, `HomotopyGroup.mapHom_conj_eq_of_joined`: inner
-  conjugations along path-connected elements induce equal maps on `π_N(G, 1)`.
-* `HomotopyGroup.map_conj_eq_id_of_joined`, `HomotopyGroup.map_conj_apply_of_joined`,
-  `HomotopyGroup.mapHom_conj_eq_id_of_joined`, `HomotopyGroup.map_conj_eq_id`,
-  `HomotopyGroup.map_conj_apply`, `HomotopyGroup.mapHom_conj_eq_id`: inner conjugation by an
-  element joined to `1` acts trivially on `π_N(G, 1)`.
+* `HomotopyGroup.map_conj_eq_of_joined`, `HomotopyGroup.map_conj_eq_id_of_joined`,
+  `HomotopyGroup.map_conj_eq_id`, `HomotopyGroup.mapHom_conj_eq_id`: inner conjugation along paths
+  and in path-connected groups acts trivially on `π_N(G, 1)`.
 -/
 
 public section
@@ -184,21 +177,18 @@ section Conjugation
 
 variable {G : Type*} [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
 
-/-- Inner conjugations by two elements joined by a path induce the same function on every homotopy
-group at `1`. -/
+/-- Inner conjugations by path-connected elements induce the same map on `π_N(G, 1)`. -/
 theorem map_conj_eq_of_joined {w₁ w₂ : G} (hw : Joined w₁ w₂)
     (h₁ : (⟨MulAut.conj w₁, IsTopologicalGroup.continuous_conj w₁⟩ : C(G, G)) 1 = 1 :=
       (MulAut.conj w₁).map_one)
     (h₂ : (⟨MulAut.conj w₂, IsTopologicalGroup.continuous_conj w₂⟩ : C(G, G)) 1 = 1 :=
       (MulAut.conj w₂).map_one) :
     map (N := N) ⟨MulAut.conj w₁, IsTopologicalGroup.continuous_conj w₁⟩ h₁ =
-      map (N := N) ⟨MulAut.conj w₂, IsTopologicalGroup.continuous_conj w₂⟩ h₂ := by
-  have heq := map_eq_of_homotopicRel (N := N) (x := (1 : G)) (y := (1 : G)) h₁
-    (Set.mem_singleton (1 : G)) hw.homotopicRel_conj
-  exact heq.trans (funext (map_congr rfl _ h₂))
+      map (N := N) ⟨MulAut.conj w₂, IsTopologicalGroup.continuous_conj w₂⟩ h₂ :=
+  (map_eq_of_homotopicRel (N := N) (x := (1 : G)) (y := (1 : G)) h₁ (Set.mem_singleton (1 : G))
+    hw.homotopicRel_conj).trans (funext (map_congr rfl _ h₂))
 
-/-- Inner conjugations by two elements joined by a path induce the same homomorphism on
-positive-dimensional homotopy groups at `1`. -/
+/-- Inner conjugations by path-connected elements induce the same homomorphism on `π_N(G, 1)`. -/
 theorem mapHom_conj_eq_of_joined [DecidableEq N] [Nonempty N] {w₁ w₂ : G} (hw : Joined w₁ w₂)
     (h₁ : (⟨MulAut.conj w₁, IsTopologicalGroup.continuous_conj w₁⟩ : C(G, G)) 1 = 1 :=
       (MulAut.conj w₁).map_one)
@@ -208,8 +198,7 @@ theorem mapHom_conj_eq_of_joined [DecidableEq N] [Nonempty N] {w₁ w₂ : G} (h
       mapHom (N := N) ⟨MulAut.conj w₂, IsTopologicalGroup.continuous_conj w₂⟩ h₂ :=
   MonoidHom.ext fun a ↦ congrFun (map_conj_eq_of_joined hw h₁ h₂) a
 
-/-- **Inner conjugation by an element joined by a path to `1` induces the identity function on
-every homotopy group at `1`.** -/
+/-- **Inner conjugation by an element joined to `1` induces `id` on `π_N(G, 1)`.** -/
 theorem map_conj_eq_id_of_joined {w : G} (hw : Joined (1 : G) w)
     (h : (⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ : C(G, G)) 1 = 1 :=
       (MulAut.conj w).map_one) :
@@ -219,17 +208,14 @@ theorem map_conj_eq_id_of_joined {w : G} (hw : Joined (1 : G) w)
     (Set.mem_singleton (1 : G)) hw.homotopicRel_id_conj
   exact (map_congr rfl h _ a).trans ((congrFun heq a).symm.trans (map_id_apply a))
 
-/-- **Inner conjugation by an element joined by a path to `1` fixes every homotopy class at
-`1`.** -/
+/-- **Inner conjugation by an element joined to `1` fixes every homotopy class at `1`.** -/
 theorem map_conj_apply_of_joined {w : G} (hw : Joined (1 : G) w)
     (h : (⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ : C(G, G)) 1 = 1 :=
-      (MulAut.conj w).map_one)
-    (a : HomotopyGroup N G 1) :
+      (MulAut.conj w).map_one) (a : HomotopyGroup N G 1) :
     map ⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ h a = a :=
   congrFun (map_conj_eq_id_of_joined hw h) a
 
-/-- Inner conjugation by an element joined by a path to `1` induces the identity homomorphism on
-positive-dimensional homotopy groups at `1`. -/
+/-- Inner conjugation by an element joined to `1` induces `MonoidHom.id` on `π_N(G, 1)`. -/
 theorem mapHom_conj_eq_id_of_joined [DecidableEq N] [Nonempty N] {w : G} (hw : Joined (1 : G) w)
     (h : (⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ : C(G, G)) 1 = 1 :=
       (MulAut.conj w).map_one) :
@@ -237,8 +223,7 @@ theorem mapHom_conj_eq_id_of_joined [DecidableEq N] [Nonempty N] {w : G} (hw : J
       MonoidHom.id (HomotopyGroup N G 1) :=
   MonoidHom.ext (map_conj_apply_of_joined hw h)
 
-/-- **In a path-connected topological group, inner conjugation induces the identity function on
-every homotopy group at `1`.** -/
+/-- **In a path-connected topological group, inner conjugation induces `id` on `π_N(G, 1)`.** -/
 @[simp]
 theorem map_conj_eq_id [PathConnectedSpace G] (w : G)
     (h : (⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ : C(G, G)) 1 = 1 :=
@@ -246,20 +231,17 @@ theorem map_conj_eq_id [PathConnectedSpace G] (w : G)
     map (N := N) ⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ h = id :=
   map_conj_eq_id_of_joined (PathConnectedSpace.joined 1 w) h
 
+-- Not `@[simp]`: `map_conj_eq_id` followed by `id_eq` already simplifies the LHS to `a`.
 /-- **In a path-connected topological group, inner conjugation fixes every homotopy class at
-`1`.**
-
-This is not a `@[simp]` lemma because `map_conj_eq_id` followed by `id_eq` already simplifies the
-left-hand side to `a`. -/
+`1`.** -/
 theorem map_conj_apply [PathConnectedSpace G] (w : G)
     (h : (⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ : C(G, G)) 1 = 1 :=
-      (MulAut.conj w).map_one)
-    (a : HomotopyGroup N G 1) :
+      (MulAut.conj w).map_one) (a : HomotopyGroup N G 1) :
     map ⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ h a = a :=
   map_conj_apply_of_joined (PathConnectedSpace.joined 1 w) h a
 
-/-- In a path-connected topological group, inner conjugation induces the identity homomorphism on
-positive-dimensional homotopy groups at `1`. -/
+/-- In a path-connected topological group, inner conjugation induces `MonoidHom.id` on
+`π_N(G, 1)`. -/
 @[simp]
 theorem mapHom_conj_eq_id [DecidableEq N] [Nonempty N] [PathConnectedSpace G] (w : G)
     (h : (⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ : C(G, G)) 1 = 1 :=

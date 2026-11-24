@@ -83,15 +83,30 @@ theorem continuous_realSpinThreeEquivQuaternionUnitary :
   have hfun : Subtype.val ∘ (realSpinThreeEquivQuaternionUnitary :
       spinGroup (realCliffordForm 3 0) → unitary ℍ[ℝ]) =
       fun s ↦ realCliffordThreeZeroEvenEquivQuaternion
-        (CliffordAlgebra.spinGroupToEven (realCliffordForm 3 0) s) := by
+        (CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 0)
+          (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 0) s)) := by
     funext s
-    rw [Function.comp_apply, coe_realSpinThreeEquivQuaternionUnitary_apply,
-      CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
+    exact coe_realSpinThreeEquivQuaternionUnitary_apply s
   rw [hfun]
   let _ : IsTopologicalAddGroup (CliffordAlgebra.even (realCliffordForm 3 0)) :=
     (CliffordAlgebra.even (realCliffordForm 3 0)).toSubmodule.isTopologicalAddGroup
+  have hinner : Continuous (fun s ↦
+      CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 0)
+        (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 0) s)) := by
+    apply continuous_induced_rng.2
+    have hinnerFun : Subtype.val ∘ (fun s ↦
+        CliffordAlgebra.evenUnitaryGroupEvenPart (realCliffordForm 3 0)
+          (CliffordAlgebra.spinGroupToEvenUnitary (realCliffordForm 3 0) s)) =
+        fun s : spinGroup (realCliffordForm 3 0) ↦
+          (s : CliffordAlgebra (realCliffordForm 3 0)) := by
+      funext s
+      simp only [Function.comp_apply, CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
+        CliffordAlgebra.coe_spinGroupToEvenUnitary_apply]
+      rfl
+    rw [hinnerFun]
+    exact continuous_subtypeVal
   exact realCliffordThreeZeroEvenEquivQuaternion.toLinearMap.continuous_of_finiteDimensional.comp
-    (CliffordAlgebra.continuous_spinGroupToEven (realCliffordForm 3 0))
+    hinner
 
 /-- Compact `Spin(3)` is continuously multiplicatively equivalent to the unit Hamilton
 quaternions. -/

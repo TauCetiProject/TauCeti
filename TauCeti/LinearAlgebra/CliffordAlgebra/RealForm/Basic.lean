@@ -68,6 +68,9 @@ unfolding.
   `(q, p)` form, with coordinate equations `..._pos_of_neg` and `..._neg_of_pos`.
 * `TauCeti.CliffordAlgebra.realCliffordEvenToNeg p q`: the even-algebra comparison into
   the Clifford algebra of the negated signature.
+* `TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg p q`: the algebra isomorphism
+  `even (realCliffordForm p q) ≃ₐ[ℝ] even (realCliffordForm q p)`, the composite of
+  `CliffordAlgebra.evenEquivEvenNeg` with the even-algebra map of `realCliffordFormNegIsometry p q`.
 * `TauCeti.realCliffordSplitIsometry`: the shared splitter into two standard signature blocks.
 * `TauCeti.realCliffordFormCongr`: the coordinate isometry between equal signatures.
 * `TauCeti.realCliffordBlockIsometry`: the splitting of the `(p, q)` form into its
@@ -76,8 +79,6 @@ unfolding.
   coordinate from a standard signature form.
 * `TauCeti.realCliffordFirstSplitIsometry`: the isometry which separates the first coordinate from
   `realCliffordForm (n + 1) 0` via `Fin.cons`.
-* `TauCeti.realCliffordFirstReflectionIsometry`: the involutive isometry of
-  `realCliffordForm (n + 1) 0` negating the first coordinate and fixing `Fin.tail`.
 * `TauCeti.realCliffordFormZeroReindex` and `TauCeti.realCliffordBlockSwapIsometry`: coordinate
   reindexing of positive-definite signature forms along `Fin m ≃ Fin n` and its specialization to
   the block swap `finAddFlip`.
@@ -100,6 +101,8 @@ unfolding.
   standard real sum-of-squares form.
 * `TauCeti.finrank_cliffordAlgebra_realCliffordForm`:
   `finrank ℝ (CliffordAlgebra (realCliffordForm p q)) = 2 ^ (p + q)`.
+* `TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg_ι`: the even comparison sends a bivector
+  `ι a * ι b` to minus the transported bivector.
 
 ## References
 
@@ -144,12 +147,9 @@ theorem realCliffordWeight_of_le {p q : ℕ} {i : Fin (p + q)} (hi : p ≤ (i : 
 are isometric. -/
 theorem equivalent_realSignatureForm_realCliffordForm (p q : ℕ) :
     (_root_.QuadraticForm.realSignatureForm p q).Equivalent (realCliffordForm p q) := by
-  have hweight : realCliffordWeight p q ∘ finSumFinEquiv =
-      Sum.elim (fun _ ↦ (1 : ℝ)) fun _ ↦ -1 := by
-    funext x
-    cases x <;> simp
   rw [_root_.QuadraticForm.realSignatureForm_def, realCliffordForm_def]
-  exact _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv hweight
+  exact _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq finSumFinEquiv fun x ↦ by
+    cases x <;> simp
 
 @[simp]
 theorem realCliffordWeight_mul_self (p q : ℕ) (i : Fin (p + q)) :
@@ -179,7 +179,7 @@ theorem realCliffordForm_zero_eq_weightedSumSquares_one (n : ℕ) :
 
 /-- The signature forms are nondegenerate. -/
 theorem nondegenerate_realCliffordForm (p q : ℕ) : (realCliffordForm p q).Nondegenerate :=
-  QuadraticMap.nondegenerate_weightedSumSquares fun i ↦
+  QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun i ↦
     (realCliffordWeight_ne_zero p q i).isUnit.isRegular
 
 /-- The standard signature form with no negative coordinates is positive definite. -/
@@ -312,6 +312,41 @@ theorem realCliffordEvenToNeg_ι (p q : ℕ) (a b : Fin (p + q) → ℝ) :
   rw [realCliffordEvenToNeg_apply, evenEquivEvenNeg_apply, evenToNeg_ι]
   simp only [Subalgebra.coe_neg, coe_even_ι_bilin, map_neg, map_mul,
     map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply]
+
+/-- The even Clifford algebras of signatures `(p, q)` and `(q, p)` are isomorphic: apply Mathlib's
+`CliffordAlgebra.evenEquivEvenNeg` and then the even-algebra map of the coordinate isometry
+`realCliffordFormNegIsometry p q`. A bivector `ι a * ι b` goes to minus the bivector of the
+transported vectors (`TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg_ι`). -/
+noncomputable def realCliffordEvenEquivNeg (p q : ℕ) :
+    even (realCliffordForm p q) ≃ₐ[ℝ] even (realCliffordForm q p) :=
+  (evenEquivEvenNeg (realCliffordForm p q)).trans
+    (evenEquivOfIsometry (realCliffordFormNegIsometry p q))
+
+/-- `realCliffordEvenEquivNeg p q` applies `CliffordAlgebra.evenEquivEvenNeg` followed by the
+even-algebra map of `realCliffordFormNegIsometry p q`. -/
+theorem realCliffordEvenEquivNeg_apply (p q : ℕ) (x : even (realCliffordForm p q)) :
+    realCliffordEvenEquivNeg p q x =
+      evenEquivOfIsometry (realCliffordFormNegIsometry p q)
+        (evenEquivEvenNeg (realCliffordForm p q) x) :=
+  (rfl)
+
+/-- The Clifford value of `realCliffordEvenEquivNeg p q x` is the even comparison
+`realCliffordEvenToNeg p q x`. -/
+theorem coe_realCliffordEvenEquivNeg_apply (p q : ℕ) (x : even (realCliffordForm p q)) :
+    (realCliffordEvenEquivNeg p q x : CliffordAlgebra (realCliffordForm q p)) =
+      realCliffordEvenToNeg p q x := by
+  rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, coe_evenEquivOfIsometry_apply,
+    equivOfIsometry_apply, realCliffordEvenToNeg_apply]
+
+/-- `realCliffordEvenEquivNeg` sends a bivector `ι a * ι b` to minus the bivector of the vectors
+transported by `realCliffordFormNegIsometry p q`. -/
+@[simp]
+theorem realCliffordEvenEquivNeg_ι (p q : ℕ) (a b : Fin (p + q) → ℝ) :
+    realCliffordEvenEquivNeg p q ((even.ι (realCliffordForm p q)).bilin a b) =
+      -(even.ι (realCliffordForm q p)).bilin (realCliffordFormNegIsometry p q a)
+        (realCliffordFormNegIsometry p q b) := by
+  rw [realCliffordEvenEquivNeg, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι,
+    map_neg, evenEquivOfIsometry_ι]
 
 end CliffordAlgebra
 
@@ -545,41 +580,6 @@ theorem realCliffordFirstSplitIsometry_single_zero (n : ℕ) (r : ℝ) :
   have h : (Pi.single 0 r : Fin (n + 1) → ℝ) = Fin.cons r 0 :=
     funext (Fin.cases (by simp) (by simp))
   rw [h, realCliffordFirstSplitIsometry_cons]
-
-/-- **First-coordinate reflection isometry**: the involutive quadratic isometry of
-`realCliffordForm (n + 1) 0` negating the `0`-th coordinate and fixing all remaining coordinates.
-In the Lipschitz group (`CliffordAlgebra.lipschitzGroup`) this corresponds to twisted conjugation
-by the unit vector `Pi.single 0 1`. -/
-def realCliffordFirstReflectionIsometry (n : ℕ) :
-    (realCliffordForm (n + 1) 0).IsometryEquiv (realCliffordForm (n + 1) 0) :=
-  _root_.QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares
-    (Fin.cons (-1 : ℝˣ) fun _ ↦ 1) fun i ↦ by
-      refine Fin.cases ?_ (fun _ ↦ ?_) i <;> simp
-
-/-- Evaluating `realCliffordFirstReflectionIsometry` negates the `0`-th coordinate and keeps
-`Fin.tail`. -/
-@[simp]
-theorem realCliffordFirstReflectionIsometry_apply (n : ℕ) (v : Fin (n + 1) → ℝ) :
-    realCliffordFirstReflectionIsometry n v = Fin.cons (-v 0) (Fin.tail v) := by
-  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-  ext i
-  refine Fin.cases ?_ (fun _ ↦ ?_) i
-  · simp [realCliffordFirstReflectionIsometry,
-      _root_.QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares]
-  · simp [realCliffordFirstReflectionIsometry,
-      _root_.QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares, Fin.tail]
-
-/-- `realCliffordFirstReflectionIsometry` is an involution. -/
-@[simp]
-theorem realCliffordFirstReflectionIsometry_symm (n : ℕ) :
-    (realCliffordFirstReflectionIsometry n).symm = realCliffordFirstReflectionIsometry n := by
-  apply DFunLike.ext
-  intro v
-  rw [QuadraticMap.IsometryEquiv.symm_apply_eq]
-  ext i
-  refine Fin.cases ?_ (fun _ ↦ ?_) i
-  · simp
-  · simp [Fin.tail]
 
 -- Not `@[simp]`: `realCliffordSplitIsometry p q 0 0` has domain `realCliffordForm (p + q) (0 + 0)`,
 -- so `Nat.add_zero` simplifies `0 + 0` inside `@DFunLike.coe`'s type parameter (`simpNF`).

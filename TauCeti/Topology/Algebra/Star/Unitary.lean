@@ -31,7 +31,7 @@ It needs only `ContinuousStar M` beyond a topological star monoid, with no separ
 continuity-of-multiplication assumption.
 
 This is the closedness hypothesis that the Lie algebra of a closed subgroup of `Mˣ` is computed
-from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
+from; see `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 
 ## Main results
 
@@ -57,43 +57,42 @@ theorem continuous_toUnits {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace 
     [ContinuousStar M] : Continuous (toUnits : unitary M → Mˣ) := by
   refine Units.continuous_iff.mpr ⟨?_, ?_⟩
   · simpa only [Function.comp_def, val_toUnits_apply] using
-      (continuous_subtype_val : Continuous fun u : unitary M ↦ (u : M))
-  · refine continuous_subtype_val.star.congr fun u ↦ ?_
+      (continuous_subtypeVal : Continuous fun u : unitary M ↦ (u : M))
+  · refine continuous_subtypeVal.star.congr fun u ↦ ?_
     simp only [← map_inv, val_toUnits_apply, ← star_eq_inv, coe_star, Pi.star_apply]
+
+section Prod
+
+variable (A B : Type*) [Monoid A] [Monoid B] [StarMul A] [StarMul B]
+  [TopologicalSpace A] [TopologicalSpace B]
 
 /-- Unitary elements in a product of topological star monoids form the product of unitary
 subgroups as a topological group, upgrading `Unitary.prodEquiv`. -/
-def prodContinuousMulEquiv (A B : Type*) [Monoid A] [Monoid B] [StarMul A] [StarMul B]
-    [TopologicalSpace A] [TopologicalSpace B] :
-    unitary (A × B) ≃ₜ* unitary A × unitary B where
+def prodContinuousMulEquiv : unitary (A × B) ≃ₜ* unitary A × unitary B where
   toMulEquiv := prodEquiv A B
   continuous_toFun :=
     Continuous.prodMk
-      (continuous_induced_rng.mpr <|
-        (continuous_fst.comp continuous_subtype_val).congr fun u ↦
-          (congrArg Prod.fst (coe_prodEquiv_apply A B u)).symm)
-      (continuous_induced_rng.mpr <|
-        (continuous_snd.comp continuous_subtype_val).congr fun u ↦
-          (congrArg Prod.snd (coe_prodEquiv_apply A B u)).symm)
+      (continuous_induced_rng.mpr <| (continuous_fst.comp continuous_subtypeVal).congr fun u ↦
+        (congrArg Prod.fst (coe_prodEquiv_apply A B u)).symm)
+      (continuous_induced_rng.mpr <| (continuous_snd.comp continuous_subtypeVal).congr fun u ↦
+        (congrArg Prod.snd (coe_prodEquiv_apply A B u)).symm)
   continuous_invFun :=
     continuous_induced_rng.mpr <|
-      ((continuous_subtype_val.comp continuous_fst).prodMk
-        (continuous_subtype_val.comp continuous_snd)).congr fun u ↦
+      ((continuous_subtypeVal.comp continuous_fst).prodMk
+        (continuous_subtypeVal.comp continuous_snd)).congr fun u ↦
           (coe_prodEquiv_symm_apply A B u).symm
 
 /-- `Unitary.prodContinuousMulEquiv` evaluates as `Unitary.prodEquiv`. -/
 @[simp]
-theorem prodContinuousMulEquiv_apply (A B : Type*) [Monoid A] [Monoid B] [StarMul A] [StarMul B]
-    [TopologicalSpace A] [TopologicalSpace B] (u : unitary (A × B)) :
-    prodContinuousMulEquiv A B u = prodEquiv A B u :=
-  (rfl)
+theorem prodContinuousMulEquiv_apply (u : unitary (A × B)) :
+    prodContinuousMulEquiv A B u = prodEquiv A B u := (rfl)
 
 /-- The inverse of `Unitary.prodContinuousMulEquiv` evaluates as `(Unitary.prodEquiv A B).symm`. -/
 @[simp]
-theorem prodContinuousMulEquiv_symm_apply (A B : Type*) [Monoid A] [Monoid B] [StarMul A]
-    [StarMul B] [TopologicalSpace A] [TopologicalSpace B] (u : unitary A × unitary B) :
-    (prodContinuousMulEquiv A B).symm u = (prodEquiv A B).symm u :=
-  (rfl)
+theorem prodContinuousMulEquiv_symm_apply (u : unitary A × unitary B) :
+    (prodContinuousMulEquiv A B).symm u = (prodEquiv A B).symm u := (rfl)
+
+end Prod
 
 end Unitary
 
@@ -105,7 +104,7 @@ def unitarySubgroupUnitsHomeomorph (M : Type*) [Monoid M] [StarMul M] [Topologic
   have hc : Continuous (unitarySubgroupUnitsEquiv : unitarySubgroup Mˣ → unitary M) := by
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, unitarySubgroupUnitsEquiv_apply_coe] using
-      (Units.continuous_val.comp (continuous_subtype_val (X := Mˣ)))
+      (Units.continuous_val.comp (continuous_subtypeVal (X := Mˣ)))
   have hc' : Continuous (unitarySubgroupUnitsEquiv.symm : unitary M → unitarySubgroup Mˣ) := by
     apply continuous_induced_rng.mpr
     simpa only [Function.comp_def, coe_unitarySubgroupUnitsEquiv_symm_apply] using

@@ -133,7 +133,7 @@ theorem exists_isFiniteType_mono_basicOpen [IsAffine X] {I : Type u} [Finite I] 
   obtain ⟨g, hg⟩ : IsUnit (X.presheaf.map (homOfLE (X.basicOpen_le f)).op f ^ n k) :=
     (X.toRingedSpace.isUnit_res_basicOpen f).pow (n k)
   let x : Γ(N', X.basicOpen f) := (t k).val (Opposite.op (X.basicOpen f))
-  refine ⟨(g⁻¹ : (Γ(X, X.basicOpen f))ˣ).1 • x, ?_⟩
+  refine ⟨(g⁻¹ : (Γ(X, X.basicOpen f))ˣ).val • x, ?_⟩
   have h : i.app _ x = N.presheaf.map (homOfLE (X.basicOpen_le f)).op (y k) := by
     have := congrArg (fun σ : N.sections ↦ σ.val (Opposite.op (X.basicOpen f))) (ht k)
     rwa [sectionsEquivTop_symm_val] at this
@@ -157,7 +157,7 @@ theorem exists_isFiniteType_mono_isIso_restrict_basicOpen [IsAffine X] {U : Sche
   have := finite_sections_of_isAffineOpen (N.restrict j) ⊤ (isAffineOpen_top _)
   obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := Γ(U, ⊤)) (M := Γ(N.restrict j, ⊤))
   obtain ⟨N', _, _, i, _, hi⟩ :=
-    exists_isFiniteType_mono_basicOpen f hf fun k : S ↦ (k.1 : Γ(N, j ''ᵁ ⊤))
+    exists_isFiniteType_mono_basicOpen f hf fun k : S ↦ (k.val : Γ(N, j ''ᵁ ⊤))
   refine ⟨N', inferInstance, inferInstance, i, inferInstance, ?_⟩
   let φ := (restrictFunctor j).map i
   -- `restrictFunctor` is a right adjoint, so it preserves monomorphisms.
@@ -218,7 +218,7 @@ theorem exists_isFiniteType_mono_isIso_restrict [IsAffine X] {N : X.Modules} [N.
   obtain ⟨N', _, _, i, _, hi⟩ := comb hs.toFinset fun f hf ↦ hs.mem_toFinset.mp hf
   refine ⟨N', inferInstance, inferInstance, i, inferInstance, ?_⟩
   -- The opens `W f` cover `V`, and `i` is an isomorphism over each of them.
-  let U : hs.toFinset → V.toScheme.Opens := fun f ↦ W f.1
+  let U : hs.toFinset → V.toScheme.Opens := fun f ↦ W f.val
   have hU : TopologicalSpace.IsOpenCover U := by
     refine eq_top_iff.mpr fun x _ ↦ ?_
     have hx : V.ι x ∈ V.ι.opensRange := ⟨x, rfl⟩
@@ -226,10 +226,10 @@ theorem exists_isFiniteType_mono_isIso_restrict [IsAffine X] {N : X.Modules} [N.
     obtain ⟨f, hf, hfx⟩ := Set.mem_iUnion₂.mp hx
     exact TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨f, hs.mem_toFinset.mpr hf⟩, hfx⟩
   refine (isIso_iff_of_isOpenCover hU _).mpr fun f ↦ ?_
-  have := hi f.1 f.2
-  have : IsIso ((restrictFunctor (W f.1).ι).map ((restrictFunctor V.ι).map i)) :=
-    (NatIso.isIso_map_iff (restrictFunctorComp (W f.1).ι V.ι) i).mp this
-  exact (NatIso.isIso_map_iff (restrictFunctorIsoPullback (W f.1).ι) _).mp this
+  have := hi f.val f.property
+  have : IsIso ((restrictFunctor (W f.val).ι).map ((restrictFunctor V.ι).map i)) :=
+    (NatIso.isIso_map_iff (restrictFunctorComp (W f.val).ι V.ι) i).mp this
+  exact (NatIso.isIso_map_iff (restrictFunctorIsoPullback (W f.val).ι) _).mp this
 
 /-- On an affine scheme, a quasi-coherent module whose global sections are finitely generated is
 a quotient of a free module of finite rank. -/
@@ -239,32 +239,18 @@ theorem exists_epi_free_of_finite [IsAffine X] (N : X.Modules) [N.IsQuasicoheren
       Epi π := by
   obtain ⟨S, hS⟩ := Module.Finite.fg_top (R := Γ(X, ⊤)) (M := Γ(N, ⊤))
   let F : X.Modules := SheafOfModules.free (S : Set Γ(N, ⊤))
-  let φ : F ⟶ N := N.freeHomEquiv.symm fun s ↦ N.sectionsEquivTop.symm s.1
+  let φ : F ⟶ N := N.freeHomEquiv.symm fun s ↦ N.sectionsEquivTop.symm s.val
   have : IsIso (image.ι φ) := by
     refine isIso_of_mono_of_surjective_sectionsFunctor_map_top _ ?_
     -- The sections functor applies `Hom.app ⊤`; state surjectivity in terms of the latter.
     change ∀ x : Γ(N, ⊤), ∃ y, (image.ι φ).app ⊤ y = x
     intro x
-    have hx : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)) := hS ▸ Submodule.mem_top
-    induction hx using Submodule.span_induction with
-    | mem s hs =>
-      refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
-        ?_⟩
-      rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac,
-        ← sectionsEquivTop_sectionsMap]
-      -- `freeHomEquiv_apply` is stated in sheaves of modules; restate it for `X.Modules`.
-      have : SheafOfModules.sectionsMap φ (SheafOfModules.freeSection ⟨s, hs⟩) =
-          N.freeHomEquiv φ ⟨s, hs⟩ :=
-        (SheafOfModules.freeHomEquiv_apply (M := N) φ ⟨s, hs⟩).symm
-      rw [this, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
-    | zero => exact ⟨0, map_zero _⟩
-    | add x y _ _ hx hy =>
-      obtain ⟨a, rfl⟩ := hx
-      obtain ⟨b, rfl⟩ := hy
-      exact ⟨a + b, map_add _ _ _⟩
-    | smul r x _ hx =>
-      obtain ⟨a, rfl⟩ := hx
-      exact ⟨r • a, Hom.app_smul _ _ _⟩
+    refine (image.ι φ).exists_app_eq_of_mem_span (fun s hs ↦ ?_)
+      (hS ▸ Submodule.mem_top : x ∈ Submodule.span Γ(X, ⊤) (S : Set Γ(N, ⊤)))
+    refine ⟨(factorThruImage φ).app ⊤ (F.sectionsEquivTop (SheafOfModules.freeSection ⟨s, hs⟩)),
+      ?_⟩
+    rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, image.fac]
+    exact app_freeHomEquiv_symm_freeSection N (fun s : (S : Set Γ(N, ⊤)) ↦ s.val) ⟨s, hs⟩
   refine ⟨(S : Set Γ(N, ⊤)), inferInstance, φ, ?_⟩
   have := epi_comp (factorThruImage φ) (image.ι φ)
   rwa [image.fac] at this
@@ -274,16 +260,16 @@ finite type. This is the converse of `Scheme.Modules.finite_sections_of_isAffine
 theorem isFiniteType_of_finite_sections (K : X.Modules) [K.IsQuasicoherent]
     (h : ∀ U : X.Opens, IsAffineOpen U → Module.Finite Γ(X, U) Γ(K, U)) : K.IsFiniteType := by
   refine TauCeti.AlgebraicGeometry.isFiniteType_of_isFiniteType_restrict_affineOpens K fun U ↦ ?_
-  have hU := U.2
+  have hU := U.property
   have : IsOpenImmersion hU.fromSpec := hU.isOpenImmersion_fromSpec
   let L := K.restrict hU.fromSpec
-  have := h U.1 hU
-  have : Module.Finite Γ(X, U.1) Γ(L, ⊤) := Module.Finite.equiv (K.fromSpecSectionsEquiv hU)
-  have : Module.Finite Γ(Spec Γ(X, U.1), ⊤) Γ(L, ⊤) :=
-    Module.Finite.of_restrictScalars_finite Γ(X, U.1) _ _
+  have := h U.val hU
+  have : Module.Finite Γ(X, U.val) Γ(L, ⊤) := Module.Finite.equiv (K.fromSpecSectionsEquiv hU)
+  have : Module.Finite Γ(Spec Γ(X, U.val), ⊤) Γ(L, ⊤) :=
+    Module.Finite.of_restrictScalars_finite Γ(X, U.val) _ _
   obtain ⟨I, _, π, hπ⟩ := exists_epi_free_of_finite L
   have : L.IsFiniteType := @isFiniteType_of_epi _ _ _ π hπ _
-  exact SheafOfModules.IsFiniteType.of_iso (R := U.1.toScheme.ringCatSheaf)
+  exact SheafOfModules.IsFiniteType.of_iso (R := U.val.toScheme.ringCatSheaf)
     (M := L.restrict hU.isoSpec.hom)
     (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app K).symm ≪≫
       (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app K)

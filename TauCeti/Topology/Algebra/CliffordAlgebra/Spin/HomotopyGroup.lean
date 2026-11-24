@@ -74,17 +74,18 @@ namespace CliffordAlgebra
 
 open TauCeti
 
-/-- **`πₖ(Spin(3)) ≅ πₖ(S³)` for `k ≥ 1`.** Compact `Spin(3)` is homeomorphic to the unit
-quaternion sphere `S³ ⊆ ℍ` via `TauCeti.realSpinThreeHomeomorphQuaternionSphere`. -/
-def realSpinThreeHomotopyGroupMulEquivSphere {N : Type*} [DecidableEq N] [Nonempty N] :
-    HomotopyGroup N (realCliffordSpinGroupZero 3) 1 ≃*
-      HomotopyGroup N (sphere (0 : ℍ[ℝ]) 1) 1 :=
+section SpinThree
+
+variable {N : Type*} [DecidableEq N] [Nonempty N]
+
+/-- **`πₖ(Spin(3)) ≅ πₖ(S³)` for `k ≥ 1`.** -/
+def realSpinThreeHomotopyGroupMulEquivSphere :
+    HomotopyGroup N (realCliffordSpinGroupZero 3) 1 ≃* HomotopyGroup N (sphere (0 : ℍ[ℝ]) 1) 1 :=
   HomotopyGroup.homeomorphMulEquivOfEq realSpinThreeHomeomorphQuaternionSphere
     realSpinThreeHomeomorphQuaternionSphere_one
 
-/-- `realSpinThreeHomotopyGroupMulEquivSphere` is the map induced on homotopy groups by
-`realSpinThreeHomeomorphQuaternionSphere`. -/
-theorem realSpinThreeHomotopyGroupMulEquivSphere_apply {N : Type*} [DecidableEq N] [Nonempty N]
+/-- Forward evaluation of `realSpinThreeHomotopyGroupMulEquivSphere`. -/
+theorem realSpinThreeHomotopyGroupMulEquivSphere_apply
     (a : HomotopyGroup N (realCliffordSpinGroupZero 3) 1) :
     realSpinThreeHomotopyGroupMulEquivSphere a =
       HomotopyGroup.map ⟨realSpinThreeHomeomorphQuaternionSphere,
@@ -92,15 +93,16 @@ theorem realSpinThreeHomotopyGroupMulEquivSphere_apply {N : Type*} [DecidableEq 
         realSpinThreeHomeomorphQuaternionSphere_one a := by
   rw [realSpinThreeHomotopyGroupMulEquivSphere, HomotopyGroup.homeomorphMulEquivOfEq_apply]
 
-/-- The inverse of `realSpinThreeHomotopyGroupMulEquivSphere` is induced by
-`realSpinThreeHomeomorphQuaternionSphere.symm`. -/
-theorem realSpinThreeHomotopyGroupMulEquivSphere_symm_apply {N : Type*} [DecidableEq N]
-    [Nonempty N] (a : HomotopyGroup N (sphere (0 : ℍ[ℝ]) 1) 1) :
+/-- Inverse of `realSpinThreeHomotopyGroupMulEquivSphere`. -/
+theorem realSpinThreeHomotopyGroupMulEquivSphere_symm_apply
+    (a : HomotopyGroup N (sphere (0 : ℍ[ℝ]) 1) 1) :
     realSpinThreeHomotopyGroupMulEquivSphere.symm a =
       HomotopyGroup.map ⟨realSpinThreeHomeomorphQuaternionSphere.symm,
         realSpinThreeHomeomorphQuaternionSphere.symm.continuous⟩
         realSpinThreeHomeomorphQuaternionSphere_symm_one a := by
   rw [realSpinThreeHomotopyGroupMulEquivSphere, HomotopyGroup.homeomorphMulEquivOfEq_symm_apply]
+
+end SpinThree
 
 /-- **Compact `Spin(3)` is `2`-connected at every basepoint**: `πₖ(Spin(3), g) = 0` for
 `k = Nat.card N < 3`. -/
