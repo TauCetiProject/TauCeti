@@ -35,14 +35,20 @@ and combined with the transformation of `Reg / #tors²` under `ψ`
 If moreover `ψ` and `ψ̂` induce the zero map on Shafarevich–Tate groups, then `Sha(E₁)[ψ]` and
 `Sha(E₂)[ψ̂]` are the whole groups `Sha(E₁)` and `Sha(E₂)`. When `Sha(E₂)` is finite, every
 nonzero morphism `f : E₁ → E₂` has a multiple that is an isogeny killing Sha in both directions,
-namely `ψ = #Sha(E₂) • f` (`TauCeti.Isogeny.Hom.exists_isogeny_shafarevichTateMap_eq_zero`).
+namely `ψ = #Sha(E₂) • f` (`TauCeti.Isogeny.Hom.exists_isogeny_shafarevichTateMap_eq_zero`); over a
+number field (and in particular over `ℚ`), `TauCeti.Isogeny.Hom.exists_isogeny_shaMap_eq_zero`
+states this in terms of `TauCeti.Isogeny.Hom.shaMap`, which does not depend on `τ`, and
+`TauCeti.Isogeny.bsdQuotient_div_bsdQuotient` and
+`TauCeti.Isogeny.Hom.exists_isogeny_bsdQuotient_div_bsdQuotient` take their vanishing hypotheses on
+`shaMap`.
 
-Over `ℚ`, with `Sha` finite, combining this with Cassels' global period–Tamagawa–Kummer product
-formula (`TauCeti.Isogeny.minimalRealPeriod_mul_tamagawaProduct_mul_kummerRatioProduct`),
+Over `ℚ`, for an arbitrary isogeny `φ : E₁ → E₂` with `Sha` finite, combining Cassels' global
+period–Tamagawa–Kummer product formula
+(`TauCeti.Isogeny.minimalRealPeriod_mul_tamagawaProduct_mul_kummerRatioProduct`),
 
   `Ω(E₁) · (∏_p c_p(E₁)) · φ.kummerRatioProduct = Ω(E₂) · (∏_p c_p(E₂))`,
 
-gives the master algebraic identity
+with the regulator transformation gives the master algebraic identity
 
   `E₁.bsdQuotient · #Sha(E₂) · φ.kummerRatioProduct · φ.dual.kummerRatio =`
   `  E₂.bsdQuotient · #Sha(E₁) · φ.kummerRatio`,
@@ -116,14 +122,17 @@ theorem bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
   have hreg := Hom.regulator_div_card_torsion_sq_mul_index_dual_div_card_ker_eq
     (f := Hom.ofIsogeny φ) (Hom.ofIsogeny_ne_zero φ)
   rw [Hom.dual_ofIsogeny] at hreg
-  have hk {W₁ W₂ : WeierstrassCurve.Affine ℚ} [W₁.IsElliptic] [W₂.IsElliptic]
-      (ψ : Isogeny W₁ W₂) : (ψ.kummerRatio : ℝ) =
-        ((Hom.ofIsogeny ψ).pointMapHom.range.index : ℝ) /
-          Nat.card (Hom.ofIsogeny ψ).pointMapHom.ker := by
-    rw [ψ.kummerRatio_def]
-    push_cast
-    rfl
-  rw [← hk φ, ← hk φ.dual] at hreg
+  have hk₁ : (φ.kummerRatio : ℝ) * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker =
+      (Hom.ofIsogeny φ).pointMapHom.range.index := by
+    exact_mod_cast φ.kummerRatio_mul_card_ker
+  have hk₂ : (φ.dual.kummerRatio : ℝ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker =
+      (Hom.ofIsogeny φ.dual).pointMapHom.range.index := by
+    exact_mod_cast φ.dual.kummerRatio_mul_card_ker
+  have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  have := (Hom.ofIsogeny φ.dual).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ.dual)
+  rw [← hk₁, ← hk₂,
+    mul_div_cancel_right₀ (φ.dual.kummerRatio : ℝ) (Nat.cast_ne_zero.2 Nat.card_pos.ne'),
+    mul_div_cancel_right₀ (φ.kummerRatio : ℝ) (Nat.cast_ne_zero.2 Nat.card_pos.ne')] at hreg
   rw [E₁.bsdQuotient_def, E₂.bsdQuotient_def]
   calc E₁.minimalRealPeriod * E₁.toAffine.regulator * Nat.card E₁.sha *
           E₁.tamagawaProduct (R := ℤ) /
@@ -229,21 +238,19 @@ theorem birchSwinnertonDyer_iff_of_bsdQuotient_eq (φ : Isogeny E₁.toAffine E�
     exact Hom.finrank_pointModTorsion_eq (f := Hom.ofIsogeny φ) (Hom.ofIsogeny_ne_zero φ)
   have hsha : Finite E₁.sha ↔ Finite E₂.sha :=
     (Hom.ofIsogeny φ).finite_sha_iff (Hom.ofIsogeny_ne_zero φ)
-  constructor
-  · intro h₁
+  have imp {A B : WeierstrassCurve ℚ} [A.IsElliptic] [B.IsElliptic]
+      (hL' : A.LFunction = B.LFunction)
+      (hrank' : Module.finrank ℤ A.toAffine.Point = Module.finrank ℤ B.toAffine.Point)
+      (hsha' : Finite B.sha → Finite A.sha)
+      (hq : ∀ [Finite A.sha] [Finite B.sha], A.bsdQuotient = B.bsdQuotient)
+      (hA : A.BirchSwinnertonDyer) : B.BirchSwinnertonDyer := by
     refine ⟨fun F U hF hU ↦ ?_, fun hF hU ↦ ?_⟩
-    · rw [← hrank]
-      exact h₁.analyticOrderAt_eq_finrank (by rwa [hL]) hU
-    · have : Finite E₁.sha := hsha.2 inferInstance
-      rw [← h]
-      exact h₁.leadingCoeff_eq_bsdQuotient (by rwa [hL]) hU
-  · intro h₂
-    refine ⟨fun F U hF hU ↦ ?_, fun hF hU ↦ ?_⟩
-    · rw [hrank]
-      exact h₂.analyticOrderAt_eq_finrank (by rwa [← hL]) hU
-    · have : Finite E₂.sha := hsha.1 inferInstance
-      rw [h]
-      exact h₂.leadingCoeff_eq_bsdQuotient (by rwa [← hL]) hU
+    · rw [← hrank']
+      exact hA.analyticOrderAt_eq_finrank (by rwa [hL']) hU
+    · have : Finite A.sha := hsha' inferInstance
+      rw [← hq]
+      exact hA.leadingCoeff_eq_bsdQuotient (by rwa [hL']) hU
+  exact ⟨imp hL hrank hsha.2 h, imp hL.symm hrank.symm hsha.1 fun {_ _} ↦ h.symm⟩
 
 /-- **Degree-one isogenies preserve the Birch–Swinnerton-Dyer quotient** when the Shafarevich–Tate
 groups are finite. -/
