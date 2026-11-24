@@ -17,7 +17,7 @@ For independent, uniformly sub-Gaussian real entries with second moments bounded
 one, a matrix with at least half as many rows as columns stretches every compressible unit
 vector by a constant times the square root of the row count, outside an exponentially small
 event. In particular the bound applies to an `(N - 1) × N` matrix for `N ≥ 2`, whose kernel
-contains the unit normals to the hyperplane spanned by its rows.
+is the orthogonal complement of the span of its rows.
 The approximation radius, allowed fraction of nonzero coordinates, and exponential rate
 depend only on the common variance proxy.
 
