@@ -64,6 +64,8 @@ linear, and the integral over `M` of `f^*θ` is `deg_y(f)`.
 * `TauCeti.degreeAtRegularValue_eq_of_isRegularValue`: the signed count does not depend on the
   regular value.
 * `TauCeti.degree_eq_degreeAtRegularValue`: the degree is the signed count at every regular value.
+* `TauCeti.degree_eq_ncard_of_isOrientationPreservingAt`: the degree of a map preserving
+  orientations along a fibre is the number of points of that fibre.
 * `TauCeti.surjective_of_degree_ne_zero`: a proper map of nonzero degree is surjective.
 * `TauCeti.degree_comp`: the degree of a composite is the product of the degrees.
 * `TauCeti.degree_eq_of_homotopy`: smoothly homotopic maps from a compact manifold have the same
@@ -173,6 +175,18 @@ theorem degree_eq_degreeAtRegularValue (o : Manifold.Orientation I M (Fin k))
   have h : ∃ y, IsRegularValue I J f y := ⟨y, hy⟩
   rw [degree_eq_degreeAtRegularValue_choose h]
   exact degreeAtRegularValue_eq_of_isRegularValue o o' hf hfp h.choose_spec hy
+
+/-- **The degree of an orientation-preserving map counts its fibres.** If a proper smooth map
+preserves the orientations at every point of the fibre over `y`, its derivatives there are
+invertible, so `y` is a regular value, and its degree is the number of points of that fibre. -/
+theorem degree_eq_ncard_of_isOrientationPreservingAt
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
+    (hf : ContMDiff I J ∞ f) (hfp : IsProperMap f) {y : N}
+    (h : ∀ x ∈ f ⁻¹' {y}, Manifold.Orientation.IsOrientationPreservingAt o o' f x) :
+    degree o o' f = (f ⁻¹' {y}).ncard := by
+  rw [degree_eq_degreeAtRegularValue o o' hf hfp (y := y) <| isRegularValue_iff.mpr
+    fun x hx ↦ isRegularPoint_iff.mpr (h x hx).isInvertible_mfderiv.surjective,
+    degreeAtRegularValue_eq_ncard h]
 
 /-- Pullback along a proper smooth map on top compactly supported cohomology, read through
 integration, is multiplication by the degree. -/

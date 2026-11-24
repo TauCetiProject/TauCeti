@@ -238,7 +238,7 @@ norm. -/
 theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
     eLpNormWkp p U k (fun z => A (f z)) ≤ ‖A‖ₑ * eLpNormWkp p U k f := by
   induction k generalizing F G with
-  | zero => exact MeasureTheory.eLpNorm_clm_comp_le A
+  | zero => exact A.eLpNorm_comp_le
   | succ k ih =>
     by_cases hA : A = 0
     · subst hA
@@ -250,7 +250,7 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
     have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
     rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
     gcongr ?_ + ?_
-    · exact MeasureTheory.eLpNorm_clm_comp_le A
+    · exact A.eLpNorm_comp_le
     · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
       refine le_iInf fun D => ?_
       rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]

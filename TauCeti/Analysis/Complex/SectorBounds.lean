@@ -12,14 +12,20 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 For a complex number `s` separated in argument from the negative real axis and a nonnegative
 real `t`, the norm of the translate `s + t` is bounded below by a fixed multiple of `‖s‖ + t`:
-`c * (‖s‖ + t) ≤ ‖s + t‖`, where `0 ≤ c ≤ 1` depends only on the angular separation. More
-sharply, `cos (arg z / 2) * (‖z‖ + t) ≤ ‖z + t‖` for every `z : ℂ` and `t : ℝ`, and on the
-closed sector `|arg z| ≤ π - δ` with `0 ≤ δ` one has `sin (δ / 2) * (‖z‖ + t) ≤ ‖z + t‖`
-(as well as `c = (1 - cos δ) / 2` for `t ≥ 0`). For `z` in the sector `Re z ≤ c ‖z‖`, `c < 1`,
-around the negative real axis, `(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`. These inequalities
-control reciprocal kernels in sectorial and Stieltjes integrals and resolvent symbols. A nonzero
-point of such a sector, with `0 < δ`, lies in the slit plane, and every sector
-`{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
+`√c * (‖s‖ + t) ≤ ‖s + t‖` whenever `(2c - 1) ‖s‖ ≤ re s` and `0 ≤ c ≤ 1`
+(`Complex.sqrt_mul_norm_add_le_norm_add_ofReal`), which sharpens `c * (‖s‖ + t) ≤ ‖s + t‖`
+(`Complex.mul_norm_add_le_norm_add_ofReal`). More sharply,
+`cos (arg z / 2) * (‖z‖ + t) ≤ ‖z + t‖` for every `z : ℂ` and `t : ℝ`, and on the closed sector
+`|arg z| ≤ π - δ` with `0 ≤ δ` the sharp constant is `sin (δ / 2)`
+(`Complex.sin_half_mul_norm_add_le_norm_add_ofReal_of_abs_arg_le`), strengthening the squared
+constant `(1 - cos δ) / 2 = sin (δ / 2) ^ 2` for `t ≥ 0`
+(`Complex.mul_norm_add_le_norm_add_ofReal_of_abs_arg_le`). For `z` in the sector
+`Re z ≤ c ‖z‖`, `c < 1`, around the negative real axis,
+`(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`, and in multiplicative form
+`(1 - max c (-1)) / 2 * (1 + ‖z‖ t) ≤ ‖1 - z t‖` (`Complex.mul_one_add_le_norm_one_sub_mul`).
+These inequalities control reciprocal kernels in sectorial and Stieltjes integrals and resolvent
+symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, and every
+sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
 (`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
 -/
 
@@ -29,22 +35,34 @@ open Complex Real
 
 namespace Complex
 
-/-- If `(2c - 1) ‖s‖ ≤ re s` with `0 ≤ c ≤ 1`, then `c * (‖s‖ + t) ≤ ‖s + t‖` for every
-nonnegative real `t`. -/
-theorem mul_norm_add_le_norm_add_ofReal {s : ℂ} {c t : ℝ}
+/-- If `(2c - 1) ‖s‖ ≤ re s` with `0 ≤ c ≤ 1`, then `√c * (‖s‖ + t) ≤ ‖s + t‖` for every
+nonnegative real `t`. This sharpens `Complex.mul_norm_add_le_norm_add_ofReal`. -/
+theorem sqrt_mul_norm_add_le_norm_add_ofReal {s : ℂ} {c t : ℝ}
     (hc : 0 ≤ c) (hc1 : c ≤ 1) (ht : 0 ≤ t)
     (hs : (2 * c - 1) * ‖s‖ ≤ s.re) :
-    c * (‖s‖ + t) ≤ ‖s + t‖ := by
+    Real.sqrt c * (‖s‖ + t) ≤ ‖s + t‖ := by
   have hsq : ‖s + t‖ ^ 2 = ‖s‖ ^ 2 + 2 * t * s.re + t ^ 2 := by
     simp only [Complex.sq_norm, normSq_apply, add_re, ofReal_re, add_im, ofReal_im, add_zero]
     ring
   have h : c * (‖s‖ + t) ^ 2 ≤ ‖s + t‖ ^ 2 := by
     nlinarith [mul_nonneg (sub_nonneg.mpr hc1) (sq_nonneg (‖s‖ - t)),
       mul_le_mul_of_nonneg_left hs (by positivity : 0 ≤ 2 * t)]
-  have hc2 : c ^ 2 ≤ c := by nlinarith
-  have h2 : (c * (‖s‖ + t)) ^ 2 ≤ ‖s + t‖ ^ 2 := by
-    nlinarith [mul_le_mul_of_nonneg_right hc2 (sq_nonneg (‖s‖ + t))]
-  nlinarith [norm_nonneg (s + t)]
+  have h2 : (Real.sqrt c * (‖s‖ + t)) ^ 2 ≤ ‖s + t‖ ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt hc]
+    exact h
+  nlinarith [norm_nonneg (s + t), Real.sqrt_nonneg c, norm_nonneg s]
+
+/-- If `(2c - 1) ‖s‖ ≤ re s` with `0 ≤ c ≤ 1`, then `c * (‖s‖ + t) ≤ ‖s + t‖` for every
+nonnegative real `t`. -/
+theorem mul_norm_add_le_norm_add_ofReal {s : ℂ} {c t : ℝ}
+    (hc : 0 ≤ c) (hc1 : c ≤ 1) (ht : 0 ≤ t)
+    (hs : (2 * c - 1) * ‖s‖ ≤ s.re) :
+    c * (‖s‖ + t) ≤ ‖s + t‖ := by
+  refine le_trans ?_ (sqrt_mul_norm_add_le_norm_add_ofReal hc hc1 ht hs)
+  have hle : c ≤ Real.sqrt c := by
+    rw [Real.le_sqrt hc hc]
+    nlinarith
+  exact mul_le_mul_of_nonneg_right hle (by positivity)
 
 /-- On the closed sector `|arg s| ≤ π - δ`, translation by a nonnegative real `t` satisfies
 `((1 - cos δ) / 2) * (‖s‖ + t) ≤ ‖s + t‖`. -/
@@ -76,6 +94,16 @@ theorem mul_add_norm_le_norm_ofReal_sub {z : ℂ} {c t : ℝ} (ht : 0 ≤ t) (hz
       rw [norm_neg, neg_re]
       nlinarith [mul_le_mul_of_nonneg_right (le_max_left c (-1)) (norm_nonneg z)])
   rwa [norm_neg, neg_add_eq_sub, add_comm ‖z‖ t] at h
+
+/-- On the sector `Re r ≤ c ‖r‖`, the numbers `1 - r t` with a nonnegative real `t` satisfy
+`(1 - max c (-1)) / 2 * (1 + ‖r‖ t) ≤ ‖1 - r t‖`, which keeps them away from `0` for `c < 1`. -/
+theorem mul_one_add_le_norm_one_sub_mul {c : ℝ} {r : ℂ} (hr : r.re ≤ c * ‖r‖) {t : ℝ}
+    (ht : 0 ≤ t) : (1 - max c (-1)) / 2 * (1 + ‖r‖ * t) ≤ ‖1 - r * t‖ := by
+  have hnorm : ‖r * t‖ = ‖r‖ * t := by rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht]
+  have h := mul_add_norm_le_norm_ofReal_sub (z := r * t) zero_le_one (by
+    rw [hnorm]
+    simpa [mul_assoc] using mul_le_mul_of_nonneg_right hr ht)
+  rwa [hnorm, Complex.ofReal_one] at h
 
 /-- For every complex `z` and real `t`,
 `‖z + t‖² - (cos (arg z / 2) * (‖z‖ + t))² = (sin (arg z / 2) * (‖z‖ - t))²`. -/

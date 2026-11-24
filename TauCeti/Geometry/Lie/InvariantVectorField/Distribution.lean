@@ -43,6 +43,8 @@ vector fields of brackets in `S` (`TauCeti.mlieBracket_sum_smul_mem`).
   exactly when its translate to the identity lies in `S`.
 * `TauCeti.map_mfderiv_mul_left_mulInvariantDistribution`: the distribution is invariant under
   left translation.
+* `TauCeti.finrank_mulInvariantDistribution`: the distribution has the dimension of `S` at every
+  point.
 * `TauCeti.isDistributionFrameOn_mulInvariantDistribution`: the invariant vector fields of a basis
   of `S` form a global frame, so (`TauCeti.isContMDiffDistribution_mulInvariantDistribution`) when
   `S` is finite-dimensional and multiplication is `C^n`, the distribution is `C^m` of rank
@@ -132,6 +134,14 @@ theorem map_mfderiv_mul_left_mulInvariantDistribution (h g : G) :
     exact ⟨w, hw, (mfderiv_mul_left_mulInvariantVectorField h g w).symm⟩
   · rintro ⟨w, hw, rfl⟩
     exact ⟨_, ⟨w, hw, rfl⟩, mfderiv_mul_left_mulInvariantVectorField h g w⟩
+
+/-- The left-invariant distribution of `S` has the dimension of `S` at every point. -/
+theorem finrank_mulInvariantDistribution (g : G) :
+    finrank 𝕜 (mulInvariantDistribution S g) = finrank 𝕜 S :=
+  -- Left translation is injective on `GroupLieAlgebra I G`: translating back to `1` inverts it.
+  ((Submodule.equivMapOfInjective _
+    (LeftInverse.injective fun w ↦ mfderiv_inv_mul_mulInvariantVectorField (I := I) w g)
+      S).finrank_eq).symm
 
 end Translation
 

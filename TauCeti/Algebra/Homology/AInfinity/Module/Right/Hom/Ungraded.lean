@@ -57,6 +57,16 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
   followed by `g`, and of the relations of `g` of length `n - s` applied to the output of `f`, for
   `s ≤ n`: the terms with an operation of `M'` between `f` and `g` occur in both families and
   cancel. Composition is associative, with the identity morphisms as units.
+* **Strict units.** A morphism is strictly unital for a family `ι` of elements of the algebra
+  (`TauCeti.UngradedAInfinityRightModuleHom.IsStrictlyUnital`) when its components `f_{n+1}`,
+  `n ≥ 1`, vanish on every input tuple containing some `ι s`, and likewise for homotopies
+  (`TauCeti.UngradedAInfinityRightModuleHom.Homotopy.IsStrictlyUnital`). Strict morphisms, sums
+  and composites of strictly unital morphisms are strictly unital, the mapping cone of a strictly
+  unital morphism of strictly unital modules is a strictly unital module, and a strictly unital
+  homotopy gives a strictly unital morphism into a mapping cone. For strictly unital modules
+  whose idempotents are cycles, the maps induced by strictly unital morphisms and homotopies
+  preserve the box tensor products over the idempotents
+  (`TauCeti.LowDimTopology.Bordered.TypeA.Invariance`).
 
 ## Main definitions
 
@@ -71,6 +81,9 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
 * `TauCeti.IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom`: an `A`-linear chain map of
   differential modules as a morphism of `A∞` modules.
 * `TauCeti.UngradedAInfinityRightModuleHom.comp`: the composite of two morphisms.
+* `TauCeti.UngradedAInfinityRightModuleHom.IsStrictlyUnital` and
+  `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.IsStrictlyUnital`: strictly unital morphisms
+  and homotopies.
 
 ## Main results
 
@@ -84,12 +97,16 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
   morphisms is strict.
 * `TauCeti.UngradedAInfinityRightModuleHom.comp_map_eq_zero`: the components of a composite of
   morphisms with bounded components are bounded.
+* `TauCeti.UngradedAInfinityRightModuleHom.IsStrictlyUnital.comp` and
+  `TauCeti.UngradedAInfinityRightModuleHom.IsStrictlyUnital.cone`: composites of strictly unital
+  morphisms are strictly unital, and so are the mapping cones of strictly unital morphisms of
+  strictly unital modules.
 
 ## References
 
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.
   Math. Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
-  §2.1 (morphisms of `A∞` modules over `𝔽₂` and their homotopies).
+  §2.1 (morphisms of `A∞` modules over `𝔽₂`, their homotopies and strict unitality).
 * B. Keller, *Introduction to A-infinity algebras and modules*, Homology Homotopy Appl. **3**
   (2001), 1–35, Section 4 (morphisms of `A∞` modules).
 -/
@@ -215,6 +232,17 @@ theorem matrixAct_cone_apply (X : Type*) [Fintype X] [DecidableEq X] (n : ℕ)
   · rw [Prod.snd_sum, ← sum_add_distrib]
     exact sum_congr rfl fun x _ => by split_ifs <;> simp
 
+/-- On row vectors `x ↦ (φ x, 0)` with values in `M`, the second component of the operations of
+the matrix module of the mapping cone is the sum over the paths `x₀ → ⋯ → xₙ = z` of
+`f_{n+1}(φ x₀, F₁ x₀ x₁, …, Fₙ xₙ₋₁ xₙ)`. -/
+theorem snd_matrixAct_cone_apply_inl (X : Type*) [Fintype X] [DecidableEq X] (n : ℕ)
+    (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
+    (f.cone.matrixAct X n F (fun x => (φ x, 0)) z).2 =
+      ∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
+        f.map n (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0)) else 0 := by
+  have h0 : Mm'.matrixAct X n F (fun _ => 0) = 0 := map_zero _
+  simp [matrixAct_cone_apply, h0]
+
 /-! ### Strict morphisms -/
 
 /-- The components of a strict morphism: `f₁ = L` and `f_{n+1} = 0` for `n ≥ 1`. -/
@@ -295,6 +323,10 @@ variable (Mm) in
 `f_{n+1} = 0` for `n ≥ 1`. -/
 noncomputable def id [CharP R 2] : UngradedAInfinityRightModuleHom Mm Mm :=
   ofLinearMap Mm Mm LinearMap.id fun _ _ _ => rfl
+
+/-- The identity morphism is the strict morphism of the identity map. -/
+theorem id_eq_ofLinearMap [CharP R 2] : id Mm = ofLinearMap Mm Mm LinearMap.id fun _ _ _ => rfl :=
+  (rfl)
 
 @[simp]
 theorem id_map_zero [CharP R 2] (a : Fin 0 → A) (m : M) : (id Mm).map 0 a m = m :=
@@ -784,6 +816,110 @@ theorem comp_add [CharP R 2] (f₁ f₂ : UngradedAInfinityRightModuleHom Mm Mm'
 
 end Comp
 
+/-! ### Strict units -/
+
+section StrictUnit
+
+variable {M'' : Type*} [AddCommGroup M''] [Module R M''] {Mm : UngradedAInfinityRightModule d M}
+  {Mm' : UngradedAInfinityRightModule d M'} {Mm'' : UngradedAInfinityRightModule d M''}
+  {S : Type*} {ι : S → A}
+
+/-- A morphism of `A∞` modules is **strictly unital** for a family `ι` of elements of the algebra,
+typically its idempotents, when every component `f_{n+1}`, `n ≥ 1`, vanishes as soon as one of its
+algebra inputs is some `ι s`. The component `f₁` has no algebra input and is not constrained. -/
+def IsStrictlyUnital (f : UngradedAInfinityRightModuleHom Mm Mm') (ι : S → A) : Prop :=
+  ∀ n (a : Fin n → A) (i : Fin n) (s : S), a i = ι s → f.map n a = 0
+
+/-- The defining property of a strictly unital morphism, for proving strict unitality without
+unfolding the definition. -/
+theorem isStrictlyUnital_iff {f : UngradedAInfinityRightModuleHom Mm Mm'} :
+    f.IsStrictlyUnital ι ↔ ∀ n (a : Fin n → A) (i : Fin n) (s : S), a i = ι s → f.map n a = 0 :=
+  Iff.rfl
+
+/-- A component of a strictly unital morphism vanishes on a unit input. -/
+theorem IsStrictlyUnital.map_eq_zero {f : UngradedAInfinityRightModuleHom Mm Mm'}
+    (hf : f.IsStrictlyUnital ι) {n : ℕ} {a : Fin n → A} {i : Fin n} {s : S} (hi : a i = ι s) :
+    f.map n a = 0 :=
+  hf n a i s hi
+
+/-- A morphism without higher components, `f_{n+1} = 0` for `n ≥ 1`, is strictly unital. -/
+theorem isStrictlyUnital_of_map_add_one_eq_zero {f : UngradedAInfinityRightModuleHom Mm Mm'}
+    (hf : ∀ n, f.map (n + 1) = 0) : f.IsStrictlyUnital ι := fun _ _ i _ _ => by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero i.pos.ne'
+  rw [hf n, _root_.zero_apply]
+
+/-- A strict morphism is strictly unital. -/
+theorem isStrictlyUnital_ofLinearMap [CharP R 2] (L : M →ₗ[R] M')
+    (hL : ∀ n a m, L (Mm.act n a m) = Mm'.act n a (L m)) :
+    (ofLinearMap Mm Mm' L hL).IsStrictlyUnital ι :=
+  isStrictlyUnital_of_map_add_one_eq_zero (ofLinearMap_map_add_one L hL)
+
+/-- The identity morphism is strictly unital. -/
+theorem isStrictlyUnital_id [CharP R 2] : (id Mm).IsStrictlyUnital ι :=
+  isStrictlyUnital_of_map_add_one_eq_zero id_map_add_one
+
+/-- A sum of strictly unital morphisms is strictly unital. -/
+theorem IsStrictlyUnital.add {f g : UngradedAInfinityRightModuleHom Mm Mm'}
+    (hf : f.IsStrictlyUnital ι) (hg : g.IsStrictlyUnital ι) : (f + g).IsStrictlyUnital ι :=
+  fun _ _ _ _ hi => by
+    rw [add_map, _root_.add_apply, hf.map_eq_zero hi, hg.map_eq_zero hi, add_zero]
+
+/-- **A composite of strictly unital morphisms is strictly unital.** -/
+theorem IsStrictlyUnital.comp [CharP R 2] {g : UngradedAInfinityRightModuleHom Mm' Mm''}
+    {f : UngradedAInfinityRightModuleHom Mm Mm'} (hg : g.IsStrictlyUnital ι)
+    (hf : f.IsStrictlyUnital ι) : (g.comp f).IsStrictlyUnital ι := by
+  refine fun n a i s hi => LinearMap.ext fun m => ?_
+  rw [comp_map_apply, LinearMap.zero_apply]
+  -- In each term `g_{j+1}(f_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, the unit input lies among the
+  -- inputs of `f_{i+1}` or among those of `g_{j+1}`.
+  refine sum_eq_zero fun k _ => ?_
+  by_cases hik : (i : ℕ) < k
+  · rw [hf.map_eq_zero (i := ⟨i, hik⟩) (by simpa using hi), LinearMap.zero_apply, map_zero]
+  · rw [hg.map_eq_zero (i := ⟨i - k, by omega⟩) (by rw [← hi]; congr 1; ext; simp; omega),
+      LinearMap.zero_apply]
+
+/-- **The mapping cone of a strictly unital morphism of strictly unital modules is strictly
+unital.** -/
+theorem IsStrictlyUnital.cone {f : UngradedAInfinityRightModuleHom Mm Mm'}
+    (hf : f.IsStrictlyUnital ι) (hMm : Mm.IsStrictlyUnital ι) (hMm' : Mm'.IsStrictlyUnital ι) :
+    f.cone.IsStrictlyUnital ι :=
+  -- The operations of arity at least three of the cone are built from those of the two modules
+  -- and the components of the morphism.
+  (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun _ hn _ _ _ hi =>
+    LinearMap.ext fun p => by
+      simp [hMm.act_eq_zero hn hi, hMm'.act_eq_zero hn hi, hf.map_eq_zero hi]
+
+/-- A homotopy between morphisms of `A∞` modules is **strictly unital** for a family `ι` of
+elements of the algebra when every component `h_{n+1}`, `n ≥ 1`, vanishes as soon as one of its
+algebra inputs is some `ι s`. -/
+def Homotopy.IsStrictlyUnital {f g : UngradedAInfinityRightModuleHom Mm Mm'} (H : Homotopy f g)
+    (ι : S → A) : Prop :=
+  ∀ n (a : Fin n → A) (i : Fin n) (s : S), a i = ι s → H.map n a = 0
+
+/-- The defining property of a strictly unital homotopy, for proving strict unitality without
+unfolding the definition. -/
+theorem Homotopy.isStrictlyUnital_iff {f g : UngradedAInfinityRightModuleHom Mm Mm'}
+    {H : Homotopy f g} :
+    H.IsStrictlyUnital ι ↔ ∀ n (a : Fin n → A) (i : Fin n) (s : S), a i = ι s → H.map n a = 0 :=
+  Iff.rfl
+
+/-- A component of a strictly unital homotopy vanishes on a unit input. -/
+theorem Homotopy.IsStrictlyUnital.map_eq_zero {f g : UngradedAInfinityRightModuleHom Mm Mm'}
+    {H : Homotopy f g} (hH : H.IsStrictlyUnital ι) {n : ℕ} {a : Fin n → A} {i : Fin n} {s : S}
+    (hi : a i = ι s) : H.map n a = 0 :=
+  hH n a i s hi
+
+/-- **A strictly unital homotopy gives a strictly unital morphism into the mapping cone**: the
+components `(id_{n+1}, h_{n+1})` of `TauCeti.UngradedAInfinityRightModuleHom.Homotopy.toConeHom`
+with algebra inputs are `(0, h_{n+1})`. -/
+theorem Homotopy.IsStrictlyUnital.toConeHom [CharP R 2]
+    {f g : UngradedAInfinityRightModuleHom Mm Mm'} {H : Homotopy f g}
+    (hH : H.IsStrictlyUnital ι) : H.toConeHom.IsStrictlyUnital ι :=
+  fun _ _ i _ hi => LinearMap.ext fun m => by
+    simp [hH.map_eq_zero hi, id_map_eq_zero i.pos.ne']
+
+end StrictUnit
+
 end UngradedAInfinityRightModuleHom
 
 /-! ### Differential modules -/
@@ -820,6 +956,15 @@ theorem toUngradedAInfinityRightModuleHom_map_add_one [CharP R 2]
     (g : M →ₗ[Aᵐᵒᵖ] M') (hg : ∀ m, g (dM m) = dM' (g m)) (n : ℕ) :
     (toUngradedAInfinityRightModuleHom hM hM' g hg).map (n + 1) = 0 :=
   (rfl)
+
+/-- A chain map of differential modules, viewed as a morphism of `A∞` modules, is strictly unital
+for every family of elements of the algebra. -/
+theorem isStrictlyUnital_toUngradedAInfinityRightModuleHom [CharP R 2] {S : Type*} {ι : S → A}
+    (hM : IsUngradedDGRightModule d dM) (hM' : IsUngradedDGRightModule d dM')
+    (g : M →ₗ[Aᵐᵒᵖ] M') (hg : ∀ m, g (dM m) = dM' (g m)) :
+    (toUngradedAInfinityRightModuleHom hM hM' g hg).IsStrictlyUnital ι :=
+  UngradedAInfinityRightModuleHom.isStrictlyUnital_of_map_add_one_eq_zero
+    (toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg)
 
 end IsUngradedDGRightModule
 

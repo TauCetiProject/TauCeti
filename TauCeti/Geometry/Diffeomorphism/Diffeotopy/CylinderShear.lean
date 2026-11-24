@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
@@ -39,6 +40,16 @@ a unipotent shear matrix, which preserves the area form `dr ∧ dθ`. These are 
 computing the flux of the shear. The derivative computation follows the torus translation
 diffeotopy `TauCeti.torusTranslationDiffeotopy`.
 
+Shears supported far out converge to the identity. If the functions `G i` eventually vanish on
+each bounded subset of `ℝ`, then over each compact subset of the cylinder the shears along `G i`
+are eventually the identity on a neighbourhood, so they converge to the identity in the weak
+Whitney `C^∞` topology (`TauCeti.tendsto_timeSlice_cylinderShearDiffeotopy`). This applies to the
+translates `r ↦ g (r - R)` of a compactly supported `g` as `R → ∞`
+(`TauCeti.tendsto_final_cylinderShearDiffeotopy_of_apply_eq_sub`), although each of them turns the
+circles over the band `R + tsupport g` by the same angles. On the cylinder the weak topology
+therefore cannot see the flux of these shears, which does not depend on `R`
+(`TauCeti.Geometry.Symplectic.Flux.Cylinder`).
+
 ## Main definitions
 
 * `TauCeti.cylinderShearDiffeotopy p g`: the diffeotopy `t ↦ ((r, θ) ↦ (r, θ + [t g(r)]))`.
@@ -53,6 +64,10 @@ diffeotopy `TauCeti.torusTranslationDiffeotopy`.
 * `TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_apply_one`,
   `TauCeti.mfderiv_cylinderMap_cylinderShearDiffeotopy_space`: the velocity and the spatial
   derivative of the motion of the shear diffeotopy.
+* `TauCeti.tendsto_timeSlice_cylinderShearDiffeotopy`,
+  `TauCeti.tendsto_final_cylinderShearDiffeotopy_of_apply_eq_sub`: shears along functions escaping
+  to infinity, such as translates of a compactly supported function, converge to the identity in
+  the weak Whitney `C^∞` topology.
 
 ## References
 
@@ -261,5 +276,58 @@ theorem mfderiv_cylinderMap_cylinderShearDiffeotopy_space (y : ℝ × AddCircle 
   refine (add_zero _).trans ((mfderiv_cylinderShear_apply p y
     (((g.contMDiff.contDiff.differentiable (by simp)) y.1).const_mul _) w).trans ?_)
   rw [deriv_const_mul _ ((g.contMDiff.contDiff.differentiable (by simp)) y.1)]
+
+/-! ### Shears escaping to infinity -/
+
+section Escaping
+
+open Filter Topology
+open scoped TauCeti.ManifoldWeakWhitney
+
+/-- **Shears escaping to infinity converge to the identity.** If the smooth functions `G i`
+eventually vanish on each bounded subset of `ℝ`, then at every time `t` the maps
+`(r, θ) ↦ (r, θ + [t G i (r)])` of the shear diffeotopies converge to the identity of the cylinder
+in the weak Whitney `C^∞` topology: over each compact set they are eventually the identity on a
+neighbourhood. -/
+theorem tendsto_timeSlice_cylinderShearDiffeotopy {ι : Type*} {l : Filter ι}
+    {G : ι → C^∞⟮𝓘(ℝ), ℝ; ℝ⟯}
+    (hG : ∀ A : Set ℝ, Bornology.IsBounded A → ∀ᶠ i in l, ∀ r ∈ A, G i r = 0)
+    (t : unitInterval) :
+    Tendsto (fun i ↦ ((cylinderShearDiffeotopy p (G i)).timeSlice t).toContMDiffMap) l
+      (𝓝 ContMDiffMap.id) := by
+  refine ContMDiffMap.tendsto_manifoldWeakWhitney_of_eventually_eventuallyEq_nhdsSet
+    fun C hC ↦ ?_
+  -- The shears are eventually the identity over the open band of width one around `C`.
+  have hA : IsOpen (Metric.thickening 1 (Prod.fst '' C) ×ˢ (univ : Set (AddCircle p))) :=
+    Metric.isOpen_thickening.prod isOpen_univ
+  have hCA : C ⊆ Metric.thickening 1 (Prod.fst '' C) ×ˢ (univ : Set (AddCircle p)) :=
+    fun y hy ↦ ⟨Metric.self_subset_thickening one_pos _ ⟨y, hy, rfl⟩, mem_univ _⟩
+  filter_upwards [hG _ (hC.image continuous_fst).isBounded.thickening] with i hi
+  exact eventuallyEq_of_mem (hA.mem_nhdsSet.2 hCA) fun y hy ↦
+    (Diffeotopy.timeSlice_apply _ t y).trans
+      (cylinderShearDiffeotopy_apply_of_eq_zero p (G i) (hi y.1 hy.1) t)
+
+/-- **Translated shears converge to the identity.** Let `g` be a smooth compactly supported
+function and `G R` its translate `r ↦ g (r - R)`. As `R → ∞`, the final maps
+`(r, θ) ↦ (r, θ + [g (r - R)])` of the shear diffeotopies along `G R` converge to the identity of
+the cylinder in the weak Whitney `C^∞` topology, although each of them moves the circles over the
+band `R + tsupport g`. -/
+theorem tendsto_final_cylinderShearDiffeotopy_of_apply_eq_sub {g : C^∞⟮𝓘(ℝ), ℝ; ℝ⟯}
+    (hgc : HasCompactSupport g) {G : ℝ → C^∞⟮𝓘(ℝ), ℝ; ℝ⟯} (hG : ∀ R r, G R r = g (r - R)) :
+    Tendsto (fun R ↦ (cylinderShearDiffeotopy p (G R)).final.toContMDiffMap) atTop
+      (𝓝 ContMDiffMap.id) := by
+  simp only [Diffeotopy.final_def]
+  refine tendsto_timeSlice_cylinderShearDiffeotopy p (fun A hA ↦ ?_) 1
+  -- Over a bounded set `A ⊆ [-a, a]`, the translate vanishes once `R - a` exceeds the support.
+  obtain ⟨a, ha⟩ := hA.subset_closedBall 0
+  obtain ⟨b, hb⟩ := hgc.isCompact.isBounded.subset_closedBall 0
+  filter_upwards [eventually_gt_atTop (a + b)] with R hR r hr
+  rw [hG]
+  refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
+  have h₁ := abs_le.1 (by simpa using ha hr)
+  have h₂ := abs_le.1 (by simpa using hb hmem)
+  linarith [h₁.2, h₂.1]
+
+end Escaping
 
 end TauCeti
