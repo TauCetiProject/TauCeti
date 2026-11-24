@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Perm.ClosureSwap
 public import TauCeti.RingTheory.MvPolynomial.PermInvariant
 public import TauCeti.RingTheory.MvPolynomial.SAGBI.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.LeadingTerm
+import TauCeti.Data.Finsupp.Multiset
 
 /-!
 # Leading exponents of permutation invariants
@@ -52,6 +53,10 @@ is finite in finitely many variables.
   subalgebra are the orbit-maximal exponents.
 * `MonomialOrder.isSAGBIBasis_range_orbitSum`: the orbit sums form a SAGBI basis of the invariant
   subalgebra.
+* `MonomialOrder.degree_orbitEsymm`, `MonomialOrder.monic_orbitEsymm`,
+  `MonomialOrder.leadingTerm_orbitEsymm`: for a set `t` of variables of an orbit, closed upwards in
+  that orbit, the elementary symmetric polynomial of degree `#t` of the orbit is monic with leading
+  monomial `∏ i ∈ t, X i`.
 * `MonomialOrder.isSAGBIBasis_range_orbitEsymm`: if `G` contains the transposition of any two
   variables in the same orbit, the elementary symmetric polynomials of the orbits form a SAGBI
   basis of the invariant subalgebra; `MonomialOrder.isSAGBIBasis_range_orbitEsymm_closure` states
@@ -150,6 +155,45 @@ theorem isSAGBIBasis_range_orbitSum :
   exact Subalgebra.mul_mem _ (Subalgebra.algebraMap_mem _ _)
     (Algebra.subset_adjoin ⟨_, ⟨_, rfl⟩, rfl⟩)
 
+section OrbitEsymm
+
+open Finsupp
+
+/-- If `t` is a set of variables of the `G`-orbit of `x` that is closed upwards in that orbit,
+the elementary symmetric polynomial of degree `#t` of the orbit has leading exponent
+`∑ i ∈ t, single i 1`. -/
+theorem degree_orbitEsymm [Nontrivial R] {x : σ} {t : Finset σ}
+    (ht : (t : Set σ) ⊆ MulAction.orbit G x)
+    (hup : ∀ i ∈ t, ∀ j ∈ MulAction.orbit G x, m.toSyn (single i 1) < m.toSyn (single j 1) →
+      j ∈ t) :
+    m.degree (orbitEsymm R G x t.card) = ∑ i ∈ t, single i 1 := by
+  rw [orbitEsymm_def]
+  exact degree_esymm_map_X (fun i hi ↦ (Set.Finite.mem_toFinset _).2 (ht hi))
+    fun i hi j hj ↦ hup i hi j ((Set.Finite.mem_toFinset _).1 hj)
+
+/-- If `t` is a set of variables of the `G`-orbit of `x` that is closed upwards in that orbit,
+the elementary symmetric polynomial of degree `#t` of the orbit is monic. -/
+theorem monic_orbitEsymm {x : σ} {t : Finset σ} (ht : (t : Set σ) ⊆ MulAction.orbit G x)
+    (hup : ∀ i ∈ t, ∀ j ∈ MulAction.orbit G x, m.toSyn (single i 1) < m.toSyn (single j 1) →
+      j ∈ t) :
+    m.Monic (orbitEsymm R G x t.card) := by
+  rw [orbitEsymm_def]
+  exact monic_esymm_map_X (fun i hi ↦ (Set.Finite.mem_toFinset _).2 (ht hi))
+    fun i hi j hj ↦ hup i hi j ((Set.Finite.mem_toFinset _).1 hj)
+
+/-- If `t` is a set of variables of the `G`-orbit of `x` that is closed upwards in that orbit,
+the leading term of the elementary symmetric polynomial of degree `#t` of the orbit is
+`∏ i ∈ t, X i`. -/
+theorem leadingTerm_orbitEsymm {x : σ} {t : Finset σ} (ht : (t : Set σ) ⊆ MulAction.orbit G x)
+    (hup : ∀ i ∈ t, ∀ j ∈ MulAction.orbit G x, m.toSyn (single i 1) < m.toSyn (single j 1) →
+      j ∈ t) :
+    m.leadingTerm (orbitEsymm R G x t.card) = monomial (∑ i ∈ t, single i 1) 1 := by
+  rw [orbitEsymm_def]
+  exact leadingTerm_esymm_map_X (fun i hi ↦ (Set.Finite.mem_toFinset _).2 (ht hi))
+    fun i hi j hj ↦ hup i hi j ((Set.Finite.mem_toFinset _).1 hj)
+
+end OrbitEsymm
+
 section Transposition
 
 open Finsupp
@@ -181,9 +225,7 @@ private theorem tsub_sum_single_le {e : σ →₀ ℕ} {x : σ} {t : Finset σ}
   have hji := he i j hj hij
   have hiff : j ∈ MulAction.orbit G x ↔ i ∈ MulAction.orbit G x := by
     rw [← MulAction.orbit_eq_iff, ← MulAction.orbit_eq_iff, MulAction.orbit_eq_iff.2 hj]
-  have hind : ∀ z, (∑ y ∈ t, single y 1 : σ →₀ ℕ) z = if z ∈ t then 1 else 0 := fun z ↦ by
-    simp [Finset.sum_apply', single_apply]
-  rw [tsub_apply, tsub_apply, hind, hind]
+  rw [tsub_apply, tsub_apply, finsetSum_single_one_apply, finsetSum_single_one_apply]
   by_cases hi : i ∈ MulAction.orbit G x
   · simp only [ht, hi, hiff.2 hi, true_and]
     split_ifs <;> omega
@@ -212,31 +254,30 @@ private theorem monomial_mem_adjoin_leadingTerm_orbitEsymm {e : σ →₀ ℕ}
   set t := O.filter (e · ≠ 0)
   have ht : ∀ y, y ∈ t ↔ y ∈ MulAction.orbit G x ∧ e y ≠ 0 := fun y ↦ by
     rw [Finset.mem_filter, Set.Finite.mem_toFinset]
-  have hup : ∀ i ∈ t, ∀ j ∈ O, m.toSyn (single i 1) < m.toSyn (single j 1) → j ∈ t := by
+  have hup : ∀ i ∈ t, ∀ j ∈ MulAction.orbit G x, m.toSyn (single i 1) < m.toSyn (single j 1) →
+      j ∈ t := by
     intro i hi j hj hij
     rw [ht] at hi ⊢
-    rw [Set.Finite.mem_toFinset] at hj
     have hij' : i ∈ MulAction.orbit G j := by
       rw [MulAction.orbit_eq_iff.2 hj]
       exact hi.1
     exact ⟨hj, fun h0 ↦ hi.2 (Nat.eq_zero_of_le_zero (h0 ▸ he j i hij' hij))⟩
   -- Write `e = e' + ∑ i ∈ t, single i 1` with `e' < e` again sorted, and induct.
   have hle : ∑ i ∈ t, single i 1 ≤ e := fun y ↦ by
-    simp only [Finset.sum_apply', single_apply, Finset.sum_ite_eq']
+    rw [finsetSum_single_one_apply]
     split_ifs with hy
     · exact Nat.one_le_iff_ne_zero.2 ((ht y).1 hy).2
     · exact Nat.zero_le _
   have hlt : e - ∑ i ∈ t, single i 1 < e := by
     refine lt_of_le_of_ne tsub_le_self fun h ↦ ?_
     have := congrArg (· x) h
-    simp only [coe_tsub, Pi.sub_apply, Finset.sum_apply', single_apply, Finset.sum_ite_eq',
+    simp only [coe_tsub, Pi.sub_apply, finsetSum_single_one_apply,
       (ht x).2 ⟨MulAction.mem_orbit_self x, hx⟩, ite_true] at this
     omega
   rw [← tsub_add_cancel_of_le hle, ← mul_one (1 : R), ← monomial_mul_monomial]
   refine Subalgebra.mul_mem _ (ih _ hlt fun i j ↦ tsub_sum_single_le ht he)
     (Algebra.subset_adjoin ⟨orbitEsymm R G x t.card, ⟨(x, t.card), rfl⟩, ?_⟩)
-  rw [orbitEsymm_def]
-  exact leadingTerm_esymm_map_X (Finset.filter_subset _ _) hup
+  exact m.leadingTerm_orbitEsymm (fun y hy ↦ ((ht y).1 hy).1) hup
 
 variable (R) in
 /-- If a permutation group `G` contains the transposition of any two variables in the same orbit,
