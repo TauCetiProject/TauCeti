@@ -81,7 +81,7 @@ transition functions is homeomorphic to the quotient of `E × F` by the orbit re
 * `IsQuotientCoveringMap.isOpenQuotientMap_associatedMk`: the total space of `E ×_G F` is the
   quotient of `E × F`.
 * `IsQuotientCoveringMap.associatedQuotientHomeomorph`: the homeomorphism from the quotient of
-  `E × F` by the orbit relation `IsQuotientCoveringMap.associatedOrbitRel` to the total space.
+  `E × F` by the orbit relation `TauCeti.associatedOrbitRel` to the total space.
 
 ## References
 
@@ -202,15 +202,22 @@ theorem deckChange_smul_self (y : E) (g : G) : hp.deckChange (g • y) y (p y) =
   rw [deckChange_self_smul, hp.deckChange_self hgy] at h
   exact eq_inv_of_mul_eq_one_right h
 
+/-- A point in the image of the local section through `e` lies over the domain of that
+section. -/
+private theorem apply_mem_localInverseAt_source_of_mem_target {y : E}
+    (h : y ∈ (hp.isLocalHomeomorph.localInverseAt e).target) :
+    p y ∈ (hp.isLocalHomeomorph.localInverseAt e).source := by
+  simpa only [IsLocalHomeomorph.localInverseAt_symm] using
+    (hp.isLocalHomeomorph.localInverseAt e).map_target h
+
 /-- A point `y` in the image of the local section through `e` defines the same local section as
 `e` over `p y`. -/
 theorem deckChange_eq_one_of_mem_target {y : E}
     (h : y ∈ (hp.isLocalHomeomorph.localInverseAt e).target) :
     hp.deckChange y e (p y) = 1 := by
   set s := hp.isLocalHomeomorph.localInverseAt e
-  have hs : p y ∈ s.source := by
-    simpa only [s, IsLocalHomeomorph.localInverseAt_symm] using s.map_target h
-  refine (hp.deckChange_eq_iff ⟨hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source, hs⟩).2 ?_
+  refine (hp.deckChange_eq_iff ⟨hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source,
+    hp.apply_mem_localInverseAt_source_of_mem_target h⟩).2 ?_
   rw [one_smul, IsLocalHomeomorph.localInverseAt_apply_self]
   simpa only [s, IsLocalHomeomorph.localInverseAt_symm] using (s.right_inv h).symm
 
@@ -453,8 +460,9 @@ theorem associatedMk_proj (q : E × F) : (hp.associatedMk ρ q).proj = p q.1 :=
 through `y`. -/
 theorem associatedMk_eq_localTriv_symm (y : E) (v : F) :
     hp.associatedMk ρ (y, v) =
-      ((hp.associatedCore ρ).localTriv y).toOpenPartialHomeomorph.symm (p y, v) :=
-  (rfl)
+      ((hp.associatedCore ρ).localTriv y).toOpenPartialHomeomorph.symm (p y, v) := by
+  rw [VectorBundleCore.localTriv_symm_fst]
+  rfl
 
 /-- In the chart through `e`, the point represented by `(y, v)` has coordinate
 `coordChange y e (p y) v`. -/
@@ -477,8 +485,8 @@ theorem localTriv_associatedMk_of_mem_target {e y : E}
     (hy : y ∈ (hp.isLocalHomeomorph.localInverseAt e).target) (v : F) :
     (hp.associatedCore ρ).localTriv e (hp.associatedMk ρ (y, v)) = (p y, v) := by
   have he : p y ∈ (hp.associatedCore ρ).baseSet e := by
-    simpa only [associatedCore_baseSet, IsLocalHomeomorph.localInverseAt_symm] using
-      (hp.isLocalHomeomorph.localInverseAt e).map_target hy
+    rw [associatedCore_baseSet]
+    exact hp.apply_mem_localInverseAt_source_of_mem_target hy
   rw [hp.localTriv_associatedMk ρ he, associatedCore_coordChange,
     hp.deckChange_eq_one_of_mem_target hy, map_one, Units.val_one, one_apply_eq_self]
 
@@ -487,7 +495,9 @@ same point. -/
 private theorem eq_of_localTriv_eq {e : E} {a b : (hp.associatedCore ρ).TotalSpace}
     (ha : a.proj ∈ (hp.associatedCore ρ).baseSet e) (hb : b.proj ∈ (hp.associatedCore ρ).baseSet e)
     (h : (hp.associatedCore ρ).localTriv e a = (hp.associatedCore ρ).localTriv e b) : a = b :=
-  ((hp.associatedCore ρ).localTriv e).toOpenPartialHomeomorph.injOn ha hb h
+  ((hp.associatedCore ρ).localTriv e).toOpenPartialHomeomorph.injOn
+    ((VectorBundleCore.mem_localTriv_source _ _ _).2 ha)
+    ((VectorBundleCore.mem_localTriv_source _ _ _).2 hb) h
 
 /-- Two pairs with the same first component represent the same point only if they are equal. -/
 @[simp]
@@ -502,11 +512,12 @@ theorem associatedMk_right_inj {y : E} {v v' : F} :
 theorem associatedMk_smul (g : G) (y : E) (v : F) :
     hp.associatedMk ρ (g • y, (ρ g : F →L[𝕜] F) v) = hp.associatedMk ρ (y, v) := by
   have hy := hp.mem_associatedCore_baseSet_self ρ y
-  have hgy : p (g • y) ∈ (hp.associatedCore ρ).baseSet y := by rwa [hp.map_smul]
-  refine hp.eq_of_localTriv_eq ρ hgy hy ?_
-  rw [hp.localTriv_associatedMk ρ hgy, localTriv_associatedMk_self, associatedCore_coordChange,
-    hp.map_smul, deckChange_smul_self, map_inv, ← mul_apply_eq_comp, ← Units.val_mul,
-    inv_mul_cancel, Units.val_one, one_apply_eq_self]
+  have hgy := hp.mem_associatedCore_baseSet_self ρ (g • y)
+  rw [hp.map_smul] at hgy
+  refine hp.eq_of_localTriv_eq ρ (by rwa [associatedMk_proj, hp.map_smul]) hgy ?_
+  rw [localTriv_associatedMk_self, hp.localTriv_associatedMk ρ hgy,
+    hp.associatedCore_coordChange_smul ρ hy, (hp.associatedCore ρ).coordChange_self _ _ hy,
+    hp.map_smul]
 
 /-- **The fibres of `E × F → E ×_G F` are the orbits** of `g • (y, v) = (g • y, ρ g v)`. -/
 theorem associatedMk_eq_associatedMk_iff {y y' : E} {v v' : F} :
@@ -514,20 +525,17 @@ theorem associatedMk_eq_associatedMk_iff {y y' : E} {v v' : F} :
       ∃ g : G, g • y = y' ∧ (ρ g : F →L[𝕜] F) v = v' := by
   refine ⟨fun h ↦ ?_, ?_⟩
   · obtain ⟨g, rfl⟩ := hp.apply_eq_iff_mem_orbit.1 (congrArg Bundle.TotalSpace.proj h).symm
-    refine ⟨g, rfl, ?_⟩
-    have hv : v' = (ρ g : F →L[𝕜] F) ((ρ g⁻¹ : F →L[𝕜] F) v') := by
-      rw [map_inv, ← mul_apply_eq_comp, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-        one_apply_eq_self]
-    rw [hv, associatedMk_smul, associatedMk_right_inj] at h
-    rw [h]
-    exact hv.symm
+    rw [← hp.associatedMk_smul ρ g y v, associatedMk_right_inj] at h
+    exact ⟨g, rfl, h⟩
   · rintro ⟨g, rfl, rfl⟩
     exact (hp.associatedMk_smul ρ g y v).symm
 
 /-- Every point of the associated bundle is represented by a pair in `E × F`. -/
 theorem associatedMk_surjective : Function.Surjective (hp.associatedMk ρ) := by
   rintro ⟨x, (w : F)⟩
-  have hx : p ((hp.associatedCore ρ).indexAt x) = x := Function.surjInv_eq hp.surjective x
+  have hx : p ((hp.associatedCore ρ).indexAt x) = x := by
+    rw [associatedCore_indexAt]
+    exact Function.surjInv_eq hp.surjective x
   have hmem := (hp.associatedCore ρ).mem_baseSet_at x
   refine ⟨((hp.associatedCore ρ).indexAt x, w), hp.eq_of_localTriv_eq ρ (by rwa [associatedMk_proj,
     hx]) hmem ?_⟩
@@ -541,7 +549,7 @@ theorem associatedMk_associatedSectionEquiv (σ : ∀ x, (hp.associatedCore ρ).
   have hy := hp.mem_associatedCore_baseSet_self ρ y
   refine hp.eq_of_localTriv_eq ρ hy hy ?_
   rw [localTriv_associatedMk_self, associatedSectionEquiv_apply_coe]
-  rfl
+  exact ((hp.associatedCore ρ).localTriv y).mk_proj_snd' (x := ⟨p y, σ (p y)⟩) hy
 
 /-- **The map `E × F → E ×_G F` is a local homeomorphism.** Near `(e, v)`, it is the inverse of
 the chart through `e` composed with `p × id`, restricted to the image of the local section of `p`
@@ -556,12 +564,14 @@ theorem isLocalHomeomorph_associatedMk : IsLocalHomeomorph (hp.associatedMk ρ) 
     simp only [s, OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.prod_apply,
       IsLocalHomeomorph.localInverseAt_symm]
     exact hp.mem_associatedCore_baseSet_self ρ q.1
-  · rintro ⟨y, v⟩ ⟨⟨hy, -⟩, -⟩
-    have hy' : y ∈ s.target := hy
+  · rintro ⟨y, v⟩ hq
+    have hy' : y ∈ s.target := by
+      simp only [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.prod_source,
+        OpenPartialHomeomorph.symm_source, mem_inter_iff, mem_prod] at hq
+      exact hq.1.1
     have hsrc : hp.associatedMk ρ (y, v) ∈ T.source := by
-      have hs : p y ∈ s.source := by
-        simpa only [s, IsLocalHomeomorph.localInverseAt_symm] using s.map_target hy'
-      exact hs
+      rw [VectorBundleCore.mem_localTriv_source, associatedMk_proj, associatedCore_baseSet]
+      exact hp.apply_mem_localInverseAt_source_of_mem_target hy'
     simp only [OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.prod_apply,
       OpenPartialHomeomorph.refl_apply, id_eq, Function.comp_apply, s,
       IsLocalHomeomorph.localInverseAt_symm]
@@ -575,35 +585,42 @@ theorem isOpenQuotientMap_associatedMk : IsOpenQuotientMap (hp.associatedMk ρ) 
   ⟨hp.associatedMk_surjective ρ, (hp.isLocalHomeomorph_associatedMk ρ).continuous,
     (hp.isLocalHomeomorph_associatedMk ρ).isOpenMap⟩
 
-/-- The relation on `E × F` identifying `(y, v)` with `(g • y, ρ g v)` for every `g : G`. Its
-quotient is the total space of the associated bundle
+omit [TopologicalSpace E] in
+variable (E) in
+/-- The relation on `E × F` identifying `(y, v)` with `(g • y, ρ g v)` for every `g : G`. For a
+quotient covering `p : E → X`, its quotient is the total space of the associated bundle
 (`IsQuotientCoveringMap.associatedQuotientHomeomorph`). -/
-def associatedOrbitRel : Setoid (E × F) where
+def _root_.TauCeti.associatedOrbitRel : Setoid (E × F) where
   r q q' := ∃ g : G, g • q.1 = q'.1 ∧ (ρ g : F →L[𝕜] F) q.2 = q'.2
-  -- By `associatedMk_eq_associatedMk_iff`, the relation says that both pairs represent the same
-  -- point.
-  iseqv.refl _ := (hp.associatedMk_eq_associatedMk_iff ρ).1 rfl
-  iseqv.symm h := (hp.associatedMk_eq_associatedMk_iff ρ).1
-    ((hp.associatedMk_eq_associatedMk_iff ρ).2 h).symm
-  iseqv.trans h h' := (hp.associatedMk_eq_associatedMk_iff ρ).1
-    (((hp.associatedMk_eq_associatedMk_iff ρ).2 h).trans
-      ((hp.associatedMk_eq_associatedMk_iff ρ).2 h'))
+  iseqv.refl _ := ⟨1, one_smul _ _, by rw [map_one, Units.val_one, one_apply_eq_self]⟩
+  iseqv.symm := by
+    rintro ⟨z, w⟩ ⟨-, -⟩ ⟨g, rfl, rfl⟩
+    refine ⟨g⁻¹, inv_smul_smul _ _, ?_⟩
+    rw [← mul_apply_eq_comp, ← Units.val_mul, ← map_mul, inv_mul_cancel, map_one,
+      Units.val_one, one_apply_eq_self]
+  iseqv.trans := by
+    rintro ⟨z, w⟩ ⟨-, -⟩ ⟨-, -⟩ ⟨g, rfl, rfl⟩ ⟨g', rfl, rfl⟩
+    refine ⟨g' * g, mul_smul _ _ _, ?_⟩
+    rw [map_mul, Units.val_mul, mul_apply_eq_comp]
 
-/-- Two pairs are related by `associatedOrbitRel` when they differ by the action of an element of
-`G`. -/
-theorem associatedOrbitRel_iff {q q' : E × F} :
-    hp.associatedOrbitRel ρ q q' ↔ ∃ g : G, g • q.1 = q'.1 ∧ (ρ g : F →L[𝕜] F) q.2 = q'.2 :=
+omit [TopologicalSpace E] in
+/-- Two pairs are related by `TauCeti.associatedOrbitRel` when they differ by the action of an
+element of `G`. -/
+theorem _root_.TauCeti.associatedOrbitRel_iff {q q' : E × F} :
+    TauCeti.associatedOrbitRel E ρ q q' ↔
+      ∃ g : G, g • q.1 = q'.1 ∧ (ρ g : F →L[𝕜] F) q.2 = q'.2 :=
   Iff.rfl
 
 /-- The orbit relation is the kernel of `E × F → E ×_G F`. -/
-theorem associatedOrbitRel_eq_ker : hp.associatedOrbitRel ρ = Setoid.ker (hp.associatedMk ρ) :=
+theorem associatedOrbitRel_eq_ker :
+    TauCeti.associatedOrbitRel E ρ = Setoid.ker (hp.associatedMk ρ) :=
   Setoid.ext fun _ _ ↦ (hp.associatedMk_eq_associatedMk_iff ρ).symm
 
 /-- The total space of the associated bundle is homeomorphic to the quotient of `E × F` by the
 orbit relation `(y, v) ∼ (g • y, ρ g v)`; the homeomorphism sends the class of `(y, v)` to the
 point it represents (`IsQuotientCoveringMap.associatedQuotientHomeomorph_mk`). -/
 noncomputable def associatedQuotientHomeomorph :
-    Quotient (hp.associatedOrbitRel ρ) ≃ₜ (hp.associatedCore ρ).TotalSpace :=
+    Quotient (TauCeti.associatedOrbitRel E ρ) ≃ₜ (hp.associatedCore ρ).TotalSpace :=
   (Homeomorph.Quotient.congrRight (Setoid.ext_iff.1 (hp.associatedOrbitRel_eq_ker ρ))).trans
     (Topology.IsQuotientMap.homeomorph
       (f := ⟨_, (hp.isLocalHomeomorph_associatedMk ρ).continuous⟩)
@@ -613,8 +630,9 @@ noncomputable def associatedQuotientHomeomorph :
 represents. -/
 @[simp]
 theorem associatedQuotientHomeomorph_mk (q : E × F) :
-    hp.associatedQuotientHomeomorph ρ (Quotient.mk _ q) = hp.associatedMk ρ q :=
-  (rfl)
+    hp.associatedQuotientHomeomorph ρ (Quotient.mk _ q) = hp.associatedMk ρ q := by
+  rw [associatedQuotientHomeomorph, Homeomorph.trans_apply, Topology.IsQuotientMap.homeomorph_apply]
+  rfl
 
 end AssociatedCore
 
