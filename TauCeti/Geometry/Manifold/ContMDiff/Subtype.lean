@@ -31,6 +31,8 @@ there after extension to the whole manifold, as for Mathlib's `ContMDiff.extend_
   `TauCeti.ContMDiffOn.subtypeVal_comp_iff`, and `TauCeti.ContMDiff.subtypeVal_comp_iff`: a map
   into an open submanifold is `C^n` (within a set, at a point, on a set, globally) iff its
   composition with the inclusion is.
+* `ContMDiff.restrictPreimage`: the restriction `f⁻¹(U) → U` of a `C^n` map to the preimage
+  of an open subset is `C^n`.
 * `ContMDiffAt.extend_subtypeVal`, `TauCeti.contMDiffAt_extend_subtypeVal_iff`: an extension
   to `M` of a map on an open submanifold is `C^n` at a point of the submanifold exactly when the
   map is.
@@ -107,6 +109,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
   {n : ℕ∞ω}
+
+/-- The restriction `f⁻¹(U) → U` of a `C^n` map `f` to the preimage of an open subset `U` of its
+target is `C^n`, at every regularity. -/
+theorem ContMDiff.restrictPreimage {f : M → M'} (hf : ContMDiff I I' n f) (U : Opens M') :
+    ContMDiff (M := (⟨f ⁻¹' U, U.isOpen.preimage hf.continuous⟩ : Opens M)) (M' := U) I I' n
+      ((U : Set M').restrictPreimage f) :=
+  (TauCeti.ContMDiff.subtypeVal_comp_iff
+    (M := (⟨f ⁻¹' U, U.isOpen.preimage hf.continuous⟩ : Opens M)) U
+    ((U : Set M').restrictPreimage f)).1 (hf.comp contMDiff_subtypeVal)
 
 /-- **Extending a map from an open submanifold.** If `g : U → M'` is `C^n` at a point `x` of the
 open set `U`, then any extension of `g` to all of `M`, for instance by zero, is `C^n` at `x`: it

@@ -134,6 +134,12 @@ theorem fderiv_fderiv_apply (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) (p : ℝ 
     (hf.fderiv_slice (m := 1) le_rfl).differentiableAt one_ne_zero
   rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hG, fderiv_eq_smul_deriv]
 
+/-- The Hessian of `f t` at `x` is symmetric when the family is jointly `C²` at `(t, x)`. -/
+theorem fderiv_fderiv_apply_comm_of_uncurry (hf : ContDiffAt ℝ 2 (uncurry f) (t, x))
+    (u w : E) :
+    fderiv ℝ (fderiv ℝ (f t)) x u w = fderiv ℝ (fderiv ℝ (f t)) x w u :=
+  (hf.comp x (contDiffAt_const.prodMk contDiffAt_id)).isSymmSndFDerivAt (by simp) u w
+
 /-- **Subtracting a functional does not change the derivative of the parametrized differential.**
 Subtracting `a` from every member of the family shifts `(t, x) ↦ d(f t)_x` by the constant `a`
 near any point at which the family is jointly `C¹`. -/
@@ -161,10 +167,8 @@ theorem surjective_fderiv_fderiv_iff (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) 
     Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)) ↔
       ∀ v, fderiv ℝ (fderiv ℝ (f t)) x v = 0 → deriv (fun s ↦ fderiv ℝ (f s) x) t v = 0 →
         v = 0 := by
-  have hft : ContDiffAt ℝ 2 (f t) x :=
-    hf.comp x ((contDiffAt_const (c := t)).prodMk contDiffAt_id)
   rw [← ContinuousLinearMap.surjective_smul_add_apply_iff
-    (fun u v ↦ hft.isSymmSndFDerivAt (by simp) u v), ← funext (fderiv_fderiv_apply hf)]
+    (fderiv_fderiv_apply_comm_of_uncurry hf), ← funext (fderiv_fderiv_apply hf)]
 
 /-- **At a transverse point the Hessian has corank at most one.** If the derivative of the
 parametrized differential `(t, x) ↦ d(f t)_x` is onto at `(t, x)`, the parameter derivative

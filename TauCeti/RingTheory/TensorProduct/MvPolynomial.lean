@@ -27,6 +27,9 @@ is `(-1)ⁿ (i choose n) uⁱ⁻ⁿ vⁿ`.
 An element of `R[X_σ] ⊗[R] N` is determined by its coefficients, the images of the coefficient
 functionals `MvPolynomial.lcoeff R e` on the polynomial leg.
 
+Mathlib's `MvPolynomial.tensorEquivSum : S[X_σ] ⊗[R] R[X_ι] ≃ₐ[S] S[X_(σ ⊕ ι)]` sends `p ⊗ 1` to
+`rename Sum.inl p` and `1 ⊗ q` to `rename Sum.inr q` (with coefficients pushed to `S`).
+
 Evaluating `S[X_ι]` at `1 ⊗ₜ yᵢ` inside `S ⊗[R] A` factors as `(algebraTensorAlgEquiv R S).symm`
 followed by `lTensor S (aeval y)`
 (`MvPolynomial.aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm`,
@@ -40,6 +43,8 @@ and integrality of `MvPolynomial.aeval y` are preserved under arbitrary base cha
   `(u - a v) ^ i` on the tensor side.
 * `MvPolynomial.ext_lid_rTensor_lcoeff`: elements of `R[X_σ] ⊗[R] N` with the same coefficients
   are equal.
+* `MvPolynomial.tensorEquivSum_tmul_one`, `MvPolynomial.tensorEquivSum_one_tmul`:
+  `MvPolynomial.tensorEquivSum` on the two factor inclusions.
 * `MvPolynomial.aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm`,
   `MvPolynomial.aeval_one_tmul_eq_map_algebraTensorAlgEquiv_symm`: `aeval (1 ⊗ₜ y ·)` factors
   through `MvPolynomial.algebraTensorAlgEquiv` and `Algebra.TensorProduct.lTensor`.
@@ -91,6 +96,36 @@ theorem ext_lid_rTensor_lcoeff {x y : MvPolynomial σ R ⊗[R] N}
     hcoord, h]
 
 end Ext
+
+section TensorEquivSum
+
+variable {R σ ι S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+
+/-- `MvPolynomial.tensorEquivSum` sends `p ⊗ 1` to `rename Sum.inl p`. -/
+@[simp]
+theorem tensorEquivSum_tmul_one (p : MvPolynomial σ S) :
+    tensorEquivSum R σ ι S (p ⊗ₜ 1) = rename Sum.inl p := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [TensorProduct.add_tmul, hp, hq]
+  | mul_X p j hp =>
+    rw [← mul_one (1 : MvPolynomial ι R), ← Algebra.TensorProduct.tmul_mul_tmul, map_mul, hp,
+      map_mul]
+    simp
+
+/-- `MvPolynomial.tensorEquivSum` sends `1 ⊗ q` to `rename Sum.inr (map (algebraMap R S) q)`. -/
+@[simp]
+theorem tensorEquivSum_one_tmul (q : MvPolynomial ι R) :
+    tensorEquivSum R σ ι S (1 ⊗ₜ q) = rename Sum.inr (map (algebraMap R S) q) := by
+  induction q using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [TensorProduct.tmul_add, hp, hq]
+  | mul_X q j hq =>
+    rw [← mul_one (1 : MvPolynomial σ S), ← Algebra.TensorProduct.tmul_mul_tmul, map_mul, hq,
+      map_mul]
+    simp
+
+end TensorEquivSum
 
 section BaseChange
 

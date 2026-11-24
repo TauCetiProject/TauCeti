@@ -47,7 +47,10 @@ its `p`-free factor.
 * `TauCeti.pPart_eq_one_iff`: the `p`-part of `x` is trivial exactly when `p` is not prime, `p`
   does not divide the order of `x`, or `x` has infinite order.
 * `TauCeti.eq_pFreePart`, `TauCeti.eq_pPart`: the factorisation is the only one of its kind.
+* `TauCeti.pPart_eq_self`: an element of `p`-power order is its own `p`-part.
 * `TauCeti.pFreePart_conj`, `TauCeti.pPart_conj`: conjugation transports both factors.
+* `TauCeti.map_pFreePart`, `TauCeti.map_pPart`: group homomorphisms transport both factors of an
+  element of finite order.
 
 ## References
 
@@ -134,6 +137,12 @@ theorem not_dvd_orderOf_pFreePart (hp : p.Prime) (hx : orderOf x ≠ 0) :
     ¬ p ∣ orderOf (pFreePart p x) := by
   rw [orderOf_pFreePart]
   exact Nat.not_dvd_ordCompl hp hx
+
+/-- The `p`-free part of an element of finite order is `p`-regular: its order is coprime to `p`. -/
+theorem coprime_orderOf_pFreePart (hp : p.Prime) (hx : IsOfFinOrder x) :
+    (orderOf (pFreePart p x)).Coprime p := by
+  rw [orderOf_pFreePart]
+  exact (Nat.coprime_ordCompl hp hx.orderOf_pos.ne').symm
 
 /-- **The factorisation is unique.** A commuting factorisation `x = s * u` in which the order of
 `s` is prime to `p` and the order of `u` is a power of `p` has `s` the `p`-free part of `x`. -/
@@ -278,6 +287,31 @@ the `p`-part. -/
 theorem eq_pPart (hp : p.Prime) {s u : G} (hsu : Commute s u) (hmul : s * u = x)
     (hs : ¬ p ∣ orderOf s) {k : ℕ} (hu : orderOf u = p ^ k) : u = pPart p x := by
   rw [pPart, ← eq_pFreePart hp hsu hmul hs hu, ← hmul, inv_mul_cancel_left]
+
+/-- An element of `p`-power order is its own `p`-part. -/
+theorem pPart_eq_self (hp : p.Prime) {k : ℕ} (hx : orderOf x = p ^ k) : pPart p x = x :=
+  (eq_pPart hp (Commute.one_left x) (one_mul x) (by simpa using hp.ne_one) hx).symm
+
+/-- **Group homomorphisms preserve the `p`-part** of an element of finite order. Finite order is
+needed: the `p`-part of a generator of `ℤ` is trivial, while its image in `ℤ / 2ℤ` is its own
+`2`-part. -/
+theorem map_pPart {H : Type*} [Group H] (f : G →* H) (hx : IsOfFinOrder x) :
+    f (pPart p x) = pPart p (f x) := by
+  by_cases hp : p.Prime
+  swap
+  · simp [pPart_of_not_prime hp]
+  have hdvd : orderOf (f (pPart p x)) ∣ p ^ (orderOf x).factorization p :=
+    (orderOf_map_dvd f _).trans (orderOf_pPart p x).dvd
+  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow hp).1 hdvd
+  refine eq_pPart hp ((commute_pFreePart_pPart p x).map f)
+    (by rw [← map_mul, pFreePart_mul_pPart]) (fun h => ?_) hj
+  exact not_dvd_orderOf_pFreePart hp hx.orderOf_pos.ne' (h.trans (orderOf_map_dvd f _))
+
+/-- **Group homomorphisms preserve the `p`-free part** of an element of finite order. -/
+theorem map_pFreePart {H : Type*} [Group H] (f : G →* H) (hx : IsOfFinOrder x) :
+    f (pFreePart p x) = pFreePart p (f x) := by
+  rw [← mul_inv_eq_iff_eq_mul.2 (pFreePart_mul_pPart p x).symm, map_mul, map_inv, map_pPart f hx,
+    ← mul_inv_eq_iff_eq_mul.2 (pFreePart_mul_pPart p (f x)).symm]
 
 end Order
 

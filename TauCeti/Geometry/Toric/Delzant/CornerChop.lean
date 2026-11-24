@@ -70,6 +70,8 @@ dimension hypothesis is needed.
 * `TauCeti.Toric.IsSmoothVertex.exists_coord`: coordinates relative to a smooth vertex.
 * `TauCeti.Toric.IsSmoothVertex.eventually_forall_mem_facetPolyhedron`: the small simplex at a
   smooth vertex lies in the polyhedron.
+* `TauCeti.Toric.IsSmoothVertex.eventually_forall_lt_apply`: the constraints inactive at a smooth
+  vertex stay inactive on the small simplex there.
 * `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`: small corner chops of a Delzant
   polytope at a vertex are Delzant polytopes.
 
@@ -301,6 +303,20 @@ theorem IsSmoothVertex.eventually_forall_mem_facetPolyhedron [Finite ι] (hi : I
   by_cases hk : k ∈ s
   · exact hxs k hk
   · exact (lt_apply_of_sum_le hx hε hxs hxε hk).le
+
+/-- **Slack near a smooth vertex.** Let `v` be a smooth vertex of the polyhedron
+`Δ = {x | c j ≤ ⟨x, u j⟩}` in an integral lattice, at which the facets indexed by `s` meet. Then for
+every sufficiently small `ε`, the constraints inactive at `v` stay inactive on the simplex
+`{y j ≥ 0, ∑ j, y j ≤ ε}` in the coordinates `y j = ⟨x, u j⟩ - c j`, `j ∈ s`, relative to `v`. -/
+theorem IsSmoothVertex.eventually_forall_lt_apply [Finite ι] (hi : IsIntegralLattice i)
+    {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v) (hvP : v ∈ facetPolyhedron i u c)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝 0, ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) →
+      ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε → ∀ k ∉ s, c k < x (i (u k)) := by
+  classical
+  obtain ⟨w, -, hx⟩ := hv.exists_coord hi hs
+  filter_upwards [eventually_mul_sum_abs_lt (w := w) hvP hs] with ε hε x hxs hxε k hk
+  exact lt_apply_of_sum_le hx hε hxs hxε hk
 
 /-! ### Vertices of the chopped polytope -/
 

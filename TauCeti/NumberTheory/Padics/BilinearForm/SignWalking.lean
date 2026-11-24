@@ -120,7 +120,8 @@ theorem IsJordanSplitting.exists_mem_apply_eq_two_pow [Module.Free ℤ_[2] M]
   obtain ⟨C, hC, hCp⟩ := isModular_def.mp (h.isModular k)
   have hBC (y z : N k) : 2 ^ k * C y z = B y z := by
     simpa using LinearMap.congr_fun₂ hC y z
-  have hCs : C.IsSymm := IsSymm.of_smul h2k (hC ▸ hB.restrict (N k))
+  have hCs : C.IsSymm := (IsSMulRegular.of_ne_zero (pow_ne_zero k two_ne_zero)).isSymm_smul_iff.mp
+    (hC ▸ hB.restrict (N k))
   have hCeven (y : N k) : 2 ∣ C y y := by
     obtain ⟨c, hc⟩ := heven y y.property
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors h2k).mp (by
