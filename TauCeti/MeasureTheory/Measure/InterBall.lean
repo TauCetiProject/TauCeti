@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
+public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -34,7 +35,11 @@ difference quotients produced by cutting a set by balls with radial cutoffs.
 
 For an arbitrary measure, a bound `μ (closedBall x r) ≤ f r` on concentric closed balls holding
 for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is right-continuous there
-(`MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`).
+(`MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`). On an extended metric space, the
+measure of the open ball `B_r(x)` is the supremum of the measures of the concentric balls of
+smaller radius (`MeasureTheory.Measure.measure_eball_eq_iSup_lt`), and it is a lower
+semicontinuous function of its centre `x`
+(`MeasureTheory.Measure.lowerSemicontinuous_measure_eball`).
 
 The balls about a point `z` have measures tending to `μ {z}` as the radius decreases to `0`,
 once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`). Dually, the
@@ -62,6 +67,10 @@ over the parts of `S` in the balls about a point tend to `0` with the radius
   of radius less than `ρ` bounds the open ball of radius `ρ`.
 * `TauCeti.isClosed_setOf_forall_measure_inter_ball_le`: the points around which a set fills at
   most `K r` of every open ball of radius `r < ρ` form a closed set.
+* `MeasureTheory.Measure.measure_eball_eq_iSup_lt`: the measure of an open ball is the supremum of
+  the measures of the concentric balls of smaller radius.
+* `MeasureTheory.Measure.lowerSemicontinuous_measure_eball`: for every measure on an extended
+  metric space, the measure of an open ball is a lower semicontinuous function of its centre.
 * `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
   `μ {z}`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over
@@ -188,6 +197,49 @@ namespace MeasureTheory.Measure
 open Metric Filter Set
 open scoped ENNReal Topology
 
+variable {X : Type*} [PseudoEMetricSpace X] [MeasurableSpace X]
+
+/-- An open ball is exhausted by the concentric balls of smaller radius, so its measure is the
+supremum of their measures. -/
+theorem measure_eball_eq_iSup_lt (μ : Measure X) (x : X) (r : ℝ≥0∞) :
+    μ (eball x r) = ⨆ r' < r, μ (eball x r') := by
+  refine le_antisymm ?_ (iSup₂_le fun r' hr' ↦ measure_mono (eball_subset_eball hr'.le))
+  rcases eq_or_ne r 0 with rfl | hr
+  · simp
+  -- The ball `B_r(x)` is the increasing union of balls `B_{u n}(x)` with `u n ↑ r`.
+  obtain ⟨u, hu_mono, hu_mem, hu_lim⟩ := exists_seq_strictMono_tendsto' (pos_iff_ne_zero.2 hr)
+  have hunion : eball x r = ⋃ n, eball x (u n) :=
+    (iUnion_subset fun n ↦ eball_subset_eball (hu_mem n).2.le).antisymm' fun y hy ↦
+      mem_iUnion.2 (hu_lim.eventually (lt_mem_nhds (mem_eball.1 hy))).exists
+  have hmono : Monotone fun n ↦ eball x (u n) := fun m n hmn ↦
+    eball_subset_eball (hu_mono.monotone hmn)
+  rw [hunion, hmono.measure_iUnion]
+  exact iSup_le fun n ↦ le_iSup₂_of_le (u n) (hu_mem n).2 le_rfl
+
+/-- For every measure on an extended metric space, the measure of the open ball `B_r(x)` is a
+lower semicontinuous function of its centre `x`. -/
+theorem lowerSemicontinuous_measure_eball (μ : Measure X) (r : ℝ≥0∞) :
+    LowerSemicontinuous fun x ↦ μ (eball x r) := by
+  intro x a ha
+  beta_reduce at ha ⊢
+  rw [measure_eball_eq_iSup_lt] at ha
+  obtain ⟨r', hr'⟩ := lt_iSup_iff.1 ha
+  obtain ⟨hr', hn⟩ := lt_iSup_iff.1 hr'
+  -- Points `y` with `edist x y < r - r'` have `B_{r'}(x) ⊆ B_r(y)`.
+  have hpos : 0 < r - r' := tsub_pos_of_lt hr'
+  filter_upwards [eball_mem_nhds x hpos] with y hy
+  have hxy : edist x y < r - r' := mem_eball'.1 hy
+  refine hn.trans_le (measure_mono (eball_subset ?_ hxy.ne_top))
+  calc edist x y + r' ≤ (r - r') + r' := by gcongr
+    _ = r := tsub_add_cancel_of_le hr'.le
+
+end MeasureTheory.Measure
+
+namespace MeasureTheory.Measure
+
+open Metric Filter Set
+open scoped ENNReal Topology
+
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
 
 /-- A bound `μ (closedBall x r) ≤ f r` holding for radii `r` arbitrarily close to `ρ` from the
@@ -203,14 +255,13 @@ theorem measure_closedBall_le_of_frequently_le (μ : Measure X) {f : ℝ → ℝ
 of the smaller balls bounds the measure of the ball. -/
 theorem measure_ball_le_of_forall_lt (μ : Measure X) {x : X} {ρ : ℝ} {B : ℝ≥0∞}
     (h : ∀ r < ρ, μ (ball x r) ≤ B) : μ (ball x ρ) ≤ B := by
-  obtain ⟨r, hr, hrρ, hlim⟩ := exists_seq_strictMono_tendsto ρ
-  have hU : ⋃ n, ball x (r n) = ball x ρ :=
-    (iUnion_subset fun n => ball_subset_ball (hrρ n).le).antisymm fun z hz =>
-      mem_iUnion.2 (hlim.eventually (lt_mem_nhds hz)).exists
-  rw [← hU, Monotone.measure_iUnion fun i j hij => ball_subset_ball (hr.monotone hij)]
-  exact iSup_le fun n => h _ (hrρ n)
+  rw [← eball_ofReal, measure_eball_eq_iSup_lt]
+  refine iSup₂_le fun r hr ↦ ?_
+  rw [← ENNReal.ofReal_toReal hr.ne_top, eball_ofReal]
+  exact h _ (ENNReal.toReal_lt_of_lt_ofReal hr)
 
 end MeasureTheory.Measure
+
 
 namespace TauCeti
 
