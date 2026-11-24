@@ -80,7 +80,7 @@ theorem isBaseChange_snd_ker_coprod_of_formalGlueing
   let q : M →ₗ[R] P ⧸ range g := (range g).mkQ.restrictScalars R ∘ₗ f
   let K' := ker q
   let h : K' →ₗ[R] range g := (f ∘ₗ K'.subtype).codRestrict ((range g).restrictScalars R)
-    fun m ↦ (Submodule.Quotient.mk_eq_zero _).mp (mem_ker.mp m.2)
+    fun m ↦ (Submodule.Quotient.mk_eq_zero _).mp (mem_ker.mp m.property)
   have hh : IsBaseChange S h :=
     IsBaseChange.of_left_exact_of_injective S (f := K'.subtype) (g := q)
       (f' := (range g).subtype) (g' := (range g).mkQ) (h₃ := LinearMap.id.restrictScalars R)
@@ -95,9 +95,12 @@ theorem isBaseChange_snd_ker_coprod_of_formalGlueing
     rintro ⟨m, hm⟩
     obtain ⟨n, hn⟩ : f m ∈ range g := by simpa [K', q] using hm
     exact ⟨⟨(m, n), by simp [K, hn]⟩, rfl⟩
-  -- `h ∘ p` is `f` applied to the first coordinate, by unfolding both codomain restrictions;
-  -- on compatible pairs this agrees with `g` applied to the second coordinate.
-  have hhp (k : K) : (h (p k) : P) = g (k : M × N).2 := hK k
+  -- By `codRestrict_apply` for both codomain restrictions, `h ∘ p` is `f` applied to the first
+  -- coordinate; on compatible pairs this agrees with `g` applied to the second coordinate.
+  have hhp (k : K) : (h (p k) : P) = g (k : M × N).2 :=
+    calc (h (p k) : P) = f (p k : M) := codRestrict_apply _ (f ∘ₗ K'.subtype) (p k)
+      _ = f (k : M × N).1 := congrArg f (codRestrict_apply K' ((fst R M N).domRestrict K) k)
+      _ = g (k : M × N).2 := hK k
   have hgc (t : S ⊗[R] K) : g (c t) = (h.liftBaseChange S (p.baseChange S t) : P) := by
     induction t with
     | tmul s k => simp [c, hhp]
