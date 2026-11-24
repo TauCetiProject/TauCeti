@@ -94,9 +94,10 @@ example : ¬ ∃ z : Spv (ℚ_[2] × ℚ_[2]), z = firstPoint ∧ z = secondPoin
   rintro ⟨z, rfl, h⟩
   exact secondPoint_not_vle (h ▸ firstPoint_vle)
 
-local instance {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-    [IsHuberRing A] : IsAdicHom (algebraMap A A) := by
-  simpa using IsAdicHom.id (A := A)
+/-- The identity tensors below use the global instance `IsAdicHom.algebraMap_self`. -/
+theorem isAdicHom_algebraMap_self {A : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsHuberRing A] : IsAdicHom (algebraMap A A) :=
+  inferInstance
 
 /-- Identity tensors lift every point, without replacing a higher-rank point by a coarsening. -/
 example {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
