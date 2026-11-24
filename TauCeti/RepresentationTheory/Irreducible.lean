@@ -74,6 +74,9 @@ an algebra are those of the whole algebra.
   involutive equivariant endomorphism, over any field.
 * `Representation.asAlgebraHom_surjective_of_isIrreducible`: over an algebraically closed
   field, every finite-dimensional irreducible representation exhausts the endomorphisms.
+* `Representation.span_range_eq_top_of_isIrreducible`: equivalently, the image of such a
+  representation spans the endomorphisms; `Representation.span_range_eq_top_of_finrank_eq_one`
+  records the same for every one-dimensional representation, over any field.
 * `Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul`: consequently the
   monoid algebra, acting on the left factor of a nonzero tensor in `V ⊗ M`, reaches every
   `v ⊗ m` for one fixed nonzero `m`.
@@ -87,6 +90,9 @@ an algebra are those of the whole algebra.
   finite-dimensional representation contains an irreducible subrepresentation.
 * `Representation.IsIrreducible.exists_forall_apply_eq_smul`: Schur's lemma over an
   algebraically closed field, for an unbundled equivariant endomorphism.
+* `Representation.map_mul_of_forall_apply_eq_smul` and
+  `Representation.map_one_of_forall_apply_eq_smul`: the scalars by which a representation acts on
+  a nonzero space are multiplicative.
 * `Representation.IsIrreducible.exists_unit_smul_of_intertwines`: two equivariant isomorphisms
   out of an irreducible representation differ by a unit scalar.
 -/
@@ -310,6 +316,23 @@ theorem asAlgebraHom_surjective_of_isIrreducible
   simpa only [Algebra.lsmul_apply, Representation.asModuleEquiv_map_smul, T',
     LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hx
 
+/-- **Burnside's theorem, spanning form.** Over an algebraically closed field, the image of a
+finite-dimensional irreducible representation spans all endomorphisms. -/
+theorem span_range_eq_top_of_isIrreducible [IsAlgClosed k] [FiniteDimensional k V]
+    {ρ : Representation k G V} (h : ρ.IsIrreducible) :
+    Submodule.span k (Set.range ρ) = ⊤ := by
+  rw [← toSubmodule_range_asAlgebraHom, Algebra.toSubmodule_eq_top, AlgHom.range_eq_top]
+  exact asAlgebraHom_surjective_of_isIrreducible ρ h
+
+/-- The image of a representation on a line spans its endomorphisms. -/
+theorem span_range_eq_top_of_finrank_eq_one (ρ : Representation k G V)
+    (h : Module.finrank k V = 1) : Submodule.span k (Set.range ρ) = ⊤ := by
+  have : FiniteDimensional k V := Module.finite_of_finrank_eq_succ h
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ h
+  have h1 : Module.finrank k (Module.End k V) = 1 := by rw [Module.finrank_linearMap, h]
+  refine eq_top_mono (Submodule.span_mono (Set.singleton_subset_iff.mpr ⟨1, map_one ρ⟩)) ?_
+  exact (finrank_eq_one_iff_of_ne_zero _ one_ne_zero).mp h1
+
 open scoped MonoidAlgebra in
 /-- **Burnside density on a tensor product.** Let `ρ` be a finite-dimensional irreducible
 representation over an algebraically closed field and `M` any vector space. Acting on the left
@@ -419,6 +442,23 @@ theorem IsIrreducible.exists_forall_apply_eq_smul [IsAlgClosed k] [FiniteDimensi
     (ρ := ρ)).surjective (f.intertwiningMap_of_isIntertwiningMap ρ ρ hf)
   refine ⟨c, fun v ↦ ?_⟩
   simpa [IntertwiningMap.algebraMap_apply] using (DFunLike.congr_fun hc v).symm
+
+/-- **Scalar operators multiply like the group.** If each `ρ g` acts on a nonzero space as
+multiplication by `c g`, then `c (g * h) = c g * c h`: both act on a nonzero vector as `ρ (g * h)`.
+This is how the scalars produced by Schur's lemma assemble into a character. -/
+theorem map_mul_of_forall_apply_eq_smul [Nontrivial V] (ρ : Representation k G V) {c : G → k}
+    (hc : ∀ g v, ρ g v = c g • v) (g h : G) : c (g * h) = c g * c h := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  refine smul_left_injective k hv ?_
+  dsimp only
+  rw [← hc, map_mul, mul_apply_eq_comp, hc h, map_smul, hc g, smul_smul, mul_comm]
+
+/-- **The scalar of the identity is one.** If each `ρ g` acts on a nonzero space as
+multiplication by `c g`, then `c 1 = 1`, since `ρ 1` is the identity. -/
+theorem map_one_of_forall_apply_eq_smul [Nontrivial V] (ρ : Representation k G V) {c : G → k}
+    (hc : ∀ g v, ρ g v = c g • v) : c 1 = 1 := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact smul_left_injective k hv (by simp [← hc])
 
 /-- **Two equivariant isomorphisms out of an irreducible representation differ by a unit
 scalar.**  If `a b : V ≃ₗ[k] W` both carry the action `ρ` to the same `σ`, then `b⁻¹ ∘ a` is an

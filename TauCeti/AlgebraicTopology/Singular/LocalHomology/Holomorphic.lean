@@ -133,6 +133,48 @@ namespace TauCeti
 
 namespace HomologicalOrientation
 
+section Real
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
+  (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
+
+include hE in
+/-- If `x` is the only solution of `f z = f x` in the ball of radius `r` about `x`, and `f` stays
+at distance at least `δ > 0` from `f x` on the sphere of radius `r`, then `f` agrees on the closed
+ball with a proper map `g` which stays at distance at least `δ` from `f x` outside the open ball,
+whose fibre over each value `y` within `δ` of `f x` is the set of solutions of `f z = y` in the
+open ball, and the local index of `f` at `x` is the degree of `g`. -/
+private theorem exists_isProperMap_eqOn_localIndex_eq_degree {f : C(E, E)} {x : E} {r δ : ℝ}
+    (hr : 0 < r) (hδ : 0 < δ) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
+    (hiso : ∀ z ∈ ball x r, f z = f x → z = x) :
+    ∃ g : C(E, E), IsProperMap g ∧ EqOn g f (closedBall x r) ∧
+      (∀ z, r ≤ dist z x → δ ≤ ‖g z - f x‖) ∧
+      (∀ y, ‖y - f x‖ < δ → g ⁻¹' {y} = {z ∈ ball x r | f z = y}) ∧
+      o.localIndex o f x = o.degree o hE g := by
+  obtain ⟨g, hgp, hgf, hgout⟩ :=
+    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr.le hδ hfδ
+  -- Outside the open ball `g` stays at distance at least `δ` from `f x`, so its fibre over a value
+  -- `y` within `δ` of `f x` is the set of solutions in the open ball.
+  have hgfib (y : E) (hy : ‖y - f x‖ < δ) : g ⁻¹' {y} = {z ∈ ball x r | f z = y} := by
+    ext z
+    simp only [mem_preimage, mem_singleton_iff, mem_ofPred_eq]
+    refine ⟨fun hz ↦ ?_, fun hz ↦ (hgf (ball_subset_closedBall hz.1)).trans hz.2⟩
+    have hzb : z ∈ ball x r := mem_ball.2 (not_le.1 fun h ↦ (hgout z h).not_gt (hz ▸ hy))
+    exact ⟨hzb, (hgf (ball_subset_closedBall hzb)).symm.trans hz⟩
+  refine ⟨g, hgp, hgf, hgout, hgfib, ?_⟩
+  -- `x` is the only preimage of `f x` under `g`, so the local index is the degree.
+  have hfib₀ : g ⁻¹' {f x} = {x} := by
+    rw [hgfib (f x) (by rwa [sub_self, norm_zero])]
+    ext z
+    simp only [mem_ofPred_eq, mem_singleton_iff]
+    exact ⟨fun hz ↦ hiso z hz.1 hz.2, by rintro rfl; exact ⟨mem_ball_self hr, rfl⟩⟩
+  have hgf_nhds : g =ᶠ[𝓝 x] f :=
+    eventually_of_mem (ball_mem_nhds x hr) fun _ hw ↦ hgf (ball_subset_closedBall hw)
+  rw [o.localIndex_congr o hE hgf_nhds.symm, ← o.localDegree_eq_localIndex o hE hE g hfib₀,
+    o.localDegree_eq_degree o hE hE hgp]
+
+end Real
+
 section Holomorphic
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E] {n : ℕ}
@@ -201,41 +243,6 @@ theorem degree_eq_ncard_of_hasFDerivAt {f : C(E, E)} (hf : IsProperMap f) {f' : 
   rw [o.degree_eq_ncard_sub_ncard hE hf (f' := fun x ↦ (f' x).restrictScalars ℝ)
     (fun x hx ↦ (hderiv x hx).restrictScalars ℝ) fun x hx ↦ (hpos x hx).ne', h₁, h₂,
     ncard_empty, Nat.cast_zero, sub_zero]
-
-include hE in
-/-- If `x` is the only solution of `f z = f x` in the ball of radius `r` about `x`, and `f` stays
-at distance at least `δ > 0` from `f x` on the sphere of radius `r`, then `f` agrees on the closed
-ball with a proper map `g` which stays at distance at least `δ` from `f x` outside the open ball,
-whose fibre over each value `y` within `δ` of `f x` is the set of solutions of `f z = y` in the
-open ball, and the local index of `f` at `x` is the degree of `g`. -/
-private theorem exists_isProperMap_eqOn_localIndex_eq_degree {f : C(E, E)} {x : E} {r δ : ℝ}
-    (hr : 0 < r) (hδ : 0 < δ) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
-    (hiso : ∀ z ∈ ball x r, f z = f x → z = x) :
-    ∃ g : C(E, E), IsProperMap g ∧ EqOn g f (closedBall x r) ∧
-      (∀ z, r ≤ dist z x → δ ≤ ‖g z - f x‖) ∧
-      (∀ y, ‖y - f x‖ < δ → g ⁻¹' {y} = {z ∈ ball x r | f z = y}) ∧
-      o.localIndex o f x = o.degree o hE g := by
-  obtain ⟨g, hgp, hgf, hgout⟩ :=
-    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr hδ hfδ
-  -- Outside the open ball `g` stays at distance at least `δ` from `f x`, so its fibre over a value
-  -- `y` within `δ` of `f x` is the set of solutions in the open ball.
-  have hgfib (y : E) (hy : ‖y - f x‖ < δ) : g ⁻¹' {y} = {z ∈ ball x r | f z = y} := by
-    ext z
-    simp only [mem_preimage, mem_singleton_iff, mem_ofPred_eq]
-    refine ⟨fun hz ↦ ?_, fun hz ↦ (hgf (ball_subset_closedBall hz.1)).trans hz.2⟩
-    have hzb : z ∈ ball x r := mem_ball.2 (not_le.1 fun h ↦ (hgout z h).not_gt (hz ▸ hy))
-    exact ⟨hzb, (hgf (ball_subset_closedBall hzb)).symm.trans hz⟩
-  refine ⟨g, hgp, hgf, hgout, hgfib, ?_⟩
-  -- `x` is the only preimage of `f x` under `g`, so the local index is the degree.
-  have hfib₀ : g ⁻¹' {f x} = {x} := by
-    rw [hgfib (f x) (by rwa [sub_self, norm_zero])]
-    ext z
-    simp only [mem_ofPred_eq, mem_singleton_iff]
-    exact ⟨fun hz ↦ hiso z hz.1 hz.2, by rintro rfl; exact ⟨mem_ball_self hr, rfl⟩⟩
-  have hgf_nhds : g =ᶠ[𝓝 x] f :=
-    eventually_of_mem (ball_mem_nhds x hr) fun _ hw ↦ hgf (ball_subset_closedBall hw)
-  rw [o.localIndex_congr o hE hgf_nhds.symm, ← o.localDegree_eq_localIndex o hE hE g hfib₀,
-    o.localDegree_eq_degree o hE hE hgp]
 
 include hE in
 /-- **The local index of a holomorphic map counts nearby solutions.** Suppose that `x` is the only
@@ -309,13 +316,13 @@ at distance at least `δ` from `f x` on the sphere of radius `r`, the map `f` an
 whose degree is the local index of `f` at `x`, equal to `f + c • (· - x)` on the closed ball, and
 at distance at least `δ - ‖c‖ r` from `f x` outside the open ball. -/
 private theorem exists_isProperMap_localIndex_eq_degree {f : C(E, E)} {x : E} {r δ : ℝ}
-    (hr : 0 < r) (hδ : 0 < δ) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
+    (hr : 0 < r) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
     (hiso : ∀ z ∈ ball x r, f z = f x → z = x) {c : ℂ} (hc : ‖c‖ * r < δ) :
     ∃ G : C(E, E), IsProperMap G ∧ o.localIndex o f x = o.degree o hE G ∧
       EqOn G (fun z ↦ f z + c • (z - x)) (closedBall x r) ∧
       ∀ z, r ≤ dist z x → δ - ‖c‖ * r ≤ ‖G z - f x‖ := by
-  obtain ⟨g, hgp, hgf, hgout, -, hidx⟩ :=
-    o.exists_isProperMap_eqOn_localIndex_eq_degree hE hr hδ hfδ hiso
+  obtain ⟨g, hgp, hgf, hgout, -, hidx⟩ := o.exists_isProperMap_eqOn_localIndex_eq_degree hE hr
+    ((mul_nonneg (norm_nonneg c) hr.le).trans_lt hc) hfδ hiso
   -- The perturbation `t • c • ρ`, with `ρ z = radialRetraction r (z - x)` equal to `z - x` on the
   -- closed ball and of norm at most `r`.
   set ρ : E → E := fun z ↦ radialRetraction r (z - x) with hρ_def
@@ -393,7 +400,7 @@ theorem localIndex_pos_of_analyticAt {f : C(E, E)} {x : E} (hf : AnalyticAt ℂ 
     exact (lt_div_iff₀ hr).1 hεδ
   -- The local index of `f` is the degree of a proper map `G`, equal to `f + ε (· - x)` near `x`,
   -- complex differentiable there with derivative `Df + ε`, which is invertible at `x`.
-  obtain ⟨G, hGp, hidx, hGf, hGout⟩ := o.exists_isProperMap_localIndex_eq_degree hE hr hδ hfδ
+  obtain ⟨G, hGp, hidx, hGf, hGout⟩ := o.exists_isProperMap_localIndex_eq_degree hE hr hfδ
     (fun z hz ↦ hiso' z (ball_subset_closedBall hz)) hεr
   have hGeq {z : E} (hz : z ∈ ball x (R / 2)) :
       (G : E → E) =ᶠ[𝓝 z] fun w ↦ f w + (ε : ℂ) • (w - x) :=
