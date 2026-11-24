@@ -18,8 +18,8 @@ exact: multiplication by `t` on `k⟦t⟧` is injective, while its reduction mod
 formal spectrum `Spf A` of a noetherian adic ring the category is nevertheless abelian, because it
 is equivalent to the abelian category of finite `A`-modules (`spfEquivFGModuleCat`, Stacks,
 Lemma 30.23.1). The kernel of a morphism of coherent formal modules there is the system of
-reductions `K ⧸ I ^ (n + 1) K` of the kernel `K` of the corresponding map of finite `A`-modules;
-by the Artin–Rees lemma this differs from the levelwise kernels.
+reductions `K ⧸ I ^ (n + 1) K` of the kernel `K` of the corresponding map of finite `A`-modules,
+which can differ from the levelwise kernels, as the multiplication-by-`t` example shows.
 
 Pullback along an isomorphism of adic thickening systems is an equivalence of categories of
 coherent formal modules (`CoherentFormalModule.pullback_isEquivalence`), so the abelian structure
