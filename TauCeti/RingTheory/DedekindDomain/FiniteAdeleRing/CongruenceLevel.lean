@@ -286,22 +286,19 @@ theorem principalLevel_top : principalLevel K (⊤ : Ideal R) = (integralGL K 2)
 /-- At the zero ideal the principal level is trivial: `K(0) = {1}`. -/
 @[simp]
 theorem principalLevel_bot : principalLevel K (⊥ : Ideal R) = ⊥ := by
-  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ ?_
-  obtain ⟨hg, -, h⟩ := mem_principalLevel_iff.mp hg
-  simp only [completedIdeal_bot, Ideal.mem_bot, sub_eq_zero] at h
-  refine Units.ext (Matrix.ext fun i j ↦ ?_)
-  have := congr(Subtype.val $(h i j))
-  fin_cases i <;> fin_cases j <;> simpa [Matrix.one_apply] using this
+  rw [principalLevel_eq_map_ker, (MonoidHom.ker_eq_bot_iff _).mpr
+    (Matrix.GeneralLinearGroup.map_injective ((RingHom.injective_iff_ker_eq_bot _).mpr
+      (Ideal.mk_ker.trans (completedIdeal_bot K)))), Subgroup.map_bot]
 
 variable {K}
 
 open Matrix.GeneralLinearGroup in
 /-- The unipotent matrix `[[1, b], [0, 1]]` with integral `b` is the image of the unipotent
-matrix of `GL₂(Ô)` with entry `b`. -/
+matrix of `GL₂(Ô)` with entry `b`: the case `Ô ⊆ 𝔸_f` of
+`Matrix.GeneralLinearGroup.map_upperRightHom`. -/
 theorem integralGL_upperRightHom (b : integralAdeles R K) :
-    integralGL K 2 (upperRightHom b) = upperRightHom (b : 𝔸ᶠ[R, K]) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp
+    integralGL K 2 (upperRightHom b) = upperRightHom (b : 𝔸ᶠ[R, K]) :=
+  map_upperRightHom _ b
 
 open Matrix.GeneralLinearGroup in
 /-- The unipotent matrix `[[1, b], [0, 1]]` lies in `K₁(N)` for every integral `b` and every
