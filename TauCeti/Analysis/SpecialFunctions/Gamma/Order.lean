@@ -156,16 +156,37 @@ theorem meromorphicOrderAt_Gamma_eq_neg_one_iff (s : ℂ) :
   · rw [meromorphicOrderAt_Gamma_of_ne_neg_nat (not_exists.mp hs)]
     simp [hs]
 
+/-- `Gammaℝ` is the product of the entire, nowhere-vanishing prefactor `z ↦ π ^ (-z / 2)` with
+`Gamma ∘ (· / 2)`. -/
+theorem Gammaℝ_eq_cpow_mul_Gamma_comp :
+    Gammaℝ = (fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2)) * (Gamma ∘ fun z : ℂ ↦ z / 2) :=
+  funext Gammaℝ_def
+
+/-- The prefactor `z ↦ π ^ (-z / 2)` of `Gammaℝ` is analytic everywhere. -/
+theorem analyticAt_pi_cpow_neg_div_two (s : ℂ) :
+    AnalyticAt ℂ (fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2)) s := by
+  fun_prop (disch := exact Or.inl (by simpa using Real.pi_pos))
+
+/-- `Gammaℂ` is the product of the entire, nowhere-vanishing prefactor `z ↦ 2 (2π) ^ (-z)` with
+`Gamma`. -/
+theorem Gammaℂ_eq_mul_Gamma :
+    Gammaℂ = (fun z : ℂ ↦ 2 * (2 * Real.pi : ℂ) ^ (-z)) * Gamma :=
+  funext Gammaℂ_def
+
+/-- The prefactor `z ↦ 2 (2π) ^ (-z)` of `Gammaℂ` is analytic everywhere. -/
+theorem analyticAt_two_mul_two_pi_cpow_neg (s : ℂ) :
+    AnalyticAt ℂ (fun z : ℂ ↦ 2 * (2 * Real.pi : ℂ) ^ (-z)) s := by
+  have hp : (2 * Real.pi : ℂ) ∈ slitPlane :=
+    Or.inl (by simpa using mul_pos (by norm_num : (0 : ℝ) < 2) Real.pi_pos)
+  exact analyticAt_const.mul (analyticAt_const.cpow (by fun_prop) hp)
+
 /-- The meromorphic order of `Gammaℝ` at `s` equals that of `Gamma` at `s / 2`. -/
 @[simp]
 theorem meromorphicOrderAt_Gammaℝ (s : ℂ) :
     meromorphicOrderAt Gammaℝ s = meromorphicOrderAt Gamma (s / 2) := by
-  have he : Gammaℝ = (fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2)) *
-      (Gamma ∘ fun z : ℂ ↦ z / 2) := funext Gammaℝ_def
-  have ha : AnalyticAt ℂ (fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2)) s := by
-    fun_prop (disch := exact Or.inl (by simpa using Real.pi_pos))
   have hn : (Real.pi : ℂ) ^ (-s / 2) ≠ 0 := by simp [Real.pi_ne_zero]
-  rw [he, meromorphicOrderAt_mul_of_ne_zero ha hn]
+  rw [Gammaℝ_eq_cpow_mul_Gamma_comp,
+    meromorphicOrderAt_mul_of_ne_zero (analyticAt_pi_cpow_neg_div_two s) hn]
   apply meromorphicOrderAt_comp_of_deriv_ne_zero (by fun_prop)
   simp
 
@@ -173,14 +194,9 @@ theorem meromorphicOrderAt_Gammaℝ (s : ℂ) :
 @[simp]
 theorem meromorphicOrderAt_Gammaℂ (s : ℂ) :
     meromorphicOrderAt Gammaℂ s = meromorphicOrderAt Gamma s := by
-  have he : Gammaℂ = (fun z : ℂ ↦ 2 * (2 * Real.pi : ℂ) ^ (-z)) * Gamma :=
-    funext Gammaℂ_def
-  have ha : AnalyticAt ℂ (fun z : ℂ ↦ 2 * (2 * Real.pi : ℂ) ^ (-z)) s := by
-    have hp : (2 * Real.pi : ℂ) ∈ slitPlane :=
-      Or.inl (by simpa using mul_pos (by norm_num : (0 : ℝ) < 2) Real.pi_pos)
-    exact analyticAt_const.mul (analyticAt_const.cpow (by fun_prop) hp)
   have hn : 2 * (2 * Real.pi : ℂ) ^ (-s) ≠ 0 := by simp [Real.pi_ne_zero]
-  rw [he, meromorphicOrderAt_mul_of_ne_zero ha hn]
+  rw [Gammaℂ_eq_mul_Gamma,
+    meromorphicOrderAt_mul_of_ne_zero (analyticAt_two_mul_two_pi_cpow_neg s) hn]
 
 /-- Gamma has no zeros as a meromorphic germ. -/
 theorem meromorphicOrderAt_Gamma_nonpos (s : ℂ) : meromorphicOrderAt Gamma s ≤ 0 := by
