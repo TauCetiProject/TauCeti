@@ -279,9 +279,9 @@ theorem hasStructuralConstant_pow_of_concaveOn (h : IsAdmissiblePair Γ f)
     have := hf.le_apply_of_hasFDerivAt_of_homogeneous hμ
       (h.isAdmissibleCone.mem_of_forall_pos hν) (h.differentiableAt hμ).hasFDerivAt
       (h.eventually_apply_smul hμ)
-    rwa [ContinuousLinearMap.apply_eq_sum_smul_single, sum_congr rfl fun j _ ↦
-      (smul_eq_mul _ _).trans (inv_mul_cancel₀ (ha j).ne'), sum_const, card_univ, nsmul_eq_mul,
-      mul_one] at this
+    have hνa (j : ι) : ν j * fderiv ℝ f μ (Pi.single j 1) = 1 := inv_mul_cancel₀ (ha j).ne'
+    rw [ContinuousLinearMap.apply_eq_sum_smul_single] at this
+    simpa [hνa] using this
   -- With `G = (∏_j a_j)^{1/n}`, the lower bound at `ν` reads `n c / G ≤ f ν`.
   set G := (∏ j, a j) ^ (n : ℝ)⁻¹
   have hG : 0 < G := Real.rpow_pos_of_pos hP _
@@ -380,9 +380,10 @@ theorem isAdmissiblePair_prod_rpow [Nonempty ι] :
   apply_smul ht μ hμ := by simpa using Real.prod_mul_rpow_inv_card ht.le fun i ↦ (hμ i).le
   fderiv_single_pos {μ} hμ j := by
     have hP : 0 < ∏ i, μ i := prod_pos fun i _ ↦ hμ i
-    rw [((hasFDerivAt_finsetProd (u := univ) (x := μ)).rpow_const (Or.inl hP.ne')).fderiv]
-    simpa [Pi.single_apply] using mul_pos (mul_pos (inv_pos.2 (Nat.cast_pos.2 Fintype.card_pos))
-      (Real.rpow_pos_of_pos hP _)) (prod_pos fun i (_ : i ∈ univ.erase j) ↦ hμ i)
+    rw [((hasFDerivAt_finsetProd (u := univ) (x := μ)).differentiableAt.hasFDerivAt.rpow_const
+      (Or.inl hP.ne')).fderiv, smul_apply, fderiv_prod_apply_single, smul_eq_mul]
+    exact mul_pos (mul_pos (inv_pos.2 (Nat.cast_pos.2 Fintype.card_pos))
+      (Real.rpow_pos_of_pos hP _)) (prod_pos fun i _ ↦ hμ i)
 
 /-- The Monge–Ampère pair satisfies the structural condition with constant `n⁻ⁿ`, where
 `n = card ι`. -/

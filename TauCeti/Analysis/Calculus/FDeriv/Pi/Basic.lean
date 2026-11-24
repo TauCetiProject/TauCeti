@@ -37,6 +37,7 @@ the `i`-th variable the separated product with the `i`-th factor replaced by its
 * `TauCeti.hasFDerivAt_prod_comp_eval`, `TauCeti.fderiv_prod_comp_eval_apply_single`: the derivative
   of a separated product `z ↦ ∏ i, φ i (z i)`, whose partial derivative in the `i`-th variable
   replaces the `i`-th factor by its derivative.
+* `TauCeti.fderiv_prod_apply_single`: the partial derivatives of the coordinate product.
 
 The derivative of coordinate replacement is the identity derivative with one row replaced
 (`HasFDerivAt.update_self`). Its scalar instance is adapted from
@@ -146,6 +147,17 @@ theorem fderiv_prod_comp_eval_apply_single (hφ : ∀ i, DifferentiableAt 𝕜 (
   rw [mul_comm]
   congr 1
   exact Finset.prod_congr rfl fun j hj ↦ by rw [update_of_ne (Finset.ne_of_mem_erase hj)]
+
+/-- The partial derivative of the coordinate product `z ↦ ∏ i, z i` in the `j`-th variable is the
+product `∏ i ≠ j, y i` of the other coordinates. -/
+theorem fderiv_prod_apply_single (j : ι) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ i, z i) y (Pi.single j 1) = ∏ i ∈ Finset.univ.erase j, y i := by
+  have := fderiv_prod_comp_eval_apply_single (φ := fun _ ↦ id) (y := y)
+    (fun _ ↦ differentiableAt_id) j
+  rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ j), update_self, deriv_id,
+    one_mul] at this
+  refine this.trans (Finset.prod_congr rfl fun i hi ↦ ?_)
+  rw [update_of_ne (Finset.ne_of_mem_erase hi), id]
 
 end ProdCompEval
 
