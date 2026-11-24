@@ -42,6 +42,8 @@ the cokernel `M ⧸ ∑ᵢ range (D i)` of the family (`TauCeti.koszulTopCohomol
 * `TauCeti.koszulCochainDifferential D`: the Koszul differential.
 * `TauCeti.koszulCocycles D q` and `TauCeti.koszulCoboundaries D q`: the cocycles and the
   coboundaries of degree `q`.
+* `TauCeti.koszulCocyclesCardEquiv D`: a top-degree cocycle is its coefficient on the full
+  index set.
 * `TauCeti.koszulTopCohomologyEquiv D`: the top cohomology is `M ⧸ ∑ᵢ range (D i)`.
 
 ## Main results
@@ -169,6 +171,12 @@ theorem koszulCoboundaries_succ (q : ℕ) :
     koszulCoboundaries D (q + 1) = (koszulCochains R ι M q).map (koszulCochainDifferential D) :=
   (rfl)
 
+@[simp]
+theorem mem_koszulCoboundaries_succ {q : ℕ} {ω : Finset ι → M} :
+    ω ∈ koszulCoboundaries D (q + 1) ↔
+      ∃ η ∈ koszulCochains R ι M q, koszulCochainDifferential D η = ω :=
+  Iff.rfl
+
 theorem koszulCoboundaries_le_koszulCochains (q : ℕ) :
     koszulCoboundaries D q ≤ koszulCochains R ι M q := by
   cases q with
@@ -227,17 +235,8 @@ theorem map_koszulCoboundaries_card :
     · rw [Pi.single_eq_of_ne (fun h ↦ hkj ((erase_inj _ (mem_univ k)).mp h)), map_zero,
         smul_zero]
 
-end Fintype
-
-end Semiring
-
-section Ring
-
-variable {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M] [LinearOrder ι] [Fintype ι]
-  (D : ι → Module.End R M)
-
 /-- A top-degree cocycle is determined by its coefficient on the full index set. -/
-private noncomputable def koszulCocyclesCardEquiv :
+noncomputable def koszulCocyclesCardEquiv :
     koszulCocycles D (Fintype.card ι) ≃ₗ[R] M where
   toFun ω := ω.val univ
   invFun m := ⟨Pi.single univ m, by
@@ -257,6 +256,25 @@ private noncomputable def koszulCocyclesCardEquiv :
     · rw [Pi.single_eq_of_ne hJ,
         mem_koszulCochains.mp hω J fun h ↦ hJ (card_eq_iff_eq_univ J |>.mp h)]
   right_inv m := Pi.single_eq_same _ _
+
+@[simp]
+theorem koszulCocyclesCardEquiv_apply (ω : koszulCocycles D (Fintype.card ι)) :
+    koszulCocyclesCardEquiv D ω = ω.val univ :=
+  (rfl)
+
+@[simp]
+theorem koszulCocyclesCardEquiv_symm_apply_coe (m : M) :
+    ((koszulCocyclesCardEquiv D).symm m : Finset ι → M) = Pi.single univ m :=
+  (rfl)
+
+end Fintype
+
+end Semiring
+
+section Ring
+
+variable {R ι M : Type*} [Ring R] [AddCommGroup M] [Module R M] [LinearOrder ι] [Fintype ι]
+  (D : ι → Module.End R M)
 
 /-- **The top Koszul cohomology is the cokernel of the family**: for a finite index type, the
 quotient of the top-degree cocycles by the coboundaries is `M ⧸ ∑ᵢ range (D i)`, through the
@@ -280,6 +298,12 @@ noncomputable def koszulTopCohomologyEquiv :
 @[simp]
 theorem koszulTopCohomologyEquiv_mk (ω : koszulCocycles D (Fintype.card ι)) :
     koszulTopCohomologyEquiv D (Submodule.Quotient.mk ω) = Submodule.Quotient.mk (ω.val univ) :=
+  (rfl)
+
+@[simp]
+theorem koszulTopCohomologyEquiv_symm_mk (m : M) :
+    (koszulTopCohomologyEquiv D).symm (Submodule.Quotient.mk m) =
+      Submodule.Quotient.mk ((koszulCocyclesCardEquiv D).symm m) :=
   (rfl)
 
 end Ring
