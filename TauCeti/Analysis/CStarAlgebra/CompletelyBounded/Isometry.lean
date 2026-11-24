@@ -103,7 +103,7 @@ amplifications are injective star homomorphisms, hence isometric. -/
 theorem isCompleteIsometry (π : F) (hπ : Function.Injective π) :
     (π : A →ₗ[ℂ] B).IsCompleteIsometry := fun n x ↦ by
   have hinj : Function.Injective (CStarMatrix.mapₙₐ (n := Fin n) (ofClass π : A →⋆ₙₐ[ℂ] B)) :=
-    fun x y h ↦ CStarMatrix.ext fun i j ↦ hπ (congrFun (congrFun h i) j)
+    CStarMatrix.map_injective hπ
   simpa using norm_map (CStarMatrix.mapₙₐ (n := Fin n) (ofClass π : A →⋆ₙₐ[ℂ] B)) hinj x
 
 end NonUnitalStarAlgHom
@@ -119,8 +119,7 @@ private theorem norm_map_toSpanSingleton_le (b : B) {n : ℕ} (x : CStarMatrix (
     ‖x.map (toSpanSingleton ℂ B b)‖ ≤ ‖x‖ * ‖b‖ := by
   let ι : B →⋆ₙₐ[ℂ] Unitization ℂ B := Unitization.inrNonUnitalStarAlgHom ℂ B
   let ιₙ := CStarMatrix.mapₙₐ (n := Fin n) ι
-  have hιₙ : Function.Injective ιₙ :=
-    fun x y h ↦ CStarMatrix.ext fun i j ↦ Unitization.inr_injective (congrFun (congrFun h i) j)
+  have hιₙ : Function.Injective ιₙ := CStarMatrix.map_injective Unitization.inr_injective
   let α := CStarMatrix.mapₙₐ (n := Fin n)
     ((StarAlgHom.ofId ℂ (Unitization ℂ B)).toNonUnitalStarAlgHom)
   have hfac : ιₙ (x.map (toSpanSingleton ℂ B b)) =
@@ -150,7 +149,7 @@ namespace completelyBounded
 
 /-- **`CB(ℂ, B) ≃ B`.** Evaluation at `1` is an isometric isomorphism from the completely bounded
 maps `ℂ → B` onto the C⋆-algebra `B`, with inverse `b ↦ (z ↦ z • b)`. -/
-@[expose] noncomputable def evalOneEquiv : completelyBounded ℂ B ≃ₗᵢ[ℂ] B where
+noncomputable def evalOneEquiv : completelyBounded ℂ B ≃ₗᵢ[ℂ] B where
   toFun u := (u : ℂ →ₗ[ℂ] B) 1
   invFun b :=
     ⟨toSpanSingleton ℂ B b, mem_completelyBounded.2 (isCompletelyBounded_toSpanSingleton b)⟩
@@ -159,22 +158,20 @@ maps `ℂ → B` onto the C⋆-algebra `B`, with inverse `b ↦ (z ↦ z • b)`
   left_inv u := Subtype.ext (ext_ring (by simp))
   right_inv b := by simp
   norm_map' u := by
-    obtain ⟨u, hu⟩ := u
-    have hu' : u = toSpanSingleton ℂ B (u 1) := ext_ring (by simp)
-    change ‖u 1‖ = ‖(⟨u, hu⟩ : completelyBounded ℂ B)‖
-    rw [norm_def]
-    dsimp only
-    rw [hu', cbNorm_toSpanSingleton, ← hu']
+    rw [norm_def, show (u : ℂ →ₗ[ℂ] B) = toSpanSingleton ℂ B ((u : ℂ →ₗ[ℂ] B) 1) from
+      ext_ring (by simp), cbNorm_toSpanSingleton]
+    -- the left side is `‖u 1‖` by definition of `toFun`
+    rfl
 
 @[simp]
 theorem evalOneEquiv_apply (u : completelyBounded ℂ B) :
     evalOneEquiv u = (u : ℂ →ₗ[ℂ] B) 1 :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem coe_evalOneEquiv_symm_apply (b : B) :
     (evalOneEquiv.symm b : ℂ →ₗ[ℂ] B) = toSpanSingleton ℂ B b :=
-  rfl
+  (rfl)
 
 end completelyBounded
 
