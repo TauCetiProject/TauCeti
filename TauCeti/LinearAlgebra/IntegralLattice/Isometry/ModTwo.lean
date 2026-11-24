@@ -63,6 +63,23 @@ theorem nondegenerate_polarBilin_reduceModTwo_quadraticForm (hu : L.IsUnimodular
     rw [polarBilin_quadraticForm]
     exact LinearMap.IsPerfPair.bijective_left _
 
+/-- The class of a vector of norm `2` has value `1` under the reduction `Q₂` of `B(x, x) / 2`
+modulo two. In particular `Q₂ [x]` is invertible, as `reductionModTwoHom_rootReflection` needs:
+`invertibleOne.copy _ (reduceModTwo_quadraticForm_mk_of_integralNorm_eq_two hL hx)` is an
+instance. -/
+theorem reduceModTwo_quadraticForm_mk_of_integralNorm_eq_two {x : L} (hx : L.integralNorm x = 2) :
+    (L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x) = 1 := by
+  simp [hx]
+
+/-- The class of a vector of norm `-2` has value `1` under the reduction `Q₂` of `B(x, x) / 2`
+modulo two. In particular `Q₂ [x]` is invertible, as `reductionModTwoHom_negRootReflection`
+needs: `invertibleOne.copy _ (reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two hL hx)` is
+an instance. -/
+theorem reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two {x : L}
+    (hx : L.integralNorm x = -2) :
+    (L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x) = 1 := by
+  simp [hx]
+
 namespace Isometry
 
 /-- The reduction modulo two of an isometry, as a `ZMod 2`-linear automorphism of `L / 2L`. -/
@@ -72,10 +89,8 @@ private noncomputable def reductionModTwoEquiv (g : Isometry L L) :
   map_add' := map_add _
   map_smul' := ZMod.map_smul (reductionHom L 2 g)
   invFun := reductionHom L 2 g⁻¹
-  left_inv c := by
-    rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
-  right_inv c := by
-    rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
+  left_inv c := by simp [← mul_apply_eq_comp, ← map_mul]
+  right_inv c := by simp [← mul_apply_eq_comp, ← map_mul]
 
 private theorem reductionModTwoEquiv_apply (g : Isometry L L) (c : QuotSMulTop (2 : ℤ) L) :
     reductionModTwoEquiv g c = reductionHom L 2 g c :=
@@ -93,12 +108,9 @@ noncomputable def reductionModTwoHom :
       rw [reductionModTwoEquiv_apply, reductionHom_apply_mk, QuadraticForm.reduceModTwo_mk,
         QuadraticForm.reduceModTwo_mk, quadraticForm_apply, quadraticForm_apply,
         integralNorm_carrierEquiv]⟩
-  map_one' := Subtype.ext <| LinearEquiv.ext fun c ↦ by
-    rw [reductionModTwoEquiv_apply, map_one, one_apply_eq_self, Subgroup.coe_one,
-      one_apply_eq_self]
+  map_one' := Subtype.ext <| LinearEquiv.ext fun c ↦ by simp [reductionModTwoEquiv_apply]
   map_mul' g h := Subtype.ext <| LinearEquiv.ext fun c ↦ by
-    rw [reductionModTwoEquiv_apply, map_mul, mul_apply_eq_comp, Subgroup.coe_mul,
-      mul_apply_eq_comp, reductionModTwoEquiv_apply, reductionModTwoEquiv_apply]
+    simp [reductionModTwoEquiv_apply, mul_apply_eq_comp]
 
 /-- The orthogonal transformation of `L / 2L` induced by an isometry is its reduction modulo
 two. -/
@@ -131,7 +143,8 @@ theorem reductionModTwoHom_rootReflection (x : L) (hx : L.integralNorm x = 2)
     reductionModTwoHom hL (rootReflection x hx) =
       QuadraticMap.reflectionOrthogonal _ (Submodule.Quotient.mk x) := by
   have hinv : ⅟((L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x)) = 1 :=
-    invOf_eq_right_inv (by simp [hx])
+    invOf_eq_right_inv <| by
+      rw [reduceModTwo_quadraticForm_mk_of_integralNorm_eq_two hL hx, mul_one]
   ext c
   induction c using Submodule.Quotient.induction_on with
   | _ y =>
@@ -146,7 +159,8 @@ theorem reductionModTwoHom_negRootReflection (x : L) (hx : L.integralNorm x = -2
     reductionModTwoHom hL (negRootReflection x hx) =
       QuadraticMap.reflectionOrthogonal _ (Submodule.Quotient.mk x) := by
   have hinv : ⅟((L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x)) = 1 :=
-    invOf_eq_right_inv (by simp [hx])
+    invOf_eq_right_inv <| by
+      rw [reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two hL hx, mul_one]
   ext c
   induction c using Submodule.Quotient.induction_on with
   | _ y =>

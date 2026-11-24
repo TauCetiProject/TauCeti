@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
+public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 import Mathlib.LinearAlgebra.RootSystem.OfBilinear
 public import TauCeti.LinearAlgebra.Reflection
 
@@ -145,69 +146,76 @@ theorem rootReflection_apply_eq_self_iff (x : L) (hx : L.integralNorm x = 2) (y 
   simp [rootReflection_apply, sub_eq_self, smul_eq_zero, hx0]
 
 /-- Reflection in an integral vector of norm `-2`, `sₓ(y) = y + B(x, y) • x`, as an automorphism
-of the lattice. These are the root reflections of the negated lattice; in lattices such as
+of the lattice: the root reflection of the lattice rescaled by `-1`. In lattices such as
 `U ⊕ E₈(-1)` and the K3 lattice, the vectors of norm `-2` are the roots. -/
 noncomputable def negRootReflection (x : L) (hx : L.integralNorm x = -2) : Isometry L L :=
-  Isometry.ofCarrierEquiv
-    (Module.reflection (x := x) (f := -L.integralForm x) (by
-      simp only [LinearMap.neg_apply, ← integralNorm_apply, hx, neg_neg])) fun y z ↦ by
-    have hxx : L.integralForm x x = -2 := by rw [← integralNorm_apply, hx]
-    have hsymm := L.isSymm_integralForm
-    simp only [Module.reflection_apply, LinearMap.neg_apply, neg_smul, sub_neg_eq_add,
-      map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hxx,
-      hsymm.eq y x]
-    ring
-
-/-- On the integral carrier, the reflection in a vector of norm `-2` is `y ↦ y + B(x, y) • x`. -/
-@[simp]
-theorem negRootReflection_carrierEquiv_apply (x : L) (hx : L.integralNorm x = -2) (y : L) :
-    (negRootReflection x hx).carrierEquiv y = y + L.integralForm x y • x := by
-  simp [negRootReflection, Module.reflection_apply, sub_neg_eq_add]
+  (rootReflection (L := (-1 : ℤ) • L) x (by rw [integralNorm_smul_apply, hx]; norm_num)).ofSmul
+    (by norm_num)
 
 /-- On the rational ambient space, the reflection in a vector of norm `-2` is
 `y ↦ y + B(x, y) • x`. -/
 theorem negRootReflection_apply (x : L) (hx : L.integralNorm x = -2) (y : V) :
     negRootReflection x hx y = y + L.form x y • (x : V) := by
-  have hxx : (-L.form x) x = 2 := by
-    rw [LinearMap.neg_apply, ← L.norm_apply, ← L.integralNorm_cast, hx]
-    norm_num
-  have hlinear := LinearEquiv.eq_extendOfIsFullLattice
-    (negRootReflection x hx).carrierEquiv (Module.reflection hxx) (by
-      intro z
-      simp only [negRootReflection_carrierEquiv_apply, Module.reflection_apply,
-        LinearMap.neg_apply, neg_smul, sub_neg_eq_add, Submodule.coe_add, SetLike.val_smul,
-        ← L.integralForm_cast, Int.cast_smul_eq_zsmul])
-  rw [← Isometry.ofCarrierEquiv_carrierEquiv (negRootReflection x hx),
-    Isometry.ofCarrierEquiv_apply, ← hlinear, Module.reflection_apply, LinearMap.neg_apply,
+  rw [negRootReflection, Isometry.ofSmul_apply, rootReflection_apply, smul_form]
+  simp [sub_eq_add_neg]
+
+/-- On the integral carrier, the reflection in a vector of norm `-2` is `y ↦ y + B(x, y) • x`. -/
+@[simp]
+theorem negRootReflection_carrierEquiv_apply (x : L) (hx : L.integralNorm x = -2) (y : L) :
+    (negRootReflection x hx).carrierEquiv y = y + L.integralForm x y • x := by
+  ext
+  simp only [Isometry.coe_carrierEquiv_apply, negRootReflection_apply, Submodule.coe_add,
+    SetLike.val_smul, ← L.integralForm_cast, Int.cast_smul_eq_zsmul]
+
+/-- The carrier equivalence is the integral module reflection in `x` with coefficient form
+`-B(x, ·)`. -/
+theorem negRootReflection_carrierEquiv (x : L) (hx : L.integralNorm x = -2) :
+    (negRootReflection x hx).carrierEquiv =
+      Module.reflection (x := x) (f := -L.integralForm x)
+        (by rw [LinearMap.neg_apply, ← integralNorm_apply, hx, neg_neg]) := by
+  ext y
+  rw [negRootReflection_carrierEquiv_apply, Module.reflection_apply, LinearMap.neg_apply,
     neg_smul, sub_neg_eq_add]
+
+/-- Every reflection in a vector of norm `-2` has determinant minus one. -/
+@[simp]
+theorem det_negRootReflection (x : L) (hx : L.integralNorm x = -2) :
+    Isometry.det L (negRootReflection x hx) = -1 := by
+  rw [Isometry.det_apply, negRootReflection_carrierEquiv, Module.det_reflection]
 
 /-- Reflection in a vector of norm `-2` sends it to its negative. -/
 @[simp]
 theorem negRootReflection_apply_self (x : L) (hx : L.integralNorm x = -2) :
     negRootReflection x hx x = -(x : V) := by
-  have hxx : L.form x x = -2 := by
-    rw [← L.norm_apply, ← L.integralNorm_cast, hx]
-    norm_num
-  rw [negRootReflection_apply, hxx]
-  module
+  rw [negRootReflection, Isometry.ofSmul_apply, rootReflection_apply_self]
 
 /-- Reflection in a vector of norm `-2` is an involution in the lattice isometry group. -/
 @[simp]
 theorem negRootReflection_mul_self (x : L) (hx : L.integralNorm x = -2) :
     negRootReflection x hx * negRootReflection x hx = 1 := by
-  have hxx : L.form x x = -2 := by
-    rw [← L.norm_apply, ← L.integralNorm_cast, hx]
-    norm_num
   ext y
-  simp only [Isometry.mul_apply, negRootReflection_apply, map_add, map_smul, hxx,
-    Isometry.one_apply]
-  module
+  rw [Isometry.mul_apply, negRootReflection, Isometry.ofSmul_apply, Isometry.ofSmul_apply,
+    ← Isometry.mul_apply, rootReflection_mul_self, Isometry.one_apply, Isometry.one_apply]
 
 /-- The inverse of the reflection in a vector of norm `-2` is itself. -/
 @[simp]
 theorem negRootReflection_inv (x : L) (hx : L.integralNorm x = -2) :
     (negRootReflection x hx)⁻¹ = negRootReflection x hx :=
   inv_eq_of_mul_eq_one_right (negRootReflection_mul_self x hx)
+
+/-- Opposite vectors of norm `-2` define the same reflection. -/
+@[simp]
+theorem negRootReflection_neg (x : L) (hx : L.integralNorm x = -2) :
+    negRootReflection (-x) (by simpa using hx) = negRootReflection x hx := by
+  ext y
+  simp [negRootReflection_apply]
+
+/-- A reflection in a vector of norm `-2` fixes exactly the vectors orthogonal to it. -/
+@[simp]
+theorem negRootReflection_apply_eq_self_iff (x : L) (hx : L.integralNorm x = -2) (y : V) :
+    negRootReflection x hx y = y ↔ L.form x y = 0 := by
+  rw [negRootReflection, Isometry.ofSmul_apply, rootReflection_apply_eq_self_iff, smul_form]
+  simp
 
 /-- Lattice isometries intertwine the reflections in a root and in its image. -/
 theorem Isometry.map_rootReflection (e : Isometry L M) (x : L)
@@ -224,6 +232,24 @@ theorem Isometry.mul_rootReflection_mul_inv (e : Isometry L L) (x : L)
       rootReflection (e.carrierEquiv x) (by simpa using hx) := by
   ext y
   simp only [Isometry.mul_apply, Isometry.inv_apply, e.map_rootReflection x hx,
+    Isometry.apply_symm_apply]
+
+/-- Lattice isometries intertwine the reflections in a vector of norm `-2` and in its image. -/
+theorem Isometry.map_negRootReflection (e : Isometry L M) (x : L)
+    (hx : L.integralNorm x = -2) (y : V) :
+    e (negRootReflection x hx y) =
+      negRootReflection (e.carrierEquiv x) (by simpa using hx) (e y) := by
+  simp only [negRootReflection_apply, map_add, map_smul,
+    Isometry.coe_carrierEquiv_apply, Isometry.map_app]
+
+/-- Conjugation by a lattice automorphism carries reflections in vectors of norm `-2` to
+reflections in vectors of norm `-2`. -/
+theorem Isometry.mul_negRootReflection_mul_inv (e : Isometry L L) (x : L)
+    (hx : L.integralNorm x = -2) :
+    e * negRootReflection x hx * e⁻¹ =
+      negRootReflection (e.carrierEquiv x) (by simpa using hx) := by
+  ext y
+  simp only [Isometry.mul_apply, Isometry.inv_apply, e.map_negRootReflection x hx,
     Isometry.apply_symm_apply]
 
 /-- **The Weyl group of an integral lattice**: the subgroup of its isometry group generated by

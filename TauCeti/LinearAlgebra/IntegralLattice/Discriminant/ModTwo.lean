@@ -125,16 +125,14 @@ noncomputable def discriminantOrthogonalGroupEquivModTwo (hu : L.IsUnimodular) (
       ≃* QuadraticMap.orthogonalGroup (L.quadraticForm hL).reduceModTwo where
   toFun σ := ⟨conjModTwo hu hL σ, QuadraticMap.mem_orthogonalGroup_iff.mpr fun c ↦
     ZMod.toRatAddCircle_injective 2 <| by
-      rw [conjModTwo_apply, ← quadratic_eq hu hL,
-        QuadraticMap.map_app_of_mem_orthogonalGroup σ.property, quadratic_eq hu hL,
-        LinearEquiv.apply_symm_apply]⟩
+      rw [conjModTwo_apply, ← quadratic_eq hu hL]
+      simp [QuadraticMap.map_app_of_mem_orthogonalGroup σ.property, quadratic_eq hu hL]⟩
   invFun τ := ⟨moduleEquivModTwo hu hL ≪≫ₗ
       (τ : QuotSMulTop (2 : ℤ) L ≃ₗ[ZMod 2] QuotSMulTop (2 : ℤ) L).restrictScalars ℤ ≪≫ₗ
       (moduleEquivModTwo hu hL).symm,
     QuadraticMap.mem_orthogonalGroup_iff.mpr fun a ↦ by
-      rw [quadratic_eq hu hL, quadratic_eq hu hL, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-        LinearEquiv.apply_symm_apply, LinearEquiv.restrictScalars_apply,
-        QuadraticMap.map_app_of_mem_orthogonalGroup τ.property]⟩
+      rw [quadratic_eq hu hL, quadratic_eq hu hL]
+      simp [QuadraticMap.map_app_of_mem_orthogonalGroup τ.property]⟩
   left_inv σ := Subtype.ext <| LinearEquiv.ext fun a ↦ by
     simp [conjModTwo_apply]
   right_inv τ := Subtype.ext <| LinearEquiv.ext fun c ↦ by
