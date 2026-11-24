@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Basic
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
@@ -92,22 +93,6 @@ open Filter MeasureTheory Complex
 open scoped Topology
 open scoped RealInnerProductSpace InnerProductSpace
 
-/-! ### The base couplings through the complex structures -/
-
-section Twist
-
-private theorem normalBaseCoupling_eq (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    normalBaseCoupling D = D 1 + Vortex.targetComplexStructure.symm (D I) := by
-  ext i
-  fin_cases i <;> simp <;> ring
-
-private theorem pairedBaseCoupling_eq (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    pairedBaseCoupling D = D 1 + Vortex.variationComplexStructure (D I) := by
-  ext i
-  fin_cases i <;> simp <;> ring
-
-end Twist
-
 /-! ### Slices of families of plane fields -/
 
 section Slice
@@ -117,9 +102,8 @@ variable {Φ : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)} {p : ℂ × ℂ}
 /-- A coordinate of the derivative of a normal slice is read off the derivative of the family. -/
 private theorem fderiv_slice_snd_apply_coord (hΦ : DifferentiableAt ℝ Φ p) (u : ℂ) (i : Fin 4) :
     fderiv ℝ (fun z ↦ Φ (p.1, z) i) p.2 u = fderiv ℝ Φ p (0, u) i := by
-  have h := (EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt.comp p.2 hΦ.hasFDerivAt_slice_snd
-  rw [show (fun z ↦ Φ (p.1, z) i) = EuclideanSpace.proj (𝕜 := ℝ) i ∘ fun z ↦ Φ (p.1, z) from rfl,
-    h.fderiv]
+  rw [DifferentiableAt.fderiv_piLp_apply hΦ.hasFDerivAt_slice_snd.differentiableAt,
+    hΦ.hasFDerivAt_slice_snd.fderiv]
   simp
 
 /-- The derivative of a base slice is read off the derivative of the family. -/
@@ -127,6 +111,12 @@ private theorem fderiv_slice_fst_apply (hΦ : DifferentiableAt ℝ Φ p) (v : �
     fderiv ℝ (fun w ↦ Φ (w, p.2)) p.1 v = fderiv ℝ Φ p (v, 0) := by
   rw [hΦ.hasFDerivAt_slice_fst.fderiv]
   simp
+
+/-- The normal slices of a compactly supported family are compactly supported. -/
+private theorem hasCompactSupport_slice_snd (hΦ : HasCompactSupport Φ) (w : ℂ) :
+    HasCompactSupport fun z ↦ Φ (w, z) :=
+  HasCompactSupport.comp_of_forall_mem_imp_mem (hΦ.isCompact.image continuous_snd)
+    (fun _ hz ↦ ⟨_, hz, rfl⟩) fun _ hq ↦ image_eq_zero_of_notMem_tsupport hq
 
 /-- The gradients of the four coordinates of the normal slice, as a linear function of the
 derivative `D` of a family at a point: the gradient of the coordinate `j` is dual to
@@ -150,18 +140,6 @@ private def jetOperator (a : EuclideanSpace ℝ (Fin 4)) :
   Vortex.gaugeFixedFirstOrder ∘L sliceGradients ∘L ContinuousLinearMap.fst ℝ _ _ +
     Vortex.gaugeFixedZerothOrder a ∘L ContinuousLinearMap.snd ℝ _ _
 
-/-- The adjoint `L_x*` on the normal slices, as a linear function of the first jet. -/
-private def jetAdjoint (a : EuclideanSpace ℝ (Fin 4)) :
-    ((ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) × EuclideanSpace ℝ (Fin 4)) →L[ℝ]
-      EuclideanSpace ℝ (Fin 4) :=
-  LinearMap.toContinuousLinearMap
-    { toFun q := !₂[-q.1 (0, 1) 0 - q.1 (0, I) 1 + a 2 * q.2 3 - a 3 * q.2 2,
-        -q.1 (0, I) 0 + q.1 (0, 1) 1 - a 2 * q.2 2 - a 3 * q.2 3,
-        -q.1 (0, 1) 2 - q.1 (0, I) 3 - a 1 * q.2 2 + a 0 * q.2 3 - a 3 * q.2 0 + a 2 * q.2 1,
-        -q.1 (0, 1) 3 + q.1 (0, I) 2 - a 0 * q.2 2 - a 1 * q.2 3 + a 2 * q.2 0 + a 3 * q.2 1]
-      map_add' q r := by ext i; fin_cases i <;> simp <;> ring
-      map_smul' c q := by ext i; fin_cases i <;> simp <;> ring }
-
 private theorem sliceGradients_apply (D : ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) (j : Fin 4) :
     sliceGradients D j = (InnerProductSpace.toDual ℝ ℂ).symm
       ((EuclideanSpace.proj j).comp (D.comp (ContinuousLinearMap.inr ℝ ℂ ℂ))) :=
@@ -171,14 +149,6 @@ private theorem jetOperator_apply (a : EuclideanSpace ℝ (Fin 4))
     (q : (ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) × EuclideanSpace ℝ (Fin 4)) :
     jetOperator a q =
       Vortex.gaugeFixedFirstOrder (sliceGradients q.1) + Vortex.gaugeFixedZerothOrder a q.2 :=
-  (rfl)
-
-private theorem jetAdjoint_apply (a : EuclideanSpace ℝ (Fin 4))
-    (q : (ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) × EuclideanSpace ℝ (Fin 4)) :
-    jetAdjoint a q = !₂[-q.1 (0, 1) 0 - q.1 (0, I) 1 + a 2 * q.2 3 - a 3 * q.2 2,
-        -q.1 (0, I) 0 + q.1 (0, 1) 1 - a 2 * q.2 2 - a 3 * q.2 3,
-        -q.1 (0, 1) 2 - q.1 (0, I) 3 - a 1 * q.2 2 + a 0 * q.2 3 - a 3 * q.2 0 + a 2 * q.2 1,
-        -q.1 (0, 1) 3 + q.1 (0, I) 2 - a 0 * q.2 2 - a 1 * q.2 3 + a 2 * q.2 0 + a 3 * q.2 1] :=
   (rfl)
 
 variable (x : ℂ → EuclideanSpace ℝ (Fin 4))
@@ -195,26 +165,7 @@ private theorem gaugeFixedOperator_slice_eq_jetOperator (hΦ : DifferentiableAt 
   ext u
   simpa using fderiv_slice_snd_apply_coord hΦ u j
 
-/-- On the normal slice through a point, `L_x*` is the jet adjoint of the family there. -/
-private theorem gaugeFixedAdjoint_slice_eq_jetAdjoint (hΦ : DifferentiableAt ℝ Φ p) :
-    Vortex.gaugeFixedAdjoint x (fun z ↦ Φ (p.1, z)) p.2 =
-      jetAdjoint (x p.2) (fderiv ℝ Φ p, Φ p) := by
-  ext i
-  fin_cases i <;> simp [jetAdjoint_apply, fderiv_slice_snd_apply_coord hΦ]
-
 variable {x}
-
-/-- The jet adjoint is jointly continuous in the field value and the jet. -/
-private theorem continuous_jetAdjoint :
-    Continuous fun r : EuclideanSpace ℝ (Fin 4) ×
-        ((ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) × EuclideanSpace ℝ (Fin 4)) ↦
-      jetAdjoint r.1 r.2 := by
-  simp only [jetAdjoint_apply]
-  exact (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ by
-    fin_cases i <;>
-      simp only [Fin.isValue, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta, Fin.mk_one,
-        Fin.reduceFinMk, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val] <;>
-      fun_prop)
 
 /-- `L_x` on the normal slices of a `C¹` family is jointly continuous. -/
 private theorem continuous_gaugeFixedOperator_slice (hx : Continuous x) (hΦ : ContDiff ℝ 1 Φ) :
@@ -229,12 +180,22 @@ private theorem continuous_gaugeFixedOperator_slice (hx : Continuous x) (hΦ : C
 /-- `L_x*` on the normal slices of a `C¹` family is jointly continuous. -/
 private theorem continuous_gaugeFixedAdjoint_slice (hx : Continuous x) (hΦ : ContDiff ℝ 1 Φ) :
     Continuous fun p : ℂ × ℂ ↦ Vortex.gaugeFixedAdjoint x (fun z ↦ Φ (p.1, z)) p.2 := by
-  have h : (fun p : ℂ × ℂ ↦ Vortex.gaugeFixedAdjoint x (fun z ↦ Φ (p.1, z)) p.2) =
-      fun p ↦ jetAdjoint (x p.2) (fderiv ℝ Φ p, Φ p) :=
-    funext fun p ↦ gaugeFixedAdjoint_slice_eq_jetAdjoint x (hΦ.differentiable one_ne_zero p)
-  rw [h]
-  exact continuous_jetAdjoint.comp ((hx.comp continuous_snd).prodMk
-    ((hΦ.continuous_fderiv one_ne_zero).prodMk hΦ.continuous))
+  have hc := hΦ.continuous
+  have hd (i : Fin 4) (u : ℂ) :
+      Continuous fun p : ℂ × ℂ ↦ fderiv ℝ (fun z ↦ Φ (p.1, z) i) p.2 u := by
+    simp_rw [fun p : ℂ × ℂ ↦ fderiv_slice_snd_apply_coord (hΦ.differentiable one_ne_zero p) u i]
+    fun_prop
+  have h₀ : Continuous fun p : ℂ × ℂ ↦ Vortex.gaugeFixedAdjoint x (fun z ↦ Φ (p.1, z)) p.2 0 := by
+    simp only [Vortex.gaugeFixedAdjoint_apply_zero]; fun_prop
+  have h₁ : Continuous fun p : ℂ × ℂ ↦ Vortex.gaugeFixedAdjoint x (fun z ↦ Φ (p.1, z)) p.2 1 := by
+    simp only [Vortex.gaugeFixedAdjoint_apply_one]; fun_prop
+  have h₂ : Continuous fun p : ℂ × ℂ ↦ Vortex.gaugeFixedAdjoint x (fun z ↦ Φ (p.1, z)) p.2 2 := by
+    simp only [Vortex.gaugeFixedAdjoint_apply_two]; fun_prop
+  have h₃ : Continuous fun p : ℂ × ℂ ↦ Vortex.gaugeFixedAdjoint x (fun z ↦ Φ (p.1, z)) p.2 3 := by
+    simp only [Vortex.gaugeFixedAdjoint_apply_three]; fun_prop
+  refine contDiff_zero.mp (contDiff_euclidean.mpr fun i ↦ contDiff_zero.mpr ?_)
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
 
 /-- `L_x` on the normal slices vanishes off the support of a differentiable family. -/
 private theorem gaugeFixedOperator_slice_eq_zero (hΦ : Differentiable ℝ Φ) (hp : p ∉ tsupport Φ) :
@@ -242,11 +203,11 @@ private theorem gaugeFixedOperator_slice_eq_zero (hΦ : Differentiable ℝ Φ) (
   rw [gaugeFixedOperator_slice_eq_jetOperator x (hΦ p), fderiv_of_notMem_tsupport ℝ hp,
     image_eq_zero_of_notMem_tsupport hp, Prod.mk_zero_zero, map_zero]
 
-/-- `L_x*` on the normal slices vanishes off the support of a differentiable family. -/
-private theorem gaugeFixedAdjoint_slice_eq_zero (hΦ : Differentiable ℝ Φ) (hp : p ∉ tsupport Φ) :
+/-- `L_x*` on the normal slices vanishes off the support of a family. -/
+private theorem gaugeFixedAdjoint_slice_eq_zero (hp : p ∉ tsupport Φ) :
     Vortex.gaugeFixedAdjoint x (fun z ↦ Φ (p.1, z)) p.2 = 0 := by
-  rw [gaugeFixedAdjoint_slice_eq_jetAdjoint x (hΦ p), fderiv_of_notMem_tsupport ℝ hp,
-    image_eq_zero_of_notMem_tsupport hp, Prod.mk_zero_zero, map_zero]
+  refine Vortex.gaugeFixedAdjoint_eq_zero_of_notMem_tsupport fun hz ↦ hp ?_
+  simpa using tsupport_comp_subset_preimage (f := fun z ↦ (p.1, z)) Φ (by fun_prop) hz
 
 /-- **`L_x` commutes with derivatives along the base.** For a `C²` family `Φ` and a base direction
 `v`, the line derivative along `(v, 0)` of `L_x` applied to the normal slices of `Φ` is `L_x`
@@ -291,6 +252,13 @@ section Cross
 variable {μ ν : Measure ℂ} [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
   {x : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
 
+/-- A continuous function vanishing off the support of a compactly supported family is
+integrable. -/
+private theorem integrable_of_forall_notMem_tsupport {E : Type*} [NormedAddCommGroup E]
+    {f : ℂ × ℂ → E} (hf : Continuous f) (hΗc : HasCompactSupport Η)
+    (h : ∀ p ∉ tsupport Η, f p = 0) : Integrable f (μ.prod ν) :=
+  hf.integrable_of_hasCompactSupport (HasCompactSupport.intro hΗc.isCompact h)
+
 /-- **Integration by parts along the base.** For a `C²` family `Ξ`, a compactly supported `C¹`
 family `Η` and a base direction `v`, `∫ ⟪L_x Ξ, ∂_v Η⟫ = -∫ ⟪L_x (∂_v Ξ), Η⟫`. -/
 private theorem integral_inner_gaugeFixedOperator_slice_fderiv_apply (hx : Continuous x)
@@ -304,15 +272,12 @@ private theorem integral_inner_gaugeFixedOperator_slice_fderiv_apply (hx : Conti
   have hLΨ := continuous_gaugeFixedOperator_slice hx hΨ
   have hc := hΗ.continuous
   exact integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable (B := innerSL ℝ)
-    (Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-      HasCompactSupport.intro hΗc.isCompact fun q hq ↦ by
-        simp [image_eq_zero_of_notMem_tsupport hq])
-    (Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-      HasCompactSupport.intro hΗc.isCompact fun q hq ↦ by
-        simp [fderiv_of_notMem_tsupport ℝ hq])
-    (Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-      HasCompactSupport.intro hΗc.isCompact fun q hq ↦ by
-        simp [image_eq_zero_of_notMem_tsupport hq])
+    (integrable_of_forall_notMem_tsupport (by fun_prop) hΗc fun q hq ↦ by
+      simp [image_eq_zero_of_notMem_tsupport hq])
+    (integrable_of_forall_notMem_tsupport (by fun_prop) hΗc fun q hq ↦ by
+      simp [fderiv_of_notMem_tsupport ℝ hq])
+    (integrable_of_forall_notMem_tsupport (by fun_prop) hΗc fun q hq ↦ by
+      simp [image_eq_zero_of_notMem_tsupport hq])
     (fun q _ ↦ hasLineDerivAt_gaugeFixedOperator_slice hΞ q v)
     (fun q _ ↦ ((hΗ.differentiable one_ne_zero) q).hasFDerivAt.hasLineDerivAt (v, 0))
 
@@ -328,17 +293,13 @@ private theorem integral_inner_gaugeFixedOperator_slice (hx : Continuous x)
   have hAΗ := continuous_gaugeFixedAdjoint_slice hx hΗ
   have hc := hΗ.continuous
   have hcΨ := hΨ.continuous
-  rw [integral_prod _ (Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-      HasCompactSupport.intro hΗc.isCompact fun q hq ↦ by
-        simp [image_eq_zero_of_notMem_tsupport hq]),
-    integral_prod _ (Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-      HasCompactSupport.intro hΗc.isCompact fun q hq ↦ by
-        simp [gaugeFixedAdjoint_slice_eq_zero (x := x) (hΗ.differentiable one_ne_zero) hq])]
+  rw [integral_prod _ (integrable_of_forall_notMem_tsupport (by fun_prop) hΗc fun q hq ↦ by
+      simp [image_eq_zero_of_notMem_tsupport hq]),
+    integral_prod _ (integrable_of_forall_notMem_tsupport (by fun_prop) hΗc fun q hq ↦ by
+      simp [gaugeFixedAdjoint_slice_eq_zero (x := x) hq])]
   exact integral_congr_ae (.of_forall fun w ↦ Vortex.integral_inner_gaugeFixedOperator (μ := ν)
     (hΨ.comp (contDiff_const.prodMk contDiff_id)) (hΗ.comp (contDiff_const.prodMk contDiff_id))
-    (Or.inr (HasCompactSupport.comp_of_forall_mem_imp_mem
-      (hΗc.isCompact.image continuous_snd) (fun z hz ↦ ⟨_, hz, rfl⟩)
-      fun _ hq ↦ image_eq_zero_of_notMem_tsupport hq)))
+    (Or.inr (hasCompactSupport_slice_snd hΗc w)))
 
 /-- **The cross term along a base direction.** For `C²` families `Ξ`, `Η`, with `Η` compactly
 supported, and a base direction `v`, the pairing of `L_x Ξ` with `∂_v Η` and the pairing of
@@ -356,12 +317,10 @@ private theorem integral_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAdjo
   have hLΞ := continuous_gaugeFixedOperator_slice hx hΞ₁
   have hAΗ := continuous_gaugeFixedAdjoint_slice hx hΗ₁
   rw [integral_add
-      (Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-        HasCompactSupport.intro hΗc.isCompact fun q hq ↦ by
-          simp [fderiv_of_notMem_tsupport ℝ hq])
-      (Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-        HasCompactSupport.intro hΗc.isCompact fun q hq ↦ by
-          simp [gaugeFixedAdjoint_slice_eq_zero (x := x) (hΗ₁.differentiable one_ne_zero) hq]),
+      (integrable_of_forall_notMem_tsupport (by fun_prop) hΗc fun q hq ↦ by
+        simp [fderiv_of_notMem_tsupport ℝ hq])
+      (integrable_of_forall_notMem_tsupport (by fun_prop) hΗc fun q hq ↦ by
+        simp [gaugeFixedAdjoint_slice_eq_zero (x := x) hq]),
     integral_inner_gaugeFixedOperator_slice_fderiv_apply hx hΞ hΗ₁ hΗc v,
     integral_inner_gaugeFixedOperator_slice hx hΨ hΗ₁ hΗc, neg_add_eq_zero]
   exact integral_congr_ae (.of_forall fun p ↦ real_inner_comm _ _)
@@ -374,29 +333,6 @@ section Energy
 
 variable {μ ν : Measure ℂ} [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
   {x : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-- The pairing `⟪u, J'⁻¹ w⟫` of `normalBaseCoupling` is alternating, as `J'` is skew. -/
-private theorem isAlt_compl₂_targetComplexStructure_symm :
-    ((innerₗ (EuclideanSpace ℝ (Fin 4))).compl₂
-      Vortex.targetComplexStructure.symm.toLinearEquiv.toLinearMap).IsAlt :=
-  fun u ↦ by
-    have h := Vortex.inner_targetComplexStructure_left u u
-    rw [real_inner_comm] at h
-    simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toLinearEquiv, Vortex.targetComplexStructure_symm_apply,
-      inner_neg_right]
-    linarith
-
-/-- The pairing `⟪u, J w⟫` of `pairedBaseCoupling` is alternating, as `J` is skew. -/
-private theorem isAlt_compl₂_variationComplexStructure :
-    ((innerₗ (EuclideanSpace ℝ (Fin 4))).compl₂
-      Vortex.variationComplexStructure.toLinearEquiv.toLinearMap).IsAlt :=
-  fun u ↦ by
-    have h := Vortex.inner_variationComplexStructure_left u u
-    rw [real_inner_comm] at h
-    simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toLinearEquiv]
-    linarith
 
 /-- The right side of the energy identity is integrable. -/
 private theorem integrable_energy_familyNormalModel (hx : Continuous x) (hΞ : ContDiff ℝ 1 Ξ)
@@ -415,7 +351,7 @@ private theorem integrable_energy_familyNormalModel (hx : Continuous x) (hΞ : C
     HasCompactSupport.intro (hΞc.isCompact.union hΗc.isCompact) fun p hp ↦ ?_
   have hpΞ : p ∉ tsupport Ξ := fun h ↦ hp (Or.inl h)
   have hpΗ : p ∉ tsupport Η := fun h ↦ hp (Or.inr h)
-  simp [gaugeFixedOperator_slice_eq_zero hdΞ hpΞ, gaugeFixedAdjoint_slice_eq_zero hdΗ hpΗ,
+  simp [gaugeFixedOperator_slice_eq_zero hdΞ hpΞ, gaugeFixedAdjoint_slice_eq_zero hpΗ,
     fderiv_of_notMem_tsupport ℝ hpΞ, fderiv_of_notMem_tsupport ℝ hpΗ]
 
 /-- The pairing of `L_x Ξ` with `∂_v Η` plus that of `L_x* Η` with `∂_v Ξ` is integrable. -/
@@ -425,12 +361,10 @@ private theorem integrable_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAd
     Integrable (fun p ↦
       ⟪Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2, fderiv ℝ Η p (v, 0)⟫ +
         ⟪Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2, fderiv ℝ Ξ p (v, 0)⟫) (μ.prod ν) := by
-  have hdΗ := hΗ.differentiable one_ne_zero
   have hcLΞ := continuous_gaugeFixedOperator_slice hx hΞ
   have hcAΗ := continuous_gaugeFixedAdjoint_slice hx hΗ
-  exact Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-    HasCompactSupport.intro hΗc.isCompact fun p hp ↦ by
-      simp [fderiv_of_notMem_tsupport ℝ hp, gaugeFixedAdjoint_slice_eq_zero hdΗ hp]
+  exact integrable_of_forall_notMem_tsupport (by fun_prop) hΗc fun p hp ↦ by
+    simp [fderiv_of_notMem_tsupport ℝ hp, gaugeFixedAdjoint_slice_eq_zero hp]
 
 /-- The pairing `⟪∂_s Φ, T (∂_t Φ)⟫` of two base derivatives of a compactly supported `C¹` family
 is integrable. -/
@@ -439,13 +373,13 @@ private theorem integrable_inner_fderiv_apply {Φ : ℂ × ℂ → EuclideanSpac
     (T : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) :
     Integrable (fun p ↦ ⟪fderiv ℝ Φ p (1, 0), T (fderiv ℝ Φ p (I, 0))⟫) (μ.prod ν) := by
   have hT := T.continuous
-  exact Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
-    HasCompactSupport.intro hΦc.isCompact fun p hp ↦ by simp [fderiv_of_notMem_tsupport ℝ hp]
+  exact integrable_of_forall_notMem_tsupport (by fun_prop) hΦc fun p hp ↦ by
+    simp [fderiv_of_notMem_tsupport ℝ hp]
 
 /-- **The pointwise expansion of the two rows of the normal model.** The squared rows are the
 squared normal operators plus the energy along the base, up to twice four cross terms: the
 pairings of `L_x Ξ` with `∂_s Η` and of `L_x* Η` with `∂_s Ξ`, the same along `t` for the family
-`J Ξ`, and the pairings `⟪∂_s Η, J'⁻¹ ∂_t Η⟫`, `⟪∂_s Ξ, J ∂_t Ξ⟫`. -/
+`J Ξ`, and the pairings `-⟪∂_s Η, J' ∂_t Η⟫`, `⟪∂_s Ξ, J ∂_t Ξ⟫`. -/
 private theorem norm_sq_add_norm_sq_familyNormalModel_eq (hΞ : Differentiable ℝ Ξ)
     (hΗ : Differentiable ℝ Η) (p : ℂ × ℂ) :
     ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2 +
@@ -461,18 +395,17 @@ private theorem norm_sq_add_norm_sq_familyNormalModel_eq (hΞ : Differentiable �
         (⟪Vortex.gaugeFixedOperator x (fun z ↦ Vortex.variationComplexStructure (Ξ (p.1, z)))
             p.2, fderiv ℝ Η p (I, 0)⟫ +
           ⟪Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2,
-            fderiv ℝ (fun q ↦ Vortex.variationComplexStructure (Ξ q)) p (I, 0)⟫) +
-        ⟪fderiv ℝ Η p (1, 0), Vortex.targetComplexStructure.symm (fderiv ℝ Η p (I, 0))⟫ +
+            fderiv ℝ (fun q ↦ Vortex.variationComplexStructure (Ξ q)) p (I, 0)⟫) -
+        ⟪fderiv ℝ Η p (1, 0), Vortex.targetComplexStructure (fderiv ℝ Η p (I, 0))⟫ +
         ⟪fderiv ℝ Ξ p (1, 0), Vortex.variationComplexStructure (fderiv ℝ Ξ p (I, 0))⟫) := by
   have hdΞ' : fderiv ℝ (fun q ↦ Vortex.variationComplexStructure (Ξ q)) p (I, 0) =
       Vortex.variationComplexStructure (fderiv ℝ Ξ p (I, 0)) :=
     congrArg (fun L ↦ L (I, 0)) (Vortex.variationComplexStructure.comp_fderiv (f := Ξ))
-  rw [normalBaseCoupling_eq, pairedBaseCoupling_eq,
+  rw [normalBaseCoupling_apply, pairedBaseCoupling_apply,
     Vortex.gaugeFixedOperator_variationComplexStructure, hdΞ', fderiv_slice_fst_apply (hΞ p),
     fderiv_slice_fst_apply (hΞ p), fderiv_slice_fst_apply (hΗ p), fderiv_slice_fst_apply (hΗ p)]
-  simp only [norm_add_sq_real, LinearIsometryEquiv.norm_map, norm_neg, inner_add_right,
-    Vortex.targetComplexStructure_symm_apply, inner_neg_right,
-    Vortex.inner_targetComplexStructure_left]
+  simp only [norm_add_sq_real, norm_sub_sq_real, LinearIsometryEquiv.norm_map, inner_add_right,
+    inner_sub_right, Vortex.inner_targetComplexStructure_left]
   ring
 
 /-- **The energy identity of the normal model with base dependence.** Let `x` be a continuous
@@ -510,32 +443,32 @@ theorem integral_norm_sq_add_norm_sq_familyNormalModel (hx : Continuous x)
   have i₂ := integrable_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAdjoint_slice
     (μ := μ) (ν := ν) hx (hΞ'.of_le (by norm_num)) hΗ₁ hΗc I
   have i₃ := integrable_inner_fderiv_apply (μ := μ) (ν := ν) hΗ₁ hΗc
-    Vortex.targetComplexStructure.symm
+    Vortex.targetComplexStructure
   have i₄ := integrable_inner_fderiv_apply (μ := μ) (ν := ν) hΞ₁ hΞc
     Vortex.variationComplexStructure
   have h₁ := integral_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAdjoint_slice
     (μ := μ) (ν := ν) hx hΞ hΗ hΗc 1
   have h₂ := integral_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAdjoint_slice
     (μ := μ) (ν := ν) hx hΞ' hΗ hΗc I
-  have h₃ : ∫ p, ⟪fderiv ℝ Η p (1, 0), Vortex.targetComplexStructure.symm (fderiv ℝ Η p (I, 0))⟫
+  have h₃ : ∫ p, ⟪fderiv ℝ Η p (1, 0), Vortex.targetComplexStructure (fderiv ℝ Η p (I, 0))⟫
       ∂μ.prod ν = 0 := by
     simpa only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
       LinearIsometryEquiv.coe_toLinearEquiv] using
       integral_bilinForm_fderiv_apply_eq_zero_of_isAlt (μ := μ.prod ν)
-        isAlt_compl₂_targetComplexStructure_symm hΗ hΗc (1, 0) (I, 0)
+        Vortex.isAlt_compl₂_targetComplexStructure hΗ hΗc (1, 0) (I, 0)
   have h₄ : ∫ p, ⟪fderiv ℝ Ξ p (1, 0), Vortex.variationComplexStructure (fderiv ℝ Ξ p (I, 0))⟫
       ∂μ.prod ν = 0 := by
     simpa only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
       LinearIsometryEquiv.coe_toLinearEquiv] using
       integral_bilinForm_fderiv_apply_eq_zero_of_isAlt (μ := μ.prod ν)
-        isAlt_compl₂_variationComplexStructure hΞ hΞc (1, 0) (I, 0)
+        Vortex.isAlt_compl₂_variationComplexStructure hΞ hΞc (1, 0) (I, 0)
   rw [integral_congr_ae (.of_forall (norm_sq_add_norm_sq_familyNormalModel_eq
       (hΞ₁.differentiable one_ne_zero) (hΗ₁.differentiable one_ne_zero))),
-    integral_add (integrable_energy_familyNormalModel hx hΞ₁ hΗ₁ hΞc hΗc) ?_, integral_const_mul,
-    integral_add ?_ i₄, integral_add ?_ i₃, integral_add i₁ i₂, h₁, h₂, h₃, h₄]
-  all_goals first
-    | exact i₁.add i₂ | exact (i₁.add i₂).add i₃ | exact (((i₁.add i₂).add i₃).add i₄).const_mul 2
-    | norm_num
+    integral_add (integrable_energy_familyNormalModel hx hΞ₁ hΗ₁ hΞc hΗc)
+      ((((i₁.fun_add i₂).sub' i₃).fun_add i₄).const_mul 2), integral_const_mul,
+    integral_add ((i₁.fun_add i₂).sub' i₃) i₄, integral_sub (i₁.fun_add i₂) i₃, integral_add i₁ i₂,
+    h₁, h₂, h₃, h₄]
+  norm_num
 
 /-- **The base energy is controlled by the normal model.** For a continuous plane field `x` and
 compactly supported `C²` families `Ξ`, `Η`, the energy of the families along the base is at most
@@ -598,9 +531,7 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_add_norm_sq_familyNormalModel
   -- Integrate the gap along each normal slice.
   rw [integral_prod _ hΗi, integral_prod _ hAi, ← integral_const_mul]
   exact integral_mono (hΗi.integral_prod_left.const_mul c) hAi.integral_prod_left fun w ↦
-    hgap _ (hΗ.comp (contDiff_const.prodMk contDiff_id))
-      (HasCompactSupport.comp_of_forall_mem_imp_mem (hΗc.isCompact.image continuous_snd)
-        (fun z hz ↦ ⟨_, hz, rfl⟩) fun _ hq ↦ image_eq_zero_of_notMem_tsupport hq)
+    hgap _ (hΗ.comp (contDiff_const.prodMk contDiff_id)) (hasCompactSupport_slice_snd hΗc w)
 
 /-- **Coercivity of the paired block at a plane vortex.** At a `C¹` plane vortex `x` whose
 section has modulus tending to one at infinity there is `c > 0` such that every pair of compactly
