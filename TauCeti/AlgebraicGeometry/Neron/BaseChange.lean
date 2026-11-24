@@ -57,8 +57,8 @@ as the pullback of `j` along `g`, then `X ×_S S'` has the property relative to 
 (Bosch–Lütkebohmert–Raynaud, *Néron Models*, §1.2, Proposition 2(c), for étale `g`). -/
 theorem NeronMappingProperty.pullback [Smooth g] (sq : IsPullback j' g' g j) {X : Over S}
     (h : NeronMappingProperty j X) : NeronMappingProperty j' ((Over.pullback g).obj X) := by
-  rw [neronMappingProperty_iff_bijective_counit_comp] at h ⊢
-  intro Y _
+  replace h := mappingProperty_iff_bijective_counit_comp.1 h
+  refine mappingProperty_iff_bijective_counit_comp.2 fun Y _ ↦ ?_
   have : Smooth ((Over.map g).obj Y).hom := by dsimp; infer_instance
   -- Pushed forward along `g`, the counit for `j'` at `Y` is the counit for `j` at `Y` viewed
   -- over `S`, up to the Beck–Chevalley isomorphism of the square.
@@ -81,7 +81,8 @@ theorem NeronMappingProperty.pullback [Smooth g] (sq : IsPullback j' g' g j) {X 
     -- `homEquiv`, which `rw` cannot reach.
     rfl
   rw [← (Equiv.bijective ((Over.mapPullbackAdj g).homEquiv _ _).symm).of_comp_iff', key]
-  refine Function.Bijective.comp ?_ ((h ((Over.map g).obj Y)).comp (Equiv.bijective _))
+  refine Function.Bijective.comp ?_
+    ((h ((Over.map g).obj Y) inferInstance).comp (Equiv.bijective _))
   exact ⟨fun a b hab ↦ (cancel_epi _).1 hab, fun b ↦ ⟨e.inv ≫ b, by simp⟩⟩
 
 namespace NeronModel
@@ -97,12 +98,12 @@ of morphisms into `M.model` are morphisms into the base-changed model. -/
 def baseChange [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A) :
     NeronModel j' ((Over.pullback g').obj A) where
   model := (Over.pullback g).obj M.model
-  genericIso := ((Over.pullbackComp j' g).symm ≪≫ eqToIso (by simp only [sq.w]) ≪≫
-    Over.pullbackComp g' j).app M.model ≪≫ (Over.pullback g').mapIso M.genericIso
+  genericIso := (Over.pullbackPullbackIsoOfComm sq.w).app M.model ≪≫
+    (Over.pullback g').mapIso M.genericIso
   smooth := by dsimp; infer_instance
   isSeparated := by dsimp; infer_instance
   quasiCompact := by dsimp; infer_instance
-  mappingProperty := M.mappingProperty.pullback sq
+  mappingProperty := NeronMappingProperty.pullback sq M.mappingProperty
 
 @[simp]
 theorem baseChange_model [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A) :
@@ -112,8 +113,8 @@ theorem baseChange_model [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel 
 @[simp]
 theorem baseChange_genericIso_hom [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A) :
     (M.baseChange sq).genericIso.hom =
-      ((Over.pullbackComp j' g).inv ≫ eqToHom (by simp only [sq.w]) ≫
-        (Over.pullbackComp g' j).hom).app M.model ≫ (Over.pullback g').map M.genericIso.hom :=
+      (Over.pullbackPullbackIsoOfComm sq.w).hom.app M.model ≫
+        (Over.pullback g').map M.genericIso.hom :=
   (rfl)
 
 /-- Base change commutes with extension of morphisms to Néron models: the base change of the
