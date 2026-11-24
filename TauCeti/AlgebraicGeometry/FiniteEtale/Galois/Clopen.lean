@@ -22,9 +22,9 @@ fundamental groups `π₁(T, x) → π₁(S, x ≫ g)` induced by `g` is an isom
 groups. No connectedness hypothesis is needed: the étale fundamental group `Aut (fiber x)` and the
 homomorphism `mapAutFiber` are defined for every scheme.
 
-For a clopen `U ⊆ S` this is the check in EtaleCohomologyFoundations §F.0.2 that the map of
-fundamental groups along the inclusion of `S₁` into `S = S₁ ⊔ S₂` is an isomorphism: covers of
-`S` restrict to covers of `S₁`, and every cover of `S₁` extends by the empty cover of `S₂`.
+For a clopen `U ⊆ S`, so that `S = U ⊔ Uᶜ`, the map of fundamental groups along the inclusion of
+`U` is an isomorphism: covers of `S` restrict to covers of `U`, and every cover of `U` extends by
+the empty cover of the complement.
 
 ## Main definitions
 
@@ -38,6 +38,10 @@ fundamental groups along the inclusion of `S₁` into `S = S₁ ⊔ S₂` is an 
   a finite étale monomorphism `g`.
 * `TauCeti.FiniteEtaleScheme.mapAutFiber_ι_bijective_of_isClosed`: `mapAutFiber U.ι rfl` is
   bijective for a clopen `U ⊆ S`.
+
+## References
+
+* A. Grothendieck, *SGA 1*, Exposé V, §§4–7.
 -/
 
 public section
@@ -57,31 +61,30 @@ inverse precomposes with the extension functor `map g`. -/
 noncomputable def mapAutFiberEquivOfMono (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g]
     {x : Spec (.of Ω) ⟶ T} {y : Spec (.of Ω) ⟶ S} (h : x ≫ g = y) :
     Aut (fiber x) ≃ₜ* Aut (fiber y) where
-  __ := ((mapPullbackAdj g).mapAutWhiskeringLeftEquiv (fiber x)).trans
-    (pullbackCompFiberIso g x ≪≫ eqToIso (congrArg fiber h)).conjAut
-  continuous_toFun := (mapAutFiber g h).continuous.congr fun σ ↦ by
-    change mapAutFiber g h σ = (pullbackCompFiberIso g x ≪≫ eqToIso (congrArg fiber h)).conjAut
-      ((mapPullbackAdj g).mapAutWhiskeringLeftEquiv (fiber x) σ)
-    rw [Adjunction.mapAutWhiskeringLeftEquiv_apply, mapAutFiber_eq_conjAut]
-  continuous_invFun :=
-    ((((mapPullbackAdj g).unitWhiskerIso (fiber x)).symm.continuous_conjAut.comp
-      (continuous_mapAut_whiskeringLeft (map g) (pullback g ⋙ fiber x))).comp
-        (pullbackCompFiberIso g x ≪≫ eqToIso (congrArg fiber h)).symm.continuous_conjAut).congr
-      fun τ ↦ by
-        change _ = ((mapPullbackAdj g).mapAutWhiskeringLeftEquiv (fiber x)).symm
-          ((pullbackCompFiberIso g x ≪≫ eqToIso (congrArg fiber h)).conjAut.symm τ)
-        rw [Adjunction.mapAutWhiskeringLeftEquiv_symm_apply, Iso.conjAut_symm_apply]
-        rfl
+  toFun := mapAutFiber g h
+  invFun τ := ((mapPullbackAdj g).mapAutWhiskeringLeftEquiv (fiber x)).symm
+    ((pullbackCompFiberIso g x ≪≫ eqToIso (congrArg fiber h)).conjAut.symm τ)
+  left_inv σ := by
+    dsimp only
+    rw [mapAutFiber_eq_conjAut, ← Adjunction.mapAutWhiskeringLeftEquiv_apply (mapPullbackAdj g),
+      MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply]
+  right_inv τ := by
+    dsimp only
+    rw [mapAutFiber_eq_conjAut, ← Adjunction.mapAutWhiskeringLeftEquiv_apply (mapPullbackAdj g),
+      MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+  map_mul' := map_mul _
+  continuous_toFun := (mapAutFiber g h).continuous
+  continuous_invFun := by
+    simp only [Adjunction.mapAutWhiskeringLeftEquiv_symm_apply, Iso.conjAut_symm_apply]
+    exact (Iso.continuous_conjAut _).comp ((continuous_mapAut_whiskeringLeft (map g)
+      (pullback g ⋙ fiber x)).comp (Iso.continuous_conjAut _))
 
 /-- The isomorphism `mapAutFiberEquivOfMono g h` is `mapAutFiber g h`. -/
 @[simp]
 theorem coe_mapAutFiberEquivOfMono (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g]
     {x : Spec (.of Ω) ⟶ T} {y : Spec (.of Ω) ⟶ S} (h : x ≫ g = y) :
     ⇑(mapAutFiberEquivOfMono g h) = mapAutFiber g h :=
-  funext fun σ ↦ by
-    change (pullbackCompFiberIso g x ≪≫ eqToIso (congrArg fiber h)).conjAut
-      ((mapPullbackAdj g).mapAutWhiskeringLeftEquiv (fiber x) σ) = _
-    rw [Adjunction.mapAutWhiskeringLeftEquiv_apply, mapAutFiber_eq_conjAut]
+  (rfl)
 
 /-- For a finite étale monomorphism `g`, the induced homomorphism of étale fundamental groups is
 bijective. -/

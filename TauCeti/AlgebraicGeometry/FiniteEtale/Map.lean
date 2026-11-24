@@ -34,7 +34,8 @@ extension of a cover of `U` by the empty cover of the complement.
 * `TauCeti.FiniteEtaleScheme.map g`: composition with a finite étale `g : T ⟶ S`, a functor
   from finite étale `T`-schemes to finite étale `S`-schemes.
 * `TauCeti.FiniteEtaleScheme.mapPullbackAdj g`: `map g` is left adjoint to base change along
-  `g`; for a monomorphism `g` its unit is an isomorphism.
+  `g`; for a monomorphism `g` its unit is the inverse of `mapCompPullbackIso g`
+  (`mapCompPullbackIso_inv`).
 * `TauCeti.FiniteEtaleScheme.mapCompPullbackIso g`: for a monomorphism `g`, base change along
   `g` after `map g` is the identity.
 * `TauCeti.FiniteEtaleScheme.mapCompFiberIso g x`: for a monomorphism `g`, the geometric
@@ -116,18 +117,42 @@ restricted to finite étale schemes. -/
 noncomputable def mapPullbackAdj (g : T ⟶ S) [IsFinite g] [Etale g] : map g ⊣ pullback g :=
   (Over.mapPullbackAdj g).restrictFullyFaithful (finiteEtaleSchemeProperty T).fullyFaithfulι
     (finiteEtaleSchemeProperty S).fullyFaithfulι (eqToIso (map_comp_ι g).symm)
-    (eqToIso (pullback_comp_ι g))
+    (eqToIso (pullback_comp_ι g).symm)
+
+/-- The components of the unit of `map g ⊣ pullback g` are those of the unit of
+`Over.map g ⊣ Over.pullback g`. -/
+@[simp]
+theorem mapPullbackAdj_unit_app_hom (g : T ⟶ S) [IsFinite g] [Etale g] (X : FiniteEtaleScheme T) :
+    ((mapPullbackAdj g).unit.app X).hom = (Over.mapPullbackAdj g).unit.app X.obj := by
+  rw [← ObjectProperty.ι_map, mapPullbackAdj, Adjunction.map_restrictFullyFaithful_unit_app]
+  simp only [eqToIso.hom, eqToHom_app, eqToHom_map, eqToHom_trans]
+  -- The remaining `eqToHom` is an identity: `map_comp_ι` and `pullback_comp_ι` hold by `rfl`.
+  exact Category.comp_id _
+
+/-- The components of the counit of `map g ⊣ pullback g` are those of the counit of
+`Over.map g ⊣ Over.pullback g`. -/
+@[simp]
+theorem mapPullbackAdj_counit_app_hom (g : T ⟶ S) [IsFinite g] [Etale g]
+    (Y : FiniteEtaleScheme S) :
+    ((mapPullbackAdj g).counit.app Y).hom = (Over.mapPullbackAdj g).counit.app Y.obj := by
+  rw [← ObjectProperty.ι_map, mapPullbackAdj, Adjunction.map_restrictFullyFaithful_counit_app]
+  simp only [eqToIso.inv, eqToHom_app, eqToHom_map, eqToHom_trans_assoc]
+  -- The remaining `eqToHom` is an identity: `map_comp_ι` and `pullback_comp_ι` hold by `rfl`.
+  exact Category.id_comp _
+
+/-- For a finite étale monomorphism `g`, the inverse of `mapCompPullbackIso g` is the unit of
+`map g ⊣ pullback g`. Not `@[simp]`: the components of both sides already have the same simp
+normal form, by `mapCompPullbackIso_inv_app_hom` and `mapPullbackAdj_unit_app_hom`. -/
+theorem mapCompPullbackIso_inv (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g] :
+    (mapCompPullbackIso g).inv = (mapPullbackAdj g).unit := by
+  ext X : 3
+  rw [mapCompPullbackIso_inv_app_hom, mapPullbackAdj_unit_app_hom]
 
 /-- For a finite étale monomorphism `g`, the unit of `map g ⊣ pullback g` is an isomorphism:
 `map g` is fully faithful. -/
 instance isIso_mapPullbackAdj_unit (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g] :
-    IsIso (mapPullbackAdj g).unit := by
-  have (X : FiniteEtaleScheme T) : IsIso ((mapPullbackAdj g).unit.app X) := by
-    have : IsIso ((finiteEtaleSchemeProperty T).ι.map ((mapPullbackAdj g).unit.app X)) := by
-      rw [mapPullbackAdj, Adjunction.map_restrictFullyFaithful_unit_app]
-      infer_instance
-    exact isIso_of_reflects_iso _ (finiteEtaleSchemeProperty T).ι
-  exact NatIso.isIso_of_isIso_app _
+    IsIso (mapPullbackAdj g).unit :=
+  mapCompPullbackIso_inv g ▸ inferInstance
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
