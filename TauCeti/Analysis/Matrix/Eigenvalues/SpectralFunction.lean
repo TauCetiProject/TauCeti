@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Eigenvalues.Smooth
+import TauCeti.Analysis.Matrix.Spectrum
 
 /-!
 # Lewis's theorem: the derivative of spectral functions
