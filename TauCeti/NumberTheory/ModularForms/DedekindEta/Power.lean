@@ -12,6 +12,7 @@ import Mathlib.Tactic.NormNum.LegendreSymbol
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
+import TauCeti.NumberTheory.ModularForms.Degeneracy
 
 /-!
 # Even powers of the eta function on principal congruence subgroups
@@ -103,9 +104,8 @@ private theorem cexp_div_twentyFour_zpow_eq_one {n r : ℤ} (h : 24 ∣ r * n) :
 private theorem kroneckerSym_zpow_eq_one {a b r : ℤ} (h : a.gcd b = 1) (hr : Even r) :
     ((kroneckerSym a b : ℤ) : ℂ) ^ r = 1 := by
   obtain ⟨m, rfl⟩ := hr
-  have hsq : ((kroneckerSym a b : ℤ) : ℂ) ^ 2 = 1 := by
-    rw [← Int.cast_pow, ← kroneckerSym_pow_left, kroneckerSym_sq_one h, Int.cast_one]
-  rw [← two_mul, zpow_mul, zpow_two, ← sq, hsq, one_zpow]
+  rw [← two_mul, zpow_mul, zpow_two, ← sq, ← Int.cast_pow, sq_kroneckerSym_eq_one h, Int.cast_one,
+    one_zpow]
 
 /-- The multiplier statement for even `c`, from the divisibilities of the entries. -/
 private theorem etaMultiplier_zpow_eq_one_of_even_c {N r : ℤ} {γ : SL(2, ℤ)}
@@ -178,13 +178,6 @@ theorem eta_zpow_two_mul_slash_of_mem_Gamma {N : ℕ} {k : ℤ} (hkN : 12 ∣ k 
   rw [eta_zpow_two_mul_slash, etaMultiplier_zpow_eq_one_of_mem_Gamma (even_two_mul k)
     (by rw [mul_assoc]; exact mul_dvd_mul_left 2 hkN) hγ, one_smul]
 
-/-- For `γ = (a b; c d)` with `b = m b'`, the matrix `γ' = (a b'; m c d) ∈ SL(2, ℤ)`, so that
-`γ' (τ / m) = (γ τ) / m`. -/
-private def scaleEntries (γ : SL(2, ℤ)) (m b' : ℤ) (hb : γ 0 1 = m * b') : SL(2, ℤ) :=
-  .mk !![γ 0 0, b'; m * γ 1 0, γ 1 1] (by
-    rw [Matrix.det_fin_two_of]
-    linear_combination γ.fin_two_mul_sub_mul_eq_one + γ 1 0 * hb)
-
 /-- **`η(τ / m) ^ (2 k)` in weight `k`**: when `12 ∣ k N`, the function `τ ↦ η(τ / m) ^ (2 k)` is
 invariant under the weight-`k` slash action of every `γ = (a b; c d) ∈ Γ(N)` with `m N ∣ b`. -/
 theorem eta_div_zpow_two_mul_slash_of_mem_Gamma_of_dvd {m N : ℕ} [NeZero m] {k : ℤ}
@@ -193,38 +186,25 @@ theorem eta_div_zpow_two_mul_slash_of_mem_Gamma_of_dvd {m N : ℕ} [NeZero m] {k
     (fun τ : ℍ ↦ η (τ / m) ^ (2 * k)) ∣[k] γ = fun τ : ℍ ↦ η (τ / m) ^ (2 * k) := by
   obtain ⟨ha, -, hc, hd⟩ := mem_Gamma_iff_dvd.1 hγ
   obtain ⟨b', hb'⟩ := (dvd_mul_right (m : ℤ) N).trans hb
-  have hm : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  set γ' := scaleEntries γ m b' hb'
-  have hγ' : γ' ∈ CongruenceSubgroup.Gamma N := by
-    refine mem_Gamma_iff_dvd.2 ⟨ha, ?_, hc.mul_left _, hd⟩
+  -- `γ` is the `diag(m, 1)`-conjugate of `δ = (a b'; m c d)`, which again lies in `Γ(N)`.
+  have hδ : conjInvScale m γ b' hb' ∈ CongruenceSubgroup.Gamma N := by
+    refine mem_Gamma_iff_dvd.2 ⟨by simpa using ha, ?_, by simpa using hc.mul_left _,
+      by simpa using hd⟩
     have : (m : ℤ) * N ∣ m * b' := hb' ▸ hb
-    exact (mul_dvd_mul_iff_left (Int.natCast_ne_zero.2 (NeZero.ne m))).1 this
-  ext τ
-  -- `τ / m` as a point of the upper half-plane.
-  let τ' : ℍ := UpperHalfPlane.mk (τ / m) (by
-    rw [Complex.div_natCast_im]
-    exact div_pos τ.im_pos (Nat.cast_pos.2 (NeZero.pos m)))
-  have hden : ((γ 1 0 : ℂ) * τ + γ 1 1) ≠ 0 := UpperHalfPlane.denom_ne_zero γ τ
-  have h00 : γ' 0 0 = γ 0 0 := rfl
-  have h01 : γ' 0 1 = b' := rfl
-  have h10 : γ' 1 0 = m * γ 1 0 := rfl
-  have h11 : γ' 1 1 = γ 1 1 := rfl
-  have hτ' : (τ' : ℂ) = τ / m := rfl
-  have hγ'den : (γ' 1 0 : ℂ) * τ' + γ' 1 1 = (γ 1 0 : ℂ) * τ + γ 1 1 := by
-    rw [h10, h11, hτ']
-    push_cast
-    field_simp
-  have hsmul : ((γ • τ : ℍ) : ℂ) / m = (γ' • τ' : ℍ) := by
-    rw [UpperHalfPlane.coe_specialLinearGroup_apply, UpperHalfPlane.coe_specialLinearGroup_apply]
-    simp only [algebraMap_int_eq, eq_intCast]
-    rw [h00, h01, h10, h11, hτ', hb']
-    have : (γ 1 0 : ℂ) * τ + γ 1 1 ≠ 0 := hden
-    push_cast at this ⊢
-    field_simp
-  rw [ModularForm.SL_slash_apply, hsmul, eta_smul_zpow_two_mul, hγ'den,
-    etaMultiplier_zpow_eq_one_of_mem_Gamma (even_two_mul k)
-      (by rw [mul_assoc]; exact mul_dvd_mul_left 2 hkN) hγ', one_mul, ModularGroup.denom_apply]
-  rw [zpow_neg, mul_right_comm, mul_inv_cancel₀ (zpow_ne_zero _ hden), one_mul, hτ']
+    simpa using (mul_dvd_mul_iff_left (Int.natCast_ne_zero.2 (NeZero.ne m))).1 this
+  -- Slashing by `diag(m, 1)` turns `τ ↦ η(τ / m) ^ (2 k)` into `m ^ (k - 1) η ^ (2 k)`.
+  have hscale : (fun τ : ℍ ↦ η (τ / m) ^ (2 * k)) ∣[k] scaleGL m =
+      (m : ℂ) ^ (k - 1) • fun τ : ℍ ↦ η τ ^ (2 * k) := by
+    ext τ
+    rw [slash_scaleGL_apply, coe_scaleGL_smul,
+      mul_div_cancel_left₀ _ (Nat.cast_ne_zero.2 (NeZero.ne m)), Pi.smul_apply, smul_eq_mul]
+  have h := slash_conjScale_eq_smul_of_slash_scaleGL _ _ (conjInvScale_apply_one_zero m γ b' hb')
+    (z := 1) (by
+      rw [hscale, one_smul]
+      exact (ModularForm.SL_smul_slash k _ _ _).trans
+        (congrArg _ (eta_zpow_two_mul_slash_of_mem_Gamma hkN hδ)))
+  rw [conjScale_conjInvScale, one_smul] at h
+  exact (ModularForm.SL_slash _ γ).trans h
 
 /-- **`η(τ / m) ^ (2 k)` on a principal congruence subgroup**: when `12 ∣ k N`, the function
 `τ ↦ η(τ / m) ^ (2 k)` is invariant under the weight-`k` slash action of `Γ(m N)`. For example
