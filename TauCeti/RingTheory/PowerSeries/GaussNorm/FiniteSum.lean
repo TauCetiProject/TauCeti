@@ -34,12 +34,10 @@ theorem norm_coeff_add_mul_pow_le_max (hc : 0 ≤ c) (m : ℕ) :
   rw [map_add, ← max_mul_of_nonneg _ _ (pow_nonneg hc m)]
   exact mul_le_mul_of_nonneg_right (IsUltrametricDist.isNonarchimedean_norm _ _) (pow_nonneg hc m)
 
-end PowerSeries
-
 /-- A common bound for the weighted coefficients of degree `n` of finitely many series also
 bounds that of their sum in an ultrametric ring, including the empty sum. -/
 theorem norm_coeff_sum_mul_pow_le {ι : Type*} (s : Finset ι)
-    (F : ι → PowerSeries R) (n : ℕ) {A : ℝ} (hA : 0 ≤ A)
+    (F : ι → _root_.PowerSeries R) (n : ℕ) {A : ℝ} (hA : 0 ≤ A)
     (hF : ∀ i ∈ s, ‖(F i).coeff n‖ * c ^ n ≤ A) :
     ‖(∑ i ∈ s, F i).coeff n‖ * c ^ n ≤ A := by
   rw [map_sum]
@@ -50,5 +48,7 @@ theorem norm_coeff_sum_mul_pow_le {ι : Type*} (s : Finset ι)
   by_cases hcn : 0 ≤ c ^ n
   · exact (mul_le_mul_of_nonneg_right hle hcn).trans (hF i hi)
   · exact (mul_nonpos_of_nonneg_of_nonpos (norm_nonneg _) (le_of_not_ge hcn)).trans hA
+
+end PowerSeries
 
 end TauCeti

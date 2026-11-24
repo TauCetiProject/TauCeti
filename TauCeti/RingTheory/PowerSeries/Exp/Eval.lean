@@ -14,8 +14,8 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 /-!
 # Evaluation of the formal exponential
 
-The formal and analytic exponentials are defined by the same infinite sum, including its
-junk value outside the convergence domain.
+Evaluating the formal exponential at a point gives the same `tsum` as `NormedSpace.exp`, even
+when the evaluation terms are not summable and both sides are the junk value `0`.
 
 For an exponential polynomial `∑ᵢ aᵢ exp(xᵢX)` whose exponential series converge at `y`, the
 Hasse derivative `D⁽ᵏ⁾` evaluates at `y` to the weighted exponential sum
@@ -24,10 +24,10 @@ Hasse derivative `D⁽ᵏ⁾` evaluates at `y` to the weighted exponential sum
 
 public section
 
-open PowerSeries Finset
+open Finset
 open scoped Nat
 
-namespace TauCeti
+namespace PowerSeries
 
 /-- The formal exponential evaluates to `NormedSpace.exp`: both are the sum `∑ bⁿ / n!`. Neither
 side assumes convergence, so the identity also holds for the junk value of a divergent sum. -/
@@ -36,7 +36,7 @@ theorem evalAt_exp {R A : Type*} [CommRing R] [Algebra ℚ R] [Ring A] [Algebra 
     [TopologicalSpace A] [IsTopologicalRing A] (b : A) :
     (exp R).evalAt b = NormedSpace.exp b := by
   let : Algebra ℚ A := Algebra.compHom A (algebraMap ℚ R)
-  let : IsScalarTower ℚ R A := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  let : IsScalarTower ℚ R A := IsScalarTower.of_algebraMap_eq' (Algebra.compHom_algebraMap_eq _ _)
   rw [evalAt_def, NormedSpace.exp_eq_tsum_rat]
   refine tsum_congr fun n ↦ ?_
   rw [coeff_exp, algebraMap_smul, one_div]
@@ -78,4 +78,4 @@ theorem evalAt_hasseDeriv_sum_smul_rescale_exp_eq_zero_iff_of_summable
   rw [evalAt_hasseDeriv_sum_smul_rescale_exp_of_summable hs, h,
     (Ne.isUnit (by positivity : (k ! : ℚ)⁻¹ ≠ 0)).smul_eq_zero]
 
-end TauCeti
+end PowerSeries
