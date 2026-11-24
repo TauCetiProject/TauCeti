@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
@@ -80,7 +81,8 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
-There is no ring homomorphism `ℂ →+* ℝ` (`Complex.instIsEmptyRingHomReal`).
+There is no ring homomorphism from `ℂ` to a semireal ring, such as `ℝ` or any linearly ordered
+ring (`Complex.instIsEmptyRingHom`).
 -/
 
 public section
@@ -459,13 +461,12 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [h0, abs_neg] at h
     exact h.false
 
-/-- There is no ring homomorphism `ℂ →+* ℝ`: it would send `I` to a real number whose square is
-`-1`. -/
-instance instIsEmptyRingHomReal : IsEmpty (ℂ →+* ℝ) := by
-  refine ⟨fun f => ?_⟩
-  have h := congrArg f I_sq
-  rw [map_pow, map_neg, map_one] at h
-  nlinarith [sq_nonneg (f I)]
+/-- There is no ring homomorphism from `ℂ` to a semireal ring `R` (one in which `-1` is not a sum
+of squares), such as `ℝ` or any linearly ordered ring: it would send `I` to an element of `R`
+whose square is `-1`. -/
+instance instIsEmptyRingHom {R : Type*} [NonAssocRing R] [IsSemireal R] : IsEmpty (ℂ →+* R) :=
+  ⟨fun f => IsSemireal.not_isSumSq_neg_one R <| by
+    simpa [← map_mul, ← sq, I_sq] using IsSumSq.mul_self (f I)⟩
 
 end Complex
 
