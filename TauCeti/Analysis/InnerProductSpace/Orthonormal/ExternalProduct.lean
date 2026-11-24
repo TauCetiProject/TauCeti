@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.Comass
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ExternalProduct
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
 
 /-!
@@ -27,17 +28,20 @@ one. The same equality holds when one factor is of top degree, a multiple of a v
 factor. The product of calibrated frames of the two factors is a calibrated frame of the external
 product. These are the pointwise inputs for products of calibrations on Riemannian products.
 
-The decomposable case follows Harvey and Lawson. Let `u` be an orthonormal frame of `E ⊕ F`
-spanning `W`, and `ψ` the form of `w₁ ∧ ⋯ ∧ w_l`. The vectors of `W` whose second component is
-orthogonal to every `wⱼ` form a subspace of dimension at least `k`; choose an orthonormal basis
-of `W` whose first `k` vectors lie in it. On that basis the value of `φ ⊠ ψ` splits as a value of
-`φ` times a value of `ψ`, and its absolute value is at least `|(φ ⊠ ψ)(u)|`, because both frames
-are orthonormal bases of `W`. When `ψ` is of top degree, the first `k` vectors are chosen in the
-kernel of the second projection on `W` instead, so that `ψ` vanishes as soon as it is fed one of
-their second components.
+Both cases follow Harvey and Lawson. Suppose `ψ` vanishes as soon as one of its arguments lies
+in the kernel of a linear map `q` from `F` to a space of dimension at most `l`. Let `u` be an
+orthonormal frame of `E ⊕ F` spanning `W`. The vectors of `W` whose second component lies in the
+kernel of `q` form a subspace of dimension at least `k`; choose an orthonormal basis of `W` whose
+first `k` vectors lie in it. On that basis the value of `φ ⊠ ψ` splits as a value of `φ` times a
+value of `ψ`, and its absolute value is at least `|(φ ⊠ ψ)(u)|`, because both frames are
+orthonormal bases of `W`. For the form `ψ` of `w₁ ∧ ⋯ ∧ w_l`, `q` is given by the `l` coordinates
+`⟪wⱼ, ·⟫`; for `ψ` of top degree, `q` is the identity of `F`.
 
 ## Main results
 
+* `ContinuousAlternatingMap.norm_externalProduct_of_apply_update_eq_zero`: the comass is the
+  product of the comasses when `ψ` vanishes whenever an argument lies in the kernel of a map to a
+  space of dimension at most its degree.
 * `ContinuousAlternatingMap.norm_externalProduct_alternatingFormEquiv_ιMulti` and
   `ContinuousAlternatingMap.norm_alternatingFormEquiv_ιMulti_externalProduct`: with a decomposable
   factor on either side the comass is the product of the comasses.
@@ -74,75 +78,31 @@ theorem IsCalibratedFrame.externalProduct {φ : E [⋀^Fin k]→L[ℝ] ℝ} {ψ 
   ⟨TauCeti.orthonormal_append_toLp_iff.2 ⟨hv.orthonormal, hw.orthonormal⟩, by
     simp [hv.apply_eq_one, hw.apply_eq_one]⟩
 
-/-- An orthonormal `(k + l)`-frame `u` of `E ⊕ F` can be replaced by an orthonormal frame `(a, b)`
-whose first `k` vectors lie in the kernel of a linear map `q` of rank at most `l`, without
-decreasing the absolute value of any `(k + l)`-form. Both frames are orthonormal bases of the span
-of `u`; the vectors `a` are chosen in the kernel of `q` on that span, which has dimension at least
-`k`. -/
-private lemma exists_orthonormal_append_le_of_orthonormal {G : Type*} [AddCommGroup G]
-    [Module ℝ G] [FiniteDimensional ℝ G] (q : WithLp 2 (E × F) →ₗ[ℝ] G) (hq : finrank ℝ G ≤ l)
-    {u : Fin (k + l) → WithLp 2 (E × F)} (hu : Orthonormal ℝ u) :
-    ∃ (a : Fin k → WithLp 2 (E × F)) (b : Fin l → WithLp 2 (E × F)),
-      Orthonormal ℝ (Fin.append a b) ∧ (∀ i, q (a i) = 0) ∧
-      ∀ Φ : WithLp 2 (E × F) [⋀^Fin (k + l)]→L[ℝ] ℝ, |Φ u| ≤ |Φ (Fin.append a b)| := by
-  classical
-  let W := Submodule.span ℝ (Set.range u)
-  have : FiniteDimensional ℝ W := FiniteDimensional.span_of_finite ℝ (Set.finite_range u)
-  have hW : finrank ℝ W = k + l := by simpa using finrank_span_eq_card hu.linearIndependent
-  let L : W →ₗ[ℝ] G := q ∘ₗ W.subtype
-  have hK : k ≤ finrank ℝ (LinearMap.ker L) := by
-    have h₁ := L.finrank_range_add_finrank_ker
-    have h₂ := (Submodule.finrank_le (LinearMap.range L)).trans hq
-    omega
-  let B := stdOrthonormalBasis ℝ (LinearMap.ker L)
-  let a₀ : Fin k → W := fun i ↦ B (Fin.castLE hK i)
-  have ha₀ : Orthonormal ℝ a₀ :=
-    (B.orthonormal.comp _ (Fin.castLE_injective hK)).comp_linearIsometry
-      (LinearMap.ker L).subtypeₗᵢ
-  let v₀ : Fin (k + l) → W := Fin.append a₀ 0
-  have hv₀ : Orthonormal ℝ ((Set.range (Fin.castAdd l)).domRestrict v₀) := by
-    rw [orthonormal_iff_ite]
-    rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩
-    simp [v₀, Set.domRestrict, Subtype.ext_iff, orthonormal_iff_ite.1 ha₀ i j]
-  obtain ⟨c, hc⟩ := hv₀.exists_orthonormalBasis_extension_of_card_eq (by simp [hW])
+/-- **The comass of an external product with a form vanishing on a kernel** is the product of
+the comasses: `‖φ ⊠ ψ‖ = ‖φ‖ ‖ψ‖` whenever `ψ` vanishes as soon as one of its arguments lies in the
+kernel of a linear map `q` from `F` to a space of dimension at most `l`. -/
+theorem norm_externalProduct_of_apply_update_eq_zero (φ : E [⋀^Fin k]→L[ℝ] ℝ)
+    (ψ : F [⋀^Fin l]→L[ℝ] ℝ) {G : Type*} [AddCommGroup G] [Module ℝ G] [FiniteDimensional ℝ G]
+    (q : F →ₗ[ℝ] G) (hq : finrank ℝ G ≤ l)
+    (hψ : ∀ x, q x = 0 → ∀ (y : Fin l → F) (j : Fin l), ψ (Function.update y j x) = 0) :
+    ‖externalProduct φ ψ‖ = ‖φ‖ * ‖ψ‖ := by
+  refine le_antisymm ((opNorm_le_iff_le_orthonormal (by positivity)).2 fun u hu ↦ ?_)
+    (norm_mul_norm_le_norm_externalProduct φ ψ)
+  -- An orthonormal basis of the span of `u` whose first `k` vectors have second components in
+  -- the kernel of `q`.
+  obtain ⟨c, hc⟩ := hu.exists_orthonormalBasis_span_apply_castAdd_eq_zero
+    (q ∘ₗ (WithLp.sndL 2 ℝ E F).toLinearMap) hq
   have hcu : Fin.append (fun i ↦ (c (Fin.castAdd l i) : WithLp 2 (E × F)))
       (fun j ↦ (c (Fin.natAdd k j) : WithLp 2 (E × F))) = fun i ↦ (c i : WithLp 2 (E × F)) :=
     Fin.append_castAdd_natAdd (f := fun i ↦ (c i : WithLp 2 (E × F)))
-  refine ⟨fun i ↦ c (Fin.castAdd l i), fun j ↦ c (Fin.natAdd k j), ?_, fun i ↦ ?_,
-    fun Φ ↦ ?_⟩
-  · rw [hcu]
-    exact c.orthonormal.comp_linearIsometry W.subtypeₗᵢ
-  · have hmem : L (c (Fin.castAdd l i)) = 0 := by
-      rw [hc _ (Set.mem_range_self i)]
-      simp only [v₀, Fin.append_left]
-      exact LinearMap.mem_ker.1 (B (Fin.castLE hK i)).property
-    exact hmem
-  · rw [hcu, ← Real.norm_eq_abs, ← Real.norm_eq_abs]
-    exact (Φ.norm_apply_eq_norm_apply_orthonormalBasis_span hu c).le
-
-/-- On an orthonormal frame `(a, b)` on which the external product splits, as in
-`externalProduct_apply_append_of_forall`, its value is at most `‖φ‖ ‖ψ‖` in absolute value. -/
-private lemma abs_externalProduct_apply_append_le (φ : E [⋀^Fin k]→L[ℝ] ℝ)
-    (ψ : F [⋀^Fin l]→L[ℝ] ℝ) {a : Fin k → WithLp 2 (E × F)} {b : Fin l → WithLp 2 (E × F)}
-    (hab : Orthonormal ℝ (Fin.append a b))
-    (h : ∀ (y : Fin l → F) (i : Fin k) (j : Fin l), ψ (Function.update y j (a i).snd) = 0) :
-    |externalProduct φ ψ (Fin.append a b)| ≤ ‖φ‖ * ‖ψ‖ := by
-  have hfst (i : Fin k) : ‖(a i).fst‖ ≤ 1 :=
-    (WithLp.norm_fst_le (x := a i)).trans (by simpa using (hab.1 (Fin.castAdd l i)).le)
-  have hsnd (j : Fin l) : ‖(b j).snd‖ ≤ 1 :=
-    (WithLp.norm_snd_le (x := b j)).trans (by simpa using (hab.1 (Fin.natAdd k j)).le)
-  rw [externalProduct_apply_append_of_forall φ ψ a b h, abs_mul, ← Real.norm_eq_abs,
-    ← Real.norm_eq_abs]
-  calc ‖φ fun i ↦ (a i).fst‖ * ‖ψ fun j ↦ (b j).snd‖
-    _ ≤ (‖φ‖ * ∏ i, ‖(a i).fst‖) * (‖ψ‖ * ∏ j, ‖(b j).snd‖) := by
-      gcongr
-      · exact φ.le_opNorm _
-      · exact ψ.le_opNorm _
-    _ ≤ (‖φ‖ * 1) * (‖ψ‖ * 1) := by
-      gcongr
-      · exact Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ hfst i
-      · exact Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun j _ ↦ hsnd j
-    _ = ‖φ‖ * ‖ψ‖ := by ring
+  have hnorm (i : Fin (k + l)) : ‖(c i : WithLp 2 (E × F))‖ = 1 := by
+    rw [Submodule.norm_coe, c.norm_eq_one]
+  rw [norm_apply_eq_norm_apply_orthonormalBasis_span _ hu c, ← hcu]
+  refine norm_externalProduct_apply_append_le φ ψ (fun i ↦ ?_) (fun j ↦ ?_)
+    fun y i j ↦ hψ _ ?_ y j
+  · exact (WithLp.norm_fst_le (x := _)).trans (hnorm _).le
+  · exact (WithLp.norm_snd_le (x := _)).trans (hnorm _).le
+  · simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, WithLp.sndL_apply] using hc i
 
 section Decomposable
 
@@ -154,19 +114,14 @@ theorem norm_externalProduct_alternatingFormEquiv_ιMulti (φ : E [⋀^Fin k]→
     (w : Fin l → F) :
     ‖externalProduct φ (TauCeti.alternatingFormEquiv F l (ιMulti ℝ l w))‖ =
       ‖φ‖ * ‖ιMulti ℝ l w‖ := by
-  classical
-  set ψ := TauCeti.alternatingFormEquiv F l (ιMulti ℝ l w)
   rw [← TauCeti.norm_alternatingFormEquiv_ιMulti w]
-  refine le_antisymm ((opNorm_le_iff_le_orthonormal (by positivity)).2 fun u hu ↦ ?_)
-    (norm_mul_norm_le_norm_externalProduct φ ψ)
-  -- The `l` linear conditions `⟪wⱼ, ·.snd⟫ = 0`.
-  let q : WithLp 2 (E × F) →ₗ[ℝ] Fin l → ℝ :=
-    LinearMap.pi fun j ↦ (innerSL ℝ (w j)).toLinearMap ∘ₗ (WithLp.sndL 2 ℝ E F).toLinearMap
-  obtain ⟨a, b, hab, ha, hle⟩ := exists_orthonormal_append_le_of_orthonormal q (by simp) hu
-  rw [Real.norm_eq_abs]
-  refine (hle _).trans (abs_externalProduct_apply_append_le φ ψ hab fun y i j ↦ ?_)
-  exact TauCeti.alternatingFormEquiv_ιMulti_apply_eq_zero_of_forall_inner_eq_zero w _ (i := j)
-    fun j' ↦ by simpa [q] using congr_fun (ha i) j'
+  -- The form of `w₁ ∧ ⋯ ∧ w_l` vanishes on the kernel of the `l` coordinates `⟪wⱼ, ·⟫`.
+  refine norm_externalProduct_of_apply_update_eq_zero φ _
+    (LinearMap.pi fun j ↦ (innerSL ℝ (w j)).toLinearMap) (by simp) fun x hx y j ↦ ?_
+  refine TauCeti.alternatingFormEquiv_ιMulti_apply_eq_zero_of_forall_inner_eq_zero w _ (i := j)
+    fun j' ↦ ?_
+  simpa only [Function.update_self, LinearMap.pi_apply, ContinuousLinearMap.coe_coe,
+    innerSL_apply_apply, Pi.zero_apply] using congr_fun hx j'
 
 end Decomposable
 
@@ -182,26 +137,19 @@ theorem norm_alternatingFormEquiv_ιMulti_externalProduct [FiniteDimensional ℝ
 least the dimension of `F`, so that `ψ` is a multiple of a volume form of `F` or zero, then
 `‖φ ⊠ ψ‖ = ‖φ‖ ‖ψ‖`. In particular, for a unit volume form `ψ` the external product has the
 comass of `φ`. -/
-theorem norm_externalProduct_of_finrank_le_right [FiniteDimensional ℝ F] (hl : finrank ℝ F ≤ l)
-    (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : F [⋀^Fin l]→L[ℝ] ℝ) :
-    ‖externalProduct φ ψ‖ = ‖φ‖ * ‖ψ‖ := by
-  classical
-  refine le_antisymm ((opNorm_le_iff_le_orthonormal (by positivity)).2 fun u hu ↦ ?_)
-    (norm_mul_norm_le_norm_externalProduct φ ψ)
-  -- The first `k` vectors of the adapted frame lie in the first factor.
-  obtain ⟨a, b, hab, ha, hle⟩ :=
-    exists_orthonormal_append_le_of_orthonormal (WithLp.sndL 2 ℝ E F).toLinearMap hl hu
-  rw [Real.norm_eq_abs]
-  refine (hle _).trans (abs_externalProduct_apply_append_le φ ψ hab fun y i j ↦ ?_)
-  rw [show (a i).snd = 0 by simpa using ha i]
-  exact ψ.map_update_zero y j
+theorem norm_externalProduct_of_finrank_le_right [FiniteDimensional ℝ F] (φ : E [⋀^Fin k]→L[ℝ] ℝ)
+    (ψ : F [⋀^Fin l]→L[ℝ] ℝ) (hl : finrank ℝ F ≤ l) :
+    ‖externalProduct φ ψ‖ = ‖φ‖ * ‖ψ‖ :=
+  norm_externalProduct_of_apply_update_eq_zero φ ψ LinearMap.id hl fun x hx y j ↦ by
+    rw [LinearMap.id_apply] at hx
+    rw [hx, ψ.map_update_zero]
 
 /-- **The comass of an external product with a top-degree first factor**: `‖φ ⊠ ψ‖ = ‖φ‖ ‖ψ‖`
 when the degree of `φ` is at least the dimension of `E`. -/
-theorem norm_externalProduct_of_finrank_le_left [FiniteDimensional ℝ E] (hk : finrank ℝ E ≤ k)
-    (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : F [⋀^Fin l]→L[ℝ] ℝ) :
+theorem norm_externalProduct_of_finrank_le_left [FiniteDimensional ℝ E] (φ : E [⋀^Fin k]→L[ℝ] ℝ)
+    (ψ : F [⋀^Fin l]→L[ℝ] ℝ) (hk : finrank ℝ E ≤ k) :
     ‖externalProduct φ ψ‖ = ‖φ‖ * ‖ψ‖ := by
-  rw [norm_externalProduct_comm, norm_externalProduct_of_finrank_le_right hk, mul_comm]
+  rw [norm_externalProduct_comm, norm_externalProduct_of_finrank_le_right ψ φ hk, mul_comm]
 
 end InnerProduct
 
