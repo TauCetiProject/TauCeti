@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Differentials.Forms.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Pullback
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Coherence
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import Mathlib.RepresentationTheory.Basic
 
 /-!
@@ -294,12 +295,6 @@ end GlobalSections
 section Automorphisms
 
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
-
-/-- The underlying morphism of an endomorphism of `X` in the category of schemes over `Spec R` is a
-morphism over `Spec R`, for the given structure morphism of `X`. -/
-instance isOver_left (g : Over.mk (X ↘ Spec (.of R)) ⟶ Over.mk (X ↘ Spec (.of R))) :
-    Scheme.Hom.IsOver (X := X) (Y := X) g.left (Spec (.of R)) :=
-  ⟨Over.w g⟩
 
 /-- The **representation of the automorphism group** of `X` over `Spec R` on global differential
 `p`-forms, by inverse pullback `g ↦ (g⁻¹)^*`. Automorphisms compose as maps and pullback reverses
