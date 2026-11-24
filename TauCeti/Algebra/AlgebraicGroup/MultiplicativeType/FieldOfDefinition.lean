@@ -245,7 +245,8 @@ theorem finrank_cocharacterFieldOfDefinition (μ : cocharacterLattice T) :
   -- `cocharacterStabilizer T μ` is by definition the stabilizer of `μ` in
   -- `Field.absoluteGaloisGroup k`, Mathlib's named copy of `Gal(AlgebraicClosure k/k)` with no
   -- bridge lemma, so Mathlib's index formula for that stabilizer is this goal.
-  exact MulAction.index_stabilizer (Field.absoluteGaloisGroup k) μ
+  exact (MulAction.index_stabilizer (Field.absoluteGaloisGroup k) μ).trans
+    (Nat.card_coe_set_eq _).symm
 
 /-- The field of definition is the base field exactly when the cocharacter is Galois-invariant,
 that is, defined over `k`. -/
