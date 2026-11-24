@@ -39,6 +39,16 @@ closed complement, and the bound is witnessed by a continuous projection `P` ont
 weak derivative of a Sobolev space with compact lower-order inclusion, it says that the quotient
 norm modulo the kernel of the top derivative is equivalent to the top seminorm.
 
+Two consequences adapt such an estimate to a changed operator or a changed error term. A compact
+perturbation `S` of `T` satisfies an estimate of the same form
+(`ContinuousLinearMap.exists_compact_estimate_of_isCompactOperator_sub`), so the semi-Fredholm
+conclusions pass to `S`. And over `ℝ` or `ℂ`, on a complete domain, the compact error may be
+replaced by `‖j x‖` for any continuous linear `j` which is injective on `ker T`, compact or not
+(`ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate`): the projection bound
+controls the component of `x` off the kernel, and on the finite-dimensional kernel `‖j ·‖` is a
+norm. For an elliptic operator with a compact lower-order perturbation, this recovers the elliptic
+estimate with an `Lᵖ` error term from one whose error contains the perturbation.
+
 The argument uses Mathlib's Riesz lemma, uniform-inducing maps, the sequential closed-range
 criterion and quotient estimate, and the compact-operator subsequence API in
 `TauCeti.Analysis.Normed.Operator.Compact.Basic`.
@@ -85,6 +95,38 @@ theorem finiteDimensional_ker_of_compact_estimate [CompleteSpace 𝕜]
   simp only [map_sub, hTv, sub_self, norm_zero, mul_zero, zero_add] at h
   have hsep : 1 ≤ ‖(v m : E) - (v n : E)‖ := hvsep hmn.ne
   exact (hsep.trans h).not_gt (by simpa [dist_eq_norm] using hclose)
+
+/-- **Compact perturbations preserve compact-error estimates.** If
+`‖x‖ ≤ C * ‖T x‖ + ‖K x‖` with `K` compact and `S - T` is compact, then `S` satisfies an estimate
+of the same form. The new compact error is `x ↦ a • ((S - T) x, K x)` for a scalar `a` of large
+enough norm. -/
+theorem exists_compact_estimate_of_isCompactOperator_sub [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {T S : E →L[𝕜] F} {K : E →L[𝕜] G} (hK : IsCompactOperator K)
+    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) (hST : IsCompactOperator (S - T)) :
+    ∃ (C' : ℝ) (K' : E →L[𝕜] F × G), IsCompactOperator K' ∧
+      ∀ x, ‖x‖ ≤ C' * ‖S x‖ + ‖K' x‖ := by
+  obtain ⟨a, ha⟩ := NormedField.exists_lt_norm 𝕜 (2 * (|C| + 1))
+  refine ⟨|C|, a • (S - T).prod K, ?_, fun x ↦ ?_⟩
+  · have h := ((hST.clm_comp (inl 𝕜 F G)).add (hK.clm_comp (inr 𝕜 F G))).smul a
+    convert h using 1
+    funext x
+    simp
+  · -- `T x = S x - (S - T) x`, and both error terms are controlled by the product norm.
+    have hT : ‖T x‖ ≤ ‖S x‖ + ‖(S - T) x‖ := by
+      calc ‖T x‖ = ‖S x - (S - T) x‖ := by rw [sub_apply, sub_sub_cancel]
+        _ ≤ ‖S x‖ + ‖(S - T) x‖ := norm_sub_le _ _
+    have h₁ : ‖(S - T) x‖ ≤ ‖((S - T).prod K) x‖ := norm_fst_le ((S - T) x, K x)
+    have h₂ : ‖K x‖ ≤ ‖((S - T).prod K) x‖ := norm_snd_le ((S - T) x, K x)
+    set N := ‖((S - T).prod K) x‖
+    have hN := norm_nonneg (((S - T).prod K) x)
+    have hC := abs_nonneg C
+    rw [smul_apply, norm_smul]
+    calc ‖x‖ ≤ C * ‖T x‖ + ‖K x‖ := hbound x
+      _ ≤ |C| * (‖S x‖ + N) + N := by
+          refine add_le_add ((mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
+            (mul_le_mul_of_nonneg_left (hT.trans ?_) hC)) h₂
+          gcongr
+      _ ≤ |C| * ‖S x‖ + ‖a‖ * N := by nlinarith
 
 section CompleteDomain
 
@@ -202,6 +244,49 @@ theorem exists_projection_norm_sub_le_of_compact_estimate
   rw [← Submodule.projectionL_eq_self_sub_projectionL, le_inv_mul_iff₀ hc,
     ← T.apply_projectionL_ker h.symm x]
   exact hcX _ (Submodule.projectionL_apply_mem h.symm x)
+
+/-- **Changing the error term of a compact-error estimate.** Over `ℝ` or `ℂ`, let
+`‖x‖ ≤ C * ‖T x‖ + ‖K x‖` on a complete space, with `K` compact, and let `j` be a continuous
+linear map which is injective on the kernel of `T`. Then the compact error may be replaced by
+`j`: there is `C'` with `‖x‖ ≤ C' * (‖T x‖ + ‖j x‖)` for every `x`.
+
+No compactness of `j` is needed, and `j` need not be injective off the kernel of `T`. For an
+elliptic operator `T` on a compact base whose estimate carries a compact lower-order perturbation
+in `K`, taking for `j` the inclusion into `Lᵖ` gives the elliptic estimate with an `Lᵖ` error. -/
+theorem exists_norm_le_mul_norm_add_norm_of_compact_estimate {Z : Type*}
+    [NormedAddCommGroup Z] [NormedSpace 𝕜 Z] (hK : IsCompactOperator K)
+    (hbound : ∀ x, ‖x‖ ≤ C * ‖T x‖ + ‖K x‖) {j : E →L[𝕜] Z}
+    (hj : Disjoint T.ker j.ker) :
+    ∃ C' : ℝ, 0 ≤ C' ∧ ∀ x, ‖x‖ ≤ C' * (‖T x‖ + ‖j x‖) := by
+  let := IsRCLikeNormedField.rclike 𝕜
+  have := T.finiteDimensional_ker_of_compact_estimate hK hbound
+  obtain ⟨P, C₁, hC₁, -, hP, hPx⟩ := T.exists_projection_norm_sub_le_of_compact_estimate hK hbound
+  -- On the finite-dimensional kernel of `T`, the injective map `j` is bounded below.
+  obtain ⟨c, -, hc⟩ := (j.toLinearMap.comp T.ker.subtype).exists_antilipschitzWith (by
+    rw [LinearMap.ker_comp]
+    exact Submodule.disjoint_iff_comap_eq_bot.1 hj)
+  have hPj (x : E) : ‖P x‖ ≤ c * ‖j (P x)‖ := by
+    have hmem : P x ∈ T.ker := by
+      rw [← hP]
+      exact ⟨x, rfl⟩
+    simpa using hc.le_mul_norm (map_zero _) ⟨P x, hmem⟩
+  refine ⟨C₁ + c * (1 + ‖j‖ * C₁), by positivity, fun x ↦ ?_⟩
+  have hjP : ‖j (P x)‖ ≤ ‖j x‖ + ‖j‖ * (C₁ * ‖T x‖) := by
+    calc ‖j (P x)‖ = ‖j x - j (x - P x)‖ := by rw [map_sub, sub_sub_cancel]
+      _ ≤ ‖j x‖ + ‖j (x - P x)‖ := norm_sub_le _ _
+      _ ≤ ‖j x‖ + ‖j‖ * (C₁ * ‖T x‖) := by
+          gcongr
+          exact (j.le_opNorm _).trans (by gcongr; exact hPx x)
+  calc ‖x‖ = ‖(x - P x) + P x‖ := by rw [sub_add_cancel]
+    _ ≤ ‖x - P x‖ + ‖P x‖ := norm_add_le _ _
+    _ ≤ C₁ * ‖T x‖ + c * (‖j x‖ + ‖j‖ * (C₁ * ‖T x‖)) := by
+        gcongr
+        · exact hPx x
+        · exact (hPj x).trans (by gcongr)
+    _ ≤ (C₁ + c * (1 + ‖j‖ * C₁)) * (‖T x‖ + ‖j x‖) := by
+        have hc₀ : (0 : ℝ) ≤ c := c.coe_nonneg
+        nlinarith [mul_nonneg (mul_nonneg (mul_nonneg hc₀ (norm_nonneg j)) hC₁) (norm_nonneg (j x)),
+          mul_nonneg hC₁ (norm_nonneg (j x)), mul_nonneg hc₀ (norm_nonneg (T x))]
 
 end Projection
 
