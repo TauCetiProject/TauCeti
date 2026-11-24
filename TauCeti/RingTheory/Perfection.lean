@@ -37,12 +37,13 @@ terms is, since the inverses of its terms are again compatible.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
   element vanishes as soon as one of its coordinates does.
 * `ModP.mk_injective`: in characteristic `p`, reduction `O → O ⧸ p` is injective.
+* `ModP.isReduced`: in characteristic `p`, `O ⧸ p` is reduced when `O` is.
 * `PreTilt.ext`, `PreTilt.coeff_equivPerfection`, `PreTilt.coeff_equivPerfection_symm`: coordinate
   extensionality and coordinate formulas for `PreTilt.equivPerfection`.
 * `PreTilt.coeff_eq_zero_iff`: in `PreTilt O p`, each coordinate detects zero when `O ⧸ p` is
   reduced.
-* `PreTilt.coeff_injective_of_isReduced`: for a reduced ring `O` of characteristic `p`, every
-  coordinate of `PreTilt O p` is injective.
+* `PreTilt.coeff_injective`: when `O ⧸ p` is reduced, every coordinate of `PreTilt O p` is
+  injective.
 * `PreTilt.coeff_eq_coeff_zero_of_isIdempotentElem`: all coordinates of an idempotent of
   `PreTilt O p` agree.
 * `TauCeti.pow_pow_of_succ_pow_eq`: in a compatible root sequence, `t (j + k)` is a `p ^ k`-th
@@ -154,6 +155,13 @@ theorem mk_injective : Function.Injective (Ideal.Quotient.mk (Ideal.span {(p : O
     rwa [Ideal.Quotient.eq_zero_iff_mem, (by simp : Ideal.span {(p : O)} = ⊥),
       Ideal.mem_bot] at h
 
+/-- **In characteristic `p`, `O ⧸ p` is reduced when `O` is**, since reduction modulo `p` is an
+isomorphism `O ≃+* O ⧸ p`. -/
+instance isReduced [IsReduced O] : IsReduced (ModP O p) :=
+  isReduced_of_injective
+    (RingEquiv.ofBijective _ ⟨mk_injective, Ideal.Quotient.mk_surjective⟩).symm
+    (RingEquiv.injective _)
+
 end ModP
 
 namespace PreTilt
@@ -191,15 +199,12 @@ theorem coeff_eq_zero_iff [IsReduced (ModP O p)] (n : ℕ) {f : PreTilt O p} :
   -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
   Perfection.coeff_eq_zero_iff (R := ModP O p) n
 
-/-- **In characteristic `p`, the coordinates of the tilt of a reduced ring are injective.** If `O`
-is a reduced ring of characteristic `p`, then `O ⧸ p = O` is reduced and every coordinate map
-`PreTilt O p → O ⧸ p` is injective. -/
-theorem coeff_injective_of_isReduced [CharP O p] [IsReduced O] (n : ℕ) :
-    Function.Injective (coeff (O := O) (p := p) n) := by
-  have : IsReduced (ModP O p) := isReduced_of_injective
-    (RingEquiv.ofBijective _ ⟨ModP.mk_injective, Ideal.Quotient.mk_surjective⟩).symm
-    (RingEquiv.injective _)
-  exact (injective_iff_map_eq_zero _).mpr fun _ ↦ (coeff_eq_zero_iff n).mp
+/-- **If `O ⧸ p` is reduced, the coordinates of the tilt are injective.** Every coordinate map
+`PreTilt O p → O ⧸ p` is injective; this applies for instance to a reduced ring `O` of
+characteristic `p`, through `ModP.isReduced`. -/
+theorem coeff_injective [IsReduced (ModP O p)] (n : ℕ) :
+    Function.Injective (coeff (O := O) (p := p) n) :=
+  (injective_iff_map_eq_zero _).mpr fun _ ↦ (coeff_eq_zero_iff n).mp
 
 /-- **The coordinates of an idempotent of the tilt are all equal.** Every coordinate of an
 idempotent `e` of `PreTilt O p` equals its zeroth coordinate. -/
