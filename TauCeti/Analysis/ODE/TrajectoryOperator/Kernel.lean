@@ -51,8 +51,6 @@ difference of dimensions of spaces of square-integrable solutions is
 * `TauCeti.squareIntegrableSolutions_sub_smul_id_le`: for a bounded-below weight `w`, the
   square-integrable solutions of `u' + (A - w') u = 0` have initial values among those of
   `v' + A v = 0`.
-* `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_ae_eq`: an element `u` with
-  continuous image `D_A u = g` has a classical solution of `v' = g - A v` as representative.
 * `TauCeti.forall_hasDerivAt_iff_forall_hasDerivAt_exp_neg_smul_add`: the change of unknown
   `u = exp (-w) • ξ + S` turns the weighted equation for `ξ` into `u' + A u = 0`.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
@@ -272,43 +270,6 @@ section Banach
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {A : ℝ → F →L[ℝ] F}
 
-/-- **Elements with a continuous image are classical solutions.** If `A` and `g` are continuous
-and the trajectory operator `D_A u = u' + A u` on the weak-derivative graph over `Lᵖ(ℝ, F)` sends
-`u` to `g`, then the value of `u` agrees almost everywhere with a classical solution `v` of
-`v' = g - A v`. -/
-theorem exists_hasDerivAt_of_trajectoryOperator_ae_eq (hA : Continuous A) {g : ℝ → F}
-    (hg : Continuous g)
-    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
-    {u : WeakDerivStep volume ⊤ p
-      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
-    (hu : ⇑(trajectoryOperator AL u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] g) :
-    ∃ v : ℝ → F, (∀ s, HasDerivAt v (g s - A s (v s)) s) ∧
-      ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
-        =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v := by
-  set w : ℝ → F :=
-    ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
-  have h : HasWeakLineDerivOn volume ⊤ w (fun s ↦ g s - A s (w s)) 1 := by
-    refine ((trajectoryOperator_eq_iff_hasWeakLineDerivOn AL u _).mp rfl).congr_ae_deriv ?_
-    filter_upwards [hu, hAL] with s hgs hs
-    rw [hgs, hs]
-  obtain ⟨c, hc⟩ := h.exists_ae_eq_add_intervalIntegral_top 0
-  have hli : LocallyIntegrable (fun s ↦ g s - A s (w s)) volume :=
-    locallyIntegrableOn_univ.1 (by simpa using h.locallyIntegrableOn_deriv)
-  have hint (a b : ℝ) : IntervalIntegrable (fun s ↦ g s - A s (w s)) volume a b :=
-    (hli.integrableOn_isCompact isCompact_uIcc).intervalIntegrable
-  set v : ℝ → F := fun t ↦ c + ∫ s in 0..t, g s - A s (w s)
-  have hvc : Continuous v := continuous_const.add (intervalIntegral.continuous_primitive hint 0)
-  -- Along `v` the integrand is continuous, and the primitive of `g - A v` is `v` itself.
-  have hv : ∀ t, v t = c + ∫ s in 0..t, g s - A s (v s) := fun t ↦
-    congrArg (c + ·) <| intervalIntegral.integral_congr_ae <| by
-      filter_upwards [hc] with s hs _
-      rw [hs]
-  refine ⟨v, fun t ↦ ?_, by simpa using hc⟩
-  have hcont : Continuous fun s ↦ g s - A s (v s) := hg.sub (hA.clm_apply hvc)
-  exact ((hcont.integral_hasStrictDerivAt 0 t).hasDerivAt.const_add c).congr_of_eventuallyEq
-    (Eventually.of_forall hv)
-
 /-- **Elements of the kernel are classical solutions.** If `A` is continuous and `u` lies in the
 kernel of the trajectory operator `D_A u = u' + A u` on the weak-derivative graph over `Lᵖ(ℝ, F)`,
 then the value of `u` agrees almost everywhere with a classical solution `v` of `v' = -A v`. -/
@@ -321,8 +282,29 @@ theorem exists_hasDerivAt_of_trajectoryOperator_eq_zero (hA : Continuous A)
     ∃ v : ℝ → F, (∀ s, HasDerivAt v (-A s (v s)) s) ∧
       ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
         =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] v := by
-  simpa using exists_hasDerivAt_of_trajectoryOperator_ae_eq hA continuous_zero hAL
-    (hu ▸ Lp.coeFn_zero F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+  set w : ℝ → F :=
+    ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
+  have h : HasWeakLineDerivOn volume ⊤ w (fun s ↦ -A s (w s)) 1 := by
+    refine ((trajectoryOperator_eq_iff_hasWeakLineDerivOn AL u 0).mp hu).congr_ae_deriv ?_
+    filter_upwards [Lp.coeFn_zero F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)), hAL]
+      with s h0 hs
+    rw [h0, hs, Pi.zero_apply, zero_sub]
+  obtain ⟨c, hc⟩ := h.exists_ae_eq_add_intervalIntegral_top 0
+  have hli : LocallyIntegrable (fun s ↦ -A s (w s)) volume :=
+    locallyIntegrableOn_univ.1 (by simpa using h.locallyIntegrableOn_deriv)
+  have hint (a b : ℝ) : IntervalIntegrable (fun s ↦ -A s (w s)) volume a b :=
+    (hli.integrableOn_isCompact isCompact_uIcc).intervalIntegrable
+  set v : ℝ → F := fun t ↦ c + ∫ s in 0..t, -A s (w s)
+  have hvc : Continuous v := continuous_const.add (intervalIntegral.continuous_primitive hint 0)
+  -- Along `v` the integrand is continuous, and the primitive of `-A v` is `v` itself.
+  have hv : ∀ t, v t = c + ∫ s in 0..t, -A s (v s) := fun t ↦
+    congrArg (c + ·) <| intervalIntegral.integral_congr_ae <| by
+      filter_upwards [hc] with s hs _
+      rw [hs]
+  refine ⟨v, fun t ↦ ?_, by simpa using hc⟩
+  have hcont : Continuous fun s ↦ -A s (v s) := (hA.clm_apply hvc).neg
+  exact ((hcont.integral_hasStrictDerivAt 0 t).hasDerivAt.const_add c).congr_of_eventuallyEq
+    (Eventually.of_forall hv)
 
 /-- **Classical solutions give elements of the weak-derivative graph.** If `v` is a classical
 solution of `v' = g - A v` with `v` and `g` in `Lᵖ(ℝ, F)`, then `v` is the value of an element `u`
