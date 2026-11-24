@@ -23,8 +23,9 @@ compares them with the clutching of dual graphs in
 
 The normalization of a clutched curve is the normalization of the original curve (for external
 clutching, of the disjoint union of the two curves), and the new flag pair is `none`. So the
-clutched curve is a curve with one more node, which is never smoothed: in a family it is a
-permanent node.
+clutched curve is a curve with one more node. This file clutches individual curves only; a family
+formed by clutching along sections would carry this node in every fibre, but no such family is
+constructed here.
 
 ## Main definitions
 
@@ -53,21 +54,29 @@ permanent node.
 * `NodalGluing.inlClutchMap_injective`, `NodalGluing.inrClutchMap_injective` and
   `NodalGluing.range_inlClutchMap_inter_range_inrClutchMap`: the two curves map injectively into
   their external clutching and meet exactly at the new node.
+* `NodalGluing.isQuotientMap_sumElim_inlClutchMap_inrClutchMap`,
+  `NodalGluing.isEmbedding_inlClutchMap` and `NodalGluing.isEmbedding_inrClutchMap`: the external
+  clutching is the quotient of the disjoint union of the two curves, and each curve embeds in it.
 * `NodalGluing.Marking.specialPoints_selfClutch`: self-clutching preserves the special points of
   every component, since the glued marks become node branches.
 * `NodalGluing.connectedSpace_gluedCurve_selfClutch` and
   `NodalGluing.connectedSpace_gluedCurve_clutch`: clutching connected curves gives a connected
   curve.
 * `NodalGluing.arithmeticGenus_dualGraph_selfClutch` and
-  `NodalGluing.arithmeticGenus_dualGraph_clutch`: self-clutching raises the arithmetic genus by
-  one, and external clutching adds the genera.
+  `NodalGluing.arithmeticGenus_dualGraph_clutch`: for dual graphs with given component genera,
+  self-clutching raises the arithmetic genus by one, and external clutching adds the genera.
 * `NodalGluing.isStable_dualGraph_selfClutch_iff`, `NodalGluing.isStable_dualGraph_clutch_iff`:
-  a clutched curve is stable exactly when the curves it is glued from are.
+  for dual graphs with given component genera, the dual graph of a clutched curve is stable
+  exactly when the dual graphs of the curves it is glued from are.
 * `NodalGluing.Iso.selfClutchEquiv`: isomorphisms of curves carrying the glued marks to the glued
   marks correspond exactly to isomorphisms of the self-clutchings fixing the new node.
 * `NodalGluing.Iso.edgeEquiv_selfClutch_none`, `NodalGluing.Iso.edgeEquiv_clutch_none`, with
   `selfClutch_trans` and `clutch_trans`: clutched isomorphisms fix the new node and clutching is
   compatible with identities and composition.
+* `NodalGluing.Iso.gluedCurveHomeomorph_selfClutch_selfClutchMap`,
+  `NodalGluing.Iso.gluedCurveHomeomorph_clutch_inlClutchMap` and
+  `NodalGluing.Iso.gluedCurveHomeomorph_clutch_inrClutchMap`: the homeomorphisms induced by
+  clutched isomorphisms commute with the clutching maps.
 
 ## Implementation notes
 
@@ -350,13 +359,14 @@ theorem dualGraphSelfClutchIso_edgeEquiv :
     (dualGraphSelfClutchIso g m).edgeEquiv = .refl (Option Flag) :=
   (rfl)
 
-/-- **Self-clutching raises the arithmetic genus by one.** -/
+/-- **Self-clutching raises the arithmetic genus by one**: with the component genera `g`, the
+dual graph of the self-clutching has arithmetic genus one more than the dual graph of the curve. -/
 theorem arithmeticGenus_dualGraph_selfClutch :
     (dualGraph g m.selfClutch).arithmeticGenus = (dualGraph g m).arithmeticGenus + 1 := by
   rw [(dualGraphSelfClutchIso g m).arithmeticGenus_eq, DualGraph.arithmeticGenus_selfClutch]
 
-/-- **Self-clutching preserves stability**: the self-clutched curve is stable exactly when the
-curve with the two glued marks is. -/
+/-- **Self-clutching preserves stability**: with the component genera `g`, the dual graph of the
+self-clutching is stable exactly when the dual graph of the curve with the two glued marks is. -/
 theorem isStable_dualGraph_selfClutch_iff [Fintype L] :
     (dualGraph g m.selfClutch).IsStable ↔ (dualGraph g m).IsStable := by
   rw [(dualGraphSelfClutchIso g m).isStable_iff, DualGraph.isStable_selfClutch_iff]
@@ -446,6 +456,15 @@ theorem selfClutch_symm
       s(m.point (.inr 0), m.point (.inr 1))) :
     e.symm.selfClutch he' = (e.selfClutch he).symm :=
   ext fun _ ↦ ((e.selfClutch he).symm_apply_eq.mpr (by simp)).symm
+
+/-- **Clutching is natural**: the homeomorphism of self-clutchings induced by a clutched
+isomorphism commutes with the clutching maps. -/
+@[simp]
+theorem gluedCurveHomeomorph_selfClutch_selfClutchMap (a : GluedCurve d) :
+    (e.selfClutch he).gluedCurveHomeomorph (selfClutchMap d m a) =
+      selfClutchMap d' m' (e.gluedCurveHomeomorph a) := by
+  induction a using Quotient.inductionOn with | _ x => ?_
+  simp only [selfClutchMap_mk, gluedCurveHomeomorph_mk, selfClutch_apply]
 
 /-- An isomorphism of self-clutchings fixing the new node carries the two glued marks to the two
 glued marks, possibly exchanging them. -/
@@ -564,6 +583,14 @@ private theorem sigmaMap_inr_injective :
 private theorem sigmaMap_inl_ne_sigmaMap_inr (x : Σ i, X (.inl i)) (y : Σ i, X (.inr i)) :
     Sigma.map Sum.inl (fun _ ↦ id) x ≠ Sigma.map Sum.inr (fun _ ↦ id) y :=
   fun h ↦ Sum.inl_ne_inr (congrArg Sigma.fst h)
+
+private theorem sumSigmaDistrib_sigmaMap_inl (x : Σ i, X (.inl i)) :
+    Equiv.sumSigmaDistrib X (Sigma.map Sum.inl (fun _ ↦ id) x) = .inl x :=
+  (rfl)
+
+private theorem sumSigmaDistrib_sigmaMap_inr (x : Σ i, X (.inr i)) :
+    Equiv.sumSigmaDistrib X (Sigma.map Sum.inr (fun _ ↦ id) x) = .inr x :=
+  (rfl)
 
 /-- The flag pairs of a disjoint union start on the components of the two curves. -/
 @[simp]
@@ -887,6 +914,67 @@ theorem continuous_inrClutchMap : Continuous (inrClutchMap d₁ m₁ m₂) :=
   GluedCurve.continuous_lift _ _ _
     (continuous_quotient_mk'.comp (continuous_sigma_map.mpr fun _ ↦ continuous_id))
 
+/-- **The external clutching is a quotient of the two curves**: together, the inclusions of the
+two curves form a quotient map from their disjoint union. -/
+theorem isQuotientMap_sumElim_inlClutchMap_inrClutchMap :
+    IsQuotientMap (Sum.elim (inlClutchMap d₂ m₁ m₂) (inrClutchMap d₁ m₁ m₂)) := by
+  have hf : Continuous (Sum.map (Quotient.mk (gluedRelSetoid d₁))
+      (Quotient.mk (gluedRelSetoid d₂)) ∘ Equiv.sumSigmaDistrib X) :=
+    continuous_sigma fun
+      | .inl _ => continuous_inl.comp (continuous_quotient_mk'.comp continuous_sigmaMk)
+      | .inr _ => continuous_inr.comp (continuous_quotient_mk'.comp continuous_sigmaMk)
+  refine .of_comp hf (continuous_inlClutchMap.sumElim continuous_inrClutchMap) ?_
+  convert isQuotientMap_quotient_mk' (s := gluedRelSetoid (d₁.clutch d₂ m₁ m₂))
+  funext x
+  rcases x with ⟨i | i, x⟩
+  exacts [inlClutchMap_mk ⟨i, x⟩, inrClutchMap_mk ⟨i, x⟩]
+
+/-- The retraction of an external clutching onto the first curve, collapsing the second curve to
+the glued mark of the first. -/
+private def inlClutchRetraction : GluedCurve (d₁.clutch d₂ m₁ m₂) → GluedCurve d₁ :=
+  GluedCurve.lift _ (fun x ↦ Sum.elim (Quotient.mk _) (fun _ ↦ Quotient.mk _ (m₁.point none))
+      (Equiv.sumSigmaDistrib X x)) fun f ↦ by
+    rcases f with _ | f | f
+    · simp only [fstPoint_selfClutch_none, sndPoint_selfClutch_none,
+        Marking.sumClutch_point_inr_zero, Marking.sumClutch_point_inr_one,
+        sumSigmaDistrib_sigmaMap_inl, sumSigmaDistrib_sigmaMap_inr, Sum.elim_inl, Sum.elim_inr]
+    all_goals simp only [← flagPoint_false, ← flagPoint_true, flagPoint_clutch_some_inl,
+      flagPoint_clutch_some_inr, sumSigmaDistrib_sigmaMap_inl, sumSigmaDistrib_sigmaMap_inr,
+      Sum.elim_inl, Sum.elim_inr, mk_flagPoint]
+
+/-- The retraction of an external clutching onto the second curve, collapsing the first curve to
+the glued mark of the second. -/
+private def inrClutchRetraction : GluedCurve (d₁.clutch d₂ m₁ m₂) → GluedCurve d₂ :=
+  GluedCurve.lift _ (fun x ↦ Sum.elim (fun _ ↦ Quotient.mk _ (m₂.point none)) (Quotient.mk _)
+      (Equiv.sumSigmaDistrib X x)) fun f ↦ by
+    rcases f with _ | f | f
+    · simp only [fstPoint_selfClutch_none, sndPoint_selfClutch_none,
+        Marking.sumClutch_point_inr_zero, Marking.sumClutch_point_inr_one,
+        sumSigmaDistrib_sigmaMap_inl, sumSigmaDistrib_sigmaMap_inr, Sum.elim_inl, Sum.elim_inr]
+    all_goals simp only [← flagPoint_false, ← flagPoint_true, flagPoint_clutch_some_inl,
+      flagPoint_clutch_some_inr, sumSigmaDistrib_sigmaMap_inl, sumSigmaDistrib_sigmaMap_inr,
+      Sum.elim_inl, Sum.elim_inr, mk_flagPoint]
+
+/-- **The first curve embeds in an external clutching.** -/
+theorem isEmbedding_inlClutchMap : IsEmbedding (inlClutchMap d₂ m₁ m₂) :=
+  .of_leftInverse (f := inlClutchRetraction) (fun a ↦ Quotient.inductionOn a fun _ ↦ by
+      simp only [inlClutchRetraction, inlClutchMap_mk, GluedCurve.lift_mk,
+        sumSigmaDistrib_sigmaMap_inl, Sum.elim_inl])
+    (GluedCurve.continuous_lift _ _ _ <| continuous_sigma fun
+      | .inl _ => continuous_quotient_mk'.comp continuous_sigmaMk
+      | .inr _ => continuous_const)
+    continuous_inlClutchMap
+
+/-- **The second curve embeds in an external clutching.** -/
+theorem isEmbedding_inrClutchMap : IsEmbedding (inrClutchMap d₁ m₁ m₂) :=
+  .of_leftInverse (f := inrClutchRetraction) (fun a ↦ Quotient.inductionOn a fun _ ↦ by
+      simp only [inrClutchRetraction, inrClutchMap_mk, GluedCurve.lift_mk,
+        sumSigmaDistrib_sigmaMap_inr, Sum.elim_inr])
+    (GluedCurve.continuous_lift _ _ _ <| continuous_sigma fun
+      | .inl _ => continuous_const
+      | .inr _ => continuous_quotient_mk'.comp continuous_sigmaMk)
+    continuous_inrClutchMap
+
 /-- **External clutching of connected curves is connected**: the two curves meet at the new
 node. -/
 instance connectedSpace_gluedCurve_clutch [ConnectedSpace (GluedCurve d₁)]
@@ -939,14 +1027,16 @@ theorem dualGraphClutchIso_edgeEquiv :
     (dualGraphClutchIso g₁ g₂ m₁ m₂).edgeEquiv = .refl (Option (Flag₁ ⊕ Flag₂)) :=
   (rfl)
 
-/-- **External clutching adds the arithmetic genera.** -/
+/-- **External clutching adds the arithmetic genera**: with the component genera `g₁` and `g₂`,
+the arithmetic genus of the dual graph of the external clutching is the sum of those of the dual
+graphs of the two curves. -/
 theorem arithmeticGenus_dualGraph_clutch :
     (dualGraph (Sum.elim g₁ g₂) (m₁.clutch m₂)).arithmeticGenus =
       (dualGraph g₁ m₁).arithmeticGenus + (dualGraph g₂ m₂).arithmeticGenus := by
   rw [(dualGraphClutchIso g₁ g₂ m₁ m₂).arithmeticGenus_eq, DualGraph.arithmeticGenus_clutch]
 
-/-- **External clutching preserves stability**: the clutched curve is stable exactly when both
-curves are. -/
+/-- **External clutching preserves stability**: with the component genera `g₁` and `g₂`, the dual
+graph of the external clutching is stable exactly when the dual graphs of both curves are. -/
 theorem isStable_dualGraph_clutch_iff [Fintype L₁] [Fintype L₂] :
     (dualGraph (Sum.elim g₁ g₂) (m₁.clutch m₂)).IsStable ↔
       (dualGraph g₁ m₁).IsStable ∧ (dualGraph g₂ m₂).IsStable := by
@@ -1058,6 +1148,24 @@ theorem clutch_apply_inl (x : Σ i, X (.inl i)) :
 theorem clutch_apply_inr (x : Σ i, X (.inr i)) :
     e₁.clutch e₂ h₁ h₂ (Sigma.map Sum.inr (fun _ ↦ id) x) = Sigma.map Sum.inr (fun _ ↦ id) (e₂ x) :=
   sum_apply_inr e₁ e₂ x
+
+/-- **External clutching is natural on the first curve**: the homeomorphism of external
+clutchings induced by a clutched isomorphism commutes with the inclusions of the first curves. -/
+@[simp]
+theorem gluedCurveHomeomorph_clutch_inlClutchMap (a : GluedCurve d₁) :
+    (e₁.clutch e₂ h₁ h₂).gluedCurveHomeomorph (inlClutchMap d₂ m₁ m₂ a) =
+      inlClutchMap d₂' m₁' m₂' (e₁.gluedCurveHomeomorph a) := by
+  induction a using Quotient.inductionOn with | _ x => ?_
+  simp only [inlClutchMap_mk, gluedCurveHomeomorph_mk, clutch_apply_inl]
+
+/-- **External clutching is natural on the second curve**: the homeomorphism of external
+clutchings induced by a clutched isomorphism commutes with the inclusions of the second curves. -/
+@[simp]
+theorem gluedCurveHomeomorph_clutch_inrClutchMap (a : GluedCurve d₂) :
+    (e₁.clutch e₂ h₁ h₂).gluedCurveHomeomorph (inrClutchMap d₁ m₁ m₂ a) =
+      inrClutchMap d₁' m₁' m₂' (e₂.gluedCurveHomeomorph a) := by
+  induction a using Quotient.inductionOn with | _ x => ?_
+  simp only [inrClutchMap_mk, gluedCurveHomeomorph_mk, clutch_apply_inr]
 
 /-- **The clutched isomorphism fixes the new node.** -/
 @[simp]
