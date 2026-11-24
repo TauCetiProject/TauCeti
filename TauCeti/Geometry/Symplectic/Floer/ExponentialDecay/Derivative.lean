@@ -24,9 +24,10 @@ loops converge uniformly to a nondegenerate `1`-periodic orbit `x`. By
 exponentially and the loops converge to `x` exponentially in `C⁰`. This file proves exponential
 convergence in `C¹`
 (`SymplecticForm.exists_pos_eventually_norm_sub_le_exp_and_norm_fderiv_sub_smulRight_le_exp`):
-eventually `‖du(s, t) - dt ⊗ X_{H_t}(x(t))‖ ≤ C e^{-κ s}`. This is the form in which the
-pre-gluing error estimate `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`
-takes the asymptotics of the two broken cylinders.
+eventually `‖du(s, t) - dt ⊗ X_{H_t}(x(t))‖ ≤ C e^{-κ s}`. This is the form of the positive-end
+hypotheses `hu` and `hdu` of the pre-gluing error estimate
+`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`; its negative-end
+hypotheses `hv` and `hdv`, as `s → -∞`, are not treated here.
 
 **The derivative solves a linear equation.** For the cylindrical perturbation `H_t dt` the
 Hamiltonian term does not depend on `s`, so differentiating the equation in `s` shows that
@@ -151,6 +152,14 @@ private noncomputable def floerCoeff (ω : SymplecticForm V) (H : ℝ → V → 
   fun z ↦ fderiv ℝ (fun w ↦ (J w).toLinearMap.toContinuousLinearMap) z (1, 0) +
     spatialFDeriv (𝕜 := ℝ) (fun p : ℝ × V ↦ ω.hamiltonianVectorField (H p.1) p.2) (u z) z.2
 
+/-- The spatial Jacobian `(t, y) ↦ dX_{H_t}(y)` of the Hamiltonian vector field, which enters the
+coefficient `B`, is `C¹` when `H` is `C³`. -/
+private theorem contDiff_spatialFDeriv_hamiltonianVectorField (hH : ContDiff ℝ 3 (uncurry H)) :
+    ContDiff ℝ 1 fun p : ℝ × V ↦ spatialFDeriv (𝕜 := ℝ)
+      (fun q : ℝ × V ↦ ω.hamiltonianVectorField (H q.1) q.2) p.2 p.1 :=
+  contDiff_iff_contDiffAt.2 fun _ ↦
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) hH).contDiffAt.spatialFDeriv (by norm_num)
+
 /-- **The integral of `‖∂ₛu‖²` over a disc is controlled by the energy of a half-cylinder.** If a
 disc of the complex coordinate of radius `r ≤ 1 / 2` lies over `[s, ∞)`, with `s > a`, then the
 integral of `‖∂ₛu‖²` over it is at most `4 / c` times the energy over `[s, ∞) × [0, 1]`. -/
@@ -211,8 +220,7 @@ private theorem norm_fderiv_floerCoeff_le (hH : ContDiff ℝ 3 (uncurry H)) {U :
   set Jc : ℝ × ℝ → V →L[ℝ] V := fun w ↦ (J w).toLinearMap.toContinuousLinearMap
   set Y : ℝ × V → V →L[ℝ] V := fun p ↦ spatialFDeriv (𝕜 := ℝ)
     (fun q : ℝ × V ↦ ω.hamiltonianVectorField (H q.1) q.2) p.2 p.1
-  have hY : ContDiff ℝ 1 Y := contDiff_iff_contDiffAt.2 fun _ ↦
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) hH).contDiffAt.spatialFDeriv (by norm_num)
+  have hY : ContDiff ℝ 1 Y := contDiff_spatialFDeriv_hamiltonianVectorField hH
   have h10 : ‖((1 : ℝ), (0 : ℝ))‖ ≤ 1 := by simp [Prod.norm_def]
   have hDJ : DifferentiableAt ℝ (fderiv ℝ Jc) z :=
     ((hJ.fderiv_of_isOpen (m := 1) hU (by norm_num)).contDiffAt
@@ -263,8 +271,7 @@ private theorem exists_bounds_of_floer {L b : ℝ} (hH : ContDiff ℝ 3 (uncurry
   set X : ℝ × V → V := fun p ↦ ω.hamiltonianVectorField (H p.1) p.2
   set Y : ℝ × V → V →L[ℝ] V := fun p ↦ spatialFDeriv (𝕜 := ℝ) X p.2 p.1
   have hX : ContDiff ℝ 2 X := ω.contDiff_hamiltonianVectorField_uncurry (n := 2) hH
-  have hY : ContDiff ℝ 1 Y :=
-    contDiff_iff_contDiffAt.2 fun _ ↦ hX.contDiffAt.spatialFDeriv (by norm_num)
+  have hY : ContDiff ℝ 1 Y := contDiff_spatialFDeriv_hamiltonianVectorField hH
   -- Bounds for `X`, `Y` and the derivative of `Y` on a compact neighbourhood of the orbit.
   set Kc : Set (ℝ × V) :=
     (fun q : ℝ × V ↦ (q.1, x q.1 + q.2)) '' (Icc (-ε) (1 + ε) ×ˢ closedBall 0 1)
@@ -381,9 +388,8 @@ private theorem pi_mul_sq_mul_norm_fderiv_apply_one_zero_sq_le_of_floer
     rw [hB]
     unfold floerCoeff
     exact ((hJ.fderiv_of_isOpen hU (by norm_num)).clm_apply contDiffOn_const).add
-      ((contDiff_iff_contDiffAt.2 fun _ ↦
-        (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) hH).contDiffAt.spatialFDeriv
-          (by norm_num)).comp_contDiffOn (contDiffOn_snd.prodMk (hu.of_le (by norm_num))))
+      ((contDiff_spatialFDeriv_hamiltonianVectorField hH).comp_contDiffOn
+        (contDiffOn_snd.prodMk (hu.of_le (by norm_num))))
   have hv' : ContDiffOn ℝ 2 (fun w ↦ fderiv ℝ u (e w) (1, 0)) (e ⁻¹' U) :=
     hv.comp e.contDiff.contDiffOn fun _ h ↦ h
   refine pi_mul_sq_mul_norm_sq_le_fifteen_mul_setIntegral_ball_of_fderiv_I_eq
@@ -399,7 +405,8 @@ private theorem pi_mul_sq_mul_norm_fderiv_apply_one_zero_sq_le_of_floer
       (hu.of_le (by norm_num)) (hJ.of_le (by norm_num)) hfloer (hball hw)
       (hH.of_le (by norm_num)).contDiffAt
     rw [show (fun w ↦ fderiv ℝ u (e w) (1, 0)) =
-        (fun z ↦ fderiv ℝ u z (1, 0)) ∘ Complex.equivRealProdCLM from rfl,
+        (fun z ↦ fderiv ℝ u z (1, 0)) ∘ Complex.equivRealProdCLM by
+      simp only [e, ContinuousLinearEquiv.coe_coe, Function.comp_def],
       fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I, stdComplexLineReal_eq,
       stdComplexLineImag_eq]
     simpa only [B, Jc, e, floerCoeff, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
@@ -512,8 +519,9 @@ whole half-cylinder. Then `u` converges to `x` exponentially fast in
 `‖u(s, t) - x(t)‖ ≤ C e^{-κ s}` and `‖du(s, t) - dt ⊗ X_{H_t}(x(t))‖ ≤ C e^{-κ s}`.
 
 The derivative of the stationary cylinder over `x` is `dt ⊗ x'(t) = dt ⊗ X_{H_t}(x(t))`, so this
-gives the hypothesis of the pre-gluing estimate
-`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`.
+gives the positive-end hypotheses `hu` and `hdu` of the pre-gluing estimate
+`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, but not its negative-end
+hypotheses `hv` and `hdv`.
 
 The derivative `v = ∂ₛu` solves the linear equation `∂ₜv = J ∂ₛv + B v` of
 `TauCeti.SymplecticForm.fderiv_fderiv_apply_one_zero_apply_zero_one_eq_of_floer`, whose coefficients

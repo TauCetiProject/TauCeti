@@ -84,8 +84,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.norm_fderiv_sub_smulRight_le_of_floer`: for a perturbation `K_t dt`, the Floer
   equation `∂ₜu = J ∂ₛu + X_{K_t}(u)` and the resulting bound on the deviation of `du` from
   `dt ⊗ w`.
-* `SymplecticForm.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le`: for `H_t dt`, the energy
-  controls `∫ ‖∂_s u‖²`.
+* `SymplecticForm.setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le`: for a perturbation
+  `K_t dt`, the energy controls `∫ ‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le`: some slice of a
   rectangle has at most the average energy.
@@ -1014,19 +1014,19 @@ theorem setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le (ω : SymplecticForm
   exact ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le (hJc z hz)
     (hJM z hz) (h z hz)
 
-/-- **The energy of `∂ₛu` is controlled by the Floer energy.** On a Floer solution for the
-cylindrical perturbation `H_t dt` over a measurable set `S` of the domain, for a family `J` of
-almost complex structures given along `u` as a function of the domain point and tamed with
+/-- **The energy of `∂ₛu` is controlled by the Floer energy.** On a Floer solution for a
+perturbation `K_t dt` without `ds`-component over a measurable set `S` of the domain, for a family
+`J` of almost complex structures given along `u` as a function of the domain point and tamed with
 constant `c` on `S`, the energy `∫ ‖∂ₛu‖²` over `S` is at most `2 / c` times the Floer energy
 there. -/
 theorem setLIntegral_enorm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
-    {H : ℝ → V → ℝ} {S : Set (ℝ × ℝ)} {J : ℝ × ℝ → AlmostComplexStructure V} {c : ℝ} (hc : 0 < c)
+    {S : Set (ℝ × ℝ)} {J : ℝ × ℝ → AlmostComplexStructure V} {c : ℝ} (hc : 0 < c)
     (hS : MeasurableSet S) (hJc : ∀ z ∈ S, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
     (hfloer : ∀ z ∈ S, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
     ∫⁻ z in S, ‖fderiv ℝ u z stdComplexLineReal‖ₑ ^ 2 ≤
       ENNReal.ofReal (2 / c) * ∫⁻ z in S,
-        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) := by
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z) := by
   rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine setLIntegral_mono' hS fun z hz ↦ ?_
   rw [← ENNReal.ofReal_mul (by positivity), ← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
