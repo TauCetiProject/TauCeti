@@ -32,7 +32,10 @@ morphism `f : X ⟶ Y` restricts to `restrictPreimage f V : f⁻¹(V) ⟶ V` ove
 A morphism of adic spaces factors through an open immersion exactly when its image lies in the
 image of the open immersion (`liftOfIsOpenImmersion`), and a commutative square with an open
 immersion opposite a monomorphism is a pullback once the preimage of the image of the monomorphism
-lies in the image of the open immersion (`isPullback_of_isOpenImmersion`).
+lies in the image of the open immersion (`isPullback_of_isOpenImmersion`). As for pre-adic
+spaces, this follows Mathlib's scheme-level `AlgebraicGeometry.IsOpenImmersion.isPullback`, and
+`restrictPreimage_id` and `restrictPreimage_comp` follow `AlgebraicGeometry.morphismRestrict_id`
+and `AlgebraicGeometry.morphismRestrict_comp`.
 
 The basis theorem also discharges the basis hypothesis of
 `TauCeti.PreAdicSpace.isSheafy_of_isAdapted_of_isSheaf_affinoidOpens`: a pre-adic space in
@@ -444,7 +447,8 @@ end Lift
 /-- **Pullback criterion along an open immersion of adic spaces.** A commutative square of adic
 spaces whose left side `iU` is an open immersion and whose right side `iV` is a monomorphism is a
 pullback square as soon as every point of `X` mapped by `g` into the image of `iV` lies in the
-image of `iU`. -/
+image of `iU`. This is the analogue of `AlgebraicGeometry.IsOpenImmersion.isPullback` for
+schemes. -/
 theorem isPullback_of_isOpenImmersion {U V X Y : AdicSpace.{u}} (f : U ⟶ V) (iU : U ⟶ X)
     (iV : V ⟶ Y) (g : X ⟶ Y) [PreAdicSpace.IsOpenImmersion iU.hom] [Mono iV]
     (w : f ≫ iV = iU ≫ g)

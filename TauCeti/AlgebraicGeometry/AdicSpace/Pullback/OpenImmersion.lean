@@ -92,7 +92,7 @@ theorem isPullback_restrict_inf_of_isPullback
   let l : s.pt ⟶ Z := hs.lift (s.fst ≫ X.ofRestrict U) (s.snd ≫ Y.ofRestrict W) hcond
   have hl₁ : l ≫ p = s.fst ≫ X.ofRestrict U := hs.lift_fst _ _ hcond
   have hl₂ : l ≫ q = s.snd ≫ Y.ofRestrict W := hs.lift_snd _ _ hcond
-  have hrange : Set.range l.hom.base ⊆ Set.range (Z.obj.ofRestrict O.isOpenEmbedding).base := by
+  have hrange : Set.range l.hom.base ⊆ Set.range (Z.ofRestrict O).hom.base := by
     rintro _ ⟨w, rfl⟩
     have hw₁ := congrArg (fun k : s.pt ⟶ X ↦ k.hom.base w) hl₁
     have hw₂ := congrArg (fun k : s.pt ⟶ Y ↦ k.hom.base w) hl₂
@@ -101,13 +101,10 @@ theorem isPullback_restrict_inf_of_isPullback
     have hmem : l.hom.base w ∈ O :=
       ⟨Opens.mem_map.mpr (hw₁.symm ▸ (s.fst.hom.base w).property),
         Opens.mem_map.mpr (hw₂.symm ▸ (s.snd.hom.base w).property)⟩
-    exact ⟨⟨l.hom.base w, hmem⟩, rfl⟩
-  let m : s.pt ⟶ Z.restrict O :=
-    ObjectProperty.homMk (PreAdicSpace.IsOpenImmersion.lift _ l.hom hrange)
-  have hmZ : m ≫ Z.ofRestrict O = l := by
-    ext1
-    rw [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, ofRestrict_hom]
-    exact PreAdicSpace.IsOpenImmersion.lift_fac _ _ _
+    rw [range_ofRestrict]
+    exact hmem
+  let m : s.pt ⟶ Z.restrict O := liftOfIsOpenImmersion (Z.ofRestrict O) l hrange
+  have hmZ : m ≫ Z.ofRestrict O = l := liftOfIsOpenImmersion_fac _ _ _
   have hm₁ : m ≫ p_O = s.fst := by
     rw [← cancel_mono (X.ofRestrict U), Category.assoc, liftRestrict_ofRestrict,
       ← Category.assoc, hmZ, hl₁]

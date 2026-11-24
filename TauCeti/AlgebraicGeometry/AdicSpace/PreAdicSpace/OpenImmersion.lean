@@ -83,7 +83,10 @@ presheafed spaces (`CategoryTheory.GlueData.mapGlueData`).
   space covered by them form a basis, if every object with `P` has a basis of such opens.
 
 The design follows `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion`, including its
-construction of pullbacks along open immersions.
+construction of pullbacks along open immersions. The pullback criterion `IsOpenImmersion.isPullback`
+and the restrictions `Hom.restrictPreimage` follow the scheme-level
+`AlgebraicGeometry.IsOpenImmersion.isPullback`, `AlgebraicGeometry.isPullback_morphismRestrict`,
+`AlgebraicGeometry.morphismRestrict_id` and `AlgebraicGeometry.morphismRestrict_comp`.
 
 ## References
 
@@ -391,7 +394,9 @@ open Limits
 
 /-- **Pullback criterion along an open immersion.** A commutative square whose left side `iU` is
 an open immersion and whose right side `iV` is a monomorphism is a pullback square as soon as
-every point of `X` mapped by `g` into the image of `iV` lies in the image of `iU`. -/
+every point of `X` mapped by `g` into the image of `iV` lies in the image of `iU`. This is the
+analogue of `AlgebraicGeometry.IsOpenImmersion.isPullback` for schemes, with `iV` only a
+monomorphism and the preimage of its image only contained in the image of `iU`. -/
 theorem isPullback {U V X Y : PreAdicSpace.{u}} (f : U ⟶ V) (iU : U ⟶ X) (iV : V ⟶ Y)
     (g : X ⟶ Y) [IsOpenImmersion iU] [Mono iV] (w : f ≫ iV = iU ≫ g)
     (hrange : g.base ⁻¹' Set.range iV.base ⊆ Set.range iU.base) : IsPullback f iU iV g := by
@@ -405,7 +410,7 @@ theorem isPullback {U V X Y : PreAdicSpace.{u}} (f : U ⟶ V) (iU : U ⟶ X) (iV
 
 /-- The factorization of an open immersion through another open immersion is an open
 immersion. -/
-instance lift_isOpenImmersion (f : X ⟶ Z) [IsOpenImmersion f] (g : Y ⟶ Z) [IsOpenImmersion g]
+instance isOpenImmersion_lift (f : X ⟶ Z) [IsOpenImmersion f] (g : Y ⟶ Z) [IsOpenImmersion g]
     (H : Set.range g.base ⊆ Set.range f.base) : IsOpenImmersion (lift f g H) := by
   have h : IsPullback (lift f g H) (𝟙 Y) f g :=
     isPullback _ _ _ _ (by simp) (by simp)
@@ -563,7 +568,8 @@ theorem restrictPreimage_comp (g : Y ⟶ Z) (W : Opens Z) :
 
 /-- **Pullback along an open subspace.** For a morphism `f : X ⟶ Y` of pre-adic spaces and an open
 `V ⊆ Y`, the open subspace `f⁻¹(V)` with the restriction `f⁻¹(V) ⟶ V` and its inclusion into `X` is
-the pullback of `V ⟶ Y` along `f`, with no hypothesis on `f`. -/
+the pullback of `V ⟶ Y` along `f`, with no hypothesis on `f`. This is the analogue of
+`AlgebraicGeometry.isPullback_morphismRestrict` for schemes. -/
 theorem isPullback_restrictPreimage :
     IsPullback (f.restrictPreimage V) (X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding)
       (Y.ofRestrict V.isOpenEmbedding) f :=
