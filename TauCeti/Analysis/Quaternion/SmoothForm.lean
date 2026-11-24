@@ -156,13 +156,10 @@ private theorem dq_single_zero_one : dq (Pi.single 0 1) = 1 := by
 
 private theorem differentiableAt_of_comp_dq {f : ℍ → ℍ} {x : Fin 4 → ℝ}
     (h : DifferentiableAt ℝ (fun y ↦ f (dq y)) x) : DifferentiableAt ℝ f (dq x) := by
-  let L := QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)
-  have hex : L.toContinuousLinearEquiv (dq x) = x := by
-    rw [L.coe_toContinuousLinearEquiv', coe_dq, L.apply_symm_apply]
-  have hid : (fun y ↦ f (dq y)) ∘ ⇑L.toContinuousLinearEquiv = f := funext fun q ↦ by
-    simp only [L, Function.comp_apply, LinearEquiv.coe_toContinuousLinearEquiv', coe_dq,
-      LinearEquiv.symm_apply_apply]
-  exact hid ▸ (hex ▸ h).comp (dq x) L.toContinuousLinearEquiv.differentiableAt
+  let L := (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).toContinuousLinearEquiv
+  have hex : L (dq x) = x := linearEquivTuple_dq x
+  have hid : (fun y ↦ f (dq y)) ∘ ⇑L = f := funext fun q ↦ congrArg f (dq_linearEquivTuple q)
+  exact hid ▸ (hex ▸ h).comp (dq x) L.differentiableAt
 
 /-- **Left Fueter exterior-derivative identity:** `d(Dq · f) = (fueterLeft (df)) dV` for every
 `f : ℍ → ℍ` and `x : Fin 4 → ℝ` (for `f` non-differentiable at `dq x` both sides are `0`). -/
@@ -458,7 +455,7 @@ theorem orientation_eq_affineFacetOrientation_iff_det_pos
       (v : Module.Basis (Fin 3) ℝ (TangentSpace (modelWithCornersUnitCube (Fin 3)) x)),
       v.orientation = (L.affineFacetOrientation p j b).orientationAt x ↔
         0 < (Matrix.of (Fin.cons (L.toContinuousLinearMap.affineFacetOutward j b)
-          (fun r ↦ NormedSpace.fromTangentSpace x.1
+          (fun r ↦ NormedSpace.fromTangentSpace x.val
             (mfderiv (modelWithCornersUnitCube (Fin 3)) 𝓘(ℝ, Fin 4 → ℝ)
               Subtype.val x (v r))))).det := by
   let M := L.toContinuousLinearMap.affineFacetLinearMap j
@@ -470,7 +467,7 @@ theorem orientation_eq_affineFacetOrientation_iff_det_pos
   let e := (tangentSpaceCastModel (modelWithCornersUnitCube (Fin 3)) x).toLinearEquiv
   let w : Module.Basis (Fin 3) ℝ (Fin 3 → ℝ) := v.map e
   let b₀ := Pi.basisFun ℝ (Fin 3)
-  have hmf (r : Fin 3) : NormedSpace.fromTangentSpace x.1
+  have hmf (r : Fin 3) : NormedSpace.fromTangentSpace x.val
       (mfderiv (modelWithCornersUnitCube (Fin 3)) 𝓘(ℝ, Fin 4 → ℝ) Subtype.val x (v r)) =
       M (w r) := by rw [M.mfderiv_subtypeVal_unitCubeImage hM q₀ x]; simp [w, e]
   simp_rw [hmf]
@@ -637,9 +634,8 @@ theorem left_cauchyFueter_affine_integralTopForm
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p x₀ : Fin 4 → ℝ} {f : ℍ → ℍ}
     (hL : 0 < LinearMap.det (L : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ))
     (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      dq (p + L u) ≠ dq x₀ → LeftFueterAt f (dq (p + L u)))
-    (hx₀ : L.symm (x₀ - p) ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
+    (hf : LeftFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)) \ {dq x₀}))
+    (hx₀ : L.symm (x₀ - p) ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
     f (dq x₀) = (1 / (2 * Real.pi ^ 2)) •
       ∑ i : Fin 4,
         (∑ j : Fin 4, ∑ b : Bool,
@@ -651,7 +647,7 @@ theorem left_cauchyFueter_affine_integralTopForm
                   (cauchyFueterKernel (dq x) (dq x₀)) (f (dq x)))))) •
           dq (Pi.single i 1) := by
   rw [L.sum_smul_integralTopForm_affineFacet_eq_rawAffineBoundary p fun j b ↦
-    (integrableOn_affineFacet_mul_cauchyFueterKernel hc hx₀ j b).1]
+    (integrableOn_affineFacet_mul_cauchyFueterKernel hc hx₀ j b).left]
   exact left_cauchyFueter_affine hL hc hf hx₀
 
 /-- **Right Cauchy–Fueter representation via `integralTopForm` on the eight oriented facets.**
@@ -662,9 +658,8 @@ theorem right_cauchyFueter_affine_integralTopForm
     {L : (Fin 4 → ℝ) ≃L[ℝ] (Fin 4 → ℝ)} {p x₀ : Fin 4 → ℝ} {f : ℍ → ℍ}
     (hL : 0 < LinearMap.det (L : (Fin 4 → ℝ) →ₗ[ℝ] Fin 4 → ℝ))
     (hc : ContinuousOn f (dq '' ((fun u ↦ p + L u) '' Icc 0 1)))
-    (hf : ∀ u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1),
-      dq (p + L u) ≠ dq x₀ → RightFueterAt f (dq (p + L u)))
-    (hx₀ : L.symm (x₀ - p) ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
+    (hf : RightFueterOn f (dq '' ((fun u ↦ p + L u) '' pi univ (fun _ ↦ Ioo 0 1)) \ {dq x₀}))
+    (hx₀ : L.symm (x₀ - p) ∈ pi univ (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
     f (dq x₀) = (1 / (2 * Real.pi ^ 2)) •
       ∑ i : Fin 4,
         (∑ j : Fin 4, ∑ b : Bool,
@@ -676,7 +671,7 @@ theorem right_cauchyFueter_affine_integralTopForm
                   (f (dq x)) (cauchyFueterKernel (dq x) (dq x₀)))))) •
           dq (Pi.single i 1) := by
   rw [L.sum_smul_integralTopForm_affineFacet_eq_rawAffineBoundary p fun j b ↦
-    (integrableOn_affineFacet_mul_cauchyFueterKernel hc hx₀ j b).2]
+    (integrableOn_affineFacet_mul_cauchyFueterKernel hc hx₀ j b).right]
   exact right_cauchyFueter_affine hL hc hf hx₀
 
 end TauCeti

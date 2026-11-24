@@ -88,7 +88,8 @@ theorem exists_lift_modelOrientation_eq (o : Orientation I M ι)
     (m : _root_.Orientation ℝ E ι) :
     ∃ l : OrientationLift I M ι, mk l = o ∧ l.modelOrientation = m := by
   obtain ⟨l, rfl⟩ := o.exists_lift
-  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m l.card_eq with h | h
+  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m
+    (Nat.card_eq_fintype_card.trans l.card_eq) with h | h
   · exact ⟨l, rfl, h⟩
   · exact ⟨l.flip, (mk_eq_mk_iff _ _).mpr (.inr rfl), by
       rw [OrientationLift.flip_modelOrientation, h]
@@ -103,6 +104,10 @@ theorem inductionOn {p : Orientation I M ι → Prop} (o : Orientation I M ι)
 /-- The index type has the dimension of the model space. -/
 theorem card_eq (o : Orientation I M ι) : Fintype.card ι = Module.finrank ℝ E :=
   Quotient.inductionOn o OrientationLift.card_eq
+
+/-- An orientation indexed by the empty finite type has a zero-dimensional model. -/
+theorem finrank_eq_zero (o : Orientation I M (Fin 0)) : Module.finrank ℝ E = 0 :=
+  o.card_eq.symm.trans (Fintype.card_fin 0)
 
 /-- The tangent space has the dimension encoded by the orientation index. -/
 theorem finrank_tangentSpace_eq (o : Orientation I M ι) (x : M) :
@@ -133,6 +138,14 @@ def reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι
 @[simp]
 theorem reindex_mk {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
     (mk o).reindex e = mk (o.reindex e) := (rfl)
+
+/-- Reindexing along the identity equivalence does not change an orientation. -/
+@[simp]
+theorem reindex_refl (o : Orientation I M ι) : o.reindex (Equiv.refl ι) = o := by
+  induction o using Orientation.inductionOn with | h l =>
+    rw [reindex_mk]
+    congr 1
+    ext α x <;> simp
 
 variable [IsManifold I 1 M]
 
@@ -183,6 +196,25 @@ theorem orientationAt_mk (o : OrientationLift I M ι) (x : M) :
     orientationAt (Orientation.mk o) x = o.orientationAt x := by
   simp only [orientationAt, Orientation.toVectorBundleOrientation_mk,
     OrientationLift.toVectorBundleOrientation_apply]
+
+/-- Mapping the tangent orientation of `Orientation.mk o` along `tangentSpaceCastModel` reads off
+the signed model orientation `if o.sign x ⟨x, _⟩ = 1 then o.modelOrientation else
+-o.modelOrientation`, including at boundary and corner points. -/
+theorem map_tangentSpaceCastModel_orientationAt_mk (o : OrientationLift I M ι) (x : M) :
+    _root_.Orientation.map ι (tangentSpaceCastModel I x).toLinearEquiv
+      ((Orientation.mk o).orientationAt x) =
+      if o.sign x ⟨x, mem_chart_source H x⟩ = 1 then
+        o.modelOrientation
+      else -o.modelOrientation := by
+  rw [orientationAt_mk]
+  -- `TangentSpace I x` is definitionally `E` and `tangentSpaceCastModel I x` is the definitional
+  -- identity across that type synonym, so `(tangentSpaceCastModel I x).toLinearEquiv` reduces to
+  -- `LinearEquiv.refl ℝ E` and `Orientation.map_refl` yields `OrientationLift.orientationAt_eq`.
+  have hcast :
+      _root_.Orientation.map ι (tangentSpaceCastModel I x).toLinearEquiv (o.orientationAt x) =
+        o.orientationAt x :=
+    DFunLike.congr_fun (_root_.Orientation.map_refl ι) (o.orientationAt x)
+  rw [hcast, OrientationLift.orientationAt_eq, OrientationLift.chartOrientation_eq_ite]
 
 @[simp]
 theorem orientationAt_neg (o : Orientation I M ι) (x : M) :
@@ -331,6 +363,15 @@ theorem real_eq_model :
 theorem orientationAt_real (x : ℝ) :
     orientationAt real x = (Module.Basis.singleton (Fin 1) ℝ).orientation := by
   rw [real_eq_model, orientationAt_model]
+
+/-- The basis of the tangent line of `ℝ` at `x` given by the unit vector `1` is positively
+oriented for the standard orientation. -/
+theorem orientation_map_fromTangentSpace_symm_singleton (x : ℝ) :
+    ((Module.Basis.singleton (Fin 1) ℝ).map
+        (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm.toLinearEquiv).orientation =
+      real.orientationAt x := by
+  rw [Module.Basis.orientation_map, ContinuousLinearEquiv.toLinearEquiv_symm,
+    ← _root_.Orientation.map_symm, Equiv.symm_apply_eq, real_eq_model, map_orientationAt_model]
 
 /-- Cast a manifold orientation along an equality of models on the same model vector space and
 chart carrier. -/

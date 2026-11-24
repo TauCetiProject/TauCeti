@@ -87,30 +87,6 @@ theorem unitCubeOrientationLift_signAt (α x : Icc (0 : ι → ℝ) 1) :
   rw [Manifold.OrientationLift.signAt_of_mem _ hx, unitCubeOrientationLift,
     Manifold.OrientationLift.ofHasGroupoid_sign]
 
-/-- Mapping the tangent orientation of `Manifold.Orientation.mk l` along `tangentSpaceCastModel`
-reads off the signed model orientation `if l.sign x x = 1 then l.modelOrientation else
--l.modelOrientation`. -/
-private theorem map_tangentSpaceCastModel_orientationAt_mk
-    {E H M ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] [Fintype ι]
-    (l : Manifold.OrientationLift I M ι) (x : M) :
-    _root_.Orientation.map ι (tangentSpaceCastModel I x).toLinearEquiv
-      ((Manifold.Orientation.mk l).orientationAt x) =
-      if l.sign x ⟨x, mem_chart_source H x⟩ = 1 then
-        l.modelOrientation
-      else -l.modelOrientation := by
-  rw [Manifold.Orientation.orientationAt_mk]
-  -- `TangentSpace I x` is definitionally `E` and `tangentSpaceCastModel I x` is the definitional
-  -- identity across that type synonym, so `(tangentSpaceCastModel I x).toLinearEquiv` reduces to
-  -- `LinearEquiv.refl ℝ E` and `Orientation.map_refl` yields `OrientationLift.orientationAt_eq`.
-  have hcast :
-      _root_.Orientation.map ι (tangentSpaceCastModel I x).toLinearEquiv (l.orientationAt x) =
-        l.orientationAt x :=
-    DFunLike.congr_fun (_root_.Orientation.map_refl ι) (l.orientationAt x)
-  rw [hcast, Manifold.OrientationLift.orientationAt_eq,
-    Manifold.OrientationLift.chartOrientation_eq_ite]
-
 /-- At every point of the closed unit cube, including faces, edges, and corners, the canonical
 tangent orientation read in the model space is `(Pi.basisFun ℝ ι).orientation`. -/
 theorem map_orientationAt_unitCubeOrientation [DecidableEq ι] (x : Icc (0 : ι → ℝ) 1) :
@@ -118,7 +94,7 @@ theorem map_orientationAt_unitCubeOrientation [DecidableEq ι] (x : Icc (0 : ι 
       ((unitCubeOrientation ι).orientationAt x) = (Pi.basisFun ℝ ι).orientation := by
   have hsign : (unitCubeOrientationLift ι).sign x ⟨x, mem_chart_source _ x⟩ = 1 := by
     rw [unitCubeOrientationLift, Manifold.OrientationLift.ofHasGroupoid_sign]
-  rw [unitCubeOrientation, map_tangentSpaceCastModel_orientationAt_mk, hsign,
+  rw [unitCubeOrientation, Manifold.Orientation.map_tangentSpaceCastModel_orientationAt_mk, hsign,
     unitCubeOrientationLift_modelOrientation]
   simp
 
@@ -142,24 +118,12 @@ theorem integrableTopForm_unitCube_iff {k : ℕ}
       IntegrableOn (fun u ↦ φ.inChartAt α u (Pi.basisFun ℝ (Fin k)))
         (Icc (0 : Fin k → ℝ) 1) := by
   let B := Pi.basisFun ℝ (Fin k)
-  have hhaar : B.addHaar = (volume : Measure (Fin k → ℝ)) := Module.Basis.addHaar_basisFun (Fin k)
-  have hm : MeasurableSet (Icc (0 : Fin k → ℝ) 1) := isClosed_Icc.measurableSet
-  have heq := eqOn_signedInChartAt_unitCube φ α
-  constructor
-  · intro hi
-    have hcoef : Integrable (φ.signedInChartAt B α (fun _ ↦ 1)) volume :=
-      hhaar ▸ ((integrableTopForm_iff φ).mp hi).2.2 B α
-    exact hcoef.integrableOn.congr_fun (fun u hu ↦ (heq hu).symm) hm
-  · intro hg
-    have himg : (extChartAt (modelWithCornersUnitCube (Fin k)) α) '' univ =
-        Icc (0 : Fin k → ℝ) 1 := by
-      rw [← extChartAt_unitCube_source α, (extChartAt _ α).image_source_eq_target,
-        extChartAt_unitCube_target α]
-    refine φ.integrableTopForm_of_open_cover (isClosed_tsupport _).isCompact B
-      (fun _ : Unit ↦ α) (fun _ ↦ univ) (fun _ ↦ isOpen_univ) (fun _ ↦ by simp)
-      (fun x _ ↦ mem_iUnion.mpr ⟨(), mem_univ x⟩) fun _ ↦ ?_
-    rw [himg, hhaar]
-    exact hg.congr_fun heq hm
+  rw [φ.integrableTopForm_iff_of_tsupport_subset_chart B α (isClosed_tsupport _).isCompact
+      (by simp), Module.Basis.addHaar_basisFun (Fin k),
+    ← integrableOn_iff_integrable_of_support_subset
+      ((φ.support_signedInChartAt_subset_target B α (fun _ ↦ 1)).trans_eq
+        (extChartAt_unitCube_target α))]
+  exact integrableOn_congr_fun (eqOn_signedInChartAt_unitCube φ α).symm isClosed_Icc.measurableSet
 
 /-- On the closed unit cube `Icc (0 : Fin k → ℝ) 1`, `integralTopForm` against the canonical
 coordinate orientation equals the Lebesgue integral over `Icc 0 1` of its chart coefficient on the
@@ -172,19 +136,17 @@ theorem integralTopForm_unitCube {k : ℕ}
   let B := Pi.basisFun ℝ (Fin k)
   let l := unitCubeOrientationLift (Fin k)
   by_cases hi : IntegrableTopForm φ
-  · have hhaar : B.addHaar = (volume : Measure (Fin k → ℝ)) :=
-      Module.Basis.addHaar_basisFun (Fin k)
-    have heq := eqOn_signedInChartAt_unitCube φ α
-    rw [unitCubeOrientation,
+  · rw [unitCubeOrientation,
       integralTopForm_eq_chartIntegral l φ hi α
         (by rw [extChartAt_unitCube_source]; exact subset_univ _),
-      l.chartIntegral_eq_const_mul_unsigned φ B α 1
-        (fun x _ ↦ unitCubeOrientationLift_signAt α x),
-      unitCubeOrientationLift_modelOrientation, _root_.Orientation.signBasis_orientation, hhaar]
+      l.chartIntegral_eq_const_mul_unsigned φ B α 1 (fun x _ ↦ unitCubeOrientationLift_signAt α x),
+      unitCubeOrientationLift_modelOrientation, _root_.Orientation.signBasis_orientation,
+      Module.Basis.addHaar_basisFun (Fin k)]
     simp only [Units.val_one, Int.cast_one, one_mul]
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Icc (0 : Fin k → ℝ) 1) fun u hu ↦ by
       rw [RoughForm.signedInChartAt_apply, dite_eq_right (by rwa [extChartAt_unitCube_target α])]]
-    exact setIntegral_congr_fun isClosed_Icc.measurableSet fun u hu ↦ (heq hu).symm
+    exact setIntegral_congr_fun isClosed_Icc.measurableSet
+      fun u hu ↦ (eqOn_signedInChartAt_unitCube φ α hu).symm
   · have hni : ¬ IntegrableOn (fun u ↦ φ.inChartAt α u B) (Icc (0 : Fin k → ℝ) 1) :=
       mt (integrableTopForm_unitCube_iff φ α).mpr hi
     rw [integralTopForm_eq_zero_of_not_integrable _ _ hi, integral_undef hni]
@@ -385,7 +347,7 @@ theorem map_orientationAt_unitCubeImageOrientation [DecidableEq ι] (hM : Inject
       if s = 1 then (Pi.basisFun ℝ ι).orientation else -(Pi.basisFun ℝ ι).orientation := by
   let := M.unitCubeImageChartedSpace hM q₀
   let := M.isManifold_unitCubeImageChartedSpace hM q₀ 1
-  rw [unitCubeImageOrientation, map_tangentSpaceCastModel_orientationAt_mk,
+  rw [unitCubeImageOrientation, Manifold.Orientation.map_tangentSpaceCastModel_orientationAt_mk,
     M.unitCubeImageOrientationLift_sign hM q₀ s x ⟨x, mem_chart_source _ x⟩,
     M.unitCubeImageOrientationLift_modelOrientation hM q₀ s]
 
@@ -436,25 +398,14 @@ theorem integrableTopForm_mpullback_unitCubeImage_iff (hM : Injective M) (q₀ :
   let φ := mpullback (modelWithCornersUnitCube (Fin k)) 𝓘(ℝ, E)
     (Subtype.val : ↥((fun u : Fin k → ℝ ↦ q₀ + M u) '' Icc 0 1) → E) ω
   let B := Pi.basisFun ℝ (Fin k)
-  have hhaar : B.addHaar = (volume : Measure (Fin k → ℝ)) := Module.Basis.addHaar_basisFun (Fin k)
-  have hm : MeasurableSet (Icc (0 : Fin k → ℝ) 1) := isClosed_Icc.measurableSet
-  have heq := M.eqOn_signedInChartAt_mpullback_unitCubeImage hM q₀ ω α
-  constructor
-  · intro hi
-    have hcoef : Integrable (φ.signedInChartAt B α (fun _ ↦ 1)) volume :=
-      hhaar ▸ ((integrableTopForm_iff φ).mp hi).2.2 B α
-    exact hcoef.integrableOn.congr_fun (fun u hu ↦ (heq hu).symm) hm
-  · intro hg
-    have himg : (extChartAt (modelWithCornersUnitCube (Fin k)) α) '' univ =
-        Icc (0 : Fin k → ℝ) 1 := by
-      rw [← M.extChartAt_unitCubeImage_source hM q₀ α, (extChartAt _ α).image_source_eq_target,
-        M.extChartAt_unitCubeImage_target hM q₀ α]
-    refine φ.integrableTopForm_of_open_cover (isClosed_tsupport _).isCompact B
-      (fun _ : Unit ↦ α) (fun _ ↦ univ) (fun _ ↦ isOpen_univ)
-      (fun _ ↦ by rw [M.chartAt_unitCubeImage_source hM q₀ α])
-      (fun x _ ↦ mem_iUnion.mpr ⟨(), mem_univ x⟩) fun _ ↦ ?_
-    rw [himg, hhaar]
-    exact hg.congr_fun heq hm
+  rw [φ.integrableTopForm_iff_of_tsupport_subset_chart B α (isClosed_tsupport _).isCompact
+      (by rw [M.chartAt_unitCubeImage_source hM q₀ α]; exact subset_univ _),
+    Module.Basis.addHaar_basisFun (Fin k),
+    ← integrableOn_iff_integrable_of_support_subset
+      ((φ.support_signedInChartAt_subset_target B α (fun _ ↦ 1)).trans_eq
+        (M.extChartAt_unitCubeImage_target hM q₀ α))]
+  exact integrableOn_congr_fun (M.eqOn_signedInChartAt_mpullback_unitCubeImage hM q₀ ω α).symm
+    isClosed_Icc.measurableSet
 
 /-- For any ambient rough `k`-form `ω`, `integralTopForm` of its pullback to
 `(fun u ↦ q₀ + M u) '' Icc 0 1` against the `s`-signed parameter orientation equals `(s : ℝ)` times
@@ -480,22 +431,20 @@ theorem integralTopForm_mpullback_unitCubeImage (hM : Injective M) (q₀ : E) (s
       ⟨q₀ + M 0, mem_image_of_mem _ ⟨le_rfl, zero_le_one⟩⟩
     let B := Pi.basisFun ℝ (Fin k)
     let l := M.unitCubeImageOrientationLift hM q₀ s
-    have hhaar : B.addHaar = (volume : Measure (Fin k → ℝ)) :=
-      Module.Basis.addHaar_basisFun (Fin k)
-    have heq := M.eqOn_signedInChartAt_mpullback_unitCubeImage hM q₀ ω α
     rw [unitCubeImageOrientation,
       integralTopForm_eq_chartIntegral l φ hi α
         (by rw [M.extChartAt_unitCubeImage_source hM q₀ α]; exact subset_univ _),
       l.chartIntegral_eq_const_mul_unsigned φ B α s
         (fun x _ ↦ M.unitCubeImageOrientationLift_signAt hM q₀ s α x),
       M.unitCubeImageOrientationLift_modelOrientation hM q₀ s,
-      _root_.Orientation.signBasis_orientation, hhaar]
+      _root_.Orientation.signBasis_orientation, Module.Basis.addHaar_basisFun (Fin k)]
     simp only [Units.val_one, Int.cast_one, one_mul]
     congr 1
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Icc (0 : Fin k → ℝ) 1) fun u hu ↦ by
       rw [RoughForm.signedInChartAt_apply,
         dite_eq_right (by rwa [M.extChartAt_unitCubeImage_target hM q₀ α])]]
-    exact setIntegral_congr_fun isClosed_Icc.measurableSet fun u hu ↦ (heq hu).symm
+    exact setIntegral_congr_fun isClosed_Icc.measurableSet
+      fun u hu ↦ (M.eqOn_signedInChartAt_mpullback_unitCubeImage hM q₀ ω α hu).symm
   · have hni : ¬ IntegrableOn g (Icc (0 : Fin k → ℝ) 1) :=
       mt (M.integrableTopForm_mpullback_unitCubeImage_iff hM q₀ ω).mpr hi
     rw [integralTopForm_eq_zero_of_not_integrable _ _ hi, integral_undef hni, mul_zero]

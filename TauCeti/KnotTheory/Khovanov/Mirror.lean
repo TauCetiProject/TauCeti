@@ -169,28 +169,28 @@ code of `D`, on which `TauCeti.PDCode.mirrorResolutionCubeIso` pairs circle tens
 theorem khovanovComplexMirrorIso_hom_f_apply (hD' : D.mirror.toPDCode.IsPlanar) (i : ℤ)
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.mirror.negativeCrossingCount})
     (x : (D.mirror.toPDCode.resolutionCube hD' R
-      (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj S.1) :
+      (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj S.val) :
     HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
         (((D.khovanovComplexMirrorIso hD R j hD').hom.f i).hom
           ((D.mirror.khovanovComplexι hD' R j S).hom x)) =
-      ((i * n).negOnePow * S.1.dualCubeSign (D.negativeCrossingCount : ℤ)) •
-        (D.khovanovComplexπ hD R (-j) ⟨S.1ᶜ, by
-          have := card_compl_add_card S.1
+      ((i * n).negOnePow * S.val.dualCubeSign (D.negativeCrossingCount : ℤ)) •
+        (D.khovanovComplexπ hD R (-j) ⟨S.valᶜ, by
+          have := card_compl_add_card S.val
           have := D.positiveCrossingCount_add_negativeCrossingCount
-          have := S.2
+          have := S.property
           simp only [negativeCrossingCount_mirror, Fintype.card_fin] at *
           omega⟩ ≫ ModuleCat.ofHom
           (Khovanov.circleDuality R _ (PiTensorProduct.reindex R (fun _ ↦ DualNumber R)
             (PDCode.SmoothingEquiv.mirror D.toPDCode
-              (PDCode.cubeState_compl S.1)).symm.resolvedCircleCongr
+              (PDCode.cubeState_compl S.val)).symm.resolvedCircleCongr
               ((D.toPDCode.mirror.resolutionCubeι ((PDCode.isPlanar_mirror _).2 hD) R
                 (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)
-                  S.1).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
+                  S.val).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
                     (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
-                      S.1 = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
+                      S.val = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
                     (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
-                      S.1 by simp only [mirror_toPDCode])).hom x))) ∘ₗ
-            (D.toPDCode.resolutionCubeι hD R _ S.1ᶜ).hom)) := by
+                      S.val by simp only [mirror_toPDCode])).hom x))) ∘ₗ
+            (D.toPDCode.resolutionCubeι hD R _ S.valᶜ).hom)) := by
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp]
   simp only [khovanovComplexMirrorIso, Iso.trans_hom, HomologicalComplex.comp_f,
     Functor.mapIso_hom, khovanovComplexShiftIso_hom_f, khovanovComplexι_def, Category.assoc,
@@ -242,26 +242,26 @@ theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
     (f : HomComplex.Cochain (D.khovanovComplex hD R (-j))
       ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R)) i)
     (y : (D.toPDCode.resolutionCube hD R
-      (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.1ᶜ) :
+      (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.valᶜ) :
     Khovanov.circleDuality R _ (PiTensorProduct.reindex R (fun _ ↦ DualNumber R)
         (PDCode.SmoothingEquiv.mirror D.toPDCode
-          (PDCode.cubeState_compl S.1)).symm.resolvedCircleCongr
+          (PDCode.cubeState_compl S.val)).symm.resolvedCircleCongr
           ((D.toPDCode.mirror.resolutionCubeι ((PDCode.isPlanar_mirror _).2 hD) R
             (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)
-              S.1).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
+              S.val).hom ((eqToHom (show (D.mirror.toPDCode.resolutionCube hD' R
                 (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
-                  S.1 = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
+                  S.val = (D.toPDCode.mirror.resolutionCube ((PDCode.isPlanar_mirror _).2 hD) R
                 (j - D.mirror.positiveCrossingCount + 2 * D.mirror.negativeCrossingCount)).obj
-                  S.1 by simp only [mirror_toPDCode])).hom
+                  S.val by simp only [mirror_toPDCode])).hom
               ((D.mirror.khovanovComplexπ hD' R j S).hom
                 (((D.khovanovComplexMirrorIso hD R j hD').inv.f i).hom f)))))
-        ((D.toPDCode.resolutionCubeι hD R _ S.1ᶜ).hom y) =
-      ((i * n).negOnePow * S.1.dualCubeSign (D.negativeCrossingCount : ℤ)) •
+        ((D.toPDCode.resolutionCubeι hD R _ S.valᶜ).hom y) =
+      ((i * n).negOnePow * S.val.dualCubeSign (D.negativeCrossingCount : ℤ)) •
         (HomComplex.Cochain.toSingleEquiv (neg_add_cancel i) f).hom
-          ((D.khovanovComplexι hD R (-j) ⟨S.1ᶜ, by
-            have := card_compl_add_card S.1
+          ((D.khovanovComplexι hD R (-j) ⟨S.valᶜ, by
+            have := card_compl_add_card S.val
             have := D.positiveCrossingCount_add_negativeCrossingCount
-            have := S.2
+            have := S.property
             simp only [negativeCrossingCount_mirror, Fintype.card_fin] at *
             omega⟩).hom y) := by
   -- Write `f` as the image of `z`, and `z` as the sum of its state components.
@@ -281,10 +281,10 @@ theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
   -- Only the state `S` pairs with the complementary state of `D`.
   have hιπ (T T' : {T : Finset (Fin n) // (#T : ℤ) = -i + D.negativeCrossingCount})
       (w : (D.toPDCode.resolutionCube hD R
-        (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.1) :
+        (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.val) :
       (D.khovanovComplexπ hD R (-j) T').hom ((D.khovanovComplexι hD R (-j) T).hom w) =
         if h : T = T' then (eqToHom (congrArg (fun T ↦ (D.toPDCode.resolutionCube hD R
-          (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.1) h)).hom w
+          (-j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj T.val) h)).hom w
         else 0 := by
     split_ifs with h
     · subst h
@@ -293,7 +293,7 @@ theorem khovanovComplexMirrorIso_inv_f_apply (hD' : D.mirror.toPDCode.IsPlanar) 
     · rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, khovanovComplexι_π_of_ne _ _ _ _ h]
       rfl
   rw [Fintype.sum_eq_single S fun T h ↦ by
-    have h' : S.1 ≠ T.1 := fun e ↦ h (Subtype.ext e.symm)
+    have h' : S.val ≠ T.val := fun e ↦ h (Subtype.ext e.symm)
     simp only [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp,
       LinearMap.comp_apply, hιπ, Subtype.mk.injEq, compl_inj_iff, h', ↓reduceDIte, map_zero,
       smul_zero]]

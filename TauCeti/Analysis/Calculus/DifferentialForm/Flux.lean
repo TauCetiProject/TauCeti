@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Coordinates
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Affine
 import Mathlib.Analysis.Calculus.FDeriv.Pi
+import TauCeti.Topology.Algebra.Module.Alternating.Topology
 
 /-!
 # Coordinate flux forms, exterior divergence, and affine cofactor pullback
@@ -64,16 +65,6 @@ section FluxForm
 
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Scalar-to-vector right multiplication on a scalar alternating form, bundled as a continuous
-linear map in the vector argument. -/
-private def smulRightCLM (η : (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] ℝ) :
-    E →L[ℝ] (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] E :=
-  ((ContinuousLinearMap.compContinuousAlternatingMapCLM ℝ (Fin (n + 1) → ℝ) ℝ E (Fin n)).flip
-    η).comp (ContinuousLinearMap.smulRightL ℝ ℝ E (ContinuousLinearMap.id ℝ ℝ))
-
-private theorem smulRightCLM_apply (η : (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] ℝ) (y : E) :
-    smulRightCLM η y = η.smulRight y := by ext v; simp [smulRightCLM]
-
 /-- The `E`-valued flux `n`-form `∑ i, (-1)^i F i x dx₀ ∧ ⋯ ∧ dx̂ᵢ ∧ ⋯ ∧ dxₙ` associated to a
 coordinate field family `F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E`. -/
 def fluxForm (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) (x : Fin (n + 1) → ℝ) :
@@ -89,8 +80,8 @@ theorem fluxForm_apply (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) (x : Fi
 private theorem fluxForm_eq_sum_clm (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E)
     (x : Fin (n + 1) → ℝ) :
     fluxForm F x =
-      ∑ i : Fin (n + 1), (-1 : ℝ) ^ (i : ℕ) • smulRightCLM (coordMinorForm i) (F i x) := by
-  simp only [fluxForm, ← smulRightCLM_apply, map_smul]
+      ∑ i : Fin (n + 1), (-1 : ℝ) ^ (i : ℕ) • (coordMinorForm i).smulRightCLM (F i x) := by
+  simp only [fluxForm, ← ContinuousAlternatingMap.smulRightCLM_apply, map_smul]
 
 @[simp]
 theorem fluxForm_succAbove_single (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E)
@@ -126,7 +117,7 @@ theorem continuousOn_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E}
   rw [funext (fluxForm_eq_sum_clm F)]
   refine continuousOn_finsetSum _ fun i _ ↦ ?_
   exact (continuousOn_const (c := (-1 : ℝ) ^ (i : ℕ))).smul
-    ((smulRightCLM (coordMinorForm i)).continuous.comp_continuousOn (hF i))
+    (((coordMinorForm i).smulRightCLM (F := E)).continuous.comp_continuousOn (hF i))
 
 /-- If every component field `F i` is differentiable within `s` at `x`, then `fluxForm F` is
 differentiable within `s` at `x`. -/
@@ -136,7 +127,7 @@ theorem differentiableWithinAt_fluxForm {F : Fin (n + 1) → (Fin (n + 1) → �
     DifferentiableWithinAt ℝ (fluxForm F) s x := by
   rw [funext (fluxForm_eq_sum_clm F)]
   refine DifferentiableWithinAt.fun_sum fun i _ ↦ ?_
-  exact ((smulRightCLM (coordMinorForm i)).differentiableAt.comp_differentiableWithinAt x
+  exact (((coordMinorForm i).smulRightCLM (F := E)).differentiableAt.comp_differentiableWithinAt x
     (hF i)).const_smul ((-1 : ℝ) ^ (i : ℕ))
 
 /-- If every component field `F i` is differentiable at `x`, then `fluxForm F` is differentiable
@@ -168,7 +159,7 @@ theorem contDiffOn_fluxForm {r : WithTop ℕ∞} {F : Fin (n + 1) → (Fin (n + 
     ContDiffOn ℝ r (fluxForm F) s := by
   rw [funext (fluxForm_eq_sum_clm F)]
   refine ContDiffOn.sum fun i _ ↦ ?_
-  exact ((smulRightCLM (coordMinorForm i)).contDiff.comp_contDiffOn (hF i)).const_smul
+  exact (((coordMinorForm i).smulRightCLM (F := E)).contDiff.comp_contDiffOn (hF i)).const_smul
     ((-1 : ℝ) ^ (i : ℕ))
 
 /-- If every component field `F i` is globally `C^r`, then `fluxForm F` is globally `C^r`. -/
@@ -177,7 +168,8 @@ theorem contDiff_fluxForm {r : WithTop ℕ∞} {F : Fin (n + 1) → (Fin (n + 1)
     ContDiff ℝ r (fluxForm F) := by
   rw [funext (fluxForm_eq_sum_clm F)]
   refine ContDiff.sum fun i _ ↦ ?_
-  exact ((smulRightCLM (coordMinorForm i)).contDiff.comp (hF i)).const_smul ((-1 : ℝ) ^ (i : ℕ))
+  exact (((coordMinorForm i).smulRightCLM (F := E)).contDiff.comp (hF i)).const_smul
+    ((-1 : ℝ) ^ (i : ℕ))
 
 /-- Evaluated on the standard coordinate frame, the within-set exterior derivative of `fluxForm F`
 is the divergence `∑ i, ∂ᵢ (F i)`. -/

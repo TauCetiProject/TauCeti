@@ -62,27 +62,27 @@ coordinatewise clamp `Set.projIcc 0 1 zero_le_one` as inverse on `Icc 0 1`. -/
 private def unitCubePartialEquiv : PartialEquiv (Icc (0 : ι → ℝ) 1) (ι → ℝ) where
   toFun := Subtype.val
   invFun x := ⟨fun i ↦ Set.projIcc 0 1 zero_le_one (x i),
-    ⟨fun i ↦ (Set.projIcc 0 1 zero_le_one (x i)).2.1,
-      fun i ↦ (Set.projIcc 0 1 zero_le_one (x i)).2.2⟩⟩
+    ⟨fun i ↦ (Set.projIcc 0 1 zero_le_one (x i)).property.left,
+      fun i ↦ (Set.projIcc 0 1 zero_le_one (x i)).property.right⟩⟩
   source := univ
   target := Icc 0 1
-  map_source' x _ := x.2
+  map_source' x _ := x.property
   map_target' _ _ := mem_univ _
   left_inv' x _ := Subtype.ext <| funext fun i ↦
-    congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨x.2.1 i, x.2.2 i⟩)
+    congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨x.property.left i, x.property.right i⟩)
   right_inv' _ hx := funext fun i ↦
-    congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨hx.1 i, hx.2 i⟩)
+    congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨hx.left i, hx.right i⟩)
 
 /-- The closed unit cube `Icc (0 : ι → ℝ) 1` as a model with corners on `ι → ℝ`, constructed via
 `ModelWithCorners.ofConvexRange` with coordinatewise `[0, 1]` clamp retraction. -/
 def modelWithCornersUnitCube : ModelWithCorners ℝ (ι → ℝ) (Icc (0 : ι → ℝ) 1) :=
   ModelWithCorners.ofConvexRange (unitCubePartialEquiv ι) rfl (convex_Icc 0 1)
-    continuous_subtype_val
+    continuous_subtypeVal
     (Continuous.subtype_mk
-      (continuous_pi fun i ↦ continuous_subtype_val.comp
+      (continuous_pi fun i ↦ continuous_subtypeVal.comp
         ((continuous_projIcc (h := (zero_le_one : (0 : ℝ) ≤ 1))).comp (continuous_apply i))) _)
     ⟨fun _ ↦ 1 / 2, mem_interior.mpr ⟨univ.pi fun _ ↦ Ioo (0 : ℝ) 1,
-      fun _ hx ↦ ⟨fun i ↦ (hx i (mem_univ i)).1.le, fun i ↦ (hx i (mem_univ i)).2.le⟩,
+      fun _ hx ↦ ⟨fun i ↦ (hx i (mem_univ i)).left.le, fun i ↦ (hx i (mem_univ i)).right.le⟩,
       isOpen_set_pi finite_univ fun _ _ ↦ isOpen_Ioo,
       fun _ _ ↦ by norm_num⟩⟩
 
@@ -90,7 +90,7 @@ variable {ι}
 
 @[simp]
 theorem modelWithCornersUnitCube_apply (x : Icc (0 : ι → ℝ) 1) :
-    modelWithCornersUnitCube ι x = x.1 := (rfl)
+    modelWithCornersUnitCube ι x = x.val := (rfl)
 
 @[simp]
 theorem coe_modelWithCornersUnitCube :
@@ -103,12 +103,12 @@ theorem coe_modelWithCornersUnitCube_symm_apply (x : ι → ℝ) (i : ι) :
 @[simp]
 theorem modelWithCornersUnitCube_symm_of_mem {x : ι → ℝ} (hx : x ∈ Icc (0 : ι → ℝ) 1) :
     ((modelWithCornersUnitCube ι).symm x : ι → ℝ) = x :=
-  funext fun i ↦ congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨hx.1 i, hx.2 i⟩)
+  funext fun i ↦ congrArg Subtype.val (Set.projIcc_of_mem zero_le_one ⟨hx.left i, hx.right i⟩)
 
 @[simp]
 theorem modelWithCornersUnitCube_symm_coe (x : Icc (0 : ι → ℝ) 1) :
-    (modelWithCornersUnitCube ι).symm x.1 = x :=
-  Subtype.ext (modelWithCornersUnitCube_symm_of_mem x.2)
+    (modelWithCornersUnitCube ι).symm x.val = x :=
+  Subtype.ext (modelWithCornersUnitCube_symm_of_mem x.property)
 
 theorem range_modelWithCornersUnitCube :
     range (modelWithCornersUnitCube ι) = Icc (0 : ι → ℝ) 1 := by
@@ -125,7 +125,7 @@ theorem extChartAt_unitCube_target (α : Icc (0 : ι → ℝ) 1) :
   ext x; simp [extChartAt]
 
 theorem extChartAt_unitCube_apply (α x : Icc (0 : ι → ℝ) 1) :
-    extChartAt (modelWithCornersUnitCube ι) α x = x.1 := (rfl)
+    extChartAt (modelWithCornersUnitCube ι) α x = x.val := (rfl)
 
 theorem coe_extChartAt_unitCube_symm_of_mem (α : Icc (0 : ι → ℝ) 1) {y : ι → ℝ}
     (hy : y ∈ Icc (0 : ι → ℝ) 1) :
@@ -136,25 +136,25 @@ theorem coe_extChartAt_unitCube_symm_of_mem (α : Icc (0 : ι → ℝ) 1) {y : �
 theorem contMDiff_subtypeVal_unitCube {n : ℕ∞ω} :
     ContMDiff (modelWithCornersUnitCube ι) 𝓘(ℝ, ι → ℝ) n
       (Subtype.val : Icc (0 : ι → ℝ) 1 → ι → ℝ) := fun x ↦
-  contMDiffAt_iff.mpr ⟨continuous_subtype_val.continuousAt,
+  contMDiffAt_iff.mpr ⟨continuous_subtypeVal.continuousAt,
     contDiffWithinAt_id.congr
       (fun _ hy ↦ coe_extChartAt_unitCube_symm_of_mem x
         (range_modelWithCornersUnitCube (ι := ι) ▸ hy))
-      (coe_extChartAt_unitCube_symm_of_mem x x.2)⟩
+      (coe_extChartAt_unitCube_symm_of_mem x x.property)⟩
 
 /-- The manifold derivative of the coordinate inclusion of the closed unit cube is the identity at
 every point, including boundary and corner points. -/
 theorem mfderiv_subtypeVal_unitCube (x : Icc (0 : ι → ℝ) 1) :
     mfderiv (modelWithCornersUnitCube ι) 𝓘(ℝ, ι → ℝ)
       (Subtype.val : Icc (0 : ι → ℝ) 1 → ι → ℝ) x =
-      (NormedSpace.fromTangentSpace x.1).symm.toContinuousLinearMap.comp
+      (NormedSpace.fromTangentSpace x.val).symm.toContinuousLinearMap.comp
         (tangentSpaceCastModel (modelWithCornersUnitCube ι) x).toContinuousLinearMap :=
-  HasMFDerivAt.mfderiv ⟨continuous_subtype_val.continuousAt, by
+  HasMFDerivAt.mfderiv ⟨continuous_subtypeVal.continuousAt, by
     simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
       Function.id_comp, range_modelWithCornersUnitCube, extChartAt_unitCube_apply]
-    exact (hasFDerivAt_id x.1).hasFDerivWithinAt.congr
+    exact (hasFDerivAt_id x.val).hasFDerivWithinAt.congr
       (fun _ hy ↦ coe_extChartAt_unitCube_symm_of_mem x hy)
-      (coe_extChartAt_unitCube_symm_of_mem x x.2)⟩
+      (coe_extChartAt_unitCube_symm_of_mem x x.property)⟩
 
 /-- The identity atlas on the closed unit cube is orientation-preserving. -/
 instance instHasGroupoidOrientationPreservingUnitCube :
@@ -186,13 +186,13 @@ def unitCubeImageHomeomorph (hM : Injective M) (q₀ : E) :
 
 @[simp]
 theorem unitCubeImageHomeomorph_symm_apply (hM : Injective M) (q₀ : E) (u : Icc (0 : ι → ℝ) 1) :
-    (M.unitCubeImageHomeomorph hM q₀).symm u = ⟨q₀ + M u.1, mem_image_of_mem _ u.2⟩ :=
+    (M.unitCubeImageHomeomorph hM q₀).symm u = ⟨q₀ + M u.val, mem_image_of_mem _ u.property⟩ :=
   (isCompact_Icc.imageHomeomorph_apply (continuous_const.add M.continuous).continuousOn
     ((add_right_injective q₀).comp hM).injOn u)
 
 theorem coe_unitCubeImageHomeomorph_symm_apply (hM : Injective M) (q₀ : E)
     (u : Icc (0 : ι → ℝ) 1) :
-    ((M.unitCubeImageHomeomorph hM q₀).symm u : E) = q₀ + M u.1 := by
+    ((M.unitCubeImageHomeomorph hM q₀).symm u : E) = q₀ + M u.val := by
   rw [unitCubeImageHomeomorph_symm_apply]
 
 @[simp]
@@ -289,12 +289,12 @@ theorem contMDiff_subtypeVal_unitCubeImage (hM : Injective M) (q₀ : E) {n : �
   let := M.unitCubeImageChartedSpace hM q₀
   intro x
   have haff : ContDiff ℝ n (fun u : ι → ℝ ↦ q₀ + M u) := contDiff_const.add M.contDiff
-  refine contMDiffAt_iff.mpr ⟨continuous_subtype_val.continuousAt,
+  refine contMDiffAt_iff.mpr ⟨continuous_subtypeVal.continuousAt,
     haff.contDiffWithinAt.congr (fun u hu ↦ ?_) ?_⟩
   · simpa only [Function.comp_apply, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_eq]
       using congrArg Subtype.val (M.extChartAt_unitCubeImage_symm_of_mem hM q₀ x
         (range_modelWithCornersUnitCube (ι := ι) ▸ hu))
-  · obtain ⟨u₀, hu₀, hxu₀⟩ := x.2
+  · obtain ⟨u₀, hu₀, hxu₀⟩ := x.property
     have hx : x = ⟨q₀ + M u₀, mem_image_of_mem _ hu₀⟩ := Subtype.ext hxu₀.symm
     simp only [Function.comp_apply, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_eq, hx,
       M.extChartAt_unitCubeImage_apply_mk hM q₀ _ hu₀,
@@ -315,11 +315,11 @@ theorem contMDiff_unitCubeImageHomeomorph_symm (hM : Injective M) (q₀ : E) {n 
       Subtype.ext (coe_extChartAt_unitCube_symm_of_mem u hv')
     simp only [Function.comp_apply, hs, id_eq, M.unitCubeImageHomeomorph_symm_apply hM q₀ ⟨v, hv'⟩,
       M.extChartAt_unitCubeImage_apply_mk hM q₀ _ hv']
-  · have hs : (extChartAt (modelWithCornersUnitCube ι) u).symm u.1 = u :=
-      Subtype.ext (coe_extChartAt_unitCube_symm_of_mem u u.2)
+  · have hs : (extChartAt (modelWithCornersUnitCube ι) u).symm u.val = u :=
+      Subtype.ext (coe_extChartAt_unitCube_symm_of_mem u u.property)
     simp only [Function.comp_apply, extChartAt_unitCube_apply, hs, id_eq,
       M.unitCubeImageHomeomorph_symm_apply hM q₀ u,
-      M.extChartAt_unitCubeImage_apply_mk hM q₀ _ u.2]
+      M.extChartAt_unitCubeImage_apply_mk hM q₀ _ u.property]
 
 /-- At every point of an injective affine cube image, the manifold derivative of the ambient
 inclusion `Subtype.val` is `M`, read through the model and ambient tangent identifications. -/
@@ -328,11 +328,11 @@ theorem mfderiv_subtypeVal_unitCubeImage (hM : Injective M) (q₀ : E)
     letI := M.unitCubeImageChartedSpace hM q₀
     mfderiv (modelWithCornersUnitCube ι) 𝓘(ℝ, E)
       (Subtype.val : ↥((fun u : ι → ℝ ↦ q₀ + M u) '' Icc 0 1) → E) x =
-      ((NormedSpace.fromTangentSpace x.1).symm.toContinuousLinearMap.comp M).comp
+      ((NormedSpace.fromTangentSpace x.val).symm.toContinuousLinearMap.comp M).comp
         (tangentSpaceCastModel (modelWithCornersUnitCube ι) x).toContinuousLinearMap := by
   let := M.unitCubeImageChartedSpace hM q₀
-  refine HasMFDerivAt.mfderiv ⟨continuous_subtype_val.continuousAt, ?_⟩
-  obtain ⟨u₀, hu₀, hxu₀⟩ := x.2
+  refine HasMFDerivAt.mfderiv ⟨continuous_subtypeVal.continuousAt, ?_⟩
+  obtain ⟨u₀, hu₀, hxu₀⟩ := x.property
   have hx : x = ⟨q₀ + M u₀, mem_image_of_mem _ hu₀⟩ := Subtype.ext hxu₀.symm
   subst hx
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
