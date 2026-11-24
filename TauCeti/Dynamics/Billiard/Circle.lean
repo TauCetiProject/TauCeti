@@ -86,12 +86,6 @@ noncomputable section
 open Function Set Complex Real
 open scoped RealInnerProductSpace
 
-/-- A circle of positive perimeter `2πR` has positive radius `R`. This supplies the radius
-hypothesis of `TauCeti.StrictConvexBilliardTable.circle` under the instance
-`Fact (0 < 2 * Real.pi * R)` that makes `AddCircle (2 * Real.pi * R)` usable. -/
-theorem Real.pos_of_fact_two_pi_mul_pos {R : ℝ} [Fact (0 < 2 * Real.pi * R)] : 0 < R :=
-  pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
-
 namespace TauCeti
 
 attribute [local instance] Complex.finrank_real_complex_fact
