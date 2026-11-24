@@ -22,8 +22,10 @@ The `0`-cocycles form a group under `(h, u) * (h', u') = (h * h', g ↦ h'⁻¹ 
 map `t ↦ (∂ t, g ↦ t⁻¹ * g • t)` is a homomorphism from `T` onto a normal subgroup, the
 `0`-coboundaries. The quotient is the group `H⁰(G, T → H)`. Viewing the crossed module as a
 two-term complex with `T` in degree `-1`, this is the degree-zero cohomology of the complex: it is
-`Hᴳ` when `T` is trivial, `(H / ∂ T)ᴳ` when `∂` is injective, and `H¹(G, T)` when `H` is trivial
-(so it is not the invariants of the cokernel in general).
+`Hᴳ` when `T` is trivial, `Qᴳ` when `1 → T → H → Q → 1` is a short exact sequence of topological
+`G`-groups (`TauCeti.NonabelianH1.IsGroupExtension`, with `H` a topological group on which `G`
+acts continuously, so that fixed points of `Q` lift to continuous cocycles), and `H¹(G, T)` when
+`H` is trivial (so it is not the invariants of the cokernel in general).
 
 With the map `Hᴳ → H⁰(G, T → H)`, `h ↦ (h, 1)`, and the map `H⁰(G, T → H) → H¹(G, T)`,
 `(h, u) ↦ [u]`, the sequence
@@ -41,6 +43,8 @@ multiplication.
   range is the normal subgroup of `0`-coboundaries.
 * `TauCeti.CrossedModule.H0 G M`: the group `H⁰(G, T → H)`, with `TauCeti.CrossedModule.H0.mk`
   the class of a `0`-cocycle.
+* `TauCeti.CrossedModule.H0.lift` and `TauCeti.CrossedModule.H0.liftHom`: functions and
+  homomorphisms out of `H⁰(G, T → H)`, descended from `0`-cocycles along the coboundaries.
 * `TauCeti.CrossedModule.H0.ofFixedPoints`: the homomorphism `Hᴳ →* H⁰(G, T → H)`.
 * `TauCeti.CrossedModule.H0.toH1`: the map `H⁰(G, T → H) → H¹(G, T)` of pointed sets.
 * `TauCeti.CrossedModule.H0.fixedPointsMulEquiv`: `H⁰(G, T → H) ≃* Hᴳ` for trivial `T`.
@@ -56,7 +60,7 @@ multiplication.
 * `TauCeti.CrossedModule.H0.toH1_eq_toH1_iff`: the fibres of `H⁰(G, T → H) → H¹(G, T)` are the
   `Hᴳ`-orbits; in particular `TauCeti.CrossedModule.H0.toH1_eq_one_iff` gives exactness at
   `H⁰(G, T → H)`.
-* `TauCeti.CrossedModule.H0.map_boundary_eq_one_iff`: exactness at `H¹(G, T)`.
+* `TauCeti.CrossedModule.H0.mem_range_toH1_iff`: exactness at `H¹(G, T)`.
 
 ## Implementation notes
 
@@ -330,6 +334,44 @@ theorem induction_on {motive : H0 G M → Prop} (x : H0 G M) (mk : ∀ z, motive
     motive x :=
   QuotientGroup.induction_on x mk
 
+/-- Define a function on `H⁰(G, T → H)` by a function on `0`-cocycles that is invariant under
+right multiplication by coboundaries. -/
+def lift {B : Sort*} (f : ZeroCocycle G M → B)
+    (hf : ∀ z t, f (z * ZeroCocycle.coboundary G M t) = f z) : H0 G M → B :=
+  Quotient.lift f fun z _ h ↦ by
+    obtain ⟨_, ⟨t, rfl⟩, rfl⟩ := (QuotientGroup.mk'_eq_mk' _).mp (Quotient.sound h)
+    exact (hf z t).symm
+
+@[simp]
+theorem lift_mk {B : Sort*} (f : ZeroCocycle G M → B)
+    (hf : ∀ z t, f (z * ZeroCocycle.coboundary G M t) = f z) (z : ZeroCocycle G M) :
+    lift f hf (mk z) = f z :=
+  (rfl)
+
+/-- A function on `H⁰(G, T → H)` is determined by its values on classes of `0`-cocycles. -/
+theorem lift_unique {B : Sort*} (f : ZeroCocycle G M → B)
+    (hf : ∀ z t, f (z * ZeroCocycle.coboundary G M t) = f z) (F : H0 G M → B)
+    (hF : ∀ z, F (mk z) = f z) : F = lift f hf :=
+  funext fun x ↦ by induction x using induction_on with | mk z => exact hF z
+
+/-- The homomorphism `H⁰(G, T → H) →* K` induced by a homomorphism on `0`-cocycles that kills the
+coboundaries. -/
+def liftHom {K : Type*} [Monoid K] (φ : ZeroCocycle G M →* K)
+    (hφ : ∀ t, φ (ZeroCocycle.coboundary G M t) = 1) : H0 G M →* K :=
+  QuotientGroup.lift _ φ (by rintro _ ⟨t, rfl⟩; exact hφ t)
+
+@[simp]
+theorem liftHom_mk {K : Type*} [Monoid K] (φ : ZeroCocycle G M →* K)
+    (hφ : ∀ t, φ (ZeroCocycle.coboundary G M t) = 1) (z : ZeroCocycle G M) :
+    liftHom φ hφ (mk z) = φ z :=
+  (rfl)
+
+/-- Two homomorphisms out of `H⁰(G, T → H)` agreeing on classes of `0`-cocycles are equal. -/
+@[ext]
+theorem hom_ext {K : Type*} [Monoid K] ⦃φ ψ : H0 G M →* K⦄ (h : φ.comp mk = ψ.comp mk) :
+    φ = ψ :=
+  QuotientGroup.monoidHom_ext _ h
+
 /-- Two `0`-cocycles have the same class exactly when they differ by one `t : T`: the second is
 `(h * ∂ t, u.twist t)` for the first `(h, u)`. -/
 theorem mk_eq_mk_iff {z z' : ZeroCocycle G M} :
@@ -374,9 +416,8 @@ theorem ofFixedPoints_eq_one_iff {h : FixedPoints.subgroup G H} :
 
 /-- The map `H⁰(G, T → H) → H¹(G, T)` of pointed sets, `[(h, u)] ↦ [u]`. -/
 def toH1 : H0 G M → NonabelianH1 G T :=
-  Quotient.lift (fun z : ZeroCocycle G M ↦ NonabelianH1.mk z.cocycle) fun z z' h ↦ by
-    obtain ⟨t, -, ht⟩ := mk_eq_mk_iff.mp (Quotient.sound h)
-    rw [ht, NonabelianH1.mk_twist]
+  lift (fun z ↦ NonabelianH1.mk z.cocycle) fun z t ↦ by
+    rw [ZeroCocycle.mul_coboundary_cocycle, NonabelianH1.mk_twist]
 
 @[simp]
 theorem toH1_mk (z : ZeroCocycle G M) : toH1 (mk z) = NonabelianH1.mk z.cocycle :=
@@ -486,12 +527,12 @@ variable [M.IsEquivariant G] {Q : Type*} [Group Q] [MulDistribMulAction G Q]
 `p : H →* Q` that kills the boundary. -/
 def toFixedPoints (p : H →* Q) (hp : ∀ (g : G) (h : H), p (g • h) = g • p h)
     (hpb : ∀ t, p (M.boundary t) = 1) : H0 G M →* FixedPoints.subgroup G Q :=
-  QuotientGroup.lift _
+  liftHom
     { toFun z := ⟨p z.elem, (FixedPoints.mem_subgroup _ _ _).mpr fun g ↦ by
         rw [← hp, z.smul_elem, map_mul, hpb, mul_one]⟩
       map_one' := Subtype.ext (_root_.map_one p)
       map_mul' _ _ := Subtype.ext (map_mul p _ _) }
-    (by rintro _ ⟨t, rfl⟩; exact Subtype.ext (hpb t))
+    fun t ↦ Subtype.ext (hpb t)
 
 @[simp]
 theorem coe_toFixedPoints_mk (p : H →* Q) (hp : ∀ (g : G) (h : H), p (g • h) = g • p h)
