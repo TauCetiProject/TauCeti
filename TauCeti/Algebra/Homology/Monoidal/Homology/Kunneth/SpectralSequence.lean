@@ -46,7 +46,10 @@ Pages are numbered as in `HomologicalComplex₂.columnFiltrationSpectralSequence
   is the graded object `GradedObject.mapBifunctorMapObj (Tor _ p) (fun x ↦ x.1 + x.2)`. On
   classes of cycles of the first page, the isomorphism is described by
   `HomologicalComplex.homologyπ_kunnethSpectralSequenceSecondPageXIso_hom`, and on each summand by
-  `HomologicalComplex.homologyMap_ι_kunnethTorSumComplexHomologyIso_hom`.
+  `HomologicalComplex.homologyMap_ι_kunnethTorSumComplexHomologyIso_hom`. A morphism of Künneth
+  spectral sequences whose first page is induced by a chain map of the complexes
+  `HomologicalComplex.kunnethTorSumComplex` is, on the second page, the map induced on their
+  homology (`HomologicalComplex.kunnethSpectralSequenceSecondPageXIso_hom_naturality_of_firstPage`).
 * **Naturality in the first variable.** Morphisms `Hᵢ(K) ⟶ Hᵢ(K')` of coefficients, for instance
   the maps `Hᵢ(f)` induced by a chain map `f : K ⟶ K'`, induce morphisms of complexes
   `HomologicalComplex.kunnethTorComplexMap` and `HomologicalComplex.kunnethTorSumComplexMap`,
@@ -60,8 +63,9 @@ Pages are numbered as in `HomologicalComplex₂.columnFiltrationSpectralSequence
   `ChainComplex.cartanEilenbergResolution.homologyResolution L j` of `Hⱼ(L)` induce morphisms of
   complexes `HomologicalComplex.kunnethTorComplexMapRight` and
   `HomologicalComplex.kunnethTorSumComplexMapRight`, through which the identifications above are
-  natural (`HomologicalComplex.kunnethColumnHomologyKunneth_naturality_right`,
-  `HomologicalComplex.tensorObjIsoKunnethTorSumComplexX_hom_naturality_right`). When each `φ j`
+  natural (`HomologicalComplex.tensorObjIsoKunnethTorSumComplexX_hom_naturality_right`). The
+  Künneth maps of the columns are natural for morphisms of the rows of the Cartan–Eilenberg
+  resolutions (`HomologicalComplex.kunnethColumnHomologyKunneth_naturality_right`). When each `φ j`
   lies over a map `Hⱼ(L) ⟶ Hⱼ(L')`, the identification with `Tor` turns them into the maps induced
   on `Tor` in the second variable
   (`HomologicalComplex.kunnethTorSumComplexHomologyIso_hom_naturality_right`), as computed by
@@ -464,6 +468,47 @@ lemma homologyπ_kunnethSpectralSequenceSecondPageXIso_hom (p q : ℕ) :
   rw [Iso.hom_inv_id_assoc]
   simp only [π_homologyIsoSc'_hom_assoc, ShortComplex.homologyπ_naturality_assoc,
     π_homologyIsoSc'_inv_assoc, reassoc_of% h]
+
+/-- **Morphisms of Künneth spectral sequences on the second page, from the first page.** Let
+`F` be a morphism of Künneth spectral sequences whose first-page component at column `p`,
+degree `q` corresponds, under the identifications
+`HomologicalComplex.kunnethFirstPageXIsoTorSum`, to the component in degree `p` of a chain map
+`T : kunnethTorSumComplex K L q ⟶ kunnethTorSumComplex K' L' q`. Then, under the identifications
+`HomologicalComplex.kunnethSpectralSequenceSecondPageXIso`, its second-page component is the map
+induced on homology by `T`, transported by `HomologicalComplex.kunnethTorSumComplexHomologyIso`. -/
+@[reassoc]
+theorem kunnethSpectralSequenceSecondPageXIso_hom_naturality_of_firstPage
+    {K' L' : ChainComplex (ModuleCat.{u} R) ℕ}
+    (F : kunnethSpectralSequence K L ⟶ kunnethSpectralSequence K' L') (p q : ℕ)
+    (T : kunnethTorSumComplex K L q ⟶ kunnethTorSumComplex K' L' q)
+    (hF : (F.hom 2).f (-(q : ℤ) - 2 * p, p) ≫ (kunnethFirstPageXIsoTorSum K' L' p q).hom =
+      (kunnethFirstPageXIsoTorSum K L p q).hom ≫ T.f p) :
+    (F.hom 3).f (-(q : ℤ) - 2 * p, p) ≫ (kunnethSpectralSequenceSecondPageXIso K' L' p q).hom =
+      (kunnethSpectralSequenceSecondPageXIso K L p q).hom ≫
+        (kunnethTorSumComplexHomologyIso K L q p).inv ≫ homologyMap T p ≫
+          (kunnethTorSumComplexHomologyIso K' L' q p).hom := by
+  -- the square of cycles: the first-page component of `F`, on cycles, followed by the lift to the
+  -- cycles of `kunnethTorSumComplex K' L' q`, is the lift to the cycles of
+  -- `kunnethTorSumComplex K L q` followed by the map induced by `T`
+  have hcycles : cyclesMap (F.hom 2) (-(q : ℤ) - 2 * p, p) ≫
+      (kunnethTorSumComplex K' L' q).liftCycles
+        (((kunnethSpectralSequence K' L').page 2).iCycles (-(q : ℤ) - 2 * p, p) ≫
+          (kunnethFirstPageXIsoTorSum K' L' p q).hom) (p - 1) (by cases p <;> simp)
+        (by rw [Category.assoc, iCycles_kunnethFirstPageXIsoTorSum_hom_d]) =
+      (kunnethTorSumComplex K L q).liftCycles
+        (((kunnethSpectralSequence K L).page 2).iCycles (-(q : ℤ) - 2 * p, p) ≫
+          (kunnethFirstPageXIsoTorSum K L p q).hom) (p - 1) (by cases p <;> simp)
+        (by rw [Category.assoc, iCycles_kunnethFirstPageXIsoTorSum_hom_d]) ≫ cyclesMap T p := by
+    rw [comp_liftCycles, liftCycles_comp_cyclesMap]
+    congr 1
+    rw [cyclesMap_i_assoc, hF, Category.assoc]
+  rw [← cancel_epi (((kunnethSpectralSequence K L).page 2).homologyπ (-(q : ℤ) - 2 * p, p) ≫
+    ((kunnethSpectralSequence K L).iso 2 3 (-(q : ℤ) - 2 * p, p)).hom)]
+  rw [Category.assoc, Category.assoc,
+    reassoc_of% (homologyπ_kunnethSpectralSequenceSecondPageXIso_hom K L p q),
+    ← F.comm_assoc 2 3, homologyπ_naturality_assoc,
+    homologyπ_kunnethSpectralSequenceSecondPageXIso_hom, reassoc_of% hcycles,
+    Iso.hom_inv_id_assoc, homologyπ_naturality_assoc]
 
 /-! ### Naturality in the first variable -/
 

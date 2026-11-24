@@ -52,11 +52,17 @@ the second page on it does not depend on `ψ`
   `HomologicalComplex.kunnethSpectralSequenceMapRightOfLift`, through any morphism of
   Cartan–Eilenberg resolutions, with `HomologicalComplex.kunnethSpectralSequenceMapRightOfLift_id`
   and `HomologicalComplex.kunnethSpectralSequenceMapRightOfLift_comp`.
-* `HomologicalComplex.kunnethSpectralSequenceFirstPageXIso_hom_naturality_right`,
+* `HomologicalComplex.kunnethSpectralSequenceFirstPageXIso_hom_naturality_rightOfLift`, with its
+  instance `HomologicalComplex.kunnethSpectralSequenceFirstPageXIso_hom_naturality_right`, and
   `HomologicalComplex.kunnethFirstPageXIsoTorSum_hom_naturality_rightOfLift`: the morphism in the
   second variable on the first page.
-* `HomologicalComplex.kunnethSpectralSequenceSecondPageXIso_hom_naturality_right`: the morphism in
-  the second variable on the second page, the map induced on `Tor` in the second variable.
+* `HomologicalComplex.kunnethSpectralSequenceSecondPageXIso_hom_naturality_rightOfLift`, with its
+  instance `HomologicalComplex.kunnethSpectralSequenceSecondPageXIso_hom_naturality_right`: the
+  morphism in the second variable on the second page, the map induced on `Tor` in the second
+  variable.
+* Both second-page results, in either variable, are deduced from
+  `HomologicalComplex.kunnethSpectralSequenceSecondPageXIso_hom_naturality_of_firstPage`, in
+  `TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.SpectralSequence`.
 * `HomologicalComplex.kunnethSpectralSequenceMapRightOfLift_hom_eq`: two lifts of the same chain
   map induce the same morphism from the second page on.
 -/
@@ -134,29 +140,9 @@ theorem kunnethSpectralSequenceSecondPageXIso_hom_naturality (p q : ℕ) :
       (kunnethSpectralSequenceSecondPageXIso K L p q).hom ≫
         GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) p) (fun x ↦ x.1 + x.2)
           (fun i ↦ homologyMap f i) (𝟙 fun j ↦ L.homology j) q := by
-  -- the square of cycles: the first-page morphism, on cycles, followed by the lift to the cycles
-  -- of `kunnethTorSumComplex K' L q`, is the lift to the cycles of `kunnethTorSumComplex K L q`
-  -- followed by the map induced by `kunnethTorSumComplexMap`
-  have hcycles : cyclesMap ((kunnethSpectralSequenceMapLeft f L).hom 2) (-(q : ℤ) - 2 * p, p) ≫
-      (kunnethTorSumComplex K' L q).liftCycles
-        (((kunnethSpectralSequence K' L).page 2).iCycles (-(q : ℤ) - 2 * p, p) ≫
-          (kunnethFirstPageXIsoTorSum K' L p q).hom) (p - 1) (by cases p <;> simp)
-        (by rw [Category.assoc, iCycles_kunnethFirstPageXIsoTorSum_hom_d]) =
-      (kunnethTorSumComplex K L q).liftCycles
-        (((kunnethSpectralSequence K L).page 2).iCycles (-(q : ℤ) - 2 * p, p) ≫
-          (kunnethFirstPageXIsoTorSum K L p q).hom) (p - 1) (by cases p <;> simp)
-        (by rw [Category.assoc, iCycles_kunnethFirstPageXIsoTorSum_hom_d]) ≫
-      cyclesMap (kunnethTorSumComplexMap L (fun i ↦ homologyMap f i) q) p := by
-    rw [comp_liftCycles, liftCycles_comp_cyclesMap]
-    congr 1
-    rw [cyclesMap_i_assoc, kunnethFirstPageXIsoTorSum_hom_naturality, Category.assoc]
-  rw [← cancel_epi (((kunnethSpectralSequence K L).page 2).homologyπ (-(q : ℤ) - 2 * p, p) ≫
-    ((kunnethSpectralSequence K L).iso 2 3 (-(q : ℤ) - 2 * p, p)).hom)]
-  rw [Category.assoc, Category.assoc,
-    reassoc_of% (homologyπ_kunnethSpectralSequenceSecondPageXIso_hom K L p q),
-    ← (kunnethSpectralSequenceMapLeft f L).comm_assoc 2 3, homologyπ_naturality_assoc,
-    homologyπ_kunnethSpectralSequenceSecondPageXIso_hom, reassoc_of% hcycles,
-    ← kunnethTorSumComplexHomologyIso_hom_naturality, homologyπ_naturality_assoc]
+  rw [kunnethSpectralSequenceSecondPageXIso_hom_naturality_of_firstPage K L _ p q _
+      (kunnethFirstPageXIsoTorSum_hom_naturality f L p q),
+    kunnethTorSumComplexHomologyIso_hom_naturality, Iso.inv_hom_id_assoc]
 
 section Right
 
@@ -264,35 +250,12 @@ theorem kunnethSpectralSequenceSecondPageXIso_hom_naturality_rightOfLift
       (kunnethSpectralSequenceSecondPageXIso K L₁ p q).hom ≫
         GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) p) (fun x ↦ x.1 + x.2)
           (𝟙 fun i ↦ K.homology i) (fun j ↦ homologyMap g j) q := by
-  -- the square of cycles: the first-page morphism, on cycles, followed by the lift to the cycles
-  -- of `kunnethTorSumComplex K L₂ q`, is the lift to the cycles of `kunnethTorSumComplex K L₁ q`
-  -- followed by the map induced by `kunnethTorSumComplexMapRight`
-  have hcycles :
-      cyclesMap ((kunnethSpectralSequenceMapRightOfLift K ψ).hom 2) (-(q : ℤ) - 2 * p, p) ≫
-        (kunnethTorSumComplex K L₂ q).liftCycles
-          (((kunnethSpectralSequence K L₂).page 2).iCycles (-(q : ℤ) - 2 * p, p) ≫
-            (kunnethFirstPageXIsoTorSum K L₂ p q).hom) (p - 1) (by cases p <;> simp)
-          (by rw [Category.assoc, iCycles_kunnethFirstPageXIsoTorSum_hom_d]) =
-      (kunnethTorSumComplex K L₁ q).liftCycles
-          (((kunnethSpectralSequence K L₁).page 2).iCycles (-(q : ℤ) - 2 * p, p) ≫
-            (kunnethFirstPageXIsoTorSum K L₁ p q).hom) (p - 1) (by cases p <;> simp)
-          (by rw [Category.assoc, iCycles_kunnethFirstPageXIsoTorSum_hom_d]) ≫
-        cyclesMap (kunnethTorSumComplexMapRight K
-          (fun j ↦ ChainComplex.cartanEilenbergResolution.homologyResolutionMap ψ j) q) p := by
-    rw [comp_liftCycles, liftCycles_comp_cyclesMap]
-    congr 1
-    rw [cyclesMap_i_assoc, kunnethFirstPageXIsoTorSum_hom_naturality_rightOfLift,
-      Category.assoc]
-  rw [← cancel_epi (((kunnethSpectralSequence K L₁).page 2).homologyπ (-(q : ℤ) - 2 * p, p) ≫
-    ((kunnethSpectralSequence K L₁).iso 2 3 (-(q : ℤ) - 2 * p, p)).hom)]
-  rw [Category.assoc, Category.assoc,
-    reassoc_of% (homologyπ_kunnethSpectralSequenceSecondPageXIso_hom K L₁ p q),
-    ← (kunnethSpectralSequenceMapRightOfLift K ψ).comm_assoc 2 3, homologyπ_naturality_assoc,
-    homologyπ_kunnethSpectralSequenceSecondPageXIso_hom, reassoc_of% hcycles,
-    ← kunnethTorSumComplexHomologyIso_hom_naturality_right K _ _
+  rw [kunnethSpectralSequenceSecondPageXIso_hom_naturality_of_firstPage K L₁ _ p q _
+      (kunnethFirstPageXIsoTorSum_hom_naturality_rightOfLift K ψ p q),
+    kunnethTorSumComplexHomologyIso_hom_naturality_right K _ _
       (fun j ↦ ChainComplex.cartanEilenbergResolution.homologyResolutionMap_f_zero_comp_π_f_zero
         ψ g hψ j),
-    homologyπ_naturality_assoc]
+    Iso.inv_hom_id_assoc]
 
 /-- **Independence of the lift from the second page on.** Two morphisms `ψ` and `ψ'` of
 Cartan–Eilenberg resolutions over the same chain map `g` induce the same morphism of Künneth
