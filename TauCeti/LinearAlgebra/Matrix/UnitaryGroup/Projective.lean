@@ -76,16 +76,20 @@ theorem scalar_mem_unitaryGroup_iff [Nonempty n] {a : R} :
   simp [mem_unitaryGroup_iff', Unitary.mem_iff_star_mul_self, star_eq_conjTranspose, scalar_apply,
     ← scalar_inj (n := n)]
 
+/-- On a nonempty index type, a unitary matrix is a unit scalar exactly when it is a scalar
+matrix `a • 1`. -/
+theorem mem_range_scalarHom_iff [Nonempty n] {A : unitaryGroup n R} :
+    A ∈ (scalarHom n R).range ↔ ∃ a : R, (A : Matrix n n R) = scalar n a := by
+  refine ⟨by rintro ⟨c, rfl⟩; exact ⟨c, coe_scalarHom c⟩, fun ⟨a, hA⟩ ↦ ?_⟩
+  exact ⟨⟨a, scalar_mem_unitaryGroup_iff.1 (hA ▸ A.property)⟩, Subtype.ext hA.symm⟩
+
 variable (R) in
 /-- Every `1 × 1` unitary matrix is a unit scalar. -/
 theorem range_scalarHom_fin_one : (scalarHom (Fin 1) R).range = ⊤ := by
-  refine eq_top_iff.2 fun A _ ↦ ?_
-  have hA : (A : Matrix (Fin 1) (Fin 1) R) =
-      scalar (Fin 1) ((A : Matrix (Fin 1) (Fin 1) R) 0 0) := by
-    ext i j
-    fin_cases i; fin_cases j
-    simp [scalar_apply]
-  exact ⟨⟨_, scalar_mem_unitaryGroup_iff.1 (hA ▸ A.property)⟩, Subtype.ext hA.symm⟩
+  refine eq_top_iff.2 fun A _ ↦ mem_range_scalarHom_iff.2 ⟨(A : Matrix (Fin 1) (Fin 1) R) 0 0, ?_⟩
+  ext i j
+  fin_cases i; fin_cases j
+  simp [scalar_apply]
 
 /-- Unit scalars commute with every unitary matrix. -/
 theorem commute_scalarHom (c : unitary R) (A : unitaryGroup n R) :

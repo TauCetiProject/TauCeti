@@ -117,16 +117,13 @@ theorem forall_smul_eq_iff_mem_range_scalarHom {A : unitaryGroup (Fin (n + 1)) �
       have h := (LinearIndependent.pair_iff.1 hli) c (-1)
         (by simp only [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, hc]; simp)
       exact neg_ne_zero.2 one_ne_zero h.2
-  have hAa : (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℂ) = scalar (Fin (n + 1)) a := by
-    ext i j
-    have h := congrArg (fun v : EuclideanSpace ℂ (Fin (n + 1)) ↦ v i)
-      (LinearMap.congr_fun ha (EuclideanSpace.single j 1))
-    simp only [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
-      UnitaryGroup.toLinearIsometryEquiv_single] at h
-    simpa [scalar_apply, diagonal_apply, Pi.single_apply, eq_comm] using h
-  -- The scalar `a` is unitary because `A` is.
-  have hau : a ∈ unitary ℂ := UnitaryGroup.scalar_mem_unitaryGroup_iff.1 (hAa ▸ A.property)
-  exact ⟨⟨a, hau⟩, Subtype.ext (by rw [UnitaryGroup.coe_scalarHom]; exact hAa.symm)⟩
+  refine UnitaryGroup.mem_range_scalarHom_iff.2 ⟨a, ?_⟩
+  ext i j
+  have h := congrArg (fun v : EuclideanSpace ℂ (Fin (n + 1)) ↦ v i)
+    (LinearMap.congr_fun ha (EuclideanSpace.single j 1))
+  simp only [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
+    UnitaryGroup.toLinearIsometryEquiv_single] at h
+  simpa [scalar_apply, diagonal_apply, Pi.single_apply, eq_comm] using h
 
 /-- The kernel of the action of `U(n + 1)` on `CPⁿ` is the subgroup of unit scalars. -/
 theorem ker_toPermHom_unitaryGroup :
