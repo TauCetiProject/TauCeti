@@ -191,14 +191,11 @@ private theorem isFixedPt_gluing_snd_splitPassage {z : WithLp 2 (Eₛ × Eᵤ)}
 
 /-- A point `z` of the graph of `g` in the entrance face with `‖z.snd‖ ≤ r₀ * ε` whose passage lies
 on the graph of `k` is `(g (r • w r), r • w r)` for the gluing parameter `r = ‖z.snd‖ / ε`, where
-`w r` is the fixed point of the gluing map: the exit coordinate of `z` is a fixed point, hence
-equals `w r`. -/
-private theorem toLp_mem_image_of_mem_graph
-    (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
-    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
-    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
-    (hkε : ∀ x ∈ closedBall 0 (r₀ * ε), ‖k x‖ = ε) (hε : 0 < ε) (hK : Kk * Kg * r₀ ^ 2 < 1)
-    {w : ℝ → Eᵤ} (hw : ∀ r ∈ Icc 0 r₀, w r ∈ closedBall 0 ε ∧ k (r • g (r • w r)) = w r)
+`w r` is the unique fixed point of the gluing map in the closed ball of radius `ε`: the exit
+coordinate of `z` is such a fixed point, hence equals `w r`. -/
+private theorem toLp_mem_image_of_mem_graph (hε : 0 < ε) {w : ℝ → Eᵤ}
+    (hw : ∀ r ∈ Icc 0 r₀, w r ∈ closedBall 0 ε ∧ k (r • g (r • w r)) = w r ∧
+      ∀ v ∈ closedBall 0 ε, k (r • g (r • v)) = v → v = w r)
     {z : WithLp 2 (Eₛ × Eᵤ)} (hsrc : z ∈ (splitPassage ε).source) (hzr₀ : ‖z.snd‖ ≤ r₀ * ε)
     (hzg : z.fst = g z.snd) (hzk : (splitPassage ε z).snd = k (splitPassage ε z).fst) :
     z ∈ (fun r ↦ WithLp.toLp 2 (g (r • w r), r • w r)) '' Ioc 0 r₀ := by
@@ -208,10 +205,7 @@ private theorem toLp_mem_image_of_mem_graph
   obtain ⟨hfv, hvz⟩ := isFixedPt_gluing_snd_splitPassage hsrc hzg hzk
   have hv : (splitPassage ε z).snd ∈ closedBall 0 ε := mem_closedBall_zero_iff.2
     (mem_splitPassage_target.1 ((splitPassage ε).map_source hsrc)).1.le
-  have hf := contractingWith_gluing hg hgε hk hK hr' (mapsTo_gluing hgε hkε hr')
-  have hvw : (splitPassage ε z).snd = w (‖z.snd‖ / ε) :=
-    Subtype.ext_iff.1 (hf.fixedPoint_unique' (x := ⟨_, hv⟩) (y := ⟨_, (hw _ hr').1⟩)
-      (Subtype.ext hfv) (Subtype.ext (hw _ hr').2))
+  have hvw : (splitPassage ε z).snd = w (‖z.snd‖ / ε) := (hw _ hr').2.2 _ hv hfv
   refine ⟨_, hr, ?_⟩
   apply WithLp.ofLp_injective
   ext
@@ -255,7 +249,7 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
     exact (norm_nonneg _).not_gt (hz.trans_lt (mul_neg_of_neg_of_pos hr₀0 hε))
   -- The gluing maps contract the closed ball of radius `ε` and depend Lipschitz-continuously on
   -- the gluing parameter, so their fixed points form a Lipschitz family.
-  obtain ⟨w, hwlip, hw'⟩ := exists_lipschitzOnWith_forall_fixedPt (S := Icc 0 r₀)
+  obtain ⟨w, hwlip, hw⟩ := exists_lipschitzOnWith_forall_fixedPt (S := Icc 0 r₀)
     (T := fun r v ↦ k (r • g (r • v))) (K := ⟨Kk * Kg * r₀ ^ 2, by positivity⟩)
     isClosed_closedBall.isComplete ⟨0, mem_closedBall_self hε.le⟩ hK
     (fun r hr ↦ mapsTo_gluing hgε hkε hr)
@@ -263,19 +257,18 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
       (mem_closedBall_zero_iff.1 hv'))
     (fun r hr r' hr' v hv ↦ dist_gluing_le_dist hg hgε hk hr₀ hr hr'
       (mem_closedBall_zero_iff.1 hv))
-  have hw (r : ℝ) (hr : r ∈ Icc 0 r₀) := And.intro (hw' r hr).1 (hw' r hr).2.1
   have hwnorm (r : ℝ) (hr : r ∈ Icc 0 r₀) : ‖w r‖ = ε := by
-    rw [← (hw r hr).2]
+    rw [← (hw r hr).2.1]
     exact norm_gluing_eq hgε hkε hr (mem_closedBall_zero_iff.1 (hw r hr).1)
   refine ⟨w, hwlip, ?_, hwnorm,
-    fun r hr ↦ (hw r hr).2, ?_⟩
-  · have h := (hw 0 (left_mem_Icc.2 hr₀0)).2
+    fun r hr ↦ (hw r hr).2.1, ?_⟩
+  · have h := (hw 0 (left_mem_Icc.2 hr₀0)).2.1
     simp only [zero_smul] at h
     exact h.symm
   · ext z
     constructor
     · rintro ⟨hsrc, hzr₀, hzg, hzk⟩
-      exact toLp_mem_image_of_mem_graph hg hgε hk hkε hε hK hw hsrc hzr₀ hzg hzk
+      exact toLp_mem_image_of_mem_graph hε hw hsrc hzr₀ hzg hzk
     · -- Conversely, the point with gluing parameter `r` exits the box at `(r • g (r • w r), w r)`,
       -- which lies on the graph of `k` because `w r` is a fixed point.
       rintro ⟨r, hr, rfl⟩
@@ -288,7 +281,7 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
       · simpa [norm_smul, Real.norm_of_nonneg hr.1.le, hwr] using
           mul_le_mul_of_nonneg_right hr.2 hε.le
       · rw [hpass]
-        simpa using (hw r hr').2.symm
+        simpa using (hw r hr').2.1.symm
 
 
 /-! ### Families of discs -/
