@@ -97,10 +97,9 @@ private theorem enorm_sliceAverage_rpow_le {s : ℝ}
     exact (eNorm_integral_le_lintegral_eNorm _).trans
       ((eLpNorm_one_eq_lintegral_eNorm hf).symm.trans_le
         (eLpNorm_le_eLpNorm_of_exponent_le one_le_two))
-  have h₂ := ENNReal.rpow_le_rpow h₁ (zero_le_two : (0 : ℝ) ≤ 2)
-  rwa [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hf,
-    ENNReal.toReal_ofNat, ← ENNReal.rpow_mul, one_div, inv_mul_cancel₀ two_ne_zero,
-    ENNReal.rpow_one] at h₂
+  have h₂ := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hf
+  push_cast at h₂
+  exact (ENNReal.rpow_le_rpow h₁ zero_le_two).trans_eq h₂
 
 /-- The slice average of a section that is a.e. strongly measurable on the strip is a.e. strongly
 measurable on the strip. -/
