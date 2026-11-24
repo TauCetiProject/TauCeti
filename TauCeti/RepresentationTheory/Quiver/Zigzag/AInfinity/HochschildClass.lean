@@ -350,30 +350,29 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod
         φ (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, x 2 * x 3])) -
         φ (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, x 2])) * x 3 -
         x 0 * φ (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 1, x 2, x 3])) := by
-  have hsp (p : ℕ) (hp : p ≤ 2) (e : nonisolatedZigzagQuotient k G)
-      (w : Fin 3 → nonisolatedZigzagQuotient k G)
-      (hw : ∀ j : Fin 3, (if (j : ℕ) < p then x ⟨j, by omega⟩
-        else if (j : ℕ) = p then e else x ⟨j + 1, by omega⟩) = w j) :
-      splice k x 0 4 p 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k w) := by
-    rw [splice_eq_of_tprod k x e two_pos (by omega) (by norm_num)]
-    refine of_tprod_congr k _ _ (by norm_num) fun j ↦ ?_
-    have hj := hw ⟨j, by omega⟩
-    split_ifs at hj ⊢ <;> simpa [Fin.ext_iff] using hj
-  have hsub (a : ℕ) (ha : a ≤ 1) (w : Fin 3 → nonisolatedZigzagQuotient k G)
-      (hw : ∀ j : Fin 3, x ⟨a + j, by omega⟩ = w j) :
-      subword k x a 3 = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k w) := by
-    rw [subword_eq_of_tprod k x (by norm_num) (by omega)]
-    exact of_tprod_congr k _ _ rfl hw
+  have hsp₀ (e : nonisolatedZigzagQuotient k G) :
+      splice k x 0 4 0 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![e, x 2, x 3]) := by
+    rw [splice_eq_of_tprod k x e (by norm_num) (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
+  have hsp₁ (e : nonisolatedZigzagQuotient k G) :
+      splice k x 0 4 1 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, e, x 3]) := by
+    rw [splice_eq_of_tprod k x e (by norm_num) (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
+  have hsp₂ (e : nonisolatedZigzagQuotient k G) :
+      splice k x 0 4 2 2 e = of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, e]) := by
+    rw [splice_eq_of_tprod k x e (by norm_num) (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
+  have hsub₀ : subword k x 0 3 =
+      of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 0, x 1, x 2]) := by
+    rw [subword_eq_of_tprod k x (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
+  have hsub₁ : subword k x 1 3 =
+      of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![x 1, x 2, x 3]) := by
+    rw [subword_eq_of_tprod k x (by norm_num) (by norm_num)]
+    exact of_tprod_congr k _ _ (by norm_num) fun j ↦ by fin_cases j <;> simp
   rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_mem hφ x hx,
     Fin.sum_univ_three]
-  simp only [Fin.val_zero, Fin.val_one, Fin.val_two, Fin.isValue, Fin.reduceCastSucc,
-    Fin.reduceSucc]
-  have hlast : (Fin.last (2 + 1) : Fin 4) = 3 := Fin.ext (by simp)
-  rw [hsp 0 (by omega) _ ![x 0 * x 1, x 2, x 3] (fun j ↦ by fin_cases j <;> simp),
-    hsp 1 (by omega) _ ![x 0, x 1 * x 2, x 3] (fun j ↦ by fin_cases j <;> simp),
-    hsp 2 (by omega) _ ![x 0, x 1, x 2 * x 3] (fun j ↦ by fin_cases j <;> simp),
-    hsub 0 (by omega) ![x 0, x 1, x 2] (fun j ↦ by fin_cases j <;> simp),
-    hsub 1 (by omega) ![x 1, x 2, x 3] (fun j ↦ by fin_cases j <;> simp), hlast]
+  simp [hsp₀, hsp₁, hsp₂, hsub₀, hsub₁]
 
 end Differential
 
@@ -980,9 +979,9 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
   have := Fintype.ofFinite V
   obtain ⟨a, ha, hhead, hbal, h1⟩ :=
     exists_zigzagBacktrackPairing_obstruction_single_eq_one (k := k) (hns := hns) hδ hv
-  rintro ⟨φ, hφ, hφc⟩
-  rw [← hφc, zigzagBacktrackPairing_hochschildDifferential_eq_zero ha hhead hbal hφ] at h1
-  exact zero_ne_one h1
+  rw [zigzagBacktrackPairing_obstruction] at h1
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra ha hhead hbal
+    _ _ (by rw [h1]; exact one_ne_zero)
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when four
 distinct darts of `G` have a common head, that is when some vertex has four distinct neighbours,
