@@ -70,15 +70,17 @@ omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)]
 /-- Transport of a section preserves its closed support. -/
 @[simp]
 theorem tsupport_contMDiffSectionEquiv (s : Cₛ^n⟮IB; F, E⟯) :
-    (contMDiffSectionEquiv g s).tsupport = s.tsupport :=
-  (rfl)
+    (contMDiffSectionEquiv g s).tsupport = s.tsupport := by
+  simp only [ContMDiffSection.tsupport_def, contMDiffSectionEquiv_apply,
+    EmbeddingLike.map_ne_zero_iff]
 
 omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
 /-- Inverse transport of a section preserves its closed support. -/
 @[simp]
 theorem tsupport_contMDiffSectionEquiv_symm (s : Cₛ^n⟮IB; F, WithFiberMetric g⟯) :
-    ((contMDiffSectionEquiv g).symm s).tsupport = s.tsupport :=
-  (rfl)
+    ((contMDiffSectionEquiv g).symm s).tsupport = s.tsupport := by
+  simp only [ContMDiffSection.tsupport_def, contMDiffSectionEquiv_symm_apply,
+    EmbeddingLike.map_ne_zero_iff]
 
 end WithFiberMetric
 

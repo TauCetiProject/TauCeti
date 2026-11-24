@@ -81,9 +81,6 @@ variable [IsManifold I ∞ M] [IsContinuousRiemannianBundle E (fun x : M ↦ Tan
 /-- Compactly supported smooth real forms have dense image in the geometric L² space on a
 Riemannian manifold, including in the presence of a boundary. -/
 theorem denseRange_toL2Form : DenseRange (toL2Form I M k) := by
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  let : ContMDiffVectorBundle ∞ E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
   refine (LpSection.denseRange_ofCompactlySupported (𝕜 := ℝ) (I := I) (F := E [⋀^Fin k]→L[ℝ] ℝ)
     (E := WithFiberMetric (formMetric I M k)) (μ := riemannianVolume I M)
     (p := 2) ENNReal.ofNat_ne_top).mono ?_

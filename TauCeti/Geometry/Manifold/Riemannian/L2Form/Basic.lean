@@ -144,8 +144,8 @@ def toL2Form : compactlySupportedForms I M k →ₗ[ℝ] L2Form I M k where
     LpSection.ofCompactlySupported ℝ I 2 (riemannianVolume I M) (toContinuousSection I M k α)
   map_add' α β := by rw [map_add, map_add]
   map_smul' c α := by
-    rw [map_smul, LpSection.ofCompactlySupported_smul, RingHom.id_apply, RCLike.ofReal_real_eq_id,
-      id_eq]
+    rw [map_smul, LpSection.ofCompactlySupported_smul]
+    simp
 
 /-- The class of a compactly supported form is the class of its continuous section. -/
 theorem toL2Form_apply (α : compactlySupportedForms I M k) :
