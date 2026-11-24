@@ -150,10 +150,10 @@ theorem deckFundamentalGroupEquiv_symm_mk_apply_basepointLift (p : Path x₀ x�
         (p.source.trans (basepointLift x₀).property.symm) 1 := by
   have h := (isRegular_proj x₀).deckFundamentalGroupEquiv_unop_monodromy (isCoveringMap x₀)
     (basepointLift x₀) ((deckFundamentalGroupEquiv x₀).symm (GeometricFundamentalGroup.mk p))
-  rw [← deckFundamentalGroupEquiv, MulEquiv.apply_symm_apply] at h
-  change ((isCoveringMap x₀).monodromy (Path.Homotopic.Quotient.mk p) _ : UniversalCover x₀) =
-    _ at h
-  rw [(isCoveringMap x₀).coe_monodromy_mk, deck.smul_eq_apply] at h
+  -- Mathlib has no lemma for `FundamentalGroup.toPath (FundamentalGroup.fromPath γ) = γ`; both
+  -- are reducible abbreviations, so `coe_monodromy_mk` matches the loop class directly.
+  rw [← deckFundamentalGroupEquiv, MulEquiv.apply_symm_apply, MulOpposite.unop_op,
+    (isCoveringMap x₀).coe_monodromy_mk, deck.smul_eq_apply] at h
   exact h.symm
 
 /-- **The homomorphism law by path lifting.** The lift of `p.trans q` from the base lift ends at
