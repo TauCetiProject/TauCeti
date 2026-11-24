@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Derivative
+public import TauCeti.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.LambdaRing.Binomial
 public import TauCeti.RingTheory.LambdaRing.MonoidAlgebra
 import TauCeti.RingTheory.Binomial
@@ -59,7 +59,9 @@ special λ-rings, and are not proved here.
   `TauCeti.PreLambdaStructure.adams_three`: the first three Adams operations.
 * `TauCeti.PreLambdaHom.map_adams`: morphisms of pre-λ structures commute with Adams operations.
 * `TauCeti.PreLambdaStructure.IsLine.adams_eq_pow`: `ψⁿ l = lⁿ` for a line element `l` and `n ≥ 1`.
-* `TauCeti.PreLambdaStructure.binomial_adams_apply`: the binomial Adams operations are the identity.
+* `TauCeti.PreLambdaStructure.binomial_adamsSeries`,
+  `TauCeti.PreLambdaStructure.binomial_adams_apply`: the binomial Adams series is `∑_{n ≥ 1} x tⁿ`,
+  so the binomial Adams operations are the identity.
 
 ## References
 
@@ -79,13 +81,6 @@ variable (Λ : PreLambdaStructure R)
 
 /-! ### The Adams series -/
 
-/-- The total operation at `-t` has constant coefficient `1`. -/
-@[simp]
-theorem constantCoeff_rescale_totalSeries (x : R) :
-    constantCoeff (rescale (-1) (Λ.totalSeries x)) = 1 := by
-  rw [← coeff_zero_eq_constantCoeff_apply, coeff_rescale]
-  simp
-
 /-- The coefficients of the total operation at `-t` are `(-1)ⁿ λⁿ x`. -/
 theorem coeff_rescale_totalSeries (n : ℕ) (x : R) :
     coeff n (rescale (-1) (Λ.totalSeries x)) = (-1) ^ n * Λ.lambda n x := by
@@ -98,24 +93,21 @@ theorem isUnit_rescale_totalSeries (x : R) : IsUnit (rescale (-1) (Λ.totalSerie
 /-- The coefficients of `-t λ_{-t}'(x)`: the coefficient of `tⁿ` is `(-1)^(n + 1) n λⁿ x`. -/
 theorem coeff_neg_X_mul_derivative_rescale_totalSeries (n : ℕ) (x : R) :
     coeff n (-(X * d⁄dX (rescale (-1) (Λ.totalSeries x)))) = (-1) ^ (n + 1) * n * Λ.lambda n x := by
-  rcases n with _ | n
-  · simp
-  · rw [map_neg, coeff_succ_X_mul, coeff_derivative, coeff_rescale_totalSeries]
-    push_cast
-    ring
+  rw [map_neg, coeff_X_mul_derivative, coeff_rescale_totalSeries]
+  ring
 
 /-- The **Adams series** `ψ_t x = -t λ_{-t}'(x) / λ_{-t}(x)`, the generating series of the Adams
-operations. -/
+operations: minus `PowerSeries.xLogDeriv` of the unit `λ_{-t}(x)`. -/
 def adamsSeries (x : R) : R⟦X⟧ :=
-  -(X * d⁄dX (rescale (-1) (Λ.totalSeries x))) * invOfUnit (rescale (-1) (Λ.totalSeries x)) 1
+  -(xLogDeriv (Λ.isUnit_rescale_totalSeries x).unit).toAdd
 
 /-- The **generating-series identity** of the Adams operations:
 `λ_{-t}(x) ψ_t(x) = -t λ_{-t}'(x)`. -/
 theorem rescale_totalSeries_mul_adamsSeries (x : R) :
     rescale (-1) (Λ.totalSeries x) * Λ.adamsSeries x =
       -(X * d⁄dX (rescale (-1) (Λ.totalSeries x))) := by
-  rw [adamsSeries, mul_left_comm,
-    mul_invOfUnit _ 1 (by rw [constantCoeff_rescale_totalSeries, Units.val_one]), mul_one]
+  rw [adamsSeries, toAdd_xLogDeriv, IsUnit.unit_spec, mul_neg, mul_comm, mul_assoc,
+    IsUnit.val_inv_mul, mul_one]
 
 /-- The generating-series identity characterizes the Adams series, since `λ_{-t}(x)` is a unit. -/
 theorem eq_adamsSeries_iff {x : R} {φ : R⟦X⟧} :
@@ -128,10 +120,10 @@ theorem eq_adamsSeries_iff {x : R} {φ : R⟦X⟧} :
 /-- The Adams series is additive. -/
 theorem adamsSeries_add (x y : R) :
     Λ.adamsSeries (x + y) = Λ.adamsSeries x + Λ.adamsSeries y := by
-  rw [eq_comm, eq_adamsSeries_iff, totalSeries_add, map_mul, Derivation.leibniz, smul_eq_mul,
-    smul_eq_mul]
-  linear_combination rescale (-1) (Λ.totalSeries y) * Λ.rescale_totalSeries_mul_adamsSeries x +
-    rescale (-1) (Λ.totalSeries x) * Λ.rescale_totalSeries_mul_adamsSeries y
+  have h : (Λ.isUnit_rescale_totalSeries (x + y)).unit =
+      (Λ.isUnit_rescale_totalSeries x).unit * (Λ.isUnit_rescale_totalSeries y).unit :=
+    Units.ext (by simp only [IsUnit.unit_spec, Units.val_mul, totalSeries_add, map_mul])
+  rw [adamsSeries, adamsSeries, adamsSeries, h, map_mul, toAdd_mul, neg_add]
 
 @[simp]
 theorem adamsSeries_zero : Λ.adamsSeries 0 = 0 := by
@@ -200,15 +192,15 @@ theorem adams_one : Λ.adams 1 = AddMonoidHom.id R := by
 
 /-- `ψ² x = x² - 2 λ² x`. -/
 theorem adams_two (x : R) : Λ.adams 2 x = x ^ 2 - 2 * Λ.lambda 2 x := by
-  rw [adams_eq_sum]
-  simp [show Ico 1 2 = {1} by rfl]
+  rw [adams_eq_sum, Nat.Ico_succ_singleton]
+  simp only [sum_singleton, lambda_one, Nat.reduceSub, adams_one, AddMonoidHom.id_apply]
   ring
 
 /-- `ψ³ x = x³ - 3 x λ² x + 3 λ³ x`. -/
 theorem adams_three (x : R) :
     Λ.adams 3 x = x ^ 3 - 3 * x * Λ.lambda 2 x + 3 * Λ.lambda 3 x := by
-  rw [adams_eq_sum]
-  simp [show Ico 1 3 = {1, 2} by rfl, adams_two]
+  rw [adams_eq_sum, show Ico 1 3 = {1, 2} by decide, sum_pair (by decide)]
+  simp only [lambda_one, Nat.reduceSub, adams_one, AddMonoidHom.id_apply, adams_two]
   ring
 
 /-! ### Line elements -/
@@ -241,15 +233,11 @@ variable {Λ : PreLambdaStructure R} {Λ' : PreLambdaStructure S}
 /-- A morphism of pre-λ structures carries the Adams series of `x` to that of its image. -/
 theorem map_adamsSeries (f : PreLambdaHom Λ Λ') (x : R) :
     PowerSeries.map (f : R →+* S) (Λ.adamsSeries x) = Λ'.adamsSeries (f x) := by
-  have hderiv (φ : R⟦X⟧) :
-      PowerSeries.map (f : R →+* S) (d⁄dX φ) = d⁄dX (PowerSeries.map (f : R →+* S) φ) := by
-    ext n
-    simp [coeff_derivative]
   have hrescale : PowerSeries.map (f : R →+* S) (rescale (-1) (Λ.totalSeries x)) =
       rescale (-1) (Λ'.totalSeries (f x)) := by
     rw [← map_totalSeries, ← rescale_map, map_neg, map_one]
   rw [Λ'.eq_adamsSeries_iff, ← hrescale, ← map_mul, Λ.rescale_totalSeries_mul_adamsSeries,
-    map_neg, map_mul, map_X, hderiv]
+    map_neg, map_mul, map_X, ← derivative_map]
 
 /-- **Morphisms of pre-λ structures commute with Adams operations.** -/
 @[simp]
@@ -267,39 +255,42 @@ section Binomial
 
 variable {R : Type*} [CommRing R] [BinomialRing R]
 
+/-- The binomial Adams series is `∑_{n ≥ 1} x tⁿ`. -/
+theorem binomial_adamsSeries (x : R) :
+    (binomial R).adamsSeries x = PowerSeries.mk fun k => if k = 0 then 0 else x := by
+  rw [eq_comm, eq_adamsSeries_iff]
+  ext k
+  rw [coeff_mul, coeff_neg_X_mul_derivative_rescale_totalSeries,
+    Nat.sum_antidiagonal_eq_sum_range_succ
+      (fun i j => coeff i (rescale (-1) ((binomial R).totalSeries x)) *
+        coeff j (PowerSeries.mk fun k => if k = 0 then 0 else x))]
+  simp only [coeff_rescale_totalSeries, binomial_lambda, coeff_mk]
+  rw [sum_range_succ, Nat.sub_self]
+  simp only [↓reduceIte, mul_zero, add_zero]
+  have hsum : ∑ i ∈ range k, (-1) ^ i * Ring.choose x i * (if k - i = 0 then 0 else x) =
+      x * ∑ i ∈ range k, (-1) ^ i * Ring.choose x i := by
+    rw [mul_sum]
+    refine sum_congr rfl fun i hi => ?_
+    have hi : k - i ≠ 0 := by simp at hi; omega
+    simp only [hi, ↓reduceIte]
+    ring
+  rw [hsum]
+  -- `x ∑_{i < k} (-1)ⁱ (x choose i) = (-1)^(k + 1) k (x choose k)`, by the alternating partial
+  -- sums and `k (x choose k) = x (x - 1 choose k - 1)`.
+  rcases k with _ | m
+  · simp
+  have hsum' := TauCeti.Ring.alternating_sum_range_choose_eq_choose (x - 1) m
+  rw [sub_add_cancel] at hsum'
+  have hmul := Ring.choose_smul_choose x (n := m + 1) (k := 1) (by omega)
+  rw [Nat.choose_one_right, Ring.choose_one_right, Nat.add_sub_cancel, nsmul_eq_mul] at hmul
+  rw [hsum']
+  push_cast at hmul ⊢
+  linear_combination (-(-1) ^ m) * hmul
+
 /-- **The binomial Adams operations are the identity**: `ψⁿ x = x` for `n ≥ 1`. -/
 @[simp]
 theorem binomial_adams_apply {n : ℕ} (hn : n ≠ 0) (x : R) : (binomial R).adams n x = x := by
-  have hseries : (binomial R).adamsSeries x = PowerSeries.mk fun n => if n = 0 then 0 else x := by
-    rw [eq_comm, eq_adamsSeries_iff]
-    ext n
-    rw [coeff_mul, coeff_neg_X_mul_derivative_rescale_totalSeries,
-      Nat.sum_antidiagonal_eq_sum_range_succ
-        (fun i j => coeff i (rescale (-1) ((binomial R).totalSeries x)) *
-          coeff j (PowerSeries.mk fun n => if n = 0 then 0 else x))]
-    simp only [coeff_rescale_totalSeries, binomial_lambda, coeff_mk]
-    rw [sum_range_succ, Nat.sub_self]
-    simp only [↓reduceIte, mul_zero, add_zero]
-    have hsum : ∑ i ∈ range n, (-1) ^ i * Ring.choose x i * (if n - i = 0 then 0 else x) =
-        x * ∑ i ∈ range n, (-1) ^ i * Ring.choose x i := by
-      rw [mul_sum]
-      refine sum_congr rfl fun i hi => ?_
-      have hi : n - i ≠ 0 := by simp at hi; omega
-      simp only [hi, ↓reduceIte]
-      ring
-    rw [hsum]
-    -- `x ∑_{i < n} (-1)ⁱ (x choose i) = (-1)^(n + 1) n (x choose n)`, by the alternating partial
-    -- sums and `n (x choose n) = x (x - 1 choose n - 1)`.
-    rcases n with _ | m
-    · simp
-    have hsum' := TauCeti.Ring.alternating_sum_range_choose_eq_choose (x - 1) m
-    rw [sub_add_cancel] at hsum'
-    have hmul := Ring.choose_smul_choose x (n := m + 1) (k := 1) (by omega)
-    rw [Nat.choose_one_right, Ring.choose_one_right, Nat.add_sub_cancel, nsmul_eq_mul] at hmul
-    rw [hsum']
-    push_cast at hmul ⊢
-    linear_combination (-(-1) ^ m) * hmul
-  rw [adams_apply, hseries, coeff_mk]
+  rw [adams_apply, binomial_adamsSeries, coeff_mk]
   simp [hn]
 
 end Binomial

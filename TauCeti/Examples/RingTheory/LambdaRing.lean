@@ -154,8 +154,7 @@ example : (binomial ℤ).adams 2 (-1) = -1 ∧ (-1 : ℤ) ^ 2 = 1 :=
 example :
     (lineMonomial (Multiplicative ℤ)).adams 2 (MonoidAlgebra.of ℤ _ (Multiplicative.ofAdd 1)) =
       MonoidAlgebra.of ℤ _ (Multiplicative.ofAdd 2) := by
-  rw [lineMonomial_adams_of two_ne_zero, ← ofAdd_nsmul]
-  rfl
+  rw [lineMonomial_adams_of two_ne_zero, ← ofAdd_nsmul, nsmul_eq_mul, mul_one, Nat.cast_ofNat]
 
 /-- The integral formula for `ψ³` in binomial `ℤ`: `ψ³ 2 = 2³ - 3 · 2 · λ² 2 + 3 λ³ 2 = 2`. -/
 example : (binomial ℤ).adams 3 2 = 2 := by
