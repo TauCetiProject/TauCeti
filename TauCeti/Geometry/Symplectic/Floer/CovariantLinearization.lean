@@ -60,7 +60,7 @@ here. The covariant variational equation
 (`CovariantDerivative.alongCurve_mfderiv_timeDependentFlowOf`) therefore says that the
 `s`-independent field `ξ(s, t) = dφ_{s₀, t} v` lies in its kernel, for every `v ∈ T_x M`, every
 family `J` and every torsion-free connection
-(`floerLinearization_mfderiv_timeDependentFlowOf`). Over a `1`-periodic
+(`floerLinearization_mfderiv_timeDependentFlowOf_eq_zero`). Over a `1`-periodic
 orbit of a `1`-periodic Hamiltonian, `ξ` is `1`-periodic in `t` when `v` is fixed by the
 derivative of the time-one map (`TauCeti.mfderiv_timeDependentFlowOf_add_period_apply_of_eq`), and
 it vanishes nowhere when `v ≠ 0`. So a degenerate orbit gives a nowhere-vanishing `C¹` kernel
@@ -432,7 +432,7 @@ trajectory of `x` from time `s₀`. For the cylindrical perturbation `Ks = 0`, `
 family `J` and every torsion-free connection, the `s`-independent field `ξ(s, t) = dφ_{s₀, t} v`
 is annihilated by the linearized Floer operator, at every point where the trajectory is defined.
 -/
-theorem floerLinearization_mfderiv_timeDependentFlowOf (ω : SmoothTwoForm I M)
+theorem floerLinearization_mfderiv_timeDependentFlowOf_eq_zero (ω : SmoothTwoForm I M)
     (cov : CovariantDerivative I E (TangentSpace I : M → Type _)) (htor : cov.IsTorsionFree)
     (J : ℝ × ℝ → ∀ x : M, TangentSpace I x →L[ℝ] TangentSpace I x) {G : ℝ → M → ℝ}
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
@@ -462,8 +462,8 @@ a fixed point of the time-one map `φ_{s₀, s₀ + 1}`, with the flow from `(s�
 `s₀ + 1`, which is not nondegenerate. Along the stationary cylinder over the orbit of `x` there is
 a nowhere-vanishing `C¹` field `ξ`, independent of `s` and `1`-periodic in `t`, which the
 linearized Floer operator annihilates for every family `J` and every torsion-free connection.
-`floerLinearization_mfderiv_timeDependentFlowOf` gives such a field explicitly, as the linearized
-flow of a nonzero vector fixed by the derivative of the time-one map. -/
+`floerLinearization_mfderiv_timeDependentFlowOf_eq_zero` gives such a field explicitly, as the
+linearized flow of a nonzero vector fixed by the derivative of the time-one map. -/
 theorem exists_ne_zero_floerLinearization_eq_zero_of_not_isNondegenerateFixedPt
     (ω : SmoothTwoForm I M) {G : ℝ → M → ℝ} (hG : Function.Periodic G 1)
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
@@ -505,7 +505,8 @@ theorem exists_ne_zero_floerLinearization_eq_zero_of_not_isNondegenerateFixedPt
     fun z hz ↦ hv0 (injective_mfderiv_timeDependentFlowOf hX₁ (hall z.2)
       (hz.trans (map_zero _).symm)), fun _ _ ↦ rfl,
     fun z ↦ mfderiv_timeDependentFlowOf_add_period_apply_of_eq hX₁ hper h hfix hv z.2,
-    fun cov htor J z ↦ floerLinearization_mfderiv_timeDependentFlowOf ω cov htor J hX v (hall z.2)⟩
+    fun cov htor J z ↦
+      floerLinearization_mfderiv_timeDependentFlowOf_eq_zero ω cov htor J hX v (hall z.2)⟩
 
 end StationaryCylinder
 

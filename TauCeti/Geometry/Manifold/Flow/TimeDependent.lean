@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -112,7 +113,7 @@ the initial position of the submanifold to the later ones.
 * `TauCeti.contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf`: along a trajectory, the
   linearized flow `u ↦ dφ_{s, u} v` is one degree less regular than the field.
 * `TauCeti.injective_mfderiv_timeDependentFlowOf`: the derivative of the time map is injective
-  wherever the flow is defined, with no completeness assumption.
+  wherever the flow is defined, with no completeness assumption on the field.
 * `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ico`,
   `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ioc` and
   `TauCeti.mem_timeDependentFlowDomain_of_isCompact_of_mapsTo`: the escape criterion, a solution
@@ -1422,8 +1423,7 @@ is defined at `x`, flowing back from `t` to `s` is a left inverse near `x`, so `
 injective at `x`. No completeness of the field is needed. -/
 theorem injective_mfderiv_timeDependentFlowOf (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     Function.Injective (mfderiv I I (timeDependentFlowOf X s t) x) :=
-  (((timeDependentFlowPartialDiffeomorph le_rfl hX s t).isLocalDiffeomorphAt I I 1
-    h).isInvertible_mfderiv one_ne_zero).injective
+  ((timeDependentFlowPartialDiffeomorph le_rfl hX s t).isInvertible_mfderiv one_ne_zero h).injective
 
 end CompleteSpace
 
