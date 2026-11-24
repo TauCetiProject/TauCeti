@@ -126,6 +126,17 @@ theorem bijective_localizedMap_fst_equalizer (f : M →ₐ[R] P) (g : N →ₐ[S
     ⟨LocalizedModule.map_injective _ _ (equalizerLinearEquivKer f g).injective,
       LocalizedModule.map_surjective _ _ (equalizerLinearEquivKer f g).surjective⟩
 
+/-- The algebra isomorphism `R_r ⊗[R] B ≃ₐ[R_r] R_r ⊗[R] M` induced by the first projection from
+the subalgebra `B` of pairs `(m, n)` with `f m = g n`, when `g` becomes bijective after inverting
+the image of `r`. -/
+private noncomputable def equalizerAwayAlgEquiv (f : M →ₐ[R] P) (g : N →ₐ[S] P) (r : R)
+    (hg : Bijective (LocalizedModule.map (.powers (algebraMap R S r)) g.toLinearMap)) :
+    Localization.Away r ⊗[R] equalizer (f.comp (fst R M N))
+        ((g.restrictScalars R).comp (snd R M N)) ≃ₐ[Localization.Away r]
+      Localization.Away r ⊗[R] M :=
+  (fst R M N).comp _ |>.algEquivOfLocalizedBijective (.powers r) (Localization.Away r)
+    (bijective_localizedMap_fst_equalizer f g _ (by rwa [Algebra.algebraMapSubmonoid_powers]))
+
 variable [Module.Flat R S]
 
 /-- **Formal glueing of algebras.** Let `R → S` be flat and induce `R/I ≅ S/IS`, with `I`
@@ -163,9 +174,7 @@ theorem finite_equalizer_of_formalGlueing (f : M →ₐ[R] P) (g : N →ₐ[S] P
     Module.Finite R
       (equalizer (f.comp (fst R M N)) ((g.restrictScalars R).comp (snd R M N))) :=
   (isBaseChange_snd_equalizer_of_formalGlueing f g hf G hG hloc).finite_of_formalGlueing G hG
-    (fun r hr ↦ ((fst R M N).comp _ |>.algEquivOfLocalizedBijective (.powers r)
-      (Localization.Away r) (bijective_localizedMap_fst_equalizer f g _
-        (by rw [Algebra.algebraMapSubmonoid_powers]; exact hloc r hr))).toLinearEquiv) hM
+    (fun r hr ↦ (equalizerAwayAlgEquiv f g r (hloc r hr)).toLinearEquiv) hM
 
 end Ring
 
@@ -192,13 +201,23 @@ theorem etale_equalizer_of_formalGlueing (f : M →ₐ[R] P) (g : N →ₐ[S] P)
       (equalizer (f.comp (fst R M N)) ((g.restrictScalars R).comp (snd R M N))) :=
   (IsBaseChange.finite_etale_of_formalGlueing
     (isBaseChange_snd_equalizer_of_formalGlueing f g hf G hG hloc) G hG
-    (fun r hr ↦ (fst R M N).comp _ |>.algEquivOfLocalizedBijective (.powers r)
-      (Localization.Away r) (bijective_localizedMap_fst_equalizer f g _
-        (by rw [Algebra.algebraMapSubmonoid_powers]; exact hloc r hr))) hM).2
+    (fun r hr ↦ equalizerAwayAlgEquiv f g r (hloc r hr)) hM).2
 
 end CommRing
 
 section AdicCompletion
+
+/-- A finite generating set `G` of an ideal `I` of a Noetherian ring, together with the bijectivity
+of `R ⧸ (G) → R̂ ⧸ (G) R̂`, in the form in which the formal glueing theorems take it. -/
+private theorem exists_finset_span_eq_bijective_quotientMap {R : Type*} [CommRing R]
+    [IsNoetherianRing R] (I : Ideal R) :
+    ∃ G : Finset R, Ideal.span (G : Set R) = I ∧
+      Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map
+        (algebraMap R (AdicCompletion I R))) (algebraMap R (AdicCompletion I R))
+          Ideal.le_comap_map) := by
+  obtain ⟨G, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
+  exact ⟨G, rfl, AdicCompletion.quotientMap_algebraMap_bijective_one
+    (Submodule.fg_span G.finite_toSet)⟩
 
 section Ring
 
@@ -220,10 +239,9 @@ theorem isBaseChange_snd_equalizer_of_adicCompletion (f : M →ₐ[R] P)
     IsBaseChange (AdicCompletion I R) ((snd R M N).comp
       (equalizer (f.comp (fst R M N))
         ((g.restrictScalars R).comp (snd R M N))).val).toLinearMap := by
-  obtain ⟨G, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
-  have hG := AdicCompletion.quotientMap_algebraMap_bijective_one (Submodule.fg_span G.finite_toSet)
+  obtain ⟨G, hGI, hG⟩ := exists_finset_span_eq_bijective_quotientMap I
   exact isBaseChange_snd_equalizer_of_formalGlueing f g hf G hG
-    fun r hr ↦ hloc r (Ideal.subset_span hr)
+    fun r hr ↦ hloc r (hGI.le (Ideal.subset_span hr))
 
 /-- **Finiteness of an algebra glued along the completion.** In the situation of
 `AlgHom.isBaseChange_snd_equalizer_of_adicCompletion`, if `N` is finite over `R̂` and the
@@ -238,11 +256,10 @@ theorem finite_equalizer_of_adicCompletion (f : M →ₐ[R] P)
     (hM : ∀ r ∈ I, Module.Finite (Localization.Away r) (Localization.Away r ⊗[R] M)) :
     Module.Finite R
       (equalizer (f.comp (fst R M N)) ((g.restrictScalars R).comp (snd R M N))) := by
-  obtain ⟨G, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
-  have hG := AdicCompletion.quotientMap_algebraMap_bijective_one (Submodule.fg_span G.finite_toSet)
+  obtain ⟨G, hGI, hG⟩ := exists_finset_span_eq_bijective_quotientMap I
   exact finite_equalizer_of_formalGlueing f g hf G hG
-    (fun r hr ↦ hloc r (Ideal.subset_span hr))
-    fun r hr ↦ hM r (Ideal.subset_span hr)
+    (fun r hr ↦ hloc r (hGI.le (Ideal.subset_span hr)))
+    fun r hr ↦ hM r (hGI.le (Ideal.subset_span hr))
 
 end Ring
 
@@ -267,11 +284,10 @@ theorem etale_equalizer_of_adicCompletion (f : M →ₐ[R] P)
       Algebra.Etale (Localization.Away r) (Localization.Away r ⊗[R] M)) :
     Algebra.Etale R
       (equalizer (f.comp (fst R M N)) ((g.restrictScalars R).comp (snd R M N))) := by
-  obtain ⟨G, rfl⟩ := (IsNoetherian.noetherian I : I.FG)
-  have hG := AdicCompletion.quotientMap_algebraMap_bijective_one (Submodule.fg_span G.finite_toSet)
+  obtain ⟨G, hGI, hG⟩ := exists_finset_span_eq_bijective_quotientMap I
   exact etale_equalizer_of_formalGlueing f g hf G hG
-    (fun r hr ↦ hloc r (Ideal.subset_span hr))
-    fun r hr ↦ hM r (Ideal.subset_span hr)
+    (fun r hr ↦ hloc r (hGI.le (Ideal.subset_span hr)))
+    fun r hr ↦ hM r (hGI.le (Ideal.subset_span hr))
 
 end CommRing
 
