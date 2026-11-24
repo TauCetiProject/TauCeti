@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Field.Subfield.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import TauCeti.Algebra.Algebra.Subring
 
 /-!
 # Invertible matrices over subfields

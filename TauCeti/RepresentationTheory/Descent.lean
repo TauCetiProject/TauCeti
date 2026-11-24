@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.BaseChange
 
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import TauCeti.LinearAlgebra.LinearMap.BaseChange
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # Algebraic descent of morphisms between representations
@@ -94,21 +95,6 @@ variable {E L G V W : Type*} [Field E] [Field L] [Algebra E L] [Algebra.IsAlgebr
   [Monoid G] [AddCommGroup V] [Module E V] [FiniteDimensional E V]
   [AddCommGroup W] [Module E W]
 
-/-- Scalar-tower naturality for a single scalar multiple of a base-changed linear map. -/
-private theorem cancelBaseChange_comp_smul_baseChange
-    {E E' L V W : Type*} [CommSemiring E] [CommSemiring E'] [CommRing L]
-    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
-    [AddCommMonoid V] [Module E V] [AddCommMonoid W] [Module E W]
-    (c : E') (g : V →ₗ[E] W) :
-    (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap ∘ₗ
-        (c • g.baseChange E').baseChange L =
-      (algebraMap E' L c • g.baseChange L) ∘ₗ
-        (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
-  rw [LinearMap.baseChange_smul, LinearMap.comp_smul, LinearMap.baseChange_baseChange,
-    ← LinearMap.comp_assoc, ← LinearMap.comp_assoc, LinearEquiv.comp_coe,
-    LinearEquiv.symm_trans_self, LinearEquiv.refl_toLinearMap, LinearMap.id_comp,
-    IsScalarTower.algebraMap_smul, LinearMap.smul_comp]
-
 /-- **Morphism descent over an algebraic field extension.** Any intertwining map between the
 scalar extensions to `L` of two `E`-representations, with finite-dimensional domain `V`, descends
 to a finite intermediate field `E' : IntermediateField E L`. -/
@@ -143,35 +129,15 @@ theorem IntertwiningMap.exists_descent_of_baseChange
   have hcomp :
       (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap ∘ₗ f₀.baseChange L =
         f.toLinearMap ∘ₗ (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
-    have hf₀ : f₀.baseChange L =
-        ∑ p ∈ s.attach, ((⟨p.val.1, hs_mem p.val p.property⟩ : E') •
-          p.val.2.baseChange E').baseChange L :=
-      map_sum (LinearMap.baseChangeHom E' L (E' ⊗[E] V) (E' ⊗[E] W)) _ s.attach
-    have hlhs :
-        (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap ∘ₗ f₀.baseChange L =
-          ∑ p ∈ s.attach, (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap ∘ₗ
-            ((⟨p.val.1, hs_mem p.val p.property⟩ : E') • p.val.2.baseChange E').baseChange L := by
-      rw [hf₀]
-      exact map_sum
-        (LinearMap.llcomp L _ _ _ (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap)
-        _ s.attach
-    have hrhs :
-        f.toLinearMap ∘ₗ (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap =
-          ∑ p ∈ s.attach, (p.val.1 • p.val.2.baseChange L) ∘ₗ
-            (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
-      have hf' : f.toLinearMap = ∑ p ∈ s.attach, p.val.1 • p.val.2.baseChange L := by
-        rw [Finset.sum_attach s (fun p ↦ p.1 • p.2.baseChange L), ← hz, hs, map_sum]
-        simp only [LinearMap.baseChangeTensorHom_tmul]
-      rw [hf']
-      exact map_sum
-        (LinearMap.lcomp L _ (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap)
-        _ s.attach
-    rw [hlhs, hrhs]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    have hc := cancelBaseChange_comp_smul_baseChange (L := L)
-      (⟨p.val.1, hs_mem p.val p.property⟩ : E') p.val.2
-    rw [IntermediateField.algebraMap_apply] at hc
-    exact hc
+    have hf' : f.toLinearMap =
+        ∑ p ∈ s.attach, algebraMap E' L (⟨p.val.1, hs_mem p.val p.property⟩ : E') •
+          p.val.2.baseChange L := by
+      rw [← hz, hs, map_sum, ← Finset.sum_attach s]
+      refine Finset.sum_congr rfl fun p _ ↦ ?_
+      rw [LinearMap.baseChangeTensorHom_tmul, IntermediateField.algebraMap_apply]
+    simpa only [f₀, hf'] using
+      LinearMap.cancelBaseChange_comp_sum_smul_baseChange s.attach
+        (fun p ↦ (⟨p.val.1, hs_mem p.val p.property⟩ : E')) (fun p ↦ p.val.2)
   have hcompat (x : L ⊗[E'] (E' ⊗[E] V)) :
       AlgebraTensorModule.cancelBaseChange E E' L L W (f₀.baseChange L x) =
         f (AlgebraTensorModule.cancelBaseChange E E' L L V x) :=
@@ -217,10 +183,9 @@ theorem Equiv.exists_descent_of_baseChange
     exact (AlgebraTensorModule.cancelBaseChange E E' L L W).symm.bijective.comp
       (e.bijective.comp (AlgebraTensorModule.cancelBaseChange E E' L L V).bijective)
   let e' : (ρ.baseChange E').Equiv (σ.baseChange E') := f'.ofBijective hbij
-  have he' : e'.toIntertwiningMap = f' := IntertwiningMap.ext rfl
   refine ⟨E', hfin, e', fun x ↦ ?_⟩
-  simpa only [← Equiv.coe_toIntertwiningMap, Equiv.toIntertwiningMap_baseChange, he'] using
-    hcompat x
+  simpa only [e', ← Equiv.coe_toIntertwiningMap, Equiv.toIntertwiningMap_baseChange,
+    IntertwiningMap.toIntertwiningMap_ofBijective] using hcompat x
 
 end AlgebraicDescent
 

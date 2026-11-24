@@ -27,7 +27,11 @@ left multiplication by `M.map (algebraMap A B)`
 When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
 maps (`LinearMap.baseChange_injective`). Faithful flatness therefore permits checking equality of
 linear maps after extension of scalars, including comparing maps defined over two intermediate
-algebras inside a common enlargement (`LinearMap.baseChange_eq_of_baseChange_eq`).
+algebras inside a common enlargement (`LinearMap.baseChange_eq_of_baseChange_eq`). Scalar-tower
+cancellation `AlgebraTensorModule.cancelBaseChange` also commutes with scalar multiples and finite
+sums of scalar multiples of base-changed linear maps
+(`LinearMap.cancelBaseChange_comp_smul_baseChange`,
+`LinearMap.cancelBaseChange_comp_sum_smul_baseChange`).
 
 For a finitely generated projective `R`-module `V` and a finitely generated projective `A`-module
 `E`, an `R`-linear map `c : V → End_A E` extends `A`-linearly to `A ⊗[R] V`, and the finite
@@ -271,6 +275,40 @@ theorem baseChange_eq_of_baseChange_eq
     LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_symm_tmul]
   exact (AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange _).trans
     (hv.trans (AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange _).symm)
+
+/-- Scalar-tower naturality for a single scalar multiple of a base-changed linear map. -/
+theorem cancelBaseChange_comp_smul_baseChange
+    {E E' L V W : Type*} [CommSemiring E] [CommSemiring E'] [CommSemiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    [AddCommMonoid V] [Module E V] [AddCommMonoid W] [Module E W]
+    (c : E') (g : V →ₗ[E] W) :
+    (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap ∘ₗ
+        (c • g.baseChange E').baseChange L =
+      (algebraMap E' L c • g.baseChange L) ∘ₗ
+        (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
+  ext v
+  simp [TensorProduct.smul_tmul', Algebra.smul_def]
+
+/-- Scalar-tower naturality for a finite sum of scalar multiples of base-changed linear maps. -/
+theorem cancelBaseChange_comp_sum_smul_baseChange
+    {E E' L V W ι : Type*} [CommSemiring E] [CommSemiring E'] [CommSemiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    [AddCommMonoid V] [Module E V] [AddCommMonoid W] [Module E W]
+    (s : Finset ι) (c : ι → E') (g : ι → (V →ₗ[E] W)) :
+    (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap ∘ₗ
+        (∑ i ∈ s, c i • (g i).baseChange E').baseChange L =
+      (∑ i ∈ s, algebraMap E' L (c i) • (g i).baseChange L) ∘ₗ
+        (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih =>
+    simp only [Finset.sum_cons]
+    have hadd :
+        (c a • (g a).baseChange E' + ∑ i ∈ s, c i • (g i).baseChange E').baseChange L =
+          (c a • (g a).baseChange E').baseChange L +
+            (∑ i ∈ s, c i • (g i).baseChange E').baseChange L :=
+      map_add (LinearMap.baseChangeHom E' L (E' ⊗[E] V) (E' ⊗[E] W)) _ _
+    rw [hadd, LinearMap.comp_add, LinearMap.add_comp, ih, cancelBaseChange_comp_smul_baseChange]
 
 end LinearMap
 

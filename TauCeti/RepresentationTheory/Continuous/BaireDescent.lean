@@ -189,7 +189,7 @@ private noncomputable def descentObjectIso {Γ K L V ι : Type*}
         (continuousMapGL (algebraMap E L) (continuous_algebraMap E L))
         (liftGL (toGL ρ b) E hmem) = toGL ρ b := by
     ext1 g
-    simp
+    simp [IntermediateField.algebraMap_eq_subtype]
   ((baseChangeOfGLIso L (liftGL (toGL ρ b) E hmem)).trans (ofGLCongr hcomp)).trans
     (ofGLToGLIso ρ b)
 
@@ -233,17 +233,8 @@ private noncomputable def descentIntertwiningMap {Γ K L V₁ V₂ ι₁ ι₂ :
             ((liftGL (toGL ρ₁ b₁) E h₁ g : Matrix ι₁ ι₁ E)).map (algebraMap E L) =
           ((liftGL (toGL ρ₂ b₂) E h₂ g : Matrix ι₂ ι₂ E)).map (algebraMap E L) *
             ME.map (algebraMap E L) := by
-      have h₁' : ((liftGL (toGL ρ₁ b₁) E h₁ g : Matrix ι₁ ι₁ E)).map (algebraMap E L) =
-          LinearMap.toMatrix b₁ b₁ (ρ₁ g) := by
-        ext i j
-        simp only [Matrix.map_apply, IntermediateField.algebraMap_apply, coe_liftGL,
-          coe_toGL_apply, LinearMap.toMatrix_apply]
-      have h₂' : ((liftGL (toGL ρ₂ b₂) E h₂ g : Matrix ι₂ ι₂ E)).map (algebraMap E L) =
-          LinearMap.toMatrix b₂ b₂ (ρ₂ g) := by
-        ext i j
-        simp only [Matrix.map_apply, IntermediateField.algebraMap_apply, coe_liftGL,
-          coe_toGL_apply, LinearMap.toMatrix_apply]
-      rw [hME, h₁', h₂', ← LinearMap.toMatrix_comp b₁ b₁ b₂ f.toLinearMap (ρ₁ g),
+      rw [hME, IntermediateField.algebraMap_eq_subtype, map_subtype_liftGL_toGL,
+        map_subtype_liftGL_toGL, ← LinearMap.toMatrix_comp b₁ b₁ b₂ f.toLinearMap (ρ₁ g),
         ← LinearMap.toMatrix_comp b₁ b₂ b₂ (ρ₂ g) f.toLinearMap,
         ← coe_toRepresentation ρ₁, ← coe_toRepresentation ρ₂, f.isIntertwining' g]
     exact LinearMap.ext fun v ↦ by

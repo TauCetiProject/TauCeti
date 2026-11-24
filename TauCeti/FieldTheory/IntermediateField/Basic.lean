@@ -24,7 +24,6 @@ namespace IntermediateField
 
 /-- For an intermediate field `E` of `L / K`, the algebra structure map `algebraMap E L` equals
 the canonical inclusion `SubringClass.subtype E`. -/
-@[simp]
 theorem algebraMap_eq_subtype {K L : Type*} [Field K] [Field L] [Algebra K L]
     (E : IntermediateField K L) :
     (algebraMap E L : E →+* L) = SubringClass.subtype E := by
