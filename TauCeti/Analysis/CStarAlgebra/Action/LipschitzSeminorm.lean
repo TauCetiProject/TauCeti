@@ -62,6 +62,12 @@ public section
 
 open scoped ENNReal
 
+/-- A star-algebra equivalence between C⋆-algebras preserves the extended norm. -/
+theorem StarAlgEquiv.eNorm_map {F A B : Type*} [NonUnitalCStarAlgebra A]
+    [NonUnitalCStarAlgebra B] [EquivLike F A B] [NonUnitalAlgEquivClass F ℂ A B]
+    [StarHomClass F A B] (φ : F) (a : A) : ‖φ a‖ₑ = ‖a‖ₑ := by
+  simp only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map]
+
 namespace TauCeti
 
 namespace CStarAction
@@ -180,7 +186,7 @@ theorem actionLip_mul_le (a b : A) :
         rw [map_mul, sub_mul, mul_sub, sub_add_sub_cancel]
     _ ≤ ‖α g a - a‖ₑ * ‖b‖ₑ + ‖a‖ₑ * ‖α g b - b‖ₑ := by
         refine (eNorm_add_le _ _).trans (add_le_add ?_ (eNorm_mul_le _ _))
-        simpa only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map] using eNorm_mul_le (α g a - a) (α g b)
+        simpa only [StarAlgEquiv.eNorm_map] using eNorm_mul_le (α g a - a) (α g b)
     _ ≤ α.actionLip ℓ a * ENNReal.ofReal (ℓ g) * ‖b‖ₑ +
           ‖a‖ₑ * (α.actionLip ℓ b * ENNReal.ofReal (ℓ g)) := by
         gcongr <;> exact α.eNorm_apply_sub_le_actionLip_mul ℓ g _
@@ -198,8 +204,7 @@ theorem actionLip_conjugate {B : Type*} [NonUnitalCStarAlgebra B] (e : A ≃⋆�
     (α.conjugate e).actionLip ℓ b = α.actionLip ℓ (e.symm b) := by
   simp only [actionLip, conjugate_apply]
   congr! 3 with g
-  rw [eNorm_eq_nnNorm, eNorm_eq_nnNorm, ← StarAlgEquiv.nnNorm_map e, map_sub,
-    e.apply_symm_apply]
+  rw [← StarAlgEquiv.eNorm_map e, map_sub, e.apply_symm_apply]
 
 /-- Every sublevel set of the action seminorm is norm closed. -/
 theorem isClosed_setOf_actionLip_le (r : ℝ≥0∞) : IsClosed {a : A | α.actionLip ℓ a ≤ r} := by
@@ -336,8 +341,7 @@ theorem actionLip_inv_le (u : Aˣ) :
     _ ≤ ‖α g ↑u⁻¹‖ₑ * ‖(u - α g u : A)‖ₑ * ‖(↑u⁻¹ : A)‖ₑ :=
         (eNorm_mul_le _ _).trans (by gcongr; exact eNorm_mul_le _ _)
     _ = ‖(↑u⁻¹ : A)‖ₑ * ‖α g u - u‖ₑ * ‖(↑u⁻¹ : A)‖ₑ := by
-        rw [← eNorm_neg (u - α g u : A), neg_sub]
-        simp only [eNorm_eq_nnNorm, StarAlgEquiv.nnNorm_map]
+        rw [← eNorm_neg (u - α g u : A), neg_sub, StarAlgEquiv.eNorm_map]
     _ ≤ ‖(↑u⁻¹ : A)‖ₑ * (α.actionLip ℓ u * ENNReal.ofReal (ℓ g)) * ‖(↑u⁻¹ : A)‖ₑ := by
         gcongr
         exact α.eNorm_apply_sub_le_actionLip_mul ℓ g _
