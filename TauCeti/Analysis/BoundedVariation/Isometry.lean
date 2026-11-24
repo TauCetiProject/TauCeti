@@ -16,15 +16,13 @@ import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 # Isometric transport of distributional total variation, BV spaces, and perimeter
 
 Distributional total variation is unchanged when a function and its open domain are pulled back
-by a measure-preserving linear isometry equivalence `e : E ≃ₗᵢ[ℝ] E'` with measurable inverse,
-such as a rotation or a reflection of a Euclidean space with its Borel or completed Lebesgue
-measure. If only `e '' V ⊆ Ω`, the pulled-back variation on `V` is bounded by the variation on
-`Ω`. Perimeter is transported in the same way, both for preimages and for images of sets.
-
-Combining linear transport and translation of test vector fields gives the same invariance for
-every measure-preserving affine isometry equivalence `f : E ≃ᵃⁱ[ℝ] E'` with measurable inverse,
-without assuming that the target measure is translation invariant or that the measurable spaces are
-Borel; in particular this covers rigid motions of a Euclidean space.
+by a measure-preserving affine isometry equivalence `f : E ≃ᵃⁱ[ℝ] E'` with measurable inverse,
+such as a rigid motion of a Euclidean space with its Borel or completed Lebesgue measure, without
+assuming that the target measure is translation invariant or that the measurable spaces are Borel.
+If only `f '' V ⊆ Ω`, the pulled-back variation on `V` is bounded by the variation on `Ω`.
+Perimeter is transported in the same way, both for preimages and for images of sets. Specializing
+via `LinearIsometryEquiv.toAffineIsometryEquiv` gives the corresponding results for linear isometry
+equivalences `e : E ≃ₗᵢ[ℝ] E'`.
 
 Combining invariance of total variation with `L¹` change of variables induces the linear isometric
 equivalence `TauCeti.BV.compLinearIsometryEquiv : BV ν Ω ≃ₗᵢ[ℝ] BV μ V` whenever `V = e ⁻¹' Ω`,
@@ -42,15 +40,15 @@ perimeter.
 
 * `AffineIsometryEquiv.totalVariationOn_comp_le`: pulling back into a smaller domain along an
   affine isometry equivalence does not increase total variation.
-* `AffineIsometryEquiv.totalVariationOn_comap` and `AffineIsometryEquiv.perimeter_comap`:
-  invariance under affine isometry equivalences.
-* `LinearIsometryEquiv.totalVariationOn_comp_le`: specialization of
-  `AffineIsometryEquiv.totalVariationOn_comp_le` to linear isometry equivalences.
-* `LinearIsometryEquiv.totalVariationOn_comp` and `LinearIsometryEquiv.totalVariationOn_comap`:
-  invariance under exact transport.
-* `LinearIsometryEquiv.perimeter_preimage_le`, `LinearIsometryEquiv.perimeter_preimage`,
-  `LinearIsometryEquiv.perimeter_comap` and `LinearIsometryEquiv.perimeter_image`: the
+* `AffineIsometryEquiv.totalVariationOn_comp` and `AffineIsometryEquiv.totalVariationOn_comap`:
+  invariance of total variation under exact affine-isometric transport.
+* `AffineIsometryEquiv.perimeter_preimage_le`, `AffineIsometryEquiv.perimeter_preimage`,
+  `AffineIsometryEquiv.perimeter_comap` and `AffineIsometryEquiv.perimeter_image`: the
   corresponding statements for perimeter.
+* `LinearIsometryEquiv.totalVariationOn_comp_le`, `LinearIsometryEquiv.totalVariationOn_comp`,
+  `LinearIsometryEquiv.totalVariationOn_comap`, `LinearIsometryEquiv.perimeter_preimage_le`,
+  `LinearIsometryEquiv.perimeter_preimage`, `LinearIsometryEquiv.perimeter_comap` and
+  `LinearIsometryEquiv.perimeter_image`: specializations to linear isometry equivalences.
 * `TauCeti.BV.compLinearIsometryEquiv`: isometric equivalence of `TauCeti.BV` spaces along a
   measure-preserving linear isometry equivalence with measurable inverse.
 * `TauCeti.BV.isCompactOperator_toL1CLM_of_linearIsometryEquiv` and
@@ -137,26 +135,61 @@ theorem totalVariationOn_comp_le (f : E ≃ᵃⁱ[ℝ] E')
     ContinuousLinearEquiv.transportTestFunction_apply, ← hfsymm]
   simpa [L] using hφ (f.symm y)
 
-/-- **Invariance of total variation under affine isometries.** Pulling a function and its open
-domain back along a measure-preserving affine isometry equivalence with measurable inverse does
-not change its total variation. -/
+/-- **Invariance of total variation under affine isometries.** If a measure-preserving affine
+isometry equivalence `f` with measurable inverse identifies `V` with `Ω`, then pulling a function
+back along `f` does not change its total variation. -/
+theorem totalVariationOn_comp (f : E ≃ᵃⁱ[ℝ] E')
+    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
+    (hVO : MapsTo f V Ω) (hOV : MapsTo f.symm Ω V) :
+    totalVariationOn μ V (u ∘ f) = totalVariationOn ν Ω u := by
+  refine le_antisymm (totalVariationOn_comp_le f hf hinv hVO) ?_
+  simpa [Function.comp_def] using totalVariationOn_comp_le (u := u ∘ f) f.symm
+    (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩ hf) hf.measurable hOV
+
+/-- Total variation is invariant under a measure-preserving affine isometry equivalence with
+measurable inverse, with the pulled-back domain written canonically as the preimage open set. -/
 theorem totalVariationOn_comap (f : E ≃ᵃⁱ[ℝ] E')
     (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) :
-    totalVariationOn μ (Opens.comap ⟨f, f.continuous⟩ Ω) (u ∘ f) = totalVariationOn ν Ω u := by
-  refine le_antisymm
-    (totalVariationOn_comp_le f hf hinv fun _ hx => Opens.mem_comap.mp hx) ?_
-  simpa [Function.comp_def] using totalVariationOn_comp_le (u := u ∘ f) f.symm
-    (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩ hf) hf.measurable
+    totalVariationOn μ (Opens.comap ⟨f, f.continuous⟩ Ω) (u ∘ f) = totalVariationOn ν Ω u :=
+  totalVariationOn_comp f hf hinv (fun _ hx => Opens.mem_comap.mp hx)
     fun y hy => Opens.mem_comap.mpr (by simpa using hy)
 
-/-- **Invariance of perimeter under affine isometries.** Pulling a set and its open domain back
-along a measure-preserving affine isometry equivalence with measurable inverse does not change its
-perimeter. -/
+/-- Pulling a set back along a measure-preserving affine isometry equivalence `f` with measurable
+inverse does not increase its perimeter when `f` maps `V` into `Ω`. -/
+theorem perimeter_preimage_le (f : E ≃ᵃⁱ[ℝ] E')
+    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) (hVO : MapsTo f V Ω) :
+    perimeter μ V (f ⁻¹' s) ≤ perimeter ν Ω s := by
+  rw [perimeter_preimage_eq_totalVariationOn, perimeter_def]
+  exact totalVariationOn_comp_le f hf hinv hVO
+
+/-- **Invariance of perimeter under affine isometries.** If a measure-preserving affine isometry
+equivalence `f` with measurable inverse identifies `V` with `Ω`, then the perimeter in `V` of the
+preimage of `s` equals the perimeter of `s` in `Ω`. -/
+theorem perimeter_preimage (f : E ≃ᵃⁱ[ℝ] E')
+    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
+    (hVO : MapsTo f V Ω) (hOV : MapsTo f.symm Ω V) :
+    perimeter μ V (f ⁻¹' s) = perimeter ν Ω s := by
+  rw [perimeter_preimage_eq_totalVariationOn, perimeter_def]
+  exact totalVariationOn_comp f hf hinv hVO hOV
+
+/-- Perimeter is invariant when a set and its ambient open set are both pulled back along the same
+measure-preserving affine isometry equivalence with measurable inverse. -/
 theorem perimeter_comap (f : E ≃ᵃⁱ[ℝ] E')
     (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm) :
     perimeter μ (Opens.comap ⟨f, f.continuous⟩ Ω) (f ⁻¹' s) = perimeter ν Ω s := by
   rw [perimeter_preimage_eq_totalVariationOn, perimeter_def]
   exact totalVariationOn_comap f hf hinv
+
+/-- The image of a set under a measure-preserving affine isometry equivalence `f` with measurable
+inverse identifying `V` with `Ω` has, in `Ω`, the perimeter of the original set in `V`. -/
+theorem perimeter_image {s : Set E} (f : E ≃ᵃⁱ[ℝ] E')
+    (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
+    (hVO : MapsTo f V Ω) (hOV : MapsTo f.symm Ω V) :
+    perimeter ν Ω (f '' s) = perimeter μ V s := by
+  rw [image_eq_preimage_of_inverse f.symm_apply_apply f.apply_symm_apply]
+  exact perimeter_preimage f.symm
+    (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩ hf)
+    hf.measurable hOV (by simpa using hVO)
 
 end AffineIsometryEquiv
 
@@ -175,26 +208,22 @@ along `e` does not change its total variation. -/
 theorem totalVariationOn_comp (e : E ≃ₗᵢ[ℝ] E')
     (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
     (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) :
-    totalVariationOn μ V (u ∘ e) = totalVariationOn ν Ω u := by
-  refine le_antisymm (totalVariationOn_comp_le e he hinv hVO) ?_
-  simpa [Function.comp_def] using totalVariationOn_comp_le (u := u ∘ e) e.symm
-    (MeasurePreserving.symm ⟨e.toEquiv, he.measurable, hinv⟩ he) he.measurable hOV
+    totalVariationOn μ V (u ∘ e) = totalVariationOn ν Ω u :=
+  e.toAffineIsometryEquiv.totalVariationOn_comp he hinv hVO hOV
 
 /-- Total variation is invariant under a measure-preserving linear isometry equivalence with
 measurable inverse, with the pulled-back domain written canonically as the preimage open set. -/
 theorem totalVariationOn_comap (e : E ≃ₗᵢ[ℝ] E')
     (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm) :
     totalVariationOn μ (Opens.comap (e : C(E, E')) Ω) (u ∘ e) = totalVariationOn ν Ω u :=
-  totalVariationOn_comp e he hinv (fun _ hx => Opens.mem_comap.mp hx)
-    fun y hy => Opens.mem_comap.mpr (by simpa using hy)
+  e.toAffineIsometryEquiv.totalVariationOn_comap he hinv
 
 /-- Pulling a set back along a measure-preserving linear isometry equivalence `e` with measurable
 inverse does not increase its perimeter when `e` maps `V` into `Ω`. -/
 theorem perimeter_preimage_le (e : E ≃ₗᵢ[ℝ] E')
     (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm) (hVO : MapsTo e V Ω) :
-    perimeter μ V (e ⁻¹' s) ≤ perimeter ν Ω s := by
-  rw [perimeter_preimage_eq_totalVariationOn, perimeter_def]
-  exact totalVariationOn_comp_le e he hinv hVO
+    perimeter μ V (e ⁻¹' s) ≤ perimeter ν Ω s :=
+  e.toAffineIsometryEquiv.perimeter_preimage_le he hinv hVO
 
 /-- **Isometry invariance of perimeter.** If a measure-preserving linear isometry equivalence `e`
 with measurable inverse identifies `V` with `Ω`, then the perimeter in `V` of the preimage of `s`
@@ -202,28 +231,23 @@ equals the perimeter of `s` in `Ω`. -/
 theorem perimeter_preimage (e : E ≃ₗᵢ[ℝ] E')
     (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
     (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) :
-    perimeter μ V (e ⁻¹' s) = perimeter ν Ω s := by
-  rw [perimeter_preimage_eq_totalVariationOn, perimeter_def]
-  exact totalVariationOn_comp e he hinv hVO hOV
+    perimeter μ V (e ⁻¹' s) = perimeter ν Ω s :=
+  e.toAffineIsometryEquiv.perimeter_preimage he hinv hVO hOV
 
 /-- Perimeter is invariant when a set and its ambient open set are both pulled back along the same
 measure-preserving linear isometry equivalence with measurable inverse. -/
 theorem perimeter_comap (e : E ≃ₗᵢ[ℝ] E')
     (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm) :
-    perimeter μ (Opens.comap (e : C(E, E')) Ω) (e ⁻¹' s) = perimeter ν Ω s := by
-  rw [perimeter_preimage_eq_totalVariationOn, perimeter_def]
-  exact totalVariationOn_comap e he hinv
+    perimeter μ (Opens.comap (e : C(E, E')) Ω) (e ⁻¹' s) = perimeter ν Ω s :=
+  e.toAffineIsometryEquiv.perimeter_comap he hinv
 
 /-- The image of a set under a measure-preserving linear isometry equivalence `e` with measurable
 inverse identifying `V` with `Ω` has, in `Ω`, the perimeter of the original set in `V`. -/
 theorem perimeter_image {s : Set E} (e : E ≃ₗᵢ[ℝ] E')
     (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
     (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) :
-    perimeter ν Ω (e '' s) = perimeter μ V s := by
-  rw [e.image_eq_preimage_symm]
-  exact perimeter_preimage e.symm
-    (MeasurePreserving.symm ⟨e.toEquiv, he.measurable, hinv⟩ he)
-    he.measurable hOV (by simpa using hVO)
+    perimeter ν Ω (e '' s) = perimeter μ V s :=
+  e.toAffineIsometryEquiv.perimeter_image he hinv hVO hOV
 
 end LinearIsometryEquiv
 
