@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Submodule
 
 /-!
 # Examples of hermitian vector bundles over rings of integers
@@ -17,6 +17,9 @@ public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
   conjugation condition, although each form could be positive definite: it is not a hermitian
   metric.
 * In the line of a fractional ideal with weights `λ_v`, `‖x‖_v = e^{-λ_v} |x|_v`.
+* If `e₁, e₂` are orthonormal at `σ` (as for `ℤ²` with the standard metric), the quotient metric
+  on `E ⧸ 𝓞 K (e₁ + e₂)` gives `‖[e₁]‖_σ = 1/√2`, not 1: the quotient metric is not the metric of
+  a complement lattice such as `𝓞 K e₁`.
 -/
 
 public section
@@ -55,3 +58,47 @@ example {I : FractionalIdeal (𝓞 K)⁰ K} (hI : I ≠ 0) (w : InfinitePlace K 
     (v : InfinitePlace K) (x : I) :
     (HermitianMetric.fractionalIdeal I hI w).placeNorm v x = Real.exp (-w v) * v x := by
   simp
+
+-- The quotient metric of `E ⧸ 𝓞 K (e₁ + e₂)` for `e₁, e₂` orthonormal at `σ` has
+-- `‖[e₁]‖_σ = 1/√2`, computed through the lift `(e₁ - e₂) / 2`, which is orthogonal to `e₁ + e₂`.
+example {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Module.Finite (𝓞 K) E]
+    (h : HermitianMetric K E) (σ : K →+* ℂ) (e₁ e₂ : E)
+    (h₁₁ : h.form σ (1 ⊗ₜ e₁) (1 ⊗ₜ e₁) = 1) (h₂₂ : h.form σ (1 ⊗ₜ e₂) (1 ⊗ₜ e₂) = 1)
+    (h₁₂ : h.form σ (1 ⊗ₜ e₁) (1 ⊗ₜ e₂) = 0) :
+    (h.quotient (Submodule.span (𝓞 K) {e₁ + e₂})).norm σ (1 ⊗ₜ Submodule.Quotient.mk e₁) =
+      √2⁻¹ := by
+  set F := Submodule.span (𝓞 K) {e₁ + e₂}
+  have h₂₁ : h.form σ (1 ⊗ₜ e₂) (1 ⊗ₜ e₁) = 0 := h.form_eq_zero_symm.mp h₁₂
+  have hF (w : Codomain σ ⊗[𝓞 K] F) :
+      ∃ c : ℂ, F.subtype.baseChange (Codomain σ) w = c • (1 ⊗ₜ (e₁ + e₂)) := by
+    induction w using TensorProduct.inductionOn with
+    | tmul c x =>
+      obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.1 x.property
+      refine ⟨Codomain.equiv σ (r • c), ?_⟩
+      rw [LinearMap.baseChange_tmul, Submodule.subtype_apply, ← hr, ← TensorProduct.smul_tmul,
+        Codomain.tmul_eq_smul]
+    | add w₁ w₂ h₁ h₂ =>
+      obtain ⟨a, ha⟩ := h₁
+      obtain ⟨b, hb⟩ := h₂
+      exact ⟨a + b, by rw [map_add, ha, hb, add_smul]⟩
+  set v : Codomain σ ⊗[𝓞 K] E := (2⁻¹ : ℂ) • (1 ⊗ₜ e₁ - 1 ⊗ₜ e₂)
+  have hv : h.IsOrthogonalFiber F σ v := h.isOrthogonalFiber_iff F |>.mpr fun w ↦ by
+    obtain ⟨c, hc⟩ := hF w
+    simp only [hc, v, TensorProduct.tmul_add, map_smul, map_sub, map_add, LinearMap.map_smulₛₗ₂,
+      LinearMap.add_apply, h₁₁, h₂₂, h₁₂, h₂₁]
+    ring
+  have hmk : F.mkQ.baseChange (Codomain σ) v = 1 ⊗ₜ Submodule.Quotient.mk e₁ := by
+    have h0 : F.mkQ.baseChange (Codomain σ) (1 ⊗ₜ (e₁ + e₂)) = 0 := by
+      rw [LinearMap.baseChange_tmul, Submodule.mkQ_apply,
+        (Submodule.Quotient.mk_eq_zero F).2 (Submodule.mem_span_singleton_self _),
+        TensorProduct.tmul_zero]
+    have hv' : v = 1 ⊗ₜ e₁ - (2⁻¹ : ℂ) • (1 ⊗ₜ (e₁ + e₂)) := by
+      simp only [v, TensorProduct.tmul_add]
+      module
+    rw [hv', map_sub, LinearMap.map_smul_of_tower, h0, smul_zero, sub_zero,
+      LinearMap.baseChange_tmul, Submodule.mkQ_apply]
+  rw [← hmk, h.norm_quotient_baseChange_mkQ F hv, HermitianMetric.norm_def]
+  congr 1
+  simp only [v, map_smul, map_sub, LinearMap.map_smulₛₗ₂, LinearMap.sub_apply, h₁₁, h₂₂, h₁₂,
+    h₂₁]
+  norm_num

@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.CongruenceSubgroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+
 /-!
 # Congruence subgroups of the general linear group
 
@@ -51,11 +53,8 @@ theorem mem_congruenceSubgroup_iff {I : Ideal A}
       ∀ i j, (pointsMulEquiv n x : Matrix (Fin n) (Fin n) A) i j -
         (1 : Matrix (Fin n) (Fin n) A) i j ∈ I := by
   rw [← Subgroup.mem_map_iff_mem (f := (pointsMulEquiv (R := R) (A := A) n).toMonoidHom)
-    (pointsMulEquiv n).injective, map_congruenceSubgroup, MonoidHom.mem_ker,
-    MulEquiv.coe_toMonoidHom, Matrix.GeneralLinearGroup.ext_iff]
-  refine forall₂_congr fun i j ↦ ?_
-  rw [Matrix.GeneralLinearGroup.map_apply, Matrix.GeneralLinearGroup.coe_one, ← Ideal.Quotient.eq,
-    Matrix.one_apply, Matrix.one_apply, apply_ite (Ideal.Quotient.mk I), map_one, map_zero]
+    (pointsMulEquiv n).injective, map_congruenceSubgroup, MulEquiv.coe_toMonoidHom]
+  exact Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff I
 
 end GeneralLinear
 

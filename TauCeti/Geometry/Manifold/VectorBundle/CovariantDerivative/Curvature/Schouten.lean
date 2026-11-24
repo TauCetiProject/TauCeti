@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Schouten
+public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Decomposition
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -33,7 +33,7 @@ zero and returns `0`.
 * `CovariantDerivative.schoutenTensor`: the Schouten tensor.
 * `CovariantDerivative.schouten_curvatureFourTensor`: algebraic Schouten form of
   `curvatureFourTensor`.
-* `CovariantDerivative.bilinFormTrace_schoutenTensor`: `tr_g P = Scal / (2 (n - 1))`.
+* `CovariantDerivative.metricTrace_schoutenTensor`: `tr_g P = Scal / (2 (n - 1))`.
 * `CovariantDerivative.ricciTensor_eq_smul_schoutenTensor_add`: `Ric = (n - 2) P + (tr_g P) g`.
 * `CovariantDerivative.schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub`: constant
   curvature `κ` gives `P = (κ / 2) g`.
@@ -90,14 +90,14 @@ theorem schoutenTensor_apply (x : M) (u v : TangentSpace I x) :
     cov.ricci_curvatureFourTensor, cov.scalar_curvatureFourTensor]
 
 /-- The metric trace of the Schouten tensor is `Scal / (2 (n - 1))`, away from dimension `2`. -/
-theorem bilinFormTrace_schoutenTensor (x : M)
+theorem metricTrace_schoutenTensor (x : M)
     (hn : Module.finrank ℝ (TangentSpace I x) ≠ 2) :
-    TauCeti.bilinFormTrace (cov.schoutenTensor x) =
+    LinearMap.BilinMap.metricTrace (cov.schoutenTensor x) =
       cov.scalarCurvature x / (2 * ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 1)) := by
   rw [← cov.schouten_curvatureFourTensor x, ← cov.scalar_curvatureFourTensor x]
-  exact TauCeti.FourTensor.bilinFormTrace_schouten hn fun hn1 ↦
-    (cov.scalar_curvatureFourTensor x).trans
-      (cov.scalarCurvature_eq_zero_of_finrank_le_one x hn1.le)
+  exact TauCeti.FourTensor.metricTrace_schouten_of_antisymm_first hn fun a b c d ↦ by
+    simpa only [cov.curvatureFourTensor_eq_riemannCurvatureTensor] using
+      cov.riemannCurvatureTensor_antisymm_first x a b d c
 
 /-- Away from dimension `2`, Ricci curvature decomposes as `Ric = (n - 2) P + (tr_g P) g` in
 terms of the Schouten tensor `P`. -/
@@ -105,7 +105,7 @@ theorem ricciTensor_eq_smul_schoutenTensor_add (x : M)
     (hn : Module.finrank ℝ (TangentSpace I x) ≠ 2) :
     cov.ricciTensor x =
       ((Module.finrank ℝ (TangentSpace I x) : ℝ) - 2) • cov.schoutenTensor x +
-        TauCeti.bilinFormTrace (cov.schoutenTensor x) • innerₗ (TangentSpace I x) := by
+        LinearMap.BilinMap.metricTrace (cov.schoutenTensor x) • innerₗ (TangentSpace I x) := by
   rw [← cov.ricci_curvatureFourTensor x, ← cov.schouten_curvatureFourTensor x]
   exact TauCeti.FourTensor.ricci_eq_smul_schouten_add hn fun hn1 ↦
     (cov.scalar_curvatureFourTensor x).trans
@@ -120,7 +120,7 @@ theorem IsMetricCompatible.schoutenTensor_isSymm
     (cov.schoutenTensor x).IsSymm := by
   rw [← cov.schouten_curvatureFourTensor x]
   exact LinearMap.BilinForm.isSymm_iff.mp <|
-    TauCeti.FourTensor.isSymm_schouten_of_isSymm_ricci <|
+    TauCeti.FourTensor.isSymm_schouten <|
       LinearMap.BilinForm.isSymm_iff.mpr <| by
         rw [cov.ricci_curvatureFourTensor x]
         exact hcov.ricciTensor_isSymm cov ht x
@@ -140,7 +140,8 @@ theorem schoutenTensor_eq_of_curvatureTensor_eq_smul_inner_sub (x : M) (k : ℝ)
       k • (inner ℝ u v • w - inner ℝ w v • u)) :
     cov.schoutenTensor x = (k / 2) • innerₗ (TangentSpace I x) := by
   rw [← cov.schouten_curvatureFourTensor x, cov.curvatureFourTensor_eq_smul_constantCurvature x h,
-    map_smul, TauCeti.FourTensor.schouten_constantCurvature hn, smul_smul, mul_one_div]
+    map_smul, TauCeti.FourTensor.schouten_constantCurvature_of_three_le_finrank hn, smul_smul,
+    mul_one_div]
 
 /-- For a smooth metric, the Schouten tensor of a smooth connection pairs two vector fields
 differentiable at `x` to a function differentiable at `x`. -/

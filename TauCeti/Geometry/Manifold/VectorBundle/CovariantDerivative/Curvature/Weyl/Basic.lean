@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Schouten
-import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Schouten
+import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Decomposition
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.FourTensor.Basic
 
 /-!

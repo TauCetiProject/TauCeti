@@ -31,7 +31,7 @@ convention `r(u, v, u, v)` is positive on the round sphere.
 On a finite-dimensional real inner product space the *Ricci contraction*
 `Ric(u, v) = ∑ᵢ r(eᵢ, u, eᵢ, v)` and the *scalar contraction* `Scal = ∑ᵢ Ric(eᵢ, eᵢ)` do not depend
 on the orthonormal basis `(eᵢ)`; they are defined through the metric trace
-`TauCeti.bilinFormTrace`. This matches `Ric(u, v) = tr(w ↦ R(w, u)v)`.
+`LinearMap.BilinMap.metricTrace`. This matches `Ric(u, v) = tr(w ↦ R(w, u)v)`.
 
 The Kulkarni–Nomizu product `LinearMap.BilinForm.kulkarniNomizu` of two bilinear forms becomes a
 four-tensor `TauCeti.FourTensor.kulkarniNomizu` after reordering it to the convention above:
@@ -76,6 +76,8 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
 * `TauCeti.FourTensor.algebraicCurvaturePullback`: pullback of algebraic curvature tensors along a
   continuous linear map, as a continuous linear map.
 * `TauCeti.FourTensor.ricci` and `TauCeti.FourTensor.scalar`: the Ricci and scalar contractions.
+* `TauCeti.FourTensor.ricciSlice`: the bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace
+  is the Ricci contraction.
 * `TauCeti.FourTensor.kulkarniNomizu`: the Kulkarni–Nomizu product of two bilinear forms, as a
   four-tensor.
 * `TauCeti.FourTensor.constantCurvature`: the constant-curvature tensor of curvature `1`.
@@ -99,14 +101,17 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   identify algebraic curvature tensors.
 * `TauCeti.FourTensor.IsBivectorSymmetric.isSymm_ricci`: the Ricci contraction of a
   bivector-symmetric four-tensor is symmetric.
+* `TauCeti.FourTensor.ricci_apply`: the Ricci contraction `ricci r u v` is the metric trace of
+  `ricciSlice r u v`.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
   `TauCeti.FourTensor.scalar_apply_orthonormalBasis`: the contractions in an orthonormal basis.
 * `TauCeti.FourTensor.ricci_compContinuousLinearMap_linearIsometryEquiv` and
   `TauCeti.FourTensor.scalar_compContinuousLinearMap_linearIsometryEquiv`: the contractions are
   equivariant under linear isometric equivalences.
 * `TauCeti.FourTensor.ricci_kulkarniNomizu_innerₗ`: `Ric(h ⊙ g) = (n - 2) h + (tr h) g`.
-* `TauCeti.FourTensor.constantCurvature_apply_self_pos_iff`: `r(u, v, u, v) > 0` for the
-  constant-curvature tensor exactly on a linearly independent pair.
+* `TauCeti.FourTensor.constantCurvature_eq_half_smul_kulkarniNomizu`,
+  `TauCeti.FourTensor.constantCurvature_apply_self_pos_iff`: the Kulkarni–Nomizu square formula
+  and positivity of `r(u, v, u, v)` on linearly independent pairs.
 * `TauCeti.FourTensor.constantCurvature_compContinuousLinearMap_linearIsometry`: linear isometries
   pull the constant-curvature tensor back to the constant-curvature tensor.
 * `TauCeti.FourTensor.ricci_constantCurvature`, `TauCeti.FourTensor.scalar_constantCurvature`,
@@ -448,27 +453,6 @@ theorem algebraicCurvaturePullback_algebraicCurvaturePullback_of_comp_eq_id {f :
   rw [← ContinuousLinearMap.comp_apply, ← algebraicCurvaturePullback_comp, h,
     algebraicCurvaturePullback_id, ContinuousLinearMap.id_apply]
 
-/-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction. -/
-private def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![x, u, y, v])
-    (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-
-private theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
-    ricciSlice r u v x y = r ![x, u, y, v] :=
-  (rfl)
-
-/-- The bilinear form `(x, y) ↦ r ![u, v, x, y]` slicing the last two slots of a four-tensor. -/
-private def lastSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, v, x, y])
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
-
-/-- Evaluation of `lastSlice r u v`. -/
-private theorem lastSlice_apply (r : FourTensor V) (u v x y : V) :
-    lastSlice r u v x y = r ![u, v, x, y] :=
-  LinearMap.mk₂_apply ..
-
 /-- Curry a continuous four-tensor into a four-fold linear map. -/
 def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ where
   toFun r := LinearMap.mk₂ ℝ (fun u v ↦ LinearMap.mk₂ ℝ (fun z w ↦ r ![u, v, z, w])
@@ -486,6 +470,20 @@ def toLinearMap₄ : FourTensor V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →�
 /-- Currying a four-tensor into a four-fold linear map is injective. -/
 theorem toLinearMap₄_injective : Function.Injective (toLinearMap₄ (V := V)) := fun _ _ h ↦ by
   ext m; rw [← FinVec.etaExpand_eq m]; exact congr($h (m 0) (m 1) (m 2) (m 3))
+
+/-- The bilinear form `(x, y) ↦ r(x, u, y, v)` whose metric trace is the Ricci contraction
+(`TauCeti.FourTensor.ricci_apply`): the slice of `toLinearMap₄ r` with the second slot fixed to `u`
+and the fourth to `v`. -/
+def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
+  ((toLinearMap₄ r).flip u).compr₂ (LinearMap.applyₗ v)
+
+/-- Evaluation of `ricciSlice r u v` on `(x, y)` evaluates `r` on `(x, u, y, v)`, with `u` and `v`
+fixed in the second and fourth slots. -/
+@[simp]
+theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
+    ricciSlice r u v x y = r ![x, u, y, v] := by
+  rw [ricciSlice, LinearMap.compr₂_apply, LinearMap.flip_apply, LinearMap.applyₗ_apply_apply,
+    toLinearMap₄_apply]
 
 end NormedSpace
 
@@ -603,28 +601,40 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 trace over its first and third arguments. In an orthonormal basis it is
 `∑ᵢ r(eᵢ, u, eᵢ, v)`, see `TauCeti.FourTensor.ricci_apply_orthonormalBasis`. -/
 def ricci : FourTensor V →ₗ[ℝ] BilinForm ℝ V where
-  toFun r := LinearMap.mk₂ ℝ (fun u v ↦ bilinFormTrace (ricciSlice r u v))
-    (fun _ _ _ ↦ by rw [← map_add]; congr 1; ext; exact apply_add_second ..)
-    (fun _ _ _ ↦ by rw [← map_smul]; congr 1; ext; exact apply_smul_second ..)
-    (fun _ _ _ ↦ by rw [← map_add]; congr 1; ext; exact apply_add_fourth ..)
-    (fun _ _ _ ↦ by rw [← map_smul]; congr 1; ext; exact apply_smul_fourth ..)
+  toFun r := LinearMap.mk₂ ℝ (fun u v ↦ LinearMap.BilinMap.metricTrace (ricciSlice r u v))
+    (fun _ _ _ ↦ by
+      rw [← map_add]; congr 1; ext
+      simp only [ricciSlice_apply, LinearMap.add_apply, apply_add_second])
+    (fun _ _ _ ↦ by
+      rw [← map_smul]; congr 1; ext
+      simp only [ricciSlice_apply, LinearMap.smul_apply, apply_smul_second, smul_eq_mul])
+    (fun _ _ _ ↦ by
+      rw [← map_add]; congr 1; ext
+      simp only [ricciSlice_apply, LinearMap.add_apply, apply_add_fourth])
+    (fun _ _ _ ↦ by
+      rw [← map_smul]; congr 1; ext
+      simp only [ricciSlice_apply, LinearMap.smul_apply, apply_smul_fourth, smul_eq_mul])
   map_add' r q := by
     ext u v
-    simp only [LinearMap.mk₂_apply, LinearMap.add_apply]
-    rw [← map_add]
-    -- `ricciSlice` is additive in the tensor by its definition.
-    rfl
+    have h : ricciSlice (r + q) u v = ricciSlice r u v + ricciSlice q u v := by
+      ext; simp only [ricciSlice_apply, LinearMap.add_apply, _root_.add_apply]
+    simp only [LinearMap.mk₂_apply, LinearMap.add_apply, h, map_add]
   map_smul' c r := by
     ext u v
-    simp only [LinearMap.mk₂_apply, LinearMap.smul_apply, RingHom.id_apply]
-    rw [← map_smul]
-    -- `ricciSlice` is homogeneous in the tensor by its definition.
-    rfl
+    have h : ricciSlice (c • r) u v = c • ricciSlice r u v := by
+      ext; simp only [ricciSlice_apply, LinearMap.smul_apply, _root_.smul_apply]
+    simp only [LinearMap.mk₂_apply, LinearMap.smul_apply, RingHom.id_apply, h, map_smul]
+
+/-- The Ricci contraction is the metric trace of the slice `(x, y) ↦ r(x, u, y, v)`. -/
+theorem ricci_apply (r : FourTensor V) (u v : V) :
+    ricci r u v = LinearMap.BilinMap.metricTrace (ricciSlice r u v) := by
+  simp only [ricci, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.mk₂_apply]
 
 /-- In every orthonormal basis `(eᵢ)`, the Ricci contraction is `∑ᵢ r(eᵢ, u, eᵢ, v)`. -/
 theorem ricci_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] :=
-  bilinFormTrace_eq_sum (ricciSlice r u v) b
+    (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] := by
+  rw [ricci_apply, LinearMap.BilinMap.metricTrace_eq_sum (ricciSlice r u v) b]
+  simp only [ricciSlice_apply]
 
 /-- The Ricci contraction of a four-tensor symmetric under pair interchange is symmetric. -/
 theorem isSymm_ricci_of_swap_pairs {r : FourTensor V}
@@ -648,39 +658,47 @@ theorem ricci_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAdd
     (u v : W) :
     ricci (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) u v =
       ricci r (e u) (e v) := by
-  let b := stdOrthonormalBasis ℝ W
-  rw [ricci_apply_orthonormalBasis b, ricci_apply_orthonormalBasis (b.map e)]
-  simp only [compContinuousLinearMap_apply_vec, OrthonormalBasis.map_apply,
-    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
+  -- The slice of the pulled-back tensor is the pullback of the slice.
+  have h : ricciSlice (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap)
+      u v = (ricciSlice r (e u) (e v)).compl₁₂ e.toLinearEquiv.toLinearMap
+        e.toLinearEquiv.toLinearMap :=
+    LinearMap.ext₂ fun x y ↦ by
+      simp only [ricciSlice_apply, LinearMap.compl₁₂_apply, compContinuousLinearMap_apply_vec,
+        LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
+        LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+  rw [ricci_apply, ricci_apply, h, LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv]
 
 /-- The scalar contraction of a four-tensor: the metric trace of its Ricci contraction. -/
 def scalar : FourTensor V →ₗ[ℝ] ℝ :=
-  bilinFormTrace ∘ₗ ricci
+  LinearMap.BilinMap.metricTrace ∘ₗ ricci
 
 /-- The scalar contraction is the metric trace of the Ricci contraction. -/
-theorem scalar_apply (r : FourTensor V) : scalar r = bilinFormTrace (ricci r) :=
+theorem scalar_apply (r : FourTensor V) : scalar r = LinearMap.BilinMap.metricTrace (ricci r) :=
   (rfl)
 
 /-- In every orthonormal basis `(eᵢ)`, the scalar contraction is `∑ᵢ ∑ⱼ r(eᵢ, eⱼ, eᵢ, eⱼ)`. -/
 theorem scalar_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
     (r : FourTensor V) : scalar r = ∑ j, ∑ i, r ![b i, b j, b i, b j] := by
-  simp only [scalar_apply, bilinFormTrace_eq_sum _ b, ricci_apply_orthonormalBasis b]
+  simp only [scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b,
+    ricci_apply_orthonormalBasis b]
 
 /-- The scalar contraction is invariant under linear isometric equivalences. -/
 theorem scalar_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAddCommGroup W]
     [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (e : W ≃ₗᵢ[ℝ] V) (r : FourTensor V) :
     scalar (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       scalar r := by
-  let b := stdOrthonormalBasis ℝ W
-  rw [scalar_apply_orthonormalBasis b, scalar_apply_orthonormalBasis (b.map e)]
-  simp only [compContinuousLinearMap_apply_vec, OrthonormalBasis.map_apply,
-    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
+  have h : ricci (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
+      (ricci r).compl₁₂ e.toLinearEquiv.toLinearMap e.toLinearEquiv.toLinearMap :=
+    LinearMap.ext₂ fun u v ↦ by
+      rw [ricci_compContinuousLinearMap_linearIsometryEquiv, LinearMap.compl₁₂_apply,
+        LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
+  rw [scalar_apply, scalar_apply, h, LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv]
 
 /-- The Ricci contraction of the Kulkarni–Nomizu product of `h` with the inner product:
 `Ric(h ⊙ g) = (n - 2) h + (tr h) g`. -/
 theorem ricci_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
     ricci (kulkarniNomizu h (innerₗ V)) =
-      ((Module.finrank ℝ V : ℝ) - 2) • h + bilinFormTrace h • innerₗ V := by
+      ((Module.finrank ℝ V : ℝ) - 2) • h + LinearMap.BilinMap.metricTrace h • innerₗ V := by
   ext u v
   rw [ricci_apply_orthonormalBasis (stdOrthonormalBasis ℝ V)]
   simp only [kulkarniNomizu_apply_eq, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
@@ -691,9 +709,9 @@ theorem ricci_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
 `Scal(h ⊙ g) = 2 (n - 1) tr h`. -/
 theorem scalar_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
     scalar (kulkarniNomizu h (innerₗ V)) =
-      2 * ((Module.finrank ℝ V : ℝ) - 1) * bilinFormTrace h := by
+      2 * ((Module.finrank ℝ V : ℝ) - 1) * LinearMap.BilinMap.metricTrace h := by
   rw [scalar_apply, ricci_kulkarniNomizu_innerₗ, map_add, map_smul, map_smul,
-    bilinFormTrace_inner, smul_eq_mul, smul_eq_mul]
+    LinearMap.BilinMap.metricTrace_inner, smul_eq_mul, smul_eq_mul]
   ring
 
 variable (V) in
@@ -703,6 +721,11 @@ product with itself. It is the curvature four-tensor of the unit sphere, and `κ
 curvature four-tensor of a space of constant sectional curvature `κ`. -/
 def constantCurvature : FourTensor V :=
   (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V)
+
+/-- The constant-curvature tensor is half the Kulkarni–Nomizu square of the inner product. -/
+theorem constantCurvature_eq_half_smul_kulkarniNomizu :
+    constantCurvature V = (1 / 2 : ℝ) • kulkarniNomizu (innerₗ V) (innerₗ V) :=
+  (rfl)
 
 /-- Evaluation of the constant-curvature tensor. -/
 @[simp]
@@ -756,16 +779,16 @@ theorem constantCurvature_compContinuousLinearMap_linearIsometry {W : Type*}
 /-- The Ricci contraction of the constant-curvature tensor is `(n - 1) g`. -/
 theorem ricci_constantCurvature :
     ricci (constantCurvature V) = ((Module.finrank ℝ V : ℝ) - 1) • innerₗ V := by
-  rw [constantCurvature, map_smul, ricci_kulkarniNomizu_innerₗ, bilinFormTrace_inner, ← add_smul,
-    smul_smul]
+  rw [constantCurvature, map_smul, ricci_kulkarniNomizu_innerₗ,
+    LinearMap.BilinMap.metricTrace_inner, ← add_smul, smul_smul]
   congr 1
   ring
 
 /-- The scalar contraction of the constant-curvature tensor is `n (n - 1)`. -/
 theorem scalar_constantCurvature :
     scalar (constantCurvature V) = Module.finrank ℝ V * ((Module.finrank ℝ V : ℝ) - 1) := by
-  rw [constantCurvature, map_smul, scalar_kulkarniNomizu_innerₗ, bilinFormTrace_inner,
-    smul_eq_mul]
+  rw [constantCurvature, map_smul, scalar_kulkarniNomizu_innerₗ,
+    LinearMap.BilinMap.metricTrace_inner, smul_eq_mul]
   ring
 
 /-- In dimension at least `2`, the constant-curvature tensor is nonzero. -/
@@ -797,12 +820,12 @@ theorem sum_mul_constantCurvature_last {ι : Type*} [Fintype ι] (b : Orthonorma
   have heval (u v : V) :
       (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ)) = r ![a, c, u, v] := by
     calc (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪u, b p⟫_ℝ * ⟪v, b q⟫_ℝ))
-        = ∑ p, ∑ q, lastSlice r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
+        = ∑ p, ∑ q, toLinearMap₄ r a c (b p) (b q) * ⟪b p, u⟫_ℝ * ⟪b q, v⟫_ℝ :=
           Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ by
-            rw [lastSlice_apply, real_inner_comm u, real_inner_comm v]
+            rw [toLinearMap₄_apply, real_inner_comm u, real_inner_comm v]
             ring
       _ = r ![a, c, u, v] := by
-          rw [b.sum_apply_mul_inner_mul_inner b, lastSlice_apply]
+          rw [b.sum_apply_mul_inner_mul_inner b, toLinearMap₄_apply]
   have hsub : (∑ p, ∑ q, r ![a, c, b p, b q] * constantCurvature V ![x, y, b p, b q]) =
       (∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b p⟫_ℝ * ⟪y, b q⟫_ℝ)) -
         ∑ p, ∑ q, r ![a, c, b p, b q] * (⟪x, b q⟫_ℝ * ⟪y, b p⟫_ℝ) := by
@@ -1067,7 +1090,7 @@ theorem ricci_planeCurvature_of_orthonormal {u v : V} (huv : Orthonormal ℝ ![u
 theorem scalar_planeCurvature (u v : V) :
     scalar (planeCurvature u v) = 2 * constantCurvature V ![u, v, u, v] := by
   set b := stdOrthonormalBasis ℝ V
-  rw [scalar_apply, bilinFormTrace_eq_sum _ b]
+  rw [scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b]
   have expand (i : Fin (Module.finrank ℝ V)) :
       ricci (planeCurvature u v) (b i) (b i) =
         ‖u‖ ^ 2 * ⟪v, b i⟫_ℝ ^ 2 - 2 * ⟪u, v⟫_ℝ * (⟪u, b i⟫_ℝ * ⟪b i, v⟫_ℝ) +

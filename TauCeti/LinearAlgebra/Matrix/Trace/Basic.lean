@@ -27,6 +27,8 @@ of traces and traces of products.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
 * `Matrix.sum_symmMinor_eq_two_mul_trace_sub`: double-sum identity for symmetrized `2 × 2` minors.
+* `Matrix.trace_list_prod_map_mapMatrix`: mapping a list of square matrices along a ring
+  homomorphism commutes with taking the trace of its product.
 -/
 
 public section
@@ -68,5 +70,12 @@ theorem sum_symmMinor_eq_two_mul_trace_sub {R : Type*} [CommRing R] (A C : Matri
       Matrix.trace_transpose_mul X Y
   simp only [Finset.sum_sub_distrib, Finset.sum_add_distrib, hdiag, hcross, trace_mul_comm C A]
   ring
+
+/-- Mapping a list of square matrices along a ring homomorphism commutes with taking the trace of
+its product. -/
+theorem trace_list_prod_map_mapMatrix {R S : Type*} [DecidableEq n] [Semiring R] [Semiring S]
+    (f : R →+* S) (l : List (Matrix n n R)) :
+    trace (l.map f.mapMatrix).prod = f (trace l.prod) := by
+  rw [← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace]
 
 end Matrix

@@ -61,9 +61,9 @@ The point mass in dimension `d > 0` has `H^s` singular support `{x₀}` for `s �
 * `Distribution.isOpen_diff_sobolevSingularSupport`, `Distribution.sobolevSingularSupport_mono`,
   `Distribution.sobolevSingularSupport_subset_singularSupport`: the `H^s` singular support is
   closed in `Ω`, grows with `s`, and lies in the singular support.
-* `Distribution.IsLocallySobolevAt.add`, `Distribution.IsLocallySobolevAt.smulLeftCLM`,
-  `Distribution.isLocallySobolevAt_restrictCLM_iff`: being `H^s` near a point is preserved by
-  sums, smooth multiples and restriction.
+* `Distribution.IsLocallySobolevAt.add`, `Distribution.IsLocallySobolevAt.sum`,
+  `Distribution.IsLocallySobolevAt.smulLeftCLM`, `Distribution.isLocallySobolevAt_restrictCLM_iff`:
+  being `H^s` near a point is preserved by sums, finite sums, smooth multiples and restriction.
 * `Distribution.sobolevSingularSupport_restrictCLM`,
   `Distribution.sobolevSingularSupport_add_subset`,
   `Distribution.sobolevSingularSupport_smulLeftCLM_subset`: restriction, sums and smooth multiples.
@@ -222,6 +222,13 @@ theorem IsLocallySobolevAt.sub {s : ℝ} {S T : 𝓓'(Ω, ℂ)} {x : E}
     (S - T).IsLocallySobolevAt s x := by
   rw [sub_eq_add_neg]
   exact hS.add (isLocallySobolevAt_neg_iff.2 hT)
+
+/-- A finite sum of distributions `H^s` near a point `x ∈ Ω` is `H^s` near `x`. -/
+theorem IsLocallySobolevAt.sum {s : ℝ} {ι : Type*} {t : Finset ι} {T : ι → 𝓓'(Ω, ℂ)} {x : E}
+    (hx : x ∈ Ω) (h : ∀ i ∈ t, (T i).IsLocallySobolevAt s x) :
+    (∑ i ∈ t, T i).IsLocallySobolevAt s x :=
+  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsLocallySobolevAt s x) (fun _ _ ↦ .add)
+    (isLocallySobolevAt_zero_iff.2 hx) h
 
 /-- The complex conjugate of `T` is `H^s` near `x` exactly when `T` is. -/
 @[simp]

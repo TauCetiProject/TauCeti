@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # Metric index raising of bilinear forms to endomorphisms
@@ -21,8 +22,10 @@ endomorphism `B♯` satisfying `⟪B♯ u, v⟫ = B u v`, inverse to metric lowe
 `A ↦ (innerₗ E).comp A`. It carries `innerₗ E` to `LinearMap.id`, converts `B.IsSymm` to
 `(B♯).IsSymmetric`, restricts to a linear equivalence `TauCeti.symmBilinEquivSelfAdjoint`
 between `LinearMap.BilinForm.symmSubmodule ℝ E` and `selfAdjoint.submodule ℝ (Module.End ℝ E)`,
-identifies `LinearMap.trace` with `TauCeti.bilinFormTrace`, pulls back `B.compl₁₂ f g` via
-`LinearMap.adjoint g`, and is equivariant under linear isometric equivalences.
+identifies `LinearMap.trace` with `LinearMap.BilinMap.metricTrace`, pulls back `B.compl₁₂ f g`
+via `LinearMap.adjoint g`, and is equivariant under linear isometric equivalences. For a
+continuous metric `g` equal to the inner product, `B♯` is `g⁻¹ ∘ B`, the composition of `B` with
+the inverse of `g` regarded as a map to the dual.
 
 ## Main definitions
 
@@ -40,6 +43,8 @@ identifies `LinearMap.trace` with `TauCeti.bilinFormTrace`, pulls back `B.compl�
   `TauCeti.coe_symmBilinEquivSelfAdjoint_symm`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
   `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`, `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`,
   and `LinearIsometryEquiv.comp_bilinFormToEnd_of_eq`: symmetry, trace, pullback, and equivariance.
+* `ContinuousLinearMap.toLinearMap_inverse_comp_eq_bilinFormToEnd`: raising an index with the
+  inverse of a continuous bilinear form `g` equal to the inner product is `bilinFormToEnd`.
 -/
 
 public section
@@ -92,11 +97,12 @@ open TauCeti
     (innerₗ E).comp (bilinFormToEnd B) = B := by
   rw [← (bilinFormToEnd B).bilinFormToEnd_symm_apply, LinearEquiv.symm_apply_apply]
 
-/-- The operator trace of `bilinFormToEnd B` equals the metric trace `bilinFormTrace B`. -/
+/-- The operator trace of `bilinFormToEnd B` equals the metric trace
+`LinearMap.BilinMap.metricTrace B`. -/
 @[simp] theorem trace_bilinFormToEnd (B : BilinForm ℝ E) :
-    LinearMap.trace ℝ E (bilinFormToEnd B) = bilinFormTrace B := by
+    LinearMap.trace ℝ E (bilinFormToEnd B) = LinearMap.BilinMap.metricTrace B := by
   let b := stdOrthonormalBasis ℝ E
-  rw [LinearMap.trace_eq_sum_inner _ b, bilinFormTrace_eq_sum B b]
+  rw [LinearMap.trace_eq_sum_inner _ b, LinearMap.BilinMap.metricTrace_eq_sum B b]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm, B.inner_bilinFormToEnd_left]
 
 /-- Metric index raising pulls back `B.compl₁₂ f g` via `LinearMap.adjoint g`. -/
@@ -147,6 +153,25 @@ def symmBilinEquivSelfAdjoint :
   (rfl)
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+open TauCeti
+
+/-- If `g` is the inner product, raising the first index of `B` with `g` is metric index raising
+`TauCeti.bilinFormToEnd` of `B`. -/
+theorem toLinearMap_inverse_comp_eq_bilinFormToEnd (g : E →L[ℝ] E →L[ℝ] ℝ)
+    (hg : ∀ v w, g v w = ⟪v, w⟫) (B : E →L[ℝ] E →L[ℝ] ℝ) :
+    ((g.inverse ∘L B : E →L[ℝ] E) : E →ₗ[ℝ] E) = bilinFormToEnd B.toBilinForm := by
+  have hinv : g.IsInvertible :=
+    InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner (c := 1) one_ne_zero
+      (by simpa only [one_mul] using hg)
+  rw [← LinearMap.bilinFormToEnd_innerₗ_comp ((g.inverse ∘L B : E →L[ℝ] E) : E →ₗ[ℝ] E)]
+  refine congrArg bilinFormToEnd (LinearMap.ext₂ fun v w ↦ ?_)
+  rw [LinearMap.comp_apply, coe_coe, comp_apply, innerₗ_apply_apply, ← hg, toBilinForm_apply]
+  exact congrArg (fun φ ↦ φ w) (hinv.self_apply_inverse (B v))
+
+end ContinuousLinearMap
 
 namespace LinearIsometryEquiv
 

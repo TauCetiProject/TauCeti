@@ -251,7 +251,7 @@ theorem excessAt_walkAssignment [DecidableEq V] {s t : V} (p : ArrowWalk Q s t) 
   induction p with
   | nil => simp
   | cons p e ih =>
-    rw [walkAssignment_cons, excessAt_add, ih, excessAt_single]
+    rw [walkAssignment_cons, excessAt_add_apply, ih, excessAt_single]
     abel
 
 /-- A closed walk gives a circulation. -/
@@ -360,7 +360,7 @@ lemma excessAt_sign_of_sub_walkAssignment {f : Assignment Q K} {s t : V}
   have hgf : f - walkAssignment p q ≤ f := sub_le_self _ (walkAssignment_nonneg p hq.le)
   have hexc (v : V) : excessAt f v = excessAt (f - walkAssignment p q) v +
       ((if v = t then q else 0) - if v = s then q else 0) := by
-    simp [excessAt_sub]
+    simp [excessAt_sub_apply]
   -- The difference vanishes on the arrows entering `s` and on those leaving `t`, so its excess
   -- is nonpositive at `s` and nonnegative at `t`.
   have hgs : excessAt (f - walkAssignment p q) s ≤ 0 :=
