@@ -64,8 +64,7 @@ private theorem tprod_eq_sum {s : Finset (Dual R M × M)} (hs : ∑ q ∈ s, q.1
     tprod R x = ∑ q ∈ s, (∏ i, q.1 (x i)) • tprod R fun _ : Fin p ↦ q.2 := by
   calc tprod R x = (∑ q ∈ s, q.1 q.2) ^ p • tprod R x := by rw [hs, one_pow, one_smul]
     _ = ∑ q ∈ s, q.1 q.2 ^ Fintype.card (Fin p) • tprod R x := by
-        rw [← frobenius_def, map_sum, Finset.sum_smul, Fintype.card_fin]
-        simp [frobenius_def]
+        rw [sum_pow_char, Finset.sum_smul, Fintype.card_fin]
     _ = _ := Finset.sum_congr rfl fun q _ ↦ Module.Invertible.apply_pow_card_smul_tprod ..
 
 /-- The diagonal `x ↦ x ⊗ ⋯ ⊗ x` of the `p`-th tensor power of an invertible module, which is

@@ -42,7 +42,11 @@ theorem mapRingHom_mk_eq_mk (g : M →ₛₗ[f] N) (hg : Submodule.span S (Set.r
   algebraize [f]
   let := Module.restrictScalars R S N
   have := IsScalarTower.restrictScalars R S N
-  let l : M →ₗ[R] N := { toFun := g, map_add' := g.map_add, map_smul' := g.map_smulₛₗ }
+  let l : M →ₗ[R] N :=
+    { toFun := g, map_add' := g.map_add
+      map_smul' r x := by
+        rw [g.map_smulₛₗ, RingHom.id_apply, ← algebraMap_smul S r (g x),
+          RingHom.algebraMap_toAlgebra] }
   have hl : Function.Surjective (l.liftBaseChange S) := by
     rw [← LinearMap.range_eq_top, eq_top_iff, ← hg, Submodule.span_le]
     rintro _ ⟨x, rfl⟩

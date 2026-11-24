@@ -35,11 +35,6 @@ open Module TensorProduct PiTensorProduct
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- Appending one factor to a tensor power: `⨂[R]^n M ⊗[R] M ≃ ⨂[R]^(n+1) M`. -/
-private def tensorPowerSuccEquiv (n : ℕ) : ⨂[R]^n M ⊗[R] M ≃ₗ[R] ⨂[R]^(n + 1) M :=
-  TensorProduct.congr (.refl R _) (TauCeti.TensorPower.oneEquiv R M).symm ≪≫ₗ
-    TensorPower.mulEquiv
-
 namespace Module.Invertible
 
 variable [Module.Invertible R M]
@@ -57,7 +52,7 @@ theorem apply_pow_card_smul_tprod {ι : Type*} [Fintype ι] (ξ : Dual R M) (y :
 instance tensorPower (n : ℕ) : Module.Invertible R (⨂[R]^n M) := by
   induction n with
   | zero => exact .congr (isEmptyEquiv (Fin 0)).symm
-  | succ n ih => exact .congr (tensorPowerSuccEquiv n)
+  | succ n ih => exact .congr (TauCeti.TensorPower.succEquiv R M n)
 
 end Module.Invertible
 
@@ -74,6 +69,6 @@ theorem mk_tensorPower (n : ℕ) : Pic.mk R (⨂[R]^n M) = Pic.mk R M ^ n := by
     exact ⟨isEmptyEquiv (Fin 0)⟩
   | succ n ih =>
     rw [pow_succ, ← ih, ← mk_tensor, mk_eq_mk_iff]
-    exact ⟨(tensorPowerSuccEquiv n).symm⟩
+    exact ⟨(TauCeti.TensorPower.succEquiv R M n).symm⟩
 
 end CommRing.Pic
