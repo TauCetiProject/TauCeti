@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.Analytic.Uniqueness
-import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -76,59 +75,14 @@ theorem hasDerivAt_polylog_one {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     simp [polylog_one]
   · ring
 
-/-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, `deriv (polylog 1) z = (1 - z)⁻¹`. -/
-theorem deriv_polylog_one {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
-    deriv (polylog 1) z = (1 - z)⁻¹ :=
-  (hasDerivAt_polylog_one hz).deriv
-
 /-- On the principal domain `{z | 1 - z ∈ Complex.slitPlane}`, `polylog (k + 2)` has complex
 derivative `(k !)⁻¹ * ∫ t in 0..1, (-Real.log t) ^ k / (1 - t * z)`. -/
 theorem hasDerivAt_polylog_nat_add_two (k : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     HasDerivAt (polylog (k + 2 : ℕ))
       ((Nat.factorial k : ℂ)⁻¹ *
         ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * z)) z := by
-  obtain ⟨ε, hε, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.mp
-    (Complex.isOpen_setOf_one_sub_mem_slitPlane.mem_nhds hz)
-  obtain ⟨δ, hδ, hδ_le⟩ := exists_le_norm_one_sub_ofReal_mul (isCompact_closedBall z ε) hball
-  let F : ℂ → ℝ → ℂ := fun w t ↦
-    ((-Real.log t : ℝ) : ℂ) ^ k * (-Complex.log (1 - (t : ℂ) * w)) / (t : ℂ)
-  let F' : ℂ → ℝ → ℂ := fun w t ↦ ((-Real.log t : ℝ) : ℂ) ^ k / (1 - (t : ℂ) * w)
-  let bound : ℝ → ℝ := fun t ↦ δ⁻¹ * |Real.log t| ^ k
-  have hbound : ∀ᵐ t ∂volume, t ∈ uIoc (0 : ℝ) 1 → ∀ w ∈ closedBall z ε, ‖F' w t‖ ≤ bound t := by
-    refine ae_of_all _ fun t ht w hw_mem ↦ ?_
-    rw [uIoc_of_le zero_le_one] at ht
-    have hw : δ ≤ ‖1 - (t : ℂ) * w‖ := hδ_le w hw_mem t (Ioc_subset_Icc_self ht)
-    dsimp only [F', bound]
-    rw [norm_div, norm_pow, Complex.norm_real, Real.norm_eq_abs, abs_neg, div_eq_inv_mul]
-    gcongr
-  have hbound_int : IntervalIntegrable bound volume 0 1 := by
-    have hlog : IntervalIntegrable (fun t : ℝ ↦ |Real.log t| ^ k) volume 0 1 := by
-      simpa only [Real.norm_eq_abs, abs_pow] using (intervalIntegrable_log_pow k).norm
-    exact hlog.const_mul δ⁻¹
-  have hdiff : ∀ᵐ t ∂volume, t ∈ uIoc (0 : ℝ) 1 →
-      ∀ w ∈ closedBall z ε, HasDerivAt (fun x ↦ F x t) (F' w t) w := by
-    refine ae_of_all _ fun t ht w hw_mem ↦ ?_
-    rw [uIoc_of_le zero_le_one] at ht
-    have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.1.ne'
-    have htwΩ : 1 - (t : ℂ) * w ∈ Complex.slitPlane :=
-      Complex.one_sub_ofReal_mul_mem_slitPlane (hball hw_mem) (Ioc_subset_Icc_self ht)
-    have htw0 : 1 - (t : ℂ) * w ≠ 0 := Complex.slitPlane_ne_zero htwΩ
-    have hin : HasDerivAt (fun x : ℂ ↦ 1 - (t : ℂ) * x) (0 - (t : ℂ) * 1) w :=
-      (hasDerivAt_const w (1 : ℂ)).sub ((hasDerivAt_id w).const_mul (t : ℂ))
-    have hlog := (((Complex.hasDerivAt_log htwΩ).comp w hin).neg.const_mul
-      (((-Real.log t : ℝ) : ℂ) ^ k)).div_const (t : ℂ)
-    refine hlog.congr_deriv ?_
-    dsimp only [F']
-    field_simp [ht0, htw0]
-    ring
-  have hint := (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (closedBall_mem_nhds z hε)
-    (Eventually.of_forall fun w ↦ (by fun_prop : Measurable (F w)).aestronglyMeasurable)
-    (intervalIntegrable_radialIntegrand k z)
-    (by fun_prop : Measurable (F' z)).aestronglyMeasurable
-    hbound hbound_int hdiff).2
   rw [funext (polylog_nat_add_two k)]
-  exact hint.const_mul (Nat.factorial k : ℂ)⁻¹
+  exact (hasDerivAt_integral_radialIntegrand k hz).const_mul (Nat.factorial k : ℂ)⁻¹
 
 /-- Every integer-weight polylogarithm is complex differentiable at each point of the principal
 domain `{z | 1 - z ∈ Complex.slitPlane}`. -/

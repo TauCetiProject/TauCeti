@@ -13,6 +13,8 @@ import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Integral.ChristKiselev
+import TauCeti.MeasureTheory.Integral.Kernel.Pairing
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Retarded Strichartz estimates from dual estimates
@@ -41,7 +43,7 @@ retarded region `s < t`:
 where `δ = 1 / p₁ + 1 / p - 1`. For a dispersive equation with admissible pairs `(q, r)` and
 `(q₁, r₁)` the time exponents are `p = q'` and `p₁ = q₁'`, and the condition reads `q₁' < q`. It
 fails only when both pairs are at the endpoint `q = q₁ = 2`, which needs the Keel–Tao argument
-instead.
+instead (`TauCeti.exists_enorm_integral_setIntegral_Iio_inner_adjoint_le_of_endpoint`).
 
 The mixed norm of a function `F : ℝ → L²(X, μ)` is written
 `eLpNorm (fun s ↦ eLpNorm (F s) a μ) p volume`, as in `TauCeti.Analysis.PDE.Strichartz.TTStar`.
@@ -171,31 +173,16 @@ theorem enorm_integral_setIntegral_Iio_inner_adjoint_le {p₁ p a₁ a : ℝ≥0
   -- The pairing is integrable on the plane, so the integral over `s < t` is the integral over
   -- the region `{(s, t) | s < t}`.
   have hβ : Integrable (fun z : ℝ × ℝ ↦ ⟪u z.1, w z.2⟫_𝕜) (volume.prod volume) :=
-    (hUF.norm.mul_prod hUG.norm).mono' (hUF.1.comp_fst.inner hUG.1.comp_snd)
-      (.of_forall fun _ ↦ norm_inner_le_norm _ _)
-  have hmeas : MeasurableSet {z : ℝ × ℝ | z.1 < z.2} :=
-    measurableSet_lt measurable_fst measurable_snd
-  have hregion : ∫ t, ∫ s in Set.Iio t, ⟪u s, w t⟫_𝕜 =
-      ∫ z in {z : ℝ × ℝ | z.1 < z.2}, ⟪u z.1, w z.2⟫_𝕜 := by
-    rw [← integral_indicator hmeas, Measure.volume_eq_prod,
-      integral_prod_symm _ (hβ.indicator hmeas)]
-    refine integral_congr_ae (.of_forall fun t ↦ ?_)
-    dsimp only
-    rw [← integral_indicator measurableSet_Iio]
-    exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
-  rw [hregion]
+    hUF.inner_fst_snd hUG
+  rw [integral_setIntegral_Iio_eq_setIntegral hβ.integrableOn, ← Measure.volume_eq_prod]
   -- On every rectangle of times the pairing factors as `⟪∫_I u, ∫_J w⟫`, and the dual estimates
   -- bound the two factors; the Christ–Kiselev lemma passes the bound to `s < t`.
   refine (eNorm_setIntegral_fst_lt_snd_le hp hpp
     (by rw [Measure.volume_eq_prod]; exact hβ.integrableOn) _ _ (A := C₁ * C)
     fun I J hI hJ _ ↦ ?_).trans_eq (by ring)
   have hfac : ∫ z in I ×ˢ J, ⟪u z.1, w z.2⟫_𝕜 = ⟪∫ s in I, u s, ∫ t in J, w t⟫_𝕜 := by
-    rw [Measure.volume_eq_prod, setIntegral_prod _ hβ.integrableOn]
-    calc ∫ s in I, ∫ t in J, ⟪u s, w t⟫_𝕜 = ∫ s in I, ⟪u s, ∫ t in J, w t⟫_𝕜 :=
-          integral_congr_ae (.of_forall fun s ↦ integral_inner hUG.integrableOn _)
-      _ = ⟪∫ s in I, u s, ∫ t in J, w t⟫_𝕜 := by
-          rw [← inner_conj_symm, ← integral_inner hUF.integrableOn, ← integral_conj]
-          simp_rw [inner_conj_symm]
+    rw [inner_integral_integral_eq_integral_prod hUF.integrableOn hUG.integrableOn,
+      Measure.prod_restrict, Measure.volume_eq_prod]
   rw [hfac]
   calc _ ≤ ‖∫ s in I, u s‖ₑ * ‖∫ t in J, w t‖ₑ := eNorm_inner_le_eNorm _ _
     _ ≤ C₁ * eLpNorm (I.indicator fun s ↦ eLpNorm (F s) a₁ μ) p₁ *
