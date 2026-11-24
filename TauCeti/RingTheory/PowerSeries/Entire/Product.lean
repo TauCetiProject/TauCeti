@@ -7,11 +7,11 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.Factorization
 import Mathlib.Order.Northcott
-import Mathlib.RingTheory.Polynomial.GaussNorm
 import TauCeti.Analysis.Normed.Ring.InfiniteProd.Ultra
 import TauCeti.Data.Set.Card
 import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.RingTheory.PowerSeries.GaussNorm.NearOne
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Canonical Weierstrass products of entire power series
@@ -57,9 +57,11 @@ enumeration-independent unconditional infinite product in `PowerSeries.IsEntire.
   `multipliable_polynomialHom_one_sub_C_mul_X_of_tendsto_cofinite_zero`): unconditional
   convergence of `∏' i, (1 - cᵢ X)` in `PowerSeries.IsEntire.subring R` iff `c → 0` cofinitely.
 * `TauCeti.PowerSeries.IsEntire.constantCoeff_tprod_one_sub_polynomialHom_C_mul_X`,
-  `Filter.Tendsto.hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X`, and
+  `Filter.Tendsto.hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X`,
+  `TauCeti.PowerSeries.IsEntire.gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_le`, and
   `TauCeti.PowerSeries.IsEntire.gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_lt`:
-  constant coefficient, pointwise evaluation, and Gauss-norm bound for `∏' i, (1 - cᵢ X)`.
+  constant coefficient, pointwise evaluation, and closed/strict Gauss-norm bounds for
+  `∏' i, (1 - cᵢ X)`.
 * `TauCeti.PowerSeries.IsEntire.multipliable_polynomialHom_one_sub_C_inv_mul_X` and
   `TauCeti.PowerSeries.IsEntire.multipliable_polynomialHom_one_sub_C_inv_mul_X_iff`: unconditional
   convergence of `∏' i, (1 - αᵢ⁻¹ X)` from `‖α i‖ → ∞` cofinitely.
@@ -112,11 +114,11 @@ private theorem norm_restrict_polynomialHom_C_mul_X_le (r : Set.Ioi (0 : ℝ)) (
       ‖c‖ * (r : ℝ) := by
   rw [TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict,
     _root_.PowerSeries.IsEntire.coe_polynomialHom, Polynomial.coe_mul, Polynomial.coe_C,
-    Polynomial.coe_X, ← pow_one (_root_.PowerSeries.X (R := R)),
-    ← _root_.PowerSeries.monomial_eq_C_mul_X_pow]
-  have h : (_root_.PowerSeries.monomial 1 c).gaussNorm norm (r : ℝ) = ‖c‖ * (r : ℝ) ^ 1 :=
-    _root_.PowerSeries.gaussNorm_monomial (v := normRingSeminorm R) (r := c) r.property.le 1
-  rw [h, pow_one]
+    Polynomial.coe_X]
+  have heq : (_root_.PowerSeries.C c * _root_.PowerSeries.X : R⟦X⟧) =
+      (1 - _root_.PowerSeries.C (-c) * _root_.PowerSeries.X) - 1 := by
+    rw [map_neg, neg_mul, sub_neg_eq_add, add_sub_cancel_left]
+  rw [heq, TauCeti.PowerSeries.gaussNorm_one_sub_C_mul_X_sub_one (-c) r.property.le, norm_neg]
 
 /-- **Necessary condition for multipliability of `1 - cᵢ X`.** Over an ultrametric normed
 commutative ring, if the linear factors `1 - cᵢ X` are unconditionally multipliable in the Gauss
@@ -484,7 +486,9 @@ theorem _root_.PowerSeries.IsEntire.hasProd_polynomialHom_one_sub_C_inv_mul_X
     have h1 : (1 : ℕ∞) ≤ (_root_.PowerSeries.taylor 0 f).order := by
       rw [← hα 0]
       exact Set.one_le_encard_iff_nonempty.mpr ⟨i, hi⟩
-    rw [_root_.PowerSeries.order_taylor_zero_eq_zero (by simp [h0])] at h1
+    have h0' : (_root_.PowerSeries.taylor 0 f).order = 0 := by
+      simp [_root_.PowerSeries.order_eq_zero_iff_constantCoeff_ne_zero, h0]
+    rw [h0'] at h1
     exact absurd h1 (by decide)
   have hgrow : Tendsto (fun i ↦ ‖α i‖) cofinite atTop :=
     hf.tendsto_norm_cofinite_atTop_of_encard_le_order_taylor (L := K) hf0 fun i ↦ by
@@ -533,17 +537,11 @@ theorem _root_.PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_s
   have hα : ∀ x : K, {i : ι | α i = x}.encard = (_root_.PowerSeries.taylor x f).order := by
     intro x
     by_cases hx : f.evalAt x = 0
-    · have htop : (_root_.PowerSeries.taylor x f).order ≠ ⊤ := by
-        have hR0 : 0 < max ‖x‖ 1 := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
-        have ho := (hf.isRestricted (max ‖x‖ 1)).order_taylor_eq_count_zeroMultiset (L := K) hR0
-          hf0 (le_max_left _ _)
-        simp only [Algebra.algebraMap_self, _root_.PowerSeries.map_id] at ho
-        exact ho.trans_lt (ENat.natCast_lt_top _) |>.ne
-      have hfib : {i : ι | α i = x} = {i : ι | i.1 = ⟨x, hx⟩} := by
+    · have hfib : {i : ι | α i = x} = {i : ι | i.1 = ⟨x, hx⟩} := by
         ext i
         simp [α, Subtype.ext_iff]
       rw [hfib, TauCeti.encard_sigma_fst_fiber_eq, ENat.card_eq_coe_fintype_card,
-        Fintype.card_fin, ENat.natCast_toNat_eq_self.mpr htop]
+        Fintype.card_fin, ENat.natCast_toNat_eq_self.mpr (hf.order_taylor_ne_top hf0 x)]
     · have hemp : {i : ι | α i = x} = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun i hi ↦
         hx (hi ▸ i.1.property)
       have hord : (_root_.PowerSeries.taylor x f).order = 0 := by
@@ -634,7 +632,7 @@ theorem _root_.PowerSeries.IsEntire.hasProd_evalAt_one_sub_inv_smul [CompleteSpa
     HasProd (fun i ↦ 1 - (α i)⁻¹ • b) (f.evalAt b) := by
   have hprod := evalAt_hasProd (hf.hasProd_polynomialHom_one_sub_C_inv_mul_X h0 hα) b
   exact hprod.congr_fun fun i ↦ by
-    rw [coe_polynomialHom_one_sub_C_mul_X, _root_.PowerSeries.evalAt_one_sub_C_mul_X]
+    simp [_root_.PowerSeries.evalAt_one_sub_C_mul_X]
 
 end NormedField
 

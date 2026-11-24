@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.Product
 import TauCeti.RingTheory.PowerSeries.GaussNorm.NearOne
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # The Weierstrass entire product theorem
@@ -97,7 +98,7 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [Is
   {f : K⟦X⟧}
 
 open Classical in
-omit [IsAlgClosed K] in
+omit [IsUltrametricDist K] [IsAlgClosed K] in
 /-- The canonical unlabelled family of nonzero zeros of `f` repeated according to their Taylor
 multiplicities has fiber cardinality `(taylor y f).order` at every nonzero `y : K`, and `0` at
 `0`. -/
@@ -121,13 +122,8 @@ private theorem encard_sigma_zeros_eq {f : K⟦X⟧} (hf : f.IsEntire) (hf0 : f 
             cases hx
             rfl
           right_inv := fun k ↦ rfl }
-      have hord_ne_top : (_root_.PowerSeries.taylor y f).order ≠ ⊤ := by
-        have hr : 0 < max ‖y‖ 1 := lt_max_of_lt_right zero_lt_one
-        have hcount := (hf.isRestricted (max ‖y‖ 1)).order_taylor_eq_count_zeroMultiset (L := K)
-          hr hf0 (le_max_left _ _)
-        simpa using (hcount.trans_lt (ENat.natCast_lt_top _)).ne
       rw [Set.encard, ENat.card_congr e, ENat.card_eq_coe_fintype_card, Fintype.card_fin,
-        ENat.natCast_toNat hord_ne_top]
+        ENat.natCast_toNat (hf.order_taylor_ne_top hf0 y)]
     · have hord0 : (_root_.PowerSeries.taylor y f).order = 0 :=
         not_not.mp (order_ne_zero_iff_constCoeff_eq_zero.not.mpr
           (by rwa [constantCoeff_taylor]))
@@ -152,7 +148,7 @@ theorem hasProd_polynomialHom_zeros (hf : f.IsEntire) (h0 : constantCoeff f = 1)
   by_cases hy0 : y = 0
   · subst hy0
     simp only [↓reduceIte]
-    exact (order_taylor_zero_eq_zero (by simp [h0])).symm
+    rw [taylor_zero, order_eq_zero_iff_constantCoeff_ne_zero.mpr (by simp [h0])]
   · simp [hy0]
 
 /-- **Weierstrass factorisation of a nonzero entire series, indexed form.** Let `f` be a nonzero
@@ -172,7 +168,7 @@ theorem eq_C_mul_X_pow_mul_tprod_of_order_taylor_eq {ι : Type*} (hf : f.IsEntir
   have hord (x : K) : (_root_.PowerSeries.taylor x g₁).order = {i : ι | a i = x}.encard := by
     by_cases hx0 : x = 0
     · subst hx0
-      rw [order_taylor_zero_eq_zero (by simp [hg₁_const]),
+      rw [taylor_zero, order_eq_zero_iff_constantCoeff_ne_zero.mpr (by simp [hg₁_const]),
         eq_comm, Set.encard_eq_zero, Set.eq_empty_iff_forall_notMem]
       exact fun i hi ↦ ha0 i hi
     · rw [hord_nz x hx0, ha x hx0]

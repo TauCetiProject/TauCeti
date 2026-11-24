@@ -43,8 +43,9 @@ nonvanishing Hasse derivative at every point, so each of its zeros has a finite 
   converges.
 * `PowerSeries.IsEntire.hasseDeriv_taylor`: Hasse derivatives commute with translation.
 * `PowerSeries.IsEntire.taylor_taylor`: `taylor b (taylor a f) = taylor (b + a) f`.
-* `PowerSeries.IsEntire.taylor_inj`, `PowerSeries.IsEntire.taylor_eq_zero_iff`: translation is
-  injective on entire series.
+* `PowerSeries.IsEntire.taylor_inj`, `PowerSeries.IsEntire.taylor_eq_zero_iff`,
+  `PowerSeries.IsEntire.order_taylor_ne_top`: translation is injective on entire series, and
+  nonzero entire series have finite Taylor order at every point.
 -/
 
 public section
@@ -170,6 +171,12 @@ theorem IsEntire.taylor_inj {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire) (
 /-- An entire series has zero Taylor translate exactly when it is zero. -/
 theorem IsEntire.taylor_eq_zero_iff (hf : f.IsEntire) (a : R) : taylor a f = 0 ↔ f = 0 := by
   simpa using hf.taylor_inj isEntire_zero a
+
+/-- A nonzero entire series over a complete normed commutative ring has finite Taylor order at
+every point. -/
+theorem IsEntire.order_taylor_ne_top (hf : f.IsEntire) (hf0 : f ≠ 0) (a : R) :
+    (taylor a f).order ≠ ⊤ :=
+  order_eq_top.not.mpr ((hf.taylor_eq_zero_iff a).not.mpr hf0)
 
 end Complete
 
