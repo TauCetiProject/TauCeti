@@ -203,15 +203,6 @@ theorem viterboOrientationTwist_ρ_rotationLoop (γ : MooreFreeLoopSpace M) :
 
 /-! ### Constant loops -/
 
-/-- Moore loops in `M` with the same underlying Moore path have the same orientation character,
-even when their base points are only propositionally equal. -/
-private theorem orientationCharacter_fundamentalGroupHom_congr {x y : M}
-    {α : MooreLoopSpace M y} {β : MooreLoopSpace M x} (h : α.toMoorePath = β.toMoorePath) :
-    orientationCharacter hd y (MooreLoopSpace.fundamentalGroupHom y α) =
-      orientationCharacter hd x (MooreLoopSpace.fundamentalGroupHom x β) := by
-  obtain rfl : y = x := by rw [← α.source_eq, h, β.source_eq]
-  rw [MooreLoopSpace.ext h]
-
 /-- **Along the constant loops, the orientation part of the Viterbo twist is the orientation local
 system**: its pullback along the inclusion `M → 𝓛M` of the constant loops is `o_M`. -/
 theorem pullback_constMap_viterboOrientationTwist (x : M) :

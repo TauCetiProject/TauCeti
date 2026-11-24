@@ -41,6 +41,8 @@ orientation part is the local system `ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w})` o
 
 * `TauCeti.orientationCharacter_eq_of_joined_toCircle`: freely homotopic loops have the same
   orientation character.
+* `TauCeti.orientationCharacter_fundamentalGroupHom_congr`: Moore loops with the same underlying
+  Moore path have the same orientation character.
 * `TauCeti.MooreFreeLoopSpace.orientationSign_eq_of_joined`: the orientation sign is constant on
   the path components of the free loop space.
 * `TauCeti.MooreFreeLoopSpace.orientationSign_const`: constant loops preserve the orientation.
@@ -78,6 +80,15 @@ theorem orientationCharacter_eq_of_joined_toCircle {x y : M} {ℓ₀ : Path x x}
       orientationCharacter hd y (.fromPath (Path.Homotopic.Quotient.mk ℓ₁)) :=
   apply_fromPath_eq_of_joined_toCircle (orientationCharacter hd)
     (orientationCharacter_fundamentalGroupMulEquivOfPath hd) h
+
+/-- Moore loops in `M` with the same underlying Moore path have the same orientation character,
+even when their base points are only propositionally equal. -/
+theorem orientationCharacter_fundamentalGroupHom_congr {x y : M}
+    {α : MooreLoopSpace M y} {β : MooreLoopSpace M x} (h : α.toMoorePath = β.toMoorePath) :
+    orientationCharacter hd y (MooreLoopSpace.fundamentalGroupHom y α) =
+      orientationCharacter hd x (MooreLoopSpace.fundamentalGroupHom x β) := by
+  obtain rfl : y = x := by rw [← α.source_eq, h, β.source_eq]
+  rw [MooreLoopSpace.ext h]
 
 namespace MooreFreeLoopSpace
 
