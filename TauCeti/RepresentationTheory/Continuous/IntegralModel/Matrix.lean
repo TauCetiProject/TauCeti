@@ -39,7 +39,7 @@ suitable basis of `V`, a continuous homomorphism `Γ → GL_n(𝒪[E])`
 
 * `TauCeti.GaloisLattice.IntegralModel.coe_toGL_apply`: the matrix form is the matrix of the
   restricted action on `Λ`.
-* `TauCeti.GaloisLattice.IntegralModel.toGL_apply_map`: its image in `GL ι E` is the matrix of
+* `TauCeti.GaloisLattice.IntegralModel.map_toGL_apply`: its image in `GL ι E` is the matrix of
   `ρ g` in the extended basis of `V`.
 * `TauCeti.GaloisLattice.IntegralModel.continuous_toGL`: the matrix form is continuous.
 * `TauCeti.ContinuousRep.exists_basis_continuousMonoidHom_GL`: over a nonarchimedean local field,
@@ -104,7 +104,7 @@ theorem coe_toGL_apply (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) (g 
 
 /-- The entries of the matrix form, read in `E`, are those of the matrix of `ρ g` in the
 extended basis of `V`. -/
-theorem toGL_apply_map (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) (g : Γ) :
+theorem map_toGL_apply (Λ : IntegralModel O ρ) (b : Basis ι O Λ.lattice) (g : Γ) :
     (Λ.toGL b g : Matrix ι ι O).map (algebraMap O E) =
       LinearMap.toMatrix (b.extendOfIsFullLattice E) (b.extendOfIsFullLattice E) (ρ g) := by
   rw [toGL, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Basis.map_stabilizerMulEquivGL_apply]
@@ -116,13 +116,10 @@ a valuative topology, then `g ↦ Λ.toGL b g` is continuous. -/
 theorem continuous_toGL [ContinuousInv Γ] [TopologicalSpace O] [IsTopologicalSemiring O]
     (Λ : IntegralModel O ρ) [IsModuleTopology O Λ.lattice] (b : Basis ι O Λ.lattice) :
     Continuous (Λ.toGL b) := by
-  have hmat {f : Γ → Γ} (hf : Continuous f) : Continuous fun g => (Λ.toGL b (f g) : Matrix ι ι O) :=
-    continuous_matrix fun i j =>
-      ((IsModuleTopology.continuous_of_linearMap (b.coord i)).comp
-        ((Λ.toContinuousRep.continuous_orbit (b j)).comp hf)).congr fun g => by
-          simp [LinearMap.toMatrix_apply]
-  refine Units.continuous_iff.mpr ⟨hmat continuous_id, ?_⟩
-  simpa only [map_inv] using hmat continuous_inv
+  have hmat : Continuous fun g => (Λ.toGL b g : Matrix ι ι O) := by
+    simpa only [coe_toGL_apply] using Λ.toContinuousRep.continuous_toMatrix b
+  refine Units.continuous_iff.mpr ⟨hmat, ?_⟩
+  simpa only [Function.comp_def, map_inv] using hmat.comp continuous_inv
 
 end TauCeti.GaloisLattice.IntegralModel
 
@@ -147,6 +144,6 @@ theorem exists_basis_continuousMonoidHom_GL (ρ : ContinuousRep Γ E V) :
   have := IsLattice.free E Λ.lattice
   let b := Module.finBasisOfFinrankEq 𝒪[E] Λ.lattice
     (IsFullLattice.finrank_eq (K := E) (M := Λ.lattice))
-  exact ⟨b.extendOfIsFullLattice E, ⟨Λ.toGL b, Λ.continuous_toGL b⟩, Λ.toGL_apply_map b⟩
+  exact ⟨b.extendOfIsFullLattice E, ⟨Λ.toGL b, Λ.continuous_toGL b⟩, Λ.map_toGL_apply b⟩
 
 end TauCeti.ContinuousRep
