@@ -97,7 +97,8 @@ theorem Subgroup.isSimpleGroup_of_isMinimalNormal_of_iSup_eq_top {ι : Type*}
   obtain rfl | hij := eq_or_ne i j
   · exact le_sup_left
   · exact le_sup_of_le_right fun y hy ↦ mem_centralizer_iff.2 fun x hx ↦
-      (commute_of_normal_of_disjoint _ _ (hH i).normal (hH j).normal (hdisj hij) x y hx hy).eq
+      (pairwise_commute_of_normal_of_pairwiseDisjoint (fun k ↦ (hH k).normal) hdisj hij
+        x y hx hy).eq
 
 namespace Subgroup.IsMinimalNormal
 
@@ -137,8 +138,9 @@ theorem exists_mulEquiv_pi [Finite N] (hN : N.IsMinimalNormal) :
   classical
   have := hN.normal
   have : Nontrivial N := (nontrivial_iff_ne_bot N).2 hN.ne_bot
-  have hNtop : (⊤ : NormalSubgroup N) ≠ ⊥ := fun h ↦
-    top_ne_bot (α := Subgroup N) (by simpa using congr(((↑) : NormalSubgroup N → Subgroup N) $h))
+  have hNtop : (⊤ : NormalSubgroup N) ≠ ⊥ := by
+    rw [Ne, ← Subtype.coe_inj, CompleteSublattice.coe_top, CompleteSublattice.coe_bot]
+    exact top_ne_bot
   -- A minimal normal subgroup `A` of `N`, that is, an atom of the lattice of normal subgroups.
   obtain ⟨A, hA, -⟩ := (eq_bot_or_exists_atom_le (⊤ : NormalSubgroup N)).resolve_left hNtop
   have hAm := NormalSubgroup.isAtom_iff_isMinimalNormal.1 hA
@@ -158,8 +160,12 @@ theorem exists_mulEquiv_pi [Finite N] (hN : N.IsMinimalNormal) :
   have hH : ∀ x, (H x).IsMinimalNormal := fun x ↦ by simpa [H, ← hg x] using hf (g x)
   have htop : ⨆ x, H x = ⊤ := by
     refine eq_top_iff.2 ((iSup_map_conjNormal_eq_top hN hAm.ne_bot).ge.trans (iSup_le fun g ↦ ?_))
-    have hle : f g ≤ t.sup id := hsup ▸ Finset.le_sup (f := id) (Set.mem_toFinset.2 ⟨g, rfl⟩)
-    simpa [f, φ, H, Finset.sup_eq_iSup, iSup_subtype', ← Subtype.coe_le_coe] using hle
+    -- `f g` lies below the supremum of `t`, which in `Subgroup N` is the supremum of `H`.
+    have hfg : f g ≤ t.sup id := hsup ▸ Finset.le_sup (f := id) (Set.mem_toFinset.2 ⟨g, rfl⟩)
+    have hle : (A : Subgroup N).map (φ g : N →* N) ≤
+        ((t.sup id : NormalSubgroup N) : Subgroup N) := Subtype.coe_le_coe.2 hfg
+    rw [NormalSubgroup.coe_finset_sup] at hle
+    exact hle.trans (Finset.sup_le fun x hx ↦ le_iSup H ⟨x, hx⟩)
   have hdisj : Pairwise (Disjoint on H) := fun x y hxy ↦ CompleteSublattice.disjoint_iff.1
     (hind.pairwiseDisjoint x.property y.property (Subtype.coe_injective.ne hxy))
   let eN := mulEquivPiOfISupIndep (fun x ↦ (hH x).normal)

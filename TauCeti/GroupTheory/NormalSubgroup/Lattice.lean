@@ -143,6 +143,11 @@ theorem coe_inf (M N : NormalSubgroup G) :
     ((M ⊓ N : NormalSubgroup G) : Subgroup G) = (M : Subgroup G) ⊓ N :=
   rfl
 
+@[simp, norm_cast]
+theorem coe_finset_sup {ι : Type*} (s : Finset ι) (f : ι → NormalSubgroup G) :
+    ((s.sup f : NormalSubgroup G) : Subgroup G) = s.sup fun i ↦ (f i : Subgroup G) :=
+  map_finset_sup (normalSubgroups G).subtype s f
+
 /-- **Dedekind's modular law** for normal subgroups: for normal `A ≤ C` and normal `B`,
 `(A ⊔ B) ⊓ C = A ⊔ (B ⊓ C)`. -/
 instance instIsModularLattice : IsModularLattice (NormalSubgroup G) where
