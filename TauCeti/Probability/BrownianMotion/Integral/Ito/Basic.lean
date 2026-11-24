@@ -34,9 +34,7 @@ probability to the Itô integral at `t`
 (`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains`), and also at every earlier
 time (`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains_of_le`); so any limit in
 probability of them agrees almost surely with the Itô integral at `t`
-(`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`). Against an adapted integrator
-the Itô integral is almost everywhere strongly measurable at each time
-(`TauCeti.Probability.IsItoIntegral.aestronglyMeasurable`). Such a sequence and the one
+(`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`). Such approximants and the ones
 witnessing the Itô integral are compared on one common grid. Their difference has square energy
 converging to zero in probability, so its elementary integral at `t` converges to zero in
 probability by the energy estimate
@@ -47,6 +45,9 @@ and continuity of their paths makes them indistinguishable. Neither path continu
 usual conditions on the filtration are needed. Conversely, the predicate is invariant under
 indistinguishability (`TauCeti.Probability.IsItoIntegral.congr`), so it determines its
 integrals exactly up to indistinguishability (`TauCeti.Probability.isItoIntegral_iff_indist`).
+
+Against an adapted integrator the Itô integral is almost everywhere strongly measurable at each
+time (`TauCeti.Probability.IsItoIntegral.aestronglyMeasurable`).
 
 The elementary integral of a simple holding is its Itô integral against every process with
 almost surely continuous paths (`TauCeti.Probability.isItoIntegral_simpleGains`). Existence of
