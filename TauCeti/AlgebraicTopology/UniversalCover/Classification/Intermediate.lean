@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.RecoveredSubgroup
 public import TauCeti.Topology.Covering.Factorization
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The Galois correspondence is a correspondence of towers of covers
