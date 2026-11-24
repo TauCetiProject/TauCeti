@@ -35,14 +35,10 @@ def polarPointHomeomorphComplex : PolarPoint ≃ₜ ℂ where
     · simpa only [radius_def] using Real.log_exp z.re
     · simp only [angle_def]
   continuous_toFun := by
-    have hr : Continuous fun p : PolarPoint ↦ radius p :=
-      by simpa only [radius_def] using continuous_subtypeVal.fst
-    have hlog := hr.log radius_ne_zero
-    have ha : Continuous fun p : PolarPoint ↦ angle p :=
-      by simpa only [angle_def] using continuous_subtypeVal.snd
-    simpa only [Function.comp_def, Complex.equivRealProdCLM_symm_apply,
-      Complex.mk_eq_add_mul_I] using
-      Complex.equivRealProdCLM.symm.continuous.comp (hlog.prodMk ha)
+    simp only [Complex.mk_eq_add_mul_I, radius_def, angle_def]
+    exact (Complex.continuous_ofReal.comp
+      (continuous_subtypeVal.fst.log fun p : PolarPoint ↦ ne_of_gt p.property)).add
+      ((Complex.continuous_ofReal.comp continuous_subtypeVal.snd).mul_const Complex.I)
   continuous_invFun :=
     ((Real.continuous_exp.comp Complex.continuous_re).prodMk
       Complex.continuous_im).subtype_mk _

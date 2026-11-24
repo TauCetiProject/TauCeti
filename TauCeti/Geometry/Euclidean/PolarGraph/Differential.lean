@@ -72,18 +72,20 @@ theorem projectionDeriv_injective (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
     exact hx.isUnit
   exact Complex.equivRealProdCLM.symm.injective.comp ((Module.End.isUnit_iff _).mp hunit).injective
 
-/-- The Cartesian polar parametrization is a smooth local diffeomorphism at every nonzero radius. -/
-theorem isLocalDiffeomorphAt_polarCoord_symm (x : ℝ × ℝ) (hx : x.1 ≠ 0) :
-    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℂ) ∞ Complex.polarCoord.symm x := by
-  have hs : ContDiff ℝ ∞ Complex.polarCoord.symm := by
-    simpa only [zero_add] using TauCeti.contDiff_add_polarCoord_symm (n := ∞) 0
+/-- The Cartesian polar parametrization is a `C^n` local diffeomorphism at every nonzero
+radius, for every regularity `n ≥ 1`, including analytic regularity. -/
+theorem isLocalDiffeomorphAt_polarCoord_symm (x : ℝ × ℝ) (hx : x.1 ≠ 0)
+    {n : WithTop ℕ∞} (hn : 1 ≤ n) :
+    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℂ) n Complex.polarCoord.symm x := by
+  have hs : ContDiff ℝ n Complex.polarCoord.symm := by
+    simpa only [zero_add] using TauCeti.contDiff_add_polarCoord_symm (n := n) 0
   let e := ((projectionDeriv x).toLinearMap.linearEquivOfInjective
     (projectionDeriv_injective x hx) Complex.equivRealProdCLM.symm.toLinearEquiv.finrank_eq
     ).toContinuousLinearEquiv
   have he : (e : ℝ × ℝ →L[ℝ] ℂ) = projectionDeriv x :=
     ContinuousLinearMap.ext fun v ↦ by simp [e]
   exact TauCeti.isLocalDiffeomorphAt_of_fderiv_eq hs.contDiffOn isOpen_univ (Set.mem_univ x)
-    (by simp) (e := e) (he.trans (fderiv_polarCoord_symm x).symm)
+    hn (e := e) (he.trans (fderiv_polarCoord_symm x).symm)
 
 /-- Every real angular translation preserves the pullback inner product at any real radius. -/
 theorem inner_projectionDeriv_add_angle (x v w : ℝ × ℝ) (t : ℝ) :
