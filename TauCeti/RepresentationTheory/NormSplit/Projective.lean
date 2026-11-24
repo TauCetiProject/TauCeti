@@ -48,7 +48,7 @@ namespace Rep
 
 open CategoryTheory
 
-section Retract
+section
 
 variable {k : Type u} {G : Type v} [CommRing k] [Group G] [Fintype G]
 
@@ -68,13 +68,9 @@ theorem id_mem_range_norm_linHom_of_retract {A B : Rep.{w} k G} (s : A ⟶ B) (r
   conv_rhs => rw [← hx, ← hβx]
   simp [map_sum, hom_comm_apply]
 
-end Retract
-
-variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
-
 /-- **The identity of a free representation is a norm**: it is the norm of the projection to the
 coefficients at `1 ∈ G`, `f ↦ single 1 (f 1)` in each coordinate. -/
-theorem id_mem_range_norm_linHom_free (ι : Type u) :
+theorem id_mem_range_norm_linHom_free (ι : Type w) :
     LinearMap.id ∈ LinearMap.range
       (Representation.linHom (free k G ι).ρ (free k G ι).ρ).norm := by
   classical
@@ -86,10 +82,14 @@ theorem id_mem_range_norm_linHom_free (ι : Type u) :
 
 /-- **The identity of a projective representation is a norm**: `id_A = ∑ g, A.ρ g ∘ α ∘ A.ρ g⁻¹`
 for some `k`-linear `α`. -/
-theorem id_mem_range_norm_linHom_of_projective (A : Rep.{u} k G) [Projective A] :
+theorem id_mem_range_norm_linHom_of_projective (A : Rep.{max u v} k G) [Projective A] :
     LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm :=
   id_mem_range_norm_linHom_of_retract (retractFree A).i (retractFree A).r (retractFree A).retract
     (id_mem_range_norm_linHom_free _)
+
+end
+
+variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
 /-- **Higman's criterion.** A representation projective over `k` is projective exactly when its
 identity is a norm for the conjugation action on its `k`-linear endomorphisms. -/
