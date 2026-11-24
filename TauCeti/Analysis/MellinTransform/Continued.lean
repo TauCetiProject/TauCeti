@@ -67,6 +67,8 @@ of integrals `∫₀^∞ f(t) h(xt) dt` (DLMF §2.5(iii)) and of the distributio
   holomorphy away from the poles `-α_k` and `β_k`.
 * `TauCeti.add_re_pos_of_mellinConvergent`, `TauCeti.re_lt_of_mellinConvergent`: a nonzero
   coefficient bounds the strip of absolute convergence.
+* `TauCeti.mellinContAtZero_spec`, `TauCeti.mellinContAtTop_spec`: these properties assembled
+  for a continuation through an expansion with strictly increasing real parts of the exponents.
 
 ## References
 
@@ -230,23 +232,28 @@ private theorem eventually_rpow_le_norm_cpow_smul_sub_sum {k : ℕ}
   obtain ⟨C, hC⟩ := (hk1.trans (isBigO_ofReal_cpow_rpow self_mem_nhdsWithin (α (k + 1)))).bound
   filter_upwards [hC, eventually_mul_rpow_lt_nhdsGT_zero (sub_pos.mpr hα) C (half_pos hA),
     self_mem_nhdsWithin] with t ht₁ ht₂ (ht₀ : 0 < t)
+  have hnorm (w : ℂ) (x : E) : ‖(t : ℂ) ^ w • x‖ = t ^ w.re * ‖x‖ := by
+    rw [norm_smul, norm_cpow_eq_rpow_re_of_pos ht₀]
+  have hpow : t ^ ((z + α k).re - 1) = t ^ (z - 1).re * t ^ (α k).re := by
+    rw [← Real.rpow_add ht₀, add_re, sub_re, one_re]
+    congr 1
+    ring
   have hsucc : g k t = g (k + 1) t + (t : ℂ) ^ α k • a k := by
     simp only [hg, Finset.sum_range_succ]
     abel
-  have hP : 0 < t ^ (z.re - 1) := Real.rpow_pos_of_pos ht₀ _
   have hQ : 0 < t ^ (α k).re := Real.rpow_pos_of_pos ht₀ _
-  have hD : 0 < t ^ ((α (k + 1)).re - (α k).re) := Real.rpow_pos_of_pos ht₀ _
   have hsplit : t ^ (α (k + 1)).re = t ^ ((α (k + 1)).re - (α k).re) * t ^ (α k).re := by
     rw [← Real.rpow_add ht₀, sub_add_cancel]
   rw [hsplit, Real.norm_of_nonneg (by positivity)] at ht₁
-  have hlow : t ^ (α k).re * ‖a k‖ ≤ ‖g k t‖ + ‖g (k + 1) t‖ := by
-    have h := norm_sub_le (g k t) (g (k + 1) t)
-    rwa [hsucc, add_sub_cancel_left, norm_smul, norm_cpow_eq_rpow_re_of_pos ht₀, ← hsucc] at h
-  have hG : ‖a k‖ / 2 * t ^ (α k).re ≤ ‖g k t‖ := by nlinarith
-  rw [norm_smul, norm_cpow_eq_rpow_re_of_pos ht₀, sub_re, one_re, add_re,
-    show z.re + (α k).re - 1 = z.re - 1 + (α k).re by ring, Real.rpow_add ht₀,
-    div_mul_eq_mul_div, le_div_iff₀ hA]
-  nlinarith [mul_le_mul_of_nonneg_left hG hP.le]
+  have hlow : t ^ (α k).re * ‖a k‖ ≤ ‖g k t‖ + ‖g (k + 1) t‖ :=
+    calc t ^ (α k).re * ‖a k‖ = ‖g k t - g (k + 1) t‖ := by rw [hsucc, add_sub_cancel_left, hnorm]
+      _ ≤ ‖g k t‖ + ‖g (k + 1) t‖ := norm_sub_le _ _
+  have hG : t ^ (α k).re ≤ 2 / ‖a k‖ * ‖g k t‖ := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hA]
+    nlinarith [mul_le_mul_of_nonneg_right ht₂.le hQ.le]
+  calc t ^ ((z + α k).re - 1) = t ^ (z - 1).re * t ^ (α k).re := hpow
+    _ ≤ t ^ (z - 1).re * (2 / ‖a k‖ * ‖g k t‖) := by gcongr
+    _ = 2 / ‖a k‖ * ‖(t : ℂ) ^ (z - 1) • g k t‖ := by rw [hnorm]; ring
 
 /-- A nonzero coefficient `a_k` of an expansion of `f` at `0+` with strictly increasing `Re α_k`
 bounds the strip of absolute convergence of the Mellin transform of `f`: if it converges at `z`,
@@ -292,6 +299,35 @@ theorem mellinContAtZero_eq_mellin [CompleteSpace E]
       add_re_pos_of_mellinConvergent hexp hα hfz
     rw [mellinContAtZero_succ (integrableOn_Ioc_sub_sum_of_mellinConvergent hfz fun j _ ↦
       hpos j) (or_iff_not_imp_left.mpr (hpos n)), ih]
+
+/-- The continuation at `0+` assembled (DLMF 2.5.25–2.5.26): for an expansion of `f` at `0+` with
+strictly increasing `Re α_k` and `f = O(t^{-b})` at `+∞`, `mellinContAtZero f a α n` is holomorphic
+on the strip `-Re α_n < Re z < b` away from the poles `-α_k`, agrees with the continuation through
+`m` terms on `-Re α_{min n m} < Re z`, equals `mellin f` on `-Re α_0 < Re z < b`, and minus its
+principal parts `a_k/(z + α_k)` is holomorphic on the whole strip. -/
+theorem mellinContAtZero_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 0))
+    (hexp : HasAsymptoticExpansion (𝓝[>] 0) (fun k (t : ℝ) ↦ (t : ℂ) ^ α k) a f)
+    (hα : StrictMono fun k ↦ (α k).re) {b : ℝ} (hb : f =O[atTop] (· ^ (-b))) (n : ℕ) :
+    DifferentiableOn ℂ (mellinContAtZero f a α n)
+        {z | -(α n).re < z.re ∧ z.re < b ∧ ∀ k < n, z + α k ≠ 0} ∧
+      (∀ m, EqOn (mellinContAtZero f a α n) (mellinContAtZero f a α m)
+        {z | -(α (min n m)).re < z.re}) ∧
+      EqOn (mellinContAtZero f a α n) (mellin f) {z | -(α 0).re < z.re ∧ z.re < b} ∧
+      DifferentiableOn ℂ
+        (fun z ↦ mellinContAtZero f a α n z - ∑ k ∈ Finset.range n, (z + α k)⁻¹ • a k)
+        {z | -(α n).re < z.re ∧ z.re < b} := by
+  refine ⟨fun z hz ↦ (differentiableAt_mellinContAtZero hf (hexp.isBigO n) hb hz.1 hz.2.1
+      hz.2.2).differentiableWithinAt, fun m z hz ↦ ?_, fun z hz ↦ ?_,
+    differentiableOn_mellinContAtZero_sub_sum hf (hexp.isBigO n) hb⟩
+  · rcases le_total n m with hnm | hmn
+    · exact (mellinContAtZero_eq_of_le hf hexp hα.monotone hnm
+        (by rwa [min_eq_left hnm] at hz)).symm
+    · exact mellinContAtZero_eq_of_le hf hexp hα.monotone hmn (by rwa [min_eq_right hmn] at hz)
+  · have hbot : f =O[𝓝[>] 0] (· ^ (-(-(α 0).re))) := by
+      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using
+        isBigO_sub_sum_rpow (hexp.isBigO 0)
+    exact mellinContAtZero_eq_mellin hexp hα
+      (mellinConvergent_of_isBigO_rpow hf hb hz.2 hbot hz.1) n
 
 end AtZero
 
@@ -346,15 +382,6 @@ theorem mellinContAtTop_eq_mellinContAtZero (f : ℝ → E) (b : ℕ → E) (β 
     integral_Ioc_cpow_smul_eq_integral_Ioi_comp_inv f z]
   abel
 
-/-- An expansion of `f` at `+∞` in powers `t^{-β_k}` is an expansion of `t ↦ f t⁻¹` at `0+` in
-powers `t^{β_k}`. -/
-private theorem hasAsymptoticExpansion_comp_inv
-    (hexp : HasAsymptoticExpansion atTop (fun k (t : ℝ) ↦ (t : ℂ) ^ (-β k)) b f) :
-    HasAsymptoticExpansion (𝓝[>] 0) (fun k (t : ℝ) ↦ (t : ℂ) ^ β k) b fun t ↦ f t⁻¹ :=
-  (hexp.comp_tendsto tendsto_inv_nhdsGT_zero).congr_scale fun k ↦ by
-    filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-    simp only [ofReal_inv, inv_cpow_ofReal_nonneg ht.le, cpow_neg, inv_inv]
-
 /-- The remainder of an expansion at `+∞` after `n` terms is `O(t ^ (-Re β_n))`. -/
 private theorem isBigO_sub_sum_rpow_atTop
     (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
@@ -377,7 +404,7 @@ theorem mellinContAtTop_succ [CompleteSpace E]
     (hn : b n = 0 ∨ z.re < (β n).re) :
     mellinContAtTop f b β (n + 1) z = mellinContAtTop f b β n z := by
   rw [mellinContAtTop_eq_mellinContAtZero, mellinContAtTop_eq_mellinContAtZero]
-  refine mellinContAtZero_succ ?_ (hn.imp_right fun h ↦ by simpa using h)
+  refine mellinContAtZero_succ ?_ (hn.imp_right fun h ↦ by rw [add_re, neg_re]; linarith)
   rw [integrableOn_Ioc_cpow_smul_iff_integrableOn_Ioi_comp_inv, neg_neg]
   exact hint.congr_fun (fun t ht ↦ by rw [sub_sum_comp_inv (zero_lt_one.trans ht)])
     measurableSet_Ioi
@@ -441,7 +468,7 @@ theorem re_lt_of_mellinConvergent
     (hexp : HasAsymptoticExpansion atTop (fun k (t : ℝ) ↦ (t : ℂ) ^ (-β k)) b f)
     (hβ : StrictMono fun k ↦ (β k).re) (hfz : MellinConvergent f z) {k : ℕ} (hk : b k ≠ 0) :
     z.re < (β k).re := by
-  have h := add_re_pos_of_mellinConvergent (hasAsymptoticExpansion_comp_inv hexp) hβ
+  have h := add_re_pos_of_mellinConvergent hexp.comp_inv_atTop hβ
     ((mellinConvergent_comp_inv_iff f (-z)).mpr (by rwa [neg_neg])) hk
   rw [add_re, neg_re] at h
   linarith
@@ -453,8 +480,37 @@ theorem mellinContAtTop_eq_mellin [CompleteSpace E]
     (hβ : StrictMono fun k ↦ (β k).re) (hfz : MellinConvergent f z) (n : ℕ) :
     mellinContAtTop f b β n z = mellin f z := by
   rw [mellinContAtTop_eq_mellinContAtZero, mellinContAtZero_eq_mellin
-    (hasAsymptoticExpansion_comp_inv hexp) hβ
+    hexp.comp_inv_atTop hβ
     ((mellinConvergent_comp_inv_iff f (-z)).mpr (by rwa [neg_neg])) n, mellin_comp_inv, neg_neg]
+
+/-- The continuation at `+∞` assembled (DLMF 2.5.27–2.5.28): for an expansion of `f` at `+∞` with
+strictly increasing `Re β_k` and `f = O(t^c)` at `0+`, `mellinContAtTop f b β n` is holomorphic on
+the strip `-c < Re z < Re β_n` away from the poles `β_k`, agrees with the continuation through `m`
+terms on `Re z < Re β_{min n m}`, equals `mellin f` on `-c < Re z < Re β_0`, and plus the principal
+parts `b_k/(z - β_k)` is holomorphic on the whole strip. -/
+theorem mellinContAtTop_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 0))
+    (hexp : HasAsymptoticExpansion atTop (fun k (t : ℝ) ↦ (t : ℂ) ^ (-β k)) b f)
+    (hβ : StrictMono fun k ↦ (β k).re) {c : ℝ} (hc : f =O[𝓝[>] 0] (· ^ c)) (n : ℕ) :
+    DifferentiableOn ℂ (mellinContAtTop f b β n)
+        {z | -c < z.re ∧ z.re < (β n).re ∧ ∀ k < n, z ≠ β k} ∧
+      (∀ m, EqOn (mellinContAtTop f b β n) (mellinContAtTop f b β m)
+        {z | z.re < (β (min n m)).re}) ∧
+      EqOn (mellinContAtTop f b β n) (mellin f) {z | -c < z.re ∧ z.re < (β 0).re} ∧
+      DifferentiableOn ℂ
+        (fun z ↦ mellinContAtTop f b β n z + ∑ k ∈ Finset.range n, (z - β k)⁻¹ • b k)
+        {z | -c < z.re ∧ z.re < (β n).re} := by
+  refine ⟨fun z hz ↦ (differentiableAt_mellinContAtTop hf (hexp.isBigO n) hc hz.1 hz.2.1
+      hz.2.2).differentiableWithinAt, fun m z hz ↦ ?_, fun z hz ↦ ?_,
+    differentiableOn_mellinContAtTop_add_sum hf (hexp.isBigO n) hc⟩
+  · rcases le_total n m with hnm | hmn
+    · exact (mellinContAtTop_eq_of_le hf hexp hβ.monotone hnm
+        (by rwa [min_eq_left hnm] at hz)).symm
+    · exact mellinContAtTop_eq_of_le hf hexp hβ.monotone hmn (by rwa [min_eq_right hmn] at hz)
+  · have htop : f =O[atTop] (· ^ (-(β 0).re)) := by
+      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using
+        isBigO_sub_sum_rpow_atTop (hexp.isBigO 0)
+    exact mellinContAtTop_eq_mellin hexp hβ
+      (mellinConvergent_of_isBigO_rpow hf htop hz.2 (by simpa only [neg_neg] using hc) hz.1) n
 
 end AtTop
 
