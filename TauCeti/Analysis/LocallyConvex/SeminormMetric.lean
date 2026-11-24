@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Analysis.SpecificLimits.Basic
+public import TauCeti.Analysis.LocallyConvex.WithSeminorms
+public import TauCeti.Analysis.Normed.Group.CompatibleNorm
 
 /-!
 # The translation-invariant metric of a countable family of seminorms
@@ -26,12 +27,10 @@ additive group structure on `E` whose uniformity *is* the given one
 `UniformSpace.pseudoMetricSpace` already give some compatible pseudometric, but not a
 translation-invariant one or an explicit formula in terms of the seminorms.
 
-For an arbitrary family of seminorms, a sequence is Cauchy if and only if it is Cauchy for every
-seminorm of the family (`WithSeminorms.cauchySeq_iff`). For a countable family the uniformity is
-countably generated, so the space is complete if and only if every sequence that is Cauchy for
-each seminorm converges (`WithSeminorms.completeSpace_iff`). Since the uniformity of
-`WithSeminorms.toSeminormedAddCommGroup` is the given one, this is equally the completeness of
-the Fréchet metric.
+Since the uniformity of `WithSeminorms.toSeminormedAddCommGroup` is the given one, the
+completeness criterion `WithSeminorms.completeSpace_iff` (a countable family: the space is
+complete if and only if every sequence that is Cauchy for each seminorm converges) is equally
+the completeness criterion of the Fréchet metric.
 
 ## References
 
@@ -137,40 +136,6 @@ end SeminormFamily
 
 namespace WithSeminorms
 
-section Cauchy
-
-variable {𝕜 E ι : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
-  [UniformSpace E] [IsUniformAddGroup E] {p : SeminormFamily 𝕜 E ι}
-
-/-- In a uniform additive group whose topology is induced by a family of seminorms, a sequence
-is Cauchy if and only if it is Cauchy for every seminorm of the family. -/
-theorem cauchySeq_iff {F : Type*} [SemilatticeSup F] [Nonempty F] (hp : WithSeminorms p)
-    {u : F → E} :
-    CauchySeq u ↔ ∀ i, ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, p i (u m - u n) < ε := by
-  rw [cauchySeq_iff_tendsto, uniformity_eq_comap_nhds_zero, tendsto_comap_iff, hp.tendsto_nhds]
-  refine forall₃_congr fun i ε _ ↦ ?_
-  simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd, sub_zero]
-  rw [eventually_atTop_prod_self']
-  exact exists_congr fun N ↦ forall₂_congr fun m _ ↦ forall₂_congr fun n _ ↦ by
-    rw [map_sub_rev]
-
-/-- **Completeness criterion for countably many seminorms.** A uniform additive group whose
-topology is induced by a countable family of seminorms is complete if and only if every sequence
-which is Cauchy for every seminorm of the family converges. -/
-theorem completeSpace_iff [Countable ι] (hp : WithSeminorms p) :
-    CompleteSpace E ↔ ∀ u : ℕ → E,
-      (∀ i, ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, p i (u m - u n) < ε) →
-        ∃ x, Tendsto u atTop (𝓝 x) := by
-  have : (𝓝 (0 : E)).IsCountablyGenerated := by
-    rw [p.withSeminorms_iff_nhds_eq_iInf.mp hp]
-    infer_instance
-  have : (𝓤 E).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  simp_rw [← hp.cauchySeq_iff]
-  exact ⟨fun _ u hu ↦ cauchySeq_tendsto_of_complete hu,
-    UniformSpace.complete_of_cauchySeq_tendsto⟩
-
-end Cauchy
-
 section FrechetMetric
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
@@ -183,8 +148,7 @@ theorem hasBasis_frechetSeminorm_lt [TopologicalSpace E] (hp : WithSeminorms p) 
   refine hp.hasBasis_zero_ball.to_hasBasis ?_ fun ε hε ↦ ?_
   · rintro ⟨s, r⟩ (hr : 0 < r)
     -- `s ⊆ range N`, and a Fréchet bound `2⁻¹ ^ N * min 1 r` controls each `p n`, `n < N`.
-    obtain ⟨N, hN⟩ : ∃ N, s ⊆ Finset.range N := ⟨s.sup id + 1, fun n hn ↦
-      Finset.mem_range.2 (Nat.lt_succ_of_le (Finset.le_sup (f := id) hn))⟩
+    obtain ⟨N, hN⟩ := s.exists_nat_subset_range
     refine ⟨2⁻¹ ^ N * min 1 r, by positivity, fun x (hx : p.frechetSeminorm x < _) ↦ ?_⟩
     rw [Seminorm.mem_ball_zero]
     refine Seminorm.finset_sup_apply_lt hr fun n hn ↦ p.lt_of_frechetSeminorm_lt (hx.trans_le ?_)
@@ -230,9 +194,7 @@ definitionally the given one, so it is compatible with the topology and the unif
 of `E`. This is not an instance, since it depends on the choice of `p`. -/
 abbrev toSeminormedAddCommGroup [UniformSpace E] [IsUniformAddGroup E] (hp : WithSeminorms p) :
     SeminormedAddCommGroup E :=
-  { p.frechetSeminorm.toSeminormedAddCommGroup with
-    toPseudoMetricSpace := p.frechetSeminorm.toSeminormedAddCommGroup.toPseudoMetricSpace
-      |>.replaceUniformity (uniformity_eq_frechetSeminorm hp) }
+  p.frechetSeminorm.toSeminormedAddCommGroupOfUniformity (uniformity_eq_frechetSeminorm hp)
 
 variable [UniformSpace E] [IsUniformAddGroup E] (hp : WithSeminorms p)
 
@@ -260,6 +222,23 @@ abbrev toNormedAddCommGroup [T0Space E] : NormedAddCommGroup E :=
   NormedAddCommGroup.ofSeparation fun x hx ↦ by
     have : Inseparable x 0 := Metric.inseparable_iff.2 (by rwa [dist_zero_right])
     exact this.eq
+
+/-- The norm of the normed Fréchet metric is the Fréchet group seminorm. -/
+theorem toNormedAddCommGroup_norm_eq [T0Space E] (x : E) :
+    @norm E hp.toNormedAddCommGroup.toNorm x = p.frechetSeminorm x :=
+  (rfl)
+
+/-- The distance of the normed Fréchet metric is `p.frechetSeminorm (x - y)`. -/
+theorem toNormedAddCommGroup_dist_eq [T0Space E] (x y : E) :
+    @dist E hp.toNormedAddCommGroup.toDist x y = p.frechetSeminorm (x - y) :=
+  @dist_eq_norm E hp.toNormedAddCommGroup.toSeminormedAddCommGroup x y
+
+/-- The uniform structure of the normed Fréchet metric is the given uniform structure of `E`. -/
+theorem toNormedAddCommGroup_toUniformSpace [T0Space E] :
+    @PseudoMetricSpace.toUniformSpace E
+        hp.toNormedAddCommGroup.toMetricSpace.toPseudoMetricSpace =
+      ‹UniformSpace E› :=
+  (rfl)
 
 end FrechetMetric
 
