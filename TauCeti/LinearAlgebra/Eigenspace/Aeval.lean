@@ -21,7 +21,8 @@ level `k` is contained in that of `p(f)` at `p(μ)`
 the spectral mapping theorem for the characteristic roots of `p(f)`.
 
 Similarly, if `p ∣ q` then every vector killed by a power of `p(f)` is killed by a power of `q(f)`
-(`Module.End.maxGenEigenspace_aeval_le_of_dvd`).
+(`Module.End.maxGenEigenspace_aeval_le_of_dvd`), and an eigenvector of `f²` for `μ` is killed by
+`f² - μ` (`Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C`).
 
 ## References
 
@@ -72,5 +73,11 @@ theorem maxGenEigenspace_aeval_le_of_dvd {R M : Type*} [CommRing R] [AddCommGrou
   rw [zero_smul, sub_zero] at hn ⊢
   rw [mul_comm p r, map_mul, ((Commute.all r p).map (aeval f)).mul_pow, mul_apply_eq_comp, hn,
     map_zero]
+
+/-- An eigenvector of `f²` for `μ` is killed by `f² - μ`. -/
+theorem mem_maxGenEigenspace_aeval_X_sq_sub_C {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] {f : End R M} {μ : R} {v : M} (hv : f (f v) = μ • v) :
+    v ∈ (aeval f (X ^ 2 - C μ)).maxGenEigenspace 0 :=
+  (mem_maxGenEigenspace _ _ _).2 ⟨1, by simp [sq, hv]⟩
 
 end Module.End

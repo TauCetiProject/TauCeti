@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Nondegenerate
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
+import TauCeti.Algebra.Polynomial.EvenComp
 import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Plane
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.Geometry.Symplectic.Restrict
 import TauCeti.Geometry.Symplectic.Spectrum
+import TauCeti.LinearAlgebra.Eigenspace.Aeval
 import TauCeti.LinearAlgebra.Eigenspace.Commute
 
 /-!
@@ -81,8 +83,6 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
 * `isSymplectic_maxGenEigenspace_sq_sub`, `apply_eq_zero_of_mem_maxGenEigenspace_sq_sub`: for
   `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace, and these
   subspaces are pairwise `ω`-orthogonal for distinct `μ`.
-* `comp_neg_X_sq_sub_C`, `mem_maxGenEigenspace_sq_sub`: the polynomial `X² - μ` is even, and an
-  eigenvector of `A²` for `μ` is killed by `A² - μ`.
 
 ## References
 
@@ -102,10 +102,6 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] {ω : SymplecticForm V}
 
 variable {A : Module.End ℝ V}
 
-/-- The polynomial `X² - μ` is even. -/
-theorem comp_neg_X_sq_sub_C (μ : ℝ) : (X ^ 2 - C μ : ℝ[X]).comp (-X) = X ^ 2 - C μ := by
-  simp [sub_comp]
-
 /-- For `A ∈ sp(V, ω)`, the vectors killed by a power of `A² - μ` form a symplectic subspace. -/
 theorem isSymplectic_maxGenEigenspace_sq_sub [FiniteDimensional ℝ V]
     (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (μ : ℝ) :
@@ -122,11 +118,6 @@ theorem apply_eq_zero_of_mem_maxGenEigenspace_sq_sub
     ?_ hv hw
   rw [comp_neg_X_sq_sub_C]
   exact isCoprime_sub_C_of_isUnit_sub (X ^ 2) (sub_ne_zero.2 hμν).isUnit
-
-/-- An eigenvector of `A²` for `μ` is killed by `A² - μ`. -/
-theorem mem_maxGenEigenspace_sq_sub {μ : ℝ} {v : V} (hv : A (A v) = μ • v) :
-    v ∈ (aeval A (X ^ 2 - C μ)).maxGenEigenspace 0 :=
-  (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simp [sq, hv]⟩
 
 /-- For `A ∈ sp(V, ω)`, the vectors killed by powers of `A² - μ` for the distinct `μ ∈ s`, indexed
 by `Fin s.card`, are pairwise `ω`-orthogonal. -/
@@ -152,7 +143,7 @@ private theorem finrank_maxGenEigenspace_sq_sub
   -- `ω(x ν, y ν) = 1`.
   have hx (ν : s) : ∃ x ∈ G ν, x ≠ 0 := by
     obtain ⟨x, hx⟩ := (hAs ν ν.property).exists_hasEigenvector
-    refine ⟨x, mem_maxGenEigenspace_sq_sub ?_, hx.2⟩
+    refine ⟨x, Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C ?_, hx.2⟩
     simpa [sq] using hx.apply_eq_smul
   choose x hxG hx0 using hx
   have hy (ν : s) : ∃ y ∈ G ν, ω (x ν) y = 1 := by
@@ -210,7 +201,7 @@ private theorem apply_apply_eq_of_mem_maxGenEigenspace_sq_sub
   -- An eigenvector of `A²` for `μ` lies in `L`, so `κ = μ`.
   obtain ⟨x, hx⟩ := (hAs μ hμ).exists_hasEigenvector
   have hxμ : A (A x) = μ • x := by simpa [sq] using hx.apply_eq_smul
-  have hxL : x ∈ L := mem_maxGenEigenspace_sq_sub hxμ
+  have hxL : x ∈ L := Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C hxμ
   -- The restriction of `A` evaluates on `L` as `A` does, definitionally.
   have h : A (A x) = κ • x := congrArg Subtype.val (LinearMap.congr_fun hκ ⟨x, hxL⟩)
   rw [hxμ] at h
