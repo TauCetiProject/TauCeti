@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Prod
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeB.Representation
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Representation
 import TauCeti.RepresentationTheory.Spin.OddStructure
@@ -15,7 +16,9 @@ import TauCeti.RepresentationTheory.Spin.OddStructure
 The full spin representations of the split odd and even orthogonal Lie algebras are
 faithful over every field in which two is invertible. This supplies the injective Lie action
 needed to regard their admissible spin lattices as faithful Chevalley representations.
-The type-D result concerns the full exterior spinor module, not either half-spin summand.
+The type-D result concerns the full exterior spinor module, not either half-spin summand;
+equivalently, the paired action on the two half-spin summands is faithful
+(`TauCeti.SpinPolarizationData.typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective`).
 
 In odd dimension the action of the whole Clifford algebra is not faithful. Its restriction
 to the even subalgebra is nevertheless faithful, and the quadratic Lie algebra lies in that
@@ -88,6 +91,16 @@ theorem typeDSpinLieRep_injective (hline : P.line = ⊥) :
     (P.typeDQuadraticEquiv b hline).injective
   simpa only [Function.comp_apply, typeDSpinLieRep_apply, LieHom.comp_apply, LieSubalgebra.coe_incl,
     AlgHom.toLieHom_apply, LieEquiv.coe_toLieHom] using hxy
+
+/-- The split even orthogonal Lie algebra acts faithfully on the sum of its two half-spin modules:
+an element is determined by its actions on `S⁺` and `S⁻`. -/
+theorem typeDSpinPlusLieRep_prod_typeDSpinMinusLieRep_injective (hline : P.line = ⊥) :
+    Function.Injective ((P.typeDSpinPlusLieRep b hline).prod (P.typeDSpinMinusLieRep b hline)) := by
+  have := Module.Finite.of_basis (P.typeDBasis b hline)
+  intro x y hxy
+  rw [LieHom.prod_apply, LieHom.prod_apply, ← P.evenSpinActionProd_typeDQuadraticEquiv,
+    ← P.evenSpinActionProd_typeDQuadraticEquiv] at hxy
+  simpa using congrArg Subtype.val (evenSpinActionProd_injective P hline hxy)
 
 end SpinPolarizationData
 

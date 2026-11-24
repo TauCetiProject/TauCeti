@@ -40,7 +40,12 @@ decreases by the multiplicity of the crossed eigenvalue
 (`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_add_finrank_eigenspace_atTop` and
 `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_add_finrank_eigenspace_atBot`).
 The weights below the spectral gap of `TauCeti.Analysis.ODE.EnergyEstimate.Weighted` cross no
-eigenvalue, and leave the index unchanged.
+eigenvalue, and leave the index unchanged. The limits `A±` may have kernels: for small decay
+weights, with slopes `δ⁻ < 0 < δ⁺` closer to `0` than every nonzero eigenvalue of the respective
+limits, the index is `n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`, so the kernel of the limit at `+∞` is counted
+as negative and that at `-∞` as positive
+(`index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`, in
+`TauCeti.WeakDerivStep`).
 
 A weight can therefore make `D_A` Fredholm when a limit is degenerate, as for Morse–Bott
 trajectories: for `A = 0`, where `d/ds` itself is not Fredholm, a slope with `δ⁻ < 0 < δ⁺` gives
@@ -49,6 +54,14 @@ index `-dim E` (`index_trajectoryOperator_neg_smul_id_eq_neg_finrank`).
 For the symmetric weight `w(s) = δ log (cosh s)`, which is `δ |s|` up to a bounded error, the slope
 is `δ tanh s` and the index is `n_{< -δ}(A⁻) - n_{< δ}(A⁺)`
 (`index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`).
+For a continuous family `B` with nonzero scalar limits `b± • id` the index is `dim E` when
+`b⁻ < 0 < b⁺`, `-dim E` when `b⁺ < 0 < b⁻`, and `0` otherwise
+(`TauCeti.WeakDerivStep.index_trajectoryOperator_of_tendsto_smul_id`). In particular, for a
+constant scalar coefficient `a • id` on `E` the index is `dim E` when `δ⁺ < a < δ⁻`,
+`-dim E` when `δ⁻ < a < δ⁺`, and `0` when `δ⁻` and `δ⁺` lie on the same side of `a`
+(`TauCeti.WeakDerivStep.index_trajectoryOperator_smul_id_sub_smul_id`); for `a = 0` the
+unweighted operator `d/ds`, which is not Fredholm when `E ≠ 0`, becomes Fredholm of index
+`-dim E` for decay weights and of index `dim E` for growth weights.
 In the scalar case `E = ℝ` with constant coefficient `a`, the operator `u ↦ u' + (a - δ tanh s) u`
 has index `0` for `|δ| < |a|` and index `-1` for `δ > |a|`: as `δ` increases through `|a|`, one
 of the two slopes `±δ` crosses the simple eigenvalue `a` of the limits.
@@ -68,8 +81,13 @@ In the namespace `TauCeti.WeakDerivStep`:
 * `index_trajectoryOperator_eq_add_finrank_eigenspace_atTop`,
   `index_trajectoryOperator_eq_add_finrank_eigenspace_atBot`: crossing one eigenvalue
   at one end changes the index by its multiplicity.
+* `index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker`: small decay
+  weights give the index `n⁻(A⁻) - n⁻(A⁺) - dim ker A⁺`.
 * `index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`:
   the index for the symmetric weight `δ log (cosh s)`.
+* `index_trajectoryOperator_of_tendsto_smul_id`: the index for nonzero scalar limits.
+* `index_trajectoryOperator_smul_id_sub_smul_id`: the index for a constant scalar coefficient on
+  `E`.
 * `index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_eq_zero_of_abs_lt_abs`,
   `index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id_eq_neg_one_of_abs_lt`: the scalar crossing,
   index `0` below `|a|` and `-1` above it.
@@ -329,6 +347,48 @@ theorem index_trajectoryOperator_eq_add_finrank_eigenspace_atBot
       hother,
     RCLike.ofReal_real_eq_id, id_eq]
 
+/-- **The index for small decay weights.** Let `δminus > 0` be smaller than the absolute value of
+every negative eigenvalue of `A⁻`, let `δplus > 0` be smaller than every positive eigenvalue of
+`A⁺`, and let `c` be a continuous slope with limits `-δminus` at `-∞` and `δplus` at `+∞`, as for
+a decay weight equal to `δminus |s|` near `-∞` and to `δplus |s|` near `+∞`. Then the index of
+`u ↦ u' + (A - c) u` is the number of negative eigenvalues of `A⁻`, minus the number of negative
+eigenvalues of `A⁺`, minus the dimension of the kernel of `A⁺`: the kernel of the limit at `+∞`
+is counted as negative, and that at `-∞` as positive. -/
+theorem index_trajectoryOperator_sub_smul_id_eq_finrank_sub_finrank_sub_finrank_ker
+    (hA : Continuous A) (hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric)
+    (hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    {c : ℝ → ℝ} (hc : Continuous c) {δminus δplus : ℝ} (hδminus : 0 < δminus)
+    (hδplus : 0 < δplus) (hcbot : Tendsto c atBot (𝓝 (-δminus)))
+    (hctop : Tendsto c atTop (𝓝 δplus))
+    (hgapminus : ∀ μ ∈ Ico (-δminus) 0, ¬Module.End.HasEigenvalue (Aminus : E →ₗ[ℝ] E) μ)
+    (hgapplus : ∀ μ ∈ Ioc 0 δplus, ¬Module.End.HasEigenvalue (Aplus : E →ₗ[ℝ] E) μ)
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ A s - c s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL).index =
+      (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) -
+          Module.finrank ℝ (LinearMap.ker (Aplus : E →ₗ[ℝ] E)) := by
+  rw [index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank hA
+      hsymminus hsymplus hbot htop hc hcbot hctop (hgapminus _ ⟨le_rfl, neg_lt_zero.2 hδminus⟩)
+      (hgapplus _ ⟨hδplus, le_rfl⟩) BL hBL]
+  -- No eigenvalue of `A⁻` lies in `[-δminus, 0)`, and the only one of `A⁺` in `[0, δplus)` is
+  -- `0`, whose eigenspace is the kernel.
+  have hplus : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ico 0 δplus) =
+      LinearMap.ker (Aplus : E →ₗ[ℝ] E) := by
+    rw [Module.End.pointSpectralSubspace_eq_eigenspace (𝕜 := ℝ) (Ω := Ico 0 δplus) (μ := 0)
+      ⟨le_rfl, hδplus⟩
+      fun ν hν hν0 ↦ not_not.1 (Module.End.hasEigenvalue_iff.not.1
+        (hgapplus ν ⟨lt_of_le_of_ne hν.1 hν0.symm, hν.2.le⟩))]
+    simp
+  rw [Module.End.finrank_pointSpectralSubspace_Iio_eq_add (A := (Aminus : E →ₗ[ℝ] E))
+      (neg_nonpos.2 hδminus.le),
+    Module.End.finrank_pointSpectralSubspace_Iio_eq_add (A := (Aplus : E →ₗ[ℝ] E)) hδplus.le,
+    Module.End.pointSpectralSubspace_eq_bot_iff.2 hgapminus, finrank_bot, hplus]
+  push_cast
+  ring
+
 /-- **The index for the symmetric weight `δ log (cosh s)`.** Let `A` be a continuous family with
 symmetric limits `A±`, and let `δ` be a real number such that `-δ` is not an eigenvalue of `A⁻`
 and `δ` is not an eigenvalue of `A⁺`. The weight `δ log (cosh s)`, which is `δ |s|` up to a
@@ -353,45 +413,90 @@ theorem index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSu
 
 section Scalar
 
+/-- **The index for scalar limits.** Let `B` be a continuous family of operators on a
+finite-dimensional real inner product space `E` whose limits at `±∞` are nonzero scalars
+`b± • id`. Then the trajectory operator `u ↦ u' + B u` has index `dim E` when `b⁻ < 0 < b⁺`,
+`-dim E` when `b⁺ < 0 < b⁻`, and `0` when `b⁻` and `b⁺` have the same sign: each limit has the
+single eigenvalue `b±`, of multiplicity `dim E`. -/
+theorem index_trajectoryOperator_of_tendsto_smul_id {B : ℝ → E →L[ℝ] E} (hB : Continuous B)
+    {bminus bplus : ℝ} (hbot : Tendsto B atBot (𝓝 (bminus • ContinuousLinearMap.id ℝ E)))
+    (htop : Tendsto B atTop (𝓝 (bplus • ContinuousLinearMap.id ℝ E)))
+    (hbminus : bminus ≠ 0) (hbplus : bplus ≠ 0)
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] B) :
+    (trajectoryOperator (p := 2) BL).index =
+      (if bminus < 0 then (Module.finrank ℝ E : ℤ) else 0) -
+        if bplus < 0 then (Module.finrank ℝ E : ℤ) else 0 := by
+  have hcoe (b : ℝ) :
+      ((b • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E) = b • LinearMap.id := by
+    rw [ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id]
+  have hsym (b : ℝ) : ((b • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
+    simpa using LinearMap.IsSymmetric.id.smul (conj_trivial b)
+  -- The scalar `b` has the single eigenvalue `b`. The lemmas on scalars are stated over `RCLike`;
+  -- over `ℝ` the cast `ℝ → ℝ` is the identity.
+  have hscalar (b : ℝ) (Ω : Set ℝ) (hb : b ∉ Ω) : Module.End.pointSpectralSubspace
+      ((b • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E) Ω = ⊥ := by
+    have hs := Module.End.pointSpectralSubspace_smul_id_of_notMem (𝕜 := ℝ) (E := E) hb
+    simp only [RCLike.ofReal_real_eq_id, id_eq] at hs
+    rw [hcoe, hs]
+  have hne {b : ℝ} (hb : b ≠ 0) :
+      ¬Module.End.HasEigenvalue ((b • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E) 0 := by
+    simpa using Module.End.pointSpectralSubspace_eq_bot_iff.mp
+      (hscalar b {0} (notMem_singleton_iff.2 hb)) 0 (mem_singleton 0)
+  have hfinrank (b : ℝ) : (Module.finrank ℝ (Module.End.pointSpectralSubspace
+      ((b • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0)) : ℤ) =
+        if b < 0 then (Module.finrank ℝ E : ℤ) else 0 := by
+    split_ifs with h
+    · have hs := Module.End.pointSpectralSubspace_smul_id_of_mem (𝕜 := ℝ) (E := E) (Ω := Iio 0) h
+      simp only [RCLike.ofReal_real_eq_id, id_eq] at hs
+      rw [hcoe, hs, finrank_top]
+    · rw [hscalar b _ h, finrank_bot, Nat.cast_zero]
+  rw [index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
+      (c := fun _ ↦ 0) hB (hsym bminus) (hsym bplus) hbot htop continuous_const tendsto_const_nhds
+      tendsto_const_nhds (hne hbminus) (hne hbplus) BL (by simpa using hBL),
+    hfinrank, hfinrank]
+
+/-- **The scalar example.** For the constant coefficient `a • id` on a finite-dimensional real
+inner product space `E` and a continuous slope `c` with limits `δ±` different from `a`, the
+trajectory operator `u ↦ u' + (a - c) u` has index `dim E` when `δ⁺ < a < δ⁻`, `-dim E` when
+`δ⁻ < a < δ⁺`, and `0` when `δ⁻` and `δ⁺` lie on the same side of `a`. This is
+`index_trajectoryOperator_of_tendsto_smul_id` for the limits `(a - δ±) • id`. In particular, for
+`a = 0` the operator `d/ds`, which is not Fredholm on unweighted spaces when `E ≠ 0`, has index
+`-dim E` for decay weights (`δ⁻ < 0 < δ⁺`) and `dim E` for growth weights (`δ⁺ < 0 < δ⁻`). -/
+theorem index_trajectoryOperator_smul_id_sub_smul_id (a : ℝ) {c : ℝ → ℝ} (hc : Continuous c)
+    {δminus δplus : ℝ} (hcbot : Tendsto c atBot (𝓝 δminus)) (hctop : Tendsto c atTop (𝓝 δplus))
+    (hminus : δminus ≠ a) (hplus : δplus ≠ a)
+    (BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ a • ContinuousLinearMap.id ℝ E - c s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) BL).index =
+      (if a < δminus then (Module.finrank ℝ E : ℤ) else 0) -
+        if a < δplus then (Module.finrank ℝ E : ℤ) else 0 := by
+  have hlim {l : Filter ℝ} {δ : ℝ} (h : Tendsto c l (𝓝 δ)) :
+      Tendsto (fun s ↦ a • ContinuousLinearMap.id ℝ E - c s • ContinuousLinearMap.id ℝ E) l
+        (𝓝 ((a - δ) • ContinuousLinearMap.id ℝ E)) := by
+    rw [sub_smul]
+    exact tendsto_const_nhds.sub (h.smul_const _)
+  rw [index_trajectoryOperator_of_tendsto_smul_id (continuous_const.sub (hc.smul continuous_const))
+      (hlim hcbot) (hlim hctop) (sub_ne_zero.2 hminus.symm) (sub_ne_zero.2 hplus.symm) BL hBL]
+  simp only [sub_neg]
+
 variable {a δ : ℝ}
 
-/-- The index of the scalar operator `u ↦ u' + (a - δ tanh s) u`, by the symmetric weight formula
-`index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank`:
-the scalar `a` has the single eigenvalue `a`, so it has one eigenvalue below `t` if `a < t` and
-none otherwise. -/
+/-- The index of the scalar operator `u ↦ u' + (a - δ tanh s) u`, by the scalar example
+`index_trajectoryOperator_smul_id_sub_smul_id` for the slope `δ tanh s`, whose limits are `∓δ`
+at `∓∞`. -/
 private theorem index_trajectoryOperator_smul_id_sub_mul_tanh_smul_id (h₁ : a ≠ -δ)
     (h₂ : a ≠ δ) (BL : Lp (ℝ →L[ℝ] ℝ) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hBL : BL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ a • ContinuousLinearMap.id ℝ ℝ - (δ * Real.tanh s) • ContinuousLinearMap.id ℝ ℝ) :
     (trajectoryOperator (p := 2) BL).index =
-      ((if a < -δ then 1 else 0 : ℕ) : ℤ) - ((if a < δ then 1 else 0 : ℕ) : ℤ) := by
-  have hcoe : ((a • ContinuousLinearMap.id ℝ ℝ : ℝ →L[ℝ] ℝ) : ℝ →ₗ[ℝ] ℝ) = a • LinearMap.id := by
-    rw [ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_id]
-  have hsym : ((a • ContinuousLinearMap.id ℝ ℝ : ℝ →L[ℝ] ℝ) : ℝ →ₗ[ℝ] ℝ).IsSymmetric := by
-    simpa using LinearMap.IsSymmetric.id.smul (conj_trivial a)
-  -- The lemmas on scalars are stated over `RCLike`; over `ℝ` the cast `ℝ → ℝ` is the identity.
-  have hscalar (Ω : Set ℝ) (ha : a ∉ Ω) : Module.End.pointSpectralSubspace
-      ((a • ContinuousLinearMap.id ℝ ℝ : ℝ →L[ℝ] ℝ) : ℝ →ₗ[ℝ] ℝ) Ω = ⊥ := by
-    have hs := Module.End.pointSpectralSubspace_smul_id_of_notMem (𝕜 := ℝ) (E := ℝ) ha
-    simp only [RCLike.ofReal_real_eq_id, id_eq] at hs
-    rw [hcoe, hs]
-  have hne {μ : ℝ} (h : μ ≠ a) :
-      ¬Module.End.HasEigenvalue ((a • ContinuousLinearMap.id ℝ ℝ : ℝ →L[ℝ] ℝ) : ℝ →ₗ[ℝ] ℝ) μ := by
-    have hs := hscalar {μ} (Ne.symm h)
-    simp only [Module.End.pointSpectralSubspace_singleton, RCLike.ofReal_real_eq_id, id_eq] at hs
-    rw [Module.End.hasEigenvalue_iff, not_not, hs]
-  have hfinrank (t : ℝ) : Module.finrank ℝ (Module.End.pointSpectralSubspace
-      ((a • ContinuousLinearMap.id ℝ ℝ : ℝ →L[ℝ] ℝ) : ℝ →ₗ[ℝ] ℝ) (Iio t)) =
-        if a < t then 1 else 0 := by
-    split_ifs with h
-    · have hs := Module.End.pointSpectralSubspace_smul_id_of_mem (𝕜 := ℝ) (E := ℝ) (Ω := Iio t) h
-      simp only [RCLike.ofReal_real_eq_id, id_eq] at hs
-      rw [hcoe, hs, finrank_top, Module.finrank_self]
-    · rw [hscalar _ h, finrank_bot]
-  rw [index_trajectoryOperator_sub_mul_tanh_smul_id_eq_finrank_pointSpectralSubspace_sub_finrank
-      continuous_const hsym hsym tendsto_const_nhds tendsto_const_nhds (hne (Ne.symm h₁))
-      (hne (Ne.symm h₂)) BL hBL,
-    hfinrank, hfinrank]
+      (if a < -δ then 1 else 0 : ℤ) - (if a < δ then 1 else 0 : ℤ) := by
+  rw [index_trajectoryOperator_smul_id_sub_smul_id a (c := fun s ↦ δ * Real.tanh s)
+      (continuous_const.mul Real.continuous_tanh)
+      (by simpa using Real.tendsto_tanh_atBot.const_mul δ)
+      (by simpa using Real.tendsto_tanh_atTop.const_mul δ) h₁.symm h₂.symm BL hBL,
+    Module.finrank_self, Nat.cast_one]
 
 /-- **The scalar crossing below the rate.** For `|δ| < |a|`, the operator
 `u ↦ u' + (a - δ tanh s) u` on `W^{1,2}(ℝ)`, the conjugate of `u ↦ u' + a u` on the spaces weighted

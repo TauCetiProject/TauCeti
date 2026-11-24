@@ -291,6 +291,14 @@ theorem pointSpectralSubspace_mono (h : Ω ⊆ Ω') :
 theorem pointSpectralSubspace_empty : A.pointSpectralSubspace ∅ = ⊥ := by
   simp [pointSpectralSubspace]
 
+/-- The point-spectral subspace selected by `Ω` vanishes exactly when `A` has no eigenvalue in
+`Ω`. -/
+@[simp]
+theorem pointSpectralSubspace_eq_bot_iff :
+    A.pointSpectralSubspace Ω = ⊥ ↔ ∀ μ ∈ Ω, ¬A.HasEigenvalue (μ : 𝕜) := by
+  rw [← le_bot_iff, pointSpectralSubspace_le_iff]
+  simp only [le_bot_iff, hasEigenvalue_iff, not_not]
+
 /-- The point-spectral subspace of a union is the sum of the two point-spectral subspaces. -/
 @[simp]
 theorem pointSpectralSubspace_union :
@@ -422,6 +430,20 @@ theorem pointSpectralSubspace_smul_id_of_notMem {c : ℝ} (hc : c ∉ Ω) :
   rw [Submodule.mem_bot]
   by_contra hx0
   exact hμc (smul_left_injective 𝕜 hx0 hx.symm)
+
+/-- The point-spectral subspace of the identity selected by a set containing `1` is the whole
+space. With `Module.End.pointSpectralSubspace_neg` this also computes it for `-1`. -/
+@[simp]
+theorem pointSpectralSubspace_one_of_mem (h : 1 ∈ Ω) :
+    (1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊤ := by
+  simpa [Module.End.one_eq_id] using pointSpectralSubspace_smul_id_of_mem (𝕜 := 𝕜) (E := E) h
+
+/-- The point-spectral subspace of the identity selected by a set not containing `1` is zero.
+With `Module.End.pointSpectralSubspace_neg` this also computes it for `-1`. -/
+@[simp]
+theorem pointSpectralSubspace_one_of_notMem (h : 1 ∉ Ω) :
+    (1 : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊥ := by
+  simpa [Module.End.one_eq_id] using pointSpectralSubspace_smul_id_of_notMem (𝕜 := 𝕜) (E := E) h
 
 /-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
 the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
