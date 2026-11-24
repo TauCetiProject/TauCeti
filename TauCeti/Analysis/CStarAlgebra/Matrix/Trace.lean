@@ -55,7 +55,9 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   `‖·‖₂` do not depend on the labelling of the index type, so the statements below over `n ⊕ m`
   and `n × m` give those over `Fin (k + l)` and `Fin (k * l)`.
 * `CStarMatrix.normalizedTrace_fromBlocks`, `CStarMatrix.normalizedTwoNorm_fromBlocks_sq`: block
-  additivity `tr_{k+l}(x ⊕ y) = (k tr_k(x) + l tr_l(y))/(k + l)`, and the same for `‖·‖₂²`.
+  additivity `tr_{k+l}(x ⊕ y) = (k tr_k(x) + l tr_l(y))/(k + l)`, and the same for `‖·‖₂²`; the
+  `simp` forms `CStarMatrix.normalizedTrace_ofMatrix_fromBlocks` and
+  `CStarMatrix.normalizedTwoNorm_ofMatrix_fromBlocks_sq` take `Matrix` blocks.
 * `CStarMatrix.normalizedTrace_kronecker`, `CStarMatrix.normalizedTwoNorm_kronecker`: tensor
   multiplicativity `tr_{kl}(x ⊗ y) = tr_k(x) tr_l(y)` and `‖x ⊗ y‖₂ = ‖x‖₂‖y‖₂` for the Kronecker
   product; the `simp` forms `CStarMatrix.normalizedTrace_ofMatrix_kronecker` and
@@ -531,6 +533,20 @@ theorem normalizedTwoNorm_reindexₐ_symm (x : CStarMatrix n n ℂ) (e : m ≃ n
     normalizedTwoNorm ((reindexₐ ℂ ℂ e).symm x) = normalizedTwoNorm x := by
   rw [← reindexₐ_symm, normalizedTwoNorm_reindexₐ]
 
+/-- **Block additivity of the normalized trace**, for a block matrix with diagonal blocks
+`A ∈ M_k` and `D ∈ M_l`: `tr_{k+l} = (k tr_k(A) + l tr_l(D))/(k + l)`; the off-diagonal blocks do
+not contribute. -/
+@[simp]
+theorem normalizedTrace_ofMatrix_fromBlocks (A : Matrix n n ℂ) (b : Matrix n m ℂ)
+    (c : Matrix m n ℂ) (D : Matrix m m ℂ) :
+    normalizedTrace (ofMatrix (Matrix.fromBlocks A b c D)) =
+      (Fintype.card n * normalizedTrace (ofMatrix A) +
+          Fintype.card m * normalizedTrace (ofMatrix D)) /
+        (Fintype.card n + Fintype.card m) := by
+  rw [card_mul_normalizedTrace, card_mul_normalizedTrace, normalizedTrace_def,
+    Equiv.symm_apply_apply, Equiv.symm_apply_apply, Equiv.symm_apply_apply,
+    Matrix.trace_fromBlocks, Fintype.card_sum, Nat.cast_add, inv_mul_eq_div]
+
 /-- **Block additivity of the normalized trace.** For the block matrix with diagonal blocks
 `x ∈ M_k` and `y ∈ M_l`, `tr_{k+l} = (k tr_k(x) + l tr_l(y))/(k + l)`; the off-diagonal blocks do
 not contribute. -/
@@ -539,10 +555,24 @@ theorem normalizedTrace_fromBlocks (x : CStarMatrix n n ℂ) (b : Matrix n m ℂ
     normalizedTrace (ofMatrix (Matrix.fromBlocks (ofMatrix.symm x) b c (ofMatrix.symm y))) =
       (Fintype.card n * normalizedTrace x + Fintype.card m * normalizedTrace y) /
         (Fintype.card n + Fintype.card m) := by
-  rw [normalizedTrace_def, Equiv.symm_apply_apply, Matrix.trace_fromBlocks, Fintype.card_sum,
-    card_mul_normalizedTrace, card_mul_normalizedTrace, div_eq_inv_mul]
-  push_cast
-  rfl
+  rw [normalizedTrace_ofMatrix_fromBlocks, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+/-- **Block additivity of the normalized 2-norm**, for the block-diagonal matrix `A ⊕ D` with
+`A ∈ M_k` and `D ∈ M_l`: `‖A ⊕ D‖₂² = (k‖A‖₂² + l‖D‖₂²)/(k + l)`. -/
+@[simp]
+theorem normalizedTwoNorm_ofMatrix_fromBlocks_sq (A : Matrix n n ℂ) (D : Matrix m m ℂ) :
+    normalizedTwoNorm (ofMatrix (Matrix.fromBlocks A 0 0 D)) ^ 2 =
+      (Fintype.card n * normalizedTwoNorm (ofMatrix A) ^ 2 +
+          Fintype.card m * normalizedTwoNorm (ofMatrix D) ^ 2) /
+        (Fintype.card n + Fintype.card m) := by
+  have h : star (ofMatrix (Matrix.fromBlocks A 0 0 D)) * ofMatrix (Matrix.fromBlocks A 0 0 D) =
+      ofMatrix (Matrix.fromBlocks (ofMatrix.symm (star (ofMatrix A) * ofMatrix A)) 0 0
+        (ofMatrix.symm (star (ofMatrix D) * ofMatrix D))) := by
+    apply ofMatrix.symm.injective
+    simp [Matrix.fromBlocks_conjTranspose, Matrix.fromBlocks_multiply]
+  rw [normalizedTwoNorm_sq, h, normalizedTrace_fromBlocks, normalizedTrace_star_mul_self,
+    normalizedTrace_star_mul_self]
+  norm_cast
 
 /-- **Block additivity of the normalized 2-norm.** For the block-diagonal matrix `x ⊕ y` with
 `x ∈ M_k` and `y ∈ M_l`, `‖x ⊕ y‖₂² = (k‖x‖₂² + l‖y‖₂²)/(k + l)`. -/
@@ -550,15 +580,7 @@ theorem normalizedTwoNorm_fromBlocks_sq (x : CStarMatrix n n ℂ) (y : CStarMatr
     normalizedTwoNorm (ofMatrix (Matrix.fromBlocks (ofMatrix.symm x) 0 0 (ofMatrix.symm y))) ^ 2 =
       (Fintype.card n * normalizedTwoNorm x ^ 2 + Fintype.card m * normalizedTwoNorm y ^ 2) /
         (Fintype.card n + Fintype.card m) := by
-  have h : star (ofMatrix (Matrix.fromBlocks (ofMatrix.symm x) 0 0 (ofMatrix.symm y))) *
-      ofMatrix (Matrix.fromBlocks (ofMatrix.symm x) 0 0 (ofMatrix.symm y)) =
-      ofMatrix (Matrix.fromBlocks (ofMatrix.symm (star x * x)) 0 0
-        (ofMatrix.symm (star y * y))) := by
-    apply ofMatrix.symm.injective
-    simp [Matrix.fromBlocks_conjTranspose, Matrix.fromBlocks_multiply]
-  rw [normalizedTwoNorm_sq, h, normalizedTrace_fromBlocks, normalizedTrace_star_mul_self,
-    normalizedTrace_star_mul_self]
-  norm_cast
+  rw [normalizedTwoNorm_ofMatrix_fromBlocks_sq, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
 /-- **Tensor multiplicativity of the normalized trace**, for matrices `A ∈ M_k` and `B ∈ M_l`:
 `tr_{kl}(A ⊗ B) = tr_k(A) tr_l(B)`. -/
