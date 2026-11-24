@@ -20,7 +20,8 @@ its image is a compact subset of a discrete space. Hence only finitely many elem
 matrix entries of `ρ`. When `K` is a field algebraic over a finite field `F`, these entries
 generate a finite subfield `k` of `K`, and `ρ` takes values in `GL_n(k)`. The descent itself,
 `TauCeti.CoefficientDescent.descend`, works for any subring of `K` containing the entries, so `ρ`
-descends to every finite `k' ⊇ k`; here we show that the descended homomorphism is continuous.
+descends to every finite `k' ⊇ k` (via `TauCeti.CoefficientDescent.entries_subset_range_of_le`);
+here we show that the descended homomorphism is continuous.
 
 ## Main results
 
@@ -119,7 +120,7 @@ theorem exists_finite_descend [Finite F] [Algebra.IsAlgebraic F K] {ρ : Γ →*
     ∃ (k : IntermediateField F K) (ρk : Γ →* GL n k), Finite k ∧ Continuous ρk ∧
       ∀ g, Matrix.GeneralLinearGroup.map (algebraMap k K) (ρk g) = ρ g :=
   ⟨entryField F ρ, descend (algebraMap (entryField F ρ) K).injective
-    (entries_subset_range_entryField F ρ), finite_entryField F hρ,
+    (entries_subset_range_of_le F le_rfl), finite_entryField F hρ,
     continuous_descend hρ _ _, map_descend _ _⟩
 
 end EntryField

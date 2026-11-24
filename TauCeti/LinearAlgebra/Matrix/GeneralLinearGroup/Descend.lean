@@ -29,6 +29,8 @@ of each matrix lifts as well, and `ρ` factors uniquely through `GL_n(R) → GL_
 * `TauCeti.CoefficientDescent.map_descend`: `ρ` is the composite of `descend` with
   `GL_n(R) → GL_n(K)`.
 * `TauCeti.CoefficientDescent.eq_descend_iff`: `descend` is the unique such factorization.
+* `TauCeti.CoefficientDescent.entries_subset_range_of_le`: the entries lie in every intermediate
+  field containing `entryField F ρ`, so `ρ` descends to each of them.
 -/
 
 public section
@@ -149,9 +151,11 @@ theorem entryField_le_iff {ρ : Γ →* GL n K} {L : IntermediateField F K} :
 theorem entries_subset_entryField (ρ : Γ →* GL n K) : entries ρ ⊆ entryField F ρ :=
   IntermediateField.subset_adjoin F (entries ρ)
 
-theorem entries_subset_range_entryField (ρ : Γ →* GL n K) :
-    entries ρ ⊆ Set.range (algebraMap (entryField F ρ) K) :=
-  fun x hx ↦ ⟨⟨x, entries_subset_entryField F ρ hx⟩, rfl⟩
+/-- The entries of `ρ` lie in the image of every intermediate field containing `entryField F ρ`,
+so `ρ` descends to any such field via `descend`. -/
+theorem entries_subset_range_of_le {ρ : Γ →* GL n K} {L : IntermediateField F K}
+    (hL : entryField F ρ ≤ L) : entries ρ ⊆ Set.range (algebraMap L K) :=
+  fun x hx ↦ ⟨⟨x, hL (entries_subset_entryField F ρ hx)⟩, rfl⟩
 
 end EntryField
 
