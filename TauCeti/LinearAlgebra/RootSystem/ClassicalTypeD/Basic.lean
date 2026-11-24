@@ -210,6 +210,15 @@ private lemma typeDRawRoot_surjective : Surjective (typeDRawRoot (n := n)) := by
 private noncomputable def typeDRawRootEquiv (n : ℕ) : TypeDRawIndex n ≃ TypeDRoot n :=
   Equiv.ofBijective typeDRawRoot ⟨typeDRawRoot_injective, typeDRawRoot_surjective⟩
 
+/-- There are finitely many integral vectors of squared length two. -/
+instance instFiniteTypeDRoot (n : ℕ) : Finite (TypeDRoot n) :=
+  .of_equiv _ (typeDRawRootEquiv n)
+
+/-- There are no roots of type `D₁`: no vector of `ℤ¹` has squared length two. -/
+instance instIsEmptyTypeDRootOne : IsEmpty (TypeDRoot 1) :=
+  have : IsEmpty (TypeDPair 1) := ⟨fun p => p.property (Subsingleton.elim _ _)⟩
+  (typeDRawRootEquiv 1).symm.isEmpty
+
 /-- Every classical type-`D` root has one of the three coordinate shapes
 `eᵢ - eⱼ`, `eᵢ + eⱼ`, or `-eᵢ - eⱼ`, for distinct coordinates `i` and `j`.
 
