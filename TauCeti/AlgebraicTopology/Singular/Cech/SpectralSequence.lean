@@ -134,9 +134,7 @@ lemma isZero_cechSpectralSequence_page_two_X [Fintype ι] {p : ℕ}
 /-- The abutment of the Čech--singular spectral sequence of an open cover is the singular homology
 of the covered space. -/
 def cechSpectralSequenceAbutmentIso (hU : ⋃ i, (U i : Set X) = Set.univ) (n : ℕ) :
-    (CochainComplex.spectralObject
-      (CochainComplex.filtrationFunctor (cechDoubleComplex U R).flip.rowFiltration
-        (cechDoubleComplex U R).flip.monotone_rowFiltration)).abutment (-n) ≅
+    (cechDoubleComplex U R).flip.rowFiltrationSpectralObject.abutment (-n) ≅
       ((singularHomologyFunctor C n).obj R).obj X := by
   haveI : QuasiIso (cechTotalAugmentation U R) := quasiIso_cechTotalAugmentation U R hU
   exact (cechDoubleComplex U R).columnFiltrationAbutmentIso n ≪≫

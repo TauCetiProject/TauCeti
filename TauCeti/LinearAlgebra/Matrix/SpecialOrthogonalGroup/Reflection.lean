@@ -46,6 +46,8 @@ the products of two reflections.
 ## Main declarations
 
 * `TauCeti.reflectionMatrix`: the matrix of a reflection, with its normalizing scalar as data.
+* `TauCeti.exists_mem_orthogonalGroup_mulVec_eq_smul_single`: Householder reflections carry a
+  vector over a linearly ordered field to a multiple of a basis vector of the same length.
 * `TauCeti.reflectionPair`: the product of two reflections, as a special orthogonal matrix.
 * `TauCeti.toMatrix'_reflection`: `reflectionMatrix` is the coordinate matrix of the reflection
   of the standard quadratic form.
@@ -181,6 +183,32 @@ theorem reflectionMatrix_add_mulVec_reflectionMatrix_mulVec {K : Type*} [Field K
     field_simp
   rw [reflectionMatrix_mulVec, reflectionMatrix_mulVec, hu, hdot, hscal]
   module
+
+variable [Fintype n] in
+/-- **Householder reflections.** Over a linearly ordered field, if `s * s = c ⬝ᵥ c` then some
+orthogonal matrix, a reflection or the identity, carries `c` to `s` times the basis vector at
+`i₀`. -/
+theorem exists_mem_orthogonalGroup_mulVec_eq_smul_single {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {c : n → K} {s : K} (hs : s * s = c ⬝ᵥ c) (i₀ : n) :
+    ∃ A ∈ Matrix.orthogonalGroup n K, A *ᵥ c = s • Pi.single i₀ 1 := by
+  -- The reflection in `d = c - s e`, which is the identity's job when `d = 0`.
+  set d := c - s • Pi.single i₀ (1 : K)
+  rcases eq_or_ne d 0 with hd | hd
+  · exact ⟨1, one_mem _, by rw [one_mulVec, ← sub_eq_zero]; exact hd⟩
+  -- `d ⬝ᵥ d = 2 (d ⬝ᵥ c)`, since `c` and `s e` have the same squared length.
+  have hdd : d ⬝ᵥ d = 2 * (d ⬝ᵥ c) := by
+    simp only [d, sub_dotProduct, dotProduct_sub, smul_dotProduct, dotProduct_smul,
+      single_dotProduct, dotProduct_single, smul_eq_mul, Pi.sub_apply, Pi.smul_apply,
+      Pi.single_eq_same, dotProduct_comm c]
+    linear_combination hs
+  have hd₀ : d ⬝ᵥ d ≠ 0 := fun h ↦ hd (dotProduct_self_eq_zero.1 h)
+  have ht : 2 / (d ⬝ᵥ d) * (d ⬝ᵥ d) = 2 := div_mul_cancel₀ 2 hd₀
+  refine ⟨reflectionMatrix d (2 / (d ⬝ᵥ d)), reflectionMatrix_mem_orthogonalGroup ht, ?_⟩
+  have hdc : d ⬝ᵥ c ≠ 0 := fun h ↦ hd₀ (by rw [hdd, h, mul_zero])
+  have htc : 2 / (d ⬝ᵥ d) * (d ⬝ᵥ c) = 1 := by
+    rw [hdd]
+    field_simp
+  rw [reflectionMatrix_mulVec, htc, one_smul, sub_sub_cancel]
 
 /-! ### Products of two reflections -/
 

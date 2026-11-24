@@ -14,6 +14,7 @@ import Mathlib.RingTheory.Localization.Integer
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.Matrix.DotProduct
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Farkas certificates for finite systems of linear inequalities and equations
@@ -283,12 +284,12 @@ theorem exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul [Finite I] [Fini
     refine ⟨D.toNat, by omega, g, fun i => ?_, funext fun j => ?_⟩
     · have h : ((A *ᵥ g) i : ℚ) = ((D : ℚ) • (A.map Int.cast *ᵥ q)) i := by
         rw [← mulVec_smul, ← hg']
-        exact (Int.castRingHom ℚ).map_mulVec A g i
+        exact (congrFun (map_intCast_mulVec A g) i).symm
       rw [← Int.cast_le (R := ℚ), h]
       simpa [max_eq_left hD'.le] using mul_le_mul_of_nonneg_left (hqA i) hD'.le
     · have h : ((E *ᵥ g) j : ℚ) = ((D : ℚ) • (E.map Int.cast *ᵥ q)) j := by
         rw [← mulVec_smul, ← hg']
-        exact (Int.castRingHom ℚ).map_mulVec E g j
+        exact (congrFun (map_intCast_mulVec E g) j).symm
       apply Int.cast_injective (α := ℚ)
       have hqj : (E.map Int.cast *ᵥ q) j = d j := by simpa using congrFun hqE j
       simp [h, hqj, max_eq_left hD'.le]
@@ -296,11 +297,11 @@ theorem exists_mulVec_le_and_mulVec_eq_intCast_iff_exists_nsmul [Finite I] [Fini
     have hN' : (0 : K) < N := by exact_mod_cast hN
     refine ⟨_, mulVec_inv_smul hN' (x := Int.cast ∘ x) (fun i => ?_) (funext fun j => ?_)⟩
     · have h : ((A *ᵥ x) i : K) = (A.map Int.cast *ᵥ (Int.cast ∘ x)) i :=
-        (Int.castRingHom K).map_mulVec A x i
+        (congrFun (map_intCast_mulVec A x) i).symm
       rw [← h]
       simpa using (Int.cast_le (R := K)).mpr (hA i)
     · have h : ((E *ᵥ x) j : K) = (E.map Int.cast *ᵥ (Int.cast ∘ x)) j :=
-        (Int.castRingHom K).map_mulVec E x j
+        (congrFun (map_intCast_mulVec E x) j).symm
       rw [← h]
       simpa using congrArg (Int.cast : ℤ → K) (congrFun hE j)
 

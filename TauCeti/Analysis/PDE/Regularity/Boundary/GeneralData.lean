@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.BoundaryValues
 public import TauCeti.Analysis.PDE.Regularity.Boundary.DirichletHolder
+import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 
 /-!
 # The global Hölder estimate for the Dirichlet problem with general data
@@ -44,9 +45,10 @@ The two special cases are already proved: a scalar datum with zero boundary valu
 datum with Lipschitz boundary values
 (`Set.IsLipschitzDomain.exists_ae_eq_and_holderOnWith_divergence`).
 Let `w ∈ H¹₀(Ω)` be the weak solution of `-∂ᵢ(aⁱʲ ∂ⱼw) = f`, given by Lax–Milgram
-(`TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`;
-`v ↦ ∫_Ω f v` is continuous on `H¹₀(Ω)` because `r > 2n/(n + 2)`). Then `u - w` solves
-`-∂ᵢ(aⁱʲ ∂ⱼ(u - w)) = ∂ᵢFⁱ` with the boundary values `G`, and `u = (u - w) + w`. The two Hölder
+(`v ↦ ∫_Ω f v` is continuous on `H¹₀(Ω)` because `r > 2n/(n + 2)`). Then `u - w` solves
+`-∂ᵢ(aⁱʲ ∂ⱼ(u - w)) = ∂ᵢFⁱ` with the boundary values `G`
+(`TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inner`), and
+`u = (u - w) + w`. The two Hölder
 exponents are lowered to their minimum on the bounded set `Ω` (`HolderOnWith.of_le`).
 
 ## References
@@ -61,42 +63,6 @@ noncomputable section
 
 open MeasureTheory Metric Set TopologicalSpace
 open scoped ENNReal NNReal RealInnerProductSpace
-
-namespace TauCeti.PDE
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
-  [mu.IsAddHaarMeasure]
-
-/-- Splitting off the scalar datum. If `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` weakly, then the weak
-solution `w ∈ H¹₀(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f` leaves `u - w` solving `-∂ᵢ(aⁱʲ ∂ⱼ(u - w)) = ∂ᵢFⁱ`. -/
-private theorem exists_mem_w1p0Submodule_forall_energyFormH1_eq_and_sub_eq [Nonempty ι]
-    {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
-    {r : ℝ≥0} {f : EuclideanSpace ℝ ι → ℝ} {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    {u : W1p mu Omega 2} (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hfin : mu (Omega : Set (EuclideanSpace ℝ ι)) ≠ ∞) (hr : 1 < r)
-    (hrn : (Fintype.card ι : ℝ) < 2 * r) (hf : MemLp f r (mu.restrict Omega))
-    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
-      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu -
-        ∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu) :
-    ∃ w : W1p mu Omega 2, w ∈ w1p0Submodule mu Omega 2 ∧
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 w (v : W1p mu Omega 2) =
-        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) ∧
-      ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (u - w) (v : W1p mu Omega 2) =
-        -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫ ∂mu := by
-  have hn : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
-  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  obtain ⟨w, hw, -⟩ := h.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp ha (c := 0)
-    aestronglyMeasurable_const (gamma := 0) (fun _ _ => by simp) (fun _ _ => le_rfl) hfin hr
-    (by nlinarith [mul_pos hn (sub_pos.2 hr1)]) hf
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
-  refine ⟨w, (ClosedSubmodule.mem_toSubmodule_iff _ _).1 w.property, hw, fun v => ?_⟩
-  rw [energyFormH1_sub_left hcoeff, hu v, hw v]
-  ring
-
-end TauCeti.PDE
 
 namespace Set.IsLipschitzDomain
 
@@ -168,8 +134,13 @@ theorem exists_ae_eq_and_holderOnWith_add_divergence [Nonempty ι]
   intro a f F u g G K₀ K₁ h ha hf hF hug hu hgG hG hG0
   have hlam := h.pos
   -- `u = (u - w) + w`, where `w ∈ H¹₀(Ω)` carries the scalar datum and `u - w` the rest.
-  obtain ⟨w, hw0, hw, huw⟩ := exists_mem_w1p0Submodule_forall_energyFormH1_eq_and_sub_eq h ha
-    hb.measure_lt_top.ne hr hrn hf hu
+  obtain ⟨w', hw, huw⟩ :=
+    exists_forall_energyFormH1_eq_setIntegral_and_sub_eq_neg_setIntegral_inner h ha
+      hb.measure_lt_top.ne hr
+      (mul_two_sub_lt_two_mul_of_lt_two_mul (Nat.cast_nonneg _) (by exact_mod_cast hr) hrn) hf hu
+  set w : W1p mu Omega 2 := (w' : W1p mu Omega 2)
+  have hw0 : w ∈ w1p0Submodule mu Omega 2 :=
+    (ClosedSubmodule.mem_toSubmodule_iff _ _).1 w'.property
   have huwg : u - w - g ∈ w1p0Submodule mu Omega 2 := by
     rw [sub_right_comm]
     exact (ClosedSubmodule.mem_toSubmodule_iff _ _).1

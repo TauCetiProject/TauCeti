@@ -358,6 +358,9 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends
   obtain ⟨hβpc, hβp1, hβpM, hβpT⟩ := hβ βp (by simp)
   obtain ⟨hβmc, hβm1, hβmM, hβmT⟩ := hβ βm (by simp)
   obtain ⟨hβ₀c, hβ₀1, hβ₀M, hβ₀T'⟩ := hβ β₀ (by simp)
+  replace hβpc := contDiff_infty.1 hβpc 2
+  replace hβmc := contDiff_infty.1 hβmc 2
+  replace hβ₀c := contDiff_infty.1 hβ₀c 2
   -- The estimate on the compact cylinder `[-T, T] × [0, 1]`.
   obtain ⟨C₀, hC₀, hcore⟩ := exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic
     (a := -T) (b := T) (by linarith) (fun z _ ↦ hJ z) hJc.continuousOn hAc.continuousOn

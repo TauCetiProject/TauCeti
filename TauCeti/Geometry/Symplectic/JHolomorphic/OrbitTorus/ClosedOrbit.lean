@@ -132,7 +132,8 @@ theorem hasProd_ofPowerSeries_torusWeightSeries_closedOrbitHomologyClass
         (fun i ↦ if (1 + P i).det < 0 then -1 else 1)
         (fun i ↦ -(SignType.sign (1 - P i).det * if (1 + P i).det < 0 then -1 else 1))) :=
   TauCeti.hasProd_ofPowerSeries_torusWeightSeries _
-    (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd) hdet hP
+    (tendsto_timePeriodHom_closedOrbitHomologyClass
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd) hdet hP
 
 include hφ hx hd hdet in
 /-- **The orbit-torus series of the closed orbits give the orbit zeta function.** Under the
@@ -152,7 +153,8 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod
           (torusWeightSeries (decide (0 < (1 - P i).det))
             (if (1 + P i).det < 0 then 1 else 0))) :=
   TauCeti.orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries _
-    (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd) hdet hP K
+    (tendsto_timePeriodHom_closedOrbitHomologyClass
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd) hdet hP K
 
 /-! ### Labels from the linearized return maps
 
@@ -308,7 +310,8 @@ theorem mapRingHom_tprod_fixedPointDerivative_eq_exp_tsum_single_sign_det_div
   have hx : Injective x :=
     injective_of_existsUnique_iterate (fun i ↦ mk_mem_periodicPts (hd i) (hxd i)) hrep
   rw [← orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative hφ hx hxd hd
-    hE hσ hφσ K, orbitZeta_eq_exp_tsum_single_sign_det_div hφ hxd hd hmin hrep K]
+    hE hσ hφσ K, orbitZeta_eq_exp_tsum_single_sign_det_div
+    (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hxd hd hmin hrep K]
 
 include hd in
 /-- **Below a period cutoff, the orbit-torus series labelled by the return maps give the orbit
@@ -383,7 +386,8 @@ theorem mapRingHom_intTimePeriodHom_orbitZeta_closedOrbitHomologyClass (ε : ι 
       orbitZeta K (Int.castAddHom ℝ) (fun i ↦ (d i : ℤ)) ε := by
   rw [mapRingHom_orbitZeta _ _ _
     (fun i ↦ timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i))
-    (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd)]
+    (tendsto_timePeriodHom_closedOrbitHomologyClass
+      (finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod hφ φ.continuous) hx hxd hd)]
   congr 1
   funext i
   simp
