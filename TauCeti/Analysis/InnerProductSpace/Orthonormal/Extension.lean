@@ -41,14 +41,14 @@ theorem exists_fin_four_extension {u v : E} (huv : Orthonormal 𝕜 ![u, v])
     inner_eq_zero_symm.2 (hw₁o v (by simp)), hw₂o u (by simp), hw₂o v (by simp), hw₂o w₁ (by simp)]
 
 /-- The span of an orthonormal `(k + l)`-frame `u` has an orthonormal basis whose first `k`
-vectors lie in the kernel of a linear map `q` into a space of dimension at most `l`. The kernel of
-`q` on the span has dimension at least `k`; an orthonormal `k`-frame in it is extended to an
-orthonormal basis of the span. -/
+vectors lie in the kernel of a linear map `q` into a space of dimension at most `l`. -/
 theorem exists_orthonormalBasis_span_apply_castAdd_eq_zero {k l : ℕ} {u : Fin (k + l) → E}
     (hu : Orthonormal 𝕜 u) {G : Type*} [AddCommGroup G] [Module 𝕜 G] [FiniteDimensional 𝕜 G]
     (q : E →ₗ[𝕜] G) (hq : Module.finrank 𝕜 G ≤ l) :
     ∃ c : OrthonormalBasis (Fin (k + l)) 𝕜 (Submodule.span 𝕜 (Set.range u)),
       ∀ i, q (c (Fin.castAdd l i)) = 0 := by
+  -- The kernel of `q` on the span has dimension at least `k`; an orthonormal `k`-frame in it is
+  -- extended to an orthonormal basis of the span.
   classical
   let W := Submodule.span 𝕜 (Set.range u)
   have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range u)
