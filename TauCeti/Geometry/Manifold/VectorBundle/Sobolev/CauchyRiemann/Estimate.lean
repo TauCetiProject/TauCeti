@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
@@ -455,20 +456,6 @@ theorem exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le (hp : 1 < p)
         push_cast
         ring
 
-omit [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- A smooth function equal to one on a compact set `K` whose support has closure inside a given
-open neighbourhood `U` of `K`. -/
-private theorem exists_contMDiff_eqOn_one_tsupport_subset [CompactSpace M] {K U : Set M}
-    (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
-    ∃ ψ : M → ℝ, ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ ∧ EqOn ψ 1 K ∧ tsupport ψ ⊆ U := by
-  have := ChartedSpace.locallyCompactSpace ℂ M
-  obtain ⟨W, hW, hKW, hWU, -⟩ := exists_open_between_and_isCompact_closure hK hU hKU
-  obtain ⟨f, hf0, hf1, -⟩ := exists_contMDiffMap_zero_one_of_isClosed 𝓘(ℝ, ℂ) (n := ⊤)
-    hW.isClosed_compl hK.isClosed (disjoint_compl_left_iff_subset.2 hKW)
-  refine ⟨f, f.contMDiff, hf1, (closure_mono fun x hx ↦ ?_).trans hWU⟩
-  by_contra hxW
-  exact hx (hf0 hxW)
-
 include hD hDs in
 /-- The chart estimate
 `TauCeti.IsRealCauchyRiemannOperator.exists_eLpNorm_coord_smul_add_eLpNorm_fderiv_le` in terms of
@@ -589,8 +576,9 @@ theorem exists_norm_le_norm_sobolevL_add_norm (hp : 1 < p) (hp_top : p ≠ (∞ 
     A.isOpen_dom (by rw [A.iUnion_dom])
   have hχ1 (x : M) : ∑ i, χ i x = 1 := by
     simpa [finsum_eq_sum_of_fintype] using χ.sum_eq_one (mem_univ x)
-  choose ψ hψ hψ1 hψi using fun i ↦ exists_contMDiff_eqOn_one_tsupport_subset
-    (isClosed_tsupport (χ i)).isCompact (A.isOpen_dom i) (hχ i)
+  choose ψ hψ _ hψi hψ1 using fun i ↦
+    (isClosed_tsupport (χ i)).exists_contMDiff_tsupport_subset_eq_one_iff (I := 𝓘(ℝ, ℂ))
+      (A.isOpen_dom i) (hχ i)
   choose Cψ hCψ using fun i ↦
     SobolevSection.exists_norm_contMDiffSMulL_le (μ := volume) (p := p) (k := 1) (hψ i) (hψi i)
   choose Cc hCc using fun i ↦
@@ -623,11 +611,10 @@ theorem exists_norm_le_norm_sobolevL_add_norm (hp : 1 < p) (hp_top : p ≠ (∞ 
   set v := SobolevSection.contMDiffSMulL A volume p 1 (χ i).contMDiff w
   have hvi := hCc i s hs
   calc ‖v‖ = ‖SobolevSection.contMDiffSMulL A volume p 1 (hψ i) v‖ := by
-        rw [SobolevSection.contMDiffSMulL_contMDiffSMulL_of_eqOn _ (hψ i) (hψ1 i)]
+        rw [SobolevSection.contMDiffSMulL_contMDiffSMulL_of_eqOn _ (hψ i) fun _ h ↦ (hψ1 i _).1 h]
     _ ≤ Cψ i * ‖(v : A.sectionChartData.SobolevData volume p 1) i‖ := hCψ i v
-    _ ≤ max (Cψ i) 0 * ‖(v : A.sectionChartData.SobolevData volume p 1) i‖ := by
-        gcongr
-        exact le_max_left _ _
+    _ ≤ max (Cψ i) 0 * ‖(v : A.sectionChartData.SobolevData volume p 1) i‖ :=
+        mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _)
     _ ≤ max (Cψ i) 0 * (max (Cc i) 0 * X) := by
         gcongr
         exact hvi.trans (by gcongr; exact le_max_left _ _)
