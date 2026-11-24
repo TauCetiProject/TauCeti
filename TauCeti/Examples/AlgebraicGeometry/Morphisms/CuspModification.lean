@@ -61,10 +61,12 @@ private theorem X_sq_mem_conductor : (X : k[X]) ^ 2 ∈ (coordinateRing k).toSub
   refine Subring.mem_conductor_iff.mpr fun p ↦ ?_
   rw [mul_comm]
   induction p using Polynomial.induction_on with
-  | C a => exact mul_mem (Subalgebra.algebraMap_mem _ a) (X_pow_mem k le_rfl)
+  | C a =>
+    rw [← Polynomial.algebraMap_eq]
+    exact mul_mem (Subalgebra.algebraMap_mem _ a) (X_pow_mem k le_rfl)
   | add p q hp hq => simpa [add_mul] using add_mem hp hq
   | monomial n a _ =>
-    rw [mul_assoc, ← pow_add]
+    rw [mul_assoc, ← pow_add, ← Polynomial.algebraMap_eq]
     exact mul_mem (Subalgebra.algebraMap_mem _ a) (X_pow_mem k (by lia))
 
 /-- The normalization of the cusp is finite. -/
