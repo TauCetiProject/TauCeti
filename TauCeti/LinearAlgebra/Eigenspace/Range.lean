@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+import Mathlib.Algebra.Polynomial.RingDivision
 
 /-!
 # Generalized eigenspaces for nonzero eigenvalues lie in the range
@@ -14,10 +15,13 @@ Let `f` be an endomorphism of a vector space and `μ ≠ 0`. A generalized eigen
 satisfies `μ • w = f w - (f - μ) w`, so by induction on the exponent it lies in every submodule
 containing the range of `f`. Thus the generalized eigenspaces of `f` for nonzero eigenvalues only
 see the range of `f`, and `f` has the same nonzero eigenvalues as its restriction to any such
-submodule.
+submodule. More precisely, over any commutative ring, for a unit `μ` every power of `f` maps each
+generalized eigenspace for `μ` onto itself, since `(X - μ) ^ n` and `X ^ k` are coprime.
 
 ## Main results
 
+* `Module.End.surjOn_pow_genEigenspace_of_isUnit`: for a unit `μ`, every power of `f` maps each
+  generalized eigenspace of `f` for `μ` onto itself.
 * `Module.End.genEigenspace_le_of_range_le`: for `μ ≠ 0`, every generalized eigenspace of `f` for
   `μ` lies in every submodule containing the range of `f`.
 * `Module.End.hasEigenvalue_restrict_iff_of_range_le`: the restriction of `f` to a submodule
@@ -27,6 +31,24 @@ submodule.
 public section
 
 namespace Module.End
+
+open Polynomial in
+/-- For a unit `μ`, every power `f ^ k` maps each generalized eigenspace of `f` for `μ` onto
+itself: since `(X - μ) ^ l` and `X ^ k` are coprime, a vector killed by `(f - μ) ^ l` is `f ^ k u`
+for some `u` also killed by `(f - μ) ^ l`. -/
+theorem surjOn_pow_genEigenspace_of_isUnit {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] {f : End R M} {μ : R} (hμ : IsUnit μ) (n : ℕ∞) (k : ℕ) :
+    Set.SurjOn ⇑(f ^ k) (f.genEigenspace μ n) (f.genEigenspace μ n) := fun x hx ↦ by
+  obtain ⟨l, hl, hx⟩ := mem_genEigenspace.1 hx
+  rw [LinearMap.mem_ker] at hx
+  obtain ⟨a, b, hab⟩ : IsCoprime ((X - C μ) ^ l) (X ^ k) := by
+    simpa using (isCoprime_X_sub_C_of_isUnit_sub (a := μ) (b := (0 : R)) (by simpa using hμ)).pow
+  have hP : aeval f ((X - C μ) ^ l) = (f - μ • 1) ^ l := by
+    simp [Algebra.algebraMap_eq_smul_one]
+  refine ⟨aeval f b x, mem_genEigenspace.2 ⟨l, hl, ?_⟩, ?_⟩
+  · have hc := LinearMap.congr_fun ((Commute.all ((X - C μ) ^ l) b).map (aeval f)).eq x
+    simpa only [LinearMap.mem_ker, map_mul, mul_apply_eq_comp, hP, hx, map_zero] using hc
+  · simpa [mul_comm b, mul_apply_eq_comp, hP, hx] using congr(aeval f $hab x)
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 

@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 public import Mathlib.LinearAlgebra.Eigenspace.Zero
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Eigenspace.Range
 
 /-!
 # Generalized eigenspaces under a pairing with a multiplier
@@ -131,21 +132,6 @@ private theorem apply_pow_apply_pow_sub_smul (B : M →ₗ[R] M' →ₗ[R] N) {F
     simp only [pow_succ' F, pow_succ' (F' - β • 1), pow_succ (F - α • 1), pow_succ' (-β),
       mul_apply_eq_comp, B.apply_apply_sub_smul h hαβ, hcomm', ih, smul_smul]
 
-/-- For a unit `α`, each power of `F` maps the kernel of `(F - α) ^ n` onto itself: since
-`(X - α) ^ n` and `X ^ k` are coprime, a vector `x` with `(F - α) ^ n x = 0` is `F ^ k u` for some
-`u` with `(F - α) ^ n u = 0`. -/
-private theorem exists_pow_apply_eq_of_pow_sub_smul_apply_eq_zero {F : End R M} {α : R}
-    (hα : IsUnit α) {n : ℕ} {x : M} (hx : ((F - α • 1) ^ n) x = 0) (k : ℕ) :
-    ∃ u, ((F - α • 1) ^ n) u = 0 ∧ (F ^ k) u = x := by
-  obtain ⟨a, b, hab⟩ : IsCoprime ((X - C α) ^ n) (X ^ k) := by
-    simpa using (isCoprime_X_sub_C_of_isUnit_sub (a := α) (b := (0 : R)) (by simpa using hα)).pow
-  have hP : aeval F ((X - C α) ^ n) = (F - α • 1) ^ n := by
-    simp [Algebra.algebraMap_eq_smul_one]
-  refine ⟨aeval F b x, ?_, ?_⟩
-  · have hc := LinearMap.congr_fun ((Commute.all ((X - C α) ^ n) b).map (aeval F)).eq x
-    simpa only [map_mul, mul_apply_eq_comp, hP, hx, map_zero] using hc
-  · simpa [mul_comm b, mul_apply_eq_comp, hP, hx] using congr(aeval F $hab x)
-
 section Artinian
 
 variable [IsArtinian R M']
@@ -164,7 +150,8 @@ theorem eq_zero_of_mem_maxGenEigenspace_of_compl₁₂_eq_smul (B : M →ₗ[R] 
   -- for all large `k`; take such a `k ≥ n` and write `x = F ^ k u` with `(F - α) ^ k u = 0`.
   obtain ⟨k, hk, hnk⟩ := ((eventually_codisjoint_ker_pow_range_pow (F' - β • 1)).and
     (Filter.eventually_ge_atTop n)).exists
-  obtain ⟨u, hu, rfl⟩ := exists_pow_apply_eq_of_pow_sub_smul_apply_eq_zero hα hn k
+  obtain ⟨u, hu, rfl⟩ := surjOn_pow_genEigenspace_of_isUnit hα n k (mem_genEigenspace_nat.2 hn)
+  replace hu : ((F - α • 1) ^ n) u = 0 := mem_genEigenspace_nat.1 hu
   refine hB _ fun w ↦ ?_
   obtain ⟨y, _, hy, ⟨z, rfl⟩, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.1 hk w
   simp [hxy y ((mem_maxGenEigenspace F' β y).2 ⟨k, hy⟩), B.apply_pow_apply_pow_sub_smul h hαβ,
