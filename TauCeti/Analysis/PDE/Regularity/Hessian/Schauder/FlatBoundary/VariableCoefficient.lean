@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.VariableCoefficient
 import TauCeti.Analysis.Holder.Lp
+import TauCeti.Analysis.PDE.Ellipticity.Basic
 
 /-!
 # Schauder estimates up to a flat boundary for coefficients of small oscillation
@@ -122,14 +123,13 @@ theorem
   let H := iteratedFDeriv ℝ 2 u
   let M : ℝ := (eLpNorm H 2 (volume.restrict Ho)).toReal
   let V : ℝ := (volume (ball (0 : E) (r / 2)) ^ (-((2 : ℝ)⁻¹))).toReal
-  have hLam : 0 < Lam :=
-    hlam.trans_le (by simpa using (hA (EuclideanSpace.single 0 1)).trans (hA' _))
+  have hLam : 0 < Lam := hlam.trans_le (le_of_mul_norm_sq_le_toQuadraticForm'_le hA hA')
   -- Absorbing the terms in `J` reduces the estimate to a two-point bound for each constant `J`.
   refine holderOnWith_of_forall_holderOnWith_dist_le hJ₀ hlam hsmall fun J hJ x hx y hy => ?_
   -- Interpolation at scale `r`, on a ball of radius `r / 2` in `H` next to each point.
   have hsup (x : E) (hx : x ∈ Hc) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by
     simpa only [ENNReal.toReal_ofNat] using hJ.norm_le_add_eLpNorm_toReal_of_halfSpace
-      (mu := volume) hν hr two_ne_zero ENNReal.ofNat_ne_top hH2 (mem_ofPred.1 hx)
+      (mu := volume) hν hr two_ne_zero hH2 (mem_ofPred.1 hx)
   let B : ℝ≥0 := (J * r ^ (α : ℝ) + V * M).toNNReal
   have hBc : (B : ℝ) = J * r ^ (α : ℝ) + V * M := Real.coe_toNNReal _ (by positivity)
   have hg := holderOnWith_sum_smul_fderiv_fderiv_of_abs_sub_le ha hL (hJ.mono hoc)

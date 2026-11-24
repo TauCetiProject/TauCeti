@@ -28,6 +28,8 @@ ideals `Aeᵢ` only up to isomorphism, here the idempotents themselves agree.
 * `CompleteOrthogonalIdempotents.exists_equiv_of_isPrimitiveIdempotent`: in a commutative ring,
   two complete orthogonal families of primitive idempotents indexed by finite types agree up to a
   bijection of the index types.
+* `CompleteOrthogonalIdempotents.exists_eq_sum_of_isIdempotentElem`: in a commutative ring, every
+  idempotent is the sum of a subfamily of a complete orthogonal family of primitive idempotents.
 
 ## References
 
@@ -73,5 +75,20 @@ theorem exists_equiv_of_isPrimitiveIdempotent {e : ι → A} {f : κ → A}
       ((hσ i).trans (hτ (σ i))) rfl
   · exact (hf.existsUnique_eq_of_isPrimitiveIdempotent hfp (hfp j)).unique
       ((hτ j).trans (hσ (τ j))) rfl
+
+/-- **Every idempotent is a sum of primitive ones**, in a commutative ring with a complete
+orthogonal family of primitive idempotents `e`. From `f = ∑ i, f * e i`, each `f * e i` is `0` or
+`e i` because `e i` is primitive, so `f` is the sum of the `e i` with `f * e i = e i`. -/
+theorem exists_eq_sum_of_isIdempotentElem {e : ι → A} (he : CompleteOrthogonalIdempotents e)
+    (hep : ∀ i, TauCeti.IsPrimitiveIdempotent (e i)) {f : A} (hf : IsIdempotentElem f) :
+    ∃ s : Finset ι, f = ∑ i ∈ s, e i := by
+  classical
+  refine ⟨Finset.univ.filter fun i ↦ e i * f = e i, ?_⟩
+  conv_lhs => rw [← one_mul f, ← he.complete, Finset.sum_mul]
+  rw [Finset.sum_filter]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  split_ifs with h
+  · exact h
+  · exact ((hep i).mul_eq_zero_or_eq_of_commute hf (Commute.all _ _)).resolve_right h
 
 end CompleteOrthogonalIdempotents
