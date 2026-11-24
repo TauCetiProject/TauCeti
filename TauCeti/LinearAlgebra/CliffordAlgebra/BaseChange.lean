@@ -53,7 +53,9 @@ the scalar extension of the grading of `Cℓ(M, Q)`.
 * `CliffordAlgebra.ofBaseChange_map_map` and `CliffordAlgebra.toBaseChange_map`: under
   `CliffordAlgebra.ofBaseChange` and `CliffordAlgebra.toBaseChange`, the algebra map induced by
   the extension `f.baseChange A` of a quadratic isometry `f` corresponds to the scalar extension
-  `A ⊗ map f` of the algebra map induced by `f`.
+  `A ⊗ map f` of the algebra map induced by `f`; `CliffordAlgebra.map_comp_map_baseChange_eq` and
+  `CliffordAlgebra.map_map_baseChange_eq` identify compositions `map g ∘ map (f.baseChange A)` on
+  pure generators `1 ⊗ₜ v`.
 * `CliffordAlgebra.ofBaseChange_map_involute` and `CliffordAlgebra.ofBaseChange_map_reverse`:
   under `CliffordAlgebra.ofBaseChange`, the grade involution and reversal of the right tensor
   factor become those of `Cℓ(A ⊗ M, Q_A)`.
@@ -519,6 +521,34 @@ theorem liftBaseChange_comp_map {N : Type*} [AddCommGroup N] [Module R N] {Q : Q
   eq_liftBaseChange_iff_ι.2 fun v ↦ by simp
 
 end LiftBaseChange
+
+/-- Composing `CliffordAlgebra.map (f.baseChange A)` with `CliffordAlgebra.map g` agrees with
+`CliffordAlgebra.map h` whenever `g` sends `1 ⊗ₜ f v` to `h (1 ⊗ₜ v)` for every `v : M`. -/
+theorem map_comp_map_baseChange_eq {N P : Type*} [AddCommGroup N] [Module R N]
+    [AddCommGroup P] [Module A P] {Q : QuadraticForm R M} {Q' : QuadraticForm R N}
+    {Q'' : QuadraticForm A P} (g : Q'.baseChange A →qᵢ Q'') (f : Q →qᵢ Q')
+    (h : Q.baseChange A →qᵢ Q'') (hfg : ∀ v : M, g (1 ⊗ₜ f v) = h (1 ⊗ₜ v)) :
+    (map g).comp (map (f.baseChange A)) = map h := by
+  rw [map_comp_map]
+  congr 1
+  apply QuadraticMap.Isometry.ext
+  intro x
+  induction x using TensorProduct.inductionOn with
+  | tmul a v =>
+    simp only [QuadraticMap.Isometry.comp_apply, QuadraticMap.Isometry.baseChange_tmul]
+    rw [show a ⊗ₜ[R] f v = a • (1 ⊗ₜ[R] f v) by rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one],
+      show a ⊗ₜ[R] v = a • (1 ⊗ₜ[R] v) by rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one],
+      map_smul, map_smul, hfg v]
+  | add x y hx hy => simp [map_add, hx, hy]
+
+/-- Pointwise form of `CliffordAlgebra.map_comp_map_baseChange_eq`. -/
+theorem map_map_baseChange_eq {N P : Type*} [AddCommGroup N] [Module R N]
+    [AddCommGroup P] [Module A P] {Q : QuadraticForm R M} {Q' : QuadraticForm R N}
+    {Q'' : QuadraticForm A P} (g : Q'.baseChange A →qᵢ Q'') (f : Q →qᵢ Q')
+    (h : Q.baseChange A →qᵢ Q'') (hfg : ∀ v : M, g (1 ⊗ₜ f v) = h (1 ⊗ₜ v))
+    (c : CliffordAlgebra (Q.baseChange A)) :
+    map g (map (f.baseChange A) c) = map h c :=
+  DFunLike.congr_fun (map_comp_map_baseChange_eq g f h hfg) c
 
 section LiftBaseChangeRing
 

@@ -98,12 +98,6 @@ open scoped InnerProductSpace TensorProduct
 
 namespace CliffordAlgebra
 
-/-- In a complex vector space, any vector equal to its own negation is zero. -/
-private theorem eq_zero_of_eq_neg {M : Type*} [AddCommGroup M] [Module ℂ M] {x : M}
-    (h : x = -x) : x = 0 :=
-  (two_ne_zero : (2 : ℂ) ≠ 0).isUnit.smul_eq_zero.mp
-    (by rw [two_smul ℂ x]; exact eq_neg_iff_add_eq_zero.mp h)
-
 section Algebra
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -332,7 +326,8 @@ theorem eigenspace_liftBaseChange_complexVolume_positiveOrientation_neg_one :
   ext ψ
   simp only [mem_eigenspace_iff, complexVolume_positiveOrientation, map_one, one_apply_eq_self,
     neg_smul, one_smul, Submodule.mem_bot]
-  exact ⟨eq_zero_of_eq_neg, fun h ↦ by simp [h]⟩
+  have := HasUniqueDiv.of_isTorsionFree ℂ S
+  exact self_eq_neg
 
 end RankZero
 
@@ -573,7 +568,7 @@ theorem inner_eigenspace_liftBaseChange_complexVolume_eq_zero {ψ₁ ψ₂ : S}
   rw [Module.End.mem_eigenspace_iff, neg_one_smul] at h₂
   have hsymm := hρ.isSymmetric_liftBaseChange_complexVolume o ψ₁ ψ₂
   rw [h₁, h₂, inner_neg_right] at hsymm
-  exact eq_zero_of_eq_neg hsymm
+  exact self_eq_neg.mp hsymm
 
 /-- **Pythagorean chirality decomposition**: on a geometric Hermitian Clifford module, the squared
 norm of every spinor `ψ` is the sum of the squared norms of its positive and negative chiral

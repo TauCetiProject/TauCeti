@@ -49,21 +49,6 @@ open scoped TensorProduct
 
 namespace AlgHom
 
-private theorem map_comp_baseChange_eq {R A M N P : Type*} [CommRing R] [Invertible (2 : R)]
-    [CommRing A] [Algebra R A] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    [AddCommGroup P] [Module A P] {Q : QuadraticForm R M} {Q' : QuadraticForm R N}
-    {Q'' : QuadraticForm A P} (g : Q'.baseChange A →qᵢ Q'') (f : Q →qᵢ Q')
-    (h : Q.baseChange A →qᵢ Q'') (hfg : ∀ (a : A) (v : M), g (a ⊗ₜ f v) = h (a ⊗ₜ v))
-    (c : CliffordAlgebra (Q.baseChange A)) :
-    map g (map (f.baseChange A) c) = map h c := by
-  rw [← AlgHom.comp_apply, map_comp_map]
-  refine AlgHom.congr_fun (congrArg map ?_) c
-  apply QuadraticMap.Isometry.ext
-  intro x
-  induction x using TensorProduct.inductionOn with
-  | tmul a v => simpa using hfg a v
-  | add x y hx hy => simp [map_add, hx, hy]
-
 variable {R A M₁ M₂ E F : Type*} [CommRing R] [Invertible (2 : R)] [CommRing A] [Algebra R A]
   [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
@@ -98,10 +83,10 @@ theorem cliffordProdBaseChange_ι (x : M₁ × M₂) :
 theorem cliffordProdBaseChange_map_inl (a : CliffordAlgebra Q₁) :
     ρ₁.cliffordProdBaseChange γ hγ hγρ ρ₂ (map (QuadraticMap.Isometry.inl Q₁ Q₂) a) =
       (ρ₁ a).rTensor F := by
-  have hinl := map_comp_baseChange_eq (QuadraticForm.baseChangeProd (A := A) Q₁ Q₂).toIsometry
+  have hinl := map_map_baseChange_eq (QuadraticForm.baseChangeProd (A := A) Q₁ Q₂).toIsometry
     (QuadraticMap.Isometry.inl Q₁ Q₂)
     (QuadraticMap.Isometry.inl (Q₁.baseChange A) (Q₂.baseChange A))
-    (fun r v ↦ by simp) (ofBaseChangeAux A Q₁ a)
+    (fun v ↦ by simp) (ofBaseChangeAux A Q₁ a)
   simp [cliffordProdBaseChange, equivOfIsometry_apply, hinl]
 
 include hγ in
@@ -111,10 +96,10 @@ theorem cliffordProdBaseChange_map_inr_of_mem_evenOdd {j : ZMod 2} {b : Clifford
     (hb : b ∈ evenOdd Q₂ j) :
     ρ₁.cliffordProdBaseChange γ hγ hγρ ρ₂ (map (QuadraticMap.Isometry.inr Q₁ Q₂) b) =
       TensorProduct.map (γ ^ j.val) (ρ₂ b) := by
-  have hinr := map_comp_baseChange_eq (QuadraticForm.baseChangeProd (A := A) Q₁ Q₂).toIsometry
+  have hinr := map_map_baseChange_eq (QuadraticForm.baseChangeProd (A := A) Q₁ Q₂).toIsometry
     (QuadraticMap.Isometry.inr Q₁ Q₂)
     (QuadraticMap.Isometry.inr (Q₁.baseChange A) (Q₂.baseChange A))
-    (fun r w ↦ by simp) (ofBaseChangeAux A Q₂ b)
+    (fun w ↦ by simp) (ofBaseChangeAux A Q₂ b)
   simp [cliffordProdBaseChange, equivOfIsometry_apply, hinr,
     cliffordProdTensor_map_inr_of_mem_evenOdd _ _ _ _ _
       (ofBaseChangeAux_mem_evenOdd (A := A) hb)]
