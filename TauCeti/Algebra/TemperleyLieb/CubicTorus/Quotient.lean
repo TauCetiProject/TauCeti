@@ -35,6 +35,8 @@ annihilates it (`cubicHom_jonesWenzl_five`).
 
 ## Main definitions
 
+* `TauCeti.TemperleyLieb.cubicStarAlgHom`: `F_m` as a star-algebra map into `CubicTorus (m - 1)`,
+  with values in the star subalgebra `cubicFixedStarSubalgebra (m - 1)`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientCubicHom`: the injective algebra map from the
   trace-radical quotient of `TemperleyLieb ℂ (√3 : ℂ) m` into `cubicFixed (m - 1)`.
 
@@ -72,19 +74,27 @@ instance : Fact (IsSelfAdjoint (Real.sqrt 3 : ℂ)) :=
 
 /-- The cubic comparison map intertwines the analytic adjoint of the Temperley–Lieb algebra with
 the adjoint of the cubic quantum torus. -/
+@[simp]
 theorem coe_cubicHom_star {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
     (cubicHom m (star x) : CubicTorus (m - 1)) = star (cubicHom m x : CubicTorus (m - 1)) :=
   (map_star_iff (F := (cubicFixed (m - 1)).val.comp (cubicHom m))).2
     (fun j ↦ by simp [IsSelfAdjoint, star_smul]) x
 
-/-- The cubic comparison map, as a star-algebra map into the cubic quantum torus. -/
-private noncomputable def cubicStarAlgHom (m : ℕ) :
+/-- The cubic comparison map `F_m`, as a star-algebra map into the cubic quantum torus. Its values
+lie in the star subalgebra `cubicFixedStarSubalgebra (m - 1)` (`cubicStarAlgHom_mem`). -/
+noncomputable def cubicStarAlgHom (m : ℕ) :
     TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m →⋆ₐ[ℂ] CubicTorus (m - 1) :=
   { (cubicFixed (m - 1)).val.comp (cubicHom m) with map_star' := coe_cubicHom_star }
 
-private theorem cubicStarAlgHom_apply {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
+@[simp]
+theorem cubicStarAlgHom_apply {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
     cubicStarAlgHom m x = cubicHom m x :=
   (rfl)
+
+/-- The star-algebra form of `F_m` takes values in the inversion-fixed star subalgebra. -/
+theorem cubicStarAlgHom_mem {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
+    cubicStarAlgHom m x ∈ cubicFixedStarSubalgebra (m - 1) :=
+  mem_cubicFixedStarSubalgebra.2 (cubicHom m x).property
 
 namespace IsMarkovTrace
 
@@ -104,12 +114,12 @@ theorem traceRadical_eq_ker_cubicHom (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ
       cubicScalarCoefficient_mul_comm]
   have hrad : (tr m).traceRadical (htr.map_mul_comm m) = τ.traceRadical hτ := by
     ext x
-    simp [τ, htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, cubicStarAlgHom_apply, hne]
+    simp [τ, htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, hne]
   rw [hrad, LinearMap.traceRadical_eq_ker_of_nullSubmodule_eq_bot τ hτ
     (cubicStarPositiveFunctional (m - 1)) nullSubmodule_cubicStarPositiveFunctional
     (cubicStarAlgHom m) fun a ↦ by simp [τ]]
   ext x
-  simp [cubicStarAlgHom_apply, RingHom.mem_ker]
+  simp [RingHom.mem_ker]
 
 /-- The cubic comparison map kills `x` exactly when `x` lies in the trace radical, that is,
 `tr m (x * y) = 0` for every `y`. -/

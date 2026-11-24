@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace
 public import TauCeti.Analysis.StarAlgebra.GNS.Basic
+import TauCeti.Algebra.Group.Fin.Tuple
 
 /-!
 # The adjoint on the cubic quantum torus
@@ -21,8 +22,9 @@ This file equips `G_N` with its *adjoint*, the conjugate-linear map
 `conj (α(a, b)) = ω ^ (-2 B(a, b)) = α(-b, -a)`, so `G_N` is a star algebra in which every `W(a)`,
 in particular every site unitary `U_j`, is unitary, and every `p_j = 3⁻¹ (1 + U_j + U_j ^ 2)` is a
 self-adjoint idempotent. The inversion `θ_N : W(a) ↦ W(-a)` commutes with the adjoint, so the
-inversion-fixed subalgebra `C_N` is closed under it, and so does the inclusion
-`I_N : W(a) ↦ W(a, 0)` of `G_N` in `G_(N+1)`.
+inversion-fixed subalgebra `C_N` is closed under it and is a star subalgebra
+(`cubicFixedStarSubalgebra`), and so does the inclusion `I_N : W(a) ↦ W(a, 0)` of `G_N` in
+`G_(N+1)`.
 
 The scalar coefficient `s_N`, the coefficient of `W(0) = 1`, is compatible with the adjoint and
 satisfies the Parseval identity `s_N(x⋆ x) = Σ_a conj(x_a) x_a`. Hence `s_N` is a positive
@@ -35,6 +37,8 @@ with the trace radical, in `TauCeti.Algebra.TemperleyLieb.CubicTorus.Quotient`.
 
 * `TauCeti.TemperleyLieb.instStarRingCubicTorus` and
   `TauCeti.TemperleyLieb.instStarModuleCubicTorus`: the conjugate-linear adjoint on `G_N`.
+* `TauCeti.TemperleyLieb.cubicFixedStarSubalgebra`: the inversion-fixed subalgebra `C_N` as a
+  star subalgebra.
 * `TauCeti.TemperleyLieb.cubicStarPositiveFunctional`: the scalar coefficient as a positive
   functional.
 
@@ -96,9 +100,7 @@ private theorem cubicStarₗ_of (g : Multiplicative (Fin N → ZMod 3)) :
 `conj (α(g, h)) = α(h⁻¹, g⁻¹)`. -/
 private theorem star_cubicFactor (g h : Multiplicative (Fin N → ZMod 3)) :
     star (cubicFactor N g h : ℂ) = cubicFactor N h⁻¹ g⁻¹ := by
-  rw [cubicFactor_apply, cubicFactor_apply, coe_cubeRootPow, coe_cubeRootPow, toAdd_inv,
-    toAdd_inv, LinearMap.map_neg₂, map_neg, neg_neg, chainForm_swap, mul_neg,
-    AddChar.map_neg_eq_conj, starRingEnd_apply, star_star]
+  simp [cubicFactor_apply, chainForm_swap g.toAdd h.toAdd]
 
 private theorem cubicStarₗ_mul (x y : CubicTorus N) :
     cubicStarₗ N (x * y) = cubicStarₗ N y * cubicStarₗ N x := by
@@ -184,6 +186,7 @@ theorem isStarProjection_cubicProjection (j : Fin N) : IsStarProjection (cubicPr
   ⟨cubicProjection_mul_self j, star_cubicProjection j⟩
 
 /-- The inversion commutes with the adjoint. -/
+@[simp]
 theorem cubicInversion_star (x : CubicTorus N) :
     cubicInversion N (star x) = star (cubicInversion N x) := by
   have key : (cubicInversion N).toLinearMap.comp (cubicStarₗ N) =
@@ -200,15 +203,29 @@ theorem star_mem_cubicFixed {x : CubicTorus N} (hx : x ∈ cubicFixed N) :
   rw [mem_cubicFixed] at hx ⊢
   rw [cubicInversion_star, hx]
 
+variable (N) in
+/-- The inversion-fixed subalgebra `C_N`, as a star subalgebra of the cubic quantum torus. -/
+noncomputable def cubicFixedStarSubalgebra : StarSubalgebra ℂ (CubicTorus N) where
+  toSubalgebra := cubicFixed N
+  star_mem' := star_mem_cubicFixed
+
+@[simp]
+theorem toSubalgebra_cubicFixedStarSubalgebra :
+    (cubicFixedStarSubalgebra N).toSubalgebra = cubicFixed N :=
+  (rfl)
+
+@[simp]
+theorem mem_cubicFixedStarSubalgebra {x : CubicTorus N} :
+    x ∈ cubicFixedStarSubalgebra N ↔ x ∈ cubicFixed N :=
+  Iff.rfl
+
 /-- The inclusion `I_N : W(a) ↦ W(a, 0)` of cubic quantum tori commutes with the adjoints. -/
+@[simp]
 theorem cubicIncl_star (x : CubicTorus N) : cubicIncl N (star x) = star (cubicIncl N x) := by
   have key : (cubicIncl N).toLinearMap.comp (cubicStarₗ N) =
       (cubicStarₗ (N + 1)).comp (cubicIncl N).toLinearMap :=
     (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
-      simp only [LinearMap.comp_apply, basis_apply, AlgHom.toLinearMap_apply, of_eq_weyl,
-        ← star_eq_cubicStarₗ]
-      rw [star_weyl, ← cubicInversion_weyl, ← cubicInversion_cubicIncl, cubicIncl_weyl,
-        cubicInversion_weyl, star_weyl]
+      simp [of_eq_weyl, ← star_eq_cubicStarₗ, cubicIncl_weyl, Fin.neg_snoc]
   simpa only [star_eq_cubicStarₗ, LinearMap.comp_apply, AlgHom.toLinearMap_apply] using
     LinearMap.congr_fun key x
 

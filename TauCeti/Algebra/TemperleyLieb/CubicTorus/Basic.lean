@@ -172,6 +172,11 @@ noncomputable def cubeRootPow : AddChar (ZMod 3) ℂˣ :=
 theorem coe_cubeRootPow (x : ZMod 3) : (cubeRootPow x : ℂ) = ZMod.stdAddChar x := by
   simp [cubeRootPow, ZMod.stdAddChar_apply]
 
+/-- Conjugating `ω ^ x` gives `ω ^ (-x)`. -/
+@[simp]
+theorem star_cubeRootPow (x : ZMod 3) : star (cubeRootPow x : ℂ) = cubeRootPow (-x) := by
+  simp [coe_cubeRootPow, AddChar.map_neg_eq_conj]
+
 /-- For `x ≠ 0` in `ZMod 3`, `ω ^ x` is a primitive cube root of unity:
 `1 + ω ^ x + (ω ^ x) ^ 2 = 0`. -/
 theorem one_add_cubeRootPow_add_sq {x : ZMod 3} (hx : x ≠ 0) :
