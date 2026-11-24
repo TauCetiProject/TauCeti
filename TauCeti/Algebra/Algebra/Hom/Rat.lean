@@ -14,19 +14,20 @@ import Mathlib.LinearAlgebra.Basis.VectorSpace
 # Ring homomorphisms out of finite-dimensional `ℚ`-algebras
 
 A ring homomorphism between `ℚ`-algebras is automatically `ℚ`-linear (`RingHom.equivRatAlgHom`),
-so a finite-dimensional `ℚ`-algebra has only finitely many ring homomorphisms into a field that is
-a `ℚ`-algebra. For instance a finite product of number fields has finitely many complex embeddings.
+so a finite-dimensional `ℚ`-algebra has only finitely many ring homomorphisms into an integral
+domain that is a `ℚ`-algebra. For instance a finite product of number fields has finitely many
+complex embeddings.
 
 ## Main declarations
 
 * `Finite.ringHom_of_rat`: `R →+* K` is finite for a finite-dimensional `ℚ`-algebra
-  `R` and a field `K`.
+  `R` and an integral domain `K`.
 -/
 
 public section
 
-/-- A finite-dimensional `ℚ`-algebra has finitely many ring homomorphisms into a field: they are
-its `ℚ`-algebra homomorphisms, which are linearly independent. -/
+/-- A finite-dimensional `ℚ`-algebra has finitely many ring homomorphisms into an integral domain:
+they are its `ℚ`-algebra homomorphisms, which are linearly independent. -/
 instance Finite.ringHom_of_rat {R K : Type*} [Ring R] [Algebra ℚ R] [Module.Finite ℚ R]
-    [Field K] [Algebra ℚ K] : Finite (R →+* K) :=
+    [CommRing K] [IsDomain K] [Algebra ℚ K] : Finite (R →+* K) :=
   .of_equiv _ (RingHom.equivRatAlgHom R K).symm

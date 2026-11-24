@@ -146,6 +146,7 @@ theorem mem_fixingSubgroup_reflexField_iff (Φ : CMType E) (σ : ℂ ≃ₐ[ℚ]
       invFun := (σ.symm : ℂ →+* ℂ).comp
       left_inv φ := RingHom.ext fun _ ↦ σ.symm_apply_apply _
       right_inv φ := RingHom.ext fun _ ↦ σ.apply_symm_apply _ }
+  have he (φ : E →+* ℂ) : e φ = (σ : ℂ →+* ℂ).comp φ := rfl
   -- Applying `σ` to a type trace sums over the transported type `σΦ = {ψ | σ⁻¹ ∘ ψ ∈ Φ}`.
   have key (a : E) : σ (Φ.typeTrace a) = ∑ ψ with e.symm ψ ∈ Φ, ψ a := by
     rw [typeTrace_eq_sum, map_sum]
@@ -170,7 +171,7 @@ theorem mem_fixingSubgroup_reflexField_iff (Φ : CMType E) (σ : ℂ ≃ₐ[ℚ]
       rw [key, typeTrace_eq_sum]
       refine Finset.sum_congr (Finset.filter_congr fun ψ _ ↦ ?_) fun _ _ ↦ rfl
       have := h (e.symm ψ)
-      rwa [show (σ : ℂ →+* ℂ).comp (e.symm ψ) = ψ from e.apply_symm_apply ψ, Iff.comm] at this
+      rwa [← he, e.apply_symm_apply, Iff.comm] at this
     | algebraMap r => exact σ.commutes r
     | add x y _ _ hx hy => rw [map_add, hx, hy]
     | inv x _ hx => rw [map_inv₀, hx]
@@ -197,7 +198,6 @@ variable {K L : Type*} [Field K] [Field L] [NumberField K] [NumberField L] [Alge
 trace: `typeTrace_Φ b = typeTrace_{Φ₀} (Tr_{L/K} b)` for the type `Φ` induced on `L` by `Φ₀`. -/
 theorem typeTrace_induced (Φ₀ : CMType K) (b : L) :
     (Φ₀.induced (algebraMap K L)).typeTrace b = Φ₀.typeTrace (Algebra.trace K L b) := by
-  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ K L
   -- Group the embeddings of `L` in the induced type by their restriction to `K`.
   have hfib : ((Φ₀.induced (algebraMap K L) : CMType L) : Set (L →+* ℂ)) =
       ⋃ φ₀ ∈ (Φ₀ : Set (K →+* ℂ)), (fun φ : L →+* ℂ ↦ φ.comp (algebraMap K L)) ⁻¹' {φ₀} := by
@@ -215,7 +215,6 @@ theorem reflexField_induced (Φ₀ : CMType K) :
   · rw [typeTrace_induced]
     exact typeTrace_mem_reflexField Φ₀ _
   · -- On `K`, the induced type trace is `[L : K]` times the original one.
-    have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ K L
     have h : (Φ₀.induced (algebraMap K L)).typeTrace (algebraMap K L a) =
         (Module.finrank K L : ℂ) * Φ₀.typeTrace a := by
       rw [typeTrace_induced, Algebra.trace_algebraMap, map_nsmul, nsmul_eq_mul]
