@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.Points
-public import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 
 /-!
 # Base change of the Grassmannian scheme
@@ -77,37 +76,48 @@ section Scheme
 
 variable (k : ℕ)
 
-/-- The morphism `Spec A ⟶ G(k, M)` over `Spec R` classifying the image in `G(k, A ⊗[R] M; A)` of a
-point of `G(k, A ⊗[R'] M'; A)`, for the algebra structure on `A` over `R` induced from `R'`. -/
-private noncomputable def grassmannianPoint {A : Type u} [CommRing A] [Algebra R' A]
+/-- The morphism `Spec A ⟶ G(k, M)` over `Spec R` classifying the image in `G(k, A ⊗[R] M; A)` of
+a point over an `R'`-algebra `A`. The algebra structure of `A` over `R` and the scalar tower are
+explicit arguments, so that `grassmannianPoints_congr` can compare different choices. -/
+private noncomputable def grassmannianPoints (A : Type u) [CommRing A] [Algebra R' A]
+    (_ : Algebra R A) (_ : IsScalarTower R R' A) (N : G(k, A ⊗[R'] M'; A)) :
+    Spec (.of A) ⟶ scheme R M k :=
+  toSchemeHom (hf.grassmannianEquiv A N)
+
+-- `grassmannianPoints` depends on the algebra structure over `R` only through its equality class.
+private lemma grassmannianPoints_congr (A : Type u) [CommRing A] [Algebra R' A]
+    (iR jR : Algebra R A) (t : @IsScalarTower R R' A _ _ (@Algebra.toSMul _ _ _ _ iR))
+    (t' : @IsScalarTower R R' A _ _ (@Algebra.toSMul _ _ _ _ jR)) (h : iR = jR)
+    (N : G(k, A ⊗[R'] M'; A)) :
+    grassmannianPoints hf k A iR t N = grassmannianPoints hf k A jR t' N := by
+  subst h
+  rfl
+
+/-- `grassmannianPoints` with the algebra structure over `R` through `R'`. -/
+private noncomputable def grassmannianPoints' (A : Type u) [CommRing A] [Algebra R' A]
     (N : G(k, A ⊗[R'] M'; A)) : Spec (.of A) ⟶ scheme R M k :=
   letI : Algebra R A := ((algebraMap R' A).comp (algebraMap R R')).toAlgebra
-  haveI : IsScalarTower R R' A := .of_algebraMap_eq' rfl
-  toSchemeHom (hf.grassmannianEquiv A N)
+  grassmannianPoints hf k A ‹_› (.of_algebraMap_eq' rfl) N
 
 variable {k}
 
-/-- `grassmannianPoint` computed with any compatible algebra structure on `A` over `R`. -/
-private lemma grassmannianPoint_eq {A : Type u} [CommRing A] [Algebra R' A] [iR : Algebra R A]
+private lemma grassmannianPoints'_eq (A : Type u) [CommRing A] [Algebra R' A] [Algebra R A]
     [IsScalarTower R R' A] (N : G(k, A ⊗[R'] M'; A)) :
-    grassmannianPoint hf k N = toSchemeHom (hf.grassmannianEquiv A N) := by
-  obtain rfl : iR = ((algebraMap R' A).comp (algebraMap R R')).toAlgebra :=
-    Algebra.algebra_ext _ _ fun r ↦ IsScalarTower.algebraMap_apply R R' A r
-  -- with the induced algebra structure, both sides are `grassmannianPoint` by definition
-  rfl
+    grassmannianPoints' hf k A N = toSchemeHom (hf.grassmannianEquiv A N) :=
+  grassmannianPoints_congr hf k A _ _ _ ‹_›
+    (by rw [← IsScalarTower.algebraMap_eq R R' A, toAlgebra_algebraMap]) N
 
-/-- `grassmannianPoint` is natural in the algebra. -/
-private lemma grassmannianPoint_map {A B : Type u} [CommRing A] [Algebra R' A] [CommRing B]
+/-- `grassmannianPoints'` is natural in the `R'`-algebra. -/
+private lemma grassmannianPoints'_map (A B : Type u) [CommRing A] [Algebra R' A] [CommRing B]
     [Algebra R' B] (g : A →ₐ[R'] B) (N : G(k, A ⊗[R'] M'; A)) :
-    grassmannianPoint hf k (map g N) =
-      Spec.map (CommRingCat.ofHom (g : A →+* B)) ≫ grassmannianPoint hf k N := by
+    grassmannianPoints' hf k B (map g N) =
+      Spec.map (CommRingCat.ofHom (g : A →+* B)) ≫ grassmannianPoints' hf k A N := by
   let _ : Algebra R A := ((algebraMap R' A).comp (algebraMap R R')).toAlgebra
   have : IsScalarTower R R' A := .of_algebraMap_eq' rfl
   let _ : Algebra R B := ((algebraMap R' B).comp (algebraMap R R')).toAlgebra
   have : IsScalarTower R R' B := .of_algebraMap_eq' rfl
-  rw [grassmannianPoint_eq, grassmannianPoint_eq, grassmannianEquiv_map, toSchemeHom_map]
-  -- `g.restrictScalars R` has underlying ring map `g`
-  rfl
+  rw [grassmannianPoints'_eq, grassmannianPoints'_eq, grassmannianEquiv_map, toSchemeHom_map,
+    AlgHom.coe_restrictScalars]
 
 variable {A : Type u} [CommRing A] [Algebra R' A] [Algebra R A] [IsScalarTower R R' A]
 
@@ -119,7 +129,7 @@ variable (k) in
 of `G(k, M')`, it exhibits `G(k, M')` as the base change of `G(k, M)` to `Spec R'`
 (`IsBaseChange.isPullback_grassmannianSchemeHom`). -/
 noncomputable def grassmannianSchemeHom : scheme R' M' k ⟶ scheme R M k :=
-  homOfPoints (grassmannianPoint hf k) (grassmannianPoint_map hf)
+  homOfPoints (grassmannianPoints' hf k) (grassmannianPoints'_map hf)
 
 variable (k) in
 /-- `grassmannianSchemeHom` depends on the base change map only through its value: two equal maps
@@ -134,18 +144,22 @@ composed with `grassmannianSchemeHom`, classifies the image of `N` in `G(k, A �
 @[reassoc (attr := simp)]
 theorem toSchemeHom_comp_grassmannianSchemeHom (N : G(k, A ⊗[R'] M'; A)) :
     toSchemeHom N ≫ grassmannianSchemeHom hf k = toSchemeHom (hf.grassmannianEquiv A N) :=
-  (toSchemeHom_comp_homOfPoints _ (grassmannianPoint_map hf) N).trans (grassmannianPoint_eq hf N)
+  (toSchemeHom_comp_homOfPoints _ _ N).trans (grassmannianPoints'_eq hf A N)
 
 variable (k) in
 /-- `grassmannianSchemeHom` lies over `Spec R' ⟶ Spec R`. -/
 @[reassoc (attr := simp)]
 theorem grassmannianSchemeHom_toSpec :
     grassmannianSchemeHom hf k ≫ toSpec R M k =
-      toSpec R' M' k ≫ Spec.map (CommRingCat.ofHom (algebraMap R R')) := by
-  refine Scheme.hom_ext_of_forall_spec fun B a ↦ affinePoint_induction (R₀ := R)
-    (fun A _ _ _ _ N ↦ ?_) a
-  rw [toSchemeHom_comp_grassmannianSchemeHom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec_assoc,
-    ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← IsScalarTower.algebraMap_eq]
+      toSpec R' M' k ≫ Spec.map (CommRingCat.ofHom (algebraMap R R')) :=
+  scheme_hom_ext fun A _ _ N ↦ by
+    -- make `A` an `R`-algebra through `R'`, so that `grassmannianSchemeHom` can be computed on
+    -- points
+    let _ : Algebra R A := ((algebraMap R' A).comp (algebraMap R R')).toAlgebra
+    have : IsScalarTower R R' A := .of_algebraMap_eq' rfl
+    rw [toSchemeHom_comp_grassmannianSchemeHom_assoc, toSchemeHom_toSpec,
+      toSchemeHom_toSpec_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+      ← IsScalarTower.algebraMap_eq]
 
 variable (k) in
 /-- **Base change of the Grassmannian scheme along a base change of modules.** For a base change

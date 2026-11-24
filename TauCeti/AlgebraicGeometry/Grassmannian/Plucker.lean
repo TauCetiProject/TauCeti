@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Grassmannian.Points
-public import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 public import TauCeti.RingTheory.Grassmannian.Plucker
 
 /-!
@@ -46,7 +45,7 @@ namespace Module.Grassmannian
 variable {R : Type u} [CommRing R] {M : Type u} [AddCommGroup M] [Module R M] {k : ℕ}
 
 -- the naturality of the point map of `pluckerHom`
-private lemma toSchemeHom_pluckerBaseChange_map {S T : Type u} [CommRing S] [Algebra R S]
+private lemma toSchemeHom_pluckerBaseChange_map (S T : Type u) [CommRing S] [Algebra R S]
     [CommRing T] [Algebra R T] (f : S →ₐ[R] T) (N : G(k, S ⊗[R] M; S)) :
     toSchemeHom (pluckerBaseChange (map f N)) =
       Spec.map (CommRingCat.ofHom (f : S →+* T)) ≫ toSchemeHom (pluckerBaseChange N) := by
@@ -58,7 +57,7 @@ variable (R M k) in
 `⋀ᵏ (A ⊗[R] M) → ⋀ᵏ ((A ⊗[R] M) ⧸ N)`, read in `A ⊗[R] ⋀ᵏ M`
 (`Module.Grassmannian.toSchemeHom_comp_pluckerHom`). -/
 noncomputable def pluckerHom : scheme R M k ⟶ scheme R (⋀[R]^k M) 1 :=
-  homOfPoints (fun N ↦ toSchemeHom (pluckerBaseChange N)) toSchemeHom_pluckerBaseChange_map
+  homOfPoints (fun _ _ _ N ↦ toSchemeHom (pluckerBaseChange N)) toSchemeHom_pluckerBaseChange_map
 
 variable {A : Type u} [CommRing A] [Algebra R A]
 
@@ -73,7 +72,7 @@ variable (R M k) in
 /-- `pluckerHom` lies over `Spec R`. -/
 @[reassoc (attr := simp)]
 theorem pluckerHom_toSpec : pluckerHom R M k ≫ toSpec R (⋀[R]^k M) 1 = toSpec R M k := by
-  refine hom_ext fun A _ _ N ↦ ?_
+  refine scheme_hom_ext fun A _ _ N ↦ ?_
   rw [toSchemeHom_comp_pluckerHom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec]
 
 end Module.Grassmannian
