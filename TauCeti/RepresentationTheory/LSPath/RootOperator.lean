@@ -292,7 +292,7 @@ the target height form pulls back along `g` to the source height form followed b
 theorem minHeight_mapSemilinear {𝕜' W : Type*} [Field 𝕜'] [LinearOrder 𝕜']
     [IsStrictOrderedRing 𝕜'] [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'} {g : V →ₛₗ[σ] W}
     (hσ : Monotone σ) {f' : Dual 𝕜' W} (hf : ∀ v, f' (g v) = σ (f v)) (p : PLPath 𝕜 V) :
-    (p.mapSemilinear g).minHeight f' = σ (p.minHeight f) := by
+    (p.mapSemilinear g hσ).minHeight f' = σ (p.minHeight f) := by
   rw [mapSemilinear_def, minHeight_ofSegments, listMinHeight_mapSemilinear hσ hf, ← minHeight_def]
 
 /-- Minimum height is natural under arbitrary linear maps. -/

@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Rat.Cast.Order
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RepresentationTheory.LSPath.Basic
-
-import TauCeti.Data.Rat.Cast.Order
 
 /-!
 # Rational piecewise-linear realization of Lakshmibai–Seshadri paths
@@ -69,7 +68,8 @@ yields `π.toPLPath 𝕜 f`. -/
 theorem mapSemilinear_toRatPLPath {𝕜 V : Type*} [Field 𝕜] [PartialOrder 𝕜]
     [IsStrictOrderedRing 𝕜] [PosMulReflectLT 𝕜] [AddCommGroup V] [Module 𝕜 V] (f : M →+ V)
     (π : LSPath P b lam) :
-    π.toRatPLPath.mapSemilinear (f.liftBaseChangeSemilinear (Rat.castHom 𝕜)) =
+    π.toRatPLPath.mapSemilinear (f.liftBaseChangeSemilinear (Rat.castHom 𝕜))
+        Rat.cast_mono_of_partialOrder =
       π.toPLPath 𝕜 f := by
   rw [toRatPLPath_def, mapSemilinear_toPLPath ℚ _ _ Rat.cast_mono_of_partialOrder,
     AddMonoidHom.liftBaseChangeSemilinear_comp_mk]

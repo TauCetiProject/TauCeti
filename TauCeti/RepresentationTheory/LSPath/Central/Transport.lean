@@ -330,6 +330,7 @@ theorem endpoint_toRatPLPath_centralTransport :
     LinearMap.toAddMonoidHom_coe]
 
 /-- Central transport shifts the lattice-valued weight of an LS path by `χ`. -/
+@[simp]
 theorem weight_centralTransport :
     (centralTransport χ hχ π).weight = π.weight + χ := by
   refine (centralTransport χ hχ π).weight_eq_iff_endpoint_toRatPLPath.mpr ?_

@@ -193,6 +193,7 @@ theorem centralTransportIsoUntwistedTarget_def :
 end TransportIsoUntwistedTargetSimp
 
 /-- Central transport preserves the `i`-raising string length `ε_i`. -/
+@[simp]
 theorem crystal_ε_centralTransport {χ : X} (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
     (hlam' : lam + χ ∈ dominantChamber P b) (i : b.support) (π : LSPath P b lam) :
     (crystal hlam').ε i (centralTransport χ hχ π) = (crystal hlam).ε i π := by
@@ -201,6 +202,7 @@ theorem crystal_ε_centralTransport {χ : X} (hχ : ∀ i ∈ b.support, P.coroo
     hlam').ε_apply i π
 
 /-- Central transport preserves the `i`-lowering string length `φ_i`. -/
+@[simp]
 theorem crystal_φ_centralTransport {χ : X} (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0)
     (hlam' : lam + χ ∈ dominantChamber P b) (i : b.support) (π : LSPath P b lam) :
     (crystal hlam').φ i (centralTransport χ hχ π) = (crystal hlam).φ i π := by

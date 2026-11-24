@@ -284,7 +284,7 @@ with `toPLPath` by postcomposing the realization `f` with the semilinear map. -/
 theorem mapSemilinear_toPLPath {𝕜' W : Type*} [Field 𝕜'] [PartialOrder 𝕜'] [IsStrictOrderedRing 𝕜']
     [AddCommGroup W] [Module 𝕜' W] {σ : 𝕜 →+* 𝕜'} (g : V →ₛₗ[σ] W) (hσ : Monotone σ)
     (π : LSPath P b lam) :
-    (π.toPLPath 𝕜 f).mapSemilinear g = π.toPLPath 𝕜' (g.toAddMonoidHom.comp f) := by
+    (π.toPLPath 𝕜 f).mapSemilinear g hσ = π.toPLPath 𝕜' (g.toAddMonoidHom.comp f) := by
   rw [toPLPath_def, toPLPath_def, PLPath.mapSemilinear_ofSegments _ g hσ]
   congr 1; simp [timed_def, List.map_ofFn, Function.comp_def]
 

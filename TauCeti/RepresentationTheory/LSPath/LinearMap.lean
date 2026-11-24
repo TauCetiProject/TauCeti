@@ -80,7 +80,8 @@ theorem listLower_mapSemilinear (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (
 height form pulls back along `g` to the source height form followed by `σ`. -/
 theorem lower_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜']
     (p : PLPath 𝕜 V) (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v)) (x : V) :
-    lower f' (g x) (p.mapSemilinear g) = (lower f x p).map (fun q ↦ q.mapSemilinear g) := by
+    lower f' (g x) (p.mapSemilinear g hσ) =
+      (lower f x p).map (fun q ↦ q.mapSemilinear g hσ) := by
   obtain ⟨l, rfl⟩ := ofSegments_surjective p
   simp only [mapSemilinear_ofSegments l g hσ, lower_ofSegments, listLower_mapSemilinear hσ hf,
     Option.map_map]
@@ -90,9 +91,10 @@ theorem lower_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜
 height form pulls back along `g` to the source height form followed by `σ`. -/
 theorem raise_mapSemilinear [IsStrictOrderedRing 𝕜] [IsStrictOrderedRing 𝕜']
     (p : PLPath 𝕜 V) (hσ : Monotone σ) (hf : ∀ v, f' (g v) = σ (f v)) (x : V) :
-    raise f' (g x) (p.mapSemilinear g) = (raise f x p).map (fun q ↦ q.mapSemilinear g) := by
+    raise f' (g x) (p.mapSemilinear g hσ) =
+      (raise f x p).map (fun q ↦ q.mapSemilinear g hσ) := by
   simp only [raise_def, ← mapSemilinear_reverse, lower_mapSemilinear _ hσ hf, Option.map_map]
-  exact congrArg (Option.map · _) (funext fun q ↦ (mapSemilinear_reverse q g).symm)
+  exact congrArg (Option.map · _) (funext fun q ↦ (mapSemilinear_reverse q g hσ).symm)
 
 end Semilinear
 
