@@ -8,7 +8,6 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.CategoryTheory.Triangulated.Adjunction
-public import Mathlib.CategoryTheory.Triangulated.Subcategory
 public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
 /-!
@@ -62,8 +61,9 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
   defining relation.
 * `TauCeti.TriangulatedK0.of_shift_one` and `TauCeti.TriangulatedK0.of_shift`: the class of a
   shift, `[X⟦1⟧] = -[X]` and `[X⟦n⟧] = (-1)ⁿ[X]`.
-* `TauCeti.TriangulatedK0.exists_eq_of`: every element of triangulated `K₀` is the class of a
-  single object.
+* `TauCeti.TriangulatedK0.of_surjective`: every element of triangulated `K₀` is the class of a
+  single object, with `TauCeti.TriangulatedK0.mem_range_map_iff` and
+  `TauCeti.TriangulatedK0.mem_range_map_ι_iff` characterizing the ranges of `map F` and `map P.ι`.
 * `TauCeti.TriangulatedK0.liftEquiv`: the universal property. Triangle-additive invariants with
   values in `G` correspond bijectively to homomorphisms `TriangulatedK0 C →+ G`.
 * `TauCeti.TriangulatedK0.BiadditiveInvariant.bilift_of_of` and
@@ -239,19 +239,19 @@ theorem induction_on {motive : TriangulatedK0 C → Prop} (x : TriangulatedK0 C)
     (neg : ∀ a, motive a → motive (-a)) : motive x :=
   PresentedK0.induction_on x zero of add neg
 
-/-- **Every element of triangulated `K₀` is the class of an object**: sums are realised by
+/-- **Every element of triangulated `K₀` is the class of a single object**: sums are realised by
 biproducts and negatives by shifts, since `[X⟦1⟧] = -[X]`. -/
-theorem exists_eq_of (x : TriangulatedK0 C) : ∃ X : C, x = of X := by
+theorem of_surjective : Function.Surjective (of : C → TriangulatedK0 C) := fun x => by
   induction x using induction_on with
-  | zero => exact ⟨0, of_zero.symm⟩
+  | zero => exact ⟨0, of_zero⟩
   | of X => exact ⟨X, rfl⟩
   | add x y hx hy =>
       obtain ⟨X, rfl⟩ := hx
       obtain ⟨Y, rfl⟩ := hy
-      exact ⟨X ⊞ Y, (of_biprod X Y).symm⟩
+      exact ⟨X ⊞ Y, of_biprod X Y⟩
   | neg x hx =>
       obtain ⟨X, rfl⟩ := hx
-      exact ⟨X⟦(1 : ℤ)⟧, (of_shift_one X).symm⟩
+      exact ⟨X⟦(1 : ℤ)⟧, of_shift_one X⟩
 
 section HomExt
 
@@ -383,6 +383,13 @@ theorem map_comp {K : Type u''} [Category.{v''} K] [Preadditive K] [HasZeroObjec
 theorem map_congr {F' : C ⥤ D} [F'.CommShift ℤ] [F'.IsTriangulated]
     (h : ∀ X : C, Nonempty (F.obj X ≅ F'.obj X)) : map F = map F' :=
   PresentedK0.map_congr h _ _
+
+/-- An element of `TriangulatedK0 D` lies in the range of `map F` if and only if it is the class
+of `F.obj X` for some object `X : C`. -/
+theorem mem_range_map_iff {y : TriangulatedK0 D} :
+    y ∈ (map F).range ↔ ∃ X : C, (of (F.obj X) : TriangulatedK0 D) = y := by
+  rw [AddMonoidHom.mem_range, of_surjective.exists]
+  simp only [map_of]
 
 end Functoriality
 
@@ -528,6 +535,14 @@ theorem of_fullSubcategory_distTriang {T : Triangle C} (hT : T ∈ distTriang C)
     ← of_congr (P.fullyFaithfulι.preimageIso (X := T'.obj₃) (Y := ⟨T.obj₃, h₃⟩)
       (Triangle.π₃.mapIso e))]
   exact of_distTriang hT'
+
+/-- An element of `TriangulatedK0 C` lies in the range of `map P.ι` if and only if it is the
+class of an object satisfying `P`. -/
+theorem mem_range_map_ι_iff {x : TriangulatedK0 C} :
+    x ∈ (map P.ι).range ↔ ∃ X : C, P X ∧ (of X : TriangulatedK0 C) = x := by
+  rw [mem_range_map_iff]
+  simp only [ObjectProperty.ι_obj]
+  exact ⟨fun ⟨X, hX⟩ => ⟨X.obj, X.property, hX⟩, fun ⟨X, hP, hX⟩ => ⟨⟨X, hP⟩, hX⟩⟩
 
 end FullSubcategory
 

@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import Mathlib.CategoryTheory.Simple
 public import TauCeti.CategoryTheory.Abelian.Injective.Basic
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Finite semisimple categories
