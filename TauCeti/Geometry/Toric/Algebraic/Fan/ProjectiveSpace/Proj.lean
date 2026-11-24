@@ -235,9 +235,8 @@ private theorem val_awayRatio (j : Option ι) :
     ← TauCeti.Localization.mk'_pow_eq_invSelf_pow_mul]
 
 omit [Fintype ι] in
-private theorem awayRatio_self : awayRatio k k = 1 := by
-  apply val_injective
-  rw [val_awayRatio, val_one, mul_comm, IsLocalization.Away.mul_invSelf]
+private theorem awayRatio_self : awayRatio k k = 1 :=
+  Away.mk_self _ _
 
 /-- The characters of the maximal cone omitting `k` act on the chart `D₊(X_k)`: a character with
 exponents `a_j` along the rays `j ≠ k` goes to `∏ (X_j / X_k) ^ a_j`. -/
