@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Holder.Basic
-public import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Inclusions between the Hölder spaces `C^{k,α}(M)` of different exponents
+# Inclusions between the Hölder spaces `C^{k,α}(M)`: lower exponent and lower order
 
 Let `A` be a compact chart atlas of a manifold `M`. For `β ≤ α`, every element of
 `A.CkHolderSpace k α F` lies in `A.CkHolderSpace k β F`: on each piece of the atlas the `k`th
@@ -46,7 +45,7 @@ continuous on both, so the closed graph theorem makes the inclusion continuous
 * `TauCeti.CompactChartAtlas.CkHolderSpace.norm_inclusionL_le`: the inclusion has norm at most
   `2 N + 1`.
 * `TauCeti.CompactChartAtlas.CkHolderSpace.inclusionL_injective`: the inclusion is injective.
-* `ContMDiffMap.memChartHolder_of_isCompact_of_contMDiff`: the `k`th coordinate derivative of a
+* `ContMDiffMap.memChartHolder_of_contMDiff_of_isCompact`: the `k`th coordinate derivative of a
   `C^{k+1}` map is `β`-Hölder on every compact subset of a chart target, for `β ≤ 1`.
 
 ## References
@@ -84,18 +83,13 @@ theorem locallyLipschitz_chartIteratedFDeriv [IsManifold I (k + 1 : ℕ) M]
   have : IsScalarTower ℝ 𝕜 (E [×k]→L[𝕜] F) := .restrictScalars ℝ 𝕜 _
   set T := (extChartAt I x).target
   have hT : UniqueDiffOn 𝕜 T := uniqueDiffOn_extChartAt_target x
-  have hf' : ContDiffOn 𝕜 (k + 1 : ℕ) (f ∘ (extChartAt I x).symm) T := by
-    simpa only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-      Function.id_comp] using (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x)).contDiffOn
+  have hf' : ContDiffOn 𝕜 (k + 1 : ℕ) (f ∘ (extChartAt I x).symm) T :=
+    contDiffOn_comp_extend_symm (⟨f, hf⟩ : C^(k + 1 : ℕ)⟮I, M; 𝓘(𝕜, F), F⟯)
+      (IsManifold.chart_mem_maximalAtlas x)
   set g := iteratedFDerivWithin 𝕜 k (f ∘ (extChartAt I x).symm) T
-  -- The `k`th derivative is `C^1` on the target: its derivative is the next derivative.
-  have hg : ContDiffOn 𝕜 1 g T := by
-    rw [← zero_add (1 : WithTop ℕ∞), contDiffOn_succ_iff_fderivWithin hT]
-    refine ⟨hf'.differentiableOn_iteratedFDerivWithin (by exact_mod_cast k.lt_succ_self) hT,
-      by simp, ?_⟩
-    rw [contDiffOn_zero, fderivWithin_iteratedFDerivWithin]
-    exact (LinearIsometryEquiv.continuous _).comp_continuousOn
-      (hf'.continuousOn_iteratedFDerivWithin le_rfl hT)
+  -- The `k`th derivative is `C^1` on the target.
+  have hg : ContDiffOn 𝕜 1 g T := fun z hz ↦
+    (hf' z hz).iteratedFDerivWithin_right hT (by rw [add_comm]; norm_cast) hz
   intro z
   obtain ⟨ε, ε0, hε⟩ := Metric.mem_nhdsWithin_iff.1
     (extChartAt_target_mem_nhdsWithin_of_mem (I := I) z.property)
@@ -113,7 +107,7 @@ theorem locallyLipschitz_chartIteratedFDeriv [IsManifold I (k + 1 : ℕ) M]
 /-- **Hölder bounds from one more derivative.** Over `ℝ` or `ℂ` and for `β ≤ 1`, the
 `k`th coordinate derivative of a `C^{k+1}` map is `β`-Hölder on every compact subset of a chart
 target. The compact set need not be convex. -/
-theorem memChartHolder_of_isCompact_of_contMDiff [IsManifold I (k + 1 : ℕ) M] {β : ℝ≥0}
+theorem memChartHolder_of_contMDiff_of_isCompact [IsManifold I (k + 1 : ℕ) M] {β : ℝ≥0}
     (hβ : β ≤ 1) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (hf : ContMDiff I 𝓘(𝕜, F) (k + 1 : ℕ) f) (x : M)
     {K : Set (extChartAt I x).target} (hK : IsCompact K) (hk : k ≤ n) :
     MemChartHolder x K k hk β f := by
@@ -236,7 +230,7 @@ variable (A k α F) in
 noncomputable def inclusionSuccLinearMap (hβ : β ≤ 1) :
     A.CkHolderSpace (k + 1) α F →ₗ[𝕜] A.CkHolderSpace k β F where
   toFun f := mk (toContMDiffMapSucc f) fun i ↦
-    ContMDiffMap.memChartHolder_of_isCompact_of_contMDiff hβ (toContMDiffMapSucc f)
+    ContMDiffMap.memChartHolder_of_contMDiff_of_isCompact hβ (toContMDiffMapSucc f)
       (by simpa [coe_toContMDiffMapSucc] using (toContMDiffMap A (k + 1) α F f).contMDiff) _
       (A.piece i).isCompact le_rfl
   map_add' _ _ := ext fun _ ↦ by simp [coe_toContMDiffMapSucc]
@@ -253,14 +247,8 @@ variable [LocallyCompactSpace E] [CompleteSpace F]
 /-- When the model space is locally compact and `F` is complete, the inclusion
 `C^{k+1,α}(M, F) → C^{k,β}(M, F)` is continuous, by the closed graph theorem. -/
 theorem continuous_inclusionSuccLinearMap (hβ : β ≤ 1) :
-    Continuous (inclusionSuccLinearMap A k α F hβ) := by
-  refine (inclusionSuccLinearMap A k α F hβ).continuous_of_seq_closed_graph
-    fun u f g hu hg ↦ ext fun y ↦ ?_
-  have hg' : Tendsto (fun n ↦ u n y) atTop (𝓝 (g y)) := by
-    simpa [Function.comp_def] using ((evalCLM A k β F y).continuous.tendsto g).comp hg
-  have hf' : Tendsto (fun n ↦ u n y) atTop (𝓝 (f y)) := by
-    simpa [Function.comp_def] using ((evalCLM A (k + 1) α F y).continuous.tendsto f).comp hu
-  simpa using tendsto_nhds_unique hg' hf'
+    Continuous (inclusionSuccLinearMap A k α F hβ) :=
+  continuous_of_coe_eq _ (coe_inclusionSuccLinearMap hβ)
 
 variable (A k α F) in
 /-- **Lowering the order of a Hölder space.** Over `ℝ` or `ℂ`, when the model space is locally
