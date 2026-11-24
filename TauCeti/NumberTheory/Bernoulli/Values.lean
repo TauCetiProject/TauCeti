@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ZetaValues
+public import TauCeti.NumberTheory.Bernoulli.Basic
 
 /-!
 # Signs and values of the even Bernoulli numbers
 
 The Bernoulli numbers here are Mathlib's `bernoulli`, with `B₁ = -1/2`. Mathlib evaluates them
-up to `B₆`. This file continues the list of the even ones up to `B₃₈`, and proves that they
+up to `B₆`, and `TauCeti.bernoulli_twelve` in `TauCeti.NumberTheory.Bernoulli.Basic` evaluates
+`B₁₂`. This file continues the list of the even ones up to `B₃₈`, and proves that they
 alternate in sign, `(-1)^(k+1) B_{2k} > 0` for `k ≥ 1`; in particular no even Bernoulli number
 vanishes.
 
@@ -27,7 +29,8 @@ Bernoulli index is `n - 2`.
 
 * `TauCeti.neg_one_pow_mul_bernoulli_two_mul_pos`: `(-1)^(k+1) B_{2k} > 0` for `k ≠ 0`.
 * `TauCeti.bernoulli_two_mul_ne_zero`: `B_{2k} ≠ 0` for every `k`.
-* `TauCeti.bernoulli_eight`, …, `TauCeti.bernoulli_thirtyEight`: the values of `B₈, …, B₃₈`.
+* `TauCeti.bernoulli_eight`, …, `TauCeti.bernoulli_thirtyEight`: the values of `B₈, …, B₃₈`
+  other than `B₁₂`.
 
 ## References
 
@@ -86,14 +89,6 @@ theorem bernoulli_ten : bernoulli 10 = 5 / 66 := by
   simp (disch := decide) only [sum_range_succ, sum_range_zero, bernoulli'_one,
     ← bernoulli_eq_bernoulli'_of_ne_one, bernoulli_eq_zero_of_odd, bernoulli_zero, bernoulli_two,
     bernoulli_four, bernoulli_six, bernoulli_eight]
-  decide +kernel
-
-@[simp]
-theorem bernoulli_twelve : bernoulli 12 = -691 / 2730 := by
-  rw [bernoulli_eq_bernoulli'_of_ne_one (by decide), bernoulli'_def]
-  simp (disch := decide) only [sum_range_succ, sum_range_zero, bernoulli'_one,
-    ← bernoulli_eq_bernoulli'_of_ne_one, bernoulli_eq_zero_of_odd, bernoulli_zero, bernoulli_two,
-    bernoulli_four, bernoulli_six, bernoulli_eight, bernoulli_ten]
   decide +kernel
 
 @[simp]

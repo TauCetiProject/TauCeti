@@ -61,11 +61,14 @@ a topological `Flow ℝ M` in `IsContactForm.reebFlow` without rest points
   `IsContactForm.conj_kerFlowEquiv_linearizedReebReturn`,
   `IsContactForm.charpoly_mfderiv_flowOf_reebVectorField`,
   `IsContactForm.charpoly_normalReturnDerivative_eq`,
-  `IsContactForm.hasEigenvalue_returnDerivative_iff`): when `Φ_T(p) = p`, restricting `dΦ_T(p)` to
-  `ξ_p` yields a linear symplectomorphism whose iterates obey the power law, whose conjugacy class
-  is invariant along the trajectory, whose full monodromy characteristic polynomial splits as
+  `IsContactForm.hasEigenvalue_returnDerivative_iff`):
+  when the maximal flow is defined at `(T, p)` and `Φ_T(p) = p`, restricting `dΦ_T(p)` to
+  `ξ_p` yields a linear symplectomorphism whose iterates obey the power law, whose conjugacy
+  class is invariant along the trajectory,
+  whose full monodromy characteristic polynomial splits as
   `(X - 1)` times its characteristic polynomial, and whose characteristic polynomial and eigenvalues
-  agree with those of any local transverse Poincaré section.
+  agree with those of the normal derivative on a transverse section for the return branch at
+  the specified time `T`, including when `T` exceeds the least period.
 
 ## References
 
@@ -110,7 +113,7 @@ theorem mpullback_flowOf_apply (hα : α.IsContactForm)
   have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
     ((ContMDiff.contMDiff_mvfderiv_apply hf (m := 0) (by norm_num)).comp
       (hα.contMDiff_reebVectorField.of_le (by simp))).continuous
-  exact mpullback_flowOf_apply_eq_exp_integral_smul hX2 hRf α.mdifferentiable
+  exact mpullback_flowOf_apply_eq_exp_integral_smul (hX2.of_le one_le_two) hRf α.mdifferentiable
     (hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero)) hx
 
 /-- **Contact Hamiltonian flows preserve the coorientation.** For a contact form `α` and the
@@ -137,7 +140,7 @@ theorem mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
   · intro h x
     -- The pullbacks `φₜ^* α` at `x` are constant for small `t`, and their velocity at `0` is
     -- `L_X α = (R_α f) α`.
-    have hd := hasDerivAt_mpullback_flowOf_zero hX2 x (α.mdifferentiable x)
+    have hd := hasDerivAt_mpullback_flowOf_zero (hX2.of_le one_le_two) x (α.mdifferentiable x)
     have hconst : (fun s ↦ TauCeti.mpullback I I (flowOf X s) α.val x) =ᶠ[𝓝 0]
         fun _ ↦ α.val x := by
       have hopen : {s | (s, x) ∈ flowDomain X} ∈ 𝓝 (0 : ℝ) :=
@@ -596,6 +599,28 @@ theorem IsContactForm.hasEigenvalue_returnDerivative_iff (hα : α.IsContactForm
     Module.End.hasEigenvalue_iff_isRoot_charpoly, Module.End.hasEigenvalue_iff_isRoot_charpoly,
     charpoly_returnDerivative_eq_X_mul hgv (h := hK), IsRoot.def, IsRoot.def, eval_mul, eval_X,
     mul_eq_zero, or_iff_right hμ]
+
+namespace IsContactForm
+
+/-- The linearized Reeb return map at a return time `T` has no eigenvalue `1` iff some local
+transverse section through `p` has a return derivative without eigenvalue `1` for the branch at
+time `T`. The branch uses the specified return time, which need not be the least period. -/
+theorem not_hasEigenvalue_one_linearizedReebReturn_iff_exists_not_hasEigenvalue_returnDerivative
+    (hα : α.IsContactForm) {T : ℝ} {p : M} (hT : (T, p) ∈ flowDomain α.reebVectorField)
+    (hp : flowOf α.reebVectorField T p = p) :
+    ¬(hα.linearizedReebReturn hT hp).HasEigenvalue 1 ↔
+      ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g p ∧
+        mvfderiv I g p (α.reebVectorField p) ≠ 0 ∧
+        ¬(returnDerivative α.reebVectorField g T p).HasEigenvalue 1 := by
+  constructor
+  · intro hnd
+    obtain ⟨g, hg, hgv⟩ := hα.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one 1 p
+    have hgv0 : mvfderiv I g p (α.reebVectorField p) ≠ 0 := hgv ▸ one_ne_zero
+    exact ⟨g, hg, hgv0, mt (hα.hasEigenvalue_returnDerivative_iff hT hp hg hgv0 one_ne_zero).1 hnd⟩
+  · rintro ⟨g, hg, hgv, hnd⟩
+    exact mt (hα.hasEigenvalue_returnDerivative_iff hT hp hg hgv one_ne_zero).2 hnd
+
+end IsContactForm
 
 /-- **Degeneracy of identity return in dimension at least `3`.** If `2 ≤ finrank ℝ E` (so the
 contact manifold has odd dimension `2 n + 1 ≥ 3` and `dim ξ_p ≥ 1`) and `dΦ_T(p) = id`, then

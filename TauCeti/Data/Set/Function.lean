@@ -24,6 +24,8 @@ public import Mathlib.Data.Set.Function
   containing `K`.
 * `Function.Injective.apply_notMem_pair`: an injective map sends a point other than `b` and `c`
   outside the pair `{f b, f c}`.
+* `Function.Injective.val_mem_of_subset_insert`: an injective map into a set `T ⊆ insert z₀ S`
+  sends every point other than a preimage of `z₀` into `S`.
 -/
 
 public section
@@ -79,5 +81,12 @@ theorem apply_mem_iff_of_eq_self {α : Type*} {f : α → α} (hf : Injective f)
 theorem apply_notMem_pair {α : Sort*} {β : Type*} {f : α → β} (hf : Injective f) {a b c : α}
     (hb : a ≠ b) (hc : a ≠ c) : f a ∉ ({f b, f c} : Set β) := by
   simp [hf.ne hb, hf.ne hc]
+
+/-- An injective map `e` into a set `T ⊆ insert z₀ S` with `e a₀ = z₀` sends every `a ≠ a₀`
+into `S`. -/
+theorem val_mem_of_subset_insert {α : Sort*} {β : Type*} {T S : Set β} {z₀ : β} {e : α → T}
+    (he : Injective e) (hT : T ⊆ insert z₀ S) {a₀ a : α} (he₀ : (e a₀).val = z₀)
+    (ha : a ≠ a₀) : (e a).val ∈ S :=
+  mem_of_mem_insert_of_ne (hT (e a).property) fun h ↦ ha (he (Subtype.ext (h.trans he₀.symm)))
 
 end Function.Injective

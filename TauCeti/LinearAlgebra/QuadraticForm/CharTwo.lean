@@ -347,8 +347,10 @@ theorem equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_fin
       simp [f]
     · rw [e.symm.toLinearEquiv.finrank_map_eq, ← (LinearEquiv.ofInjective f hf).finrank_eq,
         Module.finrank_fin_fun]
-  · have hU_orth : U = LinearMap.BilinForm.orthogonal Q.polarBilin U :=
-      ((hU.orthogonal_polarBilin_eq_self_iff hQ).mpr (by omega)).symm
+  · have hrad : Q.radical = ⊥ :=
+      eq_bot_mono Q.radical_le_ker_polarBilin (LinearMap.BilinForm.Nondegenerate.ker_eq_bot hQ)
+    have hU_orth : U = LinearMap.BilinForm.orthogonal Q.polarBilin U :=
+      ((hU.orthogonal_polarBilin_eq_self_iff hrad).mpr (by omega)).symm
     let eU : Module.Basis (Fin m) K U := Module.finBasisOfFinrankEq K U hUm
     obtain ⟨b, hb, hbinl⟩ :=
       LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J_inl_eq Q.isAlt_polarBilin hQ eU hU_orth
@@ -370,9 +372,11 @@ theorem equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_ort
       ∃ U : Submodule K V,
         Q.IsTotallyIsotropic U ∧ LinearMap.BilinForm.orthogonal Q.polarBilin U = U := by
   rw [equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_finrank_eq hQ hdim]
-  refine ⟨fun ⟨U, hU, hUm⟩ ↦ ⟨U, hU, (hU.orthogonal_polarBilin_eq_self_iff hQ).mpr (by omega)⟩,
+  have hrad : Q.radical = ⊥ :=
+    eq_bot_mono Q.radical_le_ker_polarBilin (LinearMap.BilinForm.Nondegenerate.ker_eq_bot hQ)
+  refine ⟨fun ⟨U, hU, hUm⟩ ↦ ⟨U, hU, (hU.orthogonal_polarBilin_eq_self_iff hrad).mpr (by omega)⟩,
     fun ⟨U, hU, hUorth⟩ ↦ ⟨U, hU, ?_⟩⟩
-  have := (hU.orthogonal_polarBilin_eq_self_iff hQ).mp hUorth
+  have := (hU.orthogonal_polarBilin_eq_self_iff hrad).mp hUorth
   omega
 
 /-- Over a field of characteristic two, a finite-dimensional quadratic form `Q` with nondegenerate

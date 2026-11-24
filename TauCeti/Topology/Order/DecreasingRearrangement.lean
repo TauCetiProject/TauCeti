@@ -20,8 +20,9 @@ including for an empty index type. The characterization by finite superlevel set
 choosing an enumeration of the original index type.
 
 For a family tending to zero along the cofinite filter, its rearrangement tends to zero
-and bounds every finite product by the product of the same number of initial terms.
-This supplies ordered bounds for determinants with arbitrarily indexed rows.
+and bounds every finite product, and every finite sum, by the product or sum of the same number
+of initial terms. This supplies ordered bounds for determinants with arbitrarily indexed rows, and
+bounds the sum of a family by the sum of its rearrangement.
 -/
 
 public section
@@ -263,29 +264,42 @@ theorem tendsto_decreasingRearrangement (hr : Tendsto r cofinite (𝓝 0)) :
   exact (decreasingRearrangement_le_of_card_le (half_pos hε).le hn
     (fun i hi ↦ le_of_lt (lt_of_not_ge (by simpa using hi)))).trans_lt (half_lt_self hε)
 
+/-- The entries of a finite set, listed in nonincreasing order, are bounded termwise by the
+rearrangement. -/
+private theorem exists_equiv_le_decreasingRearrangement (hr : BddAbove (Set.range r))
+    (s : Finset ι) : ∃ g : Fin s.card ≃ s, ∀ k, r (g k) ≤ decreasingRearrangement r k := by
+  classical
+  let e : Fin s.card ≃ s := (Fintype.equivFinOfCardEq (Fintype.card_coe s)).symm
+  let σ := Tuple.sortDesc fun k ↦ r (e k)
+  have hg : Antitone fun k ↦ r (e (σ k)) := Tuple.antitone_sortDesc fun k ↦ r (e k)
+  refine ⟨σ.trans e, fun k ↦ ?_⟩
+  apply le_decreasingRearrangement hr (s := (Iic k).map
+    (σ.toEmbedding.trans (e.toEmbedding.trans (Function.Embedding.subtype _))))
+  · simp
+  · intro i hi
+    obtain ⟨j, hj, rfl⟩ := mem_map.mp hi
+    exact hg (mem_Iic.mp hj)
+
 /-- Every finite product of entries is bounded by the initial product of the rearrangement. -/
 theorem prod_le_prod_decreasingRearrangement (hr₀ : ∀ i, 0 ≤ r i)
     (hr : BddAbove (Set.range r)) (s : Finset ι) :
     ∏ i ∈ s, r i ≤ ∏ k ∈ range s.card, decreasingRearrangement r k := by
-  classical
-  let e : Fin s.card ≃ s := (Fintype.equivFinOfCardEq (Fintype.card_coe s)).symm
-  let f : Fin s.card → ℝ := fun k ↦ r (e k)
-  let σ := Tuple.sortDesc f
-  let g : Fin s.card ↪ ι := σ.toEmbedding.trans (e.toEmbedding.trans (Function.Embedding.subtype _))
-  have hgk (k : Fin s.card) : g k = (e (σ k) : ι) := by simp [g]
-  have hg : Antitone (r ∘ g) := Tuple.antitone_sortDesc f
-  have hle (k : Fin s.card) : r (g k) ≤ decreasingRearrangement r k := by
-    apply le_decreasingRearrangement hr (s := (Iic k).map g)
-    · simp
-    · intro i hi
-      obtain ⟨j, hj, rfl⟩ := mem_map.mp hi
-      exact hg (mem_Iic.mp hj)
+  obtain ⟨g, hg⟩ := exists_equiv_le_decreasingRearrangement hr s
   calc
     ∏ i ∈ s, r i = ∏ k : Fin s.card, r (g k) := by
-      rw [← prod_coe_sort s, ← e.prod_comp, ← Equiv.prod_comp σ]
-      simp only [hgk]
+      rw [← prod_coe_sort s, ← g.prod_comp]
     _ ≤ ∏ k : Fin s.card, decreasingRearrangement r k :=
-      prod_le_prod₀ (fun k _ ↦ hr₀ _) (fun k _ ↦ hle k)
+      prod_le_prod₀ (fun k _ ↦ hr₀ _) (fun k _ ↦ hg k)
     _ = _ := Fin.prod_univ_eq_prod_range _ _
+
+/-- Every finite sum of entries is bounded by the initial sum of the rearrangement. -/
+theorem sum_le_sum_decreasingRearrangement (hr : BddAbove (Set.range r)) (s : Finset ι) :
+    ∑ i ∈ s, r i ≤ ∑ k ∈ range s.card, decreasingRearrangement r k := by
+  obtain ⟨g, hg⟩ := exists_equiv_le_decreasingRearrangement hr s
+  calc
+    ∑ i ∈ s, r i = ∑ k : Fin s.card, r (g k) := by
+      rw [← sum_coe_sort s, ← g.sum_comp]
+    _ ≤ ∑ k : Fin s.card, decreasingRearrangement r k := sum_le_sum fun k _ ↦ hg k
+    _ = _ := Fin.sum_univ_eq_sum_range _ _
 
 end TauCeti

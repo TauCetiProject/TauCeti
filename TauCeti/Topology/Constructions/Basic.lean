@@ -33,6 +33,9 @@ subtype-topology convergence API for continuous maps on subtypes.
   and symmetry of the fibre product.
 * `ContinuousAt.tendsto_comap_val`, `Continuous.tendsto_comap_val`: a continuous function on a
   subtype tends to `f x` along `Filter.comap Subtype.val (𝓝 x.val)`.
+* `Topology.IsQuotientMap.of_comp_eq_comp`: quotient maps are stable under pullback along a
+  continuous injection when the pulled-back inclusion is a closed map, as for the restriction of a
+  quotient map to the preimage of a closed set.
 -/
 
 public section
@@ -253,3 +256,31 @@ theorem Continuous.tendsto_comap_val (hf : Continuous f) (x : Subtype p) :
   hf.continuousAt.tendsto_comap_val
 
 end Subtype
+
+/-- **Quotient maps are stable under closed pullback.** Let `f : X → Y` be a quotient map and
+`j : Y' → Y` a continuous injection. Let `g : X' → Y'` be a continuous surjection lying over `f`
+through a closed map `i : X' → X`, so `f ∘ i = j ∘ g`, whose range contains `f ⁻¹' range j`.
+Then `g` is a quotient map.
+
+The model case is the restriction of `f` over a closed subset `C ⊆ Y`, with `i` and `j` the
+inclusions of `f ⁻¹' C` and `C`: unlike the restriction over an open subset
+(`Topology.IsQuotientMap.restrictPreimage_isOpen`), it needs the closedness of `C`, through `i`. -/
+theorem Topology.IsQuotientMap.of_comp_eq_comp {X X' Y Y' : Type*} [TopologicalSpace X]
+    [TopologicalSpace X'] [TopologicalSpace Y] [TopologicalSpace Y'] {f : X → Y} {g : X' → Y'}
+    {i : X' → X} {j : Y' → Y} (hf : IsQuotientMap f) (hg : Continuous g)
+    (hgs : Function.Surjective g) (hi : IsClosedMap i) (hj : Continuous j)
+    (hji : Function.Injective j) (hcomm : f ∘ i = j ∘ g) (hrange : f ⁻¹' range j ⊆ range i) :
+    IsQuotientMap g := by
+  refine isQuotientMap_iff_isClosed.2 ⟨hgs, fun s ↦ ⟨fun hs ↦ hs.preimage hg, fun hs ↦ ?_⟩⟩
+  have himage : f ⁻¹' (j '' s) = i '' (g ⁻¹' s) := by
+    ext x
+    constructor
+    · rintro ⟨y, hy, hxy⟩
+      obtain ⟨x', rfl⟩ := hrange ⟨y, hxy⟩
+      have hgy : g x' = y := hji ((congrFun hcomm x').symm.trans hxy.symm)
+      exact ⟨x', mem_preimage.2 (hgy ▸ hy), rfl⟩
+    · rintro ⟨x', hx', rfl⟩
+      exact ⟨g x', hx', (congrFun hcomm x').symm⟩
+  have hjs : IsClosed (j '' s) := hf.isCoinducing.isClosed_preimage.1 (himage ▸ hi _ hs)
+  rw [← hji.preimage_image s]
+  exact hjs.preimage hj

@@ -11,7 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.Equivalence
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.Evaluation
-public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Corestrict.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Tower
 
 /-!
