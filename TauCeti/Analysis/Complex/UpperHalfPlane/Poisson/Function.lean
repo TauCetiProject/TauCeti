@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Poisson
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 
 /-!
@@ -21,7 +22,7 @@ Poisson integral of the measure `h dx`.
 
 The **Schwarz integral** of `h` is
 `S[h](z) = (1 / (π i)) ∫ (1 / (x - z) - x / (1 + x ^ 2)) h(x) dx`, and for `h ∈ L¹(ℝ)` the
-Schwarz integral **normalised at infinity** is
+Schwarz integral **normalized at infinity** is
 `S⁰[h](z) = (1 / (π i)) ∫ h(x) / (x - z) dx`. Off the real axis `S[h]` converges for
 `h ∈ L¹(Π)`, and for a real `h` its real part is `P[h]`. For a nonnegative `h` it is the Schwarz
 integral of the measure `h dx`. Off the real axis both integrals converge for `h ∈ L¹(ℝ)`, and they
@@ -43,14 +44,15 @@ times the density of the Poisson measure:
   `P[h]` is taken componentwise.
 * `TauCeti.upperHalfPlanePoissonIntegralFun_eq_upperHalfPlanePoissonIntegral_withDensity`: for a
   nonnegative `h`, `P[h]` is the Poisson integral of the measure `h dx`.
-* `TauCeti.upperHalfPlaneSchwarzIntegralFun`, `TauCeti.upperHalfPlaneSchwarzIntegralZero`: the
-  Schwarz integrals `S[h]` and `S⁰[h]` of a complex function.
+* `TauCeti.upperHalfPlaneSchwarzIntegralFun`,
+  `TauCeti.upperHalfPlaneSchwarzIntegralFunNormalized`: the Schwarz integrals `S[h]` and `S⁰[h]`
+  of a complex function.
 * `TauCeti.integrable_subtractedResolventKernel_mul`: for `h ∈ L¹(Π)` the integrand of `S[h]` is
   integrable off the real axis.
 * `TauCeti.re_upperHalfPlaneSchwarzIntegralFun`: `Re S[h] = P[h]` for a real `h ∈ L¹(Π)`.
 * `TauCeti.upperHalfPlaneSchwarzIntegralFun_eq_upperHalfPlaneSchwarzIntegral_withDensity`: for a
   nonnegative `h`, `S[h]` is the Schwarz integral of the measure `h dx`.
-* `TauCeti.upperHalfPlaneSchwarzIntegralZero_sub_upperHalfPlaneSchwarzIntegralFun`:
+* `TauCeti.upperHalfPlaneSchwarzIntegralFunNormalized_sub_upperHalfPlaneSchwarzIntegralFun`:
   `S⁰[h] - S[h] = -(i / π) ∫ x h(x) / (1 + x ^ 2) dx` for `h ∈ L¹(ℝ)`.
 * `TauCeti.upperHalfPlanePoissonKernel_eq_poissonKernel_cayley`: the Cayley comparison of the
   half-plane and disc Poisson kernels.
@@ -116,17 +118,6 @@ theorem isPoissonFinite_withDensity_enorm {E : Type*} [NormedAddCommGroup E] [No
     (.of_forall fun x ↦ ?_)
   dsimp only
   rw [norm_smul, Real.norm_of_nonneg (by positivity), NNReal.smul_def, smul_eq_mul, coe_nnNorm,
-    mul_comm]
-
-/-- If `f` is integrable for the measure `|h(x)| dx`, then `f • h` is Lebesgue integrable. -/
-private theorem integrable_smul_of_integrable_withDensity_enorm {𝕜 E : Type*} [NormedField 𝕜]
-    [NormedSpace ℝ 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : ℝ → 𝕜} {h : ℝ → E}
-    (hf : Integrable f (volume.withDensity fun x ↦ ‖h x‖ₑ)) (hfm : AEStronglyMeasurable f)
-    (hh : AEStronglyMeasurable h) : Integrable fun x ↦ f x • h x := by
-  simp_rw [eNorm_eq_nnNorm] at hf
-  rw [integrable_withDensity_iff_integrable_smul₀ hh.nnNorm.aemeasurable] at hf
-  refine hf.mono (hfm.smul hh) (.of_forall fun x ↦ ?_)
-  rw [norm_smul, NNReal.smul_def, norm_smul, coe_nnNorm, Real.norm_of_nonneg (norm_nonneg _),
     mul_comm]
 
 /-- **The Poisson integral of an `L¹(Π)` function converges**: for `h` integrable for the Poisson
@@ -229,21 +220,22 @@ theorem upperHalfPlaneSchwarzIntegralFun_eq_upperHalfPlaneSchwarzIntegral_withDe
   funext x
   rw [NNReal.smul_def, Complex.real_smul, mul_comm]
 
-/-- The **Schwarz integral normalised at infinity** `S⁰[h](z) = (1 / (π i)) ∫ h(x) / (x - z) dx` of
+/-- The **Schwarz integral normalized at infinity** `S⁰[h](z) = (1 / (π i)) ∫ h(x) / (x - z) dx` of
 a complex function `h` on `ℝ`, meaningful for `h ∈ L¹(ℝ)`. -/
-def upperHalfPlaneSchwarzIntegralZero (h : ℝ → ℂ) (z : ℂ) : ℂ :=
+def upperHalfPlaneSchwarzIntegralFunNormalized (h : ℝ → ℂ) (z : ℂ) : ℂ :=
   ((π : ℂ) * I)⁻¹ * ∫ x, h x / ((x : ℂ) - z)
 
-/-- The defining formula of `TauCeti.upperHalfPlaneSchwarzIntegralZero`. -/
-theorem upperHalfPlaneSchwarzIntegralZero_def (h : ℝ → ℂ) (z : ℂ) :
-    upperHalfPlaneSchwarzIntegralZero h z = ((π : ℂ) * I)⁻¹ * ∫ x, h x / ((x : ℂ) - z) := by
-  rw [upperHalfPlaneSchwarzIntegralZero]
+/-- The defining formula of `TauCeti.upperHalfPlaneSchwarzIntegralFunNormalized`. -/
+theorem upperHalfPlaneSchwarzIntegralFunNormalized_def (h : ℝ → ℂ) (z : ℂ) :
+    upperHalfPlaneSchwarzIntegralFunNormalized h z =
+      ((π : ℂ) * I)⁻¹ * ∫ x, h x / ((x : ℂ) - z) := by
+  rw [upperHalfPlaneSchwarzIntegralFunNormalized]
 
 /-- **The two Schwarz integrals differ by an imaginary constant**: for `h ∈ L¹(ℝ)` and `z` off
 the real axis, `S⁰[h](z) - S[h](z) = -(i / π) ∫ x h(x) / (1 + x ^ 2) dx`. -/
-theorem upperHalfPlaneSchwarzIntegralZero_sub_upperHalfPlaneSchwarzIntegralFun {h : ℝ → ℂ}
+theorem upperHalfPlaneSchwarzIntegralFunNormalized_sub_upperHalfPlaneSchwarzIntegralFun {h : ℝ → ℂ}
     (hh : Integrable h) {z : ℂ} (hz : z.im ≠ 0) :
-    upperHalfPlaneSchwarzIntegralZero h z - upperHalfPlaneSchwarzIntegralFun h z =
+    upperHalfPlaneSchwarzIntegralFunNormalized h z - upperHalfPlaneSchwarzIntegralFun h z =
       -(I / π) * ∫ x : ℝ, (x : ℂ) / (1 + (x : ℂ) ^ 2) * h x := by
   have h1 := integrable_div_ofReal_sub hh hz
   have h2 := integrable_div_one_add_sq_mul hh
@@ -252,7 +244,7 @@ theorem upperHalfPlaneSchwarzIntegralZero_sub_upperHalfPlaneSchwarzIntegralFun {
     funext x
     rw [subtractedResolventKernel_def]
     ring
-  rw [upperHalfPlaneSchwarzIntegralZero_def, upperHalfPlaneSchwarzIntegralFun_def, hK,
+  rw [upperHalfPlaneSchwarzIntegralFunNormalized_def, upperHalfPlaneSchwarzIntegralFun_def, hK,
     integral_sub h1 h2, ← mul_sub, sub_sub_cancel]
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
   field_simp

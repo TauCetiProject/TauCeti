@@ -207,15 +207,10 @@ namespace TauCeti
 
 /-- Off the real axis, `h(x) / (x - z)` is integrable for `h ∈ L¹(μ)`: `|x - z| ≥ |Im z|`. -/
 theorem integrable_div_ofReal_sub {μ : Measure ℝ} {h : ℝ → ℂ} (hh : Integrable h μ) {z : ℂ}
-    (hz : z.im ≠ 0) : Integrable (fun x : ℝ ↦ h x / ((x : ℂ) - z)) μ := by
-  refine (hh.norm.const_mul |z.im|⁻¹).mono'
-    (hh.aemeasurable.div (by fun_prop : Measurable fun x : ℝ ↦ (x : ℂ) - z).aemeasurable
-      |>.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
-  have hpos : 0 < |z.im| := abs_pos.2 hz
-  have hle : |z.im| ≤ ‖(x : ℂ) - z‖ := by
-    simpa using Complex.abs_im_le_norm ((x : ℂ) - z)
-  rw [norm_div, div_eq_inv_mul]
-  exact mul_le_mul_of_nonneg_right (inv_anti₀ hpos hle) (norm_nonneg _)
+    (hz : z.im ≠ 0) : Integrable (fun x : ℝ ↦ h x / ((x : ℂ) - z)) μ :=
+  (hh.bdd_mul (Complex.continuous_resolvent_real hz).aestronglyMeasurable
+    (.of_forall fun x ↦ Complex.norm_resolvent_real_le z x hz)).congr
+      (.of_forall fun x ↦ by simp [resolvent, Ring.inverse_eq_inv', div_eq_mul_inv, mul_comm])
 
 /-- For `h ∈ L¹(μ)`, `x h(x) / (1 + x ^ 2)` is integrable, since `|x| / (1 + x ^ 2) ≤ 1`. -/
 theorem integrable_div_one_add_sq_mul {μ : Measure ℝ} {h : ℝ → ℂ} (hh : Integrable h μ) :
