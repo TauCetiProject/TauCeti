@@ -33,7 +33,7 @@ For a smooth proper geometrically connected family of curves `f`:
   The action is simply transitive on points, since two classes of degree `d` differ by a class of
   degree zero; and `Picᵈ_{X/S}` has a section over the fppf covering `X ⟶ S`, namely `d` times
   the class of the graph of the diagonal, a relative effective Cartier divisor of degree one
-  (`relativePicardDegreeFppfSubfunctor_obj_nonempty`). Consequently `Picᵈ_{X/S} ⟶ S` is
+  (`relativePicardDegreeFppfSubfunctor_obj_op_mk_nonempty`). Consequently `Picᵈ_{X/S} ⟶ S` is
   surjective, and the class of the torsor in `Sheaf.NonabelianH1` is trivial exactly when
   `Picᵈ_{X/S}` has a section over `S` (`TauCeti.GroupScheme.mk_toTorsor_eq_one_iff`).
 
@@ -44,7 +44,10 @@ For a smooth proper geometrically connected family of curves `f`:
 * `TauCeti.AlgebraicGeometry.picardComponentι`: the monomorphism into the Picard scheme;
 * the instance `CommGrpObj (picardComponent f 0)`: the group law of `Pic⁰_{X/S}`;
 * the instance `ModObj (picardComponent f 0) (picardComponent f d)`: the action on `Picᵈ_{X/S}`;
-* `TauCeti.AlgebraicGeometry.isTorsor_picardComponent`: `Picᵈ_{X/S}` is a `Pic⁰_{X/S}`-torsor.
+* `TauCeti.AlgebraicGeometry.isTorsor_picardComponent`: `Picᵈ_{X/S}` is a `Pic⁰_{X/S}`-torsor;
+* the instance `IsMonHom (picardComponentι f 0)` and
+  `TauCeti.AlgebraicGeometry.smul_comp_picardComponentι`: `Pic⁰_{X/S}` is a subgroup scheme of the
+  Picard scheme, acting on `Picᵈ_{X/S}` by the restricted group law.
 
 ## References
 
@@ -148,22 +151,27 @@ lemma picardComponentZeroMulRepresentableBy_homEquiv' {T : Over S}
 -- The lemmas below about `(picardComponentRepresentableBy f d).homEquiv` are not `@[simp]`: `simp`
 -- rewrites the type of the sections of `Picᵈ_{X/S}` by `Subfunctor.toFunctor_obj` and
 -- `Functor.comp_obj`, after which their left-hand sides no longer match.
+/-- The class represented by a section of `Pic⁰_{X/S}` is the image, under the inclusion
+`relativePicardDegreeZeroFppfSheafι`, of the section of the degree-zero Picard sheaf that it
+represents through `picardComponentZeroMulRepresentableBy f`. -/
+theorem picardComponentRepresentableBy_homEquiv_val {T : Over S}
+    (φ : T ⟶ picardComponent f 0) :
+    ((picardComponentRepresentableBy f 0).homEquiv φ).val =
+      (relativePicardDegreeZeroFppfSheafι f).hom.app (op T)
+        ((picardComponentZeroMulRepresentableBy f).homEquiv' φ).toAdd :=
+  (relativePicardDegreeZeroFppfSheafι_hom_app_relativePicardDegreeZeroFppfSheafIso_inv_app
+    f _).symm
+
 /-- The unit section of `Pic⁰_{X/S}` represents the trivial class. -/
 theorem picardComponentRepresentableBy_homEquiv_one_val (T : Over S) :
     ((picardComponentRepresentableBy f 0).homEquiv (1 : T ⟶ picardComponent f 0)).val = 0 := by
   have h : (picardComponentZeroMulRepresentableBy f).homEquiv' (1 : T ⟶ picardComponent f 0) =
       1 := by
-    -- The unit section is defined by `MonObj.ofRepresentableBy` as the morphism representing `1`.
-    rw [show (1 : T ⟶ picardComponent f 0) =
-        toUnit T ≫ (picardComponentZeroMulRepresentableBy f).homEquiv'.symm 1 from rfl,
-      Functor.RepresentableBy.homEquiv'_comp, Equiv.apply_symm_apply, map_one]
-  rw [picardComponentZeroMulRepresentableBy_homEquiv'] at h
-  have h' : (relativePicardDegreeZeroFppfSheafIso f).inv.app (op T)
-      ((picardComponentRepresentableBy f 0).homEquiv 1) = 0 :=
-    Multiplicative.ofAdd.injective
-      (h.trans (ofAdd_zero (α := (relativePicardDegreeZeroFppfSheaf f).obj.obj (op T))).symm)
-  rw [← relativePicardDegreeZeroFppfSheafι_hom_app_relativePicardDegreeZeroFppfSheafIso_inv_app,
-    h']
+    -- `MonObj.ofRepresentableBy_one` states the unit through the representation of the sheaf
+    -- composed with `forget₂`, so `Equiv.apply_symm_apply` only applies up to defeq.
+    rw [Hom.one_def, MonObj.ofRepresentableBy_one, Functor.RepresentableBy.homEquiv'_comp]
+    exact (congrArg _ (Equiv.apply_symm_apply _ _)).trans (map_one _)
+  rw [picardComponentRepresentableBy_homEquiv_val, h]
   exact map_zero _
 
 /-- The product of two sections of `Pic⁰_{X/S}` represents the sum of their classes, that is, the
@@ -173,22 +181,18 @@ theorem picardComponentRepresentableBy_homEquiv_mul_val {T : Over S}
     ((picardComponentRepresentableBy f 0).homEquiv (φ * ψ)).val =
       ((picardComponentRepresentableBy f 0).homEquiv φ).val +
         ((picardComponentRepresentableBy f 0).homEquiv ψ).val := by
-  have h : (picardComponentZeroMulRepresentableBy f).homEquiv' (φ * ψ) =
-      (picardComponentZeroMulRepresentableBy f).homEquiv' φ *
-        (picardComponentZeroMulRepresentableBy f).homEquiv' ψ := by
-    -- The multiplication is defined by `MonObj.ofRepresentableBy` as the morphism representing
-    -- the product of the two projections.
-    rw [show φ * ψ = lift φ ψ ≫ (picardComponentZeroMulRepresentableBy f).homEquiv'.symm
-        ((picardComponentZeroMulRepresentableBy f).homEquiv' (fst _ _) *
-          (picardComponentZeroMulRepresentableBy f).homEquiv' (snd _ _)) from rfl,
-      Functor.RepresentableBy.homEquiv'_comp, Equiv.apply_symm_apply, map_mul,
-      ← Functor.RepresentableBy.homEquiv'_comp, ← Functor.RepresentableBy.homEquiv'_comp,
-      lift_fst, lift_snd]
-  simp only [picardComponentZeroMulRepresentableBy_homEquiv'] at h
-  rw [← relativePicardDegreeZeroFppfSheafι_hom_app_relativePicardDegreeZeroFppfSheafIso_inv_app,
-    ← relativePicardDegreeZeroFppfSheafι_hom_app_relativePicardDegreeZeroFppfSheafIso_inv_app,
-    ← relativePicardDegreeZeroFppfSheafι_hom_app_relativePicardDegreeZeroFppfSheafIso_inv_app,
-    ← map_add, Multiplicative.ofAdd.injective (h.trans (ofAdd_add _ _).symm)]
+  let e := picardComponentZeroMulRepresentableBy f
+  have h : e.homEquiv' (φ * ψ) = e.homEquiv' φ * e.homEquiv' ψ := by
+    -- As for the unit, `MonObj.ofRepresentableBy_mul` states the product through the
+    -- representation composed with `forget₂`, so the rewrites only apply up to defeq.
+    rw [Hom.mul_def, MonObj.ofRepresentableBy_mul, Functor.RepresentableBy.homEquiv'_comp]
+    refine (congrArg _ (Equiv.apply_symm_apply _ _)).trans ?_
+    rw [map_mul]
+    exact congrArg₂ (· * ·) ((e.homEquiv'_comp _ _).symm.trans (congrArg _ (lift_fst φ ψ)))
+      ((e.homEquiv'_comp _ _).symm.trans (congrArg _ (lift_snd φ ψ)))
+  rw [picardComponentRepresentableBy_homEquiv_val, picardComponentRepresentableBy_homEquiv_val,
+    picardComponentRepresentableBy_homEquiv_val, h]
+  exact map_add _ _ _
 
 /-- The inverse of a section of `Pic⁰_{X/S}` represents the negative of its class. -/
 theorem picardComponentRepresentableBy_homEquiv_inv_val {T : Over S}
@@ -291,7 +295,7 @@ theorem isTorsor_picardComponent :
   coversTop := by
     have := SmoothOfRelativeDimension.smooth 1 f
     rw [Scheme.fppfTopology.coversTop_over_iff]
-    obtain ⟨σ, hσ⟩ := relativePicardDegreeFppfSubfunctor_obj_nonempty f d
+    obtain ⟨σ, hσ⟩ := relativePicardDegreeFppfSubfunctor_obj_op_mk_nonempty f d
     let p := (picardComponentRepresentableBy f d).homEquiv.symm ⟨σ, hσ⟩
     -- The fppf covering `f` factors through the structure morphism of `picardComponent f d`.
     refine Scheme.fppfTopology.superset_covering ?_
@@ -303,6 +307,45 @@ theorem isTorsor_picardComponent :
 /-- The structure morphism of `Picᵈ_{X/S}` is surjective, as for every torsor. -/
 instance : Surjective (picardComponent f d).hom :=
   GroupScheme.surjective_of_isTorsor (isTorsor_picardComponent f d)
+
+/-! ### Compatibility with the Picard scheme -/
+
+section PicardScheme
+
+variable [HasPicardScheme f]
+
+/-- The inclusion of `Pic⁰_{X/S}` into the Picard scheme is a homomorphism of group objects:
+`Pic⁰_{X/S}` is a subgroup scheme of the Picard scheme. -/
+instance : IsMonHom (picardComponentι f 0) where
+  one_hom := by
+    refine (picardSchemeRepresentableBy f).homEquiv.injective ?_
+    rw [picardSchemeRepresentableBy_homEquiv_comp_picardComponentι,
+      ← Category.id_comp η[picardScheme f], ← toUnit_unique (toUnit _) (𝟙 _), ← Hom.one_def,
+      picardSchemeRepresentableBy_homEquiv_one, ← Category.id_comp η[picardComponent f 0],
+      ← toUnit_unique (toUnit _) (𝟙 _), ← Hom.one_def,
+      picardComponentRepresentableBy_homEquiv_one_val]
+  mul_hom := by
+    refine (picardSchemeRepresentableBy f).homEquiv.injective ?_
+    rw [picardSchemeRepresentableBy_homEquiv_comp_picardComponentι, ← lift_fst_comp_snd_comp,
+      ← Hom.mul_def, picardSchemeRepresentableBy_homEquiv_mul,
+      picardSchemeRepresentableBy_homEquiv_comp_picardComponentι,
+      picardSchemeRepresentableBy_homEquiv_comp_picardComponentι,
+      ← Category.id_comp μ[picardComponent f 0], ← lift_fst_snd, ← Hom.mul_def,
+      picardComponentRepresentableBy_homEquiv_mul_val]
+
+/-- In the Picard scheme, the action of `Pic⁰_{X/S}` on `Picᵈ_{X/S}` is the restriction of the
+group law. -/
+theorem smul_comp_picardComponentι {T : Over S} (m : T ⟶ picardComponent f 0)
+    (x : T ⟶ picardComponent f d) :
+    (m • x) ≫ picardComponentι f d = (m ≫ picardComponentι f 0) * (x ≫ picardComponentι f d) := by
+  refine (picardSchemeRepresentableBy f).homEquiv.injective ?_
+  rw [picardSchemeRepresentableBy_homEquiv_mul,
+    picardSchemeRepresentableBy_homEquiv_comp_picardComponentι,
+    picardSchemeRepresentableBy_homEquiv_comp_picardComponentι,
+    picardSchemeRepresentableBy_homEquiv_comp_picardComponentι,
+    picardComponentRepresentableBy_homEquiv_smul_val]
+
+end PicardScheme
 
 end Torsor
 

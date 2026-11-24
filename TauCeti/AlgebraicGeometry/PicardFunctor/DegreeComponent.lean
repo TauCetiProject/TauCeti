@@ -52,7 +52,7 @@ For a smooth proper geometrically connected family of curves:
   multiplication by `n` sends `Picᵈ` to `Picⁿᵈ`;
 * the class of a relative effective Cartier divisor of degree `d` lies in `Picᵈ`; in particular
   every `Picᵈ` has a section over `X` itself, `d` times the class of the graph of the diagonal
-  (`relativePicardDegreeFppfSubfunctor_obj_nonempty`);
+  (`relativePicardDegreeFppfSubfunctor_obj_op_mk_nonempty`);
 * `Pic⁰` is the image of the degree-zero Picard sheaf `relativePicardDegreeZeroFppfSheaf f`
   (`range_relativePicardDegreeZeroFppfSheafι`), which it identifies with `Pic⁰`
   (`relativePicardDegreeZeroFppfSheafIso`).
@@ -72,8 +72,8 @@ locally constant.
 * `TauCeti.AlgebraicGeometry.relativePicardToFppfSheaf_app_mem_relativePicardDegreeFppfSubfunctor`
   `_iff`: membership of an actual line-bundle class;
 * `TauCeti.AlgebraicGeometry.add_mem_relativePicardDegreeFppfSubfunctor_obj`: degrees add;
-* `TauCeti.AlgebraicGeometry.relativePicardDegreeFppfSubfunctor_obj_nonempty`: `Picᵈ` has a
-  section over `X`;
+* `TauCeti.AlgebraicGeometry.relativePicardDegreeFppfSubfunctor_obj_op_mk_nonempty`: `Picᵈ` has
+  a section over `X`;
 * `TauCeti.AlgebraicGeometry.range_relativePicardDegreeZeroFppfSheafι`,
   `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFppfSheafIso`: `Pic⁰` is the degree-zero
   Picard sheaf;
@@ -400,7 +400,7 @@ theorem relativePicardToFppfSheaf_app_mem_relativePicardDegreeFppfSubfunctor_of_
 /-- **`Picᵈ_{X/S}` has a section over `X`.** Over the test scheme `X ⟶ S`, the diagonal is a
 section of `X ×_S X ⟶ X`, and `d` times the class of its graph, a relative effective Cartier
 divisor of degree one, lies in `Picᵈ_{X/S}(X)`. -/
-theorem relativePicardDegreeFppfSubfunctor_obj_nonempty (d : ℤ) :
+theorem relativePicardDegreeFppfSubfunctor_obj_op_mk_nonempty (d : ℤ) :
     ((relativePicardDegreeFppfSubfunctor f d).obj (op (Over.mk f))).Nonempty := by
   have h := zsmul_mem_relativePicardDegreeFppfSubfunctor_obj f
     (relativePicardToFppfSheaf_app_mem_relativePicardDegreeFppfSubfunctor_of_mem f
@@ -504,14 +504,14 @@ instance isIso_lift_relativePicardDegreeZeroFppfSheafι :
       (forget AddCommGrpCat)) (range_relativePicardDegreeZeroFppfSheafι f).le) := by
   have : Mono (relativePicardDegreeZeroFppfSheafι f).hom :=
     (sheafToPresheaf _ _).map_mono (relativePicardDegreeZeroFppfSheafι f)
-  rw [NatTrans.isIso_iff_isIso_app]
-  intro T
-  rw [isIso_iff_bijective]
-  refine ⟨fun a b h ↦ ?_, fun σ ↦ ?_⟩
-  · exact (AddCommGrpCat.mono_iff_injective _).1 ((NatTrans.mono_iff_mono_app _).1 this T)
-      (congrArg Subtype.val h)
-  · obtain ⟨a, ha⟩ := (range_relativePicardDegreeZeroFppfSheafι f).ge T σ.property
-    exact ⟨a, Subtype.ext ha⟩
+  -- Up to the equality of subfunctors `range_relativePicardDegreeZeroFppfSheafι`, this is
+  -- Mathlib's `Subfunctor.toRange` of a monomorphism.
+  have key : ∀ G (h : Subfunctor.range (Functor.whiskerRight
+      (relativePicardDegreeZeroFppfSheafι f).hom (forget AddCommGrpCat)) = G),
+      IsIso (Subfunctor.lift _ h.le) := by
+    rintro _ rfl
+    exact inferInstanceAs (IsIso (Subfunctor.toRange _))
+  exact key _ (range_relativePicardDegreeZeroFppfSheafι f)
 
 /-- The sections of the degree-zero Picard sheaf `relativePicardDegreeZeroFppfSheaf f` are the
 sections of the component `Pic⁰_{X/S}`, through the inclusion
