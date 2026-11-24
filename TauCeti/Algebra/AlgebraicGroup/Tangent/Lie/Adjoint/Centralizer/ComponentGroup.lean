@@ -333,10 +333,8 @@ theorem centralizerComponentGroupMap_eq_mapComponentGroup (f : H ⟶ K)
   apply hom_ext
   ext a
   rw [toBialgHom_comp, toBialgHom_comp, BialgHom.comp_apply, BialgHom.comp_apply,
-    toBialgHom_ofHom]
-  dsimp only [mkQuotient, toBialgHom, ObjectProperty.homMk]
-  rw [CommHopfAlgCat.mkQuotient_apply, CommHopfAlgCat.mkQuotient_apply,
-    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.mkₐ_eq_mk, BialgHom.centralizerMap_mk]
+    toBialgHom_ofHom, toBialgHom_mkQuotient_apply, toBialgHom_mkQuotient_apply,
+    BialgHom.centralizerMap_mk]
 
 /-- `centralizerComponentGroupMap` commutes with the homomorphisms `A_K(x) →* π₀(K)` and
 `A_H(df(x)) →* π₀(H)` induced by the centralizer inclusions into the ambient groups. -/

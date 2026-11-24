@@ -281,7 +281,6 @@ theorem mapDomain_mem_quotientPointsSubgroup_of_map_le
 
 /-- The point map induced by a Hopf-algebra morphism sending `I` into `J`, restricted to the
 cut-out point subgroups. -/
-@[expose]
 noncomputable def mapDomainQuotientPointsSubgroup
     {H K : _root_.CommHopfAlgCat.{v} R} (phi : H ⟶ K)
     {I : HopfIdeal R H} {J : HopfIdeal R K} (hIJ : I.map phi.hom ≤ J) (A : CommAlgCat.{w} R) :
@@ -299,7 +298,7 @@ lemma mapDomainQuotientPointsSubgroup_apply
     mapDomainQuotientPointsSubgroup phi hIJ A g =
       ⟨BialgHom.mapDomain (A := A) phi.hom g,
         mapDomain_mem_quotientPointsSubgroup_of_map_le phi hIJ A g.property⟩ :=
-  rfl
+  (rfl)
 
 /-- Coercing `mapDomainQuotientPointsSubgroup` gives `BialgHom.mapDomain`. -/
 @[simp]
@@ -310,7 +309,7 @@ lemma coe_mapDomainQuotientPointsSubgroup_apply
     (mapDomainQuotientPointsSubgroup phi hIJ A g :
       HopfAlgebra.points (R := R) (H := H) A) =
       BialgHom.mapDomain (A := A) phi.hom g :=
-  rfl
+  (rfl)
 
 /-- For the quotient morphism `q : H ⟶ H ⧸ I`, given with `hq : q = mkQuotient H I`, a point of
 `H ⧸ I` vanishes on the image of a Hopf ideal `J` of `H` exactly when the corresponding point of
