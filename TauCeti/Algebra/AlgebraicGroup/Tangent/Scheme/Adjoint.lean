@@ -53,6 +53,8 @@ theorem lieAlgebraAdjointAction_smul :
     ModObj.smul (M := G) (X := lieAlgebraOver k H) =
       (𝟙 G ⊗ₘ (lieAlgebraOverIso k H).inv) ≫
         (ComoduleAlgebra.specModObj k H P).smul ≫ (lieAlgebraOverIso k H).hom := by
+  -- In `ModObj.ofIso`, the group isomorphism is `Iso.refl`, and the self-action on
+  -- morphisms is the monoidal tensor. Its inverse therefore contributes `𝟙 G`.
   rfl
 
 end TauCeti

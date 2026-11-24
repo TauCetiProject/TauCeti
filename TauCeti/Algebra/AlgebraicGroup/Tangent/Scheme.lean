@@ -92,8 +92,9 @@ def lieAlgebraOverIso : (algSpec (.of k)).obj (op (CommAlgCat.of k P)) ≅
 theorem lieAlgebraOverIso_hom_left : (lieAlgebraOverIso k H).hom.left =
     (lieAlgebraSchemeIso k H).inv := by
   simp only [lieAlgebraOverIso, Iso.trans_hom, Over.comp_left,
-    TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk_hom_left]
-  rfl
+    TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk_hom_left, Over.isoMk_hom_left,
+    Iso.symm_hom]
+  exact Category.id_comp _
 
 end Over
 

@@ -182,6 +182,8 @@ theorem specModObj_smul_map (T : Type u) [CommRing T] [Algebra R T]
   simp only [comp_lift_assoc, GrpObj.comp_inv, lift_snd, lift_fst]
   apply Quiver.Hom.unop_inj
   apply CommAlgCat.hom_ext
+  -- In the opposite category, the cartesian lift is `Algebra.TensorProduct.lift`, and
+  -- inversion of the group point is precomposition with the antipode.
   rfl
 
 variable {R H A} {B : Type u} [CommRing B] [Algebra R B] [ComoduleAlgebra R H B]
