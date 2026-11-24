@@ -44,8 +44,9 @@ theorem mem_wordCutoff {k : ℕ} {l : List N} :
 /-- Every increment in an allowed word has degree at most the total degree. -/
 theorem degree_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
     {n : N} (hn : n ∈ l) : d.degree n ≤ d.degree l.sum := by
-  simpa only [← map_list_sum] using
-    List.le_sum_map_of_nonneg d.degree (fun a ha => d.degree_nonneg (hP a ha)) hn
+  rw [map_list_sum]
+  exact List.single_le_sum (by simpa using fun a ha => d.degree_nonneg (hP a ha))
+    _ (List.mem_map_of_mem hn)
 
 /-- The number of nonzero allowed increments is bounded by their total degree. -/
 theorem length_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)

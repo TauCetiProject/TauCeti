@@ -42,14 +42,6 @@ theorem length_le_sum_map_of_pos {α : Type*} {l : List α} (w : α → ℤ)
   simpa only [length_map, nsmul_eq_mul, mul_one] using
     (length_nsmul_le_sum (l.map w) (1 : ℤ) hweight)
 
-/-- An entry's weight is at most the total when all weights in the list are nonnegative. -/
-theorem le_sum_map_of_nonneg {α : Type*} {l : List α} (w : α → ℤ)
-    (h : ∀ a ∈ l, 0 ≤ w a) {a : α} (ha : a ∈ l) : w a ≤ (l.map w).sum := by
-  apply single_le_sum _ _ (mem_map.mpr ⟨a, ha, rfl⟩)
-  intro b hb
-  obtain ⟨c, hc, rfl⟩ := mem_map.mp hb
-  exact h c hc
-
 /-- Over an alphabet of positive integer weights, a fixed weight cutoff permits
 only finitely many words whenever it permits only finitely many letters. -/
 theorem finite_setOf_sum_map_le {α : Type*} {s : Set α} (w : α → ℤ) (k : ℕ)
@@ -59,7 +51,8 @@ theorem finite_setOf_sum_map_le {α : Type*} {s : Set α} (w : α → ℤ) (k : 
   apply ((finite_length_le {a ∈ s | w a ≤ k} k).image (map Subtype.val)).subset
   rintro l ⟨hs, hsum⟩
   have hentry (a : α) (ha : a ∈ l) : a ∈ {a ∈ s | w a ≤ k} :=
-    ⟨hs a ha, (le_sum_map_of_nonneg w (fun b hb => (hpos b (hs b hb)).le) ha).trans hsum⟩
+    ⟨hs a ha, (single_le_sum (by simpa using fun b hb => (hpos b (hs b hb)).le)
+      _ (mem_map_of_mem ha)).trans hsum⟩
   have hlen := length_le_sum_map_of_pos w (fun a ha => hpos a (hs a ha))
   refine ⟨l.attachWith _ hentry, ?_, attachWith_map_subtype_val hentry⟩
   change (l.attachWith (· ∈ {a ∈ s | w a ≤ k}) hentry).length ≤ k
