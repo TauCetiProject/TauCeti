@@ -23,8 +23,8 @@ iterate kills it too.
 * `TauCeti.iterate_map_eq_zero_of_le`: an iterate killing a vector is followed by iterates
   killing it.
 * `TauCeti.iterate_map_sum`: the iterates of an additive map preserve finite sums.
-* `LinearMap.iterate_map_smulₛₗ`: the iterates of a semilinear map twist scalars by the
-  corresponding iterates of the scalar endomorphism.
+* `TauCeti.iterate_map_smulₛₗ`: the iterates of a map preserving a twisted scalar action
+  twist scalars by the corresponding iterates of the scalar map.
 * `TauCeti.iterate_map_smul`: the iterates of a linear map preserve scalar multiplication.
 * `TauCeti.iterate_map_rat_smul`: the iterates of an additive map between `ℚ`-modules preserve
   rational scalar multiplication.
@@ -32,16 +32,15 @@ iterate kills it too.
 
 public section
 
-/-- Iterating a semilinear endomorphism twists scalar multiplication by the same number of
-iterations of the scalar endomorphism. -/
-theorem LinearMap.iterate_map_smulₛₗ {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-    {σ : R →+* R} (f : M →ₛₗ[σ] M) (n : ℕ) (r : R) (x : M) :
+namespace TauCeti
+
+/-- Iterating a map compatible with a twisted scalar action iterates the scalar twist as well. -/
+theorem iterate_map_smulₛₗ {R F M : Type*} {σ : R → R} [SMul R M] [FunLike F M M]
+    [MulActionSemiHomClass F σ M M] (f : F) (n : ℕ) (r : R) (x : M) :
     f^[n] (r • x) = σ^[n] r • f^[n] x := by
   induction n with
   | zero => rfl
   | succ n ih => simp only [Function.iterate_succ_apply', ih, map_smulₛₗ]
-
-namespace TauCeti
 
 variable {F M : Type*} [FunLike F M M]
 
@@ -61,9 +60,7 @@ theorem iterate_map_sum [AddCommMonoid M] [AddMonoidHomClass F M M] (f : F) {ι 
 /-- The iterates of a linear map preserve scalar multiplication. -/
 theorem iterate_map_smul {R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     [LinearMapClass F R M M] (f : F) (n : ℕ) (r : R) (x : M) : f^[n] (r • x) = r • f^[n] x := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [Function.iterate_succ_apply', ih, map_smul, Function.iterate_succ_apply']
+  simpa only [Function.iterate_id, id_eq] using iterate_map_smulₛₗ (σ := id) f n r x
 
 /-- The iterates of an additive map between `ℚ`-modules preserve rational scalar
 multiplication. -/

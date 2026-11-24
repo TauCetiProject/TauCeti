@@ -292,16 +292,19 @@ local instance : RingHomInvPair (σ.symm : L →+* L) (σ : L →+* L) :=
 noncomputable def kerFrobenius (g : D ⟶ D') :
     g.hom.ker ≃ₛₗ[(σ : L →+* L)] g.hom.ker := by
   let Φ := LinearEquiv.ofBijective D.frobenius D.frobenius_bijective
-  have hker : g.hom.ker.comap D.frobenius = g.hom.ker := by
-    ext x
-    simp only [Submodule.mem_comap, LinearMap.mem_ker, g.hom_frobenius]
-    exact ⟨fun h => D'.frobenius_injective (h.trans (map_zero _).symm),
-      fun h => h.symm ▸ map_zero _⟩
+  have hker : g.hom.ker.comap Φ.toLinearMap = g.hom.ker := by
+    change g.hom.ker.comap D.frobenius = g.hom.ker
+    have hcomm : g.hom.comp D.frobenius = D'.frobenius.comp g.hom :=
+      LinearMap.ext g.hom_frobenius
+    rw [← LinearMap.ker_comp, hcomm,
+      LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot_of_injective D'.frobenius_injective)]
   exact (LinearEquiv.ofEq _ _ hker.symm).trans (Φ.ofSubmodule' g.hom.ker)
 
 @[simp]
 theorem kerFrobenius_apply (g : D ⟶ D') (x : g.hom.ker) :
-    (kerFrobenius g x : D) = D.frobenius x := (rfl)
+    (kerFrobenius g x : D) = D.frobenius x := by
+  rw [kerFrobenius, LinearEquiv.trans_apply, LinearEquiv.ofSubmodule'_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.ofBijective_apply]
 
 /-- A morphism of finite isocrystals is an epimorphism iff its underlying map is surjective. -/
 theorem epi_iff_surjective (g : D ⟶ D') : Epi g ↔ Function.Surjective g.hom := by

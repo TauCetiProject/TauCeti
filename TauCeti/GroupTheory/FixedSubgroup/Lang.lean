@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.GroupTheory.FixedPointFree
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
 # Surjective Lang maps and fixed lifts
@@ -118,12 +117,3 @@ theorem exists_fixed_lift_of_surjective_commutatorMap {H : Type*} [Group H]
 end Group
 
 end MonoidHom
-
-/-- The difference of an additive endomorphism and the identity telescopes on the sum of
-the first `n` iterates. -/
-theorem AddMonoidHom.map_sum_iterate_sub {M : Type*} [AddCommGroup M] (F : M →+ M) (n : ℕ) (x : M) :
-    F (∑ i ∈ Finset.range n, F^[i] x) - ∑ i ∈ Finset.range n, F^[i] x = F^[n] x - x := by
-  have h := congrArg Multiplicative.toAdd
-    (F.toMultiplicative.commutatorMap_prod_range n (Multiplicative.ofAdd x))
-  change (∑ i ∈ Finset.range n, F^[i] x) - F (∑ i ∈ Finset.range n, F^[i] x) = x - F^[n] x at h
-  simpa only [neg_sub] using congrArg Neg.neg h

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.PowerSeries.Basic
 
 /-!
@@ -14,7 +13,9 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 
 A twisted polynomial in positive coefficient Frobenius acts surjectively on power series over
 an algebraically closed field if at least one of its operator coefficients has nonzero constant
-term. Each successive coefficient is obtained by solving a nonconstant residue polynomial.
+term. Normalizing Laurent-series operator coefficients by a common power of `X` produces
+a power-series equation with this nonzero reduction. Each successive coefficient is obtained
+by solving a nonconstant residue polynomial.
 
 ## References
 

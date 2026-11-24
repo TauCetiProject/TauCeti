@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FiniteIsocrystal.Basic
-public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
+public import TauCeti.RingTheory.LaurentSeries.DifferenceEquation
+
+import TauCeti.GroupTheory.FixedSubgroup.Lang
 
 /-!
 # Splitting extensions of equal-characteristic isocrystals
@@ -20,6 +22,7 @@ kernel gives a fixed lift of this identity, hence an equivariant section.
 
 public section
 
+open AddMonoidHom (toMultiplicative_apply_apply)
 open CategoryTheory Function
 open scoped LaurentSeries
 
@@ -34,6 +37,24 @@ local instance : RingHomInvPair (σ : k⸨X⸩ →+* k⸨X⸩) (σ.symm : k⸨X�
 
 local instance : RingHomInvPair (σ.symm : k⸨X⸩ →+* k⸨X⸩) (σ : k⸨X⸩ →+* k⸨X⸩) :=
   RingHomInvPair.of_ringEquiv_symm σ.toRingEquiv
+
+private theorem surjective_commutatorMap_of_coefficientFrobenius
+    {V : Type*} [AddCommGroup V] [Module k⸨X⸩ V] [Module.Finite k⸨X⸩ V]
+    (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobenius p f) (hf : 0 < f)
+    (Ψ : V →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] V) :
+    Surjective (MonoidHom.commutatorMap Ψ.toAddMonoidHom.toMultiplicative) := by
+  have h (T : V →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] V) : Surjective (fun x => T x - x) := by
+    revert T
+    rw [show (σ : k⸨X⸩ →+* k⸨X⸩) =
+      (LaurentSeries.coefficientFrobenius (k := k) p f : k⸨X⸩ →+* k⸨X⸩) from
+      congrArg RingEquiv.toRingHom hσ]
+    exact LaurentSeries.surjective_sub_id_of_coefficientFrobenius_semilinear p hf
+  intro t
+  obtain ⟨s, hs⟩ := h Ψ (-t.toAdd)
+  refine ⟨Multiplicative.ofAdd s, Multiplicative.toAdd.injective ?_⟩
+  simpa only [MonoidHom.commutatorMap_apply, toAdd_div,
+    toMultiplicative_apply_apply, LinearMap.toAddMonoidHom_coe, toAdd_ofAdd,
+    neg_sub, neg_neg] using congrArg Neg.neg hs
 
 /-- Every epimorphism of equal-characteristic finite isocrystals over an algebraically
 closed residue field splits when Frobenius fixes `X` and raises each coefficient to
@@ -50,43 +71,44 @@ theorem isSplitEpi_of_epi (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobe
   let incl := (LinearMap.compRight k⸨X⸩ (M := D') g.hom.ker.subtype).toAddMonoidHom.toMultiplicative
   have hker : incl.range = post.ker := by
     ext s
-    change (∃ t : D' →ₗ[k⸨X⸩] g.hom.ker, g.hom.ker.subtype.comp t = s) ↔ g.hom.comp s = 0
-    refine ⟨?_, fun h => ⟨s.codRestrict _ (DFunLike.congr_fun h), rfl⟩⟩
+    rw [MonoidHom.mem_range, MonoidHom.mem_ker]
+    simp only [incl, post, toMultiplicative_apply_apply,
+      LinearMap.toAddMonoidHom_coe, LinearMap.compRight_apply, Multiplicative.exists,
+      ← Multiplicative.toAdd_symm_eq, Equiv.symm_apply_eq, toAdd_one]
+    refine ⟨?_, fun h => ⟨s.toAdd.codRestrict _ (DFunLike.congr_fun h), rfl⟩⟩
     rintro ⟨t, rfl⟩
     exact LinearMap.ext fun x => (t x).property
-  let Ψmul := Ψ.toLinearMap.toAddMonoidHom.toMultiplicative
-  have hLang : Surjective (MonoidHom.commutatorMap Ψmul) := by
-    have hRingHom : (σ : k⸨X⸩ →+* k⸨X⸩) =
-        (LaurentSeries.coefficientFrobenius (k := k) p f : k⸨X⸩ →+* k⸨X⸩) :=
-      congrArg RingEquiv.toRingHom hσ
-    have h (T : (D' →ₗ[k⸨X⸩] g.hom.ker) →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)]
-        (D' →ₗ[k⸨X⸩] g.hom.ker)) : Surjective (fun x => T x - x) := by
-      revert T
-      rw [hRingHom]
-      exact LaurentSeries.surjective_sub_id_of_coefficientFrobenius_semilinear p hf
-    intro t
-    obtain ⟨s, hs⟩ : ∃ s, Ψ s - s = -t.toAdd := h Ψ.toLinearMap (-t.toAdd)
-    exact ⟨s, by
-      change s - Ψ s = t.toAdd
-      simpa only [neg_sub, neg_neg] using congrArg Neg.neg hs⟩
-  obtain ⟨s, hfix, hsection⟩ := post.exists_fixed_lift_of_surjective_commutatorMap incl hker
-    Ψmul F.toLinearMap.toAddMonoidHom.toMultiplicative
-    F'.toLinearMap.toAddMonoidHom.toMultiplicative
-    (fun t => LinearMap.ext fun x => by
-      change g.hom (F t.toAdd x) = F' (g.hom.comp t.toAdd) x
+  have hpost (t : D' →ₗ[k⸨X⸩] D) : g.hom.comp (F t) = F' (g.hom.comp t) :=
+    LinearMap.ext fun x => by
       simpa only [LinearMap.comp_apply, LinearEquiv.arrowCongr_apply, F, F', Φ, Φ',
-        LinearEquiv.ofBijective_apply] using g.hom_frobenius (t.toAdd (Φ'.symm x)))
-    (fun t => LinearMap.ext fun x => by
-      change F (g.hom.ker.subtype.comp t.toAdd) x = (Ψ t.toAdd x).val
+        LinearEquiv.ofBijective_apply] using g.hom_frobenius (t (Φ'.symm x))
+  have hincl (t : D' →ₗ[k⸨X⸩] g.hom.ker) :
+      F (g.hom.ker.subtype.comp t) = g.hom.ker.subtype.comp (Ψ t) :=
+    LinearMap.ext fun x => by
       simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.arrowCongr_apply,
-        Φ, F, Ψ, LinearEquiv.ofBijective_apply, kerFrobenius_apply])
-    ((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left hLang
-    (y := Multiplicative.ofAdd LinearMap.id) (LinearMap.ext fun x => Φ'.apply_symm_apply x)
-  have hcomm (x : D') : s.toAdd (D'.frobenius x) = D.frobenius (s.toAdd x) := by
-    have hx : Φ'.symm (D'.frobenius x) = x := by
-      simpa only [Φ', LinearEquiv.ofBijective_apply] using Φ'.symm_apply_apply x
-    have h := DFunLike.congr_fun (show F s.toAdd = s.toAdd from hfix) (D'.frobenius x)
-    simpa only [F, LinearEquiv.arrowCongr_apply, Φ, LinearEquiv.ofBijective_apply, hx] using h.symm
-  exact IsSplitEpi.mk' ⟨ofHom s.toAdd hcomm, hom_ext hsection⟩
+        Φ, F, Ψ, LinearEquiv.ofBijective_apply, kerFrobenius_apply]
+  have hid : F' LinearMap.id = LinearMap.id := LinearMap.ext fun x => by
+    simpa only [F', LinearEquiv.arrowCongr_apply, LinearMap.id_apply] using Φ'.apply_symm_apply x
+  obtain ⟨s, hfix, hsection⟩ := post.exists_fixed_lift_of_surjective_commutatorMap incl hker
+    Ψ.toLinearMap.toAddMonoidHom.toMultiplicative F.toLinearMap.toAddMonoidHom.toMultiplicative
+    F'.toLinearMap.toAddMonoidHom.toMultiplicative (fun t => by
+      simpa only [post, toMultiplicative_apply_apply, LinearMap.toAddMonoidHom_coe,
+        LinearEquiv.coe_toLinearMap, LinearMap.compRight_apply, toAdd_ofAdd] using
+        congrArg Multiplicative.ofAdd (hpost t.toAdd))
+    (fun t => by
+      simpa only [incl, toMultiplicative_apply_apply, LinearMap.toAddMonoidHom_coe,
+        LinearEquiv.coe_toLinearMap, LinearMap.compRight_apply, toAdd_ofAdd] using
+        congrArg Multiplicative.ofAdd (hincl t.toAdd))
+    ((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left
+    (surjective_commutatorMap_of_coefficientFrobenius hσ hf Ψ.toLinearMap)
+    (y := Multiplicative.ofAdd LinearMap.id) (congrArg Multiplicative.ofAdd hid)
+  apply_fun Multiplicative.toAdd at hfix hsection
+  simp only [post, toMultiplicative_apply_apply,
+    LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap, LinearMap.compRight_apply,
+    toAdd_ofAdd] at hfix hsection
+  refine IsSplitEpi.mk' ⟨ofHom s.toAdd (fun x => ?_), hom_ext hsection⟩
+  have h := DFunLike.congr_fun hfix (Φ' x)
+  simp only [F, LinearEquiv.arrowCongr_apply, LinearEquiv.symm_apply_apply] at h
+  simpa only [Φ, Φ', LinearEquiv.ofBijective_apply] using h.symm
 
 end TauCeti.FiniteIsocrystal
