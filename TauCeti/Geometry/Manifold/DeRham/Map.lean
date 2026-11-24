@@ -176,8 +176,7 @@ theorem map_const_eq_zero {k : ℕ} (hk : k ≠ 0) (c : M') :
   rw [map_mk, LinearMap.zero_apply, mk_eq_zero_iff]
   convert Submodule.zero_mem (exactForms I M (k + 1))
   ext : 2
-  rw [closedForms.coe_mpullback, SmoothForm.coe_mpullback, mpullback_const]
-  rfl
+  simp [closedForms.coe_mpullback, SmoothForm.coe_mpullback, mpullback_const]
 
 /-- A smooth diffeomorphism `Φ : M ≃ M'` induces a linear equivalence `H^k(M') ≃ H^k(M)` on de Rham
 cohomology: pullback along `Φ`, with inverse pullback along `Φ.symm`. -/
