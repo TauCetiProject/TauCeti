@@ -8,10 +8,9 @@ module
 public import Mathlib.Topology.Category.LightProfinite.Cartesian
 
 /-!
-# Points of products of light profinite sets
+# Evaluation in the cartesian monoidal structure on light profinite sets
 
-The cartesian monoidal structure on light profinite sets is the product of spaces, so a point
-of `S ⊗ T` is a pair and whiskering acts on the corresponding coordinate.
+Left whiskering acts on the second coordinate of the type-theoretic product.
 -/
 
 public section
@@ -22,10 +21,9 @@ open CategoryTheory MonoidalCategory
 
 namespace LightProfinite
 
-/-- Left whiskering by `S` applies a map of light profinite sets to the second coordinate. -/
-@[simp]
-lemma whiskerLeft_apply (S : LightProfinite.{u}) {T T' : LightProfinite.{u}} (f : T ⟶ T')
-    (p : (S ⊗ T : LightProfinite.{u})) :
-    (S ◁ f) p = (p.1, f p.2) := rfl
+/-- Left whiskering applies the given morphism to the second coordinate. -/
+lemma whiskerLeft_apply (S : LightProfinite.{u}) {T U : LightProfinite.{u}}
+    (f : T ⟶ U) (x : S) (y : T) : (S ◁ f) (x, y) = (x, f y) := by
+  rfl
 
 end LightProfinite

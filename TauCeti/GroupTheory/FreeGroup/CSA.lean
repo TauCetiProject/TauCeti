@@ -67,7 +67,7 @@ elements of a CSA group are moved into general position by conjugating their ent
 
 public section
 
-open Group Subgroup
+open Group TauCeti Subgroup
 
 namespace IsFreeGroup
 
@@ -126,7 +126,8 @@ theorem maximal_isMulCommutative_zpowers {u : G} (hu : ¬IsProperPower u) :
 not a proper power. -/
 theorem isTISubgroup_zpowers_iff {u : G} (hu : u ≠ 1) :
     TauCeti.IsTISubgroup (zpowers u) ↔ ¬IsProperPower u := by
-  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer hu ?_, isTISubgroup_zpowers⟩
+  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer (x := u)
+    (not_isOfFinOrder_of_isMulTorsionFree hu) ?_, isTISubgroup_zpowers⟩
   exact le_antisymm (zpowers_le_centralizer_singleton u)
     (h.centralizer_singleton_le (mem_zpowers u) hu)
 
@@ -134,8 +135,8 @@ theorem isTISubgroup_zpowers_iff {u : G} (hu : u ≠ 1) :
 `u` is not a proper power. -/
 theorem maximal_isMulCommutative_zpowers_iff {u : G} (hu : u ≠ 1) :
     Maximal (fun K : Subgroup G => IsMulCommutative K) (zpowers u) ↔ ¬IsProperPower u := by
-  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer hu ?_,
-    maximal_isMulCommutative_zpowers⟩
+  refine ⟨fun h => not_isProperPower_of_zpowers_eq_centralizer (x := u)
+    (not_isOfFinOrder_of_isMulTorsionFree hu) ?_, maximal_isMulCommutative_zpowers⟩
   have hle := zpowers_le_centralizer_singleton u
   exact le_antisymm hle (h.2 (isMulCommutative_centralizer hu) hle)
 
@@ -198,7 +199,8 @@ theorem not_isCommTransitive_hnnExtension_zpowers_sq {α : Type*} (a : α) :
     ¬ IsCommTransitive (HNNExtension (FreeGroup α) (zpowers (FreeGroup.of a ^ 2))
       (zpowers (FreeGroup.of a ^ 2)) (MulEquiv.refl _)) :=
   HNNExtension.not_isCommTransitive_zpowers_of_isProperPower (FreeGroup.isProperPower_of_sq a)
-    ((pow_eq_one_iff_left two_ne_zero).not.2 (FreeGroup.of_ne_one a))
+    (not_isOfFinOrder_of_isMulTorsionFree
+      ((pow_eq_one_iff_left two_ne_zero).not.2 (FreeGroup.of_ne_one a)))
 
 /-- The HNN extension of a free group along the identity of `zpowers (a ^ 2)` is not CSA. This
 is the extension of the centralizer of `a ^ 2` taken with `zpowers (a ^ 2)` in place of the full

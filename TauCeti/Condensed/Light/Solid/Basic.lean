@@ -5,125 +5,180 @@ Authors: Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.Local
-public import TauCeti.Condensed.Light.Monoidal
 public import TauCeti.Condensed.Light.NullSequence.Basic
+public import TauCeti.Condensed.Light.InternalHom.Basic
 
 import Mathlib.CategoryTheory.Adjunction.Additive
+import TauCeti.Condensed.Light.Basic
 
 /-!
 # Light solid modules
 
-A light condensed module `B` is solid when one minus precomposition with the null shift is
-invertible on the internal Hom out of the null-sequence module into `B`. At the point this asks
-that every null sequence `b` admits exactly one null sequence `x` with `x n - x (n + 1) = b n`;
-the internal Hom asks the same in families over every light profinite set.
+A light condensed module is solid if the difference of identity and precomposition by
+`nullShift` is invertible on its internal Hom from `nullSeq`. The tensor test formulation
+expresses unique summability in every light profinite family. By the tensor–Hom adjunction
+it is equivalent to the same unique summability on maps out of `nullSeq R ⊗ Z` for every light
+condensed module `Z`. So solid modules are the local objects for an explicit family of test maps,
+indexed by light profinite sets, and they are closed under all limits.
 
-Through the tensor–Hom adjunction this internal condition becomes an external one: `B` is solid
-exactly when precomposition with `1 - σ ⊗ Z` is bijective on maps `P ⊗ Z ⟶ B` for every `Z`,
-where `P` is the null-sequence module and `σ` its shift. Testing against the free modules on
-light profinite sets suffices. So solid modules are the local objects for an explicit family of
-test maps, indexed by light profinite sets, and they are closed under isomorphisms and under
-all limits.
-
-The definition follows Rodríguez Camargo, *Notes on Solid Geometry*, Definition 3.2.1, and
-Wagner, *q-de Rham cohomology and topological Hochschild homology over ku*, §2.1.
+This is the null-sequence criterion of Rodríguez Camargo, *Notes on Solid Geometry*,
+Definition 3.2.1, over a commutative coefficient ring.
 -/
 
 public section
 
 universe u
 
-open CategoryTheory Category Limits MonoidalCategory MonoidalClosed LightCondensed
+open CategoryTheory Category Limits MonoidalCategory LightCondensed
+
+open scoped ZeroObject
+
+namespace LightCondMod
+
+open TauCeti
+
+variable {R : Type u} [CommRing R]
+
+/-- The internal difference operator for the null-sequence summability test. -/
+noncomputable def lightSolidDifference (M : LightCondMod R) :
+    (nullSeq R ⟶[LightCondMod R] M) ⟶ (nullSeq R ⟶[LightCondMod R] M) :=
+  𝟙 _ - (MonoidalClosed.pre (nullShift R)).app M
+
+/-- The characteristic equation of the internal null-sequence difference. -/
+lemma lightSolidDifference_def (M : LightCondMod R) :
+    lightSolidDifference M = 𝟙 _ - (MonoidalClosed.pre (nullShift R)).app M := by rfl
+
+/-- On sections, the internal null-sequence difference subtracts the precomposition map. -/
+@[simp]
+lemma lightSolidDifference_app_apply (M : LightCondMod R) (S : LightProfinite.{u})
+    (s : (nullSeq R ⟶[LightCondMod R] M).obj.obj (Opposite.op S)) :
+    (lightSolidDifference M).hom.app (Opposite.op S) s =
+      s - ((MonoidalClosed.pre (nullShift R)).app M).hom.app (Opposite.op S) s := by
+  rw [lightSolidDifference_def, hom_app_sub_apply]
+  simp only [ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app, ModuleCat.id_apply]
+
+/-- The null-sequence difference commutes with maps of the coefficient object. -/
+@[reassoc]
+lemma lightSolidDifference_naturality {M N : LightCondMod R} (f : M ⟶ N) :
+    lightSolidDifference M ≫ (ihom (nullSeq R)).map f =
+      (ihom (nullSeq R)).map f ≫ lightSolidDifference N := by
+  simp only [lightSolidDifference_def, Preadditive.sub_comp, Preadditive.comp_sub,
+    id_comp, comp_id, MonoidalClosed.pre_comm_ihom_map]
+
+end LightCondMod
+
+open TauCeti LightCondMod
+
+namespace LightCondensed
+
+variable {R : Type u} [CommRing R]
+
+/-- The tensor test equivalence sends the external difference to the internal difference. -/
+lemma tensorHomSectionsAddEquiv_sub_precomp (M : LightCondMod R) (S : LightProfinite.{u})
+    (g : nullSeq R ⊗ (free R).obj S.toCondensed ⟶ M) :
+    tensorHomSectionsAddEquiv R (nullSeq R) M S (g - (nullShift R ▷ _) ≫ g) =
+      (lightSolidDifference M).hom.app (Opposite.op S)
+        (tensorHomSectionsAddEquiv R (nullSeq R) M S g) := by
+  rw [map_sub, tensorHomSectionsAddEquiv_precomp, lightSolidDifference_app_apply]
+
+end LightCondensed
 
 namespace TauCeti
 
-variable (R : Type u) [CommRing R]
+variable {R : Type u} [CommRing R]
 
-/-- A light condensed module `B` is solid when one minus precomposition with the null shift is
-an isomorphism of the internal Hom from the null-sequence module to `B`. -/
-def IsLightSolid : ObjectProperty (LightCondMod.{u} R) := fun B ↦
-  IsIso (𝟙 ((ihom (nullSeq R)).obj B) - (pre (nullShift R)).app B)
+/-- A light condensed module is solid if its internal null-sequence difference is invertible. -/
+def IsLightSolid : ObjectProperty (LightCondMod R) := fun M ↦ IsIso (lightSolidDifference M)
 
+/-- The defining invertibility criterion for solidity. -/
+lemma isLightSolid_iff (M : LightCondMod R) :
+    IsLightSolid M ↔ IsIso (lightSolidDifference M) := by rfl
+
+/-- Solidity is equivalent to unique solvability of the difference equation on every test family. -/
+lemma isLightSolid_iff_bijective (M : LightCondMod R) :
+    IsLightSolid M ↔ ∀ S : LightProfinite.{u}, Function.Bijective
+      (fun g : nullSeq R ⊗ (free R).obj S.toCondensed ⟶ M ↦
+        g - (nullShift R ▷ _) ≫ g) := by
+  have h (S : LightProfinite.{u}) :
+      Function.Bijective ((lightSolidDifference M).hom.app (Opposite.op S)) ↔
+        Function.Bijective (fun g : nullSeq R ⊗ (free R).obj S.toCondensed ⟶ M ↦
+          g - (nullShift R ▷ _) ≫ g) := by
+    rw [← Function.Bijective.of_comp_iff _ (tensorHomSectionsAddEquiv R (nullSeq R) M S).bijective]
+    simp_rw [Function.comp_def, ← tensorHomSectionsAddEquiv_sub_precomp]
+    exact Function.Bijective.of_comp_iff' (tensorHomSectionsAddEquiv R (nullSeq R) M S).bijective _
+  -- The sheaf-to-presheaf functor detects invertibility componentwise.
+  rw [isLightSolid_iff]
+  rw [← isIso_iff_of_reflects_iso _ (sheafToPresheaf _ _),
+    NatTrans.isIso_iff_isIso_app]
+  constructor
+  · intro hs S
+    exact (h S).mp ((ConcreteCategory.isIso_iff_bijective _).mp (hs (Opposite.op S)))
+  · intro hs S
+    exact (ConcreteCategory.isIso_iff_bijective _).mpr ((h S.unop).mpr (hs S.unop))
+
+/-- Uncurrying turns postcomposition with the internal null-sequence difference into
+precomposition with one minus the whiskered null shift. -/
+private lemma uncurry_comp_lightSolidDifference {Z M : LightCondMod R}
+    (g : Z ⟶ (nullSeq R ⟶[LightCondMod R] M)) :
+    MonoidalClosed.uncurry (g ≫ lightSolidDifference M) =
+      (𝟙 _ - nullShift R ▷ Z) ≫ MonoidalClosed.uncurry g := by
+  rw [lightSolidDifference_def, Preadditive.comp_sub, Preadditive.sub_comp, comp_id, id_comp,
+    ← MonoidalClosed.uncurry_pre_app, ← MonoidalClosed.homEquiv_symm_apply_eq,
+    ← MonoidalClosed.homEquiv_symm_apply_eq, ← MonoidalClosed.homEquiv_symm_apply_eq,
+    (ihom.adjunction (nullSeq R)).homAddEquiv_symm_sub]
+
+/-- Solidity is equivalent to unique solvability of the difference equation on maps out of
+`nullSeq R ⊗ Z`, for every light condensed module `Z`. -/
+theorem isLightSolid_iff_bijective_tensor (M : LightCondMod R) :
+    IsLightSolid M ↔ ∀ Z : LightCondMod R,
+      Function.Bijective fun g : nullSeq R ⊗ Z ⟶ M ↦ g - (nullShift R ▷ Z) ≫ g := by
+  rw [isLightSolid_iff, isIso_iff_yoneda_map_bijective]
+  refine forall_congr' fun Z ↦ ?_
+  have h : (fun g : nullSeq R ⊗ Z ⟶ M ↦ g - (nullShift R ▷ Z) ≫ g) =
+      ((ihom.adjunction (nullSeq R)).homEquiv Z M).symm ∘
+        (fun g ↦ g ≫ lightSolidDifference M) ∘ (ihom.adjunction (nullSeq R)).homEquiv Z M := by
+    ext g : 1
+    simp only [Function.comp_apply, MonoidalClosed.homEquiv_apply_eq,
+      MonoidalClosed.homEquiv_symm_apply_eq, uncurry_comp_lightSolidDifference,
+      MonoidalClosed.uncurry_curry, Preadditive.sub_comp, id_comp]
+  rw [h, Equiv.comp_bijective, Equiv.bijective_comp]
+
+variable (R) in
 /-- The null-sequence test maps: for each light profinite set `S`, one minus the null shift
 tensored with the free module on `S`. -/
-def nullSeqTest : MorphismProperty (LightCondMod.{u} R) :=
+def nullSeqTest : MorphismProperty (LightCondMod R) :=
   MorphismProperty.ofHoms fun S : LightProfinite.{u} ↦
     𝟙 (nullSeq R ⊗ (free R).obj S.toCondensed) - nullShift R ▷ (free R).obj S.toCondensed
 
-variable {R}
-
-/-- Restatement of the definition of light solidity. -/
-lemma isLightSolid_iff_isIso (B : LightCondMod.{u} R) :
-    IsLightSolid R B ↔ IsIso (𝟙 ((ihom (nullSeq R)).obj B) - (pre (nullShift R)).app B) :=
-  Iff.rfl
-
-/-- Uncurrying turns postcomposition with one minus `pre (nullShift R)` into precomposition
-with one minus the whiskered null shift. -/
-private lemma uncurry_comp_sub_pre {Z B : LightCondMod.{u} R}
-    (g : Z ⟶ (ihom (nullSeq R)).obj B) :
-    uncurry (g ≫ (𝟙 _ - (pre (nullShift R)).app B)) =
-      (𝟙 _ - nullShift R ▷ Z) ≫ uncurry g := by
-  rw [Preadditive.comp_sub, Preadditive.sub_comp, Category.comp_id, Category.id_comp,
-    ← uncurry_pre_app, ← homEquiv_symm_apply_eq, ← homEquiv_symm_apply_eq,
-    ← homEquiv_symm_apply_eq, (ihom.adjunction (nullSeq R)).homAddEquiv_symm_sub]
-
-/-- Under currying, one minus the whiskered null shift on maps `nullSeq R ⊗ Z ⟶ B` is
-postcomposition with the solidity test map on maps `Z ⟶ ihom (nullSeq R) B`. -/
-private lemma bijective_sub_whiskerRight_comp_iff (Z B : LightCondMod.{u} R) :
-    Function.Bijective (fun g : nullSeq R ⊗ Z ⟶ B ↦ g - nullShift R ▷ Z ≫ g) ↔
-      Function.Bijective fun g : Z ⟶ (ihom (nullSeq R)).obj B ↦
-        g ≫ (𝟙 _ - (pre (nullShift R)).app B) := by
-  have h : (fun g : nullSeq R ⊗ Z ⟶ B ↦ g - nullShift R ▷ Z ≫ g) =
-      ((ihom.adjunction (nullSeq R)).homEquiv Z B).symm ∘ (fun g ↦
-        g ≫ (𝟙 _ - (pre (nullShift R)).app B)) ∘ (ihom.adjunction (nullSeq R)).homEquiv Z B := by
-    ext g : 1
-    simp only [Function.comp_apply, homEquiv_apply_eq, homEquiv_symm_apply_eq,
-      uncurry_comp_sub_pre, uncurry_curry, Preadditive.sub_comp, Category.id_comp]
-  rw [h, Equiv.comp_bijective, Equiv.bijective_comp]
-
-/-- Solidity is invertibility of one minus the null shift on maps out of `P ⊗ Z`, for every
-light condensed module `Z`, where `P` is the null-sequence module. -/
-theorem isLightSolid_iff_bijective (B : LightCondMod.{u} R) :
-    IsLightSolid R B ↔ ∀ Z : LightCondMod.{u} R,
-      Function.Bijective fun g : nullSeq R ⊗ Z ⟶ B ↦ g - nullShift R ▷ Z ≫ g := by
-  simp only [bijective_sub_whiskerRight_comp_iff, isLightSolid_iff_isIso,
-    isIso_iff_yoneda_map_bijective]
-
-/-- Solidity is detected by the free modules on light profinite sets: it suffices that one minus
-the null shift is invertible on maps out of `P ⊗ R[S]` for every light profinite `S`. -/
-theorem isLightSolid_iff_bijective_free (B : LightCondMod.{u} R) :
-    IsLightSolid R B ↔ ∀ S : LightProfinite.{u},
-      Function.Bijective fun g : nullSeq R ⊗ (free R).obj S.toCondensed ⟶ B ↦
-        g - nullShift R ▷ (free R).obj S.toCondensed ≫ g := by
-  simp only [bijective_sub_whiskerRight_comp_iff, isLightSolid_iff_isIso,
-    LightCondMod.isIso_iff_bijective_comp_free]
-
 variable (R) in
 /-- Solid modules are the local objects for the null-sequence test maps. -/
-theorem isLightSolid_eq_isLocal : IsLightSolid R = (nullSeqTest R).isLocal := by
-  ext B
-  rw [isLightSolid_iff_bijective_free, MorphismProperty.isLocal_iff]
+theorem isLightSolid_eq_isLocal : IsLightSolid (R := R) = (nullSeqTest R).isLocal := by
+  ext M
+  rw [isLightSolid_iff_bijective, MorphismProperty.isLocal_iff]
   constructor
   · rintro h _ _ _ ⟨S⟩
-    simpa only [Preadditive.sub_comp, Category.id_comp] using h S
+    simpa only [Preadditive.sub_comp, id_comp] using h S
   · intro h S
-    simpa only [Preadditive.sub_comp, Category.id_comp] using
-      h _ (MorphismProperty.ofHoms.mk S)
-
-/-- Solidity is invariant under isomorphism. -/
-instance : (IsLightSolid R).IsClosedUnderIsomorphisms := by
-  rw [isLightSolid_eq_isLocal]
-  infer_instance
+    simpa only [Preadditive.sub_comp, id_comp] using h _ (MorphismProperty.ofHoms.mk S)
 
 /-- Solid modules are closed under all limits. -/
-instance (J : Type*) [Category* J] : (IsLightSolid R).IsClosedUnderLimitsOfShape J := by
+instance (J : Type*) [Category* J] : (IsLightSolid (R := R)).IsClosedUnderLimitsOfShape J := by
   rw [isLightSolid_eq_isLocal]
   infer_instance
 
-/-- A zero module is solid. -/
-lemma isLightSolid_of_isZero {B : LightCondMod.{u} R} (hB : IsZero B) : IsLightSolid R B :=
-  (IsLightSolid R).prop_of_isTerminal B hB.isTerminal
+instance : (IsLightSolid (R := R)).IsClosedUnderIsomorphisms where
+  of_iso e hM := by
+    let difference : ihom (nullSeq R) ⟶ ihom (nullSeq R) :=
+      { app := lightSolidDifference
+        naturality _ _ f := (lightSolidDifference_naturality f).symm }
+    exact (NatTrans.isIso_app_iff_of_iso difference e).mp hM
+
+instance : (IsLightSolid (R := R)).ContainsZero where
+  exists_zero := by
+    refine ⟨0, Limits.isZero_zero _, ?_⟩
+    apply (isLightSolid_iff _).mpr
+    have h := (ihom (nullSeq R)).map_isZero (Limits.isZero_zero (LightCondMod R))
+    exact h.isIso h _
 
 end TauCeti

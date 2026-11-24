@@ -100,19 +100,12 @@ program `c` halts on `x` exactly when the program that ignores its input and run
 on its own number. -/
 theorem oneOneReducible_dom_eval_jump :
     OneOneReducible (fun p : Code × ℕ => (Code.eval Z.oracle p.1 p.2).Dom) (· ∈ Z.jump) := by
-  -- hard-wire the input `x` into the program `c`
-  let r : Code × ℕ → Code := fun p => .comp p.1 (Nat.Partrec.Code.const p.2).toSingleOracleCode
-  have hr : Primrec r := Code.primrec₂_comp.comp Primrec.fst <|
-    Nat.Partrec.Code.primrec_toSingleOracleCode.comp <|
-      Nat.Partrec.Code.primrec_const.comp Primrec.snd
-  refine ⟨fun p => encode (r p), (Primrec.encode.comp hr).to_comp, ?_, fun p => ?_⟩
-  · rintro ⟨c, x⟩ ⟨d, y⟩ h
-    simp only [r, encode_inj, Code.comp.injEq] at h
-    obtain ⟨rfl, h⟩ := h
-    rw [Nat.Partrec.Code.const_inj (Nat.Partrec.Code.toSingleOracleCode_injective h)]
-  · simp only [r, mem_jump, ofNat_encode, Code.eval_comp, Code.eval_toSingleOracleCode,
-      Nat.Partrec.Code.eval_const]
-    exact Iff.of_eq (congrArg Part.Dom (Part.bind_some _ _)).symm
+  refine ⟨Function.uncurry Code.haltingIndex, Code.primrec₂_haltingIndex.to_comp, ?_, ?_⟩
+  · intro p q hpq
+    simp only [Function.uncurry, Code.haltingIndex_inj] at hpq
+    exact Prod.ext hpq.1 hpq.2
+  · intro p
+    simp [Function.uncurry]
 
 /-- **Every set c.e. in `Z` reduces one-one to the jump of `Z`:** the domain of every partial
 function recursive in the oracle of `Z` reduces one-one to `Z'`. -/

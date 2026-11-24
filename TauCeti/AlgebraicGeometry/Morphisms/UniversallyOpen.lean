@@ -15,7 +15,9 @@ Every universally open morphism of schemes is an open map
 topological spaces is an open quotient map (`AlgebraicGeometry.Scheme.Hom.isOpenQuotientMap`).
 Since both surjectivity and universal openness are stable under base change, this applies in
 particular to any pullback projection along a surjective universally open morphism, such as base
-change along an extension of ground fields.
+change along an extension of ground fields. Without surjectivity, such a projection still pulls
+dense opens back to dense opens
+(`AlgebraicGeometry.Scheme.dense_preimage_of_isPullback_of_universallyOpen`).
 -/
 
 public section
@@ -33,3 +35,16 @@ theorem isOpenQuotientMap {X Y : Scheme.{u}} (f : X ⟶ Y) [Surjective f] [Unive
   ⟨f.surjective, f.continuous, f.isOpenMap⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme
+
+universe u
+
+/-- The preimage of a dense open under the base change of a universally open morphism is dense. -/
+theorem dense_preimage_of_isPullback_of_universallyOpen {X X' S S' : Scheme.{u}} {πX : X' ⟶ X}
+    {sX' : X' ⟶ S'} {sX : X ⟶ S} {p : S' ⟶ S} (hX : IsPullback πX sX' sX p) [UniversallyOpen p]
+    {U : X.Opens} (hU : Dense (U : Set X)) : Dense (πX ⁻¹ᵁ U : Set X') := by
+  have : UniversallyOpen πX := MorphismProperty.of_isPullback hX.flip inferInstance
+  exact hU.preimage πX.isOpenMap
+
+end AlgebraicGeometry.Scheme

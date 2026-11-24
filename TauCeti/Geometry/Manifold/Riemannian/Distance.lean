@@ -54,6 +54,9 @@ is the special case that matters downstream.
 * `TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_of_contMDiffAt`: a map from a
   real normed space into a manifold with continuous Riemannian metric is Lipschitz
   on a ball around each point where it is `C¹`.
+* `TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_extChartAt_symm_of_isCompact`: on a
+  boundaryless manifold, the inverse of an extended chart is Lipschitz, for the ambient distance,
+  on each compact subset of the chart target.
 * `TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`: the extended distance is bounded
   below by any bound valid for the lengths of *all* `C¹` curves joining two points, since it is the
   infimum of those lengths.
@@ -143,16 +146,17 @@ end Comparison
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
-/-- The set of points at finite Riemannian distance from `x` is open: any point close enough to a
-point `y` of this set is at Riemannian distance `< 1` from `y`, hence at finite distance from `x` by
-the triangle inequality. -/
-theorem isOpen_setOfPred_riemannianEDist_lt_top (x : M) :
-    IsOpen {y | riemannianEDist I x y < ⊤} := by
+/-- Open Riemannian balls are open: any point close enough to a point `y` at Riemannian distance
+less than `r` from `x` is again at distance less than `r` from `x`, by the triangle inequality. In
+particular, with `r = ⊤`, the set of points at finite Riemannian distance from `x` is open. -/
+theorem isOpen_setOfPred_riemannianEDist_lt (x : M) (r : ℝ≥0∞) :
+    IsOpen {y | riemannianEDist I x y < r} := by
   rw [isOpen_iff_mem_nhds]
   intro y hy
-  filter_upwards [eventually_riemannianEDist_lt I y zero_lt_one] with z hz
+  obtain ⟨δ, hδ, hδr⟩ := ENNReal.lt_iff_exists_add_pos_lt.1 hy
+  filter_upwards [eventually_riemannianEDist_lt I y (ENNReal.coe_pos.2 hδ)] with z hz
   exact (riemannianEDist_triangle (y := y)).trans_lt
-    (ENNReal.add_lt_top.2 ⟨hy, hz.trans_le le_top⟩)
+    ((ENNReal.add_lt_add_left (ne_top_of_lt hy) hz).trans hδr)
 
 variable (I) in
 /-- The set of points at finite Riemannian distance from `x` is closed: if `y` is at infinite
@@ -171,7 +175,7 @@ variable (I) in
 /-- The set of points at finite Riemannian distance from `x` is clopen. -/
 theorem isClopen_setOfPred_riemannianEDist_lt_top (x : M) :
     IsClopen {y | riemannianEDist I x y < ⊤} :=
-  ⟨isClosed_setOfPred_riemannianEDist_lt_top I x, isOpen_setOfPred_riemannianEDist_lt_top I x⟩
+  ⟨isClosed_setOfPred_riemannianEDist_lt_top I x, isOpen_setOfPred_riemannianEDist_lt I x ⊤⟩
 
 variable (I) in
 /-- Two points of a preconnected set are at finite Riemannian distance. -/
@@ -441,6 +445,27 @@ theorem exists_pathELength_lt_of_dist_lt {x y : M} {r : ℝ} (hr : dist x y < r)
   apply exists_lt_of_riemannianEDist_lt
   rw [← IsRiemannianManifold.out (I := I) x y, edist_dist]
   exact (ENNReal.ofReal_lt_ofReal_iff (dist_nonneg.trans_lt hr)).2 hr
+
+section LocalLipschitz
+
+variable [I.Boundaryless] [IsManifold I 1 M]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The inverse chart is Lipschitz on compact sets.** On a boundaryless manifold with a
+continuous Riemannian metric, the inverse of the extended chart at `x` is Lipschitz, from the norm
+distance of the model space to the ambient distance, on every compact subset of the chart
+target. -/
+theorem exists_lipschitzOnWith_extChartAt_symm_of_isCompact (x : M) {K : Set E}
+    (hK : IsCompact K) (hKt : K ⊆ (extChartAt I x).target) :
+    ∃ C : ℝ≥0, LipschitzOnWith C (extChartAt I x).symm K := by
+  refine LocallyLipschitzOn.exists_lipschitzOnWith_of_compact hK fun z hz ↦ ?_
+  have hsmooth : ContMDiffAt 𝓘(ℝ, E) I 1 (extChartAt I x).symm z :=
+    (contMDiffOn_extChartAt_symm x).contMDiffAt
+      ((isOpen_extChartAt_target x).mem_nhds (hKt hz))
+  obtain ⟨r, hr, C, hC⟩ := exists_lipschitzOnWith_of_contMDiffAt hsmooth
+  exact ⟨C, Metric.ball z r, mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds z hr), hC⟩
+
+end LocalLipschitz
 
 end PseudoMetric
 

@@ -114,9 +114,9 @@ theorem _root_.CategoryTheory.Equivalence.projectiveDimension_functor_obj
     (e : C ≌ D) (X : C) :
     projectiveDimension (e.functor.obj X) = projectiveDimension X :=
   le_antisymm
-    (projectiveDimension_le_of_hasProjectiveDimensionLT fun n ↦
+    (projectiveDimension_le_projectiveDimension_iff.2 fun n ↦
       (e.hasProjectiveDimensionLT_functor_obj_iff X n).mpr)
-    (projectiveDimension_le_of_hasProjectiveDimensionLT fun n ↦
+    (projectiveDimension_le_projectiveDimension_iff.2 fun n ↦
       (e.hasProjectiveDimensionLT_functor_obj_iff X n).mp)
 
 /-- **Injective dimension bounds are invariant under an equivalence.** The object `e X` has

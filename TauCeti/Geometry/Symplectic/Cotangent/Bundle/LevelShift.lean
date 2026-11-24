@@ -33,7 +33,8 @@ every point `q` and every `ξ`, for some `c ∈ 𝔤*`. Then:
   `μ⁻¹(ν)` onto the level `μ⁻¹(ν + c)`
   (`TauCeti.CotangentBundle.image_vectorBundleTranslateDiffeomorph_preimage_momentMap`). For the
   connection form, `c = -ν₀`, and with `ν = ν₀` this is the shift of `μ⁻¹(ν₀)` onto the horizontal
-  covectors `μ⁻¹(0)`.
+  covectors `μ⁻¹(0)`
+  (`TauCeti.CotangentBundle.momentMap_vectorBundleTranslateDiffeomorph_eq_zero_iff`).
 * If `α` is moreover `G`-invariant, `τ_α` commutes with the cotangent-lifted action
   (`TauCeti.CotangentBundle.vectorBundleTranslateDiffeomorph_smul`). Comparing the equivariance of
   `μ` on both sides then shows that the value `c` is necessarily fixed by the coadjoint action,
@@ -119,6 +120,16 @@ theorem preimage_vectorBundleTranslateDiffeomorph_preimage_momentMap
   ext z
   simp only [mem_preimage, mem_singleton_iff, momentMap_vectorBundleTranslateDiffeomorph hα,
     add_left_inj]
+
+/-- If a one-form `α` pairs every fundamental vector field with `-ν(ξ)`, translation by `α`
+carries the level `μ⁻¹(ν)` of the cotangent moment map exactly onto the zero level. -/
+theorem momentMap_vectorBundleTranslateDiffeomorph_eq_zero_iff
+    {ν : Module.Dual ℝ (GroupLieAlgebra IG G)}
+    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) (z : CotangentBundle I M) :
+    momentMap IG G (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
+        (SmoothForm.degreeOneEquiv α).contMDiff z) = 0 ↔ momentMap IG G z = ν := by
+  rw [momentMap_vectorBundleTranslateDiffeomorph (c := -ν)
+    fun x ξ ↦ (hα x ξ).trans (LinearMap.neg_apply ν ξ).symm, add_neg_eq_zero]
 
 /-- **The magnetic shift between moment levels.** If a one-form `α` pairs every fundamental vector
 field with the constant `c(ξ)`, translating the fibres by `α` carries the level `μ⁻¹(ν)` of the
