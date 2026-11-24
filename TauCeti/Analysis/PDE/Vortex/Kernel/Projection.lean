@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.ExponentialRegularity
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Decay
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 
 /-!
 # Weighted Sobolev estimates for the kernel projection at a plane vortex
@@ -34,9 +35,9 @@ and the elliptic identification of the weak kernel with the smooth one. As a wea
 (`exp_mul_smul_mem_sobolevFields_natCast_add_one_of_memLp`).
 
 **The projection.** For an orthonormal basis `(eᵢ)` of the kernel, `Π f = ∑ᵢ ⟪eᵢ, f⟫ eᵢ`. Writing
-`⟪eᵢ, f⟫ = ∫ ⟪exp(-c ρ) eᵢ, exp(c ρ) f⟫` (`abs_inner_le_of_memLp_exp_mul_smul`) and using the
-decay of `eᵢ` at the rate `-c`, the coefficients are bounded by the weighted `L²` norm of `f`, and
-the decay of `eᵢ` at the rate `c` with all its derivatives gives
+`⟪eᵢ, f⟫ = ∫ ⟪exp(-c ρ) eᵢ, exp(c ρ) f⟫` (`TauCeti.abs_inner_le_of_memLp_exp_mul_smul`) and
+using the decay of `eᵢ` at the rate `-c`, the coefficients are bounded by the weighted `L²` norm
+of `f`, and the decay of `eᵢ` at the rate `c` with all its derivatives gives
 
 `‖exp(c ρ) Π f‖_(H^s) ≤ K ‖exp(c ρ) f‖_(L²)`
 
@@ -135,25 +136,6 @@ theorem exp_mul_smul_mem_sobolevFields_of_mem_weakGaugeFixedKernel (hx : ContDif
     (memLp_exp_mul_smul_of_mem_weakGaugeFixedKernel hx hbound hsol hlim hc hu) hwf
 
 /-! ### The kernel projection -/
-
-/-- **Moving an exponential weight across the `L²` pairing.** Let `ρ(z) = √(1 + |z|²)` and let
-`e`, `f` be `L²` fields such that `exp(-c ρ) e` and `exp(c ρ) f` are square integrable. Then the
-`L²` pairing satisfies `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`. -/
-theorem abs_inner_le_of_memLp_exp_mul_smul {c : ℝ}
-    {e f : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
-    (he' : MemLp (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • e z) 2 volume)
-    (hf : MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume) :
-    |⟪e, f⟫| ≤ (eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • e z) 2 volume).toReal *
-      (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume).toReal := by
-  -- Moving the weight across the pairing: `⟪e, f⟫ = ⟪exp(-c ρ) e, exp(c ρ) f⟫` in `L²`.
-  have hinner : ⟪e, f⟫ = ⟪he'.toLp _, hf.toLp _⟫ := by
-    rw [L2.inner_def, L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [he'.coeFn_toLp, hf.coeFn_toLp] with z hez hfz
-    simp only [hez, hfz, real_inner_smul_left, real_inner_smul_right, ← mul_assoc, ← Real.exp_add,
-      ← add_mul, add_neg_cancel, zero_mul, Real.exp_zero, one_mul]
-  rw [hinner, ← Lp.norm_toLp _ he', ← Lp.norm_toLp _ hf]
-  exact abs_real_inner_le_norm _ _
 
 /-- **The weighted Sobolev estimate for the kernel projection.** Let `x` be a smooth solution of the
 plane vortex equations with `|α| → 1` at infinity whose coordinates have bounded derivatives of

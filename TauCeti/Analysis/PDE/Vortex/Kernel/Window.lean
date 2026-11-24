@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Projection
 public import TauCeti.Analysis.PDE.Vortex.UniformDerivativeDecay
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 
 /-!
 # The kernel of the vortex operator over a compact window of divisors
