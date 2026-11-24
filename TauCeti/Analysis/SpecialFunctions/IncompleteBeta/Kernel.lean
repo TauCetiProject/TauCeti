@@ -240,7 +240,7 @@ theorem incompleteBetaKernel_add_right (ξ : ℂ) (v₁ v₂ w : ℤ × ℤ) :
 the slit plane, is `(2πi)⁻¹ (F ξ - F (conj ξ))`: the case of
 `curveIntegral_segment_add_segment_toSpanSingleton_eq_sub` for the slit plane, star-convex at
 `1/2`. -/
-private theorem curveIntegral_conj_half_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ} (hξ : ξ ∈ slitPlane)
+theorem curveIntegral_conj_half_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ} (hξ : ξ ∈ slitPlane)
     (hF : ∀ z ∈ slitPlane, HasDerivAt F (f z) z) (hf : ContinuousOn f slitPlane) :
     (∫ᶜ z in Path.segment (conj ξ) (1 / 2 : ℂ), ContinuousLinearMap.toSpanSingleton ℂ (f z)) +
         ∫ᶜ z in Path.segment (1 / 2 : ℂ) ξ, ContinuousLinearMap.toSpanSingleton ℂ (f z) =
