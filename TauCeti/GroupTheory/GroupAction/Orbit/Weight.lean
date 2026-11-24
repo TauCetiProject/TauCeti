@@ -227,12 +227,22 @@ theorem orbitCountClasses_eq_image :
   exact ⟨Quotient.mk _ g, orbitOfRightCoset_mk g⟩
 
 /-- A point whose orbit is counted lies in `G • v`. -/
-private theorem mem_orbit_of_mk_mem_orbitCountClasses {y : α}
+theorem mem_orbit_of_mk_mem_orbitCountClasses {y : α}
     (hy : Quotient.mk (orbitRel Γ α) y ∈ Γ.orbitCountClasses Y v) : y ∈ orbit G v := by
   obtain ⟨x, hxv, -, hxy⟩ := mem_orbitCountClasses.mp hy
   obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hxy.symm))
   rw [← orbit_eq_iff.mpr hxv, ← hγ, Subgroup.smul_def]
   exact mem_orbit x (γ : G)
+
+/-- When `Y` is `Γ`-stable, the orbit of `y` is counted exactly when `y ∈ G • v ∩ Y`. -/
+theorem mk_mem_orbitCountClasses_iff (hY : ∀ γ ∈ Γ, ∀ y ∈ Y, γ • y ∈ Y) {y : α} :
+    Quotient.mk (orbitRel Γ α) y ∈ Γ.orbitCountClasses Y v ↔ y ∈ orbit G v ∧ y ∈ Y := by
+  refine ⟨fun hy ↦ ⟨mem_orbit_of_mk_mem_orbitCountClasses hy, ?_⟩,
+    fun ⟨hyv, hyY⟩ ↦ ⟨y, ⟨hyv, hyY⟩, rfl⟩⟩
+  obtain ⟨x, -, hxY, hxy⟩ := mem_orbitCountClasses.mp hy
+  obtain ⟨γ, hγ⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hxy.symm))
+  rw [← hγ, Subgroup.smul_def]
+  exact hY _ γ.property _ hxY
 
 /-- The fibre of the orbit map over a counted orbit consists of counted cosets. -/
 private theorem orbitOfRightCoset_fiber_subset {o : orbitRel.Quotient Γ α}
