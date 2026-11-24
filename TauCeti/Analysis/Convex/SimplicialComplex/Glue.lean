@@ -364,6 +364,7 @@ theorem mem_ofSimplices_faces {σ : ι → Finset E} {indep} {inter} :
 
 /-- The underlying space of `ofSimplices σ indep inter` is the union of the convex hulls of the
 simplices `σ k`. -/
+@[simp]
 theorem space_ofSimplices {σ : ι → Finset E} {indep} {inter} :
     (ofSimplices (𝕜 := 𝕜) σ indep inter).space = ⋃ k, convexHull 𝕜 (σ k : Set E) := by
   ext x
@@ -375,6 +376,7 @@ theorem space_ofSimplices {σ : ι → Finset E} {indep} {inter} :
     exact ⟨σ k, ⟨by simpa using Set.nonempty_of_mem hx, k, subset_rfl⟩, hx⟩
 
 /-- The vertices of `ofSimplices σ indep inter` are the vertices of the simplices `σ k`. -/
+@[simp]
 theorem vertices_ofSimplices {σ : ι → Finset E} {indep} {inter} :
     (ofSimplices (𝕜 := 𝕜) σ indep inter).vertices = ⋃ k, (σ k : Set E) := by
   ext x

@@ -411,6 +411,7 @@ theorem staircaseSimplex_mem_staircaseComplex_faces (k : ι) :
   (mem_staircaseComplex_faces hv hab).2 ⟨⟨_, lower_mem_staircaseSimplex le_rfl⟩, k, subset_rfl⟩
 
 /-- The vertices of the staircase triangulation are the lower and the upper vertices. -/
+@[simp]
 theorem vertices_staircaseComplex :
     (staircaseComplex v a b hv hab).vertices =
       range (fun i ↦ (v i, a (v i))) ∪ range fun i ↦ (v i, b (v i)) := by
