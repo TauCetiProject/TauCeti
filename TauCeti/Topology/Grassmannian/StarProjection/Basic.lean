@@ -13,7 +13,6 @@ public import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 public import TauCeti.Topology.Grassmannian.Tautological
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.Topology.Algebra.Module.Trace
-import TauCeti.Topology.Grassmannian.Map
 
 /-!
 # The Grassmannian of an inner product space in projection form
@@ -98,40 +97,6 @@ complete. Requiring only `P ∘ P = P` would admit the non-self-adjoint idempote
 public section
 
 open Module Set TauCeti
-
-namespace TauCeti.finiteGrassmannian
-
-variable {𝕜 : Type*} [RCLike 𝕜] {k N : ℕ}
-
-/-- The image of a point `S` of the finite Grassmannian under a linear automorphism `O` of
-`EuclideanSpace 𝕜 (Fin N)`: `TauCeti.finiteGrassmannian.map` of `O` read on `Fin N → 𝕜` through
-the coordinate identification `WithLp.linearEquiv`. In coordinates it is `O(S)`
-(`TauCeti.finiteGrassmannian.toEuclidean_mapEuclidean`). -/
-noncomputable def mapEuclidean (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
-    (S : finiteGrassmannian 𝕜 k N) : finiteGrassmannian 𝕜 k N :=
-  S.map ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).symm ≪≫ₗ O ≪≫ₗ
-    WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).toLinearMap (LinearEquiv.injective _)
-
-/-- Read in coordinates, `S.mapEuclidean O` is the image `O(S)`. -/
-@[simp]
-theorem toEuclidean_mapEuclidean
-    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
-    (S : finiteGrassmannian 𝕜 k N) :
-    (S.mapEuclidean O).toEuclidean =
-      S.toEuclidean.map (O : EuclideanSpace 𝕜 (Fin N) →ₗ[𝕜] _) := by
-  ext x
-  simp [mapEuclidean]
-
-/-- Moving a point of the finite Grassmannian by `O⁻¹` and then by `O` gives it back. -/
-@[simp]
-theorem mapEuclidean_mapEuclidean_symm
-    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
-    (S : finiteGrassmannian 𝕜 k N) : (S.mapEuclidean O.symm).mapEuclidean O = S := by
-  rw [mapEuclidean, mapEuclidean, ← map_comp]
-  convert map_id S
-  exact LinearMap.ext fun x ↦ by simp
-
-end TauCeti.finiteGrassmannian
 
 namespace Euclidean
 
