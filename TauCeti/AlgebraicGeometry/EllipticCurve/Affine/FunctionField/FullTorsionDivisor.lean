@@ -98,13 +98,13 @@ theorem principal_blochRho
   have hprod : ∑ b : ZMod C × ZMod C, b = 0 := by
     ext <;> simp [Prod.fst_sum, Prod.snd_sum, Fintype.sum_prod_type]
   have hsum : ∑ a : AddSubgroup.torsionBy W.Point (C : ℤ), (a : W.Point) = 0 := by
-    rw [← AddSubmonoidClass.coe_finsetSum, ← e.symm.toEquiv.sum_comp, AddEquiv.toEquiv_eq_coe,
-      AddEquiv.coe_toEquiv, ← map_sum, hprod, map_zero, ZeroMemClass.coe_zero]
+    rw [← e.symm.toEquiv.sum_comp]
+    simpa [map_sum] using congrArg (fun b ↦ (e.symm b : W.Point)) hprod
   have hex := (W.exists_principal_eq_sum_zsmul_iff Finset.univ (fun _ ↦ -1)
     (fun a : AddSubgroup.torsionBy W.Point (C : ℤ) ↦ (a : W.Point))).2
     (by simp only [neg_one_zsmul, Finset.sum_neg_distrib, hsum, neg_zero])
   simp only [neg_one_zsmul, neg_sub] at hex
-  rw [blochRho, dite_eq_left_of_eq_true (eq_true hex)]
+  rw [blochRho, dite_eq_left hex]
   exact hex.choose_spec
 
 /-- **The divisor of Bloch's function, in Bloch's form**: when `E[C] ≅ (ℤ/C)²`, the divisor of `ρ`
@@ -117,11 +117,16 @@ theorem principal_blochRho_eq_sub
           WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace a).val := by
   obtain ⟨e⟩ := h
   have hcard : Fintype.card (AddSubgroup.torsionBy W.Point (C : ℤ)) = C ^ 2 := by
-    rw [Nat.card_eq_fintype_card.symm, Nat.card_congr e.toEquiv, Nat.card_prod, Nat.card_zmod, sq]
-  rw [principal_blochRho ⟨e⟩, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, hcard,
-    Finset.filter_ne', ← Finset.add_sum_erase _ _ (Finset.mem_univ 0), ZeroMemClass.coe_zero,
-    Point.zero_def, coe_pointEquivDegreeOnePlace_zero, ← natCast_zsmul, sub_smul, one_smul,
-    Nat.cast_pow, sub_add_eq_sub_sub]
+    rw [← Nat.card_eq_fintype_card, Nat.card_congr e.toEquiv, Nat.card_prod, Nat.card_zmod, sq]
+  -- the `a = 0` term of `∑_{a ∈ E[C]} (a)` is `(O)`
+  have h0 : (W.pointEquivDegreeOnePlace
+      ((0 : AddSubgroup.torsionBy W.Point (C : ℤ)) : W.Point)).val = Place.infinity W :=
+    coe_pointEquivDegreeOnePlace_zero W
+  rw [principal_blochRho ⟨e⟩, Finset.sum_sub_distrib, Finset.filter_ne',
+    ← Finset.add_sum_erase _ (fun a : AddSubgroup.torsionBy W.Point (C : ℤ) ↦
+      WeilDivisor.ofPoint (W.pointEquivDegreeOnePlace a).val) (Finset.mem_univ 0), h0]
+  simp [hcard, sub_smul, ← natCast_zsmul]
+  abel
 
 /-- **Bloch's function is determined up to a constant**: when `E[C] ≅ (ℤ/C)²`, the functions with
 divisor `∑_{a ∈ E[C]} ((O) - (a))` are exactly the nonzero constant multiples of `ρ`, since `F` is
@@ -176,20 +181,18 @@ theorem exists_map_blochRho_eq_algebraMap_mul [DecidableEq K]
       algebraMap K (W.map f).FunctionField c * (W.map f).blochRho C := by
   obtain ⟨e⟩ := h
   obtain ⟨eK⟩ := hK
-  -- the transport `E[C](F) → E[C](K)` is injective between sets of `C²` elements
+  -- the torsion map `E[C](F) → E[C](K)` is injective between sets of `C²` elements
   let g : AddSubgroup.torsionBy W.Point (C : ℤ) → AddSubgroup.torsionBy (W.map f).Point (C : ℤ) :=
-    fun a ↦ ⟨(a : W.Point).mapAlong f f.injective, by
-      rw [AddSubgroup.torsionBy.nsmul_iff, ← natCast_zsmul, ← Point.mapAlong_zsmul, natCast_zsmul,
-        AddSubgroup.torsionBy.nsmul_iff.mp a.property, Point.mapAlong_zero]⟩
+    WeierstrassCurve.torsionMapAlong W f C
   have hg : Function.Bijective g := by
-    refine (Fintype.bijective_iff_injective_and_card g).2 ⟨fun a b hab ↦ Subtype.ext
-      (Point.mapAlong_injective f f.injective (congrArg Subtype.val hab)), ?_⟩
+    refine (Fintype.bijective_iff_injective_and_card g).2
+      ⟨WeierstrassCurve.torsionMapAlong_injective W f C, ?_⟩
     rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, Nat.card_congr e.toEquiv,
       Nat.card_congr eK.toEquiv]
   have hdiv := principal_map_blochRho f ⟨e⟩
   rw [Fintype.sum_bijective g hg _ (fun b ↦ WeilDivisor.ofPoint (Place.infinity (W.map f)) -
     WeilDivisor.ofPoint ((W.map f).pointEquivDegreeOnePlace (b : (W.map f).Point)).val)
-    fun _ ↦ rfl, ← principal_blochRho ⟨eK⟩] at hdiv
+    fun _ ↦ by rw [WeierstrassCurve.coe_torsionMapAlong_apply], ← principal_blochRho ⟨eK⟩] at hdiv
   simpa using Divisor.exists_units_algebraMap_mul_of_principal_eq (W.map f).isFunctionField
     (W.map f).isIntegrallyClosedIn_functionField hdiv
 
