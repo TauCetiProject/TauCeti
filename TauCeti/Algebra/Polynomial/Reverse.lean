@@ -54,6 +54,12 @@ The reverse of
 `(X - C a) ^ n` is `(1 - C a * X) ^ n`, and over a nontrivial ring its factor `1 - X` (for `a = 1`)
 is nonzero.
 
+A monic polynomial over a ring without zero divisors is reciprocal up to sign, `p.reverse = ±p`,
+exactly when `p.reverse = C (p.coeff 0) * p` (`Polynomial.Monic.reverse_eq_C_coeff_zero_mul_iff`);
+this is the shape in which the minimal polynomial of an inverse presents itself. The constant
+coefficient of such a `p` is then `1` or `-1` (`Polynomial.Monic.coeff_zero_eq_one_of_reverse_eq`
+and `Polynomial.Monic.coeff_zero_eq_neg_one_of_reverse_eq_neg`).
+
 Finally, reflecting the difference `p(X) - p(X - a)` at a bound on the degree of `p`, its first
 coefficient past the degree drop is `natDegree p * a * leadingCoeff p`: the top terms cancel and
 the subleading term is read off from the Taylor expansion of `p` at `-a`.
@@ -214,6 +220,30 @@ theorem reverse_map_of_isUnit_leadingCoeff [Semiring R] [Semiring S] {p : R[X]}
 @[simp]
 theorem reverse_one [Semiring R] : (1 : R[X]).reverse = 1 := by
   rw [← C_1, reverse_C, C_1]
+
+/-- A monic polynomial `p` with `p.reverse = p` has constant coefficient `1`. -/
+theorem Monic.coeff_zero_eq_one_of_reverse_eq [Semiring R] {p : R[X]} (hp : p.Monic)
+    (h : p.reverse = p) : p.coeff 0 = 1 := by
+  rw [← h, coeff_zero_reverse, hp.leadingCoeff]
+
+/-- A monic polynomial `p` with `p.reverse = -p` has constant coefficient `-1`. -/
+theorem Monic.coeff_zero_eq_neg_one_of_reverse_eq_neg [Ring R] {p : R[X]} (hp : p.Monic)
+    (h : p.reverse = -p) : p.coeff 0 = -1 := by
+  rw [← neg_eq_iff_eq_neg, ← coeff_neg, ← h, coeff_zero_reverse, hp.leadingCoeff]
+
+/-- A monic polynomial `p` without zero divisors in its coefficients satisfies
+`p.reverse = C (p.coeff 0) * p` exactly when it is reciprocal up to sign: `p.reverse = p` or
+`p.reverse = -p`. -/
+theorem Monic.reverse_eq_C_coeff_zero_mul_iff [Ring R] [NoZeroDivisors R] {p : R[X]}
+    (hp : p.Monic) : p.reverse = C (p.coeff 0) * p ↔ p.reverse = p ∨ p.reverse = -p := by
+  constructor
+  · intro h
+    have hc : p.coeff 0 * p.coeff 0 = 1 := by
+      rw [← coeff_C_mul, ← h, coeff_zero_reverse, hp.leadingCoeff]
+    rcases mul_self_eq_one_iff.mp hc with hc | hc <;> simp [h, hc]
+  · rintro (h | h)
+    · rw [hp.coeff_zero_eq_one_of_reverse_eq h, C_1, one_mul, h]
+    · rw [hp.coeff_zero_eq_neg_one_of_reverse_eq_neg h, C_neg, C_1, neg_one_mul, h]
 
 /-- Reflection exchanges an invertible root with its inverse, preserving its multiplicity.
 The degree bound can exceed the actual degree, and the zero polynomial is included. -/
