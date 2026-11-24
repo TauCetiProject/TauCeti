@@ -98,7 +98,12 @@ theorem stabilizerHopfIdeal_le_mumfordTateHopfIdeal_iff
     realComodule, Submodule.stabilizerHopfIdeal_corestrict_eq_bot_iff,
     Submodule.stabilizerHopfIdeal_baseChange_le_ker_iff, ← AlgHom.comap_ker]
   -- the kernels of `h` and of its restriction of scalars to `ℚ` are the same ideal
-  rfl
+  have hker : RingHom.ker (AlgHom.restrictScalars ℚ (h.hom : ℝ ⊗[ℚ] H →ₐ[ℝ] S)) =
+      RingHom.ker (h.hom : ℝ ⊗[ℚ] H →ₐ[ℝ] S).toRingHom := by
+    ext x
+    simp only [RingHom.mem_ker, AlgHom.restrictScalars_apply, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe]
+  rw [hker]
 
 /-- **The subspaces stable under the Mumford–Tate group.** The stabilizer in `G` of a rational
 subspace `W ≤ M` contains `MT(h)` exactly when the complexification `ℂ ⊗[ℝ] (ℝ ⊗[ℚ] W)` is the

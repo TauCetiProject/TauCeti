@@ -342,8 +342,13 @@ theorem _root_.Submodule.stabilizerHopfIdeal_eq_bot_iff_eq_iSup_hodgeComponent (
   rw [← Submodule.stabilizerHopfIdeal_baseChange_eq_bot_iff (K := ℂ), ← h,
     Submodule.stabilizerHopfIdeal_eq_bot_iff, Submodule.coact_mem_range_iff_eq_iSup_inf_weightSpace,
     ← hodgeIndexEquiv.iSup_comp]
-  -- the two sides differ only in how the corestricted coaction is presented
   simp only [hV, Function.comp_apply, DiagonalizableGroup.weightSpace_eq_comoduleWeightSpace]
+  -- The two sides differ only in the comodule instance of `Comodule.weightSpace`: on the left
+  -- the local `Comodule.Corestrict φ.toCoalgHom`, on the right
+  -- `Comodule.Corestrict ↑↑splittingBialgEquiv` from `weightSpace_eq_comoduleWeightSpace`.
+  -- Their coalgebra structures on `ℂ ⊗[ℝ] S` are `TensorProduct.instCoalgebraStruct` and
+  -- `Coalgebra.toCoalgebraStruct`, which agree only after unfolding instances, so `simp` cannot
+  -- rewrite one into the other.
   rfl
 
 end TauCeti.DeligneTorus
