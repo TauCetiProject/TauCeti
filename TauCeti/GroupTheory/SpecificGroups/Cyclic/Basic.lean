@@ -96,15 +96,14 @@ theorem _root_.MulEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one {G : Type*} [Group 
 /-- An element generates a group equivalent to `Multiplicative ℤ` iff it is sent to `±1`. -/
 theorem _root_.MulEquiv.zpowers_eq_top_iff_isUnit_toAdd {G : Type*} [Group G] {g : G}
     (e : G ≃* Multiplicative ℤ) : Subgroup.zpowers g = ⊤ ↔ IsUnit (e g).toAdd := by
+  -- `Int.mem_zmultiples_iff`, moved to `Multiplicative ℤ` along `Multiplicative.ofAdd`.
+  have key : (e g).toAdd ∣ 1 ↔ Multiplicative.ofAdd 1 ∈ Subgroup.zpowers (e g) := by
+    rw [← Int.mem_zmultiples_iff, ← SetLike.mem_coe, ← Multiplicative.ofAdd.injective.mem_set_image,
+      ofAdd_image_zmultiples_eq_zpowers_ofAdd, ofAdd_toAdd, SetLike.mem_coe]
   rw [← (Subgroup.map_injective (f := e.toMonoidHom) e.injective).eq_iff,
     Subgroup.map_top_of_surjective _ e.surjective, MonoidHom.map_zpowers,
-    MulEquiv.coe_toMonoidHom, isUnit_iff_dvd_one]
-  refine ⟨fun h => ?_, fun ⟨c, hc⟩ => (Subgroup.eq_top_iff' _).2 fun x =>
-    Subgroup.zpowers_le.2 ?_ (Int.mem_zpowers_ofAdd_one x)⟩
-  · obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.1 (h ▸ Subgroup.mem_top (Multiplicative.ofAdd 1))
-    exact ⟨k, by rw [mul_comm, ← smul_eq_mul, ← toAdd_zpow, hk, toAdd_ofAdd]⟩
-  · exact Subgroup.mem_zpowers_iff.2 ⟨c, Multiplicative.toAdd.injective (by
-      rw [toAdd_zpow, toAdd_ofAdd, smul_eq_mul, mul_comm, ← hc])⟩
+    MulEquiv.coe_toMonoidHom, isUnit_iff_dvd_one, key, ← top_le_iff,
+    ← (Subgroup.eq_top_iff' _).2 Int.mem_zpowers_ofAdd_one, Subgroup.zpowers_le]
 
 /-- An element of a group equivalent to `Multiplicative ℤ` has finite order iff it is sent to
 `0`. -/
