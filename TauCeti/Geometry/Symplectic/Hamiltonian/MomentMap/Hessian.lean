@@ -10,12 +10,25 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Critical
 
 /-!
-# Hessians of moment map components at fixed points
+# Hessians of moment map components
 
-Let a Lie group `G` act smoothly on a manifold `M` with a nondegenerate two-form `σ`, with moment
-map `μ : M → 𝔤*`, so that the component `μ^ξ = ⟨μ, ξ⟩` has Hamiltonian vector field the
-fundamental vector field `ξ_M`. The critical points of `μ^ξ` are the zeros of `ξ_M`, the points
-fixed by the closure `T_ξ` of `{exp (t ξ) | t ∈ ℝ}`
+Let `μ : M → 𝔤*` be a moment map of an infinitesimal action `Z ↦ Z_M` for a closed two-form `σ`.
+At a critical point `x` of a component `μ^X = ⟨μ, X⟩`, differentiating
+`dμ^X(Y_M) = σ(X_M, Y_M)`, which differs from `μ^⁅X, Y⁆` by a locally constant function, gives the
+Hessian of `μ^X` against a generator:
+
+`Hess μ^X (x) (v, Y_M x) = σ_x(⁅X, Y⁆_M x, v)`
+
+(`TauCeti.SmoothTwoForm.IsMomentMap.criticalHessian_apply_eq_eval₂_lie`). Where `μ` is moreover
+infinitesimally equivariant, `σ(Z_M, Y_M) = μ ⁅Z, Y⁆`, this reads
+`Hess μ^X (x) (Z_M x, Y_M x) = μ(x)(⁅⁅X, Y⁆, Z⁆)`
+(`TauCeti.SmoothTwoForm.IsMomentMap.criticalHessian_apply_apply_eq_lie_lie`); on a coadjoint orbit,
+where the generators span every tangent space, this determines the Hessian.
+
+For the rest of the file, let a Lie group `G` act smoothly on a manifold `M` with a nondegenerate
+two-form `σ`, with moment map `μ : M → 𝔤*`, so that the component `μ^ξ = ⟨μ, ξ⟩` has
+Hamiltonian vector field the fundamental vector field `ξ_M`. The critical points of `μ^ξ` are the
+zeros of `ξ_M`, the points fixed by the closure `T_ξ` of `{exp (t ξ) | t ∈ ℝ}`
 (`TauCeti.SmoothTwoForm.IsMomentMap.criticalPoints_eq_fixedPoints`). This file computes the
 Hessian of `μ^ξ` at such a point `p` from the isotropy representation of `T_ξ` on `T_p M`.
 
@@ -49,12 +62,17 @@ compact connected abelian group acting with this property at every fixed point, 
 `μ^ξ` is a Morse function are therefore dense in the Lie algebra
 (`TauCeti.SmoothTwoForm.IsMomentMap.dense_setOf_isMorse`).
 
-Neither closedness of `σ`, equivariance of `μ` nor compactness of `M` is used.
+For these fixed-point results neither closedness of `σ`, equivariance of `μ` nor compactness of
+`M` is used.
 
 ## Main results
 
 All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 
+* `criticalHessian_apply_eq_eval₂_lie`: for a closed form, at a critical point of `μ^X`, the
+  Hessian of `μ^X` against `Y_M x` is `σ_x(⁅X, Y⁆_M x, ·)`.
+* `criticalHessian_apply_apply_eq_lie_lie`: where moreover the cocycle of `μ` vanishes, the
+  Hessian on generators is `μ(x)(⁅⁅X, Y⁆, Z⁆)`.
 * `criticalHessian_apply_eq_eval₂_deriv`: at a zero `p` of `ξ_M`, the Hessian of `μ^ξ` is
   `σ_p(A_ξ v, w)`.
 * `criticalHessian_apply_eq_zero_iff`: its null space consists of the vectors fixed by the
@@ -83,6 +101,40 @@ open Function Set
 open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothTwoForm.IsMomentMap
+
+section Lie
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
+  {σ : SmoothTwoForm I M} {a : InfinitesimalAction 𝔤 I M} {μ : M → Module.Dual ℝ 𝔤} {X : 𝔤}
+  {x : M}
+
+/-- **The Hessian of a moment map component against a generator.** For a closed form, at a
+critical point `x` of the component `μ^X`, the Hessian of `μ^X` pairs a tangent vector `v` with the
+generator `Y_M x` to `σ_x(⁅X, Y⁆_M x, v)`, the derivative of `μ^⁅X, Y⁆` along `v`. Indeed
+`dμ^X(Y_M) = σ(X_M, Y_M)`, which differs from `μ^⁅X, Y⁆` by a locally constant function. -/
+theorem criticalHessian_apply_eq_eval₂_lie (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed)
+    (hx : x ∈ criticalPoints I fun y ↦ μ y X) (v : TangentSpace I x) (Y : 𝔤) :
+    criticalHessian I (fun y ↦ μ y X) x v (a Y x) = SmoothBundleForm.eval₂ σ x (a ⁅X, Y⁆ x) v := by
+  have h2 : (2 : WithTop ℕ∞) ≤ ∞ := by simp
+  have : IsManifold I 2 M := IsManifold.of_le h2
+  have hY : (fun y ↦ mvfderiv I (fun z ↦ μ z X) y (a Y y)) =
+      fun y ↦ SmoothBundleForm.eval₂ σ y (a X y) (a Y y) :=
+    funext fun y ↦ (h.eval₂_apply X y _).symm
+  rw [criticalHessian_apply_eq_mvfderiv ((h.contMDiff X).of_le h2 x)
+      (mem_criticalPoints.1 hx) ((a.contMDiff Y x).mdifferentiableAt (by simp)), hY,
+    h.mvfderiv_eval₂ hσ, h.eval₂_apply]
+
+/-- **The Hessian of a moment map component on generators.** For a closed form, at a critical
+point `x` of the component `μ^X` at which the moment map is infinitesimally equivariant, the
+Hessian of `μ^X` pairs the generators `Z_M x` and `Y_M x` to `μ(x)(⁅⁅X, Y⁆, Z⁆)`. -/
+theorem criticalHessian_apply_apply_eq_lie_lie (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed)
+    (hx : x ∈ criticalPoints I fun y ↦ μ y X) (hc : σ.momentCocycle a μ x = 0) (Z Y : 𝔤) :
+    criticalHessian I (fun y ↦ μ y X) x (a Z x) (a Y x) = μ x ⁅⁅X, Y⁆, Z⁆ := by
+  rw [h.criticalHessian_apply_eq_eval₂_lie hσ hx, momentCocycle_eq_zero_iff.1 hc]
+
+end Lie
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}

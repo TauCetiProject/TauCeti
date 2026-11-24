@@ -568,6 +568,19 @@ theorem π₁Equiv_apply (b₀ : T.quotient.V) (x : GraphOfGroups.π₁ D.graphO
       D.twist y := by
   simp [π₁Equiv]
 
+/-- On the vertex group at the base vertex, `π₁(D.graphOfGroups, b₀) ≃* G` is the inclusion of the
+stabilizer of the lifted vertex. -/
+theorem π₁Equiv_vertexHom_nil {b₀ : T.quotient.V} (g : D.graphOfGroups.vertexGroup b₀) :
+    D.π₁Equiv b₀ (GraphOfGroups.π₁.vertexHom Quiver.Path.nil g) = g := by
+  simp
+
+/-- The inverse of `π₁(D.graphOfGroups, b₀) ≃* G` sends an element `g` of the vertex group at
+`b₀`, read in `G`, to the image of `g` in `π₁(D.graphOfGroups, b₀)`. -/
+@[simp] theorem π₁Equiv_symm_coe_vertex {b₀ : T.quotient.V}
+    (g : D.graphOfGroups.vertexGroup b₀) :
+    (D.π₁Equiv b₀).symm (g : G) = GraphOfGroups.π₁.vertexHom Quiver.Path.nil g :=
+  (D.π₁Equiv b₀).symm_apply_eq.2 (D.π₁Equiv_vertexHom_nil g).symm
+
 end Basic
 
 /-! ### Independence of the lifting -/

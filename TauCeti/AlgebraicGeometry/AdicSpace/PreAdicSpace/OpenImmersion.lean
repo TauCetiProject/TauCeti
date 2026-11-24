@@ -50,7 +50,8 @@ presheafed spaces (`CategoryTheory.GlueData.mapGlueData`).
   with the restriction of its target to its image.
 * `TauCeti.PreAdicSpace.IsOpenImmersion.pullbackConeOfLeft`: the pullback of an open immersion
   along a morphism, with `pullbackConeOfLeftIsLimit` proving that it is a pullback.
-* `TauCeti.PreAdicSpace.Hom.restrictPreimage`: a morphism restricted over an open of its target.
+* `TauCeti.PreAdicSpace.Hom.restrictPreimage`, `TauCeti.PreAdicSpace.Hom.liftRestrict`: a morphism
+  restricted over an open of its target or lifted from an open mapped into it.
 * `TauCeti.PreAdicSpace.restrictRestrictIso`: restricting a restriction is restricting to the
   image.
 
@@ -514,6 +515,38 @@ theorem restrictPreimage_base_apply
     (f.restrictPreimage V).base x = ⟨f.base x.val, Opens.mem_map.mp x.property⟩ := by
   apply Subtype.ext
   exact congrArg (fun g ↦ g.base x) (f.restrictPreimage_ofRestrict V)
+
+/-- Lift the restriction of a morphism `f : X ⟶ Y` to `O ≤ f⁻¹(U)` across `Y.ofRestrict U`. -/
+noncomputable def liftRestrict {O : Opens X} {U : Opens Y}
+    (hOU : O ≤ (Opens.map f.base).obj U) :
+    X.restrict O.isOpenEmbedding ⟶ Y.restrict U.isOpenEmbedding :=
+  IsOpenImmersion.lift (Y.ofRestrict U.isOpenEmbedding)
+    (X.ofRestrict O.isOpenEmbedding ≫ f)
+    (by rintro _ ⟨x, rfl⟩; exact ⟨⟨f.base x.val, hOU x.property⟩, rfl⟩)
+
+/-- `liftRestrict` commutes with the open subspace inclusions into `X` and `Y`. -/
+@[reassoc (attr := simp)]
+theorem liftRestrict_ofRestrict {O : Opens X} {U : Opens Y}
+    (hOU : O ≤ (Opens.map f.base).obj U) :
+    f.liftRestrict hOU ≫ Y.ofRestrict U.isOpenEmbedding =
+      X.ofRestrict O.isOpenEmbedding ≫ f :=
+  IsOpenImmersion.lift_fac _ _ _
+
+/-- Uniqueness of `liftRestrict` as the morphism commuting with the open subspace inclusions. -/
+theorem liftRestrict_uniq {O : Opens X} {U : Opens Y}
+    (hOU : O ≤ (Opens.map f.base).obj U)
+    (g : X.restrict O.isOpenEmbedding ⟶ Y.restrict U.isOpenEmbedding)
+    (hg : g ≫ Y.ofRestrict U.isOpenEmbedding = X.ofRestrict O.isOpenEmbedding ≫ f) :
+    g = f.liftRestrict hOU :=
+  IsOpenImmersion.lift_uniq _ _ _ g hg
+
+/-- On points, `liftRestrict` evaluates as `f.base` with codomain restricted to `U`. -/
+@[simp]
+theorem liftRestrict_base_apply {O : Opens X} {U : Opens Y}
+    (hOU : O ≤ (Opens.map f.base).obj U) (x : X.restrict O.isOpenEmbedding) :
+    (f.liftRestrict hOU).base x = ⟨f.base x.val, hOU x.property⟩ := by
+  apply Subtype.ext
+  exact congrArg (fun g ↦ g.base x) (f.liftRestrict_ofRestrict hOU)
 
 
 /-- **Restrictions of a morphism can be recognized through open immersions.** Let `f : X ⟶ Y` be

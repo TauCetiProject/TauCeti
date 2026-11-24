@@ -323,7 +323,8 @@ theorem mixedMarkovChainWith_of_forall_cond [Countable α] [MeasurableSingletonC
     rw [hcyl]
     exact nullMeasurableSet_blockCylinder (fun i => hX i.val) fun i => measurableSet_singleton (w i)
   calc prefixLaw μ X (n + 1) {w}
-      = μ {ω | ∀ i : Fin (n + 1), X i.val ω = w i} := prefixLaw_singleton_eq_measure hX w
+      = μ {ω | ∀ i : Fin (n + 1), X i.val ω = w i} :=
+        prefixLaw_singleton_eq_measure (fun i => hX i.val) w
     _ = (Measure.sum fun b => μ (f ⁻¹' {b}) • μ[|f ⁻¹' {b}])
         {ω | ∀ i : Fin (n + 1), X i.val ω = w i} := by rw [hμ]
     _ = ∑' b, μ (f ⁻¹' {b}) * μ[|f ⁻¹' {b}] {ω | ∀ i : Fin (n + 1), X i.val ω = w i} := by
@@ -334,7 +335,7 @@ theorem mixedMarkovChainWith_of_forall_cond [Countable α] [MeasurableSingletonC
         by_cases hb : μ (f ⁻¹' {b}) = 0
         · simp [hb]
         · rw [lintegral_congr_ae (hG_ae b), ← (h b hb).prefixLaw_singleton_eq_lintegral,
-            prefixLaw_singleton_eq_measure fun i => (hX i).mono_ac cond_absolutelyContinuous]
+            prefixLaw_singleton_eq_measure fun i => (hX i.val).mono_ac cond_absolutelyContinuous]
     _ = ∫⁻ ω, G ω ∂μ := by
         conv_rhs => rw [← hμ]
         rw [lintegral_sum_measure]

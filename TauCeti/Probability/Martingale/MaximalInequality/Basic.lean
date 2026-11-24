@@ -395,6 +395,7 @@ theorem lintegral_iSup_sqrt_le (hf : Submartingale f ℱ μ)
         gcongr with k
         split_ifs with h
         · rw [indicator_of_mem (subset_toMeasurable μ _ h)]
+          exact pow_le_pow_right₀ one_le_two k.le_succ
         · exact bot_le
     _ = μ univ + ∑' k : ℕ, 2 ^ (k + 1) * μ {ω | 2 ^ k < Y ω} := by
         rw [lintegral_add_left measurable_const, lintegral_const, one_mul,

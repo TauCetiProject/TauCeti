@@ -11,8 +11,8 @@ public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import Mathlib.Geometry.Manifold.Metrizable
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.Metrizable
 
 /-!
 # The Mayer–Vietoris sequence of de Rham complexes
@@ -74,6 +74,8 @@ the glued form restricting to `dα` and `dβ` is the differential of a function 
 * `TauCeti.deRhamCohomology.mayerVietorisδ_const` and
   `TauCeti.deRhamCohomology.ker_mayerVietorisδ_zero`: the connecting map kills constant classes,
   and in degree zero, for preconnected `U` and `V`, nothing else.
+* `TauCeti.subsingleton_deRhamCohomology_one_sup`: if `U` and `V` have no first cohomology and
+  `U ⊓ V` is preconnected, then `U ⊔ V` has no first cohomology.
 
 ## References
 
@@ -298,14 +300,8 @@ theorem SmoothForm.surjective_mayerVietoris [FiniteDimensional ℝ E] [IsManifol
           (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _))) := by
   intro θ
   -- The open subset `U ⊔ V` is again a Hausdorff σ-compact manifold, hence normal.
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : SecondCountableTopology H := I.secondCountableTopology
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
-  have : LocallyCompactSpace (U ⊔ V : Opens M) := ChartedSpace.locallyCompactSpace H _
-  have : NormalSpace (U ⊔ V : Opens M) :=
-    have := Manifold.metrizableSpace I (U ⊔ V : Opens M)
-    inferInstance
+  have := Manifold.sigmaCompactSpace_opens I (U ⊔ V)
+  have := Manifold.normalSpace_opens I (U ⊔ V)
   -- A cut-off function vanishing near the points outside `V` and equal to one near the points
   -- outside `U`.
   have hA : IsClosed {x : (U ⊔ V : Opens M) | (x : M) ∉ V} :=
@@ -724,6 +720,18 @@ theorem ker_mayerVietorisδ_zero (U V : Opens M) [PreconnectedSpace U] [Preconne
   exact sub_sub_sub_cancel_right _ _ _
 
 end deRhamCohomology
+
+/-- **The first de Rham cohomology of a union.** If `U` and `V` have no first de Rham cohomology
+and their intersection is preconnected, then `U ⊔ V` has no first de Rham cohomology. -/
+theorem subsingleton_deRhamCohomology_one_sup {U V : Opens M}
+    [PreconnectedSpace (U ⊓ V : Opens M)] (hU : Subsingleton (deRhamCohomology I U 1))
+    (hV : Subsingleton (deRhamCohomology I V 1)) :
+    Subsingleton (deRhamCohomology I (U ⊔ V : Opens M) 1) := by
+  -- Every class is the image of a degree-zero class on `U ⊓ V`, which is constant.
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨d, rfl⟩ := deRhamCohomology.mayerVietorisδ_surjective (k := 0) hU hV c
+  obtain ⟨r, rfl⟩ := deRhamCohomology.exists_eq_const d
+  exact deRhamCohomology.mayerVietorisδ_const U V r
 
 end Connecting
 

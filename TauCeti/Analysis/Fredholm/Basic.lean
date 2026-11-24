@@ -51,12 +51,17 @@ intended throughout.
   `NontriviallyNormedField`, without completeness or separation assumptions.
 * `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_index_eq_zero`: an injective
   Fredholm operator of index zero is invertible.
+* `ContinuousLinearMap.index_comp`: the index of a composition of Fredholm operators is the sum
+  of their indices.
 * `ContinuousLinearMap.isFredholm_iff_of_comp_eq`: operators conjugate under continuous linear
   equivalences are simultaneously Fredholm.
 * `ContinuousLinearMap.IsFredholm.restrictScalars`: a Fredholm operator over `𝕜'` stays Fredholm
   over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
   a complex Fredholm operator is Fredholm. Its index is computed by
   `ContinuousLinearMap.index_restrictScalars`.
+* `ContinuousLinearMap.IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq`: a
+  `𝕜'`-linear map whose underlying `𝕜`-linear map is Fredholm has finite-dimensional cokernel
+  over `𝕜'`.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -216,6 +221,13 @@ lemma IsFredholm.isInvertible_of_injective_of_index_eq_zero {T : E →L[𝕜] F}
   exact isInvertible_iff_isFredholm_and_bijective.2
     ⟨hT, T.bijective_of_injective_of_index_eq_zero hinj h0⟩
 
+/-- The index of a composition of Fredholm operators is the sum of their indices. This is
+Mathlib's `ContinuousLinearMap.IsFredholm.index_comp`, stated for `ContinuousLinearMap.index`
+rather than for the index of the underlying linear maps. -/
+lemma index_comp {S : F →L[𝕜] G} {T : E →L[𝕜] F} (hS : IsFredholm S) (hT : IsFredholm T) :
+    (S ∘L T).index = S.index + T.index := by
+  simpa only [index_def] using hS.index_comp hT
+
 section RestrictScalars
 
 variable (𝕜) {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [Module 𝕜 𝕜'] [Module.Finite 𝕜 𝕜']
@@ -239,6 +251,21 @@ lemma IsFredholm.restrictScalars {T : E →L[𝕜'] F} (hT : IsFredholm T) :
     have : FiniteDimensional 𝕜 (F ⧸ T.range) := Module.Finite.trans 𝕜' _
     exact (Submodule.Quotient.restrictScalarsEquiv 𝕜 T.range).symm.finiteDimensional
   closedComplemented_ker := hT.closedComplemented_ker.restrictScalars 𝕜
+
+variable {𝕜} in
+omit [Module.Finite 𝕜 𝕜'] in
+/-- The cokernel of a `𝕜'`-linear map `f` whose underlying `𝕜`-linear map is a Fredholm operator
+`A` is finite-dimensional over `𝕜'`. For instance, the complex cokernel of a complex-linear map
+whose realification is Fredholm is finite-dimensional. -/
+theorem IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq {A : E →L[𝕜] F}
+    (hA : A.IsFredholm) {f : E →ₗ[𝕜'] F} (hf : f.restrictScalars 𝕜 = A) :
+    FiniteDimensional 𝕜' (F ⧸ LinearMap.range f) := by
+  have : FiniteDimensional 𝕜 (F ⧸ (LinearMap.range f).restrictScalars 𝕜) := by
+    rw [← LinearMap.range_restrictScalars, hf]
+    exact hA.finite_coker
+  have : FiniteDimensional 𝕜 (F ⧸ LinearMap.range f) :=
+    Module.Finite.equiv (Submodule.Quotient.restrictScalarsEquiv 𝕜 _)
+  exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' _
 
 end RestrictScalars
 

@@ -35,6 +35,7 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
   monomials in two disjoint groups of variables.
 * `MvPolynomial.coeff_prod_X_mul_X_pow_eq_zero`: the monomials `∏_{(i, j)} (XᵢYⱼ) ^ lᵢⱼ` with
   `∑ l = d` have no coefficient outside bidegree `(d, d)` in the two groups of variables.
+* `MvPolynomial.monomial_eq_X_pow_mul_monomial_erase`: a monomial splits off its power of `X b`.
 * `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
   variable set to `1` gives the value of `c Y^e`.
 * `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
@@ -117,6 +118,11 @@ theorem coeff_prod_X_mul_X_pow_eq_zero {d : ℕ} {κ : Type*} [Fintype ι] [Fint
   rcases not_and_or.mp h with h | h
   · exact (hw (Sum.elim 1 0)).coeff_eq_zero e (by simpa [hweight, hl] using h)
   · exact (hw (Sum.elim 0 1)).coeff_eq_zero e (by simpa [hweight, hl] using h)
+
+/-- A monomial splits off its power of `X b`: `r X^s = X b ^ s_b * r X^(s - s_b e_b)`. -/
+theorem monomial_eq_X_pow_mul_monomial_erase {σ : Type*} (b : σ) (s : σ →₀ ℕ) (r : A) :
+    monomial s r = X b ^ s b * monomial (s.erase b) r := by
+  rw [← monomial_single_add, Finsupp.single_add_erase]
 
 /-- Evaluating the monomial `c X^a Y^e` in the variables `τ ⊕ σ` at a point whose `.inl`
 coordinates are all `1` gives the value of `c Y^e` at the `.inr` coordinates. -/

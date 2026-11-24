@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
@@ -47,6 +48,8 @@ localization arguments need.
 * `TauCeti.W1p.contDiffSMul`: the product `ψ u`, as an element of `W^{1,p}(Ω)`.
 * `TauCeti.W1p.value_contDiffSMul_ae` and `TauCeti.W1p.gradient_contDiffSMul_ae`: its two
   components, `ψ u` and `ψ ∇u + u ∇ψ`.
+* `TauCeti.W1p.eLpNorm_le_eLpNorm_value_contDiffSMul`: if `ψ = 1` on `s ⊆ Ω`, the `L^q(s)` norm
+  of `u` is at most the `L^q(Ω)` norm of `ψ u`.
 * `TauCeti.W1p.norm_contDiffSMul_le`: the bound `‖ψ u‖ ≤ 2 M ‖u‖`.
 * `TauCeti.W1p.contDiffSMulL`: the same map, bundled as a continuous linear operator.
 * `TauCeti.W1p.norm_gradient_contDiffSMul_sq_le`: at exponent two, the weighted bound
@@ -140,6 +143,23 @@ theorem W1p.value_contDiffSMul_ae (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
         = psi x • W1p.value u x := by
   rw [W1p.contDiffSMul, W1p.value_mk]
   exact MemLp.coeFn_toLp _
+
+/-- If a cutoff `ψ` equals `1` on a measurable set `s ⊆ Ω` and `f` agrees almost everywhere with
+`u`, then the `L^q(s)` norm of `f` is at most the `L^q(Ω)` norm of `ψ u`. -/
+theorem W1p.eLpNorm_le_eLpNorm_value_contDiffSMul (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)
+    (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M)
+    {u : W1p mu Omega p} {f : E → ℝ} (huf : W1p.value u =ᵐ[mu.restrict Omega] f) {s : Set E}
+    (hs : s ⊆ Omega) (hsm : MeasurableSet s) (hpsi1 : EqOn psi 1 s) (q : ENNReal) :
+    eLpNorm f q (mu.restrict s) ≤
+      eLpNorm (W1p.value (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)) q (mu.restrict Omega) := by
+  calc eLpNorm f q (mu.restrict s)
+      = eLpNorm (W1p.value (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)) q (mu.restrict s) := by
+        refine eLpNorm_congr_ae ?_
+        filter_upwards [ae_restrict_of_ae_restrict_of_subset hs
+            (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u),
+          ae_restrict_of_ae_restrict_of_subset hs huf, ae_restrict_mem hsm] with x h1 h2 hx
+        rw [h1, ← h2, hpsi1 hx, Pi.one_apply, one_smul]
+    _ ≤ _ := eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)
 
 /-- **The Leibniz rule in `W^{1,p}(Ω)`**: the weak gradient of `ψ u` is `ψ ∇u + u ∇ψ`. -/
 theorem W1p.gradient_contDiffSMul_ae (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)

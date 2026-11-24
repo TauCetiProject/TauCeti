@@ -378,6 +378,15 @@ end ContMDiffSection
 
 namespace TauCeti
 
+/-- The vector field of the directional derivative `∂_w` is the constant field `w`. -/
+@[simp]
+theorem vectorField_lineDerivation (w x : E) : (lineDerivation ℝ w).vectorField x = w :=
+  ContMDiffSection.vectorField_vectorFieldDerivation _ x
+
+end TauCeti
+
+namespace TauCeti
+
 /-- **Derivations are smooth vector fields.** On a finite-dimensional, Hausdorff, boundaryless
 real manifold, sending a derivation of `C^∞(M, ℝ)` to its vector field is a `C^∞(M, ℝ)`-linear
 equivalence onto the smooth sections of the tangent bundle; its inverse differentiates along the

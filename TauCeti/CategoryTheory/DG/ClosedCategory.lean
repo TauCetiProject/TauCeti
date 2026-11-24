@@ -168,7 +168,7 @@ theorem dgClosedHom_comp
     dgClosedHom R (f ≫ g) = dgCompZero R (dgClosedHom R f) (dgClosedHom R g) := by
   rw [dgCompZero_def]
   simp only [dgClosedHom, ForgetEnrichment.homTo_comp, HomologicalComplex.comp_f]
-  rw [leftUnitor_inv_f, leftUnitor'_inv]
+  rw [leftUnitor_inv_f]
   simp only [Category.assoc, tensorHom_def, HomologicalComplex.comp_f,
     ι_whiskerRight_assoc, ι_whiskerLeft_assoc]
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
@@ -188,7 +188,7 @@ theorem eHomWhiskerLeft_f_apply (X : ForgetEnrichment (CochainComplex (ModuleCat
     ((eHomWhiskerLeft (CochainComplex (ModuleCat.{v} R) ℤ) X g).f p).hom f =
       dgComp R f (dgClosedHom R g) (add_zero p) := by
   rw [eHomWhiskerLeft, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    rightUnitor_inv_f, rightUnitor'_inv]
+    rightUnitor_inv_f]
   simp only [Category.assoc, ι_whiskerLeft_assoc, ModuleCat.hom_comp, LinearMap.coe_comp]
   rw [← dgCompMap_tmul, dgCompMap_def]
   rfl
@@ -203,7 +203,7 @@ theorem eHomWhiskerRight_f_apply {X Y : ForgetEnrichment (CochainComplex (Module
     ((eHomWhiskerRight (CochainComplex (ModuleCat.{v} R) ℤ) g Z).f p).hom f =
       dgComp R (dgClosedHom R g) f (zero_add p) := by
   rw [eHomWhiskerRight, HomologicalComplex.comp_f, HomologicalComplex.comp_f,
-    leftUnitor_inv_f, leftUnitor'_inv]
+    leftUnitor_inv_f]
   simp only [Category.assoc, ι_whiskerRight_assoc, ModuleCat.hom_comp, LinearMap.coe_comp]
   rw [← dgCompMap_tmul, dgCompMap_def]
   rfl

@@ -253,6 +253,33 @@ theorem house_add_le {x y : F} (hx : IsAlgebraic ℚ x) (hy : IsAlgebraic ℚ y)
   rw [← IntermediateField.coe_add, house_coe, house_coe, house_coe]
   exact NumberField.house_add_le a b
 
+/-- Negation preserves the house. -/
+@[simp]
+theorem house_neg (x : F) : house (-x) = house x := by
+  have hle (y : F) : house (-y) ≤ house y := by
+    by_cases hy : IsAlgebraic ℚ y
+    · have h1 : IsAlgebraic ℚ (-1 : F) := by simpa using isAlgebraic_intCast (R := ℚ) (-1 : ℤ)
+      have hmul := house_mul_le h1 hy
+      have hh1 : house (-1 : F) = 1 := by simpa using house_intCast (F := F) (-1 : ℤ)
+      simpa [neg_one_mul, hh1] using hmul
+    · have hny : ¬IsAlgebraic ℚ (-y) := fun h ↦ hy (by simpa using h.neg)
+      simp [hy, hny]
+  exact le_antisymm (hle x) (by simpa using hle (-x))
+
+/-- The house of a finite sum of algebraic elements is at most the sum of their houses. -/
+theorem house_sum_le {ι : Type*} (s : Finset ι) {f : ι → F}
+    (hf : ∀ i ∈ s, IsAlgebraic ℚ (f i)) :
+    house (∑ i ∈ s, f i) ≤ ∑ i ∈ s, house (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih =>
+    have halg_sum : IsAlgebraic ℚ (∑ i ∈ s, f i) := by
+      rw [← mem_algebraicClosure_iff]
+      exact sum_mem fun i hi ↦ mem_algebraicClosure_iff.mpr (hf i (Finset.mem_cons_of_mem hi))
+    rw [Finset.sum_cons, Finset.sum_cons]
+    linarith [house_add_le (hf a (Finset.mem_cons_self a s)) halg_sum,
+      ih fun i hi ↦ hf i (Finset.mem_cons_of_mem hi)]
+
 /-- The house is multiplicative on powers. For transcendental `x` and `n ≠ 0` both sides are
 `0`. -/
 @[simp]

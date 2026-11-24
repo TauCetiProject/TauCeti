@@ -12,7 +12,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalProbability
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
-import TauCeti.Probability.Density
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Probability.Distributions.Gamma.CharFun
 -- Non-public: the finite-extrema CDF formulas are used only inside proofs.
 import TauCeti.Probability.Distributions.Relations
@@ -59,7 +59,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
-* `expMeasure_map_const_mul` — positive scaling divides the rate;
+* `expMeasure_map_const_mul`, `ProbabilityTheory.HasLaw.const_mul_expMeasure` — positive scaling
+  divides the rate at the measure and random-variable levels;
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
 * `map_sub_cond_expMeasure` — conditional on exceeding a nonnegative threshold, the excess
   has the original exponential law;
@@ -161,8 +162,26 @@ theorem expMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (expMeasure r).map (c * ·) = expMeasure (r / c) := by
   simpa only [expMeasure] using gammaMeasure_map_const_mul hc
 
-/-- `expMeasure r` presented by its real-valued density, the form in which the shared density
-bridge of `TauCeti/Probability/Density.lean` applies. -/
+end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+/-- Multiplying an exponential random variable by a positive constant divides its rate by that
+constant. -/
+theorem const_mul_expMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {r c : ℝ} (hX : HasLaw X (expMeasure r) P) (hc : 0 < c) :
+    HasLaw (fun ω ↦ c * X ω) (expMeasure (r / c)) P := by
+  rw [← expMeasure_map_const_mul hc]
+  exact (hasLaw_map (measurable_const_mul c).aemeasurable).fun_comp hX
+
+end ProbabilityTheory.HasLaw
+
+namespace TauCeti.Probability
+
+/-- `expMeasure r` presented by its real-valued density, the form in which the real-density
+`withDensity` lemmas of `TauCeti/MeasureTheory/Integral/Bochner/WithDensity.lean` apply. -/
 private lemma expMeasure_eq_withDensity_ofReal (r : ℝ) :
     expMeasure r = volume.withDensity fun x => ENNReal.ofReal (exponentialPDFReal r x) :=
   (rfl)
@@ -176,7 +195,7 @@ rate exactly when its density-weighted version is Lebesgue integrable. -/
 theorem integrable_expMeasure_iff (hr : 0 < r) {g : ℝ → E} :
     Integrable g (expMeasure r) ↔ Integrable fun x => exponentialPDFReal r x • g x := by
   rw [expMeasure_eq_withDensity_ofReal]
-  exact Probability.integrable_withDensity_ofReal_iff
+  exact MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr))
 
 /-- **Integral transfer.** An integral against an exponential law with positive rate is the
@@ -184,7 +203,7 @@ density-weighted Lebesgue integral. -/
 theorem integral_expMeasure_eq (hr : 0 < r) (g : ℝ → E) :
     ∫ x, g x ∂expMeasure r = ∫ x, exponentialPDFReal r x • g x := by
   rw [expMeasure_eq_withDensity_ofReal]
-  exact Probability.integral_withDensity_ofReal
+  exact MeasureTheory.integral_withDensity_ofReal
     (measurable_exponentialPDFReal r).aemeasurable (ae_of_all _ (exponentialPDFReal_nonneg hr)) g
 
 /-- Integrability against an exponential law is integrability of the weighted integrand over

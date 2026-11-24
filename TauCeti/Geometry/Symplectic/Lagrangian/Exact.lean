@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
+public import TauCeti.Geometry.Symplectic.Liouville.Radial
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Exact Lagrangian maps
@@ -34,6 +37,12 @@ The main facts are:
 * **Transport by exact symplectomorphisms.** A diffeomorphism `ψ : M → M₂` with `ψ^*σ₂ = σ` and
   `ψ^*θ₂ = θ + dg` carries exact Lagrangian maps `f` with primitive `h` to exact Lagrangian maps
   `ψ ∘ f` with primitive `h + g ∘ f`, and conversely.
+* **Isotropic maps into a symplectic vector space.** The radial primitive `λ` of a linear
+  symplectic form `σ` on `V` satisfies `dλ = σ`, so the pullback of `λ` along a smooth map
+  `f : M → V` has exterior derivative the pullback of `σ`. Hence `λ` pulls back to a closed
+  one-form along every isotropic map, for instance along a Lagrangian immersion. Its periods along
+  closed curves in `M` are then the symplectic areas of the discs these curves bound in `V`, which
+  is how they measure the area of holomorphic discs with Lagrangian boundary.
 
 The cotangent examples, the zero section and the graphs of exact one-forms, are in
 `TauCeti.Geometry.Symplectic.Cotangent.Bundle.Graph`.
@@ -50,6 +59,8 @@ The cotangent examples, the zero section and the graphs of exact one-forms, are 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_add_mextDeriv_iff`: change of
   primitive one-form.
 * `Diffeomorph.isExactLagrangianMap_comp_iff`: transport by exact symplectomorphisms.
+* `TauCeti.SymplecticForm.isClosed_mpullback_radialPrimitive`: an isotropic map pulls the radial
+  primitive back to a closed form.
 
 ## References
 
@@ -246,5 +257,31 @@ end Transport
 end IsNondegenerate
 
 end SmoothTwoForm
+
+/-! ### The radial primitive along isotropic maps -/
+
+section Isotropic
+
+/- The scoped `ContDiff` notation makes `ω` a notation, so the symplectic form is called `σ` in
+this section. -/
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- **Isotropic maps pull the radial primitive back to closed forms.** Along a smooth map `f`
+whose tangent images are isotropic for `σ`, `d(f^* λ) = f^* σ = 0`. -/
+theorem SymplecticForm.isClosed_mpullback_radialPrimitive (σ : SymplecticForm V) {f : M → V}
+    (hf : ContMDiff I 𝓘(ℝ, V) ∞ f) (h : (isNondegenerate_constSmooth σ).IsIsotropicMap I f) :
+    (SmoothForm.mpullback f hf σ.radialPrimitive).IsClosed := by
+  have hprim : IsSmoothBundleForm (I := 𝓘(ℝ, V)) (F := ℝ) (V := Bundle.Trivial V ℝ) 1
+      σ.radialPrimitive.val :=
+    (isSmoothBundleForm_def 1 _).mpr (σ.radialPrimitive.contMDiff.of_le (by simp))
+  rw [SmoothForm.isClosed_def, SmoothForm.coe_mpullback,
+    ← mpullback_mextDeriv (hf.of_le (by simp)) hprim, mextDeriv_radialPrimitive,
+    ← SmoothForm.coe_mpullback f hf,
+    (SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero hf).1 h]
+  exact ZeroMemClass.coe_zero _
+
+end Isotropic
 
 end TauCeti

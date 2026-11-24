@@ -9,10 +9,10 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
-import Mathlib.Analysis.PSeries
 import Mathlib.Data.Pi.Interval
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.PSeries.Shifted
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.InfiniteSum.PiProd
 
@@ -144,6 +144,14 @@ theorem latticePoint_sub {ι : Type*} (j j' : ι → ℤ) :
     latticePoint (j - j') = latticePoint j - latticePoint j' := by
   ext i
   simp
+
+/-- The lattice point with coordinates `j` is the integer combination `∑ i, j i • eᵢ` of the
+standard basis vectors. -/
+theorem latticePoint_eq_sum {ι : Type*} [Fintype ι] (j : ι → ℤ) :
+    latticePoint j = ∑ i, (j i : ℝ) • EuclideanSpace.basisFun ι ℝ i := by
+  classical
+  ext k
+  simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
 
 /-- Only finitely many lattice points lie in a ball. -/
 theorem finite_setOf_norm_latticePoint_lt {ι : Type*} [Fintype ι] (R : ℝ) :
@@ -277,19 +285,26 @@ theorem hasSum_latticeBump_sub (x : EuclideanSpace ℝ (Fin n)) :
   obtain ⟨i, hi⟩ : ∃ i, j i ∉ t i := by simpa [Fintype.mem_piFinset] using hj
   exact prod_eq_zero (mem_univ i) (by simpa using latticeBump₁_sub_eq_zero (x i) hi)
 
+/-- If a set `s` contains every lattice point of norm less than `R`, then the translate of
+`latticeBump n` centred at a lattice point outside `s` vanishes on the ball of radius `R - √n`. -/
+theorem latticeBump_sub_eq_zero_of_notMem {s : Set (Fin n → ℤ)} {R : ℝ}
+    (hs : ∀ j, ‖latticePoint j‖ < R → j ∈ s) {y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ + √n < R)
+    {j : Fin n → ℤ} (hj : j ∉ s) : latticeBump n (y - latticePoint j) = 0 := by
+  by_contra hne
+  have hy' := mem_closedBall_of_latticeBump_sub_ne_zero hne
+  rw [Metric.mem_closedBall, dist_eq_norm] at hy'
+  refine hj (hs j ?_)
+  calc ‖latticePoint j‖ = ‖y - (y - latticePoint j)‖ := by rw [sub_sub_cancel]
+    _ ≤ ‖y‖ + ‖y - latticePoint j‖ := norm_sub_le _ _
+    _ < R := by linarith
+
 /-- A finite sum of integer translates of `latticeBump n` that contains every lattice point of
 norm less than `R` sums to `1` on the ball of radius `R - √n`. -/
 theorem sum_latticeBump_sub_eq_one {s : Finset (Fin n → ℤ)} {R : ℝ}
     (hs : ∀ j, ‖latticePoint j‖ < R → j ∈ s) {y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ + √n < R) :
     ∑ j ∈ s, latticeBump n (y - latticePoint j) = 1 :=
-  ((hasSum_latticeBump_sub y).unique (hasSum_sum_of_ne_finset_zero fun j hj ↦ by
-    by_contra hne
-    have hy' := mem_closedBall_of_latticeBump_sub_ne_zero hne
-    rw [Metric.mem_closedBall, dist_eq_norm] at hy'
-    refine hj (hs j ?_)
-    calc ‖latticePoint j‖ = ‖y - (y - latticePoint j)‖ := by rw [sub_sub_cancel]
-      _ ≤ ‖y‖ + ‖y - latticePoint j‖ := norm_sub_le _ _
-      _ < R := by linarith)).symm
+  ((hasSum_latticeBump_sub y).unique (hasSum_sum_of_ne_finset_zero fun _ hj ↦
+    latticeBump_sub_eq_zero_of_notMem (s := (s : Set (Fin n → ℤ))) hs hy hj)).symm
 
 /-! ### A summable weight on the lattice -/
 
@@ -307,14 +322,9 @@ theorem latticeWeight_nonneg (d : Fin n → ℤ) : 0 ≤ latticeWeight d :=
 theorem summable_latticeWeight : Summable (latticeWeight (n := n)) := by
   refine Summable.prod_pi_of_nonneg (ι := Fin n) (f := fun _ (m : ℤ) ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹)
     (fun _ ↦ ?_) fun _ m ↦ by positivity
-  rw [summable_int_iff_summable_nat_and_neg]
-  have h : Summable fun m : ℕ ↦ (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ :=
-    (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
-  have e : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((m : ℤ) : ℝ)|) ^ 2)⁻¹ := fun m ↦ by
-    rw [Int.cast_natCast, abs_of_nonneg (Nat.cast_nonneg m), Nat.cast_succ, add_comm]
-  have e' : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((-(m : ℤ) : ℤ) : ℝ)|) ^ 2)⁻¹ :=
-    fun m ↦ by rw [Int.cast_neg, abs_neg, ← e]
-  exact ⟨h.congr e, h.congr e'⟩
+  refine (summable_one_add_abs_int_rpow (r := -2) (by norm_num)).congr fun m ↦ ?_
+  rw [Real.rpow_neg (by positivity)]
+  norm_cast
 
 /-- Decay like `(1 + ‖x - j‖²)⁻ⁿ` around a point `x` of `ℝⁿ` is dominated by the lattice weight of
 the displacement of `j` from the integer part `⌊x⌋` of `x`. -/
@@ -368,6 +378,16 @@ theorem summable_one_add_norm_sub_latticePoint_sq_pow_inv (x : EuclideanSpace �
   Summable.of_nonneg_of_le (fun _ ↦ by positivity)
     (one_add_norm_sub_latticePoint_sq_pow_inv_le x)
     (((Equiv.subLeft fun i ↦ ⌊x i⌋).summable_iff.2 summable_latticeWeight).mul_left _)
+
+/-- On the unit ball about `x`, the weights `(1 + ‖y - j‖²)⁻ⁿ` are bounded by a summable family
+of the lattice points `j`. -/
+theorem exists_summable_forall_one_add_norm_sub_latticePoint_sq_pow_inv_le
+    (x : EuclideanSpace ℝ (Fin n)) : ∃ v : (Fin n → ℤ) → ℝ, Summable v ∧
+      ∀ j, ∀ y ∈ Metric.ball x 1, ((1 + ‖y - latticePoint j‖ ^ 2) ^ n)⁻¹ ≤ v j :=
+  ⟨fun j ↦ 4 ^ n * ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹,
+    (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
+    fun j _ hy ↦ one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one
+      (Metric.mem_ball.1 hy).le j⟩
 
 /-- The lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` are bounded independently of `x`. -/
 theorem tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le (x : EuclideanSpace ℝ (Fin n)) :

@@ -242,12 +242,14 @@ private theorem exists_smul_eq_of_mul_eq {D : ℤ} {f g : BinaryQuadraticForm �
     (hβ : g.idealGenerator D =
       μ * (z • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + w • f.idealGenerator D)) :
     ∃ γ : SL(2, ℤ), γ • f = g := by
-  let γ : SL(2, ℤ) := ⟨!![w, z; y, x], by rw [Matrix.det_fin_two_of]; linarith⟩
+  -- `Matrix.SpecialLinearGroup.mk` comes from mathlib4 #45242.
+  let γ : SL(2, ℤ) := .mk !![w, z; y, x] (by rw [Matrix.det_fin_two_of]; linarith)
   refine ⟨γ, (eq_of_idealGenerator_mul_a_eq hgD ((discrim_smul γ f).trans hfD) hga ?_).symm⟩
   have hfirst := idealChangeFactor_mul_first f D hfD hfa γ
   have hsecond := idealChangeFactor_mul_second f D hfD hfa γ
-  simp only [γ, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.empty_val', Matrix.cons_val_fin_one] at hfirst hsecond
+  simp only [γ, Matrix.SpecialLinearGroup.coe_mk, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
+    at hfirst hsecond
   rw [← hfirst, ← hsecond, ha, hβ]
   simp only [zsmul_eq_mul]
   ring

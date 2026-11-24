@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric
+public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.VectorField
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.OrthonormalTrivialization
 import TauCeti.Geometry.Manifold.Instances.Sphere

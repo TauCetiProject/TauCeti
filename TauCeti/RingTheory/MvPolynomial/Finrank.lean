@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Dimension of homogeneous and bounded-degree polynomials
@@ -133,19 +134,7 @@ theorem finrank_homogeneousSubmodule (σ R : Type*) [CommSemiring R]
 theorem finrank_homogeneousSubmodule_eq_multichoose (σ R : Type*) [Fintype σ]
     [CommSemiring R] [StrongRankCondition R] (n : ℕ) :
     Module.finrank R (homogeneousSubmodule σ R n) = (Fintype.card σ).multichoose n := by
-  classical
-  rw [finrank_homogeneousSubmodule]
-  let e : (↥{d : σ →₀ ℕ | d.degree = n}) ≃
-      (Finset.univ.finsuppAntidiag n : Finset (σ →₀ ℕ)) :=
-    Equiv.subtypeEquiv (Equiv.refl _) (fun d => by
-      simp [Finset.mem_finsuppAntidiag, Finsupp.degree_eq_sum])
-  calc
-    Nat.card (↥{d : σ →₀ ℕ | d.degree = n}) =
-        Nat.card (Finset.univ.finsuppAntidiag n : Finset (σ →₀ ℕ)) := Nat.card_congr e
-    _ = (Fintype.card σ).multichoose n := by
-      rw [Nat.card_eq_fintype_card, Fintype.card_coe,
-        Finset.card_finsuppAntidiag_nat_eq_multichoose]
-      simp
+  rw [finrank_homogeneousSubmodule, Nat.card_coe_set_eq, Finsupp.ncard_setOf_degree_eq]
 
 /-- The polynomials of total degree at most `m` in `d = card σ` variables have dimension
 `(m + d choose d)`. -/

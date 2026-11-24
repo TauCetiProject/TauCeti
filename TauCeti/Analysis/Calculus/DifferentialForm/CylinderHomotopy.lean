@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.MeasureTheory.Constructions.UnitInterval
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The homotopy operator on a cylinder over a subset of a normed space
@@ -67,6 +68,8 @@ proved directly, without Stokes' theorem on the manifold with corners `M × [0, 
   `TauCeti.norm_cylinderHomotopy_le`, `TauCeti.norm_iteratedFDeriv_cylinderHomotopy_le`: support
   and sup-norm bounds for `h ω` and its derivatives, which make `h` continuous on compactly
   supported smooth forms.
+* `TauCeti.norm_cylinderHomotopy_pullback_le`: the bound `B A L ^ n` for `h (Φ^* ω)`, in terms of
+  bounds `B` for `ω` and `A`, `L` for the time and space derivatives of `Φ`.
 
 ## References
 
@@ -105,19 +108,19 @@ theorem cylinderHomotopy_apply (ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]�
 map; the cylinder homotopy operator integrates it over time. -/
 private def contractInl : ((E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin n]→L[ℝ] F :=
   ContinuousAlternatingMap.compContinuousLinearMapCLM (.inl ℝ E ℝ) ∘L
-    (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := F)
-      (n := n)).toContinuousLinearMap.flip (0, 1)
+    ContinuousAlternatingMap.curryLeftFlipL (0, 1)
 
 private theorem contractInl_def :
     contractInl (E := E) (F := F) (n := n) =
       ContinuousAlternatingMap.compContinuousLinearMapCLM (.inl ℝ E ℝ) ∘L
-        (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := F)
-          (n := n)).toContinuousLinearMap.flip (0, 1) :=
+        ContinuousAlternatingMap.curryLeftFlipL (0, 1) :=
   (rfl)
 
 private theorem contractInl_apply (α : (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F) :
-    contractInl α = (α.curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) :=
-  (rfl)
+    contractInl α = (α.curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ) := by
+  simp only [contractInl_def, ContinuousLinearMap.comp_apply,
+    ContinuousAlternatingMap.curryLeftFlipL_apply_apply,
+    ContinuousAlternatingMap.compContinuousLinearMapCLM_apply]
 
 private theorem cylinderHomotopy_eq_integral_unitInterval
     (ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F) :
@@ -143,8 +146,8 @@ theorem cylinderHomotopy_apply_apply [CompleteSpace F]
     (hω : IntervalIntegrable (fun t ↦ ω (x, t)) volume 0 1) (v : Fin n → E) :
     cylinderHomotopy ω x v = ∫ t in (0 : ℝ)..1, ω (x, t) (Fin.cons (0, 1) fun i ↦ (v i, 0)) := by
   have h : cylinderHomotopy ω x = contractInl (∫ t in (0 : ℝ)..1, ω (x, t)) := by
-    rw [cylinderHomotopy_apply]
-    exact contractInl.intervalIntegral_comp_comm hω
+    simp only [cylinderHomotopy_apply, ← contractInl_apply]
+    exact (contractInl (E := E) (F := F) (n := n)).intervalIntegral_comp_comm hω
   rw [h, contractInl_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
     ContinuousAlternatingMap.curryLeft_apply_apply]
   exact ((ContinuousAlternatingMap.apply ℝ (E × ℝ) F _).intervalIntegral_comp_comm hω).symm
@@ -182,8 +185,9 @@ theorem cylinderHomotopy_add_apply {x : E} {ω₁ ω₂ : E × ℝ → (E × ℝ
     (h₁ : ContinuousOn ω₁ ({x} ×ˢ Icc 0 1)) (h₂ : ContinuousOn ω₂ ({x} ×ˢ Icc 0 1)) :
     cylinderHomotopy (ω₁ + ω₂) x = cylinderHomotopy ω₁ x + cylinderHomotopy ω₂ x := by
   simp only [cylinderHomotopy_apply, Pi.add_apply, ← contractInl_apply, map_add]
-  exact intervalIntegral.integral_add (intervalIntegrable_curryLeft_inl_of_continuousOn h₁)
-    (intervalIntegrable_curryLeft_inl_of_continuousOn h₂)
+  exact intervalIntegral.integral_add
+    (by simpa only [← contractInl_apply] using intervalIntegrable_curryLeft_inl_of_continuousOn h₁)
+    (by simpa only [← contractInl_apply] using intervalIntegrable_curryLeft_inl_of_continuousOn h₂)
 
 /-- The cylinder homotopy operator is supported over the part of the support of the form that lies
 in `E × [0, 1]`. -/
@@ -229,6 +233,49 @@ theorem norm_cylinderHomotopy_le {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]
     rw [uIoc_of_le zero_le_one] at ht
     exact ((contractInl (E := E) (F := F) (n := n)).le_of_opNorm_le norm_contractInl_le_one _).trans
       ((one_mul _).trans_le (h t (Ioc_subset_Icc_self ht)))
+  have hI := intervalIntegral.norm_integral_le_of_norm_le_const hle
+  rw [sub_zero, abs_one, mul_one] at hI
+  rw [cylinderHomotopy_apply]
+  simp only [← contractInl_apply]
+  exact hI
+
+/-- **The cylinder homotopy operator of a pullback**: let `Φ : E × ℝ → E'` and let `ω` be a
+form on `E'` with `‖ω (Φ (x, t))‖ ≤ B` for `t ∈ [0, 1]`. If `‖DΦ (x, t) (0, 1)‖ ≤ A` and the
+spatial derivative `DΦ (x, t) ∘ inl` has operator norm at most `L` along `{x} × [0, 1]`, then the
+cylinder homotopy operator of the pullback `Φ^* ω` is bounded by `B A L ^ n` at `x`. Only one
+argument of the pulled-back form sees the time direction, which gives this bound rather than the
+one from the full norm of `DΦ`. -/
+theorem norm_cylinderHomotopy_pullback_le {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    {Φ : E × ℝ → E'} {ω : E' → E' [⋀^Fin (n + 1)]→L[ℝ] F} {x : E} {A B L : ℝ}
+    (hω : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (Φ (x, t))‖ ≤ B)
+    (hA : ∀ t ∈ Icc (0 : ℝ) 1, ‖fderiv ℝ Φ (x, t) (0, 1)‖ ≤ A)
+    (hL : ∀ t ∈ Icc (0 : ℝ) 1, ‖(fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)‖ ≤ L) :
+    ‖cylinderHomotopy (fun p ↦ (ω (Φ p)).compContinuousLinearMap (fderiv ℝ Φ p)) x‖ ≤
+      B * A * L ^ n := by
+  have hB : 0 ≤ B := (norm_nonneg _).trans (hω 0 ⟨le_rfl, zero_le_one⟩)
+  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0 ⟨le_rfl, zero_le_one⟩)
+  have hle : ∀ t ∈ Ι (0 : ℝ) 1, ‖contractInl ((ω (Φ (x, t))).compContinuousLinearMap
+      (fderiv ℝ Φ (x, t)))‖ ≤ B * A * L ^ n := fun t ht ↦ by
+    rw [uIoc_of_le zero_le_one] at ht
+    have ht' : t ∈ Icc (0 : ℝ) 1 := Ioc_subset_Icc_self ht
+    -- Contracting with `∂ₜ` first, the remaining `n` arguments only see `DΦ ∘ inl`.
+    have hcomp : contractInl ((ω (Φ (x, t))).compContinuousLinearMap (fderiv ℝ Φ (x, t))) =
+        ((ω (Φ (x, t))).curryLeft (fderiv ℝ Φ (x, t) (0, 1))).compContinuousLinearMap
+          ((fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)) := by
+      rw [contractInl_apply, ContinuousAlternatingMap.curryLeft_compContinuousLinearMap,
+        ContinuousAlternatingMap.compContinuousLinearMap_compContinuousLinearMap]
+    rw [hcomp]
+    calc _ ≤ ‖(ω (Φ (x, t))).curryLeft (fderiv ℝ Φ (x, t) (0, 1))‖ *
+          ‖(fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)‖ ^ n :=
+          (ContinuousAlternatingMap.norm_compContinuousLinearMap_le _ _).trans_eq (by simp)
+      _ ≤ (‖ω (Φ (x, t))‖ * ‖fderiv ℝ Φ (x, t) (0, 1)‖) * L ^ n := by
+          gcongr
+          · exact ((ω (Φ (x, t))).curryLeft.le_opNorm _).trans_eq
+              (by rw [ContinuousAlternatingMap.norm_curryLeft])
+          · exact hL t ht'
+      _ ≤ (B * A) * L ^ n := by
+          gcongr
+          exacts [hω t ht', hA t ht']
   have hI := intervalIntegral.norm_integral_le_of_norm_le_const hle
   rw [sub_zero, abs_one, mul_one] at hI
   rw [cylinderHomotopy_apply]
@@ -362,7 +409,8 @@ theorem contDiffOn_cylinderHomotopy (hs : Convex ℝ s) (hsu : UniqueDiffOn ℝ 
   rw [cylinderHomotopy_eq_integral_unitInterval]
   exact hs.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     (integrable_const (1 : ℝ)) continuous_subtypeVal hsu (hsu.prod uniqueDiffOn_Icc_zero_one)
-    (contractInl.contDiff.comp_contDiffOn hω) fun x hx t ↦ ⟨hx, t.property⟩
+    ((contractInl (E := E) (F := F) (n := n)).contDiff.comp_contDiffOn hω) fun x hx t ↦
+      ⟨hx, t.property⟩
 
 variable [CompleteSpace F]
 

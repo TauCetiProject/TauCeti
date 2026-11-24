@@ -18,8 +18,10 @@ import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
 linear equivalence with the exterior algebra, and the commutation rule
-`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another. Rescaling the
-factors of a product of vectors pulls the scalars out in front
+`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, together with the
+square of a scalar plus a vector (`CliffordAlgebra.algebraMap_add_ι_mul_self`) and the
+extensionality of algebra equivalences on generators (`CliffordAlgebra.algEquiv_ext_ι`).
+Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
 -/
 
@@ -68,6 +70,21 @@ theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R
   rw [map_sub, map_smul, sub_mul, smul_mul_assoc, ι_sq_scalar, Algebra.smul_def,
     ← map_mul (algebraMap R (CliffordAlgebra Q)), hr,
     ← ι_mul_ι_add_swap, add_sub_cancel_right]
+
+/-- The square of an element `r + ι Q t` of the first filtration step: its vector part is
+`ι Q ((2 * r) • t)`. -/
+theorem algebraMap_add_ι_mul_self (Q : QuadraticForm R M) (r : R) (t : M) :
+    (algebraMap R (CliffordAlgebra Q) r + ι Q t) * (algebraMap R _ r + ι Q t) =
+      algebraMap R _ (r * r + Q t) + ι Q ((2 * r) • t) := by
+  rw [add_mul, mul_add, mul_add, ι_sq_scalar, ← map_mul, ← Algebra.commutes r (ι Q t),
+    ← Algebra.smul_def, map_add, map_smul, mul_smul, two_smul]
+  abel
+
+/-- Two algebra equivalences out of a Clifford algebra agree when they agree on the generators:
+the equivalence form of `CliffordAlgebra.hom_ext`. -/
+theorem algEquiv_ext_ι {Q : QuadraticForm R M} {A : Type*} [Semiring A] [Algebra R A]
+    {φ ψ : CliffordAlgebra Q ≃ₐ[R] A} (h : ∀ v, φ (ι Q v) = ψ (ι Q v)) : φ = ψ :=
+  AlgEquiv.coe_toAlgHom_injective <| hom_ext <| LinearMap.ext h
 
 /-- Rescaling every factor of a product of vectors collects the product of the scalars in front
 of the product. -/

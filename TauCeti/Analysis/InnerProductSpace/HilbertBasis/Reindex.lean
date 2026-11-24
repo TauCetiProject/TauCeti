@@ -174,7 +174,7 @@ theorem inner_equiv_left (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 
 `b.equiv c e x = ∑ᵢ ⟪b i, x⟫_𝕜 • c (e i)`. -/
 theorem hasSum_equiv_apply (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (e : ι ≃ κ) (x : E) :
     HasSum (fun i ↦ ⟪b i, x⟫_𝕜 • c (e i)) (b.equiv c e x) := by
-  simpa only [LinearIsometryEquiv.coe_coe'', b.equiv_apply_basis c e] using
+  simpa only [LinearIsometryEquiv.coe_coe'', b.equiv_apply_basis c e, RingHom.id_apply] using
     b.hasSum_inner_smul_apply (b.equiv c e : E →L[𝕜] F) x
 
 /-- The inverse of `b.equiv c e` is `c.equiv b e.symm`. -/

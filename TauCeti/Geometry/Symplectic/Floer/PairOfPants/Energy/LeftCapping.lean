@@ -142,9 +142,10 @@ private theorem contMDiffAt_cappedExchangePerturbation_apply (hH : ∀ q, Period
 
 variable [IsManifold I ⊤ M] {ω : SmoothTwoForm I M} [FiniteDimensional ℝ E]
 
-/-- The curvature of the capped datum along a map continuous on `S` is integrable. It is
-continuous on `S`, and its integral is finite by the uniform curvature bound. -/
-private theorem IsNondegenerate.integrable_hamiltonianCurvature_cappedExchangePerturbation
+/-- **The curvature of the input-exchange family capped at `0` is integrable.** For bounded
+period-one `C¹` Hamiltonians, `L > 4` and `0 ≤ c ≤ 1`, the curvature of the member `c` of the
+family along a map continuous on `S` is integrable over the plane. -/
+theorem IsNondegenerate.integrable_hamiltonianCurvature_cappedExchangePerturbation
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {B : Puncture → ℝ}
     (hB : ∀ q t x, |H q t x| ≤ B q) (hL : 4 < L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {u : ℝ × ℝ → M}

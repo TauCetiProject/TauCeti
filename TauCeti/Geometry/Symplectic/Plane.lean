@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.CartanSubalgebra
 public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import Mathlib.Algebra.Lie.SkewAdjoint
+public import TauCeti.Geometry.Symplectic.Orientation
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import Mathlib.LinearAlgebra.Center
 import Mathlib.Tactic.FinCases
@@ -31,6 +32,8 @@ bracket.
 
 * `TauCeti.SymplecticForm.not_linearIndependent_of_apply_eq_zero`: two vectors pairing trivially
   under `ω` are linearly dependent.
+* `TauCeti.SymplecticForm.basis_orientation_eq_orientation_iff`: a basis `(e₀, e₁)` is positive for
+  the symplectic orientation exactly when `ω(e₀, e₁) > 0`.
 * `TauCeti.SymplecticForm.exists_basis_coe_eq_of_apply_eq_one`,
   `TauCeti.SymplecticForm.exists_eq_smul_add_smul`: a pair `(q, p)` with `ω(q, p) = 1` is a basis.
 * `TauCeti.SymplecticForm.exists_isSymplectomorphism_forall_apply_eq_of_pair`: endomorphisms acting
@@ -77,6 +80,37 @@ theorem not_linearIndependent_of_apply_eq_zero (hV : finrank ℝ V = 2) {v w : V
   have hv : ω.toBilinForm v = 0 := b.ext fun i ↦ by simpa using hb i
   have : v = 0 := ω.nondegenerate.1 v fun w ↦ by simp [hv]
   exact hli.ne_zero 0 (by simpa using this)
+
+/-- In dimension two, a basis `(e₀, e₁)` is positively oriented for the symplectic orientation of
+`ω` exactly when `ω(e₀, e₁) > 0`. -/
+theorem basis_orientation_eq_orientation_iff [FiniteDimensional ℝ V] (hV : finrank ℝ V = 2)
+    (b : Basis (Fin 2) ℝ V) : b.orientation = ω.orientation hV ↔ 0 < ω (b 0) (b 1) := by
+  -- If `ω(e₀, e₁) > 0`, rescaling `e₁` by `ω(e₀, e₁)⁻¹` gives a Darboux basis `(q₁, p₁)`.
+  have hpos (b : Basis (Fin 2) ℝ V) (hb : 0 < ω (b 0) (b 1)) :
+      b.orientation = ω.orientation hV := by
+    let w : Fin 2 → ℝˣ := ![1, Units.mk0 (ω (b 0) (b 1))⁻¹ (inv_ne_zero hb.ne')]
+    let e : Fin 1 × Fin 2 ≃ Fin 2 := finProdFinEquiv.trans (finCongr (one_mul 2))
+    have he₀ : e (0, 0) = 0 := rfl
+    have he₁ : e (0, 1) = 1 := rfl
+    have hd : ω.IsDarbouxBasis ((b.unitsSMul w).reindex e.symm) := by
+      refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;>
+        simp [Subsingleton.elim i 0, Subsingleton.elim j 0, he₀, he₁, w,
+          Basis.unitsSMul_apply, Units.smul_def, hb.ne']
+    have hr : ((b.unitsSMul w).reindex e.symm).reindex
+        (finProdFinEquiv.trans (finCongr (one_mul 2))) = b.unitsSMul w :=
+      Basis.eq_of_apply_eq fun i ↦ by
+        simp only [Basis.reindex_apply, Equiv.symm_symm, Equiv.apply_symm_apply, e]
+    have h := hd.orientation_reindex hV (one_mul 2)
+    rwa [hr, Basis.orientation_unitsSMul, Module.Ray.units_smul_of_pos _ (by simp [w, hb])] at h
+  refine ⟨fun h ↦ ?_, hpos b⟩
+  -- Otherwise `ω(e₀, e₁) < 0`, and `(-e₀, e₁)` is positively oriented, which reverses `b`.
+  by_contra hb
+  have hne : ω (b 0) (b 1) ≠ 0 := fun h₀ ↦ not_linearIndependent_of_apply_eq_zero hV h₀ <|
+    FinVec.etaExpand_eq (⇑b) ▸ b.linearIndependent
+  have h' := hpos (b.unitsSMul ![-1, 1]) (by
+    simpa [Basis.unitsSMul_apply, Units.smul_def] using lt_of_le_of_ne (not_lt.mp hb) hne)
+  rw [Basis.orientation_unitsSMul, Module.Ray.units_smul_of_neg _ (by simp), h] at h'
+  exact Module.Ray.ne_neg_self _ h'.symm
 
 /-- In dimension two, an endomorphism self-adjoint for `ω` is a homothety. -/
 theorem exists_eq_smul_one_of_apply_left (hV : finrank ℝ V = 2) {S : Module.End ℝ V}

@@ -164,7 +164,7 @@ private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
     have ht₂I : t₂ ∈ Icc a b := ⟨hc'.1.le.trans ht₂.1.le, (ht₂.2.trans_le (min_le_right _ _)).le⟩
     -- The crossings after `s` are `c` and the crossings after `t₂`.
     have hsplit : {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} :=
-      Finset.filter_lt_eq_insert_of_forall_lt hcmem.1 hsc hcmin ht₂.1 fun t htS h ↦
+      Finset.filter_lt_eq_insert_of_forall_lt hcmem.1 hsc hcmin (hsc.trans ht₂.1).le fun t htS h ↦
         lt_of_not_ge fun htt₂ ↦ ((hS t).1 htS).2
           (hu ⟨h, htt₂.trans_lt (ht₂.2.trans_le (min_le_left _ _))⟩)
     have hcnot : c ∉ {t ∈ S | t₂ < t} := fun h ↦ (Finset.mem_filter.1 h).2.not_gt ht₂.1
