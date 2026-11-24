@@ -397,6 +397,10 @@ section IdealCorrespondence
 
 variable {G : Type*} [AddCommGroup G] [Preorder G] [IsOrderedAddMonoid G]
 
+private theorem Quotient.mem_comap_mk {I : OrderIdeal G} {K : OrderIdeal (G ⧸ I)} {x : G} :
+    x ∈ K.toAddSubgroup.comap (Quotient.mk I).toAddMonoidHom ↔ Quotient.mk I x ∈ K := by
+  simp [AddSubgroup.mem_comap]
+
 /-- Preimage of an order ideal of `G ⧸ I` along `Quotient.mk I`. -/
 def Quotient.comapIdeal (I : OrderIdeal G) (K : OrderIdeal (G ⧸ I)) : OrderIdeal G :=
   ofDirected (K.toAddSubgroup.comap (Quotient.mk I).toAddMonoidHom)
@@ -404,10 +408,8 @@ def Quotient.comapIdeal (I : OrderIdeal G) (K : OrderIdeal (G ⧸ I)) : OrderIde
       obtain ⟨q, hqK, h0q, hxq⟩ := K.exists_nonneg_le hx
       obtain ⟨z, hz0, rfl⟩ := Quotient.exists_nonneg_mk_eq I h0q
       obtain ⟨h, hhI, hh0, hxz⟩ := Quotient.exists_nonneg_le_of_mk_le_mk hxq
-      refine ⟨z + h, ?_, add_nonneg hz0 hh0, hxz⟩
-      simp only [AddSubgroup.mem_comap, OrderAddMonoidHom.toAddMonoidHom_eq_coe,
-        AddMonoidHom.coe_ofClass, mem_toAddSubgroup, Quotient.mk_add_of_mem hhI]
-      exact hqK)
+      refine ⟨z + h, Quotient.mem_comap_mk.2 ?_, add_nonneg hz0 hh0, hxz⟩
+      simpa [Quotient.mk_add_of_mem hhI] using hqK)
     (isHereditary_def.2 fun _ _ ha hab hb ↦
       K.isHereditary.mem_of_le ((map_zero (Quotient.mk I)).symm.trans_le
         (OrderHomClass.mono (Quotient.mk I) ha)) (OrderHomClass.mono (Quotient.mk I) hab) hb)
@@ -416,7 +418,7 @@ def Quotient.comapIdeal (I : OrderIdeal G) (K : OrderIdeal (G ⧸ I)) : OrderIde
 theorem Quotient.mem_comapIdeal {I : OrderIdeal G} {K : OrderIdeal (G ⧸ I)} {x : G} :
     x ∈ Quotient.comapIdeal I K ↔ Quotient.mk I x ∈ K := by
   rw [comapIdeal, mem_ofDirected]
-  rfl
+  exact mem_comap_mk
 
 theorem Quotient.le_comapIdeal (I : OrderIdeal G) (K : OrderIdeal (G ⧸ I)) :
     I ≤ Quotient.comapIdeal I K := by

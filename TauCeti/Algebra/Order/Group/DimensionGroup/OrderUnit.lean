@@ -30,7 +30,8 @@ directed, and in a directed interpolation group `[0, u]` is a scale iff `u` is a
 ## Main results
 
 * `TauCeti.IsNatOrderUnit.exists_neg_nsmul_le_le_nsmul`: symmetric intervals `[-n • u, n • u]`.
-* `TauCeti.IsNatOrderUnit.isDirectedOrder`: a preordered monoid with an order unit is directed.
+* `TauCeti.IsNatOrderUnit.isDirectedOrder`: a preordered commutative ordered monoid with an
+  order unit is upward directed.
 * `TauCeti.isNatOrderUnit_iff_forall_nonneg_exists_le_nsmul`: in a directed group or monoid, it
   suffices to dominate nonnegative elements.
 * `TauCeti.isNatOrderUnit_iff_pos`: in a nontrivial Archimedean partially ordered abelian group,
@@ -78,7 +79,7 @@ section AddCommMonoid
 
 variable {G : Type*} [AddCommMonoid G] [Preorder G] [IsOrderedAddMonoid G] {u v : G}
 
-/-- A preordered commutative monoid admitting an order unit is upward directed. -/
+/-- A preordered commutative ordered monoid admitting an order unit is upward directed. -/
 theorem isDirectedOrder (hu : IsNatOrderUnit u) : IsDirectedOrder G where
   directed a b := by
     obtain ⟨m, hm⟩ := hu.exists_le_nsmul a
