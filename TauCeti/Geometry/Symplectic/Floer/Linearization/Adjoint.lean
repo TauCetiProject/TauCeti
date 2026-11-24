@@ -307,21 +307,10 @@ theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
     rw [norm_smul, Real.norm_eq_abs]
     exact mul_le_of_le_one_left (norm_nonneg _) hf₁
   rw [floerLinearizationAdjoint_fun_smul hf hη hJu, sub_sub]
-  have hsum : ‖f z • ω.floerLinearizationAdjoint J Ks Kt u η z -
-      (fderiv ℝ f z stdComplexLineReal • η z +
-        fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z)))‖ ≤
-      ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ + M * (1 + B) * ‖η z‖ := by
-    have h := norm_sub_le (f z • ω.floerLinearizationAdjoint J Ks Kt u η z)
-      (fderiv ℝ f z stdComplexLineReal • η z +
-        fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z)))
-    have h' := norm_add_le (fderiv ℝ f z stdComplexLineReal • η z)
-      (fderiv ℝ f z stdComplexLineImag • (η z).comp (J z (u z)))
-    nlinarith
   calc _ ≤ (‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ + M * (1 + B) * ‖η z‖) ^ 2 := by
         gcongr
-    _ ≤ _ := by
-        nlinarith [sq_nonneg (‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ -
-          M * (1 + B) * ‖η z‖)]
+        exact (norm_sub_le _ _).trans (add_le_add h₀ ((norm_add_le _ _).trans (by linarith)))
+    _ ≤ _ := add_sq_le.trans_eq (by ring)
 
 /-! ### Green's formula -/
 

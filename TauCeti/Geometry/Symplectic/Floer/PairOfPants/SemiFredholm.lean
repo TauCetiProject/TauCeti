@@ -632,6 +632,52 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux
     mul_nonneg (mul_nonneg hS (sq_nonneg c)) hY, mul_nonneg hC₀ hX, mul_nonneg hC₀ hY,
     mul_nonneg (mul_nonneg hC₀ (sq_nonneg c)) hX, mul_nonneg (mul_nonneg hC₀ (sq_nonneg c)) hY]
 
+omit [FiniteDimensional ℝ V] in
+/-- **Patching at two heights.** Suppose that for every height `R₀ ≥ 1` above the heights `R q`,
+the energy of a section `ξ` beyond `R₀ + 1` on the ends, read through `P q`, and on the truncation
+`S_{R₀}` is controlled by a quantity `X ξ` and by `ξ` on `S_{R₀ + 1}`. Then the same holds at
+a single height `T` on both sides: the estimate at `R₀` controls the ends beyond `R₀ + 1`, and the
+estimate at `R₀ + 1` the core `S_{R₀ + 1}`. -/
+private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_height
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {P : Puncture → (ℝ × ℝ → V) → ℝ × ℝ → G} {X : (ℝ × ℝ → V) → ℝ} {R : Puncture → ℝ}
+    (h : ∀ ⦃R₀ : ℝ⦄, 1 ≤ R₀ → (∀ q, R q < R₀) → ∃ C', 0 ≤ C' ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄,
+      ContDiff ℝ 2 ξ → HasCompactSupport ξ → tsupport ξ ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (P q ξ) ζ) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity ξ z ≤
+        C' * (X ξ + ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖ξ z‖ ^ 2)) :
+    ∃ C', 0 ≤ C' ∧ ∃ T, 0 ≤ T ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
+      tsupport ξ ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (P q ξ) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity ξ z ≤
+        C' * (X ξ + ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ z‖ ^ 2) := by
+  -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
+  -- second the core `S_{R₀ + 1}`.
+  set R₀ := 1 + ∑ q, |R q|
+  have hsum : 0 ≤ ∑ q, |R q| := Finset.sum_nonneg fun q _ ↦ abs_nonneg _
+  have hR (q : Puncture) : R q < R₀ := by
+    have := (le_abs_self (R q)).trans
+      (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
+    linarith
+  obtain ⟨C₁, hC₁, h₁⟩ := h (by linarith) hR
+  obtain ⟨C₂, hC₂, h₂⟩ := h (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans (lt_add_one _)
+  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by positivity, fun ξ hξ hξc hξS ↦ ?_⟩
+  have e₁ := h₁ hξ hξc hξS
+  have e₂ := h₂ hξ hξc hξS
+  have hY : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖ξ z‖ ^ 2 ≤
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1 + 1), ‖ξ z‖ ^ 2 :=
+    setIntegral_mono_set ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact
+      (isCompact_preimage_truncation _)) (ae_of_all _ fun _ ↦ sq_nonneg _)
+      (.of_forall fun _ hz ↦ preimage_mono (truncation_mono (by linarith)) hz)
+  have hcore₀ : 0 ≤ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀,
+      sobolevDensity ξ z :=
+    setIntegral_nonneg (isCompact_preimage_truncation _).measurableSet fun z _ ↦
+      sobolevDensity_nonneg ξ z
+  have hends₀ : 0 ≤ ∑ q, ∫ ζ in Ioi (R₀ + 1 + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (P q ξ) ζ :=
+    Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
+      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
+  nlinarith [mul_le_mul_of_nonneg_left hY hC₁]
+
 /-- **Patching end estimates into the semi-Fredholm estimate on the pair of pants.** Let `J(z)` be
 compatible along `u` on `S = ℂ ∖ {0, 1}`, with `J` `C¹` and `K_s`, `K_t` `C²` at the points
 `(z, u z)`, and `u` `C¹` on `S`. Suppose that on each end `q` the linearized Floer operator `D_u`
@@ -668,40 +714,9 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
         C' * ((∫ z, ‖ω.floerLinearization
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ z‖ ^ 2) := by
-  -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
-  -- second the core `S_{R₀ + 1}`.
-  set R₀ := 1 + ∑ q, |R q|
-  have hsum : 0 ≤ ∑ q, |R q| := Finset.sum_nonneg fun q _ ↦ abs_nonneg _
-  have hR (q : Puncture) : R q < R₀ := by
-    have := (le_abs_self (R q)).trans
-      (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
-    linarith
-  obtain ⟨C₁, hC₁, h₁⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
-    hKt hu hc (C := C) (R := R) hend (by linarith) hR
-  obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
-    hKt hu hc (C := C) (R := R) hend (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
-      (lt_add_one _)
-  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by positivity, fun ξ hξ hξc hξS ↦ ?_⟩
-  have e₁ := h₁ hξ hξc hξS
-  have e₂ := h₂ hξ hξc hξS
-  have hξ2 := hξ.continuous.norm.pow 2
-  have hX : 0 ≤ ∫ z, ‖ω.floerLinearization
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 :=
-    integral_nonneg fun _ ↦ sq_nonneg _
-  have hY : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖ξ z‖ ^ 2 ≤
-      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1 + 1), ‖ξ z‖ ^ 2 :=
-    setIntegral_mono_set (hξ2.continuousOn.integrableOn_compact (isCompact_preimage_truncation _))
-      (ae_of_all _ fun _ ↦ sq_nonneg _)
-      (.of_forall fun _ hz ↦ preimage_mono (truncation_mono (by linarith)) hz)
-  have hcore₀ : 0 ≤ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀,
-      sobolevDensity ξ z :=
-    setIntegral_nonneg (isCompact_preimage_truncation _).measurableSet fun z _ ↦
-      sobolevDensity_nonneg ξ z
-  have hends₀ : 0 ≤ ∑ q, ∫ ζ in Ioi (R₀ + 1 + 1) ×ˢ Icc (0 : ℝ) 1,
-      sobolevDensity (ξ ∘ positiveEndChart q) ζ :=
-    Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
-      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
-  nlinarith [mul_le_mul_of_nonneg_left hY hC₁, mul_nonneg hC₂ hX]
+  exact exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_height
+    (P := fun q ξ ↦ ξ ∘ positiveEndChart q) fun _ hR₀ hR ↦
+      ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs hKt hu hc hend hR₀ hR
 
 /-- **The semi-Fredholm estimate along a Floer pair of pants.** Let `H_q` be jointly `C²`
 period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive end Hamiltonians
@@ -1014,41 +1029,11 @@ theorem
         C' * ((∫ z, w z * ‖ω.floerLinearizationAdjoint
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
-  -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
-  -- second the core `S_{R₀ + 1}`.
-  set R₀ := 1 + ∑ q, |R q|
-  have hsum : 0 ≤ ∑ q, |R q| := Finset.sum_nonneg fun q _ ↦ abs_nonneg _
-  have hR (q : Puncture) : R q < R₀ := by
-    have := (le_abs_self (R q)).trans
-      (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
-    linarith
-  obtain ⟨C₁, hC₁, h₁⟩ :=
-    exists_forall_sum_setIntegral_covectorPullback_add_setIntegral_le_of_ends_aux ω hJ hKs hKt hu
-      hc hw hwc hwS hend (by linarith) hR
-  obtain ⟨C₂, hC₂, h₂⟩ :=
-    exists_forall_sum_setIntegral_covectorPullback_add_setIntegral_le_of_ends_aux ω hJ hKs hKt hu
-      hc hw hwc hwS hend (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans (lt_add_one _)
-  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by positivity, fun η hη hηc hηS ↦ ?_⟩
-  have e₁ := h₁ hη hηc hηS
-  have e₂ := h₂ hη hηc hηS
-  have hX : 0 ≤ ∫ z, w z * ‖ω.floerLinearizationAdjoint
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
-    integral_nonneg fun z ↦ mul_nonneg (hw z) (sq_nonneg _)
-  have hY : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖η z‖ ^ 2 ≤
-      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1 + 1), ‖η z‖ ^ 2 :=
-    setIntegral_mono_set ((hη.continuous.norm.pow 2).continuousOn.integrableOn_compact
-      (isCompact_preimage_truncation _)) (ae_of_all _ fun _ ↦ sq_nonneg _)
-      (.of_forall fun _ hz ↦ preimage_mono (truncation_mono (by linarith)) hz)
-  have hcore₀ : 0 ≤ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀,
-      sobolevDensity η z :=
-    setIntegral_nonneg (isCompact_preimage_truncation _).measurableSet fun z _ ↦
-      sobolevDensity_nonneg η z
-  have hends₀ : 0 ≤ ∑ q, ∫ ζ in Ioi (R₀ + 1 + 1) ×ˢ Icc (0 : ℝ) 1,
-      sobolevDensity (covectorPullback (positiveEndChart q)
-        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ :=
-    Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
-      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
-  nlinarith [mul_le_mul_of_nonneg_left hY hC₁, mul_nonneg hC₂ hX]
+  exact exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_height
+    (P := fun q η ↦ covectorPullback (positiveEndChart q)
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) fun _ hR₀ hR ↦
+      exists_forall_sum_setIntegral_covectorPullback_add_setIntegral_le_of_ends_aux ω hJ hKs hKt
+        hu hc hw hwc hwS hend hR₀ hR
 
 /-- **The semi-Fredholm estimate of the formal adjoint along a Floer pair of pants.** Let `u` be a
 `C¹` solution on `S = ℂ ∖ {0, 1}` of the Floer equation for the pair-of-pants perturbation of
