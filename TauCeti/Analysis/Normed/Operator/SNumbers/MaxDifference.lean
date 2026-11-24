@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.SNumbers.Hilbert
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 import TauCeti.LinearAlgebra.Matrix.CornerMinor
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -107,14 +108,6 @@ private instance (n : ℕ) :
       ‖p.1‖ ≤ 1 ∧ ‖p.2‖ ≤ 1} :=
   ⟨⟨0, by simp, by simp⟩⟩
 
-private theorem nnnorm_det_euclideanSpace_le_pow {n : ℕ}
-    (S : EuclideanSpace 𝕜 (Fin n) →L[𝕜] EuclideanSpace 𝕜 (Fin n)) :
-    ‖S.det‖₊ ≤ ‖S‖₊ ^ n := by
-  rw [S.nnnorm_det_eq_prod_singularValue, finrank_euclideanSpace_fin]
-  calc ∏ i ∈ Finset.range n, S.singularValue i
-      ≤ ∏ _ ∈ Finset.range n, ‖S‖₊ := Finset.prod_le_prod fun i _ ↦ S.singularValue_le_nnnorm i
-    _ = ‖S‖₊ ^ n := by simp
-
 private theorem nnnorm_det_comp_comp_le_pow_nnnorm (T : E →L[𝕜] F) {n : ℕ}
     {A : EuclideanSpace 𝕜 (Fin n) →L[𝕜] E} {B : F →L[𝕜] EuclideanSpace 𝕜 (Fin n)}
     (hA : ‖A‖ ≤ 1) (hB : ‖B‖ ≤ 1) :
@@ -125,7 +118,10 @@ private theorem nnnorm_det_comp_comp_le_pow_nnnorm (T : E →L[𝕜] F) {n : ℕ
           (opNNNorm_comp_le _ _).trans (mul_le_mul_right (opNNNorm_comp_le _ _) _)
       _ ≤ 1 * (‖T‖₊ * 1) := by gcongr <;> assumption_mod_cast
       _ = ‖T‖₊ := by simp
-  exact (nnnorm_det_euclideanSpace_le_pow _).trans (pow_le_pow_left' hnorm n)
+  have hdet : ‖(B ∘L T ∘L A).det‖₊ ≤ ‖B ∘L T ∘L A‖₊ ^ n := by
+    simpa only [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_pow, finrank_euclideanSpace_fin] using
+      (B ∘L T ∘L A).norm_det_le_opNorm_pow
+  exact hdet.trans (pow_le_pow_left' hnorm n)
 
 private theorem bddAbove_range_nnnorm_det_comp_comp (T : E →L[𝕜] F) (n : ℕ) :
     BddAbove (Set.range fun p :
@@ -200,15 +196,18 @@ theorem nnnorm_det_comp_comp_le_detNumber {n : ℕ}
       rw [Subsingleton.elim (B ∘L T ∘L A)
         (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin 0))), det_id]
     simp [hdet]
+  have hdet_pow : ‖(B ∘L T ∘L A).det‖₊ ≤ ‖B ∘L T ∘L A‖₊ ^ n := by
+    simpa only [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_pow, finrank_euclideanSpace_fin] using
+      (B ∘L T ∘L A).norm_det_le_opNorm_pow
   rcases eq_or_ne ‖B‖₊ 0 with hB | hB
   · have h0 : ‖B ∘L T ∘L A‖₊ = 0 := le_antisymm
       ((opNNNorm_comp_le _ _).trans (by simp [hB])) bot_le
-    simpa [hB, zero_pow hn.ne', h0] using nnnorm_det_euclideanSpace_le_pow (B ∘L T ∘L A)
+    simpa [hB, zero_pow hn.ne', h0] using hdet_pow
   rcases eq_or_ne ‖A‖₊ 0 with hA | hA
   · have h0 : ‖B ∘L T ∘L A‖₊ = 0 := le_antisymm
       ((opNNNorm_comp_le _ _).trans
         ((mul_le_mul_right (opNNNorm_comp_le _ _) _).trans (by simp [hA]))) bot_le
-    simpa [hA, zero_pow hn.ne', h0] using nnnorm_det_euclideanSpace_le_pow (B ∘L T ∘L A)
+    simpa [hA, zero_pow hn.ne', h0] using hdet_pow
   have hA₀ : ‖A‖ ≠ 0 := by rwa [← coe_nnNorm, NNReal.coe_ne_zero]
   have hB₀ : ‖B‖ ≠ 0 := by rwa [← coe_nnNorm, NNReal.coe_ne_zero]
   have hA₁ := smul_inv_smul₀ (RCLike.ofReal_ne_zero (K := 𝕜) |>.mpr hA₀) A
@@ -243,8 +242,7 @@ theorem detNumber_one (T : E →L[𝕜] F) : T.detNumber 1 = ‖T‖₊ := by
   let A : EuclideanSpace 𝕜 (Fin 1) →L[𝕜] E := (EuclideanSpace.proj 0).smulRight x
   let B : F →L[𝕜] EuclideanSpace 𝕜 (Fin 1) := g.smulRight (e 0)
   have hA : ‖A‖₊ ≤ ‖x‖₊ := opNNNorm_le_bound _ _ fun z ↦ by
-    simpa [A, nnNorm_smul, mul_comm] using
-      mul_le_mul_right (show ‖z 0‖₊ ≤ ‖z‖₊ from PiLp.norm_apply_le z 0) ‖x‖₊
+    simpa [A, nnNorm_smul, mul_comm] using mul_le_mul_right (PiLp.nnNorm_apply_le z 0) ‖x‖₊
   have hB : ‖B‖₊ ≤ 1 := by
     rw [nnNorm_smulRight_apply]
     have hen : ‖e 0‖₊ = 1 := NNReal.coe_eq_one.mp he
@@ -314,9 +312,10 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 theorem detNumber_id_euclideanSpace (n : ℕ) :
     (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin n))).detNumber n = 1 := by
   set I := ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin n))
-  refine le_antisymm ((I.detNumber_le_pow_nnnorm n).trans
-    ((pow_le_pow_left' (show ‖I‖₊ ≤ 1 from mod_cast norm_id_le) n).trans_eq (one_pow n))) ?_
   have hI : ‖I‖ ≤ 1 := norm_id_le
+  have hI_nn : ‖I‖₊ ≤ 1 := mod_cast hI
+  refine le_antisymm ((I.detNumber_le_pow_nnnorm n).trans
+    ((pow_le_pow_left' hI_nn n).trans_eq (one_pow n))) ?_
   simpa [I] using I.nnnorm_det_comp_comp_le_detNumber_of_norm_le_one hI hI
 
 end Normalization
@@ -326,23 +325,6 @@ section Recursions
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-private theorem norm_comp_le_one {X Y Z : Type*}
-    [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
-    [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-    [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
-    {g : Y →L[𝕜] Z} {f : X →L[𝕜] Y} (hg : ‖g‖ ≤ 1) (hf : ‖f‖ ≤ 1) :
-    ‖g ∘L f‖ ≤ 1 := by
-  have hg' : ‖g‖₊ ≤ 1 := mod_cast hg
-  have hf' : ‖f‖₊ ≤ 1 := mod_cast hf
-  exact NNReal.coe_le_coe.mpr ((opNNNorm_comp_le g f).trans (mul_le_one' hg' hf'))
-
-private theorem toMatrix_basisFun_apply {m : ℕ}
-    (S : EuclideanSpace 𝕜 (Fin m) →L[𝕜] EuclideanSpace 𝕜 (Fin m)) (i j : Fin m) :
-    LinearMap.toMatrix (EuclideanSpace.basisFun (Fin m) 𝕜).toBasis
-      (EuclideanSpace.basisFun (Fin m) 𝕜).toBasis S.toLinearMap i j =
-      S (EuclideanSpace.single j 1) i := by
-  simp [LinearMap.toMatrix_apply, EuclideanSpace.basisFun_repr]
 
 /-- Isometric zero-extension `ℓ₂ᵏ → ℓ₂ᵏ⁺¹` onto the first `k` coordinates. -/
 private noncomputable def inclInit (k : ℕ) :
@@ -445,13 +427,6 @@ private theorem norm_extendLeft_le_one {k : ℕ} {B : F →L[𝕜] EuclideanSpac
     pow_le_pow_left₀ (norm_nonneg _) ((φ.le_opNorm y).trans (by nlinarith [norm_nonneg y])) 2
   nlinarith [sq_nonneg a, sq_nonneg b]
 
-private theorem sum_smul_apply_single {k : ℕ} {G : Type*} [SeminormedAddCommGroup G]
-    [NormedSpace 𝕜 G] (L : EuclideanSpace 𝕜 (Fin k) →L[𝕜] G) (u : EuclideanSpace 𝕜 (Fin k)) :
-    ∑ j : Fin k, u j • L (EuclideanSpace.single j 1) = L u := by
-  simp_rw [← map_smul, ← map_sum]
-  congr 1
-  simpa [EuclideanSpace.basisFun_repr] using (EuclideanSpace.basisFun (Fin k) 𝕜).sum_repr u
-
 private theorem toMatrix_extendLeft_comp_extendRight_blocks {k : ℕ} (T : E →L[𝕜] F)
     (A : EuclideanSpace 𝕜 (Fin k) →L[𝕜] E) (B : F →L[𝕜] EuclideanSpace 𝕜 (Fin k))
     (x : E) (φ : StrongDual 𝕜 F) (a b : ℝ) :
@@ -464,22 +439,18 @@ private theorem toMatrix_extendLeft_comp_extendRight_blocks {k : ℕ} (T : E →
         ((a * b : ℝ) : 𝕜) * φ (T (A (EuclideanSpace.single j 1)))) ∧
       M (Fin.last k) (Fin.last k) = ((b ^ 2 : ℝ) : 𝕜) * φ (T x) := by
   refine ⟨fun i j ↦ ?_, fun i ↦ ?_, fun j ↦ ?_, ?_⟩
-  · refine (toMatrix_basisFun_apply _ i.castSucc j.castSucc).trans ?_
-    rw [comp_apply, comp_apply, extendRight_single_castSucc, map_smul, map_smul, PiLp.smul_apply,
-      extendLeft_apply_castSucc, smul_eq_mul]
-    push_cast; ring
-  · refine (toMatrix_basisFun_apply _ i.castSucc (Fin.last k)).trans ?_
-    rw [comp_apply, comp_apply, extendRight_single_last, map_smul, map_smul, PiLp.smul_apply,
-      extendLeft_apply_castSucc, smul_eq_mul]
-    push_cast; ring
-  · refine (toMatrix_basisFun_apply _ (Fin.last k) j.castSucc).trans ?_
-    rw [comp_apply, comp_apply, extendRight_single_castSucc, map_smul, map_smul, PiLp.smul_apply,
-      extendLeft_apply_last, smul_eq_mul]
-    push_cast; ring
-  · refine (toMatrix_basisFun_apply _ (Fin.last k) (Fin.last k)).trans ?_
-    rw [comp_apply, comp_apply, extendRight_single_last, map_smul, map_smul, PiLp.smul_apply,
-      extendLeft_apply_last, smul_eq_mul]
-    push_cast; ring
+  · simp [LinearMap.toMatrix_apply, extendRight_single_castSucc, extendLeft_apply_castSucc,
+      RCLike.real_smul_eq_coe_mul]
+    ring
+  · simp [LinearMap.toMatrix_apply, extendRight_single_last, extendLeft_apply_castSucc,
+      RCLike.real_smul_eq_coe_mul, RCLike.algebraMap_eq_ofReal]
+    ring
+  · simp [LinearMap.toMatrix_apply, extendRight_single_castSucc, extendLeft_apply_last,
+      RCLike.real_smul_eq_coe_mul, RCLike.algebraMap_eq_ofReal]
+    ring
+  · simp [LinearMap.toMatrix_apply, extendRight_single_last, extendLeft_apply_last,
+      RCLike.real_smul_eq_coe_mul]
+    ring
 
 /-- Schur-complement determinant identity for the bordered compression `B' ∘L T ∘L A'`. -/
 private theorem det_extendLeft_comp_extendRight {k : ℕ} (T : E →L[𝕜] F)
@@ -495,10 +466,15 @@ private theorem det_extendLeft_comp_extendRight {k : ℕ} (T : E →L[𝕜] F)
   set e₁ := (EuclideanSpace.basisFun (Fin (k + 1)) 𝕜).toBasis
   set M := LinearMap.toMatrix e₁ e₁ (extendLeft B φ a b ∘L T ∘L extendRight A x a b).toLinearMap
   let w : Fin k → 𝕜 := fun j ↦ ((b / a : ℝ) : 𝕜) * u j
+  have hTAu : T (A u) = ∑ j : Fin k, u j • T (A (EuclideanSpace.single j 1)) := by
+    have hu_sum : ∑ j : Fin k, u j • EuclideanSpace.single j (1 : 𝕜) = u := by
+      simpa using (EuclideanSpace.basisFun (Fin k) 𝕜).sum_repr u
+    simp_rw [← map_smul, ← map_sum, hu_sum]
   have hw (i : Fin k) : M i.castSucc (Fin.last k) = ∑ j : Fin k, M i.castSucc j.castSucc * w j := by
     have hlin : ∑ j : Fin k, u j * (B (T (A (EuclideanSpace.single j 1))) i) = B (T x) i := by
-      simpa [Finset.sum_apply, hu] using
-        congrArg (fun v ↦ v i) (sum_smul_apply_single (B ∘L T ∘L A) u)
+      have hBTx : B (T x) = B (T (A u)) := hu.symm
+      rw [hBTx, hTAu, map_sum]
+      simp [map_smul]
     have hab' : ((a ^ 2 : ℝ) : 𝕜) * ((b / a : ℝ) : 𝕜) = ((a * b : ℝ) : 𝕜) := by
       norm_cast; field_simp
     rw [hM_cl, ← hlin, ← hab', Finset.mul_sum]
@@ -507,7 +483,8 @@ private theorem det_extendLeft_comp_extendRight {k : ℕ} (T : E →L[𝕜] F)
   have hschur : M (Fin.last k) (Fin.last k) - ∑ j : Fin k, M (Fin.last k) j.castSucc * w j =
       ((b ^ 2 : ℝ) : 𝕜) * φ (T x - T (A u)) := by
     have hlin : ∑ j : Fin k, u j * φ (T (A (EuclideanSpace.single j 1))) = φ (T (A u)) := by
-      simpa using sum_smul_apply_single (φ ∘L T ∘L A) u
+      rw [hTAu, map_sum]
+      simp [map_smul]
     have hbb : ((a * b : ℝ) : 𝕜) * ((b / a : ℝ) : 𝕜) = ((b ^ 2 : ℝ) : 𝕜) := by
       norm_cast; field_simp
     have hsum : ∑ j : Fin k, M (Fin.last k) j.castSucc * w j = ((b ^ 2 : ℝ) : 𝕜) * φ (T (A u)) := by
@@ -518,33 +495,10 @@ private theorem det_extendLeft_comp_extendRight {k : ℕ} (T : E →L[𝕜] F)
   have hsub : M.submatrix Fin.castSucc Fin.castSucc =
       ((a ^ 2 : ℝ) : 𝕜) • LinearMap.toMatrix e₀ e₀ (B ∘L T ∘L A).toLinearMap := by
     ext i j
-    refine (hM_cc i j).trans ?_
-    simpa only [Matrix.smul_apply, smul_eq_mul, comp_apply] using
-      congrArg (((a ^ 2 : ℝ) : 𝕜) * ·) (toMatrix_basisFun_apply (B ∘L T ∘L A) i j).symm
+    simp [hM_cc, e₀, LinearMap.toMatrix_apply]
   rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix e₁,
     M.det_eq_sub_sum_mul_det_submatrix_castSucc_of_col hw, hschur, hsub, Matrix.det_smul,
     Fintype.card_fin, LinearMap.det_toMatrix, ContinuousLinearMap.det]
-
-/-- Rank bound for an operator factoring through `EuclideanSpace 𝕜 (Fin k)`. -/
-private theorem rank_comp_euclideanSpace_le {k : ℕ}
-    (L : EuclideanSpace 𝕜 (Fin k) →L[𝕜] F) (R : E →L[𝕜] EuclideanSpace 𝕜 (Fin k)) :
-    (L ∘L R).rank ≤ k := by
-  have hrank : Module.rank 𝕜 (EuclideanSpace 𝕜 (Fin k)) = k := by
-    rw [(WithLp.linearEquiv 2 𝕜 (Fin k → 𝕜)).rank_eq, rank_fin_fun]
-  have hL : L.rank ≤ k := by
-    have h := (lift_rank_range_le L.toLinearMap).trans_eq (by rw [hrank, Cardinal.lift_natCast])
-    exact Cardinal.lift_le_nat_iff.mp h
-  exact (Submodule.rank_mono (LinearMap.range_comp_le_range _ _)).trans hL
-
-private theorem exists_comp_eq_id_of_det_ne_zero {k : ℕ}
-    {S : EuclideanSpace 𝕜 (Fin k) →L[𝕜] EuclideanSpace 𝕜 (Fin k)} (hdet : S.det ≠ 0) :
-    ∃ S_inv : EuclideanSpace 𝕜 (Fin k) →L[𝕜] EuclideanSpace 𝕜 (Fin k),
-      ∀ y, S (S_inv y) = y := by
-  obtain ⟨uS, huS⟩ := (LinearMap.isUnit_iff_isUnit_det S.toLinearMap).mpr hdet.isUnit
-  refine ⟨(↑uS⁻¹ : EuclideanSpace 𝕜 (Fin k) →ₗ[𝕜] EuclideanSpace 𝕜 (Fin k)).toContinuousLinearMap,
-    fun y ↦ ?_⟩
-  rw [LinearMap.coe_toContinuousLinearMap', ← ContinuousLinearMap.coe_coe,
-    ← mul_apply_eq_comp, ← huS, Units.mul_inv, one_apply_eq_self]
 
 omit [NormedSpace 𝕜 F] in
 /-- Scalar and `ℝ≥0`-norm normalization for the bordered Schur-complement determinant product with
@@ -567,14 +521,20 @@ private theorem le_detNumber_succ_of_det_ne_zero {k : ℕ} (hk : 0 < k) (T : E �
     ((k : ℝ≥0) ^ k / ((k : ℝ≥0) + 1) ^ (k + 1)) * T.singularValue k *
       ‖(B ∘L T ∘L A).det‖₊ ≤ T.detNumber (k + 1) := by
   set S := B ∘L T ∘L A
-  obtain ⟨S_inv, hS_inv⟩ := exists_comp_eq_id_of_det_ne_zero hdet
-  set R : E →L[𝕜] F := (T ∘L A) ∘L (S_inv ∘L B ∘L T)
+  let eS := S.toContinuousLinearEquivOfDetNeZero hdet
+  set R : E →L[𝕜] F :=
+    (T ∘L A) ∘L ((eS.symm : EuclideanSpace 𝕜 (Fin k) →L[𝕜] EuclideanSpace 𝕜 (Fin k)) ∘L B ∘L T)
   set c : ℝ≥0 := (k : ℝ≥0) ^ k / ((k : ℝ≥0) + 1) ^ (k + 1)
   have hc_pos : 0 < c := div_pos (pow_pos (Nat.cast_pos.mpr hk) k)
     (pow_pos (add_pos (Nat.cast_pos.mpr hk) zero_lt_one) (k + 1))
   have hS_pos : 0 < ‖S.det‖₊ := nnNorm_pos.mpr hdet
-  have hR_le : T.singularValue k ≤ ‖T - R‖₊ :=
-    T.singularValue_le_nnnorm_sub (R := R) (rank_comp_euclideanSpace_le (T ∘L A) (S_inv ∘L B ∘L T))
+  have hTA0 : (T ∘L A).singularValue k = 0 :=
+    (T ∘L A).singularValue_eq_zero_of_rank_domain_le
+      (by rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin])
+  have hR0 : R.singularValue k = 0 :=
+    le_antisymm (((T ∘L A).singularValue_comp_le_right _ k).trans_eq (by simp [hTA0])) bot_le
+  have hR_le : T.singularValue k ≤ ‖T - R‖₊ := by
+    simpa only [add_sub_cancel, hR0, zero_add] using R.singularValue_add_le (T - R) k
   refine (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hR_le hc_pos.le) hS_pos.le).trans ?_
   have hcS : 0 < c * ‖S.det‖₊ := mul_pos hc_pos hS_pos
   rw [mul_assoc, mul_left_comm c, ← le_div_iff₀ hcS]
@@ -588,9 +548,12 @@ private theorem le_detNumber_succ_of_det_ne_zero {k : ℕ} (hk : 0 < k) (T : E �
   have ha_sq : a ^ 2 = (k : ℝ) / ((k : ℝ) + 1) := Real.sq_sqrt (div_nonneg hk_real.le hk1_real.le)
   have hb_sq : b ^ 2 = 1 / ((k : ℝ) + 1) := Real.sq_sqrt (div_nonneg zero_le_one hk1_real.le)
   have hab : a ^ 2 + b ^ 2 = 1 := by rw [ha_sq, hb_sq, ← add_div, div_self hk1_real.ne']
-  let u : EuclideanSpace 𝕜 (Fin k) := S_inv (B (T x))
-  have hdet' := det_extendLeft_comp_extendRight (b := b) T A B x φ (hS_inv (B (T x))) ha_pos.ne'
-  have hRx : T x - T (A u) = (T - R) x := by simp only [R, u, sub_apply, comp_apply]
+  let u : EuclideanSpace 𝕜 (Fin k) := eS.symm (B (T x))
+  have hu : S u = B (T x) :=
+    (S.toContinuousLinearEquivOfDetNeZero_apply hdet u).symm.trans (eS.apply_symm_apply (B (T x)))
+  have hdet' := det_extendLeft_comp_extendRight (b := b) T A B x φ hu ha_pos.ne'
+  have hRx : T x - T (A u) = (T - R) x := by
+    simp only [R, u, sub_apply, comp_apply, ContinuousLinearEquiv.coe_coe]
   have hnnorm : ‖(extendLeft B φ a b ∘L T ∘L extendRight A x a b).det‖₊ =
       ‖(T - R) x‖₊ * (c * ‖S.det‖₊) := by
     rw [hdet', hRx, hφx, nnnorm_ofReal_sq_mul_norm_mul_pow ha_sq hb_sq]
@@ -644,9 +607,10 @@ private theorem toMatrix_projInit_comp_inclInit_eq_diagonal {n : ℕ}
   -- `Fin.castLE (Nat.le_succ n)` and `Fin.castSucc` are definitionally the same embedding,
   -- recorded explicitly so `Fin.castSucc_inj` applies.
   have hcast : Fin.castLE (Nat.le_succ n) i = i.castSucc := rfl
-  refine (toMatrix_basisFun_apply _ i j).trans ?_
-  simp only [comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-    LinearIsometryEquiv.coe_toLinearIsometry]
+  rw [LinearMap.toMatrix_apply]
+  simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.coe_toBasis_repr_apply,
+    EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply, coe_coe, comp_apply,
+    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
   rw [hJ_apply, he₁, hS_apply, U.symm_apply_apply, map_smul, PiLp.smul_apply,
     projInit, inclInit, EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply,
     EuclideanSpace.take_apply, hcast]
@@ -670,10 +634,12 @@ private theorem prod_castSucc_singularValue_le_detNumber {n : ℕ} (T : E →L[�
     projInit n ∘L U.symm.toLinearIsometry.toContinuousLinearMap ∘L B
   have hJ : ‖inclInit (𝕜 := 𝕜) n‖ ≤ 1 := LinearIsometry.norm_toContinuousLinearMap_le _
   have hP : ‖projInit (𝕜 := 𝕜) n‖ ≤ 1 := by rw [projInit, LinearIsometryEquiv.norm_map]; exact hJ
-  have hA₀ : ‖A₀‖ ≤ 1 := norm_comp_le_one hA
-    (norm_comp_le_one V.symm.toLinearIsometry.norm_toContinuousLinearMap_le hJ)
-  have hB₀ : ‖B₀‖ ≤ 1 := norm_comp_le_one hP
-    (norm_comp_le_one U.symm.toLinearIsometry.norm_toContinuousLinearMap_le hB)
+  have hA₀ : ‖A₀‖ ≤ 1 := (opNorm_comp_le _ _).trans <| by
+    rw [V.symm.toLinearIsometry.norm_toContinuousLinearMap_comp]
+    exact (mul_le_of_le_one_right (norm_nonneg _) hJ).trans hA
+  have hB₀ : ‖B₀‖ ≤ 1 := (opNorm_comp_le _ _).trans <| by
+    rw [U.symm.toLinearIsometry.norm_toContinuousLinearMap_comp]
+    exact (mul_le_of_le_one_right (norm_nonneg _) hB).trans hP
   have hcomp : B₀ ∘L T ∘L A₀ = projInit n ∘L U.symm.toLinearIsometry.toContinuousLinearMap ∘L S ∘L
       V.symm.toLinearIsometry.toContinuousLinearMap ∘L inclInit n := by
     simp only [A₀, B₀, S, comp_assoc]
@@ -761,8 +727,9 @@ theorem singularValue_le_exp_mul_hilbertNumber (T : E →L[𝕜] F) (n : ℕ) :
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
   have h1n : ((n : ℝ) + 1) / (n : ℝ) ≤ Real.exp (1 / (n : ℝ)) := by
-    have h := Real.add_one_le_exp (1 / (n : ℝ))
-    rwa [show 1 / (n : ℝ) + 1 = ((n : ℝ) + 1) / (n : ℝ) by field_simp; ring] at h
+    have hdiv : 1 / (n : ℝ) + 1 = ((n : ℝ) + 1) / (n : ℝ) := by field_simp; ring
+    rw [← hdiv]
+    exact Real.add_one_le_exp (1 / (n : ℝ))
   have hpow : (((n : ℝ) + 1) / (n : ℝ)) ^ n ≤ Real.exp 1 := by
     calc (((n : ℝ) + 1) / (n : ℝ)) ^ n
         ≤ Real.exp (1 / (n : ℝ)) ^ n := pow_le_pow_left₀ (by positivity) h1n n
