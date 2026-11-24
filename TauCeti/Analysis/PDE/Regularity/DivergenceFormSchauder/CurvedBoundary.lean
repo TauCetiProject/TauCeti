@@ -126,8 +126,8 @@ functions, with `a' = pullbackPrincipal Φ a`, `f' = pullbackDensity Φ f` and t
 private theorem energyFormH1_restrictL_w1pCompL_eq
     {W B V D H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hVW : V ≤ W) (hDWΩ : D ≤ W ⊓ Ω)
     (hΦB : Wkp.IsChangeOfVariables 1 B V Φ L 1) (hΦD : Wkp.IsChangeOfVariables 1 (B ⊓ H) D Φ L 1)
-    (hΨD : Wkp.IsChangeOfVariables 1 D (B ⊓ H) Ψ L 1) (hΨΦ : ∀ y, Ψ (Φ y) = y)
-    (hΦΨ : ∀ x, Φ (Ψ x) = x)
+    (hΨD : Wkp.IsChangeOfVariables 1 D (B ⊓ H) Ψ L 1) (hΨΦ : LeftInvOn Ψ Φ (B ⊓ H))
+    (hΦΨ : RightInvOn Ψ Φ D)
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {u : W1p volume W 2}
@@ -162,7 +162,7 @@ private theorem energyFormH1_restrictL_w1pCompL_eq
   -- Transfer it to the flat side.
   have h := energyFormH1_compL_eq_setIntegral_add_setIntegral_inner hΦD.differentiableOn
     hΦD.injOn hΦD.mapsTo hΦD.norm_fderiv_le hΦD.pos hΦD.le_abs_det hΨD.differentiableOn
-    hΨD.mapsTo hΨD.norm_fderiv_le hΨD.pos hΨD.le_abs_det (fun y _ => hΨΦ y) (fun x _ => hΦΨ x)
+    hΨD.mapsTo hΨD.norm_fderiv_le hΨD.pos hΨD.le_abs_det hΨΦ hΦΨ
     (b := 0) (c := 0) hD ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
   rw [pullbackDrift_zero, pullbackDensity_zero] at h
   have hcomp := hΦB.w1pCompL_restrictL_eq_restrictL_w1pCompL hΦD inf_le_left ENNReal.ofNat_ne_top
@@ -403,7 +403,7 @@ gradient of the flattened function `v = u ∘ Φ`, then `∇u(x) = DΨ(x)* P(Ψ 
 `x ∈ D = Φ (B ∩ H)`. -/
 private theorem ae_gradient_eq_adjoint_fderiv_apply
     (hΦ : Wkp.IsChangeOfVariables 1 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 1 U U' Ψ L 1)
-    (hΨΦ : ∀ y, Ψ (Φ y) = y) (hΦΨ : ∀ x, Φ (Ψ x) = x)
+    (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U)
     {W B V D H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hVW : V ≤ W) (hDU : D ≤ U)
     (hΦB : Wkp.IsChangeOfVariables 1 B V Φ L 1) (hΨD : Wkp.IsChangeOfVariables 1 D (B ⊓ H) Ψ L 1)
     (u : W1p volume W 2) {P : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
@@ -424,8 +424,8 @@ private theorem ae_gradient_eq_adjoint_fderiv_apply
       with y h1 h2 h3
     rw [← h1, h2, h3]
   filter_upwards [hΨD.ae_comp hflat, ae_restrict_mem D.isOpen.measurableSet] with x hx hxD
-  rw [hx, hΦΨ, ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-    hΨ.fderiv_comp_fderiv_eq_id hΦ (fun x _ => hΦΨ x) (fun y _ => hΨΦ y) (hDU hxD),
+  rw [hx, hΦΨ (hDU hxD), ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    hΨ.fderiv_comp_fderiv_eq_id hΦ hΦΨ hΨΦ (hDU hxD),
     ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
 
 end Back
@@ -441,7 +441,7 @@ variable {L : ℝ} {α : ℝ≥0}
 `ρ'` with `B(Φ y₀, ρ') ⊆ U`, on which `Ψ` is `L`-Lipschitz and maps into `B(y₀, r / 4)`. -/
 private theorem exists_radii_of_isChangeOfVariables
     (hΦ : Wkp.IsChangeOfVariables 1 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 1 U U' Ψ L 1)
-    (hΨΦ : ∀ y, Ψ (Φ y) = y) {y₀ : EuclideanSpace ℝ (Fin (n + 1))} (hy₀ : y₀ ∈ U') :
+    (hΨΦ : LeftInvOn Ψ Φ U') {y₀ : EuclideanSpace ℝ (Fin (n + 1))} (hy₀ : y₀ ∈ U') :
     ∃ r ρ' : ℝ, 0 < r ∧ 0 < ρ' ∧ 0 ≤ L ∧ ball y₀ r ⊆ U' ∧ ball (Φ y₀) ρ' ⊆ U ∧
       LipschitzOnWith L.toNNReal Φ (ball y₀ r) ∧ MapsTo Φ (ball y₀ r) (ball (Φ y₀) ((L + 1) * r)) ∧
       LipschitzOnWith L.toNNReal Ψ (ball (Φ y₀) ρ') ∧
@@ -469,7 +469,7 @@ private theorem exists_radii_of_isChangeOfVariables
     rw [mem_ball] at hy ⊢
     nlinarith
   · have h := (hlip hΨ hρ'U).dist_le_mul x hx (Φ y₀) (mem_ball_self hρ')
-    rw [Real.coe_toNNReal _ hL, hΨΦ] at h
+    rw [Real.coe_toNNReal _ hL, hΨΦ hy₀] at h
     rw [mem_ball] at hx ⊢
     have hx' : dist x (Φ y₀) < r / (4 * (L + 1)) := hx.trans_le (min_le_right _ _)
     have h4 : (L + 1) * (r / (4 * (L + 1))) = r / 4 := by field_simp
@@ -480,7 +480,7 @@ and `Φ` maps the part of `U'` in the half-space `H = {c₀ < ⟪y, ν⟫}` onto
 then `u ∘ Φ` vanishes almost everywhere on `B ∖ H`, for every ball `B ⊆ U'` that `Φ` maps into
 `V ⊆ W`. -/
 private theorem ae_value_w1pCompL_eq_zero (hΦ : Wkp.IsChangeOfVariables 1 U' U Φ L 1)
-    (hΨΦ : ∀ y, Ψ (Φ y) = y) (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = (Ω : Set _) ∩ U)
+    (hΨΦ : LeftInvOn Ψ Φ U') (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = (Ω : Set _) ∩ U)
     {W B V H : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     (hrU' : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ U') (hVW : V ≤ W)
     (hΦB : Wkp.IsChangeOfVariables 1 B V Φ L 1) {u : W1p volume W 2}
@@ -498,7 +498,7 @@ private theorem ae_value_w1pCompL_eq_zero (hΦ : Wkp.IsChangeOfVariables 1 U' U 
     rw [himage]
     exact ⟨hΦy, hΦ.mapsTo (hrU' hyB)⟩
   obtain ⟨y', hy', hyy'⟩ := hx'
-  have : y' = y := by rw [← hΨΦ y', hyy', hΨΦ]
+  have : y' = y := by rw [← hΨΦ hy'.2, hyy', hΨΦ (hrU' hyB)]
   exact (hH y).2 (this ▸ hy'.1)
 
 /-- **Integrability of Hölder data on a piece of finite measure.** On an open set `D` of finite
@@ -530,8 +530,8 @@ the flattened datum `f' = pullbackDensity Φ f` and a constant `c_G`,
 whenever `Φ` maps `B ∩ H` onto `D ⊆ S`. -/
 private theorem flat_data_le {W B V D H : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     (hΦB : Wkp.IsChangeOfVariables 1 B V Φ L 1) (hΦD : Wkp.IsChangeOfVariables 1 (B ⊓ H) D Φ L 1)
-    (hΨD : Wkp.IsChangeOfVariables 1 D (B ⊓ H) Ψ L 1) (hΨΦ : ∀ y, Ψ (Φ y) = y)
-    (hΦΨ : ∀ x, Φ (Ψ x) = x) (hVW : V ≤ W) {S : Set (EuclideanSpace ℝ (Fin (n + 1)))}
+    (hΨD : Wkp.IsChangeOfVariables 1 D (B ⊓ H) Ψ L 1) (hΨΦ : LeftInvOn Ψ Φ (B ⊓ H))
+    (hΦΨ : RightInvOn Ψ Φ D) (hVW : V ≤ W) {S : Set (EuclideanSpace ℝ (Fin (n + 1)))}
     (hDS : (D : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ S) {u : W1p volume W 2}
     {q : ℝ≥0∞} {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hf : MemLp f q (volume.restrict S))
     {KG cG : ℝ≥0} :
@@ -541,8 +541,7 @@ private theorem flat_data_le {W B V D H : Opens (EuclideanSpace ℝ (Fin (n + 1)
       max (cG : ℝ) (max 1 L) * (KG + (eLpNorm f q (volume.restrict S)).toReal + ‖u‖) := by
   have hfb : (eLpNorm (pullbackDensity Φ f) q (volume.restrict ((B : Set _) ∩ H))).toReal ≤
       (eLpNorm f q (volume.restrict S)).toReal :=
-    ENNReal.toReal_mono hf.eLpNorm_ne_top ((eLpNorm_pullbackDensity_le hΦD hΨD
-      (fun x _ => hΨΦ x) (fun x _ => hΦΨ x)
+    ENNReal.toReal_mono hf.eLpNorm_ne_top ((eLpNorm_pullbackDensity_le hΦD hΨD hΨΦ hΦΨ
       (hf.mono_measure (Measure.restrict_mono hDS le_rfl)).aestronglyMeasurable).trans
         (eLpNorm_mono_measure f (Measure.restrict_mono hDS le_rfl)))
   have hvb : ‖W1p.gradient (hΦB.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hVW u))‖ ≤
@@ -559,26 +558,26 @@ private theorem flat_data_le {W B V D H : Opens (EuclideanSpace ℝ (Fin (n + 1)
 
 /-- **The pieces of a flattening chart over a ball.** For an open `B ⊆ U'` there are open sets
 `V` and `D` such that `Φ` is a change of variables from `B` into `V` and from `B ∩ H` into `D`,
-with inverse `Ψ` from `D` into `B ∩ H`, where `D ⊆ V ∩ Ω ∩ U` and `D` contains every point of
+with inverse `Ψ` from `D` into `B ∩ H`, where `V ⊆ U`, `D ⊆ V ∩ Ω` and `D` contains every point of
 `Ω ∩ U` that `Ψ` maps into `B`. -/
 private theorem exists_opens_of_isChangeOfVariables
     (hΦ : Wkp.IsChangeOfVariables 1 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 1 U U' Ψ L 1)
-    (hΨΦ : ∀ y, Ψ (Φ y) = y) (hΨc : Continuous Ψ)
+    (hΨΦ : LeftInvOn Ψ Φ U')
     (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = (Ω : Set _) ∩ U)
     {B H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hH : ∀ y, y ∈ H ↔ c₀ < ⟪y, ν⟫_ℝ)
     (hBU' : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ U') :
     ∃ V D : Opens (EuclideanSpace ℝ (Fin (n + 1))),
       (∀ x ∈ (V : Set (EuclideanSpace ℝ (Fin (n + 1)))), Ψ x ∈ B) ∧ D ≤ V ∧
-      (D : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Ω ∧ D ≤ U ∧
+      (D : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Ω ∧ V ≤ U ∧
       (∀ x ∈ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) ∩ U, Ψ x ∈ B → x ∈ D) ∧
       Wkp.IsChangeOfVariables 1 B V Φ L 1 ∧ Wkp.IsChangeOfVariables 1 (B ⊓ H) D Φ L 1 ∧
       Wkp.IsChangeOfVariables 1 D (B ⊓ H) Ψ L 1 := by
   let V : Opens (EuclideanSpace ℝ (Fin (n + 1))) :=
-    ⟨U ∩ Ψ ⁻¹' B, U.isOpen.inter (B.isOpen.preimage hΨc)⟩
+    ⟨U ∩ Ψ ⁻¹' B, hΨ.differentiableOn.continuousOn.isOpen_inter_preimage U.isOpen B.isOpen⟩
   have hΦB : Wkp.IsChangeOfVariables 1 B V Φ L 1 :=
     hΦ.mono_set (fun y hy => hBU' hy) fun y hy =>
-      ⟨hΦ.mapsTo (hBU' hy), by rw [mem_preimage, hΨΦ]; exact hy⟩
-  refine ⟨V, V ⊓ Ω, fun x hx => hx.2, inf_le_left, fun x hx => hx.2, fun x hx => hx.1.1,
+      ⟨hΦ.mapsTo (hBU' hy), by rw [mem_preimage, hΨΦ (hBU' hy)]; exact hy⟩
+  refine ⟨V, V ⊓ Ω, fun x hx => hx.2, inf_le_left, fun x hx => hx.2, fun x hx => hx.1,
     fun x hx hxB => ⟨⟨hx.2, hxB⟩, hx.1⟩, hΦB, ?_, ?_⟩
   · refine hΦ.mono_set (fun y hy => hBU' hy.1) fun y hy => ⟨hΦB.mapsTo hy.1, ?_⟩
     have hmem : Φ y ∈ (Ω : Set _) ∩ U := by
@@ -590,7 +589,7 @@ private theorem exists_opens_of_isChangeOfVariables
       rw [himage]
       exact ⟨hx.2, hx.1.1⟩
     obtain ⟨y, hy, rfl⟩ := hx'
-    exact ⟨hx.1.2, by rw [hΨΦ]; exact (hH y).2 hy.1⟩
+    exact ⟨hx.1.2, by rw [hΨΦ hy.2]; exact (hH y).2 hy.1⟩
 
 /-- **The folded flattened coefficients.** Let `Φ` and `Ψ` be mutually inverse changes of
 variables with Jacobian determinant one and `DΨ` `α`-Hölder, let `B(y₀, r) ⊆ U'` be centred on the
@@ -601,7 +600,7 @@ closed half-space into `t`. If `a` is uniformly elliptic and `α`-Hölder on `t`
 `α`-Hölder on all of `B(y₀, r)`, with explicit constants. -/
 private theorem folded_coefficient_bounds
     (hΦ : Wkp.IsChangeOfVariables 1 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 1 U U' Ψ L 1)
-    (hΨΦ : ∀ y, Ψ (Φ y) = y) (hΦΨ : ∀ x, Φ (Ψ x) = x) (hν : ν ≠ 0)
+    (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U) (hν : ν ≠ 0)
     {y₀ : EuclideanSpace ℝ (Fin (n + 1))} (hy₀ν : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
     (hrU' : ball y₀ r ⊆ U') {t : Set (EuclideanSpace ℝ (Fin (n + 1)))}
     (hst : MapsTo Φ (ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) t)
@@ -631,8 +630,8 @@ private theorem folded_coefficient_bounds
       (fun y hy => hΦ.norm_fderiv_le (k := 0) y (hsU' hy))
       (fun y hy w => by
         calc ‖w‖ = ‖fderiv ℝ Ψ (Φ y) (fderiv ℝ Φ y w)‖ := by
-              rw [← ContinuousLinearMap.comp_apply, hΦ.fderiv_comp_fderiv_eq_id hΨ
-                (fun x _ => hΨΦ x) (fun x _ => hΦΨ x) (hsU' hy), ContinuousLinearMap.id_apply]
+              rw [← ContinuousLinearMap.comp_apply, hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ
+                (hsU' hy), ContinuousLinearMap.id_apply]
           _ ≤ L * ‖fderiv ℝ Φ y w‖ := (ContinuousLinearMap.le_opNorm _ _).trans
               (mul_le_mul_of_nonneg_right (hΨ.norm_fderiv_le (k := 0) _ (hΦ.mapsTo (hsU' hy)))
                 (norm_nonneg _)))
@@ -645,9 +644,9 @@ private theorem folded_coefficient_bounds
     (s := ball y₀ r)
   -- On `s`, `DΨ ∘ Φ` is an `α`-Hölder left inverse of `DΦ` bounded by `L`, and `|det DΦ| = 1`.
   have hcomp (y) (hy : y ∈ s) :=
-    hΦ.fderiv_comp_fderiv_eq_id hΨ (fun x _ => hΨΦ x) (fun x _ => hΦΨ x) (hsU' hy)
+    hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ (hsU' hy)
   have habs (y) (hy : y ∈ s) : |(fderiv ℝ Φ y).det| = 1 :=
-    hΦ.abs_det_fderiv_eq_one hΨ (fun x _ => hΨΦ x) (fun x _ => hΦΨ x) (hsU' hy)
+    hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ (hsU' hy)
   have hTs : HolderOnWith (KT * L.toNNReal ^ (α : ℝ)) α (fun y => fderiv ℝ Ψ (Φ y)) s := by
     simpa only [mul_one, Function.comp_def] using
       hT.comp (hΦl.mono inter_subset_left).holderOnWith fun y hy => hΦ.mapsTo (hsU' hy)
@@ -692,8 +691,7 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
     {α β : ℝ≥0} (hβ : 0 < β) (hβ1 : β < 1) (hβα : β ≤ α) {q : ℝ≥0∞} (hq : 2 ≤ q)
     (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal)
     (hΦ : Wkp.IsChangeOfVariables 1 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 1 U U' Ψ L 1)
-    (hΨΦ : ∀ y, Ψ (Φ y) = y) (hΦΨ : ∀ x, Φ (Ψ x) = x) (hΦc : Continuous Φ)
-    (hΨc : Continuous Ψ) (hν : ν ≠ 0)
+    (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U) (hν : ν ≠ 0)
     (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = (Ω : Set _) ∩ U) {KT : ℝ≥0}
     (hT : HolderOnWith KT α (fderiv ℝ Ψ) U) {y₀ : EuclideanSpace ℝ (Fin (n + 1))}
     (hy₀ : y₀ ∈ U') (hy₀ν : ⟪y₀, ν⟫_ℝ = c₀) (lam Lam M : ℝ) :
@@ -748,13 +746,17 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
   -- The pieces of the chart: `Φ` maps `B` onto `V ⊆ W`, and `B ∩ H` onto `D' ⊆ V ∩ Ω`.
   set t := closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) ∩ ball (Φ y₀) ρ
   have hst : MapsTo Φ (ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) t := fun y hy =>
-    ⟨mapsTo_closure_of_image_eq hν U'.isOpen hΦc.continuousOn himage ⟨hy.2, hrU' hy.1⟩,
+    ⟨mapsTo_closure_of_image_eq hν U'.isOpen hΦ.differentiableOn.continuousOn himage
+      ⟨hy.2, hrU' hy.1⟩,
       hΦball hy.1⟩
   have hy₀s : y₀ ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ} := ⟨mem_ball_self hr, hy₀ν.ge⟩
-  obtain ⟨V, D', hVB, hDV, hDΩ, hD'U, hsubD, hΦB, hΦD, hΨD⟩ :=
-    exists_opens_of_isChangeOfVariables hΦ hΨ hΨΦ hΨc himage hH (B := B) hrU'
+  obtain ⟨V, D', hVB, hDV, hDΩ, hVU, hsubD, hΦB, hΦD, hΨD⟩ :=
+    exists_opens_of_isChangeOfVariables hΦ hΨ hΨΦ himage hH (B := B) hrU'
+  have hD'U : D' ≤ U := hDV.trans hVU
+  have hΨΦB : LeftInvOn Ψ Φ (B ⊓ H) := hΨΦ.mono fun y hy => hrU' hy.1
+  have hΦΨD : RightInvOn Ψ Φ D' := hΦΨ.mono hD'U
   have hVρ : (V : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball (Φ y₀) ρ := fun x hx => by
-    rw [← hΦΨ x]
+    rw [← hΦΨ (hVU hx)]
     exact hΦball (hVB x hx)
   have hVW : V ≤ W := fun x hx => hW (hVρ hx)
   have hD't : (D' : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ (Ω : Set _) ∩ ball (Φ y₀) ρ :=
@@ -798,7 +800,7 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
     hell hKa hGc hGD
   have hDWΩ : D' ≤ W ⊓ Ω := fun x hx => ⟨hVW (hDV hx), hDΩ hx⟩
   have hveq := energyFormH1_restrictL_w1pCompL_eq hVW hDWΩ hΦB hΦD hΨD
-    hΨΦ hΦΨ hu ha hGcD (hfD.mono_exponent hq)
+    hΨΦB hΦΨD hu ha hGcD (hfD.mono_exponent hq)
   -- On `B ∩ H` the folded coefficients are the flattened ones.
   have hBHm := (B ⊓ H).isOpen.measurableSet
   have hveqF : ∀ φ : 𝓓(B ⊓ H, ℝ), energyFormH1 (pullbackPrincipal Φ a ∘ F) 0 0
@@ -817,13 +819,14 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
     (volume.restrict ((B : Set _) ∩ H))).toReal + ‖W1p.gradient v‖
   -- The data of the flat problem are bounded by those of the curved one.
   have hQ₁ : Q₁ ≤ c₂ * Q :=
-    flat_data_le hΦB hΦD hΨD hΨΦ hΦΨ hVW hD't hf
+    flat_data_le hΦB hΦD hΨD hΨΦB hΦΨD hVW hD't hf
   -- Back to the curved side.
   set T := closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) ∩ ball (Φ y₀) ρ'
   have hTU : T ⊆ U := fun x hx => hρ'U hx.2
   have hΨT : MapsTo Ψ T (closedBall y₀ (r / 4) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) := fun x hx =>
     ⟨ball_subset_closedBall (hΨball hx.2),
-      mapsTo_setOf_le_inner_of_image_eq U.isOpen hΨc.continuousOn (fun y _ => hΨΦ y) himage
+      mapsTo_setOf_le_inner_of_image_eq U.isOpen hΨ.differentiableOn.continuousOn
+        (hΨΦ.mono inter_subset_right) himage
         ⟨hx.1, hρ'U hx.2⟩⟩
   have hTD : ∀ x ∈ T, ∀ x' ∈ T, edist x x' ≤ D := fun x hx x' hx' => by
     rw [edist_dist, ← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (by positivity)]
@@ -894,10 +897,8 @@ theorem exists_holderOnWith_gradient_of_graph {E : Type*} [NormedAddCommGroup E]
       (by exact_mod_cast hγ) hgraph
   set Φ := e.symm ∘ G₀.symm ∘ e
   set Ψ := e.symm ∘ G₀ ∘ e
-  have hΨΦ : ∀ y, Ψ (Φ y) = y := fun y => by simp [Φ, Ψ]
-  have hΦΨ : ∀ x, Φ (Ψ x) = x := fun x => by simp [Φ, Ψ]
-  have hΦc : Continuous Φ := e.symm.continuous.comp (G₀.symm.continuous.comp e.continuous)
-  have hΨc : Continuous Ψ := e.symm.continuous.comp (G₀.continuous.comp e.continuous)
+  have hΨΦ : LeftInvOn Ψ Φ U' := fun y _ => by simp [Φ, Ψ]
+  have hΦΨ : RightInvOn Ψ Φ U := fun x _ => by simp [Φ, Ψ]
   -- The boundary point lies on the hyperplane: it is in the closure of the flat side, but not
   -- in the flat side, since `Φ` fixes it and it is not in `Ω`.
   have hx₀Ω : e.symm 0 ∉ (Ω : Set _) := fun h => by
@@ -917,7 +918,7 @@ theorem exists_holderOnWith_gradient_of_graph {E : Type*} [NormedAddCommGroup E]
       ((contDiff_graphFlattening hγ).differentiable one_ne_zero)
       (holderWith_fderiv_graphFlattening (hγ.differentiable one_ne_zero) hγK)).holderOnWith _
   have h := exists_holderOnWith_gradient_of_isChangeOfVariables hβ hβ1 hβα hq hβq hΦ hΨ hΨΦ hΦΨ
-    hΦc hΨc hν himage hT hx₀U' hx₀ν lam Lam M
+    hν himage hT hx₀U' hx₀ν lam Lam M
   rwa [hΦx₀] at h
 
 end Main

@@ -330,8 +330,8 @@ theorem mapsTo_closure_of_image_eq {Omega U U' : Set F} {Φ : F → F} {ν : F} 
 
 /-- **The inverse of a flattening chart on the closure of the domain.** If `Φ` maps the part of
 `U'` in the open half-space `{c₀ < ⟪y, ν⟫}` onto `Ω ∩ U`, with `U` open, and `Ψ` is continuous on
-`U` and a left inverse of `Φ` there, then `Ψ` maps `closure Ω ∩ U` into the closed half-space
-`{c₀ ≤ ⟪y, ν⟫}`. -/
+`U` and `Ψ (Φ y) = y` for `y` in the part of `U'` in the open half-space, then `Ψ` maps
+`closure Ω ∩ U` into the closed half-space `{c₀ ≤ ⟪y, ν⟫}`. -/
 theorem mapsTo_setOf_le_inner_of_image_eq {Omega U U' : Set F} {Φ Ψ : F → F} {ν : F} {c₀ : ℝ}
     (hU : IsOpen U) (hΨc : ContinuousOn Ψ U) (hΨΦ : LeftInvOn Ψ Φ ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U'))
     (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = Omega ∩ U) :
