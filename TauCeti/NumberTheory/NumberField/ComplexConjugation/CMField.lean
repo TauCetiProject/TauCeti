@@ -82,8 +82,8 @@ footnote 3). -/
 theorem star_comp (σ : ℂ →+* ℂ) (φ : K →+* ℂ) : star (σ.comp φ) = σ.comp (star φ) := by
   ext x
   have h := NumberField.IsCMField.complexEmbedding_complexConj K (σ.comp φ) x
-  rw [comp_apply, NumberField.IsCMField.complexEmbedding_complexConj K φ x] at h
-  exact h.symm
+  simpa only [star_apply, comp_apply, Complex.star_def,
+    NumberField.IsCMField.complexEmbedding_complexConj K φ x] using h.symm
 
 end RingHom
 
