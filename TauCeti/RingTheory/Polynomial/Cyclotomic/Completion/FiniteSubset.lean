@@ -286,6 +286,20 @@ theorem continuous_restrict (hTS : T ⊆ S) : Continuous (restrict R hTS) :=
   (continuous_iff R T).mpr fun U ↦ by
     simpa only [Function.comp_def, proj_restrict] using continuous_proj _
 
+@[simp]
+theorem restrict_rfl (R : Type*) [CommRing R] (S : Set ℕ) :
+    restrict R (Set.Subset.rfl : S ⊆ S) = AlgHom.id R (FiniteSubsetLimit R S) :=
+  AlgHom.ext fun _ ↦ ext fun _ ↦ by simp
+
+theorem restrict_rfl_apply (y : FiniteSubsetLimit R S) :
+    restrict R (Set.Subset.rfl : S ⊆ S) y = y := by
+  simp
+
+@[simp]
+theorem restrict_restrict {U : Set ℕ} (hUT : U ⊆ T) (hTS : T ⊆ S) (y : FiniteSubsetLimit R S) :
+    restrict R hUT (restrict R hTS y) = restrict R (hUT.trans hTS) y :=
+  ext fun _ ↦ by simp
+
 end Restrict
 
 section Map
@@ -310,6 +324,25 @@ theorem continuous_map (φ : R →+* R') : Continuous (map φ (S := S)) :=
   (continuous_iff R' S).mpr fun U ↦ by
     simpa only [Function.comp_def, proj_map] using
       (CycloCompletion.continuous_map φ U.val).comp (continuous_proj U)
+
+@[simp]
+theorem map_id (R : Type*) [CommRing R] (S : Set ℕ) :
+    map (RingHom.id R) = RingHom.id (FiniteSubsetLimit R S) :=
+  RingHom.ext fun _ ↦ ext fun _ ↦ by simp
+
+theorem map_id_apply (y : FiniteSubsetLimit R S) : map (RingHom.id R) y = y := by
+  simp
+
+@[simp]
+theorem map_map {R'' : Type*} [CommRing R''] (ψ : R' →+* R'') (φ : R →+* R')
+    (y : FiniteSubsetLimit R S) : map ψ (map φ y) = map (ψ.comp φ) y :=
+  ext fun _ ↦ by simp
+
+/-- Order restriction and coefficient change commute. -/
+@[simp]
+theorem restrict_map (φ : R →+* R') {T : Set ℕ} (hTS : T ⊆ S) (y : FiniteSubsetLimit R S) :
+    restrict R' hTS (map φ y) = map φ (restrict R hTS y) :=
+  ext fun _ ↦ by simp
 
 end Map
 
