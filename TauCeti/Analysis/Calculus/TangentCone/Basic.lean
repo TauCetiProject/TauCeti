@@ -31,6 +31,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
+* `TauCeti.uniqueDiffOn_closedBall`: a closed ball of positive radius is a set of unique
+  differentiability.
 * `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
@@ -41,6 +43,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
   positive tangent cones onto positive tangent cones.
 * `HasDerivWithinAt.mem_posTangentConeAt`: the right derivative of a curve which frequently lies
   in a set, just after the base time, is a positive tangent vector of that set.
+* `TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt`: a map fixing a set has derivative the
+  identity on the tangent cone of that set.
 -/
 
 public section
@@ -112,6 +116,13 @@ theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : �
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
 
+/-- A closed ball of positive radius in a real normed space has unique derivatives, including on
+its boundary sphere. -/
+theorem TauCeti.uniqueDiffOn_closedBall {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (x : E) {r : ℝ} (hr : 0 < r) : UniqueDiffOn ℝ (Metric.closedBall x r) :=
+  uniqueDiffOn_convex (convex_closedBall x r)
+    ⟨x, mem_interior_iff_mem_nhds.mpr (Metric.closedBall_mem_nhds x hr)⟩
+
 /-- A real direction `v` is tangent to the horizontal line `{y : ℂ | y.im = c}` at each of its
 points. -/
 theorem TauCeti.mem_tangentConeAt_setOf_im_eq {c : ℝ} {v w : ℂ} (hw : w.im = c) (hv : v.im = 0) :
@@ -164,3 +175,11 @@ theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
       fun τ ⟨h, hτ⟩ ↦ ⟨le_of_lt hτ, h⟩
   refine posTangentConeAt_mono ((image_mono inter_subset_right).trans (image_preimage_subset x s))
     (by simpa using (hx.mono inter_subset_left).hasFDerivWithinAt.mapsTo_posTangentConeAt h1)
+
+/-- A map that is differentiable at `x ∈ s` and fixes every point of `s` has derivative the
+identity on the tangent cone of `s` at `x`. -/
+theorem TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {s : Set E} {r : E → E} {x v : E} (hr : DifferentiableAt 𝕜 r x)
+    (hrs : EqOn r id s) (hx : x ∈ s) (hv : v ∈ tangentConeAt 𝕜 s x) : fderiv 𝕜 r x v = v :=
+  hr.hasFDerivAt.hasFDerivWithinAt.unique_on
+    ((hasFDerivWithinAt_id x s).congr (fun _ hy ↦ hrs hy) (hrs hx)) hv

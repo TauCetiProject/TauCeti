@@ -113,7 +113,8 @@ blocks. -/
 
 end FromBlocksBasic
 
-@[simp] theorem ofMatrix_fromBlocks (M₁₁ : Matrix m₁ n₁ A) (M₁₂ : Matrix m₁ n₂ A)
+/-- `ofMatrix` sends `Matrix.fromBlocks` to `CStarMatrix.fromBlocks`. -/
+theorem ofMatrix_fromBlocks (M₁₁ : Matrix m₁ n₁ A) (M₁₂ : Matrix m₁ n₂ A)
     (M₂₁ : Matrix m₂ n₁ A) (M₂₂ : Matrix m₂ n₂ A) :
     ofMatrix (Matrix.fromBlocks M₁₁ M₁₂ M₂₁ M₂₂) =
       fromBlocks (ofMatrix M₁₁) (ofMatrix M₁₂) (ofMatrix M₂₁) (ofMatrix M₂₂) := (rfl)
@@ -272,7 +273,8 @@ def fromRows (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₂ n₁ A) :
     ofMatrix.symm (fromRows M₁ M₂) =
       Matrix.fromRows (ofMatrix.symm M₁) (ofMatrix.symm M₂) := (rfl)
 
-@[simp] theorem ofMatrix_fromRows (M₁ : Matrix m₁ n₁ A) (M₂ : Matrix m₂ n₁ A) :
+/-- `ofMatrix` sends `Matrix.fromRows` to `CStarMatrix.fromRows`. -/
+theorem ofMatrix_fromRows (M₁ : Matrix m₁ n₁ A) (M₂ : Matrix m₂ n₁ A) :
     ofMatrix (Matrix.fromRows M₁ M₂) = fromRows (ofMatrix M₁) (ofMatrix M₂) := (rfl)
 
 /-- Concatenate two `CStarMatrix` blocks with the same row index horizontally into a
@@ -284,7 +286,8 @@ def fromCols (M₁ : CStarMatrix m₁ n₁ A) (M₂ : CStarMatrix m₁ n₂ A) :
     ofMatrix.symm (fromCols M₁ M₂) =
       Matrix.fromCols (ofMatrix.symm M₁) (ofMatrix.symm M₂) := (rfl)
 
-@[simp] theorem ofMatrix_fromCols (M₁ : Matrix m₁ n₁ A) (M₂ : Matrix m₁ n₂ A) :
+/-- `ofMatrix` sends `Matrix.fromCols` to `CStarMatrix.fromCols`. -/
+theorem ofMatrix_fromCols (M₁ : Matrix m₁ n₁ A) (M₂ : Matrix m₁ n₂ A) :
     ofMatrix (Matrix.fromCols M₁ M₂) = fromCols (ofMatrix M₁) (ofMatrix M₂) := (rfl)
 
 /-- The conjugate transpose of a row-stacked `CStarMatrix` is the column-stacked conjugate

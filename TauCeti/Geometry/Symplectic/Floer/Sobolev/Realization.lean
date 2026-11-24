@@ -162,6 +162,20 @@ theorem floerJetCoeff_jet (ω : SymplecticForm V) (J : ℝ × ℝ → V → V �
   simp only [floerJetCoeff_apply, floerLinearization_eq_add, jet_apply, stdComplexLineReal_eq,
     stdComplexLineImag_eq]
 
+/-- **The coefficients of the linearized operator for a constant almost complex structure.** For a
+constant `J`, the perturbation `K = H dt` of an autonomous Hamiltonian and any map `u`, the
+coefficient field of the linearized Floer operator on jets is that of `∂s + J ∂t - J dX_H(u)`. -/
+theorem floerJetCoeff_const_eq (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H) u z =
+      firstOrderJetCoeff J.toLinearMap.toContinuousLinearMap
+        (-(J.toLinearMap.toContinuousLinearMap.comp
+          (fderiv ℝ (ω.hamiltonianVectorField H) (u z)))) := by
+  rw [floerJetCoeff_def]
+  congr 1
+  ext v
+  simp [floerLinearizationCoeff_apply, hamiltonianVectorField_const]
+
 /-- The linearized Floer operator `D_u` along `u`, as an operator from the Sobolev space
 `W^{1,2}(ℝ × S¹, V)` (`TauCeti.CylinderSobolev.H1`) to `L²(ℝ × S¹, V)`. It is `0` by convention
 when the coefficients of `D_u` are not essentially bounded on the cylinder. -/

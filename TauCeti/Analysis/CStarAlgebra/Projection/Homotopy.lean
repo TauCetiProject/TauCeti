@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import TauCeti.Algebra.Star.Projection.Unitary
-public import TauCeti.Analysis.CStarAlgebra.Unitary.Connected
 public import TauCeti.Topology.Algebra.Star.Unitary
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.Projection
@@ -37,8 +37,6 @@ identity path component of `unitary A`.
 * `IsStarProjection.exists_path_iff_exists_joined_one_unitary_conj`: `p` and `q` are joined by a
   continuous path of star projections if and only if `q = u * p * star u` for some `u : unitary A`
   with `Joined 1 u`.
-* `IsStarProjection.exists_path_of_isSelfAdjoint_unitary`: if `u : unitary A` is self-adjoint, then
-  `p` and `u * p * star u` are joined by a continuous path of star projections.
 
 ## References
 
@@ -333,13 +331,6 @@ theorem exists_path_iff_exists_joined_one_unitary_conj {p q : A} (hp : IsStarPro
       ∃ u : unitary A, Joined 1 u ∧ (u : A) * p * star (u : A) = q :=
   ⟨fun ⟨γ, hγ⟩ ↦ exists_joined_one_unitary_conj_of_path γ hγ,
     fun ⟨_, hu, hq⟩ ↦ hq ▸ exists_path_of_joined_one_unitary hp hu⟩
-
-/-- Conjugating a star projection `p` by a self-adjoint unitary `u` connects `p` to
-`u * p * star u` by a norm-continuous path of star projections. -/
-theorem exists_path_of_isSelfAdjoint_unitary {p : A} (hp : IsStarProjection p)
-    (u : unitary A) (hu : IsSelfAdjoint (u : A)) :
-    ∃ γ : Path p ((u : A) * p * star (u : A)), ∀ t, IsStarProjection (γ t) :=
-  ⟨Unitary.conjPath (Unitary.pathFromOneOfIsSelfAdjoint u hu) p, hp.conjPath _⟩
 
 end PathEquivalence
 

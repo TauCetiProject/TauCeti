@@ -366,69 +366,7 @@ theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableE
 section Stabilization
 
 variable [DecidableEq m] [DecidableEq n] [Ring A] [StarRing A]
-  {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMatrix n m A}
-
-private theorem isSelfAdjoint_fromBlocks_one_sub (hv : v * v.conjTranspose * v = v)
-    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
-    IsSelfAdjoint (fromBlocks (1 - p) v.conjTranspose v (1 - q)) := by
-  have heq := murrayVonNeumannEquiv_of_mul_conjTranspose_mul_self_eq hv
-  rw [hv₁, hv₂] at heq; rw [IsSelfAdjoint]
-  simp [heq.isStarProjection_left.one_sub.isSelfAdjoint.star_eq,
-    heq.isStarProjection_right.one_sub.isSelfAdjoint.star_eq]
-
-/-- Given a rectangular partial isometry `v : CStarMatrix n m A` with `v * vᴴ * v = v`,
-`vᴴ * v = p`, and `v * vᴴ = q`, the `2 × 2` block matrix `fromBlocks (1 - p) vᴴ v (1 - q)` is a
-self-adjoint unitary involution conjugating `diag(p, 0)` to `diag(0, q)`. -/
-def stabilizedSymmUnitary (hv : v * v.conjTranspose * v = v)
-    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
-    unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A) := by
-  have heq := murrayVonNeumannEquiv_of_mul_conjTranspose_mul_self_eq hv
-  rw [hv₁, hv₂] at heq
-  let w : CStarMatrix (m ⊕ n) (m ⊕ n) A := fromBlocks (1 - p) v.conjTranspose v (1 - q)
-  have hw_sa : star w = w := (isSelfAdjoint_fromBlocks_one_sub hv hv₁ hv₂).star_eq
-  have hvp : v * p = v := by rw [← hv₁, ← mul_assoc_rectangular, hv]
-  have hpv : p * v.conjTranspose = v.conjTranspose := by
-    simpa [conjTranspose_mul, ← star_eq_conjTranspose,
-      heq.isStarProjection_left.isSelfAdjoint.star_eq] using congrArg conjTranspose hvp
-  have hww : w * w = 1 := ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_mul, ofMatrix_symm_fromBlocks, ofMatrix_symm_sub, ofMatrix_symm_sub,
-      ofMatrix_symm_one, ofMatrix_symm_one]
-    exact Matrix.fromBlocks_one_sub_mul_self_of_mul_eq
-      (congrArg ofMatrix.symm hv₁) (congrArg ofMatrix.symm hv₂)
-      (congrArg ofMatrix.symm hpv) (congrArg ofMatrix.symm hvp)
-  exact ⟨w, Unitary.mem_iff.mpr ⟨by rw [hw_sa, hww], by rw [hw_sa, hww]⟩⟩
-
-@[simp] theorem coe_stabilizedSymmUnitary (hv : v * v.conjTranspose * v = v)
-    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
-    (stabilizedSymmUnitary hv hv₁ hv₂ : CStarMatrix (m ⊕ n) (m ⊕ n) A) =
-      fromBlocks (1 - p) v.conjTranspose v (1 - q) := (rfl)
-
-/-- The `2 × 2` block unitary `stabilizedSymmUnitary` is self-adjoint. -/
-theorem isSelfAdjoint_stabilizedSymmUnitary (hv : v * v.conjTranspose * v = v)
-    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
-    IsSelfAdjoint (stabilizedSymmUnitary hv hv₁ hv₂ : CStarMatrix (m ⊕ n) (m ⊕ n) A) :=
-  isSelfAdjoint_fromBlocks_one_sub hv hv₁ hv₂
-
-@[simp] theorem star_stabilizedSymmUnitary (hv : v * v.conjTranspose * v = v)
-    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
-    star (stabilizedSymmUnitary hv hv₁ hv₂) = stabilizedSymmUnitary hv hv₁ hv₂ :=
-  Subtype.ext (isSelfAdjoint_stabilizedSymmUnitary hv hv₁ hv₂).star_eq
-
-/-- The self-adjoint unitary `stabilizedSymmUnitary` conjugates `fromBlocks p 0 0 0` to
-`fromBlocks 0 0 0 q`. -/
-theorem stabilizedSymmUnitary_mul_fromBlocks_mul_star (hv : v * v.conjTranspose * v = v)
-    (hv₁ : v.conjTranspose * v = p) (hv₂ : v * v.conjTranspose = q) :
-    (stabilizedSymmUnitary hv hv₁ hv₂ : CStarMatrix (m ⊕ n) (m ⊕ n) A) * fromBlocks p 0 0 0 *
-        star (stabilizedSymmUnitary hv hv₁ hv₂ : CStarMatrix (m ⊕ n) (m ⊕ n) A) =
-      fromBlocks 0 0 0 q := by
-  rw [(isSelfAdjoint_stabilizedSymmUnitary hv hv₁ hv₂).star_eq, coe_stabilizedSymmUnitary]
-  have hvp : v * p = v := by rw [← hv₁, ← mul_assoc_rectangular, hv]
-  refine ofMatrix.symm.injective ?_
-  rw [ofMatrix_symm_mul, ofMatrix_symm_mul, ofMatrix_symm_fromBlocks, ofMatrix_symm_fromBlocks,
-    ofMatrix_symm_fromBlocks, ofMatrix_symm_sub, ofMatrix_symm_sub, ofMatrix_symm_one,
-    ofMatrix_symm_one, ofMatrix_symm_zero]
-  exact Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq
-    (congrArg ofMatrix.symm hv₁) (congrArg ofMatrix.symm hv₂) (congrArg ofMatrix.symm hvp)
+  {p : CStarMatrix m m A} {q : CStarMatrix n n A}
 
 /-- Over a unital `⋆`-ring, a star projection `p` is Murray–von Neumann equivalent to `q` if and
 only if `fromBlocks p 0 0 0` and `fromBlocks 0 0 0 q` are conjugate by a self-adjoint unitary in
@@ -440,19 +378,26 @@ theorem murrayVonNeumannEquiv_iff_exists_isSelfAdjoint_unitary_fromBlocks_zero_r
         IsSelfAdjoint (u : CStarMatrix (m ⊕ n) (m ⊕ n) A) ∧
           (u : CStarMatrix (m ⊕ n) (m ⊕ n) A) * fromBlocks p 0 0 0 *
             star (u : CStarMatrix (m ⊕ n) (m ⊕ n) A) = fromBlocks 0 0 0 q := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · obtain ⟨v, hv₁, hv₂, hvp⟩ := h.exists_matrix_mul_eq_self
-    have hv : v * v.conjTranspose * v = v := by rw [mul_assoc_rectangular, hv₁, hvp]
-    exact ⟨stabilizedSymmUnitary hv hv₁ hv₂, isSelfAdjoint_stabilizedSymmUnitary hv hv₁ hv₂,
-      stabilizedSymmUnitary_mul_fromBlocks_mul_star hv hv₁ hv₂⟩
-  · rintro ⟨u, -, hconj⟩
-    have hp0 : IsStarProjection (fromBlocks p 0 0 (0 : CStarMatrix n n A)) :=
-      isStarProjection_fromBlocks_zero.mpr ⟨hp, .zero _⟩
-    have hq : IsStarProjection q :=
-      (isStarProjection_fromBlocks_zero.mp (hconj ▸ hp0.star_right_conjugate u)).2
-    exact (murrayVonNeumannEquiv_fromBlocks_zero_right hp).trans
-      ((hconj ▸ murrayVonNeumannEquiv_unitary_conj hp0 u).trans
-        (murrayVonNeumannEquiv_fromBlocks_zero_left hq).symm)
+  rw [murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent]
+  refine ⟨fun h ↦ ?_, fun ⟨u, _, hconj⟩ ↦ ?_⟩
+  · obtain ⟨w, hw_sa, hw_u, hw_conj⟩ :=
+      h.exists_isSelfAdjoint_mem_unitary_mul_fromBlocks_mul_star
+    refine ⟨⟨ofMatrix w, ?_⟩, ?_, ?_⟩
+    · rw [Unitary.mem_iff] at hw_u ⊢
+      exact ⟨ofMatrix.symm.injective (by simpa [Matrix.star_eq_conjTranspose] using hw_u.1),
+        ofMatrix.symm.injective (by simpa [Matrix.star_eq_conjTranspose] using hw_u.2)⟩
+    · rw [IsSelfAdjoint]
+      exact ofMatrix.symm.injective <| by simpa [Matrix.star_eq_conjTranspose] using hw_sa.star_eq
+    · exact ofMatrix.symm.injective <| by simpa [Matrix.star_eq_conjTranspose] using hw_conj
+  · have hu₁ := congrArg ofMatrix.symm (Unitary.coe_star_mul_self u)
+    have hu₂ := congrArg ofMatrix.symm (Unitary.coe_mul_star_self u)
+    simp only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_one] at hu₁ hu₂
+    have hc := congrArg ofMatrix.symm hconj
+    refine Matrix.isMurrayVonNeumannEquivalent_of_mem_unitary_mul_fromBlocks_mul_star
+      (isStarProjection_ofMatrix_symm.mpr hp) (w := ofMatrix.symm (u : CStarMatrix _ _ A)) ?_ ?_
+    · rw [Unitary.mem_iff]
+      exact ⟨by rwa [Matrix.star_eq_conjTranspose], by rwa [Matrix.star_eq_conjTranspose]⟩
+    · simpa [Matrix.star_eq_conjTranspose] using hc
 
 end Stabilization
 

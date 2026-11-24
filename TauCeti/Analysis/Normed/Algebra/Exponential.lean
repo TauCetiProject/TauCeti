@@ -37,7 +37,6 @@ Baker--Campbell--Hausdorff expansion.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
   origin.
 * `NormedSpace.hasSum_exp_sub_one`: `exp x - 1 = ∑ₙ (n + 1)!⁻¹ • x ^ (n + 1)`.
-* `IsIdempotentElem.exp_smul`: `exp (z • p) = 1 + (exp z - 1) • p` for an idempotent `p`.
 * `NormedSpace.exp_add_smul`: `exp` is multiplicative on scalar multiples of a fixed element.
 * `TauCeti.norm_exp_le_mul_exp_of_norm_pow_le`: if `‖x ^ n‖ ≤ M * r ^ n` for every `n`, then
   `‖exp x‖ ≤ M * Real.exp r`; in particular `‖exp x‖ ≤ Real.exp ‖x‖` when `‖1‖ ≤ 1`
@@ -111,22 +110,6 @@ theorem isBigO_exp_sub_quadratic :
 theorem hasSum_exp_sub_one (x : A) :
     HasSum (fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • x ^ (n + 1)) (exp x - 1) := by
   simpa using (hasSum_nat_add_iff' 1).2 (exp_series_hasSum_exp' (𝕂 := 𝕂) x)
-
-/-- For an idempotent element `p` in a complete normed algebra,
-`exp (z • p) = 1 + (exp z - 1) • p`. -/
-theorem _root_.IsIdempotentElem.exp_smul {𝕂 A : Type*} [NontriviallyNormedField 𝕂]
-    [CharZero 𝕂] [ContinuousSMul ℚ 𝕂] [CompleteSpace 𝕂]
-    [NormedRing A] [NormedAlgebra 𝕂 A] [CompleteSpace A]
-    {p : A} (hp : IsIdempotentElem p) (z : 𝕂) :
-    exp (z • p) = 1 + (exp z - 1) • p := by
-  have h1 := (ContinuousLinearMap.smulRight (1 : 𝕂 →L[𝕂] 𝕂) p).hasSum (hasSum_exp_sub_one 𝕂 z)
-  have h2 : (fun n : ℕ ↦ (ContinuousLinearMap.smulRight (1 : 𝕂 →L[𝕂] 𝕂) p)
-      ((((n + 1)! : 𝕂))⁻¹ • z ^ (n + 1))) =
-      fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • (z • p) ^ (n + 1) := by
-    ext n
-    simp [smul_smul, smul_pow, hp.pow_succ_eq]
-  rw [h2] at h1
-  simpa [sub_eq_iff_eq_add'] using (hasSum_exp_sub_one 𝕂 (z • p)).unique h1
 
 /-! ### Additivity and cancellation in a complete normed algebra -/
 

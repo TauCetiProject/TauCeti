@@ -731,7 +731,7 @@ private theorem gaugeAdjoint_phaseGauge_sub_eq_zero_of_coulombMap_eq_zero (hj : 
   have hx1 : ContDiff ℝ 1 x := x.contDiff (by push_cast; linarith)
   have hy1 : ContDiff ℝ 1 y := y.contDiff (by push_cast; linarith)
   have hφ : ContDiff ℝ 2 (continuousRep F) :=
-    contDiff_continuousRep (by rw [Complex.finrank_real_complex]; push_cast; linarith) F
+    contDiff_continuousRep (finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)) F
   set φ := continuousRep F
   set G := coulombPhaseDeriv x F
   -- The continuous representative of `d₀* d₀ F` is minus the rest of the Coulomb defect.
@@ -822,7 +822,8 @@ theorem exists_mem_nhds_continuousOn_forall_smul_mem_coulombSlice (hk : 3 ≤ k)
     exact AddChar.map_zero_eq_one _
   · set F := Φ (y.realSubRef (Nat.cast_nonneg (j + 2)))
     have hφ : ContDiff ℝ 2 (continuousRep F) :=
-      contDiff_continuousRep (by rw [Complex.finrank_real_complex]; push_cast; linarith) _
+      contDiff_continuousRep
+        (finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)) _
     have hact : ⇑(expGauge hs F • y) = phaseGauge y (continuousRep F) := by
       rw [coe_smul, toSubgroup_expGauge]
       exact gaugeTransform_exp (hφ.differentiable two_ne_zero) y

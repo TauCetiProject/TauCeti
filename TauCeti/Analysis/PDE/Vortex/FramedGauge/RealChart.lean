@@ -10,7 +10,6 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Real
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -119,12 +118,9 @@ theorem coeFn_inclusionLp_ae_eq_continuousRepField (hs : 1 < s) {h : 0 ≤ s}
 form a `Cⁿ` field. -/
 theorem contDiff_continuousRepField {n : ℕ} (hs : n + 1 < s) {h : 0 ≤ s}
     (u : Fin 4 → realSubmodule ℂ h) : ContDiff ℝ n (continuousRepField u) := by
-  have hs' : (finrank ℝ ℂ : ℝ) + 2 * n < 2 * s := by
-    rw [Complex.finrank_real_complex]
-    push_cast
-    linarith
   exact contDiff_piLp' (p := 2) fun j ↦ by
-    simpa only [continuousRepField_apply] using contDiff_continuousRep hs' (u j)
+    simpa only [continuousRepField_apply] using
+      contDiff_continuousRep (finrank_real_complex_add_two_mul_lt_two_mul hs) (u j)
 
 /-- For `s > 1`, real coordinates are determined by their field of continuous representatives. -/
 theorem continuousRepField_injective (hs : 1 < s) {h : 0 ≤ s} :

@@ -93,8 +93,8 @@ private theorem leftLift_symm (x y : A ⊗[ℂ] H) : leftLift φ x y = star (lef
     induction y using TensorProduct.inductionOn with
     | tmul a ξ =>
       have hstar : φ (star b * a) = (φ (star a * b)).adjoint := by
-        simpa only [coe_toPositiveLinearMap, star_mul, star_star,
-          ContinuousLinearMap.star_eq_adjoint] using map_star φ.toPositiveLinearMap (star a * b)
+        simpa only [star_mul, star_star, ContinuousLinearMap.star_eq_adjoint] using
+          φ.map_star (star a * b)
       rw [leftLift_tmul_tmul, leftLift_tmul_tmul, star_star, Complex.star_def, inner_conj_symm,
         hstar, ContinuousLinearMap.adjoint_inner_right]
     | add y₁ y₂ hy₁ hy₂ => simp [leftLift_add, hy₁, hy₂]
@@ -273,17 +273,7 @@ private theorem norm_leftMulPreStinespring_sum_le {n : ℕ} (c : A) (a : Fin n �
     CStarMatrix.ofMatrix (Matrix.of fun i j => star (c * a i) * (c * a j))
   let M₂ : CStarMatrix (Fin n) (Fin n) A :=
     CStarMatrix.ofMatrix (Matrix.of fun i j => (‖c‖ ^ 2 : ℝ) • (star (a i) * a j))
-  have hle : 0 ≤ M₂ - M₁ := CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun y => by
-    let z : A := ∑ j, a j * y j
-    have hdiff : (∑ i, ∑ j, star (y i) * (M₂ - M₁) i j * y j) =
-        (‖c‖ ^ 2 : ℝ) • (star z * z) - star z * (star c * c) * z := by
-      simp only [z, star_sum, Finset.sum_mul, Finset.smul_sum]
-      rw [← Finset.sum_sub_distrib]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      simp [M₁, M₂, Finset.mul_sum, Finset.smul_sum, Finset.sum_sub_distrib, mul_sub, sub_mul,
-        mul_assoc, mul_smul_comm, smul_mul_assoc]
-    rw [hdiff, sub_nonneg, sq, ← CStarRing.norm_star_mul_self (x := c)]
-    exact CStarAlgebra.star_left_conjugate_le_norm_smul z (star c * c)
+  have hle : 0 ≤ M₂ - M₁ := CStarMatrix.norm_sq_smul_sub_mulLeft_nonneg c a
   have hre : 0 ≤ (∑ i, ∑ j, ⟪ξ i, (M₂ - M₁).map φ i j (ξ j)⟫_ℂ).re :=
     (RCLike.nonneg_iff.mp
       ((CStarMatrix.nonneg_iff_forall_sum_inner_nonneg.mp
@@ -579,6 +569,13 @@ theorem star_map_mul_map_le_opNorm_smul (a : A) :
   exact ⟨by simp [-Complex.ofReal_pow],
     by simpa [RCLike.ofReal_re, -Complex.ofReal_pow] using sub_nonneg.mpr hle⟩
 
+/-- The **Kadison–Schwarz inequality** for a completely positive contraction into `H →L[ℂ] H`
+from a possibly nonunital C⋆-algebra: `star (φ a) * φ a ≤ φ (star a * a)`. -/
+theorem star_map_mul_map_le_of_opNorm_le_one (h : ‖φ.toContinuousLinearMap‖ ≤ 1) (a : A) :
+    star (φ a) * φ a ≤ φ (star a * a) :=
+  (φ.star_map_mul_map_le_opNorm_smul a).trans
+    (smul_le_of_le_one_left (map_nonneg φ (star_mul_self_nonneg a)) h)
+
 /-- **Stinespring's dilation theorem (nonunital domain)**. -/
 theorem stinespring_nonUnital :
     ∃ (K : Type (max u v)) (_ : NormedAddCommGroup K) (_ : InnerProductSpace ℂ K)
@@ -647,31 +644,11 @@ theorem stinespringOp_eq_toStinespring_one : φ.stinespringOp = φ.toStinespring
   simpa [stinespringHom_one, ContinuousLinearMap.one_def] using φ.stinespring_eq 1
 
 theorem norm_stinespringOp_sq_eq_norm_map_one : ‖φ.stinespringOp‖ ^ 2 = ‖φ 1‖ := by
-  rw [← φ.stinespringOp_adjoint_comp_self, ContinuousLinearMap.norm_adjoint_comp_self, sq]
-
-/-- A completely positive map from a unital C⋆-algebra into `H →L[ℂ] H` attains its operator norm
-at `1`: `‖φ‖ = ‖φ 1‖`. -/
-@[simp] theorem opNorm_toContinuousLinearMap_eq_norm_map_one :
-    ‖φ.toContinuousLinearMap‖ = ‖φ 1‖ := by
-  rw [← φ.norm_stinespringOp_sq, φ.norm_stinespringOp_sq_eq_norm_map_one]
+  simp
 
 /-- The Stinespring operator is an isometry if and only if `φ` is unital (`φ 1 = 1`). -/
 theorem isometry_stinespringOp_iff : Isometry φ.stinespringOp ↔ φ 1 = 1 := by
   rw [ContinuousLinearMap.isometry_iff_adjoint_comp_self, φ.stinespringOp_adjoint_comp_self]
-
-/-- The **subunital Kadison–Schwarz inequality** for a completely positive map from a unital
-C⋆-algebra into `H →L[ℂ] H`: `star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a)`. -/
-theorem star_map_mul_map_le_norm_map_one_smul (a : D) :
-    star (φ a) * φ a ≤ ‖φ 1‖ • φ (star a * a) :=
-  φ.opNorm_toContinuousLinearMap_eq_norm_map_one ▸ φ.star_map_mul_map_le_opNorm_smul a
-
-/-- The **Kadison–Schwarz inequality** for a unital completely positive map into `H →L[ℂ] H`. -/
-theorem star_map_mul_map_le_of_map_one (h1 : φ 1 = 1) (a : D) :
-    star (φ a) * φ a ≤ φ (star a * a) := by
-  by_cases hH : Subsingleton H
-  · exact le_of_eq (Subsingleton.elim _ _)
-  · rw [not_subsingleton_iff_nontrivial] at hH
-    simpa [h1] using φ.star_map_mul_map_le_norm_map_one_smul a
 
 /-- **Stinespring's dilation theorem** (Stinespring 1955, Theorem 1; Blackadar II.6.9.7). -/
 theorem stinespring :

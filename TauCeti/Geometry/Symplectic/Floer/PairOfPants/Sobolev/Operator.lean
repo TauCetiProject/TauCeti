@@ -113,7 +113,8 @@ theorem mul_norm_floerLinearizationCoeff_positiveEndChart_le (ω : SymplecticFor
         ‖ω.floerLinearizationCoeff
           (fun ζ' y ↦ (J (positiveEndChart q ζ') y).toLinearMap.toContinuousLinearMap)
           (fun _ _ ↦ 0) (fun ζ' ↦ positiveEndHamiltonian H q ζ'.2) (u ∘ positiveEndChart q) ζ‖ := by
-  set w := positiveEndChart q ζ with hw
+  rw [← positiveEndChartScale_apply]
+  set w := positiveEndChart q ζ
   set C := ω.floerLinearizationCoeff (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u w
@@ -123,7 +124,7 @@ theorem mul_norm_floerLinearizationCoeff_positiveEndChart_le (ω : SymplecticFor
   set Jw := J w (u w)
   set a := (fderiv ℝ (positiveEndChart q) ζ stdComplexLineReal).1
   set b := (fderiv ℝ (positiveEndChart q) ζ stdComplexLineReal).2
-  set r := 2 * π * ‖Complex.equivRealProdCLM.symm w - q.endCenter‖
+  set r := positiveEndChartScale q ζ
   -- On constant sections the two linearized operators are their zeroth-order parts, so the
   -- chart identity `D_end = a D - b J D` becomes `C_end = (a - b J) C`.
   have hid (v : V) : Ce v = a • C v - b • Jw (C v) := by
@@ -135,15 +136,8 @@ theorem mul_norm_floerLinearizationCoeff_positiveEndChart_le (ω : SymplecticFor
       Function.comp_apply] using h
   -- The Jacobian of the positive end chart is `a² + b² = (2π |w - c_q|)²`.
   have hdet : a ^ 2 + b ^ 2 = r ^ 2 := by
-    have hab : (fderiv ℝ (positiveEndChart q) ζ).det = a ^ 2 + b ^ 2 :=
-      (isComplexLinearMap_fderiv_positiveEndChart q ζ).det_eq_sq_add_sq
-    rw [← hab, det_fderiv_positiveEndChart]
-    ring
-  have hr : 0 < r := by
-    have hne : Complex.equivRealProdCLM.symm w ≠ q.endCenter := by
-      rw [hw, positiveEndChart_apply]
-      exact equivRealProdCLM_symm_endChart_ne_endCenter q _
-    exact mul_pos (mul_pos two_pos pi_pos) (norm_pos_iff.2 (sub_ne_zero.2 hne))
+    rw [sq_positiveEndChartScale_eq_sq_add_sq, ← stdComplexLineReal_eq]
+  have hr : 0 < r := positiveEndChartScale_pos q ζ
   exact Jw.mul_opNorm_le_of_eq_smul_sub_smul hid hdet hr
 
 /-- **The coefficient field on conformal jets on an end.** Let `u` solve the Floer equation for the
@@ -172,9 +166,7 @@ theorem norm_floerConformalJetCoeff_positiveEndChart_le (ω : SymplecticForm V)
       (positiveEndChart q ζ)‖ ≤ 1 + B + (1 + B) * B / (2 * π) := by
   -- The zeroth-order part `C(w)` is at most `(1 + B) B / (2π d)` with `d = |w - c_q|`, and the
   -- weight is at least `d⁻²`.
-  have hne : Complex.equivRealProdCLM.symm (positiveEndChart q ζ) ≠ q.endCenter := by
-    rw [positiveEndChart_apply]
-    exact equivRealProdCLM_symm_endChart_ne_endCenter q _
+  have hne := equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ
   refine (ω.norm_floerConformalJetCoeff_le_of_norm_floerJetCoeff_comp_le
     (ρ := cylindricalWeight) (by simp only [hJz]) hB
     (ω.mul_norm_floerLinearizationCoeff_positiveEndChart_le hH hHs hζ hu hfl) ?_

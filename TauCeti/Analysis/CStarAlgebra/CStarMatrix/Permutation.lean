@@ -48,7 +48,8 @@ def reindexMatrix (A : Type*) [DecidableEq n] [Zero A] [One A] (e : m ≃ n) : C
 @[simp] theorem ofMatrix_symm_reindexMatrix [DecidableEq n] [Zero A] [One A] (e : m ≃ n) :
     ofMatrix.symm (reindexMatrix A e) = e.toPEquiv.toMatrix := (rfl)
 
-@[simp] theorem ofMatrix_toMatrix_toPEquiv [DecidableEq n] [Zero A] [One A] (e : m ≃ n) :
+/-- `ofMatrix` sends `e.toPEquiv.toMatrix` to `CStarMatrix.reindexMatrix A e`. -/
+theorem ofMatrix_toMatrix_toPEquiv [DecidableEq n] [Zero A] [One A] (e : m ≃ n) :
     ofMatrix (e.toPEquiv.toMatrix : Matrix m n A) = reindexMatrix A e := (rfl)
 
 @[simp] theorem reindexMatrix_apply [DecidableEq n] [Zero A] [One A] (e : m ≃ n) (i : m) (j : n) :

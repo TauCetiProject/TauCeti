@@ -14,7 +14,7 @@ import Mathlib.RingTheory.QuadraticAlgebra
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.RingTheory.Finite.ArtinSchreier
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.Norm.Henselian
 
 /-!

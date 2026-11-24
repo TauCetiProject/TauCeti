@@ -50,7 +50,8 @@ def single [Zero A] (i : m) (j : n) (a : A) : CStarMatrix m n A :=
 @[simp] theorem ofMatrix_symm_single [Zero A] (i : m) (j : n) (a : A) :
     ofMatrix.symm (single i j a) = Matrix.single i j a := (rfl)
 
-@[simp] theorem ofMatrix_single [Zero A] (i : m) (j : n) (a : A) :
+/-- `ofMatrix` sends `Matrix.single` to `CStarMatrix.single`. -/
+theorem ofMatrix_single [Zero A] (i : m) (j : n) (a : A) :
     ofMatrix (Matrix.single i j a) = single i j a := (rfl)
 
 @[grind =]
