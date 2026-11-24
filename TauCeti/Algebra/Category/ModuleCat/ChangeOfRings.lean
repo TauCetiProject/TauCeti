@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
+public import Mathlib.LinearAlgebra.TensorProduct.Projective
+public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.LinearAlgebra.TensorProduct.Cyclic
@@ -36,8 +38,10 @@ Along the structure map `algebraMap R S` of an `R`-algebra, extension of scalars
 product `S ⊗[R] M` taken with the algebra module structure of `S`
 (`ModuleCat.extendScalarsAlgebraMapIso`), naturally in `M`
 (`ModuleCat.extendScalarsAlgebraMapIso_inv_naturality`,
-`ModuleCat.extendScalarsAlgebraMapIso_hom_naturality`). When `S` is flat over `R`, this
-extension of scalars is exact and so preserves finite limits
+`ModuleCat.extendScalarsAlgebraMapIso_hom_naturality`). Through it, extension of scalars along
+any ring homomorphism preserves finitely generated modules and projective modules
+(`ModuleCat.finite_extendScalars_obj`, `ModuleCat.projective_extendScalars_obj`). When `S` is
+flat over `R`, this extension of scalars is exact and so preserves finite limits
 (`ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`). An `R`-linear map `f : M → N` to an
 `S`-module exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
 `S ⊗[R] M → N` is bijective; in that case the adjoint morphism of modules is an isomorphism
@@ -263,6 +267,29 @@ theorem extendScalarsAlgebraMapIso_hom_naturality {M N : ModuleCat.{w} R} (φ : 
     Category.comp_id]
 
 end AlgebraMap
+
+section FiniteProjective
+
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] (f : R →+* S)
+
+-- With the algebra structure `f.toAlgebra`, `algebraMap R S` is `f` by definition, so
+-- `extendScalarsAlgebraMapIso` identifies `(extendScalars f).obj M` with `S ⊗[R] M`, where
+-- Mathlib's `Module.Finite.base_change` and `Module.Projective.tensorProduct` apply.
+
+/-- Extension of scalars `S ⊗_{R,f} M` of a finitely generated module is finitely generated. -/
+instance finite_extendScalars_obj (M : ModuleCat.{w} R) [Module.Finite R M] :
+    Module.Finite S ((extendScalars f).obj M) := by
+  let _ : Algebra R S := f.toAlgebra
+  exact Module.Finite.equiv (extendScalarsAlgebraMapIso (R := R) (S := S) M).symm.toLinearEquiv
+
+/-- Extension of scalars `S ⊗_{R,f} M` of a projective module is projective. -/
+instance projective_extendScalars_obj (M : ModuleCat.{w} R) [Module.Projective R M] :
+    Module.Projective S ((extendScalars f).obj M) := by
+  let _ : Algebra R S := f.toAlgebra
+  exact Module.Projective.of_equiv
+    (extendScalarsAlgebraMapIso (R := R) (S := S) M).symm.toLinearEquiv
+
+end FiniteProjective
 
 section Flat
 
