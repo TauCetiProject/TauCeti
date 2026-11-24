@@ -172,7 +172,10 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
   obtain ⟨φ₁, hφ₁⟩ := exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero
     (L := Lop) (R := Rop) (l := l.map MulOpposite.op) (Filter.eventually_map.2 hC)
     (tendsto_mul_left_map_op hl) D₁op hD₁op
-    fun a b x ↦ hD₁_ER a.unop (R b.unop x) (apply_mem_essentialSubmodule R b.unop x)
+    fun a b x ↦ by
+      simpa only [D₁op, Lop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
+        MulOpposite.opContinuousLinearEquiv_symm_apply] using
+        hD₁_ER a.unop (R b.unop x) (apply_mem_essentialSubmodule R b.unop x)
   refine ⟨ψ - φ₁, fun a ↦ ?_⟩
   ext x
   have hDa := congr($(hD_eq a) x)

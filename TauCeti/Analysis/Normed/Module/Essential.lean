@@ -418,8 +418,10 @@ theorem essentialBimoduleSubmodule_eq_inf_of_tendsto_mul_right
   let Rop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := R.comp unopL
   have hLop : ∀ a b x, Lop (a * b) x = Lop b (Lop a x) := fun a b x ↦ by
     simp [Lop, unopL, hL]
-  have hRLop : ∀ a b x, Rop a (Lop b x) = Lop b (Rop a x) := fun a b x ↦
-    (hLR b.unop a.unop x).symm
+  have hRLop : ∀ a b x, Rop a (Lop b x) = Lop b (Rop a x) := fun a b x ↦ by
+    simp only [Rop, Lop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
+      MulOpposite.opContinuousLinearEquiv_symm_apply]
+    exact (hLR b.unop a.unop x).symm
   have h := essentialBimoduleSubmodule_eq_inf (l := l.map MulOpposite.op) hLop hRLop
     (Filter.eventually_map.2 hC) (TauCeti.tendsto_mul_left_map_op hl)
   rwa [essentialBimoduleSubmodule_comp_of_surjective R L MulOpposite.unop_surjective,
