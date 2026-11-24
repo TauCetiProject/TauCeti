@@ -170,25 +170,19 @@ the rank of `E` may be an infinite cardinal. -/
 theorem exists_mem_rank_eq (v : E) {k : ℕ} (hk : k ≠ 0)
     (hkE : (k : Cardinal) ≤ Module.rank 𝕜 E) :
     ∃ N : Submodule 𝕜 E, v ∈ N ∧ Module.rank 𝕜 N = k := by
-  -- For `v ≠ 0`, take the span of `v` and `k - 1` linearly independent vectors of a complement
-  -- of `𝕜 ∙ v`.
   rcases eq_or_ne v 0 with rfl | hv
   · obtain ⟨N, -, hN⟩ := exists_le_rank_eq (M := ⊤) (by rwa [rank_top 𝕜 E])
     exact ⟨N, N.zero_mem, hN⟩
-  have hv1 : Module.rank 𝕜 (𝕜 ∙ v) = 1 := by
-    rw [← Module.finrank_eq_rank, finrank_span_singleton hv, Nat.cast_one]
-  obtain ⟨C, hC⟩ := (𝕜 ∙ v).exists_isCompl
-  have hE : Module.rank 𝕜 C + 1 = Module.rank 𝕜 E := by
-    rw [← (quotientEquivOfIsCompl _ _ hC).rank_eq, ← hv1, rank_quotient_add_rank]
-  obtain ⟨N, hNC, hN⟩ := exists_le_rank_eq (M := C) (k := k - 1) <| by
-    rw [← Cardinal.add_one_le_add_one_iff, hE]
-    exact le_of_eq_of_le (by norm_cast; omega) hkE
-  refine ⟨(𝕜 ∙ v) ⊔ N, mem_sup_left (mem_span_singleton_self v), ?_⟩
-  have h := rank_sup_add_rank_inf_eq (𝕜 ∙ v) N
-  rw [(hC.disjoint.mono_right hNC).eq_bot, rank_bot, add_zero, hv1, hN] at h
-  rw [h]
-  norm_cast
-  omega
+  -- Extend `{v}` to an independent set `t` of cardinality `rank E`, then take the span of a
+  -- `k`-element subset of `t` containing `v`.
+  obtain ⟨t, hvt, ht, hti⟩ :=
+    exists_linearIndepOn_of_lt_rank ((linearIndepOn_singleton_iff 𝕜 (v := id)).2 hv)
+  obtain ⟨r, hvr, hrt, hr⟩ := Set.exists_superset_subset_encard_eq hvt
+    (s := {v}) (k := k) (by simpa using Nat.one_le_iff_ne_zero.2 hk) <| by
+      rw [← Set.toENat_cardinalMk, ht]
+      simpa using Cardinal.toENat.monotone' hkE
+  refine ⟨span 𝕜 r, subset_span (hvr rfl), ?_⟩
+  rw [rank_span_set (hti.mono hrt), ← Cardinal.toENat_eq_natCast, Set.toENat_cardinalMk, hr]
 
 /-- The linear-algebra core of the transverse level disc, kernel part. If `T` has dimension
 `dim G + 1`, `T` and the kernel of a surjection `π` span the space, and some `v ∈ T` with

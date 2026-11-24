@@ -22,7 +22,10 @@ factors.
 The point `u • P` is `(Unitary.linearIsometryEquiv u).grassmannianCongr k P`
 (`Euclidean.grassmannian.smul_eq_grassmannianCongr`), the image of `P` under the homeomorphism
 `LinearIsometryEquiv.grassmannianCongr` induced by the linear isometry equivalence of `u`; its
-plane is `u (range P)` (`Euclidean.grassmannian.range_coe_smul`).
+plane is `u (range P)` (`Euclidean.grassmannian.range_coe_smul`). The conjugation itself is
+Mathlib's `Unitary.conjStarAlgAut`: Mathlib's `Unitary.conjStarAlgEquiv_unitaryLinearIsometryEquiv`
+identifies it with conjugation by the linear isometry equivalence `Unitary.linearIsometryEquiv u`,
+which is how `Euclidean.grassmannian.coe_smul` reads `u • P` as `u P u*`.
 
 The `k`-planes of `E` as orthogonal projections follow L. Simon, *Lectures on Geometric Measure
 Theory*, §38.
@@ -68,7 +71,9 @@ noncomputable instance instMulActionUnitary :
     simp only [smul_eq_grassmannianCongr, map_mul, LinearIsometryEquiv.mul_def,
       LinearIsometryEquiv.grassmannianCongr_trans, Homeomorph.trans_apply]
 
-/-- The plane of `u • P` is the image of the plane of `P` under `u`. -/
+/-- The plane of `u • P` is the image of the plane of `P` under `u`. It is a `simp↓` lemma so that
+it fires before `coe_smul` expands `u • P` into an operator product. -/
+@[simp↓]
 theorem range_coe_smul (u : unitary (E →L[𝕜] E)) (P : grassmannian 𝕜 E k) :
     ((u • P : grassmannian 𝕜 E k) : E →L[𝕜] E).range =
       (P : E →L[𝕜] E).range.map (u : E →L[𝕜] E).toLinearMap :=
