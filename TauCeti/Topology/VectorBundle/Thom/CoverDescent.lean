@@ -114,74 +114,17 @@ local instance : MulAction ℤˣ
     (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd :=
   thomPairSndMulAction
 
-omit [FiniteDimensional ℝ F] [Fintype ι] in
-variable (F E ι) in
-/-- The map of Thom pairs of the orientation cover is `TauCeti.pullbackThomPairMap`. -/
-private theorem coverThomPairMap_eq_pullbackThomPairMap :
-    coverThomPairMap F E ι = pullbackThomPairMap F E projection :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun v ↦
-    (coverThomPairMap_fst_apply v).trans (pullbackThomPairMap_fst_apply F E _ v).symm)
-
-variable (F E ι) in
-include hι in
-/-- The map of total spaces of `(E', E'₀) ⟶ (E, E₀)` is the quotient map of the free action of
-`ℤˣ`: `isQuotientCoveringMap_pullbackThomPairMap_fst`, restated for `coverThomPairMap`, whose Thom
-pair reads the zeros of the fibres through their module structure, as the actions here do. -/
-private theorem isQuotientCoveringMap_coverThomPairMap_fst :
-    IsQuotientCoveringMap (TopPair.Hom.fst (coverThomPairMap F E ι)) ℤˣ := by
-  rw [coverThomPairMap_eq_pullbackThomPairMap]
-  exact isQuotientCoveringMap_pullbackThomPairMap_fst hι
-
-variable (F E ι) in
-include hι in
-/-- The map of nonzero vectors of `(E', E'₀) ⟶ (E, E₀)` is the quotient map of the free action of
-`ℤˣ`: `isQuotientCoveringMap_pullbackThomPairMap_snd`, restated for `coverThomPairMap`. -/
-private theorem isQuotientCoveringMap_coverThomPairMap_snd :
-    IsQuotientCoveringMap (TopPair.Hom.snd (coverThomPairMap F E ι)) ℤˣ := by
-  rw [coverThomPairMap_eq_pullbackThomPairMap]
-  exact isQuotientCoveringMap_pullbackThomPairMap_snd hι
-
-omit [FiniteDimensional ℝ F] [Fintype ι] in
-/-- The unit `-1` acts on the total space of the Thom pair of the orientation cover by the lifted
-deck involution. -/
-private theorem neg_one_smul_eq_deckThomPairMap_fst
-    (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
-    (-1 : ℤˣ) • v = TopPair.Hom.fst (deckThomPairMap F E ι) v := by
-  refine Eq.trans ?_ (deckThomPairMap_fst_apply v).symm
-  -- the base point of `(-1) • v` is `(-1) • v.proj`, by definition of the action
-  exact TotalSpace.ext (show (-1 : ℤˣ) • v.proj = _ from
-    (neg_one_smul_eq_deck v.proj).trans (deck_apply v.proj)) HEq.rfl
-
-/-- The units act continuously on the total space of the Thom pair of the orientation cover: `-1`
-acts by the lifted deck involution. -/
+/-- The units act continuously on the total space of the Thom pair of the orientation cover
+(`TauCeti.VectorBundleOrientationCover.continuousConstSMul_thomPairFst`). -/
 local instance : ContinuousConstSMul ℤˣ
-    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst where
-  continuous_const_smul u := by
-    rcases Int.units_eq_one_or u with rfl | rfl
-    · simp_rw [one_smul]
-      exact continuous_id
-    · simp_rw [neg_one_smul_eq_deckThomPairMap_fst]
-      exact (TopPair.Hom.fst (deckThomPairMap F E ι)).hom.continuous
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst :=
+  continuousConstSMul_thomPairFst
 
-/-- The units act continuously on the nonzero vectors of the Thom pair of the orientation cover. -/
+/-- The units act continuously on the nonzero vectors of the Thom pair of the orientation cover
+(`TauCeti.VectorBundleOrientationCover.continuousConstSMul_thomPairSnd`). -/
 local instance : ContinuousConstSMul ℤˣ
-    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd where
-  continuous_const_smul u := by
-    refine Continuous.subtype_mk ?_ _
-    exact (continuous_const_smul u : Continuous fun x :
-      (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst ↦
-        u • x).comp continuous_subtypeVal
-
-omit [FiniteDimensional ℝ F] [Fintype ι] in
-/-- The action of `-1` on the total space of the Thom pair of the orientation cover is the lifted
-deck involution. -/
-private theorem ofHom_neg_one_smul :
-    TopCat.ofHom ⟨((-1 : ℤˣ) • · :
-        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst →
-          (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst),
-        continuous_const_smul _⟩ =
-      TopPair.Hom.fst (deckThomPairMap F E ι) :=
-  TopCat.ext neg_one_smul_eq_deckThomPairMap_fst
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd :=
+  continuousConstSMul_thomPairSnd
 
 omit [FiniteDimensional ℝ F] in
 /-- **Lifted orientation-twisted cocycles are semi-invariant for the sign character.** The lift to
@@ -222,7 +165,7 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     rw [HomologicalComplex.comp_f, HomologicalComplex.neg_f_apply] at hΛ
     -- `δ_*` commutes with the quotient onto the relative chains, and `δ_* ≫ Λ = -Λ`; `erw` for
     -- the instances of the composites of chains with the cochain `ψ`, as above
-    rw [ofHom_neg_one_smul]
+    rw [ofHom_neg_one_smul_eq_deckThomPairMap_fst]
     erw [reassoc_of% hn, Category.assoc, reassoc_of% hΛ, Preadditive.neg_comp,
       Preadditive.comp_neg]
     have hχ : ((Units.map (Int.castRingHom k).toMonoidHom (-1) : kˣ) : k) = -1 := by simp
@@ -231,17 +174,6 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
     rfl
 
 /-! ### Descent of the equivariant Thom isomorphism -/
-
-omit [FiniteDimensional ℝ F] [Fintype ι] in
-/-- The projection of the Thom pair of the orientation cover to the cover is equivariant. -/
-private theorem thomPairProj_smul (u : ℤˣ)
-    (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
-    thomPairProj F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (u • v) =
-      u • thomPairProj F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) v := by
-  -- `erw`: the points of the Thom pair are those of the total space only up to unfolding
-  -- `TopCat.of`; both sides are then `(u • v).proj = u • v.proj`, true by definition of the action
-  erw [thomPairProj_apply, thomPairProj_apply]
-  rfl
 
 variable (F E) in
 /-- **The Thom isomorphism with coefficients in the orientation system, from a semi-invariant Thom
@@ -276,14 +208,19 @@ def thomPairSingularHomologyIsoTwistedHomology
     (thomPair F _).twistedHomologyIsoHomologyCoinvariantsTensorObj k
       (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι)
       (isQuotientCoveringMap_coverThomPairMap_snd F E ι hι) thomPair_map_smul
-      (Rep.trivial k ℤˣ k) ((thomPair F _).singularChainsRepCap thomPairProj_smul
-        (Units.map (Int.castRingHom k).toMonoidHom) hφ thomPair_map_smul) (p + finrank ℝ F) ≪≫
+      -- the pair and `p₀` are explicit so that the cap map is the one of the instance above:
+      -- `thomPairProj_smul` reads the zeros of the fibres through `pullbackFiberZero` instead
+      (Rep.trivial k ℤˣ k) (TopPair.singularChainsRepCap
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (p₀ := thomPairProj F _) thomPairProj_smul (Units.map (Int.castRingHom k).toMonoidHom) hφ
+        thomPair_map_smul)
+      (p + finrank ℝ F) ≪≫
     (HomologicalComplex.homologyFunctor _ _ _).mapIso (HomologicalComplex.mapExtendIso _ _ _) ≪≫
     HomologicalComplex.extendHomologyIso _ _ (ComplexShape.embeddingDownNatAdd_f _ p) ≪≫
     (HomologicalComplex.homologyFunctor _ _ p).mapIso
       ((NatIso.mapHomologicalComplex (Rep.tensorLeftCompCoinvariantsTensorTrivialIso _ ≪≫
         (Rep.coinvariantsTensor k ℤˣ).mapIso
-          (Rep.mkIso Representation.ofLinearCharacterIntCastEquiv)) _).app _) ≪≫
+          (Rep.mkIso Representation.ofLinearCharacterIntCastEquivOfDistribMulAction)) _).app _) ≪≫
     (HomologicalComplex.homologyFunctor _ _ p).mapIso
       (coinvariantsTensorSingularChainsRepIsoTwisted hι k)
 

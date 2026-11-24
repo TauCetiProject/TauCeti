@@ -32,8 +32,8 @@ representation, and its irreducibility is what the Mackey criterion decides.
 * `Representation.ofLinearCharacter`: the one-dimensional representation associated to a
   unit-valued multiplicative character.
 * `FDRep.ofLinearCharacter`: the same representation as an object of `FDRep k G`.
-* `Representation.ofLinearCharacterIntCastEquiv`: the line of the sign character `ℤˣ →* kˣ` is the
-  action of `ℤˣ` on `k` by signs.
+* `Representation.ofLinearCharacterIntCastEquivOfDistribMulAction`: the line of the sign character
+  `ℤˣ →* kˣ` is the action of `ℤˣ` on `k` by signs.
 
 ## Main results
 
@@ -126,17 +126,17 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
 /-- **The sign character of `ℤˣ` acts on `k` by signs.** The line of the character `ℤˣ →* kˣ`
 induced by `ℤ → k` is the action `u • x` of `ℤˣ` on `k` (`Representation.ofDistribMulAction`),
 through the identity of `k`. -/
-def ofLinearCharacterIntCastEquiv [CommRing k] :
+def ofLinearCharacterIntCastEquivOfDistribMulAction [CommRing k] :
     (ofLinearCharacter (Units.map (Int.castRingHom k).toMonoidHom)).Equiv
       (ofDistribMulAction k ℤˣ k) :=
   .mk (LinearEquiv.refl k k) fun _ ↦ by
     ext
     simp [ofLinearCharacter_apply, Units.smul_def]
 
-/-- The identification `ofLinearCharacterIntCastEquiv` is the identity of `k`. -/
+/-- The identification `ofLinearCharacterIntCastEquivOfDistribMulAction` is the identity of `k`. -/
 @[simp]
-theorem ofLinearCharacterIntCastEquiv_apply [CommRing k] (x : k) :
-    ofLinearCharacterIntCastEquiv x = x :=
+theorem ofLinearCharacterIntCastEquivOfDistribMulAction_apply [CommRing k] (x : k) :
+    ofLinearCharacterIntCastEquivOfDistribMulAction x = x :=
   (rfl)
 
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/

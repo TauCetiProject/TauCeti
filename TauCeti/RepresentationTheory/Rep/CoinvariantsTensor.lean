@@ -189,6 +189,8 @@ def tensorLeftCompCoinvariantsTensorTrivialIso (A : Rep.{u} k G) :
 
 /-- The identification `tensorLeftCompCoinvariantsTensorTrivialIso` sends the class of
 `r ⊗ (a ⊗ x)` to the class of `r • a ⊗ x`. -/
+-- Match before simplification changes the presentation of the tensor carrier.
+@[simp↓]
 theorem tensorLeftCompCoinvariantsTensorTrivialIso_hom_app_coinvariantsTensorMk
     (A X : Rep.{u} k G) (r : k) (a : A) (x : X) :
     ((tensorLeftCompCoinvariantsTensorTrivialIso A).hom.app X).hom

@@ -172,9 +172,8 @@ private theorem ofSubsetMap_neg_one_comp_preimageThomPairIso_hom :
   simp only [TopPair.Hom.fst_comp, CategoryTheory.comp_apply]
   rw [preimageThomPairIso_hom_fst_apply, preimageThomPairIso_hom_fst_apply,
     TopPair.ofSubsetMap_fst_apply]
-  refine Eq.trans ?_ (deckThomPairMap_fst_apply (F := F) (E := E) (ι := ι) v).symm
   -- The left side `TopCat.ofHom ⟨((-1 : ℤˣ) • ·), _⟩ v` is `(-1 : ℤˣ) • v` by definition.
-  exact Pullback.totalSpace_ext ((neg_one_smul_eq_deck v.proj).trans (deck_apply _)) rfl
+  exact neg_one_smul_eq_deckThomPairMap_fst v
 
 section CommRing
 
