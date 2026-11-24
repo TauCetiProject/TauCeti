@@ -50,7 +50,7 @@ energy; so it applies to the levels of a breaking sequence of smooth trajectorie
   `TauCeti.SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`). If moreover `J` is
   tamed by `ω` along `g`, so that the energy density of `g` is nonnegative, then the energy of `g`
   is `A_H(x₁) - A_H(x₀)`
-  (`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendstoUniformly`).
+  (`setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tendstoUniformly`).
 
 The results here do not sum the energies of the levels of a broken limit. Showing that no energy
 is lost along the necks, i.e. that these energies add up to the energy of each trajectory, would
@@ -223,8 +223,8 @@ theorem tendsto_hamiltonianAction_slice_of_tendstoUniformly (hH : Continuous (un
 converge uniformly to closed `C¹` loops `x₀` as `s → -∞` and `x₁` as `s → ∞`, such as the orbits
 at which a level of a broken limit begins and ends, then the Floer energy of `g` over the strip
 `ℝ × [0, 1]` is `A_H(x₁) - A_H(x₀)`. -/
-theorem lintegral_floerEnergyDensity_eq_of_tendstoUniformly (hH : ContDiff ℝ 2 (uncurry H))
-    (hHper : Periodic H 1) (hW : IsOpen W)
+theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tendstoUniformly
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHper : Periodic H 1) (hW : IsOpen W)
     (hJ : ContDiffOn ℝ 1 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
     (hJper : Periodic J 1) (hu : ∀ k, ContDiff ℝ (⊤ : ℕ∞) (u k))
     (hper : ∀ k s, Periodic (fun t ↦ u k (s, t)) 1)
