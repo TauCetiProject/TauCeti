@@ -43,7 +43,8 @@ at `j`. The rank-two input is that an alternating word `⋯ sᵢ sⱼ` shorter t
 an integral combination `c αᵢ + c' αⱼ` with `c, c' ≥ 0`. The coefficients satisfy
 `cₙ₊₂ = bₙ cₙ₊₁ - cₙ` with multipliers `bₙ` alternating between `-A j i` and `-A i j`; they are
 checked directly for the four finite Cartan products, and for a Cartan product at least `4` the
-two-step recurrence `cₙ₊₄ = (A i j A j i - 2) cₙ₊₂ - cₙ` keeps them nondecreasing.
+two-step recurrence `cₙ₊₄ = (A i j A j i - 2) cₙ₊₂ - cₙ` keeps the coefficients of each parity
+nondecreasing (`cₙ ≤ cₙ₊₂`), hence nonnegative.
 
 ## Main results
 
