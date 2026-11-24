@@ -498,21 +498,13 @@ section BlockTensor
 
 variable {m : Type*} [Fintype m]
 
-/-- The entries of a reindexed matrix. Mathlib's `CStarMatrix.reindexₐ_apply` has right-hand side
-`Matrix.reindex e e M i j` with `M` a `CStarMatrix`, which is not type-correct at instance
-transparency, so neither `simp` nor `rw` can continue from it to `Matrix.reindex_apply`; this
-states the entry directly, by unfolding `reindexₐ`, `Matrix.reindex` and `Matrix.submatrix`. -/
-private theorem reindexₐ_apply_apply (x : CStarMatrix n n ℂ) (e : n ≃ m) (i j : m) :
-    reindexₐ ℂ ℂ e x i j = x (e.symm i) (e.symm j) :=
-  rfl
-
 /-- The normalized trace does not depend on the labelling of the index type. -/
 @[simp]
 theorem normalizedTrace_reindexₐ (x : CStarMatrix n n ℂ) (e : n ≃ m) :
     normalizedTrace (reindexₐ ℂ ℂ e x) = normalizedTrace x := by
   rw [normalizedTrace_eq_sum, normalizedTrace_eq_sum, Fintype.card_congr e]
   congr 1
-  exact Fintype.sum_equiv e.symm _ _ fun i ↦ reindexₐ_apply_apply x e i i
+  exact Fintype.sum_equiv e.symm _ _ fun i ↦ reindexₐ_apply_apply e x i i
 
 /-- The normalized trace is invariant under the inverse of a reindexing. -/
 @[simp]
