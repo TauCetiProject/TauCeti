@@ -146,9 +146,7 @@ variable [HasPullbacks C] [F.IsPrestack J]
 
 /-- The descent datum given by `q^* M` over `V` is identified with the pullback along `q` of the
 descent datum given by `M` over `U`. -/
--- The body is exposed so that the index map and the morphisms `β` are definitionally the identity
--- and `q`, as needed to state `toObjPullbackData_iso`.
-@[expose] def toObjPullbackData {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) :
+def toObjPullbackData {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) :
     PullbackData q ((toObjFunctor.{w} J F U).obj M)
       ((toObjFunctor.{w} J F V).obj ((F.map q.op.toLoc).toFunctor.obj M)) where
   α j := j
@@ -177,10 +175,18 @@ descent datum given by `M` over `U`. -/
 
 open PullbackData
 
+/-- The morphisms `β` of `toObjPullbackData q M` are `q`. -/
+@[simp]
+lemma toObjPullbackData_β {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) (j) :
+    (toObjPullbackData.{w} (J := J) q M).β j = q :=
+  (rfl)
+
 /-- The identifications of `toObjPullbackData` are the isomorphisms `toObjPullbackIso`. -/
-lemma toObjPullbackData_iso {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) ⦃T : C⦄
-    (b : T ⟶ V) (c : T ⟶ U) (h : b ≫ q = c) :
-    (toObjPullbackData.{w} (J := J) q M).iso (j := PUnit.unit) b c h = toObjPullbackIso q M b c h :=
+@[simp]
+lemma toObjPullbackData_iso {U V : C} (q : V ⟶ U) (M : F.obj (.mk (op U))) ⦃T : C⦄ ⦃j⦄
+    (b : T ⟶ V) (c : T ⟶ U) (h : b ≫ (toObjPullbackData.{w} (J := J) q M).β j = c) :
+    (toObjPullbackData.{w} (J := J) q M).iso b c h =
+      toObjPullbackIso q M b c (by rwa [toObjPullbackData_β] at h) :=
   (rfl)
 
 /-- Pulling back a morphism along `q` and embedding it is transporting its embedding along
@@ -190,13 +196,13 @@ lemma toObjFunctor_map_map {U V : C} (q : V ⟶ U) {M M' : F.obj (.mk (op U))} (
       transport (toObjPullbackData q M) (toObjPullbackData q M')
         ((toObjFunctor.{w} J F U).map φ) :=
   toObjFunctor_hom_ext fun T b w ↦ by
-    rw [app_transport _ _ _ _ _ _ _ _ rfl rfl, transportApp_def, app_toObjFunctor_map_self,
-      app_toObjFunctor_map]
-    -- The morphisms `β` of `toObjPullbackData` are `q` and the fibres of `toObjFunctor` are
-    -- `(F.map (𝟙 _)).obj _` only after unfolding, so these rewrites go through `erw`.
-    erw [toObjPullbackData_iso, toObjPullbackData_iso]
-    erw [toObjFunctor_obj_hom_self, Category.comp_id, ← toObjPullbackIso_hom_naturality_assoc,
-      Iso.hom_inv_id, Category.comp_id]
+    rw [app_transport _ _ _ _ _ _ (b ≫ q) (b ≫ q) (by rw [toObjPullbackData_β])
+      (by rw [toObjPullbackData_β]), transportApp_def, toObjPullbackData_iso,
+      toObjPullbackData_iso, app_toObjFunctor_map_self, app_toObjFunctor_map_self]
+    -- The objects of `toObjFunctor` are `(F.map (𝟙 _)).obj _` only up to unfolding, so the
+    -- naturality square is applied by unification rather than by rewriting.
+    exact ((Iso.eq_comp_inv _).2 (toObjPullbackIso_hom_naturality q φ b (b ≫ q) rfl)).trans
+      (Category.assoc _ _ _)
 
 /-- Embedding the unit isomorphism `(𝟙 U)^* M ⟶ M` of `F` is transporting the identity along
 `toObjPullbackData (𝟙 U) M` and `PullbackData.refl`. -/
@@ -204,14 +210,12 @@ lemma transport_toObjPullbackData_refl {U : C} (M : F.obj (.mk (op U))) :
     transport (toObjPullbackData (𝟙 U) M) (refl _) (𝟙 _) =
       (toObjFunctor.{w} J F U).map ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M) :=
   toObjFunctor_hom_ext fun T b w ↦ by
-    refine (app_transport (toObjPullbackData (𝟙 U) M) (refl _) (𝟙 _) b b w b b
-      (Category.comp_id b) (Category.comp_id b)).trans ?_
-    -- The indices and morphisms `β` of `toObjPullbackData` and `refl` are `PUnit.unit` and `𝟙 U`
-    -- only after unfolding, so these rewrites go through `erw`.
-    erw [transportApp_def, app_toObjFunctor_map_self, toObjPullbackData_iso, id_app]
-    simp only [refl_iso, DescentData.iso_inv]
-    erw [toObjFunctor_obj_hom_self, Category.comp_id]
-    exact (Category.comp_id _).trans (toObjPullbackIso_id_hom M b)
+    rw [app_transport_refl (toObjPullbackData (𝟙 U) M) (𝟙 _) b b w b
+        (by rw [toObjPullbackData_β]; exact Category.comp_id b),
+      toObjPullbackData_iso, app_toObjFunctor_map_self, ← toObjPullbackIso_id_hom, id_app,
+      toObjFunctor_obj_hom_self]
+    -- As in `toObjFunctor_map_map`, the identity is on an object of `toObjFunctor`.
+    exact Category.comp_id _
 
 /-- Embedding the composition isomorphism `(r ≫ q)^* M ⟶ r^* (q^* M)` of `F` is transporting the
 identity along `toObjPullbackData (r ≫ q) M` and the composite of `toObjPullbackData r (q^* M)` and
@@ -224,29 +228,22 @@ lemma transport_toObjPullbackData_trans {U V W : C} (q : V ⟶ U) (r : W ⟶ V)
       (toObjFunctor.{w} J F W).map
         ((F.mapComp' q.op.toLoc r.op.toLoc (r ≫ q).op.toLoc rfl).hom.toNatTrans.app M) :=
   toObjFunctor_hom_ext fun T b w ↦ by
-    refine (app_transport (toObjPullbackData (r ≫ q) M)
-      ((toObjPullbackData r ((F.map q.op.toLoc).toFunctor.obj M)).trans
-        (toObjPullbackData q M) (r ≫ q) rfl) (𝟙 _) b b w (b ≫ r ≫ q) (b ≫ r ≫ q)
-      rfl rfl).trans ?_
-    -- As in `transport_toObjPullbackData_refl`, the indices and morphisms `β` of the pullback
-    -- data agree with those in the lemmas only after unfolding.
-    erw [transportApp_def, app_toObjFunctor_map_self, toObjPullbackData_iso, id_app]
-    simp only [PullbackData.trans, Iso.trans_inv]
-    erw [toObjFunctor_obj_hom_self, toObjPullbackData_iso, toObjPullbackData_iso]
-    erw [Category.id_comp, ← toObjPullbackIso_comp_hom q r M b _ rfl]
-    -- The isomorphisms cancelled here agree with those in the goal only after unfolding, so the
-    -- cancellation is applied by unification rather than by `simp`.
+    rw [app_transport_trans (r ≫ q) rfl (toObjPullbackData (r ≫ q) M)
+        (toObjPullbackData r ((F.map q.op.toLoc).toFunctor.obj M)) (toObjPullbackData q M) (𝟙 _)
+        b b w (b ≫ r ≫ q) (by simp) (b ≫ r) (by simp) (b ≫ r ≫ q) (by simp),
+      toObjPullbackData_iso, toObjPullbackData_iso, toObjPullbackData_iso,
+      app_toObjFunctor_map_self, ← toObjPullbackIso_comp_hom q r M b _ rfl, id_app,
+      toObjFunctor_obj_hom_self]
+    -- The identity is on an object of `toObjFunctor`, which is `(F.map (𝟙 _)).obj _` only up to
+    -- unfolding, so the cancellation is applied by unification rather than by `simp`.
     have cancel {D : Type _} [Category D] {X Y Z Z' : D} (x : X ⟶ Y) (a : Y ≅ Z) (b : Z ≅ Z') :
-        (x ≫ a.hom ≫ b.hom) ≫ b.inv ≫ a.inv = x := by
+        (x ≫ a.hom ≫ b.hom) ≫ 𝟙 Z' ≫ b.inv ≫ a.inv = x := by
       simp
     exact cancel _ _ _
 
 /-- The pullback of a descent datum `A` along a member `A.f i` of its covering family is
 identified with the descent datum along the identity given by `A.D.obj i`. -/
--- The body is exposed so that the morphisms `β` are definitionally identities when the
--- compatibility with the descent data (`hom_eq`) is checked; that field does not elaborate when
--- the body is not exposed.
-@[expose] def selfPullbackData {U : C} (A : Obj.{w} J F U) (i : A.ι) :
+def selfPullbackData {U : C} (A : Obj.{w} J F U) (i : A.ι) :
     PullbackData (A.f i) A ((toObjFunctor.{w} J F (A.X i)).obj (A.D.obj i)) where
   α _ := i
   β _ := 𝟙 _
@@ -264,6 +261,13 @@ identified with the descent datum along the identity given by `A.D.obj i`. -/
     subst e₁ e₃ e₄ e₂
     rw [DescentData.hom_self _ _ _ rfl, DescentData.hom_self _ _ _ hb, Category.id_comp]
     exact (Iso.hom_inv_id _).symm
+
+/-- The member of the covering family of `A` below the identity of `A.X i` in
+`selfPullbackData A i` is `i`. -/
+@[simp]
+lemma selfPullbackData_α {U : C} (A : Obj.{w} J F U) (i : A.ι) (j) :
+    (selfPullbackData A i).α j = i :=
+  (rfl)
 
 /-- The pullback of a descent datum `A` along a member `A.f i` of its covering family is
 isomorphic to the image of `A.D.obj i` under `toObjFunctor`. -/
