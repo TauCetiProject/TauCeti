@@ -59,6 +59,7 @@ apply to all three ends.
 * `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`,
+  `TauCeti.Floer.contDiffOn_uncurry_pairOfPantsPerturbation`,
   `TauCeti.Floer.differentiableAt_pairOfPantsPerturbation_target`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians, and in particular
   differentiable in the target point for `C¹` Hamiltonians.
@@ -384,6 +385,16 @@ theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Per
     (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
       contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+
+/-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
+jointly on `S × V`, for `Cⁿ` Hamiltonians. -/
+theorem contDiffOn_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (v : ℂ) :
+    ContDiffOn ℝ n
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  exact (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contDiffWithinAt
 
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are
 differentiable in the target point, for `C¹` Hamiltonians. -/
