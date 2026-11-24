@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.FieldTheory.Perfect
-public import Mathlib.LinearAlgebra.Dimension.Finite
+public import TauCeti.Algebra.Module.LinearMap.Iterate
+public import TauCeti.GroupTheory.FixedSubgroup.Lang
 public import TauCeti.RingTheory.LaurentSeries.Basic
+public import TauCeti.RingTheory.PowerSeries.CoefficientFrobenius
 
 /-!
 # Coefficient Frobenius and difference equations on Laurent series
@@ -36,25 +36,17 @@ public section
 open scoped PowerSeries LaurentSeries
 open Finset Function HahnSeries
 
-namespace LaurentSeries
+namespace TauCeti.LaurentSeries
 
 variable (p : ℕ) {k : Type*}
 
 /-- Apply the `p^f`-power automorphism to each coefficient of a Laurent series. -/
 noncomputable def coefficientFrobenius [CommSemiring k] [ExpChar k p] [PerfectRing k p] (f : ℕ) :
     k⸨X⸩ ≃+* k⸨X⸩ :=
-  { toFun := mapRingHom (iterateFrobeniusEquiv k p f).toRingHom
-    invFun := mapRingHom (iterateFrobeniusEquiv k p f).symm.toRingHom
-    map_add' := map_add _
-    map_mul' := map_mul _
-    left_inv := fun x => by
-      ext j
-      rw [coeff_mapRingHom, coeff_mapRingHom]
-      exact (iterateFrobeniusEquiv k p f).symm_apply_apply _
-    right_inv := fun x => by
-      ext j
-      rw [coeff_mapRingHom, coeff_mapRingHom]
-      exact (iterateFrobeniusEquiv k p f).apply_symm_apply _ }
+  RingEquiv.ofRingHom (mapRingHom (iterateFrobeniusEquiv k p f : k →+* k))
+    (mapRingHom ((iterateFrobeniusEquiv k p f).symm : k →+* k))
+    (by rw [← mapRingHom_comp, RingEquiv.comp_symm, mapRingHom_id])
+    (by rw [← mapRingHom_comp, RingEquiv.symm_comp, mapRingHom_id])
 
 variable [CommSemiring k] [ExpChar k p] [PerfectRing k p]
 
@@ -62,6 +54,13 @@ variable [CommSemiring k] [ExpChar k p] [PerfectRing k p]
 @[simp]
 theorem coeff_coefficientFrobenius (f : ℕ) (x : k⸨X⸩) (j : ℤ) :
     (coefficientFrobenius p f x).coeff j = x.coeff j ^ p ^ f :=
+  coeff_mapRingHom _ _ _
+
+/-- Inverse coefficient Frobenius applies the inverse scalar Frobenius to each coefficient. -/
+@[simp]
+theorem coeff_coefficientFrobenius_symm (f : ℕ) (x : k⸨X⸩) (j : ℤ) :
+    ((coefficientFrobenius p f).symm x).coeff j =
+      (iterateFrobeniusEquiv k p f).symm (x.coeff j) :=
   coeff_mapRingHom _ _ _
 
 /-- Coefficient Frobenius acts on a monomial without changing its exponent. -/
@@ -99,58 +98,13 @@ theorem coefficientFrobenius_iterate (f n : ℕ) :
     funext x
     rw [iterate_succ_apply, ih, Nat.mul_succ, coefficientFrobenius_add_apply]
 
-end LaurentSeries
+end TauCeti.LaurentSeries
 
-namespace LaurentSeries
+namespace TauCeti.LaurentSeries
 
-open Polynomial
+open _root_.LaurentSeries (coeff_coe_powerSeries ofPowerSeries_powerSeriesPart)
 
 variable {p : ℕ} {k : Type*} [Field k] [Fact p.Prime] [CharP k p] [IsAlgClosed k]
-
-private theorem exists_powerSeries_sum_mul_frobenius_eq (s : Finset ℕ) (a : ℕ → k⟦X⟧)
-    {f : ℕ} (hf : 0 < f) (ha : ∃ i ∈ s, PowerSeries.constantCoeff (a i) ≠ 0) (b : k⟦X⟧) :
-    ∃ x : k⟦X⟧, ∑ i ∈ s, a i * PowerSeries.map (iterateFrobenius k p (f * i)) x = b := by
-  classical
-  let q := p ^ f
-  have hq : 1 < q := one_lt_pow₀ (Fact.out : p.Prime).one_lt hf.ne'
-  -- The constant coefficients give the same nonconstant polynomial at every lifting step.
-  let lead (x : k) := ∑ i ∈ s, PowerSeries.constantCoeff (a i) * x ^ (q ^ i)
-  have hlead : Surjective lead := by
-    let P : k[X] := ∑ i ∈ s, monomial (q ^ i) (PowerSeries.constantCoeff (a i))
-    obtain ⟨i, hi, hai⟩ := ha
-    have he (j : ℕ) : q ^ j = q ^ i ↔ j = i := (Nat.pow_right_injective hq).eq_iff
-    have hcoeff : P.coeff (q ^ i) = PowerSeries.constantCoeff (a i) := by
-      simp only [P, finsetSum_coeff, coeff_monomial_apply, he]
-      simp [hi]
-    have hdegree : P.natDegree ≠ 0 := by
-      intro h
-      have hlt : P.natDegree < q ^ i := h.symm ▸ pow_pos (by omega) _
-      exact hai (hcoeff.symm.trans (coeff_eq_zero_of_natDegree_lt hlt))
-    simpa only [lead, P, eval_finsetSum, eval_monomial] using IsAlgClosed.eval_surjective hdegree
-  let lower (n : ℕ) (c : ℕ → k) : k :=
-    ∑ i ∈ s, ∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * c j ^ (q ^ i)
-  let solve (n : ℕ) (c : ℕ → k) := surjInv hlead (PowerSeries.coeff n b - lower n c)
-  let step (n : ℕ) (prev : ∀ j < n, k) : k :=
-    solve n (fun j => if h : j < n then prev j h else 0)
-  let c : ℕ → k := fun n => Nat.strongRecOn n step
-  have hc (n : ℕ) : ∑ i ∈ s, PowerSeries.constantCoeff (a i) * c n ^ (q ^ i) =
-      PowerSeries.coeff n b - lower n c := by
-    rw [show c n = solve n (fun j => if j < n then c j else 0) from Nat.strongRecOn_eq step n]
-    have h : lower n (fun j => if j < n then c j else 0) = lower n c := by
-      refine sum_congr rfl fun i _ => sum_congr rfl fun j hj => ?_
-      simp [mem_range.mp hj]
-    simpa only [solve, h] using
-      rightInverse_surjInv hlead (PowerSeries.coeff n b - lower n c)
-  refine ⟨PowerSeries.mk c, PowerSeries.ext fun n => ?_⟩
-  have hmul (i : ℕ) :
-      PowerSeries.coeff n (a i * PowerSeries.map (iterateFrobenius k p (f * i))
-          (PowerSeries.mk c)) =
-        (∑ j ∈ range n, PowerSeries.coeff (n - j) (a i) * c j ^ (q ^ i)) +
-          PowerSeries.constantCoeff (a i) * c n ^ (q ^ i) := by
-    rw [mul_comm, PowerSeries.coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ]
-    simp [PowerSeries.coeff_zero_eq_constantCoeff, iterateFrobenius_def, q, pow_mul, mul_comm]
-  simp only [map_sum, hmul, sum_add_distrib, hc, lower]
-  abel
 
 /-- A nonzero scalar twisted polynomial in positive coefficient Frobenius is surjective on
 Laurent series over an algebraically closed field. Each index in `s` denotes an iterate
@@ -180,45 +134,35 @@ theorem surjective_sum_mul_coefficientFrobenius {f : ℕ} (hf : 0 < f) {s : Fins
     rw [← PowerSeries.coeff_zero_eq_constantCoeff, ← coeff_coe_powerSeries, haSeries_coe _ hj'.1,
       coeff_single_mul, one_mul, Int.natCast_zero, zero_sub, neg_neg]
     exact coeff_order_eq_zero.not.mpr hj'.2
-  obtain ⟨x, hx⟩ := exists_powerSeries_sum_mul_frobenius_eq (p := p) s aSeries hf
+  obtain ⟨x, hx⟩ := TauCeti.PowerSeries.exists_sum_mul_map_iterateFrobenius_eq (p := p) s aSeries hf
     ⟨j, hj'.1, hAj⟩ b.powerSeriesPart
   refine ⟨single (b.order - m) 1 * (x : k⸨X⸩), ?_⟩
   apply mul_left_cancel₀ (a := (single (-b.order) 1 : k⸨X⸩)) (by simp)
   rw [← ofPowerSeries_powerSeriesPart b, ← hx, map_sum]
   rw [mul_sum]
   refine sum_congr rfl fun i hi => ?_
-  have hadd : -b.order + (b.order - m) = -m := by omega
-  rw [map_mul, coefficientFrobenius_single, one_pow, mul_left_comm (a i), ← mul_assoc,
-    single_mul_single, one_mul, hadd, ← mul_assoc, ← haSeries_coe i hi, coefficientFrobenius_coe]
-  exact (map_mul (ofPowerSeries ℤ k) _ _).symm
+  have hshift : (single (-b.order) 1 : k⸨X⸩) * single (b.order - m) 1 =
+      single (-m) 1 := by
+    have hadd : -b.order + (b.order - m) = -m := by omega
+    rw [single_mul_single, one_mul, hadd]
+  simp only [map_mul, coefficientFrobenius_single, one_pow, coefficientFrobenius_coe,
+    haSeries_coe i hi]
+  rw [← hshift]
+  ac_rfl
 
-end LaurentSeries
+end TauCeti.LaurentSeries
 
-namespace LaurentSeries
+namespace TauCeti.LaurentSeries
 
 variable {k : Type*} [Field k] (p : ℕ) [Fact p.Prime] [CharP k p] [IsAlgClosed k]
   {f : ℕ} {V : Type*} [AddCommGroup V] [Module k⸨X⸩ V]
 
 local notation "σ" => coefficientFrobenius (k := k) p f
 
-private theorem frobenius_iterate_smul (Φ : V →ₛₗ[(σ).toRingHom] V)
-    (n : ℕ) (a : k⸨X⸩) (v : V) : Φ^[n] (a • v) = σ^[n] a • Φ^[n] v := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-    rw [iterate_succ_apply' Φ, ih, map_smulₛₗ, iterate_succ_apply' σ, iterate_succ_apply' Φ]
-    rfl
-
-private theorem frobenius_sub_sum_iterates (Φ : V →ₛₗ[(σ).toRingHom] V) (n : ℕ) (v : V) :
-    Φ (∑ j ∈ range n, Φ^[j] v) - ∑ j ∈ range n, Φ^[j] v = Φ^[n] v - v := by
-  rw [map_sum, ← sum_sub_distrib]
-  simp_rw [← iterate_succ_apply' Φ]
-  exact sum_range_sub (fun j => Φ^[j] v) n
-
 /-- On a finite-dimensional Laurent-series vector space over an algebraically closed field,
 the difference `Φ - 1` for positive coefficient Frobenius is surjective. -/
-theorem surjective_sub_id_of_semilinear [Module.Finite k⸨X⸩ V] (hf : 0 < f)
-    (Φ : V →ₛₗ[(σ).toRingHom] V) : Surjective (fun x => Φ x - x) := by
+theorem surjective_sub_id_of_coefficientFrobenius_semilinear [Module.Finite k⸨X⸩ V] (hf : 0 < f)
+    (Φ : V →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] V) : Surjective (fun x => Φ x - x) := by
   classical
   intro v
   -- The first `finrank + 1` iterates of the target vector satisfy a nonzero relation.
@@ -251,13 +195,16 @@ theorem surjective_sub_id_of_semilinear [Module.Finite k⸨X⸩ V] (hf : 0 < f)
     simp only [w, ← sum_smul, hz', neg_one_smul]
   have hiter (i : Fin (n + 1)) :
       Φ^[n - i.val] (w i) = σ^[n] z • (a i • u i) := by
-    rw [frobenius_iterate_smul p, iterate_map_mul, hinv, ← iterate_add_apply,
+    rw [Φ.iterate_map_smulₛₗ, RingEquiv.coe_toRingHom, iterate_map_mul, hinv, ← iterate_add_apply,
       Nat.sub_add_cancel (by omega : i.val ≤ n), smul_smul, mul_comm]
   -- The iterated terms sum to zero, and their starting terms sum to `-v`.
   refine ⟨∑ i : Fin (n + 1), ∑ j ∈ range (n - i.val), Φ^[j] (w i), ?_⟩
   dsimp only
   rw [map_sum, ← sum_sub_distrib]
-  simp_rw [frobenius_sub_sum_iterates p, hiter]
+  have htel (n : ℕ) (x : V) :
+      Φ (∑ j ∈ range n, Φ^[j] x) - ∑ j ∈ range n, Φ^[j] x = Φ^[n] x - x := by
+    simpa only [LinearMap.toAddMonoidHom_coe] using Φ.toAddMonoidHom.map_sum_iterate_sub n x
+  simp_rw [htel, hiter]
   rw [sum_sub_distrib, ← smul_sum, ha, smul_zero, hsum, zero_sub, neg_neg]
 
-end LaurentSeries
+end TauCeti.LaurentSeries

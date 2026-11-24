@@ -14,7 +14,7 @@ public import Mathlib.Algebra.Module.Rat
 
 Mathlib records that the iterates `f^[n]` of an additive map preserve zero, addition, negation
 and integer multiples (`iterate_map_zero`, `iterate_map_add`, ...). This file adds finite sums,
-scalar multiplication by the scalars of a linear map, and rational scalar multiplication, all in
+scalar multiplication for linear and semilinear maps, and rational scalar multiplication, all in
 the iterate form `f^[n]`, together with the fact that once an iterate kills a vector, every later
 iterate kills it too.
 
@@ -23,12 +23,23 @@ iterate kills it too.
 * `TauCeti.iterate_map_eq_zero_of_le`: an iterate killing a vector is followed by iterates
   killing it.
 * `TauCeti.iterate_map_sum`: the iterates of an additive map preserve finite sums.
+* `LinearMap.iterate_map_smulₛₗ`: the iterates of a semilinear map twist scalars by the
+  corresponding iterates of the scalar endomorphism.
 * `TauCeti.iterate_map_smul`: the iterates of a linear map preserve scalar multiplication.
 * `TauCeti.iterate_map_rat_smul`: the iterates of an additive map between `ℚ`-modules preserve
   rational scalar multiplication.
 -/
 
 public section
+
+/-- Iterating a semilinear endomorphism twists scalar multiplication by the same number of
+iterations of the scalar endomorphism. -/
+theorem LinearMap.iterate_map_smulₛₗ {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {σ : R →+* R} (f : M →ₛₗ[σ] M) (n : ℕ) (r : R) (x : M) :
+    f^[n] (r • x) = σ^[n] r • f^[n] x := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp only [Function.iterate_succ_apply', ih, map_smulₛₗ]
 
 namespace TauCeti
 

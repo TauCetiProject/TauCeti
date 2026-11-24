@@ -11,11 +11,11 @@ public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
 /-!
 # Splitting extensions of equal-characteristic isocrystals
 
-Every surjective morphism of finite isocrystals over `k((X))` with arithmetic
-coefficient Frobenius has a Frobenius-equivariant section when `k` is
-algebraically closed. The Frobenius defect of an arbitrary linear section
-takes values in the kernel, so a solution of `Φ - 1` on the space of linear
-maps into that kernel corrects the section.
+Every epimorphism of finite isocrystals over `k((X))` has a Frobenius-equivariant
+section when `k` is algebraically closed and Frobenius fixes `X` and raises
+each coefficient to `p^f` for `f > 0`. The identity on the target is fixed by
+Frobenius conjugation. Surjectivity of the Lang map on linear maps into the
+kernel gives a fixed lift of this identity, hence an equivariant section.
 -/
 
 public section
@@ -24,8 +24,6 @@ open CategoryTheory Function
 open scoped LaurentSeries
 
 namespace TauCeti.FiniteIsocrystal
-
-open _root_.LaurentSeries
 
 variable {k E : Type*} [Field k] [CommRing E] [Algebra E k⸨X⸩]
   {p : ℕ} [Fact p.Prime] [CharP k p] [IsAlgClosed k] {f : ℕ}
@@ -37,60 +35,58 @@ local instance : RingHomInvPair (σ : k⸨X⸩ →+* k⸨X⸩) (σ.symm : k⸨X�
 local instance : RingHomInvPair (σ.symm : k⸨X⸩ →+* k⸨X⸩) (σ : k⸨X⸩ →+* k⸨X⸩) :=
   RingHomInvPair.of_ringEquiv_symm σ.toRingEquiv
 
-private noncomputable def kerFrobenius (g : D ⟶ D') :
-    g.hom.ker ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] g.hom.ker :=
-  LinearEquiv.ofBijective (D.frobenius.restrict fun x hx => by
-    rw [LinearMap.mem_ker, g.hom_frobenius, LinearMap.mem_ker.mp hx, map_zero]) <| by
-      refine ⟨fun x y h => Subtype.ext (D.frobenius_injective (congrArg Subtype.val h)), ?_⟩
-      intro y
-      obtain ⟨x, hx⟩ := D.frobenius_surjective y.val
-      have hxker : x ∈ g.hom.ker := by
-        rw [LinearMap.mem_ker]
-        apply D'.frobenius_injective
-        rw [← g.hom_frobenius, hx, LinearMap.mem_ker.mp y.property, map_zero]
-      exact ⟨⟨x, hxker⟩, Subtype.ext hx⟩
-
-/-- Every surjective morphism of equal-characteristic finite isocrystals over an algebraically
-closed residue field has an intertwining section. In particular, every short exact sequence
-of such isocrystals splits. -/
-theorem isSplitEpi_of_surjective (hσ : σ.toRingEquiv = coefficientFrobenius p f)
-    (hf : 0 < f) (g : D ⟶ D') (hg : Surjective g.hom) : IsSplitEpi g := by
-  obtain ⟨s, hs⟩ := g.hom.exists_rightInverse_of_surjective (LinearMap.range_eq_top.mpr hg)
+/-- Every epimorphism of equal-characteristic finite isocrystals over an algebraically
+closed residue field splits when Frobenius fixes `X` and raises each coefficient to
+`p^f` for `f > 0`. In particular, every short exact sequence of such isocrystals splits. -/
+theorem isSplitEpi_of_epi (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobenius p f)
+    (hf : 0 < f) (g : D ⟶ D') [Epi g] : IsSplitEpi g := by
   let Φ := LinearEquiv.ofBijective D.frobenius D.frobenius_bijective
   let Φ' := LinearEquiv.ofBijective D'.frobenius D'.frobenius_bijective
-  -- Conjugation by Frobenius measures whether a linear section intertwines.
-  let defect : D' →ₗ[k⸨X⸩] D := s - (Φ'.arrowCongr Φ) s
-  have hright (y : D') : g.hom (s y) = y := DFunLike.congr_fun hs y
-  have hdefect (x : D') : g.hom (defect x) = 0 := by
-    simp only [defect, LinearMap.sub_apply, map_sub, LinearEquiv.arrowCongr_apply, Φ,
-      LinearEquiv.ofBijective_apply, g.hom_frobenius, hright]
-    exact sub_eq_zero.mpr (Φ'.apply_symm_apply x).symm
-  let δ : D' →ₗ[k⸨X⸩] g.hom.ker := defect.codRestrict _ hdefect
+  let F : (D' →ₗ[k⸨X⸩] D) ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] _ := Φ'.arrowCongr Φ
+  let F' : (D' →ₗ[k⸨X⸩] D') ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] _ := Φ'.arrowCongr Φ'
   let Ψ : (D' →ₗ[k⸨X⸩] g.hom.ker) ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)]
       (D' →ₗ[k⸨X⸩] g.hom.ker) := Φ'.arrowCongr (kerFrobenius g)
-  have hsurj : Surjective (fun x => Ψ x - x) := by
-    have hRingHom : (σ : k⸨X⸩ →+* k⸨X⸩) = (coefficientFrobenius p f).toRingHom :=
+  let post := (LinearMap.compRight k⸨X⸩ (M := D') g.hom).toAddMonoidHom.toMultiplicative
+  let incl := (LinearMap.compRight k⸨X⸩ (M := D') g.hom.ker.subtype).toAddMonoidHom.toMultiplicative
+  have hker : incl.range = post.ker := by
+    ext s
+    change (∃ t : D' →ₗ[k⸨X⸩] g.hom.ker, g.hom.ker.subtype.comp t = s) ↔ g.hom.comp s = 0
+    refine ⟨?_, fun h => ⟨s.codRestrict _ (DFunLike.congr_fun h), rfl⟩⟩
+    rintro ⟨t, rfl⟩
+    exact LinearMap.ext fun x => (t x).property
+  let Ψmul := Ψ.toLinearMap.toAddMonoidHom.toMultiplicative
+  have hLang : Surjective (MonoidHom.commutatorMap Ψmul) := by
+    have hRingHom : (σ : k⸨X⸩ →+* k⸨X⸩) =
+        (LaurentSeries.coefficientFrobenius (k := k) p f : k⸨X⸩ →+* k⸨X⸩) :=
       congrArg RingEquiv.toRingHom hσ
     have h (T : (D' →ₗ[k⸨X⸩] g.hom.ker) →ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)]
         (D' →ₗ[k⸨X⸩] g.hom.ker)) : Surjective (fun x => T x - x) := by
       revert T
       rw [hRingHom]
-      exact fun T => surjective_sub_id_of_semilinear p hf T
-    exact h Ψ.toLinearMap
-  -- A correction with image in the kernel preserves the section equation.
-  obtain ⟨t, ht⟩ := hsurj δ
-  let sectionMap := s + g.hom.ker.subtype.comp t
-  have hcomm (x : D') : sectionMap (D'.frobenius x) = D.frobenius (sectionMap x) := by
-    have hx : Φ'.symm (D'.frobenius x) = x := Φ'.symm_apply_apply x
-    have hker (y : g.hom.ker) : (kerFrobenius g y : D) = D.frobenius y := (rfl)
-    have hδ (y : D') : (δ y : D) = defect y := (rfl)
-    have h := congrArg Subtype.val (DFunLike.congr_fun ht (D'.frobenius x))
-    simp only [LinearMap.sub_apply, Submodule.coe_sub, Ψ, LinearEquiv.arrowCongr_apply,
-      hx, hker, hδ, defect, Φ, LinearEquiv.ofBijective_apply] at h
-    simpa only [sectionMap, LinearMap.add_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-      map_add, add_comm] using sub_eq_sub_iff_add_eq_add.mp h.symm
-  refine IsSplitEpi.mk' ⟨ofHom sectionMap hcomm, hom_ext ?_⟩
-  ext x
-  simp [sectionMap, hright, LinearMap.mem_ker.mp (t x).property]
+      exact LaurentSeries.surjective_sub_id_of_coefficientFrobenius_semilinear p hf
+    intro t
+    obtain ⟨s, hs⟩ : ∃ s, Ψ s - s = -t.toAdd := h Ψ.toLinearMap (-t.toAdd)
+    exact ⟨s, by
+      change s - Ψ s = t.toAdd
+      simpa only [neg_sub, neg_neg] using congrArg Neg.neg hs⟩
+  obtain ⟨s, hfix, hsection⟩ := post.exists_fixed_lift_of_surjective_commutatorMap incl hker
+    Ψmul F.toLinearMap.toAddMonoidHom.toMultiplicative
+    F'.toLinearMap.toAddMonoidHom.toMultiplicative
+    (fun t => LinearMap.ext fun x => by
+      change g.hom (F t.toAdd x) = F' (g.hom.comp t.toAdd) x
+      simpa only [LinearMap.comp_apply, LinearEquiv.arrowCongr_apply, F, F', Φ, Φ',
+        LinearEquiv.ofBijective_apply] using g.hom_frobenius (t.toAdd (Φ'.symm x)))
+    (fun t => LinearMap.ext fun x => by
+      change F (g.hom.ker.subtype.comp t.toAdd) x = (Ψ t.toAdd x).val
+      simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.arrowCongr_apply,
+        Φ, F, Ψ, LinearEquiv.ofBijective_apply, kerFrobenius_apply])
+    ((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left hLang
+    (y := Multiplicative.ofAdd LinearMap.id) (LinearMap.ext fun x => Φ'.apply_symm_apply x)
+  have hcomm (x : D') : s.toAdd (D'.frobenius x) = D.frobenius (s.toAdd x) := by
+    have hx : Φ'.symm (D'.frobenius x) = x := by
+      simpa only [Φ', LinearEquiv.ofBijective_apply] using Φ'.symm_apply_apply x
+    have h := DFunLike.congr_fun (show F s.toAdd = s.toAdd from hfix) (D'.frobenius x)
+    simpa only [F, LinearEquiv.arrowCongr_apply, Φ, LinearEquiv.ofBijective_apply, hx] using h.symm
+  exact IsSplitEpi.mk' ⟨ofHom s.toAdd hcomm, hom_ext hsection⟩
 
 end TauCeti.FiniteIsocrystal
