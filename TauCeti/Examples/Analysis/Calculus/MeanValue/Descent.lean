@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.MeanValue.Descent
-import Mathlib.Analysis.Calculus.Deriv.Mul
+public import TauCeti.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.FDeriv.Add
-import Mathlib.Analysis.Calculus.FDeriv.Linear
+import TauCeti.Analysis.Normed.Operator.Mul
 
 /-!
 # Checks for the descent lemma
@@ -32,9 +30,8 @@ open TauCeti
 example (x y : ℝ) :
     ‖fderiv ℝ (fun y : ℝ ↦ y ^ 2 / 2) y - fderiv ℝ (fun y : ℝ ↦ y ^ 2 / 2) x‖ ≤ 1 * ‖y - x‖ := by
   have hd (y : ℝ) : deriv (fun y : ℝ ↦ y ^ 2 / 2) y = y := by simp
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun z ↦ ?_
-  simp only [sub_apply, fderiv_eq_smul_deriv, hd, smul_eq_mul, ← mul_sub, norm_mul, one_mul]
-  exact (mul_comm _ _).le
+  rw [← toSpanSingleton_deriv, ← toSpanSingleton_deriv]
+  simp [ContinuousLinearMap.norm_toSpanSingleton_sub, hd]
 
 /-- For `y ↦ y ^ 2 / 2` on `ℝ` and `L = 1` the descent lemma is an equality. -/
 example (x h : ℝ) :
