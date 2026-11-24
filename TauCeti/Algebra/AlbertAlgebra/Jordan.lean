@@ -24,11 +24,12 @@ Jordan identity is what produces derivations of `J` beyond those induced from th
 No coordinate computation of the identity itself is needed. The instance is
 `TauCeti.Jordan.IsCubicMinimalPolynomial.isCommJordan` of
 `TauCeti/Algebra/Jordan/CubicMinimalPolynomial.lean`, applied to
-`TauCeti.AlbertAlgebra.isCubicMinimalPolynomial`, and so comes from three facts:
+`TauCeti.AlbertAlgebra.isCubicMinimalPolynomial`, and so comes from four facts:
 
 * the **cubic equation** `A³ = T(A) A² - S(A) A + det A · 1` of
   `TauCeti/Algebra/AlbertAlgebra/Determinant.lean` (`TauCeti.AlbertAlgebra.mul_mul_self`), with
   `T` the trace, `S` the spur and `A³ = A ∘ A²`;
+* the **spur formula** `2 S(A) = T(A)² - T(A ∘ A)` (`TauCeti.AlbertAlgebra.two_mul_spur`);
 * the **associativity of the trace form**, `T((A ∘ B) ∘ C) = T(A ∘ (B ∘ C))`
   (`TauCeti.AlbertAlgebra.trace_mul_assoc`);
 * the **gradient of the determinant**: its derivative at `A` in the direction `B` is

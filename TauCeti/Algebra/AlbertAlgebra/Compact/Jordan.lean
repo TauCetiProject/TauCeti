@@ -25,12 +25,13 @@ As for the split Albert algebra in `TauCeti/Algebra/AlbertAlgebra/Jordan.lean`, 
 computation of the identity itself is needed. The instance is
 `TauCeti.Jordan.IsCubicMinimalPolynomial.isCommJordan` of
 `TauCeti/Algebra/Jordan/CubicMinimalPolynomial.lean`, applied to
-`TauCeti.CompactAlbertAlgebra.isCubicMinimalPolynomial`, and so follows from three facts of
+`TauCeti.CompactAlbertAlgebra.isCubicMinimalPolynomial`, and so follows from four facts of
 `TauCeti/Algebra/AlbertAlgebra/Compact/Determinant.lean` and
 `TauCeti/Algebra/AlbertAlgebra/Compact.lean`:
 
 * the **cubic equation** `A³ = T(A) A² - S(A) A + det A · 1`
   (`TauCeti.CompactAlbertAlgebra.mul_mul_self`), with `T` the trace, `S` the spur and `A³ = A ∘ A²`;
+* the **spur formula** `2 S(A) = T(A)² - T(A ∘ A)` (`TauCeti.CompactAlbertAlgebra.two_mul_spur`);
 * the **associativity of the trace form**, `T((A ∘ B) ∘ C) = T(A ∘ (B ∘ C))`
   (`TauCeti.CompactAlbertAlgebra.trace_mul_assoc`);
 * the **gradient of the determinant**: its derivative at `A` in the direction `B` is
