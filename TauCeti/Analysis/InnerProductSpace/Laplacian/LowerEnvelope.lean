@@ -18,16 +18,20 @@ cannot be applied to it directly. It can be tested instead: if `(x₀, s₀)` mi
 `K × S` with `x₀` in the interior of `K`, and `γ` is a local section of `S` through `s₀`, then `x₀`
 is an interior local minimum of `y ↦ q y (γ y)` (`TauCeti.isLocalMin_of_isMinOn_prod`). If this
 function is `C²` at `x₀`, its first derivative vanishes and its Laplacian is nonnegative there
-(`TauCeti.laplacian_nonneg_of_isMinOn_prod`). The parameter `s₀` is a minimizing parameter at
-`x₀`, so a differential inequality need only be checked at minimizing parameters, along any
-convenient section through them, for instance a moving frame.
+(`TauCeti.laplacian_nonneg_of_isMinOn_prod`, in
+`TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr`). The parameter `s₀` is a minimizing
+parameter at `x₀`, so a differential inequality need only be checked at minimizing parameters,
+along any convenient section through them, for instance a moving frame.
 
 This gives a strict minimum principle for lower envelopes
-(`TauCeti.ge_of_laplacian_add_fderiv_neg_of_isMinOn`): if `q ≥ m` on `frontier K` and, at each
-interior point `x` and each parameter `s` minimizing `q x` with `q x s < m`, some section `γ`
-through `s` and some drift vector `b` satisfy `Δ (q · γ) x + D (q · γ) x b < 0`, then `q ≥ m` on
-`K × S`. Its quantitative form (`TauCeti.min_le_of_laplacian_le_mul_add_of_isMinOn`) assumes, at
-minimizing parameters with `q x s < min m (-k / c₀)`,
+(`TauCeti.ge_of_laplacian_add_fderiv_neg_of_isMinOn`): let `K` and `S` be compact and `q` jointly
+continuous on `K × S`. If `q ≥ m` on `frontier K` and, at each interior point `x` and each
+parameter `s` minimizing `q x` with `q x s < m`, some section `γ` through `s`, with
+`y ↦ q y (γ y)` `C²` at `x`, and some drift vector `b` satisfy
+`Δ (q · γ) x + D (q · γ) x b < 0`, then `q ≥ m` on `K × S`. Its quantitative form
+(`TauCeti.min_le_of_laplacian_le_mul_add_of_isMinOn`), for the same compact `K` and `S` and
+jointly continuous `q`, assumes, at minimizing parameters with `q x s < min m (-k / c₀)`, a
+section `γ` through `s` with `y ↦ q y (γ y)` `C²` at `x` and a drift vector `b` such that
 
 `Δ (q · γ) x + D (q · γ) x b ≤ c x · q x s + k`,  `c x ≥ c₀ > 0`,  `k ≥ 0`,
 
@@ -47,13 +51,10 @@ large-parameter Seiberg–Witten solutions from below.
 
 ## Main results
 
-* `TauCeti.laplacian_nonneg_of_isMinOn_prod`: for an interior minimizer `(x₀, s₀)` of `q` over
-  `K × S` and every local section `γ` of `S` through `s₀`, the Laplacian of `q · γ` is
-  nonnegative at `x₀`.
 * `TauCeti.ge_of_laplacian_add_fderiv_neg_of_isMinOn`: the strict minimum principle for lower
-  envelopes.
+  envelopes over compact `K` and `S`, tested along sections `γ` with `y ↦ q y (γ y)` `C²`.
 * `TauCeti.min_le_of_laplacian_le_mul_add_of_isMinOn`: the quantitative minimum principle for
-  lower envelopes.
+  lower envelopes over compact `K` and `S`, tested along sections `γ` with `y ↦ q y (γ y)` `C²`.
 * `TauCeti.min_mul_norm_sq_le_of_laplacian_le_mul_add_of_isMinOn`: the minimum principle for the
   quadratic form of a field of bilinear forms, a lower bound on the least eigenvalue when the
   forms are symmetric.
@@ -74,16 +75,6 @@ open InnerProductSpace Laplacian Set Metric Filter Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [TopologicalSpace ι]
-
-omit [TopologicalSpace ι] in
-/-- **The Laplacian test for a lower envelope.** If `(x, s)` minimizes `q` over `K × S` and `x`
-lies in the interior of `K`, then for every local section `γ` of `S` through `s` such that
-`y ↦ q y (γ y)` is `C²` at `x`, the Laplacian of `y ↦ q y (γ y)` is nonnegative at `x`. -/
-theorem laplacian_nonneg_of_isMinOn_prod {K : Set E} {S : Set ι} {q : E → ι → ℝ} {x : E} {s : ι}
-    {γ : E → ι} (hx : x ∈ interior K) (hmin : IsMinOn (fun p : E × ι ↦ q p.1 p.2) (K ×ˢ S) (x, s))
-    (hγx : γ x = s) (hγ : ∀ᶠ y in 𝓝 x, γ y ∈ S) (hcd : ContDiffAt ℝ 2 (fun y ↦ q y (γ y)) x) :
-    0 ≤ Δ (fun y ↦ q y (γ y)) x :=
-  laplacian_nonneg_of_isLocalMin hcd (isLocalMin_of_isMinOn_prod hx hmin hγx hγ)
 
 /-- **The strict minimum principle for lower envelopes.** Let `K` and `S` be compact and let `q` be
 jointly continuous on `K × S`. Suppose that `q ≥ m` on `frontier K × S`, and that at each interior
