@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationTh
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.EMetricSpace.Lipschitz
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
+import TauCeti.MeasureTheory.Group.ActionIntegral
 
 /-!
 # The Koopman group of a measurable action of `ℝ`
@@ -76,10 +77,18 @@ private theorem norm_abs_sub_le_two {a b : ℝ} (ha : ‖a‖ ≤ 1) (hb : ‖b�
 private def orbitAverage (g : X → ℝ) (h : ℝ) (x : X) : ℝ :=
   h⁻¹ * ∫ r in (0 : ℝ)..h, g (r +ᵥ x)
 
+/-- A measurable function bounded by `1` is integrable along every orbit over a set of times of
+finite measure. -/
+private theorem integrableOn_orbit (hg : Measurable g) (hg1 : ∀ x, ‖g x‖ ≤ 1) (x : X)
+    {s : Set ℝ} (hs : volume s ≠ ∞) : IntegrableOn (fun r : ℝ => g (r +ᵥ x)) s :=
+  have : IsFiniteMeasure (volume.restrict s) := isFiniteMeasure_restrict.2 hs
+  (integrable_const (1 : ℝ)).mono' (hg.comp (measurable_vadd_const x)).aestronglyMeasurable
+    (ae_of_all _ fun _ => hg1 _)
+
 private theorem intervalIntegrable_orbit (hg : Measurable g) (hg1 : ∀ x, ‖g x‖ ≤ 1) (x : X)
     (a b : ℝ) : IntervalIntegrable (fun r : ℝ => g (r +ᵥ x)) volume a b :=
-  (intervalIntegrable_const (c := (1 : ℝ))).mono_fun'
-    (hg.comp (measurable_vadd_const x)).aestronglyMeasurable (ae_of_all _ fun _ => hg1 _)
+  ⟨integrableOn_orbit hg hg1 x measure_Ioc_lt_top.ne,
+    integrableOn_orbit hg hg1 x measure_Ioc_lt_top.ne⟩
 
 omit [MeasurableSpace X] [MeasurableVAdd₂ ℝ X] in
 private theorem orbitAverage_vadd (g : X → ℝ) (h t : ℝ) (x : X) :
@@ -93,6 +102,11 @@ private theorem measurable_orbitAverage (hg : Measurable g) (h : ℝ) :
     (hg.comp (measurable_snd.vadd measurable_fst)).stronglyMeasurable
   have h₁ := (hF.integral_prod_right' (ν := volume.restrict (Ioc 0 h))).measurable
   have h₂ := (hF.integral_prod_right' (ν := volume.restrict (Ioc h 0))).measurable
+  have heq : orbitAverage g h = fun x =>
+      h⁻¹ * ((∫ r in Ioc 0 h, g (r +ᵥ x)) - ∫ r in Ioc h 0, g (r +ᵥ x)) := by
+    funext x
+    rw [orbitAverage, intervalIntegral]
+  rw [heq]
   exact (h₁.sub h₂).const_mul _
 
 omit [MeasurableSpace X] [MeasurableVAdd₂ ℝ X] in
@@ -104,6 +118,16 @@ private theorem norm_orbitAverage_le (hg1 : ∀ x, ‖g x‖ ≤ 1) {h : ℝ} (h
   rw [sub_zero, abs_of_pos hh, one_mul] at this
   calc h⁻¹ * ‖∫ r in (0 : ℝ)..h, g (r +ᵥ x)‖ ≤ h⁻¹ * h := by gcongr
     _ = 1 := inv_mul_cancel₀ hh.ne'
+
+/-- The orbit averages of `g` are integrable along every orbit over a set of times of finite
+measure. -/
+private theorem integrableOn_orbitAverage (hg : Measurable g) (hg1 : ∀ x, ‖g x‖ ≤ 1) {h : ℝ}
+    (hh : 0 < h) (x : X) {s : Set ℝ} (hs : volume s ≠ ∞) :
+    IntegrableOn (fun r : ℝ => orbitAverage g h (r +ᵥ x)) s :=
+  have : IsFiniteMeasure (volume.restrict s) := isFiniteMeasure_restrict.2 hs
+  (integrable_const (1 : ℝ)).mono' ((measurable_orbitAverage hg h).comp
+    (measurable_vadd_const x)).aestronglyMeasurable
+    (ae_of_all _ fun _ => norm_orbitAverage_le hg1 hh _)
 
 /-- Moving the time window by `t` changes the orbit average by at most the mass of `g` on two
 time windows of length `|t|`. -/
@@ -119,25 +143,6 @@ private theorem abs_orbitAverage_vadd_sub_le (hg : Measurable g) (hg1 : ∀ x, �
   exact (abs_sub _ _).trans (add_le_add
     ((Real.norm_eq_abs _).symm.trans_le intervalIntegral.norm_integral_le_integral_norm_uIoc)
     ((Real.norm_eq_abs _).symm.trans_le intervalIntegral.norm_integral_le_integral_norm_uIoc))
-
-/-- The translates of an integrable function, over a finite measure `ν` of times, are jointly
-integrable. -/
-private theorem integrable_vadd_prod [SFinite μ] [VAddInvariantMeasure ℝ X μ] {ν : Measure ℝ}
-    [IsFiniteMeasure ν] {F : X → ℝ} (hF : Measurable F) (hFi : Integrable F μ) :
-    Integrable (fun p : X × ℝ => F (p.2 +ᵥ p.1)) (μ.prod ν) := by
-  refine (integrable_prod_iff'
-    (hF.comp (measurable_snd.vadd measurable_fst)).aestronglyMeasurable).2
-    ⟨ae_of_all _ fun s => (measurePreserving_vadd s μ).integrable_comp_of_integrable hFi, ?_⟩
-  exact (integrable_const (∫ x, ‖F x‖ ∂μ)).congr
-    (ae_of_all _ fun s => (integral_vadd_eq_self (μ := μ) (fun x => ‖F x‖)).symm)
-
-/-- Integrating the invariance `∫ F dμ = ∫ F (s +ᵥ ·) dμ` against a finite measure `ν` of times
-and applying Fubini. -/
-private theorem integral_integral_vadd [SFinite μ] [VAddInvariantMeasure ℝ X μ] {ν : Measure ℝ}
-    [IsFiniteMeasure ν] {F : X → ℝ} (hF : Measurable F) (hFi : Integrable F μ) :
-    ∫ x, (∫ s, F (s +ᵥ x) ∂ν) ∂μ = ν.real univ * ∫ x, F x ∂μ := by
-  rw [integral_integral_swap (integrable_vadd_prod hF hFi)]
-  simp [integral_vadd_eq_self]
 
 /-- The orbit averages of an integrable function are integrable. -/
 private theorem integrable_orbitAverage [SFinite μ] [VAddInvariantMeasure ℝ X μ]
@@ -165,8 +170,8 @@ private theorem integral_orbitAverage_vadd_le (hg : Measurable g) (hg0 : ∀ x, 
     rw [← intervalIntegral.integral_of_le zero_le_one,
       intervalIntegral.integral_comp_add_left (fun u => g (u +ᵥ x)), add_zero,
       intervalIntegral.integral_of_le (by linarith)]
-    exact setIntegral_mono_set ((integrable_const (1 : ℝ)).mono' hG.aestronglyMeasurable
-      (ae_of_all _ fun _ => hg1 _)) (.of_forall fun _ => hg0 _)
+    exact setIntegral_mono_set (integrableOn_orbit hg hg1 x measure_Ioc_lt_top.ne)
+      (.of_forall fun _ => hg0 _)
       (.of_forall fun _ hu => Ioc_subset_Ioc (by linarith [hr.1]) (by linarith [hr.2]) hu)
   calc ∫ s in Ioc (0 : ℝ) 1, orbitAverage g h (s +ᵥ x)
       = h⁻¹ * ∫ r in Ioc 0 h, ∫ s in Ioc (0 : ℝ) 1, g ((r + s) +ᵥ x) := by
@@ -216,7 +221,7 @@ private theorem tendsto_integral_abs_orbitAverage_sub [SFinite μ] [VAddInvarian
   have key : ∀ᶠ h in 𝓝[>] (0 : ℝ), ∫ x, |orbitAverage g h x - g x| ∂μ =
       ∫ x, (∫ s in Ioc (0 : ℝ) 1, |orbitAverage g h (s +ᵥ x) - g (s +ᵥ x)|) ∂μ := by
     filter_upwards [self_mem_nhdsWithin] with h hh
-    rw [integral_integral_vadd (hmeas h) ((integrable_orbitAverage hg hgi hh).sub hgi).abs]
+    rw [integral_integral_vadd_eq (hmeas h) ((integrable_orbitAverage hg hgi hh).sub hgi).abs]
     simp
   rw [tendsto_congr' key, show (𝓝 (0 : ℝ)) = 𝓝 (∫ _x : X, (0 : ℝ) ∂μ) by simp]
   have hmeas' (h : ℝ) : StronglyMeasurable fun p : X × ℝ =>
@@ -232,13 +237,9 @@ private theorem tendsto_integral_abs_orbitAverage_sub [SFinite μ] [VAddInvarian
   refine ae_of_all _ fun x => ?_
   have hA0 (s : ℝ) : 0 ≤ orbitAverage g h (s +ᵥ x) :=
     mul_nonneg (inv_nonneg.2 hh.1.le) (intervalIntegral.integral_nonneg hh.1.le fun _ _ => hg0 _)
-  have iA : IntegrableOn (fun s : ℝ => orbitAverage g h (s +ᵥ x)) (Ioc 0 1) :=
-    (integrable_const (1 : ℝ)).mono' ((measurable_orbitAverage hg h).comp
-      (measurable_vadd_const x)).aestronglyMeasurable
-      (ae_of_all _ fun _ => norm_orbitAverage_le hg1 hh.1 _)
+  have iA := integrableOn_orbitAverage hg hg1 hh.1 x (measure_Ioc_lt_top (a := (0 : ℝ)) (b := 1)).ne
   have iG (b : ℝ) : IntegrableOn (fun s : ℝ => g (s +ᵥ x)) (Ioc 0 b) :=
-    (integrable_const (1 : ℝ)).mono' (hg.comp (measurable_vadd_const x)).aestronglyMeasurable
-      (ae_of_all _ fun _ => hg1 _)
+    integrableOn_orbit hg hg1 x measure_Ioc_lt_top.ne
   have h₁ := integral_orbitAverage_vadd_le hg hg0 hg1 hh.1 hh.2.le x
   have h₂ : ∫ s in Ioc (0 : ℝ) 1, g (s +ᵥ x) ≤ ∫ u in Ioc (0 : ℝ) 2, g (u +ᵥ x) :=
     setIntegral_mono_set (iG 2) (.of_forall fun _ => hg0 _)
@@ -269,9 +270,10 @@ private theorem integral_abs_orbitAverage_vadd_sub_le [SFinite μ] [VAddInvarian
         integral_mono (((measurePreserving_vadd t μ).integrable_comp_of_integrable iA).sub iA).abs
           ((i₁.add i₂).const_mul _) fun x => abs_orbitAverage_vadd_sub_le hg hg1 hh t x
     _ = 2 * |t| / h * ∫ x, ‖g x‖ ∂μ := by
-        rw [integral_const_mul, integral_add i₁ i₂, integral_integral_vadd hg.norm hgi.norm,
-          integral_integral_vadd hg.norm hgi.norm]
-        simp [Measure.real, Real.volume_uIoc]
+        rw [integral_const_mul, integral_add i₁ i₂, integral_integral_vadd_eq hg.norm hgi.norm,
+          integral_integral_vadd_eq hg.norm hgi.norm]
+        simp only [Measure.real, Real.volume_uIoc, Measure.restrict_apply_univ,
+          ENNReal.toReal_ofReal (abs_nonneg _), sub_zero, add_sub_cancel_right]
         ring
 
 /-- Comparing `g` and its translate through the orbit average `A_h g`. -/
