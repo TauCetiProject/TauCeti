@@ -42,19 +42,24 @@ It follows from the commutator of a current with a normally ordered mode
 (`TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_normalOrderedMode_sub_mul`): the Leibniz terms
 cancel because `∑ᵢ xᵢ ⊗ yᵢ` is invariant, the reordering terms give the adjoint Casimir operator
 `∑ᵢ ⁅⁅z, xᵢ⁆, yᵢ⁆ = z` (`TauCeti.sum_lie_lie_killingDualBasis`), the central contractions give
-`2 a w`, and the central constant vanishes because `∑ᵢ ⁅xᵢ, yᵢ⁆ = 0`. If `Φ = c κ_L` then `w = c z`
-and `[z_k, Sₙ] = k (1 - 2 a c) z_{n+k}`. Away from the critical level `1 - 2 a c = 0`, the
+`2 a w`, and the central constant vanishes because `∑ᵢ ⁅xᵢ, yᵢ⁆ = 0`. If `Φ = c • κ_L` then
+`w = c z` and `[z_k, Sₙ] = k (1 - 2 a c) z_{n+k}`. When `Φ = c • κ_L` and `1 - 2 a c ≠ 0`, the
 normalised modes `Lₘ = (1 - 2 a c)⁻¹ Sₘ` (`TauCeti.CurrentAlgebra.sugawaraVirasoro`) satisfy
-`[Lₘ, z_k] = -k z_{m+k}`, with Sugawara central charge
-`c_{Vir} = -(2 a c) / (1 - 2 a c) · dim L` (`TauCeti.CurrentAlgebra.sugawaraCentralCharge`).
+`[Lₘ, z_k] = -k z_{m+k}`, with Sugawara central charge `c_{Vir} = -(2 a c) / (1 - 2 a c) · dim L`
+(`TauCeti.CurrentAlgebra.sugawaraCentralCharge`, which gives the central term in the Virasoro
+relations when `2 ≠ 0` and `3 ≠ 0`).
 
-**The critical level.** When `2 a Φ = κ_L`, every `Sₙ` commutes with all currents, so it lies in the
-center of `Û` (`TauCeti.CurrentAlgebra.sugawaraMode_mem_center`). For the affine level form
+**The critical level.** In arbitrary characteristic, the critical condition is `2 a Φ = κ_L`: when
+`2 a Φ = κ_L`, every `Sₙ` commutes with all currents, so it lies in the center of `Û`
+(`TauCeti.CurrentAlgebra.sugawaraMode_mem_center`). When `2 ≠ 0`, for the affine level form
 `κ = -Φ` at `a = 1` this is `κ = -½ κ_L`, the critical level `κ_c`.
 
-No characteristic or algebraic-closure hypothesis is needed. In the normalisation of Frenkel, with
-the invariant form `κ₀ = κ_L / (2 h^∨)` and `S(z) = ½ ∑ :J^a J_a:` for `κ₀`-dual bases, the
-Segal--Sugawara modes are `h^∨ Sₙ`, and at the level `κ = k κ₀` the formula above becomes
+The general construction and current commutator above need no characteristic or algebraic-closure
+hypothesis. In `TauCeti.Algebra.Lie.Current.Sugawara.Normalization`, when `2 ≠ 0` and
+`κ_L = 2 h^∨ κ₀` with `h^∨ ≠ 0` (in particular, for a simple Lie algebra in characteristic zero
+where `h^∨` is the dual Coxeter number), in the normalisation of Frenkel with `κ₀ = κ_L / (2 h^∨)`
+and `S(z) = ½ ∑ :J^a J_a:` for `κ₀`-dual bases, the Segal--Sugawara modes are `h^∨ Sₙ`, and at the
+level `κ = k κ₀` (`Φ = -(k • κ₀)`, `a = 1`) the formula above becomes
 `[z_m, h^∨ Sₙ] = (k + h^∨) m z_{n+m}`.
 
 The homothety `t ↦ u t` scales `Sₙ` by `u ^ n` at every central value
@@ -209,13 +214,13 @@ theorem toCompletedEnveloping_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm {c
     (h : Φ = c • killingForm K L) (z : L) (k n : ℤ) :
     ιK[z, k] * sugawaraMode Φ hΦ hΦs a n - sugawaraMode Φ hΦ hΦs a n * ιK[z, k] =
       ((k : K) * (1 - 2 * a * c)) • ιK[z, n + k] := by
+  have hz : z - (2 * a) • c • z = (1 - 2 * a * c) • z := by module
   rw [toCompletedEnveloping_mul_sugawaraMode_sub_mul (w := c • z) (fun y ↦ by simp [h]),
-    show z - (2 * a) • c • z = (1 - 2 * a * c) • z by module, TensorProduct.tmul_smul, map_smul,
-    map_smul, smul_smul]
+    hz, TensorProduct.tmul_smul, map_smul, map_smul, smul_smul]
 
-/-- **The Segal--Sugawara modes are central at the critical level.** If `2 a Φ = κ_L`, which for
-the affine level form `κ = -Φ` at central value `1` is the critical level `κ = -½ κ_L`, then every
-`Sₙ` lies in the center of `Û`. -/
+/-- **The Segal--Sugawara modes are central at the critical level.** If `2 a Φ = κ_L` (in
+arbitrary characteristic; when `2 ≠ 0`, for the affine level form `κ = -Φ` at central value `1` this
+is the critical level `κ = -½ κ_L`), then every `Sₙ` lies in the center of `Û`. -/
 theorem sugawaraMode_mem_center (h : (2 * a) • Φ = killingForm K L) (n : ℤ) :
     sugawaraMode Φ hΦ hΦs a n ∈ Subalgebra.center K (CompletedEnveloping Φ hΦ hΦs a) := by
   have hnd := LieAlgebra.IsKilling.killingForm_nondegenerate K L

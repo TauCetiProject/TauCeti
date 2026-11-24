@@ -187,12 +187,10 @@ theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
         ∑ j ∈ Finset.Ico k 0, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
       (k : R) • ι[⁅x, y⁆, n] -
         algebraMap R UK (if n = 0 then (k * (k - 1) / 2 : ℤ) * a * Φ x y else 0) := by
-  have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
-    simp only [Int.card_Ico]
-    omega
   have h := sum_Ico_sub_sum_Ico_zsmul_envelopingι_mul_sub_mul_of_fn (Φ := Φ) (hΦ := hΦ)
     (hΦs := hΦs) (a := a) (fun _ ↦ 1) x y k n
-  simp only [one_smul, Finset.sum_const, nsmul_eq_mul, mul_one, hc,
+  simp only [one_smul, Finset.sum_const, nsmul_eq_mul, mul_one,
+    Finset.card_Ico_sub_card_Ico 0 k, sub_zero,
     Int.eq_ediv_of_mul_eq_right two_ne_zero (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)] at h
   rw [h, Int.cast_smul_eq_zsmul]
   congr 1

@@ -49,8 +49,6 @@ At `a = 1` and `Φ = -κ` this is the center `Z(Û_κ)` of the completed envelop
 
 * `TauCeti.CurrentAlgebra.hasBasis_nhds_zero_center`: the ideals `Z ∩ ker π_n` form a basis of
   neighbourhoods of zero in the center.
-* `TauCeti.CurrentAlgebra.topologicalClosure_adjoin_range_envelopingι`: the images of the currents
-  topologically generate `Û`.
 * `TauCeti.CurrentAlgebra.mem_center_iff_forall_commute`: centrality is detected on the current
   generators.
 * `TauCeti.CurrentAlgebra.mem_center_iff_forall_commute_single`: centrality is detected on the

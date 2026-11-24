@@ -74,12 +74,14 @@ field and at every central value.
 
 * `TauCeti.CurrentAlgebra.hasSum_normalOrderedMode`: `:x y:_n` is the sum of its normally ordered
   summands.
-* `TauCeti.CurrentAlgebra.summable_normalOrderedSummand`: the summands ordered at any cut form a
-  summable family.
+* `TauCeti.CurrentAlgebra.summable_normalOrderedSummand`,
+  `TauCeti.CurrentAlgebra.summable_smul_normalOrderedSummand`: the summands (and their scalar
+  weightings) ordered at any cut form a summable family.
 * `TauCeti.CurrentAlgebra.limπ_normalOrderedMode`: its coordinates are finite sums.
 * `TauCeti.CurrentAlgebra.limSmul_normalOrderedMode`: its action on a smooth vector is a finite
   sum.
 * `TauCeti.CurrentAlgebra.normalOrderedSummand_eq_add_sub`,
+  `TauCeti.CurrentAlgebra.tsum_smul_normalOrderedSummand`,
   `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
 * `TauCeti.CurrentAlgebra.coordinateEnvelopingAut_homothety_normalOrderedSummand`: homothety
   scaling of each normally ordered summand at any cut.
@@ -264,6 +266,47 @@ theorem normalOrderedSummand_eq_add_sub (p n m : ℤ) (x y : L) :
   simp only [normalOrderedSummand_apply, Finset.mem_Ico]
   split_ifs <;> first | omega | abel
 
+variable (Φ hΦ hΦs a) in
+/-- Multiplying the normally ordered summands at any cut by arbitrary scalar weights preserves
+summability in `Û`. -/
+theorem summable_smul_normalOrderedSummand (p n : ℤ) (w : ℤ → R) (x y : L) :
+    Summable fun m ↦
+      w m • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a p n m x y) := by
+  simpa only [algebraMap_smul] using (orderQuotientTower Φ hΦ hΦs a).summable_smul
+    (summable_normalOrderedSummand Φ hΦ hΦs a p n x y) (fun m : ℤ ↦ algebraMap R UK (w m))
+
+/-- **Moving the cut of a scalar-weighted normally ordered series.** Multiplying the summands of
+`:x y:_n` at the cut `p` by scalar weights `w : ℤ → R` and moving the cut back to `0` produces
+the cut-`0` weighted series plus the weighted commutators `w m • [xₘ, y_{n-m}]` for `0 ≤ m < p`,
+minus those for `p ≤ m < 0`. -/
+theorem tsum_smul_normalOrderedSummand (p n : ℤ) (w : ℤ → R) (x y : L) :
+    ∑' m, w m • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a p n m x y) =
+      (∑' m, w m •
+          toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a 0 n m x y)) +
+        toCompletedEnveloping Φ hΦ hΦs a
+          (∑ m ∈ Finset.Ico 0 p, w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) -
+            ∑ m ∈ Finset.Ico p 0, w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m])) := by
+  refine HasSum.tsum_eq ?_
+  have hterm (m : ℤ) :
+      w m • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a p n m x y) =
+        w m • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a 0 n m x y) +
+          toCompletedEnveloping Φ hΦ hΦs a (if m ∈ Finset.Ico 0 p then
+            w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) else 0) -
+          toCompletedEnveloping Φ hΦ hΦs a (if m ∈ Finset.Ico p 0 then
+            w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) else 0) := by
+    rw [normalOrderedSummand_eq_add_sub p n, map_sub, map_add, smul_sub, smul_add]
+    have hite (s : Finset ℤ) :
+        w m • toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then
+          ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m] else 0) =
+        toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then
+          w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) else 0) := by
+      split_ifs <;> simp
+    rw [hite (Finset.Ico 0 p), hite (Finset.Ico p 0)]
+  simp only [hterm, map_sub, ← add_sub_assoc]
+  exact (((summable_smul_normalOrderedSummand Φ hΦ hΦs a 0 n w x y).hasSum).add
+    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)).sub
+    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)
+
 /-- **Moving the cut of the normal ordering.** If the summands of `:x y:_n` are ordered at the cut
 `p` instead of `0`, putting `xₘ` on the left exactly when `m < p`, the series still converges in
 `Û` (`TauCeti.CurrentAlgebra.summable_normalOrderedSummand`), and its sum differs from `:x y:_n`
@@ -274,11 +317,8 @@ theorem tsum_normalOrderedSummand (p n : ℤ) (x y : L) :
       normalOrderedMode Φ hΦ hΦs a n x y + toCompletedEnveloping Φ hΦ hΦs a
         (∑ m ∈ Finset.Ico 0 p, (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) -
           ∑ m ∈ Finset.Ico p 0, (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m])) := by
-  refine HasSum.tsum_eq ?_
-  simp only [normalOrderedSummand_eq_add_sub p n, map_add, map_sub, ← add_sub_assoc]
-  exact ((hasSum_normalOrderedMode n x y).add
-    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)).sub
-    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)
+  simpa only [Pi.one_apply, one_smul, ← normalOrderedMode_apply] using
+    tsum_smul_normalOrderedSummand (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) p n 1 x y
 
 end NormalOrder
 

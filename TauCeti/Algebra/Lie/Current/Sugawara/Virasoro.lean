@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Lie.Current.Sugawara.Degree
-import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # The Segal--Sugawara Virasoro relations
@@ -115,42 +114,6 @@ private theorem sugawaraMode_mul_normalOrderedSummand_sub_mul {c : K}
   · simp only [Int.cast_sub, smul_neg, smul_mul_assoc, mul_smul_comm, smul_add, smul_smul]
     module
 
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-/-- Reordering the cut-`m` summand into cut `0` splits the combined `l`-th summand into
-`(1 - 2 a c) (m - n)` times the cut-`0` summand plus the finite window difference between `0` and
-`m`. -/
-private theorem combined_normalOrderedSummand_eq (c : K) (x y : L) (m n l : ℤ) :
-    ((1 - 2 * a * c) * -((l - m : ℤ) : K)) •
-        toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y) +
-      ((1 - 2 * a * c) * (l - n : K)) •
-        toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y) =
-      ((1 - 2 * a * c) * (m - n : K)) •
-        toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y) +
-      (1 - 2 * a * c) • toC (if l ∈ Finset.Ico 0 m then
-        ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l]) else 0) -
-      (1 - 2 * a * c) • toC (if l ∈ Finset.Ico m 0 then
-        ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l]) else 0) := by
-  rw [normalOrderedSummand_eq_add_sub m (m + n) l x y, map_sub, map_add, smul_sub, smul_add]
-  have hite (s : Finset ℤ) :
-      ((1 - 2 * a * c) * -((l - m : ℤ) : K)) • toC (if l ∈ s then
-        ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l] else 0) =
-      (1 - 2 * a * c) • toC (if l ∈ s then
-        ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l]) else 0) := by
-    split_ifs <;> simp only [map_zero, smul_zero, map_smul, smul_smul, Int.cast_sub]
-    congr 1
-    ring
-  rw [hite (Finset.Ico 0 m), hite (Finset.Ico m 0), Int.cast_sub]
-  module
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-/-- Multiplying the normally ordered summands at any cut by arbitrary `K`-scalar weights preserves
-summability in `Û`. -/
-private theorem hasSum_smul_normalOrderedSummand (p N : ℤ) (w : ℤ → K) (x y : L) :
-    HasSum (fun l : ℤ ↦ w l • toC (normalOrderedSummand Φ hΦ hΦs a p N l x y))
-      (∑' l : ℤ, w l • toC (normalOrderedSummand Φ hΦ hΦs a p N l x y)) := by
-  simpa only [algebraMap_smul] using ((orderQuotientTower Φ hΦ hΦs a).summable_smul
-    (summable_normalOrderedSummand Φ hΦ hΦs a p N x y) (fun l : ℤ ↦ algebraMap K UK (w l))).hasSum
-
 /-- **The commutator of a Segal--Sugawara mode with a normally ordered mode**, for `Φ = c • κ_L`
 over any field `K` (with `m (m + 1) / 2` and `(m ^ 3 - m) / 6` computed in `ℤ` before casting to
 `K`). -/
@@ -168,26 +131,42 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
     ((hasSum_normalOrderedMode n x y).mul_right (sugawaraMode Φ hΦ hΦs a m))
   simp only [sugawaraMode_mul_normalOrderedSummand_sub_mul h] at h₁
   -- Stage 2: Sum the cut-`m` and cut-`0` weighted families separately, reindexing `j + m ↦ l`.
-  have hA₀ := hasSum_smul_normalOrderedSummand (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
-    m (m + n) (fun l ↦ (1 - 2 * a * c) * -((l - m : ℤ) : K)) x y
+  let w₁ (l : ℤ) : K := (1 - 2 * a * c) * -((l - m : ℤ) : K)
+  let w₂ (l : ℤ) : K := (1 - 2 * a * c) * (l - n : K)
+  have hA₀ := (summable_smul_normalOrderedSummand Φ hΦ hΦs a m (m + n) w₁ x y).hasSum
   have hA : HasSum (fun j : ℤ ↦ ((1 - 2 * a * c) * -(j : K)) •
       toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) (j + m) x y))
-      (∑' l : ℤ, ((1 - 2 * a * c) * -((l - m : ℤ) : K)) •
-        toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y)) := by
-    simpa only [Function.comp_def, Equiv.coe_addRight, add_sub_cancel_right] using
+      (∑' l : ℤ, w₁ l • toC (normalOrderedSummand Φ hΦ hΦs a m (m + n) l x y)) := by
+    simpa only [Function.comp_def, Equiv.coe_addRight, w₁, add_sub_cancel_right] using
       (Equiv.addRight m).hasSum_iff.2 hA₀
-  have hB := hasSum_smul_normalOrderedSummand (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
-    0 (m + n) (fun l ↦ (1 - 2 * a * c) * (l - n : K)) x y
-  -- Stage 3: Combine both families at cut `0` and extract the finite window between `0` and `m`.
-  have hcomb := hA₀.add hB
-  simp only [combined_normalOrderedSummand_eq] at hcomb
-  let g (l : ℤ) : UK := ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l])
-  have h₂ := (((hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
-      (m + n) x y).const_smul ((1 - 2 * a * c) * (m - n : K))).add
-    ((hasSum_map_ite_mem toC (Finset.Ico 0 m) g).const_smul (1 - 2 * a * c))).sub
-    ((hasSum_map_ite_mem toC (Finset.Ico m 0) g).const_smul (1 - 2 * a * c))
-  rw [h₁.unique (hA.add hB), hcomb.unique h₂, add_sub_assoc, ← smul_sub, ← map_sub,
-    sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul x y m (m + n), map_sub, map_smul,
+  have hB := (summable_smul_normalOrderedSummand Φ hΦ hΦs a 0 (m + n) w₂ x y).hasSum
+  -- Stage 3: Move the cut from `m` back to `0` and combine both cut-`0` series.
+  rw [h₁.unique (hA.add hB), tsum_smul_normalOrderedSummand, add_right_comm]
+  have hsum0 :
+      (∑' l : ℤ, w₁ l • toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y)) +
+        ∑' l : ℤ, w₂ l • toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y) =
+      ((1 - 2 * a * c) * (m - n : K)) • normalOrderedMode Φ hΦ hΦs a (m + n) x y := by
+    rw [← (summable_smul_normalOrderedSummand Φ hΦ hΦs a 0 (m + n) w₁ x y).tsum_add
+      (summable_smul_normalOrderedSummand Φ hΦ hΦs a 0 (m + n) w₂ x y)]
+    have hpt (l : ℤ) :
+        w₁ l • toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y) +
+          w₂ l • toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y) =
+        ((1 - 2 * a * c) * (m - n : K)) •
+          toC (normalOrderedSummand Φ hΦ hΦs a 0 (m + n) l x y) := by
+      simp only [w₁, w₂, Int.cast_sub]
+      module
+    simp_rw [hpt, (summable_normalOrderedSummand Φ hΦ hΦs a 0 (m + n) x y).tsum_const_smul,
+      ← normalOrderedMode_apply]
+  have hw₁ (l : ℤ) :
+      w₁ l • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l]) =
+        (1 - 2 * a * c) • (((m - l : ℤ) : K) •
+          (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l])) := by
+    simp only [w₁, smul_smul, Int.cast_sub]
+    congr 1
+    ring
+  rw [hsum0]
+  simp_rw [hw₁, ← Finset.smul_sum, ← smul_sub, map_smul]
+  rw [sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul x y m (m + n), map_sub, map_smul,
     smul_sub, smul_smul, AlgHom.commutes]
   have hcent : (1 - 2 * a * c) • algebraMap K (CompletedEnveloping Φ hΦ hΦs a)
       (if m + n = 0 then ((m ^ 3 - m) / 6 : ℤ) * a * Φ x y else 0) =

@@ -32,6 +32,8 @@ form, with its evaluation lemmas, and constructs the canonical Killing Casimir t
 * `TauCeti.killingForm_killingDuality_symm_apply`: its inverse sends `f` to the `x` with
   `κ(x, -) = f`.
 * `TauCeti.toLinearMap_killingDuality`: its underlying linear map is the Killing form.
+* `TauCeti.killingDuality_symm_coord`: `killingDuality.symm` sends `b.coord i` to
+  `killingDualBasis b i`.
 * `TauCeti.killingCasimirTensor_eq_sum`: `killingCasimirTensor K L = ∑ᵢ bᵢ ⊗ b'ᵢ` in any finite
   basis `b` and its Killing-dual basis `b'`.
 
@@ -74,6 +76,18 @@ theorem toLinearMap_killingDuality :
     ((killingDuality K L : L ≃ₗ[K] Dual K L) : L →ₗ[K] Dual K L) = killingForm K L :=
   LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ killingDuality_apply K L x y
 
+variable {K L} in
+/-- The inverse of the Killing duality sends the `i`-th coordinate functional of a basis `b` to
+the `i`-th element of the Killing-dual basis of `b`. -/
+@[simp]
+theorem killingDuality_symm_coord {ι : Type*} [DecidableEq ι] [Finite ι]
+    (b : Module.Basis ι K L) (i : ι) :
+    (killingDuality K L).symm (b.coord i) = killingDualBasis b i := by
+  refine sub_eq_zero.1 ((IsKilling.killingForm_nondegenerate K L).1 _ fun y ↦ ?_)
+  simp only [map_sub, LinearMap.sub_apply, killingForm_killingDuality_symm_apply, Basis.coord_apply]
+  rw [LinearMap.BilinForm.repr_apply_eq_apply_dualBasis (IsKilling.killingForm_nondegenerate K L),
+    sub_self]
+
 /-- **The Killing Casimir tensor** `∑ᵢ xᵢ ⊗ yᵢ ∈ L ⊗[K] L`, obtained by applying the inverse of
 `TauCeti.killingDuality` to the second factor of `coevaluation K L 1`. -/
 noncomputable def killingCasimirTensor : L ⊗[K] L :=
@@ -86,19 +100,11 @@ theorem killingCasimirTensor_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι]
     (b : Module.Basis ι K L) :
     killingCasimirTensor K L = ∑ i, b i ⊗ₜ[K] killingDualBasis b i := by
   classical
-  have hdual (i : Basis.ofVectorSpaceIndex K L) :
-      ((killingDuality K L).symm.toLinearEquiv : Dual K L ≃ₗ[K] L)
-          ((Basis.ofVectorSpace K L).coord i) =
-        killingDualBasis (Basis.ofVectorSpace K L) i := by
-    rw [killingDualBasis, LinearMap.BilinForm.dualBasis, Basis.map_apply, Basis.coe_dualBasis,
-      eq_comm, LinearEquiv.symm_apply_eq, ← LinearMap.BilinForm.toLinearEquiv_lieModuleEquivDual
-        (killingForm K L) (IsKilling.killingForm_nondegenerate K L)
-        (LieModule.traceForm_lieInvariant K L L)]
-    exact ((killingDuality K L).apply_symm_apply _).symm
   rw [killingCasimirTensor, _root_.coevaluation_apply_one, map_sum]
   simp only [LinearMap.lTensor_tmul]
   trans ∑ i, (Basis.ofVectorSpace K L) i ⊗ₜ[K] killingDualBasis (Basis.ofVectorSpace K L) i
-  · exact Finset.sum_congr rfl fun i _ ↦ congrArg (_ ⊗ₜ[K] ·) (hdual i)
+  · exact Finset.sum_congr rfl fun i _ ↦
+      congrArg (_ ⊗ₜ[K] ·) (killingDuality_symm_coord (Basis.ofVectorSpace K L) i)
   · exact (TensorProduct.mk K L L).sum_apply_dualBasis_eq
       (IsKilling.killingForm_nondegenerate K L) (Basis.ofVectorSpace K L) b
 
