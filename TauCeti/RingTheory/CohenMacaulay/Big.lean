@@ -55,6 +55,8 @@ system of parameters, for a balanced one) satisfies the monomial property of reg
   zero, such as a field, the balanced notion means `M ≠ 𝔪 M`, and
   `Module.isBigCohenMacaulay_iff_of_ringKrullDim_eq_zero` says the same for the big notion over a
   Noetherian local ring of dimension zero.
+* `Module.isBalancedBigCohenMacaulay_iff_nontrivial` and `Module.isBigCohenMacaulay_iff_nontrivial`:
+  over a field both notions mean `M ≠ 0`.
 * `Module.IsCohenMacaulay.isRegular_of_isSystemOfParameters`: in a finite Cohen–Macaulay module of
   full dimension every system of parameters is a regular sequence.
 * `Module.isBigCohenMacaulay_iff_isCohenMacaulay_and_supportDim_eq` and
@@ -229,6 +231,13 @@ theorem isBalancedBigCohenMacaulay_iff_nontrivial {K : Type u} [Field K] {V : Ty
   refine ⟨fun h ↦ (Submodule.nontrivial_iff K).1 ⟨⊤, ⊥, h⟩, fun _ ↦ ?_⟩
   have := (Submodule.nontrivial_iff K (M := V)).2 ‹_›
   exact top_ne_bot
+
+/-- Over a field, a module is big Cohen–Macaulay if and only if it is nonzero. -/
+theorem isBigCohenMacaulay_iff_nontrivial {K : Type u} [Field K] {V : Type v} [AddCommGroup V]
+    [Module K V] : IsBigCohenMacaulay K V ↔ Nontrivial V := by
+  rw [isBigCohenMacaulay_iff_of_ringKrullDim_eq_zero (ringKrullDim_eq_zero_of_field K),
+    ← isBalancedBigCohenMacaulay_iff_of_ringKrullDim_eq_zero (ringKrullDim_eq_zero_of_field K)]
+  exact isBalancedBigCohenMacaulay_iff_nontrivial
 
 section Finite
 
