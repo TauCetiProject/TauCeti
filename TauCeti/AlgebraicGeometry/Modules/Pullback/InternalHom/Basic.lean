@@ -115,10 +115,10 @@ theorem isIso_pullbackIhomComparison_of_exactPairing
   have h : pullbackIhomComparison M f = (Scheme.Modules.pullback f).ihomComparison M := by
     apply NatTrans.ext
     funext F
-    rw [pullbackIhomComparison_app_eq_curry, Functor.ihomComparison_app_eq_curry,
-      ← Functor.Monoidal.inv_δ]
-    -- The strong monoidal structure is constructed from the canonical oplax comparison.
-    rfl
+    have hμ : inv (δ (Scheme.Modules.pullback f) M ((ihom M).obj F)) =
+        μ (Scheme.Modules.pullback f) M ((ihom M).obj F) :=
+      Functor.Monoidal.inv_δ (Scheme.Modules.pullback f) M ((ihom M).obj F)
+    rw [pullbackIhomComparison_app_eq_curry, Functor.ihomComparison_app_eq_curry, hμ]
   rw [h]
   exact (Scheme.Modules.pullback f).ihomComparison_isIso_of_exactPairing D M
 
