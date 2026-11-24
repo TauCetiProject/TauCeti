@@ -80,37 +80,29 @@ variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
 omit [Field R] [IsStrictOrderedRing R] [IsRealClosed R] in
 /-- Around a point `t` outside a finite set `Z`, the open interval between the neighbours of `t`
 in `Z` contains no point of `Z` between `t` and any of its points. -/
-private theorem exists_lt_lt_forall_notMem_Icc {Z : Finset R} {t : R} (ht : t ∉ Z) :
+private theorem exists_lt_lt_forall_notMem_uIcc {Z : Finset R} {t : R} (ht : t ∉ Z) :
     ∃ a ∈ insert ⊥ (Z.image (↑)), ∃ b ∈ insert ⊤ (Z.image (↑)),
       a < (t : WithBot R) ∧ (t : WithTop R) < b ∧
-        ∀ u : R, a < u → (u : WithTop R) < b → ∀ z ∈ Z, z ∉ Icc (min t u) (max t u) := by
+        ∀ u : R, a < u → (u : WithTop R) < b → ∀ z ∈ Z, z ∉ uIcc t u := by
   classical
   refine ⟨(Z.filter (· < t)).max, ?_, (Z.filter (t < ·)).min, ?_, ?_, ?_, ?_⟩
-  · cases h : (Z.filter (· < t)).max with
-    | bot => exact Finset.mem_insert_self _ _
-    | coe z =>
-      exact Finset.mem_insert_of_mem
-        (Finset.mem_image_of_mem _ (Finset.mem_filter.1 (Finset.mem_of_max h)).1)
-  · cases h : (Z.filter (t < ·)).min with
-    | top => exact Finset.mem_insert_self _ _
-    | coe z =>
-      exact Finset.mem_insert_of_mem
-        (Finset.mem_image_of_mem _ (Finset.mem_filter.1 (Finset.mem_of_min h)).1)
-  · cases h : (Z.filter (· < t)).max with
-    | bot => exact WithBot.bot_lt_coe t
-    | coe z => exact WithBot.coe_lt_coe.2 (Finset.mem_filter.1 (Finset.mem_of_max h)).2
-  · cases h : (Z.filter (t < ·)).min with
-    | top => exact WithTop.coe_lt_top t
-    | coe z => exact WithTop.coe_lt_coe.2 (Finset.mem_filter.1 (Finset.mem_of_min h)).2
-  · rintro u hau hub z hz ⟨h₁, h₂⟩
+  · exact Finset.insert_subset_insert _ (Finset.image_subset_image (Finset.filter_subset _ _))
+      (Finset.max_mem_insert_bot_image_coe _)
+  · exact Finset.insert_subset_insert _ (Finset.image_subset_image (Finset.filter_subset _ _))
+      (Finset.min_mem_insert_top_image_coe _)
+  · rw [Finset.max_eq_sup_coe, Finset.sup_lt_iff (WithBot.bot_lt_coe t)]
+    simp
+  · rw [Finset.min_eq_inf_withTop, Finset.lt_inf_iff (WithTop.coe_lt_top t)]
+    simp
+  · rintro u hau hub z hz hzu
     rcases lt_trichotomy z t with hzt | rfl | hzt
-    · have hzu : z < u :=
+    · have hzu' : z < u :=
         WithBot.coe_lt_coe.1 ((Finset.le_max (Finset.mem_filter.2 ⟨hz, hzt⟩)).trans_lt hau)
-      exact (min_le_iff.1 h₁).elim hzt.not_ge hzu.not_ge
+      exact (mem_uIcc.1 hzu).elim (fun h => h.1.not_gt hzt) fun h => h.1.not_gt hzu'
     · exact ht hz
     · have huz : u < z :=
         WithTop.coe_lt_coe.1 (hub.trans_le (Finset.min_le (Finset.mem_filter.2 ⟨hz, hzt⟩)))
-      exact (le_max_iff.1 h₂).elim hzt.not_ge huz.not_ge
+      exact (mem_uIcc.1 hzu).elim (fun h => h.2.not_gt huz) fun h => h.2.not_gt hzt
 
 /-- **Semialgebraic subsets of `R`.** Over a real closed field, a subset of `Fin 1 → R` is
 semialgebraic if and only if it is a finite union of points and open intervals with endpoints in
@@ -128,16 +120,12 @@ theorem isSemialgebraic_fin_one_iff {s : Set (Fin 1 → R)} :
       simpa using (eval₂_uniqueAlgEquiv (f := p i) (φ := RingHom.id R) (a := x)).symm⟩
   let Z : Finset R := Finset.univ.biUnion fun i => (q i).roots.toFinset
   -- On an interval meeting no root, the signs of the `p i` are constant.
-  have hsign {t u : R} (htu : ∀ z ∈ Z, z ∉ Icc (min t u) (max t u)) (i : Fin m) :
+  have hsign {t u : R} (htu : ∀ z ∈ Z, z ∉ uIcc t u) (i : Fin m) :
       SignType.sign ((q i).eval u) = SignType.sign ((q i).eval t) := by
     by_cases hqi : q i = 0
     · simp [hqi]
-    have hz : ∀ y ∈ Icc (min t u) (max t u), (q i).eval y ≠ 0 := fun y hy hy0 =>
-      htu y (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ _, by simp [hqi, hy0]⟩) hy
-    have h := (q i).sign_eval_const min_le_max hz
-    rcases le_total t u with htu' | htu'
-    · simpa [htu'] using h.symm
-    · simpa [htu'] using h
+    exact ((q i).sign_eval_eq_of_forall_mem_uIcc fun y hy hy0 =>
+      htu y (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ _, by simp [hqi, hy0]⟩) hy).symm
   set s := {x : Fin 1 → R | Φ fun i => SignType.sign (eval x (p i))}
   have hconst (t : R) : (fun _ => t : Fin 1 → R) ∈ s ↔ Φ fun i => SignType.sign ((q i).eval t) := by
     simp [s, hq]
@@ -151,7 +139,7 @@ theorem isSemialgebraic_fin_one_iff {s : Set (Fin 1 → R)} :
   · intro hxs
     by_cases hZ : x 0 ∈ Z
     · exact Or.inl ⟨hZ, (hx x).symm ▸ hxs⟩
-    obtain ⟨a, ha, b, hb, hat, htb, hab⟩ := exists_lt_lt_forall_notMem_Icc hZ
+    obtain ⟨a, ha, b, hb, hat, htb, hab⟩ := exists_lt_lt_forall_notMem_uIcc hZ
     refine Or.inr ⟨a, b, ⟨⟨ha, hb⟩, fun u hau hub => ?_⟩, hat, htb⟩
     rw [hconst, funext (hsign (hab u hau hub))]
     simpa [s, hq] using hxs
