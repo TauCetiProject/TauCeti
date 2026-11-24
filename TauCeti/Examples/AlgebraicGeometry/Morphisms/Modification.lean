@@ -45,22 +45,10 @@ open CategoryTheory AlgebraicGeometry TauCeti.AlgebraicGeometry Polynomial
 
 namespace TauCeti.Examples.ModificationChecks
 
-/-- A morphism that is an isomorphism over a dense open with dense preimage is birational over its
-target. -/
-private theorem birationalOver_of_isIso {X Y : Scheme} (f : X ⟶ Y) (U : Y.Opens)
-    (hU : Dense (U : Set Y)) (hfU : Dense (f ⁻¹ᵁ U : Set X)) [IsIso (f ∣_ U)] :
-    Scheme.BirationalOver f (𝟙 Y) :=
-  ⟨⟨f ⁻¹ᵁ U, hfU, U, hU, asIso (f ∣_ U)⟩, by simp [Scheme.PartialIso.IsOver]⟩
-
 /-- The basic open `D(x)` of the line is dense. -/
 private theorem dense_basicOpen_X (k : Type) [Field k] :
     Dense (PrimeSpectrum.basicOpen (X : k[X]) : Set (PrimeSpectrum k[X])) :=
   PrimeSpectrum.dense_basicOpen_of_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero X_ne_zero)
-
-/-- The basic open of a unit is everything. -/
-private theorem basicOpen_eq_top_of_isUnit {R : Type} [CommRing R] {r : R} (hr : IsUnit r) :
-    PrimeSpectrum.basicOpen r = ⊤ :=
-  eq_top_iff.2 fun x _ => fun hx => x.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ hx hr)
 
 /-! ### A finite modification that is not an isomorphism -/
 
@@ -82,6 +70,11 @@ instance : Algebra k[X] (Thick k) := Ideal.Quotient.algebra _
 /-- The quotient map `k[y][x] → k[x, y]/(x², xy)`. -/
 @[expose] def thickMk : k[X][X] →+* Thick k := Ideal.Quotient.mk _
 
+-- `Thick k` is by definition the quotient ring `k[y][x] ⧸ (x², xy)`, with its quotient algebra
+-- structure; the lemmas below cross from `Thick k` to that quotient only through `thickMk_def`.
+private theorem thickMk_def : thickMk k = Ideal.Quotient.mk (thickIdeal k) :=
+  rfl
+
 private theorem thickMk_surjective : Function.Surjective (thickMk k) :=
   Ideal.Quotient.mk_surjective
 
@@ -91,8 +84,9 @@ private theorem thickMk_eq_zero_iff {q : k[X][X]} : thickMk k q = 0 ↔ q ∈ th
 /-- The structure map `k[y] → k[x, y]/(x², xy)`. -/
 abbrev thickAlg : k[X] →+* Thick k := algebraMap k[X] (Thick k)
 
-private theorem thickAlg_apply (r : k[X]) : thickAlg k r = thickMk k (C r) :=
-  (rfl)
+private theorem thickAlg_apply (r : k[X]) : thickAlg k r = thickMk k (C r) := by
+  rw [thickMk_def, ← Polynomial.algebraMap_eq]
+  exact (Ideal.Quotient.mk_algebraMap _ _ _).symm
 
 /-- The projection `Spec k[x, y]/(x², xy) → Spec k[y]`. -/
 abbrev thickToLine : Spec (.of (Thick k)) ⟶ Spec (.of k[X]) :=
@@ -105,7 +99,8 @@ private def thickEval : Thick k →+* k[X] :=
     simp [Set.insert_subset_iff]
 
 private theorem thickEval_mk (q : k[X][X]) : thickEval k (thickMk k q) = q.eval 0 := by
-  exact (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
+  rw [thickMk_def, thickEval]
+  exact Ideal.Quotient.lift_mk _ _ _
 
 private theorem thickEval_thickAlg (r : k[X]) : thickEval k (thickAlg k r) = r := by
   rw [thickAlg_apply, thickEval_mk, eval_C]
@@ -117,12 +112,15 @@ private def thickDual : Thick k →+* DualNumber k :=
     refine (Ideal.span_le.2 ?_ : thickIdeal k ≤ RingHom.ker _) ha
     simp [Set.insert_subset_iff, sq, DualNumber.eps_mul_eps]
 
+private theorem thickDual_mk (q : k[X][X]) : thickDual k (thickMk k q) =
+    q.eval₂ ((TrivSqZeroExt.inlHom k k).comp (evalRingHom 0)) DualNumber.eps := by
+  rw [thickMk_def, thickDual]
+  exact Ideal.Quotient.lift_mk _ _ _
+
 /-- The class of `x` is not zero. -/
 private theorem mk_X_ne_zero : thickMk k X ≠ 0 := fun h => by
   have := congrArg (fun b => (thickDual k b).snd) h
-  have h1 : thickDual k (thickMk k X) = DualNumber.eps := by
-    exact (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
-  simp [h1] at this
+  simp [thickDual_mk] at this
 
 /-- An element killed by setting `x = 0` is a multiple of `x`, hence nilpotent. -/
 private theorem isNilpotent_of_thickEval_eq_zero (b : Thick k) (hb : thickEval k b = 0) :
@@ -151,6 +149,12 @@ instance : IsFinite (thickToLine k) := by
     (Ideal.Quotient.factorₐ k[X] hle).toLinearMap (Ideal.Quotient.factor_surjective hle)
   rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom, thickAlg, RingHom.finite_algebraMap]
   infer_instance
+
+/-- The image of `y` is not nilpotent, since setting `x = 0` sends it to `y`. -/
+private theorem not_isNilpotent_thickAlg_X : ¬ IsNilpotent (thickAlg k X) := fun ⟨n, hn⟩ => by
+  have := congrArg (thickEval k) hn
+  rw [map_pow, thickEval_thickAlg, map_zero] at this
+  exact X_ne_zero (pow_eq_zero_iff'.1 this).1
 
 /-- After inverting `y`, the map `k[y] → k[x, y]/(x², xy)` is bijective: `x = 0` there. -/
 private theorem bijective_awayMap :
@@ -192,11 +196,7 @@ example : IsModification (thickToLine k) ∧ IsFinite (thickToLine k) ∧
         PrimeSpectrum.isOpen_basicOpen.dense <| (TopologicalSpace.Opens.ne_bot_iff_nonempty _).1 <|
           by
             rw [Ne, PrimeSpectrum.basicOpen_eq_bot_iff, CommRingCat.hom_ofHom]
-            intro h
-            obtain ⟨n, hn⟩ := h
-            have := congrArg (thickEval k) hn
-            rw [map_pow, thickEval_thickAlg, map_zero] at this
-            exact X_ne_zero (pow_eq_zero_iff'.1 this).1,
+            exact not_isNilpotent_thickAlg_X k,
         hiso⟩ }
   refine ⟨hmod, inferInstance, fun h => ?_, inferInstance,
     (isNormalScheme_Spec_iff _).2 inferInstance, fun h => ?_⟩
@@ -225,7 +225,7 @@ abbrev gmToLine : Spec (.of (Localization.Away (X : k[X]))) ⟶ Spec (.of k[X]) 
 
 private theorem gmToLine_preimage :
     gmToLine k ⁻¹ᵁ PrimeSpectrum.basicOpen (X : k[X]) = ⊤ :=
-  basicOpen_eq_top_of_isUnit (IsLocalization.Away.algebraMap_isUnit _)
+  (PrimeSpectrum.basicOpen_eq_top_iff _).2 (IsLocalization.Away.algebraMap_isUnit _)
 
 instance : IsIso (gmToLine k ∣_ PrimeSpectrum.basicOpen (X : k[X])) :=
   isIso_SpecMap_morphismRestrict_basicOpen_of_injective (S := Localization.Away (X : k[X])) X
@@ -238,7 +238,8 @@ example : Dense (PrimeSpectrum.basicOpen (X : k[X]) : Set (PrimeSpectrum k[X])) 
     IsIso (gmToLine k ∣_ PrimeSpectrum.basicOpen (X : k[X])) ∧
     Scheme.BirationalOver (gmToLine k) (𝟙 _) := by
   have hd := dense_basicOpen_X k
-  refine ⟨hd, gmToLine_preimage k, inferInstance, birationalOver_of_isIso _ _ hd ?_⟩
+  refine ⟨hd, gmToLine_preimage k, inferInstance,
+    (gmToLine k).birationalOver_of_isIso_morphismRestrict _ hd ?_⟩
   rw [gmToLine_preimage]
   simp
 
