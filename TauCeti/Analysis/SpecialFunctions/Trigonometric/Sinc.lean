@@ -63,11 +63,8 @@ theorem sub_mul_sinc_sub_mul (a s t : ℝ) :
 theorem cos_sub_mul (a s t : ℝ) :
     cos ((t - s) * a) =
       cos (s * a) * cos (t * a) + s * sinc (s * a) * (t * sinc (t * a)) * a ^ 2 := by
-  rcases eq_or_ne a 0 with rfl | h
-  · simp
-  · rw [mul_comm (t - s) a, mul_comm t a, mul_comm s a, mul_sinc_mul_of_ne_zero h,
-      mul_sinc_mul_of_ne_zero h, mul_sub, cos_sub]
-    field_simp
+  rw [sub_mul, cos_sub, ← mul_sinc (s * a), ← mul_sinc (t * a)]
+  ring
 
 /-- The function `sinc` is nonnegative on `[-π, π]`. -/
 theorem sinc_nonneg {x : ℝ} (hx : |x| ≤ π) : 0 ≤ sinc x := by

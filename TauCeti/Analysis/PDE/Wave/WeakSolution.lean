@@ -23,19 +23,22 @@ is solved by Duhamel's formula
 in terms of the propagators `cos (tD)` (`TauCeti.waveCosPropagator`) and `D⁻¹ sin (tD)`
 (`TauCeti.waveSinPropagator`). A strong solution on an order-connected set of times containing
 `0` and `t`, whose forcing is integrable between `0` and `t`, is given at time `t` by this formula
-(`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`; for the
-initial time `0`, `TauCeti.IsWaveSolutionOn.eq_waveDuhamelSolution`). Conversely,
+(`TauCeti.IsWaveSolutionOn.eq_waveCosPropagator_add_waveSinPropagator_add_integral`). Conversely,
 this file shows that the formula `TauCeti.waveDuhamelSolution f g G` solves the forced problem
 for all data `f, g ∈ L²` and every continuous forcing `G : ℝ → L²`, in the weak sense.
 
 The solution starts from `f` (`TauCeti.waveDuhamelSolution_zero`). At time `t` it is
 homogeneous in the data and the forcing (`TauCeti.waveDuhamelSolution_smul`), and additive in the
 data and in forcings integrable between `0` and `t` (`TauCeti.waveDuhamelSolution_add`); so it is
-linear on pairs of data `f, g ∈ L²` and continuous forcings. For continuous forcing it is
-continuous in time (`TauCeti.continuous_waveDuhamelSolution`), it is bounded by
-`‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|` (`TauCeti.norm_waveDuhamelSolution_le`), and
-for every `φ ∈ L²` whose distributional Laplacian `ψ = Δφ` lies in `L²`, the scalar function
-`t ↦ ⟪φ, u(t)⟫` is twice differentiable, with
+linear on pairs of data `f, g ∈ L²` and continuous forcings. For forcing integrable between `0`
+and `t` it is bounded by `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|`
+(`TauCeti.norm_waveDuhamelSolution_le`), and for `0 ≤ t ≤ T` its Duhamel term is the retarded
+integral `∫_{s < t} D⁻¹ sin ((t - s)D) G(s) ds` of the forcing restricted to `[0, T]`
+(`TauCeti.waveDuhamelSolution_eq_setIntegral_Iio`), the form treated by the retarded Strichartz
+estimates. For continuous forcing it is continuous in time
+(`TauCeti.continuous_waveDuhamelSolution`), and for every `φ ∈ L²` whose distributional
+Laplacian `ψ = Δφ` lies in `L²`, the scalar function `t ↦ ⟪φ, u(t)⟫` is twice differentiable,
+with
 
 `d/dt ⟪φ, u(t)⟫ = ⟪ψ, D⁻¹ sin (tD) f⟫ + ⟪φ, cos (tD) g + ∫₀ᵗ cos ((t - s)D) G(s) ds⟫`,
 `d²/dt² ⟪φ, u(t)⟫ = ⟪ψ, u(t)⟫ + ⟪φ, G(t)⟫`
@@ -47,7 +50,8 @@ for every `φ ∈ L²` whose distributional Laplacian `ψ = Δφ` lies in `L²`,
 with `ψ = Δφ`, so `u` solves the wave equation in the sense of distributions in space
 (`TauCeti.hasDerivAt_deriv_inner_toLp_waveDuhamelSolution`).
 
-By the subtraction formula `TauCeti.waveSinPropagator_sub`, the retarded term is
+By the subtraction formula `TauCeti.waveSinPropagator_sub`, for continuous forcing `G` the
+retarded term is
 
 `∫₀ᵗ D⁻¹ sin ((t - s)D) G(s) ds =`
 `D⁻¹ sin (tD) ∫₀ᵗ cos (sD) G(s) ds - cos (tD) ∫₀ᵗ D⁻¹ sin (sD) G(s) ds`.
@@ -62,11 +66,9 @@ they are differentiated by `TauCeti.hasDerivAt_waveSinPropagator_apply`,
 ## Main declarations
 
 * `TauCeti.waveDuhamelSolution`: the solution formula, with
-  `TauCeti.continuous_waveDuhamelSolution`, `TauCeti.waveDuhamelSolution_add` and
-  `TauCeti.waveDuhamelSolution_smul`;
-* `TauCeti.IsWaveSolutionOn.eq_waveDuhamelSolution`: strong solutions are given by the formula;
-  and
-  `TauCeti.hasDerivAt_inner_waveDuhamelSolution`,
+  `TauCeti.continuous_waveDuhamelSolution`, `TauCeti.waveDuhamelSolution_add`,
+  `TauCeti.waveDuhamelSolution_smul` and `TauCeti.waveDuhamelSolution_eq_setIntegral_Iio`;
+* `TauCeti.hasDerivAt_inner_waveDuhamelSolution`,
   `TauCeti.hasDerivAt_deriv_inner_waveDuhamelSolution`: the weak wave equation.
 
 ## References
@@ -129,16 +131,6 @@ theorem waveDuhamelSolution_zero_zero_zero :
     waveDuhamelSolution F (0 : Lp F 2 (volume : Measure E)) 0 0 = 0 :=
   funext fun t ↦ by simp
 
-/-- A strong solution of `∂ₜ²u - Δu = G` on an order-connected set of times containing `0` and
-`t`, whose forcing is integrable between `0` and `t`, is given at time `t` by Duhamel's formula
-with data `u(0)` and `u'(0)`. -/
-theorem IsWaveSolutionOn.eq_waveDuhamelSolution {u u' u'' G : ℝ → Lp F 2 (volume : Measure E)}
-    {s : Set ℝ} [s.OrdConnected] (hu : IsWaveSolutionOn u u' u'' G s) (h₀ : 0 ∈ s) {t : ℝ}
-    (ht : t ∈ s) (hG : IntervalIntegrable G volume 0 t) :
-    u t = waveDuhamelSolution F (u 0) (u' 0) G t := by
-  simpa [waveDuhamelSolution_def] using
-    hu.eq_waveCosPropagator_add_waveSinPropagator_add_integral h₀ ht hG
-
 /-- The solution is homogeneous in the data and the forcing. -/
 theorem waveDuhamelSolution_smul (c : ℂ) (f g : Lp F 2 (volume : Measure E))
     (G : ℝ → Lp F 2 (volume : Measure E)) (t : ℝ) :
@@ -157,9 +149,10 @@ theorem waveDuhamelSolution_add (f₁ f₂ g₁ g₂ : Lp F 2 (volume : Measure 
     intervalIntegral.integral_add hG₁.waveSinPropagator_sub_apply hG₂.waveSinPropagator_sub_apply]
   abel
 
-/-- The **a priori bound** `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|`. -/
+/-- The **a priori bound** `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|`, for forcing `G`
+integrable between `0` and `t`. -/
 theorem norm_waveDuhamelSolution_le (f g : Lp F 2 (volume : Measure E))
-    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : Continuous G) (t : ℝ) :
+    {G : ℝ → Lp F 2 (volume : Measure E)} {t : ℝ} (hG : IntervalIntegrable G volume 0 t) :
     ‖waveDuhamelSolution F f g G t‖ ≤
       ‖f‖ + |t| * ‖g‖ + |∫ s in (0 : ℝ)..t, |t - s| * ‖G s‖| := by
   refine (norm_add₃_le).trans (add_le_add (add_le_add ?_ ?_) ?_)
@@ -168,9 +161,26 @@ theorem norm_waveDuhamelSolution_le (f g : Lp F 2 (volume : Measure E))
   · exact ((waveSinPropagator F t).le_opNorm g).trans
       (by gcongr; exact norm_waveSinPropagator_le t)
   · refine intervalIntegral.norm_integral_le_abs_of_norm_le (Eventually.of_forall fun s ↦ ?_)
-      ((by fun_prop : Continuous fun s ↦ |t - s| * ‖G s‖).intervalIntegrable 0 t)
+      (hG.norm.continuousOn_mul (by fun_prop : Continuous fun s ↦ |t - s|).continuousOn)
     exact ((waveSinPropagator F (t - s)).le_opNorm _).trans
       (by gcongr; exact norm_waveSinPropagator_le _)
+
+/-- For `0 ≤ t ≤ T`, the Duhamel term of the solution at time `t` is the retarded integral
+`∫_{s < t} D⁻¹ sin ((t - s)D) G(s) ds` of the forcing restricted to `[0, T]` and extended by zero,
+the form treated by the retarded Strichartz estimates
+(`ContDiffBump.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum`). -/
+theorem waveDuhamelSolution_eq_setIntegral_Iio (f g : Lp F 2 (volume : Measure E))
+    (G : ℝ → Lp F 2 (volume : Measure E)) {t T : ℝ} (ht : 0 ≤ t) (htT : t ≤ T) :
+    waveDuhamelSolution F f g G t = waveCosPropagator F t f + waveSinPropagator F t g +
+      ∫ s in Set.Iio t, waveSinPropagator F (t - s) ((Set.Icc 0 T).indicator G s) := by
+  have hind : (fun s ↦ waveSinPropagator F (t - s) ((Set.Icc 0 T).indicator G s)) =
+      (Set.Icc 0 T).indicator fun s ↦ waveSinPropagator F (t - s) (G s) :=
+    funext fun s ↦ by by_cases hs : s ∈ Set.Icc 0 T <;> simp [hs]
+  have hset : Set.Iio t ∩ Set.Icc 0 T = Set.Ico 0 t :=
+    Set.ext fun s ↦ ⟨fun ⟨h₁, h₂, _⟩ ↦ ⟨h₂, h₁⟩, fun ⟨h₁, h₂⟩ ↦ ⟨h₂, h₁, h₂.le.trans htT⟩⟩
+  rw [waveDuhamelSolution_def, hind, setIntegral_indicator measurableSet_Icc, hset,
+    integral_Ico_eq_integral_Ioo,
+    ← integral_Ioc_eq_integral_Ioo, intervalIntegral.integral_of_le ht]
 
 section Duhamel
 
@@ -194,7 +204,8 @@ private theorem hasDerivAt_duhamelSin (hG : Continuous G) (t : ℝ) :
     HasDerivAt (duhamelSin G) (waveSinPropagator F t (G t)) t :=
   (hG.waveSinPropagator_apply.integral_hasStrictDerivAt 0 t).hasDerivAt
 
-/-- The Duhamel term splits as `D⁻¹ sin (tD) ∫₀ᵗ cos (sD) G - cos (tD) ∫₀ᵗ D⁻¹ sin (sD) G`. -/
+/-- For continuous forcing `G`, the Duhamel term splits as
+`D⁻¹ sin (tD) ∫₀ᵗ cos (sD) G - cos (tD) ∫₀ᵗ D⁻¹ sin (sD) G`. -/
 private theorem integral_waveSinPropagator_sub_apply (hG : Continuous G) (t : ℝ) :
     ∫ s in (0 : ℝ)..t, waveSinPropagator F (t - s) (G s) =
       waveSinPropagator F t (duhamelCos G t) - waveCosPropagator F t (duhamelSin G t) := by
@@ -220,7 +231,8 @@ theorem continuous_waveDuhamelSolution (f g : Lp F 2 (volume : Measure E)) (hG :
 
 variable {φ ψ : Lp F 2 (volume : Measure E)}
 
-/-- Against a test function `φ` with `Δφ = ψ`, the integral `∫₀ᵗ cos ((t - s)D) G(s) ds` splits as
+/-- Against a test function `φ` with `Δφ = ψ`, for continuous forcing `G`, the integral
+`∫₀ᵗ cos ((t - s)D) G(s) ds` splits as
 `⟪cos (tD) φ, ∫₀ᵗ cos (sD) G⟫ - ⟪D⁻¹ sin (tD) ψ, ∫₀ᵗ D⁻¹ sin (sD) G⟫`. -/
 private theorem inner_integral_waveCosPropagator_sub_apply
     (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F))) (hG : Continuous G) (t : ℝ) :
@@ -243,7 +255,7 @@ private theorem inner_integral_waveCosPropagator_sub_apply
     inner_waveCosPropagator_apply, inner_waveSinPropagator_apply]
 
 /-- **The weak velocity of the solution of the wave equation.** For a test function `φ ∈ L²` with
-`Δφ = ψ ∈ L²`, the pairing `t ↦ ⟪φ, u(t)⟫` of the solution
+`Δφ = ψ ∈ L²` and continuous forcing `G`, the pairing `t ↦ ⟪φ, u(t)⟫` of the solution
 `u(t) = cos (tD) f + D⁻¹ sin (tD) g + ∫₀ᵗ D⁻¹ sin ((t - s)D) G(s) ds` is differentiable, with
 derivative `⟪ψ, D⁻¹ sin (tD) f⟫ + ⟪φ, cos (tD) g + ∫₀ᵗ cos ((t - s)D) G(s) ds⟫`. Formally this
 pairs `φ` with the velocity `D⁻¹ sin (tD) Δf + cos (tD) g + ∫₀ᵗ cos ((t - s)D) G(s) ds`; as `Δf`
@@ -279,8 +291,8 @@ theorem hasDerivAt_inner_waveDuhamelSolution (hφψ : Δ (φ : 𝓢'(E, F)) = (�
     inner_waveCosPropagator_apply, hcomm]
   ring
 
-/-- The weak velocity of `hasDerivAt_inner_waveDuhamelSolution` has derivative
-`⟪ψ, u(t)⟫ + ⟪φ, G(t)⟫`. -/
+/-- For continuous forcing `G`, the weak velocity of `hasDerivAt_inner_waveDuhamelSolution` has
+derivative `⟪ψ, u(t)⟫ + ⟪φ, G(t)⟫`. -/
 private theorem hasDerivAt_inner_waveDuhamelVelocity
     (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F))) (f g : Lp F 2 (volume : Measure E))
     (hG : Continuous G) (t : ℝ) :
@@ -311,9 +323,9 @@ private theorem hasDerivAt_inner_waveDuhamelVelocity
     inner_waveSinPropagator_apply, inner_waveCosPropagator_apply]
   linear_combination hφ
 
-/-- **The weak wave equation.** For a test function `φ ∈ L²` with `Δφ = ψ ∈ L²`, the derivative
-of `t ↦ ⟪φ, u(t)⟫` is itself differentiable, with derivative `⟪ψ, u(t)⟫ + ⟪φ, G(t)⟫`: the solution
-satisfies `∂ₜ²u = Δu + G` against `φ`. -/
+/-- **The weak wave equation.** For a test function `φ ∈ L²` with `Δφ = ψ ∈ L²` and continuous
+forcing `G`, the derivative of `t ↦ ⟪φ, u(t)⟫` is itself differentiable, with derivative
+`⟪ψ, u(t)⟫ + ⟪φ, G(t)⟫`: the solution satisfies `∂ₜ²u = Δu + G` against `φ`. -/
 theorem hasDerivAt_deriv_inner_waveDuhamelSolution (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F)))
     (f g : Lp F 2 (volume : Measure E)) (hG : Continuous G) (t : ℝ) :
     HasDerivAt (deriv fun t ↦ ⟪φ, waveDuhamelSolution F f g G t⟫)
@@ -321,15 +333,16 @@ theorem hasDerivAt_deriv_inner_waveDuhamelSolution (hφψ : Δ (φ : 𝓢'(E, F)
   rw [funext fun t ↦ (hasDerivAt_inner_waveDuhamelSolution hφψ f g hG t).deriv]
   exact hasDerivAt_inner_waveDuhamelVelocity hφψ f g hG t
 
-/-- **The weak initial velocity.** The pairing `t ↦ ⟪φ, u(t)⟫` has derivative `⟪φ, g⟫` at
-`t = 0`. -/
+/-- **The weak initial velocity.** For a test function `φ ∈ L²` with `Δφ = ψ ∈ L²` and continuous
+forcing `G`, the pairing `t ↦ ⟪φ, u(t)⟫` has derivative `⟪φ, g⟫` at `t = 0`. -/
 theorem hasDerivAt_inner_waveDuhamelSolution_zero (hφψ : Δ (φ : 𝓢'(E, F)) = (ψ : 𝓢'(E, F)))
     (f g : Lp F 2 (volume : Measure E)) (hG : Continuous G) :
     HasDerivAt (fun t ↦ ⟪φ, waveDuhamelSolution F f g G t⟫) ⟪φ, g⟫ 0 := by
   simpa using hasDerivAt_inner_waveDuhamelSolution hφψ f g hG 0
 
-/-- **The wave equation in the sense of distributions.** For every Schwartz function `φ`, the
-derivative of `t ↦ ⟪φ, u(t)⟫` has derivative `⟪Δφ, u(t)⟫ + ⟪φ, G(t)⟫`. -/
+/-- **The wave equation in the sense of distributions.** For every Schwartz function `φ` and
+continuous forcing `G`, the derivative of `t ↦ ⟪φ, u(t)⟫` has derivative
+`⟪Δφ, u(t)⟫ + ⟪φ, G(t)⟫`. -/
 theorem hasDerivAt_deriv_inner_toLp_waveDuhamelSolution (φ : 𝓢(E, F))
     (f g : Lp F 2 (volume : Measure E)) (hG : Continuous G) (t : ℝ) :
     HasDerivAt (deriv fun t ↦ ⟪φ.toLp 2, waveDuhamelSolution F f g G t⟫)

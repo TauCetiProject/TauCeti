@@ -70,7 +70,8 @@ identity and Duhamel's formula.
   `(t, f) ↦ cos(tD) f` is jointly continuous (`TauCeti.continuous_waveCosPropagator_uncurry`).
 * `TauCeti.norm_waveSinPropagator_sub_le`: `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm,
   and `TauCeti.continuous_waveSinPropagator_uncurry`: `(t, g) ↦ D⁻¹ sin(tD) g` is jointly
-  continuous. Hence retarded Duhamel integrals are measurable in time
+  continuous. Hence the retarded Duhamel integral `t ↦ ∫_{s < t} D⁻¹ sin((t - s)D) G(s) ds` is
+  almost everywhere strongly measurable whenever `G` is
   (`TauCeti.aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub`), and, for fixed `t`, the
   integrand `τ ↦ D⁻¹ sin((t - τ)D) G(τ)` is integrable between `t₀` and `t` whenever `G` is
   (`IntervalIntegrable.waveSinPropagator_sub_apply`).
@@ -351,10 +352,9 @@ theorem waveSinPropagator_sub (s t : ℝ) :
     waveSinPropagator (E := E) F (t - s) =
       waveSinPropagator F t ∘L waveCosPropagator F s -
         waveCosPropagator F t ∘L waveSinPropagator F s := by
-  rw [waveSinPropagator_def, waveSinPropagator_def, waveSinPropagator_def, waveCosPropagator_def,
-    waveCosPropagator_def, Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM,
-    Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM, ← Lp.fourierMultiplierCLM_sub]
-  rw [MemLp.toLp_smul_toLp, MemLp.toLp_smul_toLp, ← MemLp.toLp_sub]
+  simp only [waveSinPropagator_def, waveCosPropagator_def,
+    Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM, MemLp.toLp_smul_toLp]
+  rw [← Lp.fourierMultiplierCLM_sub, ← MemLp.toLp_sub]
   exact congrArg _ (MemLp.toLp_congr _ _ (.of_forall fun ξ ↦ waveSinSymbol_sub s t ξ))
 
 /-- **The subtraction formula for `cos(tD)`**, on the domain of the Laplacian: if the
@@ -366,10 +366,9 @@ theorem waveCosPropagator_sub_apply {φ ψ : Lp F 2 (volume : Measure E)}
       waveCosPropagator F s (waveCosPropagator F t φ) -
         waveSinPropagator F s (waveSinPropagator F t ψ) := by
   refine (Lp.fourierTransformₗᵢ E F).injective (Lp.ext ?_)
-  change ((𝓕 (waveCosPropagator F (t - s) φ) : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
-    (𝓕 (waveCosPropagator F s (waveCosPropagator F t φ) -
-      waveSinPropagator F s (waveSinPropagator F t ψ)) : Lp F 2 (volume : Measure E))
-  rw [FourierTransform.fourier_sub]
+  -- The Fourier transform on `L²` is by definition `Lp.fourierTransformₗᵢ`.
+  have hF (x : Lp F 2 (volume : Measure E)) : Lp.fourierTransformₗᵢ E F x = 𝓕 x := rfl
+  rw [hF, hF, FourierTransform.fourier_sub]
   filter_upwards [coeFn_fourier_waveCosPropagator (t - s) φ,
     coeFn_fourier_waveCosPropagator s (waveCosPropagator F t φ),
     coeFn_fourier_waveCosPropagator t φ,
