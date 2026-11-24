@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import TauCeti.AlgebraicGeometry.LineBundle.Degree
-public import TauCeti.AlgebraicGeometry.LineBundle.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 
 /-!
@@ -62,12 +61,6 @@ theorem eulerCharBelow_pullback [CompactSpace X] [QuasiSeparatedSpace X]
   rw [pullback_mk, eulerCharBelow_mk, eulerCharBelow_mk,
     InvertibleSheaf.pullback_obj_obj, eulerCharBelow_pullback_eq_of_isPullback H]
 
-private lemma eulerDegree_eq_sub_eulerCharBelow (F : Type u) [Field F]
-    {Z : Scheme.{u}} [Z.Over (Spec (.of F))] (a : LineBundleClass Z) :
-    eulerDegree F a = eulerCharBelow F a 2 - eulerCharBelow F (1 : LineBundleClass Z) 2 := by
-  obtain ⟨L, rfl⟩ := mk_surjective a
-  rw [eulerDegree_mk, InvertibleSheaf.eulerDegree_def, eulerCharBelow_mk, eulerCharBelow_one]
-
 include H in
 /-- Pullback under a field extension preserves the Euler-characteristic degree of a
 line-bundle class on a quasi-compact quasi-separated scheme, for instance a proper scheme
@@ -75,7 +68,7 @@ over `k`. -/
 theorem eulerDegree_pullback [CompactSpace X] [QuasiSeparatedSpace X]
     (a : LineBundleClass X) :
     eulerDegree K (pullback g a) = eulerDegree k a := by
-  rw [eulerDegree_eq_sub_eulerCharBelow, eulerDegree_eq_sub_eulerCharBelow,
+  rw [eulerDegree_eq_eulerCharBelow_sub, eulerDegree_eq_eulerCharBelow_sub,
     ← pullback_one g, eulerCharBelow_pullback H, eulerCharBelow_pullback H]
 
 omit [Y.Over (Spec (.of K))] in
