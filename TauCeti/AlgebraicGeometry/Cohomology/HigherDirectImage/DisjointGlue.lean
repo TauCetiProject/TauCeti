@@ -26,10 +26,9 @@ image `Rⁿ f_*` has the sections `Hⁿ(f⁻¹(V j), F j)`
 nonzero as soon as one of these cohomology groups is
 (`AlgebraicGeometry.Scheme.Hom.nontrivial_higherDirectImage_disjointGlue`).
 
-The intended application is `S = ⨿ₙ Spec k`, `X = ⨿ₙ ℙⁿ` and `F n = O(-n-1)`, which is meant to
-show that `Rⁿ f_*` is nonzero for every `n`: a qcqs morphism to a base that is not quasi-compact
-can have nonzero higher direct images in infinitely many degrees. The identification of this
-morphism with the setting above and the cohomology of `O(-n-1)` it needs are not formalised here.
+This is the setting of the standard example of a qcqs morphism to a base that is not
+quasi-compact whose higher direct images are nonzero in infinitely many degrees: for
+`S = ⨿ₙ Spec k`, `X = ⨿ₙ ℙⁿ` and `F n = O(-n-1)`, `Rⁿ f_*` is nonzero for every `n`.
 -/
 
 public section

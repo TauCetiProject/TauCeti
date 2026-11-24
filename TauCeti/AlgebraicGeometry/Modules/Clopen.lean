@@ -8,8 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.AlgebraicGeometry.Modules.DisjointGlue
-import TauCeti.AlgebraicGeometry.Modules.Products
-import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 
 /-!
