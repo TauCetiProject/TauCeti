@@ -26,7 +26,6 @@ and ergodic measures.
 
 ## Main declarations
 
-* `MeasureTheory.ProbabilityMeasure.map_convexComb`: push-forward along a measurable map is affine.
 * `MeasureTheory.ProbabilityMeasure.instMulActionPushforward`: the push-forward action.
 * `MeasureTheory.ProbabilityMeasure.smul_apply`: evaluation on a measurable set.
 * `MeasureTheory.ProbabilityMeasure.instContinuousConstSMulPushforward`: continuity for the weak
@@ -45,14 +44,6 @@ open scoped ENNReal Pointwise
 
 namespace MeasureTheory.ProbabilityMeasure
 
-/-- **Push-forward is affine.** The push-forward of a convex combination of probability measures
-along a measurable map is the convex combination of the push-forwards. -/
-theorem map_convexComb {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {f : α → β}
-    (hf : Measurable f) {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : ProbabilityMeasure α) :
-    (convexComb hab P Q).map f = convexComb hab (P.map f) (Q.map f) := by
-  apply toMeasure_injective
-  simp [Measure.map_add _ _ hf, Measure.map_smul _ hf.aemeasurable]
-
 variable {M X : Type*} [MeasurableSpace X]
 
 section SMul
@@ -64,6 +55,7 @@ instance instSMulPushforward : SMul M (ProbabilityMeasure X) where
   smul g μ := μ.map (g • ·)
 
 /-- The underlying measure of `g • μ` is the push-forward of `μ` along `x ↦ g • x`. -/
+@[simp]
 theorem toMeasure_smul (g : M) (μ : ProbabilityMeasure X) :
     ((g • μ : ProbabilityMeasure X) : Measure X) = (μ : Measure X).map (g • ·) :=
   (rfl)
@@ -81,6 +73,7 @@ instance instContinuousConstSMulPushforward [TopologicalSpace X] [BorelSpace X]
 variable [MeasurableConstSMul M X]
 
 /-- The mass of a measurable set under `g • μ` is the mass of its preimage under `x ↦ g • x`. -/
+@[simp]
 theorem smul_apply (g : M) (μ : ProbabilityMeasure X) {s : Set X} (hs : MeasurableSet s) :
     (g • μ) s = μ ((g • ·) ⁻¹' s) :=
   map_apply μ (measurable_const_smul g).aemeasurable hs
@@ -92,6 +85,7 @@ theorem smul_convexComb (g : M) {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : Prob
   map_convexComb (measurable_const_smul g) hab P Q
 
 /-- The action moves point masses along the action on `X`. -/
+@[simp]
 theorem smul_diracProba (g : M) (x : X) : g • diracProba x = diracProba (g • x) :=
   toMeasure_injective (Measure.map_dirac' (measurable_const_smul g) x)
 

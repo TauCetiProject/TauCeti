@@ -15,7 +15,10 @@ public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cylinder
 # Checks: the weak topology on spaces of configurations
 
 These examples check the weak topology on probability measures on a closed set of `Bool`-valued
-configurations indexed by `ℤ` (DimerModelsAndLozengeTilings §4.4):
+configurations indexed by `ℤ`. They illustrate that weak convergence can be tested on
+correlation functions, that one-point functions do not determine a measure, that point masses on a
+non-closed set of configurations can converge to a point mass outside it, and that the product of
+trivial σ-algebras is too coarse for the weak topology:
 
 * the point masses at the indicators of `[n, ∞)` converge to the point mass at the zero
   configuration, through convergence of all correlation functions;
@@ -97,7 +100,8 @@ private theorem correlationFunction_bernoulliHalf (F : Finset ℤ) :
   have h : uniformOn (univ : Set Bool) {true} = 2⁻¹ := by
     rw [uniformOn_univ]
     simp
-  rw [Finset.prod_const, h, ENNReal.coe_pow, ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat]
+  rw [Finset.prod_const, h]
+  simp [ENNReal.inv_pow]
 
 private theorem correlationFunction_constMix (F : Finset ℤ) (hF : F.Nonempty) :
     constMix.correlationFunction F = 2⁻¹ := by
@@ -223,7 +227,7 @@ example : (@MeasurableSpace.pi ℤ (fun _ => Bool) fun _ => ⊥) = ⊥ ∧
     rw [trivialTrace_eq_bot, MeasurableSpace.measurableSet_bot_iff]
     rintro (h | h)
     · exact (singleton_nonempty _).ne_empty h
-    · exact one'_ne_zero'.symm ((eq_univ_iff_forall.mp h zero').symm ▸ rfl)
+    · exact one'_ne_zero' (mem_singleton_iff.mp (h ▸ mem_univ zero')).symm
   refine ⟨pi_bot, isClopen_singleton_one', hnot, fun h => hnot ?_, ?_⟩
   · rw [h]
     exact MeasurableSpace.measurableSet_generateFrom isClopen_singleton_one'.isOpen
