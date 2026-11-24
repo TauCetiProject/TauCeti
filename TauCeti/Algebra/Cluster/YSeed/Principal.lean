@@ -63,6 +63,7 @@ theorem toExtendedMatrix_principalYSeed :
 
 /-- Every frozen column of a principal matrix pattern has finite support, even with infinitely
 many mutable and coefficient indices. -/
+@[simp]
 theorem hasFiniteFrozenColumnSupport_principalExtension_mutationWord (w : List K) :
     (B.principalExtension.mutationWord w).HasFiniteFrozenColumnSupport := by
   have h : (B.principalYSeed.mutationWord w).toExtendedMatrix =
@@ -71,6 +72,7 @@ theorem hasFiniteFrozenColumnSupport_principalExtension_mutationWord (w : List K
   exact YSeed.hasFiniteFrozenColumnSupport_toExtendedMatrix _
 
 /-- Reading the mutated principal extension recovers the normalized tropical pattern. -/
+@[simp]
 theorem toTropicalYSeed_principalExtension_mutationWord (w : List K)
     (h : (B.principalExtension.mutationWord w).HasFiniteFrozenColumnSupport) :
     (B.principalExtension.mutationWord w).toTropicalYSeed h =
