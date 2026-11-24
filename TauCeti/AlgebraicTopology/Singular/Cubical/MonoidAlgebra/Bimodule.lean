@@ -488,8 +488,10 @@ theorem cubicalChainModuleLeftPhantomEquiv_apply (x : cubicalChainModule Y H R) 
 theorem cubicalChainModuleLeftPhantomEquiv_symm :
     (cubicalChainModuleLeftPhantomEquiv G Y H H' R).symm =
       cubicalChainModuleLeftPhantomEquiv G Y H' H R :=
-  LinearEquiv.ext fun x ↦
-    (DFunLike.congr_fun (cubicalChainModulePhantomEquiv_symm (Y := Y) (G := H) (G' := H')) x :)
+  LinearEquiv.ext fun x ↦ by
+    rw [LinearEquiv.symm_apply_eq, cubicalChainModuleLeftPhantomEquiv_apply,
+      cubicalChainModuleLeftPhantomEquiv_apply,
+      ← cubicalChainModulePhantomEquiv_symm (G := H) (G' := H'), LinearEquiv.apply_symm_apply]
 
 /-- The change of phantom monoid over the chains of `G` commutes with the differentials. -/
 theorem cubicalChainModuleDifferential_leftPhantomEquiv (x : cubicalChainModule Y H R) :
