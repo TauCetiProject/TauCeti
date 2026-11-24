@@ -56,9 +56,6 @@ the chains, as for the boundary.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `trajectorySign_eq_signBasis`: the sign of a trajectory into a positively oriented critical point
-  of index `0` is the sign of the orientation at its source relative to a basis along which `f`
-  increases.
 * `trajectorySign_eq_neg_of_notMem_orbit`: two different trajectories leaving a critical point of
   index `1` carry opposite signs, measured against the orientations of the empty basis at their
   ends.
@@ -213,7 +210,7 @@ index `1`, and let `C` be a basis of the coordinates of negative weight at `p` w
 sent by the unstable frame at `y` to vectors along which `f` increases. Then the comparison map at
 `y` is an isomorphism, and the sign at `y`, measured against the positive orientation at `q`, is
 the sign of `op` relative to `C`. -/
-theorem trajectorySign_eq_signBasis {p q : M} {φp : MorseChart E f p}
+private theorem trajectorySign_eq_signBasis {p q : M} {φp : MorseChart E f p}
     {φq : MorseChart E f q} (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {y : M}
     (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))

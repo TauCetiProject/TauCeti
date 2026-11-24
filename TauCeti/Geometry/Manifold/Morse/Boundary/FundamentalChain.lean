@@ -68,6 +68,11 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `map_unstableFrame_eq_orientationAt_iff`: the unstable frame of a critical point of top index
   compares orientations in the same way at every point of its unstable manifold.
+* `bijective_stableComparison`, `fundamentalSign_mul_trajectorySign`: along a trajectory from a
+  critical point of top index to one of index `n - 1`, the map `v ↦ (df v, N_q v)` is an
+  isomorphism, and the sign of the trajectory times the fundamental sign of its source compares,
+  through this map, the orientation of `M` with the standard orientation of `ℝ` followed by the
+  orientation of the unstable manifold of `q`.
 * `IsMorseSmale.finsum_fundamentalSign_mul_signedMorseBoundaryCoeff`: the boundary coefficients of
   a critical point, weighted by the fundamental signs of their sources, add up to zero.
 * `IsMorseSmale.signedMorseBoundary_signedMorseFundamentalChain`: `∂ [M] = 0`.
@@ -162,14 +167,6 @@ theorem fundamentalSign_of_morseIndex_eq {p : criticalPoints 𝓘(ℝ, E) f}
     hX.fundamentalSign 𝔬 oM p =
       if hX.unstableOrientation 𝔬 hp = oM.orientationAt p then 1 else -1 :=
   dite_eq_left hp
-
-/-- At a critical point of top index, the fundamental sign is `1` exactly when the unstable
-orientation is the orientation of `M`. -/
-theorem fundamentalSign_eq_one_iff {p : criticalPoints 𝓘(ℝ, E) f}
-    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
-    hX.fundamentalSign 𝔬 oM p = 1 ↔ hX.unstableOrientation 𝔬 hp = oM.orientationAt p := by
-  rw [fundamentalSign_of_morseIndex_eq hp]
-  split_ifs with h <;> simp [h]
 
 /-- The fundamental sign vanishes at the critical points of index less than `dim M`. -/
 @[simp]
@@ -498,7 +495,7 @@ private theorem map_stableComparison_eq_neg {q : M} {φ : MorseChart E f q}
 point `z` of a trajectory from a critical point `p` of index `n` to a critical point `q` of index
 `n - 1`, the map `v ↦ (df_z v, N_q v)` is an isomorphism: it is the comparison map after the
 inverse of the unstable frame of `p`. -/
-private theorem bijective_stableComparison (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+theorem bijective_stableComparison (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     {p q : M} {φp : MorseChart E f p} {φq : MorseChart E f q}
     (hφp : ∀ y ∈ φp.toChart.source, φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
       fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
@@ -520,7 +517,7 @@ Let `p` have index `n` and `q` index `n - 1`, and let `z` lie on a trajectory fr
 sign of the trajectory, multiplied by the fundamental sign of `p`, is `1` exactly when the map
 `v ↦ (df_z v, N_q v)` carries the orientation of `M` at `z` to the standard orientation of `ℝ`
 followed by the orientation of the unstable manifold of `q`. -/
-private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
+theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f) (𝔬 : MorseOrientation f X)
     (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E))) {p q : criticalPoints 𝓘(ℝ, E) f}
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E)

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.FundamentalChain
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedAugmentation
 import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 import TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional
@@ -37,14 +36,6 @@ the integral Morse boundary of `p` has coefficients `±1` at `q₀` and `q₁`, 
 the augmentation signs, and `0` elsewhere. On the circle with two maxima and two minima this
 determines the Morse differential up to the orientations of the unstable manifolds.
 
-On an oriented manifold, the sign of each of these trajectories is read off the direction in which
-it leaves `p`. If the unstable frame at `p` carries the orientation of the unstable line of `p` to
-the orientation of the manifold at `p` (for orientation data, if the unstable orientation
-`TauCeti.IsAdaptedPseudoGradient.unstableOrientation` of `p` is that of the manifold), it does so
-all along `W^u(p)` (`TauCeti.IsAdaptedPseudoGradient.map_unstableFrame_eq_orientationAt_iff`),
-and the trajectory counts positively exactly when `f` increases along a positive tangent vector,
-that is, when the orientation points along `-X`, the direction in which `f` increases.
-
 ## Main results
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -61,10 +52,6 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `exists_ne_signedMorseBoundaryCoeff_of_finrank_eq_one`: the integral Morse boundary of `p` has
   coefficients `±1` at these two critical points, cancelling under the augmentation, and `0`
   elsewhere.
-* `trajectorySign_eq_sign_mvfderiv`: on an oriented manifold of dimension `1`, if the unstable
-  frame at `p` carries the orientation of the unstable line of `p` to the orientation of the
-  manifold at `p`, the sign of a trajectory from `p` to a positively oriented critical point of
-  index `0` is the sign of the derivative of `f` along a positive tangent vector.
 
 ## References
 
@@ -183,125 +170,6 @@ private theorem eq_insert_orbit_union_orbit {W : Set M} {x y₁ y₂ : M}
   obtain ⟨u₁, u₂, rfl⟩ := hW
   rw [hX.flow.orbit_union_orbit_eq ((mem_insert_iff.1 hy₁.1).resolve_left hy₁.2)
     ((mem_insert_iff.1 hy₂.1).resolve_left hy₂.2) hne]
-
-/-- Let `p` be a critical point of index `1 = dim M`, and let `C` be a basis of the line of
-coordinates of negative weight at `p` whose orientation the unstable frame at `p` carries to the
-orientation `o` of `M` at `p`. Then at every point `y` of `W^u(p)`, the unstable frame carries the
-vector of `C` to a positive multiple of the vector of a tangent basis positive for `o`. -/
-private theorem exists_pos_unstableFrame_eq_smul (hf : IsMorse 𝓘(ℝ, E) f) {p : M}
-    {φp : MorseChart E f p}
-    (hφp : ∀ y ∈ φp.toChart.source,
-      φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
-        fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
-    (hpE : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E)
-    (hm : manifoldMorseIndex 𝓘(ℝ, E) f p = 1)
-    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E)))
-    (C : Module.Basis (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) ℝ ({i // φp.weight i < 0} → ℝ))
-    (hbp : Bijective (hX.unstableFrame φp p))
-    (hop : Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame φp p).toLinearMap hbp)
-      (C.orientation.reindex ℝ _ (finCongr hpE)) = o.orientationAt p)
-    {y : M} (hy : y ∈ hX.flow.unstableSet p)
-    (b : Module.Basis (Fin (finrank ℝ E)) ℝ (TangentSpace 𝓘(ℝ, E) y))
-    (hb : b.orientation = o.orientationAt y) (i : Fin (manifoldMorseIndex 𝓘(ℝ, E) f p))
-    (k : Fin (finrank ℝ E)) :
-    ∃ t : ℝ, 0 < t ∧ hX.unstableFrame φp y (C i) = t • b k := by
-  have : Unique (Fin (finrank ℝ E)) := by rw [← hpE, hm]; infer_instance
-  have : Subsingleton (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) := by rw [hm]; infer_instance
-  -- The unstable frame at `y` is an isomorphism onto the line `T_y M`, and it carries the
-  -- orientation of `C` to `o` there, as it does at `p`.
-  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφp hf hy).exists
-  have hby := bijective_unstableFrame hφp hpE hT
-  have hY := (map_unstableFrame_eq_orientationAt_iff hf hφp
-    (hX.mfderiv_eq_zero_of_mem_unstableSet hy) o _ hy hby hbp).2 hop
-  -- So the frame image `B` of `C` is a positive basis of `T_y M`.
-  let B := (C.reindex (finCongr hpE)).map
-    (LinearEquiv.ofBijective (hX.unstableFrame φp y).toLinearMap hby)
-  rw [← Module.Basis.orientation_reindex, ← Module.Basis.orientation_map, ← hb, eq_comm,
-    Module.Basis.orientation_eq_iff_det_pos, Module.Basis.det_apply, Matrix.det_unique,
-    Module.Basis.toMatrix_apply] at hY
-  have hB : B default = hX.unstableFrame φp y (C i) := by
-    rw [Module.Basis.map_apply, Module.Basis.reindex_apply,
-      Subsingleton.elim ((finCongr hpE).symm default) i]
-    rfl
-  rw [hB] at hY
-  refine ⟨_, hY, ?_⟩
-  conv_lhs => rw [← b.sum_repr (hX.unstableFrame φp y (C i))]
-  rw [Fintype.sum_unique, Subsingleton.elim k default]
-
-/-- **The sign of a trajectory into a minimum on an oriented line.** Let `o` be an orientation of a
-manifold of dimension `1`, `p` a critical point of index `1`, oriented by `op`, and `q` a critical
-point of index `0`. Suppose that the unstable frame at `p` carries `op` to the orientation of `o`
-at `p`, as it does for orientation data whose unstable orientation at `p` is that of `o`
-(`unstableOrientation`). Then at a point `y` of `W^u(p)` where `df_y ≠ 0`, the sign of the
-trajectory of `y`, measured against the positive orientation at `q`, is the sign of the derivative
-of `f` at `y` along a positive tangent vector for `o`. -/
-theorem trajectorySign_eq_sign_mvfderiv (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
-    {φp : MorseChart E f p} {φq : MorseChart E f q}
-    (hφp : ∀ y ∈ φp.toChart.source,
-      φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
-        fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
-    (hpE : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E)
-    (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0)
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
-    (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E)))
-    (op : Orientation ℝ ({i // φp.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)))
-    (hbp : Bijective (hX.unstableFrame φp p))
-    (hop : Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame φp p).toLinearMap hbp)
-      (op.reindex ℝ _ (finCongr hpE)) = o.orientationAt p)
-    {y : M} (hy : y ∈ hX.flow.unstableSet p) (hy₀ : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
-    (b : Module.Basis (Fin (finrank ℝ E)) ℝ (TangentSpace 𝓘(ℝ, E) y))
-    (hb : b.orientation = o.orientationAt y) (k : Fin (finrank ℝ E)) :
-    hX.trajectorySign φp φq op
-        (Module.finBasisOfFinrankEq ℝ _ φq.finrank_negativeWeight_fun).orientation hpq y =
-      (SignType.sign (mvfderiv 𝓘(ℝ, E) f y (b k)) : ℤ) := by
-  have hm : manifoldMorseIndex 𝓘(ℝ, E) f p = 1 := by omega
-  -- The unstable frame carries `op` to `o` all along `W^u(p)`, and the trajectory counts positively
-  -- when `op` points along `-X y`, the direction in which `f` increases.
-  -- A basis `C` of the line of coordinates of negative weight at `p`, positive for `op`; the
-  -- frame carries it to a positive multiple `w` of `b k`.
-  have : Nonempty (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) := ⟨⟨0, by omega⟩⟩
-  have : Subsingleton (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) := by rw [hm]; infer_instance
-  let C := op.someBasis (by rw [Fintype.card_fin, φp.finrank_negativeWeight_fun])
-  have hC : C.orientation = op := op.someBasis_orientation _
-  let i₀ : Fin (manifoldMorseIndex 𝓘(ℝ, E) f p) := ⟨0, by omega⟩
-  obtain ⟨t, ht, hwb⟩ :=
-    exists_pos_unstableFrame_eq_smul hX hf hφp hpE hm o C hbp (hC ▸ hop) hy b hb i₀ k
-  -- Along `w`, `f` is not constant: `X y` is a multiple of `w`.
-  have hdfX := hX.mvfderiv_apply_lt_zero y hy₀
-  obtain ⟨κ, hκ⟩ := exists_smul_eq_of_finrank_eq_one
-    (by rw [Module.finrank_eq_card_basis b, Fintype.card_fin, ← hpE, hm])
-    (show hX.unstableFrame φp y (C i₀) ≠ 0 from fun h ↦ C.ne_zero i₀
-      (injective_unstableFrame_of_mem hφp hf hy (by rw [map_zero]; exact h))) (X y)
-  have hdfw : mvfderiv 𝓘(ℝ, E) f y (hX.unstableFrame φp y (C i₀)) ≠ 0 := fun h ↦ by
-    rw [← hκ, map_smul, h, smul_zero] at hdfX
-    exact lt_irrefl _ hdfX
-  have hdw : mvfderiv 𝓘(ℝ, E) f y (hX.unstableFrame φp y (C i₀)) =
-      t * mvfderiv 𝓘(ℝ, E) f y (b k) := by
-    rw [hwb, map_smul, smul_eq_mul]
-  rw [hdw] at hdfw
-  rw [show SignType.sign (mvfderiv 𝓘(ℝ, E) f y (b k)) =
-      SignType.sign (t * mvfderiv 𝓘(ℝ, E) f y (b k)) by rw [sign_mul, sign_pos ht, one_mul]]
-  -- `f` increases along the frame image of a basis `σ • C`, where `σ` has the sign of `df (w)`.
-  have hinc
-      (C' : Module.Basis (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) ℝ ({i // φp.weight i < 0} → ℝ))
-      (σ : ℝ) (hC' : ∀ j, C' j = σ • C j) (hσ : 0 < σ * (t * mvfderiv 𝓘(ℝ, E) f y (b k))) (j) :
-      0 < mvfderiv 𝓘(ℝ, E) f y (hX.unstableFrame φp y (C' j)) := by
-    simpa [hC', Subsingleton.elim j i₀, hdw] using hσ
-  rcases hdfw.lt_or_gt with hneg | hpos
-  · -- `f` decreases along `w`, so it increases along `-w`: the sign is `-1`.
-    let C' := C.unitsSMul fun _ ↦ (-1 : ℝˣ)
-    have hC'o : C'.orientation = -C.orientation := by
-      rw [Module.Basis.orientation_unitsSMul]
-      simp [hm]
-    rw [trajectorySign_eq_signBasis hq hpq op C'
-        (hinc C' (-1) (fun j ↦ by simp [C', Module.Basis.unitsSMul_apply]) (by simpa using hneg)),
-      ← hC, Orientation.signBasis_eq_neg_of_orientation_eq_neg _ C C' hC'o,
-      Orientation.signBasis_orientation, sign_neg hneg]
-    simp
-  · rw [trajectorySign_eq_signBasis hq hpq op C
-        (hinc C 1 (fun j ↦ (one_smul ℝ _).symm) (by simpa using hpos)),
-      ← hC, Orientation.signBasis_orientation, sign_pos hpos]
-    simp
 
 variable [ConnectedSpace M]
 
