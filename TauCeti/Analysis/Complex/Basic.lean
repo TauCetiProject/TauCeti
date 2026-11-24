@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -376,10 +377,7 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
 circle, so its conjugate is its inverse. -/
 theorem conj_eq_inv_of_pow_eq {z w : ℂ} {n : ℕ} (hn : n ≠ 0) (hz : z ^ n = w)
     (hw : w * conj w = 1) : conj z = z⁻¹ := by
-  have hw' : ‖w‖ = 1 := by
-    have h := congrArg norm hw
-    rw [norm_mul, norm_conj, norm_one] at h
-    nlinarith [norm_nonneg w]
+  have hw' : ‖w‖ = 1 := TauCeti.RCLike.mul_conj_eq_one_iff.1 hw
   have hz' : ‖z‖ = 1 :=
     (pow_eq_one_iff_of_nonneg (norm_nonneg z) hn).mp (by rw [← norm_pow, hz, hw'])
   exact (inv_eq_conj hz').symm

@@ -50,6 +50,8 @@ namespace Polynomial
 theorem isSolvable_of_isSplittingField {F L : Type*} [Field F] [Field L] [Algebra F L]
     (p : F[X]) [IsSplittingField F L p] (h : Group.IsSolvable p.Gal) :
     Group.IsSolvable (L ≃ₐ[F] L) :=
+  -- `p.Gal` is by definition `p.SplittingField ≃ₐ[F] p.SplittingField`, and its derived group
+  -- structure is the one of `AlgEquiv`, so `h` already has the restated type.
   have : Group.IsSolvable (p.SplittingField ≃ₐ[F] p.SplittingField) := h
   Group.isSolvable_of_surjective
     (f := (AlgEquiv.autCongr (IsSplittingField.algEquiv L p)).symm.toMonoidHom)

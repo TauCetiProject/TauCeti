@@ -33,6 +33,8 @@ splitting field in characteristic zero.
 
 ## Main results
 
+* `NumberField.IsCMField.div_complexConj_mul_complexConj_div_complexConj_eq_one`: for a unit `x`,
+  `u = x / conj x` satisfies `u * conj u = 1`.
 * `NumberField.IsCMField.mul_complexConj_eq_one_of_pow_eq`: `n`-th roots of elements with
   `x * conj x = 1` satisfy the same identity.
 * `NumberField.IsCMField.exists_mem_maximalRealSubfield_div_eq_pow_iff`: a unit `x` of a CM field
@@ -59,6 +61,13 @@ section CMField
 variable {L : Type*} [Field L] [CharZero L] [IsCMField L] [Algebra.IsIntegral ℚ L]
 
 local notation3 "L⁺" => maximalRealSubfield L
+
+/-- For a unit `x` of a CM field, `u = x / conj x` satisfies `u * conj u = 1`. -/
+theorem div_complexConj_mul_complexConj_div_complexConj_eq_one (x : Lˣ) :
+    x / complexConj L x * complexConj L (x / complexConj L x) = 1 := by
+  have hcx : complexConj L (x : L) ≠ 0 := by simp
+  rw [map_div₀, complexConj_apply_apply]
+  field_simp
 
 /-- An `n`-th root `β`, `n ≠ 0`, of an element `x` with `x * conj x = 1` again satisfies
 `β * conj β = 1`. -/
@@ -93,9 +102,8 @@ theorem exists_mem_maximalRealSubfield_div_eq_pow_iff {x : Lˣ} {n : ℕ} :
   · refine ⟨x, (complexConj_eq_self_iff L _).1 ?_, 1, by simp⟩
     rw [pow_zero, eq_comm, div_eq_one_iff_eq hcx] at hβ
     exact hβ.symm
-  have hβ1 : β * complexConj L β = 1 := mul_complexConj_eq_one_of_pow_eq hn hβ (by
-    rw [map_div₀, complexConj_apply_apply]
-    field_simp)
+  have hβ1 : β * complexConj L β = 1 := mul_complexConj_eq_one_of_pow_eq hn hβ
+    (div_complexConj_mul_complexConj_div_complexConj_eq_one x)
   obtain ⟨y, hy⟩ := (exists_complexConj_div_eq_iff L (x := Units.mk0 β
     (left_ne_zero_of_mul_eq_one hβ1))).2 hβ1
   rw [Units.val_mk0, div_eq_iff y.ne_zero] at hy
@@ -172,9 +180,7 @@ theorem exists_mem_maximalRealSubfield_algebraMap_div_eq_pow (a : Kˣ) (hn : n �
     IsSplittingField.finiteDimensional L (X ^ n - C ((a : K) / complexConj K a))
   have : Algebra.IsIntegral ℚ L := Algebra.IsIntegral.trans K
   have : IsCMField L := of_isSplittingField_X_pow_sub_C (n := n)
-    (u := (a : K) / complexConj K a) (by
-      rw [map_div₀, complexConj_apply_apply]
-      field_simp)
+    (u := (a : K) / complexConj K a) (div_complexConj_mul_complexConj_div_complexConj_eq_one a)
   obtain ⟨β, hβ⟩ :=
     (IsSplittingField.splits L (X ^ n - C ((a : K) / complexConj K a))).exists_eval_eq_zero (by
       rw [Polynomial.map_sub, Polynomial.map_pow, map_X, map_C,
