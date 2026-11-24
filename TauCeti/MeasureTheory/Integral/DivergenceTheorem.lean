@@ -190,7 +190,7 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_ball
   rw [h]
   refine intervalIntegral.integral_congr fun θ _ ↦ ?_
   have hmem (θ : ℝ) : circleMap z₀ b θ ∈ K := circleMap_mem_closedBall z₀ hb.le θ
-  rw [deriv_comp_circleMap_eq_fderivWithin hmem
+  rw [deriv_comp_circleMap_eq_fderivWithin (.of_forall hmem)
     (hu₁.differentiableOn one_ne_zero _ (hmem θ))]
   simp [ω, ContinuousAlternatingMap.compContinuousLinearMap_apply, Du, smul_smul]
 
