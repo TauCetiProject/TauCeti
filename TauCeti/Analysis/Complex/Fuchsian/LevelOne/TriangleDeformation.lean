@@ -32,15 +32,15 @@ elliptic element of order `p` deforms this presentation into one of the compact 
 Both have determinant `cos² θ + b θ (1 - b θ) = 1` and trace `2 cos θ`, and `S U θ` has trace `1`.
 At `θ = π / p` this gives `U ^ p = -1`, `(S U) ^ 3 = -1` and `S ^ 2 = -1`, so the classes of
 `S U`, `S` and `U⁻¹` in `PSL(2, ℝ)` satisfy the relations of `Δ(3, 2, p)` and have the exact
-orders `3`, `2` and `p`. The fixed points in `ℍ` are explicit: `U θ` fixes exactly the point
-`i y` with `y = b θ / sin θ`, whose square is `b θ / (1 - b θ)`, and `S U θ` fixes exactly the
-point `(1 - 2 b θ + i √3) / (2 cos θ)`. Together with the fixed point `i` of `S`, these are the
-vertices of the hyperbolic triangle with angles `π / p`, `π / 3` and `π / 2` that the
-representation is meant to realize; the identification of its vertex transformations with
-`U⁻¹`, `S U` and `S`, which would make the representation faithful with cofinite image, is not
-proved here. As `p → ∞` the matrices `U (π / p)` and `L (π / p)` tend to the unipotent matrices
-`T` and `Tᵀ`, while the height `b / sin θ` of the fixed point of `U (π / p)` is
-`p / π + O(1 / p)`.
+orders `3`, `2` and `p`. The fixed points in `ℍ` are explicit: for `0 < sin θ`, `U θ` fixes
+exactly the point `i y` with `y = b θ / sin θ`, whose square is `b θ / (1 - b θ)`, and for
+`0 < cos θ`, `S U θ` fixes exactly the point `(1 - 2 b θ + i √3) / (2 cos θ)`. Together with
+the fixed point `i` of `S`, these are the vertices of the hyperbolic triangle with angles
+`π / p`, `π / 3` and `π / 2` that the representation is meant to realize; the identification of
+its vertex transformations with `U⁻¹`, `S U` and `S`, which would make the representation faithful
+with cofinite image, is not proved here. As `p → ∞` the matrices `U (π / p)` and `L (π / p)` tend
+to the unipotent matrices `T` and `Tᵀ`, while the height `b / sin θ` of the fixed point of
+`U (π / p)` is `p / π + O(1 / p)`.
 
 ## Main definitions
 
@@ -149,9 +149,11 @@ theorem continuous_b : Continuous b := by
 
 /-! ### The deformed matrices -/
 
-/-- The deformed matrix `U θ = !![cos θ, b θ; b θ - 1, cos θ]`. At `θ = π / p` with `6 ≤ p` (more
-generally when `4 sin² θ ≤ 1`) it is elliptic of projective order `p`, fixing `i (b θ / sin θ)`;
-at `θ = 0` it is `T = !![1, 1; 0, 1]`. -/
+/-- The deformed matrix `U θ = !![cos θ, b θ; b θ - 1, cos θ]`. At `θ = π / p` with `6 ≤ p` its
+class in `PSL(2, ℝ)` has order `p` (`TauCeti.TriangleDeformation.orderOf_mk_slU`). For
+`4 sin² θ ≤ 1` and `0 < sin θ` it is elliptic and fixes exactly `i (b θ / sin θ)` in `ℍ`
+(`TauCeti.TriangleDeformation.slU_smul_eq_self_iff`); at `θ = 0` it is the parabolic
+`T = !![1, 1; 0, 1]`. -/
 def U (θ : ℝ) : Matrix (Fin 2) (Fin 2) ℝ :=
   !![Real.cos θ, b θ; b θ - 1, Real.cos θ]
 
@@ -319,8 +321,8 @@ theorem slU_smul_eq_self_iff (h : 4 * Real.sin θ ^ 2 ≤ 1) (hθ : 0 < Real.sin
         mul_zero, mul_one] at this
       nlinarith [b_lt_one hθ.ne', cuspHeight_pos hθ]
     rw [UpperHalfPlane.ext_iff, UpperHalfPlane.coe_specialLinearGroup_apply]
-    change ((Real.cos θ : ℂ) * (cuspHeight θ * I) + (b θ : ℂ)) /
-      (((b θ - 1 : ℝ) : ℂ) * (cuspHeight θ * I) + (Real.cos θ : ℂ)) = cuspHeight θ * I
+    simp only [Algebra.algebraMap_self, RingHom.id_apply, coe_slU, U_def, Matrix.of_apply,
+      Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     rw [div_eq_iff hden, ofReal_sub, ofReal_one]
     linear_combination (-1) * hy - ((b θ : ℂ) - 1) * (cuspHeight θ : ℂ) ^ 2 * I_sq
   rw [Matrix.SpecialLinearGroup.smul_eq_self_iff_of_isElliptic hell hw, UpperHalfPlane.ext_iff,
@@ -357,8 +359,8 @@ theorem S_mul_slU_smul_eq_self_iff (h : 4 * Real.sin θ ^ 2 ≤ 1) (hc : 0 < Rea
       nlinarith [w.im_pos]
     rw [UpperHalfPlane.ext_iff, UpperHalfPlane.coe_specialLinearGroup_apply,
       Matrix.SpecialLinearGroup.coe_mul, coe_slU, S_mul_U]
-    change (((1 - b θ : ℝ) : ℂ) * w + ((-Real.cos θ : ℝ) : ℂ)) /
-      ((Real.cos θ : ℂ) * w + (b θ : ℂ)) = w
+    simp only [Algebra.algebraMap_self, RingHom.id_apply, Matrix.of_apply, Matrix.cons_val',
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     rw [div_eq_iff hden]
     simp only [w, ofReal_sub, ofReal_one, ofReal_neg, ofReal_mul,
       ofReal_ofNat]
