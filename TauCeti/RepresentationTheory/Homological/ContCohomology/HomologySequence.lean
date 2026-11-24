@@ -149,7 +149,7 @@ theorem delta_apply (n : ℕ) (z₃ : cocycles (ofDiscreteModule ℤ G C) n)
 omit [CompactSpace G] in
 /-- The data `TauCeti.ContCohomology.DiscreteShortExact.delta_apply` computes the connecting map
 from: a lift `x₂` of the cocycle `z` to `B`, and a cocycle `z₁` on `A` whose image is `d x₂`. -/
-theorem exists_delta_witness (m : ℕ)
+theorem exists_delta_witness [LocallyCompactSpace G] (m : ℕ)
     (z : cocycles (ofDiscreteModule ℤ G C) m) :
     ∃ (x₂ : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).X m)
       (z₁ : cocycles (ofDiscreteModule ℤ G A) (m + 1)),
@@ -197,8 +197,9 @@ theorem longExact_exact₁ (n : ℕ) :
 
 omit [CompactSpace G] in
 /-- **Exactness at `Hⁿ(G, B)`**: the image of the coefficient map induced by `A → B` is the
-kernel of the coefficient map induced by `B → C`. -/
-theorem longExact_exact₂ (n : ℕ) :
+kernel of the coefficient map induced by `B → C`. No connecting map is involved, so local
+compactness of `G` suffices. -/
+theorem longExact_exact₂ [LocallyCompactSpace G] (n : ℕ) :
     Function.Exact (coeffMap (ofDiscreteModuleMap S.incl.toIntLinearMap S.incl_equivariant) n)
       (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n) :=
   S.topShortExact.longExact_exact₂ n
@@ -228,7 +229,7 @@ theorem delta_comp_coeffMap_incl (n : ℕ) :
 omit [CompactSpace G] in
 /-- If `Hⁿ(G, A)` vanishes, the coefficient map `Hⁿ(G, B) → Hⁿ(G, C)` is injective, by exactness
 at `Hⁿ(G, B)`. -/
-theorem coeffMap_proj_injective {n : ℕ}
+theorem coeffMap_proj_injective [LocallyCompactSpace G] {n : ℕ}
     [Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A))] :
     Function.Injective
       (coeffMap (ofDiscreteModuleMap S.proj.toIntLinearMap S.proj_equivariant) n) :=

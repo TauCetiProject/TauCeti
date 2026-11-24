@@ -6,17 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExactCochains.Basic
-import TauCeti.RepresentationTheory.Continuous.TopRep.KernelCokernel
 import TauCeti.Topology.Discrete
 
 /-!
 # Lifting continuous cochains along continuous sections
 
-A map of topological representations admitting a continuous set-theoretic section induces
-surjections on homogeneous continuous cochains in every degree, provided the source action is
-jointly continuous. In particular, this holds for surjections onto discrete representations. This
-is the degreewise lifting input for Tate's inverse-limit theorem; see K. Rubin, *Euler Systems*,
-Appendix B, §2, Remark 2.2.
+This file specializes the continuous-section criterion from `ExactCochains.Basic` to surjections
+onto discrete representations: any set-theoretic section from a discrete space is continuous.
+Consequently, these maps induce surjections on homogeneous continuous cochains in every degree,
+provided the source action is jointly continuous. This is the degreewise lifting input for Tate's
+inverse-limit theorem; see K. Rubin, *Euler Systems*, Appendix B, §2, Remark 2.2.
 -/
 
 public section
@@ -30,22 +29,6 @@ universe u v
 variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {Y Z : TopRep.{v} R G}
-
-/-- Over a topological group, a coefficient map admitting a continuous set-theoretic section
-induces a surjection on continuous homogeneous cochains in every degree,
-when the source action is jointly continuous. -/
-theorem continuousCochainsFunctor_map_f_surjective_of_continuous_section (g : Y ⟶ Z)
-    (hs : ∃ s : Z.V → Y.V, Continuous s ∧ ∀ z, g.hom (s z) = z)
-    (hρ : Continuous fun p : G × Y.V ↦ Y.ρ p.1 p.2) (n : ℕ) :
-    Function.Surjective (((continuousCochainsFunctor R G).map g).f n).hom := by
-  rw [continuousCochainsFunctor_map]
-  let S := ShortComplex.mk (TopRep.kerι g) g (TopRep.kerι_comp g)
-  have hS : S.TopShortExact :=
-    { isEmbedding_f := TopRep.isEmbedding_kerι g
-      exact := TopRep.exact_kerι g
-      exists_continuous_section := hs
-      continuous_ρ₂ := hρ }
-  exact hS.cochainsMap_g_f_surjective n
 
 /-- Over a topological group, a surjective coefficient map onto a discrete representation
 induces a surjection on continuous homogeneous cochains in every degree, when the

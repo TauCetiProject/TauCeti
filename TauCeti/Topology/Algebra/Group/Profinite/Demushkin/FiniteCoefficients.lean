@@ -52,7 +52,6 @@ namespace IsDemushkin
 variable (hG : IsDemushkin p G)
 include hG
 
-omit [CompactSpace G] in
 /-- **`H²(G, M)` of a Demushkin group is finite for every finite `p`-primary `M`**, on Mathlib's
 carrier. -/
 theorem finite_continuousCohomology_two (M : Type u) [AddCommGroup M] [TopologicalSpace M]

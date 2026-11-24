@@ -53,9 +53,8 @@ universe u
 variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace G]
   [IsTopologicalGroup G] [CompactSpace G]
 
-omit [CompactSpace G] in
-/-- **Finiteness of `Hⁿ` on finite `p`-primary modules.** Let `G` be a pro-`p` topological group
-with `Hⁿ(G, 𝔽_p)` finite. Then `Hⁿ(G, M)` is finite for every finite discrete `p`-primary `G`-module
+/-- **Finiteness of `Hⁿ` on finite `p`-primary modules.** Let `G` be a compact pro-`p` group with
+`Hⁿ(G, 𝔽_p)` finite. Then `Hⁿ(G, M)` is finite for every finite discrete `p`-primary `G`-module
 `M`. -/
 theorem IsProP.finite_continuousCohomology_of_finite_cohomFp (hG : IsProP p G) {n : ℕ}
     [Finite (cohomFp p G n)] (M : Type u) [AddCommGroup M] [TopologicalSpace M]

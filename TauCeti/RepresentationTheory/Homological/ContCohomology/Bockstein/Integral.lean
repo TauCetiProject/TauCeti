@@ -234,10 +234,10 @@ theorem mem_primaryComponent_iff_exists_integralBockstein (p : ℕ) [NeZero p]
   · rintro ⟨k, y, rfl⟩
     exact ⟨k, (mem_range_integralBockstein_iff G (p ^ k) 1 _).1 ⟨y, rfl⟩⟩
 
-/-- **Vanishing of the `p`-primary part of integral cohomology.** Let `G` be a compact group,
-all coefficients carrying the trivial action. If `Hⁱ⁺¹(G, ℤ/pᵐ)` vanishes and `pᵐ`
+/-- **Vanishing of the `p`-primary part of integral cohomology.** Let `G` be a compact, locally
+compact group, all coefficients carrying the trivial action. If `Hⁱ⁺¹(G, ℤ/pᵐ)` vanishes and `pᵐ`
 kills `Hⁱ(G, ℤ/pᵏ)` for every `k`, then the `p`-primary component of `Hⁱ⁺¹(G, ℤ)` vanishes. -/
-theorem primaryComponent_continuousCohomology_int_eq_bot (p : ℕ) [NeZero p]
+theorem primaryComponent_continuousCohomology_int_eq_bot [LocallyCompactSpace G] (p : ℕ) [NeZero p]
     (m i : ℕ)
     [Subsingleton (continuousCohomology (i + 1)
       (ofDiscreteModule ℤ G (ULift.{u} (ZMod (p ^ m)))))]

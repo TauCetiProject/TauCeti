@@ -61,7 +61,7 @@ variable {p : ℕ} {G : Type u} [Group G]
 
 namespace ContinuousCohomology
 
-variable [TopologicalSpace G] [IsTopologicalGroup G]
+variable [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
 
 /-- Vanishing of `Hⁿ(G, -)` on the finite discrete simple `𝔽_p`-representations of `G` implies
 vanishing of `Hⁿ(G, M)` for every finite discrete `G`-module `M` killed by `p`. -/

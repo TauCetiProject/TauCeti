@@ -13,7 +13,7 @@ import TauCeti.LinearAlgebra.Exact
 /-!
 # Testing cohomological dimension on finite modules killed by p
 
-For a topological group `G`, vanishing of continuous cohomology in a fixed degree on finite
+For a compact group `G`, vanishing of continuous cohomology in a fixed degree on finite
 discrete modules killed by `p` implies vanishing on all finite discrete `p`-primary modules.
 A finite `p`-primary module `M` is killed by some `p ^ k`. The sequence
 `0 → pM → M → M / pM → 0` reduces this exponent: `pM` is killed by `p ^ (k - 1)`, and
@@ -52,8 +52,7 @@ variable {p : ℕ} {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGro
 
 namespace ContinuousCohomology
 
-omit [CompactSpace G] in
-/-- For a topological group, vanishing in a fixed degree on finite discrete modules killed by `p`
+/-- For a compact group, vanishing in a fixed degree on finite discrete modules killed by `p`
 implies vanishing in that degree on every finite discrete `p`-primary module. No primality or
 pro-`p` hypothesis is needed. -/
 theorem subsingleton_continuousCohomology_of_forall_finite_nsmul_eq_zero (n : ℕ)

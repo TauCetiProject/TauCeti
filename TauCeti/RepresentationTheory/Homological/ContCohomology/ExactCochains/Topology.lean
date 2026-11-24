@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Homology
 A topologically short exact sequence of coefficients (`CategoryTheory.ShortComplex.TopShortExact`:
 an embedding followed by a map with a continuous section, with a jointly continuous action on the
 middle term) induces a categorical short exact sequence of homogeneous continuous-cochain complexes
-in `TopModuleCat R`, over any topological group. Short exact sequences of discrete
+in `TopModuleCat R`, over any locally compact topological group. Short exact sequences of discrete
 coefficients are the instance used most often. The cochains retain their compact-open and
 subspace topologies; these need not be discrete when the group is not compact.
 
@@ -44,8 +44,9 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {S : ShortComplex (TopRep.{v} R G)}
 
 /-- The sequence of canonical continuous-cochain complexes of a topologically short exact
-sequence is short exact in the category of cochain complexes of topological modules. -/
-theorem cochains_shortExact (hS : S.TopShortExact) :
+sequence is short exact in the category of cochain complexes of topological modules, for a
+locally compact group. -/
+theorem cochains_shortExact [LocallyCompactSpace G] (hS : S.TopShortExact) :
     (S.map (continuousCochainsFunctor R G)).ShortExact := by
   have : (forget₂ (TopModuleCat.{v} R) (ModuleCat.{v} R)).Additive :=
     Functor.additive_of_preserves_binary_products _
@@ -70,16 +71,17 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (S : DiscreteShortExact G A B C)
 
 /-- The sequence of canonical continuous-cochain complexes is short exact in the category
-of cochain complexes of topological modules, for a topological group acting continuously
+of cochain complexes of topological modules, for a locally compact group acting continuously
 on the discrete middle coefficient module. -/
-theorem continuousCochainsShortExact_shortExact [ContinuousSMul G B] :
-    S.continuousCochainsShortExact.ShortExact :=
+theorem continuousCochainsShortExact_shortExact [LocallyCompactSpace G]
+    [ContinuousSMul G B] : S.continuousCochainsShortExact.ShortExact :=
   S.topShortExact.cochains_shortExact
 
 /-- The canonical continuous-cochain sequence is short exact in `TopModuleCat ℤ` in every
-degree, for a topological group acting continuously on the discrete middle coefficient
+degree, for a locally compact group acting continuously on the discrete middle coefficient
 module. The compact-open and subspace topologies on the cochains are retained. -/
-theorem continuousCochainsShortExact_degreewise_shortExact [ContinuousSMul G B] (n : ℕ) :
+theorem continuousCochainsShortExact_degreewise_shortExact [LocallyCompactSpace G]
+    [ContinuousSMul G B] (n : ℕ) :
     (S.continuousCochainsShortExact.map
       (HomologicalComplex.eval (TopModuleCat.{u} ℤ) (ComplexShape.up ℕ) n)).ShortExact :=
   S.continuousCochainsShortExact_shortExact.map_of_exact
