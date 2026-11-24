@@ -35,10 +35,10 @@ relation `A₁ dA₁ + A₂ dA₂ = m L² dH + 2 m H L dL` between their differe
   (`TauCeti.finrank_range_fderiv_keplerFirstIntegrals_eq_three`).
 
 For `m > 0` and nonzero angular momentum, the Runge–Lenz vector is nonzero exactly when the energy
-exceeds the circular energy `-m κ² / (2 L²)`, the minimum of `H` at fixed `L`
-(`TauCeti.rungeLenz_ne_zero_iff_lt_centralForceHamiltonian`). The states of the bound phase space
-`{q ≠ 0, H < 0, L ≠ 0}` (`TauCeti.keplerBoundPhaseSpace`) with nonzero Runge–Lenz vector form a
-dense open subset of it, on which `(H, L, A₁, A₂)` has rank exactly three
+exceeds `-m κ² / (2 L²)` (`TauCeti.rungeLenz_ne_zero_iff_lt_centralForceHamiltonian`); for `κ > 0`
+this is the energy of the circular orbit with angular momentum `L`. The states of the bound phase
+space `{q ≠ 0, H < 0, L ≠ 0}` (`TauCeti.keplerBoundPhaseSpace`) with nonzero Runge–Lenz vector form
+a dense open subset of it, on which `(H, L, A₁, A₂)` has rank exactly three
 (`TauCeti.exists_isOpen_finrank_range_fderiv_keplerFirstIntegrals_eq_three`): the
 bound Kepler problem is superintegrable.
 
@@ -193,8 +193,8 @@ theorem finrank_range_fderiv_keplerFirstIntegrals_eq_three (hm : m ≠ 0) {x : V
   have hA' : F x 2 ≠ 0 ∨ F x 3 ≠ 0 := by
     by_contra! h
     have hn := b.sum_sq_inner_left (rungeLenz m κ x)
-    rw [Fin.sum_univ_two, show ⟪rungeLenz m κ x, b 0⟫_ℝ = 0 from h.1,
-      show ⟪rungeLenz m κ x, b 1⟫_ℝ = 0 from h.2] at hn
+    simp only [F, keplerFirstIntegrals_two, keplerFirstIntegrals_three] at h
+    rw [Fin.sum_univ_two, h.1, h.2] at hn
     exact hA (norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (by simpa using hn.symm)))
   refine le_antisymm
     (finrank_range_fderiv_keplerFirstIntegrals_le_three_of_ne_zero b hm hq (Or.inr hA')) ?_
@@ -210,11 +210,11 @@ theorem finrank_range_fderiv_keplerFirstIntegrals_eq_three (hm : m ≠ 0) {x : V
   obtain ⟨e, hli⟩ := exists_linearIndependent_fderiv_kepler_of_rungeLenz_ne_zero b hm hq hA
   have hli' := hli.map' (ContinuousLinearMap.coeLM ℝ)
     (LinearMap.ker_eq_bot.2 ContinuousLinearMap.coe_injective)
-  have hsub : Submodule.span ℝ (range ((ContinuousLinearMap.coeLM ℝ) ∘ ![
-      fderiv ℝ (centralForceHamiltonian m (fun r ↦ -κ / r)) x,
-      fderiv ℝ (angularMomentum (b 0) (b 1)) x,
-      fderiv ℝ (fun y ↦ ⟪rungeLenz m κ y, e⟫_ℝ) x])) ≤
-        LinearMap.range (fderiv ℝ F x).toLinearMap.dualMap := by
+  set S := Submodule.span ℝ (range ((ContinuousLinearMap.coeLM ℝ) ∘ ![
+    fderiv ℝ (centralForceHamiltonian m (fun r ↦ -κ / r)) x,
+    fderiv ℝ (angularMomentum (b 0) (b 1)) x,
+    fderiv ℝ (fun y ↦ ⟪rungeLenz m κ y, e⟫_ℝ) x])) with hS
+  have hsub : S ≤ LinearMap.range (fderiv ℝ F x).toLinearMap.dualMap := by
     rw [Submodule.span_le, range_subset_iff]
     intro i
     fin_cases i
@@ -228,31 +228,9 @@ theorem finrank_range_fderiv_keplerFirstIntegrals_eq_three (hm : m ≠ 0) {x : V
         keplerFirstIntegrals_three]
       rw [← b.sum_inner_mul_inner, Fin.sum_univ_two]
       ring
-  calc 3 = finrank ℝ (Submodule.span ℝ (range ((ContinuousLinearMap.coeLM ℝ) ∘ ![
-        fderiv ℝ (centralForceHamiltonian m (fun r ↦ -κ / r)) x,
-        fderiv ℝ (angularMomentum (b 0) (b 1)) x,
-        fderiv ℝ (fun y ↦ ⟪rungeLenz m κ y, e⟫_ℝ) x]))) := by
-        rw [finrank_span_eq_card hli', Fintype.card_fin]
+  calc 3 = finrank ℝ S := by rw [hS, finrank_span_eq_card hli', Fintype.card_fin]
     _ ≤ _ := Submodule.finrank_mono hsub
     _ = _ := LinearMap.finrank_range_dualMap_eq_finrank_range _
-
-/-- **The Runge–Lenz vector vanishes exactly at the circular energy.** Off the collision set, for
-`m > 0` and nonzero angular momentum `L`, the Runge–Lenz vector is nonzero exactly when the energy
-exceeds the circular energy `-m κ² / (2 L²)`. -/
-theorem rungeLenz_ne_zero_iff_lt_centralForceHamiltonian (hm : 0 < m) {x : V × V} (hq : x.1 ≠ 0)
-    (hL : angularMomentum (b 0) (b 1) x ≠ 0) :
-    rungeLenz m κ x ≠ 0 ↔ -(m * κ ^ 2) / (2 * angularMomentum (b 0) (b 1) x ^ 2) <
-      centralForceHamiltonian m (fun r ↦ -κ / r) x := by
-  have hn := norm_rungeLenz_sq_of_orthonormalBasis b hm.ne' κ hq
-  set H := centralForceHamiltonian m (fun r ↦ -κ / r) x
-  set L := angularMomentum (b 0) (b 1) x
-  -- Both sides say that `‖A‖² = m (m κ² + 2 H L²)` is positive.
-  have hprod : ‖rungeLenz m κ x‖ ^ 2 = m * (m * κ ^ 2 + H * (2 * L ^ 2)) := by
-    rw [hn]
-    ring
-  rw [div_lt_iff₀ (by positivity), ← norm_ne_zero_iff, ← sq_pos_iff, hprod,
-    mul_pos_iff_of_pos_left hm]
-  constructor <;> intro h <;> linarith
 
 /-- The states of the bound phase space of the Kepler problem with nonzero Runge–Lenz vector form
 an open set. -/
@@ -274,8 +252,8 @@ theorem keplerBoundPhaseSpace_subset_closure_setOf_rungeLenz_ne_zero (hm : m ≠
       Set (puncturedPhaseSpace V)) :=
     (keplerBoundPhaseSpace b m κ).isOpen.preimage continuous_subtypeVal
   have hx' := (dense_setOf_rungeLenz_ne_zero hm hκ).open_subset_closure_inter ht
-    (show (⟨x, mem_puncturedPhaseSpace.2 ((mem_keplerBoundPhaseSpace b).1 hx).1⟩ :
-      puncturedPhaseSpace V) ∈ _ from hx)
+    (a := ⟨x, mem_puncturedPhaseSpace.2 ((mem_keplerBoundPhaseSpace b).1 hx).1⟩)
+    (mem_preimage.2 hx)
   refine closure_mono ?_ (image_closure_subset_closure_image continuous_subtypeVal ⟨_, hx', rfl⟩)
   rintro _ ⟨y, ⟨hy, hyA⟩, rfl⟩
   exact ⟨hy, hyA⟩
