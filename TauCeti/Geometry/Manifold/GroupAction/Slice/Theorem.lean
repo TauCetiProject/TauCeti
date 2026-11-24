@@ -11,19 +11,20 @@ public import TauCeti.Geometry.Lie.FundamentalVectorField
 import TauCeti.Geometry.Manifold.GroupAction.TransverseSlice
 
 /-!
-# The slice theorem at the identity coset
+# The action map of a balanced product is a local diffeomorphism
 
 Let a finite-dimensional real Lie group `G` act smoothly on a manifold `M`, let `K` be a closed
 subgroup of `G` acting smoothly on a manifold `Z`, and let `ι : Z → M` be a smooth `K`-equivariant
 map. The action map `[g, z] ↦ g • ι z` descends from `G × Z` to the balanced product `G ×_K Z`
 (`TauCeti.BalancedProduct.liftRightTranslation`). This file proves that the descended map is a
-local diffeomorphism at the identity coset `[1, z₀]` when `ι` is a transverse slice at `z₀`: its
-differential at `z₀` is injective with range a complement of the orbit tangent space `𝔤 · ι z₀`,
-and `dim K = dim 𝔤_{ι z₀}`. This is the local half of the slice theorem `G ×_K S ≅ G • S` for
-proper actions (Meinrenken, Theorem 1.25), with `K` the stabilizer of `ι z₀`, whose Lie algebra
-is the isotropy algebra `𝔤_{ι z₀}` (`TauCeti.Lie.finrank_lieSubalgebraOfSubgroup_stabilizer`).
-The linear slice data at a point of a proper action are
-`ProperSMul.exists_equivariant_slice`.
+local diffeomorphism at `[g, z]` when the differential of `(g, z) ↦ g • ι z` is onto there and the
+dimensions match, and in particular at the identity coset `[1, z₀]` when `ι` is a transverse slice
+at `z₀`: its differential at `z₀` is injective with range a complement of the orbit tangent space
+`𝔤 · ι z₀`, and `dim K = dim 𝔤_{ι z₀}`. This is the local half of the slice theorem
+`G ×_K S ≅ G • S` for proper actions (Meinrenken, Theorem 1.25), with `K` the stabilizer of `ι z₀`,
+whose Lie algebra is the isotropy algebra `𝔤_{ι z₀}`
+(`TauCeti.Lie.finrank_lieSubalgebraOfSubgroup_stabilizer`). The linear slice data at a point of a
+proper action are `ProperSMul.exists_equivariant_slice`.
 
 The differential of `(g, z) ↦ g • ι z` at `(1, z₀)` is `(ξ, v) ↦ ξ_M(ι z₀) + dι v`, which is onto
 `T_{ι z₀} M` because the orbit tangent space and the range of `dι` together span it. The
@@ -33,10 +34,10 @@ bijective, and the inverse function theorem applies.
 
 The descended map is `G`-equivariant: left translation by `g` on the `G` factor intertwines
 `(h, z) ↦ h • ι z` with the diffeomorphism `g • ·` of `M`. So surjectivity of the differential at
-`(1, z)` propagates to `(g, z)` for every `g`, and the descended map is a local diffeomorphism along
-the whole orbit `G ×_K {z}`; if this holds for every `z ∈ Z`, it is a local diffeomorphism on all
-of `G ×_K Z`. This is the first step of the global half of the slice theorem; injectivity after
-shrinking `Z`, which uses properness, is not treated here.
+`(1, z)` propagates to `(g, z)` for every `g`
+(`TauCeti.surjective_mfderiv_smul_slice_of_surjective_one`), and the descended map is a local
+diffeomorphism along the whole orbit `G ×_K {z}`; if this holds for every `z ∈ Z`, it is a local
+diffeomorphism on all of `G ×_K Z`.
 
 ## Main results
 
@@ -45,8 +46,6 @@ shrinking `Z`, which uses properness, is not treated here.
   and `dim G + dim Z = dim M + dim K`.
 * `TauCeti.BalancedProduct.isLocalDiffeomorphAt_liftRightTranslation_one`: the slice theorem at
   the identity coset, for a transverse slice `ι`.
-* `TauCeti.BalancedProduct.surjective_mfderiv_smul_of_surjective_one`: surjectivity of the
-  differential of `(g, z) ↦ g • ι z` at `(1, z)` propagates to `(g, z)`.
 * `TauCeti.BalancedProduct.isLocalDiffeomorphAt_liftRightTranslation_of_surjective_one` and
   `TauCeti.BalancedProduct.isLocalDiffeomorph_liftRightTranslation`: the descended action map is a
   local diffeomorphism along the orbit of `[1, z]`, and everywhere when this holds for every `z`.
@@ -168,35 +167,6 @@ theorem isLocalDiffeomorphAt_liftRightTranslation_one [CompleteSpace EM] (hι : 
   have h₆ : finrank ℝ (TangentSpace IZ z₀) = finrank ℝ EZ := rfl
   omega
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsClosed (K : Set G)] [FiniteDimensional ℝ EZ]
-  [IZ.Boundaryless] [IsManifold IZ ∞ Z] [T2Space Z] [IsManifold IM ∞ M] in
-/-- **The differential of the action map is onto along the whole `G`-orbit of `(1, z)`.** Left
-translation by `g` on the `G` factor intertwines `(h, z) ↦ h • ι z` with the diffeomorphism
-`g • ·` of `M`, so if its differential at `(1, z)` is onto, so is its differential at `(g, z)`. -/
-theorem surjective_mfderiv_smul_of_surjective_one (hι : ContMDiff IZ IM ∞ ι) {z : Z}
-    (hsurj : Surjective (mfderiv (I.prod IZ) IM (fun p : G × Z ↦ p.1 • ι p.2) (1, z))) (g : G) :
-    Surjective (mfderiv (I.prod IZ) IM (fun p : G × Z ↦ p.1 • ι p.2) (g, z)) := by
-  set F : G × Z → M := fun p ↦ p.1 • ι p.2
-  have hF : ContMDiff (I.prod IZ) IM ∞ F :=
-    (ContMDiffSMul.contMDiff_smul (I := I) (I' := IM) (n := ∞)).comp
-      (contMDiff_fst.prodMk (hι.comp contMDiff_snd))
-  set T : G × Z → G × Z := fun p ↦ (g * p.1, p.2)
-  have hT : ContMDiff (I.prod IZ) (I.prod IZ) ∞ T :=
-    (contMDiff_const.mul contMDiff_fst).prodMk contMDiff_snd
-  have hT1 : T (1, z) = (g, z) := by simp [T]
-  have hcomm : F ∘ T = (Diffeomorph.smul I IM ∞ g) ∘ F :=
-    funext fun p ↦ mul_smul g p.1 (ι p.2)
-  have h₁ := mfderiv_comp (1, z) (hF.mdifferentiableAt (by simp)) (hT.mdifferentiableAt (by simp))
-  have h₂ := mfderiv_comp (1, z)
-    ((Diffeomorph.smul I IM ∞ g).contMDiff.mdifferentiableAt (by simp))
-    (hF.mdifferentiableAt (by simp))
-  rw [hcomm, h₂, hT1] at h₁
-  have hs : Surjective ((mfderiv IM IM (Diffeomorph.smul I IM ∞ g) (F (1, z))).comp
-      (mfderiv (I.prod IZ) IM F (1, z))) :=
-    ((Diffeomorph.smul I IM ∞ g).isInvertible_mfderiv (by simp)).surjective.comp hsurj
-  rw [h₁] at hs
-  exact Surjective.of_comp hs
-
 /-- **The slice theorem along the orbit of the identity coset.** If the differential of
 `(h, z) ↦ h • ι z` at `(1, z)` is onto and `dim G + dim Z = dim M + dim K`, then
 `[g, z] ↦ g • ι z` is a local diffeomorphism at `[g, z]` for every `g ∈ G`. -/
@@ -207,7 +177,8 @@ theorem isLocalDiffeomorphAt_liftRightTranslation_of_surjective_one (hι : ContM
     IsLocalDiffeomorphAt 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM ∞
       (liftRightTranslation ι) (mk K (K.toRightTranslation g) z) :=
   isLocalDiffeomorphAt_liftRightTranslation hι
-    (surjective_mfderiv_smul_of_surjective_one hι hsurj g) hdim
+    (surjective_mfderiv_smul_slice_of_surjective_one (hι.mdifferentiableAt (by simp)) hsurj g)
+    hdim
 
 /-- **The action map of a balanced product is a local diffeomorphism everywhere** when the
 differential of `(h, z) ↦ h • ι z` is onto at `(1, z)` for every `z ∈ Z` and
