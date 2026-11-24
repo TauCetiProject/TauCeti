@@ -267,6 +267,13 @@ theorem coe_globalFlowDiffeomorph {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
       globalFlow v (hvn.of_le (by exact_mod_cast hn)) hcomplete t :=
   funext (globalFlowDiffeomorph_apply hcomplete hn hvn t)
 
+/-- The time-`t` map of the flow of a complete `C¹` vector field has injective differential at
+every point, since it is a diffeomorphism. -/
+theorem injective_mfderiv_flowOf (t : ℝ) (x : M) :
+    Function.Injective (mfderiv I I (flowOf v t) x) := by
+  rw [flowOf_eq_globalFlow hv hcomplete, ← coe_globalFlowDiffeomorph hcomplete le_rfl hv t]
+  exact ((globalFlowDiffeomorph hcomplete le_rfl hv t).isInvertible_mfderiv one_ne_zero).injective
+
 omit hv in
 /-- The inverse of `globalFlowDiffeomorph` at time `t` is the time-`(-t)` map of the flow. -/
 @[simp]
