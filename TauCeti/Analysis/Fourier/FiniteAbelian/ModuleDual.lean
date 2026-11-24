@@ -198,7 +198,9 @@ theorem sum_dual_apply_eq_zero [Fintype (Module.Dual k W)] (hφ : ∑ r, φ r = 
 theorem sum_dual_apply_eq_ite [Fintype (Module.Dual k W)] [DecidableEq W] (hφ : ∑ r, φ r = 0)
     (u : W) : ∑ w' : Module.Dual k W, φ (w' u) = if u = 0 then (Fintype.card W : Λ) else 0 := by
   split_ifs with hu
-  · simp [hu, Fintype.card_eq_nat_card, TauCeti.Module.natCard_dual, -Nat.card_eq_fintype_card]
+  · rw [Fintype.card_eq_nat_card (α := W), ← TauCeti.Module.natCard_dual k W,
+      Nat.card_eq_fintype_card]
+    simp [hu]
   · exact sum_dual_apply_eq_zero hφ hu
 
 /-- **Fourier inversion.** If `∑ r, φ r = 0`, transforming twice gives `|W| · t (-w)` at the image
@@ -286,17 +288,15 @@ unit of `Λ`, the transform is invertible, with inverse
 noncomputable def fourierTransformEquiv (hφ : ∑ r, φ r = 0) (hW : IsUnit (Fintype.card W : Λ)) :
     (W → Λ) ≃ₗ[Λ] (Module.Dual k W → Λ) where
   __ := φ.fourierTransform
-  invFun t' w := ↑hW.unit⁻¹ * φ.fourierTransform t' (Module.Dual.eval k W (-w))
+  invFun t' := (↑hW.unit⁻¹ : Λ) • fun w ↦ φ.fourierTransform t' (Module.Dual.eval k W (-w))
   left_inv t := by
     ext w
-    simp only [LinearMap.toFun_eq_coe, fourierTransform_fourierTransform_eval hφ, neg_neg,
-      ← mul_assoc, IsUnit.val_inv_mul, one_mul]
+    simp only [LinearMap.toFun_eq_coe, Pi.smul_apply, smul_eq_mul,
+      fourierTransform_fourierTransform_eval hφ, neg_neg, ← mul_assoc, IsUnit.val_inv_mul, one_mul]
   right_inv t' := by
     ext w'
-    change φ.fourierTransform
-      ((↑hW.unit⁻¹ : Λ) • fun w ↦ φ.fourierTransform t' (Module.Dual.eval k W (-w))) w' = t' w'
-    rw [map_smul, Pi.smul_apply, smul_eq_mul, fourierTransform_fourierTransform_comp_eval_neg hφ,
-      ← mul_assoc, IsUnit.val_inv_mul, one_mul]
+    rw [LinearMap.toFun_eq_coe, map_smul, Pi.smul_apply, smul_eq_mul,
+      fourierTransform_fourierTransform_comp_eval_neg hφ, ← mul_assoc, IsUnit.val_inv_mul, one_mul]
 
 /-- The linear equivalence `fourierTransformEquiv` is the finite Fourier transform. -/
 @[simp]
