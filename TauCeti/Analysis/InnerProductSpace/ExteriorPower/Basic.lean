@@ -55,10 +55,10 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 ## Main results
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
-* `LinearIsometryEquiv.inner_conj_exteriorPower_map` and
-  `LinearIsometryEquiv.adjoint_exteriorPower_map`:
-  `⟪(⋀ⁿ e.symm ∘ₗ T ∘ₗ ⋀ⁿ e) x, y⟫ = ⟪T (⋀ⁿ e x), ⋀ⁿ e y⟫` and
-  `LinearMap.adjoint (⋀ⁿ e) = ⋀ⁿ e.symm` for a linear isometric equivalence `e`.
+* `LinearIsometryEquiv.adjoint_exteriorPower_map` and
+  `LinearIsometryEquiv.exteriorPower_map_comp_adjoint`:
+  `LinearMap.adjoint (⋀ⁿ e) = ⋀ⁿ e.symm` and `⋀ⁿ e ∘ₗ LinearMap.adjoint (⋀ⁿ e) = id` for a
+  linear isometric equivalence `e`.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
   `exteriorPower.orthonormal_ιMulti_two_of_orthonormal`: for an orthonormal triple `e, x, y`, the
   wedges `e ∧ x` and `e ∧ y` are orthonormal.
@@ -72,7 +72,7 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
 * `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
-  `OrthonormalBasis.sum_rankOne_ιMulti_two`,
+  `OrthonormalBasis.sum_rankOne_ιMulti_two`, `OrthonormalBasis.sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.eq_sum_inner_smul_ιMulti_two`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space and the general
@@ -354,15 +354,12 @@ theorem adjoint_exteriorPower_map (e : E ≃ₗᵢ[ℝ] F) :
   ((e.toLinearEquiv.exteriorPower n).isometryOfInner
     (exteriorPower.inner_map_map e.toLinearIsometry)).adjoint_toLinearMap_eq_symm
 
-/-- Conjugating an endomorphism of `⋀[ℝ]^n F` by a linear isometric equivalence `e : E ≃ₗᵢ[ℝ] F`
-moves the outer `map n e.symm.toLinearMap` to the right inner-product argument as
-`map n e.toLinearMap`. -/
-theorem inner_conj_exteriorPower_map (e : E ≃ₗᵢ[ℝ] F) (T : Module.End ℝ (⋀[ℝ]^n F))
-    (x y : ⋀[ℝ]^n E) :
-    ⟪(map n e.symm.toLinearMap ∘ₗ T ∘ₗ map n e.toLinearMap) x, y⟫ =
-      ⟪T (map n e.toLinearMap x), map n e.toLinearMap y⟫ := by
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, ← e.adjoint_exteriorPower_map,
-    LinearMap.adjoint_inner_left]
+/-- Composing `exteriorPower.map n e.toLinearMap` with its adjoint gives the identity. -/
+theorem exteriorPower_map_comp_adjoint (e : E ≃ₗᵢ[ℝ] F) :
+    map n e.toLinearMap ∘ₗ LinearMap.adjoint (map n e.toLinearMap) = LinearMap.id := by
+  rw [e.adjoint_exteriorPower_map, ← map_comp]
+  have h : e.toLinearMap ∘ₗ e.symm.toLinearMap = LinearMap.id := by ext; simp
+  rw [h, map_id]
 
 end LinearIsometryEquiv
 
@@ -440,6 +437,15 @@ theorem sum_rankOne_ιMulti_two (b : OrthonormalBasis ι ℝ E) :
   simp_rw [← Finset.mul_sum, hp, ← Finset.sum_mul, hp]
   ring
 
+/-- Pointwise ordered-wedge resolution of the identity on `⋀² E`: summing
+`⟪b i ∧ b j, z⟫ • (b i ∧ b j)` over all ordered pairs `(i, j)` gives `2 • z`. -/
+theorem sum_inner_smul_ιMulti_two (b : OrthonormalBasis ι ℝ E) (z : ⋀[ℝ]^2 E) :
+    (∑ i, ∑ j, ⟪exteriorPower.ιMulti ℝ 2 ![b i, b j], z⟫ •
+      exteriorPower.ιMulti ℝ 2 ![b i, b j]) = (2 : ℝ) • z := by
+  simpa only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
+    InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] using
+    LinearMap.congr_fun b.sum_rankOne_ιMulti_two z
+
 /-! ### Two-vectors in an orthonormal frame of a four-dimensional space -/
 
 section FinFour
@@ -485,18 +491,10 @@ theorem eq_sum_inner_smul_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E) (x : 
       ⟪x, ιMulti ℝ 2 ![b 1, b 2]⟫ • ιMulti ℝ 2 ![b 1, b 2] +
       ⟪x, ιMulti ℝ 2 ![b 1, b 3]⟫ • ιMulti ℝ 2 ![b 1, b 3] +
       ⟪x, ιMulti ℝ 2 ![b 2, b 3]⟫ • ιMulti ℝ 2 ![b 2, b 3] := by
-  have h := LinearMap.congr_fun b.sum_rankOne_ιMulti_two x
-  simp only [LinearMap.sum_apply, ContinuousLinearMap.coe_coe,
-    InnerProductSpace.rankOne_apply, LinearMap.smul_apply, LinearMap.id_apply] at h
-  simp only [Fin.sum_univ_four, ιMulti_two_self, inner_zero_left, zero_smul,
-    ιMulti_two_swap (b 0) (b 1), ιMulti_two_swap (b 0) (b 2), ιMulti_two_swap (b 0) (b 3),
-    ιMulti_two_swap (b 1) (b 2), ιMulti_two_swap (b 1) (b 3), ιMulti_two_swap (b 2) (b 3),
-    inner_neg_left, neg_smul, smul_neg, neg_neg, zero_add, add_zero] at h
-  simp only [real_inner_comm x] at h
-  refine smul_right_injective (⋀[ℝ]^2 E) (two_ne_zero (α := ℝ)) ?_
-  dsimp only
-  rw [← h, two_smul ℝ]
-  module
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [b.inner_ιMulti_two_eq_sum x u w]
+  simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← b.repr_apply_apply]
+  ring
 
 /-- The squared norm of a two-vector is the sum of the squares of its coordinates in the
 basis `bᵢ ∧ bⱼ`, `i < j`, induced by an orthonormal basis `b` indexed by `Fin 4`. -/
@@ -773,7 +771,7 @@ theorem twoVectorContraction_twoVectorBracket (F G : ⋀[ℝ]^2 V) :
   rw [← lie_bivectorExterior_ι, bivectorExterior_twoVectorBracket, lie_lie,
     lie_bivectorExterior_ι, lie_bivectorExterior_ι, lie_bivectorExterior_ι,
     lie_bivectorExterior_ι, ← map_sub]
-  rfl
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply]
 
 omit [FiniteDimensional ℝ V] in
 /-- The two-vector bracket is skew-symmetric. -/

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
 /-!
 # Metric index raising of bilinear forms to endomorphisms
@@ -34,7 +35,6 @@ endomorphism `B♯` satisfying `⟪B♯ u, v⟫ = B u v`, inverse to metric lowe
 * `TauCeti.isSymmetric_bilinFormToEnd_iff`, `LinearMap.BilinForm.trace_bilinFormToEnd`,
   `LinearMap.BilinForm.bilinFormToEnd_compl₁₂`,
   `LinearIsometry.bilinFormTrace_comp_adjoint`,
-  `LinearIsometryEquiv.toLinearIsometry_toLinearMap`,
   `LinearIsometryEquiv.comp_bilinFormToEnd_compl₁₂`, and
   `LinearIsometryEquiv.comp_bilinFormToEnd_of_eq`: symmetry, trace, pullback, and equivariance.
 -/
@@ -126,15 +126,6 @@ namespace LinearIsometryEquiv
 
 open TauCeti
 
-omit [FiniteDimensional ℝ E] in
-/-- The linear map underlying `e.toLinearIsometry` is `e.toLinearMap`. -/
-theorem toLinearIsometry_toLinearMap {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] (e : F ≃ₗᵢ[ℝ] E) :
-    e.toLinearIsometry.toLinearMap = e.toLinearMap :=
-  LinearMap.ext fun _ ↦ by
-    rw [LinearIsometry.coe_toLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
-    rfl
-
 /-- Metric index raising is equivariant under linear isometric equivalences. -/
 theorem comp_bilinFormToEnd_compl₁₂ {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : F ≃ₗᵢ[ℝ] E) (B : BilinForm ℝ E) :
@@ -171,10 +162,11 @@ theorem bilinFormTrace_comp_adjoint {W V : Type*} [NormedAddCommGroup W]
         (B.comp (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap
           (ContinuousLinearMap.adjoint f.toContinuousLinearMap).toLinearMap) =
       bilinFormTrace B := by
+  -- Convert metric traces to `bilinFormToEnd` traces, then apply trace cyclicity and `f* ∘ f = id`.
   rw [← LinearMap.BilinForm.trace_bilinFormToEnd, ← LinearMap.BilinForm.trace_bilinFormToEnd,
     LinearMap.BilinForm.comp, B.bilinFormToEnd_compl₁₂,
     ← ContinuousLinearMap.adjoint_toLinearMap, LinearMap.adjoint_adjoint,
-    f.toLinearMap_toContinuousLinearMap,
-    LinearMap.trace_comp_cycle, f.adjoint_comp_self', LinearMap.comp_id]
+    f.toLinearMap_toContinuousLinearMap]
+  simp [LinearMap.trace_comp_cycle, f.adjoint_comp_self']
 
 end LinearIsometry

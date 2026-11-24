@@ -10,20 +10,20 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Further properties of `TauCeti.FourTensor.ofExteriorEnd`
 
 This file supplements `TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.ExteriorSquare` with
-injectivity, identity and scalar-contraction evaluations, characterization of
+zero-cancellation, identity and scalar-contraction evaluations, characterization of
 `curvatureEndomorphism r`, the rank-one operator characterization of `planeCurvature u v`, and
 pullback / `O(V)`-equivariance for `TauCeti.FourTensor.ofExteriorEnd`.
 
 ## Main statements
 
-* `TauCeti.FourTensor.ofExteriorEnd_injective`: an endomorphism of `⋀[ℝ]^2 V` is determined by its
-  four-tensor.
+* `TauCeti.FourTensor.ofExteriorEnd_eq_zero_iff`: `ofExteriorEnd T = 0 ↔ T = 0`.
 * `TauCeti.FourTensor.ofExteriorEnd_one`: the identity on `⋀[ℝ]^2 V` corresponds to
   `constantCurvature V`.
 * `TauCeti.FourTensor.scalar_ofExteriorEnd`: `scalar (ofExteriorEnd T) = 2 * trace T`.
@@ -53,10 +53,6 @@ noncomputable section
 namespace TauCeti.FourTensor
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- An endomorphism of `⋀[ℝ]^2 V` is uniquely determined by its four-tensor. -/
-theorem ofExteriorEnd_injective : Function.Injective (ofExteriorEnd (V := V)) :=
-  Function.LeftInverse.injective curvatureEndomorphism_ofExteriorEnd
 
 /-- The four-tensor of an endomorphism of `⋀[ℝ]^2 V` vanishes iff the endomorphism does. -/
 @[simp]

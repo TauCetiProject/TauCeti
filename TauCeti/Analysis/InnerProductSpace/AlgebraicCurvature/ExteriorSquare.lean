@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.SymmetricProduct
 import Mathlib.Tactic.Ring
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Trace
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 import TauCeti.LinearAlgebra.ExteriorPower.Square
@@ -46,6 +47,7 @@ Under this dictionary, `curvatureEndomorphism (kulkarniNomizu h k) =
   `TauCeti.FourTensor.isSymmetric_curvatureEndomorphism_of_swap_pairs`,
   `TauCeti.FourTensor.isAlgebraicCurvature_ofExteriorEnd_iff`,
   `TauCeti.FourTensor.curvatureEndomorphism_ofExteriorEnd`,
+  `TauCeti.FourTensor.ofExteriorEnd_injective`, `TauCeti.FourTensor.ofExteriorEnd_inj`,
   `TauCeti.FourTensor.ofExteriorEnd_curvatureEndomorphism_of_antisymm`,
   `TauCeti.FourTensor.coe_curvatureEndomorphismEquiv_symm`,
   `TauCeti.FourTensor.curvatureEndomorphism_kulkarniNomizu`,
@@ -223,6 +225,16 @@ theorem curvatureEndomorphism_ofExteriorEnd (T : Module.End ℝ (⋀[ℝ]^2 V)) 
   exteriorPower.linearMap_ext_inner_ιMulti_two fun u v z w ↦ by
     rw [inner_curvatureEndomorphism_ιMulti_of_antisymm (ofExteriorEnd_antisymm_first T)
       (ofExteriorEnd_antisymm_last T), ofExteriorEnd_apply]
+
+/-- An endomorphism of `⋀[ℝ]^2 V` is uniquely determined by its four-tensor. -/
+theorem ofExteriorEnd_injective : Function.Injective (ofExteriorEnd (V := V)) :=
+  Function.LeftInverse.injective curvatureEndomorphism_ofExteriorEnd
+
+/-- Two endomorphisms of `⋀[ℝ]^2 V` induce the same four-tensor iff they are equal. -/
+@[simp]
+theorem ofExteriorEnd_inj {T₁ T₂ : Module.End ℝ (⋀[ℝ]^2 V)} :
+    ofExteriorEnd T₁ = ofExteriorEnd T₂ ↔ T₁ = T₂ :=
+  ofExteriorEnd_injective.eq_iff
 
 /-- `ofExteriorEnd T` is bivector-symmetric iff `T` is symmetric on `⋀[ℝ]^2 V`. -/
 @[simp]
@@ -420,13 +432,9 @@ theorem map_comp_curvatureEndomorphism_compContinuousLinearMap
         curvatureEndomorphism
           (r.compContinuousLinearMap fun _ ↦ e.toLinearIsometry.toContinuousLinearMap) =
       curvatureEndomorphism r ∘ₗ exteriorPower.map 2 e.toLinearIsometry.toLinearMap := by
-  have hadj : exteriorPower.map 2 e.toLinearMap ∘ₗ
-      LinearMap.adjoint (exteriorPower.map 2 e.toLinearMap) = LinearMap.id := by
-    rw [e.adjoint_exteriorPower_map, ← e.toLinearEquiv.exteriorPower_toLinearMap 2,
-      ← LinearEquiv.exteriorPower_toLinearMap e.symm.toLinearEquiv 2,
-      e.toLinearEquiv_symm, ← LinearEquiv.exteriorPower_symm, LinearEquiv.comp_symm]
   rw [e.toLinearIsometry.toContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap,
     LinearIsometry.toLinearMap_toContinuousLinearMap, e.toLinearIsometry_toLinearMap,
-    ← LinearMap.comp_assoc, ← LinearMap.comp_assoc, hadj, LinearMap.id_comp]
+    ← LinearMap.comp_assoc, ← LinearMap.comp_assoc, e.exteriorPower_map_comp_adjoint,
+    LinearMap.id_comp]
 
 end LinearIsometryEquiv
