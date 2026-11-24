@@ -237,34 +237,23 @@ theorem coe_symm_spinToSpecialOrthogonal_matrixSpecialOrthogonalSpinDiagonalLift
   rw [matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
     matrixSpecialOrthogonalSpinDiagonalLift_apply,
     spinToSpecialOrthogonal_realCliffordSpinDiagonalLift]
-  ext (i : Fin (k + k)) (j : Fin (k + k))
-  rw [LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, _root_.Matrix.reindex_apply,
-    _root_.Matrix.submatrix_apply]
-  have happendL (u v : Fin (k + 0) → ℝ) (a : Fin k) :
-      (Fin.append u v : Fin (k + k) → ℝ) (Fin.castAdd k a) = u a :=
-    Fin.append_left (u : Fin k → ℝ) (v : Fin k → ℝ) a
-  have happendR (u v : Fin (k + 0) → ℝ) (a : Fin k) :
-      (Fin.append u v : Fin (k + k) → ℝ) (Fin.natAdd k a) = v a :=
-    Fin.append_right (u : Fin k → ℝ) (v : Fin k → ℝ) a
-  refine Fin.addCases (fun j' ↦ ?_) (fun j' ↦ ?_) j
-  · rw [← Fin.append_single_zero (n := k), realCliffordSpecialOrthogonalBlockSum_apply_append,
-      map_zero, matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
-      _root_.Matrix.toLin'_apply]
-    refine Fin.addCases (fun i' ↦ ?_) (fun i' ↦ ?_) i
-    · rw [happendL, finSumFinEquiv_symm_apply_castAdd, finSumFinEquiv_symm_apply_castAdd,
-        _root_.Matrix.fromBlocks_apply₁₁, _root_.Matrix.mulVec_single]
-      simp
-    · rw [happendR, finSumFinEquiv_symm_apply_natAdd, finSumFinEquiv_symm_apply_castAdd,
-        _root_.Matrix.fromBlocks_apply₂₁, Pi.zero_apply, _root_.Matrix.zero_apply]
-  · rw [← Fin.append_zero_single (m := k), realCliffordSpecialOrthogonalBlockSum_apply_append,
-      map_zero, matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
-      _root_.Matrix.toLin'_apply]
-    refine Fin.addCases (fun i' ↦ ?_) (fun i' ↦ ?_) i
-    · rw [happendL, finSumFinEquiv_symm_apply_castAdd, finSumFinEquiv_symm_apply_natAdd,
-        _root_.Matrix.fromBlocks_apply₁₂, Pi.zero_apply, _root_.Matrix.zero_apply]
-    · rw [happendR, finSumFinEquiv_symm_apply_natAdd, finSumFinEquiv_symm_apply_natAdd,
-        _root_.Matrix.fromBlocks_apply₂₂, _root_.Matrix.mulVec_single]
-      simp
+  apply _root_.Matrix.toLin'.injective
+  rw [_root_.Matrix.toLin'_toMatrix']
+  refine LinearMap.ext fun x ↦ ?_
+  have happend (a b : Fin k → ℝ) :
+      (Fin.append a b : Fin (k + k) → ℝ) ∘ finSumFinEquiv = Sum.elim a b :=
+    funext (Sum.rec (Fin.append_left a b) (Fin.append_right a b))
+  have hsum (a b : Fin k → ℝ) :
+      Sum.elim a b ∘ finSumFinEquiv.symm = (Fin.append a b : Fin (k + k) → ℝ) := by
+    rw [← happend a b, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
+  rw [← Fin.append_castAdd_natAdd (m := k) (n := k) (f := x), LinearEquiv.coe_coe,
+    realCliffordSpecialOrthogonalBlockSum_apply_append,
+    matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
+    matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
+    _root_.Matrix.toLin'_apply, _root_.Matrix.toLin'_apply, _root_.Matrix.toLin'_apply,
+    _root_.Matrix.reindex_apply, _root_.Matrix.submatrix_mulVec_equiv, Equiv.symm_symm, happend,
+    _root_.Matrix.fromBlocks_mulVec]
+  simp [hsum]
 
 /-! ### Uniqueness of continuous lifts -/
 
