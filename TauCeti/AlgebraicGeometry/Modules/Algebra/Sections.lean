@@ -12,12 +12,16 @@ public import TauCeti.CategoryTheory.Monoidal.Internal.Module
 # Sections of algebras of modules on schemes
 
 A monoid object `A` in `X.Modules` (a not necessarily commutative `𝒪ₓ`-algebra) has a
-`Γ(X, U)`-algebra of sections on each open `U`. Restriction is a ring homomorphism, and a morphism
-of monoid objects is a `Γ(X, U)`-algebra homomorphism on sections over every open `U`, compatible
-with restriction; morphisms are determined by these algebra homomorphisms.
+`Γ(X, U)`-algebra of sections on each open `U`. Restriction is a ring homomorphism, so the sections
+form a sheaf of rings `CategoryTheory.Mon.sectionsPresheaf`. A morphism of monoid objects is a
+`Γ(X, U)`-algebra homomorphism on sections over every open `U`, compatible with restriction, hence
+a morphism of these sheaves of rings; morphisms are determined by these algebra homomorphisms.
 
 For a commutative monoid object the sections form a commutative ring. Restriction then gives a
 presheaf of commutative rings under the structure presheaf of `X`, and this presheaf is a sheaf.
+The commutative restriction maps, algebra homomorphisms and isomorphisms on sections
+(`CategoryTheory.CommMon.sectionsAlgHom`, `CategoryTheory.CommMon.sectionsAlgEquiv`) are those of
+the underlying monoid objects.
 
 Conversely, a morphism of presheaves of section rings compatible with the structure maps is a
 morphism of commutative `𝒪ₓ`-algebras (`CategoryTheory.CommMon.homOfSectionsPresheaf`). This
@@ -77,6 +81,7 @@ lemma _root_.CategoryTheory.Mon.sections_algebraMap_def (U : X.Opens) (r : Γ(X,
 
 /-- Restricting the image of a regular function under the structure map of an `𝒪ₓ`-algebra is
 the image of its restriction. -/
+@[simp]
 lemma _root_.CategoryTheory.Mon.presheaf_map_algebraMap {U V : X.Opens} (i : V ⟶ U)
     (r : Γ(X, U)) :
     A.X.presheaf.map i.op (algebraMap Γ(X, U) Γ(A.X, U) r) =
@@ -128,6 +133,44 @@ lemma _root_.CategoryTheory.Mon.restrictSections_algebraMap {U V : X.Opens} (i :
       algebraMap Γ(X, V) Γ(A.X, V) (X.presheaf.map i.op r) :=
   A.presheaf_map_algebraMap i r
 
+/-- The presheaf of rings of sections of an `𝒪ₓ`-algebra, with restriction maps
+`CategoryTheory.Mon.restrictSections`. -/
+@[expose]
+def _root_.CategoryTheory.Mon.sectionsPresheaf : X.Opensᵒᵖ ⥤ RingCat.{u} where
+  obj U := RingCat.of Γ(A.X, U.unop)
+  map i := RingCat.ofHom (A.restrictSections i.unop)
+  map_id U := by
+    ext x
+    exact congr($(A.X.presheaf.map_id U) x)
+  map_comp i j := by
+    ext x
+    exact congr($(A.X.presheaf.map_comp i j) x)
+
+@[simp]
+lemma _root_.CategoryTheory.Mon.sectionsPresheaf_obj (U : X.Opensᵒᵖ) :
+    A.sectionsPresheaf.obj U = RingCat.of Γ(A.X, U.unop) :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.Mon.sectionsPresheaf_map {U V : X.Opensᵒᵖ} (i : U ⟶ V) :
+    A.sectionsPresheaf.map i = RingCat.ofHom (A.restrictSections i.unop) :=
+  (rfl)
+
+/-- The presheaf of section rings of an `𝒪ₓ`-algebra is a sheaf: its underlying presheaf of sets
+is that of the sheaf of modules `A.X`. -/
+lemma _root_.CategoryTheory.Mon.isSheaf_sectionsPresheaf :
+    TopCat.Presheaf.IsSheaf (X := X) A.sectionsPresheaf := by
+  rw [TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget RingCat)]
+  have h := (TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget AddCommGrpCat) A.X.presheaf).mp
+    A.X.isSheaf
+  -- Both presheaves of sets have the sections `Γ(A.X, U)` as values, and restriction agrees by
+  -- `Mon.restrictSections_apply`.
+  refine TopCat.Presheaf.isSheaf_of_iso (F := A.X.presheaf ⋙ forget AddCommGrpCat)
+    (NatIso.ofComponents (fun U ↦ Iso.refl ((A.X.presheaf ⋙ forget AddCommGrpCat).obj U))
+      fun i ↦ ?_) h
+  ext x
+  exact A.restrictSections_apply i.unop x |>.symm
+
 variable {A} {B C : Mon X.Modules}
 
 /-- The algebra map on sections induced by a morphism of `𝒪ₓ`-algebras. It sends each section to
@@ -164,6 +207,30 @@ lemma _root_.CategoryTheory.Mon.sectionsAlgHom_id (A : Mon X.Modules) (U : X.Ope
 @[simp]
 lemma _root_.CategoryTheory.Mon.sectionsAlgHom_comp (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
     Mon.sectionsAlgHom (f ≫ g) U = (Mon.sectionsAlgHom g U).comp (Mon.sectionsAlgHom f U) :=
+  (rfl)
+
+/-- A morphism of `𝒪ₓ`-algebras induces a morphism of their presheaves of section rings, given on
+each open by `CategoryTheory.Mon.sectionsAlgHom`. -/
+def _root_.CategoryTheory.Mon.sectionsPresheafMap (f : A ⟶ B) :
+    A.sectionsPresheaf ⟶ B.sectionsPresheaf where
+  app U := RingCat.ofHom (Mon.sectionsAlgHom f U.unop).toRingHom
+  naturality _ _ i := by
+    ext x
+    exact Mon.sectionsAlgHom_restrictSections f i.unop x
+
+@[simp]
+lemma _root_.CategoryTheory.Mon.sectionsPresheafMap_app (f : A ⟶ B) (U : X.Opensᵒᵖ) :
+    (Mon.sectionsPresheafMap f).app U = RingCat.ofHom (Mon.sectionsAlgHom f U.unop).toRingHom :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.Mon.sectionsPresheafMap_id (A : Mon X.Modules) :
+    Mon.sectionsPresheafMap (𝟙 A) = 𝟙 A.sectionsPresheaf :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.Mon.sectionsPresheafMap_comp (f : A ⟶ B) (g : B ⟶ C) :
+    Mon.sectionsPresheafMap (f ≫ g) = Mon.sectionsPresheafMap f ≫ Mon.sectionsPresheafMap g :=
   (rfl)
 
 /-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
@@ -278,20 +345,71 @@ lemma _root_.CategoryTheory.CommMon.restrictSections_algebraMap {U V : X.Opens} 
       algebraMap Γ(X, V) Γ(A.X, V) (X.presheaf.map i.op r) :=
   A.toMon.restrictSections_algebraMap i r
 
+/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras: that of the
+underlying morphism of monoid objects. -/
+def _root_.CategoryTheory.CommMon.sectionsAlgHom {A B : CommMon X.Modules}
+    (f : A ⟶ B) (U : X.Opens) : Γ(A.X, U) →ₐ[Γ(X, U)] Γ(B.X, U) :=
+  Mon.sectionsAlgHom f.hom U
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_apply {A B : CommMon X.Modules}
+    (f : A ⟶ B) (U : X.Opens) (x : Γ(A.X, U)) :
+    CommMon.sectionsAlgHom f U x = f.hom.hom.app U x :=
+  Mon.sectionsAlgHom_apply f.hom U x
+
+/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras commutes with
+restriction of sections. -/
+lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_restrictSections {A B : CommMon X.Modules}
+    (f : A ⟶ B) {U V : X.Opens} (i : V ⟶ U) (x : Γ(A.X, U)) :
+    CommMon.sectionsAlgHom f V (A.restrictSections i x) =
+      B.restrictSections i (CommMon.sectionsAlgHom f U x) := by
+  rw [CommMon.restrictSections_apply, CommMon.restrictSections_apply]
+  exact (congrArg (Mon.sectionsAlgHom f.hom V) (A.toMon.restrictSections_apply i x)).symm.trans
+    ((Mon.sectionsAlgHom_restrictSections f.hom i x).trans (B.toMon.restrictSections_apply i _))
+
+/-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
+sections. -/
+lemma _root_.CategoryTheory.CommMon.hom_ext_of_sectionsAlgHom {A B : CommMon X.Modules}
+    {f g : A ⟶ B} (h : ∀ U, CommMon.sectionsAlgHom f U = CommMon.sectionsAlgHom g U) : f = g :=
+  InducedCategory.hom_ext (Mon.hom_ext_of_sectionsAlgHom h)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_id (A : CommMon X.Modules) (U : X.Opens) :
+    CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) :=
+  Mon.sectionsAlgHom_id A.toMon U
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_comp {A B C : CommMon X.Modules}
+    (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
+    CommMon.sectionsAlgHom (f ≫ g) U =
+      (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) :=
+  Mon.sectionsAlgHom_comp f.hom g.hom U
+
+/-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
+commutative `𝒪ₓ`-algebras: that of the underlying isomorphism of monoid objects. -/
+def _root_.CategoryTheory.CommMon.sectionsAlgEquiv {A B : CommMon X.Modules} (e : A ≅ B)
+    (U : X.Opens) : Γ(A.X, U) ≃ₐ[Γ(X, U)] Γ(B.X, U) :=
+  Mon.sectionsAlgEquiv ((CommMon.forget₂Mon X.Modules).mapIso e) U
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgEquiv_apply {A B : CommMon X.Modules} (e : A ≅ B)
+    (U : X.Opens) (x : Γ(A.X, U)) :
+    CommMon.sectionsAlgEquiv e U x = CommMon.sectionsAlgHom e.hom U x :=
+  Mon.sectionsAlgEquiv_apply ((CommMon.forget₂Mon X.Modules).mapIso e) U x
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsAlgEquiv_symm_apply {A B : CommMon X.Modules}
+    (e : A ≅ B) (U : X.Opens) (x : Γ(B.X, U)) :
+    (CommMon.sectionsAlgEquiv e U).symm x = CommMon.sectionsAlgHom e.inv U x :=
+  Mon.sectionsAlgEquiv_symm_apply ((CommMon.forget₂Mon X.Modules).mapIso e) U x
+
 /-- The presheaf of section rings of a commutative `𝒪ₓ`-algebra is a sheaf: its underlying
-presheaf of sets is that of the sheaf of modules `A.X`. -/
+presheaf of sets is that of the underlying monoid object. -/
 lemma _root_.CategoryTheory.CommMon.isSheaf_sectionsPresheaf :
     TopCat.Presheaf.IsSheaf (X := X) A.sectionsPresheaf := by
   rw [TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget CommRingCat)]
-  have h := (TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget AddCommGrpCat) A.X.presheaf).mp
-    A.X.isSheaf
-  -- Both presheaves of sets have the sections `Γ(A.X, U)` as values, and restriction agrees by
-  -- `CommMon.restrictSections_apply`.
-  refine TopCat.Presheaf.isSheaf_of_iso (F := A.X.presheaf ⋙ forget AddCommGrpCat)
-    (NatIso.ofComponents (fun U ↦ Iso.refl ((A.X.presheaf ⋙ forget AddCommGrpCat).obj U))
-      fun i ↦ ?_) h
-  ext x
-  exact A.restrictSections_apply i.unop x |>.symm
+  exact (TopCat.Presheaf.isSheaf_iff_isSheaf_comp (forget RingCat) _).mp
+    A.toMon.isSheaf_sectionsPresheaf
 
 variable {A} {B : CommMon X.Modules}
 

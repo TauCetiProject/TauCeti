@@ -24,10 +24,12 @@ commutative case is `TauCeti.AlgebraicGeometry.QuasicoherentAlgebra`, which embe
 
 The sections API does not use quasi-coherence and is stated for all monoid objects in
 `X.Modules` (`CategoryTheory.Mon.ringSections`, `CategoryTheory.Mon.algebraSections`,
-`CategoryTheory.Mon.restrictSections`, `CategoryTheory.Mon.sectionsAlgHom`): on each open `U` the
-sections `Γ(A, U)` form a `Γ(X, U)`-algebra, restriction is a ring homomorphism, and a morphism of
-sheaves of algebras is an algebra homomorphism on sections. Morphisms of sheaves of algebras are
-determined by their values on sections (`TauCeti.AlgebraicGeometry.SheafAlgebra.hom_ext`).
+`CategoryTheory.Mon.restrictSections`, `CategoryTheory.Mon.sectionsPresheaf`,
+`CategoryTheory.Mon.sectionsAlgHom`): on each open `U` the sections `Γ(A, U)` form a
+`Γ(X, U)`-algebra, restriction is a ring homomorphism, so the sections form a sheaf of rings,
+and a morphism of sheaves of algebras is an algebra homomorphism on sections. Morphisms of
+sheaves of algebras are determined by their values on sections
+(`TauCeti.AlgebraicGeometry.SheafAlgebra.hom_ext`).
 
 Pullback along a morphism of schemes `f : Y ⟶ X` is Mathlib's `Functor.mapMon` applied to the
 strong monoidal pullback of quasi-coherent sheaves; the characteristic equations identify the

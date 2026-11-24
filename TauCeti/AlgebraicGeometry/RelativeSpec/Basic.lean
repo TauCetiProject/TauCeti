@@ -29,10 +29,8 @@ This is exactly the input of Mathlib's relative gluing on the small affine Zaris
 
 ## Main declarations
 
-* `CategoryTheory.CommMon.sectionsAlgHom` and `CategoryTheory.CommMon.sectionsPresheafMap`:
-  algebra morphisms on sections and their compatibility with restriction and structure maps;
-* `CategoryTheory.CommMon.sectionsAlgEquiv`: the algebra isomorphism on sections induced by an
-  isomorphism of algebras;
+* `CategoryTheory.CommMon.sectionsPresheafMap`: the morphism of presheaves of section rings
+  induced by a morphism of algebras, and its compatibility with the structure maps;
 * `CategoryTheory.CommMon.isLocalization_basicOpen`: for quasi-coherent `A`, an affine open `U`
   and `f ∈ Γ(X, U)`, `Γ(A.X, X.basicOpen f)` is the localization of `Γ(A.X, U)` away from `f`;
 * `AlgebraicGeometry.Scheme.AffineZariskiSite.isPullback_relativeGluingData_cover` and
@@ -66,64 +64,6 @@ noncomputable section
 variable {X : Scheme.{u}} (A : CommMon X.Modules)
 
 namespace CategoryTheory.CommMon
-
-/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras: that of the
-underlying morphism of monoid objects. -/
-def sectionsAlgHom {A B : CommMon X.Modules}
-    (f : A ⟶ B) (U : X.Opens) : Γ(A.X, U) →ₐ[Γ(X, U)] Γ(B.X, U) :=
-  Mon.sectionsAlgHom f.hom U
-
-@[simp]
-lemma sectionsAlgHom_apply {A B : CommMon X.Modules}
-    (f : A ⟶ B) (U : X.Opens) (x : Γ(A.X, U)) :
-    CommMon.sectionsAlgHom f U x = f.hom.hom.app U x :=
-  Mon.sectionsAlgHom_apply f.hom U x
-
-/-- The algebra map on sections induced by a morphism of commutative `𝒪ₓ`-algebras commutes with
-restriction of sections. -/
-lemma sectionsAlgHom_restrictSections {A B : CommMon X.Modules}
-    (f : A ⟶ B) {U V : X.Opens} (i : V ⟶ U) (x : Γ(A.X, U)) :
-    CommMon.sectionsAlgHom f V (A.restrictSections i x) =
-      B.restrictSections i (CommMon.sectionsAlgHom f U x) := by
-  rw [CommMon.restrictSections_apply, CommMon.restrictSections_apply]
-  exact (congrArg (Mon.sectionsAlgHom f.hom V) (A.toMon.restrictSections_apply i x)).symm.trans
-    ((Mon.sectionsAlgHom_restrictSections f.hom i x).trans (B.toMon.restrictSections_apply i _))
-
-/-- A morphism of commutative `𝒪ₓ`-algebras is determined by the algebra maps it induces on
-sections. -/
-lemma hom_ext_of_sectionsAlgHom {A B : CommMon X.Modules}
-    {f g : A ⟶ B} (h : ∀ U, CommMon.sectionsAlgHom f U = CommMon.sectionsAlgHom g U) : f = g :=
-  InducedCategory.hom_ext (Mon.hom_ext_of_sectionsAlgHom h)
-
-@[simp]
-lemma sectionsAlgHom_id (A : CommMon X.Modules) (U : X.Opens) :
-    CommMon.sectionsAlgHom (𝟙 A) U = AlgHom.id Γ(X, U) Γ(A.X, U) :=
-  Mon.sectionsAlgHom_id A.toMon U
-
-@[simp]
-lemma sectionsAlgHom_comp {A B C : CommMon X.Modules}
-    (f : A ⟶ B) (g : B ⟶ C) (U : X.Opens) :
-    CommMon.sectionsAlgHom (f ≫ g) U =
-      (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) :=
-  Mon.sectionsAlgHom_comp f.hom g.hom U
-
-/-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
-commutative `𝒪ₓ`-algebras: that of the underlying isomorphism of monoid objects. -/
-def sectionsAlgEquiv {A B : CommMon X.Modules} (e : A ≅ B)
-    (U : X.Opens) : Γ(A.X, U) ≃ₐ[Γ(X, U)] Γ(B.X, U) :=
-  Mon.sectionsAlgEquiv ((CommMon.forget₂Mon X.Modules).mapIso e) U
-
-@[simp]
-lemma sectionsAlgEquiv_apply {A B : CommMon X.Modules} (e : A ≅ B)
-    (U : X.Opens) (x : Γ(A.X, U)) :
-    CommMon.sectionsAlgEquiv e U x = CommMon.sectionsAlgHom e.hom U x :=
-  Mon.sectionsAlgEquiv_apply ((CommMon.forget₂Mon X.Modules).mapIso e) U x
-
-@[simp]
-lemma sectionsAlgEquiv_symm_apply {A B : CommMon X.Modules}
-    (e : A ≅ B) (U : X.Opens) (x : Γ(B.X, U)) :
-    (CommMon.sectionsAlgEquiv e U).symm x = CommMon.sectionsAlgHom e.inv U x :=
-  Mon.sectionsAlgEquiv_symm_apply ((CommMon.forget₂Mon X.Modules).mapIso e) U x
 
 /-- A morphism of commutative sheaf algebras induces a morphism of their presheaves of rings. -/
 def sectionsPresheafMap {A B : CommMon X.Modules}
