@@ -230,6 +230,13 @@ theorem norm_pos (σ : K →+* ℂ) {x : E} (hx : x ≠ 0) : 0 < E.norm σ x := 
   refine Real.sqrt_pos.2 (lt_of_le_of_ne InnerProductSpace.Core.inner_self_nonneg (Ne.symm ?_))
   exact fun h => E.one_tmul_ne_zero σ hx (InnerProductSpace.Core.normSq_eq_zero.1 h)
 
+variable (E) in
+/-- The zero element of a hermitian vector bundle has norm zero at every embedding. -/
+@[simp]
+protected theorem norm_zero (σ : K →+* ℂ) : E.norm σ 0 = 0 := by
+  let := E.metric.core σ
+  simp [norm_def, inner_def, InnerProductSpace.Core.inner_zero_left]
+
 section Trivial
 
 variable (σ : K →+* ℂ)
