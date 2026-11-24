@@ -62,6 +62,7 @@ generated `R ⧸ I`-algebra when `I` is finitely generated.
   retract the inclusions, kill the other degrees, detect equality and reconstruct every element.
 * `Ideal.ReesQuotient.range_of`: the image of the degree-`n` inclusion is the degree-`n` piece of
   the quotient grading.
+* `Ideal.ReesQuotient.mvPolynomialHom_homogeneousComponent`: the generator map is graded.
 * `Ideal.ReesQuotient.mvPolynomialHom_surjective`: the generator map is onto when the `aᵢ`
   generate `I`; hence `Ideal.ReesQuotient.ringHom_ext` (ring homomorphisms out of the Rees
   quotient are determined in degrees zero and one) and `Ideal.ReesQuotient.finiteType_of_fg`.
@@ -448,6 +449,22 @@ theorem mvPolynomialHom_map_of_isHomogeneous (ha : ∀ i, a i ∈ I) {ν : ℕ}
   apply (equivAssociatedGraded I).injective
   rw [equivAssociatedGraded_mvPolynomialHom,
     AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous ha hF, equivAssociatedGraded_mk]
+
+/-- The generator map is graded: it sends the `ν`-th homogeneous component of `P` to the
+degree-`ν` piece of the image of `P`. -/
+theorem mvPolynomialHom_homogeneousComponent (ha : ∀ i, a i ∈ I) (ν : ℕ)
+    (P : MvPolynomial σ (R ⧸ I)) :
+    mvPolynomialHom I ha (homogeneousComponent ν P) =
+      of I ν (coeff I ν (mvPolynomialHom I ha P)) := by
+  apply (equivAssociatedGraded I).injective
+  rw [equivAssociatedGraded_mvPolynomialHom, equivAssociatedGraded_of, coeff_apply,
+    equivAssociatedGraded_mvPolynomialHom, AssociatedGraded.mvPolynomialHom_homogeneousComponent]
+
+/-- The generator map sends a homogeneous polynomial of degree `ν` into the degree-`ν` piece. -/
+theorem mvPolynomialHom_of_isHomogeneous (ha : ∀ i, a i ∈ I) {ν : ℕ}
+    {P : MvPolynomial σ (R ⧸ I)} (hP : P.IsHomogeneous ν) :
+    mvPolynomialHom I ha P = of I ν (coeff I ν (mvPolynomialHom I ha P)) := by
+  simpa [homogeneousComponent_eq_self hP] using mvPolynomialHom_homogeneousComponent ha ν P
 
 /-- If the `aᵢ` generate `I`, then the generator map is surjective: the Rees quotient is generated
 over its degree-zero part `R ⧸ I` by the degree-one classes of the `aᵢ`. -/

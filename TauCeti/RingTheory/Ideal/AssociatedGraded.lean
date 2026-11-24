@@ -550,60 +550,44 @@ theorem map_algebraMap (f : R →+* S) (h : I ≤ J.comap f) (r : R) :
     map f h (algebraMap R I.AssociatedGraded r) = algebraMap S J.AssociatedGraded (f r) := by
   rw [← mk_zero ⟨r, I.mem_pow_zero r⟩, map_mk, mk_zero]
 
+/-- As an additive map, `AssociatedGraded.map f h` is the direct sum `DirectSum.map` of the
+degree-`n` maps `gradedPieceMap f h n`. -/
+theorem toAddMonoidHom_map (f : R →+* S) (h : I ≤ J.comap f) :
+    (map f h).toAddMonoidHom = DirectSum.map fun n ↦ (gradedPieceMap f h n).toAddMonoidHom :=
+  DirectSum.addHom_ext fun n x ↦ by simp [map]
+
 /-- The degree-`n` component of `AssociatedGraded.map f h x` is the image of the degree-`n`
 component of `x` under `gradedPieceMap f h n`. -/
 @[simp]
 theorem map_apply (f : R →+* S) (h : I ≤ J.comap f) (x : I.AssociatedGraded) (n : ℕ) :
-    map f h x n = gradedPieceMap f h n (x n) := by
-  induction x using DirectSum.induction_on with
-  | zero => simp
-  | of m q =>
-    induction q using Submodule.Quotient.induction_on with | _ y =>
-    rw [← mk_apply, map_mk, mk_apply, mk_apply]
-    by_cases hmn : m = n
-    · subst hmn
-      simp only [DirectSum.of_eq_same, gradedPieceMap_mk]
-    · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hmn), DirectSum.of_eq_of_ne _ _ _ (Ne.symm hmn),
-        map_zero]
-  | add x y hx hy => simp only [map_add, DirectSum.add_apply, hx, hy]
+    map f h x n = gradedPieceMap f h n (x n) :=
+  (congrArg (· n) (DFunLike.congr_fun (toAddMonoidHom_map f h) x)).trans
+    (DirectSum.map_apply _ n x)
 
 /-- `AssociatedGraded.map f h` sends the summand of degree `n` to the summand of degree `n`,
 by `gradedPieceMap f h n`. -/
 @[simp]
 theorem map_of (f : R →+* S) (h : I ≤ J.comap f) (n : ℕ) (x : I.GradedPiece n) :
     map f h (DirectSum.of I.GradedPiece n x) =
-      DirectSum.of J.GradedPiece n (gradedPieceMap f h n x) := by
-  induction x using Submodule.Quotient.induction_on with | _ y =>
-  rw [← mk_apply, map_mk, mk_apply, gradedPieceMap_mk]
+      DirectSum.of J.GradedPiece n (gradedPieceMap f h n x) :=
+  (DFunLike.congr_fun (toAddMonoidHom_map f h) _).trans (DirectSum.map_of _ n x)
 
 /-- **Injectivity of the induced graded map.** `gr_I R → gr_J S` is injective exactly when, for
 every `n`, an element `x ∈ Iⁿ` with `f x ∈ Jⁿ⁺¹` already lies in `Iⁿ⁺¹`, that is, when
 `Iⁿ ∩ f⁻¹(Jⁿ⁺¹) = Iⁿ⁺¹` for all `n`. Injectivity of `f` alone does not imply this. -/
 theorem map_injective_iff (f : R →+* S) (h : I ≤ J.comap f) :
     Function.Injective (map f h) ↔ ∀ n, I ^ n ⊓ (J ^ (n + 1)).comap f ≤ I ^ (n + 1) := by
-  simp_rw [← gradedPieceMap_injective_iff f h]
-  constructor
-  · intro hinj n x y hxy
-    apply DirectSum.of_injective (β := I.GradedPiece) n
-    apply hinj
-    rw [map_of, map_of, hxy]
-  · intro hinj x y hxy
-    exact DirectSum.ext fun n ↦ hinj n (by rw [← map_apply, ← map_apply, hxy])
+  change Function.Injective (map f h).toAddMonoidHom ↔ _
+  rw [toAddMonoidHom_map, DirectSum.map_injective]
+  simp_rw [LinearMap.toAddMonoidHom_coe, gradedPieceMap_injective_iff]
 
 /-- If `f` is surjective and `J ≤ I.map f`, for instance `J = I.map f`, then
 `gr_I R → gr_J S` is surjective. -/
 theorem map_surjective {f : R →+* S} (hf : Function.Surjective f) (h : I ≤ J.comap f)
     (hJ : J ≤ I.map f) : Function.Surjective (map f h) := by
-  intro y
-  induction y using DirectSum.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
-  | of n q =>
-    obtain ⟨p, rfl⟩ := gradedPieceMap_surjective hf h hJ n q
-    exact ⟨DirectSum.of _ n p, map_of f h n p⟩
-  | add y z hy hz =>
-    obtain ⟨x, rfl⟩ := hy
-    obtain ⟨x', rfl⟩ := hz
-    exact ⟨x + x', map_add _ x x'⟩
+  change Function.Surjective (map f h).toAddMonoidHom
+  rw [toAddMonoidHom_map]
+  exact (DirectSum.map_surjective _).mpr fun n ↦ gradedPieceMap_surjective hf h hJ n
 
 /-- Two ring homomorphisms out of `gr_I R` agree once they agree on every homogeneous class. -/
 theorem ringHom_ext {T : Type w} [Semiring T] {φ ψ : I.AssociatedGraded →+* T}

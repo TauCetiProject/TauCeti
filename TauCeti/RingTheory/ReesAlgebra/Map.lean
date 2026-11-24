@@ -39,6 +39,7 @@ with `I = (t²)` and `J = I.map f`, the element `t⁵ ∈ I \ I²` maps into `J�
   `Ideal.AssociatedGraded.map` commutes.
 * `Ideal.ReesQuotient.coeff_map` and `Ideal.ReesQuotient.map_of`: in each degree `n`, the map is
   `Ideal.gradedPieceMap f h n` on coefficients and on homogeneous pieces.
+* `Ideal.ReesQuotient.map_mvPolynomialHom`: the map is compatible with the generator maps.
 * `Ideal.ReesQuotient.map_id` and `Ideal.ReesQuotient.map_comp`: functoriality.
 * `Ideal.ReesQuotient.map_injective_iff` and `Ideal.ReesQuotient.map_surjective`: the injectivity
   criterion and surjectivity for surjective `f`.
@@ -152,6 +153,17 @@ theorem map_of (f : R →+* S) (h : I ≤ J.comap f) (n : ℕ) (x : I.GradedPiec
   apply (equivAssociatedGraded J).injective
   rw [equivAssociatedGraded_map, equivAssociatedGraded_of, equivAssociatedGraded_of,
     AssociatedGraded.map_of]
+
+/-- `ReesQuotient.map` carries the generator map for a family `aᵢ ∈ I` to the generator map for
+the family `f aᵢ ∈ J`, after reducing the coefficients of the polynomial along `f`. -/
+theorem map_mvPolynomialHom {σ : Type*} {a : σ → R} (f : R →+* S) (h : I ≤ J.comap f)
+    (ha : ∀ i, a i ∈ I) (P : MvPolynomial σ (R ⧸ I)) :
+    map f h (mvPolynomialHom I ha P) =
+      mvPolynomialHom J (a := f ∘ a) (fun i ↦ mem_comap.mp (h (ha i)))
+        (P.map (quotientMap J f h)) := by
+  apply (equivAssociatedGraded J).injective
+  rw [equivAssociatedGraded_map, equivAssociatedGraded_mvPolynomialHom,
+    equivAssociatedGraded_mvPolynomialHom, AssociatedGraded.map_mvPolynomialHom]
 
 /-- The identity of `R` induces the identity of `R[It] ⧸ I R[It]`. -/
 @[simp]
