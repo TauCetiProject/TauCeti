@@ -146,14 +146,12 @@ theorem _root_.ContinuousLinearEquiv.span_singularCohomology_compl_zero_eq_top_i
       (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ E) ≃ₗ[K]
       (TopPair.ofSubset (X := TopCat.of V) ({0}ᶜ : Set V)).singularCohomology
         (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ E) :=
-    ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
-      (finrank ℝ E)).mapIso f.complZeroPairIso.op).toLinearEquiv
+    (TopPair.singularCohomologyMapIso (ModuleCat.of K K) K (ModuleCat.of K K)
+      f.complZeroPairIso (finrank ℝ E)).toLinearEquiv
   rw [← Φ.apply_symm_apply c, Φ.span_singleton_apply_eq_top_iff,
     span_singularCohomology_complSingleton_eq_top_iff (OpenPartialHomeomorph.refl E)
-      (Set.mem_univ 0) hy, Φ.apply_symm_apply]
-  -- `change`: `Φ⁻¹` is the pull-back along `f⁻¹`.
-  change IsUnit ((TopPair.singularKronecker _ K _ (TopPair.singularCohomologyMap
-    f.complZeroPairIso.inv _ c)).hom _) ↔ _
-  rw [TopPair.singularKronecker_naturality, ModuleCat.hom_comp, LinearMap.comp_apply]
+      (Set.mem_univ 0) hy, Φ.apply_symm_apply, Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply,
+    Iso.symm_hom, TopPair.singularCohomologyMapIso_inv, TopPair.singularKronecker_naturality,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
 
 end TauCeti

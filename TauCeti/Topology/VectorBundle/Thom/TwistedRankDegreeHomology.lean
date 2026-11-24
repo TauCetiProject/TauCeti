@@ -906,9 +906,13 @@ theorem liftFiberEquiv_fiberThomPairSignLocalSystemIso_inv_app_apply (b : B)
       r := by
   simp only [fiberThomPairSignLocalSystemIso, Iso.trans_inv, eqToIso.inv, NatTrans.comp_app,
     eqToHom_app, ModuleCat.hom_comp]
-  -- `change`: the inverse of the trivialization of the fibre over `v` is the inverse of evaluation
-  -- at `o`, and the transports along equalities of fibres of `o(E)` over points equal to `b` are
-  -- the transports of `TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv_eqToHom_apply`.
+  -- `change`, not `rw`/`simp`: the goal applies `fiberThomPairMap F E b` to `v : E b`, which is a
+  -- point of the fibre pair over `b` only after unfolding the pair. So the goal is not type-correct
+  -- at instance transparency: `rw [liftFiberEquiv_eqToHom_apply]` fails on it, and `simp only`
+  -- cannot unfold the components of `fiberSignIso` by `NatIso.ofComponents_inv_app`. `change`
+  -- restates it with the inverse of the trivialization over `v` as the inverse of evaluation at
+  -- `o`, and the transports along equalities of fibres of `o(E)` over points equal to `b` as those
+  -- of `TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv_eqToHom_apply`.
   change VectorBundleOrientationCover.liftFiberEquiv hι ⟨b, o⟩ hv
       ((eqToHom (congrArg (fun y ↦ (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk y))
         hv)).hom ((VectorBundleOrientationCover.signLocalSystemFiberEquiv hι o).symm r)) = r
