@@ -324,8 +324,8 @@ theorem homogeneousCyclotomic_dvd_pow_sub_pow {d n : ℕ} (h : d ∣ n) (a b : R
   rw [← prod_homogeneousCyclotomic_eq_pow_sub_pow hn]
   exact Finset.dvd_prod_of_mem _ (Nat.mem_divisors.2 ⟨h, hn.ne'⟩)
 
-/-- For `d ∣ n` with `0 < n`, the cofactor of `a ^ d - b ^ d` in `a ^ n - b ^ n` is the product of
-the `Φ_e(a, b)` over the divisors `e` of `n` that do not divide `d`:
+/-- For `d ∣ n` with `0 < n`, multiplying `a ^ d - b ^ d` by the product of the `Φ_e(a, b)` over
+the divisors `e` of `n` that do not divide `d` gives `a ^ n - b ^ n`:
 `(a ^ d - b ^ d) ∏_{e ∣ n, e ∤ d} Φ_e(a, b) = a ^ n - b ^ n`. This is the homogeneous form of
 `Polynomial.X_pow_sub_one_mul_prod_cyclotomic_eq_X_pow_sub_one_of_dvd`. -/
 theorem pow_sub_pow_mul_prod_homogeneousCyclotomic_eq_pow_sub_pow_of_dvd {d n : ℕ} (hdn : d ∣ n)
