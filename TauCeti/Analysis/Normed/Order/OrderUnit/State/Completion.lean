@@ -80,26 +80,33 @@ theorem IsOrderUnitNorm.existsUnique_state_extension_completion {φ : WeakDual �
   exact DFunLike.ext _ _ fun x => by
     simpa [ψ] using (DFunLike.congr_fun huniq x).symm
 
+private theorem IsOrderUnitNorm.mapsTo_pullbackFunctional_completion_stateSpace :
+    MapsTo (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional
+      (@stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
+        (e : UniformSpace.Completion E)) (stateSpace e) :=
+  letI : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
+  (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).mapsTo_pullbackFunctional_stateSpace
+    (fun _ _ hab => he.completion_coe_le_coe_iff.mpr hab) rfl
+
+private noncomputable def IsOrderUnitNorm.completionStateFun :
+    @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
+      (e : UniformSpace.Completion E) → stateSpace e :=
+  fun ψ => ⟨(UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ.val,
+    he.mapsTo_pullbackFunctional_completion_stateSpace ψ.property⟩
+
 private noncomputable def IsOrderUnitNorm.completionStateEquiv :
     @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
       (e : UniformSpace.Completion E) ≃ stateSpace e :=
-  letI : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
-  let T := UniformSpace.Completion.toComplL (S := ℝ) (α := E)
-  let hmaps : MapsTo T.pullbackFunctional
-      (stateSpace (e : UniformSpace.Completion E)) (stateSpace e) :=
-    T.mapsTo_pullbackFunctional_stateSpace
-      (fun _ _ hab => he.completion_coe_le_coe_iff.mpr hab) rfl
-  let f : stateSpace (e : UniformSpace.Completion E) → stateSpace e :=
-    fun ψ => ⟨T.pullbackFunctional ψ.val, hmaps ψ.property⟩
-  have hbij : Function.Bijective f := by
+  have hbij : Function.Bijective he.completionStateFun := by
     refine ⟨fun ψ₁ ψ₂ h => ?_, fun φ => ?_⟩
-    · obtain ⟨_, _, huniq⟩ := he.existsUnique_state_extension_completion (f ψ₂).property
+    · obtain ⟨_, _, huniq⟩ :=
+        he.existsUnique_state_extension_completion (he.completionStateFun ψ₂).property
       have h1 : ψ₁.val = _ := huniq ψ₁.val ⟨ψ₁.property, congrArg Subtype.val h⟩
       have h2 : ψ₂.val = _ := huniq ψ₂.val ⟨ψ₂.property, rfl⟩
       exact Subtype.ext (h1.trans h2.symm)
     · obtain ⟨ψ, ⟨hψmem, hψeq⟩, _⟩ := he.existsUnique_state_extension_completion φ.property
       exact ⟨⟨ψ, hψmem⟩, Subtype.ext hψeq⟩
-  Equiv.ofBijective f hbij
+  Equiv.ofBijective he.completionStateFun hbij
 
 private theorem IsOrderUnitNorm.completionStateEquiv_val
     (ψ : @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
@@ -109,17 +116,8 @@ private theorem IsOrderUnitNorm.completionStateEquiv_val
   rfl
 
 private theorem IsOrderUnitNorm.continuous_completionStateEquiv :
-    Continuous he.completionStateEquiv := by
-  let : PartialOrder (UniformSpace.Completion E) := he.completionPartialOrder
-  have hfn : (he.completionStateEquiv :
-      @stateSpace (UniformSpace.Completion E) _ _ _ he.completionPartialOrder.toPreorder
-        (e : UniformSpace.Completion E) → stateSpace e) = fun ψ =>
-      ⟨(UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional ψ.val,
-        (UniformSpace.Completion.toComplL (S := ℝ) (α := E)).mapsTo_pullbackFunctional_stateSpace
-          (fun _ _ hab => he.completion_coe_le_coe_iff.mpr hab) rfl ψ.property⟩ :=
-    funext fun ψ => Subtype.ext (he.completionStateEquiv_val ψ)
-  rw [hfn]
-  exact ((UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional.continuous.comp
+    Continuous he.completionStateEquiv :=
+  ((UniformSpace.Completion.toComplL (S := ℝ) (α := E)).pullbackFunctional.continuous.comp
     continuous_subtypeVal).subtype_mk _
 
 /-- Restriction along `E → UniformSpace.Completion E` induces a weak-star homeomorphism between the

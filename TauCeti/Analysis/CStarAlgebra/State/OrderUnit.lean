@@ -74,11 +74,10 @@ theorem mapsTo_extendFromSelfAdjoint_stateSpace :
   intro ψ hψ
   rw [TauCeti.mem_stateSpace_iff_map_one]
   refine ⟨fun a ha => ?_, ?_⟩
-  · let a' : selfAdjoint A := ⟨a, IsSelfAdjoint.of_nonneg ha⟩
-    have ha' : (0 : selfAdjoint A) ≤ a' := ha
-    rw [show a = (a' : A) from rfl, extendFromSelfAdjoint_apply_coe]
-    exact Complex.le_def.mpr ⟨map_nonneg_of_mem_stateSpace hψ ha', rfl⟩
-  · rw [show (1 : A) = ((1 : selfAdjoint A) : A) from rfl, extendFromSelfAdjoint_apply_coe,
+  · lift a to selfAdjoint A using IsSelfAdjoint.of_nonneg ha
+    rw [extendFromSelfAdjoint_apply_coe]
+    exact Complex.le_def.mpr ⟨map_nonneg_of_mem_stateSpace hψ (Subtype.coe_le_coe.mp ha), rfl⟩
+  · rw [← selfAdjoint.val_one (R := A), extendFromSelfAdjoint_apply_coe,
       map_unit_of_mem_stateSpace hψ, Complex.ofReal_one]
 
 /-- On any C⋆-algebra state `φ`, extending the restriction to `selfAdjoint A` recovers `φ`. -/

@@ -175,14 +175,8 @@ theorem IsOrderUnitNorm.mem_stateSpace_iff_exists_positiveLinearMap {E : Type*}
     h ▸ ((he.toPositiveContinuousLinearMap isOrderUnitNorm_real_one
       ω).toWeakDual_mem_stateSpace_iff_apply_eq_one e).mpr (by simpa using hω)⟩
   let ω : E →ₚ[ℝ] ℝ := { toLinearMap := (toStrongDual φ).toLinearMap, monotone' := hφ.1 }
-  have hω : (he.toPositiveContinuousLinearMap isOrderUnitNorm_real_one ω : E →L[ℝ] ℝ) =
-      toStrongDual φ := by
-    ext a
-    rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap,
-      he.toPositiveContinuousLinearMap_apply, ← PositiveLinearMap.coe_toLinearMap]
-    dsimp only [ω]
-    rw [ContinuousLinearMap.coe_coe]
-  exact ⟨ω, hφ.2, by rw [hω, toWeakDual_toStrongDual]⟩
+  have hω_apply (a : E) : ω a = toStrongDual φ a := rfl
+  exact ⟨ω, hφ.2, DFunLike.ext _ _ fun a => by simp [hω_apply]⟩
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
   {e : E} (he : IsOrderUnitNorm e)

@@ -432,17 +432,15 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrde
 /-- Compatibility of the partial order with nonnegative scalar multiplication follows
 automatically from `IsOrderUnitNorm`. -/
 theorem IsOrderUnitNorm.posSMulMono (he : IsOrderUnitNorm e) : PosSMulMono ℝ E := by
-  refine ⟨fun c hc a b hab => ?_⟩
-  rw [← sub_nonneg, ← smul_sub, he.nonneg_iff_norm_smul_sub_le]
-  have hx : ‖‖b - a‖ • e - (b - a)‖ ≤ ‖b - a‖ :=
-    he.nonneg_iff_norm_smul_sub_le.mp (sub_nonneg.mpr hab)
+  refine PosSMulMono.of_smul_nonneg fun c hc x hx => he.nonneg_iff_norm_smul_sub_le.2 ?_
+  rw [he.nonneg_iff_norm_smul_sub_le] at hx
   calc
-    ‖‖c • (b - a)‖ • e - c • (b - a)‖
-        = ‖c • (‖b - a‖ • e - (b - a))‖ := by
+    ‖‖c • x‖ • e - c • x‖
+        = ‖c • (‖x‖ • e - x)‖ := by
           rw [norm_smul_of_nonneg hc, mul_smul, ← smul_sub]
-    _ = c * ‖‖b - a‖ • e - (b - a)‖ := norm_smul_of_nonneg hc _
-    _ ≤ c * ‖b - a‖ := mul_le_mul_of_nonneg_left hx hc
-    _ = ‖c • (b - a)‖ := (norm_smul_of_nonneg hc _).symm
+    _ = c * ‖‖x‖ • e - x‖ := norm_smul_of_nonneg hc _
+    _ ≤ c * ‖x‖ := mul_le_mul_of_nonneg_left hx hc
+    _ = ‖c • x‖ := (norm_smul_of_nonneg hc _).symm
 
 end PosSMulMono
 

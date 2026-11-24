@@ -180,9 +180,9 @@ theorem IsOrderUnitNorm.evalContinuousMap_le_iff {a b : E} :
 
 /-- The evaluation map into `C(stateSpace e, ℝ)` is isometric. -/
 theorem IsOrderUnitNorm.norm_evalContinuousMap (a : E) :
-    let : CompactSpace (stateSpace e) := he.compactSpace_stateSpace
-    ‖evalContinuousMap e a‖ = ‖a‖ := by
-  dsimp only
+    @norm C(stateSpace e, ℝ)
+      (@ContinuousMap.instNorm _ _ _ he.compactSpace_stateSpace _)
+      (evalContinuousMap e a) = ‖a‖ := by
   let : CompactSpace (stateSpace e) := he.compactSpace_stateSpace
   rw [ContinuousMap.norm_eq_iSup_norm, he.norm_eq_iSup_abs_state_apply a]
   simp [Real.norm_eq_abs]
@@ -197,8 +197,8 @@ theorem IsOrderUnitNorm.nnNorm_eq_iSup_nnNorm_state_apply (a : E) :
 
 /-- The canonical unital isometric order embedding `E →ₗᵢ[ℝ] C(stateSpace e, ℝ)`. -/
 noncomputable def IsOrderUnitNorm.evalLinearIsometry :
-    letI : CompactSpace (stateSpace e) := he.compactSpace_stateSpace
-    E →ₗᵢ[ℝ] C(stateSpace e, ℝ) :=
+    @LinearIsometry ℝ ℝ _ _ (RingHom.id ℝ) E C(stateSpace e, ℝ) _
+      (@ContinuousMap.instSeminormedAddCommGroup _ _ _ he.compactSpace_stateSpace _) _ _ :=
   letI : CompactSpace (stateSpace e) := he.compactSpace_stateSpace
   { toLinearMap := evalContinuousMap e
     norm_map' := he.norm_evalContinuousMap }
@@ -206,8 +206,9 @@ noncomputable def IsOrderUnitNorm.evalLinearIsometry :
 /-- The underlying linear map of `evalLinearIsometry` is `evalContinuousMap e`. -/
 @[simp]
 theorem IsOrderUnitNorm.evalLinearIsometry_toLinearMap :
-    let : CompactSpace (stateSpace e) := he.compactSpace_stateSpace
-    he.evalLinearIsometry.toLinearMap = evalContinuousMap e := by
+    @LinearIsometry.toLinearMap ℝ ℝ _ _ (RingHom.id ℝ) E C(stateSpace e, ℝ) _
+      (@ContinuousMap.instSeminormedAddCommGroup _ _ _ he.compactSpace_stateSpace _) _ _
+      he.evalLinearIsometry = evalContinuousMap e := by
   rfl
 
 /-- Evaluating `evalLinearIsometry` agrees with `evalContinuousMap`. -/
