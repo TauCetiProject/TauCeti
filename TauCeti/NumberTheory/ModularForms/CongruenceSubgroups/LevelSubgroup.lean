@@ -60,6 +60,8 @@ equal in general.
 * `TauCeti.index_GL2Borel_zmod`, `TauCeti.index_GL2Gamma1_zmod`: their indices.
 * `TauCeti.projectiveIndex_GL2Borel_zmod_prime`, `TauCeti.two_mul_projectiveIndex_GL2Gamma1_zmod`:
   their projective indices.
+* `TauCeti.GL2.map_castHom_comp_mapGL`: reducing `SL(2, ℤ)` modulo `m` and then modulo `n ∣ m` is
+  reducing modulo `n`.
 * `TauCeti.GL2.map_castHom_surjective`: the reduction `GL₂(ℤ / m) → GL₂(ℤ / n)` is surjective for
   `n ∣ m` and `m ≠ 0`.
 * `TauCeti.GL2.projectiveIndex_comap_map_castHom`, `TauCeti.GL2.map_det_comap_map_castHom`: the
@@ -183,6 +185,13 @@ namespace GL2
 section ChangeOfLevel
 
 variable {m n : ℕ} (h : n ∣ m)
+
+/-- Reducing `SL(ι, ℤ)` modulo `m` and then modulo `n` is reducing modulo `n`. -/
+theorem map_castHom_comp_mapGL {ι : Type*} [Fintype ι] [DecidableEq ι] :
+    (GeneralLinearGroup.map (ZMod.castHom h (ZMod n))).comp
+        (mapGL (R := ℤ) (n := ι) (ZMod m)) = mapGL (ZMod n) := by
+  ext γ i j
+  simp [GeneralLinearGroup.map_apply]
 
 /-- **Lifting with a prescribed determinant.** An element `g` of `GL₂(ℤ / n)` lifts to an element
 of `GL₂(ℤ / m)` with any prescribed determinant `u` reducing to `det g`. Write `g` as an element of

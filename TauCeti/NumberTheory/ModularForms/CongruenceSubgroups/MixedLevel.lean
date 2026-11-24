@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.LevelSubgroup
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+
 /-!
 # The mixed levels `Γ₁(N) ∩ Γ₀(M)`
 
@@ -34,8 +36,8 @@ the level `Γ₀(M)`.
 * `TauCeti.GL2Gamma1Gamma0.index_eq`: its index is `φ(N) [SL(2, ℤ) : Γ₀(M)]`.
 * `TauCeti.GL2Gamma1Gamma0.neg_one_mem_iff`: it contains `-1` exactly when `N ≤ 2`.
 * `TauCeti.GL2Gamma1Gamma0.map_det`: its determinant image is all of `(ℤ / M)ˣ`.
-* `TauCeti.GL2Gamma1Gamma0.of_dvd_refl` and `TauCeti.GL2Gamma1Gamma0.of_one_dvd`: the cases
-  `N = M` and `N = 1`.
+* `TauCeti.GL2Gamma1Gamma0.dvd_refl_eq_GL2Gamma1` and
+  `TauCeti.GL2Gamma1Gamma0.one_dvd_eq_GL2Borel`: the cases `N = M` and `N = 1`.
 
 ## References
 
@@ -80,17 +82,10 @@ variable (h)
 theorem le_GL2Borel : GL2Gamma1Gamma0 h ≤ GL2Borel (ZMod M) :=
   inf_le_right
 
-/-- Reducing `SL(2, ℤ)` modulo `M` and then modulo `N` is reducing modulo `N`. -/
-theorem map_castHom_comp_mapGL :
-    (GeneralLinearGroup.map (ZMod.castHom h (ZMod N))).comp
-        (mapGL (R := ℤ) (n := Fin 2) (ZMod M)) = mapGL (ZMod N) := by
-  ext γ i j
-  simp [GeneralLinearGroup.map_apply]
-
 /-- **The preimage of the mixed level in `SL(2, ℤ)` is `Γ₁(N) ⊓ Γ₀(M)`.** -/
 @[simp]
 theorem comap_mapGL : (GL2Gamma1Gamma0 h).comap (mapGL (ZMod M)) = Gamma1 N ⊓ Gamma0 M := by
-  rw [GL2Gamma1Gamma0, Subgroup.comap_inf, Subgroup.comap_comap, map_castHom_comp_mapGL,
+  rw [GL2Gamma1Gamma0, Subgroup.comap_inf, Subgroup.comap_comap, GL2.map_castHom_comp_mapGL,
     comap_mapGL_GL2Gamma1, comap_mapGL_GL2Borel]
 
 /-- The upper-left entry modulo `N` of an upper-triangular matrix, as a homomorphism to
@@ -98,13 +93,17 @@ theorem comap_mapGL : (GL2Gamma1Gamma0 h).comap (mapGL (ZMod M)) = Gamma1 N ⊓ 
 noncomputable def upperLeftHom : GL2Borel (ZMod M) →* (ZMod N)ˣ :=
   (ZMod.unitsMap h).comp ((MonoidHom.fst _ _).comp GL2Borel.diag)
 
+@[simp]
+theorem val_upperLeftHom (g : GL2Borel (ZMod M)) :
+    (upperLeftHom h g : ZMod N) = ZMod.castHom h (ZMod N)
+      (((g : GL (Fin 2) (ZMod M)) : Matrix (Fin 2) (Fin 2) (ZMod M)) 0 0) := by
+  simp [upperLeftHom, ZMod.unitsMap_val]
+
 theorem ker_upperLeftHom :
     (upperLeftHom h).ker = (GL2Gamma1Gamma0 h).subgroupOf (GL2Borel (ZMod M)) := by
   ext g
-  simp only [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, mem_iff, upperLeftHom,
-    MonoidHom.comp_apply, MonoidHom.coe_fst, Units.ext_iff, ZMod.unitsMap_val, Units.val_one,
-    GL2Borel.diag_fst_val, GL2Borel.apply_one_zero, and_true]
-  rfl
+  simp only [MonoidHom.mem_ker, Subgroup.mem_subgroupOf, mem_iff, Units.ext_iff,
+    val_upperLeftHom, Units.val_one, GL2Borel.apply_one_zero, and_true]
 
 theorem upperLeftHom_surjective [NeZero M] : Function.Surjective (upperLeftHom h) :=
   (ZMod.unitsMap_surjective h).comp (Prod.fst_surjective.comp GL2Borel.diag_surjective)
@@ -112,18 +111,20 @@ theorem upperLeftHom_surjective [NeZero M] : Function.Surjective (upperLeftHom h
 /-- **`[Γ₀(M) : Γ₁(N) ∩ Γ₀(M)] = φ(N)`** in `GL₂(ℤ / M)`. -/
 theorem relIndex_GL2Borel [NeZero M] :
     (GL2Gamma1Gamma0 h).relIndex (GL2Borel (ZMod M)) = N.totient := by
-  have : NeZero N := ⟨fun hN ↦ NeZero.ne M (Nat.eq_zero_of_zero_dvd (hN ▸ h))⟩
+  have : NeZero N := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne M) h⟩
   rw [Subgroup.relIndex, ← ker_upperLeftHom, Subgroup.index_ker,
     MonoidHom.range_eq_top_of_surjective _ (upperLeftHom_surjective h), Subgroup.card_top,
     Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 /-- **The index of the mixed level is `φ(N) ψ(M)`**, where `ψ(M) = [SL(2, ℤ) : Γ₀(M)]`. -/
-theorem index_eq [NeZero M] : (GL2Gamma1Gamma0 h).index = N.totient * (Gamma0 M).index := by
-  rw [← Subgroup.relIndex_mul_index (le_GL2Borel h), relIndex_GL2Borel, index_GL2Borel_zmod]
+theorem index_eq : (GL2Gamma1Gamma0 h).index = N.totient * (Gamma0 M).index := by
+  rw [← Subgroup.relIndex_mul_index (le_GL2Borel h), index_GL2Borel_zmod]
+  rcases eq_zero_or_neZero M with rfl | _
+  · rw [Gamma0_zero_index, mul_zero, mul_zero]
+  · rw [relIndex_GL2Borel]
 
 /-- **`-1` lies in the mixed level exactly when `N ≤ 2`.** -/
-theorem neg_one_mem_iff [NeZero M] : (-1 : GL (Fin 2) (ZMod M)) ∈ GL2Gamma1Gamma0 h ↔ N ≤ 2 := by
-  have hN : N ≠ 0 := fun hN ↦ NeZero.ne M (Nat.eq_zero_of_zero_dvd (hN ▸ h))
+theorem neg_one_mem_iff [NeZero N] : (-1 : GL (Fin 2) (ZMod M)) ∈ GL2Gamma1Gamma0 h ↔ N ≤ 2 := by
   rw [GL2Gamma1Gamma0, Subgroup.mem_inf, Subgroup.mem_comap, GeneralLinearGroup.map_neg, map_one,
     GL2Gamma1.neg_one_mem_iff, and_iff_left GL2Borel.neg_one_mem]
   constructor
@@ -132,18 +133,19 @@ theorem neg_one_mem_iff [NeZero M] : (-1 : GL (Fin 2) (ZMod M)) ∈ GL2Gamma1Gam
     have : Fact (2 < N) := ⟨h2⟩
     exact ZMod.neg_one_ne_one h1
   · intro h2
-    have h1 : 1 ≤ N := Nat.pos_of_ne_zero hN
+    have h1 : 1 ≤ N := NeZero.pos N
     interval_cases N <;> decide
 
 /-- **The projective index of the mixed level** is its index for `N ≤ 2`. -/
-theorem projectiveIndex_eq_index [NeZero M] (hN : N ≤ 2) :
+theorem projectiveIndex_eq_index [NeZero N] (hN : N ≤ 2) :
     (GL2Gamma1Gamma0 h).projectiveIndex = (GL2Gamma1Gamma0 h).index :=
   Subgroup.projectiveIndex_eq_index ((neg_one_mem_iff h).mpr hN)
 
 /-- **The projective index of the mixed level** is half its index for `N ≥ 3`. -/
-theorem two_mul_projectiveIndex [NeZero M] (hN : 3 ≤ N) :
-    2 * (GL2Gamma1Gamma0 h).projectiveIndex = (GL2Gamma1Gamma0 h).index :=
-  Subgroup.two_mul_projectiveIndex ((neg_one_mem_iff h).not.mpr (by omega))
+theorem two_mul_projectiveIndex (hN : 3 ≤ N) :
+    2 * (GL2Gamma1Gamma0 h).projectiveIndex = (GL2Gamma1Gamma0 h).index := by
+  have : NeZero N := ⟨by omega⟩
+  exact Subgroup.two_mul_projectiveIndex ((neg_one_mem_iff h).not.mpr (by omega))
 
 /-- **The determinant maps the mixed level onto `(ℤ / M)ˣ`**: `!![1, 0; 0, u]` has determinant
 `u`. -/
@@ -152,13 +154,13 @@ theorem map_det : (GL2Gamma1Gamma0 h).map GeneralLinearGroup.det = ⊤ :=
     ⟨GL2Borel.mk 1 u 0, mem_iff.mpr ⟨by simp [-ZMod.castHom_apply], by simp⟩, by simp⟩
 
 /-- For `N = M` the mixed level is `Γ₁(N)`. -/
-theorem of_dvd_refl : GL2Gamma1Gamma0 (dvd_refl N) = GL2Gamma1 (ZMod N) := by
+theorem dvd_refl_eq_GL2Gamma1 : GL2Gamma1Gamma0 (dvd_refl N) = GL2Gamma1 (ZMod N) := by
   rw [GL2Gamma1Gamma0, ZMod.castHom_self, GeneralLinearGroup.map_id, Subgroup.comap_id,
     inf_eq_left]
   exact GL2Gamma1.le_GL2Borel
 
 /-- For `N = 1` the mixed level is `Γ₀(M)`. -/
-theorem of_one_dvd : GL2Gamma1Gamma0 (one_dvd M) = GL2Borel (ZMod M) := by
+theorem one_dvd_eq_GL2Borel : GL2Gamma1Gamma0 (one_dvd M) = GL2Borel (ZMod M) := by
   rw [GL2Gamma1Gamma0, inf_eq_right]
   intro g _
   simp [Subsingleton.elim _ (1 : ZMod 1)]
