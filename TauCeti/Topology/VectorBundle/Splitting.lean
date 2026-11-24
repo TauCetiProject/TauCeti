@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Constructions
+public import TauCeti.Algebra.Exact.Split
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Section
 
@@ -238,16 +239,9 @@ theorem exists_bundleHomeomorph_prod_of_rightInverse
   have h₃ := (hs.comp (FiberBundle.continuous_proj (F₁ × F₃) (E₁ ×ᵇ E₃))).clm_bundle_apply
     (continuous_snd.comp hdiag)
   -- Fibrewise, `(v, w) ↦ i v + s w` is the splitting isomorphism of the exact sequence.
-  have hbij (x : B) : Bijective ((i x).coprod (s x)) := by
-    have hpi (v : E₁ x) : p x (i x v) = 0 := (hexact x).le ⟨v, rfl⟩
-    have hps' (w : E₃ x) : p x (s x w) = w := congr($(hps x) w)
-    refine ⟨fun a b hab ↦ ?_, fun u ↦ ?_⟩
-    · rw [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.coprod_apply] at hab
-      have h₂ : a.2 = b.2 := by simpa [hpi, hps'] using congr(p x $hab)
-      exact Prod.ext (hinj x (by rwa [h₂, add_left_inj] at hab)) h₂
-    · obtain ⟨v, hv⟩ : u - s x (p x u) ∈ (i x).range := (hexact x).ge (by simp [hps'])
-      exact ⟨(v, p x u), by
-        rw [ContinuousLinearMap.coprod_apply, ← ContinuousLinearMap.coe_coe, hv, sub_add_cancel]⟩
+  have hbij (x : B) : Bijective ((i x).coprod (s x)) :=
+    (LinearMap.exact_iff.2 (hexact x).symm).bijective_coprod_of_comp_eq_id (hinj x)
+      congr(ContinuousLinearMap.toLinearMap $(hps x))
   obtain ⟨h, hh⟩ := exists_bundleHomeomorph_of_bijective (fun x ↦ (i x).coprod (s x))
     ((h₁.add_totalSpace 𝕜 h₃).congr fun q ↦ by rw [ContinuousLinearMap.coprod_apply]) hbij
   exact ⟨h, fun x v w ↦ by rw [hh, ContinuousLinearMap.coprod_apply]⟩
@@ -276,17 +270,9 @@ theorem exists_bundleHomeomorph_prod_of_leftInverse [FiniteDimensional 𝕜 F₂
       TotalSpace.mk' (F₁ × F₃) (E := E₁ ×ᵇ E₃) q.proj ((t q.proj).prod (p q.proj) q.snd) :=
     (FiberBundle.Prod.isInducing_diag F₁ E₁ F₃ E₃).continuous_iff.2 (h₁.prodMk h₃)
   -- Fibrewise, `u ↦ (t u, p u)` is the splitting isomorphism of the exact sequence.
-  have hbij (x : B) : Bijective ((t x).prod (p x)) := by
-    have hpi (v : E₁ x) : p x (i x v) = 0 := (hexact x).le ⟨v, rfl⟩
-    have hti' (v : E₁ x) : t x (i x v) = v := congr($(hti x) v)
-    refine ⟨fun a b hab ↦ ?_, fun ⟨v, w⟩ ↦ ?_⟩
-    · simp only [ContinuousLinearMap.prod_apply, Prod.mk.injEq] at hab
-      obtain ⟨c, hc⟩ : a - b ∈ (i x).range := (hexact x).ge (by simp [hab.2])
-      -- Applying the left inverse `t x` to `i x c = a - b` gives `c = t x a - t x b = 0`.
-      have hc₀ : c = 0 := by simpa [hti', hab.1] using congr(t x $hc)
-      rw [← sub_eq_zero, ← hc, hc₀, map_zero]
-    · obtain ⟨u, rfl⟩ := hsurj x w
-      exact ⟨i x v + u - i x (t x u), by simp [hpi, hti']⟩
+  have hbij (x : B) : Bijective ((t x).prod (p x)) :=
+    (LinearMap.exact_iff.2 (hexact x).symm).bijective_prod_of_comp_eq_id (hsurj x)
+      congr(ContinuousLinearMap.toLinearMap $(hti x))
   obtain ⟨h, hh⟩ := exists_bundleHomeomorph_of_bijective (fun x ↦ (t x).prod (p x)) hc hbij
   exact ⟨h, fun x u ↦ by rw [hh, ContinuousLinearMap.prod_apply]⟩
 
