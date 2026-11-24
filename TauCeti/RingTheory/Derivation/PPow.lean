@@ -10,14 +10,16 @@ import Mathlib.Data.Nat.Choose.Dvd
 public import Mathlib.RingTheory.Derivation.Lie
 public import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 public import TauCeti.Algebra.Lie.Basic
+public import TauCeti.Algebra.Lie.Restricted.Basic
 public import TauCeti.RingTheory.Derivation.Basic
 public import TauCeti.RingTheory.Derivation.BaseChange
 public import TauCeti.RingTheory.Derivation.Localization
 public import TauCeti.RingTheory.Kaehler.DualDerivation
--- Non-public: `Module.End.instExpChar` and `Derivation.toLinearMapLieHom` carry `ad_pPow` into
--- the associative algebra `Module.End R A`.
-import TauCeti.Algebra.CharP.LinearMaps
-import TauCeti.RingTheory.Derivation.Lie
+-- `Module.End.instExpChar` and `Derivation.toLinearMapLieHom` carry `ad_pPow` and `pPow_add` into
+-- the associative algebra `Module.End R A`; both appear in `toLinearMapRestrictedLieHom`.
+public import TauCeti.Algebra.CharP.LinearMaps
+public import TauCeti.RingTheory.Derivation.Lie
+import TauCeti.RingTheory.Derivation.FirstOrder
 
 /-!
 # The `p`-th power of a derivation
@@ -37,10 +39,16 @@ the Leibniz rule would give `0`. (Exponential characteristic `1` is characterist
 The `p`-th power is the `p`-map making `Derivation R A A` a restricted Lie algebra in the sense of
 Jacobson, and it is the correction term in the `p`-curvature `(∇_D)^p - ∇_{D^[p]}` of a connection
 (Katz). This file proves its homogeneity for scalars of `R`, the identity `ad (D^[p]) = (ad D)^p`
-in the Lie algebra of derivations, its compatibility with scalar extension and with localization,
-and its vanishing on the derivations dual to a basis of exact Kähler differentials. The behaviour
-of `pPow` on sums (Jacobson's formula) and on multiples `a • D` by elements `a : A` (Hochschild's
-formula) is not treated here.
+in the Lie algebra of derivations, Jacobson's formula
+`(D + E)^[p] = D^[p] + E^[p] + Λ_p(D, E)`, which together make `Derivation R A A` a restricted Lie
+algebra whose inclusion into `Module.End R A` is a restricted morphism, its compatibility with
+scalar extension and with localization,
+its vanishing on the derivations dual to a basis of exact Kähler differentials, and its
+compatibility with conjugation by a unit `u`: the `p`-th power of the operator `D - u⁻¹ D(u)` is
+the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way from `D^[p]`. In the language of
+connections, the rank-one connection `d - du/u` on `A`, whose horizontal section is `u`, has
+vanishing `p`-curvature. The behaviour
+of `pPow` on multiples `a • D` by elements `a : A` (Hochschild's formula) is not treated here.
 
 ## Main declarations
 
@@ -49,10 +57,17 @@ formula) is not treated here.
 * `Derivation.pPow`: the `p`-th power of a derivation, as a derivation.
 * `Derivation.pPow_const_smul`: `(c • D)^[p] = c ^ p • D^[p]` for `c : R`.
 * `Derivation.ad_pPow`: `ad (D^[p]) = (ad D) ^ p` in the Lie algebra `Derivation R A A`.
+* `Derivation.pPow_add`: Jacobson's formula `(D + E)^[p] = D^[p] + E^[p] + Λ_p(D, E)`.
+* `Derivation.instRestrictedLieAlgebra`: `Derivation R A A` is a restricted Lie algebra under
+  `pPow`.
+* `Derivation.toLinearMapRestrictedLieHom`: the inclusion into `Module.End R A`, with its
+  restricted structure `f ↦ f ^ p`, is a restricted morphism.
 * `Derivation.pPow_baseChange`: `pPow` commutes with scalar extension `S ⊗[R] -`.
 * `Derivation.pPow_extendOfIsLocalization`: `pPow` commutes with extension to a localization.
 * `Derivation.pPow_dualDerivation_eq_zero`: the `p`-th powers of the derivations dual to a basis
   `ds_i` of `Ω[A⁄R]` vanish.
+* `Derivation.sub_mulLeft_inv_mul_pow_expChar`: `(D - u⁻¹ D(u)) ^ p = D^[p] - u⁻¹ D^[p](u)` in
+  `Module.End R A`, for a unit `u`.
 
 ## References
 
@@ -168,6 +183,44 @@ theorem ad_pPow (D : Derivation R A A) :
     congr($(TauCeti.LieAlgebra.ad_pow_expChar_pow (R := R) p (toLinearMapLieHom R A D) 1)
       (toLinearMapLieHom R A E))
 
+/-- **Jacobson's formula for derivations.** `(D + E)^[p] = D^[p] + E^[p] + Λ_p(D, E)`, where
+`Λ_p` is Jacobson's Lie polynomial evaluated in the Lie algebra of derivations. -/
+theorem pPow_add (D E : Derivation R A A) :
+    (D + E).pPow p = D.pPow p + E.pPow p + TauCeti.LieAlgebra.jacobson p D E := by
+  let := TauCeti.RestrictedLieAlgebra.ofAssociativeAlgebra R (Module.End R A) p
+  apply toLinearMapLieHom_injective
+  rw [map_add, map_add, LieHom.map_jacobson]
+  simpa using TauCeti.RestrictedLieAlgebra.pMap_add (R := R) (p := p) (D : Module.End R A) E
+
+/-- **Derivations form a restricted Lie algebra** (Jacobson; Katz 1970, (5.0)): the `p`-map is the
+`p`-th power `D ↦ D^[p]`. -/
+instance instRestrictedLieAlgebra : TauCeti.RestrictedLieAlgebra R (Derivation R A A) p where
+  pMap D := D.pPow p
+  pMap_smul := pPow_const_smul p
+  ad_pMap := ad_pPow p
+  pMap_add := pPow_add p
+
+/-- The `p`-map of `Derivation R A A` is `pPow`. -/
+@[simp]
+theorem pMap_eq_pPow (D : Derivation R A A) :
+    TauCeti.RestrictedLieAlgebra.pMap R p D = D.pPow p :=
+  (rfl)
+
+variable (R A) in
+/-- The inclusion of derivations into `Module.End R A` is a morphism of restricted Lie algebras,
+for the restricted structure `f ↦ f ^ p` of the associative algebra `Module.End R A`. -/
+def toLinearMapRestrictedLieHom :
+    letI := TauCeti.RestrictedLieAlgebra.ofAssociativeAlgebra R (Module.End R A) p
+    TauCeti.RestrictedLieHom R (Derivation R A A) (Module.End R A) p :=
+  letI := TauCeti.RestrictedLieAlgebra.ofAssociativeAlgebra R (Module.End R A) p
+  { toLinearMapLieHom R A with map_pMap' D := by simp }
+
+@[simp]
+theorem toLinearMapRestrictedLieHom_apply (D : Derivation R A A) :
+    letI := TauCeti.RestrictedLieAlgebra.ofAssociativeAlgebra R (Module.End R A) p
+    toLinearMapRestrictedLieHom R A p D = (D : Module.End R A) :=
+  toLinearMapLieHom_apply D
+
 /-- **The `p`-th power commutes with localization.** If `T` is a localization of `A`, extending
 `D^[p]` from `A` to `T` gives the `p`-th power of the extension of `D`. -/
 theorem pPow_extendOfIsLocalization {T : Type*} [CommRing T] [Algebra R T] [Algebra A T]
@@ -183,6 +236,23 @@ theorem pPow_extendOfIsLocalization {T : Type*} [CommRing T] [Algebra R T] [Alge
   simp [extendOfIsLocalization_algebraMap, (h.iterate_right p a).symm, pow_apply_eq_iterate]
 
 end CommRing
+
+/-! ### Conjugation by a unit -/
+
+section Conjugation
+
+variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A] (p : ℕ) [ExpChar A p]
+
+/-- **The `p`-th power of `D - u⁻¹ D(u)`.** For a unit `u`, the `p`-th power of the operator
+`D - u⁻¹ D(u)` on `A` is the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way from the
+derivation `D^[p]`. Equivalently, the rank-one connection `d - du/u`, whose horizontal section is
+`u`, has vanishing `p`-curvature `(∇_D)^p - ∇_{D^[p]}`. -/
+theorem sub_mulLeft_inv_mul_pow_expChar (D : Derivation R A A) (u : Aˣ) :
+    (D.toLinearMap - LinearMap.mulLeft R (↑u⁻¹ * D u)) ^ p =
+      (D.pPow p).toLinearMap - LinearMap.mulLeft R (↑u⁻¹ * D.pPow p u) := by
+  rw [sub_mulLeft_inv_mul_pow, ← toLinearMap_pPow, mulLeft_mul_mul_mulLeft_inv]
+
+end Conjugation
 
 /-! ### Derivations dual to a basis of exact differentials -/
 

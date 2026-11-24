@@ -97,10 +97,16 @@ rotates the orbit at that end.
   (contractible) periodic solutions of `X` and of the shifted field `t ↦ X (t + θ)`.
 * `TauCeti.exists_mem_periodicSolutions_comp_eq`: periodic solutions in `e(K)` of a field agreeing
   there with the pushforward `d e (X_t)` are read through `e` from periodic solutions in `K`.
-* `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
-  preserves the domain and the flow.
+* `TauCeti.timeDependentFlowOf_add_period_add_period`,
+  `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
+  preserves the flow and its domain.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
+* `TauCeti.mfderiv_timeDependentFlowOf_add_period_apply`: for a jointly `C¹` periodic field, the
+  derivative of the flow over one more period factors through the derivative of the return map,
+  wherever both are defined. At a fixed point of the return map in its domain, a vector fixed by
+  the derivative of the return map therefore spreads to a periodic solution of the linearized flow
+  (`TauCeti.mfderiv_timeDependentFlowOf_add_period_apply_of_eq`).
 * `TauCeti.eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt`,
   `TauCeti.IsNondegenerateFixedPt.eventually_forall_mem_periodicSolutions_eq`: periodic solutions
   through isolated (in particular nondegenerate) fixed points of the return map are isolated.
@@ -232,6 +238,34 @@ theorem exists_mem_periodicSolutions_comp_eq {F : Type*} [NormedAddCommGroup F] 
   rw [hex, ← hY t _ (hxK t), hx]
   exact hy t
 
+/-- **Isolated periodic solutions read through `e`.** In the setting of
+`TauCeti.exists_mem_periodicSolutions_comp_eq`, suppose that the `T`-periodic solutions of `X` in
+`K` are isolated: for each such solution `x`, every `T`-periodic solution in `K` starting close
+enough to `x 0` is `x`. Then every `T`-periodic solution `y` of `y' = Y(t, y)` with values in
+`e(K)` is isolated in the uniform distance among the `T`-periodic solutions with values in
+`e(K)`. -/
+theorem exists_pos_forall_eq_of_forall_dist_lt_of_mem_image {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] {e : M → F} {K : Set M} (hK : IsCompact K)
+    (he_inj : InjOn e K) (hde : ∀ p ∈ K, Injective (mvfderiv I e p))
+    {Y : ℝ → F → F} (hY : ∀ t, ∀ p ∈ K, Y t (e p) = mvfderiv I e p (X t p))
+    (hiso : ∀ x ∈ periodicSolutions X T, (∀ t, x t ∈ K) →
+      ∀ᶠ p in 𝓝 (x 0), ∀ x' ∈ periodicSolutions X T, (∀ t, x' t ∈ K) → x' 0 = p → x' = x)
+    {y : ℝ → F} (hyper : Periodic y T) (hy : ∀ t, HasDerivAt y (Y t (y t)) t)
+    (hyK : ∀ t, y t ∈ e '' K) :
+    ∃ ε > 0, ∀ y' : ℝ → F, Periodic y' T → (∀ t, HasDerivAt y' (Y t (y' t)) t) →
+      (∀ t, y' t ∈ e '' K) → (∀ t, dist (y' t) (y t) < ε) → y' = y := by
+  have he : ContinuousOn e K := fun p hp ↦ (mdifferentiableAt_of_mfderiv_injective
+    (injective_mvfderiv_iff.1 (hde p hp))).continuousAt.continuousWithinAt
+  obtain ⟨x, hx, hxK, rfl⟩ := exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hyper hy hyK
+  -- Inside `K`, the neighbourhoods of `x 0` are read through `e`.
+  obtain ⟨V, hV, hVx⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj (hxK 0)
+    (mem_nhdsWithin_of_mem_nhds (hiso x hx hxK))
+  obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.1 hV
+  refine ⟨ε, hε, fun y' hy'per hy' hy'K hdist ↦ ?_⟩
+  obtain ⟨x', hx', hx'K, rfl⟩ :=
+    exists_mem_periodicSolutions_comp_eq hK he_inj hde hY hy'per hy' hy'K
+  rw [hVx ⟨hx'K 0, hεV (Metric.mem_ball.2 (hdist 0))⟩ x' hx' hx'K rfl]
+
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/
 def contractiblePeriodicSolutions (X : ℝ → (x : M) → TangentSpace I x) (T : ℝ) : Set (ℝ → M) :=
@@ -300,17 +334,27 @@ include hX
 
 omit [CompleteSpace E] in
 /-- **The flow of a time-periodic field is invariant under translation of time by a period.** If
-`X (t + T) = X t` for all `t` and the flow from `s` to `t` is defined at `x`, then so is the flow
-from `s + T` to `t + T`, with the same value. -/
+`X (t + T) = X t` for all `t`, the flow from `s + T` to `t + T` is the flow from `s` to `t`. Both
+sides take the junk value outside the flow domain, which is also invariant
+(`TauCeti.timeDependentFlowOf_add_period_of_mem`). -/
+theorem timeDependentFlowOf_add_period_add_period (hT : Periodic X T) (s t : ℝ) :
+    timeDependentFlowOf X (s + T) (t + T) = timeDependentFlowOf X s t := by
+  -- Shifting a `T`-periodic field by `T` does not change it, so neither does shifting its flow.
+  funext y
+  rw [← timeDependentFlowOf_comp_add_right hX T, funext hT]
+
+omit [CompleteSpace E] in
+/-- **The flow domain of a time-periodic field is invariant under translation of time by a
+period.** If `X (t + T) = X t` for all `t` and the flow from `s` to `t` is defined at `x`, then so
+is the flow from `s + T` to `t + T`, with the same value. -/
 theorem timeDependentFlowOf_add_period_of_mem (hT : Periodic X T)
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     ((s + T, t + T), x) ∈ timeDependentFlowDomain X ∧
       timeDependentFlowOf X (s + T) (t + T) x = timeDependentFlowOf X s t x := by
   -- Shifting a `T`-periodic field by `T` does not change it.
-  have hXT : (fun u ↦ X (u + T)) = X := funext hT
-  have h' : ((s, t), x) ∈ timeDependentFlowDomain (fun u ↦ X (u + T)) := by rwa [hXT]
-  refine ⟨(mem_timeDependentFlowDomain_comp_add_right_iff hX T).1 h', ?_⟩
-  rw [← timeDependentFlowOf_comp_add_right hX T, hXT]
+  have h' : ((s, t), x) ∈ timeDependentFlowDomain (fun u ↦ X (u + T)) := by rwa [funext hT]
+  exact ⟨(mem_timeDependentFlowDomain_comp_add_right_iff hX T).1 h',
+    congrFun (timeDependentFlowOf_add_period_add_period hX hT s t) x⟩
 
 omit [CompleteSpace E] in
 /-- If the return map of a time-periodic field fixes `x`, so does its `k`-th iterate: the flow
@@ -386,11 +430,8 @@ def periodicSolutionsEquivFixedPoints (hT : Periodic X T) (hT0 : T ≠ 0) (s : �
       (by rwa [x.property.2.eq])).2
     dsimp only
     rw [← htr, x.property.2.eq, heq]⟩
-  left_inv γ := Subtype.ext <| funext fun t ↦ by
-    have hγ (u : ℝ) (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) := γ.property.1 u
-    exact timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ
-      ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-      ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  left_inv γ := Subtype.ext <| funext <| timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX
+    γ.property.1 s
   right_inv x := Subtype.ext (timeDependentFlowOf_self X s x)
 
 omit [CompleteSpace E] in
@@ -411,6 +452,56 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
       timeDependentFlowOf X s t x :=
   (rfl)
 
+/-- **The derivative of the flow over one more period.** Let `X` be a `T`-periodic jointly `C¹`
+field, let the flow from `(s, x)` be defined at time `s + T`, and the flow from `s` at time `t` at
+the image `φ_{s, s + T}(x)`. Then the derivative of the flow to time `t + T` is that of the return
+map followed by that of the flow to time `t`:
+`dφ_{s, t + T} v = dφ_{s, t} (dφ_{s, s + T} v)`. -/
+theorem mfderiv_timeDependentFlowOf_add_period_apply (hT : Periodic X T)
+    (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
+    (ht : ((s, t), timeDependentFlowOf X s (s + T) x) ∈ timeDependentFlowDomain X)
+    (v : TangentSpace I x) :
+    mfderiv I I (timeDependentFlowOf X s (t + T)) x v =
+      mfderiv I I (timeDependentFlowOf X s t) (timeDependentFlowOf X s (s + T) x)
+        (mfderiv I I (timeDependentFlowOf X s (s + T)) x v) := by
+  rw [mfderiv_timeDependentFlowOf_trans_of_mem hX h
+    (timeDependentFlowOf_add_period_of_mem hX hT ht).1,
+    timeDependentFlowOf_add_period_add_period hX hT]
+  -- The goal is `ContinuousLinearMap.comp_apply`, except that the coercion on the left still has
+  -- the codomain `TangentSpace I (φ_{s, t + T} x)` of the original derivative, while the composite
+  -- lands in `TangentSpace I (φ_{s, t} (φ_{s, s + T} x))`. Both unfold to `E`, so `rfl` closes it,
+  -- whereas rewriting with `comp_apply` fails on the mismatched codomain.
+  rfl
+
+/-- **Periodic solutions of the linearized flow.** If `X` is jointly `C¹` and `T`-periodic, `x` is
+a fixed point of the return map `φ_{s, s + T}` in its domain, and `v` is fixed by its derivative,
+then `t ↦ dφ_{s, t} v` along the periodic orbit of `x` is `T`-periodic. -/
+theorem mfderiv_timeDependentFlowOf_add_period_apply_of_eq (hT : Periodic X T)
+    (h : ((s, s + T), x) ∈ timeDependentFlowDomain X)
+    (hfix : IsFixedPt (timeDependentFlowOf X s (s + T)) x) {v : TangentSpace I x}
+    (hv : mfderiv I I (timeDependentFlowOf X s (s + T)) x v = v) (t : ℝ) :
+    mfderiv I I (timeDependentFlowOf X s (t + T)) x v =
+      mfderiv I I (timeDependentFlowOf X s t) x v := by
+  rcases eq_or_ne T 0 with rfl | hT0
+  · rw [add_zero]
+  have hall := mem_timeDependentFlowDomain_of_isFixedPt hX hT hT0 h hfix t
+  have hRt : ((s, t), timeDependentFlowOf X s (s + T) x) ∈ timeDependentFlowDomain X := by
+    rw [hfix.eq]
+    exact hall
+  have hR : MDifferentiableAt I I (timeDependentFlowOf X s (s + T)) x :=
+    mdifferentiableAt_timeDependentFlowOf hX h
+  have hφR :
+      MDifferentiableAt I I (timeDependentFlowOf X s t) (timeDependentFlowOf X s (s + T) x) :=
+    mdifferentiableAt_timeDependentFlowOf hX hRt
+  have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
+    mdifferentiableAt_timeDependentFlowOf hX hall
+  -- Both chain rules compute the derivative of `φ_{s, t} ∘ φ_{s, s + T}` at `x`: the first at the
+  -- image point, the second at `x`, which it equals.
+  exact (mfderiv_timeDependentFlowOf_add_period_apply hX hT h hRt v).trans
+    ((mfderiv_comp_apply x hφR hR v).symm.trans
+      ((mfderiv_comp_apply_of_eq x hφ hR hfix.eq v).trans
+        (congrArg (mfderiv I I (timeDependentFlowOf X s t) x) hv)))
+
 omit [CompleteSpace E] in
 /-- **Periodic solutions through isolated fixed points are isolated.** Let `γ` be a `T`-periodic
 solution of `X` whose value `γ s` is isolated among the fixed points of the return map
@@ -423,11 +514,8 @@ theorem eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt {
     ∀ᶠ p in 𝓝 (γ s), ∀ δ ∈ periodicSolutions X T, δ s = p → δ = γ := by
   -- A solution defined for all time is the trajectory of the flow from time `s`.
   have hflow {δ : ℝ → M} (hδ : δ ∈ periodicSolutions X T) (t : ℝ) :
-      timeDependentFlowOf X s t (δ s) = δ t := by
-    have hδ' (u : ℝ) (_ : u ∈ Ioo (min s t - 1) (max s t + 1)) := hδ.1 u
-    exact timeDependentFlowOf_eq_of_hasMFDerivAt hX hδ'
-      ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-      ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+      timeDependentFlowOf X s t (δ s) = δ t :=
+    timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hδ.1 s t
   filter_upwards [eventually_nhdsWithin_iff.1 hiso] with p hp δ hδ hδp
   -- The value `δ s` is a fixed point of the return map close to `γ s`, hence equal to it.
   have hδγ : δ s = γ s := by
@@ -496,9 +584,7 @@ theorem semiconj_timeDependentFlowOf_add_period (hT : Periodic X T) (s s' : ℝ)
     Semiconj (timeDependentFlowOf X s s') (timeDependentFlowOf X s (s + T))
       (timeDependentFlowOf X s' (s' + T)) := fun y ↦ by
   -- Flowing from `s` to `s'` is flowing from `s + T` to `s' + T`, since `X` is `T`-periodic.
-  have hper : timeDependentFlowOf X (s + T) (s' + T) = timeDependentFlowOf X s s' :=
-    funext fun z ↦ (timeDependentFlowOf_add_period_of_mem hX hT
-      (by rw [timeDependentFlowDomain_eq_univ hc]; exact mem_univ _)).2
+  have hper := timeDependentFlowOf_add_period_add_period hX hT s s'
   calc timeDependentFlowOf X s s' (timeDependentFlowOf X s (s + T) y)
       = timeDependentFlowOf X (s + T) (s' + T) (timeDependentFlowOf X s (s + T) y) := by
         rw [hper]
@@ -530,10 +616,7 @@ theorem isNondegenerateFixedPt_timeDependentFlowOf_iff_of_mem_periodicSolutions
     IsNondegenerateFixedPt I (timeDependentFlowOf X s' (s' + T)) (γ s') ↔
       IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s) := by
   -- A solution defined for all time is the trajectory of the flow from time `s`.
-  have hγ' (u : ℝ) (_ : u ∈ Ioo (min s s' - 1) (max s s' + 1)) := hγ.1 u
-  rw [← timeDependentFlowOf_eq_of_hasMFDerivAt hX (s := s) (t := s') hγ'
-    ⟨by linarith [min_le_left s s'], by linarith [le_max_left s s']⟩
-    ⟨by linarith [min_le_right s s'], by linarith [le_max_right s s']⟩]
+  rw [← timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX hγ.1 s s']
   exact isNondegenerateFixedPt_timeDependentFlowOf_iff hX hc hT s s' (γ s)
 
 omit [CompleteSpace E] in
@@ -571,11 +654,8 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
       IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s)) :
     (periodicSolutions X T).Finite := by
   -- On a compact manifold the flow is defined everywhere, so the return map is continuous.
-  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ
-    (fun _ _ hy ↦ (hy (mem_univ _)).elim)
-  have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
-    ((contMDiff_timeDependentFlowOf hcomplete le_rfl hX).comp
-      ((contMDiff_const (c := (s, s + T))).prodMk contMDiff_id)).continuous
+  have hcomplete := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
+  have hφ := continuous_timeDependentFlowOf hcomplete le_rfl hX s (s + T)
   set e := periodicSolutionsEquivFixedPoints hX hT hT0 s
   -- Every fixed point of the return map is the initial point of a periodic solution.
   have hfin := finite_fixedPoints_of_isNondegenerateFixedPt hφ fun x hx ↦ by
@@ -613,8 +693,7 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
   let _ : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let _ : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   -- On a compact manifold the flow is defined everywhere and is continuous.
-  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ
-    (fun _ _ hy ↦ (hy (mem_univ _)).elim)
+  have hcomplete := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hX
   have hflow := (contMDiff_timeDependentFlowOf hcomplete le_rfl hX).continuous
   let e := periodicSolutionsEquivFixedPoints hX hT hT0.ne' s
   -- A periodic solution is contractible exactly when its loop over `[s, s + T]` is
@@ -639,9 +718,8 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
     exact hflow.comp (by fun_prop)
   have hY : IsClosed {x | ((s, s + T), x) ∈ timeDependentFlowDomain X ∧
       IsFixedPt (timeDependentFlowOf X s (s + T)) x} := by
-    have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
-      hflow.comp (by fun_prop : Continuous fun x : M ↦ ((s, s + T), x))
-    convert isClosed_fixedPoints hφ using 1
+    convert isClosed_fixedPoints (continuous_timeDependentFlowOf hcomplete le_rfl hX s (s + T))
+      using 1
     ext x
     simp [timeDependentFlowDomain_eq_univ hcomplete]
   -- The initial points of the contractible solutions form a closed set of nondegenerate fixed

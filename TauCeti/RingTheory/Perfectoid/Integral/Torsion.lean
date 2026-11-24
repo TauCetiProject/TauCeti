@@ -81,7 +81,8 @@ so `p θ(u) θ(w) = 0`, and `θ(u)` is a unit. -/
 private theorem natCast_mul_fontaineTheta_eq_zero {w : WittVector p (PreTilt A p)}
     (hw : teichmuller p (ξ.coeff 0) * w = 0) : (p : A) * fontaineTheta A p w = 0 := by
   have hξk : ξ ∈ RingHom.ker (fontaineTheta A p) := hξ ▸ mem_span_singleton_self ξ
-  obtain ⟨u, hu⟩ := exists_unit_eq_teichmuller_add_of_ker_fontaineTheta_eq_span hξ
+  obtain ⟨u, hu⟩ :=
+    isDistinguished_iff_exists_unit.mp (isDistinguished_of_ker_fontaineTheta_eq_span hξ)
   have h : fontaineTheta A p (ξ * w) = 0 := RingHom.mem_ker.mp (mul_mem_right w _ hξk)
   rw [hu, add_mul, hw, zero_add, map_mul, map_mul, map_natCast] at h
   have hθu : IsUnit (fontaineTheta A p u) := u.isUnit.map _
@@ -125,7 +126,8 @@ private theorem eq_zero_of_coeff_zero_mul_eq_zero_of_untilt_eq_zero {a : PreTilt
 private theorem exists_untilt_eq_of_natCast_mul_eq_zero {y : A} (hy : (p : A) * y = 0) :
     ∃ a : PreTilt A p, ξ.coeff 0 * a = 0 ∧ a.untilt = y := by
   have hξk : ξ ∈ RingHom.ker (fontaineTheta A p) := hξ ▸ mem_span_singleton_self ξ
-  obtain ⟨u, hu⟩ := exists_unit_eq_teichmuller_add_of_ker_fontaineTheta_eq_span hξ
+  obtain ⟨u, hu⟩ :=
+    isDistinguished_iff_exists_unit.mp (isDistinguished_of_ker_fontaineTheta_eq_span hξ)
   obtain ⟨w, rfl⟩ := surjective_fontaineTheta (p := p) y
   have hpw : (p : WittVector p (PreTilt A p)) * w ∈ span {ξ} := by
     rw [← hξ, RingHom.mem_ker, map_mul, map_natCast, hy]

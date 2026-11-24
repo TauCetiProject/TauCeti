@@ -6,7 +6,7 @@ Authors: Claude, Codex
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Integral
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # The `L²` pairing of symmetric kernels
@@ -203,7 +203,7 @@ theorem sq_rectIntegral_le_measureReal_mul_l2sq (K : SymmKernel Ω μ) (S T : Se
     (∫ p in S ×ˢ T, K p.1 p.2 ∂(μ.prod μ)) ^ 2
         ≤ (μ.prod μ).real (S ×ˢ T) *
             ∫ p in S ×ˢ T, K p.1 p.2 ^ 2 ∂(μ.prod μ) :=
-      MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ _
+      TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ _
         (measure_ne_top _ _)
         (K.integrable_sq μ).integrableOn
     _ ≤ (μ.prod μ).real (S ×ˢ T) * ∫ p, K p.1 p.2 ^ 2 ∂(μ.prod μ) := by

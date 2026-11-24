@@ -59,6 +59,9 @@ intended throughout.
   over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
   a complex Fredholm operator is Fredholm. Its index is computed by
   `ContinuousLinearMap.index_restrictScalars`.
+* `ContinuousLinearMap.IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq`: a
+  `𝕜'`-linear map whose underlying `𝕜`-linear map is Fredholm has finite-dimensional cokernel
+  over `𝕜'`.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -248,6 +251,21 @@ lemma IsFredholm.restrictScalars {T : E →L[𝕜'] F} (hT : IsFredholm T) :
     have : FiniteDimensional 𝕜 (F ⧸ T.range) := Module.Finite.trans 𝕜' _
     exact (Submodule.Quotient.restrictScalarsEquiv 𝕜 T.range).symm.finiteDimensional
   closedComplemented_ker := hT.closedComplemented_ker.restrictScalars 𝕜
+
+variable {𝕜} in
+omit [Module.Finite 𝕜 𝕜'] in
+/-- The cokernel of a `𝕜'`-linear map `f` whose underlying `𝕜`-linear map is a Fredholm operator
+`A` is finite-dimensional over `𝕜'`. For instance, the complex cokernel of a complex-linear map
+whose realification is Fredholm is finite-dimensional. -/
+theorem IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq {A : E →L[𝕜] F}
+    (hA : A.IsFredholm) {f : E →ₗ[𝕜'] F} (hf : f.restrictScalars 𝕜 = A) :
+    FiniteDimensional 𝕜' (F ⧸ LinearMap.range f) := by
+  have : FiniteDimensional 𝕜 (F ⧸ (LinearMap.range f).restrictScalars 𝕜) := by
+    rw [← LinearMap.range_restrictScalars, hf]
+    exact hA.finite_coker
+  have : FiniteDimensional 𝕜 (F ⧸ LinearMap.range f) :=
+    Module.Finite.equiv (Submodule.Quotient.restrictScalarsEquiv 𝕜 _)
+  exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' _
 
 end RestrictScalars
 

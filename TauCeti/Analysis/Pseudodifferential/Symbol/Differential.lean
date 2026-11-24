@@ -56,8 +56,9 @@ For the differential symbol of order `m`:
   of temperate growth whose symbol has compact spatial support, the extension of the quantization
   to the Bessel-potential space `H^r` is the differential operator acting on tempered
   distributions;
-* `TauCeti.ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id`:
-  its `H^{r,p}` counterpart for `1 < p < ∞` and smooth compactly supported scalar coefficients;
+* `toDistr_quantizeUniformBesselPotentialSpace_ofDifferentialSymbol_smul_id` in the namespace
+  `TauCeti.ClassicalSymbol`: its `H^{r,p}` counterpart for `1 < p < ∞` and smooth compactly
+  supported scalar coefficients;
 * `TauCeti.ClassicalSymbol.ofDifferentialOperator`: the classical symbol of a differential
   operator `D` of order at most `m` on the smooth real functions on `ℝⁿ` in Grothendieck's sense
   (`TauCeti.differentialOperators`, defined by iterated commutators with multiplication operators,
@@ -72,13 +73,23 @@ For the differential symbol of order `m`:
   `i ^ m` times the geometric principal symbol `TauCeti.smoothPrincipalSymbol` of `D` at the
   covector `⟪ξ, ·⟫` (`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialOperator`), so
   the two notions of ellipticity agree
-  (`TauCeti.ClassicalSymbol.isElliptic_ofDifferentialOperator_iff`);
+  (`TauCeti.ClassicalSymbol.isElliptic_ofDifferentialOperator_iff`). The symbol vanishes at every
+  position at which all outputs of `D` vanish
+  (`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperator_eq_zero`), so it has
+  compact spatial support when the outputs of `D` vanish outside a compact set
+  (`TauCeti.ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialOperator`);
 * `TauCeti.ClassicalSymbol.negLaplacian`: the classical symbol of the negative Laplacian
   `-∑ⱼ ∂ⱼ²`, with full symbol `‖ξ‖²` (`TauCeti.ClassicalSymbol.coefficient_toSymbol_negLaplacian`)
   and principal symbol `HomogeneousSymbol.normRpow _ _ V 2`
   (`TauCeti.ClassicalSymbol.principal_negLaplacian`); it is elliptic
   (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`), and its quantization is Mathlib's `-Δ` on
-  Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`).
+  Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`);
+* `TauCeti.ClassicalSymbol.ofLinear`: the classical symbol of order `1` of a first-order operator
+  `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u` with constant coefficients, given by a real-linear `L` of the frequency,
+  with full and principal symbol `L ξ` (`TauCeti.ClassicalSymbol.principal_ofLinear`); its
+  quantization is this operator on Schwartz input
+  (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofLinear`), and it is elliptic exactly when `L ξ`
+  is invertible at every nonzero frequency (`TauCeti.ClassicalSymbol.isElliptic_ofLinear_iff`).
 
 ## References
 
@@ -312,14 +323,14 @@ variable [FiniteDimensional ℂ V] [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 �
 `H^{r,p} → H^{r - m,p}` given by the quantization of its classical symbol is the differential
 operator acting on tempered distributions. This is the `H^{r,p}` counterpart of
 `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol`. -/
-theorem toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id
+theorem toDistr_quantizeUniformBesselPotentialSpace_ofDifferentialSymbol_smul_id
     {β : ι → CoordinateSpace n → ℂ} (hβ : ∀ i ∈ s, ContDiff ℝ ∞ (β i))
     (hβc : ∀ i ∈ s, HasCompactSupport (β i)) (r : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
     (u : H^{r, p}(CoordinateSpace n, V)) :
     ((ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ V)
-        (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.quantizeBesselPotentialSpace
+        (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.quantizeUniformBesselPotentialSpace
       (hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol m s v _ _ hk
-        fun i hi ↦ (hβc i hi).smul_right) r p u).toDistr =
+        fun i hi ↦ (hβc i hi).smul_right).isUniform r p u).toDistr =
       ∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) (∂^{v i} u.toDistr) := by
   set a := (ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ V)
     (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol
@@ -337,18 +348,16 @@ theorem toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id
     refine Finset.sum_congr rfl fun i hi ↦ ?_
     rw [SchwartzMap.smulLeftCLM_apply_apply (hgr i hi)]
     simp
-  have key : BesselPotentialSpace.toDistrCLM _ V _ p ∘L a.quantizeBesselPotentialSpace ha r p =
-      (∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
-        iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
-        BesselPotentialSpace.toDistrCLM _ V r p := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun w ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
-      Symbol.quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM ha r hp hp_top, hq,
-      SchwartzMap.toDistr_toBesselPotentialSpaceCLM, sum_apply, map_sum,
-      iteratedLineDerivOpCLM_apply,
-      TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
-      TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
-  simpa using congrArg (fun L ↦ L u) key
+  simpa using (ha.hasBesselPotentialSpaceExtension hp
+    hp_top).toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall hp_top
+    ((∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
+      iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
+      BesselPotentialSpace.toDistrCLM _ V r p) (fun w ↦ by
+      simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply, hq,
+        SchwartzMap.toDistr_toBesselPotentialSpaceCLM, sum_apply, map_sum,
+        iteratedLineDerivOpCLM_apply,
+        TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
+        TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]) u
 
 end BesselPotentialSpace
 
@@ -403,6 +412,72 @@ theorem principal_negLaplacian :
 theorem isElliptic_negLaplacian : (negLaplacian n V).IsElliptic := by
   rw [isElliptic_def, principal_negLaplacian]
   exact HomogeneousSymbol.isElliptic_normRpow _ _ _ _
+
+/-! ### First-order operators with constant coefficients -/
+
+/-- The classical symbol of order `1` with full symbol `L ξ`, for a continuous real-linear function
+`L` of the frequency: the symbol of the first-order operator `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u` with constant
+coefficients (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofLinear`). Its principal symbol is
+`HomogeneousSymbol.ofLinear L` (`TauCeti.ClassicalSymbol.principal_ofLinear`). -/
+def ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) : ClassicalSymbol n V W 1 :=
+  ofContDiffHomogeneous (fun p ↦ L p.2) (L.contDiff.comp contDiff_snd)
+    fun _ _ _ _ _ ↦ by rw [Real.rpow_one, map_smul]
+
+/-- The full symbol of `ClassicalSymbol.ofLinear L` is `L ξ`. -/
+@[simp]
+theorem coefficient_toSymbol_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W))
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (ofLinear L).toSymbol.coefficient p = L p.2 := by
+  rw [ofLinear, toSymbol_ofContDiffHomogeneous, Symbol.coefficient_ofContDiffHomogeneous]
+
+/-- The principal symbol of `ClassicalSymbol.ofLinear L` is the homogeneous symbol `L ξ`. -/
+@[simp]
+theorem principal_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) :
+    (ofLinear L).principal = HomogeneousSymbol.ofLinear _ L :=
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [ofLinear, principal_ofContDiffHomogeneous,
+      HomogeneousSymbol.coefficient_mk'_of_ne_zero _ _ _ hξ, HomogeneousSymbol.coefficient_ofLinear]
+
+/-- The full symbol `L ξ` is the differential symbol of `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u`. -/
+private theorem differentialSymbol_ofLinear (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W))
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    differentialSymbol (k := fun _ : Fin n ↦ 1) Finset.univ (fun j _ ↦ EuclideanSpace.single j 1)
+      (fun j _ ↦ -Complex.I • L (EuclideanSpace.single j 1)) p = L p.2 := by
+  rw [differentialSymbol_def]
+  conv_rhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr p.2]
+  simp only [map_sum, map_smul, EuclideanSpace.basisFun_apply, EuclideanSpace.basisFun_repr]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [smul_smul, ← Complex.coe_smul]
+  congr 1
+  simp only [EuclideanSpace.inner_single_right, one_mul, RCLike.conj_to_real, Finset.prod_const,
+    Finset.card_univ, Fintype.card_fin, pow_one]
+  linear_combination -(p.2.ofLp j : ℂ) * Complex.I_mul_I
+
+/-- **First-order operators with constant coefficients are pseudodifferential operators.** On
+Schwartz input, the quantization of `ClassicalSymbol.ofLinear L` is `u ↦ -i ∑ⱼ L(eⱼ) ∂ⱼ u`, with no
+smoothing remainder. -/
+theorem quantizeSchwartzValue_ofLinear [CompleteSpace V] [CompleteSpace W]
+    (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (ofLinear L).toSymbol.coefficient u x =
+      -Complex.I • ∑ j, L (EuclideanSpace.single j 1)
+        (∂_{(EuclideanSpace.single j 1 : CoordinateSpace n)} u x) := by
+  have h : (ofLinear L).toSymbol.coefficient =
+      differentialSymbol (k := fun _ : Fin n ↦ 1) Finset.univ
+        (fun j _ ↦ EuclideanSpace.single j 1)
+        (fun j _ ↦ -Complex.I • L (EuclideanSpace.single j 1)) :=
+    funext fun p ↦ by rw [coefficient_toSymbol_ofLinear, differentialSymbol_ofLinear]
+  rw [h, quantizeSchwartzValue_differentialSymbol, Finset.smul_sum]
+  simp [LineDeriv.iteratedLineDerivOp_one]
+
+/-- **Ellipticity of a first-order operator with constant coefficients.** The classical symbol
+`ClassicalSymbol.ofLinear L` is elliptic exactly when `L ξ` is invertible at every nonzero
+frequency. -/
+theorem isElliptic_ofLinear_iff (L : CoordinateSpace n →L[ℝ] (V →L[ℂ] W)) :
+    (ofLinear L).IsElliptic ↔ ∀ ξ, ξ ≠ 0 → (L ξ).IsInvertible := by
+  rw [isElliptic_def, principal_ofLinear, HomogeneousSymbol.isElliptic_iff]
+  simp only [HomogeneousSymbol.coefficient_ofLinear]
+  exact ⟨fun h ξ hξ ↦ h 0 ξ hξ, fun h _ ξ hξ ↦ h ξ hξ⟩
 
 end ClassicalSymbol
 
@@ -482,6 +557,23 @@ theorem coefficient_toSymbol_ofDifferentialOperator (x ξ : CoordinateSpace n) :
           ∏ i, (Complex.I * ξ i) ^ α i) • ContinuousLinearMap.id ℂ V := by
   rw [ofDifferentialOperator, coefficient_toSymbol_ofDifferentialSymbol,
     differentialSymbol_multiIndexWord, sum_biUnion_piAntidiag]
+
+/-- The full symbol of `ofDifferentialOperator V D` vanishes at every position `x` at which every
+output of `D` vanishes. -/
+theorem coefficient_toSymbol_ofDifferentialOperator_eq_zero {x : CoordinateSpace n}
+    (hD : ∀ f, D.val f x = 0) (ξ : CoordinateSpace n) :
+    (ofDifferentialOperator V D).toSymbol.coefficient (x, ξ) = 0 := by
+  rw [coefficient_toSymbol_ofDifferentialOperator]
+  refine sum_eq_zero fun k _ ↦ sum_eq_zero fun α _ ↦ ?_
+  simp [coordinateCoeff_def, hD]
+
+/-- If the outputs of `D` vanish outside a compact set `K`, then the symbol of `D` has compact
+spatial support. -/
+theorem hasCompactSpatialSupport_toSymbol_ofDifferentialOperator {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) (hD : ∀ x ∉ K, ∀ f, D.val f x = 0) :
+    (ofDifferentialOperator V D).toSymbol.HasCompactSpatialSupport :=
+  Symbol.hasCompactSpatialSupport_iff.2
+    ⟨K, hK, fun x hx ↦ coefficient_toSymbol_ofDifferentialOperator_eq_zero D (hD x hx)⟩
 
 /-- **Differential operators are pseudodifferential operators.** On Schwartz input `u`, the
 quantization of `ofDifferentialOperator V D` is the differential operator `D` acting on `V`-valued

@@ -22,6 +22,7 @@ derivations and powers in the associative algebra `Module.End R A`.
 * `Derivation.toLinearMapLieHom`: the inclusion of derivations into linear endomorphisms, as a
   morphism of Lie algebras.
 * `Derivation.toLinearMapLieHom_injective`: this morphism is injective.
+* `Derivation.lie_smul_smul`: the bracket `⁅a • D, b • D⁆ = (a * D b - b * D a) • D`.
 -/
 
 public section
@@ -30,7 +31,11 @@ namespace Derivation
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A]
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+section
+
+variable (R A)
 
 /-- The inclusion of derivations into `R`-linear endomorphisms, as a morphism of Lie algebras for
 the commutator bracket of `Module.End R A`. -/
@@ -40,7 +45,7 @@ def toLinearMapLieHom : Derivation R A A →ₗ⁅R⁆ Module.End R A where
   map_smul' _ _ := rfl
   map_lie' := commutator_coe_linear_map
 
-variable {R A}
+end
 
 /-- `toLinearMapLieHom` sends a derivation to its underlying endomorphism. -/
 @[simp]
@@ -51,5 +56,13 @@ theorem toLinearMapLieHom_apply (D : Derivation R A A) :
 /-- A derivation is determined by its underlying endomorphism. -/
 theorem toLinearMapLieHom_injective : Function.Injective (toLinearMapLieHom R A) :=
   fun _ _ h ↦ ext fun a ↦ by simpa using LinearMap.congr_fun h a
+
+/-- The Lie bracket of two scalar multiples `a • D` and `b • D` of a derivation `D` is
+`(a * D b - b * D a) • D`. -/
+theorem lie_smul_smul (D : Derivation R A A) (a b : A) :
+    ⁅a • D, b • D⁆ = (a * D b - b * D a) • D := by
+  ext c
+  simp only [commutator_apply, smul_apply, smul_eq_mul, leibniz]
+  ring
 
 end Derivation
