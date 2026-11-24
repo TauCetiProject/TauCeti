@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Core
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
+public import TauCeti.CategoryTheory.Core
 public import TauCeti.CategoryTheory.Monoidal.Skeleton
 
 /-!
@@ -21,14 +21,21 @@ is braided (resp. symmetric), so is `Core C`, and the inclusion is braided.
 A (braided) strong monoidal functor `F : C ⥤ D` induces a (braided) strong monoidal functor
 `F.core : Core C ⥤ Core D`, and the comparison isomorphisms `Functor.coreCompInclusionIso`,
 `Functor.coreId` and `Functor.coreComp` are monoidal natural isomorphisms. For a groupoid `C`
-the inclusion `Core C ⥤ C` is a braided monoidal equivalence.
+the inclusion `Core C ⥤ C` is moreover an equivalence of categories (proved for any groupoid in
+`TauCeti.CategoryTheory.Core`).
 
-Finally, since two objects are isomorphic in `Core C` exactly when they are isomorphic in `C`,
-the inclusion identifies the monoid of isomorphism classes `Skeleton (Core C)` with
-`Skeleton C` (`CategoryTheory.Core.skeletonMulEquiv`), naturally in strong monoidal functors.
+Finally, the bijection `CategoryTheory.Core.skeletonEquiv` between the isomorphism classes of
+`Core C` and of `C` is an isomorphism of monoids `Skeleton (Core C) ≃* Skeleton C`
+(`CategoryTheory.Core.skeletonMulEquiv`), natural in strong monoidal functors.
 
 This is the input to Quillen's group completion `S⁻¹S` of a symmetric monoidal category `S`,
 which is formed from the symmetric monoidal groupoid `Core S`.
+
+## Implementation notes
+
+The construction follows Mathlib's monoidal structure on `WideSubcategory`
+(`Mathlib/CategoryTheory/Monoidal/Widesubcategory.lean`), using `Monoidal.induced`,
+`BraidedCategory.ofFaithful` and `SymmetricCategory.ofFaithful`.
 
 ## References
 
@@ -36,7 +43,7 @@ which is formed from the symmetric monoidal groupoid `Core S`.
   Mathematics 145, AMS, 2013, Chapter IV, Definition 4.1 and Examples 4.1.1.
 -/
 
-@[expose] public section
+public section
 
 namespace CategoryTheory
 
@@ -144,24 +151,6 @@ end Braided
 instance instSymmetricCategory [SymmetricCategory C] : SymmetricCategory (Core C) :=
   .ofFaithful (inclusion C)
 
-section Groupoid
-
-variable [IsGroupoid C]
-
-/-- In a groupoid every morphism is an isomorphism, so the inclusion of the core is full. -/
-instance : (inclusion C).Full where
-  map_surjective f := ⟨⟨asIso f⟩, rfl⟩
-
-/-- The inclusion of the core is bijective on objects. -/
-instance : (inclusion C).EssSurj where
-  mem_essImage X := ⟨⟨X⟩, ⟨Iso.refl _⟩⟩
-
-/-- The core of a groupoid is equivalent to the groupoid via the inclusion. Since the inclusion
-is braided monoidal, this is a braided monoidal equivalence. -/
-instance : (inclusion C).IsEquivalence where
-
-end Groupoid
-
 end Core
 
 namespace Functor
@@ -224,23 +213,37 @@ instance Iso.instIsMonoidalCoreHom {D : Type u₂} [Category.{v₂} D] [Monoidal
 
 namespace Core
 
-/-- Two objects of `Core C` are isomorphic exactly when they are isomorphic in `C`, so the
-inclusion identifies the monoid of isomorphism classes of `Core C` with that of `C`. -/
+/-- The bijection `skeletonEquiv` between the isomorphism classes of `Core C` and of `C`, as an
+isomorphism of monoids. -/
 noncomputable def skeletonMulEquiv : Skeleton (Core C) ≃* Skeleton C :=
   .ofBijective (Skeleton.monoidHom (inclusion C)) <| by
-    refine ⟨fun X Y h ↦ ?_, fun X ↦ ⟨toSkeleton ⟨(fromSkeleton C).obj X⟩, ?_⟩⟩
-    · rw [← toSkeleton_fromSkeleton_obj X, ← toSkeleton_fromSkeleton_obj Y] at h ⊢
-      obtain ⟨e⟩ := toSkeleton_eq_toSkeleton_iff.1 (by simpa using h)
-      exact congr_toSkeleton_of_iso (isoMk e)
-    · simp [toSkeleton_fromSkeleton_obj]
+    convert skeletonEquiv.bijective using 1
+    ext X
+    rw [← toSkeleton_fromSkeleton_obj X]
+    simp
 
 @[simp]
 lemma skeletonMulEquiv_toSkeleton (X : Core C) :
     skeletonMulEquiv (toSkeleton X) = toSkeleton X.of :=
   Skeleton.monoidHom_toSkeleton (inclusion C) X
 
+@[simp]
+lemma skeletonMulEquiv_symm_toSkeleton (X : C) :
+    skeletonMulEquiv.symm (toSkeleton X) = toSkeleton (⟨X⟩ : Core C) :=
+  skeletonMulEquiv.symm_apply_eq.2 (skeletonMulEquiv_toSkeleton _).symm
+
+lemma toMonoidHom_skeletonMulEquiv :
+    (skeletonMulEquiv (C := C)).toMonoidHom = Skeleton.monoidHom (inclusion C) :=
+  (rfl)
+
+lemma toEquiv_skeletonMulEquiv : (skeletonMulEquiv (C := C)).toEquiv = skeletonEquiv :=
+  Equiv.ext fun X ↦ by
+    rw [← toSkeleton_fromSkeleton_obj X]
+    simp
+
 /-- The identification of the monoids of isomorphism classes of `Core C` and `C` is natural in
 strong monoidal functors. -/
+@[simp]
 lemma skeletonMulEquiv_monoidHom_core {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
     (F : C ⥤ D) [F.Monoidal] (X : Skeleton (Core C)) :
     skeletonMulEquiv (Skeleton.monoidHom F.core X) = Skeleton.monoidHom F (skeletonMulEquiv X) := by
