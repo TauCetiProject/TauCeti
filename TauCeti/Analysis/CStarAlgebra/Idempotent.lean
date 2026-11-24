@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import TauCeti.Algebra.Star.Projection.Idempotent
 public import TauCeti.Algebra.Ring.Idempotent.Units
+public import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # Idempotents and their range projections
@@ -16,7 +17,10 @@ Every idempotent `e` in a unital C⋆-algebra has a unique star projection `p` s
 `e * p = p` and `p * e = e`. Thus `e` and `p` generate the same principal right ideal.
 The projection is `e * star e * (1 - (e - star e)²)⁻¹`, and depends continuously and naturally
 on `e`. The unit `TauCeti.idempotentConjUnit e p` conjugates `e` to `p`; its value is
-`1 + e - p`, with inverse `1 - e + p`.
+`1 + e - p`, with inverse `1 - e + p`, so every idempotent is similar to its range projection
+(`IsIdempotentElem.isConj_idempotentRangeProjection`). This is how idempotents are replaced by
+projections before using constructions, such as unitary splittings, that make sense only for
+self-adjoint idempotents.
 
 Applied to matrix algebras this converts idempotent representatives of projective modules
 into projection representatives, without changing their range modules.
@@ -24,6 +28,7 @@ into projection representatives, without changing their range modules.
 ## References
 
 * Blackadar, *K-Theory for Operator Algebras*, second edition, Proposition 4.6.2.
+* I. Kaplansky, *Rings of Operators*, W. A. Benjamin (1968).
 -/
 
 public section
@@ -103,5 +108,20 @@ theorem idempotentRangeProjection_eq_iff (he : IsIdempotentElem e) {p : A} :
 theorem existsUnique_isStarProjection_mul_eq_right (he : IsIdempotentElem e) :
     ∃! p : A, IsStarProjection p ∧ e * p = p ∧ p * e = e :=
   he.existsUnique_isStarProjection_mul_eq_right_of_isUnit (isUnit_idempotentProjectionDenom e)
+
+/-- The range projection of an idempotent `e` is the only self-adjoint element `q` with
+`e * q = q` and `q * e = e`; idempotence of `q` is not assumed. -/
+theorem eq_idempotentRangeProjection_iff (he : IsIdempotentElem e) {q : A}
+    (hq : IsSelfAdjoint q) :
+    q = idempotentRangeProjection e ↔ e * q = q ∧ q * e = e := by
+  refine ⟨fun h ↦ h ▸ ⟨he.mul_idempotentRangeProjection, he.idempotentRangeProjection_mul⟩,
+    fun ⟨heq, hqe⟩ ↦ ?_⟩
+  exact hq.eq_of_mul_eq_right he.isStarProjection_idempotentRangeProjection.isSelfAdjoint
+    heq hqe he.mul_idempotentRangeProjection he.idempotentRangeProjection_mul
+
+/-- Every idempotent of a unital C⋆-algebra is similar to its range projection. -/
+theorem isConj_idempotentRangeProjection (he : IsIdempotentElem e) :
+    IsConj (idempotentRangeProjection e) e :=
+  isConj_of_mul_eq he.mul_idempotentRangeProjection he.idempotentRangeProjection_mul
 
 end IsIdempotentElem

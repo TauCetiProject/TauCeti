@@ -225,11 +225,24 @@ example : ¬ SoftplusSystem 0 0 1 := by
 example : SoftplusSystem 2 2 0 := by
   simp
 
+example : SoftplusSystem (-2) 0 0 := by
+  norm_num
+
 example : ¬ SoftplusSystem 2 1 0 := by
   simp
 
 example : ¬ SoftplusSystem 0 0 (-1) :=
   not_softplusSystem_of_neg (by norm_num)
+
+example : (2, 1, Real.log 2) ∈ cone :=
+  (le_log_iff_mem_cone two_pos).mp le_rfl
+
+example : (0 : ℝ) ≤ Real.log 0 ∧ (0, 1, 0) ∉ cone := by
+  simp
+
+example : (1, 1 / 2, Real.log 2 / 2) ∈ cone := by
+  rw [← le_mul_log_div_iff_mem_cone one_pos (by norm_num), one_div_one_div]
+  exact le_of_eq (by ring)
 
 example : -Real.log (1 / (1 + Real.exp (-(-Real.log 3)))) ≤ Real.log 4 := by
   rw [neg_log_one_div_one_add_exp_neg_le_iff_softplusSystem, neg_neg]
@@ -242,6 +255,26 @@ example {n : ℕ} (a x : Fin n → ℝ) (b t : ℝ) :
       SoftplusSystem ((∑ j, a j * x j) + b) t 1 :=
   log_one_add_exp_le_iff_softplusSystem
 
+example (a x : Fin 0 → ℝ) : SoftplusSystem ((∑ j, a j * x j) + 0) (Real.log 2) 1 := by
+  rw [← log_one_add_exp_le_iff_softplusSystem]
+  norm_num
+
+example : SoftplusSystem (Real.log 3 / 2) (Real.log 4 / 2) (1 / 2) ∧
+    -(1 / 2) * Real.log (1 / (1 + Real.exp (-(-Real.log 3 / 2) / (1 / 2)))) ≤ Real.log 4 / 2 := by
+  have h : SoftplusSystem (Real.log 3 / 2) (Real.log 4 / 2) (1 / 2) := by
+    refine ⟨3 / 8, 1 / 8, by norm_num, ?_, ?_⟩
+    · rw [mem_cone_iff_of_pos (by norm_num),
+        show (Real.log 3 / 2 - Real.log 4 / 2) / (1 / 2) = Real.log 3 - Real.log 4 by ring,
+        Real.exp_sub, Real.exp_log (by norm_num), Real.exp_log (by norm_num)]
+      norm_num
+    · rw [mem_cone_iff_of_pos (by norm_num),
+        show -(Real.log 4 / 2) / (1 / 2) = -Real.log 4 by ring,
+        Real.exp_neg, Real.exp_log (by norm_num)]
+      norm_num
+  refine ⟨h, ?_⟩
+  rw [neg_mul_log_one_div_one_add_exp_neg_div_le_iff_softplusSystem (by norm_num), neg_div, neg_neg]
+  exact h
+
 example (d s : Fin 0 → ℝ) :
     ∃ u : Fin 0 → ℝ, (∑ i ∈ (∅ : Finset (Fin 0)), d i * u i) ≤ 0 ∧
       ∀ i ∈ (∅ : Finset (Fin 0)), (u i, 1, s i) ∈ cone := by
@@ -253,6 +286,44 @@ example (d s : Fin 0 → ℝ) :
       ∀ i ∈ (∅ : Finset (Fin 0)), (u i, 1, s i) ∈ cone := by
   rw [← sum_mul_exp_le_iff_exists_mem_cone (s := s) (by simp)]
   norm_num
+
+example : (∑ j : Fin 2, ![2, 0] j * Real.exp (![Real.log 3, 0] j)) ≤ 6 := by
+  rw [sum_mul_exp_le_iff_exists_mem_cone (by simp [Fin.forall_fin_two])]
+  refine ⟨![3, 1], ?_, ?_⟩
+  · norm_num [Fin.sum_univ_two]
+  · simp [Fin.forall_fin_two, Real.exp_log]
+
+example {n : ℕ} (s : Fin n → ℝ) (L : ℝ) :
+    (∃ u : Fin n → ℝ, (∑ j, 0 * u j) ≤ L ∧ ∀ j ∈ Finset.univ, (u j, 1, s j) ∈ cone) ↔ 0 ≤ L := by
+  rw [← sum_mul_exp_le_iff_exists_mem_cone (fun _ _ ↦ le_rfl)]
+  simp
+
+example : ¬ ((-1) * Real.exp 0 ≤ (-2 : ℝ)) ∧ ∃ u : ℝ, (-1) * u ≤ -2 ∧ (u, 1, 0) ∈ cone := by
+  refine ⟨by norm_num, 2, by norm_num, ?_⟩
+  rw [mem_cone_one_iff, Real.exp_zero]
+  norm_num
+
+example : (∑ _j : Fin 1, 3 * (Real.exp (2 * Real.log 2 / 2) - 1)) ≤ 3 := by
+  rw [sum_mul_exp_div_sub_one_le_iff_exists_mem_cone (fun _ _ ↦ by norm_num)
+    (fun _ _ ↦ two_pos)]
+  refine ⟨fun _ ↦ 1, by norm_num, fun _ _ ↦ (mem_cone_mul_add_one_iff two_pos).mpr ?_⟩
+  norm_num [Real.exp_log two_pos]
+
+example : 3 * (Real.exp (2 * Real.log 2 / 2) - 1) - 3 / (2 * Real.log 2) * (2 * Real.log 2) = 0 ∧
+    3 * 1 - 3 / (2 * Real.log 2) * (2 * Real.log 2) = 0 := by
+  have hlog : 2 * Real.log 2 ≠ 0 := mul_ne_zero two_ne_zero (Real.log_pos one_lt_two).ne'
+  rw [mul_div_cancel_left₀ _ two_ne_zero, Real.exp_log two_pos, div_mul_cancel₀ _ hlog]
+  norm_num
+
+example {n : ℕ} (t x : Fin n → ℝ) (L : ℝ) (ht : ∀ j, 0 < t j) :
+    (∃ u : Fin n → ℝ, (∑ j, 0 * u j) ≤ L ∧
+      ∀ j ∈ Finset.univ, (t j * (u j + 1), t j, x j) ∈ cone) ↔ 0 ≤ L := by
+  rw [← sum_mul_exp_div_sub_one_le_iff_exists_mem_cone (fun _ _ ↦ le_rfl) (fun j _ ↦ ht j)]
+  simp
+
+example (d t x : Fin 0 → ℝ) :
+    ¬ ∃ u : Fin 0 → ℝ, (∑ j, d j * u j) ≤ -1 ∧ ∀ j, (t j * (u j + 1), t j, x j) ∈ cone := by
+  simp
 
 example {n : ℕ} (d t x s : Fin n → ℝ) (hd : ∀ j, 0 ≤ d j) (ht : ∀ j, 0 < t j) :
     (∑ j, d j * (Real.exp (x j / t j) - 1)) - (∑ j, s j * x j) ≤ 0 ↔
@@ -272,11 +343,31 @@ example {n : ℕ} (q x : Fin n → ℝ) {a : ℝ} (ha : 0 < a) (b c z : ℝ) :
       0 < b * z + c ∧ Real.log a + (∑ j, q j * x j) ≤ Real.log (b * z + c) :=
   Real.mul_exp_le_iff_log_add_le_log ha
 
-example : ¬ (1 * Real.exp 0 ≤ (0 : ℝ)) := by
-  rw [Real.mul_exp_le_iff_log_add_le_log zero_lt_one]
+example : 2 * Real.exp (Real.log 3) = 6 ∧
+    ∃ v : ℝ, 2 * v ≤ 6 ∧ (v, 1, Real.log 3) ∈ cone := by
+  rw [Real.exp_log (by norm_num)]
+  exact ⟨by norm_num, 3, by norm_num, by rw [mem_cone_one_iff, Real.exp_log (by norm_num)]⟩
+
+example : ¬ ∃ v : ℝ, 2 * v ≤ 0 ∧ (v, 1, Real.log 3) ∈ cone := by
+  rw [← mul_exp_le_iff_exists_mem_cone zero_le_two]
+  exact not_le.mpr (mul_pos two_pos (Real.exp_pos _))
+
+example : 2 * Real.exp (∑ _j : Fin 1, 1 * Real.log 3) ≤ -1 * -3 + 3 ∧
+    (∃ v : ℝ, 2 * v ≤ -1 * -3 + 3 ∧ (v, 1, ∑ _j : Fin 1, 1 * Real.log 3) ∈ cone) ∧
+    Real.log 2 + (∑ _j : Fin 1, 1 * Real.log 3) ≤ Real.log (-1 * -3 + 3) := by
+  have h : 2 * Real.exp (∑ _j : Fin 1, 1 * Real.log 3) ≤ -1 * -3 + 3 := by
+    simp only [Finset.univ_unique, one_mul, Finset.sum_const, Finset.card_singleton, one_smul]
+    rw [Real.exp_log (by norm_num)]
+    norm_num
+  exact ⟨h, (mul_exp_le_iff_exists_mem_cone zero_le_two).mp h,
+    ((Real.mul_exp_le_iff_log_add_le_log two_pos).mp h).2⟩
+
+example (q x : Fin 0 → ℝ) : ¬ (1 * Real.exp (∑ j, q j * x j) ≤ 0 * 0 + 0) ∧
+    ¬ (0 < (0 : ℝ) * 0 + 0 ∧ Real.log 1 + (∑ j, q j * x j) ≤ Real.log (0 * 0 + 0)) := by
   simp
 
-example : (1 * ((Real.exp (-1) - 1) + 1), 1, -1) ∈ cone :=
-  (mem_cone_mul_add_one_iff zero_lt_one).mpr (by simp)
+example : (1 * ((Real.exp (-1) - 1) + 1), 1, -1) ∈ cone ∧ Real.exp (-1) - 1 < 0 :=
+  ⟨(mem_cone_mul_add_one_iff zero_lt_one).mpr (by simp),
+    sub_neg.mpr (Real.exp_lt_one_iff.mpr (by norm_num))⟩
 
 end TauCeti.ExponentialCone

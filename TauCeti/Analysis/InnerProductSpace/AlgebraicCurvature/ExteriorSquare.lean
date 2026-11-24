@@ -45,7 +45,8 @@ Under this dictionary, `curvatureEndomorphism (kulkarniNomizu h k) =
   `TauCeti.FourTensor.curvatureEndomorphism_constantCurvature`,
   `TauCeti.FourTensor.two_mul_trace_curvatureEndomorphism_comp_symmMap₂_id_of_antisymm`,
   `TauCeti.FourTensor.scalar_eq_two_mul_trace_curvatureEndomorphism_of_antisymm`,
-  `ContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap`, and
+  `ContinuousLinearMap.curvatureEndomorphism_compContinuousLinearMap`,
+  `ContinuousLinearMap.inner_curvatureEndomorphism_compContinuousLinearMap`, and
   `LinearIsometryEquiv.map_comp_curvatureEndomorphism_compContinuousLinearMap`.
 
 ## References
@@ -327,6 +328,16 @@ theorem curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) (r : F
     simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_left,
       exteriorPower.map_apply_ιMulti_two, inner_curvatureEndomorphism_ιMulti,
       compContinuousLinearMap_apply_vec, ContinuousLinearMap.coe_coe]
+
+/-- The bivector form of the pullback of a four-tensor along `f : W →L[ℝ] V` evaluates the bivector
+form of `r` on the images under `exteriorPower.map 2 f`. -/
+theorem inner_curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) (r : FourTensor V)
+    (ω ω' : ⋀[ℝ]^2 W) :
+    ⟪curvatureEndomorphism (r.compContinuousLinearMap fun _ ↦ f) ω, ω'⟫ =
+      ⟪curvatureEndomorphism r (exteriorPower.map 2 f.toLinearMap ω),
+        exteriorPower.map 2 f.toLinearMap ω'⟫ := by
+  rw [f.curvatureEndomorphism_compContinuousLinearMap, LinearMap.comp_apply,
+    LinearMap.adjoint_inner_left, LinearMap.comp_apply]
 
 end ContinuousLinearMap
 

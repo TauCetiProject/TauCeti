@@ -273,7 +273,7 @@ theorem infiniteAdeleNorm_comp (M : Type*) [Field M] [NumberField M] [Algebra L 
   refine Fintype.prod_equiv e _ _ fun p ↦ ?_
   let _ : p.2.val.LiesOver p.1.val := p.2.property
   let _ : p.1.val.LiesOver v := p.1.property
-  let _ : p.2.val.LiesOver v := LiesOver.trans p.2.val p.1.val v
+  let _ : p.2.val.LiesOver v := AbsoluteValue.LiesOver.trans v.val p.1.val.val p.2.val.val
   -- As in `finiteAdeleNorm_comp`, the completion algebra at `(e p).1` depends on `(e p).2`, so
   -- rewrite the whole subtype element rather than its projection.
   rw [show e p = ⟨p.2.val, inferInstance⟩ from

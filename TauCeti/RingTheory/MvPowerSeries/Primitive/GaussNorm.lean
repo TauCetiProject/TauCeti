@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Primitive.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 import TauCeti.Analysis.Normed.Field.NatCast
-import TauCeti.Data.Finsupp.Interval
+import TauCeti.Order.Filter.Cofinite.Basic
 
 /-!
 # Termwise primitives of restricted power series
@@ -134,7 +134,8 @@ theorem IsRestricted.primitive (hc' : ∀ j, 0 ≤ c' j) (hle : ∀ j, c' j ≤ 
   obtain ⟨C, -, hC⟩ := exists_norm_coeff_primitive_mul_prod_le (K := K) c c' i hc' hle hlt
   refine squeeze_zero (fun n ↦ mul_nonneg (norm_nonneg _)
     (Finset.prod_nonneg fun j _ ↦ pow_nonneg (hc' j) _)) (hC f) ?_
-  simpa using (hf.comp (tendsto_sub_cofinite (single i 1))).const_mul C
+  classical
+  simpa using (hf.comp (tendsto_tsub_const_cofinite (single i 1))).const_mul C
 
 end NormedField
 

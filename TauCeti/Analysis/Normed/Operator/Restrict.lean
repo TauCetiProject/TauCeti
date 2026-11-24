@@ -17,6 +17,9 @@ the norm of the restriction is the supremum of `‖T x‖` over the vectors `x �
 An operator within distance `1` of one fixing `M` restricts to an injective map on `M`
 (`ContinuousLinearMap.injective_comp_subtypeL_of_norm_sub_lt_one`).
 
+A bounded bilinear map whose values lie in a submodule is bounded into that submodule
+(`ContinuousLinearMap.codRestrictBilin`).
+
 A bounded bilinear action preserving a submodule restricts to a bounded action on that
 submodule, with operator norm at most that of the original action.
 -/
@@ -28,6 +31,25 @@ namespace ContinuousLinearMap
 variable {𝕜 B E : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup B] [NormedSpace 𝕜 B]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A continuous bilinear map whose values lie in a submodule is continuous into that submodule. -/
+noncomputable def codRestrictBilin {F G : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] (T : B →L[𝕜] F →L[𝕜] G)
+    (p : Submodule 𝕜 G) (hT : ∀ x y, T x y ∈ p) : B →L[𝕜] F →L[𝕜] p :=
+  (T.toLinearMap₁₂.codRestrict₂ p.subtype p.injective_subtype
+    (fun x y ↦ by simpa using hT x y)).mkContinuous₂ ‖T‖ fun x y ↦ by
+      exact (congrArg norm (LinearMap.codRestrict₂_apply T.toLinearMap₁₂ p.subtype
+        p.injective_subtype (fun x y ↦ by simpa using hT x y) x y)).trans_le (T.le_opNorm₂ x y)
+
+@[simp]
+theorem coe_codRestrictBilin_apply {F G : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] (T : B →L[𝕜] F →L[𝕜] G)
+    (p : Submodule 𝕜 G) (hT : ∀ x y, T x y ∈ p) (x : B) (y : F) :
+    (T.codRestrictBilin p hT x y : G) = T x y := by
+  unfold codRestrictBilin
+  exact (congrArg Subtype.val (LinearMap.mkContinuous₂_apply _ _ x y)).trans
+    (LinearMap.codRestrict₂_apply T.toLinearMap₁₂ p.subtype p.injective_subtype
+      (fun x y ↦ by simpa using hT x y) x y)
 
 section Subspace
 

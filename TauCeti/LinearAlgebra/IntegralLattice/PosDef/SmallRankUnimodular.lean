@@ -175,7 +175,7 @@ six.** -/
 theorem six_le_finrank_of_vectorsOfNorm_one_eq_empty [Nontrivial L]
     (h1 : L.vectorsOfNorm 1 = ∅) : 6 ≤ finrank ℤ L := by
   by_contra! hn
-  exact hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) (by exact_mod_cast h1)
+  exact hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) h1
     (hL.minimum_eq_one_of_isUnimodular_of_finrank_le_five hU (by omega))
 
 /-- **A nonzero positive definite unimodular lattice of rank at most eight without vectors of norm
@@ -185,7 +185,7 @@ theorem minimum_eq_two_of_vectorsOfNorm_one_eq_empty [Nontrivial L]
   have hle := hL.minimum_le_two_of_isUnimodular_of_finrank_le_eight hU hn
   have hpos := hL.minimum_pos
   have hne :=
-    hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) (by exact_mod_cast h1)
+    hL.isPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (n := 1) h1
   omega
 
 /-- **A nonzero even positive definite unimodular lattice of rank at most eight has minimum
@@ -405,7 +405,7 @@ theorem nonempty_isometry_typeE₈RootLattice_of_isEven (he : L.IsEven)
     (hn : finrank ℤ L = 8) : Nonempty (Isometry typeE₈RootLattice L) := by
   have : Nontrivial L := Module.nontrivial_of_finrank_pos (R := ℤ) (by omega)
   exact hL.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty hU
-    (by exact_mod_cast IsEven.vectorsOfNorm_eq_empty_of_not_even L he (n := 1) (by decide))
+    (IsEven.vectorsOfNorm_eq_empty_of_not_even L he (n := 1) (by decide))
     (by omega)
 
 end IsPosDef

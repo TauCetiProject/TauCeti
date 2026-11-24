@@ -85,6 +85,8 @@ likewise for `(det E)^*` and `det E ⊗ (det F)^*`.
 * `TauCeti.isComplexPositive_iff`: complex positivity is computed by any complex basis.
 * `TauCeti.isComplexPositive_iff_of_orientation_eq`: complex positivity is
   `TauCeti.complexOrientation`, computed by any real basis in that orientation.
+* `TauCeti.isComplexPositive_ιMulti_of_subsingleton`: the empty exterior product of a zero complex
+  vector space is complex positive.
 * `TauCeti.IsComplexPositive.exists_pos_smul_eq`, `TauCeti.IsComplexPositive.not_neg`,
   `TauCeti.isComplexPositive_or_isComplexPositive_neg`: complex positivity is an orientation of
   the line `det E`; similarly for `(det E)^*` and `det E ⊗ (det F)^*`.
@@ -380,6 +382,14 @@ complex positive `x ∈ det E` and a complex positive functional `φ` on `det F`
 def IsComplexPositiveTMulDual (t : detLine ℝ E ⊗[ℝ] Dual ℝ (detLine ℝ F)) : Prop :=
   ∃ (x : detLine ℝ E) (φ : Dual ℝ (detLine ℝ F)), IsComplexPositive x ∧
     IsComplexPositiveDual φ ∧ t = x ⊗ₜ φ
+
+omit [IsScalarTower ℝ ℂ E] [IsScalarTower ℝ ℂ F] in
+/-- An element of `det E ⊗ (det F)^*` is complex positive exactly when it is `x ⊗ φ` for a complex
+positive `x` and a complex positive functional `φ`. -/
+theorem isComplexPositiveTMulDual_iff :
+    IsComplexPositiveTMulDual t ↔ ∃ (x : detLine ℝ E) (φ : Dual ℝ (detLine ℝ F)),
+      IsComplexPositive x ∧ IsComplexPositiveDual φ ∧ t = x ⊗ₜ φ :=
+  Iff.rfl
 
 omit [IsScalarTower ℝ ℂ E] [IsScalarTower ℝ ℂ F] in
 /-- The tensor product of a complex positive element and a complex positive functional is complex

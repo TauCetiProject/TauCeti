@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -16,13 +17,15 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 The trivial bundle `Bundle.Trivial B F` has the single global trivialization
 `Bundle.Trivial.trivialization B F`, so a map into its total space is smooth (or differentiable at
 a point) exactly when its base map and its fibre map into `F` are; in particular its constant
-sections are smooth, and a section is differentiable at a point exactly when its fibre map is
-(`Bundle.Trivial.mdifferentiableAt_section_iff`). `Bundle.Trivial.homeomorphProd` upgrades to a
-`C^n` diffeomorphism `Bundle.Trivial.diffeomorphProd` between `TotalSpace F (Bundle.Trivial B F)`
-and `B × F`. When the fibre `W` is instead a finite-dimensional Hausdorff topological module over a
-complete nontrivially normed field `𝕜` without a fixed norm, `TauCeti.TrivialModel 𝕜 W` supplies
-`Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal coordinate model fibre equipping `Bundle.Trivial B W`
-with a `C^n` vector bundle structure without `AddCommGroup` diamonds on `W`.
+sections are smooth, the underlying `F`-valued function of a smooth section is smooth
+(`ContMDiffSection.contMDiff_coe_trivial`), and a section is differentiable at a point exactly when
+its fibre map is (`Bundle.Trivial.mdifferentiableAt_section_iff`). `Bundle.Trivial.homeomorphProd`
+upgrades to a `C^n` diffeomorphism `Bundle.Trivial.diffeomorphProd` between
+`TotalSpace F (Bundle.Trivial B F)` and `B × F`. When the fibre `W` is instead a finite-dimensional
+Hausdorff topological module over a complete nontrivially normed field `𝕜` without a fixed norm,
+`TauCeti.TrivialModel 𝕜 W` supplies `Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal coordinate model
+fibre equipping `Bundle.Trivial B W` with a `C^n` vector bundle structure without `AddCommGroup`
+diamonds on `W`.
 
 The topology, fibre bundle, vector bundle, and `C^n` vector bundle instances for
 `TauCeti.TrivialModel` directly adapt Mathlib's `Bundle.Trivial.fiberBundle`
@@ -97,6 +100,11 @@ omit [TopologicalSpace B] in
 /-- On the trivial line bundle, a function times the constant section `1` is the function. -/
 protected theorem smul_one (σ : B → 𝕜) : (σ • (1 : B → 𝕜) : Π y : B, Trivial B 𝕜 y) = σ :=
   funext fun _ ↦ mul_one _
+
+/-- The underlying `F`-valued function of a smooth section of the trivial bundle is smooth. -/
+theorem _root_.ContMDiffSection.contMDiff_coe_trivial (s : Cₛ^n⟮I; F, Trivial B F⟯) :
+    ContMDiff I 𝓘(𝕜, F) n (fun x ↦ (s x : F)) :=
+  (contMDiff_mk_iff.1 s.contMDiff).2
 
 section Diffeomorph
 

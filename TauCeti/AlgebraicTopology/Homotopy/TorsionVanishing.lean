@@ -11,7 +11,9 @@ public import TauCeti.AlgebraicTopology.Homotopy.AcyclicCover
 import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.AlgebraicTopology.EilenbergMacLane.Torsion
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
+import TauCeti.AlgebraicTopology.PathComponent
 import TauCeti.AlgebraicTopology.Singular.Coefficients.FlatBaseChange
+import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!
 # Homotopy groups of spaces with torsion homology
@@ -46,6 +48,13 @@ mod-two vanishing theorem
   since the order of every element of `A` is a unit of `S⁻¹ℤ`
   (`Module.IsTorsion'.isUnit_addOrderOf`).
 
+Since a path component is simply connected exactly when the fundamental group at any of its points
+is trivial (`TauCeti.simplyConnectedSpace_pathComponent_iff`), the theorem also applies to a single
+path component: if the fundamental group of `Y` at `y` is trivial and the path component of `y`
+has the `S⁻¹ℤ`-homology of a point, every `πₙ₊₂(Y, y)` is `S`-torsion
+(`TauCeti.isTorsion'_homotopyGroup_of_subsingleton_singularHomology_pathComponent`). No hypothesis
+is made on the other path components of `Y`.
+
 ## Main results
 
 * `TauCeti.isTorsion'_homotopyGroup_of_subsingleton_singularHomology`: the homotopy groups of a
@@ -54,6 +63,9 @@ mod-two vanishing theorem
   simply connected space with `S`-torsion reduced integral homology are `S`-torsion.
 * `TauCeti.isMulTorsion_homotopyGroup_of_isAddTorsion_singularHomology`: the homotopy groups of a
   simply connected space with torsion reduced integral homology are torsion groups.
+* `TauCeti.isTorsion'_homotopyGroup_of_subsingleton_singularHomology_pathComponent`: if the
+  fundamental group of `Y` at `y` is trivial and the path component of `y` has the homology of a
+  point over `S⁻¹ℤ`, the higher homotopy groups of `Y` at `y` are `S`-torsion.
 
 ## References
 
@@ -132,5 +144,19 @@ theorem isMulTorsion_homotopyGroup_of_isAddTorsion_singularHomology {Y : Type}
     (isTorsion'_homotopyGroup_of_isTorsion'_singularHomology (nonZeroDivisors ℤ)
       (fun i ↦ isAddTorsion_iff_isTorsion_int.1 (hY i)) y n)
   exact fun g ↦ isOfFinAddOrder_ofMul_iff.1 (hπ (Additive.ofMul g))
+
+/-- **Serre's theorem modulo `S`-torsion for a path component.** Let `S` be a submonoid of `ℤ` and
+`k` a localization of `ℤ` at `S`. If the fundamental group of `Y` at `y` is trivial and the path
+component of `y` has the `k`-homology of a point, then every homotopy group `πₙ₊₂(Y, y)` is
+`S`-torsion. -/
+theorem isTorsion'_homotopyGroup_of_subsingleton_singularHomology_pathComponent (k : Type)
+    [CommRing k] [Algebra ℤ k] [IsLocalization S k] {Y : Type} [TopologicalSpace Y] (y : Y)
+    [Subsingleton (FundamentalGroup Y y)]
+    (hY : ∀ i, Subsingleton
+      (((singularChains k).obj (TopCat.of (pathComponent y))).homology (i + 1)))
+    (n : ℕ) : Module.IsTorsion' (Additive (π_ (n + 2) Y y)) S :=
+  have := (simplyConnectedSpace_pathComponent_iff y).2 ‹_›
+  (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).toAdditive.isTorsion'_iff.1
+    (isTorsion'_homotopyGroup_of_subsingleton_singularHomology S k hY (pathComponentSelf y) n)
 
 end TauCeti

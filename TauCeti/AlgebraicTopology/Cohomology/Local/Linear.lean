@@ -17,9 +17,12 @@ coefficient module `N` is arbitrary. The formula holds in every degree, includin
 for a zero-dimensional space.
 
 In particular, orientation-preserving linear changes of coordinates fix every local
-cohomology class, whereas orientation-reversing ones negate it. This is the transition
-formula needed to compare the local fibre generators of an oriented Thom class. In odd
-dimension the antipodal map `x ↦ -x` therefore acts by `-1`
+cohomology class, whereas orientation-reversing ones negate it. So two continuous linear
+isomorphisms `f f' : V ≃ E` pull a class of `Hⁿ(E, E ∖ {0})` back to classes that differ by the
+sign of the determinant of `f⁻¹ ≫ f'`
+(`ContinuousLinearEquiv.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`). This is
+the transition formula needed to compare the local fibre generators of an oriented Thom class. In
+odd dimension the antipodal map `x ↦ -x` therefore acts by `-1`
 (`TauCeti.singularCohomologyMap_neg_complZeroPairIso_hom`).
 
 The proof uses the determinant action on local homology in
@@ -64,6 +67,29 @@ theorem singularCohomologyMap_continuousLinearMap_compl_zero (f : E →L[ℝ] E)
   rw [TopPair.singularKronecker_naturality,
     singularHomologyMap_continuousLinearMap_compl_zero]
   simp
+
+variable {R N} in
+/-- **Two linear isomorphisms onto `E` read local cohomology classes up to a sign.** For continuous
+linear equivalences `f f' : V ≃L[ℝ] E`, pulling a class of `Hⁿ(E, E ∖ {0}; R, N)` back along `f'`
+gives its pull-back along `f` multiplied by the sign of the determinant of `f⁻¹ ≫ f'`. -/
+theorem _root_.ContinuousLinearEquiv.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul
+    {V : Type w} [TopologicalSpace V] [AddCommMonoid V] [Module ℝ V] (f f' : V ≃L[ℝ] E) (n : ℕ)
+    (c : (TopPair.ofSubset (X := TopCat.of E) ({0}ᶜ : Set E)).singularCohomology R k N n) :
+    TopPair.singularCohomologyMap f'.complZeroPairIso.hom n c =
+      (SignType.sign ((f.symm.trans f' : E ≃L[ℝ] E) : E →L[ℝ] E).det : ℤ) •
+        TopPair.singularCohomologyMap f.complZeroPairIso.hom n c := by
+  set A := f.symm.trans f'
+  have hA : Set.MapsTo (A : E →L[ℝ] E) ({0}ᶜ : Set E) {0}ᶜ := A.mapsTo_compl_zero
+  -- `f'` is `f` followed by the automorphism `A = f⁻¹ ≫ f'` of `E`, which acts by its sign.
+  have hcomp : f'.complZeroPairIso.hom =
+      f.complZeroPairIso.hom ≫
+        TopPair.ofSubsetMap (TopCat.ofHom ((A : E →L[ℝ] E) : C(E, E))) hA := by
+    have h : f' = f.trans A := by ext; simp [A]
+    rw [h, ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom]
+    exact congrArg _ (ContinuousLinearEquiv.complZeroPairIso_hom _)
+  rw [hcomp, TopPair.singularCohomologyMap_comp,
+    singularCohomologyMap_continuousLinearMap_compl_zero, Preadditive.zsmul_comp, Category.id_comp]
+  exact congr($(ModuleCat.hom_zsmul _ _) c)
 
 /-- **The antipodal map acts by `-1` in odd dimension.** For `E` of odd finite dimension, `x ↦ -x`
 acts as `-1` on `Hᵈ(E, E ∖ {0}; R, N)` in every degree `d`, by the sign of
