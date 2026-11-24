@@ -570,17 +570,6 @@ section PrimePower
 
 variable {p a : ℕ} [hp : Fact p.Prime] {ζ : K}
 
-/-- A subgroup of `Kˣ` containing the units with values `z ≠ 0` and `x` contains the unit with
-value `z ^ k * x`. -/
-private theorem mem_of_val_eq_zpow_mul {H : Subgroup Kˣ} {z x : K} (hz0 : z ≠ 0)
-    (hz : ∀ u : Kˣ, (u : K) = z → u ∈ H) (hx : ∀ u : Kˣ, (u : K) = x → u ∈ H) {k : ℤ} {u : Kˣ}
-    (hu : (u : K) = z ^ k * x) : u ∈ H := by
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    exact u.ne_zero (by rw [hu, mul_zero])
-  rw [show u = Units.mk0 z hz0 ^ k * Units.mk0 x hx0 from Units.ext (by simp [hu])]
-  exact mul_mem (zpow_mem (hz _ rfl) k) (hx _ rfl)
-
 /-- If `ζ` is a primitive `p ^ a`-th root of unity, every difference `1 - ζ ^ b` with
 `0 < b < p ^ a` lies in any subgroup of `Kˣ` containing `1 - ζ` and the ratios
 `(ζ ^ c - 1) / (ζ - 1)` with `c` prime to `p`: write `b = p ^ r * c` with `p ∤ c` and factor
