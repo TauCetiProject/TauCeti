@@ -214,9 +214,9 @@ theorem _root_.ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left {X : Ty
     [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     (Φ : E →L[𝕜] F) (Ψ : F →L[𝕜] E) (hΨΦ : Function.LeftInverse Ψ Φ) {k : X → E}
     {D : X →L[𝕜] F} {y : X} (hD : HasFDerivAt (Φ ∘ k) D y) : Φ.comp (Ψ.comp D) = D := by
-  have hk : Ψ ∘ (Φ ∘ k) = k := funext fun u ↦ hΨΦ (k u)
-  have h : HasFDerivAt k (Ψ.comp D) y := by simpa only [hk] using Ψ.hasFDerivAt.comp y hD
-  exact (Φ.hasFDerivAt.comp y h).unique hD
+  rw [← hD.fderiv, Φ.fderiv_comp_left_of_leftInverse Ψ hΨΦ k y]
+  ext v
+  simp [hΨΦ _]
 
 end TauCeti
 

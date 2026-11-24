@@ -27,9 +27,8 @@ one-sided quotient slope at any point, although they are real-linear.
   slope `b` at `q` exactly when `b = 0` and `g` has real derivative `0` at `q`.
 * `TauCeti.leftQuotientDifferentiableAt_coe_comp_iff` and its right counterpart: some slope
   exists exactly when the real derivative of `g` at `q` is `0`.
-* `HasFDerivAt.not_leftQuotientDifferentiableAt_coe_comp`,
-  `HasFDerivAt.not_hasLeftQuotientFDerivAt_coe_comp` and their right counterparts: a nonzero real
-  derivative excludes every one-sided slope.
+* `HasFDerivAt.not_leftQuotientDifferentiableAt_coe_comp` and its right counterpart: a nonzero
+  real derivative excludes every one-sided slope.
 * `TauCeti.not_leftQuotientDifferentiableAt_re`, `TauCeti.not_hasLeftQuotientFDerivAt_re`, their
   right counterparts and the analogues for `imI`, `imJ` and `imK`: the coordinate projections have
   no one-sided slope at any point.
@@ -54,12 +53,12 @@ theorem hasLeftQuotientFDerivAt_coe_comp_iff :
     HasLeftQuotientFDerivAt (fun x ↦ (g x : ℍ)) q b ↔ b = 0 ∧ HasFDerivAt g (0 : ℍ →L[ℝ] ℝ) q := by
   refine ⟨fun hb ↦ ?_, fun ⟨hb, hg⟩ ↦ ?_⟩
   · obtain rfl : b = 0 := by
-      -- Otherwise the derivative value `(i * b⁻¹) * b = i` would be real.
+      -- Otherwise the derivative value `h * b = i` would be real for some `h`.
       by_contra hb0
-      have h := Quaternion.coe_re_of_hasFDerivAt_coe_comp hb.hasFDerivAt (⟨0, 1, 0, 0⟩ * b⁻¹)
-      simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply', mul_assoc,
-        inv_mul_cancel₀ hb0, mul_one] at h
-      simpa using congrArg QuaternionAlgebra.imI h
+      obtain ⟨h, hh⟩ := (mulRight_bijective₀ b hb0).surjective ⟨0, 1, 0, 0⟩
+      have h' := Quaternion.coe_re_of_hasFDerivAt_coe_comp hb.hasFDerivAt h
+      simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply', hh] at h'
+      simpa using congrArg QuaternionAlgebra.imI h'
     refine ⟨rfl, Quaternion.hasFDerivAt_coe_comp_iff.mp ?_⟩
     simpa [hasLeftQuotientFDerivAt_iff_hasFDerivAt] using hb
   · simpa [hb, hasLeftQuotientFDerivAt_iff_hasFDerivAt] using
@@ -71,11 +70,12 @@ theorem hasRightQuotientFDerivAt_coe_comp_iff :
     HasRightQuotientFDerivAt (fun x ↦ (g x : ℍ)) q b ↔ b = 0 ∧ HasFDerivAt g (0 : ℍ →L[ℝ] ℝ) q := by
   refine ⟨fun hb ↦ ?_, fun ⟨hb, hg⟩ ↦ ?_⟩
   · obtain rfl : b = 0 := by
-      -- Otherwise the derivative value `b * (b⁻¹ * i) = i` would be real.
+      -- Otherwise the derivative value `b * h = i` would be real for some `h`.
       by_contra hb0
-      have h := Quaternion.coe_re_of_hasFDerivAt_coe_comp hb.hasFDerivAt (b⁻¹ * ⟨0, 1, 0, 0⟩)
-      simp only [ContinuousLinearMap.mul_apply', ← mul_assoc, mul_inv_cancel₀ hb0, one_mul] at h
-      simpa using congrArg QuaternionAlgebra.imI h
+      obtain ⟨h, hh⟩ := (mulLeft_bijective₀ b hb0).surjective ⟨0, 1, 0, 0⟩
+      have h' := Quaternion.coe_re_of_hasFDerivAt_coe_comp hb.hasFDerivAt h
+      simp only [ContinuousLinearMap.mul_apply', hh] at h'
+      simpa using congrArg QuaternionAlgebra.imI h'
     refine ⟨rfl, Quaternion.hasFDerivAt_coe_comp_iff.mp ?_⟩
     simpa [hasRightQuotientFDerivAt_iff_hasFDerivAt] using hb
   · simpa [hb, hasRightQuotientFDerivAt_iff_hasFDerivAt] using
@@ -110,20 +110,6 @@ theorem HasFDerivAt.not_rightQuotientDifferentiableAt_coe_comp {g : ℍ → ℝ}
     {q : ℍ} (hg : HasFDerivAt g g' q) (hg' : g' ≠ 0) :
     ¬TauCeti.RightQuotientDifferentiableAt (fun x ↦ (g x : ℍ)) q := fun h ↦
   hg' (hg.unique (TauCeti.rightQuotientDifferentiableAt_coe_comp_iff.mp h))
-
-/-- A real-valued function with a nonzero real derivative at `q` has no left quotient slope `b` at
-`q`. -/
-theorem HasFDerivAt.not_hasLeftQuotientFDerivAt_coe_comp {g : ℍ → ℝ} {g' : ℍ →L[ℝ] ℝ}
-    {q : ℍ} (hg : HasFDerivAt g g' q) (hg' : g' ≠ 0) (b : ℍ) :
-    ¬TauCeti.HasLeftQuotientFDerivAt (fun x ↦ (g x : ℍ)) q b := fun h ↦
-  hg.not_leftQuotientDifferentiableAt_coe_comp hg' h.leftQuotientDifferentiableAt
-
-/-- A real-valued function with a nonzero real derivative at `q` has no right quotient slope `b`
-at `q`. -/
-theorem HasFDerivAt.not_hasRightQuotientFDerivAt_coe_comp {g : ℍ → ℝ} {g' : ℍ →L[ℝ] ℝ}
-    {q : ℍ} (hg : HasFDerivAt g g' q) (hg' : g' ≠ 0) (b : ℍ) :
-    ¬TauCeti.HasRightQuotientFDerivAt (fun x ↦ (g x : ℍ)) q b := fun h ↦
-  hg.not_rightQuotientDifferentiableAt_coe_comp hg' h.rightQuotientDifferentiableAt
 
 namespace TauCeti
 
