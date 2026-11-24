@@ -315,8 +315,7 @@ theorem ContDiffOn.contDiffOn_iteratedFDeriv_partial {G : Type*} [NormedAddCommG
       (ih (m := m + 1) (by push_cast at hkm; rwa [add_comm m, ← add_assoc])) hW
     refine ((continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (k + 1) ↦ E) G).symm.contDiff
       |>.comp_contDiffOn hD).congr fun p _ ↦ ?_
-    rw [iteratedFDeriv_succ_eq_comp_left]
-    rfl
+    rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, Function.comp_apply]
 
 /-- **Continuity of iterated partial derivatives.** If `F` is `C^n` on an open set `W ⊆ E × P`,
 then for every `k ≤ n` the `k`-th derivative of `x ↦ F (x, p.2)` at `p.1` is continuous in `p`

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.FDeriv.Affine
+import Mathlib.Analysis.Calculus.FDeriv.Linear
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -23,7 +24,8 @@ map is a real immersion at a point exactly when it is a complex one. For a holom
 of one variable, the real derivative is multiplication by the complex derivative, so the two have
 the same norm. An affine automorphism of a finite-dimensional space over `𝕜'` has, over `𝕜`, the
 invertible derivative given by its linear part; for instance, the automorphism `z ↦ a z + b` of
-`ℂ` with `a ≠ 0` has an invertible real derivative.
+`ℂ` with `a ≠ 0` has an invertible real derivative. Conversely, a continuous `𝕜`-linear map that
+commutes with `𝕜'`-scalars preserves differentiability over `𝕜'`.
 
 ## Main results
 
@@ -39,6 +41,8 @@ invertible derivative given by its linear part; for instance, the automorphism `
   its scalar restriction to `𝕜` is, assuming only `LinearMap.CompatibleSMul`.
 * `AffineEquiv.hasFDerivAt_restrictScalars`: the derivative over `𝕜` of an affine automorphism over
   `𝕜'` is its linear part.
+* `ContinuousLinearMap.comp_differentiableOn_of_map_smul`: a continuous `𝕜`-linear map that
+  commutes with `𝕜'`-scalars sends maps differentiable over `𝕜'` to maps differentiable over `𝕜'`.
 -/
 
 public section
@@ -117,3 +121,16 @@ theorem hasFDerivAtFilter_restrictScalars_iff {f : E → F} {f' : E →L[𝕜'] 
   simp only [hasFDerivAtFilter_iff_isLittleO, ContinuousLinearMap.coe_restrictScalars']
 
 end TauCeti
+
+/-- A continuous `𝕜`-linear map `L` between spaces over a larger field `𝕜'` that commutes with
+`𝕜'`-scalars is `𝕜'`-linear, so it sends maps differentiable over `𝕜'` on a set to maps
+differentiable over `𝕜'` there. For instance, a real-linear map between complex spaces that
+commutes with complex scalars sends holomorphic maps to holomorphic maps. -/
+theorem ContinuousLinearMap.comp_differentiableOn_of_map_smul {𝕜 𝕜' V E F : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup V]
+    [NormedSpace 𝕜' V] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] (L : E →L[𝕜] F)
+    (hL : ∀ (c : 𝕜') (y : E), L (c • y) = c • L y) {f : V → E} {s : Set V}
+    (hf : DifferentiableOn 𝕜' f s) : DifferentiableOn 𝕜' (L ∘ f) s :=
+  ContinuousLinearMap.comp_differentiableOn
+    { toFun := L, map_add' := L.map_add, map_smul' := hL, cont := L.continuous } hf

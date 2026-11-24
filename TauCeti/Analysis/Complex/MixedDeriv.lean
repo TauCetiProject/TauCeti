@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 
@@ -111,13 +112,11 @@ theorem differentiableOn_iteratedFDeriv_partial {n : WithTop ℕ∞}
   induction k generalizing x with
   | zero =>
     -- The zeroth derivative is `H` itself, read as a multilinear map in no variables.
-    let e : G →L[ℂ] ContinuousMultilinearMap ℝ (fun _ : Fin 0 ↦ X) G :=
-      { toFun := (continuousMultilinearCurryFin0 ℝ X G).symm
-        map_add' := map_add _
-        map_smul' := fun c y ↦ by ext; simp
-        cont := (continuousMultilinearCurryFin0 ℝ X G).symm.continuous }
-    exact (e.differentiable.comp_differentiableOn (hhol x hx)).congr fun z _ ↦ by
-      ext; simp [e]
+    refine (((continuousMultilinearCurryFin0 ℝ X G).symm.toContinuousLinearEquiv : G →L[ℝ] _)
+      |>.comp_differentiableOn_of_map_smul (fun c y ↦ by ext; simp) (hhol x hx)).congr
+      fun z _ ↦ ?_
+    ext
+    simp
   | succ k ih =>
     -- The `(k+1)`-th derivative uncurries the parameter derivative of the `k`-th one, which is
     -- holomorphic since the `k`-th derivative is a `C²` family of holomorphic functions.
@@ -125,15 +124,11 @@ theorem differentiableOn_iteratedFDeriv_partial {n : WithTop ℕ∞}
       (by push_cast at hk; rwa [add_assoc, one_add_one_eq_two] at hk)
     have hD := differentiableOn_fderiv_partial hHk hW hV
       (fun x' hx' ↦ ih (le_trans (by norm_cast; omega) hk) hx') hx
-    let L := (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ X) G).symm
-    let e : (X →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ X) G) →L[ℂ]
-        ContinuousMultilinearMap ℝ (fun _ : Fin (k + 1) ↦ X) G :=
-      { toFun := L
-        map_add' := map_add L
-        map_smul' := fun c f ↦ by ext; simp [L]
-        cont := L.continuous }
-    refine (e.differentiable.comp_differentiableOn hD).congr fun z _ ↦ ?_
+    refine (((continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ X) G).symm
+      |>.toContinuousLinearEquiv : _ →L[ℝ] _).comp_differentiableOn_of_map_smul
+      (fun c f ↦ by ext; simp) hD).congr fun z _ ↦ ?_
     rw [iteratedFDeriv_succ_eq_comp_left]
-    rfl
+    simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 end ContDiffOn

@@ -18,9 +18,10 @@ import TauCeti.Analysis.Complex.Runge.Operator
 The finite-rank Runge operator `TauCeti.exists_finite_rank_runge_operator`
 (`TauCeti.Analysis.Complex.Runge.Operator`) approximates every function `f` holomorphic on an
 open set `U`, at the points of a compact set `K`, by `A f = ∑ j, w j * f (ζ j) * g j` within `ε`
-times a bound for `f` on a compact set `L`. Here the nodes `ζ j ∈ U`, the weights `w j` and the
-functions `g j`, holomorphic on a larger open set `Ω`, do not depend on `f`. This file applies
-such an operator, fibrewise, to families of functions depending on parameters.
+times any nonnegative bound for `f` on a compact set `L`. Here the nodes `ζ j ∈ U`, the weights
+`w j` and the functions `g j`, holomorphic on an open set `Ω` (the Runge domain), do not depend
+on `f`. This file applies such an operator, fibrewise, to families of functions depending on
+parameters.
 
 * `TauCeti.contDiffOn_sum_smul_apply`: applied to a family `h (x, ·)` depending on a parameter `x`
   in a normed space over a field `𝕜` such as `ℝ` or `ℂ`, of which `ℂ` is a normed algebra, the
@@ -29,10 +30,12 @@ such an operator, fibrewise, to families of functions depending on parameters.
   parameters.
 * `TauCeti.norm_iteratedFDeriv_sub_sum_smul_le`: if `h` is jointly `C^n` and holomorphic in its
   complex variable, then on `K` every parameter derivative of `h - A h` of order `k < n` is at
-  most `ε` times a bound for the same derivative of `h` on `L`. Parameter derivatives commute
-  with `A`, whose data do not depend on the parameter, and they are again holomorphic in the
-  complex variable (`ContDiffOn.differentiableOn_iteratedFDeriv_partial`), so the vector-valued
-  form of the operator estimate (`TauCeti.norm_sub_sum_smul_le_of_scalar`) applies to them.
+  most `ε` times any nonnegative bound for the same derivative of `h` on `L`. Parameter
+  derivatives commute with `A`, whose data do not depend on the parameter (Mathlib's
+  `iteratedFDeriv_fun_sum_apply` and `iteratedFDeriv_const_smul_apply'`), and they are again
+  holomorphic in the complex variable (`ContDiffOn.differentiableOn_iteratedFDeriv_partial`), so
+  the vector-valued form of the operator estimate (`TauCeti.norm_sub_sum_smul_le_of_scalar`)
+  applies to them.
 
 These estimates control all parameter derivatives of the Runge corrections when solutions of
 the inhomogeneous Cauchy–Riemann equation depending smoothly or holomorphically on parameters
@@ -73,9 +76,10 @@ theorem contDiffOn_sum_smul_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜] 
 /-- **Parameter derivatives under the finite-rank Runge operator.** Let `h : X × ℂ → G` be `C^n`
 on `S ×ˢ U` for open sets `S` and `U`, and holomorphic in its complex variable on `U`. If nodes
 `ζ j ∈ U`, weights `w j` and functions `g j` approximate every scalar function holomorphic on
-`U` at the points of `K ⊆ U` within `ε` times any bound for it on `L`, then for `k < n` the
-`k`-th parameter derivative of `h - A h`, where `A h (x, z) = ∑ j, (w j * g j z) • h (x, ζ j)`,
-is at most `ε` times any bound for the `k`-th parameter derivative of `h` on `L`. -/
+`U` at the points of `K ⊆ U` within `ε` times any nonnegative bound for it on `L`, then for
+`k < n`, every `x ∈ S` and every `z ∈ K`, the `k`-th parameter derivative at `x` of `h - A h` at
+`z`, where `A h (x, z) = ∑ j, (w j * g j z) • h (x, ζ j)`, has norm at most `ε * B` for any
+nonnegative bound `B` on `L` for the `k`-th parameter derivative of `h` at `x`. -/
 theorem norm_iteratedFDeriv_sub_sum_smul_le {X : Type*} [NormedAddCommGroup X]
     [NormedSpace ℝ X] {S : Set X} {h : X × ℂ → G} {n : WithTop ℕ∞}
     (hA : ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U → ∀ B : ℝ, 0 ≤ B → (∀ y ∈ L, ‖f y‖ ≤ B) →

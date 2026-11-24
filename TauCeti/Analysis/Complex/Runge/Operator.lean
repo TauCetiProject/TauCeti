@@ -260,8 +260,8 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
 
 /-- **Vector-valued finite-rank Runge estimate.** If nodes `ζ j`, weights `w j` and functions
 `g j` approximate every scalar function holomorphic on `U` at the points of `K` within `ε` times
-any bound for it on `L`, then they approximate every function holomorphic on `U` with values in
-a complex normed space `G` just as well. -/
+any nonnegative bound for it on `L`, then they approximate every function holomorphic on `U` with
+values in a complex normed space `G` just as well. -/
 theorem norm_sub_sum_smul_le_of_scalar {ι : Type*} [Fintype ι] {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℂ G] {U L K : Set ℂ} {ζ w : ι → ℂ} {g : ι → ℂ → ℂ}
     {ε : ℝ} (hA : ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U → ∀ B : ℝ, 0 ≤ B → (∀ y ∈ L, ‖f y‖ ≤ B) →
