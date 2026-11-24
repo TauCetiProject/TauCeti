@@ -22,7 +22,7 @@ The weight is chosen so that this works: after the substitution `x = u t`,
 
 which is the regularised lower incomplete Gamma function `P(k + 1, t)` for `t ≥ 0`. Hence
 `w_k(t) * t ^ k` increases from `0` to `1`, so `w_k(t) ~ t ^ (-k)` as `t → ∞`, while `w_k` stays
-continuously differentiable at the origin, where `t ^ (-k)` blows up. On the Laplace side,
+smooth at the origin, where `t ^ (-k)` blows up when `k > 0`. On the Laplace side,
 multiplying a function with transform `F(s)` by the weight replaces `F(s)` by
 `-∫ u in 0..1, F'(s + u) * u ^ k / k!`, which turns a pole of order `k + 1` on the boundary line
 into a locally integrable singularity.
@@ -42,7 +42,7 @@ into a locally integrable singularity.
 * `tendstoUniformlyOn_delangeWeight_add_div`: `w_k(t + h) / w_k(t) → 1` as `t → ∞`, uniformly
   for `h` in a bounded interval; `tendsto_delangeWeight_add_div_atTop` is the pointwise form.
 * `hasDerivAt_delangeWeight`, `hasDerivAt_delangeWeight_of_ne_zero`,
-  `deriv_delangeWeight_zero`, `contDiff_delangeWeight`: `w_k` is `C¹` on `ℝ`, with
+  `deriv_delangeWeight_zero`, `contDiff_delangeWeight`: `w_k` is smooth on `ℝ`, with
   `w_k'(t) = exp (-t) / k! - k w_k(t) / t` for `t ≠ 0` and `w_k'(0) = 1 / (k! (k + 1))`.
 * `tendsto_deriv_delangeWeight_div_atTop`: the logarithmic derivative `w_k' / w_k` tends to `0`.
 
@@ -59,7 +59,7 @@ public section
 noncomputable section
 
 open Filter Set
-open scoped Nat Topology
+open scoped ContDiff Nat Topology
 
 namespace TauCeti.HigherPoleTauberian
 
@@ -82,11 +82,12 @@ theorem delangeWeight_def (k : ℕ) (t : ℝ) :
 theorem delangeWeight_zero_right (k : ℕ) : delangeWeight k 0 = 0 := by
   simp [delangeWeight_def]
 
-/-- The integral factor `∫ u in 0..1, exp (-u * t) * u ^ k / k!` of the weight is continuous in
+/-- The integral factor `∫ u in 0..1, exp (-u * t) * u ^ k / k!` of the weight is smooth in
 `t`. -/
-private theorem continuous_integral_delangeWeight (k : ℕ) :
-    Continuous fun t : ℝ ↦ ∫ u in (0 : ℝ)..1, Real.exp (-u * t) * u ^ k / (k ! : ℝ) :=
-  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by fun_prop) 0 1
+private theorem contDiff_integral_delangeWeight (k : ℕ) :
+    ContDiff ℝ ∞ fun t : ℝ ↦ ∫ u in (0 : ℝ)..1, Real.exp (-u * t) * u ^ k / (k ! : ℝ) :=
+  ContDiff.parametric_intervalIntegral
+    (f := fun p : ℝ × ℝ ↦ Real.exp (-p.2 * p.1) * p.2 ^ k / (k ! : ℝ)) (by fun_prop)
 
 /-- The integral factor of the weight is positive at every real `t`. -/
 private theorem integral_delangeWeight_pos (k : ℕ) (t : ℝ) :
@@ -147,7 +148,7 @@ theorem delangeWeight_eq_regularizedGamma_div (k : ℕ) (ht : 0 ≤ t) :
 @[fun_prop]
 theorem continuous_delangeWeight (k : ℕ) : Continuous (delangeWeight k) := by
   simp_rw [funext (delangeWeight_def k)]
-  exact continuous_id.mul (continuous_integral_delangeWeight k)
+  exact continuous_id.mul (contDiff_integral_delangeWeight k).continuous
 
 /-! ### Sign and size -/
 
@@ -292,7 +293,7 @@ theorem hasDerivAt_delangeWeight (k : ℕ) (t : ℝ) :
   rcases eq_or_ne t 0 with rfl | ht
   · -- At the origin, the slope `w_k(s) / s` is the continuous integral factor.
     rw [hasDerivAt_iff_tendsto_slope_zero]
-    have hlim := (continuous_integral_delangeWeight k).continuousAt (x := 0) |>.tendsto
+    have hlim := (contDiff_integral_delangeWeight k).continuous.continuousAt (x := 0) |>.tendsto
       |>.mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
     convert hlim.congr' ?_ using 2
     · rw [integral_delangeWeight_zero, neg_zero, Real.exp_zero]
@@ -312,13 +313,10 @@ theorem deriv_delangeWeight_zero (k : ℕ) :
   field_simp
   ring
 
-/-- The weight is continuously differentiable on `ℝ`. -/
-theorem contDiff_delangeWeight (k : ℕ) : ContDiff ℝ 1 (delangeWeight k) := by
-  rw [contDiff_one_iff_deriv]
-  refine ⟨fun t ↦ (hasDerivAt_delangeWeight k t).differentiableAt, ?_⟩
-  rw [funext fun t ↦ (hasDerivAt_delangeWeight k t).deriv]
-  exact (by fun_prop : Continuous fun t : ℝ ↦ Real.exp (-t) / (k ! : ℝ)).sub
-    (continuous_const.mul (continuous_integral_delangeWeight k))
+/-- The weight is smooth on `ℝ`. -/
+theorem contDiff_delangeWeight (k : ℕ) : ContDiff ℝ ∞ (delangeWeight k) := by
+  rw [funext (delangeWeight_def k)]
+  exact contDiff_id.mul (contDiff_integral_delangeWeight k)
 
 /-- The logarithmic derivative of the weight tends to `0`: `w_k'(t) / w_k(t) → 0` as `t → ∞`. -/
 theorem tendsto_deriv_delangeWeight_div_atTop (k : ℕ) :
