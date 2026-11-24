@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype
-public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
+public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype.Basic
 
-import TauCeti.Analysis.Normed.Module.GaussianSum.CotypeComparison
-import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Gaussian
+import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype.Comparison
 import TauCeti.Probability.Distributions.Gaussian.Moments
 
 /-!
@@ -19,10 +17,6 @@ If a real normed space `Y` has Gaussian cotype `2` with constant `C` (in particu
 Rademacher cotype `2` with constant `C`), then the Gaussian second moment of every finite family
 `y` is controlled by its Rademacher second moment:
 `G₂(y) = (𝔼_g ‖∑ i, gᵢ yᵢ‖²)^(1/2) ≤ 4 √3 C R₂(y)`.
-Consequently every operator `U` from a finite-dimensional real inner product space with
-orthonormal basis `(eᵢ)` into `Y` has `2`-summing norm `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`, a bound
-independent of the dimension that involves only the Rademacher average of the images of the
-basis vectors.
 
 The proof applies the threshold comparison `gaussianSecondMoment_le_two_mul_rademacherSecondMoment`
 at `t = 2 √3 C` together with the fourth-moment tail bound `setIntegral_sq_tail_gaussianReal_le`
@@ -32,9 +26,6 @@ at `t = 2 √3 C` together with the fourth-moment tail bound `setIntegral_sq_tai
 
 * `TauCeti.HasGaussianCotype.gaussianSecondMoment_le`, `TauCeti.HasCotype.gaussianSecondMoment_le`:
   `G₂(y) ≤ 4 √3 C R₂(y)` under Gaussian or Rademacher cotype `2` with constant `C`.
-* `ContinuousLinearMap.summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype`,
-  `ContinuousLinearMap.summingENorm_two_le_mul_rademacherSecondMoment_of_hasCotype`:
-  `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`.
 
 ## References
 
@@ -47,7 +38,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory TauCeti.Probability
-open scoped ENNReal NNReal BigOperators InnerProductSpace
+open scoped NNReal BigOperators
 
 namespace TauCeti
 
@@ -73,10 +64,7 @@ theorem HasGaussianCotype.gaussianSecondMoment_le (h : HasGaussianCotype Y 2 C) 
         gcongr
         exact setIntegral_sq_tail_gaussianReal_le ht
       _ = 1 / 2 := by
-        rw [show 3 / (2 * √3 * (C : ℝ)) ^ 2 = (1 / (2 * (C : ℝ))) ^ 2 by
-            rw [mul_pow, mul_pow, Real.sq_sqrt (by norm_num)]
-            field_simp,
-          Real.sqrt_sq (by positivity)]
+        rw [Real.sqrt_div (by norm_num), Real.sqrt_sq ht.le]
         field_simp
   simpa only [mul_assoc] using
     (gaussianSecondMoment_le_two_mul_rademacherSecondMoment h htail y).trans_eq (by ring)
@@ -88,35 +76,3 @@ theorem HasCotype.gaussianSecondMoment_le (h : HasCotype Y 2 C) (y : ι → Y) :
   h.hasGaussianCotype_two.gaussianSecondMoment_le y
 
 end TauCeti
-
-namespace ContinuousLinearMap
-
-open TauCeti
-
-variable {ι E Y : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E]
-  [InnerProductSpace ℝ E] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {C : ℝ≥0}
-
-/-- **The `2`-summing norm under Gaussian cotype `2`, by Rademacher averages.** If `Y` has
-Gaussian cotype `2` with constant `C`, every operator `U` from a real inner product space with
-orthonormal basis `(eᵢ)` into `Y` satisfies `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`. -/
-theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype (U : E →L[ℝ] Y)
-    (b : OrthonormalBasis ι ℝ E) (h : HasGaussianCotype Y 2 C) :
-    U.summingENorm 2 ≤
-      ENNReal.ofReal (4 * √3 * C ^ 2 * rademacherSecondMoment fun i ↦ U (b i)) := by
-  refine (U.summingENorm_two_le_of_hasGaussianCotype b h).trans (ENNReal.ofReal_le_ofReal ?_)
-  calc (C : ℝ) * gaussianSecondMoment (fun i ↦ U (b i))
-      ≤ C * (4 * √3 * C * rademacherSecondMoment fun i ↦ U (b i)) :=
-        mul_le_mul_of_nonneg_left (h.gaussianSecondMoment_le _) C.coe_nonneg
-    _ = _ := by ring
-
-/-- **The cotype-`2` summing bound.** If `Y` has Rademacher cotype `2` with constant `C`, every
-operator `U` from a real inner product space with orthonormal basis `(eᵢ)` into `Y` satisfies
-`π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`, with a constant independent of the dimension. -/
-theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasCotype (U : E →L[ℝ] Y)
-    (b : OrthonormalBasis ι ℝ E) (h : HasCotype Y 2 C) :
-    U.summingENorm 2 ≤
-      ENNReal.ofReal (4 * √3 * C ^ 2 * rademacherSecondMoment fun i ↦ U (b i)) :=
-  U.summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype b
-    h.hasGaussianCotype_two
-
-end ContinuousLinearMap

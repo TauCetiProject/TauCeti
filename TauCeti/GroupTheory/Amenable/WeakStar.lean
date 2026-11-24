@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.WeakDual.Basic
+public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.GroupTheory.Amenable.Basic
 
 /-!
@@ -99,7 +99,7 @@ theorem mem_range_toWeakDual_iff {φ : WeakDual ℝ (UCB G)} :
 /-- The means lie in the closed unit ball of the dual of `UCB G`. -/
 theorem range_toWeakDual_subset_closedBall :
     Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) ⊆
-      WeakDual.closedBall ℝ (UCB G) 1 := by
+      WeakDual.toStrongDual ⁻¹' Metric.closedBall 0 1 := by
   rintro _ ⟨m, rfl⟩
   simp
 

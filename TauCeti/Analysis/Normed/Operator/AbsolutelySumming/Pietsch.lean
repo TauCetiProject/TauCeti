@@ -77,12 +77,21 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+variable (𝕜 E) in
+/-- The closed unit ball of the dual, as a set in the weak-star dual. -/
+private abbrev dualBall : Set (WeakDual 𝕜 E) :=
+  WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1
+
+private theorem norm_le_one_of_mem_dualBall (f : dualBall 𝕜 E) :
+    ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E)‖ ≤ 1 :=
+  mem_closedBall_zero_iff.mp f.property
+
 /-- **Pietsch domination**, the easy direction: if `‖T x‖ ≤ C (∫ |f x|ᵖ dν(f))^(1/p)` for a
 probability measure `ν` on the dual unit ball, then `πₚ(T) ≤ C`. -/
 theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual 𝕜 E)]
     [OpensMeasurableSpace (WeakDual 𝕜 E)]
     (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C)
-    (ν : Measure (WeakDual.closedBall 𝕜 E 1))
+    (ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1))
     [IsProbabilityMeasure ν]
     (hT : ∀ x : E,
       ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal)) :
@@ -106,8 +115,7 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
         mul_le_mul_of_nonneg_left (integral_mono (integrable_finsetSum _ fun i _ ↦ hint (x i))
           (integrable_const _) fun f ↦ (sum_norm_eval_rpow_le_weakLpNorm p hp x _).trans <|
             Real.rpow_le_rpow (mul_nonneg hW (norm_nonneg _))
-              (mul_le_of_le_one_right hW (WeakDual.norm_toStrongDual_le_of_mem_closedBall f))
-              hq.le)
+              (mul_le_of_le_one_right hW (norm_le_one_of_mem_dualBall f)) hq.le)
           (by positivity)
       _ = (C * W) ^ p.toReal := by simp [Real.mul_rpow hC hW]
   rw [PiLp.norm_eq_sum hq, one_div, Real.rpow_inv_le_iff_of_pos
@@ -128,7 +136,7 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ}
     (hC : 0 ≤ C) (hT : T.summingENorm p ≤ ENNReal.ofReal C) (w : E →₀ ℝ) (hw : ∀ x, 0 ≤ w x)
     {δ : ℝ} (hδ : 0 < δ) :
-    ∃ f : WeakDual.closedBall 𝕜 E 1, ∑ x ∈ w.support,
+    ∃ f : dualBall 𝕜 E, ∑ x ∈ w.support,
       w x * (‖T x‖ ^ p.toReal - C ^ p.toReal * ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) < δ := by
   have hq : 0 < p.toReal := (ENNReal.toReal_pos_iff_ne_top p).2 hp
   by_contra! hge
@@ -142,7 +150,7 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
       by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq.ne']
     rw [Finset.sum_congr rfl fun x _ ↦ hy x,
       Finset.sum_coe_sort s fun x ↦ w x * ‖T x‖ ^ p.toReal]
-  have hge' (f : WeakDual.closedBall 𝕜 E 1) :
+  have hge' (f : dualBall 𝕜 E) :
       C ^ p.toReal * ∑ x ∈ s, w x * ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ≤ A - δ := by
     have := hge f
     simp only [mul_sub, Finset.sum_sub_distrib, Finset.mul_sum] at this ⊢
@@ -156,7 +164,7 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
   have hweak : weakLpNorm (𝕜 := 𝕜) p ((C : 𝕜) • y) ≤ (A - δ) ^ (1 / p.toReal) := by
     rw [weakLpNorm_le_iff_unitBall]
     intro g hg
-    have hmem : StrongDual.toWeakDual g ∈ WeakDual.closedBall 𝕜 E 1 := by simpa using hg
+    have hmem : StrongDual.toWeakDual g ∈ dualBall 𝕜 E := by simpa using hg
     have h := hge' ⟨_, hmem⟩
     rw [PiLp.norm_eq_sum hq]
     refine Real.rpow_le_rpow (Finset.sum_nonneg fun _ _ ↦ by positivity) ?_ (by positivity)
@@ -188,21 +196,20 @@ continuous functions on the dual ball that is negative on the constant `1`, nonp
 nonnegative functions, and satisfies `‖T x‖ ^ p * L 1 ≥ C ^ p * L (f ↦ ‖f x‖ ^ p)`. -/
 private theorem exists_separating_functional (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C)
     (hT : T.summingENorm p ≤ ENNReal.ofReal C) :
-    ∃ L : StrongDual ℝ C(WeakDual.closedBall 𝕜 E 1, ℝ),
-      L 1 < 0 ∧ (∀ h, 0 ≤ h → L h ≤ 0) ∧
+    ∃ L : StrongDual ℝ C(dualBall 𝕜 E, ℝ), L 1 < 0 ∧ (∀ h, 0 ≤ h → L h ≤ 0) ∧
       ∀ x : E, C ^ p.toReal * L (WeakDual.evalRpow 1 p x) ≤ ‖T x‖ ^ p.toReal * L 1 := by
-  let g : E → C(WeakDual.closedBall 𝕜 E 1, ℝ) := fun x ↦
+  let g : E → C(dualBall 𝕜 E, ℝ) := fun x ↦
     ‖T x‖ ^ p.toReal • 1 - C ^ p.toReal • WeakDual.evalRpow 1 p x
-  let Φ : (E →₀ ℝ) →ₗ[ℝ] C(WeakDual.closedBall 𝕜 E 1, ℝ) := Finsupp.linearCombination ℝ g
-  have hΦ (w : E →₀ ℝ) (f : WeakDual.closedBall 𝕜 E 1) : Φ w f = ∑ x ∈ w.support,
+  let Φ : (E →₀ ℝ) →ₗ[ℝ] C(dualBall 𝕜 E, ℝ) := Finsupp.linearCombination ℝ g
+  have hΦ (w : E →₀ ℝ) (f : dualBall 𝕜 E) : Φ w f = ∑ x ∈ w.support,
       w x * (‖T x‖ ^ p.toReal - C ^ p.toReal * ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) := by
     simp only [Φ, g, Finsupp.linearCombination_apply, Finsupp.sum, ContinuousMap.coe_sum,
       ContinuousMap.coe_smul, ContinuousMap.coe_sub, ContinuousMap.coe_one, Finset.sum_apply,
       Pi.smul_apply, Pi.sub_apply, Pi.one_apply, smul_eq_mul, mul_one, WeakDual.evalRpow_apply]
   -- The convex cone of nonnegative combinations of the `g x`.
-  let Q : Set C(WeakDual.closedBall 𝕜 E 1, ℝ) := Φ '' Set.Ici 0
+  let Q : Set C(dualBall 𝕜 E, ℝ) := Φ '' Set.Ici 0
   -- `Q` misses the open convex cone of functions bounded below by a positive constant.
-  have hdisj : Disjoint {h : C(WeakDual.closedBall 𝕜 E 1, ℝ) | ∃ δ > 0, ∀ f, δ ≤ h f} Q := by
+  have hdisj : Disjoint {h : C(dualBall 𝕜 E, ℝ) | ∃ δ > 0, ∀ f, δ ≤ h f} Q := by
     rw [Set.disjoint_left]
     rintro h ⟨δ, hδ, hhδ⟩ ⟨w, hw, rfl⟩
     obtain ⟨f, hf⟩ := exists_sum_lt_of_summingENorm_le hp hC hT w (Finsupp.le_def.1 hw) hδ
@@ -227,7 +234,7 @@ theorem exists_isProbabilityMeasure_of_summingENorm_le_ofReal [MeasurableSpace (
     [BorelSpace (WeakDual 𝕜 E)]
     (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C)
     (hT : T.summingENorm p ≤ ENNReal.ofReal C) :
-    ∃ ν : Measure (WeakDual.closedBall 𝕜 E 1),
+    ∃ ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1),
       IsProbabilityMeasure ν ∧ ν.Regular ∧ ∀ x : E,
         ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
   have hq : 0 < p.toReal := (ENNReal.toReal_pos_iff_ne_top p).2 hp
@@ -246,7 +253,7 @@ theorem exists_isProbabilityMeasure_of_summingENorm_le_ofReal [MeasurableSpace (
 measure on the dual unit ball with the constant `πₚ(T)`. -/
 theorem exists_isProbabilityMeasure_of_summingENorm_ne_top [MeasurableSpace (WeakDual 𝕜 E)]
     [BorelSpace (WeakDual 𝕜 E)] (hp : p ≠ ∞) {T : E →L[𝕜] F} (hT : T.summingENorm p ≠ ∞) :
-    ∃ ν : Measure (WeakDual.closedBall 𝕜 E 1),
+    ∃ ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1),
       IsProbabilityMeasure ν ∧ ν.Regular ∧ ∀ x : E, ‖T x‖ ≤
         (T.summingENorm p).toReal * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) :=
   exists_isProbabilityMeasure_of_summingENorm_le_ofReal hp ENNReal.toReal_nonneg
@@ -259,7 +266,7 @@ theorem summingENorm_le_ofReal_iff_exists_isProbabilityMeasure
     [MeasurableSpace (WeakDual 𝕜 E)] [BorelSpace (WeakDual 𝕜 E)]
     (hp : p ≠ ∞) {T : E →L[𝕜] F} {C : ℝ} (hC : 0 ≤ C) :
     T.summingENorm p ≤ ENNReal.ofReal C ↔
-      ∃ ν : Measure (WeakDual.closedBall 𝕜 E 1),
+      ∃ ν : Measure (WeakDual.toStrongDual ⁻¹' closedBall (0 : StrongDual 𝕜 E) 1),
         IsProbabilityMeasure ν ∧ ν.Regular ∧ ∀ x : E,
           ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) :=
   ⟨exists_isProbabilityMeasure_of_summingENorm_le_ofReal hp hC,
@@ -279,13 +286,13 @@ measurable: on the separable range of the map, evaluation is continuous in the p
 measurable in the functional. -/
 private theorem measurable_apply_dualBall [MeasurableSpace (WeakDual 𝕜 E)]
     [OpensMeasurableSpace (WeakDual 𝕜 E)] {X : Ω → E} (hX : StronglyMeasurable X) :
-    Measurable fun q : Ω × WeakDual.closedBall 𝕜 E 1 ↦ (q.2 : WeakDual 𝕜 E) (X q.1) := by
+    Measurable fun q : Ω × dualBall 𝕜 E ↦ (q.2 : WeakDual 𝕜 E) (X q.1) := by
   borelize E
   let S := Set.range X
   have : SecondCountableTopology S := hX.isSeparable_range.secondCountableTopology
-  have hev : Measurable fun q : S × WeakDual.closedBall 𝕜 E 1 ↦ (q.2 : WeakDual 𝕜 E) (q.1 : E) :=
+  have hev : Measurable fun q : S × dualBall 𝕜 E ↦ (q.2 : WeakDual 𝕜 E) (q.1 : E) :=
     measurable_uncurry_of_continuous_of_measurable
-      (u := fun (x : S) (f : WeakDual.closedBall 𝕜 E 1) ↦ (f : WeakDual 𝕜 E) (x : E))
+      (u := fun (x : S) (f : dualBall 𝕜 E) ↦ (f : WeakDual 𝕜 E) (x : E))
       (fun f ↦ (WeakDual.toStrongDual (f : WeakDual 𝕜 E)).continuous.comp continuous_subtypeVal)
       (fun x ↦ ((WeakDual.eval_continuous (x : E)).comp continuous_subtypeVal).measurable)
   exact hev.comp ((hX.measurable.subtype_mk (h := Set.mem_range_self)).prodMap measurable_id)
@@ -308,12 +315,13 @@ theorem integral_norm_apply_rpow_le_of_summingENorm_le (hp : p ≠ ∞) {U : E �
     (hX.ae_eq hXX').integrable_norm_rpow
       (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
   -- The integrand `(ω, f) ↦ ‖f (X' ω)‖ ^ p` is jointly measurable and dominated by `‖X' ω‖ ^ p`.
-  let G : Ω → WeakDual.closedBall 𝕜 E 1 → ℝ := fun ω f ↦ ‖(f : WeakDual 𝕜 E) (X' ω)‖ ^ p.toReal
+  let G : Ω → dualBall 𝕜 E → ℝ := fun ω f ↦ ‖(f : WeakDual 𝕜 E) (X' ω)‖ ^ p.toReal
   have hGm : Measurable (Function.uncurry G) :=
     (measurable_apply_dualBall hX.aestronglyMeasurable.stronglyMeasurable_mk).norm.pow_const _
-  have hGle (ω : Ω) (f : WeakDual.closedBall 𝕜 E 1) : G ω f ≤ ‖X' ω‖ ^ p.toReal :=
+  have hGle (ω : Ω) (f : dualBall 𝕜 E) : G ω f ≤ ‖X' ω‖ ^ p.toReal :=
     Real.rpow_le_rpow (norm_nonneg _)
-      ((WeakDual.norm_apply_le_of_mem_closedBall f (X' ω)).trans_eq (one_mul _)) hq.le
+      ((WeakDual.toStrongDual (f : WeakDual 𝕜 E)).le_of_opNorm_le
+        (mem_closedBall_zero_iff.1 f.property) _ |>.trans_eq (one_mul _)) hq.le
   have hGint : Integrable (Function.uncurry G) (μ.prod ν) := by
     refine Integrable.mono' (hX'int.comp_fst ν) hGm.aestronglyMeasurable (ae_of_all _ fun q ↦ ?_)
     exact (Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)).trans_le (hGle q.1 q.2)
@@ -334,7 +342,7 @@ theorem integral_norm_apply_rpow_le_of_summingENorm_le (hp : p ≠ ∞) {U : E �
             = ∫ ω, ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E) (X ω)‖ ^ p.toReal ∂μ :=
               integral_congr_ae (hXX'.mono fun ω h ↦ by
                 simp only [G, h, WeakDual.toStrongDual_apply])
-          _ ≤ M := hM _ (WeakDual.norm_toStrongDual_le_of_mem_closedBall f)
+          _ ≤ M := hM _ (mem_closedBall_zero_iff.1 f.property)
     _ = C ^ p.toReal * M := by simp
 
 end Integral

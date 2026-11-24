@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Dissipative.Basic
 public import TauCeti.Analysis.Normed.Module.DualitySet
-import TauCeti.Analysis.Normed.Module.WeakDual.Basic
+import Mathlib.Analysis.Normed.Module.WeakDual
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -68,7 +68,7 @@ theorem IsDissipative.exists_mem_dualitySet_apply_nonpos {A : X →ₗ.[ℝ] X}
     ∃ f ∈ dualitySet ℝ (x : X), f (A x) ≤ 0 := by
   -- Norming functionals for `lambda • x - A x` have a weak-* cluster point by Banach--Alaoglu.
   let K : ℕ → Set (WeakDual ℝ X) := fun n =>
-    WeakDual.closedBall ℝ X 1 ∩ {w | w (A x) ≤ 0} ∩
+    WeakDual.toStrongDual ⁻¹' Metric.closedBall 0 1 ∩ {w | w (A x) ≤ 0} ∩
       {w | ‖(x : X)‖ - ‖A x‖ * (1 / ((n : ℝ) + 1)) ≤ w x}
   have hclosed : ∀ n, IsClosed (K n) := fun n =>
     ((WeakDual.isClosed_closedBall 0 1).inter

@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
-import TauCeti.Analysis.Normed.Module.WeakDual.Basic
+import Mathlib.Analysis.Normed.Module.WeakDual
 import TauCeti.Analysis.Normed.Algebra.Jacobson
 import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 import TauCeti.RingTheory.Jacobson.Spectrum
@@ -207,7 +207,7 @@ theorem isCompact_union_zero :
   refine (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset
     (union_zero_isClosed 𝕜 A) ?_
   rintro φ (hφ | rfl)
-  · rw [WeakDual.mem_closedBall_iff]
+  · rw [Set.mem_preimage, mem_closedBall_zero_iff]
     refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a ↦ ?_
     have hbound : ‖(WeakDual.toStrongDual φ) a‖ ≤ ‖a‖ :=
       NonUnitalAlgHom.norm_apply_le_self (⟨φ, hφ⟩ : characterSpace 𝕜 A) a

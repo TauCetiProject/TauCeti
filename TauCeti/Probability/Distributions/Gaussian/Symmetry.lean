@@ -20,12 +20,10 @@ This applies in particular to odd products of centered linear observables, witho
 independence or a nonsingular covariance.
 The standard real Gaussian product law is also invariant under planar reflections, linear isometry
 equivalences intertwine scaled standard Gaussian measures on finite-dimensional real inner product
-spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), the standard Gaussian
-measure on `EuclideanSpace ℝ ι` is invariant under coordinatewise sign flips
-(`TauCeti.Probability.stdGaussian_map_units_smul`), centered real Gaussian laws assign equal mass to
-opposite half-lines (giving positive-variance half-line mass `2⁻¹`), and centered real Gaussian laws
-and their independent products are invariant under multiplication by deterministic scalars of unit
-modulus.
+spaces (`TauCeti.Probability.map_linearIsometryEquiv_map_smul_stdGaussian`), centered real
+Gaussian laws assign equal mass to opposite half-lines (giving positive-variance half-line mass
+`2⁻¹`), and centered real Gaussian laws and their independent products are invariant under
+multiplication by deterministic scalars of unit modulus.
 In particular, integrals against the standard Gaussian measure are invariant under linear isometry
 equivalences (`LinearIsometryEquiv.integral_comp_stdGaussian`), such as the
 coordinate sign changes `TauCeti.Probability.signFlip` of `EuclideanSpace ℝ ι`, so a standard
@@ -191,17 +189,6 @@ def signFlip (ε : ι → ℤˣ) : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] Euclidea
 theorem signFlip_apply (ε : ι → ℤˣ) (g : EuclideanSpace ℝ ι) (i : ι) :
     signFlip ε g i = ε i • g i := by
   rcases Int.units_eq_one_or (ε i) with h | h <;> simp [signFlip, h]
-
-/-- Coordinatewise sign changes preserve the standard Gaussian measure on `EuclideanSpace ℝ ι`. -/
-theorem stdGaussian_map_units_smul (ε : ι → ℤˣ) :
-    (stdGaussian (EuclideanSpace ℝ ι)).map
-        (fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i) =
-      stdGaussian (EuclideanSpace ℝ ι) := by
-  have hL : (signFlip ε : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =
-      fun g : EuclideanSpace ℝ ι ↦ WithLp.toLp 2 fun i ↦ ε i • g i := by
-    ext g i
-    simp
-  simpa only [hL] using (signFlip ε).measurePreserving_stdGaussian.map_eq
 
 /-- Changing the signs of the coordinates is an involution. -/
 @[simp]

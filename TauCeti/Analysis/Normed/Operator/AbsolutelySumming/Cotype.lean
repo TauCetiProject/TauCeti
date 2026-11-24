@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Gaussian
 public import TauCeti.Analysis.Normed.Module.RademacherSum.TypeCotype
 
-import TauCeti.Analysis.Normed.Module.GaussianSum.CotypeComparison
-import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype.Comparison
+import TauCeti.Analysis.Normed.Module.GaussianSum.Rademacher
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Cotype-2 summing bounds
@@ -26,7 +27,8 @@ summing bounds (Pisier, Theorem 3.9):
 `π₂(U) ≤ (1 + ‖(RCLike.I : 𝕜)‖) * (2 * C * t) * R₂(U ∘ b)` whenever
 `C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2`, specializing to `π₂(U) ≤ 2 * C * t * R₂(U ∘ b)` and
 `π₂(U) ≤ 8 * C² * R₂(U ∘ b)` over `ℝ`, and to `π₂(U) ≤ 4 * C * t * R₂(U ∘ b)` and
-`π₂(U) ≤ 16 * C² * R₂(U ∘ b)` over any `RCLike` field.
+`π₂(U) ≤ 16 * C² * R₂(U ∘ b)` over any `RCLike` field. We also include the `4 √3 C² R₂(U eᵢ)`
+real bounds derived via `TauCeti.HasGaussianCotype.gaussianSecondMoment_le`.
 
 ## Main declarations
 
@@ -38,6 +40,9 @@ summing bounds (Pisier, Theorem 3.9):
 * `ContinuousLinearMap.summingENorm_two_le_ofReal_eight_mul_sq_mul_rademacherSecondMoment`,
   `ContinuousLinearMap.summingENorm_two_le_ofReal_sixteen_mul_sq_mul_rademacherSecondMoment`:
   explicit-constant cotype-`2` summing bounds over `ℝ` and over any `RCLike` field.
+* `ContinuousLinearMap.summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype`,
+  `ContinuousLinearMap.summingENorm_two_le_mul_rademacherSecondMoment_of_hasCotype`:
+  `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)` over `ℝ`.
 
 ## References
 
@@ -119,9 +124,7 @@ theorem summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment
         (rademacherSecondMoment_nonneg _)
     simp [ENNReal.ofReal_of_nonpos h1]
   · apply ENNReal.ofReal_le_ofReal
-    have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by
-      rw [RCLike.norm_I]
-      split_ifs <;> norm_num
+    have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := RCLike.norm_I_le_one
     have hnonneg : 0 ≤ (C : ℝ) * t * rademacherSecondMoment (U ∘ b) :=
       mul_nonneg (mul_nonneg C.property ht_neg.le) (rademacherSecondMoment_nonneg _)
     nlinarith
@@ -152,5 +155,35 @@ theorem summingENorm_two_le_ofReal_sixteen_mul_sq_mul_rademacherSecondMoment
     U.summingENorm 2 ≤ ENNReal.ofReal (16 * (C : ℝ) ^ 2 * rademacherSecondMoment (U ∘ b)) :=
   (summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment hY
     (Probability.mul_sqrt_setIntegral_sq_tail_four_mul_le C) b U).trans_eq (by ring_nf)
+
+section RademacherSecondMoment
+
+variable {ι E Y : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E]
+  [InnerProductSpace ℝ E] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {C : ℝ≥0}
+
+/-- **The `2`-summing norm under Gaussian cotype `2`, by Rademacher averages.** If `Y` has
+Gaussian cotype `2` with constant `C`, every operator `U` from a real inner product space with
+orthonormal basis `(eᵢ)` into `Y` satisfies `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`. -/
+theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype (U : E →L[ℝ] Y)
+    (b : OrthonormalBasis ι ℝ E) (h : HasGaussianCotype Y 2 C) :
+    U.summingENorm 2 ≤
+      ENNReal.ofReal (4 * √3 * C ^ 2 * rademacherSecondMoment fun i ↦ U (b i)) := by
+  refine (U.summingENorm_two_le_of_hasGaussianCotype b h).trans (ENNReal.ofReal_le_ofReal ?_)
+  calc (C : ℝ) * gaussianSecondMoment (fun i ↦ U (b i))
+      ≤ C * (4 * √3 * C * rademacherSecondMoment fun i ↦ U (b i)) :=
+        mul_le_mul_of_nonneg_left (h.gaussianSecondMoment_le _) C.coe_nonneg
+    _ = _ := by ring
+
+/-- **The cotype-`2` summing bound.** If `Y` has Rademacher cotype `2` with constant `C`, every
+operator `U` from a real inner product space with orthonormal basis `(eᵢ)` into `Y` satisfies
+`π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`, with a constant independent of the dimension. -/
+theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasCotype (U : E →L[ℝ] Y)
+    (b : OrthonormalBasis ι ℝ E) (h : HasCotype Y 2 C) :
+    U.summingENorm 2 ≤
+      ENNReal.ofReal (4 * √3 * C ^ 2 * rademacherSecondMoment fun i ↦ U (b i)) :=
+  U.summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype b
+    h.hasGaussianCotype_two
+
+end RademacherSecondMoment
 
 end ContinuousLinearMap

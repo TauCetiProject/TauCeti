@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype
+public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype.Basic
 public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
 
-import Mathlib.Analysis.Normed.Module.RCLike.Extend
-import TauCeti.Analysis.InnerProductSpace.Parseval
 import TauCeti.Analysis.Normed.Module.GaussianSum.Comparison
+import TauCeti.Analysis.Normed.Module.GaussianSum.WeakTwo
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Gaussian cotype-2 summing bounds
@@ -20,7 +20,8 @@ let `U : E →L[𝕜] Y` be a bounded operator from a finite-dimensional inner p
 orthonormal basis `b` over `𝕜 = ℝ` or `ℂ` (or any `RCLike` field).
 
 Every finite family in `E` of weak `ℓ²` norm `W` is weakly square-dominated by `(W • bᵢ)ᵢ` over `ℝ`
-(and by `(W • bᵢ, W • (I • bᵢ))ᵢ` over any `RCLike` field via `StrongDual.extendRCLike`).
+(and by `(W • bᵢ, W • (I • bᵢ))ᵢ` over any `RCLike` field via
+`ContinuousLinearMap.weakTwo_dom_of_orthonormalBasis`).
 Gaussian comparison (`TauCeti.gaussianSecondMoment_le_of_weakTwo_le`) then gives the unified
 `2`-summing bound `π₂(U) ≤ (1 + ‖(RCLike.I : 𝕜)‖) * C * G₂(U ∘ b)` over any `RCLike` field,
 specializing to `π₂(U) ≤ C * G₂(U ∘ b)` over `ℝ` and `π₂(U) ≤ 2 * C * G₂(U ∘ b)` in general
@@ -52,39 +53,6 @@ open scoped BigOperators ENNReal NNReal
 
 namespace ContinuousLinearMap
 
-/-- Every real continuous linear functional on `Y` is weakly square-dominated on `U ∘ x` by the
-scaled basis image `(W • U (b i), W • (I • U (b i)))ᵢ`, where `W = weakLpNorm 2 x`. -/
-private theorem weakTwo_dom_of_orthonormalBasis {𝕜 ι E Y : Type*} [RCLike 𝕜] [Fintype ι]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedSpace ℝ Y]
-    (b : OrthonormalBasis ι 𝕜 E) (U : E →L[𝕜] Y) {m : ℕ} (x : Fin m → E) (f : StrongDual ℝ Y) :
-    let W := weakLpNorm (𝕜 := 𝕜) 2 x
-    ∑ j, |f (U (x j))| ^ 2 ≤
-      ∑ k, |f (Sum.elim (fun i ↦ W • (U ∘ b) i)
-        (fun i ↦ W • ((RCLike.I : 𝕜) • (U ∘ b) i)) k)| ^ 2 := by
-  intro W
-  have hW : 0 ≤ W := apply_nonneg _ _
-  let g : StrongDual 𝕜 Y := f.extendRCLike (𝕜 := 𝕜)
-  have hre (v : Y) : |f v| ^ 2 ≤ ‖g v‖ ^ 2 := by
-    rw [← f.re_extendRCLike_apply (𝕜 := 𝕜) v]
-    exact pow_le_pow_left₀ (abs_nonneg _) (RCLike.abs_re_le_norm _) 2
-  have hnorm (v : Y) : ‖g v‖ ^ 2 = |f v| ^ 2 + |f ((RCLike.I : 𝕜) • v)| ^ 2 := by
-    rw [RCLike.norm_sq_eq_def, f.re_extendRCLike_apply, f.im_extendRCLike_apply]
-    simp [pow_two]
-  have hweak := sum_norm_eval_rpow_le_weakLpNorm (𝕜 := 𝕜) 2 (by simp) x (g.comp U)
-  simp only [ENNReal.toReal_ofNat, Real.rpow_two, comp_apply] at hweak
-  calc
-    ∑ j, |f (U (x j))| ^ 2 ≤ ∑ j, ‖g (U (x j))‖ ^ 2 := Finset.sum_le_sum fun j _ ↦ hre _
-    _ ≤ (W * ‖g.comp U‖) ^ 2 := hweak
-    _ = W ^ 2 * ∑ i, ‖g (U (b i))‖ ^ 2 := by
-      rw [mul_pow, ← b.sum_sq_norm_apply_eq_norm_sq (g.comp U)]
-      simp_rw [ContinuousLinearMap.comp_apply]
-    _ = ∑ k, |f (Sum.elim (fun i ↦ W • (U ∘ b) i)
-          (fun i ↦ W • ((RCLike.I : 𝕜) • (U ∘ b) i)) k)| ^ 2 := by
-      simp_rw [hnorm, Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, Function.comp_apply,
-        map_smul, smul_eq_mul, abs_mul, mul_pow, abs_of_nonneg hW, ← Finset.mul_sum,
-        Finset.sum_add_distrib, mul_add]
-
 /-- **Pisier's Gaussian summing bound (unified `RCLike` form).** If `Y` has Gaussian cotype `2`
 with constant `C`, then every bounded `𝕜`-linear operator `U : E →L[𝕜] Y` from an inner product
 space with a finite orthonormal basis `b` satisfies
@@ -112,7 +80,7 @@ theorem summingENorm_two_le_ofReal_one_add_norm_I_mul_gaussianSecondMoment
   have hG : gaussianSecondMoment (U ∘ x) ≤
       (1 + ‖(RCLike.I : 𝕜)‖) * gaussianSecondMoment (U ∘ b) * W := calc
     gaussianSecondMoment (U ∘ x) ≤ gaussianSecondMoment y :=
-      gaussianSecondMoment_le_of_weakTwo_le (U ∘ x) y (weakTwo_dom_of_orthonormalBasis b U x)
+      gaussianSecondMoment_le_of_weakTwo_le (U ∘ x) y (U.weakTwo_dom_of_orthonormalBasis b x)
     _ ≤ gaussianSecondMoment (fun i ↦ W • (U ∘ b) i) +
           gaussianSecondMoment (fun i ↦ W • ((RCLike.I : 𝕜) • (U ∘ b) i)) :=
       gaussianSecondMoment_sumElim_le _ _
@@ -139,9 +107,7 @@ theorem summingENorm_two_le_ofReal_two_mul_gaussianSecondMoment
     U.summingENorm 2 ≤ ENNReal.ofReal (2 * C * gaussianSecondMoment (U ∘ b)) := by
   refine (summingENorm_two_le_ofReal_one_add_norm_I_mul_gaussianSecondMoment hY b U).trans ?_
   apply ENNReal.ofReal_le_ofReal
-  have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by
-    rw [RCLike.norm_I]
-    split_ifs <;> norm_num
+  have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := RCLike.norm_I_le_one
   have hG : 0 ≤ (C : ℝ) * gaussianSecondMoment (U ∘ b) :=
     mul_nonneg C.property (gaussianSecondMoment_nonneg _)
   nlinarith

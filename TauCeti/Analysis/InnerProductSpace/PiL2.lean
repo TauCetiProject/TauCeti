@@ -701,9 +701,19 @@ variable {ι : Type*}
 def truncVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
   PiLp.coordIndicator {r : ℝ | |r| ≤ t} g
 
+/-- Defining formula for `EuclideanSpace.truncVec`. -/
+theorem truncVec_def (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    truncVec t g = PiLp.coordIndicator {r : ℝ | |r| ≤ t} g :=
+  (rfl)
+
 /-- Coordinatewise tail of a real Euclidean vector outside `[-t, t]`. -/
 def tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
   PiLp.coordIndicator {r : ℝ | t < |r|} g
+
+/-- Defining formula for `EuclideanSpace.tailVec`. -/
+theorem tailVec_def (t : ℝ) (g : EuclideanSpace ℝ ι) :
+    tailVec t g = PiLp.coordIndicator {r : ℝ | t < |r|} g :=
+  (rfl)
 
 @[simp]
 theorem truncVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :

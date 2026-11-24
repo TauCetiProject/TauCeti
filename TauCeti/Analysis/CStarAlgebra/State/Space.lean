@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
-import TauCeti.Analysis.Normed.Module.WeakDual.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!

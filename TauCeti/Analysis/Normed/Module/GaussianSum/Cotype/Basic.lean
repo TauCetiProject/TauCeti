@@ -111,9 +111,11 @@ theorem HasGaussianCotype.subsingleton_of_lt_one (h : HasGaussianCotype Y q C) (
     have hy_norm : ‖y‖ = 1 / 2 := by
       rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
       field_simp [hx0.ne']
+    have hnorm : ‖WithLp.toLp 0 (fun _ : Fin 1 ↦ y)‖ = 1 := by
+      rw [PiLp.norm_eq_card]
+      simp [show y ≠ 0 from fun h0 ↦ by simp [h0] at hy_norm]
     have h1 := h 1 (fun _ ↦ y)
-    rw [gaussianSecondMoment_unique, PiLp.norm_eq_card] at h1
-    simp [hy_norm] at h1
+    rw [hnorm, gaussianSecondMoment_unique, hy_norm] at h1
     linarith
   · have h1 := h 1 (fun _ ↦ x)
     rw [gaussianSecondMoment_unique] at h1
@@ -132,10 +134,13 @@ theorem HasGaussianCotype.two_le [Nontrivial Y] (h : HasGaussianCotype Y q C) : 
   rcases eq_or_ne q 0 with rfl | hq0
   · exfalso
     have key : (1 : ℝ) ≤ 1 / 2 := le_of_forall_rpow_le_mul_rpow (C := C * ‖y‖) fun n ↦ by
+      have hnorm : ‖WithLp.toLp 0 (fun _ : Fin (n + 1) ↦ y)‖ = (n : ℝ) + 1 := by
+        rw [PiLp.norm_eq_card]
+        simp [hy]
       have hn := h (n + 1) (fun _ ↦ y)
-      rw [PiLp.norm_eq_card, gaussianSecondMoment_const] at hn
-      simp [hy, Real.sqrt_eq_rpow] at hn
-      simpa only [Real.rpow_one, one_div] using hn.trans_eq (by ring)
+      rw [hnorm, gaussianSecondMoment_const, Real.sqrt_eq_rpow] at hn
+      simp only [Real.rpow_one, one_div, Fintype.card_fin, Nat.cast_add, Nat.cast_one] at hn ⊢
+      rwa [← mul_assoc, mul_right_comm (C : ℝ)] at hn
     norm_num at key
   have hqpos : 0 < q.toReal := ENNReal.toReal_pos hq0 hqtop
   have key : q.toReal⁻¹ ≤ 1 / 2 := le_of_forall_rpow_le_mul_rpow (C := C) fun n ↦ by

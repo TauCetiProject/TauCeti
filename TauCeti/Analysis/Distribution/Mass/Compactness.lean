@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.Support
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Normed.Operator.Extend
-import TauCeti.Analysis.Normed.Module.WeakDual.Basic
+import Mathlib.Analysis.Normed.Module.WeakDual
 
 /-!
 # Weak compactness under a mass bound

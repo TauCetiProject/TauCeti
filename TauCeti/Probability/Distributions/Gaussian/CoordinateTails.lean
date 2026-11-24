@@ -8,9 +8,6 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 
-import Mathlib.MeasureTheory.SpecificCodomains.WithLp
-import Mathlib.Probability.Distributions.Gaussian.Fernique
-import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 import TauCeti.Probability.Distributions.Gaussian.Symmetry
 
@@ -56,29 +53,27 @@ theorem memLp_comp_coordIndicator {Y : Type*} [NormedAddCommGroup Y] [NormedSpac
     {p : ℝ≥0∞} (hp : p ≠ ∞) :
     MemLp (fun g : EuclideanSpace ℝ ι ↦ U (PiLp.coordIndicator s g)) p
       (stdGaussian (EuclideanSpace ℝ ι)) :=
-  (IsGaussian.memLp_id _ p hp).clm_comp_of_ae_norm_le U
+  U.comp_memLp' ((IsGaussian.memLp_id (stdGaussian (EuclideanSpace ℝ ι)) p hp).of_le
     (PiLp.measurable_coordIndicator hs).aestronglyMeasurable
-    (Filter.Eventually.of_forall (PiLp.norm_coordIndicator_le s))
+    (Filter.Eventually.of_forall (PiLp.norm_coordIndicator_le s)))
 
 /-- Composing a bounded linear map `U` on real Euclidean space with coordinate truncation belongs
 to every finite `Lᵖ` space under the standard Gaussian measure. -/
 theorem memLp_comp_truncVec {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (U : EuclideanSpace ℝ ι →L[ℝ] Y) (t : ℝ) {p : ℝ≥0∞} (hp : p ≠ ∞) :
     MemLp (fun g : EuclideanSpace ℝ ι ↦ U (EuclideanSpace.truncVec t g)) p
-      (stdGaussian (EuclideanSpace ℝ ι)) :=
-  (IsGaussian.memLp_id _ p hp).clm_comp_of_ae_norm_le U
-    (EuclideanSpace.measurable_truncVec t).aestronglyMeasurable
-    (Filter.Eventually.of_forall (EuclideanSpace.norm_truncVec_le t))
+      (stdGaussian (EuclideanSpace ℝ ι)) := by
+  simpa only [← EuclideanSpace.truncVec_def] using
+    memLp_comp_coordIndicator U (measurableSet_le continuous_abs.measurable measurable_const) hp
 
 /-- Composing a bounded linear map `U` on real Euclidean space with coordinate tail masking belongs
 to every finite `Lᵖ` space under the standard Gaussian measure. -/
 theorem memLp_comp_tailVec {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (U : EuclideanSpace ℝ ι →L[ℝ] Y) (t : ℝ) {p : ℝ≥0∞} (hp : p ≠ ∞) :
     MemLp (fun g : EuclideanSpace ℝ ι ↦ U (EuclideanSpace.tailVec t g)) p
-      (stdGaussian (EuclideanSpace ℝ ι)) :=
-  (IsGaussian.memLp_id _ p hp).clm_comp_of_ae_norm_le U
-    (EuclideanSpace.measurable_tailVec t).aestronglyMeasurable
-    (Filter.Eventually.of_forall (EuclideanSpace.norm_tailVec_le t))
+      (stdGaussian (EuclideanSpace ℝ ι)) := by
+  simpa only [← EuclideanSpace.tailVec_def] using
+    memLp_comp_coordIndicator U (measurableSet_lt measurable_const continuous_abs.measurable) hp
 
 /-- The product of two coordinates of the Gaussian tail vector `EuclideanSpace.tailVec` is
 integrable under the standard Gaussian measure. -/
@@ -105,15 +100,12 @@ theorem integral_tailVec_mul_of_ne (t : ℝ) {i j : ι} (hij : i ≠ j) :
           ∂stdGaussian (EuclideanSpace ℝ ι)) := by
     rw [← integral_neg]
     conv_lhs =>
-      rw [← stdGaussian_map_units_smul ε,
-        integral_map (μ := stdGaussian (EuclideanSpace ℝ ι)) (by fun_prop)
-          (by rw [stdGaussian_map_units_smul ε]
-              exact (integrable_tailVec_mul t i j).aestronglyMeasurable)]
+      rw [← (signFlip ε).integral_comp_stdGaussian]
     refine integral_congr_ae (Filter.Eventually.of_forall fun g ↦ ?_)
     dsimp only
-    rw [EuclideanSpace.tailVec_units_smul, EuclideanSpace.tailVec_units_smul]
-    simp only [ε, Pi.mulSingle_eq_same, Pi.mulSingle_eq_of_ne hij.symm, Units.smul_def,
-      Units.val_neg, Units.val_one, neg_smul, one_smul, EuclideanSpace.tailVec_apply]
+    simp only [EuclideanSpace.tailVec_apply, signFlip_apply, ε, Pi.mulSingle_eq_same,
+      Pi.mulSingle_eq_of_ne hij.symm, Units.smul_def, Units.val_neg, Units.val_one, neg_smul,
+      one_smul, abs_neg]
     split_ifs <;> ring
   linarith
 
