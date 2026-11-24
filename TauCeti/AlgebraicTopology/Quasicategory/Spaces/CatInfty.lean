@@ -98,13 +98,6 @@ private instance (A B : SpacesΔ.{u}) : IsIso (toCatInftyΔHomToSpaces A B) := b
   dsimp [toCatInftyΔHomToSpaces]
   infer_instance
 
-@[reassoc]
-private lemma eqToHom_core_ι {X Y : SSet.{u}} (h : X = Y) :
-    eqToHom (congrArg (fun Z : SSet.{u} ↦ (Z.core : SSet.{u})) h) ≫ Y.core.ι =
-      X.core.ι ≫ eqToHom h := by
-  subst h
-  simp
-
 private lemma toCatInftyΔHomToSpaces_eq_core (A B : SpacesΔ.{u}) :
     toCatInftyΔHomToSpaces A B =
       eqToHom (ObjectProperty.FullSubcategory.eHom_eq SSet (toCatInftyΔObj A) (toCatInftyΔObj B)) ≫

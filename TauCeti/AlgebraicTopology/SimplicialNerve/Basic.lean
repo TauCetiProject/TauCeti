@@ -35,7 +35,9 @@ an edge from `h` to `g ∘ f` in a mapping simplicial set, not an equality.
 * `CategoryTheory.simplicialNerveFunctor`: the simplicial nerve as a functor from the category of
   small simplicial categories to simplicial sets.
 * `CategoryTheory.SimplicialNerve.fromNerve`: the comparison map from the ordinary nerve of the
-  underlying category, with `bijective_fromNerve_app` in degrees at most one.
+  underlying category, natural with respect to simplicial functors
+  (`fromNerve_comp_simplicialNerveMap`) and bijective in degrees at most one
+  (`bijective_fromNerve_app`).
 * `CategoryTheory.SimplicialNerve.map_apply`, `CategoryTheory.SimplicialNerve.map_apply_obj`:
   restriction in `SimplicialNerve C` as precomposition with `SimplicialThickening.functor`.
 * `CategoryTheory.SimplicialNerve.vertexEquiv`: vertices of `SimplicialNerve C` are objects of `C`.
@@ -219,6 +221,20 @@ lemma simplicialNerveMap_app_vertexEquiv_symm {D : Type u} [Category.{v} D] [Sim
       (vertexEquiv D).symm (F.obj x) :=
   (vertexEquiv D).injective (by simp)
 
+/-- `fromNerve` is natural with respect to simplicial functors, via the underlying ordinary
+functor. -/
+@[reassoc]
+lemma fromNerve_comp_simplicialNerveMap {D : Type u} [Category.{v} D] [SimplicialCategory D]
+    (F : EnrichedFunctor SSet.{v} C D) :
+    fromNerve C ≫ simplicialNerveMap F =
+      nerveMap (ForgetEnrichment.equivInverse SSet C ⋙ F.forget ⋙
+        ForgetEnrichment.equivFunctor SSet D) ≫ fromNerve D := by
+  ext n G
+  dsimp
+  rw [simplicialNerveMap_app, fromNerve_app_apply, SimplicialThickening.ofFunctor_comp,
+    fromNerve_app_apply, nerveMap_app]
+  exact congrArg SimplicialThickening.ofFunctor (Functor.assoc _ _ _)
+
 /-- `simplicialNerveMap F` sends `edgeMk f` to the edge of the underlying morphism induced by `F`,
 with endpoints identified by `vertexEquiv_simplicialNerveMap_app`. -/
 @[simp]
@@ -229,27 +245,27 @@ lemma edgeMk_map_simplicialNerveMap {D : Type u} [Category.{v} D] [SimplicialCat
         (simplicialNerveMap_app_vertexEquiv_symm F x).symm
         (simplicialNerveMap_app_vertexEquiv_symm F y).symm := by
   refine SSet.Edge.ext ?_
-  let F' := ForgetEnrichment.equivInverse SSet C ⋙ F.forget ⋙ ForgetEnrichment.equivFunctor SSet D
-  have hL : ((edgeMk f).map (simplicialNerveMap F)).edge =
-      SimplicialThickening.ofFunctor
-        ((Monotone.functor (f := (ULift.down : ULift.{v} (Fin 2) → _)) fun _ _ h ↦ h) ⋙
-          ComposableArrows.mk₁ f ⋙ F') :=
-    (SSet.Edge.map_edge _ _).trans <|
-      (congrArg ((simplicialNerveMap F).app (op ⦋1⦌))
-        ((edgeMk_edge f).trans (fromNerve_app_apply C (op ⦋1⦌) (ComposableArrows.mk₁ f)))).trans <|
-      (simplicialNerveMap_app F (op ⦋1⦌) _).trans <|
-      (SimplicialThickening.ofFunctor_comp _ F).trans <|
-      congrArg SimplicialThickening.ofFunctor (Functor.assoc _ _ _)
-  have hR : ((edgeMk ((eHomEquiv SSet).symm (eHomEquiv SSet f ≫ F.map x y))).ofEq
-        (simplicialNerveMap_app_vertexEquiv_symm F x).symm
-        (simplicialNerveMap_app_vertexEquiv_symm F y).symm).edge =
-      SimplicialThickening.ofFunctor
-        ((Monotone.functor (f := (ULift.down : ULift.{v} (Fin 2) → _)) fun _ _ h ↦ h) ⋙
-          ComposableArrows.mk₁ (F'.map f)) :=
-    (SSet.Edge.ofEq_edge _ _ _).trans <|
-      (edgeMk_edge _).trans (fromNerve_app_apply D (op ⦋1⦌) _)
-  rw [hL, hR]
-  exact congrArg (fun H ↦ SimplicialThickening.ofFunctor (_ ⋙ H)) (nerveMap_app_mk₁ F' f)
+  calc
+    ((edgeMk f).map (simplicialNerveMap F)).edge
+      = (simplicialNerveMap F).app (op ⦋1⦌)
+          ((fromNerve C).app (op ⦋1⦌) (ComposableArrows.mk₁ f)) := by
+          rw [SSet.Edge.map_edge, edgeMk_edge]
+    _ = (fromNerve D).app (op ⦋1⦌)
+          ((nerveMap (ForgetEnrichment.equivInverse SSet C ⋙ F.forget ⋙
+            ForgetEnrichment.equivFunctor SSet D)).app (op ⦋1⦌) (ComposableArrows.mk₁ f)) :=
+          ConcreteCategory.congr_hom
+            (NatTrans.congr_app (fromNerve_comp_simplicialNerveMap F) (op ⦋1⦌))
+            (ComposableArrows.mk₁ f)
+    _ = (fromNerve D).app (op ⦋1⦌)
+          (ComposableArrows.mk₁ ((eHomEquiv SSet).symm (eHomEquiv SSet f ≫ F.map x y))) := by
+          rw [nerveMap_app_mk₁]
+          -- `ForgetEnrichment.equivFunctor` and `equivInverse` act on morphisms by `eHomEquiv`.
+          rfl
+    _ = ((edgeMk ((eHomEquiv SSet).symm (eHomEquiv SSet f ≫ F.map x y))).ofEq
+          (simplicialNerveMap_app_vertexEquiv_symm F x).symm
+          (simplicialNerveMap_app_vertexEquiv_symm F y).symm).edge := by
+          rw [← edgeMk_edge]
+          exact (SSet.Edge.ofEq_edge _ _ _).symm
 
 lemma edgeMk_injective {x y : C} : Function.Injective (edgeMk : (x ⟶ y) → _) := fun f g h ↦ by
   have := (bijective_fromNerve_app C (n := op ⦋1⦌) le_rfl).1 (congrArg SSet.Edge.edge h)

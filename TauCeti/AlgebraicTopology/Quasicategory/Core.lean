@@ -403,6 +403,14 @@ instance isIso_core_ι [KanComplex X] : IsIso X.core.ι := by
   rw [core_eq_top, ← Subcomplex.topIso_hom]
   infer_instance
 
+/-- Transporting the core inclusion along an equality of simplicial sets commutes with `eqToHom`. -/
+@[reassoc]
+lemma eqToHom_core_ι (h : X = Y) :
+    eqToHom (congrArg (fun Z : SSet.{u} ↦ (Z.core : SSet.{u})) h) ≫ Y.core.ι =
+      X.core.ι ≫ eqToHom h := by
+  subst h
+  simp
+
 /-- Every map from a Kan complex into `X` factors through `X.core`. -/
 lemma range_le_core_of_kanComplex [KanComplex Y] (f : Y ⟶ X) :
     Subcomplex.range f ≤ X.core :=
