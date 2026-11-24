@@ -94,12 +94,26 @@ theorem inst_bdEqual (t₁ t₂ : L.Term (α ⊕ Fin k)) (ts : Fin k → L.Term 
       (t₁.subst (Sum.elim Term.var ts)).equal (t₂.subst (Sum.elim Term.var ts)) := by
   simp [inst_def, Term.bdEqual, Term.equal, Function.comp_def]
 
+/-- The instance of an equation is the equation of the instances of its two terms. -/
+@[simp]
+theorem inst_equal (t₁ t₂ : L.Term (α ⊕ Fin k)) (ts : Fin k → L.Term α) :
+    (equal t₁ t₂).inst ts =
+      (t₁.subst (Sum.elim Term.var ts)).equal (t₂.subst (Sum.elim Term.var ts)) :=
+  inst_bdEqual t₁ t₂ ts
+
 /-- The instance of a relation atom applies the relation to the instances of its terms. -/
 @[simp]
 theorem inst_boundedFormula {l : ℕ} (R : L.Relations l) (us : Fin l → L.Term (α ⊕ Fin k))
     (ts : Fin k → L.Term α) :
     (R.boundedFormula us).inst ts = R.formula fun i => (us i).subst (Sum.elim Term.var ts) := by
   simp [inst_def, Relations.boundedFormula, Relations.formula, Function.comp_def]
+
+/-- The instance of a relation atom applies the relation to the instances of its terms. -/
+@[simp]
+theorem inst_rel {l : ℕ} (R : L.Relations l) (us : Fin l → L.Term (α ⊕ Fin k))
+    (ts : Fin k → L.Term α) :
+    (rel R us).inst ts = R.formula fun i => (us i).subst (Sum.elim Term.var ts) :=
+  inst_boundedFormula R us ts
 
 @[simp]
 theorem inst_imp (φ ψ : L.BoundedFormula α k) (ts : Fin k → L.Term α) :
@@ -157,6 +171,15 @@ theorem depth_rel {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term (α ⊕ F
   (rfl)
 
 @[simp]
+theorem depth_bdEqual (t₁ t₂ : L.Term (α ⊕ Fin n)) : (t₁.bdEqual t₂).depth = 0 :=
+  (rfl)
+
+@[simp]
+theorem depth_boundedFormula {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term (α ⊕ Fin n)) :
+    (R.boundedFormula ts).depth = 0 :=
+  (rfl)
+
+@[simp]
 theorem depth_imp (φ ψ : L.BoundedFormula α n) : (φ.imp ψ).depth = max φ.depth ψ.depth + 1 :=
   (rfl)
 
@@ -196,7 +219,7 @@ theorem depth_ex (φ : L.BoundedFormula α (n + 1)) : φ.ex.depth = φ.depth + 3
 
 /-- Atomic formulas have depth `0`. -/
 theorem IsAtomic.depth_eq_zero {φ : L.BoundedFormula α n} (h : φ.IsAtomic) : φ.depth = 0 := by
-  cases h <;> rfl
+  cases h <;> simp
 
 /-- Mapping the terms and relation symbols of a formula keeps its depth, provided the map applied
 under each quantifier does. -/

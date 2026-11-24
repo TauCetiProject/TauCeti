@@ -27,8 +27,10 @@ already computed.
   `subst_all`: substitution on each constructor.
 * `FirstOrder.Language.BoundedFormula.subst_subst`: two substitutions compose to one.
 * `FirstOrder.Language.BoundedFormula.relabelAux_inl`: `relabelAux` on a free variable.
-* `FirstOrder.Language.BoundedFormula.relabel_subst_eq_subst_relabel`: substitution commutes with
-  relabelling when the two agree on each variable.
+* `FirstOrder.Language.Term.relabel_subst_eq_subst_relabel`,
+  `FirstOrder.Language.BoundedFormula.relabel_subst_eq_subst_relabel`: substitution commutes with
+  relabelling when the two agree on each variable, for terms under bound positions and for
+  formulas.
 * `FirstOrder.Language.BoundedFormula.toFormula_subst`: opening the bound positions of a
   substituted formula is substituting in the opened formula.
 * `FirstOrder.Language.BoundedFormula.freeVarFinset_subst`: the free variables after a
@@ -104,6 +106,45 @@ theorem relabelAux_inl {δ ε : Type*} {m : ℕ} (g : δ → ε ⊕ Fin m) (k : 
     relabelAux g k (Sum.inl x) = Sum.map id (Fin.castAdd k) (g x) := by
   rcases hx : g x with y | j <;> simp [relabelAux, hx]
 
+end FirstOrder.Language.BoundedFormula
+
+namespace FirstOrder.Language.Term
+
+variable {L : Language} {γ : Type*}
+
+/-- The term step of `BoundedFormula.relabel_subst_eq_subst_relabel`: in a term under `k` bound
+positions, substituting `F` for the free variables and then relabelling along
+`BoundedFormula.relabelAux g k` is relabelling along `BoundedFormula.relabelAux g' k` and then
+substituting `F'`, provided the two agree on each variable. -/
+theorem relabel_subst_eq_subst_relabel {δ ε γ' : Type*} {m : ℕ} (F : γ → L.Term δ)
+    (g : δ → ε ⊕ Fin m) (g' : γ → γ' ⊕ Fin m) (F' : γ' → L.Term ε)
+    (h : ∀ c, (F c).relabel g =
+      Sum.elim (fun c' => (F' c').relabel Sum.inl) (fun j => var (Sum.inr j)) (g' c))
+    {k : ℕ} (t : L.Term (γ ⊕ Fin k)) :
+    (t.subst (Sum.elim (relabel Sum.inl ∘ F) (var ∘ Sum.inr))).relabel
+        (BoundedFormula.relabelAux g k) =
+      (t.relabel (BoundedFormula.relabelAux g' k)).subst
+        (Sum.elim (relabel Sum.inl ∘ F') (var ∘ Sum.inr)) := by
+  rw [relabel_subst, subst_relabel]
+  congr 1
+  funext x
+  rcases x with c | i
+  · have hg : BoundedFormula.relabelAux g k ∘ Sum.inl = Sum.map id (Fin.castAdd k) ∘ g :=
+      funext (BoundedFormula.relabelAux_inl g k)
+    rw [Function.comp_apply, Sum.elim_inl, Function.comp_apply, relabel_relabel, hg,
+      ← relabel_relabel, h c, BoundedFormula.relabelAux_inl]
+    rcases g' c with c' | j
+    · rw [Sum.elim_inl, Sum.map_inl, Sum.elim_inl, Function.comp_apply, relabel_relabel]
+      rfl
+    · rfl
+  · simp [BoundedFormula.relabelAux]
+
+end FirstOrder.Language.Term
+
+namespace FirstOrder.Language.BoundedFormula
+
+variable {L : Language} {α β γ : Type*} {n : ℕ}
+
 /-- Substitution commutes with relabelling: substituting `F` and then relabelling along `g` is
 relabelling along `g'` and then substituting `F'`, provided the two agree on each variable. A
 variable that `g'` sends to a new bound position `j` must be sent by `F` to a term that `g`
@@ -113,27 +154,13 @@ theorem relabel_subst_eq_subst_relabel {δ ε γ' : Type*} {m : ℕ} (F : γ →
     (h : ∀ c, (F c).relabel g =
       Sum.elim (fun c' => (F' c').relabel Sum.inl) (fun j => Term.var (Sum.inr j)) (g' c)) :
     ∀ {k} (χ : L.BoundedFormula γ k), (χ.subst F).relabel g = (χ.relabel g').subst F' := by
-  have hterm : ∀ (k : ℕ) (t : L.Term (γ ⊕ Fin k)),
-      (t.subst (Sum.elim (Term.relabel Sum.inl ∘ F) (Term.var ∘ Sum.inr))).relabel
-          (relabelAux g k) =
-        (t.relabel (relabelAux g' k)).subst
-          (Sum.elim (Term.relabel Sum.inl ∘ F') (Term.var ∘ Sum.inr)) := by
-    intro k t
-    simp only [Term.relabel_subst, Term.subst_relabel]
-    congr 1
-    funext x
-    rcases x with c | i
-    · have hc := congrArg (Term.relabel (Sum.map id (Fin.castAdd k))) (h c)
-      simp only [Function.comp_apply, Sum.elim_inl, Term.relabel_relabel, relabelAux_inl]
-      rcases hg' : g' c with c' | j <;>
-        simp only [hg', Sum.elim_inl, Sum.elim_inr, Term.relabel_relabel] at hc <;>
-        simpa [Function.comp_def, relabelAux_inl] using hc
-    · simp [relabelAux]
   intro k χ
   induction χ with
   | falsum => rfl
-  | equal t₁ t₂ => simp only [subst, relabel, mapTermRel, hterm]
-  | rel R ts => simp only [subst, relabel, mapTermRel, hterm]
+  | equal t₁ t₂ =>
+    simp only [subst, relabel, mapTermRel, Term.relabel_subst_eq_subst_relabel F g g' F' h]
+  | rel R ts =>
+    simp only [subst, relabel, mapTermRel, Term.relabel_subst_eq_subst_relabel F g g' F' h]
   | imp φ ψ ihφ ihψ => rw [subst_imp, relabel_imp, relabel_imp, subst_imp, ihφ, ihψ]
   | all φ ih => rw [subst_all, relabel_all, relabel_all, subst_all, ih]
 
