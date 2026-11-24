@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Faithful quotient representations
@@ -13,6 +15,8 @@ public import Mathlib.RepresentationTheory.Basic
 Mathlib's `Representation.ofQuotient` descends a representation through a normal subgroup
 acting trivially. The kernel always acts trivially, and quotienting by it gives a faithful
 representation on the original module, with the caller's scalar and additive structures.
+Likewise, a normal subgroup `N` acts trivially on the coset permutation module `R[G ⧸ N]`
+(`Representation.instIsTrivialOfMulActionQuotientCompSubtype`).
 -/
 
 public section
@@ -25,6 +29,14 @@ variable {R G M : Type*} [Semiring R] [Group G] [AddCommMonoid M] [Module R M]
 /-- Restriction to the kernel is a trivial representation. -/
 instance isTrivial_comp_ker : IsTrivial (ρ.comp ρ.ker.subtype) where
   out g := MonoidHom.mem_ker.mp g.property
+
+/-- For a normal subgroup `N` of `G`, the restriction of the coset permutation representation
+`R[G ⧸ N]` to `N` is trivial. -/
+instance instIsTrivialOfMulActionQuotientCompSubtype (N : Subgroup G) [N.Normal] :
+    IsTrivial ((ofMulAction R G (G ⧸ N)).comp N.subtype) where
+  out n := by
+    ext x
+    simp [TauCeti.smul_quotient_eq_self_of_mem n.property]
 
 /-- Restricting a quotient representation along the quotient map recovers the original
 representation, on the same module with the caller's scalar and additive structures. -/
