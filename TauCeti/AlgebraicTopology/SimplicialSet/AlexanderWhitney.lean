@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import TauCeti.AlgebraicTopology.SimplicialObject.AlexanderWhitney
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 
@@ -154,7 +156,7 @@ lemma alexanderWhitney_naturality {K' L' : SSet.{w}} (f : K ⟶ K') (g : L ⟶ L
     ιChainComplex_alexanderWhitney_f_assoc, ιChainComplex_alexanderWhitney_f,
     Preadditive.sum_comp, Category.assoc]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  simp only [tensorHom_eq_mapBifunctorMap, ι_tensorHom, tensorHom_comp_tensorHom_assoc,
+  simp only [ι_tensorHom_f, tensorHom_comp_tensorHom_assoc,
     ι_chainComplexMap_f, Monoidal.tensorHom_app, Monoidal.tensorObj_obj, tensorHom_app_apply,
     NatTrans.naturality_apply]
 
@@ -173,8 +175,8 @@ lemma alexanderWhitney_coefficient_naturality {R' S' : C} (f : R ⟶ R') (g : S 
     ιChainComplex_alexanderWhitney_f, ιChainComplex_alexanderWhitney_f_assoc,
     Preadditive.comp_sum, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [tensorHom_eq_mapBifunctorMap, ← Category.assoc, tensorHom_comp_tensorHom, Category.assoc,
-    ι_tensorHom, ← Category.assoc, tensorHom_comp_tensorHom,
+  rw [← Category.assoc, tensorHom_comp_tensorHom, Category.assoc,
+    ι_tensorHom_f, ← Category.assoc, tensorHom_comp_tensorHom,
     SSet.ιChainComplex_chainComplexFunctor_map_app_f,
     SSet.ιChainComplex_chainComplexFunctor_map_app_f]
 

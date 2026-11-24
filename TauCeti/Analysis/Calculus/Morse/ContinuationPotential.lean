@@ -64,7 +64,7 @@ base potential `C h`. If `|∂ₜ f| ≤ K t (1 - t²)` with `0 ≤ K < C`, then
 `C / (C + K)` and `C / (C - K)`, and it is `1` wherever `f` is independent of the time, so the two
 fields agree near the critical points. Being a bounded positive multiple, the rescaled field has
 the same oriented trajectories, reparametrized
-(`TauCeti.Geometry.Manifold.Morse.ContinuationPotential`).
+(`TauCeti.Geometry.Manifold.Morse.ContinuationPotential.Basic`).
 
 ## Main declarations
 

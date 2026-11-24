@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Poi
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
 import TauCeti.AlgebraicGeometry.IdealSheaf.Product
+import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 
 /-!
 # Naive level structures on an elliptic curve
@@ -272,9 +273,8 @@ theorem isClosedImmersion_naiveLocusι_left [Finite A] {N : ℕ}
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) (hu : ∀ a, u a ^ N = 1) :
     IsClosedImmersion (naiveLocusι u).left := by
   rw [naiveLocusι_left]
-  apply IsClosedImmersion.of_isPreimmersion
-  rw [Scheme.Opens.range_ι, coe_naiveLocusOpens]
-  exact (isClopen_naiveLocus u hN hu).isClosed
+  exact (Scheme.Opens.isClosedImmersion_ι_iff _).mpr
+    (by rw [coe_naiveLocusOpens]; exact (isClopen_naiveLocus u hN hu).isClosed)
 
 /-- **The naive locus is finite where `N` is invertible.** If `H` is finite over `S`, the natural
 number `N` is invertible in every residue field of `S` and every point `u a` is killed by `N`, then

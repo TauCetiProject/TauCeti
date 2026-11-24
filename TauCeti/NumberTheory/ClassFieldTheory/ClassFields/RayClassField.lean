@@ -106,6 +106,8 @@ whenever `L/K` is Galois and `𝔪` is invariant under `Gal(L/K)`-transport
   `TauCeti.ClassFieldTheory.finrank_hilbertClassField` and
   `TauCeti.ClassFieldTheory.finrank_narrowHilbertClassField`: the degrees are the order of the ray
   class group, the class number and the order of the narrow class group.
+* `TauCeti.ClassFieldTheory.hilbertClassField_eq_bot_iff`: the Hilbert class field is `K` itself
+  exactly when `K` has class number one.
 * `TauCeti.ClassFieldTheory.fieldRange_le_hilbertClassField_iff`: the Hilbert class field is the
   maximal abelian extension unramified at every finite and every infinite place.
 * `TauCeti.ClassFieldTheory.fieldRange_le_narrowHilbertClassField_iff`: the narrow Hilbert class
@@ -347,6 +349,10 @@ theorem gal_hilbertClassField_equiv_classGroup :
 theorem finrank_hilbertClassField : Module.finrank K (hilbertClassField K) = classNumber K := by
   rw [← IsGalois.card_aut_eq_finrank, ← Nat.card_congr (hilbertClassArtinEquiv K).toEquiv,
     classNumber, Nat.card_eq_fintype_card]
+
+/-- **The Hilbert class field is trivial exactly in class number one.** -/
+theorem hilbertClassField_eq_bot_iff : hilbertClassField K = ⊥ ↔ classNumber K = 1 := by
+  rw [← IntermediateField.finrank_eq_one_iff, finrank_hilbertClassField]
 
 /-- **Reciprocity for the narrow Hilbert class field**: the Artin map identifies the narrow class
 group of `K` with the Galois group of the narrow Hilbert class field: `rayClassArtinEquiv` at the

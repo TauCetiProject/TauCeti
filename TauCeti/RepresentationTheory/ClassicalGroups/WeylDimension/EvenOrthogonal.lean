@@ -272,7 +272,7 @@ private theorem evenOrthogonalWeylDimensionNumerator_add_two_of_colLen_le_one
       = (∏ k ∈ range n, ((k + 1) * (2 * k + 1).factorial : ℤ))
         * ∏ c ∈ range (n + 1), (((μ.rowLen 0 + n + 1 : ℕ) : ℤ) ^ 2 - (c : ℤ) ^ 2) := by
   have h' : ∀ j, 0 < j → μ.rowLen j = 0 := fun j hj =>
-    YoungDiagram.rowLen_eq_zero_of_colLen_le (h.trans hj)
+    YoungDiagram.rowLen_eq_zero_iff.mpr (h.trans hj)
   rw [evenOrthogonalWeylDimensionNumerator_eq_prod_prod, prod_range_succ']
   congr 1
   · rw [prod_congr rfl fun i hi => evenOrthogonalWeylDimensionNumerator_row_of_rowLen_eq_zero
