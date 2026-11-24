@@ -331,6 +331,52 @@ private theorem contDiff_endCutoff_smul (R₀ : ℝ) (q : Puncture) {ξ : ℝ ×
     ContDiff ℝ 2 fun z ↦ endCutoff R₀ q z • ξ z :=
   contDiff_smul_of_tsupport_subset (fun _ hz ↦ contDiffAt_endCutoff R₀ q hz) hξ hξS
 
+omit [FiniteDimensional ℝ V] in
+/-- **The weighted `L²` norm of an operator on a cut-off field.** Let `f` have derivative supported
+in a compact set `K`, bounded by `M` there, let `b ≤ B` and the weight `w ≥ 0` satisfy `w ≤ Λ` on
+`K`. If an operator `D` vanishes on `f ξ` off `S` and, at each point of `S` where `‖df‖ ≤ M'` and
+`b ≤ B'`, satisfies `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M' (1 + B'))² ‖ξ‖²`, then
+`∫ w ‖D (f ξ)‖² ≤ 2 ∫ w ‖D ξ‖² + 2 (M (1 + B))² Λ ∫_K ‖ξ‖²`. This is shared by `D_u` (with
+`w = 1`) and by its formal adjoint (with `w = ρ⁻¹`). -/
+private theorem integral_mul_norm_fun_smul_sq_le {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] {D : (ℝ × ℝ → E) → ℝ × ℝ → F}
+    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) {K : Set (ℝ × ℝ)} (hK : IsCompact K) {f : ℝ × ℝ → ℝ}
+    (hfK : ∀ z ∈ thricePuncturedSphereReal, fderiv ℝ f z ≠ 0 → z ∈ K) {b : ℝ × ℝ → ℝ}
+    {M B Λ : ℝ} (hM : ∀ z ∈ K, ‖fderiv ℝ f z‖ ≤ M) (hB : ∀ z ∈ K, b z ≤ B) (hΛ₀ : 0 ≤ Λ)
+    (hΛ : ∀ z ∈ K, w z ≤ Λ) {ξ : ℝ × ℝ → E} (hξ : Continuous ξ)
+    (hD : ∀ z ∈ thricePuncturedSphereReal, ∀ M' B' : ℝ, ‖fderiv ℝ f z‖ ≤ M' → b z ≤ B' →
+      ‖D (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
+        2 * ‖D ξ z‖ ^ 2 + 2 * (M' * (1 + B')) ^ 2 * ‖ξ z‖ ^ 2)
+    (hD₀ : ∀ z ∉ thricePuncturedSphereReal, D (fun w ↦ f w • ξ w) z = 0)
+    (hξi : Integrable fun z ↦ w z * ‖D ξ z‖ ^ 2)
+    (hfξi : Integrable fun z ↦ w z * ‖D (fun w ↦ f w • ξ w) z‖ ^ 2) :
+    ∫ z, w z * ‖D (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
+      2 * (∫ z, w z * ‖D ξ z‖ ^ 2) + 2 * (M * (1 + B)) ^ 2 * Λ * ∫ z in K, ‖ξ z‖ ^ 2 := by
+  have hind : Integrable (K.indicator fun z ↦ ‖ξ z‖ ^ 2) :=
+    ((hξ.norm.pow 2).continuousOn.integrableOn_compact hK).integrable_indicator hK.measurableSet
+  set c := M * (1 + B)
+  calc _ ≤ ∫ z, (2 * (w z * ‖D ξ z‖ ^ 2) + 2 * c ^ 2 * Λ * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z) := by
+        refine integral_mono hfξi ((hξi.const_mul 2).add (hind.const_mul _)) fun z ↦ ?_
+        have hind₀ : 0 ≤ K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z :=
+          indicator_nonneg (fun _ _ ↦ sq_nonneg _) z
+        by_cases hzS : z ∈ thricePuncturedSphereReal
+        · by_cases hz : fderiv ℝ f z = 0
+          · have h := hD z hzS 0 (b z) (by simp [hz]) le_rfl
+            simp only [zero_mul, zero_pow two_ne_zero, mul_zero, add_zero] at h
+            nlinarith [mul_nonneg (mul_nonneg (sq_nonneg c) hΛ₀) hind₀,
+              mul_le_mul_of_nonneg_left h (hw z)]
+          · have hzK := hfK z hzS hz
+            have h := hD z hzS M B (hM z hzK) (hB z hzK)
+            rw [indicator_of_mem hzK]
+            nlinarith [mul_le_mul_of_nonneg_left h (hw z), mul_le_mul_of_nonneg_right (hΛ z hzK)
+              (mul_nonneg (sq_nonneg c) (sq_nonneg ‖ξ z‖))]
+        · rw [hD₀ z hzS, norm_zero, zero_pow two_ne_zero, mul_zero]
+          have := hw z
+          positivity
+    _ = _ := by
+        rw [integral_add (hξi.const_mul 2) (hind.const_mul _), integral_const_mul,
+          integral_const_mul, integral_indicator hK.measurableSet]
+
 /-- **The `L²` norm of the operator on a cut-off section.** Let `f` be smooth on `S` with
 `|f| ≤ 1`, with derivative supported in a compact set `K ⊆ S` and bounded by `M` there, and let
 `‖J‖ ≤ B` along `u` on `K`. Then for a `C²` section `ξ` with compact support in `S`,
@@ -350,43 +396,23 @@ private theorem integral_norm_floerLinearization_fun_smul_sq_le (ω : Symplectic
     ∫ z, ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
       2 * (∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
         2 * (M * (1 + B)) ^ 2 * ∫ z in K, ‖ξ z‖ ^ 2 := by
-  have hfξ : ContDiff ℝ 2 fun z ↦ f z • ξ z := contDiff_smul_of_tsupport_subset hf hξ hξS
   have hint {η : ℝ × ℝ → V} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η)
       (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
-      Integrable fun z ↦ ‖ω.floerLinearization J Ks Kt u η z‖ ^ 2 := by
-    exact ω.integrable_norm_floerLinearization_sq
+      Integrable fun z ↦ 1 * ‖ω.floerLinearization J Ks Kt u η z‖ ^ 2 := by
+    simpa only [one_mul] using ω.integrable_norm_floerLinearization_sq
       (ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu (hη.of_le one_le_two)
         hηS) hηc
-  have hind : Integrable (K.indicator fun z ↦ ‖ξ z‖ ^ 2) :=
-    ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact hK).integrable_indicator
-      hK.measurableSet
-  calc _ ≤ ∫ z, (2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 +
-        2 * (M * (1 + B)) ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z) := by
-        refine integral_mono (hint hfξ (hξc.smul_left (f := f))
-          ((tsupport_smul_subset_right _ _).trans hξS))
-          (((hint hξ hξc hξS).const_mul 2).add (hind.const_mul _)) fun z ↦ ?_
-        have hind₀ : 0 ≤ K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z :=
-          indicator_nonneg (fun _ _ ↦ sq_nonneg _) z
-        by_cases hzS : z ∈ thricePuncturedSphereReal
-        · have hfd := (hf z hzS).differentiableAt two_ne_zero
-          have hξd := hξ.differentiable two_ne_zero z
-          by_cases hz : fderiv ℝ f z = 0
-          · have h := ω.norm_floerLinearization_fun_smul_sq_le J Ks Kt u ξ hfd hξd (hf₁ z)
-              (M := 0) (B := ‖J z (u z)‖) (by simp [hz]) le_rfl
-            simp only [zero_mul, zero_pow two_ne_zero, mul_zero, add_zero] at h
-            nlinarith [mul_nonneg (sq_nonneg (M * (1 + B))) hind₀]
-          · have hzK := hfK z hzS hz
-            have h := ω.norm_floerLinearization_fun_smul_sq_le J Ks Kt u ξ hfd hξd (hf₁ z)
-              (hM z hzK) (hB z hzK)
-            simpa only [indicator_of_mem hzK] using h
-        · have hz : z ∉ tsupport fun w ↦ f w • ξ w := fun h ↦
-            hzS (hξS (tsupport_smul_subset_right _ _ h))
-          rw [ω.floerLinearization_of_notMem_tsupport J Ks Kt u hz, norm_zero,
-            zero_pow two_ne_zero]
-          positivity
-    _ = _ := by
-        rw [integral_add ((hint hξ hξc hξS).const_mul 2) (hind.const_mul _), integral_const_mul,
-          integral_const_mul, integral_indicator hK.measurableSet]
+  simpa only [one_mul, mul_one] using integral_mul_norm_fun_smul_sq_le
+    (D := ω.floerLinearization J Ks Kt u) (w := fun _ ↦ 1) (b := fun z ↦ ‖J z (u z)‖)
+    (fun _ ↦ zero_le_one) hK hfK hM hB zero_le_one
+    (fun _ _ ↦ le_rfl) hξ.continuous
+    (fun z hzS _ _ hM' hB' ↦ ω.norm_floerLinearization_fun_smul_sq_le J Ks Kt u ξ
+      ((hf z hzS).differentiableAt two_ne_zero) (hξ.differentiable two_ne_zero z) (hf₁ z) hM' hB')
+    (fun z hzS ↦ ω.floerLinearization_of_notMem_tsupport J Ks Kt u fun h ↦
+      hzS (hξS (tsupport_smul_subset_right _ _ h)))
+    (hint hξ hξc hξS)
+    (hint (contDiff_smul_of_tsupport_subset hf hξ hξS) (hξc.smul_left (f := f))
+      ((tsupport_smul_subset_right _ _).trans hξS))
 
 omit [FiniteDimensional ℝ V] in
 /-- **The end piece.** Let `G ξ` be a field `ξ` read on the end `q`, such that multiplying `ξ` by
@@ -857,48 +883,20 @@ private theorem integral_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoin
         ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ^ 2 ≤
       2 * (∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
         2 * (M * (1 + B)) ^ 2 * Λ * ∫ z in K, ‖η z‖ ^ 2 := by
-  have hfη : ContDiff ℝ 2 fun z ↦ f z • η z := contDiff_smul_of_tsupport_subset hf hη hηS
-  have hW := ω.integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq hJ hKs hKt
-    hu (hη.of_le one_le_two) subset_rfl hηc hηS
-  have hind : Integrable (K.indicator fun z ↦ ‖η z‖ ^ 2) :=
-    ((hη.continuous.norm.pow 2).continuousOn.integrableOn_compact hK).integrable_indicator
-      hK.measurableSet
-  set c := M * (1 + B)
-  calc _ ≤ ∫ z, (2 * ((cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
-        2 * c ^ 2 * Λ * K.indicator (fun z ↦ ‖η z‖ ^ 2) z) := by
-        refine integral_mono
-          (ω.integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq hJ hKs hKt hu
-            (hfη.of_le one_le_two) (tsupport_smul_subset_right _ _) hηc hηS)
-          ((hW.const_mul 2).add (hind.const_mul _)) fun z ↦ ?_
-        have hind₀ : 0 ≤ K.indicator (fun z ↦ ‖η z‖ ^ 2) z :=
-          indicator_nonneg (fun _ _ ↦ sq_nonneg _) z
-        have hρ : 0 ≤ (cylindricalWeight z)⁻¹ := inv_nonneg.2 (cylindricalWeight_nonneg z)
-        by_cases hzS : z ∈ thricePuncturedSphereReal
-        · have hfd := (hf z hzS).differentiableAt two_ne_zero
-          have hηd := hη.differentiable two_ne_zero z
-          have hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z :=
-            ((hJ z hzS).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
-              (differentiableAt_id.prodMk ((hu z hzS).differentiableAt one_ne_zero))
-          by_cases hz : fderiv ℝ f z = 0
-          · have h := ω.norm_floerLinearizationAdjoint_fun_smul_sq_le (Ks := Ks) (Kt := Kt)
-              hfd hηd hJu (hf₁ z) (M := 0) (B := ‖J z (u z)‖) (by simp [hz]) le_rfl
-            simp only [zero_mul, zero_pow two_ne_zero, mul_zero, add_zero] at h
-            nlinarith [mul_nonneg (mul_nonneg (sq_nonneg c) hΛ₀) hind₀,
-              mul_le_mul_of_nonneg_left h hρ]
-          · have hzK := hfK z hzS hz
-            have h := ω.norm_floerLinearizationAdjoint_fun_smul_sq_le (Ks := Ks) (Kt := Kt)
-              hfd hηd hJu (hf₁ z) (hM z hzK) (hB z hzK)
-            rw [indicator_of_mem hzK]
-            nlinarith [mul_le_mul_of_nonneg_left h hρ, mul_le_mul_of_nonneg_right (hΛ z hzK)
-              (mul_nonneg (sq_nonneg c) (sq_nonneg ‖η z‖))]
-        · have hz : z ∉ tsupport fun w ↦ f w • η w := fun h ↦
-            hzS (hηS (tsupport_smul_subset_right _ _ h))
-          rw [floerLinearizationAdjoint_of_notMem_tsupport hz, norm_zero, zero_pow two_ne_zero,
-            mul_zero]
-          positivity
-    _ = _ := by
-        rw [integral_add (hW.const_mul 2) (hind.const_mul _), integral_const_mul,
-          integral_const_mul, integral_indicator hK.measurableSet]
+  refine integral_mul_norm_fun_smul_sq_le (D := ω.floerLinearizationAdjoint J Ks Kt u)
+    (b := fun z ↦ ‖J z (u z)‖) (fun z ↦ inv_nonneg.2 (cylindricalWeight_nonneg z)) hK hfK hM hB
+    hΛ₀ hΛ hη.continuous (fun z hzS _ _ hM' hB' ↦ ?_)
+    (fun z hzS ↦ floerLinearizationAdjoint_of_notMem_tsupport fun h ↦
+      hzS (hηS (tsupport_smul_subset_right _ _ h)))
+    (ω.integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq hJ hKs hKt hu
+      (hη.of_le one_le_two) subset_rfl hηc hηS)
+    (ω.integrable_inv_cylindricalWeight_mul_norm_floerLinearizationAdjoint_sq hJ hKs hKt hu
+      ((contDiff_smul_of_tsupport_subset hf hη hηS).of_le one_le_two)
+      (tsupport_smul_subset_right _ _) hηc hηS)
+  exact ω.norm_floerLinearizationAdjoint_fun_smul_sq_le (Ks := Ks) (Kt := Kt)
+    ((hf z hzS).differentiableAt two_ne_zero) (hη.differentiable two_ne_zero z)
+    (((hJ z hzS).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
+      (differentiableAt_id.prodMk ((hu z hzS).differentiableAt one_ne_zero))) (hf₁ z) hM' hB'
 
 /-- **Comparing the weights on the cut-off end piece.** The covector field `β_q η` is supported
 where `±s ≥ R₀ ≥ 0` on the end `q`, where `|z - c_q|² ≤ 5 ρ⁻¹`, so the weighted norm of its
