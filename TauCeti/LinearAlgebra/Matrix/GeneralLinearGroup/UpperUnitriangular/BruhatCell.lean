@@ -438,28 +438,17 @@ theorem coe_unitriangularInversionGroupEquivBruhatCell_apply (w : Equiv.Perm ι)
       QuotientGroup.mk ((j : GL ι R) * permutationGL (k := R) w) :=
   (rfl)
 
-/-- For `i < j`, the pair `(i, j)` fails to be an inversion of `w⁻¹` exactly when `w⁻¹` keeps it in
-order. -/
-private theorem not_mem_inversions_iff (w : Equiv.Perm ι) {i j : ι} (hij : i < j) :
-    (i, j) ∉ Finset.univ.inversions ⇑w.symm ↔ w.symm i < w.symm j := by
-  have hne : w.symm i ≠ w.symm j := fun h => ne_of_lt hij (w.symm.injective h)
-  constructor
-  · intro h
-    exact lt_of_le_of_ne (not_lt.mp fun hlt =>
-      h (Finset.mem_inversions.mpr ⟨Finset.mem_univ _, Finset.mem_univ _, hij, hlt⟩)) hne
-  · intro h h'
-    obtain ⟨_, _, _, hlt⟩ := Finset.mem_inversions.mp h'
-    exact (not_lt_of_ge h.le) hlt
-
 /-- The elements of `U_w` are exactly the upper-unitriangular matrices whose entries above the
 diagonal vanish off the inversions of `w⁻¹`. -/
 private theorem mem_unitriangularInversionGroup_iff_notMem_inversions (w : Equiv.Perm ι)
     (g : GL ι R) :
     g ∈ unitriangularInversionGroup R w ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
-      ∀ i j, i < j → (i, j) ∉ Finset.univ.inversions ⇑w.symm → (g : Matrix ι ι R) i j = 0 :=
-  (mem_unitriangularInversionGroup_iff).trans
-    ⟨fun hg => ⟨hg.1, fun i j hij hS => hg.2 i j hij ((not_mem_inversions_iff w hij).mp hS)⟩,
-      fun hg => ⟨hg.1, fun i j hij hw => hg.2 i j hij ((not_mem_inversions_iff w hij).mpr hw)⟩⟩
+      ∀ i j, i < j → (i, j) ∉ Finset.univ.inversions ⇑w.symm → (g : Matrix ι ι R) i j = 0 := by
+  have h (i j : ι) (hij : i < j) : (i, j) ∉ Finset.univ.inversions ⇑w.symm ↔ w.symm i < w.symm j :=
+    Finset.notMem_inversions_iff w.symm.injective (Finset.mem_univ _) (Finset.mem_univ _) hij
+  rw [mem_unitriangularInversionGroup_iff]
+  exact ⟨fun hg => ⟨hg.1, fun i j hij hS => hg.2 i j hij ((h i j hij).mp hS)⟩,
+    fun hg => ⟨hg.1, fun i j hij hw => hg.2 i j hij ((h i j hij).mpr hw)⟩⟩
 
 variable (R) in
 /-- **The coordinates of `U_w`**: an element of `U_w` is determined by its entries at the

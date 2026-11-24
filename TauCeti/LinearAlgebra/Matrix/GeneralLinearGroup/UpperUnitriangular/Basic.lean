@@ -262,7 +262,6 @@ Let `P` be a predicate on pairs of indices, satisfied only by pairs `i < j`, and
 `i < j` not satisfying `P` vanish. Then an element of `H` is determined by its entries at the
 pairs satisfying `P`, and these entries are arbitrary: the map sending `g` to its entries at the
 pairs satisfying `P` is a bijection from `H` onto the functions `{p : ι × ι // P p} → R`. -/
-@[expose]
 noncomputable def unitriangularGroupEquivFunOfSupported (H : Subgroup (GL ι R)) (P : ι × ι → Prop)
     (hP : ∀ p, P p → p.1 < p.2)
     (hH : ∀ g : GL ι R, g ∈ H ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
@@ -296,6 +295,7 @@ noncomputable def unitriangularGroupEquivFunOfSupported (H : Subgroup (GL ι R))
       upperUnitriangularMatrixOfEntries_apply_of_mem P _ (ne_of_lt (hP _ p.property)) p.property]
 
 /-- The coordinates of `g` are its entries at the pairs satisfying `P`. -/
+@[simp]
 theorem unitriangularGroupEquivFunOfSupported_apply (H : Subgroup (GL ι R)) (P : ι × ι → Prop)
     (hP : ∀ p, P p → p.1 < p.2)
     (hH : ∀ g : GL ι R, g ∈ H ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
@@ -303,10 +303,11 @@ theorem unitriangularGroupEquivFunOfSupported_apply (H : Subgroup (GL ι R)) (P 
     (p : {p : ι × ι // P p}) :
     unitriangularGroupEquivFunOfSupported H P hP hH g p =
       ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2 :=
-  rfl
+  (rfl)
 
 /-- The entries of the element with coordinates `c` are those of the matrix
 `TauCeti.upperUnitriangularMatrixOfEntries P c`. -/
+@[simp]
 theorem unitriangularGroupEquivFunOfSupported_symm_apply_coe (H : Subgroup (GL ι R))
     (P : ι × ι → Prop) (hP : ∀ p, P p → p.1 < p.2)
     (hH : ∀ g : GL ι R, g ∈ H ↔ (g : Matrix ι ι R).IsUpperUnitriangular ∧
@@ -315,13 +316,12 @@ theorem unitriangularGroupEquivFunOfSupported_symm_apply_coe (H : Subgroup (GL �
     ((unitriangularGroupEquivFunOfSupported H P hP hH).symm c : GL ι R) i j =
       upperUnitriangularMatrixOfEntries P c i j := by
   have h : ((unitriangularGroupEquivFunOfSupported H P hP hH).symm c : GL ι R) =
-      (isUpperUnitriangular_upperUnitriangularMatrixOfEntries P hP c).toGL := rfl
+      (isUpperUnitriangular_upperUnitriangularMatrixOfEntries P hP c).toGL := (rfl)
   rw [h, IsUpperUnitriangular.coe_toGL]
 
 /-- `Uₙ(R)` is in bijection with the functions on the pairs `i < j` of indices: an
 upper-unitriangular matrix is determined by its entries strictly above the diagonal, which are
 arbitrary (`TauCeti.upperUnitriangularEntries` and `TauCeti.upperUnitriangularOfEntries`). -/
-@[expose]
 noncomputable def upperUnitriangularGroupEquiv (ι : Type*) [Fintype ι] [LinearOrder ι] (R : Type*)
     [Ring R] :
     upperUnitriangularGroup ι R ≃ ({p : ι × ι // p.1 < p.2} → R) :=
@@ -330,34 +330,33 @@ noncomputable def upperUnitriangularGroupEquiv (ι : Type*) [Fintype ι] [Linear
       ⟨fun hg => ⟨hg, fun _ _ hij hijP => absurd hij hijP⟩, fun hg => hg.1⟩)
 
 /-- The entries strictly above the diagonal of an upper-unitriangular matrix. -/
-@[expose]
 noncomputable def upperUnitriangularEntries (g : upperUnitriangularGroup ι R) :
     {p : ι × ι // p.1 < p.2} → R :=
   upperUnitriangularGroupEquiv ι R g
 
 /-- The element of `Uₙ(R)` with prescribed entries strictly above the diagonal. -/
-@[expose]
 noncomputable def upperUnitriangularOfEntries (f : {p : ι × ι // p.1 < p.2} → R) :
     upperUnitriangularGroup ι R :=
   (upperUnitriangularGroupEquiv ι R).symm f
 
 @[simp]
 theorem upperUnitriangularGroupEquiv_apply (g : upperUnitriangularGroup ι R) :
-    upperUnitriangularGroupEquiv ι R g = upperUnitriangularEntries g := rfl
+    upperUnitriangularGroupEquiv ι R g = upperUnitriangularEntries g := (rfl)
 
 @[simp]
 theorem upperUnitriangularGroupEquiv_symm_apply (f : {p : ι × ι // p.1 < p.2} → R) :
-    (upperUnitriangularGroupEquiv ι R).symm f = upperUnitriangularOfEntries f := rfl
+    (upperUnitriangularGroupEquiv ι R).symm f = upperUnitriangularOfEntries f := (rfl)
 
 /-- The entries above the diagonal of an upper-unitriangular matrix, read off the matrix. This is
 deliberately not a `simp` lemma: on `upperUnitriangularOfEntries f`, `simp` evaluates
 `upperUnitriangularEntries` with `upperUnitriangularEntries_upperUnitriangularOfEntries`. -/
 theorem upperUnitriangularEntries_apply (g : upperUnitriangularGroup ι R)
     (p : {p : ι × ι // p.1 < p.2}) :
-    upperUnitriangularEntries g p = ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2 := rfl
+    upperUnitriangularEntries g p = ((g : GL ι R) : Matrix ι ι R) p.val.1 p.val.2 := (rfl)
 
 /-- The matrix of `upperUnitriangularOfEntries f` is
 `TauCeti.upperUnitriangularMatrixOfEntries` of `f`. -/
+@[simp]
 theorem coe_upperUnitriangularOfEntries_apply (f : {p : ι × ι // p.1 < p.2} → R) (i j : ι) :
     ((upperUnitriangularOfEntries f : GL ι R) : Matrix ι ι R) i j =
       upperUnitriangularMatrixOfEntries (fun p : ι × ι => p.1 < p.2) f i j := by
