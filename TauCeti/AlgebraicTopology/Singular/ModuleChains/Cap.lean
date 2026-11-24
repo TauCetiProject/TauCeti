@@ -90,7 +90,7 @@ variable {P n} in
 /-- A relative cocycle `φ` of degree `n` of a pair `(X, A)` is **semi-invariant** for an action of
 `G` on `X` and a character `χ : G →* kˣ` if, pulled back to `X`, it satisfies `φ(g • c) = χ(g) φ(c)`
 for every `g : G` and every singular `n`-chain `c` of `X`. -/
-def IsSemiInvariantCocycle {G : Type u} [Group G] [MulAction G P.fst] [ContinuousConstSMul G P.fst]
+def IsSemiInvariantCocycle {G : Type u} [Monoid G] [MulAction G P.fst] [ContinuousConstSMul G P.fst]
     (χ : G →* kˣ)
     (φ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n) : Prop :=
   ∀ g : G, ((singularChains k).map
@@ -99,20 +99,6 @@ def IsSemiInvariantCocycle {G : Type u} [Group G] [MulAction G P.fst] [Continuou
         (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ =
     (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
         (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ)
-
-variable {P n} in
-/-- Unfolding `TopPair.IsSemiInvariantCocycle`: the pull-back of `φ` to the ambient space
-satisfies `φ(g • c) = χ(g) φ(c)`. -/
-theorem isSemiInvariantCocycle_iff {G : Type u} [Group G] [MulAction G P.fst]
-    [ContinuousConstSMul G P.fst] (χ : G →* kˣ)
-    (φ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n) :
-    IsSemiInvariantCocycle χ φ ↔ ∀ g : G, ((singularChains k).map
-      (TopCat.ofHom ⟨(g • · : P.fst → P.fst), continuous_const_smul g⟩)).f n ≫
-      (P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ =
-    (χ g : k) • ((P.singularChainComplexπ (ModuleCat.of k k)).f n ≫
-        (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).iCycles n φ) :=
-  Iff.rfl
 
 /-- The relative cocycle `φ` pulled back to a cocycle of the ambient space along the quotient onto
 the relative chains. -/
@@ -242,11 +228,9 @@ private def signedCapComponent (q : ℕ) :
 
 /-- The sign-corrected cap products commute with the boundaries: they are the components of the
 chain map `TauCeti.ChainComplex.capChainMap` of the cocycle `φ` pulled back to the ambient space. -/
-private theorem zsmul_capComponent_comp_d (q : ℕ) :
-    (((-1 : ℤ) ^ (n * (q + 1))) • capComponent P p₀ n φ (q + 1)) ≫
-        ((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).d (q + 1) q =
-      ((TopCat.toSSet.obj P.fst).chainComplex (ModuleCat.of k k)).d (q + 1 + n) (q + n) ≫
-        (((-1 : ℤ) ^ (n * q)) • capComponent P p₀ n φ q) := by
+private theorem signedCapComponent_comp_d (q : ℕ) :
+    signedCapComponent P p₀ n φ (q + 1) ≫ ((singularChains k).obj Y).d (q + 1) q =
+      ((singularChains k).obj P.fst).d (q + 1 + n) (q + n) ≫ signedCapComponent P p₀ n φ q := by
   have hψ := ChainComplex.d_comp_linearYonedaObj_iCycles n (n + 1) (pulledCocycle P n φ)
   have h := (ChainComplex.capChainMap k
     (P.fst.alexanderWhitneyDiagonal (λ_ (ModuleCat.of k k)).inv)
@@ -257,21 +241,13 @@ private theorem zsmul_capComponent_comp_d (q : ℕ) :
     ChainComplex.capChainMap_f _ _ hψ q _ (by omega),
     HomologicalComplex.extend_d_eq _ _ (ComplexShape.embeddingDownNatAdd_f n (q + 1))
       (ComplexShape.embeddingDownNatAdd_f n q)] at h
-  simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
-    Iso.inv_hom_id_assoc] at h
-  rw [← cancel_mono (((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).extendXIso
-    (ComplexShape.embeddingDownNatAdd n) (ComplexShape.embeddingDownNatAdd_f n q)).inv]
-  simpa only [capComponent, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc]
-    using h
-
-/-- `zsmul_capComponent_comp_d`, read on the singular chains `singularChains k`, the form in which
-the representations of the singular chains are stated. -/
-private theorem signedCapComponent_comp_d (q : ℕ) :
-    signedCapComponent P p₀ n φ (q + 1) ≫ ((singularChains k).obj Y).d (q + 1) q =
-      ((singularChains k).obj P.fst).d (q + 1 + n) (q + n) ≫ signedCapComponent P p₀ n φ q :=
-  -- `(singularChains k).obj X` is `(TopCat.toSSet.obj X).chainComplex (ModuleCat.of k k)` after
-  -- unfolding `singularChainComplexFunctor`
-  zsmul_capComponent_comp_d P p₀ n φ q
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, ← Preadditive.zsmul_comp] at h
+  -- `(singularChains k).obj X` is `(TopCat.toSSet.obj X).chainComplex (ModuleCat.of k k)` and
+  -- `signedCapComponent` is `(-1)^(n q) • capComponent` only after unfolding, which `rw` does not
+  -- see through, so the cancellation is applied by `refine` and `h` closes the goal by `exact`
+  refine (cancel_mono (((TopCat.toSSet.obj Y).chainComplex (ModuleCat.of k k)).extendXIso
+    (ComplexShape.embeddingDownNatAdd n) (ComplexShape.embeddingDownNatAdd_f n q)).inv).1 ?_
+  exact h
 
 variable {P p₀ n φ} in
 /-- The sign-corrected cap products with a semi-invariant cocycle are semi-invariant:

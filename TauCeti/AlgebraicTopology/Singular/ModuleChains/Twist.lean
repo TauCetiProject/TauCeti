@@ -53,8 +53,11 @@ universe u
 
 namespace TauCeti
 
-variable {k : Type u} [CommRing k] {Y : TopCat.{u}} {G : Type u} [Group G] [MulAction G Y]
-  [ContinuousConstSMul G Y] (χ : G →* kˣ)
+variable {k : Type u} [CommRing k] {Y : TopCat.{u}}
+
+section Monoid
+
+variable {G : Type u} [Monoid G] [MulAction G Y] [ContinuousConstSMul G Y] (χ : G →* kˣ)
 
 variable (k Y) in
 /-- **Forgetting the action, the twisted chains are the singular chains.** Forgetting the action
@@ -117,6 +120,12 @@ theorem singularChainsRepTwistExtendForget₂Iso_hom_f (n q : ℕ) :
     HomologicalComplex.extendMap_f _ _ (ComplexShape.embeddingDownNatAdd_f n q), Category.assoc,
     Iso.inv_hom_id_assoc]
 
+end Monoid
+
+section Group
+
+variable {G : Type u} [Group G] [MulAction G Y] [ContinuousConstSMul G Y] (χ : G →* kˣ)
+
 /-- **The twisted singular chains of a free `G`-space are projective**: twisting by the
 one-dimensional representation of `χ` keeps the free representations of the singular chains
 projective. -/
@@ -124,5 +133,7 @@ instance projective_tensorLeft_singularChainsRep_X [IsCancelSMul G Y] (q : ℕ) 
     Projective ((((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex
       _).obj (singularChainsRep k Y G)).X q) :=
   Rep.projective_tensorObj _ _
+
+end Group
 
 end TauCeti
