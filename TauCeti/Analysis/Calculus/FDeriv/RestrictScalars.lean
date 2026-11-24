@@ -37,6 +37,8 @@ invertible derivative given by its linear part; for instance, the automorphism `
 * `DifferentiableAt.range_fderiv_restrictScalars`: the range of the derivative does not depend
   on the field of scalars.
 * `DifferentiableAt.injective_fderiv_restrictScalars_iff`: neither does its injectivity.
+* `TauCeti.hasFDerivAtFilter_restrictScalars_iff`: a `𝕜'`-linear map is a derivative exactly when
+  its scalar restriction to `𝕜` is, assuming only `LinearMap.CompatibleSMul`.
 * `AffineEquiv.hasFDerivAt_restrictScalars`: the derivative over `𝕜` of an affine automorphism over
   `𝕜'` is its linear part.
 * `ContinuousLinearMap.differentiableAt_comp_of_map_smul`: composing with a `𝕜`-linear map that
@@ -113,5 +115,22 @@ theorem _root_.ContinuousLinearMap.differentiableAt_comp_of_map_smul {𝕜 𝕜'
     (hf : DifferentiableAt 𝕜' f x) : DifferentiableAt 𝕜' (fun y ↦ T (f y)) x :=
   (({ toFun := T, map_add' := T.map_add, map_smul' := hT, cont := T.continuous } :
     X →L[𝕜'] Y).differentiableAt).comp x hf
+
+end TauCeti
+
+namespace TauCeti
+
+variable (𝕜 : Type*) {𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E] [SeminormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] [LinearMap.CompatibleSMul E F 𝕜 𝕜']
+
+/-- A `𝕜'`-linear map is a derivative of `f` along a filter exactly when its scalar restriction to
+`𝕜` is: both are the same `o`-condition. Unlike `HasFDerivAtFilter.restrictScalars`, this needs
+only the scalar compatibility `LinearMap.CompatibleSMul` that `ContinuousLinearMap.restrictScalars`
+assumes, rather than a normed algebra with scalar towers, and the spaces need only be seminormed. -/
+theorem hasFDerivAtFilter_restrictScalars_iff {f : E → F} {f' : E →L[𝕜'] F}
+    {L : Filter (E × E)} :
+    HasFDerivAtFilter f (f'.restrictScalars 𝕜) L ↔ HasFDerivAtFilter f f' L := by
+  simp only [hasFDerivAtFilter_iff_isLittleO, ContinuousLinearMap.coe_restrictScalars']
 
 end TauCeti

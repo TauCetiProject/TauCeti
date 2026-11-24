@@ -27,6 +27,8 @@ with multiplication by `i` preserves invertibility.
   for a continuous real-linear map `L : Y →L[ℝ] X`.
 * `ContinuousLinearMap.complexOfMapISmul`: a continuous real-linear map between complex modules
   that commutes with multiplication by `i`, as a continuous complex-linear map.
+* `ContinuousLinearMap.commute_I_smul_one_iff`: a continuous real-linear endomorphism commutes
+  with the operator `I • 1` exactly when it commutes with multiplication by `i` on vectors.
 * `ContinuousLinearEquiv.complexOfMapISmul`: the corresponding conversion of continuous
   real-linear equivalences, preserving their forward and inverse maps.
 -/
@@ -103,6 +105,12 @@ theorem restrictScalars_complexOfMapISmul (u : V →L[ℝ] W)
     (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     (u.complexOfMapISmul h).restrictScalars ℝ = u :=
   ContinuousLinearMap.ext fun v ↦ congrFun (coe_complexOfMapISmul u h) v
+
+/-- A continuous real-linear endomorphism commutes with multiplication by `I` as an operator
+exactly when it commutes with `I` on vectors. -/
+theorem commute_I_smul_one_iff [ContinuousConstSMul ℂ V] {A : V →L[ℝ] V} :
+    Commute (Complex.I • (1 : V →L[ℝ] V)) A ↔ ∀ v, A (Complex.I • v) = Complex.I • A v := by
+  simp [Commute, SemiconjBy, ContinuousLinearMap.ext_iff, eq_comm]
 
 end ContinuousLinearMap
 

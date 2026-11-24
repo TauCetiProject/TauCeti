@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import Mathlib.Algebra.Module.FinitePresentation
+import Mathlib.RingTheory.Flat.Localization
+import Mathlib.RingTheory.LocalProperties.Basic
 import Mathlib.RingTheory.Support
 
 /-!
-# Surjectivity and bijectivity of linear maps on fibres
+# Faithfulness, surjectivity and bijectivity on fibres
 
 For a prime `p` of a commutative ring `R`, the fibre of an `R`-module `M` at `p` is
 `κ(p) ⊗[R] M`, with `κ(p)` the residue field. A linear map into a finite module is surjective iff
@@ -25,6 +28,14 @@ module splits, so its kernel is a finite direct summand of the source whose fibr
 of the fibre maps. Thus a map between finite projective modules, for instance a bilinear pairing
 read as a map into the dual, is an isomorphism exactly when it is one at every point of
 `Spec R`.
+
+Faithfulness is also fibrewise: a finite flat module is faithful exactly when its fibre at every
+prime is nonzero (`Module.faithfulSMul_iff_forall_finrank_residueField_pos`). One direction holds
+for every finite module: the support of a finite module is the zero locus of its annihilator, so a
+faithful module has full support, and by Nakayama's lemma its fibres are nonzero. Conversely, at a
+maximal ideal `m` the localization `M_m` of a finite flat module is free over the local ring `R_m`,
+and nonzero when the fibre at `m` is, so `R_m` acts faithfully on it; an element of `R` killing `M`
+therefore vanishes in every `R_m`, hence is zero.
 
 ## References
 
@@ -46,6 +57,45 @@ theorem subsingleton_iff_forall_subsingleton_residueField_tensorProduct [Module.
   refine (support_eq_empty_iff (R := R)).mp (Set.eq_empty_iff_forall_notMem.mpr fun p hp ↦ ?_)
   rw [mem_support_iff_nontrivial_residueField_tensorProduct] at hp
   exact not_nontrivial_iff_subsingleton.mpr (h p) hp
+
+/-- A faithful finite module has nonzero fibre `κ(p) ⊗[R] M` at every prime `p`. -/
+theorem finrank_residueField_pos_of_faithfulSMul [Module.Finite R M] [FaithfulSMul R M]
+    (p : PrimeSpectrum R) :
+    0 < finrank p.asIdeal.ResidueField (p.asIdeal.ResidueField ⊗[R] M) := by
+  have hp : p ∈ support R M := mem_support_iff_of_finite.2 <| by
+    rw [annihilator_eq_bot.2 inferInstance]
+    exact bot_le
+  have := (mem_support_iff_nontrivial_residueField_tensorProduct p).1 hp
+  exact finrank_pos
+
+/-- A finite flat module whose fibres at all primes are nonzero is faithful. -/
+theorem faithfulSMul_of_forall_finrank_residueField_pos [Module.Finite R M] [Module.Flat R M]
+    (h : ∀ p : PrimeSpectrum R,
+      0 < finrank p.asIdeal.ResidueField (p.asIdeal.ResidueField ⊗[R] M)) :
+    FaithfulSMul R M := by
+  refine annihilator_eq_bot.1 (eq_bot_iff.2 fun r hr ↦ ?_)
+  rw [mem_annihilator] at hr
+  -- `r` vanishes in the localization at every maximal ideal `J`, where `M` is free and nonzero.
+  refine (Submodule.mem_bot R).2 (eq_zero_of_localization r fun J hJ ↦ ?_)
+  let p : PrimeSpectrum R := ⟨J, hJ.isPrime⟩
+  have : Nontrivial (LocalizedModule J.primeCompl M) :=
+    mem_support_iff.1 ((mem_support_iff_nontrivial_residueField_tensorProduct p).2
+      (nontrivial_of_finrank_pos (h p)))
+  have : Free (Localization.AtPrime J) (LocalizedModule J.primeCompl M) :=
+    free_of_flat_of_isLocalRing
+  refine smul_left_injective' (M := Localization.AtPrime J) (α := LocalizedModule J.primeCompl M)
+    (funext fun x ↦ ?_)
+  induction x using LocalizedModule.induction_on with
+  | h m s =>
+    simp [LocalizedModule.smul'_mk, hr]
+
+/-- **Faithfulness is fibrewise.** A finite flat module over a commutative ring is faithful iff
+its fibre `κ(p) ⊗[R] M` at every prime `p` is nonzero. -/
+theorem faithfulSMul_iff_forall_finrank_residueField_pos [Module.Finite R M] [Module.Flat R M] :
+    FaithfulSMul R M ↔ ∀ p : PrimeSpectrum R,
+      0 < finrank p.asIdeal.ResidueField (p.asIdeal.ResidueField ⊗[R] M) :=
+  ⟨fun _ ↦ finrank_residueField_pos_of_faithfulSMul,
+    faithfulSMul_of_forall_finrank_residueField_pos⟩
 
 end Module
 

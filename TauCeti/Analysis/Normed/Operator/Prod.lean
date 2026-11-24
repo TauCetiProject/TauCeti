@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Prod
+import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 /-!
 # Operator norms of maps into and out of a product
 
 The continuous linear map `(x, y) ↦ f x + g y` out of a product (`ContinuousLinearMap.coprod`) has
-operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le`). This bounds solution
+operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le`) and at least `‖f‖` and
+`‖g‖` (`ContinuousLinearMap.opNorm_le_opNorm_coprod_left`,
+`ContinuousLinearMap.opNorm_le_opNorm_coprod_right`). The upper bound bounds solution
 operators assembled from separate operators for each component of the data, for instance the
 forcing and the initial datum of an evolution equation. A continuous linear map out of `𝕜 × 𝕜`
 is determined by its values on the coordinate vectors
@@ -42,6 +45,18 @@ theorem opNorm_coprod_le (f : E →L[𝕜] G) (g : F →L[𝕜] G) : ‖f.coprod
   exact (opNorm_add_le _ _).trans (add_le_add
     ((f.opNorm_comp_le _).trans (mul_le_of_le_one_right (norm_nonneg _) (norm_fst_le _ _ _)))
     ((g.opNorm_comp_le _).trans (mul_le_of_le_one_right (norm_nonneg _) (norm_snd_le _ _ _))))
+
+/-- The operator norm of `f` is at most that of `(x, y) ↦ f x + g y`, its restriction to the
+first factor. -/
+theorem opNorm_le_opNorm_coprod_left (f : E →L[𝕜] G) (g : F →L[𝕜] G) : ‖f‖ ≤ ‖f.coprod g‖ := by
+  simpa using ((f.coprod g).opNorm_comp_le (inl 𝕜 E F)).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (norm_inl_le_one 𝕜 E F))
+
+/-- The operator norm of `g` is at most that of `(x, y) ↦ f x + g y`, its restriction to the
+second factor. -/
+theorem opNorm_le_opNorm_coprod_right (f : E →L[𝕜] G) (g : F →L[𝕜] G) : ‖g‖ ≤ ‖f.coprod g‖ := by
+  simpa using ((f.coprod g).opNorm_comp_le (inr 𝕜 E F)).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (norm_inr_le_one 𝕜 E F))
 
 /-- A continuous linear map out of `𝕜 × 𝕜` at `(a, b)` is `a` times its value at `(1, 0)` plus `b`
 times its value at `(0, 1)`. -/

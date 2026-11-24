@@ -189,11 +189,11 @@ theorem rep_serreRootGenerator_sq (k : Fin 6 ⊕ Fin 6) :
   | inl i =>
       simpa only [TauCeti.serreRootGenerator_inl, rep_ι_apply,
         rationalSerreRepresentation_serreE, LinearMap.zero_apply] using
-        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (raisingMatrixQ_sq i) v
+        Matrix.mulVec_mulVec_eq_zero_of_sq_eq_zero (raisingMatrixQ_sq i) v
   | inr i =>
       simpa only [TauCeti.serreRootGenerator_inr, rep_ι_apply,
         rationalSerreRepresentation_serreF, LinearMap.zero_apply] using
-        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (loweringMatrixQ_sq i) v
+        Matrix.mulVec_mulVec_eq_zero_of_sq_eq_zero (loweringMatrixQ_sq i) v
 
 /-- Every represented Serre root generator acts nilpotently. -/
 theorem isNilpotent_rep_serreRootGenerator (k : Fin 6 ⊕ Fin 6) :
