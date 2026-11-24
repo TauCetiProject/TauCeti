@@ -9,8 +9,10 @@ public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Data.Finset.NatAntidiagonal
+public import Mathlib.Topology.MetricSpace.Ultra.Basic
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
@@ -56,6 +58,10 @@ convolution into the familiar sums `∑' y, L (f (x / y)) (g y)` and `∑' y, L 
   `(f ⋆[L] g) x = ∑' y, L (f y) (g (y⁻¹ * x))`; additively
   `DiscreteConvolution.addConvolution_eq_tsum_neg_add` and
   `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`.
+* `DiscreteConvolution.norm_ringConvolution_apply_le` and its additive version
+  `DiscreteConvolution.norm_addRingConvolution_apply_le`: on a group, over an ultrametric ring, if
+  the coefficient norms of `f` and `g` are bounded by `A` and `B`, those of `f ⋆ᵣ g` are bounded by
+  `A B`.
 * `DiscreteConvolution.hasSum_tsum_mul_div` and its additive version
   `DiscreteConvolution.hasSum_tsum_mul_sub`: on a group, for two absolutely summable families
   in a complete normed ring, `x ↦ ∑' y, f y * g (x / y)` (their convolution when the group is
@@ -236,6 +242,19 @@ theorem ringConvolution_eq_tsum_inv_mul [NonUnitalNonAssocSemiring R] [Topologic
     (f g : M → R) (x : M) :
     (f ⋆ᵣ g) x = ∑' y, f y * g (y⁻¹ * x) :=
   convolution_eq_tsum_inv_mul _ f g x
+
+/-- On a group, over an ultrametric ring, if the coefficient norms of `f` and `g` are bounded by
+`A` and `B`, those of `f ⋆ᵣ g` are bounded by `A B`. -/
+@[to_additive (dont_translate := R) norm_addRingConvolution_apply_le
+  /-- On an additive group, over an ultrametric ring, if the coefficient norms of `f` and `g` are
+  bounded by `A` and `B`, those of `f ⋆ᵣ₊ g` are bounded by `A B`. -/]
+theorem norm_ringConvolution_apply_le [SeminormedRing R] [IsUltrametricDist R] {f g : M → R}
+    {A B : ℝ} (hf : ∀ x, ‖f x‖ ≤ A) (hg : ∀ x, ‖g x‖ ≤ B) (x : M) : ‖(f ⋆ᵣ g) x‖ ≤ A * B := by
+  have hA : 0 ≤ A := (norm_nonneg _).trans (hf 1)
+  rw [ringConvolution_eq_tsum_div]
+  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg hA ((norm_nonneg _).trans (hg 1))) fun y ↦
+      (norm_mul_le _ _).trans (mul_le_mul (hf _) (hg _) (norm_nonneg _) hA)
 
 /-- On a group, for two absolutely summable families `f`, `g` in a complete normed ring, the
 family `x ↦ ∑' y, f y * g (x / y)` (the convolution of `f` and `g` when `M` is commutative) sums

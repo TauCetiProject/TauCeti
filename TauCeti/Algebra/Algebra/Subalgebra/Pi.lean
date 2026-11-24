@@ -7,16 +7,22 @@ module
 
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
+import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Algebra.Group.Pi.Units
 import Mathlib.RingTheory.Finiteness.Basic
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 
 /-!
-# Units in subalgebras of integral and finite products
+# Subalgebras of product algebras
+
+This file collects structural results about subalgebras of product algebras `∀ i, B i` and `ι → K`.
+
+## Units in subalgebras of integral and finite products
 
 Let `O` be a commutative ring, `B : ι → Type*` a family of commutative `O`-algebras such that
 `∏ i, B i` is integral over `O`, and `A : Subalgebra O (∀ i, B i)` an `O`-subalgebra. Since
@@ -28,6 +34,15 @@ In particular, when `ι` is finite and each `B i` is a finite `O`-module, the pr
 finite and hence integral over `O`, yielding the finite-product criterion `Subalgebra.isUnit_iff`
 and the homogeneous finite-product criterion `Subalgebra.isUnit_iff_isUnit_prod`.
 
+## Point-separating subalgebras of a finite product of a field
+
+For a field `K` and a finite type `ι`, a subalgebra of `ι → K` that separates the points of `ι`
+(Mathlib's `Set.SeparatesPoints`) is everything (`Subalgebra.eq_top_of_separatesPoints`). This
+is the finite, purely algebraic form of the Stone–Weierstrass theorem. The proof is Lagrange
+interpolation: for each `j ≠ i` some affine function of an element of the subalgebra is `1` at
+`i` and `0` at `j`, and the product of these is the indicator `Pi.single i 1` of `i`
+(`Subalgebra.single_one_mem_of_separatesPoints`).
+
 ## Main results
 
 * `Subalgebra.isUnit_iff_of_isIntegral`: an element of a subalgebra of an integral product algebra
@@ -36,11 +51,16 @@ and the homogeneous finite-product criterion `Subalgebra.isUnit_iff_isUnit_prod`
   `O`-algebras is a unit if and only if all of its coordinates are units.
 * `Subalgebra.isUnit_iff_isUnit_prod`: product criterion for units in a subalgebra of `ι → B` for
   a finite `O`-algebra `B` (in particular `ι → O`).
+* `Subalgebra.single_one_mem_of_separatesPoints`: a point-separating subalgebra of `ι → K`
+  contains every indicator `Pi.single i 1`.
+* `Subalgebra.eq_top_of_separatesPoints`: finite Stone–Weierstrass theorem.
 -/
 
 public section
 
 namespace Subalgebra
+
+section IsUnit
 
 variable {O ι : Type*} [CommRing O]
 
@@ -73,5 +93,52 @@ theorem isUnit_iff_isUnit_prod [Fintype ι] {B : Type*} [CommRing B] [Algebra O 
     [Module.Finite O B] {A : Subalgebra O (ι → B)} {y : A} :
     IsUnit y ↔ IsUnit (∏ i : ι, (y : ι → B) i) := by
   rw [isUnit_iff, IsUnit.prod_univ_iff]
+
+end IsUnit
+
+section SeparatesPoints
+
+variable {K ι : Type*} [Field K] [Finite ι] {S : Subalgebra K (ι → K)}
+
+/-- A subalgebra of `ι → K` that separates the points of the finite type `ι` contains the
+indicator function of each point. -/
+theorem single_one_mem_of_separatesPoints [DecidableEq ι]
+    (h : (S : Set (ι → K)).SeparatesPoints) (i : ι) : Pi.single i (1 : K) ∈ S := by
+  have := Fintype.ofFinite ι
+  -- for each `j ≠ i`, a function in `S` that is `1` at `i` and `0` at `j`
+  have hfactor : ∀ j, ∃ g ∈ S, g i = 1 ∧ (i ≠ j → g j = 0) := by
+    intro j
+    by_cases hij : i = j
+    · exact ⟨1, S.one_mem, rfl, fun h => absurd hij h⟩
+    obtain ⟨f, hf, hfij⟩ := h hij
+    refine ⟨(f i - f j)⁻¹ • (f - algebraMap K _ (f j)),
+      S.smul_mem (S.sub_mem hf (S.algebraMap_mem _)) _, ?_, fun _ => ?_⟩ <;>
+    simp only [Pi.smul_apply, Pi.sub_apply, Pi.algebraMap_apply, Algebra.algebraMap_self,
+      RingHom.id_apply, smul_eq_mul, sub_self, mul_zero, inv_mul_cancel₀ (sub_ne_zero.mpr hfij)]
+  choose g hgS hgi hgj using hfactor
+  -- Lagrange interpolation: the indicator of `i` is the product of these functions
+  have hprod : Pi.single i 1 = ∏ j, g j := by
+    funext k
+    rw [Finset.prod_apply]
+    by_cases hk : k = i
+    · subst hk
+      rw [Pi.single_eq_same, eq_comm]
+      exact Finset.prod_eq_one fun j _ => hgi j
+    · rw [Pi.single_eq_of_ne hk, eq_comm]
+      exact Finset.prod_eq_zero (Finset.mem_univ k) (hgj k (Ne.symm hk))
+  exact hprod ▸ S.prod_mem fun j _ => hgS j
+
+/-- **Finite Stone–Weierstrass theorem.** A subalgebra of `ι → K` that separates the points of
+the finite type `ι` is `⊤`. -/
+theorem eq_top_of_separatesPoints (h : (S : Set (ι → K)).SeparatesPoints) : S = ⊤ := by
+  classical
+  have := Fintype.ofFinite ι
+  refine eq_top_iff.mpr fun f _ => ?_
+  rw [← Finset.univ_sum_single f]
+  refine S.sum_mem fun i _ => ?_
+  rw [← mul_one (f i), ← smul_eq_mul, Pi.single_smul']
+  exact S.smul_mem (single_one_mem_of_separatesPoints h i) _
+
+end SeparatesPoints
 
 end Subalgebra

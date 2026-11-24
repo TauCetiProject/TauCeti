@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Aspherical
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FreeLoop
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Hurewicz
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ReducedHomology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import TauCeti.Topology.MappingSpace.Sphere.Moore
 public import TauCeti.Topology.PathSpace.Moore.From
@@ -45,6 +48,17 @@ it.
   `H_{k-2}(P_{⋆→Q} 𝓛₀Q; ℤ)`, which is isomorphic to `π_k(Q, x)` by the Hurewicz theorem for the
   double loop space (`TauCeti.basedConstContractibleMoorePathsHomologyAddEquiv`,
   `TauCeti.singularHomologyMap_basedConstContractibleMoorePathsInclusion_succ_eq_zero`).
+* A path-connected `Q` is aspherical exactly when the kernel vanishes in every degree with
+  integral coefficients, through Lemma 3.41 of Barraud–Damian–Humilière–Oancea:
+  `isAspherical_iff_forall_injective_singularHomologyMap_basedConstContractibleMoorePathsInclusion`
+  in the namespace `TauCeti`. So when `Q` is not aspherical some degree has a nonzero kernel, which
+  is all that Proposition 5.11 is needed for when the map `π ∘ φ` has degree `±1`. For aspherical
+  `Q` the kernel vanishes with any coefficient ring
+  (`TauCeti.IsAspherical.injective_singularHomologyMap_basedConstContractibleMoorePathsInclusion`).
+* For aspherical `Q` the constant loops `Q → 𝓛₀Q` are moreover a weak homotopy equivalence, so
+  they induce isomorphisms on ordinary singular homology
+  (`TauCeti.IsAspherical.isIso_singularHomologyMap_constContractibleLoop`). For a torus, this is
+  why `i_{Q*}` is injective on ordinary homology.
 
 ## References
 
@@ -199,5 +213,77 @@ theorem basedConstContractibleMoorePathsHomologyAddEquiv_succ_apply (m : ℕ)
   rfl
 
 end Integral
+
+section Aspherical
+
+/-! ### Aspherical spaces
+
+For an aspherical space `Q` the constant loops `i_Q : Q → 𝓛₀Q` are a weak homotopy equivalence
+(`TauCeti.IsAspherical.isWeakHomotopyEquivalence_constContractibleLoop`), so `i_{Q*}` is an
+isomorphism on ordinary singular homology, and the kernel of the inclusion of path spaces vanishes
+in every degree. Conversely, by Lemma 3.41 of Barraud–Damian–Humilière–Oancea, a path-connected
+space whose kernel vanishes in every degree with integral coefficients is aspherical. -/
+
+/-- **For an aspherical space, the constant loops `i_Q : Q → 𝓛₀Q` induce isomorphisms on singular
+homology** with coefficients in any module, since they are a weak homotopy equivalence. -/
+theorem IsAspherical.isIso_singularHomologyMap_constContractibleLoop {R : Type*} [Ring R]
+    {Q : Type v} [TopologicalSpace Q] {x : Q} (h : IsAspherical Q x) (M : ModuleCat.{v} R)
+    (n : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{v} R) n).obj M).map
+      (TopCat.ofHom (constContractibleLoop (Q := Q)))) :=
+  h.isWeakHomotopyEquivalence_constContractibleLoop.isIso_singularHomologyMap M n
+
+/-- **For an aspherical space, the inclusion of the constant loops on path spaces is injective on
+homology.** If `Q` is aspherical, the map induced on `Hₙ(-; R)` by the inclusion
+`P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q` is injective in every degree: its kernel is the reduced homology
+of the double loop space (`TauCeti.kernelBasedConstContractibleMoorePathsInclusionIso`), which is
+path connected with vanishing positive-degree homology. -/
+theorem IsAspherical.injective_singularHomologyMap_basedConstContractibleMoorePathsInclusion
+    {R : Type u} [Ring R] {Q : Type u} [TopologicalSpace Q] {x : Q} (h : IsAspherical Q x)
+    (n : ℕ) :
+    Function.Injective (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map
+      (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x))).hom := by
+  rw [← ModuleCat.mono_iff_injective]
+  refine Preadditive.mono_of_isZero_kernel _
+    ((kernelBasedConstContractibleMoorePathsInclusionIso (ModuleCat.of R R) Q x n).isZero_iff.2 ?_)
+  cases n with
+  | zero =>
+    have := (pathConnectedSpace_doubleLoopSpace_iff x).2 (h.subsingleton_homotopyGroup 0)
+    exact isZero_reducedSingularHomologyFunctor_zero _ _
+  | succ m =>
+    refine ((reducedSingularHomologySuccIso _ m).app _).isZero_iff.2 ?_
+    rw [singularHomologyFunctor_obj_obj]
+    exact isZero_homology_singularChains_doubleLoopSpace R h.subsingleton_homotopyGroup
+      m.succ_ne_zero
+
+/-- **A path-connected space is aspherical exactly when the inclusion of the constant loops on path
+spaces is injective on integral homology in every degree.** Equivalently, `Q` fails to be
+aspherical exactly when the kernel of the map induced on some `Hₙ(-; ℤ)` by the inclusion
+`P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q` is nonzero. This is Lemma 3.41 of
+Barraud–Damian–Humilière–Oancea (`TauCeti.isAspherical_iff_doubleLoopSpace_singularHomology`)
+read through the identification of the kernel with `H~ₙ(Ω²Q)`
+(`TauCeti.kernelBasedConstContractibleMoorePathsInclusionIso`). It is the form of Proposition 5.11
+used for maps of degree `±1`, where every nonzero element of the kernel serves. -/
+theorem
+    isAspherical_iff_forall_injective_singularHomologyMap_basedConstContractibleMoorePathsInclusion
+    {Q : Type} [TopologicalSpace Q] [PathConnectedSpace Q] (x : Q) :
+    IsAspherical Q x ↔ ∀ n, Function.Injective
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ ℤ)).map
+        (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x))).hom := by
+  refine ⟨fun h n ↦ h.injective_singularHomologyMap_basedConstContractibleMoorePathsInclusion n,
+    fun h ↦ ?_⟩
+  have hZ (n : ℕ) : IsZero ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) n).obj
+      (TopCat.of (Ω (Ω Q x) (Path.refl x)))) := by
+    have := (ModuleCat.mono_iff_injective _).2 (h n)
+    exact (kernelBasedConstContractibleMoorePathsInclusionIso (ModuleCat.of ℤ ℤ) Q x n).isZero_iff.1
+      (isZero_kernel_of_mono _)
+  have : Nonempty (TopCat.of (Ω (Ω Q x) (Path.refl x))) := ⟨Path.refl (Path.refl x)⟩
+  rw [isAspherical_iff_doubleLoopSpace_singularHomology]
+  refine ⟨pathConnectedSpace_of_isZero_reducedSingularHomologyFunctor_zero (hZ 0), fun m hm ↦ ?_⟩
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
+  rw [← singularHomologyFunctor_obj_obj]
+  exact ((reducedSingularHomologySuccIso _ m).app _).isZero_iff.1 (hZ (m + 1))
+
+end Aspherical
 
 end TauCeti
