@@ -43,6 +43,8 @@ take their familiar Hermitian form, because inversion conjugates character value
 * `TauCeti.irreducibleCharacter`: the `i`-th irreducible character, for an enumeration of that set
   by `Fin (Nat.card (ConjClasses G))`, together with `TauCeti.irreducibleRepresentation`, an
   irreducible representation affording it, and `TauCeti.characterDegree`, its degree.
+* `TauCeti.irreducibleCharactersOver`: the irreducible characters `Irr(G | θ)` of `G` lying over a
+  function `θ` on a subgroup `N`.
 * `TauCeti.characterTable`: the character table of `G`.
 * `TauCeti.basisIrreducibleCharacter`: its rows, as a basis of the class functions, so that
   `TauCeti.linearIndependent_irreducibleCharacter` holds in `G → k`.
@@ -320,6 +322,7 @@ section Subsingleton
 variable {k : Type u} [Field k] [IsAlgClosed k]
 
 /-- A group with one element has the trivial character as its only irreducible character. -/
+@[simp]
 theorem irreducibleCharacters_of_subsingleton {G : Type v} [Group G] [Subsingleton G] :
     irreducibleCharacters k G = {fun _ => 1} := by
   let : Invertible (Nat.card G : k) := invertibleOfNonzero (by simp)
@@ -340,6 +343,44 @@ theorem irreducibleCharacters_of_subsingleton {G : Type v} [Group G] [Subsinglet
   exact Set.mem_singleton_iff.mpr (e1.trans e2.symm)
 
 end Subsingleton
+
+section Over
+
+variable (k : Type u) {G : Type v} [Field k] [Group G]
+
+/-- **The irreducible characters of `G` lying over `θ`**, `Irr(G | θ)`: for a function `θ` on a
+subgroup `N`, the irreducible characters `ψ` of `G` with `∑ᶠ n ∈ N, ψ n θ n⁻¹ ≠ 0`. Over an
+algebraically closed field of characteristic zero and for an irreducible character `θ` of a finite
+`N`, the sum is `|N|` times the multiplicity of `θ` in the restriction of `ψ` to `N`, so these are
+the irreducible characters whose restriction contains `θ`. -/
+def irreducibleCharactersOver (N : Subgroup G) (θ : N → k) : Set (G → k) :=
+  {ψ | ψ ∈ irreducibleCharacters k G ∧ ∑ᶠ n : N, ψ n * θ n⁻¹ ≠ 0}
+
+variable {k}
+
+/-- Membership in `TauCeti.irreducibleCharactersOver`, with the defining sum over the finite
+subgroup `N` written as a `Finset` sum. -/
+@[simp]
+theorem mem_irreducibleCharactersOver_iff {N : Subgroup G} [Fintype N] {θ : N → k} {ψ : G → k} :
+    ψ ∈ irreducibleCharactersOver k N θ ↔
+      ψ ∈ irreducibleCharacters k G ∧ ∑ n : N, ψ n * θ n⁻¹ ≠ 0 := by
+  rw [← finsum_eq_sum_of_fintype]
+  exact Iff.rfl
+
+/-- The irreducible characters lying over `θ` are irreducible characters. -/
+theorem irreducibleCharactersOver_subset {N : Subgroup G} (θ : N → k) :
+    irreducibleCharactersOver k N θ ⊆ irreducibleCharacters k G :=
+  fun _ hψ => hψ.1
+
+/-- Over the trivial subgroup, every irreducible character lies over any function that does not
+vanish at the identity. -/
+theorem irreducibleCharactersOver_bot [CharZero k] {θ : (⊥ : Subgroup G) → k} (hθ : θ 1 ≠ 0) :
+    irreducibleCharactersOver k ⊥ θ = irreducibleCharacters k G := by
+  refine (irreducibleCharactersOver_subset θ).antisymm fun ψ h => ⟨h, ?_⟩
+  rw [finsum_unique, Unique.default_eq 1]
+  simpa using mul_ne_zero (apply_one_ne_zero_of_mem_irreducibleCharacters h) hθ
+
+end Over
 
 section Table
 

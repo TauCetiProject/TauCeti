@@ -31,11 +31,6 @@ of functions inflated from `G ⧸ N`, up to the normalisation
 (`TauCeti.sum_mul_comp_mk_mul_mul_comp_mk_inv`), which gives irreducibility and injectivity; the
 column orthogonality of `G ⧸ N` gives surjectivity.
 
-## Main definitions
-
-* `TauCeti.irreducibleCharactersOver`: the irreducible characters `Irr(G | θ)` of `G` lying over a
-  function `θ` on a subgroup `N`.
-
 ## Main results
 
 * `TauCeti.sum_character_mul_mul_character_mul_inv_eq_card`: a character restricting irreducibly to
@@ -60,39 +55,7 @@ open Module Finset
 
 universe u v
 
-variable (k : Type u) {G : Type v} [Field k] [Group G]
-
-/-- **The irreducible characters of `G` lying over `θ`**, `Irr(G | θ)`: for a function `θ` on a
-subgroup `N`, the irreducible characters `ψ` of `G` with `∑ n ∈ N, ψ n θ n⁻¹ ≠ 0`. Over an
-algebraically closed field of characteristic zero and for an irreducible character `θ` of `N`, the
-sum is `|N|` times the multiplicity of `θ` in the restriction of `ψ` to `N`, so these are the
-irreducible characters whose restriction contains `θ`. -/
-def irreducibleCharactersOver (N : Subgroup G) [Fintype N] (θ : N → k) : Set (G → k) :=
-  {ψ | ψ ∈ irreducibleCharacters k G ∧ ∑ n : N, ψ n * θ n⁻¹ ≠ 0}
-
-variable {k}
-
-/-- Membership in `TauCeti.irreducibleCharactersOver` unfolded. -/
-@[simp]
-theorem mem_irreducibleCharactersOver_iff {N : Subgroup G} [Fintype N] {θ : N → k} {ψ : G → k} :
-    ψ ∈ irreducibleCharactersOver k N θ ↔
-      ψ ∈ irreducibleCharacters k G ∧ ∑ n : N, ψ n * θ n⁻¹ ≠ 0 :=
-  Iff.rfl
-
-/-- The irreducible characters lying over `θ` are irreducible characters. -/
-theorem irreducibleCharactersOver_subset {N : Subgroup G} [Fintype N] (θ : N → k) :
-    irreducibleCharactersOver k N θ ⊆ irreducibleCharacters k G :=
-  fun _ hψ => hψ.1
-
-/-- Over the trivial subgroup, every irreducible character lies over any function that does not
-vanish at the identity. -/
-theorem irreducibleCharactersOver_bot [CharZero k] [Fintype (⊥ : Subgroup G)]
-    {θ : (⊥ : Subgroup G) → k} (hθ : θ 1 ≠ 0) :
-    irreducibleCharactersOver k ⊥ θ = irreducibleCharacters k G := by
-  refine (irreducibleCharactersOver_subset θ).antisymm fun ψ h =>
-    mem_irreducibleCharactersOver_iff.mpr ⟨h, ?_⟩
-  rw [Fintype.sum_subsingleton _ 1]
-  simpa using mul_ne_zero (apply_one_ne_zero_of_mem_irreducibleCharacters h) hθ
+variable {k : Type u} {G : Type v} [Field k] [Group G]
 
 section Coset
 
@@ -211,7 +174,7 @@ theorem mul_comp_mk_mem_irreducibleCharacters (hχ : χ ∈ irreducibleCharacter
 
 /-- **Every irreducible character of `G` over `θ` is a product `χ · (β ∘ π)`**, for `χ` an
 irreducible character of `G` extending the irreducible character `θ` of the normal subgroup `N`. -/
-theorem exists_mem_irreducibleCharacters_eq_mul_comp_mk [Fintype N] {θ : N → k}
+theorem exists_mem_irreducibleCharacters_eq_mul_comp_mk {θ : N → k}
     (hχ : χ ∈ irreducibleCharacters k G) (hres : ∀ n : N, χ n = θ n)
     (hθ : θ ∈ irreducibleCharacters k N) {ψ : G → k} (hψ : ψ ∈ irreducibleCharactersOver k N θ) :
     ∃ β ∈ irreducibleCharacters k (G ⧸ N), (fun g : G => χ g * β g) = ψ := by
@@ -221,7 +184,7 @@ theorem exists_mem_irreducibleCharacters_eq_mul_comp_mk [Fintype N] {θ : N → 
   classical
   have := Fintype.ofFinite G
   have hθ' : (fun n : N => χ n) ∈ irreducibleCharacters k N := funext hres ▸ hθ
-  obtain ⟨hψ, hsum⟩ := hψ
+  obtain ⟨hψ, hsum⟩ := mem_irreducibleCharactersOver_iff.mp hψ
   by_contra hcon
   have hzero (i : Fin (Nat.card (ConjClasses (G ⧸ N)))) :
       ∑ g : G, ψ g * (χ g⁻¹ * irreducibleCharacter k i ((g⁻¹ : G) : G ⧸ N)) = 0 :=
@@ -261,7 +224,7 @@ theorem exists_mem_irreducibleCharacters_eq_mul_comp_mk [Fintype N] {θ : N → 
 irreducible character of `N` and `χ` an irreducible character of `G` extending `θ`. Then
 `β ↦ χ · (β ∘ π)` is a bijection from the irreducible characters of `G ⧸ N` onto the irreducible
 characters of `G` lying over `θ`, over an algebraically closed field of characteristic zero. -/
-theorem gallagher_bijOn [Fintype N] {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G)
+theorem gallagher_bijOn {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G)
     (hθ : θ ∈ irreducibleCharacters k N) (hres : ∀ n : N, χ n = θ n) :
     Set.BijOn (fun (β : G ⧸ N → k) (g : G) => χ g * β g)
       (irreducibleCharacters k (G ⧸ N)) (irreducibleCharactersOver k N θ) := by
@@ -274,7 +237,8 @@ theorem gallagher_bijOn [Fintype N] {θ : N → k} (hχ : χ ∈ irreducibleChar
   have hQ0 : (Nat.card (G ⧸ N) : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   obtain ⟨d, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hχ
   have hiso := sum_mul_comp_mk_mul_mul_comp_mk_inv ρ N hθ'
-  refine ⟨fun β hβ => ⟨mul_comp_mk_mem_irreducibleCharacters hχ hθ' hβ, ?_⟩,
+  refine ⟨fun β hβ => mem_irreducibleCharactersOver_iff.mpr
+      ⟨mul_comp_mk_mem_irreducibleCharacters hχ hθ' hβ, ?_⟩,
     fun β hβ β' hβ' heq => ?_,
     fun ψ hψ => exists_mem_irreducibleCharacters_eq_mul_comp_mk hχ hres hθ hψ⟩
   · -- `χ · β` lies over `θ`: on `N` it is `β(1) θ`.
