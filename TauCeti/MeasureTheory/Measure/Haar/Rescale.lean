@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
-# Almost-everywhere equalities under rescaling
+# Rescaling and additive Haar measures
 
 For an additive Haar measure `μ` on a finite-dimensional real normed space, a rescaling
 `x ↦ c • x` with `c ≠ 0` is quasi-measure-preserving (Mathlib's
@@ -19,10 +20,17 @@ sets for every `c`, the zero scale included, where both sides vanish. On the rea
 `d > 1` the rescaling of a density by `c` carries the factor `|c| ^ d` instead, which this file
 does not treat.
 
+Conversely, rescaling normalizes Haar measures: on a nontrivial space, a dilation by
+`t = c ^ (1 / d)`, where `μ = c • ν` and `d` is the dimension, carries `μ` to `ν`. This reduces a
+statement about an arbitrary additive Haar measure to the same statement for `volume`, at the
+price of dilating the domain.
+
 ## Main results
 
 * `MeasureTheory.Measure.smul_comp_smul_ae_eq`: if `f =ᵐ[μ] g`, then
   `(fun x ↦ c • f (c • x)) =ᵐ[μ] fun x ↦ c • g (c • x)` for every real `c`.
+* `MeasureTheory.Measure.exists_pos_map_smul_eq`: two additive Haar measures on a nontrivial space
+  differ by a positive dilation.
 * `Filter.EventuallyEq.inv_mul_comp_div`: the real-line form for the rescaling
   `t ↦ h⁻¹ f(t / h)` of a density by a bandwidth `h`.
 -/
@@ -46,6 +54,21 @@ theorem smul_comp_smul_ae_eq (μ : Measure E) [μ.IsAddHaarMeasure] {f g : E →
   filter_upwards [(quasiMeasurePreserving_smul μ hc).ae_eq_comp hfg] with x hx
   rw [Function.comp_apply, Function.comp_apply] at hx
   rw [hx]
+
+/-- **Haar measures differ by a dilation.** On a nontrivial finite-dimensional real normed space,
+every additive Haar measure `μ` is carried to any other additive Haar measure `ν` by a dilation
+`x ↦ t • x` with `t > 0`. -/
+theorem exists_pos_map_smul_eq [Nontrivial E] (μ ν : Measure E) [μ.IsAddHaarMeasure]
+    [ν.IsAddHaarMeasure] : ∃ t : ℝ, 0 < t ∧ Measure.map (t • ·) μ = ν := by
+  set c := μ.addHaarScalarFactor ν
+  have hc : 0 < c := addHaarScalarFactor_pos_of_isAddHaarMeasure μ ν
+  have hn : Module.finrank ℝ E ≠ 0 := Module.finrank_pos.ne'
+  refine ⟨(c : ℝ) ^ ((Module.finrank ℝ E : ℝ)⁻¹), by positivity, ?_⟩
+  rw [isAddLeftInvariant_eq_smul μ ν, Measure.map_smul, map_addHaar_smul ν (by positivity),
+    Real.rpow_inv_natCast_pow c.coe_nonneg hn, abs_of_pos (by positivity),
+    ENNReal.ofReal_inv_of_pos (by positivity), ENNReal.ofReal_coe_nnreal, ENNReal.smul_def,
+    smul_smul, ENNReal.mul_inv_cancel (by exact_mod_cast hc.ne') ENNReal.coe_ne_top, one_smul]
+  exact (measurable_const_smul _).aemeasurable
 
 end MeasureTheory.Measure
 
