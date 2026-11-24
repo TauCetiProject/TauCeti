@@ -56,9 +56,9 @@ Sobolev realization.
   (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`) and its cokernel vanishes. Applying the
   closed graph theorem produces a bounded right inverse `Q : L²(ℂ; ℝ⁴) → H¹(ℂ)⁴` whose values are
   `L²`-orthogonal to the kernel
-  (`TauCeti.Vortex.exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id`); such a
-  preimage is unique for any `a`
-  (`TauCeti.Vortex.eq_of_sobolevGaugeFixedOperator_eq_of_inner_sobolevFieldValues_eq_zero`).
+  (`TauCeti.Vortex.exists_isOrthogonalRightInverse_sobolevGaugeFixedOperator`), which is unique by
+  `ContinuousLinearMap.IsOrthogonalRightInverse.unique` and equals
+  `ContinuousLinearMap.orthogonalRightInverse`.
 * **Fredholm property.** Combining vanishing cokernel with the finite-dimensional kernel from
   `TauCeti.Analysis.PDE.Vortex.SobolevRealization` via
   `ContinuousLinearMap.IsFredholm.of_surjective` yields
@@ -81,10 +81,9 @@ dimension and real Fredholm index `2 |D|` and `2 m`, and degree-zero bijectivity
   `TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`:
   integration by parts, weak characterization, and weak-to-strong lifting for
   `sobolevGaugeFixedOperator a`.
-* `TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`,
-  `TauCeti.Vortex.eq_of_sobolevGaugeFixedOperator_eq_of_inner_sobolevFieldValues_eq_zero`, and
-  `TauCeti.Vortex.exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id`: surjectivity
-  (vanishing cokernel) and unique bounded `L²`-orthogonal right inverse `L² → H¹`.
+* `TauCeti.Vortex.sobolevGaugeFixedOperator_surjective` and
+  `TauCeti.Vortex.exists_isOrthogonalRightInverse_sobolevGaugeFixedOperator`: surjectivity
+  (vanishing cokernel) and bounded `L²`-orthogonal right inverse `L² → H¹`.
 * `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator`,
   `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_contDiff`, and
   `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_mem_framedFieldSpace`: the Fredholm
@@ -264,42 +263,19 @@ theorem exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_
 
 /-! ### Bounded `L²`-orthogonal right inverse, surjectivity, and vanishing cokernel -/
 
-/-- **Uniqueness of `L²`-orthogonal preimages.** For any `L∞` coefficient `a`, two elements of
-`H¹(ℂ)⁴` with the same image under `sobolevGaugeFixedOperator a` that are both `L²`-orthogonal to
-its kernel are equal. -/
-theorem eq_of_sobolevGaugeFixedOperator_eq_of_inner_sobolevFieldValues_eq_zero
-    (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
-    {y₁ y₂ : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
-    (heq : sobolevGaugeFixedOperator a y₁ = sobolevGaugeFixedOperator a y₂)
-    (hy₁ : ∀ u ∈ (sobolevGaugeFixedOperator a).ker,
-      ⟪sobolevFieldValues y₁, sobolevFieldValues u⟫ = 0)
-    (hy₂ : ∀ u ∈ (sobolevGaugeFixedOperator a).ker,
-      ⟪sobolevFieldValues y₂, sobolevFieldValues u⟫ = 0) :
-    y₁ = y₂ := by
-  have hker : y₁ - y₂ ∈ (sobolevGaugeFixedOperator a).ker := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, heq, sub_self]
-  have hzero : ⟪sobolevFieldValues (y₁ - y₂), sobolevFieldValues (y₁ - y₂)⟫ = 0 := by
-    have hsub : ⟪sobolevFieldValues (y₁ - y₂), sobolevFieldValues (y₁ - y₂)⟫ =
-        ⟪sobolevFieldValues y₁, sobolevFieldValues (y₁ - y₂)⟫ -
-          ⟪sobolevFieldValues y₂, sobolevFieldValues (y₁ - y₂)⟫ := by
-      rw [← inner_sub_left, ← map_sub]
-    rw [hsub, hy₁ _ hker, hy₂ _ hker, sub_self]
-  exact sub_eq_zero.1 (sobolevFieldValues_injective (by simpa using inner_self_eq_zero.1 hzero))
-
 /-- **Bounded `L²`-orthogonal right inverse `L² → H¹`.** At a `C¹` plane vortex `x` with
 `|α| → 1` at infinity and `L∞` class `a`, there is a continuous linear right inverse
 `Q : L²(ℂ; ℝ⁴) → H¹(ℂ)⁴` of `sobolevGaugeFixedOperator a` whose outputs are `L²`-orthogonal to
 the kernel of `sobolevGaugeFixedOperator a`. By
-`TauCeti.Vortex.eq_of_sobolevGaugeFixedOperator_eq_of_inner_sobolevFieldValues_eq_zero`, this
-operator `Q` is unique. -/
-theorem exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id (hx : ContDiff ℝ 1 x)
+`ContinuousLinearMap.IsOrthogonalRightInverse.unique` (with `sobolevFieldValues_injective`), this
+operator `Q` is unique and equals
+`ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator a)`. -/
+theorem exists_isOrthogonalRightInverse_sobolevGaugeFixedOperator (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hax : a =ᵐ[μ⊤] x) :
-    ∃ Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
-      (sobolevGaugeFixedOperator a).comp Q = ContinuousLinearMap.id ℝ _ ∧
-        ∀ f, ∀ u ∈ (sobolevGaugeFixedOperator a).ker,
-          ⟪sobolevFieldValues (Q f), sobolevFieldValues u⟫ = 0 := by
+    ∃ Q, ContinuousLinearMap.IsOrthogonalRightInverse
+      sobolevFieldValues (sobolevGaugeFixedOperator a) Q := by
   -- Transport the `L²` minimal weak right inverse from `volume` to `μ⊤`, then lift to `H¹(ℂ)⁴`.
   obtain ⟨Q₀, hQ₀⟩ := exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution
     (μ := volume) hx hsol hlim
@@ -346,9 +322,8 @@ theorem exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id (hx : Co
     rw [hgraph]
     exact isClosed_eq (sobolevFieldValues.continuous.comp continuous_snd)
       (Q₁.continuous.comp continuous_fst)
-  refine ⟨ContinuousLinearMap.ofIsClosedGraph hclosed, ?_, fun f u hu ↦ ?_⟩
-  · ext1 f
-    obtain ⟨w, hw, hLw⟩ := hQ₁_mem f
+  refine ⟨ContinuousLinearMap.ofIsClosedGraph hclosed, ⟨fun f ↦ ?_, fun f u hu ↦ ?_⟩⟩
+  · obtain ⟨w, hw, hLw⟩ := hQ₁_mem f
     have hQw : ContinuousLinearMap.ofIsClosedGraph hclosed f = w :=
       sobolevFieldValues_injective (by simpa [hqL] using hw.symm)
     simpa [hQw] using hLw
@@ -376,9 +351,9 @@ theorem sobolevGaugeFixedOperator_surjective (hx : ContDiff ℝ 1 x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hax : a =ᵐ[μ⊤] x) :
     Function.Surjective (sobolevGaugeFixedOperator a) := by
-  obtain ⟨Q, hQ, -⟩ :=
-    exists_continuousLinearMap_sobolevGaugeFixedOperator_comp_eq_id hx hsol hlim hax
-  exact fun f ↦ ⟨Q f, DFunLike.congr_fun hQ f⟩
+  obtain ⟨Q, hQ⟩ :=
+    exists_isOrthogonalRightInverse_sobolevGaugeFixedOperator hx hsol hlim hax
+  exact hQ.rightInverse.surjective
 
 /-! ### Fredholm property -/
 
