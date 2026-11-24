@@ -6,79 +6,75 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticStatistics.ArithmeticFamily.Basic
-public import Mathlib.Topology.Algebra.Order.LiminfLimsup
 public import Mathlib.Topology.Algebra.Order.Field
+public import Mathlib.Topology.Order.LiminfLimsup
 
 /-!
 # Relative densities in arithmetic families
 
-For subfamilies `S` and `T` of an arithmetic family, the proportion of `T` lying in `S` at the
-inclusive cutoff `X` is
-
-```text
-  ratio S T X = count (S ∩ T) X / count T X,
-```
-
-read as `0` when the denominator vanishes. The upper and lower relative densities are the
-`limsup` and `liminf` of this proportion as `X → ∞`, and `HasDensity S T d` says that the
-proportion tends to `d`. The reference family `T` is always explicit: a statement such as
-*density one among squarefree integers* is `HasDensity A T 1` for that `T`.
+For subfamilies `S` and `T` of an arithmetic family, `ratio S T X` is the proportion of the
+members of `T` of height at most `X` that lie in `S`, read as `0` when there are none. The
+upper and lower relative densities are its `limsup` and `liminf` as the real cutoff tends to
+infinity, and `HasDensity S T d` says that the proportion tends to `d`. Statements such as
+"density one" or "half of all squarefree integers" in arithmetic statistics are relative
+densities in this sense, with the reference family `T` named explicitly.
 
 ## Main results
 
-* `ArithmeticFamily.hasDensity_iff_lowerDensity_eq_upperDensity`: a density exists exactly when
-  the lower and upper densities agree.
-* `ArithmeticFamily.hasDensity_self`: a nonempty subfamily has density one in itself.
-* `ArithmeticFamily.HasDensity.union`, `ArithmeticFamily.HasDensity.diff`: densities add on
-  disjoint subfamilies and complement inside a nonempty reference family.
-* `ArithmeticFamily.hasDensity_zero_of_finite`, `ArithmeticFamily.HasDensity.congr_finite`:
-  finite sets are negligible in an infinite reference family.
-* `ArithmeticFamily.hasDensity_iff_tendsto_ratioLT`: strict and inclusive cutoffs give the same
+* `hasDensity_iff_lowerDensity_eq_and_upperDensity_eq`,
+  `exists_hasDensity_iff_lowerDensity_eq_upperDensity`: a relative density is the common value
+  of the lower and upper relative densities, and exists exactly when they agree.
+* `HasDensity.sdiff`, `HasDensity.union`: complements and disjoint unions.
+* `hasDensity_zero_of_finite`, `HasDensity.congr_finite`: finite sets are negligible in an
+  infinite reference family.
+* `hasDensity_iff_tendsto_ratioLT`: the inclusive and the strict cutoffs give the same
   densities.
-* `ArithmeticFamily.hasDensity_rescale_iff`: a positive constant multiple of the height gives
-  the same densities.
-* `ArithmeticFamily.HasDensity.trans`: densities multiply in towers `S ⊆ T ⊆ U`.
+* `hasDensity_rescale_iff`: rescaling the height by a positive constant does not change
+  densities.
+* `HasDensity.mul`: relative densities multiply in towers.
+* `hasDensity_inter_one_of_lowerDensity_pos`: a density-one subfamily has density one in every
+  subfamily of positive lower density.
 
 ## References
 
 * M. Bhargava, A. Shankar, *Binary quartic forms having bounded invariants, and the
-  boundedness of the average rank of elliptic curves*, Ann. of Math. 181 (2015), 191–242,
-  Theorem 1.8 (densities of families of elliptic curves ordered by height).
+  boundedness of the average rank of elliptic curves*, Ann. of Math. 181 (2015), §2.
 * A. Burungale, Y. Tian, *A rank zero p-converse to a theorem of Gross–Zagier, Kolyvagin and
-  Rubin*, Ann. of Math. 203 (2026), 1–13, Theorem 1.2 and Proposition 1.3 (density one and
-  lower densities among squarefree integers).
+  Rubin*, Ann. of Math. 203 (2026), Theorem 1.2 and Proposition 1.3.
 -/
 
 public section
-
-open Filter Topology
 
 namespace TauCeti
 
 namespace ArithmeticFamily
 
+open Filter Topology
+
 variable {ι : Type*} (F : ArithmeticFamily ι)
 
-/-! ### Proportions at a cutoff -/
-
-/-- The proportion of `T` lying in `S` at the inclusive cutoff `X`, with `0 / 0 = 0`. -/
+/-- The proportion of the members of `T` of height at most `X` that lie in `S`, read as `0`
+when `T` has no member of height at most `X`. -/
 noncomputable def ratio (S T : Set ι) (X : ℝ) : ℝ :=
   (F.count (S ∩ T) X : ℝ) / F.count T X
 
-/-- The proportion of `T` lying in `S` at the strict cutoff `X`, with `0 / 0 = 0`. -/
+/-- The proportion of the members of `T` of height less than `X` that lie in `S`, read as `0`
+when `T` has no member of height less than `X`. -/
 noncomputable def ratioLT (S T : Set ι) (X : ℝ) : ℝ :=
   (F.countLT (S ∩ T) X : ℝ) / F.countLT T X
 
-/-- The upper relative density of `S` in `T`. -/
+/-- The upper relative density of `S` in `T`: the `limsup` of the proportion `ratio S T X` as
+the cutoff `X` tends to infinity. -/
 noncomputable def upperDensity (S T : Set ι) : ℝ :=
   limsup (F.ratio S T) atTop
 
-/-- The lower relative density of `S` in `T`, the lower limiting proportion. -/
+/-- The lower relative density of `S` in `T`: the `liminf` of the proportion `ratio S T X` as
+the cutoff `X` tends to infinity. -/
 noncomputable def lowerDensity (S T : Set ι) : ℝ :=
   liminf (F.ratio S T) atTop
 
-/-- `S` has relative density `d` in `T` when the proportion of `T` lying in `S` tends to `d`
-as the inclusive cutoff tends to infinity. -/
+/-- `S` has relative density `d` in `T`: the proportion of the members of `T` of height at
+most `X` that lie in `S` tends to `d` as the cutoff `X` tends to infinity. -/
 def HasDensity (S T : Set ι) (d : ℝ) : Prop :=
   Tendsto (F.ratio S T) atTop (𝓝 d)
 
@@ -86,211 +82,337 @@ variable {F} {S S' T U : Set ι} {d d' : ℝ}
 
 /-- Evaluate the inclusive proportion as a quotient of counts. -/
 theorem ratio_apply (S T : Set ι) (X : ℝ) :
-    F.ratio S T X = (F.count (S ∩ T) X : ℝ) / F.count T X := by
-  rw [ratio]
+    F.ratio S T X = (F.count (S ∩ T) X : ℝ) / F.count T X := (rfl)
 
 /-- Evaluate the strict proportion as a quotient of strict counts. -/
 theorem ratioLT_apply (S T : Set ι) (X : ℝ) :
-    F.ratioLT S T X = (F.countLT (S ∩ T) X : ℝ) / F.countLT T X := by
-  rw [ratioLT]
+    F.ratioLT S T X = (F.countLT (S ∩ T) X : ℝ) / F.countLT T X := (rfl)
 
-/-- The upper relative density is the `limsup` of the proportions. -/
-theorem upperDensity_def (S T : Set ι) : F.upperDensity S T = limsup (F.ratio S T) atTop := by
-  rw [upperDensity]
+/-- The upper relative density is the `limsup` of the inclusive proportion. -/
+theorem upperDensity_def (S T : Set ι) :
+    F.upperDensity S T = limsup (F.ratio S T) atTop := (rfl)
 
-/-- The lower relative density is the `liminf` of the proportions. -/
-theorem lowerDensity_def (S T : Set ι) : F.lowerDensity S T = liminf (F.ratio S T) atTop := by
-  rw [lowerDensity]
+/-- The lower relative density is the `liminf` of the inclusive proportion. -/
+theorem lowerDensity_def (S T : Set ι) :
+    F.lowerDensity S T = liminf (F.ratio S T) atTop := (rfl)
 
-/-- Having a relative density is convergence of the proportions. -/
-theorem hasDensity_iff : F.HasDensity S T d ↔ Tendsto (F.ratio S T) atTop (𝓝 d) := by
-  rw [HasDensity]
+/-- A relative density is a limit of the inclusive proportion. -/
+theorem hasDensity_iff_tendsto_ratio :
+    F.HasDensity S T d ↔ Tendsto (F.ratio S T) atTop (𝓝 d) := .rfl
 
+alias ⟨HasDensity.tendsto, _⟩ := hasDensity_iff_tendsto_ratio
+
+/-! ### Bounds on the proportion -/
+
+variable (F) in
 /-- Proportions are nonnegative. -/
 theorem ratio_nonneg (S T : Set ι) (X : ℝ) : 0 ≤ F.ratio S T X := by
   rw [ratio_apply]
   positivity
 
+variable (F) in
 /-- Proportions are at most one. -/
 theorem ratio_le_one (S T : Set ι) (X : ℝ) : F.ratio S T X ≤ 1 := by
   rw [ratio_apply]
-  exact div_le_one_of_le₀ (mod_cast F.count_mono_set Set.inter_subset_right X) (by positivity)
+  exact div_le_one_of_le₀ (by exact_mod_cast F.count_mono_set Set.inter_subset_right X)
+    (by positivity)
 
-/-- The empty subfamily has proportion zero. -/
-@[simp]
-theorem ratio_empty (T : Set ι) (X : ℝ) : F.ratio ∅ T X = 0 := by
-  simp [ratio_apply]
+variable (F) in
+/-- Strict proportions are nonnegative. -/
+theorem ratioLT_nonneg (S T : Set ι) (X : ℝ) : 0 ≤ F.ratioLT S T X := by
+  rw [ratioLT_apply]
+  positivity
 
-/-- The proportion of `T` lying in `S` only depends on `S ∩ T`. -/
-@[simp]
-theorem ratio_inter_right (S T : Set ι) (X : ℝ) : F.ratio (S ∩ T) T X = F.ratio S T X := by
-  rw [ratio_apply, ratio_apply, Set.inter_assoc, Set.inter_self]
+variable (F) in
+/-- Strict proportions are at most one. -/
+theorem ratioLT_le_one (S T : Set ι) (X : ℝ) : F.ratioLT S T X ≤ 1 := by
+  rw [ratioLT_apply]
+  exact div_le_one_of_le₀ (by exact_mod_cast F.countLT_mono_set Set.inter_subset_right X)
+    (by positivity)
 
-/-- Proportions add on disjoint subfamilies, at every cutoff. -/
-theorem ratio_union_of_disjoint (h : Disjoint S S') (T : Set ι) (X : ℝ) :
-    F.ratio (S ∪ S') T X = F.ratio S T X + F.ratio S' T X := by
-  rw [ratio_apply, ratio_apply, ratio_apply, Set.union_inter_distrib_right,
-    F.count_union_of_disjoint (h.mono Set.inter_subset_left Set.inter_subset_left), Nat.cast_add,
-    add_div]
-
-/-- Proportions multiply in towers `S ⊆ T ⊆ U`, at every cutoff. -/
-theorem ratio_mul_ratio_of_subset (hST : S ⊆ T) (hTU : T ⊆ U) (X : ℝ) :
-    F.ratio S T X * F.ratio T U X = F.ratio S U X := by
-  rw [ratio_apply, ratio_apply, ratio_apply, Set.inter_eq_left.mpr hST,
-    Set.inter_eq_left.mpr hTU, Set.inter_eq_left.mpr (hST.trans hTU)]
-  rcases Nat.eq_zero_or_pos (F.count T X) with hT | hT
-  · have hS : F.count S X = 0 := Nat.eq_zero_of_le_zero (hT ▸ F.count_mono_set hST X)
-    simp [hS, hT]
-  · rw [div_mul_div_comm, mul_comm (F.count S X : ℝ),
-      mul_div_mul_left _ _ (by positivity : (F.count T X : ℝ) ≠ 0)]
-
-/-! ### Upper and lower densities -/
-
-private theorem isBoundedUnder_le_ratio (S T : Set ι) :
-    IsBoundedUnder (· ≤ ·) atTop (F.ratio S T) :=
+variable (F) in
+/-- The proportion is bounded above along every filter. -/
+theorem isBoundedUnder_le_ratio (S T : Set ι) (l : Filter ℝ) :
+    l.IsBoundedUnder (· ≤ ·) (F.ratio S T) :=
   isBoundedUnder_of ⟨1, F.ratio_le_one S T⟩
 
-private theorem isBoundedUnder_ge_ratio (S T : Set ι) :
-    IsBoundedUnder (· ≥ ·) atTop (F.ratio S T) :=
+variable (F) in
+/-- The proportion is bounded below along every filter. -/
+theorem isBoundedUnder_ge_ratio (S T : Set ι) (l : Filter ℝ) :
+    l.IsBoundedUnder (· ≥ ·) (F.ratio S T) :=
   isBoundedUnder_of ⟨0, F.ratio_nonneg S T⟩
 
-/-- The lower relative density never exceeds the upper one. -/
+variable (F) in
+/-- Lower relative densities are nonnegative. -/
+theorem lowerDensity_nonneg (S T : Set ι) : 0 ≤ F.lowerDensity S T :=
+  le_liminf_of_le (F.isBoundedUnder_le_ratio S T atTop).isCoboundedUnder_ge
+    (.of_forall (F.ratio_nonneg S T))
+
+variable (F) in
+/-- Upper relative densities are at most one. -/
+theorem upperDensity_le_one (S T : Set ι) : F.upperDensity S T ≤ 1 :=
+  limsup_le_of_le (F.isBoundedUnder_ge_ratio S T atTop).isCoboundedUnder_le
+    (.of_forall (F.ratio_le_one S T))
+
+variable (F) in
+/-- The lower relative density never exceeds the upper relative density. -/
 theorem lowerDensity_le_upperDensity (S T : Set ι) : F.lowerDensity S T ≤ F.upperDensity S T :=
-  liminf_le_limsup (isBoundedUnder_le_ratio S T) (isBoundedUnder_ge_ratio S T)
+  liminf_le_limsup (F.isBoundedUnder_le_ratio S T atTop) (F.isBoundedUnder_ge_ratio S T atTop)
+
+/-! ### Limits and the lower and upper densities -/
+
+/-- A relative density is the common value of the lower and upper relative densities. -/
+theorem hasDensity_iff_lowerDensity_eq_and_upperDensity_eq :
+    F.HasDensity S T d ↔ F.lowerDensity S T = d ∧ F.upperDensity S T = d :=
+  ⟨fun h ↦ ⟨h.liminf_eq, h.limsup_eq⟩, fun h ↦ tendsto_of_liminf_eq_limsup h.1 h.2
+    (F.isBoundedUnder_le_ratio S T atTop) (F.isBoundedUnder_ge_ratio S T atTop)⟩
 
 /-- A relative density is the lower relative density. -/
 theorem HasDensity.lowerDensity_eq (h : F.HasDensity S T d) : F.lowerDensity S T = d :=
-  (hasDensity_iff.mp h).liminf_eq
+  (hasDensity_iff_lowerDensity_eq_and_upperDensity_eq.mp h).1
 
 /-- A relative density is the upper relative density. -/
 theorem HasDensity.upperDensity_eq (h : F.HasDensity S T d) : F.upperDensity S T = d :=
-  (hasDensity_iff.mp h).limsup_eq
-
-/-- A relative density exists exactly when the lower and upper relative densities agree. -/
-theorem hasDensity_iff_lowerDensity_eq_upperDensity :
-    F.HasDensity S T d ↔ F.lowerDensity S T = d ∧ F.upperDensity S T = d :=
-  ⟨fun h ↦ ⟨h.lowerDensity_eq, h.upperDensity_eq⟩, fun h ↦
-    hasDensity_iff.mpr <| tendsto_of_liminf_eq_limsup h.1 h.2 (isBoundedUnder_le_ratio S T)
-      (isBoundedUnder_ge_ratio S T)⟩
+  (hasDensity_iff_lowerDensity_eq_and_upperDensity_eq.mp h).2
 
 /-- A relative density is unique. -/
 theorem HasDensity.unique (h : F.HasDensity S T d) (h' : F.HasDensity S T d') : d = d' :=
-  tendsto_nhds_unique (hasDensity_iff.mp h) (hasDensity_iff.mp h')
+  tendsto_nhds_unique h h'
 
-/-- A relative density is nonnegative. -/
+/-- A relative density exists exactly when the lower and upper relative densities agree. -/
+theorem exists_hasDensity_iff_lowerDensity_eq_upperDensity :
+    (∃ d, F.HasDensity S T d) ↔ F.lowerDensity S T = F.upperDensity S T :=
+  ⟨fun ⟨_, h⟩ ↦ h.lowerDensity_eq.trans h.upperDensity_eq.symm,
+    fun h ↦ ⟨_, hasDensity_iff_lowerDensity_eq_and_upperDensity_eq.mpr ⟨h, rfl⟩⟩⟩
+
+/-- Relative densities are nonnegative. -/
 theorem HasDensity.nonneg (h : F.HasDensity S T d) : 0 ≤ d :=
-  ge_of_tendsto' (hasDensity_iff.mp h) (F.ratio_nonneg S T)
+  h.lowerDensity_eq ▸ F.lowerDensity_nonneg S T
 
-/-- A relative density is at most one. -/
+/-- Relative densities are at most one. -/
 theorem HasDensity.le_one (h : F.HasDensity S T d) : d ≤ 1 :=
-  le_of_tendsto' (hasDensity_iff.mp h) (F.ratio_le_one S T)
+  h.upperDensity_eq ▸ F.upperDensity_le_one S T
 
-/-! ### Basic densities -/
+/-! ### Elementary densities -/
+
+/-- No member of a reference family lies in the empty subfamily. -/
+@[simp]
+theorem ratio_empty_left (T : Set ι) (X : ℝ) : F.ratio ∅ T X = 0 := by
+  simp [ratio_apply]
+
+/-- The proportion in the empty reference family is zero by convention. -/
+@[simp]
+theorem ratio_empty_right (S : Set ι) (X : ℝ) : F.ratio S ∅ X = 0 := by
+  simp [ratio_apply]
+
+/-- A reference family with a member of height at most `X` has proportion one in itself. -/
+theorem ratio_self {X : ℝ} (hT : 0 < F.count T X) : F.ratio T T X = 1 := by
+  rw [ratio_apply, Set.inter_self]
+  exact div_self (by positivity)
 
 /-- The empty subfamily has density zero in every reference family. -/
 theorem hasDensity_empty (T : Set ι) : F.HasDensity ∅ T 0 := by
-  rw [hasDensity_iff]
-  exact tendsto_const_nhds.congr fun X ↦ (F.ratio_empty T X).symm
+  rw [hasDensity_iff_tendsto_ratio, funext (ratio_empty_left (F := F) T)]
+  exact tendsto_const_nhds
 
-/-- A nonempty subfamily has density one in itself. The empty subfamily has density zero in
-itself by the `0 / 0 = 0` convention. -/
-theorem hasDensity_self (hT : T.Nonempty) : F.HasDensity T T 1 := by
-  rw [hasDensity_iff]
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [F.eventually_count_pos hT] with X hX
-  rw [ratio_apply, Set.inter_self, div_self (by positivity)]
+/-- A nonempty subfamily has density one in itself. -/
+theorem hasDensity_self (hT : T.Nonempty) : F.HasDensity T T 1 :=
+  tendsto_const_nhds.congr' <| (F.eventually_count_pos hT).mono fun _ hX ↦ (ratio_self hX).symm
 
-/-- Densities add on disjoint subfamilies. -/
-theorem HasDensity.union (h : Disjoint S S') (hS : F.HasDensity S T d)
-    (hS' : F.HasDensity S' T d') : F.HasDensity (S ∪ S') T (d + d') := by
-  rw [hasDensity_iff]
-  exact ((hasDensity_iff.mp hS).add (hasDensity_iff.mp hS')).congr fun X ↦
-    (F.ratio_union_of_disjoint h T X).symm
+/-- Proportions add on disjoint subfamilies. -/
+theorem ratio_union (h : Disjoint S S') (T : Set ι) (X : ℝ) :
+    F.ratio (S ∪ S') T X = F.ratio S T X + F.ratio S' T X := by
+  simp only [ratio_apply, Set.union_inter_distrib_right,
+    F.count_union_of_disjoint (h.mono Set.inter_subset_left Set.inter_subset_left)]
+  push_cast
+  exact add_div _ _ _
 
-/-- The complement of a subfamily in a nonempty reference family has the complementary
-density. -/
-theorem HasDensity.diff (hT : T.Nonempty) (h : F.HasDensity S T d) :
-    F.HasDensity (T \ S) T (1 - d) := by
-  rw [hasDensity_iff]
-  refine (tendsto_const_nhds.sub (hasDensity_iff.mp h)).congr' ?_
-  filter_upwards [F.eventually_count_pos hT] with X hX
-  have hsplit := F.ratio_union_of_disjoint (S := T ∩ S) (S' := T \ S)
-    Set.disjoint_sdiff_inter.symm T X
-  rw [Set.inter_union_sdiff, ratio_apply T, Set.inter_self, div_self (by positivity)] at hsplit
-  rw [Set.inter_comm, ratio_inter_right] at hsplit
-  linarith
+/-- Proportions are subadditive. -/
+theorem ratio_union_le (S S' T : Set ι) (X : ℝ) :
+    F.ratio (S ∪ S') T X ≤ F.ratio S T X + F.ratio S' T X := by
+  simp only [ratio_apply, Set.union_inter_distrib_right, ← add_div]
+  exact div_le_div_of_nonneg_right (by exact_mod_cast F.count_union_le _ _ X) (by positivity)
+
+/-- Enlarging a subfamily enlarges its proportion. -/
+theorem ratio_mono_left (h : S ⊆ S') (T : Set ι) (X : ℝ) : F.ratio S T X ≤ F.ratio S' T X := by
+  simp only [ratio_apply]
+  exact div_le_div_of_nonneg_right
+    (by exact_mod_cast F.count_mono_set (Set.inter_subset_inter_left T h) X) (by positivity)
+
+/-- Enlarging a subfamily enlarges its lower relative density. -/
+theorem lowerDensity_mono_left (h : S ⊆ S') (T : Set ι) :
+    F.lowerDensity S T ≤ F.lowerDensity S' T :=
+  liminf_le_liminf (.of_forall (ratio_mono_left h T)) (F.isBoundedUnder_ge_ratio S T atTop)
+    (F.isBoundedUnder_le_ratio S' T atTop).isCoboundedUnder_ge
+
+/-- Enlarging a subfamily enlarges its upper relative density. -/
+theorem upperDensity_mono_left (h : S ⊆ S') (T : Set ι) :
+    F.upperDensity S T ≤ F.upperDensity S' T :=
+  limsup_le_limsup (.of_forall (ratio_mono_left h T))
+    (F.isBoundedUnder_ge_ratio S T atTop).isCoboundedUnder_le (F.isBoundedUnder_le_ratio S' T atTop)
+
+/-- The proportion of `S` in `T` only depends on the members of `S` lying in `T`. -/
+@[simp]
+theorem ratio_inter_self_right (S T : Set ι) (X : ℝ) : F.ratio (S ∩ T) T X = F.ratio S T X := by
+  rw [ratio_apply, ratio_apply, Set.inter_assoc, Set.inter_self]
+
+/-- The lower relative density of `S` in `T` only depends on the members of `S` lying in `T`. -/
+@[simp]
+theorem lowerDensity_inter_self_right (S T : Set ι) :
+    F.lowerDensity (S ∩ T) T = F.lowerDensity S T := by
+  rw [lowerDensity_def, lowerDensity_def, funext (ratio_inter_self_right (F := F) S T)]
+
+/-- The upper relative density of `S` in `T` only depends on the members of `S` lying in `T`. -/
+@[simp]
+theorem upperDensity_inter_self_right (S T : Set ι) :
+    F.upperDensity (S ∩ T) T = F.upperDensity S T := by
+  rw [upperDensity_def, upperDensity_def, funext (ratio_inter_self_right (F := F) S T)]
+
+/-- The relative density of `S` in `T` only depends on the members of `S` lying in `T`. -/
+@[simp]
+theorem hasDensity_inter_self_right_iff : F.HasDensity (S ∩ T) T d ↔ F.HasDensity S T d := by
+  rw [hasDensity_iff_tendsto_ratio, hasDensity_iff_tendsto_ratio,
+    funext (ratio_inter_self_right (F := F) S T)]
+
+/-- Within a reference family with a member of height at most `X`, the proportion of the
+complement is one minus the proportion. -/
+theorem ratio_sdiff {X : ℝ} (hT : 0 < F.count T X) (S : Set ι) :
+    F.ratio (T \ S) T X = 1 - F.ratio S T X := by
+  have h := F.count_inter_add_count_sdiff T S X
+  have hT' : (F.count T X : ℝ) ≠ 0 := by positivity
+  rw [ratio_apply, ratio_apply, Set.inter_eq_left.mpr Set.sdiff_subset, Set.inter_comm S T,
+    eq_sub_iff_add_eq, ← add_div, div_eq_one_iff_eq hT', ← h]
+  push_cast
+  ring
+
+/-- The complement of a subfamily of density `d` in a nonempty reference family `T` has
+density `1 - d` in `T`. -/
+theorem HasDensity.sdiff (hT : T.Nonempty) (h : F.HasDensity S T d) :
+    F.HasDensity (T \ S) T (1 - d) :=
+  (tendsto_const_nhds.sub h).congr' <|
+    (F.eventually_count_pos hT).mono fun _ hX ↦ (ratio_sdiff hX S).symm
+
+/-- Relative densities add on disjoint subfamilies. -/
+theorem HasDensity.union (hS : Disjoint S S') (h : F.HasDensity S T d)
+    (h' : F.HasDensity S' T d') : F.HasDensity (S ∪ S') T (d + d') := by
+  rw [hasDensity_iff_tendsto_ratio, funext (ratio_union hS T)]
+  exact h.add h'
 
 /-- A finite subfamily has density zero in an infinite reference family. -/
 theorem hasDensity_zero_of_finite (hS : S.Finite) (hT : T.Infinite) : F.HasDensity S T 0 := by
-  rw [hasDensity_iff]
-  refine squeeze_zero (g := fun X ↦ (S.ncard : ℝ) / F.count T X) (F.ratio_nonneg S T)
-    (fun X ↦ ?_)
+  have hle (X : ℝ) : F.ratio S T X ≤ S.ncard / F.count T X := by
+    rw [ratio_apply]
+    refine div_le_div_of_nonneg_right ?_ (by positivity)
+    exact_mod_cast (F.count_le_ncard (hS.subset Set.inter_subset_left) X).trans
+      (Set.ncard_le_ncard Set.inter_subset_left hS)
+  exact squeeze_zero (F.ratio_nonneg S T) hle
     (tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.comp (F.tendsto_count_atTop hT)))
-  rw [ratio_apply, count_eq_ncard]
-  exact div_le_div_of_nonneg_right
-    (mod_cast Set.ncard_le_ncard (fun _ hi ↦ hi.1.1) hS) (Nat.cast_nonneg _)
 
 /-- Changing a subfamily by finitely many members does not change its density in an infinite
 reference family. -/
 theorem HasDensity.congr_finite (hSS' : (symmDiff S S').Finite) (hT : T.Infinite)
     (h : F.HasDensity S T d) : F.HasDensity S' T d := by
-  have h₁ : F.HasDensity (S \ S') T 0 := hasDensity_zero_of_finite
-    (hSS'.subset fun _ hx ↦ Set.mem_symmDiff.mpr (Or.inl hx)) hT
-  have h₂ : F.HasDensity (S' \ S) T 0 := hasDensity_zero_of_finite
-    (hSS'.subset fun _ hx ↦ Set.mem_symmDiff.mpr (Or.inr hx)) hT
-  have hinter : F.HasDensity (S ∩ S') T d := by
-    rw [hasDensity_iff]
-    convert (hasDensity_iff.mp h).sub (hasDensity_iff.mp h₁) using 1
-    · ext X
-      rw [eq_sub_iff_add_eq, ← F.ratio_union_of_disjoint
-        Set.disjoint_sdiff_inter.symm, Set.inter_union_sdiff]
-    · rw [sub_zero]
-  have hdisj : Disjoint (S ∩ S') (S' \ S) := by
-    rw [Set.inter_comm]
-    exact Set.disjoint_sdiff_inter.symm
-  simpa [Set.inter_comm S S', Set.inter_union_sdiff] using hinter.union hdisj h₂
+  have h₀ := (hasDensity_zero_of_finite (F := F) hSS' hT).tendsto
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le (by simpa using h.tendsto.sub h₀)
+    (by simpa using h.tendsto.add h₀) (fun X ↦ ?_) (fun X ↦ ?_)
+  · rw [sub_le_iff_le_add]
+    refine (ratio_mono_left (fun x hx ↦ ?_) T X).trans (ratio_union_le S' _ T X)
+    by_cases hx' : x ∈ S'
+    · exact .inl hx'
+    · exact .inr (.inl ⟨hx, hx'⟩)
+  · refine (ratio_mono_left (fun x hx ↦ ?_) T X).trans (ratio_union_le S _ T X)
+    by_cases hx' : x ∈ S
+    · exact .inl hx'
+    · exact .inr (.inr ⟨hx, hx'⟩)
 
-/-! ### Strict cutoffs -/
+/-! ### Strict and inclusive cutoffs -/
 
-/-- Strict and inclusive cutoffs give the same relative densities. -/
+/-- The inclusive and strict cutoffs give the same relative densities. -/
 theorem hasDensity_iff_tendsto_ratioLT :
     F.HasDensity S T d ↔ Tendsto (F.ratioLT S T) atTop (𝓝 d) := by
-  choose δ hδ hδeq using F.exists_countLT_eq_count_sub
-  choose ε hε hεeq using F.exists_count_eq_countLT_add
-  rw [hasDensity_iff]
+  choose δ hδ₀ hδ₁ hδ using F.exists_countLT_eq_count_sub_and_count_eq_countLT_add
   constructor
   · intro h
-    have hg : Tendsto (fun X ↦ X - δ X) atTop atTop :=
-      tendsto_atTop_mono (fun X ↦ by simp only [id]; linarith [(hδ X).2])
+    have : Tendsto (fun X ↦ X - δ X) atTop atTop :=
+      tendsto_atTop_mono (fun X ↦ by dsimp only [id]; linarith [hδ₁ X])
         (tendsto_atTop_add_const_right _ (-1) tendsto_id)
-    refine (h.comp hg).congr fun X ↦ ?_
-    simp [ratio_apply, ratioLT_apply, hδeq]
+    refine (h.tendsto.comp this).congr fun X ↦ ?_
+    simp [ratio_apply, ratioLT_apply, (hδ X _).1]
   · intro h
-    have hg : Tendsto (fun X ↦ X + ε X) atTop atTop :=
-      tendsto_atTop_mono (fun X ↦ by simp only [id]; linarith [(hε X).1]) tendsto_id
-    refine (h.comp hg).congr fun X ↦ ?_
-    simp [ratio_apply, ratioLT_apply, hεeq]
+    have : Tendsto (fun X ↦ X + δ X) atTop atTop :=
+      tendsto_atTop_mono (fun X ↦ by dsimp only [id]; linarith [hδ₀ X]) tendsto_id
+    refine (h.comp this).congr fun X ↦ ?_
+    simp [ratio_apply, ratioLT_apply, (hδ X _).2]
 
-/-! ### Rescaling and towers -/
+/-! ### Rescaling the height -/
 
-/-- Rescaling the height by `c > 0` divides the cutoff of every proportion by `c`. -/
+/-- The proportion for a rescaled height is the original proportion at the divided cutoff. -/
+@[simp]
 theorem ratio_rescale (c : ℝ) (hc : 0 < c) (S T : Set ι) (X : ℝ) :
     (F.rescale c hc).ratio S T X = F.ratio S T (X / c) := by
   simp [ratio_apply, count_rescale]
 
-/-- Rescaling the height by `c > 0` does not change relative densities. -/
+/-- Rescaling the height by a positive constant does not change relative densities. -/
+@[simp]
 theorem hasDensity_rescale_iff (c : ℝ) (hc : 0 < c) :
     (F.rescale c hc).HasDensity S T d ↔ F.HasDensity S T d := by
-  rw [hasDensity_iff, hasDensity_iff, funext (F.ratio_rescale c hc S T)]
-  conv_rhs => rw [← map_div_atTop_eq c hc, tendsto_map'_iff, Function.comp_def]
+  constructor
+  · intro h
+    refine (h.tendsto.comp (tendsto_id.atTop_mul_const hc)).congr fun X ↦ ?_
+    simp [ratio_rescale, hc.ne']
+  · intro h
+    refine (h.tendsto.comp (tendsto_id.atTop_div_const hc)).congr fun X ↦ ?_
+    simp [ratio_rescale]
 
-/-- Relative densities multiply in towers: if `S ⊆ T ⊆ U`, `S` has density `α` in `T` and `T`
-has density `β` in `U`, then `S` has density `α * β` in `U`. -/
-theorem HasDensity.trans {α β : ℝ} (hST : S ⊆ T) (hTU : T ⊆ U) (hS : F.HasDensity S T α)
-    (hT : F.HasDensity T U β) : F.HasDensity S U (α * β) := by
-  rw [hasDensity_iff]
-  exact ((hasDensity_iff.mp hS).mul (hasDensity_iff.mp hT)).congr
-    (F.ratio_mul_ratio_of_subset hST hTU)
+/-! ### Towers and restriction -/
+
+/-- In a tower `T ⊆ U`, the proportion of `U` lying in `S ∩ T` is the product of the
+proportion of `T` lying in `S` and the proportion of `U` lying in `T`. -/
+theorem ratio_mul_ratio (hTU : T ⊆ U) (S : Set ι) (X : ℝ) :
+    F.ratio S T X * F.ratio T U X = F.ratio (S ∩ T) U X := by
+  simp only [ratio_apply, Set.inter_eq_left.mpr hTU, Set.inter_assoc]
+  rcases (Nat.zero_le (F.count T X)).eq_or_lt with h | h
+  · have : F.count (S ∩ T) X = 0 :=
+      Nat.eq_zero_of_le_zero (h ▸ F.count_mono_set Set.inter_subset_right X)
+    simp [← h, this]
+  · exact div_mul_div_cancel₀ (by positivity)
+
+/-- Relative densities multiply in towers: if `S` has density `α` in `T` and `T ⊆ U` has
+density `β` in `U`, then `S ∩ T` has density `α * β` in `U`. -/
+theorem HasDensity.mul {α β : ℝ} (hTU : T ⊆ U) (hS : F.HasDensity S T α)
+    (hT : F.HasDensity T U β) : F.HasDensity (S ∩ T) U (α * β) := by
+  rw [hasDensity_iff_tendsto_ratio, ← funext (ratio_mul_ratio hTU S)]
+  exact hS.tendsto.mul hT.tendsto
+
+/-- A subfamily `A` of density one in `T` has density one in every subfamily `U ⊆ T` of
+positive lower density in `T`. -/
+theorem hasDensity_inter_one_of_lowerDensity_pos {A : Set ι} (hA : F.HasDensity A T 1)
+    (hUT : U ⊆ T) (hU : 0 < F.lowerDensity U T) : F.HasDensity (A ∩ U) U 1 := by
+  have hpos : ∀ᶠ X in atTop, F.lowerDensity U T / 2 < F.ratio U T X :=
+    eventually_lt_of_lt_liminf (by rw [← lowerDensity_def]; linarith)
+      (F.isBoundedUnder_ge_ratio U T atTop)
+  obtain ⟨X₀, hX₀⟩ := hpos.exists
+  rcases U.eq_empty_or_nonempty with rfl | hU₀
+  · simp only [ratio_empty_left] at hX₀
+    linarith
+  -- the proportion of `U` outside `A` is controlled by the proportion of `T` outside `A`
+  have hbound : ∀ᶠ X in atTop,
+      F.ratio (U \ A) U X ≤ F.ratio (T \ A) T X / (F.lowerDensity U T / 2) := by
+    filter_upwards [hpos] with X hX
+    rw [le_div_iff₀ (by linarith)]
+    calc F.ratio (U \ A) U X * (F.lowerDensity U T / 2)
+        ≤ F.ratio (U \ A) U X * F.ratio U T X :=
+          mul_le_mul_of_nonneg_left hX.le (F.ratio_nonneg _ _ X)
+      _ = F.ratio (U \ A) T X := by
+          rw [ratio_mul_ratio hUT, Set.inter_eq_left.mpr Set.sdiff_subset]
+      _ ≤ F.ratio (T \ A) T X := ratio_mono_left (Set.sdiff_subset_sdiff_left hUT) T X
+  have hzero : F.HasDensity (U \ A) U 0 := by
+    have hTA := (hA.sdiff (hU₀.mono hUT)).tendsto
+    rw [sub_self] at hTA
+    refine squeeze_zero' (.of_forall (F.ratio_nonneg _ U)) hbound ?_
+    simpa using hTA.div_const (F.lowerDensity U T / 2)
+  have h := hzero.sdiff hU₀
+  rwa [Set.sdiff_sdiff_right_self, Set.inter_comm U A, sub_zero] at h
 
 end ArithmeticFamily
 

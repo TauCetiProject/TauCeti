@@ -37,7 +37,7 @@ example :
   intro F
   have h₀ : F.HasDensity {0, 1, 2} univ 0 := hasDensity_zero_of_finite (toFinite _) infinite_univ
   have h₁ : F.HasDensity (univ \ {0, 1, 2}) univ 1 := by
-    simpa using h₀.diff univ_nonempty
+    simpa using h₀.sdiff univ_nonempty
   exact ⟨h₀, h₁, hasDensity_iff_tendsto_ratioLT.mp h₁⟩
 
 end TauCeti.ArithmeticFamily

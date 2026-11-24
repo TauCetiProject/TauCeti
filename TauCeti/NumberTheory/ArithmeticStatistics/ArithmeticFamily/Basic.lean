@@ -15,9 +15,7 @@ An `ArithmeticFamily ι` equips its carrier with a real-valued Northcott height.
 specifies the objects being counted: use a quotient carrier to count isomorphism classes,
 and a pullback with its explicit fibre multiplicities to count representatives.
 
-Inclusive counts, strict counts and weighted counts are finite at every real cutoff. Since
-every cutoff is isolated from the other height values, a strict count is an inclusive count at a
-slightly lower cutoff, and an inclusive count is a strict count at a slightly higher one.
+Inclusive counts, strict counts and weighted counts are finite at every real cutoff.
 Finite-fibre pullbacks and positive rescalings preserve this finiteness; a quotient height
 defines a family once its own Northcott finiteness is supplied.
 Natural-valued heights recover `TauCeti.normLE` and `TauCeti.summatory`; multiplicative Weil
@@ -145,6 +143,32 @@ theorem count_union_of_disjoint {S T : Set ι} (h : Disjoint S T) (X : ℝ) :
   exact Finset.disjoint_left.mpr fun i hi hj ↦
     Set.disjoint_left.mp h (Finset.mem_filter.mp hi).2 (Finset.mem_filter.mp hj).2
 
+/-- Counts are subadditive. -/
+theorem count_union_le (S T : Set ι) (X : ℝ) :
+    F.count (S ∪ T) X ≤ F.count S X + F.count T X := by
+  classical
+  simp only [count, Set.mem_union, Finset.filter_or]
+  exact Finset.card_union_le _ _
+
+/-- A count splits into the parts inside and outside a second subfamily. -/
+theorem count_inter_add_count_sdiff (S T : Set ι) (X : ℝ) :
+    F.count (S ∩ T) X + F.count (S \ T) X = F.count S X := by
+  rw [← count_union_of_disjoint _ Set.disjoint_sdiff_inter.symm, Set.inter_union_sdiff]
+
+/-- A finite subfamily has count at most its cardinality. -/
+theorem count_le_ncard {S : Set ι} (hS : S.Finite) (X : ℝ) : F.count S X ≤ S.ncard := by
+  rw [count_eq_ncard]
+  exact Set.ncard_le_ncard (Set.sep_subset _ _) hS
+
+/-- A nonempty subfamily has positive count at every large enough cutoff. -/
+theorem eventually_count_pos {S : Set ι} (hS : S.Nonempty) :
+    ∀ᶠ X in Filter.atTop, 0 < F.count S X := by
+  obtain ⟨i, hi⟩ := hS
+  filter_upwards [Filter.eventually_ge_atTop (F.height i)] with X hX
+  have hfin : {j ∈ S | F.height j ≤ X}.Finite := (F.finite_height_le X).subset fun _ hj ↦ hj.2
+  rw [count_eq_ncard, Set.ncard_pos hfin]
+  exact ⟨i, hi, hX⟩
+
 /-- Below a uniform lower bound for the height, every subfamily has count zero. -/
 theorem count_eq_zero_of_lt {b X : ℝ} (hb : ∀ i, b ≤ F.height i) (hX : X < b)
     (S : Set ι) : F.count S X = 0 := by
@@ -163,14 +187,6 @@ theorem tendsto_count_atTop {S : Set ι} (hS : S.Infinite) :
   filter_upwards [F.tendsto_heightLE_atTop.eventually (Filter.eventually_ge_atTop s)] with X hX
   rw [← hcard]
   exact Finset.card_le_card fun i hi ↦ Finset.mem_filter.mpr ⟨hX hi, hs hi⟩
-
-/-- A nonempty subfamily has eventually positive counts. -/
-theorem eventually_count_pos {T : Set ι} (hT : T.Nonempty) :
-    ∀ᶠ X in Filter.atTop, 0 < F.count T X := by
-  obtain ⟨t, ht⟩ := hT
-  filter_upwards [Filter.eventually_ge_atTop (F.height t)] with X hX
-  rw [count_eq_ncard, Set.ncard_pos ((F.finite_height_le X).subset fun _ ↦ And.right)]
-  exact ⟨t, ht, hX⟩
 
 /-- The strict count never exceeds the inclusive count at the same cutoff. -/
 theorem countLT_le_count (S : Set ι) (X : ℝ) : F.countLT S X ≤ F.count S X := by
@@ -215,51 +231,42 @@ theorem count_le_countLT_of_lt (S : Set ι) {X Y : ℝ} (h : X < Y) :
   exact Finset.mem_filter.mpr
     ⟨F.heightLE_mono h.le hiX, hiS, ((mem_heightLE F).mp hiX).trans_lt h⟩
 
-/-- Every cutoff is isolated from the height values other than itself, by a gap of size at
-most one. -/
-private theorem exists_height_gap (X : ℝ) :
-    ∃ δ, 0 < δ ∧ δ ≤ 1 ∧ ∀ i, F.height i ≠ X → δ < |F.height i - X| := by
-  let s : Set ℝ := F.height '' {i | F.height i ≤ X + 1} \ {X}
-  have hs : IsClosed s :=
-    (((F.finite_height_le (X + 1)).image _).subset Set.sdiff_subset).isClosed
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hs.isOpen_compl X (by simp [s])
-  refine ⟨min (ε / 2) 1, by positivity, min_le_right _ _, fun i hi ↦ ?_⟩
-  by_contra! hle
-  have h₁ := hle.trans (min_le_left _ _)
-  have h₂ := hle.trans (min_le_right _ _)
-  have h₃ : F.height i ≤ X + 1 := by linarith [le_abs_self (F.height i - X)]
-  refine hball (?_ : F.height i ∈ Metric.ball X ε) ⟨⟨i, h₃, rfl⟩, hi⟩
-  rw [Metric.mem_ball, Real.dist_eq]
-  linarith
-
-/-- A strict count equals an inclusive count at a cutoff lowered by at most one, the same
-for every subfamily. -/
-theorem exists_countLT_eq_count_sub (X : ℝ) :
-    ∃ δ ∈ Set.Ioc (0 : ℝ) 1, ∀ S : Set ι, F.countLT S X = F.count S (X - δ) := by
-  obtain ⟨δ, hδ, hδ₁, hgap⟩ := F.exists_height_gap X
-  refine ⟨δ, ⟨hδ, hδ₁⟩, fun S ↦ ?_⟩
-  rw [countLT_eq_ncard, count_eq_ncard]
-  congr 1
-  ext i
-  refine and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h ↦ by linarith⟩
-  have := hgap i h.ne
-  rw [abs_of_neg (by linarith)] at this
-  linarith
-
-/-- An inclusive count equals a strict count at a cutoff raised by at most one, the same for
-every subfamily. -/
-theorem exists_count_eq_countLT_add (X : ℝ) :
-    ∃ δ ∈ Set.Ioc (0 : ℝ) 1, ∀ S : Set ι, F.count S X = F.countLT S (X + δ) := by
-  obtain ⟨δ, hδ, hδ₁, hgap⟩ := F.exists_height_gap X
-  refine ⟨δ, ⟨hδ, hδ₁⟩, fun S ↦ ?_⟩
-  rw [countLT_eq_ncard, count_eq_ncard]
-  congr 1
-  ext i
-  refine and_congr_right fun _ ↦ ⟨fun h ↦ by linarith, fun h ↦ ?_⟩
-  by_contra! hlt
-  have := hgap i hlt.ne'
-  rw [abs_of_pos (by linarith)] at this
-  linarith
+/-- Around every cutoff `X` there is a gap `δ ∈ (0, 1]` free of heights, except possibly `X`
+itself, so that strict and inclusive counts at `X` are inclusive and strict counts at
+`X - δ` and `X + δ`. -/
+theorem exists_countLT_eq_count_sub_and_count_eq_countLT_add (X : ℝ) :
+    ∃ δ, 0 < δ ∧ δ ≤ 1 ∧ ∀ S : Set ι,
+      F.countLT S X = F.count S (X - δ) ∧ F.count S X = F.countLT S (X + δ) := by
+  have hsub : {i | F.height i ≤ X + 1 ∧ F.height i ≠ X} ⊆ {i | F.height i ≤ X + 1} :=
+    fun _ hi ↦ hi.1
+  have hfin : (F.height '' {i | F.height i ≤ X + 1 ∧ F.height i ≠ X}).Finite :=
+    ((F.finite_height_le (X + 1)).subset hsub).image _
+  have hX : X ∉ F.height '' {i | F.height i ≤ X + 1 ∧ F.height i ≠ X} := by
+    rintro ⟨i, ⟨-, hi⟩, rfl⟩
+    exact hi rfl
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hfin.isClosed.isOpen_compl X hX
+  -- every height `h ≤ X + 1` other than `X` satisfies `|h - X| ≥ ε`
+  have hgap : ∀ i, F.height i ≤ X + 1 → F.height i ≠ X → ε ≤ |F.height i - X| := by
+    intro i hi hiX
+    by_contra! hlt
+    exact hball (Metric.mem_ball.mpr hlt) ⟨i, ⟨hi, hiX⟩, rfl⟩
+  obtain ⟨δ, hδ, hδε, hδ1⟩ : ∃ δ : ℝ, 0 < δ ∧ δ ≤ ε ∧ δ ≤ 1 :=
+    ⟨min ε 1, lt_min hε one_pos, min_le_left ε 1, min_le_right ε 1⟩
+  -- no height lies in `[X - δ, X)` or in `(X, X + δ)`
+  have hlt (i : ι) : F.height i < X ↔ F.height i ≤ X - δ := by
+    refine ⟨fun hi ↦ ?_, fun hi ↦ by linarith⟩
+    have := hgap i (by linarith) hi.ne
+    rw [abs_of_neg (by linarith)] at this
+    linarith
+  have hle (i : ι) : F.height i ≤ X ↔ F.height i < X + δ := by
+    refine ⟨fun hi ↦ by linarith, fun hi ↦ ?_⟩
+    by_contra! hXi
+    have := hgap i (by linarith) hXi.ne'
+    rw [abs_of_pos (by linarith)] at this
+    linarith
+  refine ⟨δ, hδ, hδ1, fun S ↦ ⟨?_, ?_⟩⟩
+  · simp only [countLT_eq_ncard, count_eq_ncard, hlt]
+  · simp only [countLT_eq_ncard, count_eq_ncard, hle]
 
 /-- Descend an invariant height to a quotient, requiring finiteness on the quotient itself.
 Finiteness of representatives is neither required nor implied. -/

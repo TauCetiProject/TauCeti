@@ -117,6 +117,9 @@ the strict zigzag algebra over every nontrivial commutative ring is proved in
   one, of any length at least two.
 * `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod`: the same on a word
   of four letters, written out.
+* `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous`: the
+  Hochschild differential of a degree-zero suspended cochain on a word of homogeneous letters of
+  any degrees, with the Koszul signs of the collapsed products.
 * `TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`: `Λ` vanishes on coboundaries
   when its weights satisfy the balance condition.
 * `TauCeti.zigzagTrace_obstruction_zigzagLoopAInfinityAlgebra_of_tprod`: the trace of the higher
@@ -260,6 +263,73 @@ theorem apply_subword_mem_zigzagIntegerGrade_one
     zigzagStrictAInfinityAlgebra_grading_piece, zero_add] at h
   exact h
 
+/-- **The Hochschild differential on words of homogeneous letters.** For a suspended cochain `φ`
+of degree zero and letters `x₀, …, x_{n+1}` of path-length degrees `d₀, …, d_{n+1}`,
+
+```text
+δφ(x₀, …, x_{n+1}) = τ(φ(x₀, …, x_n)) x_{n+1} + τ(x₀) φ(x₁, …, x_{n+1})
+    - ∑_{p ≤ n} (-1)^((d₀ - 1) + ⋯ + (d_{p-1} - 1)) φ(x₀, …, τ(x_p) x_{p+1}, …, x_{n+1}),
+```
+
+where `τ` is the Koszul twist acting on a homogeneous element of degree `e` by `(-1)^e`. On
+letters of degree one this is
+`zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_mem`. -/
+theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous
+    (φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G)
+    {n : ℕ} (x : ℕ → nonisolatedZigzagQuotient k G) (d : ℕ → ℤ)
+    (hx : ∀ i < n + 2, x i ∈ zigzagIntegerGrade k G (d i)) :
+    (𝒵).hochschildDifferential 0 φ
+        (of k _ ⟨n + 2, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 2) ↦ x j)) =
+      (𝒵).grading.koszulTwist 1
+          (φ (of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ x j))) *
+          x (n + 1) +
+        (𝒵).grading.koszulTwist 1 (x 0) *
+          φ (of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ x (1 + j))) -
+        ∑ p ∈ Finset.range (n + 1), negOnePowCast k (∑ j ∈ Finset.range p, (d j - 1)) •
+          φ (of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦
+            replaceBlock x p 2 ((𝒵).grading.koszulTwist 1 (x p) * x (p + 1)) j)) := by
+  have hx' : ∀ i < n + 2, x i ∈ ((𝒵).grading.shift 1).piece (d i - 1) := fun i hi ↦ by
+    rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, sub_add_cancel]
+    exact hx i hi
+  rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul,
+    LinearMap.sub_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,
+    gradedCoderiv_of_tprod_of_homogeneous_nat _ _ _ _ x _ hx',
+    gradedCoderiv_of_tprod_of_homogeneous_nat _ _ _ _ x _ hx']
+  simp only [zero_mul, negOnePowCast_zero, one_smul, one_mul, map_sum, map_smul]
+  -- In `m{φ}` only the collapses of `n + 1` letters at the two ends survive.
+  rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single (n + 1)
+      (fun d _ hd ↦ taylor_splice_of_ne _ p d _ (by omega)) (by simp),
+    Finset.sum_range_succ', Finset.sum_range_succ',
+    Finset.sum_eq_zero fun p _ ↦ by rw [splice_eq_zero_of_block_lt_add k _ _ (by omega), map_zero],
+    zero_add, splice_collapse_init_eq k (n := n + 1) (by omega),
+    splice_collapse_tail_eq k (n := n + 1) (by omega), taylor_of_tprod_two,
+    taylor_of_tprod_two]
+  -- In `φ{m}` only the collapses of two letters survive.
+  rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single 2
+      (fun d _ hd ↦ by rw [taylor_subword_of_ne _ p d hd, splice_zero, map_zero, smul_zero])
+      (by simp),
+    Finset.sum_range_succ, splice_eq_zero_of_block_lt_add k _ _ (by omega), map_zero, smul_zero,
+    add_zero]
+  have hinit : subword k (fun j : Fin (n + 2) ↦ x j) 0 (n + 1) =
+      of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ x j) := by
+    rw [subword_eq_of_tprod k _ (by omega) (by omega)]
+    exact of_tprod_congr k _ _ rfl fun j ↦ by simp
+  have htail : subword k (fun j : Fin (n + 2) ↦ x j) (0 + 1) (n + 1) =
+      of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ x (1 + j)) := by
+    rw [subword_eq_of_tprod k _ (by omega) (by omega)]
+  have hinner : ∀ p ∈ Finset.range (n + 1),
+      splice k (fun j : Fin (n + 2) ↦ x j) 0 (n + 2) p 2
+          ((𝒵).taylor (subword k (fun j : Fin (n + 2) ↦ x j) p 2)) =
+        of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦
+          replaceBlock x p 2 ((𝒵).grading.koszulTwist 1 (x p) * x (p + 1)) j) := by
+    intro p hp
+    rw [Finset.mem_range] at hp
+    rw [taylor_subword_two _ p (by omega), splice_eq_of_tprod_replaceBlock k x two_pos (by omega)]
+    exact of_tprod_congr k _ _ (by omega) fun _ ↦ rfl
+  rw [Finset.sum_congr rfl fun p hp ↦ by rw [hinner p hp], hinit, htail]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Fin.val_zero, Fin.val_last]
+  abel
+
 /-- **The Hochschild differential on words of arrows of any length.** For a suspended cochain `φ`
 of degree zero and letters `x₀, …, x_{n+1}` of path length one, such as arrows,
 
@@ -280,40 +350,35 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
       ∑ p : Fin (n + 1), φ (splice k x 0 (n + 2) p 2 (x p.castSucc * x p.succ)) -
         φ (subword k x 0 (n + 1)) * x (Fin.last (n + 1)) -
         x 0 * φ (subword k x 1 (n + 1)) := by
-  have htw (y : nonisolatedZigzagQuotient k G) (hy : y ∈ zigzagIntegerGrade k G 1) :
-      (𝒵).grading.koszulTwist 1 y = -y := by
+  -- Read the letters off a family indexed by the natural numbers.
+  obtain ⟨y, rfl⟩ : ∃ y : ℕ → nonisolatedZigzagQuotient k G, (fun j : Fin (n + 2) ↦ y j) = x :=
+    ⟨fun i ↦ if h : i < n + 2 then x ⟨i, h⟩ else 0, funext fun j ↦ by simp⟩
+  have hy (i : ℕ) (hi : i < n + 2) : y i ∈ zigzagIntegerGrade k G 1 := hx ⟨i, hi⟩
+  have htw (z : nonisolatedZigzagQuotient k G) (hz : z ∈ zigzagIntegerGrade k G 1) :
+      (𝒵).grading.koszulTwist 1 z = -z := by
     rw [(𝒵).grading.koszulTwist_one_apply_of_mem (e := 1)
       (by rwa [zigzagStrictAInfinityAlgebra_grading_piece])]
     simp
-  have hx' : ∀ i, x i ∈ ((𝒵).grading.shift 1).piece ((fun _ ↦ (0 : ℤ)) i) := fun i ↦ by
-    rw [InternalGrading.shift_piece, zigzagStrictAInfinityAlgebra_grading_piece, zero_add]
-    exact hx i
+  have hinit : subword k (fun j : Fin (n + 2) ↦ y j) 0 (n + 1) =
+      of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ y j) := by
+    rw [subword_eq_of_tprod k _ (by omega) (by omega)]
+    exact of_tprod_congr k _ _ rfl fun j ↦ by simp
   -- `φ` sends a word of `n + 1` letters of path length one to path length one.
-  have hφx : φ (subword k x 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 :=
+  have hφy : φ (subword k (fun j : Fin (n + 2) ↦ y j) 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 :=
     apply_subword_mem_zigzagIntegerGrade_one hφ hx 0 (n + 1)
-  rw [AInfinityAlgebra.hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul,
-    LinearMap.sub_apply, brace_def, brace_def, LinearMap.comp_apply, LinearMap.comp_apply,
-    gradedCoderiv_of_tprod_of_homogeneous _ _ _ _ x _ hx',
-    gradedCoderiv_of_tprod_of_homogeneous _ _ _ _ x _ hx']
-  simp only [dite_eq_ite, ite_self, Finset.sum_const_zero, mul_zero, Int.negOnePow_zero,
-    Units.val_one, Int.cast_one, one_smul, map_sum]
-  -- In `m{φ}` only the collapses of `n + 1` letters at the two ends survive.
-  rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single (n + 1)
-      (fun d _ hd ↦ taylor_splice_of_ne x p d _ (by omega)) (by simp),
-    Finset.sum_range_succ', Finset.sum_range_succ',
-    Finset.sum_eq_zero fun p _ ↦ by rw [splice_eq_zero_of_block_lt_add k x _ (by omega), map_zero],
-    zero_add, zero_add, splice_collapse_init_eq k (n := n + 1) (by omega),
-    splice_collapse_tail_eq k (n := n + 1) (by omega), taylor_of_tprod_two,
-    taylor_of_tprod_two]
-  -- In `φ{m}` only the collapses of two letters survive.
-  rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single 2
-      (fun d _ hd ↦ by rw [taylor_subword_of_ne x p d hd, splice_zero, map_zero]) (by simp),
-    Finset.sum_range_succ, splice_eq_zero_of_block_lt_add k x _ (by omega), map_zero, add_zero,
-    Finset.sum_range]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [htw _ hφx, htw _ (hx 0),
-    Finset.sum_congr rfl fun (p : Fin (n + 1)) _ ↦ by
-      rw [taylor_subword_two x p (by omega), htw _ (hx _), neg_mul, splice_neg, map_neg]]
+  have hsplice (p : ℕ) (hp : p < n + 1) (e : nonisolatedZigzagQuotient k G) :
+      of k _ ⟨n + 1, by omega⟩
+          (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ replaceBlock y p 2 e j) =
+        splice k (fun j : Fin (n + 2) ↦ y j) 0 (n + 2) p 2 e := by
+    rw [splice_eq_of_tprod_replaceBlock k y two_pos (by omega)]
+    exact of_tprod_congr k _ _ (by omega) fun _ ↦ rfl
+  rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous φ y (fun _ ↦ 1) hy,
+    ← hinit, ← subword_eq_of_tprod k (fun j : Fin (n + 2) ↦ y j) (a := 1) (by omega) (by omega),
+    htw _ hφy, htw _ (hy 0 (by omega)), Finset.sum_range]
+  simp only [sub_self, Finset.sum_const_zero, negOnePowCast_zero, one_smul, Fin.val_castSucc,
+    Fin.val_succ, Fin.val_last, Fin.val_zero]
+  rw [Finset.sum_congr rfl fun (p : Fin (n + 1)) _ ↦ by
+    rw [htw _ (hy p (by omega)), neg_mul, hsplice p p.isLt, splice_neg, map_neg]]
   simp only [Finset.sum_neg_distrib, neg_mul, sub_neg_eq_add]
   abel
 

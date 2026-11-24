@@ -35,6 +35,8 @@ count `#GL_n(F_q) = ∏_{i=0}^{n-1} (q^n - q^i)` is Mathlib's `Matrix.card_GL_fi
 * `Matrix.measure_setOf_isUnit`: `μ(GL_n(R)) = #GL_n(F_q) / q^{n²} · μ(M_n(R))`.
 * `Matrix.measureReal_setOf_isUnit`: for a probability measure,
   `μ(GL_n(R)) = (q⁻¹; q⁻¹)_n = ∏_{i=1}^n (1 - q^{-i})`.
+* `IsLocalRing.measureReal_setOf_isUnit`: the case `n = 1`, transported along `R ≃ M_1(R)`: the
+  units of `R` have measure `1 - q⁻¹` for every left-invariant probability measure on `R`.
 -/
 
 public section
@@ -105,3 +107,31 @@ theorem measureReal_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
     TauCeti.prod_range_pow_sub_pow_div_pow hq]
 
 end Matrix
+
+namespace IsLocalRing
+
+variable {R : Type*} [CommRing R] [IsLocalRing R] [MeasurableSpace R] [MeasurableAdd R]
+  [Finite (ResidueField R)]
+
+/-- **Haar probability of the units of a local ring.** If `R` is a commutative local ring with
+measurable maximal ideal and finite residue field of `q` elements, then every left-invariant
+probability measure on `R`, such as its additive Haar probability measure, gives the units
+measure `1 - q⁻¹`. This is the case `n = 1` of `Matrix.measureReal_setOf_isUnit`, transported
+along `R ≃ M_1(R)`. -/
+theorem measureReal_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R)) (μ : Measure R)
+    [μ.IsAddLeftInvariant] [IsProbabilityMeasure μ] :
+    μ.real {x | IsUnit x} = 1 - (Nat.card (ResidueField R) : ℝ)⁻¹ := by
+  let e : R ≃ᵐ Matrix (Fin 1) (Fin 1) R :=
+    (MeasurableEquiv.funUnique (Fin 1) R).symm.trans <|
+      (MeasurableEquiv.funUnique (Fin 1) (Fin 1 → R)).symm.trans (Matrix.ofMeasurableEquiv _ _ _)
+  let f : R →ₙ+ Matrix (Fin 1) (Fin 1) R :=
+    { toFun := e
+      map_add' := fun x y ↦ by ext i j; simp [e] }
+  have : (μ.map e).IsAddLeftInvariant := isAddLeftInvariant_map f e.measurable e.surjective
+  have hset : e ⁻¹' {M | IsUnit M} = {x | IsUnit x} := by
+    ext x
+    simp [e, Matrix.isUnit_iff_isUnit_det, Matrix.det_unique]
+  have h := Matrix.measureReal_setOf_isUnit 1 hm (μ.map e)
+  rwa [measureReal_def, e.map_apply, hset, ← measureReal_def, TauCeti.qPochhammer_one] at h
+
+end IsLocalRing
