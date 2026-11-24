@@ -19,7 +19,7 @@ import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.Composition.Sobolev
-import TauCeti.Analysis.Pseudodifferential.EllipticRegularity
+import TauCeti.Analysis.Pseudodifferential.EllipticRegularity.Basic
 import TauCeti.Analysis.Pseudodifferential.FourierSchur
 import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv

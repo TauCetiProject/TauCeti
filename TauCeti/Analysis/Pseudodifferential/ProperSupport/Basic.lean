@@ -72,7 +72,9 @@ spatial support, and they are the pieces that are patched together on manifolds.
   (`TauCeti.Symbol.HasPropagationLE.quantizeSchwartzValue_congr`) and `Op(a)` preserves compact
   supports (`TauCeti.Symbol.HasPropagationLE.hasCompactSupport_quantizeSchwartzValue`). The kernel
   cutoff by a `χ` supported in the ball of radius `ε` has propagation at most `ε`
-  (`TauCeti.Symbol.hasPropagationLE_kernelCutoff`).
+  (`TauCeti.Symbol.hasPropagationLE_kernelCutoff`), and multiplication operators have
+  propagation at most every `ε > 0` (`TauCeti.Symbol.hasPropagationLE_ofSpatial`,
+  `TauCeti.Symbol.hasPropagationLE_const`).
 * `TauCeti.Symbol.exists_isSmoothing_sub_and_hasPropagationLE`: for every `ε > 0`, every symbol is,
   up to a smoothing symbol, a symbol of propagation at most `ε`.
 * `TauCeti.Symbol.exists_isSmoothing_sub_and_hasNearDiagonalKernel`: for every `ε > 0`, every
@@ -746,12 +748,19 @@ theorem HasPropagationLE.hasCompactSupport_quantizeSchwartzValue (ha : a.HasProp
 theorem hasPropagationLE_zero (ε : ℝ) : (0 : Symbol n V W m).HasPropagationLE ε :=
   fun u x _ ↦ by rw [coefficient_zero, quantizeSchwartzValue_zero_left]
 
-/-- The quantization of a constant symbol, multiplication by a fixed continuous linear map `T`, has
-propagation at most every `ε > 0`. -/
-theorem hasPropagationLE_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) (hε : 0 < ε) :
-    (const T : Symbol n V W 0).HasPropagationLE ε := fun u x hu ↦ by
-  rw [funext (coefficient_const (n := n) T), quantizeSchwartzValue_comp_fst (fun _ ↦ T),
+/-- The symbol `f(x)` of multiplication by `f` has propagation at most every `ε > 0`: the kernel
+of a multiplication operator is supported on the diagonal. -/
+theorem hasPropagationLE_ofSpatial [CompleteSpace V] [CompleteSpace W]
+    (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) (hε : 0 < ε) :
+    (ofSpatial f hf).HasPropagationLE ε := fun u x hu ↦ by
+  rw [funext (coefficient_ofSpatial f hf), quantizeSchwartzValue_comp_fst,
     hu x (Metric.mem_ball_self hε), map_zero]
+
+/-- A constant symbol has propagation at most every `ε > 0`. -/
+theorem hasPropagationLE_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) (hε : 0 < ε) :
+    (const T : Symbol n V W 0).HasPropagationLE ε := by
+  convert hasPropagationLE_ofSpatial (fun _ ↦ T) contDiff_const hε using 1
+  exact Symbol.ext <| funext fun p ↦ by rw [coefficient_const, coefficient_ofSpatial]
 
 theorem HasPropagationLE.add (ha : a.HasPropagationLE ε) (hb : b.HasPropagationLE ε) :
     (a + b).HasPropagationLE ε := fun u x hu ↦ by
