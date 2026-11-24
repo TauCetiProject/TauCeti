@@ -73,7 +73,8 @@ The preimage of a discrete subgroup of `G ⧸ N`, for a discrete normal subgroup
 * `Subgroup.comapMk'OpenNormalOrderIso`: open normal subgroups of `G ⧸ N` correspond
   to the open normal subgroups of `G` containing `N`.
 * `QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`: in a weakly locally compact
-  topological group, `G ⧸ Γ` is compact exactly when `K * Γ = G` for a compact set `K`.
+  group with separately continuous multiplication, `G ⧸ Γ` is compact exactly when `K * Γ = G`
+  for a compact set `K`.
 -/
 
 public section
@@ -488,10 +489,12 @@ open scoped Pointwise
 
 variable {G : Type*} [Group G] {Γ : Subgroup G}
 
-/-- In a weakly locally compact topological group, `G ⧸ Γ` is compact exactly when `K * Γ = G`
-for some compact set `K`. -/
-theorem compactSpace_iff_exists_isCompact_mul_eq_univ [TopologicalSpace G] [IsTopologicalGroup G]
-    [WeaklyLocallyCompactSpace G] :
+/-- In a weakly locally compact group with separately continuous multiplication, `G ⧸ Γ` is
+compact exactly when `K * Γ = G` for some compact set `K`. -/
+@[to_additive /-- In a weakly locally compact additive group with separately continuous addition,
+`G ⧸ Γ` is compact exactly when `K + Γ = G` for some compact set `K`. -/]
+theorem compactSpace_iff_exists_isCompact_mul_eq_univ [TopologicalSpace G]
+    [SeparatelyContinuousMul G] [WeaklyLocallyCompactSpace G] :
     CompactSpace (G ⧸ Γ) ↔ ∃ K : Set G, IsCompact K ∧ K * (Γ : Set G) = univ := by
   simp_rw [← image_mk_eq_univ_iff]
   refine ⟨fun _ ↦ ?_, fun ⟨K, hK, hKΓ⟩ ↦ ⟨hKΓ ▸ hK.image continuous_mk⟩⟩

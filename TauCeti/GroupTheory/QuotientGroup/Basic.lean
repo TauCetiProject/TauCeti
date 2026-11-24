@@ -72,6 +72,7 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
 * `QuotientGroup.image_mk_eq_univ_iff`: a set `K` meets every left coset of `Γ` exactly when
   `K * Γ = G`.
+* `QuotientAddGroup.image_mk_eq_univ_iff`: the additive form, `K + Γ = G`.
 -/
 
 public section
@@ -354,6 +355,7 @@ open Set
 variable {G : Type*} [Group G] {Γ : Subgroup G}
 
 /-- A set `K` meets every left coset of `Γ` exactly when `K * Γ = G`. -/
+@[to_additive /-- A set `K` meets every coset of `Γ` exactly when `K + Γ = G`. -/]
 theorem image_mk_eq_univ_iff {K : Set G} :
     ((↑) '' K : Set (G ⧸ Γ)) = univ ↔ K * (Γ : Set G) = univ := by
   rw [← preimage_image_mk_eq_mul]

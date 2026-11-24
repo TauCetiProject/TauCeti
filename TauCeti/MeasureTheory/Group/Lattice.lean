@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Group.ProperlyDiscontinuous
-public import TauCeti.MeasureTheory.Measure.Haar.Quotient
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
@@ -36,9 +35,11 @@ formula (`QuotientGroup.lintegral_eq_lintegral_automorphize`), and `G ⧸ Γ` is
 
 * `Subgroup.isLattice_iff_covolume_lt_top`: for discrete `Γ` in a unimodular group, `Γ` is a
   lattice exactly when `MeasureTheory.covolume Γ.op G μ` is finite.
-* `Subgroup.IsLattice.of_isHaarMeasure`: being a lattice does not depend on the Haar measure.
+* `Subgroup.IsLattice.of_isHaarMeasure`, `Subgroup.IsUniformLattice.of_isHaarMeasure`: being a
+  (uniform) lattice does not depend on the Haar measure.
 * `Subgroup.IsLattice.isFiniteMeasure_quotient`: the quotient measure on `G ⧸ Γ` of a lattice is
   finite.
+* `Subgroup.IsUniformLattice.compactSpace`: the quotient by a uniform lattice is compact.
 * `Subgroup.isUniformLattice_iff_isLattice_and_compactSpace`: in a weakly locally compact group,
   a lattice is uniform exactly when `G ⧸ Γ` is compact.
 * `Subgroup.isUniformLattice_iff_discreteTopology_and_compactSpace`: in a unimodular second
@@ -85,14 +86,19 @@ structure IsUniformLattice [TopologicalSpace G] (Γ : Subgroup G) (μ : Measure 
 
 variable [TopologicalSpace G] {Γ : Subgroup G} {μ : Measure G}
 
-/-- A lattice in a second countable group is countable. -/
-theorem IsLattice.countable [SecondCountableTopology G] (h : Γ.IsLattice μ) : Countable Γ :=
+/-- A lattice in a hereditarily Lindelöf (for instance second countable) group is countable. -/
+theorem IsLattice.countable [HereditarilyLindelofSpace G] (h : Γ.IsLattice μ) : Countable Γ :=
   have := h.discreteTopology
-  countable_of_discreteTopology
+  countable_of_Lindelof_of_discrete
 
 /-- A lattice has a fundamental domain for its right action. -/
 theorem IsLattice.hasFundamentalDomain (h : Γ.IsLattice μ) : HasFundamentalDomain Γ.op G μ :=
   ⟨h.exists_isFundamentalDomain_measure_lt_top.imp fun _ ↦ And.left⟩
+
+/-- The quotient of `G` by a uniform lattice is compact. -/
+theorem IsUniformLattice.compactSpace (h : Γ.IsUniformLattice μ) : CompactSpace (G ⧸ Γ) :=
+  have ⟨_, hK, hKΓ⟩ := h.exists_isCompact_mul_eq_univ
+  ⟨QuotientGroup.image_mk_eq_univ_iff.mpr hKΓ ▸ hK.image QuotientGroup.continuous_mk⟩
 
 variable [IsTopologicalGroup G]
 
@@ -105,12 +111,19 @@ theorem IsLattice.of_isHaarMeasure [BorelSpace G] [LocallyCompactSpace G]
   rw [Measure.isMulLeftInvariant_eq_smul ν μ, Measure.coe_nnreal_smul_apply]
   exact ENNReal.mul_lt_top ENNReal.coe_lt_top hμs
 
+/-- Being a uniform lattice does not depend on the choice of Haar measure. -/
+theorem IsUniformLattice.of_isHaarMeasure [BorelSpace G] [LocallyCompactSpace G]
+    [SecondCountableTopology G] {ν : Measure G} [μ.IsHaarMeasure] [ν.IsHaarMeasure]
+    (h : Γ.IsUniformLattice μ) : Γ.IsUniformLattice ν :=
+  ⟨h.toIsLattice.of_isHaarMeasure, h.exists_isCompact_mul_eq_univ⟩
+
 section Unimodular
 
 variable [BorelSpace G] [μ.IsMulRightInvariant]
 
+omit [IsTopologicalGroup G] [BorelSpace G] in
 /-- In a unimodular group, a lattice has finite covolume. -/
-theorem IsLattice.covolume_lt_top [Countable Γ] (h : Γ.IsLattice μ) :
+theorem IsLattice.covolume_lt_top [MeasurableConstSMul Gᵐᵒᵖ G] [Countable Γ] (h : Γ.IsLattice μ) :
     covolume Γ.op G μ < ∞ := by
   obtain ⟨s, hs, hμs⟩ := h.exists_isFundamentalDomain_measure_lt_top
   rwa [hs.covolume_eq_volume]
@@ -122,8 +135,8 @@ theorem isLattice_iff_covolume_lt_top [T2Space G] [LocallyCompactSpace G]
     Γ.IsLattice μ ↔ DiscreteTopology Γ ∧ covolume Γ.op G μ < ∞ := by
   refine ⟨fun h ↦ ⟨h.discreteTopology, have := h.countable; h.covolume_lt_top⟩,
     fun ⟨hd, hcov⟩ ↦ ⟨hd, ?_⟩⟩
-  have : Countable Γ := countable_of_discreteTopology
-  obtain ⟨s, -, hs⟩ := exists_isFundamentalDomain_op (Γ := Γ) μ
+  have : Countable Γ := countable_of_Lindelof_of_discrete
+  obtain ⟨s, -, hs⟩ := Γ.exists_isFundamentalDomain_op μ
   exact ⟨s, hs, hs.covolume_eq_volume μ ▸ hcov⟩
 
 end Unimodular
@@ -141,33 +154,35 @@ end Subgroup
 
 namespace Subgroup
 
-variable [TopologicalSpace G] [IsTopologicalGroup G] {Γ : Subgroup G} {μ : Measure G}
+variable [TopologicalSpace G] {Γ : Subgroup G} {μ : Measure G}
 
-/-- In a weakly locally compact group, a lattice is uniform exactly when `G ⧸ Γ` is compact. -/
-theorem isUniformLattice_iff_isLattice_and_compactSpace [WeaklyLocallyCompactSpace G] :
+/-- In a weakly locally compact group with separately continuous multiplication, a lattice is
+uniform exactly when `G ⧸ Γ` is compact. -/
+theorem isUniformLattice_iff_isLattice_and_compactSpace [SeparatelyContinuousMul G]
+    [WeaklyLocallyCompactSpace G] :
     Γ.IsUniformLattice μ ↔ Γ.IsLattice μ ∧ CompactSpace (G ⧸ Γ) :=
-  ⟨fun h ↦ ⟨h.toIsLattice, QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ.mpr
-    h.exists_isCompact_mul_eq_univ⟩,
+  ⟨fun h ↦ ⟨h.toIsLattice, h.compactSpace⟩,
     fun ⟨h, hc⟩ ↦ ⟨h, QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ.mp hc⟩⟩
 
 /-- In a unimodular, second countable, locally compact Hausdorff group, a discrete subgroup with
 compact quotient `G ⧸ Γ` has finite covolume: a fundamental domain has measure at most that of a
 compact set `K` with `K * Γ = G`. So it is a uniform lattice. -/
-theorem isUniformLattice_iff_discreteTopology_and_compactSpace [BorelSpace G] [T2Space G]
+theorem isUniformLattice_iff_discreteTopology_and_compactSpace [IsTopologicalGroup G]
+    [BorelSpace G] [T2Space G]
     [LocallyCompactSpace G] [SecondCountableTopology G] [μ.IsMulRightInvariant]
     [IsFiniteMeasureOnCompacts μ] :
     Γ.IsUniformLattice μ ↔ DiscreteTopology Γ ∧ CompactSpace (G ⧸ Γ) := by
-  refine ⟨fun h ↦ ⟨h.discreteTopology,
-    (isUniformLattice_iff_isLattice_and_compactSpace.mp h).2⟩, fun ⟨hd, hc⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ ⟨h.discreteTopology, h.compactSpace⟩, fun ⟨hd, hc⟩ ↦ ?_⟩
   obtain ⟨K, hK, hKΓ⟩ := QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ.mp hc
-  have : Countable Γ := countable_of_discreteTopology
-  obtain ⟨s, -, hs⟩ := exists_isFundamentalDomain_op (Γ := Γ) μ
+  have : Countable Γ := countable_of_Lindelof_of_discrete
+  obtain ⟨s, -, hs⟩ := Γ.exists_isFundamentalDomain_op μ
   refine ⟨⟨hd, s, hs, ?_⟩, K, hK, hKΓ⟩
   calc μ s ≤ μ (⋃ γ : Γ.op, γ • K ∩ s) := measure_mono fun x hx ↦ ?_
     _ ≤ ∑' γ : Γ.op, μ (γ • K ∩ s) := measure_iUnion_le _
     _ = μ K := (hs.measure_eq_tsum K).symm
     _ < ∞ := hK.measure_lt_top
   obtain ⟨k, hk, γ, hγ, rfl⟩ : x ∈ K * (Γ : Set G) := hKΓ ▸ mem_univ x
-  exact mem_iUnion.mpr ⟨⟨MulOpposite.op γ, hγ⟩, ⟨⟨k, hk, rfl⟩, hx⟩⟩
+  refine mem_iUnion.mpr ⟨⟨MulOpposite.op γ, Subgroup.mem_op.mpr hγ⟩, ⟨k, hk, ?_⟩, hx⟩
+  simp only [Subgroup.mk_smul, op_smul_eq_mul]
 
 end Subgroup

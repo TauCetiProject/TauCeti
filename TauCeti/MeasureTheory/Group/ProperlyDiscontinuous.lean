@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Group.FundamentalDomain
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Bases
-public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
 
 /-!
@@ -150,13 +149,13 @@ namespace Subgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [MeasurableSpace G]
   [OpensMeasurableSpace G] [T2Space G] [LocallyCompactSpace G] [SecondCountableTopology G]
-  {Γ : Subgroup G} [DiscreteTopology Γ]
+  (Γ : Subgroup G) [DiscreteTopology Γ]
 
 /-- A discrete subgroup `Γ` of a second countable, locally compact Hausdorff group `G` has a
 measurable fundamental domain for its right action on `G`, for every measure. -/
 theorem exists_isFundamentalDomain_op (μ : Measure G) :
     ∃ s : Set G, MeasurableSet s ∧ IsFundamentalDomain Γ.op s μ := by
-  have : Countable Γ := countable_of_discreteTopology
+  have : Countable Γ := countable_of_Lindelof_of_discrete
   have : ProperlyDiscontinuousSMul Γ.op G :=
     Γ.properlyDiscontinuousSMul_opposite_of_tendsto_cofinite
       (Γ.tendsto_coe_cofinite_of_isDiscrete (isDiscrete_iff_discreteTopology.mpr ‹_›))
@@ -164,7 +163,7 @@ theorem exists_isFundamentalDomain_op (μ : Measure G) :
     refine eq_univ_of_forall fun x ↦ ?_
     rw [SetLike.mem_coe, TauCeti.mem_freeLocus, eq_bot_iff]
     intro γ hγ
-    rw [MulAction.mem_stabilizer_iff] at hγ
+    rw [MulAction.mem_stabilizer_iff, Subgroup.smul_def, MulOpposite.smul_eq_mul_unop] at hγ
     rw [Subgroup.mem_bot]
     exact Subtype.ext (MulOpposite.unop_injective (mul_eq_left.mp hγ))
   obtain ⟨s, hs, -, h⟩ :=
@@ -174,6 +173,6 @@ theorem exists_isFundamentalDomain_op (μ : Measure G) :
 /-- In a second countable, locally compact Hausdorff group, a discrete subgroup has a
 fundamental domain for its right action. -/
 theorem hasFundamentalDomain_op (μ : Measure G) : HasFundamentalDomain Γ.op G μ :=
-  ⟨(exists_isFundamentalDomain_op μ).imp fun _ ↦ And.right⟩
+  ⟨(Γ.exists_isFundamentalDomain_op μ).imp fun _ ↦ And.right⟩
 
 end Subgroup
