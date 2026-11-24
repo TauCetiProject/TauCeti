@@ -231,6 +231,8 @@ theorem geometricDeckQuotientEquiv_mk_op_symm_apply (g : FundamentalGroup X x₀
     (geometricDeckQuotientEquiv x₀ N (QuotientGroup.mk (op g))).val.symm (Quotient.mk'' e) =
       Quotient.mk'' (g • e) := by
   rw [geometricDeckQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.congr_mk]
+  -- Plain `simp` moves the inversion out through `deckSubgroupQuotientProjEquivOfNormal` and
+  -- gets stuck at `(φ g)⁻¹.symm`, so `inv'` is unfolded first and `inv_inv` cancels it.
   simp only [MulEquiv.inv'_symm_apply, Function.comp_apply, unop_op,
     deckSubgroupQuotientProjEquivOfNormal_mk_symm_apply, inv_inv]
 

@@ -81,14 +81,15 @@ theorem mk_symm (p : Path x₀ x₀) : mk p.symm = (mk p)⁻¹ :=
   unop_injective <| by simp [FundamentalGroup.inv_def, Path.Homotopic.Quotient.mk_symm]
 
 /-- Two loops have the same class iff they are homotopic. -/
-theorem mk_eq_mk_iff {p q : Path x₀ x₀} : mk p = mk q ↔ p.Homotopic q :=
-  op_injective.eq_iff.trans <|
-    CategoryTheory.End.homEquiv.symm.injective.eq_iff.trans Path.Homotopic.Quotient.eq
+theorem mk_eq_mk_iff {p q : Path x₀ x₀} : mk p = mk q ↔ p.Homotopic q := by
+  rw [op_inj, CategoryTheory.End.of.injEq, Path.Homotopic.Quotient.eq]
 
 /-- Every element of the geometric fundamental group is the class of a loop. -/
-theorem mk_surjective : Function.Surjective (mk : Path x₀ x₀ → GeometricFundamentalGroup X x₀) :=
-  op_surjective.comp <|
-    CategoryTheory.End.homEquiv.symm.surjective.comp Path.Homotopic.Quotient.mk_surjective
+theorem mk_surjective :
+    Function.Surjective (mk : Path x₀ x₀ → GeometricFundamentalGroup X x₀) := by
+  intro a
+  obtain ⟨p, hp⟩ := Path.Homotopic.Quotient.mk_surjective a.unop.asHom
+  exact ⟨p, unop_injective <| CategoryTheory.End.ext hp⟩
 
 end GeometricFundamentalGroup
 
