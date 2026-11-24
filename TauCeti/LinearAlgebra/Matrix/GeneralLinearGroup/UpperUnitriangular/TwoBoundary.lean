@@ -27,7 +27,8 @@ agree with the identity except in row `0` at columns `j ≥ n - s` and in column
 The corner `(0, n)` lies in both ranges and is one coordinate. Writing `g = 1 + X`, the product
 of two such strictly upper triangular `X` is supported at the corner, and more precisely the
 support condition is stable under multiplication on either side by upper triangular matrices, so
-it is preserved by conjugation by them (`TauCeti.IsTwoBoundary.isUpperTriangular_mul_mul`).
+it is preserved by conjugation by upper triangular matrices with upper triangular inverse, in
+particular by `Uₙ₊₁(R)` (`TauCeti.IsTwoBoundary.isUpperTriangular_mul_mul`).
 Hence `P_(r,s)` is a normal subgroup of `Uₙ₊₁(R)` for all `n`, `r`, `s`, it contains the
 corner subgroup `Z = U^n = P_(0,0)` (`twoBoundarySubgroup_zero_zero`), and every entry other
 than the corner is additive on it. For `r, s < n` its noncorner entries, the `s` first-row entries
@@ -180,7 +181,7 @@ private theorem Supported.mul_apply_eq_zero {X Y : Matrix (Fin (n + 1)) (Fin (n 
 
 /-- The two-boundary support condition is preserved by multiplying on the left and on the right by
 upper triangular matrices `T` and `T'` with `T * T' = 1`; in particular by conjugation by an
-invertible upper triangular matrix. -/
+upper triangular matrix whose inverse is upper triangular, such as an element of `Uₙ₊₁(R)`. -/
 theorem IsTwoBoundary.isUpperTriangular_mul_mul {M T T' : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
     (hM : IsTwoBoundary n r s M) (hT : T.IsUpperTriangular) (hT' : T'.IsUpperTriangular)
     (hTT' : T * T' = 1) : IsTwoBoundary n r s (T * M * T') := by
