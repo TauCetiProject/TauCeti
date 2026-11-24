@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.Morse.CWModel.Proper
 public import TauCeti.Geometry.Manifold.Morse.CWModel.Relative
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.AlgebraicTopology.Cellular.Dimension
 import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Topology.CWComplex.Classical.Finite
@@ -91,9 +90,10 @@ intersection `affineZeroLocus p ⊆ ℂ^σ` with surjective Jacobian
 
 * `ℂ` and general finite-dimensional complex normed spaces admit CW homotopy models of dimension at
   most their complex dimension (`0` when subsingleton).
-* The smooth affine hyperbola `z₀ z₁ = 1` in `ℂ²` (`ℂ*`), `0`-dimensional and empty affine zero
-  loci, and exhaustion-independence of pseudoconvex CW models.
-* Sharpness of properness / closedness on `ℂ² \ {0}` is recorded in
+* `0`-dimensional and empty affine zero loci, and exhaustion-independence of pseudoconvex CW models.
+* The smooth affine hyperbola `z₀ z₁ = 1` in `ℂ²` (`ℂ*`) with its homology and cohomology check
+  is recorded in `TauCeti/Examples/Geometry/Manifold/Complex/AffineHyperbola.lean`, and sharpness
+  of properness / closedness on `ℂ² \ {0}` in
   `TauCeti/Examples/Geometry/Manifold/Complex/PuncturedSpace.lean`.
 
 ## References
@@ -191,15 +191,12 @@ theorem exists_cwComplex_homotopyEquiv_of_isManifoldStrictlyPlurisubharmonicAt
         ↥{x ∈ criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f x = m})) ∧
       ∀ m, finrank ℂ E < m → IsEmpty (cell (univ : Set X) m) := by
   rcases isEmpty_or_nonempty M with hM | _
-  · have hemptyCell (m : ℕ) : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) :=
-      ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
-    exact ⟨PEmpty.{u + 1}, inferInstance, inferInstance, inferInstance,
-      RelCWComplex.finiteDimensional_of_isEmpty_cell_gt _ (d := 0) fun m _ ↦ hemptyCell m,
-      ⟨Homeomorph.empty.toHomotopyEquiv⟩, fun m ↦
-        have : IsEmpty ↥{x ∈ criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f x = m} :=
-          ⟨fun x ↦ hM.elim x.val⟩
-        ⟨Equiv.equivOfIsEmpty _ _⟩,
-      fun m _ ↦ hemptyCell m⟩
+  · obtain ⟨X, instTop, instT2, instCW, h, hcell⟩ := hf.exists_cwComplex_homotopyEquiv hp hbdd
+    have hempty (m : ℕ) : IsEmpty (cell (univ : Set X) m) :=
+      (hcell m).some.isEmpty_congr.2 ⟨fun x ↦ hM.elim x.val⟩
+    exact ⟨X, instTop, instT2, instCW,
+      RelCWComplex.finiteDimensional_of_isEmpty_cell_gt _ (d := 0) fun m _ ↦ hempty m,
+      h, hcell, fun m _ ↦ hempty m⟩
   · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
     simpa only [add_zero] using
       hf.exists_cwComplex_homotopyEquiv_of_isManifoldStronglyPseudoconvexAt (q := 0) hp hbdd
@@ -536,17 +533,15 @@ Jacobian is surjective at every common zero, a smooth affine complex complete in
 dimension `|σ| - |ι|`. Then `affineZeroLocus p` is homotopy equivalent to a finite-dimensional
 Hausdorff CW complex with no cells in dimensions strictly above `|σ| - |ι|`. -/
 theorem exists_cwComplex_homotopyEquiv_affineZeroLocus {σ : Type u} {ι : Type*}
-    [Fintype σ] [Finite ι] {p : ι → MvPolynomial σ ℂ}
+    [Fintype σ] [Fintype ι] {p : ι → MvPolynomial σ ℂ}
     (hp : ∀ x ∈ affineZeroLocus p, Surjective (jacobiMatrixAt p x).mulVec) :
     ∃ (X : Type u) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
       RelCWComplex.FiniteDimensional (univ : Set X) ∧ Nonempty (affineZeroLocus p ≃ₕ X) ∧
-      ∀ m, Nat.card σ - Nat.card ι < m → IsEmpty (cell (univ : Set X) m) := by
-  let _ := Fintype.ofFinite ι
+      ∀ m, Fintype.card σ - Fintype.card ι < m → IsEmpty (cell (univ : Set X) m) := by
   obtain ⟨_, _, X, instTop, instT2, instCW, _, h, _, -, -, -, -, -, -, -, -, hfd, -, -, -, -,
       hempty, -⟩ :=
     exists_cwComplex_subcomplex_homotopyEquiv_affineZeroLocus hp
-  simpa only [Nat.card_eq_fintype_card] using
-    ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
+  exact ⟨X, instTop, instT2, instCW, hfd, ⟨h.symm⟩, hempty⟩
 
 end AffineZeroLocus
 
@@ -601,7 +596,7 @@ namespace TauCeti
 
 section Checks
 
-open AlgebraicTopology CategoryTheory Limits MvPolynomial
+open MvPolynomial
 
 /-- **Check: finite-dimensional complex normed spaces.** The identity on any finite-dimensional
 complex normed space `E` (in particular `ℂ`, with `finrank ℂ ℂ = 1`) is a closed holomorphic
@@ -628,57 +623,6 @@ example {E F : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [S
   simpa only [finrank_zero_of_subsingleton] using
     exists_cwComplex_homotopyEquiv_of_isClosedEmbedding hi hinj hclosed
 
-/-- The defining polynomial `z₀ z₁ - 1` of the smooth affine hyperbola `ℂ* ↪ ℂ²`. -/
-private abbrev hyperbolaPoly : Unit → MvPolynomial (Fin 2) ℂ :=
-  fun _ ↦ MvPolynomial.X 0 * MvPolynomial.X 1 - 1
-
-/-- The smooth affine hyperbola `z₀ z₁ = 1` in `ℂ²` is nonempty (`(1, 1)` lies on it). -/
-private theorem nonempty_affineZeroLocus_hyperbolaPoly :
-    Nonempty (affineZeroLocus hyperbolaPoly) :=
-  ⟨⟨![1, 1], mem_affineZeroLocus.2 fun _ ↦ by simp [hyperbolaPoly]⟩⟩
-
-/-- At every point `z` of the affine hyperbola `z₀ z₁ = 1`, the `1 × 2` Jacobian matrix
-`(z₁, z₀)` is surjective because `z₁ ≠ 0`. -/
-private theorem surjective_jacobiMatrixAt_hyperbolaPoly :
-    ∀ z ∈ affineZeroLocus hyperbolaPoly,
-      Surjective (jacobiMatrixAt hyperbolaPoly z).mulVec := by
-  intro z hz
-  rw [mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero]
-  have hz_eq : z 0 * z 1 - 1 = 0 := by simpa [hyperbolaPoly] using mem_affineZeroLocus.1 hz ()
-  refine ⟨0, ?_⟩
-  have hz1 : z 1 ≠ 0 := by
-    intro h0
-    rw [h0, mul_zero, zero_sub] at hz_eq
-    exact neg_ne_zero.2 one_ne_zero hz_eq
-  simpa [hyperbolaPoly, pderiv_mul, pderiv_X] using hz1
-
-/-- **Check: the smooth affine hyperbola `z₀ z₁ = 1` in `ℂ²` (`ℂ*`).** The zero locus is
-nonempty, smooth of complex dimension `2 - 1 = 1`, and homotopy equivalent to a Hausdorff CW
-complex with no cells above dimension `1`; transferring cellular dimension bounds across that CW
-homotopy equivalence recovers `Hₖ = 0` and `Hᵏ = 0` for `k > 1` and freeness of `H₁(-; ℤ)`. -/
-example : Nonempty (affineZeroLocus hyperbolaPoly) ∧
-    ∃ (X : Type) (_ : TopologicalSpace X) (_ : T2Space X) (_ : CWComplex (univ : Set X)),
-      Nonempty (affineZeroLocus hyperbolaPoly ≃ₕ X) ∧
-      (∀ k, 1 < k → IsEmpty (cell (univ : Set X) k)) ∧
-      (∀ k, 1 < k → IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
-        (ModuleCat.of ℤ ℤ)).obj (TopCat.of (affineZeroLocus hyperbolaPoly)))) ∧
-      (∀ k, 1 < k → IsZero ((TopCat.of (affineZeroLocus hyperbolaPoly)).singularCohomology
-        (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ ℤ) k)) ∧
-      Module.Free ℤ (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
-        (ModuleCat.of ℤ ℤ)).obj (TopCat.of (affineZeroLocus hyperbolaPoly))) := by
-  refine ⟨nonempty_affineZeroLocus_hyperbolaPoly, ?_⟩
-  obtain ⟨X, _, _, _, _, ⟨h⟩, hdim⟩ :=
-    exists_cwComplex_homotopyEquiv_affineZeroLocus surjective_jacobiMatrixAt_hyperbolaPoly
-  have hdim' : ∀ k, 1 < k → IsEmpty (cell (univ : Set X) k) :=
-    fun k hk ↦ hdim k (by simpa only [Nat.card_fin, Nat.card_unique] using hk)
-  let e : affineZeroLocus hyperbolaPoly ≃ₕ (univ : Set X) :=
-    h.trans (Homeomorph.Set.univ X).symm.toHomotopyEquiv
-  have : IsEmpty (cell (univ : Set X) (1 + 1)) := hdim' 2 (by omega)
-  exact ⟨X, _, ‹_›, ‹_›, ⟨h⟩, hdim',
-    fun k hk ↦ e.isZero_singularHomology_of_isEmpty_cell_gt _ hdim' hk,
-    fun k hk ↦ e.isZero_singularCohomology_of_isEmpty_cell_gt _ _ hdim' hk,
-    e.free_singularHomology_of_isEmpty_cell_succ (ModuleCat.of ℤ ℤ) 1⟩
-
 /-- **Check: `0`-dimensional nonempty smooth affine zero locus (`z₀ = 0` in `ℂ¹`).** Its CW
 model has no cells in positive dimensions. -/
 example :
@@ -692,7 +636,7 @@ example :
     mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero.2 ⟨0, by simp [p]⟩
   obtain ⟨X, _, _, _, _, hX, hdim⟩ := exists_cwComplex_homotopyEquiv_affineZeroLocus hp
   refine ⟨⟨⟨![0], mem_affineZeroLocus.2 fun _ ↦ by simp [p]⟩⟩, X, _, ‹_›, ‹_›, hX, ?_⟩
-  exact fun k hk ↦ hdim k (by simpa only [Nat.card_fin, Nat.card_unique] using hk)
+  exact fun k hk ↦ hdim k (by simpa only [Fintype.card_fin, Fintype.card_unit] using hk)
 
 /-- **Check: empty smooth affine zero locus (`1 = 0` in `ℂ¹`).** -/
 example :
@@ -709,7 +653,7 @@ example :
     fun z hz ↦ hEmpty.elim ⟨z, hz⟩
   obtain ⟨X, _, _, _, _, hX, hdim⟩ := exists_cwComplex_homotopyEquiv_affineZeroLocus hp
   exact ⟨hEmpty, X, _, ‹_›, ‹_›, hX,
-    fun k hk ↦ hdim k (by simpa only [Nat.card_fin, Nat.card_unique] using hk)⟩
+    fun k hk ↦ hdim k (by simpa only [Fintype.card_fin, Fintype.card_unit] using hk)⟩
 
 /-- **Check: exhaustion-independence of CW homotopy models.** Any two smooth proper bounded-below
 strongly pseudoconvex exhaustions `f₁` (with parameter `q₁`) and `f₂` (with parameter `q₂`) on
