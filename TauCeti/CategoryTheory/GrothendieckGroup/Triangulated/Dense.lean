@@ -447,8 +447,8 @@ noncomputable def classSubcategoryOrderIso :
 subcategory `A` to the range of `TriangulatedK0.map A.ι`. -/
 theorem classSubcategoryOrderIso_apply
     (A : {A : ObjectProperty C // A.IsTriangulated ∧ A.IsClosedUnderIsomorphisms ∧
-      A.retractClosure = ⊤}) [A.val.IsTriangulated] :
-    classSubcategoryOrderIso A = (map A.val.ι).range :=
+      A.retractClosure = ⊤}) :
+    classSubcategoryOrderIso A = letI := A.property.1; (map A.val.ι).range :=
   (rfl)
 
 /-- An element of `TriangulatedK0 C` lies in the subgroup attached to `A` under
