@@ -21,7 +21,8 @@ does not change its limit property, so `Pro.reindex G F` is an isomorphism. In p
 pro-object may be presented by any initial subdiagram of a presentation. Combined with
 `TauCeti.IsCofiltered.exists_cofinite_directed`, every presented pro-object is isomorphic,
 through `Pro.reindex`, to one indexed by the opposite of a cofinite directed partial order.
-The inverse comparison is computed on stages by `Pro.inv_reindex_π` and `Pro.inv_reindex_π_eq`.
+The inverse comparison is computed on stages by `Pro.inv_reindex_π` and
+`Pro.inv_reindex_π_eq_π_comp_const_map`.
 
 ## Main declarations
 
@@ -30,7 +31,7 @@ The inverse comparison is computed on stages by `Pro.inv_reindex_π` and `Pro.in
 * `TauCeti.Pro.reindexNatTrans`: the comparison as a natural transformation of functors on
   diagrams.
 * `TauCeti.Pro.isIso_reindex`: the comparison along an initial functor is an isomorphism.
-* `TauCeti.Pro.inv_reindex_π_eq`: the stage projections of its inverse.
+* `TauCeti.Pro.inv_reindex_π_eq_π_comp_const_map`: the stage projections of its inverse.
 
 ## References
 
@@ -134,7 +135,7 @@ theorem inv_reindex_π (G : K ⥤ I) [G.Initial] (F : I ⥤ C) (k : K) :
 /-- The inverse of the reindexing comparison along an initial functor projects an arbitrary
 stage `i` through any stage `k` of the restricted presentation with a map `G.obj k ⟶ i`; since
 `G` is initial, such a map exists for every `i`. -/
-theorem inv_reindex_π_eq (G : K ⥤ I) [G.Initial] (F : I ⥤ C) {i : I} {k : K}
+theorem inv_reindex_π_eq_π_comp_const_map (G : K ⥤ I) [G.Initial] (F : I ⥤ C) {i : I} {k : K}
     (f : G.obj k ⟶ i) :
     inv (reindex G F) ≫ π F i = π (G ⋙ F) k ≫ const.map (F.map f) := by
   rw [← π_naturality F f, inv_reindex_π_assoc]
