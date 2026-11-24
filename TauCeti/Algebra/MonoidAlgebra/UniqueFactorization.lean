@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 public import TauCeti.Algebra.MvPolynomial.Laurent.Basic
@@ -20,7 +19,7 @@ import TauCeti.Algebra.MonoidAlgebra.MapDomain
 import TauCeti.Algebra.MvPolynomial.Laurent.Polynomial
 
 /-!
-# Factoriality of group algebras of torsion-free abelian groups
+# Factoriality of free abelian group algebras and decomposition in the torsion-free case
 
 Let `R` be a unique factorization domain. The group algebra `R[N]` of a free abelian group `N`,
 of any rank, is again a unique factorization domain: a basis of `N` identifies `R[N]` with a
@@ -28,14 +27,16 @@ Laurent ring, which is the localization of a polynomial ring at its variables. I
 Laurent rings `ℤ[N]` and `ℤ[v^{±1}][N]` of a lattice `N` are factorial.
 
 For an arbitrary torsion-free abelian group `G`, such as the multiplicative group of a
-coefficient semifield, `R[G]` need not be factorial: in `ℤ[ℚ]` the monomial `X^1` is the square
-of `X^{1/2}`, which is the square of `X^{1/4}`, and so on, so it has no factorization into
-irreducibles. What survives is the divisibility property that relatively prime elements are
+coefficient semifield, `R[G]` need not be factorial: in `ℤ[ℚ]` the non-unit `X^1 - 1` is
+`(X^{1/2} - 1) (X^{1/2} + 1)`, and `X^{1/2} - 1` splits in the same way, so the principal ideals
+`(X^1 - 1) ⊊ (X^{1/2} - 1) ⊊ (X^{1/4} - 1) ⊊ ⋯` form an infinite strictly ascending chain, which
+a factorial ring cannot contain. What survives is the divisibility property that relatively prime elements are
 used for: `R[G]` is a decomposition monoid, so `a ∣ b * c` splits as `a = a₁ * a₂` with
 `a₁ ∣ b` and `a₂ ∣ c`. Indeed finitely many elements of `R[G]`, together with the witnesses of a
 divisibility among them, lie in the group algebra of a finitely generated subgroup, which is free
-because `G` is torsion-free, so that its group algebra is factorial. The same holds for Laurent
-rings `(R[G])[N]` over such group algebras, which are group algebras of `N × G` over `R`.
+because `G` is torsion-free, so that its group algebra is factorial. The same holds for the group
+algebras `(R[G])[N]` of torsion-free abelian groups `N` over such group algebras, which include
+the Laurent rings over them, since they are group algebras of `N × G` over `R`.
 
 Consequently, in all of these rings two relatively prime elements `a` and `b` satisfy
 `(a) ∩ (b) = (a b)`, by
@@ -46,14 +47,14 @@ Consequently, in all of these rings two relatively prime elements `a` and `b` sa
 * `AddMonoidAlgebra.uniqueFactorizationMonoid`: the group algebra of a free abelian group over a
   unique factorization domain is a unique factorization domain. This covers the Laurent rings
   `TauCeti.LaurentRing R K` in any set of variables.
-* `MonoidAlgebra.exists_fg_forall_mem_range_mapDomain`: finitely many elements of a group algebra
-  lie in the image of the group algebra of a finitely generated subgroup, with additive form
-  `AddMonoidAlgebra.exists_fg_forall_mem_range_mapDomain`.
 * `AddMonoidAlgebra.decompositionMonoid` and `MonoidAlgebra.decompositionMonoid`: the group
   algebra of a torsion-free abelian group over a unique factorization domain is a decomposition
   monoid.
-* `AddMonoidAlgebra.decompositionMonoid_monoidAlgebra`: so is a Laurent ring over such a group
-  algebra.
+* `AddMonoidAlgebra.decompositionMonoid_addMonoidAlgebra` and
+  `AddMonoidAlgebra.decompositionMonoid_monoidAlgebra`: so is the group algebra `(R[G])[N]` of a
+  torsion-free abelian group `N` over such a group algebra `R[G]`. This covers Laurent rings over
+  `R[G]`, to which `AddMonoidAlgebra.decompositionMonoid` does not apply directly since `R[G]`
+  need not be factorial.
 
 ## Implementation notes
 
@@ -72,25 +73,6 @@ into the intersection of principal ideals.
 -/
 
 public section
-
-namespace MonoidAlgebra
-
-variable {R : Type*} [Semiring R] {G : Type*} [Group G]
-
-/-- Finitely many elements of a group algebra `R[G]` lie in the image of the group algebra of a
-finitely generated subgroup of `G`. -/
-@[to_additive
-/-- Finitely many elements of a group algebra `R[G]` lie in the image of the group algebra of a
-finitely generated subgroup of `G`. -/]
-theorem exists_fg_forall_mem_range_mapDomain (s : Finset (MonoidAlgebra R G)) :
-    ∃ H : Subgroup G, H.FG ∧ ∀ x ∈ s, x ∈ Set.range (mapDomain (R := R) H.subtype) := by
-  classical
-  refine ⟨.closure ↑(s.biUnion fun x ↦ x.coeff.support),
-    (Subgroup.fg_iff _).mpr ⟨_, rfl, Finset.finite_toSet _⟩, fun x hx ↦ ?_⟩
-  refine (mem_range_mapDomain_iff Subtype.val_injective x).mpr fun g hg ↦ ?_
-  exact ⟨⟨g, Subgroup.subset_closure (Finset.mem_biUnion.mpr ⟨x, hx, hg⟩)⟩, rfl⟩
-
-end MonoidAlgebra
 
 namespace AddMonoidAlgebra
 
@@ -134,15 +116,22 @@ instance decompositionMonoid : DecompositionMonoid (AddMonoidAlgebra R G) where
       exists_dvd_and_dvd_of_dvd_mul ⟨d, mapDomain_injective Subtype.val_injective hd⟩
     exact ⟨_, _, map_dvd _ h₁, map_dvd _ h₂, map_mul (mapDomainRingHom R H.subtype) a₁ a₂⟩
 
-/-- A Laurent ring `(R[G])[N]` over the group algebra of a torsion-free abelian group `G`, with
-`R` a unique factorization domain and `N` torsion-free, is a decomposition monoid: it is the group
-algebra of `N × G` over `R`. This covers Laurent rings over `ℤ[P]` for the multiplicative group of
-a coefficient semifield `P`. -/
+/-- The group algebra `(R[G])[N]` of a torsion-free abelian group `N` over the group algebra of a
+torsion-free abelian group `G`, with `R` a unique factorization domain, is a decomposition monoid.
+This covers Laurent rings over `R[G]`, to which `decompositionMonoid` does not apply directly since
+`R[G]` need not be factorial. -/
+instance decompositionMonoid_addMonoidAlgebra {N : Type*} [AddCommGroup N] [HasUniqueDiv N] :
+    DecompositionMonoid (AddMonoidAlgebra (AddMonoidAlgebra R G) N) :=
+  MulEquiv.decompositionMonoid (β := AddMonoidAlgebra R (N × G)) curryRingEquiv.symm
+
+/-- The group algebra `(R[G])[N]` of a torsion-free abelian group `N` over the group algebra of a
+torsion-free multiplicative abelian group `G`, with `R` a unique factorization domain, is a
+decomposition monoid. This covers Laurent rings over `ℤ[P]` for the multiplicative group of a
+coefficient semifield `P`. -/
 instance decompositionMonoid_monoidAlgebra {G N : Type*} [CommGroup G] [HasUniqueRoots G]
     [AddCommGroup N] [HasUniqueDiv N] :
     DecompositionMonoid (AddMonoidAlgebra (MonoidAlgebra R G) N) :=
-  MulEquiv.decompositionMonoid (β := AddMonoidAlgebra R (N × Additive G))
-    ((mapRingEquiv N (MonoidAlgebra.toAdditive R G)).trans (curryAlgEquiv R).symm.toRingEquiv)
+  MulEquiv.decompositionMonoid (mapRingEquiv N (MonoidAlgebra.toAdditive R G))
 
 end AddMonoidAlgebra
 
@@ -169,6 +158,8 @@ example : UniqueFactorizationMonoid
     (TauCeti.LaurentRing (TauCeti.LaurentRing ℤ Unit) (Fin 2)) := inferInstance
 
 example : DecompositionMonoid (AddMonoidAlgebra ℤ ℚ) := inferInstance
+
+example : DecompositionMonoid (TauCeti.LaurentRing (AddMonoidAlgebra ℤ ℚ) (Fin 2)) := inferInstance
 
 example : DecompositionMonoid
     (TauCeti.LaurentRing (MonoidAlgebra ℤ (Multiplicative ℚ)) (Fin 2)) := inferInstance
