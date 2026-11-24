@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
+import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
@@ -366,8 +367,7 @@ rotation homomorphism is the twisting circle, which acts on the canonical line b
 theorem eq_one_of_mem_canonicalLineFixingSubgroup_of_toSpecialOrthogonal_eq_one
     {x : spinCGroup Q hQ₀} (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀)
     (h1 : spinCGroup.toSpecialOrthogonal Q hQ₀ x = 1) : x = 1 := by
-  have hQn : Q.Nondegenerate :=
-    QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
+  have hQn : Q.Nondegenerate := QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
   -- The kernel of the rotation homomorphism is the twisting circle.
   obtain ⟨w, rfl⟩ : ∃ w : Circle, spinCGroup.ofCircle Q hQ₀ w = x := by
@@ -396,8 +396,7 @@ theorem exists_mem_canonicalLineFixingSubgroup_toSpecialOrthogonal_eq_of_mem_uni
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     {A : TauCeti.QuadraticMap.specialOrthogonalGroup Q} (hA : A ∈ J.unitaryGroup Q) :
     ∃ x ∈ canonicalLineFixingSubgroup o ρ J hQ₀, spinCGroup.toSpecialOrthogonal Q hQ₀ x = A := by
-  have hQn : Q.Nondegenerate :=
-    QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
+  have hQn : Q.Nondegenerate := QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ
   obtain ⟨s, hs⟩ := spinToSpecialOrthogonal_surjective_of_isSquare Q hQn (fun v _ ↦ by
     rw [invOf_eq_inv, hQ]
     exact ⟨‖v‖⁻¹, by ring⟩) A

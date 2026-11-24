@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Holder.C2HolderBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
 import TauCeti.Analysis.Holder.ConeInterpolation
@@ -15,16 +16,16 @@ import TauCeti.Topology.MetricSpace.Holder
 /-!
 # The global Schauder estimate on a bounded domain with `C^{2,α}` boundary
 
-Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary: near each
-point `x` of its frontier, `Ω` is the region `{z | γ z < ⟪z, ν⟫}` above the graph of a `C^{2,α}`
-function over a hyperplane `ν^⊥`, that is
+Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary
+(`Set.HasC2HolderBoundary Ω α`): near each point `x` of its frontier, `Ω` is the region
+`{z | γ z < ⟪z, ν⟫}` above the graph of a `C^{2,α}` function over a hyperplane `ν^⊥`, that is
 
-`ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}`
+`Ω ∩ ball x r = {z | γ z < ⟪z, ν⟫} ∩ ball x r`
 
 for a unit vector `ν`, a radius `r > 0` and a `C²` function `γ` invariant under translation along
-`ν`, with `Dγ` and `D²γ` bounded and `D²γ` `α`-Hölder. This file proves the global `C^{2,α}`
-estimate up to the boundary for the non-divergence-form operator `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`, in
-`TauCeti.PDE`:
+`ν`, with `Dγ` and `D²γ` bounded and `D²γ` `α`-Hölder. Such a set is open
+(`Set.HasC2HolderBoundary.isOpen`). This file proves the global `C^{2,α}` estimate up to the
+boundary for the non-divergence-form operator `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`, in `TauCeti.PDE`:
 `exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_and_holderOnWith_of_sum_smul_fderiv_fderiv`;
 there is a constant `C` such that every `u` that is `C²` near `closure Ω`, vanishes on `∂Ω` and has
 `|u| ≤ N` on `closure Ω` satisfies, on `closure Ω`,
@@ -307,12 +308,8 @@ global estimate, if `|u|`, `‖Du‖` and `‖D²u‖` are bounded by `N` on `cl
 `α`-Hölder on `closure Ω` with constant `C (K + N)`, where `C` depends only on `Ω`, `α`, `λ`, `Λ`,
 `L` and `M`. The interpolation inequalities on `closure Ω` then reduce `N` to a bound for `|u|`. -/
 private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv {α : ℝ≥0}
-    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω) (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
-    {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
+    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω)
+    (hbdry : Ω.HasC2HolderBoundary α) {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
       (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
@@ -326,8 +323,16 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderi
         HolderOnWith K α (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
         HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
+  have hbdry' : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
+      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
+      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
+      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ} := by
+    intro x hx
+    obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, hG2, hG3, hr, hΩr⟩ :=
+      Set.hasC2HolderBoundary_iff.1 hbdry x hx
+    exact ⟨ν, γ, G, r, hν, hγ, hγν, hG1, hG2, hG3, hr, by rw [inter_comm, hΩr, inter_comm]⟩
   obtain ⟨δ, hδ, A, hA⟩ :=
-    exists_dist_iteratedFDeriv_two_le_of_dist_lt hα hα1 hΩo hΩ hbdry Lam L M hlam
+    exists_dist_iteratedFDeriv_two_le_of_dist_lt hα hα1 hbdry.isOpen hΩ hbdry' Lam L M hlam
   refine ⟨A + 2 * δ ^ (-(α : ℝ)),
     fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN0 hN1 hN2 hV hK => ?_⟩
   -- Values of `D²u` on `closure Ω` lie within `2 N` of each other.
@@ -349,12 +354,8 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderi
 estimate, if `|u| ≤ N` and `‖Du‖ + ‖D²u‖ ≤ T` on `closure Ω`, then `D²u` is `α`-Hölder on
 `closure Ω` with constant `C (K + (N + T))`. -/
 private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_le {α : ℝ≥0}
-    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω) (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
-    {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
+    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω)
+    (hbdry : Ω.HasC2HolderBoundary α) {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
       (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
@@ -368,7 +369,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
         HolderOnWith (C * (K + (N + T))) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
   obtain ⟨C, hC⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv hα
-    hα1 hΩo hΩ hbdry Lam L M hlam
+    hα1 hΩ hbdry Lam L M hlam
   refine ⟨C, fun {a} hEll hEll' hL hM {U u N K V T} hU hΩU hu hu0 hN hT hV hK => ?_⟩
   refine hC hEll hEll' hL hM hU hΩU hu hu0 (fun z hz => ?_) (fun z hz => ?_) (fun z hz => ?_) hV hK
   · push_cast; linarith [hN z hz, T.coe_nonneg]
@@ -378,16 +379,15 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_
 /-- A `C^{2,α}` boundary patch is a Lipschitz boundary patch: `γ` is `G`-Lipschitz since
 `‖Dγ‖ ≤ G`. -/
 private theorem exists_lipschitzWith_patch {α : ℝ≥0} {Ω : Set E}
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ}) :
+    (hbdry : Ω.HasC2HolderBoundary α) :
     ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
       LipschitzWith G γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
       ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ} := fun x hx => by
-  obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, -, -, hr, hpatch⟩ := hbdry x hx
+  obtain ⟨ν, γ, G, r, hν, hγ, hγν, hG1, -, -, hr, hpatch⟩ :=
+    Set.hasC2HolderBoundary_iff.1 hbdry x hx
   exact ⟨ν, γ, G, r, hν, lipschitzWith_of_nnNorm_fderiv_le (hγ.differentiable (by norm_num))
-    fun z => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hG1 z, hγν, hr, hpatch⟩
+    fun z => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hG1 z, hγν, hr,
+    by rw [inter_comm, hpatch, inter_comm]⟩
 
 /-- Some scale `0 < ε ≤ ε₀` makes `c (ε^(1 + α) + ε^α)` at most `1 / 2`. -/
 private theorem exists_pos_le_mul_rpow_add_rpow_le {α : ℝ≥0} (hα : 0 < α) {c ε₀ : ℝ}
@@ -412,12 +412,8 @@ with `N + S` in place of `N` bounds the Hölder constant of `D²u` by `C₁ (K +
 interpolation inequalities on `closure Ω` at a small scale `ε` turn this into
 `S ≤ C_ε N + (K + N + S) / 2`. -/
 private theorem exists_norm_fderiv_add_norm_iteratedFDeriv_two_le {α : ℝ≥0} (hα : 0 < α)
-    (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω) (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
-    {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
+    (hα1 : α < 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω)
+    (hbdry : Ω.HasC2HolderBoundary α) {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ B : ℝ, 1 ≤ B ∧ ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
       (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
@@ -430,7 +426,7 @@ private theorem exists_norm_fderiv_add_norm_iteratedFDeriv_two_le {α : ℝ≥0}
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
         ∀ z ∈ closure Ω, ‖fderiv ℝ u z‖ + ‖iteratedFDeriv ℝ 2 u z‖ ≤ B * (K + N) := by
   obtain ⟨C₁, hC₁⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_le hα
-    hα1 hΩo hΩ hbdry Lam L M hlam
+    hα1 hΩ hbdry Lam L M hlam
   obtain ⟨CI, hCI, ε₀, hε₀, hint⟩ :=
     exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_closure (F := ℝ) hΩ
       (exists_lipschitzWith_patch hbdry) α
@@ -470,15 +466,17 @@ private theorem exists_norm_fderiv_add_norm_iteratedFDeriv_two_le {α : ℝ≥0}
   nlinarith [hfS z hz, mul_nonneg hX K.coe_nonneg, K.coe_nonneg, N.coe_nonneg]
 
 /-- **The global Schauder estimate on a bounded domain with `C^{2,α}` boundary.** Let
-`0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{2,α}` boundary: near each point
-`x` of its frontier, `ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫}` for a unit vector `ν`, a radius
-`r > 0` and a `C²` function `γ` invariant under translation along `ν`, with `‖Dγ‖ ≤ G`,
-`‖D²γ‖ ≤ G` and `D²γ` `α`-Hölder with constant `G`. Let `0 < λ`, `Λ`, `L` and `M` be given. Then
-there is a constant `C` with the following property. Let `a` have ellipticity bounds `λ, Λ` at
-every point of `closure Ω`, and entries `α`-Hölder with constant `L` and bounded by `M` on
-`closure Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on an open set containing `closure Ω`,
-vanishing on the frontier of `Ω`, with `|u| ≤ N` on `closure Ω` and with `D²u` `α`-Hölder there
-(with any constant). If `L u` is `α`-Hölder on `Ω` with constant `K`, then on `closure Ω`
+`0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary
+(`Set.HasC2HolderBoundary`): near each point `z` of its frontier,
+`Ω ∩ ball z r = {x | γ x < ⟪x, ν⟫} ∩ ball z r` for a unit vector `ν`, a radius `r > 0` and a `C²`
+function `γ` invariant under translation along `ν`, with `‖Dγ‖ ≤ G`, `‖D²γ‖ ≤ G` and `D²γ`
+`α`-Hölder with constant `G`. Such a set is open (`Set.HasC2HolderBoundary.isOpen`). Let
+`0 < λ`, `Λ`, `L` and `M` be given. Then there is a constant `C` with the following property.
+Let `a` have ellipticity bounds `λ, Λ` at every point of `closure Ω`, and entries `α`-Hölder
+with constant `L` and bounded by `M` on `closure Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu`. Let `u` be `C²` on
+an open set containing `closure Ω`, vanishing on the frontier of `Ω`, with `|u| ≤ N` on
+`closure Ω` and with `D²u` `α`-Hölder there (with any constant). If `L u` is `α`-Hölder on `Ω`
+with constant `K`, then on `closure Ω`
 
 `‖Du‖ ≤ C (K + N)`, `‖D²u‖ ≤ C (K + N)` and `[D²u]_α ≤ C (K + N)`.
 
@@ -487,12 +485,8 @@ nor on `u`. This is Gilbarg–Trudinger's Theorem 6.6 for zero boundary values a
 lower-order terms; the uniformity in `a` is what the method of continuity uses. -/
 theorem
     exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_and_holderOnWith_of_sum_smul_fderiv_fderiv
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω) (hΩ : Bornology.IsBounded Ω)
-    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
-      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
-      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
-      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
-    {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω)
+    (hbdry : Ω.HasC2HolderBoundary α) {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
       (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
       (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
@@ -507,9 +501,9 @@ theorem
           (∀ z ∈ closure Ω, ‖iteratedFDeriv ℝ 2 u z‖ ≤ C * (K + N)) ∧
           HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
   obtain ⟨B, hB, hsup⟩ :=
-    exists_norm_fderiv_add_norm_iteratedFDeriv_two_le hα hα1 hΩo hΩ hbdry Lam L M hlam
+    exists_norm_fderiv_add_norm_iteratedFDeriv_two_le hα hα1 hΩ hbdry Lam L M hlam
   obtain ⟨C₁, hC₁⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_le hα
-    hα1 hΩo hΩ hbdry Lam L M hlam
+    hα1 hΩ hbdry Lam L M hlam
   have hBB : ((B.toNNReal : ℝ≥0) : ℝ) = B := Real.coe_toNNReal B (by linarith)
   refine ⟨C₁ * (1 + B.toNNReal) + B.toNNReal,
     fun {a} hEll hEll' hL hM {U u N K V} hU hΩU hu hu0 hN hV hK => ?_⟩
