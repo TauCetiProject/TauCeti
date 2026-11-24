@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Erf.Fresnel.Basic
+public import TauCeti.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.Analytic.Order
-public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Real.Pi.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
@@ -104,14 +104,6 @@ private theorem hasDerivAt_integral_comp_pi_mul_sq_div_two {f : ℝ → ℝ} (hf
     HasDerivAt (fun x : ℝ => ∫ t in (0 : ℝ)..x, f (π * t ^ 2 / 2)) (f (π * x ^ 2 / 2)) x :=
   ((hf.comp (by fun_prop : Continuous fun t : ℝ => π * t ^ 2 / 2)).integral_hasStrictDerivAt
     0 x).hasDerivAt
-
-/-- A function with a nonnegative derivative at every point of a convex set is monotone on it. -/
-private theorem monotoneOn_of_hasDerivAt_nonneg {D : Set ℝ} (hD : Convex ℝ D) {f f' : ℝ → ℝ}
-    (hf : ∀ x ∈ D, HasDerivAt f (f' x) x) (hf' : ∀ x ∈ D, 0 ≤ f' x) : MonotoneOn f D :=
-  monotoneOn_of_hasDerivWithinAt_nonneg hD
-    (fun x hx => (hf x hx).continuousAt.continuousWithinAt)
-    (fun x hx => (hf x (interior_subset hx)).hasDerivWithinAt)
-    fun x hx => hf' x (interior_subset hx)
 
 /-- The comparison function `C(x) − sin(πx²/2)/(πx) + (cos(πx²/2) − 1)/(π²x³)` has derivative
 `3(1 − cos(πx²/2))/(π²x⁴) ≥ 0` for `x ≠ 0`, so it is monotone on `[1, ∞)`. -/
