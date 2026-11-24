@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Defs
 public import Mathlib.RingTheory.TwoSidedIdeal.Basic
 
 /-!

@@ -63,18 +63,11 @@ theorem rightAnnihilator_topologicalClosure [IsTopologicalRing A] [T1Space A]
         (isClosed_singleton.preimage (continuous_mul_const a))
         (I.mem_topologicalClosure.mp hx)
 
-/-- In a `T₁` unital ring with separately continuous multiplication,
-`(Module.annihilator R I).toTwoSided` is closed for any two-sided ideal `I`. -/
-instance isClosed_moduleAnnihilator_toTwoSided {R : Type*} [Ring R] [TopologicalSpace R]
-    [SeparatelyContinuousMul R] [T1Space R] (I : TwoSidedIdeal R) :
-    IsClosed (((Module.annihilator R I).toTwoSided : TwoSidedIdeal R) : Set R) :=
-  I.annihilator_eq_moduleAnnihilator_toTwoSided ▸ I.isClosed_annihilator
-
 /-- In a `T₁` unital ring with separately continuous multiplication, `Module.annihilator R I` is
 closed for any two-sided ideal `I`. -/
 instance isClosed_moduleAnnihilator {R : Type*} [Ring R] [TopologicalSpace R]
     [SeparatelyContinuousMul R] [T1Space R] (I : TwoSidedIdeal R) :
     IsClosed (Module.annihilator R I : Set R) := by
-  simpa only [Ideal.coe_toTwoSided] using isClosed_moduleAnnihilator_toTwoSided I
+  simpa only [← coe_asIdeal, asIdeal_annihilator] using I.isClosed_annihilator
 
 end TwoSidedIdeal

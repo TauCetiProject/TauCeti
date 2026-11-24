@@ -31,22 +31,6 @@ namespace TwoSidedIdeal
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 
-/-- The annihilator of a closed two-sided ideal `I` is the kernel of the canonical homomorphism
-from `A` into the multiplier algebra of `I`. -/
-theorem ker_multiplierHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
-    ker (I.toNonUnitalStarSubalgebra.multiplierHom I.mul_mem_toNonUnitalStarSubalgebra) =
-      I.annihilator :=
-  ext fun _ ↦ by
-    simp only [mem_ker, NonUnitalStarSubalgebra.multiplierHom_eq_zero_iff,
-      mem_toNonUnitalStarSubalgebra, mem_annihilator]
-
-/-- The canonical homomorphism from `A` into the multiplier algebra of a closed two-sided ideal `I`
-is injective exactly when `I` is essential. -/
-theorem multiplierHom_injective_iff_isEssential (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
-    Function.Injective (I.toNonUnitalStarSubalgebra.multiplierHom
-      I.mul_mem_toNonUnitalStarSubalgebra) ↔ I.IsEssential := by
-  rw [← ker_eq_bot, ker_multiplierHom, annihilator_eq_bot_iff_isEssential_of_isClosed]
-
 /-- The canonical contractive `⋆`-homomorphism `A →⋆ₙₐ[ℂ] 𝓜(ℂ, I)` induced by left and right
 multiplication of `A` on a closed two-sided ideal `I`. -/
 noncomputable def multiplierHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
@@ -102,7 +86,7 @@ end
 
 /-- The kernel of `I.multiplierHom : A →⋆ₙₐ[ℂ] 𝓜(ℂ, I)` is the annihilator of `I`. -/
 @[simp]
-theorem ker_idealMultiplierHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
+theorem ker_multiplierHom (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
     TwoSidedIdeal.ker I.multiplierHom = I.annihilator := by
   ext a
   rw [mem_ker, multiplierHom_eq_zero_iff]
@@ -113,7 +97,7 @@ variable {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
 
 theorem multiplierHom_injective_iff_annihilator_eq_bot :
     Function.Injective I.multiplierHom ↔ I.annihilator = ⊥ := by
-  rw [← ker_eq_bot, ker_idealMultiplierHom]
+  rw [← ker_eq_bot, ker_multiplierHom]
 
 /-- For a closed two-sided ideal `I` of a C⋆-algebra `A`, the canonical map `A →⋆ₙₐ[ℂ] 𝓜(ℂ, I)` is
 injective if and only if `I` is an essential closed ideal of `A`. -/

@@ -160,7 +160,8 @@ theorem annihilator_bot : (⊥ : TwoSidedIdeal R).annihilator = ⊤ :=
 theorem rightAnnihilator_bot : (⊥ : TwoSidedIdeal R).rightAnnihilator = ⊤ :=
   gc_annihilator_rightAnnihilator.u_top
 
-theorem annihilator_top_of_faithfulSMul [FaithfulSMul R R] :
+@[simp]
+theorem annihilator_top [FaithfulSMul R R] :
     (⊤ : TwoSidedIdeal R).annihilator = ⊥ :=
   le_bot_iff.mp fun _ ha => (mem_bot _).mpr <| eq_of_smul_eq_smul fun x : R => by
     simpa [smul_eq_mul] using mul_eq_zero_of_mem_annihilator ha (mem_top R (x := x))
@@ -183,7 +184,7 @@ theorem annihilator_eq_top_iff [FaithfulSMul Rᵐᵒᵖ R] {I : TwoSidedIdeal R}
 @[simp]
 theorem rightAnnihilator_eq_top_iff [FaithfulSMul R R] {I : TwoSidedIdeal R} :
     I.rightAnnihilator = ⊤ ↔ I = ⊥ :=
-  ⟨fun h => le_bot_iff.mp <| annihilator_top_of_faithfulSMul (R := R) ▸
+  ⟨fun h => le_bot_iff.mp <| annihilator_top (R := R) ▸
       le_annihilator_iff_le_rightAnnihilator.mpr h.ge,
    fun h => h ▸ rightAnnihilator_bot⟩
 
@@ -281,30 +282,10 @@ theorem annihilator_eq_toTwoSided_annihilator :
   ext a
   simp [Module.mem_annihilator]
 
-/-- In a unital ring `R`, `I.annihilator` coincides with `(Module.annihilator R I).toTwoSided`
-for the left-multiplication `R`-module structure on `I`. -/
-theorem annihilator_eq_moduleAnnihilator_toTwoSided :
-    I.annihilator = (Module.annihilator R I).toTwoSided := by
-  ext a
-  rw [mem_annihilator, Ideal.mem_toTwoSided, Module.mem_annihilator]
-  exact ⟨fun h x => Subtype.ext (h x x.property), fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩)⟩
-
-/-- Membership in `(Module.annihilator R I).toTwoSided` for a two-sided ideal `I` of a unital
-ring `R`. -/
-theorem mem_moduleAnnihilator_toTwoSided_iff {a : R} :
-    a ∈ (Module.annihilator R I).toTwoSided ↔ ∀ x ∈ I, a * x = 0 := by
-  rw [← annihilator_eq_moduleAnnihilator_toTwoSided, mem_annihilator]
-
-/-- For a two-sided ideal `I` of a unital ring `R`, `(Module.annihilator R I).toTwoSided` is
-closed under compatible scalar multiplication. -/
-theorem smul_mem_moduleAnnihilator_toTwoSided {M : Type*} [SMul M R] [IsScalarTower M R R]
-    (c : M) {a : R} (ha : a ∈ (Module.annihilator R I).toTwoSided) :
-    c • a ∈ (Module.annihilator R I).toTwoSided := by
-  simpa only [smul_mul_assoc, one_mul] using
-    (Module.annihilator R I).toTwoSided.mul_mem_left (c • (1 : R)) a ha
-
 theorem asIdeal_annihilator : I.annihilator.asIdeal = Module.annihilator R I := by
-  rw [annihilator_eq_moduleAnnihilator_toTwoSided, Ideal.asIdeal_toTwoSided]
+  ext a
+  rw [mem_asIdeal, mem_annihilator, Module.mem_annihilator]
+  exact ⟨fun h x => Subtype.ext (h x x.property), fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩)⟩
 
 /-- In a unital ring `R`, `I.rightAnnihilator.asIdealOpposite` coincides with
 `Module.annihilator Rᵐᵒᵖ I` for the right-multiplication `Rᵐᵒᵖ`-module structure on `I`. -/
@@ -324,11 +305,6 @@ theorem le_rightAnnihilator_iff_asIdeal_mul_eq_bot {I J : TwoSidedIdeal R} :
   rw [← le_bot_iff, Ideal.mul_le, le_rightAnnihilator_iff]
   simp only [mem_asIdeal, Submodule.mem_bot]
   exact ⟨fun h x hx a ha => h a ha x hx, fun h a ha x hx => h x hx a ha⟩
-
-@[simp]
-theorem annihilator_top : (⊤ : TwoSidedIdeal R).annihilator = ⊥ :=
-  eq_bot_iff.2 fun a ha ↦ (mem_bot R).2 <| by
-    simpa using mul_eq_zero_of_mem_annihilator ha (mem_top R (x := (1 : R)))
 
 end Ring
 
@@ -409,12 +385,6 @@ theorem annihilator_annihilator_annihilator (hI : ∀ x ∈ I, star x ∈ I) :
   le_antisymm (annihilator_le_annihilator (le_annihilator_annihilator hI))
     (le_annihilator_annihilator fun _ ↦ star_mem_annihilator)
 
-/-- In a proper star ring, nothing annihilates the whole ring. -/
-@[simp]
-theorem annihilator_top_of_isProperStar : (⊤ : TwoSidedIdeal R).annihilator = ⊥ :=
-  top_inf_eq (⊤ : TwoSidedIdeal R).annihilator ▸
-    inf_annihilator (I := (⊤ : TwoSidedIdeal R)) fun _ _ ↦ mem_top R
-
 /-- A self-adjoint ideal is essential exactly when its annihilator vanishes. -/
 theorem annihilator_eq_bot_iff_isEssential (hI : ∀ x ∈ I, star x ∈ I) :
     I.annihilator = ⊥ ↔ I.IsEssential :=
@@ -430,20 +400,12 @@ section RingIsProperStar
 
 variable {R : Type*} [Ring R] [StarRing R] [IsProperStar R]
 
-/-- For any two-sided ideal `I` of a unital proper star ring `R`,
-`(Module.annihilator R I).toTwoSided` is closed under `star`. -/
-theorem star_mem_moduleAnnihilator_toTwoSided {I : TwoSidedIdeal R} {a : R}
-    (ha : a ∈ (Module.annihilator R I).toTwoSided) :
-    star a ∈ (Module.annihilator R I).toTwoSided := by
-  rw [← annihilator_eq_moduleAnnihilator_toTwoSided] at ha ⊢
-  exact star_mem_annihilator ha
-
 /-- For any two-sided ideal `I` of a unital proper star ring `R`, `Module.annihilator R I` is
 closed under `star`. -/
 theorem star_mem_moduleAnnihilator {I : TwoSidedIdeal R} {a : R}
-    (ha : a ∈ Module.annihilator R I) : star a ∈ Module.annihilator R I :=
-  Ideal.mem_toTwoSided.mp
-    (star_mem_moduleAnnihilator_toTwoSided (Ideal.mem_toTwoSided.mpr ha))
+    (ha : a ∈ Module.annihilator R I) : star a ∈ Module.annihilator R I := by
+  rw [← asIdeal_annihilator, mem_asIdeal] at ha ⊢
+  exact star_mem_annihilator ha
 
 end RingIsProperStar
 

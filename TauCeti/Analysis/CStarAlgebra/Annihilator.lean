@@ -31,11 +31,6 @@ section NonUnitalCStarAlgebra
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 
-/-- A closed two-sided ideal of a C⋆-algebra is essential exactly when its annihilator vanishes. -/
-theorem annihilator_eq_bot_iff_isEssential_of_isClosed (I : TwoSidedIdeal A)
-    [IsClosed (I : Set A)] : I.annihilator = ⊥ ↔ I.IsEssential :=
-  annihilator_eq_bot_iff_isEssential fun _ ↦ I.star_mem_of_isClosed
-
 /-- In any C⋆-algebra, the left and right annihilators of a two-sided ideal `I` coincide. -/
 theorem annihilator_eq_rightAnnihilator (I : TwoSidedIdeal A) :
     I.annihilator = I.rightAnnihilator := by
