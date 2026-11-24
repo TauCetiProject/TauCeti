@@ -32,7 +32,7 @@ algebra with an exact sequence `0 → Γ → I₀ → I₁` by finitely generate
 modules (`TauCeti.two_le_dominantDimension_iff`). Put `Q = I₀ × I₁` and `B = Module.End Γ Q`.
 Then `Q` is a generator over `B`, being finitely generated and projective over `Γ`
 (`TauCeti.Module.isGenerator_end_of_projective`), and a cogenerator, being finitely generated and
-injective (`FGModuleCat.isCoseparator_end_of_injective`). The copresentation `0 → Γ → Q → Q²`
+injective (`TauCeti.isCoseparator_end_of_injective`). The copresentation `0 → Γ → Q → Q²`
 gives the double centralizer property `Γ ≅ Module.End B Q`
 (`TauCeti.toModuleEnd_moduleEnd_bijective_of_exact`). The algebra `B` is again an Artin algebra,
 finite over the base ring as a ring of linear maps between finitely generated modules.
@@ -113,11 +113,10 @@ theorem exists_algEquiv_end_of_two_le_dominantDimension (R : Type*) [CommRing R]
     rintro ⟨a, b⟩
     simpa [f', g', funext_iff, Fin.forall_fin_two] using and_congr (hfg a) eq_comm
   let φ : Γ →ₐ[R] Module.End B (FGModuleCat.of B (I₀ × I₁)).obj :=
-    { Module.toModuleEnd B (I₀ × I₁) (S := Γ) with
-      commutes' r := LinearMap.ext fun x ↦ by simp }
+    Algebra.lsmul R B (FGModuleCat.of B (I₀ × I₁)).obj
   refine ⟨B, inferInstance, inferInstance, inferInstance, FGModuleCat.of B (I₀ × I₁),
     isGeneratorCogenerator_iff.2
-      ⟨FGModuleCat.isSeparator_of_isGenerator _, FGModuleCat.isCoseparator_end_of_injective R⟩,
+      ⟨FGModuleCat.isSeparator_of_isGenerator _, isCoseparator_end_of_injective R⟩,
     ⟨AlgEquiv.ofBijective φ (toModuleEnd_moduleEnd_bijective_of_exact hf' hfg')⟩⟩
 
 end TauCeti

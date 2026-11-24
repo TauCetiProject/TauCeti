@@ -60,7 +60,8 @@ theorem toModuleEnd_moduleEnd_bijective_of_exact {Γ : Type u} [Ring Γ] {Q : Ty
   have : Small.{v} Γ := small_of_injective hf
   have hf1 (γ : Γ) : f γ = γ • f 1 := by rw [← map_smul, smul_eq_mul, mul_one]
   refine ⟨fun a b h ↦ hf ?_, fun φ ↦ ?_⟩
-  · simpa [← hf1] using LinearMap.congr_fun h (f 1)
+  · simpa only [Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply, ← hf1] using
+      LinearMap.congr_fun h (f 1)
   -- `φ` commutes with the coordinates of `g`, so `φ (f 1)` lies in `ker g = range f`.
   obtain ⟨γ, hγ⟩ := (hfg (φ (f 1))).1 <| funext fun i ↦ by
     simpa [Module.End.smul_def, hfg.apply_apply_eq_zero] using
@@ -73,7 +74,6 @@ theorem toModuleEnd_moduleEnd_bijective_of_exact {Γ : Type u} [Ring Γ] {Q : Ty
   have h1 : φ x = k (f γ) := by
     rw [hγ, ← hx]
     exact φ.map_smul k (f 1)
-  rw [h1, hf1, map_smul, hx]
-  rfl
+  rw [h1, hf1, map_smul, hx, Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply]
 
 end TauCeti

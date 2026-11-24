@@ -34,9 +34,9 @@ It is the step of Morita theory that recovers a ring from a progenerator of its 
 and the step of the Morita-Tachikawa correspondence that recovers an algebra from a
 generator-cogenerator.
 
-In the other direction, a finitely generated projective module is a generator over its
-endomorphism ring (`TauCeti.Module.isGenerator_end_of_projective`), through a dual basis. This is
-the generator half of the converse of the Morita-Tachikawa correspondence.
+In the other direction, a finitely generated projective module is a generator for modules over
+its endomorphism ring (`TauCeti.Module.isGenerator_end_of_projective`), through a dual basis. This
+is the generator half of the converse of the Morita-Tachikawa correspondence.
 
 Unlike `TauCeti.toModuleEnd_moduleEnd_bijective` of
 `TauCeti.RingTheory.Semisimple.DoubleCentralizer`, which rests on the Jacobson density theorem,
@@ -258,22 +258,24 @@ end IsGenerator
 
 /-! ### A finitely generated projective module over its endomorphism ring -/
 
-/-- **A finitely generated projective module is a generator over its endomorphism ring.** A dual
-basis `x = ∑ᵢ gᵢ(x) • xᵢ` of `M` gives the linear forms `y ↦ (x ↦ gᵢ(x) • y)` over
-`Γ = Module.End R M`, with values in `Γ`, which send the vectors `xᵢ` to maps summing to the
-identity. -/
+/-- **A finitely generated projective module is a generator over its endomorphism ring.** A
+finitely generated projective `R`-module `M` is a generator for modules over `Module.End R M`, which
+acts on `M` by evaluation. -/
 instance isGenerator_end_of_projective [Module.Finite R M] [Module.Projective R M] :
     IsGenerator (Module.End R M) M := by
+  -- A dual basis `x = ∑ᵢ gᵢ(x) • xᵢ` of `M` gives the linear forms `sᵢ : y ↦ (x ↦ gᵢ(x) • y)`
+  -- over `Γ = Module.End R M`, with values in `Γ`, which send the vectors `xᵢ` to maps summing to
+  -- the identity.
   obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
   let s (i : Fin n) : M →ₗ[Module.End R M] Module.End R M :=
     { toFun y := (LinearMap.proj i ∘ₗ g).smulRight y
       map_add' _ _ := by ext; simp
       map_smul' _ _ := by ext; simp }
+  have hs (i : Fin n) (y x : M) : s i y x = g x i • y := rfl
   refine ⟨n, s, fun i ↦ f (Pi.single i 1), LinearMap.ext fun x ↦ ?_⟩
   have hx : f (g x) = x := LinearMap.congr_fun hfg x
   conv_rhs => rw [one_apply_eq_self, ← hx, ← Finset.univ_sum_single (g x)]
-  simp only [s, LinearMap.coe_mk, AddHom.coe_mk, map_sum, LinearMap.sum_apply,
-    LinearMap.smulRight_apply, LinearMap.comp_apply, LinearMap.proj_apply]
+  simp only [LinearMap.sum_apply, hs, map_sum]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [← map_smul, ← Pi.single_smul, smul_eq_mul, mul_one]
 
 end Module
