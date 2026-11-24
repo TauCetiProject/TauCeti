@@ -131,7 +131,7 @@ theorem toContinuousMap_harmonicsEquivHarmonicsL2 (f : harmonics m d) :
 theorem coe_harmonicsEquivHarmonicsL2 (f : harmonics m d) :
     (harmonicsEquivHarmonicsL2 m d f : Lp ℝ 2 volₘ) =
       ContinuousMap.toLp (E := ℝ) 2 volₘ ℝ (f : C(Sₘ, ℝ)) :=
-  (rfl)
+  Submodule.coe_equivMapOfInjective_apply _ (ContinuousMap.toLp_injective volₘ) _ f
 
 theorem toContinuousMap_mem (w : harmonicsL2 m d) : toContinuousMap m d w ∈ harmonics m d :=
   ((harmonicsEquivHarmonicsL2 m d).symm w).property
@@ -191,10 +191,9 @@ theorem inner_act (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (w w' : harmonicsL2 m d) :
     ⟪act m d e w, act m d e w'⟫_ℝ = ⟪w, w'⟫_ℝ := by
   let Φ := LinearIsometryEquiv.unitSphereRiemannianIsometry (n := m) (k := m) e
   have hvol := Φ.measurePreserving_riemannianVolume
-  have hint := hvol.integral_comp' (f := Φ.toDiffeomorph.toHomeomorph.toMeasurableEquiv)
+  have he : MeasurableEmbedding Φ := Φ.toDiffeomorph.toHomeomorph.measurableEmbedding
+  have hint := hvol.integral_comp he
     (fun y ↦ toContinuousMap m d w y * toContinuousMap m d w' y)
-  rw [Homeomorph.toMeasurableEquiv_coe, Diffeomorph.coe_toHomeomorph,
-    RiemannianIsometry.coe_toDiffeomorph] at hint
   simpa only [inner_eq_integral, toContinuousMap_act, Φ,
     LinearIsometryEquiv.unitSphereRiemannianIsometry_apply] using hint
 
@@ -224,10 +223,9 @@ theorem actEquiv_apply (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (w : harmonicsL2 m d) :
   (rfl)
 
 /-- The scalar reproducing kernel is invariant under simultaneous sphere isometries. -/
-theorem inner_kerFun_smul (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (x y : Sₘ) :
-    ⟪RKHS.kerFun (harmonicsL2 m d) (e • x) 1,
-      RKHS.kerFun (harmonicsL2 m d) (e • y) 1⟫_ℝ =
-      ⟪RKHS.kerFun (harmonicsL2 m d) x 1, RKHS.kerFun (harmonicsL2 m d) y 1⟫_ℝ := by
+theorem kernel_smul (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (x y : Sₘ) :
+    RKHS.kernel (harmonicsL2 m d) (e • x) (e • y) 1 =
+      RKHS.kernel (harmonicsL2 m d) x y 1 := by
   let b := stdOrthonormalBasis ℝ (harmonicsL2 m d)
   rw [← b.sum_apply_mul_apply, ← (b.map (actEquiv m d e)).sum_apply_mul_apply]
   simp only [coe_eq_toContinuousMap, OrthonormalBasis.map_apply, actEquiv_apply,
@@ -239,7 +237,7 @@ theorem sum_toContinuousMap_mul_toContinuousMap_smul {ι : Type*} [Fintype ι]
     (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (x y : Sₘ) :
     ∑ i, toContinuousMap m d (b i) (e • x) * toContinuousMap m d (b i) (e • y) =
       ∑ i, toContinuousMap m d (b i) x * toContinuousMap m d (b i) y := by
-  simpa only [← coe_eq_toContinuousMap, b.sum_apply_mul_apply] using inner_kerFun_smul m d e x y
+  simpa only [← coe_eq_toContinuousMap, b.sum_apply_mul_apply] using kernel_smul m d e x y
 
 /-- The sum of squares of an orthonormal basis is constant on the sphere. -/
 theorem sum_toContinuousMap_sq_eq {ι : Type*} [Fintype ι]
