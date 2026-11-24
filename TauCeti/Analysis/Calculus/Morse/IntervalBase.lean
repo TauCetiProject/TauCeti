@@ -525,6 +525,12 @@ theorem intervalBaseTimeCoordinate_neg (t : ℝ) :
 theorem mul_one_sub_sq_pos_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo 0 1) : 0 < t * (1 - t ^ 2) :=
   mul_pos ht.1 (by nlinarith [ht.1, ht.2])
 
+/-- On `(0, 1)` the exponential of the time coordinate is `t / √(1 - t²)`. -/
+theorem exp_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    Real.exp (intervalBaseTimeCoordinate t) = t / √(1 - t ^ 2) := by
+  have h1 : 0 < 1 - t ^ 2 := sub_pos.2 (pow_lt_one₀ ht.1.le ht.2 two_ne_zero)
+  rw [intervalBaseTimeCoordinate, Real.exp_sub, Real.exp_log ht.1, Real.exp_half, Real.exp_log h1]
+
 /-- On `(0, 1)` the derivative of the time coordinate is `1 / (t (1 - t²))`. -/
 theorem hasDerivAt_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
     HasDerivAt intervalBaseTimeCoordinate (t * (1 - t ^ 2))⁻¹ t := by
