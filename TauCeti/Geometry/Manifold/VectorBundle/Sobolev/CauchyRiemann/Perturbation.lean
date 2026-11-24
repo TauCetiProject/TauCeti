@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.HomMultiplication
 
 /-!
@@ -15,9 +15,9 @@ Let `M` be a closed complex curve and `V → M` a complex vector bundle with a f
 `A`. A real Cauchy–Riemann operator of class `W^{0,p}` is `D = D₀ + α`, where `D₀` is a smooth real
 Cauchy–Riemann operator and `α` is a zeroth-order term of class `L^p`, `p > 2`, with values in
 `(0,1)`-forms (McDuff–Salamon, Definition C.1.5). This file realizes such operators as bounded
-operators `W^{1,q}(Σ, V) → L^q(Σ, Λ^{0,1} ⊗ V)` for every finite `1 ≤ q ≤ p`, the case `ℓ = k = 1`
-of McDuff–Salamon Theorem C.1.10, and shows that `D - D₀` is compact (McDuff–Salamon Lemma C.2.2
-at `ℓ = k = 1`).
+operators `W^{1,q}(Σ, V) → L^q(Σ, Λ^{0,1} ⊗ V)` for every finite `1 ≤ q ≤ p`, the exponents
+`ℓ = k = 1` used in McDuff–Salamon Theorem C.1.10, and shows that `D - D₀` is compact
+(McDuff–Salamon Lemma C.2.2 at `ℓ = k = 1`).
 
 The coefficient `α` is an order-zero Sobolev section of the real hom bundle
 `x ↦ V x →L[ℝ] (T_x M →L[ℝ] V x)`, that is a `V`-valued one-form with coefficients in `End_ℝ V`,
@@ -29,8 +29,8 @@ Multiplication by `α` is `TauCeti.SobolevSection.homMulL`, which lands in the `
 
 ## Main definitions
 
-* `TauCeti.IsRealCauchyRiemannOperator.perturbationL`: the bounded bilinear map
-  `(α, ξ) ↦ (α ξ)^{0,1}` from `L^p` coefficients and `W^{1,q}` sections to `L^q` `(0,1)`-forms.
+* `TauCeti.IsRealCauchyRiemannOperator.perturbationL`: for a fixed `L^p` coefficient `α`, the
+  bounded operator `ξ ↦ (α ξ)^{0,1}` from `W^{1,q}` sections to `L^q` `(0,1)`-forms.
 * `TauCeti.IsRealCauchyRiemannOperator.perturbedSobolevL`: the realization of `D₀ + α` as a
   bounded operator `W^{1,q}(Σ, V) → L^q(Σ, Λ^{0,1} ⊗ V)`.
 
@@ -40,8 +40,9 @@ Multiplication by `α` is `TauCeti.SobolevSection.homMulL`, which lands in the `
   the perturbation is compact.
 * `TauCeti.IsRealCauchyRiemannOperator.isCompactOperator_perturbedSobolevL_sub`: the realizations
   of `D₀ + α` and of `D₀` differ by a compact operator.
-* `TauCeti.IsRealCauchyRiemannOperator.chartValueL_perturbedSobolevL_ae`,
-  `TauCeti.IsRealCauchyRiemannOperator.chartValueL_perturbedSobolevL_ae_of_zeroOne`: in chart `i`,
+* `TauCeti.IsRealCauchyRiemannOperator.chartValueL_perturbedSobolevL_ae`: in chart `i`, the
+  realization is `∂bar uᵢ + Zᵢ uᵢ + (αᵢ uᵢ)^{0,1}`.
+* `TauCeti.IsRealCauchyRiemannOperator.chartValueL_perturbedSobolevL_ae_of_zeroOne`: in chart `i`,
   the realization is `∂bar uᵢ + Zᵢ uᵢ + αᵢ uᵢ` for a coefficient with values in `(0,1)`-forms.
 
 ## References
@@ -97,13 +98,22 @@ private def homMulTangentL (hp : 2 < p) (hqp : q ≤ p)
 
 /-- **The rough zeroth-order term.** For `p > 2`, `1 ≤ q ≤ p` and an `L^p` section `α` of the real
 hom bundle `x ↦ V x →L[ℝ] (T_x M →L[ℝ] V x)`, the bounded operator sending a `W^{1,q}` section `ξ`
-of `V` to the `(0,1)`-part of the one-form `α ξ`, an `L^q` `(0,1)`-form. In chart `i` it is the
-complex antilinear part of `αᵢ uᵢ`
-(`TauCeti.IsRealCauchyRiemannOperator.chartValueL_perturbationL_ae`). -/
+of `V` to the `(0,1)`-part of the one-form `α ξ`, an `L^q` `(0,1)`-form
+(`TauCeti.IsRealCauchyRiemannOperator.perturbationL_apply`). In chart `i` it is the complex
+antilinear part of `αᵢ uᵢ` (`TauCeti.IsRealCauchyRiemannOperator.chartValueL_perturbationL_ae`). -/
 def perturbationL (hp : 2 < p) (hqp : q ≤ p)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) μ p 0) :
     SobolevSection A μ q 1 →L[ℝ] zeroOneSobolevSections A μ q 0 :=
   (zeroOnePartSobolevL A μ q 0).comp (homMulTangentL A μ hp hqp α)
+
+@[simp]
+theorem perturbationL_apply (hp : 2 < p) (hqp : q ≤ p)
+    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) μ p 0)
+    (ξ : SobolevSection A μ q 1) :
+    perturbationL A μ hp hqp α ξ = zeroOnePartSobolevL A μ q 0
+      (SobolevSection.homMulL A A.tangentHom.closure_dom_subset_baseSet μ (by simpa using hp) hqp
+        α ξ) :=
+  (rfl)
 
 /-- **Compact perturbation** (McDuff–Salamon, Lemma C.2.2, at `ℓ = k = 1`). For a fixed `L^p`
 coefficient with `p > 2`, the rough zeroth-order term is compact from `W^{1,q}` to `L^q`, for every
@@ -149,6 +159,7 @@ def perturbedSobolevL (hp : 2 < p) (hqp : q ≤ p)
     AddSubmonoid.continuousAdd (zeroOneSobolevSections A μ q 0).toAddSubmonoid
   hD.sobolevL A hDs μ q + perturbationL A μ hp hqp α
 
+@[simp]
 theorem perturbedSobolevL_apply (hp : 2 < p) (hqp : q ≤ p)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) μ p 0)
     (ξ : SobolevSection A μ q 1) :
@@ -164,6 +175,8 @@ theorem isCompactOperator_perturbedSobolevL_sub (hp : 2 < p) (hqp : q ≤ p)
       hD.perturbedSobolevL A hDs μ hp hqp α ξ - hD.sobolevL A hDs μ q ξ := by
   convert isCompactOperator_perturbationL A μ hp hqp α using 1
   funext ξ
+  rw [perturbedSobolevL_apply]
+  -- The `AddCommGroup` structure of the `(0,1)`-forms is only found once the type is given.
   exact add_sub_cancel_left (G := zeroOneSobolevSections A μ q 0) _ _
 
 /-- **The chart formula.** In chart `i`, the realization of `D₀ + α` sends a section with chart data
