@@ -78,6 +78,8 @@ closed upper half-plane are read in `ℂ` in
 * `TauCeti.FiniteBundleAtlas.contDiffOn_transition`: chart transitions of a `Cⁿ` manifold are `Cⁿ`.
 * `TauCeti.FiniteBundleAtlas.differentiableOn_transition`: chart transitions are differentiable
   for a `C¹` manifold.
+* `TauCeti.FiniteBundleAtlas.exists_bound_comp_chart_symm`: a `C¹` function read in a chart is
+  bounded, with bounded derivative, on the chart image.
 * `TauCeti.FiniteBundleAtlas.contMDiff_smul_chartSection`: a `Cⁿ` cutoff supported in a chart
   domain times a section that is `Cⁿ` in that chart is a `Cⁿ` section.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
@@ -534,6 +536,22 @@ theorem contDiffOn_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedSpa
     ContDiffOn ℝ n (fun y ↦ φ ((A.chart i).symm y)) (A.chart i).target := by
   rw [← contMDiffOn_iff_contDiffOn]
   exact hφ.contMDiffOn.comp (t := univ) contMDiffOn_chart_symm fun _ _ ↦ mem_univ _
+
+/-- A `C¹` function on `M`, read in chart `i`, is bounded and has bounded derivative on the image
+of the chart, whose closure is a compact subset of the chart target. -/
+theorem exists_bound_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [IsManifold 𝓘(ℝ, E) 1 M] {φ : M → G} (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, G) 1 φ) (i : Fin A.n) :
+    ∃ B L : NNReal, ∀ z ∈ (A.image i : Set E), ‖φ ((A.chart i).symm z)‖ ≤ B ∧
+      ‖fderiv ℝ (fun y ↦ φ ((A.chart i).symm y)) z‖ ≤ L := by
+  have hφ' := A.contDiffOn_comp_chart_symm hφ i
+  have hcl := A.closure_image_subset_target i
+  obtain ⟨B, hB⟩ :=
+    (A.isCompact_closure_image i).exists_bound_of_continuousOn (hφ'.continuousOn.mono hcl)
+  obtain ⟨L, hL⟩ := (A.isCompact_closure_image i).exists_bound_of_continuousOn
+    ((hφ'.continuousOn_fderiv_of_isOpen (A.chart i).open_target le_rfl).mono hcl)
+  exact ⟨B.toNNReal, L.toNNReal, fun z hz ↦
+    ⟨(hB z (subset_closure hz)).trans (Real.le_coe_toNNReal _),
+      (hL z (subset_closure hz)).trans (Real.le_coe_toNNReal _)⟩⟩
 
 end FiniteBundleAtlas
 
