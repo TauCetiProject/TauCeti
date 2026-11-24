@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.Solvable
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Lie.Covering
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.SimplyConnected
 public import TauCeti.Geometry.Lie.Prod
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Existence
+import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 
 /-!
 # Splitting a simply connected Lie group along complementary ideals
@@ -23,8 +25,13 @@ algebra of a compact Lie group, then `G` is the product of the commutative subgr
 and the subgroup `K` integrating `[𝔤, 𝔤]` (`TauCeti.Lie.centerProdDerivedContinuousMulEquiv`).
 Applied to the universal cover of a compact connected Lie group, this is a step towards the finite
 cover `T × K → G` by a torus times a simply connected semisimple group. The splitting takes the
-complementarity of the two ideals as a hypothesis, and does not identify the factors with `ℝʳ` or
-show that they are compact.
+complementarity of the two ideals as a hypothesis.
+
+The commutative factor is simply connected, as a factor of `G`, so its exponential identifies it
+with its Lie algebra (`TauCeti.lieExpContinuousAddEquiv`), which the inclusion carries onto `𝔷`.
+So `(z, k) ↦ exp z * k` is an isomorphism of topological groups `𝔷 × K ≃ₜ* G` from the product of
+the vector group `𝔷 ≅ ℝʳ` with `K` (`TauCeti.Lie.lieExpCenterProdDerivedContinuousMulEquiv`). That
+`K` is compact is not shown here.
 
 The splitting rests on a general criterion. Let `φ : A → G` and `ψ : K → G` be smooth
 homomorphisms out of connected Lie groups.
@@ -56,6 +63,8 @@ connected, not simply connected: the covering argument needs simple connectivity
   integral leaf subgroups of two complementary ideals.
 * `TauCeti.Lie.centerProdDerivedContinuousMulEquiv`: the case of the centre and the derived
   algebra.
+* `TauCeti.Lie.lieExpCenterProdDerivedContinuousMulEquiv`: the same splitting with the centre
+  factor replaced by the vector group `𝔷`, through the exponential.
 
 ## Main results
 
@@ -251,6 +260,140 @@ theorem commute_integralLeafSubgroupData_center
       LieSubalgebra ℝ (LeftInvariantDerivation I G)) :=
     inferInstanceAs (IsLieAbelian (LieAlgebra.center ℝ (LeftInvariantDerivation I G)))
   LieSubalgebra.commute_integralLeafSubgroupData_of_isLieAbelian _ x y
+
+/-! ### The centre factor is the centre of the Lie algebra -/
+
+section Center
+
+variable [T2Space G]
+
+/-- The Lie map of the inclusion of the integral leaf subgroup of the centre `𝔷` is a linear
+isomorphism from its Lie algebra onto `𝔷`. -/
+private def centerFactorLieEquiv :
+    let A := (LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
+    LeftInvariantDerivation A.I' A.X ≃ₗ[ℝ]
+      (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule :=
+  let A := (LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+    LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
+  (LinearEquiv.ofInjective _ A.injective_lieMap_toContMDiffMonoidMorphism).trans
+    (LinearEquiv.ofEq _ _ (by
+      rw [LieSubalgebra.range_lieMap_integralLeafSubgroupData,
+        LieIdeal.toLieSubalgebra_toSubmodule]))
+
+omit [SimplyConnectedSpace G] [T2Space G] in
+private theorem lieMap_centerFactorLieEquiv_symm
+    (z : (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule) :
+    lieMap ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+        (I := I)).toContMDiffMonoidMorphism ((centerFactorLieEquiv (I := I) (G := G)).symm z) =
+      z :=
+  congrArg Subtype.val ((centerFactorLieEquiv (I := I) (G := G)).apply_symm_apply z)
+
+/-- The first factor of `TauCeti.Lie.centerProdDerivedContinuousMulEquiv`, the integral leaf
+subgroup of the centre `𝔷`, is the vector group `𝔷` through its exponential: it is a simply
+connected commutative Lie group (`TauCeti.lieExpContinuousAddEquiv`) whose Lie algebra is carried
+onto `𝔷` by the Lie map of its inclusion. -/
+private def centerFactorContinuousMulEquiv
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
+    Multiplicative (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule ≃ₜ*
+      ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
+  let A := (LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+    LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
+  have : T2Space A.X := A.I'.t2Space_of_lieGroup ∞
+  have : IsMulCommutative A.X := ⟨⟨fun x y ↦ (commute_integralLeafSubgroupData_center x y).eq⟩⟩
+  have : SimplyConnectedSpace A.X := (simplyConnectedSpace_prod_iff.mp
+    (centerProdDerivedContinuousMulEquiv hc).toHomeomorph.toHomotopyEquiv.simplyConnectedSpace).1
+  have : FiniteDimensional ℝ (LeftInvariantDerivation A.I' A.X) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := A.I') (n := ∞) (by simp) (1 : A.X))
+  have : FiniteDimensional ℝ (LeftInvariantDerivation A.I' A.X) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := A.I') (n := ∞) (by simp) (1 : A.X))
+  let d := (centerFactorLieEquiv (I := I) (G := G)).toContinuousLinearEquiv
+  let tA : Additive A.X ≃ₜ A.X := ⟨Additive.toMul, continuous_toMul, continuous_ofMul⟩
+  let tz : Multiplicative (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule ≃ₜ
+      (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule :=
+    ⟨Multiplicative.toAdd, continuous_toAdd, continuous_ofAdd⟩
+  ContinuousMulEquiv.mk' ((tz.trans (d.symm.toHomeomorph.trans
+    (lieExpContinuousAddEquiv (I := A.I') (G := A.X)).toHomeomorph)).trans tA)
+    (fun x y ↦ by
+      simp only [Homeomorph.trans_apply, tz, tA, Homeomorph.homeomorph_mk_coe, toAdd_mul,
+        ContinuousLinearEquiv.coe_toHomeomorph, ContinuousAddEquiv.toEquiv_eq_coe, map_add]
+      exact congrArg Additive.toMul (map_add (lieExpContinuousAddEquiv (I := A.I') (G := A.X))
+        _ _))
+
+/-- The centre factor carries `z ∈ 𝔷` to `exp z`. -/
+private theorem toHom_centerFactorContinuousMulEquiv
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1))
+    (z : Multiplicative (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule) :
+    ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).toHom
+        (centerFactorContinuousMulEquiv hc z) =
+      lieExp (I := I) (z.toAdd : LeftInvariantDerivation I G) := by
+  let A := (LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+    LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)
+  have : T2Space A.X := A.I'.t2Space_of_lieGroup ∞
+  have : IsMulCommutative A.X := ⟨⟨fun x y ↦ (commute_integralLeafSubgroupData_center x y).eq⟩⟩
+  have : SimplyConnectedSpace A.X := (simplyConnectedSpace_prod_iff.mp
+    (centerProdDerivedContinuousMulEquiv hc).toHomeomorph.toHomotopyEquiv.simplyConnectedSpace).1
+  simp only [centerFactorContinuousMulEquiv, ContinuousMulEquiv.coe_mk',
+    Homeomorph.trans_apply, Homeomorph.homeomorph_mk_coe, ContinuousLinearEquiv.coe_toHomeomorph,
+    LinearEquiv.coe_toContinuousLinearEquiv_symm']
+  -- The exponential of the centre factor at `Y`, pushed into `G`, is `exp` of the image of `Y`
+  -- under the Lie map of the inclusion, and that Lie map inverts the linear isomorphism onto `𝔷`.
+  refine (congrArg (fun w ↦ ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).toHom
+        (Additive.toMul w)) (lieExpContinuousAddEquiv_apply _)).trans ?_
+  rw [toMul_ofMul, ← ImmersedLieSubgroupData.toContMDiffMonoidMorphism_apply, map_lieExp]
+  rw [lieMap_centerFactorLieEquiv_symm]
+
+/-- **The centre factor of a simply connected Lie group is the centre of its Lie algebra.** If the
+centre `𝔷` and the derived algebra `[𝔤, 𝔤]` of the Lie algebra of a simply connected Lie group `G`
+are complementary, then `(z, k) ↦ exp z * k` identifies the product of the vector group `𝔷` with
+the subgroup integrating `[𝔤, 𝔤]` with `G`, as a topological group
+(`TauCeti.Lie.lieExpCenterProdDerivedContinuousMulEquiv_apply`). The first factor of
+`TauCeti.Lie.centerProdDerivedContinuousMulEquiv` is a simply connected commutative Lie group
+with Lie algebra `𝔷`, so its exponential is an isomorphism from `𝔷`
+(`TauCeti.lieExpContinuousAddEquiv`). -/
+def lieExpCenterProdDerivedContinuousMulEquiv
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
+    Multiplicative (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule ×
+      ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X
+      ≃ₜ* G :=
+  let e := centerFactorContinuousMulEquiv hc
+  ContinuousMulEquiv.mk'
+    ((e.toHomeomorph.prodCongr (Homeomorph.refl _)).trans
+      (centerProdDerivedContinuousMulEquiv hc).toHomeomorph)
+    (fun p q ↦ by
+      have h := map_mul (centerProdDerivedContinuousMulEquiv hc) (e p.1, p.2) (e q.1, q.2)
+      rw [Prod.mk_mul_mk, ← map_mul e] at h
+      -- Both sides are `h` up to unfolding the product and composite of homeomorphisms.
+      exact h)
+
+@[simp]
+theorem lieExpCenterProdDerivedContinuousMulEquiv_apply
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1))
+    (p : Multiplicative (LieAlgebra.center ℝ (LeftInvariantDerivation I G)).toSubmodule ×
+      ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) :
+    lieExpCenterProdDerivedContinuousMulEquiv hc p =
+      lieExp (I := I) (p.1.toAdd : LeftInvariantDerivation I G) *
+        ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+          LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+            (I := I)).toHom p.2 := by
+  -- Unfolded, the left side is the splitting applied to `(e p.1, p.2)`, where `e` is the centre
+  -- factor isomorphism.
+  rw [← toHom_centerFactorContinuousMulEquiv hc]
+  exact centerProdDerivedContinuousMulEquiv_apply hc (centerFactorContinuousMulEquiv hc p.1, p.2)
+
+end Center
 
 end Ideal
 
