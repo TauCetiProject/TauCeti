@@ -96,17 +96,6 @@ theorem smooth_ι_comp_iff_le_smoothLocus {X S : Scheme.{u}} (f : X ⟶ S)
 
 variable {k : Type u} [Field k] {X : Scheme.{u}} (f : X ⟶ Spec (.of k))
 
-/-- Every morphism from the spectrum of a ring to the spectrum of a field is flat. -/
-private theorem flat_of_field {R : CommRingCat.{u}} (y : Spec R ⟶ Spec (.of k)) : Flat y := by
-  rw [← Spec.map_preimage y, Flat.SpecMap_iff]
-  algebraize [(Spec.preimage y).hom]
-  exact (inferInstance : Module.Flat k R)
-
-/-- A geometrically reduced scheme over a field is reduced. -/
-private theorem isReduced_of_geometricallyReduced [GeometricallyReduced f] : IsReduced X :=
-  GeometricallyReduced.geometrically_isReduced (f := f) (𝟙 _) (𝟙 X) f
-    (IsPullback.of_horiz_isIso ⟨by simp⟩)
-
 variable [LocallyOfFinitePresentation f]
 
 /-- **A reduced scheme over a field with dense smooth locus is geometrically reduced.** -/
@@ -116,8 +105,7 @@ theorem geometricallyReduced_of_dense_smoothLocus [IsReduced X]
   have : IsDominant f.smoothLocus.ι := ⟨by rwa [DenseRange, Scheme.Opens.range_ι]⟩
   have : IsSchemeTheoreticallyDominant f.smoothLocus.ι := .of_isDominant _
   refine ⟨fun K _ y Z fst snd H ↦ ?_⟩
-  have : Flat y := flat_of_field y
-  have : Flat fst := MorphismProperty.of_isPullback H.flip ‹_›
+  have : Flat fst := MorphismProperty.of_isPullback H.flip inferInstance
   have H' := isPullback_morphismRestrict fst f.smoothLocus
   have : QuasiCompact (fst ⁻¹ᵁ f.smoothLocus).ι :=
     MorphismProperty.of_isPullback H' (inferInstanceAs (QuasiCompact f.smoothLocus.ι))
@@ -145,16 +133,16 @@ private theorem dense_smoothLocus_of_isUniversalHomeomorphism [GeometricallyRedu
     hp.surjective.denseRange.dense_image hp.continuous q.dense_smoothLocus_of_perfectField
   refine hW.mono ((smooth_ι_comp_iff_le_smoothLocus f W).mp ?_)
   have hsm : Smooth ((p ⁻¹ᵁ W).ι ≫ q) := (smooth_ι_comp_iff_le_smoothLocus q _).mpr hpre.le
-  have : Flat y := flat_of_field y
   exact MorphismProperty.of_isPullback_of_descendsAlong
     (Q := @Surjective ⊓ @Flat ⊓ @QuasiCompact)
-    ((isPullback_morphismRestrict p W).paste_vert H).flip ⟨⟨inferInstance, ‹_›⟩, inferInstance⟩
+    ((isPullback_morphismRestrict p W).paste_vert H).flip
+    ⟨⟨inferInstance, inferInstance⟩, inferInstance⟩
     hsm
 
 /-- **A geometrically reduced scheme over a field has dense smooth locus.** -/
 theorem dense_smoothLocus_of_geometricallyReduced [GeometricallyReduced f] :
     Dense (f.smoothLocus : Set X) := by
-  have := isReduced_of_geometricallyReduced f
+  have := GeometricallyReduced.isReduced_of_flat_of_isLocallyNoetherian f
   obtain ⟨p, hp⟩ := CharP.exists k
   rcases CharP.char_is_prime_or_zero k p with hpp | rfl
   · have : Fact p.Prime := ⟨hpp⟩
