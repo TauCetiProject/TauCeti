@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Riccardo Brasca
 -/
 module
 
@@ -29,6 +29,8 @@ continuously onto this equator.
   equator.
 * `TauCeti.exists_ne_and_ne_neg_sphere`: in dimension at least two, the unit sphere has points
   other than `±p`, for instance the points of the equator orthogonal to `p`.
+* `TauCeti.nonempty_sphereEquator_inter_sphereEquator`: two great hyperspheres in a unit sphere
+  of dimension at least two meet.
 -/
 
 public section
@@ -151,5 +153,17 @@ theorem exists_ne_and_ne_neg_sphere (hV : 1 < finrank ℝ V) (p : sphere (0 : V)
     rwa [show v = p from Subtype.ext_iff.1 h] at hpv
   · exact ne_neg_of_inner_eq_zero (ne_zero_of_mem_unit_sphere p) (by rwa [real_inner_comm])
       (Subtype.ext_iff.1 h)
+
+/-- Two great hyperspheres in a unit sphere of dimension at least two meet. The defining
+normals may be equal or zero. -/
+theorem nonempty_sphereEquator_inter_sphereEquator
+    (hdim : 2 < finrank ℝ V) (a b : V) :
+    (sphereEquator a ∩ sphereEquator b).Nonempty := by
+  classical
+  obtain ⟨x, hx, horth⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := ℝ) {a, b} (Finset.card_le_two.trans_lt hdim)
+  refine ⟨⟨x, by simpa using hx⟩, ?_, ?_⟩
+  · simpa only [mem_sphereEquator, real_inner_comm] using horth a (by simp)
+  · simpa only [mem_sphereEquator, real_inner_comm] using horth b (by simp)
 
 end TauCeti

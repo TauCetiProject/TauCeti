@@ -30,6 +30,8 @@ mechanism behind the left-right symmetry of the radical, proved in
 * `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left` and
   `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_right`: the two elementwise descriptions of
   the Jacobson radical of a ring.
+* `TauCeti.Ring.isUnit_add_iff_of_mem_jacobson`: adding an element of the radical does not change
+  whether an element is a unit.
 * `TauCeti.Ring.mem_jacobson_of_forall_isNilpotent_mul`: an element all of whose left multiples
   are nilpotent lies in the radical.
 * `TauCeti.Ring.isLocalHom_mk_jacobson`: units lift modulo the Jacobson radical.
@@ -104,6 +106,18 @@ particular, a left ideal consisting of nilpotent elements lies in the radical. -
 theorem mem_jacobson_of_forall_isNilpotent_mul {x : R} (h : ∀ y : R, IsNilpotent (y * x)) :
     x ∈ Ring.jacobson R :=
   mem_jacobson_iff_isUnit_one_add_mul_left.2 fun y => (h y).isUnit_one_add
+
+/-- Adding an element of the Jacobson radical does not change whether an element is a unit. -/
+theorem isUnit_add_iff_of_mem_jacobson {a j : R} (hj : j ∈ Ring.jacobson R) :
+    IsUnit (a + j) ↔ IsUnit a := by
+  have key {a j : R} (hj : j ∈ Ring.jacobson R) (ha : IsUnit a) : IsUnit (a + j) := by
+    obtain ⟨u, rfl⟩ := ha
+    have he : (u : R) + j = u * (1 + ↑u⁻¹ * j) := by
+      rw [mul_add, mul_one, ← mul_assoc, Units.mul_inv, one_mul]
+    rw [he]
+    exact u.isUnit.mul (mem_jacobson_iff_isUnit_one_add_mul_left.1 hj _)
+  refine ⟨fun h => ?_, key hj⟩
+  simpa using key (neg_mem hj) h
 
 variable (R) in
 /-- The quotient of a nontrivial ring by its Jacobson radical is nontrivial, the radical being
