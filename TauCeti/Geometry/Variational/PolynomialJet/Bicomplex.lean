@@ -258,6 +258,15 @@ theorem horizontalDiff_mul (x y : Forms R ι α) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [horizontalForm, ExteriorAlgebra.ι_mul_eq_involute_mul]
 
+/-- Scalar multiplication by a function `f` obeys the Leibniz rule
+`d_H (f • ω) = (∑ᵢ (Dᵢ f) dxⁱ) ∧ ω + f • d_H ω`. -/
+@[simp]
+theorem horizontalDiff_smul (f : PolynomialJet R ι α) (x : Forms R ι α) :
+    horizontalDiff R ι α (f • x) =
+      (∑ i, totalDeriv i f • horizontalForm R α i) * x + f • horizontalDiff R ι α x := by
+  rw [Algebra.smul_def, horizontalDiff_mul, horizontalDiff_algebraMap, AlgHom.commutes,
+    ← Algebra.smul_def]
+
 /-- The horizontal differential raises the exterior degree by one. -/
 theorem horizontalDiff_mem_grading {p : ℤ} {x : Forms R ι α}
     (hx : x ∈ grading R (PolynomialJet R ι α) p) :
@@ -304,6 +313,14 @@ theorem verticalDiff_mul (x y : Forms R ι α) :
       verticalDiff R ι α x * y + involute (Q := 0) x * verticalDiff R ι α y := by
   simp only [verticalDiff_apply, extDeriv_mul, horizontalDiff_mul, sub_mul, mul_sub]
   abel
+
+/-- Scalar multiplication by a function `f` obeys the Leibniz rule
+`d_V (f • ω) = d_V f ∧ ω + f • d_V ω`. -/
+@[simp]
+theorem verticalDiff_smul (f : PolynomialJet R ι α) (x : Forms R ι α) :
+    verticalDiff R ι α (f • x) =
+      verticalDiff R ι α (algebraMap _ (Forms R ι α) f) * x + f • verticalDiff R ι α x := by
+  rw [Algebra.smul_def, verticalDiff_mul, AlgHom.commutes, ← Algebra.smul_def]
 
 /-- The vertical differential raises the exterior degree by one. -/
 theorem verticalDiff_mem_grading {p : ℤ} {x : Forms R ι α}
