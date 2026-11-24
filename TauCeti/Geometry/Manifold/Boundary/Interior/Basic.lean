@@ -230,11 +230,12 @@ instance instIsManifoldInterior {n : WithTop ℕ∞} [IsManifold I n M] :
     rw [OpenPartialHomeomorph.coe_interiorExtend_symm_apply I e (by simpa using And.intro h₁ h₂)]
 
 variable {I} in
-/-- The inclusion of the interior reads as the identity in extended charts, near the image of the
-base point: on the target of the chart of the interior, its inverse is the inverse of the extended
-chart of `M` at `x`, which the extended chart of `M` at `x` undoes. -/
+/-- Read in extended charts, the inclusion of the interior into `M` is the identity of `E` near
+the image of `x`. -/
 theorem writtenInExtChartAt_subtypeVal_interior_eventuallyEq (x : I.interior M) :
     writtenInExtChartAt 𝓘(𝕜, E) I x Subtype.val =ᶠ[𝓝 (extChartAt 𝓘(𝕜, E) x x)] id := by
+  -- On the target of the chart of the interior, its inverse is the inverse of the extended chart
+  -- of `M` at `x`, which the extended chart of `M` at `x` undoes.
   have hx : extChartAt 𝓘(𝕜, E) x x ∈ (chartAt E x).target := by
     simpa using (chartAt E x).map_source (mem_chart_source E x)
   filter_upwards [(chartAt E x).open_target.mem_nhds hx] with v hv

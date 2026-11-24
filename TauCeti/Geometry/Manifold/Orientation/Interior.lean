@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.InteriorInclusion
+public import TauCeti.Geometry.Manifold.Boundary.Interior.Inclusion
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 
 /-!

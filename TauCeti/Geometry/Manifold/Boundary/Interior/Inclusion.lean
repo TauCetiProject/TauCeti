@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Boundary.Interior
+public import TauCeti.Geometry.Manifold.Boundary.Interior.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -225,7 +225,8 @@ def interiorDiffeomorph [BoundarylessManifold I M] (n : WithTop ℕ∞) :
 theorem coe_interiorDiffeomorph [BoundarylessManifold I M] (n : WithTop ℕ∞) :
     ⇑(I.interiorDiffeomorph M n) = Subtype.val := by
   rw [ModelWithCorners.interiorDiffeomorph, Diffeomorph.coe_trans, Diffeomorph.coe_ofTop]
-  rfl
+  funext x
+  exact coe_interiorDiffeomorphOpens_apply n x
 
 /-- The inverse of the diffeomorphism onto a manifold without boundary sends a point to the
 interior point over it. -/
