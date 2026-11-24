@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Operator.Bilinear
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.ProdLp
+public import TauCeti.LinearAlgebra.LinearPMap.Conj
 
 /-!
 # Transport of the operator represented by a form
@@ -17,16 +17,17 @@ public import TauCeti.Analysis.Normed.Operator.LinearPMap.ProdLp
 Let `j : V →L[𝕜] H` be injective with dense range and `q : V →L⋆[𝕜] V →L[𝕜] 𝕜` a bounded
 sesquilinear form, and let `A = closedFormOperator j hj hdense q` be the operator it represents:
 `j u ∈ dom A` with `A (j u) = h` exactly when `q u v = ⟪h, j v⟫_𝕜` for every `v`. This file
-transports `A` along the three operations on the data `(V, H, j, q)` that leave the form unchanged.
+transports `A` along three operations on the data `(V, H, j, q)`: unitary change of `H`, change of
+the form-domain carrier `V`, and orthogonal sums of two forms.
 
 * **Unitary transport.** For a linear isometric equivalence `U : H ≃ₗᵢ[𝕜] H'`, the form `q` along
   `U ∘ j` represents the unitary conjugate `U A U⁻¹`.
 * **Change of form-domain carrier.** For a continuous linear equivalence `e : V' ≃L[𝕜] V`, the
   pulled-back form `(u', v') ↦ q (e u') (e v')` along `j ∘ e` represents the same operator `A`.
   In particular the operator depends on the form domain only up to isometric isomorphism.
-* **Finite orthogonal sums.** For two forms `q₁` along `j₁` and `q₂` along `j₂`, the sum form
-  `q₁ ⊕ q₂` on `V₁ × V₂` along `j₁ × j₂ : V₁ × V₂ → WithLp 2 (H₁ × H₂)` represents the direct sum
-  `A₁ ⊕ A₂` (`LinearPMap.withLpProdMap`) on the Hilbert direct sum.
+* **Orthogonal sums of two forms.** For two forms `q` along `j` and `q₂` along `j₂`, the sum form
+  `q ⊕ q₂` on `V × V₂` along `j × j₂ : V × V₂ → WithLp 2 (H × H₂)` represents the direct sum
+  `A ⊕ A₂` (`LinearPMap.withLpProdMap`) on the Hilbert direct sum.
 
 None of these needs completeness, coercivity or the Hermitian property: they are statements about
 the graph relation of the form, compared through
@@ -36,7 +37,7 @@ the graph relation of the form, compared through
 
 * `ContinuousLinearMap.closedFormOperator_comp_linearIsometryEquiv`: unitary transport.
 * `ContinuousLinearMap.closedFormOperator_comp_continuousLinearEquiv`: change of carrier.
-* `ContinuousLinearMap.closedFormOperator_prod`: finite orthogonal sums.
+* `ContinuousLinearMap.closedFormOperator_prod`: orthogonal sums of two forms.
 
 ## References
 
@@ -64,11 +65,11 @@ theorem closedFormOperator_comp_linearIsometryEquiv {H' : Type*} [NormedAddCommG
       (closedFormOperator j hj hdense q).conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H') := by
   refine (eq_closedFormOperator_of_mem_graph_iff _ _ _ q fun x h ↦ ?_).symm
   rw [LinearPMap.mem_graph_conj_iff, mem_graph_closedFormOperator_iff]
-  refine exists_congr fun u ↦ and_congr ?_ (forall_congr' fun v ↦ ?_)
-  · change j u = U.symm x ↔ U (j u) = x
-    exact ⟨fun h ↦ by rw [h, U.apply_symm_apply], fun h ↦ by rw [← h, U.symm_apply_apply]⟩
-  · change q u v = ⟪U.symm h, j v⟫_𝕜 ↔ q u v = ⟪h, U (j v)⟫_𝕜
-    rw [← U.inner_map_map, U.apply_symm_apply]
+  simp only [comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_symm_toLinearEquiv, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv]
+  refine exists_congr fun u ↦ and_congr U.eq_symm_apply (forall_congr' fun v ↦ ?_)
+  rw [← U.inner_map_map, U.apply_symm_apply]
 
 /-- **Change of form-domain carrier.** For a continuous linear equivalence `e : V' ≃L[𝕜] V`, the
 pulled-back form `(u', v') ↦ q (e u') (e v')` along `j ∘ e` represents the same operator as `q`
@@ -89,10 +90,10 @@ theorem closedFormOperator_comp_continuousLinearEquiv {V' : Type*} [SeminormedAd
     fun ⟨u, hu, hq⟩ ↦ ⟨e u, hu, fun v ↦ ?_⟩⟩
   simpa using hq (e.symm v)
 
-/-- **The form operator of an orthogonal sum.** For forms `q₁` along `j₁ : V₁ →L[𝕜] H₁` and `q₂`
-along `j₂ : V₂ →L[𝕜] H₂`, the sum form `((u₁, u₂), (v₁, v₂)) ↦ q₁ u₁ v₁ + q₂ u₂ v₂` on
-`V₁ × V₂` along `j₁ × j₂ : V₁ × V₂ → WithLp 2 (H₁ × H₂)` represents the direct sum `A₁ ⊕ A₂` of
-the operators represented by `q₁` and `q₂`. -/
+/-- **The form operator of an orthogonal sum.** For forms `q` along `j : V →L[𝕜] H` and `q₂`
+along `j₂ : V₂ →L[𝕜] H₂`, the sum form `((u, u₂), (v, v₂)) ↦ q u v + q₂ u₂ v₂` on `V × V₂` along
+`j × j₂ : V × V₂ → WithLp 2 (H × H₂)` represents the direct sum `A ⊕ A₂` of the operators
+represented by `q` and `q₂`. -/
 theorem closedFormOperator_prod {V₂ H₂ : Type*} [SeminormedAddCommGroup V₂] [NormedSpace 𝕜 V₂]
     [NormedAddCommGroup H₂] [InnerProductSpace 𝕜 H₂] (j : V →L[𝕜] H) (hj : Function.Injective j)
     (hdense : DenseRange j) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (j₂ : V₂ →L[𝕜] H₂)
