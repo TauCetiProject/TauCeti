@@ -256,17 +256,6 @@ private theorem extDerivOne_mem_exteriorPower_two (ω : Ω[S⁄R]) :
     rw [map_add]
     exact add_mem ih₁ ih₂
 
-private theorem extDerivOne_mul_ι_add_involute_ι_mul (ω : Ω[S⁄R]) :
-    extDerivOne R S ω * ExteriorAlgebra.ι S ω +
-      involute (Q := (0 : QuadraticForm S Ω[S⁄R])) (ExteriorAlgebra.ι S ω) *
-        extDerivOne R S ω = 0 := by
-  have hinv : involute (Q := (0 : QuadraticForm S Ω[S⁄R])) (extDerivOne R S ω) =
-      extDerivOne R S ω := by
-    rw [TauCeti.ExteriorAlgebra.involute_of_mem_exteriorPower
-      (extDerivOne_mem_exteriorPower_two R S ω)]
-    simp
-  rw [involute_ι, neg_mul, ExteriorAlgebra.ι_mul_eq_involute_mul, hinv, add_neg_cancel]
-
 /-- **The algebraic exterior derivative** on the algebraic de Rham algebra
 `ExteriorAlgebra S Ω[S⁄R]`, the unique `R`-linear endomorphism extending
 `KaehlerDifferential.D R S` in degree zero, annihilating exact `1`-forms `ι (D R S s)`, and
@@ -280,7 +269,8 @@ noncomputable def extDeriv : ExteriorAlgebra S Ω[S⁄R] →ₗ[R] ExteriorAlgeb
         (ExteriorAlgebra.ι S ω))
     (extDerivOne R S)
     (fun s ω ↦ by simpa using extDerivOne_smul R S s ω)
-    (extDerivOne_mul_ι_add_involute_ι_mul R S)
+    (fun ω ↦ ExteriorAlgebra.mul_ι_add_involute_ι_mul_of_mem_exteriorPower even_two
+      (extDerivOne_mem_exteriorPower_two R S ω) ω)
 
 variable {R S}
 
