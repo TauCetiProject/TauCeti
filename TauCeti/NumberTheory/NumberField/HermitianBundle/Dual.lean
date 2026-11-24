@@ -24,9 +24,9 @@ For a finitely generated projective `𝓞 K`-module `E`, the complex fibre
 finite-dimensional fibre, so every complex linear functional `φ` on the fibre is `h_σ(u_φ, ·)` for
 a unique vector `u_φ` (the Riesz vector, `TauCeti.HermitianMetric.dualVector`). The dual form is
 `h^∨_σ(a, b) = h_σ(u_b, u_a)`, so that the Riesz correspondence is antiunitary. Complex
-conjugation `c ⊗ x ↦ conj c ⊗ x` from the fibre at `σ` to the fibre at `conj σ` carries the Riesz
-vector of `1 ⊗ f` at `σ` to that at `conj σ`, which gives the conjugation condition of the dual
-metric.
+conjugation `c ⊗ x ↦ conj c ⊗ x` from the fibre at `σ` to the fibre at `conj σ`
+(`TauCeti.HermitianMetric.fiberConj`) carries the Riesz vector of `1 ⊗ f` at `σ` to that at
+`conj σ`, which gives the conjugation condition of the dual metric.
 
 ## Main definitions
 
@@ -125,70 +125,19 @@ theorem dualPairing_one_tmul_eval (x : E) (b : Codomain σ ⊗[𝓞 K] Module.Du
     rw [dualPairing_tmul_tmul, dualPairing_tmul_tmul, Module.Dual.eval_apply]
     simp only [map_one, one_mul]
 
-/-! ### Complex conjugation of fibres -/
-
-/-- Complex conjugation `Codomain σ → Codomain (conjugate σ)`, which is `𝓞 K`-linear because
-`conj (σ a) = (conjugate σ) a`. -/
-private def codomainConj : Codomain σ →ₗ[𝓞 K] Codomain (conjugate σ) where
-  toFun z := (Codomain.equiv (conjugate σ)).symm (conj (Codomain.equiv σ z))
-  map_add' _ _ := by simp only [map_add]
-  map_smul' a z := by
-    rw [RingHom.id_apply, Algebra.smul_def, Algebra.smul_def]
-    apply (Codomain.equiv (conjugate σ)).injective
-    simp only [map_mul, AlgEquiv.apply_symm_apply, Codomain.equiv_algebraMap_ringOfIntegers,
-      conjugate_coe_eq]
-
-private theorem equiv_codomainConj (z : Codomain σ) :
-    Codomain.equiv (conjugate σ) (codomainConj σ z) = conj (Codomain.equiv σ z) :=
-  AlgEquiv.apply_symm_apply _ _
-
-variable (E) in
-/-- Complex conjugation `c ⊗ x ↦ conj c ⊗ x` from the complex fibre at `σ` to the complex fibre
-at the conjugate embedding. -/
-private def conjFiber : Codomain σ ⊗[𝓞 K] E →ₗ[𝓞 K] Codomain (conjugate σ) ⊗[𝓞 K] E :=
-  (codomainConj σ).rTensor E
-
-private theorem conjFiber_tmul (z : Codomain σ) (x : E) :
-    conjFiber E σ (z ⊗ₜ x) = codomainConj σ z ⊗ₜ x :=
-  (rfl)
-
-private theorem conjFiber_surjective : Function.Surjective (conjFiber E σ) := by
-  rw [← LinearMap.range_eq_top, eq_top_iff]
-  rintro u -
-  induction u using TensorProduct.inductionOn with
-  | add a b ha hb => exact add_mem ha hb
-  | tmul z x =>
-    refine ⟨(Codomain.equiv σ).symm (conj (Codomain.equiv (conjugate σ) z)) ⊗ₜ x, ?_⟩
-    rw [conjFiber_tmul]
-    congr 1
-    apply (Codomain.equiv (conjugate σ)).injective
-    rw [equiv_codomainConj, AlgEquiv.apply_symm_apply, Complex.conj_conj]
-
-private theorem dualPairing_conjFiber (f : Module.Dual (𝓞 K) E) (w : Codomain σ ⊗[𝓞 K] E) :
-    dualPairing E (conjugate σ) (1 ⊗ₜ f) (conjFiber E σ w) =
+/-- Pairing `1 ⊗ f` with the conjugate `TauCeti.HermitianMetric.fiberConj` of `w` at the conjugate
+embedding is the complex conjugate of pairing `1 ⊗ f` with `w` at `σ`. -/
+private theorem dualPairing_fiberConj (f : Module.Dual (𝓞 K) E) (w : Codomain σ ⊗[𝓞 K] E) :
+    dualPairing E (conjugate σ) (1 ⊗ₜ f) (fiberConj E σ w) =
       conj (dualPairing E σ (1 ⊗ₜ f) w) := by
   induction w using TensorProduct.inductionOn with
   | add a b ha hb => simp only [map_add, ha, hb]
   | tmul z x =>
-    rw [conjFiber_tmul, dualPairing_tmul_tmul, dualPairing_tmul_tmul, conjugate_coe_eq,
-      equiv_codomainConj]
+    rw [fiberConj_tmul, dualPairing_tmul_tmul, dualPairing_tmul_tmul, conjugate_coe_eq,
+      Codomain.equiv_conj]
     simp only [map_one, one_mul, map_mul]
 
 variable (h : HermitianMetric K E)
-
-/-- The forms at `σ` and at the conjugate embedding are complex conjugate under conjugation of
-fibres, on the whole fibre. -/
-private theorem form_conjFiber (u v : Codomain σ ⊗[𝓞 K] E) :
-    h.form (conjugate σ) (conjFiber E σ u) (conjFiber E σ v) = conj (h.form σ u v) := by
-  induction u using TensorProduct.inductionOn with
-  | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
-  | tmul z x =>
-    induction v using TensorProduct.inductionOn with
-    | add a b ha hb => simp only [map_add, ha, hb]
-    | tmul w y =>
-      rw [conjFiber_tmul, conjFiber_tmul, h.form_tmul_tmul (conjugate σ), h.form_tmul_tmul σ,
-        form_conjugate_tmul]
-      simp only [equiv_codomainConj, map_mul, Complex.conj_conj]
 
 /-! ### Riesz vectors -/
 
@@ -232,11 +181,14 @@ theorem dualVector_injective [Module.Projective (𝓞 K) E] :
 /-- Conjugation of fibres carries the Riesz vector of `1 ⊗ f` at `σ` to the Riesz vector of
 `1 ⊗ f` at the conjugate embedding. -/
 private theorem dualVector_conjugate (f : Module.Dual (𝓞 K) E) :
-    h.dualVector (conjugate σ) (1 ⊗ₜ f) = conjFiber E σ (h.dualVector σ (1 ⊗ₜ f)) := by
+    h.dualVector (conjugate σ) (1 ⊗ₜ f) = fiberConj E σ (h.dualVector σ (1 ⊗ₜ f)) := by
   rw [dualVector_eq_iff]
-  ext w'
-  obtain ⟨w, rfl⟩ := conjFiber_surjective σ w'
-  rw [h.form_conjFiber, form_dualVector, dualPairing_conjFiber]
+  ext w
+  induction w using TensorProduct.inductionOn with
+  | add a b ha hb => simp only [map_add, ha, hb]
+  | tmul z x =>
+    rw [Codomain.tmul_eq_smul (conjugate σ) z, map_smul, map_smul, ← fiberConj_one_tmul σ x,
+      h.form_fiberConj, form_dualVector, dualPairing_fiberConj]
 
 /-! ### The dual metric -/
 
@@ -260,7 +212,7 @@ def dual : HermitianMetric K (Module.Dual (𝓞 K) E) where
     simpa only [LinearMap.mk₂'ₛₗ_apply] using
       h.form_self_pos σ ((map_ne_zero_iff _ (h.dualVector_injective σ)).2 ha)
   form_conjugate_tmul σ f g := by
-    simp only [LinearMap.mk₂'ₛₗ_apply, dualVector_conjugate, form_conjFiber]
+    simp only [LinearMap.mk₂'ₛₗ_apply, dualVector_conjugate, form_fiberConj]
 
 @[simp]
 theorem dual_form_apply (a b : Codomain σ ⊗[𝓞 K] Module.Dual (𝓞 K) E) :
