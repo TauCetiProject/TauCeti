@@ -51,6 +51,19 @@ noncomputable section
 
 namespace TauCeti
 
+/-- The harmonic number `H_n` as a real sum, `∑_{i < n} 1 / (i + 1)`. -/
+private theorem harmonic_cast_eq_sum_range (n : ℕ) :
+    (harmonic n : ℝ) = ∑ i ∈ Finset.range n, ((i + 1 : ℕ) : ℝ)⁻¹ := by
+  induction n with
+  | zero => simp [harmonic_zero]
+  | succ n ih =>
+    rw [harmonic_succ, Rat.cast_add, Rat.cast_inv, Rat.cast_natCast, Finset.sum_range_succ, ih]
+
+/-- The harmonic numbers are nonnegative. -/
+private theorem harmonic_cast_nonneg (n : ℕ) : (0 : ℝ) ≤ harmonic n := by
+  rw [harmonic_cast_eq_sum_range]
+  positivity
+
 /-! ### Separated points -/
 
 /-- In the window `‖x‖ ∈ [nδ, (n + 1)δ)` with `n ≥ 1`, `min(Y, 1 / ‖x‖) ≤ 1 / (nδ)`; in the
@@ -75,7 +88,8 @@ private theorem card_filter_floor_distInt_div_eq_le_two {ι : Type*} (s : Finset
     {δ : ℝ} (hδ : 0 < δ) (hsep : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → δ ≤ distInt (x i - x j)) (k : ℕ) :
     (s.filter fun i ↦ ⌊distInt (x i) / δ⌋₊ = k).card ≤ 2 := by
   refine (Finset.card_le_card_of_injOn (fun i ↦ decide (0 ≤ x i - round (x i)))
-    (fun _ _ ↦ Finset.mem_coe.2 (Finset.mem_univ _)) ?_).trans_eq rfl
+    (fun _ _ ↦ Finset.mem_coe.2 (Finset.mem_univ _)) ?_).trans_eq
+    (Finset.card_univ.trans Fintype.card_bool)
   intro i hi j hj hij
   by_contra hne
   rw [Finset.mem_coe, Finset.mem_filter] at hi hj
@@ -139,8 +153,7 @@ theorem sum_min_inv_distInt_le_of_separated {ι : Type*} (s : Finset ι) (x : ι
               (by exact_mod_cast card_filter_floor_distInt_div_eq_le_two s x hδ hsep k) (hb0 k)
     _ = 2 * Y + 2 / δ * harmonic K := by
         rw [Finset.sum_range_succ', add_comm]
-        simp only [hb, harmonic, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast, Finset.mul_sum,
-          Nat.succ_ne_zero, ↓reduceIte]
+        simp only [hb, harmonic_cast_eq_sum_range, Finset.mul_sum, Nat.succ_ne_zero, ↓reduceIte]
         congr 1
         refine Finset.sum_congr rfl fun k _ ↦ ?_
         field_simp
@@ -262,7 +275,7 @@ private theorem sum_block_bounds_le {q M : ℕ} (hq : 0 < q) (hM : 0 < M) {X : �
   set J := M / L
   rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
   have hharm : ∑ j ∈ Finset.range J, 2 * (X / ((j + 1 : ℕ) * L)) = 2 * X / L * harmonic J := by
-    simp only [harmonic, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast, Finset.mul_sum]
+    simp only [harmonic_cast_eq_sum_range, Finset.mul_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     field_simp
   rw [hharm]
@@ -273,7 +286,7 @@ private theorem sum_block_bounds_le {q M : ℕ} (hq : 0 < q) (hM : 0 < M) {X : �
   have hJL : (J : ℝ) * L ≤ M := by exact_mod_cast Nat.div_mul_le_self M L
   have hL : (0 : ℝ) < L := by exact_mod_cast Nat.succ_pos (q / 2)
   -- With `Λ = 1 + log (Mq)`: `H_J ≤ Λ`, `H_q ≤ Λ` and `Λ ≤ 2 log (2Mq)`.
-  set Λ := 1 + Real.log (M * q) with hΛ
+  set Λ := 1 + Real.log (M * q)
   have hlogMq : 0 ≤ Real.log (M * q) := Real.log_nonneg (by nlinarith)
   have hHJ : (harmonic J : ℝ) ≤ Λ := by
     refine (harmonic_le_one_add_log J).trans ?_
@@ -291,12 +304,11 @@ private theorem sum_block_bounds_le {q M : ℕ} (hq : 0 < q) (hM : 0 < M) {X : �
   have hXL : 2 * X / L ≤ 4 * X / q := by
     rw [div_le_div_iff₀ hL hq']
     nlinarith
-  have hHJ0 : (0 : ℝ) ≤ harmonic J := by simp only [harmonic]; push_cast; positivity
-  have hHq0 : (0 : ℝ) ≤ harmonic q := by simp only [harmonic]; push_cast; positivity
-  have e1 : 2 * X / L * harmonic J ≤ 4 * X / q * Λ := mul_le_mul hXL hHJ hHJ0 (by positivity)
+  have e1 : 2 * X / L * harmonic J ≤ 4 * X / q * Λ :=
+    mul_le_mul hXL hHJ (harmonic_cast_nonneg J) (by positivity)
   have e2 : (J : ℝ) * (4 * q * harmonic q) ≤ 8 * M * Λ := by
     calc (J : ℝ) * (4 * q * harmonic q) = J * (4 * q) * harmonic q := by ring
-      _ ≤ 8 * M * Λ := mul_le_mul (by nlinarith) hHq hHq0 (by positivity)
+      _ ≤ 8 * M * Λ := mul_le_mul (by nlinarith) hHq (harmonic_cast_nonneg q) (by positivity)
   have e3 : 2 * (2 * (q : ℝ)) + 4 * q * harmonic q ≤ 8 * q * Λ := by nlinarith
   have hXq : 0 ≤ X / q * Λ := mul_nonneg (by positivity) (by linarith)
   calc 2 * X / L * harmonic J + J * (4 * q * harmonic q) + (2 * (2 * q) + 4 * q * harmonic q)
