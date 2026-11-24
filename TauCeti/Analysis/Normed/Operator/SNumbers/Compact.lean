@@ -10,9 +10,9 @@ public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.Topology.MetricSpace.Cover
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
-import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Topology.Algebra.SeparationQuotient.FiniteDimensional
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Analysis.Normed.Operator.Cover
 
 /-!
 # Covering estimates, total boundedness, and compactness for Gelfand and Kolmogorov numbers
@@ -25,10 +25,11 @@ both the Kolmogorov numbers `dₙ(T)` and the Gelfand numbers `cₙ(T)` detect t
 the spaces.
 
 * **Covering upper bounds.** An `ε`-cover of `T(B_E)` of cardinality at most `n` bounds `dₙ(T)` by
-  `ε * ‖c‖₊` for every scalar `c` with `1 < ‖c‖` (taking the span of the centres), hence by `ε`
-  over a densely normed field. Over `ℝ` or `ℂ`, intersecting the kernels of `φᵢ ∘ T` for norming
-  functionals `φᵢ` of the centres gives a closed subspace of codimension at most `n` on which
-  `‖T x‖ ≤ 2 ε ‖x‖`, refining
+  `ε * ‖c‖₊` for every scalar `c` with `1 < ‖c‖` (quotienting by the span of the centres via
+  `ContinuousLinearMap.nnnorm_mkQL_span_comp_le_mul_of_isCover`), hence by `ε` over a densely
+  normed field. Over `ℝ` or `ℂ`, intersecting the kernels of `φᵢ ∘ T` for norming functionals `φᵢ`
+  of the centres (`ContinuousLinearMap.exists_rank_quotient_le_nnnorm_comp_subtypeL_le_of_isCover`)
+  gives a closed subspace of codimension at most `n` on which `‖T x‖ ≤ 2 ε ‖x‖`, refining
   `IsCompactOperator.exists_finiteDimensional_quotient_norm_comp_subtype_le` to the quantitative
   bound `cₙ(T) ≤ 2 ε`.
 * **Total boundedness from decay.** Over a locally compact scalar field, `dₙ(T) → 0` implies that
@@ -97,29 +98,9 @@ theorem ContinuousLinearMap.kolmogorovNumber_le_mul_of_isCover {T : E →L[𝕜]
     {C : Set F} (hC : C.encard ≤ n) (hcover : Metric.IsCover ε (T '' Metric.closedBall 0 1) C)
     {c : 𝕜} (hc : 1 < ‖c‖) :
     T.kolmogorovNumber n ≤ ε * ‖c‖₊ := by
-  have hfin : C.Finite := encard_lt_top_iff.mp (hC.trans_lt (WithTop.coe_lt_top n))
-  set V : Submodule 𝕜 F := Submodule.span 𝕜 C
-  have hcard : hfin.toFinset.card ≤ n := by
-    exact_mod_cast hfin.encard_eq_coe_toFinset_card.symm.trans_le hC
-  have hV : Module.rank 𝕜 V ≤ n := by
-    rw [show V = Submodule.span 𝕜 (hfin.toFinset : Set F) by simp [V]]
-    exact (rank_span_finset_le hfin.toFinset).trans (Nat.cast_le.mpr hcard)
-  refine (T.kolmogorovNumber_le hV).trans ?_
-  rw [← NNReal.coe_le_coe]
-  push_cast
-  have _ : 0 < ‖c‖ := one_pos.trans hc
-  refine ContinuousLinearMap.opNorm_le_of_shell one_pos (by positivity) hc fun x hx₁ hx₂ ↦ ?_
-  have hTx : T x ∈ T '' Metric.closedBall 0 1 :=
-    ⟨x, mem_closedBall_zero_iff.mpr hx₂.le, rfl⟩
-  obtain ⟨y, hyC, hxy⟩ :=
-    Metric.isCover_iff_subset_iUnion_closedBall.mp hcover hTx |> mem_iUnion₂.mp
-  have hy0 : (Submodule.Quotient.mk y : F ⧸ V) = 0 :=
-    (Submodule.Quotient.mk_eq_zero V).mpr (Submodule.subset_span hyC)
-  calc ‖(V.mkQL ∘L T) x‖ = ‖V.mkQL (T x - y)‖ := by simp [hy0]
-    _ ≤ ‖T x - y‖ := Submodule.Quotient.norm_mk_le V _
-    _ ≤ ε := by simpa [Metric.mem_closedBall, dist_eq_norm] using hxy
-    _ = ((ε : ℝ) * ‖c‖) * (1 / ‖c‖) := by field_simp
-    _ ≤ ((ε : ℝ) * ‖c‖) * ‖x‖ := by gcongr
+  have hV : Module.rank 𝕜 (Submodule.span 𝕜 C) ≤ n :=
+    (rank_span_le C).trans (by simpa [Set.encard, ← Cardinal.toENat_mk] using hC)
+  exact (T.kolmogorovNumber_le hV).trans (T.nnnorm_mkQL_span_comp_le_mul_of_isCover hcover hc)
 
 /-- **Total boundedness implies Kolmogorov decay.** Over any nontrivially normed field, if `T` maps
 the closed unit ball to a totally bounded set, then `dₙ(T) → 0`. Neither space needs to be
@@ -349,39 +330,10 @@ norming functionals `φ_y` of the centres gives a subspace `M` of codimension at
 theorem ContinuousLinearMap.gelfandNumber_le_two_mul_of_isCover {T : E →L[𝕜] F} {n : ℕ} {ε : ℝ≥0}
     {C : Set F} (hC : C.encard ≤ n) (hcover : Metric.IsCover ε (T '' Metric.closedBall 0 1) C) :
     T.gelfandNumber n ≤ 2 * ε := by
-  have hfin : C.Finite := encard_lt_top_iff.mp (hC.trans_lt (WithTop.coe_lt_top n))
-  let : Fintype C := hfin.fintype
-  have hcard : Fintype.card C ≤ n := by
-    rw [← Set.toFinset_card]
-    exact_mod_cast hfin.encard_eq_coe_toFinset_card.symm.trans_le hC
-  choose φ hφ hφ_apply using fun y : C ↦ exists_dual_vector'' 𝕜 (y : F)
-  let A : E →L[𝕜] (C → 𝕜) := ContinuousLinearMap.pi fun y ↦ (φ y).comp T
-  have hrank : Module.rank 𝕜 (E ⧸ LinearMap.ker A.toLinearMap) ≤ n := by
-    have h1 := A.toLinearMap.quotKerEquivRange.lift_rank_eq
-    have h2 : Module.rank 𝕜 (LinearMap.range A.toLinearMap) ≤ n := by
-      refine (Submodule.rank_le _).trans ?_
-      rw [rank_fun']
-      exact Nat.cast_le.mpr hcard
-    exact Cardinal.lift_le_nat_iff.mp (h1.trans_le (Cardinal.lift_le_nat_iff.mpr h2))
-  refine (T.gelfandNumber_le hrank).trans ?_
-  rw [← NNReal.coe_le_coe]
-  push_cast
-  refine ContinuousLinearMap.opNorm_le_of_unit_norm (by positivity) fun x hx ↦ ?_
-  have hTx : T x ∈ T '' Metric.closedBall 0 1 :=
-    ⟨x, mem_closedBall_zero_iff.mpr (by simpa using hx.le), rfl⟩
-  obtain ⟨y, hyC, hxy⟩ :=
-    Metric.isCover_iff_subset_iUnion_closedBall.mp hcover hTx |> mem_iUnion₂.mp
-  let j : C := ⟨y, hyC⟩
-  have hzero : φ j (T x) = 0 := congrFun x.2 j
-  have hy_le : ‖y‖ ≤ ‖T x - y‖ := by
-    calc ‖y‖ = ‖φ j (y - T x)‖ := by rw [map_sub, hzero, sub_zero, hφ_apply]; simp [j]
-      _ ≤ ‖φ j‖ * ‖y - T x‖ := (φ j).le_opNorm _
-      _ ≤ ‖y - T x‖ := mul_le_of_le_one_left (norm_nonneg _) (hφ j)
-      _ = ‖T x - y‖ := norm_sub_rev _ _
-  have hdist : ‖T x - y‖ ≤ ε := by simpa [Metric.mem_closedBall, dist_eq_norm] using hxy
-  calc ‖(T ∘L (LinearMap.ker A.toLinearMap).subtypeL) x‖ = ‖T x‖ := rfl
-    _ ≤ ‖T x - y‖ + ‖y‖ := by simpa only [sub_add_cancel] using norm_add_le (T x - y) y
-    _ ≤ 2 * (ε : ℝ) := by linarith
+  obtain ⟨hfin, hncard⟩ := encard_le_coe_iff_finite_ncard_le.mp hC
+  obtain ⟨K, -, hK_rank, hTK⟩ :=
+    T.exists_rank_quotient_le_nnnorm_comp_subtypeL_le_of_isCover hfin hcover
+  exact (T.gelfandNumber_le (hK_rank.trans (Nat.cast_le.mpr hncard))).trans hTK
 
 /-- **Finite-ball covering bound for Gelfand numbers.** Over an `RCLike` scalar field, if `T(B_E)`
 is covered by `s.card ≤ n` closed balls of radius `ε`, then `cₙ(T) ≤ 2 * ε`. -/

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Analysis.Normed.Group.Quotient
 import Mathlib.Tactic.NoncommRing
+import TauCeti.Analysis.Normed.Operator.Cover
 
 /-!
 # Compact operators on quotients and bounded sequences
@@ -185,23 +186,14 @@ theorem exists_finiteDimensional_quotient_norm_le (K : E →L[𝕜] F)
     ∃ W : Submodule 𝕜 F, FiniteDimensional 𝕜 W ∧ ‖W.mkQL.comp K‖ ≤ ε := by
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
   have hc₀ : 0 < ‖c‖ := one_pos.trans hc
-  -- Cover a compact set containing the image of the unit ball by finitely many balls of
-  -- radius `ε / ‖c‖`; their centres span `W`.
-  obtain ⟨C, hC, hKC⟩ := hK.image_closedBall_subset_compact 1
-  obtain ⟨s, -, hs, hcover⟩ := hC.finite_cover_balls (div_pos hε hc₀)
+  have hδ : (⟨ε / ‖c‖, (div_pos hε hc₀).le⟩ : NNReal) ≠ 0 :=
+    NNReal.coe_ne_zero.mp (div_pos hε hc₀).ne'
+  obtain ⟨s, -, hs, hcover⟩ :=
+    Metric.exists_finite_isCover_of_totallyBounded hδ (hK.totallyBounded_image_closedBall 1)
   refine ⟨Submodule.span 𝕜 s, FiniteDimensional.span_of_finite 𝕜 hs, ?_⟩
-  refine opNorm_le_of_shell one_pos hε.le hc fun x hx₁ hx₂ ↦ ?_
-  obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 <| hcover <| hKC <|
-    mem_image_of_mem K (mem_closedBall_zero_iff.2 hx₂.le)
-  have hqy : (Submodule.Quotient.mk y : F ⧸ Submodule.span 𝕜 s) = 0 := by
-    simpa using Submodule.subset_span hy
-  calc
-    ‖(Submodule.span 𝕜 s).mkQL.comp K x‖ = ‖(Submodule.span 𝕜 s).mkQL (K x - y)‖ := by
-      simp [hqy]
-    _ ≤ ‖K x - y‖ := Submodule.Quotient.norm_mk_le _ _
-    _ ≤ ε / ‖c‖ := (mem_ball_iff_norm.1 hxy).le
-    _ = ε * (1 / ‖c‖) := by ring
-    _ ≤ ε * ‖x‖ := by gcongr
+  have hle : ‖(Submodule.span 𝕜 s).mkQL.comp K‖ ≤ ε / ‖c‖ * ‖c‖ := by
+    exact_mod_cast K.nnnorm_mkQL_span_comp_le_mul_of_isCover hcover hc
+  exact hle.trans_eq (div_mul_cancel₀ ε hc₀.ne')
 
 end ContinuousLinearMap
 
