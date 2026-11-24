@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.HalfSpin
 public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import TauCeti.LinearAlgebra.Determinant.Basic
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 public import TauCeti.Topology.VectorBundle.Associated.Bilinear
 public import TauCeti.Topology.VectorBundle.Associated.Metric
 public import TauCeti.Topology.VectorBundle.SpinStructure.Basic
