@@ -35,6 +35,8 @@ multiplication by `p` has `lim = 0` and `lim¹ ≃ ℤ_[p] ⧸ ℤ`, so it is no
 
 * `TauCeti.CompactCoefficients.Tower`: a tower of abelian groups, with its shift map
   `Tower.shift`, its limit `Tower.lim` and its first derived limit `Tower.limOne`.
+* `TauCeti.CompactCoefficients.Tower.limLift`: the homomorphism into `lim A` induced by a family
+  of homomorphisms compatible with the transitions.
 * `TauCeti.CompactCoefficients.Tower.toModuleFunctor`: the tower as a tower of `ℤ`-modules.
 * `TauCeti.CompactCoefficients.Tower.limComparison`,
   `TauCeti.CompactCoefficients.Tower.limOneComparison`: the identifications of `lim` and `lim¹`
@@ -111,6 +113,25 @@ theorem mem_lim {a : ∀ n, A.obj n} : a ∈ A.lim ↔ ∀ n, A.map n (a (n + 1)
   rw [lim_eq_ker, AddMonoidHom.mem_ker, funext_iff]
   simp only [shift_apply, Pi.zero_apply, sub_eq_zero]
   exact forall_congr' fun n ↦ eq_comm
+
+/-- Two elements of `lim A` are equal when all their coordinates agree. -/
+@[ext]
+theorem lim_ext {a b : A.lim} (h : ∀ n, (a : ∀ n, A.obj n) n = (b : ∀ n, A.obj n) n) : a = b :=
+  Subtype.ext (funext h)
+
+/-- **The universal property of `lim A`.** A family of homomorphisms `P → Aₙ` compatible with the
+transitions `φₙ` induces a homomorphism `P → lim A`. -/
+def limLift {P : Type*} [AddZeroClass P] (f : ∀ n, P →+ A.obj n)
+    (hf : ∀ n x, A.map n (f (n + 1) x) = f n x) : P →+ A.lim :=
+  AddMonoidHom.codRestrict (AddMonoidHom.pi f) _ fun x ↦ A.mem_lim.2 fun n ↦ hf n x
+
+/-- The homomorphism `P → lim A` induced by a compatible family is computed by the given
+homomorphism `P → Aₙ` in the `n`-th coordinate. -/
+@[simp]
+theorem coe_limLift_apply {P : Type*} [AddZeroClass P] (f : ∀ n, P →+ A.obj n)
+    (hf : ∀ n x, A.map n (f (n + 1) x) = f n x) (x : P) (n : ℕ) :
+    (A.limLift f hf x : ∀ n, A.obj n) n = f n x :=
+  (rfl)
 
 /-- The tower of abelian groups as a tower of `ℤ`-modules. Its terms are the groups `Aₙ` with their
 `ℤ`-module structures, so that the product of its terms is `∏ₙ Aₙ`; the body is exposed for this

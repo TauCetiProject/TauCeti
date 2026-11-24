@@ -47,8 +47,6 @@ cohomology of `ℤ_p(1) = lim_m μ_{p^m}` to the inverse limit of the finite-lev
 * `TauCeti.kummerH1Tower`: the tower `H¹(G_K, μ_p) ← H¹(G_K, μ_{p^2}) ← ⋯` of abelian groups.
 * `TauCeti.kummerH1Limit`: the inverse limit `lim_m H¹(G_K, μ_{p^m})`, with its intrinsic
   `ℤ_p`-module structure `TauCeti.kummerH1LimitPadicModule` for `p` prime.
-* `TauCeti.kummerH1LimitLift`: the homomorphism into `lim_m H¹(G_K, μ_{p^m})` induced by a
-  family of homomorphisms compatible with the transition maps.
 * `TauCeti.padicKummerMap`: the limit Kummer map `A(K) → lim_m H¹(G_K, μ_{p^m})`.
 * `TauCeti.padicKummerEquiv`: the limit Kummer map as a `ℤ_p`-linear isomorphism.
 
@@ -61,6 +59,8 @@ cohomology of `ℤ_p(1) = lim_m μ_{p^m}` to the inverse limit of the finite-lev
 * `TauCeti.padicKummerMap_injective`, `TauCeti.padicKummerMap_surjective`: the limit Kummer map
   is bijective.
 * `TauCeti.padicKummerMap_smul`: the limit Kummer map is `ℤ_p`-linear.
+* `TauCeti.padicKummerEquiv_symm_apply_of_eq`: the coordinates of the inverse of the limit
+  Kummer isomorphism are power classes.
 
 ## References
 
@@ -100,29 +100,6 @@ as the subgroup of compatible families in the product of the cohomology groups. 
 abbrev kummerH1Limit :
     AddSubgroup (∀ m : ℕ, H1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ m))) :=
   (kummerH1Tower p K).lim
-
-/-- Two elements of the inverse limit agree when all their coordinates agree. -/
-@[ext]
-theorem kummerH1Limit_ext {y z : kummerH1Limit p K} (h : ∀ m, y.val m = z.val m) : y = z :=
-  Subtype.ext (funext h)
-
-/-- **The universal property of the inverse limit.** A family of homomorphisms into
-`H¹(G_K, μ_{p^m})` compatible with the transition maps `TauCeti.kummerH1Transition` induces a
-homomorphism into `lim_m H¹(G_K, μ_{p^m})`. -/
-def kummerH1LimitLift {A : Type*} [AddZeroClass A]
-    (f : ∀ m : ℕ, A →+ H1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ m)))
-    (hf : ∀ m x, kummerH1Transition p K m (f (m + 1) x) = f m x) :
-    A →+ kummerH1Limit p K :=
-  AddMonoidHom.codRestrict (AddMonoidHom.pi f) _ fun x ↦
-    (kummerH1Tower p K).mem_lim.2 fun m ↦ hf m x
-
-/-- The induced homomorphism is computed by the given homomorphism at every level. -/
-@[simp]
-theorem kummerH1LimitLift_apply {A : Type*} [AddZeroClass A]
-    (f : ∀ m : ℕ, A →+ H1 (AbsoluteGaloisGroup K) (KummerCoeff K (p ^ m)))
-    (hf : ∀ m x, kummerH1Transition p K m (f (m + 1) x) = f m x) (x : A) (m : ℕ) :
-    (kummerH1LimitLift p K f hf x).val m = f m x := by
-  simp [kummerH1LimitLift]
 
 variable {p K}
 
@@ -169,7 +146,7 @@ invertible in `K`: the Kummer class map `TauCeti.kummerClassMap` in every coordi
 `TauCeti.padicKummerMap_surjective`). -/
 def padicKummerMap (hp : IsUnit (p : K)) :
     Additive (padicCompletionUnits p K) →+ kummerH1Limit p K :=
-  kummerH1LimitLift p K
+  (kummerH1Tower p K).limLift
     (fun m ↦ MonoidHom.toAdditiveLeft ((kummerCoord hp m).toMonoidHom.comp
       ((Pi.evalMonoidHom _ m).comp (padicCompletionUnits p K).subtype)))
     fun m x ↦ by
@@ -184,9 +161,9 @@ variable {p K}
 private theorem padicKummerMap_apply (hp : IsUnit (p : K))
     (x : Additive (padicCompletionUnits p K)) (m : ℕ) :
     (padicKummerMap p K hp x).val m = Multiplicative.toAdd (kummerCoord hp m (x.toMul.val m)) := by
-  simp only [padicKummerMap, kummerH1LimitLift_apply, MonoidHom.coe_toAdditiveLeft,
-    Function.comp_apply, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype,
-    Pi.evalMonoidHom_apply]
+  simp only [padicKummerMap, CompactCoefficients.Tower.coe_limLift_apply,
+    MonoidHom.coe_toAdditiveLeft, Function.comp_apply, MonoidHom.coe_comp,
+    MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype, Pi.evalMonoidHom_apply]
 
 /-- **The coordinates of the limit Kummer map.** If the `m`-th coordinate of `x ∈ A(K)` is the
 power class of `a ∈ Kˣ`, the `m`-th coordinate of its image is the Kummer class of `a` in
@@ -317,6 +294,17 @@ variable {p K}
 theorem padicKummerEquiv_apply (hp : IsUnit (p : K)) (x : Additive (padicCompletionUnits p K)) :
     padicKummerEquiv p K hp x = padicKummerMap p K hp x :=
   (rfl)
+
+/-- **The coordinates of the inverse limit Kummer isomorphism.** If the `m`-th coordinate of
+`y ∈ lim_m H¹(G_K, μ_{p^m})` is the Kummer class of `a ∈ Kˣ`, the `m`-th coordinate of its
+preimage in `A(K)` is the power class of `a`. -/
+theorem padicKummerEquiv_symm_apply_of_eq (hp : IsUnit (p : K)) {y : kummerH1Limit p K}
+    {m : ℕ} {a : Kˣ}
+    (h : Multiplicative.toAdd (kummerMap K (p ^ m) (hp.natCast_pow m) a) = y.val m) :
+    ((padicKummerEquiv p K hp).symm y).toMul.val m = a := by
+  refine (kummerCoord hp m).injective (Multiplicative.toAdd.injective ?_)
+  rw [← padicKummerMap_apply, ← padicKummerEquiv_apply, LinearEquiv.apply_symm_apply,
+    kummerCoord_mk, h]
 
 end PadicModule
 
