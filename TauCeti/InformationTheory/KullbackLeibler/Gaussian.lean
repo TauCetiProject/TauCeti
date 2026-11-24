@@ -58,6 +58,13 @@ nondegenerate law charges no point, while the point mass is carried by one.
   between multivariate normal laws.
 * A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, 2009, Corollary 2.1(i),
   p. 87, for unit variance.
+
+The common-variance statements `Real.klDiv_gaussianReal` and `TauCeti.klDiv_multivariateGaussian`,
+and the reduction of the isotropic case to its coordinates by tensorization, are adapted from the
+lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
+`CKSD/Nonparametric/LowerBounds/Gaussian.lean`, theorems `CKSD.klDiv_gaussianReal_gaussianReal`
+(common variance, by exponential tilting) and `CKSD.klDiv_pi_gaussianReal`. The formula for
+different variances and its density-based proof on the real line are not drawn from it.
 -/
 
 public section
