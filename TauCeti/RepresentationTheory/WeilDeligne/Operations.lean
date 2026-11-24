@@ -126,26 +126,26 @@ theorem Hom.prodMap_comp (f : Hom D₂ D₃) (g : Hom D₂' D₃') (f' : Hom D�
 /-- The inclusion of the first summand into a direct sum of parameters. -/
 def Hom.inl : Hom D (D.prod D') where
   toLinearMap := LinearMap.inl E V V'
-  isIntertwining' w := LinearMap.ext fun _ ↦ Prod.ext rfl (map_zero (D'.r w)).symm
-  comp_N := LinearMap.ext fun _ ↦ Prod.ext rfl (map_zero D'.N).symm
+  isIntertwining' _ := LinearMap.ext fun _ ↦ by simp
+  comp_N := LinearMap.ext fun _ ↦ by simp
 
 /-- The inclusion of the second summand into a direct sum of parameters. -/
 def Hom.inr : Hom D' (D.prod D') where
   toLinearMap := LinearMap.inr E V V'
-  isIntertwining' w := LinearMap.ext fun _ ↦ Prod.ext (map_zero (D.r w)).symm rfl
-  comp_N := LinearMap.ext fun _ ↦ Prod.ext (map_zero D.N).symm rfl
+  isIntertwining' _ := LinearMap.ext fun _ ↦ by simp
+  comp_N := LinearMap.ext fun _ ↦ by simp
 
 /-- The projection of a direct sum of parameters onto its first summand. -/
 def Hom.fst : Hom (D.prod D') D where
   toLinearMap := LinearMap.fst E V V'
-  isIntertwining' _ := rfl
-  comp_N := rfl
+  isIntertwining' _ := LinearMap.ext fun _ ↦ by simp
+  comp_N := LinearMap.ext fun _ ↦ by simp
 
 /-- The projection of a direct sum of parameters onto its second summand. -/
 def Hom.snd : Hom (D.prod D') D' where
   toLinearMap := LinearMap.snd E V V'
-  isIntertwining' _ := rfl
-  comp_N := rfl
+  isIntertwining' _ := LinearMap.ext fun _ ↦ by simp
+  comp_N := LinearMap.ext fun _ ↦ by simp
 
 /-- The morphism into a direct sum of parameters given by a pair of morphisms. -/
 def Hom.prod (f : Hom D₃ D₁) (g : Hom D₃ D₁') : Hom D₃ (D₁.prod D₁') where
