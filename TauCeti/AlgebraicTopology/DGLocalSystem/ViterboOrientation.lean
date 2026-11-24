@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Orientation
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Orientation.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.FreeLoop
 public import TauCeti.Topology.PathSpace.Moore.Rotation
 
