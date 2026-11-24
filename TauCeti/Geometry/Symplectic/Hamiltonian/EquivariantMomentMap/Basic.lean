@@ -132,7 +132,7 @@ nondegenerate form every component of the moment map Poisson-commutes with the i
   preconnected group acting by symplectomorphisms of a preconnected manifold, a moment map whose
   cocycle vanishes at one point is coadjoint-equivariant.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mfderiv_momentDefect_apply_eq_zero`: for an element acting
-  symplectically, the defect of a moment map is locally constant in the point.
+  symplectically, the defect of a moment map has vanishing differential in the point.
 * `SmoothTwoForm.IsMomentMap.momentDefect_eq_of_momentCocycle_eq_zero_of_mem_connectedComponent`:
   on any manifold, if the cocycle vanishes at `x` then `θ(·, x)` is constant on each connected
   component of `G`.
@@ -340,8 +340,8 @@ private theorem contMDiff_momentDefect_apply_left
     ((h.comp (Lie.tangentAd (I := I) g⁻¹ :
       GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G)).contMDiff ξ)
 
-/-- **The defect of a moment map is locally constant in the point.** If `μ` is a moment map of the
-action by fundamental vector fields and `g` acts by a symplectomorphism, every component
+/-- **The defect of a moment map has vanishing differential in the point.** If `μ` is a moment map
+of the action by fundamental vector fields and `g` acts by a symplectomorphism, every component
 `x ↦ θ(g, x)(ξ)` of the defect has vanishing differential: `x ↦ μ (g • x)` and
 `x ↦ Ad*_g (μ x)` are moment maps of the same action `ξ ↦ (Ad_{g⁻¹} ξ)_M`. No connectedness of the
 manifold is needed. -/
@@ -516,8 +516,8 @@ theorem momentDefect_eq_of_momentCocycle_eq_zero_of_mem_connectedComponent
   refine mfderiv_eq_zero_of_mfderiv_mul_left_one_eq_zero ?_
   rw [← mvfderiv_eq_zero_iff]
   /- Near `g`, the defect is `θ(g k, x)(ξ) = θ(g, k • x)(ξ) + θ(k, x)(Ad_{g⁻¹} ξ)`. Its derivative
-  in `k` at `1` vanishes: the first term because `θ(g, ·)` is locally constant, the second because
-  the cocycle at `x` vanishes. -/
+  in `k` at `1` vanishes: the first term because `θ(g, ·)` has vanishing differential, the second
+  because the cocycle at `x` vanishes. -/
   have htrans : (fun k : G ↦ momentDefect μ (g * k) x ξ) = fun k ↦
       momentDefect μ g (k • x) ξ +
         momentDefect μ k x (Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ) := by
