@@ -44,6 +44,8 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
   have hm : μ P M ((ihom M).obj N) ≫ σ.app (M ⊗ (ihom M).obj N) =
       (σ.app M ⊗ₘ σ.app ((ihom M).obj N)) ≫
         μ (Scheme.Modules.restrictFunctor j) M ((ihom M).obj N) := by
+    -- Pin the direct oplax and braided lax instances: rewriting `δ_μ P` directly
+    -- uses the monoidal projections, which `rw` does not identify with these instances.
     have hδμ : δ P M ((ihom M).obj N) ≫ μ P M ((ihom M).obj N) = 𝟙 _ :=
       Functor.Monoidal.δ_μ P M ((ihom M).obj N)
     apply (cancel_epi (δ P M ((ihom M).obj N))).mp
@@ -57,6 +59,8 @@ private theorem isIso_pullbackIhomComparison_app_of_restrictFunctor
   have h : (pullbackIhomComparison M j).app N = (P.ihomComparison M).app N := by
     rw [pullbackIhomComparison_app_eq_curry, Functor.ihomComparison_app_eq_curry,
       ← Functor.Monoidal.inv_δ P]
+    -- Unfolding `P` and reducing the oplax projection of `pullbackBraided` to
+    -- `pullbackOplaxMonoidal` identifies the two curried maps.
     rfl
   exact h ▸ hP
 

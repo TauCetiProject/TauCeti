@@ -134,11 +134,14 @@ instance pullbackBraided : (pullback f).Braided := by
       -- Express full-subcategory composition on underlying modules before rewriting inverses.
       change (μ H E F).hom ≫ _ = _ ≫ (μ H F E).hom
       have hμ (E F : QuasicoherentSheaf Y) : (μ H E F).hom =
-          inv (δ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
-            Scheme.Modules.pullback f) E F) := by
+          μ ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
+            Scheme.Modules.pullback f) E F := by
         rw [← Functor.Monoidal.inv_δ, ObjectProperty.hom_inv]
-        rfl
-      rw [hμ, hμ, Functor.Monoidal.inv_δ, Functor.Monoidal.inv_δ]
+        -- The lifted oplax tensor comparison forgets to the module comparison.
+        exact Functor.Monoidal.inv_δ
+          ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
+            Scheme.Modules.pullback f) E F
+      rw [hμ, hμ]
       exact @Functor.LaxBraided.braided _ _ _ _ _ _ _ _
         ((ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f)
         inferInstance E F }
