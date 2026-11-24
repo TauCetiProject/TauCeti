@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import TauCeti.AlgebraicGeometry.Grassmannian.Proper
-public import TauCeti.AlgebraicGeometry.Grassmannian.Relative
+public import TauCeti.AlgebraicGeometry.Grassmannian.Relative.Basic
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import Mathlib.AlgebraicGeometry.PullbackCarrier
 
@@ -108,7 +108,7 @@ instance isIso_grassmannianToBase_zero : IsIso (grassmannianToBase E 0) :=
 variable {E k}
 
 /-- If the sections of a sheaf of finite type over the affine opens are projective of constant
-rank `n`, the relative Grassmannian `G(n, E) ⟶ X` is an isomorphism. -/
+rank `k`, the relative Grassmannian `G(k, E) ⟶ X` is an isomorphism. -/
 theorem isIso_grassmannianToBase_of_rankAtStalk_eq [E.IsFiniteType]
     (hE : ∀ U : X.affineOpens, Module.Projective Γ(X, U.val) Γ(E, U.val))
     (h : ∀ (U : X.affineOpens) p, Module.rankAtStalk (R := Γ(X, U.val)) Γ(E, U.val) p = k) :
