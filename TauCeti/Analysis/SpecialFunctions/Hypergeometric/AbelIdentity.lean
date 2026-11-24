@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.ODE.Complex.ScalarLinear
+import TauCeti.Analysis.ODE.Complex.Wronskian
 import TauCeti.Analysis.ODE.Wronskian
 
 /-!
