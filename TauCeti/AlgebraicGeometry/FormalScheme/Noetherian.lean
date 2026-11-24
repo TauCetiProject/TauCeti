@@ -91,10 +91,11 @@ private theorem exists_mem_basicOpen_isNoetherianRing [IsNoetherianRing A] (χ :
   -- the preimage of `D(b)` is the basic open set of the pulled-back global section
   set a := (topSectionsIso A).hom (χ.c.app (op ⊤) ((topSectionsIso B).inv b))
   have hpre : (Opens.map χ.base).obj (basicOpen b) = basicOpen a := by
-    have h := toRingedSpace_basicOpen ((topSectionsIso B).inv b)
-    rw [Iso.inv_hom_id_apply] at h
-    exact (congrArg (Opens.map χ.base).obj h.symm).trans
-      ((LocallyRingedSpace.preimage_basicOpen χ _).trans (toRingedSpace_basicOpen _))
+    have ha : χ.c.app (op ⊤) ((topSectionsIso B).inv b) = (topSectionsIso A).inv a :=
+      (Iso.hom_inv_id_apply _ _).symm
+    exact (congrArg (Opens.map χ.base).obj (basicOpen_topSectionsIso_inv b).symm).trans
+      ((LocallyRingedSpace.preimage_basicOpen χ _).trans
+        ((congrArg _ ha).trans (basicOpen_topSectionsIso_inv a)))
   -- `χ` identifies `D(a) ≅ Spf A_{a}` with `D(b) ≅ Spf B_{b}`
   let f₁ := (Spf A).ofRestrict (basicOpen a).isOpenEmbedding ≫ χ
   let f₂ := (Spf B).ofRestrict (basicOpen b).isOpenEmbedding

@@ -57,7 +57,7 @@ A time-dependent function `F(t, x)` is an autonomous function on the extended ph
 Poisson bracket with `K` there is `∂_t F + {F_t, H_t}`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_extendedHamiltonian`). This is the rate of
 change of `F` along every solution of the nonautonomous equation
-(`TauCeti.SmoothTwoForm.IsNondegenerate.hasDerivAt_apply_of_hasMFDerivAt`). On a Hausdorff
+(`TauCeti.SmoothTwoForm.hasDerivAt_apply_of_hasMFDerivAt`). On a Hausdorff
 boundaryless finite-dimensional manifold, for a jointly `C²` Hamiltonian, it characterises the
 conserved quantities of the maximal time-dependent Hamiltonian flow
 `TauCeti.timeDependentFlowOf`: `F` is constant along the flow wherever the flow is defined exactly
@@ -298,6 +298,18 @@ theorem IsHamiltonianVectorField.isMIntegralCurve_extended {H : ℝ → M → �
     IsMIntegralCurve (fun u ↦ (γ u, (u, c - H u (γ u)))) (extendedVectorField H X) :=
   fun u ↦ (hX u).hasMFDerivAt_extended_of_hasMFDerivAt (hH _) (hγ u) c
 
+/-- **The rate of change of a time-dependent function along a solution.** If the curve `γ` solves
+the nonautonomous equation `γ' = X_{H_s}(γ)` at time `s` and `F` is differentiable at
+`(s, γ s)`, then `u ↦ F(u, γ u)` has derivative `∂_t F + {F_s, H_s}` at `s`. -/
+theorem hasDerivAt_apply_of_hasMFDerivAt {F H : ℝ → M → ℝ} {γ : ℝ → M} {s : ℝ}
+    (hF : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (uncurry F) (s, γ s))
+    (hγ : HasMFDerivAt 𝓘(ℝ) I γ s
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (H s) (γ s)))) :
+    HasDerivAt (fun u ↦ F u (γ u))
+      (deriv (fun u ↦ F u (γ s)) s + σ.poissonBracket (F s) (H s) (γ s)) s := by
+  rw [σ.poissonBracket_eq_mvfderiv]
+  exact hγ.hasDerivAt_comp_graph hF
+
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (hσ : σ.IsNondegenerate)
@@ -344,25 +356,13 @@ theorem poissonBracket_extendedHamiltonian {F H : ℝ → M → ℝ} {t : ℝ} {
     funext fun y ↦ by rw [extendedHamiltonian_apply, add_sub_cancel_left]
   have hsnd : MDifferentiableAt (I.prod 𝓘(ℝ, ℝ × ℝ)) 𝓘(ℝ) (fun y : M × (ℝ × ℝ) ↦ y.2.2)
       (x, (t, e)) := differentiableAt_snd.mdifferentiableAt.comp _ mdifferentiableAt_snd
-  rw [hσ.extended.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_extendedHamiltonian hH,
+  rw [σ.extended.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_extendedHamiltonian hH,
     hFK, mvfderiv_fun_sub (mdifferentiableAt_extendedHamiltonian hF) hsnd,
     sub_apply, mvfderiv_extendedHamiltonian_apply hF,
-    hσ.poissonBracket_eq_mvfderiv]
+    σ.poissonBracket_eq_mvfderiv]
   simp only [mvfderiv_momentum_apply, extendedVectorField_fst, extendedVectorField_snd_fst,
     extendedVectorField_snd_snd]
   ring
-
-/-- **The rate of change of a time-dependent function along a solution.** If the curve `γ` solves
-the nonautonomous equation `γ' = X_{H_s}(γ)` at time `s` and `F` is differentiable at
-`(s, γ s)`, then `u ↦ F(u, γ u)` has derivative `∂_t F + {F_s, H_s}` at `s`. -/
-theorem hasDerivAt_apply_of_hasMFDerivAt {F H : ℝ → M → ℝ} {γ : ℝ → M} {s : ℝ}
-    (hF : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (uncurry F) (s, γ s))
-    (hγ : HasMFDerivAt 𝓘(ℝ) I γ s
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (H s) (γ s)))) :
-    HasDerivAt (fun u ↦ F u (γ u))
-      (deriv (fun u ↦ F u (γ s)) s + σ.poissonBracket (F s) (H s) (γ s)) s := by
-  rw [hσ.poissonBracket_eq_mvfderiv]
-  exact hγ.hasDerivAt_comp_graph hF
 
 /-- **Conserved quantities of a time-dependent Hamiltonian flow.** On a Hausdorff boundaryless
 finite-dimensional manifold with a nondegenerate form, let `H` be a jointly `C²` time-dependent
@@ -384,7 +384,7 @@ theorem forall_apply_timeDependentFlowOf_eq_iff [T2Space M] [BoundarylessManifol
       HasDerivAt (fun r ↦ F r (timeDependentFlowOf X s r x))
         (deriv (fun r ↦ F r (timeDependentFlowOf X s u x)) u +
           σ.poissonBracket (F u) (H u) (timeDependentFlowOf X s u x)) u :=
-    fun h ↦ hσ.hasDerivAt_apply_of_hasMFDerivAt (hF _) (hasMFDerivAt_timeDependentFlowOf hX h)
+    fun h ↦ hasDerivAt_apply_of_hasMFDerivAt (hF _) (hasMFDerivAt_timeDependentFlowOf hX h)
   constructor
   · intro hcons t x
     -- The function `u ↦ F(u, φ_{t,u} x)` is constant near `t`, where the flow is defined.

@@ -26,6 +26,8 @@ local frame.
 
 ## Main results
 
+* `CovariantDerivative.contMDiff_covariantDerivative`: the covariant derivative `∇σ` of a
+  `C^(n + 1)` section is a `C^n` section of `Hom(TM, V)`.
 * `CovariantDerivative.contMDiffAt_apply`: the pointwise version of the next result.
 * `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.

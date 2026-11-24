@@ -116,6 +116,9 @@ estimates do not see the boundary.
   lower-order term in divergence form is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_matrixBilinearForm_gradient`: the principal
   density `⟨a ∇u, ∇w⟩` of two Sobolev functions is integrable.
+* `TauCeti.PDE.UniformlyEllipticOn.continuous_energyFormIntegral_jetField_left`: for
+  `v ∈ W^{1,q}(Ω)` the drift- and mass-free form `u ↦ a(u, v)` is continuous on `W^{1,p}(Ω)`,
+  `p` and `q` Hölder conjugate.
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormH1_le`: boundedness of the energy form, with
   explicit constant `Λ + β + γ`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self`: Gårding's inequality on `H¹(Ω)`.
@@ -541,14 +544,6 @@ theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu
   set b := EuclideanSpace.basisFun ι ℝ
   have hloc : ∀ j, LocallyIntegrableOn (fun x => innerSL ℝ (W1p.gradient w x) (b j)) Omega mu :=
     fun j => ((W1p.hasWeakFDerivOn w).hasWeakLineDerivOn (b j)).locallyIntegrableOn_deriv
-  -- Pointwise, `⟨η, A ξ⟩ = ∑ⱼ ⟨η, cⱼ⟩ ξⱼ`.
-  have hB : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ =
-      ∑ j, ⟪η, WithLp.toLp 2 (Aᵀ j)⟫_ℝ * innerSL ℝ ξ (b j) := fun η ξ => by
-    simp only [b, innerSL_apply_apply, EuclideanSpace.inner_basisFun_real]
-    simp only [matrixBilinearForm_apply, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
-      Matrix.transpose_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
   rw [energyFormH1_zero_zero_eq_setIntegral]
   calc ∫ x in Omega, matrixBilinearForm A
         (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 ψ) x) (W1p.gradient w x) ∂mu
@@ -556,10 +551,11 @@ theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu
           innerSL ℝ (W1p.gradient w x) (b j) ∂mu := by
         refine integral_congr_ae ?_
         filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 ψ] with x hx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, hB]
+        -- Pointwise, `⟨η, A ξ⟩ = ∑ⱼ ⟨η, cⱼ⟩ ξⱼ`.
+        rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_eq_sum_inner_transpose]
         refine Finset.sum_congr rfl fun j _ => ?_
         rw [smul_eq_mul, (ψ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
-          inner_gradient_left]
+          inner_gradient_left, innerSL_apply_apply]
     _ = ∑ j, ∫ x in Omega, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (WithLp.toLp 2 (Aᵀ j)) •
           innerSL ℝ (W1p.gradient w x) (b j) ∂mu :=
         integral_finsetSum _ fun j _ =>
@@ -984,6 +980,40 @@ theorem integrable_matrixBilinearForm_gradient
   simpa using h.integrable_energyIntegrand_jetField ha (b := 0) (c := 0) (beta := 0)
     (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u w
+
+open scoped ENNReal in
+/-- **Continuity of the energy form across Hölder conjugate exponents.** For a measurable
+uniformly elliptic `a` and `v ∈ W^{1,q}(Ω)`, the energy form `u ↦ a(u, v)` with no drift and no
+mass is continuous on `W^{1,p}(Ω)` for Hölder conjugate `p` and `q`: it is integration of `∇u`
+against the field `aᵀ ∇v ∈ L^q(Ω)`. -/
+theorem continuous_energyFormIntegral_jetField_left {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+    [q.HolderConjugate p] (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (v : W1p mu Omega q) :
+    Continuous fun u : W1p mu Omega p =>
+      energyFormIntegral (mu.restrict Omega) a 0 0 (jetField u) (jetField v) := by
+  -- The field `x ↦ ⟨a(x) ·, ∇v(x)⟩` of linear functionals lies in `L^q(Ω)`.
+  set G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] ℝ :=
+    fun x => matrixBilinearForm (a x) (W1p.gradient v x)
+  have hG : MemLp G q (mu.restrict Omega) := by
+    refine (Lp.memLp (W1p.gradient v)).of_le_mul (c := Lam)
+      ((continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable
+        ((continuous_matrixBilinearForm.comp_aestronglyMeasurable ha).prodMk
+          (Lp.aestronglyMeasurable _))) ?_
+    filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
+    exact ((matrixBilinearForm (a x)).le_opNorm _).trans
+      (mul_le_mul_of_nonneg_right (h.opNorm_matrixBilinearForm_le hx) (norm_nonneg _))
+  -- Integration against it is a continuous linear functional of the gradient.
+  set L := (ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)).lpPairing
+    (mu.restrict Omega) q p (hG.toLp G)
+  have hL : (fun u : W1p mu Omega p =>
+      energyFormIntegral (mu.restrict Omega) a 0 0 (jetField u) (jetField v)) =
+      fun u => L (W1p.gradientL u) := funext fun u => by
+    rw [energyFormIntegral_zero_zero_eq_integral, ContinuousLinearMap.lpPairing_eq_integral]
+    refine integral_congr_ae ?_
+    filter_upwards [hG.coeFn_toLp] with x hx
+    simp only [ContinuousLinearMap.id_apply, hx, W1p.gradientL_apply, jetField_apply, G]
+  rw [hL]
+  exact L.continuous.comp W1p.gradientL.continuous
 
 /-- **Boundedness of the energy form on `H¹(Ω)`.** For a uniformly elliptic principal coefficient
 with upper constant `Λ`, a drift bounded by `β` and a mass coefficient bounded by `γ`,
