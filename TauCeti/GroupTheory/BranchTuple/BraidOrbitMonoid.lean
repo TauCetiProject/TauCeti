@@ -41,6 +41,8 @@ it by the ordered product of `x`, so an element of product one is central.
 
 * `TauCeti.HurwitzRel c`: the relations `[a][b] ~ [a b a⁻¹][a]` among words in `c`.
 * `TauCeti.BraidOrbitMonoid c`: the monoid presented by these relations.
+* `TauCeti.BraidOrbitMonoid.lift`: the homomorphism out of the braid-orbit monoid determined by
+  a map on `c` satisfying the Hurwitz relations.
 * `TauCeti.BraidOrbitMonoid.ofTuple`: the element represented by a `c`-valued tuple.
 * `TauCeti.BraidOrbitMonoid.product`: the ordered product, as a homomorphism to `G`.
 * `TauCeti.BraidOrbitMonoid.classMultiset` and `TauCeti.BraidOrbitMonoid.length`: the multiset of
@@ -103,6 +105,23 @@ theorem of_mul_of (a b a' : c) (h : (a' : G) = a * b * (a : G)⁻¹) :
   simpa only [PresentedMonoid.of, map_mul] using
     PresentedMonoid.mk_eq_mk_of_rel (HurwitzRel.move a b a' h)
 
+/-- The universal property of the braid-orbit monoid: a map `f` from `c` to a monoid satisfying
+`f a * f b = f a' * f a` whenever `a' = a b a⁻¹` extends to a homomorphism sending each generator
+`[a]` to `f a`. Two homomorphisms out of the braid-orbit monoid agreeing on generators are equal
+by `PresentedMonoid.ext`. -/
+def lift {M : Type*} [Monoid M] (f : c → M)
+    (hf : ∀ a b a' : c, (a' : G) = a * b * (a : G)⁻¹ → f a * f b = f a' * f a) :
+    BraidOrbitMonoid c →* M :=
+  PresentedMonoid.lift f fun _ _ h ↦ by
+    obtain ⟨a, b, a', h⟩ := h
+    simpa only [map_mul, FreeMonoid.lift_eval_of] using hf a b a' h
+
+@[simp]
+theorem lift_of {M : Type*} [Monoid M] (f : c → M)
+    (hf : ∀ a b a' : c, (a' : G) = a * b * (a : G)⁻¹ → f a * f b = f a' * f a) (a : c) :
+    lift f hf (PresentedMonoid.of (HurwitzRel c) a) = f a :=
+  PresentedMonoid.lift_of _ _
+
 /-! ### Elements represented by tuples -/
 
 /-- The element of the braid-orbit monoid represented by a `c`-valued tuple `t` of length `r`:
@@ -148,13 +167,11 @@ theorem exists_ofTuple_eq (x : BraidOrbitMonoid c) : ∃ (r : ℕ) (t : Fin r �
 /-- The ordered product of a representative, as a homomorphism from the braid-orbit monoid to `G`
 sending each generator `[a]` to `a`. -/
 def product : BraidOrbitMonoid c →* G :=
-  PresentedMonoid.lift Subtype.val fun _ _ h ↦ by
-    obtain ⟨a, b, a', h⟩ := h
-    simp [h]
+  lift Subtype.val fun _ _ _ h ↦ by simp [h]
 
 @[simp]
 theorem product_of (a : c) : product (PresentedMonoid.of (HurwitzRel c) a) = a :=
-  PresentedMonoid.lift_of _ _
+  lift_of _ _ _
 
 /-- The ordered product of the element represented by a tuple is the ordered product of the
 tuple. -/
@@ -167,13 +184,12 @@ theorem product_ofTuple (t : Fin r → c) :
 /-- The multiset of conjugacy classes of the entries of a representative: the multiplicity of a
 class `C` is the number of entries lying in `C`. -/
 def classMultiset (x : BraidOrbitMonoid c) : Multiset (ConjClasses G) :=
-  Multiplicative.toAdd <| PresentedMonoid.lift
+  Multiplicative.toAdd <| lift
     (fun a : c ↦ Multiplicative.ofAdd ({ConjClasses.mk (a : G)} : Multiset (ConjClasses G)))
-    (fun _ _ h ↦ by
-      obtain ⟨a, b, a', h⟩ := h
+    (fun a b a' h ↦ by
       have hclass : ConjClasses.mk (a' : G) = ConjClasses.mk (b : G) :=
         ConjClasses.mk_eq_mk_iff_isConj.mpr (isConj_iff.mpr ⟨(a : G)⁻¹, by rw [h]; group⟩)
-      simp only [map_mul, FreeMonoid.lift_eval_of, hclass]
+      rw [hclass]
       exact mul_comm _ _) x
 
 @[simp]
