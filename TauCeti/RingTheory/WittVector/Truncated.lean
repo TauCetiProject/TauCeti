@@ -57,7 +57,7 @@ theorem wittAdd_one :
 theorem add_coeff_one (x y : WittVector p R) :
     (x + y).coeff 1 =
       x.coeff 1 + y.coeff 1 + TauCeti.DeltaRing.addCorrection p (x.coeff 0) (y.coeff 0) := by
-  simp [add_coeff, wittAdd_one, peval, TauCeti.DeltaRing.addCorrection_def]
+  simp [add_coeff, wittAdd_one, peval, TauCeti.DeltaRing.map_addCorrection]
 
 end WittVector
 
