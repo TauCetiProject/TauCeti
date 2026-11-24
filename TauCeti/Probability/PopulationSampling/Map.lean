@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Map
 public import TauCeti.Probability.PopulationSampling.Distinct
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.Logic.Function.Update
 import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 
@@ -242,11 +243,11 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_inject
         (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
       2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
-  rw [sampleWithoutReplacement_def, sampleWithReplacement_def, tvDist,
-    etvDist_samplePopulation_dirac_eq_id _ _ hx, ← tvDist, ← sampleWithoutReplacement_def,
-    ← sampleWithReplacement_def]
-  exact tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq Function.injective_id e
-    (Set.to_countable _).measurableSet
+  have hle : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) ≤
+      (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+    exact_mod_cast Nat.descFactorial_le_pow _ _
+  rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective hx e]
+  simp [ENNReal.toReal_one_sub_div hle]
 
 end DistinctMeasurableSingletons
 

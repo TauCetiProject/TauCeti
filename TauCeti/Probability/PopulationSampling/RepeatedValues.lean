@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.PopulationSampling.Map
 public import TauCeti.Probability.PopulationSampling.OnePair
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Sampling discrepancy for populations with a repeated value
@@ -276,13 +277,13 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_in
         (sampleWithReplacement (ι := ι) (Measure.dirac x)) <
       2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
-  obtain ⟨a, -⟩ := not_injective_iff.1 hx
-  have : Nonempty (ι → κ) := ⟨fun _ => a⟩
   have h := ENNReal.toReal_strict_mono (by finiteness)
     (etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
       (ι := ι) hx hm)
-  rwa [← tvDist, ENNReal.toReal_mul, ENNReal.toReal_ofNat, ← uniformOn_not_injective_apply_eq,
-    ← measureReal_def, uniformOn_real_not_injective_apply_eq] at h
+  have hle : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) ≤
+      (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+    exact_mod_cast Nat.descFactorial_le_pow _ _
+  simpa [tvDist, ENNReal.toReal_one_sub_div hle] using h
 
 /-- **Distinct values are the only populations attaining the collision probability.** For
 `2 ≤ |ι| ≤ |κ|` and a measurable all-distinct event, the largest event excess of sampling
