@@ -47,6 +47,8 @@ it classifies there glue along the Zariski cover
 * `Module.Grassmannian.toSchemeHom_map`: naturality of `toSchemeHom` in the algebra.
 * `Module.Grassmannian.toSchemeHom_injective` and `Module.Grassmannian.exists_toSchemeHom_eq`:
   every morphism over `Spec R` classifies a unique point.
+* `Module.Grassmannian.affinePoint_induction`: a property of all morphisms `Spec B ⟶ G(k, M)` holds
+  once it holds for the morphisms `toSchemeHom N`.
 * `Module.Grassmannian.isEmpty_scheme_of_rankAtStalk_lt`, `Module.Grassmannian.isIso_toSpec_zero`,
   and `Module.Grassmannian.isIso_toSpec_of_rankAtStalk_eq`: extreme-dimension Grassmannian schemes.
 
@@ -414,6 +416,26 @@ theorem exists_toSchemeHom_eq (h : Spec (.of A) ⟶ scheme R M k)
     (fun r ↦ (chartHomEquiv R (x r) _ (g r)).val) hs hcompat
   exact ⟨N, TauCeti.AlgebraicGeometry.Spec.hom_ext_of_span_eq_top s hs fun r ↦
     ((specMap_comp_toSchemeHom_eq_iff N _ _ (g r)).2 (hN r)).trans (hg r).symm⟩
+
+/-- **Induction on affine points of the Grassmannian scheme.** Every morphism
+`a : Spec B ⟶ G(k, M)` classifies a point over `B`, for the algebra structure of `B` over `R` read
+off from the composite `Spec B ⟶ G(k, M) ⟶ Spec R`, and for an `R₀`-algebra `R` the induced one
+over `R₀`. So a property of such morphisms holds as soon as it holds for every morphism
+`toSchemeHom N` classifying a point `N` over an `R`-algebra `A` with a compatible `R₀`-algebra
+structure. -/
+@[elab_as_elim]
+theorem affinePoint_induction {R₀ : Type u} [CommRing R₀] [Algebra R₀ R]
+    {motive : ∀ {B : CommRingCat.{u}}, (Spec B ⟶ scheme R M k) → Prop}
+    (toSchemeHom : ∀ (A : Type u) [CommRing A] [Algebra R A] [Algebra R₀ A]
+      [IsScalarTower R₀ R A] (N : G(k, A ⊗[R] M; A)), motive (toSchemeHom N))
+    {B : CommRingCat.{u}} (a : Spec B ⟶ scheme R M k) : motive a := by
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (a ≫ toSpec R M k)
+  let _ : Algebra R B := φ.hom.toAlgebra
+  let _ : Algebra R₀ B := (φ.hom.comp (algebraMap R₀ R)).toAlgebra
+  have : IsScalarTower R₀ R B := .of_algebraMap_eq' rfl
+  obtain ⟨N, rfl⟩ := exists_toSchemeHom_eq (A := B) a
+    (hφ.symm.trans (by rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]))
+  exact toSchemeHom B N
 
 end ToSchemeHom
 
