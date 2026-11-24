@@ -39,7 +39,8 @@ hypothesis on `X'`.
   satisfies the identity characterizing the base change of `g ∘ f`, so `(g ∘ f)' = g' ∘ f'`.
 
 The base change `πX` of a universally open morphism such as `Spec K' ⟶ Spec K` pulls dense opens
-back to dense opens (`AlgebraicGeometry.Scheme.dense_preimage_of_isPullback`), which supplies the
+back to dense opens
+(`AlgebraicGeometry.Scheme.dense_preimage_of_isPullback_of_universallyOpen`), which supplies the
 density hypothesis of `AlgebraicGeometry.Scheme.PartialMap.baseChange`.
 -/
 
