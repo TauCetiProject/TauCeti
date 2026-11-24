@@ -93,6 +93,17 @@ instance : CoeSort (EquivariantModuleCat.{v} A Γ) (Type v) :=
 
 attribute [coe] carrier
 
+variable (A Γ) in
+/-- The equivariant module with underlying type `M`. -/
+abbrev of (M : Type v) [AddCommGroup M] [Module A M] [DistribMulAction Γ M]
+    [SMulDistribClass Γ A M] : EquivariantModuleCat.{v} A Γ :=
+  ⟨M⟩
+
+@[simp]
+theorem coe_of (M : Type v) [AddCommGroup M] [Module A M] [DistribMulAction Γ M]
+    [SMulDistribClass Γ A M] : (of A Γ M : Type v) = M :=
+  rfl
+
 /-- A morphism of equivariant modules: an `A`-linear map commuting with the action of `Γ`. -/
 structure Hom (X Y : EquivariantModuleCat.{v} A Γ) where
   /-- The underlying `A`-linear map. -/
@@ -148,19 +159,30 @@ theorem isoMk_inv_hom {X Y : EquivariantModuleCat.{v} A Γ} (e : X ≃ₗ[A] Y)
 
 /-! ### Equivariant modules as modules over the skew monoid algebra -/
 
+/-- The equivariance condition as the commutation hypothesis of
+`SkewMonoidAlgebra.liftNCRingHom`. -/
+private theorem toAddMonoidEnd_comm (X : EquivariantModuleCat.{v} A Γ) (a : A) (g : Γ) :
+    Module.toAddMonoidEnd A X (g • a) * DistribMulAction.toAddMonoidEnd Γ X g =
+      DistribMulAction.toAddMonoidEnd Γ X g * Module.toAddMonoidEnd A X a :=
+  AddMonoid.End.ext _ fun x ↦ (smul_distrib_smul g a x).symm
+
 /-- The action of the skew monoid algebra `A ⋊ Γ` on an equivariant module `X`, as a ring
 homomorphism to the additive endomorphisms of `X`: `single g a` acts by `x ↦ a • g • x`. -/
 def toEnd (X : EquivariantModuleCat.{v} A Γ) : SkewMonoidAlgebra A Γ →+* AddMonoid.End X :=
   SkewMonoidAlgebra.liftNCRingHom (Module.toAddMonoidEnd A X)
-    (DistribMulAction.toAddMonoidEnd Γ X) fun {a g} ↦
-      AddMonoidHom.ext fun x ↦ (smul_distrib_smul g a x).symm
+    (DistribMulAction.toAddMonoidEnd Γ X) (toAddMonoidEnd_comm X _ _)
+
+/-- `SkewMonoidAlgebra.liftNCRingHom` on `single g a` is `f a * u g`. -/
+private theorem liftNCRingHom_single {R : Type*} [Semiring R]
+    (f : A →+* R) (u : Γ →* R) (h : ∀ {a : A} {g : Γ}, f (g • a) * u g = u g * f a) (g : Γ)
+    (a : A) : SkewMonoidAlgebra.liftNCRingHom f u h (SkewMonoidAlgebra.single g a) = f a * u g :=
+  SkewMonoidAlgebra.liftNC_single _ _ _ _
 
 @[simp]
 theorem toEnd_single (X : EquivariantModuleCat.{v} A Γ) (g : Γ) (a : A) (x : X) :
     X.toEnd (SkewMonoidAlgebra.single g a) x = a • g • x := by
-  simp [toEnd, SkewMonoidAlgebra.liftNCRingHom]
-  -- The product of additive endomorphisms is their composite.
-  rfl
+  rw [toEnd, liftNCRingHom_single, AddMonoid.End.coe_mul, Function.comp_apply]
+  exact Module.toAddMonoidEnd_apply_apply A _ a (g • x)
 
 /-- An equivariant module is a left module over the skew monoid algebra `A ⋊ Γ`, with
 `single g a • x = a • g • x` (`TauCeti.EquivariantModuleCat.single_smul`). -/
@@ -186,6 +208,7 @@ instance (X : EquivariantModuleCat.{v} A Γ) : IsScalarTower A (SkewMonoidAlgebr
     | add f₁ f₂ h₁ h₂ => simp [smul_add, add_smul, h₁, h₂]
 
 /-- A morphism of equivariant modules is linear over the skew monoid algebra. -/
+@[simp]
 theorem hom_smul {X Y : EquivariantModuleCat.{v} A Γ} (f : X ⟶ Y) (s : SkewMonoidAlgebra A Γ)
     (x : X) : f.hom (s • x) = s • f.hom x := by
   induction s using SkewMonoidAlgebra.induction_on with
@@ -219,22 +242,20 @@ theorem toModuleSkewMonoidAlgebra_map_hom_apply {X Y : EquivariantModuleCat.{v} 
 /-! ### Modules over the skew monoid algebra as equivariant modules -/
 
 variable (A Γ) in
--- Exposed so that the equivariant module has the module over `A ⋊ Γ` as its underlying type.
 /-- A left module over the skew monoid algebra `A ⋊ Γ` as an equivariant `A`-module: `a : A` acts
 by `single 1 a` and `g : Γ` by `single g 1`. -/
-@[expose]
 def ofModule (M : Type v) [AddCommGroup M] [Module (SkewMonoidAlgebra A Γ) M] :
     EquivariantModuleCat.{v} A Γ :=
   letI : Module A M := Module.compHom M (SkewMonoidAlgebra.singleOneRingHom (G := Γ))
   letI : DistribMulAction Γ M := DistribMulAction.compHom M (SkewMonoidAlgebra.of A Γ)
-  { carrier := M
-    isSMulDistribClass := ⟨fun g a m ↦ by
-      -- By definition `g` acts by `single g 1` and `a` by `single 1 a`.
-      change (SkewMonoidAlgebra.single g 1 : SkewMonoidAlgebra A Γ) •
-          (SkewMonoidAlgebra.single 1 a : SkewMonoidAlgebra A Γ) • m =
-        (SkewMonoidAlgebra.single 1 (g • a) : SkewMonoidAlgebra A Γ) •
-          (SkewMonoidAlgebra.single g 1 : SkewMonoidAlgebra A Γ) • m
-      simp [← mul_smul]⟩ }
+  haveI : SMulDistribClass Γ A M := ⟨fun g a m ↦ by
+    -- By definition `g` acts by `single g 1` and `a` by `single 1 a`.
+    change (SkewMonoidAlgebra.single g 1 : SkewMonoidAlgebra A Γ) •
+        (SkewMonoidAlgebra.single 1 a : SkewMonoidAlgebra A Γ) • m =
+      (SkewMonoidAlgebra.single 1 (g • a) : SkewMonoidAlgebra A Γ) •
+        (SkewMonoidAlgebra.single g 1 : SkewMonoidAlgebra A Γ) • m
+    simp [← mul_smul]⟩
+  of A Γ M
 
 section ofModule
 
@@ -259,6 +280,14 @@ theorem ofModuleAddEquiv_smul_eq_of_smul (g : Γ) (m : ofModule A Γ M) :
     ofModuleAddEquiv (g • m) = SkewMonoidAlgebra.of A Γ g • ofModuleAddEquiv m :=
   (rfl)
 
+/-- Pulled back to the equivariant module `TauCeti.EquivariantModuleCat.ofModule A Γ M`, the action
+of `single g a` on a module `M` over `A ⋊ Γ` is `m ↦ a • g • m`. -/
+@[simp]
+theorem ofModuleAddEquiv_symm_single_smul (g : Γ) (a : A) (m : M) :
+    (ofModuleAddEquiv (A := A) (Γ := Γ)).symm (SkewMonoidAlgebra.single g a • m) =
+      a • g • ofModuleAddEquiv.symm m :=
+  ofModuleAddEquiv.injective <| by simp [← mul_smul]
+
 end ofModule
 
 variable (A Γ) in
@@ -270,10 +299,10 @@ def ofModuleSkewMonoidAlgebra :
   obj M := ofModule A Γ M
   map f :=
     homMk
-      { toFun := f.hom
-        map_add' := f.hom.map_add
-        map_smul' := fun a m ↦ f.hom.map_smul (SkewMonoidAlgebra.single 1 a) m }
-      fun g m ↦ f.hom.map_smul (SkewMonoidAlgebra.single g 1) m
+      { toFun m := ofModuleAddEquiv.symm (f.hom (ofModuleAddEquiv m))
+        map_add' _ _ := by simp
+        map_smul' _ _ := ofModuleAddEquiv.injective (by simp) }
+      fun _ _ ↦ ofModuleAddEquiv.injective (by simp)
 
 @[simp]
 theorem ofModuleSkewMonoidAlgebra_obj (M : ModuleCat.{v} (SkewMonoidAlgebra A Γ)) :
@@ -303,6 +332,11 @@ theorem unitIso_hom_hom_apply (X : EquivariantModuleCat.{v} A Γ) (x : X) :
     ofModuleAddEquiv ((unitIso X).hom.hom x) = x :=
   (rfl)
 
+@[simp]
+theorem unitIso_inv_hom_apply (X : EquivariantModuleCat.{v} A Γ) (m : ofModule A Γ X) :
+    (unitIso X).inv.hom m = ofModuleAddEquiv m :=
+  (rfl)
+
 /-- The counit of `TauCeti.EquivariantModuleCat.equivalenceModuleSkewMonoidAlgebra`: a module over
 `A ⋊ Γ` is isomorphic, by the identity map, to the module over `A ⋊ Γ` obtained from its
 equivariant module structure. -/
@@ -317,6 +351,11 @@ def counitIso (M : ModuleCat.{v} (SkewMonoidAlgebra A Γ)) :
 @[simp]
 theorem counitIso_hom_hom_apply (M : ModuleCat.{v} (SkewMonoidAlgebra A Γ))
     (m : ofModule A Γ M) : (counitIso M).hom.hom m = ofModuleAddEquiv m :=
+  (rfl)
+
+@[simp]
+theorem counitIso_inv_hom_apply (M : ModuleCat.{v} (SkewMonoidAlgebra A Γ)) (m : M) :
+    ofModuleAddEquiv ((counitIso M).inv.hom m) = m :=
   (rfl)
 
 variable (A Γ) in
