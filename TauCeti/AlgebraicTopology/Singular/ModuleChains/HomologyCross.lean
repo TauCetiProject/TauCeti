@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
@@ -28,6 +29,18 @@ factor: `pr₂_* (a × b) = 0` when `a` has positive degree
 through the product with a point, whose homology vanishes in positive degrees. For instance,
 every class of `H₂(S¹ × Y; k)` in the image of `[S¹] × H₁(Y; k)` maps to zero in `H₂(Y; k)`, so
 every class pulled back from `Y` along the projection vanishes on it.
+
+In bidegree `(1, 1)` the cross product is computed on cycles by the shuffle product. For singular
+`1`-simplices `x` of `A` and `y` of `B`, the shuffle product
+`(s₁ x, s₀ y) - (s₀ x, s₁ y)` (`TopCat.shuffleChainOneOne`) is a cycle when the chains of `x` and
+`y` are (`TopCat.singularChains_d_shuffleChainOneOne`), and the cross product of the classes of
+`x` and `y` is its class (`TopCat.singularHomologyCrossBilinear_homologyπ_one_one`). This is the
+explicit cycle on which integrals over a product of two loops are computed.
+
+For arbitrary module coefficients `R` and `S`, the cross product
+`Hᵢ(X; R) ⊗ Hⱼ(Y; S) ⟶ Hₙ(X × Y; R ⊗ S)` is natural for maps of both factors on pure tensors,
+`(f × g)_*(α × β) = f_* α × g_* β` (`TauCeti.homologyMap_prodMap_singularHomologyCross_tmul`),
+and additive in the second factor (`TauCeti.singularHomologyCross_tmul_sub`).
 
 ## References
 
@@ -154,4 +167,189 @@ theorem singularHomologyMap_fst_singularHomologyCrossBilinear_eq_zero {A B : Typ
   rw [hfst, ContinuousMap.singularHomologyMap_comp, singularHomologyCrossBilinear_naturality_right,
     hc, map_zero, map_zero]
 
+/-! ### The cross product of two classes of degree one -/
+
+section OneOne
+
+open HomologicalComplex
+open scoped Simplicial
+
+variable {k} {A B : Type w} [TopologicalSpace A] [TopologicalSpace B]
+
+/-- The shuffle product of two singular `1`-simplices `x` of `A` and `y` of `B`: the singular
+`2`-chain `(s₁ x, s₀ y) - (s₀ x, s₁ y)` of `A × B`. Read on the unit square, it is the sum of the
+two triangles below and above the diagonal, the second with a negative sign. -/
+noncomputable def shuffleChainOneOne (x : (toSSet.obj (of A)) _⦋1⦌)
+    (y : (toSSet.obj (of B)) _⦋1⦌) : ((singularChains k).obj (of (A × B))).X 2 :=
+  simplexChain ((Functor.LaxMonoidal.μ toSSet (of A) (of B)).app _
+      (((toSSet.obj (of A)).σ 1 x, (toSSet.obj (of B)).σ 0 y) :
+        (toSSet.obj (of A) ⊗ toSSet.obj (of B)) _⦋2⦌)) 1 -
+    simplexChain ((Functor.LaxMonoidal.μ toSSet (of A) (of B)).app _
+      (((toSSet.obj (of A)).σ 0 x, (toSSet.obj (of B)).σ 1 y) :
+        (toSSet.obj (of A) ⊗ toSSet.obj (of B)) _⦋2⦌)) 1
+
+/-- The shuffle product of two singular `1`-simplices is `(s₁ x, s₀ y) - (s₀ x, s₁ y)`. -/
+theorem shuffleChainOneOne_def (x : (toSSet.obj (of A)) _⦋1⦌) (y : (toSSet.obj (of B)) _⦋1⦌) :
+    shuffleChainOneOne (k := k) x y =
+      simplexChain ((Functor.LaxMonoidal.μ toSSet (of A) (of B)).app _
+          (((toSSet.obj (of A)).σ 1 x, (toSSet.obj (of B)).σ 0 y) :
+            (toSSet.obj (of A) ⊗ toSSet.obj (of B)) _⦋2⦌)) 1 -
+        simplexChain ((Functor.LaxMonoidal.μ toSSet (of A) (of B)).app _
+          (((toSSet.obj (of A)).σ 0 x, (toSSet.obj (of B)).σ 1 y) :
+            (toSSet.obj (of A) ⊗ toSSet.obj (of B)) _⦋2⦌)) 1 :=
+  (rfl)
+
+/-- For cycles `z` and `z'` lying over the chains of singular `1`-simplices `x` and `y`, the cycle
+of `A × B` computing the cross product of their classes lies over the shuffle product of `x` and
+`y`. -/
+private theorem iCycles_cyclesMap_cyclesCross (x : (toSSet.obj (of A)) _⦋1⦌)
+    (y : (toSSet.obj (of B)) _⦋1⦌) (z : ((singularChains k).obj (of A)).cycles 1)
+    (hz : ((singularChains k).obj (of A)).iCycles 1 z = simplexChain x 1)
+    (z' : ((singularChains k).obj (of B)).cycles 1)
+    (hz' : ((singularChains k).obj (of B)).iCycles 1 z' = simplexChain y 1) :
+    ((singularChains k).obj (of (A × B))).iCycles 2
+        ((cyclesMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+            (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj (of A ⊗ of B))) 2).hom
+          ((cyclesMap (shuffle (of A) (of B) (𝟙_ (ModuleCat.{w} k)) (𝟙_ _)) 2).hom
+            ((cyclesCross ((toSSet.obj (of A)).chainComplex (𝟙_ (ModuleCat.{w} k)))
+              ((toSSet.obj (of B)).chainComplex (𝟙_ (ModuleCat.{w} k))) 1 1 2 rfl).hom
+                (z ⊗ₜ z')))) =
+      shuffleChainOneOne x y := by
+  -- The cycle lies over the image of `z ⊗ z'` under the shuffle map and the coefficient map.
+  have hcomp : cyclesCross ((toSSet.obj (of A)).chainComplex (𝟙_ (ModuleCat.{w} k)))
+        ((toSSet.obj (of B)).chainComplex (𝟙_ (ModuleCat.{w} k))) 1 1 2 rfl ≫
+        cyclesMap (shuffle (of A) (of B) (𝟙_ (ModuleCat.{w} k)) (𝟙_ _)) 2 ≫
+        cyclesMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+          (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj (of A ⊗ of B))) 2 ≫ iCycles _ 2 =
+      (iCycles _ 1 ⊗ₘ iCycles _ 1) ≫ ιTensorObj _ _ 1 1 2 rfl ≫
+        (shuffle (of A) (of B) (𝟙_ (ModuleCat.{w} k)) (𝟙_ _)).f 2 ≫
+        (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+          (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj (of A ⊗ of B))).f 2 := by
+    simp only [cyclesMap_i, cyclesMap_i_assoc]
+    exact cyclesCross_iCycles_assoc _ _ 1 1 2 rfl _
+  have hmor := congrArg (fun f ↦ f.hom (z ⊗ₜ z')) hcomp
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hmor
+  -- The shuffle map sends `x ⊗ y` to `(s₁ x, s₀ y) - (s₀ x, s₁ y)`, with coefficient `1 ⊗ 1`.
+  have h11 := congrArg (fun f ↦ (f ≫ (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+          (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj (of A ⊗ of B))).f 2).hom
+        ((1 : k) ⊗ₜ (1 : k)))
+    (ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) x y)
+  simp only [Category.assoc, Preadditive.sub_comp,
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f] at h11
+  simp only [ModuleCat.hom_comp, ModuleCat.hom_sub, LinearMap.comp_apply,
+    LinearMap.sub_apply] at h11
+  -- `erw` is needed because the tensor products of `ModuleCat` here are not syntactically
+  -- `TensorProduct`, and the chains of `singularChains k` unfold to those of `TopCat.toSSet`.
+  erw [ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
+    one_smul] at h11
+  erw [hmor, ModuleCat.MonoidalCategory.tensorHom_tmul, hz, hz']
+  exact h11
+
+/-- The shuffle product of two singular `1`-simplices whose chains are cycles is a cycle. -/
+theorem singularChains_d_shuffleChainOneOne {x : (toSSet.obj (of A)) _⦋1⦌}
+    {y : (toSSet.obj (of B)) _⦋1⦌}
+    (hx : ((singularChains k).obj (of A)).d 1 0 (simplexChain x 1) = 0)
+    (hy : ((singularChains k).obj (of B)).d 1 0 (simplexChain y 1) = 0) :
+    ((singularChains k).obj (of (A × B))).d 2 1 (shuffleChainOneOne (k := k) x y) = 0 := by
+  rw [← iCycles_cyclesMap_cyclesCross x y _
+    (iCycles_moduleCatCyclesMk (hm := ChainComplex.next_nat_succ 0) (hx := hx)) _
+    (iCycles_moduleCatCyclesMk (hm := ChainComplex.next_nat_succ 0) (hx := hy))]
+  exact iCycles_d_apply _ 2 1 _
+
+/-- **The cross product of two classes of degree one** is the class of the shuffle product: for
+cycles `z` of `A` and `z'` of `B` lying over the chains of singular `1`-simplices `x` and `y`, and
+any cycle `c` of `A × B` lying over the shuffle product `(s₁ x, s₀ y) - (s₀ x, s₁ y)`, the cross
+product `[z] × [z']` is `[c]`. -/
+theorem singularHomologyCrossBilinear_homologyπ_one_one {x : (toSSet.obj (of A)) _⦋1⦌}
+    {y : (toSSet.obj (of B)) _⦋1⦌} (z : ((singularChains k).obj (of A)).cycles 1)
+    (hz : ((singularChains k).obj (of A)).iCycles 1 z = simplexChain x 1)
+    (z' : ((singularChains k).obj (of B)).cycles 1)
+    (hz' : ((singularChains k).obj (of B)).iCycles 1 z' = simplexChain y 1)
+    (c : ((singularChains k).obj (of (A × B))).cycles 2)
+    (hc : ((singularChains k).obj (of (A × B))).iCycles 2 c = shuffleChainOneOne x y) :
+    singularHomologyCrossBilinear k (of A) (of B) 1 1 2 rfl
+        (((singularChains k).obj (of A)).homologyπ 1 z)
+        (((singularChains k).obj (of B)).homologyπ 1 z') =
+      ((singularChains k).obj (of (A × B))).homologyπ 2 c := by
+  -- The cross product of the classes is the class of the shuffled cycle,
+  have key : (singularHomologyCross (of A) (of B) (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) 1 1 2 rfl).hom
+      (((toSSet.obj (of A)).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ 1 z ⊗ₜ
+        ((toSSet.obj (of B)).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ 1 z') =
+      ((toSSet.obj (of A ⊗ of B)).chainComplex (𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ _)).homologyπ 2
+        ((cyclesMap (shuffle (of A) (of B) (𝟙_ (ModuleCat.{w} k)) (𝟙_ _)) 2).hom
+          ((cyclesCross ((toSSet.obj (of A)).chainComplex (𝟙_ (ModuleCat.{w} k)))
+            ((toSSet.obj (of B)).chainComplex (𝟙_ (ModuleCat.{w} k))) 1 1 2 rfl).hom
+              (z ⊗ₜ z'))) := by
+    -- The cross product is by definition the algebraic one followed by the shuffle map; the
+    -- rewrite is done by `congrArg`, since the classes are typed by the singular homology functor.
+    refine (congrArg (fun f ↦ f.hom
+      (((toSSet.obj (of A)).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ 1 z ⊗ₜ
+        ((toSSet.obj (of B)).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ 1 z'))
+      (singularHomologyCross_def (of A) (of B) (𝟙_ (ModuleCat.{w} k)) (𝟙_ _) 1 1 2 rfl)).trans ?_
+    exact moduleCat_homologyMap_homologyCross_tmul
+      ((toSSet.obj (of A)).chainComplex (𝟙_ (ModuleCat.{w} k)))
+      ((toSSet.obj (of B)).chainComplex (𝟙_ (ModuleCat.{w} k))) 1 1 2 rfl
+      (shuffle (of A) (of B) (𝟙_ (ModuleCat.{w} k)) (𝟙_ _)) z z'
+  -- and the coefficient identification `k ⊗ k ≅ k` acts on it as on its cycle.
+  have hnat := congrArg (fun f ↦ f.hom
+      ((cyclesMap (shuffle (of A) (of B) (𝟙_ (ModuleCat.{w} k)) (𝟙_ _)) 2).hom
+        ((cyclesCross ((toSSet.obj (of A)).chainComplex (𝟙_ (ModuleCat.{w} k)))
+          ((toSSet.obj (of B)).chainComplex (𝟙_ (ModuleCat.{w} k))) 1 1 2 rfl).hom (z ⊗ₜ z'))))
+    (homologyπ_naturality (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+      (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj (of A ⊗ of B))) 2)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hnat
+  rw [singularHomologyCrossBilinear_apply]
+  -- `erw`: the classes are typed by the objects of the singular homology functor, which unfold
+  -- to the homology of the chain complexes in `key` and `hnat`.
+  erw [key, hnat]
+  congr 1
+  exact moduleCat_iCycles_injective _ _
+    ((iCycles_cyclesMap_cyclesCross x y z hz z' hz').trans hc.symm)
+
+end OneOne
+
 end TopCat
+
+namespace TauCeti
+
+section ModuleCoefficients
+
+variable {k : Type w} [CommRing k] (R S : ModuleCat.{w} k) {Y : Type w} [TopologicalSpace Y]
+
+/-- **Naturality of the cross product**, on pure tensors: for maps `f : X → X'` and `g : Y → Y'`,
+`(f × g)_*(α × β) = f_* α × g_* β`. -/
+theorem homologyMap_prodMap_singularHomologyCross_tmul {X X' Y' : Type w} [TopologicalSpace X]
+    [TopologicalSpace X'] [TopologicalSpace Y'] (f : C(X, X')) (g : C(Y, Y')) {i j n : ℕ}
+    (h : i + j = n) (α : ((TopCat.toSSet.obj (TopCat.of X)).homology R i : ModuleCat.{w} k))
+    (β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (f.prodMap g))) (R ⊗ S) n).hom
+        ((TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) =
+      (TopCat.singularHomologyCross (TopCat.of X') (TopCat.of Y') R S i j n h).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R i).hom α ⊗ₜ
+          (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) S j).hom β) := by
+  -- Both maps send `(x, y)` to `(f x, g y)`.
+  have hfg : TopCat.ofHom f ⊗ₘ TopCat.ofHom g = TopCat.ofHom (f.prodMap g) :=
+    TopCat.ext fun _ ↦ rfl
+  have := congrArg (fun φ ↦ φ.hom (α ⊗ₜ β))
+    (TopCat.singularHomologyCross_naturality (TopCat.ofHom f) (TopCat.ofHom g) R S i j n h)
+  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, hfg,
+    ModuleCat.hom_tensorHom] at this
+  -- `this` is the claim up to the action of `f_* ⊗ₘ g_*` on a pure tensor and the functor maps as
+  -- `SSet.homologyMap`; these cannot be rewritten in `this`, whose classes are typed by the objects
+  -- of the homology functor rather than by `SSet.homology`.
+  exact this.symm
+
+/-- The cross product is additive in the second factor: `α × (β - β') = α × β - α × β'`. -/
+theorem singularHomologyCross_tmul_sub {X : Type w} [TopologicalSpace X] {i j n : ℕ}
+    (h : i + j = n) (α : ((TopCat.toSSet.obj (TopCat.of X)).homology R i : ModuleCat.{w} k))
+    (β β' : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
+    (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ (β - β')) =
+      (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β) -
+        (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β') :=
+  -- The tensor product of `ModuleCat` is not syntactically `TensorProduct`, so `simp` does not
+  -- apply `TensorProduct.tmul_sub` here.
+  (congrArg _ (TensorProduct.tmul_sub _ _ _)).trans (map_sub _ _ _)
+
+end ModuleCoefficients
+
+end TauCeti

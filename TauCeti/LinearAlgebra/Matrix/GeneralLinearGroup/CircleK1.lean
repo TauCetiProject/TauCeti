@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1
 public import TauCeti.RingTheory.DedekindDomain.Circle
 
 import Mathlib.Topology.Homotopy.Lifting
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Matrix.Polar.SpecialLinear
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation

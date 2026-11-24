@@ -38,6 +38,12 @@ second derivative `-4 δ cos (2 (y - r))`. So the critical points are the angles
   `r + π / 2 + j π`.
 * `TauCeti.circleCosTwoMax_inj`, `TauCeti.circleCosTwoMin_inj`,
   `TauCeti.circleCosTwoMax_ne_circleCosTwoMin`: the four labelled angles are distinct.
+* `TauCeti.exists_circleCosTwoMax_eq`, `TauCeti.exists_circleCosTwoMin_eq`: every lifted maximum
+  `r + j π` and minimum `r + π / 2 + j π`, `j ∈ ℤ`, is one of them.
+* `TauCeti.circleCosTwoMax_add_coe`, `TauCeti.circleCosTwoMin_add_coe`,
+  `TauCeti.circleCosTwoMax_sub_coe`: rotating the function moves the labelled points with it.
+* `TauCeti.circleCosTwo_add_pi`: rotating the function by `π` does not change it;
+  `TauCeti.circleCosTwoMax_add_pi`, `TauCeti.circleCosTwoMin_add_pi`: it exchanges the labels.
 * `TauCeti.circleCosTwoMaxCrit`, `TauCeti.circleCosTwoMinCrit`: the same points as elements of
   the set of critical points, the basis elements of the Morse complex;
   `TauCeti.circleCosTwoMaxCrit_ne_circleCosTwoMinCrit`: a maximum is never a minimum among them.
@@ -179,6 +185,66 @@ theorem circleCosTwoMax_inj (r : ℝ) {i j : Fin 2} :
 theorem circleCosTwoMin_inj (r : ℝ) {i j : Fin 2} :
     circleCosTwoMin r i = circleCosTwoMin r j ↔ i = j :=
   (circleCosTwoMin_injective r).eq_iff
+
+/-- Every class `r + j π` with `j ∈ ℤ` is one of the two maxima. -/
+theorem exists_circleCosTwoMax_eq (r : ℝ) (m : ℤ) :
+    ∃ j : Fin 2, circleCosTwoMax r j = ((r + m * π : ℝ) : AddCircle (2 * π)) := by
+  have hm : (m : ℝ) = 2 * ((m / 2 : ℤ) : ℝ) + ((m % 2 : ℤ) : ℝ) := by
+    exact_mod_cast (Int.mul_ediv_add_emod m 2).symm
+  rcases Int.emod_two_eq_zero_or_one m with h | h <;> rw [h] at hm <;>
+    [refine ⟨0, coe_eq_coe_iff_exists_zsmul.2 ⟨-(m / 2), ?_⟩⟩;
+      refine ⟨1, coe_eq_coe_iff_exists_zsmul.2 ⟨-(m / 2), ?_⟩⟩] <;>
+    · rw [zsmul_eq_mul, hm]
+      push_cast [Fin.val_zero, Fin.val_one]
+      ring
+
+/-- Every class `r + π / 2 + j π` with `j ∈ ℤ` is one of the two minima. -/
+theorem exists_circleCosTwoMin_eq (r : ℝ) (m : ℤ) :
+    ∃ j : Fin 2, circleCosTwoMin r j = ((r + π / 2 + m * π : ℝ) : AddCircle (2 * π)) := by
+  obtain ⟨j, hj⟩ := exists_circleCosTwoMax_eq (r + π / 2) m
+  exact ⟨j, by rw [circleCosTwoMin_def, ← hj, circleCosTwoMax_def]⟩
+
+/-- Rotating the function by `π` does not change it, since `cos` has period `2 π`. -/
+theorem circleCosTwo_add_pi (δ r : ℝ) : circleCosTwo δ (r + π) = circleCosTwo δ r := by
+  funext θ
+  obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  rw [circleCosTwo_coe, circleCosTwo_coe,
+    show 2 * (t - (r + π)) = 2 * (t - r) - 2 * π by ring, Real.cos_sub_two_pi]
+
+/-- Rotating the function by `c` moves its maxima by `c`, keeping their labels. -/
+theorem circleCosTwoMax_add_coe (r c : ℝ) (j : Fin 2) :
+    circleCosTwoMax r j + (c : AddCircle (2 * π)) = circleCosTwoMax (r + c) j := by
+  rw [circleCosTwoMax_def, circleCosTwoMax_def, ← coe_add, add_right_comm]
+
+/-- Rotating the function by `-c` moves its maxima by `-c`, keeping their labels. -/
+theorem circleCosTwoMax_sub_coe (r c : ℝ) (j : Fin 2) :
+    circleCosTwoMax r j - (c : AddCircle (2 * π)) = circleCosTwoMax (r - c) j := by
+  rw [sub_eq_add_neg, ← coe_neg, circleCosTwoMax_add_coe, sub_eq_add_neg]
+
+/-- Rotating the function by `c` moves its minima by `c`, keeping their labels. -/
+theorem circleCosTwoMin_add_coe (r c : ℝ) (j : Fin 2) :
+    circleCosTwoMin r j + (c : AddCircle (2 * π)) = circleCosTwoMin (r + c) j := by
+  rw [circleCosTwoMin_def, circleCosTwoMin_def, ← coe_add]
+  congr 1
+  ring
+
+/-- Rotating the function by `π` exchanges the labels of its maxima: the maximum `r + π + j π` is
+`r + (j + 1) π`. -/
+@[simp]
+theorem circleCosTwoMax_add_pi (r : ℝ) (j : Fin 2) :
+    circleCosTwoMax (r + π) j = circleCosTwoMax r (j + 1) := by
+  rw [circleCosTwoMax_def, circleCosTwoMax_def]
+  fin_cases j
+  · norm_num
+  · exact coe_eq_coe_iff_exists_zsmul.2 ⟨1, by push_cast [Fin.val_zero, Fin.val_one]; ring⟩
+
+/-- Rotating the function by `π` exchanges the labels of its minima: the minimum
+`r + π + π / 2 + j π` is `r + π / 2 + (j + 1) π`. -/
+@[simp]
+theorem circleCosTwoMin_add_pi (r : ℝ) (j : Fin 2) :
+    circleCosTwoMin (r + π) j = circleCosTwoMin r (j + 1) := by
+  rw [circleCosTwoMin_def, circleCosTwoMin_def, add_right_comm r π,
+    ← circleCosTwoMax_def, ← circleCosTwoMax_def, circleCosTwoMax_add_pi]
 
 /-! ### The function in charts -/
 
