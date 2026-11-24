@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
@@ -314,8 +314,8 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
   -- The holonomy along `k w`, `k ∈ ℤ`, is the `k`-th power of the holonomy along `w`.
   have htw {w e : ℂ} (he : e ≠ 0) (h : ∀ z, u (z + w) = e * u z) (k : ℤ) (z : ℂ) :
       u (z + k * w) = e ^ k * u z := by
-    simpa [Units.smul_def, zsmul_eq_mul] using Function.apply_add_zsmul_eq_zpow_smul
-      (a := Units.mk0 e he) (f := u) (by simpa [Units.smul_def] using h) k z
+    simpa [Units.smul_def, zsmul_eq_mul] using (TauCeti.zpow_smul_eq_add_zsmul
+      (g := Units.mk0 e he) (fun z ↦ (h z).symm) k z).symm
   have hper (m : Fin 2 → ℤ) : Function.Periodic G fun i ↦ (m i : ℝ) := fun p ↦ by
     have hL : L (p + fun i ↦ (m i : ℝ)) = L p + (m 0 : ℂ) * ω₁ + (m 1 : ℂ) * ω₂ := by
       rw [map_add, periodCoordEquiv_apply, periodCoordEquiv_apply]
