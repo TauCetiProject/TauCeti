@@ -223,7 +223,7 @@ theorem signEquiv_strandIncl (δ : R) {n : ℕ} (x : TemperleyLieb R δ (n + 1))
 theorem signEquiv_strandInclAll (δ : R) (n : ℕ) (x : TemperleyLieb R δ n) :
     signEquiv δ (n + 1) (strandInclAll n x) = strandInclAll n (signEquiv δ n x) := by
   cases n with
-  | zero => rw [eq_algebraMap_aug_zero x]; simp
+  | zero => rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x]; simp
   | succ n => simp
 
 /-- The inverse sign isomorphism commutes with adding a straight strand. -/

@@ -177,7 +177,9 @@ theorem strandIncl_star (x : TemperleyLieb R δ (n + 1)) :
 theorem strandInclAll_star (n : ℕ) (x : TemperleyLieb R δ n) :
     strandInclAll n (star x) = star (strandInclAll n x) := by
   cases n with
-  | zero => rw [eq_algebraMap_aug_zero x]; simp [Algebra.algebraMap_eq_smul_one]
+  | zero =>
+    rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x]
+    simp [Algebra.algebraMap_eq_smul_one]
   | succ _ => rw [strandInclAll_succ, strandIncl_star]
 
 /-- The augmentation conjugates: on at most one strand, where the algebra is the base ring, the

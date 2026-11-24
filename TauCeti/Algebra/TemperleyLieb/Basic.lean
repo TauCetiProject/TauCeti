@@ -322,10 +322,11 @@ theorem algEquivOfLeOne_symm_apply (h : n ≤ 1) (r : R) :
     (algEquivOfLeOne δ h).symm r = algebraMap R (TemperleyLieb R δ n) r := by
   simp only [algEquivOfLeOne, AlgEquiv.ofAlgHom_symm_apply, Algebra.ofId_apply]
 
-/-- Every element of `TemperleyLieb R δ 0` is the scalar image of its augmentation. -/
-theorem eq_algebraMap_aug_zero {δ : R} (x : TemperleyLieb R δ 0) :
-    x = algebraMap R (TemperleyLieb R δ 0) (aug x) := by
-  have h := ((algEquivOfLeOne δ (n := 0) (Nat.zero_le 1)).symm_apply_apply x).symm
+/-- On at most one strand, every element of `TemperleyLieb R δ n` is the scalar image of its
+augmentation. -/
+theorem eq_algebraMap_aug_of_le_one {δ : R} {n : ℕ} (hn : n ≤ 1) (x : TemperleyLieb R δ n) :
+    x = algebraMap R (TemperleyLieb R δ n) (aug x) := by
+  have h := ((algEquivOfLeOne δ hn).symm_apply_apply x).symm
   rwa [algEquivOfLeOne_apply, algEquivOfLeOne_symm_apply] at h
 
 /-- Strand inclusion `TemperleyLieb R δ n →ₐ[R] TemperleyLieb R δ (n + 1)` defined for every

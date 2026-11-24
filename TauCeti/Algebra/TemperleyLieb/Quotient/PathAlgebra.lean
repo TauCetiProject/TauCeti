@@ -76,13 +76,13 @@ def blockAt (u : V) :
   toFun X := if hu : u ∈ G.walkEndpoints v₀ n then X ⟨u, hu⟩ else 0
   map_one' := by
     split_ifs with hu; · rfl
-    have := not_nonempty_iff.1 ((G.mem_walkEndpoints_iff v₀).not.1 hu); exact Subsingleton.elim _ _
+    have := G.isEmpty_endpointWalk_of_notMem v₀ hu; exact Subsingleton.elim _ _
   map_mul' _ _ := by split_ifs <;> simp
   map_zero' := by split_ifs <;> rfl
   map_add' _ _ := by split_ifs <;> simp
   commutes' _ := by
     split_ifs with hu; · simp [Algebra.algebraMap_eq_smul_one]
-    have := not_nonempty_iff.1 ((G.mem_walkEndpoints_iff v₀).not.1 hu); exact Subsingleton.elim _ _
+    have := G.isEmpty_endpointWalk_of_notMem v₀ hu; exact Subsingleton.elim _ _
 @[simp] theorem blockAt_of_mem {u : V} (hu : u ∈ G.walkEndpoints v₀ n) (X : PathAlgebra K G v₀ n) :
     blockAt u X = X ⟨u, hu⟩ := dite_eq_left hu
 theorem blockAt_of_notMem {u : V} (hu : u ∉ G.walkEndpoints v₀ n) (X : PathAlgebra K G v₀ n) :
@@ -92,22 +92,24 @@ theorem blockAt_of_notMem {u : V} (hu : u ∉ G.walkEndpoints v₀ n) (X : PathA
   by_cases hu : u ∈ G.walkEndpoints v₀ n <;>
     simp [blockAt_of_mem, blockAt_of_notMem, hu, Matrix.star_eq_conjTranspose]
 end CommSemiring
+end PathAlgebra
 section Finrank
-variable (K G v₀) [Field K]
+variable [Field K]
 /-- Dimension of `PathAlgebra K G v₀ n` as a sum of squared `n`-step walk counts. -/
-theorem finrank (n : ℕ) : Module.finrank K (PathAlgebra K G v₀ n) =
+theorem finrank_pathAlgebra (n : ℕ) : Module.finrank K (PathAlgebra K G v₀ n) =
     ∑ v ∈ G.walkEndpoints v₀ n, Fintype.card (G.EndpointWalk v₀ n v) ^ 2 := by
   rw [Module.finrank_pi_fintype]
   simp only [Module.finrank_matrix, Module.finrank_self, mul_one, ← sq]
   exact (G.walkEndpoints v₀ n).sum_attach fun v ↦ Fintype.card (G.EndpointWalk v₀ n v) ^ 2
-/-- On a finite vertex type, `finrank` sums squared `n`-step walk counts over all vertices. -/
-theorem finrank_fintype [Fintype V] (n : ℕ) : Module.finrank K (PathAlgebra K G v₀ n) =
-    ∑ v : V, Fintype.card (G.EndpointWalk v₀ n v) ^ 2 := by
-  rw [finrank]; exact Finset.sum_subset (Finset.subset_univ _) fun v _ hv ↦ by
-    have : IsEmpty (G.EndpointWalk v₀ n v) := ⟨fun p ↦ hv ((G.mem_walkEndpoints_iff v₀).2 ⟨p⟩)⟩
+/-- On a finite vertex type, `finrank_pathAlgebra` sums squared `n`-step walk counts over all
+vertices. -/
+theorem finrank_pathAlgebra_of_fintype [Fintype V] (n : ℕ) :
+    Module.finrank K (PathAlgebra K G v₀ n) =
+      ∑ v : V, Fintype.card (G.EndpointWalk v₀ n v) ^ 2 := by
+  rw [finrank_pathAlgebra]; exact Finset.sum_subset (Finset.subset_univ _) fun v _ hv ↦ by
+    have := G.isEmpty_endpointWalk_of_notMem v₀ hv
     simp [Fintype.card_eq_zero]
 end Finrank
-end PathAlgebra
 end PathAlgebra
 section Extend
 variable {K : Type*} [CommSemiring K] {V : Type*} (G : SimpleGraph V) [DecidableEq V]
@@ -224,7 +226,7 @@ theorem pathAlgebraTrace_pathAlgebraExtend {δ : K}
       ← (G.neighborFinset v).sum_attach fun u ↦ (PathAlgebra.blockAt u X).trace]
     refine Finset.sum_congr rfl fun u _ ↦ ?_
     by_cases hu : u.val ∈ G.walkEndpoints v₀ n; · simp [hu, Matrix.trace]
-    have := not_nonempty_iff.1 ((G.mem_walkEndpoints_iff v₀).not.1 hu)
+    have := G.isEmpty_endpointWalk_of_notMem v₀ hu
     simp [PathAlgebra.blockAt_of_notMem hu]
   rw [Finset.sum_congr rfl fun _ hv ↦ by rw [htr hv, Finset.mul_sum],
     G.sum_walkEndpoints_succ v₀ n (fun v u ↦ (r v / r v₀) ^ 2 * (PathAlgebra.blockAt u X).trace)
@@ -352,7 +354,7 @@ normalization. -/
     Finset.sum_congr (s₁ := G.walkEndpoints v₀ (n + 1)) rfl fun v _ ↦ by
       rw [htrY v, Finset.mul_sum, Finset.mul_sum],
     G.sum_walkEndpoints_succ v₀ n (fun v u ↦ δ⁻¹ * ((r v / r v₀) ^ 2 * step v u)) fun _ _ hu ↦ by
-      have := not_nonempty_iff.1 ((G.mem_walkEndpoints_iff v₀).not.1 hu); simp [step]]
+      have := G.isEmpty_endpointWalk_of_notMem v₀ hu; simp [step]]
   exact Finset.sum_congr rfl fun u _ ↦ Finset.sum_congr rfl fun _ _ ↦ by
     have := hr u; have := hr v₀; field_simp
 end WalkExpect
@@ -364,17 +366,15 @@ variable {n : ℕ}
 /-- The generator element in `PathAlgebra K G v₀ n` acting at interior position `b` between `a` and
 `c`, with entry `r (s b) * r (t b) / r (s a) ^ 2` when `s a = s c` and `t` updates `s` at `b`. -/
 def pathAlgebraGenerator (a b c : Fin (n + 1)) : PathAlgebra K G v₀ n :=
-  fun v ↦ Matrix.of fun s t : G.EndpointWalk v₀ n v.val ↦
-    if s a = s c ∧ (t : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (t b) ∧
-        G.Adj (s a) (t b) then r (s b) * r (t b) / r (s a) ^ 2 else 0
+  fun _ ↦ walkGenerator G r DFunLike.coe (fun _ ↦ True) a b c
 theorem pathAlgebraGenerator_apply (a b c : Fin (n + 1)) (v : G.walkEndpoints v₀ n)
     (s t : G.EndpointWalk v₀ n v.val) : pathAlgebraGenerator G v₀ r a b c v s t =
       if s a = s c ∧ (t : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (t b) ∧
-          G.Adj (s a) (t b) then r (s b) * r (t b) / r (s a) ^ 2 else 0 := (rfl)
+          G.Adj (s a) (t b) then r (s b) * r (t b) / r (s a) ^ 2 else 0 := by
+  simp [pathAlgebraGenerator, walkGenerator_apply]
 variable {G v₀ r}
 /-- Left multiplication by `pathAlgebraGenerator a b c` sums over neighbours `x` of `s a`
-when `s a = s c`
-and vanishes otherwise. -/
+when `s a = s c` and vanishes otherwise. -/
 theorem pathAlgebraGenerator_mul_apply {a b c : Fin (n + 1)} (hab : a.val + 1 = b.val)
     (hbc : b.val + 1 = c.val) (v : G.walkEndpoints v₀ n)
     (X : Matrix (G.EndpointWalk v₀ n v.val) (G.EndpointWalk v₀ n v.val) K)
@@ -383,71 +383,37 @@ theorem pathAlgebraGenerator_mul_apply {a b c : Fin (n + 1)} (hab : a.val + 1 = 
         ∑ x ∈ (G.neighborFinset (s a)).attach, r (s b) * r x.val / r (s a) ^ 2 *
           X (s.update hab hbc hac ((G.mem_neighborFinset _ _).1 x.property)) u
       else 0 := by
-  rw [Matrix.mul_apply]; split_ifs with hac
-  · let f (x : {x // x ∈ G.neighborFinset (s a)}) :=
-      s.update hab hbc hac ((G.mem_neighborFinset _ _).1 x.property)
-    rw [← Finset.sum_subset (Finset.subset_univ ((G.neighborFinset (s a)).attach.image f)),
-      Finset.sum_image fun _ _ _ _ h ↦ Subtype.ext <| by
-        simpa [f] using congrArg (fun w : G.EndpointWalk v₀ n v.val ↦ w b) h]
-    · exact Finset.sum_congr rfl fun x _ ↦ by
-        have hx : G.Adj (s c) x.val := hac ▸ (G.mem_neighborFinset _ _).1 x.property
-        simp [pathAlgebraGenerator_apply, f, hac, hx]
-    · intro t _ ht
-      rw [pathAlgebraGenerator_apply, ite_eq_right fun ⟨_, hst, hadj⟩ ↦ ht <| Finset.mem_image.2
-        ⟨⟨t b, (G.mem_neighborFinset _ _).2 hadj⟩, Finset.mem_attach _ _,
-          EndpointWalk.ext fun i ↦ by simpa [f] using (congrFun hst i).symm⟩, zero_mul]
-  · exact Finset.sum_eq_zero fun _ _ ↦ by simp [pathAlgebraGenerator_apply, hac]
+  rw [pathAlgebraGenerator, walkGenerator_mul_apply DFunLike.coe DFunLike.coe_injective
+    (fun _ ↦ True) (fun s _ hac x hx ↦ s.update hab hbc hac hx)
+    (fun _ _ _ _ ↦ EndpointWalk.coe_update _ hab hbc _ _)]
+  by_cases hac : s a = s c
+  · rw [dite_eq_left ⟨trivial, hac⟩, dite_eq_left hac]
+  · rw [dite_eq_right fun h ↦ hac h.2, dite_eq_right hac]
 theorem pathAlgebraGenerator_update_apply {a b c : Fin (n + 1)} (hab : a.val + 1 = b.val)
     (hbc : b.val + 1 = c.val) {v : G.walkEndpoints v₀ n} (s : G.EndpointWalk v₀ n v.val)
     (hac : s a = s c) {x : V} (hx : G.Adj (s a) x) (u : G.EndpointWalk v₀ n v.val) :
     pathAlgebraGenerator G v₀ r a b c v (s.update hab hbc hac hx) u =
       if (u : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (u b) ∧ G.Adj (s a) (u b) then
-        r x * r (u b) / r (s a) ^ 2 else 0 := by
-  rw [pathAlgebraGenerator_apply]; simp [update_of_ne (Fin.ne_of_val_ne (by omega) : a ≠ b),
-    update_of_ne (Fin.ne_of_val_ne (by omega) : c ≠ b), hac]
+        r x * r (u b) / r (s a) ^ 2 else 0 :=
+  walkGenerator_update_apply DFunLike.coe (fun _ ↦ True) hab hbc trivial hac
+    (EndpointWalk.coe_update s hab hbc hac hx) u
 /-- When the vertex weights `r` are self-adjoint, each block of `pathAlgebraGenerator` is
 Hermitian. -/
 theorem conjTranspose_pathAlgebraGenerator [StarRing K] (hrs : ∀ v, IsSelfAdjoint (r v))
     {a b c : Fin (n + 1)} (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val)
     (v : G.walkEndpoints v₀ n) :
-    (pathAlgebraGenerator G v₀ r a b c v)ᴴ = pathAlgebraGenerator G v₀ r a b c v := by
-  have ha : a ≠ b := Fin.ne_of_val_ne (by omega); have hc : c ≠ b := Fin.ne_of_val_ne (by omega)
-  have hsymm {s t : G.EndpointWalk v₀ n v.val}
-      (h : s a = s c ∧ (t : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (t b) ∧
-        G.Adj (s a) (t b)) :
-      t a = t c ∧ (s : Fin (n + 1) → V) = update (t : Fin (n + 1) → V) b (s b) ∧
-        G.Adj (t a) (s b) := by
-    have hta : t a = s a := by rw [congrFun h.2.1 a, update_of_ne ha]
-    exact ⟨by rw [hta, congrFun h.2.1 c, update_of_ne hc, h.1],
-      by rw [h.2.1, update_idem, update_eq_self], hta ▸ s.adj hab⟩
-  ext s t; rw [Matrix.conjTranspose_apply, pathAlgebraGenerator_apply, pathAlgebraGenerator_apply]
-  split_ifs with h₁ h₂ h₃
-  · rw [congrFun h₂.2.1 a, update_of_ne ha]
-    simp only [star_div₀, star_mul, star_pow, (hrs _).star_eq, mul_comm (r (s b))]
-  all_goals first | exact star_zero K | exact (h₂ (hsymm h₁)).elim | exact (h₁ (hsymm h₃)).elim
+    (pathAlgebraGenerator G v₀ r a b c v)ᴴ = pathAlgebraGenerator G v₀ r a b c v :=
+  conjTranspose_walkGenerator hrs DFunLike.coe (fun _ ↦ True) hab hbc (fun {s} _ ↦ s.isWalkFrom)
+    (fun _ _ _ _ ↦ trivial)
 /-- Temperley–Lieb idempotent relation `e_i ^ 2 = δ • e_i` for `pathAlgebraGenerator`. -/
 theorem pathAlgebraGenerator_mul_self (hr : ∀ v, r v ≠ 0) {δ : K}
     (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
     {a b c : Fin (n + 1)} (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val) :
     pathAlgebraGenerator G v₀ r a b c * pathAlgebraGenerator G v₀ r a b c =
-      δ • pathAlgebraGenerator G v₀ r a b c := by
-  ext v s u
-  rw [Pi.mul_apply, pathAlgebraGenerator_mul_apply hab hbc, Pi.smul_apply, Matrix.smul_apply,
-    pathAlgebraGenerator_apply, smul_eq_mul]
-  by_cases hac : s a = s c
-  · rw [dite_eq_left hac]
-    by_cases hu : (u : Fin (n + 1) → V) = update (s : Fin (n + 1) → V) b (u b) ∧ G.Adj (s a) (u b)
-    · rw [ite_eq_left ⟨hac, hu⟩]
-      simp_rw [pathAlgebraGenerator_update_apply hab hbc s hac, ite_eq_left hu]
-      rw [(G.neighborFinset (s a)).sum_attach fun x ↦
-          r (s b) * r x / r (s a) ^ 2 * (r x * r (u b) / r (s a) ^ 2),
-        Finset.sum_congr rfl fun x _ ↦ (by ring :
-          r (s b) * r x / r (s a) ^ 2 * (r x * r (u b) / r (s a) ^ 2) =
-            r (s b) * r (u b) / r (s a) ^ 4 * r x ^ 2), ← Finset.mul_sum, hδ]
-      have := hr (s a); field_simp
-    · rw [ite_eq_right fun h ↦ hu h.2, mul_zero]
-      simp [pathAlgebraGenerator_update_apply hab hbc s hac, hu]
-  · rw [dite_eq_right hac, ite_eq_right fun h ↦ hac h.1, mul_zero]
+      δ • pathAlgebraGenerator G v₀ r a b c :=
+  funext fun _ ↦ walkGenerator_mul_self hr DFunLike.coe DFunLike.coe_injective (fun _ ↦ True)
+    hab hbc (fun _ ↦ hδ _) (fun s _ hac _ hx ↦ s.update hab hbc hac hx)
+    (fun _ _ _ _ ↦ EndpointWalk.coe_update _ hab hbc _ _) (fun _ _ _ _ ↦ trivial)
 /-- Temperley–Lieb zigzag relation `e_i * e_{i±1} * e_i = e_i` for adjacent
 `pathAlgebraGenerator`s. -/
 private theorem pathAlgebraGenerator_zigzag (hr : ∀ v, r v ≠ 0) {a₁ b₁ c₁ a₂ b₂ c₂ q : Fin (n + 1)}
@@ -455,48 +421,12 @@ private theorem pathAlgebraGenerator_zigzag (hr : ∀ v, r v ≠ 0) {a₁ b₁ c
     (hab₂ : a₂.val + 1 = b₂.val) (hbc₂ : b₂.val + 1 = c₂.val)
     (hc : (a₂ = b₁ ∧ b₂ = c₁ ∧ c₂ = q) ∨ (c₂ = b₁ ∧ b₂ = a₁ ∧ a₂ = q)) :
     pathAlgebraGenerator G v₀ r a₁ b₁ c₁ * pathAlgebraGenerator G v₀ r a₂ b₂ c₂ *
-      pathAlgebraGenerator G v₀ r a₁ b₁ c₁ = pathAlgebraGenerator G v₀ r a₁ b₁ c₁ := by
-  have hb₁q : b₁ ≠ q := hc.elim (fun ⟨_, rfl, rfl⟩ ↦ Fin.ne_of_val_ne (by omega))
-    fun ⟨_, rfl, rfl⟩ ↦ Fin.ne_of_val_ne (by omega)
-  have ⟨hab₁', hcb₁, hac₁'⟩ : a₁ ≠ b₁ ∧ c₁ ≠ b₁ ∧ a₁ ≠ c₁ := by
-    refine ⟨?_, ?_, ?_⟩ <;> exact Fin.ne_of_val_ne (by omega)
-  ext v s u
-  rw [mul_assoc, Pi.mul_apply, Pi.mul_apply, pathAlgebraGenerator_mul_apply hab₁ hbc₁,
-    pathAlgebraGenerator_apply]
-  by_cases hac : s a₁ = s c₁
-  · -- First reduction: in the sum over `x ∈ neighborFinset (s a₁)` updating `b₁`, the middle
-    -- generator requires `s₁ a₂ = s₁ c₂`, isolating the unique summand `x = s q`.
-    rw [dite_eq_left hac]
-    have hqadj : G.Adj (s a₁) (s q) := hc.elim (fun ⟨_, rfl, rfl⟩ ↦ hac ▸ s.adj hbc₂)
-      fun ⟨_, rfl, rfl⟩ ↦ (s.adj hab₂).symm
-    rw [Finset.sum_eq_single_of_mem ⟨s q, (G.mem_neighborFinset _ _).2 hqadj⟩
-      (Finset.mem_attach _ _) fun x _ hxq ↦ by
-        rw [pathAlgebraGenerator_mul_apply hab₂ hbc₂,
-          dite_eq_right fun hEq ↦ hxq <| Subtype.ext <| by
-          rcases hc with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩
-          · simpa [update_of_ne hb₁q.symm] using hEq
-          · simpa [update_of_ne hb₁q.symm] using hEq.symm, mul_zero]]
-    let s₁ := s.update hab₁ hbc₁ hac hqadj
-    have ⟨hs₁a₂, hs₁c₂, hs₁b₂⟩ : s₁ a₂ = s q ∧ s₁ c₂ = s q ∧ s₁ b₂ = s a₁ := by
-      rcases hc with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
-        simp [s₁, update_of_ne hb₁q.symm, update_of_ne hab₁', update_of_ne hcb₁, hac]
-    have hs₁ : s₁ a₂ = s₁ c₂ := hs₁a₂.trans hs₁c₂.symm
-    -- Second reduction: in the sum over `y ∈ neighborFinset (s₁ a₂)` updating `b₂`, the rightmost
-    -- generator requires matching vertices at `a₁` and `c₁`, isolating `y = s a₁ = s₁ b₂`.
-    have hamem : s a₁ ∈ G.neighborFinset (s₁ a₂) :=
-      (G.mem_neighborFinset _ _).2 (hs₁a₂ ▸ hqadj.symm)
-    rw [pathAlgebraGenerator_mul_apply hab₂ hbc₂, dite_eq_left hs₁,
-      Finset.sum_eq_single_of_mem ⟨s a₁, hamem⟩ (Finset.mem_attach _ _) fun y _ hya ↦ by
-        rw [pathAlgebraGenerator_apply, ite_eq_right fun ⟨hEq, _, _⟩ ↦ hya <| Subtype.ext <| by
-          rcases hc with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩
-          · simpa [s₁, update_of_ne hac₁', update_of_ne hab₁'] using hEq.symm
-          · simpa [s₁, update_of_ne hac₁'.symm, update_of_ne hcb₁, ← hac] using hEq, mul_zero],
-      s₁.update_eq_self hab₂ hbc₂ hs₁ ((G.mem_neighborFinset _ _).1 hamem) hs₁b₂.symm,
-      pathAlgebraGenerator_update_apply hab₁ hbc₁ s hac hqadj]
-    simp only [hac, true_and]; split_ifs
-    · rw [hs₁b₂, hs₁a₂, hac]; have := hr (s c₁); have := hr (s q); field_simp
-    · simp
-  · rw [dite_eq_right hac, ite_eq_right fun h ↦ hac h.1]
+      pathAlgebraGenerator G v₀ r a₁ b₁ c₁ = pathAlgebraGenerator G v₀ r a₁ b₁ c₁ :=
+  funext fun _ ↦ walkGenerator_zigzag hr DFunLike.coe DFunLike.coe_injective (fun _ ↦ True)
+    (fun {s} _ ↦ s.isWalkFrom) hab₁ hbc₁ hab₂ hbc₂ hc
+    (fun hab hbc s _ hac _ hx ↦ s.update hab hbc hac hx)
+    (fun {_ _ _} hab hbc {_} _ hac {_} hx ↦ EndpointWalk.coe_update _ hab hbc hac hx)
+    (fun {_ _ _} _ _ {_} _ _ {_} _ ↦ trivial)
 /-- Matrix entries of a product of two `pathAlgebraGenerator`s whose updated positions are
 disjoint. -/
 theorem pathAlgebraGenerator_mul_pathAlgebraGenerator_apply {a b c a' b' c' : Fin (n + 1)}
@@ -507,29 +437,22 @@ theorem pathAlgebraGenerator_mul_pathAlgebraGenerator_apply {a b c a' b' c' : Fi
           (u : Fin (n + 1) → V) = update (update (s : Fin (n + 1) → V) b (u b)) b' (u b') ∧
           G.Adj (s a) (u b) ∧ G.Adj (s a') (u b') then
         r (s b) * r (u b) / r (s a) ^ 2 * (r (s b') * r (u b') / r (s a') ^ 2) else 0 := by
-  rw [Pi.mul_apply, pathAlgebraGenerator_mul_apply hab hbc]; by_cases hac : s a = s c
-  · rw [dite_eq_left hac]; by_cases hub : G.Adj (s a) (u b)
-    · rw [Finset.sum_eq_single_of_mem ⟨u b, (G.mem_neighborFinset _ _).2 hub⟩
-        (Finset.mem_attach _ _) fun x _ hxu ↦ by
-          rw [pathAlgebraGenerator_apply, ite_eq_right fun ⟨_, hEq, _⟩ ↦ hxu <| Subtype.ext <| by
-            simpa [update_of_ne h₂] using (congrFun hEq b).symm, mul_zero],
-        pathAlgebraGenerator_apply]
-      simp only [EndpointWalk.coe_update, update_of_ne h₁.symm, update_of_ne h₂.symm,
-        update_of_ne h₃.symm, hac, hac ▸ hub, true_and]; split_ifs <;> simp
-    · rw [ite_eq_right fun h ↦ hub h.2.2.2.1]; refine Finset.sum_eq_zero fun x _ ↦ ?_
-      rw [pathAlgebraGenerator_apply, ite_eq_right fun ⟨_, hEq, _⟩ ↦ hub <|
-        (by simpa [update_of_ne h₂] using congrFun hEq b : u b = x.val) ▸
-          (G.mem_neighborFinset _ _).1 x.property, mul_zero]
-  · rw [dite_eq_right hac, ite_eq_right fun h ↦ hac h.1]
+  simpa [pathAlgebraGenerator] using
+    walkGenerator_mul_walkGenerator_apply DFunLike.coe DFunLike.coe_injective (fun _ ↦ True)
+      h₁ h₂ h₃ (fun s _ hac _ hx ↦ s.update hab hbc hac hx)
+      (fun _ _ _ _ ↦ EndpointWalk.coe_update _ hab hbc _ _) (fun _ _ _ _ ↦ trivial) s u
 /-- Far-commutation relation `e_i * e_j = e_j * e_i` for disjoint `pathAlgebraGenerator`s. -/
 theorem pathAlgebraGenerator_mul_pathAlgebraGenerator_comm {a b c a' b' c' : Fin (n + 1)}
     (hab : a.val + 1 = b.val) (hbc : b.val + 1 = c.val) (hab' : a'.val + 1 = b'.val)
     (hbc' : b'.val + 1 = c'.val) (h₁ : b ≠ a') (h₂ : b ≠ b') (h₃ : b ≠ c') (h₄ : b' ≠ a)
     (h₅ : b' ≠ c) : pathAlgebraGenerator G v₀ r a b c * pathAlgebraGenerator G v₀ r a' b' c' =
-      pathAlgebraGenerator G v₀ r a' b' c' * pathAlgebraGenerator G v₀ r a b c := by
-  ext v s u; rw [pathAlgebraGenerator_mul_pathAlgebraGenerator_apply hab hbc h₁ h₂ h₃,
-    pathAlgebraGenerator_mul_pathAlgebraGenerator_apply hab' hbc' h₄ h₂.symm h₅, update_comm h₂]
-  split_ifs <;> first | ring1 | (exfalso; tauto)
+      pathAlgebraGenerator G v₀ r a' b' c' * pathAlgebraGenerator G v₀ r a b c :=
+  funext fun _ ↦ walkGenerator_mul_walkGenerator_comm DFunLike.coe DFunLike.coe_injective
+    (fun _ ↦ True) h₁ h₂ h₃ h₄ h₅
+    (fun s _ hac _ hx ↦ s.update hab hbc hac hx)
+    (fun _ _ _ _ ↦ EndpointWalk.coe_update _ hab hbc _ _) (fun _ _ _ _ ↦ trivial)
+    (fun s _ hac _ hx ↦ s.update hab' hbc' hac hx)
+    (fun _ _ _ _ ↦ EndpointWalk.coe_update _ hab' hbc' _ _) (fun _ _ _ _ ↦ trivial)
 /-- `pathAlgebraExtend` shifts `pathAlgebraGenerator` indices by `Fin.castSucc`. -/
 theorem pathAlgebraExtend_pathAlgebraGenerator {a b c : Fin (n + 2)} (hbc : b.val + 1 = c.val) :
     pathAlgebraExtend G v₀ (pathAlgebraGenerator G v₀ r a b c) =
@@ -579,7 +502,7 @@ level `n ≥ 0`. -/
     pathAlgebraRep G v₀ hr hδ (strandInclAll n x) =
       pathAlgebraExtend G v₀ (pathAlgebraRep G v₀ hr hδ x) := by
   cases n with
-  | zero => rw [eq_algebraMap_aug_zero x]; simp
+  | zero => rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x]; simp
   | succ _ => rw [strandInclAll_succ, pathAlgebraRep_strandIncl]
 section Star
 variable [StarRing K] (hrs : ∀ v, IsSelfAdjoint (r v)) [Fact (IsSelfAdjoint δ)]
@@ -793,7 +716,7 @@ theorem pathAlgebraTrace_pathAlgebraExtend_mul_pathAlgebraGenerator (hr : ∀ v,
         pathAlgebraGenerator_mul_pathAlgebraExtend_snoc_diag hr X ha' hv]
       exact (G.neighborFinset v).sum_attach (g v),
     G.sum_walkEndpoints_succ v₀ (n + 1) g fun _ u hu ↦ by
-      have := not_nonempty_iff.1 ((G.mem_walkEndpoints_iff v₀).not.1 hu); exact Fintype.sum_empty _]
+      have := G.isEmpty_endpointWalk_of_notMem v₀ hu; exact Fintype.sum_empty _]
   exact Finset.sum_congr rfl fun u _ ↦ by
     rw [Finset.sum_comm, Matrix.trace, Finset.mul_sum]
     refine Finset.sum_congr rfl fun p _ ↦ ?_
@@ -824,36 +747,4 @@ theorem IsMarkovTrace.apply_eq_pathAlgebraTrace_pathAlgebraRep
   LinearMap.congr_fun (congrFun (htr.unique (isMarkovTrace_pathAlgebraTrace G v₀ hr hδ)) n) x
 end WalkTraceMarkov
 end WalkRep
-section FiniteGraph
-variable {K : Type*} [Field K] {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
-  [DecidableRel G.Adj] (v₀ : V) {r : V → K} (hr : ∀ v, r v ≠ 0) {δ : K}
-  (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = δ * r v ^ 2)
-/-- On a finite graph, `pathAlgebraRep` agrees entrywise with `pathRep` on genuine walks. -/
-theorem pathAlgebraRep_eq_pathRep_apply {n : ℕ} (x : TemperleyLieb K δ n)
-    (v : G.walkEndpoints v₀ n) (p q : G.EndpointWalk v₀ n v.val) :
-    pathAlgebraRep G v₀ hr hδ x v p q = pathRep G v₀ hr (.of_forall hδ n) x p q := by
-  induction x using TemperleyLieb.induction generalizing p q with
-  | e _ =>
-    have hp : G.IsWalkFrom v₀ ⇑p := p.isWalkFrom
-    simp only [pathAlgebraRep_e, pathRep_e, pathAlgebraGenerator_apply, pathGenerator_apply,
-      hp, true_and]
-  | algebraMap _ =>
-    simp [Algebra.algebraMap_eq_smul_one, Matrix.one_apply, DFunLike.coe_injective.eq_iff]
-  | add _ _ hx hy => simp [hx, hy]
-  | mul x _ hx hy =>
-    simp only [map_mul, Pi.mul_apply, Matrix.mul_apply]
-    let emb : G.EndpointWalk v₀ n v.val → (Fin (n + 1) → V) := (↑)
-    rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.image emb)),
-      Finset.sum_image fun _ _ _ _ h ↦ DFunLike.coe_injective h]
-    · exact Finset.sum_congr rfl fun _ _ ↦ by rw [hx, hy]
-    · intro u _ hu
-      rw [pathRep_apply_eq_zero hr (.of_forall hδ n) x (s := ⇑p) fun ⟨hp, hlast⟩ ↦ hu <|
-        Finset.mem_image.2 ⟨⟨u, hp.1 p.isWalkFrom, hlast.symm.trans p.apply_last⟩,
-          Finset.mem_univ _, rfl⟩, zero_mul]
-/-- On a finite graph, `pathAlgebraTrace ∘ pathAlgebraRep` coincides with `pathTrace`. -/
-theorem pathAlgebraTrace_pathAlgebraRep_eq_pathTrace {n : ℕ} (x : TemperleyLieb K δ n) :
-    pathAlgebraTrace G v₀ r (pathAlgebraRep G v₀ hr hδ x) = pathTrace G v₀ hr (.of_forall hδ n) x :=
-  ((isMarkovTrace_pathTrace G v₀ hr hδ).apply_eq_pathAlgebraTrace_pathAlgebraRep
-    G v₀ hr hδ n x).symm
-end FiniteGraph
 end TauCeti.TemperleyLieb

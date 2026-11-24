@@ -167,8 +167,24 @@ theorem finrank_quotient_eq_sum_card_sq (n : ℕ) : Module.finrank ℂ (htr.Quot
     ∑ v ∈ G.walkEndpoints v₀ n, Fintype.card (G.EndpointWalk v₀ n v) ^ 2 := by
   classical
   exact (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj n
-    |>.toAlgEquiv.toLinearEquiv.finrank_eq).trans (PathAlgebra.finrank ℂ G v₀ n)
+    |>.toAlgEquiv.toLinearEquiv.finrank_eq).trans (finrank_pathAlgebra ℂ G v₀ n)
 end GraphModel
+section
+variable {V : Type*} (G : SimpleGraph V) [DecidableEq V] [DecidableRel G.Adj] [G.LocallyFinite]
+  (v₀ : V) {r : V → ℂ} (hr : ∀ v, r v ≠ 0) (hrs : ∀ v, IsSelfAdjoint (r v))
+  {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
+  (hδ : ∀ v, ∑ u ∈ G.neighborFinset v, r u ^ 2 = (δ : ℂ) * r v ^ 2)
+  {f : V → ℕ} (hf : Function.Injective f) (hf₀ : f v₀ = 0)
+  (hadj : ∀ {x y}, G.Adj x y → f x + 1 = f y ∨ f y + 1 = f x)
+  {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ} (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
+/-- `quotientStarPositiveFunctional` computes as `pathAlgebraTrace ∘ quotientPathAlgebraEquiv`. -/
+theorem quotientStarPositiveFunctional_eq_pathAlgebraTrace_quotientPathAlgebraEquiv
+    (hδloop : δ ∈ jonesLoopParameters) {n : ℕ} (x : htr.Quotient n) :
+    htr.quotientStarPositiveFunctional hδloop n x =
+      pathAlgebraTrace G v₀ r (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj n x) :=
+  (htr.quotientStarPositiveFunctional_apply hδloop n x).trans
+    (htr.pathAlgebraTrace_quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj x).symm
+end
 end IsMarkovTrace
 namespace IsMarkovTrace
 section JonesQuotients
@@ -176,12 +192,19 @@ open Real SimpleGraph
 variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
   {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ} (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
 /-- **Discrete Jones quotient decomposition** at `δ = 2 cos (π / m)` (`m ≥ 2`) on `A_(m-1)`. -/
-@[expose] def discreteQuotientEquiv {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m)) (n : ℕ) :
+def discreteQuotientEquiv {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m)) (n : ℕ) :
     htr.Quotient n ≃⋆ₐ[ℂ] PathAlgebra ℂ (pathGraph (m - 1)) ⟨0, Nat.sub_pos_of_lt (by omega)⟩ n :=
   htr.quotientPathAlgebraEquiv (pathGraph (m - 1)) ⟨0, Nat.sub_pos_of_lt (by omega)⟩
     discretePathWeight_ne_zero (isSelfAdjoint_discretePathWeight m)
     (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq v)
     Fin.val_injective rfl (fun h ↦ pathGraph_adj.1 h) n
+/-- Unfolding equation for `discreteQuotientEquiv` as a `quotientPathAlgebraEquiv`. -/
+theorem discreteQuotientEquiv_eq {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m)) (n : ℕ) :
+    htr.discreteQuotientEquiv hm hδ n =
+      htr.quotientPathAlgebraEquiv (pathGraph (m - 1)) ⟨0, Nat.sub_pos_of_lt (by omega)⟩
+        discretePathWeight_ne_zero (isSelfAdjoint_discretePathWeight m)
+        (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq v)
+        Fin.val_injective rfl (fun h ↦ pathGraph_adj.1 h) n := (rfl)
 /-- Evaluating `discreteQuotientEquiv` on a quotient class computes `pathAlgebraRep` on
 `A_(m-1)`. -/
 @[simp] theorem discreteQuotientEquiv_mk {m : ℕ} (hm : 2 ≤ m) (hδ : δ = 2 * cos (π / m))
@@ -191,11 +214,17 @@ variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
         discretePathWeight_ne_zero
         (fun v ↦ by rw [hδ]; exact sum_neighborFinset_discretePathWeight_sq v) x := (rfl)
 /-- **Generic Jones quotient decomposition** for `δ ≥ 2` on `A_∞` (`hasse ℕ`). -/
-@[expose] def genericQuotientEquiv (hδ : 2 ≤ δ) (n : ℕ) :
+def genericQuotientEquiv (hδ : 2 ≤ δ) (n : ℕ) :
     htr.Quotient n ≃⋆ₐ[ℂ] PathAlgebra ℂ (hasse ℕ) 0 n :=
   htr.quotientPathAlgebraEquiv (hasse ℕ) 0 (genericPathWeight_ne_zero hδ)
     (isSelfAdjoint_genericPathWeight δ) (sum_neighborFinset_genericPathWeight_sq hδ)
     Function.injective_id rfl (fun h ↦ hasse_nat_adj.1 h) n
+/-- Unfolding equation for `genericQuotientEquiv` as a `quotientPathAlgebraEquiv`. -/
+theorem genericQuotientEquiv_eq (hδ : 2 ≤ δ) (n : ℕ) :
+    htr.genericQuotientEquiv hδ n =
+      htr.quotientPathAlgebraEquiv (hasse ℕ) 0 (genericPathWeight_ne_zero hδ)
+        (isSelfAdjoint_genericPathWeight δ) (sum_neighborFinset_genericPathWeight_sq hδ)
+        Function.injective_id rfl (fun h ↦ hasse_nat_adj.1 h) n := (rfl)
 /-- Evaluating `genericQuotientEquiv` on a quotient class computes `pathAlgebraRep` on `A_∞`. -/
 @[simp] theorem genericQuotientEquiv_mk (hδ : 2 ≤ δ) {n : ℕ} (x : TemperleyLieb ℂ (δ : ℂ) n) :
     htr.genericQuotientEquiv hδ n (Ideal.Quotient.mk (htr.traceRadical n) x) =

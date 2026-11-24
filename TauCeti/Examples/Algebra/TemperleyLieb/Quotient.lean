@@ -24,7 +24,7 @@ theorem finrank_quotient_eq_one_of_loop_one
     (htr : IsMarkovTrace ℂ ((1 : ℝ) : ℂ) tr) (n : ℕ) : Module.finrank ℂ (htr.Quotient n) = 1 := by
   rw [(htr.discreteQuotientEquiv (m := 3) (by omega)
       (by rw [Nat.cast_ofNat, cos_pi_div_three]; ring) n).toAlgEquiv.toLinearEquiv.finrank_eq,
-    PathAlgebra.finrank_fintype, Fin.sum_univ_two]
+    finrank_pathAlgebra_of_fintype, Fin.sum_univ_two]
   rcases Nat.mod_two_eq_zero_or_one n with hn | hn <;> simp [card_endpointWalk_pathGraph_two, hn]
 /-- At `δ = 1` on `2` strands, `f_2` lies in `htr.traceRadical 2` but not the Jacobson radical. -/
 theorem traceRadical_two_ne_jacobson_at_one {tr : ∀ n : ℕ, TemperleyLieb ℂ 1 n →ₗ[ℂ] ℂ}
@@ -42,7 +42,7 @@ private theorem sqrt_two_eq_two_mul_cos : √2 = 2 * cos (π / (4 : ℕ)) := by
 private theorem finrank_pathAlgebra_pathGraph_three :
     Module.finrank ℂ (PathAlgebra ℂ (pathGraph 3) 0 2) = 2 ∧
       Module.finrank ℂ (PathAlgebra ℂ (pathGraph 3) 0 3) = 4 := by
-  simp only [PathAlgebra.finrank_fintype, Fin.sum_univ_three, card_endpointWalk_succ,
+  simp only [finrank_pathAlgebra_of_fintype, Fin.sum_univ_three, card_endpointWalk_succ,
     card_endpointWalk_zero, (by decide : (pathGraph 3).neighborFinset 0 = {1}),
     (by decide : (pathGraph 3).neighborFinset 1 = {0, 2}),
     (by decide : (pathGraph 3).neighborFinset 2 = {1}), Finset.sum_singleton,
@@ -67,7 +67,7 @@ private theorem finrank_pathAlgebra_hasse :
       Module.finrank ℂ (PathAlgebra ℂ (hasse ℕ) 0 3) = 5 := by
   have hw2 : (hasse ℕ).walkEndpoints 0 2 = {0, 2} := by ext; simp [walkEndpoints_succ]
   have hw3 : (hasse ℕ).walkEndpoints 0 3 = {1, 3} := by rw [walkEndpoints_succ, hw2]; ext; simp
-  simp only [PathAlgebra.finrank, hw2, hw3, card_endpointWalk_succ, card_endpointWalk_zero,
+  simp only [finrank_pathAlgebra, hw2, hw3, card_endpointWalk_succ, card_endpointWalk_zero,
     neighborFinset_hasse_nat_zero, neighborFinset_hasse_nat_succ, Finset.sum_singleton,
     Finset.sum_pair (by decide : 0 ≠ 2), Finset.sum_pair (by decide : 1 ≠ 3),
     Finset.sum_pair (by decide : 2 ≠ 4)]; decide

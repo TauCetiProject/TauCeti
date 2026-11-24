@@ -92,8 +92,8 @@ theorem traceRadical_le_comap_strandInclAll (n : ℕ) :
     intro x hx
     rw [mem_traceRadical_iff] at hx
     have h0 := hx 1
-    rw [eq_algebraMap_aug_zero x, Algebra.algebraMap_eq_smul_one, mul_one, map_smul,
-      htr.map_one, pow_zero, smul_eq_mul, mul_one] at h0
+    rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x, Algebra.algebraMap_eq_smul_one, mul_one,
+      map_smul, htr.map_one, pow_zero, smul_eq_mul, mul_one] at h0
     rw [Ideal.mem_comap, strandInclAll_zero, h0, map_zero]
     exact (htr.traceRadical 1).zero_mem
   | succ n =>
@@ -116,7 +116,7 @@ theorem comap_traceRadical_strandInclAll (n : ℕ)
     simp only [strandInclAll_zero, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
       map_smul, htr.map_one, zero_add, pow_one, smul_eq_mul] at h1
     have haug : aug x = 0 := (hδ rfl) (by simpa [mul_comm] using h1)
-    rw [eq_algebraMap_aug_zero x, haug, map_zero]
+    rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x, haug, map_zero]
     exact (htr.traceRadical 0).zero_mem
   | succ n => rw [strandInclAll_succ]; exact htr.comap_traceRadical_strandIncl n
 

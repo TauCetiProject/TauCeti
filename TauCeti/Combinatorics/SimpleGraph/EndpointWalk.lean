@@ -212,6 +212,10 @@ theorem walkEndpoints_succ (m : ℕ) :
       fun ⟨w⟩ ↦ ⟨w (Fin.last m).castSucc, ih.2 ⟨w.init⟩, w.adj_init_last⟩⟩
 instance instNonemptyEndpointWalk (m : ℕ) (u : G.walkEndpoints v₀ m) :
     Nonempty (G.EndpointWalk v₀ m u.val) := (G.mem_walkEndpoints_iff v₀).1 u.property
+/-- If `v ∉ G.walkEndpoints v₀ m`, there are no `m`-step walks from `v₀` to `v`. -/
+theorem isEmpty_endpointWalk_of_notMem {m : ℕ} {v : V} (hv : v ∉ G.walkEndpoints v₀ m) :
+    IsEmpty (G.EndpointWalk v₀ m v) :=
+  not_nonempty_iff.1 ((G.mem_walkEndpoints_iff v₀).not.1 hv)
 /-- Swap summation over `(m + 1)`-step endpoints and neighbours when `g` vanishes off `m`-step
 endpoints. -/
 theorem sum_walkEndpoints_succ (m : ℕ) {M : Type*} [AddCommMonoid M] (g : V → V → M)

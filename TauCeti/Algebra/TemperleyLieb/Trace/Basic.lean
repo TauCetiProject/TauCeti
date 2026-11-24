@@ -112,9 +112,8 @@ theorem map_strandIncl_mul_e_last_mul (htr : IsMarkovTraceUpTo R δ N tr) {m : �
 /-- On at most one strand the algebra is the base ring, so a Markov trace is `aug x * δ ^ m`. -/
 theorem apply_of_le_one (htr : IsMarkovTraceUpTo R δ N tr) {m : ℕ} (hm : m ≤ N) (hm1 : m ≤ 1)
     (x : TemperleyLieb R δ m) : tr m hm x = aug x * δ ^ m := by
-  conv_lhs => rw [← (algEquivOfLeOne δ hm1).symm_apply_apply x]
-  rw [algEquivOfLeOne_apply, algEquivOfLeOne_symm_apply, Algebra.algebraMap_eq_smul_one,
-    map_smul, htr.map_one, smul_eq_mul]
+  conv_lhs => rw [eq_algebraMap_aug_of_le_one hm1 x]
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, htr.map_one, smul_eq_mul]
 
 /-- **Uniqueness of Markov traces up to `N` strands.** Over every commutative semiring and at
 every loop parameter there is at most one unnormalized Markov trace on `0, …, N` strands: on at
@@ -164,7 +163,8 @@ theorem map_strandInclAll (htr : IsMarkovTrace R δ tr) (n : ℕ) (x : Temperley
     tr (n + 1) (strandInclAll n x) = δ * tr n x := by
   cases n with
   | zero =>
-    rw [eq_algebraMap_aug_zero x]; simp [Algebra.algebraMap_eq_smul_one, htr.map_one, mul_comm]
+    rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x]
+    simp [Algebra.algebraMap_eq_smul_one, htr.map_one, mul_comm]
   | succ n => rw [strandInclAll_succ, htr.map_strandIncl]
 
 /-- On at most one strand the algebra is the base ring, so a Markov trace is `aug x * δ ^ n`. -/

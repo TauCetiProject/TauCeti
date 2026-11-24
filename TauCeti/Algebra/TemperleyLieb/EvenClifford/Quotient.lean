@@ -270,7 +270,7 @@ level `n ≥ 0`. -/
 theorem evenCliffordHom_strandInclAll (n : ℕ) (x : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) n) :
     evenCliffordHom (n + 1) (strandInclAll n x) = evenCliffordIncl n (evenCliffordHom n x) := by
   cases n with
-  | zero => rw [eq_algebraMap_aug_zero x]; simp
+  | zero => rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x]; simp
   | succ n => rw [strandInclAll_succ]; exact evenCliffordHom_strandIncl n x
 
 /-- Multiplying an included Clifford element on the right by the last Clifford projection scales its
