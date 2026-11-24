@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.Algebra.Polynomial.LinearFactor
 
 /-!
 # Taylor coefficients at a root and in subleading degree
@@ -230,12 +231,8 @@ order less than `m` vanish at `ζ`. -/
 theorem aeval_hasseDeriv_eq_zero_of_pow_dvd {B : Type*} [CommRing B] [Algebra R B] {ζ : B}
     {g p : R[X]} (hg : aeval ζ g = 0) {m : ℕ} (h : g ^ m ∣ p) {k : ℕ} (hk : k < m) :
     aeval ζ (hasseDeriv k p) = 0 := by
-  have hroot : X - C ζ ∣ g.map (algebraMap R B) :=
-    dvd_iff_isRoot.mpr (by rwa [IsRoot, eval_map_algebraMap])
-  have hdvd : (X - C ζ) ^ m ∣ p.map (algebraMap R B) :=
-    (pow_dvd_pow_of_dvd hroot m).trans (by simpa using Polynomial.map_dvd (algebraMap R B) h)
-  rw [← coeff_taylor_map_algebraMap, taylor_coeff]
-  exact X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.mp hdvd k hk
+  obtain ⟨c, hc⟩ := pow_sub_dvd_hasseDeriv_of_pow_dvd k h
+  rw [hc, map_mul, map_pow, hg, zero_pow (by omega), zero_mul]
 
 /-- For `p ≠ 0`, `r` has multiplicity at least `n` as a root of `p` if and only if every Hasse
 derivative of `p` of order less than `n` vanishes at `r`. -/
