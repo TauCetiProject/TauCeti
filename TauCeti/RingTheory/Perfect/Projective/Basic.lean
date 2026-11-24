@@ -55,7 +55,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Module
+open _root_.Module
 
 variable {R M : Type*} [CommRing R] (p : ℕ) [ExpChar R p] [Fact p.Prime] [PerfectRing R p]
   [AddCommGroup M] [Module R M] [Module.FinitePresentation R M]
