@@ -126,11 +126,8 @@ theorem IsMinimal.negOnePowCast_smul_splice_two_add_succ_eq_zero {𝒜 : AInfini
   -- Collapsing `[e, x_{p+2}]` gives `x_{p+2}`, producing the same spliced word with opposite sign.
   have hsucc_val : 𝒜.taylor (subword R x (p + 1) 2) = x ⟨p + 1 + 1, by omega⟩ := by
     rw [subword_two_eq R x (by omega), hxe, h𝒜.taylor_of_two_cohomologicalUnit_left he]
-  rw [hp_val, splice_smul, smul_smul, ← negOnePowCast_add, hsucc_val,
-    splice_two_succ_eq_splice_two_pred R (Nat.succ_pos p) hpn x,
-    prefixSum_succ (by omega : p < n + 1), ← add_assoc, negOnePowCast_add _ 1, negOnePowCast_one,
-    mul_neg_one, neg_smul]
-  exact neg_add_cancel _
+  rw [hp_val, hsucc_val, splice_two_succ_eq_splice_two_pred R (Nat.succ_pos p) hpn x, splice_smul]
+  simp [prefixSum_succ (by omega : p < n + 1), negOnePowCast_add, smul_smul]
 
 /-! ### Stasheff identity on duplicated-unit words -/
 
@@ -194,22 +191,21 @@ private theorem taylor_barDifferential_duplicateAt_m_add_three {𝒜 : AInfinity
       ite_eq_right, add_zero]
   rcases Nat.eq_zero_or_pos p with rfl | hppos
   · -- Initial `(m + 3)`-collapse (`p = 0`).
-    rw [ite_eq_left rfl, ite_eq_right (by omega), add_zero, prefixSum_zero,
-      negOnePowCast_zero, one_smul, splice_collapse_init_eq R (by omega : 0 < m + 3)]
+    rw [splice_collapse_init_eq R (by omega : 0 < m + 3)]
+    simp
   · -- Tail `(m + 3)`-collapse (`p = 1`): survives as `-m(w)` at `j = 0`, vanishes for `j ≥ 1`.
     obtain rfl : p = 1 := by omega
     rcases Nat.eq_zero_or_pos j.val with hj0 | hjpos
     · obtain rfl : j = 0 := Fin.ext hj0
       have hY0 : duplicateAt e 0 w 0 = e := duplicateAt_castSucc e 0 w
-      have hD0 : duplicateAt (-1 : ℤ) 0 𝒟 ⟨0, by omega⟩ = -1 := duplicateAt_castSucc (-1 : ℤ) 0 𝒟
-      rw [ite_eq_right (by omega), ite_eq_left ⟨rfl, Fin.val_zero _⟩, zero_add,
-        prefixSum_succ (by omega : 0 < m + 4), prefixSum_zero, zero_add, hD0, negOnePowCast_neg,
-        negOnePowCast_one, neg_one_smul, splice_collapse_tail_eq R (by omega : 0 < m + 3), hY0,
+      have hD0 : duplicateAt (-1 : ℤ) 0 𝒟 0 = -1 := duplicateAt_castSucc (-1 : ℤ) 0 𝒟
+      rw [splice_collapse_tail_eq R (by omega : 0 < m + 3), hY0,
         subword_tail_duplicateAt_zero R (Fin.val_zero _) hwj,
         h𝒜.taylor_of_two_cohomologicalUnit_left he]
+      simp [prefixSum_succ (by omega : 0 < m + 4), hD0]
     · obtain ⟨u, hu, hsub⟩ := subword_tail_duplicateAt_of_pos R e hjpos w
-      rw [hsub, hIH u ⟨j.val - 1, by omega⟩ (by dsimp only; omega) hu, splice_zero, map_zero,
-        smul_zero, ite_eq_right (by omega), ite_eq_right (by omega), add_zero]
+      rw [hsub, hIH u ⟨j.val - 1, by omega⟩ (by dsimp only; omega) hu, splice_zero]
+      simp [Nat.ne_of_gt hjpos]
 
 private theorem taylor_barDifferential_duplicateAt_ne_two {𝒜 : AInfinityAlgebra R A}
     (h𝒜 : 𝒜.IsMinimal) {e : A} (he : 𝒜.CohomologicalUnit e) {m : ℕ}
@@ -248,9 +244,9 @@ private theorem taylor_barDifferential_duplicateAt_binary_prefix {𝒜 : AInfini
     simp only [Fin.val_zero] at hsp
     have hY0 : duplicateAt e 0 w ⟨0, by omega⟩ = e := duplicateAt_castSucc e 0 w
     have hY1 : duplicateAt e 0 w ⟨0 + 1, by omega⟩ = e := duplicateAt_succ e 0 w
-    rw [ite_eq_left (Fin.val_zero _), Fin.val_zero, zero_add, Finset.sum_range_one,
-      prefixSum_zero, negOnePowCast_zero, one_smul, subword_two_eq R _ (by omega), hY0, hY1,
-      h𝒜.taylor_of_two_cohomologicalUnit_left he, hsp]
+    simp only [Fin.val_zero, zero_add, Finset.sum_range_one]
+    rw [subword_two_eq R _ (by omega), hY0, hY1, h𝒜.taylor_of_two_cohomologicalUnit_left he, hsp]
+    simp
   · -- For `j > 0`, binary collapses before `j - 1` vanish by `hIH`, and slots `j - 1` and `j`
     -- cancel around the interior unit `duplicateAt e j w j = e`.
     have hj_pred : (j.val - 1) + 1 = j.val := Nat.sub_add_cancel hjpos
@@ -338,8 +334,8 @@ theorem IsMinimal.taylor_barDifferential_duplicateAt {𝒜 : AInfinityAlgebra R 
       rw [Finset.mem_range] at ht
       rw [Nat.add_right_comm j.val 1 t,
         prefixSum_duplicateAt_succ_ge j h𝒟j (by omega) (by omega),
-        subword_two_duplicateAt_ge R (by omega) (by omega) hwj, negOnePowCast_add,
-        negOnePowCast_neg, negOnePowCast_one, mul_neg_one, neg_smul]
+        subword_two_duplicateAt_ge R (by omega) (by omega) hwj]
+      simp [negOnePowCast_add]
   -- Step 3: Split the binary sum at `j + 1` and cancel the `j = 0` boundary terms.
   rw [Finset.sum_range_succ _ (m + 3),
     splice_eq_zero_of_not_fits R _ _ (by omega : ¬ (0 < 2 ∧ (m + 3) + 2 ≤ m + 4)), map_zero,

@@ -285,10 +285,11 @@ private theorem unitKillingCochain_barDifferential_prefix {𝒜 : AInfinityAlgeb
   rcases Nat.eq_zero_or_pos i.val with hi0 | hipos
   · -- At `i = 0`, collapsing `[e, w₁]` leaves the tail subword, matching `m₂(e, φ(tail))`.
     have hw0 : w 0 = e := (congrArg w (Fin.ext hi0.symm)).trans hwi
-    rw [hi0, Finset.sum_range_one, prefixSum_zero, negOnePowCast_zero, one_smul,
-      subword_two_eq R w (by omega), Fin.zero_eta, hw0,
+    simp only [hi0, zero_add, Finset.sum_range_one]
+    rw [subword_two_eq R w (by omega), Fin.zero_eta, hw0,
       h𝒜.taylor_of_two_cohomologicalUnit_left he, h𝒜.taylor_of_two_cohomologicalUnit_left he,
       splice_two_succ_eq_subword R (by omega : 0 < m + 2) rfl w]
+    simp
   · -- For `i > 0`, `φ` kills both the tail subword and collapses before `i - 1`, and the adjacent
     -- collapses at `i - 1` and `i` cancel around the interior unit `w i = e`.
     have htail : unitKillingCochain 𝒜 e π m j (subword R w 1 (m + 2)) = 0 := by
