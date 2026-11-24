@@ -145,14 +145,19 @@ private theorem floerLinearizationAdjoint_reflectL_eq (ω : SymplecticForm V)
             (reflectL z) stdComplexLineImag -
           ω.floerLinearizationCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
             (reflectL z)) (ω.flatEquiv.symm (η (reflectL z)))) := by
-  rw [floerLinearizationAdjoint_eq_neg hη hJu,
-    (hasFDerivAt_flatEquiv_symm_comp_reflectL ω hη).fderiv]
-  ext w
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    reflectL_stdComplexLineReal, reflectL_stdComplexLineImag, map_neg, flatEquiv_apply, map_add,
-    map_sub, apply_leftAdjointL_apply, apply_flatEquiv_symm_apply, neg_apply, add_apply, sub_apply,
-    hc.apply_apply_eq_neg, LinearMap.coe_toContinuousLinearMap']
-  ring
+  -- The derivatives of `ω♭⁻¹ ∘ η` at `ρ z` are those of the reflected field, with `∂s` negated.
+  have hd (v : ℝ × ℝ) : fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) (reflectL z) (reflectL v) =
+      fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) z v := by
+    rw [fderiv_flatEquiv_symm_apply, (hasFDerivAt_flatEquiv_symm_comp_reflectL ω hη).fderiv]
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  have h₁ := hd stdComplexLineReal
+  have h₂ := hd stdComplexLineImag
+  rw [reflectL_stdComplexLineReal, map_neg] at h₁
+  rw [reflectL_stdComplexLineImag] at h₂
+  rw [floerLinearizationAdjoint_eq_neg_flatEquiv ω hη hJu hc, ← h₁, ← h₂, ← map_neg]
+  congr 1
+  simp only [AlmostComplexStructure.neg_apply]
+  abel
 
 /-! ### The limit of the reflected adjoint at a nondegenerate orbit -/
 
@@ -381,21 +386,10 @@ private theorem sobolev_reflectL_le (ω : SymplecticForm V) {η : ℝ × ℝ →
         (‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineReal‖ ^ 2 +
           ‖fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η (reflectL w))) w stdComplexLineImag‖ ^ 2 +
           ‖ω.flatEquiv.symm (η (reflectL w))‖ ^ 2) := by
-  set c := ‖(ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ))‖
-  have hb (φ : V →L[ℝ] ℝ) : ‖φ‖ ^ 2 ≤ c ^ 2 * ‖ω.flatEquiv.symm φ‖ ^ 2 := by
-    rw [← mul_pow]
-    refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
-    simpa using (ω.flatEquiv : V →L[ℝ] (V →L[ℝ] ℝ)).le_opNorm (ω.flatEquiv.symm φ)
   rw [(hasFDerivAt_flatEquiv_symm_comp_reflectL ω (hη (reflectL w))).fderiv]
   simp only [ContinuousLinearMap.comp_apply, reflectL_stdComplexLineReal,
     reflectL_stdComplexLineImag, map_neg, norm_neg, mul_add]
-  gcongr <;> exact hb _
-
-/-- `‖ω♭⁻¹ φ‖² ≤ ‖ω♭⁻¹‖² ‖φ‖²`. -/
-private theorem norm_flatEquiv_symm_sq_le (ω : SymplecticForm V) (φ : V →L[ℝ] ℝ) :
-    ‖ω.flatEquiv.symm φ‖ ^ 2 ≤ ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖ ^ 2 * ‖φ‖ ^ 2 := by
-  rw [← mul_pow]
-  exact pow_le_pow_left₀ (norm_nonneg _) ((ω.flatEquiv.symm : _ →L[ℝ] V).le_opNorm φ) 2
+  gcongr <;> exact ω.norm_sq_le_norm_flatEquiv_sq_mul_norm_flatEquiv_symm_apply_sq _
 
 /-- **Transferring the estimate.** Let `P ζ = ∂s ζ + Jr ∂t ζ + Ar ζ` satisfy the semi-Fredholm
 estimate with error region `[-T, T] × [0, 1]` on the strips reflected into a set `I` of slices, and
@@ -443,7 +437,7 @@ private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : Symplec
       Jr w (fderiv ℝ ζ w stdComplexLineImag) + Ar w (ζ w)‖ ^ 2 ≤
       c₂ ^ 2 * ‖D η (reflectL w)‖ ^ 2 := by
     rw [← ContinuousLinearEquiv.symm_apply_apply ω.flatEquiv (_ + _), ← hD hη w (hKI hw)]
-    exact ω.norm_flatEquiv_symm_sq_le _
+    exact ω.norm_flatEquiv_symm_apply_sq_le _
   have hm : MeasurableSet K := measurableSet_Icc.prod measurableSet_Icc
   have hDρ : ContinuousOn (fun w ↦ D η (reflectL w)) K :=
     (hDc hη).comp reflectL.continuous.continuousOn fun w hw ↦ ⟨hKI hw, mem_univ _⟩
@@ -472,7 +466,7 @@ private theorem exists_forall_setIntegral_le_of_flatEquiv_reflectL (ω : Symplec
             (isCompact_Icc.prod isCompact_Icc)) hm fun w hw ↦ hP hw
       · exact setIntegral_mono (hζ.continuous.norm.pow 2).integrableOn_Icc_prod_Icc
           (continuous_const.mul ((hη.continuous.comp reflectL.continuous).norm.pow 2)
-            ).integrableOn_Icc_prod_Icc fun w ↦ ω.norm_flatEquiv_symm_sq_le (η (reflectL w))
+            ).integrableOn_Icc_prod_Icc fun w ↦ ω.norm_flatEquiv_symm_apply_sq_le (η (reflectL w))
     _ = _ := by
       have hTr := setIntegral_comp_reflectL (fun z ↦ ‖η z‖ ^ 2) (-T) T
       rw [neg_neg] at hTr

@@ -106,6 +106,11 @@ theorem isWeight_cylindricalWeight :
     exact add_pos (inv_pos.2 (Complex.normSq_pos.2 h₀))
       (inv_pos.2 (Complex.normSq_pos.2 (sub_ne_zero.2 h₁)))
 
+/-- The inverse of the cylindrical weight is continuous on the pair of pants. -/
+theorem continuousOn_inv_cylindricalWeight :
+    ContinuousOn (fun z ↦ (cylindricalWeight z)⁻¹) thricePuncturedSphereReal :=
+  isWeight_cylindricalWeight.continuousOn.inv₀ fun z hz ↦ (isWeight_cylindricalWeight.pos z hz).ne'
+
 /-- The arithmetic of the weight on an end: if a point lies at distance `x > 0` from the center of
 its end and at distance `y ≥ x / 2` from the other finite puncture, then
 `(x⁻² + y⁻²) 4π² x² ∈ [4π², 20π²]`. -/
@@ -185,6 +190,24 @@ theorem inv_norm_sub_endCenter_sq_le_cylindricalWeight (q : Puncture) (z : ℝ �
     linarith
   · simp only [endCenter_inf, sub_zero]
     linarith
+
+/-- **The inverse cylindrical weight on the ends.** On the part `±s ≥ 0` of the end `q`, the
+square distance `|z - c_q|²` to the center of the end is at most `5` times the inverse of the
+cylindrical weight: up to `4π²` the left side is the weight in the end chart times the chart's
+Jacobian (`cylindricalWeight_endChart_mul_det_fderiv_mem_Icc`). -/
+theorem norm_sub_endCenter_sq_mul_cylindricalWeight_le (q : Puncture) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (h : 0 ≤ (positiveEndCoord q z).1) :
+    ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 * cylindricalWeight z ≤ 5 := by
+  set ζ := positiveEndCoord q z
+  have hζ : endChart q (q.endSign • ζ) = z := by
+    rw [← positiveEndChart_apply,
+      positiveEndChart_positiveEndCoord q (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)]
+  have h₀ : 0 ≤ q.endSign * (q.endSign • ζ).1 := by
+    rwa [Prod.smul_fst, smul_eq_mul, ← mul_assoc, endSign_mul_self, one_mul]
+  have hρ := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q h₀).2
+  rw [det_fderiv_endChart, hζ] at hρ
+  refine le_of_mul_le_mul_left (a := 4 * π ^ 2) ?_ (by positivity)
+  linarith
 
 /-- Away from the center `c_q` of an end, the inverse square root of the cylindrical weight is at
 most the distance `|z - c_q|`. -/
