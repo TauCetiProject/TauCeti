@@ -18,19 +18,20 @@ Let `R` be a realization of a matrix over a field `K` of characteristic zero, wi
 the modules of category `O` are formal sums `∑_μ c_μ e^μ` over weights `μ ∈ H*` whose support lies
 in finitely many translated cones `λ - Q₊`. This file constructs the ring they live in.
 
-The ring `TauCeti.CartanRealization.CharacterRing R S` is the ring of Hahn series with
-coefficients in `S` over the exponent type `TauCeti.CartanRealization.CharacterExponent R`, the
-weights ordered by `μ ≤ ν ↔ μ - ν ∈ Q₊`. By the general theory of
-`TauCeti/RingTheory/HahnSeries/Cone.lean`, a function on weights is a Hahn series exactly when its
-support lies in finitely many cones `λ - Q₊` (`HahnSeries.ofConeBounded`,
-`HahnSeries.exists_finset_sub_mem_of_coeff_ne_zero`), so this is the ring of cone-supported
-characters, with Mathlib's convolution product. The independence of the simple roots in the full
-dual, rather than after restriction to the coroot span, makes `Q₊` pointed even when the matrix is
-singular, as in affine type.
+The ring `TauCeti.CartanRealization.CharacterRing R S` is the ring of Hahn series with coefficients
+in `S` over the exponent type `TauCeti.CartanRealization.CharacterExponent R`, the weights ordered
+by `μ ≤ ν ↔ μ - ν ∈ Q₊`. By the general theory of `TauCeti/RingTheory/HahnSeries/Cone.lean`, the
+support of every Hahn series lies in finitely many cones `λ - Q₊`
+(`HahnSeries.exists_finset_sub_mem_of_coeff_ne_zero`). For a finite index set `Q₊` is finitely
+generated (`TauCeti.CartanRealization.isAddFG_posRootCone`), and conversely every function on
+weights with such support is a Hahn series (`HahnSeries.ofConeBounded`), so this is the ring of
+cone-supported characters, with Mathlib's convolution product. The independence of the simple roots
+in the full dual, rather than after restriction to the coroot span, makes `Q₊` pointed even when the
+matrix is singular, as in affine type.
 
 The formal exponentials `e^μ` form a monoid homomorphism from the weights, with unit values. For
 a nonzero `β ∈ Q₊` the element `1 - e^{-β}` is invertible, with inverse the geometric series
-`∑_{n ≥ 0} e^{-nβ}`; for the simple roots these are the factors of the Weyl–Kac denominator.
+`∑_{n ≥ 0} e^{-nβ}`; for the positive roots `β` these are the factors of the Weyl–Kac denominator.
 With no simple roots the cone is zero and every character has finite support.
 
 For a rational realization of an integral matrix with a coweight lattice, the characters with
@@ -87,8 +88,10 @@ abbrev CharacterExponent : Type _ :=
   ConeExponent R.isPointed_posRootCone
 
 /-- The **character ring** of a realization `R` with coefficients in `S`: formal sums
-`∑_μ c_μ e^μ` over weights `μ ∈ H*` whose support lies in finitely many cones `λ - Q₊`, realized as
-the Hahn series over `TauCeti.CartanRealization.CharacterExponent R`. -/
+`∑_μ c_μ e^μ` over weights `μ ∈ H*`, realized as the Hahn series over
+`TauCeti.CartanRealization.CharacterExponent R`. The support of each lies in finitely many cones
+`λ - Q₊`; for a finite index set every such formal sum is a character
+(`HahnSeries.ofConeBounded`). -/
 abbrev CharacterRing (S : Type*) [Zero S] : Type _ :=
   HahnSeries R.CharacterExponent S
 
@@ -189,8 +192,8 @@ end CommRing
 
 /-! ### No simple roots -/
 
-/-- With no simple roots the positive root cone is zero, so every character has finite support: the
-character ring is the group ring of the weights. -/
+/-- With no simple roots the positive root cone is zero, so every character has finite support:
+characters are finite sums, as in a group ring of the weights. -/
 theorem finite_support_of_isEmpty [IsEmpty I] {S : Type*} [Zero S] (f : R.CharacterRing S) :
     f.support.Finite := by
   classical
@@ -198,10 +201,8 @@ theorem finite_support_of_isEmpty [IsEmpty I] {S : Type*} [Zero S] (f : R.Charac
   refine (t.finite_toSet.image toConeExponent).subset fun x hx ↦ ?_
   obtain ⟨b, hb, hbx⟩ := ht x.ofConeExponent hx
   refine ⟨b, hb, ConeExponent.ext ?_⟩
-  have hbx' : b - x.ofConeExponent ∈ R.posRootCone := hbx
-  generalize x.ofConeExponent = μ at hbx' ⊢
-  rw [posRootCone_eq_bot, Submodule.mem_bot, sub_eq_zero] at hbx'
-  simpa using hbx'
+  rw [Submodule.mem_toAddSubmonoid, posRootCone_eq_bot, Submodule.mem_bot, sub_eq_zero] at hbx
+  simpa using hbx
 
 end CharZero
 
@@ -237,6 +238,13 @@ theorem coe_mem_posRootCone_iff {φ : L.weightLattice} :
     exact (L.coe_root i).symm
   rw [h]
   exact ⟨fun ⟨ψ, hψ, he⟩ ↦ hι he ▸ hψ, fun hφ ↦ ⟨φ, hφ, rfl⟩⟩
+
+/-- For a finite index set the positive root cone of the weight lattice is finitely generated, so
+every function on `P` supported in finitely many cones `λ - Q₊` is a character supported on the
+weight lattice (`HahnSeries.ofConeBounded`). -/
+instance isAddFG_posRootCone [Finite I] : IsAddFG L.posRootCone.toAddSubmonoid := by
+  rw [AddSubmonoid.isAddFG_iff_finite, posRootCone_def]
+  exact ⟨Set.range L.root, Set.finite_range _, (Submodule.span_nat_eq_addSubmonoidClosure _).symm⟩
 
 /-- The exponents of characters supported on the weight lattice: the weights in `P`, ordered by
 `μ ≤ ν ↔ μ - ν ∈ Q₊`. -/

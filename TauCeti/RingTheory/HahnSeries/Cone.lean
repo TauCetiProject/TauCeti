@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Finsupp
 public import Mathlib.Algebra.Group.Submonoid.Support
+public import Mathlib.Algebra.Order.Group.Cone
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.RingTheory.HahnSeries.Multiplication
 public import TauCeti.Order.WellFounded.Set
@@ -14,11 +15,12 @@ public import TauCeti.Order.WellFounded.Set
 /-!
 # Hahn series supported below finitely many translated cones
 
-Let `M` be an abelian group and `C` a pointed submonoid of `M`, a cone with `C ∩ -C = 0`. Series
-`∑ c_μ e^μ` over `M` whose support lies in a finite union of translated negative cones `λ - C`
-form a ring under convolution: for two such series and a target `ξ`, only finitely many pairs of
-exponents in the supports add up to `ξ`. This is the ring in which the characters of
-representations with weights bounded above, such as highest-weight modules, are multiplied.
+Let `M` be an abelian group and `C` a pointed submonoid of `M`, a cone with `C ∩ -C = 0`. When `C`
+is finitely generated, series `∑ c_μ e^μ` over `M` whose support lies in a finite union of
+translated negative cones `λ - C` form a ring under convolution: for two such series and a target
+`ξ`, only finitely many pairs of exponents in the supports add up to `ξ`. This is the ring in which
+the characters of representations with weights bounded above, such as highest-weight modules, are
+multiplied.
 
 This file realizes that ring as Mathlib's Hahn series, rather than building the convolution
 again. The exponent type `TauCeti.ConeExponent hC` is a copy of `M` ordered by `μ ≤ ν ↔ μ - ν ∈ C`,
@@ -154,19 +156,29 @@ theorem toConeExponent_sub (a b : M) :
     (toConeExponent (a - b) : ConeExponent hC) = toConeExponent a - toConeExponent b := (rfl)
 
 @[simp]
+theorem ofConeExponent_nsmul (n : ℕ) (x : ConeExponent hC) :
+    (n • x).ofConeExponent = n • x.ofConeExponent := (rfl)
+
+@[simp]
+theorem ofConeExponent_zsmul (n : ℤ) (x : ConeExponent hC) :
+    (n • x).ofConeExponent = n • x.ofConeExponent := (rfl)
+
+@[simp]
 theorem toConeExponent_nsmul (n : ℕ) (a : M) :
+    (toConeExponent (n • a) : ConeExponent hC) = n • toConeExponent a := (rfl)
+
+@[simp]
+theorem toConeExponent_zsmul (n : ℤ) (a : M) :
     (toConeExponent (n • a) : ConeExponent hC) = n • toConeExponent a := (rfl)
 
 /-! ### The order -/
 
-instance : PartialOrder (ConeExponent hC) where
-  le x y := x.ofConeExponent - y.ofConeExponent ∈ C
-  le_refl x := by simp [zero_mem]
-  le_trans x y z hxy hyz := by
-    simpa only [sub_add_sub_cancel] using add_mem hxy hyz
-  le_antisymm x y hxy hyx := by
-    refine ext (sub_eq_zero.mp (hC _ hxy ?_))
-    simpa only [neg_sub] using hyx
+/-- The order of `TauCeti.ConeExponent hC` is the dual of Mathlib's order on `M` with positive
+cone `C` (`PartialOrder.ofAddSubmonoid`), transported along `ofConeExponent`. -/
+instance : PartialOrder (ConeExponent hC) :=
+  letI := PartialOrder.ofAddSubmonoid hC
+  PartialOrder.lift (fun x ↦ OrderDual.toDual x.ofConeExponent)
+    (OrderDual.toDual.injective.comp ofConeExponent_injective)
 
 theorem le_def {x y : ConeExponent hC} : x ≤ y ↔ x.ofConeExponent - y.ofConeExponent ∈ C :=
   Iff.rfl
@@ -178,10 +190,11 @@ theorem toConeExponent_le_toConeExponent_iff {a b : M} :
     (toConeExponent a : ConeExponent hC) ≤ toConeExponent b ↔ a - b ∈ C :=
   Iff.rfl
 
-instance : IsOrderedAddMonoid (ConeExponent hC) where
-  add_le_add_left x y hxy z := by
-    rw [le_def] at hxy ⊢
-    simpa [add_sub_add_right_eq_sub] using hxy
+instance : IsOrderedAddMonoid (ConeExponent hC) :=
+  letI := PartialOrder.ofAddSubmonoid hC
+  haveI := IsOrderedAddMonoid.ofAddSubmonoid hC
+  Function.Injective.isOrderedAddMonoid (fun x ↦ OrderDual.toDual x.ofConeExponent)
+    (fun _ _ ↦ (rfl)) Iff.rfl
 
 /-- `Ici λ` is the translated negative cone `λ - C`. -/
 theorem mem_Ici_iff {x y : ConeExponent hC} :
@@ -249,8 +262,8 @@ theorem map_injective {f : M →+ M'} (hf : Function.Injective f) :
 exponents. -/
 theorem map_le_map_iff {f : M →+ M'} (hf : ∀ a, f a ∈ C' ↔ a ∈ C) {x y : ConeExponent hC} :
     map (hC' := hC') f x ≤ map f y ↔ x ≤ y := by
-  rw [le_def, le_def]
-  exact (congrArg (· ∈ C') (map_sub f _ _).symm).to_iff.trans (hf _)
+  rw [le_def, le_def, ofConeExponent_map, ofConeExponent_map, ← map_sub]
+  exact hf _
 
 end ConeExponent
 

@@ -57,20 +57,25 @@ noncomputable def ofPowerSeriesSingle (hg : 0 < g) : PowerSeries R →+* R⟦Γ�
   (embDomainRingHom (multiplesHom Γ g) (strictMono_multiplesHom hg).injective
     fun _ _ ↦ (strictMono_multiplesHom hg).le_iff_le).comp toPowerSeries.symm.toRingHom
 
+/-- `ofPowerSeriesSingle R hg f` is the embedding along `n ↦ n • g` of `f` as a Hahn series. -/
+private theorem ofPowerSeriesSingle_apply (hg : 0 < g) (f : PowerSeries R) :
+    ofPowerSeriesSingle R hg f =
+      embDomain ⟨⟨multiplesHom Γ g, (strictMono_multiplesHom hg).injective⟩,
+        (strictMono_multiplesHom hg).le_iff_le⟩ (toPowerSeries.symm f) :=
+  (rfl)
+
 /-- The coefficient of `ofPowerSeriesSingle R hg f` at `n • g` is the `n`-th coefficient
 of `f`. -/
 @[simp]
 theorem coeff_ofPowerSeriesSingle_nsmul (hg : 0 < g) (f : PowerSeries R) (n : ℕ) :
     (ofPowerSeriesSingle R hg f).coeff (n • g) = PowerSeries.coeff n f := by
-  simp only [ofPowerSeriesSingle, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingHom.coe_coe, embDomainRingHom, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk]
-  rw [← multiplesHom_apply, embDomain_mk_coeff, coeff_toPowerSeries_symm]
+  rw [ofPowerSeriesSingle_apply, ← multiplesHom_apply, embDomain_mk_coeff,
+    coeff_toPowerSeries_symm]
 
 /-- `ofPowerSeriesSingle R hg f` vanishes away from the multiples of `g`. -/
 theorem coeff_ofPowerSeriesSingle_of_forall_ne (hg : 0 < g) (f : PowerSeries R) {a : Γ}
     (ha : ∀ n : ℕ, n • g ≠ a) : (ofPowerSeriesSingle R hg f).coeff a = 0 := by
-  simp only [ofPowerSeriesSingle, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingHom.coe_coe, embDomainRingHom, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk]
+  rw [ofPowerSeriesSingle_apply]
   exact embDomain_of_notMem_range fun ⟨n, hn⟩ ↦ ha n hn
 
 /-- Substituting `t ^ g` for `X` is injective. -/
@@ -87,10 +92,8 @@ theorem ofPowerSeriesSingle_X (hg : 0 < g) :
   have hX : toPowerSeries.symm (PowerSeries.X : PowerSeries R) = single 1 1 := by
     ext n
     simp [PowerSeries.coeff_X, coeff_single]
-  simp only [ofPowerSeriesSingle, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingHom.coe_coe, hX, embDomainRingHom, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk,
-    embDomain_single, RelEmbedding.coe_mk, Function.Embedding.coeFn_mk, multiplesHom_apply,
-    one_nsmul]
+  rw [ofPowerSeriesSingle_apply, hX, embDomain_single]
+  simp only [RelEmbedding.coe_mk, Function.Embedding.coeFn_mk, multiplesHom_apply, one_nsmul]
 
 /-- `ofPowerSeriesSingle R hg` sends constants to constants. -/
 @[simp]
