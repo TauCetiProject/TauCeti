@@ -65,7 +65,9 @@ measure of the orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y
 (`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`), so integrals over the hyperplane
 are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`), the disc cut from the
 hyperplane by a ball of radius `r` centred on it has measure `ω_{n-1} r ^ (n - 1)`
-(`TauCeti.euclideanHausdorffMeasure_ball_inter_setOf_inner_eq`), and the isodiametric
+(`TauCeti.euclideanHausdorffMeasure_ball_inter_setOf_inner_eq`), in dimension `n ≥ 2` the
+hyperplane itself has infinite `μHE[n - 1]` measure
+(`TauCeti.euclideanHausdorffMeasure_setOf_inner_eq_eq_top`), and the isodiametric
 inequality holds on the hyperplane (`TauCeti.euclideanHausdorffMeasure_inter_setOf_inner_eq_le`).
 
 Isometries carry restricted Euclidean Hausdorff measure to its restriction on the image
