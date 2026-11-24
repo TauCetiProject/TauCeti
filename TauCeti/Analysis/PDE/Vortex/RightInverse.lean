@@ -154,7 +154,7 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
           ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
         ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
   set S := gaugeFixedAdjointToLp μ hx
-  set ι := (TestFunction.ambientToLp 2 μ : TestField →L[ℝ] _).toLinearMap
+  set ι := (TestFunction.ambientToLp ℝ 2 μ : TestField →L[ℝ] _).toLinearMap
   have hS := inner_gaugeFixedAdjointToLp (μ := μ) hx
   have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
       ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=

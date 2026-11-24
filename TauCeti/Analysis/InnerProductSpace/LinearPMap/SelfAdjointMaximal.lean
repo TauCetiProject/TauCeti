@@ -66,13 +66,13 @@ theorem _root_.IsSelfAdjoint.ker_subScalar_adjoint_conj_eq_bot {A B : H →ₗ.[
   intro e he
   obtain ⟨he, hAe⟩ := mem_ker_subScalar_iff.mp he
   obtain ⟨x, hx⟩ := hB.smul_sub_surjective hc (c • e - A† ⟨e, he⟩)
+  have hx : c • (x : H) - B x = c • e - A† ⟨e, he⟩ := hx
   have hxA : A† ⟨x, hBA.1 x.property⟩ = B x := (hBA.2 rfl).symm
   have hy : e - (x : H) ∈ (A†.subScalar c).ker := by
     refine mem_ker_subScalar_iff.mpr ⟨sub_mem he (hBA.1 x.property), ?_⟩
     have hsub : A† ⟨e - x, sub_mem he (hBA.1 x.property)⟩ = A† ⟨e, he⟩ - A† ⟨x, hBA.1 x.property⟩ :=
-      _root_.map_sub A†.toFun ⟨e, he⟩ ⟨x, hBA.1 x.property⟩
+      (congrArg A† (Subtype.ext (by rw [Submodule.coe_sub]))).trans (A†.map_sub _ _)
     rw [hsub, hxA, smul_sub]
-    simp only at hx
     rw [← sub_eq_zero] at hx ⊢
     rw [← hx]
     abel

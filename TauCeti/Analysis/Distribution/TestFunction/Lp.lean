@@ -37,7 +37,9 @@ evaluation on integrable forms (`Distribution.extendL1`).
 
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
 * `TestFunction.ambientToLp`: the class in `Lᵖ(ν)` of a test function, for a measure `ν` on the
-  ambient space, and `TestFunction.ambientToLpₗ`, the same map as a `𝕜`-linear map.
+  ambient space, as a `𝕜`-linear map.
+* `TestFunction.inner_ambientToLp` and `TestFunction.inner_ambientToLp_left`: the `L²(ν)` inner
+  product with the class of a test function is the integral of the pointwise inner product.
 * `TestFunction.ambientToLp_restrict_injective`: a test function on `Ω` is determined by its class
   in `Lᵖ(μ|_Ω)` when `μ` charges every nonempty open set.
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
@@ -256,54 +258,49 @@ private theorem hasLocallyFiniteMass_memLp_ambientToLp :
     (fun x hx => hφK (subset_tsupport _ hx)) (norm_nonneg (φ : E →ᵇ F))
     (ae_of_all _ fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x)
 
-variable (p ν) in
-/-- The class in `Lᵖ(ν)` of a test function on `Ω`, for a measure `ν` on the ambient space `E`
-that is finite on compact sets, as a continuous linear map for the test-function topology. Unlike
-`TestFunction.toLp`, the measure lives on `E`: a test function vanishes off `Ω`, so it needs no
-restriction. -/
-def ambientToLp : 𝓓^{n}(Ω, F) →L[ℝ] Lp F p ν :=
-  let L : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p ν :=
-    { toFun φ := (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ
-      map_add' φ ψ := by
-        rw [← MemLp.toLp_add]
-        exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
-      map_smul' c φ := by
-        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-        exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp)) }
-  ⟨L, Distribution.HasLocallyFiniteMass.continuous hasLocallyFiniteMass_memLp_ambientToLp⟩
+variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
 
-/-- `ambientToLp p ν φ` is the `Lᵖ(ν)` class of `φ`. -/
-theorem ambientToLp_apply (φ : 𝓓^{n}(Ω, F)) :
-    ambientToLp p ν φ = (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ :=
-  (rfl)
-
-/-- A representative of `ambientToLp p ν φ` agrees almost everywhere with `φ`. -/
-theorem coeFn_ambientToLp (φ : 𝓓^{n}(Ω, F)) : ambientToLp p ν φ =ᵐ[ν] φ := by
-  rw [ambientToLp_apply]
-  exact MemLp.coeFn_toLp _
-
-variable (p ν) in
-/-- `TestFunction.ambientToLp` as a `𝕜`-linear map, for a normed field `𝕜` acting on `F`
-compatibly with the real scalars. -/
-def ambientToLpₗ (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] :
+/-- The class in `Lᵖ(ν)` of a test function on `Ω`, as a `𝕜`-linear map. -/
+private def ambientToLpLinear (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (p : ℝ≥0∞) (ν : Measure E) [IsFiniteMeasureOnCompacts ν] :
     𝓓^{n}(Ω, F) →ₗ[𝕜] Lp F p ν where
-  toFun := ambientToLp p ν
-  map_add' := map_add _
+  toFun φ := (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ
+  map_add' φ ψ := by
+    rw [← MemLp.toLp_add]
+    exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
   map_smul' c φ := by
-    rw [ambientToLp_apply, ambientToLp_apply, RingHom.id_apply, ← MemLp.toLp_const_smul]
+    rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
 
-@[simp]
-theorem coe_ambientToLpₗ (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] :
-    ⇑(ambientToLpₗ p ν 𝕜 : 𝓓^{n}(Ω, F) →ₗ[𝕜] Lp F p ν) = ambientToLp p ν :=
+/-- The class in `Lᵖ(ν)` of a test function on `Ω`, for a measure `ν` on the ambient space `E`
+that is finite on compact sets, as a continuous `𝕜`-linear map for the test-function topology, for
+a normed field `𝕜` acting on `F` compatibly with the real scalars. Unlike `TestFunction.toLp`, the
+measure lives on `E`: a test function vanishes off `Ω`, so it needs no restriction. -/
+def ambientToLp (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+    (p : ℝ≥0∞) [Fact (1 ≤ p)] (ν : Measure E) [IsFiniteMeasureOnCompacts ν] :
+    𝓓^{n}(Ω, F) →L[𝕜] Lp F p ν :=
+  ⟨ambientToLpLinear 𝕜 p ν, by
+    have h : Distribution.HasLocallyFiniteMass
+        (ambientToLpLinear ℝ p ν : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p ν) :=
+      hasLocallyFiniteMass_memLp_ambientToLp
+    exact h.continuous⟩
+
+/-- `ambientToLp 𝕜 p ν φ` is the `Lᵖ(ν)` class of `φ`. -/
+theorem ambientToLp_apply (φ : 𝓓^{n}(Ω, F)) :
+    ambientToLp 𝕜 p ν φ = (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ :=
   (rfl)
+
+/-- A representative of `ambientToLp 𝕜 p ν φ` agrees almost everywhere with `φ`. -/
+theorem coeFn_ambientToLp (φ : 𝓓^{n}(Ω, F)) : ambientToLp 𝕜 p ν φ =ᵐ[ν] φ := by
+  rw [ambientToLp_apply]
+  exact MemLp.coeFn_toLp _
 
 /-- **A test function is determined by its class in `Lᵖ(μ|_Ω)`**, for a measure `μ` charging
 every nonempty open set: a continuous function vanishing almost everywhere on the open set `Ω`
 vanishes on `Ω`, and a test function on `Ω` vanishes off `Ω`. -/
 theorem ambientToLp_restrict_injective {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
     [μ.IsOpenPosMeasure] :
-    Function.Injective (ambientToLp p (μ.restrict Ω) : 𝓓^{n}(Ω, F) → Lp F p (μ.restrict Ω)) := by
+    Function.Injective (ambientToLp 𝕜 p (μ.restrict Ω) : 𝓓^{n}(Ω, F) → Lp F p (μ.restrict Ω)) := by
   refine (injective_iff_map_eq_zero _).2 fun φ hφ ↦ TestFunction.ext fun x ↦ ?_
   have hae : (φ : E → F) =ᵐ[μ.restrict Ω] 0 :=
     (coeFn_ambientToLp φ).symm.trans (Lp.eq_zero_iff_ae_eq_zero.mp hφ)
@@ -314,7 +311,8 @@ theorem ambientToLp_restrict_injective {μ : Measure E} [IsFiniteMeasureOnCompac
 
 /-- The squared `L²(ν)` norm of the class of a test function is the integral of its squared
 pointwise norm. -/
-theorem norm_ambientToLp_sq (φ : 𝓓^{n}(Ω, F)) : ‖ambientToLp 2 ν φ‖ ^ 2 = ∫ x, ‖φ x‖ ^ 2 ∂ν := by
+theorem norm_ambientToLp_sq (φ : 𝓓^{n}(Ω, F)) :
+    ‖ambientToLp 𝕜 2 ν φ‖ ^ 2 = ∫ x, ‖φ x‖ ^ 2 ∂ν := by
   rw [ambientToLp_apply]
   exact MemLp.norm_toLp_sq _
 
@@ -324,9 +322,20 @@ end Ambient
 inner product. -/
 theorem inner_ambientToLp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
     {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (u : Lp G 2 ν) (φ : 𝓓^{n}(Ω, G)) :
-    ⟪u, ambientToLp 2 ν φ⟫_ℝ = ∫ x, ⟪u x, φ x⟫_ℝ ∂ν := by
+    ⟪u, ambientToLp ℝ 2 ν φ⟫_ℝ = ∫ x, ⟪u x, φ x⟫_ℝ ∂ν := by
   rw [ambientToLp_apply]
   exact L2.inner_toLp u _
+
+/-- The `L²(ν)` inner product of the class of a test function with an `L²(ν)` function is the
+integral of the pointwise inner product, over an `RCLike` field `𝕜`. -/
+theorem inner_ambientToLp_left {𝕜 G : Type*} [RCLike 𝕜] [NormedAddCommGroup G]
+    [InnerProductSpace 𝕜 G] [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G] {ν : Measure E}
+    [IsFiniteMeasureOnCompacts ν] (φ : 𝓓^{n}(Ω, G)) (u : Lp G 2 ν) :
+    ⟪ambientToLp 𝕜 2 ν φ, u⟫_𝕜 = ∫ x, ⟪φ x, u x⟫_𝕜 ∂ν := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_ambientToLp (𝕜 := 𝕜) (p := 2) (ν := ν) φ] with x hx
+  rw [hx]
 
 /-- **Density of test functions in `Lᵖ`.** For `1 ≤ p < ∞` and a regular measure `μ` on an open
 set `Ω` of a finite-dimensional space, the classes of test functions are dense in `Lᵖ(μ; F)`. -/
