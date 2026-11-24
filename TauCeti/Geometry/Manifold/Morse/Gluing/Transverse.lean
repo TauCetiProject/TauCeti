@@ -224,11 +224,11 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
     hy₁ε, hy₂u, hy₂ε, hy₁, hy₂, hφ', hZ', hy₂φ', hy₂Z, htr'⟩ :=
     hX.exists_morseBox_of_broken_of_isSliceChart hf hpq' ha₁ hy hyq hφZ hZ hyφZ hyZ htr
   set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-    fun w ↦ φ.splitCoord (φ.coord (φ.toChart w)) with hΦdef
+    fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
     fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
-  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun w hw ↦ by
-    simp only [hΨdef, hΦdef, LinearEquiv.symm_apply_apply, φ.toChart.left_inv hw]
+  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun _ hw ↦
+    φ.toChart_symm_coord_symm_splitCoord_symm_splitCoord_coord_toChart hw
   have hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target := fun z hz ↦
     hε₂ z (by linarith)
   have hfa₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq' ha₁
@@ -514,17 +514,17 @@ private theorem eventually_exists_eq_of_forall_smul_comp_smul_eq_self
   set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
     fun w ↦ φ.splitCoord (φ.coord (φ.toChart w)) with hΦdef
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
-    fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
-  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun w hw ↦ by
-    simp only [hΨdef, hΦdef, LinearEquiv.symm_apply_apply, φ.toChart.left_inv hw]
+    fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))
+  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun _ hw ↦
+    φ.toChart_symm_coord_symm_splitCoord_symm_splitCoord_coord_toChart hw
   have hfy₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq hy₁
   have hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target := fun z hz ↦ hε₂ z (by linarith)
   -- On the box, the stable set of `q` is the plane `v = 0`.
   have hlocΨ (z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)))
       (h₁ : ‖z.fst‖ ≤ ε) (h₂ : ‖z.snd‖ ≤ ε) : Ψ z ∈ hX.flow.stableSet q ↔ z.snd = 0 := by
     have hbox := MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε₁ h₁ h₂
-    have hΦz : φ.splitCoord (φ.coord (φ.toChart (Ψ z))) = z := by
-      simp only [hΨdef, φ.toChart.right_inv hbox, LinearEquiv.apply_symm_apply]
+    have hΦz : φ.splitCoord (φ.coord (φ.toChart (Ψ z))) = z :=
+      φ.splitCoord_coord_toChart_toChart_symm_coord_symm_splitCoord_symm hbox
     have h := (hloc (Ψ z) (φ.toChart.map_target hbox) (by
       rw [← φ.max_norm_fst_norm_snd_splitCoord, hΦz]
       exact (max_le h₁ h₂).trans_lt (by linarith))).1
@@ -664,8 +664,8 @@ private theorem IsMorseSmale.exists_centreGluingArc {hX : IsAdaptedPseudoGradien
     fun w ↦ φ.splitCoord (φ.coord (φ.toChart w)) with hΦdef
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
     fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
-  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun w hw ↦ by
-    simp only [hΨdef, hΦdef, LinearEquiv.symm_apply_apply, φ.toChart.left_inv hw]
+  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun _ hw ↦
+    φ.toChart_symm_coord_symm_splitCoord_symm_splitCoord_coord_toChart hw
   have hΨ0 : Ψ 0 = q := by simp [hΨdef]
   -- Near the centre, `f` stays below `f a₁`.
   obtain ⟨r, hr, hrf⟩ : ∃ r > 0, ∀ (x : {i // φ.weight i = 1} → ℝ)

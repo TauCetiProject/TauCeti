@@ -513,7 +513,7 @@ private theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoG
           hX.flow τ u =
             φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (WithLp.toLp 2 (g v, v)))) := by
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
-    fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
+    fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))
   -- Near `0`, the points of the disc lie near `y₁`, inside the box near its entrance face.
   have hΨψ : Tendsto (fun z ↦ Ψ (ψ z)) (𝓝 0) (𝓝 y₁) := by
     have hc := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
@@ -543,8 +543,8 @@ private theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoG
   refine ⟨δ, hδ, K, g, hg, fun v hv ↦ ⟨(hpts v hv).1, ?_⟩⟩
   -- The point of the disc over `v` flows to the entrance point `(g v, v)` at its entry time.
   obtain ⟨-, z, ⟨hzf, hzs, hzT, hzS, hzN₁⟩, hzflow⟩ := hpts v hv
-  have hΦΨ : φ.splitCoord (φ.coord (φ.toChart (Ψ (ψ z)))) = ψ z := by
-    simp [hΨdef, φ.toChart.right_inv hzT]
+  have hΦΨ : φ.splitCoord (φ.coord (φ.toChart (Ψ (ψ z)))) = ψ z :=
+    φ.splitCoord_coord_toChart_toChart_symm_coord_symm_splitCoord_symm hzT
   have hentry := hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ (φ.toChart.map_target hzT)
     (by rw [hΦΨ]; exact hzf) (by rw [hΦΨ]; exact hzs)
   rw [hΦΨ, hzflow] at hentry
@@ -684,9 +684,9 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
   set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
     fun w ↦ φ.splitCoord (φ.coord (φ.toChart w)) with hΦdef
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
-    fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
-  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun w hw ↦ by
-    simp only [hΨdef, hΦdef, LinearEquiv.symm_apply_apply, φ.toChart.left_inv hw]
+    fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))
+  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun _ hw ↦
+    φ.toChart_symm_coord_symm_splitCoord_symm_splitCoord_coord_toChart hw
   obtain ⟨hA₁, -⟩ := hX.eventually_of_mem_entranceFace φ hε hερ (fun w hw hwρ ↦ (hloc w hw hwρ).1)
     hy₁φ hy₁s hy₁ε
   obtain ⟨hA₂, -⟩ := hX.eventually_of_mem_exitFace φ hε hερ (fun w hw hwρ ↦ (hloc w hw hwρ).2)
@@ -756,8 +756,10 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
   obtain ⟨⟨z₁, ⟨⟨hw, hwf, hws⟩, hz₁, hwu, hwN₁⟩, hwz⟩,
     z₂, ⟨⟨hw', hw'f, hw's⟩, hz₂, hw'Z, hw'N⟩, hw'z⟩ := hpairs z hz
   -- The entrance-side point flows to the exit-side point, which therefore lies in `W^u(p)`.
-  have hΦΨ₁ : Φ (Ψ (ψ z₁)) = ψ z₁ := by simp [hΦdef, hΨdef, φ.toChart.right_inv hz₁]
-  have hΦΨ₂ : Φ (Ψ (χ z₂)) = χ z₂ := by simp [hΦdef, hΨdef, φ.toChart.right_inv hz₂]
+  have hΦΨ₁ : Φ (Ψ (ψ z₁)) = ψ z₁ :=
+    φ.splitCoord_coord_toChart_toChart_symm_coord_symm_splitCoord_symm hz₁
+  have hΦΨ₂ : Φ (Ψ (χ z₂)) = χ z₂ :=
+    φ.splitCoord_coord_toChart_toChart_symm_coord_symm_splitCoord_symm hz₂
   rw [← hΦΨ₁] at hwz
   rw [← hΦΨ₂] at hw'z
   obtain ⟨τ, hτ⟩ := hX.exists_flow_eq_of_mem_splitGluingPairs φ hφ hε hε₂ hz hw hwf hws hwz hw'
