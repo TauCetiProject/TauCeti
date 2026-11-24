@@ -296,9 +296,15 @@ target, without changing the map. -/
 theorem exists_target_eq (h : IsSliceChart φ S A) {T : Set F} (hT : IsOpen T)
     (hTφ : T ⊆ φ.target) :
     ∃ ψ : OpenPartialHomeomorph M F, ⇑ψ = ⇑φ ∧ ψ.source = φ.source ∩ φ ⁻¹' T ∧ ψ.target = T ∧
-      IsSliceChart ψ S A :=
-  ⟨(φ.symm.restrOpen T hT).symm, rfl, rfl, inter_eq_right.mpr hTφ,
-    isSliceChart_iff.mpr fun _ hy => h.mem_iff hy.1⟩
+      IsSliceChart ψ S A := by
+  have hsrc : (φ.symm.restrOpen T hT).symm.source = φ.source ∩ φ ⁻¹' T := by
+    rw [OpenPartialHomeomorph.symm_source]
+    simp [OpenPartialHomeomorph.restrOpen_toPartialEquiv]
+  refine ⟨(φ.symm.restrOpen T hT).symm, ?_, hsrc, ?_,
+    isSliceChart_iff.mpr fun _ hy => h.mem_iff (hsrc.subset hy).1⟩
+  · rw [OpenPartialHomeomorph.coe_restrOpen_symm, OpenPartialHomeomorph.symm_symm]
+  · rw [OpenPartialHomeomorph.symm_target, OpenPartialHomeomorph.restrOpen_source,
+      OpenPartialHomeomorph.symm_source, inter_eq_right.mpr hTφ]
 
 /-- Restricting a slice chart to an open set restricts the flattened set to the same open set. -/
 theorem restrOpen (h : IsSliceChart φ S A) {V : Set M} (hV : IsOpen V) :
