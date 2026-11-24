@@ -180,20 +180,18 @@ left coordinate inclusion. -/
 @[reassoc (attr := simp)]
 theorem includeLeft_comp_tensorProductCongr_inv
     {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
-    includeLeft H' K' ≫ (tensorProductCongr e f).inv = e.inv ≫ includeLeft H K :=
-  by
-    rw [← Iso.symm_hom, tensorProductCongr_symm, ← Iso.symm_hom]
-    exact includeLeft_comp_tensorProductCongr_hom e.symm f.symm
+    includeLeft H' K' ≫ (tensorProductCongr e f).inv = e.inv ≫ includeLeft H K := by
+  simpa only [← tensorProductCongr_symm, Iso.symm_hom] using
+    includeLeft_comp_tensorProductCongr_hom e.symm f.symm
 
 /-- The inverse of a tensor-product isomorphism carries the right coordinate inclusion to the
 right coordinate inclusion. -/
 @[reassoc (attr := simp)]
 theorem includeRight_comp_tensorProductCongr_inv
     {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
-    includeRight H' K' ≫ (tensorProductCongr e f).inv = f.inv ≫ includeRight H K :=
-  by
-    rw [← Iso.symm_hom, tensorProductCongr_symm, ← Iso.symm_hom]
-    exact includeRight_comp_tensorProductCongr_hom e.symm f.symm
+    includeRight H' K' ≫ (tensorProductCongr e f).inv = f.inv ≫ includeRight H K := by
+  simpa only [← tensorProductCongr_symm, Iso.symm_hom] using
+    includeRight_comp_tensorProductCongr_hom e.symm f.symm
 
 /-- The left coordinate inclusion is injective over any commutative base ring: applying
 the counit to the right tensor factor gives a retraction. -/

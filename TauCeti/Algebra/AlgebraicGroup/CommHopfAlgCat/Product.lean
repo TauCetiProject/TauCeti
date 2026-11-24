@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 public import TauCeti.Algebra.Bialgebra.TensorProduct
 
+import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
+
 /-!
 # Tensor products of commutative Hopf algebras
 
@@ -71,6 +73,15 @@ section TensorProductCongr
 
 variable {H H' H'' K K' K'' : CommHopfAlgCat.{v} R}
 
+/-- The tensor product of the inverses of `e` and `f` is a left inverse of the tensor product of
+`e` and `f`. Applied to `e` and `f` and to their inverses, this gives both inverse laws of
+`tensorProductCongr`. -/
+private theorem map_inv_comp_map_hom (e : H ≅ H') (f : K ≅ K') :
+    (Bialgebra.TensorProduct.map e.inv.hom f.inv.hom).comp
+        (Bialgebra.TensorProduct.map e.hom.hom f.hom.hom) = BialgHom.id R (H ⊗[R] K) := by
+  simp only [TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id_iff, ← CommHopfAlgCat.hom_comp,
+    Iso.hom_inv_id, TauCeti.CommHopfAlgCat.hom_id_eq_bialgHom_id, and_self]
+
 /-- **The tensor product of two isomorphisms of commutative Hopf algebras**: for `e : H ≅ H'`
 and `f : K ≅ K'`, the isomorphism `H ⊗[R] K ≅ H' ⊗[R] K'` sending `x ⊗ₜ y` to `e x ⊗ₜ f y`. Its
 inverse is the tensor product of the inverses. On affine group schemes it is the product of the
@@ -81,21 +92,11 @@ noncomputable def tensorProductCongr (e : H ≅ H') (f : K ≅ K') :
   hom := CommHopfAlgCat.ofHom (Bialgebra.TensorProduct.map e.hom.hom f.hom.hom)
   inv := CommHopfAlgCat.ofHom (Bialgebra.TensorProduct.map e.inv.hom f.inv.hom)
   hom_inv_id := by
-    rw [← CommHopfAlgCat.ofHom_comp, ← CommHopfAlgCat.ofHom_id]
-    congr 1
-    refine TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id_iff.2 ⟨?_, ?_⟩
-    · rw [← CommHopfAlgCat.hom_comp, e.hom_inv_id]
-      rfl
-    · rw [← CommHopfAlgCat.hom_comp, f.hom_inv_id]
-      rfl
+    simpa only [CommHopfAlgCat.ofHom_comp, CommHopfAlgCat.ofHom_id] using
+      congrArg CommHopfAlgCat.ofHom (map_inv_comp_map_hom e f)
   inv_hom_id := by
-    rw [← CommHopfAlgCat.ofHom_comp, ← CommHopfAlgCat.ofHom_id]
-    congr 1
-    refine TauCeti.Bialgebra.TensorProduct.map_comp_map_eq_id_iff.2 ⟨?_, ?_⟩
-    · rw [← CommHopfAlgCat.hom_comp, e.inv_hom_id]
-      rfl
-    · rw [← CommHopfAlgCat.hom_comp, f.inv_hom_id]
-      rfl
+    simpa only [Iso.symm_hom, Iso.symm_inv, CommHopfAlgCat.ofHom_comp, CommHopfAlgCat.ofHom_id]
+      using congrArg CommHopfAlgCat.ofHom (map_inv_comp_map_hom e.symm f.symm)
 
 /-- The bialgebra map underlying `tensorProductCongr e f` is the tensor product of the bialgebra
 maps underlying `e` and `f`. -/

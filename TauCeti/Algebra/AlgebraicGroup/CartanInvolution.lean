@@ -184,19 +184,12 @@ theorem mem_twistedRealPoints_tensorProductCongr_iff {θ₁ : H₁ ≅ H₁} {θ
         p.comp Algebra.TensorProduct.includeRight ∈ twistedRealPoints θ₂ := by
   rw [mem_twistedRealPoints_iff_comp_eq, mem_twistedRealPoints_iff_comp_eq,
     mem_twistedRealPoints_iff_comp_eq, CommHopfAlgCat.tensorProductCongr_hom_hom,
-    Bialgebra.TensorProduct.map_toAlgHom]
-  -- Both sides of `p ∘ (θ₁ ⊗ θ₂) = conj ∘ p` restrict along the two inclusions to the factor
-  -- equations, and `Algebra.TensorProduct.ext` reassembles them.
-  have hl : (p.comp (Algebra.TensorProduct.map (θ₁.hom.hom : H₁ →ₐ[ℝ] H₁)
-      (θ₂.hom.hom : H₂ →ₐ[ℝ] H₂))).comp Algebra.TensorProduct.includeLeft =
-        (p.comp Algebra.TensorProduct.includeLeft).comp (θ₁.hom.hom : H₁ →ₐ[ℝ] H₁) := by
-    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft, AlgHom.comp_assoc]
-  have hr : (p.comp (Algebra.TensorProduct.map (θ₁.hom.hom : H₁ →ₐ[ℝ] H₁)
-      (θ₂.hom.hom : H₂ →ₐ[ℝ] H₂))).comp Algebra.TensorProduct.includeRight =
-        (p.comp Algebra.TensorProduct.includeRight).comp (θ₂.hom.hom : H₂ →ₐ[ℝ] H₂) := by
-    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_assoc]
-  rw [← hl, ← hr, ← AlgHom.comp_assoc _ p, ← AlgHom.comp_assoc _ p]
-  exact ⟨fun h ↦ ⟨by rw [h], by rw [h]⟩, fun ⟨h₁, h₂⟩ ↦ Algebra.TensorProduct.ext h₁ h₂⟩
+    Bialgebra.TensorProduct.map_toAlgHom, Algebra.TensorProduct.ext_iff]
+  -- `Algebra.TensorProduct.ext_iff` splits `p ∘ (θ₁ ⊗ θ₂) = conj ∘ p` along the two inclusions;
+  -- evaluating, both sides compare the same values at `x ⊗ₜ 1` and at `1 ⊗ₜ y`.
+  simp only [AlgHom.ext_iff, AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+    Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
+    Algebra.TensorProduct.map_tmul, map_one]
 
 open scoped PointTopology in
 /-- Under the identification of the complex points of `H₁ ⊗[ℝ] H₂` with pairs of complex points
