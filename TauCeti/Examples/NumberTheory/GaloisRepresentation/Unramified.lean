@@ -42,8 +42,7 @@ example (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ.Coprime (ringChar (𝓀[K]))) :
         X - C ((u⁻¹ : ℤ_[ℓ]ˣ) : ℤ_[ℓ]) := by
   refine ⟨localCyclotomicCharacter ℓ K (arithFrobLift K),
     (isArithFrobeniusLift_arithFrobLift K).coe_localCyclotomicCharacter ℓ hℓ, ?_⟩
-  rw [frobCharpolyGeom, charpoly_ofCharacter_apply, map_inv,
-    continuousLocalCyclotomicCharacter_apply]
+  rw [frobCharpolyGeom_ofCharacter, continuousLocalCyclotomicCharacter_apply]
 
 -- The trivial representation of rank `n` has Frobenius polynomial `(X - 1)^n`.
 example (A : Type*) [CommRing A] [TopologicalSpace A] [Nontrivial A] (n : ℕ) :
@@ -58,8 +57,7 @@ example {A M : Type*} [CommRing A] [Nontrivial A] [AddCommGroup M] [Module A M]
     (ρ : ContinuousRep (Field.absoluteGaloisGroup K) A M) (b : Module.Basis (Fin 2) A M) (a : A)
     (h : LinearMap.toMatrix b b (ρ (arithFrobLift K)) = !![1, a; 0, 1]) :
     ρ.frobCharpoly = (ContinuousRep.trivial (Field.absoluteGaloisGroup K) A M).frobCharpoly := by
-  rw [frobCharpoly_trivial, Module.finrank_eq_card_basis b, frobCharpoly,
+  rw [frobCharpoly_trivial, Module.finrank_eq_card_basis b, frobCharpoly_def,
     ← LinearMap.charpoly_toMatrix _ b, h, Matrix.charpoly_fin_two]
-  simp only [Matrix.trace_fin_two_of, Matrix.det_fin_two_of, Fintype.card_fin]
-  rw [mul_one, mul_zero, sub_zero, map_add, map_one]
+  simp [Matrix.trace_fin_two_of, Matrix.det_fin_two_of]
   ring
