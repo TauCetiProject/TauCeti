@@ -50,12 +50,14 @@ abbrev genericLocalRing := Localization.AtPrime (Ideal.span {π})
 abbrev completedGenericIntegers :=
   AdicCompletion (maximalIdeal (genericLocalRing π)) (genericLocalRing π)
 
-private theorem maximalIdeal_genericLocalRing :
+/-- The image of the parameter generates the maximal ideal of the generic local ring. -/
+theorem maximalIdeal_genericLocalRing :
     maximalIdeal (genericLocalRing π) =
       Ideal.span {algebraMap A (genericLocalRing π) π} := by
   rw [← Localization.AtPrime.map_eq_maximalIdeal, Ideal.map_span, Set.image_singleton]
 
-private theorem fg_maximalIdeal_genericLocalRing :
+/-- The maximal ideal of the generic local ring is finitely generated. -/
+theorem fg_maximalIdeal_genericLocalRing :
     (maximalIdeal (genericLocalRing π)).FG := by
   rw [maximalIdeal_genericLocalRing]
   exact Submodule.fg_span_singleton _
