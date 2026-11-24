@@ -66,6 +66,8 @@ sets, with no condition on its averaged derivatives.
 * `TauCeti.ClassicalSymbol.exists_smul_quantizeSchwartzValue_comp_eq`: changes of coordinates by
   diffeomorphisms between open sets preserve classical symbols, and the principal symbol
   transforms by the cotangent map.
+* `OpenPartialHomeomorph.exists_schwartzMap_apply_eq_smul`: the transported inputs `(ψ u) ∘ κ⁻¹`
+  of that theorem are Schwartz functions.
 
 ## References
 
@@ -174,6 +176,36 @@ private theorem exists_sum_eq
     simp only [σ, smul_eq_mul, κ.left_inv hy, hθψ y hψy]
     ring_nf
   · simp [hw, hv0 z hz]
+
+/-- **Transporting an input along a change of coordinates.** For a diffeomorphism `κ` between open
+sets of `ℝⁿ`, a cutoff `ψ` with compact support in the source of `κ` and a Schwartz function `u`,
+the function `(ψ u) ∘ κ⁻¹`, extended by `0` off the target of `κ`, is a Schwartz function. These
+are the inputs `v` of `TauCeti.ClassicalSymbol.exists_smul_quantizeSchwartzValue_comp_eq`. -/
+theorem _root_.OpenPartialHomeomorph.exists_schwartzMap_apply_eq_smul
+    (κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n))
+    (hκ' : ContDiffOn ℝ ∞ κ.symm κ.target) {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) (hψs : tsupport ψ ⊆ κ.source) (u : 𝓢(CoordinateSpace n, V)) :
+    ∃ v : 𝓢(CoordinateSpace n, V),
+      (∀ y ∈ κ.source, v (κ y) = ψ y • u y) ∧ ∀ z ∉ κ.target, v z = 0 := by
+  -- Multiply `(ψ u) ∘ κ⁻¹`, which is smooth on the target, by a cutoff `θ` supported in the
+  -- target and equal to `1` on the image of the support of `ψ`.
+  obtain ⟨θ, hθ, -, hθ1, hθc, hθt⟩ := (hψc.isCompact.image_of_continuousOn
+    (κ.continuousOn.mono hψs)).exists_contDiff_cutoff κ.open_target (by
+      rintro _ ⟨y, hy, rfl⟩
+      exact κ.map_source (hψs hy))
+  have hf : ContDiff ℝ ∞ fun z ↦ θ z • (ψ (κ.symm z) • u (κ.symm z)) :=
+    ContDiffOn.contDiff_smul_of_tsupport_subset
+      ((hψ.comp_contDiffOn hκ').smul ((u.smooth ⊤).comp_contDiffOn hκ')) κ.open_target
+      hθ.contDiffOn hθt
+  have hfc : HasCompactSupport fun z ↦ θ z • (ψ (κ.symm z) • u (κ.symm z)) :=
+    hθc.smul_right
+  refine ⟨hfc.toSchwartzMap hf, fun y hy ↦ ?_, fun z hz ↦ ?_⟩
+  · rw [HasCompactSupport.toSchwartzMap_toFun, κ.left_inv hy]
+    by_cases hψy : ψ y = 0
+    · simp [hψy]
+    rw [interior_subset (hθ1 ⟨y, subset_tsupport _ hψy, rfl⟩), one_smul]
+  · rw [HasCompactSupport.toSchwartzMap_toFun,
+      image_eq_zero_of_notMem_tsupport fun h ↦ hz (hθt h), zero_smul]
 
 variable [CompleteSpace V] [CompleteSpace W]
 

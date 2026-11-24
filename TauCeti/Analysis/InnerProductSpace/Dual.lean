@@ -34,6 +34,7 @@ No inner product instance on the algebraic dual is installed.
 
 * `InnerProductSpace.toDual_symm_innerSL`: `(toDual 𝕜 E).symm (innerSL 𝕜 w) = w`.
 * `InnerProductSpace.innerSL_toDual_symm`: `innerSL 𝕜 ((toDual 𝕜 E).symm q) = q`.
+* `InnerProductSpace.toDual_symm_innerSL_comp`: `(toDual 𝕜 F).symm (⟪w, A ·⟫) = A† w`.
 * `InnerProductSpace.apply_toDual_symm_eq_conj`: `β(α♯) = conj (α(β♯))`, writing `α♯` for
   `(toDual 𝕜 E).symm α`.
 * `InnerProductSpace.apply_toDual_symm_self`: `q(q♯) = ‖q‖²`.
@@ -112,6 +113,12 @@ theorem toDual_symm_innerSL (w : E) : (toDual 𝕜 E).symm (innerSL 𝕜 w) = w 
 @[simp]
 theorem innerSL_toDual_symm (q : StrongDual 𝕜 E) : innerSL 𝕜 ((toDual 𝕜 E).symm q) = q := by
   ext v; simp [toDual_symm_apply]
+
+/-- The inverse Riesz isomorphism sends the functional `⟪w, A ·⟫` to `A† w`. -/
+theorem toDual_symm_innerSL_comp {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [CompleteSpace F] (w : E) (A : F →L[𝕜] E) :
+    (toDual 𝕜 F).symm ((innerSL 𝕜 w).comp A) = ContinuousLinearMap.adjoint A w :=
+  (toDual 𝕜 F).symm_apply_eq.2 (by ext; simp [ContinuousLinearMap.adjoint_inner_left])
 
 /-- The Riesz operator `continuousLinearMapOfBilin B` depends continuously on the sesquilinear
 form `B`: it is the composite of `B` with the inverse Riesz isomorphism. -/
