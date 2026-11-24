@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.RingTheory.Localization.Module
-public import Mathlib.RingTheory.Trace.Basic
 
 /-!
 # The coordinate matrix of a family as a linear map
@@ -21,10 +20,9 @@ linearly independent exactly when the `y a` span `M`.
 
 This identifies the relations among finitely many vectors of a finite-dimensional space with the
 solutions of a linear system whose rows are independent precisely in the spanning case, the
-situation in which lattices of integral relations have a covolume formula. Two compatibilities
-let the coordinate matrix be computed elsewhere: localizing the scalars of `b` maps its entries
-to the localized ring, and for an algebra `B` over `A` the matrix of the values `σ (y a)` under
-the algebra maps `σ : B →ₐ[A] C` factors through the coordinate matrix and the values `σ (b i)`.
+situation in which lattices of integral relations have a covolume formula. Localizing the scalars
+of `b` maps the entries of the coordinate matrix to the localized ring, so integral coordinates
+can be computed in the localized basis.
 
 ## Main results
 
@@ -34,8 +32,6 @@ the algebra maps `σ : B →ₐ[A] C` factors through the coordinate matrix and 
 * `Module.Basis.linearIndependent_row_toMatrix_iff`: over a field, its rows are linearly
   independent if and only if `y` spans `M`.
 * `Module.Basis.toMatrix_localizationLocalization`: coordinates in a localized basis.
-* `Module.Basis.embeddingsMatrix_eq_transpose_mul`: the embeddings matrix of `y` is the transposed
-  coordinate matrix times the embeddings matrix of `b`.
 -/
 
 public section
@@ -60,17 +56,6 @@ theorem toMatrix_localizationLocalization {A Rₛ Aₛ : Type*} [CommRing A] [Al
       (b.toMatrix y).map (algebraMap R Rₛ) := by
   ext i a
   simp [toMatrix_apply]
-
-/-- The matrix of the values `σ (y a)` of a family `y` under the `A`-algebra maps `σ : B →ₐ[A] C`
-is the transpose of its coordinate matrix in a basis `b`, mapped to `C`, times the matrix of the
-values `σ (b i)`. -/
-theorem embeddingsMatrix_eq_transpose_mul [Fintype ι] {A B : Type*} (C : Type*) [CommRing A]
-    [CommRing B] [Algebra A B] [CommRing C] [Algebra A C] (b : Basis ι A B) (y : κ → B) :
-    Algebra.embeddingsMatrix A C y =
-      ((b.toMatrix y).map (algebraMap A C))ᵀ * Algebra.embeddingsMatrix A C b := by
-  ext a σ
-  conv_lhs => rw [Algebra.embeddingsMatrix_apply, ← b.sum_repr (y a)]
-  simp [Matrix.mul_apply, toMatrix_apply, Algebra.smul_def]
 
 variable [Finite ι] [Fintype κ]
 

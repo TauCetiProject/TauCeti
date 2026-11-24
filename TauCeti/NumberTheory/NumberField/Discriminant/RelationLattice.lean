@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 public import TauCeti.LinearAlgebra.Basis.ToMatrix
 public import TauCeti.NumberTheory.Height.Arakelov.IntMatrix
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
+public import TauCeti.RingTheory.Trace.EmbeddingsMatrix
 
 /-!
 # The lattice of integer relations among algebraic integers
@@ -105,18 +106,25 @@ theorem det_conjTranspose_mul_self_embeddingsMatrix (b : Basis ι ℚ K) (y : κ
     rw [mul_comm, Complex.star_def, Complex.mul_conj, Complex.normSq_eq_norm_sq, ← norm_pow,
       ← hdisc]
     simp only [eq_ratCast, Complex.norm_ratCast]
-    rw [← Rat.cast_abs, Complex.ofReal_ratCast]
+    norm_cast
   rw [hBB, mul_right_comm, hnorm, Rat.cast_mul, eq_ratCast]
 
 omit [Fintype ι] [DecidableEq ι] [Fintype κ] in
 /-- The coordinates of a family of algebraic integers in the `ℚ`-basis of `K` induced by a
 `ℤ`-basis `β` of `𝓞 K` are its integer coordinates in `β`. -/
-private theorem toMatrix_localizationLocalization_coe (β : Basis ι ℤ (𝓞 K)) (y : κ → 𝓞 K) :
+theorem toMatrix_localizationLocalization_ringOfIntegers (β : Basis ι ℤ (𝓞 K)) (y : κ → 𝓞 K) :
     (β.localizationLocalization ℚ (nonZeroDivisors ℤ) K).toMatrix (fun a ↦ (y a : K)) =
-      (β.toMatrix y).map ((↑) : ℤ → ℚ) := by
-  have h := β.toMatrix_localizationLocalization (Rₛ := ℚ) (nonZeroDivisors ℤ) (Aₛ := K) y
-  rw [algebraMap_int_eq, Int.coe_castRingHom] at h
-  exact h
+      (β.toMatrix y).map ((↑) : ℤ → ℚ) :=
+  β.toMatrix_localizationLocalization (Rₛ := ℚ) (nonZeroDivisors ℤ) (Aₛ := K) y
+
+omit [Fintype ι] [DecidableEq ι] [Fintype κ] in
+/-- If a finite family `y` of algebraic integers spans `K` over `ℚ`, the rows of its integer
+coordinate matrix in a `ℤ`-basis `β` of `𝓞 K` are linearly independent over `ℚ`. -/
+theorem linearIndependent_row_toMatrix_map_intCast [Finite ι] [Finite κ] (β : Basis ι ℤ (𝓞 K))
+    {y : κ → 𝓞 K} (hy : span ℚ (Set.range fun a ↦ (y a : K)) = ⊤) :
+    LinearIndependent ℚ ((β.toMatrix y).map ((↑) : ℤ → ℚ)).row := by
+  rw [← toMatrix_localizationLocalization_ringOfIntegers]
+  exact (linearIndependent_row_toMatrix_iff _ _).2 hy
 
 open scoped Classical in
 /-- **The Gram–discriminant identity for an integral basis.** Let `V` be the matrix of the values
@@ -133,9 +141,10 @@ theorem det_conjTranspose_mul_self_embeddingsMatrix_ringOfIntegers (β : Basis �
   have hmat : (β.toMatrix y).map ((↑) : ℤ → ℚ) * ((β.toMatrix y).map ((↑) : ℤ → ℚ))ᵀ =
       (β.toMatrix y * (β.toMatrix y)ᵀ).map ((↑) : ℤ → ℚ) :=
     (Matrix.map_mul (f := Int.castRingHom ℚ)).symm
-  rw [b.det_conjTranspose_mul_self_embeddingsMatrix, toMatrix_localizationLocalization_coe, hb,
-    NumberField.discr_eq_of_integralBasis, hmat, ← Int.cast_det, ← Int.cast_abs, ← Int.cast_mul,
-    Rat.cast_intCast]
+  rw [b.det_conjTranspose_mul_self_embeddingsMatrix,
+    toMatrix_localizationLocalization_ringOfIntegers, hb, NumberField.discr_eq_of_integralBasis,
+    hmat]
+  norm_cast
 
 /-- **The covolume of the lattice of integer relations.** Let `y` be a finite family of algebraic
 integers spanning `K` over `ℚ`, and `B` its integer coordinate matrix in a `ℤ`-basis `β` of `𝓞 K`.
@@ -145,10 +154,9 @@ theorem covolume_intLattice_ker_linearCombination {p : ℕ} (β : Basis (Fin p) 
     {y : κ → 𝓞 K} (hy : span ℚ (Set.range fun a ↦ (y a : K)) = ⊤) :
     ZLattice.covolume (LinearMap.ker (Fintype.linearCombination ℚ fun a ↦ (y a : K))).intLattice =
       √((β.toMatrix y * (β.toMatrix y)ᵀ).det : ℝ) / ((β.toMatrix y).minorGcd : ℝ) := by
-  set b := β.localizationLocalization ℚ (nonZeroDivisors ℤ) K
-  have hB := toMatrix_localizationLocalization_coe β y
-  rw [← b.ker_mulVecLin_toMatrix, hB]
-  exact covolume_intLattice_ker_mulVecLin (hB ▸ (b.linearIndependent_row_toMatrix_iff _).2 hy)
+  rw [← (β.localizationLocalization ℚ (nonZeroDivisors ℤ) K).ker_mulVecLin_toMatrix,
+    toMatrix_localizationLocalization_ringOfIntegers]
+  exact covolume_intLattice_ker_mulVecLin (β.linearIndependent_row_toMatrix_map_intCast hy)
 
 end Module.Basis
 
@@ -168,15 +176,13 @@ theorem covolume_intLattice_ker_linearCombination_le {y : κ → 𝓞 K}
           Algebra.embeddingsMatrix ℚ ℂ fun a ↦ (y a : K)).det.re /
         |(NumberField.discr K : ℝ)|) := by
   set β := (NumberField.RingOfIntegers.basis K).reindex (Fintype.equivFin _)
-  have hrow : LinearIndependent ℚ ((β.toMatrix y).map ((↑) : ℤ → ℚ)).row := by
-    rw [← β.toMatrix_localizationLocalization_coe y]
-    exact (Basis.linearIndependent_row_toMatrix_iff _ _).2 hy
   have hd : (NumberField.discr K : ℝ) ≠ 0 := by exact_mod_cast NumberField.discr_ne_zero K
   rw [β.covolume_intLattice_ker_linearCombination hy,
     β.det_conjTranspose_mul_self_embeddingsMatrix_ringOfIntegers y, Complex.intCast_re]
   push_cast
   rw [mul_div_cancel_left₀ _ (abs_ne_zero.2 hd)]
-  exact div_le_self (Real.sqrt_nonneg _) (by exact_mod_cast Matrix.one_le_minorGcd hrow)
+  exact div_le_self (Real.sqrt_nonneg _) <|
+    mod_cast Matrix.one_le_minorGcd (β.linearIndependent_row_toMatrix_map_intCast hy)
 
 /-- **The covolume of the lattice of integer relations is bounded by the conjugates.** For a finite
 family `y` of algebraic integers spanning `K` over `ℚ`, the lattice of integer relations among the
