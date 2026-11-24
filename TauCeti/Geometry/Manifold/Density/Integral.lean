@@ -50,6 +50,8 @@ have boundary or corners: only the model carries its Borel measurable structure.
 * `TauCeti.integralDensity_eq_sum_disjointed_chart_integrals`: independence of chart, basis and
   cover.
 * `TauCeti.integralTopForm_eq_integralDensity`: `∫_o φ = ∫ φ.toDensity o`.
+* `TauCeti.integralDensity_modelSpace`: on the model space the integral is the Lebesgue integral
+  of the value on a model basis.
 
 ## References
 
@@ -182,6 +184,15 @@ theorem inChartAt_self [IsManifold I 1 M] (μ : RoughDensity I M m) (b : Basis (
   -- The derivative of the inverse chart at the chart point is the identity, applied pointwise.
   rfl
 
+/-- On the model space, the coefficient of a density in any chart is its value on the model
+basis. -/
+@[simp]
+theorem inChartAt_modelSpace (μ : RoughDensity 𝓘(ℝ, E) E m)
+    (b : Basis (Fin m) ℝ E) (α : E) : μ.inChartAt b α = fun y ↦ μ y b := by
+  funext y
+  -- All charts of the model space are the identity chart, so this is `inChartAt_self` at `y`.
+  exact μ.inChartAt_self b y
+
 /-- On an overlap of two preferred charts, the chart coefficients of a density differ by the
 absolute determinant of the within-range transition derivative. This includes boundary and
 corner points. -/
@@ -232,7 +243,9 @@ theorem integral_inChartAt_changeChart [IsManifold I 1 M] (μ : RoughDensity I M
         IntegrableOn (μ.inChartAt b β) ((extChartAt I β) '' s) ν) := by
   have := Module.Finite.of_basis b
   exact TauCeti.setIntegral_image_extChartAt_changeChart α β hsub hs
-    (fun x hx ↦ (inChartAt_changeChart μ b (hsub hx).1 (hsub hx).2).symm) ν
+    (fun x hx ↦ by
+      rw [smul_eq_mul]
+      exact (inChartAt_changeChart μ b (hsub hx).1 (hsub hx).2).symm) ν
 
 /-- Chart integrals of a density over a set do not depend on the model basis, each basis
 carrying its normalized Haar measure. -/
@@ -303,33 +316,21 @@ theorem RoughDensity.integrableDensity_of_open_cover {J : Type*} (μ : RoughDens
     (hcover : _root_.tsupport (α := Density E m) μ ⊆ ⋃ i, u i)
     (hlocal : ∀ i, IntegrableOn (μ.inChartAt b (β i)) ((extChartAt I (β i)) '' u i) b.addHaar) :
     IntegrableDensity μ := by
-  classical
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
-  obtain ⟨t, ht⟩ := hc.elim_finite_subcover u hu hcover
-  have hcover' : _root_.tsupport (α := Density E m) μ ⊆ ⋃ i : t, u i := by
-    intro x hx
-    obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.mp (ht hx)
-    exact mem_iUnion.mpr ⟨⟨i, hi⟩, hxi⟩
-  refine integrableDensity_of_basis hc b fun α ↦ ?_
-  let s : t → Set M := fun i ↦ (extChartAt I α).source ∩ u i
-  let A : t → Set E := fun i ↦ (extChartAt I α) '' s i
-  have hpiece (i : t) : IntegrableOn (μ.inChartAt b α) (A i) b.addHaar := by
-    have hsub : s i ⊆ (extChartAt I α).source ∩ (extChartAt I (β i)).source := fun x hx ↦
+  refine integrableDensity_of_basis hc b fun α ↦
+    integrable_of_isCompact_of_open_cover (I := I) α hc u hu hcover (fun i ↦ ?_)
+      fun y hy ↦ ?_
+  · have hsub : (extChartAt I α).source ∩ u i ⊆
+        (extChartAt I α).source ∩ (extChartAt I (β i)).source := fun x hx ↦
       ⟨hx.1, by simpa only [extChartAt_source] using hsource i hx.2⟩
     apply (μ.integral_inChartAt_changeChart b α (β i) hsub
       ((hu i).measurableSet_image_extChartAt_source_inter α) b.addHaar).2.mpr
     exact (hlocal i).mono_set (image_mono inter_subset_right)
-  apply (integrableOn_iff_integrable_of_support_subset ?_).mp
-    (integrableOn_finite_iUnion.mpr hpiece)
-  intro y hy
-  have hn := Function.mem_support.mp hy
-  by_cases hyt : y ∈ (extChartAt I α).target
-  · have hne : μ ((extChartAt I α).symm y) ≠ 0 := fun hz ↦ hn (by
-      rw [RoughDensity.inChartAt_of_mem_target μ b α hyt, hz, Density.zero_apply])
-    obtain ⟨i, hi⟩ := mem_iUnion.mp (hcover' (subset_tsupport (α := Density E m) μ hne))
-    exact mem_iUnion.mpr ⟨i, ⟨(extChartAt I α).symm y,
-      ⟨(extChartAt I α).map_target hyt, hi⟩, (extChartAt I α).right_inv hyt⟩⟩
-  · exact absurd (RoughDensity.inChartAt_of_notMem_target μ b α hyt) hn
+  · by_cases hyt : y ∈ (extChartAt I α).target
+    · have hne : μ ((extChartAt I α).symm y) ≠ 0 := fun hz ↦ hy (by
+        rw [RoughDensity.inChartAt_of_mem_target μ b α hyt, hz, Density.zero_apply])
+      exact ⟨hyt, subset_tsupport (α := Density E m) μ hne⟩
+    · exact absurd (RoughDensity.inChartAt_of_notMem_target μ b α hyt) hy
 
 /-- A compactly supported density whose support lies in a preferred chart is integrable exactly
 when its coefficient in that chart, in one model basis, is integrable. -/
@@ -352,6 +353,20 @@ theorem IntegrableDensity.isCompact {μ : RoughDensity I M m} (hi : IntegrableDe
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   exact ((integrableDensity_iff μ).mp hi).1
+
+/-- An integrable density has a model basis of the size of its degree. -/
+theorem IntegrableDensity.nonempty_basis {μ : RoughDensity I M m} (hi : IntegrableDensity μ) :
+    Nonempty (Basis (Fin m) ℝ E) := by
+  let : MeasurableSpace E := borel E
+  let : BorelSpace E := ⟨rfl⟩
+  exact ((integrableDensity_iff μ).mp hi).2.1
+
+/-- The coefficients of an integrable density are integrable in every preferred chart and every
+model basis. -/
+theorem IntegrableDensity.integrable_inChartAt [MeasurableSpace E] [BorelSpace E]
+    {μ : RoughDensity I M m} (hi : IntegrableDensity μ) (b : Basis (Fin m) ℝ E) (α : M) :
+    Integrable (μ.inChartAt b α) b.addHaar :=
+  ((integrableDensity_iff μ).mp hi).2.2 b α
 
 /-- The sum of two integrable densities is integrable. -/
 theorem IntegrableDensity.add {μ ν : RoughDensity I M m} (hμ : IntegrableDensity μ)
@@ -429,9 +444,8 @@ variable [FiniteDimensional ℝ E]
 /-- `coverSum` for the chosen finite open chart cover of a compact set `K`. -/
 private def chosenCoverSum [MeasurableSpace E] [BorelSpace E] (μ : RoughDensity I M m)
     (b : Basis (Fin m) ℝ E) (K : Set M) (hK : IsCompact K) : ℝ :=
-  letI : LocallyCompactSpace H := I.locallyCompactSpace
-  let h := exists_finite_precompact_chart_cover (I := I) hK
-  coverSum μ b h.choose_spec.choose h.choose_spec.choose_spec.choose
+  let c := chooseChartCover (I := I) K hK
+  coverSum μ b c.center c.domain
 
 private theorem chosenCoverSum_congr [MeasurableSpace E] [BorelSpace E]
     (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) {K K' : Set M} (hK : IsCompact K)
@@ -478,14 +492,12 @@ theorem integralDensity_eq_sum_disjointed_chart_integrals [IsManifold I 1 M]
   have hm : ‹MeasurableSpace E› = borel E := BorelSpace.measurable_eq
   cases hm
   let : MeasurableSpace E := borel E
-  let : LocallyCompactSpace H := I.locallyCompactSpace
   rw [integralDensity, dite_eq_left hi]
   unfold chosenCoverSum coverSum
-  let h := exists_finite_precompact_chart_cover (I := I) hi.isCompact
-  have hp := h.choose_spec.choose_spec.choose_spec.choose_spec
+  let c := chooseChartCover (I := I) _ hi.isCompact
   simp_rw [μ.setIntegral_inChartAt_basis_eq b]
   have hint (β : M) (t : Set E) : IntegrableOn (μ.inChartAt b β) t b.addHaar :=
-    (((integrableDensity_iff μ).mp hi).2.2 b β).integrableOn
+    (hi.integrable_inChartAt b β).integrableOn
   -- The coefficient of a density vanishes at the coordinates of the points where it vanishes.
   have hz (β : M) (x : M) (hx : x ∈ (extChartAt I β).source) (hx0 : x ∉ {x | μ x ≠ 0}) :
       μ.inChartAt b β (extChartAt I β x) = 0 := by
@@ -497,8 +509,8 @@ theorem integralDensity_eq_sum_disjointed_chart_integrals [IsManifold I 1 M]
   exact sum_setIntegral_image_extChartAt_disjointed_eq hz
     (fun β γ _ hsub hm ↦ (μ.integral_inChartAt_changeChart b β γ hsub
       (hm.image_extChartAt β (hsub.trans inter_subset_left)) b.addHaar).1)
-    _ _ (fun i ↦ (hp.1 i).1.isChartMeasurable) (fun i ↦ (hp.1 i).2.1)
-    (fun x hx ↦ hp.2 (subset_closure hx)) (fun _ ↦ hint _ _)
+    c.center c.domain (fun i ↦ (c.isOpen_domain i).isChartMeasurable) c.domain_subset
+    (fun x hx ↦ c.covers (subset_closure hx)) (fun _ ↦ hint _ _)
     α u hu hs hc (fun _ ↦ hint _ _)
 
 /-- An integrable density that vanishes outside a preferred chart has that chart's integral. -/
@@ -513,6 +525,14 @@ theorem integralDensity_eq_integral_inChartAt [IsManifold I 1 M] [MeasurableSpac
     (extChartAt I α).image_source_eq_target]
   refine setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ ?_
   exact μ.inChartAt_of_notMem_target b α hy
+
+/-- On the model space, the integral of an integrable density is the Lebesgue integral of its
+value on a model basis, for the Haar measure of that basis. -/
+theorem integralDensity_modelSpace [MeasurableSpace E] [BorelSpace E]
+    {μ : RoughDensity 𝓘(ℝ, E) E m} (hi : IntegrableDensity μ) (b : Basis (Fin m) ℝ E) :
+    integralDensity μ = ∫ y, μ y b ∂b.addHaar := by
+  rw [integralDensity_eq_integral_inChartAt hi b 0 (by simp),
+    RoughDensity.inChartAt_modelSpace]
 
 /-- The zero density has zero integral. -/
 @[simp]
@@ -532,7 +552,7 @@ theorem integralDensity_add [IsManifold I 1 M] {μ ν : RoughDensity I M m}
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
   let : LocallyCompactSpace H := I.locallyCompactSpace
-  obtain ⟨b⟩ := ((integrableDensity_iff μ).mp hμ).2.1
+  obtain ⟨b⟩ := hμ.nonempty_basis
   obtain ⟨n, α, u, _, hp, hc⟩ :=
     exists_finite_precompact_chart_cover (I := I) (hμ.isCompact.union hν.isCompact)
   have hu (i : Fin n) : IsChartMeasurable I (u i) := (hp i).1.isChartMeasurable
@@ -544,8 +564,8 @@ theorem integralDensity_add [IsManifold I 1 M] {μ ν : RoughDensity I M m}
       fun x hx ↦ hc (Or.inr (subset_closure hx)), ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [RoughDensity.inChartAt_add]
-  exact integral_add (((integrableDensity_iff μ).mp hμ).2.2 b (α i)).integrableOn
-    (((integrableDensity_iff ν).mp hν).2.2 b (α i)).integrableOn
+  exact integral_add (hμ.integrable_inChartAt b (α i)).integrableOn
+    (hν.integrable_inChartAt b (α i)).integrableOn
 
 /-- Integration of densities commutes with finite sums of integrable densities. -/
 theorem integralDensity_sum [IsManifold I 1 M] {ι : Type*} (μ : ι → RoughDensity I M m)
@@ -558,7 +578,7 @@ theorem integralDensity_sum [IsManifold I 1 M] {ι : Type*} (μ : ι → RoughDe
     have hμi := hμ i (Finset.mem_insert_self i s)
     let : MeasurableSpace E := borel E
     let : BorelSpace E := ⟨rfl⟩
-    obtain ⟨b⟩ := ((integrableDensity_iff (μ i)).mp hμi).2.1
+    obtain ⟨b⟩ := hμi.nonempty_basis
     rw [Finset.sum_insert hi, Finset.sum_insert hi,
       integralDensity_add hμi (IntegrableDensity.sum b μ s fun j hj ↦
         hμ j (Finset.mem_insert_of_mem hj)),

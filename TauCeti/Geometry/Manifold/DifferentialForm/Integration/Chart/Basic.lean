@@ -127,7 +127,7 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
     exact (hsub hx).2
   have hc := φ.inChartAt_apply_basis_eq_det_mul b ((extChartAt I α).map_source (hsub hx).1) hβ
   rw [(extChartAt I α).left_inv (hsub hx).1] at hc
-  rw [hc, ← mul_assoc, ← mul_assoc, hσ x hx]
+  rw [hc, smul_eq_mul, ← mul_assoc, ← mul_assoc, hσ x hx]
 
 /-- Actual integrability of unsigned top-form coefficients is invariant under a chart change.
 The absolute Jacobian theorem and a measurable determinant sign preserve both strong
