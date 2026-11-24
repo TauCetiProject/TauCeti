@@ -21,9 +21,10 @@ Let `B` be a `ℤ`-valued bilinear form on an additive group `L`. Its *dual latt
 `L^# = {x ∈ ℚ ⊗ L : B(x, L) ⊆ ℤ}`, computed with the rational extension of `B`. It contains the
 image of `L`, and the *dual index* `[L^# : L]` is the index of that image in `L^#`. When `L` is
 finite free over `ℤ` and `B` is nondegenerate over `ℚ`, the dual index is finite: for a `ℤ`-basis
-of `L` it is the absolute value of the Gram determinant. The form is *self-dual at `p`* when `L`
-and `L^#` agree after localizing at `p`; when the dual index is finite and `p` is prime, this
-happens exactly when `p` does not divide the dual index.
+of `L` it is the absolute value of the Gram determinant. The form is *self-dual at `p`* when every
+element of `L^#` has a multiple prime to `p` in the image of `L`; for `p` prime this says that `L`
+and `L^#` agree after localizing at `p`, and when the dual index is finite it happens exactly when
+`p` does not divide the dual index.
 
 ## Main definitions
 
@@ -147,10 +148,10 @@ theorem dualIndex_ne_zero [Module.Free ℤ L] [Module.Finite ℤ L]
     ← LinearMap.BilinForm.nondegenerate_baseChange_iff (A := ℚ) _ b]
   exact hB
 
-/-- A `ℤ`-valued bilinear form is **self-dual at `p`** when `L` and its dual lattice `L^#` agree
-after localizing at `p`: every `x ∈ L^#` has a multiple `n • x ∈ L` with `n` prime to `p`. By
-`isSelfDualAt_iff_not_dvd_dualIndex`, when the dual index is finite and `p` is prime, this holds
-exactly when `p ∤ [L^# : L]`. -/
+/-- A `ℤ`-valued bilinear form is **self-dual at `p`** when every `x ∈ L^#` has a multiple
+`n • x ∈ L` with `n` not divisible by `p`. For `p` prime this says that `L` and its dual lattice
+`L^#` agree after localizing at `p`. By `isSelfDualAt_iff_not_dvd_dualIndex`, when the dual index
+is finite and `p` is prime, this holds exactly when `p ∤ [L^# : L]`. -/
 def IsSelfDualAt (p : ℕ) : Prop :=
   ∀ x ∈ B.dualLattice, ∃ n : ℕ, ¬p ∣ n ∧ ∃ y : L, (1 : ℚ) ⊗ₜ[ℤ] y = n • x
 

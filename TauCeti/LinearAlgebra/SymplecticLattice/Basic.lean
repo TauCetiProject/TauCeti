@@ -25,9 +25,10 @@ contains the image of `L` and is an `O`-submodule of `L ⊗ ℚ` because the adj
 `star b`. When `L` is
 finite free over `ℤ`, it contains `L` with finite index `[L^# : L]`, the *dual index*, which is
 the absolute value of the Gram determinant of any `ℤ`-basis. The lattice is *self-dual at `p`*
-when `L` and `L^#` agree after localizing at `p`; for `L` finite free over `ℤ` and `p` prime,
-this happens exactly when `p` does not divide the dual index. These primes are the good primes of
-the lattice for the PEL moduli problems.
+when every element of `L^#` has a multiple prime to `p` in the image of `L`; for `p` prime this
+says that `L` and `L^#` agree after localizing at `p`, and for `L` finite free over `ℤ` it happens
+exactly when `p` does not divide the dual index. Self-duality at `p` is one of the conditions
+defining a good prime of a PEL datum.
 
 The dual lattice, dual index and self-duality only use the pairing and its rational
 nondegeneracy; their general theory is in `TauCeti.LinearAlgebra.BilinearForm.Dual.Index`, and
@@ -200,8 +201,8 @@ theorem dualIndex_ne_zero [Module.Free ℤ L] [Module.Finite ℤ L] : Λ.dualInd
   Λ.form.dualIndex_ne_zero Λ.nondegenerate
 
 /-- A symplectic lattice is **self-dual at `p`** when its pairing is
-(`LinearMap.BilinForm.IsSelfDualAt`): `L` and its dual lattice `L^#` agree after localizing at
-`p`. -/
+(`LinearMap.BilinForm.IsSelfDualAt`): every element of `L^#` has a multiple prime to `p` in the
+image of `L`. For `p` prime this says that `L` and `L^#` agree after localizing at `p`. -/
 abbrev IsSelfDualAt (p : ℕ) : Prop :=
   Λ.form.IsSelfDualAt p
 
@@ -219,6 +220,11 @@ def zero [Subsingleton L] : SymplecticOLattice O L where
   isAlt _ := rfl
   adjoint _ _ _ := rfl
   nondegenerate := ⟨fun x _ ↦ Subsingleton.elim x 0, fun x _ ↦ Subsingleton.elim x 0⟩
+
+/-- The pairing of the zero lattice is zero. -/
+@[simp]
+theorem zero_form [Subsingleton L] : (zero O L).form = 0 :=
+  (rfl)
 
 /-- The zero lattice has dual index one. -/
 theorem dualIndex_zero [Subsingleton L] : (zero O L).dualIndex = 1 :=
