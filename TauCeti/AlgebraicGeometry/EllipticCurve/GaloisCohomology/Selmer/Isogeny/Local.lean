@@ -112,7 +112,8 @@ theorem natCard_localCondition_selmerStructure
     (i : ι) [DecidableEq (L i)] :
     Nat.card ((φ.selmerStructure τ).localCondition i) =
       (ofIsogeny (φ.baseChange (L i))).pointMapHom.range.index := by
-  rw [selmerStructure_localCondition, ← range_kummerMap, natCard_range_kummerMap]
+  rw [selmerStructure_localCondition, ← range_kummerMap,
+    natCard_range_kummerMap]
 
 end Field
 

@@ -234,18 +234,17 @@ instance isStableUnderBaseChange' (P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) →
   isStableUnderBaseChange P'
 
 /-- If `P` is stable under base change of schemes and `f : F ⟶ H` satisfies `EtaleLocal P`, then
-the second projection `AlgSpace.pullbackSnd f g : AlgSpace.pullbackObj f g ⟶ G` satisfies
-`EtaleLocal P` (Stacks, Section 67.22 (03MJ, 04RD)). -/
+the second projection `pullback.snd f g : pullback f g ⟶ G` satisfies `EtaleLocal P`
+(Stacks, Section 67.22 (03MJ, 04RD)). -/
 theorem baseChange {F G H : AlgSpace.{u}} {f : F ⟶ H} (hf : EtaleLocal P f) (g : G ⟶ H) :
-    EtaleLocal P (AlgSpace.pullbackSnd f g) :=
-  hf.of_isPullback (AlgSpace.isPullback f g)
+    EtaleLocal P (pullback.snd f g) :=
+  hf.of_isPullback (IsPullback.of_hasPullback f g)
 
 /-- First-projection counterpart of `EtaleLocal.baseChange`: if `g : G ⟶ H` satisfies
-`EtaleLocal P`, then `AlgSpace.pullbackFst f g : AlgSpace.pullbackObj f g ⟶ F` satisfies
-`EtaleLocal P`. -/
+`EtaleLocal P`, then `pullback.fst f g : pullback f g ⟶ F` satisfies `EtaleLocal P`. -/
 theorem baseChange_fst {F G H : AlgSpace.{u}} {g : G ⟶ H} (hg : EtaleLocal P g) (f : F ⟶ H) :
-    EtaleLocal P (AlgSpace.pullbackFst f g) :=
-  hg.of_isPullback (AlgSpace.isPullback f g).flip
+    EtaleLocal P (pullback.fst f g) :=
+  hg.of_isPullback (IsPullback.of_hasPullback f g).flip
 
 end BaseChange
 

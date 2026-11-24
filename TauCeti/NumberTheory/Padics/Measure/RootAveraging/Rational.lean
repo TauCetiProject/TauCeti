@@ -64,11 +64,7 @@ theorem mul_map_subst_psiSeries_eq_sum_div {ζ : ℂ_[p]} (hζ : IsPrimitiveRoot
       ∑ i : Fin p, ι (P.eval₂ κ (C (ζ ^ (i : ℕ)) * (1 + X) - 1)) /
         ι (Q.eval₂ κ (C (ζ ^ (i : ℕ)) * (1 + X) - 1)) := by
   have hnorm : ‖ζ‖ = 1 := (hζ.isOfFinOrder (Fact.out : p.Prime).ne_zero).norm_eq_one
-  have hmem : ζ ∈ 𝓞_ℂ_[p] := by
-    apply (Valuation.mem_valuationSubring_iff _ _).2
-    rw [← NNReal.coe_le_coe,
-      PadicComplex.valuation_coe, hnorm]
-    exact le_rfl
+  have hmem : ζ ∈ 𝓞_ℂ_[p] := PadicComplexInt.mem_iff_norm_le_one.2 hnorm.le
   let ζ₀ : 𝓞_ℂ_[p] := ⟨ζ, hmem⟩
   have hζ₀ : IsPrimitiveRoot ζ₀ p :=
     hζ.of_map_of_injective (f := (𝓞_ℂ_[p]).subtype) Subtype.val_injective

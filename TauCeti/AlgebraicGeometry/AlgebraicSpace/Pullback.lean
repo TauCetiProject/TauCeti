@@ -7,9 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.Category
 public import Mathlib.CategoryTheory.Limits.FullSubcategory
-public import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 public import Mathlib.CategoryTheory.Limits.Preserves.Creates.Finite
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteLimits
+import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 import Mathlib.CategoryTheory.Sites.Limits
 import TauCeti.CategoryTheory.MorphismProperty.Limits
 
@@ -17,25 +17,14 @@ import TauCeti.CategoryTheory.MorphismProperty.Limits
 # Fibre products of algebraic spaces
 
 Fibre products and binary products of algebraic spaces are algebraic spaces (Stacks,
-Lemma 65.7.3 (02X2)). Consequently the full subcategory `AlgSpace` has pullbacks, binary products,
-and all finite limits, created and preserved by the forgetful functor `AlgSpace.toPresheaf` to
-presheaves on schemes, and preserved by the fully faithful embedding `AlgSpace.ofScheme` of
-schemes.
+Lemma 65.7.3 (02X2)). Consequently `IsAlgebraicSpace` is closed under finite limits of presheaves,
+so the full subcategory `AlgSpace` has pullbacks, binary products, and all finite limits, created
+and preserved by the forgetful functor `AlgSpace.toPresheaf` to presheaves on schemes, and
+preserved by the fully faithful embedding `AlgSpace.ofScheme` of schemes.
 
 For étale atlases `a : h_U ⟶ F` and `b : h_V ⟶ G` over an algebraic space `H`, the representable
 diagonal of `H` represents the presheaf fibre product `h_U ×_H h_V` by a scheme `W`, and the
 induced morphism `h_W ⟶ F ×_H G` is an étale atlas (`EtaleAtlas.lift_isPullback`).
-
-## Main definitions
-
-* `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.pullbackObj`,
-  `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.pullbackFst`,
-  `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.pullbackSnd`, and
-  `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.pullbackLift`: named fibre product of algebraic
-  spaces, its two projections, and its universal lift.
-* `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.ofSchemePullbackIso`: comparison isomorphism
-  `ofScheme.obj (pullback f g) ≅ pullbackObj (ofScheme.map f) (ofScheme.map g)` compatible with
-  both projections.
 
 ## Main results
 
@@ -48,9 +37,12 @@ induced morphism `h_W ⟶ F ×_H G` is an étale atlas (`EtaleAtlas.lift_isPullb
   pullback or binary product of presheaves are étale atlases.
 * `TauCeti.AlgebraicGeometry.Spaces.isAlgebraicSpace_pullback` and
   `TauCeti.AlgebraicGeometry.Spaces.IsAlgebraicSpace.prod`: pullbacks and binary products of
-  algebraic spaces are algebraic spaces (Stacks, Lemma 65.7.3 (02X2)).
+  algebraic spaces are algebraic spaces (Stacks, Lemma 65.7.3 (02X2)), giving
+  `ObjectProperty.IsClosedUnderFiniteLimits` for `IsAlgebraicSpace`,
+  `CreatesFiniteLimits AlgSpace.toPresheaf`, and `PreservesLimitsOfSize AlgSpace.ofScheme`.
 * `TauCeti.AlgebraicGeometry.Spaces.AlgSpace.ofScheme_relativelyRepresentable`: every morphism from
-  an embedded scheme to an algebraic space is representable by schemes on underlying presheaves.
+  an embedded scheme to an algebraic space is representable by schemes on underlying presheaves
+  (Stacks, Lemma 65.7.1 (02X0)).
 
 ## References
 
@@ -230,121 +222,6 @@ namespace AlgSpace
 noncomputable instance : CreatesFiniteLimits toPresheaf.{u} where
   createsFiniteLimits _ _ _ := inferInstance
 
-/-- The named fibre product of two morphisms `f : F ⟶ H` and `g : G ⟶ H` in `AlgSpace`, built on
-the presheaf pullback `pullback f.hom g.hom`. The object is exposed so that presheaf morphisms out
-of or into `(pullbackObj f g).obj` have source or target `pullback f.hom g.hom`. -/
-@[expose]
-noncomputable def pullbackObj {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) : AlgSpace.{u} :=
-  ⟨pullback f.hom g.hom, isAlgebraicSpace_pullback f.hom g.hom F.property G.property H.property⟩
-
-@[simp]
-lemma pullbackObj_obj {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    (pullbackObj f g).obj = pullback f.hom g.hom :=
-  (rfl)
-
-/-- The first projection `F ×_H G ⟶ F` of the named fibre product in `AlgSpace`. -/
-noncomputable def pullbackFst {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    pullbackObj f g ⟶ F :=
-  ObjectProperty.homMk (pullback.fst f.hom g.hom)
-
-@[simp]
-lemma pullbackFst_hom {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    (pullbackFst f g).hom = pullback.fst f.hom g.hom :=
-  (rfl)
-
-/-- The second projection `F ×_H G ⟶ G` of the named fibre product in `AlgSpace`. -/
-noncomputable def pullbackSnd {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    pullbackObj f g ⟶ G :=
-  ObjectProperty.homMk (pullback.snd f.hom g.hom)
-
-@[simp]
-lemma pullbackSnd_hom {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    (pullbackSnd f g).hom = pullback.snd f.hom g.hom :=
-  (rfl)
-
-/-- Commutativity of the projections of `AlgSpace.pullbackObj`. -/
-@[reassoc]
-theorem pullback_condition {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    pullbackFst f g ≫ f = pullbackSnd f g ≫ g := by
-  ext1
-  exact pullback.condition
-
-/-- Universal lift into `AlgSpace.pullbackObj`. -/
-noncomputable def pullbackLift {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
-    (u : W ⟶ F) (v : W ⟶ G) (w : u ≫ f = v ≫ g) : W ⟶ pullbackObj f g :=
-  ObjectProperty.homMk (pullback.lift u.hom v.hom (congrArg (fun k ↦ k.hom) w))
-
-@[simp]
-lemma pullbackLift_hom {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
-    (u : W ⟶ F) (v : W ⟶ G) (w : u ≫ f = v ≫ g) :
-    (pullbackLift u v w).hom = pullback.lift u.hom v.hom (congrArg (fun k ↦ k.hom) w) :=
-  (rfl)
-
-@[reassoc (attr := simp)]
-lemma pullbackLift_fst {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
-    (u : W ⟶ F) (v : W ⟶ G) (w : u ≫ f = v ≫ g) :
-    pullbackLift u v w ≫ pullbackFst f g = u := by
-  ext1
-  exact pullback.lift_fst _ _ _
-
-@[reassoc (attr := simp)]
-lemma pullbackLift_snd {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
-    (u : W ⟶ F) (v : W ⟶ G) (w : u ≫ f = v ≫ g) :
-    pullbackLift u v w ≫ pullbackSnd f g = v := by
-  ext1
-  exact pullback.lift_snd _ _ _
-
-/-- Morphisms into `AlgSpace.pullbackObj` are determined by their two projections. -/
-@[ext 1100]
-lemma pullback_hom_ext {W F G H : AlgSpace.{u}} {f : F ⟶ H} {g : G ⟶ H}
-    {u v : W ⟶ pullbackObj f g}
-    (h₁ : u ≫ pullbackFst f g = v ≫ pullbackFst f g)
-    (h₂ : u ≫ pullbackSnd f g = v ≫ pullbackSnd f g) : u = v := by
-  apply ObjectProperty.hom_ext
-  exact pullback.hom_ext
-    (congrArg (fun k ↦ k.hom) h₁)
-    (congrArg (fun k ↦ k.hom) h₂)
-
-@[simp]
-lemma pullbackLift_fst_snd {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    pullbackLift (pullbackFst f g) (pullbackSnd f g) (pullback_condition f g) =
-      𝟙 (pullbackObj f g) := by
-  ext <;> simp
-
-/-- `AlgSpace.pullbackObj` with its projections `pullbackFst` and `pullbackSnd` is a pullback
-square in `AlgSpace`. -/
-theorem isPullback {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    IsPullback (pullbackFst f g) (pullbackSnd f g) f g :=
-  IsPullback.mk' (pullback_condition f g)
-    (fun _ _ _ ↦ pullback_hom_ext)
-    fun _ u v w ↦ ⟨pullbackLift u v w, pullbackLift_fst u v w, pullbackLift_snd u v w⟩
-
-/-- Comparison isomorphism between `AlgSpace.pullbackObj f g` and the categorical pullback
-`Limits.pullback f g` in `AlgSpace`. -/
-noncomputable def pullbackObjIsoPullback {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    pullbackObj f g ≅ pullback f g :=
-  (isPullback f g).isoPullback
-
-@[reassoc (attr := simp)]
-lemma pullbackObjIsoPullback_hom_fst {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    (pullbackObjIsoPullback f g).hom ≫ pullback.fst f g = pullbackFst f g :=
-  (isPullback f g).isoPullback_hom_fst
-
-@[reassoc (attr := simp)]
-lemma pullbackObjIsoPullback_hom_snd {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    (pullbackObjIsoPullback f g).hom ≫ pullback.snd f g = pullbackSnd f g :=
-  (isPullback f g).isoPullback_hom_snd
-
-@[reassoc (attr := simp)]
-lemma pullbackObjIsoPullback_inv_fst {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    (pullbackObjIsoPullback f g).inv ≫ pullbackFst f g = pullback.fst f g :=
-  (isPullback f g).isoPullback_inv_fst
-
-@[reassoc (attr := simp)]
-lemma pullbackObjIsoPullback_inv_snd {F G H : AlgSpace.{u}} (f : F ⟶ H) (g : G ⟶ H) :
-    (pullbackObjIsoPullback f g).inv ≫ pullbackSnd f g = pullback.snd f g :=
-  (isPullback f g).isoPullback_inv_snd
-
 /-- Every morphism from an embedded scheme to an algebraic space is representable by schemes on
 underlying presheaves (Stacks, Lemma 65.7.1 (02X0)). -/
 @[stacks 02X0]
@@ -357,37 +234,6 @@ noncomputable instance : PreservesLimitsOfSize.{w, w'} ofScheme.{u} :=
   have : PreservesLimitsOfSize.{w, w'} (ofScheme.{u} ⋙ toPresheaf) :=
     preservesLimits_of_natIso ofSchemeCompToPresheafIso.symm
   preservesLimits_of_reflects_of_preserves ofScheme toPresheaf
-
-/-- Comparison isomorphism identifying the embedded fibre product of schemes with
-`AlgSpace.pullbackObj` of the embedded morphisms. -/
-noncomputable def ofSchemePullbackIso {X Y Z : Scheme.{u}} (f : X ⟶ Z) (g : Y ⟶ Z) :
-    ofScheme.obj (pullback f g) ≅ pullbackObj (ofScheme.map f) (ofScheme.map g) :=
-  ((IsPullback.of_hasPullback f g).map ofScheme).isoIsPullback _ _
-    (isPullback (ofScheme.map f) (ofScheme.map g))
-
-@[reassoc (attr := simp)]
-lemma ofSchemePullbackIso_hom_fst {X Y Z : Scheme.{u}} (f : X ⟶ Z) (g : Y ⟶ Z) :
-    (ofSchemePullbackIso f g).hom ≫ pullbackFst (ofScheme.map f) (ofScheme.map g) =
-      ofScheme.map (pullback.fst f g) :=
-  IsPullback.isoIsPullback_hom_fst _ _ _ _
-
-@[reassoc (attr := simp)]
-lemma ofSchemePullbackIso_hom_snd {X Y Z : Scheme.{u}} (f : X ⟶ Z) (g : Y ⟶ Z) :
-    (ofSchemePullbackIso f g).hom ≫ pullbackSnd (ofScheme.map f) (ofScheme.map g) =
-      ofScheme.map (pullback.snd f g) :=
-  IsPullback.isoIsPullback_hom_snd _ _ _ _
-
-@[reassoc (attr := simp)]
-lemma ofSchemePullbackIso_inv_fst {X Y Z : Scheme.{u}} (f : X ⟶ Z) (g : Y ⟶ Z) :
-    (ofSchemePullbackIso f g).inv ≫ ofScheme.map (pullback.fst f g) =
-      pullbackFst (ofScheme.map f) (ofScheme.map g) :=
-  IsPullback.isoIsPullback_inv_fst _ _ _ _
-
-@[reassoc (attr := simp)]
-lemma ofSchemePullbackIso_inv_snd {X Y Z : Scheme.{u}} (f : X ⟶ Z) (g : Y ⟶ Z) :
-    (ofSchemePullbackIso f g).inv ≫ ofScheme.map (pullback.snd f g) =
-      pullbackSnd (ofScheme.map f) (ofScheme.map g) :=
-  IsPullback.isoIsPullback_inv_snd _ _ _ _
 
 end AlgSpace
 
