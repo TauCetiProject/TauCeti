@@ -258,16 +258,11 @@ theorem mem_smul {σ : RingAut ℂ} {Φ : CMType E} {ψ : E →+* ℂ} :
 
 /-- The action `σΦ = {σ ∘ φ : φ ∈ Φ}` of `Aut(ℂ)` on CM types. -/
 instance : MulAction (RingAut ℂ) (CMType E) where
-  one_smul Φ := ext fun ψ ↦ by
-    have h : ((1 : RingAut ℂ).symm : ℂ →+* ℂ).comp ψ = ψ := RingHom.ext fun x ↦ by
-      rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← RingAut.inv_apply, inv_one,
-        RingAut.one_apply]
-    rw [mem_smul, h]
+  one_smul Φ := ext fun ψ ↦ by simp [mem_smul, RingAut.one_eq_refl]
   mul_smul σ τ Φ := ext fun ψ ↦ by
     have h : ((σ * τ).symm : ℂ →+* ℂ).comp ψ =
-        (τ.symm : ℂ →+* ℂ).comp ((σ.symm : ℂ →+* ℂ).comp ψ) := RingHom.ext fun x ↦ by
-      simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, ← RingAut.inv_apply, mul_inv_rev,
-        RingAut.mul_apply]
+        (τ.symm : ℂ →+* ℂ).comp ((σ.symm : ℂ →+* ℂ).comp ψ) := by
+      ext; simp [← RingAut.inv_apply]
     rw [mem_smul, mem_smul, mem_smul, h]
 
 /-- `σ ∘ φ ∈ σΦ` exactly when `φ ∈ Φ`. -/
