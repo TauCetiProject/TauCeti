@@ -86,8 +86,7 @@ theorem exists_eq_mul_im_add_upperHalfPlanePoissonIntegral {u : ℂ → ℝ}
 /-- On the imaginary axis, `π y P(iy, x) = y² / (x² + y²)`. -/
 theorem pi_mul_mul_upperHalfPlanePoissonKernel_mul_I (y x : ℝ) :
     π * y * upperHalfPlanePoissonKernel (y * I) x = y ^ 2 / (x ^ 2 + y ^ 2) := by
-  rw [upperHalfPlanePoissonKernel_eq, normSq_ofReal_sub, mul_I_re, mul_I_im, ofReal_re,
-    ofReal_im, neg_zero, sub_zero]
+  simp [upperHalfPlanePoissonKernel_eq, normSq_ofReal_sub]
   field_simp
 
 /-- **The Poisson integral on the imaginary axis.** For a measure `ν` on `ℝ`,
@@ -177,17 +176,11 @@ theorem tendsto_ofReal_pi_mul_mul_upperHalfPlanePoissonIntegral_mul_I {ν : Meas
 imaginary part is `P[ν]`. -/
 theorem tendsto_upperHalfPlanePoissonIntegral_mul_I_div (ν : Measure ℝ) :
     Tendsto (fun y : ℝ ↦ upperHalfPlanePoissonIntegral ν (y * I) / y) atTop (𝓝 0) := by
-  let μ : Measure ℝ := ENNReal.ofReal π⁻¹ • ν
-  refine (tendsto_im_div_of_eq_subtractedResolventKernel_add (a := 0) (b := 0) (nu := μ)
-    (F := fun z ↦ ((0 : ℝ) : ℂ) + ((0 : ℝ) : ℂ) * z + ∫ t, subtractedResolventKernel z t ∂μ)
-    fun _ _ ↦ rfl).congr fun y ↦ ?_
-  have hπ :
-      π * upperHalfPlanePoissonIntegral μ (y * I) = upperHalfPlanePoissonIntegral ν (y * I) := by
-    rw [upperHalfPlanePoissonIntegral_smul_measure,
-      ENNReal.toReal_ofReal (inv_nonneg.2 Real.pi_pos.le), ← mul_assoc,
-      mul_inv_cancel₀ Real.pi_ne_zero, one_mul]
-  simp only [ofReal_zero, zero_mul, add_zero, zero_add]
-  rw [im_integral_subtractedResolventKernel, hπ]
+  have h := (tendsto_im_div_of_eq_subtractedResolventKernel_add (a := 0) (b := 0) (nu := ν)
+    (F := fun z ↦ ∫ t, subtractedResolventKernel z t ∂ν) fun _ _ ↦ by simp).div_const π
+  rw [zero_div] at h
+  refine h.congr fun y ↦ ?_
+  rw [im_integral_subtractedResolventKernel, mul_div_assoc, mul_div_cancel_left₀ _ Real.pi_ne_zero]
 
 section Representation
 
