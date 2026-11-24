@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.ZMod
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceKernel
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Congruence.Kernel
 
 /-!
 # Degenerate congruence kernels

@@ -377,13 +377,13 @@ theorem topologicalClosure_map_eta (H : FiniteIndexNormalSubgroup G) :
     (isClosed_ker_coordinateHom G H)) fun x hx ↦ ?_
   · rintro _ ⟨g, hg, rfl⟩
     exact (etaFn_mem_ker_coordinateHom_iff G H).2 hg
-  · -- the open kernel is a neighbourhood of `x` and meets the dense image of `G` inside `H`
-    rw [← SetLike.mem_coe, Subgroup.topologicalClosure_coe, mem_closure_iff_nhds]
-    intro V hV
-    obtain ⟨_, ⟨g, rfl⟩, hgV, hgH⟩ :=
-      (ProfiniteGrp.ProfiniteCompletion.denseRange (G := GrpCat.of G)).inter_nhds_nonempty
-        (Filter.inter_mem hV ((isOpen_ker_coordinateHom G H).mem_nhds hx))
-    exact ⟨_, hgV, g, (etaFn_mem_ker_coordinateHom_iff G H).1 hgH, rfl⟩
+  · -- the open kernel lies in the closure of its intersection with the dense image of `G`
+    rw [← SetLike.mem_coe, Subgroup.topologicalClosure_coe]
+    refine closure_mono ?_
+      ((ProfiniteGrp.ProfiniteCompletion.denseRange (G := GrpCat.of G)).open_subset_closure_inter
+        (isOpen_ker_coordinateHom G H) hx)
+    rintro _ ⟨hgH, g, rfl⟩
+    exact ⟨g, (etaFn_mem_ker_coordinateHom_iff G H).1 hgH, rfl⟩
 
 /-- The kernel of the comparison from the profinite completion of `G` to its completion
 `lim_{N ∈ 𝒩} G ⧸ N` relative to a family `𝒩` of finite-index normal subgroups: the elements
