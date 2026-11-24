@@ -11,8 +11,7 @@ public import TauCeti.AlgebraicGeometry.Limits.Affine.Localization
 public import TauCeti.AlgebraicGeometry.FiniteEtale.PuncturedSpectrum
 import TauCeti.Topology.Sober
 import TauCeti.AlgebraicGeometry.Pullback.SpecMap
-import TauCeti.RingTheory.Etale.NoetherianDescent
-import TauCeti.RingTheory.Localization.FinitePresentation
+import TauCeti.RingTheory.Etale.Localization
 
 /-!
 # Spreading out finite étale covers, and extension across points where purity holds
@@ -28,8 +27,8 @@ localizations `Γ(A)[1/f]`, `f(x) ≠ 0`, of an affine open neighbourhood `A` of
 (`Submonoid.localizationAwaySpecConeIsLimit`), since `𝒪_{X,x}` is the filtered colimit of these
 rings. A finite étale cover of `Spec 𝒪_{X,x}` descends to one of these principal opens `D(f)`, as
 finite étale algebras descend through filtered colimits of rings
-(`TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization`). Isomorphisms of
-finite étale covers descend along such limits
+(`TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_localizationAwayRingCocone`).
+Isomorphisms of finite étale covers descend along such limits
 (`TauCeti.FiniteEtaleScheme.exists_nonempty_iso_pullback_of_isLimit`, from the descent of
 isomorphisms of finitely presented schemes,
 `CategoryTheory.Limits.IsLimit.exists_iso_pullback_of_iso`, Stacks 01ZM and 081E), which applies
@@ -125,25 +124,18 @@ theorem exists_pullback_localizationAwaySpecCone_iso
     ∃ (s : (Finset M)ᵒᵖ) (Y₀ : FiniteEtaleScheme (M.localizationAwaySpecDiagram.obj s)),
       Nonempty ((pullback ((M.localizationAwaySpecCone S).π.app s)).obj Y₀ ≅ Y) := by
   let F := M.localizationAwayDiagram ⋙ forget₂ (CommAlgCat.{u} R) CommRingCat.{u}
-  let ψ (s : Finset M) : F.obj s →+* S := ((M.localizationAwayRingCocone S).ι.app s).hom
-  -- Maps from rings of finite presentation over `ℤ` to `M⁻¹R` factor through a stage.
-  have hfactor (P : Type u) [CommRing P] [Algebra.FinitePresentation ℤ P] (g : P →+* S) :
-      ∃ s, ∃ φ : P →+* F.obj s, (ψ s).comp φ = g := by
-    -- Lift the initial ring to the universe of the localization diagram.
-    let f := (algebraMap ℤ P).comp (ULift.ringEquiv : ULift.{u} ℤ ≃+* ℤ).toRingHom
-    have hf : f.FinitePresentation :=
-      (RingHom.finitePresentation_algebraMap.mpr inferInstance).comp
-        (.of_bijective ULift.ringEquiv.bijective)
-    obtain ⟨s, φ, -, hφ⟩ := f.exists_factorization_localizationAwayRingCocone hf M
-      ((algebraMap ℤ R).comp ULift.ringEquiv.toRingHom) g (by ext; simp [f])
-    exact ⟨s, φ, hφ⟩
   -- `Y` is the spectrum of a finite étale `M⁻¹R`-algebra `B`, which descends to a stage.
   have := essSurj_spec (.of S)
   obtain ⟨B, ⟨eB⟩⟩ := Functor.EssSurj.mem_essImage (spec (.of S)) Y
-  obtain ⟨s, B₀, _, _, _, _, ⟨e⟩⟩ :=
-    TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization
-      (fun s ↦ F.obj s) ψ hfactor B.unop.obj
-  let := (ψ s).toAlgebra
+  obtain ⟨s, B₀, _, iB, hét, hfin, ⟨e⟩⟩ :=
+    TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_localizationAwayRingCocone
+      (S := S) B.unop.obj M
+  -- Restate the model's structure over the underlying ring of the stage.
+  let : Algebra (F.obj s) B₀ := iB
+  have : Algebra.Etale (F.obj s) B₀ := hét
+  have : Module.Finite (F.obj s) B₀ := hfin
+  let : Algebra (F.obj s) S := ((M.localizationAwayRingCocone S).ι.app s).hom.toAlgebra
+  let : Algebra (M.localizationAwayDiagram.obj s) S := ‹Algebra (F.obj s) S›
   refine ⟨Opposite.op s, (spec (F.obj s)).obj (Opposite.op (CommAlgCat.FiniteEtale.of _ B₀)),
     ⟨?_ ≪≫ eB⟩⟩
   apply ObjectProperty.isoMk
