@@ -13,7 +13,6 @@ public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Pow
 import TauCeti.NumberTheory.Padics.Measure.Moments
 import TauCeti.NumberTheory.Padics.Measure.Pushforward
 import TauCeti.NumberTheory.Padics.Measure.Topology.Amice
-import TauCeti.Topology.Algebra.Group.Generation
 
 /-!
 # The Amice transform in the completed group algebra
@@ -39,9 +38,11 @@ identifies with the coefficientwise topology on series, and for the inverse-limi
 `(1 + T) ^ k`, the transforms of the Dirac measures at `k ∈ ℕ`, whose images are both `[φ 1] ^ k`.
 As the polynomials are dense, the two sides agree everywhere.
 
-Two cases are recorded, through the power-series coordinate
-`TauCeti.completedGroupAlgebra.powerSeriesCoordinate` of the completed group algebra of an infinite
-procyclic pro-`p` group:
+Read through the power-series coordinate `TauCeti.completedGroupAlgebra.powerSeriesCoordinate`
+`T ↦ [γ] - 1` of the completed group algebra of an infinite procyclic pro-`p` group `Γ` with
+topological generator `γ`, this says that the coordinate of `A_μ` is the completed-group-algebra
+element of the pushforward of `μ` along any `φ` with `φ 1 = γ`
+(`AbstractMeasure.powerSeriesCoordinate_amiceTransformEquiv_of_apply`). Two cases are recorded:
 
 * `AbstractMeasure.powerSeriesCoordinate_amiceTransformEquiv`: for `Γ = ℤ_p` and `γ = 1`, the
   power-series coordinate of `A_μ` is the completed-group-algebra element of `μ`; so the Dirac
@@ -67,22 +68,6 @@ open scoped AbstractMeasure PowerSeries.WithPiTopology
 
 variable {p : ℕ} [Fact p.Prime]
 
-namespace TauCeti
-
-/-- **The generator `γ = exp q` topologically generates the principal units `1 + qℤ_p`**, as an
-element of the subgroup `unitsPrincipal p (padicUnitsDepth p)` of `ℤ_pˣ`: it is the image of the
-topological generator `1` of `ℤ_p` under the logarithmic isomorphism `unitsPrincipalLogEquiv`. -/
-theorem topologicallyGenerates_padicUnitsGenerator :
-    (Subgroup.closure ({⟨padicUnitsGenerator p, padicUnitsGenerator_mem_unitsPrincipal⟩} :
-      Set (unitsPrincipal p (padicUnitsDepth p)))).topologicalClosure = ⊤ := by
-  let e := (unitsPrincipalLogEquiv p).symm
-  have h := topologicalClosure_closure_image_eq_top (topologicallyGenerates_ofAdd_one_padicInt p)
-    (f := (e : Multiplicative ℤ_[p] →* unitsPrincipal p (padicUnitsDepth p))) e.continuous
-    e.surjective.denseRange
-  rwa [Set.image_singleton, MonoidHom.coe_ofClass, unitsPrincipalLogEquiv_symm_ofAdd_one] at h
-
-end TauCeti
-
 namespace TauCeti.completedGroupAlgebra
 
 variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ] [CompactSpace Γ]
@@ -93,13 +78,19 @@ variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ] [
 private abbrev padicIntMap (φ : Multiplicative ℤ_[p] →ₜ* Γ) : C(ℤ_[p], Γ) :=
   (φ : C(Multiplicative ℤ_[p], Γ)).comp ⟨Multiplicative.ofAdd, continuous_ofAdd⟩
 
-/-- The image in `ℤ_p[[Γ]]` of the pushforward along `φ` of the measure with Amice transform `F`. -/
-private def amiceIntegral (φ : Multiplicative ℤ_[p] →ₜ* Γ) (F : ℤ_[p]⟦X⟧) :
-    completedGroupAlgebra ℤ_[p] Γ :=
-  AbstractMeasure.toCompletedGroupAlgebra
-    (AbstractMeasure.map (padicIntMap φ) (AbstractMeasure.amiceTransformEquiv.symm F))
+/-- The image in `ℤ_p[[Γ]]` of the pushforward along `φ` of the measure with Amice transform `F`,
+as a `ℤ_p`-linear map of `F`. -/
+private def amiceIntegral (φ : Multiplicative ℤ_[p] →ₜ* Γ) :
+    ℤ_[p]⟦X⟧ →ₗ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ :=
+  AbstractMeasure.toCompletedGroupAlgebra.toLinearMap ∘ₗ
+    AbstractMeasure.map (padicIntMap φ) ∘ₗ AbstractMeasure.amiceTransformEquiv.symm.toLinearMap
 
-omit [IsMulCommutative Γ] in
+omit [TotallyDisconnectedSpace Γ] in
+private theorem amiceIntegral_apply (φ : Multiplicative ℤ_[p] →ₜ* Γ) (F : ℤ_[p]⟦X⟧) :
+    amiceIntegral φ F = AbstractMeasure.toCompletedGroupAlgebra
+      (AbstractMeasure.map (padicIntMap φ) (AbstractMeasure.amiceTransformEquiv.symm F)) :=
+  rfl
+
 private theorem continuous_amiceIntegral (φ : Multiplicative ℤ_[p] →ₜ* Γ) :
     Continuous (amiceIntegral φ) := by
   let : TopologicalSpace D(ℤ_[p], ℤ_[p]) := AbstractMeasure.WeakTopology
@@ -118,8 +109,8 @@ private theorem amiceIntegral_one_add_X_pow (φ : Multiplicative ℤ_[p] →ₜ*
       AbstractMeasure.dirac ℤ_[p] (k : ℤ_[p]) := by
     rw [LinearEquiv.symm_apply_eq, AbstractMeasure.amiceTransformEquiv_apply,
       AbstractMeasure.amiceTransform_dirac, binomialSeries_nat]
-  rw [amiceIntegral, hδ, AbstractMeasure.map_dirac, AbstractMeasure.toCompletedGroupAlgebra_dirac,
-    ← map_pow, ← map_pow]
+  rw [amiceIntegral_apply, hδ, AbstractMeasure.map_dirac,
+    AbstractMeasure.toCompletedGroupAlgebra_dirac, ← map_pow, ← map_pow]
   simp [← ofAdd_nsmul]
 
 omit [TotallyDisconnectedSpace Γ] in
@@ -132,14 +123,12 @@ private theorem amiceIntegral_coe (φ : Multiplicative ℤ_[p] →ₜ* Γ) (P : 
   rw [Polynomial.aeval_comp]
   simp only [map_add, Polynomial.aeval_X, map_one, sub_add_cancel]
   induction Q using Polynomial.induction_on' with
-  | add P Q hP hQ =>
-    simp only [Polynomial.add_comp, Polynomial.coe_add, map_add, ← hP, ← hQ, amiceIntegral]
+  | add P Q hP hQ => simp only [Polynomial.add_comp, Polynomial.coe_add, map_add, hP, hQ]
   | monomial k c =>
-    have hsmul (F : ℤ_[p]⟦X⟧) : amiceIntegral φ (c • F) = c • amiceIntegral φ F := by
-      simp only [amiceIntegral, map_smul]
-    rw [Polynomial.monomial_comp, Polynomial.coe_mul, Polynomial.coe_C, Polynomial.coe_pow,
-      Polynomial.coe_add, Polynomial.coe_X, Polynomial.coe_one, add_comm X, ← smul_eq_C_mul,
-      hsmul, amiceIntegral_one_add_X_pow, Polynomial.aeval_monomial, Algebra.smul_def]
+    rw [Polynomial.monomial_comp, ← Polynomial.smul_eq_C_mul]
+    push_cast
+    rw [map_smul, add_comm X, amiceIntegral_one_add_X_pow, Polynomial.aeval_monomial,
+      Algebra.smul_def]
 
 /-- **`[φ 1] - 1` is topologically nilpotent** in the completed group algebra `ℤ_p[[Γ]]` of a
 commutative profinite group, for every continuous homomorphism `φ : ℤ_p → Γ`. So power series over
@@ -148,8 +137,7 @@ needed: the image of `φ` is pro-`p`. -/
 theorem isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one (φ : Multiplicative ℤ_[p] →ₜ* Γ) :
     IsTopologicallyNilpotent (of ℤ_[p] Γ (φ (.ofAdd 1)) - 1) := by
   have h := ((continuous_amiceIntegral φ).tendsto 0).comp (HasEval.X (R := ℤ_[p]))
-  have h0 : amiceIntegral φ 0 = 0 := by simp [amiceIntegral]
-  rw [h0] at h
+  rw [map_zero] at h
   refine h.congr fun n ↦ ?_
   rw [Function.comp_apply, ← Polynomial.coe_X, ← Polynomial.coe_pow, amiceIntegral_coe, map_pow,
     Polynomial.aeval_X]
@@ -178,8 +166,25 @@ theorem toCompletedGroupAlgebra_map_eq_aeval_amiceTransform (φ : Multiplicative
   have h := PowerSeries.eval₂_unique (continuous_algebraMap ℤ_[p] _)
     (isTopologicallyNilpotent_of_apply_ofAdd_one_sub_one φ) (continuous_amiceIntegral φ)
     fun P ↦ by rw [amiceIntegral_coe, Polynomial.aeval_def]
-  rw [PowerSeries.coe_aeval, ← h, amiceIntegral, ← amiceTransformEquiv_apply,
+  rw [PowerSeries.coe_aeval, ← h, amiceIntegral_apply, ← amiceTransformEquiv_apply,
     LinearEquiv.symm_apply_apply]
+
+variable [Infinite Γ]
+
+/-- **The Amice coordinate along a homomorphism `ℤ_p → Γ`.** Let `γ` topologically generate the
+infinite commutative pro-`p` group `Γ`, and let `φ : ℤ_p → Γ` be a continuous homomorphism with
+`φ 1 = γ`. Then the power-series coordinate `T ↦ [γ] - 1` of `ℤ_p[[Γ]]` sends the Amice transform
+of `μ` to the completed-group-algebra element of the pushforward of `μ` along `φ`. -/
+theorem powerSeriesCoordinate_amiceTransformEquiv_of_apply (hΓ : IsProP p Γ) {γ : Γ}
+    (hγ : (Subgroup.closure ({γ} : Set Γ)).topologicalClosure = ⊤)
+    (φ : Multiplicative ℤ_[p] →ₜ* Γ) (hφ : φ (.ofAdd 1) = γ) (μ : D(ℤ_[p], ℤ_[p])) :
+    powerSeriesCoordinate hΓ hγ (amiceTransformEquiv μ) =
+      completedGroupAlgebraEquiv
+        (map ((φ : C(Multiplicative ℤ_[p], Γ)).comp ⟨Multiplicative.ofAdd, continuous_ofAdd⟩)
+          μ) := by
+  subst hφ
+  rw [coe_powerSeriesCoordinate, completedGroupAlgebraEquiv_apply, amiceTransformEquiv_apply,
+    toCompletedGroupAlgebra_map_eq_aeval_amiceTransform]
 
 end General
 
@@ -191,8 +196,10 @@ theorem powerSeriesCoordinate_amiceTransformEquiv (μ : D(ℤ_[p], ℤ_[p])) :
     powerSeriesCoordinate (isProP_multiplicative_padicInt p)
         (topologicallyGenerates_ofAdd_one_padicInt p) (amiceTransformEquiv μ) =
       completedGroupAlgebraEquiv (map ⟨Multiplicative.ofAdd, continuous_ofAdd⟩ μ) := by
-  rw [coe_powerSeriesCoordinate, completedGroupAlgebraEquiv_apply, amiceTransformEquiv_apply]
-  exact (toCompletedGroupAlgebra_map_eq_aeval_amiceTransform (ContinuousMonoidHom.id _) μ).symm
+  convert powerSeriesCoordinate_amiceTransformEquiv_of_apply (isProP_multiplicative_padicInt p)
+    (topologicallyGenerates_ofAdd_one_padicInt p) (ContinuousMonoidHom.id _) rfl μ using 4
+  ext
+  simp
 
 /-- **The Amice coordinate on the principal units.** Transport of
 `powerSeriesCoordinate_amiceTransformEquiv` to the principal units `1 + qℤ_p` of `ℤ_pˣ`, where
@@ -205,16 +212,11 @@ theorem powerSeriesCoordinate_unitsPrincipal_amiceTransformEquiv (μ : D(ℤ_[p]
       completedGroupAlgebraEquiv
         (map ⟨fun a ↦ (unitsPrincipalLogEquiv p).symm (.ofAdd a),
           (unitsPrincipalLogEquiv p).symm.continuous.comp continuous_ofAdd⟩ μ) := by
-  let φ : Multiplicative ℤ_[p] →ₜ* unitsPrincipal p (padicUnitsDepth p) :=
-    (unitsPrincipalLogEquiv p).symm
-  have hφ : (φ : C(Multiplicative ℤ_[p], _)).comp ⟨Multiplicative.ofAdd, continuous_ofAdd⟩ =
-      ⟨fun a ↦ (unitsPrincipalLogEquiv p).symm (.ofAdd a),
-        (unitsPrincipalLogEquiv p).symm.continuous.comp continuous_ofAdd⟩ :=
-    ContinuousMap.ext fun _ ↦ rfl
-  rw [coe_powerSeriesCoordinate, completedGroupAlgebraEquiv_apply, amiceTransformEquiv_apply, ← hφ,
-    toCompletedGroupAlgebra_map_eq_aeval_amiceTransform]
-  -- The evaluation points `[φ 1] - 1` and `[γ] - 1` agree, as `φ 1 = γ`.
-  simp only [φ, ContinuousMonoidHom.coe_coe, unitsPrincipalLogEquiv_symm_ofAdd_one]
+  convert powerSeriesCoordinate_amiceTransformEquiv_of_apply (φ := (unitsPrincipalLogEquiv p).symm)
+    (isProP_unitsPrincipal p (padicUnitsDepth_pos p)) topologicallyGenerates_padicUnitsGenerator
+    unitsPrincipalLogEquiv_symm_ofAdd_one μ using 4
+  ext
+  simp
 
 /-- The Dirac measure at `a`, with Amice transform `(1 + T) ^ a`, has coordinate `[a] = [γ ^ a]`. -/
 example (a : ℤ_[p]) :
