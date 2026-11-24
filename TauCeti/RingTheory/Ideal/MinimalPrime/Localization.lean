@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
+public import Mathlib.RingTheory.KrullDimension.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # Minimal primes and localization
 
-This file collects two facts about the localization of a commutative semiring `A` at a prime `m`
+This file collects three facts about the localization of a commutative semiring `A` at a prime `m`
 and the minimal primes below `m`.
 
 If the localization `A_m` is a domain, as it is when `A_m` is a regular local ring, then the
@@ -23,6 +25,10 @@ If `m` is minimal over a radical ideal `I`, then `I` generates the maximal ideal
 principal ideal `I = (f)` with `A ⧸ (f)` reduced, this says that `f` generates the maximal ideal
 of the localization at every prime minimal over `f`.
 
+If `p` is minimal over an ideal `I`, then every element `x ∈ p` becomes nilpotent modulo `I` in
+the localization at `p`: some `s ∉ p` carries a power of `x` into `I`. This is how a property of
+`I` preserved under such multipliers passes to the minimal primes over `I`.
+
 ## Main results
 
 * `TauCeti.le_of_mem_minimalPrimes_of_isDomain_localization`: if `A_m` is a domain, a minimal
@@ -31,6 +37,11 @@ of the localization at every prime minimal over `f`.
   are coprime when all maximal localizations are domains.
 * `IsLocalization.AtPrime.map_eq_maximalIdeal_of_mem_minimalPrimes`: if `m` is minimal over a
   radical ideal `I`, then `I` generates the maximal ideal of `A_m`.
+* `IsLocalization.comap_mem_minimalPrimes_of_krullDimLE_zero`: in a localization at
+  non-zero-divisors of Krull dimension zero, such as an Artinian total ring of fractions, every
+  prime contracts to a minimal prime.
+* `Ideal.exists_mul_pow_mem_of_mem_minimalPrimes`: if `p` is minimal over `I` and `x ∈ p`, then
+  `s * x ^ n ∈ I` for some `s ∉ p` and some `n`.
 -/
 
 public section
@@ -82,3 +93,42 @@ theorem map_eq_maximalIdeal_of_mem_minimalPrimes {R : Type*} [CommSemiring R] {I
     ← IsLocalization.map_radical q.primeCompl A, hI.radical]
 
 end IsLocalization.AtPrime
+
+namespace IsLocalization
+
+/-- In a localization at non-zero-divisors of Krull dimension zero, such as an Artinian total ring
+of fractions, every prime contracts to a minimal prime of the original ring. -/
+theorem comap_mem_minimalPrimes_of_krullDimLE_zero {R : Type*} [CommRing R] {M : Submonoid R}
+    (hM : M ≤ nonZeroDivisors R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S]
+    [Ring.KrullDimLE 0 S] (p : Ideal S) [p.IsPrime] :
+    p.comap (algebraMap R S) ∈ minimalPrimes R := by
+  have h := minimalPrimes_comap M S (⊥ : Ideal S)
+  rw [Ideal.comap_bot_of_injective _ (IsLocalization.injective S hM)] at h
+  exact (h ▸ ⟨p, Ideal.mem_minimalPrimes_of_krullDimLE_zero p, rfl⟩ :
+    p.comap (algebraMap R S) ∈ (⊥ : Ideal R).minimalPrimes)
+
+end IsLocalization
+
+namespace Ideal
+
+/-- Every element `x` of a prime `p` minimal over an ideal `I` has a power that a multiplier
+outside `p` carries into `I`: some `s ∉ p` and `n` have `s * x ^ n ∈ I`. Equivalently, the image of
+`x` in the localization at `p` is nilpotent modulo `I`. -/
+theorem exists_mul_pow_mem_of_mem_minimalPrimes {R : Type*} [CommSemiring R] {I p : Ideal R}
+    (hp : p ∈ I.minimalPrimes) {x : R} (hx : x ∈ p) : ∃ s ∉ p, ∃ n : ℕ, s * x ^ n ∈ I := by
+  have := hp.isPrime
+  obtain ⟨n, hn⟩ : algebraMap R (Localization.AtPrime p) x ∈
+      (I.map (algebraMap R (Localization.AtPrime p))).radical := by
+    rw [IsLocalization.AtPrime.radical_map_of_mem_minimalPrimes _ p I hp]
+    exact mem_map_of_mem _ hx
+  rw [← map_pow, IsLocalization.mem_map_algebraMap_iff p.primeCompl] at hn
+  obtain ⟨⟨⟨a, ha⟩, t⟩, h⟩ := hn
+  rw [← map_mul, IsLocalization.eq_iff_exists p.primeCompl] at h
+  obtain ⟨u, hu⟩ := h
+  refine ⟨u * t, (u * t).property, n, ?_⟩
+  have h : ((u * t : p.primeCompl) : R) * x ^ n = u * a := by
+    rw [Submonoid.coe_mul, ← hu]
+    ring
+  exact h ▸ I.mul_mem_left _ ha
+
+end Ideal

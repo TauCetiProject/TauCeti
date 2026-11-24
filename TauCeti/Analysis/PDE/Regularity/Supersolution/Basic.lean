@@ -40,7 +40,7 @@ Under a Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂`, with `α = 1 - 2/q >
 
 `u⁻¹ ≤ D S^{1/α} R^{-1/α} ‖u⁻¹‖_{L²(B(x₀, R))}` on `B(x₀, R/2)`.
 
-The scale-invariant estimates from small negative powers are in
+The scale-invariant estimates from negative powers are in
 `TauCeti.Analysis.PDE.Regularity.Supersolution.Lp`.
 
 ## Main declarations

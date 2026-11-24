@@ -26,13 +26,19 @@ weighted mass `∫ (1 + t ^ 2)⁻¹ dν` is the total mass of `ρ`.
 
 This file proves the density conversion, the existence of the representation
 `F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` with `a = Re F(i)`, `b ≥ 0` and
-`∫ (1 + t ^ 2)⁻¹ dν < ∞`, and the uniqueness of the constants `a` and `b`: `a` is read off at
-`z = i` and `b` is the limit of `Im F(i y) / y` as `y → ∞`.  Uniqueness of the measure `ν` is
-not proved here.
+`∫ (1 + t ^ 2)⁻¹ dν < ∞`, and the uniqueness of the triple `(a, b, ν)`.  The constant `a` is read
+off at `z = i` and `b` is the limit of `Im F(i y) / y` as `y → ∞`.  For the measure, the
+Nevanlinna integral of a finite measure `ρ` is `ρ(ℝ) z + (1 + z ^ 2) m_ρ(z)` for `Im z ≠ 0`,
+where `m_ρ` is the resolvent transform, so Stieltjes inversion determines `ρ`
+(`MeasureTheory.Measure.ext_of_integral_nevanlinnaKernel`, in
+`TauCeti.Analysis.Complex.Pick.Nevanlinna`), and `ν` is recovered from
+`ρ = (1 + t ^ 2)⁻¹ ν`.
 
 ## Main declarations
 
 * `TauCeti.subtractedResolventKernel`: the kernel `(t - z)⁻¹ - t / (1 + t ^ 2)`.
+* `TauCeti.norm_subtractedResolventKernel_le`: on the upper half-plane the kernel is bounded by a
+  multiple of `(1 + t ^ 2)⁻¹`.
 * `MeasureTheory.Measure.integral_subtractedResolventKernel_withDensity`: under the density change
   `dν = (1 + t ^ 2) dρ` the subtracted resolvent kernel integrates to the Nevanlinna kernel.
 * `MeasureTheory.Measure.lintegral_inv_one_add_sq_withDensity`: the weighted-mass identity
@@ -44,6 +50,11 @@ not proved here.
   `TauCeti.tendsto_im_div_of_eq_subtractedResolventKernel_add`: the constant term is `Re F(i)`, and
   the linear coefficient is the limit of `Im F(i y) / y`.
 * `TauCeti.eq_and_eq_of_eq_subtractedResolventKernel_add`: uniqueness of the constants.
+* `MeasureTheory.Measure.integral_subtractedResolventKernel_eq_integral_nevanlinnaKernel`: the
+  density conversion read from an arbitrary measure `ν`.
+* `TauCeti.eq_of_eq_subtractedResolventKernel_add`: uniqueness of the measure.
+* `TauCeti.existsUnique_eq_subtractedResolventKernel_add`: the Herglotz representation of a Pick
+  function, with a unique triple `(a, b, ν)`.
 
 ## References
 
@@ -86,6 +97,20 @@ theorem nevanlinnaKernel_eq_one_add_sq_mul_subtractedResolventKernel {z : ℂ} {
   rw [nevanlinnaKernel_def, subtractedResolventKernel_def]
   field_simp [one_add_ofReal_sq_ne_zero t]
   ring
+
+/-- At a point of the upper half-plane, the subtracted resolvent kernel is bounded by a multiple of
+`(1 + t ^ 2)⁻¹`, with the constant of `TauCeti.norm_nevanlinnaKernel_le`. -/
+theorem norm_subtractedResolventKernel_le {z : ℂ} (hz : 0 < z.im) (t : ℝ) :
+    ‖subtractedResolventKernel z t‖ ≤
+      (‖z + I‖ + ‖z - I‖) / (‖z + I‖ - ‖z - I‖) * (1 + t ^ 2)⁻¹ := by
+  have h := nevanlinnaKernel_eq_one_add_sq_mul_subtractedResolventKernel
+    (ofReal_sub_ne_zero_of_im_ne_zero hz.ne' t)
+  have hcast : 1 + (t : ℂ) ^ 2 = ((1 + t ^ 2 : ℝ) : ℂ) := by push_cast; ring
+  have hnorm : ‖nevanlinnaKernel z t‖ = (1 + t ^ 2) * ‖subtractedResolventKernel z t‖ := by
+    rw [h, hcast, norm_mul, norm_real, Real.norm_of_nonneg (by positivity)]
+  calc ‖subtractedResolventKernel z t‖ = ‖nevanlinnaKernel z t‖ * (1 + t ^ 2)⁻¹ := by
+        rw [hnorm, mul_comm, inv_mul_cancel_left₀ (by positivity)]
+    _ ≤ _ := mul_le_mul_of_nonneg_right (norm_nevanlinnaKernel_le hz t) (by positivity)
 
 /-- At `z = i` the subtracted resolvent kernel is `i / (1 + t ^ 2)`. -/
 @[simp]
@@ -196,11 +221,11 @@ theorem integrable_subtractedResolventKernel {nu : Measure ℝ}
     simpa [subtractedResolventKernel_conj] using h
   · exact hH hz
 
-/-- At a nonreal point, the subtracted resolvent kernel dominates the weight `(1 + t ^ 2)⁻¹` up to
-a constant. -/
-private theorem inv_one_add_sq_le_mul_norm_subtractedResolventKernel {z : ℂ} (hz : z.im ≠ 0)
+/-- At a nonreal point, the absolute imaginary part `|Im z| / |t - z| ^ 2` of the subtracted
+resolvent kernel dominates the weight `(1 + t ^ 2)⁻¹` up to a constant. -/
+theorem inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel {z : ℂ} (hz : z.im ≠ 0)
     (t : ℝ) :
-    (1 + t ^ 2)⁻¹ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * ‖subtractedResolventKernel z t‖ := by
+    (1 + t ^ 2)⁻¹ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * |(subtractedResolventKernel z t).im| := by
   have : 0 < |z.im| := abs_pos.2 hz
   have hns : normSq ((t : ℂ) - z) ≤ 2 * (1 + ‖z‖ ^ 2) * (1 + t ^ 2) := by
     have hre := (normSq_eq_norm_sq z).symm
@@ -210,13 +235,9 @@ private theorem inv_one_add_sq_le_mul_norm_subtractedResolventKernel {z : ℂ} (
       sq_nonneg (t * z.re), sq_nonneg (t * z.im)]
   have hpos : 0 < normSq ((t : ℂ) - z) :=
     normSq_pos.2 (ofReal_sub_ne_zero_of_im_ne_zero hz t)
-  have him : |z.im| / normSq ((t : ℂ) - z) ≤ ‖subtractedResolventKernel z t‖ := by
-    rw [← abs_of_pos hpos, ← abs_div, ← subtractedResolventKernel_im]
-    exact abs_im_le_norm _
+  rw [subtractedResolventKernel_im, abs_div, abs_of_pos hpos]
   calc (1 + t ^ 2)⁻¹ = 2 * (1 + ‖z‖ ^ 2) / |z.im| *
         (|z.im| / (2 * (1 + ‖z‖ ^ 2) * (1 + t ^ 2))) := by field_simp
-    _ ≤ 2 * (1 + ‖z‖ ^ 2) / |z.im| * (|z.im| / normSq ((t : ℂ) - z)) := by
-      gcongr
     _ ≤ _ := by gcongr
 
 /-- At a nonreal point, the subtracted resolvent kernel is `ν`-integrable exactly when `ν` has
@@ -227,7 +248,8 @@ theorem integrable_subtractedResolventKernel_iff {nu : Measure ℝ} {z : ℂ} (h
   refine ⟨fun h ↦ Integrable.lintegral_lt_top ?_, fun h ↦ integrable_subtractedResolventKernel h hz⟩
   refine (h.norm.const_mul (2 * (1 + ‖z‖ ^ 2) / |z.im|)).mono' (by fun_prop) (.of_forall fun t ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
-  exact inv_one_add_sq_le_mul_norm_subtractedResolventKernel hz t
+  exact (inv_one_add_sq_le_mul_abs_im_subtractedResolventKernel hz t).trans
+    (by gcongr; exact abs_im_le_norm _)
 
 /-- **Herglotz representation of a Pick function.** A function holomorphic on the upper
 half-plane with nonnegative imaginary part is `F z = Re F(i) + b z + ∫ ((t - z)⁻¹ -
@@ -331,6 +353,69 @@ theorem eq_and_eq_of_eq_subtractedResolventKernel_add {F : ℂ → ℂ} {a a' b 
       (re_eq_of_eq_subtractedResolventKernel_add hrep').symm,
     tendsto_nhds_unique (tendsto_im_div_of_eq_subtractedResolventKernel_add hrep)
       (tendsto_im_div_of_eq_subtractedResolventKernel_add hrep')⟩
+
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+open TauCeti
+
+/-- Off the real axis, integrals of the subtracted resolvent kernel against any measure `ν` are
+Nevanlinna integrals against `(1 + t ^ 2)⁻¹ ν`, which is a finite measure exactly when `ν` has
+finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. This is
+`MeasureTheory.Measure.integral_subtractedResolventKernel_withDensity` read from `ν`. -/
+theorem integral_subtractedResolventKernel_eq_integral_nevanlinnaKernel (nu : Measure ℝ) {z : ℂ}
+    (hz : z.im ≠ 0) :
+    ∫ t, subtractedResolventKernel z t ∂nu =
+      ∫ t, nevanlinnaKernel z t ∂nu.withDensity fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹ := by
+  conv_lhs => rw [← nu.withDensity_inv_one_add_sq_withDensity]
+  exact Measure.integral_subtractedResolventKernel_withDensity _ hz
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+/-- **Uniqueness of the measure of a Herglotz representation.** Two representations
+`F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` of the same function on the upper
+half-plane, with measures of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`, have the same measure.
+The finiteness is needed: for measures of infinite weighted mass the integral term vanishes. -/
+theorem eq_of_eq_subtractedResolventKernel_add {F : ℂ → ℂ} {a a' b b' : ℝ}
+    {nu nu' : Measure ℝ} (hnu : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤)
+    (hnu' : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu' < ⊤)
+    (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
+    (hrep' : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      F z = a' + b' * z + ∫ t, subtractedResolventKernel z t ∂nu') :
+    nu = nu' := by
+  obtain ⟨rfl, rfl⟩ := eq_and_eq_of_eq_subtractedResolventKernel_add hrep hrep'
+  have := isFiniteMeasure_withDensity hnu.ne
+  have := isFiniteMeasure_withDensity hnu'.ne
+  suffices h : nu.withDensity (fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹) =
+      nu'.withDensity (fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹) by
+    rw [← nu.withDensity_inv_one_add_sq_withDensity, h,
+      nu'.withDensity_inv_one_add_sq_withDensity]
+  refine Measure.ext_of_integral_nevanlinnaKernel fun z hz ↦ ?_
+  have := (hrep z hz).symm.trans (hrep' z hz)
+  rwa [add_right_inj,
+    nu.integral_subtractedResolventKernel_eq_integral_nevanlinnaKernel (ne_of_gt hz),
+    nu'.integral_subtractedResolventKernel_eq_integral_nevanlinnaKernel (ne_of_gt hz)] at this
+
+/-- **The Herglotz representation theorem.** A function holomorphic on the upper half-plane with
+nonnegative imaginary part has a unique representation
+`F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` with `b ≥ 0` and `ν` a positive measure
+of finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. The constant term of this representation is
+`Re F(i)`, by `TauCeti.re_eq_of_eq_subtractedResolventKernel_add`. -/
+theorem existsUnique_eq_subtractedResolventKernel_add {F : ℂ → ℂ}
+    (hF : DifferentiableOn ℂ F UpperHalfPlane.upperHalfPlaneSet)
+    (him : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, 0 ≤ (F z).im) :
+    ∃! p : ℝ × ℝ × Measure ℝ, 0 ≤ p.2.1 ∧ ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂p.2.2 < ⊤ ∧
+      ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+        F z = p.1 + p.2.1 * z + ∫ t, subtractedResolventKernel z t ∂p.2.2 := by
+  obtain ⟨b, nu, hb, hnu, hrep⟩ := exists_eq_subtractedResolventKernel_add hF him
+  refine ⟨((F I).re, b, nu), ⟨hb, hnu, hrep⟩, fun ⟨a', b', nu'⟩ ⟨_, hnu', hrep'⟩ ↦ ?_⟩
+  obtain rfl := eq_of_eq_subtractedResolventKernel_add hnu' hnu hrep' hrep
+  obtain ⟨rfl, rfl⟩ := eq_and_eq_of_eq_subtractedResolventKernel_add hrep' hrep
+  rfl
 
 end TauCeti
 

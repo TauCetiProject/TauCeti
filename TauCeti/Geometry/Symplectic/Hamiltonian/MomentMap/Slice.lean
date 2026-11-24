@@ -173,7 +173,7 @@ theorem finrank_orbitTangent_inf_orthogonal_add_finrank_isotropy [FiniteDimensio
     finrank ℝ ↥(a.orbitTangent x ⊓ (σ.bilinFormAt x).orthogonal (a.orbitTangent x)) +
       finrank ℝ (a.isotropy x) = finrank ℝ (lieAnnihilator ℝ 𝔤 (μ x)) := by
   have hle : (a.isotropy x).toSubmodule ≤ (lieAnnihilator ℝ 𝔤 (μ x)).toSubmodule :=
-    h.isotropy_le_lieAnnihilator hc
+    isotropy_le_lieAnnihilator_of_momentCocycle_eq_zero hc
   have h₁ := Submodule.finrank_quotient_add_finrank
     ((a.isotropy x).toSubmodule.comap (lieAnnihilator ℝ 𝔤 (μ x)).toSubmodule.subtype)
   rw [(h.quotEquivOrbitTangentInfOrthogonal hc).finrank_eq,
@@ -235,7 +235,7 @@ theorem tangentRepresentation_mem_orthogonal_orbitTangent
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)) :
     tangentRepresentation hd g u ∈ (hσ.symplecticFormAt x).orthogonal
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) := by
-  have : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  have : ContMDiffConstSMul I' ∞ G M := ContMDiffSMul.contMDiffConstSMul I
   exact SymplecticForm.apply_mem_orthogonal (ρ := (tangentRepresentation hd).toRepresentation)
     (hσ.symplecticFormAt_tangentRepresentation hσG hd)
     (fun g _ hv ↦ tangentRepresentation_mem_orbitTangent_fundamental hd g hv) g hu
@@ -249,7 +249,7 @@ def symplecticSliceRepresentation :
     stabilizer G x →*
       hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x ≃ₗ[ℝ]
         hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x :=
-  haveI : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  haveI : ContMDiffConstSMul I' ∞ G M := ContMDiffSMul.contMDiffConstSMul I
   (hσ.symplecticFormAt x).reducedSpaceRepresentation
     (tangentAut fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x)
     (hσ.isSymplectomorphism_tangentAut hσG

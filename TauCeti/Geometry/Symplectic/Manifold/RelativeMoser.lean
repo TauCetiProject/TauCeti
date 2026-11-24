@@ -356,19 +356,10 @@ private theorem moserRate_eq_zero {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ�
   have hvel : mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
       (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) (moserFamily σ₀ σ₁).val) y =
       deriv Real.smoothTransition t • (σ₁ - σ₀).val y := by
-    have h := (moserFamily σ₀ σ₁).hasDerivAt_mpullback_prodMk_timeDeriv t y
-    simp only [moserFamily, SmoothForm.mpullback_prodMk_lineMapFamily, SmoothForm.coe_mpullback,
-      SmoothForm.coe_timeDeriv] at h
-    refine h.unique ?_
-    have hc : HasDerivAt Real.smoothTransition (deriv Real.smoothTransition t) t :=
-      ((Real.smoothTransition.contDiff (n := 1)).differentiable one_ne_zero t).hasDerivAt
-    -- The values of the slices are read in the model fibre `E [⋀^Fin 2]→L[ℝ] ℝ`.
-    have h2 : HasDerivAt (F := E [⋀^Fin 2]→L[ℝ] ℝ)
-        (fun u ↦ (σ₀.val y : E [⋀^Fin 2]→L[ℝ] ℝ) +
-          Real.smoothTransition u • ((σ₁ - σ₀).val y : E [⋀^Fin 2]→L[ℝ] ℝ))
-        (deriv Real.smoothTransition t • ((σ₁ - σ₀).val y : E [⋀^Fin 2]→L[ℝ] ℝ)) t :=
-      (hc.smul_const _).const_add _
-    exact h2
+    simpa only [moserFamily, SmoothForm.coe_mpullback, SmoothForm.coe_timeDeriv, Submodule.coe_smul,
+      Pi.smul_apply] using
+      congrArg (fun β ↦ β.val y) (SmoothForm.mpullback_prodMk_timeDeriv_lineMapFamily σ₀ σ₁
+        (Real.smoothTransition.contDiff (n := ⊤)) t)
   -- The slice at time `t` is closed, since `σ₁ - σ₀ = dβ` is exact.
   have hclosed : (σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).IsClosed := by
     refine h₀.add (SmoothForm.IsClosed.smul _ ?_)

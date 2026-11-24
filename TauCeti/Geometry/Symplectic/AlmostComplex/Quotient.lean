@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.AlmostComplex
-public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.LinearAlgebra.Isomorphisms
+public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
 # Almost complex structures on quotient spaces
@@ -15,6 +15,30 @@ An invariant real subspace of an almost complex vector space has an almost compl
 The quotient projection intertwines the two structures. In particular this constructs the
 complex structure on the normal quotient of a pseudoholomorphic immersion, without a metric
 or a choice of complement.
+
+More generally, if `π : V → W` is a surjective linear map whose kernel `J` preserves, there is
+exactly one complex structure `J_W` on `W` with `π ∘ J = J_W ∘ π`
+(`TauCeti.AlmostComplexStructure.descend`,
+`TauCeti.AlmostComplexStructure.isComplexLinearMap_iff_eq_descend`). Conversely, the kernel of a
+complex-linear map is invariant
+(`TauCeti.IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero`), so the invariance of the
+kernel is exactly the condition for `π` to be complex linear for some structure on `W`.
+
+The case of interest is the projection `E × N → E` to the first factor. Near a pseudoholomorphic
+curve, coordinates `(z, W) ∈ E × N` built from a foliation of a tube by pseudoholomorphic normal
+discs make every fibre `{z} × N` complex, that is, `J` preserves the vertical subspace `{0} × N`.
+The structure induced on the base is then `J_E v = (J (v, 0)).1`
+(`TauCeti.AlmostComplexStructure.descend_fst_apply`). It depends on the point of `E × N`, not only
+on its base point, so the projection of a pseudoholomorphic map is holomorphic only for this
+varying structure on the base.
+
+## Main declarations
+
+* `TauCeti.AlmostComplexStructure.quotient`: the structure induced on `V ⧸ p`.
+* `TauCeti.AlmostComplexStructure.descend`: the structure induced on the target of a surjection
+  whose kernel is `J`-invariant, characterized by `TauCeti.AlmostComplexStructure.descend_apply`.
+* `TauCeti.AlmostComplexStructure.isComplexLinearMap_iff_eq_descend`: it is the only structure
+  making the surjection complex linear.
 -/
 
 public section
@@ -88,6 +112,51 @@ theorem isComplexLinearMap_liftQ_iff (J : AlmostComplexStructure V)
     IsComplexLinearMap (J.quotient p hp) K (p.liftQ f hf) ↔ IsComplexLinearMap J K f := by
   rw [← isComplexLinearMap_comp_mkQ_iff]
   simp
+
+/-- **The complex structure induced on the target of a surjection.** If `π : V → W` is surjective
+and its kernel is `J`-invariant, the quotient structure on `V ⧸ ker π`, transported along
+`V ⧸ ker π ≃ W`. It is characterized by `J_W (π v) = π (J v)`
+(`TauCeti.AlmostComplexStructure.descend_apply`). -/
+noncomputable def descend (J : AlmostComplexStructure V) (π : V →ₗ[ℝ] W)
+    (hπ : Function.Surjective π) (hJ : ∀ v, π v = 0 → π (J v) = 0) :
+    AlmostComplexStructure W :=
+  (J.quotient (LinearMap.ker π) fun v hv ↦
+    LinearMap.mem_ker.2 (hJ v (LinearMap.mem_ker.1 hv))).transport (π.quotKerEquivOfSurjective hπ)
+
+/-- The induced structure is characterized by `J_W (π v) = π (J v)`. -/
+@[simp]
+theorem descend_apply (J : AlmostComplexStructure V) (π : V →ₗ[ℝ] W)
+    (hπ : Function.Surjective π) (hJ : ∀ v, π v = 0 → π (J v) = 0) (v : V) :
+    J.descend π hπ hJ (π v) = π (J v) := by
+  have hs : (π.quotKerEquivOfSurjective hπ).symm (π v) = Submodule.Quotient.mk v := by
+    rw [LinearEquiv.symm_apply_eq, LinearMap.quotKerEquivOfSurjective_apply_mk]
+  rw [descend, transport_apply, hs, quotient_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
+
+/-- The surjection is complex linear for the induced structure on its target. -/
+@[simp]
+theorem isComplexLinearMap_descend (J : AlmostComplexStructure V) (π : V →ₗ[ℝ] W)
+    (hπ : Function.Surjective π) (hJ : ∀ v, π v = 0 → π (J v) = 0) :
+    IsComplexLinearMap J (J.descend π hπ hJ) π :=
+  (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ (descend_apply J π hπ hJ v).symm
+
+/-- **Uniqueness of the induced structure.** A surjection `π` is complex linear from `J` to `J'`
+exactly when `J'` is the structure induced by `J`. -/
+theorem isComplexLinearMap_iff_eq_descend {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {π : V →ₗ[ℝ] W} (hπ : Function.Surjective π)
+    (hJ : ∀ v, π v = 0 → π (J v) = 0) :
+    IsComplexLinearMap J J' π ↔ J' = J.descend π hπ hJ := by
+  refine ⟨fun h ↦ ext fun w ↦ ?_, fun h ↦ h ▸ isComplexLinearMap_descend J π hπ hJ⟩
+  obtain ⟨v, rfl⟩ := hπ w
+  rw [descend_apply, (isComplexLinearMap_iff_apply J J' π).1 h v]
+
+/-- On a product `E × N` whose vertical subspace `{0} × N` is `J`-invariant, the structure induced
+on the base `E` is the block `J_E v = (J (v, 0)).1`. -/
+@[simp]
+theorem descend_fst_apply {E N : Type*} [AddCommGroup E] [Module ℝ E] [AddCommGroup N]
+    [Module ℝ N] (J : AlmostComplexStructure (E × N))
+    (hJ : ∀ v : E × N, v.1 = 0 → (J v).1 = 0) (v : E) :
+    J.descend (LinearMap.fst ℝ E N) LinearMap.fst_surjective hJ v = (J (v, 0)).1 := by
+  simpa using descend_apply J (LinearMap.fst ℝ E N) LinearMap.fst_surjective hJ (v, 0)
 
 end TauCeti.AlmostComplexStructure
 

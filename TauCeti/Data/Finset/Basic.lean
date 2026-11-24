@@ -57,11 +57,11 @@ import TauCeti.Data.Set.PowersetCard
   halves of a finset inside an open interval between the split point and an endpoint;
   `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
   are the corresponding identities for an integer cancelling the cardinality of the finset.
-* `Finset.Nonempty.exists_subset_Ioi_insert_eq` writes a nonempty finset of a linear order as its
-  minimum inserted into a finset above it, and `Finset.min'_insert_of_subset_Ioi` recovers that
+* `Finset.Nonempty.exists_forall_lt_insert_eq` writes a nonempty finset of a linear order as its
+  minimum inserted into a finset above it, and `Finset.min'_insert_of_forall_le` recovers that
   minimum.
-* `Finset.filter_min'_lt_eq_erase` identifies the elements above the minimum with the erasure of
-  the minimum.
+* `Finset.filter_lt_eq_erase_of_forall_le` identifies the elements above a lower bound with the
+  erasure of the lower bound.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
   identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
   map it strictly between the images of `a` and `b`, and
@@ -220,18 +220,24 @@ theorem filter_ne_product_of_disjoint {α : Type*} {s t : Finset α} [DecidableE
   filter_true_of_mem fun _ hp =>
     hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
 
-/-- A rectangle `X ×ˢ Y` inside a block `A ×ˢ B` of disjoint sets, with sides carrying an
-`ε`-fraction of `A` and `B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
-theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [CommSemiring R]
-    [LinearOrder R] [IsStrictOrderedRing R] {ε : R} {A B X Y : Finset α} (hε : 0 ≤ ε)
-    (hAB : Disjoint A B) (hX : X ⊆ A) (hY : Y ⊆ B) (hXc : ε * #A ≤ #X) (hYc : ε * #B ≤ #Y) :
+/-- A rectangle `X ×ˢ Y` of disjoint sets, with sides carrying an `ε`-fraction of the sides of a
+block `A ×ˢ B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
+theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [Semiring R]
+    [PartialOrder R] [IsOrderedRing R] {ε : R} {A B X Y : Finset α} (hε : 0 ≤ ε)
+    (hXY : Disjoint X Y) (hXc : ε * #A ≤ #X) (hYc : ε * #B ≤ #Y) :
     ε ^ 2 * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤
       (#((X ×ˢ Y).filter fun p => p.1 ≠ p.2) : R) := by
-  rw [filter_ne_product_of_disjoint hAB, filter_ne_product_of_disjoint (hAB.mono hX hY),
-    card_product, card_product]
-  push_cast
-  calc ε ^ 2 * (#A * #B : R) = (ε * #A) * (ε * #B) := by ring
-    _ ≤ #X * #Y := mul_le_mul hXc hYc (by positivity) (Nat.cast_nonneg _)
+  rw [filter_ne_product_of_disjoint hXY, card_product]
+  calc ε ^ 2 * (#((A ×ˢ B).filter fun p => p.1 ≠ p.2) : R) ≤ ε ^ 2 * (#A * #B : R) := by
+        gcongr
+        have hle : #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤ #A * #B :=
+          (card_filter_le _ _).trans (card_product A B).le
+        exact_mod_cast Nat.mono_cast hle
+    _ = ε * ((ε * #A) * #B) := by rw [sq]; simp only [mul_assoc]
+    _ = ε * ((#A * ε) * #B) := by rw [(Nat.cast_commute #A ε).eq]
+    _ = (ε * #A) * (ε * #B) := by simp only [mul_assoc]
+    _ ≤ #X * #Y := mul_le_mul hXc hYc (mul_nonneg hε (Nat.cast_nonneg _)) (Nat.cast_nonneg _)
+    _ = _ := by push_cast; rfl
 
 /-- A finset has at most `#s ^ 2` ordered pairs of distinct elements. -/
 theorem card_offDiag_le_sq {α : Type*} (s : Finset α) : #s.offDiag ≤ #s ^ 2 := by
@@ -264,20 +270,20 @@ theorem card_mul_card_le_two_mul_card_filter_ne_product {α : Type*} [DecidableE
     _ = 2 * (#s * (#t - 1)) := Nat.mul_left_comm _ _ _
     _ ≤ 2 * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := Nat.mul_le_mul_left _ hle
 
-/-- If `s` and `t` are equal or disjoint, then for `s' ⊆ s` and `t' ⊆ t` the pairs with distinct
-coordinates in `s' ×ˢ t'` are at most a `#s' / #s`-fraction of those in `s ×ˢ t`. For
-overlapping `s ≠ t` this can fail: take `s = {a, b}`, `t = {b, c}`, `s' = {a}` and `t' = t`. -/
+/-- If `s` is contained in `t` or disjoint from it, then for `s' ⊆ s` and `t' ⊆ t` the pairs with
+distinct coordinates in `s' ×ˢ t'` are at most a `#s' / #s`-fraction of those in `s ×ˢ t`. For
+overlapping `s ⊄ t` this can fail: take `s = {a, b}`, `t = {b, c}`, `s' = {a}` and `t' = t`. -/
 theorem card_filter_ne_product_mul_card_le {α : Type*} [DecidableEq α] {s t s' t' : Finset α}
-    (hst : s = t ∨ Disjoint s t) (hs' : s' ⊆ s) (ht' : t' ⊆ t) :
+    (hst : s ⊆ t ∨ Disjoint s t) (hs' : s' ⊆ s) (ht' : t' ⊆ t) :
     #{p ∈ s' ×ˢ t' | p.1 ≠ p.2} * #s ≤ #s' * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
-  obtain rfl | hst := hst
-  · -- Each `u ∈ s'` has at most `#s - 1` partners in `t' ⊆ s`.
-    have h₁ : #{p ∈ s' ×ˢ t' | p.1 ≠ p.2} ≤ #s' * (#s - 1) := by
+  obtain hst | hst := hst
+  · -- Each `u ∈ s'` has at most `#t - 1` partners in `t' ⊆ t`.
+    have h₁ : #{p ∈ s' ×ˢ t' | p.1 ≠ p.2} ≤ #s' * (#t - 1) := by
       rw [card_filter_ne_product, ← smul_eq_mul, ← sum_const]
       exact sum_le_sum fun u hu ↦
-        (card_erase_of_mem (hs' hu)) ▸ card_le_card (erase_subset_erase u ht')
-    have h₂ : #{p ∈ s ×ˢ s | p.1 ≠ p.2} = #s * (#s - 1) := by
-      rw [card_filter_ne_product, sum_congr rfl fun u hu ↦ card_erase_of_mem hu, sum_const,
+        (card_erase_of_mem (hst (hs' hu))) ▸ card_le_card (erase_subset_erase u ht')
+    have h₂ : #{p ∈ s ×ˢ t | p.1 ≠ p.2} = #s * (#t - 1) := by
+      rw [card_filter_ne_product, sum_congr rfl fun u hu ↦ card_erase_of_mem (hst hu), sum_const,
         smul_eq_mul]
     rw [h₂, ← mul_assoc, mul_right_comm]
     exact Nat.mul_le_mul_right _ h₁
@@ -479,11 +485,10 @@ theorem exists_perm_prod_fix_and_le {S S' : Set ℕ} (hd : Disjoint S S')
   · exact hρJ _ (mem_union_left _ (mem_image_of_mem _ hp))
   · exact hρJ _ (mem_union_right _ (mem_image_of_mem _ hp))
 
-open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead
 be summed first over `c` and then over the interval of possible `b`. -/
-theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddCommMonoid M]
-    (a : α) (f : α → α → M) :
+theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [DecidableLE α]
+    [AddCommMonoid M] (a : α) (f : α → α → M) :
     ∑ b ∈ univ.filter (a ≤ ·), ∑ c ∈ univ.filter (b ≤ ·), f b c =
       ∑ c, ∑ b ∈ univ.filter (fun b => a ≤ b ∧ b ≤ c), f b c :=
   sum_comm' fun _ _ => by simp
@@ -670,24 +675,21 @@ theorem filter_gt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] 
     rw [mem_filter] at hx
     exact mem_Ioo.2 ⟨hx.2, (mem_Ioo.1 (hs hx.1)).2⟩
 
-/-- Inserting an element `a` into a finset above `a` makes `a` the minimum. -/
-theorem min'_insert_of_subset_Ioi {α : Type*} [LinearOrder α] [LocallyFiniteOrderTop α] {a : α}
-    {s : Finset α} (hs : s ⊆ Ioi a) : (insert a s).min' (insert_nonempty a s) = a :=
-  le_antisymm (min'_le _ _ (mem_insert_self a s)) (le_min' _ _ _ fun y hy ↦ by
-    rcases mem_insert.1 hy with rfl | hy
-    · exact le_rfl
-    · exact (mem_Ioi.1 (hs hy)).le)
+/-- Inserting an element `a` into a finset of elements above `a` makes `a` the minimum. -/
+theorem min'_insert_of_forall_le {α : Type*} [LinearOrder α] {a : α}
+    {s : Finset α} (hs : ∀ b ∈ s, a ≤ b) : (insert a s).min' (insert_nonempty a s) = a :=
+  (min'_eq_iff _ _ a).2 ⟨mem_insert_self a s, by simpa using hs⟩
 
-/-- Removing the minimum of a nonempty finset leaves the elements strictly above it. -/
-theorem filter_min'_lt_eq_erase {α : Type*} [LinearOrder α] {s : Finset α} (hs : s.Nonempty) :
-    {x ∈ s | s.min' hs < x} = s.erase (s.min' hs) :=
-  (filter_congr fun y hy ↦ ⟨LT.lt.ne', (s.min'_le y hy).lt_of_ne'⟩).trans (filter_ne' s _)
+/-- Removing a lower bound `a` of a finset leaves the elements strictly above `a`. -/
+theorem filter_lt_eq_erase_of_forall_le {α : Type*} [PartialOrder α] [DecidableEq α] {s : Finset α}
+    {a : α} [DecidablePred (a < ·)] (h : ∀ x ∈ s, a ≤ x) : {x ∈ s | a < x} = s.erase a :=
+  (filter_congr fun y hy ↦ ⟨LT.lt.ne', (h y hy).lt_of_ne'⟩).trans (filter_ne' s _)
 
-/-- A nonempty finset of a linear order is an element `a` inserted into a finset above `a`. -/
-theorem Nonempty.exists_subset_Ioi_insert_eq {α : Type*} [LinearOrder α]
-    [LocallyFiniteOrderTop α] {s : Finset α} (hs : s.Nonempty) :
-    ∃ a t, t ⊆ Ioi a ∧ insert a t = s :=
-  ⟨s.min' hs, s.erase (s.min' hs), fun _ ht ↦ mem_Ioi.2 (min'_lt_of_mem_erase_min' _ _ ht),
+/-- A nonempty finset of a linear order is an element `a` inserted into a finset of elements
+above `a`. -/
+theorem Nonempty.exists_forall_lt_insert_eq {α : Type*} [LinearOrder α] {s : Finset α}
+    (hs : s.Nonempty) : ∃ a t, (∀ x ∈ t, a < x) ∧ insert a t = s :=
+  ⟨s.min' hs, s.erase (s.min' hs), fun _ ht ↦ min'_lt_of_mem_erase_min' _ _ ht,
     insert_erase (min'_mem s hs)⟩
 
 /-- If a monotone map `f` is not injective on a finset `T` inside `Ioo a b`, or does not map `T`
@@ -791,10 +793,12 @@ theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearO
   have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
   exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
 
-/-- If `c` is the first element of a finite set `S` after `s`, and no element of `S` lies in
-`(c, t₂]`, then the elements of `S` after `s` are `c` and the elements after `t₂`. -/
-theorem filter_lt_eq_insert_of_forall_lt {α : Type*} [LinearOrder α] {S : Finset α} {s c t₂ : α}
-    (hc : c ∈ S) (hsc : s < c) (hcmin : ∀ t ∈ S, s < t → c ≤ t) (hct : c < t₂)
+/-- If `c` is the first element of a finite set `S` after `s`, and every element of `S` strictly
+above `c` is strictly above `t₂`, then the elements of `S` after `s` are `c` and the elements after
+`t₂`, for any `t₂` with `s ≤ t₂`. -/
+theorem filter_lt_eq_insert_of_forall_lt {α : Type*} [PartialOrder α] [DecidableEq α]
+    [DecidableLT α] {S : Finset α} {s c t₂ : α}
+    (hc : c ∈ S) (hsc : s < c) (hcmin : ∀ t ∈ S, s < t → c ≤ t) (hst : s ≤ t₂)
     (hgap : ∀ t ∈ S, c < t → t₂ < t) :
     {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} := by
   ext t
@@ -806,7 +810,7 @@ theorem filter_lt_eq_insert_of_forall_lt {α : Type*} [LinearOrder α] {S : Fins
     · exact Or.inr ⟨htS, hgap t htS h⟩
   · rintro (rfl | ⟨htS, ht⟩)
     · exact ⟨hc, hsc⟩
-    · exact ⟨htS, hsc.trans (hct.trans ht)⟩
+    · exact ⟨htS, hst.trans_lt ht⟩
 
 /-- Replacing a point `a` of a finset on which `f` is injective by a point `b` with the same
 image keeps `f` injective. -/

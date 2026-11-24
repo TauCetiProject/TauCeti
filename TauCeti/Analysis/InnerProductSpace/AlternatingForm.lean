@@ -94,6 +94,13 @@ theorem alternatingFormEquiv_ιMulti_apply {k : ℕ} (u v : Fin k → V) :
     alternatingFormEquiv V k (ιMulti ℝ k u) v = (Matrix.of fun i j ↦ ⟪u j, v i⟫).det := by
   rw [alternatingFormEquiv_apply, inner_ιMulti_ιMulti]
 
+/-- The form of a wedge of vectors `u₁ ∧ ⋯ ∧ uₖ` vanishes on every frame `v` having a vector `vᵢ`
+orthogonal to every `uⱼ`. -/
+theorem alternatingFormEquiv_ιMulti_apply_eq_zero_of_forall_inner_eq_zero {k : ℕ} (u v : Fin k → V)
+    {i : Fin k} (h : ∀ j, ⟪u j, v i⟫ = 0) : alternatingFormEquiv V k (ιMulti ℝ k u) v = 0 := by
+  rw [alternatingFormEquiv_ιMulti_apply]
+  exact Matrix.det_eq_zero_of_row_eq_zero i fun j ↦ by simp [h]
+
 /-- The form of a wedge of vectors is the alternatization of the product of the covectors
 `⟪uⱼ, ·⟫`. -/
 private theorem alternatingFormEquiv_ιMulti_toAlternatingMap {k : ℕ} (u : Fin k → V) :
@@ -237,6 +244,14 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
       ιMulti_family, OrthonormalBasis.coe_toBasis]
   rw [hs, real_inner_comm ((alternatingFormEquiv V k).symm β),
     inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti]
+
+/-- **The inner product of `0`-forms** is the product of their values: a `0`-form is a constant,
+evaluated on the empty tuple `v`. -/
+theorem alternatingFormInner_zero_apply (α β : V [⋀^Fin 0]→L[ℝ] ℝ) (v : Fin 0 → V) :
+    alternatingFormInner V 0 α β = α v * β v := by
+  rw [alternatingFormInner_eq_sum (stdOrthonormalBasis ℝ V)]
+  simp only [Subsingleton.elim _ v, Finset.sum_const, Finset.card_univ]
+  simp
 
 end TauCeti
 

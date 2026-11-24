@@ -33,6 +33,8 @@ group is transported along surjective additive maps.
   an element sent to `g` by an additive endomorphism is a unit multiple of `g`.
 * `AddMonoidHom.involutive_of_surjective`: a surjective additive endomorphism of an infinite cyclic
   group is `±1`, hence an involution.
+* `AddMonoidHom.finite_of_surjective_of_map_eq_zero`: a quotient of `ℤ` by a subgroup containing a
+  nonzero integer is finite.
 * `AddMonoidHom.injective_of_addEquiv_int`: a homomorphism out of an infinite cyclic group is
   injective when it sends some element to an element of infinite order.
 * `AddEquiv.bijective_zmultiplesHom_apply_iff`: `n ↦ n • f a` is bijective exactly when
@@ -117,6 +119,21 @@ theorem involutive_of_surjective {H : Type*} [AddCommGroup H] (f : H →+ H) {g 
   intro y
   obtain ⟨k, rfl⟩ := hg.2 y
   rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [hfg]
+
+/-- **A quotient of `ℤ` by a nonzero subgroup is finite.** If `f : ℤ →+ H` is surjective and
+`f k = 0` for some integer `k ≠ 0`, then `H` is finite: every element of `H` is the image of a
+residue modulo `k`. -/
+theorem finite_of_surjective_of_map_eq_zero {H : Type*} [AddGroup H] {f : ℤ →+ H}
+    (hf : Function.Surjective f) {k : ℤ} (hk : k ≠ 0) (hfk : f k = 0) : Finite H := by
+  refine Finite.of_surjective (fun j : Fin k.natAbs ↦ f j) fun d ↦ ?_
+  obtain ⟨j, rfl⟩ := hf d
+  have hr : 0 ≤ j % k := Int.emod_nonneg j hk
+  refine ⟨⟨(j % k).toNat, by have := Int.emod_lt j hk; omega⟩, ?_⟩
+  -- `j` and its residue modulo `k` differ by a multiple of `k`, which `f` kills.
+  have hq : f (k * (j / k)) = 0 := by
+    rw [mul_comm, ← smul_eq_mul, map_zsmul, hfk, smul_zero]
+  conv_rhs => rw [← Int.emod_add_mul_ediv j k]
+  simp [Int.toNat_of_nonneg hr, hq]
 
 /-- A homomorphism out of an infinite cyclic group is injective as soon as it sends some element
 to an element of infinite order. -/

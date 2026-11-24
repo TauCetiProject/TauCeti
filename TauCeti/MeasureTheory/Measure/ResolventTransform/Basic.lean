@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Complex.HalfPlane
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
+import TauCeti.Basic.Complex.OfRealSub
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -24,7 +25,9 @@ is the integral of the kernel `im z / ((x - re z)² + (im z)²)`.
 This kernel is positive in the upper half-plane, so the imaginary part of the transform
 is strictly positive there for every nonzero finite measure. We also give uniform bounds
 away from the real axis, the continuity of the kernel there, the Lipschitz bound
-`‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, and prove
+`‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, the
+continuity of the transform off the real axis
+(`MeasureTheory.continuousAt_resolventTransform_of_im_ne_zero`), and prove
 affine covariance under pushforward. Off the real axis the transform is analytic with derivative
 `∫ (x - z)⁻² dμ(x)`, bounded by `|Im z|⁻² μ(ℝ)`, and its first-order Taylor expansion at `z` has
 remainder at most `‖w - z‖² / (|Im z|² |Im w|) · μ(ℝ)`; these bounds are uniform over all
@@ -135,6 +138,12 @@ theorem Measure.integral_inv_sub_eq_neg_resolventTransform (μ : Measure ℝ) (z
 
 variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
+/-- The resolvent transform of a finite measure on `ℝ` is continuous off the real axis, by
+Mathlib's `hasDerivAt_resolventTransform`. -/
+theorem continuousAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
+    ContinuousAt (resolventTransform μ) z :=
+  (hasDerivAt_resolventTransform z (Complex.notMem_image_ofReal_of_im_ne_zero hz)).continuousAt
+
 /-- The real resolvent kernel is integrable for a finite measure off the real axis. -/
 theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
     Integrable (resolvent (R := ℝ) z) μ := by
@@ -197,16 +206,14 @@ theorem resolventTransform_sub_resolventTransform {z w : ℂ} (hz : z.im ≠ 0) 
 derivative `∫ (x - z)⁻² dμ(x)`. -/
 theorem hasDerivAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
     HasDerivAt (resolventTransform μ) (∫ x, resolvent z x ^ 2 ∂μ) z :=
-  hasDerivAt_resolventTransform z fun ⟨x, _, hx⟩ ↦
-    hz (by simpa using (congrArg Complex.im hx).symm)
+  hasDerivAt_resolventTransform z (Complex.notMem_image_ofReal_of_im_ne_zero hz)
 
 /-- Off the real axis the transform of a finite measure is analytic. -/
 theorem analyticOnNhd_resolventTransform :
     AnalyticOnNhd ℂ (resolventTransform μ) {z : ℂ | z.im ≠ 0} :=
   (IsOpen.analyticOn_iff_analyticOnNhd
     (isOpen_ne_fun Complex.continuous_im continuous_const)).1 <|
-    analyticOn_resolventTransform.mono fun _ hz ⟨_, _, hx⟩ ↦
-      hz (by simpa using (congrArg Complex.im hx).symm)
+    analyticOn_resolventTransform.mono fun _ hz ↦ Complex.notMem_image_ofReal_of_im_ne_zero hz
 
 /-- In the upper half-plane the transform of a finite measure is analytic. -/
 theorem analyticOnNhd_resolventTransform_setOf_im_pos :

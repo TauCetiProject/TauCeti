@@ -8,12 +8,18 @@ module
 public import TauCeti.GroupTheory.TitsSystem.Parabolic.Classification
 
 /-!
-# Conjugating standard parabolics of a Tits system into one another
+# Conjugating parabolic subgroups of a Tits system
 
-For a Tits system with distinguished subgroup `B` and subsets `J, J'` of the simple reflections,
-`g P_J g⁻¹ ⊆ P_{J'}` holds exactly when `J ⊆ J'` and `g ∈ P_{J'}`. In particular a conjugate of
-`B` lying in a subgroup `P ⊇ B` is conjugate by an element of `P`, and two conjugate standard
-parabolics are equal, with the conjugating element in the parabolic.
+For a Tits system `(B, N)` in a group `G`, an element `g` that conjugates `B` into a subgroup
+`P ⊇ B` already lies in `P`. Consequently, for subgroups `P, Q ⊇ B`, the conjugate `g P g⁻¹` lies
+in `Q` exactly when `P ≤ Q` and `g ∈ Q`, and `g P g⁻¹ = Q` exactly when `P = Q` and `g ∈ P`.
+Since every subgroup containing `B` is a standard parabolic
+(`TauCeti.TitsSystem.standardParabolic_eq_of_subgroupB_le`), this says for subsets `J, J'` of the
+simple reflections that `g P_J g⁻¹ ⊆ P_{J'}` holds exactly when `J ⊆ J'` and `g ∈ P_{J'}`. In
+particular two conjugate standard parabolics are equal, with the conjugating element in the
+parabolic.
+
+Conjugates are written in Mathlib's convention `MulAut.conj g • H` for `g H g⁻¹`.
 
 The key step, `TauCeti.TitsSystem.mem_of_conj_subgroupB_le`, is proved by induction on the length
 of the Weyl element `w` with `g ∈ B w B`. Writing `w = s w'` with `s` simple and `w'` shorter, the
@@ -25,11 +31,18 @@ These are statements about an arbitrary Tits system, with no topology, field or 
 ## Main declarations
 
 * `TauCeti.TitsSystem.mem_of_conj_subgroupB_le`: if `g B g⁻¹ ⊆ P` for a subgroup `P ⊇ B`,
-  then `g ∈ P`.
+  then `g ∈ P`; `TauCeti.TitsSystem.conj_smul_subgroupB_le_iff` is the iff form.
+* `TauCeti.TitsSystem.conj_smul_le_iff_of_subgroupB_le`: for `P, Q ⊇ B`, `g P g⁻¹ ≤ Q` iff
+  `P ≤ Q` and `g ∈ Q`.
+* `TauCeti.TitsSystem.conj_smul_eq_iff_of_subgroupB_le`: for `P, Q ⊇ B`, `g P g⁻¹ = Q` iff
+  `P = Q` and `g ∈ P`.
 * `TauCeti.TitsSystem.conj_smul_standardParabolic_le_iff`: `g P_J g⁻¹ ≤ P_{J'}` iff `J ⊆ J'`
   and `g ∈ P_{J'}`, with the elementwise form `conj_standardParabolic_le_iff`.
 * `TauCeti.TitsSystem.conj_standardParabolic_eq_iff`: `g P_J g⁻¹ = P_{J'}` iff `J = J'` and
   `g ∈ P_J`.
+* Simp-normal companions such as
+  `TauCeti.TitsSystem.conj_smul_subgroupB_le_standardParabolic_iff` for the cases where `B`
+  itself (that is, `P_∅`) appears.
 
 ## References
 
@@ -109,6 +122,39 @@ theorem mem_of_conj_subgroupB_le {P : Subgroup G} (hB : T.subgroupB ≤ P) {g : 
     rwa [mul_inv_rev, ← mul_assoc, P.mul_mem_cancel_right (P.inv_mem hxP), mul_assoc x,
       mul_assoc x, P.mul_mem_cancel_left hxP] at h
 
+/-- **Conjugating `B` into an overgroup.** For a subgroup `P` containing `B`, the conjugate
+`g B g⁻¹` lies in `P` exactly when `g` does. -/
+theorem conj_smul_subgroupB_le_iff {P : Subgroup G} (hB : T.subgroupB ≤ P) {g : G} :
+    MulAut.conj g • T.subgroupB ≤ P ↔ g ∈ P :=
+  ⟨fun h ↦ T.mem_of_conj_subgroupB_le hB fun b hb ↦
+      h (Subgroup.smul_mem_pointwise_smul b _ _ hb),
+    fun hg ↦ (Subgroup.pointwise_smul_le_pointwise_smul_iff.mpr hB).trans
+      (Subgroup.conj_smul_eq_self_of_mem hg).le⟩
+
+/-- For subgroups `P` and `Q` containing `B`, the conjugate `g P g⁻¹` lies in `Q` exactly when
+`P ≤ Q` and `g ∈ Q`. -/
+theorem conj_smul_le_iff_of_subgroupB_le {P Q : Subgroup G} (hP : T.subgroupB ≤ P)
+    (hQ : T.subgroupB ≤ Q) {g : G} :
+    MulAut.conj g • P ≤ Q ↔ P ≤ Q ∧ g ∈ Q := by
+  refine ⟨fun h ↦ ?_, fun ⟨hPQ, hg⟩ ↦
+    (Subgroup.pointwise_smul_le_pointwise_smul_iff.mpr hPQ).trans
+      (Subgroup.conj_smul_eq_self_of_mem hg).le⟩
+  have hg : g ∈ Q := (T.conj_smul_subgroupB_le_iff hQ).mp
+    ((Subgroup.pointwise_smul_le_pointwise_smul_iff.mpr hP).trans h)
+  rw [← Subgroup.conj_smul_eq_self_of_mem hg, Subgroup.pointwise_smul_le_pointwise_smul_iff] at h
+  exact ⟨h, hg⟩
+
+/-- For subgroups `P` and `Q` containing `B`, the conjugate `g P g⁻¹` equals `Q` exactly when
+`P = Q` and `g ∈ P`: distinct overgroups of `B` are never conjugate, and each is
+self-normalizing. -/
+theorem conj_smul_eq_iff_of_subgroupB_le {P Q : Subgroup G} (hP : T.subgroupB ≤ P)
+    (hQ : T.subgroupB ≤ Q) {g : G} :
+    MulAut.conj g • P = Q ↔ P = Q ∧ g ∈ P := by
+  refine ⟨fun h ↦ ?_, fun ⟨hPQ, hg⟩ ↦ hPQ ▸ Subgroup.conj_smul_eq_self_of_mem hg⟩
+  have hg : g ∈ Q := ((T.conj_smul_le_iff_of_subgroupB_le hP hQ).mp h.le).2
+  rw [← Subgroup.conj_smul_eq_self_of_mem hg, smul_left_cancel_iff] at h
+  exact ⟨h, h ▸ hg⟩
+
 /-- **Conjugation into a standard parabolic.** For subsets `J, J'` of the simple reflections,
 `g P_J g⁻¹ ≤ P_{J'}` holds exactly when `J ⊆ J'` and `g ∈ P_{J'}`. For `J = ∅` this says that
 `g B g⁻¹ ≤ P_{J'}` forces `g ∈ P_{J'}`; applied to `g` and `g⁻¹` it says that conjugate standard
@@ -117,17 +163,8 @@ parabolics are equal (Bourbaki, Ch. IV §2, nos. 5--6; Borel--Tits 1965, Corolla
 theorem conj_smul_standardParabolic_le_iff (J J' : Set T.simple) (g : G) :
     MulAut.conj g • T.standardParabolic J ≤ T.standardParabolic J' ↔
       J ⊆ J' ∧ g ∈ T.standardParabolic J' := by
-  refine ⟨fun h ↦ ?_, fun ⟨hJ, hg⟩ ↦
-    Subgroup.conj_smul_le_of_le (T.standardParabolic_monotone hJ) ⟨g, hg⟩⟩
-  have h' : ∀ p ∈ T.standardParabolic J, g * p * g⁻¹ ∈ T.standardParabolic J' :=
-    fun p hp ↦ h (Subgroup.smul_mem_pointwise_smul p _ _ hp)
-  have hg : g ∈ T.standardParabolic J' :=
-    T.mem_of_conj_subgroupB_le (T.subgroupB_le_standardParabolic J')
-      fun b hb ↦ h' b (T.subgroupB_le_standardParabolic J hb)
-  refine ⟨(T.standardParabolic_le_standardParabolic_iff J J').mp fun p hp ↦ ?_, hg⟩
-  have := h' p hp
-  rwa [(T.standardParabolic J').mul_mem_cancel_right ((T.standardParabolic J').inv_mem hg),
-    (T.standardParabolic J').mul_mem_cancel_left hg] at this
+  rw [T.conj_smul_le_iff_of_subgroupB_le (T.subgroupB_le_standardParabolic J)
+    (T.subgroupB_le_standardParabolic J'), T.standardParabolic_le_standardParabolic_iff]
 
 /-- The elementwise form of `conj_smul_standardParabolic_le_iff`: `g p g⁻¹ ∈ P_{J'}` for every
 `p ∈ P_J` exactly when `J ⊆ J'` and `g ∈ P_{J'}`. -/
@@ -146,15 +183,53 @@ theorem conj_standardParabolic_le_iff (J J' : Set T.simple) (g : G) :
 theorem conj_standardParabolic_eq_iff (J J' : Set T.simple) (g : G) :
     MulAut.conj g • T.standardParabolic J = T.standardParabolic J' ↔
       J = J' ∧ g ∈ T.standardParabolic J := by
-  constructor
-  · intro h
-    obtain ⟨hJ, hg⟩ := (T.conj_smul_standardParabolic_le_iff J J' g).mp h.le
-    have hge : MulAut.conj g⁻¹ • T.standardParabolic J' = T.standardParabolic J := by
-      rw [← h, map_inv, inv_smul_smul]
-    obtain ⟨hJ', -⟩ := (T.conj_smul_standardParabolic_le_iff J' J g⁻¹).mp hge.le
-    have hJJ : J = J' := hJ.antisymm hJ'
-    exact ⟨hJJ, hJJ ▸ hg⟩
-  · rintro ⟨rfl, hg⟩
-    exact Subgroup.conj_smul_eq_self_of_mem hg
+  rw [T.conj_smul_eq_iff_of_subgroupB_le (T.subgroupB_le_standardParabolic J)
+    (T.subgroupB_le_standardParabolic J'), le_antisymm_iff,
+    T.standardParabolic_le_standardParabolic_iff, T.standardParabolic_le_standardParabolic_iff,
+    ← Set.Subset.antisymm_iff]
+
+/-- `g B g⁻¹ ≤ P_J` exactly when `g ∈ P_J`; the simp-normal form of
+`conj_smul_standardParabolic_le_iff` for `J = ∅`. -/
+@[simp]
+theorem conj_smul_subgroupB_le_standardParabolic_iff (J : Set T.simple) (g : G) :
+    MulAut.conj g • T.subgroupB ≤ T.standardParabolic J ↔ g ∈ T.standardParabolic J :=
+  T.conj_smul_subgroupB_le_iff (T.subgroupB_le_standardParabolic J)
+
+/-- `g P_J g⁻¹ ≤ B` exactly when `J = ∅` and `g ∈ B`; the simp-normal form of
+`conj_smul_standardParabolic_le_iff` for `J' = ∅`. -/
+@[simp]
+theorem conj_smul_standardParabolic_le_subgroupB_iff (J : Set T.simple) (g : G) :
+    MulAut.conj g • T.standardParabolic J ≤ T.subgroupB ↔ J = ∅ ∧ g ∈ T.subgroupB := by
+  simpa only [standardParabolic_empty, Set.subset_empty_iff] using
+    T.conj_smul_standardParabolic_le_iff J ∅ g
+
+/-- `g B g⁻¹ ≤ B` exactly when `g ∈ B`. -/
+@[simp]
+theorem conj_smul_subgroupB_le_self_iff (g : G) :
+    MulAut.conj g • T.subgroupB ≤ T.subgroupB ↔ g ∈ T.subgroupB :=
+  T.conj_smul_subgroupB_le_iff le_rfl
+
+/-- `g B g⁻¹ = P_J` exactly when `J = ∅` and `g ∈ B`; the simp-normal form of
+`conj_standardParabolic_eq_iff` for `J = ∅`. -/
+@[simp]
+theorem conj_smul_subgroupB_eq_standardParabolic_iff (J : Set T.simple) (g : G) :
+    MulAut.conj g • T.subgroupB = T.standardParabolic J ↔ J = ∅ ∧ g ∈ T.subgroupB := by
+  simpa only [standardParabolic_empty, eq_comm (a := (∅ : Set T.simple))] using
+    T.conj_standardParabolic_eq_iff ∅ J g
+
+/-- `g P_J g⁻¹ = B` exactly when `J = ∅` and `g ∈ B`; the simp-normal form of
+`conj_standardParabolic_eq_iff` for `J' = ∅`. -/
+@[simp]
+theorem conj_smul_standardParabolic_eq_subgroupB_iff (J : Set T.simple) (g : G) :
+    MulAut.conj g • T.standardParabolic J = T.subgroupB ↔ J = ∅ ∧ g ∈ T.subgroupB := by
+  have h := T.conj_standardParabolic_eq_iff J ∅ g
+  rw [T.standardParabolic_empty] at h
+  exact h.trans (and_congr_right fun hJ ↦ by rw [hJ, T.standardParabolic_empty])
+
+/-- `g B g⁻¹ = B` exactly when `g ∈ B`. -/
+@[simp]
+theorem conj_smul_subgroupB_eq_self_iff (g : G) :
+    MulAut.conj g • T.subgroupB = T.subgroupB ↔ g ∈ T.subgroupB := by
+  rw [T.conj_smul_eq_iff_of_subgroupB_le le_rfl le_rfl, and_iff_right rfl]
 
 end TauCeti.TitsSystem

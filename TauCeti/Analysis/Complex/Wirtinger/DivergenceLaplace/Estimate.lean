@@ -263,7 +263,7 @@ private theorem exists_eLpNormWkp_one_ball_le {V : Type*} [NormedAddCommGroup V]
     gcongr
     calc _ ≤ ‖L i‖ₑ * eLpNorm f r (volume.restrict Ω) + ‖L i‖ₑ * eLpNorm g r (volume.restrict Ω) +
           ‖L i‖ₑ * eLpNorm ξ q (volume.restrict Ω) := by
-          gcongr <;> exact eLpNorm_clm_comp_le (L i)
+          gcongr <;> exact (L i).eLpNorm_comp_le
       _ = ‖L i‖ₑ * X := by ring
   have hξsum : ξ = ∑ i, fun z ↦ S i (L i (ξ z)) := by
     ext z

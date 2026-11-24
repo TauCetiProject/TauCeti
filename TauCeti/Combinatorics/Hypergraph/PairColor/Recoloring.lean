@@ -49,6 +49,8 @@ on all rectangles are simultaneously close to their means
 * `TauCeti.PairColorSystem.exists_coupled_recoloring_abs_card_filter_sub_le`: a recoloring between
   `s` and `t` with small rectangle discrepancy toward `p` and, when `S.IsRegularPair η s t`,
   total-variation edit bound on `s ×ˢ t`.
+* `TauCeti.PairColorSystem.exists_recoloring_colorOfPair_eq`: keyed gluing of local
+  pair-color systems across a partition `P` into a single reversal-preserving system.
 
 ## References
 
@@ -342,6 +344,51 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [Fintype κ] (S : PairC
         ≤ η * #s * #t := hd
       _ ≤ 2 * (max (Fintype.card κ) 1 : ℕ) * η * (#s * #t) := by
           nlinarith [mul_pos hs0 ht0]
+
+/-- **Keyed gluing of local pair-color systems.** Given a partition `P` of `V`, a key
+`f : P.parts → α` into a linearly ordered type `α`, and local systems `T A B` with
+`(T A B).rev = S.rev` whenever `f A < f B`, selecting `T A B` for `f A < f B`, `T B A` for
+`f B < f A`, and `S` for `f A = f B` produces a global `R : PairColorSystem κ V` with
+`R.rev = S.rev` agreeing with `T A B` on `A ×ˢ B` whenever `f A < f B` and with `S` whenever
+`f A = f B`. -/
+theorem exists_recoloring_colorOfPair_eq {α : Type*} [LinearOrder α] [Fintype V] [DecidableEq V]
+    (S : PairColorSystem κ V) (P : Finpartition (univ : Finset V))
+    (f : P.parts → α) (T : P.parts → P.parts → PairColorSystem κ V)
+    (hrev : ∀ A B, f A < f B → (T A B).rev = S.rev) :
+    ∃ R : PairColorSystem κ V, R.rev = S.rev ∧
+      (∀ A B : P.parts, f A < f B → ∀ x ∈ A.val, ∀ y ∈ B.val,
+        R.colorOfPair x y = (T A B).colorOfPair x y) ∧
+      (∀ A B : P.parts, f A = f B → ∀ x ∈ A.val, ∀ y ∈ B.val,
+        R.colorOfPair x y = S.colorOfPair x y) := by
+  classical
+  let cell (x : V) : P.parts := ⟨P.part x, P.part_mem.2 (mem_univ x)⟩
+  have hcell (A : P.parts) {x : V} (hx : x ∈ A.val) : cell x = A :=
+    Subtype.ext (P.part_eq_of_mem A.property hx)
+  -- Ordered pairs choose the local system indexed by the smaller key; equal keys preserve `S`.
+  let R : PairColorSystem κ V :=
+    { color := fun p ↦
+        let A := cell p.val.1
+        let B := cell p.val.2
+        if f A < f B then (T A B).color p
+        else if f B < f A then (T B A).color p
+        else S.color p
+      rev := S.rev
+      rev_involutive := S.rev_involutive
+      color_rev := fun p ↦ by
+        obtain ⟨⟨u, v⟩, huv⟩ := p
+        by_cases h₁ : f (cell u) < f (cell v)
+        · have h₂ : ¬ f (cell v) < f (cell u) := lt_asymm h₁
+          simpa [h₁, h₂, hrev _ _ h₁] using (T (cell u) (cell v)).color_rev ⟨(u, v), huv⟩
+        · by_cases h₂ : f (cell v) < f (cell u)
+          · simpa [h₁, h₂, hrev _ _ h₂] using (T (cell v) (cell u)).color_rev ⟨(u, v), huv⟩
+          · simpa [h₁, h₂] using S.color_rev ⟨(u, v), huv⟩ }
+  refine ⟨R, rfl, fun A B hAB x hx y hy ↦ ?_, fun A B hAB x hx y hy ↦ ?_⟩
+  · by_cases hxy : x = y
+    · simp [hxy]
+    · simp [colorOfPair_of_ne _ hxy, R, hcell A hx, hcell B hy, hAB]
+  · by_cases hxy : x = y
+    · simp [hxy]
+    · simp [colorOfPair_of_ne _ hxy, R, hcell A hx, hcell B hy, hAB]
 
 end PairColorSystem
 

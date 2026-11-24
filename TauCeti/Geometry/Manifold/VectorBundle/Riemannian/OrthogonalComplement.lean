@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The orthogonal complement of a nowhere-zero section or an orthonormal family

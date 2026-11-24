@@ -53,12 +53,18 @@ bounded approximate diagonal has a bounded approximate identity.
   `TauCeti.CompletedProjectiveTensor.mul'_mulRight_apply`: `Δ` is a bimodule map.
 * `TauCeti.CompletedProjectiveTensor.mul'_surjective`: `Δ` is surjective when `A` has a bounded
   left approximate identity.
+* `TauCeti.CompletedProjectiveTensor.mapL_comp_mulLeft`,
+  `TauCeti.CompletedProjectiveTensor.mapL_comp_mulRight` and
+  `TauCeti.CompletedProjectiveTensor.mul'_comp_mapL`: a bounded operator `f : A → B` compatible with
+  multiplication induces `f ⊗ f : A ⊗̂π A → B ⊗̂π B` compatible with the outer actions and with `Δ`.
 * `TauCeti.IsApproximateDiagonal.isApproximateUnit_map`: `Δ` maps an approximate diagonal to an
   approximate identity.
 * `TauCeti.IsApproximateDiagonal.exists_isApproximateUnit`: a Banach algebra with an approximate
   diagonal bounded by `C` has a two-sided approximate identity bounded by `C`.
 * `TauCeti.exists_isApproximateDiagonal_iff_forall_finset`: finite-set criterion for an approximate
   diagonal bounded by `C`.
+* `TauCeti.IsApproximateDiagonal.prod`: approximate diagonals of `A` and `B` give an approximate
+  diagonal of `A × B` along the inclusions of the factors.
 
 ## References
 
@@ -228,6 +234,63 @@ theorem mul'_surjective {𝕜 A : Type*} [RCLike 𝕜] [NonUnitalNormedRing A] [
   let ⟨a, y, _, h⟩ := exists_mul_eq_of_tendsto_mul_right 𝕜 hC hl x
   ⟨(⟨a ⊗ₜ y⟩ : ProjectiveTensor 𝕜 A A), by simpa using h⟩
 
+section Map
+
+variable {𝕜 A B : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRing A]
+  [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [NonUnitalSeminormedRing B]
+  [NormedSpace 𝕜 B] [IsScalarTower 𝕜 B B] [SMulCommClass 𝕜 B B] (f : A →L[𝕜] B)
+
+/-- If `f : A → B` carries left multiplication by `c` to left multiplication by `c'`, then
+`f ⊗ f` carries the outer left action of `c` to that of `c'`. This applies to `c' = f c` when `f`
+is multiplicative, and to the inclusion of a factor of a product algebra. -/
+theorem mapL_comp_mulLeft {c : A} {c' : B} (h : ∀ x, f (c * x) = c' * f x) :
+    mapL f f ∘L mulLeft 𝕜 A c = mulLeft 𝕜 B c' ∘L mapL f f := by
+  ext
+  simp [h]
+
+/-- If `f (c * x) = c' * f x` for all `x`, then `(f ⊗ f) (c · m) = c' · (f ⊗ f) m`. -/
+theorem mapL_mulLeft_apply {c : A} {c' : B} (h : ∀ x, f (c * x) = c' * f x)
+    (m : CompletedProjectiveTensor 𝕜 A A) :
+    mapL f f (mulLeft 𝕜 A c m) = mulLeft 𝕜 B c' (mapL f f m) :=
+  congr($(mapL_comp_mulLeft f h) m)
+
+/-- If `f : A → B` carries right multiplication by `c` to right multiplication by `c'`, then
+`f ⊗ f` carries the outer right action of `c` to that of `c'`. -/
+theorem mapL_comp_mulRight {c : A} {c' : B} (h : ∀ x, f (x * c) = f x * c') :
+    mapL f f ∘L mulRight 𝕜 A c = mulRight 𝕜 B c' ∘L mapL f f := by
+  ext
+  simp [h]
+
+/-- If `f (x * c) = f x * c'` for all `x`, then `(f ⊗ f) (m · c) = (f ⊗ f) m · c'`. -/
+theorem mapL_mulRight_apply {c : A} {c' : B} (h : ∀ x, f (x * c) = f x * c')
+    (m : CompletedProjectiveTensor 𝕜 A A) :
+    mapL f f (mulRight 𝕜 A c m) = mulRight 𝕜 B c' (mapL f f m) :=
+  congr($(mapL_comp_mulRight f h) m)
+
+end Map
+
+section MapMul
+
+variable {𝕜 A B : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A] [NonUnitalNormedRing B]
+  [NormedSpace 𝕜 B] [IsScalarTower 𝕜 B B] [SMulCommClass 𝕜 B B] [CompleteSpace B]
+  (f : A →L[𝕜] B)
+
+/-- A multiplicative bounded operator `f` intertwines the multiplication maps:
+`Δ ∘L (f ⊗ f) = f ∘L Δ`. -/
+theorem mul'_comp_mapL (hf : ∀ x y, f (x * y) = f x * f y) :
+    mul' 𝕜 B ∘L mapL f f = f ∘L mul' 𝕜 A := by
+  ext
+  simp [hf]
+
+/-- A multiplicative bounded operator `f` satisfies `Δ ((f ⊗ f) m) = f (Δ m)`. -/
+theorem mul'_mapL_apply (hf : ∀ x y, f (x * y) = f x * f y)
+    (m : CompletedProjectiveTensor 𝕜 A A) :
+    mul' 𝕜 B (mapL f f m) = f (mul' 𝕜 A m) :=
+  congr($(mul'_comp_mapL f hf) m)
+
+end MapMul
+
 end CompletedProjectiveTensor
 
 open CompletedProjectiveTensor
@@ -318,6 +381,55 @@ theorem isApproximateDiagonal_pure_zero [Subsingleton A] :
   tendsto_mul_mul' a := by simp [Subsingleton.elim a 0]
 
 end ApproximateDiagonal
+
+section Prod
+
+variable {𝕜 A B : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A] [NonUnitalNormedRing B]
+  [NormedSpace 𝕜 B] [IsScalarTower 𝕜 B B] [SMulCommClass 𝕜 B B] [CompleteSpace B]
+
+/-- **Approximate diagonals of a product.** If `l₁` and `l₂` are approximate diagonals of the
+Banach algebras `A` and `B`, then the tensors `(ι₁ ⊗ ι₁) m₁ + (ι₂ ⊗ ι₂) m₂`, for `(m₁, m₂)` along
+`l₁ ×ˢ l₂`, form an approximate diagonal of `A × B`; here `ι₁` and `ι₂` are the inclusions of the
+factors. Since `ι₁ ⊗ ι₁` and `ι₂ ⊗ ι₂` are bounded operators, it is bounded when `l₁` and `l₂`
+are. -/
+theorem IsApproximateDiagonal.prod {l₁ : Filter (CompletedProjectiveTensor 𝕜 A A)}
+    {l₂ : Filter (CompletedProjectiveTensor 𝕜 B B)} (h₁ : IsApproximateDiagonal 𝕜 l₁)
+    (h₂ : IsApproximateDiagonal 𝕜 l₂) :
+    IsApproximateDiagonal 𝕜 ((l₁ ×ˢ l₂).map fun m ↦
+      mapL (.inl 𝕜 A B) (.inl 𝕜 A B) m.1 + mapL (.inr 𝕜 A B) (.inr 𝕜 A B) m.2) := by
+  have := h₁.neBot
+  have := h₂.neBot
+  have hinl (x y : A) : ContinuousLinearMap.inl 𝕜 A B (x * y) =
+      ContinuousLinearMap.inl 𝕜 A B x * ContinuousLinearMap.inl 𝕜 A B y := by
+    ext <;> simp
+  have hinr (x y : B) : ContinuousLinearMap.inr 𝕜 A B (x * y) =
+      ContinuousLinearMap.inr 𝕜 A B x * ContinuousLinearMap.inr 𝕜 A B y := by
+    ext <;> simp
+  refine { tendsto_mulLeft_sub_mulRight := fun c ↦ tendsto_map'_iff.2 ?_
+           tendsto_mul_mul' := fun c ↦ tendsto_map'_iff.2 ?_ }
+  · -- The commutator of `c` with the assembled tensor is the sum of the images of the
+    -- commutators of `c.1` with `m₁` and of `c.2` with `m₂`.
+    have h₁' := ((mapL (.inl 𝕜 A B) (.inl 𝕜 A B)).continuous.tendsto 0).comp
+      ((h₁.tendsto_mulLeft_sub_mulRight c.1).comp (tendsto_fst (g := l₂)))
+    have h₂' := ((mapL (.inr 𝕜 A B) (.inr 𝕜 A B)).continuous.tendsto 0).comp
+      ((h₂.tendsto_mulLeft_sub_mulRight c.2).comp (tendsto_snd (f := l₁)))
+    rw [map_zero] at h₁' h₂'
+    convert h₁'.add h₂' using 1
+    · ext m
+      simp only [Function.comp_apply, map_add, map_sub,
+        mapL_mulLeft_apply (.inl 𝕜 A B) (c := c.1) (c' := c) (fun x ↦ by ext <;> simp),
+        mapL_mulLeft_apply (.inr 𝕜 A B) (c := c.2) (c' := c) (fun x ↦ by ext <;> simp),
+        mapL_mulRight_apply (.inl 𝕜 A B) (c := c.1) (c' := c) (fun x ↦ by ext <;> simp),
+        mapL_mulRight_apply (.inr 𝕜 A B) (c := c.2) (c' := c) (fun x ↦ by ext <;> simp)]
+      abel
+    · simp
+  · -- The multiplication map sends the assembled tensor to `(Δ m₁, Δ m₂)`.
+    convert ((h₁.tendsto_mul_mul' c.1).comp (tendsto_fst (g := l₂))).prodMk_nhds
+      ((h₂.tendsto_mul_mul' c.2).comp (tendsto_snd (f := l₁))) using 1
+    ext m <;> simp [mul'_mapL_apply _ hinl, mul'_mapL_apply _ hinr]
+
+end Prod
 
 section Unital
 
