@@ -19,7 +19,7 @@ Let `R → R'` be a map of commutative rings and `f ∈ R`. Write `f'` for the i
 `M[f^∞]` for the `f`-power torsion of a module `M`, `R_f` for a localization of `R` away from `f`
 and `R'_f` for a localization of `R'` away from `f'`. The pair `(R → R', f)` is a *glueing pair*
 when `R → R'` induces isomorphisms `R ⧸ fⁿ ≃ R' ⧸ f'ⁿ` for every `n` and a bijection
-`R[f^∞] → R'[f^∞]`. Equivalently, given the isomorphisms modulo powers of `f`, the square
+`R[f^∞] → R'[f^∞]`. Equivalently, the square
 
 ```
 R   ⟶ R'
@@ -37,7 +37,8 @@ is the `f`-adic completion `R → R̂` of a ring in which `f` is a nonzerodiviso
 
 Given the isomorphisms modulo powers of `f`, the sequence is always exact on the right. It is
 exact on the left exactly when `R[f^∞] → R'[f^∞]` is injective, since the kernel of `R → R_f` is
-`R[f^∞]`, and exact in the middle exactly when `R[f^∞] → R'[f^∞]` is surjective.
+`R[f^∞]`, and exact in the middle exactly when `R[f^∞] → R'[f^∞]` is surjective. Conversely, an
+exact square already induces the isomorphisms modulo powers of `f`.
 
 ## Main definitions
 
@@ -55,9 +56,8 @@ exact on the left exactly when `R[f^∞] → R'[f^∞]` is injective, since the 
   surjective modulo every power of `f`.
 * `TauCeti.GlueingPair.exactSquare`: the square `R → R'`, `R_f → R'_f` of a glueing pair is
   exact.
-* `TauCeti.glueingPair_iff_exactSquare`: the torsion criterion. When `R → R'` induces
-  isomorphisms modulo every power of `f`, the pair is a glueing pair if and only if the square is
-  exact.
+* `TauCeti.glueingPair_iff_exactSquare`: the torsion criterion. The pair is a glueing pair if
+  and only if the square is exact.
 * `TauCeti.GlueingPair.exists_isPrime_comap_eq`: for a glueing pair, every prime of `R` comes
   from a prime of `R'` or of `R_f`. This specializes
   `TauCeti.exists_isPrime_comap_eq_of_bijective_quotientMap`.
@@ -86,9 +86,8 @@ variable [Algebra R R']
 variable (R') in
 /-- The pair `(R → R', f)` is a *glueing pair* when `R → R'` induces isomorphisms
 `R ⧸ (fⁿ) ≃ R' ⧸ (f'ⁿ)` for every `n`, where `f'` is the image of `f`, and a bijection between
-the `f`-power torsion of `R` and the `f'`-power torsion of `R'`. When the first condition holds,
-the second is equivalent to exactness of `0 → R → R' × R_f → R'_f → 0`
-(`TauCeti.glueingPair_iff_exactSquare`). -/
+the `f`-power torsion of `R` and the `f'`-power torsion of `R'`. Equivalently, the sequence
+`0 → R → R' × R_f → R'_f → 0` is exact (`TauCeti.glueingPair_iff_exactSquare`). -/
 structure GlueingPair (f : R) : Prop where
   /-- Every element of `R'` is congruent modulo `f'ⁿ` to the image of an element of `R`. -/
   quotient_surjective : ∀ (n : ℕ) (y : R'), ∃ x : R,
@@ -288,19 +287,61 @@ theorem GlueingPair.exactSquare (h : GlueingPair R' f) [IsLocalization.Away f R�
   exact := exact_of_surjOn_torsion' (fun n ↦ (h.quotient_injective n).le) h.torsion_bijOn.surjOn
   surjective := surjective_sub_of_quotient_surjective h.quotient_surjective
 
-/-- The torsion criterion for glueing pairs (Stacks, Lemma 15.92.6). Suppose that the canonical
-maps `R ⧸ (fⁿ) → R' ⧸ (f'ⁿ)` are bijective for every `n`. Then `(R → R', f)` is a glueing pair,
-that is, `R[f^∞] → R'[f^∞]` is bijective, if and only if the square `R → R'`, `R_f → R'_f` is
-exact. -/
+/-- In an exact square `R → R'`, `R_f → R'_f`, every element `y` of `R'` is congruent modulo
+`f'ⁿ` to the image of an element of `R`: write `y / f'ⁿ = a - s` in `R'_f`, so that the pair
+`(y - f'ⁿ a, -fⁿ s)` is compatible. -/
+private theorem quotient_surjective_of_exactSquare
+    [IsLocalization.Away (algebraMap R R' f) L] (h : ExactSquare R R' R₂ L) (n : ℕ) (y : R') :
+    ∃ x : R, y - algebraMap R R' x ∈ Ideal.span {algebraMap R R' f ^ n} := by
+  let d : Submonoid.powers (algebraMap R R' f) := ⟨algebraMap R R' f ^ n, n, rfl⟩
+  obtain ⟨⟨a, s⟩, has⟩ := h.surjective (IsLocalization.mk' L y d)
+  have hspec := IsLocalization.mk'_spec L y d
+  rw [← has] at hspec
+  obtain ⟨x, hx, -⟩ := (h.exists_algebraMap_eq_iff (y - algebraMap R R' f ^ n * a)
+    (-(algebraMap R R₂ f ^ n * s))).mpr (by
+      simp only [d, map_sub, map_mul, map_pow, map_neg, ← IsScalarTower.algebraMap_apply]
+        at hspec ⊢
+      linear_combination -hspec)
+  exact ⟨x, Ideal.mem_span_singleton'.mpr ⟨a, by rw [hx]; ring⟩⟩
+
+/-- In an exact square `R → R'`, `R_f → R'_f`, an element `x` of `R` whose image is `f'ⁿ y` is
+divisible by `fⁿ`: the pair `(y, x / fⁿ)` is compatible, so it comes from some `z` with
+`x = fⁿ z`. -/
+private theorem comap_span_pow_le_of_exactSquare [IsLocalization.Away f R₂]
+    [IsLocalization.Away (algebraMap R R' f) L] (h : ExactSquare R R' R₂ L) (n : ℕ) :
+    (Ideal.span {algebraMap R R' f ^ n}).comap (algebraMap R R') ≤ Ideal.span {f ^ n} := by
+  intro x hx
+  obtain ⟨y, hy⟩ := Ideal.mem_span_singleton'.mp (Ideal.mem_comap.mp hx)
+  let d : Submonoid.powers f := ⟨f ^ n, n, rfl⟩
+  have hspec : IsLocalization.mk' R₂ x d * algebraMap R R₂ f ^ n = algebraMap R R₂ x := by
+    simpa [d] using IsLocalization.mk'_spec R₂ x d
+  have hu : IsUnit (algebraMap R L f) := by
+    rw [IsScalarTower.algebraMap_apply R R' L]
+    exact IsLocalization.Away.algebraMap_isUnit _
+  obtain ⟨z, hz, hz'⟩ := (h.exists_algebraMap_eq_iff y (IsLocalization.mk' R₂ x d)).mpr <|
+    (hu.pow n).mul_left_inj.mp (by
+      have hspecL := congr(algebraMap R₂ L $hspec)
+      have hyL := congr(algebraMap R' L $hy)
+      simp only [map_mul, map_pow, ← IsScalarTower.algebraMap_apply] at hspecL hyL
+      rw [hyL, hspecL])
+  refine Ideal.mem_span_singleton'.mpr ⟨z, h.injective (Prod.ext ?_ ?_)⟩
+  · simp only [map_mul, map_pow, hz, hy]
+  · simp only [map_mul, map_pow, hz', hspec]
+
+/-- The torsion criterion for glueing pairs (Stacks, Lemma 15.92.6). The pair `(R → R', f)` is a
+glueing pair if and only if the square `R → R'`, `R_f → R'_f` is exact. Exactness of the square
+already forces the isomorphisms `R ⧸ (fⁿ) ≃ R' ⧸ (f'ⁿ)`, so no hypothesis on the quotients is
+needed. -/
 theorem glueingPair_iff_exactSquare [IsLocalization.Away f R₂]
-    [IsLocalization.Away (algebraMap R R' f) L]
-    (hq : ∀ n : ℕ, Function.Bijective
-      (Ideal.quotientMap _ (algebraMap R R') (span_pow_le_comap_span_pow R' f n))) :
+    [IsLocalization.Away (algebraMap R R' f) L] :
     GlueingPair R' f ↔ ExactSquare R R' R₂ L :=
-  ⟨fun h ↦ h.exactSquare R₂ L, fun h ↦ glueingPair_iff.mpr ⟨hq,
-    (algebraMap R R').mapsTo_torsion'_powers f,
-    (injective_algebraMap_prod_iff_injOn_torsion' R' R₂).mp h.injective,
-    surjOn_torsion'_of_exact h.exact⟩⟩
+  ⟨fun h ↦ h.exactSquare R₂ L, fun h ↦
+    { quotient_surjective := quotient_surjective_of_exactSquare h
+      quotient_injective := fun n ↦
+        le_antisymm (comap_span_pow_le_of_exactSquare h n) (span_pow_le_comap_span_pow R' f n)
+      torsion_bijOn := ⟨(algebraMap R R').mapsTo_torsion'_powers f,
+        (injective_algebraMap_prod_iff_injOn_torsion' R' R₂).mp h.injective,
+        surjOn_torsion'_of_exact h.exact⟩ }⟩
 
 omit [Algebra R L] [Algebra R' L] [Algebra R₂ L] [IsScalarTower R R' L] [IsScalarTower R R₂ L] in
 /-- Every prime ideal of `R` is the contraction of a prime ideal of `R'` or of `R_f` for a glueing
