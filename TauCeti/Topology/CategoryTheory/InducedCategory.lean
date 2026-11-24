@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import TauCeti.Topology.CategoryTheory.Functor.IsomorphismClasses
 public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 public import TauCeti.Topology.CategoryTheory.IsomorphismClasses
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.Maps.Proper.Basic
 
 /-!

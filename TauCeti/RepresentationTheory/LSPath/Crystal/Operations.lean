@@ -11,7 +11,6 @@ public import TauCeti.RepresentationTheory.LSPath.SimpleRootString
 
 import Mathlib.Tactic.Ring
 import TauCeti.RepresentationTheory.LSPath.Concatenation
-import TauCeti.RepresentationTheory.LSPath.LinearMap
 
 /-!
 # Categorical operations and simple-root strings on path crystals
