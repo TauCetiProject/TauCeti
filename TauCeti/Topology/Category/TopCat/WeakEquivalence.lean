@@ -102,18 +102,13 @@ theorem map_eq_of_homotopy {C : Type v} [Category.{w} C] {F : _root_.TopCat.{u} 
   let Hmap : IX ⟶ Y :=
     _root_.TopCat.ofHom ⟨fun q ↦ H (_root_.TopCat.I.homeomorph q.1, q.2), by fun_prop⟩
   let e : (_root_.TopCat.I.{u} × X) ≃ₕ X :=
-    { toFun := ContinuousMap.snd
-      invFun := i₀.hom
-      left_inv := Nonempty.intro
-        { toContinuousMap :=
-            ⟨fun q ↦ (_root_.TopCat.I.homeomorph.symm (q.1 * _root_.TopCat.I.homeomorph q.2.1),
-              q.2.2), by fun_prop⟩
-          map_zero_left q := by
-            simp [i₀, _root_.TopCat.I.homeomorph.symm_apply_eq, _root_.TopCat.I.homeomorph_zero]
-          map_one_left q := by simp }
-      right_inv := ContinuousMap.Homotopic.refl _ }
+    (Homeomorph.prodComm _ _).toHomotopyEquiv.trans
+      (ContinuousMap.HomotopyEquiv.prodContractible X _)
+  have he : ContinuousMap.snd = e.toFun := by
+    ext ⟨t, x⟩
+    simp [e]
   have hsnd : IsIso (F.map snd) :=
-    hF _ ((mem_weakEquivalences_iff _).2 e.isWeakHomotopyEquivalence)
+    hF _ ((mem_weakEquivalences_iff _).2 (by simpa [snd, he] using e.isWeakHomotopyEquivalence))
   have hi : F.map i₀ = F.map i₁ := by
     refine (cancel_mono (F.map snd)).1 ?_
     rw [← F.map_comp, ← F.map_comp]

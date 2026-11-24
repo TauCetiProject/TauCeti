@@ -188,7 +188,7 @@ instance moduleFinite_homology (X Y : ZigzagProjectiveTwistedClosure k G) (n : â
   have : Module.Finite k (K.sc' (n - 1) n (n + 1)).Xâ‚‚ :=
     inferInstanceAs (Module.Finite k (DGHom k n X Y))
   have : Module.Finite k (K.sc' (n - 1) n (n + 1)).homology :=
-    (K.sc' (n - 1) n (n + 1)).finite_homology
+    inferInstance
   exact Module.Finite.equiv
     (K.homologyIsoSc' (n - 1) n (n + 1) (by simp) (by simp)).toLinearEquiv.symm
 

@@ -103,14 +103,9 @@ theorem finrank_pi_fintype_of_hasRankNullity {R : Type u} {ι : Type w} [Fintype
     simp [finrank_zero_of_subsingleton]
   | succ n ih =>
     intro N _ _ _
-    let e := (LinearEquiv.piCongrLeft' R N (finSuccEquiv n)).trans
-      (LinearEquiv.piOptionEquivProd R (M := fun o ↦ N ((finSuccEquiv n).symm o)))
-    have : Module.Finite R (∀ j : Fin n, N ((finSuccEquiv n).symm (some j))) :=
-      Module.Finite.pi
-    rw [e.finrank_eq, finrank_prod_of_hasRankNullity,
-      ih (fun j ↦ N ((finSuccEquiv n).symm (some j))),
-      ← Fintype.sum_option (fun o ↦ finrank R (N ((finSuccEquiv n).symm o)))]
-    exact Fintype.sum_equiv (finSuccEquiv n).symm _ _ fun _ ↦ rfl
+    have : Module.Finite R (∀ i : Fin n, N i.succ) := Module.Finite.pi
+    rw [(Fin.consLinearEquiv R N).symm.finrank_eq, finrank_prod_of_hasRankNullity,
+      ih (fun i ↦ N i.succ), Fin.sum_univ_succ]
 
 end HasRankNullity
 

@@ -33,8 +33,7 @@ the finranks of the terms and of the homology agree up to degree `n`
 (`ChainComplex.sum_range_finrank_X_eq_sum_range_finrank_homology`).  The terms in degrees above
 `n + 1` play no role.
 
-For a complex whose terms are all finitely generated and vanish in all large degrees, combining
-`HomologicalComplex.finite_not_isZero_X_of_eventually_isZero` with
+For a complex whose terms are all finitely generated and vanish in all large degrees,
 `HomologicalComplex.eulerChar_eq_homologyEulerChar` gives the equality of Mathlib's term and
 homology Euler characteristics directly over any ring satisfying the strong rank condition and
 rank--nullity. The same equality for bounded cochain complexes indexed by `ℤ` with terms in
@@ -49,8 +48,8 @@ modules as the kernel of the second map modulo the range of the first: over a ri
 strong rank condition and rank--nullity, when `X₂` is finitely generated, the rank of the homology
 plus the rank of `im f` is the rank of `ker g`
 (`CategoryTheory.ShortComplex.finrank_homology_add_finrank_range_f`).  The same description shows
-that over a noetherian ring the homology is finitely generated when `X₂` is
-(`CategoryTheory.ShortComplex.finite_homology`).
+that when `X₂` is noetherian, the homology is noetherian
+(`CategoryTheory.ShortComplex.isNoetherian_homology`), and hence finitely generated.
 
 ## References
 

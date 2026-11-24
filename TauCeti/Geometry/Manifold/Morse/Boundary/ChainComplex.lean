@@ -245,7 +245,7 @@ theorem isZero_morseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
 instance finite_homology_morseComplex (n : ℕ) :
     Module.Finite (ZMod 2) ((h.morseComplex hf).homology n) :=
   have : Module.Finite (ZMod 2) ((h.morseComplex hf).sc n).X₂ := h.finite_morseComplex_X hf n
-  ((h.morseComplex hf).sc n).finite_homology
+  inferInstanceAs (Module.Finite (ZMod 2) ((h.morseComplex hf).sc n).homology)
 
 /-- **The weak Morse inequality for Morse homology.** The mod-two Morse homology in degree `n` has
 dimension at most the number of critical points of index `n`. -/
@@ -308,8 +308,8 @@ theorem homologyEulerChar_morseComplex :
     (h.morseComplex hf).homologyEulerChar =
       ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount 𝓘(ℝ, E) f i).toNat := by
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar _
-      (HomologicalComplex.finite_not_isZero_X_of_eventually_isZero _
-        (Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
+      (Filter.eventually_cofinite.1 (Nat.cofinite_eq_atTop.symm ▸
+        Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
           h.isZero_morseComplex_X_of_finrank_lt hf hn⟩)),
     h.eulerChar_morseComplex hf]
 

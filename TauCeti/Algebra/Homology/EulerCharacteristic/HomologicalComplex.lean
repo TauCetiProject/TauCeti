@@ -24,8 +24,6 @@ This file proves the Euler--Poincaré identity for complexes of arbitrary shape 
 Noetherian assumption), using
 `HomologicalComplex.finrank_X_eq_finrank_homology_add_finrank_range_add_finrank_range`:
 
-* `HomologicalComplex.finite_not_isZero_X_of_eventually_isZero`: an `ℕ`-indexed complex vanishing
-  from some degree on has finite support.
 * `HomologicalComplex.sum_finrank_X_eq_sum_finrank_homology`: on any finite set `s : Finset ι`
   on which the terms of `K` are finitely generated and whose boundary differentials into and out
   of `s` vanish, the signed sums of term finranks and homology finranks over `s` agree; the
@@ -50,21 +48,6 @@ open CategoryTheory Limits Module
 universe u v
 
 namespace HomologicalComplex
-
-section Support
-
-/-- If an `ℕ`-indexed homological complex vanishes from some degree on, then `K.X n` is nonzero
-at only finitely many indices `n : ℕ`. -/
-theorem finite_not_isZero_X_of_eventually_isZero {A : Type*} [Category* A]
-    [HasZeroMorphisms A] {c : ComplexShape ℕ} (K : HomologicalComplex A c)
-    (hK : ∀ᶠ n in Filter.atTop, IsZero (K.X n)) :
-    {n : ℕ | ¬ IsZero (K.X n)}.Finite := by
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 hK
-  exact (Finset.range N).finite_toSet.subset fun n hn ↦ by
-    by_contra h
-    exact hn (hN n (by simpa using h))
-
-end Support
 
 section RankNullity
 

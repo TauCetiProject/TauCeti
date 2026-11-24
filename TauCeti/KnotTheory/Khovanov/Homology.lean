@@ -95,7 +95,7 @@ instance [IsNoetherianRing R] (i j : ℤ) :
     Module.Finite R (D.khovanovHomology hD R i j) := by
   let : Module.Finite R ((D.khovanovComplex hD R j).sc i).X₂ :=
     inferInstanceAs (Module.Finite R ((D.khovanovComplex hD R j).X i))
-  exact ((D.khovanovComplex hD R j).sc i).finite_homology
+  exact inferInstanceAs (Module.Finite R ((D.khovanovComplex hD R j).sc i).homology)
 
 /-- Khovanov cohomology vanishes outside the normalized cochain interval `[-n₋, n₊]`. -/
 theorem isZero_khovanovHomology_of_cochain_notMem_Icc {i : ℤ}

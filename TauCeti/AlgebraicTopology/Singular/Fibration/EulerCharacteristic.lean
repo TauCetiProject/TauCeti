@@ -250,14 +250,6 @@ private lemma exists_cell_and_fiber_bounds [RelCWComplex.Finite C]
   obtain ⟨Q, hQ⟩ := Filter.eventually_atTop.1 hsigma
   exact ⟨K, Q, hK, fun k hk j q hq ↦ hQ q hq ⟨⟨k, hk⟩, j⟩⟩
 
-omit hp [T2Space B'] in
-/-- At a position `pq` of total degree `pq.1 + pq.2 = -n`, the alternating sign on
-`ComplexShape.up' (r, 1 - r)` is `(-1 : ℤ) ^ n`. -/
-private lemma coe_χ_up'_of_add_eq_neg (r : ℤ) {pq : ℤ × ℤ} {n : ℕ}
-    (h : pq.1 + pq.2 = -(n : ℤ)) :
-    ((ComplexShape.up' (r, 1 - r)).χ pq : ℤ) = (-1 : ℤ) ^ n := by
-  rw [ComplexShape.χ_up'_sub, h, Int.negOnePow_neg, Int.coe_negOnePow_natCast]
-
 /-- Computing `(S.page 2).eulerChar` over a finite CW complex `C` when every fibre has alternating
 homology finrank sum `d`: it equals `cwEulerChar C * d`. -/
 private lemma eulerChar_serreSpectralSequence_page_two [RelCWComplex.Finite C]
@@ -295,7 +287,7 @@ private lemma eulerChar_serreSpectralSequence_page_two [RelCWComplex.Finite C]
     have (j : cell C m) : Module.Finite R
         (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
           (p.fiber (g (map m j 0)))) := hfin _ q
-    rw [coe_χ_up'_of_add_eq_neg _ (serreFirstPagePos_add m q),
+    rw [ComplexShape.coe_χ_up'_sub_of_add_eq_neg _ (serreFirstPagePos_add m q),
       (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g m q (serreFirstPagePos m q)
         (serreFirstPagePos_snd m q) (serreFirstPagePos_add m q)).toLinearEquiv.finrank_eq,
       ModuleCat.finrank_sigma]
@@ -420,7 +412,8 @@ private lemma eulerChar_serreSpectralSequence_page_top [FiniteType C]
       (fun b hb ↦ Module.Finite.equiv (hcok_iso b hb).toLinearEquiv)]
   simp only [Nat.cast_sum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun b hb ↦ ?_
-  rw [coe_χ_up'_of_add_eq_neg _ (serrePagePos_add n b), (hcok_iso b hb).toLinearEquiv.finrank_eq]
+  rw [ComplexShape.coe_χ_up'_sub_of_add_eq_neg _ (serrePagePos_add n b),
+    (hcok_iso b hb).toLinearEquiv.finrank_eq]
 
 end PageTwo
 

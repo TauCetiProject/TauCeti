@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.FiberBundle.Basic
-public import TauCeti.Topology.Category.TopCat.Fiber
+public import Mathlib.Topology.Category.TopCat.Basic
 
 /-!
 # Preferred trivializations and disjoint unions of trivializations
@@ -25,10 +25,8 @@ A map is continuous as soon as every point of the base lies in the base set of a
 (`TauCeti.continuous_of_forall_exists_trivialization`), so it packages as a morphism in `TopCat`
 (`TauCeti.locallyTrivialHom`), and the trivializations at the points of the base of a fibre bundle
 make its projection such a locally trivial map.
-Finally, the inverse of a trivialization undoes a coordinate change into it; over a point of its
-base set a trivialization is an equivalence between the fibre and the model fibre, and for a
-morphism in `TopCat` it gives an isomorphism in `TopCat` between the fibre and the model fibre
-(`Bundle.Trivialization.fiberIso`).
+Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
+of its base set a trivialization is an equivalence between the fibre and the model fibre.
 When the model fibre is a point, so is every fibre, and a projection with a chosen point in each
 fibre is a bijection onto the base.
 
@@ -40,8 +38,6 @@ fibre is a bijection onto the base.
   space lies over a finite union of preferred trivializing base sets.
 * `TauCeti.continuous_of_forall_exists_trivialization`: a locally trivial map is continuous.
 * `TauCeti.locallyTrivialHom`: a locally trivial map packaged as a morphism in `TopCat`.
-* `Bundle.Trivialization.fiberIso`: over a point of its base set, a trivialization of a morphism in
-  `TopCat` gives an isomorphism in `TopCat` between its fibre and the model fibre.
 * `Homeomorph.toTrivialization`: a homeomorphism `Z ≃ₜ B × F` over `B` is a trivialization of the
   projection `Z → B` over all of `B`.
 * `FiberBundle.continuous_of_forall_trivialization`: chart formulas continuous at each point give
@@ -94,35 +90,6 @@ theorem eventually_proj_mem_baseSet_trivializationAt (v₀ : TotalSpace F E) :
 end Bundle.TotalSpace
 
 namespace Bundle.Trivialization
-
-section TopCat
-
-open CategoryTheory
-
-/-- Over a point in the base set of a trivialization `e` of a morphism in `TopCat`, the fibre
-is isomorphic in `TopCat` to the model fibre `F`. -/
-noncomputable def fiberIso {E B : _root_.TopCat.{u}} {F : Type u} [TopologicalSpace F] {p : E ⟶ B}
-    (e : Trivialization F p) {b : B} (hb : b ∈ e.baseSet) :
-    p.fiber b ≅ _root_.TopCat.of F :=
-  _root_.TopCat.isoOfHomeo (e.preimageSingletonHomeomorph hb)
-
-/-- Evaluating the forward map of `Bundle.Trivialization.fiberIso` reads the second coordinate of
-the trivialization. -/
-@[simp]
-theorem fiberIso_hom_apply {E B : _root_.TopCat.{u}} {F : Type u} [TopologicalSpace F]
-    {p : E ⟶ B} (e : Trivialization F p) {b : B} (hb : b ∈ e.baseSet) (x : p.fiber b) :
-    (e.fiberIso hb).hom x = (e x.val).2 := by
-  simp [fiberIso]
-
-/-- Evaluating the inverse map of `Bundle.Trivialization.fiberIso` recovers the point of the total
-space given by `e.toOpenPartialHomeomorph.symm`. -/
-@[simp]
-theorem coe_fiberIso_inv_apply {E B : _root_.TopCat.{u}} {F : Type u} [TopologicalSpace F]
-    {p : E ⟶ B} (e : Trivialization F p) {b : B} (hb : b ∈ e.baseSet) (v : F) :
-    ((e.fiberIso hb).inv v : E) = e.toOpenPartialHomeomorph.symm (b, v) := by
-  simp [fiberIso]
-
-end TopCat
 
 variable {B F Z : Type*} [TopologicalSpace B] [TopologicalSpace F] [TopologicalSpace Z]
   {proj : Z → B}

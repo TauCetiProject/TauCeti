@@ -55,13 +55,6 @@ instance isNoetherian_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCa
     inferInstanceAs (IsNoetherian k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
   isNoetherian_of_linearEquiv S.moduleCatHomologyIso.toLinearEquiv.symm
 
-/-- The homology of a short complex of modules with noetherian middle term is finitely generated.
-Retained as a convenient dot-notation lemma for existing callers alongside the
-`isNoetherian_homology` instance. -/
-theorem finite_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k))
-    [IsNoetherian k S.X₂] : Module.Finite k S.homology :=
-  Module.IsNoetherian.finite k S.homology
-
 variable {k : Type u} [Ring k] [StrongRankCondition k]
 
 /-- For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules with `X₂` finite, over a ring satisfying

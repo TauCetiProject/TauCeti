@@ -304,7 +304,7 @@ theorem sum_finrank_homology_le_sum_finrank_X [NeZero n]
   -- subquotient of the finite-dimensional `D.X i`.
   have : ∀ i, Module.Finite k (K.homology i) := fun i ↦ by
     have : Module.Finite k (D.sc i).X₂ := inferInstanceAs (Module.Finite k (D.X i))
-    have : Module.Finite k (D.homology i) := (D.sc i).finite_homology
+    have : Module.Finite k (D.homology i) := inferInstanceAs (Module.Finite k (D.sc i).homology)
     have h : (ιCompressionHomology n K i i ≫ (e i).inv) ≫
         ((e i).hom ≫ πCompressionHomology n K i i) = 𝟙 _ := by
       simp

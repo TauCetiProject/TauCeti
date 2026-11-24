@@ -48,7 +48,7 @@ instance moduleFinite {k G : Type u} [CommRing k] [IsNoetherianRing k] [Group G]
   -- The `n`-chains `Gⁿ →₀ A` are the middle term of the short complex computing `Hₙ(G, A)`.
   have : IsNoetherian k ((inhomogeneousChains A).sc n).X₂ :=
     inferInstanceAs (IsNoetherian k ((Fin n → G) →₀ A))
-  ((inhomogeneousChains A).sc n).finite_homology
+  inferInstanceAs (Module.Finite k ((inhomogeneousChains A).sc n).homology)
 
 /-- The positive-degree homology of a finite group with coefficients in a finitely generated
 integral representation is finite. In particular `Hₙ₊₁(G, ℤ)` with trivial coefficients is finite;

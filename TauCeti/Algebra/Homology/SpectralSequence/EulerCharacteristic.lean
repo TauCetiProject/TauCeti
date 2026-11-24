@@ -124,6 +124,12 @@ theorem χ_up'_sub (r : ℤ) (pq : ℤ × ℤ) :
     (up' (r, 1 - r)).χ pq = (pq.1 + pq.2).negOnePow :=
   EulerCharSigns.ofUp'Odd_χ _ pq
 
+/-- At a position `pq` of total degree `pq.1 + pq.2 = -n`, the alternating sign on
+`ComplexShape.up' (r, 1 - r)` is `(-1 : ℤ) ^ n`. -/
+theorem coe_χ_up'_sub_of_add_eq_neg (r : ℤ) {pq : ℤ × ℤ} {n : ℕ} (h : pq.1 + pq.2 = -(n : ℤ)) :
+    ((up' (r, 1 - r)).χ pq : ℤ) = (-1 : ℤ) ^ n := by
+  rw [χ_up'_sub, h, Int.negOnePow_neg, Int.coe_negOnePow_natCast]
+
 /-- Alternating signs `(p, q) ↦ (-1)^(p + q)` on page `r` of a homological spectral sequence with
 differential bidegree `(-r, r - 1)`. -/
 instance eulerCharSignsUp'NegSub (r : ℤ) :

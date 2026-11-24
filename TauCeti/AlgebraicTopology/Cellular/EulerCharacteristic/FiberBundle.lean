@@ -14,8 +14,8 @@ public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 Every locally trivial map `p : E → B` with model fibre `F` packages as a morphism in `TopCat`
 (`TauCeti.locallyTrivialHom`), is a Serre fibration
 (`TauCeti.TopCat.mem_serreFibrations_of_exists_trivialization`), and over each `b` has fibre
-isomorphic in `TopCat` to `F` (`Bundle.Trivialization.fiberIso`). Applying the Serre
-spectral sequence finiteness and Euler characteristic theorems of
+isomorphic in `TopCat` to `F` (via `Bundle.Trivialization.preimageSingletonHomeomorph`).
+Applying the Serre spectral sequence finiteness and Euler characteristic theorems of
 `TauCeti.AlgebraicTopology.Singular.Fibration.EulerCharacteristic` therefore gives, over any
 (possibly disconnected and non-paracompact) base `B` of finite CW type:
 
@@ -75,7 +75,7 @@ private def locallyTrivialFiberSingularHomologyIso
       ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
         (TopCat.of F) :=
   ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).mapIso
-    ((h b).choose.fiberIso (p := locallyTrivialHom h) (h b).choose_spec)
+    (TopCat.isoOfHomeo ((h b).choose.preimageSingletonHomeomorph (h b).choose_spec))
 
 variable {E B F : Type u} [TopologicalSpace E] [TopologicalSpace B] [TopologicalSpace F]
   {p : E → B} (h : ∀ b, ∃ e : Trivialization F p, b ∈ e.baseSet)

@@ -142,7 +142,7 @@ theorem finite_twistedCellularHomology [IsNoetherianRing R] [∀ x, Module.Finit
     Module.Finite R ((twistedCellularChainComplex C L).homology n) :=
   have : Module.Finite R ((twistedCellularChainComplex C L).sc n).X₂ :=
     finite_twistedCellularChainComplex_X C L n
-  ((twistedCellularChainComplex C L).sc n).finite_homology
+  inferInstanceAs (Module.Finite R ((twistedCellularChainComplex C L).sc n).homology)
 
 /-- Over a noetherian ring, with finitely generated fibres, the relative homology with local
 coefficients of a relative CW complex is finitely generated in each degree with finitely many
@@ -190,7 +190,7 @@ theorem homologyEulerChar_twistedCellularChainComplex [RelCWComplex.Finite C]
       have : IsEmpty (cell C n) := hn
       isZero_twistedCellularChainComplex_X C L n
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar _
-      (HomologicalComplex.finite_not_isZero_X_of_eventually_isZero _ hzero),
+      (Filter.eventually_cofinite.1 (Nat.cofinite_eq_atTop.symm ▸ hzero)),
     ChainComplex.eulerChar_eq_finsum_finrank, cwEulerChar_def, mul_finsum]
   refine finsum_congr fun i ↦ ?_
   have := FiniteType.finite_cell (C := C) (D := D) i
