@@ -19,7 +19,7 @@ Let `f t : E → ℝ` be a one-parameter family of functions on a finite-dimensi
 space, jointly `C³`, and let `x₀` be a degenerate critical point of `f t₀` at which the family is
 transverse: the derivative of the parametrized differential `(t, x) ↦ d(f t)_x` is onto. The
 Hessian of `f t₀` at `x₀` then has a one-dimensional kernel, spanned by some `v ≠ 0`
-(`TauCeti.exists_eq_smul_of_fderiv_fderiv_apply_eq_zero`). Write `k` for the Morse index of
+(`TauCeti.ker_fderiv_fderiv_eq_span_singleton`). Write `k` for the Morse index of
 `f t₀` at `x₀`, the number of negative directions of its Hessian, and
 
 `κ = D³(f t₀)_{x₀} (v, v, v)`
@@ -139,10 +139,11 @@ private theorem exists_hasDerivAt_crossingForm :
 
 /-- **The Morse index just after a birth–death point.** Let the family be jointly `C³` at
 `(t, x)`, let the kernel of the Hessian of `f t` at `x` be the line spanned by `v`, as it is at a
-transverse point, and let `κ = D³(f t)_x (v, v, v) ≠ 0`. Along a curve `c` through `(t, x)` with
-velocity `(0, v)`, the Morse index of `f (c σ).1` at `(c σ).2` for `σ > 0` close to `0` is the
-Morse index of `f t` at `x`, plus one if `κ < 0`. Neither `x` nor the points of the curve need to be
-critical, and the family need not be transverse. -/
+transverse point (`TauCeti.ker_fderiv_fderiv_eq_span_singleton`), and let
+`κ = D³(f t)_x (v, v, v) ≠ 0`. Along a curve `c` through `(t, x)` with velocity `(0, v)`, the Morse
+index of `f (c σ).1` at `(c σ).2` for `σ > 0` close to `0` is the Morse index of `f t` at `x`,
+plus one if `κ < 0`. Neither `x` nor the points of the curve need to be critical, and the family
+need not be transverse. -/
 theorem eventually_nhdsGT_morseIndex_eq :
     ∀ᶠ σ in 𝓝[>] 0, morseIndex (f (c σ).1) (c σ).2 =
       morseIndex (f t) x + if fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v < 0 then 1 else 0 := by
@@ -154,10 +155,11 @@ theorem eventually_nhdsGT_morseIndex_eq :
 
 /-- **The Morse index just before a birth–death point.** Let the family be jointly `C³` at
 `(t, x)`, let the kernel of the Hessian of `f t` at `x` be the line spanned by `v`, as it is at a
-transverse point, and let `κ = D³(f t)_x (v, v, v) ≠ 0`. Along a curve `c` through `(t, x)` with
-velocity `(0, v)`, the Morse index of `f (c σ).1` at `(c σ).2` for `σ < 0` close to `0` is the
-Morse index of `f t` at `x`, plus one if `0 < κ`. Neither `x` nor the points of the curve need to be
-critical, and the family need not be transverse. -/
+transverse point (`TauCeti.ker_fderiv_fderiv_eq_span_singleton`), and let
+`κ = D³(f t)_x (v, v, v) ≠ 0`. Along a curve `c` through `(t, x)` with velocity `(0, v)`, the Morse
+index of `f (c σ).1` at `(c σ).2` for `σ < 0` close to `0` is the Morse index of `f t` at `x`,
+plus one if `0 < κ`. Neither `x` nor the points of the curve need to be critical, and the family
+need not be transverse. -/
 theorem eventually_nhdsLT_morseIndex_eq :
     ∀ᶠ σ in 𝓝[<] 0, morseIndex (f (c σ).1) (c σ).2 =
       morseIndex (f t) x + if 0 < fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v then 1 else 0 := by
