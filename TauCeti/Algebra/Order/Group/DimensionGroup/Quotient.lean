@@ -217,22 +217,26 @@ section UniversalProperty
 variable {G H : Type*} [AddCommGroup G] [Preorder G] [IsOrderedAddMonoid G]
   [AddMonoid H] [Preorder H]
 
+omit [IsOrderedAddMonoid G] in
+private def liftHom (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0) :
+    (G ⧸ I) →+ H :=
+  QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf
+
+private theorem liftHom_mk (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0) (x : G) :
+    liftHom I f hf (mk I x) = f x :=
+  rfl
+
 /-- Universal property of `G ⧸ I`: a monotone homomorphism `f : G →+o H` vanishing on `I`
 factors uniquely through `mk I` as a monotone homomorphism `(G ⧸ I) →+o H`. -/
 def lift (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0) :
-    (G ⧸ I) →+o H :=
-  have hf' : I.toAddSubgroup ≤ f.toAddMonoidHom.ker := hf
-  { toAddMonoidHom := QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf'
-    monotone' a b hab := by
-      induction a using induction_on with | _ x =>
-      induction b using induction_on with | _ y =>
-      obtain ⟨h, hhI, hxy⟩ := mk_le_mk_iff.1 hab
-      change QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf' (mk I x) ≤
-        QuotientAddGroup.lift I.toAddSubgroup f.toAddMonoidHom hf' (mk I y)
-      rw [mk_apply, mk_apply, QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply,
-        QuotientAddGroup.lift_mk, QuotientAddGroup.lift_mk]
-      simp only [OrderAddMonoidHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass]
-      exact (OrderHomClass.mono f hxy).trans_eq (by rw [map_add, hf h hhI, add_zero]) }
+    (G ⧸ I) →+o H where
+  toAddMonoidHom := liftHom I f hf
+  monotone' a b hab := by
+    induction a using induction_on with | _ x =>
+    induction b using induction_on with | _ y =>
+    obtain ⟨h, hhI, hxy⟩ := mk_le_mk_iff.1 hab
+    simp only [AddMonoidHom.toFun_eq_coe, liftHom_mk]
+    exact (OrderHomClass.mono f hxy).trans_eq (by rw [map_add, hf h hhI, add_zero])
 
 @[simp]
 theorem lift_mk (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0) (x : G) :
@@ -299,8 +303,7 @@ noncomputable def liftOrderAddMonoidIso (I : OrderIdeal G) (f : G →+o H)
       induction a using induction_on with | _ x =>
       induction b using induction_on with | _ y =>
       refine ⟨fun hle ↦ ?_, fun hle ↦ OrderHomClass.mono (lift I f hf) hle⟩
-      change e (mk I x) ≤ e (mk I y) at hle
-      rw [he_mk, he_mk] at hle
+      simp only [Equiv.toFun_as_coe, AddEquiv.toEquiv_eq_coe, AddEquiv.coe_toEquiv, he_mk] at hle
       obtain ⟨h, hhI, hpos⟩ := hlift (y - x) (map_sub f y x ▸ sub_nonneg.2 hle)
       exact mk_le_mk_iff.2 ⟨h, hhI, by
         rw [← sub_nonneg]

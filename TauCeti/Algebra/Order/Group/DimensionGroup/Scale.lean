@@ -113,16 +113,15 @@ theorem mem_addSubmonoidClosure_of_nonneg_of_le [AddCommGroup G] [PartialOrder G
     (hnonneg : ∀ ⦃s⦄, s ∈ S → 0 ≤ s) (hher : ∀ ⦃g s⦄, 0 ≤ g → g ≤ s → s ∈ S → g ∈ S)
     {g x : G} (hg : 0 ≤ g) (hgx : g ≤ x) (hx : x ∈ AddSubmonoid.closure S) :
     g ∈ AddSubmonoid.closure S := by
-  induction hx using AddSubmonoid.closure_induction generalizing g with
-  | mem s hs => exact AddSubmonoid.subset_closure (hher hg hgx hs)
-  | zero =>
-    obtain rfl : g = 0 := le_antisymm hgx hg
-    exact zero_mem _
-  | add x y hx hy ihx ihy =>
-    obtain ⟨g₁, g₂, hg₁, hg₁x, hg₂, hg₂y, rfl⟩ := h.exists_decomposition
-      (nonneg_of_mem_addSubmonoidClosure hnonneg hx)
-      (nonneg_of_mem_addSubmonoidClosure hnonneg hy) hg hgx
-    exact add_mem (ihx hg₁ hg₁x) (ihy hg₂ hg₂y)
+  rw [← AddSubmonoid.closure_insert_zero] at hx ⊢
+  refine h.mem_addSubmonoidClosure_of_nonneg_of_le_of_zero_mem (Set.mem_insert 0 S)
+    ?_ ?_ hg hgx hx
+  · rintro _ (rfl | hs)
+    · exact le_rfl
+    · exact hnonneg hs
+  · rintro _ _ hg' hgs (rfl | hs)
+    · exact Or.inl (le_antisymm hgs hg')
+    · exact Or.inr (hher hg' hgs hs)
 
 end HasRieszInterpolation
 
