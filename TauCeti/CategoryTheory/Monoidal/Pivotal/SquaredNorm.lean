@@ -387,6 +387,7 @@ theorem normalizedExactPairing_coevaluation (X : C) [Simple X] [FiniteDimensiona
 
 /-- Closing up the coevaluation of `TauCeti.normalizedExactPairing k X` with the evaluation of
 `X` gives the identity of the unit. -/
+@[simp]
 theorem normalizedExactPairing_coevaluation_comp_evaluation (X : C) [Simple X]
     [FiniteDimensional k (X ⟶ X)] :
     @ExactPairing.coevaluation C _ _ Xᘁ X (normalizedExactPairing k X) ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
@@ -396,6 +397,7 @@ theorem normalizedExactPairing_coevaluation_comp_evaluation (X : C) [Simple X]
 
 /-- Closing up the coevaluation of `X` with the evaluation of `TauCeti.normalizedExactPairing k X`
 gives the squared norm of `X`. -/
+@[simp]
 theorem coevaluation_comp_normalizedExactPairing_evaluation (X : C) [Simple X]
     [FiniteDimensional k (X ⟶ X)] :
     η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (normalizedExactPairing k X) =

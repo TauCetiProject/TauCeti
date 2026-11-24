@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Adjunction
+public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Faithful
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
 
 /-!
@@ -18,7 +19,8 @@ the induction functor `Center.induction k C : C ⥤ Center C`, `X ↦ ⨁ S, S �
 to the forgetful functor. This file shows that it is also left adjoint to it, with no pivotal
 structure assumed: `Center.inductionForgetAdjunction k C : Center.induction k C ⊣ Center.forget C`.
 
-The unit `X ⟶ ⨁ S, S ⊗ X ⊗ Sᘁ` includes `X` into the summand of the class `R` of the unit object.
+The unit `X ⟶ ⨁ S, S ⊗ X ⊗ Sᘁ` includes `X` into the summand of the class `R` of the unit object,
+identified with `X` by `CategoryTheory.Center.inductionUnitSummandIso`.
 The counit at an object `⟨A, b⟩` of the centre moves `A` out of each summand `S ⊗ A ⊗ Sᘁ` to the
 right of `Sᘁ` with `b`, and contracts `S ⊗ Sᘁ` with an evaluation `S ⊗ Sᘁ ⟶ 𝟙_ C`. Without a
 pivotal structure such an evaluation is only determined up to a scalar, and the counit commutes
@@ -137,18 +139,29 @@ section UnitSummand
 
 variable {R : C} [P : ExactPairing Rᘁ R] (φ : R ≅ 𝟙_ C)
 
-/-- For `R ≅ 𝟙_ C` and a pairing of `Rᘁ` and `R`, the morphism `𝟙_ C ⟶ Rᘁ` obtained from the
-coevaluation. -/
-private def unitDualHom : 𝟙_ C ⟶ Rᘁ :=
-  η_ (Rᘁ : C) R ≫ (Rᘁ : C) ◁ φ.hom ≫ (ρ_ _).hom
-
-/-- Contracting `R` with `unitDualHom φ` is the identification `R ≅ 𝟙_ C`, by the zigzag
-identity of the pairing. -/
-private theorem whiskerLeft_unitDualHom_comp_evaluation :
-    R ◁ unitDualHom φ ≫ ε_ (Rᘁ : C) R = (ρ_ R).hom ≫ φ.hom := by
+/-- For `φ : R ≅ 𝟙_ C` and a pairing of `Rᘁ` and `R` normalized by `η_ Rᘁ R ≫ ε_ R Rᘁ = 𝟙`,
+contracting `R` with the right adjoint mate `φ.homᘁ : 𝟙_ C ⟶ Rᘁ` through the pairing is `φ`. -/
+private theorem whiskerLeft_rightAdjointMate_comp_evaluation
+    (hP : η_ (Rᘁ : C) R ≫ ε_ R Rᘁ = 𝟙 (𝟙_ C)) :
+    R ◁ φ.homᘁ ≫ ε_ (Rᘁ : C) R = (ρ_ R).hom ≫ φ.hom := by
+  -- By the normalization, the mate of `φ.hom` is `φ` applied after the coevaluation.
+  have hm : (φ.homᘁ : 𝟙_ C ⟶ Rᘁ) = η_ (Rᘁ : C) R ≫ (Rᘁ : C) ◁ φ.hom ≫ (ρ_ _).hom := by
+    apply (ExactPairing.homUnitEquiv R Rᘁ).symm.injective
+    rw [← cancel_epi φ.inv, ExactPairing.homUnitEquiv_symm_apply,
+      ExactPairing.homUnitEquiv_symm_apply, rightAdjointMate_comp_evaluation]
+    trans 𝟙 (𝟙_ C)
+    · -- The evaluation of the unit object is its right unitor.
+      change φ.inv ≫ (λ_ R).inv ≫ 𝟙_ C ◁ φ.hom ≫ (ρ_ (𝟙_ C)).hom = _
+      rw [← leftUnitor_inv_naturality_assoc, Iso.inv_hom_id_assoc, unitors_inv_equal,
+        Iso.inv_hom_id]
+    · rw [leftUnitor_inv_naturality_assoc, whisker_exchange_assoc, unitors_inv_equal,
+        ← rightUnitor_inv_naturality_assoc]
+      simp only [Category.assoc, Iso.hom_inv_id_assoc, ← whiskerLeft_comp_assoc, Iso.hom_inv_id,
+        whiskerLeft_id, Category.id_comp, hP]
+  rw [hm]
   calc
     _ = 𝟙 _ ⊗≫ R ◁ η_ (Rᘁ : C) R ⊗≫ ((R ⊗ Rᘁ) ◁ φ.hom ≫ ε_ (Rᘁ : C) R ▷ 𝟙_ C) ⊗≫ 𝟙 _ := by
-      simp only [unitDualHom, whiskerLeft_comp]
+      simp only [whiskerLeft_comp]
       monoidal
     _ = 𝟙 _ ⊗≫ (R ◁ η_ (Rᘁ : C) R ⊗≫ ε_ (Rᘁ : C) R ▷ R) ⊗≫ φ.hom := by
       rw [whisker_exchange]
@@ -157,55 +170,72 @@ private theorem whiskerLeft_unitDualHom_comp_evaluation :
       rw [ExactPairing.coevaluation_evaluation'']
       monoidal
 
-/-- `unitDualHom φ` has a retraction. -/
-private theorem unitDualHom_comp_retraction :
-    unitDualHom φ ≫ (λ_ _).inv ≫ φ.inv ▷ _ ≫ ε_ (Rᘁ : C) R = 𝟙 (𝟙_ C) := by
-  calc
-    _ = 𝟙 _ ⊗≫ (𝟙_ C ◁ unitDualHom φ ≫ φ.inv ▷ Rᘁ) ⊗≫ ε_ (Rᘁ : C) R := by
-      monoidal
-    _ = 𝟙 _ ⊗≫ φ.inv ▷ 𝟙_ C ⊗≫ (R ◁ unitDualHom φ ≫ ε_ (Rᘁ : C) R) := by
-      rw [whisker_exchange]
-      monoidal
-    _ = 𝟙 _ ⊗≫ (φ.inv ≫ φ.hom) := by
-      rw [whiskerLeft_unitDualHom_comp_evaluation]
-      monoidal
-    _ = _ := by
-      rw [Iso.inv_hom_id]
-      monoidal
-
-/-- The inclusion `X ⟶ R ⊗ X ⊗ Rᘁ` through `φ⁻¹ : 𝟙_ C ⟶ R` and `unitDualHom φ`. -/
-private def unitIncl (X : C) : X ⟶ R ⊗ X ⊗ Rᘁ :=
-  (λ_ X).inv ≫ φ.inv ▷ X ≫ (ρ_ _).inv ≫ (R ⊗ X) ◁ unitDualHom φ ≫ (α_ _ _ _).hom
-
-/-- `unitIncl φ` is natural. -/
-private theorem unitIncl_naturality {X Y : C} (f : X ⟶ Y) :
-    f ≫ unitIncl φ Y = unitIncl φ X ≫ R ◁ f ▷ Rᘁ := by
-  simp only [unitIncl, Category.assoc]
-  rw [leftUnitor_inv_naturality_assoc, whisker_exchange_assoc, rightUnitor_inv_naturality_assoc,
-    ← whisker_exchange_assoc, associator_naturality_middle]
-
-/-- The inclusion `unitIncl φ` followed by the contraction of `R ⊗ Rᘁ` past a half-braiding is
-the identity. -/
-private theorem unitIncl_comp_contract {A : C} (b : HalfBraiding A) :
-    unitIncl φ A ≫ R ◁ (b.β Rᘁ).hom ≫ (α_ _ _ _).inv ≫ ε_ (Rᘁ : C) R ▷ A ≫ (λ_ A).hom =
+/-- The inclusion `X ⟶ R ⊗ X ⊗ Rᘁ` through `φ⁻¹ : 𝟙_ C ⟶ R` and `φ.homᘁ : 𝟙_ C ⟶ Rᘁ` (the inverse
+of `Center.inductionUnitSummandIso` when `R` represents the class of the unit), followed by the
+contraction of `R ⊗ Rᘁ` past a half-braiding through a normalized pairing, is the identity. -/
+private theorem rightAdjointMate_comp_contract (hP : η_ (Rᘁ : C) R ≫ ε_ R Rᘁ = 𝟙 (𝟙_ C))
+    {A : C} (b : HalfBraiding A) :
+    (ρ_ A).inv ≫ (λ_ (A ⊗ 𝟙_ C)).inv ≫ 𝟙_ C ◁ A ◁ φ.homᘁ ≫ φ.inv ▷ (A ⊗ Rᘁ) ≫
+        R ◁ (b.β Rᘁ).hom ≫ (α_ _ _ _).inv ≫ ε_ (Rᘁ : C) R ▷ A ≫ (λ_ A).hom =
       𝟙 A := by
-  have hnat := b.naturality (unitDualHom φ)
+  have hnat := b.naturality (φ.homᘁ)
+  -- The chosen right dual of the unit is the unit itself.
+  dsimp only [HasRightDual.rightDual] at hnat
   rw [HalfBraiding.β_tensorUnit_hom] at hnat
   calc
-    _ = 𝟙 _ ⊗≫ φ.inv ▷ A ⊗≫ R ◁ (A ◁ unitDualHom φ ≫ (b.β Rᘁ).hom) ⊗≫
+    _ = 𝟙 _ ⊗≫ φ.inv ▷ A ⊗≫ R ◁ (A ◁ φ.homᘁ ≫ (b.β Rᘁ).hom) ⊗≫
           ε_ (Rᘁ : C) R ▷ A ⊗≫ 𝟙 _ := by
-      simp only [unitIncl, whiskerLeft_comp]
+      rw [whisker_exchange_assoc]
+      simp only [whiskerLeft_comp]
       monoidal
-    _ = 𝟙 _ ⊗≫ φ.inv ▷ A ⊗≫ (R ◁ unitDualHom φ ≫ ε_ (Rᘁ : C) R) ▷ A ⊗≫ 𝟙 _ := by
+    _ = 𝟙 _ ⊗≫ φ.inv ▷ A ⊗≫ (R ◁ φ.homᘁ ≫ ε_ (Rᘁ : C) R) ▷ A ⊗≫ 𝟙 _ := by
       rw [hnat]
       simp only [whiskerLeft_comp, comp_whiskerRight]
       monoidal
     _ = 𝟙 _ ⊗≫ (φ.inv ≫ φ.hom) ▷ A ⊗≫ 𝟙 _ := by
-      rw [whiskerLeft_unitDualHom_comp_evaluation]
+      rw [whiskerLeft_rightAdjointMate_comp_evaluation φ hP]
       simp only [comp_whiskerRight]
       monoidal
     _ = _ := by
       rw [Iso.inv_hom_id]
+      monoidal
+
+/-- The contraction behind the left triangle identity at the summand `R ⊗ X ⊗ Rᘁ`: insert
+`m' : Rᘁ ⟶ 𝟙_ C` after the inclusion `ι₀` through `φ⁻¹` and `m : 𝟙_ C ⟶ Rᘁ`, then contract `R`
+with `m` through the pairing. When `m'` is a left inverse of `m` and contracting `R` with `m` is
+`φ`, the result is the identity. The mates of `φ` are such `m` and `m'`, whose source and target
+`(𝟙_ C)ᘁ` the coherence tactic does not identify with `𝟙_ C`; this lemma is stated for morphisms
+out of `𝟙_ C` itself. -/
+private theorem whiskerLeft_comp_contract_eq_id {X : C} {m : 𝟙_ C ⟶ Rᘁ} {m' : Rᘁ ⟶ 𝟙_ C}
+    (hmm : m' ≫ m = 𝟙 _) (hm : R ◁ m ≫ ε_ (Rᘁ : C) R = (ρ_ R).hom ≫ φ.hom)
+    {ι₀ : X ⟶ R ⊗ X ⊗ Rᘁ}
+    (hι : ι₀ = (ρ_ X).inv ≫ (λ_ (X ⊗ 𝟙_ C)).inv ≫ 𝟙_ C ◁ X ◁ m ≫ φ.inv ▷ (X ⊗ Rᘁ)) :
+    R ◁ (ι₀ ▷ Rᘁ ≫ (R ⊗ X ⊗ Rᘁ) ◁ m' ≫ (ρ_ _).hom ≫ (λ_ _).inv ≫ m ▷ (R ⊗ X ⊗ Rᘁ)) ≫
+        (α_ _ _ _).inv ≫ ε_ (Rᘁ : C) R ▷ (R ⊗ X ⊗ Rᘁ) ≫ (λ_ _).hom =
+      𝟙 _ := by
+  calc
+    _ = 𝟙 _ ⊗≫ R ◁ (ι₀ ▷ Rᘁ ≫ (R ⊗ X ⊗ Rᘁ) ◁ m') ⊗≫
+          (R ◁ m ≫ ε_ (Rᘁ : C) R) ▷ (R ⊗ X ⊗ Rᘁ) ⊗≫ 𝟙 _ := by
+      simp only [whiskerLeft_comp, comp_whiskerRight]
+      monoidal
+    _ = 𝟙 _ ⊗≫ R ◁ (X ◁ m' ≫ ι₀ ▷ 𝟙_ C) ⊗≫ ((ρ_ R).hom ≫ φ.hom) ▷ (R ⊗ X ⊗ Rᘁ) ⊗≫ 𝟙 _ := by
+      rw [← whisker_exchange, hm]
+    _ = 𝟙 _ ⊗≫ R ◁ X ◁ m' ⊗≫ (R ◁ ι₀ ≫ φ.hom ▷ (R ⊗ X ⊗ Rᘁ)) ⊗≫ 𝟙 _ := by
+      simp only [whiskerLeft_comp, comp_whiskerRight]
+      monoidal
+    _ = 𝟙 _ ⊗≫ R ◁ X ◁ m' ⊗≫ φ.hom ▷ X ⊗≫ (𝟙_ C ◁ X ◁ m ≫ φ.inv ▷ (X ⊗ Rᘁ)) ⊗≫ 𝟙 _ := by
+      rw [whisker_exchange, hι]
+      simp only [whiskerLeft_comp]
+      monoidal
+    _ = 𝟙 _ ⊗≫ (R ⊗ X) ◁ m' ⊗≫ (φ.hom ≫ φ.inv) ▷ X ⊗≫ (R ⊗ X) ◁ m ⊗≫ 𝟙 _ := by
+      rw [whisker_exchange]
+      simp only [comp_whiskerRight]
+      monoidal
+    _ = 𝟙 _ ⊗≫ (R ⊗ X) ◁ (m' ≫ m) ⊗≫ 𝟙 _ := by
+      rw [Iso.hom_inv_id, id_whiskerRight]
+      monoidal
+    _ = _ := by
+      rw [hmm, whiskerLeft_id]
       monoidal
 
 end UnitSummand
@@ -324,26 +354,12 @@ private def counitSummand {A : C} (b : HalfBraiding A) (S : SimpleClasses C) :
 private def counitF {A : C} (b : HalfBraiding A) : inductionObj A ⟶ A :=
   biproduct.desc (counitSummand k b)
 
-omit [IsAlgClosed k] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
-  [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] in
-/-- Morphisms out of `inductionObj X ⊗ U` are determined by their restrictions to the summands. -/
-private theorem whiskerRight_hom_ext {X U Y : C}
-    {f g : inductionObj X ⊗ U ⟶ Y}
-    (h : ∀ S, biproduct.ι (inductionSummand X) S ▷ U ≫ f =
-      biproduct.ι (inductionSummand X) S ▷ U ≫ g) : f = g := by
-  have key (φ : inductionObj X ⊗ U ⟶ Y) : φ = ∑ S, biproduct.π (inductionSummand X) S ▷ U ≫
-      biproduct.ι (inductionSummand X) S ▷ U ≫ φ := by
-    simp only [← Preadditive.sum_comp, ← comp_whiskerRight_assoc, ← sum_whiskerRight,
-      biproduct.total, id_whiskerRight, Category.id_comp]
-  rw [key f, key g]
-  simp only [h]
-
 /-- **The counit commutes with the half-braidings.** For `⟨A, b⟩` in the centre, the morphism
 `⨁ S, S ⊗ A ⊗ Sᘁ ⟶ A` contracting each summand with the normalized evaluation intertwines the
 half-braiding of the induced object with `b`. -/
 private theorem counitF_comm {A : C} (b : HalfBraiding A) (U : C) :
     counitF k b ▷ U ≫ (b.β U).hom = inductionβHom k A U ≫ U ◁ counitF k b := by
-  refine whiskerRight_hom_ext fun S ↦ ?_
+  refine biproduct.hom_ext_whiskerRight fun S ↦ ?_
   let PS := normalizedExactPairing k S.repr
   have hS := normalizedExactPairing_coevaluation_comp_evaluation k S.repr
   -- Insert the decomposition of the identity of `inductionObj A` after the half-braiding.
@@ -415,38 +431,22 @@ private theorem counitF_naturality {A A' : C} {b : HalfBraiding A} {b' : HalfBra
       monoidal
 
 variable (C) in
-/-- The normalized pairing of `Rᘁ` and the representative `R` of the class of the unit, through
-which the unit of the adjunction includes `X` into the summand of `R`. -/
+/-- The normalized pairing of `Rᘁ` and the representative `R` of the class of the unit, whose
+evaluation contracts the summand of `R` in the counit. -/
 private abbrev unitClassPairing :
     ExactPairing (SimpleClasses.classOf (𝟙_ C)).reprᘁ (SimpleClasses.classOf (𝟙_ C)).repr :=
   normalizedExactPairing k _
 
-variable (C) in
-/-- The morphism `unitDualHom : 𝟙_ C ⟶ Rᘁ` for the representative `R` of the class of the unit,
-its normalized pairing and `R ≅ 𝟙_ C`. -/
-private abbrev unitClassDualHom : 𝟙_ C ⟶ (SimpleClasses.classOf (𝟙_ C)).reprᘁ :=
-  unitDualHom (P := unitClassPairing k C) (SimpleClasses.classOfReprIso (𝟙_ C))
-
-/-- The unit `X ⟶ ⨁ S, S ⊗ X ⊗ Sᘁ`: the inclusion of the summand of the class `R` of the unit
-object, through `R ≅ 𝟙_ C` and the coevaluation of the normalized pairing of `Rᘁ` and `R`. -/
+/-- The unit `X ⟶ ⨁ S, S ⊗ X ⊗ Sᘁ`: the inclusion of the summand of the class of the unit object,
+identified with `X` by `Center.inductionUnitSummandIso`. -/
 private def unitF (X : C) : X ⟶ inductionObj X :=
-  unitIncl (P := unitClassPairing k C) (SimpleClasses.classOfReprIso (𝟙_ C)) X ≫
-    biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C))
+  (inductionUnitSummandIso X).inv ≫ biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C))
 
+omit [MonoidalPreadditive C] [IsFiniteSemisimpleCategory C] in
 /-- The unit is natural. -/
 private theorem unitF_naturality {X Y : C} (f : X ⟶ Y) :
-    f ≫ unitF k Y = unitF k X ≫ inductionMap f := by
-  rw [unitF, unitF, reassoc_of% unitIncl_naturality (P := unitClassPairing k C), Category.assoc,
-    biproduct.ι_map]
-
-omit [Fintype (SimpleClasses C)] in
-/-- The morphism `𝟙_ C ⟶ Rᘁ`, for `R` the representative of the class of the unit, used in the
-unit of the adjunction, is an isomorphism. -/
-private theorem isIso_unitClassDualHom : IsIso (unitClassDualHom k C) := by
-  have hr : unitClassDualHom k C ≫ _ = 𝟙 _ :=
-    unitDualHom_comp_retraction (P := unitClassPairing k C) (SimpleClasses.classOfReprIso (𝟙_ C))
-  have : Mono (unitClassDualHom k C) := mono_of_mono_fac hr
-  exact isIso_of_mono_of_ne_zero fun h ↦ id_ne_zero (𝟙_ C) (by rw [← hr, h, zero_comp])
+    f ≫ unitF Y = unitF X ≫ inductionMap f := by
+  rw [unitF, unitF, inductionUnitSummandIso_inv_naturality_assoc, Category.assoc, biproduct.ι_map]
 
 omit [Fintype (SimpleClasses C)] in
 /-- The half-braiding of the induced object at the right dual of the representative of a simple
@@ -458,7 +458,8 @@ private theorem inductionβComponent_rightDual_of_ne (X : C) {S : SimpleClasses 
   set φ := SimpleClasses.classOfReprIso (𝟙_ C)
   have hzero (h : (SimpleClasses.classOf (𝟙_ C)).repr ⟶
       S.reprᘁ ⊗ (SimpleClasses.classOf (𝟙_ C)).repr) : h = 0 := by
-    have h0 := SimpleClasses.hom_rightDual_eq_zero hS (φ.inv ≫ h ≫ S.reprᘁ ◁ φ.hom ≫ (ρ_ _).hom)
+    have h0 := SimpleClasses.hom_rightDual_eq_zero (X := S.repr)
+      (by rwa [SimpleClasses.classOf_repr]) (φ.inv ≫ h ≫ S.reprᘁ ◁ φ.hom ≫ (ρ_ _).hom)
     calc
       h = φ.hom ≫ (φ.inv ≫ h ≫ S.reprᘁ ◁ φ.hom ≫ (ρ_ _).hom) ≫ (ρ_ _).inv ≫
           S.reprᘁ ◁ φ.inv := by
@@ -469,25 +470,19 @@ private theorem inductionβComponent_rightDual_of_ne (X : C) {S : SimpleClasses 
   exact Finset.sum_eq_zero fun i _ ↦ by rw [hzero (Module.finBasis k _ i), map_zero]
 
 omit [Fintype (SimpleClasses C)] in
-/-- The isomorphism `𝟙_ C ≅ Rᘁ` given by `unitDualHom`, for `R` the representative of the class
-of the unit. -/
-private def unitDualIso : 𝟙_ C ≅ (SimpleClasses.classOf (𝟙_ C)).reprᘁ :=
-  haveI := isIso_unitClassDualHom k (C := C)
-  asIso (unitClassDualHom k C)
-
-omit [Fintype (SimpleClasses C)] in
 /-- The component of the half-braiding of the induced object at the right dual `Rᘁ` of the
 representative `R` of the class of the unit, from the summand of `R` to itself, computed through
-the isomorphism `unitDualIso : 𝟙_ C ≅ Rᘁ`. -/
+the right adjoint mates of `R ≅ 𝟙_ C`. -/
 private theorem inductionβComponent_rightDual_unitClass (X : C) :
     inductionβComponent k X ((SimpleClasses.classOf (𝟙_ C)).reprᘁ)
         (SimpleClasses.classOf (𝟙_ C)) (SimpleClasses.classOf (𝟙_ C)) =
-      inductionSummand X (SimpleClasses.classOf (𝟙_ C)) ◁ (unitDualIso k).inv ≫
-        (ρ_ _).hom ≫ (λ_ _).inv ≫
-          (unitDualIso k).hom ▷ inductionSummand X (SimpleClasses.classOf (𝟙_ C)) := by
+      inductionSummand X (SimpleClasses.classOf (𝟙_ C)) ◁
+          (SimpleClasses.classOfReprIso (𝟙_ C)).invᘁ ≫ (ρ_ _).hom ≫ (λ_ _).inv ≫
+        (SimpleClasses.classOfReprIso (𝟙_ C)).homᘁ ▷
+          inductionSummand X (SimpleClasses.classOf (𝟙_ C)) := by
   rw [← Category.assoc (ρ_ _).hom, ← inductionβComponent_tensorUnit_self k X,
-    ← whiskerLeft_comp_inductionβComponent, ← whiskerLeft_comp_assoc, Iso.inv_hom_id,
-    whiskerLeft_id, Category.id_comp]
+    ← whiskerLeft_comp_inductionβComponent, ← whiskerLeft_comp_assoc, ← comp_rightAdjointMate,
+    Iso.hom_inv_id, rightAdjointMate_id, whiskerLeft_id, Category.id_comp]
 
 /-- Morphisms of the centre into an induced object agree once their underlying morphisms agree
 after the projection onto the summand of the class of the unit. This is the uniqueness half of
@@ -518,7 +513,7 @@ private theorem induction_hom_ext {W : Center C} {X : C} {f g : W ⟶ (induction
 
 /-- **Left triangle identity**, after the projection onto the summand of the class of the unit. -/
 private theorem inductionMap_unitF_comp_counitF_comp_π (X : C) :
-    inductionMap (unitF k X) ≫ counitF k (inductionHalfBraiding k X) ≫
+    inductionMap (unitF X) ≫ counitF k (inductionHalfBraiding k X) ≫
         biproduct.π (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) =
       biproduct.π (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) := by
   refine biproduct.hom_ext' _ _ fun S ↦ ?_
@@ -532,43 +527,25 @@ private theorem inductionMap_unitF_comp_counitF_comp_π (X : C) :
   rw [ι_whiskerRight_inductionβHom_whiskerLeft_π]
   by_cases hS : S = SimpleClasses.classOf (𝟙_ C)
   · subst hS
-    have := isIso_unitClassDualHom k (C := C)
     rw [biproduct.ι_π_self, inductionβComponent_rightDual_unitClass k X]
-    simp only [unitDualIso, asIso_hom, asIso_inv]
-    set R := (SimpleClasses.classOf (𝟙_ C)).repr
-    set φ := SimpleClasses.classOfReprIso (𝟙_ C)
-    set ζ := unitDualHom (P := normalizedExactPairing k R) φ
-    let := normalizedExactPairing k R
-    calc
-      _ = 𝟙 _ ⊗≫ R ◁ (unitIncl φ X ▷ Rᘁ ≫ (R ⊗ X ⊗ Rᘁ) ◁ inv ζ) ⊗≫
-            (R ◁ ζ ≫ ε_ (Rᘁ : C) R) ▷ (R ⊗ X ⊗ Rᘁ) ⊗≫ 𝟙 _ := by
-        simp only [whiskerLeft_comp, comp_whiskerRight]
-        monoidal
-      _ = 𝟙 _ ⊗≫ R ◁ (X ◁ inv ζ ≫ unitIncl φ X ▷ 𝟙_ C) ⊗≫
-            ((ρ_ R).hom ≫ φ.hom) ▷ (R ⊗ X ⊗ Rᘁ) ⊗≫ 𝟙 _ := by
-        rw [← whisker_exchange, whiskerLeft_unitDualHom_comp_evaluation]
-      _ = 𝟙 _ ⊗≫ R ◁ X ◁ inv ζ ⊗≫ (R ◁ unitIncl φ X ≫ φ.hom ▷ (R ⊗ X ⊗ Rᘁ)) ⊗≫ 𝟙 _ := by
-        simp only [whiskerLeft_comp, comp_whiskerRight]
-        monoidal
-      _ = 𝟙 _ ⊗≫ R ◁ X ◁ inv ζ ⊗≫ (φ.hom ▷ X ≫ 𝟙_ C ◁ unitIncl φ X) ⊗≫ 𝟙 _ := by
-        rw [whisker_exchange]
-      _ = 𝟙 _ ⊗≫ (R ⊗ X) ◁ inv ζ ⊗≫ (φ.hom ≫ φ.inv) ▷ X ⊗≫ (R ⊗ X) ◁ ζ ⊗≫ 𝟙 _ := by
-        simp only [unitIncl, whiskerLeft_comp, comp_whiskerRight]
-        monoidal
-      _ = 𝟙 _ ⊗≫ (R ⊗ X) ◁ (inv ζ ≫ ζ) ⊗≫ 𝟙 _ := by
-        rw [Iso.hom_inv_id, id_whiskerRight]
-        monoidal
-      _ = _ := by
-        rw [IsIso.inv_hom_id, whiskerLeft_id]
-        monoidal
+    exact whiskerLeft_comp_contract_eq_id (P := unitClassPairing k C)
+      (SimpleClasses.classOfReprIso (𝟙_ C))
+      (by rw [← comp_rightAdjointMate, Iso.hom_inv_id, rightAdjointMate_id])
+      (whiskerLeft_rightAdjointMate_comp_evaluation (P := unitClassPairing k C) _
+        (normalizedExactPairing_coevaluation_comp_evaluation k _))
+      (inductionUnitSummandIso_inv X)
   · rw [inductionβComponent_rightDual_of_ne k X hS, comp_zero,
       MonoidalPreadditive.whiskerLeft_zero, zero_comp, biproduct.ι_π_ne _ hS]
 
 /-- **Right triangle identity**: the unit followed by the counit is the identity. -/
 private theorem unitF_comp_counitF {A : C} (b : HalfBraiding A) :
-    unitF k A ≫ counitF k b = 𝟙 A := by
-  rw [unitF, Category.assoc, counitF, biproduct.ι_desc, counitSummand]
-  exact unitIncl_comp_contract (P := unitClassPairing k C) (SimpleClasses.classOfReprIso (𝟙_ C)) b
+    unitF A ≫ counitF k b = 𝟙 A := by
+  rw [unitF, Category.assoc, counitF, biproduct.ι_desc, counitSummand,
+    inductionUnitSummandIso_inv]
+  simp only [Category.assoc]
+  exact rightAdjointMate_comp_contract (P := unitClassPairing k C)
+    (SimpleClasses.classOfReprIso (𝟙_ C))
+    (normalizedExactPairing_coevaluation_comp_evaluation k _) b
 
 /-! ### The adjunction -/
 
@@ -588,8 +565,8 @@ def inductionForgetAdjunction : induction k C ⊣ forget C :=
   -- half-braiding of the induced object or reassociate are explicit `Eq.trans` terms.
   Adjunction.mkOfUnitCounit
     { unit :=
-        { app X := unitF k X
-          naturality _ _ f := unitF_naturality k f }
+        { app X := unitF X
+          naturality _ _ f := unitF_naturality f }
       counit :=
         { app Z :=
             { f := counitF k Z.2
@@ -606,7 +583,7 @@ def inductionForgetAdjunction : induction k C ⊣ forget C :=
           ((inductionMap_unitF_comp_counitF_comp_π k X).trans (Category.id_comp _).symm)
       right_triangle := by
         refine NatTrans.ext (funext fun Z ↦ ?_)
-        exact (congrArg (unitF k Z.1 ≫ ·) (Category.id_comp (counitF k Z.2))).trans
+        exact (congrArg (unitF Z.1 ≫ ·) (Category.id_comp (counitF k Z.2))).trans
           (unitF_comp_counitF k Z.2) }
 
 /-- `Center.induction k C` is a left adjoint (in particular, it preserves all colimits that exist
@@ -616,21 +593,14 @@ instance instIsLeftAdjointInduction : (induction k C).IsLeftAdjoint :=
 
 variable {C}
 
-/-- The unit of `inductionForgetAdjunction` at `X` includes `X` into the summand of the class `R` of
-the unit object, through `R ≅ 𝟙_ C` and the coevaluation of the normalized pairing of `Rᘁ` and
-`R`. -/
+/-- The unit of `inductionForgetAdjunction` at `X` includes `X` into the summand of the class of the
+unit object, identified with `X` by `Center.inductionUnitSummandIso`. -/
 @[simp]
 theorem inductionForgetAdjunction_unit_app (X : C) :
     (inductionForgetAdjunction k C).unit.app X =
-      (λ_ X).inv ≫ (SimpleClasses.classOfReprIso (𝟙_ C)).inv ▷ X ≫ (ρ_ _).inv ≫
-        ((SimpleClasses.classOf (𝟙_ C)).repr ⊗ X) ◁
-          (@ExactPairing.coevaluation C _ _ _ _
-              (normalizedExactPairing k (SimpleClasses.classOf (𝟙_ C)).repr) ≫
-            (SimpleClasses.classOf (𝟙_ C)).reprᘁ ◁ (SimpleClasses.classOfReprIso (𝟙_ C)).hom ≫
-              (ρ_ _).hom) ≫
-          (α_ _ _ _).hom ≫ biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) := by
-  simp only [inductionForgetAdjunction, Adjunction.mkOfUnitCounit_unit, unitF, unitIncl,
-    unitDualHom, Category.assoc]
+      (inductionUnitSummandIso X).inv ≫
+        biproduct.ι (inductionSummand X) (SimpleClasses.classOf (𝟙_ C)) := by
+  simp only [inductionForgetAdjunction, Adjunction.mkOfUnitCounit_unit, unitF]
   -- The two sides agree except in the implicit objects of the composites, which are written
   -- `inductionObj X` on the left and `⨁ inductionSummand X`, the abbreviation it unfolds to, on
   -- the right; `simp` does not rewrite these objects.

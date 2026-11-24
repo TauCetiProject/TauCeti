@@ -24,8 +24,8 @@ rigid category with simple tensor unit this action is an involution
   representative;
 * `TauCeti.SimpleClasses.dual_classOf` and `TauCeti.SimpleClasses.eq_dual_iff`: characterizations
   of the dual class;
-* `TauCeti.SimpleClasses.hom_rightDual_eq_zero`: the unit object maps to the right dual of a
-  representative only if the class is that of the unit.
+* `TauCeti.SimpleClasses.hom_rightDual_eq_zero`: the unit object maps nontrivially to the right
+  dual of a simple object only if its class is that of the unit.
 
 ## References
 
@@ -66,17 +66,15 @@ theorem eq_dual_iff (S T : SimpleClasses C) : T = S.dual ↔ Nonempty (T.repr �
   rw [eq_iff_nonempty_iso]
   exact ⟨fun ⟨e⟩ ↦ ⟨e ≪≫ dualReprIso S⟩, fun ⟨e⟩ ↦ ⟨e ≪≫ (dualReprIso S).symm⟩⟩
 
-/-- There are no nonzero morphisms from a simple unit object to the right dual of the
-representative of a simple class other than that of the unit: by Frobenius reciprocity they
-correspond to morphisms from the representative to the unit, which vanish by Schur's lemma. -/
-theorem hom_rightDual_eq_zero [Simple (𝟙_ C)] {S : SimpleClasses C} (hS : S ≠ classOf (𝟙_ C))
-    (f : 𝟙_ C ⟶ S.reprᘁ) : f = 0 := by
-  have hg : (ExactPairing.homUnitEquiv S.repr S.reprᘁ).symm f = 0 := by
+/-- There are no nonzero morphisms from a simple unit object to the right dual of a simple object
+whose class is not that of the unit: by Frobenius reciprocity they correspond to morphisms from the
+object to the unit, which vanish by Schur's lemma. -/
+theorem hom_rightDual_eq_zero [Simple (𝟙_ C)] {X : C} [Simple X] (hX : classOf X ≠ classOf (𝟙_ C))
+    (f : 𝟙_ C ⟶ Xᘁ) : f = 0 := by
+  have hg : (ExactPairing.homUnitEquiv X Xᘁ).symm f = 0 := by
     by_contra h
-    exact hS (by
-      rw [← classOf_repr S]
-      exact classOf_eq_iff_exists_ne_zero.2 ⟨_, h⟩)
-  rw [← (ExactPairing.homUnitEquiv S.repr S.reprᘁ).apply_symm_apply f, hg,
+    exact hX (classOf_eq_iff_exists_ne_zero.2 ⟨_, h⟩)
+  rw [← (ExactPairing.homUnitEquiv X Xᘁ).apply_symm_apply f, hg,
     ExactPairing.homUnitEquiv_apply, MonoidalPreadditive.zero_whiskerRight, Limits.zero_comp,
     Limits.comp_zero]
 
