@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Algebra.Polynomial.Smeval
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Algebra.Ring.SpectralIdempotent
 
@@ -37,10 +38,14 @@ second (`ContinuousLinearMap.IsRieszColemanProjection.equivKer`). Such a project
 (`ContinuousLinearMap.IsRieszColemanProjection.unique`); for `Q = 1` it is zero
 (`ContinuousLinearMap.isRieszColemanProjection_one_iff`,
 `ContinuousLinearMap.IsRieszColemanProjection.eq_zero_of_one`,
-`ContinuousLinearMap.isRieszColemanProjection_one_zero`).
+`ContinuousLinearMap.isRieszColemanProjection_one_zero`); scaling `Q` by a unit constant leaves
+the predicate unchanged (`ContinuousLinearMap.IsRieszColemanProjection.C_mul`,
+`ContinuousLinearMap.isRieszColemanProjection_C_mul_iff`).
 
 When the leading coefficient of `Q` is a unit, the constant term of `Q*` is `Q.leadingCoeff`, so
-dividing `Q* - Q*(0)` by `X` expresses `E = u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E)`. Consequently:
+dividing `Q* - Q*(0)` by `X` expresses `E = u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E)`, and
+`Q*(u * (1 - E))` is invertible
+(`ContinuousLinearMap.IsRieszColemanProjection.isUnit_aeval_mul_one_sub_reverse`). Consequently:
 
 * `u` restricts to a continuous linear automorphism of `range E = ker Q*(u)`
   (`ContinuousLinearMap.IsRieszColemanProjection.equivRange`);
@@ -61,7 +66,11 @@ Finally, any linear map intertwining two endomorphisms intertwines their Riesz�
 and complementary inverses for the same polynomial `Q`, so every bounded operator commuting with
 `u` commutes with `E` and preserves both spectral summands
 (`ContinuousLinearMap.IsRieszColemanProjection.semiconj`,
-`ContinuousLinearMap.IsRieszColemanProjection.commute_of_commute`).
+`ContinuousLinearMap.IsRieszColemanProjection.commute_of_commute`), and ring homomorphisms
+between endomorphism algebras matching reversed-polynomial evaluation and closure membership
+transport Riesz–Coleman projections and their complementary inverses
+(`ContinuousLinearMap.IsRieszColemanProjection.map`,
+`ContinuousLinearMap.IsRieszColemanProjection.inverse_map`).
 
 ## Main definitions
 
@@ -229,6 +238,56 @@ theorem eq_inverse (hE : IsRieszColemanProjection u Q E) {w : M →L[R] M}
     _ = hE.inverse := by
         rw [hw, mul_sub (α := M →L[R] M), mul_one, hE.inverse_mul_eq_zero, sub_zero hE.inverse]
 
+private theorem C_mul_aux (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+    ∃ hE' : IsRieszColemanProjection u (Polynomial.C c * Q) E,
+      hE'.inverse = Ring.inverse c • hE.inverse := by
+  have haeval := Polynomial.aeval_C_mul_reverse u hc Q
+  have hcc : Ring.inverse c * c = 1 := Ring.inverse_mul_cancel _ hc
+  have hinv₁ : Polynomial.aeval u (Polynomial.C c * Q).reverse * (Ring.inverse c • hE.inverse) =
+      1 - E := by
+    rw [haeval, smul_mul_smul_comm, mul_comm c, hcc, one_smul, hE.aeval_reverse_mul_inverse]
+  have hinv₂ : (Ring.inverse c • hE.inverse) * Polynomial.aeval u (Polynomial.C c * Q).reverse =
+      1 - E := by
+    rw [haeval, smul_mul_smul_comm, hcc, one_smul, hE.inverse_mul_aeval_reverse]
+  have hinv₃ : E * (Ring.inverse c • hE.inverse) = 0 := by
+    rw [mul_smul_comm, hE.mul_inverse_eq_zero, smul_zero]
+  have hinv₄ : (Ring.inverse c • hE.inverse) * E = 0 := by
+    rw [smul_mul_assoc, hE.inverse_mul_eq_zero, smul_zero]
+  have hE' : IsRieszColemanProjection u (Polynomial.C c * Q) E :=
+    ⟨hE.isIdempotentElem, hE.commute, hE.mem_closure_adjoin,
+      by rw [haeval, smul_mul_assoc, hE.aeval_reverse_mul_eq_zero, smul_zero],
+      ⟨Ring.inverse c • hE.inverse, hinv₁, hinv₂, hinv₃, hinv₄,
+        (Algebra.adjoin R {u}).topologicalClosure.smul_mem hE.inverse_mem_closure_adjoin _⟩⟩
+  exact ⟨hE', (hE'.eq_inverse hinv₁ hinv₃).symm⟩
+
+/-- Scaling `Q` by a unit scalar preserves Riesz–Coleman projections. -/
+theorem C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+    IsRieszColemanProjection u (Polynomial.C c * Q) E :=
+  (C_mul_aux hE hc).1
+
+/-- Rescaling `Q` by a unit scalar `c` scales the complementary inverse by `Ring.inverse c`. -/
+@[simp]
+theorem inverse_C_mul (hE : IsRieszColemanProjection u Q E) {c : R} (hc : IsUnit c) :
+    (hE.C_mul hc).inverse = Ring.inverse c • hE.inverse :=
+  (C_mul_aux hE hc).2
+
+end IsRieszColemanProjection
+
+/-- Scaling `Q` by a unit scalar does not change the Riesz–Coleman projections of `u`. -/
+@[simp]
+theorem isRieszColemanProjection_C_mul_iff {u E : M →L[R] M} {Q : R[X]} {c : R}
+    (hc : IsUnit c) :
+    IsRieszColemanProjection u (Polynomial.C c * Q) E ↔ IsRieszColemanProjection u Q E := by
+  obtain ⟨c', hc'⟩ := hc.exists_left_inv
+  refine ⟨fun h ↦ ?_, fun h ↦ h.C_mul hc⟩
+  have hQ : Polynomial.C c' * (Polynomial.C c * Q) = Q := by
+    rw [← mul_assoc, ← Polynomial.C_mul, hc', Polynomial.C_1, one_mul]
+  simpa only [hQ] using h.C_mul (IsUnit.of_mul_eq_one _ hc')
+
+namespace IsRieszColemanProjection
+
+variable {u E : M →L[R] M} {Q : R[X]}
+
 /-- The complementary inverse preserves `ker E`. -/
 theorem mapsTo_ker_inverse (hE : IsRieszColemanProjection u Q E) :
     Set.MapsTo hE.inverse E.ker E.ker := by
@@ -275,6 +334,20 @@ theorem range_aeval_reverse_eq_ker (hE : IsRieszColemanProjection u Q E) :
   refine ⟨?_, fun hx ↦ ⟨hE.inverse x, hE.aeval_reverse_apply_inverse hx⟩⟩
   rintro ⟨y, rfl⟩
   simpa only [mul_apply_eq_comp, zero_apply] using congr($(hE.mul_aeval_reverse_eq_zero) y)
+
+/-- **Monotonicity in the polynomial.** If the leading coefficient of `Q` is a unit and `Q ∣ Q'`,
+then the range `ker Q*(u)` of a Riesz–Coleman projection of `u` for `Q` lies in the range
+`ker Q'*(u)` of any Riesz–Coleman projection of `u` for `Q'`. -/
+theorem range_le_range_of_dvd {Q' : R[X]} {E' : M →L[R] M} (hE : IsRieszColemanProjection u Q E)
+    (hE' : IsRieszColemanProjection u Q' E') (hQ : IsUnit Q.leadingCoeff) (hQQ' : Q ∣ Q') :
+    LinearMap.range (E : M →ₗ[R] M) ≤ LinearMap.range (E' : M →ₗ[R] M) := by
+  obtain ⟨A, rfl⟩ := hQQ'
+  rw [hE.range_eq_ker, hE'.range_eq_ker]
+  rcases eq_or_ne A 0 with rfl | hA
+  · simp
+  rw [reverse_mul (by rwa [Ne, hQ.mul_right_eq_zero, leadingCoeff_eq_zero]), toLinearMap_aeval,
+    toLinearMap_aeval]
+  exact le_sup_left.trans Polynomial.sup_ker_aeval_le_ker_aeval_mul
 
 /-- **Topological decomposition `M = ker Q*(u) ⊕ range Q*(u)`.** -/
 theorem isTopCompl_ker_range_aeval_reverse (hE : IsRieszColemanProjection u Q E) :
@@ -416,6 +489,14 @@ theorem isUnit_toLinearMap_restrict_range (hE : IsRieszColemanProjection u Q E)
     IsUnit ((u : M →ₗ[R] M).restrict hE.mapsTo_range) :=
   (hE.isUnit_restrict_range hQ).map toLinearMapRingHom
 
+/-- When `Q.leadingCoeff` is a unit, `Q*(u * (1 - E))` is invertible on `M`. -/
+theorem isUnit_aeval_mul_one_sub_reverse (hE : IsRieszColemanProjection u Q E)
+    (hQ : IsUnit Q.leadingCoeff) :
+    IsUnit (Polynomial.aeval (u * (1 - E)) Q.reverse) :=
+  Polynomial.isUnit_aeval_mul_one_sub_of_isIdempotentElem hE.isIdempotentElem hE.commute
+    (Polynomial.coeff_zero_reverse Q ▸ hQ) hE.aeval_reverse_mul_inverse
+    hE.inverse_mul_aeval_reverse
+
 end IsRieszColemanProjection
 
 end Module
@@ -506,6 +587,47 @@ theorem commute_inverse_of_commute (hE : IsRieszColemanProjection u Q E) {g : M 
 end IsRieszColemanProjection
 
 end Intertwining
+
+section Map
+
+variable {R₁ R₂ : Type*} [NormedCommRing R₁] [TauCeti.NormedRing.IsTate R₁]
+  [NormedCommRing R₂] [TauCeti.NormedRing.IsTate R₂]
+  {M₁ M₂ : Type*} [SeminormedAddCommGroup M₁] [Module R₁ M₁] [IsBoundedSMul R₁ M₁]
+  [SeminormedAddCommGroup M₂] [Module R₂ M₂] [IsBoundedSMul R₂ M₂]
+
+/-- **Transport of Riesz–Coleman projections along a ring homomorphism.** If `Φ` is a ring
+homomorphism between endomorphism algebras matching `Q'*(Φ u) = Φ (Q*(u))` and preserving the
+operator-norm closure of polynomials in `u`, then `Φ E` is a Riesz–Coleman projection of `Φ u` for
+`Q'`. -/
+theorem IsRieszColemanProjection.map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ →L[R₂] M₂))
+    {u E : M₁ →L[R₁] M₁} {Q : R₁[X]} {Q' : R₂[X]}
+    (hE : IsRieszColemanProjection u Q E)
+    (haeval : Polynomial.aeval (Φ u) Q'.reverse = Φ (Polynomial.aeval u Q.reverse))
+    (hclosure : ∀ {v : M₁ →L[R₁] M₁},
+      v ∈ closure (Algebra.adjoin R₁ {u} : Set (M₁ →L[R₁] M₁)) →
+      Φ v ∈ closure (Algebra.adjoin R₂ {Φ u} : Set (M₂ →L[R₂] M₂))) :
+    IsRieszColemanProjection (Φ u) Q' (Φ E) :=
+  ⟨hE.isIdempotentElem.map Φ, hE.commute.map Φ, hclosure hE.mem_closure_adjoin,
+    by rw [haeval, ← map_mul, hE.aeval_reverse_mul_eq_zero, map_zero],
+    Φ.exists_mul_eq_one_sub_map haeval.symm hE.exists_inverse hclosure⟩
+
+/-- **Transport of the complementary inverse along a ring homomorphism.** Under the hypotheses of
+`IsRieszColemanProjection.map`, the complementary inverse of the transported projection `Φ E` is
+`Φ hE.inverse`. -/
+theorem IsRieszColemanProjection.inverse_map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ →L[R₂] M₂))
+    {u E : M₁ →L[R₁] M₁} {Q : R₁[X]} {Q' : R₂[X]}
+    (hE : IsRieszColemanProjection u Q E)
+    (haeval : Polynomial.aeval (Φ u) Q'.reverse = Φ (Polynomial.aeval u Q.reverse))
+    (hclosure : ∀ {v : M₁ →L[R₁] M₁},
+      v ∈ closure (Algebra.adjoin R₁ {u} : Set (M₁ →L[R₁] M₁)) →
+      Φ v ∈ closure (Algebra.adjoin R₂ {Φ u} : Set (M₂ →L[R₂] M₂))) :
+    (hE.map Φ haeval hclosure).inverse = Φ hE.inverse := by
+  have hinv := Φ.map_mul_eq_one_sub_and_mul_eq_zero haeval.symm
+    hE.aeval_reverse_mul_inverse hE.inverse_mul_aeval_reverse
+    hE.mul_inverse_eq_zero hE.inverse_mul_eq_zero
+  exact ((hE.map Φ haeval hclosure).eq_inverse hinv.1 hinv.2.2.1).symm
+
+end Map
 
 section Retract
 

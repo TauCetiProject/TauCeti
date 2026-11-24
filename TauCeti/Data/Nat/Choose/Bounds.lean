@@ -28,6 +28,9 @@ hence degree-`k` monomials in `n` variables), is bounded by `n ^ k`.
 The sum `∑ₖ m (m - 1) ⋯ (m - k + 1) · A ^ (m - k)` collects the coefficients of the iterated
 derivatives `(d/dX)ᵏ X^m = m (m - 1) ⋯ (m - k + 1) X^(m - k)` evaluated at `A`. Since
 `m (m - 1) ⋯ (m - k + 1) ≤ choose m k · m ^ k`, the binomial theorem bounds it by `(m + A) ^ m`.
+In the same way `k! ≤ choose m k · m ^ k` for `k ≤ m` bounds the factorial-weighted power sum
+`∑_{k ≤ m} k! · A ^ k`, which collects the factors `k!` relating the iterated derivatives of a
+polynomial of degree `m` to its Hasse derivatives, by `(1 + m A) ^ m`.
 
 ## Main results
 
@@ -36,6 +39,8 @@ derivatives `(d/dX)ᵏ X^m = m (m - 1) ⋯ (m - k + 1) X^(m - k)` evaluated at `
 * `Nat.multichoose_le_pow`: `n.multichoose k ≤ n ^ k`.
 * `Nat.sum_range_descFactorial_mul_pow_le`: `∑_{k < N} m.descFactorial k · A ^ (m - k) ≤
   (m + A) ^ m` for `0 ≤ A` in an ordered commutative semiring.
+* `Nat.sum_range_factorial_mul_pow_le`: `∑_{k ≤ m} k! · A ^ k ≤ (1 + m A) ^ m` for `0 ≤ A` in an
+  ordered commutative semiring.
 -/
 
 public section
@@ -76,6 +81,20 @@ theorem Nat.multichoose_le_pow : ∀ n k : ℕ, n.multichoose k ≤ n ^ k
           exact Nat.add_le_add_right (Nat.mul_le_mul_left n (Nat.pow_le_pow_left n.le_succ k)) _
       _ = (n + 1) ^ (k + 1) := by rw [← Nat.succ_mul, pow_succ']
 
+/-- The comparison behind both factorial-type power-sum bounds: if `c k ≤ choose m k · m ^ k` for
+`k ≤ m`, then `∑_{k ≤ m} c k · X ^ k · Y ^ (m - k) ≤ (m X + Y) ^ m` for `0 ≤ X, Y`, by the
+binomial theorem. -/
+private theorem Nat.sum_range_mul_pow_mul_pow_le {α : Type*} [CommSemiring α] [PartialOrder α]
+    [IsOrderedRing α] (m : ℕ) {c : ℕ → ℕ} (hc : ∀ k ≤ m, c k ≤ m.choose k * m ^ k) {X Y : α}
+    (hX : 0 ≤ X) (hY : 0 ≤ Y) :
+    ∑ k ∈ range (m + 1), (c k : α) * X ^ k * Y ^ (m - k) ≤ (m * X + Y) ^ m := by
+  refine (sum_le_sum fun k hk ↦ ?_).trans (add_pow ((m : α) * X) Y m).ge
+  have h : (c k : α) ≤ ((m.choose k * m ^ k : ℕ) : α) :=
+    Nat.mono_cast (hc k (Nat.lt_succ_iff.1 (mem_range.1 hk)))
+  calc (c k : α) * X ^ k * Y ^ (m - k) ≤ ((m.choose k * m ^ k : ℕ) : α) * X ^ k * Y ^ (m - k) := by
+        gcongr
+    _ = _ := by push_cast; ring
+
 /-- The descending-factorial-weighted power sum `∑_{k < N} m (m - 1) ⋯ (m - k + 1) · A ^ (m - k)`
 is at most `(m + A) ^ m` when `0 ≤ A`, whatever the number `N` of terms: the terms with `k > m`
 vanish, and `m (m - 1) ⋯ (m - k + 1) ≤ choose m k · m ^ k`. -/
@@ -88,10 +107,17 @@ theorem Nat.sum_range_descFactorial_mul_pow_le {α : Type*} [CommSemiring α] [P
     · exact sum_le_sum_of_subset_of_nonneg (range_subset_range.2 h) fun _ _ _ ↦ by positivity
     · refine (sum_subset (range_subset_range.2 h) fun k _ hk ↦ ?_).ge
       rw [Nat.descFactorial_eq_zero_iff_lt.2 (by simpa using hk), Nat.cast_zero, zero_mul]
-  refine hle.trans ((sum_le_sum fun k hk ↦ ?_).trans (add_pow (m : α) A m).ge)
-  rw [mul_right_comm]
-  refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg hA _)
-  have h : m.descFactorial k ≤ m ^ k * m.choose k :=
-    (m.descFactorial_le_pow k).trans
-      (Nat.le_mul_of_pos_right _ (Nat.choose_pos (Nat.lt_succ_iff.1 (mem_range.1 hk))))
-  exact (Nat.mono_cast h).trans_eq (by push_cast; ring)
+  refine hle.trans ?_
+  simpa only [one_pow, mul_one] using Nat.sum_range_mul_pow_mul_pow_le m
+    (fun k hk ↦ (m.descFactorial_le_pow k).trans (Nat.le_mul_of_pos_left _ (Nat.choose_pos hk)))
+    zero_le_one hA
+
+/-- The factorial-weighted power sum `∑_{k ≤ m} k! · A ^ k` is at most `(1 + m A) ^ m` when
+`0 ≤ A`, since `k! ≤ choose m k · m ^ k` for `k ≤ m`. -/
+theorem Nat.sum_range_factorial_mul_pow_le {α : Type*} [CommSemiring α] [PartialOrder α]
+    [IsOrderedRing α] (m : ℕ) {A : α} (hA : 0 ≤ A) :
+    ∑ k ∈ range (m + 1), (k.factorial : α) * A ^ k ≤ (1 + m * A) ^ m := by
+  rw [add_comm (1 : α)]
+  simpa only [one_pow, mul_one] using Nat.sum_range_mul_pow_mul_pow_le m
+    (fun k hk ↦ (Nat.factorial_le_pow k).trans ((Nat.pow_le_pow_left hk k).trans
+      (Nat.le_mul_of_pos_left _ (Nat.choose_pos hk)))) hA zero_le_one

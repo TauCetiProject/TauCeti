@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Geometry.Manifold.Instances.Stiefel.Rotation
 public import TauCeti.Topology.MappingSpace.Sphere.LoopFamily
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic

@@ -55,6 +55,9 @@ delta rows `∏ᵢ Δ(q zᵢ; τᵢ)` of the homogeneous rational case
 * `TauCeti.pow_mul_eval_hasseDeriv_waldschmidtDeltaOperator_mem_range_intCast`: the denominator
   bound `L ^ κ δ_k^{[κ]}(x; σ) ∈ ℤ` for integral `x`.
 * `TauCeti.abs_eval_hasseDeriv_waldschmidtDeltaOperator_le`: the size bound.
+* `TauCeti.abs_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le` and
+  `TauCeti.norm_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le`: the size bound at integers
+  `t` with `|t| ≤ N`.
 * `Subring.pow_mul_waldschmidtInterpolationMatrix_waldschmidtDeltaOperator_mem` and
   `Subring.pow_mul_waldschmidtInterpolationMatrix_waldschmidtDelta_waldschmidtDeltaOperator_mem`:
   common denominators of the interpolation matrices with delta-operator columns.
@@ -189,6 +192,26 @@ theorem abs_eval_hasseDeriv_waldschmidtDeltaOperator_le {x : ℚ} {n : ℕ} (hx 
       (hlen _) (l1Norm_nonneg _) (by positivity)
   rw [← Rat.cast_le (K := ℝ)]
   simpa [← Rat.norm_cast_real, Real.norm_eq_abs] using h
+
+/-- **The size bound for the delta polynomials at integers.** If `t` is an integer with
+`|t| ≤ N`, then `|δ_k^{[κ]}(t; σ)| ≤ 2 ^ (σ / k (N + k + 1) + (N + σ % k + 1))`, with the natural
+quotient `σ / k` and remainder `σ % k` (which are `0` and `σ` when `k = 0`). -/
+theorem abs_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le {t : ℤ} {N : ℕ}
+    (ht : t.natAbs ≤ N) (k σ κ : ℕ) :
+    |(hasseDeriv κ (waldschmidtDeltaOperator k σ)).eval (t : ℚ)| ≤
+      2 ^ (σ / k * (N + k + 1) + (N + σ % k + 1)) := by
+  refine abs_eval_hasseDeriv_waldschmidtDeltaOperator_le ?_ k σ κ
+  rw [← Int.cast_abs, Int.abs_eq_natAbs]
+  exact_mod_cast ht
+
+/-- The size bound `TauCeti.abs_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le` for the
+norm of `ℚ`, as used by coefficient-length estimates. -/
+theorem norm_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le {t : ℤ} {N : ℕ}
+    (ht : t.natAbs ≤ N) (k σ κ : ℕ) :
+    ‖(hasseDeriv κ (waldschmidtDeltaOperator k σ)).eval (t : ℚ)‖ ≤
+      (2 : ℝ) ^ (σ / k * (N + k + 1) + (N + σ % k + 1)) := by
+  rw [← Rat.norm_cast_real, Real.norm_eq_abs, ← Rat.cast_abs]
+  exact_mod_cast abs_eval_intCast_hasseDeriv_waldschmidtDeltaOperator_le ht k σ κ
 
 end TauCeti
 

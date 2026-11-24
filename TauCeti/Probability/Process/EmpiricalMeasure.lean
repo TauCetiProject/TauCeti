@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Group.Convolution
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 public import Mathlib.Probability.UniformOn
+import Mathlib.MeasureTheory.Group.LIntegral
 
 /-!
 # Empirical measures of finite families and sequences
@@ -27,7 +29,10 @@ measure, and the sequence form as a specialization, so they can never drift apar
 The API covers evaluation, integration, pushforward, continuity, measurability and finite support.
 Values are counted with multiplicity: the empirical measure depends only on the multiset of values,
 so it is invariant under reindexing. The empirical measure of a concatenation is the average of the
-empirical measures of its pieces weighted by their sizes. The finite-population form is used by
+empirical measures of its pieces weighted by their sizes. On a commutative additive group with
+jointly measurable addition and an s-finite translation-invariant measure `μ`, the convolution of
+the empirical measure with `μ.withDensity g`, for an almost everywhere measurable `g`, has density
+the average of the translates of `g` by the sample points. The finite-population form is used by
 quantitative sampling arguments and, applied to eigenvalues, defines empirical spectral measures of
 matrices. The sequence form is the process-level input to the empirical-measure form of de
 Finetti's theorem.
@@ -223,6 +228,42 @@ theorem continuous_empiricalFiniteMeasure [TopologicalSpace α] [OpensMeasurable
 
 end FiniteFamily
 
+section Convolution
+
+open Finset
+
+variable {κ G : Type*} [Fintype κ] [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G]
+  {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant]
+
+/-- The convolution of the empirical measure of `x` with `μ.withDensity g`, for an s-finite,
+translation-invariant measure `μ` on a commutative additive group with jointly measurable addition
+and an almost everywhere measurable density `g`, has density the average
+`(card κ)⁻¹ ∑ᵢ g (t - xᵢ)` of the translates of `g` by the sample points. -/
+theorem empiricalFiniteMeasure_conv_withDensity (x : κ → G) {g : G → ℝ≥0∞}
+    (hg : AEMeasurable g μ) :
+    (empiricalFiniteMeasure x : Measure G) ∗ μ.withDensity g =
+      μ.withDensity fun t ↦ ∑ i, ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * g (t - x i) := by
+  have hgi (i : κ) : AEMeasurable (fun t ↦ g (t - x i)) μ :=
+    hg.comp_quasiMeasurePreserving (measurePreserving_sub_right μ (x i)).quasiMeasurePreserving
+  refine Measure.ext_of_lintegral _ fun f hf ↦ ?_
+  rw [Measure.lintegral_conv hf, lintegral_empiricalFiniteMeasure
+      (f := fun y ↦ ∫⁻ z, f (y + z) ∂μ.withDensity g)
+      (hf.comp measurable_add).lintegral_prod_right',
+    lintegral_withDensity_eq_lintegral_mul₀
+      (Finset.aemeasurable_fun_sum _ fun i _ ↦ (hgi i).const_mul _) hf.aemeasurable]
+  simp only [Pi.mul_apply, sum_mul]
+  rw [lintegral_finsetSum' (f := fun i a ↦ _ * g (a - x i) * f a) _
+      fun i _ ↦ ((hgi i).const_mul _).mul hf.aemeasurable, mul_sum]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [lintegral_withDensity_eq_lintegral_mul₀ hg (by fun_prop : Measurable _).aemeasurable]
+  simp_rw [mul_assoc]
+  rw [lintegral_const_mul'' (f := fun a ↦ g (a - x i) * f a) _ ((hgi i).mul hf.aemeasurable)]
+  congr 1
+  rw [← lintegral_add_left_eq_self (fun t ↦ g (t - x i) * f t) (x i)]
+  simp
+
+end Convolution
+
 section FinitePopulation
 
 variable {κ : Type*} [Fintype κ] [Nonempty κ]
@@ -257,6 +298,14 @@ theorem empiricalMeasureOfFintype_apply {x : κ → α} {s : Set α} (hs : Measu
       ∑ i, s.indicator (1 : α → ℝ≥0∞) (x i) := by
   rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     toFiniteMeasure_empiricalMeasureOfFintype, empiricalFiniteMeasure_apply hs]
+
+/-- A finite empirical population charges a set exactly when some member of the population lies
+in it. The set need not be measurable. -/
+theorem empiricalMeasureOfFintype_pos_iff [MeasurableSingletonClass α] {x : κ → α}
+    {s : Set α} :
+    0 < (empiricalMeasureOfFintype x : Measure α) s ↔ ∃ i, x i ∈ s := by
+  simp [empiricalMeasureOfFintype_toMeasure, Measure.dirac_apply, pos_iff_ne_zero,
+    Finset.sum_eq_zero_iff]
 
 /-- Two nonempty finite populations with the same values, counted with multiplicity, have the
 same empirical measure. -/
