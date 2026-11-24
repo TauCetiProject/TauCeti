@@ -238,6 +238,7 @@ theorem deconcatenation_cons (x : M) (w : TensorWords R M) :
   deconcatenation_reducedInclusion_prepend x w
 
 /-- Mapping a word starting with `x` gives a word starting with the image of `x`. -/
+@[simp]
 theorem map_cons (f : M →ₗ[R] N) (x : M) (w : TensorWords R M) :
     map f (cons R M x w) = cons R N (f x) (map f w) := by
   have h : map f ∘ₗ cons R M x = cons R N (f x) ∘ₗ map f := by

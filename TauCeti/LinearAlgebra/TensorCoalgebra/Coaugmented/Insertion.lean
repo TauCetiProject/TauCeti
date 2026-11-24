@@ -116,6 +116,7 @@ theorem insertions_apply_one (a : M) (t : ℕ) : insertions R a t 1 = (cons R M 
 
 /-- Inserting `t` copies of `a` into `x w`: some `k` of them go before `x`, and the others into
 `w`. -/
+@[simp]
 theorem insertions_cons (a : M) (t : ℕ) (x : M) (w : TensorWords R M) :
     insertions R a t (cons R M x w) =
       ∑ p ∈ Finset.antidiagonal t, (cons R M a ^ p.1) (cons R M x (insertions R a p.2 w)) := by
@@ -311,6 +312,7 @@ theorem twistedInsert_one (τ : M →ₗ[R] M) (c : M) : twistedInsert R τ c 1 
   twistedInsertAux_one τ c
 
 /-- Inserting a letter into `x w`: before `x`, or after the twisted letter `τ x`. -/
+@[simp]
 theorem twistedInsert_cons (τ : M →ₗ[R] M) (c x : M) (w : TensorWords R M) :
     twistedInsert R τ c (cons R M x w) =
       cons R M c (cons R M x w) + cons R M (τ x) (twistedInsert R τ c w) :=
