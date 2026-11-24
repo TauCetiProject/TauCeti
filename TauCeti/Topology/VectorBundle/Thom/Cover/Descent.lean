@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Coordi
 public import TauCeti.AlgebraicTopology.Singular.Twisted.QuotientCovering
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.SignRepresentation
-public import TauCeti.Topology.VectorBundle.Thom.CoverChainMap
+public import TauCeti.Topology.VectorBundle.Thom.Cover.ChainMap
 public import TauCeti.Topology.VectorBundle.Thom.EquivariantCap
 
 /-!

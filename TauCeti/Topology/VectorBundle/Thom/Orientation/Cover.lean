@@ -438,9 +438,8 @@ theorem neg_one_smul_eq_deckThomPairMap_fst
     (v : (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst) :
     (-1 : ℤˣ) • v = TopPair.Hom.fst (deckThomPairMap F E ι) v := by
   refine Eq.trans ?_ (deckThomPairMap_fst_apply v).symm
-  -- the base point of `(-1) • v` is `(-1) • v.proj`, by definition of the action
-  exact TotalSpace.ext (show (-1 : ℤˣ) • v.proj = _ from
-    (neg_one_smul_eq_deck v.proj).trans (deck_apply v.proj)) HEq.rfl
+  exact TotalSpace.ext ((proj_smul_totalSpace (-1) v).trans
+    ((neg_one_smul_eq_deck v.proj).trans (deck_apply v.proj))) HEq.rfl
 
 omit [Fintype ι] [FiniteDimensional ℝ F] in
 /-- The action of `-1` on the total space of the Thom pair of the pull-back of `E` to the
