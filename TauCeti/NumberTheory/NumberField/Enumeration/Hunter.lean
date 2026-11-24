@@ -13,6 +13,7 @@ public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.Localization.NormTrace
+import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Gram.Projection
 import TauCeti.Data.Int.Round
 import TauCeti.LinearAlgebra.Unimodular.Basis
@@ -30,8 +31,9 @@ the Euclidean space indexed by the complex embeddings; the real inner product of
 with `t2Vector K x` is the trace `Tr x`, and `‖t2Vector K 1‖ ^ 2 = n`.
 
 The Gram determinant of the `T₂` vectors of any `ℤ`-basis of the ring of integers is `|discr K|`
-(`TauCeti.NumberField.det_gram_t2Vector`): the Gram matrix is `(conj M) Mᵀ` for the complex
-embedding matrix `M`, whose determinant squares to the discriminant.
+(`TauCeti.NumberField.det_gram_t2Vector`): it is `‖det M‖ ^ 2` for the complex embedding matrix
+`M`, the coordinate matrix of these vectors in the standard orthonormal basis, and `det M` squares
+to the discriminant.
 
 **Hunter's theorem** (`TauCeti.NumberField.hunter`) bounds the smallest `T₂` of a non-rational
 algebraic integer. Let `Γ` be admissible in rank `n - 1`: every positive definite real symmetric
@@ -151,20 +153,28 @@ theorem det_gram_t2Vector {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis 
         RingHom.equivRatAlgHom_apply]
     rw [hdiscr, eq_ratCast, Rat.cast_intCast, hMe] at h
     exact h.symm
-  -- Over `ℂ`, the Gram matrix is `(conj M) Mᵀ`.
+  -- Over `ℂ`, the Gram determinant is `‖det M‖ ^ 2`: read the `T₂` vectors in the standard
+  -- orthonormal basis of the Euclidean space, enumerated by `ι` through `e`.
   have hG : Complex.ofRealHom.mapMatrix (gram ℝ fun i ↦ t2Vector K (b i)) =
-      M.map (starRingEnd ℂ) * Mᵀ := by
+      gram ℂ fun i ↦ t2Vector K (b i) := by
     ext i j
-    simp only [Matrix.mul_apply, RingHom.mapMatrix_apply, map_apply, gram_apply,
-      Complex.ofRealHom_eq_coe, ofReal_inner_t2Vector, M, transpose_apply, of_apply]
-    exact (e.sum_comp fun σ ↦ conj (σ (b i : K)) * σ (b j : K)).symm
-  -- `det (conj M) = conj (det M)` and `conj z * z = ‖z‖ ^ 2`, so `det (conj M) * det M` is
-  -- `‖det M‖ ^ 2 = ‖det M ^ 2‖ = |discr K|`.
-  have hconj : (M.map (starRingEnd ℂ)).det * M.det = ‖M.det ^ 2‖ := by
-    simp [← RingHom.mapMatrix_apply, ← RingHom.map_det, Complex.conj_mul']
-  have hdet := congr_arg det hG
-  simp only [← RingHom.map_det, det_mul, det_transpose, hconj, hM] at hdet
-  simpa using hdet
+    rw [RingHom.mapMatrix_apply, map_apply, gram_apply, gram_apply, Complex.ofRealHom_eq_coe,
+      ofReal_inner_t2Vector]
+    simp [PiLp.inner_apply, mul_comm]
+  classical
+  have hdet : ((EuclideanSpace.basisFun (K →+* ℂ) ℂ).reindex e.symm).toBasis.det
+      (fun i ↦ t2Vector K (b i)) = M.det := by
+    rw [OrthonormalBasis.reindex_toBasis, Basis.det_reindex, ← det_submatrix_equiv_self e.symm M,
+      ← basisFun_toBasis_det_toLp]
+    congr with σ τ
+    simp [M]
+  have h := congr_arg det hG
+  rw [← RingHom.map_det,
+    ((EuclideanSpace.basisFun (K →+* ℂ) ℂ).reindex e.symm).det_gram_eq_norm_det_sq, hdet] at h
+  have hnorm : ‖M.det‖ ^ 2 = |(discr K : ℝ)| := by
+    rw [← norm_pow, hM, Complex.norm_intCast]
+  rw [← hnorm]
+  exact Complex.ofReal_injective (by simpa using h)
 
 variable (K) in
 /-- The projection `t2Vector K x - (Tr x / n) • t2Vector K 1` of the `T₂` vector of `x` away from
