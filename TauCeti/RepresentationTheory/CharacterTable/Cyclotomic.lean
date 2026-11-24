@@ -82,13 +82,12 @@ theorem centralCharacterTable_mem_range_complexEmbedding
     (i : Fin (Nat.card (ConjClasses G))) (C : ConjClasses G) :
     centralCharacterTable ℂ G i C ∈ Set.range (Cyclotomic.complexEmbedding (e := e)) := by
   apply Cyclotomic.mem_range_complexEmbedding_of_isIntegral
-  · let K := IntermediateField.adjoin ℚ {Cyclotomic.complexRoot e}
+  · let K := Cyclotomic.complexField e
     have hchar : characterTable ℂ G i C ∈ K := by
       have hle : Algebra.adjoin ℤ {Cyclotomic.complexRoot e} ≤
           K.toSubalgebra.restrictScalars ℤ := by
         apply Algebra.adjoin_le
-        exact Set.singleton_subset_iff.mpr
-          (IntermediateField.subset_adjoin ℚ _ (Set.mem_singleton _))
+        exact Set.singleton_subset_iff.mpr (Cyclotomic.complexRoot_mem_complexField e)
       exact hle (Cyclotomic.mem_range_complexEmbedding_iff.mp
         (characterTable_mem_range_complexEmbedding e he i C))
     rw [centralCharacterTable_eq_div i

@@ -7,6 +7,9 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Polarization.Hyperbolic
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.LinearAlgebra.Dual.Basis
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.HyperbolicPair
 
 /-!
 # The standard split even-dimensional polarization
@@ -27,7 +30,14 @@ directly into the spin representation and Kostant-lattice constructions.
 * `TauCeti.splitEvenForm`: its quadratic form `(f, x) ↦ f x`.
 * `TauCeti.splitEvenPolarization`: the canonical polarization by the two coordinate axes.
 * `TauCeti.splitEvenBasis`: the coordinate basis of the first isotropic summand.
+* `TauCeti.splitEvenDualBasis`: the basis of `M* × M` by dual coordinates and coordinates, in
+  which the polar form has Gram matrix `fromBlocks 0 1 1 0`.
 * `TauCeti.finrank_splitEvenPolarization_W`: the first isotropic summand has dimension `n`.
+* `TauCeti.isHyperbolicFamily_splitEvenForm`: the coordinate hyperbolic pairs form a family of
+  mutually orthogonal hyperbolic pairs.
+* `TauCeti.splitEvenSpaceBaseChange`: the base change `SplitEvenSpace R n → SplitEvenSpace S n`
+  along an algebra `R → S`, with `TauCeti.splitEvenForm_splitEvenSpaceBaseChange` showing that it
+  carries the split form to its image in `S`.
 
 ## References
 
@@ -125,6 +135,85 @@ theorem coe_splitEvenBasis (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
   rw [splitEvenBasis, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply,
     SpinPolarizationData.coe_hyperbolicBasis_apply, Pi.basisFun_apply]
 
+/-- The basis of the standard split space `M* × M` given by the dual coordinate functionals and
+the coordinate vectors. -/
+noncomputable def splitEvenDualBasis (K : Type u) [CommRing K] (n : ℕ) :
+    Basis (Fin n ⊕ Fin n) K (SplitEvenSpace K n) :=
+  (Pi.basisFun K (Fin n)).dualBasis.prod (Pi.basisFun K (Fin n))
+
+/-- The first half of the split basis consists of the standard dual-coordinate axes. -/
+@[simp]
+theorem splitEvenDualBasis_inl (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
+    splitEvenDualBasis K n (Sum.inl i) = ((Pi.basisFun K (Fin n)).coord i, 0) := by
+  simp [splitEvenDualBasis, Basis.prod_apply]
+
+/-- The second half of the split basis consists of the standard coordinate axes. -/
+@[simp]
+theorem splitEvenDualBasis_inr (K : Type u) [CommRing K] (n : ℕ) (i : Fin n) :
+    splitEvenDualBasis K n (Sum.inr i) = (0, Pi.single i 1) := by
+  simp [splitEvenDualBasis, Basis.prod_apply, Pi.basisFun_apply]
+
+/-- In the dual-coordinate and coordinate basis, the polar form of the standard split quadratic
+form has Gram matrix `fromBlocks 0 1 1 0`. -/
+theorem toMatrix_polarBilin_splitEvenForm (K : Type u) [CommRing K] (n : ℕ) :
+    LinearMap.BilinForm.toMatrix (splitEvenDualBasis K n) (splitEvenForm K n).polarBilin =
+      Matrix.fromBlocks 0 1 1 0 := by
+  ext (i | i) (j | j) <;>
+    simp [LinearMap.BilinForm.toMatrix_apply, Matrix.one_apply, Pi.single_apply, eq_comm]
+
+section BaseChange
+
+variable (R S : Type*) [CommRing R] [CommRing S] [Algebra R S] (n : ℕ)
+
+/-- The base change `(f, x) ↦ (f_S, x_S)` of a vector of the standard split space along an
+algebra `R → S`: `f_S` is the functional whose coordinates `f_S eᵢ` are the images of `f eᵢ`, and
+`x_S` is the coordinatewise image of `x`. -/
+noncomputable def splitEvenSpaceBaseChange : SplitEvenSpace R n →ₗ[R] SplitEvenSpace S n where
+  toFun m := (∑ i, algebraMap R S (m.1 (Pi.single i 1)) • LinearMap.proj i,
+    fun i ↦ algebraMap R S (m.2 i))
+  map_add' m m' := by
+    refine Prod.ext (LinearMap.ext fun y ↦ ?_) (funext fun i ↦ ?_)
+    · simp only [Prod.fst_add, LinearMap.add_apply, map_add, add_smul, Finset.sum_add_distrib]
+    · simp
+  map_smul' c m := by
+    refine Prod.ext (LinearMap.ext fun y ↦ ?_) (funext fun i ↦ ?_)
+    · simp only [Prod.smul_fst, LinearMap.smul_apply, smul_eq_mul, map_mul, mul_smul,
+        ← Finset.smul_sum, RingHom.id_apply, algebraMap_smul]
+    · simp [Algebra.smul_def]
+
+/-- The functional of a base-changed vector sends `y` to `∑ i, f eᵢ • yᵢ`. -/
+theorem splitEvenSpaceBaseChange_fst_apply (m : SplitEvenSpace R n) (y : Fin n → S) :
+    (splitEvenSpaceBaseChange R S n m).1 y = ∑ i, m.1 (Pi.single i 1) • y i := by
+  simp only [splitEvenSpaceBaseChange, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.coe_sum,
+    Finset.sum_apply, LinearMap.smul_apply, LinearMap.proj_apply, algebraMap_smul]
+
+/-- The coordinates of the functional of a base-changed vector are the images of the coordinates
+of the original functional. -/
+@[simp]
+theorem splitEvenSpaceBaseChange_fst_single (m : SplitEvenSpace R n) (i : Fin n) :
+    (splitEvenSpaceBaseChange R S n m).1 (Pi.single i 1) =
+      algebraMap R S (m.1 (Pi.single i 1)) := by
+  rw [splitEvenSpaceBaseChange_fst_apply,
+    Finset.sum_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp), Pi.single_eq_same,
+    Algebra.algebraMap_eq_smul_one]
+
+/-- The vector part of a base-changed vector is the coordinatewise image of the vector part. -/
+@[simp]
+theorem splitEvenSpaceBaseChange_snd (m : SplitEvenSpace R n) (i : Fin n) :
+    (splitEvenSpaceBaseChange R S n m).2 i = algebraMap R S (m.2 i) :=
+  (rfl)
+
+/-- The split form of a base-changed vector is the image of the split form of the vector. -/
+theorem splitEvenForm_splitEvenSpaceBaseChange (m : SplitEvenSpace R n) :
+    splitEvenForm S n (splitEvenSpaceBaseChange R S n m) =
+      algebraMap R S (splitEvenForm R n m) := by
+  rw [splitEvenForm_apply, splitEvenForm_apply, splitEvenSpaceBaseChange_fst_apply]
+  conv_rhs => rw [pi_eq_sum_univ' m.2, map_sum, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [map_smul, smul_eq_mul, map_mul, splitEvenSpaceBaseChange_snd, Algebra.smul_def, mul_comm]
+
+end BaseChange
+
 variable (K : Type u) [Field K]
 
 /-- The standard split space of `n` hyperbolic planes has dimension `2 * n`. -/
@@ -143,5 +232,17 @@ theorem splitEvenPolarization_W_ne_bot {n : ℕ} (hn : n ≠ 0) :
     (splitEvenPolarization K n).W ≠ ⊥ :=
   Submodule.finrank_eq_zero.not.1 <| by
     simpa using hn
+
+/-- The coordinate pairs `e_i = (0, δ_i)`, `f_i = (δ_i^*, 0)` form a family of mutually
+orthogonal hyperbolic pairs for the standard split even form `(φ, x) ↦ φ x`. -/
+theorem isHyperbolicFamily_splitEvenForm (K : Type u) [CommRing K] (n : ℕ) :
+    QuadraticMap.IsHyperbolicFamily (splitEvenForm K n) (fun i => (0, Pi.single i 1))
+      (fun i => (LinearMap.proj i, 0)) where
+  left_isotropic _ := by simp
+  right_isotropic _ := by simp
+  polar_left_right _ := by simp
+  polar_left_left _ _ _ := by simp
+  polar_left_right_of_ne _ _ hij := by simp [Pi.single_eq_of_ne' hij]
+  polar_right_right _ _ _ := by simp
 
 end TauCeti
