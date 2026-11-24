@@ -55,17 +55,6 @@ namespace TauCeti.IntegralLattice
 
 variable {W : Type*} [AddCommGroup W] [Module ℚ W] {N : IntegralLattice W}
 
-/-- The form of `U` in the isotropic basis `e`, `f`: `B(α e + β f, a e + b f) = α b + β a`. -/
-private theorem integralForm_hyperbolicPlaneBasis (α β a b : ℤ) :
-    hyperbolicPlane.integralForm (α • hyperbolicPlaneBasis 0 + β • hyperbolicPlaneBasis 1)
-      (a • hyperbolicPlaneBasis 0 + b • hyperbolicPlaneBasis 1) = α * b + β * a := by
-  have h (i j : Fin 2) := congrFun (congrFun gramMatrix_hyperbolicPlaneBasis i) j
-  simp only [gramMatrix_apply] at h
-  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, h,
-    Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.empty_val', Matrix.cons_val_fin_one]
-  ring
-
 /-- Every vector of `U ⊕ N` is `α e + β f + y` with integer coordinates `α` and `β` and `y ∈ N`. -/
 private theorem exists_eq_inl_add_inr (x : hyperbolicPlane.orthogonalSum N) :
     ∃ (α β : ℤ) (y : N), x = orthogonalSumInl hyperbolicPlane N
@@ -130,9 +119,16 @@ private theorem exists_integralForm_add_integralNorm_eq (hN : N.IsEven) (hNu : N
           obtain ⟨v, hv⟩ := hNu.exists_characteristicVector_sub_eq_two_smul hy
             ((N.isEven_iff_isCharacteristicVector_zero).mp hN)
           rw [sub_zero] at hv
+          have hx2 : orthogonalSumInl hyperbolicPlane N
+                ((k + k) • hyperbolicPlaneBasis 0 + (m + m) • hyperbolicPlaneBasis 1) +
+              orthogonalSumInr hyperbolicPlane N y = (2 : ℤ) • (orthogonalSumInl hyperbolicPlane N
+                (k • hyperbolicPlaneBasis 0 + m • hyperbolicPlaneBasis 1) +
+              orthogonalSumInr hyperbolicPlane N v) := by
+            rw [hv]
+            simp only [map_add, map_zsmul]
+            module
           apply hx
-          rw [Submodule.Quotient.mk_eq_zero, hv, ← two_smul ℤ k, ← two_smul ℤ m, smul_assoc,
-            smul_assoc, ← smul_add, map_zsmul, map_zsmul, ← smul_add]
+          rw [Submodule.Quotient.mk_eq_zero, hx2]
           exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
         exact ⟨z, ((Int.not_even_iff_odd.mp hd).sub_odd hz).sub (hNz z)⟩
       exact ⟨1 - k, c - m * (1 - k), z, by linear_combination -hc⟩

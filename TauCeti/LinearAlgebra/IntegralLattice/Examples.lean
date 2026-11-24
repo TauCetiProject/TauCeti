@@ -29,6 +29,8 @@ the affine form.
 * `TauCeti.IntegralLattice.negativeA1`: the negative rank-one lattice with Gram matrix `[-2]`.
 * `TauCeti.IntegralLattice.hyperbolicPlane`: the hyperbolic plane with Gram matrix
   `!![0, 1; 1, 0]`.
+* `TauCeti.IntegralLattice.integralForm_hyperbolicPlaneBasis`: the form of the hyperbolic plane in
+  its isotropic basis, `B(α e + β f, a e + b f) = α b + β a`.
 * `TauCeti.IntegralLattice.affineA1`: the affine `A₁` lattice with Gram matrix
   `!![2, -2; -2, 2]`.
 * `TauCeti.IntegralLattice.affineA1RadicalQuotientIsometry`: the isometry from the radical
@@ -108,6 +110,18 @@ noncomputable def hyperbolicPlaneBasis : Basis (Fin 2) ℤ hyperbolicPlane :=
   rw [hg]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [hyperbolicPlaneMatrix]
+
+/-- The form of the hyperbolic plane in its isotropic basis `e`, `f`:
+`B(α e + β f, a e + b f) = α b + β a`. -/
+theorem integralForm_hyperbolicPlaneBasis (α β a b : ℤ) :
+    hyperbolicPlane.integralForm (α • hyperbolicPlaneBasis 0 + β • hyperbolicPlaneBasis 1)
+      (a • hyperbolicPlaneBasis 0 + b • hyperbolicPlaneBasis 1) = α * b + β * a := by
+  have h (i j : Fin 2) := congrFun (congrFun gramMatrix_hyperbolicPlaneBasis i) j
+  simp only [gramMatrix_apply] at h
+  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, h,
+    Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.empty_val', Matrix.cons_val_fin_one]
+  ring
 
 /-- The degenerate affine `A₁` lattice, with Gram matrix `!![2, -2; -2, 2]`. -/
 noncomputable def affineA1 : IntegralLattice (Fin 2 → ℚ) := by
