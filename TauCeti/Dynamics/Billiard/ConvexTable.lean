@@ -347,16 +347,13 @@ def circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] : ConvexTable ⊤ (2 * Real.pi
     (StrictConvexBilliardTable.circle (Real.pos_of_fact_two_pi_mul_pos (R := R))).norm_deriv
   left_of_tangent' s t h := by
     have hR : 0 < R := Real.pos_of_fact_two_pi_mul_pos
-    -- The height of `χ t` above the tangent line at `χ s` is `R (1 - cos ((t - s) / R))`.
-    have hd := StrictConvexBilliardTable.areaForm_deriv_circle_sub (hR := hR) s t s
-    rw [Complex.areaForm, sub_self, zero_div, Real.cos_zero] at hd
-    rw [hd]
-    refine mul_pos hR (sub_pos.2 (lt_of_le_of_ne (Real.cos_le_one _) fun hc => ?_))
-    obtain ⟨n, hn⟩ := (Real.cos_eq_one_iff _).1 hc
-    refine h n ?_
-    rw [eq_div_iff hR.ne'] at hn
-    rw [← hn]
-    ring
+    -- This is the `areaForm_pos` field of the circle billiard table.
+    rw [← Complex.areaForm]
+    refine (StrictConvexBilliardTable.circle hR).areaForm_pos s t fun hts => ?_
+    rw [StrictConvexBilliardTable.apply_eq_apply_iff, ← sub_eq_zero, ← AddCircle.coe_sub,
+      AddCircle.coe_eq_zero_iff] at hts
+    obtain ⟨m, hm⟩ := hts
+    exact h m (by rw [← hm, zsmul_eq_mul, StrictConvexBilliardTable.period_circle])
 
 @[simp]
 theorem circle_apply (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
