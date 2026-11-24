@@ -151,7 +151,7 @@ origin. -/
 private theorem differentiableOn_homogeneousLift {k : ℤ} {s : ℙ ℂ (Fin (n + 1) → ℂ) → ℂ}
     (hs : s ∈ holomorphicTwistSections n k) : DifferentiableOn ℂ (homogeneousLift k s) {0}ᶜ := by
   intro v hv
-  obtain ⟨j, hj⟩ := Function.ne_iff.1 (show v ≠ 0 from hv)
+  obtain ⟨j, hj⟩ := Function.ne_iff.1 (Set.mem_compl_singleton_iff.1 hv)
   -- Near `v`, the function is the chart-`j` coordinate of `s` at the affine coordinates of `[w]`,
   -- times `w j ^ k`.
   have hcoord (i : Fin (n + 1)) : DifferentiableAt ℂ (fun w : Fin (n + 1) → ℂ ↦ w i) v :=
@@ -204,9 +204,10 @@ private theorem exists_isHomogeneous_eval_eq_homogeneousLift (d : ℕ)
         (dense_compl_singleton _).prod (dense_compl_singleton _)
       have := Continuous.ext_on hdense (f := fun p : ℂ × (Fin (n + 1) → ℂ) ↦ G (p.1 • p.2))
         (g := fun p ↦ p.1 ^ d * G p.2) (hGcont.comp (continuous_fst.smul continuous_snd))
-        ((continuous_fst.pow d).mul (hGcont.comp continuous_snd)) fun p ⟨ht, hv⟩ ↦ by
-          have ht : p.1 ≠ 0 := ht
-          have hv : p.2 ≠ 0 := hv
+        ((continuous_fst.pow d).mul (hGcont.comp continuous_snd)) fun p hp ↦ by
+          obtain ⟨ht, hv⟩ := Set.mem_prod.1 hp
+          replace ht := Set.mem_compl_singleton_iff.1 ht
+          replace hv := Set.mem_compl_singleton_iff.1 hv
           dsimp only
           rw [hGeq (smul_ne_zero ht hv), hGeq hv, homogeneousLift_smul _ s ht, zpow_natCast]
       exact fun t v ↦ congrFun this (t, v)
@@ -231,7 +232,8 @@ theorem eq_zero_of_mdifferentiable_section_twistCore (hn : n ≠ 0) {k : ℤ} (h
       (continuous_pow _).mul (hG.continuous.comp (continuous_id.smul continuous_const))
     have := Continuous.ext_on (dense_compl_singleton (0 : ℂ)) (g := fun _ ↦ G v) hcont
       continuous_const
-      fun t (ht : t ≠ 0) ↦ by
+      fun t ht ↦ by
+        replace ht := Set.mem_compl_singleton_iff.1 ht
         rw [hGeq (smul_ne_zero ht hv), hGeq hv, homogeneousLift_smul _ s ht, hm]
         simp [ht]
     simpa using (congrFun this 0).symm
