@@ -16,8 +16,9 @@ import TauCeti.Computability.Primrec.Bitwise
 To compare two finite-stage enumerations `A` and `B`, `TauCeti.Enumeration.stageCompare A B s`
 searches for the least stage `t` with `A s ⊆ B t`. Its actual domain is `{s | ∃ t, A s ⊆ B t}`,
 when `B` is directed under inclusion its totality characterizes `stageLimit A ⊆ stageLimit B`,
-and for `ℕ`-valued enumerations it is uniformly recursive in any oracle and stage parameters without
-totality or directedness premises.
+and for `ℕ`-valued enumerations it is uniformly recursive in any oracle `G` in which the binary
+finite-set codes of both enumerations are uniformly computable, without totality or directedness
+premises.
 
 ## Main definitions
 
