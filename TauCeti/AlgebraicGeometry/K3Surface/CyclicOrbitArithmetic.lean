@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ArithmeticFunction.JordanTotient
+public import TauCeti.NumberTheory.ArithmeticFunction.DedekindPsi
 import TauCeti.Data.Nat.GCD
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.IntervalCases
