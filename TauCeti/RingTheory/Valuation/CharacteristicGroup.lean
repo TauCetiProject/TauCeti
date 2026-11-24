@@ -116,7 +116,7 @@ theorem CofinalValue.of_isEquiv {v : Valuation A Γ₀} {w : Valuation A Γ₀'}
     (h : v.IsEquiv w) {a : A} (hv : CofinalValue v a) : CofinalValue w a := by
   intro γ hγ
   obtain ⟨n, hn⟩ := hv (h.orderMonoidIso₀.symm γ)
-    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso₀ heq))
+    (pos_iff_ne_zero.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso₀ heq))
   refine ⟨n, ?_⟩
   have := (map_lt_map_iff h.orderMonoidIso₀).mpr hn
   rw [map_pow, Valuation.IsEquiv.orderMonoidIso₀_spec] at this
@@ -173,7 +173,7 @@ theorem HasFullCharacteristicGroup.of_isEquiv {v : Valuation A Γ₀} {w : Valua
     (h : v.IsEquiv w) (hv : HasFullCharacteristicGroup v) : HasFullCharacteristicGroup w := by
   intro γ hγ
   obtain ⟨a, ha_lo, ha_hi⟩ := hv (h.orderMonoidIso₀.symm γ)
-    (zero_lt_iff.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso₀ heq))
+    (pos_iff_ne_zero.mpr fun heq ↦ hγ.ne' (by simpa using congrArg h.orderMonoidIso₀ heq))
   refine ⟨a, ?_, ?_⟩
   · have := (map_le_map_iff h.orderMonoidIso₀).mpr ha_lo
     rw [map_inv₀, Valuation.IsEquiv.orderMonoidIso₀_spec] at this

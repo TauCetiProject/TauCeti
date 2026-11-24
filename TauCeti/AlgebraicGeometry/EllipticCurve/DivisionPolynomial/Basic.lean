@@ -33,6 +33,8 @@ a curve in characteristic-≠-2 normal form.
   `x' · ΨSq₂(x) = Φ₂(x)` does.
 * `WeierstrassCurve.evalEval_ψ₂_of_isCharNeTwoNF`: `ψ₂(x, y) = 2y` whenever `a₁ = a₃ = 0`. The
   two-division polynomial is `2y + a₁x + a₃`, so Mathlib's `IsCharNeTwoNF` collapses it.
+* `WeierstrassCurve.Ψ₂Sq_of_isCharNeTwoNF` and `WeierstrassCurve.eval_Ψ₂Sq_of_isCharNeTwoNF`:
+  `Ψ₂Sq = 4 (X³ + a₂X² + a₄X + a₆)` whenever `a₁ = a₃ = 0`.
 * `WeierstrassCurve.eval_Ψ₃`: `Ψ₃(x) = 3x⁴ + b₂x³ + 3b₄x² + 3b₆x + b₈`, the value of `Ψ₃` at a
   point through the `b`-invariants.
 * `WeierstrassCurve.variableChange_b₈_eq_eval_Ψ₃`: after a change of variables `C`, the invariant
@@ -154,6 +156,20 @@ are covered through Mathlib's `isCharNeTwoNF_of_isShortNF`. -/
 @[simp] lemma evalEval_ψ₂_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x y : R) :
     W.ψ₂.evalEval x y = 2 * y := by
   simp [WeierstrassCurve.ψ₂, Affine.polynomialY, evalEval]
+
+/-- **In characteristic-≠-2 normal form, `Ψ₂Sq` is four times the cubic**:
+`Ψ₂Sq = 4 (X³ + a₂X² + a₄X + a₆)` whenever `a₁ = a₃ = 0`, since then `b₂ = 4a₂`, `b₄ = 2a₄` and
+`b₆ = 4a₆`. -/
+theorem Ψ₂Sq_of_isCharNeTwoNF [W.IsCharNeTwoNF] :
+    W.Ψ₂Sq = C 4 * (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆) := by
+  rw [Ψ₂Sq, b₂_of_isCharNeTwoNF, b₄_of_isCharNeTwoNF, b₆_of_isCharNeTwoNF]
+  simp only [map_mul, map_ofNat]
+  ring
+
+/-- `Ψ₂Sq(x) = 4 (x³ + a₂x² + a₄x + a₆)` for a model in characteristic-≠-2 normal form. -/
+@[simp] theorem eval_Ψ₂Sq_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x : R) :
+    W.Ψ₂Sq.eval x = 4 * (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆) := by
+  simp [W.Ψ₂Sq_of_isCharNeTwoNF]
 
 /-- The `3`-division polynomial `Ψ₃ = 3X⁴ + b₂X³ + 3b₄X² + 3b₆X + b₈` at a point. -/
 theorem eval_Ψ₃ (x : R) :

@@ -34,6 +34,8 @@ inherited from `SemimoduleCat` along the faithful forgetful functor.
 * `TauCeti.FGComoduleCat.leftUnitor_hom_apply`,
   `TauCeti.FGComoduleCat.rightUnitor_hom_apply`, and
   `TauCeti.FGComoduleCat.associator_hom_apply`: concrete formulas for the coherence maps.
+* `TauCeti.FGComoduleCat.smul_id_tensorUnit_bijective`: the endomorphisms of the tensor unit
+  are exactly the scalar multiples of the identity.
 * `TauCeti.FGComoduleCat.leftUnitor_hom_toLinearMap`,
   `TauCeti.FGComoduleCat.rightUnitor_hom_toLinearMap`, and
   `TauCeti.FGComoduleCat.associator_hom_toLinearMap`: the same formulas at the level of
@@ -289,6 +291,17 @@ theorem rightUnitor_inv_toLinearMap :
   apply LinearMap.ext
   intro m
   exact rightUnitor_inv_apply m
+
+/-- The endomorphisms of the tensor unit of finitely generated comodules over a bialgebra are the
+scalars: `r ↦ r • 𝟙 (𝟙_ _)` is a bijection from `R` onto the endomorphisms of `𝟙_ _`. -/
+theorem smul_id_tensorUnit_bijective :
+    Function.Bijective (fun r : R => r • 𝟙 (𝟙_ (FGComoduleCat.{u, v, u} R C))) := by
+  -- An endomorphism `f` of the trivial comodule `R` is determined by the scalar `f 1`.
+  refine ⟨fun r s h => ?_, fun f => ⟨f (1 : R), ?_⟩⟩
+  · simpa using congrArg (fun f : 𝟙_ (FGComoduleCat.{u, v, u} R C) ⟶ _ => f (1 : R)) h
+  · refine ConcreteCategory.hom_ext _ _ fun x => ?_
+    rw [smul_apply, CategoryTheory.id_apply, smul_eq_mul, mul_comm, ← smul_eq_mul, ← map_smul,
+      smul_eq_mul, mul_one]
 
 end FGComoduleCat
 

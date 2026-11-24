@@ -337,7 +337,7 @@ theorem hasDenominatorPower_denom_one (P : PairOfDefinition A) (T : Set A)
     HasDenominatorPower P T 1 S := by
   refine (hasDenominatorPower_iff P T 1 S).mpr ⟨1, fun b _ ↦ ?_⟩
   rw [← one_mul (b : A), divBy_mul_cancel_left]
-  exact algebraMap_mem_locSubring P T 1 S b.2
+  exact algebraMap_mem_locSubring P T 1 S b.property
 
 /-- **The standing hypothesis survives a change of presentation by a unit.** Rescaling both the
 numerators and the denominator by a unit `u` carries `HasDenominatorPower` from `(T, s)` to
@@ -759,7 +759,7 @@ theorem awayLift_mem_locIdealImage (P : PairOfDefinition A) (U : Set A) (u : A)
   | zero => simp
   | add p q _ _ hp hq => simpa [map_add] using (locIdealImage P Tw w W n).add_mem hp hq
   | smul e p _ hp =>
-      have he := awayLift_mem_locSubring P U u V Tw w W r hw hgen e.2
+      have he := awayLift_mem_locSubring P U u V Tw w W r hw hgen e.property
       simpa [map_mul, mul_comm] using locIdealImage_mul_locSubring_subset P Tw w W n
         (Set.mul_mem_mul hp he)
 
@@ -832,7 +832,7 @@ private theorem locIdealImage_mul_algebraMap_subset (P : PairOfDefinition A)
       push_cast [smul_eq_mul]; ring
     rw [this, mul_comm]
     exact locIdealImage_mul_locSubring_subset P T s S n
-      (Set.mul_mem_mul hu c.2)
+      (Set.mul_mem_mul hu c.property)
 
 /-- Multiplying `algebraMap a` by an element of a suitable `locIdealImage j` lands in
 `locIdealImage i`. The single-element case of `locIdealImage_mul_algebraMap_subset`, with the
@@ -1274,7 +1274,7 @@ theorem mem_localization_idealOfDefinition [SeparatelyContinuousMul A] (P : Pair
     {x : letI := locTopology P T s S hden; (P.localization T s S hden).ringOfDefinition} :
     letI := locTopology P T s S hden
     x ∈ (P.localization T s S hden).idealOfDefinition ↔
-      (⟨x, by rw [← localization_ringOfDefinition P T s S hden]; exact x.2⟩ :
+      (⟨x, by rw [← localization_ringOfDefinition P T s S hden]; exact x.property⟩ :
         locSubring P T s S) ∈ locIdeal P T s S := (Iff.rfl)
 
 /-- **Wedhorn's topological localisation is a Huber ring.** Under the standing hypothesis, `Aₛ`

@@ -81,7 +81,7 @@ variable {k : Type u} [Ring k] [TopologicalSpace k]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {M : TopRep.{max v w} k G} {ℳ : ℤ → Submodule k M.V}
   {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n} {d : M ⟶ M}
-  {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
+  {hd : LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
   {X : TopRep.{max v w} k G} (c : ResolutionContraction X (M.gradedCochainComplex ℳ hρ d hd hdd))
 
 /-- The comparison on the piece `ℳ p`: the degree-`n` component of `c.comparison`, included in
@@ -167,10 +167,10 @@ theorem gradedComparison_apply_of_mem_of_neg {p : ℤ} (hp : p < 0) {v : M.V} (h
 
 /-- The comparison on total modules has degree zero. -/
 theorem isHomogeneous_gradedComparison :
-    TauCeti.LinearMap.IsHomogeneous (c.gradedComparison).hom.toLinearMap ℳ
+    LinearMap.IsHomogeneous (c.gradedComparison).hom.toLinearMap ℳ
       X.gradedResolutionPiece 0 := by
   classical
-  refine TauCeti.LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
+  refine LinearMap.isHomogeneous_def.2 fun p v hv ↦ ?_
   rw [add_zero]
   rcases lt_or_ge p 0 with hp | hp
   · exact (c.gradedComparison_apply_of_mem_of_neg hp hv).symm ▸ zero_mem _
@@ -194,9 +194,10 @@ theorem gradedResolutionTopRep_ρ_gradedComparison {v : M.V} (hv : ∀ g, M.ρ g
 augmentation of the total coinduced resolution, by constant functions in degree zero. -/
 @[simp]
 theorem gradedComparison_ι_apply (x : X.V) :
-    (c.gradedComparison).hom (c.ι.hom x).1 = X.gradedResolutionAugmentation x := by
+    (c.gradedComparison).hom (c.ι.hom x).val = X.gradedResolutionAugmentation x := by
   classical
-  rw [c.gradedComparison_apply_of_mem (n := 0) (c.ι.hom x).2, gradedResolutionAugmentation_apply,
+  rw [c.gradedComparison_apply_of_mem (n := 0) (c.ι.hom x).property,
+      gradedResolutionAugmentation_apply,
     ← c.ι_comp_comparison_f_zero, comp_apply]
   -- The degree-zero object of `gradedCochainComplex` is the subtype `ℳ 0`, so the element
   -- rebuilt from `(c.ι.hom x).1` is `c.ι.hom x` by subtype eta.

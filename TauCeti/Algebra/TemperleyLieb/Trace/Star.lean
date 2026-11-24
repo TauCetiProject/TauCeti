@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
 public import TauCeti.Algebra.TemperleyLieb.Star
+public import TauCeti.RingTheory.Ideal.Quotient.Star
 public import TauCeti.RingTheory.TraceFunctional.Star
 import Mathlib.Algebra.Star.LinearMap
 
@@ -84,11 +85,24 @@ end Semiring
 
 variable {R : Type*} [CommRing R] [StarRing R] {δ : R} [Fact (IsSelfAdjoint δ)]
 
+/-- At a self-adjoint loop parameter, the trace radical of a Markov trace is star-stable. -/
+theorem IsMarkovTrace.isStar_traceRadical {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+    (htr : IsMarkovTrace R δ tr) (n : ℕ) :
+    ((tr n).traceRadical (htr.map_mul_comm n)).IsStar :=
+  ⟨fun ha ↦ ((tr n).star_mem_traceRadical_iff (htr.map_mul_comm n) (htr.map_star n)).mpr ha⟩
+
 /-- The spin-model Markov trace preserves the analytic adjoint, even when its unit parameter
 is not self-adjoint: only the loop parameter must be self-adjoint. -/
 @[simp]
 theorem markovTrace_star (q : Rˣ) (h : δ = -((q : R) + ((q⁻¹ : Rˣ) : R))) {n : ℕ}
     (x : TemperleyLieb R δ n) : markovTrace q h (star x) = star (markovTrace q h x) :=
   (isMarkovTrace_markovTrace q h).map_star n x
+
+/-- At a self-adjoint loop parameter, the trace radical of the spin-model Markov trace is
+star-stable. -/
+instance instIsStarTraceRadicalMarkovTrace (q : Rˣ) (h : δ = -((q : R) + ((q⁻¹ : Rˣ) : R)))
+    (n : ℕ) :
+    ((markovTrace (n := n) q h).traceRadical (markovTrace_mul_comm q h)).IsStar :=
+  (isMarkovTrace_markovTrace q h).isStar_traceRadical n
 
 end TauCeti.TemperleyLieb

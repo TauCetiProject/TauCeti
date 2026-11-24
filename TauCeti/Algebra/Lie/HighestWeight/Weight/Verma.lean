@@ -237,14 +237,14 @@ private noncomputable def exponentEquivSupported :
 
 private theorem sum_exponentEquivSupported (n : posRoots (IsKilling.rootSystem H) b →₀ ℕ) :
     ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
-        (exponentEquivSupported b n).1 i • (IsKilling.rootSystem H).root i =
+        (exponentEquivSupported b n).val i • (IsKilling.rootSystem H).root i =
       n.sum fun i k ↦ k • (IsKilling.rootSystem H).root i := by
   classical
   have := Fintype.ofFinite (posRoots (IsKilling.rootSystem H) b)
   rw [Finset.sum_subtype _ (mem_posRootsFinset _ b),
     Finsupp.sum_fintype n (fun i k ↦ k • (IsKilling.rootSystem H).root i) fun _ ↦ zero_nsmul _]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp [exponentEquivSupported, i.2]
+  simp [exponentEquivSupported, i.property]
 
 /-- The weight `lam + ∑ᵢ nᵢ (-αᵢ)` of a basis vector is `mu` exactly when `∑ᵢ nᵢ αᵢ = lam - mu`. -/
 private theorem add_sum_smul_neg_eq_iff (n : posRoots (IsKilling.rootSystem H) b →₀ ℕ)
@@ -267,7 +267,7 @@ private noncomputable def exponentEquivKostantPartition (mu : Dual K H) :
       {c : H.root → ℕ // IsKostantPartition (IsKilling.rootSystem H) b (lam - mu) c} :=
   ((exponentEquivSupported b).subtypeEquiv
       (q := fun c ↦ ∑ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
-        c.1 i • (IsKilling.rootSystem H).root i = lam - mu) fun n ↦ by
+        c.val i • (IsKilling.rootSystem H).root i = lam - mu) fun n ↦ by
       rw [add_sum_smul_neg_eq_iff, ← sum_exponentEquivSupported]).trans <|
     (Equiv.subtypeSubtypeEquivSubtypeInter
       (fun c : H.root → ℕ ↦ Function.support c ⊆ posRoots (IsKilling.rootSystem H) b)
@@ -296,8 +296,8 @@ theorem weightSpace_vermaModule_ne_bot_iff (mu : Dual K H) :
     LinearOrder.lift' (Finite.equivFin _) (Finite.equivFin _).injective
   rw [weightSpace_vermaModule_ne_bot_iff_exists b lam (negativeNilradicalBasis H b)
     (lie_negativeNilradicalBasis_eq_neg_root_smul b) mu]
-  exact ⟨fun ⟨n, hn⟩ ↦ ⟨_, (exponentEquivKostantPartition b lam mu ⟨n, hn⟩).2⟩,
-    fun ⟨c, hc⟩ ↦ ⟨_, ((exponentEquivKostantPartition b lam mu).symm ⟨c, hc⟩).2⟩⟩
+  exact ⟨fun ⟨n, hn⟩ ↦ ⟨_, (exponentEquivKostantPartition b lam mu ⟨n, hn⟩).property⟩,
+    fun ⟨c, hc⟩ ↦ ⟨_, ((exponentEquivKostantPartition b lam mu).symm ⟨c, hc⟩).property⟩⟩
 
 /-- **A Verma module is the sum of its weight spaces.** -/
 theorem iSup_weightSpace_vermaModule_eq_top :
