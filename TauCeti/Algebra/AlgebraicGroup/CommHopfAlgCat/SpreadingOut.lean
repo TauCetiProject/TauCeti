@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommHopfAlgCat
-public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import Mathlib.RingTheory.FinitePresentation
 public import TauCeti.Algebra.HopfAlgebra.SpreadingOut
 import Mathlib.RingTheory.Flat.TorsionFree
@@ -79,10 +78,17 @@ theorem exists_finset_bialgEquiv_baseChange [Algebra.FiniteType K H] :
     Function.Injective.moduleIsTorsionFree _ Subtype.val_injective fun _ _ ↦ rfl
   have hspan : Submodule.span K (A : Set H) = ⊤ := by
     rw [TauCeti.Algebra.span_adjoin_eq_toSubmodule_adjoin, hs, Algebra.top_toSubmodule]
+  have : TensorProduct.CompatibleSMul (S.integer K) K H H :=
+    IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors _) K H H
+  -- The `S.integer K`-module structure on `H ⊗[K] H` through the left factor, which the Hopf
+  -- algebra structure of the form uses, rather than the one of a subalgebra of `K`.
+  let : Module (S.integer K) (H ⊗[K] H) := TensorProduct.leftModule
+  have : TensorProduct.CompatibleSMul (S.integer K) K H (H ⊗[K] H) :=
+    IsLocalization.tensorProduct_compatibleSMul (nonZeroDivisors _) K H (H ⊗[K] H)
   let : HopfAlgebra (S.integer K) A := hA.hopfAlgebra
   have : Algebra.FiniteType (S.integer K) A :=
     (Subalgebra.fg_iff_finiteType A).mp (Subalgebra.fg_adjoin_finset s)
   exact ⟨.of (S.integer K) A, Algebra.FinitePresentation.of_finiteType.mp this,
-    ⟨hA.baseChangeBialgEquiv hspan⟩⟩
+    ⟨hA.baseChangeBialgEquiv (nonZeroDivisors _) hspan⟩⟩
 
 end TauCeti.CommHopfAlgCat

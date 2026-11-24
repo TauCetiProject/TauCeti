@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.Algebra.HopfAlgebra.Form
 import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
-import TauCeti.RingTheory.DedekindDomain.SInteger.Basic
+import TauCeti.RingTheory.DedekindDomain.SInteger.FiniteSupport
 
 /-!
 # Spreading out the Hopf operations over the `S`-integers
@@ -71,18 +71,21 @@ theorem exists_finset_isStableUnderHopfOps_adjoin_of_adjoin_eq_top (s : Finset H
   refine ⟨S₀, fun S hS ↦ ?_⟩
   have hint := hS₀ S hS
   have hT {y : H} (hy : y ∈ T) : y ∈ Algebra.adjoin (S.integer K) (s : Set H) :=
-    hF y (S.integer K) fun f hf ↦ ⟨⟨f, hint (by simpa using Or.inl ⟨y, hy, hf⟩)⟩, rfl⟩
+    hF y (S.integer K) fun f hf ↦
+      ⟨⟨f, hint (Finset.mem_union_left _ (Finset.mem_biUnion.mpr ⟨y, hy, hf⟩))⟩, rfl⟩
   refine Subalgebra.IsStableUnderHopfOps.adjoin (fun x hx ↦ ?_) (fun x hx ↦ ?_) (fun x hx ↦ ?_)
   · rw [hP x]
     refine Subalgebra.sum_mem _ fun i hi ↦ ?_
     have h₁ : i.1 ∈ Algebra.adjoin (S.integer K) (s : Set H) :=
-      hT (by simpa [T] using Or.inr ⟨x, hx, Or.inl ⟨i.2, hi⟩⟩)
+      hT (Finset.mem_union_right _ (Finset.mem_biUnion.mpr
+        ⟨x, hx, Finset.mem_union_left _ (Finset.mem_image_of_mem _ hi)⟩))
     have h₂ : i.2 ∈ Algebra.adjoin (S.integer K) (s : Set H) :=
-      hT (by simpa [T] using Or.inr ⟨x, hx, Or.inr ⟨i.1, hi⟩⟩)
+      hT (Finset.mem_union_right _ (Finset.mem_biUnion.mpr
+        ⟨x, hx, Finset.mem_union_right _ (Finset.mem_image_of_mem _ hi)⟩))
     exact ⟨⟨i.1, h₁⟩ ⊗ₜ ⟨i.2, h₂⟩, Subalgebra.tensorSquareMap_tmul _ _ _⟩
   · rw [Algebra.mem_bot]
-    exact ⟨⟨_, hint (by simpa using Or.inr ⟨x, hx, rfl⟩)⟩, rfl⟩
-  · exact hT (by simpa [T] using Or.inl ⟨x, hx, rfl⟩)
+    exact ⟨⟨_, hint (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hx))⟩, rfl⟩
+  · exact hT (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hx))
 
 /-- **Spreading out the Hopf structure.** For a finitely generated Hopf algebra `H`
 over `K`, there are generators `s` of `H` and a finite set `S₀` of places of `K` such that, for

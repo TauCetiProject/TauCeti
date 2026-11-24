@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Flat.Domain
 public import Mathlib.RingTheory.Flat.TorsionFree
-public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Algebra.TensorProduct.Subalgebra
 
 /-!

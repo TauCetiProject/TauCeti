@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
-public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.RingTheory.TensorProduct.AlgEquiv
 import Mathlib.RingTheory.Flat.Domain
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
@@ -48,22 +47,17 @@ variable {R K H : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K] [Semiri
 variable (K) in
 /-- The canonical map from the tensor square over `R` of an `R`-subalgebra `A` of a `K`-algebra
 `H` to the tensor square of `H` over `K`. On pure tensors it applies the inclusion of `A` in both
-factors. -/
+factors: it is the tensor square of the inclusion of `A`, followed by the quotient map
+`H ⊗[R] H → H ⊗[K] H`. -/
 noncomputable def tensorSquareMap (A : Subalgebra R H) : A ⊗[R] A →ₐ[R] H ⊗[K] H :=
-  Algebra.TensorProduct.lift
-    ((Algebra.TensorProduct.includeLeft : H →ₐ[K] H ⊗[K] H).restrictScalars R |>.comp A.val)
-    ((Algebra.TensorProduct.includeRight : H →ₐ[K] H ⊗[K] H).restrictScalars R |>.comp A.val)
-    fun x y ↦ by
-      simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
-        Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply]
-      exact (Commute.one_right _).tmul (Commute.one_left _)
+  (Algebra.TensorProduct.mapOfCompatibleSMul K R R H H).comp
+    (Algebra.TensorProduct.map A.val A.val)
 
 /-- The canonical map `A ⊗[R] A → H ⊗[K] H` sends `x ⊗ y` to `x ⊗ y`. -/
 @[simp]
 theorem tensorSquareMap_tmul (A : Subalgebra R H) (x y : A) :
     tensorSquareMap K A (x ⊗ₜ y) = (x : H) ⊗ₜ[K] (y : H) := by
-  rw [tensorSquareMap, Algebra.TensorProduct.lift_tmul]
-  simp
+  simp [tensorSquareMap]
 
 /-- An `R`-subalgebra `A` of an algebra `H` over a localization `K` of `R` at a submonoid `M`
 which spans `H` over `K` has `H` as its localization at `M`: the inclusion `A → H` is the base
