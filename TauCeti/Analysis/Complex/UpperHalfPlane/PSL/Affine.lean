@@ -66,10 +66,8 @@ theorem exists_coe_smul_eq_mul_add_of_smul_infty {g : PSL(2, ℝ)}
     ∃ μ : ℝ, 0 < μ ∧ ∃ c : ℝ, ∀ z : ℍ, ((g • z : ℍ) : ℂ) = μ * z + c := by
   induction g using QuotientGroup.induction_on with | H A => ?_
   rw [mk_smul_infty_eq_infty_iff] at hg
-  have hdet : A 0 0 * A 1 1 = 1 := by
-    have := A.det_coe
-    rw [Matrix.det_fin_two, hg] at this
-    simpa using this
+  have hdet :=
+    Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hg
   have h00 : A 0 0 ≠ 0 := left_ne_zero_of_mul_eq_one hdet
   refine ⟨A 0 0 ^ 2, by positivity, A 0 0 * A 0 1, fun z ↦ ?_⟩
   have h11 : (A 1 1 : ℂ) ≠ 0 := by exact_mod_cast right_ne_zero_of_mul_eq_one hdet

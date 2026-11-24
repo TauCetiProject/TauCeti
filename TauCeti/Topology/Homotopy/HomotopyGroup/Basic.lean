@@ -27,7 +27,9 @@ so the homotopy set is trivial (the instance `HomotopyGroup.subsingleton_of_infi
 
 On classes of generalized loops, Mathlib's identification of `π_0` with the path components and
 of a homotopy group indexed by a singleton with the fundamental group are computed by
-`HomotopyGroup.pi0EquivZerothHomotopy_mk` and `homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom`.
+`HomotopyGroup.pi0EquivZerothHomotopy_mk` and `homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom`,
+and the inverse of the identification `π_1 ≃* FundamentalGroup` by
+`HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk`.
 -/
 
 public section
@@ -106,3 +108,13 @@ theorem homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom {M X : Type*} [Uniqu
     (homotopyGroupEquivFundamentalGroupOfUnique M ⟦γ⟧).asHom =
       Path.Homotopic.Quotient.mk (genLoopEquivOfUnique M γ) :=
   (rfl)
+
+/-- The inverse of `pi1MulEquivFundamentalGroup` sends the class of a loop `γ` to the class of the
+corresponding cube loop `(genLoopEquivOfUnique (Fin 1)).symm γ`. -/
+theorem HomotopyGroup.pi1MulEquivFundamentalGroup_symm_fromPath_mk {X : Type*}
+    [TopologicalSpace X] {x : X} (γ : Path x x) :
+    pi1MulEquivFundamentalGroup.symm (FundamentalGroup.fromPath (.mk γ)) =
+      ⟦(genLoopEquivOfUnique (Fin 1)).symm γ⟧ :=
+  -- Mathlib defines `pi1MulEquivFundamentalGroup` as the quotient of
+  -- `genLoopEquivOfUnique (Fin 1)`, so its inverse is computed on representatives
+  rfl
