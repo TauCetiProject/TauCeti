@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Localized
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -36,6 +37,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.inner_mgradient`: its characteristic property
   `⟪grad f x, v⟫ = df_x v`, and `TauCeti.Manifold.eq_mgradient_iff`, which identifies the
   gradient from it.
+* `TauCeti.Manifold.exists_contMDiffMap_mgradient_eq`: every tangent vector is the gradient of a
+  smooth function.
 * `IsMIntegralCurve.comp_neg_neg_mgradient`: reversing time turns a negative gradient
   trajectory of `f` into one of `-f`.
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
@@ -481,5 +484,12 @@ theorem eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm
     rfl
   rw [norm_mgradient_eq_norm_mvfderiv, hfac, mul_comm]
   exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr)
+
+/-- **Every tangent vector is a gradient.** On a finite-dimensional Hausdorff smooth manifold with a
+Riemannian metric, every tangent vector `w` at `x` is the gradient at `x` of a smooth function. -/
+theorem exists_contMDiffMap_mgradient_eq [IsManifold I ∞ M] [T2Space M] (x : M)
+    (w : TangentSpace I x) : ∃ f : C^∞⟮I, M; ℝ⟯, mgradient I f x = w := by
+  obtain ⟨f, -, hfx⟩ := TauCeti.exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (innerSL ℝ w)
+  exact ⟨f, (eq_mgradient_iff.2 fun v ↦ by rw [hfx, innerSL_apply_apply]).symm⟩
 
 end TauCeti.Manifold
