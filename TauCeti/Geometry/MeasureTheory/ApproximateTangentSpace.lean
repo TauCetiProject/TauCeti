@@ -31,12 +31,16 @@ countably `k`-rectifiable set `Γ`, that is, the weight of a rectifiable `k`-var
 
 ## Main results
 
+* `MeasureTheory.Measure.blowUp_apply_vadd_smul`: `μ_{x,r}(A) = r ^ (-k) μ (x + r • A)`.
 * `MeasureTheory.Measure.blowUp_euclideanHausdorffMeasure`: the blow-ups of `μHE[k]` are `μHE[k]`.
 * `AffineSubspace.blowUp_euclideanHausdorffMeasure_restrict`: at a point `x` of an affine subspace
   `A`, the blow-ups of `μHE[k]⌞A` are `μHE[k]⌞A.direction`.
 * `AffineSubspace.hasApproxTangentSpace_smul_euclideanHausdorffMeasure_restrict`: hence
   `θ μHE[k]⌞A`, with `k` the dimension of `A`, has approximate tangent space `A.direction` with
   multiplicity `θ` at every point of `A`.
+* `MeasureTheory.Measure.HasApproxTangentSpace.tendsto_blowUp_apply`: the blow-up masses of a
+  bounded measurable set whose frontier the limit measure does not charge converge to its mass
+  under the limit measure.
 * `MeasureTheory.Measure.HasApproxTangentSpace.tendsto_measure_closedBall_div` and
   `MeasureTheory.Measure.HasApproxTangentSpace.tendsto_measure_ball_div`: the multiplicity is the
   density, `μ (B_r(x)) / (ω_k r ^ k) → θ`, for closed and for open balls.
@@ -115,6 +119,19 @@ private theorem coe_dilation_symm (hr : r ≠ 0) :
   ext z
   simp [dilation]
 
+/-- The preimage of a set `s` under the dilation `y ↦ r⁻¹ • (y - x)` is `x + r • s`. -/
+private theorem preimage_dilation (hr : r ≠ 0) (s : Set E) :
+    (fun y ↦ r⁻¹ • (y - x)) ⁻¹' s = x +ᵥ r • s := by
+  rw [← coe_dilation hr, ← (dilation x hr).image_symm, coe_dilation_symm, ← image_smul,
+    ← image_vadd, image_image]
+  simp [add_comm]
+
+/-- **The defining identity of blow-ups.** For `r ≠ 0`, a blow-up gives a measurable set `s` the
+mass `r ^ (-k) μ (x + r • s)`. -/
+theorem blowUp_apply_vadd_smul (hr : r ≠ 0) {s : Set E} (hs : MeasurableSet s) :
+    μ.blowUp k x r s = (ENNReal.ofReal r)⁻¹ ^ k * μ (x +ᵥ r • s) := by
+  rw [blowUp_apply hs, preimage_dilation hr]
+
 /-- Integrals against a blow-up are `r ^ (-k)` times integrals of the dilated function. -/
 theorem integral_blowUp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (hr : 0 < r)
     (f : E → G) :
@@ -167,11 +184,7 @@ blow-ups. -/
 theorem blowUp_euclideanHausdorffMeasure (hr : 0 < r) :
     (μHE[k] : Measure E).blowUp k x r = μHE[k] := by
   ext s hs
-  have hpre : (fun y ↦ r⁻¹ • (y - x)) ⁻¹' s = x +ᵥ r • s := by
-    rw [← coe_dilation hr.ne', ← (dilation x hr.ne').image_symm, coe_dilation_symm,
-      ← image_smul, ← image_vadd, image_image]
-    simp [add_comm]
-  rw [blowUp_apply hs, hpre, measure_vadd, euclideanHausdorffMeasure_smul₀ k hr.ne']
+  rw [blowUp_apply_vadd_smul hr.ne' hs, measure_vadd, euclideanHausdorffMeasure_smul₀ k hr.ne']
   simp [ENNReal.smul_def, ← mul_assoc, ← mul_pow, ← Real.eNorm_of_nonneg hr.le, eNorm_eq_nnNorm,
     ENNReal.inv_mul_cancel, hr.ne']
 
@@ -229,10 +242,12 @@ namespace HasApproxTangentSpace
 
 variable [IsLocallyFiniteMeasure μ]
 
-/-- Under the convergence of the blow-ups, their masses of a bounded measurable set whose frontier
-lies in the unit sphere converge to the mass of the limit measure. -/
-private theorem tendsto_blowUp_apply (h : μ.HasApproxTangentSpace x T θ) {s : Set E}
-    (hs : MeasurableSet s) (hsb : Bornology.IsBounded s) (hfr : frontier s ⊆ sphere 0 1) :
+/-- If `μ` has approximate tangent space `T` with multiplicity `θ` at `x`, then the blow-up masses
+of a bounded measurable set `s` whose frontier is not charged by `μHE[k]⌞T` converge to
+`θ μHE[k]⌞T (s)`. -/
+theorem tendsto_blowUp_apply (h : μ.HasApproxTangentSpace x T θ) {s : Set E}
+    (hs : MeasurableSet s) (hsb : Bornology.IsBounded s)
+    (hfr : μHE[finrank ℝ T].restrict (T : Set E) (frontier s) = 0) :
     Tendsto (fun r ↦ μ.blowUp (finrank ℝ T) x r s) (𝓝[>] 0)
       (𝓝 (θ * μHE[finrank ℝ T].restrict (T : Set E) s)) := by
   set ν := μHE[finrank ℝ T].restrict (T : Set E)
@@ -242,9 +257,7 @@ private theorem tendsto_blowUp_apply (h : μ.HasApproxTangentSpace x T θ) {s : 
       (Filter.comap Subtype.val (𝓝[>] 0)) (𝓝 (∫ y, f y ∂(θ • ν))) := by
     rw [integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul]
     exact (h.tendsto_integral f).comp tendsto_comap
-  have hfr0 : (θ • ν) (frontier s) = 0 :=
-    measure_mono_null hfr
-      (by simp [ν, Submodule.euclideanHausdorffMeasure_restrict_sphere T.zero_mem one_ne_zero])
+  have hfr0 : (θ • ν) (frontier s) = 0 := by simp [ν, hfr]
   have hlim := tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported hconv hs
     hsb.isCompact_closure hfr0
   rw [smul_apply, ENNReal.smul_def, smul_eq_mul] at hlim
@@ -255,13 +268,16 @@ private theorem tendsto_blowUp_closedBall (h : μ.HasApproxTangentSpace x T θ) 
       (𝓝 (θ * volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1))) := by
   simpa [Submodule.euclideanHausdorffMeasure_restrict_closedBall T.zero_mem] using
     h.tendsto_blowUp_apply measurableSet_closedBall isBounded_closedBall
-      frontier_closedBall_subset_sphere
+      (measure_mono_null frontier_closedBall_subset_sphere
+        (Submodule.euclideanHausdorffMeasure_restrict_sphere T.zero_mem one_ne_zero))
 
 private theorem tendsto_blowUp_ball (h : μ.HasApproxTangentSpace x T θ) :
     Tendsto (fun r ↦ μ.blowUp (finrank ℝ T) x r (ball 0 1)) (𝓝[>] 0)
       (𝓝 (θ * volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) 1))) := by
   simpa [Submodule.euclideanHausdorffMeasure_restrict_ball T.zero_mem] using
-    h.tendsto_blowUp_apply measurableSet_ball isBounded_ball frontier_ball_subset_sphere
+    h.tendsto_blowUp_apply measurableSet_ball isBounded_ball
+      (measure_mono_null frontier_ball_subset_sphere
+        (Submodule.euclideanHausdorffMeasure_restrict_sphere T.zero_mem one_ne_zero))
 
 /-- `r ^ (-k) m / ω = m / (r ^ k ω)`, the conversion between the mass of a blow-up and a density
 ratio. -/
