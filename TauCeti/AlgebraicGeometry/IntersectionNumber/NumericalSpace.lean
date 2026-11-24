@@ -122,10 +122,11 @@ theorem numericalIntersectionNumberBaseChange_tmul {A : Type*} [CommRing A] (a :
   simp [numericalIntersectionNumberBaseChange, zsmul_eq_mul, mul_comm]
 
 /-- The base-changed intersection number is compatible with a change of coefficients `A ⟶ B`. -/
+@[simp]
 theorem numericalIntersectionNumberBaseChange_rTensor {A B : Type*} [CommRing A] [CommRing B]
     [Algebra A B] (v : A ⊗[ℤ] Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x)) :
     numericalIntersectionNumberBaseChange x hi hC B
-        (AlgebraTensorModule.rTensor ℤ _ (Algebra.linearMap A B) v) =
+        (((Algebra.linearMap A B).restrictScalars ℤ).rTensor _ v) =
       algebraMap A B (numericalIntersectionNumberBaseChange x hi hC A v) := by
   induction v using TensorProduct.inductionOn with
   | tmul a α => simp
@@ -133,11 +134,13 @@ theorem numericalIntersectionNumberBaseChange_rTensor {A B : Type*} [CommRing A]
 
 /-- The real intersection number of the image of a rational numerical class is its rational
 intersection number. -/
+@[simp]
 theorem numericalIntersectionNumberBaseChange_ratToRealNumericalClasses
     (v : RatNumericalClasses k x) :
     numericalIntersectionNumberBaseChange x hi hC ℝ (ratToRealNumericalClasses k x v) =
       numericalIntersectionNumberBaseChange x hi hC ℚ v := by
-  rw [ratToRealNumericalClasses, numericalIntersectionNumberBaseChange_rTensor, eq_ratCast]
+  rw [ratToRealNumericalClasses, AlgebraTensorModule.coe_rTensor,
+    numericalIntersectionNumberBaseChange_rTensor, eq_ratCast]
 
 end Absolute
 
