@@ -39,6 +39,8 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
 
 * `TauCeti.SplitK0.of_extendScalars_obj`: the split `K₀` class of an extended module agrees
   with the class of any module linearly isomorphic to its balanced extension.
+* `TauCeti.SplitK0.map_extendScalars_of_finiteProjectiveModulesRegular`: the induced map
+  `K₀(R) → K₀(S)` sends `[R]` to `[S]`.
 * `TauCeti.BalancedExtension.finiteProjectiveModules_le_inverseImage_functor`: extension of
   scalars preserves finitely generated projective modules.
 * `RingHom.finiteProjectiveModules_le_inverseImage_restrictScalars_iff`: restriction of scalars
@@ -142,5 +144,15 @@ theorem of_extendScalars_obj {P : (finiteProjectiveModules R).FullSubcategory}
     SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj P) = SplitK0.of.{u} Q :=
   SplitK0.of_congr (ObjectProperty.isoMk _
     (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫ θ.toModuleIso))
+
+variable (f) in
+/-- Extension of scalars sends the class of the regular module `R` to the class of the regular
+module `S`. -/
+theorem map_extendScalars_of_finiteProjectiveModulesRegular :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars
+        (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) =
+      SplitK0.of.{u} (finiteProjectiveModulesRegular S) := by
+  rw [SplitK0.map_of]
+  exact of_extendScalars_obj (BalancedExtension.rid f)
 
 end TauCeti.SplitK0
