@@ -72,76 +72,43 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 
 namespace IsCurvedDGAlgebra
 
-/-- The curved `A∞` operations of a differential `d` and a curvature `w` on an algebra: `m₀ = w`,
-`m₁ = d`, `m₂` is the product, and all other operations vanish. -/
-private noncomputable def operation (d : A →ₗ[R] A) (w : A) :
-    ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) A
-  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id R) _ w
-  | 1 => MultilinearMap.ofSubsingleton (RingHom.id R) A A 0 d
-  | 2 => (MultilinearMap.ofSubsingletonₗ R (RingHom.id R) A A (0 : Fin 1) ∘ₗ LinearMap.mul R
-      A).uncurryLeft
-  | _ + 3 => 0
-
-private theorem operation_zero_apply (d : A →ₗ[R] A) (w : A) (x : Fin 0 → A) :
-    operation d w 0 x = w := (rfl)
-
-private theorem operation_one_apply (d : A →ₗ[R] A) (w : A) (x : Fin 1 → A) :
-    operation d w 1 x = d (x 0) := (rfl)
-
-private theorem operation_two_apply (d : A →ₗ[R] A) (w : A) (x : Fin 2 → A) :
-    operation d w 2 x = x 0 * x 1 := by
-  simp [operation, LinearMap.uncurryLeft_apply, Fin.tail]
-
-private theorem operation_of_three_le (d : A →ₗ[R] A) (w : A) {n : ℕ} (hn : 3 ≤ n) :
-    operation d w n = 0 := by
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  rfl
-
-/-- The operation `operation d w n` has degree `2 - n`. -/
-private theorem isHomogeneous_operation (h : IsCurvedDGAlgebra 𝒜 d w) (n : ℕ) :
-    MultilinearMap.IsHomogeneous (operation d w n) (fun _ ↦ 𝒜) 𝒜 (2 - n) := by
-  rw [MultilinearMap.isHomogeneous_def]
-  intro e x hx
-  rcases n with _ | _ | _ | n
-  · simpa [operation_zero_apply] using h.curvature_mem
-  · simpa [operation_one_apply] using h.map_mem (hx 0)
-  · simpa [operation_two_apply] using SetLike.mul_mem_graded (hx 0) (hx 1)
-  · simp [operation_of_three_le d w (by omega : 3 ≤ n + 3)]
+open AInfinity
 
 /-- The operations of a curved differential graded algebra satisfy every curved Stasheff identity
 on homogeneous inputs. -/
 private theorem curvedStasheffSum_operation (h : IsCurvedDGAlgebra 𝒜 d w) (n : ℕ) (e : ℕ → ℤ)
     (x : ℕ → A) (hx : ∀ i < n, x i ∈ 𝒜 (e i)) :
-    AInfinity.curvedStasheffSum (operation d w) e x n = 0 := by
+    AInfinity.curvedStasheffSum (dgOperation d w) e x n = 0 := by
   match n, hx with
-  | 0, _ => simpa [operation_zero_apply, operation_one_apply] using h.map_curvature
+  | 0, _ => simpa [dgOperation_zero_apply, dgOperation_one_apply] using h.map_curvature
   | 1, _ =>
     rw [AInfinity.curvedStasheffSum_one]
-    simp [operation_zero_apply, operation_one_apply, operation_two_apply, h.sq_eq]
+    simp [dgOperation_zero_apply, dgOperation_one_apply, dgOperation_two_apply, h.sq_eq]
   | n + 2, hx =>
-    rw [AInfinity.curvedStasheffSum_of_m_succ_eq_zero _ _ _ (operation_of_three_le d w (by omega))]
+    rw [AInfinity.curvedStasheffSum_eq_stasheffSum_of_m_succ_eq_zero _ _ _
+      (dgOperation_of_three_le d w (by omega))]
     match n, hx with
     | 0, hx =>
       rw [AInfinity.stasheffSum_two_eq_zero_iff]
-      simpa [operation_one_apply, operation_two_apply, ← negOnePow_smul_eq_negOnePowCast_smul]
+      simpa [dgOperation_one_apply, dgOperation_two_apply, ← negOnePow_smul_eq_negOnePowCast_smul]
         using h.leibniz (hx 0 (by omega)) (x 1)
     | 1, _ =>
       rw [AInfinity.stasheffSum_three_eq_zero_iff_of_m_three_eq_zero _ _ _
-        (operation_of_three_le d w le_rfl)]
-      simp [operation_two_apply, mul_assoc]
+        (dgOperation_of_three_le d w le_rfl)]
+      simp [dgOperation_two_apply, mul_assoc]
     | n + 2, _ =>
       exact AInfinity.stasheffSum_eq_zero_of_m_eq_zero _ _ _ (by omega)
-        fun _ ↦ operation_of_three_le d w
+        fun _ ↦ dgOperation_of_three_le d w
 
 /-- The curved `A∞` algebra of a curved differential graded algebra: `m₀ = w`, `m₁ = d`, `m₂` is
 the product, and `m n = 0` for `n ≥ 3`. -/
 noncomputable def toCurvedAInfinityAlgebra (h : IsCurvedDGAlgebra 𝒜 d w) :
     CurvedAInfinityAlgebra R A where
   grading := InternalGrading.ofDecomposition 𝒜
-  m := operation d w
+  m := dgOperation d w
   m_degree n := by
     rw [InternalGrading.ofDecomposition_piece]
-    exact isHomogeneous_operation h n
+    exact isHomogeneous_dgOperation h.map_mem h.curvature_mem n
   stasheff n e x hx := by
     rw [InternalGrading.ofDecomposition_piece] at hx
     exact curvedStasheffSum_operation h n e x hx
@@ -157,27 +124,27 @@ curvature. -/
 @[simp]
 theorem curvature_toCurvedAInfinityAlgebra (h : IsCurvedDGAlgebra 𝒜 d w) :
     h.toCurvedAInfinityAlgebra.curvature = w :=
-  (h.toCurvedAInfinityAlgebra.m_zero_apply ![]).symm.trans (operation_zero_apply d w ![])
+  (h.toCurvedAInfinityAlgebra.m_zero_apply ![]).symm.trans (dgOperation_zero_apply d w ![])
 
 /-- The unary operation of the curved `A∞` algebra of a curved differential graded algebra is the
 differential. -/
 @[simp]
 theorem toCurvedAInfinityAlgebra_m_one_apply (h : IsCurvedDGAlgebra 𝒜 d w) (x : Fin 1 → A) :
     h.toCurvedAInfinityAlgebra.m 1 x = d (x 0) :=
-  operation_one_apply d w x
+  dgOperation_one_apply d w x
 
 /-- The binary operation of the curved `A∞` algebra of a curved differential graded algebra is
 the product. -/
 @[simp]
 theorem toCurvedAInfinityAlgebra_m_two_apply (h : IsCurvedDGAlgebra 𝒜 d w) (x : Fin 2 → A) :
     h.toCurvedAInfinityAlgebra.m 2 x = x 0 * x 1 :=
-  operation_two_apply d w x
+  dgOperation_two_apply d w x
 
 /-- The operations of arity at least three of the curved `A∞` algebra of a curved differential
 graded algebra vanish. -/
 theorem toCurvedAInfinityAlgebra_m_of_three_le (h : IsCurvedDGAlgebra 𝒜 d w) {n : ℕ}
     (hn : 3 ≤ n) : h.toCurvedAInfinityAlgebra.m n = 0 :=
-  operation_of_three_le d w hn
+  dgOperation_of_three_le d w hn
 
 /-- The simp-normal form of `toCurvedAInfinityAlgebra_m_of_three_le`. -/
 @[simp]

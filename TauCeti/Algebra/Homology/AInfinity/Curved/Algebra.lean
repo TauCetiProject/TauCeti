@@ -165,23 +165,10 @@ graded derivation of `m₂`, with the Koszul sign determined by the degree of th
 theorem stasheff_arity_two_of_m_three_eq_zero (hm₃ : 𝒜.m 3 = 0) (x y : A) (p : ℤ)
     (hx : x ∈ 𝒜.grading.piece p) :
     𝒜.m 1 ![𝒜.m 2 ![x, y]] =
-      𝒜.m 2 ![𝒜.m 1 ![x], y] + negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] := by
-  let L : A →ₗ[R] A := 𝒜.differential ∘ₗ (𝒜.m 2).curryRight ![x]
-  let Q : A →ₗ[R] A := (𝒜.m 2).curryRight ![𝒜.m 1 ![x]] +
-    negOnePowCast R p • ((𝒜.m 2).curryRight ![x] ∘ₗ 𝒜.differential)
-  suffices L y = Q y by simpa [L, Q] using this
-  refine LinearMap.congr_fun (𝒜.grading.linearMap_ext fun q z hz ↦ ?_) y
-  let e : ℕ → ℤ := fun i ↦ if i = 0 then p else q
-  let a : ℕ → A := fun i ↦ if i = 0 then x else z
-  have ha : ∀ i < 2, a i ∈ 𝒜.grading.piece (e i) := by
-    intro i hi
-    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
-    · simpa [a, e] using hx
-    · simpa [a, e] using hz
-  have h := 𝒜.stasheff 2 e a ha
-  rw [AInfinity.curvedStasheffSum_of_m_succ_eq_zero _ _ _ hm₃,
-    AInfinity.stasheffSum_two_eq_zero_iff] at h
-  simpa [L, Q, a, e] using h
+      𝒜.m 2 ![𝒜.m 1 ![x], y] + negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] :=
+  AInfinity.stasheff_arity_two_of_stasheffSum_eq_zero 𝒜.grading 𝒜.m (fun e a ha ↦
+    (AInfinity.curvedStasheffSum_eq_stasheffSum_of_m_succ_eq_zero _ _ _ hm₃).symm.trans
+      (𝒜.stasheff 2 e a ha)) x y p hx
 
 /-! ### Strict units -/
 
@@ -253,7 +240,7 @@ def toCurvedAInfinityAlgebra : CurvedAInfinityAlgebra R A where
       exact MultilinearMap.isHomogeneous_zero _ _ _
     · exact 𝒜.m_degree n hn
   stasheff n d x hx := by
-    rw [AInfinity.curvedStasheffSum_of_m_zero_eq_zero _ _ _ 𝒜.m_zero]
+    rw [AInfinity.curvedStasheffSum_eq_stasheffSum_of_m_zero_eq_zero _ _ _ 𝒜.m_zero]
     exact 𝒜.stasheff n d x hx
 
 @[simp]
@@ -294,7 +281,8 @@ noncomputable def toAInfinityAlgebra (h : 𝒜.curvature = 0) : AInfinityAlgebra
   AInfinityAlgebra.ofStasheff 𝒜.grading 𝒜.m (𝒜.m_zero_eq_zero_iff.2 h) (fun n _ ↦ 𝒜.m_degree n)
     (AInfinity.suspensionTaylor _ _) (AInfinity.isSuspension_suspensionTaylor _ _)
     fun n _ d x hx ↦ by
-      rw [← AInfinity.curvedStasheffSum_of_m_zero_eq_zero _ _ _ (𝒜.m_zero_eq_zero_iff.2 h)]
+      rw [← AInfinity.curvedStasheffSum_eq_stasheffSum_of_m_zero_eq_zero _ _ _
+        (𝒜.m_zero_eq_zero_iff.2 h)]
       exact 𝒜.stasheff n d x hx
 
 @[simp]

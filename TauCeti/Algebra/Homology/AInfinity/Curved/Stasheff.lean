@@ -47,9 +47,9 @@ encoding, where no structural coefficient appears.
 
 * `TauCeti.AInfinity.curvedStasheffSum_eq_stasheffSum_add`: the curved sum is the uncurved sum
   plus the curvature insertions `(-1) ^ r m_{n + 1}(x₀, …, x_{r - 1}, m₀, x_r, …, x_{n - 1})`.
-* `TauCeti.AInfinity.curvedStasheffSum_of_m_zero_eq_zero` and
-  `TauCeti.AInfinity.curvedStasheffSum_of_m_succ_eq_zero`: the curved sum is the uncurved one when
-  the curvature vanishes, or when the operation of arity `n + 1` vanishes.
+* `TauCeti.AInfinity.curvedStasheffSum_eq_stasheffSum_of_m_zero_eq_zero` and
+  `TauCeti.AInfinity.curvedStasheffSum_eq_stasheffSum_of_m_succ_eq_zero`: the curved sum is the
+  uncurved one when the curvature vanishes, or when the operation of arity `n + 1` vanishes.
 * `TauCeti.AInfinity.curvedStasheffSum_zero` and `TauCeti.AInfinity.curvedStasheffSum_one`: the
   identities in arities zero and one, written out.
 * `TauCeti.AInfinity.curvedSuspendedStasheffSum_eq_zero_iff`: the suspended curved identity holds
@@ -119,14 +119,14 @@ theorem curvedStasheffSum_congr {e : ℕ → ℤ} {y : ℕ → A} (n : ℕ)
   exact stasheffTerm_congr m d x _ _ _ (fun i hi ↦ hd i (by omega)) fun i hi ↦ hx i (by omega)
 
 /-- **Without curvature the curved Stasheff sum is the uncurved one.** -/
-theorem curvedStasheffSum_of_m_zero_eq_zero (h : m 0 = 0) (n : ℕ) :
+theorem curvedStasheffSum_eq_stasheffSum_of_m_zero_eq_zero (h : m 0 = 0) (n : ℕ) :
     curvedStasheffSum m d x n = stasheffSum m d x n := by
   rw [curvedStasheffSum_eq_stasheffSum_add,
     Finset.sum_eq_zero fun p _ ↦ stasheffTerm_eq_zero_of_inner_eq_zero m d x h, add_zero]
 
 /-- The curvature insertions of arity `n` have outer arity `n + 1`, so they disappear when that
 operation vanishes. -/
-theorem curvedStasheffSum_of_m_succ_eq_zero {n : ℕ} (h : m (n + 1) = 0) :
+theorem curvedStasheffSum_eq_stasheffSum_of_m_succ_eq_zero {n : ℕ} (h : m (n + 1) = 0) :
     curvedStasheffSum m d x n = stasheffSum m d x n := by
   rw [curvedStasheffSum_eq_stasheffSum_add, Finset.sum_eq_zero fun p hp ↦ ?_, add_zero]
   refine stasheffTerm_eq_zero_of_outer_eq_zero m d x ?_
