@@ -294,19 +294,14 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_appl
         ENNReal.ofReal (A * ((2 : ℝ) ^ j) ^ (2 * ((Module.finrank ℝ E : ℝ) / 2 -
           Module.finrank ℝ E * (r⁻¹).toReal - 1 / q))) *
           ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' volume := by
-  set ψ' : E → ℂ := fun ξ ↦ ψ ξ * star (ψ ξ)
-  have hψ' : ContDiff ℝ ∞ ψ' := hψ.mul (Complex.conjCLE.contDiff.comp hψ)
-  have hψ'0 : (0 : E) ∉ tsupport ψ' := fun h ↦ hψ0 (tsupport_mul_subset_left h)
+  obtain ⟨ψ', hψ', hψ'c, hψ'0, hred⟩ :=
+    exists_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint_eq hψ hψc hψ0
   obtain ⟨A, hA0, hA⟩ := exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le_rpow
-    (r' := r') hψ' hψc.mul_right hψ'0 hq hqr
+    (r' := r') hψ' hψ'c hψ'0 hq hqr
   refine ⟨A, hA0, fun j m hm s t hst g ↦ ?_⟩
-  have hm' : (m • star m : Lp ℂ ∞ (volume : Measure E)) =ᵐ[volume]
-      fun ξ ↦ ψ' (((2 : ℝ) ^ j)⁻¹ • ξ) := by
-    filter_upwards [Lp.coeFn_lpSMul (r := ∞) m (star m), Lp.coeFn_star m, hm] with ξ h₁ h₂ h₃
-    rw [h₁, Pi.smul_apply', h₂, Pi.star_apply, h₃, smul_eq_mul]
-  rw [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
-    Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
-  exact hA j _ hm' (s - t) (sub_ne_zero.2 hst) g
+  obtain ⟨m', hm', hm'eq⟩ := hred j m hm
+  rw [hm'eq]
+  exact hA j m' hm' (s - t) (sub_ne_zero.2 hst) g
 
 /-! ### The Strichartz estimates -/
 
