@@ -457,15 +457,13 @@ omit [Fintype ι] [DecidableEq ι] in
 `Z₀ - Z₀ᵀ = Yᵀ J₀ Y`. -/
 theorem unipotentBase_sub_transpose {J₀ : Matrix κ κ R} (hJ₀ : J₀.toBilin'.IsAlt)
     (Y : Matrix κ ι R) : unipotentBase J₀ Y - (unipotentBase J₀ Y)ᵀ = Yᵀ * J₀ * Y := by
-  -- `Yᵀ J₀ Y` is alternating: skew because `J₀` is, and its diagonal entries are values of the
-  -- form of `J₀` on the columns of `Y`
+  -- `Yᵀ J₀ Y` is skew because `J₀` is; its diagonal entry at `i` is the pullback of `J₀` along
+  -- the `i`th column of `Y`, which is alternating
   have hskew : (Yᵀ * J₀ * Y)ᵀ = -(Yᵀ * J₀ * Y) := by
     simp [transpose_mul, transpose_eq_neg_of_isAlt_toBilin' hJ₀, Matrix.mul_assoc]
   have hdiag (i : ι) : (Yᵀ * J₀ * Y) i i = 0 := by
-    have := hJ₀ (fun a => Y a i)
-    rw [toBilin'_apply] at this
-    simp only [Matrix.mul_apply, transpose_apply, Finset.sum_mul]
-    rwa [Finset.sum_comm]
+    simpa [Matrix.mul_apply] using apply_self_eq_zero_of_isAlt_toBilin'
+      (isAlt_toBilin'_transpose_mul_mul hJ₀ (Y.submatrix id fun _ : Unit => i)) ()
   ext i j
   rw [Matrix.sub_apply, transpose_apply]
   rcases lt_trichotomy i j with h | rfl | h
