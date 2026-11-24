@@ -154,12 +154,11 @@ theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRin
   exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.property k
 
 open Pointwise in
-/-- For an irreducible element `ϖ` of the ring of integers of a valuation `v` on a field, when that
-ring is a valuation ring, the elements of valuation one are the complement in `v.integer` of the
-maximal ideal `ϖ • v.integer`. -/
+/-- For an irreducible element `ϖ` of the ring of integers of a valuation `v` on a field, the
+elements of valuation one are the complement in `v.integer` of the maximal ideal
+`ϖ • v.integer`. -/
 theorem _root_.Irreducible.setOf_valuation_eq_one_eq_sdiff {K Γ₀ : Type*} [Field K]
-    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀} [PreValuationRing v.integer]
-    {ϖ : v.integer} (hϖ : Irreducible ϖ) :
+    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀} {ϖ : v.integer} (hϖ : Irreducible ϖ) :
     {x : K | v x = 1} = (v.integer : Set K) \ (ϖ : K) • (v.integer : Set K) := by
   have hm : ((↑) : v.integer → K) '' ↑(IsLocalRing.maximalIdeal v.integer) =
       (ϖ : K) • (v.integer : Set K) := by

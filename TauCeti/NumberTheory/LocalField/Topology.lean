@@ -29,6 +29,7 @@ proper metric space, and proper metric spaces are second countable.
 
 * `TauCeti.instSecondCountableTopologyOfIsNonarchimedeanLocalField`: a nonarchimedean local field
   is second countable.
+* `TauCeti.isCompact_integer`: the ring of integers is compact.
 -/
 
 public section
@@ -52,6 +53,11 @@ instance instSecondCountableTopologyOfIsNonarchimedeanLocalField : SecondCountab
   have h : @SecondCountableTopology K (normalizedNormedFieldTopology K) :=
     secondCountable_of_proper
   rwa [normalizedNormedField_topology_eq] at h
+
+variable (K) in
+/-- The ring of integers of a nonarchimedean local field is compact. -/
+theorem isCompact_integer : IsCompact (𝒪[K] : Set K) :=
+  isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))
 
 /- A nonarchimedean local field is totally disconnected, by
 `TauCeti.instNonarchimedeanRingOfIsValuativeTopology`, Mathlib's

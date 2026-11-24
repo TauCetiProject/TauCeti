@@ -43,7 +43,6 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
 
 ## Main results
 
-* `TauCeti.isCompact_integer`: the ring of integers is compact.
 * `TauCeti.existsUnique_isAddHaarMeasure_measure_integer_eq_one`: there is exactly one additive
   Haar measure on `K` giving `𝒪[K]` mass one.
 * `MeasureTheory.measure_smul_integer_of_irreducible`: the maximal ideal `ϖ • 𝒪[K]` has `q⁻¹`
@@ -83,7 +82,7 @@ interior: it is compact, and open since the topology of `K` is valuative. Mathli
 mass one. -/
 noncomputable def integerPositiveCompacts : PositiveCompacts K where
   carrier := 𝒪[K]
-  isCompact' := isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))
+  isCompact' := isCompact_integer K
   interior_nonempty' := ⟨0, by
     rw [Valuation.isOpen_integer.interior_eq]
     exact zero_mem 𝒪[K]⟩
@@ -92,19 +91,12 @@ noncomputable def integerPositiveCompacts : PositiveCompacts K where
 theorem coe_integerPositiveCompacts : (integerPositiveCompacts K : Set K) = 𝒪[K] :=
   (rfl)
 
-/-- The ring of integers of a nonarchimedean local field is compact. -/
-theorem isCompact_integer : IsCompact (𝒪[K] : Set K) :=
-  isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))
-
 variable {K} in
 /-- The units of the ring of integers, the elements of valuation one, form a measurable set: they
-are the compact set `𝒪[K]` minus the compact maximal ideal `ϖ • 𝒪[K]`. -/
+are the sphere of radius one, which is closed (`Valuation.isClosed_sphere`). -/
 theorem measurableSet_setOf_valuation_eq_one [MeasurableSpace K] [BorelSpace K] :
     MeasurableSet {x : K | valuation K x = 1} := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  rw [hϖ.setOf_valuation_eq_one_eq_sdiff]
-  exact (isCompact_integer K).isClosed.measurableSet.diff
-    ((isCompact_integer K).smul (ϖ : K)).isClosed.measurableSet
+  simpa only [Valuation.restrict_eq_one_iff] using ((valuation K).isClosed_sphere 1).measurableSet
 
 /-- **The normalized Haar measure of a local field.** There is exactly one additive Haar measure
 on `K` giving the ring of integers `𝒪[K]` mass one, namely

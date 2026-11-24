@@ -20,14 +20,17 @@ so the units have mass `1 - q⁻¹` for both `μ`
 (`MeasureTheory.Measure.addHaar_setOf_valuation_eq_one`) and `|ω|`
 (`MeasureTheory.Measure.withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one`).
 
-For `K = ℚ_[p]` this mass is `1 - p⁻¹`. The partial products `∏_{p ≤ n} (1 - p⁻¹)` tend to `0`,
-because the sum of the reciprocals of the primes diverges
-(`Nat.tendsto_prod_primesLE_filter_notMem_one_sub_inv_atTop`).
-So the family of local measures `|ω|_p` does not give the units `ℤ_p^×` mass `1` at all but
-finitely many primes, which is the normalization hypothesis of the restricted product of Haar
-measures (`TauCeti.restrictedHaar`), and no single rescaling `c • |ω|_p` repairs
-this (`TauCeti.not_eventually_smul_withDensity_setOf_valuation_eq_one`). The Tamagawa measure
-of `𝔾_m` uses the convergence factors `(1 - p⁻¹)⁻¹` instead.
+For `K = ℚ_[p]` this mass is `1 - p⁻¹`, and the product of these local masses over all primes is
+`0`: the partial products `∏_{p ≤ n} (1 - p⁻¹)` tend to `0`, because the sum of the reciprocals of
+the primes diverges (`Nat.tendsto_prod_primesLE_filter_notMem_one_sub_inv_atTop_nhds_zero`). This
+is why the Tamagawa measure of `𝔾_m` uses the convergence factors `(1 - p⁻¹)⁻¹`.
+
+Separately, since `1 - q⁻¹ ≠ 1`, the local measures `|ω|_p` do not give the units `ℤ_p^×` mass
+`1` at all but finitely many primes, and no single rescaling `c • |ω|_p` repairs this
+(`TauCeti.not_eventually_smul_withDensity_setOf_valuation_eq_one`). This is the analogue, for these
+measures on the additive field `K`, of the normalization hypothesis of the restricted product of
+Haar measures (`TauCeti.restrictedHaar`). The multiplicative Haar measure on `Kˣ` that `|ω|`
+restricts to, and the application to `TauCeti.restrictedHaar`, are not formalized here.
 
 ## Main declarations
 
@@ -93,15 +96,24 @@ theorem withDensity_inv_nnnorm_setOf_norm_eq_one (μ : Measure ℚ_[p]) [μ.IsAd
 
 end Padic
 
+/-- A rescaling `c (1 - n⁻¹)` takes the value `1` for at most one positive natural `n`. -/
+private theorem eq_of_mul_one_sub_inv_eq_one {c : ℝ≥0∞} {a b : ℕ} (ha : 0 < a) (hb : 0 < b)
+    (h₁ : c * (1 - (a : ℝ≥0∞)⁻¹) = 1) (h₂ : c * (1 - (b : ℝ≥0∞)⁻¹) = 1) : a = b := by
+  have h := (ENNReal.eq_inv_of_mul_eq_one_left h₁).symm.trans (ENNReal.eq_inv_of_mul_eq_one_left h₂)
+  rwa [inv_inj, ENNReal.sub_right_inj ENNReal.one_ne_top
+    (ENNReal.inv_le_one.2 (by exact_mod_cast ha)) (ENNReal.inv_le_one.2 (by exact_mod_cast hb)),
+    inv_inj, Nat.cast_inj] at h
+
 /-- **Form measures need convergence factors.** Let `K i` be a family of nonarchimedean local
 fields, indexed by an infinite type, such that each residue cardinality `q` is taken by only
 finitely many `K i`, for instance the `ℚ_[p]` (`Padic.natCard_residueField`) or the completions of
 a number field at its finite places, and let `μ i` be the additive Haar measure on `K i` with
 `μ i 𝒪[K i] = 1`. No single rescaling `c • |dx/x|_i` of the form measures gives the units of
 `𝒪[K i]` mass one for all but finitely many `i`: their masses are `c (1 - q_i⁻¹)`, which take the
-value `1` only for the `i` sharing a single value of `q_i`. With `c = 1` this says that the
-family `|dx/x|_i` fails the normalization hypothesis of the restricted product of Haar measures
-(`TauCeti.restrictedHaar`). -/
+value `1` only for the `i` sharing a single value of `q_i`. This is the analogue, for the
+measures `|x|⁻¹ μ i` on the additive fields `K i`, of the normalization hypothesis of the
+restricted product of Haar measures (`TauCeti.restrictedHaar`); the Haar measures on the
+`(K i)ˣ` that these would restrict to are not constructed here. -/
 theorem not_eventually_smul_withDensity_setOf_valuation_eq_one {ι : Type*} [Infinite ι]
     {K : ι → Type*} [∀ i, Field (K i)] [∀ i, ValuativeRel (K i)] [∀ i, TopologicalSpace (K i)]
     [∀ i, IsNonarchimedeanLocalField (K i)] [∀ i, MeasurableSpace (K i)]
@@ -113,18 +125,9 @@ theorem not_eventually_smul_withDensity_setOf_valuation_eq_one {ι : Type*} [Inf
   intro h
   simp only [smul_apply, withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one, hμ,
     mul_one, smul_eq_mul] at h
-  obtain ⟨i, hi⟩ := (Set.infinite_of_finite_compl (Filter.mem_cofinite.1 h)).nonempty
-  have hpos (k : ι) : 0 < Nat.card 𝓀[K k] := Nat.card_pos
-  have hle (k : ι) : (Nat.card 𝓀[K k] : ℝ≥0∞)⁻¹ ≤ 1 :=
-    ENNReal.inv_le_one.2 (by exact_mod_cast hpos k)
-  have hne (k : ι) : (Nat.card 𝓀[K k] : ℝ≥0∞)⁻¹ ≠ ⊤ :=
-    ENNReal.inv_ne_top.2 (by exact_mod_cast (hpos k).ne')
-  refine Set.infinite_of_finite_compl (Filter.mem_cofinite.1 h) <| (hq (Nat.card 𝓀[K i])).subset
-    fun j hj ↦ ?_
-  have h' := (ENNReal.eq_inv_of_mul_eq_one_left hi).symm.trans
-    (ENNReal.eq_inv_of_mul_eq_one_left hj)
-  rw [inv_inj, (ENNReal.cancel_of_ne ENNReal.one_ne_top).tsub_right_inj (ENNReal.cancel_of_ne
-    (hne i)) (ENNReal.cancel_of_ne (hne j)) (hle i) (hle j), inv_inj, Nat.cast_inj] at h'
-  exact h'.symm
+  have hinf := Set.infinite_of_finite_compl (Filter.mem_cofinite.1 h)
+  obtain ⟨i, hi⟩ := hinf.nonempty
+  exact hinf <| (hq (Nat.card 𝓀[K i])).subset fun j hj ↦
+    eq_of_mul_one_sub_inv_eq_one Nat.card_pos Nat.card_pos hj hi
 
 end TauCeti

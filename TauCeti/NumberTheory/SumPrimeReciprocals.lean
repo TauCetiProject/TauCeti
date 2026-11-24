@@ -29,7 +29,7 @@ the primes dividing the level.
 * `Nat.tendsto_sum_primesLE_filter_notMem_inv_atTop`: the partial sums of `1 / p` diverge.
 * `Nat.tendsto_prod_primesLE_filter_notMem_one_sub_inv_inv_atTop`: the partial Euler products
   `∏ (1 - 1 / p)⁻¹` diverge.
-* `Nat.tendsto_prod_primesLE_filter_notMem_one_sub_inv_atTop`: the partial products
+* `Nat.tendsto_prod_primesLE_filter_notMem_one_sub_inv_atTop_nhds_zero`: the partial products
   `∏ (1 - 1 / p)` tend to `0`.
 -/
 
@@ -70,7 +70,7 @@ theorem tendsto_prod_primesLE_filter_notMem_one_sub_inv_inv_atTop (T : Finset �
 /-- **The Euler product of `1 - 1 / p` tends to zero.** For every finite set `T`, the partial
 products `∏ p ≤ n, p ∉ T, (1 - 1 / p)` tend to `0`, being the inverses of the diverging Euler
 products of `tendsto_prod_primesLE_filter_notMem_one_sub_inv_inv_atTop`. -/
-theorem tendsto_prod_primesLE_filter_notMem_one_sub_inv_atTop (T : Finset ℕ) :
+theorem tendsto_prod_primesLE_filter_notMem_one_sub_inv_atTop_nhds_zero (T : Finset ℕ) :
     Tendsto (fun n ↦ ∏ p ∈ primesLE n with p ∉ T, (1 - (p : ℝ)⁻¹)) atTop (nhds 0) := by
   simpa [Pi.inv_def] using
     (tendsto_prod_primesLE_filter_notMem_one_sub_inv_inv_atTop T).inv_tendsto_atTop
