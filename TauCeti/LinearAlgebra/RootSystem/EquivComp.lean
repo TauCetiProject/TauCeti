@@ -260,16 +260,14 @@ theorem indexEquiv_pow (σ : Aut P) (n : ℕ) : (σ ^ n).indexEquiv = σ.indexEq
 Not a `simp` lemma: `RootPairing.Equiv.mul_eq_comp` rewrites its left-hand side. -/
 theorem weightMap_mul_apply (σ τ : Aut P) (x : M) :
     (σ * τ).toHom.weightMap x = σ.toHom.weightMap (τ.toHom.weightMap x) := by
-  rw [← weightEquiv_apply, ← weightHom_apply, map_mul, mul_apply_eq_comp, weightHom_apply,
-    weightHom_apply, weightEquiv_apply, weightEquiv_apply]
+  simp only [mul_eq_comp, toHom_comp, Hom.comp_weightMap_apply]
 
 /-- The weight map of a power of an automorphism is the power of its weight map. -/
 @[simp]
 theorem weightMap_pow (σ : Aut P) (n : ℕ) : (σ ^ n).toHom.weightMap = σ.toHom.weightMap ^ n := by
-  have h : ⇑σ.weightEquiv = σ.toHom.weightMap := funext σ.weightEquiv_apply
-  ext x
-  rw [← weightEquiv_apply, ← weightHom_apply, map_pow, pow_apply_eq_iterate, pow_apply_eq_iterate,
-    weightHom_apply, h]
+  induction n with
+  | zero => simp only [pow_zero, toHom_one, Hom.weightMap_one, Module.End.one_eq_id]
+  | succ n ih => ext x; rw [pow_succ, weightMap_mul_apply, ih, pow_succ, mul_apply_eq_comp]
 
 end Pow
 

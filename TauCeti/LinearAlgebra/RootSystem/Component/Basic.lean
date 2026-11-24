@@ -450,9 +450,7 @@ side. -/
 theorem Equiv.componentEquiv_mul (σ τ : P.Aut) :
     (σ * τ).componentEquiv = σ.componentEquiv * τ.componentEquiv :=
   _root_.Equiv.ext fun C ↦ C.ind fun i ↦ by
-    rw [Equiv.Perm.mul_apply, componentEquiv_componentOf, componentEquiv_componentOf,
-      componentEquiv_componentOf, ← indexHom_apply, map_mul, Equiv.Perm.mul_apply, indexHom_apply,
-      indexHom_apply]
+    simp [componentEquiv_componentOf]
 
 /-- **Automorphisms permute the irreducible components by a group action.** -/
 @[simp]
