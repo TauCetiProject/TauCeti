@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 
 /-!
@@ -26,6 +26,8 @@ functor to its modules.
 * `CategoryTheory.Functor.natEndModule`: the action of `End F` on `F.obj Y`, as a `Module`
   structure for use as a local instance.
 * `CategoryTheory.Functor.toNatEndModule`: the lift of `F` to modules over `End F`.
+* `CategoryTheory.Functor.toNatEndModuleCompRestrictScalarsIso`: restricting scalars back to `R`
+  recovers `F`.
 
 ## References
 
@@ -104,6 +106,25 @@ attribute [local instance] natEndModule
 /-- The action of natural endomorphisms extends the action of `R`. -/
 instance natEndModule_isScalarTower (Y : D) : IsScalarTower R (End F) (F.obj Y) where
   smul_assoc c η y := by simp
+
+/-- Restricting the action of `End F` on the values of `F.toNatEndModule` back to `R` recovers
+`F`; the components are identities. -/
+noncomputable def toNatEndModuleCompRestrictScalarsIso :
+    F.toNatEndModule ⋙ ModuleCat.restrictScalars (algebraMap R (End F)) ≅ F :=
+  NatIso.ofComponents (fun Y ↦ LinearEquiv.toModuleIso
+    (@AddEquiv.toLinearEquiv _ _ _ _ _ _
+      ((ModuleCat.restrictScalars (algebraMap R (End F))).obj (F.toNatEndModule.obj Y)).isModule _
+      (.refl (F.obj Y)) fun c y ↦ algebraMap_smul (End F) (M := F.obj Y) c y)) fun _ ↦ rfl
+
+/-- The components of `F.toNatEndModuleCompRestrictScalarsIso` are identities. -/
+theorem toNatEndModuleCompRestrictScalarsIso_hom_app_hom_apply (Y : D) (y : F.obj Y) :
+    (F.toNatEndModuleCompRestrictScalarsIso.hom.app Y).hom y = y :=
+  (rfl)
+
+/-- The inverse components of `F.toNatEndModuleCompRestrictScalarsIso` are identities. -/
+theorem toNatEndModuleCompRestrictScalarsIso_inv_app_hom_apply (Y : D) (y : F.obj Y) :
+    (F.toNatEndModuleCompRestrictScalarsIso.inv.app Y).hom y = y :=
+  (rfl)
 
 end CommRing
 

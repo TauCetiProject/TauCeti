@@ -49,6 +49,8 @@ morphism between such direct sums.
 * `CategoryTheory.Functor.hullModuleFunctor_obj_obj`,
   `CategoryTheory.Functor.hullModuleFunctor_map_hom_hom_apply`: it acts on objects and morphisms
   as `ω`.
+* `CategoryTheory.Functor.hullModuleFunctorCompRestrictScalarsIso`: restricting scalars back to
+  the base ring, `hullModuleFunctor` recovers the restricted fibre functor `⟨X⟩.ι ⋙ ω`.
 * `CategoryTheory.Functor.hullEquivalence`: for an exact faithful linear functor to vector
   spaces, `hullModuleFunctor` is an equivalence `⟨X⟩ ≌ FGModuleCat A_X`.
 
@@ -105,6 +107,28 @@ theorem hullModuleFunctor_map_hom_hom_apply {Y Y' : (subquotientHull X).FullSubc
     ((ω.hullModuleFunctor X).map g).hom.hom y = (ω.map g.hom).hom y :=
   (rfl)
 
+variable (X) in
+/-- Restricting scalars back to `R`, `hullModuleFunctor` recovers the fibre functor `ω` on the
+hull of `X`; the components are identities. -/
+noncomputable def hullModuleFunctorCompRestrictScalarsIso :
+    ω.hullModuleFunctor X ⋙ (ModuleCat.isFG _).ι ⋙
+        ModuleCat.restrictScalars (algebraMap R (End ((subquotientHull X).ι ⋙ ω))) ≅
+      (subquotientHull X).ι ⋙ ω :=
+  (Functor.associator _ _ _).symm ≪≫ isoWhiskerRight ((ModuleCat.isFG _).liftCompιIso _ _) _ ≪≫
+    ((subquotientHull X).ι ⋙ ω).toNatEndModuleCompRestrictScalarsIso
+
+/-- The components of `hullModuleFunctorCompRestrictScalarsIso` are identities. -/
+theorem hullModuleFunctorCompRestrictScalarsIso_hom_app_hom_apply
+    (Y : (subquotientHull X).FullSubcategory) (y : ω.obj Y.obj) :
+    ((ω.hullModuleFunctorCompRestrictScalarsIso X).hom.app Y).hom y = y :=
+  ((subquotientHull X).ι ⋙ ω).toNatEndModuleCompRestrictScalarsIso_hom_app_hom_apply Y y
+
+/-- The inverse components of `hullModuleFunctorCompRestrictScalarsIso` are identities. -/
+theorem hullModuleFunctorCompRestrictScalarsIso_inv_app_hom_apply
+    (Y : (subquotientHull X).FullSubcategory) (y : ω.obj Y.obj) :
+    ((ω.hullModuleFunctorCompRestrictScalarsIso X).inv.app Y).hom y = y :=
+  ((subquotientHull X).ι ⋙ ω).toNatEndModuleCompRestrictScalarsIso_inv_app_hom_apply Y y
+
 end Functor
 
 section Equivalence
@@ -153,9 +177,7 @@ private lemma hullEndOfPoint_app (η : End ((subquotientHull X).ι ⋙ ω))
       η * hullEndOfPoint ω q := by
   refine End.ext (NatTrans.ext (funext fun Y ↦ ?_))
   ext y
-  rw [← natEndModule_smul, ← natEndModule_smul, ← natEndModule_smul, mul_smul,
-    hullEndOfPoint_smul, hullEndOfPoint_smul]
-  simp only [natEndModule_smul]
+  simp only [← natEndModule_smul, mul_smul, hullEndOfPoint_smul]
   exact ω.map_hom_app_hom_apply η (Y := ⟨_, ω.subquotientHull_hullRepresenting X⟩) _ q
 
 /-- The value of a morphism out of a finite direct sum of copies of `P_X`, assembled from
@@ -170,6 +192,15 @@ private lemma map_biproductDesc_apply {ι : Type} [Fintype ι]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [hullEndOfPoint_smul, map_biproductDesc_map_ι_apply]
 
+/-- A linear map is surjective once every member of a spanning family lies in its range. -/
+private lemma surjective_of_span_range_eq_top {S M N ι : Type*} [Semiring S] [AddCommMonoid M]
+    [AddCommMonoid N] [Module S M] [Module S N] {s : ι → N}
+    (hs : Submodule.span S (Set.range s) = ⊤) (f : M →ₗ[S] N) (h : ∀ j, s j ∈ LinearMap.range f) :
+    Function.Surjective f := by
+  rw [← LinearMap.range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
+  rintro _ ⟨j, rfl⟩
+  exact h j
+
 /-- Every `End (⟨X⟩.ι ⋙ ω)`-linear map between fibres of objects of the hull of `X` is `ω g` for
 some morphism `g`. -/
 private lemma exists_map_eq {Y Y' : (subquotientHull X).FullSubcategory}
@@ -183,11 +214,9 @@ private lemma exists_map_eq {Y Y' : (subquotientHull X).FullSubcategory}
   let f₂ := biproduct.desc fun j ↦ (ω.hullEvalEquiv Y'.property).symm (φ (b j))
   have h₂ (v) : (ω.map f₂).hom v = φ ((ω.map f₁).hom v) := by
     simp only [f₁, f₂, map_biproductDesc_apply, _root_.map_sum, LinearMap.map_smul]
-  have hsurj : Function.Surjective (ω.map f₁).hom := by
-    rw [← LinearMap.range_eq_top, eq_top_iff, ← b.span_eq, Submodule.span_le]
-    rintro _ ⟨j, rfl⟩
-    refine ⟨(ω.map (biproduct.ι _ j)).hom (ω.fiberSpanPoint (ω.hullBasisPoint X)), ?_⟩
-    simp [f₁]
+  have hsurj : Function.Surjective (ω.map f₁).hom :=
+    surjective_of_span_range_eq_top b.span_eq _ fun j ↦
+      ⟨(ω.map (biproduct.ι _ j)).hom (ω.fiberSpanPoint (ω.hullBasisPoint X)), by simp [f₁]⟩
   have : Epi f₁ := ω.epi_of_epi_map ((ModuleCat.epi_iff_surjective _).2 hsurj)
   have hker : kernel.ι f₁ ≫ f₂ = 0 := ω.map_injective <| by
     ext z
@@ -251,10 +280,8 @@ private lemma exists_iso (M : FGModuleCat.{w} (End ((subquotientHull X).ι ⋙ �
   let ρ : ((subquotientHull X).ι ⋙ ω).toNatEndModule.obj ⟨_, hQ⟩ →ₗ[
       End ((subquotientHull X).ι ⋙ ω)] M.obj :=
     biproductLinearMap ω s
-  have hρ : Function.Surjective ρ := by
-    rw [← LinearMap.range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
-    rintro _ ⟨j, rfl⟩
-    exact ⟨_, biproductLinearMap_map_ι ω s j⟩
+  have hρ : Function.Surjective ρ :=
+    surjective_of_span_range_eq_top hs ρ fun j ↦ ⟨_, biproductLinearMap_map_ι ω s j⟩
   obtain ⟨m, f, hf⟩ := exists_range_eq ω (LinearMap.ker ρ)
   have hY : subquotientHull X (cokernel f) :=
     (subquotientHull X).prop_of_epi (cokernel.π f) hQ
