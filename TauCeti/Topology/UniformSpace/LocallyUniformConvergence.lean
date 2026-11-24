@@ -30,10 +30,13 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
-Locally uniform convergence along a filter `l` passes to any family of indices tending to `l`,
-for instance to a subsequence (`TendstoLocallyUniformlyOn.comp_tendsto`,
-`TendstoLocallyUniformly.comp_tendsto`), and a family that does not depend on its index
-converges locally uniformly to its constant value (`TauCeti.tendstoLocallyUniformly_const`).
+Uniform and locally uniform convergence along a filter `l` pass to any family of indices tending
+to `l`, for instance to a subsequence (`TendstoUniformlyOn.comp_tendsto`,
+`TendstoLocallyUniformlyOn.comp_tendsto`, `TendstoLocallyUniformly.comp_tendsto`), and a family
+that does not depend on its index converges locally uniformly to its constant value
+(`TauCeti.tendstoLocallyUniformly_const`).
+Locally uniform convergence on the whole space gives pointwise convergence
+(`TendstoLocallyUniformly.tendsto_at`).
 
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
@@ -41,7 +44,10 @@ continuous convergence at every point of the set
 `Fᵢ ∘ g` on an open set `s`, for an open map `g` injective on `s`, is convergence of `Fᵢ` on
 `g '' s` (`TendstoLocallyUniformlyOn.image_of_isOpenMap`). Locally uniform limits on open windows
 `Uᵢ \ Zᵢ` glue to a locally uniform limit on `(⋃ᵢ Uᵢ) \ Z` for every closed set `Z` containing
-each `Zᵢ ∩ Uᵢ` (`TauCeti.exists_tendstoLocallyUniformlyOn_iUnion_sdiff`).
+each `Zᵢ ∩ Uᵢ` (`TauCeti.exists_tendstoLocallyUniformlyOn_iUnion_sdiff`). This follows from
+gluing on open sets: if `F` converges locally uniformly on each open set `Gᵢ`, with values in a
+Hausdorff space, the limits agree on the overlaps and `F` converges locally uniformly on the union
+to the glued limit (`TauCeti.exists_tendstoLocallyUniformlyOn_iUnion`).
 
 A locally uniform limit `w` of maps `e ∘ uᵢ`, for an open partial homeomorphism `e` and maps `uᵢ`
 with values in a subset `K` of its source, is read back through `e.symm` when `w` takes values in
@@ -59,6 +65,14 @@ public section
 
 open Filter Set Topology Uniformity
 
+/-- Uniform convergence along `p` passes to any filter `q` that `g` maps into `p`; for instance,
+from a sequence to a subsequence. -/
+theorem TendstoUniformlyOn.comp_tendsto {ι ι' α β : Type*} [UniformSpace β] {F : ι → α → β}
+    {f : α → β} {p : Filter ι} {s : Set α} {g : ι' → ι} {q : Filter ι'}
+    (h : TendstoUniformlyOn F f p s) (hg : Tendsto g q p) :
+    TendstoUniformlyOn (F ∘ g) f q s :=
+  fun u hu ↦ hg.eventually (h u hu)
+
 /-- Locally uniform convergence along `p` passes to any filter `q` that `g` maps into `p`; for
 instance, from a sequence to a subsequence. -/
 theorem TendstoLocallyUniformlyOn.comp_tendsto {ι ι' α β : Type*} [TopologicalSpace α]
@@ -66,6 +80,13 @@ theorem TendstoLocallyUniformlyOn.comp_tendsto {ι ι' α β : Type*} [Topologic
     {q : Filter ι'} (h : TendstoLocallyUniformlyOn F f p s) (hg : Tendsto g q p) :
     TendstoLocallyUniformlyOn (F ∘ g) f q s :=
   fun u hu x hx ↦ (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, hg.eventually hev⟩
+
+/-- A locally uniform limit is a pointwise limit: if `F i → f` locally uniformly along `p`, then
+`F i a → f a` for every `a`. -/
+theorem TendstoLocallyUniformly.tendsto_at {ι α β : Type*} [TopologicalSpace α] [UniformSpace β]
+    {F : ι → α → β} {f : α → β} {p : Filter ι} (h : TendstoLocallyUniformly F f p) (a : α) :
+    Tendsto (fun i ↦ F i a) p (𝓝 (f a)) :=
+  (tendstoLocallyUniformlyOn_univ.2 h).tendsto_at (mem_univ a)
 
 /-- **Locally uniform convergence to a continuous limit is continuous convergence.** On an open
 set on which the limit is continuous, `F i → f` locally uniformly exactly when `F i y → f x` as
@@ -195,6 +216,23 @@ theorem tendstoLocallyUniformly_of_forall_continuousAt {δ γ : Type*} [Topologi
   have hfam := (hΦ x).tendsto.comp (hx.prodMk_nhds (hp.comp tendsto_fst))
   exact (hlim.prodMk_nhds hfam).mono_right (nhds_le_uniformity _)
 
+/-- **Gluing locally uniform limits.** If `F i` converges locally uniformly to `vⱼ` on each of
+the open sets `Gⱼ`, with values in a Hausdorff uniform space, then it converges locally uniformly
+on their union to one function, which agrees with every `vⱼ` on `Gⱼ`. -/
+theorem exists_tendstoLocallyUniformlyOn_iUnion {γ κ : Type*} [UniformSpace γ] [T2Space γ]
+    [l.NeBot] {G : κ → Set α} (hG : ∀ j, IsOpen (G j)) {F : ι → α → γ} {v : κ → α → γ}
+    (h : ∀ j, TendstoLocallyUniformlyOn F (v j) l (G j)) :
+    ∃ w : α → γ, (∀ j, EqOn w (v j) (G j)) ∧ TendstoLocallyUniformlyOn F w l (⋃ j, G j) := by
+  classical
+  obtain ⟨i₀⟩ := l.nonempty_of_neBot
+  -- Limits are unique, so the `v j` agree on the overlaps of the `G j`.
+  set w : α → γ := fun x ↦ if hx : ∃ j, x ∈ G j then v hx.choose x else F i₀ x
+  have hw (j : κ) : EqOn w (v j) (G j) := fun x hx ↦ by
+    have hx' : ∃ j, x ∈ G j := ⟨j, hx⟩
+    simp only [w, hx', dite_true]
+    exact tendsto_nhds_unique ((h _).tendsto_at hx'.choose_spec) ((h j).tendsto_at hx)
+  exact ⟨w, hw, tendstoLocallyUniformlyOn_iUnion hG fun j ↦ (h j).congr_right (hw j).symm⟩
+
 /-- **Gluing locally uniform limits over open windows.** If `F i` converges locally uniformly on
 `Uⱼ \ Zⱼ` for every open window `Uⱼ`, then it converges locally uniformly on `(⋃ⱼ Uⱼ) \ Z` for
 every closed set `Z` containing every `Zⱼ ∩ Uⱼ`: the limits of two windows agree where both
@@ -204,15 +242,10 @@ theorem exists_tendstoLocallyUniformlyOn_iUnion_sdiff {γ κ : Type*} [UniformSp
     {Zw : κ → Set α} {Z : Set α} (hZ : IsClosed Z) (hZw : ∀ j, Zw j ∩ U j ⊆ Z) {vw : κ → α → γ}
     (hvw : ∀ j, TendstoLocallyUniformlyOn F (vw j) l (U j \ Zw j)) :
     ∃ v : α → γ, TendstoLocallyUniformlyOn F v l ((⋃ j, U j) \ Z) := by
-  classical
-  obtain ⟨i₀⟩ := l.nonempty_of_neBot
-  refine ⟨fun x ↦ if hx : ∃ j, x ∈ U j \ Zw j then vw (Classical.choose hx) x else F i₀ x, ?_⟩
+  have hsub (j : κ) : U j \ Z ⊆ U j \ Zw j := fun x hx ↦ ⟨hx.1, fun hxj ↦ hx.2 (hZw j ⟨hxj, hx.1⟩)⟩
+  obtain ⟨v, -, hv⟩ := exists_tendstoLocallyUniformlyOn_iUnion (fun j ↦ (hU j).sdiff hZ)
+    fun j ↦ (hvw j).mono (hsub j)
   rw [iUnion_sdiff]
-  refine tendstoLocallyUniformlyOn_iUnion (fun j ↦ (hU j).sdiff hZ) fun j ↦ ?_
-  have hsub : U j \ Z ⊆ U j \ Zw j := fun x hx ↦ ⟨hx.1, fun hxj ↦ hx.2 (hZw j ⟨hxj, hx.1⟩)⟩
-  refine ((hvw j).congr_right fun x hx ↦ ?_).mono hsub
-  have hex : ∃ j, x ∈ U j \ Zw j := ⟨j, hx⟩
-  simp only [hex, ↓reduceDIte]
-  exact tendsto_nhds_unique ((hvw j).tendsto_at hx) ((hvw _).tendsto_at (Classical.choose_spec hex))
+  exact ⟨v, hv⟩
 
 end TauCeti

@@ -18,6 +18,7 @@ import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.SpecialFunctions.Exponential
+import TauCeti.Geometry.Lie.Subgroup.LimitCriterion
 import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 import TauCeti.LinearAlgebra.Matrix.Block
 
@@ -55,6 +56,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
 
 ## Main results
 
+* `ClosedSubgroup.mem_matrixLieAlgebra_of_tendsto`: the limit criterion, a limit `X` of matrices
+  `Xₖ` with `exp (tₖ • Xₖ) ∈ G` for positive scales `tₖ → 0` lies in the Lie algebra.
 * `ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra`: the Lie algebra consists of
   skew-Hermitian matrices.
 * `ClosedSubgroup.matrixAdjointRepresentation_lie`: each `Ad(g)` preserves the bracket.
@@ -73,8 +76,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
 
 public section
 
-open NormedSpace
-open scoped Manifold Matrix
+open Filter NormedSpace
+open scoped Manifold Matrix Topology
 
 noncomputable section
 
@@ -144,6 +147,23 @@ private theorem forall_exp_mem_lie (G : ClosedSubgroup (Matrix.unitaryGroup n �
   rw [forall_exp_mem_iff] at hX hY ⊢
   simpa only [LieEquiv.map_lie] using LieSubalgebra.lie_mem _ hX hY
 
+/-- The limit criterion for the Lie algebra of the closed subgroup of units determined by `G`,
+read in matrix coordinates. -/
+private theorem forall_exp_mem_of_tendsto (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
+    {X : Matrix n n 𝕜} {t : ℕ → ℝ} {Xn : ℕ → Matrix n n 𝕜} (ht_pos : ∀ᶠ k in atTop, 0 < t k)
+    (ht : Tendsto t atTop (𝓝 0)) (hXn : Tendsto Xn atTop (𝓝 X))
+    (hmem : ∀ᶠ k in atTop, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t k • Xn k)) :
+    ∀ s : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (s • X) := by
+  rw [forall_exp_mem_iff]
+  refine mem_lieSubalgebraOfSubgroup_of_seq (isClosed_toGL G) ht_pos ht
+    (Xn := fun k ↦ (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm (Xn k)) ?_ ?_
+  · exact ((unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm.toLinearMap
+      |>.continuous_of_finiteDimensional.tendsto X).comp hXn
+  · filter_upwards [hmem] with k ⟨g, hg, hgk⟩
+    rw [← map_smul, lieExp_eq_expUnit]
+    refine ⟨g, hg, Units.ext ?_⟩
+    simp [hgk]
+
 /-- A real linear functional on matrices, along conjugation by the exponential line of `X`, has
 derivative at `0` its value on the commutator. -/
 private theorem hasDerivAt_linearMap_exp_mul_mul_exp_neg (ℓ : Matrix n n 𝕜 →ₗ[ℝ] ℝ)
@@ -171,6 +191,15 @@ variable {G H : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
 theorem mem_matrixLieAlgebra_iff {X : Matrix n n 𝕜} :
     X ∈ G.matrixLieAlgebra ↔ ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X) :=
   Iff.rfl
+
+/-- **The limit criterion for the Lie algebra.** If positive scales `tₖ → 0` and matrices
+`Xₖ → X` have `exp (tₖ • Xₖ) ∈ G` for all large `k`, then `X` lies in the Lie algebra of `G`. -/
+theorem mem_matrixLieAlgebra_of_tendsto {X : Matrix n n 𝕜} {t : ℕ → ℝ} {Xn : ℕ → Matrix n n 𝕜}
+    (ht_pos : ∀ᶠ k in atTop, 0 < t k) (ht : Tendsto t atTop (𝓝 0))
+    (hXn : Tendsto Xn atTop (𝓝 X))
+    (hmem : ∀ᶠ k in atTop, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t k • Xn k)) :
+    X ∈ G.matrixLieAlgebra :=
+  forall_exp_mem_of_tendsto G ht_pos ht hXn hmem
 
 /-- The Lie algebra of a closed subgroup of `U(n)` consists of skew-Hermitian matrices. -/
 theorem conjTranspose_eq_neg_of_mem_matrixLieAlgebra {X : Matrix n n 𝕜}

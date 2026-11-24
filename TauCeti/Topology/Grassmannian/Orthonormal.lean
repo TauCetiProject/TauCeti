@@ -47,7 +47,9 @@ is the definition `TauCeti.finiteOrthonormalFrame.unitaryMulAction` rather than 
 for `r = N` the two actions would be actions of the same group; it restricts to the special
 unitary group (`TauCeti.finiteOrthonormalFrame.specialUnitaryMulAction`) and, over `ℝ`, to the
 special orthogonal group (`TauCeti.finiteOrthonormalFrame.specialOrthogonalMulAction`). The
-standard orthonormal frame `(e₀, …, e_{r-1})` is `TauCeti.finiteOrthonormalFrame.standard`.
+standard orthonormal frame `(e₀, …, e_{r-1})` is `TauCeti.finiteOrthonormalFrame.standard`, so
+orthonormal `r`-frames exist exactly when `r ≤ N`
+(`TauCeti.finiteOrthonormalFrame.nonempty_iff_le`).
 An orthonormal one-frame is the same as a unit vector
 (`TauCeti.finiteOrthonormalFrame.sphereHomeomorph`).
 
@@ -356,16 +358,14 @@ of all frames. -/
     gramSchmidt_of_orthogonal 𝕜 fun _ _ hij ↦ f.property.2 hij
   simp [finiteFullRankFrame.coe_orthonormalize, gramSchmidtNormed, hgs, f.property.1 i]
 
+variable (𝕜) in
 /-- An orthonormal one-frame of `𝕜^N` is the same as a unit vector of `EuclideanSpace 𝕜 (Fin N)`.
--/
-def sphereHomeomorph (𝕜 : Type*) [RCLike 𝕜] (N : ℕ) :
+For `𝕜 = ℂ` this identifies `V₁(ℂ^N)` with the sphere `S^(2N-1)`. -/
+def sphereHomeomorph (N : ℕ) :
     finiteOrthonormalFrame 𝕜 1 N ≃ₜ Metric.sphere (0 : EuclideanSpace 𝕜 (Fin N)) 1 where
-  toFun f := ⟨WithLp.toLp 2 (f.val 0), by simpa using f.property.1 0⟩
-  invFun y := ⟨fun _ ↦ WithLp.ofLp (y : EuclideanSpace 𝕜 (Fin N)), by
-    rw [orthonormal_iff_ite]
-    intro i j
-    rw [Subsingleton.elim i j]
-    simp [norm_eq_of_mem_sphere]⟩
+  toFun f := ⟨WithLp.toLp 2 (f.val 0), mem_sphere_zero_iff_norm.2 (f.property.1 0)⟩
+  invFun y := ⟨fun _ ↦ WithLp.ofLp (y : EuclideanSpace 𝕜 (Fin N)),
+    orthonormal_subsingleton_iff.2 fun _ ↦ norm_eq_of_mem_sphere y⟩
   left_inv f := Subtype.ext <| funext fun i ↦ by rw [Subsingleton.elim i 0]
   right_inv y := rfl
   continuous_toFun := Continuous.subtype_mk ((PiLp.continuous_toLp 2 _).comp
@@ -383,6 +383,16 @@ theorem coe_sphereHomeomorph_symm_apply (y : Metric.sphere (0 : EuclideanSpace �
     (i : Fin 1) :
     ((sphereHomeomorph 𝕜 N).symm y).val i = WithLp.ofLp (y : EuclideanSpace 𝕜 (Fin N)) :=
   (rfl)
+
+/-- There is an orthonormal `r`-frame of `𝕜^N` exactly when `r ≤ N`: the span of such a frame is
+an `r`-dimensional subspace, and the standard frame `(e₀, …, e_{r-1})` exists for `r ≤ N`. -/
+theorem nonempty_iff_le : Nonempty (finiteOrthonormalFrame 𝕜 r N) ↔ r ≤ N :=
+  ⟨fun ⟨f⟩ ↦ finiteGrassmannian.nonempty_iff_le.1 ⟨finiteGrassmannian.frameSpan f.toFullRankFrame⟩,
+    fun h ↦ ⟨standard 𝕜 h⟩⟩
+
+/-- For `N < r`, there is no orthonormal `r`-frame of `𝕜^N`. -/
+theorem isEmpty_of_lt (h : N < r) : IsEmpty (finiteOrthonormalFrame 𝕜 r N) :=
+  not_nonempty_iff.1 fun hf ↦ (nonempty_iff_le.1 hf).not_gt h
 
 end finiteOrthonormalFrame
 

@@ -241,6 +241,19 @@ theorem freeze_apply (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
   (DFunLike.congr_fun (J.freeze_toEndomorphism_apply p x) v).trans
     (J.tangentEndomorphism_apply (p, x) v).symm
 
+/-- The frozen structures `J(p, ·)`, read as a vertical family over `P × M`, are jointly `Cⁿ`:
+they are the original-target tangent endomorphisms of `J`. -/
+theorem contMDiff_freeze_almostComplexStructureAt [FiniteDimensional ℝ E]
+    (J : ContMDiffAlmostComplexStructureFamily I M IP P n) :
+    ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
+        ((J.freeze q.1).almostComplexStructureAt q.2).toLinearMap.toContinuousLinearMap) :=
+  J.contMDiff_tangentEndomorphism.congr fun q ↦
+    congrArg (TotalSpace.mk' (E →L[ℝ] E) q.2) <| ContinuousLinearMap.ext fun v ↦ by
+      rw [LinearMap.coe_toContinuousLinearMap']
+      exact ((J.freeze q.1).almostComplexStructureAt_apply q.2 v).trans (J.freeze_apply q.1 q.2 v)
+
 /-- Domain-dependent structures are equal if their frozen structures agree at every domain point. -/
 theorem ext_of_freeze
     {J K : ContMDiffAlmostComplexStructureFamily I M IP P n}
