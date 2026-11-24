@@ -17,10 +17,10 @@ public import TauCeti.Topology.PL.Map
 
 A **PL structure** of dimension `n` on a topological space `M` is a triangulation of `M` by a
 finite combinatorial `n`-manifold: a finite vertex type `ι`, an abstract simplicial complex `K` on
-`ι` in which the link of every face is a combinatorial sphere or ball
-(`PreAbstractSimplicialComplex.IsCombinatorialManifold`), and a homeomorphism `e` from the weak
-realization of `K` onto `M`. For `n = 2` this is a triangulation of a compact surface, possibly
-with boundary, by a finite combinatorial surface.
+`ι` in which the link of every vertex is a combinatorial sphere or ball of dimension `n - 1`
+(void when `n = 0`; `PreAbstractSimplicialComplex.IsCombinatorialManifold`), and a homeomorphism
+`e` from the weak realization of `K` onto `M`. For `n = 2` this is a triangulation of a compact
+surface, possibly with boundary, by a finite combinatorial surface.
 
 The homeomorphism is part of the data. Precomposing it with a self-homeomorphism of the
 realization that is not piecewise linear gives a second PL structure on the same complex, and the
@@ -62,6 +62,8 @@ compact space with a triangulation by a combinatorial `n`-manifold carries a PL 
 * `TauCeti.PLStructure.isPLMap_map_left_iff`, `TauCeti.PLStructure.isPLMap_map_right_iff`,
   `TauCeti.PLStructure.isPLMap_map`: how piecewise linearity reads after transporting a PL
   structure, and that a homeomorphism is piecewise linear onto the structure it transports to.
+* `TauCeti.PLStructure.sphere_eq_map`, `TauCeti.PLStructure.closedBall_eq_map`: the standard
+  examples as transported realizations.
 
 ## References
 
@@ -84,9 +86,10 @@ universe u v w
 open Classical in
 /-- A **PL structure** of dimension `n` on `M`: a triangulation of `M` by a finite combinatorial
 `n`-manifold. It consists of a finite vertex type, an abstract simplicial complex on it in which
-every face link is a combinatorial sphere or ball, and a homeomorphism from the weak realization
-of the complex onto `M`. The homeomorphism is part of the data: two PL structures on the same
-complex differ by their comparison homeomorphism, which need not be piecewise linear. -/
+every vertex link is a combinatorial sphere or ball of dimension `n - 1` (void when `n = 0`), and
+a homeomorphism from the weak realization of the complex onto `M`. The homeomorphism is part of
+the data: two PL structures on the same complex differ by their comparison homeomorphism, which
+need not be piecewise linear. -/
 structure PLStructure (M : Type u) [TopologicalSpace M] (n : ℕ) where
   /-- The vertex type of the triangulating complex. -/
   ι : Type u
@@ -119,6 +122,7 @@ exposed so that the complex of the structure is the given complex by definition.
     PLStructure (Realization K) n where
   ι := ι
   K := K
+  -- `convert` replaces the `DecidableEq ι` instance of `hK` by the classical one of the field.
   isCombinatorialManifold := by convert hK
   e := Homeomorph.refl _
 
@@ -181,6 +185,8 @@ theorem eulerChar_eq (s : PLStructure M n) [FiniteCWType M] :
 `n`-manifold. -/
 theorem isCombinatoriallyTriangulable (s : PLStructure M n) :
     IsCombinatoriallyTriangulable.{u} M n :=
+  -- `convert` reconciles the `DecidableEq s.ι` instances of the field and of the
+  -- characterization, both classical but elaborated separately.
   isCombinatoriallyTriangulable_iff.mpr ⟨s.ι, s.K, by convert s.isCombinatorialManifold, ⟨s.e⟩⟩
 
 /-! ### Piecewise-linear maps -/
@@ -202,6 +208,7 @@ theorem isPLMap_iff {s : PLStructure M m} {t : PLStructure N n} {f : M → N} :
   Iff.rfl
 
 /-- The identity is piecewise linear from a PL structure to itself. -/
+@[simp]
 theorem isPLMap_id (s : PLStructure M n) : s.IsPLMap s id :=
   ⟨id, isPLOn_id _, fun y => by simp⟩
 
@@ -227,13 +234,10 @@ theorem IsPLMap.continuous {s : PLStructure M m} {t : PLStructure N n} {f : M �
   -- Coordinates are a closed embedding of the realization of a finite complex.
   have hg : Continuous fun y : Realization s.K => t.e.symm (f (s.e y)) :=
     (t.K.isClosedEmbedding_realization_coe (Set.toFinite _)).continuous_iff.mpr hcoord
-  have hf : f = fun x => t.e (t.e.symm (f (s.e (s.e.symm x)))) := by
-    funext x
-    simp
-  rw [hf]
-  exact t.e.continuous.comp (hg.comp s.e.symm.continuous)
+  exact t.e.symm.comp_continuous_iff.mp (s.e.comp_continuous_iff'.mp hg)
 
 /-- Transporting the source structure along `g` replaces the map by its composite with `g`. -/
+@[simp]
 theorem isPLMap_map_left_iff {N' : Type u} [TopologicalSpace N'] {s : PLStructure M m}
     {t : PLStructure P n} (g : M ≃ₜ N') {f : N' → P} :
     (s.map g).IsPLMap t f ↔ s.IsPLMap t (f ∘ g) :=
@@ -241,6 +245,7 @@ theorem isPLMap_map_left_iff {N' : Type u} [TopologicalSpace N'] {s : PLStructur
 
 /-- Transporting the target structure along `g` replaces the map by its composite with
 `g.symm`. -/
+@[simp]
 theorem isPLMap_map_right_iff {P' : Type v} [TopologicalSpace P'] {s : PLStructure M m}
     {t : PLStructure N n} (g : N ≃ₜ P') {f : M → P'} :
     s.IsPLMap (t.map g) f ↔ s.IsPLMap t (g.symm ∘ f) :=
@@ -249,8 +254,7 @@ theorem isPLMap_map_right_iff {P' : Type v} [TopologicalSpace P'] {s : PLStructu
 /-- A homeomorphism is piecewise linear from a PL structure to its transport along it. -/
 theorem isPLMap_map {N' : Type u} [TopologicalSpace N'] (s : PLStructure M n) (g : M ≃ₜ N') :
     s.IsPLMap (s.map g) g := by
-  rw [isPLMap_map_right_iff, Homeomorph.symm_comp_self]
-  exact s.isPLMap_id
+  simp
 
 /-! ### Standard examples -/
 
@@ -261,12 +265,31 @@ def sphere (n : ℕ) : PLStructure (Metric.sphere (0 : EuclideanSpace ℝ (Fin (
     exact PreAbstractSimplicialComplex.isCombinatorialManifold_simplexBoundary (by simp))).map
     (realizationStandardSuccSimplexBoundaryHomeomorphSphere n)
 
+/-- `TauCeti.PLStructure.sphere` is the realization of the boundary of the standard
+`(n + 1)`-simplex, transported to the sphere. It is stated for any proof `h` of the manifold
+condition, so rewriting with it does not restate that proof. -/
+theorem sphere_eq_map
+    (h : (standardSuccSimplexBoundary n).toPreAbstractSimplicialComplex.IsCombinatorialManifold n) :
+    sphere n = (ofRealization (standardSuccSimplexBoundary n) h).map
+      (realizationStandardSuccSimplexBoundaryHomeomorphSphere n) :=
+  (rfl)
+
 /-- The closed unit `n`-ball, triangulated by the standard `n`-simplex. -/
 def closedBall (n : ℕ) : PLStructure (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) n :=
   (ofRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) (by
     rw [top_toPreAbstractSimplicialComplex, ← PreAbstractSimplicialComplex.simplex_univ]
     exact PreAbstractSimplicialComplex.isCombinatorialManifold_simplex (by simp))).map
     (realizationTopHomeomorphClosedBall n)
+
+/-- `TauCeti.PLStructure.closedBall` is the realization of the standard `n`-simplex, transported
+to the closed ball. It is stated for any proof `h` of the manifold condition, so rewriting with it
+does not restate that proof. -/
+theorem closedBall_eq_map
+    (h : PreAbstractSimplicialComplex.IsCombinatorialManifold
+      (⊤ : AbstractSimplicialComplex (Fin (n + 1))).toPreAbstractSimplicialComplex n) :
+    closedBall n = (ofRealization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) h).map
+      (realizationTopHomeomorphClosedBall n) :=
+  (rfl)
 
 end PLStructure
 
@@ -280,6 +303,7 @@ theorem nonempty_plStructure_iff {M : Type u} [TopologicalSpace M] {n : ℕ} :
   obtain ⟨ι, K, hK, ⟨e⟩⟩ := isCombinatoriallyTriangulable_iff.mp h
   have : CompactSpace (Realization K) := e.symm.compactSpace
   have : Finite ι := (K.compactSpace_realization_iff_finite).mp inferInstance
+  -- `convert` replaces the classical `DecidableEq ι` instance of `hK` by that of the field.
   exact ⟨⟨ι, K, by convert hK, e⟩⟩
 
 end TauCeti
