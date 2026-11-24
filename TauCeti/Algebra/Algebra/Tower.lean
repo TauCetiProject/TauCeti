@@ -35,6 +35,8 @@ operators over an `RCLike` field, with the structure an instance provides in a c
   structure is `Algebra.restrictScalars R S A`.
 * `AlgEquiv.toRingEquiv_algebraMap_of_tower`: an `S`-algebra isomorphism fixes the image of `R`,
   stated as a compatibility of the underlying ring isomorphism along `RingEquiv.refl R`.
+* `IsScalarTower.of_algHom_compHom`: pulling back a `K`-module along `j : O →ₐ[R] K` preserves the
+  scalar tower over `R`.
 -/
 
 public section
@@ -72,3 +74,15 @@ This is the compatibility hypothesis of semilinear transports such as
 theorem AlgEquiv.toRingEquiv_algebraMap_of_tower (e : A ≃ₐ[S] B) (c : R) :
     e.toRingEquiv (algebraMap R A c) = algebraMap R B (RingEquiv.refl R c) :=
   (e.restrictScalars R).commutes c
+
+/-- Pulling back a `K`-module structure on `M` along an `R`-algebra homomorphism `j : O →ₐ[R] K`
+preserves the scalar tower over `R`. -/
+theorem IsScalarTower.of_algHom_compHom {R O K M : Type*} [CommSemiring R] [Semiring O]
+    [Semiring K] [Algebra R O] [Algebra R K] [AddCommMonoid M] [Module R M] [Module K M]
+    [IsScalarTower R K M] (j : O →ₐ[R] K) :
+    letI := Module.compHom M (j : O →+* K)
+    IsScalarTower R O M :=
+  letI := Module.compHom M (j : O →+* K)
+  IsScalarTower.of_algebraMap_smul fun r m ↦ by
+    change j (algebraMap R O r) • m = r • m
+    rw [j.commutes, algebraMap_smul]

@@ -264,15 +264,16 @@ private theorem exists_apply_comp_algebraMap [Module.Projective R O] [Module.Fin
     ∃ ν : D(X, O),
       ∀ g : C(X, R), ν ((algebraMapCLM R O : C(R, O)).comp g) = algebraMap R O (μ g) := by
   obtain ⟨n, b, φ, hsum⟩ := TauCeti.exists_sum_dual_smul_eq (R := R) (M := O)
-  let cAdd (i : Fin n) : C(X, O) →+ C(X, R) :=
-    (φ i).toAddMonoidHom.compLeftContinuous X (IsModuleTopology.continuous_of_linearMap (φ i))
-  have hcAdd (i : Fin n) (f : C(X, O)) :
-      cAdd i f = (⟨φ i, IsModuleTopology.continuous_of_linearMap (φ i)⟩ : C(O, R)).comp f :=
-    (rfl)
+  let cMap (i : Fin n) : C(O, R) := ⟨φ i, IsModuleTopology.continuous_of_linearMap (φ i)⟩
+  let cAdd (i : Fin n) (f : C(X, O)) : C(X, R) := (cMap i).comp f
+  have hcAdd_add (i : Fin n) (f₁ f₂ : C(X, O)) :
+      cAdd i (f₁ + f₂) = cAdd i f₁ + cAdd i f₂ := by
+    ext x
+    simp [cAdd, cMap]
   have hcoord (i : Fin n) (a : O) (f : C(X, O)) :
       cAdd i (a • f) = ∑ j : Fin n, φ i (a * b j) • cAdd j f := by
     ext x
-    simp only [hcAdd, ContinuousMap.comp_apply, ContinuousMap.smul_apply, smul_eq_mul,
+    simp only [cAdd, cMap, ContinuousMap.comp_apply, ContinuousMap.smul_apply, smul_eq_mul,
       ContinuousMap.coe_mk, ContinuousMap.coe_sum, Finset.sum_apply]
     conv_lhs => rw [← hsum (f x)]
     rw [Finset.mul_sum, map_sum]
@@ -280,20 +281,19 @@ private theorem exists_apply_comp_algebraMap [Module.Projective R O] [Module.Fin
     rw [Algebra.mul_smul_comm, map_smul, smul_eq_mul, mul_comm]
   refine ⟨toCLMEquiv.symm
     { toFun := fun f ↦ ∑ i : Fin n, μ (cAdd i f) • b i
-      map_add' := fun f₁ f₂ ↦ by simp [add_smul, Finset.sum_add_distrib]
+      map_add' := fun f₁ f₂ ↦ by simp [hcAdd_add, add_smul, Finset.sum_add_distrib]
       map_smul' := fun a f ↦ by
         simp only [RingHom.id_apply, hcoord, map_sum, map_smul, smul_eq_mul, Finset.sum_smul]
         simp_rw [mul_comm (φ _ _) _, ← smul_smul]
         rw [Finset.sum_comm]
         simp only [← Finset.smul_sum, hsum, Finset.mul_sum, Algebra.mul_smul_comm]
       cont := continuous_finsetSum _ fun i _ ↦
-        ((map_continuous μ).comp
-          (ContinuousMap.continuous_postcomp
-            ⟨φ i, IsModuleTopology.continuous_of_linearMap (φ i)⟩)).smul continuous_const },
+        ((map_continuous μ).comp (ContinuousMap.continuous_postcomp (cMap i))).smul
+          continuous_const },
     fun g ↦ ?_⟩
   have hcomp (i : Fin n) : cAdd i ((algebraMapCLM R O : C(R, O)).comp g) = φ i 1 • g := by
     ext x
-    simp only [hcAdd, ContinuousMap.comp_apply, algebraMapCLM_apply,
+    simp only [cAdd, cMap, ContinuousMap.comp_apply, algebraMapCLM_apply,
       ContinuousMap.coe_mk, ContinuousMap.smul_apply, smul_eq_mul]
     rw [Algebra.algebraMap_eq_smul_one, map_smul, smul_eq_mul, mul_comm]
   simp only [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', LinearMap.coe_mk, AddHom.coe_mk,
@@ -510,12 +510,8 @@ private theorem baseChangeLinearMap_bijective :
       rw [map_add, hadd, hz₁, hz₂]
   · intro ν
     dsimp only [inv]
-    refine ext_of_apply_comp_algebraMap R fun g ↦ ?_
-    rw [map_sum, ← coe_toCLMEquiv, map_sum, _root_.sum_apply]
-    simp_rw [coe_toCLMEquiv, baseChangeLinearMap_tmul, _root_.smul_apply,
-      extendScalars_apply_comp_algebraMap, mapScalars_apply, smul_eq_mul, mul_comm (b _),
-      ← Algebra.smul_def]
-    exact hsum (ν ((algebraMapCLM R O : C(R, O)).comp g))
+    simp only [map_sum, baseChangeLinearMap_tmul]
+    exact (eq_sum_smul_extendScalars_of_dual hsum ν).symm
 
 /-- **Finite projective base change of abstract measures.** When `O` carries the `R`-module
 topology and is finitely generated and projective over `R`, `O ⊗[R] D(X, R)` is canonically
