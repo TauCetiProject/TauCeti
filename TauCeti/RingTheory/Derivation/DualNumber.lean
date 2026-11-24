@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Derivation.Basic
+public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.DualNumber.Map
 
 /-!
@@ -25,10 +26,14 @@ The automorphism `TauCeti.derivationLieAlgebra.toDualNumberAut` is built for der
 not necessarily commutative algebra, using `DualNumber.lift` to extend `a ↦ a + (D a) ε` to the
 dual numbers; `Derivation.toDualNumberAut` is its commutative case through
 `TauCeti.derivationEquivDerivationLieAlgebra`.
-The group isomorphism `TauCeti.derivationEquivInfinitesimalDualNumberAut` between derivations
-and the subgroup `TauCeti.infinitesimalDualNumberAut` is obtained in
-`TauCeti.Algebra.Lie.Derivation.InfinitesimalAut` as the commutative case of the statement for
-noncommutative algebras.
+The group isomorphism `TauCeti.derivationLieAlgebra.equivInfinitesimalDualNumberAut` identifies
+derivations of a not necessarily commutative algebra, with addition written multiplicatively,
+with the subgroup `TauCeti.infinitesimalDualNumberAut`; its inverse reads off the coefficient of
+`ε` in the image of a constant. The commutative
+`TauCeti.derivationEquivInfinitesimalDualNumberAut` is obtained from it through
+`TauCeti.derivationEquivDerivationLieAlgebra`. The infinitesimal automorphisms of the base change
+`R[ε] ⊗[R] A` over `R[ε]` correspond to these by conjugation with
+`TauCeti.dualNumberAlgebraTensorAlgEquiv`.
 
 ## References
 
@@ -184,6 +189,8 @@ end Derivation
 
 namespace TauCeti
 
+section Subgroup
+
 variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
 
 /-- Automorphisms of `A[ε]` that fix the infinitesimal parameter and induce the identity
@@ -209,5 +216,94 @@ and preservation of `ε`. -/
 theorem mem_infinitesimalDualNumberAut (e : A[ε] ≃ₐ[R] A[ε]) :
     e ∈ infinitesimalDualNumberAut R A ↔ (∀ z, (e z).fst = z.fst) ∧ e ε = ε :=
   Iff.rfl
+
+end Subgroup
+
+namespace derivationLieAlgebra
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+
+/-- The derivation `a ↦ (e a).snd` read off an infinitesimal automorphism `e`; multiplicativity
+of `e` is its Leibniz rule. -/
+private def ofInfinitesimalDualNumberAut (e : infinitesimalDualNumberAut R A) :
+    derivationLieAlgebra R A :=
+  ⟨{ toFun := fun a ↦ (e.val (inl a)).snd
+     map_add' := fun a b ↦ by simp
+     map_smul' := fun r a ↦ by simp [inl_smul] }, mem_derivationLieAlgebra.2 fun x y ↦ by
+    have hfst (a : A) : (e.val (inl a)).fst = a := ((mem_infinitesimalDualNumberAut _).1 e.prop).1 _
+    have h := congrArg snd (map_mul e.val (inl x) (inl y))
+    rw [← inl_mul, DualNumber.snd_mul, hfst, hfst] at h
+    simpa [add_comm] using h⟩
+
+/-- **Infinitesimal automorphisms are derivations**: derivations of `A`, with addition written
+multiplicatively, are the automorphisms of `A[ε]` over `R` that fix `ε` and reduce to the identity
+modulo `ε`. The inverse reads off the coefficient of `ε` in the image of a constant. -/
+def equivInfinitesimalDualNumberAut :
+    Multiplicative (derivationLieAlgebra R A) ≃* infinitesimalDualNumberAut R A where
+  toFun D := ⟨toDualNumberAut D.toAdd, by simp⟩
+  invFun e := Multiplicative.ofAdd (ofInfinitesimalDualNumberAut e)
+  left_inv D := by
+    apply Multiplicative.toAdd.injective
+    ext a
+    simp [ofInfinitesimalDualNumberAut]
+  right_inv e := by
+    obtain ⟨hfst, heps⟩ := (mem_infinitesimalDualNumberAut _).1 e.prop
+    apply Subtype.ext
+    ext z
+    · simpa only [toDualNumberAut_fst] using (hfst z).symm
+    · have h : e.val z = e.val (inl z.fst) + e.val (inl z.snd) * e.val ε :=
+        AlgHom.apply_dualNumber e.val.toAlgHom z
+      rw [heps] at h
+      rw [h, toDualNumberAut_snd]
+      simp [ofInfinitesimalDualNumberAut, hfst, add_comm]
+  map_mul' D E := Subtype.ext (toDualNumberAut_add D.toAdd E.toAdd)
+
+/-- The automorphism corresponding to a derivation is `toDualNumberAut`. -/
+@[simp]
+theorem equivInfinitesimalDualNumberAut_apply_coe
+    (D : Multiplicative (derivationLieAlgebra R A)) :
+    (equivInfinitesimalDualNumberAut D : A[ε] ≃ₐ[R] A[ε]) = toDualNumberAut D.toAdd :=
+  (rfl)
+
+/-- Recover a derivation by taking the infinitesimal part of the image of each constant. -/
+@[simp]
+theorem equivInfinitesimalDualNumberAut_symm_apply (e : infinitesimalDualNumberAut R A) (a : A) :
+    ((equivInfinitesimalDualNumberAut.symm e).toAdd : Module.End R A) a = (e.val (inl a)).snd :=
+  (rfl)
+
+end derivationLieAlgebra
+
+section Commutative
+
+variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+
+/-- Derivations, with addition written multiplicatively, are the infinitesimal
+automorphisms of the dual numbers: the commutative case of
+`TauCeti.derivationLieAlgebra.equivInfinitesimalDualNumberAut`. -/
+def derivationEquivInfinitesimalDualNumberAut :
+    Multiplicative (Derivation R A A) ≃* infinitesimalDualNumberAut R A :=
+  (AddEquiv.toMultiplicative derivationEquivDerivationLieAlgebra.toLinearEquiv.toAddEquiv).trans
+    derivationLieAlgebra.equivInfinitesimalDualNumberAut
+
+/-- The automorphism corresponding to a derivation is `Derivation.toDualNumberAut`. -/
+@[simp]
+theorem derivationEquivInfinitesimalDualNumberAut_apply_coe
+    (d : Multiplicative (Derivation R A A)) :
+    (derivationEquivInfinitesimalDualNumberAut d : A[ε] ≃ₐ[R] A[ε]) =
+      d.toAdd.toDualNumberAut := by
+  ext z <;> simp [derivationEquivInfinitesimalDualNumberAut]
+
+/-- Recover a derivation by taking the infinitesimal part of the image of each constant. -/
+@[simp]
+theorem derivationEquivInfinitesimalDualNumberAut_symm_apply
+    (e : infinitesimalDualNumberAut R A) (a : A) :
+    ((derivationEquivInfinitesimalDualNumberAut (R := R) (A := A)).symm e).toAdd a =
+      (e.val (inl a)).snd :=
+  -- the inverse of the composite is the inverse of `derivationEquivDerivationLieAlgebra`
+  -- applied after that of `equivInfinitesimalDualNumberAut`
+  (derivationEquivDerivationLieAlgebra_symm_apply _ a).trans
+    (derivationLieAlgebra.equivInfinitesimalDualNumberAut_symm_apply e a)
+
+end Commutative
 
 end TauCeti
