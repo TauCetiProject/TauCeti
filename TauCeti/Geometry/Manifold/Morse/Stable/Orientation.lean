@@ -465,13 +465,8 @@ theorem reindex_unstableFrameOrientation_neg_eq_orientationAt_iff
         o.orientationAt y := by
   rw [unstableFrameOrientation_def, unstableFrameOrientation_def, Orientation.ofExact_neg_left,
     Orientation.reindex_neg]
-  suffices ∀ u : Orientation ℝ (TangentSpace 𝓘(ℝ, E) y) ι,
-      -u = o.orientationAt y ↔ u ≠ o.orientationAt y from this _
-  intro u
-  rcases (o.orientationAt y).eq_or_eq_neg u
-    (Nat.card_eq_fintype_card.trans (o.finrank_tangentSpace_eq y).symm) with h | h <;> rw [h]
-  · exact iff_of_false (fun h' ↦ Module.Ray.ne_neg_self u h'.symm) (not_not.2 rfl)
-  · exact iff_of_true rfl (Module.Ray.ne_neg_self u)
+  exact neg_eq_iff_eq_neg.trans (Orientation.ne_iff_eq_neg _ _
+    (Nat.card_eq_fintype_card.trans (o.finrank_tangentSpace_eq y).symm)).symm
 
 /-- **The frame orientations along the stable manifold.** Let `o` be an orientation of `M`, and
 orient the coordinates of positive weight of a Morse chart `φ` at `x`, in which `X` is linear, by

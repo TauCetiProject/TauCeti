@@ -103,8 +103,7 @@ orientation of `o` at `p` (`IsAdaptedPseudoGradient.unstableFrameOrientation`). 
 def InducesOrientationAt (𝔬 : MorseOrientation f X) (hX : IsAdaptedPseudoGradient f X)
     (hf : IsMorse 𝓘(ℝ, E) f) {n : ℕ} (o : Manifold.Orientation 𝓘(ℝ, E) M (Fin n))
     (p : criticalPoints 𝓘(ℝ, E) f) : Prop :=
-  have hx := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
-    (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property)
+  have hx := hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints p.property
   Orientation.reindex ℝ _ (finCongr (by
       have h₁ := hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
       have h₂ := o.card_eq
@@ -284,8 +283,8 @@ private theorem exists_pos_unstableFrame_eq_smul (hf : IsMorse 𝓘(ℝ, E) f) {
     manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E) (-f) p))
   have hB (i) : B (Fin.castAdd _ i) = hX.unstableFrame φp y (C i) := by
     simp only [B, F, Module.Basis.reindex_apply, Module.Basis.map_apply,
-      LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe]
-    congr 2
+      LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe, finCongr_symm, finCongr_apply]
+    exact congrArg (fun k ↦ hX.unstableFrame φp y (C k)) (Fin.ext (by simp))
   have hY := (reindex_unstableFrameOrientation_eq_orientationAt_iff hφp hf hp o e C.orientation _
     (hX.mem_unstableSet_self hp.mem_criticalPoints) hy).1 hop
   rw [unstableFrameOrientation_def, Orientation.ofExact_orientation _ _ _ C _ B hB
@@ -347,27 +346,31 @@ theorem trajectorySign_eq_sign_mvfderiv (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
   have hdfw : mvfderiv 𝓘(ℝ, E) f y (hX.unstableFrame φp y (C i₀)) ≠ 0 := fun h ↦ by
     rw [← hκ, map_smul, h, smul_zero] at hdfX
     exact lt_irrefl _ hdfX
-  rw [hwb, map_smul, smul_eq_mul] at hdfw
+  have hdw : mvfderiv 𝓘(ℝ, E) f y (hX.unstableFrame φp y (C i₀)) =
+      t * mvfderiv 𝓘(ℝ, E) f y (b 0) := by
+    rw [hwb, map_smul, smul_eq_mul]
+  rw [hdw] at hdfw
   rw [show SignType.sign (mvfderiv 𝓘(ℝ, E) f y (b 0)) =
       SignType.sign (t * mvfderiv 𝓘(ℝ, E) f y (b 0)) by rw [sign_mul, sign_pos ht, one_mul]]
+  -- `f` increases along the frame image of a basis `σ • C`, where `σ` has the sign of `df (w)`.
+  have hinc
+      (C' : Module.Basis (Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) ℝ ({i // φp.weight i < 0} → ℝ))
+      (σ : ℝ) (hC' : ∀ j, C' j = σ • C j) (hσ : 0 < σ * (t * mvfderiv 𝓘(ℝ, E) f y (b 0))) (j) :
+      0 < mvfderiv 𝓘(ℝ, E) f y (hX.unstableFrame φp y (C' j)) := by
+    simpa [hC', Subsingleton.elim j i₀, hdw] using hσ
   rcases hdfw.lt_or_gt with hneg | hpos
   · -- `f` decreases along `w`, so it increases along `-w`: the sign is `-1`.
     let C' := C.unitsSMul fun _ ↦ (-1 : ℝˣ)
     have hC'o : C'.orientation = -C.orientation := by
-      have h1 : (-1 : ℝˣ) ^ manifoldMorseIndex 𝓘(ℝ, E) f p = -1 := by rw [hm, pow_one]
-      rw [Module.Basis.orientation_unitsSMul, Finset.prod_const, Finset.card_univ,
-        Fintype.card_fin, h1, inv_neg, inv_one]
-      exact Module.Ray.units_smul_of_neg _ (by norm_num) _
-    rw [trajectorySign_eq_signBasis hq hpq op C' fun j ↦ by
-        rw [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_neg, Units.val_one,
-          neg_one_smul, map_neg, map_neg, show j = i₀ from Subsingleton.elim _ _, hwb, map_smul,
-          smul_eq_mul]
-        linarith,
+      rw [Module.Basis.orientation_unitsSMul]
+      simp [hm]
+    rw [trajectorySign_eq_signBasis hq hpq op C'
+        (hinc C' (-1) (fun j ↦ by simp [C', Module.Basis.unitsSMul_apply]) (by simpa using hneg)),
       ← hC, Orientation.signBasis_eq_neg_of_orientation_eq_neg _ C C' hC'o,
       Orientation.signBasis_orientation, sign_neg hneg]
     simp
-  · rw [trajectorySign_eq_signBasis hq hpq op C fun j ↦ by
-        rwa [show j = i₀ from Subsingleton.elim _ _, hwb, map_smul, smul_eq_mul],
+  · rw [trajectorySign_eq_signBasis hq hpq op C
+        (hinc C 1 (fun j ↦ (one_smul ℝ _).symm) (by simpa using hpos)),
       ← hC, Orientation.signBasis_orientation, sign_pos hpos]
     simp
 

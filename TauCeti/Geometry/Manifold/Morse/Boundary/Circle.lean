@@ -183,6 +183,17 @@ private theorem cos_eq_neg_one_of_coe_eq_circleCosTwoMin {r s : ℝ} {i : Fin 2}
     (h : (s : AddCircle (2 * π)) = circleCosTwoMin r i) : Real.cos (2 * (s - r)) = -1 := by
   simpa using (circleCosTwo_coe 1 r s).symm.trans (h ▸ circleCosTwo_circleCosTwoMin 1 r i)
 
+/-- At `r + m π`, a lift of a maximum, `cos (2 (u - r)) = 1`. -/
+private theorem cos_two_mul_add_int_mul_pi_sub (r : ℝ) (m : ℤ) :
+    Real.cos (2 * (r + m * π - r)) = 1 := by
+  rw [show 2 * (r + m * π - r) = m * (2 * π) by ring, Real.cos_int_mul_two_pi]
+
+/-- At `r + m π + π / 2`, a lift of a minimum, `cos (2 (u - r)) = -1`. -/
+private theorem cos_two_mul_add_int_mul_pi_add_pi_div_two_sub (r : ℝ) (m : ℤ) :
+    Real.cos (2 * (r + m * π + π / 2 - r)) = -1 := by
+  rw [show 2 * (r + m * π + π / 2 - r) = π + m * (2 * π) by ring, Real.cos_add_int_mul_two_pi,
+    Real.cos_pi]
+
 /-- Where `cos (2 (u - r)) = ±1`, the function takes the value `±δ`, which is not strictly between
 its values at a minimum and at a maximum. -/
 private theorem circleCosTwo_coe_notMem_Ioo {u : ℝ}
@@ -203,11 +214,8 @@ private theorem eq_of_coe_mem_morseTrajectorySlice_of_eq
   obtain ⟨⟨s, hsI, hps⟩, ⟨s', hs'I, hqs⟩⟩ := mem_image_Icc_of_mem_unstableSet_inter_stableSet hX
     (circleCosTwoMax_ne_circleCosTwoMin r j i) ⟨ht.1, ht.2.1⟩ (a := r + m * π)
     (b := r + m * π + π / 2) ⟨_, ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩, rfl⟩
-    (circleCosTwo_coe_notMem_Ioo (.inl (by
-      rw [show 2 * (r + m * π - r) = m * (2 * π) by ring, Real.cos_int_mul_two_pi])) i j)
-    (circleCosTwo_coe_notMem_Ioo (.inr (by
-      rw [show 2 * (r + m * π + π / 2 - r) = π + m * (2 * π) by ring,
-        Real.cos_add_int_mul_two_pi, Real.cos_pi])) i j)
+    (circleCosTwo_coe_notMem_Ioo (.inl (cos_two_mul_add_int_mul_pi_sub r m)) i j)
+    (circleCosTwo_coe_notMem_Ioo (.inr (cos_two_mul_add_int_mul_pi_add_pi_div_two_sub r m)) i j)
   -- The maximum is the left end of the arc and the minimum the right end.
   have hcs (u : ℝ) : Real.cos (2 * (u - r)) = Real.cos (2 * (u - (r + m * π))) := by
     rw [show 2 * (u - r) = 2 * (u - (r + m * π)) + m * (2 * π) by ring,
@@ -232,12 +240,10 @@ private theorem ne_of_coe_mem_morseTrajectorySlice_of_eq
     (circleCosTwoMax_ne_circleCosTwoMin r j i) ⟨ht.1, ht.2.1⟩
     (a := r + m * π + π / 2) (b := r + m * π + π / 2 + π / 2)
     ⟨_, ⟨by linarith [Real.pi_pos], by linarith [Real.pi_pos]⟩, rfl⟩
-    (circleCosTwo_coe_notMem_Ioo (.inr (by
-      rw [show 2 * (r + m * π + π / 2 - r) = π + m * (2 * π) by ring,
-        Real.cos_add_int_mul_two_pi, Real.cos_pi])) i j)
+    (circleCosTwo_coe_notMem_Ioo (.inr (cos_two_mul_add_int_mul_pi_add_pi_div_two_sub r m)) i j)
     (circleCosTwo_coe_notMem_Ioo (.inl (by
-      rw [show 2 * (r + m * π + π / 2 + π / 2 - r) = ((m + 1 : ℤ) : ℝ) * (2 * π) by
-        push_cast; ring, Real.cos_int_mul_two_pi])) i j)
+      rw [show r + m * π + π / 2 + π / 2 = r + ((m + 1 : ℤ) : ℝ) * π by push_cast; ring]
+      exact cos_two_mul_add_int_mul_pi_sub r (m + 1))) i j)
   -- The minimum is the left end of the arc and the maximum the right end.
   have hcs (u : ℝ) : Real.cos (2 * (u - r)) = -Real.cos (2 * (u - (r + m * π + π / 2))) := by
     rw [show 2 * (u - r) = 2 * (u - (r + m * π + π / 2)) + π + m * (2 * π) by ring,
@@ -372,19 +378,13 @@ theorem exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq (h�
   · exact h0 j
   · exact h1 j
 
-/-- The maxima are nondegenerate critical points. -/
-private theorem isManifoldNondegenerateCriticalPoint_circleCosTwoMaxCrit (hδ : 0 < δ) (r : ℝ)
-    (j : Fin 2) : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ) (circleCosTwo δ r)
-      (circleCosTwoMaxCrit δ r j : AddCircle (2 * π)) :=
-  (isMorse_circleCosTwo hδ.ne' r).isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
-    (mem_criticalPoints_iff_mfderiv_eq_zero.1 (circleCosTwoMaxCrit δ r j).property)
-
 /-- At a maximum, the Morse indices of `f` and of `-f` add up to the dimension `1`. -/
 private theorem manifoldMorseIndex_add_manifoldMorseIndex_neg_circleCosTwoMaxCrit (hδ : 0 < δ)
     (r : ℝ) (j : Fin 2) :
     manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) (circleCosTwoMaxCrit δ r j) +
       manifoldMorseIndex 𝓘(ℝ) (-circleCosTwo δ r) (circleCosTwoMaxCrit δ r j) = 1 := by
-  have := (isManifoldNondegenerateCriticalPoint_circleCosTwoMaxCrit hδ r j
+  have := (IsMorse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+    (isMorse_circleCosTwo hδ.ne' r) (circleCosTwoMaxCrit δ r j).property
     ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   rw [finrank_self] at this
   omega
@@ -441,7 +441,8 @@ theorem signedMorseBoundaryCoeff_circleCosTwo_eq_augmentationSign_mul (hδ : 0 <
   have hs := signBasis_mul_trajectorySign (hX := hX) (φp := 𝔬.chart (circleCosTwoMaxCrit δ r j))
     (φq := 𝔬.chart (circleCosTwoMinCrit δ r i)) (op := 𝔬.orientation (circleCosTwoMaxCrit δ r j))
     (oq := 𝔬.orientation (circleCosTwoMinCrit δ r i)) (hpq := hpq) b y
-  have hx := isManifoldNondegenerateCriticalPoint_circleCosTwoMaxCrit hδ r j
+  have hx := hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+    (circleCosTwoMaxCrit δ r j).property
   have hslice := hymem
   rw [coe_circleCosTwoMaxCrit, coe_circleCosTwoMinCrit] at hslice
   rw [hX.mem_morseTrajectorySlice] at hymem
@@ -463,10 +464,9 @@ theorem signedMorseBoundaryCoeff_circleCosTwo_eq_augmentationSign_mul (hδ : 0 <
     -- Read the tangent line at `t` as `ℝ`, where `smulRight_apply` applies.
     change ((1 : ℝ →L[ℝ] ℝ).smulRight _ : ℝ →L[ℝ] ℝ) (1 : ℝ) = _
     simp [ContinuousLinearMap.smulRight_apply]
-  -- The general lemma reads `NormedSpace ℝ ℝ` through another instance path, which only `erw`
-  -- sees through.
-  erw [hdf] at hsign
-  rw [hsign] at hs
+  -- `hsign` reads the target `ℝ` of `df` through the instances of the general lemma; `Eq.trans`
+  -- identifies them with the ones of `hdf` by unification.
+  rw [hsign.trans (congrArg (fun d : ℝ ↦ (SignType.sign d : ℤ)) hdf)] at hs
   rw [MorseOrientation.augmentationSign_of_morseIndex_eq_zero _ hqi, ← one_mul (trajectorySign ..),
     ← Int.units_coe_mul_self ((𝔬.orientation (circleCosTwoMinCrit δ r i)).signBasis b), mul_assoc,
     hs]
