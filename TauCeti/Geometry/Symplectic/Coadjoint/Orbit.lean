@@ -177,6 +177,14 @@ theorem eq_coadjointOrbitForm_iff
       ν.leftInvariantKirillovForm :=
   SmoothForm.eq_descendedForm_iff
 
+/-- The Kirillov–Kostant–Souriau form of the zero functional vanishes. -/
+@[simp]
+theorem coadjointOrbitForm_zero :
+    (0 : Module.Dual ℝ (GroupLieAlgebra I G)).coadjointOrbitForm = 0 := by
+  rw [eq_comm, eq_coadjointOrbitForm_iff 0
+      (isSubmersion_quotientMk_stabilizer_coadjointRepresentation 0).contMDiff,
+    map_zero, leftInvariantKirillovForm_zero]
+
 /-- The KKS form evaluates on images under the differential of the projection `G → G ⧸ G_ν` as
 the left-invariant Kirillov form: `ω_ν(dπ v, dπ w) = σ_ν(v, w)`. -/
 theorem eval₂_coadjointOrbitForm_mfderiv (g : G) (v w : TangentSpace I g) :
