@@ -48,11 +48,9 @@ split coordinates near its entrance and exit points (`eventually_of_morseBox`, w
 reading gluing pairs back on `M` (`continuousAt_toChart_symm_of_mem_insert_splitGluingPairs`), in
 the namespace `TauCeti.IsAdaptedPseudoGradient`, are also the setting of the half-open gluing
 charts of `TauCeti.Geometry.Manifold.Morse.Gluing.Transverse`. So are the Morse chart with a box
-at a critical point (`exists_morseChart_box`), the crossing of the entrance face of every small box
-by a trajectory into the critical point (`eventually_exists_flow_mem_entranceFace`), and the
-continuity of the split coordinates and of reading them back on `M`
-(`continuousAt_splitCoord_coord_toChart`, `continuousAt_toChart_symm_coord_symm_splitCoord_symm`),
-which serve the case of a transverse set through the critical point.
+at a critical point (`exists_morseChart_box`) and the crossing of the entrance face of every small
+box by a trajectory into the critical point (`eventually_exists_flow_mem_entranceFace`), which
+serve the case of a transverse set through the critical point.
 
 **Through the critical point.** The point `y` may also be `q` itself, for a set `Z` through `q`
 transverse to `W^u(q)` there. Its orbit is then constant and never reaches the exit face; instead,
@@ -92,6 +90,38 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M] {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+
+omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- The norms of the two split coordinates of a Morse chart are continuous at the points of the
+chart. -/
+private theorem MorseChart.continuousAt_norm_fst_and_norm_snd {q y : M} (φ : MorseChart E f q)
+    (hy : y ∈ φ.toChart.source) :
+    ContinuousAt (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖) y ∧
+      ContinuousAt (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) y :=
+  ⟨(WithLp.continuous_fst 2 _ _).norm.continuousAt.comp
+      (φ.continuousAt_splitCoord_coord_toChart hy),
+    (WithLp.continuous_snd 2 _ _).norm.continuousAt.comp
+      (φ.continuousAt_splitCoord_coord_toChart hy)⟩
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- **Near a face of a Morse box.** Let `a` and `b` be the norms of the two split coordinates of a
+Morse chart `φ`, in either order, and let `P` hold at the points of the chart in the cube of
+radius `ρ > 2 ε`. At a point `y` of the chart where `a = ε` and `b = 0`, eventually
+`0 < a < 2 ε`, `b < ε` and `P` holds, and the product `a b` tends to `0`. -/
+private theorem MorseChart.eventually_of_boxFace {q y : M} (φ : MorseChart E f q) {ε ρ : ℝ}
+    (hε : 0 < ε) (hερ : 2 * ε < ρ) {a b : M → ℝ} {P : M → Prop}
+    (hab : ∀ w, max (a w) (b w) = ‖φ.coord (φ.toChart w)‖)
+    (hP : ∀ w ∈ φ.toChart.source, ‖φ.coord (φ.toChart w)‖ < ρ → P w)
+    (hy : y ∈ φ.toChart.source) (ha : Tendsto a (𝓝 y) (𝓝 ε)) (hb : Tendsto b (𝓝 y) (𝓝 0)) :
+    (∀ᶠ w in 𝓝 y, w ∈ φ.toChart.source ∧ 0 < a w ∧ a w < 2 * ε ∧ b w < ε ∧ P w) ∧
+      Tendsto (fun w ↦ a w * b w) (𝓝 y) (𝓝 0) := by
+  refine ⟨?_, by simpa only [mul_zero] using ha.mul hb⟩
+  filter_upwards [φ.toChart.open_source.mem_nhds hy, ha.eventually (lt_mem_nhds hε),
+    ha.eventually (gt_mem_nhds (by linarith : ε < 2 * ε)), hb.eventually (gt_mem_nhds hε)]
+    with w h₁ h₂ h₃ h₄
+  refine ⟨h₁, h₂, h₃, h₄, hP w h₁ ?_⟩
+  rw [← hab]
+  exact max_lt (by linarith) (by linarith)
 
 namespace IsAdaptedPseudoGradient
 
@@ -230,14 +260,6 @@ private theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
   exact ⟨φ, ε, ρ, T₁, -T₂, _, _, hφ, hε, hερ, fun z hz ↦ hT z (by linarith), hloc, rfl, rfl, hy₁,
     hy₂, hy₁s, hn₁, hy₂u, hn₂⟩
 
-omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The split coordinates of a Morse chart are continuous at the points of the chart. -/
-theorem continuousAt_splitCoord_coord_toChart {q : M} (φ : MorseChart E f q) {y : M}
-    (hy : y ∈ φ.toChart.source) :
-    ContinuousAt (fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))) y :=
-  (φ.splitCoordL.continuous.continuousAt.comp (φ.toChart.continuousAt hy)).congr
-    (.of_forall fun _ ↦ φ.splitCoordL_apply _)
-
 /-- **A Morse box near its entrance point.** Let `φ` be a Morse chart at `q` in which, on the cube
 of radius `ρ > 2 ε`, the stable set of `q` is the plane `v = 0`, and let `y₁` be a point of the
 entrance face `‖u‖ = ε, v = 0` of the box of radius `ε`, in the split coordinates `(u, v)` of `φ`.
@@ -255,27 +277,14 @@ theorem eventually_of_morseBox_entranceFace (hX : IsAdaptedPseudoGradient f X) {
       (w ∈ hX.flow.stableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).snd = 0)) ∧
     Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ *
       ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) (𝓝 y₁) (𝓝 0) := by
-  set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-    fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))
-  have hΦc : ContinuousAt Φ y₁ := continuousAt_splitCoord_coord_toChart φ hy₁φ
-  have hfst : ContinuousAt (fun w ↦ ‖(Φ w).fst‖) y₁ :=
-    ((WithLp.continuous_fst 2 _ _).norm.continuousAt (x := Φ y₁)).comp hΦc
-  have hsnd : ContinuousAt (fun w ↦ ‖(Φ w).snd‖) y₁ :=
-    ((WithLp.continuous_snd 2 _ _).norm.continuousAt (x := Φ y₁)).comp hΦc
-  have hy₁fst : Tendsto (fun w ↦ ‖(Φ w).fst‖) (𝓝 y₁) (𝓝 ε) := by
-    have h := hfst.tendsto
-    rwa [hy₁ε] at h
-  have hy₁snd : Tendsto (fun w ↦ ‖(Φ w).snd‖) (𝓝 y₁) (𝓝 0) := by
-    have h := hsnd.tendsto
-    rwa [hy₁s, norm_zero] at h
-  refine ⟨?_, by simpa only [mul_zero] using hy₁fst.mul hy₁snd⟩
-  filter_upwards [φ.toChart.open_source.mem_nhds hy₁φ, hy₁fst.eventually (lt_mem_nhds hε),
-    hy₁fst.eventually (gt_mem_nhds (by linarith : ε < 2 * ε)),
-    hy₁snd.eventually (gt_mem_nhds hε)] with w h₁ h₂ h₃ h₄
+  obtain ⟨hfst, hsnd⟩ := φ.continuousAt_norm_fst_and_norm_snd hy₁φ
+  have hy₁fst := hfst.tendsto
+  have hy₁snd := hsnd.tendsto
+  rw [hy₁ε] at hy₁fst
+  rw [hy₁s, norm_zero] at hy₁snd
   -- On the cube of radius `2 ε` the plane `v = 0` is the stable set.
-  refine ⟨h₁, h₂, h₃, h₄, hloc w h₁ ?_⟩
-  rw [← φ.max_norm_fst_norm_snd_splitCoord]
-  exact max_lt (by linarith) (by linarith)
+  exact φ.eventually_of_boxFace hε hερ (fun _ ↦ φ.max_norm_fst_norm_snd_splitCoord _) hloc hy₁φ
+    hy₁fst hy₁snd
 
 /-- **A Morse box near its exit point.** Let `φ` be a Morse chart at `q` in which, on the cube of
 radius `ρ > 2 ε`, the unstable set of `q` is the plane `u = 0`, and let `y₂` be a point of the exit
@@ -294,27 +303,15 @@ theorem eventually_of_morseBox_exitFace (hX : IsAdaptedPseudoGradient f X) {q y�
       (w ∈ hX.flow.unstableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0)) ∧
     Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ *
       ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) (𝓝 y₂) (𝓝 0) := by
-  set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-    fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))
-  have hΦc : ContinuousAt Φ y₂ := continuousAt_splitCoord_coord_toChart φ hy₂φ
-  have hfst : ContinuousAt (fun w ↦ ‖(Φ w).fst‖) y₂ :=
-    ((WithLp.continuous_fst 2 _ _).norm.continuousAt (x := Φ y₂)).comp hΦc
-  have hsnd : ContinuousAt (fun w ↦ ‖(Φ w).snd‖) y₂ :=
-    ((WithLp.continuous_snd 2 _ _).norm.continuousAt (x := Φ y₂)).comp hΦc
-  have hy₂snd : Tendsto (fun w ↦ ‖(Φ w).snd‖) (𝓝 y₂) (𝓝 ε) := by
-    have h := hsnd.tendsto
-    rwa [hy₂ε] at h
-  have hy₂fst : Tendsto (fun w ↦ ‖(Φ w).fst‖) (𝓝 y₂) (𝓝 0) := by
-    have h := hfst.tendsto
-    rwa [hy₂u, norm_zero] at h
-  refine ⟨?_, by simpa only [zero_mul] using hy₂fst.mul hy₂snd⟩
-  filter_upwards [φ.toChart.open_source.mem_nhds hy₂φ, hy₂snd.eventually (lt_mem_nhds hε),
-    hy₂snd.eventually (gt_mem_nhds (by linarith : ε < 2 * ε)),
-    hy₂fst.eventually (gt_mem_nhds hε)] with w h₁ h₂ h₃ h₄
+  obtain ⟨hfst, hsnd⟩ := φ.continuousAt_norm_fst_and_norm_snd hy₂φ
+  have hy₂fst := hfst.tendsto
+  have hy₂snd := hsnd.tendsto
+  rw [hy₂u, norm_zero] at hy₂fst
+  rw [hy₂ε] at hy₂snd
   -- On the cube of radius `2 ε` the plane `u = 0` is the unstable set.
-  refine ⟨h₁, h₂, h₃, h₄, hloc w h₁ ?_⟩
-  rw [← φ.max_norm_fst_norm_snd_splitCoord]
-  exact max_lt (by linarith) (by linarith)
+  obtain ⟨h, hκ⟩ := φ.eventually_of_boxFace hε hερ
+    (fun _ ↦ (max_comm _ _).trans (φ.max_norm_fst_norm_snd_splitCoord _)) hloc hy₂φ hy₂snd hy₂fst
+  exact ⟨h, by simpa only [mul_comm] using hκ⟩
 
 /-- **A Morse box near its entrance and exit points.** Let `φ` be a Morse chart at `q` in which,
 on the cube of radius `ρ > 2 ε`, the stable and unstable sets of `q` are the coordinate planes, and
@@ -421,18 +418,6 @@ private theorem exists_flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGrad
   rw [Flow.map_add, Flow.map_add, h₁, h₃, ← h₂, Flow.map_neg_apply_map]
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
-points of the chart. -/
-theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm {q : M}
-    (φ : MorseChart E f q)
-    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
-    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
-    ContinuousAt (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) z :=
-  (φ.toChart.continuousAt_symm hz).comp (f := fun z ↦ φ.coord.symm (φ.splitCoord.symm z))
-    ((φ.splitCoordL.symm.continuous.continuousAt (x := z)).congr
-      (.of_forall fun _ ↦ φ.splitCoordL_symm_apply _))
-
-omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- If a Morse chart contains the cube of radius `ε`, reading pairs of split coordinates back on
 `M` is continuous at the gluing pairs of the box of radius `ε`, and at the pair of coordinates of
 two points of the chart. -/
@@ -464,9 +449,10 @@ theorem continuousAt_toChart_symm_of_mem_insert_splitGluingPairs {q y₁ y₂ : 
           (mem_splitPassage_source.1 hsrc).1.le (mem_splitPassage_source.1 hsrc).2.2,
         MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε₁
           (mem_splitPassage_target.1 htgt).2.2 (mem_splitPassage_target.1 htgt).1.le⟩
-  exact ((continuousAt_toChart_symm_coord_symm_splitCoord_symm φ hb₁).comp
+  exact ((φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm hb₁).comp
     continuous_fst.continuousAt).prodMk
-    ((continuousAt_toChart_symm_coord_symm_splitCoord_symm φ hb₂).comp continuous_snd.continuousAt)
+    ((φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm hb₂).comp
+      continuous_snd.continuousAt)
 
 /-- **The flow carries a set transverse to an unstable manifold along it.** Let `Z` be a set
 through a point `y` of `W^u(q)`, flattened near `y` by a chart of the maximal atlas and transverse
@@ -592,7 +578,7 @@ private theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoG
     fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
   -- Near `0`, the points of the disc lie near `y₁`, inside the box near its entrance face.
   have hΨψ : Tendsto (fun z ↦ Ψ (ψ z)) (𝓝 0) (𝓝 y₁) := by
-    have hc := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    have hc := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (z := φ.splitCoord (φ.coord (φ.toChart y₁))) (by simpa using φ.toChart.map_source hy₁φ)
     have h' := hc.tendsto.comp (hψ₀ ▸ hψ.continuousAt.tendsto)
     rwa [show φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
@@ -706,7 +692,7 @@ private theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceCha
     (fun w hw hwρ ↦ (hloc w hw hwρ).2) (hX.mem_unstableSet_inter_stableSet_self hq).1 hφZ hZ
     hqφZ hqZ htr
   have hN' : (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) ⁻¹' N ∈ 𝓝 0 :=
-    (continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    (φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (by simpa using hε₁ 0 (by simp [hε.le]))).preimage_mem_nhds (by simpa using hN)
   obtain ⟨T, ⟨y, hy, hbox, hW, hxη, hgraph⟩, hT0⟩ :=
     ((eventually_exists_splitQuadraticFlow_snd_eq hδ hη hg (fun y hy ↦ (hpts y hy).1) hk hk₀
@@ -786,14 +772,14 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
     WithLp.ofLp_injective 2 (Prod.ext (by simpa using hy₂u.symm) (by simp))
   -- Near `0`, the points of the discs lie near the entrance and exit points.
   have hΨψ : Tendsto (fun z ↦ Ψ (ψ z)) (𝓝 0) (𝓝 y₁) := by
-    have hc : ContinuousAt Ψ (Φ y₁) := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    have hc : ContinuousAt Ψ (Φ y₁) := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (by simpa [hΦdef] using φ.toChart.map_source hy₁φ)
     have hψc := hψ.continuousAt.tendsto
     rw [hψ₀] at hψc
     have h := hc.tendsto.comp hψc
     rwa [hΨΦ y₁ hy₁φ] at h
   have hΨχ : Tendsto (fun z ↦ Ψ (χ z)) (𝓝 0) (𝓝 y₂) := by
-    have hc : ContinuousAt Ψ (Φ y₂) := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    have hc : ContinuousAt Ψ (Φ y₂) := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (by simpa [hΦdef] using φ.toChart.map_source hy₂φ)
     have hχc := hχ.continuousAt.tendsto
     rw [hχ₀] at hχc

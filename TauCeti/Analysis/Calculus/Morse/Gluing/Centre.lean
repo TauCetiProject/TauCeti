@@ -347,15 +347,13 @@ private theorem dist_centerGluing_le_dist {r s : ℝ} (hr : r ∈ Icc 0 r₀) (h
       ≤ dist (r • k (r • g y)) (s • k (r • g y)) + dist (s • k (r • g y)) (s • k (s • g y)) :=
         dist_triangle _ _ _
     _ = dist r s * ‖k (r • g y)‖ + s * dist (k (r • g y)) (k (s • g y)) := by
-        rw [dist_smul₀, Real.norm_of_nonneg hs.1, dist_eq_norm, dist_eq_norm, ← sub_smul,
-          norm_smul, Real.norm_eq_abs, Real.dist_eq]
+        simp [dist_eq_norm, ← sub_smul, ← smul_sub, norm_smul, abs_of_nonneg hs.1]
     _ ≤ dist r s * (Kk * (1 * ε)) + 1 * (Kk * (dist r s * ε)) := by
         gcongr
         · exact hkr.trans (by gcongr)
         · calc dist (k (r • g y)) (k (s • g y)) ≤ Kk * dist (r • g y) (s • g y) :=
                 hk.dist_le_mul _ hr' _ hs'
-            _ = Kk * (dist r s * ε) := by
-                rw [dist_eq_norm, ← sub_smul, norm_smul, hgy, Real.dist_eq, Real.norm_eq_abs]
+            _ = Kk * (dist r s * ε) := by simp [dist_eq_norm, ← sub_smul, norm_smul, hgy]
     _ = 2 * Kk * ε * dist r s := by ring
 
 end Hypotheses
@@ -382,8 +380,8 @@ private theorem exists_mem_Ioc_of_mem_splitCenterGluingPairs
       hgε _ (mem_closedBall_zero_iff.2 hp₁)] at hp₂
     exact le_of_mul_le_mul_right hp₂ hε
   refine ⟨r, ⟨hrpos, hrr₀⟩, ?_, Prod.ext ?_ ?_⟩
-  · rw [← hp2fst, ← hpk, hp2snd, smul_smul, hrdef, ← Real.exp_add, neg_add_cancel,
-      Real.exp_zero, one_smul]
+  · rw [← hp2fst, ← hpk, hp2snd]
+    simp [smul_smul, hrdef, ← Real.exp_add]
   · apply WithLp.ofLp_injective
     ext
     · simp [hpg]
@@ -408,8 +406,9 @@ private theorem exists_splitCenterGluingPairs_parametrization [CompleteSpace E�
   -- The gluing maps contract the closed ball of radius `r₀ ε` and depend Lipschitz-continuously on
   -- the gluing parameter, so their fixed points form a Lipschitz family.
   obtain ⟨y, hylip, hy⟩ := exists_lipschitzOnWith_forall_fixedPt (S := Icc 0 r₀)
-    (T := fun r v ↦ r • k (r • g v)) isClosed_closedBall.isComplete
-    ⟨0, mem_closedBall_self (by positivity)⟩ hK (fun r hr ↦ mapsTo_centerGluing hgε hk hk₀ hKk hr)
+    (T := fun r v ↦ r • k (r • g v)) (K := ⟨Kk * Kg * r₀ ^ 2, by positivity⟩)
+    isClosed_closedBall.isComplete ⟨0, mem_closedBall_self (by positivity)⟩ hK
+    (fun r hr ↦ mapsTo_centerGluing hgε hk hk₀ hKk hr)
     (fun r hr v hv v' hv' ↦ dist_centerGluing_le hg hgε hk hk₀ hr hv hv')
     (fun r hr r' hr' v hv ↦ dist_centerGluing_le_dist hgε hk hk₀ hr₀₁ hr hr' hv)
   have hyc := hylip.continuousOn
@@ -442,13 +441,13 @@ private theorem exists_splitCenterGluingPairs_parametrization [CompleteSpace E�
     have hr1 : r ≤ 1 := hr.2.trans hr₀₁
     refine ⟨mem_closedBall_zero_iff.1 (hy r hr').1, rfl, ⟨-Real.log r,
       neg_nonneg.2 (Real.log_nonpos hr.1.le hr1), ?_⟩, ?_, rfl⟩
-    · rw [splitQuadraticFlow_apply, neg_neg, Real.exp_log hr.1, Real.exp_neg, Real.exp_log hr.1]
+    · rw [splitQuadraticFlow_apply]
       apply WithLp.ofLp_injective
       ext
-      · simp [hFdef]
+      · simp [hFdef, Real.exp_log hr.1]
       · have h := congrArg (fun v ↦ r⁻¹ • v) (hy r hr').2.1
         simp only [smul_smul, inv_mul_cancel₀ hr.1.ne', one_smul] at h
-        simp [hFdef, h]
+        simp [hFdef, h, Real.exp_neg, Real.exp_log hr.1]
     · rw [hnorm r hr']
       exact mul_le_mul_of_nonneg_right hr.2 hε.le
   · -- Conversely, the expanding entrance coordinate of a pair of gluing parameter `r` is a fixed

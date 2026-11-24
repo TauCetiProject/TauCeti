@@ -256,8 +256,9 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
   -- The gluing maps contract the closed ball of radius `ε` and depend Lipschitz-continuously on
   -- the gluing parameter, so their fixed points form a Lipschitz family.
   obtain ⟨w, hwlip, hw'⟩ := exists_lipschitzOnWith_forall_fixedPt (S := Icc 0 r₀)
-    (T := fun r v ↦ k (r • g (r • v))) isClosed_closedBall.isComplete
-    ⟨0, mem_closedBall_self hε.le⟩ hK (fun r hr ↦ mapsTo_gluing hgε hkε hr)
+    (T := fun r v ↦ k (r • g (r • v))) (K := ⟨Kk * Kg * r₀ ^ 2, by positivity⟩)
+    isClosed_closedBall.isComplete ⟨0, mem_closedBall_self hε.le⟩ hK
+    (fun r hr ↦ mapsTo_gluing hgε hkε hr)
     (fun r hr v hv v' hv' ↦ dist_gluing_le hg hgε hk hr (mem_closedBall_zero_iff.1 hv)
       (mem_closedBall_zero_iff.1 hv'))
     (fun r hr r' hr' v hv ↦ dist_gluing_le_dist hg hgε hk hr₀ hr hr'

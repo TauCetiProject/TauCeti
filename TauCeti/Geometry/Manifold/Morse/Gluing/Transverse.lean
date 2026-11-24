@@ -117,6 +117,29 @@ private theorem exists_pos_forall_mul_sq_lt_sq {n ε r₀ : ℝ} (hn : 0 ≤ n) 
     ((div_le_one (by positivity)).2 (by linarith)), fun u hu hu' ↦
     lt_of_le_of_lt (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hu hu' 2) hn) hr₁n⟩
 
+omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- **The box near the centre lies below a level.** Let `φ` be a Morse chart at `q`, where `f` is
+continuous, and `c > f q`. For some `ρc > 0`, the points of the chart with split coordinates
+`(u, v)`, `‖u‖ < ρc` and `‖v‖ < ρc`, lie below the level `c`. -/
+private theorem MorseChart.exists_pos_forall_norm_lt_apply_lt {q : M} (φ : MorseChart E f q)
+    (hf : ContinuousAt f q) {c : ℝ} (hqc : f q < c) :
+    ∃ ρc > 0, ∀ z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)),
+      ‖z.fst‖ < ρc → ‖z.snd‖ < ρc →
+        f (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) < c := by
+  have h0 : φ.coord.symm (φ.splitCoord.symm 0) ∈ φ.toChart.target := by
+    simpa using φ.toChart.map_source φ.mem_source
+  have hW : (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) ⁻¹' {w | f w < c} ∈
+      𝓝 0 := by
+    refine (φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm h0).preimage_mem_nhds ?_
+    simpa using hf.preimage_mem_nhds (gt_mem_nhds hqc)
+  -- A ball of the product, read through `WithLp.toLp`.
+  obtain ⟨ρc, hρc, hρcW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2
+    ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ)).tendsto 0
+    (by rw [WithLp.toLp_zero]; exact hW))
+  refine ⟨ρc, hρc, fun z hu hv ↦ hρcW (?_ : WithLp.ofLp z ∈ _)⟩
+  rw [← ball_prod_same]
+  exact ⟨mem_ball_zero_iff.2 hu, mem_ball_zero_iff.2 hv⟩
+
 namespace IsAdaptedPseudoGradient
 
 /-- **The point of a transverse set on an orbit depends continuously on the orbit.** Let `Z` be a
@@ -250,9 +273,7 @@ private theorem IsMorseSmale.exists_transverseGluingArc {hX : IsAdaptedPseudoGra
   -- Near `y₂`, the point of `Z'` on an orbit depends continuously on the orbit.
   have hy₂c : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y₂ ≠ 0 :=
     hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hqr hy₂
-  have hΦc : ContinuousAt Φ y₂ :=
-    (φ.splitCoordL.continuous.continuousAt.comp (φ.toChart.continuousAt hy₂φ)).congr
-      (.of_forall fun _ ↦ φ.splitCoordL_apply _)
+  have hΦc : ContinuousAt Φ y₂ := φ.continuousAt_splitCoord_coord_toChart hy₂φ
   have hexit : ContinuousAt (fun w ↦ splitExitTime ε (Φ w)) y₂ := by
     simp only [splitExitTime_def]
     refine (Real.continuousAt_log ?_).comp (continuousAt_const.div
@@ -817,8 +838,121 @@ private theorem exists_flow_eq_and_mem_splitCenterGluingPairs (hX : IsAdaptedPse
   refine ⟨mem_splitCenterGluingPairs.2 ⟨hE₂r.le, by rw [← hEE]; exact hw₁g,
     ⟨-splitEntryTime ε (Φ w₂), neg_nonneg.2 (splitEntryTime_nonpos (by linarith)),
       (Flow.map_neg_apply_map _ _ _).symm⟩, hw₂f.le, hw₂k⟩, ?_⟩
-  change _ = Ψ E₂
-  rw [hE₂, ← ht, Flow.map_add]
+  rw [Flow.map_add, ht]
+  exact hE₂.symm
+
+/-- **A gluing pair at the centre, between two sets.** Under the hypotheses of
+`exists_flow_eq_of_mem_splitCenterGluingPairs`, let the points of the chart with split coordinates
+`(g v, v)` lie in `A` and those with split coordinates `(u, k u)` lie in `B`, for `‖u‖, ‖v‖ ≤ r₀ ε`.
+The first point of a gluing pair at the centre, read on the manifold, lies in `A` and flows to the
+second, which lies in `B`, and the two split coordinates of the second have norms at most `r₀ ε`
+and `Kk r₀ ε`. -/
+private theorem mem_and_exists_flow_eq_of_mem_splitCenterGluingPairs
+    (hX : IsAdaptedPseudoGradient f X) {q : M} (φ : MorseChart E f q)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε r₀ : ℝ} {Kk : NNReal} (hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
+    {g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ}
+    {k : ({i // φ.weight i = 1} → ℝ) → {i // ¬φ.weight i = 1} → ℝ}
+    (hgε : ∀ v ∈ Metric.closedBall 0 (r₀ * ε), ‖g v‖ = ε)
+    (hk : LipschitzOnWith Kk k (Metric.closedBall 0 (r₀ * ε))) (hk₀ : k 0 = 0)
+    (hr₀ε : r₀ * ε ≤ ε) (hKkε : Kk * (r₀ * ε) ≤ ε) {A B : Set M}
+    (hgA : ∀ v ∈ Metric.closedBall 0 (r₀ * ε),
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (WithLp.toLp 2 (g v, v)))) ∈ A)
+    (hkB : ∀ u ∈ Metric.closedBall 0 (r₀ * ε),
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (WithLp.toLp 2 (u, k u)))) ∈ B)
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) ×
+      WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : z ∈ splitCenterGluingPairs ε r₀ g k) :
+    φ.coord.symm (φ.splitCoord.symm z.1) ∈ φ.toChart.target ∧
+      φ.coord.symm (φ.splitCoord.symm z.2) ∈ φ.toChart.target ∧
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1)) ∈ A ∧
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.2)) ∈ B ∧
+      (∃ t, hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1))) =
+        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.2))) ∧
+      ‖z.2.fst‖ ≤ r₀ * ε ∧ ‖z.2.snd‖ ≤ Kk * (r₀ * ε) := by
+  obtain ⟨hz₁, hzg, -, hz₂, hzk⟩ := mem_splitCenterGluingPairs.1 hz
+  obtain ⟨hz₁t, hz₂t, ht, hz₂s⟩ :=
+    hX.exists_flow_eq_of_mem_splitCenterGluingPairs φ hφ hε₁ hgε hk hk₀ hr₀ε hKkε hz
+  -- The two points lie on the graphs of `g` and of `k`.
+  have hz1 : z.1 = WithLp.toLp 2 (g z.1.snd, z.1.snd) :=
+    WithLp.ofLp_injective 2 (Prod.ext (by simpa using hzg) (by simp))
+  have hz2 : z.2 = WithLp.toLp 2 (z.2.fst, k z.2.fst) :=
+    WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simpa using hzk))
+  refine ⟨hz₁t, hz₂t, ?_, ?_, ht, hz₂, hz₂s⟩
+  · rw [hz1]
+    exact hgA _ (mem_closedBall_zero_iff.2 hz₁)
+  · rw [hz2]
+    exact hkB _ (mem_closedBall_zero_iff.2 hz₂)
+
+/-- **Trajectories near a broken one at the centre give gluing pairs.** Let `φ` be a Morse chart
+at `q` in which `X` is linear, which contains the cube of radius `2 ε`, and on whose cube of
+radius `ρ` the plane `u = 0` lies in `W^u(q)`, and let `p ≠ q` with `f q < f p`. Suppose that near
+`y₁` the points of the chart satisfy `0 < ‖u‖ < 2 ε` and `‖v‖ < ε`, that `‖u‖ ‖v‖` tends to `0`
+at `y₁`, that the model entrance points of the points of `W^u(p)` on the level of `y₁` near `y₁`
+lie on the graph of `g`, and that near `q` the points of `Z` lie on the graph of `k`. If
+`0 < r₀ ≤ 1` and `r₀ ^ 2 n < 1`, then for every pair `(w₁, w₂)` near `(y₁, q)` of a point
+`w₁ ∈ W^u(p)` on the level of `y₁` and a point `w₂ ∈ Z` of its orbit, the model entrance point of
+`w₂` and the split coordinates of `w₂` form a gluing pair at the centre with `‖u‖ < r₀ ε`, and
+`w₁` flows to the point with the coordinates of that entrance point. -/
+private theorem eventually_mem_splitCenterGluingPairs (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) {p q y₁ : M} (hpq : p ≠ q) (hqp : f q < f p) (φ : MorseChart E f q)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε ρ r₀ : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
+    (hρ : 0 < ρ) (hloc : ∀ w ∈ φ.toChart.source, ‖φ.coord (φ.toChart w)‖ < ρ →
+      (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0 → w ∈ hX.flow.unstableSet q)
+    (hr₀ : 0 < r₀) (hr₀₁ : r₀ ≤ 1) (hn : r₀ ^ 2 * Module.finrank ℝ E < 1)
+    {g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ}
+    {k : ({i // φ.weight i = 1} → ℝ) → {i // ¬φ.weight i = 1} → ℝ} {Z : Set M}
+    (hnear₁ : ∀ᶠ w in 𝓝 y₁, w ∈ φ.toChart.source ∧
+      0 < ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ ∧
+      ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ < 2 * ε ∧
+      ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖ < ε)
+    (hκ₁ : Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ *
+      ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) (𝓝 y₁) (𝓝 0))
+    (hgraph : ∀ᶠ w in 𝓝 y₁, w ∈ hX.flow.unstableSet p → f w = f y₁ →
+      (splitQuadraticFlow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w))))
+        (φ.splitCoord (φ.coord (φ.toChart w)))).fst =
+      g (splitQuadraticFlow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w))))
+        (φ.splitCoord (φ.coord (φ.toChart w)))).snd)
+    (hkexh : ∀ᶠ w in 𝓝 q, w ∈ Z → (φ.splitCoord (φ.coord (φ.toChart w))).snd =
+      k (φ.splitCoord (φ.coord (φ.toChart w))).fst) :
+    ∀ᶠ w : M × M in 𝓝 (y₁, q), w.1 ∈ hX.flow.unstableSet p → f w.1 = f y₁ → w.2 ∈ Z →
+      (∃ t, hX.flow t w.1 = w.2) →
+      (splitQuadraticFlow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w.2))))
+          (φ.splitCoord (φ.coord (φ.toChart w.2))), φ.splitCoord (φ.coord (φ.toChart w.2))) ∈
+        splitCenterGluingPairs ε r₀ g k ∧
+      ‖(φ.splitCoord (φ.coord (φ.toChart w.2))).fst‖ < r₀ * ε ∧
+      (∃ τ, hX.flow τ w.1 = φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
+        (splitQuadraticFlow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w.2))))
+          (φ.splitCoord (φ.coord (φ.toChart w.2))))))) ∧
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
+        (φ.splitCoord (φ.coord (φ.toChart w.2))))) = w.2 := by
+  set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
+    fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))
+  -- Near `q` the points of the chart lie in the small box around the centre, below `f p`.
+  have hΦ₂ : Tendsto Φ (𝓝 q) (𝓝 0) := by
+    have h := (φ.continuousAt_splitCoord_coord_toChart φ.mem_source).tendsto
+    rwa [show φ.splitCoord (φ.coord (φ.toChart q)) = 0 by simp [φ.apply_self]] at h
+  have hfst₂ : Tendsto (fun w ↦ ‖(Φ w).fst‖) (𝓝 q) (𝓝 0) := by
+    simpa [Function.comp_def] using ((WithLp.continuous_fst 2 _ _).tendsto 0).norm.comp hΦ₂
+  have hsnd₂ : Tendsto (fun w ↦ ‖(Φ w).snd‖) (𝓝 q) (𝓝 0) := by
+    simpa [Function.comp_def] using ((WithLp.continuous_snd 2 _ _).tendsto 0).norm.comp hΦ₂
+  have hnear₂ : ∀ᶠ w in 𝓝 q, (w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < ρ) ∧
+      ‖(Φ w).fst‖ < r₀ * ε ∧ ‖(Φ w).snd‖ < ε ∧ f w < f p :=
+    (φ.eventually_mem_source_norm_coord_lt hρ).and
+      ((hfst₂.eventually (gt_mem_nhds (mul_pos hr₀ hε))).and
+        ((hsnd₂.eventually (gt_mem_nhds hε)).and
+          (hX.mdifferentiable.continuous.continuousAt.eventually (gt_mem_nhds hqp))))
+  filter_upwards [((hnear₁.and ((hκ₁.div_const ε).eventually
+    (gt_mem_nhds (by simpa using mul_pos hr₀ hε)))).and hgraph).prod_nhds (hnear₂.and hkexh)]
+    with w hw hw1u hw1f hw2Z hwt
+  obtain ⟨⟨⟨⟨hw₁s, hw₁f0, hw₁f, hw₁n⟩, hκw⟩, hw₁g⟩, ⟨⟨hw₂s, hw₂ρ⟩, hw₂f, hw₂n, hw₂p⟩, hw₂k⟩ := hw
+  obtain ⟨t, ht⟩ := hwt
+  obtain ⟨hP, hflow⟩ := hX.exists_flow_eq_and_mem_splitCenterGluingPairs hf hpq φ hφ hε hε₂ hloc
+    hr₀₁ hn hw1u hw₁s hw₁f0 hw₁f hw₁n hκw (hw₁g hw1u hw1f) hw₂s hw₂ρ hw₂f hw₂n (hw₂k hw2Z) hw₂p ht
+  exact ⟨hP, hw₂f, ⟨_, hflow⟩, by simp [φ.toChart.left_inv hw₂s]⟩
 
 /-- **The model gluing arc into a transverse set through the critical point, on the manifold.**
 For a trajectory from `p` through `a₁` to `q`, with `ind p = ind q + 1`, and a set `Z` through `q`
@@ -915,22 +1049,8 @@ private theorem IsMorseSmale.exists_centerGluingArc {hX : IsAdaptedPseudoGradien
     rw [h]
     exact (Flow.apply_mem_unstableSet_iff _ _).2 hzu
   -- Near the centre, the points of the box lie below the level `c`.
-  have hW : (fun z ↦ Ψ z) ⁻¹' {w | f w < c} ∈ 𝓝 0 := by
-    have hc0 := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
-      (z := 0) (by simpa using hε₁ 0 (by simp [hε.le]))
-    refine hc0.preimage_mem_nhds ?_
-    have hΨ0 : Ψ 0 = q := by simpa [hΦq] using hΨΦ q φ.mem_source
-    rw [show φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm 0)) = q from hΨ0]
-    exact (hX.mdifferentiable.continuous.continuousAt (x := q)).preimage_mem_nhds
-      (gt_mem_nhds hqc)
-  obtain ⟨ρc, hρc, hρcW⟩ := Metric.mem_nhds_iff.1 ((WithLp.prod_continuous_toLp 2
-    ({i // φ.weight i = 1} → ℝ) ({i // ¬φ.weight i = 1} → ℝ)).tendsto 0
-    (by rw [WithLp.toLp_zero]; exact hW))
-  have hlowc : ∀ (u : {i // φ.weight i = 1} → ℝ) (v : {i // ¬φ.weight i = 1} → ℝ),
-      ‖u‖ < ρc → ‖v‖ < ρc → f (Ψ (WithLp.toLp 2 (u, v))) < c := fun u v hu hv ↦
-    hρcW (by
-      rw [← ball_prod_same]
-      exact mk_mem_prod (mem_ball_zero_iff.2 hu) (mem_ball_zero_iff.2 hv))
+  obtain ⟨ρc, hρc, hlowc⟩ :=
+    φ.exists_pos_forall_norm_lt_apply_lt hX.mdifferentiable.continuous.continuousAt hqc
   -- Choose the gluing radius `r₀`.
   have hev (a b : ℝ) (hb : 0 < b) : ∀ᶠ r in 𝓝 (0 : ℝ), r * a < b :=
     ((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually (gt_mem_nhds hb)
@@ -963,28 +1083,11 @@ private theorem IsMorseSmale.exists_centerGluingArc {hX : IsAdaptedPseudoGradien
     rw [hg₀, hΦq, ← hψ₀, hι₁0]
   rw [hbr] at he₀ hcl
   -- The pairs, read on `M`.
-  have hpair : ∀ z ∈ splitCenterGluingPairs ε r₀ g k,
-      φ.coord.symm (φ.splitCoord.symm z.1) ∈ φ.toChart.target ∧
-      φ.coord.symm (φ.splitCoord.symm z.2) ∈ φ.toChart.target ∧
-      Ψ z.1 ∈ hX.flow.unstableSet p ∧ Ψ z.2 ∈ Z ∧ (∃ t, hX.flow t (Ψ z.1) = Ψ z.2) ∧
-      f (Ψ z.2) < c ∧ ‖z.2.fst‖ ≤ r₀ * ε := by
-    intro z hz
-    obtain ⟨hz₁, hzg, -, hz₂, hzk⟩ := mem_splitCenterGluingPairs.1 hz
-    obtain ⟨hz₁t, hz₂t, ht, hz₂s⟩ :=
-      hX.exists_flow_eq_of_mem_splitCenterGluingPairs φ hφ hε₁ hgε' hk' hk₀ hr₀ε hKkε hz
-    have hz1 : z.1 = WithLp.toLp 2 (g z.1.snd, z.1.snd) :=
-      WithLp.ofLp_injective 2 (Prod.ext (by simpa using hzg) (by simp))
-    have hz2 : z.2 = WithLp.toLp 2 (z.2.fst, k z.2.fst) :=
-      WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simpa using hzk))
-    refine ⟨hz₁t, hz₂t, ?_, ?_, ht, ?_, hz₂⟩
-    · rw [hz1]
-      exact hgu _ (Metric.closedBall_subset_closedBall hr₀g.le (mem_closedBall_zero_iff.2 hz₁))
-    · rw [hz2]
-      exact (hkZ _ (Metric.closedBall_subset_closedBall hr₀k.le
-        (mem_closedBall_zero_iff.2 hz₂))).2
-    · rw [hz2]
-      exact hlowc _ _ (hz₂.trans_lt hρ₁)
-        ((hzk ▸ hz₂s).trans_lt (by rw [mul_left_comm]; exact hρ₂))
+  have hpair (z) (hz : z ∈ splitCenterGluingPairs ε r₀ g k) :=
+    hX.mem_and_exists_flow_eq_of_mem_splitCenterGluingPairs φ hφ hε₁ hgε' hk' hk₀ hr₀ε hKkε
+      (A := hX.flow.unstableSet p) (B := Z)
+      (fun v hv ↦ hgu v (Metric.closedBall_subset_closedBall hr₀g.le hv))
+      (fun u hu ↦ (hkZ u (Metric.closedBall_subset_closedBall hr₀k.le hu)).2) hz
   -- The arc: the two points of the gluing pair at each gluing parameter, read on `M`.
   have hmem : ∀ s : Icc (0 : ℝ) r₀, (s : ℝ) ≠ 0 → (e s).val ∈ splitCenterGluingPairs ε r₀ g k :=
     fun s hs ↦ e.injective.val_mem_of_subset_insert hcl.subset he₀ fun h ↦
@@ -1004,10 +1107,10 @@ private theorem IsMorseSmale.exists_centerGluingArc {hX : IsAdaptedPseudoGradien
     refine continuous_iff_continuousAt.2 fun s ↦ ?_
     have hc : Continuous fun s ↦ (e s).val := continuous_subtypeVal.comp e.continuous
     exact (ContinuousAt.comp (f := fun s ↦ (e s).val.1)
-      (continuousAt_toChart_symm_coord_symm_splitCoord_symm φ (htgt s).1)
+      (φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm (htgt s).1)
       (continuous_fst.comp hc).continuousAt).prodMk
       (ContinuousAt.comp (f := fun s ↦ (e s).val.2)
-        (continuousAt_toChart_symm_coord_symm_splitCoord_symm φ (htgt s).2)
+        (φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm (htgt s).2)
         (continuous_snd.comp hc).continuousAt)
   have hB₀ : B ⟨0, left_mem_Icc.2 hr₀.le⟩ = (y₁, q) := by
     simp only [hBdef, he₀, hΨΦ y₁ hy₁φ, hΨΦ q φ.mem_source]
@@ -1022,7 +1125,8 @@ private theorem IsMorseSmale.exists_centerGluingArc {hX : IsAdaptedPseudoGradien
     · obtain rfl : s = ⟨0, left_mem_Icc.2 hr₀.le⟩ := Subtype.ext hs
       rw [hB₀]
       exact hqc
-    · exact (hpair _ (hmem s hs)).2.2.2.2.2.1
+    · obtain ⟨-, -, -, -, -, hfst, hsnd⟩ := hpair _ (hmem s hs)
+      exact hlowc _ (hfst.trans_lt hρ₁) (hsnd.trans_lt (by rw [mul_left_comm]; exact hρ₂))
   · -- Distinct parameters give distinct second points, since the parameter is `‖u‖ / ε`.
     have h2 : (e s).val.2 = (e s').val.2 :=
       φ.injOn_toChart_symm_coord_symm_splitCoord_symm (htgt s).2 (htgt s').2 hss'
@@ -1030,41 +1134,28 @@ private theorem IsMorseSmale.exists_centerGluingArc {hX : IsAdaptedPseudoGradien
   · -- A trajectory from `p` near the broken one enters the box once, through the graph of `g`, and
     -- meets `Z` near `q` on the graph of `k`: its entrance point and that point form a gluing
     -- pair at the centre, of small parameter.
-    have hΦ₂ : Tendsto Φ (𝓝 q) (𝓝 0) := by
-      have h := (continuousAt_splitCoord_coord_toChart φ φ.mem_source).tendsto
-      rwa [show φ.splitCoord (φ.coord (φ.toChart q)) = 0 from hΦq] at h
-    have hfst₂ : Tendsto (fun w ↦ ‖(Φ w).fst‖) (𝓝 q) (𝓝 0) := by
-      simpa [Function.comp_def] using ((WithLp.continuous_fst 2 _ _).tendsto 0).norm.comp hΦ₂
-    have hsnd₂ : Tendsto (fun w ↦ ‖(Φ w).snd‖) (𝓝 q) (𝓝 0) := by
-      simpa [Function.comp_def] using ((WithLp.continuous_snd 2 _ _).tendsto 0).norm.comp hΦ₂
-    have hnear₂ : ∀ᶠ w in 𝓝 q, (w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < ρ) ∧
-        ‖(Φ w).fst‖ < r₀ * ε ∧ ‖(Φ w).snd‖ < ε ∧ f w < c :=
-      (φ.eventually_mem_source_norm_coord_lt hρ).and
-        ((hfst₂.eventually (gt_mem_nhds (mul_pos hr₀ hε))).and
-          ((hsnd₂.eventually (gt_mem_nhds hε)).and
-            (hX.mdifferentiable.continuous.continuousAt.eventually (gt_mem_nhds hqc))))
-    filter_upwards [((hnear₁.and ((hκ₁.div_const ε).eventually
-      (gt_mem_nhds (by simpa using mul_pos hr₀ hε)))).and
-      (hexh₁ _ (inter_mem hU₁ hgexh))).prod_nhds (hnear₂.and hkexh)]
+    have hgraph : ∀ᶠ w in 𝓝 y₁, w ∈ hX.flow.unstableSet p → f w = f y₁ →
+        (splitQuadraticFlow (splitEntryTime ε (Φ w)) (Φ w)).fst =
+          g (splitQuadraticFlow (splitEntryTime ε (Φ w)) (Φ w)).snd := by
+      filter_upwards [hexh₁ _ hgexh] with w hw hwu hwf
+      obtain ⟨z, hzg, rfl⟩ := hw hwu hwf
+      exact hzg
+    filter_upwards [hX.eventually_mem_splitCenterGluingPairs hf hpq' (by linarith [hfa₁.2]) φ hφ
+      hε hε₂ hρ (fun w hw hwρ ↦ (hloc w hw hwρ).2.2) hr₀ hr₀₁.le hn
+      (hnear₁.mono fun w hw ↦ ⟨hw.1, hw.2.1, hw.2.2.1, hw.2.2.2.1⟩) hκ₁ hgraph hkexh]
       with w hw hw1u hw1f hw2Z hwt
-    obtain ⟨⟨⟨⟨hw₁s, hw₁f0, hw₁f, hw₁n, -⟩, hκw⟩, hex⟩, ⟨⟨hw₂s, hw₂ρ⟩, hw₂f, hw₂n, hw₂c⟩, hw₂k⟩ :=
-      hw
-    obtain ⟨t, ht⟩ := hwt
-    -- The entrance point of `w.1` lies on the graph of `g`.
-    obtain ⟨z, ⟨-, hzg⟩, hzw⟩ := hex hw1u hw1f
-    obtain ⟨hP, hflow⟩ := hX.exists_flow_eq_and_mem_splitCenterGluingPairs hf hpq' φ hφ hε hε₂
-      (fun w hw hwρ ↦ (hloc w hw hwρ).2.2) hr₀₁.le hn hw1u hw₁s hw₁f0 hw₁f hw₁n hκw
-      (by rw [← hzw]; exact hzg) hw₂s hw₂ρ hw₂f hw₂n (hw₂k hw2Z) (by linarith [hfa₁.2]) ht
+    obtain ⟨hP, hw₂f, ⟨τ, hτ⟩, hw₂⟩ := hw hw1u hw1f hw2Z hwt
     set s₀ := e.symm ⟨(_, Φ w.2), subset_closure hP⟩ with hs₀def
     have hBs₀ : B s₀ = (Ψ (splitQuadraticFlow (splitEntryTime ε (Φ w.2)) (Φ w.2)), Ψ (Φ w.2)) := by
       simp only [hBdef, hs₀def, e.apply_symm_apply, hΦdef]
     have hs₀ : (s₀ : ℝ) < r₀ := by
       rw [hs₀def, he, div_lt_iff₀ hε]
       exact hw₂f
-    refine ⟨s₀, hs₀, ⟨splitEntryTime ε (Φ w.2) + t, ?_⟩, ?_⟩
+    refine ⟨s₀, hs₀, ⟨τ, ?_⟩, ?_⟩
     · rw [hBs₀]
-      exact hflow
-    · rw [hBs₀, hΨΦ w.2 hw₂s]
+      exact hτ
+    · rw [hBs₀]
+      exact hw₂.symm
 
 /-- **Gluing a broken trajectory into a transverse set.** Let `X` be a Morse–Smale adapted
 pseudo-gradient for a Morse function `f` on a compact manifold of dimension `n`, `a₁` a point of a
