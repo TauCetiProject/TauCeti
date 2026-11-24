@@ -73,10 +73,11 @@ the reference field are bounded. No equation map, gauge group, Fredholm property
 structure on the quotient is constructed here.
 
 A continuous field lying in `A_m^k` for every `k` is smooth
-(`contDiff_of_forall_mem_framedFieldSpace`). Conversely, a smooth field all of whose derivatives
-of `x - x_ref` are `O(exp (-c |z|))` at infinity, for some `c > 0`, lies in `A_m^s` for every `s`
-(`mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`), by the classical
-description of `H^k`
+(`contDiff_of_forall_mem_framedFieldSpace`), with bounded derivatives of every order
+(`exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace`). Conversely, a smooth field
+all of whose derivatives of `x - x_ref` are `O(exp (-c |z|))` at infinity, for some `c > 0`, lies
+in `A_m^s` for every `s` (`mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`), by
+the classical description of `H^k`
 (`TemperedDistribution.mem_realSobolevFunctions_natCast_of_memLp_iteratedFDeriv`).
 
 ## References
@@ -665,6 +666,16 @@ theorem tendsto_normSq_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ
     (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) :
     Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
   tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx
+
+/-- A continuous field lying in `A_m^k` for every `k` has bounded derivatives of every order:
+each coordinate has bounded `n`-th derivative on the whole plane
+(`exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace` in `A_m^(n+2)`). -/
+theorem exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
+    {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x)
+    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (i : Fin 4) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C :=
+  exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace (by push_cast; linarith) hx (hmem (n + 2))
+    i
 
 /-- **Exponentially decaying fields lie in every `A_m^s`.** A smooth field `x` such that every
 derivative of `x - x_ref` is `O(exp (-c |z|))` at infinity, for some `c > 0`, lies in the affine
