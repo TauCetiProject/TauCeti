@@ -518,6 +518,7 @@ theorem perfection_fromPerfection :
   homPerfectionEquiv_symm_comp _
 
 /-- The perfection of `f` is the only morphism `X^perf ⟶ Y^perf` lying over `f`. -/
+@[simp]
 theorem eq_perfection_iff (φ : X.perfection p hX ⟶ Y.perfection p hY) :
     φ = f.perfection p hX hY ↔ φ ≫ Y.fromPerfection p hY = X.fromPerfection p hX ≫ f :=
   ⟨fun h ↦ h ▸ f.perfection_fromPerfection p hX hY,
