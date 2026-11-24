@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Abelian
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Product
 public import Mathlib.CategoryTheory.Abelian.Subcategory
-import Mathlib.CategoryTheory.Preadditive.LeftExact
+public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 /-!
 # The abelian category of finite comodules
@@ -16,10 +16,18 @@ import Mathlib.CategoryTheory.Preadditive.LeftExact
 Finitely generated comodules over a flat coalgebra over a Noetherian commutative ring form
 an abelian category. Their kernels and cokernels are computed in the category of all comodules.
 In particular, finite-dimensional comodules over a field form an abelian category, with an
-exact forgetful functor to vector spaces. For coordinate Hopf algebras this supplies the
+exact forgetful functor to vector spaces. Hence epimorphisms and monomorphisms of finite
+comodules are surjective and injective (`TauCeti.FGComoduleCat.surjective_of_epi`,
+`TauCeti.FGComoduleCat.injective_of_mono`). For coordinate Hopf algebras this supplies the
 abelian and exact structures of the Tannakian representation category.
 
-The full-subcategory argument uses Mathlib's `ObjectProperty` kernel and cokernel closure API.
+The full-subcategory argument shows that finite generation is closed under kernels and
+cokernels; closure under finite products is in
+`TauCeti.Algebra.Coalgebra.Comodule.Finite.Product`. Mathlib's `ObjectProperty`
+abelian-subcategory instance then makes finite comodules abelian, and
+`CategoryTheory.ObjectProperty.preservesFiniteLimits_ι` and
+`CategoryTheory.ObjectProperty.preservesFiniteColimits_ι` make their inclusion into all comodules
+exact.
 -/
 
 public section
@@ -64,32 +72,6 @@ namespace FGComoduleCat
 
 variable [IsNoetherianRing R] [Module.Flat R C]
 
-/-- Finite comodules over a flat coalgebra over a Noetherian commutative ring are abelian. -/
-instance : Abelian (FGComoduleCat.{u, v, w} R C) where
-
-instance {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
-    PreservesLimit (parallelPair f 0) (incl (R := R) (C := C)) :=
-  (ComoduleCat.isFG R C).preservesKernels_ι f
-
-omit [IsNoetherianRing R] [Module.Flat R C] in
-instance {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
-    PreservesColimit (parallelPair f 0) (incl (R := R) (C := C)) :=
-  (ComoduleCat.isFG R C).preservesCokernels_ι f
-
-/-- Inclusion of finite comodules preserves finite limits. -/
-instance : PreservesFiniteLimits (incl (R := R) (C := C) :
-    FGComoduleCat.{u, v, w} R C ⥤ _) :=
-  Functor.preservesFiniteLimits_of_preservesKernels _
-
-omit [IsNoetherianRing R] [Module.Flat R C] in
-/-- Inclusion of finite comodules preserves finite colimits. -/
-instance : PreservesFiniteColimits (incl (R := R) (C := C) :
-    FGComoduleCat.{u, v, w} R C ⥤ _) :=
-  by
-    let : HasCoequalizers (FGComoduleCat.{u, v, w} R C) :=
-      Preadditive.hasCoequalizers_of_hasCokernels
-    exact Functor.preservesFiniteColimits_of_preservesCokernels _
-
 /-- The underlying-module functor on finite comodules preserves finite limits. -/
 instance : PreservesFiniteLimits
     (forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)) :=
@@ -102,6 +84,20 @@ instance : PreservesFiniteColimits
     (forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)) :=
   inferInstanceAs (PreservesFiniteColimits
     (incl ⋙ forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)))
+
+omit [IsNoetherianRing R] [Module.Flat R C] in
+/-- An epimorphism of finite comodules is surjective. -/
+theorem surjective_of_epi {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) [Epi f] :
+    Function.Surjective f :=
+  (ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi ((forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).map f))
+
+/-- A monomorphism of finite comodules over a flat coalgebra over a Noetherian ring is
+injective. -/
+theorem injective_of_mono {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) [Mono f] :
+    Function.Injective f :=
+  (ModuleCat.mono_iff_injective _).1
+    (inferInstance : Mono ((forget₂ (FGComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)).map f))
 
 end FGComoduleCat
 

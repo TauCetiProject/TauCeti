@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.Support
+public import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
 # Topological support of a translate
@@ -27,13 +28,33 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   `Homeomorph.mulTSupport_comp_symm_subset_interior_image`.
 * `Continuous.smul_of_continuousOn_of_tsupport_subset`: a continuous function supported
   in `U`, times a function continuous on `U`, is continuous.
+* `Continuous.continuousOn_smul_comp_snd_of_continuousAt`: for `f` continuous,
+  `(x, y) ↦ F (x, y) • f y` is continuous on `s ×ˢ univ` when `F` is continuous at every `(x, y)`
+  with `x ∈ s` and `y ∈ tsupport f`.
 * `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
   `tsupport g ×ˢ tsupport f`.
+* `TauCeti.tsupport_subset_of_forall_notMem_eq_zero`: a function vanishing off a closed set `s`
+  has topological support in `s`, with multiplicative version
+  `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `HasCompactSupport.of_tsupport_subset_ball`: in a proper space, a function whose topological
+  support lies in a ball is compactly supported, with multiplicative version
+  `HasCompactMulSupport.of_mulTSupport_subset_ball`.
+* `HasCompactSupport.mono_of_eq_zero`: a function vanishing wherever a compactly supported
+  function vanishes is compactly supported, with multiplicative version
+  `HasCompactMulSupport.mono_of_eq_one`.
+* `HasCompactSupport.of_forall_mem_support_eq_one`: a function is compactly supported when a
+  compactly supported function is equal to `1` on its support.
 * `TauCeti.hasCompactSupport_pi_iff`: a function with values in a finite product is compactly
   supported exactly when every coordinate is, with multiplicative version
   `TauCeti.hasCompactMulSupport_pi_iff`.
+* `TauCeti.sum_eventuallyEq_of_notMem_tsupport`: near a point outside the topological supports
+  of all summands but one, a finite sum agrees with that summand, with multiplicative version
+  `TauCeti.prod_eventuallyEq_of_notMem_mulTSupport`.
+* `TauCeti.apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport`: a functional that depends only on
+  the germ at `x` and is quadratic under scaling does not mix functions whose topological
+  supports at `x` are disjoint.
 -/
 
 public section
@@ -71,6 +92,12 @@ theorem tsupport_snd_smul_fst_subset [TopologicalSpace Y] (f : Y → R) (g : X �
 
 end Prod
 
+/-- A function equal to `1` off a closed set `s` has topological multiplicative support in `s`. -/
+@[to_additive /-- A function vanishing off a closed set `s` has topological support in `s`. -/]
+theorem mulTSupport_subset_of_forall_notMem_eq_one {Y M : Type*} [TopologicalSpace Y] [One M]
+    {f : Y → M} {s : Set Y} (hf : ∀ x ∉ s, f x = 1) (hs : IsClosed s) : mulTSupport f ⊆ s :=
+  hs.closure_subset_iff.2 (Function.mulSupport_subset_iff'.2 hf)
+
 end TauCeti
 
 namespace Continuous
@@ -90,6 +117,23 @@ theorem smul_of_continuousOn_of_tsupport_subset {Z 𝕜 F : Type*} [TopologicalS
   refine ⟨(ha x hxU).smul hb.continuousAt.continuousWithinAt, ?_⟩
   exact (continuousWithinAt_const.smul hb.continuousAt.continuousWithinAt).congr
     (fun y hy ↦ by simp [hzero y hy]) rfl
+
+/-- For `f` continuous, the function `(x, y) ↦ F (x, y) • f y` is continuous on `s ×ˢ univ` as
+soon as `F` is continuous at every `(x, y)` with `x ∈ s` and `y ∈ tsupport f`: off the support
+of `f` the function vanishes near `(x, y)`. -/
+theorem continuousOn_smul_comp_snd_of_continuousAt {X Y 𝕜 M : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace 𝕜] [Zero M] [TopologicalSpace M] [SMulZeroClass 𝕜 M]
+    [ContinuousSMul 𝕜 M] {F : X × Y → 𝕜} {f : Y → M} {s : Set X} (hf : Continuous f)
+    (hF : ∀ x ∈ s, ∀ y ∈ tsupport f, ContinuousAt F (x, y)) :
+    ContinuousOn (fun p : X × Y ↦ F p • f p.2) (s ×ˢ Set.univ) := by
+  rintro ⟨x, y⟩ ⟨hx, -⟩
+  refine ContinuousAt.continuousWithinAt ?_
+  by_cases hy : y ∈ tsupport f
+  · exact (hF x hx y hy).smul (hf.continuousAt.comp continuousAt_snd)
+  · have h0 : ∀ᶠ z in nhds y, f z = 0 := notMem_tsupport_iff_eventuallyEq.1 hy
+    refine (continuousAt_const (y := (0 : M))).congr ?_
+    filter_upwards [continuousAt_snd.eventually h0] with p hp
+    simp only [hp, smul_zero]
 
 end Continuous
 
@@ -124,6 +168,34 @@ theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [Topologica
     (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
   HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
 
+/-- In a proper space, a function whose topological multiplicative support lies in a ball has
+compact multiplicative support. -/
+@[to_additive /-- In a proper space, a function whose topological support lies in a ball has
+compact support. -/]
+theorem HasCompactMulSupport.of_mulTSupport_subset_ball {X β : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] [One β] {g : X → β} {c : X} {r : ℝ} (h : mulTSupport g ⊆ Metric.ball c r) :
+    HasCompactMulSupport g :=
+  .of_mulSupport_subset_isCompact (isCompact_closedBall c r)
+    ((subset_mulTSupport g).trans (h.trans Metric.ball_subset_closedBall))
+
+/-- A function equal to `1` wherever a function with compact multiplicative support is equal to
+`1` has compact multiplicative support. -/
+@[to_additive /-- A function vanishing wherever a compactly supported function vanishes is
+compactly supported. -/]
+theorem HasCompactMulSupport.mono_of_eq_one {X β γ : Type*} [TopologicalSpace X] [One β] [One γ]
+    {f : X → β} {g : X → γ} (hf : HasCompactMulSupport f) (hg : ∀ x, f x = 1 → g x = 1) :
+    HasCompactMulSupport g :=
+  hf.mono <| Function.mulSupport_subset_iff'.2 fun x hx ↦ hg x (Function.notMem_mulSupport.1 hx)
+
+/-- A function is compactly supported when a compactly supported function is equal to `1` on its
+support. -/
+theorem HasCompactSupport.of_forall_mem_support_eq_one {X β γ : Type*} [TopologicalSpace X]
+    [Zero β] [One β] [NeZero (1 : β)] [Zero γ] {f : X → β} {g : X → γ} (hf : HasCompactSupport f)
+    (hfg : ∀ x ∈ Function.support g, f x = 1) : HasCompactSupport g :=
+  hf.mono fun x hx ↦ by
+    rw [Function.mem_support, hfg x hx]
+    exact one_ne_zero
+
 namespace TauCeti
 
 /-- A function with values in a finite product has compact multiplicative support exactly when
@@ -134,5 +206,49 @@ theorem hasCompactMulSupport_pi_iff {X ι : Type*} [TopologicalSpace X] [Finite 
     {M : ι → Type*} [∀ i, One (M i)] {f : X → ∀ i, M i} :
     HasCompactMulSupport f ↔ ∀ i, HasCompactMulSupport (f · i) := by
   simp [hasCompactMulSupport_iff_eventuallyEq, Filter.EventuallyEq, funext_iff]
+
+open scoped Topology in
+/-- Near a point outside the topological multiplicative supports of all `f j` with `j ∈ s` and
+`j ≠ i`, the product `∏ j ∈ s, f j` agrees with `f i`. -/
+@[to_additive /-- Near a point outside the topological supports of all `f j` with `j ∈ s` and
+`j ≠ i`, the sum `∑ j ∈ s, f j` agrees with `f i`. -/]
+theorem prod_eventuallyEq_of_notMem_mulTSupport {X M κ : Type*} [TopologicalSpace X]
+    [CommMonoid M] {s : Finset κ} {f : κ → X → M} {x : X} {i : κ} (hi : i ∈ s)
+    (h : ∀ j ∈ s, j ≠ i → x ∉ mulTSupport (f j)) : (∏ j ∈ s, f j) =ᶠ[𝓝 x] f i := by
+  classical
+  have h₁ : ∀ᶠ y in 𝓝 x, ∀ j ∈ s.erase i, f j y = 1 := (Filter.eventually_all_finset _).2
+    fun j hj ↦ notMem_mulTSupport_iff_eventuallyEq.1 (h j (Finset.mem_of_mem_erase hj)
+      (Finset.ne_of_mem_erase hj))
+  filter_upwards [h₁] with y hy
+  rw [Finset.prod_apply, ← Finset.mul_prod_erase s _ hi, Finset.prod_eq_one hy, mul_one]
+
+open scoped Topology in
+/-- Let `Q` be a functional of functions `X → M` that depends only on the germ at `x` and satisfies
+`Q (a • φ) = a ^ 2 * Q φ`. If `x` lies in the topological support of at most one `v j`, then
+`Q (∑ j, c j • v j) = ∑ j, c j ^ 2 * Q (v j)`. -/
+theorem apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport {X R M κ : Type*} [TopologicalSpace X]
+    [Semiring R] [AddCommMonoid M] [Module R M] [Fintype κ] {v : κ → X → M} {x : X}
+    (Q : (X → M) → R) (hQ : ∀ (a : R) φ, Q (a • φ) = a ^ 2 * Q φ)
+    (hQx : ∀ φ ψ, φ =ᶠ[𝓝 x] ψ → Q φ = Q ψ) (c : κ → R)
+    (hv : ∀ i j, i ≠ j → x ∈ tsupport (v i) → x ∉ tsupport (v j)) :
+    Q (∑ j, c j • v j) = ∑ j, c j ^ 2 * Q (v j) := by
+  classical
+  -- `Q` vanishes on functions vanishing near `x`, since such a function is `0 • φ` near `x`.
+  have hzero : ∀ φ : X → M, φ =ᶠ[𝓝 x] 0 → Q φ = 0 := fun φ hφ ↦ by
+    rw [hQx φ ((0 : R) • φ) (hφ.trans (.of_eq (by ext; simp))), hQ, zero_pow two_ne_zero,
+      zero_mul]
+  have hzero' : ∀ j, x ∉ tsupport (v j) → c j ^ 2 * Q (v j) = 0 := fun j hj ↦ by
+    rw [hzero _ (notMem_tsupport_iff_eventuallyEq.1 hj), mul_zero]
+  by_cases hx : ∃ i, x ∈ tsupport (v i)
+  · obtain ⟨i, hi⟩ := hx
+    have hi' : ∀ j ≠ i, x ∉ tsupport (v j) := fun j hj ↦ hv i j (Ne.symm hj) hi
+    rw [hQx _ _ (sum_eventuallyEq_of_notMem_tsupport (f := fun j ↦ c j • v j) (Finset.mem_univ i)
+        fun j _ hj hx ↦ hi' j hj (tsupport_smul_subset_right (fun _ ↦ c j) (v j) hx)), hQ,
+      Finset.sum_eq_single i (fun j _ hj ↦ hzero' j (hi' j hj)) (by simp)]
+  · push Not at hx
+    rw [Finset.sum_eq_zero fun j _ ↦ hzero' j (hx j)]
+    refine hzero _ ((Filter.eventually_all.2 fun j ↦
+      notMem_tsupport_iff_eventuallyEq.1 (hx j)).mono fun y hy ↦ ?_)
+    simp [Finset.sum_apply, hy]
 
 end TauCeti

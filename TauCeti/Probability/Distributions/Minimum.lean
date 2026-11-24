@@ -36,7 +36,6 @@ namespace TauCeti.Probability
 
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] [Nonempty ι]
   {P : Measure Ω} {μ : ι → Measure ℝ} {X : ι → Ω → ℝ}
-  [∀ i, IsProbabilityMeasure (μ i)]
 
 /-- **Cumulative hazards add under independent minima.** At a point where every component has
 positive survival, the negative logarithm of the minimum's survival is the sum of the component
@@ -139,13 +138,16 @@ theorem deriv_cdf_min_div_one_sub_cdf_of_eq_withDensity (hindep : iIndepFun X P)
         (1 - cdf (P.map fun ω =>
           Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x) =
       ∑ i, f i x / (1 - cdf (μ i) x) := by
+  have := hindep.isProbabilityMeasure
+  have _ i : IsProbabilityMeasure (μ i) := (hlaw i).isProbabilityMeasure_iff.1 this
   have hd i := hasDerivAt_cdf_of_eq_withDensity (hμ i) (hfm i) (hnn i) (hc i)
   rw [deriv_cdf_min_div_one_sub_cdf hindep hlaw hS (fun i => (hd i).differentiableAt)]
   simp_rw [(hd _).deriv]
 
 /-- **Cumulative hazard of the product-measure minimum.** This measure identity applies to any
 finite nonempty family of real probability laws, including laws with atoms. -/
-theorem neg_log_one_sub_cdf_map_min_pi {x : ℝ} (hS : ∀ i, cdf (μ i) x < 1) :
+theorem neg_log_one_sub_cdf_map_min_pi [∀ i, IsProbabilityMeasure (μ i)] {x : ℝ}
+    (hS : ∀ i, cdf (μ i) x < 1) :
     -Real.log (1 - cdf ((Measure.pi μ).map fun z =>
       Finset.univ.inf' Finset.univ_nonempty fun i => z i) x) =
       ∑ i, -Real.log (1 - cdf (μ i) x) := by
@@ -156,7 +158,7 @@ theorem neg_log_one_sub_cdf_map_min_pi {x : ℝ} (hS : ∀ i, cdf (μ i) x < 1) 
 /-- **Hazard of the product-measure minimum.** Where survival is positive and each marginal cdf
 is differentiable, the hazard of the minimum of the coordinate projections is their hazard sum.
 -/
-theorem deriv_cdf_map_min_pi_div_one_sub_cdf {x : ℝ}
+theorem deriv_cdf_map_min_pi_div_one_sub_cdf [∀ i, IsProbabilityMeasure (μ i)] {x : ℝ}
     (hS : ∀ i, cdf (μ i) x < 1) (hd : ∀ i, DifferentiableAt ℝ (cdf (μ i)) x) :
     deriv (cdf ((Measure.pi μ).map fun z =>
       Finset.univ.inf' Finset.univ_nonempty fun i => z i)) x /

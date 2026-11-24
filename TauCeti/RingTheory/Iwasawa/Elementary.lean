@@ -75,7 +75,7 @@ theorem eq_zero_of_isTorsion_elementary {O : Type*} [CommRing O] [Nontrivial O] 
   obtain ⟨s, hs⟩ := @hE (Pi.single i₀ 1, 0)
   have h0 : (s : O⟦X⟧) = 0 := by
     simpa [Submonoid.smul_def] using congr_fun (congr_arg Prod.fst hs) i₀
-  exact nonZeroDivisors.ne_zero s.2 h0
+  exact nonZeroDivisors.ne_zero s.property h0
 
 /-- A rank-zero elementary module `Elementary O ϖ 0 m F n` over a domain `O` with `ϖ ≠ 0` and
 nonzero horizontal factors is torsion over `O⟦X⟧`. -/
@@ -122,7 +122,7 @@ theorem exists_isPseudoIsomorphism_elementary (hϖ : Irreducible ϖ) [Module.Fin
   let p (i : ι) : Prop := (𝔭 i).asIdeal = Ideal.span {C ϖ}
   choose G hG using fun i : {i // ¬ p i} ↦
     ((height_eq_one_iff_of_isDiscreteValuationRing hϖ (𝔭 i).asIdeal).mp (h𝔭n i).1).resolve_left
-      i.2
+      i.property
   let eV := Fintype.equivFin {i // p i}
   let eH := Fintype.equivFin {i // ¬ p i}
   refine ⟨r, _, _, fun k ↦ n (eV.symm k), fun k ↦ G (eH.symm k), fun k ↦ n (eH.symm k),
@@ -135,7 +135,7 @@ theorem exists_isPseudoIsomorphism_elementary (hϖ : Irreducible ϖ) [Module.Fin
   let eVert := LinearEquiv.piCongrLeft' O⟦X⟧ (fun i : {i // p i} ↦ O⟦X⟧ ⧸ (𝔭 i).asIdeal ^ n i)
       eV ≪≫ₗ LinearEquiv.piCongrRight fun k ↦ Submodule.quotEquivOfEq _
         (Ideal.span {C (ϖ ^ n (eV.symm k))})
-        (by rw [(eV.symm k).2, Ideal.span_singleton_pow, map_pow])
+        (by rw [(eV.symm k).property, Ideal.span_singleton_pow, map_pow])
   let eHor := LinearEquiv.piCongrLeft' O⟦X⟧ (fun i : {i // ¬ p i} ↦ O⟦X⟧ ⧸ (𝔭 i).asIdeal ^ n i)
       eH ≪≫ₗ LinearEquiv.piCongrRight fun k ↦ Submodule.quotEquivOfEq _
         (Ideal.span {((G (eH.symm k) ^ n (eH.symm k) : O[X]) : O⟦X⟧)})

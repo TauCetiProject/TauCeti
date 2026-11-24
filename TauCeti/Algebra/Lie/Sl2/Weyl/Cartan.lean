@@ -64,7 +64,7 @@ theorem _root_.IsSl2Triple.weylAut_apply_coe_of_mem_rootSpace {i : H.root} {h e 
     (hf : ∀ y, ∃ k, ((ad K L f) ^ k) y = 0) (heα : e ∈ rootSpace H (i : Weight K H L))
     (hfα : f ∈ rootSpace H (-(i : Weight K H L))) (y : H) :
     weylAut t he hf (y : L) = ((rootSystem H).coreflection i y : L) := by
-  have hα : (i : Weight K H L).IsNonZero := (Finset.mem_filter.mp i.2).2
+  have hα : (i : Weight K H L).IsNonZero := (Finset.mem_filter.mp i.property).2
   have hye : ⁅(y : L), e⁆ = (i : Weight K H L) y • e := lie_eq_smul_of_mem_rootSpace heα y
   have hyf : ⁅(y : L), f⁆ = -((i : Weight K H L) y • f) := by
     simpa using lie_eq_smul_of_mem_rootSpace hfα y
@@ -80,12 +80,12 @@ theorem exists_mem_intLieAlgebra_forall_smul_eq_coweightEquiv (w : (rootSystem H
     ∃ g ∈ intLieAlgebra K L, ∀ y : H,
       g • (y : L) = ((w : (rootSystem H).Aut).coweightEquiv y : L) := by
   suffices ∀ w ∈ (rootSystem H).weylGroup, ∃ g ∈ intLieAlgebra K L,
-      ∀ y : H, g • (y : L) = (w.coweightEquiv y : L) from this w w.2
+      ∀ y : H, g • (y : L) = (w.coweightEquiv y : L) from this w w.property
   intro w hw
   induction hw using RootPairing.weylGroup.induction with
   | mem i =>
     -- a reflection is realized by the Weyl automorphism of an `sl₂` triple of its root
-    have hα : (i : Weight K H L).IsNonZero := (Finset.mem_filter.mp i.2).2
+    have hα : (i : Weight K H L).IsNonZero := (Finset.mem_filter.mp i.property).2
     obtain ⟨h, e, f, t, heα, hfα⟩ := exists_isSl2Triple_of_weight_isNonZero hα
     have he := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(i : Weight K H L)) hα heα
     have hf := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(-(i : Weight K H L))) hα.neg hfα

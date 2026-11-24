@@ -203,7 +203,7 @@ theorem finite_smul_deltaSubmodule_of_finite_ker {p : ℕ} {O M N : Type*} [Comm
   let g := f.restrict hmap
   have : Finite (LinearMap.ker g) := by
     refine Finite.of_injective (fun x : LinearMap.ker g ↦
-      (⟨x.1.1, congr_arg Subtype.val x.2⟩ : LinearMap.ker f)) ?_
+      (⟨x.val.val, congrArg Subtype.val x.property⟩ : LinearMap.ker f)) ?_
     intro x y hxy
     exact Subtype.ext (Subtype.ext (Subtype.mk.inj hxy))
   exact (LinearMap.exact_subtype_ker_map g).finite
@@ -223,8 +223,8 @@ private theorem finite_smul_deltaSubmodule_of_surjective_of_finite_ker {p : ℕ}
   let B := Fintype.card ↥(a • deltaSubmodule p O M) * Fintype.card (LinearMap.ker g) + 1
   let e : Fin B → ↥(a • deltaSubmodule p O P) :=
     fun i ↦ Infinite.natEmbedding ↥(a • deltaSubmodule p O P) i
-  have hz : ∀ i : Fin B, ∃ z ∈ deltaSubmodule p O P, a • z = (e i).1 := fun i ↦
-    (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp (e i).2
+  have hz : ∀ i : Fin B, ∃ z ∈ deltaSubmodule p O P, a • z = (e i).val := fun i ↦
+    (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp (e i).property
   choose z hz_mem hz_smul using hz
   choose m hm using fun i ↦ (mem_deltaSubmodule p O P (z i)).mp (hz_mem i)
   let m₀ := Finset.univ.sup m
@@ -241,17 +241,17 @@ private theorem finite_smul_deltaSubmodule_of_surjective_of_finite_ker {p : ℕ}
     refine (mem_deltaSubmodule p O M _).mpr ⟨m₀, ?_⟩
     dsimp only [x₀]
     split_ifs with h
-    · have hκ : (κ h.choose).1 = (κ i).1 := congr_arg Subtype.val h.choose_spec
+    · have hκ : (κ h.choose).val = (κ i).val := congrArg Subtype.val h.choose_spec
       simpa only [smul_sub, sub_eq_zero, ω] using hκ.symm
     · exact absurd ⟨i, rfl⟩ h
   let Φ : Fin B → ↥(a • deltaSubmodule p O M) × LinearMap.ker g := fun i ↦
     (⟨a • (x i - x₀ (κ i)), Submodule.smul_mem_pointwise_smul _ _ _ (hdiff_mem i)⟩, κ i)
   have hΦ : Function.Injective Φ := fun i₁ i₂ h ↦ by
-    have h₂ : κ i₁ = κ i₂ := congr_arg Prod.snd h
+    have h₂ : κ i₁ = κ i₂ := congrArg Prod.snd h
     have h₁ : a • (x i₁ - x₀ (κ i₁)) = a • (x i₂ - x₀ (κ i₂)) :=
-      congr_arg Subtype.val (congr_arg Prod.fst h)
+      congrArg Subtype.val (congrArg Prod.fst h)
     rw [h₂, smul_sub, smul_sub, sub_left_inj] at h₁
-    have he : (e i₁).1 = (e i₂).1 := by
+    have he : (e i₁).val = (e i₂).val := by
       rw [← hz_smul i₁, ← hz_smul i₂, ← hgx i₁, ← hgx i₂, ← map_smul, ← map_smul, h₁]
     exact Fin.ext ((Infinite.natEmbedding _).injective (Subtype.ext he))
   have hcard := Fintype.card_le_of_injective Φ hΦ

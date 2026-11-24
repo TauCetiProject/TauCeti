@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
+import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
@@ -24,7 +25,8 @@ it needs them; this file states them once. Since the powers of a uniformizer are
 distinct, a discrete valuation ring is also infinite. Writing elements as a unit times a power of a
 uniformizer `x` also shows that a ring map to a reduced semiring is injective as soon as it does
 not kill `x`, and that a ring map to a cancellative commutative semiring reflects divisibility when
-it sends `x` to a nonzero nonunit.
+it sends `x` to a nonzero nonunit. Since a discrete valuation ring is not a field, an integral
+extension of a ring of dimension at most one in it is injective.
 
 ## Main results
 
@@ -36,13 +38,8 @@ it sends `x` to a nonzero nonunit.
   `addVal x` is the multiplicity of `𝔪` in the ideal `(x)`.
 * `TauCeti.IsDiscreteValuationRing.addVal_eq_one_iff_irreducible`: the uniformizers are the
   elements of additive valuation `1`.
-* `TauCeti.IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow` and
-  `TauCeti.IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow_of_addVal_eq`: writing
-  `x = u * ϖ ^ e` or having `addVal S x = e` identifies `(x)` with `𝔪 ^ e`.
-* `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow` and
-  `TauCeti.IsDiscreteValuationRing.natCard_quotient_span_singleton`: the quotient by `𝔪 ^ n` has
-  cardinality `Nat.card (ResidueField S) ^ n`, and for `x ≠ 0` the quotient by `(x)` has
-  cardinality `Nat.card (ResidueField S) ^ (addVal S x).toNat`.
+* `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow`: the quotient by `𝔪 ^ n`
+  has cardinality `Nat.card (ResidueField S) ^ n`.
 * `TauCeti.IsDiscreteValuationRing.hasFiniteQuotients`: if the residue field is finite, so is
   the quotient by any nonzero ideal.
 * `TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add`: `𝔪 ^ (k + e)` has index
@@ -61,6 +58,8 @@ it sends `x` to a nonzero nonunit.
   that sends a uniformizer `x` to a nonzero element is injective.
 * `TauCeti.IsDiscreteValuationRing.map_dvd_iff`: a ring map to a cancellative commutative
   semiring that sends a uniformizer `x` to a nonzero nonunit reflects divisibility.
+* `TauCeti.IsDiscreteValuationRing.faithfulSMul_of_isIntegral`: an integral extension of a ring
+  of dimension at most one in a discrete valuation ring is injective.
 -/
 
 public section
@@ -188,33 +187,6 @@ instance infinite : Infinite S :=
   not_finite_iff_infinite.mp fun _ ↦
     _root_.IsDiscreteValuationRing.not_isField S (Finite.isField_of_domain S)
 
-/-- Writing an element `x = u * ϖ ^ e` as a unit times a power of a uniformizer identifies the
-principal ideal `(x)` with `𝔪 ^ e`. -/
-theorem span_singleton_eq_maximalIdeal_pow {ϖ x : S} (hϖ : Irreducible ϖ) {u : S} (hu : IsUnit u)
-    {e : ℕ} (hx : x = u * ϖ ^ e) :
-    Ideal.span {x} = maximalIdeal S ^ e := by
-  rw [hx, Ideal.span_singleton_mul_left_unit hu, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq]
-
-/-- An element of finite additive valuation `e` generates the ideal `𝔪 ^ e`. -/
-theorem span_singleton_eq_maximalIdeal_pow_of_addVal_eq {x : S} {e : ℕ}
-    (hx : _root_.IsDiscreteValuationRing.addVal S x = e) :
-    Ideal.span {x} = maximalIdeal S ^ e := by
-  have hx0 : x ≠ 0 := by rintro rfl; simp at hx
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  obtain ⟨n, u, rfl⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hx0 hϖ
-  rw [_root_.IsDiscreteValuationRing.addVal_def' u hϖ n, Nat.cast_inj] at hx
-  exact hx ▸ span_singleton_eq_maximalIdeal_pow hϖ u.isUnit rfl
-
-/-- For a nonzero element `x` of a discrete valuation ring, the quotient `S ⧸ (x)` has cardinality
-`Nat.card (ResidueField S) ^ (addVal S x).toNat`. No finiteness assumption on the residue field is
-needed. -/
-theorem natCard_quotient_span_singleton {x : S} (hx : x ≠ 0) :
-    Nat.card (S ⧸ Ideal.span {x}) =
-      Nat.card (ResidueField S) ^ (_root_.IsDiscreteValuationRing.addVal S x).toNat := by
-  rw [span_singleton_eq_maximalIdeal_pow_of_addVal_eq
-      (ENat.natCast_toNat (_root_.IsDiscreteValuationRing.addVal_eq_top_iff.not.mpr hx)).symm,
-    natCard_quotient_maximalIdeal_pow]
-
 section Map
 
 variable {T F : Type*} [FunLike F S T] {x : S}
@@ -247,5 +219,14 @@ theorem map_dvd_iff [CommSemiring T] [IsCancelMulZero T] [RingHomClass F S T] (f
   exact pow_dvd_pow x ((pow_dvd_pow_iff hfx₀ hfx).mp h)
 
 end Map
+
+/-- An integral extension of a ring of dimension at most one in a discrete valuation ring is
+injective: its kernel is a prime strictly below the contraction of the maximal ideal. -/
+theorem faithfulSMul_of_isIntegral {R : Type*} [CommRing R] [Ring.DimensionLEOne R]
+    [Algebra R S] [Algebra.IsIntegral R S] : FaithfulSMul R S := by
+  rw [faithfulSMul_iff_algebraMap_injective, RingHom.injective_iff_ker_eq_bot,
+    RingHom.ker_eq_comap_bot]
+  exact Ring.DimensionLEOne.eq_bot_of_lt _ _ <| Ideal.IsIntegral.under_lt_under (R := R) <|
+    bot_lt_iff_ne_bot.2 (_root_.IsDiscreteValuationRing.not_a_field S)
 
 end TauCeti.IsDiscreteValuationRing

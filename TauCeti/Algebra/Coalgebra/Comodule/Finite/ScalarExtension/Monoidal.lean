@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Monoidal
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.ScalarExtension.Basic
 
@@ -28,6 +29,8 @@ comodule source category.
 * `TauCeti.FGComoduleCat.scalarExtensionFunctor_ε`: the unit-comparison formula.
 * `TauCeti.FGComoduleCat.scalarExtensionFunctor_δ`: the inverse tensorator formula.
 * `TauCeti.FGComoduleCat.scalarExtensionFunctor_η`: the inverse unit-comparison formula.
+* `TauCeti.FGComoduleCat.isMonoidal_of_endomorphism_components`: a natural endomorphism of
+  scalar extension whose linear components preserve tensor products is monoidal.
 -/
 
 public section
@@ -224,5 +227,46 @@ theorem scalarExtensionFunctor_η :
       eqToHom (scalarExtensionFunctor_obj R H A (𝟙_ (FGComoduleCat R H))) ≫
         SemimoduleCat.ofHom
           (TensorProduct.AlgebraTensorModule.rid R A A).toLinearMap := rfl
+
+/-- A natural endomorphism of scalar extension that is an epimorphism at the tensor unit is
+monoidal when its transported linear components preserve tensor products. Preservation of the
+tensor unit follows (`CategoryTheory.NatTrans.IsMonoidal.of_tensor`). -/
+theorem isMonoidal_of_endomorphism_components
+    (F : ∀ M : FGComoduleCat.{u, v, u} R H, Module.End A (A ⊗[R] M))
+    (τ : scalarExtensionFunctor R H A ⟶ scalarExtensionFunctor R H A)
+    [Epi (τ.app (𝟙_ (FGComoduleCat.{u, v, u} R H)))]
+    (happ : ∀ M : FGComoduleCat.{u, v, u} R H,
+      τ.app M =
+        eqToHom (scalarExtensionFunctor_obj R H A M) ≫
+          SemimoduleCat.ofHom (F M) ≫
+            eqToHom (scalarExtensionFunctor_obj R H A M).symm)
+    (htensor : ∀ M N : FGComoduleCat.{u, v, u} R H,
+      (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap.comp
+          (TensorProduct.map (F M) (F N)) =
+        (F (M ⊗ N : FGComoduleCat R H)).comp
+            (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap) :
+    NatTrans.IsMonoidal τ := by
+  refine NatTrans.IsMonoidal.of_tensor _ fun M N ↦ ?_
+  -- The ascribed categorical type is load-bearing: `congrArg` on its own yields the
+  -- definitionally equal `LinearMap.comp`/`TensorProduct.map` spelling, which `erw` matches
+  -- syntactically and so would not find.
+  have htensor_cat :
+      SemimoduleCat.ofHom
+            (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap ≫
+          SemimoduleCat.ofHom (F (M ⊗ N : FGComoduleCat R H)) =
+        (SemimoduleCat.ofHom (F M) ⊗ₘ SemimoduleCat.ofHom (F N)) ≫
+          SemimoduleCat.ofHom
+            (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap :=
+    congrArg SemimoduleCat.ofHom (htensor M N).symm
+  erw [scalarExtensionFunctor_μ,
+    happ, happ, happ]
+  rw [← MonoidalCategory.tensorHom_comp_tensorHom,
+    ← MonoidalCategory.tensorHom_comp_tensorHom]
+  simp only [Category.assoc]
+  rw [cancel_epi]
+  erw [Category.assoc, eqToHom_trans_assoc]
+  simp only [MonoidalCategory.tensorHom_comp_tensorHom_assoc, eqToHom_trans,
+    eqToHom_refl, Category.id_comp, Category.comp_id]
+  erw [← Category.assoc, htensor_cat, Category.assoc]
 
 end TauCeti.FGComoduleCat

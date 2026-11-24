@@ -90,7 +90,7 @@ theorem finite_pointwise_smul_of_finite_quotient {α R M : Type*} [Monoid α] [R
   have hK_le : K ≤ LinearMap.ker π₀ := fun y hy ↦ by
     rw [LinearMap.mem_ker]
     simp only [π₀, LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact Submodule.smul_mem_pointwise_smul y.1 a (I ⊓ D) ⟨hy, y.2⟩
+    exact Submodule.smul_mem_pointwise_smul y.val a (I ⊓ D) ⟨hy, y.property⟩
   have hπ₀_surj : Function.Surjective π₀ :=
     U.mkQ_surjective.comp (LinearMap.submoduleMap_surjective _ D)
   have : Finite (↥S ⧸ U) :=

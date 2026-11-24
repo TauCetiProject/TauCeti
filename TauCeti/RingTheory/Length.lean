@@ -14,14 +14,12 @@ public import Mathlib.RingTheory.OrderOfVanishing.Basic
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;
 -- no statement in this file mentions it.
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
-import Mathlib.LinearAlgebra.Quotient.Card
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.LocalRing.Length
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import Mathlib.RingTheory.Localization.Ideal
 import Mathlib.RingTheory.QuotSMulTop
 import Mathlib.RingTheory.Spectrum.Prime.Topology
-import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # General facts about the length of a module
@@ -81,10 +79,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   of `M` by it.
 * `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
   over `A`.
-* `TauCeti.natCard_eq_natCard_residueField_pow_length` and
-  `TauCeti.natCard_eq_natCard_residueField_pow_length_of_finite`: a finite-length (in particular,
-  finite) module `M` over a commutative local ring `A` has cardinality
-  `Nat.card (ResidueField A) ^ (Module.length A M).toNat`.
+* `TauCeti.natCard_eq_pow_of_length_eq` and `TauCeti.natCard_eq_pow_length_toNat`: a module of
+  finite length `ℓ` over a local ring whose residue field has `q` elements has `q ^ ℓ` elements.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
 * `Ideal.length_quotient_eq_one`: `length (A ⧸ 𝔪) = 1` for a maximal (left) ideal `𝔪` of a ring
@@ -245,7 +241,7 @@ theorem comap_subtype_map_lsmul (N : Submodule A M) (a : A) :
   · rintro ⟨z, hz, hzy⟩
     exact ⟨⟨z, hz⟩, Subtype.ext hzy⟩
   · rintro ⟨z, rfl⟩
-    exact ⟨(z : M), z.2, rfl⟩
+    exact ⟨(z : M), z.property, rfl⟩
 
 end CommSemiring
 
@@ -386,8 +382,6 @@ section LocalRing
 
 open _root_.IsLocalRing
 
-section
-
 variable {A : Type*} [CommRing A] [IsLocalRing A]
 
 /-- The residue field of a local ring has length one over the ring. -/
@@ -397,35 +391,51 @@ theorem length_residueField_eq_one : Module.length A (ResidueField A) = 1 := by
     (S := ResidueField A) residue_surjective]
   exact instIsSimpleModule _
 
-/-- Every finite-length module over a commutative local ring has cardinality equal to the
-`(Module.length A M).toNat`-th power of the residue cardinality: each simple subquotient in a
-composition series is isomorphic to `ResidueField A`. No finiteness assumption on `ResidueField A`
-is needed. -/
-theorem natCard_eq_natCard_residueField_pow_length {M : Type*} [AddCommGroup M] [Module A M]
-    (hM : IsFiniteLength A M) :
+variable {M : Type*} [AddCommGroup M] [Module A M]
+
+/-- Over a local ring, a covering `N ⋖ P` of submodules multiplies the cardinality by that of the
+residue field: `P ⧸ N` is a simple module, hence isomorphic to the residue field. This follows the
+proof of Mathlib's `CovBy.length_restrictScalars` (`Mathlib/RingTheory/LocalRing/Length.lean`). -/
+theorem _root_.CovBy.natCard_eq_mul_natCard_residueField {N P : Submodule A M} (h : N ⋖ P) :
+    Nat.card P = Nat.card N * Nat.card (ResidueField A) := by
+  let f : N →ₗ[A] P := Submodule.inclusion h.le
+  have key : IsSimpleModule A (P ⧸ LinearMap.range f) := by
+    rwa [Submodule.range_inclusion, ← covBy_iff_quot_is_simple h.le]
+  obtain ⟨m, hm, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp key
+  rw [eq_maximalIdeal hm] at e
+  rw [Submodule.card_eq_card_quotient_mul_card (LinearMap.range f),
+    ← Nat.card_congr (LinearEquiv.ofInjective f (Submodule.inclusion_injective h.le)).toEquiv,
+    Nat.card_congr e.toEquiv]
+  -- The residue field is by definition the quotient by the maximal ideal.
+  rfl
+
+/-- **The cardinality of a module of finite length over a local ring.** If `M` has length `n`
+over a local ring `A`, then `M` has `q ^ n` elements, where `q` is the cardinality of the residue
+field of `A`. The proof adapts the composition-series induction of Mathlib's
+`IsLocalRing.length_restrictScalars`. -/
+theorem natCard_eq_pow_of_length_eq {n : ℕ} (h : Module.length A M = n) :
+    Nat.card M = Nat.card (ResidueField A) ^ n := by
+  obtain ⟨s, hs_bot, hs_top⟩ := isFiniteLength_iff_exists_compositionSeries.mp
+    (Module.length_ne_top_iff.mp (h ▸ ENat.natCast_ne_top n))
+  have hlen : s.length = n := by
+    exact_mod_cast (Module.length_compositionSeries s hs_bot hs_top).trans h
+  suffices ∀ k, Nat.card (s k) = Nat.card (ResidueField A) ^ (k : ℕ) by
+    rw [← hlen, ← Fin.val_last s.length, ← this, ← RelSeries.last, hs_top]
+    exact Nat.card_congr (LinearEquiv.ofTop ⊤ rfl).toEquiv.symm
+  intro k
+  induction k using Fin.induction with
+  | zero => rw [← RelSeries.head, hs_bot]; simp
+  | succ i hi =>
+    rw [Fin.val_succ, pow_succ, ← Fin.val_castSucc, ← hi]
+    exact (s.step i).natCard_eq_mul_natCard_residueField
+
+/-- A finite module over a local ring `A` has `q ^ ℓ` elements, where `q` is the cardinality of the
+residue field and `ℓ` the (finite) length of the module. -/
+theorem natCard_eq_pow_length_toNat [Finite M] :
     Nat.card M = Nat.card (ResidueField A) ^ (Module.length A M).toNat := by
-  induction hM with
-  | of_subsingleton =>
-    rw [Module.length_eq_zero_iff.mpr inferInstance, ENat.toNat_zero, pow_zero, Nat.card_unique]
-  | @of_simple_quotient M _ _ N hQ hN ih =>
-    obtain ⟨m, hm, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp hQ
-    have hcardQ : Nat.card (M ⧸ N) = Nat.card (ResidueField A) :=
-      Nat.card_congr (e.trans (quotientEquivResidueField hm)).toEquiv
-    have hlen : Module.length A M = Module.length A N + 1 := by
-      rw [Module.length_eq_add_of_exact N.subtype N.mkQ N.injective_subtype N.mkQ_surjective
-        (LinearMap.exact_subtype_mkQ N), Module.length_eq_one_iff.mpr hQ]
-    rw [Submodule.card_eq_card_quotient_mul_card N, hcardQ, ih, hlen,
-      ENat.toNat_add (Module.length_ne_top_iff.mpr hN) (by simp), ENat.toNat_one, pow_succ]
-
-end
-
-/-- Every finite module over a commutative local ring has cardinality equal to the
-`(Module.length A M).toNat`-th power of the residue cardinality. -/
-theorem natCard_eq_natCard_residueField_pow_length_of_finite (A M : Type*) [CommRing A]
-    [IsLocalRing A] [AddCommGroup M] [Module A M] [Finite M] :
-    Nat.card M = Nat.card (ResidueField A) ^ (Module.length A M).toNat :=
-  natCard_eq_natCard_residueField_pow_length
-    (isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, isArtinian_of_finite⟩)
+  have : IsArtinian A M := isArtinian_of_finite
+  have : IsNoetherian A M := isNoetherian_of_finite A M
+  exact natCard_eq_pow_of_length_eq (ENat.natCast_toNat Module.length_ne_top).symm
 
 end LocalRing
 
@@ -610,10 +620,11 @@ variable {A V W : Type*} [CommRing A] [AddCommGroup V] [Module A V] [AddCommGrou
 `aM ⊔ (M ⊓ ker e)`. -/
 theorem ker_mkQ_comp_codRestrict (e : V →ₗ[A] W) (M : Submodule A V) (a : A) :
     LinearMap.ker ((LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)).mkQ ∘ₗ
-        LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2))
+        LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem
+            y.property))
       = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔ Submodule.comap M.subtype (LinearMap.ker e) := by
   set g : ↥M →ₗ[A] ↥(M.map e) :=
-    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
+    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.property)
   have hg : Function.Surjective g := LinearMap.submoduleMap_surjective e M
   have hmap : LinearMap.range (LinearMap.lsmul A ↥(M.map e) a) =
       (LinearMap.range (LinearMap.lsmul A ↥M a)).map g := by
@@ -629,7 +640,7 @@ theorem length_quotient_sup_comap_ker (e : V →ₗ[A] W) (M : Submodule A V) (a
         Submodule.comap M.subtype (LinearMap.ker e))) =
       Module.length A (↥(M.map e) ⧸ LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)) := by
   set g : ↥M →ₗ[A] ↥(M.map e) :=
-    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
+    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.property)
   set Q : Submodule A ↥(M.map e) := LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)
   have hgsurj : Function.Surjective g := LinearMap.submoduleMap_surjective e M
   have hker : LinearMap.ker (Q.mkQ ∘ₗ g) = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
@@ -654,8 +665,8 @@ compare the lengths of the two localizations in `length_localizedModule_comap`. 
 private noncomputable def localizedModuleComap (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [𝔮.IsPrime] :
     LocalizedModule (𝔮.comap σ).primeCompl N →ₛₗ[Localization.localRingHom (𝔮.comap σ) 𝔮 σ rfl]
       LocalizedModule 𝔮.primeCompl M where
-  toFun x := x.liftOn (fun p ↦ LocalizedModule.mk (e p.1) ⟨σ p.2, p.2.2⟩) fun ⟨n, s⟩ ⟨n', s'⟩
-      ⟨u, hu⟩ ↦ LocalizedModule.mk_eq.mpr ⟨⟨σ u, u.2⟩, by
+  toFun x := x.liftOn (fun p ↦ LocalizedModule.mk (e p.1) ⟨σ p.2, p.2.property⟩) fun ⟨n, s⟩ ⟨n', s'⟩
+      ⟨u, hu⟩ ↦ LocalizedModule.mk_eq.mpr ⟨⟨σ u, u.property⟩, by
         simpa [Submonoid.smul_def, map_smulₛₗ] using congrArg e hu⟩
   map_add' x y := by
     induction x using LocalizedModule.induction_on with | h n s => ?_
@@ -673,7 +684,8 @@ private noncomputable def localizedModuleComap (e : N ≃ₛₗ[σ] M) (𝔮 : I
 
 private theorem localizedModuleComap_mk (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [𝔮.IsPrime] (n : N)
     (s : (𝔮.comap σ).primeCompl) :
-    localizedModuleComap e 𝔮 (LocalizedModule.mk n s) = LocalizedModule.mk (e n) ⟨σ s, s.2⟩ :=
+    localizedModuleComap e 𝔮 (LocalizedModule.mk n s) = LocalizedModule.mk (e n) ⟨σ s, s.property⟩
+        :=
   rfl
 
 /-- **Transport of local lengths along a ring isomorphism.** Let `σ : A → B` be a ring isomorphism
@@ -686,7 +698,7 @@ theorem length_localizedModule_comap (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [�
   have hσ (b : B) : σ (σ' b) = b := RingHomInvPair.comp_apply_eq₂
   have hmem (t : 𝔮.primeCompl) : σ' t ∈ (𝔮.comap σ).primeCompl := by
     rw [Ideal.mem_primeCompl_iff, Ideal.mem_comap, hσ]
-    exact t.2
+    exact t.property
   have : RingHomSurjective (Localization.localRingHom (𝔮.comap σ) 𝔮 σ rfl) :=
     ⟨(Localization.localRingEquiv (𝔮.comap σ) 𝔮 (RingHomInvPair.toRingEquiv σ σ') rfl).surjective⟩
   refine LinearMap.length_eq_of_bijective (localizedModuleComap e 𝔮) ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩
