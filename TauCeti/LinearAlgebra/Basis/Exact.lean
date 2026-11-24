@@ -34,6 +34,8 @@ transition matrix between two such bases is block upper triangular
 * `Module.Basis.eq_reindex_ofExactLift`: the same for a basis indexed by `Fin (m + n)`.
 * `Module.Basis.coe_reindex_ofExactLift`: indexed by `Fin (m + n)`, the basis `ofExactLift` is
   `Fin.append (f ∘ a) s`.
+* `Module.Basis.coe_reindex_finAddFlip_ofExactLift`: further reindexed by `finAddFlip`, it is
+  `Fin.append s (f ∘ a)`.
 * `Module.Basis.exists_coe_eq_append_lift`: for surjective `g`, some lifts `s` of `c` give such a
   basis `Fin.append (f ∘ a) s`.
 * `Module.Basis.ofExactLift_det_eq_mul`: the determinant with respect to such a basis of a family
@@ -64,20 +66,20 @@ variable {R A B C : Type*} [Semiring R] [AddCommGroup A] [AddCommGroup B] [AddCo
 `C`. -/
 private def exactLiftEquiv (c : Basis σ R C) (s : σ → B) (hs : ∀ j, g (s j) = c j) :
     B ≃ₗ[R] A × C :=
-  (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).1
+  (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).val
 
 variable {hf hfg}
 
 private theorem exactLiftEquiv_apply (c : Basis σ R C) (s : σ → B) (hs : ∀ j, g (s j) = c j)
     (x : A) : exactLiftEquiv hf hfg c s hs (f x) = (x, 0) := by
   have := congrArg (fun φ : A →ₗ[R] B ↦ exactLiftEquiv hf hfg c s hs (φ x))
-    (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).2.1
+    (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).property.1
   simpa [exactLiftEquiv] using this
 
 private theorem exactLiftEquiv_apply_snd (c : Basis σ R C) (s : σ → B)
     (hs : ∀ j, g (s j) = c j) (y : B) : (exactLiftEquiv hf hfg c s hs y).2 = g y := by
   have := congrArg (fun φ : B →ₗ[R] C ↦ φ y)
-    (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).2.2
+    (hfg.splitSurjectiveEquiv hf ⟨c.constr ℕ s, c.ext fun j ↦ by simp [hs]⟩).property.2
   simpa [exactLiftEquiv] using this.symm
 
 private theorem exactLiftEquiv_symm_inr (c : Basis σ R C) (s : σ → B)
@@ -86,7 +88,7 @@ private theorem exactLiftEquiv_symm_inr (c : Basis σ R C) (s : σ → B)
   -- The inverse of `splitSurjectiveEquiv` sends a splitting `e` to the section `e.symm ∘ₗ inr`,
   -- so the first step holds by definition.
   calc (exactLiftEquiv hf hfg c s hs).symm (0, c j)
-      = ((hfg.splitSurjectiveEquiv hf).symm (hfg.splitSurjectiveEquiv hf l)).1 (c j) := rfl
+      = ((hfg.splitSurjectiveEquiv hf).symm (hfg.splitSurjectiveEquiv hf l)).val (c j) := rfl
     _ = s j := by rw [Equiv.symm_apply_apply, constr_basis]
 
 variable (hf hfg)
@@ -158,6 +160,18 @@ theorem coe_reindex_ofExactLift {m n : ℕ} (a : Basis (Fin m) R A) (c : Basis (
     ⇑((ofExactLift hf hfg a c s hs).reindex finSumFinEquiv) = Fin.append (f ∘ a) s := by
   funext j
   induction j using Fin.addCases <;> simp
+
+/-- Reindexed by `finSumFinEquiv` and then by the block swap `finAddFlip`, the basis
+`ofExactLift` lists the lifts `s` followed by the image of the basis `a` of `A`. -/
+theorem coe_reindex_finAddFlip_ofExactLift {m n : ℕ} (a : Basis (Fin m) R A)
+    (c : Basis (Fin n) R C) (s : Fin n → B) (hs : ∀ j, g (s j) = c j) :
+    ⇑(((ofExactLift hf hfg a c s hs).reindex finSumFinEquiv).reindex finAddFlip) =
+      Fin.append s (f ∘ a) := by
+  rw [coe_reindex, coe_reindex_ofExactLift]
+  funext j
+  induction j using Fin.addCases with
+  | left j => simp [(Equiv.symm_apply_eq _).2 (finAddFlip_apply_natAdd j m).symm]
+  | right i => simp [(Equiv.symm_apply_eq _).2 (finAddFlip_apply_castAdd i n).symm]
 
 include hf hfg in
 /-- In a short exact sequence `0 → A → B → C → 0`, a basis `a` of `A` and a basis `c` of `C`

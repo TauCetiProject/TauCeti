@@ -30,20 +30,18 @@ A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g �
 
 * `ContinuousLinearMap.IsIdempotentElem.rangeEquiv`: the isomorphism of the ranges of `p` and
   `q` induced by `q * p + (1 - q) * (1 - p)`, when that operator is invertible.
-* `ContinuousLinearMap.IsIdempotentElem.projectionOntoKer`: the projection `1 - p` of `M` onto
-  `p.ker`.
 * `ContinuousLinearMap.rangeEquivOfRetract`: the identification of the range of `e` with the
   range of its extension `i ∘ e ∘ r` along a retract.
 
 ## Main results
 
-* `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`, `rangeRestrict_comp_subtypeL`, and
-  `rangeRestrict_comp_comp_subtypeL`: an idempotent continuous linear map fixes its range, making
-  `p.rangeRestrict` a retraction onto `p.range` that conjugates invariant endomorphisms to their
-  restrictions.
-* `ContinuousLinearMap.IsIdempotentElem.projectionOntoKer_comp_subtypeL` and
-  `ContinuousLinearMap.IsIdempotentElem.projectionOntoKer_comp_comp_subtypeL`: `1 - p` retracts `M`
-  onto `p.ker` and conjugates invariant endomorphisms to their restrictions.
+* `ContinuousLinearMap.IsIdempotentElem.comp_self`,
+  `ContinuousLinearMap.IsIdempotentElem.comp_comp_self`: idempotence stated with `∘L` in place
+  of `*`.
+* `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`: an idempotent continuous linear map
+  fixes every vector of its range.
+* `ContinuousLinearMap.IsIdempotentElem.completeSpace_range`: the range of an idempotent
+  continuous linear map on a complete space is complete.
 * `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
   `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
@@ -61,86 +59,34 @@ public section
 
 open scoped Ring
 
-namespace ContinuousLinearMap
-
-namespace IsIdempotentElem
+namespace ContinuousLinearMap.IsIdempotentElem
 
 section Semiring
 
 variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
   {p : M →L[R] M}
 
-/-- An idempotent continuous linear map fixes every vector of its range. -/
-@[simp] theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w := by
-  obtain ⟨y, hy⟩ := w.2; exact hy ▸ congr($hp.eq y)
+/-- An idempotent continuous linear map composed with itself is itself. -/
+theorem comp_self (hp : IsIdempotentElem p) : p ∘L p = p :=
+  (mul_def p p).symm.trans hp.eq
 
-/-- Restricting an idempotent continuous linear map to its range gives a retraction onto
-`p.range`. -/
-@[simp] theorem rangeRestrict_comp_subtypeL (hp : IsIdempotentElem p) :
-    p.rangeRestrict.comp p.range.subtypeL = .id R p.range := by ext w; simp [apply_coe_range hp]
-
-/-- Conjugating an endomorphism `u` leaving `p.range` invariant by the range inclusion and
-retraction recovers `u.restrict`. -/
-theorem rangeRestrict_comp_comp_subtypeL (hp : IsIdempotentElem p) {u : M →L[R] M}
-    (hm : Set.MapsTo u p.range p.range) :
-    p.rangeRestrict.comp (u.comp p.range.subtypeL) = u.restrict hm := by
-  ext x; rw [coe_restrict_apply (fun _ hx ↦ hm hx)]; simp [apply_coe_range hp ⟨u x, hm x.2⟩]
+/-- Idempotence in the left-associated form `(X ∘L p) ∘L p = X ∘L p`, for any `X` out of `M`. -/
+theorem comp_comp_self {N : Type*} [TopologicalSpace N] [AddCommMonoid N] [Module R N]
+    (hp : IsIdempotentElem p) (X : M →L[R] N) : (X ∘L p) ∘L p = X ∘L p := by
+  rw [comp_assoc, comp_self hp]
 
 end Semiring
 
 variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
-  [IsTopologicalAddGroup M] {p q : M →L[R] M}
+  {p q : M →L[R] M}
 
-/-- For an idempotent continuous linear map `p`, `1 - p` projects `M` onto `p.ker`. -/
-def projectionOntoKer (hp : IsIdempotentElem p) : M →L[R] p.ker :=
-  (1 - p).codRestrict p.ker fun x ↦ LinearMap.mem_ker.mpr <| by
-    simpa [sub_eq_zero] using congr($hp.eq x).symm
+/-- An idempotent continuous linear map fixes every vector of its range. -/
+@[simp]
+theorem apply_coe_range (hp : IsIdempotentElem p) (w : p.range) : p w = w :=
+  (LinearMap.IsIdempotentElem.mem_range_iff
+    (ContinuousLinearMap.IsIdempotentElem.toLinearMap hp)).mp w.property
 
-/-- Applying `projectionOntoKer` computes `1 - p` in `M`. -/
-@[simp] theorem coe_projectionOntoKer_apply (hp : IsIdempotentElem p) (x : M) :
-    (projectionOntoKer hp x : M) = (1 - p) x := by simp [projectionOntoKer]
-
-/-- Composing the subtype inclusion with `projectionOntoKer` recovers `1 - p`. -/
-@[simp] theorem subtypeL_comp_projectionOntoKer (hp : IsIdempotentElem p) :
-    p.ker.subtypeL.comp (projectionOntoKer hp) = 1 - p :=
-  subtypeL_comp_codRestrict _ _ _
-
-/-- `projectionOntoKer` fixes every vector of `p.ker`. -/
-@[simp] theorem projectionOntoKer_apply_coe (hp : IsIdempotentElem p) (x : p.ker) :
-    projectionOntoKer hp x = x :=
-  SetLike.coe_eq_coe.mp (by simp)
-
-/-- `projectionOntoKer` is a left inverse to the subtype inclusion of `p.ker`. -/
-@[simp] theorem projectionOntoKer_comp_subtypeL (hp : IsIdempotentElem p) :
-    (projectionOntoKer hp).comp p.ker.subtypeL = .id R p.ker := by ext; simp
-
-/-- `projectionOntoKer` vanishes on images of `p`. -/
-@[simp] theorem projectionOntoKer_apply_self (hp : IsIdempotentElem p) (x : M) :
-    projectionOntoKer hp (p x) = 0 :=
-  SetLike.coe_eq_coe.mp (by simpa [sub_eq_zero] using congr($hp.eq x).symm)
-
-/-- Composing `projectionOntoKer` on the right with `p` gives zero. -/
-@[simp] theorem projectionOntoKer_comp_self (hp : IsIdempotentElem p) :
-    (projectionOntoKer hp).comp p = 0 := by ext; simp
-
-/-- The kernel of `projectionOntoKer` is `p.range`. -/
-@[simp] theorem ker_projectionOntoKer (hp : IsIdempotentElem p) :
-    LinearMap.ker (projectionOntoKer hp : M →ₗ[R] p.ker) = p.range := by
-  rw [projectionOntoKer, ker_codRestrict, toLinearMap_sub, toLinearMap_one]
-  exact (LinearMap.IsIdempotentElem.range_eq_ker (toLinearMap hp)).symm
-
-/-- `projectionOntoKer` has full range `p.ker`. -/
-@[simp] theorem range_projectionOntoKer (hp : IsIdempotentElem p) :
-    LinearMap.range (projectionOntoKer hp : M →ₗ[R] p.ker) = ⊤ :=
-  LinearMap.range_eq_of_proj (projectionOntoKer_apply_coe hp)
-
-/-- Conjugating an endomorphism `u` leaving `p.ker` invariant by the kernel inclusion and
-projection recovers `u.restrict`. -/
-theorem projectionOntoKer_comp_comp_subtypeL (hp : IsIdempotentElem p) {u : M →L[R] M}
-    (hm : Set.MapsTo u p.ker p.ker) :
-    (projectionOntoKer hp).comp (u.comp p.ker.subtypeL) = u.restrict hm := by
-  ext x; rw [coe_restrict_apply (fun _ hx ↦ hm hx)]
-  simp [projectionOntoKer_apply_coe hp ⟨u x, hm x.2⟩]
+variable [IsTopologicalAddGroup M]
 
 /-- The operator `p * p + (1 - p) * (1 - p)`, which intertwines an idempotent `p` with itself, is
 the identity. -/
@@ -200,12 +146,12 @@ private theorem inverse_intertwiner_mem_range (hp : IsIdempotentElem p)
 of `p` onto the range of `q`, with inverse the restriction of `U⁻¹`. -/
 noncomputable def rangeEquiv (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (hU : IsUnit (q * p + (1 - q) * (1 - p))) : p.range ≃L[R] q.range :=
-  .equivOfInverse ((intertwiner p q ∘L p.range.subtypeL).codRestrict q.range
+  .ofContinuousLinearMap ((intertwiner p q ∘L p.range.subtypeL).codRestrict q.range
       (intertwiner_mem_range hp hq))
     (((intertwiner p q)⁻¹ʳ ∘L q.range.subtypeL).codRestrict p.range
       (inverse_intertwiner_mem_range hp hq hU))
-    (fun w ↦ Subtype.ext (congr($(Ring.inverse_mul_cancel _ hU) (w : M))))
-    (fun w ↦ Subtype.ext (congr($(Ring.mul_inverse_cancel _ hU) (w : M))))
+    (ContinuousLinearMap.ext fun w ↦ Subtype.ext (congr($(Ring.mul_inverse_cancel _ hU) (w : M))))
+    (ContinuousLinearMap.ext fun w ↦ Subtype.ext (congr($(Ring.inverse_mul_cancel _ hU) (w : M))))
 
 variable (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
   (hU : IsUnit (q * p + (1 - q) * (1 - p)))
@@ -222,7 +168,15 @@ theorem coe_rangeEquiv_symm_apply (w : q.range) :
     ((rangeEquiv hp hq hU).symm w : M) = (q * p + (1 - q) * (1 - p))⁻¹ʳ w :=
   (rfl)
 
-end IsIdempotentElem
+/-- The range of an idempotent continuous linear map on a complete space is complete. -/
+theorem completeSpace_range {R M : Type*} [Ring R] [UniformSpace M] [T1Space M] [CompleteSpace M]
+    [AddCommGroup M] [IsTopologicalAddGroup M] [Module R M] {p : M →L[R] M}
+    (hp : IsIdempotentElem p) : CompleteSpace p.range :=
+  (isClosed_range hp).completeSpace_coe
+
+end ContinuousLinearMap.IsIdempotentElem
+
+namespace ContinuousLinearMap
 
 /-- If `g` is a pseudo-inverse of `f`, that is `f ∘ g ∘ f = f`, then `g ∘ f` is a projection. -/
 theorem isIdempotentElem_comp_of_comp_comp_eq_self {R M N : Type*} [Semiring R]

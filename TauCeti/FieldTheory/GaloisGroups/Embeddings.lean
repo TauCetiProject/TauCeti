@@ -48,7 +48,7 @@ noncomputable def quotientStabilizerEquivAlgHomSimpleField {x : E} (hx : IsInteg
           (y : normalClosure F F⟮x⟯ E) ≃
       (F⟮x⟯ →ₐ[F] normalClosure F F⟮x⟯ E) :=
   letI : Normal F (normalClosure F F⟮x⟯ E) := normal_normalClosure_adjoin_simple hx hsplit
-  (rootSetEquivQuotientStabilizer (minpoly.irreducible hx) y.2).symm.trans
+  (rootSetEquivQuotientStabilizer (minpoly.irreducible hx) y.property).symm.trans
     (rootSetEquivAlgHomAdjoin F (normalClosure F F⟮x⟯ E) hx)
 
 /-- The embedding indexed by the coset of `σ` sends the generator to `σ • y`. -/
@@ -85,7 +85,7 @@ theorem quotientStabilizerEquivAlgHomSimpleField_smul {x : E} (hx : IsIntegral F
   change (quotientStabilizerEquivAlgHomSimpleField hx hsplit y (σ • c))
       (AdjoinSimple.gen F x) =
     (σ • quotientStabilizerEquivAlgHomSimpleField hx hsplit y c) (AdjoinSimple.gen F x)
-  let e := rootSetEquivQuotientStabilizer (minpoly.irreducible hx) y.2
+  let e := rootSetEquivQuotientStabilizer (minpoly.irreducible hx) y.property
   have he : e.symm (σ • c) = σ • e.symm c := by
     apply e.injective
     rw [e.apply_symm_apply, rootSetEquivQuotientStabilizer_smul,
@@ -116,7 +116,7 @@ noncomputable def quotientGalStabilizerEquivAlgHomSimpleField {x : E} (hx : IsIn
       (F⟮x⟯ →ₐ[F] normalClosure F F⟮x⟯ E) := by
   let e := splittingFieldEquivNormalClosure hx hsplit
   let y' : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E) :=
-    ⟨e y, rootSet_mapsTo e.toAlgHom y.2⟩
+    ⟨e y, rootSet_mapsTo e.toAlgHom y.property⟩
   exact (QuotientGroup.congrOfMapEq (galEquivNormalClosure hx hsplit)
     (map_stabilizer_galEquivNormalClosure_eq_stabilizer hx hsplit y)).trans
       (quotientStabilizerEquivAlgHomSimpleField hx hsplit y')
@@ -133,7 +133,7 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_mk_gen {x : E} (hx : IsInteg
       splittingFieldEquivNormalClosure hx hsplit (σ • y : (minpoly F x).SplittingField) := by
   let e := splittingFieldEquivNormalClosure hx hsplit
   let y' : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E) :=
-    ⟨e y, rootSet_mapsTo e.toAlgHom y.2⟩
+    ⟨e y, rootSet_mapsTo e.toAlgHom y.property⟩
   -- The composite equivalence is defined with local transports, so `rw` cannot see its
   -- final component until the application is exposed.
   change quotientStabilizerEquivAlgHomSimpleField hx hsplit y'

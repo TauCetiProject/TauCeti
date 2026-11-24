@@ -76,8 +76,8 @@ def directSumEquivProd (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
 private theorem directSumEquivProd_apply_eq (C : Submodule R (ι → A))
     (D : Submodule R (κ → A)) (x : directSum C D) :
     directSumEquivProd C D x =
-      (⟨fun i ↦ x.1 (.inl i), (mem_directSum_iff.mp x.2).1⟩,
-        ⟨fun j ↦ x.1 (.inr j), (mem_directSum_iff.mp x.2).2⟩) := by
+      (⟨fun i ↦ x.val (.inl i), (mem_directSum_iff.mp x.property).1⟩,
+        ⟨fun j ↦ x.val (.inr j), (mem_directSum_iff.mp x.property).2⟩) := by
   apply Prod.ext
   · apply Subtype.ext
     funext i
@@ -93,30 +93,30 @@ private theorem directSumEquivProd_apply_eq (C : Submodule R (ι → A))
 @[simp]
 theorem directSumEquivProd_apply_fst (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
     (x : directSum C D) (i : ι) :
-    (directSumEquivProd C D x).1.1 i = x.1 (.inl i) := by
-  exact congrArg (fun y : C × D ↦ y.1.1 i) (directSumEquivProd_apply_eq C D x)
+    (directSumEquivProd C D x).1.val i = x.val (.inl i) := by
+  exact congrArg (fun y : C × D ↦ y.1.val i) (directSumEquivProd_apply_eq C D x)
 
 @[simp]
 theorem directSumEquivProd_apply_snd (C : Submodule R (ι → A)) (D : Submodule R (κ → A))
     (x : directSum C D) (j : κ) :
-    (directSumEquivProd C D x).2.1 j = x.1 (.inr j) := by
-  exact congrArg (fun y : C × D ↦ y.2.1 j) (directSumEquivProd_apply_eq C D x)
+    (directSumEquivProd C D x).2.val j = x.val (.inr j) := by
+  exact congrArg (fun y : C × D ↦ y.2.val j) (directSumEquivProd_apply_eq C D x)
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inl (C : Submodule R (ι → A))
     (D : Submodule R (κ → A)) (x : C) (y : D) (i : ι) :
-    ((directSumEquivProd C D).symm (x, y)).1 (.inl i) = x.1 i := by
+    ((directSumEquivProd C D).symm (x, y)).val (.inl i) = x.val i := by
   have h := directSumEquivProd_apply_eq C D ((directSumEquivProd C D).symm (x, y))
   rw [LinearEquiv.apply_symm_apply] at h
-  exact (congrArg (fun z : C × D ↦ z.1.1 i) h).symm
+  exact (congrArg (fun z : C × D ↦ z.1.val i) h).symm
 
 @[simp]
 theorem directSumEquivProd_symm_apply_inr (C : Submodule R (ι → A))
     (D : Submodule R (κ → A)) (x : C) (y : D) (j : κ) :
-    ((directSumEquivProd C D).symm (x, y)).1 (.inr j) = y.1 j := by
+    ((directSumEquivProd C D).symm (x, y)).val (.inr j) = y.val j := by
   have h := directSumEquivProd_apply_eq C D ((directSumEquivProd C D).symm (x, y))
   rw [LinearEquiv.apply_symm_apply] at h
-  exact (congrArg (fun z : C × D ↦ z.2.1 j) h).symm
+  exact (congrArg (fun z : C × D ↦ z.2.val j) h).symm
 
 /-- Direct sum is monotone in both constituent codes. -/
 @[gcongr]
@@ -245,8 +245,8 @@ variable [Semiring R] [AddCommMonoid A] [Module R A] [DecidableEq A] [Fintype ι
 theorem hammingNorm_directSumEquivProd_symm (C : Submodule R (ι → A))
     (D : Submodule R (κ → A)) (x : C) (y : D) :
     hammingNorm ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → A) =
-      hammingNorm x.1 + hammingNorm y.1 := by
-  rw [← TauCeti.hammingNorm_sumElim x.1 y.1]
+      hammingNorm x.val + hammingNorm y.val := by
+  rw [← TauCeti.hammingNorm_sumElim x.val y.val]
   apply congrArg hammingNorm
   funext i
   cases i <;> simp
@@ -272,8 +272,8 @@ theorem hammingDist_directSumEquivProd_symm (C : Submodule R (ι → A))
     (D : Submodule R (κ → A)) (x x' : C) (y y' : D) :
     hammingDist ((directSumEquivProd C D).symm (x, y) : ι ⊕ κ → A)
         ((directSumEquivProd C D).symm (x', y') : ι ⊕ κ → A) =
-      hammingDist x.1 x'.1 + hammingDist y.1 y'.1 := by
-  rw [← TauCeti.hammingDist_sumElim x.1 x'.1 y.1 y'.1]
+      hammingDist x.val x'.val + hammingDist y.val y'.val := by
+  rw [← TauCeti.hammingDist_sumElim x.val x'.val y.val y'.val]
   apply congrArg₂ hammingDist
   · funext i
     cases i <;> simp

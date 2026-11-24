@@ -66,7 +66,7 @@ theorem isNontrivial_comap_algebraMap [Algebra.IsIntegral K L] (v : Valuation L 
   simp only [map_mul, map_pow] at hi hj heq
   rw [htriv _ (left_ne_zero_of_mul hi), htriv _ (left_ne_zero_of_mul hj), one_mul,
     one_mul] at heq
-  exact hij (pow_right_injective₀ (zero_lt_iff.mpr hx0) hx1 heq)
+  exact hij (pow_right_injective₀ (pos_iff_ne_zero.mpr hx0) hx1 heq)
 
 end Valuation
 

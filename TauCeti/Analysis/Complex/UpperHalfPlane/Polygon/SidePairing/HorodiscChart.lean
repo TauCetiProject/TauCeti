@@ -288,7 +288,8 @@ theorem disjoint_smul_interior_carrier_of_isParabolic
   obtain ⟨u, hu, rfl⟩ := mem_smul_set.1 hw
   -- `γ` carries the interior point `u` into `P`, so it is a local neighbour of `γ • u`
   have hmem := hP.mem_of_smul_mem (σ.hasUniformTilingCharts_of_isParabolic hcyc hpar)
-    (by rw [σ.closure_biUnion_localNeighbors]; exact γ.2) (interior_subset hu) (interior_subset hwi)
+    (by rw [σ.closure_biUnion_localNeighbors]; exact γ.property) (interior_subset hu)
+        (interior_subset hwi)
   rw [σ.localNeighbors_of_mem_interior hwi] at hmem
   exact Subtype.ext hmem
 

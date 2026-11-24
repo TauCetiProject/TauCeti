@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
-# Linear independence of rows in partitioned matrices
+# Linear independence of rows in partitioned matrices, and standard frames
 
 This file proves that the rows of a column-partitioned matrix `[A | B]` are linearly independent
 as soon as the rows of one of its blocks are: two distinct combinations of the rows already
@@ -22,6 +22,9 @@ which is what turns a row count into a dimension: over a field, `[I | A]` has as
 dimension of the code it generates, and `[B | I]` has as many rows as the codimension of the code
 it checks.
 
+It also identifies the row-partitioned matrix `(0; 1)`, reindexed along an equivalence
+`e : ι ≃ n₁ ⊕ n₂`, with the frame of the standard basis columns `e⁻¹ (inr j)` of `ι`.
+
 ## Main declarations
 
 * `Matrix.linearIndependent_row_fromCols_of_left`,
@@ -30,6 +33,8 @@ it checks.
 * `Matrix.linearIndependent_row_one_fromCols`: the rows of `[I | A]` are linearly independent.
 * `Matrix.linearIndependent_row_fromCols_one`: the rows of `[B | I]` are linearly
   independent.
+* `Matrix.fromRows_zero_one_submatrix_equiv`: reindexed along `e : ι ≃ n₁ ⊕ n₂`, the matrix
+  `(0; 1)` is the frame of the standard basis columns `e⁻¹ (inr j)`.
 -/
 
 public section
@@ -59,5 +64,15 @@ theorem linearIndependent_row_one_fromCols [DecidableEq m] (A : Matrix m n₂ R)
 theorem linearIndependent_row_fromCols_one [DecidableEq m] (B : Matrix m n₁ R) :
     LinearIndependent R (fromCols B (1 : Matrix m m R)).row :=
   linearIndependent_row_fromCols_of_right linearIndependent_row_one B
+
+/-- Reindexed along an equivalence `e : ι ≃ n₁ ⊕ n₂`, the matrix `(0; 1)` is the frame of the
+standard basis columns `e⁻¹ (inr j)`, `j : n₂`. -/
+theorem fromRows_zero_one_submatrix_equiv {R ι n₁ n₂ : Type*} [Zero R] [One R] [DecidableEq ι]
+    [DecidableEq n₂] (e : ι ≃ n₁ ⊕ n₂) :
+    (fromRows (0 : Matrix n₁ n₂ R) (1 : Matrix n₂ n₂ R)).submatrix e id =
+      (1 : Matrix ι ι R).submatrix id (e.symm ∘ Sum.inr) := by
+  ext i j
+  obtain ⟨i, rfl⟩ := e.symm.surjective i
+  rcases i with i | i <;> simp [Matrix.one_apply, Function.comp_def, id_eq]
 
 end Matrix

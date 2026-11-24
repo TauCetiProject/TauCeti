@@ -124,7 +124,7 @@ theorem mem_stabilizerBallQuotientChart_source_iff {τ : ℍ} :
       obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hq))
       refine ⟨g, ?_⟩
       rw [hg]
-      exact (mem_stabilizerBall Γ z ε).1 σ.2
+      exact (mem_stabilizerBall Γ z ε).1 σ.property
   · rintro ⟨g, hg⟩
     refine ⟨Quotient.mk _ ⟨g • τ, (mem_stabilizerBall Γ z ε).2 hg⟩, ?_⟩
     rw [SubMulAction.orbitRelQuotientMap_mk]
@@ -300,7 +300,7 @@ theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
       rwa [← stabilizerBallQuotientChart_source]
     obtain ⟨σ, hσ⟩ := Set.mem_range.mp hu1'
     obtain ⟨τ, rfl⟩ := Quotient.exists_rep σ
-    have hτε : dist (τ : ℍ) z < ε' := (mem_stabilizerBall Γ z ε').1 τ.2
+    have hτε : dist (τ : ℍ) z < ε' := (mem_stabilizerBall Γ z ε').1 τ.property
     have hε'ε : ε' ≤ ε := le_of_not_ge hεε'
     have hτεε : dist (τ : ℍ) z < ε := lt_of_lt_of_le hτε hε'ε
     have hp : (stabilizerBallQuotientChart hε hopen).symm u = Quotient.mk _ (τ : ℍ) := by

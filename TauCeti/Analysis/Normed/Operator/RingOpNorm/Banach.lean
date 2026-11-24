@@ -275,15 +275,14 @@ end Lipschitz
 section Retract
 
 variable {R : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
-  {M : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+  {M N : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+  [NormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+  {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
 
 omit [IsBoundedSMul R M] in
 /-- For a retract `r ∘ i = id` of `M` through `N`, every operator-norm limit of polynomials in
 the extension `i ∘ u ∘ r` of an endomorphism `u` of `M` commutes with the idempotent `i ∘ r`. -/
-theorem apply_comp_apply_of_mem_closure_adjoin
-    {N : Type*} [NormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
-    {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
-    (hri : r.comp i = .id R M) {X : N →L[R] N}
+theorem apply_comp_apply_of_mem_closure_adjoin (hri : r.comp i = .id R M) {X : N →L[R] N}
     (hX : X ∈ closure (Algebra.adjoin R {i.comp (u.comp r)} : Set (N →L[R] N))) (y : N) :
     i (r (X y)) = X (i (r y)) := by
   have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
@@ -298,14 +297,20 @@ theorem apply_comp_apply_of_mem_closure_adjoin
     (Subalgebra.topologicalClosure_adjoin_le_centralizer_centralizer R _ hX) _ he
   exact congr($hX' y)
 
+end Retract
+
+section RetractSeminormed
+
+variable {R : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
+  {M N : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+  {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
+
 /-- For a retract `r ∘ i = id` of `M` through `N`, compression `X ↦ r ∘ X ∘ i` sends the
 operator-norm closure of the polynomials in the extension `i ∘ u ∘ r` of an endomorphism `u` of
 `M` into the closure of the polynomials in `u`. On the polynomials it is multiplicative, since
 they commute with the idempotent `i ∘ r`. -/
-theorem comp_comp_mem_closure_adjoin
-    {N : Type*} [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
-    {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
-    (hri : r.comp i = .id R M) {X : N →L[R] N}
+theorem comp_comp_mem_closure_adjoin (hri : r.comp i = .id R M) {X : N →L[R] N}
     (hX : X ∈ closure (Algebra.adjoin R {i.comp (u.comp r)} : Set (N →L[R] N))) :
     r.comp (X.comp i) ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) := by
   have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
@@ -336,7 +341,7 @@ theorem comp_comp_mem_closure_adjoin
     ext z
     simp [hy.1, hri']
 
-end Retract
+end RetractSeminormed
 
 variable {R E : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] [CompleteSpace E]

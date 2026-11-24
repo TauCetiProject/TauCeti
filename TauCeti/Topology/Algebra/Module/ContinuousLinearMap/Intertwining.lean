@@ -15,16 +15,18 @@ public import TauCeti.LinearAlgebra.End.Aeval
 A linear map `T : E →ₗ[R] F` between topological modules, possibly discontinuous, is
 intertwined by continuous linear maps `Q` on `F` and `P` on `E` up to a continuous error when
 `Q ∘ T - T ∘ P` is continuous. This file shows that such intertwining pairs are closed under
-taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`
-and their powers. Polynomial evaluation with zero constant coefficient commutes with extending
-an endomorphism along a continuous linear retract; no complement is needed.
+taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`, their
+powers, and polynomials in the intertwined operators (`Function.Semiconj.aeval`). Polynomial
+evaluation with zero constant coefficient commutes with extending an endomorphism along a
+continuous linear retract, and polynomial kernels with invertible constant coefficient are
+continuously linearly equivalent along any continuous linear retract; no complement is needed.
 
 ## Main results
 
 * `LinearMap.continuous_comp_sub_comp_of_continuous_sub`: products of maps intertwining `T`
   up to continuous errors again intertwine `T` up to a continuous error.
-* `Function.Semiconj.aeval`: a linear intertwiner between continuous linear endomorphisms
-  intertwines every polynomial in them.
+* `Function.Semiconj.aeval`: a linear intertwiner intertwines every polynomial in the intertwined
+  continuous endomorphisms.
 * `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
   coefficient commutes with extension along a retract.
 * `ContinuousLinearMap.kerAevalCompCompEquiv`: along a continuous linear retract, the kernel of a
@@ -98,8 +100,6 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
-section CommSemiring
-
 variable {R M N : Type*} [CommSemiring R]
   [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
   [ContinuousConstSMul R M]
@@ -113,17 +113,6 @@ theorem toLinearMap_aeval (u : M →L[R] M) (p : Polynomial R) :
   simpa only [Polynomial.map_id, toLinearMapRingHom_apply] using
     Polynomial.map_aeval_eq_aeval_map (ψ := toLinearMapRingHom)
       (φ := RingHom.id R) (by ext x; rfl) p u
-
-/-- A linear intertwiner between continuous linear endomorphisms intertwines every polynomial in
-them. -/
-theorem _root_.Function.Semiconj.aeval {f : M →ₗ[R] N} {u : M →L[R] M} {v : N →L[R] N}
-    (hf : Function.Semiconj f u v) (p : Polynomial R) :
-    Function.Semiconj f (Polynomial.aeval u p : M →L[R] M)
-      (Polynomial.aeval v p : N →L[R] N) := by
-  have h : v.toLinearMap.comp f = f.comp u.toLinearMap := LinearMap.ext fun x ↦ (hf x).symm
-  intro x
-  have hx := LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq h p) x
-  simpa only [LinearMap.comp_apply, ← toLinearMap_aeval, coe_coe] using hx.symm
 
 /-- Extending an endomorphism along a retract commutes with evaluating a polynomial whose
 constant coefficient is zero. The condition ensures that the polynomial also vanishes on the
@@ -140,38 +129,61 @@ theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
 coefficient, the retraction and section identify `ker P(i ∘ u ∘ r)` with `ker P(u)`. -/
 noncomputable def kerAevalCompCompEquiv {i : M →L[R] N} {r : N →L[R] M}
     (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0)) :
-    LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) P : N →ₗ[R] N) ≃L[R]
-      LinearMap.ker (Polynomial.aeval u P : M →ₗ[R] M) :=
+    (Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N).ker ≃L[R]
+      (Polynomial.aeval u P : M →L[R] M).ker :=
   let e := LinearMap.kerAevalCompCompEquiv
     (by rw [← toLinearMap_comp, hri, coe_id] : r.toLinearMap ∘ₗ i.toLinearMap = LinearMap.id)
     u.toLinearMap hP
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     ((r.comp (Submodule.subtypeL _)).codRestrict _ fun y ↦ by
-      simpa [e] using
-        (e ⟨y.1, by simpa only [toLinearMap_aeval, toLinearMap_comp] using y.2⟩).2)
+      have hy : (y : N) ∈ LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)).toLinearMap P) := by
+        simpa only [toLinearMap_aeval, toLinearMap_comp] using y.property
+      simpa [e] using (e ⟨(y : N), hy⟩).property)
     ((i.comp (Submodule.subtypeL _)).codRestrict _ fun x ↦ by
-      simpa [e] using (e.symm ⟨x.1, by simpa only [toLinearMap_aeval] using x.2⟩).2)
-    (fun y ↦ Subtype.ext <| by
+      have hx : (x : M) ∈ LinearMap.ker (Polynomial.aeval u.toLinearMap P) := by
+        simpa only [toLinearMap_aeval] using x.property
+      simpa [e] using (e.symm ⟨(x : M), hx⟩).property)
+    (ContinuousLinearMap.ext fun x ↦ Subtype.ext <| by simpa using DFunLike.congr_fun hri (x : M))
+    (ContinuousLinearMap.ext fun y ↦ Subtype.ext <| by
       have hz := congrArg Subtype.val
-        (e.symm_apply_apply ⟨y.1, by simpa only [toLinearMap_aeval, toLinearMap_comp] using y.2⟩)
+        (e.symm_apply_apply
+          ⟨(y : N), by simpa only [toLinearMap_aeval, toLinearMap_comp] using y.property⟩)
       rw [LinearMap.coe_kerAevalCompCompEquiv_symm_apply,
         LinearMap.coe_kerAevalCompCompEquiv_apply] at hz
       simpa using hz)
-    (fun x ↦ Subtype.ext <| by simpa using DFunLike.congr_fun hri x.1)
 
 /-- The polynomial-kernel equivalence along a continuous linear retract applies the retraction. -/
 @[simp] theorem coe_kerAevalCompCompEquiv_apply {i : M →L[R] N} {r : N →L[R] M}
     (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0))
-    (y : LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) P : N →ₗ[R] N)) :
+    (y : (Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N).ker) :
     (kerAevalCompCompEquiv hri u hP y : M) = r y := by simp [kerAevalCompCompEquiv]
 
 /-- The inverse polynomial-kernel equivalence along a continuous linear retract applies the
 inclusion. -/
 @[simp] theorem coe_kerAevalCompCompEquiv_symm_apply {i : M →L[R] N} {r : N →L[R] M}
     (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0))
-    (x : LinearMap.ker (Polynomial.aeval u P : M →ₗ[R] M)) :
+    (x : (Polynomial.aeval u P : M →L[R] M).ker) :
     ((kerAevalCompCompEquiv hri u hP).symm x : N) = i x := by simp [kerAevalCompCompEquiv]
 
-end CommSemiring
-
 end ContinuousLinearMap
+
+namespace Function.Semiconj
+
+variable {R M N : Type*} [CommSemiring R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+  [ContinuousConstSMul R N]
+  {f : M →ₗ[R] N} {u : M →L[R] M} {v : N →L[R] N}
+
+/-- A linear intertwiner intertwines every polynomial in the intertwined endomorphisms. -/
+theorem aeval (hf : Function.Semiconj f u v) (P : Polynomial R) :
+    Function.Semiconj f (Polynomial.aeval u P) (Polynomial.aeval v P) := by
+  have hP : (Polynomial.aeval v P).toLinearMap.comp f =
+      f.comp (Polynomial.aeval u P).toLinearMap := by
+    rw [ContinuousLinearMap.toLinearMap_aeval, ContinuousLinearMap.toLinearMap_aeval]
+    exact Module.End.aeval_comp_of_comp_eq (LinearMap.ext fun x ↦ (hf x).symm) P
+  intro x
+  exact (LinearMap.congr_fun hP x).symm
+
+end Function.Semiconj

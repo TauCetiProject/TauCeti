@@ -55,7 +55,11 @@ namespace TauCeti
 open ContinuousLinearMap InnerProductSpace
 open scoped RealInnerProductSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+section CompleteSpace
+
+variable [CompleteSpace E]
 
 /-- The Hamiltonian vector field `(q, p) ↦ (p♯ / m, 0)` of a free particle of mass `m`, where
 `p♯` is the Riesz representative of the covector `p`. -/
@@ -132,15 +136,20 @@ theorem strongDualCotangentSymplecticForm_freeParticleEvolution (m t : ℝ)
     map_smul, smul_eq_mul, apply_toDual_symm_eq_conj v.2 u.2, RCLike.conj_to_real]
   ring
 
+end CompleteSpace
+
 /-- The kinetic energy `H(q, p) = ‖p‖² / (2m)` of a free particle of mass `m`, the norm being
 the dual norm of the covector `p`. -/
 def freeParticleHamiltonian (m : ℝ) (x : E × StrongDual ℝ E) : ℝ :=
   ‖x.2‖ ^ 2 / (2 * m)
 
-omit [CompleteSpace E] in
 theorem freeParticleHamiltonian_apply (m : ℝ) (x : E × StrongDual ℝ E) :
     freeParticleHamiltonian m x = ‖x.2‖ ^ 2 / (2 * m) :=
   (rfl)
+
+section CompleteSpace
+
+variable [CompleteSpace E]
 
 /-- **Conservation of energy** for the free particle. -/
 @[simp]
@@ -167,6 +176,8 @@ theorem hasFDerivAt_freeParticleHamiltonian (m : ℝ) (x : E × StrongDual ℝ E
   rw [hu]
   simp only [smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, coe_snd', apply_apply]
   field_simp
+
+end CompleteSpace
 
 section FiniteDimensional
 

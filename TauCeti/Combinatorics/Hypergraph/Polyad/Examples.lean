@@ -40,7 +40,7 @@ private def fullPolyad : Polyad3 oneCell where
   color₁₂ := ()
 
 private noncomputable def pruned : Subpolyad3 fullPolyad where
-  pair₀₁ := fullPolyad.pairSupport₀₁.filter fun p ↦ p.1 = (0, 1) ∨ p.1 = (1, 2)
+  pair₀₁ := fullPolyad.pairSupport₀₁.filter fun p ↦ p.val = (0, 1) ∨ p.val = (1, 2)
   pair₀₂ := fullPolyad.pairSupport₀₂
   pair₁₂ := fullPolyad.pairSupport₁₂
   pair₀₁_sub := filter_subset _ _

@@ -27,6 +27,11 @@ Lusin separation (`MeasureTheory.AnalyticSet.measurablySeparable`), these are th
 separation arguments that alternate between Borel separators and their saturations or
 neighbourhoods.
 
+For a continuous action of a Polish group `G`, the saturation `⋃ g, g • A` of an analytic set is
+analytic (`MeasureTheory.AnalyticSet.iUnion_smul`): it is the image of `univ ×ˢ A` under the
+action. When the space acted on is also Polish, the orbit relation is analytic
+(`MeasureTheory.analyticSet_setOf_orbitRel`): it is the range of `(g, x) ↦ (g • x, x)`.
+
 As the continuous image of the Baire space `ℕ → ℕ`, an analytic set has at most continuum many
 points (`MeasureTheory.AnalyticSet.mk_le_continuum`).
 
@@ -56,6 +61,10 @@ Borel, hence analytic.
   `MeasureTheory.AnalyticSet.preimage_image_quotientMk_measurableSet`: the saturation of an analytic
   set (in a Hausdorff space) or of a Borel set under an equivalence relation with analytic graph is
   analytic.
+* `MeasureTheory.AnalyticSet.iUnion_smul`: under a continuous action of a Polish group, the
+  saturation of an analytic set is analytic.
+* `MeasureTheory.analyticSet_setOf_orbitRel`: the orbit relation of a continuous action of a Polish
+  group on a Polish space is analytic.
 * `MeasureTheory.AnalyticSet.mk_le_continuum`: an analytic set has at most `𝔠` points.
 
 ## References
@@ -71,6 +80,8 @@ Borel, hence analytic.
 public section
 
 open Set Cardinal
+
+open scoped Pointwise
 
 namespace MeasureTheory
 
@@ -198,6 +209,30 @@ theorem AnalyticSet.preimage_image_quotientMk_measurableSet [MeasurableSpace α]
     AnalyticSet (Quotient.mk E ⁻¹' (Quotient.mk E '' s)) := by
   rw [E.preimage_image_quotientMk_eq_relPreimage]
   exact hE.relPreimage_measurableSet hs
+
+/-- Under a continuous action of a Polish group, the saturation `⋃ g, g • s` of an analytic set
+is analytic: it is the image of `univ ×ˢ s` under the action. -/
+theorem AnalyticSet.iUnion_smul {G : Type*} [TopologicalSpace G] [PolishSpace G] [SMul G α]
+    [ContinuousSMul G α] {s : Set α} (hs : AnalyticSet s) : AnalyticSet (⋃ g : G, g • s) := by
+  have h : (⋃ g : G, g • s) = image2 (· • ·) (univ : Set G) s := by
+    ext x
+    simp [mem_smul_set, Set.mem_smul]
+  rw [h]
+  exact isClosed_univ.analyticSet.image2 continuous_smul hs
+
+/-- The orbit relation of a continuous action of a Polish group on a Polish space is analytic: it
+is the range of the continuous map `(g, x) ↦ (g • x, x)`. -/
+theorem analyticSet_setOf_orbitRel {G : Type*} [Group G] [TopologicalSpace G] [PolishSpace G]
+    [MulAction G α] [ContinuousSMul G α] [PolishSpace α] :
+    AnalyticSet {p : α × α | MulAction.orbitRel G α p.1 p.2} := by
+  have h : {p : α × α | MulAction.orbitRel G α p.1 p.2} =
+      range fun q : G × α => (q.1 • q.2, q.2) := by
+    ext ⟨x, y⟩
+    simp only [mem_ofPred_eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff, mem_range,
+      Prod.exists, Prod.mk.injEq]
+    exact ⟨fun ⟨g, hg⟩ => ⟨g, y, hg, rfl⟩, fun ⟨g, _, hg, he⟩ => ⟨g, he ▸ hg⟩⟩
+  rw [h]
+  exact analyticSet_range_of_polishSpace (continuous_smul.prodMk continuous_snd)
 
 /-- An analytic set has at most continuum many points. -/
 theorem AnalyticSet.mk_le_continuum {s : Set α} (hs : AnalyticSet s) : #s ≤ 𝔠 := by

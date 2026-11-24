@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.Bases.PotentiallyONable
 public import TauCeti.Analysis.Normed.Operator.RowCompact
 public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
+public import TauCeti.Topology.Algebra.Module.Complement
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.Pi
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
@@ -56,7 +57,9 @@ row-compact idempotent `i ∘ e ∘ r` of the model space
 * `ContinuousLinearMap.isPrCompact_iff_isRowCompact`: on model spaces the notion is row
   compactness.
 * `ContinuousLinearMap.IsPrCompact.comp_clm`, `ContinuousLinearMap.IsPrCompact.clm_comp`,
-  `ContinuousLinearMap.isPrCompact_of_tendsto`: the closed operator ideal property.
+  `ContinuousLinearMap.IsPrCompact.restrict_of_isTopCompl`,
+  `ContinuousLinearMap.isPrCompact_of_tendsto`: the closed operator ideal property and
+  restriction to topologically complemented invariant submodules.
 * `ContinuousLinearMap.IsPrCompact.aeval`: polynomials with zero constant coefficient preserve
   row compactness.
 * `ContinuousLinearMap.IsPrCompact.tendsto_ringOpNorm_comp_indicatorCLM_comp_sub`: a row-compact
@@ -298,6 +301,15 @@ theorem IsPrCompact.clm_comp {u : M →L[R] N} (hu : u.IsPrCompact) (w : N →L[
   rw [comp_assoc] at h
   exact isPrCompact_of_isRowCompact_comp hM hP h
 
+/-- The restriction of a `(Pr)`-compact operator `u` to a `u`-invariant submodule `p` with a
+topological complement `q` (not necessarily `u`-invariant) is `(Pr)`-compact. -/
+theorem IsPrCompact.restrict_of_isTopCompl {u : M →L[R] M} (hu : u.IsPrCompact)
+    {p q : Submodule R M} (h : p.IsTopCompl q) (hu_maps : ∀ x ∈ p, u x ∈ p) :
+    (u.restrict hu_maps).IsPrCompact := by
+  have hPr : HasPr R p := hu.hasPr_source.of_isTopCompl h
+  rw [u.restrict_eq_projectionOntoL_comp h hu_maps]
+  exact (hu.comp_clm p.subtypeL hPr).clm_comp (p.projectionOntoL q h) hPr
+
 /-- A polynomial with zero constant coefficient preserves row compactness on modules with
 property (Pr), over ultrametric Tate scalars. -/
 theorem IsPrCompact.aeval [ContinuousConstSMul R M] {u : M →L[R] M} (hu : u.IsPrCompact)
@@ -305,24 +317,6 @@ theorem IsPrCompact.aeval [ContinuousConstSMul R M] {u : M →L[R] M} (hu : u.Is
   obtain ⟨B', rfl⟩ := Polynomial.X_dvd_iff.2 hB0
   rw [map_mul, Polynomial.aeval_X, mul_def]
   exact hu.comp_clm _ hu.hasPr_source
-
-/-- Restricting a row-compact endomorphism of a (Pr) module to an invariant range of an idempotent
-continuous linear endomorphism gives a row-compact endomorphism. -/
-theorem IsPrCompact.restrict_range_of_isIdempotentElem {u e : M →L[R] M} (hu : u.IsPrCompact)
-    (he : IsIdempotentElem e) (hm : Set.MapsTo u e.range e.range) :
-    (u.restrict hm).IsPrCompact := by
-  have hRange := hu.hasPr_source.range_of_isIdempotentElem he
-  rw [← IsIdempotentElem.rangeRestrict_comp_comp_subtypeL he hm]
-  exact (hu.comp_clm e.range.subtypeL hRange).clm_comp e.rangeRestrict hRange
-
-/-- Restricting a row-compact endomorphism of a (Pr) module to an invariant kernel of an idempotent
-continuous linear endomorphism gives a row-compact endomorphism. -/
-theorem IsPrCompact.restrict_ker_of_isIdempotentElem {u e : M →L[R] M} (hu : u.IsPrCompact)
-    (he : IsIdempotentElem e) (hm : Set.MapsTo u e.ker e.ker) :
-    (u.restrict hm).IsPrCompact := by
-  have hKer := hu.hasPr_source.ker_of_isIdempotentElem he
-  rw [← IsIdempotentElem.projectionOntoKer_comp_comp_subtypeL he hm]
-  exact (hu.comp_clm e.ker.subtypeL hKer).clm_comp (IsIdempotentElem.projectionOntoKer he) hKer
 
 end Ideal
 

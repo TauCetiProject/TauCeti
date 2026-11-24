@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -29,8 +30,9 @@ finite-dimensional space `E`, the rank and the dimension of the kernel of `df_x`
 
 The rank does not depend on coordinates. It is computed in any pair of charts by the derivative of
 the coordinate expression of `f` (`TauCeti.mfderivRank_eq_finrank_range_fderivWithin`), and it is
-unchanged by composition on the left with maps of injective derivative and on the right with maps
-of surjective derivative (`TauCeti.mfderivRank_comp_of_injective` and
+unchanged by composition on the left with maps of injective derivative (for `f` differentiable at
+the point, the left map need not be assumed differentiable) and on the right with maps of surjective
+derivative (for differentiable `f` and `h`; `TauCeti.mfderivRank_comp_of_injective` and
 `TauCeti.mfderivRank_comp_of_surjective`). Composition on either side with a diffeomorphism
 preserves it without any differentiability assumption on `f`
 (`Diffeomorph.mfderivRank_diffeomorph_comp` and `Diffeomorph.mfderivRank_comp_diffeomorph`).
@@ -148,11 +150,14 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
 
-/-- **Composition on the left with an immersion preserves the rank.** If `g` has injective
-derivative at `f x`, then `g ∘ f` and `f` have the same rank at `x`. -/
-theorem mfderivRank_comp_of_injective {g : N → P} (hg : MDifferentiableAt J K g (f x))
+/-- **Composition on the left with an immersion preserves the rank.** If `f` is differentiable
+at `x` and `g` has injective derivative at `f x`, then `g ∘ f` and `f` have the same rank at `x`.
+Differentiability of `g` at `f x` is not assumed: it follows from the injectivity of the
+derivative. -/
+theorem mfderivRank_comp_of_injective {g : N → P}
     (hf : MDifferentiableAt I J f x) (hinj : Injective (mfderiv J K g (f x))) :
     mfderivRank I K (g ∘ f) x = mfderivRank I J f x := by
+  have hg := mdifferentiableAt_of_mfderiv_injective hinj
   rw [mfderivRank_def, mfderivRank_def, mfderiv_comp x hg hf, ContinuousLinearMap.toLinearMap_comp]
   simpa using LinearMap.finrank_range_comp_comp _ (mfderiv I J f x).toLinearMap LinearMap.id hinj
     surjective_id
@@ -237,9 +242,7 @@ theorem eventually_mfderivRank_le_mfderivRank (hf : ContMDiffAt I J n f x) (hn :
   -- chart image of `x`, so its derivative within `range I` is continuous there.
   obtain ⟨u, hu, hzu, hg⟩ := (contMDiffAt_iff.1 hf₁).2.contDiffOn' le_rfl (by simp)
   rw [insert_eq_of_mem hz] at hg
-  have hcont := hg.continuousOn_fderivWithin (I.uniqueDiffOn.inter hu) le_rfl _ ⟨hz, hzu⟩
-  have hD : ∀ w ∈ range I ∩ u, fderivWithin 𝕜 g (range I ∩ u) w = fderivWithin 𝕜 g (range I) w :=
-    fun w hw ↦ fderivWithin_inter (hu.mem_nhds hw.2)
+  have hcont := hg.continuousOn_fderivWithin_of_inter I.uniqueDiffOn hu le_rfl _ ⟨hz, hzu⟩
   -- In finite dimensions the rank of a linear map is a natural number, and maps of rank at least
   -- that of the derivative at the chart image of `x` form an open set.
   have hrank : ∀ L : E →L[𝕜] E',
@@ -253,11 +256,11 @@ theorem eventually_mfderivRank_le_mfderivRank (hf : ContMDiffAt I J n f x) (hn :
       w ∈ u ∧ mfderivRank I J f x ≤
         finrank 𝕜 (LinearMap.range (fderivWithin 𝕜 g (range I) w : E →ₗ[𝕜] E')) := by
     rw [← nhdsWithin_inter_of_mem' (mem_nhdsWithin_of_mem_nhds (hu.mem_nhds hzu))]
-    have hmem : fderivWithin 𝕜 g (range I ∩ u) (extChartAt I x x) ∈
+    have hmem : fderivWithin 𝕜 g (range I) (extChartAt I x x) ∈
         {L : E →L[𝕜] E' | (mfderivRank I J f x : Cardinal) ≤ (L : E →ₗ[𝕜] E').rank} := by
-      rw [Set.mem_ofPred_eq, hrank, hD _ ⟨hz, hzu⟩, ← hx]
+      rw [Set.mem_ofPred_eq, hrank, ← hx]
     filter_upwards [hcont (hopen.mem_nhds hmem), self_mem_nhdsWithin] with w hw hwu
-    rw [Set.mem_preimage, Set.mem_ofPred_eq, hrank, hD w hwu] at hw
+    rw [Set.mem_preimage, Set.mem_ofPred_eq, hrank] at hw
     exact ⟨hwu.2, hw⟩
   rw [← map_extChartAt_nhds, eventually_map] at hev
   filter_upwards [hev, (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf₁,

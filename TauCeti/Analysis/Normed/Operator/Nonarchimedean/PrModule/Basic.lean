@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import TauCeti.Analysis.Normed.Operator.RowCompact.PrModule
 public import TauCeti.LinearAlgebra.Charpoly.Projective
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # Fredholm series of row-compact operators on modules with property (Pr)
@@ -54,6 +53,8 @@ finite projective module may vary over `Spec R`.
   space it is the principal-minor series of the matrix.
 * `ContinuousLinearMap.IsPrCompact.charPowerSeries_comp_comm`: cyclicity
   `det (1 - T (u ∘ v)) = det (1 - T (v ∘ u))`.
+* `ContinuousLinearMap.IsPrCompact.charPowerSeries_restrict_of_isTopCompl`: Fredholm series of
+  the restriction to an invariant topologically complemented submodule.
 * `ContinuousLinearMap.IsPrCompact.charPowerSeries_conj`: invariance under conjugation.
 * `ContinuousLinearMap.IsPrCompact.isEntire_charPowerSeries`: the series is entire.
 * `ContinuousLinearMap.charPowerSeries_eq_projectiveCharpolyRev`: comparison with the finite
@@ -195,6 +196,19 @@ theorem IsPrCompact.charPowerSeries_comp_comm {u : M →L[R] N} (hu : u.IsPrComp
   rw [h₁, h₂, h.charPowerSeries_matrixCoeff_comp_comm]
 
 omit [NormOneClass R] in
+/-- For a `(Pr)`-compact operator `u` preserving a submodule `p` with topological complement `q`
+(not necessarily `u`-invariant), the Fredholm series of the restriction `u|_{p}` equals that of
+`u * p.projectionL q h`. -/
+theorem IsPrCompact.charPowerSeries_restrict_of_isTopCompl {u : M →L[R] M} (hu : u.IsPrCompact)
+    {p q : Submodule R M} (h : p.IsTopCompl q) (hu_maps : ∀ x ∈ p, u x ∈ p) :
+    (u.restrict hu_maps).charPowerSeries = (u * p.projectionL q h).charPowerSeries := by
+  have hPr : HasPr R p := hu.hasPr_source.of_isTopCompl h
+  have hop : (u.comp p.subtypeL).comp (p.projectionOntoL q h) = u * p.projectionL q h :=
+    ext fun x ↦ by simp [mul_def, Submodule.projectionL_apply]
+  rw [u.restrict_eq_projectionOntoL_comp h hu_maps,
+    ← (hu.comp_clm p.subtypeL hPr).charPowerSeries_comp_comm, hop]
+
+omit [NormOneClass R] in
 /-- **Invariance under conjugation.** The Fredholm series of a row-compact endomorphism `u` of a
 module with property (Pr) is unchanged by conjugation `e ∘ u ∘ e⁻¹` by a continuous linear
 equivalence `e`, which need not be an isometry. -/
@@ -217,35 +231,12 @@ theorem IsPrCompact.charPowerSeries_smul [ContinuousConstSMul R M] {u : M →L[R
     matrixCoeff_smul,
     Matrix.charPowerSeries_smul c (hu.isRowCompact_comp iM rM).summable_principalMinor]
 
-omit [NormOneClass R] in
-/-- The Fredholm series of the restriction of a row-compact endomorphism `u` of a (Pr) module to an
-invariant range of an idempotent `e` equals the Fredholm series of `u * e`. -/
-theorem IsPrCompact.charPowerSeries_restrict_range_of_isIdempotentElem {u e : M →L[R] M}
-    (hu : u.IsPrCompact) (he : IsIdempotentElem e) (hm : Set.MapsTo u e.range e.range) :
-    (u.restrict hm).charPowerSeries = (u * e).charPowerSeries := by
-  have hRange := hu.hasPr_source.range_of_isIdempotentElem he
-  rw [← IsIdempotentElem.rangeRestrict_comp_comp_subtypeL he hm,
-    ((hu.comp_clm e.range.subtypeL hRange).charPowerSeries_comp_comm e.rangeRestrict).symm,
-    comp_assoc, subtypeL_comp_codRestrict, ← mul_def]
-
-omit [NormOneClass R] in
-/-- The Fredholm series of the restriction of a row-compact endomorphism `u` of a (Pr) module to an
-invariant kernel of an idempotent `e` equals the Fredholm series of `u * (1 - e)`. -/
-theorem IsPrCompact.charPowerSeries_restrict_ker_of_isIdempotentElem {u e : M →L[R] M}
-    (hu : u.IsPrCompact) (he : IsIdempotentElem e) (hm : Set.MapsTo u e.ker e.ker) :
-    (u.restrict hm).charPowerSeries = (u * (1 - e)).charPowerSeries := by
-  have hKer := hu.hasPr_source.ker_of_isIdempotentElem he
-  rw [← IsIdempotentElem.projectionOntoKer_comp_comp_subtypeL he hm,
-    ((hu.comp_clm e.ker.subtypeL hKer).charPowerSeries_comp_comm
-      (IsIdempotentElem.projectionOntoKer he)).symm,
-    comp_assoc, IsIdempotentElem.subtypeL_comp_projectionOntoKer he, ← mul_def]
-
 end RowCompact
 
 section Finite
 
 variable {R : Type w} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
-  [TauCeti.NormedRing.IsTate R] {M : Type u} [NormedAddCommGroup M] [Module R M]
+  [TauCeti.NormedRing.IsTate R] {M : Type u} [SeminormedAddCommGroup M] [Module R M]
   [IsBoundedSMul R M]
 
 /-- **Comparison with the finite projective determinant.** On a finitely generated module with
@@ -256,6 +247,7 @@ theorem charPowerSeries_eq_projectiveCharpolyRev [Module.Finite R M] (hM : HasPr
     (u : M →L[R] M) :
     haveI := hM.projective
     u.charPowerSeries = ((u : M →ₗ[R] M).projectiveCharpolyRev : PowerSeries R) := by
+  let : NormedAddCommGroup M := NormedAddCommGroup.ofSeparation fun _ ↦ hM.eq_zero_of_norm_eq_zero
   have := hM.projective
   obtain ⟨n, i, r, hri⟩ := hM.exists_comp_eq_id_of_finite
   have h : ∀ x, r (i x) = x := fun x ↦ by simpa using DFunLike.congr_fun hri x

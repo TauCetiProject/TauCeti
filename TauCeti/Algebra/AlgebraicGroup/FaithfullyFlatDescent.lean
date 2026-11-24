@@ -129,10 +129,10 @@ private theorem faithfullyFlatDescentHom_bijective :
   · intro f
     obtain ⟨g, hg⟩ := (AlgHom.mem_mrange_mapValue_iff (H := H)
       (φ := IsScalarTower.toAlgHom R A B) (FaithfulSMul.algebraMap_injective A B)).mpr fun h => by
-        have hr : f.1.ofConv h ∈ Set.range (algebraMap A B) := by
+        have hr : f.val.ofConv h ∈ Set.range (algebraMap A B) := by
           rw [← Algebra.IsEffective.eqLocus_includeLeft_includeRight
             (Algebra.IsEffective.of_faithfullyFlat A B)]
-          exact (mem_descentSubgroup_iff_apply (R := R) A B f.1).mp f.2 h
+          exact (mem_descentSubgroup_iff_apply (R := R) A B f.val).mp f.property h
         obtain ⟨y, hy⟩ := hr
         exact (AlgHom.mem_range _).mpr ⟨y, by rw [IsScalarTower.coe_toAlgHom', hy]⟩
     exact ⟨g, Subtype.ext (by rw [faithfullyFlatDescentHom_apply, hg])⟩
@@ -159,7 +159,7 @@ point. -/
 theorem mapValue_faithfullyFlatDescentMulEquiv_symm_apply
     (f : descentSubgroup (R := R) (H := H) A B) :
     WithConv.toConv ((IsScalarTower.toAlgHom R A B).comp
-      ((faithfullyFlatDescentMulEquiv (R := R) (H := H) A B).symm f).ofConv) = f.1 := by
+      ((faithfullyFlatDescentMulEquiv (R := R) (H := H) A B).symm f).ofConv) = f.val := by
   rw [← AlgHom.mapValue_apply, ← faithfullyFlatDescentMulEquiv_apply]
   exact congr_arg Subtype.val
     ((faithfullyFlatDescentMulEquiv (R := R) (H := H) A B).apply_symm_apply f)

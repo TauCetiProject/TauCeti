@@ -76,10 +76,11 @@ public section
 
 namespace TauCeti.Huber.Pair
 
-variable {A B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+section Basic
+
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
-  [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
-  {S : Pair A} {U : Pair B} {V : Pair C}
+  {S : Pair A} {U : Pair B}
 
 namespace Hom
 
@@ -140,11 +141,16 @@ theorem IsFinite.plus_eq_of_toRingHom_eq_id {S' : Pair A} {φ : Hom S S'} (hφ :
 
 end Hom
 
+end Basic
+
 /-! ### Quotient mappings -/
 
 section Complete
 
-variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+section QuotientMapping
+
+variable {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+  {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [CompleteSpace A] [T0Space A] [IsHuberRing A] {S : Pair A} {U : Pair B}
 
 /-- **A quotient mapping out of a complete Hausdorff Huber pair is finite**: it is topologically
@@ -154,13 +160,16 @@ theorem Hom.IsQuotientMapping.isFinite {f : Hom S U} (hf : f.IsQuotientMapping) 
   isIntegral := RingHom.isIntegral_of_surjective _ hf.isOpenQuotientMap.surjective
   isIntegral_plus _ := hf.mem_plus_iff.mp
 
-variable (S) in
+end QuotientMapping
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+  [CompleteSpace A] [T0Space A] [IsHuberRing A] (S : Pair A)
+
 /-- **The identity of a complete Hausdorff Huber pair is finite.** -/
 @[simp]
 theorem Hom.isFinite_id : (Hom.id S).IsFinite :=
   (Hom.isQuotientMapping_id S).isFinite
 
-variable (S) in
 /-- **The canonical morphism from a complete Hausdorff Huber pair to a quotient pair is finite**,
 for every ideal. -/
 @[simp]
@@ -173,7 +182,9 @@ end Complete
 
 section Comp
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+variable {B C : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+  [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C] {V : Pair C}
+  {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
   {S : Pair A} {U : Pair B}
 
 /-- **Finite morphisms compose over a Tate base.** -/
@@ -213,7 +224,8 @@ end Tate
 
 section FiniteEtale
 
-variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+variable {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+  {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [IsTateRing A] [CompleteSpace A] [T2Space A] {S : Pair A} {U : Pair B}
 
 /-- **A finite étale morphism of Huber pairs over a complete Hausdorff Tate ring is finite**

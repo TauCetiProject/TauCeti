@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Types.Pushouts
 public import Mathlib.CategoryTheory.SmallObject.TransfiniteCompositionLifting
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
 public import Mathlib.Topology.Separation.Regular
+public import TauCeti.Topology.Homotopy.Extension.Basic
 
 /-!
 # Extending disjoint open sets along maps of `TopCat`
@@ -23,13 +24,16 @@ property with respect to the map from that space to a point, and the general the
 properties shows that they are stable under cobase change, coproducts and transfinite composition.
 In particular a relative cell complex in `TopCat` whose cells extend disjoint open sets extends
 disjoint open sets. A map with a continuous retraction on a neighbourhood of its range extends
-disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`).
+disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`), and so does an
+inducing map whose range has the homotopy extension property
+(`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`).
 
 The application is to Hausdorffness of cell complexes: two points separated by open sets stay
 separated after a map which extends disjoint open sets.
 
 * `TauCeti.TopCat.t2Space_of_isColimit`: the colimit of a filtered diagram of Hausdorff spaces is
-  Hausdorff if the maps to the colimit extend disjoint open sets.
+  Hausdorff if the maps to the colimit extend disjoint open sets. For a sequence it suffices that
+  the bonding maps extend disjoint open sets (`TauCeti.TopCat.t2Space_of_isColimit_nat`).
 * `TauCeti.TopCat.t2Space_of_isPushout`: attaching a regular Hausdorff space `B` to a Hausdorff
   space along a map `m : A ⟶ B` with closed range which extends disjoint open sets gives a
   Hausdorff space.
@@ -96,41 +100,41 @@ private def classify {U V : Set X} (hU : IsOpen U) (hV : IsOpen V) (h : Disjoint
       ((continuous_Prop.2 hU).prodMk (continuous_Prop.2 hV)).subtype_mk _⟩
 
 private lemma setOf_classify_fst {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
-    (h : Disjoint U V) : {x | (classify hU hV h x).down.1.1} = U :=
+    (h : Disjoint U V) : {x | (classify hU hV h x).down.val.1} = U :=
   rfl
 
 private lemma setOf_classify_snd {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
-    (h : Disjoint U V) : {x | (classify hU hV h x).down.1.2} = V :=
+    (h : Disjoint U V) : {x | (classify hU hV h x).down.val.2} = V :=
   rfl
 
 private lemma preimage_setOf_fst {Y : TopCat.{u}} (f : X ⟶ Y)
     (σ : Y ⟶ disjointOpensClassifier.{u}) :
-    f ⁻¹' {y | (σ y).down.1.1} = {x | ((f ≫ σ) x).down.1.1} :=
+    f ⁻¹' {y | (σ y).down.val.1} = {x | ((f ≫ σ) x).down.val.1} :=
   rfl
 
 private lemma preimage_setOf_snd {Y : TopCat.{u}} (f : X ⟶ Y)
     (σ : Y ⟶ disjointOpensClassifier.{u}) :
-    f ⁻¹' {y | (σ y).down.1.2} = {x | ((f ≫ σ) x).down.1.2} :=
+    f ⁻¹' {y | (σ y).down.val.2} = {x | ((f ≫ σ) x).down.val.2} :=
   rfl
 
 private lemma isOpen_setOf_fst (σ : X ⟶ disjointOpensClassifier.{u}) :
-    IsOpen {x | (σ x).down.1.1} :=
-  continuous_Prop.1 <| continuous_fst.comp <| continuous_subtype_val.comp <|
+    IsOpen {x | (σ x).down.val.1} :=
+  continuous_Prop.1 <| continuous_fst.comp <| continuous_subtypeVal.comp <|
     continuous_uliftDown.comp σ.hom.continuous
 
 private lemma isOpen_setOf_snd (σ : X ⟶ disjointOpensClassifier.{u}) :
-    IsOpen {x | (σ x).down.1.2} :=
-  continuous_Prop.1 <| continuous_snd.comp <| continuous_subtype_val.comp <|
+    IsOpen {x | (σ x).down.val.2} :=
+  continuous_Prop.1 <| continuous_snd.comp <| continuous_subtypeVal.comp <|
     continuous_uliftDown.comp σ.hom.continuous
 
 private lemma disjoint_setOf (σ : X ⟶ disjointOpensClassifier.{u}) :
-    Disjoint {x | (σ x).down.1.1} {x | (σ x).down.1.2} :=
-  Set.disjoint_left.2 fun x h₁ h₂ ↦ (σ x).down.2 ⟨h₁, h₂⟩
+    Disjoint {x | (σ x).down.val.1} {x | (σ x).down.val.2} :=
+  Set.disjoint_left.2 fun x h₁ h₂ ↦ (σ x).down.property ⟨h₁, h₂⟩
 
 /-- Two maps to `disjointOpensClassifier` agree if they classify the same pair of open sets. -/
 private lemma hom_ext_classifier {σ τ : X ⟶ disjointOpensClassifier.{u}}
-    (h₁ : {x | (σ x).down.1.1} = {x | (τ x).down.1.1})
-    (h₂ : {x | (σ x).down.1.2} = {x | (τ x).down.1.2}) : σ = τ := by
+    (h₁ : {x | (σ x).down.val.1} = {x | (τ x).down.val.1})
+    (h₂ : {x | (σ x).down.val.2} = {x | (τ x).down.val.2}) : σ = τ := by
   ext x
   exacts [Set.ext_iff.1 h₁ x, Set.ext_iff.1 h₂ x]
 
@@ -181,6 +185,25 @@ theorem extendsDisjointOpens_of_continuousOn {X Y : TopCat.{u}} {Z : Type*} [Top
   · ext x
     simp [hmN, hρm]
 
+/-- **An inducing map whose image has the homotopy extension property extends disjoint open
+sets.** If `m : X ⟶ Y` is inducing and `range m` has the homotopy extension property in `Y`, then
+any two disjoint open subsets of `X` are the preimages under `m` of two disjoint open subsets
+of `Y`. -/
+theorem extendsDisjointOpens_of_hasHomotopyExtensionProperty {X Y : TopCat.{u}}
+    (m : X ⟶ Y) (hm : IsInducing m) (h : HasHomotopyExtensionProperty (Set.range m)) :
+    extendsDisjointOpens m := by
+  -- A retraction `r` of `[0, 1] × Y` onto `{0} × Y ∪ [0, 1] × range m` sends the open
+  -- neighbourhood `{y | 0 < (r (1, y)).1}` of `range m` into `[0, 1] × range m`, so
+  -- `y ↦ (r (1, y)).2` is a continuous retraction of that neighbourhood onto `range m`.
+  obtain ⟨r, hr, hr'⟩ := h.exists_retraction
+  have hrm (x : X) : r (1, m x) = (1, m x) := hr' _ (mem_cylinderExtensionDomain_of_mem ⟨x, rfl⟩)
+  refine extendsDisjointOpens_of_continuousOn m hm (N := {y | 0 < (r (1, y)).1})
+    (isOpen_lt continuous_const (by fun_prop)) (ρ := fun y ↦ (r (1, y)).2)
+    (by fun_prop : Continuous fun y ↦ (r (1, y)).2).continuousOn (fun x ↦ ?_) (fun y hy ↦ ?_)
+    (fun x ↦ by simp [hrm])
+  · simp [hrm]
+  · exact (mem_cylinderExtensionDomain_iff.1 (hr (1, y))).resolve_left (ne_of_gt hy)
+
 /-- If two points of a Hausdorff space `X` are mapped by `f : X ⟶ Y` to distinct points and `f`
 extends disjoint open sets, then their images are separated by disjoint open sets of `Y`. -/
 private lemma exists_disjoint_isOpen_apply {X Y : TopCat.{u}} [T2Space X] {f : X ⟶ Y}
@@ -207,6 +230,21 @@ theorem t2Space_of_isColimit {J : Type*} [Category J] [IsFilteredOrEmpty J] {F :
     exact hx'
   rw [← hy, ← hy'] at hyy' ⊢
   exact exists_disjoint_isOpen_apply (h _) hyy'
+
+/-- The colimit of a sequence of Hausdorff spaces in `TopCat` is Hausdorff if the bonding maps
+extend disjoint open sets, for instance if they are embeddings whose images have the homotopy
+extension property (`TauCeti.TopCat.extendsDisjointOpens_of_hasHomotopyExtensionProperty`). -/
+theorem t2Space_of_isColimit_nat {F : ℕ ⥤ TopCat.{u}} [∀ n, T2Space (F.obj n)]
+    (hF : ∀ n : ℕ, extendsDisjointOpens (F.map (homOfLE n.le_succ))) {c : Cocone F}
+    (hc : IsColimit c) : T2Space c.pt :=
+  -- Each map `F.obj n ⟶ c.pt` is a transfinite composition of the bonding maps from `n` on.
+  let h : extendsDisjointOpens.TransfiniteCompositionOfShape ℕ (c.ι.app 0) :=
+    { F := F
+      isoBot := Iso.refl _
+      incl := c.ι
+      isColimit := hc
+      map_mem n _ := hF n }
+  t2Space_of_isColimit hc h.mem_incl_app
 
 section Pushout
 

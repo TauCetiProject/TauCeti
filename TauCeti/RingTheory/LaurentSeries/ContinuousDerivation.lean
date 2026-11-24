@@ -205,7 +205,7 @@ noncomputable def continuousDerivationsEquiv : K⸨X⸩ ≃ₗ[K⸨X⸩] continu
   map_smul' a b := Subtype.ext (smul_assoc a b _)
   invFun δ := (δ : Derivation K K⸨X⸩ K⸨X⸩) (single 1 1)
   left_inv a := by simp
-  right_inv δ := Subtype.ext (δ.1.eq_smul_laurentSeriesDerivation δ.2).symm
+  right_inv δ := Subtype.ext (δ.val.eq_smul_laurentSeriesDerivation δ.property).symm
 
 @[simp]
 theorem coe_continuousDerivationsEquiv_apply (a : K⸨X⸩) :
@@ -374,7 +374,7 @@ noncomputable def powerSeriesPreservingDerivationsEquiv :
     ⟨fun a b h ↦ ofPowerSeries_injective <|
         smul_laurentSeriesDerivation_inj.1 (Subtype.ext_iff.1 h),
       fun δ ↦ by
-        obtain ⟨a, ha⟩ := mem_powerSeriesPreservingDerivations_iff.1 δ.2
+        obtain ⟨a, ha⟩ := mem_powerSeriesPreservingDerivations_iff.1 δ.property
         exact ⟨a, Subtype.ext ha.symm⟩⟩
 
 /-- `TauCeti.powerSeriesPreservingDerivationsEquiv` sends `a` to the vector field `a D`. -/
@@ -408,7 +408,7 @@ noncomputable def maximalIdealPreservingDerivationsEquiv :
     Ideal.span {(PowerSeries.X : K⟦X⟧)} ≃ₗ[K] maximalIdealPreservingDerivations K :=
   LinearEquiv.ofBijective
     { toFun a := ⟨((a : K⟦X⟧) : K⸨X⸩) • laurentSeriesDerivation K,
-        smul_laurentSeriesDerivation_mem_maximalIdealPreservingDerivations a.2⟩
+        smul_laurentSeriesDerivation_mem_maximalIdealPreservingDerivations a.property⟩
       map_add' a b := by
         ext1
         simp [add_smul]
@@ -418,7 +418,7 @@ noncomputable def maximalIdealPreservingDerivationsEquiv :
     ⟨fun a b h ↦ Subtype.ext <| ofPowerSeries_injective <|
         smul_laurentSeriesDerivation_inj.1 (Subtype.ext_iff.1 h),
       fun δ ↦ by
-        obtain ⟨a, ha⟩ := mem_maximalIdealPreservingDerivations_iff.1 δ.2
+        obtain ⟨a, ha⟩ := mem_maximalIdealPreservingDerivations_iff.1 δ.property
         exact ⟨⟨PowerSeries.X * a, Ideal.mem_span_singleton.2 (dvd_mul_right _ _)⟩,
           Subtype.ext ha.symm⟩⟩
 

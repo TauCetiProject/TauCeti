@@ -9,11 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.PotentialGood
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.GoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
-import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.DiscreteValuationRing
-import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Extension
 
@@ -65,6 +61,9 @@ Shafarevich
 * `WeierstrassCurve.exists_tateModuleGaloisRepresentation_eq_one_of_finite_image`: if the image of
   `I_K` on `T_ℓ E` is finite, the elements of `I_K` fixing some finite extension of `K` act
   trivially on `T_ℓ E`.
+* `WeierstrassCurve.hasPotentialGoodReduction_of_finite_image_tateModuleGaloisRepresentation`: if
+  the image of `I_K` on `T_ℓ E` is finite, then `W` has potential good reduction (the converse
+  implication of Silverman AEC VII.7.3).
 * `WeierstrassCurve.hasPotentialGoodReduction_iff_finite_image_tateModuleGaloisRepresentation`:
   `W` has potential good reduction exactly when the image of `I_K` on `T_ℓ E` is finite.
 
@@ -172,7 +171,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_mem_inertiaSubgroup_of_mem_fixi
     ?_ hσ hσL ?_
   · rw [Nat.cast_pow]
     exact pow_ne_zero n hℓ
-  · rw [AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj n x).2, map_zero]
+  · rw [AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj n x).property, map_zero]
 
 end GoodReductionOverExtension
 
@@ -245,10 +244,10 @@ theorem HasPotentialGoodReduction.finite_image_tateModuleGaloisRepresentation
     rw [← mul_inv_cancel_left σ σ', map_mul, hM ℓ hℓ _ hg hgM, mul_one]
   -- So the image injects into the finite group `Gal(N/K)`.
   have : Finite (ρ '' (inertiaSubgroup K : Set (Field.absoluteGaloisGroup K))) := by
-    refine Finite.of_injective (fun y ↦ AlgEquiv.restrictNormal y.2.choose N)
+    refine Finite.of_injective (fun y ↦ AlgEquiv.restrictNormal y.property.choose N)
       fun y y' hyy' ↦ Subtype.ext ?_
-    rw [← y.2.choose_spec.2, ← y'.2.choose_spec.2]
-    exact key y.2.choose_spec.1 y'.2.choose_spec.1 hyy'
+    rw [← y.property.choose_spec.2, ← y'.property.choose_spec.2]
+    exact key y.property.choose_spec.1 y'.property.choose_spec.1 hyy'
   exact Set.toFinite _
 
 end PotentialGoodReduction
@@ -259,7 +258,8 @@ section FiniteImage
 
 variable [W.IsElliptic]
 
-/-- **Good reduction over a finite extension from an unramified Tate module.** Let `M` be a finite
+/-- **Good reduction over a finite extension from an unramified Tate module.** Let `W` be an
+elliptic curve over a nonarchimedean local field `K`, let `M` be a finite
 extension of `K` inside `K^{alg}`, and let `ℓ` be a prime different from the residue characteristic
 of `K`. If every element of the inertia subgroup of `Gal(K^{alg}/K)` fixing `M` acts trivially on
 the `ℓ`-adic Tate module of `W`, then `W` has potential good reduction. -/
@@ -320,11 +320,11 @@ theorem hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one
   rw [Affine.Point.map_eq_self_iff]
   exact ⟨φ.injective ((hσ _).trans hQ.1), φ.injective ((hσ _).trans hQ.2)⟩
 
-/-- **A finite inertia image is trivial on the inertia of a finite extension.** Let `ℓ` be a prime
-invertible in `K`. If the image of the inertia subgroup of
-`Gal(K^{alg}/K)` in the automorphisms of the `ℓ`-adic Tate module of `W` is finite, then there is a
-finite extension `M` of `K` inside `K^{alg}` such that every element of the inertia subgroup fixing
-`M` acts trivially on the Tate module. -/
+/-- **A finite inertia image is trivial on the inertia of a finite extension.** Let `W` be an
+elliptic curve over a nonarchimedean local field `K`, and let `ℓ` be a prime invertible in `K`. If
+the image of the inertia subgroup of `Gal(K^{alg}/K)` in the automorphisms of the `ℓ`-adic Tate
+module of `W` is finite, then there is a finite extension `M` of `K` inside `K^{alg}` such that
+every element of the inertia subgroup fixing `M` acts trivially on the Tate module. -/
 theorem exists_tateModuleGaloisRepresentation_eq_one_of_finite_image
     [DecidableEq (AlgebraicClosure K)] {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : K) ≠ 0)
     (h : (W.tateModuleGaloisRepresentation ℓ ''

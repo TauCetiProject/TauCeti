@@ -105,21 +105,22 @@ noncomputable def kerAevalCompCompEquiv {π : F →ₗ[R] M} {σ : M →ₗ[R] F
     ((π.comp (Submodule.subtype _)).codRestrict _ fun y ↦ mem_ker.mpr <| by
       have hr : u.comp π = π.comp (σ ∘ₗ u ∘ₗ π) := by rw [← comp_assoc, ← comp_assoc, h, id_comp]
       simpa [mem_ker.mp y.property] using
-        LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P) y.1)
+        LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P) (y : F))
     ((σ.comp (Submodule.subtype _)).codRestrict _ fun x ↦ mem_ker.mpr <| by
       have hs : (σ ∘ₗ u ∘ₗ π).comp σ = σ.comp u := by rw [comp_assoc, comp_assoc, h, comp_id]
       simpa [mem_ker.mp x.property] using
-        LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hs P) x.1)
-    (LinearMap.ext fun x ↦ Subtype.ext (LinearMap.congr_fun h x.1))
+        LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hs P) (x : M))
+    (LinearMap.ext fun x ↦ Subtype.ext (LinearMap.congr_fun h (x : M)))
     (LinearMap.ext fun y ↦ Subtype.ext <| by
       have hr : u.comp π = π.comp (σ ∘ₗ u ∘ₗ π) := by rw [← comp_assoc, ← comp_assoc, h, id_comp]
       have hπy : aeval u P (π y) = 0 := by
         simpa [mem_ker.mp y.property] using
-          LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P) y.1
-      have hdiv : π (aeval (σ ∘ₗ u ∘ₗ π) P.divX y.1) = aeval u P.divX (π y) :=
-        (LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P.divX) y.1).symm
+          LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P) (y : F)
+      have hdiv : π (aeval (σ ∘ₗ u ∘ₗ π) P.divX (y : F)) = aeval u P.divX (π y) :=
+        (LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq hr P.divX) (y : F)).symm
       have h₁ : σ (u (aeval u P.divX (π y))) + P.coeff 0 • (y : F) = 0 := by
-        have hF := LinearMap.congr_fun (congrArg (aeval (σ ∘ₗ u ∘ₗ π)) (X_mul_divX_add P).symm) y.1
+        have hF :=
+          LinearMap.congr_fun (congrArg (aeval (σ ∘ₗ u ∘ₗ π)) (X_mul_divX_add P).symm) (y : F)
         rw [mem_ker.mp y.property] at hF
         simpa [-X_mul_divX_add, Algebra.algebraMap_eq_smul_one, hdiv] using hF.symm
       have h₂ : σ (u (aeval u P.divX (π y))) + P.coeff 0 • σ (π y) = 0 := by

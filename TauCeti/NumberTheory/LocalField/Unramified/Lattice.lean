@@ -119,7 +119,7 @@ omit [IsSepClosed Ω] in
 /-- Two finite unramified subextensions are equal when their underlying intermediate fields are
 equal. -/
 @[ext]
-theorem ext {E F : FiniteUnramifiedSubextension K Ω} (h : E.1 = F.1) : E = F :=
+theorem ext {E F : FiniteUnramifiedSubextension K Ω} (h : E.val = F.val) : E = F :=
   Subtype.ext h
 
 end FiniteUnramifiedSubextension
@@ -133,7 +133,7 @@ def unramifiedExtensionPNat (f : ℕ+) : FiniteUnramifiedSubextension K Ω :=
 /-- The underlying field of the finite unramified subextension of degree `f`. -/
 @[simp]
 theorem coe_unramifiedExtensionPNat (f : ℕ+) :
-    (unramifiedExtensionPNat K Ω f).1 = unramifiedExtension K Ω f :=
+    (unramifiedExtensionPNat K Ω f).val = unramifiedExtension K Ω f :=
   congrArg Subtype.val (unramifiedExtensionPNat.eq_def K Ω f)
 
 /-- Positive integers classify the finite unramified subextensions of a separably closed
@@ -145,7 +145,7 @@ private def unramifiedExtensionEquivFiniteUnramifiedSubextension :
     intro f g hfg
     apply PNat.eq
     have hfields : unramifiedExtension K Ω f = unramifiedExtension K Ω g :=
-      congrArg (fun E : FiniteUnramifiedSubextension K Ω ↦ E.1) hfg
+      congrArg (fun E : FiniteUnramifiedSubextension K Ω ↦ E.val) hfg
     calc
       (f : ℕ) = Module.finrank K (unramifiedExtension K Ω f) :=
         (finrank_unramifiedExtension f.ne_zero).symm
@@ -155,7 +155,7 @@ private def unramifiedExtensionEquivFiniteUnramifiedSubextension :
     by
       intro E
       obtain ⟨f, hf⟩ :=
-        (isFiniteUnramifiedSubextension_iff_exists_eq_unramifiedExtension K Ω E.1).1 E.2
+        (isFiniteUnramifiedSubextension_iff_exists_eq_unramifiedExtension K Ω E.val).1 E.property
       exact ⟨f, Subtype.ext hf.symm⟩⟩
 
 /-- The classification of finite unramified subextensions by their positive degrees. -/
@@ -194,21 +194,21 @@ theorem finiteUnramifiedSubextensionDegreeEquiv_symm_apply (f : ℕ+) :
 the base field. -/
 @[simp]
 theorem coe_degree (E : FiniteUnramifiedSubextension K Ω) :
-    (E.degree : ℕ) = Module.finrank K E.1 := by
-  have hE : unramifiedExtension K Ω E.degree = E.1 :=
+    (E.degree : ℕ) = Module.finrank K E.val := by
+  have hE : unramifiedExtension K Ω E.degree = E.val :=
     congrArg Subtype.val
       ((unramifiedExtensionEquivFiniteUnramifiedSubextension K Ω).apply_symm_apply E)
   calc
     (E.degree : ℕ) = Module.finrank K (unramifiedExtension K Ω E.degree) :=
       (finrank_unramifiedExtension E.degree.ne_zero).symm
-    _ = Module.finrank K E.1 := congrArg (fun F : IntermediateField K Ω ↦
+    _ = Module.finrank K E.val := congrArg (fun F : IntermediateField K Ω ↦
       Module.finrank K F) hE
 
 /-- A finite unramified subextension is the canonical unramified extension of its vector-space
 degree over the base field. -/
 @[simp]
 theorem unramifiedExtension_finrank (E : FiniteUnramifiedSubextension K Ω) :
-    unramifiedExtension K Ω (Module.finrank K E.1) = E.1 := by
+    unramifiedExtension K Ω (Module.finrank K E.val) = E.val := by
   rw [← coe_degree K Ω E]
   exact congrArg Subtype.val
     ((unramifiedExtensionEquivFiniteUnramifiedSubextension K Ω).apply_symm_apply E)
@@ -216,9 +216,9 @@ theorem unramifiedExtension_finrank (E : FiniteUnramifiedSubextension K Ω) :
 /-- Inclusion of finite unramified subextensions is divisibility of their degrees. -/
 theorem le_iff_degree_dvd {E F : FiniteUnramifiedSubextension K Ω} :
     E ≤ F ↔ (E.degree : ℕ) ∣ F.degree := by
-  have hE : unramifiedExtension K Ω E.degree = E.1 := by
+  have hE : unramifiedExtension K Ω E.degree = E.val := by
     simpa only [coe_degree] using unramifiedExtension_finrank K Ω E
-  have hF : unramifiedExtension K Ω F.degree = F.1 := by
+  have hF : unramifiedExtension K Ω F.degree = F.val := by
     simpa only [coe_degree] using unramifiedExtension_finrank K Ω F
   rw [← Subtype.coe_le_coe, ← hE, ← hF]
   exact unramifiedExtension_le_unramifiedExtension_iff K Ω E.degree.ne_zero F.degree.ne_zero
@@ -273,8 +273,8 @@ theorem degree_sup_pnat (E F : FiniteUnramifiedSubextension K Ω) :
 the two degrees. -/
 @[simp]
 theorem degree_inf (E F : FiniteUnramifiedSubextension K Ω) :
-    Module.finrank K (E ⊓ F).1 =
-      Nat.gcd (Module.finrank K E.1) (Module.finrank K F.1) := by
+    Module.finrank K (E ⊓ F).val =
+      Nat.gcd (Module.finrank K E.val) (Module.finrank K F.val) := by
   rw [← coe_degree K Ω (E ⊓ F), ← coe_degree K Ω E, ← coe_degree K Ω F]
   rw [degree_inf_pnat,
     PNat.toPNat'_coe (Nat.gcd_pos_of_pos_left F.degree E.degree.pos)]
@@ -283,8 +283,8 @@ theorem degree_inf (E F : FiniteUnramifiedSubextension K Ω) :
 two degrees. -/
 @[simp]
 theorem degree_sup (E F : FiniteUnramifiedSubextension K Ω) :
-    Module.finrank K (E ⊔ F).1 =
-      Nat.lcm (Module.finrank K E.1) (Module.finrank K F.1) := by
+    Module.finrank K (E ⊔ F).val =
+      Nat.lcm (Module.finrank K E.val) (Module.finrank K F.val) := by
   rw [← coe_degree K Ω (E ⊔ F), ← coe_degree K Ω E, ← coe_degree K Ω F]
   rw [degree_sup_pnat,
     PNat.toPNat'_coe (Nat.pos_of_ne_zero (Nat.lcm_ne_zero E.degree.ne_zero F.degree.ne_zero))]

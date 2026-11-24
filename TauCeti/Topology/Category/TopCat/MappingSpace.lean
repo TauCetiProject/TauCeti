@@ -10,7 +10,11 @@ public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.CompactOpen
 
 /-!
-# Locally compact spaces are exponentiable in `TopCat`
+# Compact-open mapping spaces in `TopCat`
+
+For an R₁ space `Y`, the compact-open mapping-space functor `C(Y, -)` preserves limits.
+The compact-open topology is induced by restrictions to compact subspaces of `Y`, on which
+evaluation is continuous.
 
 For a locally compact space `Y`, currying identifies continuous maps `Y × X → Z` with continuous
 maps `X → C(Y, Z)`, where `C(Y, Z)` carries the compact-open topology. In categorical terms, the
@@ -32,6 +36,9 @@ not preserve the pushout defining `X`.
 ## Main declarations
 
 * `TopCat.mappingSpace Y`: the functor `X ↦ C(Y, X)` on `TopCat`.
+* `TopCat.continuous_compactOpen_of_isLimit`: continuity into a mapping space with limit
+  codomain follows from continuity after every limit projection, for R₁ source spaces.
+* `TopCat.mappingSpace_preservesLimitsOfSize`: mapping spaces preserve limits for R₁ `Y`.
 * `TopCat.curryEquiv`: for locally compact `Y`, the bijection between maps `Y ⊗ X ⟶ Z`
   and maps `X ⟶ C(Y, Z)`.
 * `TopCat.closed`: a locally compact space is a closed object of `TopCat`, with internal
@@ -67,6 +74,77 @@ compact-open topology and a map acts by postcomposition. -/
 def mappingSpace (Y : TopCat.{u}) : TopCat.{u} ⥤ TopCat.{u} where
   obj X := TopCat.of C(Y, X)
   map f := TopCat.ofHom ⟨f.hom.comp, ContinuousMap.continuous_postcomp f.hom⟩
+
+/-- For a limit cone `c` and an R₁ space `Y`, a map into `C(Y, c.pt)` with the compact-open topology
+is continuous if postcomposing with each limit projection makes it continuous. -/
+theorem continuous_compactOpen_of_isLimit {Y : TopCat.{u}} [R1Space Y]
+    {J : Type w} [Category.{w'} J] {F : J ⥤ TopCat.{u}} {c : Cone F} (hc : IsLimit c)
+    {X : Type v} [TopologicalSpace X] (f : X → C(Y, c.pt))
+    (hf : ∀ j, Continuous fun x ↦ (c.π.app j).hom.comp (f x)) : Continuous f := by
+  rw [ContinuousMap.compactOpen_eq_iInf_induced]
+  apply continuous_iInf_rng.2
+  intro K
+  apply continuous_iInf_rng.2
+  intro hK
+  rw [continuous_induced_rng]
+  let : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  apply ContinuousMap.continuous_of_continuous_uncurry
+  rw [continuous_iff_coinduced_le]
+  conv_rhs => rw [induced_of_isLimit c hc]
+  refine le_iInf fun j ↦ ?_
+  rw [coinduced_le_iff_le_induced, induced_compose, ← continuous_iff_le_induced]
+  -- The restricted uncurried map is continuous after each limit projection.
+  change Continuous (fun p : X × K ↦ (c.π.app j).hom (f p.1 p.2))
+  exact continuous_eval.comp
+    (((ContinuousMap.continuous_restrict K).comp (hf j)).prodMap continuous_id)
+
+/-- If `Y` is an R₁ space, compact-open mapping spaces out of `Y` preserve limits. -/
+instance mappingSpace_preservesLimitsOfSize (Y : TopCat.{u}) [R1Space Y] :
+    PreservesLimitsOfSize.{w', w} (mappingSpace Y) := by
+  refine ⟨fun {J} _ ↦ ⟨fun {F} ↦ ⟨fun {c} hc ↦ ⟨?_⟩⟩⟩⟩
+  classical
+  let evCone (s : Cone (F ⋙ mappingSpace Y)) (x : s.pt) : Cone F :=
+    { pt := Y
+      π := { app := fun j ↦ TopCat.ofHom (s.π.app j x)
+             naturality := fun i j f ↦ by
+               ext y
+               have h := ConcreteCategory.congr_hom (s.w f) x
+               -- Compute the mapped cone equation as postcomposition of continuous maps.
+               change (F.map f).hom.comp ((s.π.app i).hom x) = (s.π.app j).hom x at h
+               exact (congrArg (fun g : C(Y, F.obj j) ↦ g y) h).symm } }
+  let lift (s : Cone (F ⋙ mappingSpace Y)) : s.pt → C(Y, c.pt) :=
+    fun x ↦ (hc.lift (evCone s x)).hom
+  have fac (s : Cone (F ⋙ mappingSpace Y)) (x : s.pt) (j : J) (y : Y) :
+      c.π.app j (lift s x y) = DFunLike.coe (F := C(Y, F.obj j)) ((s.π.app j).hom x) y :=
+    ConcreteCategory.congr_hom (hc.fac (evCone s x) j) y
+  have lift_cont (s : Cone (F ⋙ mappingSpace Y)) : Continuous (lift s) := by
+    apply continuous_compactOpen_of_isLimit hc
+    intro j
+    have h : (fun x ↦ (c.π.app j).hom.comp (lift s x)) = (s.π.app j).hom := by
+      funext x
+      exact ContinuousMap.ext (fac s x j)
+    rw [h]
+    exact (s.π.app j).hom.continuous
+  refine { lift := fun s ↦ TopCat.ofHom ⟨lift s, lift_cont s⟩
+           fac := ?_
+           uniq := ?_ }
+  · intro s j
+    ext x
+    apply ContinuousMap.ext
+    intro y
+    exact fac s x j y
+  · intro s m hm
+    ext x
+    have h : TopCat.ofHom (m.hom x : C(Y, c.pt)) = hc.lift (evCone s x) := by
+      apply hc.hom_ext
+      intro j
+      ext y
+      have h := ConcreteCategory.congr_hom (hm j) x
+      -- Compute the candidate lift after a limit projection in the mapping-space carrier.
+      change (c.π.app j).hom.comp (m.hom x) = (s.π.app j).hom x at h
+      exact (congrArg (fun g : C(Y, F.obj j) ↦ g y) h).trans
+        (fac s x j y).symm
+    exact congrArg TopCat.Hom.hom h
 
 variable (Y : TopCat.{u}) [LocallyCompactSpace Y]
 

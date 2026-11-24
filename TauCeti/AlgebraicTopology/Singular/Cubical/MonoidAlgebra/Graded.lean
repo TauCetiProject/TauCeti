@@ -26,7 +26,8 @@ which the product of homogeneous elements is their Pontryagin product (`DirectSu
 
 ## Main definitions
 
-* `TauCeti.cubicalChainLof G R n`: the inclusion of the `n`-chains, with `cubicalChainLof_mul`.
+* `TauCeti.cubicalChainLof G R n`: the inclusion of the `n`-chains, with `cubicalChainLof_mul` and
+  `cubicalChainLof_one`.
 * `TauCeti.normalizedCubicalChainAlgebra G R`: the graded algebra `⨁ n, C^□_n(G; R)`.
 * `TauCeti.NormalizedCubicalChain.gMonoid`, `.gRing`, `.gAlgebra`: the graded structures.
 
@@ -173,6 +174,31 @@ theorem cubicalChainLof_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
       cubicalChainLof G R (p + q) (NormalizedCubicalChain.mul G R p q a b) := by
   rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of,
     NormalizedCubicalChain.gMul_mul]
+
+variable {G R} in
+/-- The component of dimension `j + p` of the product of an element of the algebra of cubical
+chains with a chain `y` of dimension `p` is the Pontryagin product of its component of dimension
+`j` with `y`. -/
+@[simp]
+theorem mul_cubicalChainLof_apply_add (z : normalizedCubicalChainAlgebra G R) {p : ℕ}
+    (y : NormalizedCubicalChain G R p) (j : ℕ) :
+    (z * cubicalChainLof G R p y) (j + p) = NormalizedCubicalChain.mul G R j p (z j) y := by
+  induction z using DirectSum.induction_on with
+  | zero => simp
+  | of n c =>
+    have hm := cubicalChainLof_mul (G := G) (R := R) c y
+    simp only [DirectSum.lof_eq_of] at hm
+    simp only [DirectSum.lof_eq_of, hm]
+    rcases eq_or_ne j n with rfl | hjn
+    · rw [DirectSum.of_eq_same, DirectSum.of_eq_same]
+    · rw [DirectSum.of_eq_of_ne _ _ _ (by omega : j + p ≠ n + p), DirectSum.of_eq_of_ne _ _ _ hjn,
+        map_zero, LinearMap.zero_apply]
+  | add z z' hz hz' => simp [add_mul, hz, hz']
+
+omit [ContinuousMul G] in
+/-- The `0`-chain of the unit is the unit of the graded algebra. -/
+theorem cubicalChainLof_one : cubicalChainLof G R 0 (NormalizedCubicalChain.one G R) = 1 := by
+  rw [← NormalizedCubicalChain.gOne_one, DirectSum.lof_eq_of, DirectSum.one_def]
 
 end TauCeti
 
