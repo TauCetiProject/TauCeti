@@ -421,7 +421,7 @@ theorem meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat (r₁ r₂ 
     (meromorphicOrderAt_Gammaℂ_eq_neg_one_iff _).mpr ⟨n - 1, by push_cast [hn]; ring⟩
   have hRord :
       meromorphicOrderAt Gammaℝ (1 - n) = ((if Even n then 0 else -1 : ℤ) : WithTop ℤ) := by
-    rw [meromorphicOrderAt_Gammaℝ_one_sub_nat]; split_ifs <;> rfl
+    rw [meromorphicOrderAt_Gammaℝ_one_sub_nat]; split_ifs <;> simp
   have he : (fun s ↦ Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂) = Gammaℝ ^ r₁ * Gammaℂ ^ r₂ := by
     ext; simp
   rw [he, meromorphicOrderAt_mul (hR.pow r₁) (hC.pow r₂), meromorphicOrderAt_pow hR,
