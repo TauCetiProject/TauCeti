@@ -414,9 +414,8 @@ theorem exists_eq_map_waldschmidtPointMap_sup (b : Fin (n + 1) → R)
   refine ⟨W'.comap (waldschmidtPointMap b) ⊓ V, inf_le_right, Submodule.mem_inf.2 ⟨?_, hV⟩,
     le_antisymm (fun w hw ↦ ?_) (sup_le ((Submodule.map_mono inf_le_left).trans
       (Submodule.map_comap_le _ _)) hspan)⟩
-  · rw [Submodule.mem_comap, waldschmidtPointMap_snoc, ← mul_one (-b 0), ← smul_eq_mul,
-      Pi.single_smul]
-    exact W'.smul_mem _ he₀
+  · exact Submodule.comap_mono hspan
+      ((comap_waldschmidtPointMap_span_single b).ge (Submodule.mem_span_singleton_self _))
   obtain ⟨_, ⟨v, hv, rfl⟩, x, hx, hvx⟩ := Submodule.mem_sup.1 (hW' hw)
   refine Submodule.mem_sup.2 ⟨_, ⟨v, Submodule.mem_inf.2 ⟨?_, hv⟩, rfl⟩, x, hx, hvx⟩
   rw [Submodule.mem_comap, ← add_sub_cancel_right (waldschmidtPointMap b v) x, hvx]
@@ -438,7 +437,8 @@ theorem finrank_map_waldschmidtPointMap_sup (b : Fin (n + 1) → R)
       waldschmidtPointMap b v = Y' v + (v (Fin.last n) * (b 0 - 1)) • e₀ := by
     ext i
     cases i using Fin.cases
-    · simp [Y', e₀]
+    · simp only [Y', e₀, waldschmidtPointMap_apply_zero, Pi.add_apply, Pi.smul_apply,
+        Pi.single_eq_same, smul_eq_mul, Fin.cons_zero]
       ring
     · simp [Y', e₀, waldschmidtPointMap_apply_succ, Fin.tail]
   have he₀ : e₀ ∈ V.map Y' := by
