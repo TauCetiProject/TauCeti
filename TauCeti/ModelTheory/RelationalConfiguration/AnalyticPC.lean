@@ -50,16 +50,6 @@ namespace FirstOrder.Language.LHom
 variable {L : Language.{u, v}} {L' : Language.{u', v'}} [L.IsRelational] [L'.IsRelational]
   {V : Type w}
 
-omit [L'.IsRelational] in
-/-- In a relational language, a structure is the reduct of each of its expansions. -/
-private theorem toStructure_eq_reduct_of_isExpansionOn (g : L →ᴸ L') (S : L.Structure V)
-    (S' : L'.Structure V) (h : @IsExpansionOn L L' g V S S') : S = @LHom.reduct L L' g V S' := by
-  apply Structure.ext
-  · funext n f
-    exact isEmptyElim f
-  · funext n R x
-    exact (@IsExpansionOn.map_onRelation L L' g V S S' h n R x).symm
-
 /-- **Projective classes of codes are images of model classes.** A code on `V` lies in the
 projective class of `Θ` along `g` exactly when it is the reduct along `g` of a code satisfying
 `Θ`. -/
@@ -74,7 +64,7 @@ theorem setOf_pcMem_eq_image_modelsOf (g : L →ᴸ L') (Θ : L'.Sentenceω) :
     apply equivStructure.injective
     rw [equivStructure_apply, equivStructure_apply, toStructure_reductConfiguration,
       toStructure_ofStructure]
-    exact (toStructure_eq_reduct_of_isExpansionOn g _ S hS).symm
+    exact @reduct_eq_of_isExpansionOn _ _ g V c.toStructure S hS
   · rintro ⟨d, hd, rfl⟩
     refine (@pcMem_iff _ _ g Θ V (g.reductConfiguration d).toStructure).2
       ⟨d.toStructure, ?_, mem_modelsOf.1 hd⟩
@@ -117,13 +107,6 @@ private theorem relMap_reverseRelation_self {M : Type w} (S : L.Structure M) {k 
     @Structure.RelMap L M (reverseRelation S R₀) k R₀ xs ↔ ¬ @Structure.RelMap L M S k R₀ xs :=
   Iff.of_eq (ite_eq_left_of_eq_true _ _ (eq_true rfl))
 
-omit [L.IsRelational] [L'.IsRelational] in
-/-- A sentence is realized when it is realized as a bounded formula, for an explicit structure. -/
-private theorem realize_sentenceInf_iff {M : Type w} (T : L.Structure M) (ψ : L.Sentenceω) :
-    @SentenceInf.Realize L ℕ ψ M T ↔ @BoundedFormulaInf.Realize L ℕ Empty M T 0 ψ Empty.elim
-      default :=
-  (@SentenceInf.realize_def L ℕ ψ M T).trans (@FormulaInf.realize_def L ℕ Empty M T ψ Empty.elim)
-
 /-- **No projective class is a single code when there are uncountably many symbols.** If the
 relational language `L` has uncountably many relation symbols, then on a nonempty carrier the
 projective class of a sentence `ψ` along `LHom.sumInl : L →ᴸ L.sum W` is never a single code:
@@ -152,9 +135,12 @@ theorem setOf_pcMem_sumInl_ne_singleton {W : Language.{u', v'}} [W.IsRelational]
   let S' : (L.sum W).Structure V :=
     reverseRelation e.toStructure (Sum.inl R : (L.sum W).Relations k)
   have hψ : @SentenceInf.Realize _ ℕ ψ V S' := by
-    refine (realize_sentenceInf_iff S' ψ).2 ((BoundedFormulaInf.realize_congr_of_agreeOn ψ S'
-      e.toStructure (fun f => isEmptyElim f) (fun {n} Q hQ xs => ?_) _ _).2
-      ((realize_sentenceInf_iff _ ψ).1 (mem_modelsOf.1 he)))
+    have he₀ := mem_modelsOf.1 he
+    rw [@SentenceInf.realize_def _ ℕ ψ V e.toStructure,
+      @FormulaInf.realize_def _ ℕ Empty V e.toStructure ψ Empty.elim] at he₀
+    rw [@SentenceInf.realize_def _ ℕ ψ V S', @FormulaInf.realize_def _ ℕ Empty V S' ψ Empty.elim]
+    refine (BoundedFormulaInf.realize_congr_of_agreeOn ψ S' e.toStructure (fun f => isEmptyElim f)
+      (fun {n} Q hQ xs => ?_) _ _).2 he₀
     refine relMap_reverseRelation_of_ne _ (fun hQR => hR ?_) xs
     rw [hQR] at hQ
     exact hQ
