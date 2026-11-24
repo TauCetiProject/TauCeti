@@ -63,23 +63,36 @@ namespace HomogeneousSymbol
 variable (X E : Type*) [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
   [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
+/-- The symbol `ξ ↦ i (ξ ∧ ·)` of the exterior derivative on `k`-forms, as a real-linear function
+of the covector: the complexification of exterior multiplication by `ξ`, multiplied by `i`. -/
+def extDerivLinear (k : ℕ) :
+    E →L[ℝ] (WithLp 2 (Complexification (⋀[ℝ]^k E)) →L[ℂ]
+      WithLp 2 (Complexification (⋀[ℝ]^(k + 1) E))) :=
+  Complex.I • ((ContinuousLinearMap.complexifyL2ₗᵢ _ _).toContinuousLinearMap ∘L
+    LinearMap.toContinuousLinearMap
+      (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ ExteriorAlgebra.wedgeLeftₗ ℝ E k))
+
 /-- **The principal symbol of the exterior derivative** on `k`-forms, in the Fourier convention
 `σ(∂ⱼ) = i ξⱼ`: at every position and every covector `ξ`, the complexification of `i (ξ ∧ ·)`,
 from complex `k`-forms `(⋀ᵏ E)_ℂ` to complex `(k + 1)`-forms. It is homogeneous of degree `1`. -/
 def extDeriv (k : ℕ) :
     HomogeneousSymbol X E (WithLp 2 (Complexification (⋀[ℝ]^k E)))
       (WithLp 2 (Complexification (⋀[ℝ]^(k + 1) E))) 1 :=
-  ofLinear X <| Complex.I • ((ContinuousLinearMap.complexifyL2ₗᵢ _ _).toContinuousLinearMap ∘L
-    LinearMap.toContinuousLinearMap
-      (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ ExteriorAlgebra.wedgeLeftₗ ℝ E k))
+  ofLinear X (extDerivLinear E k)
 
 variable {X E}
+
+@[simp]
+theorem extDerivLinear_apply (k : ℕ) (ξ : E) :
+    extDerivLinear E k ξ =
+      Complex.I • (ExteriorAlgebra.wedgeLeft ξ k).toContinuousLinearMap.complexifyL2 := by
+  simp [extDerivLinear]
 
 @[simp]
 theorem coefficient_extDeriv (k : ℕ) (p : X × E) :
     (extDeriv X E k).coefficient p =
       Complex.I • (ExteriorAlgebra.wedgeLeft p.2 k).toContinuousLinearMap.complexifyL2 := by
-  simp [extDeriv]
+  rw [extDeriv, coefficient_ofLinear, extDerivLinear_apply]
 
 /-- The adjoint of the symbol of the exterior derivative, the symbol of the codifferential, is
 `-i ι_ξ`, the complexified contraction by `⟪ξ, ·⟫` multiplied by `-i`. -/
