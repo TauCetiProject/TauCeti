@@ -8,8 +8,8 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
+public import TauCeti.Geometry.Manifold.Riemannian.FlatTorus.Lattice
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
-public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Descent
 
 /-!
 # The flat torus `ℝⁿ / ℤⁿ`
@@ -133,34 +133,11 @@ private abbrev proj (n : ℕ) : (ℝ^n) → 𝕋 n :=
 
 /-! ### The flat metric -/
 
-/-- The Euclidean metric of `ℝⁿ`, as a smooth Riemannian metric. -/
-private abbrev euclideanMetric (n : ℕ) :
-    ContMDiffRiemannianMetric 𝓘(ℝ, ℝ^n) ∞ (ℝ^n) (fun x : ℝ^n ↦ TangentSpace 𝓘(ℝ, ℝ^n) x) :=
-  ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-
-private theorem euclideanMetric_inner (x : ℝ^n) (v w : TangentSpace 𝓘(ℝ, ℝ^n) x) :
-    (euclideanMetric n).inner x v w = ⟪(v : ℝ^n), (w : ℝ^n)⟫_ℝ := by
-  rw [ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
-  rfl
-
-/-- The Euclidean metric is compatible with the orbit projection: tangent vectors at points of
-one orbit with the same images in the orbit space have the same inner products. -/
-private theorem euclideanMetric_compat (x x' : ℝ^n) (v w : TangentSpace 𝓘(ℝ, ℝ^n) x)
-    (v' w' : TangentSpace 𝓘(ℝ, ℝ^n) x') (_ : proj n x = proj n x')
-    (hv : mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x v = mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x' v')
-    (hw : mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x w = mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x' w') :
-    (euclideanMetric n).inner x v w = (euclideanMetric n).inner x' v' w' := by
-  rw [(lattice n).mfderiv_orbitRelQuotient_mk, (lattice n).mfderiv_orbitRelQuotient_mk]
-    at hv hw
-  rw [euclideanMetric_inner, euclideanMetric_inner]
-  exact congrArg₂ (fun a b : ℝ^n ↦ ⟪a, b⟫_ℝ) hv hw
-
 /-- The flat metric of `ℝⁿ / ℤⁿ`: the Euclidean metric of `ℝⁿ`, descended along the orbit
 projection. -/
 def flatMetric (n : ℕ) :
     ContMDiffRiemannianMetric 𝓘(ℝ, ℝ^n) ∞ (ℝ^n) (fun x : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) x) :=
-  (euclideanMetric n).descend (f := proj n) TauCeti.isLocalDiffeomorph_addQuotientMk
-    Quotient.mk_surjective euclideanMetric_compat
+  ZLattice.quotientMetric (lattice n)
 
 /-! ### The flat torus as a Riemannian manifold -/
 
@@ -222,11 +199,8 @@ def mk : (ℝ^n) → FlatTorus n :=
 coordinates. -/
 @[simp]
 theorem flatMetric_inner_mk (x v w : ℝ^n) :
-    (flatMetric n).inner (mk x) v w = ⟪v, w⟫_ℝ := by
-  have h := (euclideanMetric n).descend_inner_mfderiv (f := proj n)
-    TauCeti.isLocalDiffeomorph_addQuotientMk Quotient.mk_surjective euclideanMetric_compat x v w
-  rw [(lattice n).mfderiv_orbitRelQuotient_mk] at h
-  exact h.trans (euclideanMetric_inner x v w)
+    (flatMetric n).inner (mk x) v w = ⟪v, w⟫_ℝ :=
+  ZLattice.quotientMetric_inner_mk (lattice n) x v w
 
 theorem mk_surjective : Surjective (mk : (ℝ^n) → FlatTorus n) :=
   Quotient.mk_surjective
@@ -312,11 +286,8 @@ theorem norm_tangentSpace_mk (x v : ℝ^n) :
 /-- **The projection is a local Riemannian isometry.** -/
 theorem isLocalRiemannianIsometry_mk :
     IsLocalRiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) := by
-  obtain ⟨hc, hi, hinner⟩ := (euclideanMetric n).isLocalRiemannianIsometry_descend
-    TauCeti.isLocalDiffeomorph_addQuotientMk Quotient.mk_surjective euclideanMetric_compat
-  refine ⟨hc, hi, fun x v w ↦ ?_⟩
-  -- The descent theorem installs the packaged metric on the source; identify its inner product.
-  exact (hinner x v w).trans (euclideanMetric_inner x v w)
+  exact ⟨contMDiff_mk, (isLocalDiffeomorph_mk (k := ∞)).isInvertible_mfderiv (by simp),
+    inner_mfderiv_mk⟩
 
 end FlatTorus
 
