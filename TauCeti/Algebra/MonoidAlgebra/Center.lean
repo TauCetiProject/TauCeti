@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 
@@ -22,6 +22,7 @@ centre of `R[G]` into the centre of `S[G]` (`MonoidAlgebra.mapRingHom_mem_center
 
 * `MonoidAlgebra.centerMapRingHom G f`: the ring homomorphism `Z(R[G]) →+* Z(S[G])` induced by
   `f : R →+* S`.
+* `MonoidAlgebra.toCenter`: for a commutative monoid `G`, the isomorphism of `R[G]` with its centre.
 
 ## Main results
 
@@ -68,5 +69,17 @@ theorem centerMapRingHom_algebraMap (f : R →+* S) (r : R) :
     centerMapRingHom G f (algebraMap R (Subalgebra.center R R[G]) r) =
       algebraMap S (Subalgebra.center S S[G]) (f r) :=
   Subtype.ext <| RingHom.congr_fun (mapRingHom_comp_algebraMap f) r
+
+/-- For a commutative monoid `G`, every element of `R[G]` is central, so `R[G]` is isomorphic to its
+centre: the identification sends `x` to `x`, read as an element of the centre. -/
+noncomputable def toCenter {k G : Type*} [CommSemiring k] [CommMonoid G] :
+    MonoidAlgebra k G ≃ₐ[k] Subalgebra.center k (MonoidAlgebra k G) :=
+  ((Subalgebra.equivOfEq _ _ (Subalgebra.center_eq_top k _)).trans Subalgebra.topEquiv).symm
+
+/-- `toCenter x` is `x`, read in the monoid algebra. -/
+@[simp]
+theorem coe_toCenter {k G : Type*} [CommSemiring k] [CommMonoid G] (x : MonoidAlgebra k G) :
+    (toCenter x : MonoidAlgebra k G) = x :=
+  (rfl)
 
 end MonoidAlgebra
