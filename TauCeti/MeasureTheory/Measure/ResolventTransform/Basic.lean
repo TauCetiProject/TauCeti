@@ -21,6 +21,10 @@ away from the real axis, the continuity of the kernel there, the Lipschitz bound
 `‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, and prove
 affine covariance under pushforward. No moment assumptions are needed.
 
+For a function `h` integrable for a measure on the real line, the integrands `h(x) / (x - z)`
+(off the real axis) and `x h(x) / (1 + x ^ 2)` are integrable too
+(`TauCeti.integrable_div_ofReal_sub`, `TauCeti.integrable_div_one_add_sq_mul`).
+
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
 
@@ -198,3 +202,30 @@ theorem resolventTransform_map_affine (a b : ℝ) (hb : b ≠ 0) (z : ℂ) :
           rw [integral_const_mul, resolventTransform_apply]
 
 end MeasureTheory
+
+namespace TauCeti
+
+/-- Off the real axis, `h(x) / (x - z)` is integrable for `h ∈ L¹(μ)`: `|x - z| ≥ |Im z|`. -/
+theorem integrable_div_ofReal_sub {μ : Measure ℝ} {h : ℝ → ℂ} (hh : Integrable h μ) {z : ℂ}
+    (hz : z.im ≠ 0) : Integrable (fun x : ℝ ↦ h x / ((x : ℂ) - z)) μ := by
+  refine (hh.norm.const_mul |z.im|⁻¹).mono'
+    (hh.aemeasurable.div (by fun_prop : Measurable fun x : ℝ ↦ (x : ℂ) - z).aemeasurable
+      |>.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
+  have hpos : 0 < |z.im| := abs_pos.2 hz
+  have hle : |z.im| ≤ ‖(x : ℂ) - z‖ := by
+    simpa using Complex.abs_im_le_norm ((x : ℂ) - z)
+  rw [norm_div, div_eq_inv_mul]
+  exact mul_le_mul_of_nonneg_right (inv_anti₀ hpos hle) (norm_nonneg _)
+
+/-- For `h ∈ L¹(μ)`, `x h(x) / (1 + x ^ 2)` is integrable, since `|x| / (1 + x ^ 2) ≤ 1`. -/
+theorem integrable_div_one_add_sq_mul {μ : Measure ℝ} {h : ℝ → ℂ} (hh : Integrable h μ) :
+    Integrable (fun x : ℝ ↦ (x : ℂ) / (1 + (x : ℂ) ^ 2) * h x) μ := by
+  refine hh.norm.mono' (((by fun_prop : Measurable fun x : ℝ ↦ (x : ℂ) / (1 + (x : ℂ) ^ 2))
+    |>.aestronglyMeasurable).mul hh.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
+  have h1 : (1 + (x : ℂ) ^ 2) = ((1 + x ^ 2 : ℝ) : ℂ) := by push_cast; ring
+  rw [norm_mul, h1, ← ofReal_div, norm_real, Real.norm_eq_abs, abs_div,
+    abs_of_pos (by positivity : (0 : ℝ) < 1 + x ^ 2)]
+  refine mul_le_of_le_one_left (norm_nonneg _) ((div_le_one (by positivity)).2 ?_)
+  nlinarith [sq_nonneg (|x| - 1), sq_abs x]
+
+end TauCeti
