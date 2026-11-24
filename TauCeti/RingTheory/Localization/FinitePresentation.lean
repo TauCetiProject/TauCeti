@@ -41,7 +41,6 @@ theorem exists_factorization_localizationAwayRingCocone
       g'.comp f = (algebraMap R (M.localizationAwayDiagram.obj s)).comp a ∧
       ((M.localizationAwayRingCocone S).ι.app s).hom.comp g' = g := by
   let D := M.localizationAwayDiagram
-  let c₀ := (M.localizationAwayCocone S).extend (eqToHom (M.localizationAwayCocone_pt S))
   let α : (Functor.const (Finset M)).obj (CommRingCat.of A) ⟶
       D ⋙ forget₂ (CommAlgCat.{u} R) CommRingCat.{u} :=
     { app := fun s ↦ CommRingCat.ofHom ((algebraMap R (D.obj s)).comp a)
@@ -53,7 +52,8 @@ theorem exists_factorization_localizationAwayRingCocone
       (CommRingCat.of A) _ α (CommRingCat.ofHom f) (M.localizationAwayRingCocone S)
       (M.localizationAwayRingCoconeIsColimit S) hf (CommRingCat.ofHom g) (fun s ↦ by
         ext x
-        exact (congrArg (fun k : A →+* S ↦ k x) h).trans ((c₀.ι.app s).hom.commutes (a x)).symm)
+        exact (congrArg (fun k : A →+* S ↦ k x) h).trans
+          (RingHom.congr_fun (M.localizationAwayRingCocone_ι_app_comp_algebraMap S s) (a x)).symm)
   exact ⟨s, g'.hom, congrArg CommRingCat.Hom.hom hg', (congrArg CommRingCat.Hom.hom hg).symm⟩
 
 /-- A map from a finitely presented algebra to `M⁻¹R` factors, over its base, through `R[1/s]`

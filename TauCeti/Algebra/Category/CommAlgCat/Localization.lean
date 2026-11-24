@@ -136,6 +136,18 @@ noncomputable abbrev localizationAwayRingCocone :
   (forget₂ (CommAlgCat.{u} R) CommRingCat.{u}).mapCocone
     ((localizationAwayCocone M S).extend (eqToHom (localizationAwayCocone_pt M S)))
 
+/-- The apex of `Submonoid.localizationAwayRingCocone` is the localization `S`. -/
+theorem localizationAwayRingCocone_pt : (localizationAwayRingCocone M S).pt = CommRingCat.of S :=
+  rfl
+
+/-- The legs of `Submonoid.localizationAwayRingCocone` are `R`-algebra maps. -/
+theorem localizationAwayRingCocone_ι_app_comp_algebraMap (s : Finset M) :
+    ((localizationAwayRingCocone M S).ι.app s).hom.comp
+        (algebraMap R ((localizationAwayDiagram M).obj s)) = algebraMap R S :=
+  RingHom.ext fun x ↦
+    (((localizationAwayCocone M S).extend (eqToHom (localizationAwayCocone_pt M S))).ι.app
+      s).hom.commutes x
+
 /-- As a commutative ring, every localization is the filtered colimit of the principal
 localizations indexed by finite sets of denominators. -/
 noncomputable def localizationAwayRingCoconeIsColimit :

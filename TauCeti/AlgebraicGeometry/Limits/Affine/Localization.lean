@@ -38,9 +38,16 @@ variable {R : Type u} [CommRing R] (M : Submonoid R)
 abbrev localizationAwaySpecDiagram : (Finset M)ᵒᵖ ⥤ Scheme.{u} :=
   (M.localizationAwayDiagram ⋙ forget₂ (CommAlgCat.{u} R) CommRingCat.{u}).op ⋙ Scheme.Spec
 
+/-- The members of `Submonoid.localizationAwaySpecDiagram` are the spectra of the principal
+localizations. -/
+@[simp]
+lemma localizationAwaySpecDiagram_obj (s : (Finset M)ᵒᵖ) :
+    M.localizationAwaySpecDiagram.obj s = Spec (.of (M.localizationAwayDiagram.obj s.unop)) :=
+  rfl
+
 /-- The members of `Submonoid.localizationAwaySpecDiagram` are affine. -/
 instance (s : (Finset M)ᵒᵖ) : IsAffine ((M.localizationAwaySpecDiagram).obj s) := by
-  dsimp only [localizationAwaySpecDiagram, Functor.comp_obj, Functor.op_obj, Scheme.Spec_obj]
+  rw [localizationAwaySpecDiagram_obj]
   infer_instance
 
 /-- The open immersion `Spec R[1/∏ s] ⟶ Spec R` of a member of
@@ -90,6 +97,17 @@ variable (S : Type u) [CommRing S] [Algebra R S] [IsLocalization M S]
 abbrev localizationAwaySpecCone : Cone M.localizationAwaySpecDiagram :=
   Scheme.Spec.mapCone (M.localizationAwayRingCocone S).op
 
+/-- The point of `Submonoid.localizationAwaySpecCone` is `Spec S`. -/
+lemma localizationAwaySpecCone_pt : (M.localizationAwaySpecCone S).pt = Spec (.of S) :=
+  rfl
+
+/-- The legs of `Submonoid.localizationAwaySpecCone` are `Spec` of the legs of
+`Submonoid.localizationAwayRingCocone`. -/
+lemma localizationAwaySpecCone_π_app (s : (Finset M)ᵒᵖ) :
+    (M.localizationAwaySpecCone S).π.app s =
+      Spec.map ((M.localizationAwayRingCocone S).ι.app s.unop) :=
+  rfl
+
 /-- The spectrum of a localization is the cofiltered limit of the spectra of the principal
 localizations, as `Spec` turns the filtered colimit `M⁻¹R = colim R[1/∏ s]` into a limit. -/
 def localizationAwaySpecConeIsLimit : IsLimit (M.localizationAwaySpecCone S) :=
@@ -101,12 +119,9 @@ def localizationAwaySpecConeIsLimit : IsLimit (M.localizationAwaySpecCone S) :=
 lemma localizationAwaySpecCone_π_app_localizationAwaySpecToSpec (s : (Finset M)ᵒᵖ) :
     (M.localizationAwaySpecCone S).π.app s ≫ M.localizationAwaySpecToSpec s =
       Spec.map (CommRingCat.ofHom (algebraMap R S)) := by
-  dsimp only [localizationAwaySpecCone, localizationAwaySpecToSpec, Functor.mapCone_π_app,
-    Cocone.op_π, Scheme.Spec_map, NatTrans.op_app]
-  rw [← Spec.map_comp]
-  congr 1
-  ext x
-  exact (((M.localizationAwayCocone S).extend
-    (eqToHom (M.localizationAwayCocone_pt S))).ι.app s.unop).hom.commutes x
+  rw [localizationAwaySpecCone_π_app, localizationAwaySpecToSpec]
+  refine (Spec.map_comp _ _).symm.trans (congrArg Spec.map ?_)
+  ext1
+  exact M.localizationAwayRingCocone_ι_app_comp_algebraMap S s.unop
 
 end Submonoid

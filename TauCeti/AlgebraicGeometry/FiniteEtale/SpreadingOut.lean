@@ -50,6 +50,8 @@ strictly larger than `W`, a contradiction.
 * `TauCeti.FiniteEtaleScheme.exists_nonempty_iso_pullback_of_isLimit`: finite étale covers of a
   member of a cofiltered diagram of qcqs schemes with affine transition maps that are isomorphic
   over the limit are isomorphic at a finite stage.
+* `TauCeti.FiniteEtaleScheme.exists_pullback_localizationAwaySpecCone_iso`: a finite étale cover
+  of `Spec (M⁻¹R)` is the base change of one over some principal localization `Spec R[1/∏ s]`.
 * `TauCeti.FiniteEtaleScheme.exists_pullback_iso_of_isPullback_fromSpecStalk`: spreading out a
   finite étale cover from `Spec 𝒪_{X,x}` to an open neighbourhood of `x`.
 * `TauCeti.FiniteEtaleScheme.essSurj_pullback_ι_of_purityHolds`: on a Noetherian scheme, if purity
@@ -114,9 +116,11 @@ section Localization
 variable {R : Type u} [CommRing R] (M : Submonoid R) (S : Type u) [CommRing S] [Algebra R S]
   [IsLocalization M S]
 
-/-- Every finite étale scheme over `Spec (M⁻¹R)` is the base change of a finite étale scheme
-over the spectrum of a principal localization `R[1/∏ s]`. -/
-private lemma exists_pullback_localizationAwaySpecCone_iso
+/-- **Finite étale covers descend to a principal localization.** Every finite étale scheme over
+`Spec (M⁻¹R)` is the base change of a finite étale scheme over the spectrum of a principal
+localization `R[1/∏ s]`, a member of the limit presentation
+`Submonoid.localizationAwaySpecConeIsLimit`. -/
+theorem exists_pullback_localizationAwaySpecCone_iso
     (Y : FiniteEtaleScheme (Spec (.of S))) :
     ∃ (s : (Finset M)ᵒᵖ) (Y₀ : FiniteEtaleScheme (M.localizationAwaySpecDiagram.obj s)),
       Nonempty ((pullback ((M.localizationAwaySpecCone S).π.app s)).obj Y₀ ≅ Y) := by
@@ -165,20 +169,17 @@ private lemma exists_glue {X Z P : Scheme.{u}} {W : X.Opens} (G : Z ⟶ X) [IsOp
   have hj₂ : j₂ ≫ W'.ι = G := by simp [j₂]
   -- The overlap square, which is cartesian over `X`, stays cartesian over the open `W'`.
   have hsq : IsPullback i₁ i₂ (X.homOfLE le_sup_left) j₂ := by
-    replace h :
-        IsPullback i₁ i₂ (X.homOfLE (le_sup_left : W ≤ W') ≫ W'.ι) (j₂ ≫ W'.ι) := by
-      rw [Scheme.homOfLE_ι, hj₂]; exact h
-    refine IsPullback.of_isLimit' ⟨by rw [← cancel_mono W'.ι]; simpa using h.w⟩
-      (PullbackCone.IsLimit.mk _
-        (fun s ↦ h.lift s.fst s.snd (by simp [reassoc_of% s.condition]))
-        (fun s ↦ h.lift_fst _ _ _) (fun s ↦ h.lift_snd _ _ _) fun s l h₁ h₂ ↦ ?_)
-    exact h.hom_ext (by simpa using h₁) (by simpa using h₂)
+    -- Paste with the square `Z = Z ×_X W'`, which is cartesian since `W'.ι` is a monomorphism.
+    refine IsPullback.of_bot (v₂₁ := 𝟙 Z) (v₂₂ := W'.ι) (h₃₁ := G) ?_
+      (by rw [← cancel_mono W'.ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι, hj₂]; exact h.w)
+      (IsPullback.of_vert_isIso_mono ⟨by simp [hj₂]⟩)
+    rwa [Category.comp_id, Scheme.homOfLE_ι]
+  -- A point of `W'` lies in `W` or is the image of a point of `Z`.
   have hcover : (X.homOfLE (le_sup_left : W ≤ W')).opensRange ⊔ j₂.opensRange = ⊤ := by
-    have hG : (j₂ ≫ W'.ι).opensRange = G.opensRange :=
-      TopologicalSpace.Opens.ext (by simp only [Scheme.Hom.coe_opensRange, hj₂])
-    rw [Scheme.opensRange_homOfLE, ← W'.ι.preimage_image_eq j₂.opensRange,
-      ← Scheme.Hom.opensRange_comp, hG, ← Scheme.Hom.preimage_sup,
-      Scheme.Opens.ι_preimage_self]
+    refine eq_top_iff.mpr fun y _ ↦ ?_
+    rw [Scheme.opensRange_homOfLE]
+    refine (TopologicalSpace.Opens.mem_sup.mp y.property).imp id fun ⟨z, hz⟩ ↦ ⟨z, ?_⟩
+    exact W'.ι.isOpenEmbedding.injective (by rw [← Scheme.Hom.comp_apply, hj₂, hz]; rfl)
   have : IsOpenImmersion i₁ :=
     MorphismProperty.of_isPullback (P := @IsOpenImmersion) h.flip inferInstance
   have : IsOpenImmersion i₂ :=
@@ -369,8 +370,7 @@ theorem essSurj_pullback_ι_of_purityHolds {X : Scheme.{u}} [IsNoetherian X] (U 
         (pullback _).mapIso e' ≪≫ e₀⟩⟩
       (lt_of_le_of_ne hW fun hWW' ↦ hxW (hWW' ▸ hxW'))
   have hι : U.ι ≫ X.topIso.inv = X.homOfLE hUW₀ := by
-    rw [← cancel_mono X.topIso.hom, Category.assoc, Iso.inv_hom_id, Category.comp_id,
-      Scheme.topIso_hom, Scheme.homOfLE_ι]
+    rw [← cancel_mono X.topIso.hom]; simp
   exact ⟨(pullback X.topIso.inv).obj V₀,
     ⟨(pullbackComp _ _).symm.app V₀ ≪≫ eqToIso (by rw [hι]) ≪≫ e₀⟩⟩
 
