@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.InterBall
 import Mathlib.MeasureTheory.Measure.Prod
@@ -61,6 +61,8 @@ gives a set of measure one.
   of two balls is the ratio of their radii raised to the dimension.
 * `MeasureTheory.Measure.addHaar_real_ball_rpow`: `μ (ball x r) ^ e = r ^ (n e) μ (ball 0 1) ^ e` in
   dimension `n`.
+* `MeasureTheory.Measure.addHaar_real_ball_half_rpow_le`:
+  `μ (ball x (R / 2)) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for `e ≥ -1` in dimension `n`.
 * `MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball`:
   `(n / r) μ (ball x r) = n rⁿ⁻¹ μ (ball 0 1)` in dimension `n`.
 * `MeasureTheory.Measure.hasDerivAt_measureReal_ball`: `ρ ↦ μ (ball x ρ)` has derivative
@@ -133,6 +135,7 @@ gives a set of measure one.
 * `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
   isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
   measure.
+* `AffineIsometryEquiv.measurePreserving_addHaar`: so does an affine isometry self-equivalence.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -194,6 +197,23 @@ theorem addHaar_real_ball_rpow
     mu.real (ball x r) ^ e = r ^ ((finrank ℝ E : ℝ) * e) * mu.real (ball 0 1) ^ e := by
   rw [addHaar_real_ball_of_pos _ _ hr, Real.mul_rpow (by positivity) measureReal_nonneg,
     ← Real.rpow_natCast, ← Real.rpow_mul hr.le]
+
+/-- Halving the radius of a ball divides its real measure by `2ⁿ`, where `n` is the dimension, so
+`μ (ball x (R / 2)) ^ e ≤ 2ⁿ μ (ball x R) ^ e` for every exponent `e ≥ -1`. -/
+theorem addHaar_real_ball_half_rpow_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x : E) {R : ℝ} (hR : 0 < R) {e : ℝ} (he : -1 ≤ e) :
+    mu.real (ball x (R / 2)) ^ e ≤ 2 ^ finrank ℝ E * mu.real (ball x R) ^ e := by
+  have hμR : 0 < mu.real (ball x R) := Metric.measureReal_ball_pos mu x hR
+  have h := mu.addHaar_real_ball_div_addHaar_real_ball x x hR (half_pos hR)
+  rw [show R / 2 / R = 2⁻¹ by field_simp, inv_pow, div_eq_iff hμR.ne'] at h
+  rw [h, Real.mul_rpow (by positivity) hμR.le, Real.inv_rpow (by positivity),
+    ← Real.rpow_neg (by positivity)]
+  gcongr
+  calc ((2 : ℝ) ^ finrank ℝ E) ^ (-e) ≤ ((2 : ℝ) ^ finrank ℝ E) ^ (1 : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ one_le_two) (by linarith)
+    _ = 2 ^ finrank ℝ E := Real.rpow_one _
 
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this
@@ -863,6 +883,22 @@ theorem map_addHaar
   (f.measurePreserving_addHaar μ).map_eq
 
 end LinearIsometryEquiv
+
+namespace AffineIsometryEquiv
+
+/-- Every affine isometry self-equivalence of a finite-dimensional real normed space preserves
+every additive Haar measure on that space. -/
+theorem measurePreserving_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ᵃⁱ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    MeasurePreserving f μ μ := by
+  have hf : ⇑f = fun x ↦ f.linearIsometryEquiv x + f 0 := funext fun x ↦ by
+    simpa using f.map_vadd 0 x
+  rw [hf]
+  exact (measurePreserving_add_right μ (f 0)).comp
+    (f.linearIsometryEquiv.measurePreserving_addHaar μ)
+
+end AffineIsometryEquiv
 
 namespace MeasureTheory.Measure
 

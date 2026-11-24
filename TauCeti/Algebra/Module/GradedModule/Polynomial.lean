@@ -9,19 +9,25 @@ public import Mathlib.Algebra.GroupWithZero.Action.Regular
 public import Mathlib.Algebra.MonoidAlgebra.Grading
 public import Mathlib.Algebra.Polynomial.Degree.Support
 public import TauCeti.Algebra.Module.GradedModule.HomogeneousPart
+public import TauCeti.Algebra.MonoidAlgebra.Grading
+import Mathlib.RingTheory.Adjoin.Polynomial.Basic
+import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # Graded modules over a polynomial ring
 
 This file records the basic behavior of the action of `k[X]` on an internally `ℤ`-graded module on
 which `X` lowers degree by a fixed `d`, and equips `k[X]` itself with the internal grading that
-places `X ^ n` in degree `-n`. It also constructs polynomial-linear homogeneous parts of maps
+places `X ^ n` in degree `-n`, or, as a graded algebra, with the standard grading placing `X ^ n` in
+degree `n`. It also constructs polynomial-linear homogeneous parts of maps
 when `X` shifts both gradings by the same integer, without a sign condition on that shift.
 
 ## Main definitions
 
 * `TauCeti.InternalGrading.homogeneousPartPolynomial`: polynomial-linear components of maps.
 * `TauCeti.Polynomial.negDegreeGrading`: the grading of `k[X]` placing `X ^ n` in degree `-n`.
+* `TauCeti.Polynomial.degreeGrade`: the grading of `k[X]` placing `X ^ n` in degree `n`, for
+  which `k[X]` is a graded algebra.
 
 ## Main results
 
@@ -44,6 +50,11 @@ when `X` shifts both gradings by the same integer, without a sign condition on t
 * `TauCeti.Polynomial.X_smul_mem_negDegreeGrading_piece`: multiplication by `X` lowers degree by
   one.
 * `TauCeti.Polynomial.X_pow_mem_negDegreeGrading_piece`: `X ^ n` has degree `-n`.
+* `TauCeti.Polynomial.mem_degreeGrade_iff`: membership in a piece of `degreeGrade` is characterized
+  coefficientwise.
+* `TauCeti.Polynomial.degreeGrade_eq_bot_of_neg` and
+  `TauCeti.Polynomial.degreeGrade_zero_eq_span_one`: the standard grading is nonnegative, and its
+  degree-zero piece is the line of constants.
 -/
 
 public section
@@ -96,19 +107,9 @@ theorem bddAbove_setOf_piece_ne_bot [Module.Finite k[X] M]
     refine Submodule.iSup_induction _ (motive := fun y ↦ (X : k[X]) • y ∈ L) hy
       (fun q y hy ↦ ?_) (by simp) fun y z hy hz ↦ by simpa only [smul_add] using L.add_mem hy hz
     exact Submodule.mem_iSup_of_mem ⟨(q : ℤ) - d, by grind⟩ (hX hy)
-  have hXnL : ∀ n : ℕ, ∀ y ∈ L, (X ^ n : k[X]) • y ∈ L := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih => exact fun y hy ↦ by simpa only [pow_succ, mul_smul] using ih _ (hXL y hy)
-  have hAL : ∀ (a : k[X]), ∀ y ∈ L, a • y ∈ L := by
-    intro a
-    induction a using Polynomial.induction_on' with
-    | add a b ha hb => exact fun y hy ↦ by simpa only [add_smul] using L.add_mem (ha y hy) (hb y hy)
-    | monomial n c =>
-      intro y hy
-      rw [← C_mul_X_pow_eq_monomial, mul_smul, ← algebraMap_eq, algebraMap_smul]
-      exact L.smul_mem c (hXnL n y hy)
+  have hAL : ∀ (a : k[X]), ∀ y ∈ L, a • y ∈ L := fun a _ hy ↦
+    L.smul_mem_of_mem_adjoin (s := {X}) (by simpa using hXL)
+      (adjoin_X (R := k) ▸ Algebra.mem_top) hy
   let L' : Submodule k[X] M := { L.toAddSubmonoid with smul_mem' := hAL }
   have hL : ∀ y : M, y ∈ L := by
     have hsL : Submodule.span k[X] (s : Set M) ≤ L' := by
@@ -247,9 +248,9 @@ theorem homogeneousPartPolynomial_apply_of_mem (f : M →ₗ[k[X]] N) (r : ℤ)
 /-- The polynomial-linear homogeneous part has the selected degree. -/
 @[simp]
 theorem isHomogeneous_homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ) :
-    TauCeti.LinearMap.IsHomogeneous (G.homogeneousPartPolynomial H hX hY f r)
+    LinearMap.IsHomogeneous (G.homogeneousPartPolynomial H hX hY f r)
       G.piece H.piece r := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [G.homogeneousPartPolynomial_apply_of_mem H hX hY f r hx]
   exact (DirectSum.decompose H.piece (f x) (p + r)).property
@@ -257,12 +258,12 @@ theorem isHomogeneous_homogeneousPartPolynomial (f : M →ₗ[k[X]] N) (r : ℤ)
 /-- Taking the component at the degree of a homogeneous polynomial-linear map recovers the map. -/
 @[simp]
 theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
-    (hf : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r) :
+    (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     G.homogeneousPartPolynomial H hX hY f r = f := by
   apply _root_.LinearMap.restrictScalars_injective k
   rw [G.homogeneousPartPolynomial_restrictScalars H hX hY f r]
   apply G.homogeneousPart_eq_self H (f.restrictScalars k) r
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   simpa only [_root_.LinearMap.restrictScalars_apply] using hf.map_mem hx
 
@@ -270,7 +271,7 @@ theorem homogeneousPartPolynomial_eq_self (f : M →ₗ[k[X]] N) (r : ℤ)
 @[simp]
 theorem homogeneousPartPolynomial_eq_self_iff (f : M →ₗ[k[X]] N) (r : ℤ) :
     G.homogeneousPartPolynomial H hX hY f r = f ↔
-      TauCeti.LinearMap.IsHomogeneous f G.piece H.piece r := by
+      LinearMap.IsHomogeneous f G.piece H.piece r := by
   constructor
   · intro hf
     rw [← hf]
@@ -421,6 +422,58 @@ theorem X_pow_mem_negDegreeGrading_piece (n : ℕ) :
   split_ifs at hm with h
   · rw [h]
   · exact absurd rfl hm
+
+/-! ### The standard grading -/
+
+variable (k) in
+/-- The standard grading of the polynomial ring `k[X]` by integer degrees: the degree-`p` piece
+consists of the polynomials all of whose monomials `X ^ n` have `n = p`, so pieces of negative
+degree vanish. It is the grading by `AddMonoidAlgebra.gradeBy` along `ℕ → ℤ`. -/
+noncomputable def degreeGrade : ℤ → Submodule k k[X] :=
+  AddMonoidAlgebra.gradeBy k ⇑(Nat.castAddMonoidHom ℤ)
+
+variable (k) in
+/-- Multiplication adds degrees in the standard grading of `k[X]`. -/
+theorem gradedMonoid_degreeGrade : SetLike.GradedMonoid (degreeGrade k) := by
+  rw [degreeGrade]
+  infer_instance
+
+variable (k) in
+/-- The polynomial ring is the internal direct sum of the pieces of its standard grading. -/
+theorem isInternal_degreeGrade : DirectSum.IsInternal (degreeGrade k) := by
+  rw [degreeGrade]
+  exact AddMonoidAlgebra.gradeBy.isInternal _
+
+/-- The polynomial ring is a graded algebra for its standard grading. -/
+noncomputable instance : GradedAlgebra (degreeGrade k) :=
+  letI := gradedMonoid_degreeGrade k
+  DirectSum.IsInternal.gradedAlgebra (isInternal_degreeGrade k)
+
+/-- A polynomial has degree `p` in `degreeGrade` exactly when each of its monomials `X ^ n` has
+`n = p`. -/
+@[simp]
+theorem mem_degreeGrade_iff {p : ℤ} {x : k[X]} :
+    x ∈ degreeGrade k p ↔ ∀ n, x.coeff n ≠ 0 → (n : ℤ) = p := by
+  rw [degreeGrade]
+  simp
+
+/-- The monomial `X ^ n` has degree `n` in `degreeGrade`. -/
+theorem X_pow_mem_degreeGrade (n : ℕ) : (X ^ n : k[X]) ∈ degreeGrade k n := by
+  rw [X_pow_eq_monomial]
+  exact AddMonoidAlgebra.single_mem_gradeBy _ n 1
+
+/-- The standard grading of `k[X]` vanishes in negative degrees. -/
+theorem degreeGrade_eq_bot_of_neg {p : ℤ} (hp : p < 0) : degreeGrade k p = ⊥ := by
+  have : ⇑(Nat.castAddMonoidHom ℤ) ⁻¹' {p} = ∅ :=
+    Set.eq_empty_iff_forall_notMem.2 fun n hn ↦ by simp at hn; omega
+  rw [degreeGrade, AddMonoidAlgebra.gradeBy_eq_supported, this,
+    AddMonoidAlgebra.supported_eq_span_single, Set.image_empty, Submodule.span_empty]
+
+/-- **The degree-zero piece of the standard grading is the line of constants.** -/
+theorem degreeGrade_zero_eq_span_one : degreeGrade k 0 = k ∙ (1 : k[X]) := by
+  have : ⇑(Nat.castAddMonoidHom ℤ) ⁻¹' {0} = {0} := by ext; simp
+  rw [degreeGrade, AddMonoidAlgebra.gradeBy_eq_supported, this,
+    AddMonoidAlgebra.supported_eq_span_single, Set.image_singleton, AddMonoidAlgebra.one_def]
 
 end Polynomial
 

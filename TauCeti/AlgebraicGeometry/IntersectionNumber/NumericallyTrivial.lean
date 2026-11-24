@@ -42,7 +42,8 @@ the other hand every class pulled back from the base is relatively numerically t
 * `LineBundleClass.NumericallyTrivial.eulerDegree_eq_zero`: on an integral curve, a numerically
   trivial class has degree zero;
 * `projectiveLine.numericallyTrivial_iff_eq_one`: on `ℙ¹_k` the numerically trivial classes are
-  exactly the trivial class;
+  exactly the trivial class, so that `Pic^τ(ℙ¹_k/k) = ⊥`
+  (`projectiveLine.numericallyTrivialClasses_eq_bot`);
 * `LineBundleClass.RelNumericallyTrivial f a`: relative numerical triviality `a ≡_f 0`, tested
   on the scheme-theoretic fibres of `f`;
 * `LineBundleClass.relNumericallyTrivialClasses f`: for proper `f`, the subgroup `Pic^τ(X/S)`;
@@ -282,6 +283,13 @@ theorem numericallyTrivial_iff_eq_one (a : LineBundleClass (projectiveLine k)) :
   apply Additive.ofMul.injective
   apply (picardDegreeEquiv k).injective
   simpa using h
+
+/-- On `ℙ¹_k` the subgroup `Pic^τ(ℙ¹_k/k)` of numerically trivial classes is trivial. -/
+@[simp]
+theorem numericallyTrivialClasses_eq_bot :
+    LineBundleClass.numericallyTrivialClasses k (projectiveLine k ↘ Spec (.of k)) = ⊥ :=
+  eq_bot_iff.mpr fun a ha ↦
+    (numericallyTrivial_iff_eq_one k a).mp (LineBundleClass.mem_numericallyTrivialClasses.mp ha)
 
 end projectiveLine
 

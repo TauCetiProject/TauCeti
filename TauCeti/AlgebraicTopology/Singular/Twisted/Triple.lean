@@ -62,8 +62,7 @@ private lemma composite_comp_twistedChainComplexπ :
 private def isColimitCompositeCokernel :
     IsColimit (CokernelCofork.ofπ ((totalPair.obj T).twistedChainComplexπ L)
       (T.composite_comp_twistedChainComplexπ L)) := by
-  have ht := (totalPair.obj T).isColimitCokernelCoforkTwistedChainComplex L
-  rw [TopPair.cokernelCoforkTwistedChainComplex_def] at ht
+  have ht := (totalPair.obj T).isColimitCokernelCoforkTwistedChainComplexπ L
   have : IsIso (TopPair.twistedSubspaceChainComplexMap (innerToTotal.app T) L) := by
     rw [TopPair.twistedSubspaceChainComplexMap_def]
     have hid : IsIso (twistedChainComplexMap (𝟙 T.thd)
@@ -140,15 +139,14 @@ abbrev twistedChainComplexShortComplex :
 /-- The relative twisted chain sequence of a triple is short exact. -/
 lemma shortExact_twistedChainComplexShortComplex :
     (T.twistedChainComplexShortComplex L).ShortExact := by
-  have hi := (innerPair.obj T).isColimitCokernelCoforkTwistedChainComplex
-    ((outerPair.obj T).subspaceSystem L)
-  have ho := (outerPair.obj T).isColimitCokernelCoforkTwistedChainComplex L
-  rw [TopPair.cokernelCoforkTwistedChainComplex_def] at hi ho
   exact shortExact_of_isColimit_cokernelCofork rfl
     (by
       have : Mono T.outerMap := (TopCat.mono_iff_injective _).2 T.isEmbedding_outerMap.injective
       infer_instance)
-    hi (T.isColimitCompositeCokernel L) ho
+    ((innerPair.obj T).isColimitCokernelCoforkTwistedChainComplexπ
+      ((outerPair.obj T).subspaceSystem L))
+    (T.isColimitCompositeCokernel L)
+    ((outerPair.obj T).isColimitCokernelCoforkTwistedChainComplexπ L)
     (TopPair.twistedChainComplexπ_comp_twistedChainComplexMap (innerToTotal.app T) L)
     (T.twistedChainComplexπ_comp_totalToOuter L)
 

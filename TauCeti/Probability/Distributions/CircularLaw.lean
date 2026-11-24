@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Isometry
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.MeasureTheory.Integral.NormRpow
 public import TauCeti.Probability.Distributions.Uniform.Ball.Basic
 

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 public import TauCeti.Analysis.Sobolev.Trace.ZeroBoundary
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Normed.Lp.ProdLp
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Extension by reflection from a half-space, and the half-space trace
@@ -351,7 +352,7 @@ theorem W1p.norm_halfSpaceTrace_le (hp : p ≠ ∞) (a : ℝ)
     (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p) :
     ‖W1p.halfSpaceTrace hp a u‖ ≤ p.toReal ^ p.toReal⁻¹ * ‖u‖ := by
   have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
-  exact le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+  exact Real.le_rpow_inv_mul_of_rpow_le hr (norm_nonneg _) (norm_nonneg _)
     (W1p.norm_value_le u) (W1p.norm_gradient_le u) (W1p.norm_halfSpaceTrace_rpow_le hp a u)
 
 /-- For `1 ≤ p < ∞`, the half-space trace has operator norm at most `p ^ (1 / p)`, which is `1`

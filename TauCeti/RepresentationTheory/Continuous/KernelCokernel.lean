@@ -184,7 +184,7 @@ continuous unitary representation carries a continuous representation. -/
 theorem continuous_orthogonalRangeRepresentation (hρ : ρ.IsUnitary)
     (hρc : ∀ w, Continuous fun g ↦ ρ g w) [FiniteDimensional 𝕜 T.toContinuousLinearMap.rangeᗮ] :
     Continuous (T.orthogonalRangeRepresentation hρ) :=
-  continuous_clm_apply.mpr (continuous_subrepresentation_apply hρc)
+  continuous_subrepresentation_of_finiteDimensional hρc
 
 section OrthogonalProjection
 

@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.ContinuousMap
@@ -48,7 +49,8 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
 ## Main results
 
 * `TauCeti.Manifold.SobolevH1`: the Sobolev space `H¹(M)`, with
-  `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions,
+  `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions (injective by
+  `TauCeti.Manifold.SobolevH1.ofSmooth_injective`),
   `TauCeti.Manifold.SobolevH1.inner_ofSmooth` the inner product of two smooth functions, and
   `TauCeti.Manifold.SobolevH1.subsingleton_of_isEmpty` showing `H¹(M)` is a subsingleton on an empty
   manifold, and `TauCeti.Manifold.SobolevH1.nontrivial_of_nonempty` showing it is nontrivial on a
@@ -332,6 +334,14 @@ theorem toLp_ofSmooth_ae_eq (u : C^∞⟮I, M; ℝ⟯) :
   rw [toLp_ofSmooth]
   exact ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) _ _
 
+/-- **Smooth functions embed into `H¹(M)`.** Two smooth functions with the same image in `H¹(M)`
+have the same class in `L²(M)`, hence agree, since the Riemannian volume charges every nonempty open
+set. -/
+theorem ofSmooth_injective : Function.Injective (ofSmooth (I := I) (M := M)) := fun u v huv ↦ by
+  have h : (u : C(M, ℝ)) = v := ContinuousMap.toLp_injective (p := 2) (𝕜 := ℝ)
+    (riemannianVolume I M) (by simpa only [toLp_ofSmooth] using congrArg toLp huv)
+  exact ContMDiffMap.ext fun x ↦ DFunLike.congr_fun h x
+
 /-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero, since its
 integral is the positive total volume. -/
 instance nontrivial_of_nonempty [Nonempty M] : Nontrivial (SobolevH1 I M) :=
@@ -482,6 +492,14 @@ theorem toLp_eq_zero_iff {w : SobolevH1 I M} : toLp w = 0 ↔ w = 0 :=
 /-- The value of `w ∈ H¹(M)` has positive `L²` norm exactly when `w ≠ 0`. -/
 theorem norm_toLp_pos_iff {w : SobolevH1 I M} : 0 < ‖toLp w‖ ↔ w ≠ 0 := by
   rw [norm_pos_iff, Ne, toLp_eq_zero_iff]
+
+/-- An element of `H¹(M)` agrees almost everywhere in `L²(M)` with a smooth function `u`
+if and only if it equals `ofSmooth u`. -/
+@[simp]
+theorem toLp_ae_eq_iff_eq_ofSmooth {w : SobolevH1 I M} {u : C^∞⟮I, M; ℝ⟯} :
+    toLp w =ᵐ[riemannianVolume I M] u ↔ w = ofSmooth u :=
+  ⟨fun hwu ↦ toLp_injective (Lp.ext (hwu.trans (toLp_ofSmooth_ae_eq u).symm)),
+    fun h ↦ h ▸ toLp_ofSmooth_ae_eq u⟩
 
 /-- **The Dirichlet form against a smooth function.** On a closed manifold with a `C¹` metric,
 `D(w, φ) = ∫ w Δ⁺φ dV` for `w ∈ H¹(M)` and a smooth function `φ`, where `Δ⁺ = -div grad` is the

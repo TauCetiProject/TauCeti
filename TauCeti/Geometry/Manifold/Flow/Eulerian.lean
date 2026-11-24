@@ -225,11 +225,8 @@ theorem timeDependentFlowOf_eulerianField [T2Space M] [IsManifold I 1 M]
       (fun p : ℝ × M ↦ (⟨p.2, eulerianField I φ p.1 p.2⟩ : TangentBundle I M)))
     (s t : ℝ) (x : M) :
     timeDependentFlowOf (eulerianField I φ) s t x = φ t ((φ s).symm x) := by
-  have h := timeDependentFlowOf_eq_of_hasMFDerivAt hX (s := s) (t := t)
-    (γ := fun u ↦ φ u ((φ s).symm x)) (a := min s t - 1) (b := max s t + 1)
-    (fun u _ ↦ hasMFDerivAt_eulerianField (hφ _ u))
-    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
-    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  have h := timeDependentFlowOf_eq_of_forall_hasMFDerivAt hX
+    (γ := fun u ↦ φ u ((φ s).symm x)) (fun u ↦ hasMFDerivAt_eulerianField (hφ _ u)) s t
   simpa using h
 
 end Flow
