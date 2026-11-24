@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Topology.Algebra.MulAction
-public import Mathlib.Topology.Compactness.LocallyCompact
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -55,11 +54,6 @@ variable [T1Space E]
 /-- The nonzero vectors are an open subset. -/
 theorem isOpenEmbedding_val_nonZero : IsOpenEmbedding (Subtype.val : {v : E // v ≠ 0} → E) :=
   isOpen_ne.isOpenEmbedding_subtypeVal
-
-/-- The nonzero vectors of a locally compact space are locally compact. -/
-instance instLocallyCompactSpaceNonZero [LocallyCompactSpace E] :
-    LocallyCompactSpace {v : E // v ≠ 0} :=
-  isOpenEmbedding_val_nonZero.locallyCompactSpace
 
 /-- The nonzero vectors of `E` are charted by their inclusion into `E`. -/
 instance instChartedSpaceNonZero [Nontrivial E] : ChartedSpace E {v : E // v ≠ 0} :=

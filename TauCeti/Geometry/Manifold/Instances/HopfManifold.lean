@@ -12,6 +12,7 @@ public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.GroupTheory.GroupAction.SubMulAction
 public import TauCeti.Geometry.Manifold.Instances.NonzeroVectors
 public import TauCeti.Geometry.Manifold.Instances.Quotient
+public import TauCeti.Topology.Compactness.LocallyCompact
 import Mathlib.Topology.Instances.ZMultiples
 
 /-!
