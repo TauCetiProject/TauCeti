@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Geometrically.Integral
-public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import TauCeti.AlgebraicGeometry.Cohomology.Genus
-public import TauCeti.AlgebraicGeometry.Geometrically.GlobalSections
+public import TauCeti.AlgebraicGeometry.Cohomology.Genus.GeometricallyIntegral
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Forms
 
@@ -35,7 +32,7 @@ global functions are the constants.
   not a K3 surface;
 * `IsK3.isZero_differentialForms`: `Ωᵖ_{X/k} = 0` for `p > 2`;
 * `IsK3.mk_det_relativeDifferentials_eq_one`: the canonical class of a K3 surface is trivial;
-* `IsK3.finrank_cohomology_zero`: `H⁰(X, 𝒪_X)` is one-dimensional over `k`.
+* `IsK3.finrank_cohomology_zero_unit_eq_one`: `H⁰(X, 𝒪_X)` is one-dimensional over `k`.
 
 ## References
 
@@ -113,14 +110,13 @@ theorem mk_det_relativeDifferentials_eq_one [X.Over (Spec (.of k))]
 
 /-- A K3 surface has only constant global functions: `H⁰(X, 𝒪_X)` is one-dimensional over `k`.
 No rational point is needed; this uses only properness and geometric integrality. -/
-theorem finrank_cohomology_zero [X.Over (Spec (.of k))] (h : IsK3 k (X ↘ Spec (.of k))) :
+theorem finrank_cohomology_zero_unit_eq_one [X.Over (Spec (.of k))]
+    (h : IsK3 k (X ↘ Spec (.of k))) :
     Module.finrank k (Scheme.Modules.Cohomology (𝟙_ X.Modules) 0) = 1 := by
   have := h.geometricallyIntegral
   have := h.isProper
-  have := h.isIntegral
   rw [← Scheme.Modules.finrank_cohomology_congr k (InvertibleSheaf.trivialObjIsoUnit X) 0]
-  exact finrank_cohomology_zero_trivial_eq_one_of_surjective k
-    (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).2
+  exact finrank_cohomology_zero_trivial_eq_one_of_geometricallyIntegral k
 
 end IsK3
 
