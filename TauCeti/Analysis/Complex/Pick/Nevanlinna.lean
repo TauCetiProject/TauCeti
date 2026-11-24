@@ -321,11 +321,7 @@ bound depending only on the distance of the point from the boundary in Cayley co
 theorem norm_nevanlinnaKernel_le {z : ℂ} (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) (x : ℝ) :
     ‖nevanlinnaKernel z x‖ ≤ (‖z + I‖ + ‖z - I‖) / (‖z + I‖ - ‖z - I‖) := by
   have hzim : 0 < z.im := hz
-  have hlt : ‖z - I‖ < ‖z + I‖ := by
-    refine lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) ?_
-    rw [← normSq_eq_norm_sq, ← normSq_eq_norm_sq]
-    simp only [normSq_apply, sub_re, sub_im, add_re, add_im, I_re, I_im]
-    nlinarith
+  have hlt : ‖z - I‖ < ‖z + I‖ := norm_sub_I_lt_norm_add_I_iff.2 hzim
   have hDpos : (0 : ℝ) < ‖z + I‖ := lt_of_le_of_lt (norm_nonneg _) hlt
   have hEnonneg : (0 : ℝ) ≤ ‖z - I‖ := norm_nonneg _
   set D := ‖z + I‖ with hD
