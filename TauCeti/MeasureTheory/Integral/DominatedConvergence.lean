@@ -54,9 +54,9 @@ on the whole space.
   constant `x`.
 * `TauCeti.continuousOn_parametric_intervalIntegral_of_continuousOn`: an interval integral of a
   function continuous on `s ×ˢ uIcc a b` is continuous in the parameter on `s`.
-* `TauCeti.tendsto_integral_norm_sub_of_dominated`: `∫ t in a..b, ‖P(t, z) - P(t, z₀)‖ ∂μ → 0`
-  as `z → z₀` within `U` when `z ↦ P(t, z)` is continuous on `U` and the norms are dominated on
-  compact subsets of `U`.
+* `TauCeti.tendsto_intervalIntegral_norm_sub_of_dominated`:
+  `∫ t in a..b, ‖P(t, z) - P(t, z₀)‖ ∂μ → 0` as `z → z₀` within `U` when `z ↦ P(t, z)` is
+  continuous on `U` and the norms are dominated on compact subsets of `U`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
@@ -374,7 +374,7 @@ measurable on `[a, b]` for `z ∈ U`, `z ↦ P(t, z)` is continuous on `U` for a
 function of `t`, then `∫ t in a..b, ‖P(t, z) - P(t, z₀)‖ ∂μ → 0` as `z → z₀` within `U`. The
 domination is only required on compact sets, so this applies on an open set of parameters where
 no single bound holds. -/
-theorem tendsto_integral_norm_sub_of_dominated {Z F : Type*} [TopologicalSpace Z]
+theorem tendsto_intervalIntegral_norm_sub_of_dominated {Z F : Type*} [TopologicalSpace Z]
     [FirstCountableTopology Z] [NormedAddCommGroup F] {μ : Measure ℝ} {P : ℝ → Z → F}
     {U : Set Z} {a b : ℝ} (hab : a ≤ b)
     (hmeas : ∀ z ∈ U, AEStronglyMeasurable (fun t ↦ P t z) (μ.restrict (Icc a b)))

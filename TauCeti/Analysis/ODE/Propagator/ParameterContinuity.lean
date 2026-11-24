@@ -21,7 +21,7 @@ This covers holomorphic families on an open subset of `ℂ`, which are in partic
 `z`.
 
 The coefficients `P(·, z)` converge to `P(·, z₀)` in `L¹([a, b])` as `z → z₀` by dominated
-convergence along sequences (`TauCeti.tendsto_integral_norm_sub_of_dominated`), so the
+convergence along sequences (`TauCeti.tendsto_intervalIntegral_norm_sub_of_dominated`), so the
 propagators converge uniformly on `[a, b]²` (`TauCeti.tendstoUniformlyOn_propagator`), and the
 limit is continuous on `[a, b]²` (`TauCeti.continuousOn_propagator`).
 
@@ -71,7 +71,7 @@ theorem continuousOn_propagator_parameter
     (continuous_fst.tendsto _).inf (tendsto_principal_principal.2 fun _ hq ↦ hq.1)
   have hunif := tendstoUniformlyOn_propagator (Q := fun q : (ℝ × ℝ) × Z ↦ fun t ↦ P t q.2)
     (hP z₀ hz₀) (hsnd.eventually (eventually_mem_nhdsWithin.mono hP))
-    ((tendsto_integral_norm_sub_of_dominated hab hmeas hcont hdom hz₀).comp hsnd)
+    ((tendsto_intervalIntegral_norm_sub_of_dominated hab hmeas hcont hdom hz₀).comp hsnd)
   exact hunif.tendsto_comp (continuousOn_propagator (hP z₀ hz₀) p₀ hp₀) hfst
 
 end TauCeti
