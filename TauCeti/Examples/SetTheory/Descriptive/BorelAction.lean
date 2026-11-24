@@ -8,6 +8,7 @@ module
 import Mathlib.Data.Fintype.Perm
 import Mathlib.Data.Fintype.Powerset
 import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
+import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.ModelTheory.RelationalConfiguration.Topology
 import TauCeti.SetTheory.Descriptive.BorelAction
 
@@ -23,7 +24,9 @@ These examples exercise the Borel σ-algebra on permutation groups and the API o
 * `ℕ` with the evaluation action is a Borel `S∞`-space with a single orbit;
 * a standard Borel space with the trivial action is one, and its orbit relation is equality;
 * the logic action on relational configurations on `ℕ` is a Borel `S∞`-space whose orbit relation
-  is isomorphism, and so is its restriction to an invariant Borel set.
+  is isomorphism, and so is its restriction to an invariant Borel set;
+* an equivariant measurable injection between Borel `S∞`-spaces has an invariant Borel range and
+  is a Borel reduction of the orbit relations.
 -/
 
 open MeasureTheory TauCeti
@@ -88,17 +91,18 @@ variable {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
 
 example :
     letI : MulAction (Equiv.Perm ℕ) X := MulAction.compHom X (1 : Equiv.Perm ℕ →* Function.End X)
-    MeasurableSMul₂ (Equiv.Perm ℕ) X :=
-  letI : MulAction (Equiv.Perm ℕ) X := MulAction.compHom X (1 : Equiv.Perm ℕ →* Function.End X)
-  ⟨measurable_snd⟩
+    MeasurableSMul₂ (Equiv.Perm ℕ) X := by
+  let : MulAction (Equiv.Perm ℕ) X := MulAction.compHom X (1 : Equiv.Perm ℕ →* Function.End X)
+  have h (g : Equiv.Perm ℕ) (x : X) : g • x = x := by simp [MulAction.compHom_smul_def]
+  exact ⟨by simpa only [Function.uncurry_def, h] using measurable_snd⟩
 
 example :
     letI : MulAction (Equiv.Perm ℕ) X := MulAction.compHom X (1 : Equiv.Perm ℕ →* Function.End X)
     MulAction.orbitRel (Equiv.Perm ℕ) X = ⊥ := by
   let : MulAction (Equiv.Perm ℕ) X := MulAction.compHom X (1 : Equiv.Perm ℕ →* Function.End X)
+  have h (g : Equiv.Perm ℕ) (x : X) : g • x = x := by simp [MulAction.compHom_smul_def]
   ext x y
-  simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  exact ⟨fun ⟨_, h⟩ => h.symm, fun h => ⟨1, h.symm⟩⟩
+  simp [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, h, eq_comm]
 
 end Trivial
 
@@ -123,3 +127,20 @@ example (p : SubMulAction (Equiv.Perm ℕ) (RelationalConfiguration L ℕ))
   ⟨hp.standardBorel, inferInstance⟩
 
 end Logic
+
+-- An equivariant measurable injection between Borel `S∞`-spaces has an invariant Borel range, by
+-- Lusin–Souslin, and is a Borel reduction of the orbit relations.
+section Injection
+
+variable {X Y : Type*} [MeasurableSpace X] [StandardBorelSpace X] [MulAction (Equiv.Perm ℕ) X]
+  [MeasurableSpace Y] [StandardBorelSpace Y] [MulAction (Equiv.Perm ℕ) Y]
+
+example (f : X →[Equiv.Perm ℕ] Y) (hmeas : Measurable f) (hinj : Function.Injective f) :
+    MeasurableSet (f.rangeSubMulAction : Set Y) := by
+  simpa using (hmeas.measurableEmbedding hinj).measurableSet_range
+
+example (f : X →[Equiv.Perm ℕ] Y) (hmeas : Measurable f) (hinj : Function.Injective f) :
+    (MulAction.orbitRel (Equiv.Perm ℕ) X).BorelReducible (MulAction.orbitRel (Equiv.Perm ℕ) Y) :=
+  borelReducible_orbitRel hmeas hinj
+
+end Injection
