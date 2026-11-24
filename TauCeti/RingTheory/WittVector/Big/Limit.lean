@@ -25,17 +25,9 @@ public section
 namespace TauCeti.BigWittVector
 
 open BigWitt (TruncationSet)
+open BigWitt.TruncationSet (FiniteSubtruncation divisorStage apply_eq_of_finiteSubtruncations)
 
 variable {S : TruncationSet} {R A : Type*}
-
-/-- The finite truncation sets contained in `S`. -/
-abbrev FiniteSubtruncation (S : TruncationSet) :=
-  {T : TruncationSet // T ≤ S ∧ (T : Set ℕ).Finite}
-
-private abbrev divisorStage (n : S) : FiniteSubtruncation S :=
-  ⟨TruncationSet.divisors n, (TruncationSet.divisors_le_iff
-      (S.ne_zero_of_mem n.property)).2 n.property,
-    by simpa only [TruncationSet.coe_divisors] using n.val.divisors.finite_toSet⟩
 
 private def finiteGlue (f : ∀ T : FiniteSubtruncation S, A → T.val → R) (a : A) : S → R :=
   fun n ↦ f (divisorStage n) a
@@ -50,13 +42,6 @@ private theorem finiteGlue_apply (f : ∀ T : FiniteSubtruncation S, A → T.val
     ((TruncationSet.divisors_le_iff (T.val.ne_zero_of_mem n.property)).2 n.property) a
     ⟨n, TruncationSet.mem_divisors_self (T.val.ne_zero_of_mem n.property)⟩).symm
 
-private theorem finiteCoordinate_ext {x y : S → R}
-    (h : ∀ (T : FiniteSubtruncation S) (n : T.val),
-      x ⟨n, T.property.1 n.property⟩ = y ⟨n, T.property.1 n.property⟩) (n : S) :
-    x n = y n :=
-  h (divisorStage n)
-    ⟨n, TruncationSet.mem_divisors_self (S.ne_zero_of_mem n.property)⟩
-
 variable [CommRing R]
 
 /-- Finite restrictions determine a big Witt vector. -/
@@ -66,7 +51,7 @@ theorem eq_of_restrict_eq {x y : BigWittVector S R}
   apply BigWittVector.ext
   intro n
   by_cases hn : n ∈ S
-  · apply finiteCoordinate_ext (x := fun n : S ↦ x.coeff n)
+  · apply apply_eq_of_finiteSubtruncations (x := fun n : S ↦ x.coeff n)
       (y := fun n : S ↦ y.coeff n) (n := ⟨n, hn⟩)
     intro T n
     have he := congrArg (fun z : BigWittVector T.val R ↦ z.coeff n) (h T)
@@ -180,7 +165,7 @@ end TauCeti.BigWittVector
 namespace TauCeti.NonUnitalBigWitt
 
 open BigWitt (TruncationSet)
-open BigWittVector (FiniteSubtruncation)
+open BigWitt.TruncationSet (FiniteSubtruncation apply_eq_of_finiteSubtruncations)
 
 variable {S : TruncationSet} {R A : Type*}
 
@@ -191,10 +176,10 @@ theorem eq_of_restrict_eq {x y : NonUnitalBigWitt S R}
     (h : ∀ T : FiniteSubtruncation S, restrict T.property.1 x = restrict T.property.1 y) :
     x = y := by
   apply NonUnitalBigWitt.ext
-  apply BigWittVector.finiteCoordinate_ext
+  apply apply_eq_of_finiteSubtruncations
   intro T n
   have he := congrArg (fun z : NonUnitalBigWitt T.val R ↦ z.coeff n) (h T)
-  simpa only [restrict_coeff] using he
+  simpa only [coeff_restrict] using he
 
 section Lift
 
@@ -211,12 +196,12 @@ private theorem liftFun_restrict (T : FiniteSubtruncation S) (a : A) :
     restrict T.property.1 (liftFun f a) = f T a := by
   apply NonUnitalBigWitt.ext
   intro n
-  rw [restrict_coeff, liftFun, coeff_mk]
+  rw [coeff_restrict, liftFun, coeff_mk]
   apply BigWittVector.finiteGlue_apply
   intro T U h a n
   have he := congrArg (fun z : NonUnitalBigWitt T.val R ↦ z.coeff n)
     (DFunLike.congr_fun (hf T U h) a)
-  simpa only [NonUnitalRingHom.comp_apply, restrict_coeff] using he
+  simpa only [NonUnitalRingHom.comp_apply, coeff_restrict] using he
 
 /-- Lift a compatible family of nonunital ring homomorphisms to `NonUnitalBigWitt S R`. -/
 noncomputable def lift : A →ₙ+* NonUnitalBigWitt S R where
