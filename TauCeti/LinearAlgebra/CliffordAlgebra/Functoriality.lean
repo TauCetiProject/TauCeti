@@ -27,7 +27,8 @@ Clifford algebra is faithful.
 
 ## Main results
 
-* `CliffordAlgebra.map_involute` proves naturality of the grade involution.
+* `CliffordAlgebra.map_involute` proves naturality of the grade involution, and
+  `ExteriorAlgebra.map_involute` is its exterior-algebra case.
 * `CliffordAlgebra.map_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.map_mem_evenOdd` proves preservation of the `ℤ/2`-grading, and
@@ -424,3 +425,19 @@ theorem map_inr_injective (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K 
 end OrthogonalProduct
 
 end CliffordAlgebra
+
+namespace ExteriorAlgebra
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- The grade involution commutes with the algebra map of exterior algebras induced by a linear
+map. -/
+@[simp]
+theorem map_involute (f : M →ₗ[R] N) (x : ExteriorAlgebra R M) :
+    map f (CliffordAlgebra.involute (Q := (0 : QuadraticForm R M)) x) =
+      CliffordAlgebra.involute (Q := (0 : QuadraticForm R N)) (map f x) :=
+  -- `ExteriorAlgebra.map f` is by definition the Clifford-algebra map of `f`, viewed as an
+  -- isometry of the zero quadratic forms.
+  CliffordAlgebra.map_involute { f with map_app' := fun _ ↦ rfl } x
+
+end ExteriorAlgebra
