@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Sets.Compacts
+public import TauCeti.Topology.LocallyConstant.Compact
+public import TauCeti.Topology.LocallyConstant.Fiber
 
 /-!
 # Slices of compact open subsets of a product
@@ -15,7 +16,11 @@ A compact open set `K ⊆ X × Y` has, at each point `x : X`, the slice `K_x = {
 When the points of `X` are closed, `K_x` is again compact open
 (`TopologicalSpace.CompactOpens.slice`), and when `X` and `Y` are Hausdorff, `x ↦ K_x` is locally
 constant (`TopologicalSpace.CompactOpens.isLocallyConstant_slice`). This is how a compact open
-subset of a product of locally profinite spaces is cut into finitely many rectangles.
+subset of a product of locally profinite spaces is cut into finitely many rectangles: `K` is the
+union of the rectangles `{x | K_x = T} ×ˢ T` over its finitely many nonempty slices `T`
+(`TopologicalSpace.CompactOpens.mem_iff_exists_sliceFiber`), and these have pairwise disjoint
+bases. Conversely, any presentation of `K` as such a union determines its slices
+(`TopologicalSpace.CompactOpens.slice_eq_of_mem`).
 
 This file also records that a compact open set is nonempty exactly when it is not `⊥`
 (`TopologicalSpace.CompactOpens.coe_nonempty`), as Mathlib does for `TopologicalSpace.Compacts`.
@@ -24,6 +29,8 @@ This file also records that a compact open set is nonempty exactly when it is no
 
 * `TopologicalSpace.CompactOpens.slice`: the slice `{y | (x, y) ∈ K}` of a compact open set
   `K ⊆ X × Y` at `x : X`.
+* `TopologicalSpace.CompactOpens.slices`: the finitely many slices of `K` over its projection.
+* `TopologicalSpace.CompactOpens.sliceFiber`: the compact open set `{x | K_x = T}`, for `T ≠ ⊥`.
 
 ## Main results
 
@@ -31,6 +38,9 @@ This file also records that a compact open set is nonempty exactly when it is no
   a product of Hausdorff spaces are locally constant.
 * `TopologicalSpace.CompactOpens.slice_prod_of_mem`, `TopologicalSpace.CompactOpens.slice_sup`:
   slices of rectangles and of unions.
+* `TopologicalSpace.CompactOpens.mem_iff_exists_sliceFiber`,
+  `TopologicalSpace.CompactOpens.pairwiseDisjoint_sliceFiber`: the decomposition of a compact open
+  subset of a product into rectangles with pairwise disjoint bases.
 -/
 
 public section
@@ -42,6 +52,7 @@ namespace TopologicalSpace.CompactOpens
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- A compact open set is nonempty exactly when it is not `⊥`. -/
+@[simp]
 theorem coe_nonempty {K : CompactOpens X} : (K : Set X).Nonempty ↔ K ≠ ⊥ := by
   rw [← ne_empty_iff_nonempty, ← coe_bot, Ne, Ne, SetLike.coe_set_eq]
 
@@ -94,6 +105,19 @@ theorem slice_eq_bot_of_notMem {K : CompactOpens (X × Y)} {x : X}
     rw [coe_bot]
     exact eq_empty_of_forall_notMem fun _ hy ↦ hx ⟨_, hy, rfl⟩
 
+/-- If `K` is the union of the rectangles `W i ×ˢ S i` with pairwise disjoint `W i`, then the
+slice of `K` at a point of `W i` is `S i`. -/
+theorem slice_eq_of_mem {K : CompactOpens (X × Y)} {ι : Type*} {s : Finset ι}
+    {W : ι → CompactOpens X} {S : ι → CompactOpens Y}
+    (hW : (s : Set ι).PairwiseDisjoint fun i ↦ (W i : Set X))
+    (hK : ∀ x y, (x, y) ∈ K ↔ ∃ i ∈ s, x ∈ W i ∧ y ∈ S i) {i : ι} (hi : i ∈ s) {x : X}
+    (hx : x ∈ W i) : K.slice x = S i := by
+  refine CompactOpens.ext (Set.ext fun y ↦ ?_)
+  simp only [SetLike.mem_coe, mem_slice, hK]
+  refine ⟨?_, fun hy ↦ ⟨i, hi, hx, hy⟩⟩
+  rintro ⟨j, hj, hxj, hyj⟩
+  rwa [hW.elim_set hi hj x hx hxj]
+
 end T1Space
 
 /-- The slices of a compact open subset of a product of Hausdorff spaces are locally constant. -/
@@ -118,5 +142,43 @@ theorem isLocallyConstant_slice [T2Space X] [T2Space Y] (K : CompactOpens (X × 
   refine CompactOpens.ext (Set.ext fun y ↦ ⟨fun hy ↦ ?_, fun hy ↦ huv ⟨hx, hv hy⟩⟩)
   by_contra hy₀
   exact huv' ⟨hx', hv' ⟨⟨_, hy, rfl⟩, hy₀⟩⟩ hy
+
+section T2Space
+
+variable [T2Space X] [T2Space Y]
+
+/-- The finitely many slices of a compact open set `K ⊆ X × Y` at the points of its projection
+to `X`. -/
+noncomputable def slices (K : CompactOpens (X × Y)) : Finset (CompactOpens Y) :=
+  (K.isLocallyConstant_slice.finite_image_of_isCompact (K.isCompact.image continuous_fst)).toFinset
+
+@[simp]
+theorem mem_slices {K : CompactOpens (X × Y)} {T : CompactOpens Y} :
+    T ∈ K.slices ↔ T ∈ K.slice '' (Prod.fst '' (K : Set (X × Y))) :=
+  Set.Finite.mem_toFinset _
+
+/-- The compact open set `{x | K_x = T}` of points of `X` at which `K ⊆ X × Y` has slice `T`, for
+`T ≠ ⊥`; it is `⊥` for `T = ⊥`. -/
+noncomputable def sliceFiber (K : CompactOpens (X × Y)) (T : CompactOpens Y) : CompactOpens X :=
+  K.isLocallyConstant_slice.fiberCompactOpens (K.isCompact.image continuous_fst)
+    (fun _ ↦ slice_eq_bot_of_notMem) T
+
+@[simp]
+theorem mem_sliceFiber {K : CompactOpens (X × Y)} {T : CompactOpens Y} {x : X} :
+    x ∈ K.sliceFiber T ↔ K.slice x = T ∧ T ≠ ⊥ :=
+  IsLocallyConstant.mem_fiberCompactOpens ..
+
+/-- A compact open set `K ⊆ X × Y` is the union of the rectangles `K.sliceFiber T ×ˢ T` over its
+slices `T`. -/
+theorem mem_iff_exists_sliceFiber (K : CompactOpens (X × Y)) (x : X) (y : Y) :
+    (x, y) ∈ K ↔ ∃ T ∈ K.slices, x ∈ K.sliceFiber T ∧ y ∈ T :=
+  K.isLocallyConstant_slice.mem_iff_exists_fiberCompactOpens _ _ id rfl
+    (fun _ _ ↦ mem_slice.symm) (fun _ hx ↦ mem_slices.2 (mem_image_of_mem _ hx)) x y
+
+theorem pairwiseDisjoint_sliceFiber (K : CompactOpens (X × Y)) :
+    (K.slices : Set (CompactOpens Y)).PairwiseDisjoint fun T ↦ (K.sliceFiber T : Set X) :=
+  IsLocallyConstant.pairwiseDisjoint_fiberCompactOpens _ _ _ _
+
+end T2Space
 
 end TopologicalSpace.CompactOpens

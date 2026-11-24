@@ -32,13 +32,13 @@ example (μ : HaarMeasureWithValues ℕ G) (ν : HaarMeasureWithValues ℕ H)
 
 /-! ### The zero measure -/
 
-example (A : Type*) [Semiring A] (ν : HaarMeasureWithValues A H) :
-    (0 : HaarMeasureWithValues A G).prod ν = 0 :=
-  (eq_prod_of_apply_prod _ _ 0 fun _ _ ↦ by simp).symm
+example (A : Type*) [Semiring A] (ν : HaarMeasureWithValues A H) (K : CompactOpens (G × H)) :
+    (0 : HaarMeasureWithValues A G).prod ν K = 0 := by
+  simp
 
-example (A : Type*) [Semiring A] (μ : HaarMeasureWithValues A G) :
-    μ.prod (0 : HaarMeasureWithValues A H) = 0 :=
-  (eq_prod_of_apply_prod _ _ 0 fun _ _ ↦ by simp).symm
+example (A : Type*) [Semiring A] (μ : HaarMeasureWithValues A G) (K : CompactOpens (G × H)) :
+    μ.prod (0 : HaarMeasureWithValues A H) K = 0 := by
+  simp
 
 /-! ### Slices -/
 
