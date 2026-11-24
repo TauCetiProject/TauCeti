@@ -129,6 +129,18 @@ private def negLaplaceBeltramiMeanZero :
   -((smoothLaplaceBeltrami I M).restrict fun u _ ↦
     smoothLaplaceBeltrami_mem_meanZeroSmoothFunctions u)
 
+omit [PreconnectedSpace M] in
+private theorem coe_negLaplaceBeltramiMeanZero_apply
+    (u : meanZeroSmoothFunctions I M (riemannianVolume I M) ∞) :
+    (negLaplaceBeltramiMeanZero I M u).val = -(smoothLaplaceBeltrami I M u.val) :=
+  rfl
+
+omit [PreconnectedSpace M] in
+private theorem negLaplaceBeltramiMeanZero_apply
+    (u : meanZeroSmoothFunctions I M (riemannianVolume I M) ∞) (x : M) :
+    (negLaplaceBeltramiMeanZero I M u).val x = -laplaceBeltrami I u.val x := by
+  simp [coe_negLaplaceBeltramiMeanZero_apply]
+
 private theorem negLaplaceBeltrami_injective :
     Function.Injective (negLaplaceBeltramiMeanZero I M) := by
   intro u₁ u₂ hu
@@ -137,9 +149,7 @@ private theorem negLaplaceBeltrami_injective :
       u₁.val.contMDiff u₂.val.contMDiff (fun x ↦ ?_)
       (integral_coe_meanZeroSmoothFunctions_eq_zero u₁)
       (integral_coe_meanZeroSmoothFunctions_eq_zero u₂))))
-  simpa only [negLaplaceBeltramiMeanZero, LinearMap.neg_apply, Submodule.coe_neg,
-    LinearMap.restrict_apply, ContMDiffMap.coe_neg, Pi.neg_apply, smoothLaplaceBeltrami_apply] using
-    congrArg (fun g ↦ g.val x) hu
+  simpa only [negLaplaceBeltramiMeanZero_apply] using congrArg (fun g ↦ g.val x) hu
 
 private theorem negLaplaceBeltrami_surjective :
     Function.Surjective (negLaplaceBeltramiMeanZero I M) := by
@@ -147,9 +157,7 @@ private theorem negLaplaceBeltrami_surjective :
   obtain ⟨u, hu0, hu⟩ := exists_neg_laplaceBeltrami_eq f.val.contMDiff
     (integral_coe_meanZeroSmoothFunctions_eq_zero f)
   refine ⟨⟨u, mem_meanZeroSmoothFunctions_iff.2 hu0⟩, Subtype.ext (ContMDiffMap.ext fun x ↦ ?_)⟩
-  simpa only [negLaplaceBeltramiMeanZero, LinearMap.neg_apply, Submodule.coe_neg,
-    LinearMap.restrict_apply, ContMDiffMap.coe_neg, Pi.neg_apply, smoothLaplaceBeltrami_apply] using
-    hu x
+  simpa only [negLaplaceBeltramiMeanZero_apply] using hu x
 
 variable (I M) in
 /-- **The nonnegative Laplacian as a linear equivalence on mean-zero smooth functions.** On a
@@ -167,9 +175,8 @@ def negLaplaceBeltramiEquiv :
 @[simp]
 theorem coe_negLaplaceBeltramiEquiv_apply
     (u : meanZeroSmoothFunctions I M (riemannianVolume I M) ∞) :
-    (negLaplaceBeltramiEquiv I M u).val = -(smoothLaplaceBeltrami I M u.val) := by
-  simp only [negLaplaceBeltramiEquiv, negLaplaceBeltramiMeanZero, LinearEquiv.ofBijective_apply,
-    LinearMap.neg_apply, Submodule.coe_neg, LinearMap.restrict_apply]
+    (negLaplaceBeltramiEquiv I M u).val = -(smoothLaplaceBeltrami I M u.val) :=
+  coe_negLaplaceBeltramiMeanZero_apply u
 
 /-- A mean-zero smooth function `u` equals `(negLaplaceBeltramiEquiv I M).symm f` if and only if
 it solves `-laplaceBeltrami I u x = f x` pointwise. -/

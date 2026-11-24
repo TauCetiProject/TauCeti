@@ -33,8 +33,8 @@ of a basis of a finite-dimensional space as smooth functions.
 * `ContMDiffMap.coe_sum`: the coercion of a finite sum of smooth maps is the sum of the coercions.
 * `ContMDiffMap.coe_smul'`: the coercion of a scalar-valued smooth map multiplying a vector-valued
   one is the pointwise scalar product of their coercions.
-* `ContMDiffMap.toContinuousMapLinearMap_apply`: pointwise evaluation of
-  `ContMDiffMap.toContinuousMapLinearMap`.
+* `ContMDiffMap.toContinuousMapLinearMap_apply`: applying
+  `ContMDiffMap.toContinuousMapLinearMap` returns the underlying continuous map.
 * `ContMDiffMap.restrictMonoidHom_apply` and `ContMDiffMap.restrictAddMonoidHom_apply`: pointwise
   evaluation of restriction of smooth maps between open subsets.
 * `ContMDiffMap.algebraMap_apply`: the scalars of the algebra of `C^n` functions are the constant
@@ -140,15 +140,15 @@ def toContinuousMapLinearMap {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     simp only [ContinuousMap.coe_mk, RingHom.id_apply, ContinuousMap.smul_apply,
       ContMDiffMap.coe_smul, Pi.smul_apply]
 
-/-- Applying `ContMDiffMap.toContinuousMapLinearMap` evaluates the underlying function. -/
+/-- Applying `ContMDiffMap.toContinuousMapLinearMap` returns the underlying continuous map. -/
 @[simp]
 theorem toContinuousMapLinearMap_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
     {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {n : ℕ∞ω}
     {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-    (u : C^n⟮I, N; 𝓘(𝕜, V), V⟯) (x : N) :
-    toContinuousMapLinearMap u x = u x :=
+    (u : C^n⟮I, N; 𝓘(𝕜, V), V⟯) :
+    toContinuousMapLinearMap u = (u : C(N, V)) :=
   (rfl)
 
 section AlgHom

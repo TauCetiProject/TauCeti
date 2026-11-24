@@ -115,13 +115,9 @@ private def toCriticalLpAux (hn : 2 < finrank ℝ E) :
         (riemannianVolume I M) ℝ).toLinearMap ∘ₗ
       (ContMDiffMap.toContinuousMapLinearMap : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C(M, ℝ)))
     (by
-      obtain ⟨A, hA⟩ := exists_norm_toLp_critical_le (I := I) (M := M) hn
-      refine ⟨A, fun u ↦ ?_⟩
-      have hu : (ContMDiffMap.toContinuousMapLinearMap : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C(M, ℝ)) u =
-          (u : C(M, ℝ)) :=
-        ContinuousMap.ext (ContMDiffMap.toContinuousMapLinearMap_apply u)
-      simpa only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply, hu]
-        using hA u)
+      simpa only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply,
+        ContMDiffMap.toContinuousMapLinearMap_apply] using
+        exists_norm_toLp_critical_le (I := I) (M := M) hn)
 
 /-- **The Sobolev embedding on a closed Riemannian manifold.** On a compact manifold without
 boundary of dimension `n > 2` with a continuous Riemannian metric, `H¹(M)` embeds continuously and
@@ -141,11 +137,9 @@ theorem toLpOfLE_ofSmooth {q : ℝ≥0∞} [Fact (1 ≤ q)] (hn : 2 < finrank �
     toLpOfLE hn hq (ofSmooth u) = ContinuousMap.toLp q (riemannianVolume I M) ℝ (u : C(M, ℝ)) := by
   have : Fact ((1 : ℝ≥0∞) ≤ ENNReal.ofReal (2 * finrank ℝ E / (finrank ℝ E - 2))) :=
     ⟨one_le_ofReal_critical hn⟩
-  have hu : (ContMDiffMap.toContinuousMapLinearMap : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C(M, ℝ)) u =
-      (u : C(M, ℝ)) :=
-    ContinuousMap.ext (ContMDiffMap.toContinuousMapLinearMap_apply u)
   rw [toLpOfLE, ContinuousLinearMap.comp_apply, toCriticalLpAux, liftSmooth_ofSmooth]
-  simp only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply, hu]
+  simp only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_apply,
+    ContMDiffMap.toContinuousMapLinearMap_apply]
   refine Lp.ext ?_
   rw [Lp.coeFn_ofExponentLEL]
   exact (ContinuousMap.coeFn_toLp _ (u : C(M, ℝ))).trans
