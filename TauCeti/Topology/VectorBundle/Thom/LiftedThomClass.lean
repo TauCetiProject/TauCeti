@@ -122,6 +122,9 @@ private theorem coefficient_comparison (p : VectorBundleOrientationCover F E ι)
   refine ModuleCat.hom_ext (LinearMap.ext_ring ((liftFiberEquiv hι p he).injective ?_))
   refine Eq.trans ?_ (liftFiberEquiv_fiberThomPairSignLocalSystemIso_inv_app_apply hι p.proj
     p.orientation v 1).symm
+  -- `erw`: the goal reads the fibre pair of `E'` over `p` and that of `E` over `p.proj`, which
+  -- agree only after unfolding the pull-back bundle, so it is not type-correct at the transparency
+  -- of `rw`; the rewrites split the components into transports and evaluations.
   erw [NatTrans.comp_app, NatTrans.comp_app, NatTrans.comp_app, Functor.mapIso_hom, eqToIso.hom,
     eqToHom_map, eqToHom_map, eqToHom_app, eqToHom_app, eqToHom_app]
   have hw : p.proj = (TopPair.Hom.fst (coverThomPairMap F E ι)
@@ -132,6 +135,8 @@ private theorem coefficient_comparison (p : VectorBundleOrientationCover F E ι)
   simp only [ModuleCat.hom_comp]
   refine (liftFiberEquiv_eqToHom_comp_eqToHom_comp_apply hι R p he _ _ _ _).trans
     ((liftFiberEquiv_eqToHom_apply hι p hw he _ _).trans ?_)
+  -- `erw`: as above, the source of `TopPair.fstPullbackCompIso` is read through the fibre pair of
+  -- `E'` over `p`, the goal through that of `E` over `p.proj`; both comparisons are identities.
   erw [NatTrans.comp_app, NatTrans.comp_app, TopPair.fstPullbackCompIso_inv_app, Category.comp_id,
     LocalCoefficientSystem.pullbackConstantIso_inv_app, Category.id_comp]
   set w := TopPair.Hom.fst (fiberThomPairMap F
@@ -144,7 +149,9 @@ private theorem coefficient_comparison (p : VectorBundleOrientationCover F E ι)
       Set (VectorBundleOrientationCover F E ι))) =
         ⟨w.proj, proj_proj_eq_proj_coverThomPairMap_fst w⟩ :=
     Subtype.ext hp.symm
-  rw [hpt]
+  rw [hpt, LocalCoefficientSystem.pullback_map_app]
+  -- `rfl`: the image of `v` in the fundamental groupoid of `E'` is `{ as := w }` by definition of
+  -- `FundamentalGroupoid.map`.
   rfl
 
 /-- **The chain map to orientation-twisted chains on a fibre pair.** On the fibre pair of `E'` over
@@ -180,7 +187,7 @@ theorem singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainM
   -- the pull-back bundle.
   erw [TopPair.twistedHomologyMap_congr _
     (congrArg TopPair.Hom.fst (fiberThomPairMap_comp_coverThomPairMap p))] at hq
-  erw [TopPair.twistedHomologyMap_naturality_assoc]
+  rw [TopPair.twistedHomologyMap_naturality_assoc]
   have hq2 := congrArg (fun φ ↦ (TopPair.ofSubset (X := TopCat.of
       (((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) p))
         ({0}ᶜ : Set _)).twistedHomologyCoefficientMap
@@ -189,7 +196,7 @@ theorem singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainM
         ((LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
           ⟨π F E, FiberBundle.continuous_proj F E⟩).obj (signLocalSystem F E R hι))).inv n ≫ φ) hq
   simp only [TopPair.twistedHomologyCoefficientMap_inv_hom_id_assoc] at hq2
-  erw [reassoc_of% hq2.symm]
+  rw [reassoc_of% hq2.symm]
   -- The last coefficient change identifies the pulled-back orientation system with `π^*o(E)`.
   have h4 : TopPair.twistedHomologyMap (fiberThomPairMap F E p.proj)
       ((LocalCoefficientSystem.pullback (X := TopCat.of (TotalSpace F E)) (Y := TopCat.of B)
@@ -203,9 +210,13 @@ theorem singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainM
       TopPair.twistedHomologyMap (fiberThomPairMap F E p.proj)
         (thomPairSignLocalSystem F E R hι) n :=
     TopPair.twistedHomologyMap_naturality _ _ _ n
+  -- `erw`: `thomPairSignLocalSystem` is a system on the space `TotalSpace F E`, read in the goal on
+  -- `(thomPair F E).fst`, which is that space only after unfolding `thomPair`.
   erw [h4]
   simp only [← TopPair.twistedHomologyCoefficientMap_comp_assoc]
   congr 1
+  -- `erw`: as for `h4`, the goal still reads `thomPairSignLocalSystem` on `(thomPair F E).fst`, so
+  -- it is not type-correct at the transparency of `rw`.
   erw [← TopPair.twistedHomologyCoefficientMap_comp_assoc,
     ← TopPair.twistedHomologyCoefficientMap_comp_assoc]
   congr 2
@@ -338,7 +349,9 @@ theorem exists_isThomClass_homologyπ_and_cyclesMap_deckThomPairMap_eq_neg :
       (HomologicalComplex.cyclesFunctor _ _ (finrank ℝ F)).map_neg
     rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.cyclesMap_comp,
       thomPairSignCochainMap_comp_singularCochainComplexMap_deckThomPairMap, hn]
-    rfl
+    -- Application of a morphism of modules is `ConcreteCategory.hom`, which is `ModuleCat.Hom.hom`
+    -- by the concrete-category instance of `ModuleCat`, and that commutes with negation.
+    exact (LinearMap.congr_fun (ModuleCat.hom_neg _) z).trans (LinearMap.neg_apply _ z)
 
 end ThomClass
 

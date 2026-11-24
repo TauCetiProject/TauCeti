@@ -254,7 +254,7 @@ theorem span_singleton_eq_top_iff_isUnit_singularKronecker
     exact (H.hom_inv_id_apply γ).symm.trans (congrArg H.inv.hom hu.symm)
   rw [(singularCohomologyComplSingletonFinrankEquivSelf (ModuleCat.of k k) φ
     hx).span_singleton_eq_top_iff_isUnit, singularCohomologyComplSingletonFinrankEquivSelf_apply,
-    hγ', map_smul, smul_eq_mul, Units.isUnit_units_mul]
-  rfl
+    hγ', map_smul, smul_eq_mul, Units.isUnit_units_mul, ModuleCat.hom_comp,
+    LinearMap.comp_apply]
 
 end TauCeti
