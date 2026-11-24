@@ -787,7 +787,9 @@ private theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart
       · exact hN ζ hζ
     filter_upwards [h] with ζ' hζ'
     simp only [η', covectorPullback_apply, Pi.zero_apply]
-    rw [show η (positiveEndChart q ζ') = 0 from hζ', ContinuousLinearMap.zero_comp]
+    have h0 : η (positiveEndChart q ζ') = 0 := by
+      simpa only [Function.comp_apply, Pi.zero_apply] using hζ'
+    rw [h0, ContinuousLinearMap.zero_comp]
   have hK : IsCompact (Icc (a / 2) (max N a) ×ˢ Icc (0 : ℝ) 1) :=
     isCompact_Icc.prod isCompact_Icc
   refine (ContinuousOn.integrableOn_compact hK fun ζ hζ ↦ ?_).of_forall_sdiff_eq_zero

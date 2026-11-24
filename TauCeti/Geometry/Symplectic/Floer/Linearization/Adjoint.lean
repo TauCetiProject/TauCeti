@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Topology.Compactness.Normed
 
 /-!
@@ -274,10 +275,13 @@ theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
       2 * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 + 2 * (M * (1 + B)) ^ 2 * ‖η z‖ ^ 2 := by
   have hy : ‖(η z).comp (J z (u z))‖ ≤ B * ‖η z‖ :=
     (opNorm_comp_le _ _).trans (by rw [mul_comm]; gcongr)
+  have hL (e : ℝ × ℝ) (he : ‖e‖ = 1) : |-fderiv ℝ f z e| ≤ M := by
+    rw [abs_neg, ← Real.norm_eq_abs]
+    exact (le_opNorm _ _).trans (by simp [he, hM])
   rw [floerLinearizationAdjoint_fun_smul hf hη hJu]
-  simpa only [neg_apply, neg_smul, ← sub_eq_add_neg] using
-    norm_smul_add_smul_add_smul_sq_le (L := -fderiv ℝ f z)
-      (A := ω.floerLinearizationAdjoint J Ks Kt u η z) hf₁ ((norm_neg _).trans_le hM) hy
+  simpa only [neg_smul, ← sub_eq_add_neg] using
+    norm_smul_add_smul_add_smul_sq_le (A := ω.floerLinearizationAdjoint J Ks Kt u η z) hf₁
+      (hL _ (by simp [stdComplexLineReal])) (hL _ (by simp [stdComplexLineImag])) hy
 
 /-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
 `z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
