@@ -74,7 +74,11 @@ private theorem differentiable_and_fderiv_inv_norm_sq_add_smul {ε : ℝ} (hε :
       (((hasFDerivAt_id x).norm_sq).add_const ε)).smul (hasFDerivAt_id x)
   refine ⟨fun x ↦ (hgd x).differentiableAt, fun i x ↦ ?_⟩
   rw [(hgd x).fderiv]
-  simp [EuclideanSpace.inner_single_right]
+  simp only [ContinuousLinearMap.comp_id, neg_smul, add_apply, smul_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
+    coe_innerSL_apply, EuclideanSpace.inner_single_right, conj_trivial, one_mul, nsmul_eq_mul,
+    Nat.cast_ofNat, smul_eq_mul, PiLp.add_apply, PiLp.smul_apply, PiLp.single_eq_same, mul_one,
+    PiLp.neg_apply]
   ring
 
 /-- The diagonal partial derivatives of the regularized shrinkage field are bounded by `3 / ε`. -/

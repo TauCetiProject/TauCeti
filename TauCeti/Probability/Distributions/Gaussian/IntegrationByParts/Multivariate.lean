@@ -11,10 +11,6 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import TauCeti.Probability.Distributions.Gaussian.Independence
-import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.Analysis.InnerProductSpace.SquaredDistance
-import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
-import TauCeti.Probability.Distributions.Gaussian.Density
 
 /-!
 # Multivariate Gaussian integration by parts
@@ -29,8 +25,9 @@ of Anderson, Guionnet and Zeitouni, used to differentiate expectations of functi
 Gaussian matrices and, for a covariance `v • 1`, as Stein's identity in estimation theory.
 
 The covariance may be singular. In the functional form the only integrability hypotheses are
-those of the two sides; the coordinate forms assume integrability of the centered side and of
-every partial derivative `∂ₗ f X`.
+those of the two sides. The coordinate forms for a general covariance assume integrability of the
+centered side and of every partial derivative `∂ₗ f X`; the isotropic forms for `N(θ, v I)`
+assume integrability of the centered side and of the `i`-th partial derivative only.
 
 ## Main results
 
@@ -45,9 +42,7 @@ every partial derivative `∂ₗ f X`.
   the coordinate form for `multivariateGaussian m S`.
 * `TauCeti.Probability.integral_sub_mul_eq_mul_integral_fderiv_multivariateGaussian`: Stein's
   identity `E[(Xᵢ - θᵢ) f(X)] = v E[∂ᵢ f(X)]` for `X ~ N(θ, v I)`, `v ≥ 0`, and a differentiable
-  real `f` such that `f`, `(xᵢ - θᵢ) f` and the partial derivative `∂ᵢ f` are integrable. For
-  `v > 0` the proof integrates by parts against the density of `N(θ, v I)` along `eᵢ`; at `v = 0`
-  both sides vanish.
+  real `f` such that `(xᵢ - θᵢ) f` and the partial derivative `∂ᵢ f` are integrable.
 * `TauCeti.Probability.gaussian_integration_by_parts`: the same identity
   `E[(Xᵢ - θᵢ) gᵢ(X)] = v E[∂ᵢ gᵢ(X)]` for the coordinates of a differentiable `L²` vector field
   `g` whose diagonal partial derivative `∂ᵢ gᵢ` is integrable; the integrability of
@@ -61,6 +56,10 @@ are uncorrelated, hence independent since they are jointly Gaussian. Conditional
 summand, the identity is the one-dimensional Gaussian integration by parts in the real variable
 `L X`, and Fubini's theorem on the product law reassembles it. When `L c = 0` the variable `L X`
 is almost surely constant and `c = 0`, so both sides vanish.
+
+The isotropic identities are the functional form for the coordinate functional `x ↦ x i`, whose
+covariance vector under `N(θ, v I)` is `v • eᵢ`. Only the derivative along `eᵢ` enters, which is
+why they need no integrability of the other partial derivatives.
 
 ## References
 
@@ -257,11 +256,10 @@ open scoped RealInnerProductSpace
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **Stein's identity** for a real function under `N(θ, v I)`, `v ≥ 0`: for a differentiable `f`
-such that `f`, `(xᵢ - θᵢ) f` and the partial derivative `∂ᵢ f` are integrable,
+such that `(xᵢ - θᵢ) f` and the partial derivative `∂ᵢ f` are integrable,
 `E[(Xᵢ - θᵢ) f(X)] = v E[∂ᵢ f(X)]`. -/
 theorem integral_sub_mul_eq_mul_integral_fderiv_multivariateGaussian {v : ℝ} (hv : 0 ≤ v)
     {θ : EuclideanSpace ℝ ι} {f : EuclideanSpace ℝ ι → ℝ} (hf : Differentiable ℝ f) (i : ι)
-    (hfi : Integrable f (multivariateGaussian θ (v • (1 : Matrix ι ι ℝ))))
     (hxf : Integrable (fun x ↦ (x i - θ i) * f x)
       (multivariateGaussian θ (v • (1 : Matrix ι ι ℝ))))
     (hdf : Integrable (fun x ↦ fderiv ℝ f x (EuclideanSpace.single i 1))
@@ -269,43 +267,28 @@ theorem integral_sub_mul_eq_mul_integral_fderiv_multivariateGaussian {v : ℝ} (
     ∫ x, (x i - θ i) * f x ∂multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)) =
       v * ∫ x, fderiv ℝ f x (EuclideanSpace.single i 1)
         ∂multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)) := by
-  rcases hv.eq_or_lt with rfl | hv
-  · simp
-  set c : ℝ := (2 * π * v) ^ (-(Fintype.card ι : ℝ) / 2)
-  set φ : EuclideanSpace ℝ ι → ℝ := fun x ↦ c * exp (-‖x - θ‖ ^ 2 / (2 * v)) with hφ
-  set e : EuclideanSpace ℝ ι := EuclideanSpace.single i 1
-  have hφm : AEMeasurable φ volume := by fun_prop
-  have hφnn : 0 ≤ᵐ[volume] φ := ae_of_all _ fun x ↦ by positivity
-  have hP := multivariateGaussian_smul_one_eq_withDensity hv θ
-  have hint (g : EuclideanSpace ℝ ι → ℝ) :
-      Integrable g (multivariateGaussian θ (v • (1 : Matrix ι ι ℝ))) ↔
-        Integrable (fun x ↦ φ x * g x) volume := by
-    simp only [hP, TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hφm hφnn, smul_eq_mul,
-      φ, c]
-  have hφd (x : EuclideanSpace ℝ ι) : HasFDerivAt φ
-      (c • ((-2 * (2 * v)⁻¹ * exp (-(2 * v)⁻¹ * ‖x - θ‖ ^ 2)) • innerSL ℝ (x - θ))) x := by
-    have he : φ = fun y ↦ c * exp (-(2 * v)⁻¹ * ‖y - θ‖ ^ 2) := by
-      funext y
-      simp only [hφ, neg_mul, inv_mul_eq_div, neg_div]
-    rw [he]
-    exact (TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq ((2 * v)⁻¹) θ x).const_mul c
-  have hφe (x : EuclideanSpace ℝ ι) : fderiv ℝ φ x e = -(v⁻¹ * (x i - θ i)) * φ x := by
-    rw [(hφd x).fderiv]
-    simp only [e, smul_apply, innerSL_apply_apply, conj_trivial,
-      EuclideanSpace.inner_single_right, PiLp.sub_apply, hφ, smul_eq_mul]
-    field_simp
-  have hibp := integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable (v := e)
-    (((hint _).1 hxf).const_mul (-v⁻¹) |>.congr (ae_of_all _ fun x ↦ by
-      simp only [hφe]; ring))
-    ((hint _).1 hdf) ((hint _).1 hfi) (fun x _ ↦ (hφd x).differentiableAt)
-    (fun x _ ↦ hf x)
-  rw [hP, TauCeti.MeasureTheory.integral_withDensity_ofReal hφm hφnn,
-    TauCeti.MeasureTheory.integral_withDensity_ofReal hφm hφnn]
-  simp only [smul_eq_mul]
-  rw [hibp, ← integral_neg, ← integral_const_mul]
-  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-  simp only [hφe]
-  field_simp
+  set P := multivariateGaussian θ (v • (1 : Matrix ι ι ℝ))
+  have hS : (v • (1 : Matrix ι ι ℝ)).PosSemidef := Matrix.PosSemidef.one.smul hv
+  have hmean : ∫ x, x i ∂P = θ i := by
+    simp [P]
+  -- The covariance vector of the coordinate functional `x ↦ x i` is `v • eᵢ`.
+  have hc (L' : StrongDual ℝ (EuclideanSpace ℝ ι)) :
+      L' (v • EuclideanSpace.single i 1) =
+        cov[fun x ↦ L' x, fun x ↦ EuclideanSpace.proj (𝕜 := ℝ) i x; P] := by
+    have hL' : (fun x : EuclideanSpace ℝ ι ↦ L' x) =
+        fun x ↦ ∑ j, x j * L' (EuclideanSpace.single j 1) := by
+      ext x
+      conv_lhs => rw [← (EuclideanSpace.basisFun ι ℝ).toBasis.sum_repr x]
+      simp
+    have hmem (j : ι) : MemLp (fun x : EuclideanSpace ℝ ι ↦ x j) 2 P :=
+      (IsGaussian.hasGaussianLaw_id.map_fun (EuclideanSpace.proj (𝕜 := ℝ) j)).memLp_two
+    simp only [EuclideanSpace.coe_proj]
+    rw [hL', covariance_fun_sum_left (fun j ↦ (hmem j).mul_const _) (hmem i)]
+    simp [P, covariance_mul_const_left, covariance_eval_multivariateGaussian hS, Matrix.one_apply]
+  have h := IsGaussian.hasGaussianLaw_id.integral_dual_sub_smul_eq_integral_fderiv
+    (EuclideanSpace.proj i) hc f hf (by simpa [hmean] using hxf)
+    (by simpa using hdf.const_mul v)
+  simpa [hmean, integral_const_mul] using h
 
 /-- **Stein's identity** for `X ~ N(θ, v I)`, `v ≥ 0`, and a differentiable vector field
 `g ∈ L²` with integrable diagonal partial derivatives: `E[(Xᵢ - θᵢ) gᵢ(X)] = v E[∂ᵢ gᵢ(X)]`. -/
@@ -317,8 +300,6 @@ theorem gaussian_integration_by_parts {v : ℝ} (hv : 0 ≤ v) {θ : EuclideanSp
     ∫ x, (x i - θ i) * g x i ∂multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)) =
       v * ∫ x, fderiv ℝ g x (EuclideanSpace.single i 1) i
         ∂multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)) := by
-  have hgi : MemLp (fun x ↦ g x i) 2 (multivariateGaussian θ (v • (1 : Matrix ι ι ℝ))) :=
-    (EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hg2
   have hd (x : EuclideanSpace ℝ ι) : fderiv ℝ (fun y ↦ g y i) x (EuclideanSpace.single i 1) =
       fderiv ℝ g x (EuclideanSpace.single i 1) i :=
     congrArg (· (EuclideanSpace.single i 1))
@@ -326,7 +307,7 @@ theorem gaussian_integration_by_parts {v : ℝ} (hv : 0 ≤ v) {θ : EuclideanSp
   simp_rw [← hd] at hdi ⊢
   exact integral_sub_mul_eq_mul_integral_fderiv_multivariateGaussian hv
     (fun x ↦ (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp x (hg x)) i
-    (hgi.integrable one_le_two) (integrable_sub_mul_apply_of_memLp hg2 θ i) hdi
+    (integrable_sub_mul_apply_of_memLp hg2 θ i) hdi
 
 end Isotropic
 
