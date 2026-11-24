@@ -117,6 +117,8 @@ and the associativity `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` for such a module is
 * `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule_apply` and
   `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule`: associativity,
   `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)`, on row vectors and through the type `D` structure `P ⊠ N`.
+* `TauCeti.TypeDAStructure.boxCoeff_eq_add_of_coeff_eq_zero`: for a bimodule whose operations
+  vanish from arity three on, `δ¹(y ⊗ x) = δ¹₁(y) ⊗ x + ∑_z δ¹₂(y, δ x z) ⊗ z`.
 * `TauCeti.TypeDAStructure.boxCoeff_eq_zero_of_isRightIdemCompatible`: `δ¹` of `P ⊠ N` does not
   lead from a generator with matching idempotents to one without.
 * `TauCeti.TypeDAStructure.boxCoeff_identity`: the coefficients of `[I] ⊠ N` are those of `N` on
@@ -384,6 +386,21 @@ theorem idem_mul_boxCoeff (p q : Y × X) : ιB (P.idem p.1) * P.boxCoeff N p q =
 
 theorem boxCoeff_mul_idem (p q : Y × X) : P.boxCoeff N p q * ιB (P.idem q.1) = P.boxCoeff N p q :=
   finsum_mul_of_forall fun k => (P.idem_mul_lift_coeff_mul_idem k _ p.1 q.1).2
+
+/-- **The coefficients of `P ⊠ N` for a differential bimodule.** If `δ¹_{k+1}` vanishes for
+`k ≥ 2`, the coefficient from `(y, x)` to `(y', z)` is the `(y, y')` entry of `δ₀` if `x = z`, plus
+that of `δ₁(δ x z)`: `δ¹(y ⊗ x) = δ¹₁(y) ⊗ x + ∑_z δ¹₂(y, δ x z) ⊗ z`. -/
+theorem boxCoeff_eq_add_of_coeff_eq_zero (hP : ∀ k, 2 ≤ k → P.coeff k = 0) (y y' : Y) (x z : X) :
+    P.boxCoeff N (y, x) (y', z) =
+      (if x = z then P.coeff 0 ![] y y' else 0) + P.coeff 1 ![N.coeff x z] y y' := by
+  have hK : ∀ k, 2 ≤ k → ∀ x x', PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k x x') = 0 :=
+    fun k hk _ _ => by rw [hP k hk, map_zero, LinearMap.zero_apply]
+  have hvec : (fun _ : Fin 1 => N.coeff x z) = ![N.coeff x z] :=
+    funext fun l => by rw [Fin.fin_one_eq_zero l, Matrix.cons_val_zero]
+  rw [P.boxCoeff_eq_sum N hK]
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, N.iteratedCoeff_zero,
+    N.iteratedCoeff_one, PiTensorProduct.lift.tprod, hvec, apply_ite, Matrix.ite_apply, map_zero,
+    Matrix.zero_apply, Subsingleton.elim Fin.elim0 ![]]
 
 /-- **The coefficients of `P ⊠ N` increase a height.** Suppose that the coefficients of `N`
 strictly increase a height `h` on its generators and that those of `δ¹₁` of `P` strictly increase
