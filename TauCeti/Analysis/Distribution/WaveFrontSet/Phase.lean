@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
 import TauCeti.Analysis.Normed.Module.Cone
@@ -42,7 +42,7 @@ cutoff:
 `T g = ∑ m, (covolume L)⁻¹ 𝓕 g (m) T (χ e_(-m))`,
 
 summed over the dual of a lattice `L` none of whose nonzero translates of `K` meet `K`, with a
-cutoff `χ` equal to one on the support of `g` (`Distribution.hasSum_localFourier_ofSupportedIn`).
+cutoff `χ` equal to one on the support of `g` (`Distribution.hasSum_fourier_mul_localFourier`).
 The Fourier coefficient
 `𝓕 g (m) = ∫ ψ(x) 𝐞(-(t Φ(x) + ⟪x, m⟫)) dx` is an oscillatory integral whose phase has
 gradient `-(t ∇Φ(x) + m)`. When `‖t ∇Φ(x) + m‖ ≥ δ (t + ‖m‖)` on the support of `ψ`, it is
@@ -160,13 +160,6 @@ section Phase
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The gradient of `Φ` in its second variable depends continuously on both variables. -/
-private theorem continuous_gradient_slice {Φ : F × E → ℝ} (hΦ : ContDiff ℝ ∞ Φ) :
-    Continuous fun q : F × E ↦ gradient (fun y ↦ Φ (q.1, y)) q.2 := by
-  simp_rw [gradient]
-  exact (InnerProductSpace.toDual ℝ E).symm.continuous.comp (continuous_iff_continuousAt.2
-    fun _ ↦ (hΦ.contDiffAt.fderiv_slice (m := 0) (by simp)).continuousAt)
-
 /-- The phase `θ((s, w, p), x) = -(s Φ(p, x) + ⟪w, x⟫)` of the Fourier coefficients
 `𝓕 (ψ 𝐞(-t Φ(p, ·))) (m)`, normalized by `s = t / (t + ‖m‖)` and `w = m / (t + ‖m‖)`. -/
 private def coeffPhase (Φ : F × E → ℝ) (z : (ℝ × E × F) × E) : ℝ :=
@@ -208,7 +201,8 @@ private theorem exists_forall_pow_mul_norm_fourier_le (ψ : 𝓓(Ω, ℂ)) {Φ :
       (∀ x ∈ tsupport ψ, δ * (t + ‖m‖) ≤ ‖t • gradient (fun y ↦ Φ (p, y)) x + m‖) →
       (t + ‖m‖) ^ N * ‖𝓕 (fun x ↦ ψ x * (𝐞 (-(t * Φ (p, x))) : ℂ)) m‖ ≤ C := by
   set G : F × E → E := fun q ↦ gradient (fun y ↦ Φ (q.1, y)) q.2
-  have hGc : Continuous G := continuous_gradient_slice hΦ
+  have hGc : Continuous G := (InnerProductSpace.toDual ℝ E).symm.continuous.comp
+    (TauCeti.continuous_fderiv_slice_right (f := fun p y ↦ Φ (p, y)) (hΦ.of_le (by simp)))
   -- The compact set of normalized parameters `(s, w, p)` of the non-stationary region.
   let Q : Set (ℝ × E × F) := Prod.fst ⁻¹' Icc 0 1 ∩ (fun q ↦ q.2.1) ⁻¹' closedBall 0 1 ∩
     (fun q ↦ q.2.2) ⁻¹' V ∩ ⋂ x ∈ tsupport ψ, {q | δ ≤ ‖q.1 • G (q.2.2, x) + q.2.1‖}
@@ -317,9 +311,9 @@ private theorem exists_forall_pow_mul_norm_complexPairing_le_of_forall {T : 𝓓
     ∃ C, ∀ p ∈ V, ∀ t : ℝ, 1 ≤ t → ∀ f : 𝓓(Ω, ℂ), (∀ x, f x = ψ x * 𝐞 (-(t * Φ (p, x)))) →
       t ^ N * ‖T.complexPairing f‖ ≤ C := by
   borelize E
-  -- A lattice `L` none of whose nonzero translates of `K = tsupport χ` meet `K`.
-  let K : Compacts E := ⟨tsupport χ, χ.hasCompactSupport.isCompact⟩
-  obtain ⟨L, _, _, hL⟩ := ZLattice.exists_forall_add_mem_eq_zero_of_isBounded K.isCompact.isBounded
+  -- A lattice `L` none of whose nonzero translates of `tsupport χ` meet it.
+  obtain ⟨L, _, _, hL⟩ :=
+    ZLattice.exists_forall_add_mem_eq_zero_of_isBounded χ.hasCompactSupport.isCompact.isBounded
   -- The constants: polynomial growth and conic decay of `T (χ e_η)`, the non-stationary bound,
   -- and the bound `‖𝓕 g‖ ≤ ∫ ‖ψ‖`.
   obtain ⟨C₀, k₀, hC₀⟩ := exists_norm_localFourier_le T χ
@@ -340,28 +334,8 @@ private theorem exists_forall_pow_mul_norm_complexPairing_le_of_forall {T : 𝓓
   have hfψ : (f : E → ℂ) = fun x ↦ ψ x * (𝐞 (-(t * Φ (p, x))) : ℂ) := funext hf
   have hsuppf : support f ⊆ tsupport ψ := fun x hx ↦
     subset_tsupport _ fun h ↦ hx (by simp [hf, h])
-  -- Expand `T f` in the Fourier series of `f` along `L`, with `χ` and `f` supported in `K`.
-  have hKΩ : (K : Set E) ⊆ Ω := χ.tsupport_subset
-  let χK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
-  let fK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset f.contDiff
-    (hsuppf.trans fun x hx ↦ subset_tsupport _ (by simp [hχψ x hx]))
-  have hχK : ofSupportedIn hKΩ χK = χ := by
-    ext x
-    simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have hfK : ofSupportedIn hKΩ fK = f := by
-    ext x
-    simp [fK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have hT := hasSum_localFourier_ofSupportedIn T hKΩ L
-    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.property h)) (φ := fK) (χ := χK) (fun x hx ↦ by
-      have hx' : x ∈ support f := by simpa [fK, ContDiffMapSupportedIn.coe_of_support_subset]
-        using hx
-      simpa [χK, ContDiffMapSupportedIn.coe_of_support_subset] using hχψ x (hsuppf hx')) 0
-  rw [hχK, hfK, localFourier_eq T f (ψ := f) fun x ↦ by simp] at hT
-  simp only [zero_sub, smul_eq_mul] at hT
-  have hfK' : (fK : E → ℂ) = f := by
-    ext x
-    simp [fK, ContDiffMapSupportedIn.coe_of_support_subset]
-  rw [hfK'] at hT
+  -- Expand `T f` in the Fourier series of `f` along `L`.
+  have hT := hasSum_fourier_mul_localFourier T χ L hL (f := f) fun x hx ↦ hχψ x (hsuppf hx)
   -- Each term of the Fourier series is `O(t ^ (-N) (1 + ‖m‖) ^ (-r₀))`.
   have hterm (m : ZLattice.dual L) :
       ‖(t ^ N : ℂ) * (κ * 𝓕 (f : E → ℂ) m * T.localFourier χ (-m))‖ ≤
@@ -402,7 +376,9 @@ theorem IsMicrolocallySmoothAt.exists_nhds_forall_pow_mul_norm_complexPairing_le
   obtain ⟨U₁, hU₁, Γ, hΓo, hξΓ, hΓc, hdec⟩ := hT.exists_nhds_cone
   obtain ⟨Γ', hΓ'o, hξΓ', hΓ'c, c, hc, hΓ'⟩ := hΓo.exists_cone_closedBall_subset hΓc hξΓ
   -- Near `(p₀, x₀)` the gradient stays in `Γ'` and within `‖ξ₀‖ / 2` of `ξ₀`.
-  have hGc := continuous_gradient_slice hΦ
+  have hGc : Continuous fun q : F × E ↦ gradient (fun y ↦ Φ (q.1, y)) q.2 :=
+    (InnerProductSpace.toDual ℝ E).symm.continuous.comp
+      (TauCeti.continuous_fderiv_slice_right (f := fun p y ↦ Φ (p, y)) (hΦ.of_le (by simp)))
   have hW : {q : F × E | gradient (fun y ↦ Φ (q.1, y)) q.2 ∈ Γ' ∧
       dist (gradient (fun y ↦ Φ (q.1, y)) q.2) ξ₀ < ‖ξ₀‖ / 2} ∈ 𝓝 (p₀, x₀) :=
     ((hΓ'o.preimage hGc).inter (isOpen_lt (hGc.dist continuous_const) continuous_const)).mem_nhds
@@ -419,11 +395,11 @@ theorem IsMicrolocallySmoothAt.exists_nhds_forall_pow_mul_norm_complexPairing_le
     (isOpen_ball.inter Ω.isOpen) (subset_inter hψ ψ.tsupport_subset)
   have hχs : tsupport (fun x ↦ (χr x : ℂ)) ⊆ U ∩ Ω :=
     (tsupport_comp_subset ofReal_zero χr).trans hχU
-  let χ : 𝓓(Ω, ℂ) := ⟨fun x ↦ (χr x : ℂ), ofRealCLM.contDiff.comp hχr,
-    hχc.comp_left ofReal_zero, hχs.trans inter_subset_right⟩
-  -- `χ` is `χr`, read as a complex function.
+  have hχrc : ContDiff ℝ ∞ fun x ↦ (χr x : ℂ) := ofRealCLM.contDiff.comp hχr
+  let χ : 𝓓(Ω, ℂ) := ⟨fun x ↦ (χr x : ℂ), hχrc, hχc.comp_left ofReal_zero,
+    hχs.trans inter_subset_right⟩
   have hχψ (x : E) (hx : x ∈ tsupport ψ) : χ x = 1 := by
-    rw [show χ x = (χr x : ℂ) from rfl, interior_subset (hχ1 hx), ofReal_one]
+    simpa [χ, TestFunction.coe_mk] using interior_subset (hχ1 hx)
   refine exists_forall_pow_mul_norm_complexPairing_le_of_forall hΦ h₀
     (hdec χ ((hχs.trans inter_subset_left).trans hUU₁)) hχψ hΓ'c hc hΓ' (isCompact_closedBall _ _)
     (fun p hp x hx ↦ ?_) N

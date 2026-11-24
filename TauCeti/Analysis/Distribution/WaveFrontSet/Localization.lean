@@ -55,7 +55,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   cutoff `φ g` is a rapidly decreasing superposition of translates of the one with cutoff `φ`;
   `Distribution.hasSum_localFourier_ofSupportedIn` is the same formula for a cutoff `φ` supported
   in a compact set `K` and a fixed cutoff `χ` equal to one on its support, with the explicit
-  Fourier coefficients of `φ`.
+  Fourier coefficients of `φ`. At `η = 0` it expands the pairing `T f` with a test function `f`
+  on whose support `χ = 1` (`Distribution.hasSum_fourier_mul_localFourier`).
 * `Distribution.exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul`: decay of each order
   of the localized Fourier transform on a set `Γ` survives multiplication of the cutoff by a smooth
   function, on any set `Γ'` whose conic neighbourhoods `closedBall η (c ‖η‖)` lie in `Γ`.
@@ -422,6 +423,32 @@ theorem hasSum_localFourier_ofSupportedIn [MeasurableSpace E] [BorelSpace E] (T 
     Λ.continuous
   rw [h1] at hsum
   simpa only [Function.comp_def, h2] using hsum
+
+/-- **The pairing with a test function as a lattice Fourier series.** Let `L` be a full lattice
+none of whose nonzero vectors translates `tsupport χ` into a set meeting it. If `χ = 1` on the
+support of a test function `f`, then
+`T f = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 f (m) T (χ e_(-m))`: this is
+`Distribution.hasSum_localFourier_ofSupportedIn` at `η = 0`, with `K = tsupport χ`. -/
+theorem hasSum_fourier_mul_localFourier [MeasurableSpace E] [BorelSpace E] (T : 𝓓'(Ω, ℂ))
+    (χ : 𝓓(Ω, ℂ)) (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hL : ∀ x ∈ tsupport χ, ∀ ℓ ∈ L, x + ℓ ∈ tsupport χ → ℓ = 0) {f : 𝓓(Ω, ℂ)}
+    (hf : EqOn (χ : E → ℂ) 1 (support f)) :
+    HasSum (fun m : ZLattice.dual L ↦ (ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (f : E → ℂ) m *
+      T.localFourier χ (-m)) (T.complexPairing f) := by
+  -- The cutoff and the test function as smooth functions supported in `K = tsupport χ`.
+  let K : Compacts E := ⟨tsupport χ, χ.hasCompactSupport⟩
+  have hKΩ : (K : Set E) ⊆ Ω := χ.tsupport_subset
+  let χK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
+  have hfK : support f ⊆ K := fun x hx ↦ subset_tsupport _ (by simp [hf hx])
+  let fK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset f.contDiff hfK
+  have hχK (x : E) : χK x = χ x := by simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hfK (x : E) : fK x = f x := by simp [fK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have h := hasSum_localFourier_ofSupportedIn T hKΩ L
+    (fun x hx ℓ h ↦ Subtype.ext (hL x hx ℓ ℓ.property h)) (φ := fK) (χ := χK)
+    (fun x hx ↦ by rw [hχK]; exact hf (by rwa [mem_support, hfK] at hx)) 0
+  have hχK' : ofSupportedIn hKΩ χK = χ := by ext x; simp [hχK]
+  rw [hχK', localFourier_eq T _ (ψ := f) fun x ↦ by simp [hfK]] at h
+  simpa only [zero_sub, smul_eq_mul, funext hfK] using h
 
 /-- **Uniform independence of the cutoff.** If `T` is microlocally smooth at `(x, ξ)`, then there
 are a neighbourhood `U` of `x` and an open cone `Γ` containing `ξ` on which the decay of every order

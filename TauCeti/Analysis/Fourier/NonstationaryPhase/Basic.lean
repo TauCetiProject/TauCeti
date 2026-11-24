@@ -10,10 +10,12 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Fourier.FourierCharDeriv
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Non-stationary phase in several variables, uniformly in a parameter
@@ -88,13 +90,9 @@ private theorem contDiff_partialDeriv {G : Type*} [NormedAddCommGroup G] [Normed
 
 omit [NormedSpace ℝ F] in
 private theorem tsupport_partialDeriv_subset {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (f : F × E → G) (v : E) : tsupport (partialDeriv f v) ⊆ tsupport f := by
-  refine closure_minimal (fun q hq ↦ by_contra fun hqf ↦ hq ?_) (isClosed_tsupport f)
-  -- Near a point outside the support of `f`, the slice through it vanishes.
-  have h : (fun y ↦ f (q.1, y)) =ᶠ[𝓝 q.2] fun _ ↦ 0 :=
-    (notMem_tsupport_iff_eventuallyEq.1 hqf).comp_tendsto
-      (continuous_const.prodMk continuous_id).continuousAt
-  simp [partialDeriv, h.fderiv_eq]
+    [NormedSpace ℝ G] (f : F × E → G) (v : E) : tsupport (partialDeriv f v) ⊆ tsupport f :=
+  (tsupport_comp_subset (g := fun L : E →L[ℝ] G ↦ L v) rfl _).trans
+    (tsupport_fderiv_slice_right_subset (𝕜 := ℝ) fun p y ↦ f (p, y))
 
 variable [FiniteDimensional ℝ E]
 
@@ -163,44 +161,6 @@ private theorem tsupport_transposeAmp_subset (θ : F × E → ℝ) (a : F × E �
       hqa ((tsupport_partialDeriv_subset _ _).trans (tsupport_flux_subset θ a k) h)
   simp [transposeAmp, hk]
 
-omit [FiniteDimensional ℝ E] in
-/-- The derivative in `x` of the oscillating factor `𝐞(t θ(p, x))`. -/
-private theorem hasFDerivAt_fourierChar {θ : F × E → ℝ} (hθ : ContDiff ℝ ∞ θ) (p : F) (t : ℝ)
-    (x : E) :
-    HasFDerivAt (fun y ↦ (𝐞 (t * θ (p, y)) : ℂ))
-      (((2 * π * t * I) * (𝐞 (t * θ (p, x)) : ℂ)) •
-        (ofRealCLM.comp (fderiv ℝ (fun y ↦ θ (p, y)) x))) x := by
-  have hθx : HasFDerivAt (fun y ↦ θ (p, y)) (fderiv ℝ (fun y ↦ θ (p, y)) x) x :=
-    ((hθ.comp (contDiff_const.prodMk contDiff_id)).differentiable (by simp) x).hasFDerivAt
-  have h := ((ofRealCLM.hasFDerivAt.comp x ((hθx.const_mul (2 * π * t)))).mul_const I).cexp
-  convert h using 1
-  · ext y
-    simp [Real.fourierChar_apply]
-    ring_nf
-  · ext v
-    simp [Real.fourierChar_apply]
-    ring_nf
-
-omit [FiniteDimensional ℝ E] in
-private theorem fderiv_fourierChar_apply {θ : F × E → ℝ} (hθ : ContDiff ℝ ∞ θ) (p : F) (t : ℝ)
-    (x v : E) :
-    fderiv ℝ (fun y ↦ (𝐞 (t * θ (p, y)) : ℂ)) x v =
-      2 * π * t * I * partialDeriv θ v (p, x) * 𝐞 (t * θ (p, x)) := by
-  rw [(hasFDerivAt_fourierChar hθ p t x).fderiv]
-  simp [partialDeriv]
-  ring
-
-omit [FiniteDimensional ℝ E] in
-private theorem contDiff_fourierChar_slice {θ : F × E → ℝ} (hθ : ContDiff ℝ ∞ θ) (p : F)
-    (t : ℝ) : ContDiff ℝ ∞ fun y ↦ (𝐞 (t * θ (p, y)) : ℂ) := by
-  have h : (fun y ↦ (𝐞 (t * θ (p, y)) : ℂ)) =
-      fun y ↦ cexp (((2 * π * (t * θ (p, y)) : ℝ) : ℂ) * I) := by
-    ext y
-    simp [Real.fourierChar_apply]
-  rw [h]
-  exact Complex.contDiff_exp.comp ((ofRealCLM.contDiff.comp (contDiff_const.mul
-    (contDiff_const.mul (hθ.comp (contDiff_const.prodMk contDiff_id))))).mul contDiff_const)
-
 /-- The pointwise identity behind the integration by parts:
 `∑ k (a ∂_k θ / gradSq θ) ∂_k 𝐞(t θ) = 2πi t a 𝐞(t θ)`. -/
 private theorem sum_flux_mul_fderiv {θ : F × E → ℝ} {a : F × E → ℂ} (hθ : ContDiff ℝ ∞ θ)
@@ -210,7 +170,14 @@ private theorem sum_flux_mul_fderiv {θ : F × E → ℝ} {a : F × E → ℂ} (
   by_cases ha : a (p, x) = 0
   · simp [flux, ha]
   have hS := hθa _ (subset_tsupport _ ha)
-  simp_rw [fderiv_fourierChar_apply hθ, flux]
+  have hθp : Differentiable ℝ fun y ↦ θ (p, y) :=
+    (hθ.comp (contDiff_const.prodMk contDiff_id)).differentiable (by simp)
+  have hd (v : E) : fderiv ℝ (fun y ↦ (𝐞 (t * θ (p, y)) : ℂ)) x v =
+      2 * π * t * I * partialDeriv θ v (p, x) * 𝐞 (t * θ (p, x)) := by
+    rw [Real.fderiv_fourierChar_comp_apply ((hθp x).const_mul t), fderiv_const_mul (hθp x)]
+    simp [partialDeriv]
+    ring
+  simp_rw [hd, flux]
   have hsum : ∑ k, ((partialDeriv θ (basis E k) (p, x) / gradSq θ (p, x) : ℝ) : ℂ) * a (p, x) *
       (2 * π * t * I * partialDeriv θ (basis E k) (p, x) * 𝐞 (t * θ (p, x))) =
       ((∑ k, partialDeriv θ (basis E k) (p, x) ^ 2 : ℝ) : ℂ) / (gradSq θ (p, x) : ℂ) *
@@ -221,15 +188,6 @@ private theorem sum_flux_mul_fderiv {θ : F × E → ℝ} {a : F × E → ℂ} (
     ring
   rw [hsum, show (∑ k, partialDeriv θ (basis E k) (p, x) ^ 2 : ℝ) = gradSq θ (p, x) from rfl,
     div_self (ofReal_ne_zero.2 hS), one_mul]
-
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] [FiniteDimensional ℝ E] in
-/-- A function of `x` that is the restriction of `f` to a slice, where the topological support of
-`f` lies over the compact set `K`, has compact support. -/
-private theorem hasCompactSupport_slice {G : Type*} [NormedAddCommGroup G] {f : F × E → G}
-    {K : Set E} (hK : IsCompact K) (hfK : tsupport f ⊆ univ ×ˢ K) (p : F) :
-    HasCompactSupport fun x ↦ f (p, x) :=
-  HasCompactSupport.intro hK fun _ hx ↦
-    image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfK h).2
 
 variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
@@ -242,11 +200,13 @@ private theorem integral_eq_inv_mul_integral_transposeAmp {θ : F × E → ℝ} 
     ∫ x, a (p, x) * 𝐞 (t * θ (p, x)) ∂μ =
       t⁻¹ * ∫ x, transposeAmp θ a (p, x) * 𝐞 (t * θ (p, x)) ∂μ := by
   set g : E → ℂ := fun y ↦ (𝐞 (t * θ (p, y)) : ℂ) with hg_def
-  have hg : ContDiff ℝ ∞ g := contDiff_fourierChar_slice hθ p t
+  have hg : ContDiff ℝ ∞ g :=
+    (contDiff_const.mul (hθ.comp (contDiff_const.prodMk contDiff_id))).fourierChar
   have hfl (k : Fin (Module.finrank ℝ E)) : ContDiff ℝ ∞ fun x ↦ flux θ a k (p, x) :=
     (contDiff_flux hθ ha hθa k).comp (contDiff_const.prodMk contDiff_id)
   have hflK (k : Fin (Module.finrank ℝ E)) : HasCompactSupport fun x ↦ flux θ a k (p, x) :=
-    hasCompactSupport_slice hK ((tsupport_flux_subset θ a k).trans haK) p
+    .comp_of_forall_mem_imp_mem hK (fun _ hx ↦ (((tsupport_flux_subset θ a k).trans haK) hx).2)
+      fun _ ↦ image_eq_zero_of_notMem_tsupport
   have hint₁ (k : Fin (Module.finrank ℝ E)) :
       Integrable (fun x ↦ fderiv ℝ (fun y ↦ flux θ a k (p, y)) x (basis E k) * g x) μ :=
     ((((hfl k).continuous_fderiv (by simp)).clm_apply continuous_const).mul
@@ -348,8 +308,8 @@ theorem exists_forall_abs_pow_mul_norm_integral_le_of_isCompact [FiniteDimension
   -- The critical points of `θ` in `x` form a closed set, disjoint from `P × tsupport ψ`; cut off
   -- in the parameter to an open neighbourhood `u` of `P` that avoids them over `tsupport ψ`.
   have ho : IsOpen {q : F × E | fderiv ℝ (fun y ↦ θ (q.1, y)) q.2 ≠ 0} :=
-    isOpen_ne_fun (continuous_iff_continuousAt.2 fun _ ↦
-      (hθ.contDiffAt.fderiv_slice (m := 0) (by simp)).continuousAt) continuous_const
+    isOpen_ne_fun (continuous_fderiv_slice_right (f := fun p y ↦ θ (p, y)) (hθ.of_le (by simp)))
+      continuous_const
   obtain ⟨u, v, hu, -, hPu, hψv, huv⟩ := generalized_tube_lemma hP hψc.isCompact ho
     fun q hq ↦ hθP q.1 hq.1 q.2 hq.2
   obtain ⟨ρ, hρ, -, hρ1, -, hρu⟩ := hP.exists_contDiff_cutoff hu hPu
