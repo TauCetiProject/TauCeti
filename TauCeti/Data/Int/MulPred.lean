@@ -10,6 +10,7 @@ import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -36,6 +37,7 @@ divisible by `3`.
 * `Int.three_dvd_mul_sq_sub_one` : `3 ∣ n * (n ^ 2 - 1)`.
 * `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
+* `Int.mul_sub_one_ediv_two_ne_zero` : `n * (n - 1) / 2 ≠ 0` for `n ∉ {0, 1}`.
 * `Int.one_sub_mul_one_sub_sub_one_ediv_two` : the reflection `n ↦ 1 - n` fixes `n * (n - 1) / 2`.
 * `Int.natCast_choose_two` : `n.choose 2 = n * (n - 1) / 2` for a natural number `n`.
 -/
@@ -83,6 +85,18 @@ theorem add_mul_add_sub_one_ediv_two (n k : ℤ) :
   refine mul_left_cancel₀ two_ne_zero ?_
   simp only [mul_add, two_mul_mul_sub_one_ediv_two]
   ring
+
+/-- The halved product `n (n - 1) / 2` of consecutive integers vanishes only at `n = 0` and
+`n = 1`. -/
+theorem mul_sub_one_ediv_two_ne_zero {n : ℤ} (h₀ : n ≠ 0) (h₁ : n ≠ 1) : n * (n - 1) / 2 ≠ 0 := by
+  have h₂ : 2 ≤ n * (n - 1) := by
+    rcases le_or_gt n 0 with h | h
+    · nlinarith [lt_of_le_of_ne h h₀]
+    · nlinarith [show 2 ≤ n by omega]
+  intro h
+  have h₃ := two_mul_mul_sub_one_ediv_two n
+  rw [h, mul_zero] at h₃
+  linarith
 
 /-- The reflection `n ↦ 1 - n` fixes the halved product `n (n - 1) / 2` of consecutive
 integers. -/

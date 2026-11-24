@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.NormForm
+-- The reduced trace `QuaternionAlgebra.reducedTrace` and the reduced trace pairing
+-- `QuaternionAlgebra.reducedTraceForm` occur in the statements below.
+public import TauCeti.Algebra.Quaternion.ReducedTrace
 -- `Mathlib.LinearAlgebra.Trace` is imported publicly for `LinearMap.trace`, which occurs in the
 -- statement of `QuaternionAlgebra.trace_mulLeft`.
 public import Mathlib.LinearAlgebra.Trace
@@ -14,26 +17,26 @@ public import Mathlib.LinearAlgebra.Trace
 # Algebra equivalences of quaternion algebras
 
 An algebra equivalence between two quaternion algebras is compatible with all of their
-quadratic-form structure: it commutes with quaternion conjugation, preserves the reduced trace
-and the reduced norm, maps the pure quaternions onto the pure quaternions, and therefore restricts
-to an isometry of pure norm forms. In the classical presentation `ℍ[R,a,b]`, this turns an
-isomorphism `ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]` into an isometry of ternary diagonal forms
-`⟨-a, -b, ab⟩ ≅ ⟨-c, -d, cd⟩`. It is the step that lets an equality of quaternion algebras up to
-isomorphism be read back as an isometry of quadratic forms, as in the classification of forms of
-dimension three by their determinant and their quaternion algebra.
+quadratic-form structure: it commutes with quaternion conjugation, preserves the reduced trace,
+the reduced trace pairing and the reduced norm, maps the pure quaternions onto the pure
+quaternions, and therefore restricts to an isometry of pure norm forms. In the classical
+presentation `ℍ[R,a,b]`, this turns an isomorphism `ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d]` into an isometry
+of ternary diagonal forms `⟨-a, -b, ab⟩ ≅ ⟨-c, -d, cd⟩`. It is the step that lets an equality of
+quaternion algebras up to isomorphism be read back as an isometry of quadratic forms, as in the
+classification of forms of dimension three by their determinant and their quaternion algebra.
 
 The one input is intrinsic: the trace of left multiplication by `x` on the free module
-`ℍ[R,c₁,c₂,c₃]` is twice the reduced trace `x + star x = 2 x.re + c₂ x.imI`
-(`QuaternionAlgebra.trace_mulLeft`). An algebra equivalence conjugates left multiplication by `x`
-into left multiplication by its image, so it preserves this trace; once `2` is cancellable it
-preserves the reduced trace, and `star x = (x + star x) - x` is then preserved as well. Everything
-else follows formally from `QuaternionAlgebra.self_mul_star`.
+`ℍ[R,c₁,c₂,c₃]` is twice the reduced trace `QuaternionAlgebra.reducedTrace`, the scalar
+`x + star x = 2 x.re + c₂ x.imI` (`QuaternionAlgebra.trace_mulLeft`). An algebra equivalence
+conjugates left multiplication by `x` into left multiplication by its image, so it preserves this
+trace; once `2` is cancellable it preserves the reduced trace, and `star x = (x + star x) - x` is
+then preserved as well. Everything else follows formally from `QuaternionAlgebra.self_mul_star`.
 
 ## Main results
 
 * `QuaternionAlgebra.trace_mulLeft`: the trace of left multiplication by a quaternion.
 * `QuaternionAlgebra.reducedTrace_eq_of_algEquiv`: an algebra equivalence preserves the reduced
-  trace.
+  trace, and `QuaternionAlgebra.congr_reducedTraceForm`: it transports the reduced trace pairing.
 * `QuaternionAlgebra.map_star_of_algEquiv`: an algebra equivalence of quaternion algebras commutes
   with conjugation, so that `StarAlgEquiv.ofAlgEquiv` makes it a `⋆`-algebra equivalence.
 * `QuaternionAlgebra.normForm_eq_of_algEquiv`: it preserves the reduced norm, and
@@ -75,7 +78,7 @@ variable {c₁ c₂ c₃ d₁ d₂ d₃ : R}
 /-- The trace of left multiplication by a quaternion `x` is twice its reduced trace
 `x + star x = 2 x.re + c₂ x.imI`. -/
 theorem trace_mulLeft (x : ℍ[R,c₁,c₂,c₃]) :
-    LinearMap.trace R _ (LinearMap.mulLeft R x) = 2 * (2 * x.re + c₂ * x.imI) := by
+    LinearMap.trace R _ (LinearMap.mulLeft R x) = 2 * reducedTrace c₁ c₂ c₃ x := by
   have basis_apply (i : Fin 4) :
       (basisOneIJK c₁ c₂ c₃) i =
         ⟨![1, 0, 0, 0] i, ![0, 1, 0, 0] i, ![0, 0, 1, 0] i, ![0, 0, 0, 1] i⟩ := by
@@ -86,13 +89,15 @@ theorem trace_mulLeft (x : ℍ[R,c₁,c₂,c₃]) :
   rw [LinearMap.trace_eq_matrix_trace R (basisOneIJK c₁ c₂ c₃), Matrix.trace, Fin.sum_univ_four]
   simp only [Matrix.diag, LinearMap.toMatrix_apply, coe_basisOneIJK_repr]
   simp_rw [basis_apply]
-  simp
+  simp [reducedTrace_apply]
   ring
 
-/-- An algebra equivalence of quaternion algebras preserves the reduced trace, in coordinates. -/
+/-- An algebra equivalence of quaternion algebras preserves the reduced trace, once `2` is
+regular. -/
+@[simp]
 theorem reducedTrace_eq_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
-    2 * (f x).re + d₂ * (f x).imI = 2 * x.re + c₂ * x.imI := by
+    reducedTrace d₁ d₂ d₃ (f x) = reducedTrace c₁ c₂ c₃ x := by
   refine h2.left ?_
   have hconj : f.toLinearEquiv.conj (LinearMap.mulLeft R x) = LinearMap.mulLeft R (f x) :=
     LinearMap.ext fun y => by simp
@@ -106,8 +111,9 @@ regular. Together with `StarAlgEquiv.ofAlgEquiv` this makes every such equivalen
 theorem map_star_of_algEquiv (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     f (star x) = star (f x) := by
-  rw [star_eq_two_re_sub, star_eq_two_re_sub, reducedTrace_eq_of_algEquiv h2, map_sub,
-    ← coe_algebraMap, ← coe_algebraMap, AlgEquiv.commutes]
+  rw [star_eq_two_re_sub, star_eq_two_re_sub, ← reducedTrace_apply, ← reducedTrace_apply,
+    reducedTrace_eq_of_algEquiv h2, map_sub, ← coe_algebraMap, ← coe_algebraMap,
+    AlgEquiv.commutes]
 
 /-- **An algebra equivalence of quaternion algebras preserves the reduced norm.** -/
 @[simp]
@@ -132,6 +138,26 @@ theorem normFormIsometryEquivOfAlgEquiv_apply (h2 : IsRegular (2 : R))
     (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x : ℍ[R,c₁,c₂,c₃]) :
     normFormIsometryEquivOfAlgEquiv h2 f x = f x := (rfl)
 
+/-- An algebra equivalence of quaternion algebras preserves the reduced trace pairing, once `2`
+is regular. -/
+-- Not a simp lemma: simp first rewrites the left-hand side with `reducedTraceForm_apply`, so the
+-- simpNF linter rejects it.
+theorem reducedTraceForm_eq_of_algEquiv (h2 : IsRegular (2 : R))
+    (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) (x y : ℍ[R,c₁,c₂,c₃]) :
+    reducedTraceForm d₁ d₂ d₃ (f x) (f y) = reducedTraceForm c₁ c₂ c₃ x y := by
+  rw [reducedTraceForm_apply, reducedTraceForm_apply, ← map_mul, reducedTrace_eq_of_algEquiv h2]
+
+/-- **An algebra equivalence of quaternion algebras transports the reduced trace pairing**, once
+`2` is regular. -/
+theorem congr_reducedTraceForm (h2 : IsRegular (2 : R))
+    (f : ℍ[R,c₁,c₂,c₃] ≃ₐ[R] ℍ[R,d₁,d₂,d₃]) :
+    LinearMap.BilinForm.congr f.toLinearEquiv (reducedTraceForm c₁ c₂ c₃) =
+      reducedTraceForm d₁ d₂ d₃ := by
+  ext x y
+  obtain ⟨x, rfl⟩ := f.surjective x
+  obtain ⟨y, rfl⟩ := f.surjective y
+  simp [LinearMap.BilinForm.congr_apply, reducedTraceForm_eq_of_algEquiv h2]
+
 end General
 
 section Diagonal
@@ -143,7 +169,7 @@ variable {a b c d : R}
 theorem re_eq_of_algEquiv (h2 : IsRegular (2 : R)) (f : ℍ[R,a,b] ≃ₐ[R] ℍ[R,c,d])
     (x : ℍ[R,a,b]) : (f x).re = x.re := by
   refine h2.left ?_
-  simpa using reducedTrace_eq_of_algEquiv h2 f x
+  simpa [reducedTrace_apply] using reducedTrace_eq_of_algEquiv h2 f x
 
 /-- **An algebra equivalence between quaternion algebras `ℍ[R,a,b]` maps the pure quaternions onto
 the pure quaternions.** -/
