@@ -25,10 +25,11 @@ universe u v u' v' u₂
 
 namespace CategoryTheory.Sheaf
 
-/-- Sheaves on an essentially small site with values in a Grothendieck abelian category form a
-Grothendieck abelian category, provided presheaves on the site can be sheafified: sheafification
-transports to the small model of the site, where the small case applies, and the result transports
-back along the equivalence of sheaf categories. -/
+/-- Sheaves on an essentially small site `C` with values in a Grothendieck abelian category form a
+Grothendieck abelian category, provided presheaves on `C` can be sheafified. Unlike Mathlib's
+`CategoryTheory.Sheaf.isGrothendieckAbelian_of_essentiallySmall`, this assumes `HasSheafify J A` on
+`C` itself rather than on the small model of `C`, and has no `HasLimitsOfShape` hypothesis over
+`StructuredArrow`s. -/
 theorem isGrothendieckAbelian_of_essentiallySmall_of_hasSheafify
     {C : Type u₂} [Category.{v} C] [EssentiallySmall.{u} C] (J : GrothendieckTopology C)
     (A : Type u') [Category.{v'} A] [Abelian A] [IsGrothendieckAbelian.{u} A] [HasSheafify J A] :

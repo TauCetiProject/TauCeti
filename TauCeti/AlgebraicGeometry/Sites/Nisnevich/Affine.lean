@@ -19,7 +19,8 @@ functor exhibits `S.AffineEtale`, with the induced topology, as a `1`-hypercover
 the small Nisnevich site of `S`. As for the small étale site
 (`Mathlib.AlgebraicGeometry.Sites.AffineEtale`), the categories of sheaves on the two sites are
 equivalent, and presheaves on the small Nisnevich site of `S : Scheme.{u}` can be sheafified with
-values in any concrete category such as `Type u`, `AddCommGrpCat.{u}` or `ModuleCat.{u} Λ`.
+values in a concrete category whose forgetful functor preserves limits and filtered colimits and
+reflects isomorphisms, such as `Type u`, `AddCommGrpCat.{u}` or `ModuleCat.{u} Λ`.
 
 ## Main declarations
 
