@@ -27,15 +27,13 @@ constructs the Itô integral of `H` against `W` and proves the Itô isometry.
   `H` has an Itô integral which is a predictable martingale.
 * `TauCeti.Probability.IsItoIntegral.martingale`: every adapted Itô integral of `H` is a
   martingale.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_isometry`,
-  `TauCeti.Probability.IsItoIntegral.memLp`, `TauCeti.Probability.IsItoIntegral.eLpNorm_eq`,
+* `TauCeti.Probability.IsItoIntegral.memLp`, `TauCeti.Probability.IsItoIntegral.eLpNorm_eq`,
   `TauCeti.Probability.IsItoIntegral.integral_sq`,
   `TauCeti.Probability.IsItoIntegral.eLpNorm_sub_eq`,
   `TauCeti.Probability.IsItoIntegral.integral_sub_sq`, and
   `TauCeti.Probability.IsItoIntegral.continuous_toLp`: every Itô integral `I` of `H` is square
   integrable at each time `t`, continuous in `L²(P)`, with `E[I_t²] = E ∫_(0,t] H_s² ds` and
-  `E[(I_t - I_s)²] = E ∫_(s,t] H_u² du` for `s ≤ t` (and combined with the martingale property
-  in `itoIntegral_isometry`).
+  `E[(I_t - I_s)²] = E ∫_(s,t] H_u² du` for `s ≤ t`.
 
 The integral is the limit of the elementary integrals of bounded simple holdings approximating
 `H` in `L²` of Lebesgue time times `P` on every finite horizon. By the elementary isometry
@@ -71,80 +69,90 @@ namespace TauCeti.Probability
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
   {W H I : ℝ≥0 → Ω → ℝ}
 
-/-- The elementary isometry for the difference of two simple holdings with bounded heights:
-the `L²(P)` distance of their elementary integrals at `t` is the `L²` distance of the holdings
-for Lebesgue time on `(0,t]` times `P`. -/
-private theorem eLpNorm_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
-    {τ σ : ℕ → ℝ≥0} {n m : ℕ} {a b : ℕ → Ω → ℝ} {C D : ℝ}
-    (hτ : MonotoneOn τ (Iic n)) (hσ : MonotoneOn σ (Iic m))
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hb : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (b j))
-    (haC : ∀ j < n, ∀ ω, ‖a j ω‖ ≤ C) (hbD : ∀ j < m, ∀ ω, ‖b j ω‖ ≤ D) (t : ℝ≥0) :
-    eLpNorm (Finance.simpleGains τ n a W t - Finance.simpleGains σ m b W t) 2 P =
-      eLpNorm (Function.uncurry (Finance.simpleHolding τ n a) -
-        Function.uncurry (Finance.simpleHolding σ m b)) 2 ((timeMeasure t).prod P) := by
+/-- The elementary isometry for the difference of two `ElementaryIntegrand`s:
+the `L²(P)` distance of their elementary integrals at `t` is the `L²` distance of their represented
+processes for Lebesgue time on `(0,t]` times `P`. -/
+private theorem eLpNorm_elementaryIntegrand_sub (hW : IsFilteredPreBrownianReal ℱ W P)
+    (K L : ElementaryIntegrand ℱ) (t : ℝ≥0) :
+    eLpNorm (K.integral W t - L.integral W t) 2 P =
+      eLpNorm (fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2 - L.toProcess p.1 p.2) 2
+        ((timeMeasure t).prod P) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨N, ρ, c, -, hρ, hc, hhold, hgain⟩ :=
-    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ hτ hσ ha hb
+    Finance.exists_simpleHolding_simpleGains_eq_sub ℱ
+      (K.monotone_dates.monotoneOn _) (L.monotone_dates.monotoneOn _)
+      K.measurable_positions L.measurable_positions
+  obtain ⟨CK, hCK⟩ := K.exists_bound_toProcess
+  obtain ⟨CL, hCL⟩ := L.exists_bound_toProcess
   -- Each height on the common grid is a value of the difference of the two holdings.
   have hc₂ (j : ℕ) (hj : j < N) : MemLp (c j) 2 P := by
-    refine MemLp.of_bound ((hc j hj).mono (ℱ.le _)).aestronglyMeasurable (max C 0 + max D 0)
+    refine MemLp.of_bound ((hc j hj).mono (ℱ.le _)).aestronglyMeasurable (CK + CL)
       (ae_of_all _ fun ω ↦ ?_)
     have hmem : ρ (j + 1) ∈ Ioc (ρ j) (ρ (j + 1)) :=
       ⟨hρ (mem_Iic.mpr hj.le) (mem_Iic.mpr hj) (Nat.lt_succ_self j), le_rfl⟩
-    rw [← Finance.simpleHolding_of_mem_Ioc (a := c) hρ.monotoneOn hj hmem ω, hhold]
-    exact (norm_sub_le _ _).trans
-      (add_le_add (Finance.norm_simpleHolding_le hτ _ ω fun j hj ↦ haC j hj ω)
-        (Finance.norm_simpleHolding_le hσ _ ω fun j hj ↦ hbD j hj ω))
-  have hG : Finance.simpleGains τ n a W t - Finance.simpleGains σ m b W t =
-      Finance.simpleGains ρ N c W t := funext fun ω ↦ (hgain W t ω).symm
-  have hK : Function.uncurry (Finance.simpleHolding τ n a) -
-      Function.uncurry (Finance.simpleHolding σ m b) =
-        Function.uncurry (Finance.simpleHolding ρ N c) := funext fun p ↦ (hhold p.1 p.2).symm
+    rw [← Finance.simpleHolding_of_mem_Ioc (a := c) hρ.monotoneOn hj hmem ω, hhold,
+      ← ElementaryIntegrand.toProcess_eq_simpleHolding,
+      ← ElementaryIntegrand.toProcess_eq_simpleHolding]
+    exact (norm_sub_le _ _).trans (add_le_add (hCK _ ω) (hCL _ ω))
+  have hG : K.integral W t - L.integral W t = Finance.simpleGains ρ N c W t :=
+    funext fun ω ↦ by
+      simpa only [Pi.sub_apply, ElementaryIntegrand.integral_eq_simpleGains] using
+        (hgain W t ω).symm
+  have hK : (fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2 - L.toProcess p.1 p.2) =
+      Function.uncurry (Finance.simpleHolding ρ N c) :=
+    funext fun p ↦ by
+      rw [ElementaryIntegrand.toProcess_eq_simpleHolding,
+        ElementaryIntegrand.toProcess_eq_simpleHolding, ← hhold p.1 p.2]
+      rfl
   rw [hG, hK]
   exact hW.eLpNorm_simpleGains hρ.monotoneOn hc hc₂ t
 
-/-- Bounded simple holdings approximating a Brownian-integrable integrand on every finite
+/-- Bounded elementary integrands approximating a Brownian-integrable integrand on every finite
 horizon have elementary martingales which are Cauchy in `L²(P)` at every time. -/
-private theorem _root_.TauCeti.BrownianIntegrable.exists_simpleGains_cauchySeq
+private theorem _root_.TauCeti.BrownianIntegrable.exists_elementaryIntegrand_cauchySeq
     (hH : BrownianIntegrable ℱ P H) (hW : IsFilteredPreBrownianReal ℱ W P) :
-    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ)
-      (hmem : ∀ k t, MemLp (Finance.simpleGains (τ k) (n k) (a k) W t) 2 P),
-      (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
-      (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
-      (∀ k j, j < n k → ∀ ω, ‖a k j ω‖ ≤ C k) ∧
-      (∀ k, Martingale (Finance.simpleGains (τ k) (n k) (a k) W) ℱ P) ∧
-      (∀ t, CauchySeq fun k ↦ (hmem k t).toLp (Finance.simpleGains (τ k) (n k) (a k) W t)) ∧
-      ∀ t, Tendsto (fun k ↦ eLpNorm (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k))
-        - Function.uncurry H) 2 ((timeMeasure t).prod P)) atTop (𝓝 0) := by
+    ∃ (K : ℕ → ElementaryIntegrand ℱ)
+      (hmem : ∀ k t, MemLp ((K k).integral W t) 2 P),
+      (∀ k, Martingale ((K k).integral W) ℱ P) ∧
+      (∀ t, CauchySeq fun k ↦ (hmem k t).toLp ((K k).integral W t)) ∧
+      ∀ t, Tendsto (fun k ↦ eLpNorm (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
+        ((timeMeasure t).prod P)) atTop (𝓝 0) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨n, τ, a, C, -, hτ, ha, haC, hKH⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have ha₂ (k : ℕ) := Finance.memLp_of_bound_stronglyMeasurable (P := P) (p := 2) (ha k) (haC k)
-  have hmem (k : ℕ) (t : ℝ≥0) : MemLp (Finance.simpleGains (τ k) (n k) (a k) W t) 2 P :=
-    hW.memLp_simpleGains (hτ k).monotoneOn (ha k) (ha₂ k) t
-  have hK (k : ℕ) (t : ℝ≥0) : MemLp (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)))
+  let K (k : ℕ) : ElementaryIntegrand ℱ :=
+    ElementaryIntegrand.ofSimpleHolding (hτ k).monotoneOn (ha k)
+      fun j hj ↦ ⟨C k, fun ω ↦ by simpa [Real.norm_eq_abs] using haC k j hj ω⟩
+  have hK_proc (k : ℕ) :
+      (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) =
+        Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)) - Function.uncurry H :=
+    funext fun p ↦ by
+      dsimp only [K, Pi.sub_apply, Function.uncurry_apply_pair]
+      rw [ElementaryIntegrand.toProcess_ofSimpleHolding]
+      rfl
+  have hKH' (t : ℝ≥0) : Tendsto (fun k ↦ eLpNorm
+      (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
+        ((timeMeasure t).prod P)) atTop (𝓝 0) :=
+    (hKH t).congr fun k ↦ congrArg (eLpNorm · 2 _) (hK_proc k).symm
+  have hmem (k : ℕ) (t : ℝ≥0) : MemLp ((K k).integral W t) 2 P :=
+    (K k).memLp_integral (fun s ↦ hW.memLp_eval s (by norm_num)) t
+  have hK (k : ℕ) (t : ℝ≥0) : MemLp (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2)
       2 ((timeMeasure t).prod P) :=
-    MemLp.of_bound (((Finance.isStronglyPredictable_simpleHolding (ha k)).mono
-        ℱ.predictable_le_prod).aestronglyMeasurable) (max (C k) 0)
-      (ae_of_all _ fun p ↦
-        Finance.norm_simpleHolding_le (hτ k).monotoneOn p.1 p.2 fun j hj ↦ haC k j hj p.2)
-  refine ⟨n, τ, a, C, hmem, fun k ↦ (hτ k).monotoneOn, ha, haC, fun k ↦ ?_, fun t ↦ ?_, hKH⟩
-  · exact hW.martingale.simpleGains_of_bdd (hτ k).monotoneOn (ha k)
-      fun j hj ↦ ⟨C k, ae_of_all _ fun ω ↦ by simpa using haC k j hj ω⟩
-  · -- The elementary integrals at `t` are exactly as far apart as their holdings.
-    have hH₂ := hH.memLp_timeMeasure t
-    have hconv : Tendsto (fun k ↦ (hK k t).toLp _) atTop (𝓝 (hH₂.toLp _)) :=
-      (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ (fun k ↦ hK k t) _ hH₂).2 (hKH t)
-    have hdist (k l : ℕ) : dist ((hmem k t).toLp _) ((hmem l t).toLp _) =
-        dist ((hK k t).toLp _) ((hK l t).toLp _) := by
-      rw [dist_eq_norm, dist_eq_norm, ← MemLp.toLp_sub, ← MemLp.toLp_sub, Lp.norm_toLp,
-        Lp.norm_toLp, eLpNorm_simpleGains_sub hW (hτ k).monotoneOn (hτ l).monotoneOn (ha k)
-          (ha l) (haC k) (haC l) t]
-    have hcau := hconv.cauchySeq
-    rw [Metric.cauchySeq_iff] at hcau ⊢
-    intro ε hε
-    obtain ⟨N, hN⟩ := hcau ε hε
-    exact ⟨N, fun k hk l hl ↦ hdist k l ▸ hN k hk l hl⟩
+    (K k).brownianIntegrable.memLp_timeMeasure t
+  refine ⟨K, hmem, fun k ↦ (K k).martingale_integral hW.martingale, fun t ↦ ?_, hKH'⟩
+  -- The elementary integrals at `t` are exactly as far apart as their holdings.
+  have hH₂ := hH.memLp_timeMeasure t
+  have hconv : Tendsto (fun k ↦ (hK k t).toLp _) atTop (𝓝 (hH₂.toLp _)) :=
+    (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ (fun k ↦ hK k t) _ hH₂).2 (hKH' t)
+  have hdist (k l : ℕ) : dist ((hmem k t).toLp _) ((hmem l t).toLp _) =
+      dist ((hK k t).toLp _) ((hK l t).toLp _) := by
+    rw [dist_eq_norm, dist_eq_norm, ← MemLp.toLp_sub, ← MemLp.toLp_sub, Lp.norm_toLp,
+      Lp.norm_toLp, eLpNorm_elementaryIntegrand_sub hW (K k) (K l) t]
+    rfl
+  have hcau := hconv.cauchySeq
+  rw [Metric.cauchySeq_iff] at hcau ⊢
+  intro ε hε
+  obtain ⟨N, hN⟩ := hcau ε hε
+  exact ⟨N, fun k hk l hl ↦ hdist k l ▸ hN k hk l hl⟩
 
 /-- Shared continuous-martingale completion returning both the constructed Itô integral and a
 sequence of `ElementaryIntegrand`s whose elementary integrals converge almost surely uniformly on
@@ -161,37 +169,20 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
         TendstoUniformlyOn (fun k t ↦ (K k).integral W t ω)
           (I · ω) atTop (Iic T) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, C, hmem, hτ, ha, haC, hmart, hcau, hKH⟩ :=
-    hH.exists_simpleGains_cauchySeq hW
+  obtain ⟨K, hmem, hmart, hcau, hKH⟩ := hH.exists_elementaryIntegrand_cauchySeq hW
   obtain ⟨I, hI, hIp, hIlim, -, φ, hφ, hIc⟩ := exists_continuous_martingale_of_cauchySeq_Lp hmart
-    (fun k ↦ hWc.mono fun ω hω ↦ Finance.continuous_simpleGains hω) hmem hcau
-  let K (k : ℕ) : ElementaryIntegrand ℱ :=
-    ElementaryIntegrand.ofSimpleHolding (hτ k) (ha k)
-      fun j hj ↦ ⟨C k, fun ω ↦ by simpa [Real.norm_eq_abs] using haC k j hj ω⟩
-  have hK_proc (k : ℕ) :
-      (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) =
-        Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)) - Function.uncurry H :=
-    funext fun p ↦ by
-      dsimp only [K, Pi.sub_apply, Function.uncurry_apply_pair]
-      rw [ElementaryIntegrand.toProcess_ofSimpleHolding]
-      rfl
-  have hK_gain (k : ℕ) (t : ℝ≥0) :
-      (K k).integral W t = Finance.simpleGains (τ k) (n k) (a k) W t :=
-    funext fun ω ↦ ElementaryIntegrand.integral_ofSimpleHolding (hτ k) (ha k) _ W t ω
+    (fun k ↦ hWc.mono fun ω hω ↦ (K k).continuous_integral hω) hmem hcau
   refine ⟨I, fun k ↦ K (φ k),
     ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦ ⟨K,
       fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
         (f := fun k p ↦ (K k).toProcess p.1 p.2 - H p.1 p.2)
         (fun k ↦ (((K k).isStronglyPredictable.sub
           hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-        ((hKH t).congr fun k ↦ congrArg (eLpNorm · 2 _) (hK_proc k).symm) hε,
-      by simpa only [hK_gain] using
-        tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
+        (hKH t) hε,
+      tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
     hIp, hI,
-    fun T ↦ ((hKH T).comp hφ.tendsto_atTop).congr fun k ↦ by
-      dsimp only [Function.comp_def]; rw [hK_proc],
-    hIc.mono fun ω hω T ↦ by
-      simpa only [fun k t ↦ congr_fun (hK_gain (φ k) t) ω] using hω.2 T⟩
+    fun T ↦ (hKH T).comp hφ.tendsto_atTop,
+    hIc.mono fun ω hω ↦ hω.2⟩
 
 /-- **Existence of the Itô integral for square-integrable integrands.** Against a pre-Brownian
 motion relative to the filtration with almost surely continuous paths, every predictable
@@ -232,17 +223,19 @@ theorem IsItoIntegral.martingale (hI : IsItoIntegral ℱ P W H I)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     (hIa : StronglyAdapted ℱ I) : Martingale I ℱ P := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, hmart, hcau, hKH⟩ :=
-    hH.exists_simpleGains_cauchySeq hW
+  obtain ⟨K, hmem, hmart, hcau, hKH⟩ := hH.exists_elementaryIntegrand_cauchySeq hW
   obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hmart hmem hcau
-  exact hZ.congr hIa fun t ↦ (hI.ae_eq_of_tendstoInMeasure hW hτ ha
-    (fun _ hε ↦ by
-      simpa only [Pi.sub_apply, Function.uncurry_apply_pair] using
-        TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-          (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-            hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-          (hKH t) hε)
-    (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)).symm
+  exact hZ.congr hIa fun t ↦ (hI.ae_eq_of_tendstoInMeasure hW
+    (fun k ↦ (K k).monotone_dates.monotoneOn _) (fun k ↦ (K k).measurable_positions)
+    (fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
+      (f := fun k p ↦ Finance.simpleHolding (K k).dates (K k).n (K k).positions p.1 p.2 -
+        H p.1 p.2)
+      (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (K k).measurable_positions).sub
+        hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
+      (by simpa only [ElementaryIntegrand.toProcess_eq_simpleHolding] using hKH t) hε)
+    (by
+      simpa only [ElementaryIntegrand.integral_eq_simpleGains] using
+        tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)).symm
 
 /-- An Itô integral of a Brownian-integrable integrand against a pre-Brownian motion relative to
 the filtration is square integrable at every time. -/
@@ -313,20 +306,5 @@ theorem IsItoIntegral.continuous_toLp (hI : IsItoIntegral ℱ P W H I)
       (hW.ae_eq_l2Integral_of_isItoIntegral hH hI t))
   rw [hEq]
   exact hW.continuous_l2Integral hH
-
-/-- **Combined Itô isometry and martingale theorem.** Against a pre-Brownian motion relative to
-the filtration, an adapted Itô integral `I` of a `BrownianIntegrable` integrand `H` is a
-square-integrable martingale satisfying `E[I_t²] = E ∫_(0,t] H_s² ds` and
-`E[(I_t - I_s)²] = E ∫_(s, t] H_u² du` for all `s ≤ t`. -/
-theorem IsFilteredPreBrownianReal.itoIntegral_isometry
-    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
-    (hI : IsItoIntegral ℱ P W H I) (hIa : StronglyAdapted ℱ I) :
-    Martingale I ℱ P ∧ (∀ t : ℝ≥0, MemLp (I t) 2 P) ∧
-      (∀ t : ℝ≥0, ∫ ω, I t ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P) ∧
-      (∀ s t : ℝ≥0, s ≤ t →
-        ∫ ω, (I t ω - I s ω) ^ 2 ∂P =
-          ∫ p, H p.1 p.2 ^ 2 ∂((timeMeasure t).restrict (Ioc s t)).prod P) :=
-  ⟨hI.martingale hW hH hIa, hI.memLp hW hH, hI.integral_sq hW hH,
-    fun _ _ hst ↦ hI.integral_sub_sq hW hH hst⟩
 
 end TauCeti.Probability

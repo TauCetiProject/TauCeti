@@ -44,12 +44,50 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set Filter Finset
 open scoped ENNReal NNReal Topology InnerProductSpace
 
-namespace TauCeti.Probability.IsFilteredPreBrownianReal
+namespace TauCeti.Probability
 
 open TauCeti
 
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
+
+/-- On each finite horizon, a predictable integrand with finite expected square energy can be
+approximated arbitrarily closely in `L²((timeMeasure t).prod P)` by a bounded
+`ElementaryIntegrand`. -/
+theorem exists_elementaryIntegrand_eLpNorm_sub_lt (ℱ : Filtration ℝ≥0 mΩ)
+    (P : Measure Ω) [IsFiniteMeasure P] (t : ℝ≥0) {H : ℝ≥0 → Ω → ℝ}
+    (hHp : IsStronglyPredictable ℱ H)
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ K : ElementaryIntegrand ℱ,
+      eLpNorm (fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2 - H p.1 p.2) 2
+        ((timeMeasure t).prod P) < ε := by
+  obtain ⟨n, τ, a, C, -, hτ, ha, hb, herr⟩ :=
+    ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t hHp hH hε
+  let K : ElementaryIntegrand ℱ := ElementaryIntegrand.ofSimpleHolding hτ.monotoneOn ha
+    fun j hj ↦ ⟨C, fun ω ↦ by simpa [Real.norm_eq_abs] using hb j hj ω⟩
+  refine ⟨K, ?_⟩
+  simpa only [K, ElementaryIntegrand.toProcess_ofSimpleHolding] using herr
+
+/-- For a predictable integrand in `L²((timeMeasure t).prod P)`, there is a sequence of bounded
+`ElementaryIntegrand`s whose represented processes converge to it in
+`L²((timeMeasure t).prod P)`. -/
+theorem exists_seq_elementaryIntegrand_tendsto_eLpNorm (ℱ : Filtration ℝ≥0 mΩ)
+    (P : Measure Ω) [IsFiniteMeasure P] (t : ℝ≥0) {H : ℝ≥0 → Ω → ℝ}
+    (hHp : IsStronglyPredictable ℱ H)
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
+    ∃ K : ℕ → ElementaryIntegrand ℱ,
+      Tendsto (fun k ↦ eLpNorm
+        (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
+        ((timeMeasure t).prod P)) atTop (𝓝 0) := by
+  choose K hK using fun k : ℕ ↦ exists_elementaryIntegrand_eLpNorm_sub_lt ℱ P t hHp hH
+    (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
+  refine ⟨K, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
+    (fun _ ↦ zero_le) fun k ↦ (hK k).le⟩
+
+namespace IsFilteredPreBrownianReal
+
+variable {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
 
 /-- The `L²(P)` distance between an elementary Brownian integral and `hW.l2Integral t` of a
 predictable integrand in `L²((timeMeasure t).prod P)` equals the time-product `L²` distance between
@@ -86,24 +124,22 @@ theorem ae_eq_l2Integral_of_memLp (hW : IsFilteredPreBrownianReal ℱ W P)
       (((ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).mpr hH).toLp
         (Function.uncurry H)) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have hex (k : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t
-    hI.isStronglyPredictable hH (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
-  choose n τ a C _ hτ ha hb hlt using hex
-  have hKlim : Tendsto (fun k ↦ eLpNorm
-      (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - H p.1 p.2) 2
-      ((timeMeasure t).prod P)) atTop (𝓝 0) :=
-    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
-      (fun _ ↦ zero_le) fun k ↦ (hlt k).le
-  exact hI.ae_eq_of_tendstoInMeasure hW (fun k ↦ (hτ k).monotoneOn) ha
+  obtain ⟨K, hKlim⟩ := exists_seq_elementaryIntegrand_tendsto_eLpNorm ℱ P t
+    hI.isStronglyPredictable hH
+  have hlim_sh : Tendsto (fun k ↦ eLpNorm
+      (fun p : ℝ≥0 × Ω ↦ Finance.simpleHolding (K k).dates (K k).n (K k).positions p.1 p.2 -
+        H p.1 p.2) 2 ((timeMeasure t).prod P)) atTop (𝓝 0) := by
+    simpa only [ElementaryIntegrand.toProcess_eq_simpleHolding] using hKlim
+  exact hI.ae_eq_of_tendstoInMeasure hW (fun k ↦ (K k).monotone_dates.monotoneOn _)
+    (fun k ↦ (K k).measurable_positions)
     (fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-      (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
+      (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (K k).measurable_positions).sub
         hI.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-      hKlim hε)
+      hlim_sh hε)
     (tendstoInMeasure_of_tendsto_eLpNorm (p := 2) (by norm_num)
-      (hKlim.congr fun k ↦ (hW.eLpNorm_simpleGains_sub_l2Integral (hτ k).monotoneOn (ha k)
-        (Finance.memLp_of_bound_stronglyMeasurable (ha k) (hb k)) t
-        hI.isStronglyPredictable hH).symm))
+      (hlim_sh.congr fun k ↦ (hW.eLpNorm_simpleGains_sub_l2Integral
+        ((K k).monotone_dates.monotoneOn _) (K k).measurable_positions
+        (fun j _ ↦ (K k).memLp_positions P 2 j) t hI.isStronglyPredictable hH).symm))
 
 /-- For a `BrownianIntegrable` integrand, every Itô integral agrees almost surely at every time `t`
 with the finite-horizon predictable L² Brownian integral `hW.l2Integral t`. Neither Brownian path
@@ -179,6 +215,29 @@ theorem eLpNorm_l2Integral_sub_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
     ((measurableSet_Ioc (a := s) (b := t)).prod MeasurableSet.univ).nullMeasurableSet,
     ← Measure.restrict_prod_eq_prod_univ]
 
+/-- Bound the `L²(P)` distance between `hW.l2Integral t` and `hW.l2Integral s` (for `s ≤ t ≤ T`)
+by the `L²` norm of the `(s, t]` indicator of `H` at the fixed horizon `T`. -/
+private theorem eNorm_l2Integral_sub_le_indicator_of_le (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H : ℝ≥0 → Ω → ℝ} (hH : BrownianIntegrable ℱ P H) {s t T : ℝ≥0}
+    (hst : s ≤ t) (htT : t ≤ T) :
+    ‖hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H)) -
+      hW.l2Integral s ((hH.memLp_predictableMeasure s).toLp (Function.uncurry H))‖ₑ ≤
+      eLpNorm ((Ioc s t ×ˢ (univ : Set Ω)).indicator (Function.uncurry H)) 2
+        ((timeMeasure T).prod P) := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  let Ft := hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))
+  let Fs := hW.l2Integral s ((hH.memLp_predictableMeasure s).toLp (Function.uncurry H))
+  have hnorm : ‖Ft - Fs‖ₑ = eLpNorm (⇑Ft - ⇑Fs) 2 P := by
+    rw [Lp.eNorm_def]
+    exact eLpNorm_congr_ae (Lp.coeFn_sub Ft Fs)
+  rw [hnorm, hW.eLpNorm_l2Integral_sub_of_le hH hst]
+  have hmeas : ((timeMeasure t).restrict (Ioc s t)).prod P ≤
+      ((timeMeasure T).restrict (Ioc s t)).prod P :=
+    Measure.prod_mono (Measure.restrict_mono Set.Subset.rfl (timeMeasure_mono htT)) le_rfl
+  refine (eLpNorm_mono_measure _ hmeas).trans_eq ?_
+  rw [Measure.restrict_prod_eq_prod_univ, ← eLpNorm_indicator_eq_eLpNorm_restrict
+    ((measurableSet_Ioc (a := s) (b := t)).prod MeasurableSet.univ).nullMeasurableSet]
+
 /-- The finite-horizon `L²` Brownian integral defines a continuous `L²(P)`-valued curve in time
 for every `BrownianIntegrable` integrand. -/
 theorem continuous_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -193,30 +252,15 @@ theorem continuous_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
   let T : ℝ≥0 := t₀ + 1
   let g (t : ℝ≥0) (p : ℝ≥0 × Ω) : ℝ :=
     (Ioc (min t t₀) (max t t₀) ×ˢ (univ : Set Ω)).indicator (Function.uncurry H) p
+  -- Step 1: for `t ≤ T`, bound `‖F t - F t₀‖ₑ` symmetrically by `‖g t‖₂` on `(0, T] × Ω`.
   have hbound (t : ℝ≥0) (ht : t ≤ T) :
       ‖F t - F t₀‖ₑ ≤ eLpNorm (g t) 2 ((timeMeasure T).prod P) := by
-    have hnorm : ‖F t - F t₀‖ₑ = eLpNorm (⇑(F t) - ⇑(F t₀)) 2 P := by
-      rw [Lp.eNorm_def]
-      exact eLpNorm_congr_ae (Lp.coeFn_sub (F t) (F t₀))
-    rw [hnorm]
     rcases le_total t₀ t with ht₀t | htt₀
-    · rw [hW.eLpNorm_l2Integral_sub_of_le hH ht₀t]
-      have hmeas : ((timeMeasure t).restrict (Ioc t₀ t)).prod P ≤
-          ((timeMeasure T).restrict (Ioc t₀ t)).prod P :=
-        Measure.prod_mono (Measure.restrict_mono Set.Subset.rfl (timeMeasure_mono ht)) le_rfl
-      refine (eLpNorm_mono_measure _ hmeas).trans_eq ?_
-      rw [Measure.restrict_prod_eq_prod_univ, ← eLpNorm_indicator_eq_eLpNorm_restrict
-        ((measurableSet_Ioc (a := t₀) (b := t)).prod MeasurableSet.univ).nullMeasurableSet]
-      simp [g, min_eq_right ht₀t, max_eq_left ht₀t]
-    · rw [eLpNorm_sub_comm, hW.eLpNorm_l2Integral_sub_of_le hH htt₀]
-      have hmeas : ((timeMeasure t₀).restrict (Ioc t t₀)).prod P ≤
-          ((timeMeasure T).restrict (Ioc t t₀)).prod P :=
-        Measure.prod_mono
-          (Measure.restrict_mono Set.Subset.rfl (timeMeasure_mono (le_self_add : t₀ ≤ T))) le_rfl
-      refine (eLpNorm_mono_measure _ hmeas).trans_eq ?_
-      rw [Measure.restrict_prod_eq_prod_univ, ← eLpNorm_indicator_eq_eLpNorm_restrict
-        ((measurableSet_Ioc (a := t) (b := t₀)).prod MeasurableSet.univ).nullMeasurableSet]
-      simp [g, min_eq_left htt₀, max_eq_right htt₀]
+    · simpa only [g, min_eq_right ht₀t, max_eq_left ht₀t] using
+        hW.eNorm_l2Integral_sub_le_indicator_of_le hH ht₀t ht
+    · simpa only [g, eNorm_sub_rev, min_eq_left htt₀, max_eq_right htt₀] using
+        hW.eNorm_l2Integral_sub_le_indicator_of_le hH htt₀ le_self_add
+  -- Step 2: since `timeMeasure T {t₀} = 0`, `g t → 0` a.e. and hence in `L²`.
   have hne_time : ∀ᵐ u ∂timeMeasure T, u ≠ t₀ :=
     ae_iff.mpr (by simp only [ne_eq, not_not, Set.ofPred_eq_eq_singleton, timeMeasure_singleton])
   have hne : ∀ᵐ p : ℝ≥0 × Ω ∂(timeMeasure T).prod P, p.1 ≠ t₀ :=
@@ -238,6 +282,7 @@ theorem continuous_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     refine tendsto_const_nhds.congr' ((hexcl u hu).mono fun t ht ↦ ?_)
     have hnot : (u, ω) ∉ Ioc (min t t₀) (max t t₀) ×ˢ (univ : Set Ω) := fun h ↦ ht h.1
     simp [g, indicator_of_notMem hnot]
+  -- Step 3: squeeze `‖F t - F t₀‖ₑ → 0` and pass to `ContinuousAt`.
   have henorm : Tendsto (fun t ↦ ‖F t - F t₀‖ₑ) (𝓝 t₀) (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
       (by simpa only [sub_zero] using hg_lim)
@@ -279,4 +324,6 @@ theorem integral_mul_of_isItoIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
     _ = ∫ p, H₁ p.1 p.2 * H₂ p.1 p.2 ∂(timeMeasure t).prod P :=
         ℱ.integral_predictableMeasure P (hH₁.isStronglyPredictable.mul hH₂.isStronglyPredictable) t
 
-end TauCeti.Probability.IsFilteredPreBrownianReal
+end IsFilteredPreBrownianReal
+
+end TauCeti.Probability

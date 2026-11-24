@@ -24,8 +24,8 @@ process uses intervals open on the left and closed on the right, and is zero at 
 The elementary integral is the existing `TauCeti.Finance.simpleGains`, not a new
 integration operator. It depends only on the represented process (`integral_congr_toProcess`), and
 its finite-sum formula, path continuity, martingale property, finite-time Lᵖ membership, filtration
-monotonicity (`monoFiltration`), addition (`Add`), and construction from bounded monotone-grid
-simple holdings (`ofSimpleHolding`) provide the starting objects for stochastic-integral completion.
+monotonicity (`monoFiltration`), and construction from bounded monotone-grid simple holdings
+(`ofSimpleHolding`) provide the starting objects for stochastic-integral completion.
 Neither completion nor an integral of an arbitrary predictable process is asserted here.
 
 ## References
@@ -150,6 +150,16 @@ theorem bounded_positions (j : ℕ) : ∃ C : ℝ, ∀ ω, |K.positions j ω| �
   by_cases hj : j < K.n
   · simpa [positions, hj] using K.bounded_height ⟨j, hj⟩
   · exact ⟨0, fun ω ↦ by simp [positions, hj]⟩
+
+/-- On a finite measure space, every extended position `K.positions j` belongs to `Lᵖ(P)`. -/
+theorem memLp_positions (P : Measure Ω) [IsFiniteMeasure P] (p : ℝ≥0∞) (j : ℕ) :
+    MemLp (K.positions j) p P := by
+  obtain ⟨C, hC⟩ := K.bounded_positions j
+  by_cases hj : j < K.n
+  · exact MemLp.of_bound
+      (((K.measurable_positions j hj).mono (ℱ.le _)).aestronglyMeasurable) C
+      (Filter.Eventually.of_forall fun ω ↦ by simpa [Real.norm_eq_abs] using hC ω)
+  · simp [positions_of_le K (not_lt.mp hj)]
 
 /-- The predictable process represented by the bounded positions and their half-open
 trading intervals. It vanishes outside the finite grid. -/
@@ -524,12 +534,12 @@ theorem integral_smul (c : ℝ) (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω :
   simpa only [integral, n_smul, dates_smul, positions_smul] using
     Finance.simpleGains_smul K.dates K.n c K.positions X t ω
 
-private structure AddWitness (K L : ElementaryIntegrand ℱ) where
-  integrand : ElementaryIntegrand ℱ
-  toProcess_eq : ∀ t ω, integrand.toProcess t ω = K.toProcess t ω + L.toProcess t ω
-  integral_eq : ∀ X t ω, integrand.integral X t ω = K.integral X t ω + L.integral X t ω
-
-private def addWitness (K L : ElementaryIntegrand ℱ) : AddWitness K L := by
+/-- The sum of two elementary integrands can be represented on a common grid by a single
+`ElementaryIntegrand` whose represented process and elementary integrals are the pointwise sums. -/
+theorem exists_toProcess_add_integral_add (K L : ElementaryIntegrand ℱ) :
+    ∃ M : ElementaryIntegrand ℱ,
+      M.toProcess = K.toProcess + L.toProcess ∧
+      ∀ X : ℝ≥0 → Ω → ℝ, M.integral X = K.integral X + L.integral X := by
   classical
   let s := (range K.n).disjSum (range L.n)
   let l := Sum.elim K.dates L.dates
@@ -539,50 +549,29 @@ private def addWitness (K L : ElementaryIntegrand ℱ) : AddWitness K L := by
     rintro (j | j) hj <;> simp only [s, inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
     · exact K.measurable_positions j hj
     · exact L.measurable_positions j hj
-  choose n τ b _ hτ hb_meas hb_bdd hhold hgain using
+  obtain ⟨n, τ, b, -, hτ, hb_meas, hb_bdd, hhold, hgain⟩ :=
     Finance.exists_simpleHolding_simpleGains_eq_sum ℱ s l u a ha
   choose CK hCK using K.bounded_positions
   choose CL hCL using L.bounded_positions
-  refine ⟨ofSimpleHolding hτ.monotoneOn hb_meas (fun j hj ↦ ?_), fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
-  · refine ⟨(∑ i ∈ range K.n, CK i) + (∑ i ∈ range L.n, CL i), fun ω ↦ ?_⟩
+  have hb_unif : ∀ j < n, ∃ C : ℝ, ∀ ω, |b j ω| ≤ C := fun j hj ↦ by
+    refine ⟨(∑ i ∈ range K.n, CK i) + (∑ i ∈ range L.n, CL i), fun ω ↦ ?_⟩
     refine (hb_bdd j hj ω).trans ?_
     simp only [s, a, sum_disjSum, Sum.elim_inl, Sum.elim_inr]
     exact add_le_add
       (sum_le_sum fun i _ ↦ by simpa [Real.norm_eq_abs] using hCK i ω)
       (sum_le_sum fun i _ ↦ by simpa [Real.norm_eq_abs] using hCL i ω)
-  · rw [toProcess_ofSimpleHolding, hhold t ω, sum_disjSum]
-    simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, toProcess_eq_simpleHolding,
+  refine ⟨ofSimpleHolding hτ.monotoneOn hb_meas hb_unif, ?_, fun X ↦ ?_⟩
+  · ext t ω
+    rw [toProcess_ofSimpleHolding, hhold t ω, sum_disjSum]
+    simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, Pi.add_apply, toProcess_eq_simpleHolding,
       Finance.simpleHolding_def]
-  · rw [integral_ofSimpleHolding, hgain X t ω, sum_disjSum]
-    simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, integral_eq_simpleGains,
+  · ext t ω
+    rw [integral_ofSimpleHolding, hgain X t ω, sum_disjSum]
+    simp only [l, u, a, Sum.elim_inl, Sum.elim_inr, Pi.add_apply, integral_eq_simpleGains,
       Finance.simpleGains_def]
     congr 1 <;> refine sum_congr rfl fun j _ ↦ ?_
     · simp [K.monotone_dates (Nat.le_succ j)]
     · simp [L.monotone_dates (Nat.le_succ j)]
-
-/-- Sum of two elementary integrands on a common grid (exposed via `K + L`). -/
-def add (K L : ElementaryIntegrand ℱ) : ElementaryIntegrand ℱ :=
-  (addWitness K L).integrand
-
-/-- Addition of two elementary integrands on a common grid. -/
-instance : Add (ElementaryIntegrand ℱ) where
-  add := add
-
-private theorem add_def (K L : ElementaryIntegrand ℱ) : K + L = K.add L := rfl
-
-/-- Adding two presentations adds their represented processes pointwise. -/
-@[simp]
-theorem toProcess_add (K L : ElementaryIntegrand ℱ) (t : ℝ≥0) (ω : Ω) :
-    (K + L).toProcess t ω = K.toProcess t ω + L.toProcess t ω := by
-  rw [add_def, add]
-  exact (addWitness K L).toProcess_eq t ω
-
-/-- Elementary integration is additive over sums of presentations. -/
-@[simp]
-theorem integral_add (K L : ElementaryIntegrand ℱ) (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
-    (K + L).integral X t ω = K.integral X t ω + L.integral X t ω := by
-  rw [add_def, add]
-  exact (addWitness K L).integral_eq X t ω
 
 /-- A one-interval elementary integrand. The height is selected at `s`, not at `t`, and is
 canonicalized to `0` when `s = t`. -/

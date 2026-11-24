@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Stopping
 public import Mathlib.Probability.Process.LocalProperty
 import TauCeti.MeasureTheory.Function.Lp.Iterated
+import TauCeti.MeasureTheory.OuterMeasure.AE
 import TauCeti.Probability.BrownianMotion.Integral.Continuous
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
@@ -49,7 +50,7 @@ strongly progressive, almost surely continuous process `I` satisfying `IsItoInte
   every strongly progressive process with a.s. finite pathwise square energy admits a
   `LocallyBrownianIntegrable` predictable representative agreeing `(timeMeasure T).prod P`-a.e.
   on every horizon `T` together with a local-martingale Itô integral (independent of the
-  representative choice by `itoIntegral_congr_progressive` / `itoIntegral_local_congr`).
+  representative choice by `itoIntegral_local_congr`).
 * `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_localMartingale`: against an almost
   surely continuous filtered pre-Brownian motion, every strongly progressive Itô integral is a
   local martingale.
@@ -111,35 +112,20 @@ private theorem isItoIntegral_of_localized_stages
   refine ⟨hH.isStronglyPredictable, hIcont, fun t ↦ ?_⟩
   -- Step 1: approximate each localized stage `energyLevelCutoff H n` in `L²` by an elementary
   -- integrand within `(n + 1)⁻¹`, and transfer convergence to the integrals via isometry.
-  choose m s a C _ hs ha hb hK_lt using fun n : ℕ ↦
-    ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t (hHloc n).isStronglyPredictable
+  choose K hK_lt using fun n : ℕ ↦
+    exists_elementaryIntegrand_eLpNorm_sub_lt ℱ P t (hHloc n).isStronglyPredictable
       ((hHloc n).memLp_timeMeasure t) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top _))
-  let K (n : ℕ) : ElementaryIntegrand ℱ :=
-    ElementaryIntegrand.ofSimpleHolding (hs n).monotoneOn (ha n)
-      fun j hj ↦ ⟨C n, fun ω ↦ by simpa [Real.norm_eq_abs] using hb n j hj ω⟩
-  have hK_proc (n : ℕ) :
-      (K n).toProcess = Finance.simpleHolding (s n) (m n) (a n) :=
-    funext fun u ↦ funext fun ω ↦ ElementaryIntegrand.toProcess_ofSimpleHolding _ _ _ u ω
   have hK_L2 : Tendsto (fun n ↦ eLpNorm
       (fun p : ℝ≥0 × Ω ↦ (K n).toProcess p.1 p.2 - energyLevelCutoff H n p.1 p.2) 2
       ((timeMeasure t).prod P)) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
-      (fun _ ↦ zero_le) fun n ↦ by
-        dsimp only [Function.comp_def]
-        rw [hK_proc]
-        exact (hK_lt n).le
-  have hK_brown (n : ℕ) : BrownianIntegrable ℱ P (K n).toProcess := by
-    rw [hK_proc n]
-    exact brownianIntegrable_iff_memLp_predictableMeasure.mpr
-      ⟨Finance.isStronglyPredictable_simpleHolding (ha n),
-        fun T ↦ Finance.memLp_simpleHolding_predictableMeasure (ha n)
-          (Finance.memLp_of_bound_stronglyMeasurable (ha n) (hb n)) T⟩
+      (fun _ ↦ zero_le) fun n ↦ (hK_lt n).le
   have hK_I_L2 : Tendsto
       (fun n ↦ eLpNorm ((K n).integral W t - U n t) 2 P) atTop (𝓝 0) :=
     hK_L2.congr fun n ↦
       (((isItoIntegral_elementaryIntegrand (K n) hcont).sub (hUito n)).eLpNorm_eq hW
-        ((hK_brown n).sub (hHloc n)) t).symm
+        ((K n).brownianIntegrable.sub (hHloc n)) t).symm
   -- Step 2: the bad events `B n = {τ n ≤ t}` decrease to a null set as `n → ∞`.
   let B (n : ℕ) : Set Ω := {ω | energyLevelLocalizer H n ω ≤ (t : WithTop ℝ≥0)}
   have hB_inter : P (⋂ n, B n) = 0 :=
@@ -162,28 +148,24 @@ private theorem isItoIntegral_of_localized_stages
     simp only [energyLevelCutoff, (WithTop.coe_le_coe.mpr hs'.2).trans ht_lt.le, ite_true,
       nnvolume.finiteEnergyCutoff_eqOn (hfin t) hs'.2]
   -- Step 4: transfer energy and integral convergence in probability via the vanishing bad sets.
-  have hunion {A C : ℕ → Set Ω} (hC : Tendsto (fun n ↦ P (C n)) atTop (𝓝 0))
-      (hsub : ∀ n, A n ≤ᵐ[P] (B n ∪ C n : Set Ω)) :
-      Tendsto (fun n ↦ P (A n)) atTop (𝓝 0) :=
-    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (by simpa only [add_zero] using hB_lim.add hC) (fun _ ↦ zero_le) fun n ↦
-        (measure_mono_ae (hsub n)).trans (measure_union_le (B n) (C n))
   refine ⟨K,
-    fun ε hε ↦ hunion
+    fun ε hε ↦ TauCeti.tendsto_measure_of_ae_subset_union hB_lim
       (TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
         (f := fun n p ↦ (K n).toProcess p.1 p.2 - energyLevelCutoff H n p.1 p.2)
         (fun n ↦ (((K n).isStronglyPredictable.sub
           (hHloc n).isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
         hK_L2 hε)
-      fun n ↦ hgood.mono fun ω hω hA ↦ (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
-        simpa only [Set.mem_ofPred_eq, ← (hω n hB).2] using hA,
-    fun ε hε ↦ hunion
+      (Eventually.of_forall fun n ↦ hgood.mono fun ω hω hA ↦
+        (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
+          simpa only [Set.mem_ofPred_eq, ← (hω n hB).2] using hA),
+    fun ε hε ↦ TauCeti.tendsto_measure_of_ae_subset_union hB_lim
       ((tendstoInMeasure_of_tendsto_eLpNorm (p := 2)
         (f := fun n ↦ (K n).integral W t - U n t)
         (g := 0) (by norm_num) (by simpa only [sub_zero] using hK_I_L2)) ε hε)
-      fun n ↦ hgood.mono fun ω hω hA ↦ (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
-        simpa only [Set.mem_ofPred_eq, Pi.sub_apply, Pi.zero_apply, eDist_eq_eNorm_sub,
-          sub_zero, (hω n hB).1] using hA⟩
+      (Eventually.of_forall fun n ↦ hgood.mono fun ω hω hA ↦
+        (Classical.em (ω ∈ B n)).imp id fun hB ↦ by
+          simpa only [Set.mem_ofPred_eq, Pi.sub_apply, Pi.zero_apply, eDist_eq_eNorm_sub,
+            sub_zero, (hω n hB).1] using hA)⟩
 
 /-- **Internal `L²` stage lemma:** stopping an Itô integral of a `BrownianIntegrable` integrand
 at any stopping time `τ` produces an Itô integral of the cutoff integrand `1_{[0, τ]} · H`. -/
@@ -307,18 +289,6 @@ theorem exists_isItoIntegral_of_isStronglyProgressive
   obtain ⟨I, hIito, hIprog, hIloc⟩ := hW.exists_isItoIntegral hcont hH'loc
   exact ⟨H', I, hH'loc, hprod, hIito, hIprog, hIloc⟩
 
-/-- **Representative independence for progressive integrands.** Any two Itô integrals `I₁` and
-`I₂` associated with predictable representatives `H₁` and `H₂` that agree
-`(timeMeasure T).prod P`-a.e. with a common process `H` on every finite horizon are
-indistinguishable. -/
-theorem itoIntegral_congr_progressive (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H H₁ H₂ I₁ I₂ : ℝ≥0 → Ω → ℝ}
-    (hH₁ : ∀ T : ℝ≥0, Function.uncurry H₁ =ᵐ[(timeMeasure T).prod P] Function.uncurry H)
-    (hH₂ : ∀ T : ℝ≥0, Function.uncurry H₂ =ᵐ[(timeMeasure T).prod P] Function.uncurry H)
-    (hI₁ : IsItoIntegral ℱ P W H₁ I₁) (hI₂ : IsItoIntegral ℱ P W H₂ I₂) :
-    I₁ ≡ᵐ[P] I₂ :=
-  hW.itoIntegral_local_congr hI₁ hI₂ fun T ↦ (hH₁ T).trans (hH₂ T).symm
-
 /-- **Local martingale property of Brownian Itô integrals.** Against an almost surely continuous
 filtered pre-Brownian motion `W`, every strongly progressive Itô integral is a local martingale on
 the raw filtration. -/
@@ -339,6 +309,91 @@ theorem itoIntegral_congr_filtration {𝒢 : Filtration ℝ≥0 mΩ}
     I ≡ᵐ[P] J :=
   isItoIntegral_unique hW𝒢 (hI.mono_filtration hℱ𝒢) hJ
 
+/-- Rewrite `(u, ω) ↦ if s < u ∧ u ≤ t then ξ ω * G u ω else 0` as `G` times the `(s, t]`
+indicator of `ξ`. -/
+private theorem ite_Ioc_mul_eq_mul_indicator (s t : ℝ≥0) (ξ : Ω → ℝ) (G : ℝ≥0 → Ω → ℝ) :
+    (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * G u ω else 0) =
+      G * fun u ω ↦ (Set.Ioc s t).indicator (fun _ ↦ ξ ω) u := by
+  ext u ω
+  simp only [Pi.mul_apply, Set.indicator_apply, Set.mem_Ioc, mul_ite, mul_zero, mul_comm]
+
+/-- Clipping two predictable processes to `(s, t]` and multiplying by a bounded `ℱ s`-measurable
+random variable `ξ` scales their time-product `L²` distance by at most `max Cξ 0`. -/
+private theorem eLpNorm_ite_Ioc_mul_sub_le (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω)
+    {s t T : ℝ≥0} {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) {Cξ : ℝ} (hCξ : ∀ ω, ‖ξ ω‖ ≤ Cξ)
+    {G H : ℝ≥0 → Ω → ℝ} (hG : IsStronglyPredictable ℱ G) (hH : IsStronglyPredictable ℱ H) :
+    eLpNorm (fun p : ℝ≥0 × Ω ↦
+        (if s < p.1 ∧ p.1 ≤ t then ξ p.2 * G p.1 p.2 else 0) -
+          if s < p.1 ∧ p.1 ≤ t then ξ p.2 * H p.1 p.2 else 0)
+      2 ((timeMeasure T).prod P) ≤
+      ENNReal.ofReal (max Cξ 0) *
+        eLpNorm (fun p : ℝ≥0 × Ω ↦ G p.1 p.2 - H p.1 p.2) 2 ((timeMeasure T).prod P) := by
+  have hΞ : IsStronglyPredictable ℱ (fun u ω ↦ (Set.Ioc s t).indicator (fun _ ↦ ξ ω) u) :=
+    ℱ.stronglyMeasurable_indicator_Ioc_predictable s t hξ
+  have hpred : IsStronglyPredictable ℱ (fun u ω ↦
+      (if s < u ∧ u ≤ t then ξ ω * G u ω else 0) -
+        if s < u ∧ u ≤ t then ξ ω * H u ω else 0) := by
+    change IsStronglyPredictable ℱ ((fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * G u ω else 0) -
+      fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * H u ω else 0)
+    rw [ite_Ioc_mul_eq_mul_indicator, ite_Ioc_mul_eq_mul_indicator]
+    exact (hG.mul hΞ).sub (hH.mul hΞ)
+  have hfm : AEStronglyMeasurable (fun p : ℝ≥0 × Ω ↦
+      (if s < p.1 ∧ p.1 ≤ t then ξ p.2 * G p.1 p.2 else 0) -
+        if s < p.1 ∧ p.1 ≤ t then ξ p.2 * H p.1 p.2 else 0) ((timeMeasure T).prod P) :=
+    (hpred.mono ℱ.predictable_le_prod).aestronglyMeasurable
+  calc eLpNorm _ 2 ((timeMeasure T).prod P)
+      ≤ eLpNorm (max Cξ 0 • fun p : ℝ≥0 × Ω ↦ G p.1 p.2 - H p.1 p.2) 2
+          ((timeMeasure T).prod P) := by
+        refine eLpNorm_mono_eNorm hfm fun ⟨u, ω⟩ ↦ ?_
+        simp only [Pi.smul_apply, smul_eq_mul, eNorm_mul, Real.eNorm_eq_ofReal_abs,
+          abs_of_nonneg (le_max_right Cξ 0)]
+        split_ifs
+        · rw [← mul_sub, abs_mul, ENNReal.ofReal_mul (abs_nonneg _)]
+          exact mul_le_mul_of_nonneg_right
+            (ENNReal.ofReal_le_ofReal ((hCξ ω).trans (le_max_left _ _))) (by positivity)
+        · simp only [sub_self, abs_zero, ENNReal.ofReal_zero, zero_le]
+    _ = ENNReal.ofReal (max Cξ 0) *
+          eLpNorm (fun p : ℝ≥0 × Ω ↦ G p.1 p.2 - H p.1 p.2) 2 ((timeMeasure T).prod P) := by
+        rw [eLpNorm_const_smul, Real.eNorm_eq_ofReal_abs, abs_of_nonneg (le_max_right Cξ 0)]
+
+/-- Clip a bounded `ElementaryIntegrand` to `(s, t]` and multiply by a bounded `ℱ s`-measurable
+random variable `ξ`. -/
+private def clipIocMul (K : ElementaryIntegrand ℱ) {s t : ℝ≥0} (hst : s ≤ t)
+    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) {Cξ : ℝ} (hCξ : ∀ ω, ‖ξ ω‖ ≤ Cξ) :
+    ElementaryIntegrand ℱ :=
+  have hclip := Finance.simpleHolding_clip_Ioc_mul ℱ (K.monotone_dates.monotoneOn _)
+    K.measurable_positions hst hξ
+  ElementaryIntegrand.ofSimpleHolding hclip.1 hclip.2.1 fun j _ ↦ by
+    obtain ⟨C, hC⟩ := K.bounded_positions j
+    refine ⟨max Cξ 0 * max C 0, fun ω ↦ ?_⟩
+    split_ifs
+    · rw [abs_mul]
+      exact mul_le_mul ((hCξ ω).trans (le_max_left _ _)) ((hC ω).trans (le_max_left _ _))
+        (abs_nonneg _) (le_max_right _ _)
+    · rw [abs_zero]
+      exact mul_nonneg (le_max_right _ _) (le_max_right _ _)
+
+private theorem toProcess_clipIocMul (K : ElementaryIntegrand ℱ) {s t : ℝ≥0} (hst : s ≤ t)
+    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) {Cξ : ℝ} (hCξ : ∀ ω, ‖ξ ω‖ ≤ Cξ)
+    (u : ℝ≥0) (ω : Ω) :
+    (clipIocMul K hst hξ hCξ).toProcess u ω =
+      if s < u ∧ u ≤ t then ξ ω * K.toProcess u ω else 0 := by
+  have hclip := Finance.simpleHolding_clip_Ioc_mul ℱ (K.monotone_dates.monotoneOn _)
+    K.measurable_positions hst hξ
+  simpa only [clipIocMul, ElementaryIntegrand.toProcess_ofSimpleHolding,
+    ElementaryIntegrand.toProcess_eq_simpleHolding, Set.indicator_apply, Set.mem_Ioc] using
+    hclip.2.2.1 u ω
+
+private theorem integral_clipIocMul (K : ElementaryIntegrand ℱ) {s t : ℝ≥0} (hst : s ≤ t)
+    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) {Cξ : ℝ} (hCξ : ∀ ω, ‖ξ ω‖ ≤ Cξ)
+    (X : ℝ≥0 → Ω → ℝ) (T : ℝ≥0) (ω : Ω) :
+    (clipIocMul K hst hξ hCξ).integral X T ω =
+      ξ ω * (K.integral X (min T t) ω - K.integral X (min T s) ω) := by
+  have hclip := Finance.simpleHolding_clip_Ioc_mul ℱ (K.monotone_dates.monotoneOn _)
+    K.measurable_positions hst hξ
+  simpa only [clipIocMul, ElementaryIntegrand.integral_ofSimpleHolding,
+    ElementaryIntegrand.integral_eq_simpleGains] using hclip.2.2.2 X T ω
+
 /-- **Internal `L²` stage lemma:** bounded left-measurable multiplier rule for `BrownianIntegrable`
 integrands on `(s, t]`. -/
 private theorem isItoIntegral_ite_Ioc_mul_of_brownianIntegrable
@@ -350,40 +405,18 @@ private theorem isItoIntegral_ite_Ioc_mul_of_brownianIntegrable
       (fun u ω ↦ ξ ω * (I (min u t) ω - I (min u s) ω)) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   have hpred : IsStronglyPredictable ℱ (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * H u ω else 0) := by
-    have hind : (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * H u ω else 0) =
-        (fun u ω ↦ (Set.Ioc s t).indicator (fun _ ↦ ξ ω) u) * H := by
-      ext u ω
-      simp only [Pi.mul_apply, Set.indicator_apply, Set.mem_Ioc, ite_mul, zero_mul]
-    rw [hind]
-    exact (ℱ.stronglyMeasurable_indicator_Ioc_predictable s t hξ).mul hH.isStronglyPredictable
+    rw [ite_Ioc_mul_eq_mul_indicator]
+    exact hH.isStronglyPredictable.mul (ℱ.stronglyMeasurable_indicator_Ioc_predictable s t hξ)
   have hcont_mul : ∀ᵐ ω ∂P, Continuous fun u ↦ ξ ω * (I (min u t) ω - I (min u s) ω) :=
     hI.ae_continuous.mono fun ω hω ↦ continuous_const.mul
       ((hω.comp (continuous_id.min continuous_const)).sub
         (hω.comp (continuous_id.min continuous_const)))
   refine ⟨hpred, hcont_mul, fun T ↦ ?_⟩
+  -- Step 1: approximate `H` by elementary integrands `K k` and clip them to `(s, t]`.
   obtain ⟨K, hKlim, hunif⟩ :=
     hW.exists_seq_elementaryIntegrand_tendstoUniformlyOn hcont hH hI
-  choose hσ hb_meas hb_hold hb_gain using fun k ↦
-    Finance.simpleHolding_clip_Ioc_mul ℱ ((K k).monotone_dates.monotoneOn _)
-      (K k).measurable_positions hst hξ
-  let σ (k : ℕ) : ℕ → ℝ≥0 := fun j ↦ Set.projIcc s t hst ((K k).dates j)
-  let b (k j : ℕ) (ω : Ω) : ℝ := if (K k).dates j ≤ t then ξ ω * (K k).positions j ω else 0
-  choose Ck hCk using fun k ↦ (K k).bounded_positions
-  have hb_bdd (k j : ℕ) (_ : j < (K k).n) : ∃ C : ℝ, ∀ ω, |b k j ω| ≤ C := by
-    refine ⟨max Cξ 0 * max (Ck k j) 0, fun ω ↦ ?_⟩
-    dsimp only [b]
-    split_ifs
-    · rw [abs_mul]
-      exact mul_le_mul ((hCξ ω).trans (le_max_left _ _)) ((hCk k j ω).trans (le_max_left _ _))
-        (abs_nonneg _) (le_max_right _ _)
-    · rw [abs_zero]
-      exact mul_nonneg (le_max_right _ _) (le_max_right _ _)
-  let L (k : ℕ) : ElementaryIntegrand ℱ :=
-    ElementaryIntegrand.ofSimpleHolding (hσ k) (hb_meas k) (hb_bdd k)
-  have hL_proc (k : ℕ) : (L k).toProcess = Finance.simpleHolding (σ k) (K k).n (b k) :=
-    funext fun u ↦ funext fun ω ↦ ElementaryIntegrand.toProcess_ofSimpleHolding _ _ _ u ω
-  have hL_gain (k : ℕ) : (L k).integral W = Finance.simpleGains (σ k) (K k).n (b k) W :=
-    funext fun u ↦ funext fun ω ↦ ElementaryIntegrand.integral_ofSimpleHolding _ _ _ W u ω
+  let L (k : ℕ) : ElementaryIntegrand ℱ := clipIocMul (K k) hst hξ hCξ
+  -- Step 2: transfer `L²((timeMeasure T).prod P)` convergence from `K k` to `L k`.
   have hL2 : Tendsto (fun k ↦ eLpNorm
       (fun p : ℝ≥0 × Ω ↦ (L k).toProcess p.1 p.2 -
         if s < p.1 ∧ p.1 ≤ t then ξ p.2 * H p.1 p.2 else 0) 2
@@ -395,45 +428,21 @@ private theorem isItoIntegral_ite_Ioc_mul_of_brownianIntegrable
     rw [mul_zero] at hconst
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hconst (fun _ ↦ zero_le)
       fun k ↦ ?_
-    have hfm : AEStronglyMeasurable
-        (fun p : ℝ≥0 × Ω ↦ (L k).toProcess p.1 p.2 -
-          if s < p.1 ∧ p.1 ≤ t then ξ p.2 * H p.1 p.2 else 0)
-        ((timeMeasure T).prod P) :=
-      (((L k).isStronglyPredictable.sub hpred).mono ℱ.predictable_le_prod).aestronglyMeasurable
-    calc eLpNorm (fun p : ℝ≥0 × Ω ↦ (L k).toProcess p.1 p.2 -
-          if s < p.1 ∧ p.1 ≤ t then ξ p.2 * H p.1 p.2 else 0) 2
-          ((timeMeasure T).prod P)
-        ≤ eLpNorm (max Cξ 0 •
-            (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2)) 2
-            ((timeMeasure T).prod P) := by
-          refine eLpNorm_mono_eNorm hfm fun ⟨u, ω⟩ ↦ ?_
-          simp only [hL_proc, σ, b, Pi.smul_apply, smul_eq_mul, hb_hold k u ω,
-            ElementaryIntegrand.toProcess_eq_simpleHolding, Set.indicator_apply, Set.mem_Ioc,
-            eNorm_mul, Real.eNorm_eq_ofReal_abs, abs_of_nonneg (le_max_right Cξ 0)]
-          split_ifs
-          · rw [← mul_sub, abs_mul, ENNReal.ofReal_mul (abs_nonneg _)]
-            exact mul_le_mul_of_nonneg_right
-              (ENNReal.ofReal_le_ofReal ((hCξ ω).trans (le_max_left _ _))) (by positivity)
-          · simp only [sub_self, abs_zero, ENNReal.ofReal_zero, zero_le]
-      _ = ENNReal.ofReal (max Cξ 0) * eLpNorm
-            (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
-            ((timeMeasure T).prod P) := by
-          rw [eLpNorm_const_smul, Real.eNorm_eq_ofReal_abs, abs_of_nonneg (le_max_right Cξ 0)]
+    simpa only [L, toProcess_clipIocMul] using eLpNorm_ite_Ioc_mul_sub_le ℱ P hξ hCξ
+      (K k).isStronglyPredictable hH.isStronglyPredictable
+  -- Step 3: conclude convergence in probability of `(L k).integral W T` via uniform limits.
   refine ⟨L,
     fun _ hε ↦ TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
       (fun k ↦ (((L k).isStronglyPredictable.sub hpred).mono
         ℱ.predictable_le_prod).aestronglyMeasurable)
       hL2 hε,
-    tendstoInMeasure_of_tendsto_ae (fun k ↦ by
-      rw [hL_gain k]
-      exact ((Finance.stronglyAdapted_simpleGains (hσ k) (hb_meas k)
-        hW.adapted.stronglyAdapted T).mono (ℱ.le T)).aestronglyMeasurable)
+    tendstoInMeasure_of_tendsto_ae (fun k ↦
+      ((L k).stronglyAdapted_integral hW.adapted.stronglyAdapted T).mono (ℱ.le T)
+        |>.aestronglyMeasurable)
       (hunif.mono fun ω hω ↦ ?_)⟩
   have h1 := (hω (max (min T t) (min T s))).tendsto_at (Set.mem_Iic.mpr (le_max_left _ _))
   have h2 := (hω (max (min T t) (min T s))).tendsto_at (Set.mem_Iic.mpr (le_max_right _ _))
-  simpa only [hL_gain, σ, b, fun k ↦ hb_gain k W T ω,
-    ElementaryIntegrand.integral_eq_simpleGains] using
-      (tendsto_const_nhds (x := ξ ω)).mul (h1.sub h2)
+  simpa only [L, integral_clipIocMul] using (tendsto_const_nhds (x := ξ ω)).mul (h1.sub h2)
 
 /-- Identify the localized `L²` stages of any Itô integral along `energyLevelLocalizer H`. -/
 private theorem exists_isItoIntegral_stoppedProcess_energyLevelLocalizer
@@ -572,14 +581,13 @@ theorem isItoIntegral_ite_Ioc_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     split_ifs
     · exact (hCξ ω).trans (le_max_left _ _)
     · simpa only [norm_zero] using le_max_right Cξ 0
+  -- Step 1: check `LocallyBrownianIntegrable` for the multiplied cutoff `K = H * Ξ`.
   let K : ℝ≥0 → Ω → ℝ := fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * H u ω else 0
   have hK : LocallyBrownianIntegrable ℱ P K := by
-    have hK_eq : K = fun u ω ↦ H u ω * Ξ u ω := by
-      ext u ω
-      simp only [K, Ξ, Set.indicator_apply, Set.mem_Ioc, mul_ite, mul_zero, mul_comm]
-    rw [hK_eq]
+    rw [show K = H * Ξ from ite_Ioc_mul_eq_mul_indicator s t ξ H]
     exact hH.mul_of_locally_bounded hΞ_pred
       (.of_forall fun ω _ ↦ ⟨max Cξ 0, fun u _ ↦ hΞ_bound u ω⟩)
+  -- Step 2: verify `IsItoIntegral` along the joint localizers `min (τ_H n) (τ_K n)`.
   have hIstop := hW.exists_isItoIntegral_stoppedProcess_energyLevelLocalizer hcont hI
   let M : ℝ≥0 → Ω → ℝ := fun u ω ↦ ξ ω * (I (min u t) ω - I (min u s) ω)
   let stopS : Ω → WithTop ℝ≥0 := fun _ ↦ (s : WithTop ℝ≥0)
@@ -604,37 +612,26 @@ theorem isItoIntegral_ite_Ioc_mul (hW : IsFilteredPreBrownianReal ℱ W P)
           stoppedProcess (stoppedProcess I (energyLevelLocalizer H n)) stopS) := by
       ext u ω
       simp only [M_n, Pi.mul_apply, Pi.sub_apply, stopS, stopT, stoppedProcess_const_time]
+    have hinf (σ : Ω → WithTop ℝ≥0) :
+        min (energyLevelLocalizer H) (energyLevelLocalizer K) n ⊓ σ =
+          energyLevelLocalizer K n ⊓ (σ ⊓ energyLevelLocalizer H n) := by
+      ext ω; simp only [Pi.inf_apply]; ac_rfl
     have hLHS_eq :
         stoppedProcess M (min (energyLevelLocalizer H) (energyLevelLocalizer K) n) =
           stoppedProcess M_n (energyLevelLocalizer K n) := by
       rw [hM_eq, hM_n_eq]
       simp only [stoppedProcess_mul, stoppedProcess_sub, stoppedProcess_const,
-        stoppedProcess_stoppedProcess]
-      have h1 :
-          min (energyLevelLocalizer H) (energyLevelLocalizer K) n ⊓ stopT =
-            energyLevelLocalizer K n ⊓ (stopT ⊓ energyLevelLocalizer H n) := by
-        ext ω; simp only [Pi.inf_apply]; ac_rfl
-      have h2 :
-          min (energyLevelLocalizer H) (energyLevelLocalizer K) n ⊓ stopS =
-            energyLevelLocalizer K n ⊓ (stopS ⊓ energyLevelLocalizer H n) := by
-        ext ω; simp only [Pi.inf_apply]; ac_rfl
-      rw [h1, h2]
+        stoppedProcess_stoppedProcess, hinf stopT, hinf stopS]
     have hK_n : BrownianIntegrable ℱ P
         (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * energyLevelCutoff H n u ω else 0) := by
-      have hEq : (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * energyLevelCutoff H n u ω else 0) =
-          energyLevelCutoff H n * Ξ := by
-        ext u ω
-        by_cases hu : s < u ∧ u ≤ t
-        · simp only [hu, and_self, ite_true, Pi.mul_apply, Ξ, Set.indicator_apply, Set.mem_Ioc,
-            mul_comm]
-        · simp only [hu, ite_false, Pi.mul_apply, Ξ, Set.indicator_apply, Set.mem_Ioc, mul_zero]
-      rw [hEq]
+      rw [ite_Ioc_mul_eq_mul_indicator]
       exact (hH.isStronglyPredictable.brownianIntegrable_ite_le_energyLocalizer
         (P := P) ((n : ℝ≥0) + 1)).mul_of_bound hΞ_pred (max Cξ 0) hΞ_bound
     rw [hLHS_eq]
     exact hW.isItoIntegral_stoppedProcess_of_brownianIntegrable hcont
       hK_n hM_n_ito (hK.isLocalizingSequence_energyLocalizer.isStoppingTime n)
-  · simp only [energyLevelCutoff, nnvolume.finiteEnergyCutoff_eqOn hfinH hu,
+  · -- Step 3: match the localized integrands where both accumulated energies are finite.
+    simp only [energyLevelCutoff, nnvolume.finiteEnergyCutoff_eqOn hfinH hu,
       nnvolume.finiteEnergyCutoff_eqOn hfinK hu, K]
     split_ifs <;> first | rfl | simp
 
@@ -652,11 +649,9 @@ theorem _root_.TauCeti.Probability.IsItoIntegral.mul_ite_Ioc
     have hzero : (fun (u : ℝ≥0) ω ↦ if (u : WithTop ℝ≥0) ≤ s then
         (if s < u ∧ u ≤ t then H u ω else 0) else 0) = 0 := by
       ext u ω
-      by_cases h1 : (u : WithTop ℝ≥0) ≤ s <;> by_cases h2 : s < u ∧ u ≤ t
+      split_ifs with h1 h2
       · exact absurd (WithTop.coe_le_coe.mp h1) h2.1.not_ge
-      · rw [ite_eq_left h1, ite_eq_right (fun h ↦ h2 h)]; rfl
-      · rw [ite_eq_right h1]; rfl
-      · rw [ite_eq_right h1]; rfl
+      all_goals simp only [Pi.zero_apply]
     rw [hzero] at hstop
     exact isItoIntegral_unique hW hstop (IsItoIntegral.zero ℱ P W)
   have hJt : stoppedProcess J (fun _ ↦ (t : WithTop ℝ≥0)) ≡ᵐ[P] J := by
@@ -665,11 +660,9 @@ theorem _root_.TauCeti.Probability.IsItoIntegral.mul_ite_Ioc
         (if s < u ∧ u ≤ t then H u ω else 0) else 0) =
         fun (u : ℝ≥0) ω ↦ if s < u ∧ u ≤ t then H u ω else 0 := by
       ext u ω
-      by_cases h1 : (u : WithTop ℝ≥0) ≤ t <;> by_cases h2 : s < u ∧ u ≤ t
-      · rw [ite_eq_left h1]
-      · rw [ite_eq_left h1]
-      · exact absurd (WithTop.coe_le_coe.mpr h2.2) h1
-      · rw [ite_eq_right h1, ite_eq_right (fun h ↦ h2 h)]
+      by_cases h : s < u ∧ u ≤ t
+      · simp only [h, (by exact_mod_cast h.2 : (u : WithTop ℝ≥0) ≤ t), ↓reduceIte]
+      · simp only [h, ↓reduceIte, ite_self]
     rw [hid] at hstop
     exact isItoIntegral_unique hW hstop hJ
   have hmul := hW.isItoIntegral_ite_Ioc_mul hcont hJ hst hξ hCξ

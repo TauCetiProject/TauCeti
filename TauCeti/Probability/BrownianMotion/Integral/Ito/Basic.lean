@@ -15,6 +15,7 @@ public import TauCeti.Probability.StochasticIntegral.Elementary
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
+import TauCeti.MeasureTheory.OuterMeasure.AE
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Process.Predictable.Basic
@@ -286,15 +287,6 @@ private theorem exists_elementaryIntegrand_of_simpleHolding [IsFiniteMeasure P]
   · simp only [ElementaryIntegrand.integral_ofSimpleHolding, Finance.simpleGains_def]
     exact Finset.sum_congr rfl fun j hj ↦ by rw [hhi (Finset.mem_range.mp hj)]
 
-private theorem tendsto_measure_of_subset_union {p q : ℕ → Ω → Prop} {B : ℕ → Set Ω}
-    (hB : Tendsto (fun k ↦ P (B k)) atTop (𝓝 0))
-    (hq : Tendsto (fun k ↦ P {ω | q k ω}) atTop (𝓝 0))
-    (hsub : ∀ k ω, p k ω → ω ∈ B k ∨ q k ω) :
-    Tendsto (fun k ↦ P {ω | p k ω}) atTop (𝓝 0) :=
-  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa only [add_zero] using hB.add hq) (fun _ ↦ zero_le) fun k ↦
-      (measure_mono (fun ω hω ↦ hsub k ω hω)).trans (measure_union_le (B k) {ω | q k ω})
-
 /-- On a finite measure space, `IsItoIntegral` can be witnessed by possibly unbounded simple
 holdings whose heights are strongly measurable at the left endpoints of their intervals. -/
 theorem isItoIntegral_of_approx_simpleHolding [IsFiniteMeasure P]
@@ -318,8 +310,11 @@ theorem isItoIntegral_of_approx_simpleHolding [IsFiniteMeasure P]
       tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
         (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
         (fun _ ↦ zero_le) fun k ↦ by simpa only [Function.comp_def] using hB k
-    refine ⟨K, fun ε hε ↦ tendsto_measure_of_subset_union hB_lim (hE ε hε) fun k ω hω ↦ ?_,
-      fun ε hε ↦ tendsto_measure_of_subset_union hB_lim (hM ε hε) fun k ω hω ↦ ?_⟩
+    refine ⟨K,
+      fun ε hε ↦ TauCeti.tendsto_measure_of_ae_subset_union hB_lim (hE ε hε)
+        (Eventually.of_forall fun k ↦ .of_forall fun ω hω ↦ ?_),
+      fun ε hε ↦ TauCeti.tendsto_measure_of_ae_subset_union hB_lim (hM ε hε)
+        (Eventually.of_forall fun k ↦ .of_forall fun ω hω ↦ ?_)⟩
     · by_cases hωB : ω ∈ B k
       · exact Or.inl hωB
       · refine Or.inr ?_
@@ -461,12 +456,14 @@ theorem add (h₁ : IsItoIntegral ℱ P W H₁ I₁) (h₂ : IsItoIntegral ℱ P
   exists_approx t := by
     obtain ⟨K₁, hE₁, hM₁⟩ := h₁.exists_approx t
     obtain ⟨K₂, hE₂, hM₂⟩ := h₂.exists_approx t
-    refine ⟨fun k ↦ K₁ k + K₂ k, fun ε hε ↦ ?_,
-      (hM₁.add hM₂).congr_left fun k ↦ .of_forall fun ω ↦ by simp⟩
-    have hEq (k s ω) : ‖(K₁ k + K₂ k).toProcess s ω - (H₁ s ω + H₂ s ω)‖ₑ =
+    choose K hK_proc hK_int using fun k ↦
+      ElementaryIntegrand.exists_toProcess_add_integral_add (K₁ k) (K₂ k)
+    refine ⟨K, fun ε hε ↦ ?_,
+      (hM₁.add hM₂).congr_left fun k ↦ .of_forall fun ω ↦ by simp [hK_int k]⟩
+    have hEq (k s ω) : ‖(K k).toProcess s ω - (H₁ s ω + H₂ s ω)‖ₑ =
         ‖((K₁ k).toProcess s ω - H₁ s ω) - (H₂ s ω - (K₂ k).toProcess s ω)‖ₑ := by
-      rw [ElementaryIntegrand.toProcess_add]
-      congr 1; ring
+      rw [hK_proc k]
+      congr 1; simp only [Pi.add_apply]; ring
     simp_rw [hEq]
     have hK (k : ℕ) : IsStronglyPredictable ℱ (fun s ω ↦ (K₁ k).toProcess s ω - H₁ s ω) :=
       (K₁ k).isStronglyPredictable.sub h₁.isStronglyPredictable
@@ -485,6 +482,15 @@ theorem sub (h₁ : IsItoIntegral ℱ P W H₁ I₁) (h₂ : IsItoIntegral ℱ P
   simpa only [sub_eq_add_neg] using h₁.add h₂.neg
 
 end IsItoIntegral
+
+/-- Every bounded elementary integrand is `BrownianIntegrable` on any finite measure space. -/
+theorem _root_.TauCeti.ElementaryIntegrand.brownianIntegrable
+    (K : ElementaryIntegrand ℱ) [IsFiniteMeasure P] :
+    BrownianIntegrable ℱ P K.toProcess := by
+  obtain ⟨C, hC⟩ := K.exists_bound_toProcess
+  refine ⟨K.isStronglyPredictable, fun T ↦ MemLp.of_bound
+    ((K.isStronglyPredictable.mono ℱ.predictable_le_prod).aestronglyMeasurable) C
+    (Eventually.of_forall fun p ↦ by rw [Real.norm_eq_abs]; exact hC p.1 p.2)⟩
 
 /-- Representative independence of the Brownian Itô integral: Itô integrals of predictable
 integrands that agree `(timeMeasure T).prod P`-almost everywhere on every finite horizon are
