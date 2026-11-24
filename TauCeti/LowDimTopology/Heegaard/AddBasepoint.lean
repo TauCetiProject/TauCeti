@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 public import TauCeti.GroupTheory.Perm.SumCongr
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 public import TauCeti.LowDimTopology.Heegaard.StrongAdmissibility
+import TauCeti.Algebra.BigOperators.Pi
 
 /-!
 # Adding a basepoint to a Heegaard diagram
@@ -478,13 +479,11 @@ theorem maslovIndex_addBasepoint (χ : Region → ℤ) (x y : H.Generator) (i j 
         (H.addBasepointGenerator r₀ y j) D =
       H.maslovIndex χ x y (D ∘ Sum.inl) + D (Sum.inr 0) + D (Sum.inr 1) + D (Sum.inr 2) -
         D (Sum.inl r₀) := by
-  have hχ : ∑ r, (((χ r - (Pi.single r₀ 1 : Region → ℤ) r : ℤ) : ℚ)) * D (Sum.inl r) =
-      ∑ r, (χ r : ℚ) * D (Sum.inl r) - D (Sum.inl r₀) := by
-    simp [sub_mul, Finset.sum_sub_distrib, Pi.single_apply]
   simp only [maslovIndex_apply, eulerMeasure_eq_sub_sum_pointMeasure,
     generatorPointMeasure_addBasepointGenerator, Fintype.sum_sum_type, addBasepointEuler_inl,
     addBasepointEuler_inr, pointMeasure_addBasepoint_inl, pointMeasure_addBasepoint_inr,
-    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply, hχ]
+    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply,
+    Fintype.sum_intCast_sub_pi_single_mul]
   push_cast
   ring
 

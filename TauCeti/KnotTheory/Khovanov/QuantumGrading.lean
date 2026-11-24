@@ -185,10 +185,10 @@ theorem mul_mem_quantumGrading_piece {p q : ℤ} {x y : R[ε]}
 /-- **The merge map `m : V ⊗ V → V` has quantum degree `-1`**, for the total-degree grading of
 `V ⊗ V`. -/
 theorem isHomogeneous_mul' :
-    TauCeti.LinearMap.IsHomogeneous (LinearMap.mul' R R[ε])
+    LinearMap.IsHomogeneous (LinearMap.mul' R R[ε])
       ((quantumGrading R).tensorProduct (quantumGrading R)).piece (quantumGrading R).piece
       (-1) := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   refine (quantumGrading R).tensorProduct_piece_le (quantumGrading R)
     (C := ((quantumGrading R).piece (p + -1)).comap (LinearMap.mul' R R[ε]))
@@ -200,10 +200,10 @@ theorem isHomogeneous_mul' :
 /-- **The split map `Δ : V → V ⊗ V` has quantum degree `-1`**, for the total-degree grading of
 `V ⊗ V`. -/
 theorem isHomogeneous_comul :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
       (quantumGrading R).piece ((quantumGrading R).tensorProduct (quantumGrading R)).piece
       (-1) := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [mem_quantumGrading_piece_iff] at hx
   rw [DualNumber.khovanov_comul_apply]
@@ -227,9 +227,9 @@ theorem isHomogeneous_comul :
 /-- **The unit `η : R → V` has quantum degree `1`**, for the grading of `R` concentrated in
 degree `0`. -/
 theorem isHomogeneous_algebraLinearMap :
-    TauCeti.LinearMap.IsHomogeneous (Algebra.linearMap R R[ε]) (trivialGrading R R)
+    LinearMap.IsHomogeneous (Algebra.linearMap R R[ε]) (trivialGrading R R)
       (quantumGrading R).piece 1 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p r hr
   rw [mem_trivialGrading_iff] at hr
   rcases hr with rfl | rfl
@@ -239,9 +239,9 @@ theorem isHomogeneous_algebraLinearMap :
 /-- **The counit `ε : V → R` has quantum degree `1`**, for the grading of `R` concentrated in
 degree `0`. -/
 theorem isHomogeneous_counit :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
       (quantumGrading R).piece (trivialGrading R R) 1 := by
-  rw [TauCeti.LinearMap.isHomogeneous_def]
+  rw [LinearMap.isHomogeneous_def]
   intro p x hx
   rw [mem_quantumGrading_piece_iff] at hx
   rw [mem_trivialGrading_iff, DualNumber.khovanov_counit_apply]
@@ -286,15 +286,15 @@ theorem eps_mem_quantumGrading_shift_one_piece_neg_two :
 
 /-- In the regrading `W = V⟨-1⟩` (`deg 1 = 0`, `deg X = -2`), the counit has degree `2`. -/
 theorem isHomogeneous_counit_shift_one :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
       ((quantumGrading R).shift 1).piece (trivialGrading R R) 2 :=
-  TauCeti.LinearMap.isHomogeneous_def.mpr fun _ _ hx => by
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx => by
     rw [InternalGrading.shift_piece] at hx
     simpa [add_assoc] using isHomogeneous_counit.map_mem hx
 
 /-- In the regrading `W = V⟨-1⟩` (`deg 1 = 0`, `deg X = -2`), the coproduct has degree `-2`. -/
 theorem isHomogeneous_comul_shift_one :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
       ((quantumGrading R).shift 1).piece
       (((quantumGrading R).shift 1).tensorProduct ((quantumGrading R).shift 1)).piece (-2) :=
   (Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul_piece
@@ -313,9 +313,9 @@ variable {R : Type u} [CommSemiring R]
 /-- With `deg 1 = 0` and `deg X = 2` (`TauCeti.dualNumberIntegerGrade R`), the Khovanov counit has
 degree `-2`. -/
 theorem isHomogeneous_counit_dualNumberIntegerGrade :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
+    LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
       (dualNumberIntegerGrade R) (trivialGrading R R) (-2) :=
-  TauCeti.LinearMap.isHomogeneous_def.mpr fun p x hx => by
+  LinearMap.isHomogeneous_def.mpr fun p x hx => by
     by_cases hp2 : p = 2
     · subst hp2; simp
     · by_cases hp0 : p = 0
@@ -327,7 +327,7 @@ theorem isHomogeneous_counit_dualNumberIntegerGrade :
 /-- With `deg 1 = 0` and `deg X = 2` (`TauCeti.dualNumberIntegerGrade R`), the Khovanov coproduct
 has degree `2`. -/
 theorem isHomogeneous_comul_dualNumberIntegerGrade :
-    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
+    LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
       (dualNumberIntegerGrade R)
       ((dualNumberIntegerInternalGrading R).tensorProduct
         (dualNumberIntegerInternalGrading R)).piece 2 := by

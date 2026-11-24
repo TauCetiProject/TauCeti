@@ -82,8 +82,9 @@ theorem tendsto_mgf_stableCompensatedPoissonMeasure_invTwoPow
     simpa only [C, ENNReal.ofReal, mgf, id_eq] using ENNReal.ofReal_le_ofReal
       (mgf_stableCompensatedPoissonMeasure_le (ε := (2 : ℝ)⁻¹ ^ n)
         (by positivity) hae)
-  have hlin := tendsto_lintegral_of_sq_bound (g := g) (by fun_prop)
-    ((ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds atTop).1 hlim) hsq
+  have hlin := tendsto_lintegral_of_rpow_bound (g := g) (by fun_prop)
+    ((ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds atTop).1 hlim) one_lt_two
+    (by simp_rw [ENNReal.rpow_two]; exact hsq)
   -- Transfer the extended integrals first, then use finiteness to pass to real transforms.
   have hfinite : ∫⁻ x, (g x : ℝ≥0∞) ∂stableMeasure α β 1 0 ≠ ∞ := by
     simpa only [ENNReal.coe_nnreal_eq, g, Real.coe_toNNReal _ (exp_pos _).le] using

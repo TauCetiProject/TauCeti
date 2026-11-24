@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
-public import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
 # Coordinate projections in a Hilbert basis
@@ -186,7 +185,7 @@ theorem isSymmetric_projection : (b.projection s : E →ₗ[𝕜] E).IsSymmetric
 /-- The squared norm of `b.projection s x` is the sum of the squared coordinates of `x` on `s`. -/
 theorem hasSum_norm_projection_sq (x : E) :
     HasSum (fun i ↦ s.indicator (fun i ↦ ‖⟪b i, x⟫_𝕜‖ ^ 2) i) (‖b.projection s x‖ ^ 2) := by
-  convert b.hasSum_norm_sq_inner (b.projection s x) using 1
+  convert b.hasSum_norm_inner_sq (b.projection s x) using 1
   ext i
   by_cases hi : i ∈ s <;> simp [inner_projection_right, hi]
 
@@ -194,7 +193,7 @@ theorem hasSum_norm_projection_sq (x : E) :
 theorem norm_projection_le : ‖b.projection s‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by
     rw [one_mul, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)]
-    refine hasSum_le (fun i ↦ ?_) (b.hasSum_norm_projection_sq s x) (b.hasSum_norm_sq_inner x)
+    refine hasSum_le (fun i ↦ ?_) (b.hasSum_norm_projection_sq s x) (b.hasSum_norm_inner_sq x)
     by_cases hi : i ∈ s <;> simp [hi]
 
 /-- The coordinate projection onto a finite set of indices has finite rank. -/

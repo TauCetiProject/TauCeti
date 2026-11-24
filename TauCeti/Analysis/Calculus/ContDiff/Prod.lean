@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 
@@ -22,7 +23,9 @@ For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 `(q, y) ↦ fderiv (F (q, ·)) y` is smooth jointly (`ContDiffAt.fderiv_slice`), smoothness persists
 along a graph over the parameter (`ContDiffAt.eventually_contDiffAt_graph`), and the vertical part
 of the derivative of a `C¹` map is continuous along a continuous graph
-(`ContDiffAt.continuousAt_fderiv_comp_inr`).
+(`ContDiffAt.continuousAt_fderiv_comp_inr`). Along two continuous graphs meeting at `p`, the
+values of a family `C¹` there differ near `p` by at most a multiple of the distance between the
+graphs (`ContDiffAt.exists_eventually_norm_sub_le`).
 The partial derivative in the second variable, applied to a fixed vector, is then `C^m` jointly
 whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`).
 
@@ -33,7 +36,9 @@ joint `C^m` regularity of the `k`-th partial derivative in the first variable, f
 
 If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then each summand is `Cⁿ` at
 its point (`ContDiffAt.of_comp_fst_add_comp_snd_left` and
-`ContDiffAt.of_comp_fst_add_comp_snd_right`).
+`ContDiffAt.of_comp_fst_add_comp_snd_right`). Subtracting a jointly `C^n` family of maps `g p`
+from a jointly `C^n` family `f t` gives a family that is jointly `C^n` in `(t, p)` and the point
+(`ContDiffAt.sub_uncurry_prod`).
 
 A compactly supported `C³` function on `E × ℝ` has compactly supported spatial first and second
 derivative fields and a time derivative field of lower smoothness, computing its slice derivatives
@@ -151,6 +156,43 @@ theorem of_comp_fst_add_comp_snd_right {n : WithTop ℕ∞} {F : Type*} [NormedA
   have hψ : ContDiffAt 𝕜 n (fun y ↦ φ a + ψ y) b := by
     simpa [Function.comp_def] using h.comp (f := fun y : F ↦ (a, y)) b (by fun_prop)
   simpa using hψ.sub (contDiffAt_const (c := φ a))
+
+/-- Subtracting the members `g p` of a family of maps that is `C^n` jointly in the parameter `p`
+and the point from a family `f t` that is jointly `C^n` gives a family that is jointly `C^n` in
+both parameters and the point. -/
+theorem sub_uncurry_prod {n : WithTop ℕ∞} {T : Type*} [NormedAddCommGroup T] [NormedSpace 𝕜 T]
+    {f : T → E → X} {g : P → E → X} {t : T}
+    (hf : ContDiffAt 𝕜 n (Function.uncurry f) (t, x))
+    (hg : ContDiffAt 𝕜 n (fun q : P × E ↦ g q.1 q.2) (p, x)) :
+    ContDiffAt 𝕜 n (fun q : (T × P) × E ↦ f q.1.1 q.2 - g q.1.2 q.2) ((t, p), x) :=
+  (hf.comp ((t, p), x) (contDiffAt_fst.fst.prodMk contDiffAt_snd)).sub
+    (hg.comp ((t, p), x) (contDiffAt_fst.snd.prodMk contDiffAt_snd))
+
+end ContDiffAt
+
+namespace ContDiffAt
+
+open scoped NNReal
+
+variable {𝕂 : Type*} [RCLike 𝕂]
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕂 P]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E]
+  {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕂 X] {p : P}
+
+/-- **A `C¹` family is Lipschitz between two graphs meeting at a point.** If `f` is `C¹` at
+`(p, ψ p)` and two maps `ψ` and `φ`, continuous at `p`, agree at `p`, then near `p` the values of
+`f` along the two graphs differ by at most a fixed multiple of `‖ψ q - φ q‖`. -/
+theorem exists_eventually_norm_sub_le {f : P × E → X} {ψ φ : P → E}
+    (hf : ContDiffAt 𝕂 1 f (p, ψ p)) (hψ : ContinuousAt ψ p) (hφ : ContinuousAt φ p)
+    (h : ψ p = φ p) :
+    ∃ K : ℝ≥0, ∀ᶠ q in nhds p, ‖f (q, ψ q) - f (q, φ q)‖ ≤ K * ‖ψ q - φ q‖ := by
+  obtain ⟨K, t, ht, hK⟩ := hf.exists_lipschitzOnWith
+  have hψ' : ∀ᶠ q in nhds p, (q, ψ q) ∈ t := (continuousAt_id.prodMk hψ).preimage_mem_nhds ht
+  have hφ' : ∀ᶠ q in nhds p, (q, φ q) ∈ t :=
+    (continuousAt_id.prodMk hφ).preimage_mem_nhds (by simpa [h] using ht)
+  refine ⟨K, ?_⟩
+  filter_upwards [hψ', hφ'] with q h₁ h₂
+  simpa [dist_eq_norm, Prod.dist_eq] using hK.dist_le_mul _ h₁ _ h₂
 
 end ContDiffAt
 

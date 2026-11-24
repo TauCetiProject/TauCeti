@@ -265,9 +265,7 @@ private theorem map_ofReal_smul_eq (B : SymmMatrix n) (t : ℝ) :
   congr 1
   conv_lhs => rw [h]
   simp only [eigenFrame, ← transpose_map]
-  -- `Matrix.map_mul` at `Complex.ofRealHom`, whose coercion is `(↑)` (`Complex.ofRealHom_eq_coe`).
-  exact (Matrix.map_mul (f := Complex.ofRealHom)).trans
-    (congrArg (· * _) (Matrix.map_mul (f := Complex.ofRealHom)))
+  rw [map_ofReal_mul, map_ofReal_mul]
 
 /-- The frames `O diag (e^{i arctan (t λⱼ)})` frame the graphs of the segment `t ↦ t B`: their
 Souriau maps are the Cayley transforms of `t B`. -/

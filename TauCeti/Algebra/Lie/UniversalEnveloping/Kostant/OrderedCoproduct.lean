@@ -66,10 +66,6 @@ theorem kostantFormComul_prod_ofFn_generator (e : ι → L) (h : κ → L)
       (fun j ↦ Finset.antidiagonal (n j))
   simp only [MultilinearMap.mkPiAlgebraFin_apply] at hexpand
   rw [hexpand]
-  refine Finset.sum_congr rfl fun p _ ↦ ?_
-  simpa only [List.map_ofFn, Function.comp_def] using
-    List.prod_map_tmul (R := ℤ) (List.ofFn (fun j : Fin r ↦ j))
-      (fun j ↦ kostantGenerator e h (i j) (p j).1)
-      (fun j ↦ kostantGenerator e h (i j) (p j).2)
+  exact Finset.sum_congr rfl fun p _ ↦ list_prod_ofFn_tmul _ _
 
 end TauCeti.UniversalEnvelopingAlgebra

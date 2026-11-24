@@ -514,7 +514,7 @@ private theorem isSimpleRing_even_baseChange : IsSimpleRing ↥(even (Q.baseChan
   have hQnd : Q.Nondegenerate :=
     QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
   refine TauCeti.CliffordAlgebra.isSimpleRing_even_of_odd_finrank
-    (QuadraticForm.Nondegenerate.baseChange (L := ℂ) hQnd) ?_
+    (QuadraticForm.Nondegenerate.baseChange (A := ℂ) hQnd) ?_
   rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
   exact hn
 

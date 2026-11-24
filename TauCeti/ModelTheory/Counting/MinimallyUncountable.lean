@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Counting.Scattered.SentenceSplits
+public import TauCeti.ModelTheory.Counting.Scattered.Spectrum
 public import TauCeti.ModelTheory.Counting.Scattered.Vaught
 import TauCeti.ModelTheory.Counting.Scattered.AnalyticSplits
 import TauCeti.ModelTheory.RelationalConfiguration.Saturation
@@ -33,6 +34,16 @@ concentrated classes (`TauCeti.ConcentratedAtBFLevels.countable_isoClasses_inter
 identifies scattered minimally uncountable classes with uncountable classes concentrated at
 back-and-forth levels (`TauCeti.bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels`).
 
+In a countable relational vocabulary, every sentence cut of a minimally uncountable class has a side
+meeting countably many isomorphism classes, so the class is thin
+(`TauCeti.MinimallyUncountableOn.isThinOn`) and, when Borel, back-and-forth scattered
+(`TauCeti.MinimallyUncountableOn.bfScattered`). The scatteredness hypotheses above can then be
+dropped for Borel classes: a Borel class is minimally uncountable precisely when it is concentrated
+at back-and-forth levels and meets uncountably many isomorphism classes
+(`TauCeti.minimallyUncountableOn_iff_concentratedAtBFLevels`), or precisely when it is scattered and
+minimally unbounded for some, equivalently every, isolating rank
+(`TauCeti.IsIsolatingRank.minimallyUncountableOn_iff_bfScattered_and_minimallyUnboundedOn`).
+
 The main result is the **Harnik–Makkai reduction**
 (`TauCeti.exists_minimallyUncountableOn_inf_of_bfScattered`): in a countable relational vocabulary,
 if `Θ` is an `L_{ω₁ω}` sentence whose model class on `ℕ` is back-and-forth scattered and meets
@@ -47,11 +58,13 @@ class of a countably branching infinitary sentence
 (`TauCeti.exists_minimallyUncountableOn_modelsOf_inter_of_bfScattered`).
 
 Consequently, every counterexample `Θ` to Vaught's dichotomy has a scattered minimally uncountable
-strengthening `Θ ⊓ θ` (`TauCeti.exists_minimallyUncountable_inf_of_not_hasVaughtDichotomy`), the
-absence of minimally uncountable sentences implies `VaughtConjecture`
-(`TauCeti.vaughtConjecture_of_forall_not_minimallyUncountableOn`), and `VaughtConjecture` is
-equivalent to the absence of scattered minimally uncountable—or scattered minimally
-unbounded—sentences (`TauCeti.vaughtConjecture_iff_forall_bfScattered_not_minimallyUncountableOn`,
+strengthening `Θ ⊓ θ` (`TauCeti.exists_minimallyUncountable_inf_of_not_hasVaughtDichotomy`), while
+conversely a minimally uncountable sentence `φ` makes `φ ⊓ L.infiniteSentence` a counterexample
+(`TauCeti.MinimallyUncountable.not_hasVaughtDichotomy_inf_infiniteSentence`). Hence
+`VaughtConjecture` is equivalent to the absence of minimally uncountable sentences
+(`TauCeti.vaughtConjecture_iff_forall_not_minimallyUncountableOn`), and to the absence of
+scattered minimally uncountable—or scattered minimally unbounded—sentences
+(`TauCeti.vaughtConjecture_iff_forall_bfScattered_not_minimallyUncountableOn`,
 `TauCeti.vaughtConjecture_iff_forall_bfScattered_not_minimallyUnboundedOn`).
 
 ## Main definitions
@@ -71,12 +84,18 @@ unbounded—sentences (`TauCeti.vaughtConjecture_iff_forall_bfScattered_not_mini
 * `TauCeti.IsIsolatingRank.minimallyUncountableOn_iff_minimallyUnboundedOn` and
   `TauCeti.IsIsolatingRank.minimallyUnboundedOn_iff`: agreement of minimal uncountability and
   minimal unboundedness on scattered sets, and independence of the isolating rank.
-* `TauCeti.bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels` and
-  `TauCeti.IsThinOnNatModels.minimallyUncountable_iff`: characterization via concentration at
+* `TauCeti.MinimallyUncountableOn.isThinOn` and `TauCeti.MinimallyUncountableOn.bfScattered`:
+  minimally uncountable classes are thin, and back-and-forth scattered when Borel.
+* `TauCeti.bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels`,
+  `TauCeti.minimallyUncountableOn_iff_concentratedAtBFLevels`, and
+  `TauCeti.minimallyUncountable_iff_concentratedAtBFLevels`: characterization via concentration at
   back-and-forth levels.
 * `TauCeti.BFScattered.exists_minimallyUncountableOn_inter_modelsOf` and
   `TauCeti.exists_minimallyUncountableOn_inf_of_bfScattered`: **the Harnik–Makkai reduction** to
   minimally uncountable counterexamples.
+* `TauCeti.not_vaughtConjecture_of_minimallyUncountableOn` and
+  `TauCeti.vaughtConjecture_iff_forall_not_minimallyUncountableOn`: a minimally uncountable sentence
+  refutes `TauCeti.VaughtConjecture`, and the conjecture holds precisely when there is none.
 * `TauCeti.vaughtConjecture_of_forall_not_minimallyUncountableOn`,
   `TauCeti.vaughtConjecture_iff_forall_bfScattered_not_minimallyUncountableOn`, and
   `TauCeti.vaughtConjecture_iff_forall_bfScattered_not_minimallyUnboundedOn`: minimal-counterexample
@@ -454,15 +473,6 @@ theorem bfScattered_modelsOf_and_minimallyUnbounded_iff [Countable (Σ n, L.Rela
     bfScattered_and_minimallyUnboundedOn_iff_concentratedAtBFLevels hρ,
     isoSetoidOn, Setoid.countable_quotient_comap_val_iff]
 
-/-- A thin sentence on `ℕ` with countable branching is minimally uncountable precisely when its
-models on `ℕ` are concentrated at back-and-forth levels and uncountably many up to isomorphism. -/
-theorem IsThinOnNatModels.minimallyUncountable_iff [Countable (Σ n, L.Relations n)] [Countable ι]
-    {φ : L.SentenceInf ι} (hthin : IsThinOnNatModels φ) :
-    MinimallyUncountable φ ↔
-      ConcentratedAtBFLevels (modelsOf (V := ℕ) φ) ∧ ¬ Countable (Quotient (isoSetoidOn ℕ φ)) := by
-  rw [← bfScattered_modelsOf_and_minimallyUncountable_iff,
-    and_iff_right hthin.bfScattered_modelsOf]
-
 /-- For a thin sentence on `ℕ` with countable branching, minimal uncountability coincides with
 minimal unboundedness for every isolating rank. -/
 theorem IsThinOnNatModels.minimallyUncountable_iff_minimallyUnbounded
@@ -473,6 +483,95 @@ theorem IsThinOnNatModels.minimallyUncountable_iff_minimallyUnbounded
   hρ.minimallyUncountableOn_iff_minimallyUnboundedOn hthin.bfScattered_modelsOf
 
 end ScatteredAndConcentrated
+
+/-! ### Minimally uncountable classes are thin -/
+
+section Thin
+
+variable {L : Language.{u, v}} [L.IsRelational] [Countable (Σ n, L.Relations n)]
+  {ι : Type uι}
+
+/-- **Minimally uncountable classes are thin.** In a countable relational vocabulary, a minimally
+uncountable set of configurations on a countable carrier contains no nonempty perfect set of
+pairwise non-isomorphic configurations. Neither measurability nor isomorphism invariance of `K` is
+assumed. -/
+theorem MinimallyUncountableOn.isThinOn {V : Type w} [Countable V]
+    {K : Set (RelationalConfiguration L V)} (h : MinimallyUncountableOn K) :
+    (isoSetoid L V).IsThinOn K :=
+  isThinOn_of_sentence_splits h.countable_inter_or_sdiff
+
+/-- A minimally uncountable infinitary sentence in a countable relational vocabulary is thin on
+`ℕ`. -/
+theorem MinimallyUncountable.isThinOnNatModels {φ : L.SentenceInf ι}
+    (h : MinimallyUncountable φ) : IsThinOnNatModels φ :=
+  isThinOnNatModels_iff_isThinOn.2 (minimallyUncountable_def.1 h).isThinOn
+
+/-- In a countable relational vocabulary, a Borel minimally uncountable set of configurations on
+`ℕ` is back-and-forth scattered. -/
+theorem MinimallyUncountableOn.bfScattered {K : Set (RelationalConfiguration L ℕ)}
+    (h : MinimallyUncountableOn K) (hK : MeasurableSet K) : BFScattered K :=
+  BFScattered.of_isThinOn hK h.isThinOn
+
+/-- A minimally uncountable infinitary sentence with countable branching in a countable relational
+vocabulary has back-and-forth scattered models on `ℕ`. -/
+theorem MinimallyUncountable.bfScattered_modelsOf [Countable ι] {φ : L.SentenceInf ι}
+    (h : MinimallyUncountable φ) : BFScattered (modelsOf (V := ℕ) φ) :=
+  (minimallyUncountable_def.1 h).bfScattered (measurableSet_modelsOf φ)
+
+/-- **Characterization of Borel minimally uncountable classes.** In a countable relational
+vocabulary, a Borel set `K` of configurations on `ℕ` is minimally uncountable precisely when it is
+concentrated at back-and-forth levels and meets uncountably many isomorphism classes. -/
+theorem minimallyUncountableOn_iff_concentratedAtBFLevels {K : Set (RelationalConfiguration L ℕ)}
+    (hK : MeasurableSet K) :
+    MinimallyUncountableOn K ↔
+      ConcentratedAtBFLevels K ∧ ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable := by
+  rw [← bfScattered_and_minimallyUncountableOn_iff_concentratedAtBFLevels]
+  exact ⟨fun h => ⟨h.bfScattered hK, h⟩, And.right⟩
+
+/-- **Characterization of minimally uncountable sentences.** In a countable relational vocabulary,
+an infinitary sentence `φ` with countable branching is minimally uncountable precisely when its
+models on `ℕ` are concentrated at back-and-forth levels and uncountably many up to isomorphism. -/
+theorem minimallyUncountable_iff_concentratedAtBFLevels [Countable ι] (φ : L.SentenceInf ι) :
+    MinimallyUncountable φ ↔
+      ConcentratedAtBFLevels (modelsOf (V := ℕ) φ) ∧ ¬ Countable (Quotient (isoSetoidOn ℕ φ)) := by
+  rw [minimallyUncountable_def, minimallyUncountableOn_iff_concentratedAtBFLevels
+    (measurableSet_modelsOf φ), isoSetoidOn, Setoid.countable_quotient_comap_val_iff]
+
+namespace IsIsolatingRank
+
+variable {ρ : RelationalConfiguration L ℕ → Ordinal.{0}}
+
+/-- **Minimal uncountability through an isolating rank.** In a countable relational vocabulary, a
+Borel set `K` of configurations on `ℕ` is minimally uncountable precisely when it is back-and-forth
+scattered and minimally unbounded for an isolating rank `ρ`. -/
+theorem minimallyUncountableOn_iff_bfScattered_and_minimallyUnboundedOn (hρ : IsIsolatingRank ρ)
+    {K : Set (RelationalConfiguration L ℕ)} (hK : MeasurableSet K) :
+    MinimallyUncountableOn K ↔ BFScattered K ∧ MinimallyUnboundedOn ρ K :=
+  ⟨fun h => ⟨h.bfScattered hK,
+      (hρ.minimallyUncountableOn_iff_minimallyUnboundedOn (h.bfScattered hK)).1 h⟩,
+    fun h => (hρ.minimallyUncountableOn_iff_minimallyUnboundedOn h.1).2 h.2⟩
+
+/-- In a countable relational vocabulary, an infinitary sentence `φ` with countable branching is
+minimally uncountable precisely when its models on `ℕ` are back-and-forth scattered and `φ` is
+minimally unbounded for an isolating rank `ρ`. -/
+theorem minimallyUncountable_iff_bfScattered_and_minimallyUnbounded (hρ : IsIsolatingRank ρ)
+    [Countable ι] (φ : L.SentenceInf ι) :
+    MinimallyUncountable φ ↔ BFScattered (modelsOf (V := ℕ) φ) ∧ MinimallyUnbounded ρ φ :=
+  hρ.minimallyUncountableOn_iff_bfScattered_and_minimallyUnboundedOn (measurableSet_modelsOf φ)
+
+end IsIsolatingRank
+
+/-- **A minimally uncountable sentence is a Vaught counterexample.** In a countable relational
+vocabulary, if `φ` is minimally uncountable, then `φ ⊓ L.infiniteSentence` fails Vaught's
+witnessed dichotomy: it has uncountably many countable models up to isomorphism and no perfect set
+of pairwise non-isomorphic ones. The conjunction with `L.infiniteSentence` discards the finite
+models of `φ`, which may carry a perfect set. -/
+theorem MinimallyUncountable.not_hasVaughtDichotomy_inf_infiniteSentence {φ : L.Sentenceω}
+    (h : MinimallyUncountable φ) : ¬ HasVaughtDichotomy (φ ⊓ L.infiniteSentence) := by
+  rw [hasVaughtDichotomy_inf_infiniteSentence_iff, not_or, ← isThinOnNatModels_iff]
+  exact ⟨(minimallyUncountable_def.1 h).not_countable_quotient, h.isThinOnNatModels⟩
+
+end Thin
 
 /-! ### The Harnik–Makkai reduction -/
 
@@ -753,14 +852,15 @@ end HarnikMakkai
 
 /-! ### Minimal-counterexample criteria for Vaught's conjecture -/
 
-/-- A back-and-forth scattered minimally uncountable sentence in a countable relational language in
-universe zero refutes `VaughtConjecture`. -/
-theorem not_vaughtConjecture_of_bfScattered_of_minimallyUncountableOn {L : Language.{0, 0}}
-    [L.IsRelational] [Countable (Σ n, L.Relations n)] {φ : L.Sentenceω}
-    (hscat : BFScattered (modelsOf (V := ℕ) φ))
+/-- **A minimally uncountable sentence refutes Vaught's conjecture.** If an `L_{ω₁ω}` sentence in a
+countable relational language in universe zero has a minimally uncountable model class on `ℕ`, then
+`VaughtConjecture` fails. -/
+theorem not_vaughtConjecture_of_minimallyUncountableOn {L : Language.{0, 0}} [L.IsRelational]
+    [Countable (Σ n, L.Relations n)] {φ : L.Sentenceω}
     (hmin : MinimallyUncountableOn (modelsOf (V := ℕ) φ)) :
     ¬ VaughtConjecture := fun hv =>
-  hmin.not_countable_quotient ((vaughtConjecture_iff_bfScattered.mp hv) L φ hscat)
+  (minimallyUncountable_def.2 hmin).not_hasVaughtDichotomy_inf_infiniteSentence
+    (vaughtConjecture_iff.1 hv L (φ ⊓ L.infiniteSentence))
 
 /-- **Reduction of Vaught's conjecture to minimally uncountable sentences.** If no `L_{ω₁ω}`
 sentence in a countable relational language in universe zero has a minimally uncountable model
@@ -775,6 +875,16 @@ theorem vaughtConjecture_of_forall_not_minimallyUncountableOn
   obtain ⟨θ, hθ⟩ := exists_minimallyUncountableOn_inf_of_bfScattered hscat hunc
   exact h L (φ ⊓ θ) hθ
 
+/-- **The minimally-uncountable formulation of Vaught's conjecture** (Harnik–Makkai; Steel).
+`VaughtConjecture` holds precisely when no `L_{ω₁ω}` sentence in a countable relational language in
+universe zero has a minimally uncountable model class on `ℕ`. No form of CH is assumed. -/
+theorem vaughtConjecture_iff_forall_not_minimallyUncountableOn :
+    VaughtConjecture ↔
+      ∀ (L : Language.{0, 0}) [L.IsRelational] [Countable (Σ n, L.Relations n)]
+        (φ : L.Sentenceω), ¬ MinimallyUncountableOn (modelsOf (V := ℕ) φ) :=
+  ⟨fun hv _ _ _ _ hmin => not_vaughtConjecture_of_minimallyUncountableOn hmin hv,
+    vaughtConjecture_of_forall_not_minimallyUncountableOn⟩
+
 /-- **The scattered minimally-uncountable formulation of Vaught's conjecture.** `VaughtConjecture`
 is equivalent, without CH, to the non-existence of a back-and-forth scattered minimally uncountable
 `L_{ω₁ω}` sentence. -/
@@ -783,8 +893,8 @@ theorem vaughtConjecture_iff_forall_bfScattered_not_minimallyUncountableOn :
       ∀ (L : Language.{0, 0}) [L.IsRelational] [Countable (Σ n, L.Relations n)]
         (φ : L.Sentenceω),
         BFScattered (modelsOf (V := ℕ) φ) → ¬ MinimallyUncountableOn (modelsOf (V := ℕ) φ) := by
-  refine ⟨fun hv L _ _ φ hscat hmin =>
-    not_vaughtConjecture_of_bfScattered_of_minimallyUncountableOn hscat hmin hv, fun h => ?_⟩
+  refine ⟨fun hv _ _ _ _ _ hmin =>
+    not_vaughtConjecture_of_minimallyUncountableOn hmin hv, fun h => ?_⟩
   refine vaughtConjecture_iff_bfScattered.mpr fun L _ _ φ hscat => ?_
   by_contra hunc
   obtain ⟨θ, hθ_scat, hθ_min⟩ := exists_minimallyUncountable_inf_of_bfScattered hscat hunc

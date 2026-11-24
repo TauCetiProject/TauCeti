@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
+import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -20,17 +21,14 @@ For `c > 0` the Mellin transform of `t ↦ e^(-c t)` converges on `0 < Re z`
 (`TauCeti.mellinConvergent_exp_neg_mul`). At `c = 1` this is the convergence of Euler's integral
 for `Γ(z)` (`Complex.GammaIntegral_convergent`), and the scaling `t ↦ c t` is Mathlib's
 `MellinConvergent.comp_mul_left`. Its value `c^(-z) Γ(z)` is Mathlib's
-`Complex.integral_cpow_mul_exp_neg_mul_Ioi`. Written against the multiplicative Haar measure
+`Complex.integral_cpow_mul_exp_neg_mul_Ioi`; at `c = 1` it is `Γ(z)`
+(`TauCeti.hasMellin_exp_neg`). Written against the multiplicative Haar measure
 `dt / t` (`TauCeti.multHaar`), these give integrability and evaluation of `t ^ z e^(-c t)`
 (`TauCeti.integrable_multHaar_cpow_mul_exp_neg_mul`,
 `TauCeti.integral_multHaar_cpow_mul_exp_neg_mul`) and their `Γ_ℝ` specialization for
 `t ^ (z / 2) e^(-π a² t)` (`TauCeti.integrable_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq`,
 `TauCeti.integral_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq`), which are the one-place gamma
 integrals produced by Gaussians in Hecke's integral representations of zeta and L-functions.
-
-The Mellin transform reads a function only on `(0, ∞)`, so functions agreeing there have the same
-transform, with the same convergence (`TauCeti.hasMellin_congr`). Kernels that are extended by zero
-off `(0, ∞)` are compared with their unextended forms this way.
 
 `TauCeti.hasMellin_max_one_sub_zero` computes the Mellin transform of the continuous cutoff
 `max (1 - t) 0`, using the difference of Mathlib's interval-power transforms. Its inverse
@@ -43,15 +41,6 @@ open Complex MeasureTheory Set
 open scoped Real
 
 namespace TauCeti
-
-/-- Functions that agree on `(0, ∞)` have the same Mellin transform, with the same convergence. -/
-theorem hasMellin_congr {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : ℝ → E}
-    (h : EqOn f g (Ioi 0)) {s : ℂ} {m : E} : HasMellin f s m ↔ HasMellin g s m := by
-  have h' : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t) (fun t ↦ (t : ℂ) ^ (s - 1) • g t)
-      (Ioi 0) := fun t ht ↦ by simp only [h ht]
-  simp only [HasMellin, MellinConvergent, mellin,
-    MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
-    MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
 
 /-- The Mellin transform of the continuous cutoff `max (1 - t) 0` is `1 / (s(s+1))`
 for `0 < Re s`. Only its values on `(0, ∞)` contribute to the transform. -/
@@ -85,6 +74,13 @@ theorem mellinConvergent_exp_neg_mul {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : 0 < 
     MellinConvergent (fun t : ℝ ↦ (Real.exp (-(c * t)) : ℂ)) z := by
   refine (MellinConvergent.comp_mul_left (f := fun t : ℝ ↦ (Real.exp (-t) : ℂ)) hc).mpr ?_
   exact (GammaIntegral_convergent hz).congr_fun (fun t _ ↦ mul_comm _ _) measurableSet_Ioi
+
+/-- Euler's integral as a Mellin transform: on `0 < Re z` the Mellin transform of `t ↦ e^(-t)`
+converges and equals `Γ(z)`. -/
+theorem hasMellin_exp_neg {z : ℂ} (hz : 0 < z.re) :
+    HasMellin (fun t : ℝ ↦ (Real.exp (-t) : ℂ)) z (Gamma z) :=
+  ⟨(GammaIntegral_convergent hz).congr_fun (fun t _ ↦ mul_comm _ _) measurableSet_Ioi,
+    by rw [← GammaIntegral_eq_mellin, Gamma_eq_integral hz]⟩
 
 /-- For `c > 0` and `0 < Re z`, `t ↦ t ^ z * exp (-c t)` is integrable against `dt / t`. -/
 theorem integrable_multHaar_cpow_mul_exp_neg_mul {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : 0 < z.re) :
