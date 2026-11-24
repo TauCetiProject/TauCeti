@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
 import TauCeti.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
@@ -321,33 +322,15 @@ theorem completedDedekindZeta_residue_eq :
     rw [Real.sqrt_eq_rpow, Complex.ofReal_cpow (abs_nonneg _),
       ← Int.cast_abs (R := ℝ) (a := discr K)]
     simp only [Complex.ofReal_intCast, Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_ofNat]
-  have hsqrt_ne : Real.sqrt |(discr K : ℝ)| ≠ 0 :=
-    (Real.sqrt_pos.mpr (by exact_mod_cast hdiscr_pos)).ne'
-  rw [hsqrt, Gammaℝ_one, one_pow, mul_one, Gammaℂ_one, dedekindZeta_residue_def]
-  have hreal :
-      Real.sqrt |(discr K : ℝ)| * (Real.pi : ℝ)⁻¹ ^ nrComplexPlaces K *
-          ((2 ^ nrRealPlaces K * (2 * Real.pi) ^ nrComplexPlaces K * regulator K * classNumber K) /
-            (torsionOrder K * Real.sqrt |(discr K : ℝ)|)) =
-        (classNumber K : ℝ) * (2 * mellinConstant K) := by
-    have hpi : (Real.pi : ℝ) ≠ 0 := Real.pi_ne_zero
-    have hpipow : (1 / Real.pi) ^ nrComplexPlaces K * Real.pi ^ nrComplexPlaces K = 1 := by
-      rw [← mul_pow, one_div_mul_cancel hpi, one_pow]
-    rw [two_mul_mellinConstant]
-    calc
-      Real.sqrt |(discr K : ℝ)| * (Real.pi : ℝ)⁻¹ ^ nrComplexPlaces K *
-          ((2 ^ nrRealPlaces K * (2 * Real.pi) ^ nrComplexPlaces K * regulator K * classNumber K) /
-            (torsionOrder K * Real.sqrt |(discr K : ℝ)|))
-          = (Real.sqrt |(discr K : ℝ)| / Real.sqrt |(discr K : ℝ)|) *
-              ((1 / Real.pi) ^ nrComplexPlaces K * Real.pi ^ nrComplexPlaces K) *
-              ((classNumber K : ℝ) *
-                (2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K * regulator K / torsionOrder K)) := by
-            rw [mul_pow, one_div]; ring
-      _ = (classNumber K : ℝ) *
-            (2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K * regulator K / torsionOrder K) := by
-            rw [div_self hsqrt_ne, hpipow, one_mul, one_mul]
-  simpa only [Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_pow, Complex.ofReal_div,
-    Complex.ofReal_natCast, Complex.ofReal_ofNat, Complex.ofReal_one, one_div] using
-    congrArg (fun x : ℝ ↦ (x : ℂ)) hreal
+  have hsqrt_ne : (Real.sqrt |(discr K : ℝ)| : ℂ) ≠ 0 :=
+    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by exact_mod_cast hdiscr_pos)).ne'
+  have hpi : (Real.pi : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
+  rw [hsqrt, Gammaℝ_one, one_pow, mul_one, Gammaℂ_one, dedekindZeta_residue_def,
+    ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, two_mul_mellinConstant]
+  push_cast
+  rw [mul_pow]
+  field_simp
+  simp [hpi]
 
 /-! ### Continuation, residue, and leading term at `0` of `dedekindZetaC` -/
 
@@ -388,12 +371,6 @@ private theorem invCompletionFactor_mul_cancel (K : Type*) [Field K] [NumberFiel
     simp only [invCompletionFactor, neg_div, Complex.cpow_neg, inv_pow, mul_inv]
   rw [hinv, ← mul_assoc, inv_mul_cancel₀ hc, one_mul]
 
-private theorem meromorphicOrderAt_inv_pow_of_neg_one {f : ℂ → ℂ} {s : ℂ} (n : ℕ)
-    (hf : MeromorphicAt (fun z ↦ (f z)⁻¹) s) (hord : meromorphicOrderAt f s = -1) :
-    meromorphicOrderAt (fun z ↦ (f z)⁻¹ ^ n) s = (n : ℤ) := by
-  rw [fun_meromorphicOrderAt_pow hf, fun_meromorphicOrderAt_inv, hord]
-  simp
-
 private theorem meromorphicOrderAt_invCompletionFactor_zero (K : Type*) [Field K] [NumberField K] :
     meromorphicOrderAt (invCompletionFactor K) 0 =
       (nrRealPlaces K : ℤ) + (nrComplexPlaces K : ℤ) := by
@@ -408,12 +385,12 @@ private theorem meromorphicOrderAt_invCompletionFactor_zero (K : Type*) [Field K
     (differentiable_Gammaℂ_inv.analyticAt 0).pow _
   have hGℝ_ord : meromorphicOrderAt (fun z : ℂ ↦ (Gammaℝ z)⁻¹ ^ nrRealPlaces K) 0 =
       (nrRealPlaces K : ℤ) :=
-    meromorphicOrderAt_inv_pow_of_neg_one _ (differentiable_Gammaℝ_inv.analyticAt 0).meromorphicAt
-      ((meromorphicOrderAt_Gammaℝ_eq_neg_one_iff 0).mpr ⟨0, by simp⟩)
+    fun_meromorphicOrderAt_inv_pow_of_neg_one (TauCeti.meromorphic_Gammaℝ 0)
+      ((meromorphicOrderAt_Gammaℝ_eq_neg_one_iff 0).mpr ⟨0, by simp⟩) _
   have hGℂ_ord : meromorphicOrderAt (fun z : ℂ ↦ (Gammaℂ z)⁻¹ ^ nrComplexPlaces K) 0 =
       (nrComplexPlaces K : ℤ) :=
-    meromorphicOrderAt_inv_pow_of_neg_one _ (differentiable_Gammaℂ_inv.analyticAt 0).meromorphicAt
-      ((meromorphicOrderAt_Gammaℂ_eq_neg_one_iff 0).mpr ⟨0, by simp⟩)
+    fun_meromorphicOrderAt_inv_pow_of_neg_one (TauCeti.meromorphic_Gammaℂ 0)
+      ((meromorphicOrderAt_Gammaℂ_eq_neg_one_iff 0).mpr ⟨0, by simp⟩) _
   have hprod1 : AnalyticAt ℂ (fun z : ℂ ↦
       ((|discr K| : ℤ) : ℂ) ^ (-z / 2) * (Gammaℝ z)⁻¹ ^ nrRealPlaces K) 0 :=
     (analyticAt_discr_inv_cpow K 0).mul hGℝ_an
@@ -588,57 +565,24 @@ private theorem dedekindZetaC_zero_limit_coeff (K : Type*) [Field K] [NumberFiel
     -((classNumber K : ℂ) * (2 * (mellinConstant K : ℂ))) * 1 *
         ((2 : ℂ)⁻¹ ^ nrRealPlaces K * (2 : ℂ)⁻¹ ^ nrComplexPlaces K) =
       (-((classNumber K : ℝ) * regulator K / torsionOrder K : ℝ) : ℂ) := by
-  have h2cancel :
-      (2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K : ℝ) *
-        ((2 : ℝ)⁻¹ ^ nrRealPlaces K * (2 : ℝ)⁻¹ ^ nrComplexPlaces K) = 1 := by
-    calc
-      (2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K : ℝ) *
-          ((2 : ℝ)⁻¹ ^ nrRealPlaces K * (2 : ℝ)⁻¹ ^ nrComplexPlaces K)
-          = ((2 : ℝ) ^ nrRealPlaces K * (2 : ℝ)⁻¹ ^ nrRealPlaces K) *
-            ((2 : ℝ) ^ nrComplexPlaces K * (2 : ℝ)⁻¹ ^ nrComplexPlaces K) := by ring
-      _ = (2 * (2 : ℝ)⁻¹) ^ nrRealPlaces K * (2 * (2 : ℝ)⁻¹) ^ nrComplexPlaces K := by
-            rw [← mul_pow, ← mul_pow]
-      _ = 1 := by simp
-  have hreal :
-      -((classNumber K : ℝ) * (2 * mellinConstant K)) * 1 *
-          ((2 : ℝ)⁻¹ ^ nrRealPlaces K * (2 : ℝ)⁻¹ ^ nrComplexPlaces K) =
-        -((classNumber K : ℝ) * regulator K / torsionOrder K) := by
-    rw [two_mul_mellinConstant]
-    calc
-      -((classNumber K : ℝ) *
-          (2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K * regulator K / torsionOrder K)) * 1 *
-          ((2 : ℝ)⁻¹ ^ nrRealPlaces K * (2 : ℝ)⁻¹ ^ nrComplexPlaces K)
-          = -((2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K : ℝ) *
-              ((2 : ℝ)⁻¹ ^ nrRealPlaces K * (2 : ℝ)⁻¹ ^ nrComplexPlaces K) *
-              ((classNumber K : ℝ) * regulator K / torsionOrder K)) := by ring
-      _ = -((classNumber K : ℝ) * regulator K / torsionOrder K) := by rw [h2cancel, one_mul]
-  simpa only [Complex.ofReal_neg, Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_pow,
-    Complex.ofReal_natCast, Complex.ofReal_ofNat, Complex.ofReal_one] using
-    congrArg (fun x : ℝ ↦ (x : ℂ)) hreal
+  rw [← Complex.ofReal_ofNat, ← Complex.ofReal_mul, two_mul_mellinConstant]
+  push_cast
+  simp only [inv_pow]
+  field_simp
 
 private theorem dedekindZetaC_zero_factor_identity {z : ℂ} (hz0 : z ≠ 0)
     (hz : dedekindZetaC K z = invCompletionFactor K z * completedDedekindZeta K z) :
     z * completedDedekindZeta K z * ((|discr K| : ℤ) : ℂ) ^ (-z / 2) *
         ((z * Gammaℝ z)⁻¹ ^ nrRealPlaces K * (z * Gammaℂ z)⁻¹ ^ nrComplexPlaces K) =
       dedekindZetaC K z / z ^ Units.rank K := by
-  have hmul : (z * Gammaℝ z)⁻¹ ^ nrRealPlaces K * (z * Gammaℂ z)⁻¹ ^ nrComplexPlaces K =
-      z⁻¹ ^ (Units.rank K + 1) *
-        ((Gammaℝ z)⁻¹ ^ nrRealPlaces K * (Gammaℂ z)⁻¹ ^ nrComplexPlaces K) := by
-    simp_rw [mul_inv, mul_pow]
-    rw [Units.rank_add_one K, pow_add]
-    ring
-  rw [hz, hmul, pow_succ', inv_pow]
-  have hzinv : z * z⁻¹ = 1 := mul_inv_cancel₀ hz0
-  dsimp only [invCompletionFactor]
-  calc
-    z * completedDedekindZeta K z * ((|discr K| : ℤ) : ℂ) ^ (-z / 2) *
-        (z⁻¹ * (z ^ Units.rank K)⁻¹ *
-          ((Gammaℝ z)⁻¹ ^ nrRealPlaces K * (Gammaℂ z)⁻¹ ^ nrComplexPlaces K))
-        = (z * z⁻¹) * (((|discr K| : ℤ) : ℂ) ^ (-z / 2) *
-            (Gammaℝ z)⁻¹ ^ nrRealPlaces K *
-            (Gammaℂ z)⁻¹ ^ nrComplexPlaces K * completedDedekindZeta K z *
-            (z ^ Units.rank K)⁻¹) := by ring
-    _ = _ := by rw [hzinv, one_mul, ← div_eq_mul_inv]
+  rw [hz]
+  unfold invCompletionFactor
+  simp_rw [mul_inv, mul_pow, div_eq_mul_inv]
+  have hzpow : z * (z⁻¹ ^ nrRealPlaces K * z⁻¹ ^ nrComplexPlaces K) = (z ^ Units.rank K)⁻¹ := by
+    rw [← pow_add, ← Units.rank_add_one K, pow_succ', ← inv_pow, ← mul_assoc, mul_inv_cancel₀ hz0,
+      one_mul]
+  rw [← hzpow]
+  ring
 
 variable (K) in
 /-- **Leading term of `dedekindZetaC K` at `s = 0`** (Neukirch VII (5.11)):

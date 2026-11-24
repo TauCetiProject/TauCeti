@@ -42,12 +42,13 @@ theorem completedDedekindZeta_rat_eq_toMeromorphicNFOn :
   have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
   have hGℝ : Gammaℝ s ≠ 0 := Gammaℝ_ne_zero_of_re_pos (by linarith)
   rw [toMeromorphicNFOn_apply_of_analyticAt meromorphic_completedRiemannZeta
-      (analyticAt_completedRiemannZeta h0 h1),
-    completedDedekindZeta_eq hs, discr_rat,
-    nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ),
+      (analyticAt_completedRiemannZeta h0 h1)]
+  rw [completedDedekindZeta_eq hs, dedekindZeta_rat_eq_riemannZeta hs,
+    riemannZeta_def_of_ne_zero h0]
+  simp only [discr_rat, nrRealPlaces_eq_one_of_finrank_eq_one (Module.finrank_self ℚ),
     nrComplexPlaces_eq_zero_of_finrank_eq_one (Module.finrank_self ℚ),
-    dedekindZeta_rat_eq_riemannZeta hs, riemannZeta_def_of_ne_zero h0]
-  simp [field]
+    abs_one, Int.cast_one, Complex.one_cpow, pow_one, pow_zero, one_mul, mul_one]
+  exact mul_div_cancel₀ _ hGℝ
 
 /-- Over `ℚ`, `completedDedekindZeta ℚ` agrees with Mathlib's `completedRiemannZeta` away from
 its poles `0` and `1`. -/

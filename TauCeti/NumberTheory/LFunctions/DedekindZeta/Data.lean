@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completion
-import TauCeti.Data.Finsupp.Single
+import TauCeti.Data.Finsupp.Order
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import TauCeti.NumberTheory.LFunctions.Data.PolarDivisor
 
@@ -143,7 +143,8 @@ theorem dedekindZetaData_hasDirichletAgreement :
 others. -/
 theorem dedekindZetaData_hasMeromorphicContinuation :
     (dedekindZetaData K).HasMeromorphicContinuation where
-  meromorphic := meromorphic_completedDedekindZeta K
+  meromorphic := by
+    simpa only [dedekindZetaData_completed] using meromorphic_completedDedekindZeta K
   meromorphicOrderAt_eq p hp := by
     rw [dedekindZetaData_polarOrder] at hp ⊢
     rcases (Finsupp.single_add_single_ne_zero_iff one_ne_zero one_ne_zero p).mp hp with rfl | rfl
@@ -152,7 +153,7 @@ theorem dedekindZetaData_hasMeromorphicContinuation :
   analyticAt p hp := by
     rw [dedekindZetaData_polarOrder] at hp
     obtain ⟨h0, h1⟩ := (Finsupp.single_add_single_eq_zero_iff one_ne_zero one_ne_zero p).mp hp
-    exact analyticAt_completedDedekindZeta h0 h1
+    simpa only [dedekindZetaData_completed] using analyticAt_completedDedekindZeta h0 h1
 
 /-- The functional equation `Λ_K(1 - s) = Λ_K(s)` of the completed Dedekind zeta function, with
 root number `1`. -/

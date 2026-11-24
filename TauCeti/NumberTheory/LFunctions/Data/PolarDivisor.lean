@@ -36,17 +36,22 @@ theorem single_zero_add_single_one_conj (s : ℂ) :
   have h := congrArg (fun d : ℂ →₀ ℕ ↦ d (conj s)) mapDomain_conj_single_zero_add_single_one.symm
   rwa [Finsupp.mapDomain_apply_of_injective (starRingEnd ℂ).injective] at h
 
+/-- Functional-equation reflection `z ↦ 1 - conj z` preserves the simple-pole divisor at `0`
+and `1`. -/
+theorem mapDomain_one_sub_conj_single_zero_add_single_one :
+    (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1).mapDomain (fun z ↦ 1 - conj z) =
+      Finsupp.single 0 1 + Finsupp.single 1 1 := by
+  simp only [Finsupp.mapDomain_add, Finsupp.mapDomain_single, map_zero, map_one, sub_zero,
+    sub_self, add_comm]
+
 /-- The simple-pole divisor at `0` and `1` is invariant under `s ↦ 1 - conj s`. -/
 theorem single_zero_add_single_one_one_sub_conj (s : ℂ) :
     (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) (1 - conj s) =
       (Finsupp.single (0 : ℂ) (1 : ℕ) + Finsupp.single 1 1 : ℂ →₀ ℕ) s := by
-  have h0 : (0 : ℂ) = 1 - conj s ↔ (1 : ℂ) = s := by
-    rw [eq_comm, sub_eq_zero, eq_comm]
-    exact (map_eq_one_iff _ (starRingEnd ℂ).injective).trans eq_comm
-  have h1 : (1 : ℂ) = 1 - conj s ↔ (0 : ℂ) = s := by
-    rw [eq_comm, sub_eq_self]
-    exact (map_eq_zero_iff _ (starRingEnd ℂ).injective).trans eq_comm
-  simp only [Finsupp.add_apply, Finsupp.single_apply, h0, h1]
-  rw [add_comm]
+  have hinj : Function.Injective (fun z : ℂ ↦ 1 - conj z) :=
+    fun z w h ↦ (starRingEnd ℂ).injective (sub_right_inj.mp h)
+  have h := congrArg (fun d : ℂ →₀ ℕ ↦ d (1 - conj s))
+    mapDomain_one_sub_conj_single_zero_add_single_one.symm
+  rwa [Finsupp.mapDomain_apply_of_injective hinj] at h
 
 end TauCeti.LFunctions

@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LFunctions.Data.Growth
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
-import TauCeti.Data.Finsupp.Single
+import TauCeti.Data.Finsupp.Order
 import TauCeti.NumberTheory.LFunctions.Data.PolarDivisor
 
 /-!
