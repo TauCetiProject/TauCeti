@@ -534,7 +534,7 @@ theorem repr_mul_of_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
         (Finsupp.support_single_subset : (Finsupp.single b (1 : R)).support ⊆ {b})))
   apply hc
   simpa only [Finset.coe_mul, Finset.coe_singleton, Set.mul_singleton] using
-    (show c ∈ (↑(((basis R H β).repr f).support * {b}) : Set H) from hs hn)
+    (Finset.mem_coe.mpr (hs hn))
 
 /-- A coefficient outside the left translate of the actual coefficient support vanishes. -/
 theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
@@ -549,7 +549,7 @@ theorem repr_of_mul_apply_eq_zero (f : twistedMonoidAlgebra R H β) (b c : H)
         (Finsupp.support_single_subset : (Finsupp.single b (1 : R)).support ⊆ {b})))
   apply hc
   simpa only [Finset.coe_mul, Finset.coe_singleton, Set.singleton_mul] using
-    (show c ∈ (↑({b} * ((basis R H β).repr f).support) : Set H) from hs hn)
+    (Finset.mem_coe.mpr (hs hn))
 
 /-- The coefficient at a free index after right multiplication by a unit-index basis element. -/
 @[simp]
@@ -759,6 +759,13 @@ noncomputable def domCongr (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b))
 theorem domCongr_of (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) (a : G) :
     domCongr e h (of a) = of (e a) := by
   simp only [domCongr, AlgEquiv.ofAlgHom_apply, lift_of]
+
+/-- Inverse reindexing sends each normalized basis element to its inverse-index basis element. -/
+@[simp]
+theorem domCongr_symm_of (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) (b : H) :
+    (domCongr e h).symm (of b) = of (e.symm b) := by
+  apply (domCongr e h).injective
+  simp only [AlgEquiv.apply_symm_apply, domCongr_of, e.apply_symm_apply]
 
 /-- The underlying linear equivalence is the canonical basis transport. -/
 theorem domCongr_toLinearEquiv (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) :
