@@ -220,8 +220,8 @@ theorem mobius_one (i : Fin k) :
 
 /-- **The affine case.** When `c = 0` and `d = 1`, the Möbius series is its numerator
 `a Xᵢ + b`. -/
-theorem mobius_of_eq_zero_of_eq_one (i : Fin k) {g : Matrix (Fin 2) (Fin 2) R} (hc : g 1 0 = 0)
-    (hd : g 1 1 = 1) : mobius i g = mobiusNum i g := by
+theorem mobius_eq_mobiusNum_of_eq_zero_of_eq_one (i : Fin k) {g : Matrix (Fin 2) (Fin 2) R}
+    (hc : g 1 0 = 0) (hd : g 1 1 = 1) : mobius i g = mobiusNum i g := by
   rw [mobius_def, mobiusDenom_def, hc, hd, zero_smul, zero_add, map_one, Ring.inverse_one,
     mul_one]
 
