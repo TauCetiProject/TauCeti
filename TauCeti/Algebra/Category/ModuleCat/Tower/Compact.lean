@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Monoid.Defs
-public import Mathlib.Topology.Category.TopCat.Limits.Konig
 public import TauCeti.Algebra.Category.ModuleCat.Tower.ProZero
-import Mathlib.NumberTheory.Padics.ProperSpace
+public import TauCeti.Topology.Compactness.InverseSystem
 
 /-!
 # Towers of compact Hausdorff modules have vanishing `lim¹`
@@ -19,7 +18,8 @@ continuous addition, and whose transitions `φₙ : Aₙ₊₁ → Aₙ` are con
 transitions is assumed. For a family `(bₙ)`, the solutions of `xₙ - φₙ(xₙ₊₁) = bₙ` are the points
 of the inverse limit of the spaces `Aₙ` along the continuous maps `y ↦ bₙ + φₙ(y)`, and an
 inverse limit of nonempty compact Hausdorff spaces is nonempty
-(`TopCat.nonempty_limitCone_of_compact_t2_cofiltered_system`). Equivalently: the first `N`
+(`TauCeti.exists_forall_map_succ_eq_of_compact_t2`, the sequential form of Mathlib's
+`TopCat.nonempty_limitCone_of_compact_t2_cofiltered_system`). Equivalently: the first `N`
 equations are solved backwards from `x_N = 0`, and compactness of `∏ₙ Aₙ` lets `N` go to infinity.
 
 This is a statement about the underlying abelian groups: the topology only serves to produce
@@ -77,23 +77,11 @@ surjective. -/
 theorem shift_surjective_of_compactSpace (hF : ∀ n, Continuous (F.transition n)) :
     Function.Surjective F.shift := by
   intro b
-  -- The tower of compact Hausdorff spaces `Aₙ` along the continuous maps `y ↦ bₙ + φₙ(y)`; a
-  -- point of its inverse limit is a preimage of `b` under the shift map.
-  let G : ℕᵒᵖ ⥤ TopCat.{v} := Functor.ofOpSequence (X := fun n ↦ TopCat.of (F.obj (op n)))
-    fun n ↦ TopCat.ofHom ⟨fun y ↦ b n + F.transition n y, continuous_const.add (hF n)⟩
-  -- The terms of `G` are the spaces `Aₙ`, by definition of `Functor.ofOpSequence`.
-  have hobj (n : ℕ) : G.obj (op n) = TopCat.of (F.obj (op n)) := rfl
-  have : ∀ j, Nonempty (G.obj j) := fun ⟨n⟩ ↦ hobj n ▸ ⟨(0 : F.obj (op n))⟩
-  have : ∀ j, CompactSpace (G.obj j) := fun ⟨n⟩ ↦
-    hobj n ▸ inferInstanceAs (CompactSpace (F.obj (op n)))
-  have : ∀ j, T2Space (G.obj j) := fun ⟨n⟩ ↦ hobj n ▸ inferInstanceAs (T2Space (F.obj (op n)))
-  obtain ⟨⟨x, hx⟩⟩ := TopCat.nonempty_limitCone_of_compact_t2_cofiltered_system G
-  -- The point `x` of the inverse limit, read in `∏ₙ Aₙ` through `hobj`.
-  refine ⟨(fun n ↦ x (op n) : F.Product), funext fun n ↦ ?_⟩
-  have h := hx (homOfLE (Nat.le_add_right n 1)).op
-  rw [Functor.ofOpSequence_map_homOfLE_succ] at h
-  -- `h` says `bₙ + φₙ(xₙ₊₁) = xₙ`, after evaluating the continuous map `TopCat.ofHom ⟨_, _⟩`.
-  exact (F.shift_apply _ n).trans (sub_eq_of_eq_add h.symm)
+  -- A compatible family of the spaces `Aₙ` along the continuous maps `y ↦ bₙ + φₙ(y)` solves
+  -- `xₙ = bₙ + φₙ(xₙ₊₁)`, so it is a preimage of `b` under the shift map.
+  obtain ⟨x, hx⟩ := exists_forall_map_succ_eq_of_compact_t2 (S := fun n ↦ F.obj (op n))
+    (fun n y ↦ b n + F.transition n y) fun n ↦ continuous_const.add (hF n)
+  exact ⟨x, funext fun n ↦ (F.shift_apply _ n).trans (sub_eq_of_eq_add (hx n).symm)⟩
 
 /-- **Towers of compact Hausdorff modules have vanishing `lim¹`.** If the terms `Aₙ` of a tower are
 compact Hausdorff with continuous addition and the transitions are continuous, then
@@ -123,11 +111,6 @@ theorem subsingleton_limOne_multiplicationTower_of_compactSpace [TopologicalSpac
   rw [multiplicationTower_transition]
   -- `toSpanSingleton R R a` is `x ↦ x • a = x * a` on the carrier `R` of the terms.
   exact (continuous_id.mul continuous_const : Continuous fun x : R ↦ x * a)
-
-/-- The tower `ℤ_[p] ← ℤ_[p] ← ⋯` with transitions multiplication by `p`, which are not surjective,
-has `lim¹ = 0` since `ℤ_[p]` is compact. -/
-example (p : ℕ) [Fact p.Prime] : Subsingleton (multiplicationTower (p : ℤ_[p])).limOne :=
-  subsingleton_limOne_multiplicationTower_of_compactSpace _
 
 end ModuleTower
 
