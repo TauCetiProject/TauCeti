@@ -5,39 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.FiniteType
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.ClosedImmersion
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction
 
 /-!
-# Subgroups mapping isomorphically onto the quotient by the unipotent radical
+# Subgroups mapping by a closed immersion to the quotient by the unipotent radical
 
-Let `G` be an affine group of finite type over a field `k`, let `N` be a normal closed subgroup,
-cut out by a normal Hopf ideal `I`, and let `T` be a closed subgroup of `G`, cut out by a Hopf
-ideal `J`. This file proves that if `G` and `T` are geometrically reduced and the composite
-`T → G → G ⧸ N` has trivial scheme-theoretic kernel, then it is a closed immersion. If moreover
-`G` is smooth and geometrically connected, `T` is smooth and connected, and the Lie algebra of
-`T` has dimension at least that of `G ⧸ N`, then the composite is an isomorphism.
+Let `G` be a geometrically reduced affine group of finite type over a field `k`, and let `T` be a
+geometrically reduced closed subgroup of `G`, cut out by a Hopf ideal `J`. This file records that
+if the composite `T → G → G ⧸ R_u(G)` has trivial scheme-theoretic kernel, then it is a closed
+immersion: the case `N = R_u(G)` of `coinvariantsι_comp_mkQuotient_surjective`.
 
 The main application is to a torus `T` of a smooth connected solvable group `G` over an
 algebraically closed field, where `G ⧸ R_u(G)` is a torus (`torus_coinvariants_unipotentRadical`).
-This is the closed-immersion step of the decomposition `G = R_u(G) ⋊ T` for a maximal torus `T`
-(Milne, Theorem 16.33(d)). It leaves the dimension count: that a maximal torus has the same
-dimension as `G ⧸ R_u(G)`.
-
-The main case is `N = R_u(G)`. Coordinate rings reverse arrows: `O(G ⧸ N)` is the Hopf
-subalgebra of right coinvariants, and the composite is the coordinate map
-`coinvariantsι ≫ mkQuotient G J`.
+Combined with a dimension equality between `T` and `G ⧸ R_u(G)`, the isomorphism criterion
+`isIso_coinvariantsι_comp_mkQuotient` then gives `T ≅ G ⧸ R_u(G)`, the input to the decomposition
+`G = R_u(G) ⋊ T` for a maximal torus `T` (Milne, Theorem 16.33(d)).
 
 ## Main declarations
 
-* `TauCeti.FiniteTypeCommHopfAlgCat.surjective_coinvariantsι_comp_mkQuotient`: a geometrically
-  reduced subgroup meeting `N` trivially maps to `G ⧸ N` by a closed immersion; the case
-  `N = R_u(G)` is `surjective_coinvariantsι_unipotentRadical_comp_mkQuotient`.
-* `TauCeti.FiniteTypeCommHopfAlgCat.isIso_coinvariantsι_comp_mkQuotient`: if moreover `G` and the
-  subgroup are smooth and connected and the Lie dimension of the subgroup is at least that of
-  `G ⧸ N`, it maps isomorphically onto `G ⧸ N`.
+* `TauCeti.FiniteTypeCommHopfAlgCat.coinvariantsι_unipotentRadical_comp_mkQuotient_surjective`:
+  a geometrically reduced subgroup meeting the unipotent radical trivially maps to `G ⧸ R_u(G)`
+  by a closed immersion.
 
 ## References
 
@@ -55,74 +44,10 @@ universe u
 
 variable {k : Type u} [Field k] (G : FiniteTypeCommHopfAlgCat.{u, u} k)
 
-/-- **A geometrically reduced subgroup meeting a normal subgroup `N` trivially maps to `G ⧸ N`
-by a closed immersion**, for a geometrically reduced `G` over any field. If the Hopf ideal `J`
-cuts out a geometrically reduced subgroup `T`, the normal Hopf ideal `I` cuts out `N`, and the
-composite `T → G → G ⧸ N` has trivial kernel,
-then its coordinate map `coinvariantsι ≫ mkQuotient G J` is surjective. -/
-theorem surjective_coinvariantsι_comp_mkQuotient
-    [Algebra.IsGeometricallyReduced k G] {I : HopfIdeal k G} (hI : I.IsNormal)
-    {J : HopfIdeal k G}
-    [Algebra.IsGeometricallyReduced k (quotient G J)]
-    (hker : CommHopfAlgCat.kernelHopfIdeal
-        (CommHopfAlgCat.coinvariantsι hI ≫
-          CommHopfAlgCat.mkQuotient G.obj J) =
-      HopfIdeal.augmentation k (CommHopfAlgCat.quotient G.obj J)) :
-    Function.Surjective
-      (CommHopfAlgCat.coinvariantsι hI ≫
-        CommHopfAlgCat.mkQuotient G.obj J).hom := by
-  let hR := hI
-  let _ := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
-  have : Algebra.FiniteType k (CommHopfAlgCat.coinvariants hR) := hR.finiteType_coinvariants
-  exact CommHopfAlgCat.surjective_of_kernelHopfIdeal_eq_augmentation _ hker
-
-/-- **A smooth connected subgroup meeting a normal subgroup `N` trivially, of Lie dimension at
-least that of `G ⧸ N`, maps isomorphically onto `G ⧸ N`**, for a smooth geometrically connected
-`G` over any field. If the Hopf ideal `J` cuts out a smooth connected subgroup `T`, the normal
-Hopf ideal `I` cuts out `N`, the composite `T → G → G ⧸ N` has trivial kernel, and the Lie
-algebra of `T` has dimension at least that of `G ⧸ N`, then the composite is an isomorphism. -/
-theorem isIso_coinvariantsι_comp_mkQuotient [Algebra.Smooth k G]
-    (hG : geometricallyConnectedCommHopfAlgProperty k G.obj) {I : HopfIdeal k G}
-    (hI : I.IsNormal) {J : HopfIdeal k G}
-    (hJ_smooth : smoothCommHopfAlgProperty k (CommHopfAlgCat.quotient G.obj J))
-    (hJ_connected : ConnectedSpace (PrimeSpectrum (CommHopfAlgCat.quotient G.obj J)))
-    (hker : CommHopfAlgCat.kernelHopfIdeal
-        (CommHopfAlgCat.coinvariantsι hI ≫
-          CommHopfAlgCat.mkQuotient G.obj J) =
-      HopfIdeal.augmentation k (CommHopfAlgCat.quotient G.obj J))
-    (hfinrank :
-      letI := hI.isHopfSubalgebra_coinvariants.hopfAlgebra
-      Module.finrank k
-          (Derivation k (CommHopfAlgCat.coinvariants hI)
-            (Bialgebra.CounitAlgebra k
-              (CommHopfAlgCat.coinvariants hI) k)) ≤
-        Module.finrank k
-          (Derivation k (CommHopfAlgCat.quotient G.obj J)
-            (Bialgebra.CounitAlgebra k (CommHopfAlgCat.quotient G.obj J) k))) :
-    IsIso (CommHopfAlgCat.coinvariantsι hI ≫
-      CommHopfAlgCat.mkQuotient G.obj J) := by
-  have hG_red := geometricallyReducedCommHopfAlgProperty_of_smooth k G.obj
-    ((smoothCommHopfAlgProperty_iff _).mpr inferInstance)
-  have : Algebra.IsGeometricallyReduced k G := hG_red.isGeometricallyReduced
-  let hR := hI
-  let _ := hR.isHopfSubalgebra_coinvariants.hopfAlgebra
-  have : Algebra.FiniteType k (CommHopfAlgCat.coinvariants hR) := hR.finiteType_coinvariants
-  -- `O(G ⧸ N)` is a Hopf subalgebra of `O(G)`, so it inherits geometric reducedness
-  -- (hence smoothness) and geometric connectedness from `G`.
-  have hinj : Function.Injective (CommHopfAlgCat.coinvariantsι hR).hom.toAlgHom :=
-    CommHopfAlgCat.hopfSubalgebraι_injective hR.isHopfSubalgebra_coinvariants
-  have hQ_smooth : smoothCommHopfAlgProperty k (CommHopfAlgCat.coinvariants hR) :=
-    smoothCommHopfAlgProperty_of_geometricallyReduced k _
-      (geometricallyReducedCommHopfAlgProperty.of_injective _ hinj hG_red)
-  exact CommHopfAlgCat.isIso_of_kernelHopfIdeal_eq_augmentation_of_finrank_le _
-    hQ_smooth
-    (geometricallyConnectedCommHopfAlgProperty.of_injective _ hinj hG).connectedSpace
-    hJ_smooth hJ_connected hker hfinrank
-
-/-- The case `N = R_u(G)` of `surjective_coinvariantsι_comp_mkQuotient`: a geometrically
+/-- The case `N = R_u(G)` of `coinvariantsι_comp_mkQuotient_surjective`: a geometrically
 reduced subgroup meeting the unipotent radical trivially maps to `G ⧸ R_u(G)` by a closed
 immersion. -/
-theorem surjective_coinvariantsι_unipotentRadical_comp_mkQuotient
+theorem coinvariantsι_unipotentRadical_comp_mkQuotient_surjective
     [Algebra.IsGeometricallyReduced k G] {J : HopfIdeal k G}
     [Algebra.IsGeometricallyReduced k (quotient G J)]
     (hker : CommHopfAlgCat.kernelHopfIdeal
@@ -132,6 +57,6 @@ theorem surjective_coinvariantsι_unipotentRadical_comp_mkQuotient
     Function.Surjective
       (CommHopfAlgCat.coinvariantsι (isNormal_unipotentRadicalDefiningIdeal G) ≫
         CommHopfAlgCat.mkQuotient G.obj J).hom :=
-  surjective_coinvariantsι_comp_mkQuotient G _ hker
+  coinvariantsι_comp_mkQuotient_surjective G _ hker
 
 end TauCeti.FiniteTypeCommHopfAlgCat

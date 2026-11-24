@@ -63,7 +63,7 @@ variable [Algebra.FiniteType k H] [Algebra.FiniteType k K] [Algebra.IsGeometrica
 /-- For a homomorphism from a geometrically reduced affine group with trivial kernel, the
 coordinate map from the image to the source is bijective: the homomorphism maps its source
 isomorphically onto its scheme-theoretic image. -/
-theorem bijective_imageι_of_kernelHopfIdeal_eq_augmentation (f : H ⟶ K)
+theorem imageι_bijective_of_kernelHopfIdeal_eq_augmentation (f : H ⟶ K)
     (hker : kernelHopfIdeal f = HopfIdeal.augmentation k K) :
     Function.Bijective (imageι f).hom := by
   have : Epi (CommRingCat.ofHom (imageι f).hom.toAlgHom.toRingHom) :=
@@ -84,7 +84,7 @@ theorem surjective_of_kernelHopfIdeal_eq_augmentation (f : H ⟶ K)
     ext x
     exact (imageι_mkImage_apply f x).symm
   rw [hf]
-  exact (bijective_imageι_of_kernelHopfIdeal_eq_augmentation f hker).2.comp (mkImage_surjective f)
+  exact (imageι_bijective_of_kernelHopfIdeal_eq_augmentation f hker).2.comp (mkImage_surjective f)
 
 /-- For a homomorphism from a geometrically reduced affine group, being a closed immersion is
 equivalent to having trivial scheme-theoretic kernel. -/
