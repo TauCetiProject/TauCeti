@@ -85,7 +85,7 @@ omit [IsScalarTower R A M] in
 differential, with target in `N'` modulo `N` is a relative boundary there, then the same holds
 for `c'`. -/
 private theorem exists_mapRange_eq_of_equiv {Q Q' : Type uQ} (e : Q' ≃ Q) {c : Q → M}
-    {c' : Q' → M} (hc : ∀ q, c (e q) = c' q) {N N' : Submodule A M}
+    {c' : Q' → M} (hc : ∀ q, c q = c' (e.symm q)) {N N' : Submodule A M}
     (H : ∀ (y : Q →₀ A) (w : M), mapRange.linearMap d y = 0 → w ∈ N' →
       linearCombination A c y - dM w ∈ N → ∃ (y' : Q →₀ A) (w' : M), w' ∈ N' ∧
         mapRange.linearMap d y' = y ∧ linearCombination A c y' + dM w' - w ∈ N)
@@ -93,7 +93,7 @@ private theorem exists_mapRange_eq_of_equiv {Q Q' : Type uQ} (e : Q' ≃ Q) {c :
     (hyw : linearCombination A c' y - dM w ∈ N) :
     ∃ (y' : Q' →₀ A) (w' : M), w' ∈ N' ∧ mapRange.linearMap d y' = y ∧
       linearCombination A c' y' + dM w' - w ∈ N := by
-  have hce : c ∘ e = c' := funext hc
+  have hce : c ∘ e = c' := funext fun q ↦ by rw [Function.comp_apply, hc, e.symm_apply_apply]
   obtain ⟨y', w', hw', hy', hyw'⟩ := H (equivMapDomain e y) w
     (by ext q; simpa using DFunLike.congr_fun hy (e.symm q)) hw
     (by rwa [linearCombination_equivMapDomain, hce])
@@ -144,7 +144,7 @@ theorem exists_semifreeModel_of_filtration (hM : IsDGLeftModule h ℳ dM) {F : �
               linearCombination A g f' + dM w' = w := by
   -- The cells of stage `k` are those of `Q k`.
   have hQ' (k : ℕ) := exists_mapRange_eq_of_equiv (Equiv.sigmaSubtype k)
-    (c' := fun x ↦ c₀ x.val.1 x.val.2) (fun ⟨⟨_, _⟩, rfl⟩ ↦ rfl) (hQ k)
+    (c' := fun x ↦ c₀ x.val.1 x.val.2) (fun _ ↦ rfl) (hQ k)
   obtain ⟨m, c, -, hlt, hcdeg, hcF, hcc₀, hc, hstage, -⟩ :=
     exists_rowFiniteTwistingCocycle_sum_of_forall_exists (ind := fun x ↦ indQ x.1 x.2)
       (indP := Empty.elim) hM 0 Sigma.fst hF hFhom (g := Empty.elim) nofun nofun nofun
