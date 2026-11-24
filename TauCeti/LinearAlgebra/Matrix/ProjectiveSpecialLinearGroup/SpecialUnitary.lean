@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
@@ -154,9 +155,7 @@ def scalarCenter {c : 𝕜} (hc : c ^ Fintype.card n = 1) :
           rw [← pow_eq_one_iff_of_nonneg (norm_nonneg c) (Fintype.card_ne_zero (α := n)),
             ← norm_pow, hc, norm_one]
         rw [scalar_apply, diagonal_mem_unitary, Pi.mem_unitary_iff]
-        exact fun _ => Unitary.mem_iff_star_mul_self.mpr <| by
-          rw [RCLike.star_def, RCLike.conj_mul, hnorm]
-          simp,
+        exact fun _ => RCLike.mem_unitary_iff_norm_eq_one.mpr hnorm,
       by simpa [scalar_apply, det_diagonal] using hc⟩⟩,
     Subgroup.mem_center_iff.mpr fun B => Subtype.ext <| by
       simpa [Submonoid.coe_mul, scalar_apply] using

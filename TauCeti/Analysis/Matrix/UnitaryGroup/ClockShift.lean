@@ -269,10 +269,7 @@ private theorem eigenvectorOrbit_return {r : ℕ} [NeZero r] {ζ : ℂ} (hζ : I
     · subst hk; simp [β]
     · have hne : ζ ^ k.val ≠ ζ ^ r := by
         rw [hζ.pow_eq_one]
-        intro h1
-        have hdvd := (hζ.pow_eq_one_iff_dvd k.val).mp h1
-        exact absurd (Nat.le_of_dvd (Nat.pos_of_ne_zero (Fin.val_ne_of_ne hk)) hdvd)
-          (not_le_of_gt k.isLt)
+        exact hζ.pow_ne_one_of_pos_of_lt (Fin.val_ne_of_ne hk) k.isLt
       simp [hk, hv_orth hne]
   have hv_r : vNat r = β • vNat 0 := by
     have h1 := congrArg (Vmat *ᵥ ·) hVr
