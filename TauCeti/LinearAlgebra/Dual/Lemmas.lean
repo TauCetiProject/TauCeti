@@ -87,6 +87,8 @@ space contains such a family, which gives coordinates on the space.
 * `Module.Dual.span_range_proj` and `LinearIndependent.exists_linearIndependent_sumElim_proj`: the
   coordinate forms span the dual of `Rⁱ`, so over a field a linearly independent family of forms
   extends by coordinate forms to a basis of the dual.
+* `Module.Dual.exists_ne_zero_apply_nonpos`: in a module of rank greater than one over a linearly
+  ordered division ring, any two linear functionals are both nonpositive at some nonzero vector.
 * `Module.Dual.exists_bijective_pi_of_iInf_ker_eq_bot`: on a finite-dimensional space, a family
   of functionals with no common zero but `0` contains `finrank K V` members that form coordinates.
 * `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi` and `Matrix.det_of_apply_eq_det_mul_det_pi`:
@@ -572,6 +574,23 @@ theorem exists_bijective_pi_of_iInf_ker_eq_bot [FiniteDimensional K V] (L : ι �
       (hli.comp _ e.symm.injective).eq_zero_of_forall_apply_eq_zero (by simp) fun i ↦
         congrFun hx i
   exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by simp)).mp hinj⟩
+
+/-- In a module of rank greater than one over a linearly ordered division ring, any two linear
+functionals admit a nonzero vector on which both are nonpositive. -/
+theorem exists_ne_zero_apply_nonpos {K V : Type*} [DivisionRing K] [LinearOrder K]
+    [IsOrderedAddMonoid K] [AddCommGroup V] [Module K V]
+    (h : 1 < Module.rank K V) (f₁ f₂ : Dual K V) :
+    ∃ v : V, v ≠ 0 ∧ f₁ v ≤ 0 ∧ f₂ v ≤ 0 := by
+  have hnot_inj : ¬Function.Injective f₁ := fun hinj => by
+    have hrank := f₁.lift_rank_le_of_injective hinj
+    rw [Module.rank_self, Cardinal.lift_one, Cardinal.lift_le_one_iff] at hrank
+    exact h.not_ge hrank
+  obtain ⟨v₀, hv₀_mem, hv₀_ne⟩ := (Submodule.ne_bot_iff _).mp
+    (mt LinearMap.ker_eq_bot.mp hnot_inj)
+  have hv₀_f₁ : f₁ v₀ = 0 := LinearMap.mem_ker.mp hv₀_mem
+  rcases le_total (f₂ v₀) 0 with h2 | h2
+  · exact ⟨v₀, hv₀_ne, hv₀_f₁.le, h2⟩
+  · exact ⟨-v₀, neg_ne_zero.mpr hv₀_ne, by simp [hv₀_f₁], by simpa using h2⟩
 
 end Module.Dual
 
