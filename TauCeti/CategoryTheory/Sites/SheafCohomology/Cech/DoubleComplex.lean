@@ -304,4 +304,13 @@ def presheafCechColumnHomologyIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : 
     (cechColumn U I p).homology k ≅ ((cechComplexFunctor U).obj (I.homology k)).X p :=
   (I.sc k).mapHomologyIso (cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p)
 
+/-- `presheafCechColumnHomologyIso` is the comparison isomorphism
+`ShortComplex.mapHomologyIso` for the functor taking a presheaf to its Čech cochains of degree
+`p`, applied to the short complex of `I` at `k`. -/
+lemma presheafCechColumnHomologyIso_eq (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ)
+    [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A] (k : ℕ) :
+    presheafCechColumnHomologyIso U I p k = (I.sc k).mapHomologyIso
+      (cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p) :=
+  (rfl)
+
 end TauCeti.CategoryTheory
