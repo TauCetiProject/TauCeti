@@ -51,7 +51,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 
 /-- A proper smooth action of a discrete countable group gives a proper étale presentation
 with the source-pulled arrow atlas. -/
-theorem isProperEtaleGroupoid [Countable G] [ProperSMul G X] :
+instance isProperEtaleGroupoid [Countable G] [ProperSMul G X] :
     IsProperEtaleGroupoid I I (ActionCategory G X) := by
   exact .of_isTopologicalGroupoid (isLocalDiffeomorph_source I ∞ G X)
     (isLocalDiffeomorph_target I ∞ G X) ((isProperMap_source_target_iff G X).2 inferInstance)
