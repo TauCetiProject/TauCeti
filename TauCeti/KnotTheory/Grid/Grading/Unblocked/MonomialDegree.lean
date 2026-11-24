@@ -90,6 +90,7 @@ noncomputable def monomialDegreePiece (a : ι) : Submodule R (GridChainMinus R n
 
 /-- A chain is homogeneous of degree `a` exactly when every monomial occurring in it has degree
 `a`. -/
+@[simp]
 theorem mem_monomialDegreePiece {a : ι} {c : GridChainMinus R n} :
     c ∈ monomialDegreePiece R deg a ↔ ∀ x : GridState n, ∀ e ∈ (c x).support, deg x e = a := by
   simp only [monomialDegreePiece, mem_monomialDegreeSupported, Set.mem_singleton_iff]
