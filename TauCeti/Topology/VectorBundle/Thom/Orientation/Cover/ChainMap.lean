@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Relative
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Basic
-public import TauCeti.Topology.VectorBundle.Thom.TwistedRankDegreeHomology
+public import TauCeti.Topology.VectorBundle.Thom.SignClass
 
 /-!
 # Chains of the Thom pair of the orientation cover as orientation-twisted chains
@@ -54,6 +54,19 @@ what an equivariant cap product chain map on `(E', E'₀)` needs, in the descent
 isomorphism of `E'` to the Thom isomorphism of `E` with coefficients in its orientation system;
 anti-invariance of a cohomology class alone does not provide a cocycle with this property.
 
+The lift of `U` is a Thom class of `E'`, over a compact base and for every commutative ring `R`
+(`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so that a cocycle representing `U`
+lifts to a cocycle of `(E', E'₀)` representing a Thom class of `E'` which `δ^*` negates exactly. On
+the fibre pair over a point `p` of the cover, `Λ` is in homology the inclusion of the fibre pair of
+`E` over `p.proj`, with the coefficients trivialized by the orientation `p.orientation`
+(`singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainMap`). This inclusion
+carries the generator of `Hᵣ(E_b, E_b ∖ {0}; R)` attached to `p.orientation`
+(`TauCeti.orientedFiberGenerator`) to the fibre class over `b = p.proj` on which `U` takes the value
+`1` (`TauCeti.thomPairSignFiberClass_eq_thomPairSignFiberMap`), so the lift of `U` takes the value
+`1` on that generator
+(`singularKronecker_singularCohomologyMap_thomPairSignCohomologyMap_twistedThomClass`), and by the
+universal coefficient theorem for the fibre pair it generates `Hʳ(E_b, E_b ∖ {0}; R)`.
+
 The lift of the deck involution is stated for an index type `ι : Type` of the orientations, and
 `TauCeti.thomPairSignLocalSystem` needs the base, the fibres and the ring in the universe of `ι`,
 so they live in `Type` here.
@@ -69,11 +82,16 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   negates it.
 * `thomPairSignCochainMap` and `thomPairSignCohomologyMap`: the lift of twisted cochains and of
   twisted cohomology to the Thom pair of `E'`, negated by the lifted deck involution.
+* `singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainMap`: on the fibre pairs,
+  `Λ` is the inclusion of the fibre pair of `E` with the coefficients trivialized by an orientation.
+* `isThomClass_thomPairSignCohomologyMap_twistedThomClass`: the lift of the Thom class with
+  coefficients in the orientation system is a Thom class of `E'`.
 
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
-  Princeton (1974), §12 (the orientation double cover and twisted coefficients).
+  Princeton (1974), §10 (Thom classes) and §12 (the orientation double cover and twisted
+  coefficients).
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press (2002), Section 3.H (homology with
   local coefficients and the local system of a covering space).
 -/
@@ -311,6 +329,106 @@ theorem singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMap :
   rw [thomPairSignChainMap, ← Category.assoc,
     singularChainComplexMap_deckThomPairMap_comp_thomPairSignChainMapAux, Preadditive.neg_comp]
 
+omit [Fintype ι] in
+/-- The fibre pair of `E'` over a point `q` of the orientation cover is carried by the covering map
+onto the fibre pair of `E` over `q.proj`. -/
+private theorem fiberThomPairMap_comp_coverThomPairMap (q : VectorBundleOrientationCover F E ι) :
+    fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q ≫
+      coverThomPairMap F E ι = fiberThomPairMap F E q.proj :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ by
+    rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]
+    refine (coverThomPairMap_fst_apply _).trans ?_
+    -- `erw`: the fibre inclusion of `E'` is stated with the zero of its fibres read through their
+    -- module structure, and the fibre pairs are reached through `TopCat.of`.
+    erw [fiberThomPairMap_fst_apply, fiberThomPairMap_fst_apply]
+    -- `Pullback.lift` sends the vector `x` over `q` to the vector `x` over `q.proj`.
+    rfl)
+
+/-- On the fibre pair over a point `q` of the orientation cover, the trivialization of the
+pulled-back orientation system used by `TauCeti.VectorBundleOrientationCover.thomPairSignChainMap`,
+read through the covering map, is the trivialization of the fibre pair of `E` over `q.proj` by the
+orientation `q.orientation`. -/
+private theorem fiberThomPairSignLocalSystemIso_inv_eq (q : VectorBundleOrientationCover F E ι) :
+    (LocalCoefficientSystem.pullbackConstantIso (TopPair.Hom.fst (fiberThomPairMap F
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q)).hom
+        (ModuleCat.of R R)).inv ≫
+      (LocalCoefficientSystem.pullback (TopPair.Hom.fst (fiberThomPairMap F
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q)).hom).map
+        (pullbackThomPairSignLocalSystemIso F E hι R).inv ≫
+      (TopPair.fstPullbackCompIso (fiberThomPairMap F
+        ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q) (coverThomPairMap F E ι)
+        (signSystem F E hι R)).inv ≫
+      eqToHom (congrArg (fun g ↦ (LocalCoefficientSystem.pullback (TopPair.Hom.fst g).hom).obj
+        (signSystem F E hι R)) (fiberThomPairMap_comp_coverThomPairMap q)) =
+    (fiberThomPairSignLocalSystemIso F E R hι q.proj q.orientation).inv := by
+  ext v : 2
+  refine ModuleCat.hom_ext (LinearMap.ext fun r ↦ ?_)
+  -- Both sides evaluate at the orientation `q` to `r`.
+  apply (liftFiberEquiv hι q
+    (congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F E q.proj v.as)).symm).injective
+  refine Eq.trans ?_
+    (liftFiberEquiv_fiberThomPairSignLocalSystemIso_inv_app_apply (R := R) hι q.proj q.orientation
+      v r).symm
+  simp only [NatTrans.comp_app, LocalCoefficientSystem.pullbackConstantIso_inv_app,
+    LocalCoefficientSystem.pullback_map_app, eqToHom_app]
+  -- `erw`: the comparison of iterated pull-backs is stated for the pairs with their own instances.
+  erw [TopPair.fstPullbackCompIso_inv_app, ModuleCat.id_apply, Category.id_comp]
+  -- The fibre inclusion of `E'` over `q` lands over `q`, where the trivialization evaluates.
+  have hw : (TopPair.Hom.fst (fiberThomPairMap F
+      ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q) v.as).proj = q := by
+    -- `erw`: as in `fiberThomPairMap_comp_coverThomPairMap`.
+    erw [fiberThomPairMap_fst_apply]
+  refine (liftFiberEquiv_eqToHom_apply (R := R) hι
+    (congrArg (fun g ↦ π F E (TopPair.Hom.fst g v.as)) (fiberThomPairMap_comp_coverThomPairMap q))
+    _ hw (proj_proj_eq_proj_coverThomPairMap_fst _) _ _).trans ?_
+  exact (liftFiberEquiv_apply hι _ _ _).trans
+    (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply hι R _ r)
+
+/-- On the fibre pair over a point `q` of the orientation cover, the chain map to
+orientation-twisted chains induces in homology the inclusion of the fibre pair of `E` over the base
+point of `q`, with the coefficients trivialized by the orientation `q.orientation`
+(`TauCeti.thomPairSignFiberMap`). -/
+theorem singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainMap
+    (q : VectorBundleOrientationCover F E ι) (n : ℕ) :
+    TopPair.singularHomologyMap
+        (fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q)
+        (ModuleCat.of R R) n ≫
+      HomologicalComplex.homologyMap (thomPairSignChainMap F E hι R) n =
+    thomPairSignFiberMap F E R hι q.proj q.orientation n := by
+  set fib := fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q
+  -- Move the fibre inclusion past the comparison with chains twisted by the constant system.
+  have hA : TopPair.singularHomologyMap fib (ModuleCat.of R R) n ≫
+      ((thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+        ).twistedHomologyConstantIso (ModuleCat.of R R) n).inv =
+      (TopPair.twistedHomologyConstantIso _ (ModuleCat.of R R) n).inv ≫
+        TopPair.twistedHomologyCoefficientMap _
+          (LocalCoefficientSystem.pullbackConstantIso (TopPair.Hom.fst fib).hom
+            (ModuleCat.of R R)).inv n ≫
+        TopPair.twistedHomologyMap fib _ n := by
+    rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
+      TopPair.twistedHomologyConstantIso_hom_pair_naturality,
+      ← TopPair.twistedHomologyCoefficientMap_comp_assoc, Iso.inv_hom_id,
+      TopPair.twistedHomologyCoefficientMap_id, Category.id_comp, Iso.inv_hom_id_assoc]
+  rw [thomPairSignChainMap_def, HomologicalComplex.homologyMap_comp,
+    HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp,
+    ← TopPair.twistedHomologyConstantIso_inv, reassoc_of% hA]
+  -- Compose the fibre inclusion with the covering map: the composite is the fibre inclusion of `E`
+  -- over `q.proj`.
+  rw [TopPair.twistedHomologyMap_naturality_assoc,
+    TopPair.twistedHomologyMap_comp_of_comp_eq_assoc fib (coverThomPairMap F E ι)
+      (signSystem F E hι R) (fiberThomPairMap_comp_coverThomPairMap q)]
+  -- Move the identification of `π^*o(E)` with its written-out form past the fibre inclusion.
+  -- `erw`: the fibre pair of `E'` over `q` is the fibre pair of `E` over `q.proj` only up to
+  -- unfolding the pull-back bundle.
+  erw [TopPair.twistedHomologyMap_comp_twistedHomologyCoefficientMap_eqToHom
+      (fiberThomPairMap F E q.proj) _ (thomPairSignLocalSystem_def hι).symm,
+    ← TopPair.twistedHomologyCoefficientMap_comp_assoc,
+    ← TopPair.twistedHomologyCoefficientMap_comp_assoc,
+    ← TopPair.twistedHomologyCoefficientMap_comp_assoc]
+  rw [thomPairSignFiberMap_def, ← fiberThomPairSignLocalSystemIso_inv_eq]
+  -- Both sides end with the same identification of `π^*o(E)` with its written-out form.
+  congr 3
+
 variable (k : Type*) [Ring k] [Linear k (ModuleCat.{0} R)] (M : ModuleCat.{0} R)
 
 variable (F E) in
@@ -382,5 +500,75 @@ theorem thomPairSignCohomologyMap_comp_singularCohomologyMap_deckThomPairMap (n 
     ← HomologicalComplex.homologyMap_comp,
     thomPairSignCochainMap_comp_singularCochainComplexMap_deckThomPairMap,
     HomologicalComplex.homologyMap_neg]
+
+end TauCeti.VectorBundleOrientationCover
+
+namespace TauCeti.VectorBundleOrientationCover
+
+/-! ### The lift of the Thom class with coefficients in the orientation system -/
+
+variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  [VectorBundle ℝ F E] {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) {R : Type}
+  [CommRing R] [CompactSpace B] (ω : Orientation ℝ F ι)
+
+/-- **The lifted Thom class on a fibre.** The lift to the Thom pair `(E', E'₀)` of the orientation
+cover of the Thom class `U` with coefficients in the orientation system, restricted to the fibre
+pair over a point `q` of the cover, takes the value `1` on the generator of `Hᵣ(E_b, E_b ∖ {0}; R)`
+attached to the orientation `q.orientation` of the fibre `E_b`, `b = q.proj`. -/
+theorem singularKronecker_singularCohomologyMap_thomPairSignCohomologyMap_twistedThomClass
+    (q : VectorBundleOrientationCover F E ι) :
+    (TopPair.singularKronecker _ R (finrank ℝ F)
+      (TopPair.singularCohomologyMap
+        (fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q)
+        (finrank ℝ F) (thomPairSignCohomologyMap F E hι R R (ModuleCat.of R R) (finrank ℝ F)
+          (twistedThomClass F E R hι ω)))).hom
+      (orientedFiberGenerator (E := E) R ω q.orientation) = 1 := by
+  rw [TopPair.singularKronecker_naturality, thomPairSignCohomologyMap_def,
+    TopPair.singularKronecker_def, thomPairSignCochainMap_def, ChainComplex.kronecker_naturality,
+    reassoc_of% singularHomologyMap_fiberThomPairMap_comp_homologyMap_thomPairSignChainMap,
+    ← TopPair.twistedKronecker_def (thomPair F E) (thomPairSignLocalSystem F E R hι)]
+  -- The fibre map carries the generator of `q.orientation` to the fibre class over `q.proj`, on
+  -- which the Thom class takes the value `1`.
+  exact (ModuleCat.comp_apply _ _ _).trans ((congrArg _
+    (thomPairSignFiberClass_eq_thomPairSignFiberMap (R := R) hι ω q.proj q.orientation).symm).trans
+    (twistedKronecker_twistedThomClass_thomPairSignFiberClass (R := R) hι ω q.proj))
+
+/-- **The lift of the Thom class with coefficients in the orientation system is a Thom class.**
+Over a compact base, the lift to the Thom pair `(E', E'₀)` of the pull-back `E'` of `E` to its
+orientation double cover of the Thom class `U ∈ Hʳ(E, E₀; π^*o(E), R)`
+(`TauCeti.twistedThomClass`) restricts on the fibre over every point `q` of the cover to a
+generator of `Hʳ(E_b, E_b ∖ {0}; R)`, `b = q.proj`: it takes the value `1` on the generator of
+`Hᵣ(E_b, E_b ∖ {0}; R)` attached to the orientation `q.orientation`. -/
+theorem isThomClass_thomPairSignCohomologyMap_twistedThomClass :
+    IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι R R (ModuleCat.of R R) (finrank ℝ F)
+        (twistedThomClass F E R hι ω)) := by
+  refine isThomClass_iff.2 ⟨inferInstance, fun q ↦ ?_⟩
+  -- A linear trivialization at `q.proj` is a chart of the fibre at `0`, so the universal
+  -- coefficient theorem identifies the cohomology of the fibre pair with the dual of its homology.
+  have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) q.proj
+  let t := (trivializationAt F E q.proj).continuousLinearEquivAt ℝ q.proj hb
+  have : T1Space (E q.proj) := t.toHomeomorph.isEmbedding.t1Space
+  have hK : Function.Injective (TopPair.singularKronecker (R := ModuleCat.of R R)
+      (M := ModuleCat.of R R) (TopPair.ofSubset (X := TopCat.of (E q.proj)) ({0}ᶜ : Set (E q.proj)))
+      R (finrank ℝ F)) := fun x y h ↦
+    (singularCohomologyComplSingletonKroneckerEquiv (ModuleCat.of R R) (ModuleCat.of R R)
+      t.toHomeomorph.toOpenPartialHomeomorph (x := (0 : E q.proj)) (by simp)
+      (finrank ℝ F)).injective
+      ((singularCohomologyComplSingletonKroneckerEquiv_apply _ _ _ _ _ x).trans
+        (h.trans (singularCohomologyComplSingletonKroneckerEquiv_apply _ _ _ _ _ y).symm))
+  have h1 := singularKronecker_singularCohomologyMap_thomPairSignCohomologyMap_twistedThomClass
+    (R := R) hι ω q
+  -- Every class `d` is the multiple of the lifted class by the value of `d` on the generator.
+  refine Submodule.eq_top_iff'.2 fun d ↦ Submodule.mem_span_singleton.2
+    ⟨(TopPair.singularKronecker _ R (finrank ℝ F) d).hom
+      (orientedFiberGenerator (E := E) R ω q.orientation), hK ?_⟩
+  refine ((TopPair.singularKronecker _ R (finrank ℝ F)).map_smul _ _).trans
+    (orientedFiberGenerator_hom_ext ω q.orientation ?_)
+  -- The scalar multiple of a morphism of modules is evaluated pointwise.
+  exact (congrArg (fun r : R ↦ (TopPair.singularKronecker _ R (finrank ℝ F) d).hom
+    (orientedFiberGenerator (E := E) R ω q.orientation) • r) h1).trans (mul_one _)
 
 end TauCeti.VectorBundleOrientationCover
