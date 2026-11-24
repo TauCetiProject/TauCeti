@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Matrix.Diagonal
 public import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.MatrixRepresentation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
+import TauCeti.Combinatorics.SimpleGraph.Bipartite
+import TauCeti.Combinatorics.SimpleGraph.Dart
 
 /-!
 # Higher Hochschild classes of zigzag algebras from matrix representations
@@ -101,13 +103,9 @@ private theorem sum_dartMatrix_mul_dartMatrix_symm [DecidableRel G.Adj]
     simp [dartMatrix, ← mul_kronecker_mul, SimpleGraph.Dart.symm]
   -- The darts with head `v` are the darts from the neighbours of `v`.
   have hre : ∑ d : G.Dart with d.snd = v, Matrix.single v v (1 : k) ⊗ₖ (β d.fst v * β v d.fst) =
-      ∑ w ∈ G.neighborFinset v, Matrix.single v v (1 : k) ⊗ₖ (β w v * β v w) :=
-    Finset.sum_bij' (fun d _ ↦ d.fst)
-      (fun w hw ↦ ⟨(w, v), ((G.mem_neighborFinset v w).1 hw).symm⟩)
-      (fun d hd ↦ (G.mem_neighborFinset _ _).2 ((Finset.mem_filter.1 hd).2 ▸ d.adj.symm))
-      (fun w _ ↦ by simp)
-      (fun d hd ↦ (SimpleGraph.Dart.ext_iff _ _).2 (Prod.ext rfl (Finset.mem_filter.1 hd).2.symm))
-      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+      ∑ w ∈ G.neighborFinset v, Matrix.single v v (1 : k) ⊗ₖ (β w v * β v w) := by
+    rw [G.sum_dart_snd_eq_sum_neighborSet, G.neighborFinset_def, ← Finset.sum_set_coe]
+    simp
   rw [Finset.sum_congr rfl fun d h ↦ hd d (Finset.mem_filter.1 h).2, hre]
   have hsum : ∑ w ∈ G.neighborFinset v, Matrix.single v v (1 : k) ⊗ₖ (β w v * β v w) =
       Matrix.single v v 1 ⊗ₖ ∑ w ∈ G.neighborFinset v, β w v * β v w := by
@@ -171,17 +169,8 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
             ⟨n + 2, by omega⟩ := by
   classical
   have := Fintype.ofFinite V
-  obtain ⟨C⟩ := hH
   -- The sign `±1` of the bipartition of `H`, extended to `G` along the copy.
-  let s : W → k := fun x ↦ if C x = 0 then 1 else -1
-  have hs (x y : W) (h : H.Adj x y) : s x = -s y := by
-    have hC := C.valid h
-    have h01 : ∀ a b : Fin 2, a ≠ b → a = 0 ∨ b = 0 := by decide
-    rcases h01 _ _ hC with h0 | h0
-    · have hCy : C y ≠ 0 := h0 ▸ hC.symm
-      simp [s, h0, hCy]
-    · have hCx : C x ≠ 0 := h0 ▸ hC
-      simp [s, h0, hCx]
+  obtain ⟨s, hs, hs₁⟩ := hH.exists_sign (R := k)
   let ε : V → k := Function.extend f s 1
   have hεf (x : W) : ε (f x) = s x := f.injective.extend_apply s 1 x
   refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
@@ -201,7 +190,7 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
     rw [← hx, ← hy, f.extendByZero_apply_apply] at hd
     rw [← hx, ← hy, hεf, hεf]
     split_ifs at hd with hxy
-    · exact hs x y hxy
+    · exact hs hxy
     · exact absurd rfl hd
   · -- On the walk, the twisted trace is the trace of the matrix product, times a sign.
     rw [Finset.sum_eq_single (fun t ↦ f.toHom.mapDart (w t)) (fun w' _ hw' ↦ by
@@ -211,13 +200,10 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
       (fun t ↦ β (w t).fst (w t).snd) fun i ↦ by rw [hw i.castSucc, Fin.coeSucc_eq_succ]]
     have hlast : (w (Fin.last (n + 1))).fst = (w 0).snd := by
       rw [hw, Fin.last_add_one]
-    have hs₁ : s (w 0).snd = 1 ∨ s (w 0).snd = -1 := by
-      simp only [s]
-      split_ifs <;> simp
     simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, traceLinearMap_apply, hlast,
       ← mul_kronecker_mul, diagonal_mul_single, mul_one, one_mul, trace_kronecker,
       trace_single_eq_same, hεf]
-    rcases hs₁ with h | h <;> simpa only [h, one_mul, neg_one_mul, neg_ne_zero] using htr
+    rcases hs₁ (w 0).snd with h | h <;> simpa only [h, one_mul, neg_one_mul, neg_ne_zero] using htr
 
 omit [DecidableRel H.Adj] in
 /-- **Higher Hochschild classes from an integer matrix representation of a bipartite
