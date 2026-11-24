@@ -202,10 +202,6 @@ private theorem one_div_add_sqrt_two_lt_millsRatio {x : ℝ} (hx : 0 ≤ x) :
       nlinarith [sq_pos_of_pos (sub_pos.mpr hlt)]
   simpa only [one_mul] using this
 
-/-- `√(4/π) = 2/√π`, the value at `0` of the denominator in the upper bound of DLMF 7.8.2. -/
-private theorem sqrt_four_div_pi : Real.sqrt (4 / π) = 2 / Real.sqrt π := by
-  rw [Real.sqrt_div' _ Real.pi_pos.le, show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq zero_le_two]
-
 /-- The upper bound of DLMF 7.8.2: `M(x) ≤ 1/(x + √(x² + 4/π))` for `x ≥ 0`. -/
 private theorem millsRatio_le_one_div_add_sqrt {x : ℝ} (hx : 0 ≤ x) :
     millsRatio x ≤ 1 / (x + Real.sqrt (x ^ 2 + 4 / π)) := by
@@ -298,15 +294,12 @@ theorem erfc_lt_exp_neg_sq {x : ℝ} (hx : 0 < x) : erfc x < Real.exp (-x ^ 2) :
         linarith [two_div_sqrt_pi_le_sqrt x]
     _ = Real.exp (-x ^ 2) := by field_simp
 
-/-- For `x ≥ 0`, `erfc x ≤ e^{-x²}`. This follows from the upper bound of DLMF 7.8.2, since
-`x + √(x² + 4/π) ≥ 2/√π`; at `x = 0` both sides are `1`. -/
+/-- For `x ≥ 0`, `erfc x ≤ e^{-x²}`. For `x > 0` this is the strict bound `erfc_lt_exp_neg_sq`;
+at `x = 0` both sides are `1`. -/
 theorem erfc_le_exp_neg_sq {x : ℝ} (hx : 0 ≤ x) : erfc x ≤ Real.exp (-x ^ 2) := by
-  have hden : 2 / Real.sqrt π ≤ x + Real.sqrt (x ^ 2 + 4 / π) := by
-    rw [← sqrt_four_div_pi]
-    linarith [Real.sqrt_le_sqrt (le_add_of_nonneg_left (sq_nonneg x) : 4 / π ≤ x ^ 2 + 4 / π)]
-  have h := (millsRatio_bounds hx).2.trans (one_div_le_one_div_of_le (by positivity) hden)
-  rw [one_div_div, mul_assoc, mul_le_iff_le_one_right (by positivity)] at h
-  rwa [Real.exp_neg, inv_eq_one_div, le_div_iff₀' (Real.exp_pos _)]
+  rcases hx.eq_or_lt with rfl | hx
+  · simp [erfc_zero]
+  · exact (erfc_lt_exp_neg_sq hx).le
 
 /-- The lower bound of DLMF 7.8.3: `√π/(2√π x + 2) ≤ M(x)` for `x ≥ 0`. -/
 private theorem sqrt_pi_div_le_millsRatio {x : ℝ} (hx : 0 ≤ x) :
