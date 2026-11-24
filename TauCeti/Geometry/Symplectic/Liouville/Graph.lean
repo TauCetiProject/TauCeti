@@ -56,10 +56,9 @@ linearly to the constant `1` deforms the graph back to `ι` through the graphs o
 
 Closed characteristics of the graph come from closed Reeb orbits of `f ι^* α`. Let `S` be compact,
 of one dimension less than `M`, let `ι` be an injective immersion into the boundary of `W`, and let
-the graph be a regular level `K⁻¹(c)`. Then a closed characteristic of this level, contractible in
-some set, is the image under `j_f` of a closed Reeb orbit `γ` of `j_f^* α = f ι^* α` up to a change
-of time, and the radial homotopy joins it to the loop `ι ∘ γ` on `Σ`, which is therefore
-contractible in `M`; see
+the graph be a regular level `K⁻¹(c)`. If this level carries a closed characteristic, contractible
+in some set, then the contact form `j_f^* α = f ι^* α` has a closed Reeb orbit `γ` whose loop
+`ι ∘ γ` on `Σ`, run at another speed, is contractible in `M`; see
 `IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic`.
 This is how Corollary E brings a closed characteristic of the hypersurface `Σ_α = j_f(S)` back to
 a closed Reeb orbit of the contact form `f ι^* α` on `Σ`, contractible in the ambient manifold.
@@ -365,11 +364,9 @@ the contact form `j_f^* α`, which is `f ι^* α` (`TauCeti.mpullback_liouvilleG
 closed Reeb orbit `γ` whose loop `ι ∘ γ` on the boundary of `W`, run at another speed, is
 contractible in `M`.
 
-Indeed the closed characteristic is the closed Reeb orbit `j_f ∘ γ` up to a change of time
-(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_isMIntegralCurve_reebVectorField_comp_eq`), and the
-radial homotopy `TauCeti.liouvilleGraphHomotopy` joins its loop to the loop `ι ∘ γ`. This is the
-step of the proof of Corollary E of Barraud–Damian–Humilière–Oancea that brings a closed
-characteristic of the graph `Σ_α` back to a closed Reeb orbit of the contact form `α` on `Σ`. -/
+This is the step of the proof of Corollary E of Barraud–Damian–Humilière–Oancea that brings a
+closed characteristic of the graph `Σ_α` back to a closed Reeb orbit of the contact form `α` on
+`Σ`. -/
 theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic
     (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
     (hc : IsCompleteVectorField Z) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιi : Injective ι)
