@@ -20,6 +20,11 @@ This file proves Bombieri's circular cosecant row bound for `δ`-separated finit
 
 * `TauCeti.sum_erase_inv_sin_sq_le`:
   `∑ j ∈ s.erase i, (sin (π * (x i - x j)) ^ 2)⁻¹ ≤ π ^ 2 / (12 * δ ^ 2)`.
+
+## References
+
+* E. Bombieri, *A note on the large sieve*, Acta Arithmetica **18** (1971), 401–404, p. 404
+  (Jordan's sine inequality and the reciprocal-sine-squared row estimate).
 -/
 
 public section

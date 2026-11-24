@@ -9,8 +9,8 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Group.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.Analysis.Normed.Group.AddCircle.Trigonometric
-import TauCeti.Analysis.SpecialFunctions.Complex.Circle.FourierChar
 
 /-!
 # The additive character `e(α) = exp(2πiα)` and geometric sums
@@ -26,7 +26,7 @@ This file sets up the additive toolkit of the Hardy–Littlewood circle method o
 * `TauCeti.distInt α = ‖α‖ = |α - round α|`, the distance from `α` to the nearest integer. It is
   the norm of `α` in `UnitAddCircle` (`TauCeti.distInt_eq_norm`), hence `1`-periodic, even and at
   most `1 / 2`, and it controls the sine: `2‖α‖ ≤ |sin (πα)|`
-  (`TauCeti.two_mul_distInt_le_abs_sin`).
+  (`Real.two_mul_norm_unitAddCircle_le_abs_sin`).
 * `TauCeti.sum_expTwoPiI_eq`: the geometric sum
   `∑_{n=1}^N e(nβ) = e(β) (e(Nβ) - 1) / (e(β) - 1)` off the integers, and
   `TauCeti.norm_sum_expTwoPiI_le`, the bound `|∑_{n=1}^N e(nβ)| ≤ min(N, 1 / (2‖β‖))`.
@@ -72,8 +72,10 @@ theorem expTwoPiI_zero : expTwoPiI 0 = 1 := by
   simp [expTwoPiI_def]
 
 theorem expTwoPiI_add (α β : ℝ) : expTwoPiI (α + β) = expTwoPiI α * expTwoPiI β := by
-  rw [expTwoPiI_eq_fourierChar, expTwoPiI_eq_fourierChar, expTwoPiI_eq_fourierChar,
-    Real.fourierChar_mul_fourierChar]
+  rw [expTwoPiI_def, expTwoPiI_def, expTwoPiI_def, ← Complex.exp_add]
+  congr 1
+  push_cast
+  ring
 
 theorem expTwoPiI_neg (α : ℝ) : expTwoPiI (-α) = (expTwoPiI α)⁻¹ := by
   rw [expTwoPiI_def, expTwoPiI_def, ← Complex.exp_neg]
@@ -93,7 +95,11 @@ theorem expTwoPiI_ne_zero (α : ℝ) : expTwoPiI α ≠ 0 :=
 
 @[simp]
 theorem conj_expTwoPiI (α : ℝ) : (starRingEnd ℂ) (expTwoPiI α) = expTwoPiI (-α) := by
-  rw [expTwoPiI_eq_fourierChar, expTwoPiI_eq_fourierChar, Real.conj_fourierChar]
+  rw [expTwoPiI_def, expTwoPiI_def, ← Complex.exp_conj]
+  congr 1
+  simp only [map_mul, Complex.conj_ofReal, Complex.conj_I, map_ofNat]
+  push_cast
+  ring
 
 theorem expTwoPiI_natCast_mul (n : ℕ) (α : ℝ) : expTwoPiI (n * α) = expTwoPiI α ^ n := by
   rw [expTwoPiI_def, expTwoPiI_def, ← Complex.exp_natCast_mul]
@@ -140,7 +146,8 @@ theorem expTwoPiI_periodic : Function.Periodic expTwoPiI 1 := fun α ↦ by
 
 /-- `‖e(α) - 1‖ = 2 |sin (πα)|`. -/
 theorem norm_expTwoPiI_sub_one (α : ℝ) : ‖expTwoPiI α - 1‖ = 2 * |Real.sin (π * α)| := by
-  rw [expTwoPiI_eq_fourierChar, Real.norm_fourierChar_sub_one]
+  rw [norm_sub_rev, expTwoPiI_def, UpperHalfPlane.norm_one_sub_exp_two_pi_I_mul, abs_mul,
+    abs_two]
 
 /-- **Orthogonality** on `ℝ / ℤ`: `∫₀¹ e(mα) dα = 1` if `m = 0` and `0` otherwise. -/
 theorem integral_expTwoPiI_intCast (m : ℤ) :
@@ -223,11 +230,6 @@ theorem distInt_periodic : Function.Periodic distInt 1 := fun α ↦ by
 theorem distInt_neg (α : ℝ) : distInt (-α) = distInt α := by
   rw [distInt_eq_norm, distInt_eq_norm, AddCircle.coe_neg, norm_neg]
 
-/-- `2‖α‖ ≤ |sin (πα)|`, from Jordan's inequality `2|x| / π ≤ |sin x|` for `|x| ≤ π / 2`. -/
-theorem two_mul_distInt_le_abs_sin (α : ℝ) : 2 * distInt α ≤ |Real.sin (π * α)| := by
-  rw [distInt_eq_norm]
-  exact Real.two_mul_norm_unitAddCircle_le_abs_sin α
-
 /-! ### Geometric sums -/
 
 /-- At an integer `β`, `∑_{n=1}^N e(nβ) = N`. -/
@@ -256,7 +258,8 @@ theorem norm_sum_expTwoPiI_le_one_div (N : ℕ) {β : ℝ} (hβ : distInt β ≠
   have hpos : 0 < 2 * distInt β := by
     have := distInt_nonneg β
     positivity
-  have hsin := two_mul_distInt_le_abs_sin β
+  have hsin : 2 * distInt β ≤ |Real.sin (π * β)| :=
+    distInt_eq_norm β ▸ Real.two_mul_norm_unitAddCircle_le_abs_sin β
   have hden : 0 < ‖expTwoPiI β - 1‖ := by
     rw [norm_expTwoPiI_sub_one]
     linarith

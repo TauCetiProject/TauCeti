@@ -5,42 +5,37 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Circle
+public import TauCeti.Analysis.Fourier.Fejer.Basic
 import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Analysis.SpecialFunctions.Complex.Circle.FourierChar
 
 /-!
 # Finite triangular Fourier sum identity
 
-This file records the finite Fejér triangular Fourier sum identity for the real additive character
-`Real.fourierChar`:
+This file records the finite Fejér triangular Fourier sum identity for the Fourier monomials
+`fourier n : C(AddCircle T, ℂ)`, derived from `TauCeti.ofReal_fejerKernel`:
 
-* `TauCeti.sum_Icc_max_sub_abs_mul_fourierChar`: for `M ≤ K`,
-  `∑ n ∈ Icc (-K) K, max 0 (M - |n|) * e(n * t) = ‖∑ k ∈ range M, e(k * t)‖ ^ 2`.
+* `TauCeti.sum_Icc_max_sub_abs_mul_fourier`: for `M ≤ K`,
+  `∑ n ∈ Icc (-K) K, max 0 (M - |n|) * fourier n x = M * fejerKernel M x`.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- For `M ≤ K`, the triangular Fourier polynomial over `[-K, K]` equals the squared norm of the
-first `M` additive characters `k ↦ Real.fourierChar (k * t)`. -/
-theorem sum_Icc_max_sub_abs_mul_fourierChar {M K : ℕ} (hMK : M ≤ K) (t : ℝ) :
+/-- For `M ≤ K`, the triangular Fourier polynomial over `[-K, K]` equals `M` times the
+Fejér kernel `fejerKernel M x`. -/
+theorem sum_Icc_max_sub_abs_mul_fourier {T : ℝ} {M K : ℕ} (hMK : M ≤ K) (x : AddCircle T) :
     ∑ n ∈ Finset.Icc (-(K : ℤ)) K,
-        ((max (0 : ℝ) ((M : ℝ) - |(n : ℝ)|) : ℝ) : ℂ) *
-          (Real.fourierChar ((n : ℝ) * t) : ℂ) =
-      (‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ ^ 2 : ℝ) := by
+        ((max (0 : ℝ) ((M : ℝ) - |(n : ℝ)|) : ℝ) : ℂ) * fourier n x =
+      (M : ℂ) * (fejerKernel M x : ℂ) := by
+  rcases Nat.eq_zero_or_pos M with rfl | hM
+  · simp [fejerKernel_zero]
+  have hMne : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hM.ne'
   have hexp :
-      ((‖∑ k ∈ Finset.range M, (Real.fourierChar ((k : ℝ) * t) : ℂ)‖ ^ 2 : ℝ) : ℂ) =
-        ∑ p ∈ Finset.range M ×ˢ Finset.range M,
-          (Real.fourierChar ((((p.1 : ℤ) - p.2 : ℤ) : ℝ) * t) : ℂ) := by
-    rw [Complex.ofReal_pow, ← Complex.mul_conj', map_sum, Finset.sum_mul, Finset.sum_product]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [Real.conj_fourierChar, Real.fourierChar_mul_fourierChar]
-    congr 2; push_cast; ring
+      (M : ℂ) * (fejerKernel M x : ℂ) =
+        ∑ p ∈ Finset.range M ×ˢ Finset.range M, fourier ((p.1 : ℤ) - p.2) x := by
+    rw [ofReal_fejerKernel, ← mul_assoc, mul_inv_cancel₀ hMne, one_mul, Finset.sum_product]
   have hmem : ∀ p ∈ Finset.range M ×ˢ Finset.range M,
       ((p.1 : ℤ) - p.2) ∈ Finset.Icc (-(K : ℤ)) K := by
     intro p hp
@@ -48,7 +43,7 @@ theorem sum_Icc_max_sub_abs_mul_fourierChar {M K : ℕ} (hMK : M ≤ K) (t : ℝ
     rw [Finset.mem_range] at hi hj
     exact Finset.mem_Icc.mpr ⟨by omega, by omega⟩
   rw [hexp, ← sum_card_filter_nsmul_eq_sum_comp (t := Finset.Icc (-(K : ℤ)) K) hmem
-      (fun n ↦ (Real.fourierChar ((n : ℝ) * t) : ℂ))]
+      (fun n ↦ fourier n x)]
   refine Finset.sum_congr rfl fun n _ ↦ ?_
   have hcount :
       ((Finset.range M ×ˢ Finset.range M).filter fun p ↦ (p.1 : ℤ) - p.2 = n).card =

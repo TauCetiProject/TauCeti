@@ -48,10 +48,10 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
   over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
 * `Finset.sum_Ioc_neg_zero_eq_sum_range`: the sum of `F j` over `-a < j ≤ 0` is the sum of
   `F (-(k : ℤ))` over `k < a`.
-* `Finset.sum_Icc_neg_eq_sum_fin`, `Finset.sum_Ico_int_add_eq_sum_range`,
-  `Finset.sum_Ico_int_add_eq_sum_fin`, and `Finset.sum_fin_ite_sub_eq_sum_range`: reindex
-  symmetric integer intervals `[-K, K]` by `Fin (2 * K + 1)`, shifted integer intervals
-  `[M, M + H)` by `range H` or `Fin H`, and zero-padded windows `[L, L + H)` inside `Fin D`.
+* `Finset.sum_Icc_neg_eq_sum_fin`, `Finset.sum_Ico_int_add_eq_sum_range`, and
+  `Finset.sum_fin_ite_sub_eq_sum_range`: reindex symmetric integer intervals `[-K, K]` by
+  `Fin (2 * K + 1)`, shifted integer intervals `[M, M + H)` by `range H`, and zero-padded
+  windows `[L, L + H)` inside `Fin D`.
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
   `Finset.sum_range_natCast_sq_mul_six`: Gauss's sum in a ring and the sum of squares below `n`.
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
@@ -178,12 +178,6 @@ theorem sum_Ico_int_add_eq_sum_range {α : Type*} [AddCommMonoid α]
     ∑ n ∈ Ico M (M + H), g n = ∑ j ∈ range H, g (M + (j : ℤ)) := by
   rw [Int.Ico_eq_finset_map, sum_map, add_sub_cancel_left, Int.toNat_natCast]
   simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
-
-/-- Reindex a sum over `Ico M (M + H)` by `Fin H`. -/
-theorem sum_Ico_int_add_eq_sum_fin {α : Type*} [AddCommMonoid α]
-    (M : ℤ) (H : ℕ) (g : ℤ → α) :
-    ∑ n ∈ Ico M (M + H), g n = ∑ j : Fin H, g (M + (j : ℤ)) := by
-  rw [sum_Ico_int_add_eq_sum_range, ← Fin.sum_univ_eq_sum_range (fun j : ℕ ↦ g (M + (j : ℤ)))]
 
 /-- Reindex a sum over the symmetric integer interval `[-K, K]` by `Fin (2 * K + 1)`. -/
 theorem sum_Icc_neg_eq_sum_fin {M : Type*} [AddCommMonoid M] (K : ℕ) (g : ℤ → M) :

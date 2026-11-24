@@ -20,6 +20,12 @@ This file records elementary metric and geometric estimates on the unit additive
   `m δ ≤ ‖(c - x j : UnitAddCircle)‖ < (m + 1) δ`.
 * `TauCeti.card_le_one_of_half_lt_of_unitAddCircle_separated`: since every point of `UnitAddCircle`
   has norm at most `1 / 2`, a `δ`-separated finite family with `1 / 2 < δ` has at most one element.
+
+## References
+
+* E. Bombieri, *A note on the large sieve*, Acta Arithmetica **18** (1971), 401–404, p. 404
+  (the radial intervals `I_m` and the at-most-two-points-per-interval claim; here taken half-open
+  `[m δ, (m + 1) δ)` via `⌊· / δ⌋₊ = m` so that adjacent endpoints do not overlap).
 -/
 
 public section

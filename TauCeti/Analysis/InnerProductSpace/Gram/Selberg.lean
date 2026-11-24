@@ -50,15 +50,6 @@ section Seminormed
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-private theorem norm_inner_self_eq_norm_sq (x : E) : ‖⟪x, x⟫_𝕜‖ = ‖x‖ ^ 2 := by
-  simp [inner_self_eq_norm_sq_to_K]
-
-private theorem norm_inner_eq_zero_of_norm_eq_zero {x y : E} (hy : ‖y‖ = 0) :
-    ‖⟪x, y⟫_𝕜‖ = 0 := by
-  have hle := norm_inner_le_norm (𝕜 := 𝕜) x y
-  rw [hy, mul_zero] at hle
-  exact le_antisymm hle (norm_nonneg _)
-
 namespace TauCeti
 
 /-- A Gram row sum `∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖` vanishes if and only if `‖y i‖ = 0`. -/
@@ -68,12 +59,11 @@ theorem sum_norm_inner_eq_zero_iff_norm_eq_zero {s : Finset ι} {y : ι → E} {
   · intro h
     have hdiag : ‖⟪y i, y i⟫_𝕜‖ ≤ ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖ :=
       Finset.single_le_sum (f := fun j ↦ ‖⟪y i, y j⟫_𝕜‖) (fun j _ ↦ norm_nonneg _) hi
-    rw [h, norm_inner_self_eq_norm_sq] at hdiag
+    rw [h, ← inner_self_re_eq_norm, inner_self_eq_norm_sq] at hdiag
     nlinarith [norm_nonneg (y i)]
   · intro h
     refine Finset.sum_eq_zero fun j _ ↦ ?_
-    rw [norm_inner_symm]
-    exact norm_inner_eq_zero_of_norm_eq_zero (𝕜 := 𝕜) h
+    simp [inner_eq_zero_of_left _ h]
 
 end TauCeti
 
@@ -184,8 +174,7 @@ theorem sum_norm_inner_sq_le_of_sum_norm_inner_le (s : Finset ι) (y : ι → E)
     set r : ℝ := ∑ j ∈ s, ‖⟪y i, y j⟫_𝕜‖
     by_cases hr : r = 0
     · have hy0 : ‖y i‖ = 0 := (TauCeti.sum_norm_inner_eq_zero_iff_norm_eq_zero (𝕜 := 𝕜) hi).mp hr
-      have hinner0 : ‖⟪x, y i⟫_𝕜‖ = 0 := norm_inner_eq_zero_of_norm_eq_zero (𝕜 := 𝕜) hy0
-      simp [hinner0]
+      simp [inner_eq_zero_of_right x hy0]
     · have hr0 : 0 ≤ r := Finset.sum_nonneg fun j _ ↦ norm_nonneg _
       calc
         ‖⟪x, y i⟫_𝕜‖ ^ 2 = r * (‖⟪x, y i⟫_𝕜‖ ^ 2 / r) := by field_simp [hr]
@@ -219,7 +208,7 @@ theorem sum_norm_inner_sq_le_of_diag_offDiag [DecidableEq ι] (s : Finset ι) (y
     (hoff : ∀ i ∈ s, ∑ j ∈ s.erase i, ‖⟪y i, y j⟫_𝕜‖ ≤ O) :
     ∑ i ∈ s, ‖⟪x, y i⟫_𝕜‖ ^ 2 ≤ (D + O) * ‖x‖ ^ 2 := by
   refine s.sum_norm_inner_sq_le_of_sum_norm_inner_le y x hDO fun i hi ↦ ?_
-  rw [← Finset.add_sum_erase _ _ hi, norm_inner_self_eq_norm_sq]
+  rw [← Finset.add_sum_erase _ _ hi, ← inner_self_re_eq_norm, inner_self_eq_norm_sq]
   exact add_le_add (hdiag i hi) (hoff i hi)
 
 end Finset
