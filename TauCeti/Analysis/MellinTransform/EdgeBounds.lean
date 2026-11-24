@@ -82,7 +82,7 @@ theorem norm_integral_vertical_tail_le {f : ℂ → ℂ} {σ K ε T : ℝ} (hε 
     simpa using (le_div_iff₀ hd).1 ((norm_nonneg _).trans (hf _ ht))
   have hint : IntegrableOn (fun t : ℝ ↦ (t ^ 2)⁻¹) {t : ℝ | T < |t|} :=
     Integrable.of_integral_ne_zero <| by
-      rw [integral_lt_abs_inv_sq hT]
+      rw [integral_lt_abs_inv_sq hT.le]
       exact div_ne_zero two_ne_zero hT.ne'
   calc ‖∫ t in {t : ℝ | T < |t|}, f (σ + t * I)‖
       ≤ ∫ t in {t : ℝ | T < |t|}, K / ε * (t ^ 2)⁻¹ := by
@@ -92,7 +92,7 @@ theorem norm_integral_vertical_tail_le {f : ℂ → ℂ} {σ K ε T : ℝ} (hε 
           (mul_sq_le_norm_mul_one_add hε.le (abs_le_norm_ofReal_add_mul_I σ t))).trans_eq ?_
         ring
     _ = 2 * K / (ε * T) := by
-        rw [integral_const_mul, integral_lt_abs_inv_sq hT]
+        rw [integral_const_mul, integral_lt_abs_inv_sq hT.le]
         field_simp
 
 /-- **A symmetric segment of a vertical line.** If `σ > 0`, `T ≥ 0` and

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
@@ -40,7 +41,7 @@ Interval integrals of elementary functions in closed form or as series, continui
   `c ≥ 0` and `δ ≥ 0`.
 * `TauCeti.integral_add_rpow_le_of_lt_neg_one`: `∫ s in 0..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1)`
   for `0 < r`, `0 ≤ β` and `S < -1`.
-* `TauCeti.integral_lt_abs_inv_sq`: `∫ t in {t | T < |t|}, (t²)⁻¹ = 2 / T` for `T > 0`.
+* `TauCeti.integral_lt_abs_inv_sq`: `∫ t in {t | T < |t|}, (t²)⁻¹ = 2 / T` for `T ≥ 0`.
 * `TauCeti.integral_inv_add_abs`: `∫ t in -T..T, (σ + |t|)⁻¹ = 2 log (1 + T / σ)` for `σ > 0` and
   `T ≥ 0`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
@@ -556,9 +557,19 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   convert h using 2 <;> ring
 
 open MeasureTheory Set in
-/-- The integral of `t⁻²` over the tails `|t| > T` of the real line is `2/T`. -/
-theorem integral_lt_abs_inv_sq {T : ℝ} (hT : 0 < T) :
+/-- The integral of `t⁻²` over the tails `|t| > T` of the real line is `2/T`. At `T = 0` the
+integrand is not integrable and both sides are `0`. -/
+theorem integral_lt_abs_inv_sq {T : ℝ} (hT : 0 ≤ T) :
     ∫ t in {t : ℝ | T < |t|}, (t ^ 2)⁻¹ = 2 / T := by
+  rcases hT.eq_or_lt with rfl | hT
+  · rw [div_zero]
+    refine integral_undef fun h ↦ ?_
+    have hsub : Ioo (0 : ℝ) 1 ⊆ {t : ℝ | 0 < |t|} := fun t ht ↦ abs_pos.mpr ht.1.ne'
+    have h' : IntegrableOn (fun t : ℝ ↦ t ^ (-2 : ℝ)) (Ioo 0 1) :=
+      (IntegrableOn.mono_set h hsub).congr_fun
+        (fun t ht ↦ by rw [Real.rpow_neg ht.1.le, Real.rpow_two]) measurableSet_Ioo
+    have := (intervalIntegral.integrableOn_Ioo_rpow_iff one_pos).1 h'
+    norm_num at this
   have hS : MeasurableSet {t : ℝ | T < |t|} :=
     measurableSet_lt measurable_const continuous_abs.measurable
   have hind : ({t : ℝ | T < |t|}.indicator fun t ↦ (t ^ 2)⁻¹) =
