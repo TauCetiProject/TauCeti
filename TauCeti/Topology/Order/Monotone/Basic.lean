@@ -39,7 +39,7 @@ theorem continuousAt_of_lt_of_eq {α β : Type*} [LinearOrder α] [TopologicalSp
 
 /-- A monotone function on a linearly ordered space with an order-closed topology has only finitely
 many discontinuities (in fact at most two) in each fiber `f ⁻¹' {c}`. -/
-theorem finite_not_continuousAt_inter_preimage_singleton {α β : Type*}
+theorem finite_setOf_not_continuousAt_and_eq {α β : Type*}
     [LinearOrder α] [TopologicalSpace α] [OrderClosedTopology α] [PartialOrder β]
     [TopologicalSpace β] {f : α → β} (hf : Monotone f) (c : β) :
     {x | ¬ ContinuousAt f x ∧ f x = c}.Finite := by
@@ -70,7 +70,7 @@ theorem finite_Icc_not_continuousAt {α β : Type*} [LinearOrder α] [Topologica
     {x ∈ Icc a b | ¬ ContinuousAt f x}.Finite := by
   rcases le_or_gt a b with _ | hba
   · refine ((Set.finite_Icc (f a) (f b)).biUnion fun c _ ↦
-        hf.finite_not_continuousAt_inter_preimage_singleton c).subset ?_
+        hf.finite_setOf_not_continuousAt_and_eq c).subset ?_
     rintro x ⟨hx, hnc⟩
     exact mem_biUnion ⟨hf hx.1, hf hx.2⟩ ⟨hnc, rfl⟩
   · simp [Icc_eq_empty_of_lt hba]
