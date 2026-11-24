@@ -156,7 +156,7 @@ theorem integer_isLocalization_iff (M : Submonoid R) :
       { map_units := fun m ↦ (Localization.mem_submonoid_iff_isUnit K S).1 (hMS m.property)
         surj := fun z ↦ ?_
         exists_of_eq := fun h ↦
-          ⟨1, by simpa using IsFractionRing.injective R K (congrArg Subtype.val h)⟩ }
+          ⟨1, by simpa using FaithfulSMul.algebraMap_injective R (S.integer K) h⟩ }
     -- The denominator ideal of `z` meets `M`: a prime containing it and avoiding `M` would be
     -- a prime of `S` (because `z` is integral outside `S`) avoiding `M`.
     obtain ⟨m, hmM, hmD⟩ : ∃ m ∈ M, m ∈ Algebra.denIdeal K (z : K) := by
