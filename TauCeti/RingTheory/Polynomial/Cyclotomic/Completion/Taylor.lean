@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.HasseDeriv
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.Completion.Topology
-public import TauCeti.RingTheory.Polynomial.Cyclotomic.Factorial
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 
 /-!
@@ -36,15 +36,6 @@ two agree up to the factor `k!` (`TauCeti.CycloCompletion.factorial_mul_coeff_ta
 characteristic two the Taylor coefficient of `q ^ 2` at `1` in degree two is `1`, while its
 second derivative vanishes.
 
-A continuous `R`-algebra map from `R[q]^S` to a discrete algebra kills the image of some index, so
-the image of `q` is a root of an actual product of cyclotomic polynomials of orders in `S`
-(`TauCeti.CycloCompletion.exists_aeval_eq_zero_of_continuous`).
-
-For factorial series the Taylor coefficients at a root of unity are finite sums: if `ζ ^ d = 1`
-with `0 < d`, then `(X - ζ) ^ k ∣ P_N` for `d k ≤ N` (`TauCeti.X_sub_C_pow_dvd_factorialPoly`),
-so the `k`-th Taylor coefficient of `∑_{n < N} b_n P_n` does not change once `N ≥ d (k + 1)`
-(`TauCeti.coeff_taylor_sum_mul_factorialPoly_of_le`).
-
 ## Main definitions
 
 * `TauCeti.CycloCompletion.evalRoot`: evaluation `R[q]^S →ₐ[R] B` at a root of `Φ_n`, `n ∈ S`.
@@ -63,10 +54,6 @@ so the `k`-th Taylor coefficient of `∑_{n < N} b_n P_n` does not change once `
   computed by any representative modulo the corresponding power of `Φ_n`.
 * `TauCeti.CycloCompletion.factorial_mul_coeff_taylorAt`: comparison with ordinary derivatives.
 * `TauCeti.CycloCompletion.continuous_evalRoot`, `TauCeti.CycloCompletion.continuous_taylorAt`.
-* `TauCeti.CycloCompletion.exists_aeval_eq_zero_of_continuous`: under a continuous algebra map to a
-  discrete algebra, `q` maps to a root of an index.
-* `TauCeti.coeff_taylor_sum_mul_factorialPoly_of_le`: stability of Taylor coefficients of finite
-  factorial sums.
 
 ## References
 
@@ -81,40 +68,27 @@ open scoped PowerSeries Topology
 
 namespace TauCeti
 
-/-- Extending a factorial sum `∑_{n < N} b_n P_n` beyond `N ≥ d (k + 1)` does not change its
-`k`-th Taylor coefficient at a root `ζ` of `X ^ d - 1`, `0 < d`. -/
-theorem coeff_taylor_sum_mul_factorialPoly_of_le {A : Type*} [CommRing A] {ζ : A} {d k N M : ℕ}
-    (hd : 0 < d) (hζ : ζ ^ d = 1) (hN : d * (k + 1) ≤ N) (hNM : N ≤ M) (b : ℕ → A[X]) :
-    (taylor ζ (∑ n ∈ Finset.range M, b n * factorialPoly A n)).coeff k =
-      (taylor ζ (∑ n ∈ Finset.range N, b n * factorialPoly A n)).coeff k := by
-  have hdvd : (X - C ζ) ^ (k + 1) ∣ ∑ n ∈ Finset.Ico N M, b n * factorialPoly A n :=
-    Finset.dvd_sum fun n hn ↦ dvd_mul_of_dvd_right
-      (X_sub_C_pow_dvd_factorialPoly hd hζ (hN.trans (Finset.mem_Ico.mp hn).1)) _
-  obtain ⟨c, hc⟩ := hdvd
-  rw [← Finset.sum_range_add_sum_Ico _ hNM, map_add, coeff_add, hc, taylor_mul, taylor_pow,
-    taylor_X_sub_C, coeff_X_pow_mul']
-  simp [show ¬k + 1 ≤ k by omega]
-
 namespace CycloCompletion
 
 variable {R : Type*} [CommRing R] {S : Set ℕ} {n : ℕ} {B : Type*} [CommRing B] [Algebra R B]
 
 section EvalRoot
 
+/-- The index `Φ_n` of `R[q]^S`. -/
+private noncomputable abbrev cyclotomicIndex (hn : n ∈ S) : cycloIndex R S :=
+  ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩
+
 /-- Evaluation of a completed element at a root `ζ` of `Φ_n`, `n ∈ S`, in an `R`-algebra `B`:
 reduce modulo `Φ_n` and evaluate the class at `ζ`. -/
 noncomputable def evalRoot (hn : n ∈ S) (ζ : B) (hζ : aeval ζ (cyclotomic n R) = 0) :
     CycloCompletion R S →ₐ[R] B :=
-  (AdjoinRoot.liftAlgHom (cyclotomic n R) (Algebra.ofId R B) ζ
-    (by rw [Algebra.toRingHom_ofId, ← aeval_def, hζ])).comp
-    (proj ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩)
+  ((AdjoinRoot.algHomEquiv B (cyclotomic n R)).symm ⟨ζ, hζ⟩).comp (proj (cyclotomicIndex hn))
 
 variable (hn : n ∈ S) (ζ : B) (hζ : aeval ζ (cyclotomic n R) = 0)
 
 /-- Root evaluation is the projection modulo `Φ_n` followed by evaluation of the class at `ζ`. -/
 theorem evalRoot_apply (x : CycloCompletion R S) :
-    evalRoot hn ζ hζ x = AdjoinRoot.liftAlgHom (cyclotomic n R) (Algebra.ofId R B) ζ
-      (by rw [Algebra.toRingHom_ofId, ← aeval_def, hζ])
+    evalRoot hn ζ hζ x = (AdjoinRoot.algHomEquiv B (cyclotomic n R)).symm ⟨ζ, hζ⟩
       (proj ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ x) :=
   (rfl)
 
@@ -122,14 +96,13 @@ theorem evalRoot_apply (x : CycloCompletion R S) :
 theorem evalRoot_eq_aeval_of_proj_eq_mk {f : cycloIndex R S} (hf : cyclotomic n R ∣ (f : R[X]))
     {x : CycloCompletion R S} {p : R[X]} (h : proj f x = AdjoinRoot.mk (f : R[X]) p) :
     evalRoot hn ζ hζ x = aeval ζ p := by
-  rw [evalRoot_apply, proj_eq_mk_of_dvd (f := ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩) hf h]
-  exact (AdjoinRoot.liftAlgHom_mk _ _ _ _ p).trans (by rw [Algebra.toRingHom_ofId, aeval_def])
+  rw [evalRoot_apply, proj_eq_mk_of_dvd (f := cyclotomicIndex hn) hf h, AdjoinRoot.algHom_mk,
+    AdjoinRoot.algHomEquiv_symm_apply_root]
 
 /-- Root evaluation agrees with polynomial evaluation. -/
 @[simp]
 theorem evalRoot_fromPoly (p : R[X]) : evalRoot hn ζ hζ (fromPoly R S p) = aeval ζ p :=
-  evalRoot_eq_aeval_of_proj_eq_mk hn ζ hζ (f := ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩)
-    dvd_rfl (proj_fromPoly _ p)
+  evalRoot_eq_aeval_of_proj_eq_mk hn ζ hζ (f := cyclotomicIndex hn) dvd_rfl (proj_fromPoly _ p)
 
 /-- Evaluation at the universal root of `Φ_n` in `AdjoinRoot (cyclotomic n R)` is the projection
 modulo `Φ_n`. -/
@@ -138,18 +111,13 @@ theorem evalRoot_root :
         (by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]) =
       proj (S := S) ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ := by
   ext x
-  obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ x)
-  rw [evalRoot_eq_aeval_of_proj_eq_mk hn _ _ (f := ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩)
-    dvd_rfl hp.symm, AdjoinRoot.aeval_eq, hp]
+  obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj (cyclotomicIndex hn) x)
+  rw [evalRoot_eq_aeval_of_proj_eq_mk hn _ _ (f := cyclotomicIndex hn) dvd_rfl hp.symm,
+    AdjoinRoot.aeval_eq, hp]
 
 /-- Root evaluation is locally constant: it factors through a discrete quotient. -/
-theorem isLocallyConstant_evalRoot : IsLocallyConstant (evalRoot hn ζ hζ) := by
-  have h : ⇑(evalRoot hn ζ hζ) = (fun a ↦ AdjoinRoot.liftAlgHom (cyclotomic n R) (Algebra.ofId R B)
-      ζ (by rw [Algebra.toRingHom_ofId, ← aeval_def, hζ]) a) ∘
-      proj (S := S) ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ :=
-    funext (evalRoot_apply hn ζ hζ)
-  rw [h]
-  exact (isLocallyConstant_proj (S := S) ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩).comp _
+theorem isLocallyConstant_evalRoot : IsLocallyConstant (evalRoot hn ζ hζ) :=
+  (isLocallyConstant_proj (cyclotomicIndex hn)).comp _
 
 /-- Root evaluation is continuous for every topology on the target. -/
 @[fun_prop, continuity]
@@ -157,32 +125,6 @@ theorem continuous_evalRoot [TopologicalSpace B] : Continuous (evalRoot hn ζ h�
   (isLocallyConstant_evalRoot hn ζ hζ).continuous
 
 end EvalRoot
-
-section Discrete
-
-/-- A continuous ring map from `R[q]^S` to a discrete ring vanishes on the neighborhood
-`ker (proj f)` of zero for some index `f`. -/
-theorem exists_ker_proj_le_ker_of_continuous {T : Type*} [Semiring T] [TopologicalSpace T]
-    [DiscreteTopology T] (φ : CycloCompletion R S →+* T) (hφ : Continuous φ) :
-    ∃ f : cycloIndex R S, RingHom.ker (proj f) ≤ RingHom.ker φ := by
-  have h0 : φ ⁻¹' {0} ∈ 𝓝 (0 : CycloCompletion R S) :=
-    hφ.continuousAt.preimage_mem_nhds (by rw [map_zero]; exact (isOpen_discrete _).mem_nhds rfl)
-  obtain ⟨f, -, hf⟩ := (hasBasis_nhds_zero R S).mem_iff.mp h0
-  exact ⟨f, fun x hx ↦ hf hx⟩
-
-/-- Under a continuous `R`-algebra map from `R[q]^S` to a discrete algebra, the image of `q` is a
-root of some index, a product of cyclotomic polynomials of orders in `S`. -/
-theorem exists_aeval_eq_zero_of_continuous [TopologicalSpace B] [DiscreteTopology B]
-    (φ : CycloCompletion R S →ₐ[R] B) (hφ : Continuous φ) :
-    ∃ f : cycloIndex R S, aeval (φ (fromPoly R S X)) (f : R[X]) = 0 := by
-  obtain ⟨f, hf⟩ := exists_ker_proj_le_ker_of_continuous φ.toRingHom hφ
-  refine ⟨f, ?_⟩
-  have hmem : fromPoly R S (f : R[X]) ∈ RingHom.ker (proj f) := by
-    rw [RingHom.mem_ker, proj_fromPoly, AdjoinRoot.mk_self]
-  rw [aeval_algHom_apply, aeval_algHom_apply, aeval_X_left_apply]
-  exact hf hmem
-
-end Discrete
 
 section Taylor
 
@@ -305,7 +247,7 @@ theorem taylorAt_fromPoly (p : R[X]) :
 @[simp]
 theorem constantCoeff_taylorAt (x : CycloCompletion R S) :
     PowerSeries.constantCoeff (taylorAt hn ζ hζ x) = evalRoot hn ζ hζ x := by
-  obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj ⟨cyclotomic n R, cyclotomic_mem_cycloIndex hn⟩ x)
+  obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective (proj (cyclotomicIndex hn) x)
   rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply,
     coeff_taylorAt_of_proj_eq_mk hn ζ hζ (by rw [zero_add, pow_one]) hp.symm, hasseDeriv_zero,
     LinearMap.id_apply, evalRoot_eq_aeval_of_proj_eq_mk hn ζ hζ dvd_rfl hp.symm]
@@ -330,8 +272,9 @@ theorem factorial_mul_coeff_taylorAt {f : cycloIndex R S} {k : ℕ}
     (hf : cyclotomic n R ^ (k + 1) ∣ (f : R[X])) {x : CycloCompletion R S} {p : R[X]}
     (h : proj f x = AdjoinRoot.mk (f : R[X]) p) :
     (k.factorial : B) * PowerSeries.coeff k (taylorAt hn ζ hζ x) = aeval ζ (derivative^[k] p) := by
-  rw [coeff_taylorAt_of_proj_eq_mk hn ζ hζ hf h, ← eval_map_algebraMap, ← eval_map_algebraMap,
-    ← hasseDeriv_map, ← iterate_derivative_map, eval_iterate_derivative_eq_factorial_mul]
+  rw [coeff_taylorAt_of_proj_eq_mk hn ζ hζ hf h]
+  simp [← eval_map_algebraMap, ← hasseDeriv_map, ← iterate_derivative_map,
+    eval_iterate_derivative_eq_factorial_mul]
 
 /-- Each Taylor coefficient is locally constant: it factors through a discrete quotient. -/
 theorem isLocallyConstant_coeff_taylorAt (k : ℕ) :
@@ -366,8 +309,8 @@ example (hn : n ∈ S) (ζ : B) (hζ : aeval ζ (cyclotomic n R) = 0) :
 example (hn : n ∈ S) (ζ : B) (hζ : aeval ζ (cyclotomic n R) = 0) (m k : ℕ) :
     PowerSeries.coeff k (taylorAt hn ζ hζ (fromPoly R S (X ^ m))) =
       (m.choose k : B) * ζ ^ (m - k) := by
-  rw [taylorAt_fromPoly, Polynomial.coeff_coe, taylor_coeff, Polynomial.map_pow, map_X,
-    X_pow_eq_monomial, hasseDeriv_monomial, eval_monomial, mul_one]
+  rw [taylorAt_fromPoly, Polynomial.coeff_coe]
+  simp [coeff_X_add_C_pow, mul_comm]
 
 /-- In characteristic two the Taylor coefficient of `q ^ 2` at `1` in degree two is `1`, although
 the second derivative of `q ^ 2` vanishes there. -/
@@ -375,9 +318,8 @@ example (S : Set ℕ) (h1 : 1 ∈ S) :
     PowerSeries.coeff 2 (taylorAt h1 (1 : ZMod 2) (by simp) (fromPoly (ZMod 2) S (X ^ 2))) = 1 ∧
       aeval (1 : ZMod 2) (derivative^[2] (X ^ 2 : (ZMod 2)[X])) = 0 := by
   refine ⟨?_, ?_⟩
-  · rw [taylorAt_fromPoly, Polynomial.coeff_coe, taylor_coeff, Polynomial.map_pow, map_X,
-      X_pow_eq_monomial, hasseDeriv_monomial, eval_monomial]
-    simp
+  · rw [taylorAt_fromPoly, Polynomial.coeff_coe]
+    simpa using coeff_X_add_C_pow (1 : ZMod 2) 2 2
   · rw [coe_aeval_eq_eval, eval_iterate_derivative_eq_factorial_mul, Nat.factorial_two,
       show ((2 : ℕ) : ZMod 2) = 0 by decide, zero_mul]
 

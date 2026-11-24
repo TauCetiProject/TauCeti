@@ -56,6 +56,8 @@ when `d k ≤ N`. In characteristic two it is not, since there `Φ_1 = Φ_2`.
   `1 ≤ i ≤ N` divides `m`.
 * `TauCeti.X_sub_C_pow_dvd_factorialPoly`: `(X - ζ) ^ k ∣ P_N` for `ζ ^ d = 1`, `0 < d` and
   `d k ≤ N`.
+* `TauCeti.coeff_taylor_sum_mul_factorialPoly_of_le`: for such `ζ`, the `k`-th Taylor coefficient
+  at `ζ` of a factorial sum `∑_{n < N} b_n P_n` does not change once `N ≥ d (k + 1)`.
 * `TauCeti.cyclotomic_pow_dvd_factorialPoly_iff`: over a characteristic-zero domain,
   `Φ_d ^ k ∣ P_N ↔ d k ≤ N` for `0 < d`.
 
@@ -236,20 +238,23 @@ theorem X_pow_sub_one_pow_dvd_factorialPoly {m k N : ℕ} (hm : 0 < m) (h : m * 
   exact prod_cyclotomic_pow_dvd_factorialPoly fun d hd ↦
     (Nat.mul_le_mul_right k (Nat.divisor_le hd)).trans h
 
-/-- `(X - ζ) ^ k ∣ P_N` for `ζ ^ d = 1`, `0 < d` and `d k ≤ N`: the factors `1 - X ^ (d j)`,
-`1 ≤ j ≤ k`, of `P_N` all vanish at `ζ`. -/
+/-- `(X - ζ) ^ k ∣ P_N` for `ζ ^ d = 1`, `0 < d` and `d k ≤ N`: `X - ζ` divides `X ^ d - 1`. -/
 theorem X_sub_C_pow_dvd_factorialPoly {ζ : R} {d k N : ℕ} (hd : 0 < d) (hζ : ζ ^ d = 1)
-    (h : d * k ≤ N) : (X - C ζ) ^ k ∣ factorialPoly R N := by
-  induction k generalizing N with
-  | zero => simp
-  | succ k ih =>
-    obtain ⟨M, hM⟩ : ∃ M, d * (k + 1) = M + 1 :=
-      ⟨d * (k + 1) - 1, by have : 0 < d * (k + 1) := Nat.mul_pos hd (by omega); omega⟩
-    have hk : d * k ≤ M := by rw [Nat.mul_succ] at hM; omega
-    refine Dvd.dvd.trans ?_ (factorialPoly_dvd_factorialPoly (hM ▸ h))
-    rw [pow_succ, factorialPoly_succ]
-    refine mul_dvd_mul (ih hk) (dvd_iff_isRoot.mpr ?_)
-    rw [← hM, IsRoot, eval_sub, eval_one, eval_pow, eval_X, pow_mul, hζ, one_pow, sub_self]
+    (h : d * k ≤ N) : (X - C ζ) ^ k ∣ factorialPoly R N :=
+  (pow_dvd_pow_of_dvd (dvd_iff_isRoot.mpr (by simp [IsRoot, hζ])) k).trans
+    (X_pow_sub_one_pow_dvd_factorialPoly hd h)
+
+/-- Extending a factorial sum `∑_{n < N} b_n P_n` beyond `N ≥ d (k + 1)` does not change its
+`k`-th Taylor coefficient at a root `ζ` of `X ^ d - 1`, `0 < d`. -/
+theorem coeff_taylor_sum_mul_factorialPoly_of_le {ζ : R} {d k N M : ℕ} (hd : 0 < d)
+    (hζ : ζ ^ d = 1) (hN : d * (k + 1) ≤ N) (hNM : N ≤ M) (b : ℕ → R[X]) :
+    (taylor ζ (∑ n ∈ Finset.range M, b n * factorialPoly R n)).coeff k =
+      (taylor ζ (∑ n ∈ Finset.range N, b n * factorialPoly R n)).coeff k := by
+  obtain ⟨c, hc⟩ : (X - C ζ) ^ (k + 1) ∣ ∑ n ∈ Finset.Ico N M, b n * factorialPoly R n :=
+    Finset.dvd_sum fun n hn ↦ dvd_mul_of_dvd_right
+      (X_sub_C_pow_dvd_factorialPoly hd hζ (hN.trans (Finset.mem_Ico.mp hn).1)) _
+  rw [← Finset.sum_range_add_sum_Ico _ hNM, map_add, coeff_add, hc]
+  simp [taylor_mul, coeff_X_pow_mul']
 
 /-- `P_N ∣ (X ^ m - 1) ^ N` when every `1 ≤ i ≤ N` divides `m`, for instance `m = N!`. -/
 theorem factorialPoly_dvd_X_pow_sub_one_pow {m N : ℕ} (h : ∀ i ∈ Ioc 0 N, i ∣ m) :
