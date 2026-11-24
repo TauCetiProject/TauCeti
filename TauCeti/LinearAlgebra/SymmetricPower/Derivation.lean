@@ -40,6 +40,7 @@ The nilpotency order of `d Symⁿ(N)` is in general larger than that of `N`; see
 * `SymmetricPower.differential_tprod`: the Leibniz formula on pure symmetric tensors.
 * `SymmetricPower.toSymmetricAlgebra_differential`: compatibility with
   `SymmetricAlgebra.derivationOfEnd`.
+* `SymmetricPower.map_comp_differential`: naturality of the differential along linear maps.
 * `SymmetricPower.differential_pow_eq_zero`: the nilpotency bound.
 * `SymmetricPower.map_exp`: `Symⁿ(exp N) = exp (d Symⁿ(N))`.
 -/
@@ -116,6 +117,16 @@ theorem differential_tprod (n : ℕ) (X : Module.End R M) (v : Fin n → M) :
   rw [toSymmetricAlgebra_tprod, SymmetricAlgebra.derivationOfEnd_ι, smul_eq_mul, mul_comm]
   simp_rw [Function.apply_update (fun _ ↦ SymmetricAlgebra.ι R M)]
   rw [prod_update_of_mem (mem_univ j), sdiff_singleton_eq_erase]
+
+/-- **Naturality of the differential**: a linear map `f` intertwining `X` with `Y` makes
+`Symⁿ(f)` intertwine `d Symⁿ(X)` with `d Symⁿ(Y)`. -/
+theorem map_comp_differential {N : Type*} [AddCommGroup N] [Module R N] (n : ℕ)
+    {f : M →ₗ[R] N} {X : Module.End R M} {Y : Module.End R N} (hf : f ∘ₗ X = Y ∘ₗ f) :
+    map (ι := Fin n) f ∘ₗ differential R M n X = differential R N n Y ∘ₗ map f := by
+  refine SymmetricPower.ext fun v ↦ ?_
+  simp only [LinearMap.comp_apply, differential_tprod, map_tprod, map_sum]
+  refine sum_congr rfl fun j _ ↦ ?_
+  simp_rw [Function.apply_update (fun _ ↦ f), ← LinearMap.comp_apply, hf]
 
 /-- **Nilpotency of the differential**: if `X ^ k = 0`, then
 `d Symⁿ(X) ^ (n * (k - 1) + 1) = 0`. -/
