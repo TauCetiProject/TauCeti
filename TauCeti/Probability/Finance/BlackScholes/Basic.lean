@@ -46,16 +46,21 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
   standard Gaussian coordinate.
 * `TauCeti.BlackScholes.riskNeutralPrice` — the discounted risk-neutral expectation of a payoff.
 * `TauCeti.BlackScholes.dPlus`, `TauCeti.BlackScholes.dMinus` — the Black–Scholes `d₊`, `d₋`.
+* `TauCeti.BlackScholes.dPlus_neg_volatility` — `d₊` is odd in the volatility.
 * `TauCeti.BlackScholes.mul_gaussianPDFReal_dPlus` — the density identity
   `s φ(d₊) = K e^{-rτ} φ(d₋)`, where `φ` is the standard Gaussian density.
 * `TauCeti.BlackScholes.callPrice`, `TauCeti.BlackScholes.putPrice` — the closed-form prices.
-* `TauCeti.BlackScholes.callPrice_of_mul_sqrt_eq_zero` — the call price is `(s - K e^{-rτ}) / 2`
-  when `σ √τ = 0`.
+* `TauCeti.BlackScholes.callPrice_of_mul_sqrt_eq_zero`,
+  `TauCeti.BlackScholes.putPrice_of_mul_sqrt_eq_zero` — the call and put prices are
+  `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2` when `σ √τ = 0`.
 * `TauCeti.BlackScholes.riskNeutralPrice_id` — the discounted stock is priced at `s`.
 * `TauCeti.BlackScholes.callPrice_sub_putPrice` — put–call parity.
 * `TauCeti.BlackScholes.callPrice_volatility_zero`,
   `TauCeti.BlackScholes.putPrice_volatility_zero` — at `σ = 0` the closed-form formulas evaluate,
   through Lean's convention `x / 0 = 0`, to `(s - K e^{-rτ}) / 2` and `(K e^{-rτ} - s) / 2`.
+* `TauCeti.BlackScholes.callPrice_strike_zero`,
+  `TauCeti.BlackScholes.putPrice_strike_zero` — at `K = 0` the closed-form formulas are linear in
+  the spot through Lean's convention `log (s / 0) = 0`.
 * `TauCeti.BlackScholes.riskNeutralPrice_call` — the risk-neutral price of a call is `callPrice`.
 * `TauCeti.BlackScholes.riskNeutralPrice_put` — the risk-neutral price of a put is `putPrice`.
 * `TauCeti.BlackScholes.callPrice_nonneg`, `TauCeti.BlackScholes.callPrice_le`,
@@ -191,6 +196,11 @@ theorem dPlus_def (s r σ K τ : ℝ) :
     dPlus s r σ K τ = (log (s / K) + (r + σ ^ 2 / 2) * τ) / (σ * √τ) :=
   (rfl)
 
+/-- Changing the sign of the volatility changes the sign of `d₊`: `σ` enters `d₊` through `σ²` and
+through the factor `σ` of the denominator. -/
+theorem dPlus_neg_volatility (s r σ K τ : ℝ) : dPlus s r (-σ) K τ = -dPlus s r σ K τ := by
+  rw [dPlus_def, dPlus_def, neg_sq, neg_mul, div_neg]
+
 /-- The Black–Scholes quantity `d₋ = d₊ - σ √τ`. -/
 def dMinus (s r σ K τ : ℝ) : ℝ :=
   dPlus s r σ K τ - σ * √τ
@@ -297,6 +307,13 @@ theorem putPrice_eq_callPrice (s r σ K τ : ℝ) :
     putPrice s r σ K τ = callPrice s r σ K τ - s + K * exp (-r * τ) := by
   linear_combination -callPrice_sub_putPrice s r σ K τ
 
+/-- Without a diffusion term (`σ √τ = 0`) both `d₊` and `d₋` vanish, and the put price is the
+affine function `(K e^{-rτ} - s) / 2` of the spot. -/
+theorem putPrice_of_mul_sqrt_eq_zero (h : σ * √τ = 0) :
+    putPrice s r σ K τ = (K * exp (-r * τ) - s) / 2 := by
+  rw [putPrice_eq_callPrice, callPrice_of_mul_sqrt_eq_zero h]
+  ring
+
 /-- At `σ = 0` the closed-form call formula evaluates to `(s - K e^{-rτ}) / 2`: through Lean's
 convention `x / 0 = 0` both `d₊` and `d₋` are `0`. This is a value of the formula, not the price of
 a call on a stock without volatility (which is the discounted intrinsic value). -/
@@ -308,9 +325,24 @@ a call on a stock without volatility (which is the discounted intrinsic value). 
 convention `x / 0 = 0` both `d₊` and `d₋` are `0`. This is a value of the formula, not the price of
 a put on a stock without volatility (which is the discounted intrinsic value). -/
 @[simp] theorem putPrice_volatility_zero (s r K τ : ℝ) :
-    putPrice s r 0 K τ = (K * exp (-r * τ) - s) / 2 := by
-  rw [putPrice_eq_callPrice, callPrice_volatility_zero]
-  ring
+    putPrice s r 0 K τ = (K * exp (-r * τ) - s) / 2 :=
+  putPrice_of_mul_sqrt_eq_zero (zero_mul _)
+
+/-- At `K = 0` the closed-form call formula evaluates to `s Φ(((r + σ² / 2) τ) / (σ √τ))`, linear
+in the spot: through Lean's convention `log (s / 0) = log 0 = 0`, `d₊` does not depend on the spot
+and the strike term vanishes. This is a value of the formula, not the price of a zero-strike call
+(which is `s` for `s ≥ 0`). -/
+@[simp] theorem callPrice_strike_zero (s r σ τ : ℝ) :
+    callPrice s r σ 0 τ = s * cdf (gaussianReal 0 1) ((r + σ ^ 2 / 2) * τ / (σ * √τ)) := by
+  rw [callPrice_def, dPlus_def, div_zero, log_zero, zero_add, zero_mul, zero_mul, sub_zero]
+
+/-- At `K = 0` the closed-form put formula evaluates to `-s Φ(-((r + σ² / 2) τ) / (σ √τ))`, linear
+in the spot: through Lean's convention `log (s / 0) = log 0 = 0`, `d₊` does not depend on the spot
+and the strike term vanishes. This is a value of the formula, not the price of a zero-strike put
+(which is `0` for `s ≥ 0`). -/
+@[simp] theorem putPrice_strike_zero (s r σ τ : ℝ) :
+    putPrice s r σ 0 τ = -(s * cdf (gaussianReal 0 1) (-((r + σ ^ 2 / 2) * τ / (σ * √τ)))) := by
+  rw [putPrice_def, dPlus_def, div_zero, log_zero, zero_add, zero_mul, zero_mul, zero_sub]
 
 /-! ### Risk-neutral prices of calls and puts -/
 

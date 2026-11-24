@@ -9,14 +9,15 @@ public import Mathlib.Analysis.Complex.BorelCaratheodory
 public import Mathlib.Analysis.Complex.AbsMax
 public import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.Complex.Liouville
+public import TauCeti.Analysis.Complex.Liouville
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Convex.SimplyConnected
 
 /-!
 # Consequences of the Borel–Carathéodory theorem
 
-Three consequences of Mathlib's Borel–Carathéodory theorem, which bounds a holomorphic function on
-a disc by an upper bound on its real part.
+Consequences of Mathlib's Borel–Carathéodory theorem, which bounds a holomorphic function on a
+disc by an upper bound on its real part.
 
 For an entire `H`, an upper bound `Complex.exp(H(z)) = O(Complex.exp(‖z‖^p))` with `p ≥ 0` forces
 `H(z) = O(‖z‖^p)`. An upper bound on the real part therefore controls the entire complex
@@ -27,6 +28,12 @@ Combined with the Cauchy estimate, the same theorem bounds the derivative: if `g
 on `ball z₀ r`, vanishes at `z₀` and has real part at most `A`, then
 `‖deriv g z‖ ≤ 4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * A` for `‖z - z₀‖ < r`.
 
+A one-sided bound `Re h ≤ C R ^ s` on the circles `‖z‖ = R` for arbitrarily large `R` forces an
+entire `h` to be a polynomial of degree at most `⌊s⌋₊`: Borel–Carathéodory turns it into a norm
+bound on the circles of half the radius, and Cauchy's estimates finish. This is the
+polynomial-degree step of the finite-order Hadamard factorization, where `h` is a logarithm of the
+Hadamard quotient and the circles are those on which the canonical product is bounded below.
+
 For a nonvanishing holomorphic function on an open disc, a relative norm bound by `M`
 also bounds its logarithmic derivative by the same coefficient times `log M`. Boundary and
 exterior values are unrestricted.
@@ -34,10 +41,24 @@ exterior values are unrestricted.
 ## Main results
 
 * `Differentiable.isBigO_of_cexp_isBigO`: polynomial growth of an entire logarithm.
+* `Differentiable.exists_eq_polynomial_eval_of_frequently_re_le_rpow`: an entire function with
+  real part at most `C R ^ s` on circles of arbitrarily large radius `R` is a polynomial of
+  degree at most `⌊s⌋₊`.
 * `Complex.norm_deriv_le_of_forall_mem_ball_re_le`: the derivative bound from a one-sided
   real-part bound.
 * `Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul`: the estimate from a relative
   norm bound.
+
+## References
+
+* A. Kupers, *Lectures on complex analysis*, Theorem 14.1.1 and Lemmas 14.1.4 and 14.1.5: the
+  polynomial-degree step of the finite-order Hadamard factorization, through Borel–Carathéodory
+  and Cauchy's estimates on circles where the canonical product is bounded below.
+* `Growth.lean` and `Order.lean` in
+  [PrimeNumberTheoremAnd, revision df0ccba](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd/tree/df0ccba486bb86e273ecab565b6ab222c37f8320/PrimeNumberTheoremAnd/Mathlib/Analysis/Complex/HadamardFactorization),
+  where this step is part of `hadamard_factorization_of_growth`.
+  `Differentiable.exists_eq_polynomial_eval_of_frequently_re_le_rpow` is adapted from it, stated
+  for an arbitrary entire function and only on an unbounded set of circles.
 -/
 
 public section
@@ -116,6 +137,45 @@ theorem Differentiable.isBigO_of_cexp_isBigO {H : ℂ → ℂ} (hH : Differentia
     _ = A + 2 * 2 ^ p * ‖z‖ ^ p := hM2
     _ ≤ A * ‖z‖ ^ p + 2 * 2 ^ p * ‖z‖ ^ p := by linarith
     _ = (A + 2 * 2 ^ p) * ‖z‖ ^ p := by ring
+
+/-- **Polynomial rigidity from real-part growth on circles.** If the real part of an entire
+function `h` is at most `C R ^ s` on the circles `‖z‖ = R` for arbitrarily large `R`, then `h` is a
+polynomial of degree at most `⌊s⌋₊`. Only an unbounded set of radii is needed, such as the good
+circles of the finite-order Hadamard factorization. -/
+theorem Differentiable.exists_eq_polynomial_eval_of_frequently_re_le_rpow {h : ℂ → ℂ}
+    (hh : Differentiable ℂ h) {C s : ℝ}
+    (hre : ∃ᶠ R in atTop, ∀ z ∈ Metric.sphere (0 : ℂ) R, (h z).re ≤ C * R ^ s) :
+    ∃ P : Polynomial ℂ, P.natDegree ≤ ⌊s⌋₊ ∧ h = P.eval := by
+  -- Work with the exponent `t = max s 0`, which has the same floor and dominates constants.
+  set t := max s 0
+  have ht : ⌊t⌋₊ = ⌊s⌋₊ := by
+    rcases le_total s 0 with hs | hs
+    · simp [t, max_eq_right hs, Nat.floor_of_nonpos hs]
+    · simp [t, max_eq_left hs]
+  rw [← ht]
+  have hhalf : Tendsto (fun R : ℝ ↦ R / 2) atTop atTop := tendsto_id.atTop_div_const two_pos
+  refine hh.exists_eq_polynomial_eval_of_frequently_norm_le_rpow
+    (C := 2 * |C| * 2 ^ t + 2 + 3 * ‖h 0‖) (hhalf.frequently
+      ((hre.and_eventually (eventually_ge_atTop 2)).mono fun R ⟨hR, hR2⟩ z hz ↦ ?_))
+  have hR0 : 0 < R := by linarith
+  have hz' : ‖z‖ = R / 2 := by simpa using hz
+  -- The maximum principle extends the real-part bound from the circle to the disc.
+  have hM : Set.MapsTo h (Metric.ball 0 R) {w | w.re ≤ |C| * R ^ s + 1} := fun w hw ↦ by
+    have hw := hh.re_le_log_of_forall_mem_sphere_norm_cexp_le (Real.exp_pos (C * R ^ s))
+      (fun z hz ↦ by rw [Complex.norm_exp]; exact Real.exp_le_exp.mpr (hR z hz)) hw
+    rw [Real.log_exp] at hw
+    simp only [Set.mem_ofPred_eq]
+    nlinarith [le_abs_self C, Real.rpow_nonneg hR0.le s]
+  -- Borel–Carathéodory on the circle of half the radius.
+  have hbc : ‖h z‖ ≤ 2 * (|C| * R ^ s + 1) + 3 * ‖h 0‖ :=
+    (Complex.borelCaratheodory (by positivity) hh.differentiableOn hM hR0
+      (by rw [Metric.mem_ball, dist_zero_right, hz']; linarith)).trans_eq
+      (by rw [hz']; field_simp; ring)
+  have h1 : 1 ≤ (R / 2) ^ t := Real.one_le_rpow (by linarith) (le_max_right _ _)
+  have h2 : R ^ s ≤ 2 ^ t * (R / 2) ^ t := by
+    rw [← Real.mul_rpow (by norm_num) (by linarith), mul_div_cancel₀ _ two_ne_zero]
+    exact Real.rpow_le_rpow_of_exponent_le (by linarith) (le_max_left _ _)
+  nlinarith [mul_le_mul_of_nonneg_left h2 (abs_nonneg C), norm_nonneg (h 0)]
 
 section DerivBound
 

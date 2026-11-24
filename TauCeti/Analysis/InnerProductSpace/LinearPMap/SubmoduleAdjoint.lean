@@ -6,6 +6,7 @@ Authors: Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # Double adjoints of submodules and densely defined operators
@@ -22,6 +23,10 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
 * `Submodule.adjoint_adjoint`: equality for complete submodules.
 * `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
   adjoint.
+* `LinearPMap.adjoint_adjoint_eq_closure`: `T†† = closure T` for a closable densely defined
+  operator.
+* `LinearPMap.adjoint_adjoint`, `LinearPMap.adjoint_adjoint_apply`: `T†† = T` for a closed
+  densely defined operator.
 
 ## Provenance
 
@@ -142,5 +147,24 @@ theorem dense_adjoint_domain {T : E →ₗ.[𝕜] F} (hTc : T.IsClosable) :
   rw [Submodule.adjoint_adjoint_eq_topologicalClosure,
     hTc.graph_closure_eq_closure_graph] at hmem
   exact T.closure.graph_fst_eq_zero_snd hmem rfl
+
+/-- **The double adjoint is the closure.** For a closable densely defined partial linear map `T`
+between Hilbert spaces, `T†† = closure T`. -/
+theorem adjoint_adjoint_eq_closure {T : E →ₗ.[𝕜] F} (hT : T.IsClosable)
+    (hd : Dense (T.domain : Set E)) : T.adjoint.adjoint = T.closure := by
+  apply eq_of_eq_graph
+  rw [adjoint_graph_eq_graph_adjoint (dense_adjoint_domain hT), adjoint_graph_eq_graph_adjoint hd,
+    Submodule.adjoint_adjoint_eq_topologicalClosure, hT.graph_closure_eq_closure_graph]
+
+/-- **The adjoint of a closed operator is involutive.** For a closed densely defined partial linear
+map `T` between Hilbert spaces, `T†† = T`. -/
+theorem adjoint_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
+    T.adjoint.adjoint = T :=
+  (adjoint_adjoint_eq_closure hT.isClosable hd).trans hT.closure_eq
+
+/-- For a closed densely defined `T`, the double adjoint `T††` evaluates as `T` on `dom T`. -/
+theorem adjoint_adjoint_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E))
+    (x : T.domain) : T.adjoint.adjoint ⟨x, (adjoint_adjoint hT hd).symm ▸ x.property⟩ = T x :=
+  (adjoint_adjoint hT hd).le.2 rfl
 
 end LinearPMap

@@ -21,6 +21,8 @@ sets of the base are compact. No separation axiom and no compactness of the base
 * `TauCeti.isProperMap_of_forall_exists_trivialization`: a locally trivial map with compact fibre is
   proper.
 * `FiberBundle.isProperMap_proj`: the projection of a fibre bundle with compact fibre is proper.
+* `FiberBundle.compactSpace_totalSpace`: a fibre bundle with compact fibre over a compact base has
+  compact total space.
 -/
 
 public section
@@ -54,3 +56,9 @@ theorem FiberBundle.isProperMap_proj [CompactSpace F] (E : B → Type*)
     [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] :
     IsProperMap (π F E) :=
   TauCeti.isProperMap_of_forall_exists_trivialization (exists_trivialization_mem_baseSet F E)
+
+/-- The total space of a fibre bundle with compact fibre over a compact base is compact. -/
+instance FiberBundle.compactSpace_totalSpace [CompactSpace B] [CompactSpace F] {E : B → Type*}
+    [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] :
+    CompactSpace (TotalSpace F E) :=
+  ⟨by simpa using (FiberBundle.isProperMap_proj F E).isCompact_preimage isCompact_univ⟩

@@ -86,6 +86,9 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
   `TauCeti.intCast_mul_waldschmidtNormalize_intCast_mem_range_intCast`: the products `cₘ βᵢ`
   lie in every subring containing `c₀, …, c_{m-1}`; for integer coefficients they are integers.
 * `TauCeti.snoc_waldschmidtNormalize_neg_one`: `(β₀, …, β_{m-1}, -1) = (-cₘ)⁻¹ (c₀, …, cₘ)`.
+* `TauCeti.mul_waldschmidtPoint_waldschmidtNormalize_zero`,
+  `TauCeti.mul_waldschmidtPoint_waldschmidtNormalize_succ`: the coordinates of the grid points
+  of the normalized coefficients, times the denominator `cₘ`.
 * `TauCeti.iteratedDeriv_waldschmidtFunction`: the entry identity
   `∂^σ/∂z₀^σ (F(z) exp(t ⟨λ, z⟩))|_{z = s · y} = γ exp(t sₘ Λ)`.
 * `TauCeti.waldschmidtOperatorEntry_eq_sum_hasseDeriv`: the Leibniz formula
@@ -287,6 +290,33 @@ theorem waldschmidtPoint_map {S : Type*} [CommRing S] (f : R →+* S) (s : Fin (
   cases i using Fin.cases <;> simp
 
 end Point
+
+section NormalizePoint
+
+variable {K : Type*} [Field K] {c : Fin (n + 1) → K}
+
+/-- The grid points of the normalized coefficients, cleared of the denominator `cₘ`: the
+`z₀`-coordinate of `cₘ (s · y)` is `-sₘ c₀`. In the homogeneous rational case `c₀ = 0` and
+the `cᵢ` integral, it is `0`. -/
+theorem mul_waldschmidtPoint_waldschmidtNormalize_zero (hc : c (Fin.last n) ≠ 0) (c₀ : K)
+    (s : Fin (n + 1) → ℤ) :
+    c (Fin.last n) * waldschmidtPoint (waldschmidtNormalize c₀ c) s 0 = -(s (Fin.last n) * c₀) := by
+  rw [waldschmidtPoint_apply_zero, waldschmidtNormalize_zero]
+  field_simp
+
+/-- The grid points of the normalized coefficients, cleared of the denominator `cₘ`: the
+`z_{k+1}`-coordinate of `cₘ (s · y)` is `cₘ s_{k+1} - sₘ c_{k+1}`. In the homogeneous rational
+case with integral `cᵢ`, it is an integer of absolute value at most
+`|cₘ| |s_{k+1}| + |c_{k+1}| |sₘ|`. -/
+theorem mul_waldschmidtPoint_waldschmidtNormalize_succ (hc : c (Fin.last n) ≠ 0) (c₀ : K)
+    (s : Fin (n + 1) → ℤ) (k : Fin n) :
+    c (Fin.last n) * waldschmidtPoint (waldschmidtNormalize c₀ c) s k.succ =
+      c (Fin.last n) * s k.castSucc - s (Fin.last n) * c k.castSucc := by
+  rw [waldschmidtPoint_apply_succ, waldschmidtNormalize_succ]
+  field_simp
+  ring
+
+end NormalizePoint
 
 section PointMap
 

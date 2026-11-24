@@ -24,8 +24,8 @@ For a finite type, take the sampling set to be `Finset.univ`. The integration re
 The formulas hold for the empty sampling set, where the law is zero. Real observables have
 full exponential-integrability domain even on arbitrary sampling sets: on infinite sets
 `uniformOn` is zero. The `HasLaw` corollaries start from a native uniform random element.
-Use `HasLaw.integral_comp_uniformOn_finset` for its labelled mean and
-`HasLaw.map_uniformOn` for its law after labelling.
+Use `HasLaw.integral_comp_uniformOn_finset` for its labelled mean and raw moments,
+and `HasLaw.map_uniformOn` for its law after labelling.
 -/
 
 public section
@@ -123,12 +123,6 @@ namespace ProbabilityTheory.HasLaw
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   [MeasurableSingletonClass α] {P : Measure Ω} {s : Finset α} {Y : Ω → α}
-
-/-- A raw moment of a labelled uniform random element is the average of the label powers. -/
-theorem integral_pow_comp_uniformOn_finset
-    (hY : HasLaw Y (uniformOn (s : Set α)) P) (label : α → ℝ) (n : ℕ) :
-    ∫ ω, label (Y ω) ^ n ∂P = (s.card : ℝ)⁻¹ * ∑ i ∈ s, label i ^ n := by
-  simpa only [smul_eq_mul] using hY.integral_comp_uniformOn_finset (fun i ↦ label i ^ n)
 
 /-- The variance of a labelled uniform random element is the empirical variance of its labels. -/
 theorem variance_comp_uniformOn_finset

@@ -43,7 +43,7 @@ variable {R : Type u} [CommRing R]
 
 /-- The first-column section on the chart where the upper-left coordinate is a unit. -/
 def upperLeftSection (a : Rˣ) (c : R) : SL(2, R) :=
-  ⟨!![(a : R), 0; c, (a⁻¹ : Rˣ)], by simp [Matrix.det_fin_two_of]⟩
+  .mk !![(a : R), 0; c, (a⁻¹ : Rˣ)] (by simp [Matrix.det_fin_two_of])
 
 /-- The matrix of the first section. -/
 @[simp]
@@ -54,7 +54,7 @@ theorem coe_upperLeftSection (a : Rˣ) (c : R) :
 
 /-- The first-column section on the chart where the lower-left coordinate is a unit. -/
 def lowerLeftSection (a : R) (c : Rˣ) : SL(2, R) :=
-  ⟨!![a, -(c⁻¹ : Rˣ); (c : R), 0], by simp [Matrix.det_fin_two_of]⟩
+  .mk !![a, -(c⁻¹ : Rˣ); (c : R), 0] (by simp [Matrix.det_fin_two_of])
 
 /-- The matrix of the second section. -/
 @[simp]
