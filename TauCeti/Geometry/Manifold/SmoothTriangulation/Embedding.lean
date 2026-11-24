@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Secant
 public import TauCeti.Analysis.Calculus.FDeriv.Antilipschitz
 import TauCeti.Analysis.Convex.SecantEstimate
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 
 /-!
 # Separation bounds for embedded smooth simplices

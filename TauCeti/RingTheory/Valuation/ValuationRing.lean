@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import Mathlib.RingTheory.Valuation.ValuationRing
 import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
@@ -36,6 +37,12 @@ Finally, on a monoid with total divisibility, a multiplicative map preserving ze
 determined by divisibility when it is at most `1` everywhere, below `1` on the nonunits and zero
 only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. This describes the `𝔪`-adic valuation of a
 discrete valuation ring on its own elements, and the points with zero support of its adic spectrum.
+For Mathlib's valuation of a valuation ring on its fraction field, the same comparison reads: the
+fraction `x / y` has value at most that of `x' / y'` exactly when `x' y ∣ x y'`.
+
+Total divisibility passes to localizations and quotients: an element outside an ideal divides
+every element of it, and so localizations and quotients of a valuation ring are valuation rings
+as soon as they are domains.
 
 ## Main results
 
@@ -47,8 +54,18 @@ discrete valuation ring on its own elements, and the points with zero support of
   of a valuation ring generates its maximal ideal.
 * `Irreducible.image_maximalIdeal_pow_eq_smul`: for an irreducible `ϖ` of a valuation subring `s`
   of a commutative ring, the image of the `k`-th power of the maximal ideal is `ϖ ^ k • s`.
+* `Irreducible.setOf_valuation_eq_one_eq_sdiff`: for an irreducible `ϖ` of the ring of integers
+  of a valuation on a field, the elements of valuation one are `v.integer \ ϖ • v.integer`.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
+* `ValuationRing.valuation_surjective`, `ValuationRing.valuation_div_le_valuation_div_iff_dvd`:
+  every element of the value group of a valuation ring is a value, and values of fractions compare
+  by divisibility of cross products.
+* `TauCeti.PreValuationRing.dvd_of_mem_of_notMem`: an element outside an ideal divides every
+  element of the ideal.
+* `TauCeti.PreValuationRing.of_isLocalization` and `TauCeti.ValuationRing.of_isLocalization`:
+  localizations of (pre)valuation rings are (pre)valuation rings. There are instances for
+  `Localization M` and for quotients `R ⧸ I`.
 
 ## References
 
@@ -141,9 +158,121 @@ theorem _root_.Irreducible.image_maximalIdeal_pow_eq_smul {A S : Type*} [CommRin
   rw [hϖ.maximalIdeal_eq_of_preValuationRing]
   exact SubsemiringClass.image_coe_span_singleton_pow s ϖ.property k
 
+open Pointwise in
+/-- For an irreducible element `ϖ` of the ring of integers of a valuation `v` on a field, the
+elements of valuation one are the complement in `v.integer` of the maximal ideal
+`ϖ • v.integer`. -/
+theorem _root_.Irreducible.setOf_valuation_eq_one_eq_sdiff {K Γ₀ : Type*} [Field K]
+    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation K Γ₀} {ϖ : v.integer} (hϖ : Irreducible ϖ) :
+    {x : K | v x = 1} = (v.integer : Set K) \ (ϖ : K) • (v.integer : Set K) := by
+  have hm : ((↑) : v.integer → K) '' ↑(IsLocalRing.maximalIdeal v.integer) =
+      (ϖ : K) • (v.integer : Set K) := by
+    simpa using hϖ.image_maximalIdeal_pow_eq_smul (A := K) 1
+  rw [← hm]
+  have hint := Valuation.integer.integers v
+  ext x
+  simp only [Set.mem_ofPred_eq, Set.mem_sdiff, SetLike.mem_coe, Set.mem_image,
+    IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, not_exists, not_and]
+  refine ⟨fun hx ↦ ⟨(Valuation.mem_integer_iff _ x).2 hx.le, fun y hy hyx ↦
+    hy (hint.isUnit_iff_valuation_eq_one.2 (hyx.symm ▸ hx :))⟩, fun ⟨hx, h⟩ ↦ ?_⟩
+  by_contra hne
+  exact h ⟨x, hx⟩ (fun hu ↦ hne (hint.isUnit_iff_valuation_eq_one.1 hu)) rfl
+
+end ValuationRing
+
+namespace PreValuationRing
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] [PreValuationRing R]
+
+/-- In a ring with total divisibility, an element outside an ideal divides every element of the
+ideal. -/
+theorem dvd_of_mem_of_notMem {I : Ideal R} {x s : R} (hx : x ∈ I) (hs : s ∉ I) : s ∣ x :=
+  (_root_.ValuationRing.dvd_total s x).resolve_right fun h ↦ hs (I.mem_of_dvd h hx)
+
+/-- A localization of a ring with total divisibility has total divisibility. -/
+theorem of_isLocalization (M : Submonoid R) (S : Type*) [CommSemiring S] [Algebra R S]
+    [IsLocalization M S] : PreValuationRing S := by
+  refine PreValuationRing.iff_dvd_total.mpr ⟨fun x y ↦ ?_⟩
+  obtain ⟨⟨a, s⟩, rfl⟩ := IsLocalization.mk'_surjective M x
+  obtain ⟨⟨b, t⟩, rfl⟩ := IsLocalization.mk'_surjective M y
+  -- If `a * c = b` then `a / s * (s * c / t) = b / t`, and symmetrically.
+  rcases _root_.ValuationRing.dvd_total a b with ⟨c, rfl⟩ | ⟨c, rfl⟩
+  · refine .inl ⟨IsLocalization.mk' S (s * c : R) t, ?_⟩
+    rw [← IsLocalization.mk'_mul, IsLocalization.mk'_eq_iff_eq, Submonoid.coe_mul]
+    congr 1
+    ring
+  · refine .inr ⟨IsLocalization.mk' S (t * c : R) s, ?_⟩
+    rw [← IsLocalization.mk'_mul, IsLocalization.mk'_eq_iff_eq, Submonoid.coe_mul]
+    congr 1
+    ring
+
+/-- `Localization M` of a ring with total divisibility has total divisibility. -/
+instance (M : Submonoid R) : PreValuationRing (Localization M) :=
+  of_isLocalization M _
+
+end CommSemiring
+
+/-- A quotient of a ring with total divisibility has total divisibility. -/
+instance {R : Type*} [CommRing R] [PreValuationRing R] (I : Ideal R) :
+    PreValuationRing (R ⧸ I) :=
+  Function.Surjective.preValuationRing (Ideal.Quotient.mk I).toMonoidHom.toMulHom
+    Ideal.Quotient.mk_surjective
+
+end PreValuationRing
+
+namespace ValuationRing
+
+/-- A localization of a ring with total divisibility is a valuation ring as soon as it is a
+domain. For a valuation domain this applies to every localization at a submonoid not
+containing `0`. -/
+theorem of_isLocalization {R : Type*} [CommSemiring R] [PreValuationRing R] (M : Submonoid R)
+    (S : Type*) [CommRing S] [IsDomain S] [Algebra R S] [IsLocalization M S] :
+    _root_.ValuationRing S :=
+  have := PreValuationRing.of_isLocalization M S
+  {}
+
+/-- `Localization M` of a ring with total divisibility is a valuation ring when it is a domain;
+for instance `Localization.AtPrime p` for a prime `p` of a valuation domain. -/
+instance {R : Type*} [CommRing R] [PreValuationRing R] (M : Submonoid R)
+    [IsDomain (Localization M)] : _root_.ValuationRing (Localization M) where
+
+/-- A quotient of a ring with total divisibility is a valuation ring when it is a domain;
+for instance `R ⧸ p` for a prime `p` of a valuation domain `R`. -/
+instance {R : Type*} [CommRing R] [PreValuationRing R] (I : Ideal R) [IsDomain (R ⧸ I)] :
+    _root_.ValuationRing (R ⧸ I) where
+
 end ValuationRing
 
 end TauCeti
+
+namespace ValuationRing
+
+variable {A K : Type*} [CommRing A] [IsDomain A] [ValuationRing A] [Field K] [Algebra A K]
+  [IsFractionRing A K]
+
+/-- The valuation of a valuation ring sends `z` to its class in the value group
+`Kˣ / Aˣ`. -/
+theorem valuation_apply (z : K) : valuation A K z = Quotient.mk'' z :=
+  rfl
+
+/-- Every element of the value group of a valuation ring is a value of its valuation. -/
+theorem valuation_surjective : Function.Surjective (valuation A K) :=
+  fun a ↦ Quotient.inductionOn' a fun z ↦ ⟨z, (valuation_apply z).symm⟩
+
+/-- In a valuation ring `A` with fraction field `K`, the fraction `x / y` has value at most that of
+`x' / y'` exactly when `x' y` divides `x y'`. -/
+theorem valuation_div_le_valuation_div_iff_dvd {x y x' y' : A} (hy : y ≠ 0) (hy' : y' ≠ 0) :
+    valuation A K (algebraMap A K x / algebraMap A K y) ≤
+        valuation A K (algebraMap A K x' / algebraMap A K y') ↔ x' * y ∣ x * y' := by
+  have hpos {z : A} (hz : z ≠ 0) : 0 < valuation A K (algebraMap A K z) :=
+    pos_iff_ne_zero.mpr <| (map_ne_zero _).mpr <|
+      (map_ne_zero_iff _ (IsFractionRing.injective A K)).mpr hz
+  rw [map_div₀, map_div₀, div_le_div_iff₀ (hpos hy) (hpos hy'), ← map_mul, ← map_mul, ← map_mul,
+    ← map_mul, (integers A K).le_iff_dvd]
+
+end ValuationRing
 
 namespace MonoidWithZeroHom
 

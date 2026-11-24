@@ -26,7 +26,8 @@ import TauCeti.Basic.Complex.Basic
 
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
-This file records their membership criteria, behavior under reflection, convexity, closure, unique
+This file records their membership criteria, behavior under reflection, convexity, closure,
+their images in annuli under the translated exponential `w ↦ z₀ + exp w`, unique
 differentiability (`uniqueDiffOn_verticalClosedStrip`), vanishing of imaginary parts of iterated
 derivatives along the real segment for functions real-valued on `[a, b]`
 (`ContDiffOn.im_iteratedDerivWithin_verticalClosedStrip_eq_zero`), the vertical Taylor–Lagrange
@@ -113,6 +114,30 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
 theorem closure_verticalStrip (hab : a < b) :
     closure (verticalStrip a b) = verticalClosedStrip a b := by
   rw [verticalStrip, closure_preimage_re, closure_Ioo hab.ne, verticalClosedStrip]
+
+/-- The translated exponential `w ↦ z₀ + exp w` maps the open strip `log r₁ < re w < log r₂` into
+the open annulus `r₁ < ‖z - z₀‖ < r₂`. No sign condition on `r₁` is needed, since
+`r₁ ≤ exp (log r₁)` for every real `r₁`. -/
+theorem mapsTo_add_exp_verticalStrip (z₀ : ℂ) (r₁ : ℝ) {r₂ : ℝ} (hr₂ : 0 < r₂) :
+    MapsTo (fun w => z₀ + exp w) (verticalStrip (Real.log r₁) (Real.log r₂))
+      (Metric.ball z₀ r₂ \ Metric.closedBall z₀ r₁) := by
+  intro w hw
+  rw [mem_verticalStrip_iff] at hw
+  rw [mem_sdiff, mem_ball_iff_norm, mem_closedBall_iff_norm, add_sub_cancel_left, norm_exp, not_le]
+  exact ⟨(Real.lt_log_iff_exp_lt hr₂).1 hw.2,
+    (Real.le_exp_log r₁).trans_lt (Real.exp_lt_exp.2 hw.1)⟩
+
+/-- The translated exponential `w ↦ z₀ + exp w` maps the closed strip `log r₁ ≤ re w ≤ log r₂`
+into the closed annulus `r₁ ≤ ‖z - z₀‖ ≤ r₂`. No sign condition on `r₁` is needed, since
+`r₁ ≤ exp (log r₁)` for every real `r₁`. -/
+theorem mapsTo_add_exp_verticalClosedStrip (z₀ : ℂ) (r₁ : ℝ) {r₂ : ℝ} (hr₂ : 0 < r₂) :
+    MapsTo (fun w => z₀ + exp w) (verticalClosedStrip (Real.log r₁) (Real.log r₂))
+      (Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁) := by
+  intro w hw
+  rw [mem_verticalClosedStrip_iff] at hw
+  rw [mem_sdiff, mem_closedBall_iff_norm, mem_ball_iff_norm, add_sub_cancel_left, norm_exp, not_lt]
+  exact ⟨(Real.le_log_iff_exp_le hr₂).1 hw.2,
+    (Real.le_exp_log r₁).trans (Real.exp_le_exp.2 hw.1)⟩
 
 /-- A closed vertical strip `verticalClosedStrip a b` with `a < b` has unique complex derivatives
 at every point, including on both vertical boundary lines `Re z = a` and `Re z = b`. -/

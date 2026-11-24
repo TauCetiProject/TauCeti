@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Little
 public import TauCeti.Analysis.Holder.Iterated
-public import TauCeti.Analysis.Holder.Little
+public import TauCeti.Analysis.Holder.Little.Basic
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
@@ -19,7 +19,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LineDeriv
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.MetricSpace.Holder
@@ -152,15 +152,6 @@ section Kernel
 
 variable (φ : ContDiffBump (0 : E))
 
-/-- The kernel `𝓕⁻ (φ (2^{-N} ·))` is the `L¹`-normalised dilate `2^{Nn} K₀ (2^N ·)`. -/
-private theorem fourierInv_lowPass_apply (N : ℕ) (y : E) :
-    𝓕⁻ (⇑(φ.lowPassSchwartz (pow_ne_zero N two_ne_zero))) y =
-      (((2 : ℝ) ^ N) ^ finrank ℝ E) •
-        𝓕⁻ (⇑(φ.lowPassSchwartz (pow_ne_zero 0 two_ne_zero))) (((2 : ℝ) ^ N) • y) := by
-  rw [φ.coe_lowPassSchwartz_eq_comp, fourierInv_comp_smul, inv_inv, inv_pow, abs_inv, inv_inv,
-    abs_of_pos (by positivity)]
-  simp only [pow_zero]
-
 /-- The Schwartz kernel `𝓕⁻ (φ (2^{-N} ·))` of the low-pass multiplier at scale `2^N`. -/
 private def kernel (N : ℕ) : 𝓢(E, ℂ) :=
   𝓕⁻ (φ.lowPassSchwartz (pow_ne_zero N two_ne_zero))
@@ -178,7 +169,8 @@ private theorem norm_iteratedFDeriv_kernel (N m : ℕ) (y : E) :
   have hdil : ⇑(kernel φ N) =
       fun y ↦ (((2 : ℝ) ^ N) ^ finrank ℝ E) • kernel φ 0 (((2 : ℝ) ^ N) • y) := by
     funext y
-    rw [coe_kernel, fourierInv_lowPass_apply, coe_kernel]
+    rw [coe_kernel, φ.fourierInv_lowPassSchwartz_apply (pow_pos two_pos N), coe_kernel]
+    simp only [pow_zero]
   rw [hdil, iteratedFDeriv_const_smul_apply' (f := fun y ↦ kernel φ 0 (((2 : ℝ) ^ N) • y))
       (hK.comp (contDiff_const_smul _)).contDiffAt,
     iteratedFDeriv_comp_const_smul _ hK, norm_smul, norm_smul, norm_pow, norm_pow,
@@ -202,17 +194,12 @@ private theorem inhomogeneousLittlewoodPaley_mul_lowPass {n₀ : ℕ}
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) *
         ⇑(φ.lowPassSchwartz (pow_ne_zero (j + n₀) two_ne_zero)) =
       fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-  ext ξ
-  rw [Pi.mul_apply, ContDiffBump.coe_lowPassSchwartz]
-  by_cases hξ : φ.inhomogeneousLittlewoodPaley j ξ = 0
-  · simp [hξ]
-  have hball : ‖ξ‖ ≤ 2 ^ j * φ.rOut := mem_closedBall_zero_iff.1 <|
-    φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j (subset_tsupport _ hξ)
-  dsimp only
-  rw [φ.one_of_mem_closedBall, Complex.ofReal_one, mul_one]
-  rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (by positivity),
-    inv_mul_le_iff₀ (by positivity), pow_add, mul_assoc]
-  exact hball.trans (by gcongr)
+  refine φ.mul_lowPassSchwartz_of_support_subset (by positivity) <| (subset_tsupport _).trans <|
+    (tsupport_comp_subset Complex.ofReal_zero _).trans <|
+      (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j).trans <|
+        Metric.closedBall_subset_closedBall ?_
+  rw [pow_add, mul_assoc]
+  gcongr
 
 /-- The smoothing `Kⱼ ⋆ g` of an `L^∞` function by the kernel `Kⱼ = 𝓕⁻ (φ (2^{-(j + n₀)} ·))`,
 an everywhere-defined function. -/
@@ -329,7 +316,7 @@ theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_add_add_sub_tw
       (φ.integral_fourierInv_inhomogeneousLittlewoodPaley_succ j) hf hmi
       (integrable_kernel_smul_sub hκi f.continuous (f.norm_coe_le_norm ·) x)
   have hnorm : ‖g‖ ≤ H * (((2 : ℝ) ^ ((s : ℝ) * ((j + 1 : ℕ) : ℝ)))⁻¹ * C) := by
-    refine Lp.norm_top_le_of_ae_bound (by positivity) ?_
+    refine Lp.norm_le_of_ae_bound_top (by positivity) ?_
     filter_upwards [hconv] with x hx
     rw [hx]
     exact (hpt x).trans (by gcongr)
@@ -359,7 +346,7 @@ private theorem toLpTop_eq_toDistr_of_tendsto {s : ℝ} {q : ℝ≥0∞} {u : Be
       (𝓝 (toLpTop volume ℂ f)) := by
     rw [tendsto_iff_norm_sub_tendsto_zero]
     refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_) hε
-    refine Lp.norm_top_le_of_ae_bound ((norm_nonneg _).trans (htail N 0)) ?_
+    refine Lp.norm_le_of_ae_bound_top ((norm_nonneg _).trans (htail N 0)) ?_
     filter_upwards [Lp.coeFn_sub (∑ j ∈ Finset.range N, u.block j) (toLpTop volume ℂ f),
       Lp.coeFn_finsetSum (Finset.range N) u.block, coeFn_toLpTop (𝕜 := ℂ) volume f,
       ae_all_iff.2 hG] with x h₁ h₂ h₃ h₄

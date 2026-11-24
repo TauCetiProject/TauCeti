@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.Hofer
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -296,35 +297,18 @@ theorem isComplexLinearMap_of_tendsto_rescale (ω : SmoothTwoForm I M) [FiniteDi
       (J (c i + ε i • w) (u i (c i + ε i • w)))
       (ω.perturbedMFDeriv Ks Kt (u i) (c i + ε i • w)).toLinearMap) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z₀ x₀) L.toLinearMap := by
-  set T := trivializationAt E (TangentSpace I) x₀
-  have hx₀ : x₀ ∈ T.baseSet := FiberBundle.mem_baseSet_trivializationAt E _ x₀
   have hx : Tendsto (fun i ↦ u i (c i + ε i • w)) l (𝓝 x₀) :=
-    ((T.tendsto_mk_nhds_mk_iff ℝ hx₀).1 (hL 0)).1
+    (((trivializationAt E (TangentSpace I) x₀).tendsto_mk_nhds_mk_iff ℝ
+      (FiberBundle.mem_baseSet_trivializationAt E _ x₀)).1 (hL 0)).1
   have hz : Tendsto (fun i ↦ c i + ε i • w) l (𝓝 z₀) := by simpa using hc.add (hε.smul_const w)
-  have hbase : ∀ᶠ i in l, u i (c i + ε i • w) ∈ T.baseSet := hx (T.open_baseSet.mem_nhds hx₀)
-  -- In coordinates, the rescaled perturbed derivatives converge to `L`, and the structures along
-  -- the sequence converge to the frozen structure.
-  have hP := ω.tendsto_coord_smul_perturbedMFDeriv_rescale hc hε hL hXs hXt
-  have h := (isBoundedBilinearMap_apply.continuous.tendsto _).comp
-    ((hJ.tendsto.comp (hz.prodMk_nhds hx)).prodMk_nhds (hP stdComplexLineReal))
-  -- Pass to the limit in `ε i • P i (0, 1) = J_i (ε i • P i (1, 0))`, read in coordinates, where
-  -- the coordinate expression of `J_i` acts on coordinates of vectors as `J_i` on the vectors.
-  have hlim : T.continuousLinearMapAt ℝ x₀ (L stdComplexLineImag) =
-      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀
-        (J z₀ x₀).toLinearMap.toContinuousLinearMap
-        (T.continuousLinearMapAt ℝ x₀ (L stdComplexLineReal)) :=
-    tendsto_nhds_unique (hP stdComplexLineImag) (h.congr' ((hsol.and hbase).mono
-      fun i ⟨hi, hb⟩ ↦ ?_))
-  · rw [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply, Trivialization.symmL_continuousLinearMapAt _ hx₀] at hlim
-    rw [isComplexLinearMap_stdComplexLine_iff, ContinuousLinearMap.coe_coe]
-    rw [← T.coe_continuousLinearEquivAt_eq hx₀] at hlim
-    exact (T.continuousLinearEquivAt ℝ x₀ hx₀).injective hlim
-  · rw [isComplexLinearMap_stdComplexLine_iff, ContinuousLinearMap.coe_coe] at hi
-    simp only [comp_apply]
-    rw [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply, Trivialization.symmL_continuousLinearMapAt _ hb, map_smul, hi]
-    rfl
+  -- The rescaled perturbed derivatives `ε i • (du - X_K)` converge to `L` in the tangent bundle,
+  -- and are complex linear for the structures along the sequence.
+  refine isComplexLinearMap_of_tendsto_tangentBundle
+    (A := fun i ↦ ε i • ω.perturbedMFDeriv Ks Kt (u i) (c i + ε i • w)) hz
+    (fun v ↦ ((trivializationAt E (TangentSpace I) x₀).tendsto_mk_nhds_mk_iff ℝ
+      (FiberBundle.mem_baseSet_trivializationAt E _ x₀)).2
+      ⟨hx, ω.tendsto_coord_smul_perturbedMFDeriv_rescale hc hε hL hXs hXt v⟩) hJ
+    (hsol.mono fun i hi ↦ hi.smul (ε i))
 
 /-- **The energy densities of rescaled maps converge to the area density of the limit.** Rescale
 maps `u i` into `M` at centres `c i → z₀` by scales `ε i → 0`. Suppose that the derivatives of the

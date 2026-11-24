@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Order.Filter.Defs
 public import Mathlib.Topology.Defs.Filter
+import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
@@ -30,6 +31,9 @@ strips (`TauCeti.HasVerticalStripGrowth.tendsto_mul_exp_neg_mul_abs_im`), and th
 exponential decay is preserved by Schwarz conjugation
 (`TauCeti.tendsto_conj_comp_conj_mul_exp_neg_mul_abs_im`). These facts allow
 growth estimates for completed and pole-cleared L-functions to be assembled from their factors.
+
+A function with vertical-strip growth that is continuous on a closed strip is bounded there by a
+power of `1 + |Im s|` at every height, not only at large height.
 -/
 
 public section
@@ -159,6 +163,28 @@ theorem sum {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ}
     simp only [Finset.sum_insert hi]
     exact (h i (Finset.mem_insert_self i t)).add
       (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
+/-- **Growth bounds at every height.** If `f` has vertical-strip growth and is continuous on the
+closed strip `a ≤ re s ≤ b`, then `‖f s‖ ≤ C * (1 + |Im s|) ^ A` on the whole strip, for some
+`C > 0` and `A ≥ 0`. -/
+theorem exists_bound_of_continuousOn (hf : HasVerticalStripGrowth f) {a b : ℝ}
+    (hc : ContinuousOn f {s : ℂ | s.re ∈ Set.Icc a b}) :
+    ∃ C : ℝ, 0 < C ∧ ∃ A : ℝ, 0 ≤ A ∧ ∀ s : ℂ, s.re ∈ Set.Icc a b →
+      ‖f s‖ ≤ C * (1 + |s.im|) ^ A := by
+  rcases lt_or_ge b a with hba | hab
+  · exact ⟨1, one_pos, 0, le_rfl, fun s hs ↦ absurd (hs.1.trans hs.2) (not_le.2 hba)⟩
+  obtain ⟨C, hC, A, hA, T, -, hbound⟩ := hf.exists_bound hab
+  obtain ⟨K, hK⟩ := (isCompact_Icc.reProdIm (isCompact_Icc (a := -T) (b := T)))
+    |>.exists_bound_of_continuousOn (hc.mono fun s hs ↦ (Complex.mem_reProdIm.1 hs).1)
+  have hKC : 0 < max K 0 + C := add_pos_of_nonneg_of_pos (le_max_right _ _) hC
+  refine ⟨max K 0 + C, hKC, A, hA, fun s hs ↦ ?_⟩
+  have hx : 1 ≤ (1 + |s.im|) ^ A := Real.one_le_rpow (by linarith [abs_nonneg s.im]) hA
+  rcases le_or_gt |s.im| T with ht | ht
+  · calc ‖f s‖ ≤ K := hK s (Complex.mem_reProdIm.2 ⟨hs, abs_le.1 ht⟩)
+      _ ≤ (max K 0 + C) * 1 := by linarith [le_max_left K 0]
+      _ ≤ (max K 0 + C) * (1 + |s.im|) ^ A := mul_le_mul_of_nonneg_left hx hKC.le
+  · exact (hbound s hs ht.le).trans
+      (mul_le_mul_of_nonneg_right (by linarith [le_max_right K 0]) (by positivity))
 
 end HasVerticalStripGrowth
 
