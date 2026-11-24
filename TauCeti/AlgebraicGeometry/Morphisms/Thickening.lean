@@ -53,12 +53,11 @@ module of homomorphisms into `I`.
   `I ≤ J`, the inclusion `V(J) ⟶ V(I)` is a first-order thickening if and only if `J ^ 2 ≤ I`,
   which holds in particular for successive positive powers `I ^ (n + 2) ≤ I ^ (n + 1)`.
 * `TauCeti.AlgebraicGeometry.IsThickening.factor_firstOrder`: a closed immersion whose ideal sheaf
-  `I` satisfies `I ^ (n + 2) = 0` factors, by Mathlib's `IsClosedImmersion.lift`, through
-  `V(I ^ (n + 1))` as a thickening with ideal of vanishing `(n + 1)`-st power followed by a
-  first-order thickening.
+  `I` satisfies `I ^ (n + 2) = 0` factors, through `TauCeti.AlgebraicGeometry.factorPowSucc` (a
+  case of Mathlib's `IsClosedImmersion.lift`), through `V(I ^ (n + 1))` as a thickening with ideal
+  of vanishing `(n + 1)`-st power followed by a first-order thickening.
 * `TauCeti.AlgebraicGeometry.isThickening_of_ker_pow_eq_bot`: a closed immersion with nilpotent
-  ideal sheaf is a thickening, and `TauCeti.AlgebraicGeometry.ker_pow_eq_bot_of_ker_comp_pow_eq`:
-  the ideal sheaf of `a` is nilpotent when that of `a ≫ j` has a power equal to that of `j`.
+  ideal sheaf is a thickening.
 * `TauCeti.AlgebraicGeometry.IsThickening.ker_le_ker`: a morphism from a reduced scheme kills the
   ideal sheaf of a thickening of its target, so it lifts along the thickening; the reduction
   `X.nilradical.subscheme ⟶ X` is a thickening.
@@ -113,12 +112,6 @@ theorem isThickening_iff_ker_le_nilradical (i : Z ⟶ X) [IsClosedImmersion i] :
   simp [isThickening_iff, surjective_iff, hnil, ← Set.range_eq_univ, ← hrange,
     ‹IsClosedImmersion i›]
 
-/-- The ideal sheaf of `V(I ^ n) ⟶ X`, for `n ≠ 0`, lies in `I`. -/
-theorem ker_subschemeι_pow_le (I : X.IdealSheafData) {n : ℕ} (hn : n ≠ 0) :
-    (I ^ n).subschemeι.ker ≤ I := by
-  rw [Scheme.IdealSheafData.ker_subschemeι]
-  exact (pow_le_pow_of_le_one bot_le le_top (Nat.one_le_iff_ne_zero.mpr hn)).trans_eq (pow_one _)
-
 /-- A closed immersion whose ideal sheaf has a vanishing nonzero power is a thickening. -/
 theorem isThickening_of_ker_pow_eq_bot (i : Z ⟶ X) [IsClosedImmersion i] {m : ℕ} (hm : m ≠ 0)
     (h : i.ker ^ m = ⊥) : IsThickening i :=
@@ -127,12 +120,22 @@ theorem isThickening_of_ker_pow_eq_bot (i : Z ⟶ X) [IsClosedImmersion i] {m : 
       _ = (i.ker ^ m).radical := (Scheme.IdealSheafData.radical_pow _ hm).symm
       _ = X.nilradical := by rw [h, Scheme.IdealSheafData.radical_bot]
 
-/-- If `a ≫ j` with `j` a closed immersion and the `m`-th power of the ideal sheaf of `a ≫ j` is
-the ideal sheaf of `j`, then the ideal sheaf of `a` has vanishing `m`-th power. -/
-theorem ker_pow_eq_bot_of_ker_comp_pow_eq {Y : Scheme.{u}} (a : Y ⟶ Z) (j : Z ⟶ X)
-    [IsClosedImmersion j] {m : ℕ} (h : (a ≫ j).ker ^ m = j.ker) : a.ker ^ m = ⊥ := by
-  rw [← Scheme.Hom.comap_ker_comp_of_isClosedImmersion a j, ← Scheme.IdealSheafData.comap_pow, h,
-    Scheme.Hom.comap_ker_self]
+/-- For a morphism `i : Z ⟶ X` with ideal sheaf `I`, the factorization `Z ⟶ V(I ^ (n + 1))` of `i`
+through the closed subscheme `V(I ^ (n + 1))`, by Mathlib's `IsClosedImmersion.lift`. -/
+noncomputable def factorPowSucc (i : Z ⟶ X) (n : ℕ) :
+    Z ⟶ (i.ker ^ (n + 1)).subscheme :=
+  IsClosedImmersion.lift (i.ker ^ (n + 1)).subschemeι i
+    (by simpa using i.ker.pow_le_self n.succ_ne_zero)
+
+@[reassoc (attr := simp)]
+theorem factorPowSucc_fac (i : Z ⟶ X) (n : ℕ) :
+    factorPowSucc i n ≫ (i.ker ^ (n + 1)).subschemeι = i :=
+  IsClosedImmersion.lift_fac _ _ _
+
+instance isClosedImmersion_factorPowSucc (i : Z ⟶ X) [IsClosedImmersion i] (n : ℕ) :
+    IsClosedImmersion (factorPowSucc i n) := by
+  unfold factorPowSucc
+  infer_instance
 
 namespace IsThickening
 
@@ -342,27 +345,16 @@ thickening (as `(I ^ (n + 1)) ^ 2 ≤ I ^ (n + 2) = 0`) and `Z ⟶ X'` is a thic
 sheaf `I / I ^ (n + 1)` has vanishing `(n + 1)`-st power. Inductively, a thickening with nilpotent
 ideal sheaf is a composite of first-order thickenings. -/
 theorem factor_firstOrder (i : Z ⟶ X) [IsClosedImmersion i] {n : ℕ} (h : i.ker ^ (n + 2) = ⊥) :
-    IsFirstOrderThickening (i.ker ^ (n + 1)).subschemeι ∧
-      IsThickening (IsClosedImmersion.lift _ i (ker_subschemeι_pow_le i.ker n.succ_ne_zero)) ∧
-      (IsClosedImmersion.lift _ i (ker_subschemeι_pow_le i.ker n.succ_ne_zero)).ker ^ (n + 1) =
-        ⊥ := by
+    IsFirstOrderThickening (i.ker ^ (n + 1)).subschemeι ∧ IsThickening (factorPowSucc i n) ∧
+      (factorPowSucc i n).ker ^ (n + 1) = ⊥ := by
   -- The `(n + 1)`-st power of the ideal sheaf of `Z ⟶ X'` is the inverse image of `I ^ (n + 1)`,
   -- which vanishes on `X'`.
-  have hker :
-      (IsClosedImmersion.lift _ i (ker_subschemeι_pow_le i.ker n.succ_ne_zero)).ker ^ (n + 1) =
-        ⊥ :=
-    ker_pow_eq_bot_of_ker_comp_pow_eq _ (i.ker ^ (n + 1)).subschemeι
-      (by rw [IsClosedImmersion.lift_fac, Scheme.IdealSheafData.ker_subschemeι])
-  have : IsClosedImmersion ((IsClosedImmersion.lift _ i
-      (ker_subschemeι_pow_le i.ker n.succ_ne_zero)) ≫ (i.ker ^ (n + 1)).subschemeι) := by
-    rw [IsClosedImmersion.lift_fac]
-    infer_instance
-  have : IsClosedImmersion
-      (IsClosedImmersion.lift _ i (ker_subschemeι_pow_le i.ker n.succ_ne_zero)) :=
-    .of_comp_isClosedImmersion _ (i.ker ^ (n + 1)).subschemeι
+  have hker : (factorPowSucc i n).ker ^ (n + 1) = ⊥ :=
+    Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le _ (i.ker ^ (n + 1)).subschemeι
+      (by rw [factorPowSucc_fac, Scheme.IdealSheafData.ker_subschemeι])
   refine ⟨⟨?_⟩, isThickening_of_ker_pow_eq_bot _ (Nat.succ_ne_zero n) hker, hker⟩
   rw [Scheme.IdealSheafData.ker_subschemeι, ← pow_add, ← le_bot_iff, ← h]
-  exact pow_le_pow_of_le_one bot_le le_top (by omega)
+  exact i.ker.pow_le_pow_right (by omega)
 
 end IsThickening
 

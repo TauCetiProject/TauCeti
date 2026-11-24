@@ -31,7 +31,11 @@ closed immersion `j`, pulling back is therefore a left inverse to pushing forwar
 (`AlgebraicGeometry.Scheme.IdealSheafData.comap_map_of_isClosedImmersion`,
 `AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion`), while pushing forward an
 inverse image recovers the supremum with `j.ker`
-(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). Analogously, the ideal
+(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). Consequently the ideal
+sheaf of `a` is nilpotent when a power of that of `a ≫ j` lies in `j.ker`
+(`AlgebraicGeometry.Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le`), and a lift of a closed
+immersion along a closed immersion is a closed immersion
+(`AlgebraicGeometry.IsClosedImmersion.isClosedImmersion_lift`). Analogously, the ideal
 sheaf of any quasi-compact morphism pulled back along an open immersion is the inverse image of its
 ideal sheaf
 (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`). In
@@ -142,6 +146,32 @@ theorem comap_map_of_isClosedImmersion {Y : Scheme.{u}} (I : X.IdealSheafData) (
 theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion {Y Z : Scheme.{u}}
     (i : Z ⟶ X) (j : X ⟶ Y) [IsClosedImmersion j] : (i ≫ j).ker.comap j = i.ker := by
   rw [Scheme.Hom.ker_comp, comap_map_of_isClosedImmersion]
+
+/-- If the `m`-th power of the ideal sheaf of `a ≫ j`, for a closed immersion `j`, lies in the
+ideal sheaf of `j`, then the ideal sheaf of `a` has vanishing `m`-th power. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_pow_eq_bot_of_ker_comp_pow_le {Y Z : Scheme.{u}}
+    (a : Z ⟶ X) (j : X ⟶ Y) [IsClosedImmersion j] {m : ℕ} (h : (a ≫ j).ker ^ m ≤ j.ker) :
+    a.ker ^ m = ⊥ := by
+  rw [← le_bot_iff, ← Scheme.Hom.comap_ker_comp_of_isClosedImmersion a j, ← comap_pow,
+    ← j.comap_ker_self]
+  exact comap_mono j h
+
+/-- A nonzero power of an ideal sheaf is contained in it, as for ideals (`Ideal.pow_le_self`). -/
+theorem pow_le_self (I : X.IdealSheafData) {n : ℕ} (hn : n ≠ 0) : I ^ n ≤ I :=
+  pow_le_of_le_one bot_le ((le_top : I ≤ ⊤).trans_eq one_eq_top.symm) hn
+
+/-- Powers of an ideal sheaf decrease, as for ideals (`Ideal.pow_le_pow_right`). -/
+theorem pow_le_pow_right (I : X.IdealSheafData) {m n : ℕ} (h : m ≤ n) : I ^ n ≤ I ^ m :=
+  pow_le_pow_of_le_one bot_le ((le_top : I ≤ ⊤).trans_eq one_eq_top.symm) h
+
+/-- The lift of a closed immersion `g` along a closed immersion `f` is a closed immersion. -/
+instance _root_.AlgebraicGeometry.IsClosedImmersion.isClosedImmersion_lift {Y Z : Scheme.{u}}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [IsClosedImmersion f] [IsClosedImmersion g] (H : f.ker ≤ g.ker) :
+    IsClosedImmersion (IsClosedImmersion.lift f g H) :=
+  have : IsClosedImmersion (IsClosedImmersion.lift f g H ≫ f) := by
+    rw [IsClosedImmersion.lift_fac]
+    infer_instance
+  .of_comp_isClosedImmersion _ f
 
 /-- For ideal sheaves `I ≤ J`, the ideal sheaf of the inclusion `V(J) ⟶ V(I)` is the inverse image
 of `J` along `V(I) ⟶ X`. -/
