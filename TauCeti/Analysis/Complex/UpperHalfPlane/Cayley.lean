@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 
 /-!
 # The Cayley transform of the closed upper half-plane
@@ -273,16 +274,24 @@ theorem differentiableOn_sub_I_div_add_I_im_nonneg :
     DifferentiableOn ℂ (fun z : ℂ => (z - I) / (z + I)) {z | 0 ≤ z.im} :=
   differentiableOn_sub_I_div_add_I.mono fun _ hz => add_I_ne_zero_of_im_nonneg hz
 
+/-- The inverse Cayley transform `w ↦ i (1 + w) / (1 - w)` is the fractional-linear map
+`w ↦ (i w + i) / (-w + 1)`. -/
+private theorem I_mul_one_add_div_one_sub_eq :
+    (fun u : ℂ => I * (1 + u) / (1 - u)) = fun u => (I * u + I) / (-1 * u + 1) := by
+  funext u
+  ring_nf
+
 /-- The derivative of the inverse Cayley transform `w ↦ i (1 + w) / (1 - w)` away from its pole
 at `1` is `2 i / (1 - w) ^ 2`. -/
 theorem hasDerivAt_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
     HasDerivAt (fun u : ℂ => I * (1 + u) / (1 - u)) (2 * I / (1 - w) ^ 2) w := by
-  have h1 : 1 - w ≠ 0 := sub_ne_zero.mpr hw.symm
-  refine ((((hasDerivAt_id w).const_add 1).const_mul I).div
-    ((hasDerivAt_id w).const_sub 1) h1).congr_deriv ?_
-  simp only [id]
-  field_simp
-  ring
+  -- The fractional-linear map with coefficients `(i, i, -1, 1)`.
+  rw [I_mul_one_add_div_one_sub_eq]
+  refine (hasDerivAt_mul_add_div_mul_add ?_).congr_deriv ?_
+  · rw [neg_one_mul, neg_add_eq_sub]
+    exact sub_ne_zero.mpr hw.symm
+  · rw [neg_one_mul, neg_add_eq_sub]
+    ring
 
 /-- The inverse Cayley transform tends to infinity as the disc variable tends to its pole `1`. -/
 theorem tendsto_I_mul_one_add_div_one_sub_nhdsNE_one :
@@ -311,19 +320,14 @@ theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} :
       not_continuousAt_of_tendsto tendsto_I_mul_one_add_div_one_sub_nhdsNE_one
         nhdsWithin_le_nhds (disjoint_nhds_cobounded _) hd.continuousAt
     simp [logDeriv_apply, deriv_zero_of_not_differentiableAt hnd]
-  have heq : (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) =ᶠ[𝓝 ζ]
-      fun ξ => 2 * I / (1 - ξ) ^ 2 :=
-    eventuallyEq_of_mem (isOpen_ne.mem_nhds hζ) fun _ hξ =>
-      (hasDerivAt_I_mul_one_add_div_one_sub hξ).deriv
-  have hfun : (fun ξ : ℂ => 2 * I / (1 - ξ) ^ 2) =
-      (fun ξ : ℂ => 2 * I * (1 - ξ) ^ (-2 : ℤ)) := by
-    funext ξ
-    simp [zpow_neg, zpow_ofNat, div_eq_mul_inv]
-  rw [(logDeriv_congr_nhds heq).eq_of_nhds, hfun,
-    logDeriv_const_mul ζ (2 * I) (mul_ne_zero two_ne_zero I_ne_zero),
-    logDeriv_fun_zpow (by fun_prop : DifferentiableAt ℂ (fun ξ : ℂ => 1 - ξ) ζ) (-2),
-    logDeriv_apply, deriv_const_sub_id 1]
-  ring
+  -- Off the pole, the second and first derivatives of the fractional-linear map.
+  have hne : -1 * ζ + 1 ≠ 0 := by
+    rw [neg_one_mul, neg_add_eq_sub]
+    exact sub_ne_zero.mpr hζ.symm
+  rw [logDeriv_apply, I_mul_one_add_div_one_sub_eq,
+    (hasDerivAt_deriv_mul_add_div_mul_add hne).deriv, (hasDerivAt_mul_add_div_mul_add hne).deriv]
+  rw [neg_one_mul, neg_add_eq_sub] at hne ⊢
+  field_simp
 
 /-- The Cayley transform tends to `1` at infinity: the point `1` it omits from the closed disc is
 the image of `∞`. -/

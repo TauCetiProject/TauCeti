@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+import TauCeti.Geometry.Manifold.Instances.OnePoint.FirstJet
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialLinear
 
 /-!

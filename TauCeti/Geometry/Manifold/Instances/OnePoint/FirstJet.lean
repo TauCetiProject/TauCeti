@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Deriv
+import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!
 # First jets of Möbius transformations
@@ -62,6 +63,8 @@ direction at one of them, in the way that ordered triples normalize three marked
 
 * `Matrix.GeneralLinearGroup.mfderiv_smul_coe`: the derivative of a Möbius transformation at a
   finite point with finite image.
+* `OnePoint.mfderiv_smul_coe_apply`: the same derivative on the Riemann sphere regarded as a real
+  surface.
 * `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_zero` and
   `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_infty`: the dilation `z ↦ a z` has derivative `a`
   at `0` and `a⁻¹` at `∞`.
@@ -152,6 +155,25 @@ theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 
   simpa using hasDerivAt_writtenInExtChartAt_smul_coe g hz
 
 end Matrix.GeneralLinearGroup
+
+namespace OnePoint
+
+/-- **The derivative of a Möbius transformation in the affine coordinate.** At a finite point `z`
+which `g = !![a, b; c, d]` does not send to `∞`, the derivative of `g` on the Riemann sphere,
+regarded as a real surface and read in the affine charts, is multiplication by
+`det g / (c * z + d) ^ 2`: it is the complex derivative
+`Matrix.GeneralLinearGroup.mfderiv_smul_coe`. -/
+theorem mfderiv_smul_coe_apply (g : GL (Fin 2) ℂ) {z : ℂ} (hz : g 1 0 * z + g 1 1 ≠ 0)
+    (v : ℂ) :
+    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : OnePoint ℂ → OnePoint ℂ) z v =
+      (g : Matrix (Fin 2) (Fin 2) ℂ).det / (g 1 0 * z + g 1 1) ^ 2 * v := by
+  -- The real derivative of the holomorphic map `g • ·` is its complex derivative.
+  have hmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (g • · : OnePoint ℂ → OnePoint ℂ) z :=
+    (contMDiff_const_smul (I := 𝓘(ℂ)) (n := ⊤) g).mdifferentiable (by simp) _
+  exact (hmd.mfderiv_modelWithCornersSelf_restrictScalars_apply ℝ v).trans
+    (GeneralLinearGroup.mfderiv_smul_coe g hz v)
+
+end OnePoint
 
 namespace OnePoint
 

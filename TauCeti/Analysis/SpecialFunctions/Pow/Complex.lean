@@ -12,11 +12,11 @@ import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.Calculus.Deriv.Mobius
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.LogDeriv
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -371,19 +371,16 @@ theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) �
       (((z - α) / (z - γ)) ^ a * (a * ((z - α)⁻¹ - (z - γ)⁻¹))) z := by
   have hq : (z - α) / (z - γ) ≠ 0 := slitPlane_ne_zero h
   obtain ⟨hzα, hzγ⟩ := div_ne_zero_iff.mp hq
-  -- The quotient is the fractional-linear map with `k = m = 1`, `l = -α`, `n = -γ`.
-  have hfun : (fun w : ℂ ↦ (1 * w + -α) / (1 * w + -γ)) = fun w ↦ (w - α) / (w - γ) := by
-    funext w
-    ring
-  have hd := hasDerivAt_mul_add_div_mul_add (k := 1) (l := -α) (m := 1) (n := -γ) (z := z)
-    (by rwa [one_mul, ← sub_eq_add_neg])
-  rw [hfun] at hd
-  have hd' : HasDerivAt (fun w ↦ (w - α) / (w - γ)) ((α - γ) / (z - γ) ^ 2) z :=
-    hd.congr_deriv (by ring)
-  refine (hd'.cpow_const h).congr_deriv ?_
-  rw [cpow_sub _ _ hq, cpow_one]
-  field_simp
-  ring
+  have hα : DifferentiableAt ℂ (fun w : ℂ ↦ w - α) z := differentiableAt_id.sub_const α
+  have hγ : DifferentiableAt ℂ (fun w : ℂ ↦ w - γ) z := differentiableAt_id.sub_const γ
+  have hd : DifferentiableAt ℂ (fun w : ℂ ↦ (w - α) / (w - γ)) z := hα.div hγ hzγ
+  -- The logarithmic derivative of the power is `a` times that of the quotient.
+  have hlog : logDeriv (fun w ↦ ((w - α) / (w - γ)) ^ a) z = a * ((z - α)⁻¹ - (z - γ)⁻¹) := by
+    rw [logDeriv_fun_cpow hd h, logDeriv_fun_div z hzα hzγ hα hγ]
+    simp [logDeriv_apply]
+  have hpow : ((z - α) / (z - γ)) ^ a ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hq)
+  refine (hd.cpow_const h).hasDerivAt.congr_deriv ?_
+  rw [hlog.symm, logDeriv_apply, mul_div_cancel₀ _ hpow]
 
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/

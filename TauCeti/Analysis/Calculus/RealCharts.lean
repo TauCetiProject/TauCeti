@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 
 /-!
 # Elementary real charts for one-dimensional changes of variables
@@ -72,9 +73,12 @@ lemma image_div_one_sub_Ioo {u0 : α} (hu1 : u0 < 1) :
 
 /-- The derivative of the chart `u ↦ u / (1 - u)` is `(1 - u) ^ (-2)`. -/
 lemma hasDerivAt_div_one_sub {u : 𝕜} (hu : u ≠ 1) :
-    HasDerivAt (fun t : 𝕜 => t / (1 - t)) ((1 - u) ^ 2)⁻¹ u :=
-  ((hasDerivAt_id' u).div ((hasDerivAt_id' u).const_sub 1)
-    (sub_ne_zero.2 hu.symm)).congr_deriv (by ring)
+    HasDerivAt (fun t : 𝕜 => t / (1 - t)) ((1 - u) ^ 2)⁻¹ u := by
+  -- The fractional-linear map with coefficients `(1, 0, -1, 1)`.
+  have h := hasDerivAt_mul_add_div_mul_add (k := (1 : 𝕜)) (l := 0) (m := -1) (n := 1)
+    (z := u) (by rw [neg_one_mul, neg_add_eq_sub]; exact sub_ne_zero.2 hu.symm)
+  simp only [one_mul, add_zero, neg_one_mul, neg_add_eq_sub, mul_one, zero_mul, sub_zero] at h
+  simpa [one_div] using h
 
 /-- The substitution `v = u / (1 - u)` identifies integration over the ray starting at
 `ρ / (1 - ρ)` with integration over `(ρ, 1)`, including totalized integrals without convergence
