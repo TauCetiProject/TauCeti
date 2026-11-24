@@ -94,10 +94,9 @@ theorem sinPerturbation_apply_coe {n : ℕ∞ω} (hn : n ≠ 0) (k : ℕ) (x : �
 /-- The lift minus the identity, `x ↦ sin ((k + 2) x) / (k + 2) ^ 2`, has `m`-th derivative
 `(k + 2) ^ m sin⁽ᵐ⁾ ((k + 2) x) / (k + 2) ^ 2`. -/
 private theorem iteratedDeriv_sinPerturbationLift_sub_id (k m : ℕ) (x : ℝ) :
-    iteratedDeriv m (fun y ↦ sinPerturbationLift k y - id y) x =
+    iteratedDeriv m (sinPerturbationLift k - id) x =
       ((k : ℝ) + 2) ^ m * iteratedDeriv m sin ((k + 2) * x) / ((k : ℝ) + 2) ^ 2 := by
-  have h : (fun y ↦ sinPerturbationLift k y - id y) =
-      fun y ↦ sin ((k + 2) * y) / ((k : ℝ) + 2) ^ 2 := by
+  have h : sinPerturbationLift k - id = fun y ↦ sin ((k + 2) * y) / ((k : ℝ) + 2) ^ 2 := by
     funext y
     simp [sinPerturbationLift]
   rw [h, iteratedDeriv_div_const, iteratedDeriv_comp_const_mul contDiff_sin]
@@ -105,12 +104,14 @@ private theorem iteratedDeriv_sinPerturbationLift_sub_id (k m : ℕ) (x : ℝ) :
 /-- **The second derivatives.** The second derivative of the `k`-th lift is `-sin ((k + 2) x)`. -/
 theorem iteratedDeriv_two_sinPerturbationLift (k : ℕ) (x : ℝ) :
     iteratedDeriv 2 (sinPerturbationLift k) x = -sin ((k + 2) * x) := by
-  have hk : ((k : ℝ) + 2) ≠ 0 := by positivity
-  have h : HasDerivAt (fun y ↦ 1 + cos ((k + 2) * y) / ((k : ℝ) + 2))
-      (-sin ((k + 2) * x) * ((k + 2) * 1) / ((k : ℝ) + 2)) x :=
-    ((((hasDerivAt_id' x).const_mul ((k : ℝ) + 2)).cos).div_const _).const_add 1
-  rw [iteratedDeriv_succ, iteratedDeriv_one, funext (deriv_sinPerturbationLift k), h.deriv]
-  field_simp
+  -- The identity has vanishing second derivative, so this is the case `m = 2` of
+  -- `iteratedDeriv_sinPerturbationLift_sub_id`.
+  have hsin : iteratedDeriv 2 sin = fun y ↦ -sin y := by
+    rw [iteratedDeriv_succ, iteratedDeriv_one, Real.deriv_sin, Real.deriv_cos']
+  have h := iteratedDeriv_sinPerturbationLift_sub_id k 2 x
+  rw [iteratedDeriv_sub (contDiff_sinPerturbationLift k).contDiffAt contDiff_id.contDiffAt,
+    iteratedDeriv_id, hsin, mul_div_cancel_left₀ _ (by positivity)] at h
+  simpa using h
 
 /-- The distance between the `m`-th derivatives of the `k`-th lift and of the identity. -/
 private theorem dist_iteratedFDeriv_sinPerturbationLift (k m : ℕ) (x : ℝ) :
@@ -118,8 +119,18 @@ private theorem dist_iteratedFDeriv_sinPerturbationLift (k m : ℕ) (x : ℝ) :
       |((k : ℝ) + 2) ^ m * iteratedDeriv m sin ((k + 2) * x) / ((k : ℝ) + 2) ^ 2| := by
   rw [dist_eq_norm, ← iteratedFDeriv_sub_apply (contDiff_sinPerturbationLift k).contDiffAt
     contDiff_id.contDiffAt, norm_iteratedFDeriv_eq_norm_iteratedDeriv,
-    show sinPerturbationLift k - id = fun y ↦ sinPerturbationLift k y - id y from rfl,
     iteratedDeriv_sinPerturbationLift_sub_id, Real.norm_eq_abs]
+
+/-- The distance between the second derivatives of the `k`-th lift and of the identity is
+`|sin ((k + 2) x)|`, since the identity has vanishing second derivative. -/
+private theorem dist_iteratedFDeriv_two_sinPerturbationLift (k : ℕ) (x : ℝ) :
+    dist (iteratedFDeriv ℝ 2 (sinPerturbationLift k) x) (iteratedFDeriv ℝ 2 id x) =
+      |sin ((k + 2) * x)| := by
+  rw [dist_eq_norm, ← iteratedFDeriv_sub_apply (contDiff_sinPerturbationLift k).contDiffAt
+    contDiff_id.contDiffAt, norm_iteratedFDeriv_eq_norm_iteratedDeriv,
+    iteratedDeriv_sub (contDiff_sinPerturbationLift k).contDiffAt contDiff_id.contDiffAt,
+    iteratedDeriv_two_sinPerturbationLift, iteratedDeriv_id]
+  simp
 
 /-- The values at `0` of the perturbations are `0`. -/
 private theorem sinPerturbation_apply_zero {n : ℕ∞ω} (hn : n ≠ 0) (k : ℕ) :
@@ -185,12 +196,9 @@ theorem not_tendsto_sinPerturbation_one {n : ℕ∞ω} (hn : 2 ≤ n) :
   obtain ⟨k, hk₁, hk₂⟩ := (hev.and (hx.eventually (Metric.ball_mem_nhds 0 hδ))).exists
   have hk := hk₁ _ (hball hk₂)
   have hk0 : (0 : ℝ) < k + 2 := by positivity
-  rw [dist_comm, dist_iteratedFDeriv_sinPerturbationLift,
-    show (2 : ℕ) = 2 * 1 from rfl, Real.iteratedDeriv_even_sin,
-    show ((k : ℝ) + 2) * (π / (2 * ((k : ℝ) + 2))) = π / 2 by field_simp] at hk
-  simp only [Pi.mul_apply, Pi.neg_apply, Pi.one_apply, pow_one, sin_pi_div_two,
-    mul_one] at hk
-  rw [mul_div_right_comm, div_self (pow_ne_zero _ hk0.ne'), one_mul, abs_neg, abs_one] at hk
+  rw [dist_comm, dist_iteratedFDeriv_two_sinPerturbationLift,
+    show ((k : ℝ) + 2) * (π / (2 * ((k : ℝ) + 2))) = π / 2 by field_simp, sin_pi_div_two,
+    abs_one] at hk
   exact lt_irrefl _ hk
 
 end TauCeti

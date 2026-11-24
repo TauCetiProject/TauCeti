@@ -59,53 +59,6 @@ namespace AddCircle
 
 variable {p q : ℝ} [Fact (0 < p)] [Fact (0 < q)]
 
-/-- An extended chart of `AddCircle q`, read along the quotient map `ℝ → AddCircle q`, is near
-each point of the preimage of its source a translation by an integer multiple of the period. -/
-theorem exists_eventually_extChartAt_coe_eq_add_zsmul (y : AddCircle q) {u : ℝ}
-    (hu : (u : AddCircle q) ∈ (extChartAt 𝓘(ℝ) y).source) :
-    ∃ k : ℤ, ∀ᶠ v : ℝ in 𝓝 u, extChartAt 𝓘(ℝ) y (v : AddCircle q) = v + k • q := by
-  -- Compare the chart with the local inverse of the quotient map on `(u - q / 2, u + q / 2)`.
-  have hq : (0 : ℝ) < q := Fact.out
-  set e := openPartialHomeomorphCoe q (u - q / 2)
-  have hu' : u ∈ e.source := ⟨by linarith, by linarith⟩
-  have hsrc : e u ∈ (chartAt ℝ y).source := by
-    rwa [← extChartAt_source 𝓘(ℝ)]
-  obtain ⟨k, hk⟩ := exists_eventuallyEq_add_zsmul (c := e.symm) (c' := chartAt ℝ y)
-    (fun a _ ↦ coe_equivIco) (fun a ha ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ y) ha)
-    (e.map_source hu') hsrc
-  refine ⟨k, ?_⟩
-  filter_upwards [continuous_quotient_mk'.continuousAt.eventually hk,
-    e.open_source.mem_nhds hu'] with v hv hve
-  have hinv : e.symm (v : AddCircle q) = v := e.left_inv hve
-  rw [extChartAt_coe, Function.comp_apply, modelWithCornersSelf_coe, id]
-  exact hv.trans (congrArg (· + k • q) hinv)
-
-omit [Fact (0 < q)] in
-/-- The extended chart of `AddCircle p` at the class of `w` sends it to a representative
-`w + j • p` of that class. -/
-theorem exists_extChartAt_coe_self_eq_add_zsmul (w : ℝ) :
-    ∃ j : ℤ, extChartAt 𝓘(ℝ) (w : AddCircle p) w = w + j • p := by
-  obtain ⟨j, hj⟩ := AddSubgroup.mem_zmultiples_iff.mp
-    (QuotientAddGroup.eq.mp (coe_extChartAt_self (w : AddCircle p)))
-  exact ⟨-j, by rw [neg_smul, hj]; abel⟩
-
-/-- **Circle maps read in charts.** Read in the extended charts at `x` and `y`, a map `f` of
-circles with a continuous lift `F` is near each tested point `F` plus an integer multiple of the
-period of the target. -/
-theorem exists_extChartAt_comp_eventuallyEq_add_zsmul {f : AddCircle p → AddCircle q}
-    {F : ℝ → ℝ} (hF : Continuous F) (hfF : ∀ x : ℝ, f x = F x) {x : AddCircle p}
-    {y : AddCircle q} {z : ℝ} (hz : z ∈ (extChartAt 𝓘(ℝ) x).target)
-    (hy : f z ∈ (extChartAt 𝓘(ℝ) y).source) :
-    ∃ k : ℤ, extChartAt 𝓘(ℝ) y ∘ f ∘ (extChartAt 𝓘(ℝ) x).symm =ᶠ[𝓝 z]
-      fun w ↦ F w + k • q := by
-  rw [hfF] at hy
-  obtain ⟨k, hk⟩ := exists_eventually_extChartAt_coe_eq_add_zsmul y hy
-  refine ⟨k, ?_⟩
-  filter_upwards [(isOpen_extChartAt_target x).mem_nhds hz, hF.continuousAt.eventually hk]
-    with w hw hwk
-  rw [Function.comp_apply, Function.comp_apply, extChartAt_symm_apply x hw, hfF]
-  exact hwk
-
 /-- Read in charts, a map of circles with a continuous lift `F` has the iterated derivatives of
 positive order of `F`. -/
 theorem iteratedFDerivWithin_extChartAt_comp_of_lift {f : AddCircle p → AddCircle q}
@@ -196,17 +149,6 @@ variable {q : ℝ} [Fact (0 < q)] {ι : Type*} {l : Filter ι}
   {f : ι → C^n⟮𝓘(ℝ), AddCircle p; 𝓘(ℝ), AddCircle q⟯}
   {g : C^n⟮𝓘(ℝ), AddCircle p; 𝓘(ℝ), AddCircle q⟯} {F : ι → ℝ → ℝ} {G : ℝ → ℝ}
 
-omit [Fact (0 < p)] in
-/-- Adding the same constant to two real functions leaves the distance between their iterated
-derivatives unchanged. -/
-private theorem dist_iteratedFDeriv_add_const (m : ℕ) (F G : ℝ → ℝ) (c v : ℝ) :
-    dist (iteratedFDeriv ℝ m (fun w ↦ F w + c) v) (iteratedFDeriv ℝ m (fun w ↦ G w + c) v) =
-      dist (iteratedFDeriv ℝ m F v) (iteratedFDeriv ℝ m G v) := by
-  rcases m with _ | m
-  · simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply, LinearIsometryEquiv.dist_map,
-      dist_add_right]
-  · rw [TauCeti.iteratedFDeriv_succ_add_const, TauCeti.iteratedFDeriv_succ_add_const]
-
 /-- Near a point `w₀` of the chart target, where `g` is read in the charts at `x` and `y` as its
 lift `G` plus `k • q`, so are the maps `f i`, with their lifts `F i` and the same `k`, eventually,
 as soon as the lifts converge locally uniformly. -/
@@ -286,19 +228,9 @@ private theorem eventually_chartJetSet_of_lift (hG : Continuous G)
       ≤ dist (iteratedFDeriv ℝ m (fun v' ↦ F i v' + k • q) v) (A v) + dist (A v) (A w₀) :=
         dist_triangle _ _ _
     _ < δ / 2 + δ / 2 := by
-        rw [dist_iteratedFDeriv_add_const, dist_comm]
+        rw [TauCeti.dist_iteratedFDeriv_add_const, dist_comm]
         exact add_lt_add (hi v hvt') hAv
     _ = δ := add_halves δ
-
-omit [Fact (0 < p)] in
-/-- Locally uniform convergence on `ℝ` of the order-zero iterated derivatives of real functions is
-locally uniform convergence of the functions themselves: the case `s = univ` of
-`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`. -/
-private theorem tendstoLocallyUniformly_iteratedFDeriv_zero_iff {Φ : ι → ℝ → ℝ} {Ψ : ℝ → ℝ} :
-    TendstoLocallyUniformly (fun i ↦ iteratedFDeriv ℝ 0 (Φ i)) (iteratedFDeriv ℝ 0 Ψ) l ↔
-      TendstoLocallyUniformly Φ Ψ l := by
-  simp only [← tendstoLocallyUniformlyOn_univ,
-    TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff]
 
 /-- **Convergence of circle maps from their lifts.** A family `f i` of `C^n` maps
 `AddCircle p → AddCircle q` converges to `g` in the weak Whitney topology when lifts `F i` of the
@@ -311,7 +243,7 @@ theorem tendsto_addCircle_addCircle_of_lift (hG : Continuous G)
     Tendsto f l (𝓝 g) := by
   -- The lifts themselves converge locally uniformly.
   have h₀ : TendstoLocallyUniformly F G l :=
-    tendstoLocallyUniformly_iteratedFDeriv_zero_iff.1 (h 0 (by simp))
+    TauCeti.tendstoLocallyUniformly_iteratedFDeriv_zero_iff.1 (h 0 (by simp))
   refine tendsto_manifoldWeakWhitney_iff.2 fun x y m hm K hK V hV hgK ↦ ?_
   rw [mem_chartJetSet] at hgK
   simp only [mem_chartJetSet]
@@ -425,7 +357,7 @@ theorem tendstoLocallyUniformly_lift_sub_lift_zero (hn : 1 ≤ n) (hF : ∀ i, C
     fun u _ ↦ (hGs.differentiable one_ne_zero u).sub ((hFs i).differentiable one_ne_zero u)
   have hb : ∀ u ∈ closedBall (0 : ℝ) R, ‖fderiv ℝ (fun x ↦ G x - F i x) u‖ ≤ ε / (R + 1) :=
     fun u hu ↦ by
-      rw [← norm_iteratedFDeriv_one, show (fun x ↦ G x - F i x) = G - F i from rfl,
+      rw [← norm_iteratedFDeriv_one, ← Pi.sub_def,
         iteratedFDeriv_sub_apply hGs.contDiffAt (hFs i).contDiffAt,
         ← dist_eq_norm]
       exact (hi u hu).le
@@ -457,7 +389,7 @@ theorem tendsto_addCircle_addCircle_iff_lift (hn : 1 ≤ n) (hF : ∀ i, Continu
   · refine fun hfg ↦ ⟨((continuous_eval_const_manifoldWeakWhitney (0 : AddCircle p)).tendsto g).comp
       hfg, fun m hm ↦ ?_⟩
     rcases m with _ | m
-    · exact tendstoLocallyUniformly_iteratedFDeriv_zero_iff.2
+    · exact TauCeti.tendstoLocallyUniformly_iteratedFDeriv_zero_iff.2
         (tendstoLocallyUniformly_lift_sub_lift_zero hn hF hG hfF hgG hfg)
     · simp only [hsub]
       exact tendstoLocallyUniformly_iteratedFDeriv_lift hF hG hfF hgG hfg hm (Nat.succ_ne_zero m)
@@ -480,8 +412,8 @@ theorem tendsto_addCircle_addCircle_iff_lift (hn : 1 ≤ n) (hF : ∀ i, Continu
     · simp only [AddCircle.coe_add, AddCircle.coe_sub, ← hfF, ← hgG, hrc, QuotientAddGroup.mk_zero]
       abel
     · rcases m with _ | m
-      · refine tendstoLocallyUniformly_iteratedFDeriv_zero_iff.2 ?_
-        have h0 := tendstoLocallyUniformly_iteratedFDeriv_zero_iff.1 (h 0 (by simp))
+      · refine TauCeti.tendstoLocallyUniformly_iteratedFDeriv_zero_iff.2 ?_
+        have h0 := TauCeti.tendstoLocallyUniformly_iteratedFDeriv_zero_iff.1 (h 0 (by simp))
         have hc : TendstoLocallyUniformly (fun i (_ : ℝ) ↦ G 0 + r (f i 0 - g 0))
             (fun _ ↦ G 0 + 0) l :=
           (tendsto_const_nhds.add hdiff).tendstoUniformly_const.tendstoLocallyUniformly

@@ -36,7 +36,8 @@ Iterating the `C¹` statement gives **Arzelà–Ascoli in `Cᵏ`**
 order at most `k + 1` of the `uₙ` are bounded on each compact subset of `Ω`, uniformly in `n`,
 then along a subsequence the `uₙ` converge to a `Cᵏ` map together with their derivatives of order
 at most `k`, locally uniformly on `Ω`. Locally uniform convergence of the derivatives of order `0`
-is that of the maps themselves (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`).
+is that of the maps themselves (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`, and
+on the whole space `TauCeti.tendstoLocallyUniformly_iteratedFDeriv_zero_iff`).
 
 For `1`-periodic curves on `ℝ`, a bound on the velocities over one period suffices: such curves in
 a compact set are uniformly Lipschitz, so a subsequence converges uniformly on `ℝ` to a continuous
@@ -61,6 +62,16 @@ theorem tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff {𝕜 E F ι : Type*}
   simp only [iteratedFDeriv_zero_eq_comp]
   refine ⟨fun h ↦ ?_, e.symm.isometry.uniformContinuous.comp_tendstoLocallyUniformlyOn⟩
   simpa [Function.comp_def, e] using e.isometry.uniformContinuous.comp_tendstoLocallyUniformlyOn h
+
+/-- Locally uniform convergence of the derivatives of order `0` on the whole space is locally
+uniform convergence of the maps themselves: the case `s = univ` of
+`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`. -/
+theorem tendstoLocallyUniformly_iteratedFDeriv_zero_iff {𝕜 E F ι : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {u : ι → E → F} {v : E → F} {l : Filter ι} :
+    TendstoLocallyUniformly (fun n ↦ iteratedFDeriv 𝕜 0 (u n)) (iteratedFDeriv 𝕜 0 v) l ↔
+      TendstoLocallyUniformly u v l := by
+  simp only [← tendstoLocallyUniformlyOn_univ, tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff]
 
 variable {E F ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Set E} {u : ι → E → F}

@@ -46,7 +46,9 @@ to a finite order have a common bound
 order `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_one_le`), and such a
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
-change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
+change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`), nor,
+at any order, the distance between the iterated derivatives of two functions shifted by the same
+constant (`TauCeti.dist_iteratedFDeriv_add_const`). The
 iterated derivatives of a constant `c` have norm at most `‖c‖`
 (`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
 most one (`TauCeti.norm_iteratedFDeriv_id_le_one`), as have those of right translations
@@ -256,6 +258,17 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
     iteratedFDeriv 𝕜 (n + 1) (fun x ↦ f x + c) = iteratedFDeriv 𝕜 (n + 1) f := by
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
+
+/-- Adding the same constant to two functions leaves the distance between their iterated
+derivatives unchanged, at every order: at order zero the constants cancel, and at positive order
+they do not change the derivatives (`TauCeti.iteratedFDeriv_succ_add_const`). -/
+theorem dist_iteratedFDeriv_add_const (n : ℕ) (f g : E → F) (c : F) (x : E) :
+    dist (iteratedFDeriv 𝕜 n (fun y ↦ f y + c) x) (iteratedFDeriv 𝕜 n (fun y ↦ g y + c) x) =
+      dist (iteratedFDeriv 𝕜 n f x) (iteratedFDeriv 𝕜 n g x) := by
+  rcases n with _ | n
+  · simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply, LinearIsometryEquiv.dist_map,
+      dist_add_right]
+  · rw [iteratedFDeriv_succ_add_const, iteratedFDeriv_succ_add_const]
 
 /-- The iterated derivatives of a constant function `c` have norm at most `‖c‖`. -/
 theorem norm_iteratedFDeriv_const_le (n : ℕ) (c : F) (x : E) :
