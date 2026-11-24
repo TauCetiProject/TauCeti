@@ -637,7 +637,7 @@ theorem vertexFaces_rot (v : ℤ × ℤ) :
 namespace TriEdge
 
 /-- The unordered pair `s(v, v + e_k)` of endpoints of an edge. -/
-@[expose] def endpoints (e : TriEdge) : Sym2 (ℤ × ℤ) := s(e.v, e.target)
+def endpoints (e : TriEdge) : Sym2 (ℤ × ℤ) := s(e.v, e.target)
 
 theorem endpoints_def (e : TriEdge) : e.endpoints = s(e.v, e.target) := (rfl)
 

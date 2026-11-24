@@ -306,12 +306,9 @@ theorem toPlacedTile_def (e : TriEdge) :
 /-- The placed tile of an edge is its lozenge. -/
 @[simp] theorem coe_toPlacedTile (e : TriEdge) :
     (e.toPlacedTile : Set TriFace) = e.faces := by
-  rw [toPlacedTile_def, DiscreteTiling.PlacedTile.coe_mk_coe, lozengeProtoset_apply,
-    DiscreteTiling.Prototile.coe_mk]
-  have he : e = e.v +ᵥ (⟨0, e.k⟩ : TriEdge) := by simp
-  conv_rhs => rw [he, faces_vadd, Finset.coe_vadd_finset]
   ext f
-  simp [Set.mem_vadd_set]
+  simp [toPlacedTile_def, DiscreteTiling.PlacedTile.coe_mk_coe, Set.mem_vadd_set_iff_neg_vadd_mem,
+    Finset.mem_neg_vadd_finset_iff]
 
 @[simp] theorem mem_toPlacedTile {e : TriEdge} {f : TriFace} :
     f ∈ e.toPlacedTile ↔ e ∈ f.edges := by
@@ -320,9 +317,7 @@ theorem toPlacedTile_def (e : TriEdge) :
 @[simp] theorem toPlacedTile_vadd (w : ℤ × ℤ) (e : TriEdge) :
     (w +ᵥ e).toPlacedTile = Multiplicative.ofAdd w • e.toPlacedTile := by
   rw [toPlacedTile_def, toPlacedTile_def, DiscreteTiling.PlacedTile.smul_mk_coe, TriEdge.vadd_v,
-    ofAdd_add]
-  -- the two sides differ only in the coercions of the group elements into the acting group
-  rfl
+    TriEdge.vadd_k, ofAdd_add]
 
 theorem toPlacedTile_bijective : Function.Bijective toPlacedTile := by
   refine ⟨fun e e' h => faces_injective (Finset.coe_injective ?_), fun pt => ?_⟩

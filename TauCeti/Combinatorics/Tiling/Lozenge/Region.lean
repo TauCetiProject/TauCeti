@@ -196,11 +196,8 @@ theorem regionVertices_eq (R : Set TriFace) :
   ext u
   constructor
   · rintro ⟨f, hf, hu⟩
-    obtain ⟨u', hu', hne⟩ : ∃ u' ∈ f.vertices, u ≠ u' := by
-      by_contra! h
-      have := Finset.card_le_one.2 fun a ha b hb => (h a ha).symm.trans (h b hb)
-      simp at this
-    obtain ⟨e, he, hee⟩ := TriFace.exists_mem_edges_endpoints_eq hu hu' hne
+    obtain ⟨u', hu', hne⟩ := Finset.exists_mem_ne (by simp : 1 < f.vertices.card) u
+    obtain ⟨e, he, hee⟩ := TriFace.exists_mem_edges_endpoints_eq hu hu' hne.symm
     exact ⟨e, ⟨f, hf, he⟩, hee ▸ Sym2.mem_mk_left u u'⟩
   · rintro ⟨e, ⟨f, hf, he⟩, hu⟩
     exact ⟨f, hf, TriFace.mem_vertices_of_mem_endpoints he hu⟩
@@ -257,7 +254,7 @@ theorem boundaryGraph_edgeSet (R : Set TriFace) :
       exact ⟨e, he, by rw [h, Sym2.map_mk]⟩
   · rintro ⟨e, he, rfl⟩
     exact ⟨s(⟨e.v, v_mem_boundaryVertices he⟩, ⟨e.target, target_mem_boundaryVertices he⟩),
-      boundaryGraph_adj.2 ⟨e, he, rfl⟩, rfl⟩
+      boundaryGraph_adj.2 ⟨e, he, TriEdge.endpoints_def e⟩, (TriEdge.endpoints_def e).symm⟩
 
 /-- The boundary graph is a subgraph of the edge graph induced on `∂R`. -/
 theorem boundaryGraph_le_induce_regionGraph (R : Set TriFace) :
@@ -306,7 +303,7 @@ private theorem reachable_v_of_mem_endpoints (he : e ∈ regionEdges R) (hu : u 
     (regionGraph R).Reachable u e.v := by
   rcases TriEdge.mem_endpoints.1 hu with rfl | rfl
   · rfl
-  · exact (regionGraph_adj.2 ⟨e, he, Sym2.eq_swap⟩).reachable
+  · exact (regionGraph_adj.2 ⟨e, he, (TriEdge.endpoints_def e).trans Sym2.eq_swap⟩).reachable
 
 /-- A region is connected exactly when the initial vertices of any two of its edges are joined in
 its edge graph. -/
@@ -551,6 +548,17 @@ private theorem isConnectedRegion_image : IsConnectedRegion (φ '' R) ↔ IsConn
   simp only [IsConnectedRegion, regionVertices_image φ χ hφ, Set.forall_mem_image]
   exact forall₂_congr fun u _ => forall₂_congr fun u' _ => iso.reachable_iff
 
+include hφ in
+private theorem regionUnion_image (L : (ℝ × ℝ) →ᵃ[ℝ] ℝ × ℝ)
+    (hL : ∀ u : ℤ × ℤ, L ((u.1 : ℝ), (u.2 : ℝ)) = (((χ u).1 : ℝ), ((χ u).2 : ℝ))) :
+    regionUnion (φ '' R) = L '' regionUnion R := by
+  have hv (f : TriFace) : ((φ f).vertices : Set (ℤ × ℤ)) = χ '' f.vertices := by
+    ext u
+    obtain ⟨u, rfl⟩ := χ.surjective u
+    simp [hφ]
+  simp only [regionUnion_def, Set.biUnion_image, Set.image_iUnion₂, AffineMap.image_convexHull,
+    hv, Set.image_image, hL]
+
 end Transfer
 
 section Translation
@@ -614,14 +622,10 @@ theorem boundaryGraph_adj_vadd {R : Set TriFace} {p p' : boundaryVertices R}
 
 /-- Translating a region by `w` translates `F(R)` by `w ∈ ℤ² ⊆ ℝ²`. -/
 @[simp] theorem regionUnion_vadd (R : Set TriFace) :
-    regionUnion (w +ᵥ R) = ((w.1 : ℝ), (w.2 : ℝ)) +ᵥ regionUnion R := by
-  rw [regionUnion_def, regionUnion_def, ← Set.image_vadd, Set.biUnion_image, Set.vadd_set_iUnion₂]
-  refine Set.iUnion₂_congr fun f _ => ?_
-  rw [← convexHull_vadd, TriFace.vertices_vadd, Finset.coe_vadd_finset, ← Set.image_vadd,
-    Set.image_image, ← Set.image_vadd, Set.image_image]
-  congr 2
-  funext u
-  simp [vadd_eq_add]
+    regionUnion (w +ᵥ R) = ((w.1 : ℝ), (w.2 : ℝ)) +ᵥ regionUnion R :=
+  regionUnion_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_vertices_vadd w)
+    (AffineEquiv.constVAdd ℝ (ℝ × ℝ) ((w.1 : ℝ), (w.2 : ℝ))).toAffineMap
+    (fun u => by simp [vadd_eq_add])
 
 end Translation
 
@@ -679,19 +683,10 @@ theorem facesOf_rot (V : Set (ℤ × ℤ)) : facesOf (latticeRot '' V) = TriFace
 /-- The rotation `ρ` acts on `F(R) ⊆ ℝ²` by the linear map `(x, y) ↦ (-y, x - y)` extending
 `latticeRot`. -/
 @[simp] theorem regionUnion_rot (R : Set TriFace) :
-    regionUnion (TriFace.rot '' R) = (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) '' regionUnion R := by
-  let L : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ :=
-    (-LinearMap.snd ℝ ℝ ℝ).prod (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ)
-  have hL : (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) = L := by
-    funext p
-    simp [L]
-  rw [hL, regionUnion_def, regionUnion_def, Set.biUnion_image, Set.image_iUnion₂]
-  refine Set.iUnion₂_congr fun f _ => ?_
-  rw [LinearMap.image_convexHull, TriFace.vertices_rot, Finset.coe_map, Set.image_image,
-    Set.image_image]
-  congr 2
-  funext u
-  simp [L]
+    regionUnion (TriFace.rot '' R) = (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) '' regionUnion R :=
+  regionUnion_image (χ := latticeRot.toEquiv) _ latticeRot_mem_vertices_rot
+    ((-LinearMap.snd ℝ ℝ ℝ).prod (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ)).toAffineMap
+    (fun u => by simp)
 
 end Rotation
 

@@ -72,20 +72,14 @@ theorem rowTiling_eq_false_of_k_eq_one {e : TriEdge} (he : e.k = 1) : rowTiling 
 `B(x, y)` contains `((x, y + 1), 1)` or `((x, y), 3)`, according as `ε x` holds or not. -/
 theorem isTiling_rowTiling (ε : ℤ → Bool) : IsTiling Set.univ {e | rowTiling ε e = true} := by
   rw [isTiling_univ_iff]
-  rintro ⟨⟨x, y⟩, c⟩
-  cases c <;> cases hε : ε x
-  · refine ⟨⟨(x, y), 2⟩, ⟨by simp [hε], by simp⟩, ?_⟩
-    rintro ⟨⟨a, b⟩, k⟩ ⟨h₁, h₂⟩
-    fin_cases k <;> simp [TriEdge.ext_iff] at h₁ h₂ ⊢ <;> simp_all
-  · refine ⟨⟨(x, y + 1), 0⟩, ⟨by simp [hε], by simp⟩, ?_⟩
-    rintro ⟨⟨a, b⟩, k⟩ ⟨h₁, h₂⟩
-    fin_cases k <;> simp [TriEdge.ext_iff] at h₁ h₂ ⊢ <;> simp_all
-  · refine ⟨⟨(x, y), 2⟩, ⟨by simp [hε], by simp⟩, ?_⟩
-    rintro ⟨⟨a, b⟩, k⟩ ⟨h₁, h₂⟩
-    fin_cases k <;> simp [TriEdge.ext_iff] at h₁ h₂ ⊢ <;> simp_all
-  · refine ⟨⟨(x, y), 0⟩, ⟨by simp [hε], by simp⟩, ?_⟩
-    rintro ⟨⟨a, b⟩, k⟩ ⟨h₁, h₂⟩
-    fin_cases k <;> simp [TriEdge.ext_iff] at h₁ h₂ ⊢ <;> simp_all
+  rintro ⟨v, c⟩
+  refine ⟨TriFace.edge ⟨v, c⟩ (if ε v.1 then 0 else 2), ⟨?_, TriFace.edge_mem_edges _ _⟩, ?_⟩
+  · cases c <;> cases hε : ε v.1 <;> simp [hε]
+  · rintro e ⟨h₁, h₂⟩
+    rw [TriFace.mem_edges_iff_edge_eq] at h₂
+    rw [← h₂] at h₁ ⊢
+    generalize e.k = k at h₁ ⊢
+    cases c <;> fin_cases k <;> simp_all
 
 /-- `ε ↦ M_ε` is injective: `ε x` is the membership of `((x, 0), 1)` in `M_ε`. -/
 theorem rowTiling_injective : Function.Injective rowTiling := fun ε ε' h => funext fun x => by
