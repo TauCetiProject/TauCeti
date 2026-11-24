@@ -31,7 +31,8 @@ finite étale algebras descend through filtered colimits of rings
 (`TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization`). Isomorphisms of
 finite étale covers descend along such limits
 (`TauCeti.FiniteEtaleScheme.exists_nonempty_iso_pullback_of_isLimit`, from the descent of
-morphisms and isomorphisms of finitely presented schemes, Stacks 01ZM and 081E), which applies
+isomorphisms of finitely presented schemes,
+`CategoryTheory.Limits.IsLimit.exists_iso_pullback_of_iso`, Stacks 01ZM and 081E), which applies
 to the base change of the limit to the quasi-compact open `W` (`IsLimit.pullbackOver`). So the two
 covers agree over `W ∩ D(f')` for a smaller principal open `D(f')` of `x`, and they glue along it
 (`TauCeti.FiniteEtaleScheme.exists_pullback_iso_of_isPullback`).
@@ -79,90 +80,6 @@ section Limit
 
 variable {I : Type u} [Category.{u} I] {D : I ⥤ Scheme.{u}}
 
-/-- Pasting: the pullback of `fst : Dⱼ ×_{Dᵢ} X ⟶ Dⱼ` along `z` is the pullback along
-`z ≫ D.map a`, after rewriting the latter as `w`. -/
-private def pasteIso {i j : I} (a : j ⟶ i) {X Z : Scheme.{u}} (p : X ⟶ D.obj i)
-    (z : Z ⟶ D.obj j) (w : Z ⟶ D.obj i) (hw : z ≫ D.map a = w) :
-    Limits.pullback z (Limits.pullback.fst (D.map a) p) ≅ Limits.pullback w p :=
-  pullbackRightPullbackFstIso (D.map a) p z ≪≫ pullback.congrHom hw rfl
-
-@[reassoc (attr := simp)]
-private lemma pasteIso_hom_fst {i j : I} (a : j ⟶ i) {X Z : Scheme.{u}} (p : X ⟶ D.obj i)
-    (z : Z ⟶ D.obj j) (w : Z ⟶ D.obj i) (hw : z ≫ D.map a = w) :
-    (pasteIso a p z w hw).hom ≫ Limits.pullback.fst _ _ = Limits.pullback.fst _ _ := by
-  simp [pasteIso]
-
-@[reassoc (attr := simp)]
-private lemma pasteIso_hom_snd {i j : I} (a : j ⟶ i) {X Z : Scheme.{u}} (p : X ⟶ D.obj i)
-    (z : Z ⟶ D.obj j) (w : Z ⟶ D.obj i) (hw : z ≫ D.map a = w) :
-    (pasteIso a p z w hw).hom ≫ Limits.pullback.snd _ _ =
-      Limits.pullback.snd _ _ ≫ Limits.pullback.snd _ _ := by
-  simp [pasteIso]
-
-@[reassoc (attr := simp)]
-private lemma pasteIso_inv_fst {i j : I} (a : j ⟶ i) {X Z : Scheme.{u}} (p : X ⟶ D.obj i)
-    (z : Z ⟶ D.obj j) (w : Z ⟶ D.obj i) (hw : z ≫ D.map a = w) :
-    (pasteIso a p z w hw).inv ≫ Limits.pullback.fst _ _ = Limits.pullback.fst _ _ := by
-  rw [Iso.inv_comp_eq, pasteIso_hom_fst]
-
-/-- At a stage `k ⟶ j ⟶ i`, an isomorphism
-`Dₖ ×_{Dⱼ} (Dⱼ ×_{Dᵢ} E) ≅ Dₖ ×_{Dⱼ} (Dⱼ ×_{Dᵢ} F)` over `Dₖ` is an isomorphism of the base
-changes of `E` and `F` to `Dₖ`. -/
-private lemma nonempty_iso_of_isIso_pullbackMap {i j k : I} (hji : j ⟶ i) (hkj : k ⟶ j)
-    {E F : FiniteEtaleScheme (D.obj i)}
-    (b : Limits.pullback (D.map hji) E.obj.hom ⟶ Limits.pullback (D.map hji) F.obj.hom)
-    (hb : b ≫ Limits.pullback.fst _ _ = Limits.pullback.fst _ _)
-    [IsIso (pullback.map (D.map hkj) (Limits.pullback.fst (D.map hji) E.obj.hom)
-      (D.map hkj) (Limits.pullback.fst (D.map hji) F.obj.hom) (𝟙 _) b (𝟙 _)
-      (by simp) (by simp [hb]))] :
-    Nonempty ((pullback (D.map (hkj ≫ hji))).obj E ≅ (pullback (D.map (hkj ≫ hji))).obj F) := by
-  have hk' : D.map hkj ≫ D.map hji = D.map (hkj ≫ hji) := (D.map_comp _ _).symm
-  let Φ : Limits.pullback E.obj.hom (D.map (hkj ≫ hji)) ≅
-      Limits.pullback F.obj.hom (D.map (hkj ≫ hji)) :=
-    pullbackSymmetry _ _ ≪≫ (pasteIso hji E.obj.hom _ _ hk').symm ≪≫
-      asIso (pullback.map (D.map hkj) (Limits.pullback.fst (D.map hji) E.obj.hom)
-        (D.map hkj) (Limits.pullback.fst (D.map hji) F.obj.hom) (𝟙 _) b (𝟙 _) _ _) ≪≫
-      pasteIso hji F.obj.hom _ _ hk' ≪≫ pullbackSymmetry _ _
-  have hΦ : Φ.hom ≫ Limits.pullback.snd F.obj.hom _ =
-      Limits.pullback.snd E.obj.hom (D.map (hkj ≫ hji)) := by
-    simp [Φ]
-  exact ⟨ObjectProperty.isoMk _ (Over.isoMk Φ hΦ)⟩
-
-/-- If `b` over `Dⱼ` is compatible with an isomorphism `e'` over the limit `S`, then the base
-change of `b` to `S` is an isomorphism. -/
-private lemma isIso_pullbackMap_π {c : Cone D} {i j : I} (hji : j ⟶ i) {X Y : Scheme.{u}}
-    (p : X ⟶ D.obj i) (q : Y ⟶ D.obj i)
-    (e' : Limits.pullback (c.π.app i) p ≅ Limits.pullback (c.π.app i) q)
-    (he' : e'.hom ≫ Limits.pullback.fst _ _ = Limits.pullback.fst _ _)
-    (b : Limits.pullback (D.map hji) p ⟶ Limits.pullback (D.map hji) q)
-    (hb : b ≫ Limits.pullback.fst _ _ = Limits.pullback.fst _ _)
-    (hcomm : pullback.map (c.π.app i) p (D.map hji) p (c.π.app j) (𝟙 X) (𝟙 _) (by simp)
-      (by simp) ≫ b = e'.hom ≫ pullback.map (c.π.app i) q (D.map hji) q (c.π.app j) (𝟙 Y)
-        (𝟙 _) (by simp) (by simp)) :
-    IsIso (pullback.map (c.π.app j) (Limits.pullback.fst (D.map hji) p) (c.π.app j)
-      (Limits.pullback.fst (D.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by simp [hb])) := by
-  -- Through the pasting isomorphisms `S ×_{Dⱼ} (Dⱼ ×_{Dᵢ} -) ≅ S ×_{Dᵢ} -`, it is `e'`.
-  have hlim : pullback.map (c.π.app j) (Limits.pullback.fst (D.map hji) p) (c.π.app j)
-      (Limits.pullback.fst (D.map hji) q) (𝟙 _) b (𝟙 _) (by simp) (by simp [hb]) ≫
-        (pasteIso hji q _ _ (c.w hji)).hom =
-      (pasteIso hji p _ _ (c.w hji)).hom ≫ e'.hom := by
-    apply pullback.hom_ext
-    · simp [he']
-    · have hX : (pasteIso hji p _ _ (c.w hji)).hom ≫ pullback.map (c.π.app i) p (D.map hji) p
-          (c.π.app j) (𝟙 _) (𝟙 _) (by simp) (by simp) = Limits.pullback.snd _ _ := by
-        apply pullback.hom_ext
-        · simp [pullback.condition]
-        · simp
-      have := congr($hcomm ≫ Limits.pullback.snd _ _)
-      simp only [Category.assoc, limit.lift_π, PullbackCone.mk_pt, PullbackCone.mk_π_app,
-        Category.comp_id] at this
-      simp only [Category.assoc, pasteIso_hom_snd, limit.lift_π_assoc, PullbackCone.mk_pt,
-        PullbackCone.mk_π_app]
-      rw [← reassoc_of% hX, this]
-  rw [← Iso.eq_comp_inv] at hlim
-  rw [hlim]
-  infer_instance
-
 /-- **Isomorphisms of finite étale covers descend along cofiltered limits.** Let `S = lim Dⱼ` be
 a cofiltered limit of quasi-compact quasi-separated schemes with affine transition maps. If two
 finite étale covers `E` and `F` of a member `Dᵢ` become isomorphic after base change to `S`, they
@@ -182,24 +99,13 @@ theorem exists_nonempty_iso_pullback_of_isLimit [IsCofiltered I]
   have he' : e'.hom ≫ Limits.pullback.fst _ F.obj.hom = Limits.pullback.fst _ _ := by
     simp only [e', Iso.trans_hom, Category.assoc, pullbackSymmetry_hom_comp_fst]
     rw [heL, pullbackSymmetry_hom_comp_snd]
-  -- It is the base change of a morphism `b` over some `Dⱼ`, which is an isomorphism over `S`.
-  obtain ⟨j, hji, b, hb, hcomm⟩ := hc.exists_pullbackMap_comp_eq e'.hom he'
-  have := QuasiCompact.compactSpace_of_compactSpace
-    (Limits.pullback.fst (D.map hji) E.obj.hom)
-  have := QuasiCompact.compactSpace_of_compactSpace
-    (Limits.pullback.fst (D.map hji) F.obj.hom)
-  have := quasiSeparatedSpace_of_quasiSeparated
-    (Limits.pullback.fst (D.map hji) F.obj.hom)
-  have : LocallyOfFinitePresentation b := by
-    have : LocallyOfFinitePresentation
-        (b ≫ Limits.pullback.fst (D.map hji) F.obj.hom) := by
-      rw [hb]; infer_instance
-    exact locallyOfFinitePresentation_of_comp b
-      (Limits.pullback.fst (D.map hji) F.obj.hom)
-  have := isIso_pullbackMap_π hji _ _ e' he' b hb hcomm
-  -- Hence `b` is an isomorphism over some later stage `Dₖ`.
-  obtain ⟨k, hkj, hk⟩ := hc.exists_isIso_pullbackMap b hb
-  exact ⟨k, hkj ≫ hji, nonempty_iso_of_isIso_pullbackMap hji hkj b hb⟩
+  -- It is the base change of an isomorphism over some `Dⱼ`.
+  obtain ⟨j, a, e₀, he₀, -⟩ := hc.exists_iso_pullback_of_iso e' he'
+  let Φ : Limits.pullback E.obj.hom (D.map a) ≅ Limits.pullback F.obj.hom (D.map a) :=
+    pullbackSymmetry _ _ ≪≫ e₀ ≪≫ pullbackSymmetry _ _
+  have hΦ : Φ.hom ≫ Limits.pullback.snd F.obj.hom _ = Limits.pullback.snd E.obj.hom (D.map a) := by
+    simp [Φ, he₀]
+  exact ⟨j, a, ⟨ObjectProperty.isoMk _ (Over.isoMk Φ hΦ)⟩⟩
 
 end Limit
 
