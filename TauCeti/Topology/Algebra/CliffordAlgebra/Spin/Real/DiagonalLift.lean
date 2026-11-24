@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.DiagonalLift
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.DiagonalLift.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Stabilization
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Basic
 
 /-!
 # Topology, uniqueness, and full-turn loop for the compact real diagonal Spin lift
@@ -56,6 +56,8 @@ This module develops the topological properties of the compact real diagonal Spi
   `TauCeti.isEmbedding_realCliffordSpinDiagonalLift`: continuity and closed-embedding properties.
 * `TauCeti.realCliffordSpinToSpecialOrthogonalRange_comp_diagonalLift`: compatibility of the
   closed unit-range diagonal lift with `realCliffordSpinToSpecialOrthogonalRange`.
+* `TauCeti.coe_symm_spinToSpecialOrthogonal_matrixSpecialOrthogonalSpinDiagonalLift`:
+  matrix-coordinate projection formula for `matrixSpecialOrthogonalSpinDiagonalLift`.
 * `TauCeti.eq_realCliffordSpinDiagonalLift_of_continuous_lift`,
   `TauCeti.eq_or_eq_negOne_mul_realCliffordSpinDiagonalLift_of_continuous_lift`, and
   `TauCeti.eq_realCliffordSpinDiagonalLift_of_continuous_monoidHom_lift`: uniqueness of continuous
@@ -215,6 +217,54 @@ theorem spinVectorAction_matrixSpecialOrthogonalSpinDiagonalLift_append (k : ℕ
     spinVectorAction_realCliffordSpinDiagonalLift_append,
     matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
     matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply]
+
+-- Not `@[simp]`: `matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe`,
+-- `matrixSpecialOrthogonalSpinDiagonalLift_apply`, and
+-- `spinToSpecialOrthogonal_realCliffordSpinDiagonalLift` simplify the LHS.
+/-- Projecting `matrixSpecialOrthogonalSpinDiagonalLift k A` to `SO(k + k)` and transporting back
+to the matrix group `SO(Fin (k + k), ℝ)` gives `Matrix.fromBlocks A 0 0 A` reindexed along
+`finSumFinEquiv`. -/
+theorem coe_symm_spinToSpecialOrthogonal_matrixSpecialOrthogonalSpinDiagonalLift
+    (k : ℕ) (A : _root_.Matrix.specialOrthogonalGroup (Fin k) ℝ) :
+    (((matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm (k + k)).symm
+        (spinToSpecialOrthogonal (realCliffordForm (k + k) 0)
+          (matrixSpecialOrthogonalSpinDiagonalLift k A)) :
+        _root_.Matrix.specialOrthogonalGroup (Fin (k + k)) ℝ) :
+        _root_.Matrix (Fin (k + k)) (Fin (k + k)) ℝ) =
+      _root_.Matrix.reindex finSumFinEquiv finSumFinEquiv
+        (_root_.Matrix.fromBlocks (A : _root_.Matrix (Fin k) (Fin k) ℝ) 0 0
+          (A : _root_.Matrix (Fin k) (Fin k) ℝ)) := by
+  rw [matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
+    matrixSpecialOrthogonalSpinDiagonalLift_apply,
+    spinToSpecialOrthogonal_realCliffordSpinDiagonalLift]
+  ext (i : Fin (k + k)) (j : Fin (k + k))
+  rw [LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, _root_.Matrix.reindex_apply,
+    _root_.Matrix.submatrix_apply]
+  have happendL (u v : Fin (k + 0) → ℝ) (a : Fin k) :
+      (Fin.append u v : Fin (k + k) → ℝ) (Fin.castAdd k a) = u a :=
+    Fin.append_left (u : Fin k → ℝ) (v : Fin k → ℝ) a
+  have happendR (u v : Fin (k + 0) → ℝ) (a : Fin k) :
+      (Fin.append u v : Fin (k + k) → ℝ) (Fin.natAdd k a) = v a :=
+    Fin.append_right (u : Fin k → ℝ) (v : Fin k → ℝ) a
+  refine Fin.addCases (fun j' ↦ ?_) (fun j' ↦ ?_) j
+  · rw [← Fin.append_single_zero (n := k), realCliffordSpecialOrthogonalBlockSum_apply_append,
+      map_zero, matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
+      _root_.Matrix.toLin'_apply]
+    refine Fin.addCases (fun i' ↦ ?_) (fun i' ↦ ?_) i
+    · rw [happendL, finSumFinEquiv_symm_apply_castAdd, finSumFinEquiv_symm_apply_castAdd,
+        _root_.Matrix.fromBlocks_apply₁₁, _root_.Matrix.mulVec_single]
+      simp
+    · rw [happendR, finSumFinEquiv_symm_apply_natAdd, finSumFinEquiv_symm_apply_castAdd,
+        _root_.Matrix.fromBlocks_apply₂₁, Pi.zero_apply, _root_.Matrix.zero_apply]
+  · rw [← Fin.append_zero_single (m := k), realCliffordSpecialOrthogonalBlockSum_apply_append,
+      map_zero, matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_apply,
+      _root_.Matrix.toLin'_apply]
+    refine Fin.addCases (fun i' ↦ ?_) (fun i' ↦ ?_) i
+    · rw [happendL, finSumFinEquiv_symm_apply_castAdd, finSumFinEquiv_symm_apply_natAdd,
+        _root_.Matrix.fromBlocks_apply₁₂, Pi.zero_apply, _root_.Matrix.zero_apply]
+    · rw [happendR, finSumFinEquiv_symm_apply_natAdd, finSumFinEquiv_symm_apply_natAdd,
+        _root_.Matrix.fromBlocks_apply₂₂, _root_.Matrix.mulVec_single]
+      simp
 
 /-! ### Uniqueness of continuous lifts -/
 

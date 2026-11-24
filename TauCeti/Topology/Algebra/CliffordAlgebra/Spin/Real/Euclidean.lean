@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.SpecialOrthogonal
 public import TauCeti.Analysis.Matrix.SpecialOrthogonal
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Basic
 public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 
 /-!

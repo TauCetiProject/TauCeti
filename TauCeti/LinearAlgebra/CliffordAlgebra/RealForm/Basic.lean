@@ -12,10 +12,8 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.Algebra.Quaternion.Split
-import TauCeti.GroupTheory.Perm.Inversion
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
-import Mathlib.LinearAlgebra.Matrix.Permutation
 
 /-!
 # The real Clifford algebras `Cliff(p, q)` and the base entries of the Bott table
@@ -86,7 +84,8 @@ unfolding.
 * `TauCeti.realCliffordFormZeroReindex`, `TauCeti.realCliffordBlockSwapIsometry`, and
   `TauCeti.realCliffordMiddleSwapIsometry`: coordinate reindexing of positive-definite signature
   forms along `Fin m ≃ Fin n`, its specialization to the block swap `finAddFlip`, and the
-  four-block middle-block exchange (`TauCeti.realCliffordMiddleSwapIsometry_eq_reindex`).
+  four-block middle-block exchange (`TauCeti.realCliffordMiddleSwapIsometry_eq_reindex`,
+  `TauCeti.realCliffordMiddleSwapIsometry_symm`).
 * `TauCeti.realBottSplitIsometry`: the two-coordinate specialization of the same signature
   splitter, separating a hyperbolic plane.
 * `TauCeti.realCliffordSignSwitchStandardIsometry`: the isometry which puts a sign-switched form
@@ -106,10 +105,6 @@ unfolding.
   standard real sum-of-squares form.
 * `TauCeti.finrank_cliffordAlgebra_realCliffordForm`:
   `finrank ℝ (CliffordAlgebra (realCliffordForm p q)) = 2 ^ (p + q)`.
-* `TauCeti.det_realCliffordFormZeroReindex`, `TauCeti.det_realCliffordBlockSwapIsometry`,
-  `TauCeti.det_realCliffordBlockSwapIsometry_self`, and
-  `TauCeti.det_realCliffordMiddleSwapIsometry`: determinants of coordinate permutations, block
-  swaps, and the middle-block exchange.
 * `TauCeti.CliffordAlgebra.realCliffordEvenEquivNeg_ι`: the even comparison sends a bivector
   `ι a * ι b` to minus the transported bivector.
 
@@ -680,6 +675,12 @@ def realCliffordBlockSwapIsometry (p q : ℕ) :
     (realCliffordForm (p + q) 0).IsometryEquiv (realCliffordForm (q + p) 0) :=
   realCliffordFormZeroReindex (finAddFlip : Fin (q + p) ≃ Fin (p + q))
 
+/-- `realCliffordBlockSwapIsometry` equals `realCliffordFormZeroReindex` along `finAddFlip`. -/
+theorem realCliffordBlockSwapIsometry_eq_reindex (p q : ℕ) :
+    realCliffordBlockSwapIsometry p q =
+      realCliffordFormZeroReindex (finAddFlip : Fin (q + p) ≃ Fin (p + q)) :=
+  (rfl)
+
 /-- `realCliffordBlockSwapIsometry` reads each coordinate through `finAddFlip`. -/
 @[simp]
 theorem realCliffordBlockSwapIsometry_apply (p q : ℕ)
@@ -706,50 +707,6 @@ theorem realCliffordBlockSwapIsometry_symm (p q : ℕ) :
     ext i; simp [finAddFlip]
   rw [realCliffordBlockSwapIsometry, realCliffordFormZeroReindex_symm, hflip,
     realCliffordBlockSwapIsometry]
-
-/-- The determinant of the coordinate-permutation isometry `realCliffordFormZeroReindex σ` is the
-sign of the permutation `σ`. -/
-theorem det_realCliffordFormZeroReindex (n : ℕ) (σ : Equiv.Perm (Fin n)) :
-    LinearMap.det (realCliffordFormZeroReindex σ).toLinearMap =
-      ((Equiv.Perm.sign σ : ℤ) : ℝ) := by
-  have hlin : (realCliffordFormZeroReindex σ).toLinearMap =
-      Matrix.toLin' (σ.permMatrix ℝ) :=
-    LinearMap.ext fun x ↦ funext fun i ↦ by
-      rw [LinearEquiv.coe_toLinearMap, IsometryEquiv.coe_toLinearEquiv,
-        realCliffordFormZeroReindex_apply, Matrix.toLin'_apply, Matrix.permMatrix_mulVec,
-        Function.comp_apply]
-  rw [hlin, LinearMap.det_toLin', Matrix.det_permutation]
-
-/-- Swapping the first `p` and last `q` coordinates of `ℝ^(p + q)` has determinant
-`(-1) ^ (p * q)`. -/
-theorem det_realCliffordBlockSwapIsometry (p q : ℕ) :
-    LinearMap.det ((realCliffordBlockSwapIsometry p q).trans
-        (realCliffordFormCongr (add_comm q p) rfl)).toLinearMap =
-      (-1 : ℝ) ^ (p * q) := by
-  let σ : Equiv.Perm (Fin (p + q)) := (finCongr (add_comm p q)).trans finAddFlip
-  have hσ : (realCliffordBlockSwapIsometry p q).trans
-      (realCliffordFormCongr (add_comm q p) rfl) = realCliffordFormZeroReindex σ := by
-    refine DFunLike.ext _ _ fun x ↦ funext fun i ↦ ?_
-    rw [QuadraticMap.IsometryEquiv.trans_apply, realCliffordFormCongr_apply,
-      realCliffordBlockSwapIsometry_apply, realCliffordFormZeroReindex_apply]
-    rfl
-  have hinv : σ = (finAddFlip.trans (finCongr (add_comm q p)))⁻¹ := by
-    ext i
-    simp [σ, Equiv.Perm.inv_def, finAddFlip, finCongr]
-  rw [hσ, det_realCliffordFormZeroReindex, hinv, Equiv.Perm.sign_inv,
-    sign_finAddFlip_trans_finCongr]
-  simp
-
-/-- Swapping the two `k`-blocks of `ℝ^(k + k)` has determinant `(-1) ^ k`. -/
-theorem det_realCliffordBlockSwapIsometry_self (k : ℕ) :
-    LinearMap.det (realCliffordBlockSwapIsometry k k).toLinearMap = (-1 : ℝ) ^ k := by
-  have h : (realCliffordBlockSwapIsometry k k).trans
-      (realCliffordFormCongr (add_comm k k) rfl) = realCliffordBlockSwapIsometry k k :=
-    DFunLike.ext _ _ fun _ ↦ funext fun _ ↦ by simp
-  rw [← h, det_realCliffordBlockSwapIsometry]
-  rcases Nat.even_or_odd k with hk | hk
-  · rw [(hk.mul_left k).neg_one_pow, hk.neg_one_pow]
-  · rw [(hk.mul hk).neg_one_pow, hk.neg_one_pow]
 
 /-- The nested coordinate isometry splitting `ℝ^((a + b) + (c + d))` into
 `((ℝ^a ⊕ ℝ^b) ⊕ (ℝ^c ⊕ ℝ^d))`. -/
@@ -921,28 +878,14 @@ theorem realCliffordMiddleSwapIsometry_apply (p q : ℕ)
     realCliffordMiddleSwapIsometry p q x i = x (finSumFinSumFinComm p p q q i) := by
   rw [realCliffordMiddleSwapIsometry_eq_reindex, realCliffordFormZeroReindex_apply]
 
-/-- **The determinant of the middle-block exchange `realCliffordMiddleSwapIsometry p q` is
-`(-1) ^ (p * q)`.** -/
-theorem det_realCliffordMiddleSwapIsometry (p q : ℕ) :
-    LinearMap.det ((realCliffordMiddleSwapIsometry p q).trans
-        (realCliffordFormCongr (add_add_add_comm p p q q) rfl)).toLinearMap =
-      (-1 : ℝ) ^ (p * q) := by
-  let σ : Equiv.Perm (Fin ((p + q) + (p + q))) :=
-    (finCongr (add_add_add_comm p p q q).symm).trans (finSumFinSumFinComm p p q q)
-  have hσ : (realCliffordMiddleSwapIsometry p q).trans
-      (realCliffordFormCongr (add_add_add_comm p p q q) rfl) =
-      realCliffordFormZeroReindex σ := by
-    refine DFunLike.ext _ _ fun x ↦ funext fun (i : Fin ((p + q) + (p + q))) ↦ ?_
-    rw [QuadraticMap.IsometryEquiv.trans_apply, realCliffordFormCongr_apply,
-      realCliffordMiddleSwapIsometry_apply, realCliffordFormZeroReindex_apply]
-    rfl
-  have hinv : σ =
-      ((finSumFinSumFinComm p q p q).trans (finCongr (add_add_add_comm p p q q)))⁻¹ := by
-    ext i
-    simp [σ, Equiv.Perm.inv_def]
-  rw [hσ, det_realCliffordFormZeroReindex, hinv, Equiv.Perm.sign_inv,
-    sign_finSumFinSumFinComm_trans_finCongr]
-  simp [mul_comm]
+/-- The inverse of `realCliffordMiddleSwapIsometry p q` is coordinate reindexing along
+`finSumFinSumFinComm p q p q`. -/
+@[simp]
+theorem realCliffordMiddleSwapIsometry_symm (p q : ℕ) :
+    (realCliffordMiddleSwapIsometry p q).symm =
+      realCliffordFormZeroReindex (finSumFinSumFinComm p q p q) := by
+  rw [realCliffordMiddleSwapIsometry_eq_reindex, realCliffordFormZeroReindex_symm,
+    finSumFinSumFinComm_symm]
 
 /-- The coordinate isometry which separates the last positive and negative coordinates of the
 signature form as a hyperbolic plane. -/

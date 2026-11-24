@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Rotation
 import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.LowRank
 
 /-!
@@ -15,8 +14,8 @@ import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.LowRank
 Let `Q` be a finite-dimensional nondegenerate quadratic form over a field `K` with `2` invertible,
 and suppose the Spin projection `Spin(Q) →* SO(Q)` is surjective (for instance, `Q` is
 positive-definite over `ℝ`, or `K` is quadratically closed). Although the Spin projection
-`Spin(Q) →* SO(Q)` generally admits no section, the doubled orthogonal sum `Q ⊕ Q` canonically
-receives the diagonal homomorphism
+`Spin(Q) →* SO(Q)` need not admit a group-homomorphic section, the doubled orthogonal sum `Q ⊕ Q`
+canonically receives the diagonal homomorphism
 
 `CliffordAlgebra.spinDiagonalLift Q hQ hsurj : SO(Q) →* Spin(Q ⊕ Q)`
 
@@ -31,14 +30,9 @@ is natural under isometric equivalences `e : Q₁ ≃qᵢ Q₂`, invariant under
 of `Q ⊕ Q`, trivial when `dim V ≤ 1`, and compatible with orthogonal sums via the middle-block
 exchange `QuadraticMap.IsometryEquiv.prodProdProdComm`: assuming surjectivity of the Spin
 projection for both summands `Q₁`, `Q₂` and for their sum `Q₁ ⊕ Q₂`, since even Clifford elements
-on orthogonal summands commute, transporting `spinDiagonalLift (Q₁ ⊕ Q₂)` along
-`prodProdProdComm` gives the `spinGroupProd` of `spinDiagonalLift Q₁` and `spinDiagonalLift Q₂`
-with no sign.
-
-Over `ℝ`, the diagonal lift of the rotation induced by a circle element `spinCircle Q u w` (or
-`spinRotation Q u w t`) is the commuting product of the two circle elements in the first and second
-summands of `Q ⊕ Q`. At the half-turn `z = -1` (angle `t = π` in `Spin`, corresponding to a full
-`2π` rotation in `SO`), both factors equal `-1`, so their product closes to `1`.
+on orthogonal summands commute, transporting `spinDiagonalLift (Q₁ ⊕ Q₂)` applied to a block sum
+`(g₁, g₂)` along `prodProdProdComm` gives the `spinGroupProd` of `spinDiagonalLift Q₁ g₁` and
+`spinDiagonalLift Q₂ g₂` with no sign.
 
 ## Main definitions
 
@@ -60,9 +54,6 @@ summands of `Q ⊕ Q`. At the half-turn `z = -1` (angle `t = π` in `Spin`, corr
   `CliffordAlgebra.spinGroupEquiv_prodComm_spinDiagonalLift`, and
   `CliffordAlgebra.spinGroupEquiv_prodProdProdComm_spinDiagonalLift`: naturality, swap invariance,
   and orthogonal-sum coherence of `spinDiagonalLift`.
-* `CliffordAlgebra.spinDiagonalLift_spinToSpecialOrthogonal_spinCircle` and
-  `CliffordAlgebra.spinDiagonalLift_spinToSpecialOrthogonal_spinRotation`: explicit plane-rotation
-  formulas over `ℝ`, closing to `1` at `z = -1` / `t = π`.
 
 ## References
 
@@ -258,64 +249,5 @@ theorem spinGroupEquiv_prodProdProdComm_spinDiagonalLift {W : Type*} [AddCommGro
 end
 
 end DiagonalLift
-
-section RealRotation
-
-open TauCeti.QuadraticMap
-
-noncomputable section
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
-  (Q : QuadraticForm ℝ V) (hQ : Q.Nondegenerate)
-  (hsurj : Function.Surjective (spinToSpecialOrthogonal Q))
-
-/-- **Circle-subgroup formula for `spinDiagonalLift`**: the diagonal lift of the rotation induced
-by `spinCircle Q u w z` is the commuting product of the two circle elements in the first and second
-summands of `Q ⊕ Q`. -/
-theorem spinDiagonalLift_spinToSpecialOrthogonal_spinCircle {u w : V}
-    (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) (z : Circle) :
-    spinDiagonalLift Q hQ hsurj (spinToSpecialOrthogonal Q (spinCircle Q u w huw h z)) =
-      spinCircle (Q.prod Q) (u, 0) (w, 0) (by simpa [QuadraticMap.isOrtho_def] using huw)
-          (by simpa using h) z *
-        spinCircle (Q.prod Q) (0, u) (0, w) (by simpa [QuadraticMap.isOrtho_def] using huw)
-          (by simpa using h) z := by
-  rw [spinDiagonalLift_spinToSpecialOrthogonal_eq_mul,
-    (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinCircle huw h _ _,
-    (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinCircle huw h _ _]
-  rfl
-
-/-- At `z = -1`, the circle-subgroup rotation projects to the identity in `SO(Q)` and its diagonal
-lift closes to `1` in `Spin(Q ⊕ Q)`. -/
-theorem spinDiagonalLift_spinToSpecialOrthogonal_spinCircle_neg_one {u w : V}
-    (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) :
-    spinDiagonalLift Q hQ hsurj (spinToSpecialOrthogonal Q (spinCircle Q u w huw h (-1))) = 1 := by
-  rw [spinCircle_neg_one, spinGroup.spinToSpecialOrthogonal_negOne, map_one]
-
-/-- **Plane-rotation formula for `spinDiagonalLift`**: the diagonal lift of the rotation induced
-by `spinRotation Q u w t` is the commuting product of the two `spinRotation` elements in the first
-and second summands of `Q ⊕ Q`. -/
-theorem spinDiagonalLift_spinToSpecialOrthogonal_spinRotation {u w : V}
-    (hu : Q u = 1) (hw : Q w = 1) (huw : Q.IsOrtho u w) (t : ℝ) :
-    spinDiagonalLift Q hQ hsurj (spinToSpecialOrthogonal Q (spinRotation Q u w hu hw huw t)) =
-      spinRotation (Q.prod Q) (u, 0) (w, 0) (by simpa using hu) (by simpa using hw)
-          (by simpa [QuadraticMap.isOrtho_def] using huw) t *
-        spinRotation (Q.prod Q) (0, u) (0, w) (by simpa using hu) (by simpa using hw)
-          (by simpa [QuadraticMap.isOrtho_def] using huw) t := by
-  rw [spinDiagonalLift_spinToSpecialOrthogonal_eq_mul,
-    (QuadraticMap.Isometry.inl Q Q).spinGroupMap_spinRotation hu hw huw t,
-    (QuadraticMap.Isometry.inr Q Q).spinGroupMap_spinRotation hu hw huw t]
-  rfl
-
-/-- At Spin angle `π` (a full `2π` rotation in `SO(Q)`), each single-summand rotation equals `-1`,
-and the diagonal lift closes to `1` in `Spin(Q ⊕ Q)`. -/
-theorem spinDiagonalLift_spinToSpecialOrthogonal_spinRotation_pi {u w : V}
-    (hu : Q u = 1) (hw : Q w = 1) (huw : Q.IsOrtho u w) :
-    spinDiagonalLift Q hQ hsurj
-        (spinToSpecialOrthogonal Q (spinRotation Q u w hu hw huw Real.pi)) = 1 := by
-  rw [spinRotation_pi, spinGroup.spinToSpecialOrthogonal_negOne, map_one]
-
-end
-
-end RealRotation
 
 end CliffordAlgebra

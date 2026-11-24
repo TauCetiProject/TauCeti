@@ -10,7 +10,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Prod
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Projection
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Obstruction
 
 /-!
 # Topology of compact real Spin stabilization and block sums
