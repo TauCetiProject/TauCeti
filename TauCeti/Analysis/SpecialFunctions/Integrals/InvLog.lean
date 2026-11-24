@@ -33,12 +33,12 @@ Separating these integrand and integral lemmas from
 * `Real.continuousOn_inv_log_rpow`, `Real.intervalIntegrable_inv_log_rpow`,
   `Real.integral_inv_log_rpow_le`, `Real.le_integral_inv_log_rpow`,
   `Real.integral_inv_log_rpow_nonneg`, `Real.integral_inv_log_rpow_eq_sub_add` — continuity,
-  monotonicity bounds, and integration by parts for reciprocal real powers `(log t ^ k)⁻¹` on
-  intervals with `a, b > 1`.
+  monotonicity bounds (for `0 ≤ k` and `1 < a ≤ b`), nonnegativity (for `1 < a ≤ b`), and
+  integration by parts for reciprocal real powers `(log t ^ k)⁻¹` with `a, b > 1`.
 * `Real.integral_inv_log_rpow_le_sqrt_add`, `Real.integral_inv_log_rpow_lt_div_add`,
   `Real.integral_inv_log_pow_le_sqrt_add`, `Real.integral_inv_log_pow_lt_div_add`,
-  `Real.isBigO_integral_inv_log_pow` — explicit upper bounds and `O(x / log x ^ n)` remainder
-  estimate for `∫ t in 2..x, (log t ^ k)⁻¹`.
+  `Real.isBigO_integral_inv_log_pow` — explicit upper bounds for `∫ t in 2..x, (log t ^ k)⁻¹`
+  and the `O(x / log x ^ n)` remainder estimate for natural exponents `n : ℕ`.
 * `TauCeti.Real.continuousOn_inv_log_pow`, `TauCeti.Real.continuousOn_inv_div_log_pow`,
   `TauCeti.Real.intervalIntegrable_inv_log_pow`, `TauCeti.Real.integral_inv_log_pow_le`,
   `TauCeti.Real.le_integral_inv_log_pow`, `TauCeti.Real.integral_inv_log_pow_nonneg`,

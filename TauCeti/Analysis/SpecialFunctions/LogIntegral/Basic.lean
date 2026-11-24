@@ -8,21 +8,25 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # The logarithmic integral
 
-This file defines the offset logarithmic integral `Li x = ∫ t in 2..x, (log t)⁻¹` and proves the
-prime-number-theorem normalisation `Li x ~ x / log x` as `x → ∞`.
+This file defines the offset logarithmic integral `Li x = ∫ t in 2..x, (log t)⁻¹` (used for
+endpoints `x > 1`) and proves the prime-number-theorem normalisation `Li x ~ x / log x` as
+`x → ∞`, together with its exact `n`-fold asymptotic expansion and elementary bounds for
+`Li x - x / log x`.
 
-The lower endpoint is `2` rather than `0`: the integrand has a nonintegrable singularity at
-`t = 1`, so the unshifted `li` exists only as a principal value, while every arithmetic
-application compares a prime count with `Li`. The endpoint agrees with the one used by the
-partial-summation identities for prime counts, so the two can be combined without a shift of
-origin.
+The lower endpoint is `2` rather than `0`: the integrand `(log t)⁻¹` has a nonintegrable
+singularity at `t = 1`. Whereas the unshifted `li x` is an ordinary Lebesgue integral for
+`0 < x < 1` and takes a Cauchy principal-value representation of `(log t)⁻¹` for `x > 1`, choosing
+`2` avoids the singularity on `(1, ∞)` and agrees with the endpoint used by the partial-summation
+identities for prime counts, so the two can be combined without a shift of origin.
 
 The asymptotic is proved from the exact identity
 `Li x = x / log x - 2 / log 2 + ∫ t in 2..x, ((log t) ^ 2)⁻¹`,
@@ -38,11 +42,19 @@ the fundamental theorem of calculus applied to `t ↦ t / log t`, together with 
 * `TauCeti.Real.hasDerivAt_logIntegral`, `TauCeti.Real.deriv_logIntegral` —
   its derivative `(log x)⁻¹` for `x > 1`.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
-* `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
+* `TauCeti.Real.logIntegral_eq_div_log_sub_add`,
+  `TauCeti.Real.logIntegral_eq_mul_sum_sub_mul_sum_add_mul_integral`,
+  `TauCeti.Real.isBigO_logIntegral_sub_mul_sum` — the antiderivative identity, exact `n`-fold
+  integration-by-parts expansion, and `O(x / log x ^ (n + 1))` asymptotic remainder for `Li`.
 * `TauCeti.Real.logIntegral_isEquivalent_div_log` — `Li x ~ x / log x` at infinity, with the
   quotient form `TauCeti.Real.tendsto_logIntegral_mul_log_div_atTop`.
 * `TauCeti.Real.tendsto_div_div_log_of_isLittleO_logIntegral` — an `o (x / log x)` error
   relative to `δ Li x` gives `f x / (x / log x) → δ`.
+* `TauCeti.Real.hasDerivAt_logIntegral_sub_div_log`,
+  `TauCeti.Real.strictMonoOn_logIntegral_sub_div_log`,
+  `TauCeti.Real.le_logIntegral_sub_div_log`, `TauCeti.Real.lt_logIntegral_sub_div_log`,
+  `TauCeti.Real.logIntegral_sub_div_log_lt` — derivative, strict monotonicity on `(1, ∞)`, and
+  elementary two-sided bounds for `Li x - x / log x` on `[2, ∞)`.
 * `TauCeti.Real.integral_inv_log_sq_eq_logIntegral_sub_div_log_sub` — `∫ t in a..b, (log t ^ 2)⁻¹`
   is the increment of `x ↦ Li x - x / log x` from `a` to `b`.
 * `TauCeti.Real.abs_integral_div_mul_log_sq_le_mul`,
@@ -70,7 +82,7 @@ transfer of explicit bounds for `θ` to explicit bounds for `π - Li` in
 public section
 
 open Asymptotics Filter MeasureTheory Set
-open scoped Topology
+open scoped Topology Nat
 
 namespace TauCeti.Real
 
@@ -78,8 +90,9 @@ namespace TauCeti.Real
 
 /-- The **offset logarithmic integral** `Li x = ∫ t in 2..x, (log t)⁻¹`.
 
-The lower endpoint `2` avoids the singularity of the integrand at `t = 1`; this is the function
-appearing in the prime number theorem in the form `π x ~ Li x`. -/
+For endpoints `x > 1`, the lower endpoint `2` keeps the integration interval away from the
+singularity of the integrand at `t = 1`; this is the function appearing in the prime number theorem
+in the form `π x ~ Li x`. -/
 noncomputable def logIntegral (x : ℝ) : ℝ := ∫ t in (2 : ℝ)..x, (Real.log t)⁻¹
 
 /-- Defining equation of `TauCeti.Real.logIntegral`. -/
@@ -219,5 +232,92 @@ theorem abs_integral_div_mul_log_sq_le_sum {f : ℝ → ℝ} {s c : ℕ → ℝ}
   refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i hi ↦ ?_)
   rw [Finset.mem_range] at hi
   exact abs_integral_div_mul_log_sq_le_mul (hs₁ i hi.le) (hs i hi) (hf i hi) (h i hi)
+
+/-! ### Offset asymptotic expansion and elementary bounds for `Li x - x / log x` -/
+
+/-- Exact `n`-fold integration-by-parts expansion of `Li x` for every `n : ℕ` and `x > 1`. -/
+theorem logIntegral_eq_mul_sum_sub_mul_sum_add_mul_integral (n : ℕ) {x : ℝ} (hx : 1 < x) :
+    logIntegral x =
+      (x / Real.log x) * (∑ k ∈ Finset.range n, (k ! : ℝ) / Real.log x ^ k) -
+        (2 / Real.log 2) * (∑ k ∈ Finset.range n, (k ! : ℝ) / Real.log 2 ^ k) +
+        (n ! : ℝ) * ∫ t in (2 : ℝ)..x, (Real.log t ^ (n + 1))⁻¹ := by
+  induction n with
+  | zero =>
+      simp [logIntegral_def]
+  | succ n ih =>
+      rw [ih, integral_inv_log_pow_eq_sub_add (n + 1) one_lt_two hx,
+        Finset.sum_range_succ, Finset.sum_range_succ, mul_add, mul_add, mul_add,
+        Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
+      have hterm (y : ℝ) : (y / Real.log y) * ((n ! : ℝ) / Real.log y ^ n) =
+          (n ! : ℝ) * (y / Real.log y ^ (n + 1)) := by
+        rw [pow_succ']
+        ring
+      rw [hterm x, hterm 2]
+      ring
+
+/-- **Asymptotic expansion of `Li`**: for every `n : ℕ`,
+`Li x - (x / log x) * ∑ k ∈ range n, k! / log x ^ k = O(x / log x ^ (n + 1))`. -/
+theorem isBigO_logIntegral_sub_mul_sum (n : ℕ) :
+    (fun x : ℝ ↦
+      logIntegral x - (x / Real.log x) * ∑ k ∈ Finset.range n, (k ! : ℝ) / Real.log x ^ k)
+      =O[atTop] fun x : ℝ ↦ x / Real.log x ^ (n + 1) := by
+  have hconst := (Real.isLittleO_const_div_log_pow
+    (-(2 / Real.log 2) * ∑ k ∈ Finset.range n, (k ! : ℝ) / Real.log 2 ^ k) (n + 1)).isBigO
+  have hrem := (Real.isBigO_integral_inv_log_pow (n + 1)).const_mul_left (n ! : ℝ)
+  refine (hconst.add hrem).congr' ?_ EventuallyEq.rfl
+  filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx
+  rw [logIntegral_eq_mul_sum_sub_mul_sum_add_mul_integral n hx]
+  ring
+
+/-- The derivative of `x ↦ Li x - x / log x` on `(1, ∞)` is `(log x ^ 2)⁻¹`. -/
+theorem hasDerivAt_logIntegral_sub_div_log {x : ℝ} (hx : 1 < x) :
+    HasDerivAt (fun t : ℝ ↦ logIntegral t - t / Real.log t) (Real.log x ^ 2)⁻¹ x := by
+  have hd := (hasDerivAt_logIntegral hx).fun_sub
+    (Real.hasDerivAt_div_log_pow 1 (Real.log_pos hx).ne')
+  simpa only [pow_one, Nat.cast_one, one_mul, sub_sub_cancel] using hd
+
+/-- `x ↦ Li x - x / log x` is strictly increasing on `(1, ∞)`. -/
+theorem strictMonoOn_logIntegral_sub_div_log :
+    StrictMonoOn (fun x : ℝ ↦ logIntegral x - x / Real.log x) (Ioi 1) := by
+  refine strictMonoOn_of_deriv_pos (convex_Ioi 1)
+    (fun x hx ↦ (hasDerivAt_logIntegral_sub_div_log hx).continuousAt.continuousWithinAt)
+    fun x hx ↦ ?_
+  rw [interior_Ioi] at hx
+  rw [(hasDerivAt_logIntegral_sub_div_log hx).deriv]
+  exact inv_pos.mpr (pow_pos (Real.log_pos hx) 2)
+
+/-- Lower bound `x / log x ^ 2 - 2 / log 2 - 2 / log 2 ^ 2 ≤ Li x - x / log x` for `x ≥ 2`. -/
+theorem le_logIntegral_sub_div_log {x : ℝ} (hx : 2 ≤ x) :
+    x / Real.log x ^ 2 - 2 / Real.log 2 - 2 / Real.log 2 ^ 2 ≤
+      logIntegral x - x / Real.log x := by
+  rw [logIntegral_eq_div_log_sub_add hx, integral_inv_log_pow_eq_sub_add 2 one_lt_two (by linarith)]
+  have hnn := integral_inv_log_pow_nonneg 3 one_lt_two hx
+  norm_num
+  linarith
+
+/-- Strict lower bound `x / log x ^ 2 - 2 / log 2 - 2 / log 2 ^ 2 < Li x - x / log x` for
+`x > 2`. -/
+theorem lt_logIntegral_sub_div_log {x : ℝ} (hx : 2 < x) :
+    x / Real.log x ^ 2 - 2 / Real.log 2 - 2 / Real.log 2 ^ 2 <
+      logIntegral x - x / Real.log x := by
+  rw [logIntegral_eq_div_log_sub_add hx.le,
+    integral_inv_log_pow_eq_sub_add 2 one_lt_two (by linarith)]
+  have hpos : 0 < ∫ t in (2 : ℝ)..x, (Real.log t ^ 3)⁻¹ :=
+    lt_of_lt_of_le (div_pos (by linarith) (pow_pos (Real.log_pos (by linarith)) 3))
+      (le_integral_inv_log_pow 3 one_lt_two hx.le)
+  norm_num
+  linarith
+
+/-- Strict upper bound for `Li x - x / log x` on `[2, ∞)`. -/
+theorem logIntegral_sub_div_log_lt {x : ℝ} (hx : 2 ≤ x) :
+    logIntegral x - x / Real.log x <
+      x / Real.log x ^ 2 + 2 * Real.sqrt x / Real.log 2 ^ 3 + 16 * x / Real.log x ^ 3 -
+        2 / Real.log 2 := by
+  rw [logIntegral_eq_div_log_sub_add hx]
+  have hb := Real.integral_inv_log_pow_lt_div_add 2 hx
+  norm_num at hb ⊢
+  have hdist : 2 * (Real.sqrt x / Real.log 2 ^ 3 + 8 * x / Real.log x ^ 3) =
+      2 * Real.sqrt x / Real.log 2 ^ 3 + 16 * x / Real.log x ^ 3 := by ring
+  linarith
 
 end TauCeti.Real

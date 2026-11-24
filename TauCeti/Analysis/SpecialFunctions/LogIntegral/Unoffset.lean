@@ -10,9 +10,10 @@ public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
-import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
-import TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv
+import TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries
+import TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg
 import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 
 /-!
 # The unoffset logarithmic integral
@@ -49,7 +50,7 @@ follow as theorems.
 * `TauCeti.Real.strictAntiOn_li_Ioo`, `TauCeti.Real.li_neg`, `TauCeti.Real.strictMonoOn_li_Ioi`,
   `TauCeti.Real.tendsto_li_nhdsNE_one`, `TauCeti.Real.tendsto_li_nhdsGT_one`,
   `TauCeti.Real.tendsto_li_nhdsLT_one`, `TauCeti.Real.tendsto_li_atTop`,
-  `TauCeti.Real.li_pos_of_three_halves_le`, and `TauCeti.Real.existsUnique_li_eq_zero` —
+  `TauCeti.Real.li_pos_of_three_halves_le`, and `TauCeti.Real.existsUnique_li_eq_zero_Ioi` —
   monotonicity, boundary limits, positivity for `x ≥ 3 / 2`, and Soldner's constant.
 
 ## References
@@ -316,13 +317,8 @@ theorem li_pos_of_three_halves_le {x : ℝ} (hx : (3 : ℝ) / 2 ≤ x) : 0 < li 
     rcases eq_or_lt_of_le hx with rfl | hlt
     · exact h32
     · exact h32.trans (strictMonoOn_li_Ioi (by norm_num) (mem_Ioi.mpr (by linarith)) hlt)
-  -- Show `0.4054 < log (3 / 2)` via `exp 0.4054 < 3 / 2`.
-  have hlog32 : (0.4054 : ℝ) < log (3 / 2) := by
-    rw [lt_log_iff_exp_lt (by norm_num)]
-    have hb := exp_bound' (x := (0.4054 : ℝ)) (by norm_num) (by norm_num) (n := 6) (by decide)
-    simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
-    norm_num at hb ⊢
-    linarith
+  -- Show `0.4054 < log (3 / 2)` from `Real.lt_log_three_halves`.
+  have hlog32 : (0.4054 : ℝ) < log (3 / 2) := lt_log_three_halves
   -- Show `-0.903 < log (log (3 / 2))` via `(0.4054)⁻¹ < exp 0.903`.
   have hloglog : (-0.903 : ℝ) < log (log (3 / 2)) := by
     rw [lt_log_iff_exp_lt (by linarith), exp_neg]
@@ -362,7 +358,7 @@ theorem li_ne_logIntegral : li ≠ logIntegral := by
   linarith [li_two_pos]
 
 /-- **Soldner's constant**: `li` has a unique zero in `(1, ∞)`. -/
-theorem existsUnique_li_eq_zero : ∃! μ ∈ Ioi (1 : ℝ), li μ = 0 := by
+theorem existsUnique_li_eq_zero_Ioi : ∃! μ ∈ Ioi (1 : ℝ), li μ = 0 := by
   obtain ⟨a, ha1, ha_lt⟩ : ∃ a ∈ Ioo (1 : ℝ) (3 / 2), li a < 0 := by
     have hmem : ∀ᶠ t in 𝓝[>] (1 : ℝ), li t < 0 :=
       tendsto_li_nhdsGT_one.eventually (eventually_lt_atBot 0)

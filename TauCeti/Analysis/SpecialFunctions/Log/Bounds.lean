@@ -5,7 +5,6 @@ Authors: Matteo Cipollina, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Analysis.Complex.ExponentialBounds
@@ -19,8 +18,9 @@ one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x 
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
 real cutoff `x` when passing between inclusive and strict prime sums.
 
-This file also records a numerical enclosure `-0.366513 ≤ log (log 2) ≤ -0.366512` for the
-iterated logarithm at `2`, used to enclose the logarithmic integral at `2`.
+This file also records the explicit decimal lower bound `0.4054 < log (3 / 2)` and the numerical
+enclosure `-0.366513 ≤ log (log 2) ≤ -0.366512` for the iterated logarithm at `2`, used in
+logarithmic-integral estimates.
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
@@ -37,6 +37,7 @@ in Hadamard minimum-modulus estimates.
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
+* `Real.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
 * `Real.le_log_log_two` and `Real.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
@@ -64,6 +65,14 @@ theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := b
   rw [log_div hx.ne' two_ne_zero] at h
   rw [div_le_iff₀ hx]
   linarith [log_le_sub_one_of_pos zero_lt_two]
+
+/-- Explicit decimal lower bound `0.4054 < log (3 / 2)`. -/
+theorem lt_log_three_halves : (0.4054 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  have hb := exp_bound' (x := (0.4054 : ℝ)) (by norm_num) (by norm_num) (n := 6) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb ⊢
+  linarith
 
 /-- Lower bound `-0.366513 ≤ log (log 2)`. -/
 theorem le_log_log_two : (-0.366513 : ℝ) ≤ log (log 2) := by

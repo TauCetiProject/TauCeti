@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv
+import TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg
 
 /-!
 # Integral representations of the Euler–Mascheroni constant
@@ -21,8 +22,9 @@ This file complements `Mathlib.NumberTheory.Harmonic.GammaDeriv` (which proves
 γ = ∫ t in 0..1, (1 - exp (-t)) / t - ∫ t in Ioi 1, exp (-t) / t
 ```
 
-from the exponential-integral tail integrability and integration-by-parts identities in
-`TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv`.
+from the exponential-integral tail integrability in
+`TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv` and the `log t * exp (-t)` kernel identities
+in `TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg`.
 
 ## Main results
 

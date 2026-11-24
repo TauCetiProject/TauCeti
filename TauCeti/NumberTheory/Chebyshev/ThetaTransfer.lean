@@ -27,11 +27,14 @@ number-field identity `TauCeti.primeCount_sub_mul_logIntegral_eq` at density `1`
 for Mathlib's `Nat.primeCounting` and `Chebyshev.theta`.
 
 Every explicit bound for `θ` becomes an explicit bound for `π` through this identity, without
-repeating the partial summation. The integrals it produces are estimated by the comparisons for the
-weight `(t log² t)⁻¹` in `TauCeti/Analysis/SpecialFunctions/Integrals/InvLog.lean`: a bound
-`|θ(t) - t| ≤ t ε(t)` turns `∫ (θ(t) - t) / (t log² t)` into `∫ ε(t) / log² t`, and constant bounds
-on the pieces of a partition turn it into increments of `x ↦ Li x - x / log x`
-(`TauCeti.Real.abs_integral_div_mul_log_sq_le_sum`).
+repeating the partial summation. The integrals it produces are estimated using the absolute-value
+comparison for the weight `(t log² t)⁻¹` in
+`TauCeti/Analysis/SpecialFunctions/Integrals/InvLog.lean`
+(`TauCeti.Real.abs_integral_div_mul_log_sq_le_integral_div_log_sq`), which turns a bound
+`|θ(t) - t| ≤ t ε(t)` into `∫ ε(t) / log² t`, together with the partition bound in
+`TauCeti/Analysis/SpecialFunctions/LogIntegral/Basic.lean`
+(`TauCeti.Real.abs_integral_div_mul_log_sq_le_sum`), which turns constant bounds on the pieces of
+a partition into increments of `x ↦ Li x - x / log x`.
 
 ## Main results
 

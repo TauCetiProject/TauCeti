@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.LHopital
-import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -194,12 +194,7 @@ theorem abs_inv_log_one_add_add_inv_log_one_sub_le {u : ℝ} (hu0 : 0 < u) (hu :
   rw [abs_of_nonneg (by rw [hrew]; positivity), hrew]
   -- Lower bound `log (1 + u) ≥ (3 / 4) * u` by concavity of `log` on `[1, 3 / 2]`.
   have hlp_ge : 3 / 4 * u ≤ log (1 + u) := by
-    have hlog32 : (3 / 8 : ℝ) ≤ log (3 / 2) := by
-      rw [le_log_iff_exp_le (by norm_num)]
-      have hb := exp_bound' (x := (3 / 8 : ℝ)) (by norm_num) (by norm_num) (n := 4) (by decide)
-      simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
-      norm_num at hb ⊢
-      linarith
+    have hlog32 : (3 / 8 : ℝ) ≤ log (3 / 2) := by linarith [lt_log_three_halves]
     have hconc : (1 - 2 * u) • log 1 + (2 * u) • log (3 / 2) ≤
         log ((1 - 2 * u) • 1 + (2 * u) • (3 / 2)) :=
       strictConcaveOn_log_Ioi.concaveOn.2 (by norm_num) (by norm_num)

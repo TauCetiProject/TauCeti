@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
+import TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv
 import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
@@ -37,11 +37,14 @@ and `li 2`:
 ## Main declarations
 
 * `TauCeti.Real.li_eq_integral_inv_log` — ordinary integral on `(0, 1)`.
-* `TauCeti.Real.tendsto_li_one_add_sub_one_sub` and
-  `TauCeti.Real.tendsto_integral_inv_log_principalValue` — Cauchy principal value on `(1, ∞)`.
-* `TauCeti.Real.hasDerivAt_li_exp`, `TauCeti.Real.integral_exp_div_eq_li_exp_sub`,
-  `TauCeti.Real.integral_Iic_exp_div_eq_li_exp`, `TauCeti.Real.li_exp`, and
-  `TauCeti.Real.tendsto_integral_exp_div_principalValue` — exponential-integral forms.
+* `TauCeti.Real.tendsto_li_sub_of_tendsto_abs_log_div`,
+  `TauCeti.Real.tendsto_li_one_add_sub_one_sub`, and
+  `TauCeti.Real.tendsto_integral_inv_log_principalValue` — cancellation of logarithmic divergences
+  and Cauchy principal value on `(1, ∞)`.
+* `TauCeti.Real.hasDerivAt_li_exp`, `TauCeti.Real.tendsto_li_exp_atBot`,
+  `TauCeti.Real.integral_exp_div_eq_li_exp_sub`, `TauCeti.Real.integral_Iic_exp_div_eq_li_exp`,
+  `TauCeti.Real.li_exp`, and `TauCeti.Real.tendsto_integral_exp_div_principalValue` —
+  exponential-integral forms.
 * `TauCeti.Real.li_eq_log_abs_sub_one_add_integral` — absolutely convergent regularized integral.
 * `TauCeti.Real.li_two_eq_integral_inv_log_one_add_add_inv_log_one_sub` — symmetric integral for
   `li 2`.
@@ -72,11 +75,51 @@ theorem li_eq_integral_inv_log {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) :
     tendsto_li_nhdsGT_zero
     ((continuousAt_li hx0 hx1.ne).tendsto.mono_left nhdsWithin_le_nhds)).symm
 
-/-- Symmetric cancellation of the logarithmic pole of `li` at `1`:
-`li (1 + ε) - li (1 - ε) → 0` as `ε → 0⁺`. -/
+/-- If `f x → 1`, `g x → 1`, and `|log (f x)| / |log (g x)| → 1` along a filter `l`, then the
+logarithmic divergences and entire-part series cancel so `li (f x) - li (g x) → 0`. -/
+theorem tendsto_li_sub_of_tendsto_abs_log_div {α : Type*} {l : Filter α} {f g : α → ℝ}
+    (hf : Tendsto f l (𝓝 1)) (hg : Tendsto g l (𝓝 1))
+    (hr : Tendsto (fun x ↦ |log (f x)| / |log (g x)|) l (𝓝 1)) :
+    Tendsto (fun x ↦ li (f x) - li (g x)) l (𝓝 0) := by
+  have hlog_diff : Tendsto (fun x ↦ log |log (f x)| - log |log (g x)|) l (𝓝 0) := by
+    have hcomp : Tendsto (fun x ↦ log (|log (f x)| / |log (g x)|)) l (𝓝 0) := by
+      simpa [Function.comp_def, log_one] using (continuousAt_log one_ne_zero).tendsto.comp hr
+    refine hcomp.congr' ?_
+    filter_upwards [hr.eventually (Ioi_mem_nhds zero_lt_one)] with x hx
+    have hdiv := div_ne_zero_iff.mp hx.ne'
+    exact log_div hdiv.1 hdiv.2
+  have hser_diff : Tendsto
+      (fun x ↦
+        (∑' n : ℕ, log (f x) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) -
+        (∑' n : ℕ, log (g x) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))) l (𝓝 0) := by
+    have hc : ContinuousAt
+        (fun t : ℝ ↦ ∑' n : ℕ, log t ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) 1 :=
+      continuous_tsum_pow_div_mul_factorial.continuousAt.comp (continuousAt_log one_ne_zero)
+    have hsf : Tendsto
+        (fun x ↦ ∑' n : ℕ, log (f x) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))
+        l (𝓝 (∑' n : ℕ, log 1 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))) :=
+      hc.tendsto.comp hf
+    have hsg : Tendsto
+        (fun x ↦ ∑' n : ℕ, log (g x) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))
+        l (𝓝 (∑' n : ℕ, log 1 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))) :=
+      hc.tendsto.comp hg
+    simpa only [sub_self] using hsf.sub hsg
+  have hsum := hlog_diff.add hser_diff
+  rw [add_zero] at hsum
+  refine hsum.congr' (Eventually.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [li_eq_add_log_abs, li_eq_add_log_abs]
+  ring
+
+/-- Symmetric cancellation of the logarithmic divergences of `li (1 + ε)` and `li (1 - ε)` as
+`ε → 0⁺`: `li (1 + ε) - li (1 - ε) → 0`. -/
 theorem tendsto_li_one_add_sub_one_sub :
     Tendsto (fun ε : ℝ ↦ li (1 + ε) - li (1 - ε)) (𝓝[>] 0) (𝓝 0) := by
-  have hlog_ratio : Tendsto (fun ε : ℝ ↦ log (1 + ε) / (-log (1 - ε))) (𝓝[>] 0) (𝓝 1) := by
+  have hp_lim : Tendsto (fun ε : ℝ ↦ 1 + ε) (𝓝[>] 0) (𝓝 1) := by
+    simpa using ((continuous_const_add (1 : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds
+  have hm_lim : Tendsto (fun ε : ℝ ↦ 1 - ε) (𝓝[>] 0) (𝓝 1) := by
+    simpa using ((continuous_sub_left (1 : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds
+  have hlog_ratio : Tendsto (fun ε : ℝ ↦ |log (1 + ε)| / |log (1 - ε)|) (𝓝[>] 0) (𝓝 1) := by
     have hp : Tendsto (fun ε : ℝ ↦ log (1 + ε) / ε) (𝓝[>] 0) (𝓝 1) := by
       have hd : HasDerivAt (fun t : ℝ ↦ log (1 + t)) 1 0 := by
         simpa using ((hasDerivAt_id' (0 : ℝ)).const_add (1 : ℝ)).log (by norm_num)
@@ -90,37 +133,10 @@ theorem tendsto_li_one_add_sub_one_sub :
     have hdiv : Tendsto (fun ε : ℝ ↦ (log (1 + ε) / ε) / (-log (1 - ε) / ε)) (𝓝[>] 0) (𝓝 1) := by
       simpa [Pi.div_def] using hp.div hm one_ne_zero
     refine hdiv.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
-    field_simp [hε.ne']
-  have hlog_diff : Tendsto (fun ε : ℝ ↦ log (log (1 + ε)) - log (log (1 - ε))) (𝓝[>] 0) (𝓝 0) := by
-    have hcomp := (continuousAt_log one_ne_zero).tendsto.comp hlog_ratio
-    rw [log_one] at hcomp
-    refine hcomp.congr' ?_
     filter_upwards [Ioo_mem_nhdsGT one_pos] with ε ⟨hε0, hε1⟩
-    have h1 : 0 < log (1 + ε) := log_pos (by linarith)
-    have h2 : 0 < -log (1 - ε) := neg_pos.mpr (log_neg (by linarith) (by linarith))
-    dsimp only [Function.comp_apply]
-    rw [log_div h1.ne' h2.ne', log_neg_eq_log]
-  have hser_diff : Tendsto
-      (fun ε : ℝ ↦
-        (∑' n : ℕ, log (1 + ε) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) -
-        (∑' n : ℕ, log (1 - ε) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))))
-      (𝓝[>] 0) (𝓝 0) := by
-    have hc1 : ContinuousAt (fun ε : ℝ ↦
-        ∑' n : ℕ, log (1 + ε) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) 0 :=
-      continuous_tsum_pow_div_mul_factorial.continuousAt.comp
-        ((continuousAt_log (by norm_num)).comp (by fun_prop))
-    have hc2 : ContinuousAt (fun ε : ℝ ↦
-        ∑' n : ℕ, log (1 - ε) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) 0 :=
-      continuous_tsum_pow_div_mul_factorial.continuousAt.comp
-        ((continuousAt_log (by norm_num)).comp (by fun_prop))
-    simpa [Pi.sub_def] using (hc1.sub hc2).tendsto.mono_left nhdsWithin_le_nhds
-  have hsum := hlog_diff.add hser_diff
-  rw [add_zero] at hsum
-  refine hsum.congr' (Eventually.of_forall fun ε ↦ ?_)
-  dsimp only
-  rw [li_def, li_def]
-  ring
+    rw [abs_of_pos (log_pos (by linarith)), abs_of_neg (log_neg (by linarith) (by linarith))]
+    field_simp [hε0.ne']
+  exact tendsto_li_sub_of_tendsto_abs_log_div hp_lim hm_lim hlog_ratio
 
 /-- **Cauchy principal value representation of `li` on `(1, ∞)`**:
 `∫ t in 0..(1 - ε), (log t)⁻¹ + ∫ t in (1 + ε)..x, (log t)⁻¹ → li x` as `ε → 0⁺`. -/
@@ -144,6 +160,11 @@ theorem hasDerivAt_li_exp {u : ℝ} (hu : u ≠ 0) :
   have h := (hasDerivAt_li (exp_pos u) hne).comp u (hasDerivAt_exp u)
   simpa only [Function.comp_def, log_exp, div_eq_mul_inv, mul_comm] using h
 
+/-- `li (exp t) → 0` as `t → -∞`. -/
+theorem tendsto_li_exp_atBot : Tendsto (fun t : ℝ ↦ li (exp t)) atBot (𝓝 0) :=
+  tendsto_li_nhdsGT_zero.comp (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+    tendsto_exp_atBot (Eventually.of_forall exp_pos))
+
 /-- On any closed interval avoiding `0`, `∫ u in a..b, exp u / u = li (exp b) - li (exp a)`. -/
 theorem integral_exp_div_eq_li_exp_sub {a b : ℝ} (h0 : (0 : ℝ) ∉ uIcc a b) :
     (∫ u in a..b, exp u / u) = li (exp b) - li (exp a) := by
@@ -157,12 +178,9 @@ theorem integral_exp_div_eq_li_exp_sub {a b : ℝ} (h0 : (0 : ℝ) ∉ uIcc a b)
 `∫ u in Iic y, exp u / u = li (exp y)`. -/
 theorem integral_Iic_exp_div_eq_li_exp {y : ℝ} (hy : y < 0) :
     (∫ u in Iic y, exp u / u) = li (exp y) := by
-  have hlim : Tendsto (fun t : ℝ ↦ li (exp t)) atBot (𝓝 0) :=
-    tendsto_li_nhdsGT_zero.comp (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      tendsto_exp_atBot (Eventually.of_forall exp_pos))
   simpa using integral_Iic_of_hasDerivAt_of_tendsto'
     (fun u hu ↦ hasDerivAt_li_exp (lt_of_le_of_lt hu hy).ne)
-    (integrableOn_exp_div_Iic hy) hlim
+    (integrableOn_exp_div_Iic hy) tendsto_li_exp_atBot
 
 /-- **Exponential-integral representation via the regularized integrand** `(exp u - 1) / u`:
 for every `y : ℝ`, `li (exp y) = γ + log |y| + ∫ u in 0..y, (exp u - 1) / u`. -/
@@ -177,26 +195,18 @@ theorem tendsto_integral_exp_div_principalValue {y : ℝ} (hy : 0 < y) :
       (fun ε : ℝ ↦ (∫ u in (-ε⁻¹)..(-ε), exp u / u) + ∫ u in ε..y, exp u / u)
       (𝓝[>] 0) (𝓝 (li (exp y))) := by
   have hneg_inv : Tendsto (fun ε : ℝ ↦ li (exp (-ε⁻¹))) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_li_nhdsGT_zero.comp (tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp tendsto_inv_nhdsGT_zero))
-      (Eventually.of_forall fun _ ↦ exp_pos _))
+    tendsto_li_exp_atBot.comp (tendsto_neg_atTop_atBot.comp tendsto_inv_nhdsGT_zero)
   have hsymm : Tendsto (fun ε : ℝ ↦ li (exp (-ε)) - li (exp ε)) (𝓝[>] 0) (𝓝 0) := by
-    have hc : ContinuousAt
-        (fun ε : ℝ ↦
-          (∑' n : ℕ, (-ε) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) -
-          (∑' n : ℕ, ε ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))) 0 :=
-      (continuous_tsum_pow_div_mul_factorial.comp continuous_neg).continuousAt.sub
-        continuous_tsum_pow_div_mul_factorial.continuousAt
-    have h0 : Tendsto
-        (fun ε : ℝ ↦
-          (∑' n : ℕ, (-ε) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) -
-          (∑' n : ℕ, ε ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))))
-        (𝓝[>] 0) (𝓝 0) := by
-      simpa using hc.tendsto.mono_left nhdsWithin_le_nhds
-    refine h0.congr' (Eventually.of_forall fun ε ↦ ?_)
-    dsimp only
-    rw [li_def, li_def, log_exp, log_exp, log_neg_eq_log]
-    ring
+    have hf : Tendsto (fun ε : ℝ ↦ exp (-ε)) (𝓝[>] 0) (𝓝 1) := by
+      have h : Continuous (fun ε : ℝ ↦ exp (-ε)) := continuous_exp.comp continuous_neg
+      simpa using (h.tendsto 0).mono_left nhdsWithin_le_nhds
+    have hg : Tendsto (fun ε : ℝ ↦ exp ε) (𝓝[>] 0) (𝓝 1) := by
+      simpa using (continuous_exp.tendsto 0).mono_left nhdsWithin_le_nhds
+    have hr : Tendsto (fun ε : ℝ ↦ |log (exp (-ε))| / |log (exp ε)|) (𝓝[>] 0) (𝓝 1) := by
+      refine tendsto_const_nhds.congr' ?_
+      filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
+      simp [log_exp, abs_neg, div_self (abs_pos.mpr hε.ne').ne']
+    exact tendsto_li_sub_of_tendsto_abs_log_div hf hg hr
   have hlim : Tendsto
       (fun ε : ℝ ↦ li (exp y) - li (exp (-ε⁻¹)) + (li (exp (-ε)) - li (exp ε)))
       (𝓝[>] 0) (𝓝 (li (exp y))) := by
@@ -279,7 +289,7 @@ theorem li_two_eq_integral_inv_log_one_add_add_inv_log_one_sub :
     exact intervalIntegral.integral_congr fun u _ ↦ by ring
   have hshift1 : (∫ u in (0 : ℝ)..1, ((log (1 + u))⁻¹ - u⁻¹)) =
       ∫ t in (1 : ℝ)..2, ((log t)⁻¹ - (t - 1)⁻¹) := by
-    simpa [add_zero, add_sub_cancel_left, show (1 : ℝ) + 1 = 2 by norm_num] using
+    simpa [add_zero, add_sub_cancel_left, one_add_one_eq_two] using
       intervalIntegral.integral_comp_add_left (fun t : ℝ ↦ (log t)⁻¹ - (t - 1)⁻¹) (1 : ℝ)
         (a := (0 : ℝ)) (b := 1)
   have hshift2 : (∫ u in (0 : ℝ)..1, ((log (1 - u))⁻¹ + u⁻¹)) =
