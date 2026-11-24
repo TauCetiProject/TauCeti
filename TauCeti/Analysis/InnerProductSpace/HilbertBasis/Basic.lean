@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.InnerProductSpace.l2Space
-import TauCeti.Analysis.InnerProductSpace.Continuous
 import TauCeti.Topology.Algebra.InfiniteSum.Defs
 
 /-!
@@ -72,7 +71,7 @@ theorem inner_eq_zero_of_forall_inner_eq_zero {K : Submodule 𝕜 E} (bK : Hilbe
 /-- A vector orthogonal to every vector of a Hilbert basis is zero. -/
 theorem eq_zero_of_forall_inner_eq_zero (b : HilbertBasis ι 𝕜 E) {x : E}
     (hx : ∀ i, ⟪b i, x⟫_𝕜 = 0) : x = 0 :=
-  (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span).eq_zero_of_forall_inner_eq_zero hx
+  b.repr.map_eq_zero_iff.1 (lp.ext (funext fun i ↦ by simp [b.repr_apply_apply, hx]))
 
 /-- A continuous semilinear map out of `E` sends every vector into a closed submodule that contains
 the images of all vectors of a Hilbert basis of `E`. -/

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Prod
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Reindex
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 public import TauCeti.Analysis.Normed.Lp.Basic
-import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Hilbert dimension and unitary classification of Hilbert spaces
@@ -42,8 +41,8 @@ the Hilbert dimension of `ℓ²(ι, 𝕜)` is `#ι` (up to universe lift), bound
 (`Orthonormal.cardinal_lift_le_hilbertDim`), is monotone along linear isometries and complete
 subspaces (`LinearIsometry.lift_hilbertDim_le`, `Submodule.hilbertDim_le`), agrees with
 `Module.finrank 𝕜 E` in finite dimension, is invariant under continuous linear equivalences
-(`ContinuousLinearEquiv.lift_hilbertDim_eq`, `ContinuousLinearEquiv.hilbertDim_eq`) via a
-density-character bound (`Orthonormal.lift_mk_le_max_aleph0_of_denseRange`), is at most `ℵ₀` if
+(`ContinuousLinearEquiv.lift_hilbertDim_eq`, `ContinuousLinearEquiv.hilbertDim_eq`) via the
+density-character bound (`TauCeti.lift_hilbertDim_le_max_aleph0_of_denseRange`), is at most `ℵ₀` if
 and only if `E` is separable (`TauCeti.hilbertDim_le_aleph0_iff`), equals `ℵ₀` if and only if `E`
 is separable and infinite-dimensional (`TauCeti.hilbertDim_eq_aleph0_iff`), and classifies Hilbert
 spaces over `𝕜` up to linear isometric equivalence
@@ -66,8 +65,8 @@ decompositions, and quotients by closed submodules (`TauCeti.hilbertDim_prodLp`,
   finite-dimensional iff the index type is finite, with `finrank 𝕜 E = Fintype.card ι`.
 * `Orthonormal.lift_mk_le`, `HilbertBasis.lift_mk_eq`: orthonormal cardinality bound and
   basis-cardinality invariance for `HilbertBasis`.
-* `Orthonormal.lift_mk_le_max_aleph0_of_denseRange`: density-character bound for continuous maps
-  with dense range out of a densely generated topological module.
+* `TauCeti.lift_hilbertDim_le_max_aleph0_of_denseRange`: density-character bound on Hilbert
+  dimension for continuous maps with dense range.
 * `HilbertBasis.nonempty_linearIsometryEquiv_iff_lift_mk_eq`: unitary classification in terms of
   given Hilbert bases.
 * `TauCeti.hilbertDim`: the Hilbert dimension of a complete inner product space.
@@ -267,38 +266,6 @@ theorem nonempty_linearIsometryEquiv_iff_nonempty_equiv {ι : Type u} {κ : Type
 end Cardinality
 
 end HilbertBasis
-
-namespace Orthonormal
-
-/-- **Density-character bound.** If `E` is a topological `𝕜`-module densely spanned by `w : ι → E`
-and `f : E → F` is continuous with dense range, then any orthonormal family `v : κ → F` has index
-cardinality at most `max (#ι) ℵ₀`. -/
-theorem lift_mk_le_max_aleph0_of_denseRange {𝕜 E F : Type*} {ι : Type u} {κ : Type v}
-    [RCLike 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E]
-    [ContinuousSMul 𝕜 E] [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-    {v : κ → F} (hv : Orthonormal 𝕜 v) {w : ι → E}
-    (hw : Dense (Submodule.span 𝕜 (Set.range w) : Set E)) {f : E → F}
-    (hf : Continuous f) (hd : DenseRange f) :
-    Cardinal.lift.{u} #κ ≤ max (Cardinal.lift.{v} #ι) ℵ₀ := by
-  classical
-  have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
-  have hφ_dense := (TopologicalSpace.denseRange_denseSeq 𝕜).finset_sum_smul hw
-  have hfφ_dense : DenseRange (f ∘ fun t : Finset (ι × ℕ) ↦
-      ∑ p ∈ t, TopologicalSpace.denseSeq 𝕜 p.2 • w p.1) :=
-    hd.comp hφ_dense hf
-  refine (hv.lift_mk_le_of_denseRange hfφ_dense).trans ?_
-  calc Cardinal.lift.{v} #(Finset (ι × ℕ))
-      ≤ Cardinal.lift.{v} #(List (ι × ℕ)) :=
-        Cardinal.lift_le.2 (Cardinal.mk_le_of_surjective List.toFinset_surjective)
-    _ ≤ Cardinal.lift.{v} (max ℵ₀ #(ι × ℕ)) :=
-        Cardinal.lift_le.2 (Cardinal.mk_list_le_max _)
-    _ = max ℵ₀ (Cardinal.lift.{v} #ι * ℵ₀) := by
-        simp [Cardinal.mk_prod]
-    _ ≤ max (Cardinal.lift.{v} #ι) ℵ₀ :=
-        max_le (le_max_right _ _)
-          ((Cardinal.mul_le_max (Cardinal.lift.{v} #ι) ℵ₀).trans (by simp))
-
-end Orthonormal
 
 namespace TauCeti
 

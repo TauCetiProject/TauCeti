@@ -115,4 +115,4 @@ theorem DenseRange.finset_sum_smul {R M ι α : Type*} [Semiring R] [Topological
   refine ⟨Finset.univ.image (fun i : s ↦ (i.val, a i)), ?_⟩
   dsimp only
   rw [Finset.sum_image (fun i _ j _ hij ↦ Subtype.ext (Prod.mk.inj hij).1)]
-  rfl
+  simp [F]

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Continuous
-import Mathlib.Analysis.InnerProductSpace.LinearMap
 
 /-!
 # Norm convergence from inner-product and norm convergence
@@ -19,9 +18,6 @@ completeness nor definiteness of the seminorm on `E` is needed.
 Specializing to eventual norm equality `‖f a‖ = ‖y‖` upgrades weak operator convergence to strong
 operator convergence on families of isometric or unitary operators.
 
-In a normed inner product space, a vector orthogonal to every member of a densely spanning family
-is zero (`Dense.eq_zero_of_forall_inner_eq_zero`).
-
 ## Main results
 
 * `TauCeti.tendsto_of_tendsto_re_inner_of_tendsto_norm`: norm convergence from convergence of norms
@@ -29,8 +25,6 @@ is zero (`Dense.eq_zero_of_forall_inner_eq_zero`).
 * `TauCeti.tendsto_of_tendsto_inner_of_tendsto_norm`: norm convergence from convergence of norms
   and inner-product convergence against the limit.
 * `TauCeti.tendsto_of_tendsto_inner_of_norm_eq`: specialization to eventual norm equality.
-* `Dense.eq_zero_of_forall_inner_eq_zero`: a vector orthogonal to every member of a densely
-  spanning family is zero.
 -/
 
 public section
@@ -83,14 +77,3 @@ theorem tendsto_of_tendsto_inner_of_norm_eq {𝕜 E α : Type*} [RCLike 𝕜]
   tendsto_of_tendsto_inner_of_tendsto_norm ((tendsto_congr' hnorm).2 tendsto_const_nhds) hinner
 
 end TauCeti
-
-/-- A vector orthogonal to every member of a densely spanning family is zero. -/
-theorem Dense.eq_zero_of_forall_inner_eq_zero {𝕜 E ι : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {w : ι → E}
-    (hw : Dense (Submodule.span 𝕜 (Set.range w) : Set E)) {x : E}
-    (hx : ∀ i, ⟪w i, x⟫_𝕜 = 0) : x = 0 := by
-  have h0 : innerSL 𝕜 x = 0 :=
-    ContinuousLinearMap.ext_on hw (Set.eqOn_range.2 (funext fun i ↦ by
-      simp only [Function.comp_apply, innerSL_apply_apply, zero_apply]
-      rw [← inner_conj_symm, hx i, map_zero]))
-  simpa [innerSL_apply_apply] using DFunLike.congr_fun h0 x

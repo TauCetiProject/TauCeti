@@ -498,9 +498,7 @@ index type `ι` is countable. -/
 theorem separableSpace_iff_countable [∀ i, Nontrivial (E i)]
     [∀ i, TopologicalSpace.SeparableSpace (E i)] [Fact (1 ≤ p)] (hp : p ≠ ∞) :
     TopologicalSpace.SeparableSpace (lp E p) ↔ Countable ι :=
-  (separableSpace_iff hp).trans
-    ⟨fun ⟨h, _⟩ ↦ Countable.of_equiv _ (Equiv.subtypeUnivEquiv ‹∀ i, Nontrivial (E i)›),
-     fun _ ↦ ⟨inferInstance, inferInstance⟩⟩
+  ⟨fun _ ↦ countable_of_separableSpace E p, fun _ ↦ separableSpace hp⟩
 
 end lp
 

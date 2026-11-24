@@ -24,10 +24,10 @@ yields the unique linear isometric equivalence `b.equiv c e : E ≃ₗᵢ[𝕜] 
 `c (e i)` for every `i` (`HilbertBasis.equiv_apply_basis`,
 `HilbertBasis.existsUnique_linearIsometryEquiv`).
 
-Together, these constructions extend `OrthonormalBasis.reindex` and `OrthonormalBasis.equiv` from
-finite bases to arbitrary Hilbert bases across universes, enabling universe-lifting and
-`ℕ`-reindexing of bases and supplying the basis-preserving unitaries needed for Hilbert-dimension
-invariance and the unitary classification of Hilbert spaces.
+Together, this file supplies `HilbertBasis.equiv` (the Hilbert-basis counterpart of
+`OrthonormalBasis.equiv`) and the coordinate and transport lemmas for Mathlib's
+`HilbertBasis.reindex`, which together feed the Hilbert-dimension invariance and unitary
+classification of Hilbert spaces.
 
 ## Main declarations
 
@@ -59,7 +59,6 @@ variable {ι : Type*} {κ : Type*} {μ : Type*} {𝕜 : Type*}
 
 /-- The coordinate representation of `b.reindex e` is `b.repr` followed by
 `LinearIsometryEquiv.lpCongrLeft`. -/
-@[simp]
 theorem repr_reindex [CompleteSpace E] (b : HilbertBasis ι 𝕜 E) (e : ι ≃ κ) :
     (b.reindex e).repr = b.repr.trans (LinearIsometryEquiv.lpCongrLeft 2 𝕜 𝕜 e) :=
   LinearIsometryEquiv.ext fun x ↦ lp.ext <| funext fun j ↦ by simp
