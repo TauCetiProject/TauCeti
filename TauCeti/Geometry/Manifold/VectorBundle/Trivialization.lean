@@ -60,7 +60,9 @@ section.
 * `Bundle.Trivialization.toDiffeomorphOfBaseSetEqUniv`: a `C^n` trivialization over the whole
   base, with `C^n` partial inverse, as a `C^n` diffeomorphism `TotalSpace F E ≃ B × F`.
 * `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
-  read through an atlas trivialization, is a `C^n` section over its base set.
+  read through an atlas trivialization, is a `C^n` section over its base set;
+  `Bundle.Trivialization.contMDiff_section_symmL`: extended by zero, it is a global `C^n` section
+  when the family is supported in the base set.
 * `Bundle.Trivialization.contDiffOn_coordChangeL_comp_symm`: the bundle transition operator
   composed with an inverse extended chart is `C^n` on subsets of the chart target whose
   inverse-chart images lie in both trivialization base sets.
@@ -398,6 +400,24 @@ theorem contMDiffOn_section_symm {U : Set B} (hU : IsOpen U) (hUe : U ⊆ e.base
     (hu : ContMDiffOn IB 𝓘(𝕜, F) n u U) :
     ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (e.symm x (u x))) U :=
   (e.contMDiffOn_section_iff hU hUe).mpr (hu.congr fun x hx ↦ by simp [e.apply_mk_symm (hUe hx)])
+
+/-- **A `C^n` family of vectors of the model fibre supported in the base set of a trivialization is
+a global `C^n` section.** If the topological support of `u` lies in the base set of an atlas
+trivialization `e`, the section `x ↦ e.symmL 𝕜 x (u x)`, which vanishes off the base set, is
+`C^n` on all of `B`. -/
+theorem contMDiff_section_symmL {u : B → F} (hu : ContMDiff IB 𝓘(𝕜, F) n u)
+    (hue : tsupport u ⊆ e.baseSet) :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun x ↦ TotalSpace.mk' F x (e.symmL 𝕜 x (u x)) := by
+  refine contMDiff_of_locally_contMDiffOn fun x ↦ ?_
+  by_cases hx : x ∈ e.baseSet
+  · refine ⟨e.baseSet, e.open_baseSet, hx, ?_⟩
+    refine (e.contMDiffOn_section_symm e.open_baseSet subset_rfl hu.contMDiffOn).congr
+      fun y hy ↦ ?_
+    rw [e.symmL_apply hy]
+  · -- Off the support of `u` the section is the zero section.
+    refine ⟨(tsupport u)ᶜ, (isClosed_tsupport u).isOpen_compl, fun h ↦ hx (hue h), ?_⟩
+    refine (Bundle.contMDiff_zeroSection 𝕜 E).contMDiffOn.congr fun y hy ↦ ?_
+    rw [image_eq_zero_of_notMem_tsupport hy, map_zero, zeroSection]
 
 end Bundle.Trivialization
 

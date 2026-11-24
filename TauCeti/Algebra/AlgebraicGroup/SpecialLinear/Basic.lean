@@ -48,6 +48,8 @@ reductivity, or base-change theorem is asserted here.
 * `TauCeti.SpecialLinear.det_map_genericMatrix_coordinateMap` and
   `TauCeti.SpecialLinear.adjoin_range_map_genericMatrix`: the generic matrix of `SLₙ` has
   determinant one, and its entries generate `O(SLₙ)`.
+* `TauCeti.SpecialLinear.hopfIdealPointsSubgroup_definingHopfIdeal`: the matrix subgroup cut out
+  by the determinant-kernel Hopf ideal is the kernel of the determinant.
 * `TauCeti.SpecialLinear.pointsMulEquiv`: the natural multiplicative equivalence between quotient
   Hopf points and `Matrix.SpecialLinearGroup`.
 * `TauCeti.SpecialLinear.ofConv_pointsMulEquiv_symm_genericMatrix` and
@@ -154,33 +156,17 @@ theorem adjoin_range_map_genericMatrix :
       (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom ij.1 ij.2)) = ⊤ := by
   let X := (GeneralLinear.genericMatrix R n).map (coordinateMap R n).hom
   let T := Algebra.adjoin R (Set.range (fun ij : Fin n × Fin n ↦ X ij.1 ij.2))
-  let q := (coordinateMap R n).hom.toAlgHom
-  have hq : Function.Surjective q :=
-    CommHopfAlgCat.mkQuotient_surjective _ (definingHopfIdeal R n)
-  -- The entries of `X` and of `X⁻¹` are the images of the generators of `O(GLₙ)` under
-  -- `O(GLₙ) ↠ O(SLₙ)`.
-  have himage := congrArg (Subalgebra.map q)
-    (GeneralLinear.adjoin_coordinateHopfAlgebra_X_union_antipode_X R n)
-  rw [Algebra.map_top, (AlgHom.range_eq_top q).mpr hq, ← Algebra.adjoin_image, Set.image_union,
-    ← Set.range_comp, ← Set.range_comp] at himage
-  rw [eq_top_iff, ← himage, Algebra.adjoin_le_iff]
+  refine GeneralLinear.adjoin_range_map_genericMatrix R n (q := (coordinateMap R n).hom.toAlgHom)
+    (CommHopfAlgCat.mkQuotient_surjective _ (definingHopfIdeal R n)) fun i j ↦ ?_
+  rw [BialgHom.coe_toAlgHom]
   -- Since `det X = 1`, the inverse `X⁻¹` is the adjugate of `X`, whose entries lie in `T`.
   let M : Matrix (Fin n) (Fin n) T := .of fun i j ↦ ⟨X i j, Algebra.subset_adjoin ⟨(i, j), rfl⟩⟩
   have hM : T.val.mapMatrix M = X := rfl
   have hinv : X⁻¹ = T.val.mapMatrix M.adjugate := by
     rw [Matrix.inv_def, det_map_genericMatrix_coordinateMap, Ring.inverse_one, one_smul,
       AlgHom.map_adjugate, hM]
-  rintro _ (⟨⟨i, j⟩, rfl⟩ | ⟨⟨i, j⟩, rfl⟩)
-  · exact Algebra.subset_adjoin ⟨(i, j), by
-      beta_reduce
-      rw [Function.comp_apply, Matrix.map_apply, GeneralLinear.genericMatrix_apply,
-        BialgHom.coe_toAlgHom]⟩
-  · rw [Function.comp_apply, ← HopfAlgebra.antipodeAlgHom_apply,
-      ← GeneralLinear.genericMatrix_apply, ← Matrix.map_apply (f := HopfAlgebra.antipodeAlgHom R _),
-      GeneralLinear.map_antipode_genericMatrix, ← Matrix.map_apply (f := q),
-      GeneralLinear.map_inv_genericMatrix, BialgHom.coe_toAlgHom]
-    rw [hinv]
-    exact (M.adjugate i j).property
+  rw [hinv]
+  exact (M.adjugate i j).property
 
 /-- The special-linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
@@ -220,7 +206,7 @@ theorem mem_definingPointsSubgroup_iff_det_eq_one
 
 /-- The matrix subgroup cut out by the determinant-kernel Hopf ideal is the kernel of the
 determinant. -/
-private theorem hopfIdealPointsSubgroup_definingHopfIdeal :
+theorem hopfIdealPointsSubgroup_definingHopfIdeal :
     GeneralLinear.hopfIdealPointsSubgroup n (definingHopfIdeal R n) A =
       (Matrix.GeneralLinearGroup.det : GL (Fin n) A →* Aˣ).ker := by
   ext g

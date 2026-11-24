@@ -46,8 +46,9 @@ for two closed-immersion sections `δ` and `x₀` of the same morphism, pulling 
 (`AlgebraicGeometry.Scheme.Hom.comap_ker_comm_of_comp_eq_id`).
 
 The closed subscheme of the inverse image `I.comap g` along `g : X' ⟶ X` is the base change of the
-closed subscheme of `I` along `g`; when `X'` is itself a base change of `X ⟶ S`, it is the base
-change over `S` of the closed subscheme of `I`
+closed subscheme of `I` along `g`. For any commutative square `g ≫ q = q' ≫ f` it lies over the
+closed subscheme of `I` (`AlgebraicGeometry.Scheme.IdealSheafData.comap_subschemeι_comp_comp`);
+when the square is a pullback square, it is the base change over `S` of the closed subscheme of `I`
 (`AlgebraicGeometry.Scheme.IdealSheafData.isPullback_subschemeMap_comap`, preserving finiteness,
 flatness, and finite presentation over the base), and sections of `V(I)` base-change to sections of
 `V(I.comap g)` via `AlgebraicGeometry.Scheme.IdealSheafData.pullbackSubschemeSection`. Hence, if
@@ -119,12 +120,6 @@ the inverse image of the ideal sheaf of `i`. -/
 theorem ker_eq_comap_of_isPullback {P Y Z : Scheme.{u}} {i' : P ⟶ X} {g : P ⟶ Z} {f : X ⟶ Y}
     (i : Z ⟶ Y) [IsClosedImmersion i] (h : IsPullback i' g f i) : i'.ker = i.ker.comap f := by
   rw [← h.isoPullback_hom_fst, Scheme.Hom.ker_comp_of_isIso, ker_fst_of_isClosedImmersion]
-
-/-- Pulling the kernel ideal sheaf of any morphism `f` back along `f` itself gives `⊥`. -/
-@[simp]
-theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_self {Y : Scheme.{u}} (f : X ⟶ Y) :
-    f.ker.comap f = ⊥ :=
-  le_bot_iff.mp (le_map_iff_comap_le.mp (map_bot f).symm.le)
 
 /-- Pushing an ideal sheaf forward along a closed immersion `j` and pulling back along `j` recovers
 the original ideal sheaf, since `j` is a monomorphism so the closed subscheme of `I` is the base
