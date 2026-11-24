@@ -45,12 +45,6 @@ theorem mk_zsmul_point_mem_exactOrder (hX : X ∈ exactOrder F N) {n : ℤ}
 
 section Units
 
-/-- On a point of exact order `N`, multiplication by `n : ℤ` only depends on `n` modulo `N`. -/
-private theorem zsmul_point_eq_of_intCast_eq (hX : X ∈ exactOrder F N) {m n : ℤ}
-    (h : (m : ZMod N) = n) : m • X.point = n • X.point := by
-  rw [zsmul_eq_zsmul_iff_modEq, ((mem_exactOrder_iff X).mp hX).2, ← ZMod.intCast_eq_intCast_iff,
-    h]
-
 /-- **Multiplying the marked point by a unit modulo `N`**: `d ∈ (ℤ/Nℤ)ˣ` sends an elliptic
 curve `E` with a point `P` of exact order `N` to `(E, d • P)`, where `d` acts on `P` through any
 integer representative (`TauCeti.PointedWeierstrassCurve.val_units_smul_of_intCast_eq`).
@@ -73,8 +67,8 @@ theorem val_units_smul :
 /-- The unit `d` multiplies the marked point by any integer representative of `d`. -/
 theorem val_units_smul_of_intCast_eq {n : ℤ} (hn : (n : ZMod N) = d) :
     ((d • Y : exactOrder F N) : PointedWeierstrassCurve F) = ⟨Y.val.curve, n • Y.val.point⟩ := by
-  rw [val_units_smul, mk_inj]
-  exact zsmul_point_eq_of_intCast_eq Y.val Y.property (by rw [ZMod.coe_valMinAbs, hn])
+  rw [val_units_smul, mk_inj, zsmul_eq_zsmul_iff_modEq, ((mem_exactOrder_iff _).mp Y.property).2,
+    ← ZMod.intCast_eq_intCast_iff, ZMod.coe_valMinAbs, hn]
 
 /-- The units modulo `N` act on the elliptic curves with a point of exact order `N` by
 multiplying the marked point. -/

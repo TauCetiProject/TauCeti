@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Quotient
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.Pointed
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.ExactOrder
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.LatticeClassification
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Diamond
+import TauCeti.Analysis.SpecialFunctions.Elliptic.Torsion
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.GammaSet
 
 /-!
@@ -76,8 +77,12 @@ embedding `μ_{NM} ↪ E[NM]` to `μ_N`, using compatible primitive roots
 ## Imported prerequisites
 
 * `UpperHalfPlane.pointedWeierstrassCurve N z`, the curve `E_z` with the point given by `1 / N`,
-  and `UpperHalfPlane.addOrderOf_weierstrassPoint_one_div`, stating that this point has exact
-  order `N`, come from `TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.Pointed`.
+  comes from `TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.Pointed`, and
+  `UpperHalfPlane.addOrderOf_weierstrassPoint_one_div`, stating that this point has exact
+  order `N`, from its sibling `Gamma1.ExactOrder`.
+* `PeriodPair.coprime_gcd_of_addOrderOf_weierstrassPoint_div`, stating that a division point
+  `(m ω₁ + n ω₂) / N` of exact order `N` has `gcd(m, n)` prime to `N`, comes from
+  `TauCeti.Analysis.SpecialFunctions.Elliptic.Torsion`.
 * `TauCeti.gamma1QuotientDiamond N`, the diamond action of `(ℤ/Nℤ)ˣ` on `Γ₁(N) \ X` for any
   `SL(2, ℤ)`-space `X`, comes from `TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Diamond`.
 * The map `PointedWeierstrassCurve.nsmulExactOrder` comes from
@@ -124,32 +129,6 @@ private lemma weierstrassPoint_div_eq_weierstrassPoint_denom_div {γ : SL(2, ℤ
   simpa only [periodPair_ω₁, periodPair_ω₂, mul_one, ModularGroup.denom_apply] using
     (z.periodPair.weierstrassPoint_div_eq_of_intCast_eq N hm hn).symm
 
-/-- If the point of `(m τ + n) / N` on `E_τ` has exact order `N`, then `gcd(m, n)` is prime to `N`:
-for `d = gcd(m, n, N)` the multiple `(N / d) • P` is the point of the period `(m / d) τ + n / d`. -/
-private lemma coprime_gcd_of_addOrderOf_weierstrassPoint [NeZero N] {τ : ℍ} {m n : ℤ}
-    (h : addOrderOf (τ.periodPair.weierstrassPoint ((m * τ + n) / N)) = N) :
-    Nat.Coprime (Int.gcd m n) N := by
-  set d := Nat.gcd (Int.gcd m n) N
-  have hdN : d ∣ N := Nat.gcd_dvd_right _ N
-  obtain ⟨m', hm'⟩ := (Int.natCast_dvd.mpr ((Nat.gcd_dvd_left _ N).trans
-    (Int.gcd_dvd_natAbs_left m n)) : (d : ℤ) ∣ m)
-  obtain ⟨n', hn'⟩ := (Int.natCast_dvd.mpr ((Nat.gcd_dvd_left _ N).trans
-    (Int.gcd_dvd_natAbs_right m n)) : (d : ℤ) ∣ n)
-  have hd₀ : (d : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.gcd_pos_of_pos_right _
-    (Nat.pos_of_neZero N)).ne'
-  have hzero : (N / d) • τ.periodPair.weierstrassPoint ((m * τ + n) / N) = 0 := by
-    rw [PeriodPair.nsmul_weierstrassPoint, PeriodPair.weierstrassPoint_eq_zero_iff,
-      Nat.cast_div hdN hd₀]
-    convert intCast_mul_add_intCast_mem_lattice_periodPair τ m' n' using 1
-    rw [hm', hn']
-    field_simp [Nat.cast_ne_zero.mpr (NeZero.ne N)]
-    push_cast
-    ring
-  have hdvd := addOrderOf_dvd_of_nsmul_eq_zero hzero
-  rw [h] at hdvd
-  exact (Nat.div_eq_self.mp (Nat.dvd_antisymm (Nat.div_dvd_of_dvd hdN) hdvd)).resolve_left
-    (NeZero.ne N)
-
 /-- **Every complex elliptic curve with a point of exact order `N` is some `(E_z, P_z)`**: it is
 isomorphic, by a change of variables, to `E_z` with the point given by `1 / N`. -/
 theorem exists_smul_pointedWeierstrassCurve_eq [NeZero N] {X : PointedWeierstrassCurve ℂ}
@@ -173,8 +152,11 @@ theorem exists_smul_pointedWeierstrassCurve_eq [NeZero N] {X : PointedWeierstras
   simp only [periodPair_ω₁, periodPair_ω₂, mul_one] at hmn
   have hN₀ : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
   have hw : w = (m * τ + n) / N := by rw [hmn, mul_div_cancel_left₀ _ hN₀]
+  have hcop : Nat.Coprime (Int.gcd m n) N :=
+    τ.periodPair.coprime_gcd_of_addOrderOf_weierstrassPoint_div N <| by
+      rwa [periodPair_ω₁, periodPair_ω₂, mul_one, ← hw]
   obtain ⟨y, hy, hy₁⟩ := (EisensteinSeries.nonempty_gammaSet_intCast_iff ![m, n]).mpr
-    (by simpa using coprime_gcd_of_addOrderOf_weierstrassPoint (hw ▸ hQN))
+    (by simpa using hcop)
   obtain ⟨γ, hγ₀, hγ₁⟩ := (Int.isCoprime_iff_gcd_eq_one.mpr hy₁).exists_SL2_row 1
   replace hγ₀ : ((γ 1 0 : ℤ) : ZMod N) = m := by simpa [hγ₀] using congrFun hy 0
   replace hγ₁ : ((γ 1 1 : ℤ) : ZMod N) = n := by simpa [hγ₁] using congrFun hy 1

@@ -5,15 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.Torsion
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.AdditionTheorem
 
 /-!
 # The marked lattice curve of an upper-half-plane point
 
 For `z ∈ ℍ`, the Weierstrass model of `ℂ / (ℤ z + ℤ)` with the point represented by `1 / N`
-is `UpperHalfPlane.pointedWeierstrassCurve N z`. At positive level the marked point has exact
-order `N`, so the curve belongs to `TauCeti.PointedWeierstrassCurve.exactOrder ℂ N`.
-This representative construction is shared by the moduli comparison and Tate uniformization.
+is `UpperHalfPlane.pointedWeierstrassCurve N z`. This representative construction is shared by
+the moduli comparison and Tate uniformization. That the marked point has exact order `N` at
+positive level is in `TauCeti.Analysis.SpecialFunctions.Elliptic.Gamma1.ExactOrder`.
 -/
 
 public section
@@ -42,16 +42,12 @@ theorem pointedWeierstrassCurve_curve (z : ℍ) :
     (z.pointedWeierstrassCurve N).curve = z.periodPair.weierstrassCurve :=
   (rfl)
 
-/-- The point of `1 / N` on `E_z` has exact order `N`. -/
-theorem addOrderOf_weierstrassPoint_one_div [NeZero N] (z : ℍ) :
-    addOrderOf (z.periodPair.weierstrassPoint (1 / N)) = N := by
-  simpa using z.periodPair.addOrderOf_weierstrassPoint_latticeBasis_div N 1
-
-/-- The pair `(E_z, P_z)` is an elliptic curve with a point of exact order `N`. -/
-theorem pointedWeierstrassCurve_mem_exactOrder [NeZero N] (z : ℍ) :
-    z.pointedWeierstrassCurve N ∈ PointedWeierstrassCurve.exactOrder ℂ N :=
-  (PointedWeierstrassCurve.mem_exactOrder_iff _).mpr
-    ⟨inferInstanceAs z.periodPair.weierstrassCurve.IsElliptic,
-      addOrderOf_weierstrassPoint_one_div z⟩
+/-- The marked point of `UpperHalfPlane.pointedWeierstrassCurve` is the point of `1 / N`, after
+transport along `UpperHalfPlane.pointedWeierstrassCurve_curve`. -/
+theorem pointedWeierstrassCurve_point (z : ℍ) :
+    cast (congrArg (fun V : WeierstrassCurve ℂ ↦ V.toAffine.Point)
+        (pointedWeierstrassCurve_curve (N := N) z)) (z.pointedWeierstrassCurve N).point =
+      z.periodPair.weierstrassPoint (1 / N) :=
+  (rfl)
 
 end UpperHalfPlane
