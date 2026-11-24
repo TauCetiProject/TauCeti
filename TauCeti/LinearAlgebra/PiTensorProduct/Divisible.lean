@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
 public import TauCeti.LinearAlgebra.TensorProduct.Divisible
+import TauCeti.Algebra.Module.LinearMap.End
 
 /-!
 # Divisibility in multiple tensor products
@@ -53,9 +54,7 @@ theorem surjective_smul_of_surjective [CommSemiring R] [∀ i, AddCommMonoid (M 
     Function.Surjective fun x : ⨂[R] i, M i ↦ r • x := by
   classical
   suffices hrange : LinearMap.range (DistribSMul.toLinearMap R (⨂[R] i, M i) r) = ⊤ by
-    have hf : ⇑(DistribSMul.toLinearMap R (⨂[R] i, M i) r) = fun x ↦ r • x :=
-      funext (DistribSMul.toLinearMap_apply R _ r)
-    rw [← hf]
+    rw [← DistribSMul.coe_toLinearMap R]
     exact LinearMap.range_eq_top.1 hrange
   rw [eq_top_iff, ← span_tprod_eq_top, Submodule.span_le]
   rintro _ ⟨f, rfl⟩
