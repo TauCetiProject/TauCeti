@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.PositiveDegrees.Map
-public import TauCeti.Algebra.PositiveDegrees.Word
+public import TauCeti.Algebra.PositiveDegrees.Word.Basic
 import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!

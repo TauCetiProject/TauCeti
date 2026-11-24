@@ -52,14 +52,14 @@ theorem degree_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
 theorem length_le_degree_sum (l : List N) (hP : ∀ n ∈ l, n ∈ d.monoid)
     (hne : ∀ n ∈ l, n ≠ 0) : (l.length : ℤ) ≤ d.degree l.sum := by
   simpa only [← map_list_sum] using
-    List.length_le_sum_map_of_pos d.degree (fun a ha => d.degree_pos (hP a ha) (hne a ha))
+    l.length_le_sum_map_of_pos d.degree (fun a ha => d.degree_pos (hP a ha) (hne a ha))
 
 /-- Every cutoff of words of nonzero allowed increments is finite. -/
 theorem finite_wordCutoff (k : ℕ) : (d.wordCutoff k).Finite := by
   have hcut : {n : N | (n ∈ d.monoid ∧ n ≠ 0) ∧ d.degree n ≤ k}.Finite :=
     (d.finite_cutoff k).subset fun _ hn => d.mem_cutoff.mpr ⟨hn.1.1, hn.2⟩
   simpa only [wordCutoff, Set.mem_ofPred_eq, ← map_list_sum] using
-    List.finite_setOf_sum_map_le (s := {n : N | n ∈ d.monoid ∧ n ≠ 0}) d.degree k
+    TauCeti.finite_setOf_sum_map_le (s := {n : N | n ∈ d.monoid ∧ n ≠ 0}) d.degree k
       (fun _ hn => d.degree_pos hn.1 hn.2) hcut
 
 /-- Word cutoffs can index finite families of degree changes. -/
@@ -67,10 +67,10 @@ instance (k : ℕ) : Finite (d.wordCutoff k) := (d.finite_wordCutoff k).to_subty
 
 /-- With finitely many labels, there are finitely many records comprising a word in
 cutoff `k` and one duplicate-free label block before, between, and after its entries. -/
-theorem finite_wordCutoff_prod_nodup_blocks {ι : Type*} [Finite ι] (k : ℕ) :
+theorem finite_setOf_mem_wordCutoff_nodup_blocks {ι : Type*} [Finite ι] (k : ℕ) :
     Set.Finite {p : List N × List (List ι) |
       p.1 ∈ d.wordCutoff k ∧ p.2.length = p.1.length + 1 ∧ ∀ b ∈ p.2, b.Nodup} :=
-  List.finite_setOf_nodup_blocks (d.finite_wordCutoff k)
+  (d.finite_wordCutoff k).nodup_blocks
 
 variable [DecidableEq N]
 
