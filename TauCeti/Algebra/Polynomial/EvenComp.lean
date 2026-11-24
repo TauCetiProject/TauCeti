@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Expand
+public import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 
 /-!
 # Even polynomials are polynomials in `X²`
@@ -15,6 +16,10 @@ is a polynomial in `X²`. This is the invariant theory of the group of order two
 Translating by `1` gives the same statement for the reflection `X ↦ -X - 2`, whose invariant is
 `X² + 2X`.
 
+The subalgebra `R[X²]` consists of the polynomials `r(X²)` (`Polynomial.mem_adjoin_X_sq_iff`).
+Over a nontrivial ring, `X` itself is not a polynomial in `X²` (`Polynomial.X_notMem_adjoin_X_sq`),
+and the substitution `X ↦ -X` is an involution (`Polynomial.algEquivAevalNegX_sq`).
+
 The basic even polynomials `X² - μ` are recorded in `Polynomial.comp_neg_X_sq_sub_C`.
 -/
 
@@ -22,12 +27,38 @@ public section
 
 namespace Polynomial
 
+/-- The subalgebra `R[X²]` consists of the polynomials of the form `r(X²)`. -/
+theorem mem_adjoin_X_sq_iff {R : Type*} [CommSemiring R] {p : R[X]} :
+    p ∈ Algebra.adjoin R {(X ^ 2 : R[X])} ↔ ∃ r : R[X], r.comp (X ^ 2) = p := by
+  simp only [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range, comp_eq_aeval]
+
+/-- **The natural map `R[X²] → R[X]` is not surjective** over a nontrivial ring: `X` is not a
+polynomial in `X²`. -/
+theorem X_notMem_adjoin_X_sq {R : Type*} [CommSemiring R] [Nontrivial R] :
+    (X : R[X]) ∉ Algebra.adjoin R {(X ^ 2 : R[X])} := by
+  rw [mem_adjoin_X_sq_iff]
+  rintro ⟨r, hr⟩
+  have h : (expand R 2 r).coeff 1 = 1 := by
+    rw [expand_eq_comp_X_pow]
+    exact congrArg (·.coeff 1) hr |>.trans coeff_X_one
+  rw [coeff_expand two_pos] at h
+  simp at h
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- The automorphism `p(X) ↦ p(-X)` is an involution. -/
+theorem algEquivAevalNegX_sq : (algEquivAevalNegX : R[X] ≃ₐ[R] R[X]) ^ 2 = 1 :=
+  AlgEquiv.ext fun p ↦ by
+    simp only [pow_two, AlgEquiv.mul_apply, algEquivAevalNegX_apply, ← comp_eq_aeval,
+      comp_neg_X_comp_neg_X, AlgEquiv.one_apply]
+
 /-- The polynomial `X² - μ` is even. -/
-theorem comp_neg_X_sq_sub_C {R : Type*} [CommRing R] (μ : R) :
-    (X ^ 2 - C μ : R[X]).comp (-X) = X ^ 2 - C μ := by
+theorem comp_neg_X_sq_sub_C (μ : R) : (X ^ 2 - C μ : R[X]).comp (-X) = X ^ 2 - C μ := by
   simp [sub_comp]
 
-variable {R : Type*} [CommRing R] [IsAddTorsionFree R]
+variable [IsAddTorsionFree R]
 
 /-- **An even polynomial is a polynomial in `X²`.** -/
 theorem exists_eq_comp_X_sq_of_comp_neg_X_eq {p : R[X]} (hp : p.comp (-X) = p) :
@@ -62,5 +93,7 @@ theorem exists_eq_comp_X_sq_add_two_mul_X_of_comp_neg_X_sub_two_eq {q : R[X]}
   congr 1
   simp only [add_comp, X_comp, one_comp]
   ring
+
+end CommRing
 
 end Polynomial

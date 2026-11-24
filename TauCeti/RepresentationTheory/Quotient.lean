@@ -17,6 +17,9 @@ acting trivially. The kernel always acts trivially, and quotienting by it gives 
 representation on the original module, with the caller's scalar and additive structures.
 Likewise, a normal subgroup `N` acts trivially on the coset permutation module `R[G ⧸ N]`
 (`Representation.instIsTrivialOfMulActionQuotientCompSubtype`).
+
+The kernel of the trivial representation is the whole group (`Representation.ker_trivial`), and
+the kernel of a product is the intersection of the kernels (`Representation.ker_prod`).
 -/
 
 public section
@@ -25,6 +28,21 @@ namespace Representation
 
 variable {R G M : Type*} [Semiring R] [Group G] [AddCommMonoid M] [Module R M]
     (ρ : Representation R G M)
+
+/-- The trivial representation has kernel the whole group. -/
+@[simp]
+theorem ker_trivial : (trivial R G M).ker = ⊤ :=
+  MonoidHom.ker_one
+
+/-- The kernel of a product is the intersection of the kernels. -/
+@[simp]
+theorem ker_prod {N : Type*} [AddCommMonoid N] [Module R N] (σ : Representation R G N) :
+    (ρ.prod σ).ker = ρ.ker ⊓ σ.ker := by
+  ext g
+  simp only [Subgroup.mem_inf, MonoidHom.mem_ker]
+  refine ⟨fun h ↦ ⟨LinearMap.ext fun x ↦ congr_arg Prod.fst (LinearMap.congr_fun h (x, 0)),
+    LinearMap.ext fun y ↦ congr_arg Prod.snd (LinearMap.congr_fun h (0, y))⟩,
+    fun h ↦ LinearMap.ext fun x ↦ by simp [h.1, h.2]⟩
 
 /-- Restriction to the kernel is a trivial representation. -/
 instance isTrivial_comp_ker : IsTrivial (ρ.comp ρ.ker.subtype) where
