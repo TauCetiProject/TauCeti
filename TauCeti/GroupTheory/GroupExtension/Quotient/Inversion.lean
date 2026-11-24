@@ -88,8 +88,7 @@ theorem toAdditiveLeft_smul_eq_cyclicRepresentation_neg (hN : N.index = 2) {s : 
   by_cases hy : y = 1
   · simp [hy]
   · -- The coset `y` is not trivial, so `e y` is the generator of `C₂`.
-    rw [(Multiplicative.eq_one_or_eq_ofAdd_one (e y)).resolve_left
-        ((map_ne_one_iff e e.injective).2 hy), AddEquiv.cyclicRepresentation_ofAdd_one_apply,
+    rw [e.apply_eq_ofAdd_one_of_ne_one hy, AddEquiv.cyclicRepresentation_ofAdd_one_apply,
       quotientConjugationAction_smul_eq_inv hN hs hinv hy]
     simp
 
@@ -118,15 +117,9 @@ theorem quotientGroupCohomologyIsoNeg_eq_mapIso (hN : N.index = 2) {s : G} (hs :
       groupCohomology.mapIso e (MulEquiv.toAdditiveLeft φ).toIntLinearEquiv
         (fun y ↦ LinearMap.ext fun (x : Additive N) ↦
           toAdditiveLeft_smul_eq_cyclicRepresentation_neg hN hs hinv e φ y x.toMul) n := by
-  -- Any two isomorphisms `G ⧸ N ≃* C₂` agree: both send the non-trivial coset to the generator.
-  obtain rfl : mulEquivOfPrimeCardEq (p := 2) (by rw [← index_eq_card, hN]) (by simp) = e :=
-    MulEquiv.ext fun y ↦ by
-      by_cases hy : y = 1
-      · simp [hy]
-      · rw [(Multiplicative.eq_one_or_eq_ofAdd_one (e y)).resolve_left
-          ((map_ne_one_iff e e.injective).2 hy),
-          (Multiplicative.eq_one_or_eq_ofAdd_one _).resolve_left
-          ((map_ne_one_iff _ (MulEquiv.injective _)).2 hy)]
+  -- Any two isomorphisms `G ⧸ N ≃* C₂` agree.
+  obtain rfl := Subsingleton.elim
+    (mulEquivOfPrimeCardEq (p := 2) (by rw [← index_eq_card, hN]) (by simp) : G ⧸ N ≃* _) e
   rfl
 
 /-- The forward map of `Subgroup.quotientGroupCohomologyIsoNeg` is the map on cohomology induced by

@@ -18,18 +18,19 @@ rotations, and in both every element outside it inverts it. So the two quotient 
 `C₂ₙ → D₄ₙ → C₂` and `C₂ₙ → Q₄ₙ → C₂` have the same kernel, the same quotient and the same
 action, and their classes lie in one group: `H²(C₂, ZMod (2 * n))`, the generator of `C₂` acting by
 negation. Both cohomology groups are identified with that one
-(`TauCeti.dihedralGroupCohomologyIso`, `TauCeti.quaternionGroupCohomologyIso`), and this file
-shows that the two classes are its two elements.
+(`TauCeti.dihedralRotationsGroupCohomologyIsoNeg`,
+`TauCeti.quaternionRotationsGroupCohomologyIsoNeg`), and this file shows that the two classes are
+its two elements.
 
 For the action by negation, `H²(C₂, T)` is the `2`-torsion of `T`
 (`TauCeti.groupCohomologyEvenNegEquivTorsionBy`): the fixed points of `x ↦ -x` modulo the image of
 the norm `x + (-x) = 0`. For `T = ZMod d` with `d ≠ 0` it therefore has `gcd 2 d` elements
 (`TauCeti.natCard_groupCohomology_two_neg_zmod`), two of them for `d = 2 * n`. The dihedral class
 is zero, since the reflections form a complement
-(`TauCeti.dihedralGroupCohomologyIso_hom_cohomologyClass_eq_zero`); the quaternion class is not,
-since `Q₄ₙ` has a single involution, which is a rotation
-(`TauCeti.quaternionGroupCohomologyIso_hom_cohomologyClass_ne_zero`). So every class is one of
-the two (`TauCeti.Examples.DihedralQuaternion.eq_dihedral_or_eq_quaternion`), and they differ
+(`TauCeti.dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero`); the quaternion
+class is not, since `Q₄ₙ` has a single involution, which is a rotation
+(`TauCeti.quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero`). So every class is
+one of the two (`TauCeti.Examples.DihedralQuaternion.eq_dihedral_or_eq_quaternion`), and they differ
 (`TauCeti.Examples.DihedralQuaternion.dihedral_ne_quaternion`).
 
 At `n = 2` this is the comparison of `D₈` and `Q₈` over their cyclic subgroup of order four. Here
@@ -78,24 +79,25 @@ theorem eq_dihedral_or_eq_quaternion (n : ℕ) [NeZero n]
     (τ : (quaternionRotations n).quotientExtension.Section) (hτ : τ 1 = 1)
     (x : groupCohomology ((AddEquiv.neg (ZMod (2 * n))).cyclicRep
       (AddEquiv.iterate_neg_two _)) 2) :
-    x = (dihedralGroupCohomologyIso (2 * n) 2).hom (GroupExtension.factorSet σ hσ
+    x = (dihedralRotationsGroupCohomologyIsoNeg (2 * n) 2).hom (GroupExtension.factorSet σ hσ
         (dihedralRotations (2 * n)).quotientExtension_inducesAction).cohomologyClass ∨
-      x = (quaternionGroupCohomologyIso n 2).hom (GroupExtension.factorSet τ hτ
+      x = (quaternionRotationsGroupCohomologyIsoNeg n 2).hom (GroupExtension.factorSet τ hτ
         (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass := by
-  rw [dihedralGroupCohomologyIso_hom_cohomologyClass_eq_zero]
+  rw [dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero]
   exact (eq_or_ne x 0).imp_right fun hx ↦
-    eq_of_ne_zero_of_ne_zero hx (quaternionGroupCohomologyIso_hom_cohomologyClass_ne_zero n τ hτ)
+    eq_of_ne_zero_of_ne_zero hx
+      (quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero n τ hτ)
 
 /-- For `n ≠ 0`, the classes of the dihedral and quaternion extensions of `C₂` by `C₂ₙ` differ
 in `H²(C₂, ZMod (2 * n))`, the generator of `C₂` acting by negation. -/
 theorem dihedral_ne_quaternion (n : ℕ) [NeZero n]
     (σ : (dihedralRotations (2 * n)).quotientExtension.Section) (hσ : σ 1 = 1)
     (τ : (quaternionRotations n).quotientExtension.Section) (hτ : τ 1 = 1) :
-    (dihedralGroupCohomologyIso (2 * n) 2).hom (GroupExtension.factorSet σ hσ
+    (dihedralRotationsGroupCohomologyIsoNeg (2 * n) 2).hom (GroupExtension.factorSet σ hσ
         (dihedralRotations (2 * n)).quotientExtension_inducesAction).cohomologyClass ≠
-      (quaternionGroupCohomologyIso n 2).hom (GroupExtension.factorSet τ hτ
+      (quaternionRotationsGroupCohomologyIsoNeg n 2).hom (GroupExtension.factorSet τ hτ
         (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass := by
-  rw [dihedralGroupCohomologyIso_hom_cohomologyClass_eq_zero]
-  exact (quaternionGroupCohomologyIso_hom_cohomologyClass_ne_zero n τ hτ).symm
+  rw [dihedralRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_eq_zero]
+  exact (quaternionRotationsGroupCohomologyIsoNeg_hom_cohomologyClass_ne_zero n τ hτ).symm
 
 end TauCeti.Examples.DihedralQuaternion
