@@ -16,15 +16,16 @@ The closed unit disk `D = closedBall (0 : EuclideanSpace ℝ (Fin 2)) 1`, a mani
 modelled on the half-plane (`TauCeti.instChartedSpaceClosedBallEuclideanSpace`), is a compact
 connected surface. Its interior is homeomorphic to the open unit disk
 (`TauCeti.closedBallInteriorHomeomorph`), which is contractible, so it is orientable. This file
-records the disk with a chosen orientation and no punctures (`TauCeti.closedDisk`), and the disk
-punctured at its centre (`TauCeti.puncturedDisk`), as surfaces in the sense of
+records the disk with a chosen orientation and no punctures
+(`TauCeti.PuncturedSurface.closedDisk`), and the disk punctured at its centre
+(`TauCeti.PuncturedSurface.puncturedDisk`), as surfaces in the sense of
 `TauCeti.PuncturedSurface`.
 
 ## Main definitions
 
 * `TauCeti.closedDiskOrientation`: an orientation of the closed unit disk.
-* `TauCeti.closedDisk`: the closed unit disk as a surface without punctures.
-* `TauCeti.puncturedDisk`: the closed unit disk punctured at its centre.
+* `TauCeti.PuncturedSurface.closedDisk`: the closed unit disk as a surface without punctures.
+* `TauCeti.PuncturedSurface.puncturedDisk`: the closed unit disk punctured at its centre.
 -/
 
 public section
@@ -53,6 +54,8 @@ def closedDiskOrientation :
   have : Nonempty ((𝓡∂ 2).interior 𝕔𝔻) :=
     ⟨(closedBallInteriorHomeomorph 2 _).symm ⟨0, by simp⟩⟩
   (HomologicalOrientation.nonempty_of_simplyConnectedSpace finrank_euclideanSpace_fin).some
+
+namespace PuncturedSurface
 
 /-- **The closed unit disk** as a surface without punctures. -/
 def closedDisk : PuncturedSurface 𝕔𝔻 where
@@ -101,5 +104,7 @@ theorem image_boundary_puncturedDisk :
     Subtype.val '' (𝓡∂ 2).boundary puncturedDisk.carrier =
       Subtype.val ⁻¹' sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 := by
   rw [puncturedDisk.image_boundary_carrier, boundary_closedBall]
+
+end PuncturedSurface
 
 end TauCeti

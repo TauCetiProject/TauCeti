@@ -71,6 +71,7 @@ charted space `X`, modelled on the half-plane, so its boundary charts are actual
 data; it is compact, connected, Hausdorff and second countable, and it carries an orientation,
 a homological orientation of its interior. The punctures `P` form a finite set of interior points
 of `X`. The surface itself is `TauCeti.PuncturedSurface.carrier`. -/
+@[ext]
 structure PuncturedSurface where
   /-- The underlying surface is compact, connected, Hausdorff and second countable. -/
   isCompactConnectedSurface : IsCompactConnectedSurface X
@@ -140,9 +141,8 @@ theorem punctures_reverse : S.reverse.punctures = S.punctures :=
   (rfl)
 
 @[simp]
-theorem reverse_reverse : S.reverse.reverse = S := by
-  cases S
-  simp only [reverse, neg_neg]
+theorem reverse_reverse : S.reverse.reverse = S :=
+  PuncturedSurface.ext (neg_neg _) rfl
 
 @[simp]
 theorem carrier_reverse : S.reverse.carrier = S.carrier :=
