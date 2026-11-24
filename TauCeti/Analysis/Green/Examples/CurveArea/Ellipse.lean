@@ -173,8 +173,9 @@ theorem ellipseCoordinates_I (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
 /-- The coordinate formula for the ellipse coordinates. -/
 theorem ellipseCoordinates_apply (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) (z : ℂ) :
     ellipseCoordinates a b ha hb z = (a * z.re : ℝ) + (b * z.im : ℝ) * Complex.I := by
-  rw [← ellipseLinearMap_apply, ← ellipseCoordinates_toLinearMap a b ha hb]
-  rfl
+  have h := congrArg (fun L : ℂ →ₗ[ℝ] ℂ ↦ L z) (ellipseCoordinates_toLinearMap a b ha hb)
+  simpa only [ellipseLinearMap_apply, LinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv] using h
 
 /-- The ellipse is the actual invertible affine image of the unit-circle parameterization. -/
 theorem ellipse_eq_affine_circle (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
@@ -212,8 +213,7 @@ theorem exists_image_ellipse_uIcc_eq_sphere_iff {a b : ℝ} (ha : a ≠ 0) (hb :
     have hmem (z : ℂ) (hz : ‖z‖ = 1) : (a * z.re - c.re) ^ 2 + (b * z.im - c.im) ^ 2 = r ^ 2 := by
       have : A z ∈ sphere c r := h ▸ mem_image_of_mem A (mem_sphere_zero_iff_norm.2 hz)
       rw [← mem_sphere_iff_norm.1 this, Complex.sq_norm, Complex.normSq_apply,
-        ellipseCoordinates_apply]
-      simp
+        ellipseCoordinates_apply, ← Complex.mk_eq_add_mul_I, Complex.sub_re, Complex.sub_im]
       ring
     have h₁ := hmem 1 (by simp)
     have h₂ := hmem (-1) (by simp)

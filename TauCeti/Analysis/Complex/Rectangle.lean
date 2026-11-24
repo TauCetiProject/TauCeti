@@ -134,7 +134,13 @@ theorem rectangle_ne_closedBall (hzw : z ≠ w) (c : ℂ) (r : ℝ) :
     have hm := hsc (by simp [Rectangle, mem_reProdIm]) hp hzp one_half_pos one_half_pos
       (add_halves 1)
     rw [Rectangle, interior_reProdIm, mem_reProdIm] at hm
-    convert hm using 2 <;> simp <;> ring
+    have hre : ((1 / 2 : ℝ) • z + (1 / 2 : ℝ) • p).re = (z.re + p.re) / 2 := by
+      simp only [add_re, smul_re, smul_eq_mul]
+      ring
+    have him : ((1 / 2 : ℝ) • z + (1 / 2 : ℝ) • p).im = (z.im + p.im) / 2 := by
+      simp only [add_im, smul_im, smul_eq_mul]
+      ring
+    rwa [hre, him] at hm
   rcases eq_or_ne z.re w.re with hre | hre
   · -- The corners `z` and `z.re + w.im * I` are distinct and share the real part `z.re`.
     refine hend z.re w.re ?_
