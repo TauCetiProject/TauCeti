@@ -106,10 +106,11 @@ theorem IsBorelOverAlgClosed.ringKrullDim_quotient_le {B : HopfIdeal k H}
         (CommHopfAlgCat.quotientMapOfLe_surjective H.obj hg)
 
 /-- **An orbit with a Borel subgroup in its stabilizer is proper.** Let `B` be a Borel subgroup of
-a reduced affine group of finite type over an algebraically closed field, and let `D ≤ B` cut out
-the stabilizer of a line `[m]`, so that `B` fixes `[m]`. If the orbit of `[m]` lies in a closed
-subset `Z` of projective space every line of which has a stabilizer with solvable rational points,
-then the orbit scheme of `[m]` is proper over the base field. -/
+a reduced affine group of finite type over an algebraically closed field, and let `D` cut out the
+stabilizer of a line `[m]`, with `D ≤ B` as Hopf ideals: the Borel subgroup cut out by `B` lies in
+the stabilizer, so `B` fixes `[m]`. If the orbit of `[m]` lies in a closed subset `Z` of
+projective space every line of which has a stabilizer with solvable rational points, then the
+orbit scheme of `[m]` is proper over the base field. -/
 theorem IsBorelOverAlgClosed.isProper_projectiveOrbitToSpec_of_forall_mem_isSolvable
     [IsReduced H] {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
     {B : HopfIdeal k H} (hB : IsBorelOverAlgClosed k H B)
