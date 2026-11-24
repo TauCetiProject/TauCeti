@@ -47,9 +47,6 @@ the pieces with constants independent of `j`.
   integrated estimates `∫ ‖∂ₓ^α ∂_ξ^β aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m - |β| + n)`. For `m = 0` they
   read `∫ ‖∂_ξ^β aⱼ(x, ξ)‖ dξ ≤ A R ^ |β|` with `A = C 2^{jn}` and `R = 2^{-j}`, the
   scale-invariant form in which they control the kernels of the pieces.
-* `TauCeti.integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall`: a function bounded by
-  `K s ^ μ` on the ball of radius `s r` and vanishing off it has `∫ ‖f‖ ≤ C s ^ (μ + n)`; this
-  turns each dyadic estimate below into an integrated one.
 * `TauCeti.Symbol.IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_le`: the case
   `α = β = []`, `∫ ‖aⱼ(x, ξ)‖ dξ ≤ C (2^j) ^ (m + n)`.
 * `TauCeti.Symbol.exists_norm_mixedDeriv_littlewoodPaleyPiece_le_two_pow`: the dyadic estimates for
@@ -76,21 +73,6 @@ open Set Filter Metric MeasureTheory
 open scoped ContDiff
 
 namespace TauCeti
-
-/-- **Integrals at scale `s`.** A function on `ℝⁿ` bounded by `K s ^ μ` on the ball of radius
-`s r` and vanishing off it has `∫ ‖f‖ ≤ K rⁿ |B(0, 1)| s ^ (μ + n)`: the ball has volume
-`(s r)ⁿ |B(0, 1)|`. For `s = 2^j` this turns the dyadic estimates of a piece into integrated
-ones. -/
-theorem integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall {n : ℕ} {E : Type*}
-    [NormedAddCommGroup E] {f : CoordinateSpace n → E} {s r K μ : ℝ} (hs : 0 < s) (hr : 0 ≤ r)
-    (hfK : ∀ ξ ∈ closedBall 0 (s * r), ‖f ξ‖ ≤ K * s ^ μ)
-    (hf0 : ∀ ξ ∉ closedBall 0 (s * r), f ξ = 0) :
-    ∫ ξ, ‖f ξ‖ ≤ K * r ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1) *
-      s ^ (μ + n) := by
-  refine (integral_norm_le_of_eq_zero_off_closedBall hfK hf0).trans_eq ?_
-  rw [Measure.addHaar_real_closedBall _ _ (by positivity), finrank_euclideanSpace_fin,
-    Real.rpow_add hs, Real.rpow_natCast, mul_pow]
-  ring
 
 namespace Symbol
 

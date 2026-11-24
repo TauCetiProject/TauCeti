@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Group.Real
@@ -55,6 +56,9 @@ integral.
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
 * `TauCeti.integral_norm_le_of_eq_zero_off_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫ ‖f‖ ≤ K |B|`.
+* `TauCeti.integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall`: on `ℝⁿ`, a function bounded
+  by `K s ^ μ` on the closed ball of radius `s r` about the origin and vanishing off it has
+  `∫ ‖f‖ ≤ K rⁿ |B(0, 1)| s ^ (μ + n)`.
 * `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
   extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
 * `TauCeti.integral_mul_eq_setIntegral_sub_mul`: if `h` vanishes off `B` and has integral zero,
@@ -289,6 +293,21 @@ theorem integral_norm_le_of_eq_zero_off_closedBall {X E : Type*} [PseudoMetricSp
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by rw [hf0 x hx, norm_zero]]
   exact (Real.le_norm_self _).trans (norm_setIntegral_le_of_norm_le_const
     measure_closedBall_lt_top fun x hx => (norm_norm (f x)).trans_le (hfK x hx))
+
+open Metric in
+/-- **Integrals at scale `s`.** A function on `ℝⁿ` bounded by `K s ^ μ` on the closed ball of
+radius `s r` about the origin and vanishing off it has `∫ ‖f‖ ≤ K rⁿ |B(0, 1)| s ^ (μ + n)`: the
+ball has volume `(s r)ⁿ |B(0, 1)|`. -/
+theorem integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall {n : ℕ} {E : Type*}
+    [NormedAddCommGroup E] {f : EuclideanSpace ℝ (Fin n) → E} {s r K μ : ℝ} (hs : 0 < s)
+    (hr : 0 ≤ r) (hfK : ∀ ξ ∈ closedBall 0 (s * r), ‖f ξ‖ ≤ K * s ^ μ)
+    (hf0 : ∀ ξ ∉ closedBall 0 (s * r), f ξ = 0) :
+    ∫ ξ, ‖f ξ‖ ≤ K * r ^ n * (volume : Measure (EuclideanSpace ℝ (Fin n))).real (ball 0 1) *
+      s ^ (μ + n) := by
+  refine (integral_norm_le_of_eq_zero_off_closedBall hfK hf0).trans_eq ?_
+  rw [Measure.addHaar_real_closedBall _ _ (by positivity), finrank_euclideanSpace_fin,
+    Real.rpow_add hs, Real.rpow_natCast, mul_pow]
+  ring
 
 /-- If `f₀` is almost everywhere the zero extension `1_s f` of `f` and `Φ x 0 = 0` for every
 `x`, then the integral of `Φ x (f₀ x)` over the whole space is the integral of `Φ x (f x)`
