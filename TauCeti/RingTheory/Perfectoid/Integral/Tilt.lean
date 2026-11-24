@@ -22,7 +22,8 @@ nonzerodivisor hypothesis is made: `A` may have `p`-torsion and zero divisors. T
   distinguished multiple `y ξ` of an element `ξ ∈ ker θ` forces `y` to be a unit and `ξ` to be
   distinguished (`WittVector.isDistinguished_mul_iff_of_coeff_zero_mem_jacobson`). As `ker θ` is
   principal and contains a distinguished element, an element of `ker θ` generates it exactly when
-  it is distinguished.
+  it is distinguished. A generator `ξ = [ξ₀] + p u`, with `u` a unit, then has `(ξ₀)♯` associated
+  to `p`, since `0 = θ(ξ) = (ξ₀)♯ + p θ(u)`.
 * **The tilt modulo `t`.** Let `t : A♭` with `t♯ ∣ p`, and let `g = [g₀] + p u` be a distinguished
   generator of `ker θ`. Comparing Witt coordinates modulo `t` in `p = z g + [t] w` shows `t ∣ g₀`.
   Hence `ker θ = (p + [t] α)` for some `α` and `ker θ + ([t]) = (p, [t])`, so
@@ -41,6 +42,8 @@ nonzerodivisor hypothesis is made: `A` may have `p`-torsion and zero divisors. T
   element of `ker θ` generates `ker θ` if and only if it is distinguished.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.exists_isDistinguished_ker_fontaineTheta_eq_span`:
   `ker θ` has a distinguished generator.
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.associated_untilt_coeff_zero`: for a generator `ξ` of
+  `ker θ`, `(ξ₀)♯` is associated to `p`.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.dvd_coeff_zero_of_ker_fontaineTheta_eq_span`: for
   `t♯ ∣ p`, `t` divides the zeroth Witt coordinate of every generator of `ker θ`.
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul`:
@@ -125,6 +128,28 @@ theorem exists_isDistinguished_ker_fontaineTheta_eq_span :
   rw [submodule_span_eq] at hg
   exact ⟨g, (ker_fontaineTheta_eq_span_iff_isDistinguished (hg ▸ mem_span_singleton_self g)).mp hg,
     hg⟩
+
+/-- A generator `ξ` of `ker θ` is distinguished (`ker_fontaineTheta_eq_span_iff_isDistinguished`),
+so `ξ = [ξ₀] + p u` for a unit `u`. -/
+theorem exists_unit_eq_teichmuller_add_of_ker_fontaineTheta_eq_span
+    {ξ : WittVector p (PreTilt A p)} (hξ : RingHom.ker (fontaineTheta A p) = span {ξ}) :
+    ∃ u : (WittVector p (PreTilt A p))ˣ, ξ = teichmuller p (ξ.coeff 0) + p * u :=
+  isDistinguished_iff_exists_unit.mp
+    ((ker_fontaineTheta_eq_span_iff_isDistinguished (hξ ▸ mem_span_singleton_self ξ)).mp hξ)
+
+/-- **The sharp of `p♭` is a unit multiple of `p`.** If `ξ` generates `ker θ`, then `(ξ₀)♯` is
+associated to `p`: writing the distinguished generator as `ξ = [ξ₀] + p u` with `u` a unit,
+`0 = θ(ξ) = (ξ₀)♯ + p θ(u)`. So `ξ₀` is a choice of `p♭`. -/
+theorem associated_untilt_coeff_zero {ξ : WittVector p (PreTilt A p)}
+    (hξ : RingHom.ker (fontaineTheta A p) = span {ξ}) :
+    Associated (ξ.coeff 0).untilt (p : A) := by
+  obtain ⟨u, hu⟩ := exists_unit_eq_teichmuller_add_of_ker_fontaineTheta_eq_span hξ
+  have h := RingHom.mem_ker.mp (hξ ▸ mem_span_singleton_self ξ : ξ ∈ RingHom.ker _)
+  rw [hu, map_add, map_mul, map_natCast, fontaineTheta_teichmuller] at h
+  have hθu : IsUnit (fontaineTheta A p u) := u.isUnit.map _
+  refine Associated.symm ⟨-hθu.unit, ?_⟩
+  rw [Units.val_neg, hθu.unit_spec]
+  linear_combination -h
 
 /-- **The zeroth Witt coordinate of a generator of `ker θ` is divisible by `t`** whenever
 `t♯ ∣ p`. For instance `(ϖ♭) ^ p ∣ ξ₀` for a generator `ξ` of `ker θ` when `((ϖ♭)♯) ^ p ∣ p`.

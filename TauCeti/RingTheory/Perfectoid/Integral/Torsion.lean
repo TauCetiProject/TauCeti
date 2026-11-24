@@ -19,7 +19,9 @@ an additive isomorphism `A♭[t] ≃+ A[π]` between the `t`-torsion of `A♭` a
 (Česnavičius–Scholze, *Purity for flat cohomology*, (2.1.2.5)).
 
 Two cases are singled out there. If `ξ` generates `ker θ`, its zeroth Witt coordinate `ξ₀ = p♭`
-has `(p♭)♯` associated to `p` (`associated_untilt_coeff_zero`), so `A♭[p♭] ≅ A[p]`. If `A` is
+has `(p♭)♯` associated to `p`
+(`TauCeti.Perfectoid.IsIntegralPerfectoid.associated_untilt_coeff_zero`, in
+`TauCeti.RingTheory.Perfectoid.Integral.Tilt`), so `A♭[p♭] ≅ A[p]`. If `A` is
 `ϖ`-adically complete with `ϖ ^ p ∣ p` and `ϖ` is associated to `(ϖ♭)♯`, then `A♭[ϖ♭] ≅ A[ϖ]`; in
 particular `A♭` is `ϖ♭`-torsion-free if and only if `A` is `ϖ`-torsion-free.
 
@@ -48,8 +50,6 @@ coordinate and on `A` through `θ` (`PreTilt.torsionByEquiv_coeff_zero_smul`): `
 
 ## Main results
 
-* `TauCeti.Perfectoid.IsIntegralPerfectoid.associated_untilt_coeff_zero`: for a generator `ξ` of
-  `ker θ`, `(ξ₀)♯` is associated to `p`.
 * `PreTilt.coe_torsionByEquiv_apply`, `PreTilt.untilt_torsionByEquiv_symm_apply`:
   `PreTilt.torsionByEquiv` is the sharp map.
 * `PreTilt.torsionByEquiv_coeff_zero_smul`: `PreTilt.torsionByEquiv` is `W(A♭)`-linear.
@@ -71,22 +71,6 @@ namespace TauCeti.Perfectoid.IsIntegralPerfectoid
 variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [IsIntegralPerfectoid p A]
   [Fact ¬IsUnit (p : A)]
 
-/-- **The sharp of `p♭` is a unit multiple of `p`.** If `ξ` generates `ker θ`, then `(ξ₀)♯` is
-associated to `p`: writing the distinguished generator as `ξ = [ξ₀] + p u` with `u` a unit,
-`0 = θ(ξ) = (ξ₀)♯ + p θ(u)`. So `ξ₀` is a choice of `p♭`. -/
-theorem associated_untilt_coeff_zero {ξ : WittVector p (PreTilt A p)}
-    (hξ : RingHom.ker (fontaineTheta A p) = span {ξ}) :
-    Associated (ξ.coeff 0).untilt (p : A) := by
-  have hξk : ξ ∈ RingHom.ker (fontaineTheta A p) := hξ ▸ mem_span_singleton_self ξ
-  obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp
-    ((ker_fontaineTheta_eq_span_iff_isDistinguished hξk).mp hξ)
-  have h := RingHom.mem_ker.mp hξk
-  rw [hu, map_add, map_mul, map_natCast, fontaineTheta_teichmuller] at h
-  have hθu : IsUnit (fontaineTheta A p u) := u.isUnit.map _
-  refine Associated.symm ⟨-hθu.unit, ?_⟩
-  rw [Units.val_neg, hθu.unit_spec]
-  linear_combination -h
-
 section Generator
 
 variable {ξ : WittVector p (PreTilt A p)} (hξ : RingHom.ker (fontaineTheta A p) = span {ξ})
@@ -97,8 +81,7 @@ so `p θ(u) θ(w) = 0`, and `θ(u)` is a unit. -/
 private theorem natCast_mul_fontaineTheta_eq_zero {w : WittVector p (PreTilt A p)}
     (hw : teichmuller p (ξ.coeff 0) * w = 0) : (p : A) * fontaineTheta A p w = 0 := by
   have hξk : ξ ∈ RingHom.ker (fontaineTheta A p) := hξ ▸ mem_span_singleton_self ξ
-  obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp
-    ((ker_fontaineTheta_eq_span_iff_isDistinguished hξk).mp hξ)
+  obtain ⟨u, hu⟩ := exists_unit_eq_teichmuller_add_of_ker_fontaineTheta_eq_span hξ
   have h : fontaineTheta A p (ξ * w) = 0 := RingHom.mem_ker.mp (mul_mem_right w _ hξk)
   rw [hu, add_mul, hw, zero_add, map_mul, map_mul, map_natCast] at h
   have hθu : IsUnit (fontaineTheta A p u) := u.isUnit.map _
@@ -116,8 +99,8 @@ private theorem untilt_add_of_coeff_zero_mul_eq_zero {a b : PreTilt A p} (ha : �
   -- `[ξ₀]` kills `p w`, hence `w`.
   have hξw : teichmuller p (ξ.coeff 0) * w = 0 := by
     refine (mul_cancel_left_mem_nonZeroDivisors (p_mem_nonZeroDivisors (R := PreTilt A p))).mp ?_
-    rw [mul_zero, mul_left_comm, ← hw, mul_sub, mul_sub, ← map_mul, ← map_mul, ← map_mul,
-      mul_add, ha, hb, add_zero, teichmuller_zero, sub_zero, sub_zero]
+    rw [mul_zero, mul_left_comm, ← hw]
+    simp [mul_sub, ← map_mul, mul_add, ha, hb]
   have h := congrArg (fontaineTheta A p) hw
   rw [map_sub, map_sub, fontaineTheta_teichmuller, fontaineTheta_teichmuller,
     fontaineTheta_teichmuller, map_mul, map_natCast,
@@ -142,8 +125,7 @@ private theorem eq_zero_of_coeff_zero_mul_eq_zero_of_untilt_eq_zero {a : PreTilt
 private theorem exists_untilt_eq_of_natCast_mul_eq_zero {y : A} (hy : (p : A) * y = 0) :
     ∃ a : PreTilt A p, ξ.coeff 0 * a = 0 ∧ a.untilt = y := by
   have hξk : ξ ∈ RingHom.ker (fontaineTheta A p) := hξ ▸ mem_span_singleton_self ξ
-  obtain ⟨u, hu⟩ := isDistinguished_iff_exists_unit.mp
-    ((ker_fontaineTheta_eq_span_iff_isDistinguished hξk).mp hξ)
+  obtain ⟨u, hu⟩ := exists_unit_eq_teichmuller_add_of_ker_fontaineTheta_eq_span hξ
   obtain ⟨w, rfl⟩ := surjective_fontaineTheta (p := p) y
   have hpw : (p : WittVector p (PreTilt A p)) * w ∈ span {ξ} := by
     rw [← hξ, RingHom.mem_ker, map_mul, map_natCast, hy]
@@ -218,6 +200,12 @@ namespace PreTilt
 
 open TauCeti.Perfectoid IsIntegralPerfectoid
 
+/-- In a commutative ring `R`, `x` lies in the `a`-torsion `R[a]` exactly when `a * x = 0`: the
+scalar action of `R` on itself is multiplication. -/
+private theorem mem_torsionBy_self_iff {R : Type*} [CommRing R] {a x : R} :
+    x ∈ Submodule.torsionBy R R a ↔ a * x = 0 := by
+  rw [Submodule.mem_torsionBy_iff, smul_eq_mul]
+
 variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [IsIntegralPerfectoid p A]
   [Fact ¬IsUnit (p : A)] {t : PreTilt A p} {π : A}
 
@@ -234,18 +222,21 @@ noncomputable def torsionByEquiv (ht : Associated t.untilt π) (hπ : π ∣ (p 
     obtain ⟨u, rfl⟩ := ht
     rw [mul_right_comm, ← map_mul, hx, untilt_zero, zero_mul]
   let f : Submodule.torsionBy (PreTilt A p) (PreTilt A p) t →+ Submodule.torsionBy A A π :=
-    AddMonoidHom.mk' (fun x ↦ ⟨(x : PreTilt A p).untilt, hmem x x.property⟩) fun x y ↦
-      Subtype.ext (untilt_add_of_mul_eq_zero htp x.property y.property)
+    AddMonoidHom.mk' (fun x ↦ ⟨(x : PreTilt A p).untilt,
+      mem_torsionBy_self_iff.mpr (hmem x (mem_torsionBy_self_iff.mp x.property))⟩) fun x y ↦
+      Subtype.ext (untilt_add_of_mul_eq_zero htp (mem_torsionBy_self_iff.mp x.property)
+        (mem_torsionBy_self_iff.mp y.property))
   AddEquiv.ofBijective f
     ⟨(injective_iff_map_eq_zero f).mpr fun x hx ↦ Subtype.ext
-      (eq_zero_of_mul_eq_zero_of_untilt_eq_zero htp x.property (congrArg Subtype.val hx)),
+      (eq_zero_of_mul_eq_zero_of_untilt_eq_zero htp (mem_torsionBy_self_iff.mp x.property)
+        (congrArg Subtype.val hx)),
     fun y ↦ by
       obtain ⟨u, rfl⟩ := ht
       obtain ⟨x, hx, hxy⟩ := exists_mul_eq_zero_untilt_eq htp (y := y) (by
-        have hy : (t.untilt * ↑u) • (y : A) = 0 := y.property
-        rw [smul_eq_mul, mul_right_comm, u.mul_left_eq_zero] at hy
+        have hy := mem_torsionBy_self_iff.mp y.property
+        rw [mul_right_comm, u.mul_left_eq_zero] at hy
         exact hy)
-      exact ⟨⟨x, hx⟩, Subtype.ext hxy⟩⟩
+      exact ⟨⟨x, mem_torsionBy_self_iff.mpr hx⟩, Subtype.ext hxy⟩⟩
 
 /-- `PreTilt.torsionByEquiv` is the sharp map. -/
 @[simp]
@@ -270,7 +261,8 @@ theorem torsionByEquiv_coeff_zero_smul (ht : Associated t.untilt π) (hπ : π �
       WittVector.fontaineTheta A p w • torsionByEquiv ht hπ x := by
   obtain ⟨c, hc⟩ := WittVector.natCast_dvd_fontaineTheta_sub_untilt w
   obtain ⟨d, hd⟩ := hπ
-  have hx : π * (x : PreTilt A p).untilt = 0 := (torsionByEquiv ht ⟨d, hd⟩ x).property
+  have hx : π * (x : PreTilt A p).untilt = 0 :=
+    mem_torsionBy_self_iff.mp (torsionByEquiv ht ⟨d, hd⟩ x).property
   ext
   simp only [coe_torsionByEquiv_apply, Submodule.coe_smul, smul_eq_mul, map_mul]
   linear_combination
