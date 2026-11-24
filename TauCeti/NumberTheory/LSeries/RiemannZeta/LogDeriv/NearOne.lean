@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Algebra.Order.GroupWithZero.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 
 /-!
 # The logarithmic derivative of the Riemann zeta function near `s = 1`
@@ -43,7 +44,7 @@ theorem logDeriv_riemannZeta_add_inv_sub_one {s : ℂ} (hs : s ≠ 1) (hζ : rie
     logDeriv riemannZeta s + (s - 1)⁻¹ = logDeriv (LFunctionTrivChar₁ 1) s := by
   have hs' : s - 1 ≠ 0 := sub_ne_zero_of_ne hs
   rw [logDeriv_apply, logDeriv_apply, deriv_LFunctionTrivChar₁_apply_of_ne_one _ hs,
-    LFunctionTrivChar₁, Function.update_of_ne hs, LFunctionTrivChar, LFunction_modOne_eq]
+    LFunctionTrivChar₁_one_apply_of_ne_one hs, LFunctionTrivChar, LFunction_modOne_eq]
   field_simp
 
 end TauCeti

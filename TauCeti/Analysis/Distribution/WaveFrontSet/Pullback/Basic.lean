@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import Mathlib.Analysis.LocallyConvex.Barrelled
 import Mathlib.Analysis.Normed.Group.Tannery
@@ -12,10 +13,12 @@ import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
 import TauCeti.Analysis.Distribution.TestFunction.Frechet
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.Prod
+import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Mollifier
 import TauCeti.Analysis.Fourier.Prod
@@ -43,6 +46,13 @@ on the wave front set, for instance a smooth one, the pullback is the restrictio
 the limit need not exist: the surface measure `T = 1 ⊗ δ₀` of `E × {0}` has its conormal set as wave
 front set, and `T (ψ ⊗ ρ) = (∫ ψ) ρ 0` is unbounded as `ρ` concentrates at `0` when `∫ ψ ≠ 0`.
 
+The wave front set of the pullback lies in the image of that of `T` over `E × {0}` under the
+transpose `ιᵀ`:
+
+`WF(ι^* T) ⊆ {(x, ξ) | ∃ η, ((x, 0), (ξ, η)) ∈ WF(T)}`
+
+(`Distribution.waveFrontSet_pullbackInl_subset`).
+
 Every injective linear map is such an inclusion after a linear change of coordinates. In
 particular, after the change `(x, y) ↦ (x, y - x)` the diagonal of `E × E` becomes `E × {0}`, and
 pulling back the tensor product `S ⊗ T` along it is how the product of two distributions with no
@@ -57,6 +67,8 @@ opposite wave front covectors over a common point is defined (Hörmander I, Theo
   functions.
 * `Distribution.pullbackInl_ofFun`: for a continuous function satisfying the hypothesis it is the
   restriction to `E × {0}`.
+* `Distribution.isMicrolocallySmoothAt_pullbackInl`, `Distribution.waveFrontSet_pullbackInl_subset`:
+  the wave front set of the pullback lies in the image of that of `T` under `ιᵀ`.
 * `Distribution.pullbackInl_add`, `Distribution.pullbackInl_smul`,
   `Distribution.pullbackInl_smul_of_ne_zero`, `Distribution.pullbackInl_zero`,
   `Distribution.pullbackInl_neg`, `Distribution.pullbackInl_sub`: linearity in `T`.
@@ -85,6 +97,16 @@ For a continuous function `F`, Fubini's theorem writes `∫ (ψ ⊗ ρ_n) F` as 
 `(ρ_n ⋆ g) (0)` of the function `g y = ∫ ψ (x) F (x, -y) dx`, which is continuous near `0`, so it
 tends to `g 0 = ∫ ψ (x) F (x, 0) dx` (`ContDiffBump.tendsto_integral_shrinking_normed_smul`).
 
+For the wave front set, let `T` be microlocally smooth at every `((x₀, 0), (ξ₀, η))`. Together with
+the conormal directions, these covectors form the closed cone `V` of the `ζ` with `ζ.fst` on the ray
+through `ξ₀`, so the localized Fourier transform of `T` with a cutoff `χ` near `(x₀, 0)` decays
+rapidly on an open cone `Γ ⊇ V \ {0}`. Applying the lattice series to the modulated cutoff `φ e_ξ`,
+whose Fourier transform is `𝓕 φ (· + ξ)`, writes the localized Fourier transform of `ι^* T` at `ξ`
+as `∑ m, c 𝓕 φ (ξ + m.fst) T (χ e_(-m))`. For `ξ` in a small cone `Γ'` around `ξ₀` and
+`-m ∉ Γ`, `‖ξ + m.fst‖ ≥ c' (‖ξ‖ + ‖m‖)` (`IsOpen.exists_cone_mul_add_le_norm_apply_sub`), so
+every summand decays rapidly in `ξ` and `m` jointly
+(`TauCeti.exists_one_add_norm_pow_mul_one_add_norm_pow_mul_norm_mul_le`).
+
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, second edition,
@@ -109,105 +131,82 @@ variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 /-! ### Neighbourhoods of `E × {0}` and decay in the conormal directions -/
 
-/-- **Decay in the conormal directions.** If no covector `((x, 0), (0, η))` with `x ∈ K` and
-`η ≠ 0` lies in the wave front set of `T`, there are an open set `G` containing `K × {0}` and a
-constant `c > 0` such that every cutoff supported in `G` has localized Fourier transform rapidly
-decreasing on the cone `‖ζ.fst‖ < c ‖ζ.snd‖` around the conormal directions `{0} × D`. -/
-private theorem exists_isOpen_forall_decay (T : 𝓓'(W, ℂ)) {K : Set E} (hK : IsCompact K)
-    (hKW : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ W)
-    (h : ∀ x ∈ K, ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) :
-    ∃ G : Set (WithLp 2 (E × D)), IsOpen G ∧ (∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G) ∧
-      ∃ c > 0, ∀ χ : 𝓓(W, ℂ), tsupport χ ⊆ G → ∀ N : ℕ, ∃ C, ∀ ζ : WithLp 2 (E × D),
-        ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C := by
-  classical
-  set ι₁ : E → WithLp 2 (E × D) := fun x ↦ toLp 2 (x, 0)
-  set ι₂ : D → WithLp 2 (E × D) := fun b ↦ toLp 2 (0, b)
-  have hι₁ : Continuous ι₁ := (prodContinuousLinearEquiv 2 ℝ E D).symm.continuous.comp
-    (continuous_id.prodMk continuous_const)
-  have hι₂ : Continuous ι₂ := (prodContinuousLinearEquiv 2 ℝ E D).symm.continuous.comp
-    (continuous_const.prodMk continuous_id)
-  have hι₂smul (t : ℝ) (b : D) : ι₂ (t • b) = t • ι₂ b := by
-    simp only [ι₂, ← toLp_smul, Prod.smul_mk, smul_zero]
-  -- The hypothesis is microlocal smoothness at the conormal covectors over `K`.
-  have hsmooth (η : sphere (0 : D) 1) : ∀ p ∈ ι₁ '' K, T.IsMicrolocallySmoothAt p (ι₂ η) := by
-    rintro _ ⟨x, hx, rfl⟩
-    by_contra hns
-    have hη : ι₂ η ≠ 0 := fun h0 ↦ ne_zero_of_mem_unit_sphere η (by
-      simpa [ι₂] using congrArg WithLp.snd h0)
-    exact h x hx η (ne_zero_of_mem_unit_sphere η) (mem_waveFrontSet_iff.2 ⟨hKW x hx, hη, hns⟩)
-  choose G' hG' hKG' Γ hΓ hηΓ hcone hdecay using fun η : sphere (0 : D) 1 ↦
-    exists_isOpen_cone_forall_decay_of_isCompact (hK.image hι₁) (hsmooth η)
-  -- Finitely many of the cones cover the conormal directions.
-  obtain ⟨t, ht⟩ := TauCeti.exists_finset_compl_singleton_subset_biUnion (E := D)
-    (Γ := fun η ↦ ι₂ ⁻¹' Γ η) (fun η ↦ (hΓ η).preimage hι₂) (fun η ↦ hηΓ η)
-    fun η s hs b hb ↦ by simpa [Set.mem_preimage, hι₂smul] using hcone η s hs _ hb
-  obtain ⟨c, hc, hcΓ⟩ := ((isOpen_biUnion fun η _ ↦ hΓ η).preimage
-    (prod_continuous_toLp 2 E D)).exists_pos_setOf_norm_fst_lt_subset
-    (fun s hs q hq ↦ by
-      obtain ⟨η, hηt, hqη⟩ := mem_iUnion₂.1 hq
-      exact mem_iUnion₂.2 ⟨η, hηt, by simpa using hcone η s hs _ hqη⟩)
-    fun b hb ↦ by
-      obtain ⟨η, hηt, hbη⟩ := mem_iUnion₂.1 (ht hb)
-      exact mem_iUnion₂.2 ⟨η, hηt, hbη⟩
-  refine ⟨⋂ η ∈ t, G' η, isOpen_biInter_finset fun η _ ↦ hG' η,
-    fun x hx ↦ mem_iInter₂.2 fun η _ ↦ hKG' η (mem_image_of_mem _ hx), c, hc,
-    fun χ hχ N ↦ ?_⟩
-  have hpiece (η : sphere (0 : D) 1) (hη : η ∈ t) :
-      ∃ C, ∀ ζ ∈ Γ η, (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C :=
-    hdecay η χ ((hχ.trans (biInter_subset_of_mem hη)).trans subset_union_left) N
-  choose! C hC using hpiece
-  refine ⟨∑ η ∈ t, |C η|, fun ζ hζ ↦ ?_⟩
-  have hζ' := hcΓ (a := ofLp ζ) (by simpa using hζ)
-  rw [mem_preimage, toLp_ofLp] at hζ'
-  obtain ⟨η, hηt, hζΓ⟩ := mem_iUnion₂.1 hζ'
-  calc (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C η := hC η hηt ζ hζΓ
-    _ ≤ |C η| := le_abs_self _
-    _ ≤ ∑ η ∈ t, |C η| :=
-      Finset.single_le_sum (f := fun η ↦ |C η|) (fun _ _ ↦ abs_nonneg _) hηt
+omit [FiniteDimensional ℝ E] in
+/-- An open cone of `E × D` containing the nonzero conormal vectors `(0, b)` contains a cone
+`‖ζ.fst‖ < c ‖ζ.snd‖` around them. -/
+private theorem exists_pos_forall_norm_fst_lt_imp_mem {Γ : Set (WithLp 2 (E × D))}
+    (hΓ : IsOpen Γ) (hcone : ∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ, t • ζ ∈ Γ)
+    (hD : ∀ b : D, b ≠ 0 → toLp 2 ((0 : E), b) ∈ Γ) :
+    ∃ c > 0, ∀ ζ : WithLp 2 (E × D), ‖ζ.fst‖ < c * ‖ζ.snd‖ → ζ ∈ Γ := by
+  obtain ⟨c, hc, hcΓ⟩ :=
+    (hΓ.preimage (prod_continuous_toLp 2 E D)).exists_pos_setOf_norm_fst_lt_subset
+      (fun t ht q hq ↦ by simpa using hcone t ht _ hq) hD
+  refine ⟨c, hc, fun ζ hζ ↦ ?_⟩
+  simpa using hcΓ (a := ofLp ζ) (by simpa using hζ)
+
+/-- Around `K × {0}`, for a compact set `K` with `K × {0} ⊆ G ∩ W`, there is a cutoff `χ` supported
+in `G`, equal to one on `K × closedBall 0 δ` for some `δ > 0`. -/
+private theorem exists_cutoff {K : Set E} (hK : IsCompact K) {G : Set (WithLp 2 (E × D))}
+    (hG : IsOpen G) (hKG : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G ∩ W) :
+    ∃ δ > 0, ∃ χ : 𝓓(W, ℂ), (∀ x ∈ K, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1) ∧
+      tsupport χ ⊆ G := by
+  obtain ⟨δ, hδ, htube⟩ := hK.exists_pos_forall_toLp_mem (hG.inter W.isOpen) hKG
+  -- A real cutoff equal to one near `K × closedBall 0 (δ / 2)`, supported in `G ∩ W`.
+  set B : Set (WithLp 2 (E × D)) := toLp 2 '' (K ×ˢ closedBall (0 : D) (δ / 2))
+  have hB : IsCompact B := (hK.prod (isCompact_closedBall _ _)).image (prod_continuous_toLp 2 E D)
+  have hBG : B ⊆ G ∩ W := by
+    rintro _ ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩
+    refine htube x hx x y (by simpa using hδ) ?_
+    rw [mem_closedBall, dist_zero_right] at hy
+    linarith
+  obtain ⟨χ, -, hχ1, hχG⟩ := exists_cutoff_tsupport_subset (Ω := W) (n := ⊤) hB
+    (hG.inter W.isOpen) hBG inter_subset_right
+  refine ⟨δ / 2, half_pos hδ, postcompCLM (𝕜 := ℝ) ofRealCLM χ, fun x hx y hy ↦ ?_, ?_⟩
+  · have h1 : χ (toLp 2 (x, y)) = 1 :=
+      hχ1.self_of_nhdsSet _ ⟨(x, y), ⟨hx, by simpa using hy⟩, rfl⟩
+    simp [h1]
+  · rw [postcompCLM_apply]
+    exact (tsupport_comp_subset (map_zero ofRealCLM) χ).trans (hχG.trans inter_subset_left)
 
 /-! ### The limit of `T (ψ ⊗ ρ)` as `ρ` concentrates at `0` -/
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
-/-- If `g` decays rapidly and the localized Fourier transform of `T` with cutoff `χ` decays rapidly
-on the cone `‖ζ.fst‖ < c ‖ζ.snd‖`, then `ζ ↦ g ζ.fst * T (χ e_(-ζ))` decays rapidly: off the cone
-`‖ζ‖` is comparable to `‖ζ.fst‖`, and the localized Fourier transform grows at most polynomially. -/
-private theorem exists_decay_mul_localFourier_neg (T : 𝓓'(W, ℂ)) {χ : 𝓓(W, ℂ)} {c : ℝ}
+/-- The summands `(covolume L)⁻¹ 𝓕 ψ (m.fst) T (χ e_(-m))` of the lattice series for the pullback
+decay rapidly, hence are summable over the dual lattice. -/
+private theorem summable_norm_fourier_mul_localFourier_neg [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ)) {χ : 𝓓(W, ℂ)}
+    (L : Submodule ℤ (WithLp 2 (E × D))) [DiscreteTopology L] [IsZLattice ℝ L] {c : ℝ}
     (hc : 0 < c) (hdecay : ∀ N : ℕ, ∃ C, ∀ ζ : WithLp 2 (E × D),
-      ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C)
-    {g : E → ℂ} (hg : ∀ N : ℕ, ∃ C, ∀ a, (1 + ‖a‖) ^ N * ‖g a‖ ≤ C) (N : ℕ) :
-    ∃ C, ∀ ζ : WithLp 2 (E × D), (1 + ‖ζ‖) ^ N * ‖g ζ.fst * T.localFourier χ (-ζ)‖ ≤ C := by
-  obtain ⟨C₀, k, hC₀⟩ := exists_norm_localFourier_le T χ
-  have hC₀' : 0 ≤ C₀ := by simpa using (norm_nonneg _).trans (hC₀ 0)
-  obtain ⟨C₁, hC₁⟩ := hdecay N
-  obtain ⟨C₂, hC₂⟩ := hg 0
-  obtain ⟨C₃, hC₃⟩ := hg (N + k)
-  have hC₂' (a : E) : ‖g a‖ ≤ C₂ := by simpa using hC₂ a
-  set A := 1 + c⁻¹
-  have hA : 1 ≤ A := le_add_of_nonneg_right (inv_nonneg.2 hc.le)
-  refine ⟨max (C₂ * C₁) (C₀ * A ^ (N + k) * C₃), fun ζ ↦ ?_⟩
-  rw [norm_mul, mul_left_comm]
-  by_cases hζ : ‖ζ.fst‖ < c * ‖ζ.snd‖
-  · -- On the cone, the localized Fourier transform decays.
-    have h := hC₁ (-ζ) (by simpa using hζ)
-    rw [norm_neg] at h
-    exact (mul_le_mul (hC₂' _) h (by positivity) ((norm_nonneg _).trans (hC₂' 0))).trans
-      (le_max_left _ _)
-  · -- Off the cone, `1 + ‖ζ‖ ≤ A (1 + ‖ζ.fst‖)`.
-    have hsnd : ‖ζ.snd‖ ≤ c⁻¹ * ‖ζ.fst‖ := by
-      rw [le_inv_mul_iff₀ hc]
-      exact not_lt.1 hζ
-    have hle : 1 + ‖ζ‖ ≤ A * (1 + ‖ζ.fst‖) := by
-      have := prod_norm_le_norm_fst_add_norm_snd ζ
-      nlinarith [norm_nonneg ζ.fst]
-    calc ‖g ζ.fst‖ * ((1 + ‖ζ‖) ^ N * ‖T.localFourier χ (-ζ)‖)
-        ≤ ‖g ζ.fst‖ * ((1 + ‖ζ‖) ^ N * (C₀ * (1 + ‖ζ‖) ^ k)) := by
-          gcongr
-          simpa using hC₀ (-ζ)
-      _ = C₀ * ((1 + ‖ζ‖) ^ (N + k) * ‖g ζ.fst‖) := by ring
-      _ ≤ C₀ * ((A * (1 + ‖ζ.fst‖)) ^ (N + k) * ‖g ζ.fst‖) := by gcongr
-      _ = C₀ * A ^ (N + k) * ((1 + ‖ζ.fst‖) ^ (N + k) * ‖g ζ.fst‖) := by rw [mul_pow]; ring
-      _ ≤ C₀ * A ^ (N + k) * C₃ := by gcongr; exact hC₃ _
-      _ ≤ _ := le_max_right _ _
+      ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C) (ψ : 𝓓(U, ℝ)) :
+    Summable fun m : ZLattice.dual L ↦ ‖(ZLattice.covolume L : ℂ)⁻¹ *
+      𝓕 (fun x ↦ (ψ x : ℂ)) (m : WithLp 2 (E × D)).fst * T.localFourier χ (-m)‖ := by
+  set a : ℂ := (ZLattice.covolume L : ℂ)⁻¹
+  set Ψ : E → ℂ := 𝓕 fun x ↦ (ψ x : ℂ)
+  -- Off the cone `‖ζ.fst‖ < c ‖ζ.snd‖`, `‖ζ‖` is comparable to `‖ζ.fst‖`.
+  have hsep : ∀ ξ ∈ ({0} : Set E), ∀ ζ ∉ {ζ : WithLp 2 (E × D) | ‖ζ.fst‖ < c * ‖ζ.snd‖},
+      c / (1 + c) * (‖ξ‖ + ‖ζ‖) ≤ ‖(-fstL 2 ℝ E D) ζ - ξ‖ := by
+    rintro _ rfl ζ hζ
+    rw [mem_ofPred_eq, not_lt] at hζ
+    have h : c / (1 + c) * ‖ζ‖ ≤ ‖ζ.fst‖ := by
+      rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+      nlinarith [mul_le_mul_of_nonneg_left (prod_norm_le_norm_fst_add_norm_snd ζ) hc.le]
+    simpa using h
+  have h := ZLattice.summable_one_add_norm_pow_mul_norm_of_decay (ZLattice.dual L)
+    (f := fun ζ : WithLp 2 (E × D) ↦ a * (Ψ ζ.fst * T.localFourier χ (-ζ)))
+    (fun N ↦ by
+      obtain ⟨C, hC⟩ := TauCeti.exists_one_add_norm_pow_mul_one_add_norm_pow_mul_norm_mul_le
+        (-fstL 2 ℝ E D) (div_pos hc (by positivity)) hsep (g := Ψ)
+        (F := fun ζ ↦ T.localFourier χ (-ζ))
+        (TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le (ofRealCLM.contDiff.comp ψ.contDiff)
+          (ψ.hasCompactSupport.comp_left (g := ((↑) : ℝ → ℂ)) ofReal_zero))
+        ((exists_norm_localFourier_le T χ).imp fun _ ⟨k, hk⟩ ↦ ⟨k, fun ζ ↦ by
+          simpa using hk (-ζ)⟩)
+        (fun N ↦ (hdecay N).imp fun _ hC ζ hζ ↦ by simpa using hC (-ζ) (by simpa using hζ)) N
+      exact ⟨‖a‖ * C, fun ζ ↦ by
+        have hζ : (1 + ‖ζ‖) ^ N * ‖Ψ ζ.fst * T.localFourier χ (-ζ)‖ ≤ C := by
+          simpa using hC 0 rfl ζ
+        rw [norm_mul, mul_left_comm]
+        exact mul_le_mul_of_nonneg_left hζ (norm_nonneg _)⟩) 0
+  simpa [mul_assoc] using h
 
 /-- **The core convergence.** Let `χ = 1` on `tsupport ψ × closedBall 0 δ`, let the localized
 Fourier transform of `T` with cutoff `χ` decay rapidly on a cone `‖ζ.fst‖ < c ‖ζ.snd‖`, and let
@@ -230,19 +229,7 @@ private theorem tendsto_apply_tsum [MeasurableSpace E] [BorelSpace E] [Measurabl
       𝓕 (fun x ↦ (ψ x : ℂ)) (m : WithLp 2 (E × D)).fst * T.localFourier χ (-m))) := by
   set a : ℂ := (ZLattice.covolume L : ℂ)⁻¹
   set Ψ : E → ℂ := 𝓕 fun x ↦ (ψ x : ℂ)
-  -- The limiting summands decay rapidly, hence are summable over the dual lattice.
-  have hsum : Summable fun m : ZLattice.dual L ↦ ‖a * Ψ (m : WithLp 2 (E × D)).fst *
-      T.localFourier χ (-m)‖ := by
-    have h := ZLattice.summable_one_add_norm_pow_mul_norm_of_decay (ZLattice.dual L)
-      (f := fun ζ : WithLp 2 (E × D) ↦ a * (Ψ ζ.fst * T.localFourier χ (-ζ))) (fun N ↦ by
-        obtain ⟨C, hC⟩ := exists_decay_mul_localFourier_neg T hc hdecay
-          (fun N ↦ TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le
-            (ofRealCLM.contDiff.comp ψ.contDiff)
-            (ψ.hasCompactSupport.comp_left (g := ((↑) : ℝ → ℂ)) ofReal_zero) N) N
-        exact ⟨‖a‖ * C, fun ζ ↦ by
-          rw [norm_mul, mul_left_comm]
-          exact mul_le_mul_of_nonneg_left (hC ζ) (norm_nonneg _)⟩) 0
-    simpa [mul_assoc] using h
+  have hsum := summable_norm_fourier_mul_localFourier_neg T L hc hdecay ψ
   -- Eventually `T (f i)` is the lattice sum with the extra factor `𝓕 (ρ i) (m.snd)`.
   have heq : ∀ᶠ i in l, ∑' m : ZLattice.dual L, a * Ψ (m : WithLp 2 (E × D)).fst *
       𝓕 (fun y ↦ (ρ i y : ℂ)) (m : WithLp 2 (E × D)).snd * T.localFourier χ (-m) = T (f i) := by
@@ -277,6 +264,22 @@ private theorem tendsto_apply_tsum [MeasurableSpace E] [BorelSpace E] [Measurabl
     nlinarith [mul_le_mul_of_nonneg_left h (by positivity : (0 : ℝ) ≤
       ‖a‖ * ‖Ψ (m : WithLp 2 (E × D)).fst‖ * ‖T.localFourier χ (-m)‖)]
 
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
+/-- If `T` has no wave front covectors `((x, 0), (0, η))` in the conormal directions, it is
+microlocally smooth at `(x, 0)` in every nonzero direction `ζ` with `ζ.fst = 0`. -/
+private theorem isMicrolocallySmoothAt_of_fst_eq_zero (T : 𝓓'(W, ℂ)) {x : E}
+    (hx : toLp 2 (x, (0 : D)) ∈ W)
+    (h : ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
+    {ζ : WithLp 2 (E × D)} (hζ0 : ζ ≠ 0) (hζ : ζ.fst = 0) :
+    T.IsMicrolocallySmoothAt (toLp 2 (x, 0)) ζ := by
+  have hζeq : toLp 2 ((0 : E), ζ.snd) = ζ := by
+    rw [← hζ, ← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
+  have hsnd : ζ.snd ≠ 0 := fun h0 ↦ hζ0 (by rw [← hζeq, h0, Prod.mk_zero_zero, toLp_zero])
+  by_contra hns
+  have hmem := mem_waveFrontSet_iff.2 ⟨hx, hζ0, hns⟩
+  rw [← hζeq] at hmem
+  exact h ζ.snd hsnd hmem
+
 /-- Around `K × {0}`, for a compact set `K` over which `T` has no conormal wave front covectors,
 there is a cutoff `χ` equal to one on `K × closedBall 0 δ` whose localized Fourier transform
 decays rapidly on a cone `‖ζ.fst‖ < c ‖ζ.snd‖`. -/
@@ -286,26 +289,20 @@ private theorem exists_cutoff_decay (T : 𝓓'(W, ℂ)) {K : Set E} (hK : IsComp
     ∃ δ > 0, ∃ χ : 𝓓(W, ℂ), (∀ x ∈ K, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1) ∧
       ∃ c > 0, ∀ N : ℕ, ∃ C, ∀ ζ : WithLp 2 (E × D),
         ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C := by
-  obtain ⟨G, hG, hKG, c, hc, hdecay⟩ := exists_isOpen_forall_decay T hK hKW h
-  obtain ⟨δ, hδ, htube⟩ :=
-    hK.exists_pos_forall_toLp_mem (hG.inter W.isOpen) fun x hx ↦ ⟨hKG x hx, hKW x hx⟩
-  -- A real cutoff equal to one near `K × closedBall 0 (δ / 2)`, supported in `G ∩ W`.
-  set B : Set (WithLp 2 (E × D)) := toLp 2 '' (K ×ˢ closedBall (0 : D) (δ / 2))
-  have hB : IsCompact B := (hK.prod (isCompact_closedBall _ _)).image (prod_continuous_toLp 2 E D)
-  have hBG : B ⊆ G ∩ W := by
-    rintro _ ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩
-    refine htube x hx x y (by simpa using hδ) ?_
-    rw [mem_closedBall, dist_zero_right] at hy
-    linarith
-  obtain ⟨χ, -, hχ1, hχG⟩ := exists_cutoff_tsupport_subset (Ω := W) (n := ⊤) hB
-    (hG.inter W.isOpen) hBG inter_subset_right
-  refine ⟨δ / 2, half_pos hδ, postcompCLM (𝕜 := ℝ) ofRealCLM χ, fun x hx y hy ↦ ?_, c, hc,
-    fun N ↦ hdecay _ ?_ N⟩
-  · have h1 : χ (toLp 2 (x, y)) = 1 :=
-      hχ1.self_of_nhdsSet _ ⟨(x, y), ⟨hx, by simpa using hy⟩, rfl⟩
-    simp [h1]
-  · rw [postcompCLM_apply]
-    exact (tsupport_comp_subset (map_zero ofRealCLM) χ).trans (hχG.trans inter_subset_left)
+  have hι : Continuous fun x : E ↦ toLp 2 (x, (0 : D)) :=
+    (prod_continuous_toLp 2 E D).comp (continuous_id.prodMk continuous_const)
+  -- The hypothesis is microlocal smoothness over `K × {0}` in the closed cone `{0} × D`.
+  obtain ⟨G, hG, hKG, Γ, hΓ, hVΓ, hcone, hdecay⟩ :=
+    exists_isOpen_cone_forall_decay_of_isClosed_cone (T := T) (hK.image hι)
+      (V := {ζ : WithLp 2 (E × D) | ζ.fst = 0}) (isClosed_eq (by fun_prop) continuous_const)
+      (fun t _ ζ hζ ↦ by simp_all) (by
+        rintro _ ⟨x, hx, rfl⟩ ζ hζ hζ0
+        exact isMicrolocallySmoothAt_of_fst_eq_zero T (hKW x hx) (h x hx) hζ0 hζ)
+  obtain ⟨c, hc, hcΓ⟩ := exists_pos_forall_norm_fst_lt_imp_mem hΓ hcone fun b hb ↦
+    hVΓ _ (by simp) fun h0 ↦ hb (by simpa using congrArg WithLp.snd h0)
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff hK hG fun x hx ↦ ⟨hKG ⟨x, hx, rfl⟩, hKW x hx⟩
+  exact ⟨δ, hδ, χ, hχ1, c, hc, fun N ↦ (hdecay χ (hχG.trans subset_union_left) N).imp
+    fun _ hC ζ hζ ↦ hC ζ (hcΓ ζ hζ)⟩
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ D]
   [FiniteDimensional ℝ D] in
@@ -508,26 +505,25 @@ private theorem tendsto_apply_tensorCLM_pullbackInl (T : 𝓓'(W, ℂ))
 
 omit [FiniteDimensional ℝ E] in
 /-- Every test function `ψ` on `U` has a sequence of test functions `(x, y) ↦ ψ x ρ_n y` on `W`
-as in `Distribution.tendsto_pullbackInl`, for smooth nonnegative functions `ρ_n` of integral one
-supported in the closed balls of radii `r n → 0`. -/
+as in `Distribution.tendsto_pullbackInl`, where `ρ_n` is the normalized bump function of a bump
+`σ_n` centred at `0`: a smooth nonnegative function of integral one supported in the closed ball of
+radius `rOut (σ_n)`. These radii tend to zero, and the product of `supp ψ` with each of these closed
+balls lies in `W`. -/
 theorem exists_seq_tensor_mollifier [MeasurableSpace D] [BorelSpace D]
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W) (ψ : 𝓓(U, ℝ)) :
-    ∃ (ρ : ℕ → D → ℝ) (r : ℕ → ℝ) (f : ℕ → 𝓓(W, ℝ)), (∀ n, ContDiff ℝ ∞ (ρ n)) ∧
-      (∀ n y, 0 ≤ ρ n y) ∧ (∀ n, ∫ y, ρ n y = 1) ∧
-      (∀ n, support (ρ n) ⊆ closedBall 0 (r n)) ∧ Tendsto r atTop (𝓝 0) ∧
-      ∀ n p, f n p = ψ p.fst * ρ n p.snd := by
+    ∃ (σ : ℕ → ContDiffBump (0 : D)) (f : ℕ → 𝓓(W, ℝ)),
+      Tendsto (fun n ↦ (σ n).rOut) atTop (𝓝 0) ∧
+      (∀ n, ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) (σ n).rOut, toLp 2 (x, y) ∈ W) ∧
+      ∀ n p, f n p = ψ p.fst * (σ n).normed volume p.snd := by
   set K : Compacts E := ⟨tsupport ψ, ψ.hasCompactSupport⟩
-  have hR := half_pos (tubeRadius_pos hU K ψ.tsupport_subset)
-  refine ⟨fun n ↦ (ContDiffBump.shrinking (c := (0 : D)) hR n).normed volume,
-    fun n ↦ (ContDiffBump.shrinking (c := (0 : D)) hR n).rOut,
+  have hδ := tubeRadius_pos hU K ψ.tsupport_subset
+  refine ⟨fun n ↦ ContDiffBump.shrinking (half_pos hδ) n,
     fun n ↦ tensorCLM hU K ψ.tsupport_subset n
       (ContDiffMapSupportedIn.of_support_subset ψ.contDiff (subset_tsupport _)),
-    fun n ↦ (ContDiffBump.shrinking hR n).contDiff_normed,
-    fun n ↦ (ContDiffBump.shrinking hR n).nonneg_normed,
-    fun n ↦ (ContDiffBump.shrinking hR n).integral_normed, fun n ↦ ?_,
-    ContDiffBump.tendsto_rOut_shrinking hR, fun n p ↦ ?_⟩
-  · rw [(ContDiffBump.shrinking hR n).support_normed_eq]
-    exact ball_subset_closedBall
+    ContDiffBump.tendsto_rOut_shrinking (half_pos hδ), fun n x hx y hy ↦ ?_, fun n p ↦ ?_⟩
+  · refine toLp_mem_of_lt_tubeRadius hU K ψ.tsupport_subset hx (by simpa using hδ) ?_
+    exact (mem_closedBall_zero_iff.1 hy).trans_lt
+      ((ContDiffBump.rOut_shrinking_le (half_pos hδ) n).trans_lt (half_lt_self hδ))
   · rw [tensorCLM_apply, ContDiffMapSupportedIn.coe_of_support_subset]
 
 /-- **Additivity of the pullback in the distribution.** -/
@@ -641,5 +637,239 @@ theorem pullbackInl_ofFun [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D]
   rw [← (WithLp.volume_preserving_symm_measurableEquiv_toLp_prod E D).symm.integral_comp']
   refine integral_congr_ae (Eventually.of_forall fun q ↦ ?_)
   simp [H, tensorCLM_apply, mul_comm, mul_assoc]
+
+/-! ### The wave front set of the pullback -/
+
+/-- **The pullback as a lattice series.** For a real test function `ψ` on `U` and a cutoff `χ`
+equal to one on `tsupport ψ × closedBall 0 δ` whose localized Fourier transform decays rapidly on a
+cone `‖ζ.fst‖ < c ‖ζ.snd‖`, the pullback of `T` at `ψ` is the lattice series
+`∑ m, (covolume L)⁻¹ 𝓕 ψ (m.fst) T (χ e_(-m))`. -/
+private theorem pullbackInl_apply_eq_tsum [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D]
+    [BorelSpace D] (T : 𝓓'(W, ℂ)) (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) {ψ : 𝓓(U, ℝ)} {χ : 𝓓(W, ℂ)}
+    {δ : ℝ} (hδ : 0 < δ) (hχ : ∀ x ∈ tsupport ψ, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1)
+    (L : Submodule ℤ (WithLp 2 (E × D))) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hL : ∀ p ∈ tsupport χ, ∀ ℓ ∈ L, p + ℓ ∈ tsupport χ → ℓ = 0) {c : ℝ} (hc : 0 < c)
+    (hdecay : ∀ N : ℕ, ∃ C, ∀ ζ : WithLp 2 (E × D),
+      ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C) :
+    T.pullbackInl hU h ψ = ∑' m : ZLattice.dual L, (ZLattice.covolume L : ℂ)⁻¹ *
+      𝓕 (fun x ↦ (ψ x : ℂ)) (m : WithLp 2 (E × D)).fst * T.localFourier χ (-m) := by
+  obtain ⟨σ, f, hr, -, hf⟩ := exists_seq_tensor_mollifier hU ψ
+  set ρ : ℕ → D → ℝ := fun n ↦ (σ n).normed volume
+  have hM : ∀ᶠ n in atTop, ∫ y, |ρ n y| ≤ 1 := Eventually.of_forall fun n ↦ by
+    simp_rw [ρ, abs_of_nonneg ((σ n).nonneg_normed _), (σ n).integral_normed, le_rfl]
+  have h1 : Tendsto (fun n ↦ ∫ y, ρ n y) atTop (𝓝 1) := by
+    simp_rw [ρ, ContDiffBump.integral_normed, tendsto_const_nhds]
+  have hρr (n : ℕ) : support (ρ n) ⊆ closedBall 0 (σ n).rOut := by
+    simpa only [ρ, (σ n).support_normed_eq] using ball_subset_closedBall
+  exact tendsto_nhds_unique
+    (tendsto_pullbackInl T hU h ψ hM h1 (Eventually.of_forall hρr) hr (Eventually.of_forall hf))
+    (tendsto_apply_tsum T hδ hχ L hL hc hdecay hM h1 (Eventually.of_forall hρr) hr
+      (Eventually.of_forall hf))
+
+/-- `Distribution.pullbackInl_apply_eq_tsum` for a complex test function `ψ`, through its real and
+imaginary parts. -/
+private theorem complexPairing_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) {ψ : 𝓓(U, ℂ)} {χ : 𝓓(W, ℂ)}
+    {δ : ℝ} (hδ : 0 < δ) (hχ : ∀ x ∈ tsupport ψ, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1)
+    (L : Submodule ℤ (WithLp 2 (E × D))) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hL : ∀ p ∈ tsupport χ, ∀ ℓ ∈ L, p + ℓ ∈ tsupport χ → ℓ = 0) {c : ℝ} (hc : 0 < c)
+    (hdecay : ∀ N : ℕ, ∃ C, ∀ ζ : WithLp 2 (E × D),
+      ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C) :
+    (T.pullbackInl hU h).complexPairing ψ = ∑' m : ZLattice.dual L,
+      (ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (ψ : E → ℂ) (m : WithLp 2 (E × D)).fst *
+        T.localFourier χ (-m) := by
+  set ψr : 𝓓(U, ℝ) := postcompCLM (𝕜 := ℝ) reCLM ψ
+  set ψi : 𝓓(U, ℝ) := postcompCLM (𝕜 := ℝ) imCLM ψ
+  have hsupp (g : ℂ →L[ℝ] ℝ) (x : E) (hx : x ∈ tsupport (postcompCLM (𝕜 := ℝ) g ψ)) :
+      x ∈ tsupport ψ := by
+    rw [postcompCLM_apply] at hx
+    exact tsupport_comp_subset (map_zero g) ψ hx
+  have hint (φ : 𝓓(U, ℝ)) : Integrable fun x ↦ (φ x : ℂ) :=
+    (continuous_ofReal.comp φ.continuous).integrable_of_hasCompactSupport
+      (φ.hasCompactSupport.comp_left ofReal_zero)
+  -- `ψ = ψr + I ψi`, so `𝓕 ψ = 𝓕 ψr + I 𝓕 ψi`.
+  have hF : 𝓕 (ψ : E → ℂ) = 𝓕 (fun x ↦ (ψr x : ℂ)) + I • 𝓕 (fun x ↦ (ψi x : ℂ)) := by
+    have hfun : (ψ : E → ℂ) = (fun x ↦ (ψr x : ℂ)) + I • fun x ↦ (ψi x : ℂ) := by
+      ext x
+      simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, ψr, ψi, postcompCLM_apply,
+        Function.comp_apply, reCLM_apply, imCLM_apply]
+      rw [mul_comm]
+      exact (re_add_im _).symm
+    rw [hfun, (hint ψr).fourier_add ((hint ψi).smul I),
+      Real.fourier_const_smul]
+  have hr := (summable_norm_fourier_mul_localFourier_neg T L hc hdecay ψr).of_norm
+  have hi := (summable_norm_fourier_mul_localFourier_neg T L hc hdecay ψi).of_norm
+  rw [complexPairing_apply,
+    pullbackInl_apply_eq_tsum T hU h hδ (fun x hx ↦ hχ x (hsupp reCLM x hx)) L hL hc hdecay,
+    pullbackInl_apply_eq_tsum T hU h hδ (fun x hx ↦ hχ x (hsupp imCLM x hx)) L hL hc hdecay]
+  refine ((hr.hasSum.add (hi.hasSum.mul_left I)).congr_fun fun m ↦ ?_).tsum_eq.symm
+  simp only [hF, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  ring
+
+/-- The localized Fourier transform of the pullback with cutoff `φ` as a lattice series: the
+pullback evaluated at the modulated cutoff `φ e_ξ`, whose Fourier transform is `𝓕 φ (· + ξ)`. -/
+private theorem localFourier_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) {φ : 𝓓(U, ℂ)} {χ : 𝓓(W, ℂ)}
+    {δ : ℝ} (hδ : 0 < δ) (hχ : ∀ x ∈ tsupport φ, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1)
+    (L : Submodule ℤ (WithLp 2 (E × D))) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hL : ∀ p ∈ tsupport χ, ∀ ℓ ∈ L, p + ℓ ∈ tsupport χ → ℓ = 0) {c : ℝ} (hc : 0 < c)
+    (hdecay : ∀ N : ℕ, ∃ C, ∀ ζ : WithLp 2 (E × D),
+      ‖ζ.fst‖ < c * ‖ζ.snd‖ → (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C) (ξ : E) :
+    (T.pullbackInl hU h).localFourier φ ξ = ∑' m : ZLattice.dual L,
+      (ZLattice.covolume L : ℂ)⁻¹ * (𝓕 (φ : E → ℂ) (ξ + (m : WithLp 2 (E × D)).fst) *
+        T.localFourier χ (-m)) := by
+  rw [localFourier_def, complexPairing_pullbackInl_eq_tsum T hU h hδ ?_ L hL hc hdecay]
+  · congr 1 with m
+    rw [TestFunction.fourier_bilinLeftCLM_fourierAtom, add_comm, mul_assoc]
+  · intro x hx y hy
+    refine hχ x ?_ y hy
+    simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply'] at hx
+    exact tsupport_mul_subset_left hx
+
+/-- **Rapid decay of the localized Fourier transform of the pullback.** Let `χ` be equal to one on
+`tsupport φ × closedBall 0 δ`, with localized Fourier transform rapidly decreasing on an open set
+`Γ` containing the cone `‖ζ.fst‖ < c ‖ζ.snd‖`. If the first components of the covectors outside
+`Γ` stay away from a set `Γ'` of frequencies, then the localized Fourier transform of the pullback
+with cutoff `φ` decays rapidly on `Γ'`. -/
+private theorem exists_decay_localFourier_pullbackInl [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) {φ : 𝓓(U, ℂ)} {χ : 𝓓(W, ℂ)}
+    {δ : ℝ} (hδ : 0 < δ) (hχ : ∀ x ∈ tsupport φ, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1)
+    {Γ : Set (WithLp 2 (E × D))} {c : ℝ} (hc : 0 < c)
+    (hcΓ : ∀ ζ : WithLp 2 (E × D), ‖ζ.fst‖ < c * ‖ζ.snd‖ → ζ ∈ Γ)
+    (hdecay : ∀ N : ℕ, ∃ C, ∀ ζ ∈ Γ, (1 + ‖ζ‖) ^ N * ‖T.localFourier χ ζ‖ ≤ C) {Γ' : Set E}
+    {c' : ℝ} (hc' : 0 < c') (hsep : ∀ ξ ∈ Γ', ∀ ζ ∉ Γ, c' * (‖ξ‖ + ‖ζ‖) ≤ ‖fstL 2 ℝ E D ζ - ξ‖)
+    (N : ℕ) : ∃ C, ∀ ξ ∈ Γ', (1 + ‖ξ‖) ^ N * ‖(T.pullbackInl hU h).localFourier φ ξ‖ ≤ C := by
+  obtain ⟨L, _, _, hL⟩ :=
+    ZLattice.exists_forall_add_mem_eq_zero_of_isBounded χ.hasCompactSupport.isCompact.isBounded
+  set q := Module.finrank ℤ (ZLattice.dual L) + 1
+  have hsum := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
+  -- The summands `𝓕 φ (ξ + m.fst) T (χ e_(-m))` of the lattice series decay jointly in `ξ ∈ Γ'`
+  -- and `m`.
+  obtain ⟨C, hC⟩ := TauCeti.exists_one_add_norm_pow_mul_one_add_norm_pow_mul_norm_mul_le
+    (fstL 2 ℝ E D) hc' hsep
+    (fun N ↦ TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport N)
+    (exists_norm_localFourier_le T χ) hdecay (N + q)
+  set a : ℂ := (ZLattice.covolume L : ℂ)⁻¹
+  refine ⟨‖a‖ * C * ∑' m : ZLattice.dual L, ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹,
+    fun ξ hξ ↦ ?_⟩
+  have hterm (m : ZLattice.dual L) :
+      ‖a * (𝓕 (φ : E → ℂ) (ξ + (m : WithLp 2 (E × D)).fst) * T.localFourier χ (-m))‖ ≤
+        ‖a‖ * C * ((1 + ‖ξ‖) ^ N)⁻¹ * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹ := by
+    set P := ‖𝓕 (φ : E → ℂ) (ξ + (m : WithLp 2 (E × D)).fst) * T.localFourier χ (-m)‖
+    have h1 : (1 + ‖ξ‖) ^ (N + q) * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ (N + q) * P) ≤ C := by
+      simpa [P] using hC ξ hξ (-(m : WithLp 2 (E × D)))
+    have hle : (1 + ‖ξ‖) ^ N * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q * P) ≤ C :=
+      le_trans (by gcongr <;> first | exact le_add_of_nonneg_right (norm_nonneg _) | omega) h1
+    rw [norm_mul, mul_assoc ‖a‖, mul_assoc ‖a‖]
+    gcongr
+    rw [mul_assoc, ← mul_inv, le_mul_inv_iff₀ (by positivity)]
+    linarith [hle]
+  have hle := tsum_of_norm_bounded (hsum.hasSum.mul_left (‖a‖ * C * ((1 + ‖ξ‖) ^ N)⁻¹)) hterm
+  have hX : (1 + ‖ξ‖) ^ N ≠ 0 := by positivity
+  rw [localFourier_pullbackInl_eq_tsum T hU h hδ hχ L hL hc
+    (fun N ↦ (hdecay N).imp fun _ hC ζ hζ ↦ hC ζ (hcΓ ζ hζ))]
+  calc (1 + ‖ξ‖) ^ N * ‖∑' m : ZLattice.dual L,
+        a * (𝓕 (φ : E → ℂ) (ξ + (m : WithLp 2 (E × D)).fst) * T.localFourier χ (-m))‖
+      ≤ (1 + ‖ξ‖) ^ N * (‖a‖ * C * ((1 + ‖ξ‖) ^ N)⁻¹ *
+          ∑' m : ZLattice.dual L, ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹) := by gcongr
+    _ = _ := by field_simp
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
+/-- If `T` is microlocally smooth at the covectors `((x₀, 0), (ξ₀, η))` for every `η`, and has no
+wave front set in the conormal directions `((x₀, 0), (0, η))`, then it is microlocally smooth at
+`(x₀, 0)` in every nonzero direction whose first component lies on the ray through `ξ₀`. -/
+private theorem isMicrolocallySmoothAt_of_fst_eq_smul (T : 𝓓'(W, ℂ)) {x₀ ξ₀ : E}
+    (hx₀ : toLp 2 (x₀, (0 : D)) ∈ W) (h : ∀ η : D, η ≠ 0 →
+      (toLp 2 (x₀, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
+    (hT : ∀ η : D, T.IsMicrolocallySmoothAt (toLp 2 (x₀, 0)) (toLp 2 (ξ₀, η)))
+    {ζ : WithLp 2 (E × D)} (hζ0 : ζ ≠ 0) {s : ℝ} (hs : 0 ≤ s) (hsζ : s • ξ₀ = ζ.fst) :
+    T.IsMicrolocallySmoothAt (toLp 2 (x₀, 0)) ζ := by
+  rcases hs.eq_or_lt with rfl | hs
+  · -- A conormal direction.
+    rw [zero_smul] at hsζ
+    exact isMicrolocallySmoothAt_of_fst_eq_zero T hx₀ h hζ0 hsζ.symm
+  · -- `ζ = s (ξ₀, s⁻¹ ζ.snd)` with `s > 0`, and microlocal smoothness is conic.
+    have hζs : s • toLp 2 (ξ₀, s⁻¹ • ζ.snd) = ζ := by
+      rw [← toLp_smul, Prod.smul_mk, smul_smul, mul_inv_cancel₀ hs.ne', one_smul, hsζ, ← ofLp_fst,
+        ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
+    rw [← hζs, isMicrolocallySmoothAt_smul_iff hs]
+    exact hT _
+
+/-- **The wave front set of the pullback to `E × {0}`, pointwise** (Hörmander I, Theorem 8.2.4).
+Let `ξ₀ ≠ 0`. If `T` is microlocally smooth at the covectors `((x₀, 0), (ξ₀, η))` for every
+`η ∈ D`, that is, at every covector over `(x₀, 0)` which the transpose `(ξ, η) ↦ ξ` of the
+inclusion sends to `ξ₀`, then the pullback of `T` to `E × {0}` is microlocally smooth at
+`(x₀, ξ₀)`. -/
+theorem isMicrolocallySmoothAt_pullbackInl (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) {x₀ ξ₀ : E} (hx₀ : x₀ ∈ U)
+    (hξ₀ : ξ₀ ≠ 0) (hT : ∀ η : D, T.IsMicrolocallySmoothAt (toLp 2 (x₀, 0)) (toLp 2 (ξ₀, η))) :
+    (T.pullbackInl hU h).IsMicrolocallySmoothAt x₀ ξ₀ := by
+  borelize E D
+  -- `T` decays at `(x₀, 0)` on an open cone `Γ` around the closed cone `V` of the covectors whose
+  -- first component lies on the ray through `ξ₀`, which contains the conormal directions.
+  set V : Set (WithLp 2 (E × D)) := WithLp.fst ⁻¹' ((fun s : ℝ ↦ s • ξ₀) '' Ici 0)
+  obtain ⟨G, hG, hp₀G, Γ, hΓ, hVΓ, hcone, hdecay⟩ :=
+    exists_isOpen_cone_forall_decay_of_isClosed_cone (T := T) (V := V) isCompact_singleton
+      ((isClosedMap_smul_left ξ₀ _ isClosed_Ici).preimage (by fun_prop))
+      (fun t ht ζ ⟨s, hs, hsζ⟩ ↦ ⟨t * s, mul_nonneg ht.le hs, by simp [← hsζ, smul_smul]⟩)
+      fun p hp ζ ⟨s, hs, hsζ⟩ hζ0 ↦ (mem_singleton_iff.1 hp) ▸
+        isMicrolocallySmoothAt_of_fst_eq_smul T (hU hx₀) (h x₀ hx₀) hT hζ0 hs hsζ
+  obtain ⟨c, hc, hcΓ⟩ := exists_pos_forall_norm_fst_lt_imp_mem hΓ hcone fun b hb ↦
+    hVΓ _ ⟨0, le_rfl, by simp⟩ fun h0 ↦ hb (by simpa using congrArg WithLp.snd h0)
+  -- Off `Γ`, the first component of a covector stays away from a cone `Γ'` around `ξ₀`.
+  obtain ⟨Γ', hΓ', hξ₀Γ', hcone', c', hc', hsep⟩ :=
+    hΓ.exists_cone_mul_add_le_norm_apply_sub hcone (fstL 2 ℝ E D) hξ₀
+      fun ζ hζ s hs hζs ↦ hVΓ ζ ⟨s, hs, hζs.symm⟩ hζ
+  -- A cutoff `φ` near `x₀` and a cutoff `χ` supported in `G`, equal to one on
+  -- `tsupport φ × closedBall 0 δ`.
+  obtain ⟨r, hr, htube⟩ := isCompact_singleton.exists_pos_forall_toLp_mem (hG.inter W.isOpen)
+    fun x hx ↦ by
+      rw [mem_singleton_iff.1 hx]
+      exact ⟨hp₀G (mem_singleton _), hU hx₀⟩
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff (isCompact_closedBall x₀ (r / 2)) hG fun x hx ↦
+    htube x₀ rfl x 0 ((mem_closedBall.1 hx).trans_lt (half_lt_self hr)) (by simpa using hr)
+  obtain ⟨φ, -, hφ1, hφ⟩ := exists_cutoff_tsupport_subset (Ω := U) (n := ⊤)
+    (isCompact_singleton (x := x₀)) (isOpen_ball.inter U.isOpen)
+    (singleton_subset_iff.2 ⟨mem_ball_self (half_pos hr), hx₀⟩) inter_subset_right
+  have hφK : tsupport (postcompCLM (𝕜 := ℝ) ofRealCLM φ) ⊆ closedBall x₀ (r / 2) := by
+    rw [postcompCLM_apply]
+    exact ((tsupport_comp_subset (map_zero ofRealCLM) φ).trans hφ).trans
+      (inter_subset_left.trans ball_subset_closedBall)
+  refine isMicrolocallySmoothAt_iff.2 ⟨postcompCLM (𝕜 := ℝ) ofRealCLM φ,
+    by simp [postcompCLM_apply, hφ1.self_of_nhdsSet x₀ rfl], Γ', hΓ', hξ₀Γ', hcone',
+    exists_decay_localFourier_pullbackInl T hU h hδ (fun x hx ↦ hχ1 x (hφK hx)) hc hcΓ
+      (hdecay χ (hχG.trans subset_union_left)) hc' hsep⟩
+
+/-- **The wave front set of the pullback to `E × {0}`** (Hörmander I, Theorem 8.2.4). The
+transpose of the inclusion `ι : x ↦ (x, 0)` is `ιᵀ (ξ, η) = ξ`, and the wave front set of the
+pullback `ι^* T` lies in the image of the wave front set of `T` over `E × {0}` under `ιᵀ`:
+
+`WF(ι^* T) ⊆ {(x, ξ) | ∃ η, ((x, 0), (ξ, η)) ∈ WF(T)}`. -/
+theorem waveFrontSet_pullbackInl_subset (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) :
+    (T.pullbackInl hU h).waveFrontSet ⊆
+      {p : E × E | ∃ η : D, (toLp 2 (p.1, (0 : D)), toLp 2 (p.2, η)) ∈ T.waveFrontSet} := by
+  rintro ⟨x, ξ⟩ hxξ
+  obtain ⟨hx, hξ, hns⟩ := mem_waveFrontSet_iff.1 hxξ
+  by_contra hmem
+  refine hns (isMicrolocallySmoothAt_pullbackInl T hU h hx hξ fun η ↦ ?_)
+  by_contra hns'
+  refine hmem ⟨η, mem_waveFrontSet_iff.2 ⟨hU hx, fun h0 ↦ hξ ?_, hns'⟩⟩
+  simpa using congrArg WithLp.fst h0
 
 end Distribution
