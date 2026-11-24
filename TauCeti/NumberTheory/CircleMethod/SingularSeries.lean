@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.CircleMethod.RamanujanSum
 public import TauCeti.NumberTheory.EulerProduct.Squarefree
 public import Mathlib.Analysis.PSeries
+import TauCeti.Algebra.Order.BigOperators.OneSubOneDivSq
 
 /-!
 # The singular series of the three-primes problem
@@ -29,10 +30,12 @@ at `p` is `1 - (p - 1)⁻²` if `p ∣ N` and `1 + (p - 1)⁻³` otherwise.
 
 ## Main results
 
+* `TauCeti.ofReal_singularSeriesTerm`: the term in `ℂ` is `μ(q) c_q(N) / φ(q)³`.
 * `TauCeti.abs_singularSeriesTerm_le`: `|μ(q) c_q(N) / φ(q)³| ≤ φ(q)⁻²`.
 * `TauCeti.singularSeries_hasProd`: the Euler product of `𝔖(N)`.
 * `TauCeti.singularSeries_eq_zero_of_even`: `𝔖(N) = 0` for even `N`, the factor at `2` being `0`.
-* `TauCeti.one_le_singularSeries_of_odd`: `1 ≤ 𝔖(N)` for odd `N`.
+* `TauCeti.one_le_singularSeries_of_odd`, `TauCeti.singularSeries_lower_bound_of_odd`:
+  `1 ≤ 𝔖(N)` for odd `N`, so `𝔖` is bounded below by a positive constant on the odd integers.
 * `TauCeti.exists_abs_singularSeries_le`: `𝔖(N)` is bounded uniformly in `N`.
 * `TauCeti.exists_abs_sum_singularSeriesTerm_sub_le`: truncating the series at `q ≤ Q` costs
   `O(Q^{-1/2})`, uniformly in `N`.
@@ -65,6 +68,12 @@ theorem singularSeriesTerm_def (N : ℤ) (q : ℕ) :
     singularSeriesTerm N q = (μ q : ℝ) / (q.totient : ℝ) ^ 3 * (ramanujanSum q N).re :=
   (rfl)
 
+/-- The complex form `μ(q) c_q(N) / φ(q)³` of the term, the Ramanujan sum `c_q(N)` being real. -/
+theorem ofReal_singularSeriesTerm (N : ℤ) (q : ℕ) :
+    (singularSeriesTerm N q : ℂ) = (μ q : ℂ) / (q.totient : ℂ) ^ 3 * ramanujanSum q N := by
+  conv_rhs => rw [← Complex.re_add_im (ramanujanSum q N), ramanujanSum_im]
+  simp [singularSeriesTerm_def]
+
 /-- The term at `q = 0` is `0`, as `μ(0) = 0`. -/
 @[simp]
 theorem singularSeriesTerm_zero_right (N : ℤ) : singularSeriesTerm N 0 = 0 := by
@@ -96,10 +105,13 @@ theorem singularSeriesTerm_prime (N : ℤ) {p : ℕ} (hp : p.Prime) :
   have hp1 : (p : ℝ) - 1 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hp.one_lt.ne')
   rw [singularSeriesTerm_def, ArithmeticFunction.moebius_apply_prime hp, Nat.totient_prime hp,
     Nat.cast_sub hp.one_le, ramanujanSum_prime hp]
-  split_ifs <;> simp <;> field_simp
+  split_ifs <;>
+    simp only [Int.cast_neg, Int.cast_one, Nat.cast_one, Complex.sub_re, Complex.natCast_re,
+      Complex.one_re, Complex.neg_re] <;>
+    field_simp
 
 /-- The term vanishes at the prime powers `p ^ k` with `k ≥ 2`. -/
-theorem singularSeriesTerm_prime_pow (N : ℤ) {p k : ℕ} (hp : p.Prime) (hk : 2 ≤ k) :
+theorem singularSeriesTerm_prime_pow_eq_zero (N : ℤ) {p k : ℕ} (hp : p.Prime) (hk : 2 ≤ k) :
     singularSeriesTerm N (p ^ k) = 0 :=
   singularSeriesTerm_eq_zero_of_not_squarefree N fun h ↦ by
     have := (Nat.squarefree_pow_iff hp.ne_one (by omega)).1 h
@@ -135,14 +147,17 @@ private theorem weight_nonneg (q : ℕ) : 0 ≤ weight q := by
 private theorem weight_prime_le {p : ℕ} (hp : p.Prime) : weight p ≤ 4 * (p : ℝ) ^ (-3 / 2 : ℝ) := by
   have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hp.two_le
   have hp0 : (0 : ℝ) < p := by linarith
-  rw [weight, show (-3 / 2 : ℝ) = 1 / 2 - 2 by norm_num, Real.rpow_sub hp0, Real.rpow_two,
-    ← Real.sqrt_eq_rpow, ArithmeticFunction.moebius_apply_prime hp, Nat.totient_prime hp,
-    Nat.cast_sub hp.one_le]
-  push_cast
-  rw [neg_one_sq, div_mul_eq_mul_div, one_mul, mul_div_assoc', mul_comm 4,
-    div_le_div_iff₀ (by nlinarith) (by positivity)]
-  have := Real.sqrt_nonneg p
-  nlinarith [mul_nonneg this (mul_nonneg (sub_nonneg.2 hp2) (by linarith : (0 : ℝ) ≤ 3 * p - 2))]
+  have hw : weight p = √p / ((p : ℝ) - 1) ^ 2 := by
+    rw [weight, ArithmeticFunction.moebius_apply_prime hp, Nat.totient_prime hp,
+      Nat.cast_sub hp.one_le]
+    push_cast
+    ring
+  have hrpow : (p : ℝ) ^ (-3 / 2 : ℝ) = √p / (p : ℝ) ^ 2 := by
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_sub hp0]
+    norm_num
+  rw [hw, hrpow]
+  calc √p / ((p : ℝ) - 1) ^ 2 ≤ √p / ((p : ℝ) / 2) ^ 2 := by gcongr; linarith
+    _ = 4 * (√p / (p : ℝ) ^ 2) := by ring
 
 private theorem summable_weight : Summable weight := by
   refine summable_of_summable_primes_of_squarefree weight_nonneg (by simp [weight])
@@ -158,9 +173,9 @@ private theorem summable_weight : Summable weight := by
 private theorem abs_singularSeriesTerm_le_moebius_sq_div (N : ℤ) (q : ℕ) :
     |singularSeriesTerm N q| ≤ (μ q : ℝ) ^ 2 / (q.totient : ℝ) ^ 2 := by
   by_cases hq : Squarefree q
-  · rw [ArithmeticFunction.moebius_apply_of_squarefree hq]
-    push_cast
-    rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
+  · have hμ : (μ q : ℝ) ^ 2 = 1 := by
+      exact_mod_cast ArithmeticFunction.moebius_sq_eq_one_of_squarefree hq
+    rw [hμ]
     exact abs_singularSeriesTerm_le N q
   · simp [singularSeriesTerm_eq_zero_of_not_squarefree N hq,
       ArithmeticFunction.moebius_eq_zero_of_not_squarefree hq]
@@ -183,6 +198,11 @@ private theorem abs_singularSeriesTerm_le_weight (N : ℤ) (q : ℕ) :
 theorem summable_abs_singularSeriesTerm (N : ℤ) :
     Summable fun q ↦ |singularSeriesTerm N q| :=
   summable_weight.of_nonneg_of_le (fun _ ↦ abs_nonneg _) (abs_singularSeriesTerm_le_weight N)
+
+/-- The series `∑_q μ(q) c_q(N) / φ(q)³` converges absolutely, stated with the norm. -/
+theorem summable_norm_singularSeriesTerm (N : ℤ) :
+    Summable fun q ↦ ‖singularSeriesTerm N q‖ := by
+  simpa only [Real.norm_eq_abs] using summable_abs_singularSeriesTerm N
 
 /-- The series `∑_q μ(q) c_q(N) / φ(q)³` converges. -/
 theorem summable_singularSeriesTerm (N : ℤ) : Summable (singularSeriesTerm N) :=
@@ -211,15 +231,12 @@ theorem singularSeries_hasProd (N : ℤ) :
       (singularSeries N) := by
   have h := EulerProduct.eulerProduct_hasProd (singularSeriesTerm_one_right N)
     (fun h ↦ singularSeriesTerm_mul N h)
-    (by simpa only [Real.norm_eq_abs] using summable_abs_singularSeriesTerm N)
-    (singularSeriesTerm_zero_right N)
+    (summable_norm_singularSeriesTerm N) (singularSeriesTerm_zero_right N)
   rw [singularSeries_def]
   convert h using 1
   funext p
-  rw [tsum_eq_sum (s := range 2) fun e he ↦
-    singularSeriesTerm_prime_pow N p.prop (by simp at he; omega)]
-  simp only [sum_range_succ, range_zero, sum_empty, pow_zero, pow_one, zero_add,
-    singularSeriesTerm_one_right, singularSeriesTerm_prime N p.prop]
+  rw [tsum_pow_eq_one_add_of_squarefree (singularSeriesTerm_one_right N)
+    fun hk ↦ singularSeriesTerm_prime_pow_eq_zero N p.prop hk, singularSeriesTerm_prime N p.prop]
   split_ifs <;> ring
 
 /-- `𝔖(N) = 0` for even `N`: the Euler factor at `2` is `1 - (2 - 1)⁻² = 0`. -/
@@ -231,46 +248,6 @@ theorem singularSeries_eq_zero_of_even {N : ℤ} (hN : Even N) : singularSeries 
 @[simp]
 theorem singularSeries_zero : singularSeries 0 = 0 :=
   singularSeries_eq_zero_of_even ⟨0, rfl⟩
-
-/-- `∏_{2 < m ≤ M} (1 - (m - 1)⁻²) = M / (2 (M - 1))`, a telescoping product. -/
-private theorem prod_Ioc_one_sub_inv_sq {M : ℕ} (hM : 2 ≤ M) :
-    ∏ m ∈ Ioc 2 M, (1 - 1 / ((m : ℝ) - 1) ^ 2) = M / (2 * ((M : ℝ) - 1)) := by
-  induction M, hM using Nat.le_induction with
-  | base => norm_num
-  | succ M hM ih =>
-    have hM' : (2 : ℝ) ≤ M := by exact_mod_cast hM
-    rw [prod_Ioc_succ_top (by omega), ih, show ((M + 1 : ℕ) : ℝ) - 1 = M by push_cast; ring]
-    have h1 : (M : ℝ) - 1 ≠ 0 := by linarith
-    have h2 : (M : ℝ) ≠ 0 := by linarith
-    field_simp
-    push_cast
-    ring
-
-/-- Over distinct integers `m ≥ 3`, every finite product of the factors `1 - (m - 1)⁻²` is at
-least `1/2`. -/
-private theorem half_le_prod_one_sub_inv_sq {ι : Type*} {s : Finset ι} {f : ι → ℕ}
-    (hf : Set.InjOn f s) (hs : ∀ i ∈ s, 3 ≤ f i) :
-    1 / 2 ≤ ∏ i ∈ s, (1 - 1 / ((f i : ℝ) - 1) ^ 2) := by
-  rw [← prod_image (f := fun m : ℕ ↦ 1 - 1 / ((m : ℝ) - 1) ^ 2) hf]
-  set t := s.image f
-  have ht : ∀ m ∈ t, 3 ≤ m := by
-    simp only [t, mem_image]
-    rintro _ ⟨i, hi, rfl⟩
-    exact hs i hi
-  set M := max (t.sup id) 2
-  have hM : 2 ≤ M := le_max_right _ _
-  have hfac : ∀ m ∈ Ioc 2 M, 0 ≤ 1 - 1 / ((m : ℝ) - 1) ^ 2 ∧ 1 - 1 / ((m : ℝ) - 1) ^ 2 ≤ 1 :=
-    fun m hm ↦ by
-      have : (3 : ℝ) ≤ m := by exact_mod_cast (mem_Ioc.1 hm).1
-      refine ⟨sub_nonneg.2 ((div_le_one (by nlinarith)).2 (by nlinarith)), ?_⟩
-      linarith [show 0 ≤ 1 / ((m : ℝ) - 1) ^ 2 by positivity]
-  have hsub : t ⊆ Ioc 2 M := fun m hm ↦
-    mem_Ioc.2 ⟨ht m hm, (le_sup (f := id) hm).trans (le_max_left _ _)⟩
-  refine le_trans ?_ (prod_le_prod_of_subset_of_le_one₀ hsub (fun m hm ↦ (hfac m hm).1)
-    fun m hm _ ↦ (hfac m hm).2)
-  have hM' : (2 : ℝ) ≤ M := by exact_mod_cast hM
-  rw [prod_Ioc_one_sub_inv_sq hM, div_le_div_iff₀ (by norm_num) (by linarith)]
-  linarith
 
 /-- `1 ≤ 𝔖(N)` for odd `N`: the Euler factor at `2` is `2`, and the factors at odd primes are at
 least `1 - (p - 1)⁻²`, whose finite products over `p ≥ 3` are at least `1/2`. -/
@@ -288,24 +265,33 @@ theorem one_le_singularSeries_of_odd {N : ℤ} (hN : Odd N) : 1 ≤ singularSeri
     omega
   -- At an odd prime `p`, `0 ≤ 1 - (p - 1)⁻² ≤ F p`.
   have hF : ∀ p : Nat.Primes, p ≠ two →
-      0 ≤ 1 - 1 / (((p : ℕ) : ℝ) - 1) ^ 2 ∧ 1 - 1 / (((p : ℕ) : ℝ) - 1) ^ 2 ≤ F p := by
+      0 ≤ 1 - 1 / (((p : ℕ) - 1 : ℕ) : ℝ) ^ 2 ∧ 1 - 1 / (((p : ℕ) - 1 : ℕ) : ℝ) ^ 2 ≤ F p := by
     intro p hp
-    have hp3 : (3 : ℝ) ≤ (p : ℕ) := by exact_mod_cast h3 p hp
-    have h0 : 0 ≤ 1 / (((p : ℕ) : ℝ) - 1) ^ 3 := by
-      have : (0 : ℝ) ≤ ((p : ℕ) : ℝ) - 1 := by linarith
-      positivity
-    refine ⟨sub_nonneg.2 ((div_le_one (by nlinarith)).2 (by nlinarith)), ?_⟩
-    simp only [F]
+    have hmem := one_sub_one_div_sq_mem_Icc (x := (((p : ℕ) - 1 : ℕ) : ℝ))
+      (by exact_mod_cast (by have := h3 p hp; omega : 1 ≤ (p : ℕ) - 1))
+    refine ⟨hmem.1, ?_⟩
+    simp only [F, ← Nat.cast_pred p.prop.pos]
     split_ifs
     · exact le_rfl
-    · linarith [show 0 ≤ 1 / (((p : ℕ) : ℝ) - 1) ^ 2 by positivity]
+    · exact hmem.2.trans (le_add_of_nonneg_right (by positivity))
   refine ge_of_tendsto (singularSeries_hasProd N) (eventually_atTop.2 ⟨{two}, fun s hs ↦ ?_⟩)
   rw [← mul_prod_erase s F (hs (mem_singleton_self _)), hF2]
-  have := half_le_prod_one_sub_inv_sq (s := s.erase two) (f := fun p : Nat.Primes ↦ (p : ℕ))
-    (fun p _ q _ h ↦ Nat.Primes.coe_nat_injective h) fun p hp ↦ h3 p (ne_of_mem_erase hp)
+  have := half_le_prod_one_sub_one_div_sq (K := ℝ) (s := s.erase two)
+    (f := fun p : Nat.Primes ↦ (p : ℕ) - 1)
+    (fun p _ q _ h ↦ Nat.Primes.coe_nat_injective <| by
+      have := p.prop.two_le
+      have := q.prop.two_le
+      simp only at h
+      omega)
+    fun p hp ↦ by have := h3 p (ne_of_mem_erase hp); omega
   have := this.trans (prod_le_prod₀ (fun p hp ↦ (hF p (ne_of_mem_erase hp)).1)
     fun p hp ↦ (hF p (ne_of_mem_erase hp)).2)
   linarith
+
+/-- `𝔖` is bounded below by a positive constant on the odd integers. -/
+theorem singularSeries_lower_bound_of_odd :
+    ∃ c : ℝ, 0 < c ∧ ∀ N : ℤ, Odd N → c ≤ singularSeries N :=
+  ⟨1, one_pos, fun _ ↦ one_le_singularSeries_of_odd⟩
 
 /-! ### Uniform bounds -/
 
@@ -313,10 +299,9 @@ theorem one_le_singularSeries_of_odd {N : ℤ} (hN : Odd N) : 1 ≤ singularSeri
 theorem exists_abs_singularSeries_le : ∃ C : ℝ, ∀ N : ℤ, |singularSeries N| ≤ C := by
   refine ⟨∑' q, weight q, fun N ↦ ?_⟩
   rw [singularSeries_def, ← Real.norm_eq_abs]
-  refine (norm_tsum_le_tsum_norm ?_).trans (Summable.tsum_le_tsum (fun q ↦ ?_) ?_ summable_weight)
-  all_goals simp only [Real.norm_eq_abs]
-  exacts [summable_abs_singularSeriesTerm N, abs_singularSeriesTerm_le_weight N q,
-    summable_abs_singularSeriesTerm N]
+  exact (norm_tsum_le_tsum_norm (summable_norm_singularSeriesTerm N)).trans
+    ((summable_norm_singularSeriesTerm N).tsum_le_tsum (abs_singularSeriesTerm_le_weight N)
+      summable_weight)
 
 /-- Truncating the singular series at `q ≤ Q` costs `O(Q^{-1/2})`, uniformly in `N`. -/
 theorem exists_abs_sum_singularSeriesTerm_sub_le :
@@ -325,26 +310,28 @@ theorem exists_abs_sum_singularSeriesTerm_sub_le :
   refine ⟨∑' q, weight q, fun N Q hQ ↦ ?_⟩
   have hQ' : (0 : ℝ) < Q := by exact_mod_cast hQ
   -- The difference is the tail `∑_{q > Q}`, whose terms are at most `weight q / √Q`.
+  -- The sum over `Icc 1 Q` is the sum over `range (Q + 1)`, the term at `0` being `0`.
+  have hrange : ∑ q ∈ Icc 1 Q, singularSeriesTerm N q =
+      ∑ q ∈ range (Q + 1), singularSeriesTerm N q :=
+    sum_subset (fun q hq ↦ by simp only [mem_Icc, mem_range] at hq ⊢; omega) fun q hq hq' ↦ by
+      obtain rfl : q = 0 := by simp only [mem_Icc, mem_range] at hq hq'; omega
+      exact singularSeriesTerm_zero_right N
   have htail : ∑ q ∈ Icc 1 Q, singularSeriesTerm N q - singularSeries N =
       -∑' k, singularSeriesTerm N (k + (Q + 1)) := by
-    rw [singularSeries_def, ← (summable_singularSeriesTerm N).sum_add_tsum_nat_add (Q + 1),
-      range_eq_Ico, sum_eq_sum_Ico_succ_bot (by omega), singularSeriesTerm_zero_right, zero_add,
-      Nat.zero_add, Ico_add_one_right_eq_Icc]
+    rw [hrange, singularSeries_def,
+      ← (summable_singularSeriesTerm N).sum_add_tsum_nat_add (Q + 1)]
     ring
+  have hnorm : Summable fun k ↦ ‖singularSeriesTerm N (k + (Q + 1))‖ :=
+    (summable_nat_add_iff (Q + 1)).2 (summable_norm_singularSeriesTerm N)
   have hw : Summable fun k ↦ weight (k + (Q + 1)) :=
     (summable_nat_add_iff (Q + 1)).2 summable_weight
   have hprefix : 0 ≤ ∑ q ∈ range (Q + 1), weight q := sum_nonneg fun q _ ↦ weight_nonneg q
   rw [htail, abs_neg, ← Real.norm_eq_abs]
   calc ‖∑' k, singularSeriesTerm N (k + (Q + 1))‖
-      ≤ ∑' k, ‖singularSeriesTerm N (k + (Q + 1))‖ := norm_tsum_le_tsum_norm <| by
-        simpa only [Real.norm_eq_abs] using
-          (summable_nat_add_iff (Q + 1)).2 (summable_abs_singularSeriesTerm N)
-    _ ≤ ∑' k, weight (k + (Q + 1)) / √Q := by
-        refine Summable.tsum_le_tsum (fun k ↦ ?_) ?_ (hw.div_const _)
-        · rw [Real.norm_eq_abs]
-          exact abs_singularSeriesTerm_le_weight_div hQ' (by push_cast; linarith)
-        · simpa only [Real.norm_eq_abs] using
-            (summable_nat_add_iff (Q + 1)).2 (summable_abs_singularSeriesTerm N)
+      ≤ ∑' k, ‖singularSeriesTerm N (k + (Q + 1))‖ := norm_tsum_le_tsum_norm hnorm
+    _ ≤ ∑' k, weight (k + (Q + 1)) / √Q :=
+        hnorm.tsum_le_tsum (fun k ↦ abs_singularSeriesTerm_le_weight_div hQ'
+          (by push_cast; linarith)) (hw.div_const _)
     _ = (∑' k, weight (k + (Q + 1))) / √Q := tsum_div_const
     _ ≤ (∑' q, weight q) / √Q := by
         refine div_le_div_of_nonneg_right ?_ (Real.sqrt_nonneg _)
