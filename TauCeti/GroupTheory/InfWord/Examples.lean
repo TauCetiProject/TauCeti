@@ -8,8 +8,8 @@ module
 public import TauCeti.GroupTheory.InfWord.CDR
 import Mathlib.Algebra.Order.Monoid.Prod
 import Mathlib.Order.SuccPred.Int
+import TauCeti.Algebra.Order.SuccPred.Prod
 import TauCeti.Order.SuccPred.Iterate
-import TauCeti.Order.SuccPred.Prod
 
 /-!
 # Non-Archimedean counterexamples for reduced infinite words
@@ -100,11 +100,22 @@ theorem letter_nonArchimedeanWord (t : Λ) (x y : X × Bool) (β : Λ) :
   classical
   exact letter_ofFun t _ β
 
+/-- On `{β | 0 < β ≤ t}`, `nonArchimedeanWord t x y` reads `x` at iterated successors of `0` and
+`y` elsewhere. -/
+theorem letter_nonArchimedeanWord_of_pos_of_le {t β : Λ} (x y : X × Bool)
+    (h0 : 0 < β) (hβ : β ≤ t) :
+    (nonArchimedeanWord t x y).letter β =
+      open Classical in
+      some (if β ∈ Set.range (fun n : ℕ => (Order.succ^[n]) (0 : Λ)) then x else y) := by
+  classical
+  exact letter_ofFun_of_pos_of_le _ h0 hβ
+
 private theorem letter_nonArchimedeanWord_succ_zero {t : Λ} (ht : 0 < t) (x y : X × Bool) :
     (nonArchimedeanWord t x y).letter (Order.succ 0) = some x := by
   classical
   have hmem : Order.succ (0 : Λ) ∈ Set.range (fun n : ℕ => (Order.succ^[n]) (0 : Λ)) := ⟨1, rfl⟩
-  simp [letter_nonArchimedeanWord, Order.lt_succ_self_of_lt ht, Order.succ_le_of_lt ht, hmem]
+  rw [letter_nonArchimedeanWord_of_pos_of_le x y (Order.lt_succ_self_of_lt ht)
+    (Order.succ_le_of_lt ht), ite_eq_left hmem]
 
 /-- The word `nonArchimedeanWord t x y` is reduced. -/
 @[simp]
@@ -133,8 +144,8 @@ theorem common_prefix_lengths_nonArchimedeanWord_eq_range {t : Λ}
   · rcases h0.eq_or_lt with rfl | hβ0
     · exact ⟨0, rfl⟩
     have hlet := take_eq_take_iff_forall_letter_eq.1 htake β le_rfl
-    rw [letter_ofFun_of_pos_of_le _ hβ0 hβt, letter_nonArchimedeanWord] at hlet
-    simp only [hβ0, hβt, and_self, ↓reduceIte, Option.some.injEq] at hlet
+    rw [letter_ofFun_of_pos_of_le _ hβ0 hβt,
+      letter_nonArchimedeanWord_of_pos_of_le x y hβ0 hβt, Option.some.injEq] at hlet
     split_ifs at hlet with hmem
     · exact hmem
     · exact absurd hlet hxy
@@ -145,8 +156,8 @@ theorem common_prefix_lengths_nonArchimedeanWord_eq_range {t : Λ}
     by_cases hγ0 : 0 < γ
     · have hγm : γ ∈ Set.range (fun n : ℕ => (Order.succ^[n]) (0 : Λ)) :=
         TauCeti.Order.mem_range_succ_iterate_of_le_of_mem hγ0.le hγ ⟨n, rfl⟩
-      simp [letter_ofFun_of_pos_of_le _ hγ0 (hγ.trans hnt), letter_nonArchimedeanWord,
-        hγ0, hγ.trans hnt, hγm]
+      rw [letter_ofFun_of_pos_of_le _ hγ0 (hγ.trans hnt),
+        letter_nonArchimedeanWord_of_pos_of_le x y hγ0 (hγ.trans hnt), ite_eq_left hγm]
     · rw [letter_eq_none_of_not_pos hγ0, letter_eq_none_of_not_pos hγ0]
 
 end Order
@@ -189,9 +200,9 @@ theorem isReduced_nonArchimedeanWord_append_inv {t : Λ}
   refine isReduced_append_inv_iff.2 ⟨isReduced_nonArchimedeanWord t x y,
     isReduced_ofFun_const t x, fun _ _ => ?_⟩
   rw [length_ofFun, length_nonArchimedeanWord, max_eq_left ht0.le,
-    letter_ofFun_of_pos_of_le _ ht0 le_rfl, letter_nonArchimedeanWord]
-  simp only [ht0, le_rfl, and_self, ↓reduceIte, hnotmem, ne_eq, Option.some.injEq]
-  exact hxy
+    letter_ofFun_of_pos_of_le _ ht0 le_rfl,
+    letter_nonArchimedeanWord_of_pos_of_le x y ht0 le_rfl, ite_eq_right hnotmem]
+  simpa using hxy
 
 /-- When `t` exceeds every finite multiple `n • Order.succ 0` and `x ≠ y`, the reduced word
 `nonArchimedeanWord t x y ++ (x^t)⁻¹` does not belong to `CDR(Λ, X)`. -/
