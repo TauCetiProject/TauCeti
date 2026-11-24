@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -25,8 +26,11 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. For a constant almost
 complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
-(`floerLinearization_const_eq`). On a direction multiplied by a function `f` of both variables it
-acts as `f D ξ + (∂s f) ξ + (∂t f) J ξ` (`floerLinearization_fun_smul`), a case of the same rule
+(`floerLinearization_const_eq`), so it vanishes at a point exactly when
+`∂s ξ = -J ∂t ξ + J dX_H(u) ξ` there (`floerLinearization_const_eq_zero_iff`), and on a direction
+`(s, t) ↦ ζ(s)` it is `ζ' - J dX_H(u) ζ` (`floerLinearization_comp_fst`). On a direction
+multiplied by a function `f` of both variables it acts as `f D ξ + (∂s f) ξ + (∂t f) J ξ`
+(`floerLinearization_fun_smul`), a case of the same rule
 for any operator `∂s + J ∂t + A` (`TauCeti.cauchyRiemann_fun_smul` in
 `TauCeti.Geometry.Symplectic.JHolomorphic.Line`), so that
 `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M (1 + B))² ‖ξ‖²` where `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`
@@ -205,6 +209,31 @@ theorem floerLinearization_const_eq (ω : SymplecticForm V) (J : AlmostComplexSt
         J (fderiv ℝ ξ z (0, 1) - fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
   simp [floerLinearization_def, hamiltonianVectorField_const, stdComplexLineReal_eq,
     stdComplexLineImag_eq]
+
+/-- **The zero equation for a constant structure and `K = H dt`.** Along any map `u`, the linearized
+Floer operator of `K = H dt` with the constant structure `J` vanishes at the point `z` exactly when
+`∂s ξ = -J ∂t ξ + J dX_H(u) ξ` holds at `z`. The partial derivatives are Mathlib's totalized
+`fderiv`, so neither side asserts that `ξ` is differentiable at `z`. -/
+theorem floerLinearization_const_eq_zero_iff (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) {u ξ : ℝ × ℝ → V} {z : ℝ × ℝ} :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) u ξ z = 0 ↔
+      fderiv ℝ ξ z (1, 0) =
+        -J (fderiv ℝ ξ z (0, 1)) + J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ξ z)) := by
+  rw [floerLinearization_const_eq, map_sub]
+  constructor <;> intro h <;> linear_combination (norm := module) h
+
+/-- **The linearized operator on directions that do not depend on `t`.** Along any map `u`, the
+linearized Floer operator of `K = H dt` with the constant structure `J`, applied to the direction
+`(s, t) ↦ ζ(s)`, is `ζ'(s) - J dX_H(u(z)) ζ(s)` at `z = (s, t)`. Here `ζ'` is Mathlib's totalized
+`deriv`, so no differentiability of `ζ` is assumed. -/
+theorem floerLinearization_comp_fst (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (H : V → ℝ) (u : ℝ × ℝ → V) (ζ : ℝ → V) (z : ℝ × ℝ) :
+    ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun _ ↦ H) u (fun w ↦ ζ w.1) z =
+      deriv ζ z.1 - J (fderiv ℝ (ω.hamiltonianVectorField H) (u z) (ζ z.1)) := by
+  rw [floerLinearization_const_eq, fderiv_comp_fst]
+  simp [sub_eq_add_neg]
 
 /-- The linearization is additive on directions differentiable at the domain point. -/
 @[simp]
