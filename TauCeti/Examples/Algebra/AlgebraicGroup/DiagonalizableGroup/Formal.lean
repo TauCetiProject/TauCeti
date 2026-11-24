@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Basic
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Formal
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Checks for the points of the formal diagonalizable group
@@ -37,9 +38,9 @@ noncomputable example (R A : Type*) [CommSemiring R] [CommRing A] [Algebra R A] 
 
 /-- `(1 + X) ^ 2 - 1 ∈ (2, X) ^ 2` in `ℤ[X]`. -/
 example : (1 + X : ℤ[X]) ^ 2 - 1 ∈ Ideal.span {(2 : ℤ[X]), X} ^ 2 := by
-  have h := Ideal.pow_pow_sub_one_mem_pow (J := Ideal.span {(2 : ℤ[X]), X}) (a := 1 + X)
-    (n := 2) (by simpa using Ideal.subset_span (Set.mem_insert_of_mem _ rfl))
-    (by exact_mod_cast Ideal.subset_span (Set.mem_insert _ _)) 1
+  have h := Ideal.pow_pow_sub_pow_pow_mem_pow_succ (I := Ideal.span {(2 : ℤ[X]), X}) (n := 2)
+    (a := 1 + X) (b := 1) (by exact_mod_cast Ideal.subset_span (Set.mem_insert _ _))
+    (by simpa using Ideal.subset_span (Set.mem_insert_of_mem _ rfl)) 1
   simpa using h
 
 /-- For an Artinian local ring `A` of residue characteristic `p` and a prime `ℓ ≠ p`, the formal

@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Henselian
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # The units congruent to one modulo an ideal
@@ -56,9 +57,10 @@ so `1 + I` is an iterated extension of additive groups.
 * `Ideal.unitsMap_quotientMk_surjective_of_ne_top`: over a local ring, reduction of units modulo a
   proper ideal is surjective.
 * `Ideal.principalUnitGroup_pow_antitone`: the subgroups `1 + I ^ n` decrease with `n`.
-* `Ideal.pow_pow_sub_one_mem_pow`: if `a ≡ 1` modulo `J` and the integer `n` lies in `J`, then
-  `a ^ (n ^ m) ≡ 1` modulo `J ^ (m + 1)`; `Ideal.pow_pow_eq_one_of_mem_principalUnitGroup`: hence
-  `1 + J` has exponent dividing `n ^ m` when `J ^ (m + 1) = 0`.
+* `Ideal.pow_pow_mem_principalUnitGroup_pow`: if the integer `n` lies in `J`, then the
+  `n ^ m`-th power of a principal unit of `J` is a principal unit of `J ^ (m + 1)`;
+  `Ideal.pow_pow_eq_one_of_mem_principalUnitGroup`: hence `1 + J` has exponent dividing `n ^ m`
+  when `J ^ (m + 1) = 0`.
 
 ## References
 
@@ -158,36 +160,13 @@ theorem unitsQuotientPrincipalUnitGroupEquiv_mk {I : Ideal R} (hI : I ≤ jacobs
     QuotientGroup.quotientMulEquivOfEq_mk,
     TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
-/-- If `a ≡ 1` modulo `I` and modulo `J`, and the integer `n` lies in `J`, then `a ^ n ≡ 1`
-modulo `I * J`: `a ^ n - 1 = (a - 1) (1 + a + ⋯ + a ^ (n - 1))`, and the second factor is
-congruent to `n`, hence to `0`, modulo `J`. -/
-theorem pow_sub_one_mem_mul {I J : Ideal R} {a : R} (haI : a - 1 ∈ I) (haJ : a - 1 ∈ J)
-    {n : ℕ} (hn : (n : R) ∈ J) : a ^ n - 1 ∈ I * J := by
-  rw [← mul_geom_sum]
-  refine mul_mem_mul haI ?_
-  have hsum : ∑ i ∈ Finset.range n, a ^ i = ∑ i ∈ Finset.range n, (a ^ i - 1) + n := by
-    simp [Finset.sum_sub_distrib]
-  rw [hsum]
-  exact add_mem (sum_mem fun i _ ↦ J.pow_sub_one_mem haJ i) hn
-
-/-- If `a ≡ 1` modulo `J` and the integer `n` lies in `J`, then `a ^ (n ^ m) ≡ 1` modulo
-`J ^ (m + 1)`. For `J = (p, X)` in `ℤ[X]` and `a = 1 + X` this is the congruence
-`(1 + X) ^ (p ^ m) - 1 ∈ (p, X) ^ (m + 1)`. -/
-theorem pow_pow_sub_one_mem_pow {J : Ideal R} {a : R} (ha : a - 1 ∈ J) {n : ℕ}
-    (hn : (n : R) ∈ J) (m : ℕ) : a ^ n ^ m - 1 ∈ J ^ (m + 1) := by
-  induction m with
-  | zero => simpa using ha
-  | succ m ih =>
-    rw [pow_succ n, pow_mul, pow_succ J]
-    exact pow_sub_one_mem_mul ih (J.pow_sub_one_mem ha _) hn
-
 /-- If the integer `n` lies in `J`, then the `n ^ m`-th power of a principal unit of `J` is a
 principal unit of `J ^ (m + 1)`. -/
 theorem pow_pow_mem_principalUnitGroup_pow {J : Ideal R} {n : ℕ} (hn : (n : R) ∈ J)
     {u : Rˣ} (hu : u ∈ J.principalUnitGroup) (m : ℕ) :
     u ^ n ^ m ∈ (J ^ (m + 1)).principalUnitGroup := by
   rw [mem_principalUnitGroup, Units.val_pow_eq_pow_val]
-  exact pow_pow_sub_one_mem_pow (mem_principalUnitGroup.mp hu) hn m
+  simpa using pow_pow_sub_pow_pow_mem_pow_succ hn (mem_principalUnitGroup.mp hu) m
 
 /-- If the integer `n` lies in `J` and `J ^ (m + 1) = 0`, then every principal unit of `J` has
 order dividing `n ^ m`. For the maximal ideal of a local ring of residue characteristic `p` with
