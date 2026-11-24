@@ -18,6 +18,7 @@ import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
 import TauCeti.Topology.Codiscrete
+import TauCeti.Topology.Separation.Hausdorff
 
 /-!
 # Critical points, fibres and coincident branches of pseudoholomorphic curves on Riemann surfaces
@@ -321,18 +322,6 @@ open RiemannSurface
 variable {S' : Type*} [TopologicalSpace S'] [ChartedSpace ℂ S'] [IsManifold 𝓘(ℂ) ∞ S']
   {u₀ : S → N} {u₁ : S' → N} {a₀ : S} {b₀ : S'}
 
-/-- If, for every neighbourhood `s` of `a`, the points `y ≠ b` with `g y ∈ f '' s` accumulate at
-`b`, then `g b = f a`. -/
-private theorem eq_of_frequently_mem_image {X Y Z : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [TopologicalSpace Z] [T2Space Z] {f : X → Z} {g : Y → Z} {a : X} {b : Y}
-    (hf : ContinuousAt f a) (hg : ContinuousAt g b)
-    (hacc : ∀ s ∈ 𝓝 a, ∃ᶠ y in 𝓝[≠] b, g y ∈ f '' s) : g b = f a := by
-  by_contra hne
-  obtain ⟨V, W, hV, hW, hbV, haW, hVW⟩ := t2_separation hne
-  obtain ⟨y, ⟨x, hx, hxy⟩, hyV⟩ := ((hacc _ (hf.preimage_mem_nhds (hW.mem_nhds haW))).and_eventually
-    (nhdsWithin_le_nhds (hg.preimage_mem_nhds (hV.mem_nhds hbV)))).exists
-  exact Set.disjoint_left.1 hVW hyV (hxy ▸ hx)
-
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 /-- A holomorphic factorization of coordinate expressions is a holomorphic factorization of germs.
 Let `B₀` and `B₁` be open sets of chart images of points near `a₀` and `b₀` that `u₀` and `u₁`
@@ -480,8 +469,7 @@ theorem RiemannSurface.GermFactorsThrough.symm (hu₀ : ContMDiff 𝓘(ℝ, ℂ)
     (h : GermFactorsThrough u₁ b₀ u₀ a₀) (hdu₁ : mfderiv 𝓘(ℝ, ℂ) I u₁ b₀ ≠ 0) :
     GermFactorsThrough u₀ a₀ u₁ b₀ := by
   obtain ⟨φ, hφb, hφd, hφu⟩ := germFactorsThrough_iff.1 h
-  have hab : u₀ a₀ = u₁ b₀ := by rw [hφu.self_of_nhds, Function.comp_apply, hφb]
-  refine germFactorsThrough_of_frequently_mem_image_of_eq hu₁ hJu₁ hu₀ hJu₀ hdu₁ hab
+  refine germFactorsThrough_of_frequently_mem_image_of_eq hu₁ hJu₁ hu₀ hJu₀ hdu₁ h.apply_eq.symm
     fun s hs ↦ ?_
   -- Otherwise the factor `φ` would take the value `a₀` near `b₀`, and `u₁` would be constant there.
   by_contra hfr

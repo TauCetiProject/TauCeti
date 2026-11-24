@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Geometry.Symplectic.JHolomorphic.AdaptedChart
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
+import TauCeti.Topology.Separation.Hausdorff
 
 /-!
 # Accumulating coincidences of pseudoholomorphic discs
@@ -167,25 +168,6 @@ private theorem exists_analyticAt_eventuallyEq_comp_of_frame [CompleteSpace V] [
   · rw [Function.comp_apply, ← he0 (ψ ζ).1, ← hψeq, hψ, Function.comp_apply, e.right_inv hζ.2.1]
 
 end NormalComponent
-
-omit [NormedSpace ℝ V] in
-/-- The coincidences of `u₁` with `u₀` accumulate at `u₁ b₀`, so this point lies on `u₀`. -/
-private theorem eq_of_frequently_mem_image (hu₀ : ContinuousAt u₀ a₀) (hu₁ : ContinuousAt u₁ b₀)
-    (hacc : ∀ S ∈ 𝓝 a₀, ∃ᶠ ζ in 𝓝[≠] b₀, u₁ ζ ∈ u₀ '' S) : u₁ b₀ = u₀ a₀ := by
-  refine eq_of_forall_dist_le fun ε hε ↦ ?_
-  have hS : u₀ ⁻¹' ball (u₀ a₀) (ε / 2) ∈ 𝓝 a₀ := hu₀.preimage_mem_nhds (ball_mem_nhds _ (by
-    positivity))
-  have hev : ∀ᶠ ζ in 𝓝[≠] b₀, u₁ ζ ∈ ball (u₁ b₀) (ε / 2) :=
-    nhdsWithin_le_nhds (hu₁.eventually (ball_mem_nhds _ (half_pos hε)))
-  obtain ⟨ζ, ⟨a, ha, hζa⟩, hζ⟩ := ((hacc _ hS).and_eventually hev).exists
-  calc dist (u₁ b₀) (u₀ a₀) ≤ dist (u₁ b₀) (u₁ ζ) + dist (u₁ ζ) (u₀ a₀) := dist_triangle _ _ _
-    _ ≤ ε / 2 + ε / 2 := by
-        gcongr
-        · rw [dist_comm]
-          exact (mem_ball.1 hζ).le
-        · rw [← hζa]
-          exact (mem_ball.1 ha).le
-    _ = ε := add_halves ε
 
 /-- **Accumulating coincidences factor a pseudoholomorphic disc** (McDuff–Salamon, Lemma 2.4.3).
 Let `J` be of class `C²` on an open set `Ω` of a finite-dimensional real normed space `V`, and let

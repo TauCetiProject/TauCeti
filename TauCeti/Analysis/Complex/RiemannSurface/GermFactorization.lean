@@ -33,6 +33,7 @@ for maps into any type.
   through the germ of `u₀` at `a`.
 * `TauCeti.RiemannSurface.GermFactorsThrough.refl`,
   `TauCeti.RiemannSurface.GermFactorsThrough.trans`: the relation is reflexive and transitive.
+* `TauCeti.RiemannSurface.GermFactorsThrough.apply_eq`: related points have the same value.
 * `TauCeti.RiemannSurface.GermFactorsThrough.eventually_mem_image`,
   `TauCeti.RiemannSurface.GermFactorsThrough.frequently_mem_image`: if the germ of `u₁` at `b`
   factors through the germ of `u₀` at `a`, then every point near `b` is mapped by `u₁` into the
@@ -66,6 +67,11 @@ theorem germFactorsThrough_iff :
     GermFactorsThrough u₁ b u₀ a ↔ ∃ φ : Y → X, φ b = a ∧
       (∀ᶠ y in 𝓝 b, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) φ y) ∧ u₁ =ᶠ[𝓝 b] u₀ ∘ φ :=
   Iff.rfl
+
+/-- If the germ of `u₁` at `b` factors through the germ of `u₀` at `a`, then `u₁ b = u₀ a`. -/
+theorem GermFactorsThrough.apply_eq (h : GermFactorsThrough u₁ b u₀ a) : u₁ b = u₀ a := by
+  obtain ⟨φ, hφb, -, hφu⟩ := h
+  rw [hφu.self_of_nhds, Function.comp_apply, hφb]
 
 /-- Every germ factors through itself, by the identity. -/
 theorem GermFactorsThrough.refl (u : X → N) (a : X) : GermFactorsThrough u a u a :=
