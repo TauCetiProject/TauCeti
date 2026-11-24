@@ -204,8 +204,8 @@ end Relations
 private theorem splitOddOneEvenBasis_liftHom_apply (q : ℍ[R,0,1,-1]) :
     (splitOddOneEvenBasis R).liftHom q =
       algebraMap R _ q.re + q.imI • (splitOddOneEvenBasis R).i +
-        q.imJ • (splitOddOneEvenBasis R).j + q.imK • (splitOddOneEvenBasis R).k :=
-  (rfl)
+        q.imJ • (splitOddOneEvenBasis R).j + q.imK • (splitOddOneEvenBasis R).k := by
+  rw [_root_.QuaternionAlgebra.Basis.liftHom_apply, _root_.QuaternionAlgebra.Basis.lift]
 
 /-- The forward map: the restriction of `splitOddOneCliffordToMatrix` to the even subalgebra. -/
 private noncomputable def splitOddOneEvenToMatrix :
