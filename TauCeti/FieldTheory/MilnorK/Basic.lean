@@ -78,20 +78,20 @@ theorem ofUnit_mul_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) : ofUnit a * of
   isSteinbergPairing_ofUnit_mul.map_self_eq_zero_of_charTwo a
 
 /-- A consecutive repeated entry `a, a` may be replaced by `a, -1`. -/
-theorem symbol_repeat_adjacent (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
+theorem symbol_append_cons_cons_self (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
     symbol (l₁ ++ a :: a :: l₂) = symbol (l₁ ++ a :: (-1 : Fˣ) :: l₂) := by
   simp only [symbol_append, symbol_cons, ← mul_assoc (ofUnit a)]
   rw [ofUnit_mul_ofUnit_self a]
 
 /-- A symbol with a consecutive repeated entry is 2-torsion. -/
-theorem two_nsmul_symbol_repeat_adjacent (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
+theorem two_nsmul_symbol_append_cons_cons_self (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
     2 • symbol (l₁ ++ a :: a :: l₂) = 0 := by
   simp only [symbol_append, symbol_cons, ← mul_assoc (ofUnit a)]
   rw [← mul_smul_comm 2 (symbol l₁), ← smul_mul_assoc 2 (ofUnit a * ofUnit a),
     two_nsmul_ofUnit_mul_self a, zero_mul, mul_zero]
 
 /-- In characteristic `2`, any symbol with a consecutive repeated entry vanishes. -/
-theorem symbol_repeat_adjacent_eq_zero_of_charTwo [CharP F 2] (l₁ : List Fˣ) (a : Fˣ)
+theorem symbol_append_cons_cons_self_eq_zero_of_charTwo [CharP F 2] (l₁ : List Fˣ) (a : Fˣ)
     (l₂ : List Fˣ) : symbol (l₁ ++ a :: a :: l₂) = 0 := by
   simp only [symbol_append, symbol_cons, ← mul_assoc (ofUnit a)]
   rw [ofUnit_mul_self_eq_zero_of_charTwo a, zero_mul, mul_zero]
@@ -102,9 +102,9 @@ theorem ofUnit_mul_symbol (a : Fˣ) (l : List Fˣ) :
   induction l with
   | nil => simp
   | cons b l ih =>
-    rw [symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_comm a b, neg_mul (ofUnit b * ofUnit a),
-      mul_assoc, ih, mul_smul_comm, ← neg_smul, ← neg_one_mul, ← pow_succ', List.length_cons,
-      mul_assoc]
+    rw [symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_comm a b, neg_mul, mul_assoc, ih,
+      mul_smul_comm]
+    simp only [List.length_cons, pow_succ', mul_smul, neg_smul, one_smul, mul_assoc]
 
 /-- Multiplying two symbols commutes up to `(-1) ^ (l₁.length * l₂.length)`. -/
 theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
