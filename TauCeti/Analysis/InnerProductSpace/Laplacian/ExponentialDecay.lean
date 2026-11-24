@@ -14,6 +14,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.PlaneWave
 import TauCeti.Analysis.InnerProductSpace.Sphere.Cap
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
@@ -21,7 +22,8 @@ import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 Let `u` be a subsolution of the screened operator `-Δ + c²` for some `c ≥ 0`, that is `c² u ≤ Δ u`,
 on a region of a finite-dimensional real inner product space. Such a function decays exponentially
-at rate `c` away from the boundary of the region. This file proves this outside and inside a ball.
+away from the boundary of the region. This file proves this at rate `c` outside a ball, and at
+every rate below `c` inside a ball.
 
 **Outside a ball.** If `u` is defined on the exterior `‖x‖ ≥ R`, with `u → 0` at infinity, and
 `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then
@@ -359,10 +361,6 @@ private theorem laplacian_cosh_barrier_le {a k : ℝ} (ha : 0 < a) (hk : 0 ≤ k
           k * Sh / (2 * S) * (2 * n) := by ring
     _ ≤ (k ^ 2 + n * k / a) * C := by linarith
 
-/-- `exp t ≤ 2 cosh t`: the lower bound for the `cosh` barriers on the boundary of a ball. -/
-private theorem exp_le_two_mul_cosh (t : ℝ) : Real.exp t ≤ 2 * Real.cosh t := by
-  linarith [Real.cosh_add_sinh t, Real.sinh_lt_cosh t]
-
 section Interior
 
 variable [Nontrivial E]
@@ -458,7 +456,7 @@ theorem le_two_mul_mul_exp_of_mul_le_laplacian {u V : E → ℝ} {z : E} {R c k 
   have h₁ : Real.cosh (k * a) ≤ Real.exp (k * a) := by
     linarith [Real.exp_sub_cosh (k * a), Real.sinh_nonneg_iff.mpr (by positivity : 0 ≤ k * a)]
   have h₂ : Real.exp (k * R) ≤ 2 * Real.cosh (k * √(R ^ 2 + a ^ 2)) :=
-    (Real.exp_le_exp.mpr hRa).trans (exp_le_two_mul_cosh _)
+    (Real.exp_le_exp.mpr hRa).trans (Real.exp_le_two_mul_cosh _)
   have hratio : Real.cosh (k * a) / Real.cosh (k * √(R ^ 2 + a ^ 2)) ≤
       2 * Real.exp (-(k * (R - a))) := by
     rw [div_le_iff₀ (Real.cosh_pos _), show -(k * (R - a)) = k * a - k * R by ring, Real.exp_sub]
@@ -555,7 +553,7 @@ private theorem exp_div_two_le_sum_cosh_mul_inner_sub {S : Finset E} {κ : ℝ}
   have h1 : κ * c * R ≤ c * ⟪θ, y - x⟫_ℝ := by
     linarith [mul_le_mul_of_nonneg_left hθ hc]
   have h2 : Real.exp (κ * c * R) / 2 ≤ Real.cosh (c * ⟪θ, y - x⟫_ℝ) := by
-    linarith [(Real.exp_le_exp.2 h1).trans (exp_le_two_mul_cosh _)]
+    linarith [(Real.exp_le_exp.2 h1).trans (Real.exp_le_two_mul_cosh _)]
   exact h2.trans (Finset.single_le_sum (f := fun θ ↦ Real.cosh (c * ⟪θ, y - x⟫_ℝ))
       (fun θ _ ↦ (Real.cosh_pos _).le) hθS)
 
