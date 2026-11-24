@@ -78,9 +78,8 @@ private noncomputable def pathMap (N : TypeDStructure d ι X)
 private theorem pathMap_apply (N : TypeDStructure d ι X)
     (f : UngradedAInfinityRightModuleHom Mm Mm') (n : ℕ) (φ : X → M) (z : X) :
     pathMap N f n φ z = ∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
-      f.map n (fun l => N.coeff (x l.castSucc) (x l.succ)) (φ (x 0)) else 0 := by
-  have h0 : Mm'.matrixAct X n (fun _ => N.coeff) (fun _ => 0) = 0 := map_zero _
-  simp [pathMap, UngradedAInfinityRightModuleHom.matrixAct_cone_apply, h0]
+      f.map n (fun l => N.coeff (x l.castSucc) (x l.succ)) (φ (x 0)) else 0 :=
+  UngradedAInfinityRightModuleHom.snd_matrixAct_cone_apply_inl f X n _ φ z
 
 /-- When the operations of the matrix module of the mapping cone of `f` along `δ` vanish from
 arity `K` on, `T_f` is the sum of the `P^f_n` for `n < K`. -/

@@ -141,7 +141,7 @@ instance instSubsingletonZero : Subsingleton (QuaternionicProjectiveSpace 0) := 
   induction p using QuaternionicProjectiveSpace.inductionOn with | h v => ?_
   induction p' using QuaternionicProjectiveSpace.inductionOn with | h w => ?_
   have norm_apply_zero (u : sphere (0 : PiLp 2 fun _ : Fin 1 ↦ ℍ) 1) : ‖u.val 0‖ = 1 :=
-    (PiLp.norm_apply_eq_norm u.val 0).trans (mem_sphere_zero_iff_norm.1 u.property)
+    (PiLp.norm_apply_eq_norm two_ne_zero u.val 0).trans (mem_sphere_zero_iff_norm.1 u.property)
   have hw : w.val 0 ≠ 0 := norm_ne_zero_iff.1 ((norm_apply_zero w).trans_ne one_ne_zero)
   refine (mk_eq_mk_iff 0 v w).2 ⟨⟨(w.val 0)⁻¹ * v.val 0, mem_sphere_zero_iff_norm.2 ?_⟩,
     Subtype.ext (PiLp.ext fun i ↦ ?_)⟩

@@ -189,6 +189,13 @@ lemma exists_notMem_le_of_integer_map_ne_top {J : Ideal R} (hJ : J ≠ ⊥)
   refine ⟨⟨_, hM.isPrime.comap _, fun h0 ↦ hJ (le_bot_iff.mp (h0 ▸ hJM))⟩, fun hv ↦ hM.ne_top
     (top_le_iff.mp ((integer_map_asIdeal_eq_top K S hv).ge.trans Ideal.map_comap_le)), hJM⟩
 
+/-- A prime ideal of `R` containing the denominator ideal of an `S`-integer is a prime of `S`: it
+is nonzero because the denominator ideal is, and it is not outside `S` by `denIdeal_not_le`. -/
+lemma exists_mem_asIdeal_eq_of_denIdeal_le {x : K} (hx : x ∈ S.integer K) {P : Ideal R}
+    [hP : P.IsPrime] (h : Algebra.denIdeal K x ≤ P) : ∃ v ∈ S, v.asIdeal = P :=
+  ⟨⟨P, hP, fun h0 ↦ Algebra.denIdeal_ne_bot K R⁰ x (le_bot_iff.1 (h0 ▸ h))⟩,
+    by_contra fun hw ↦ denIdeal_not_le K (hx _ hw) h, rfl⟩
+
 /-- The denominator ideal of an `S`-integer extends to the unit ideal of `𝒪_S`: all its prime
 factors lie in `S`, and each of those extends to the unit ideal by `integer_map_asIdeal_eq_top`. -/
 @[simp] lemma integer_map_denIdeal_eq_top {x : K} (hx : x ∈ S.integer K) :

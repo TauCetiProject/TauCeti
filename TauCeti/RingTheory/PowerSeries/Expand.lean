@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
+import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # Substitution and products of expanded power series
@@ -30,6 +31,8 @@ field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power map
 * `PowerSeries.rescale_expand`: rescaling `f (X ^ p)` by `a` rescales `f` by `a ^ p`.
 * `PowerSeries.subst_expand`: substituting into `f(X ^ p)` substitutes the `p`-th power.
 * `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
+* `PowerSeries.expand_mk_pow_mul_one_sub_C_mul_X_pow_eq_one`: the geometric series `∑ aⁿ Xᵖⁿ`
+  inverts `1 - a Xᵖ`.
 * `Finset.weightedFinsuppAntidiag s m n`: the assignments `l : ι →₀ ℕ` supported in `s` with
   `∑ c ∈ s, m c * l c = n`.
 * `PowerSeries.coeff_prod_expand`: the `n`-th coefficient of `∏ c ∈ s, f c (X ^ m c)` is the sum
@@ -136,6 +139,13 @@ theorem toMvPowerSeries_expand {σ : Type*} (p : ℕ) (hp : p ≠ 0) (i : σ) (f
   rw [toMvPowerSeries_eq_subst, toMvPowerSeries_eq_subst,
     expand_subst p hp (HasSubst.X i), MvPowerSeries.expand_X,
     subst_expand p hp (HasSubst.X i)]
+
+/-- **The geometric series in `a Xᵖ`**: `∑ aⁿ Xᵖⁿ`, the expansion of `∑ aⁿ Xⁿ`, is a
+multiplicative inverse of `1 - a Xᵖ`, for every element `a` of the coefficient ring. -/
+theorem expand_mk_pow_mul_one_sub_C_mul_X_pow_eq_one (p : ℕ) (hp : p ≠ 0) (a : R) :
+    expand p hp (mk fun n ↦ a ^ n) * (1 - C a * X ^ p) = 1 := by
+  simpa [expand_C] using congrArg (expand p hp)
+    (TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one a)
 
 /-- **Expansion of a product of expanded power series**: the `n`-th coefficient of
 `∏ c ∈ s, f c (X ^ m c)` is the sum, over all `l ∈ s.weightedFinsuppAntidiag m n`, of the products
