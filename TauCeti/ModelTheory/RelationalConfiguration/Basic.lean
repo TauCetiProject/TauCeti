@@ -84,6 +84,10 @@ variable {L : Language} {V W X : Type*}
 /-- The atom with relation symbol `R` and argument tuple `x`. -/
 def atom {n : ℕ} (R : L.Relations n) (x : Fin n → V) : Atom L V := ⟨n, R, x⟩
 
+/-- The atom constructor records the arity, the relation symbol, and the argument tuple. -/
+theorem atom_def {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
+    atom R x = ⟨n, R, x⟩ := by rfl
+
 /-- Every atom is `atom R x` for its relation symbol and tuple. -/
 @[elab_as_elim]
 theorem Atom.induction_atom {motive : Atom L V → Prop}
