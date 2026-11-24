@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.RoundSphere
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.RiemannSphere
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 
@@ -54,6 +56,11 @@ connected, so the orientation pulled back along `σ` from the outward-normal ori
 complex orientation or its opposite. At the origin, where `σ 0 = -v` and `dσ a = 2 ι a`, the sign
 is that of `vol(-v, ι 1, ι i) = -ε`.
 
+This gives the area of the two-sphere. The measure `|vol|` of the area form only depends on its
+absolute value, which pulls back to `4π |ω_FS|`, and `ω_FS` has total measure one
+(`OnePoint.measure_fubiniStudyForm_univ`). So the area form of `S²` has total measure `4π`
+(`Orientation.measure_sphereVolumeForm_univ`).
+
 For `E = ℝ³`, the north pole `v = (0, 0, 1)` and the isometry `z ↦ (Re z, -Im z, 0)`
 (`OnePoint.sphereCoordsIsometry`), `σ` is the Pauli model `OnePoint.homeomorphSphere`
 (`OnePoint.diffeomorphSphere_sphereCoordsIsometry_apply`), so the Pauli model is an analytic
@@ -77,6 +84,7 @@ diffeomorphism.
   Fubini–Study metric.
 * `OnePoint.mpullback_diffeomorphSphere_sphereVolumeForm`: the outward-normal area form pulls back
   to `∓4π` times the Fubini–Study form.
+* `Orientation.measure_sphereVolumeForm_univ`: the area form of `S²` has total measure `4π`.
 * `OnePoint.diffeomorphSphere_sphereCoordsIsometry_apply`,
   `OnePoint.toHomeomorph_diffeomorphSphere_sphereCoordsIsometry`,
   `OnePoint.diffeomorphSphere_sphereCoordsIsometry_symm_apply`: for the north pole and
@@ -92,7 +100,7 @@ diffeomorphism.
 
 public section
 
-open Metric Module Set Filter ComplexConjugate TauCeti
+open Metric Module Set Filter MeasureTheory ComplexConjugate TauCeti
 open scoped Bundle InnerProductSpace Manifold Topology ContDiff TauCeti.ComplexManifold
 
 noncomputable section
@@ -647,6 +655,34 @@ theorem mpullback_diffeomorphSphere_sphereVolumeForm :
     ((AlternatingMap.map_basis_eq_zero_iff
       (Complex.basisOneI : Module.Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) x)) _).1 ?_)
   exact (congrArg F Complex.coe_basisOneI).trans hF
+
+variable [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
+
+attribute [local instance] finrank_euclideanSpace_fin_succ_fact Complex.finrank_real_complex_fact
+
+/-- **The area of the two-sphere is `4π`.** The measure `|vol|` of the outward-normal area form of
+the unit sphere of an oriented three-dimensional inner product space gives the whole sphere
+measure `4π`. -/
+@[simp]
+theorem _root_.Orientation.measure_sphereVolumeForm_univ :
+    RoughForm.measure o.sphereVolumeForm.val (univ : Set (sphere (0 : E) 1)) =
+      ENNReal.ofReal (4 * Real.pi) := by
+  -- Transport along inverse stereographic projection from a point `v` of the sphere.
+  have : Nontrivial E :=
+    Module.nontrivial_of_finrank_pos (by rw [Fact.out (p := finrank ℝ E = 2 + 1)]; norm_num)
+  obtain ⟨w, hw⟩ := NormedSpace.sphere_nonempty (x := (0 : E)).mpr zero_le_one
+  have : Fact (finrank ℝ E = 3) := ⟨Fact.out (p := finrank ℝ E = 2 + 1)⟩
+  set v : sphere (0 : E) 1 := ⟨w, hw⟩
+  set ι := complexIsometryOrthogonalSpanSingleton (ne_zero_of_mem_unit_sphere v)
+  let _ : MeasurableSpace (OnePoint ℂ) := borel _
+  have : BorelSpace (OnePoint ℂ) := ⟨rfl⟩
+  have hΦ := (diffeomorphSphere v ι).toHomeomorph.measurePreserving_measure_mpullback
+    ((diffeomorphSphere v ι).mdifferentiable (by simp)) o.sphereVolumeForm.val
+  rw [← hΦ.measure_preimage MeasurableSet.univ.nullMeasurableSet, preimage_univ,
+    Diffeomorph.coe_toHomeomorph, mpullback_diffeomorphSphere_sphereVolumeForm v ι o,
+    RoughForm.measure_smul, smul_apply, measure_fubiniStudyForm_univ]
+  -- The frame `(v, ι 1, ι i)` has volume `±1`, so the pullback is `±4π ω_FS`.
+  simp [abs_mul, abs_volumeForm_frame v ι o]
 
 end Area
 

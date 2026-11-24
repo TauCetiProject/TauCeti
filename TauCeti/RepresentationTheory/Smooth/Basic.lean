@@ -57,6 +57,9 @@ case.
 * `Representation.IsSmooth.comp`, `Representation.isSmooth_ofQuotient_iff`: smoothness passes
   to the restriction along a continuous homomorphism (in particular to subgroups), and descends
   iff it holds on `G ⧸ S` for a trivially acting normal subgroup `S`.
+* `Representation.instIsSmoothProd`, `Representation.instIsSmoothPi`,
+  `Representation.instIsSmoothDirectSum`: binary products, finite products and direct sums of
+  smooth representations are smooth.
 * `Representation.isSmooth_ofMulAction_iff`: over a nontrivial semiring, the permutation
   representation on `A[X]` is smooth exactly when every point of `X` has an open stabilizer, as
   for `X = G ⧸ U` with `U` open (`Representation.isSmooth_ofMulAction_quotient`).
@@ -171,6 +174,17 @@ instance instIsSmoothPi {ι : Type*} [Finite ι] {M : ι → Type*}
   isOpen_stabilizer x := by
     rw [stabilizer_pi, Subgroup.coe_iInf]
     exact isOpen_iInter_of_finite fun i ↦ IsSmooth.isOpen_stabilizer (x i)
+
+/-- The direct sum of a family of smooth representations is smooth: the stabilizer of a vector is
+the intersection of the stabilizers of its finitely many nonzero components. -/
+instance instIsSmoothDirectSum {ι : Type*} {V : ι → Type*} [∀ i, AddCommMonoid (V i)]
+    [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) [∀ i, IsSmooth (ρ i)] :
+    IsSmooth (directSum ρ) where
+  isOpen_stabilizer x := by
+    classical
+    rw [stabilizer_directSum_eq_iInf_support]
+    simp only [Subgroup.coe_iInf]
+    exact x.support.finite_toSet.isOpen_biInter fun i _ ↦ IsSmooth.isOpen_stabilizer (x i)
 
 /-- Every representation of a discrete group is smooth. -/
 instance [DiscreteTopology G] : IsSmooth ρ :=

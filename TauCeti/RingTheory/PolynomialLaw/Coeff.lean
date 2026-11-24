@@ -46,6 +46,9 @@ formalization in the DividedPowers project.
   `PolynomialLaw.coeff_optionElim_add`: coefficients are invariant under reindexing, ignore
   vectors with exponent zero, scale by `r ^ n` with a vector scaled by `r`, merge two equal
   vectors with a binomial coefficient, and split a sum of vectors along the antidiagonal.
+* `PolynomialLaw.coeff_optionElim_optionElim_zero` and
+  `PolynomialLaw.coeff_optionElim_add_of_exponent_one`: a vector in the second slot with exponent
+  zero is also ignored, so the coefficient in which a vector has exponent one is additive in it.
 * `PolynomialLaw.ext_coeff`: a law is determined by its coefficients on families indexed by
   `Fin n`.
 * `PolynomialLaw.IsHomogeneousOfDegree.coeff_eq_zero`: a law homogeneous of degree `d` has no
@@ -273,6 +276,31 @@ theorem coeff_optionElim_add (n : ℕ) (a b : M) (m : ι → M) (f : M →ₚₗ
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   rw [Finset.sum_ite_eq', Finsupp.if_mem_support]
+
+/-- A vector in the second slot with exponent zero does not contribute to a coefficient. -/
+theorem coeff_optionElim_optionElim_zero (n : ℕ) (a b : M) (m : ι → M) (f : M →ₚₗ[R] N)
+    (k : ι →₀ ℕ) :
+    coeff R N (Option.elim' a (Option.elim' b m)) f ((k.optionElim 0).optionElim n) =
+      coeff R N (Option.elim' a m) f (k.optionElim n) := by
+  classical
+  let e : Option (Option ι) ≃ Option (Option ι) := Equiv.swap none (some none)
+  have hm : Option.elim' a (Option.elim' b m) ∘ e = Option.elim' b (Option.elim' a m) := by
+    funext o
+    rcases o with _ | _ | i <;> simp [e, Equiv.swap_apply_of_ne_of_ne]
+  have hk : ((k.optionElim 0).optionElim n).equivMapDomain e.symm =
+      (k.optionElim n).optionElim 0 := by
+    ext o
+    rcases o with _ | _ | i <;> simp [e, Equiv.swap_apply_of_ne_of_ne]
+  rw [← coeff_comp_equiv e, hm, hk, coeff_optionElim_zero]
+
+/-- The coefficient in which a vector `a` has exponent one is additive in `a`. -/
+theorem coeff_optionElim_add_of_exponent_one (a b : M) (m : ι → M) (f : M →ₚₗ[R] N)
+    (k : ι →₀ ℕ) :
+    coeff R N (Option.elim' (a + b) m) f (k.optionElim 1) =
+      coeff R N (Option.elim' a m) f (k.optionElim 1) +
+        coeff R N (Option.elim' b m) f (k.optionElim 1) := by
+  rw [coeff_optionElim_add, Finset.Nat.sum_antidiagonal_succ, Finset.Nat.antidiagonal_zero,
+    Finset.sum_singleton, coeff_optionElim_zero, coeff_optionElim_optionElim_zero, add_comm]
 
 /-- A polynomial law is determined by its coefficients on families indexed by `Fin n`. -/
 theorem ext_coeff {f g : M →ₚₗ[R] N}

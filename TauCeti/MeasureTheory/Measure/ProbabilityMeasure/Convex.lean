@@ -29,6 +29,7 @@ probability measures to be stated without rebuilding the probability-measure str
   `MeasureTheory.ProbabilityMeasure.convexComb_zero_right`, and
   `MeasureTheory.ProbabilityMeasure.convexComb_self` simplify degenerate combinations.
 * `MeasureTheory.ProbabilityMeasure.convexComb_comm` exchanges the measures and their weights.
+* `MeasureTheory.ProbabilityMeasure.map_convexComb`: push-forward along a measurable map is affine.
 -/
 
 public section
@@ -147,6 +148,15 @@ theorem convexComb_comm {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : ProbabilityM
     convexComb hab P Q = convexComb ((add_comm b a).trans hab) Q P := by
   apply toMeasure_injective
   simp [add_comm]
+
+/-- **Push-forward is affine.** The push-forward of a convex combination of probability measures
+along a measurable map is the convex combination of the push-forwards. -/
+@[simp]
+theorem map_convexComb {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {f : α → β}
+    (hf : Measurable f) {a b : ℝ≥0∞} (hab : a + b = 1) (P Q : ProbabilityMeasure α) :
+    (convexComb hab P Q).map f = convexComb hab (P.map f) (Q.map f) := by
+  apply toMeasure_injective
+  simp [Measure.map_add _ _ hf, Measure.map_smul _ hf.aemeasurable]
 
 end ProbabilityMeasure
 

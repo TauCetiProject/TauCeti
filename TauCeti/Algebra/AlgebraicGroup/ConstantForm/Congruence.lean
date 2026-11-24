@@ -8,7 +8,9 @@ module
 public import Mathlib.RingTheory.Smooth.Basic
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
+import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transpose
 
 /-!
@@ -27,12 +29,16 @@ automorphism `GeneralLinear.conjCoordinateIso Q` of conjugation by `Q` pulls the
 ideal of `C'` back to the defining Hopf ideal of `Q C' Qᵀ`: the pullback is the conjugate
 Hopf ideal (`TauCeti.HopfIdeal.conjugate`), recognized on points by
 `TauCeti.HopfIdeal.eq_conjugate_of_forall_mem_iff`. The isomorphism of the quotients is the
-induced one (`CommHopfAlgCat.quotientIsoOfComapEq`).
+induced one (`CommHopfAlgCat.quotientIsoOfComapEq`). Conjugation also preserves determinants, so
+the same holds for the joins with the determinant kernel `SpecialLinear.definingHopfIdeal R n`,
+which define the determinant-one subgroup schemes preserving `C` and `C'`.
 
 ## Main declarations
 
 * `TauCeti.ConstantForm.definingHopfIdeal_comapOfSurjective_conjCoordinateIso`: conjugation by
   `Q` pulls the defining Hopf ideal of `C'` back to that of `Q C' Qᵀ`.
+* `TauCeti.ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso`: the same for the
+  join with the determinant kernel.
 * `TauCeti.ConstantForm.coordinateHopfAlgebraCongr`: for `P C Pᵀ = C'`, the coordinate Hopf
   algebras of the two subgroup schemes are isomorphic.
 * `TauCeti.ConstantForm.groupSchemeCongr`: the corresponding isomorphism of group schemes.
@@ -94,6 +100,42 @@ theorem definingHopfIdeal_comapOfSurjective_conjCoordinateIso_inv (P : GL (Fin n
         (ConcreteCategory.bijective_of_isIso (GeneralLinear.conjCoordinateIso P⁻¹).hom).2 =
       definingHopfIdeal R n C := by
   rw [definingHopfIdeal_comapOfSurjective_conjCoordinateIso, ← hP,
+    GeneralLinearGroup.inv_congruence_congruence]
+
+/-- **Conjugation pulls a determinant-one constant-form Hopf ideal back to the congruent one.** The
+coordinate automorphism of conjugation by `Q` on `GLₙ` pulls the join of the constant-form Hopf
+ideal of `C` and the determinant kernel back to the corresponding join for `Q C Qᵀ`. -/
+theorem sup_specialLinear_comapOfSurjective_conjCoordinateIso (Q : GL (Fin n) R)
+    (C : Matrix (Fin n) (Fin n) R) :
+    (definingHopfIdeal R n C ⊔ SpecialLinear.definingHopfIdeal R n).comapOfSurjective
+        (GeneralLinear.conjCoordinateIso Q).hom.hom
+        (ConcreteCategory.bijective_of_isIso (GeneralLinear.conjCoordinateIso Q).hom).2 =
+      definingHopfIdeal R n
+          ((Q : Matrix (Fin n) (Fin n) R) * C * (Q : Matrix (Fin n) (Fin n) R)ᵀ) ⊔
+        SpecialLinear.definingHopfIdeal R n := by
+  have hC := definingHopfIdeal_comapOfSurjective_conjCoordinateIso Q C
+  rw [GeneralLinear.comapOfSurjective_conjCoordinateIso_eq_conjugate] at hC ⊢
+  refine (HopfIdeal.eq_conjugate_of_forall_mem_iff _ fun A x => ?_).symm
+  simp only [CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf]
+  refine and_congr ?_ ?_
+  · rw [← hC]
+    exact CommHopfAlgCat.pointConjugation_mem_conjugate_iff _ _ A x
+  · obtain ⟨A⟩ := A
+    refine (SpecialLinear.mem_definingPointsSubgroup_iff_det_eq_one R n _).trans
+      (Iff.trans ?_ (SpecialLinear.mem_definingPointsSubgroup_iff_det_eq_one R n x).symm)
+    rw [map_mul, map_mul, map_inv, GeneralLinear.pointsMulEquiv_mapValue,
+      MulEquiv.apply_symm_apply, Units.val_mul, Units.val_mul, det_units_conj]
+
+/-- Conjugation by `P⁻¹` pulls the determinant-one constant-form Hopf ideal of `C' = P C Pᵀ` back
+to that of `C`. -/
+theorem sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv (P : GL (Fin n) R)
+    {C C' : Matrix (Fin n) (Fin n) R}
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
+    (definingHopfIdeal R n C' ⊔ SpecialLinear.definingHopfIdeal R n).comapOfSurjective
+        (GeneralLinear.conjCoordinateIso P⁻¹).hom.hom
+        (ConcreteCategory.bijective_of_isIso (GeneralLinear.conjCoordinateIso P⁻¹).hom).2 =
+      definingHopfIdeal R n C ⊔ SpecialLinear.definingHopfIdeal R n := by
+  rw [sup_specialLinear_comapOfSurjective_conjCoordinateIso, ← hP,
     GeneralLinearGroup.inv_congruence_congruence]
 
 /-- **Congruent constant forms have isomorphic coordinate Hopf algebras.** If `P C Pᵀ = C'`, the

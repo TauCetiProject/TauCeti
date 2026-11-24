@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Matrix representations of signless preprojective algebras
@@ -353,7 +354,7 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trac
       (Int.castRingHom k).mapMatrix (β c a.val)) =
       (l.map fun a => β a.val c * β c a.val).map (Int.castRingHom k).mapMatrix := by
     simp only [List.map_map, Function.comp_def, map_mul]
-  rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
+  rw [hmap, trace_list_prod_map_mapMatrix, htr, map_one]
   exact one_ne_zero
 
 end CyclicClass
