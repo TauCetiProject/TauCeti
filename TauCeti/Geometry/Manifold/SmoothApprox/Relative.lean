@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.SmoothApprox
 public import Mathlib.Topology.Homotopy.Basic
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Topology.MetricSpace.ContinuousRadius
 
 /-!
@@ -82,6 +83,12 @@ variable {E F H M : Type*}
 
 variable {f e : M → F} {ε : M → ℝ} {A O : Set M}
 
+/-- A point of the segment from `a` to `b` is no farther from `a` than `b` is. -/
+private theorem dist_add_smul_sub_le {a b : F} {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :
+    dist (a + t • (b - a)) a ≤ dist b a := by
+  rw [dist_self_add_left, norm_smul, ← dist_eq_norm, Real.norm_of_nonneg ht₀]
+  exact mul_le_of_le_one_left dist_nonneg ht₁
+
 /-- **Relative smooth approximation.** Let `f : M → F` be continuous, `A ⊆ M` closed, and `e` a
 map which is `C^n` on a neighbourhood `O` of `A` and agrees with `f` on `A`. Then for every
 continuous positive precision `ε`, there is a `C^n` map `g` with `dist (g x) (f x) < ε x` for all
@@ -114,11 +121,9 @@ theorem Continuous.exists_contMDiff_approx_and_eventuallyEq (n : ℕ∞)
       filter_upwards [hρO' hx] with y hy
       simp [hh, hy]
   have h_dist (x : M) : dist (h x) (f x) < ε x / 2 := by
-    rw [hh, dist_self_add_left, norm_smul, ← dist_eq_norm, Real.norm_eq_abs,
-      abs_of_nonneg (hρI x).1]
     by_cases hx : x ∈ O'
-    · exact (mul_le_of_le_one_left dist_nonneg (hρI x).2).trans_lt hx.2
-    · simpa [(hρO' hx).self_of_nhds] using half_pos (hε_pos x)
+    · exact (dist_add_smul_sub_le (hρI x).1 (hρI x).2).trans_lt hx.2
+    · simpa [hh, (hρO' hx).self_of_nhds] using half_pos (hε_pos x)
   -- A closed neighbourhood `S` of `A` on which `h = e`, inside an open set where `e` is smooth.
   set W := interior ({x | ρ x = 1} ∩ interior O)
   have hAW : A ⊆ W := subset_interior_iff_mem_nhdsSet.mpr <|
@@ -155,10 +160,8 @@ theorem Continuous.exists_contMDiff_eventuallyEq_and_homotopyRel (n : ℕ∞)
   have hδ_pos (x : M) : 0 < δ x := lt_min (hε_pos x) (hη_pos x (hfU x))
   obtain ⟨g, hg, hge⟩ := hf.exists_contMDiff_approx_and_eventuallyEq I n hδ hδ_pos hA hO he hfe
   have hdist (t : unitInterval) (x : M) :
-      dist (f x + (t : ℝ) • (g x - f x)) (f x) < δ x := by
-    rw [dist_self_add_left, norm_smul, ← dist_eq_norm, Real.norm_eq_abs,
-      abs_of_nonneg (unitInterval.nonneg t)]
-    exact (mul_le_of_le_one_left dist_nonneg (unitInterval.le_one t)).trans_lt (hg x)
+      dist (f x + (t : ℝ) • (g x - f x)) (f x) < δ x :=
+    (dist_add_smul_sub_le (unitInterval.nonneg t) (unitInterval.le_one t)).trans_lt (hg x)
   refine ⟨g, hge,
     { toFun := fun p ↦ f p.2 + (p.1 : ℝ) • (g p.2 - f p.2)
       continuous_toFun := by fun_prop
@@ -220,23 +223,12 @@ theorem ContinuousOn.exists_contDiff_approx_and_eventuallyEq_sphere (n : ℕ∞)
   rcases lt_or_ge r 0 with hr | hr
   · exact ⟨0, contDiff_const, by simp [closedBall_eq_empty.mpr hr],
       by simp [sphere_eq_empty_of_neg hr, EventuallyEq]⟩
-  -- A continuous retraction `ρ` of `E` onto the closed ball.
-  obtain ⟨ρ, hρ, hρD, hρid⟩ : ∃ ρ : E → E, Continuous ρ ∧ (∀ x, ρ x ∈ closedBall c r) ∧
-      ∀ x ∈ closedBall c r, ρ x = x := by
-    rcases hr.eq_or_lt with rfl | hr
-    · exact ⟨fun _ ↦ c, continuous_const, fun _ ↦ by simp, fun x hx ↦ by simp_all⟩
-    have hmax (x : E) : 0 < max 1 (‖x - c‖ / r) := one_pos.trans_le (le_max_left _ _)
-    refine ⟨fun x ↦ c + (max 1 (‖x - c‖ / r))⁻¹ • (x - c), ?_, fun x ↦ ?_, fun x hx ↦ ?_⟩
-    · exact continuous_const.add <| ((continuous_const.max (by fun_prop)).inv₀
-        fun x ↦ (hmax x).ne').smul (by fun_prop)
-    · beta_reduce
-      rw [mem_closedBall, dist_self_add_left, norm_smul, norm_inv,
-        Real.norm_of_nonneg (hmax x).le, inv_mul_le_iff₀ (hmax x)]
-      exact (div_le_iff₀ hr).mp (le_max_right _ _)
-    · rw [mem_closedBall, dist_eq_norm] at hx
-      simp [max_eq_left ((div_le_one hr).mpr hx)]
-  obtain ⟨g, hg, hge⟩ := hf.exists_contMDiff_approx_and_eventuallyEq_of_retraction 𝓘(ℝ, E) n hρ
-    hρD hρid hε hε_pos isClosed_sphere sphere_subset_closedBall hO he.contMDiffOn hfe
+  -- Retract `E` onto the closed ball radially.
+  obtain ⟨g, hg, hge⟩ := hf.exists_contMDiff_approx_and_eventuallyEq_of_retraction 𝓘(ℝ, E) n
+    (TauCeti.lipschitzWith_centeredRadialRetraction hr).continuous
+    (TauCeti.centeredRadialRetraction_mem_closedBall hr)
+    (fun _ ↦ TauCeti.centeredRadialRetraction_of_mem_closedBall) hε hε_pos isClosed_sphere
+    sphere_subset_closedBall hO he.contMDiffOn hfe
   exact ⟨g, g.contMDiff.contDiff, hg, hge⟩
 
 end NormedSpace
