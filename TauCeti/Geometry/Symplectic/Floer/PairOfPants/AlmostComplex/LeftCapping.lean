@@ -53,6 +53,10 @@ the input-exchange family. The main results are:
 * `TauCeti.Floer.contMDiffAt_cappedExchangeAlmostComplex`: for period-one `C^n` end families and
   `L > 4`, the family is `C^n` jointly in the parameter `-1 < c < 2`, the point of the capped
   domain `ℂ ∖ {1}` and the point `x`.
+* `TauCeti.Floer.isComplexLinearMap_perturbedFDeriv_cappedExchange_one`: for a symplectic vector
+  space target, solutions of the Floer equation for the capping data at `1` with exchanged
+  Hamiltonians and end structures, composed with `w ↦ 1 - w`, solve the Floer equation for the
+  member `c = 1`.
 
 ## References
 
@@ -301,5 +305,67 @@ theorem contMDiffAt_cappedExchangeAlmostComplex (h₀ : ω.Compatible J₀) {n :
       hp.le)]
 
 end Smooth
+
+section Solutions
+
+/-! ### Solutions at the end of the family -/
+
+variable [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V} {H : Puncture → ℝ → V → ℝ}
+  {J : Puncture → ℝ → V → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)} {L : ℝ}
+
+/-- **Solutions at the end of the family.** Let `σ(z) = (1, 0) - z` be the exchange `w ↦ 1 - w` in
+the real coordinates `ℝ × ℝ ≃ ℂ`, let the Hamiltonians `H_q` have period one and be `C¹`, let the
+output structure `J_∞` have period one, and let `L > 4`. If `u` is differentiable at `σ(z)`, where
+`σ(z)` lies in the domain `ℂ ∖ {0}` of the exchanged problem capped at `1`, and solves the Floer
+equation there for the data obtained by plumbing the negative plane with Hamiltonian `H_0` and end
+structure `J_0` into the end at `1` of the pair of pants with exchanged data, then `u ∘ σ` solves
+the Floer equation at `z` for the member `c = 1` of the input-exchange family capped at `0`: the
+perturbation `TauCeti.Floer.cappedExchangePerturbation H L 1` with the almost complex structure
+`TauCeti.Floer.cappedExchangeAlmostComplex h₀ J hJ L 1` at `u(σ(z))`. -/
+theorem isComplexLinearMap_perturbedFDeriv_cappedExchange_one (h₀ : ω.Compatible J₀)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    (hJp : Periodic (J inf) 1) (hJ' : ∀ q t x, ω.Tames (exchangeEndData J q t x)) (hL : 4 < L)
+    {u : ℝ × ℝ → V} {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 1)
+    (hu : DifferentiableAt ℝ u ((1, 0) - z))
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (plumbedAlmostComplex h₀ h₀ (update (fun _ _ _ => J₀) inf (J zero)) (exchangeEndData J)
+        (tames_update_inf h₀.tames (hJ zero)) hJ' one L
+        (Complex.equivRealProdCLM.symm ((1, 0) - z)) (u ((1, 0) - z)))
+      (ω.perturbedFDeriv
+        (fun z x ↦ plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
+          (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u ((1, 0) - z) : ℝ × ℝ →ₗ[ℝ] V)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (cappedExchangeAlmostComplex h₀ J hJ L 1 (Complex.equivRealProdCLM.symm z)
+        (u ((1, 0) - z)))
+      (ω.perturbedFDeriv
+        (fun z x ↦ cappedExchangePerturbation H L 1 (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedExchangePerturbation H L 1 (Complex.equivRealProdCLM.symm z) x
+          Complex.I)
+        (u ∘ fun z ↦ (1, 0) - z) z : ℝ × ℝ →ₗ[ℝ] V) := by
+  set e := Complex.equivRealProdCLM.symm
+  have hσ : e ((1, 0) - z) = 1 - e z := by
+    apply Complex.ext <;> simp [e]
+  -- The structure at `z` is the exchanged capping structure at `σ(z)`.
+  rw [cappedExchangeAlmostComplex_one h₀ hJp hJ', ← hσ]
+  -- The exchanged capping perturbation is differentiable in the target point at `σ(z)`, which is
+  -- the capped puncture `1` or a point of `ℂ ∖ {0, 1}`.
+  have hS := eq_endCenter_one_or_of_ne_zero (w := e ((1, 0) - z))
+    (by rw [hσ]; exact fun h0 => hz (by linear_combination -h0))
+  have hK (v : ℂ) : DifferentiableAt ℝ
+      (fun x ↦ plumbedPerturbation (Pi.single inf (H zero)) (exchangeEndData H) one L
+        (e ((1, 0) - z)) x v) (u ((1, 0) - z)) := by
+    have hd := (contDiffAt_uncurry_plumbedPerturbation_single_inf (q := one) (by decide)
+      (periodic_exchangeEndData hH) (contDiff_uncurry_exchangeEndData hHs) hL hS
+      (u ((1, 0) - z)) v).differentiableAt one_ne_zero
+    rw [exchangeEndData_one] at hd
+    exact hd.comp _ ((differentiableAt_const _).prodMk differentiableAt_id)
+  exact ω.isComplexLinearMap_perturbedFDeriv_comp_one_sub
+    (cappedExchangePerturbation_one (hH inf) (by linarith)) hu hK h
+
+end Solutions
 
 end TauCeti.Floer

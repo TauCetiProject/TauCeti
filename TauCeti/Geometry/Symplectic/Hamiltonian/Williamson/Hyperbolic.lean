@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Nondegenerate
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral
 import Mathlib.Data.Finset.Sort
+import TauCeti.Geometry.Symplectic.Darboux.SkewAdjoint
 import TauCeti.LinearAlgebra.SesquilinearForm.AdjointPair
 
 /-!
@@ -50,6 +51,17 @@ The proof has two steps.
 
 Conversely the form `∑ₖ (k + 1) xₖ yₖ` has the `2n` distinct eigenvalues `±(k + 1)`.
 
+Equivalently, the split Cartan subalgebras are those all of whose elements have real spectra:
+a nondegenerate family whose members `A_{Q i}` have real spectra (their generalized eigenspaces
+span `V`) spans the hyperbolic blocks of a Darboux basis
+(`exists_isDarbouxBasis_span_eq_span_hyperbolic_of_iSup_maxGenEigenspace_eq_top` in the namespace
+`IsNondegenerateQuadraticFamily`).
+Here the members are semisimple and commute, so the simultaneous hyperbolic normal form
+`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_smul_of_skewAdjoint` writes every
+`Q i` as `∑ₖ c i k Hₖ` in a common Darboux basis, without choosing a regular element. This
+characterizes the split nondegenerate families
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_span_eq_span_hyperbolic_iff`).
+
 ## Main results
 
 All declarations are in the namespace `TauCeti.SymplecticForm`.
@@ -61,6 +73,11 @@ All declarations are in the namespace `TauCeti.SymplecticForm`.
   family whose span contains such a form spans the hyperbolic blocks of a Darboux basis.
 * `IsNondegenerateQuadraticFamily.exists_mem_span_card_eq_finrank_iff`: this characterizes the
   nondegenerate families of purely hyperbolic type.
+* `exists_isDarbouxBasis_span_eq_span_hyperbolic_of_iSup_maxGenEigenspace_eq_top`, in the namespace
+  `IsNondegenerateQuadraticFamily`: a nondegenerate family whose members have real spectra spans
+  the hyperbolic blocks of a Darboux basis.
+* `exists_isDarbouxBasis_span_eq_span_hyperbolic_iff`: a family spans the hyperbolic blocks of some
+  Darboux basis exactly when it is nondegenerate and its members have real spectra.
 
 ## References
 
@@ -226,11 +243,9 @@ theorem exists_isDarbouxBasis_eq_sum_smul_hyperbolic {P : QuadraticForm ℝ V} {
     ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (a : Fin n → ℝ), ω.IsDarbouxBasis b ∧
       StrictMono a ∧ (∀ k, 0 < a k) ∧ P = ∑ k, a k • hyperbolic b k := by
   obtain ⟨n, b, a, hb, ha, ha0, hA⟩ := ω.exists_isDarbouxBasis_hamiltonianEnd_apply_eq hs hP
-  refine ⟨n, b, a, hb, ha, ha0, ω.hamiltonianEnd_injective (b.ext ?_)⟩
-  rintro ⟨k, i⟩
-  obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
-  · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_fst, (hA k).1]
-  · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_snd, (hA k).2]
+  refine ⟨n, b, a, hb, ha, ha0, ?_⟩
+  rw [hb.eq_sum_smul_ellipticHyperbolic_of_hamiltonianEnd_apply ∅ (R := P) (c := a)
+    (by simpa using hA), ellipticHyperbolic_empty]
 
 namespace IsNondegenerateQuadraticFamily
 
@@ -290,6 +305,58 @@ theorem exists_mem_span_card_eq_finrank_iff (h : ω.IsNondegenerateQuadraticFami
     · rw [hb.hamiltonianEnd_sum_smul_hyperbolic_apply_snd]
       simp [ev]
 
+/-- **Williamson's theorem for split Cartan subalgebras.** A nondegenerate family of quadratic
+forms whose Hamiltonian endomorphisms have real spectra (their generalized eigenspaces span `V`)
+spans the same space of quadratic forms as the hyperbolic blocks `Hₖ = xₖ yₖ` of some Darboux
+basis. -/
+theorem exists_isDarbouxBasis_span_eq_span_hyperbolic_of_iSup_maxGenEigenspace_eq_top
+    (h : ω.IsNondegenerateQuadraticFamily Q)
+    (hsplit : ∀ i, ⨆ μ, (ω.hamiltonianEnd (Q i)).maxGenEigenspace μ = ⊤) :
+    ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V), ω.IsDarbouxBasis b ∧
+      Submodule.span ℝ (Set.range Q) = Submodule.span ℝ (Set.range (hyperbolic b)) := by
+  obtain ⟨n, b, c, hb, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_smul_of_skewAdjoint
+    (fun i ↦ ω.hamiltonianEnd (Q i)) (fun i ↦ ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra _)
+    (fun i j _ ↦ (quadraticPoissonBracket_eq_zero_iff (ω := ω)).1
+      (h.quadraticPoissonBracket_eq_zero i j))
+    (fun i ↦ h.isSemisimple_hamiltonianEnd (Submodule.subset_span ⟨i, rfl⟩)) hsplit
+  refine ⟨n, b, hb, h.span_eq_of_span_le hb.quadraticPoissonBracket_hyperbolic
+    (Submodule.span_le.2 (Set.range_subset_iff.2 fun i ↦ ?_))⟩
+  -- Each `Q i` is the combination `∑ₖ c i k Hₖ` of the hyperbolic blocks.
+  rw [hb.eq_sum_smul_ellipticHyperbolic_of_hamiltonianEnd_apply ∅ (R := Q i) (c := c i)
+    (by simpa using hc i), ellipticHyperbolic_empty]
+  exact Submodule.sum_mem _ fun k _ ↦
+    Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self k))
+
 end IsNondegenerateQuadraticFamily
+
+variable {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+
+/-- **Classification of split nondegenerate families.** A family of quadratic forms spans the same
+space as the hyperbolic blocks `Hₖ = xₖ yₖ` of some Darboux basis exactly when it is nondegenerate
+and the Hamiltonian endomorphisms of its members have real spectra. -/
+theorem exists_isDarbouxBasis_span_eq_span_hyperbolic_iff :
+    (∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V), ω.IsDarbouxBasis b ∧
+      Submodule.span ℝ (Set.range Q) = Submodule.span ℝ (Set.range (hyperbolic b))) ↔
+      ω.IsNondegenerateQuadraticFamily Q ∧
+        ∀ i, ⨆ μ, (ω.hamiltonianEnd (Q i)).maxGenEigenspace μ = ⊤ := by
+  refine ⟨?_, fun ⟨h, hsplit⟩ ↦
+    h.exists_isDarbouxBasis_span_eq_span_hyperbolic_of_iSup_maxGenEigenspace_eq_top hsplit⟩
+  rintro ⟨n, b, hb, hspan⟩
+  refine ⟨(isNondegenerateQuadraticFamily_iff_of_span_eq hspan).2
+    hb.isNondegenerateQuadraticFamily_hyperbolic, fun i ↦ ?_⟩
+  -- Each `Q i` is a combination `∑ₖ cₖ Hₖ` of the hyperbolic blocks, hence diagonal in `b`.
+  have hQ : Q i ∈ Submodule.span ℝ (Set.range (hyperbolic b)) := by
+    rw [← hspan]
+    exact Submodule.subset_span (Set.mem_range_self i)
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).1 hQ
+  rw [eq_top_iff, ← b.span_eq, Submodule.span_le]
+  rintro _ ⟨⟨k, a⟩, rfl⟩
+  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
+  · refine Submodule.mem_iSup_of_mem (c k) (Module.End.eigenspace_le_maxGenEigenspace
+      (Module.End.mem_eigenspace_iff.2 ?_))
+    rw [← hc, hb.hamiltonianEnd_sum_smul_hyperbolic_apply_fst]
+  · refine Submodule.mem_iSup_of_mem (-c k) (Module.End.eigenspace_le_maxGenEigenspace
+      (Module.End.mem_eigenspace_iff.2 ?_))
+    rw [← hc, hb.hamiltonianEnd_sum_smul_hyperbolic_apply_snd]
 
 end TauCeti.SymplecticForm

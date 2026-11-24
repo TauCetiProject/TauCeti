@@ -329,18 +329,11 @@ theorem classOf_tangentSections (n : ℕ) (R : Type*) [CommRing R]
 `tangentSections (Fin (n + 1)) R` is `n` times the class of `C(Sⁿ, R)`. -/
 theorem splitK0_of_tangentSections.{u} (n : ℕ) (R : Type u) [CommRing R]
     [TopologicalSpace R] [IsTopologicalRing R] [Algebra ℝ R] [ContinuousSMul ℝ R] :
-    SplitK0.of.{u}
-        (⟨ModuleCat.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
-            (tangentSections (Fin (n + 1)) R),
-          finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :
-          (finiteProjectiveModules
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).FullSubcategory) =
-      n • SplitK0.of.{u}
-        (⟨ModuleCat.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R),
-          finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :
-          (finiteProjectiveModules
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).FullSubcategory) := by
+    SplitK0.of.{u} (FiniteProjectiveModules.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
+        (tangentSections (Fin (n + 1)) R)) =
+      n • SplitK0.of.{u} (FiniteProjectiveModules.of
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)) := by
   rw [← sub_eq_zero, ← FiniteProjectiveModules.classOf_def]
   exact classOf_tangentSections n R
 
