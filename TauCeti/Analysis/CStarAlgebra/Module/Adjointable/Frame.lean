@@ -235,9 +235,9 @@ theorem inner_analysis_analysis (hx : IsParsevalFrame A x) (z w : E) :
   isParsevalFrame_iff_inner_analysis_analysis.mp hx z w
 
 /-- The analysis operator of a Parseval frame is isometric. -/
-theorem norm_analysis_apply (hx : IsParsevalFrame A x) (z : E) : ‖analysis A x z‖ = ‖z‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A), hx.inner_analysis_analysis,
-    ← norm_eq_sqrt_norm_inner_self]
+theorem norm_analysis_apply (hx : IsParsevalFrame A x) (z : E) : ‖analysis A x z‖ = ‖z‖ :=
+  norm_map_of_adjoint_comp_self_eq_id
+    (by rw [adjoint_analysis]; exact hx.synthesis_comp_analysis_eq_id) z
 
 /-- The identity operator of a Hilbert C⋆-module with a finite Parseval frame is module-compact:
 it is the finite sum `∑ i, θ_{x i, x i}`. -/
