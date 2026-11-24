@@ -14,7 +14,7 @@ import Mathlib.Algebra.Order.Floor.Extended
 # Packing and covering numbers via finite subsets
 
 Facts relating `ℕ∞`-valued packing and external covering numbers to finite separated sets and
-finite covers.
+finite covers, and a criterion for sequences controlled by finite covers to tend to zero.
 
 ## Main results
 
@@ -27,6 +27,8 @@ finite covers.
 * `Metric.div_two_le_of_externalCoveringNumber_lt_card` and `Metric.IsCover.div_two_le_of_card_lt`:
   if `A` contains a finite subset of mutual distance at least `δ` strictly larger than an
   `ε`-cover, then `δ / 2 ≤ ε`.
+* `Antitone.tendsto_atTop_nhds_zero_of_isCover`: an antitone sequence bounded by a multiple of `ε`
+  at the size of every finite `ε`-cover of a totally bounded set tends to zero.
 -/
 
 public section
@@ -113,3 +115,21 @@ theorem IsCover.div_two_le_of_card_lt {X : Type*} [PseudoMetricSpace X] {ε : �
     hcov.externalCoveringNumber_le_encard.trans_lt (by simpa using hcard)
 
 end Metric
+
+open Filter in
+open scoped Topology in
+/-- If `S` is totally bounded and the antitone sequence `s` satisfies `s |N| ≤ C ε` for every
+finite `ε`-cover `N` of `S`, then `s` tends to zero. -/
+theorem Antitone.tendsto_atTop_nhds_zero_of_isCover {X : Type*} [PseudoEMetricSpace X]
+    {S : Set X} {s : ℕ → ℝ≥0} (hs : Antitone s) (hS : TotallyBounded S) {C : ℝ≥0} (hC : C ≠ 0)
+    (h : ∀ (ε : ℝ≥0) (N : Finset X), IsCover ε S N → s N.card ≤ C * ε) :
+    Tendsto s atTop (𝓝 0) := by
+  refine tendsto_order.2 ⟨fun _ ha ↦ (ha.not_ge zero_le).elim, fun a ha ↦ ?_⟩
+  -- Cover `S` by finitely many balls of radius `a / (2 C)`.
+  have hε : a / (2 * C) ≠ 0 := (div_pos ha (by positivity)).ne'
+  obtain ⟨N, -, hNfin, hN⟩ := exists_finite_isCover_of_totallyBounded hε hS
+  refine eventually_atTop.2 ⟨hNfin.toFinset.card, fun n hn ↦ ?_⟩
+  have hCa : C * (a / (2 * C)) = a / 2 := by field_simp
+  refine ((hs hn).trans (h _ _ (by simpa using hN))).trans_lt ?_
+  rw [hCa]
+  exact NNReal.half_lt_self ha.ne'

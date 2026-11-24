@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Operator.SNumbers.Entropy
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Topology.MetricSpace.CoveringNumbers
 
 /-!
 # Covering estimates and compactness criteria for Gelfand and Kolmogorov numbers
@@ -80,22 +81,6 @@ open scoped NNReal Topology
 
 namespace ContinuousLinearMap
 
-/-- If `S` is totally bounded and `s` is antitone with `s |N| ≤ C ε` for every finite `ε`-cover
-`N` of `S`, then `s` tends to zero. -/
-private theorem tendsto_atTop_nhds_zero_of_isCover {X : Type*} [PseudoEMetricSpace X] {S : Set X}
-    (hS : TotallyBounded S) {s : ℕ → ℝ≥0} (hs : Antitone s) {C : ℝ≥0} (hC : C ≠ 0)
-    (h : ∀ (ε : ℝ≥0) (N : Finset X), IsCover ε S N → s N.card ≤ C * ε) :
-    Tendsto s atTop (𝓝 0) := by
-  refine tendsto_order.2 ⟨fun _ ha ↦ (ha.not_ge zero_le).elim, fun a ha ↦ ?_⟩
-  -- Cover `S` by finitely many balls of radius `a / (2 C)`.
-  have hε : a / (2 * C) ≠ 0 := (div_pos ha (by positivity)).ne'
-  obtain ⟨N, -, hNfin, hN⟩ := exists_finite_isCover_of_totallyBounded hε hS
-  refine eventually_atTop.2 ⟨hNfin.toFinset.card, fun n hn ↦ ?_⟩
-  have hCa : C * (a / (2 * C)) = a / 2 := by field_simp
-  refine ((hs hn).trans (h _ _ (by simpa using hN))).trans_lt ?_
-  rw [hCa]
-  exact NNReal.half_lt_self ha.ne'
-
 /-! ### Kolmogorov numbers -/
 
 section Kolmogorov
@@ -130,7 +115,7 @@ theorem tendsto_kolmogorovNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[�
     (hT : TotallyBounded ((T : E → F) '' closedBall 0 1)) :
     Tendsto T.kolmogorovNumber atTop (𝓝 0) := by
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
-  exact tendsto_atTop_nhds_zero_of_isCover hT T.antitone_kolmogorovNumber
+  exact T.antitone_kolmogorovNumber.tendsto_atTop_nhds_zero_of_isCover hT
     (one_pos.trans (by exact_mod_cast hc)).ne'
     fun _ _ hN ↦ T.kolmogorovNumber_le_nnnorm_mul_of_isCover le_rfl hN hc
 
@@ -291,7 +276,7 @@ theorem gelfandNumber_two_pow_le_two_mul_entropyNumber (T : E →L[𝕜] F) (n :
 theorem tendsto_gelfandNumber_atTop_nhds_zero_of_totallyBounded {T : E →L[𝕜] F}
     (hT : TotallyBounded ((T : E → F) '' closedBall 0 1)) :
     Tendsto T.gelfandNumber atTop (𝓝 0) :=
-  tendsto_atTop_nhds_zero_of_isCover hT T.antitone_gelfandNumber two_ne_zero
+  T.antitone_gelfandNumber.tendsto_atTop_nhds_zero_of_isCover hT two_ne_zero
     fun _ _ hN ↦ T.gelfandNumber_le_two_mul_of_isCover le_rfl hN
 
 /-- Every compact operator has Gelfand numbers tending to zero. -/
