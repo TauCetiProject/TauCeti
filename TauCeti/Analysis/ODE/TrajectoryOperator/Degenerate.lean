@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
-import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.Analysis.Calculus.BumpFunction.Escaping
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -85,13 +85,6 @@ private theorem deriv_profile_smul (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (he : 
     deriv (fun s ↦ φ s • e s) s = φ s • deriv e s + deriv φ s • e s :=
   deriv_smul ((hφ.differentiable (by simp)) s) (he.differentiable one_ne_zero s)
 
-/-- The square of a profile times a continuous function is integrable. -/
-private theorem integrable_profile_sq_mul {g : ℝ → ℝ} (hg : Continuous g)
-    (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hφc : HasCompactSupport φ) :
-    Integrable fun s ↦ φ s ^ 2 * g s :=
-  ((hφ.continuous.pow 2).mul hg).integrable_of_hasCompactSupport
-    (hφc.mono fun s hs h0 ↦ hs (by simp [h0]))
-
 variable [CompleteSpace F] {A : ℝ → F →L[ℝ] F}
 
 variable {u u' : WeakDerivStep volume ⊤ 2
@@ -114,6 +107,10 @@ private theorem two_mul_sq_le_norm_prev_sub_sq (he : Continuous e) {m : ℝ} (hm
     rw [hs, Pi.sub_apply, hs1, hs2, ← sub_smul, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
     linear_combination (-2 * ‖e s‖ ^ 2) * hdisj s
   have hg : Continuous fun s ↦ ‖e s‖ ^ 2 := by fun_prop
+  have hφsq : Continuous fun s ↦ φ s ^ 2 := hφ.continuous.pow 2
+  have hψsq : Continuous fun s ↦ ψ s ^ 2 := hψ.continuous.pow 2
+  have hφsqc : HasCompactSupport fun s ↦ φ s ^ 2 := hφc.comp_left (g := (· ^ 2)) (by simp)
+  have hψsqc : HasCompactSupport fun s ↦ ψ s ^ 2 := hψc.comp_left (g := (· ^ 2)) (by simp)
   have hint := hφ.continuous.integrable_sq_of_hasCompactSupport (μ := volume) hφc
   have hintψ := hψ.continuous.integrable_sq_of_hasCompactSupport (μ := volume) hψc
   rw [integral_congr_ae hae, Opens.coe_top, Measure.restrict_univ]
@@ -122,7 +119,8 @@ private theorem two_mul_sq_le_norm_prev_sub_sq (he : Continuous e) {m : ℝ} (hm
           integral_mul_const, hφ1, hψ1]
         ring
     _ ≤ _ := integral_mono_of_nonneg (.of_forall fun _ ↦ by positivity)
-        ((integrable_profile_sq_mul hg hφ hφc).add (integrable_profile_sq_mul hg hψ hψc))
+        ((hφsq.integrable_mul_of_continuousOn hφsqc (subset_univ _) hg.continuousOn).add
+          (hψsq.integrable_mul_of_continuousOn hψsqc (subset_univ _) hg.continuousOn))
         (.of_forall fun s ↦ by
           have := pow_le_pow_left₀ hm (hlow s) 2
           simp only [Pi.add_apply]

@@ -10,10 +10,9 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 
 /-!
 # Escaping profiles
@@ -32,9 +31,6 @@ pairwise disjoint and lie beyond `Sₙ`. Dilating by `n + 1` keeps `∫ φₙ² 
 
 ## Main results
 
-* `Continuous.integrable_sq_of_hasCompactSupport` and
-  `ContDiff.integrable_deriv_sq_of_hasCompactSupport`: the squares of a profile and of its
-  derivative are integrable.
 * `TauCeti.exists_seq_contDiff_hasCompactSupport_escaping_atTop` and
   `TauCeti.exists_seq_contDiff_hasCompactSupport_escaping_atBot`: the escaping profiles at `+∞`
   and at `-∞`.
@@ -46,21 +42,6 @@ noncomputable section
 
 open MeasureTheory Filter
 open scoped Topology
-
-/-- The square of a continuous compactly supported real function, such as an escaping profile,
-is integrable for any measure that is finite on compact sets. -/
-theorem Continuous.integrable_sq_of_hasCompactSupport {X : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
-    {f : X → ℝ} (hf : Continuous f) (hfc : HasCompactSupport f) :
-    Integrable (fun x ↦ f x ^ 2) μ :=
-  (hf.memLp_of_hasCompactSupport (μ := μ) (p := 2) hfc).integrable_sq
-
-/-- The square of the derivative of a `C¹` compactly supported function on `ℝ`, such as an
-escaping profile, is integrable for any measure that is finite on compact sets. -/
-theorem ContDiff.integrable_deriv_sq_of_hasCompactSupport {μ : Measure ℝ}
-    [IsFiniteMeasureOnCompacts μ] {φ : ℝ → ℝ} {n : WithTop ℕ∞} (hφ : ContDiff ℝ n φ)
-    (hφc : HasCompactSupport φ) (hn : 1 ≤ n) : Integrable (fun s ↦ deriv φ s ^ 2) μ :=
-  (hφ.continuous_deriv hn).integrable_sq_of_hasCompactSupport hφc.deriv
 
 namespace TauCeti
 

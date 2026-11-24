@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
-import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.Analysis.Calculus.BumpFunction.Escaping
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Analysis.Sobolev.GraphStep.Coordinates
+import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
