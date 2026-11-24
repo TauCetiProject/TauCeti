@@ -26,8 +26,9 @@ to the side on which the suspension is written.
   `(-1)^(n e) a`, that is, through the Koszul automorphism
   `TauCeti.InternalGrading.koszulTwistAlgEquiv` of `A`.
 
-Neither sign can be dropped on its own: with the unsigned differential and the untwisted action,
-the Leibniz rule fails for odd `n`. The two shifts are isomorphic, but not through the identity.
+The two signs cannot both be dropped: with the unsigned differential and the untwisted action, the
+Leibniz rule fails for odd `n`, while keeping either one gives a DG module. The two shifts are
+isomorphic, but not through the identity.
 The Koszul rule for exchanging the two suspensions gives the isomorphism
 `M ⊗ R[n] ≅ M[n]` (`TauCeti.DGRightModuleCat.rightShiftIsoShift`), which multiplies an element of
 degree `p` of `M` by `(-1)^(n p)`. It commutes with the differentials and the actions exactly
@@ -112,6 +113,7 @@ theorem shiftEquiv_apply (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) (x : M.
   (rfl)
 
 /-- The inverse identification of `M[n]` with `M` is the identity on elements. -/
+@[simp]
 theorem shiftEquiv_symm_apply (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) (x : M) :
     (M.shiftEquiv n).symm x = (x : M.shift n) :=
   (rfl)
@@ -168,17 +170,6 @@ theorem shiftEquiv_shiftFunctor_map (n : ℤ) {M N : DGRightModuleCat.{uR, uA, u
 
 /-! ### The right shift `M ⊗ R[n]` -/
 
-/-- A homogeneous scalar acting through the Koszul automorphism adds its degree. -/
-private theorem op_koszulTwistAlgEquiv_smul_mem (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ)
-    {p q : ℤ} {a : A} (ha : a ∈ 𝒜 p) {x : M} (hx : x ∈ M.grading q) :
-    op (InternalGrading.koszulTwistAlgEquiv 𝒜 n a) • x ∈ M.grading (p + q) := by
-  have hσ : op (InternalGrading.koszulTwistAlgEquiv 𝒜 n a) ∈
-      (InternalGrading.ofDecomposition 𝒜).opposite.piece p := by
-    rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece,
-      InternalGrading.koszulTwistAlgEquiv_apply]
-    exact InternalGrading.koszulTwist_mem_ofDecomposition 𝒜 ha n
-  exact SetLike.GradedSMul.smul_mem hσ hx
-
 /-- The Leibniz rule of the action through the Koszul automorphism, for an element of degree
 `q + n` and the unsigned differential: the signs `(-1)^(q + n)` of `M` and `(-1)^n` of the
 automorphism combine to `(-1)^q`. -/
@@ -207,6 +198,10 @@ noncomputable def rightShift (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) :
       simp only [G, InternalGrading.shift_piece, InternalGrading.ofDecomposition_piece] at hx ⊢
       simpa only [add_right_comm] using M.isDGRightModule.isHomogeneous.map_mem hx
   have hsq := M.isDGRightModule.sq_zero
+  have hmem {p q : ℤ} {a : A} (ha : a ∈ 𝒜 p) {x : M} (hx : x ∈ M.grading q) :
+      op (σ a) • x ∈ M.grading (p + q) := by
+    rw [add_comm, InternalGrading.koszulTwistAlgEquiv_apply]
+    exact op_smul_mem_of_mem_graded (InternalGrading.koszulTwist_mem_ofDecomposition 𝒜 ha n) hx
   have htower (r : R) (a : A) (x : M) : op (σ (r • a)) • x = r • (op (σ a) • x) := by
     simp only [map_smul, op_smul, smul_assoc]
   -- The Koszul automorphism read on the opposite algebra, spelled out so that its values reduce.
@@ -222,7 +217,7 @@ noncomputable def rightShift (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) :
     ⟨fun {p q} a x ha hx ↦ by
       simp only [G, InternalGrading.shift_piece, InternalGrading.ofDecomposition_piece] at hx ⊢
       rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece] at ha
-      have hax := op_koszulTwistAlgEquiv_smul_mem M n ha hx
+      have hax := hmem ha hx
       rw [← add_assoc] at hax
       -- The twisted action of `a` is the original action of its Koszul twist.
       exact hax⟩
@@ -255,6 +250,7 @@ theorem rightShiftEquiv_apply (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ)
   (rfl)
 
 /-- The inverse identification of `M ⊗ R[n]` with `M` is the identity on elements. -/
+@[simp]
 theorem rightShiftEquiv_symm_apply (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) (x : M) :
     (M.rightShiftEquiv n).symm x = (x : M.rightShift n) :=
   (rfl)
@@ -334,56 +330,6 @@ theorem rightShiftEquiv_rightShiftFunctor_map (n : ℤ) {M N : DGRightModuleCat.
 
 /-! ### Exchanging the two suspensions -/
 
-/-- The Koszul twist of `M` intertwines the twisted and the original action: passing the
-suspension costs the sign that the twist of the scalar records. -/
-private theorem koszulTwist_op_koszulTwistAlgEquiv_smul (M : DGRightModuleCat.{uR, uA, uM} h)
-    (n : ℤ) (b : A) (y : M) :
-    (InternalGrading.ofDecomposition M.grading).koszulTwist n
-        (op (InternalGrading.koszulTwistAlgEquiv 𝒜 n b) • y) =
-      op b • (InternalGrading.ofDecomposition M.grading).koszulTwist n y := by
-  induction b using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | add b b' hb hb' =>
-    rw [map_add, MulOpposite.op_add, add_smul, map_add, hb, hb', MulOpposite.op_add, add_smul]
-  | @homogeneous e b =>
-    induction y using DirectSum.Decomposition.inductionOn M.grading with
-    | zero => simp
-    | add y y' hy hy' => simp only [smul_add, map_add, hy, hy']
-    | @homogeneous p y =>
-      have hb : op (b : A) ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece e := by
-        rw [InternalGrading.op_mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece]
-        exact b.property
-      have hby : op (b : A) • (y : M) ∈ (InternalGrading.ofDecomposition M.grading).piece
-          (e + p) := by
-        rw [InternalGrading.ofDecomposition_piece]
-        exact SetLike.GradedSMul.smul_mem hb y.property
-      have hy : (y : M) ∈ (InternalGrading.ofDecomposition M.grading).piece p := by
-        rw [InternalGrading.ofDecomposition_piece]
-        exact y.property
-      -- Passing `b` costs `(-1)^(n e)`, and the twist of `b • y` costs `(-1)^(n (e + p))`.
-      have hsign : negOnePowCast R (n * e) * negOnePowCast R (n * (e + p)) =
-          negOnePowCast R (n * p) := by
-        rw [← negOnePowCast_add]
-        exact negOnePowCast_eq_of_even_sub ⟨n * e, by ring⟩
-      rw [InternalGrading.koszulTwistAlgEquiv_apply_of_mem 𝒜 n b.property, op_smul, smul_assoc,
-        negOnePow_smul_eq_negOnePowCast_smul (R := R), map_smul,
-        InternalGrading.koszulTwist_apply_of_mem _ hby,
-        InternalGrading.koszulTwist_apply_of_mem _ hy, ← negOnePowCast_eq_intCast,
-        ← negOnePowCast_eq_intCast, smul_comm (op (b : A)), smul_smul, hsign]
-
-/-- The Koszul twist of `M` turns the unsigned differential into `(-1)^n dM`. -/
-private theorem koszulTwist_differential (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ) (y : M) :
-    (InternalGrading.ofDecomposition M.grading).koszulTwist n (M.differential y) =
-      n.negOnePow •
-        M.differential ((InternalGrading.ofDecomposition M.grading).koszulTwist n y) := by
-  have hd : LinearMap.IsHomogeneous M.differential
-      (InternalGrading.ofDecomposition M.grading).piece
-      (InternalGrading.ofDecomposition M.grading).piece 1 := by
-    rw [InternalGrading.ofDecomposition_piece]
-    exact M.isDGRightModule.isHomogeneous
-  rw [hd.koszulTwist_apply n y, mul_one, ← negOnePowCast_eq_intCast,
-    ← negOnePow_smul_eq_negOnePowCast_smul]
-
 /-- The Koszul sign `(-1)^(n p)` on the elements of degree `p` of `M`, as a right-linear
 equivalence from `M ⊗ R[n]` to `M[n]`. -/
 private noncomputable def rightShiftLinearEquivShift (M : DGRightModuleCat.{uR, uA, uM} h)
@@ -394,7 +340,8 @@ private noncomputable def rightShiftLinearEquivShift (M : DGRightModuleCat.{uR, 
     ((InternalGrading.ofDecomposition M.grading).koszulTwist n (M.shiftEquiv n y))
   map_add' x y := by simp only [map_add]
   map_smul' a x := by
-    rw [rightShiftEquiv_smul, koszulTwist_op_koszulTwistAlgEquiv_smul, op_unop, map_smul,
+    rw [rightShiftEquiv_smul, InternalGrading.koszulTwist_op_koszulTwistAlgEquiv_smul, op_unop,
+      map_smul,
       RingHom.id_apply]
   left_inv x := (InternalGrading.ofDecomposition M.grading).koszulTwist_koszulTwist n (x : M)
   right_inv y := (InternalGrading.ofDecomposition M.grading).koszulTwist_koszulTwist n (y : M)
@@ -427,9 +374,10 @@ noncomputable def rightShiftIsoShift (M : DGRightModuleCat.{uR, uA, uM} h) (n : 
     (fun x ↦ (M.shiftEquiv n).injective <| by
       rw [shiftEquiv_differential, shiftEquiv_rightShiftLinearEquivShift,
         shiftEquiv_rightShiftLinearEquivShift, rightShiftEquiv_differential,
-        koszulTwist_differential])
+        M.isDGRightModule.koszulTwist_map])
 
 /-- Read in `M`, the isomorphism `M ⊗ R[n] ≅ M[n]` is the Koszul twist of `M`. -/
+@[simp]
 theorem shiftEquiv_rightShiftIsoShift_hom_apply (M : DGRightModuleCat.{uR, uA, uM} h) (n : ℤ)
     (x : M.rightShift n) :
     M.shiftEquiv n ((M.rightShiftIsoShift n).hom x) =
@@ -438,6 +386,7 @@ theorem shiftEquiv_rightShiftIsoShift_hom_apply (M : DGRightModuleCat.{uR, uA, u
   exact M.shiftEquiv_rightShiftLinearEquivShift n x
 
 /-- Read in `M`, the inverse isomorphism `M[n] ≅ M ⊗ R[n]` is the Koszul twist of `M`. -/
+@[simp]
 theorem rightShiftEquiv_rightShiftIsoShift_inv_apply (M : DGRightModuleCat.{uR, uA, uM} h)
     (n : ℤ) (x : M.shift n) :
     M.rightShiftEquiv n ((M.rightShiftIsoShift n).inv x) =
@@ -469,21 +418,12 @@ theorem rightShiftEquiv_rightShiftIsoShift_inv_apply_of_mem (M : DGRightModuleCa
 noncomputable def rightShiftFunctorIsoShiftFunctor (n : ℤ) :
     rightShiftFunctor.{uR, uA, uM} (h := h) n ≅ shiftFunctor n :=
   NatIso.ofComponents (fun M ↦ M.rightShiftIsoShift n) fun {M N} f ↦ hom_ext fun x ↦ by
-    -- A morphism preserves degrees, so it commutes with the Koszul twists.
-    have hf : LinearMap.IsHomogeneous (f.toLinearMap.restrictScalars R)
-        (InternalGrading.ofDecomposition M.grading).piece
-        (InternalGrading.ofDecomposition N.grading).piece 0 :=
-      LinearMap.isHomogeneous_def.mpr fun q y hy ↦ by
-        simpa only [InternalGrading.ofDecomposition_piece, add_zero,
-          LinearMap.coe_restrictScalars] using
-          f.map_mem' (by simpa only [InternalGrading.ofDecomposition_piece] using hy)
     refine (N.shiftEquiv n).injective ?_
     rw [comp_apply, comp_apply, shiftEquiv_rightShiftIsoShift_hom_apply,
       rightShiftEquiv_rightShiftFunctor_map, shiftEquiv_shiftFunctor_map,
       shiftEquiv_rightShiftIsoShift_hom_apply]
-    simpa only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-      LinearMap.coe_restrictScalars, DGRightModuleHom.coe_toLinearMap] using
-      hf.koszulTwist_apply n (M.rightShiftEquiv n x)
+    -- A morphism preserves degrees, so it commutes with the Koszul twists.
+    exact (DGRightModuleHom.map_koszulTwist f n (M.rightShiftEquiv n x)).symm
 
 /-- The component of `rightShiftFunctorIsoShiftFunctor` at `M` is `rightShiftIsoShift`. -/
 @[simp]
