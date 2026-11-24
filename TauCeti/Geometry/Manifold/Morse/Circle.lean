@@ -298,14 +298,21 @@ theorem mvfderiv_circleCosTwo_coe (δ r t : ℝ) :
       (mfderiv 𝓘(ℝ) 𝓘(ℝ) (circleCosTwo δ r) t) :=
     ((((contMDiff_circleCosTwo δ r) t).mdifferentiableAt (by simp)).hasMFDerivAt.comp t
       (hasMFDerivAt_coe (2 * π) t)).congr_mfderiv (ContinuousLinearMap.comp_id _)
+  -- The derivative `smulRight 1 c` of a real function is multiplication by `c`.
+  have hc : (1 : ℝ →L[ℝ] ℝ).smulRight (-(2 * δ) * Real.sin (2 * (t - r))) =
+      (-(2 * δ) * Real.sin (2 * (t - r))) • ContinuousLinearMap.id ℝ ℝ :=
+    ContinuousLinearMap.ext fun v ↦ by
+      rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, smul_apply,
+        ContinuousLinearMap.id_apply, smul_eq_mul, smul_eq_mul, mul_comm]
   have h₂ : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (circleCosTwo δ r ∘ ((↑) : ℝ → AddCircle (2 * π))) t
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (-(2 * δ) * Real.sin (2 * (t - r)))) := by
+      ((-(2 * δ) * Real.sin (2 * (t - r))) • ContinuousLinearMap.id ℝ ℝ) := by
     rw [show circleCosTwo δ r ∘ ((↑) : ℝ → AddCircle (2 * π)) =
       fun y ↦ δ * Real.cos (2 * (y - r)) from funext fun y ↦ circleCosTwo_coe δ r y]
-    exact (hasDerivAt_cos_two δ r t).hasFDerivAt.hasMFDerivAt
-  -- `NormedSpace.fromTangentSpace` is the identity of `ℝ`, and `smulRight 1 c` is `v ↦ v c`.
-  rw [mvfderiv, h₁.mfderiv.symm.trans h₂.mfderiv]
-  exact ContinuousLinearMap.ext fun v ↦ @mul_comm ℝ _ v _
+    exact ((hasDerivAt_cos_two δ r t).hasFDerivAt.congr_fderiv hc).hasMFDerivAt
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  rw [mvfderiv_apply_eq_mfderiv_apply, h₁.mfderiv.symm.trans h₂.mfderiv]
+  -- The two sides differ only in reading the tangent vector `v ∈ T_t S¹` as a real number.
+  rfl
 
 /-- At a point `x` of the circle with lift `y`, the angle `2 (y - r)` has the sine and cosine of the
 class of `2 (θ - r)`; these do not depend on the lift. -/

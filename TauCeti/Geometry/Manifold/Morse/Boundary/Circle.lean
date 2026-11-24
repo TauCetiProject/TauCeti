@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 import Mathlib.Topology.Covering.AddCircle
 import Mathlib.Topology.Homotopy.Lifting
 import TauCeti.Algebra.AddCircle
+import TauCeti.Topology.Order.IntermediateValue
 
 /-!
 # The Morse complex of `δ cos (2 (θ - r))` on the circle
@@ -207,18 +208,39 @@ private theorem exists_continuous_lift_flow (hX : IsAdaptedPseudoGradient (circl
     0 a (by simp)
   exact ⟨Γ, Γ.continuous, hΓ0, fun t ↦ congrFun hΓ t⟩
 
-/-- A continuous real function which starts in `[a, b]` and takes neither the value `a` nor the
-value `b` between the times `0` and `t` is still in `[a, b]` at the time `t`. -/
-private theorem mem_Icc_of_forall_mem_uIcc_ne {Γ : ℝ → ℝ} (hΓ : Continuous Γ) {a b t : ℝ}
-    (h₀ : Γ 0 ∈ Icc a b) (hne : ∀ s ∈ uIcc 0 t, Γ s ≠ a ∧ Γ s ≠ b) : Γ t ∈ Icc a b := by
-  by_contra h
-  rw [mem_Icc, not_and_or, not_le, not_le] at h
-  have hivt := intermediate_value_uIcc (a := 0) (b := t) hΓ.continuousOn
-  rcases h with h | h
-  · obtain ⟨s, hs, hsa⟩ := hivt (mem_uIcc.2 (Or.inr ⟨h.le, h₀.1⟩))
-    exact (hne s hs).1 hsa
-  · obtain ⟨s, hs, hsb⟩ := hivt (mem_uIcc.2 (Or.inl ⟨h₀.2, h.le⟩))
-    exact (hne s hs).2 hsb
+/-- Let the orbit of `a` under the flow of `X` meet neither the class of `u` nor that of `v` at the
+times of `T`, a set of times which contains, with every `t`, all times between `0` and `t`, and let
+`a ∈ [u, v]`. Then the lift of the orbit through `a` stays in `[u, v]` at these times, so a limit
+of the orbit along a filter containing `T` has a lift in `[u, v]`. -/
+private theorem exists_mem_Icc_coe_eq_of_tendsto
+    (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) {a u v : ℝ} (ha : a ∈ Icc u v)
+    {T : Set ℝ} (hT : ∀ t ∈ T, uIcc 0 t ⊆ T)
+    (hne : ∀ t ∈ T, hX.flow t a ≠ (u : AddCircle (2 * π)) ∧ hX.flow t a ≠ (v : AddCircle (2 * π)))
+    {l : Filter ℝ} [l.NeBot] (hl : T ∈ l) {c : AddCircle (2 * π)}
+    (hc : Tendsto (fun t ↦ hX.flow t a) l (nhds c)) :
+    ∃ x ∈ Icc u v, (x : AddCircle (2 * π)) = c := by
+  obtain ⟨Γ, hΓ, hΓ0, hΓt⟩ := exists_continuous_lift_flow hX a
+  -- At the times of `T` the lift never meets `u` or `v`, so it stays in `[u, v]`.
+  have hlift (t : ℝ) (ht : t ∈ T) : Γ t ∈ Icc u v :=
+    Ioo_subset_Icc_self (isPreconnected_uIcc.forall_mem_Ioo_of_mem_Icc hΓ.continuousOn
+      (fun s hs ↦ ⟨fun he ↦ (hne s (hT t ht hs)).1 (by rw [← hΓt s, he]),
+        fun he ↦ (hne s (hT t ht hs)).2 (by rw [← hΓt s, he])⟩)
+      left_mem_uIcc (hΓ0 ▸ ha) t right_mem_uIcc)
+  have hK : IsClosed (((↑) : ℝ → AddCircle (2 * π)) '' Icc u v) :=
+    (isCompact_Icc.image (AddCircle.continuous_mk' (2 * π))).isClosed
+  exact hK.mem_of_tendsto hc (mem_of_superset hl fun t ht ↦ ⟨Γ t, hlift t ht, hΓt t⟩)
+
+/-- The point `r + j π + π / 4`, halfway between `p_j` and `q_j`, lies on the level `f = 0`. -/
+private theorem circleCosTwo_coe_add_pi_div_four (δ r : ℝ) (j : ℕ) :
+    circleCosTwo δ r ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) = 0 := by
+  rw [circleCosTwo_coe, show 2 * (r + j * π + π / 4 - r) = π / 2 + (j : ℝ) * (2 * π) by ring,
+    Real.cos_add_nat_mul_two_pi, Real.cos_pi_div_two, mul_zero]
+
+/-- At the point `r + j π + π / 4`, the sine `sin (2 (θ - r))` is `1`. -/
+private theorem sin_two_mul_add_pi_div_four_sub (r : ℝ) (j : ℕ) :
+    Real.sin (2 * (r + j * π + π / 4 - r)) = 1 := by
+  rw [show 2 * (r + j * π + π / 4 - r) = π / 2 + (j : ℝ) * (2 * π) by ring,
+    Real.sin_add_nat_mul_two_pi, Real.sin_pi_div_two]
 
 /-- The angle `c + i π` of the circle has a lift in `[c + j π - π / 2, c + j π + π / 2]` only for
 `i = j`. -/
@@ -240,35 +262,30 @@ theorem coe_mem_stableSet_circleCosTwoMin (hδ : 0 < δ)
     (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) (j : Fin 2) :
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈ hX.flow.stableSet (circleCosTwoMin r j) := by
   have hπ := Real.pi_pos
-  set a : ℝ := r + j * π + π / 4
   obtain ⟨c, hc, hac⟩ := hX.exists_mem_stableSet (isMorse_circleCosTwo hδ.ne' r)
-    (a : AddCircle (2 * π))
-  obtain ⟨Γ, hΓ, hΓ0, hΓt⟩ := exists_continuous_lift_flow hX a
-  -- Along the forward orbit of `a`, where `f` starts at `0`, `f ≤ 0`.
-  have hle (t : ℝ) (ht : 0 ≤ t) : circleCosTwo δ r (hX.flow t a) ≤ 0 := by
-    have h : circleCosTwo δ r (hX.flow t a) ≤ circleCosTwo δ r (hX.flow 0 a) :=
-      hX.antitone_flow (a : AddCircle (2 * π)) ht
-    rwa [Flow.map_zero_apply, circleCosTwo_coe,
-      show 2 * (a - r) = π / 2 + ((j : ℕ) : ℝ) * (2 * π) by simp only [a]; ring,
-      Real.cos_add_nat_mul_two_pi, Real.cos_pi_div_two, mul_zero] at h
-  -- So its lift stays between the lifts `r + j π` and `r + j π + π` of the maxima, where `f = δ`.
-  have hlift (t : ℝ) (ht : 0 ≤ t) : Γ t ∈ Icc (r + j * π) (r + j * π + π) := by
-    refine mem_Icc_of_forall_mem_uIcc_ne hΓ
-      (by rw [hΓ0]; constructor <;> simp only [a] <;> linarith) fun s hs ↦ ?_
-    have h := hle s (by rw [uIcc_of_le ht] at hs; exact hs.1)
-    rw [← hΓt s, circleCosTwo_coe] at h
-    constructor <;> intro he <;> rw [he] at h
-    · rw [show 2 * (r + j * π - r) = ((j : ℕ) : ℝ) * (2 * π) by ring,
+    ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))
+  -- Along the forward orbit of `r + j π + π / 4`, where `f` starts at `0`, `f ≤ 0`.
+  have hle (t : ℝ) (ht : 0 ≤ t) :
+      circleCosTwo δ r (hX.flow t ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))) ≤ 0 := by
+    simpa only [Flow.map_zero_apply, circleCosTwo_coe_add_pi_div_four] using
+      hX.antitone_flow ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ht
+  -- So it never meets the maxima `r + j π` and `r + j π + π`, where `f = δ`, and the limit `c`
+  -- has a lift between them.
+  obtain ⟨x, hx, hxc⟩ := exists_mem_Icc_coe_eq_of_tendsto hX (u := r + j * π)
+    (v := r + j * π + π) (by constructor <;> linarith)
+    (fun t ht ↦ by rw [uIcc_of_le ht]; exact fun s hs ↦ hs.1)
+    (fun t ht ↦ ⟨fun he ↦ by
+      have h := hle t ht
+      rw [he, circleCosTwo_coe, show 2 * (r + j * π - r) = ((j : ℕ) : ℝ) * (2 * π) by ring,
         Real.cos_nat_mul_two_pi] at h
-      linarith
-    · rw [show 2 * (r + j * π + π - r) = ((j + 1 : ℕ) : ℝ) * (2 * π) by push_cast; ring,
+      linarith, fun he ↦ by
+      have h := hle t ht
+      rw [he, circleCosTwo_coe,
+        show 2 * (r + j * π + π - r) = ((j + 1 : ℕ) : ℝ) * (2 * π) by push_cast; ring,
         Real.cos_nat_mul_two_pi] at h
-      linarith
-  -- The limit `c` lies on the closed arc between them, with `f c ≤ 0`, so it is `q_j`.
-  have hK : IsClosed (((↑) : ℝ → AddCircle (2 * π)) '' Icc (r + j * π) (r + j * π + π)) :=
-    (isCompact_Icc.image (AddCircle.continuous_mk' (2 * π))).isClosed
-  obtain ⟨x, hx, hxc⟩ := hK.mem_of_tendsto (Flow.mem_stableSet.1 hac)
-    (eventually_atTop.2 ⟨0, fun t ht ↦ ⟨Γ t, hlift t ht, hΓt t⟩⟩)
+      linarith⟩)
+    (Ici_mem_atTop 0) (Flow.mem_stableSet.1 hac)
+  -- As `f c ≤ 0`, `c` is the minimum `q_j`.
   have hfc : circleCosTwo δ r c ≤ 0 :=
     le_of_tendsto (((contMDiff_circleCosTwo δ r).continuous.tendsto c).comp
       (Flow.mem_stableSet.1 hac))
@@ -290,36 +307,31 @@ theorem coe_mem_unstableSet_circleCosTwoMax (hδ : 0 < δ)
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈
       hX.flow.unstableSet (circleCosTwoMax r j) := by
   have hπ := Real.pi_pos
-  set a : ℝ := r + j * π + π / 4
   obtain ⟨c, hc, hac⟩ := hX.exists_mem_unstableSet (isMorse_circleCosTwo hδ.ne' r)
-    (a : AddCircle (2 * π))
-  obtain ⟨Γ, hΓ, hΓ0, hΓt⟩ := exists_continuous_lift_flow hX a
-  -- Along the backward orbit of `a`, where `f` starts at `0`, `f ≥ 0`.
-  have hge (t : ℝ) (ht : t ≤ 0) : 0 ≤ circleCosTwo δ r (hX.flow t a) := by
-    have h : circleCosTwo δ r (hX.flow 0 a) ≤ circleCosTwo δ r (hX.flow t a) :=
-      hX.antitone_flow (a : AddCircle (2 * π)) ht
-    rwa [Flow.map_zero_apply, circleCosTwo_coe,
-      show 2 * (a - r) = π / 2 + ((j : ℕ) : ℝ) * (2 * π) by simp only [a]; ring,
-      Real.cos_add_nat_mul_two_pi, Real.cos_pi_div_two, mul_zero] at h
-  -- So its lift stays between the lifts `r + j π ∓ π / 2` of the minima, where `f = -δ`.
-  have hlift (t : ℝ) (ht : t ≤ 0) : Γ t ∈ Icc (r + j * π - π / 2) (r + j * π + π / 2) := by
-    refine mem_Icc_of_forall_mem_uIcc_ne hΓ
-      (by rw [hΓ0]; constructor <;> simp only [a] <;> linarith) fun s hs ↦ ?_
-    have h := hge s (by rw [uIcc_of_ge ht] at hs; exact hs.2)
-    rw [← hΓt s, circleCosTwo_coe] at h
-    constructor <;> intro he <;> rw [he] at h
-    · rw [show 2 * (r + j * π - π / 2 - r) = -π + ((j : ℕ) : ℝ) * (2 * π) by ring,
+    ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))
+  -- Along the backward orbit of `r + j π + π / 4`, where `f` starts at `0`, `f ≥ 0`.
+  have hge (t : ℝ) (ht : t ≤ 0) :
+      0 ≤ circleCosTwo δ r (hX.flow t ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))) := by
+    simpa only [Flow.map_zero_apply, circleCosTwo_coe_add_pi_div_four] using
+      hX.antitone_flow ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ht
+  -- So it never meets the minima `r + j π ∓ π / 2`, where `f = -δ`, and the limit `c` has a lift
+  -- between them.
+  obtain ⟨x, hx, hxc⟩ := exists_mem_Icc_coe_eq_of_tendsto hX (u := r + j * π - π / 2)
+    (v := r + j * π + π / 2) (by constructor <;> linarith)
+    (fun t ht ↦ by rw [uIcc_of_ge ht]; exact fun s hs ↦ hs.2)
+    (fun t ht ↦ ⟨fun he ↦ by
+      have h := hge t ht
+      rw [he, circleCosTwo_coe,
+        show 2 * (r + j * π - π / 2 - r) = -π + ((j : ℕ) : ℝ) * (2 * π) by ring,
         Real.cos_add_nat_mul_two_pi, Real.cos_neg, Real.cos_pi] at h
-      linarith
-    · rw [show 2 * (r + j * π + π / 2 - r) = π + ((j : ℕ) : ℝ) * (2 * π) by ring,
+      linarith, fun he ↦ by
+      have h := hge t ht
+      rw [he, circleCosTwo_coe,
+        show 2 * (r + j * π + π / 2 - r) = π + ((j : ℕ) : ℝ) * (2 * π) by ring,
         Real.cos_add_nat_mul_two_pi, Real.cos_pi] at h
-      linarith
-  -- The limit `c` lies on the closed arc between them, with `f c ≥ 0`, so it is `p_j`.
-  have hK : IsClosed (((↑) : ℝ → AddCircle (2 * π)) ''
-      Icc (r + j * π - π / 2) (r + j * π + π / 2)) :=
-    (isCompact_Icc.image (AddCircle.continuous_mk' (2 * π))).isClosed
-  obtain ⟨x, hx, hxc⟩ := hK.mem_of_tendsto (Flow.mem_unstableSet.1 hac)
-    (eventually_atBot.2 ⟨0, fun t ht ↦ ⟨Γ t, hlift t ht, hΓt t⟩⟩)
+      linarith⟩)
+    (Iic_mem_atBot 0) (Flow.mem_unstableSet.1 hac)
+  -- As `f c ≥ 0`, `c` is the maximum `p_j`.
   have hfc : 0 ≤ circleCosTwo δ r c :=
     ge_of_tendsto (((contMDiff_circleCosTwo δ r).continuous.tendsto c).comp
       (Flow.mem_unstableSet.1 hac))
@@ -346,9 +358,8 @@ theorem morseTrajectorySlice_circleCosTwo_eq (hδ : 0 < δ)
   have hz : z ∈ hX.morseTrajectorySlice (circleCosTwoMax r j) (circleCosTwoMin r j) := by
     refine (hX.mem_morseTrajectorySlice).2 ⟨coe_mem_unstableSet_circleCosTwoMax hδ hX j,
       coe_mem_stableSet_circleCosTwoMin hδ hX j, ?_⟩
-    rw [circleCosTwo_circleCosTwoMax, circleCosTwo_circleCosTwoMin, circleCosTwo_coe,
-      show 2 * (r + j * π + π / 4 - r) = π / 2 + ((j : ℕ) : ℝ) * (2 * π) by ring,
-      Real.cos_add_nat_mul_two_pi, Real.cos_pi_div_two]
+    rw [circleCosTwo_circleCosTwoMax, circleCosTwo_circleCosTwoMin,
+      circleCosTwo_coe_add_pi_div_four]
     ring
   -- The slice from `p_j` to a critical point of index `0` is empty or a single point.
   obtain ⟨q₀, q₁, -, -, -, ⟨y₀, hy₀⟩, ⟨y₁, hy₁⟩, hempty⟩ :=
@@ -395,12 +406,11 @@ private theorem signedMorseBoundaryCoeff_circleCosTwo_self (hδ : 0 < δ)
     (isMorse_circleCosTwo hδ.ne' r) (finrank_self ℝ) 𝔬 oM hpq hz b hb ⟨0, by simp⟩
   -- At `z`, `df` is `-2 δ` on the positive tangent vector `b 0 = 1`.
   have hd : mvfderiv 𝓘(ℝ) (circleCosTwo δ r) z (b ⟨0, by simp⟩) = -(2 * δ) := by
-    rw [mvfderiv_circleCosTwo_coe,
-      show 2 * (r + j * π + π / 4 - r) = π / 2 + ((j : ℕ) : ℝ) * (2 * π) by ring,
-      Real.sin_add_nat_mul_two_pi, Real.sin_pi_div_two, mul_one]
     have hb0 : b ⟨0, by simp⟩ = 1 := by simp [b]
-    -- Applied to the tangent vector `v`, read in `ℝ`, the map `c • id` is `c * v`.
-    exact (congrArg (-(2 * δ) * ·) hb0).trans (mul_one _)
+    rw [mvfderiv_circleCosTwo_coe, sin_two_mul_add_pi_div_four_sub, mul_one, hb0]
+    -- The map `c • id` is applied to `1`, a tangent vector of the circle read in `ℝ`.
+    exact (smul_apply (ContinuousLinearMap.id ℝ ℝ) (-(2 * δ)) 1).trans
+      (by rw [ContinuousLinearMap.id_apply, smul_eq_mul, mul_one])
   have hs : 𝔬.augmentationSign (circleCosTwoMinCrit δ r j) *
         (SignType.sign (mvfderiv 𝓘(ℝ) (circleCosTwo δ r) z (b ⟨0, by simp⟩)) : ℤ) =
       -𝔬.augmentationSign (circleCosTwoMinCrit δ r j) := by
@@ -451,7 +461,10 @@ theorem signedMorseBoundaryCoeff_circleCosTwo (hδ : 0 < δ)
   set C := hX.signedMorseBoundaryCoeff 𝔬 (circleCosTwoMaxCrit δ r j) (circleCosTwoMinCrit δ r i)
   have hopp : A * C = -(B * (-ε * B)) := by
     rw [← hdiag, he, he]
-    fin_cases i <;> fin_cases j <;> simp_all
+    -- As `i ≠ j` in `Fin 2`, exactly one of them is `0`.
+    by_cases hi : i = 0
+    · rw [ite_eq_left hi, ite_eq_right (by omega : j ≠ 0), neg_neg]
+    · rw [ite_eq_right hi, ite_eq_left (by omega : j = 0)]
   have hA : A * A = 1 := by rcases hηi with h | h <;> rw [h] <;> norm_num
   have hB : B * B = 1 := by rcases hηj with h | h <;> rw [h] <;> norm_num
   rw [ite_eq_right hij]

@@ -584,6 +584,36 @@ private theorem mvfderiv_apply_ne_zero_of_finrank_eq_one (hX : IsAdaptedPseudoGr
     smul_zero] at hlt
   exact lt_irrefl 0 hlt
 
+/-- On a manifold of dimension `1`, let `q` have index `0`, let the stable comparison map
+`v ↦ (df_z v, N_q v)` at `z` be bijective, and let `B₀` be a basis of `ℝ × V`, for `V = 0` the
+space of coordinates of negative weight at `q`, whose vectors have first coordinate `1`. Then the
+stable comparison map carries the orientation of a basis `b` of `T_z M` to that of `B₀`, scaled by
+the inverse of `d = df_z (b k)`. -/
+private theorem map_orientation_stableComparison_eq (hE : finrank ℝ E = 1) {q : M}
+    (φq : MorseChart E f q) (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0) {z : M}
+    (hA : Bijective ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φq z)))
+    (b : Module.Basis (Fin (finrank ℝ E)) ℝ (TangentSpace 𝓘(ℝ, E) z)) (k : Fin (finrank ℝ E))
+    (hd : mvfderiv 𝓘(ℝ, E) f z (b k) ≠ 0)
+    (B₀ : Module.Basis (Fin (finrank ℝ E)) ℝ (ℝ × ({i // φq.weight i < 0} → ℝ)))
+    (hB₀ : ∀ j, (B₀ j).1 = 1) :
+    Orientation.map _ (LinearEquiv.ofBijective
+        ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φq z)).toLinearMap hA) b.orientation =
+      (Units.mk0 _ hd)⁻¹ • B₀.orientation := by
+  have : Unique (Fin (finrank ℝ E)) := by rw [hE]; infer_instance
+  have hsub : Subsingleton ({i // φq.weight i < 0} → ℝ) :=
+    Module.finrank_zero_iff.1 (φq.finrank_negativeWeight_fun.trans hq)
+  -- The stable comparison map sends `b` to `d` times `B₀`.
+  have hmap : b.map (LinearEquiv.ofBijective
+      ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φq z)).toLinearMap hA) =
+      B₀.unitsSMul fun _ ↦ Units.mk0 _ hd := by
+    refine Module.Basis.eq_of_apply_eq fun i ↦ Prod.ext ?_ (Subsingleton.elim _ _)
+    obtain rfl : i = k := Subsingleton.elim _ _
+    rw [Module.Basis.map_apply, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.prod_apply, Module.Basis.unitsSMul_apply, Units.smul_def,
+      Units.val_mk0, Prod.smul_fst, hB₀, smul_eq_mul, mul_one]
+  rw [← Module.Basis.orientation_map, hmap, Module.Basis.orientation_unitsSMul,
+    Fintype.prod_unique]
+
 /-- **The sign of a trajectory on an oriented one-dimensional manifold.** Let `M` have dimension
 `1`, let `p` and `q` be critical points with `ind p = ind q + 1`, so of index `1` and `0`, and let
 `z` lie on a trajectory from `p` to `q`. For a positive basis `b` of `T_z M`, the sign of the
@@ -611,39 +641,15 @@ theorem fundamentalSign_mul_trajectorySign_of_finrank_eq_one (hf : IsMorse 𝓘(
     (𝔬.coord_mfderiv_chart q) hp hpq hz
   rw [fundamentalSign_mul_trajectorySign hMS hf 𝔬 oM hp hpq hz hA,
     𝔬.augmentationSign_of_morseIndex_eq_zero hq]
-  have : Unique (Fin (finrank ℝ E)) := by rw [hE]; infer_instance
-  have hsub : Subsingleton ({i // (𝔬.chart q).weight i < 0} → ℝ) :=
-    Module.finrank_zero_iff.1 ((𝔬.chart q).finrank_negativeWeight_fun.trans hq)
   have hd := mvfderiv_apply_ne_zero_of_finrank_eq_one hX hE
     (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet
       (fun he ↦ by rw [Subtype.ext he] at hpq; omega) hz) b k
   set d := mvfderiv 𝓘(ℝ, E) f z (b k)
-  -- The target orientation is that of the basis `B₀` whose vectors are `(1, 0)`, or its reverse.
+  -- The target orientation is that of a basis `B₀` whose vectors are `(1, 0)`, or its reverse.
+  obtain ⟨B₀, hB₀, hT⟩ := (𝔬.chart q).exists_basis_fst_eq_one_orientation_eq hq
+    (by omega : 1 + manifoldMorseIndex 𝓘(ℝ, E) f q = finrank ℝ E)
   set b₀ := Module.finBasisOfFinrankEq ℝ _ (𝔬.chart q).finrank_negativeWeight_fun
-  have hcard : 1 + manifoldMorseIndex 𝓘(ℝ, E) f q = finrank ℝ E := by omega
-  set B₀ := (((Module.Basis.singleton (Fin 1) ℝ).prod b₀).reindex finSumFinEquiv).reindex
-    (finCongr hcard) with hB₀def
-  have hT : ((Module.Basis.singleton (Fin 1) ℝ).orientation.prod b₀.orientation
-      (Module.finrank_self ℝ) (𝔬.chart q).finrank_negativeWeight_fun).reindex ℝ _
-      (finCongr hcard) = B₀.orientation := by
-    rw [Orientation.prod_basis_orientation, hB₀def]
-    simp only [Module.Basis.orientation_reindex]
-  -- The stable comparison map sends `b` to `d` times `B₀`.
-  set 𝒜 := LinearEquiv.ofBijective
-    ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal (𝔬.chart q) z)).toLinearMap hA
-  have hmap : b.map 𝒜 = B₀.unitsSMul fun _ ↦ Units.mk0 d hd := by
-    refine Module.Basis.eq_of_apply_eq fun i ↦ Prod.ext ?_ (Subsingleton.elim _ _)
-    obtain rfl : i = k := Subsingleton.elim _ _
-    rw [Module.Basis.map_apply, Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
-      Prod.smul_fst, hB₀def, Module.Basis.reindex_apply, Module.Basis.reindex_apply]
-    rcases finSumFinEquiv.symm ((finCongr hcard).symm i) with j | j
-    · rw [Module.Basis.prod_apply_inl_fst, Module.Basis.singleton_apply, smul_eq_mul, mul_one]
-      rfl
-    · exact absurd j.isLt (by omega)
-  have hsrc : Orientation.map _ 𝒜 (oM.orientationAt z) = (Units.mk0 d hd)⁻¹ • B₀.orientation := by
-    rw [← hb, ← Module.Basis.orientation_map, hmap, Module.Basis.orientation_unitsSMul,
-      Fintype.prod_unique]
-  rw [hsrc]
+  rw [← hb, map_orientation_stableComparison_eq hE (𝔬.chart q) hq hA b k hd B₀ hB₀]
   -- Compare the two orientations according to the signs of `d` and of the orientation at `q`.
   have hne := Module.Ray.ne_neg_self B₀.orientation
   rcases hd.lt_or_gt with hneg | hpos
