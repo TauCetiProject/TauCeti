@@ -59,7 +59,7 @@ nonsingular points of the minimal reduction, but no Frobenius interpretation is 
   at `p`, good reduction at `p` means that `p` does not divide the discriminant.
 * `WeierstrassCurve.cos_frobeniusAngle`: at a good prime, `cos θ_p = a_p / (2√p)`.
 * `WeierstrassCurve.map_localPolynomial_eq_mul`: at a good prime, the local polynomial
-  `1 - a_p T + p T²` of `E` factors over `ℂ` as `(1 - α T)(1 - ᾱ T)` with
+  `1 - a_p T + p T²` of `E` factors over `ℂ` as `(1 - α T)(1 - conj α T)` with
   `α = √p exp (i θ_p)`.
 * `WeierstrassCurve.frobeniusAngle_smul`: isomorphic elliptic curves have the same angles.
 
@@ -257,9 +257,9 @@ theorem cos_frobeniusAngle {p : Nat.Primes} (hp : E.HasGoodReductionAt p) :
     exact habs.2
 
 /-- **The local polynomial at a good prime factors through the Frobenius angle**: over `ℂ`, the
-Euler factor `1 - a_p T + p T²` of `E` at `p` is `(1 - α T)(1 - ᾱ T)` with `α = √p exp (i θ_p)`.
-So `exp (± i θ_p)` are the normalized Frobenius eigenvalues, and `α` is the root of the Frobenius
-polynomial `X² - a_p X + p` with nonnegative imaginary part. -/
+Euler factor `1 - a_p T + p T²` of `E` at `p` is `(1 - α T)(1 - conj α T)` with
+`α = √p exp (i θ_p)`. So `exp (± i θ_p)` are the normalized Frobenius eigenvalues, and `α` is the
+root of the Frobenius polynomial `X² - a_p X + p` with nonnegative imaginary part. -/
 theorem map_localPolynomial_eq_mul {p : Nat.Primes} (hp : E.HasGoodReductionAt p) :
     ((E.baseChange ℚ_[p]).localPolynomial ℤ_[p]).map (Int.castRingHom ℂ) =
       (1 - C (√(p : ℝ) * Complex.exp (E.frobeniusAngle p * Complex.I)) * X) *
