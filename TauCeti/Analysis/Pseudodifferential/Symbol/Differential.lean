@@ -31,6 +31,10 @@ The summands have homogeneous degrees, so each is a classical symbol with a sing
 term (`TauCeti.ClassicalSymbol.ofContDiffHomogeneous`), and the operator is their sum after the
 integer-step order inclusions.
 
+The quantization of classical symbols is additive and homogeneous in the symbol
+(`TauCeti.ClassicalSymbol.quantizeSchwartzValue_toSymbol_add` and
+`TauCeti.ClassicalSymbol.quantizeSchwartzValue_toSymbol_smul`).
+
 For the differential symbol of order `m`:
 
 * `TauCeti.ClassicalSymbol.ofDifferentialSymbol`: the classical symbol of order `m`, with full
@@ -161,6 +165,22 @@ theorem mixedDeriv_nil_differentialSymbol_eq_zero {ι : Type*} {k : ι → ℕ} 
   simp
 
 namespace ClassicalSymbol
+
+/-- The quantization of a sum of classical symbols is the sum of their quantizations. -/
+theorem quantizeSchwartzValue_toSymbol_add (a b : ClassicalSymbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a + b).toSymbol.coefficient u x =
+      quantizeSchwartzValue a.toSymbol.coefficient u x +
+        quantizeSchwartzValue b.toSymbol.coefficient u x := by
+  rw [toSymbol_add, Symbol.coefficient_add, Symbol.quantizeSchwartzValue_coefficient_add]
+
+/-- The quantization of a scalar multiple of a classical symbol is the scalar multiple of its
+quantization. -/
+theorem quantizeSchwartzValue_toSymbol_smul (c : ℂ) (a : ClassicalSymbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue (c • a).toSymbol.coefficient u x =
+      c • quantizeSchwartzValue a.toSymbol.coefficient u x := by
+  rw [toSymbol_smul, Symbol.coefficient_smul, quantizeSchwartzValue_smul_left]
 
 variable {ι : Type*} {k : ι → ℕ}
 
