@@ -544,8 +544,8 @@ private theorem hasSum_coefficient_sharpTerm_latticePiece (p : Symbol n W U m')
       ((p.sharpTerm b k).coefficient q) := by
   obtain ⟨x, ξ⟩ := q
   set R := ‖x‖ + √n + 1
-  have hfin := finite_setOf_norm_latticePoint_lt (ι := Fin n) R
-  have hs : ∀ j, ‖latticePoint j‖ < R → j ∈ hfin.toFinset := fun j hj ↦ hfin.mem_toFinset.2 hj
+  have hfin := finite_setOf_norm_latticePoint_le (ι := Fin n) R
+  have hs : ∀ j, ‖latticePoint j‖ < R → j ∈ hfin.toFinset := fun j hj ↦ hfin.mem_toFinset.2 hj.le
   have hnear : ∀ᶠ y in 𝓝 x, ‖y‖ + √n < R :=
     (isOpen_lt (continuous_norm.add continuous_const) continuous_const).mem_nhds (by simp [R])
   -- Near `x`, the pieces centred at the lattice points of `hfin.toFinset` sum to `b`.

@@ -64,6 +64,12 @@ theorem PolarPoint.ext {p q : PolarPoint} (hr : radius p = radius q)
 def deckShift (k : ℤ) (p : PolarPoint) : PolarPoint :=
   ⟨(radius p, angle p + (k : ℝ) * (2 * Real.pi)), radius_pos p⟩
 
+/-- Deck translation is continuous on the polar cover. -/
+@[fun_prop] theorem continuous_deckShift (k : ℤ) : Continuous (deckShift k) := by
+  unfold deckShift
+  simp only [radius_def, angle_def]
+  fun_prop
+
 @[simp, grind =] theorem radius_deckShift (k : ℤ) (p : PolarPoint) :
     radius (deckShift k p) = radius p := (rfl)
 
@@ -117,6 +123,12 @@ def projection (p : PolarPoint) : ℂ :=
 
 theorem projection_def (p : PolarPoint) :
     projection p = (radius p : ℂ) * (Circle.exp (angle p) : ℂ) := (rfl)
+
+/-- The polar projection is continuous on the polar cover. -/
+@[fun_prop] theorem continuous_projection : Continuous projection := by
+  apply (continuous_congr projection_def).mpr
+  simp only [radius_def, angle_def]
+  fun_prop
 
 @[simp, grind =] theorem re_projection (p : PolarPoint) :
     (projection p).re = radius p * Real.cos (angle p) := by
@@ -226,10 +238,29 @@ theorem separation_def (u : PolarPoint → ℝ) (k : ℤ) (p : PolarPoint) :
     separation u (k + l) p = separation u k p + separation u l (deckShift k p) := by
   simp [separation_def, deckShift_add]
 
+/-- The separation after `n` positive turns is the sum of the adjacent separations. -/
+theorem separation_natCast_eq_sum (u : PolarPoint → ℝ) (n : ℕ) (p : PolarPoint) :
+    separation u n p = ∑ j ∈ Finset.range n, separation u 1 (deckShift j p) := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Nat.cast_succ, separation_add, ih, Finset.sum_range_succ]
+
 /-- Reversing a deck shift from `deckShift k p` negates its height change from `p`. -/
 @[simp, grind =] theorem separation_neg_deckShift (u : PolarPoint → ℝ) (k : ℤ)
     (p : PolarPoint) : separation u (-k) (deckShift k p) = -separation u k p := by
   simp [separation_def, sub_eq_add_neg, add_comm]
+
+/-- Continuity of the height on its domain implies continuity of the separation on each
+deck overlap. -/
+theorem continuousOn_separation {Ω : Set PolarPoint} {u : PolarPoint → ℝ}
+    (hu : ContinuousOn u Ω) (k : ℤ) : ContinuousOn (separation u k) (overlap Ω k) := by
+  have hshift : Continuous (deckShift k) := by
+    unfold deckShift radius angle
+    apply Continuous.subtype_mk
+    fun_prop
+  simp only [funext (separation_def u k)]
+  exact (hu.comp hshift.continuousOn fun _ hp ↦ (mem_overlap_iff.mp hp).2).sub
+    (hu.mono (overlap_subset Ω k))
 
 /-- One-turn invariance along a point's deck orbit makes every separation at that point zero. -/
 theorem separation_eq_zero_of_deckShift_one_deckShift_eq {u : PolarPoint → ℝ} {p : PolarPoint}

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
 
 /-!
 # Eigen-coordinates and eigenvalue multisets of a Hermitian matrix
@@ -33,7 +34,9 @@ possibly of different sizes, then the eigenvalues of `A` are those of `B` togeth
 zeros. Mathlib's `Matrix.charpoly_mul_comm_of_le` gives this relation for the two Gram matrices
 `Aᴴ * A` and `A * Aᴴ` of a rectangular matrix, which therefore have the same nonzero eigenvalues.
 This is how the spectra of sample covariance matrices `X * Xᴴ` and of their companions `Xᴴ * X`
-are compared.
+are compared. Since unitary conjugation preserves the characteristic polynomial, a decreasing real
+diagonal is recovered from the ordered eigenvalues of any of its unitary conjugates; this is the
+ordered diagonal coordinate in the spectral change of variables.
 
 Eigen-coordinates also bound the pseudo-inverse of `B` along eigenvectors of a matrix below it in
 the Loewner order: if `0 ≤ A ≤ B` and `u` is a unit eigenvector of `A` with eigenvalue `a`,
@@ -67,6 +70,8 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   zeros;
 * `Matrix.filter_map_eigenvalues_conjTranspose_mul_self` — `Aᴴ * A` and `A * Aᴴ` have the same
   nonzero eigenvalues, counted with multiplicity;
+* `Matrix.eigenvalues₀_conjStarAlgAut_diagonal` — the ordered eigenvalues of a unitary conjugate
+  of a decreasing real diagonal are its diagonal entries;
 * `Matrix.IsHermitian.eigenvalues_eq_zero_of_inner_ne_zero` — if the kernel of `B` lies in the
   kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
   eigenvector of `A` with nonzero eigenvalue.
@@ -82,12 +87,17 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   `Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq` — the canonical equivalence
   `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
   matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
-  matrix-indexed one.
+  matrix-indexed one;
+* `Matrix.IsHermitian.prod_comp_eigenvalues` and `Matrix.IsHermitian.sum_comp_eigenvalues` — a
+  product or sum of a function over the matrix-indexed eigenvalues is the same over the sorted
+  eigenvalues.
 
 ## References
 
 * R. A. Horn, C. R. Johnson, *Matrix Analysis*, 2nd ed., Cambridge University Press (2013),
   Theorem 1.3.22 (`AB` and `BA` have the same nonzero eigenvalues).
+* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
+  University Press (2010), §4.1 (ordered diagonal coordinate of the spectral change of variables).
 -/
 
 public section
@@ -385,6 +395,36 @@ theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
 
 end Matrix
 
+namespace Matrix
+
+variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [LinearOrder ι]
+
+/-- If a real diagonal decreases along a linear order on its finite index type, its entries listed
+in that order are the ordered eigenvalues of every unitary conjugate of the diagonal. -/
+theorem eigenvalues₀_conjStarAlgAut_diagonal (U : unitaryGroup ι 𝕜) {d : ι → ℝ}
+    (hd : Antitone d) (hA : (Unitary.conjStarAlgAut ℝ _ U
+      (diagonal fun i ↦ (d i : 𝕜))).IsHermitian) :
+    hA.eigenvalues₀ = d ∘ Fintype.orderIsoFinOfCardEq ι rfl := by
+  let D := diagonal fun i : ι ↦ (d i : 𝕜)
+  let o := Fintype.orderIsoFinOfCardEq ι rfl
+  have hC : (Unitary.conjStarAlgAut ℝ _ U D).charpoly = D.charpoly := by
+    rw [Unitary.conjStarAlgAut_apply, ← inv_eq_left_inv (Unitary.coe_star_mul_self U)]
+    exact charpoly_units_conj (Unitary.toUnits U) D
+  rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, hC,
+    roots_charpoly_diagonal, Multiset.map_map]
+  have hmap : Finset.univ.val.map (RCLike.re ∘ fun i ↦ (d i : 𝕜)) =
+      (List.ofFn (d ∘ o) : Multiset ℝ) := by
+    have ho : Finset.univ.val.map (d ∘ o) = Finset.univ.val.map d := by
+      rw [← Multiset.map_map, ← OrderIso.coe_toEquiv, Multiset.map_univ_val_equiv]
+    rw [← Fin.univ_val_map, ho]
+    simp
+  rw [hmap, Multiset.coe_sort]
+  exact List.mergeSort_of_pairwise (by
+    simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
+    exact (hd.comp_monotone o.monotone).sortedGE_ofFn)
+
+end Matrix
+
 namespace Matrix.IsSymm
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -421,6 +461,15 @@ theorem eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
     hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
       hA.eigenvalues₀ i := by
   simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
+
+/-- A product of a function over the matrix-indexed eigenvalues of a Hermitian matrix is its
+product over the sorted eigenvalues. -/
+@[to_additive /-- A sum of a function over the matrix-indexed eigenvalues of a Hermitian matrix is
+its sum over the sorted eigenvalues. -/]
+theorem prod_comp_eigenvalues {M : Type*} [CommMonoid M] (hA : A.IsHermitian) (g : ℝ → M) :
+    ∏ i, g (hA.eigenvalues i) = ∏ k, g (hA.eigenvalues₀ k) := by
+  rw [← Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)))]
+  simp only [eigenvalues_apply_equivOfCardEq]
 
 /-- A simple sorted eigenvalue is simple as a matrix-indexed eigenvalue at the index given by the
 canonical finite equivalence. -/
