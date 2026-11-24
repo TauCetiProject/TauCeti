@@ -26,6 +26,10 @@ affine covariance under pushforward. No moment assumptions are needed. Conversel
 axis the transform of a measure `μ` without finite weighted mass `∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since
 the kernel `‖(x - z)⁻¹‖` dominates `(1 + x ^ 2)⁻¹` up to a constant and so is not integrable.
 
+For a function `h` integrable for a measure on the real line, the integrands `h(x) / (x - z)`
+(off the real axis) and `x h(x) / (1 + x ^ 2)` are integrable too
+(`TauCeti.integrable_div_ofReal_sub`, `TauCeti.integrable_div_one_add_sq_mul`).
+
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
 
@@ -244,3 +248,25 @@ theorem resolventTransform_map_affine (a b : ℝ) (hb : b ≠ 0) (z : ℂ) :
           rw [integral_const_mul, resolventTransform_apply]
 
 end MeasureTheory
+
+namespace TauCeti
+
+/-- Off the real axis, `h(x) / (x - z)` is integrable for `h ∈ L¹(μ)`: `|x - z| ≥ |Im z|`. -/
+theorem integrable_div_ofReal_sub {μ : Measure ℝ} {h : ℝ → ℂ} (hh : Integrable h μ) {z : ℂ}
+    (hz : z.im ≠ 0) : Integrable (fun x : ℝ ↦ h x / ((x : ℂ) - z)) μ :=
+  (hh.bdd_mul (Complex.continuous_resolvent_real hz).aestronglyMeasurable
+    (.of_forall fun x ↦ Complex.norm_resolvent_real_le z x hz)).congr
+      (.of_forall fun x ↦ by simp [resolvent, Ring.inverse_eq_inv', div_eq_mul_inv, mul_comm])
+
+/-- For `h ∈ L¹(μ)`, `x h(x) / (1 + x ^ 2)` is integrable, since `|x| / (1 + x ^ 2) ≤ 1`. -/
+theorem integrable_div_one_add_sq_mul {μ : Measure ℝ} {h : ℝ → ℂ} (hh : Integrable h μ) :
+    Integrable (fun x : ℝ ↦ (x : ℂ) / (1 + (x : ℂ) ^ 2) * h x) μ := by
+  refine hh.norm.mono' (((by fun_prop : Measurable fun x : ℝ ↦ (x : ℂ) / (1 + (x : ℂ) ^ 2))
+    |>.aestronglyMeasurable).mul hh.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
+  have h1 : (1 + (x : ℂ) ^ 2) = ((1 + x ^ 2 : ℝ) : ℂ) := by push_cast; ring
+  rw [norm_mul, h1, ← ofReal_div, norm_real, Real.norm_eq_abs, abs_div,
+    abs_of_pos (by positivity : (0 : ℝ) < 1 + x ^ 2)]
+  refine mul_le_of_le_one_left (norm_nonneg _) ((div_le_one (by positivity)).2 ?_)
+  nlinarith [sq_nonneg (|x| - 1), sq_abs x]
+
+end TauCeti
