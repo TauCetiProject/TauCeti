@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Length
@@ -33,13 +33,10 @@ example : ∃ (p : ℚ[X]) (hmax : (Ideal.span {p}).IsMaximal),
     (⊥ : Ideal A).localQuotientHilbertSamuel 0 = 1 ∧
       Module.length ℚ (A ⧸ IsLocalRing.maximalIdeal A) = 2 := by
   let p : ℚ[X] := X ^ 2 + 1
-  have hp_monic : p.Monic := monic_X_pow_add_C 1 two_ne_zero
   have hp_deg : p.natDegree = 2 := by simp [p]
   have hp_irr : Irreducible p := by
-    rw [hp_monic.irreducible_iff_roots_eq_zero_of_degree_le_three (by omega) (by omega)]
-    refine Multiset.eq_zero_iff_forall_notMem.mpr fun q hq ↦ ?_
-    have hroot : q ^ 2 + 1 = 0 := by simpa [p, IsRoot.def] using isRoot_of_mem_roots hq
-    linarith [sq_nonneg q]
+    simpa [p] using irreducible_X_pow_sub_C_of_prime Nat.prime_two (a := (-1 : ℚ))
+      fun q h ↦ by linarith [sq_nonneg q]
   have hmax : (Ideal.span {p}).IsMaximal := PrincipalIdealRing.isMaximal_of_irreducible hp_irr
   refine ⟨p, hmax, Ideal.localQuotientHilbertSamuel_bot_zero, ?_⟩
   let A := Localization.AtPrime (Ideal.span {p})

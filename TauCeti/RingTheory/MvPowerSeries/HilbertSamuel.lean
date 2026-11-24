@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.PiLex
-public import TauCeti.Algebra.Order.Antidiag.FinsuppEquiv
 public import TauCeti.RingTheory.LocalRing.HilbertSamuel
 public import TauCeti.RingTheory.MvPowerSeries.FormalDivision
-import Mathlib.Data.Set.Card
-import TauCeti.Data.Finsupp.PWO
+import TauCeti.Data.Finsupp.UpperSet
 import TauCeti.Data.Finsupp.Weight
 import TauCeti.Order.PiLex
 
@@ -38,7 +36,7 @@ hold for coordinate ideals `Ideal.span (X '' S)`, coordinate hyperplanes `Ideal.
 univariate monomial powers `Ideal.span {X i ^ k}`.
 
 Applying Dickson-lemma stabilization of degree-bounded complement counts for sequences of upper
-sets in `σ →₀ ℕ` (`TauCeti.exists_forall_ge_natCard_degree_le_notMem_eq_of_isUpperSet`) to graded
+sets in `σ →₀ ℕ` (`TauCeti.exists_forall_ge_ncard_sdiff_eq_of_antitone`) to graded
 lexicographic initial diagrams yields lexicographic stabilization
 (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`, `TauCeti.hsLexStabilization`)
 and hence pointwise stabilization (`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_le`)
@@ -132,14 +130,8 @@ theorem localQuotientHilbertSamuel_bot_eq_choose {σ K : Type*} [Fintype σ] [Fi
   -- The count does not depend on the choice of a linear order on the variables.
   let : LinearOrder σ := LinearOrder.lift' _ (Fintype.equivFin σ).injective
   rw [Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram,
-    MonomialOrder.initialDiagram_bot,
-    Set.sdiff_empty, ← TauCeti.ncard_setOf_sum_le σ ℓ]
-  congr 1
-  refine Set.ncard_congr (fun α _ ↦ (α : σ → ℕ)) (fun α hα ↦ ?_) (fun _ _ _ _ h ↦
-    DFunLike.coe_injective h) fun c hc ↦ ⟨Finsupp.equivFunOnFinite.symm c, ?_, ?_⟩
-  · simpa [Finsupp.degree_eq_sum, Finsupp.sum_fintype] using hα
-  · simpa [Finsupp.degree_eq_sum, Finsupp.sum_fintype] using hc
-  · simp
+    MonomialOrder.initialDiagram_bot, Set.sdiff_empty, ← Nat.card_coe_set_eq, Set.coe_ofPred,
+    Finsupp.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
 
 /-- For any subset `S : Set σ` of finitely many variables, the Hilbert–Samuel value of the
 coordinate ideal `Ideal.span (MvPowerSeries.X '' S)` at degree `n` is
@@ -214,23 +206,6 @@ theorem localQuotientHilbertSamuel_span_X_pow_of_subsingleton {σ : Type*}
       Fin.equivSubtype.symm
   rw [Nat.card_congr hbij, Nat.card_fin]
 
--- `K[[x]] ⧸ (x²)` has Hilbert–Samuel function `1, 2, 2, …`: below `D((x²)) = {2, 3, …}` lie the
--- exponents `0` and `1`.
-example {K : Type*} [Field K] {ℓ : ℕ} (hℓ : 1 ≤ ℓ) :
-    (Ideal.span {monomial (Finsupp.single (0 : Fin 1) 2) (1 : K)}).localQuotientHilbertSamuel ℓ =
-      2 := by
-  rw [← Set.image_singleton (f := fun α ↦ monomial α (1 : K)),
-    Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram,
-    MonomialOrder.initialDiagram_span_monomial]
-  have h : {α : Fin 1 →₀ ℕ | α.degree ≤ ℓ} \
-      ⋃ α ∈ ({Finsupp.single 0 2} : Set (Fin 1 →₀ ℕ)), Set.Ici α =
-      {0, Finsupp.single 0 1} := by
-    ext α
-    obtain ⟨n, rfl⟩ : ∃ n, α = Finsupp.single 0 n := ⟨α 0, Finsupp.ext fun i ↦ by fin_cases i; simp⟩
-    simp [Finsupp.single_le_iff]
-    omega
-  rw [h, Set.ncard_pair (by simp [eq_comm]), Nat.cast_ofNat]
-
 end MvPowerSeries
 
 namespace TauCeti
@@ -250,24 +225,23 @@ theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le
       (I j).localQuotientHilbertSamuel = (I j₀).localQuotientHilbertSamuel := by
   let _ : LinearOrder σ := LinearOrder.lift' (Finite.equivFin σ) (Finite.equivFin σ).injective
   let D : ℕ → Set (σ →₀ ℕ) := fun j ↦ MonomialOrder.degLex.initialDiagram (I j)
-  let dCount (j n : ℕ) : ℕ := Nat.card {α : σ →₀ ℕ // α.degree ≤ n ∧ α ∉ D j}
-  have hval : ∀ j n, (I j).localQuotientHilbertSamuel n = (dCount j n : ℕ∞) := fun j n ↦ by
-    rw [Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram, ← Nat.card_coe_set_eq]
-    exact congrArg Nat.cast (Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ Iff.rfl))
-  have hlex : ∀ j, toLex (dCount (j + 1)) ≤ toLex (dCount j) := fun j ↦ by
+  let c (j ℓ : ℕ) : ℕ := ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ D j).ncard
+  have hval : ∀ j ℓ, (I j).localQuotientHilbertSamuel ℓ = (c j ℓ : ℕ∞) := fun j ℓ ↦
+    Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram (I j) ℓ
+  have hanti : Antitone fun j ↦ toLex (c j) := antitone_nat_of_succ_le fun j ↦ by
     rw [Pi.Lex.toLex_le_toLex]
     rcases Pi.Lex.toLex_le_toLex.mp (h j) with heq | ⟨m, hprev, hltm⟩
-    · refine Or.inl (funext fun n ↦ ?_)
-      exact Nat.cast_inj.mp ((hval (j + 1) n).symm.trans ((congr_fun heq n).trans (hval j n)))
+    · refine Or.inl (funext fun ℓ ↦ ?_)
+      exact Nat.cast_inj.mp ((hval (j + 1) ℓ).symm.trans ((congr_fun heq ℓ).trans (hval j ℓ)))
     · refine Or.inr ⟨m, fun k hk ↦ ?_, ?_⟩
       · exact Nat.cast_inj.mp ((hval (j + 1) k).symm.trans ((hprev k hk).trans (hval j k)))
       · rw [hval (j + 1) m, hval j m] at hltm
         exact Nat.cast_lt.mp hltm
-  obtain ⟨j₀, hj₀⟩ := exists_forall_ge_natCard_degree_le_notMem_eq_of_isUpperSet D
-    (fun j ↦ MonomialOrder.degLex.isUpperSet_initialDiagram (I j)) hlex
-  refine ⟨j₀, fun j hj ↦ funext fun n ↦ ?_⟩
-  rw [hval j n, hval j₀ n]
-  exact congrArg Nat.cast (congr_fun (hj₀ j hj) n)
+  obtain ⟨j₀, hj₀⟩ := exists_forall_ge_ncard_sdiff_eq_of_antitone
+    (fun j ↦ MonomialOrder.degLex.isUpperSet_initialDiagram (I j)) hanti
+  refine ⟨j₀, fun j hj ↦ funext fun ℓ ↦ ?_⟩
+  rw [hval j ℓ, hval j₀ ℓ]
+  exact congrArg Nat.cast (hj₀ j hj ℓ)
 
 /-- **Lexicographic Hilbert–Samuel stabilization** in `MvPowerSeries (Fin n) K`: every
 lexicographically nonincreasing sequence of realized Hilbert–Samuel functions stabilizes. -/

@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RingTheory.Length
-import Mathlib.RingTheory.LocalRing.Length
 import Mathlib.RingTheory.TensorProduct.Quotient
 
 /-!
@@ -271,9 +269,7 @@ variable {A : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
 @[simp]
 theorem localQuotientHilbertSamuel_ne_top (I : Ideal A) (n : ℕ) :
     I.localQuotientHilbertSamuel n ≠ ⊤ :=
-  ne_top_of_le_ne_top
-    (Module.length_ne_top_iff.mpr (TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n + 1)))
-    (TauCeti.length_quotient_anti le_sup_right)
+  Module.length_ne_top_iff.mpr (I.isFiniteLength_quotient_sup_maximalIdeal_pow (n + 1))
 
 /-- Over a noetherian local ring `A`, every value of `I.localQuotientHilbertSamuel` is strictly
 less than `⊤`. -/

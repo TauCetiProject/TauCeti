@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Order.PiLex
 import TauCeti.RingTheory.MvPowerSeries.HilbertSamuel
 
 /-!
@@ -15,8 +14,9 @@ This file collects worked examples illustrating `Ideal.localQuotientHilbertSamue
 in multivariate power series rings `MvPowerSeries σ K` and `TauCeti.hsLexStabilization`:
 
 * the univariate fat point `K⟦X⟧ ⧸ (X²)` with Hilbert–Samuel function `(1, 2, 2, …)`;
-* the shrinking univariate ideals `(X ^ max (N - j) 1)`, which decrease both pointwise and
-  lexicographically and stabilize at `K⟦X⟧ ⧸ (X)`;
+* the ascending chain of univariate ideals `(X ^ max (N - j) 1)`, whose Hilbert–Samuel
+  functions are nonincreasing both pointwise and lexicographically and stabilize at
+  `K⟦X⟧ ⧸ (X)`;
 * in `K⟦X₀, X₁⟧`, the fat point `𝔪²` (`(1, 3, 3, …)`) and the smooth line `(X₀)`
   (`(1, 2, 3, 4, …)`), which are pointwise incomparable while the line is strictly smaller
   lexicographically;
@@ -41,8 +41,8 @@ example (K : Type*) [Field K] :
     min_eq_right (by omega)]
   norm_num
 
-/-- For `I_j = (X ^ max (N - j) 1) ⊆ K⟦X⟧`, the Hilbert–Samuel functions decrease in both orders
-and stabilize at the constant function `1` of `K⟦X⟧ ⧸ (X)` for `j ≥ N`. -/
+/-- For `I_j = (X ^ max (N - j) 1) ⊆ K⟦X⟧`, the Hilbert–Samuel functions are nonincreasing in
+both orders and stabilize at the constant function `1` of `K⟦X⟧ ⧸ (X)` for `j ≥ N`. -/
 example (K : Type*) [Field K] (N : ℕ) :
     let I : ℕ → Ideal (MvPowerSeries (Fin 1) K) :=
       fun j ↦ Ideal.span {MvPowerSeries.X 0 ^ max (N - j) 1}

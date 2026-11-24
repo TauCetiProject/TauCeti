@@ -9,8 +9,6 @@ public import Mathlib.Data.Finsupp.MonomialOrder.DegLex
 public import Mathlib.Order.Antichain
 public import Mathlib.Order.Minimal
 public import Mathlib.Order.UpperLower.Basic
-public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
-public import Mathlib.RingTheory.MvPowerSeries.Inverse
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Ideal
@@ -861,6 +859,36 @@ theorem initialDiagramVertices_span_monomial [Finite σ] [Nontrivial R] {s : Fin
 
 end InitialDiagram
 
+private theorem initialDiagram_degLex_sup_eq_union_of_order {σ R : Type*} [CommRing R]
+    [Nontrivial R] [LinearOrder σ] [WellFoundedGT σ] (I J : Ideal (MvPowerSeries σ R)) (k : ℕ)
+    (hord : ∀ g ∈ J, (k : ℕ∞) ≤ g.order)
+    (hmon : ∀ α : σ →₀ ℕ, k ≤ α.degree → MvPowerSeries.monomial α (1 : R) ∈ J) :
+    degLex.initialDiagram (I ⊔ J) = degLex.initialDiagram I ∪ {α : σ →₀ ℕ | k ≤ α.degree} := by
+  ext α
+  refine ⟨fun hα ↦ ?_, ?_⟩
+  · obtain ⟨f, hf, hf0, rfl⟩ := degLex.mem_initialDiagram_iff.mp hα
+    refine or_iff_not_imp_right.mpr fun hdeg ↦ ?_
+    simp only [Set.mem_ofPred_eq, not_le] at hdeg
+    obtain ⟨g, hg, h, hh, rfl⟩ := Submodule.mem_sup.mp hf
+    have hh_ord := hord h hh
+    -- Below degree `k`, the coefficients of `g + h` are those of `g`.
+    have key : ∀ β : σ →₀ ℕ, β.degree < k →
+        MvPowerSeries.coeff β (g + h) = MvPowerSeries.coeff β g := fun β hβ ↦ by
+      rw [map_add, MvPowerSeries.coeff_of_lt_order ((Nat.cast_lt.mpr hβ).trans_le hh_ord),
+        add_zero]
+    have hα := degLex.coeff_initialExp_ne_zero hf0
+    rw [key _ hdeg] at hα
+    refine degLex.mem_initialDiagram_iff.mpr ⟨g, hg, fun hg0 ↦ by simp [hg0] at hα, ?_⟩
+    refine degLex.initialExp_eq_of_coeff_ne_zero_of_forall_lt hα fun β hβ ↦ ?_
+    rw [← key β ((Finsupp.DegLex.monotone_degree hβ.le).trans_lt hdeg)]
+    exact degLex.coeff_eq_zero_of_lt_initialExp hβ
+  · rintro (hα | hα)
+    · exact degLex.initialDiagram_mono le_sup_left hα
+    · refine degLex.mem_initialDiagram_iff.mpr ⟨MvPowerSeries.monomial α 1,
+        Ideal.mem_sup_right (hmon α hα), fun h ↦ ?_,
+        degLex.initialExp_monomial_of_ne_zero α one_ne_zero⟩
+      simpa using congrArg (MvPowerSeries.coeff α) h
+
 section MaximalIdealDiagram
 
 variable {σ K : Type*} [Field K] [LinearOrder σ] [WellFoundedGT σ]
@@ -871,39 +899,10 @@ ideal `I` adjoins all exponents of total degree at least `k` to `degLex.initialD
 theorem initialDiagram_degLex_sup_maximalIdeal_pow
     (I : Ideal (MvPowerSeries σ K)) (k : ℕ) :
     degLex.initialDiagram (I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k) =
-      degLex.initialDiagram I ∪ {α : σ →₀ ℕ | k ≤ α.degree} := by
-  ext α
-  simp only [Set.mem_union, Set.mem_ofPred_eq, degLex.mem_initialDiagram_iff]
-  refine ⟨fun ⟨h, hh, hh0, hexp⟩ ↦ ?_, ?_⟩
-  · rcases le_or_gt k α.degree with hk | hk
-    · exact Or.inr hk
-    · obtain ⟨f, hf, g, hg, rfl⟩ := Submodule.mem_sup.mp hh
-      have hfg : f = (f + g) + -g := (add_neg_cancel_right f g).symm
-      have hlt : -g ≠ 0 → degLex.initialExp (f + g) ≺[degLex] degLex.initialExp (-g) :=
-        fun hneg0 ↦ by
-          rw [hexp, degLex_lt_iff, Finsupp.DegLex.lt_iff]
-          refine Or.inl ?_
-          have hord : (k : ℕ∞) ≤ ((degLex.initialExp (-g)).degree : ℕ∞) := by
-            rw [degree_initialExp_degLex_eq_order hneg0]
-            exact MvPowerSeries.natCast_le_order_of_mem_maximalIdeal_pow (Submodule.neg_mem _ hg)
-          exact hk.trans_le (Nat.cast_le.mp hord)
-      have hfexp : degLex.initialExp f = α := by
-        rw [hfg, degLex.initialExp_add_of_lt hh0 hlt, hexp]
-      have hf0 : f ≠ 0 := by
-        rintro rfl
-        have hg_ne : -g ≠ 0 := fun h0 ↦ hh0 (by simp [neg_eq_zero.mp h0])
-        exact (hlt hg_ne).ne (by rw [zero_add, degLex.initialExp_neg])
-      exact Or.inl ⟨f, hf, hf0, hfexp⟩
-  · rintro (⟨f, hf, hf0, hexp⟩ | hk)
-    · exact ⟨f, Ideal.mem_sup_left hf, hf0, hexp⟩
-    · have hmem : MvPowerSeries.monomial α (1 : K) ∈
-          I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k :=
-        Ideal.mem_sup_right
-          (Ideal.pow_le_pow_right hk (MvPowerSeries.monomial_mem_maximalIdeal_pow α 1))
-      refine ⟨MvPowerSeries.monomial α 1, hmem, ?_,
-        degLex.initialExp_monomial_of_ne_zero α one_ne_zero⟩
-      intro h0
-      simpa using congrArg (MvPowerSeries.coeff α) h0
+      degLex.initialDiagram I ∪ {α : σ →₀ ℕ | k ≤ α.degree} :=
+  initialDiagram_degLex_sup_eq_union_of_order I _ k
+    (fun _ hg ↦ MvPowerSeries.natCast_le_order_of_mem_maximalIdeal_pow hg)
+    (fun α hα ↦ Ideal.pow_le_pow_right hα (MvPowerSeries.monomial_mem_maximalIdeal_pow α 1))
 
 /-- Over a field `K`, adjoining the maximal ideal of `MvPowerSeries σ K` to an ideal `I` adjoins
 all nonzero exponents (`1 ≤ α.degree`) to `degLex.initialDiagram I`. -/
@@ -937,33 +936,12 @@ cannot affect a graded lexicographic initial exponent of degree below `n`. -/
 theorem initialDiagram_degLex_sup_pow_span_range_X {σ R : Type*} [CommRing R] [Nontrivial R]
     [Finite σ] [LinearOrder σ] [WellFoundedGT σ] (I : Ideal (MvPowerSeries σ R)) (n : ℕ) :
     degLex.initialDiagram (I ⊔ Ideal.span (Set.range MvPowerSeries.X) ^ n) =
-      degLex.initialDiagram I ∪ {α | n ≤ α.degree} := by
-  ext α
-  refine ⟨?_, ?_⟩
-  · intro hα
-    obtain ⟨f, hf, hf0, rfl⟩ := degLex.mem_initialDiagram_iff.mp hα
-    refine or_iff_not_imp_right.mpr fun hdeg ↦ ?_
-    simp only [Set.mem_ofPred_eq, not_le] at hdeg
-    obtain ⟨g, hg, h, hh, rfl⟩ := Submodule.mem_sup.mp hf
-    rw [MvPowerSeries.mem_pow_span_range_X_iff_le_order] at hh
-    -- Below degree `n`, the coefficients of `g + h` are those of `g`.
-    have key : ∀ β : σ →₀ ℕ, β.degree < n →
-        MvPowerSeries.coeff β (g + h) = MvPowerSeries.coeff β g := fun β hβ ↦ by
-      rw [map_add, MvPowerSeries.coeff_of_lt_order ((Nat.cast_lt.mpr hβ).trans_le hh), add_zero]
-    have hα := degLex.coeff_initialExp_ne_zero hf0
-    rw [key _ hdeg] at hα
-    refine degLex.mem_initialDiagram_iff.mpr ⟨g, hg, fun hg0 ↦ by simp [hg0] at hα, ?_⟩
-    refine degLex.initialExp_eq_of_coeff_ne_zero_of_forall_lt hα fun β hβ ↦ ?_
-    rw [← key β ((Finsupp.DegLex.monotone_degree hβ.le).trans_lt hdeg)]
-    exact degLex.coeff_eq_zero_of_lt_initialExp hβ
-  · rintro (hα | hα)
-    · exact degLex.initialDiagram_mono le_sup_left hα
-    · refine degLex.mem_initialDiagram_iff.mpr ⟨MvPowerSeries.monomial α 1,
-        Ideal.mem_sup_right ?_, fun h ↦ ?_, degLex.initialExp_monomial_of_ne_zero α one_ne_zero⟩
-      · rw [MvPowerSeries.mem_pow_span_range_X_iff_le_order,
-          MvPowerSeries.order_monomial_of_ne_zero one_ne_zero]
-        exact_mod_cast hα
-      · simpa using congrArg (MvPowerSeries.coeff α) h
+      degLex.initialDiagram I ∪ {α | n ≤ α.degree} :=
+  initialDiagram_degLex_sup_eq_union_of_order I _ n
+    (fun _ hg ↦ MvPowerSeries.mem_pow_span_range_X_iff_le_order.mp hg)
+    (fun α hα ↦ MvPowerSeries.mem_pow_span_range_X_iff_le_order.mpr <| by
+      rw [MvPowerSeries.order_monomial_of_ne_zero one_ne_zero]
+      exact_mod_cast hα)
 
 end MonomialOrder
 

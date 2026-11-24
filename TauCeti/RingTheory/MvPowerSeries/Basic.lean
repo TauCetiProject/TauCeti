@@ -143,9 +143,9 @@ instance isLocalHom_C {σ R : Type*} [Semiring R] : IsLocalHom (C (σ := σ) (R 
 homomorphism. -/
 instance isLocalHom_algebraMap {σ R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
     [IsLocalHom (algebraMap R A)] :
-    IsLocalHom (algebraMap R (MvPowerSeries σ A)) where
-  map_nonunit r hr := by
-    rw [algebraMap_apply] at hr
-    exact IsLocalHom.map_nonunit r (IsLocalHom.map_nonunit _ hr)
+    IsLocalHom (algebraMap R (MvPowerSeries σ A)) := by
+  rw [show algebraMap R (MvPowerSeries σ A) = C.comp (algebraMap R A) from
+    RingHom.ext fun _ ↦ algebraMap_apply]
+  exact RingHom.isLocalHom_comp C (algebraMap R A)
 
 end MvPowerSeries

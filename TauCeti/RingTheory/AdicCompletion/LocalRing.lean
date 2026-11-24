@@ -40,7 +40,7 @@ an open prime `𝔭`, which have the dimension and regularity of `A_𝔭`.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff_of_isMaximal`: completing a Noetherian ring `R` at
   a maximal ideal `p` is regular if and only if any localization `Rₚ` of `R` at `p` is regular.
-* `TauCeti.localQuotientHilbertSamuel_adicCompletion`,
+* `Ideal.localQuotientHilbertSamuel_adicCompletion`,
   `TauCeti.localQuotientHilbertSamuel_adicCompletion_bot`: extending an ideal `I` of `R` (and in
   particular `⊥`) to `R̂` preserves `Ideal.localQuotientHilbertSamuel`.
 
@@ -125,7 +125,7 @@ theorem isRegularLocalRing_iff_of_isMaximal {R : Type*} [CommRing R] [IsNoetheri
 
 end TauCeti.AdicCompletion
 
-namespace TauCeti
+namespace Ideal
 
 /-- Extending an ideal `I` of a Noetherian local ring `A` to its `𝔪`-adic completion preserves
 every value of `Ideal.localQuotientHilbertSamuel`. -/
@@ -138,6 +138,10 @@ theorem localQuotientHilbertSamuel_adicCompletion
   Ideal.localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq
     AdicCompletion.maximalIdeal_eq_map.symm I n
 
+end Ideal
+
+namespace TauCeti
+
 /-- The `𝔪`-adic completion of a Noetherian local ring `A` has the same Hilbert–Samuel function as
 `A` at `⊥`. -/
 @[simp]
@@ -145,6 +149,6 @@ theorem localQuotientHilbertSamuel_adicCompletion_bot
     {A : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A] (n : ℕ) :
     (⊥ : Ideal (AdicCompletion (IsLocalRing.maximalIdeal A) A)).localQuotientHilbertSamuel n =
       (⊥ : Ideal A).localQuotientHilbertSamuel n := by
-  simpa using localQuotientHilbertSamuel_adicCompletion (⊥ : Ideal A) n
+  simpa using Ideal.localQuotientHilbertSamuel_adicCompletion (⊥ : Ideal A) n
 
 end TauCeti
