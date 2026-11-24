@@ -93,7 +93,7 @@ theorem coeff_enhancedStateSum (D : OrientedPDCode n) (R : Type*) [CommRing R] [
         (j - D.stateQuantumShift s)) : ℤ) := by
   rw [enhancedStateSum_eq_sum, AddMonoidAlgebra.coeff_sum, Finset.sum_apply']
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [smul_mul_assoc, AddMonoidAlgebra.coeff_smul_apply, coeff_T_mul,
+  rw [smul_mul_assoc, AddMonoidAlgebra.coeff_smul_apply, T_mul, coeff_mul_T,
     ← PDCode.card_resolvedCircle, Khovanov.coeff_pow_eq_finrank_circleQuantumGrading_piece R]
 
 end OrientedPDCode

@@ -30,7 +30,9 @@ slices through that point (`Filter.EventuallyEq.prodMk_right_nhds`,
 `Filter.EventuallyEq.prodMk_left_nhds`), and a function on a product that is continuous at every
 point of the graph of a map over a set, where the map is continuous, restricts to a continuous map
 on that graph (`TauCeti.continuousOn_comp_prodMk_of_continuousAt`,
-`TauCeti.continuous_comp_prodMk_of_continuousAt`).
+`TauCeti.continuous_comp_prodMk_of_continuousAt`). A map of `X × Y` continuous on `univ ×ˢ S`
+and sending it into `univ ×ˢ S'` restricts to a continuous map `X × S → X' × S'`
+(`ContinuousOn.continuous_restrict_univ_prod`).
 -/
 
 public section
@@ -81,6 +83,17 @@ theorem Filter.EventuallyEq.prodMk_left_nhds {X Y A : Type*} [TopologicalSpace X
     (fun x' ↦ f (x', y)) =ᶠ[𝓝 x] fun _ ↦ f (x, y) := by
   rw [h.self_of_nhds]
   exact h.comp_tendsto ((Continuous.prodMk_left y).tendsto x)
+
+/-- A map `f : X × Y → X' × Y'` that is continuous on `univ ×ˢ S` and sends it into
+`univ ×ˢ S'` restricts to a continuous map `X × S → X' × S'`. -/
+theorem ContinuousOn.continuous_restrict_univ_prod {X Y X' Y' : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace X'] [TopologicalSpace Y'] {S : Set Y} {S' : Set Y'}
+    {f : X × Y → X' × Y'} (hf : ContinuousOn f (univ ×ˢ S))
+    (hmaps : ∀ x : X × S, (f (x.1, x.2)).2 ∈ S') :
+    Continuous fun x : X × S ↦ ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : S')) := by
+  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun x ↦ ⟨mem_univ _, x.2.property⟩
+  exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
 
 namespace TauCeti
 

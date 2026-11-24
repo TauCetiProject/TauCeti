@@ -54,9 +54,10 @@ index is at most `dim_ℂ E + q`.
   parts of the Levi form in terms of the real critical Hessian.
 * `TauCeti.manifoldLeviForm_apply_self`: for `C²` `f`, its diagonal is the real number
   `(Hess f(v, v) + Hess f(I • v, I • v)) / 4`.
-* `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`,
+* `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`, `TauCeti.manifoldLeviForm_smul`,
   `TauCeti.manifoldLeviForm_mul_apply`, `TauCeti.manifoldLeviForm_scalar_comp_apply`: the sum,
-  negation, product and composition rules.
+  negation, scalar multiple, product and composition rules.
+* `TauCeti.manifoldLeviForm_I_smul_I_smul`: invariance under `I • ·` in both arguments.
 * `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
   convex function preserves positivity of the Levi form.
@@ -181,6 +182,18 @@ theorem manifoldLeviForm_add {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘
 theorem manifoldLeviForm_neg (f : M → ℝ) (x : M) :
     manifoldLeviForm E (-f) x = -manifoldLeviForm E f x :=
   leviForm_neg (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- The Levi form on a complex manifold is real homogeneous in the function. -/
+@[simp]
+theorem manifoldLeviForm_smul (a : ℝ) (f : M → ℝ) (x : M) :
+    manifoldLeviForm E (a • f) x = (a : ℂ) • manifoldLeviForm E f x :=
+  leviForm_smul a (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- The Levi form on a complex manifold is invariant under applying the complex structure `I • ·`
+to both arguments. -/
+theorem manifoldLeviForm_I_smul_I_smul (f : M → ℝ) (x : M) (v w : E) :
+    manifoldLeviForm E f x (I • v) (I • w) = manifoldLeviForm E f x v w :=
+  leviForm_I_smul_I_smul (f ∘ (chartAt E x).symm) (chartAt E x x) v w
 
 /-- **The product rule** for the Levi form on a complex manifold. Writing `∂f` for the
 complex-linear extension `StrongDual.extendRCLike` of the real differential `mvfderiv 𝓘(ℝ, E) f x`,

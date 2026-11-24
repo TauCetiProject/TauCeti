@@ -18,6 +18,12 @@ This file defines the formal `q`-series `Gₖ(q) = -Bₖ / (2k) + ∑_{n ≥ 1} 
 ## Main definitions
 
 * `TauCeti.eisensteinGSeries A k`: `-Bₖ / (2k) + ∑_{n ≥ 1} σₖ₋₁(n) qⁿ`.
+
+## Main results
+
+* `TauCeti.constantCoeff_eisensteinGSeries`: the constant term of `Gₖ` is `-Bₖ / (2k)`.
+* `TauCeti.constantCoeff_eisensteinGSeries_two`, `TauCeti.constantCoeff_eisensteinGSeries_four`:
+  `G₂(0) = -1/24` and `G₄(0) = 1/240`.
 -/
 
 public section
@@ -52,6 +58,20 @@ theorem coeff_eisensteinGSeries (k n : ℕ) :
 theorem constantCoeff_eisensteinGSeries (k : ℕ) :
     constantCoeff (eisensteinGSeries A k) = algebraMap ℚ A (-bernoulli k / (2 * k)) := by
   simp [eisensteinGSeries_def]
+
+/-- The constant coefficient of `G₂` is `-1/24`. -/
+@[simp high]
+theorem constantCoeff_eisensteinGSeries_two :
+    constantCoeff (eisensteinGSeries A 2) = algebraMap ℚ A (-1 / 24) := by
+  rw [constantCoeff_eisensteinGSeries, bernoulli_two]
+  norm_num
+
+/-- The constant coefficient of `G₄` is `1/240`. -/
+@[simp high]
+theorem constantCoeff_eisensteinGSeries_four :
+    constantCoeff (eisensteinGSeries A 4) = algebraMap ℚ A (1 / 240) := by
+  rw [constantCoeff_eisensteinGSeries, bernoulli_four]
+  norm_num
 
 end TauCeti
 
