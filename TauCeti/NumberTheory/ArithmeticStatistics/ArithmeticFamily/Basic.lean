@@ -143,6 +143,32 @@ theorem count_union_of_disjoint {S T : Set ι} (h : Disjoint S T) (X : ℝ) :
   exact Finset.disjoint_left.mpr fun i hi hj ↦
     Set.disjoint_left.mp h (Finset.mem_filter.mp hi).2 (Finset.mem_filter.mp hj).2
 
+/-- Counts are subadditive. -/
+theorem count_union_le (S T : Set ι) (X : ℝ) :
+    F.count (S ∪ T) X ≤ F.count S X + F.count T X := by
+  classical
+  simp only [count, Set.mem_union, Finset.filter_or]
+  exact Finset.card_union_le _ _
+
+/-- A count splits into the parts inside and outside a second subfamily. -/
+theorem count_inter_add_count_sdiff (S T : Set ι) (X : ℝ) :
+    F.count (S ∩ T) X + F.count (S \ T) X = F.count S X := by
+  rw [← count_union_of_disjoint _ Set.disjoint_sdiff_inter.symm, Set.inter_union_sdiff]
+
+/-- A finite subfamily has count at most its cardinality. -/
+theorem count_le_ncard {S : Set ι} (hS : S.Finite) (X : ℝ) : F.count S X ≤ S.ncard := by
+  rw [count_eq_ncard]
+  exact Set.ncard_le_ncard (Set.sep_subset _ _) hS
+
+/-- A nonempty subfamily has positive count at every large enough cutoff. -/
+theorem eventually_count_pos {S : Set ι} (hS : S.Nonempty) :
+    ∀ᶠ X in Filter.atTop, 0 < F.count S X := by
+  obtain ⟨i, hi⟩ := hS
+  filter_upwards [Filter.eventually_ge_atTop (F.height i)] with X hX
+  have hfin : {j ∈ S | F.height j ≤ X}.Finite := (F.finite_height_le X).subset fun _ hj ↦ hj.2
+  rw [count_eq_ncard, Set.ncard_pos hfin]
+  exact ⟨i, hi, hX⟩
+
 /-- Below a uniform lower bound for the height, every subfamily has count zero. -/
 theorem count_eq_zero_of_lt {b X : ℝ} (hb : ∀ i, b ≤ F.height i) (hX : X < b)
     (S : Set ι) : F.count S X = 0 := by
@@ -204,6 +230,43 @@ theorem count_le_countLT_of_lt (S : Set ι) {X Y : ℝ} (h : X < Y) :
   obtain ⟨hiX, hiS⟩ := Finset.mem_filter.mp hi
   exact Finset.mem_filter.mpr
     ⟨F.heightLE_mono h.le hiX, hiS, ((mem_heightLE F).mp hiX).trans_lt h⟩
+
+/-- Around every cutoff `X` there is a gap `δ ∈ (0, 1]` free of heights, except possibly `X`
+itself, so that strict and inclusive counts at `X` are inclusive and strict counts at
+`X - δ` and `X + δ`. -/
+theorem exists_countLT_eq_count_sub_and_count_eq_countLT_add (X : ℝ) :
+    ∃ δ, 0 < δ ∧ δ ≤ 1 ∧ ∀ S : Set ι,
+      F.countLT S X = F.count S (X - δ) ∧ F.count S X = F.countLT S (X + δ) := by
+  have hsub : {i | F.height i ≤ X + 1 ∧ F.height i ≠ X} ⊆ {i | F.height i ≤ X + 1} :=
+    fun _ hi ↦ hi.1
+  have hfin : (F.height '' {i | F.height i ≤ X + 1 ∧ F.height i ≠ X}).Finite :=
+    ((F.finite_height_le (X + 1)).subset hsub).image _
+  have hX : X ∉ F.height '' {i | F.height i ≤ X + 1 ∧ F.height i ≠ X} := by
+    rintro ⟨i, ⟨-, hi⟩, rfl⟩
+    exact hi rfl
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hfin.isClosed.isOpen_compl X hX
+  -- every height `h ≤ X + 1` other than `X` satisfies `|h - X| ≥ ε`
+  have hgap : ∀ i, F.height i ≤ X + 1 → F.height i ≠ X → ε ≤ |F.height i - X| := by
+    intro i hi hiX
+    by_contra! hlt
+    exact hball (Metric.mem_ball.mpr hlt) ⟨i, ⟨hi, hiX⟩, rfl⟩
+  obtain ⟨δ, hδ, hδε, hδ1⟩ : ∃ δ : ℝ, 0 < δ ∧ δ ≤ ε ∧ δ ≤ 1 :=
+    ⟨min ε 1, lt_min hε one_pos, min_le_left ε 1, min_le_right ε 1⟩
+  -- no height lies in `[X - δ, X)` or in `(X, X + δ)`
+  have hlt (i : ι) : F.height i < X ↔ F.height i ≤ X - δ := by
+    refine ⟨fun hi ↦ ?_, fun hi ↦ by linarith⟩
+    have := hgap i (by linarith) hi.ne
+    rw [abs_of_neg (by linarith)] at this
+    linarith
+  have hle (i : ι) : F.height i ≤ X ↔ F.height i < X + δ := by
+    refine ⟨fun hi ↦ by linarith, fun hi ↦ ?_⟩
+    by_contra! hXi
+    have := hgap i (by linarith) hXi.ne'
+    rw [abs_of_pos (by linarith)] at this
+    linarith
+  refine ⟨δ, hδ, hδ1, fun S ↦ ⟨?_, ?_⟩⟩
+  · simp only [countLT_eq_ncard, count_eq_ncard, hlt]
+  · simp only [countLT_eq_ncard, count_eq_ncard, hle]
 
 /-- Descend an invariant height to a quotient, requiring finiteness on the quotient itself.
 Finiteness of representatives is neither required nor implied. -/
