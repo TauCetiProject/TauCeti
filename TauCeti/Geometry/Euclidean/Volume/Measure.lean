@@ -454,14 +454,14 @@ image of the Lebesgue measure of `T` under the inclusion. -/
 theorem euclideanHausdorffMeasure_restrict_eq_map (T : Submodule ℝ E) :
     μHE[finrank ℝ T].restrict (T : Set E) = (volume : Measure T).map Subtype.val := by
   rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
-    isometry_subtype_coe.map_euclideanHausdorffMeasure, Subtype.range_coe]
+    isometry_subtypeVal.map_euclideanHausdorffMeasure, Subtype.range_coe]
 
 /-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, of a measurable set `s` is
 the volume of the part of `s` in `T`. -/
 theorem euclideanHausdorffMeasure_restrict_apply (T : Submodule ℝ E) {s : Set E}
     (hs : MeasurableSet s) :
     μHE[finrank ℝ T].restrict (T : Set E) s = volume (Subtype.val ⁻¹' s : Set T) := by
-  rw [T.euclideanHausdorffMeasure_restrict_eq_map, Measure.map_apply measurable_subtype_coe hs]
+  rw [T.euclideanHausdorffMeasure_restrict_eq_map, Measure.map_apply measurable_subtypeVal hs]
 
 /-- The Euclidean Hausdorff measure of the dimension of a subspace, restricted to the subspace, is
 locally finite. -/
@@ -477,7 +477,7 @@ radius about a point of `T` measure zero. -/
 theorem euclideanHausdorffMeasure_restrict_sphere {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
     {r : ℝ} (hr : r ≠ 0) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.sphere x r) = 0 := by
   rw [T.euclideanHausdorffMeasure_restrict_apply Metric.isClosed_sphere.measurableSet,
-    ← Subtype.coe_mk x hx, isometry_subtype_coe.preimage_sphere,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_sphere,
     Measure.addHaar_sphere_of_ne_zero volume _ hr]
 
 /-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives an open ball about a
@@ -486,7 +486,7 @@ theorem euclideanHausdorffMeasure_restrict_ball {T : Submodule ℝ E} {x : E} (h
     (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.ball x r) =
       volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
   rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_ball,
-    ← Subtype.coe_mk x hx, isometry_subtype_coe.preimage_ball,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_ball,
     TauCeti.volume_ball_eq_of_finrank_eq finrank_euclideanSpace_fin.symm _ 0 r]
 
 /-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives a closed ball about a
@@ -496,7 +496,7 @@ theorem euclideanHausdorffMeasure_restrict_closedBall {T : Submodule ℝ E} {x :
     (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.closedBall x r) =
       volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
   rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_closedBall,
-    ← Subtype.coe_mk x hx, isometry_subtype_coe.preimage_closedBall,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_closedBall,
     TauCeti.volume_closedBall_eq_of_finrank_eq finrank_euclideanSpace_fin.symm _ 0 r]
 
 /-- If `μHE[k]` restricts to the same measure on a subspace `T₁` of dimension `k` and on a

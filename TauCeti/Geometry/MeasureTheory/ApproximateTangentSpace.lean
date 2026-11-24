@@ -254,7 +254,7 @@ theorem tendsto_blowUp_apply (h : μ.HasApproxTangentSpace x T θ) {s : Set E}
       (𝓝 (θ * μHE[finrank ℝ T].restrict (T : Set E) s)) := by
   set ν := μHE[finrank ℝ T].restrict (T : Set E)
   let μs : Ioi (0 : ℝ) → Measure E := fun r ↦ μ.blowUp (finrank ℝ T) x r
-  have : ∀ r, IsLocallyFiniteMeasure (μs r) := fun r ↦ isLocallyFiniteMeasure_blowUp r.2
+  have : ∀ r, IsLocallyFiniteMeasure (μs r) := fun r ↦ isLocallyFiniteMeasure_blowUp r.property
   have hconv (f : C_c(E, ℝ)) : Tendsto (fun r ↦ ∫ y, f y ∂μs r)
       (Filter.comap Subtype.val (𝓝[>] 0)) (𝓝 (∫ y, f y ∂(θ • ν))) := by
     rw [integral_smul_nnreal_measure, NNReal.smul_def, smul_eq_mul]
