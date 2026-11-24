@@ -614,8 +614,8 @@ orders, so `gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x`. -/
 def framedGaugeFixedKernelEquivWeak (hx : Continuous x)
     (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) :
     gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x :=
-  gaugeFixedKernelEquivWeak (contDiff_of_forall_mem_framedFieldSpace hx hmem) fun i n ↦
-    exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))
+  gaugeFixedKernelEquivWeak (contDiff_of_forall_mem_framedFieldSpace hx hmem)
+    (exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem)
 
 /-- `framedGaugeFixedKernelEquivWeak` agrees with `gaugeFixedKernelToWeak` on every element. -/
 @[simp]
