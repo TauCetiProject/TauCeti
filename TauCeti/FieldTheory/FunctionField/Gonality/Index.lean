@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.FunctionField.Divisor.Index
 public import TauCeti.FieldTheory.FunctionField.Elliptic.Basic
 public import TauCeti.FieldTheory.FunctionField.Gonality.Basic
 -- Proof-only: genus, exact constants and degree-one divisors of the pointless conic.
@@ -13,46 +14,35 @@ import TauCeti.FieldTheory.FunctionField.Consequences.Conic
 import TauCeti.FieldTheory.FunctionField.Divisor.ConstantField
 
 /-!
-# The index of a function field, and gonality in genus zero and one
+# Gonality in genus zero and one
 
-The *index* of an algebraic function field `F / k` is the least positive degree of a divisor.
-The degrees of divisors form a subgroup of `ℤ`, and for a function field this subgroup is
-nonzero (every place has positive degree), so the index is its positive generator: a degree
-occurs exactly when the index divides it. A rational place, or an algebraically closed constant
-field, gives index one; in genus at least two, index one need not produce a rational place.
+The *index* of an algebraic function field `F / k`, the least positive degree of a divisor
+(`TauCeti.index`), divides the gonality, since the gonality is the degree of a divisor. In genus
+zero and one, over an exact constant field (`IsIntegrallyClosedIn k F`), this divisibility, with
+Riemann–Roch, determines the gonality.
 
-Since the gonality is the degree of a divisor, the index divides it. In genus zero and one this
-divisibility, with Riemann–Roch, determines the gonality.
-
-* In genus zero a canonical divisor has degree `-2`, so the index divides two. Index one means a
-  divisor of degree one, hence a rational field and gonality one; otherwise the anticanonical
-  divisor, of degree two and `ℓ = 3`, gives gonality two. So the gonality is the index.
-* In genus one every divisor `D` of positive degree has `ℓ(D) = deg D`. A pencil therefore exists
-  exactly in the degrees at least two that are multiples of the index, and the gonality is
-  `max 2 (index k F)`. An elliptic function field (genus one, index one) has gonality two, while a
-  genus-one field of index three, such as Selmer's cubic `3x³ + 4y³ + 5z³ = 0` over `ℚ`, has
-  gonality three.
+* In genus zero, over an exact constant field, a canonical divisor has degree `-2`, so the index
+  divides two. Index one means a divisor of degree one, hence a rational field and gonality one;
+  otherwise the anticanonical divisor, of degree two and `ℓ = 3`, gives gonality two. So the
+  gonality is the index.
+* In genus one, over an exact constant field, every divisor `D` of positive degree has
+  `ℓ(D) = deg D`. A pencil therefore exists exactly in the degrees at least two that are multiples
+  of the index, and the gonality is `max 2 (index k F)`. An elliptic function field (genus one,
+  index one) has gonality two, while a genus-one field of index three, such as Selmer's cubic
+  `3x³ + 4y³ + 5z³ = 0` over `ℚ`, has gonality three.
 
 The function field of the conic `x² + y² + 1 = 0` over a field without a solution to
 `a² + b² + 1 = 0`, such as `ℝ`, has index two and gonality two.
 
-## Main definitions
-
-* `TauCeti.index`: the least positive degree of a divisor of `F / k`.
-
 ## Main results
 
-* `TauCeti.Divisor.range_degree`: the degrees of divisors are the multiples of the index.
-* `TauCeti.index_dvd_iff_exists_degree_eq`, `TauCeti.index_dvd_degree`: an integer is the degree
-  of a divisor exactly when the index divides it.
-* `TauCeti.index_eq_one_iff`: index one means a divisor of degree one;
-  `TauCeti.Place.index_eq_one_of_degree_eq_one` and `TauCeti.index_eq_one_of_isAlgClosed` are the
-  two standard sources.
 * `TauCeti.index_dvd_gonality`, `TauCeti.index_dvd_two_mul_genus_sub_two`: the index divides the
-  gonality and the canonical degree.
-* `TauCeti.gonality_of_genus_eq_zero`: in genus zero the gonality is the index.
-* `TauCeti.gonality_of_genus_eq_one`: in genus one the gonality is `max 2 (index k F)`;
-  `TauCeti.IsEllipticFunctionField.gonality_eq_two`: an elliptic function field has gonality two.
+  gonality and, over an exact constant field, the canonical degree.
+* `TauCeti.gonality_of_genus_eq_zero`: in genus zero, over an exact constant field, the gonality
+  is the index.
+* `TauCeti.gonality_of_genus_eq_one`: in genus one, over an exact constant field, the gonality is
+  `max 2 (index k F)`; `TauCeti.IsEllipticFunctionField.gonality_eq_two`: an elliptic function
+  field has gonality two.
 * `TauCeti.index_eq_two_of_sq_add_sq_add_one_eq_zero`,
   `TauCeti.gonality_eq_two_of_sq_add_sq_add_one_eq_zero`: the pointless conic has index two and
   gonality two.
@@ -74,108 +64,6 @@ namespace TauCeti
 open AlgebraicGeometry
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-
-/-- The **index** of `F / k`: the least positive degree of a divisor.
-
-For an algebraic function field the degrees of divisors are exactly the multiples of the index
-(`TauCeti.Divisor.range_degree`), so the index is the positive generator of the image of the
-degree map. It is one when a rational place exists. Outside the function-field setting the set
-of positive degrees can be empty, and the index is then the junk value zero. -/
-noncomputable def index (k F : Type*) [Field k] [Field F] [Algebra k F] : ℕ :=
-  sInf {n : ℕ | 0 < n ∧ ∃ D : Divisor k F, Divisor.degree D = n}
-
-/-- **The index is at most every positive divisor degree.** -/
-theorem index_le_of_degree_eq {D : Divisor k F} {n : ℕ} (hn : 0 < n)
-    (hD : Divisor.degree D = n) : index k F ≤ n :=
-  Nat.sInf_le ⟨hn, D, hD⟩
-
-/-- A divisor of positive degree makes the index positive and attained. -/
-private theorem index_mem_of_degree_pos {D : Divisor k F} (hD : 0 < Divisor.degree D) :
-    0 < index k F ∧ ∃ D : Divisor k F, Divisor.degree D = index k F :=
-  Nat.sInf_mem (s := {n : ℕ | 0 < n ∧ ∃ D : Divisor k F, Divisor.degree D = n})
-    ⟨(Divisor.degree D).toNat, by omega, D, by omega⟩
-
-/-- A function field has a divisor of positive degree: the divisor of any place. -/
-private theorem exists_degree_pos (hF : IsFunctionField k F) :
-    ∃ D : Divisor k F, 0 < Divisor.degree D := by
-  obtain ⟨P⟩ := Place.nonempty hF
-  refine ⟨WeilDivisor.ofPoint P, ?_⟩
-  have := P.one_le_degree_of_isFunctionField hF
-  rw [Divisor.degree_ofPoint]
-  omega
-
-/-- **The index of a function field is positive.** -/
-theorem index_pos (hF : IsFunctionField k F) : 0 < index k F :=
-  (index_mem_of_degree_pos (exists_degree_pos hF).choose_spec).1
-
-/-- **The index of a function field is attained** by the degree of some divisor. -/
-theorem exists_degree_eq_index (hF : IsFunctionField k F) :
-    ∃ D : Divisor k F, Divisor.degree D = index k F :=
-  (index_mem_of_degree_pos (exists_degree_pos hF).choose_spec).2
-
-/-- **The index divides the degree of every divisor**: the remainder of `deg D` modulo the index
-is the degree of a divisor, so by minimality of the index it is zero. -/
-theorem index_dvd_degree (hF : IsFunctionField k F) (D : Divisor k F) :
-    (index k F : ℤ) ∣ Divisor.degree D := by
-  obtain ⟨D₀, hD₀⟩ := exists_degree_eq_index hF
-  have hpos := index_pos hF
-  have hr : Divisor.degree (D - (Divisor.degree D / index k F) • D₀) =
-      Divisor.degree D % index k F := by
-    rw [Divisor.degree_sub, Divisor.degree_zsmul, hD₀, Int.emod_def]
-    ring
-  have h0 : 0 ≤ Divisor.degree D % index k F := Int.emod_nonneg _ (by omega)
-  have hlt : Divisor.degree D % index k F < index k F := Int.emod_lt_of_pos _ (by omega)
-  refine Int.dvd_of_emod_eq_zero (by_contra fun hne ↦ ?_)
-  have := index_le_of_degree_eq (n := (Divisor.degree D % index k F).toNat) (by omega)
-    (by rw [hr]; omega)
-  omega
-
-/-- **The degrees of divisors are the multiples of the index**: an integer is the degree of a
-divisor of a function field exactly when the index divides it. -/
-theorem index_dvd_iff_exists_degree_eq (hF : IsFunctionField k F) {d : ℤ} :
-    (index k F : ℤ) ∣ d ↔ ∃ D : Divisor k F, Divisor.degree D = d := by
-  refine ⟨fun ⟨m, hm⟩ ↦ ?_, fun ⟨D, hD⟩ ↦ hD ▸ index_dvd_degree hF D⟩
-  obtain ⟨D₀, hD₀⟩ := exists_degree_eq_index hF
-  exact ⟨m • D₀, by rw [Divisor.degree_zsmul, hD₀, hm, mul_comm]⟩
-
-/-- **The index generates the degrees**: the image of the degree map on divisors of a function
-field is the subgroup of multiples of the index. -/
-theorem Divisor.range_degree (hF : IsFunctionField k F) :
-    (Divisor.degree (k := k) (F := F)).range = AddSubgroup.zmultiples (index k F : ℤ) := by
-  ext d
-  rw [AddMonoidHom.mem_range, Int.mem_zmultiples_iff, index_dvd_iff_exists_degree_eq hF]
-
-/-- The index of a function field divides the degree of every place. -/
-theorem Place.index_dvd_degree (hF : IsFunctionField k F) (P : Place k F) :
-    index k F ∣ P.degree := by
-  have := TauCeti.index_dvd_degree hF (WeilDivisor.ofPoint P)
-  rw [Divisor.degree_ofPoint] at this
-  exact_mod_cast this
-
-/-- **Index one means a divisor of degree one.** No hypothesis on `F` is needed: index one makes
-the defining set nonempty, and a divisor of degree one bounds the index by one. -/
-theorem index_eq_one_iff : index k F = 1 ↔ ∃ D : Divisor k F, Divisor.degree D = 1 := by
-  refine ⟨fun h ↦ ?_, fun ⟨D, hD⟩ ↦ ?_⟩
-  · have hne : {n : ℕ | 0 < n ∧ ∃ D : Divisor k F, Divisor.degree D = n}.Nonempty :=
-      Nat.nonempty_of_pos_sInf (h ▸ Nat.one_pos : 0 < index k F)
-    obtain ⟨-, D, hD⟩ : index k F ∈ _ := Nat.sInf_mem hne
-    exact ⟨D, by rw [hD, h, Nat.cast_one]⟩
-  · have := (index_mem_of_degree_pos (D := D) (by omega)).1
-    have := index_le_of_degree_eq Nat.one_pos (by rw [hD, Nat.cast_one])
-    omega
-
-/-- **A rational place gives index one.** The converse fails in genus at least two. -/
-theorem Place.index_eq_one_of_degree_eq_one {P : Place k F} (hP : P.degree = 1) :
-    index k F = 1 :=
-  index_eq_one_iff.mpr ⟨WeilDivisor.ofPoint P, by rw [Divisor.degree_ofPoint, hP, Nat.cast_one]⟩
-
-/-- **Over an algebraically closed constant field the index is one**, since every place is
-rational. -/
-theorem index_eq_one_of_isAlgClosed [IsAlgClosed k] (hF : IsFunctionField k F) :
-    index k F = 1 := by
-  obtain ⟨P⟩ := Place.nonempty hF
-  exact Place.index_eq_one_of_degree_eq_one
-    (P.degree_eq_one_of_isAlgClosed_of_isFunctionField hF)
 
 /-- **The index divides the gonality**: the gonality is the degree of a divisor. No exactness of
 the constant field is needed. -/
