@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Smooth time maps into the unit interval
@@ -36,6 +37,9 @@ inclusion is invertible at every point, including both endpoints. At interior po
 map `(s, t) ↦ (γ s, t)` from the plane to `M × [a, b]` has the product derivative.
 
 Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extChartAt_Icc_top`).
+The unit tangent vector `1` of the interval has the chart sign as its coordinate in its own chart
+(`TauCeti.one_tangentSpace_Icc_apply`), and the unit vector field `t ↦ 1` is a smooth section of
+the tangent bundle, including at both endpoints (`TauCeti.contMDiff_one_tangentSpace_Icc`).
 -/
 
 public section
@@ -454,6 +458,52 @@ theorem isInvertible_mfderiv_subtypeVal_Icc (x : Icc a b) :
   rw [← ContinuousLinearMap.isInvertible_equiv_comp (e := NormedSpace.fromTangentSpace (x : ℝ))]
   rw [← h]
   exact ContinuousLinearMap.isInvertible_equiv
+
+/-- The unit tangent vector `1` of the interval at `x`, the image of the unit vector of `ℝ`, has
+the chart sign as its coordinate in the preferred chart at `x`: it is `+1` in the translation
+chart and `-1` in the reflection chart at the right endpoint. -/
+theorem one_tangentSpace_Icc_apply (x : Icc a b) (i : Fin 1) :
+    WithLp.ofLp (p := 2) (1 : TangentSpace (𝓡∂ 1) x) i = if (x : ℝ) < b then 1 else -1 := by
+  rw [Subsingleton.elim i 0]
+  have h := mfderiv_subtypeVal_Icc_one x
+  rw [mfderiv_subtypeVal_Icc] at h
+  -- `h` says `s * v 0 = 1` for the chart sign `s`, an identity in the real tangent space of `ℝ`.
+  -- After the rewrite, `h` applies the functional `s • EuclideanSpace.proj 0` on
+  -- `EuclideanSpace ℝ (Fin 1)` as a map between tangent spaces, which is type-correct only up to
+  -- unfolding `TangentSpace`. Neither `rw [smul_apply]` nor `simp` matches this application, so
+  -- `change` performs the unfolding.
+  change (if (x : ℝ) < b then (1 : ℝ) else -1) *
+    WithLp.ofLp (p := 2) (1 : TangentSpace (𝓡∂ 1) x) 0 = 1 at h
+  by_cases hx : (x : ℝ) < b
+  · simpa only [hx, ↓reduceIte, one_mul] using h
+  · simp only [hx, ↓reduceIte, neg_one_mul] at h ⊢
+    linarith
+
+/-- **The unit vector field of the interval is smooth.** The field `t ↦ 1` of unit tangent
+vectors, the images of the unit vector of `ℝ`, is a smooth section of the tangent bundle of the
+interval `[a, b]`, including at both endpoints. Its coordinate in a fixed preferred chart is the
+constant sign of that chart. -/
+theorem contMDiff_one_tangentSpace_Icc {n : WithTop ℕ∞} :
+    ContMDiff (𝓡∂ 1) (𝓡∂ 1).tangent n
+      (fun x : Icc a b ↦ (⟨x, 1⟩ : TangentBundle (𝓡∂ 1) (Icc a b))) := by
+  intro x₀
+  rw [Bundle.contMDiffAt_section_iff]
+  refine (contMDiffAt_const (c := WithLp.toLp 2 fun _ : Fin 1 ↦
+    if (x₀ : ℝ) < b then (1 : ℝ) else -1)).congr_of_eventuallyEq (.of_forall fun x ↦ ?_)
+  -- In the chart at `x₀` the vector `1` at `x` is `tangentCoordChange x x₀ x 1`, whose coordinate
+  -- is the product of the two chart signs times the sign of the chart at `x`.
+  beta_reduce
+  rw [TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
+    tangentCoordChange_Icc x x₀ x (mem_extChartAt_source x)]
+  ext i
+  -- A scalar multiple of the identity scales each coordinate; the tangent space at `x` is
+  -- `EuclideanSpace ℝ (Fin 1)` up to unfolding `TangentSpace`.
+  have hsmul (c : ℝ) (v : EuclideanSpace ℝ (Fin 1)) :
+      ((c • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin 1))) v).ofLp i = c * v.ofLp i :=
+    (rfl)
+  refine (hsmul _ _).trans ?_
+  rw [one_tangentSpace_Icc_apply, WithLp.ofLp_toLp]
+  split_ifs <;> norm_num
 
 /-- The derivative of an affine map from the interval to any real normed space is its linear
 part applied to the actual interval inclusion derivative, including at both endpoints. -/
