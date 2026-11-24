@@ -28,6 +28,8 @@ vectors indexed by `ι`.
 
 * `Module.Basis.eq_smul_of_repr_support_subset_singleton`: a vector supported on one coordinate is
   that coordinate times the corresponding basis vector.
+* `Module.Basis.sum_repr_mul_repr'`: expanding a vector in a finite basis `b'` and reading a
+  coordinate in a basis `b`, in the multiplication order valid over a noncommutative semiring.
 * `Module.Basis.intertwines_of_apply`: a linear map that intertwines two endomorphisms on a basis
   intertwines them everywhere.
 * `Module.Basis.coord_map_apply`: the coordinates with respect to a basis transported along a
@@ -106,6 +108,15 @@ theorem repr_comp_apply_apply {κ W : Type*} [Fintype κ] [AddCommMonoid W] [Mod
   conv_lhs => rw [LinearMap.comp_apply, ← c.sum_repr (f (b i))]
   simp only [map_sum, map_smul, Finsupp.coe_finsetSum, Finset.sum_apply,
     Finsupp.smul_apply, smul_eq_mul]
+
+/-- Expanding a vector `x` in a finite basis `b'` and reading its `i`-th coordinate in a basis `b`
+writes `b.repr x i` as `∑ j, b'.repr x j * b.repr (b' j) i`, in the multiplication order valid over
+a possibly noncommutative semiring (cf. `Module.Basis.sum_repr_mul_repr`). -/
+theorem sum_repr_mul_repr' {κ : Type*} [Fintype κ] (b : Basis ι K V) (b' : Basis κ K V)
+    (x : V) (i : ι) :
+    ∑ j, b'.repr x j * b.repr (b' j) i = b.repr x i := by
+  have h := congrArg (fun y ↦ b.repr y i) (b'.sum_repr x)
+  simpa only [map_sum, map_smul, Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul] using h
 
 /-- A linear map intertwines two endomorphisms if it does so on every vector of a basis. -/
 theorem intertwines_of_apply {W : Type*} [AddCommMonoid W] [Module K W]
