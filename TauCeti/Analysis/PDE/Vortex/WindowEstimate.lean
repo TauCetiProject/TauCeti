@@ -326,8 +326,7 @@ private theorem exists_norm_le_mul_add_of_vacuum
       fun K hK ↦ ⟨hK.1, fun y f u v hu hv hweak ↦ hK.2 y f u v hu hv fun η hη hηc ↦ by
         simpa [← Pi.zero_def] using hweak η hη hηc⟩) k B (k + 1) le_rfl
   refine ⟨K, hK, fun A hA hAb y f u v hu hv hweak ↦ ?_⟩
-  have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
-    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
+  have hy : MemLp y 2 volume := memLp_of_forall_inclusionLp_ae_eq (by positivity) hu
   obtain ⟨hn, hu'⟩ := norm_inclusion_eq_and_ae_eq (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) hu
   exact hn.symm.trans_le (hKb A hA hAb y f v hy hv hweak _ hu')
 
@@ -386,15 +385,13 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add
   have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb
   have hA' (i j : Fin 4) := contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix_le
     hx hxb (hA i j) (hAb i j) i j
-  have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
-    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
+  have hy : MemLp y 2 volume := memLp_of_forall_inclusionLp_ae_eq (by positivity) hu
   exact hKb _ (fun i j ↦ (hA' i j).1) (fun i j ↦ (hA' i j).2) y f u v hu hv fun η hη hηc ↦
     integral_inner_eq_add_sub_mulVec (P := gaugeFixedAdjoint x)
       (fun η z v ↦ by rw [inner_gaugeFixedAdjoint_eq_add_inner_gaugeFixedZerothOrder x
         vacuumField, gaugeFixedZerothOrder_apply])
       (fun η hη hηc ↦ memLp_gaugeFixedAdjoint hvac.continuous (hη.of_le (by simp)) hηc)
-      hy (memLp_of_mem_sobolevFields
-        ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩))
+      hy (memLp_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hv)
       (memLp_mulVec_of_norm_iteratedFDeriv_le hA hAb hy)
       (memLp_mulVec_of_norm_iteratedFDeriv_le (fun i j ↦ (hZ i j).1) (fun i j ↦ (hZ i j).2) hy)
       hweak hη hηc
@@ -438,8 +435,7 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_ad
   have hZ := contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hx hxb
   have hA' (i j : Fin 4) := contDiff_and_norm_iteratedFDeriv_sub_gaugeFixedZerothOrderMatrix_le
     hx hxb (hA i j) (hAb i j) j i
-  have hη : MemLp η 2 volume := memLp_of_mem_sobolevFields
-    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
+  have hη : MemLp η 2 volume := memLp_of_forall_inclusionLp_ae_eq (by positivity) hu
   exact hKb _ (fun i j ↦ (hA' i j).1) (fun i j ↦ (hA' i j).2) η g u v hu hv fun w hw hwc ↦
     integral_inner_eq_add_sub_mulVec (P := gaugeFixedOperator x)
       (Z := fun i j z ↦ gaugeFixedZerothOrderMatrix (x z - vacuumField z) j i)
@@ -449,21 +445,12 @@ theorem exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_ad
         simp only [Matrix.transpose_apply])
       (fun w hw hwc ↦ (continuous_gaugeFixedOperator hvac.continuous
         (hw.of_le (by simp))).memLp_of_hasCompactSupport (hasCompactSupport_gaugeFixedOperator hwc))
-      hη (memLp_of_mem_sobolevFields
-        ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩))
+      hη (memLp_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hv)
       (memLp_mulVec_of_norm_iteratedFDeriv_le hA hAb hη)
       (memLp_mulVec_of_norm_iteratedFDeriv_le (fun i j ↦ (hZ j i).1) (fun i j ↦ (hZ j i).2) hη)
       hweak hw hwc
 
 /-! ### The weighted estimates over a window of divisors -/
-
-/-- The coefficients of the commutator with the weight `exp(c ρ)` have derivatives through order
-`k` bounded by one constant. -/
-private theorem exists_forall_norm_iteratedFDeriv_expWeightCoeff_le (c : ℝ) (k : ℕ) :
-    ∃ M ≥ 0, ∀ i j, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (expWeightCoeff c i j) z‖ ≤ M := by
-  choose M hM hMb using fun i j ↦ exists_norm_iteratedFDeriv_expWeightCoeff_le c i j k
-  obtain ⟨N, hN⟩ := Finite.exists_le fun p : Fin 4 × Fin 4 ↦ M p.1 p.2
-  exact ⟨N, (hM 0 0).trans (hN (0, 0)), fun i j n hn z ↦ (hMb i j n hn z).trans (hN (i, j))⟩
 
 /-- **The weighted Sobolev estimate for the right inverse, uniformly over a window of
 divisors.** For every degree `m`, radius `r`, bound `B`, rate `|c| < 1/2` and order `k` there is a
@@ -503,14 +490,14 @@ theorem exists_forall_norm_exp_mul_smul_le_mul_norm_of_forall_mem_norm_le (m : �
   -- elliptic estimate for the weight commutator turns this into the Sobolev bound.
   obtain ⟨K₀, hK₀⟩ := exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le
     (μ := volume) m r hc
-  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
+  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le_and_neg_le c k
   obtain ⟨K₁, hK₁, hK₁b⟩ :=
     exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add k (max B M)
   exact ⟨K₁ * (1 + 4 * K₀), by positivity, fun x D hx hsol hframe hD hDr hxb f y hweak horth v hv ↦
     exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_le k hx
       (fun i n hn ↦ ⟨B, hxb i n hn⟩) hK₁
       (hK₁b x (expWeightCoeff c) hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
-        (contDiff_expWeightCoeff c) fun i j n hn z ↦ (hM i j n hn z).trans (le_max_right _ _))
+        (contDiff_expWeightCoeff c) fun i j n hn z ↦ (hM i j n hn z).1.trans (le_max_right _ _))
       hweak (hK₀ x D hx hsol hframe hD hDr f y hweak horth) hv⟩
 
 /-- **The weighted Sobolev estimate for the adjoint of the right inverse, uniformly over a window
@@ -559,19 +546,16 @@ theorem exists_forall_norm_exp_mul_smul_adjoint_apply_le_mul_norm_of_forall_mem_
   -- Sobolev bound.
   obtain ⟨K₀, hK₀⟩ := exists_forall_eLpNorm_exp_mul_smul_adjoint_apply_le_of_forall_mem_norm_le
     (μ := volume) m r hc
-  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
+  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le_and_neg_le c k
   obtain ⟨K₁, hK₁, hK₁b⟩ :=
     exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add k (max B M)
-  have hAb (i j : Fin 4) (n : ℕ) (hn : n ≤ k) (z : ℂ) :
-      ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c j i z) z‖ ≤ max B M := by
-    rw [norm_iteratedFDeriv_fun_neg]
-    exact (hM j i n hn z).trans (le_max_right _ _)
   exact ⟨K₁ * (1 + 4 * K₀), by positivity,
     fun x D hx hsol hframe hD hDr hxb Q hweak horth g hg v hv ↦
       exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_adjoint_apply_le k hx
         (fun i n hn ↦ ⟨B, hxb i n hn⟩) hK₁
         (hK₁b x _ hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
-          (fun i j ↦ (contDiff_expWeightCoeff c j i).neg) hAb)
+          (fun i j ↦ (contDiff_expWeightCoeff c j i).neg)
+          fun i j n hn z ↦ (hM j i n hn z).2.trans (le_max_right _ _))
         hweak hg (hK₀ x D hx hsol hframe hD hDr Q hweak horth g) hv⟩
 
 end TauCeti.Vortex

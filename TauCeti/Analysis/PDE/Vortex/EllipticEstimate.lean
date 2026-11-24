@@ -345,10 +345,8 @@ private theorem exists_norm_le_mul_add_of_integral_inner_eq_add
       ‖u‖ ≤ K * (‖v‖ + (eLpNorm y 2 volume).toReal) := by
   obtain ⟨C, hC, hCb⟩ := exists_norm_le_of_mem_weakSolutions k hP hA hreg
   refine ⟨5 * C, by positivity, fun y f u v hu hv hweak ↦ ?_⟩
-  have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
-    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (by positivity)).2 ⟨u, hu⟩)
-  have hf : MemLp f 2 volume := memLp_of_mem_sobolevFields
-    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq (Nat.cast_nonneg k)).2 ⟨v, hv⟩)
+  have hy : MemLp y 2 volume := memLp_of_forall_inclusionLp_ae_eq (by positivity) hu
+  have hf : MemLp f 2 volume := memLp_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hv
   have hp := mem_weakSolutions_of_forall_inclusionLp_ae_eq hP hA hy hf hv hweak
   have hgu (a : Fin 4) : inclusionLp (by positivity) (u a) = coordL a (hy.toLp y) :=
     Lp.ext <| (hu a).trans <| by
@@ -508,8 +506,8 @@ theorem exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_le (k : ℕ
 /-- The entries of `-(expWeightCoeff c)ᵀ` have bounded derivatives through every order `k`. -/
 private theorem exists_norm_iteratedFDeriv_neg_expWeightCoeff_le (c : ℝ) (i j : Fin 4) (k : ℕ) :
     ∃ M ≥ 0, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ -expWeightCoeff c i j z) z‖ ≤ M :=
-  (exists_norm_iteratedFDeriv_expWeightCoeff_le c i j k).imp fun _ hM ↦ ⟨hM.1, fun n hn z ↦
-    (norm_iteratedFDeriv_fun_neg _ n z).trans_le (hM.2 n hn z)⟩
+  (exists_forall_norm_iteratedFDeriv_expWeightCoeff_le_and_neg_le c k).imp fun _ hM ↦
+    ⟨hM.1, fun n hn z ↦ (hM.2 i j n hn z).2⟩
 
 /-- **The weighted Sobolev estimate for the adjoint of the right inverse from a weighted `L²`
 bound.** Let `x` be a smooth field whose coordinates have bounded derivatives through order `k`,
