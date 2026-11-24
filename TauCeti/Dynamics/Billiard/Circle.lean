@@ -609,7 +609,7 @@ theorem IsInvariantGraph.apply_add_circle {ψ : ℝ → ℝ} (h : (circle hR).Is
 /-- An invariant graph of the circular table that takes a value `c` with `arccos c / π`
 irrational is the constant graph `v = c`: the level set of `c` contains the forward orbit of a
 point under the rotation by `2 R arccos c`, which is dense modulo the period. -/
-theorem IsInvariantGraph.eq_const_circle_of_irrational {ψ : ℝ → ℝ}
+private theorem IsInvariantGraph.eq_const_circle_of_irrational {ψ : ℝ → ℝ}
     (h : (circle hR).IsInvariantGraph ψ) {s₀ : ℝ} (hirr : Irrational (Real.arccos (ψ s₀) / π)) :
     ψ = fun _ ↦ ψ s₀ := by
   set c := ψ s₀
