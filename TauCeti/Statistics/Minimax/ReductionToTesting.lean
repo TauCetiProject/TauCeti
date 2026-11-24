@@ -29,7 +29,7 @@ No finiteness or countability of the index set is needed: a union of open balls 
 preimage under `ballIndex` is the union of an open set and a closed set.
 
 For a finite, nonempty, linearly ordered index set and parameters that need not be separated,
-`TauCeti.nearestIndex θ y`, in `TauCeti.Topology.MetricSpace.HausdorffDistance`, is the least
+`TauCeti.nearestIndex θ y`, in `TauCeti.Topology.MetricSpace.NearestIndex`, is the least
 index of a nearest parameter to `y` (measurable by `TauCeti.measurable_nearestIndex`, in
 `TauCeti.MeasureTheory.MeasurableSpace.Metric`), and
 `dist (θ (nearestIndex θ y)) (θ j) ≤ 2 * dist y (θ j)` for every `j`.

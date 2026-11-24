@@ -7,8 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.SimpleFuncDense
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.UniformSpace.Cauchy
-public import TauCeti.Topology.MetricSpace.HausdorffDistance
+public import TauCeti.Topology.MetricSpace.NearestIndex
 public import TauCeti.Topology.MetricSpace.SeparatedBalls
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
@@ -41,7 +42,7 @@ constant in the first variable.
   the index of the ball containing a point is measurable, for an arbitrary index type.
 * `TauCeti.measurable_nearestIndex` — for finitely many points `θ i` indexed by a nonempty linear
   order, the least index of a nearest point (`TauCeti.nearestIndex`, in
-  `TauCeti.Topology.MetricSpace.HausdorffDistance`) is measurable.
+  `TauCeti.Topology.MetricSpace.NearestIndex`) is measurable.
 -/
 
 public section
