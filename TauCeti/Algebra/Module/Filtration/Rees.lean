@@ -28,15 +28,17 @@ so the Rees module consists of Laurent polynomials.
 
 The Rees module interpolates between the module and its associated graded module:
 specializing `z` to `1` recovers `M` when `F` is exhaustive, and specializing `z` to `0` gives
-`gr^F M = ⊕_p F_p M / F_{p-1} M`. Strictness of a filtered map `u : (M, F) → (N, G)` becomes a
-torsion condition: `u` is strict exactly when the cokernel of `R u : R_F M → R_G N` has no
-`z`-torsion. This cokernel is the cokernel of graded modules, not the Rees module of the
-filtered cokernel. Likewise, a sequence of filtered maps is exact at every filtration step
-exactly when its Rees sequence is exact. These are the facts through which Saito's theory of
-Hodge modules treats strictness of filtered `D`-modules by `z`-torsion of Rees modules.
+`gr^F M = ⊕_p F_p M / F_{p-1} M`. Strictness of a filtered map `u : (M, F) → (N, G)` between
+increasing filtrations, with `F` exhaustive, becomes a torsion condition: `u` is strict exactly
+when the cokernel of `R u : R_F M → R_G N` has no `z`-torsion. This cokernel is the cokernel
+of graded modules, not the Rees module of the filtered cokernel. Likewise, a sequence of
+filtered maps is exact at every filtration step exactly when its Rees sequence is exact. These
+are the facts through which Saito's theory of Hodge modules treats strictness of filtered
+`D`-modules by `z`-torsion of Rees modules.
 
 ## Main definitions
 
+* `TauCeti.ReesModule.single F p`: the Rees monomial `m z^p` of an element `m ∈ F_p M`.
 * `TauCeti.ReesModule.shift hF`: multiplication by the Rees parameter `z`.
 * `TauCeti.ReesModule.map u hu`: the Rees map `R u` of a filtered linear map `u`.
 * `TauCeti.ReesModule.evalOne F`: specialization at `z = 1`, `∑ m_p z^p ↦ ∑ m_p`.
@@ -52,8 +54,9 @@ Hodge modules treats strictness of filtered `D`-modules by `z`-torsion of Rees m
   `TauCeti.ReesModule.quotShiftEquiv`: `R_F M / z R_F M ≅ gr^F M`.
 * `TauCeti.ReesModule.mem_range_map_iff`: an element of `R_G N` lies in the image of `R u`
   exactly when each coefficient lies in the image of the corresponding filtration step.
-* `TauCeti.ReesModule.isStrict_iff_injective_mapQ_shift`: a filtered map is strict exactly when
-  `z` acts injectively on the cokernel of its Rees map.
+* `TauCeti.ReesModule.isStrict_iff_injective_mapQ_shift`: a filtered map between increasing
+  filtrations, with exhaustive source filtration, is strict exactly when `z` acts injectively on
+  the cokernel of its Rees map.
 * `TauCeti.ReesModule.exact_map_iff`: a pair of filtered maps is exact on every filtration step
   exactly when the pair of Rees maps is exact.
 
@@ -88,6 +91,26 @@ theorem ext {x y : Finsupp.submodule F} (h : ∀ p, (x : ℤ →₀ M) p = (y : 
 theorem ext_iff {x y : Finsupp.submodule F} : x = y ↔ ∀ p, (x : ℤ →₀ M) p = (y : ℤ →₀ M) p :=
   ⟨fun h _ ↦ h ▸ rfl, ext⟩
 
+/-! ### Rees monomials -/
+
+section Single
+
+variable (F) in
+/-- The Rees monomial `m z^p` of an element `m ∈ F_p M`. -/
+noncomputable def single (p : ℤ) : F p →ₗ[R] Finsupp.submodule F :=
+  (Finsupp.lsingle p ∘ₗ (F p).subtype).codRestrict _
+    fun m ↦ (Finsupp.comap_lsingle_submodule F p).ge m.property
+
+@[simp]
+theorem coe_single (p : ℤ) (m : F p) : (single F p m : ℤ →₀ M) = Finsupp.single p (m : M) := by
+  simp [single]
+
+@[simp]
+theorem single_eq_zero {p : ℤ} {m : F p} : single F p m = 0 ↔ m = 0 := by
+  rw [← Submodule.coe_eq_zero, coe_single, Finsupp.single_eq_zero, Submodule.coe_eq_zero]
+
+end Single
+
 /-! ### The Rees parameter -/
 
 section Shift
@@ -100,10 +123,22 @@ noncomputable def shift (hF : Monotone F) : Finsupp.submodule F →ₗ[R] Finsup
 
 variable (hF : Monotone F)
 
+/-- The underlying Laurent polynomial of `z x` is `x` reindexed along `p ↦ p + 1`. -/
+theorem coe_shift (x : Finsupp.submodule F) :
+    (shift hF x : ℤ →₀ M) = Finsupp.domLCongr (R := R) (Equiv.addRight (1 : ℤ)) (x : ℤ →₀ M) :=
+  LinearMap.coe_restrict_apply _ _
+
 @[simp]
 theorem coe_shift_apply (x : Finsupp.submodule F) (p : ℤ) :
     (shift hF x : ℤ →₀ M) p = (x : ℤ →₀ M) (p - 1) := by
   simp [shift, Finsupp.domLCongr_apply, sub_eq_add_neg]
+
+/-- Multiplication by `z` sends the monomial `m z^p` to `m z^{p+1}`. -/
+@[simp]
+theorem shift_single (p : ℤ) (m : F p) :
+    shift hF (single F p m) = single F (p + 1) ⟨m, hF (Int.le_add_one le_rfl) m.property⟩ := by
+  ext q
+  simp [Finsupp.single_apply, eq_sub_iff_add_eq]
 
 /-- An element of `R_F M` is divisible by `z` exactly when each coefficient `m_p` lies in
 `F_{p-1} M`. -/
@@ -157,6 +192,13 @@ theorem map_comp_shift (hF : Monotone F) (hG : Monotone G) (u : M →ₗ[R] N)
   ext x p
   simp
 
+/-- The Rees map sends the monomial `m z^p` to `u m z^p`. -/
+@[simp]
+theorem map_single (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap u) (p : ℤ) (m : F p) :
+    map u hu (single F p m) = single G p ⟨u m, hu p m.property⟩ := by
+  ext q
+  simp [Finsupp.single_apply, apply_ite u]
+
 /-- An element of `R_G N` lies in the image of the Rees map `R u` exactly when each of its
 coefficients `n_p` is the image of an element of `F_p M`. -/
 theorem mem_range_map_iff (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap u)
@@ -185,6 +227,16 @@ theorem mem_range_map_iff (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap u
     · simp [h]
     · exact hmu p
 
+/-- A Rees monomial `n z^p` lies in the image of the Rees map `R u` exactly when `n` is the image
+of an element of `F_p M`. -/
+theorem single_mem_range_map_iff (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap u) {p : ℤ}
+    {n : G p} : single G p n ∈ LinearMap.range (map u hu) ↔ (n : N) ∈ (F p).map u := by
+  rw [mem_range_map_iff]
+  refine ⟨fun h ↦ by simpa using h p, fun h q ↦ ?_⟩
+  rcases eq_or_ne p q with rfl | hpq
+  · simpa using h
+  · simp [Finsupp.single_eq_of_ne' hpq]
+
 /-- The image of a Rees map is stable under multiplication by the Rees parameter. -/
 theorem range_map_le_comap_shift (hF : Monotone F) (hG : Monotone G) (u : M →ₗ[R] N)
     (hu : ∀ p, F p ≤ (G p).comap u) :
@@ -209,17 +261,9 @@ theorem exact_map_iff (f : M →ₗ[R] N) (g : N →ₗ[R] P) (hf : ∀ p, F p �
         (g n = 0 ↔ (n : N) ∈ (F p).map f) := by
     simp [← LinearMap.coe_range, LinearMap.range_restrict, ← Submodule.coe_eq_zero]
   refine ⟨fun h p n ↦ (hstep p n).mpr ?_, fun h y ↦ ?_⟩
-  · have hy := h ⟨Finsupp.single p (n : N), (Finsupp.comap_lsingle_submodule G p).ge n.property⟩
-    rw [map_apply_eq_zero_iff, ← LinearMap.coe_range, SetLike.mem_coe, mem_range_map_iff] at hy
-    -- Away from `p` the monomial has zero coefficients, which satisfy both conditions.
-    have hsingle {Q : ℤ → N → Prop} (h0 : ∀ q, Q q 0) :
-        (∀ q, Q q (Finsupp.single p (n : N) q)) ↔ Q p n := by
-      refine ⟨fun h ↦ by simpa using h p, fun h q ↦ ?_⟩
-      rcases eq_or_ne p q with rfl | hpq
-      · simpa using h
-      · simpa [Finsupp.single_apply, hpq] using h0 q
-    rwa [hsingle (Q := fun _ n ↦ g n = 0) fun _ ↦ map_zero g,
-      hsingle (Q := fun q n ↦ n ∈ (F q).map f) fun q ↦ zero_mem _] at hy
+  · have hy := h (single G p n)
+    rwa [map_single, single_eq_zero, Submodule.mk_eq_zero, ← LinearMap.coe_range,
+      SetLike.mem_coe, single_mem_range_map_iff] at hy
   · rw [map_apply_eq_zero_iff, ← LinearMap.coe_range, SetLike.mem_coe, mem_range_map_iff]
     exact forall_congr' fun p ↦ (hstep p ⟨_, y.property p⟩).mp (h p _)
 
@@ -239,14 +283,13 @@ theorem evalOne_apply (x : Finsupp.submodule F) :
   simp [evalOne, Finsupp.sum]
 
 @[simp]
-theorem evalOne_single {p : ℤ} {m : M} (hm : m ∈ F p) :
-    evalOne F ⟨Finsupp.single p m, (Finsupp.comap_lsingle_submodule F p).ge hm⟩ = m := by
+theorem evalOne_single (p : ℤ) (m : F p) : evalOne F (single F p m) = m := by
   simp [evalOne_apply]
 
 /-- The image of the specialization at `z = 1` is the supremum `⨆_p F_p M` (the union when `F` is
 increasing). -/
 theorem range_evalOne : LinearMap.range (evalOne F) = ⨆ p, F p := by
-  refine le_antisymm ?_ (iSup_le fun p m hm ↦ ⟨_, evalOne_single hm⟩)
+  refine le_antisymm ?_ (iSup_le fun p m hm ↦ ⟨_, evalOne_single p ⟨m, hm⟩⟩)
   rintro _ ⟨x, rfl⟩
   rw [evalOne_apply]
   exact Submodule.finsuppSum_mem _ _ _ _ fun p _ ↦ Submodule.mem_iSup_of_mem p (coe_apply_mem x p)
@@ -263,12 +306,8 @@ theorem evalOne_map (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap u) (x :
 @[simp]
 theorem evalOne_shift (hF : Monotone F) (x : Finsupp.submodule F) :
     evalOne F (shift hF x) = evalOne F x := by
-  have h : Finsupp.lsum ℕ (fun _ : ℤ ↦ (LinearMap.id : M →ₗ[R] M)) ∘ₗ
-      (Finsupp.domLCongr (R := R) (M := M) (Equiv.addRight (1 : ℤ))).toLinearMap =
-      Finsupp.lsum ℕ (fun _ : ℤ ↦ LinearMap.id) := by
-    ext p m
-    simp
-  exact LinearMap.congr_fun h (x : ℤ →₀ M)
+  rw [evalOne_apply, evalOne_apply, coe_shift, Finsupp.domLCongr_apply,
+    Finsupp.domCongr_apply, Finsupp.sum_equivMapDomain]
 
 end EvalOne
 
@@ -301,18 +340,11 @@ theorem isStrict_iff_injective_mapQ_shift (hF : Monotone F) (hG : Monotone G)
     intro p
     exact h p ⟨by simpa using hc (p + 1), y.property p⟩
   · -- Test injectivity on the monomial `n z^p`, whose product with `z` is `R u (m z^{p+1})`.
-    let y : Finsupp.submodule G :=
-      ⟨Finsupp.single p n, (Finsupp.comap_lsingle_submodule G p).ge hn₂⟩
-    have hy : (Submodule.Quotient.mk y : Finsupp.submodule G ⧸ LinearMap.range (map u hu)) = 0 := by
-      refine h _ ?_
-      rw [LinearMap.mem_ker, Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero,
-        mem_range_map_iff]
-      intro q
-      rcases eq_or_ne q (p + 1) with rfl | hq
-      · simpa [y] using hn₁
-      · simp [y, show p ≠ q - 1 by omega]
-    rw [Submodule.Quotient.mk_eq_zero, mem_range_map_iff] at hy
-    simpa [y] using hy p
+    have hy := h (Submodule.Quotient.mk (single G p ⟨n, hn₂⟩)) <| by
+      rw [LinearMap.mem_ker, Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero, shift_single,
+        single_mem_range_map_iff]
+      exact hn₁
+    rwa [Submodule.Quotient.mk_eq_zero, single_mem_range_map_iff] at hy
 
 /-! ### Specialization at `z = 1` -/
 
@@ -424,21 +456,25 @@ theorem ker_symbol (hF : Monotone F) :
   rw [LinearMap.mem_ker, mem_range_shift_iff, DFinsupp.ext_iff]
   simp
 
+@[simp]
+theorem symbol_single (p : ℤ) (m : F p) :
+    symbol F (single F p m) = DirectSum.of (GradedPiece F) p (Submodule.Quotient.mk m) := by
+  classical
+  ext q
+  rw [symbol_apply]
+  rcases eq_or_ne p q with rfl | hpq
+  · simp
+  · rw [DirectSum.of_eq_of_ne (β := GradedPiece F) _ _ _ hpq.symm, Submodule.Quotient.mk_eq_zero]
+    simp [Finsupp.single_eq_of_ne' hpq]
+
 theorem symbol_surjective : Function.Surjective (symbol F) := by
   classical
   intro c
   induction c using DirectSum.induction_on with
   | zero => exact ⟨0, map_zero _⟩
   | of p a =>
-    obtain ⟨⟨m, hm⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ a
-    refine ⟨⟨Finsupp.single p m, (Finsupp.comap_lsingle_submodule F p).ge hm⟩,
-      DFinsupp.ext fun q ↦ ?_⟩
-    rw [symbol_apply]
-    rcases eq_or_ne p q with rfl | hpq
-    · simp
-    · rw [DirectSum.of_eq_of_ne (β := GradedPiece F) _ _ _ hpq.symm,
-        Submodule.Quotient.mk_eq_zero]
-      simp [Finsupp.single_eq_of_ne' hpq]
+    obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective _ a
+    exact ⟨single F p m, symbol_single p m⟩
   | add a b ha hb =>
     obtain ⟨x, rfl⟩ := ha
     obtain ⟨y, rfl⟩ := hb
