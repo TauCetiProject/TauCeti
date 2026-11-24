@@ -416,11 +416,12 @@ preserves its coefficient l¹-norm. -/
 @[simp]
 theorem l1Norm_toMvPolynomial {σ : Type*} (i : σ) (p : A[X]) :
     (p.toMvPolynomial i).l1Norm = p.l1Norm := by
-  rw [MvPolynomial.l1Norm_def, l1Norm_eq_sum_support]
-  -- Express the support sum as `Finsupp.sum` so the coefficient reindexing lemma applies.
-  change (p.toMvPolynomial i).coeff.sum (fun _ a ↦ ‖a‖) = _
-  rw [coeff_toMvPolynomial_eq_embDomain, Finsupp.sum_embDomain]
-  rfl
+  -- Both sums run over the supports of the coefficient vectors, which the placement reindexes
+  -- along `Finsupp.single i`.
+  rw [MvPolynomial.l1Norm_def, l1Norm_eq_sum_support, Polynomial.support,
+    ← MvPolynomial.finsupp_support_eq_support, coeff_toMvPolynomial_eq_embDomain,
+    Finsupp.support_embDomain, Finset.sum_map]
+  simp only [Finsupp.embDomain_apply_self]
 
 end CommRing
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Delta.Operator
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.EntryPolynomial
-import Mathlib.RingTheory.MvPolynomial.Tower
 
 /-!
 # The size of the delta-row entries of Waldschmidt's interpolation matrix
