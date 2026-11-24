@@ -15,7 +15,7 @@ public import Mathlib.RepresentationTheory.Rep.Basic
 The canonical morphism `Rep.freeLift id : free k G A ⟶ A`, sending the generator at `a : A` to
 `a`, is an epimorphism (`Rep.epi_freeLift_id`). Splitting it gives, for a projective
 representation `A`, a retraction of the free representation on the underlying type of `A` onto `A`
-(`Rep.retractFree`).
+(`Rep.retractFree`), whose retraction is `freeLift id` (`Rep.retractFree_r`).
 -/
 
 public section
@@ -39,5 +39,11 @@ noncomputable def retractFree (A : Rep.{u} k G) [Projective A] : Retract A (free
   i := Projective.factorThru (𝟙 A) (freeLift k G A id)
   r := freeLift k G A id
   retract := Projective.factorThru_comp _ _
+
+/-- The retraction of `retractFree A` is the canonical morphism `freeLift id`. -/
+@[simp]
+theorem retractFree_r (A : Rep.{u} k G) [Projective A] :
+    (retractFree A).r = freeLift k G A id := by
+  rw [retractFree]
 
 end Rep
