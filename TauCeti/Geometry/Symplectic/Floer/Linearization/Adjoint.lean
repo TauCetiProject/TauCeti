@@ -245,37 +245,6 @@ theorem norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
     exact (opNorm_comp_le _ _).trans_eq (mul_comm _ _)
 
-/-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
-`z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
-direction, where the adjoint has the leading term `-∂s`. -/
-theorem floerLinearizationAdjoint_smul_fst {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
-    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
-    ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ β w.1 • η w) z =
-      β z.1 • ω.floerLinearizationAdjoint J Ks Kt u η z - β' • η z := by
-  have hb : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1) _ z := hβ.hasFDerivAt.comp z hasFDerivAt_fst
-  have hd : HasFDerivAt (fun w ↦ β w.1 • η w) _ z := hb.smul hη.hasFDerivAt
-  have hc : (fun w ↦ (β w.1 • η w).comp (J w (u w))) =
-      fun w ↦ β w.1 • (η w).comp (J w (u w)) := by
-    ext w
-    simp
-  have hdc : HasFDerivAt (fun w ↦ β w.1 • (η w).comp (J w (u w))) _ z :=
-    hb.smul (hη.clm_comp hJu).hasFDerivAt
-  rw [floerLinearizationAdjoint_def, hd.fderiv, hc, hdc.fderiv, floerLinearizationAdjoint_def]
-  simp only [add_apply, smul_apply, smulRight_apply, comp_apply, ContinuousLinearMap.coe_fst',
-    toSpanSingleton_apply, stdComplexLineReal_fst, stdComplexLineImag_fst, smul_comp, smul_eq_mul]
-  module
-
-/-- **Conjugating the formal adjoint by an exponential weight.** On covector fields of the form
-`e^{δ s} η`, the formal adjoint acts as `e^{δ s} (D^* - δ) η`. This is the dual of
-`floerLinearization_exp_smul`, where the weight `e^{-δ s}` turns `D` into `D - δ`. -/
-theorem floerLinearizationAdjoint_exp_smul (δ : ℝ) (hη : DifferentiableAt ℝ η z)
-    (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
-    ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ Real.exp (δ * w.1) • η w) z =
-      Real.exp (δ * z.1) • (ω.floerLinearizationAdjoint J Ks Kt u η z - δ • η z) := by
-  have hβ : HasDerivAt (fun s ↦ Real.exp (δ * s)) (Real.exp (δ * z.1) * δ) z.1 := by
-    simpa using ((hasDerivAt_id z.1).const_mul δ).exp
-  rw [floerLinearizationAdjoint_smul_fst hβ hη hJu, smul_sub, smul_smul]
-
 /-- **Multiplying by a function.** If `f`, `η` and `w ↦ J(w, u w)` are differentiable at `z`, the
 formal adjoint at `z` sends `f η` to `f D^* η - (∂s f) η - (∂t f) (η ∘ J)`. This is the adjoint
 counterpart of `floerLinearization_fun_smul`. -/
@@ -291,6 +260,28 @@ theorem floerLinearizationAdjoint_fun_smul {f : ℝ × ℝ → ℝ} (hf : Differ
     fderiv_fun_smul hf (hη.clm_comp hJu), floerLinearizationAdjoint_def]
   simp only [add_apply, smul_apply, smulRight_apply, smul_comp]
   module
+
+/-- **Multiplying by a function of `s`.** If `β` has derivative `β'` at `s`, the formal adjoint at
+`z = (s, t)` sends `β(s) η` to `β(s) D^* η - β' η`: the factor only differentiates in the `s`
+direction, where the adjoint has the leading term `-∂s`. -/
+theorem floerLinearizationAdjoint_smul_fst {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1)
+    (hη : DifferentiableAt ℝ η z) (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+    ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ β w.1 • η w) z =
+      β z.1 • ω.floerLinearizationAdjoint J Ks Kt u η z - β' • η z := by
+  have hb : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1) _ z := hβ.hasFDerivAt.comp z hasFDerivAt_fst
+  rw [floerLinearizationAdjoint_fun_smul hb.differentiableAt hη hJu, hb.fderiv]
+  simp [stdComplexLineReal_fst, stdComplexLineImag_fst]
+
+/-- **Conjugating the formal adjoint by an exponential weight.** On covector fields of the form
+`e^{δ s} η`, the formal adjoint acts as `e^{δ s} (D^* - δ) η`. This is the dual of
+`floerLinearization_exp_smul`, where the weight `e^{-δ s}` turns `D` into `D - δ`. -/
+theorem floerLinearizationAdjoint_exp_smul (δ : ℝ) (hη : DifferentiableAt ℝ η z)
+    (hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z) :
+    ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ Real.exp (δ * w.1) • η w) z =
+      Real.exp (δ * z.1) • (ω.floerLinearizationAdjoint J Ks Kt u η z - δ • η z) := by
+  have hβ : HasDerivAt (fun s ↦ Real.exp (δ * s)) (Real.exp (δ * z.1) * δ) z.1 := by
+    simpa using ((hasDerivAt_id z.1).const_mul δ).exp
+  rw [floerLinearizationAdjoint_smul_fst hβ hη hJu, smul_sub, smul_smul]
 
 /-- **The adjoint on a cut-off covector field, pointwise.** If `|f| ≤ 1`, `‖df‖ ≤ M` and
 `‖J‖ ≤ B` at `z`, then `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²` at `z`. This is the

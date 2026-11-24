@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Geometry.Symplectic.Duality
+import TauCeti.Geometry.Symplectic.Rescale
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -149,6 +150,14 @@ private noncomputable def adjointFlatCoeff (ω : SymplecticForm V) (J : ℝ × �
     (fderiv ℝ (fun w ↦ J w (u w)) z stdComplexLineImag -
       ω.floerLinearizationCoeff J Ks Kt u z)).comp (ω.flatEquiv : V →L[ℝ] V →L[ℝ] ℝ))
 
+/-- The derivative of a covector field read through `ω♭⁻¹` is `ω♭⁻¹` of its derivative. -/
+private theorem fderiv_flatEquiv_symm_comp_apply (ω : SymplecticForm V)
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (z v : ℝ × ℝ) :
+    fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z v = ω.flatEquiv.symm (fderiv ℝ η z v) := by
+  have h := DFunLike.congr_fun (ω.flatEquiv.symm.comp_fderiv (f := η) (x := z)) v
+  simpa only [Function.comp_def, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe] using h
+
 /-- **The formal adjoint read through `ω`.** Let `J(z, u z)` preserve `ω`, and let `η` and
 `w ↦ J(w, u w)` be differentiable at `z`. Write the covector field `η` as `ω♭ ∘ ζ` with
 `ω♭ v = ω(v, ·)`. Then the formal adjoint of the linearized Floer operator is
@@ -167,12 +176,8 @@ private theorem flatEquiv_fderiv_flatEquiv_symm_add_eq_neg_floerLinearizationAdj
           (ω.flatEquiv.symm (η z))) =
       -ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
         η z := by
-  have hd (v : ℝ × ℝ) : fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z v =
-      ω.flatEquiv.symm (fderiv ℝ η z v) := by
-    rw [show (fun w ↦ ω.flatEquiv.symm (η w)) = ω.flatEquiv.symm ∘ η from rfl,
-      ContinuousLinearEquiv.comp_fderiv]
-    rfl
-  rw [floerLinearizationAdjoint_eq_neg hη hJu, neg_neg, hd, hd]
+  rw [floerLinearizationAdjoint_eq_neg hη hJu, neg_neg, fderiv_flatEquiv_symm_comp_apply,
+    fderiv_flatEquiv_symm_comp_apply]
   ext y
   have h : ω.toBilinForm ((J z (u z)).toLinearMap
       (ω.flatEquiv.symm (fderiv ℝ η z stdComplexLineImag))) y =
@@ -217,15 +222,8 @@ private theorem exists_forall_setIntegral_norm_fderiv_sq_le_of_adjointFlatCoeff
     continuousOn_const.clm_comp ((((compL ℝ V V ℝ).flip).continuous.comp_continuousOn hA).clm_comp
       continuousOn_const)
   -- `-J` is compatible with the symplectic form `-ω`.
-  let ω' : SymplecticForm V :=
-    { toBilinForm := -ω.toBilinForm
-      isAlt := ω.isAlt.neg
-      nondegenerate := ω.isAlt.neg.isRefl.nondegenerate_iff_separatingLeft.2 fun v hv ↦
-        ω.separatingLeft v fun w ↦ by simpa using hv w }
-  have hc' (z : ℝ × ℝ) (hz : z ∈ K) : ω'.Compatible (-J z (u z)) := by
-    refine Compatible.of_tames ((ω'.invariant_iff _).2 fun v w ↦ ?_) fun v hv ↦ ?_
-    · simpa [ω'] using congrArg Neg.neg (((ω.invariant_iff _).1 (hc z hz).invariant) v w)
-    · simpa [ω'] using (hc z hz).tames v hv
+  have hc' (z : ℝ × ℝ) (hz : z ∈ K) : (ω.rescale (-1) (by norm_num)).Compatible (-J z (u z)) :=
+    (hc z hz).rescale_neg_of_neg (by norm_num)
   have hJc : ContinuousOn (fun z ↦ (-J z (u z)).toLinearMap.toContinuousLinearMap) K := by
     refine (continuousOn_comp_prodMk_of_continuousAt (fun z hz ↦ (hJ z hz).continuousAt)
       fun z hz ↦ (hu z hz).continuousAt.continuousWithinAt).neg.congr fun z _ ↦ ?_
@@ -281,11 +279,7 @@ hypotheses of
 on a compact set `K`, there is a constant `C ≥ 0` such that every `C²` covector field `η` with
 support in `K` satisfies `∫_K (‖∂s η‖² + ‖∂t η‖²) ≤ C ∫_K (‖D_u^* η‖² + ‖η‖²)` for the formal
 adjoint `D_u^*` of the linearized Floer operator (`floerLinearizationAdjoint`), with respect to an
-additive Haar measure.
-
-Through `ω`, `D_u^*` is minus a Cauchy–Riemann operator `∂s - J ∂t + T` on vector fields, and `-J`
-is compatible with the symplectic form `-ω`, so the estimate for Cauchy–Riemann operators with
-domain-dependent compatible structures applies. -/
+additive Haar measure. -/
 theorem exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLinearizationAdjoint
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {u : ℝ × ℝ → V} {K : Set (ℝ × ℝ)} {μ : Measure (ℝ × ℝ)} [μ.IsAddHaarMeasure]
@@ -311,8 +305,8 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLineari
   set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η w)
   have hζ : ContDiff ℝ 2 ζ := ω.flatEquiv.symm.contDiff.comp hη
   have hdη (z v : ℝ × ℝ) : fderiv ℝ η z v = ω.flatEquiv (fderiv ℝ ζ z v) := by
-    rw [show ζ = ω.flatEquiv.symm ∘ η from rfl, ContinuousLinearEquiv.comp_fderiv]
-    simp
+    rw [show fderiv ℝ ζ z v = _ from fderiv_flatEquiv_symm_comp_apply ω z v,
+      ContinuousLinearEquiv.apply_symm_apply]
   have hsq₁ (v : V) : ‖ω.flatEquiv v‖ ^ 2 ≤ a ^ 2 * ‖v‖ ^ 2 :=
     (pow_le_pow_left₀ (norm_nonneg _) (le_opNorm (ω.flatEquiv : V →L[ℝ] V →L[ℝ] ℝ) v) 2).trans_eq
       (mul_pow _ _ 2)

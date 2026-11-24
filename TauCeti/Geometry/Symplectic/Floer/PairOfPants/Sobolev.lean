@@ -202,8 +202,9 @@ theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ
 
 /-- **The inverse weight on an end.** On the part `±s > 0` of the end `q`, the squared distance
 `|z - c_q|²` to the center of the end is at most `5` times the inverse cylindrical weight. Since
-`4π² |z - c_q|²` is the Jacobian of the end chart, this says that `ρ⁻¹` and the Jacobian are
-comparable there. -/
+`4π² |z - c_q|²` is the Jacobian of the end chart, this bounds the Jacobian above by a multiple of
+`ρ⁻¹` there; together with `inv_norm_sub_endCenter_sq_le_cylindricalWeight`, the two are
+comparable. -/
 theorem norm_sub_endCenter_sq_le_mul_inv_cylindricalWeight {q : Puncture} {z : ℝ × ℝ}
     (hz : 0 < (positiveEndCoord q z).1) :
     ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 ≤ 5 * (cylindricalWeight z)⁻¹ := by
