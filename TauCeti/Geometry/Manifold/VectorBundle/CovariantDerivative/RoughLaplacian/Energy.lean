@@ -5,484 +5,271 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
-public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Codifferential
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.FormalAdjoint
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Pairing
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
 /-!
-# Formal adjunction, Green's identities, and harmonic sections for the rough Laplacian
+# The energy identity and harmonic sections for the rough Laplacian
 
-Let `∇` be a metric-compatible connection on a Riemannian vector bundle `V` over a Riemannian
-manifold `M`, and let `∇*` (`CovariantDerivative.codifferential`) and `∇*∇`
-(`CovariantDerivative.roughLaplacian`) be its codifferential and rough (connection) Laplacian built
-with the Levi–Civita connection on `TM`.
+Let `∇` be a metric connection on a Riemannian vector bundle `V` over a Riemannian manifold `M`
+without boundary, and let `∇*∇ σ = -tr_g ∇²σ` be its rough Laplacian
+(`CovariantDerivative.roughLaplacian`), built with the Levi-Civita connection on the tangent
+bundle. This file proves the **energy identity**
 
-For any `V`-valued one-form `η` and section `τ` of `V` that are differentiable at `x`, let `X` be
-the tangent vector field fibrewise dual to the covector `v ↦ ⟪τ, η v⟫`. Metric compatibility of
-both `∇` and the Levi–Civita connection yields the pointwise divergence identity
+`∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪∇σ, ∇τ⟫ dV`
 
-`div X = ⟨η, ∇τ⟩_{HS} - ⟪∇* η, τ⟫`
+for smooth sections `σ`, `τ` one of which has compact support, where
+`⟪∇σ, ∇τ⟫ = ∑ᵢ ⟪∇_{eᵢ} σ, ∇_{eᵢ} τ⟫` for any orthonormal basis `eᵢ` of the tangent space
+(`CovariantDerivative.innerCovariantDerivative`) is the pointwise inner product of the covariant
+derivatives, and `dV` is the Riemannian volume. Its consequences are that `∇*∇` is **formally
+self-adjoint** and **nonnegative**:
 
-(`CovariantDerivative.IsMetricCompatible.divergence_rieszDual_innerSL_comp`), where `⟨·, ·⟩_{HS}`
-is the fibrewise Hilbert–Schmidt inner product (`ContinuousLinearMap.hilbertSchmidtInner`). No
-orientation, boundarylessness, Hausdorffness, or compactness is needed for the pointwise identity.
+`∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`,   `∫ ⟪∇*∇ σ, σ⟫ dV = ∫ |∇σ|² dV ≥ 0`,
 
-On a smooth `σ`-compact Hausdorff Riemannian manifold without boundary, integrating against the
-orientation-free Riemannian volume (`TauCeti.riemannianVolume`) via the divergence theorem
-(`TauCeti.Manifold.integral_divergence_eq_zero`) yields:
+and that compactly supported smooth sections (in particular all smooth sections on a closed
+manifold) satisfy `∇*∇ σ = 0` if and only if they are parallel (`∇σ = 0`). On a preconnected
+manifold, any compactly supported rough-harmonic smooth section vanishing at one point—and on a
+noncompact preconnected manifold, every compactly supported rough-harmonic smooth section—vanishes
+identically.
+Together with the principal symbol `σ_F(∇*∇) = |ξ|²_g Id`
+(`CovariantDerivative.roughLaplacian_smul_smul_sub`), these are the properties of the rough
+Laplacian that make it the model Laplace-type operator on a bundle.
 
-* **Formal adjunction of `∇*` and `∇`**
-  (`CovariantDerivative.IsMetricCompatible.integral_codifferential_inner`,
-  `CovariantDerivative.IsMetricCompatible.integral_smoothCodifferential_inner`):
-  `∫ ⟪∇* η, τ⟫ dV = ∫ ⟨η, ∇τ⟩_{HS} dV` whenever `η` or `τ` has compact support.
-* **Green's first identity / Dirichlet energy**
-  (`CovariantDerivative.IsMetricCompatible.integral_roughLaplacian_inner`,
-  `CovariantDerivative.IsMetricCompatible.integral_roughLaplacian_inner_self`,
-  `CovariantDerivative.IsMetricCompatible.integral_roughLaplacian_inner_self_eq_sum`):
-  `∫ ⟪∇*∇σ, τ⟫ dV = ∫ ⟨∇σ, ∇τ⟩_{HS} dV`, and for `τ = σ` with compact support,
-  `∫ ⟪∇*∇σ, σ⟫ dV = ∫ (∇σ).hilbertSchmidtNorm ^ 2 dV = ∫ (∑ᵢ ‖∇_{bᵢ} σ‖ ^ 2) dV` in arbitrary
-  (not necessarily continuous) pointwise orthonormal bases `b`.
-* **Green's second identity / formal self-adjointness of `∇*∇`**
-  (`CovariantDerivative.IsMetricCompatible.integral_roughLaplacian_inner_eq_inner_roughLaplacian`,
-  bundled in `integral_smoothRoughLaplacian_inner_eq_inner_smoothRoughLaplacian`):
-  `∫ ⟪∇*∇σ, τ⟫ dV = ∫ ⟪σ, ∇*∇τ⟫ dV` whenever `σ` or `τ` has compact support.
-* **Characterization of rough-harmonic sections**
-  (`CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff`,
-  `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff_of_compactSpace`):
-  for a compactly supported smooth section `σ` (in particular for every smooth section when `M` is
-  compact), `∇*∇σ = 0` everywhere if and only if `∇σ = 0` everywhere. On a preconnected manifold,
-  any rough-harmonic compactly supported smooth section that vanishes at one point—and on a
-  noncompact preconnected manifold, every rough-harmonic compactly supported smooth section—vanishes
-  identically
-  (`CovariantDerivative.IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero_of_apply_eq_zero`,
-  `CovariantDerivative.IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero_of_noncompactSpace`).
+## The argument
+
+The rough Laplacian is the composite `∇*∇ σ = ∇*(∇σ)` of the connection and its formal adjoint
+(`CovariantDerivative.roughLaplacian_eq_formalAdjoint`), so the energy identity is the case
+`ω = ∇σ` of the integration by parts `∫ ⟪∇*ω, τ⟫ dV = ∫ ⟪ω, ∇τ⟫ dV` for `V`-valued one-forms
+(`CovariantDerivative.IsMetricCompatible.integral_inner_formalAdjoint`), which comes from the
+divergence theorem. The one-form `∇σ` has compact support as soon as `σ` has.
+
+## Main results
+
+* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian`,
+  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_isCompact_left`, and
+  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_or`:
+  **the energy identity**, when `τ` or `σ` has compact support.
+* `IsMetricCompatible.integral_inner_roughLaplacian_self_eq_sq_hilbertSchmidtNorm` and
+  `IsMetricCompatible.integral_inner_roughLaplacian_self_eq_sum`:
+  the Dirichlet energy written via `hilbertSchmidtNorm ^ 2` and arbitrary pointwise orthonormal
+  bases.
+* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right` and
+  `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right_of_or`:
+  the rough Laplacian is formally self-adjoint.
+* `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_self_nonneg`: it is
+  nonnegative.
+* `CovariantDerivative.IsMetricCompatible.apply_eq_zero_of_roughLaplacian_eq_zero`,
+  `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff`, and
+  `CovariantDerivative.IsMetricCompatible.roughLaplacian_eq_zero_iff_apply_eq_zero`:
+  characterizations of rough-harmonic sections.
+* `CovariantDerivative.IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero_of_apply_eq_zero` and
+  `CovariantDerivative.IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero_of_noncompactSpace`:
+  vanishing theorems on preconnected and noncompact manifolds.
 
 ## References
 
-* N. Berline, E. Getzler, and M. Vergne, *Heat Kernels and Dirac Operators*, Grundlehren der
-  mathematischen Wissenschaften 298, Springer (1992), Section 2.1, Proposition 2.4.
+* N. Berline, E. Getzler, and M. Vergne, *Heat Kernels and Dirac Operators*, Springer (1992),
+  Section 2.1, Proposition 2.4.
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton University Press (1989),
+  Chapter II, §8 (the connection Laplacian is formally self-adjoint and nonnegative).
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018),
-  Chapters 2 and 4.
-* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry*, Princeton Mathematical Series 38 (1989),
-  Chapter II, Proposition 8.1.
+  Chapter 2 (the divergence theorem) and Chapter 4 (the second covariant derivative).
 -/
 
 public section
 
 open Bundle FiberBundle MeasureTheory Riemannian.Tensor Set
+open TauCeti (riemannianVolume)
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 noncomputable section
 
 namespace CovariantDerivative
 
-/-! ### Pointwise divergence identity for a metric connection -/
-
-section PointwiseDivergence
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle 1 F V I]
-  [IsContMDiffRiemannianBundle I 1 F V]
-  {cov : CovariantDerivative I F V}
+  [FiberBundle F V] {σ τ : Π x : M, V x}
 
-/-- **Pointwise divergence identity for the covariant codifferential.** For a metric-compatible
-connection `∇` on `V`, a section `η` of `Hom(TM, V)` and a section `τ` of `V` differentiable at `x`,
-the divergence of the vector field dual to `v ↦ ⟪τ, η v⟫` equals `⟨η, ∇τ⟩_{HS} - ⟪∇* η, τ⟫`. -/
-theorem IsMetricCompatible.divergence_rieszDual_innerSL_comp (hcov : cov.IsMetricCompatible)
-    {η : Π y : M, TangentSpace I y →L[ℝ] V y} {τ : Π y : M, V y} {x : M}
-    (hη : MDiffAt
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x)
-    (hτ : MDiffAt (T% τ) x) :
-    TauCeti.Manifold.divergence I
-        (fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x =
-      ContinuousLinearMap.hilbertSchmidtInner (η x) (cov τ x) -
-        ⟪cov.codifferential (leviCivitaConnection I M) η x, τ x⟫ := by
-  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  let X : Π y : M, TangentSpace I y :=
-    fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))
-  have hX : MDiffAt (T% X) x := hη.rieszDual_innerSL_comp hτ
-  have hLC := (isLeviCivitaConnection_leviCivitaConnection (I := I) (M := M)).isMetricCompatible
-  have hterm (i : Fin (Module.finrank ℝ (TangentSpace I x))) :
-      ⟪leviCivitaConnection I M X x (b i), b i⟫ =
-        ⟪η x (b i), cov τ x (b i)⟫ +
-          ⟪(leviCivitaConnection I M).hom cov η x (b i) (b i), τ x⟫ := by
-    let Y : Π y : M, TangentSpace I y := extend E (b i)
-    have hY : MDiffAt (T% Y) x := mdifferentiableAt_extend I E (b i)
-    have hLCi := hLC.mvfderiv_inner_eq Y hX hY
-    have hVi := hcov.mvfderiv_inner_eq Y hτ (hη.clm_bundle_apply hY)
-    have hfun : (fun y ↦ ⟪X y, Y y⟫) = fun y ↦ ⟪τ y, η y (Y y)⟫ :=
-      funext fun y ↦ inner_rieszDual ((innerSL ℝ (τ y)).comp (η y)) (Y y)
-    have hYX : ⟪X x, leviCivitaConnection I M Y x (b i)⟫ =
-        ⟪τ x, η x (leviCivitaConnection I M Y x (b i))⟫ :=
-      inner_rieszDual ((innerSL ℝ (τ x)).comp (η x)) _
-    have hhom := hom_apply (leviCivitaConnection I M) cov hη hY (b i)
-    dsimp only at hLCi hVi
-    simp only [Y, extend_apply_self] at hLCi hVi hhom
-    rw [hfun] at hLCi
-    rw [hVi, hYX] at hLCi
-    simp only [Y] at hLCi
-    rw [real_inner_comm _ (η x (b i)), real_inner_comm (τ x), hhom, inner_sub_right]
-    linarith
-  rw [TauCeti.Manifold.divergence_eq_sum_inner I X x b]
-  simp_rw [hterm]
-  rw [Finset.sum_add_distrib, ← ContinuousLinearMap.hilbertSchmidtInner_eq_sum (η x) (cov τ x) b,
-    codifferential_eq_sum cov (leviCivitaConnection I M) η x b, inner_neg_left, sum_inner,
-    sub_neg_eq_add]
+/-! ### The energy identity -/
 
-end PointwiseDivergence
+namespace IsMetricCompatible
 
-/-- **Pointwise divergence identity for the rough Laplacian.** Applying
-`IsMetricCompatible.divergence_rieszDual_innerSL_comp` to `η = ∇σ` expresses `div X` as
-`⟨∇σ, ∇τ⟩_{HS} - ⟪∇*∇σ, τ⟫`. -/
-theorem IsMetricCompatible.divergence_rieszDual_innerSL_comp_cov
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-    {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-    [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
-    [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
-    [IsContMDiffRiemannianBundle I ∞ F V]
-    {cov : CovariantDerivative I F V} [ContMDiffCovariantDerivative cov ∞]
-    (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y} {x : M}
-    (hσ : CMDiff ∞ (T% σ)) (hτ : MDiffAt (T% τ) x) :
-    TauCeti.Manifold.divergence I
-        (fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (cov σ y))) x =
-      ContinuousLinearMap.hilbertSchmidtInner (cov σ x) (cov τ x) -
-        ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ := by
-  have hcovσ : CMDiff ∞
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (cov σ y)) :=
-    contMDiffOn_univ.mp
-      (ContMDiffCovariantDerivative.contMDiff.contMDiff (by simpa using hσ.contMDiffOn))
-  rw [hcov.divergence_rieszDual_innerSL_comp (hcovσ.mdifferentiableAt (by simp)) hτ,
-    codifferential_covariantDerivative cov (leviCivitaConnection I M) hσ x]
-
-/-! ### Formal adjunction, Green's identities, and rough-harmonic sections -/
-
-section Integral
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-  [MeasurableSpace M] [BorelSpace M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+variable [VectorBundle ℝ F V] [T2Space M] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
-  [IsContMDiffRiemannianBundle I ∞ F V]
+  [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] [IsContMDiffRiemannianBundle I ∞ F V]
   {cov : CovariantDerivative I F V} [ContMDiffCovariantDerivative cov ∞]
+  [I.Boundaryless] [SigmaCompactSpace M] [MeasurableSpace M] [BorelSpace M]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [MeasurableSpace M] [BorelSpace M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
-  [IsContMDiffRiemannianBundle I ∞ F V] in
-private theorem contMDiff_cov {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) :
-    CMDiff ∞ (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
-      (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (cov σ y)) :=
-  contMDiffOn_univ.mp
-    (ContMDiffCovariantDerivative.contMDiff.contMDiff (by simpa using hσ.contMDiffOn))
+local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
-omit [I.Boundaryless] [MeasurableSpace M] [BorelSpace M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
-  [IsContMDiffRiemannianBundle I ∞ F V] [ContMDiffCovariantDerivative cov ∞] in
-/-- Compact support of `η` or `τ` gives compact support of the Riesz-dual pairing field and of the
-two scalar pairings in the divergence identity. -/
-private theorem hasCompactSupport_divergence_terms
-    {η : Π y : M, TangentSpace I y →L[ℝ] V y} {τ : Π y : M, V y}
-    (hsupp : IsCompact (closure {y | η y ≠ 0}) ∨ IsCompact (closure {y | τ y ≠ 0})) :
-    HasCompactSupport (β := E)
-        (fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) ∧
-      HasCompactSupport (fun y ↦ ContinuousLinearMap.hilbertSchmidtInner (η y) (cov τ y)) ∧
-      HasCompactSupport (fun y ↦ ⟪cov.codifferential (leviCivitaConnection I M) η y, τ y⟫) := by
-  rcases hsupp with hηc | hτc
-  · refine ⟨HasCompactSupport.intro hηc fun x hx ↦ ?_,
-      HasCompactSupport.intro hηc fun x hx ↦ ?_,
-      HasCompactSupport.intro hηc fun x hx ↦ ?_⟩
-    · have h0 : η x = 0 := by_contra fun h ↦ hx (subset_closure h)
-      exact (rieszDual (I := I) x).map_eq_zero_iff.mpr (by simp [h0])
-    · have h0 : η x = 0 := by_contra fun h ↦ hx (subset_closure h)
-      simp [h0]
-    · rw [codifferential_eq_zero_of_notMem_closure cov (leviCivitaConnection I M) hx,
-        inner_zero_left]
-  · refine ⟨HasCompactSupport.intro hτc fun x hx ↦ ?_,
-      HasCompactSupport.intro hτc fun x hx ↦ ?_,
-      HasCompactSupport.intro hτc fun x hx ↦ ?_⟩
-    · have h0 : τ x = 0 := by_contra fun h ↦ hx (subset_closure h)
-      exact (rieszDual (I := I) x).map_eq_zero_iff.mpr (by simp [h0])
-    · rw [cov.covariantDerivative_eq_zero_of_notMem_closure hx, map_zero]
-    · have h0 : τ x = 0 := by_contra fun h ↦ hx (subset_closure h)
-      simp [h0]
+/-- **The energy identity for the rough Laplacian.** For a metric connection `∇` on a Riemannian
+vector bundle over a manifold without boundary, and smooth sections `σ` and `τ` where `τ` has
+compact support, `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪∇σ, ∇τ⟫ dV`. -/
+theorem integral_inner_roughLaplacian (hcov : cov.IsMetricCompatible) (hσ : CMDiff ∞ (T% σ))
+    (hτ : CMDiff ∞ (T% τ)) (hτc : IsCompact (closure {x | τ x ≠ 0})) :
+    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
+      ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M := by
+  simp only [roughLaplacian_eq_formalAdjoint cov _ hσ, innerCovariantDerivative_def]
+  exact hcov.integral_inner_formalAdjoint
+    (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)) hτ hτc
 
-/-- **Formal adjunction of `∇*` and `∇`.** On a `σ`-compact boundaryless Riemannian manifold, if
-`∇` is metric-compatible and either `η` or `τ` has compact support, then
-`∫ ⟪∇* η, τ⟫ dV = ∫ ⟨η, ∇τ⟩_{HS} dV`. -/
-theorem IsMetricCompatible.integral_codifferential_inner [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible)
-    {η : Π y : M, TangentSpace I y →L[ℝ] V y} {τ : Π y : M, V y}
-    (hη : CMDiff ∞
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)))
-    (hτ : CMDiff ∞ (T% τ))
-    (hsupp : IsCompact (closure {y | η y ≠ 0}) ∨ IsCompact (closure {y | τ y ≠ 0})) :
-    ∫ x, ⟪cov.codifferential (leviCivitaConnection I M) η x, τ x⟫
-        ∂TauCeti.riemannianVolume I M =
-      ∫ x, ContinuousLinearMap.hilbertSchmidtInner (η x) (cov τ x)
-        ∂TauCeti.riemannianVolume I M := by
-  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  obtain ⟨hXc, hf₁c, hf₂c⟩ := hasCompactSupport_divergence_terms (cov := cov) hsupp
-  have hX : ContMDiff I I.tangent 1
-      (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) :=
-    (ContMDiff.rieszDual_innerSL_comp (n := ∞) hη hτ).of_le (by simp)
-  have hf₁ : Integrable (fun x ↦ ContinuousLinearMap.hilbertSchmidtInner (η x) (cov τ x))
-      (TauCeti.riemannianVolume I M) :=
-    (ContMDiff.hilbertSchmidtInner (n := ∞) hη
-      (contMDiff_cov hτ)).continuous.integrable_of_hasCompactSupport hf₁c
-  have hf₂ : Integrable (fun x ↦ ⟪cov.codifferential (leviCivitaConnection I M) η x, τ x⟫)
-      (TauCeti.riemannianVolume I M) :=
-    ((cov.contMDiff_codifferential (leviCivitaConnection I M) hη).inner_bundle
-      hτ).continuous.integrable_of_hasCompactSupport hf₂c
-  have hzero := TauCeti.Manifold.integral_divergence_eq_zero hX hXc
-  have hpt : ∀ x, TauCeti.Manifold.divergence I
-      (fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x =
-        ContinuousLinearMap.hilbertSchmidtInner (η x) (cov τ x) -
-          ⟪cov.codifferential (leviCivitaConnection I M) η x, τ x⟫ := fun x ↦
-    hcov.divergence_rieszDual_innerSL_comp (hη.mdifferentiableAt (by simp))
-      (hτ.mdifferentiableAt (by simp))
-  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_sub hf₁ hf₂] at hzero
-  exact (sub_eq_zero.mp hzero).symm
-
-/-- **Formal adjunction of `smoothCodifferential` and `smoothCovariantDerivative`** on bundled
-smooth sections when at least one section is compactly supported. -/
-theorem IsMetricCompatible.integral_smoothCodifferential_inner [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible)
-    (η : Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯)
-    (τ : Cₛ^∞⟮I; F, V⟯)
-    (hsupp : η ∈ ContMDiffSection.compactlySupported I (E →L[ℝ] F) ∞
-        (fun x ↦ TangentSpace I x →L[ℝ] V x) ∨
-      τ ∈ ContMDiffSection.compactlySupported I F ∞ V) :
-    ∫ x, ⟪cov.smoothCodifferential (leviCivitaConnection I M) η x, τ x⟫
-        ∂TauCeti.riemannianVolume I M =
-      ∫ x, ContinuousLinearMap.hilbertSchmidtInner (η x) (cov.smoothCovariantDerivative τ x)
-        ∂TauCeti.riemannianVolume I M := by
-  simp only [smoothCodifferential_apply, smoothCovariantDerivative_apply]
-  exact hcov.integral_codifferential_inner η.contMDiff τ.contMDiff <|
-    hsupp.imp (fun h ↦ by rwa [ContMDiffSection.mem_compactlySupported,
-        ContMDiffSection.tsupport_def] at h)
-      (fun h ↦ by rwa [ContMDiffSection.mem_compactlySupported,
-        ContMDiffSection.tsupport_def] at h)
-
-/-- **Green's first identity for the rough Laplacian.** On a `σ`-compact boundaryless Riemannian
-manifold, if `∇` is metric-compatible and either `σ` or `τ` has compact support, then
-`∫ ⟪∇*∇σ, τ⟫ dV = ∫ ⟨∇σ, ∇τ⟩_{HS} dV`. -/
-theorem IsMetricCompatible.integral_roughLaplacian_inner [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y}
-    (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
-    (hsupp : IsCompact (closure {y | σ y ≠ 0}) ∨ IsCompact (closure {y | τ y ≠ 0})) :
-    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫
-        ∂TauCeti.riemannianVolume I M =
-      ∫ x, ContinuousLinearMap.hilbertSchmidtInner (cov σ x) (cov τ x)
-        ∂TauCeti.riemannianVolume I M := by
-  have hsupp' : IsCompact (closure {y | cov σ y ≠ 0}) ∨ IsCompact (closure {y | τ y ≠ 0}) := by
-    refine hsupp.imp (fun hσc ↦ hσc.of_isClosed_subset isClosed_closure ?_) id
-    exact closure_minimal
-      (fun x hx ↦ by_contra fun h ↦ hx (cov.covariantDerivative_eq_zero_of_notMem_closure h))
+/-- **The energy identity for the rough Laplacian**, when the first section has compact
+support: `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪∇σ, ∇τ⟫ dV`. -/
+theorem integral_inner_roughLaplacian_of_isCompact_left (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
+    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
+      ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M := by
+  -- `∇σ` vanishes off the closure of the nonzero locus of `σ`, so it has compact support.
+  have hc : closure {x | cov σ x ≠ 0} ⊆ closure {x | σ x ≠ 0} :=
+    closure_minimal (fun x hx ↦ by_contra fun h ↦ hx (cov.apply_eq_zero_of_notMem_closure h))
       isClosed_closure
-  have hadj := hcov.integral_codifferential_inner (contMDiff_cov hσ) hτ hsupp'
-  refine (integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)).trans hadj
-  rw [codifferential_covariantDerivative cov (leviCivitaConnection I M) hσ x]
+  simp only [roughLaplacian_eq_formalAdjoint cov _ hσ, innerCovariantDerivative_def]
+  exact hcov.integral_inner_formalAdjoint_of_isCompact_left
+    (cov.contMDiff_covariantDerivative (n := ∞) (by simpa using hσ)) hτ
+    (hσc.of_isClosed_subset isClosed_closure hc)
 
-/-- **Bundled Green's first identity** for `smoothRoughLaplacian`. -/
-theorem IsMetricCompatible.integral_smoothRoughLaplacian_inner [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible) (σ τ : Cₛ^∞⟮I; F, V⟯)
-    (hsupp : σ ∈ ContMDiffSection.compactlySupported I F ∞ V ∨
-      τ ∈ ContMDiffSection.compactlySupported I F ∞ V) :
-    ∫ x, ⟪cov.smoothRoughLaplacian (leviCivitaConnection I M) σ x, τ x⟫
-        ∂TauCeti.riemannianVolume I M =
-      ∫ x, ContinuousLinearMap.hilbertSchmidtInner
-        (cov.smoothCovariantDerivative σ x) (cov.smoothCovariantDerivative τ x)
-        ∂TauCeti.riemannianVolume I M := by
-  simp only [smoothRoughLaplacian_apply, smoothCovariantDerivative_apply]
-  exact hcov.integral_roughLaplacian_inner σ.contMDiff τ.contMDiff <|
-    hsupp.imp (fun h ↦ by rwa [ContMDiffSection.mem_compactlySupported,
-        ContMDiffSection.tsupport_def] at h)
-      (fun h ↦ by rwa [ContMDiffSection.mem_compactlySupported,
-        ContMDiffSection.tsupport_def] at h)
+/-- **Green's first identity for the rough Laplacian**, when either `σ` or `τ` has compact
+support. -/
+theorem integral_inner_roughLaplacian_of_or (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
+    (hsupp : IsCompact (closure {x | σ x ≠ 0}) ∨ IsCompact (closure {x | τ x ≠ 0})) :
+    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
+      ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M :=
+  hsupp.elim (hcov.integral_inner_roughLaplacian_of_isCompact_left hσ hτ)
+    (hcov.integral_inner_roughLaplacian hσ hτ)
 
-/-- **Dirichlet energy identity for the rough Laplacian.** For a compactly supported smooth section
-`σ` and a metric-compatible connection `∇`,
-`∫ ⟪∇*∇σ, σ⟫ dV = ∫ (cov σ x).hilbertSchmidtNorm ^ 2 dV`. -/
-theorem IsMetricCompatible.integral_roughLaplacian_inner_self [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible) {σ : Π y : M, V y}
-    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {y | σ y ≠ 0})) :
-    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫
-        ∂TauCeti.riemannianVolume I M =
-      ∫ x, (cov σ x).hilbertSchmidtNorm ^ 2 ∂TauCeti.riemannianVolume I M := by
-  rw [hcov.integral_roughLaplacian_inner hσ hσ (Or.inl hσc)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-  have : CompleteSpace (TangentSpace I x) :=
-    FiniteDimensional.completeSpace ℝ (TangentSpace I x)
-  exact ContinuousLinearMap.real_hilbertSchmidtInner_self_eq_hilbertSchmidtNorm_sq (cov σ x)
+/-- **Dirichlet energy identity in terms of `hilbertSchmidtNorm`.** For a compactly supported
+smooth section `σ` and a metric connection `∇`,
+`∫ ⟪∇*∇ σ, σ⟫ dV = ∫ (cov σ x).hilbertSchmidtNorm ^ 2 dV`. -/
+theorem integral_inner_roughLaplacian_self_eq_sq_hilbertSchmidtNorm (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
+    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫ ∂riemannianVolume I M =
+      ∫ x, (cov σ x).hilbertSchmidtNorm ^ 2 ∂riemannianVolume I M := by
+  rw [hcov.integral_inner_roughLaplacian hσ hσ hσc]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  rw [innerCovariantDerivative_def,
+    ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm]
 
 /-- **Dirichlet energy identity in arbitrary pointwise orthonormal bases.** The bases `b x` need
 not vary continuously with `x`. -/
-theorem IsMetricCompatible.integral_roughLaplacian_inner_self_eq_sum [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible) {σ : Π y : M, V y}
-    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {y | σ y ≠ 0}))
+theorem integral_inner_roughLaplacian_self_eq_sum (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0}))
     {ι : Type*} [Fintype ι] (b : ∀ x : M, OrthonormalBasis ι ℝ (TangentSpace I x)) :
-    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫
-        ∂TauCeti.riemannianVolume I M =
-      ∫ x, (∑ i, ‖cov σ x (b x i)‖ ^ 2) ∂TauCeti.riemannianVolume I M := by
-  rw [hcov.integral_roughLaplacian_inner hσ hσ (Or.inl hσc)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-  simp [ContinuousLinearMap.hilbertSchmidtInner_eq_sum (cov σ x) (cov σ x) (b x)]
+    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫ ∂riemannianVolume I M =
+      ∫ x, (∑ i, ‖cov σ x (b x i)‖ ^ 2) ∂riemannianVolume I M := by
+  rw [hcov.integral_inner_roughLaplacian hσ hσ hσc]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  simp [cov.innerCovariantDerivative_eq_sum σ σ x (b x)]
 
-/-- **Green's second identity / formal self-adjointness of `∇*∇`.** On a `σ`-compact boundaryless
-Riemannian manifold, if `∇` is metric-compatible and either `σ` or `τ` has compact support, then
-`∫ ⟪∇*∇σ, τ⟫ dV = ∫ ⟪σ, ∇*∇τ⟫ dV`. -/
-theorem IsMetricCompatible.integral_roughLaplacian_inner_eq_inner_roughLaplacian
-    [SigmaCompactSpace M] (hcov : cov.IsMetricCompatible) {σ τ : Π y : M, V y}
+/-- **The rough Laplacian is formally self-adjoint.** For a metric connection and smooth sections
+`σ` and `τ` where `τ` has compact support, `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`. -/
+theorem integral_inner_roughLaplacian_left_eq_right (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ)) (hτc : IsCompact (closure {x | τ x ≠ 0})) :
+    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
+      ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫ ∂riemannianVolume I M := by
+  calc _ = ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M :=
+        hcov.integral_inner_roughLaplacian hσ hτ hτc
+    _ = ∫ x, cov.innerCovariantDerivative τ σ x ∂riemannianVolume I M :=
+        integral_congr_ae (.of_forall fun x ↦ cov.innerCovariantDerivative_comm σ τ x)
+    _ = ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) τ x, σ x⟫ ∂riemannianVolume I M :=
+        (hcov.integral_inner_roughLaplacian_of_isCompact_left hτ hσ hτc).symm
+    _ = _ := integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
+
+/-- **Green's second identity / formal self-adjointness of `∇*∇`**, when either `σ` or `τ` has
+compact support. -/
+theorem integral_inner_roughLaplacian_left_eq_right_of_or (hcov : cov.IsMetricCompatible)
     (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
-    (hsupp : IsCompact (closure {y | σ y ≠ 0}) ∨ IsCompact (closure {y | τ y ≠ 0})) :
-    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫
-        ∂TauCeti.riemannianVolume I M =
-      ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫
-        ∂TauCeti.riemannianVolume I M := by
-  have h₁ := hcov.integral_roughLaplacian_inner hσ hτ hsupp
-  have h₂ := hcov.integral_roughLaplacian_inner hτ hσ hsupp.symm
-  have hsymm : (∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫
-      ∂TauCeti.riemannianVolume I M) =
-        ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) τ x, σ x⟫
-          ∂TauCeti.riemannianVolume I M :=
-    integral_congr_ae (Filter.Eventually.of_forall fun x ↦ real_inner_comm _ _)
-  rw [h₁, hsymm, h₂]
-  exact integral_congr_ae (Filter.Eventually.of_forall fun x ↦
-    ContinuousLinearMap.hilbertSchmidtInner_comm (cov σ x) (cov τ x))
+    (hsupp : IsCompact (closure {x | σ x ≠ 0}) ∨ IsCompact (closure {x | τ x ≠ 0})) :
+    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, τ x⟫ ∂riemannianVolume I M =
+      ∫ x, ⟪σ x, cov.roughLaplacian (leviCivitaConnection I M) τ x⟫ ∂riemannianVolume I M := by
+  rcases hsupp with hσc | hτc
+  · calc _ = ∫ x, ⟪τ x, cov.roughLaplacian (leviCivitaConnection I M) σ x⟫ ∂riemannianVolume I M :=
+          integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
+      _ = ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) τ x, σ x⟫ ∂riemannianVolume I M :=
+          (hcov.integral_inner_roughLaplacian_left_eq_right hτ hσ hσc).symm
+      _ = _ := integral_congr_ae (.of_forall fun x ↦ real_inner_comm _ _)
+  · exact hcov.integral_inner_roughLaplacian_left_eq_right hσ hτ hτc
 
-/-- **Bundled Green's second identity** for `smoothRoughLaplacian`. -/
-theorem IsMetricCompatible.integral_smoothRoughLaplacian_inner_eq_inner_smoothRoughLaplacian
-    [SigmaCompactSpace M] (hcov : cov.IsMetricCompatible) (σ τ : Cₛ^∞⟮I; F, V⟯)
-    (hsupp : σ ∈ ContMDiffSection.compactlySupported I F ∞ V ∨
-      τ ∈ ContMDiffSection.compactlySupported I F ∞ V) :
-    ∫ x, ⟪cov.smoothRoughLaplacian (leviCivitaConnection I M) σ x, τ x⟫
-        ∂TauCeti.riemannianVolume I M =
-      ∫ x, ⟪σ x, cov.smoothRoughLaplacian (leviCivitaConnection I M) τ x⟫
-        ∂TauCeti.riemannianVolume I M := by
-  simp only [smoothRoughLaplacian_apply]
-  exact hcov.integral_roughLaplacian_inner_eq_inner_roughLaplacian σ.contMDiff τ.contMDiff <|
-    hsupp.imp (fun h ↦ by rwa [ContMDiffSection.mem_compactlySupported,
-        ContMDiffSection.tsupport_def] at h)
-      (fun h ↦ by rwa [ContMDiffSection.mem_compactlySupported,
-        ContMDiffSection.tsupport_def] at h)
+/-- **The rough Laplacian is nonnegative.** For a metric connection and a compactly supported
+smooth section `σ`, `∫ ⟪∇*∇ σ, σ⟫ dV = ∫ |∇σ|² dV ≥ 0`. -/
+theorem integral_inner_roughLaplacian_self_nonneg (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
+    0 ≤ ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫ ∂riemannianVolume I M := by
+  rw [hcov.integral_inner_roughLaplacian hσ hσ hσc]
+  exact integral_nonneg fun x ↦ cov.innerCovariantDerivative_self_nonneg σ x
 
-/-- **Nonnegativity of the rough Laplacian.** For a compactly supported smooth section `σ` and a
-metric-compatible connection `∇`, `0 ≤ ∫ ⟪∇*∇σ, σ⟫ dV`. -/
-theorem IsMetricCompatible.integral_roughLaplacian_inner_self_nonneg [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible) {σ : Π y : M, V y}
-    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {y | σ y ≠ 0})) :
-    0 ≤ ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫
-      ∂TauCeti.riemannianVolume I M := by
-  rw [hcov.integral_roughLaplacian_inner hσ hσ (Or.inl hσc)]
-  exact integral_nonneg fun x ↦ ContinuousLinearMap.hilbertSchmidtInner_self_nonneg (cov σ x)
+/-- **A compactly supported smooth section in the kernel of the rough Laplacian is parallel.**
+For a metric connection on a Riemannian vector bundle over a manifold without boundary, a smooth
+section `σ` with compact support and `∇*∇ σ = 0` satisfies `∇σ = 0`. -/
+theorem apply_eq_zero_of_roughLaplacian_eq_zero (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0}))
+    (h : cov.roughLaplacian (leviCivitaConnection I M) σ = 0) : cov σ = 0 := by
+  have hint := hcov.integral_inner_roughLaplacian hσ hσ hσc
+  simp only [h, Pi.zero_apply, inner_zero_left, integral_zero] at hint
+  have hcont := (cov.contMDiff_innerCovariantDerivative hσ hσ).continuous
+  have hBc : HasCompactSupport (cov.innerCovariantDerivative σ σ) :=
+    .intro' hσc isClosed_closure fun _ ↦ cov.innerCovariantDerivative_eq_zero_of_notMem_closure_left
+  -- `⟪∇σ, ∇σ⟫` is continuous and nonnegative with integral zero, so it vanishes everywhere.
+  have hzero : cov.innerCovariantDerivative σ σ = 0 :=
+    (hcont.ae_eq_iff_eq _ continuous_zero).1 ((integral_eq_zero_iff_of_nonneg
+      (cov.innerCovariantDerivative_self_nonneg σ) (hcont.integrable_of_hasCompactSupport hBc)).1
+      hint.symm)
+  exact funext fun x ↦ (cov.innerCovariantDerivative_self_eq_zero_iff σ x).1 (congrFun hzero x)
 
-/-- **Characterization of rough-harmonic compactly supported sections.** On a `σ`-compact
-boundaryless Riemannian manifold, a compactly supported smooth section `σ` satisfies `∇*∇σ = 0`
-everywhere if and only if `σ` is parallel (`∇σ = 0` everywhere). -/
-theorem IsMetricCompatible.roughLaplacian_eq_zero_iff [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible) {σ : Π y : M, V y}
-    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {y | σ y ≠ 0})) :
-    (∀ x, cov.roughLaplacian (leviCivitaConnection I M) σ x = 0) ↔ ∀ x, cov σ x = 0 := by
-  refine ⟨fun hΔ x ↦ ?_, fun hpar x ↦ ?_⟩
-  · let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-    let g : M → ℝ := fun y ↦ ContinuousLinearMap.hilbertSchmidtInner (cov σ y) (cov σ y)
-    have hg_cont : Continuous g :=
-      (ContMDiff.hilbertSchmidtInner (n := ∞) (contMDiff_cov hσ) (contMDiff_cov hσ)).continuous
-    have hg_supp : HasCompactSupport g :=
-      HasCompactSupport.intro hσc fun y hy ↦ by
-        simp [g, cov.covariantDerivative_eq_zero_of_notMem_closure hy]
-    have hzero : ∫ y, g y ∂TauCeti.riemannianVolume I M = 0 := by
-      have h := (hcov.integral_roughLaplacian_inner hσ hσ (Or.inl hσc)).symm
-      simpa only [g, hΔ, inner_zero_left, integral_zero] using h
-    have hae := (integral_eq_zero_iff_of_nonneg
-      (fun y ↦ ContinuousLinearMap.hilbertSchmidtInner_self_nonneg (cov σ y))
-      (hg_cont.integrable_of_hasCompactSupport hg_supp)).mp hzero
-    exact ContinuousLinearMap.hilbertSchmidtInner_self_eq_zero.mp
-      (congrFun ((hg_cont.ae_eq_iff_eq _ continuous_zero).mp hae) x)
-  · have hcov_zero : cov σ = 0 := funext hpar
-    rw [← codifferential_covariantDerivative cov (leviCivitaConnection I M) hσ x, hcov_zero,
-      codifferential_zero]
+/-- **Characterization of compactly supported rough-harmonic smooth sections.** On a `σ`-compact
+manifold without boundary, a compactly supported smooth section satisfies `∇*∇ σ = 0` if and only
+if it is parallel (`∇σ = 0`). -/
+theorem roughLaplacian_eq_zero_iff (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
+    cov.roughLaplacian (leviCivitaConnection I M) σ = 0 ↔ cov σ = 0 :=
+  ⟨hcov.apply_eq_zero_of_roughLaplacian_eq_zero hσ hσc,
+    cov.roughLaplacian_eq_zero_of_apply_eq_zero _ hσ⟩
 
-/-- **Characterization of rough-harmonic sections on a closed manifold.** On a compact boundaryless
-Riemannian manifold, a smooth section satisfies `∇*∇σ = 0` everywhere if and only if it is
-parallel (`∇σ = 0` everywhere). -/
-theorem IsMetricCompatible.roughLaplacian_eq_zero_iff_of_compactSpace [CompactSpace M]
-    (hcov : cov.IsMetricCompatible) {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) :
-    (∀ x, cov.roughLaplacian (leviCivitaConnection I M) σ x = 0) ↔ ∀ x, cov σ x = 0 :=
+omit [SigmaCompactSpace M] in
+/-- **The kernel of the rough Laplacian on a closed manifold.** For a metric connection on a
+Riemannian vector bundle over a compact manifold without boundary, a smooth section satisfies
+`∇*∇ σ = 0` if and only if it is parallel, `∇σ = 0`. -/
+theorem roughLaplacian_eq_zero_iff_apply_eq_zero [CompactSpace M]
+    (hcov : cov.IsMetricCompatible) (hσ : CMDiff ∞ (T% σ)) :
+    cov.roughLaplacian (leviCivitaConnection I M) σ = 0 ↔ cov σ = 0 :=
   hcov.roughLaplacian_eq_zero_iff hσ isClosed_closure.isCompact
-
-/-- **Bundled characterization of compactly supported rough-harmonic smooth sections.** -/
-theorem IsMetricCompatible.smoothRoughLaplacian_eq_zero_iff [SigmaCompactSpace M]
-    (hcov : cov.IsMetricCompatible) (σ : Cₛ^∞⟮I; F, V⟯)
-    (hσc : σ ∈ ContMDiffSection.compactlySupported I F ∞ V) :
-    cov.smoothRoughLaplacian (leviCivitaConnection I M) σ = 0 ↔
-      cov.smoothCovariantDerivative σ = 0 := by
-  have hσc' : IsCompact (closure {y | σ y ≠ 0}) := by
-    rwa [ContMDiffSection.mem_compactlySupported, ContMDiffSection.tsupport_def] at hσc
-  simpa only [ContMDiffSection.ext_iff, smoothRoughLaplacian_apply,
-    smoothCovariantDerivative_apply, ContMDiffSection.coe_zero, Pi.zero_apply] using
-    hcov.roughLaplacian_eq_zero_iff σ.contMDiff hσc'
-
-/-- **Bundled characterization of rough-harmonic smooth sections on a closed manifold.** -/
-theorem IsMetricCompatible.smoothRoughLaplacian_eq_zero_iff_of_compactSpace [CompactSpace M]
-    (hcov : cov.IsMetricCompatible) (σ : Cₛ^∞⟮I; F, V⟯) :
-    cov.smoothRoughLaplacian (leviCivitaConnection I M) σ = 0 ↔
-      cov.smoothCovariantDerivative σ = 0 :=
-  hcov.smoothRoughLaplacian_eq_zero_iff σ (by simp)
 
 /-- On a preconnected `σ`-compact boundaryless Riemannian manifold, a compactly supported
 rough-harmonic smooth section that vanishes at one point vanishes everywhere. -/
-theorem IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero_of_apply_eq_zero
-    [SigmaCompactSpace M] [PreconnectedSpace M] (hcov : cov.IsMetricCompatible)
-    {σ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {y | σ y ≠ 0}))
-    (hΔ : ∀ x, cov.roughLaplacian (leviCivitaConnection I M) σ x = 0)
+theorem eq_zero_of_roughLaplacian_eq_zero_of_apply_eq_zero [PreconnectedSpace M]
+    (hcov : cov.IsMetricCompatible) (hσ : CMDiff ∞ (T% σ))
+    (hσc : IsCompact (closure {x | σ x ≠ 0}))
+    (hΔ : cov.roughLaplacian (leviCivitaConnection I M) σ = 0)
     {x₀ : M} (hx₀ : σ x₀ = 0) (x : M) : σ x = 0 := by
-  have hpar := (hcov.roughLaplacian_eq_zero_iff hσ hσc).mp hΔ
+  have hpar := hcov.apply_eq_zero_of_roughLaplacian_eq_zero hσ hσc hΔ
   have hdiff : MDiff[univ] (T% σ) := (hσ.mdifferentiable (by simp)).mdifferentiableOn
   have hconst := hcov.inner_eq_of_isPreconnected_of_cov_eq_zero isOpen_univ isPreconnected_univ
-    hdiff hdiff (fun y _ ↦ hpar y) (fun y _ ↦ hpar y) (mem_univ x) (mem_univ x₀)
+    hdiff hdiff (fun y _ ↦ congrFun hpar y) (fun y _ ↦ congrFun hpar y) (mem_univ x) (mem_univ x₀)
   rw [hx₀, inner_zero_left, inner_self_eq_zero] at hconst
   exact hconst
 
 /-- On a noncompact preconnected `σ`-compact boundaryless Riemannian manifold, every compactly
 supported rough-harmonic smooth section vanishes identically. -/
-theorem IsMetricCompatible.eq_zero_of_roughLaplacian_eq_zero_of_noncompactSpace
-    [SigmaCompactSpace M] [PreconnectedSpace M] [NoncompactSpace M]
-    (hcov : cov.IsMetricCompatible) {σ : Π y : M, V y}
-    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {y | σ y ≠ 0}))
-    (hΔ : ∀ x, cov.roughLaplacian (leviCivitaConnection I M) σ x = 0) (x : M) : σ x = 0 := by
+theorem eq_zero_of_roughLaplacian_eq_zero_of_noncompactSpace
+    [PreconnectedSpace M] [NoncompactSpace M] (hcov : cov.IsMetricCompatible)
+    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0}))
+    (hΔ : cov.roughLaplacian (leviCivitaConnection I M) σ = 0) (x : M) : σ x = 0 := by
   obtain ⟨x₀, hx₀⟩ := nonempty_compl.mpr hσc.ne_univ
   exact hcov.eq_zero_of_roughLaplacian_eq_zero_of_apply_eq_zero hσ hσc hΔ
     (by_contra fun h ↦ hx₀ (subset_closure h)) x
 
-end Integral
+end IsMetricCompatible
 
 end CovariantDerivative
 

@@ -12,17 +12,15 @@ public import TauCeti.AlgebraicGeometry.CartierDivisor.WeilComparison
 /-!
 # Effectivity under the Weil–Cartier correspondence
 
-On a Noetherian integral scheme of dimension at most one, regular in codimension one, the Cartier
-divisor associated with a Weil divisor is effective exactly when the Weil divisor has nonnegative
-coefficients. The comparison uses the common sheaf of rational sections: effectivity says that the
-constant rational section `1` belongs to `𝒪_X(D)`.
-
-The result identifies the effective submonoids of Weil and Cartier divisors. It allows effective
-divisors used in linear systems and Abel maps to be viewed as effective Cartier divisors.
-
-The comparison uses `Scheme.CartierDivisor.isEffective_iff_one_mem_sections` and
-`Scheme.CartierDivisor.sections_eq_toWeilDivisor`; the effective monoid equivalence is the
-restriction of `SchemeWeilDivisor.equivCartierDivisor`.
+On a Noetherian normal integral scheme, a Cartier divisor is effective if and only if its
+associated Weil divisor has nonnegative coefficients
+(`Scheme.CartierDivisor.isEffective_iff_toWeilDivisor_nonneg`), proved from algebraic Hartogs'
+principle on local equations. In particular, on a scheme of dimension at most one whose
+codimension-one local rings are discrete valuation rings, `IsNormalScheme.of_forall_coheight_le_one`
+gives `Scheme.CartierDivisor.isEffective_iff_toWeilDivisor`, and restricting
+`SchemeWeilDivisor.equivCartierDivisor` identifies the effective submonoids of Weil and Cartier
+divisors (`SchemeWeilDivisor.effectiveEquivCartierDivisor`), allowing effective divisors in linear
+systems and Abel maps to be viewed as effective Cartier divisors.
 
 ## References
 
@@ -45,18 +43,37 @@ noncomputable section
 namespace Scheme.CartierDivisor
 
 variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
-  [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+
+/-- On a Noetherian normal integral scheme, a Cartier divisor is effective if and only if its
+associated Weil divisor has nonnegative coefficients. -/
+theorem isEffective_iff_toWeilDivisor_nonneg [IsNormalScheme X] (D : CartierDivisor X) :
+    D.IsEffective ↔ 0 ≤ D.toWeilDivisor := by
+  have : ∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X)) :=
+    fun y ↦ IsNormalScheme.isDiscreteValuationRing_stalk y.val y.property
+  refine ⟨fun hD ↦ (WeilDivisor.nonneg_iff _).mpr fun η ↦ ?_,
+    fun hD ↦ isEffective_iff_exists.mpr fun x ↦ ?_⟩
+  · obtain ⟨f, hf, b, hb⟩ := isEffective_iff_exists.mp hD η
+    obtain ⟨U, hηU, hU⟩ := isLocalEquationAt_iff.mp hf
+    have : Nonempty U := ⟨⟨η, hηU⟩⟩
+    rw [D.coeff_toWeilDivisor_eq_ord η hηU f hU, ← hb]
+    exact ord_algebraMap_stalk_nonneg η.property specializes_rfl b
+  · obtain ⟨U, -, hxU, f, hf⟩ := D.exists_localEquation_le ⊤ (trivial : x ∈ (⊤ : X.Opens))
+    have : Nonempty U := ⟨⟨x, hxU⟩⟩
+    refine ⟨f, isLocalEquationAt_iff.mpr ⟨U, hxU, hf⟩,
+      exists_algebraMap_stalk_eq_of_forall_ord_nonneg fun η hηx ↦ ?_⟩
+    rw [← D.coeff_toWeilDivisor_eq_ord η (hηx.mem_open U.isOpen hxU) f hf]
+    exact WeilDivisor.coeff_nonneg hD η
 
 /-- On a Noetherian integral scheme of dimension at most one, regular in codimension one, a
 Cartier divisor is effective if and only if every coefficient of its associated Weil divisor is
 nonnegative. -/
 @[simp]
-theorem isEffective_iff_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
-    (D : CartierDivisor X) :
+theorem isEffective_iff_toWeilDivisor
+    [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
+    (hX : ∀ x : X, coheight x ≤ 1) (D : CartierDivisor X) :
     D.IsEffective ↔ 0 ≤ D.toWeilDivisor := by
-  rw [isEffective_iff_one_mem_sections,
-    SchemeWeilDivisor.nonneg_iff_one_mem_sections,
-    sections_eq_toWeilDivisor hX]
+  have : IsNormalScheme X := .of_forall_coheight_le_one hX
+  exact isEffective_iff_toWeilDivisor_nonneg D
 
 end Scheme.CartierDivisor
 

@@ -82,7 +82,7 @@ variable {k : Type w} [CommRing k] {V : Type u} {G : SimpleGraph V}
 
 section Blocks
 
-variable [Fintype V] [DecidableEq V] [DecidableRel G.Adj] [DecidableEq m]
+variable [Fintype V] [DecidableEq V] [DecidableEq m]
 
 /-- The block matrix of the arrow of a dart `d`: the block `β d.fst d.snd` from the block of
 `d.fst` to the block of `d.snd`. -/
@@ -92,8 +92,8 @@ private noncomputable def dartMatrix (β : V → V → Matrix m m k) (d : G.Dart
 
 omit [DecidableEq m] in
 /-- The block matrices of the darts satisfy the signless relations when `β` does. -/
-private theorem sum_dartMatrix_mul_dartMatrix_symm (β : V → V → Matrix m m k)
-    (hβ : ∀ v, ∑ w ∈ G.neighborFinset v, β w v * β v w = 0) (v : V) :
+private theorem sum_dartMatrix_mul_dartMatrix_symm [DecidableRel G.Adj]
+    (β : V → V → Matrix m m k) (hβ : ∀ v, ∑ w ∈ G.neighborFinset v, β w v * β v w = 0) (v : V) :
     ∑ d : G.Dart with d.snd = v, dartMatrix β d * dartMatrix β d.symm = 0 := by
   have hd (d : G.Dart) (hd : d.snd = v) : dartMatrix β d * dartMatrix β d.symm =
       Matrix.single v v 1 ⊗ₖ (β d.fst v * β v d.fst) := by
@@ -115,7 +115,6 @@ private theorem sum_dartMatrix_mul_dartMatrix_symm (β : V → V → Matrix m m 
     simp [Matrix.sum_apply, Finset.mul_sum]
   rw [hsum, hβ, kronecker_zero]
 
-omit [DecidableRel G.Adj] in
 /-- **The twisted trace is anticyclic** on the block matrices of the darts, for a sign `ε` which
 changes along every dart carrying a nonzero block. -/
 private theorem trace_twist_mul_dartMatrix (β : V → V → Matrix m m k) (ε : V → k)
@@ -132,7 +131,7 @@ private theorem trace_twist_mul_dartMatrix (β : V → V → Matrix m m k) (ε :
   rw [trace_mul_cycle', ← Matrix.mul_assoc, ← Matrix.mul_assoc, hr, hl, hε d h]
   simp
 
-omit [Fintype m] [Fintype V] [DecidableRel G.Adj] [DecidableEq m] in
+omit [Fintype W] [DecidableRel H.Adj] [Fintype m] [Fintype V] [DecidableEq m] in
 /-- Along a copy, the block matrix of the image of a dart of `H` is the block of the dart. -/
 private theorem dartMatrix_extendByZero_mapDart (f : H.Copy G) (β : W → W → Matrix m m k)
     (d : H.Dart) :
@@ -148,6 +147,7 @@ variable [Finite V] {hns : ∀ i : V, ∃ j, G.Adj i j} [DecidableEq m]
 
 local notation "𝒵" => zigzagStrictAInfinityAlgebra k hns
 
+omit [Fintype W] [DecidableRel H.Adj] in
 /-- **Higher Hochschild classes of a zigzag algebra from a matrix representation of a bipartite
 subgraph.** Let `f` be a copy of a bipartite graph `H` in `G`, not necessarily induced, and let
 `β` be a family of matrices on `H` satisfying the signless relations
@@ -158,7 +158,7 @@ coefficient one on that walk, is a Hochschild cocycle of the strict zigzag algeb
 (`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`) which is not the
 Hochschild differential of any suspended cochain of degree zero. -/
 theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero
-    (f : H.Copy G) (hH : H.IsBipartite) (β : W → W → Matrix m m k)
+    [H.LocallyFinite] (f : H.Copy G) (hH : H.IsBipartite) (β : W → W → Matrix m m k)
     (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0) {n : ℕ} (hn : 1 ≤ n)
     {w : Fin (n + 2) → H.Dart} (hw : ∀ i, (w i).fst = (w (i + 1)).snd)
     (htr : trace (List.ofFn fun t ↦ β (w t).fst (w t).snd).prod ≠ 0) :
@@ -187,23 +187,14 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
   have hεf (x : W) : ε (f x) = s x := f.injective.extend_apply s 1 x
   refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
     hn (dartMatrix (f.extendByZero β))
-    (sum_dartMatrix_mul_dartMatrix_symm _ (f.sum_extendByZero_mul_extendByZero β hβ))
+    (sum_dartMatrix_mul_dartMatrix_symm _ fun v ↦
+      f.sum_extendByZero_mul_extendByZero β (mul_zero 0) hβ v)
     (traceLinearMap _ k k ∘ₗ LinearMap.mulLeft k (diagonal ε ⊗ₖ 1)) (fun e Y ↦ ?_) _ _ ?_
   · -- The twisted trace is anticyclic, since a nonzero block lies on the image of an edge of `H`.
     refine trace_twist_mul_dartMatrix _ ε (fun d hd ↦ ?_) e Y
-    by_cases h₁ : d.fst ∈ Set.range f
-    swap
-    · exact absurd (f.extendByZero_eq_zero_of_notMem_range_left β h₁ _) hd
-    by_cases h₂ : d.snd ∈ Set.range f
-    swap
-    · exact absurd (f.extendByZero_eq_zero_of_notMem_range_right β _ h₂) hd
-    obtain ⟨x, hx⟩ := h₁
-    obtain ⟨y, hy⟩ := h₂
-    rw [← hx, ← hy, f.extendByZero_apply_apply] at hd
+    obtain ⟨x, y, hx, hy, hxy, -⟩ := (f.extendByZero_ne_zero_iff β).1 hd
     rw [← hx, ← hy, hεf, hεf]
-    split_ifs at hd with hxy
-    · exact hs x y hxy
-    · exact absurd rfl hd
+    exact hs x y hxy
   · -- On the walk, the twisted trace is the trace of the matrix product, times a sign.
     rw [Finset.sum_eq_single (fun t ↦ f.toHom.mapDart (w t)) (fun w' _ hw' ↦ by
       rw [Finsupp.single_eq_of_ne hw', mul_zero]) (by simp), Finsupp.single_eq_same, mul_one]
@@ -251,9 +242,11 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
   rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
   exact one_ne_zero
 
+omit [Fintype W] [DecidableRel H.Adj] in
 /-- A detected loop gives a nonzero higher Hochschild class. -/
 theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
-    (β : W → W → Matrix m m k) (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0)
+    [H.LocallyFinite] (β : W → W → Matrix m m k)
+    (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0)
     (f : H.Copy G) (hH : H.IsBipartite) {n : ℕ} (hn : 1 ≤ n) {u : Fin (n + 2) → H.Dart}
     (hu : ∀ i, (u i).fst = (u (i + 1)).snd)
     (htr : trace (List.ofFn fun t ↦ β (u t).fst (u t).snd).prod ≠ 0) :

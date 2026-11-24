@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Fra
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
-# The divergence in a chart
+# The divergence and coordinate Piola identity in a chart
 
 Let `ρ = √det (gᵢⱼ)` be the Riemannian volume density in the chart frame `e₁, …, eₙ` at `α`, and
 write `Xᵏ` for the coefficients of a vector field `X` in that frame. This file proves the classical
@@ -20,10 +20,12 @@ coordinate formula for the Riemannian divergence
 
 `ρ div X = ∑ₖ ∂ₖ (ρ Xᵏ)`,
 
-where `∂ₖ` is differentiation along `eₖ`. Thus `ρ div X` is a flat divergence in the chart, which
-is what lets the integral of a divergence against the Riemannian volume be computed by the flat
-divergence theorem in coordinates. No orientation is involved, and the formulas hold at every
-point of the chart domain, including boundary and corner points.
+where `∂ₖ` is differentiation along `eₖ`, together with the **coordinate Piola identity**
+`∑ₖ ∇^{LC}_{eₖ}(ρ • eₖ♯) = 0` for the weighted metric-dual frame `ρ • eₖ♯`. Thus `ρ div X` is a
+flat divergence in the chart, and covariant codifferentials and rough Laplacians take divergence
+form `ρ (∇* η) = -∑ₖ ∇_{eₖ}(ρ • η(eₖ♯))` without connection terms on `TM`. No orientation is
+involved, and the formulas hold at every point of the chart domain, including boundary and corner
+points.
 
 The formula rests on the derivative of the volume density. For any connection compatible with
 the metric, differentiating the Gram matrix gives `dG = Pᵀ G + G P`, where `P` is the matrix of the
@@ -39,6 +41,9 @@ symbol `∑ₖ Γᵏₖⱼ`, which appears when the trace of `∇X` is expanded 
   Levi-Civita connection.
 * `TauCeti.divergence_eq_sum_christoffelSymbol`: `div X = ∑ₖ (∂ₖ Xᵏ + ∑ⱼ Xʲ Γᵏₖⱼ)`.
 * `TauCeti.chartVolumeDensity_mul_divergence`: the coordinate formula `ρ div X = ∑ₖ ∂ₖ (ρ Xᵏ)`.
+* `TauCeti.inner_leviCivitaConnection_chartDualFrame` and
+  `TauCeti.sum_leviCivitaConnection_chartVolumeDensity_smul_chartDualFrame`: the coordinate Piola
+  identity `∑ₖ ∇^{LC}_{eₖ}(ρ • eₖ♯) = 0`.
 
 ## References
 
@@ -50,7 +55,7 @@ symbol `∑ₖ Γᵏₖⱼ`, which appears when the trace of `∇X` is expanded 
 public section
 
 open Bundle FiberBundle Riemannian.Tensor TauCeti.Manifold
-open scoped ContDiff Manifold Matrix
+open scoped ContDiff Manifold Matrix RealInnerProductSpace Topology
 
 namespace TauCeti
 
@@ -121,9 +126,9 @@ theorem chartVolumeDensity_mul_divergence (α : M) {y : M}
           y (chartLocalFrame (I := I) α k y) := by
   have : IsManifold I (1 + 1) M := by norm_num; infer_instance
   have hρ : MDiffAt (chartVolumeDensity (I := I) α) y :=
-    ((contMDiffOn_chartVolumeDensity (n := 1) α).contMDiffAt
-      ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy)).mdifferentiableAt
-        one_ne_zero
+    (contMDiffAt_chartVolumeDensity (n := 1) α
+      (by simpa only [TangentBundle.trivializationAt_baseSet] using hy)).mdifferentiableAt
+      one_ne_zero
   -- Expand `∂ₖ (ρ Xᵏ) = ρ ∂ₖ Xᵏ + Xᵏ ∂ₖ ρ`; the terms `Xᵏ ∂ₖ ρ = ρ ∑ⱼ Xᵏ Γʲⱼₖ` are the
   -- Christoffel terms of `ρ div X`.
   have hprod (k : Fin (Module.finrank ℝ E)) (w : TangentSpace I y) :
@@ -143,6 +148,100 @@ theorem chartVolumeDensity_mul_divergence (α : M) {y : M}
   congr 1
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
+  ring
+
+/-- Differentiating the locally constant Kronecker delta `⟪eₖ♯, eⱼ⟫ = δₖⱼ` expresses
+`⟪∇^{LC}_{eₖ} eₖ♯, eⱼ⟫` as minus the `k`-th local-frame coefficient of `∇^{LC}_{eₖ} eⱼ`. -/
+theorem inner_leviCivitaConnection_chartDualFrame
+    (α : M) {y : M} (hy : y ∈ (chartAt H α).source) (k j : Fin (Module.finrank ℝ E)) :
+    ⟪CovariantDerivative.leviCivitaConnection I M (chartDualFrame (I := I) α k) y
+        (chartLocalFrame (I := I) α k y), chartLocalFrame (I := I) α j y⟫ =
+      -(trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y
+        (CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α k) y
+          (chartLocalFrame (I := I) α j y)) := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have : IsManifold I (minSmoothness ℝ 2) M := by
+    rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hy
+  have hy_ext : y ∈ (extChartAt I α).source := by rwa [extChartAt_source]
+  have hLC := CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection (I := I) (M := M)
+  have ht : (CovariantDerivative.leviCivitaConnection I M).IsTorsionFree :=
+    (CovariantDerivative.isTorsionFree_iff_torsion_eq_zero _).2 hLC.torsion
+  have hD : MDiffAt (T% (chartDualFrame (I := I) α k)) y :=
+    (contMDiffAt_chartDualFrame (I := I) (n := 1) α hy' k).mdifferentiableAt one_ne_zero
+  have hF : MDiffAt (T% (chartLocalFrame (I := I) α j)) y :=
+    (contMDiffAt_chartLocalFrame_of_mem_chart_source (I := I) (n := 1) α hy j).mdifferentiableAt
+      one_ne_zero
+  have hcoeff (w : TangentSpace I y) :
+      ⟪chartDualFrame (I := I) α k y, w⟫ =
+        (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y w := by
+    conv_lhs =>
+      rw [(trivializationAt E (TangentSpace I) α).eq_sum_localFrameCoeff_smul
+        (I := I) (b := Module.finBasis ℝ E) (s := fun _ ↦ w) hy']
+    simp only [← chartLocalFrame_def, inner_sum, real_inner_smul_right, inner_chartDualFrame α hy,
+      mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
+  have hconst : (fun z ↦ ⟪chartDualFrame (I := I) α k z, chartLocalFrame (I := I) α j z⟫) =ᶠ[𝓝 y]
+      fun _ ↦ if k = j then (1 : ℝ) else 0 := by
+    filter_upwards [(chartAt H α).open_source.mem_nhds hy] with z hz
+    exact inner_chartDualFrame α hz k j
+  have h0 : mvfderiv I
+      (fun z ↦ ⟪chartDualFrame (I := I) α k z, chartLocalFrame (I := I) α j z⟫) y
+      (chartLocalFrame (I := I) α k y) = 0 := by
+    rw [hconst.mvfderiv_eq, mvfderiv_const, zero_apply]
+  have hm := hLC.isMetricCompatible.mvfderiv_inner_eq
+    (fun _ ↦ chartLocalFrame (I := I) α k y) hD hF
+  dsimp only at hm
+  have hcomm : CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α j) y
+        (chartLocalFrame (I := I) α k y) =
+      CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α k) y
+        (chartLocalFrame (I := I) α j y) := by
+    simpa only [chartLocalFrame_def] using
+      covariantDerivative_localFrame_comm ht (Module.finBasis ℝ E) α hy_ext k j
+  rw [h0, hcomm, hcoeff] at hm
+  linarith
+
+/-- **Coordinate Piola identity for the Levi-Civita connection.** On a chart domain, the weighted
+dual frame `ρ • eₖ♯` (with `ρ = chartVolumeDensity α`) satisfies `∑ₖ ∇^{LC}_{eₖ}(ρ • eₖ♯) = 0`.
+This cancels the connection terms on `TM` when `∇*` and `∇*∇` are written in divergence form. -/
+theorem sum_leviCivitaConnection_chartVolumeDensity_smul_chartDualFrame
+    (α : M) {y : M} (hy : y ∈ (chartAt H α).source) :
+    ∑ k, CovariantDerivative.leviCivitaConnection I M
+      (fun z ↦ chartVolumeDensity (I := I) α z • chartDualFrame (I := I) α k z) y
+      (chartLocalFrame (I := I) α k y) = 0 := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    simpa only [TangentBundle.trivializationAt_baseSet] using hy
+  let b := (trivializationAt E (TangentSpace I) α).basisAt (Module.finBasis ℝ E) hy'
+  have hb (j) : b j = chartLocalFrame (I := I) α j y :=
+    (chartLocalFrame_apply_of_mem_chart_source (I := I) α hy j).symm
+  have hLC := CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection (I := I) (M := M)
+  have hρ : MDiffAt (chartVolumeDensity (I := I) α) y :=
+    (contMDiffAt_chartVolumeDensity (I := I) (n := 1) α hy).mdifferentiableAt one_ne_zero
+  have hD (k) : MDiffAt (T% (chartDualFrame (I := I) α k)) y :=
+    (contMDiffAt_chartDualFrame (I := I) (n := 1) α hy' k).mdifferentiableAt one_ne_zero
+  refine InnerProductSpace.ext_inner_right_basis b fun j ↦ ?_
+  rw [inner_zero_left, hb, sum_inner]
+  have hsmul (k) : (fun z ↦ chartVolumeDensity (I := I) α z • chartDualFrame (I := I) α k z) =
+      chartVolumeDensity (I := I) α • chartDualFrame (I := I) α k :=
+    funext fun _ ↦ rfl
+  have hsum : ∑ k,
+      ⟪CovariantDerivative.leviCivitaConnection I M
+          (fun z ↦ chartVolumeDensity (I := I) α z • chartDualFrame (I := I) α k z) y
+          (chartLocalFrame (I := I) α k y), chartLocalFrame (I := I) α j y⟫ =
+      -chartVolumeDensity (I := I) α y *
+          ∑ k, (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y
+            (CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α k) y
+              (chartLocalFrame (I := I) α j y)) +
+        mvfderiv I (chartVolumeDensity (I := I) α) y (chartLocalFrame (I := I) α j y) := by
+    simp only [hsmul,
+      (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.leibniz_apply
+        (hD _) hρ,
+      inner_add_left, real_inner_smul_left, inner_leviCivitaConnection_chartDualFrame α hy,
+      inner_chartDualFrame α hy, mul_ite, mul_one, mul_zero, Finset.sum_add_distrib,
+      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, mul_neg, Finset.sum_neg_distrib,
+      ← Finset.mul_sum, neg_mul]
+  rw [hsum, mvfderiv_chartVolumeDensity hLC.isMetricCompatible α hy']
   ring
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 import TauCeti.Algebra.Group.ZMultiples
@@ -17,7 +18,9 @@ map `GenLoop.diskBoundaryMap p` of the cell that kills its class. With integer c
 image under this map of the standard generator `[Sⁿ⁺¹]` of the homology of the sphere
 `TopCat.diskBoundary (n + 2)` (`TauCeti.reducedSingularHomologyTopCatSphereIso`) is the Hurewicz
 class of `p`, up to a sign that depends neither on the space nor on the loop
-(`TauCeti.exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz`).
+(`TauCeti.exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz`). In particular
+the two classes lie in the same submodules
+(`GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff`).
 
 Both classes are natural in based maps, and every generalized loop factors through the
 tautological loop of the sphere (`GenLoop.hurewicz_eq_hurewicz_sphereGenLoop_comp`), so it
@@ -26,6 +29,13 @@ suffices to compare them on the sphere. There both generate the infinite cyclic 
 
 This identifies the homology classes killed by attaching cells along generalized loops, as
 computed by `TauCeti.ker_singularHomologyMap_cellAttachmentIncl`, with Hurewicz classes.
+
+Conversely, every map `h : Sⁿ⁺² → Z`, based or not, is the attaching map of the generalized loop it
+defines at the image of the north pole. When `Z` is `(n + 1)`-connected, the Hurewicz theorem then
+shows that `h` is null-homotopic exactly when `h_*[Sⁿ⁺²] = 0`
+(`TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero`): a map out of a sphere extends over
+the disk exactly when it is null-homologous, which is how maps are extended over cells attached
+along spheres.
 
 ## References
 
@@ -117,5 +127,48 @@ theorem exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n : �
   -- `TopCat.ofHom (toSphere p)` has target `TopCat.of X`, which is `X` only up to unfolding.
   erw [Functor.map_comp]
   rfl
+
+/-- **The attaching sphere of a generalized loop and its Hurewicz class lie in the same
+submodules.** Since the two classes differ by a unit of `ℤ`, the image of the generator `[Sⁿ⁺¹]`
+under `GenLoop.diskBoundaryMap p` lies in a submodule `S` of `Hₙ₊₁(X; ℤ)` exactly when the
+Hurewicz class of `p` does. -/
+theorem _root_.GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff {n : ℕ} {X : TopCat.{0}} {x : X}
+    (p : Ω^ (Fin (n + 1)) X x)
+    (S : Submodule ℤ
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj X)) :
+    (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).map
+          (diskBoundaryMap p)).hom
+        ((reducedSingularHomologyι (ModuleCat.of ℤ ℤ) (n + 1)).app (TopCat.diskBoundary.{0} (n + 2))
+          ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of ℤ ℤ) (n + 1)).inv 1)) ∈ S ↔
+      (hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 ∈ S := by
+  obtain ⟨ε, hε⟩ := exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz n
+  rw [hε X x p, ← Units.smul_def]
+  exact S.smul_mem_iff' ε
+
+/-- **A sphere in an `(n + 1)`-connected space is null-homotopic exactly when it is
+null-homologous.** If the homotopy groups `πₖ(Z, z)` vanish for every `k < n + 2`, a map
+`h : Sⁿ⁺² → Z` is null-homotopic if and only if it sends the generator `[Sⁿ⁺²]` of the integral
+homology of the sphere to zero. The map `h` need not be based, and `z` need not be in its image. -/
+theorem _root_.TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero {n : ℕ} {Z : TopCat.{0}}
+    {z : Z} (hZ : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) Z z))
+    (h : TopCat.diskBoundary.{0} (n + 3) ⟶ Z) :
+    h.hom.Nullhomotopic ↔
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map h).hom
+        ((reducedSingularHomologyι (ModuleCat.of ℤ ℤ) (n + 2)).app (TopCat.diskBoundary.{0} (n + 3))
+          ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of ℤ ℤ) (n + 2)).inv 1)) = 0 := by
+  -- `h` is the attaching map of the generalized loop it defines at the image of the north pole.
+  let z' := h ⟨sphereNorthPole (n + 2)⟩
+  obtain ⟨p, hp⟩ := exists_diskBoundaryMap_eq h
+  -- The homotopy groups below `n + 2` also vanish at `z'`, since `Z` is path connected.
+  have hpc : PathConnectedSpace Z :=
+    (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).2 (hZ 0 (by omega))
+  have hZ' : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) Z z') := fun k hk ↦
+    subsingleton_homotopyGroup_of_pathConnectedSpace (hZ k hk)
+  -- The attaching sphere vanishes exactly when its Hurewicz class does, and by the Hurewicz
+  -- theorem at `z'` that happens exactly when the class of `p` is trivial.
+  rw [← hp, ← Submodule.mem_bot ℤ, GenLoop.singularHomologyMap_diskBoundaryMap_mem_iff,
+    Submodule.mem_bot, ← HomotopyGroup.hurewiczAddEquiv_ofMul_mk hZ', AddEquiv.map_eq_zero_iff]
+  exact (HomotopyGroup.mk_eq_one_iff_nullhomotopic_diskBoundaryMap p).symm.trans
+    (ofMul_eq_zero (A := HomotopyGroup (Fin (n + 2)) Z z')).symm
 
 end TauCeti

@@ -20,8 +20,10 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 # The discriminant companion of Nagell–Lutz
 
 Over `ℤ`, a torsion point with integral coordinates either has `ψ₂ = 0` there or has `ψ₂²` dividing
-`4Δ`. Writing `κ = ψ₂(x₀, y₀) = 2y₀ + a₁x₀ + a₃`, that is the classical `y = 0 ∨ y² ∣ Δ` disjunct
-in the form a long Weierstrass model supports.
+`4Δ`. Writing `κ = ψ₂(x₀, y₀) = 2y₀ + a₁x₀ + a₃`, that is the discriminant form `y = 0 ∨ y² ∣ Δ`
+of the Nagell–Lutz disjunct, in the form a long Weierstrass model supports. On a short model
+`y² = x³ + Ax + B`, where `Δ = -16(4A³ + 27B²)`, the discriminant form is weaker by the factor `16`
+than the classical `y² ∣ 4A³ + 27B²`.
 
 Over the fraction field of a general unique factorisation domain the same holds **given a
 squarefreeness hypothesis**, exactly as in `NagellLutz.lean`: this route applies integrality at
@@ -39,11 +41,15 @@ The route is doubling. `κ ≠ 0` forces `2 • P ≠ 0`, so `2 • P` has an af
 `2 • P` makes `x'` integral — or, in its order-two case, makes `4x'` integral — and either way the
 `4` already present on the left absorbs the difference.
 
-The sharpening for short models is a separate result, `CubicDiscriminant.lean`'s
-`sq_dvd_cubic_discr`.
+For a model with `a₁ = a₃ = 0` the torsion input gives more: there `κ = 2y₀`, so it reads
+`y₀² ∣ Ψ₃(x₀)`, which `CubicDiscriminant.lean`'s `sq_dvd_cubic_discr` turns into divisibility of
+the cubic's discriminant, `Δ / 16`. That sharp form is `ShortNagellLutz.lean`'s
+`y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`.
 
 ## Main results
 
+* `WeierstrassCurve.sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃`: the torsion input, `κ² ∣ 4·Ψ₃(x₀)` when
+  `ψ₂` does not vanish at the point, under the same hypothesis as the companion.
 * `WeierstrassCurve.evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ`: the companion over a UFD `R`,
   taking the same sharp disjunction as `isInteger_or_order_two_of_torsion` but read at `2 • P`,
   guarded by `2 < addOrderOf (2 • P)`.
@@ -52,6 +58,8 @@ The sharpening for short models is a separate result, `CubicDiscriminant.lean`'s
   which is strictly stronger but is the form a caller usually has.
 * `WeierstrassCurve.evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_rat`: the `ℤ`/`ℚ` specialisation,
   assuming only that the point is torsion with integral coordinates.
+* `WeierstrassCurve.sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃_rat`: the `ℤ`/`ℚ` form of the torsion
+  input, with no arithmetic hypothesis.
 
 ## Why the hypothesis sits at `2 • P`, and why its guard is `2 <` rather than `≠ 2`
 
@@ -70,7 +78,7 @@ there; here the point is a double and may vanish, so the guard must exclude `1` 
 
 ## Provenance
 
-Ported from J. Xu and D. K. Angdinata's
+Ported from C. Birkbeck and D. K. Angdinata's
 `projects/NagellLutz/LutzNagell/LutzNagellTheorem/PIDMain.lean` in AINTLIB
 (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`):
 `kappa_sq_dvd_four_Psi3_of_torsion` (`:356`) and `lutz_nagell_pid_discriminant_of_torsion`
@@ -112,18 +120,18 @@ namespace WeierstrassCurve
 
 open WeierstrassCurve
 
-variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
+variable {R : Type*} [CommRing R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
 variable (W : WeierstrassCurve R)
 
-/-- **The `Ψ₃` divisibility, from torsion.** For a torsion point with integral coordinates and
-`κ = ψ₂(x₀, y₀) ≠ 0`, the square `κ²` divides `4·Ψ₃(x₀)`.
+/-- **The `Ψ₃` divisibility, from torsion.** Let `P = (x, y)` be a torsion point over `K` at which
+`ψ₂` does not vanish, and let `(x₀, y₀)` be a point of the integral model with `x₀` over `x`. Then
+`κ = ψ₂(x₀, y₀)` has `κ²` dividing `4·Ψ₃(x₀)`.
 
-`κ ≠ 0` makes `2 • P` nonzero, so it has an affine representative `(x', y')`, and the cleared
-doubling relation turns `Ψ₃(x₀)` into `(x₀ - x') · Ψ₂Sq(x₀) = (x₀ - x') · κ²`. Nagell–Lutz
-integrality at `2 • P` then makes `x'` integral — or, in its order-two case, makes `4x'` integral,
-and the `4` is already on the left. -/
-private lemma sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
+The arithmetic hypothesis is the one `evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ` takes, and this is
+that theorem's torsion input. For a model with `a₁ = a₃ = 0` it is also the input of
+`sq_dvd_cubic_discr`, which gives the sharp form `y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`. -/
+theorem sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
     (htor : IsOfFinAddOrder (Affine.Point.some _ _ hns))
     (hsf : 2 < addOrderOf ((2 : ℕ) • Affine.Point.some _ _ hns) →
@@ -134,6 +142,7 @@ private lemma sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
     (hκK : (W.baseChange K).ψ₂.evalEval x y ≠ 0) :
     W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * (W.Ψ₃).eval x₀ := by
   set P := Affine.Point.some _ _ hns
+  -- `κ ≠ 0` makes `2 • P` nonzero, so it has an affine representative `(x', y')`.
   have hord2 : addOrderOf P ≠ 2 := fun h ↦
     hκK ((addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero (W.baseChange K) hns).mp h)
   have hord1 : addOrderOf P ≠ 1 := fun h ↦
@@ -180,11 +189,12 @@ private lemma sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
   · exact key (4 * x'₀) (by rw [map_mul, map_ofNat, hx'₀])
   · exact key n₀ hn₀
 
-omit [IsDomain R] in
 /-- **The discriminant companion of Nagell–Lutz.** For a torsion point with integral coordinates,
 either `ψ₂` vanishes there — equivalently the point is two-torsion — or its square divides `4Δ`.
 
-This is the second disjunct of the classical statement. The arithmetic hypothesis is exactly the
+This is the second disjunct in its discriminant form: on a short model, where `κ = 2y` and
+`Δ = -16(4A³ + 27B²)`, it reads `y² ∣ Δ`, weaker by the factor `16` than the classical
+`y² ∣ 4A³ + 27B²`. The arithmetic hypothesis is exactly the
 sharp disjunction `isInteger_or_order_two_of_torsion` takes, transposed to `2 • P` — the point at
 which the proof applies it — and guarded by `2 < addOrderOf (2 • P)`. Nothing weaker is available
 along this route, and nothing stronger is asked. -/
@@ -197,8 +207,6 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ {x y : K}
           Squarefree ((p : ℤ) : R))
     {x₀ y₀ : R} (hx : algebraMap R K x₀ = x) (hy : algebraMap R K y₀ = y) :
     W.ψ₂.evalEval x₀ y₀ = 0 ∨ W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * W.Δ := by
-  -- `R` embeds into the field `K`, so it is a domain.
-  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
   by_cases hκ : W.ψ₂.evalEval x₀ y₀ = 0
   · exact Or.inl hκ
   -- The point satisfies the equation over `R` itself, by injectivity of `algebraMap R K`.
@@ -214,7 +222,6 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ {x y : K}
   refine Or.inr (dvd_four_mul_Δ_of_dvd_Ψ₂Sq_of_dvd_four_mul_Ψ₃ W (evalEval_ψ₂_sq W hEq).dvd ?_)
   exact sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ W hns htor hsf hx hEq hκK
 
-omit [IsDomain R] in
 /-- **The discriminant companion from a uniform hypothesis.** The same conclusion, asking
 squarefreeness at *every* prime dividing `addOrderOf (2 • P)` rather than at the one branch the
 proof lands in.
@@ -250,5 +257,21 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_rat {W : WeierstrassCurve �
     W.ψ₂.evalEval x₀ y₀ = 0 ∨ W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * W.Δ :=
   evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_of_squarefree W hns htor
     (fun _ p hp _ ↦ by simpa using (Nat.prime_iff_prime_int.mp hp).squarefree) hx hy
+
+/-- **The `Ψ₃` divisibility over `ℚ`**: for an integral long Weierstrass model, a torsion point
+over `ℚ` at which `ψ₂` does not vanish, and a point `(x₀, y₀)` of the integral model with `x₀`
+over `x`, the square of `κ = ψ₂(x₀, y₀)` divides `4·Ψ₃(x₀)`.
+
+As with `evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_rat`, no arithmetic hypothesis survives: over `ℤ`
+every rational prime is squarefree. -/
+theorem sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃_rat {W : WeierstrassCurve ℤ} {x y : ℚ}
+    (hns : (W.baseChange ℚ).toAffine.Nonsingular x y)
+    (htor : IsOfFinAddOrder (Affine.Point.some _ _ hns))
+    {x₀ y₀ : ℤ} (hx : algebraMap ℤ ℚ x₀ = x) (hEq : W.toAffine.Equation x₀ y₀)
+    (hκK : (W.baseChange ℚ).ψ₂.evalEval x y ≠ 0) :
+    W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * (W.Ψ₃).eval x₀ :=
+  sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ W hns htor
+    (fun h2 ↦ Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree h2 fun _ hp _ ↦
+      (Nat.prime_iff_prime_int.mp hp).squarefree) hx hEq hκK
 
 end WeierstrassCurve

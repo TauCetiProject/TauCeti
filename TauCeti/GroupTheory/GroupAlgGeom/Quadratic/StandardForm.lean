@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 public import Mathlib.Algebra.Group.Commutator
+import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
 # The rewriting rules of the standard form
@@ -34,6 +35,10 @@ not occur, so that they apply inside a longer product.
   `x U y V x⁻¹ W y⁻¹ Z` to `x⁻¹ y⁻¹ x y W V U Z`.
 * `GX.exists_mem_elementaryAut_apply_commutator_mul_sq`: a handle and a cross-cap are three
   cross-caps ([GaXu], Step 5), `x⁻¹ y⁻¹ x y s² ↦ x² y² s²`.
+* `GX.exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq`: `n` handles followed by
+  `r ≥ 1` cross-caps are `2n + r` cross-caps.
+* `GX.exists_mem_elementaryAut_apply_mul_prod_sq`: a word in which none of the variables `xᵢ`
+  occurs moves from the front of `∏ᵢ xᵢ²` to its back.
 
 ## References
 
@@ -121,5 +126,93 @@ theorem exists_mem_elementaryAut_apply_commutator_mul_sq {s : X} (hxy : x ≠ y)
       hys.symm]
   · simp only [mem_inf] at ha
     simp [ha.1.1, ha.1.2, ha.2]
+
+-- The step of `exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq`: the last of `n + 1`
+-- handles and the first of `r + 1` cross-caps are three cross-caps, leaving `n` handles followed
+-- by `r + 3` cross-caps.
+private theorem exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq_succ {N n r : ℕ}
+    (hN : 2 * (n + 1) + (r + 1) = N) {x : Fin N → X} (hx : Function.Injective x) :
+    ∃ f ∈ elementaryAut G X,
+      f ((List.ofFn fun i : Fin (n + 1) =>
+            ⁅(inr (FreeGroup.of (x ⟨2 * i, by have := i.isLt; lia⟩)) : GX G X)⁻¹,
+              (inr (FreeGroup.of (x ⟨2 * i + 1, by have := i.isLt; lia⟩)))⁻¹⁆).prod *
+          (List.ofFn fun k : Fin (r + 1) => (inr (FreeGroup.of
+            (x ⟨2 * (n + 1) + k, by have := k.isLt; lia⟩)) : GX G X) ^ 2).prod) =
+        (List.ofFn fun i : Fin n =>
+            ⁅(inr (FreeGroup.of (x ⟨2 * i, by have := i.isLt; lia⟩)) : GX G X)⁻¹,
+              (inr (FreeGroup.of (x ⟨2 * i + 1, by have := i.isLt; lia⟩)))⁻¹⁆).prod *
+          (List.ofFn fun k : Fin (r + 3) =>
+            (inr (FreeGroup.of (x ⟨2 * n + k, by have := k.isLt; lia⟩)) : GX G X) ^ 2).prod ∧
+      ∀ a, (∀ i, a ∈ avoiding (x i)) → f a = a := by
+  obtain ⟨f, hf, hfw, hfa⟩ := exists_mem_elementaryAut_apply_commutator_mul_sq (G := G)
+    (x := x ⟨2 * n, by lia⟩) (y := x ⟨2 * n + 1, by lia⟩) (s := x ⟨2 * n + 2, by lia⟩)
+    (hx.ne (by simp)) (hx.ne (by simp)) (hx.ne (by simp))
+  -- `f` fixes the words in the variables other than `x₂ₙ`, `x₂ₙ₊₁`, `x₂ₙ₊₂`
+  have hfix {j : ℕ} (hj : j < N) (h : j < 2 * n ∨ 2 * n + 2 < j) :
+      (inr (FreeGroup.of (x ⟨j, hj⟩)) : GX G X) ∈ avoiding (x ⟨2 * n, by lia⟩) ⊓
+        avoiding (x ⟨2 * n + 1, by lia⟩) ⊓ avoiding (x ⟨2 * n + 2, by lia⟩) := by
+    simp only [Subgroup.mem_inf, inr_of_mem_avoiding_iff, ne_eq, hx.eq_iff, Fin.mk.injEq]
+    lia
+  refine ⟨f, hf, ?_, fun a ha => hfa a ⟨⟨ha _, ha _⟩, ha _⟩⟩
+  rw [List.ofFn_succ_last (n := n)]
+  -- bring the indices of both sides to the form `2 * n + ⋯`
+  simp only [List.ofFn_succ, List.prod_append, List.prod_cons, List.prod_nil, mul_one,
+    Fin.val_castSucc, Fin.val_last, Fin.val_zero, Fin.val_succ, add_zero, zero_add,
+    Nat.reduceAdd, ← mul_assoc, (by lia : 2 * (n + 1) = 2 * n + 2),
+    (fun i => by lia : ∀ i : ℕ, 2 * n + 2 + (i + 1) = 2 * n + (i + 1 + 1 + 1))]
+  rw [mul_assoc _ _ (_ ^ 2), map_mul, map_mul, hfw, hfa _ (list_prod_mem ?_),
+    hfa _ (list_prod_mem ?_)]
+  · simp [mul_assoc]
+  · simp only [List.forall_mem_ofFn_iff]
+    exact fun k => pow_mem (hfix (j := 2 * n + (k + 1 + 1 + 1)) (by lia) (by lia)) 2
+  · simp only [List.forall_mem_ofFn_iff]
+    intro i
+    have h₁ := hfix (j := 2 * i) (by lia) (by lia)
+    have h₂ := hfix (j := 2 * i + 1) (by lia) (by lia)
+    rw [commutatorElement_def, inv_inv, inv_inv]
+    exact mul_mem (mul_mem (mul_mem (inv_mem h₁) (inv_mem h₂)) h₁) h₂
+
+/-- **Handles and cross-caps.** For injective `x : Fin N → X` with `N = 2n + r` and `r ≥ 1`, an
+elementary automorphism which fixes every word in which no `xᵢ` occurs turns
+`∏_{i<n} [x₂ᵢ, x₂ᵢ₊₁] ∏_{k<r} x²₂ₙ₊ₖ` into `∏_{i<N} xᵢ²`, where `[x, y] = x⁻¹ y⁻¹ x y`. -/
+theorem exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq {N n r : ℕ} (hN : 2 * n + r = N)
+    (hr : 0 < r) {x : Fin N → X} (hx : Function.Injective x) : ∃ f ∈ elementaryAut G X,
+      f ((List.ofFn fun i : Fin n =>
+            ⁅(inr (FreeGroup.of (x ⟨2 * i, by have := i.isLt; lia⟩)) : GX G X)⁻¹,
+              (inr (FreeGroup.of (x ⟨2 * i + 1, by have := i.isLt; lia⟩)))⁻¹⁆).prod *
+          (List.ofFn fun k : Fin r =>
+            (inr (FreeGroup.of (x ⟨2 * n + k, by have := k.isLt; lia⟩)) : GX G X) ^ 2).prod) =
+        (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).prod ∧
+      ∀ a, (∀ i, a ∈ avoiding (x i)) → f a = a := by
+  induction n generalizing r with
+  | zero =>
+    obtain rfl : r = N := by lia
+    exact ⟨1, one_mem _, by simp, fun _ _ => rfl⟩
+  | succ n ih =>
+    obtain ⟨r, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hr.ne'
+    obtain ⟨f₁, hf₁, hf₁w, hf₁a⟩ :=
+      exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq_succ (G := G) hN hx
+    obtain ⟨f₂, hf₂, hf₂w, hf₂a⟩ := ih (r := r + 3) (by lia) (by lia)
+    exact ⟨f₂ * f₁, mul_mem hf₂ hf₁, by rw [MulAut.mul_apply, hf₁w, hf₂w],
+      fun a ha => by rw [MulAut.mul_apply, hf₁a a ha, hf₂a a ha]⟩
+
+/-- **A word moves behind squares.** For `x : Fin N → X` and a word `P` in which no `xᵢ` occurs,
+an elementary automorphism which fixes every word in which no `xᵢ` occurs turns `P ∏_{i<N} xᵢ²`
+into `∏_{i<N} xᵢ² P`. -/
+theorem exists_mem_elementaryAut_apply_mul_prod_sq {N : ℕ} {x : Fin N → X} {P : GX G X}
+    (hP : ∀ i, P ∈ avoiding (x i)) : ∃ f ∈ elementaryAut G X,
+      f (P * (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).prod) =
+        (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).prod * P ∧
+      ∀ a, (∀ i, a ∈ avoiding (x i)) → f a = a := by
+  -- the simultaneous substitution `xᵢ ↦ P⁻¹ xᵢ P`
+  obtain ⟨f, hf, hfx, hfa⟩ := exists_mem_elementaryAut_forall_apply_inr_of
+    (Finset.univ.image x) (fun _ => P⁻¹) (fun _ => P) (by simp [hP]) (by simp [hP])
+  refine ⟨f, hf, ?_, fun a ha => hfa a (by simp [ha])⟩
+  -- `f` fixes `P` and acts on the squares `xᵢ²` as the conjugation by `P⁻¹`
+  have hl : (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).map f =
+      (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).map (MulAut.conj P⁻¹) := by
+    simp [List.map_ofFn, Function.comp_def, hfx, pow_two, mul_assoc]
+  rw [map_mul, hfa P (by simp [hP]), map_list_prod, hl, ← map_list_prod]
+  simp [mul_assoc]
 
 end TauCeti.GroupAlgGeom.GX

@@ -53,13 +53,13 @@ theorem isReduced_subscheme_iff_isRadical_ideal :
 open CategoryTheory in
 /-- Mapping the radical of an ideal sheaf's ideal on an affine open to a stalk commutes with
  taking the radical. -/
-theorem map_radical_ideal_germ (U : X.affineOpens) (x : X) (hx : x ∈ U.1) :
-    (I.ideal U).radical.map (X.presheaf.germ U.1 x hx).hom =
-      ((I.ideal U).map (X.presheaf.germ U.1 x hx).hom).radical := by
-  let := (X.presheaf.germ U.1 x hx).hom.toAlgebra
-  have := U.2.isLocalization_stalk ⟨x, hx⟩
+theorem map_radical_ideal_germ (U : X.affineOpens) (x : X) (hx : x ∈ U.val) :
+    (I.ideal U).radical.map (X.presheaf.germ U.val x hx).hom =
+      ((I.ideal U).map (X.presheaf.germ U.val x hx).hom).radical := by
+  let := (X.presheaf.germ U.val x hx).hom.toAlgebra
+  have := U.property.isLocalization_stalk ⟨x, hx⟩
   simpa only [RingHom.algebraMap_toAlgebra] using
-    IsLocalization.map_radical (U.2.primeIdealOf ⟨x, hx⟩).asIdeal.primeCompl
+    IsLocalization.map_radical (U.property.primeIdealOf ⟨x, hx⟩).asIdeal.primeCompl
       (X.presheaf.stalk x) (I.ideal U)
 
 open CategoryTheory in
@@ -69,8 +69,8 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff (f : Γ(X, ⊤)) :
     IsReduced (ofIdealTop (Ideal.span {f})).subscheme ↔
       ∀ x : X, IsRadical (X.presheaf.germ ⊤ x trivial f) := by
   let I := ofIdealTop (Ideal.span {f})
-  have hmap (U : X.affineOpens) (x : X) (hx : x ∈ U.1) :
-      (I.ideal U).map (X.presheaf.germ U.1 x hx).hom =
+  have hmap (U : X.affineOpens) (x : X) (hx : x ∈ U.val) :
+      (I.ideal U).map (X.presheaf.germ U.val x hx).hom =
         Ideal.span {X.presheaf.germ ⊤ x trivial f} := by
     rw [ofIdealTop_ideal, Ideal.map_map, Ideal.map_span, Set.image_singleton,
       ← CommRingCat.hom_comp, TopCat.Presheaf.germ_res]
@@ -86,7 +86,7 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff (f : Γ(X, ⊤)) :
     exact isRadical_iff_span_singleton.mpr hrad
   · intro h U
     apply Ideal.radical_eq_iff.mp
-    apply U.2.ideal_ext_iff.mpr
+    apply U.property.ideal_ext_iff.mpr
     intro x hxU
     rw [I.map_radical_ideal_germ U x hxU, hmap U x hxU]
     exact Ideal.radical_eq_iff.mpr (isRadical_iff_span_singleton.mp (h x))

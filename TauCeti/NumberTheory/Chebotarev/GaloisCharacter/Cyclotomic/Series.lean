@@ -119,20 +119,20 @@ private theorem exists_differentiableOn_eq_LSeries (m : ℕ) [NeZero m]
   set S := (cyclotomicModulus K m).support
   set w := χ.galoisCharacterUnitaryWeight
   have hcorr : Differentiable ℂ
-      fun s : ℂ ↦ ∏ 𝔭 ∈ S, (1 - w.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) :=
+      fun s : ℂ ↦ ∏ 𝔭 ∈ S, (1 - w.val 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) :=
     Differentiable.fun_finsetProd fun 𝔭 _ ↦ (differentiable_const 1).sub
       ((differentiable_const _).div (differentiable_id.const_cpow (.inl 𝔭.natCast_absNorm_ne_zero))
         fun s ↦ by simp [Complex.cpow_eq_zero_iff, 𝔭.natCast_absNorm_ne_zero])
   -- On `Re s > 0` each local factor `1 - w(𝔭) N(𝔭) ^ (-s)` is nonzero, since `‖w(𝔭)‖ ≤ 1`.
   have hne {s : ℂ} (hs : 0 < s.re) :
-      ∏ 𝔭 ∈ S, (1 - w.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) ≠ 0 :=
+      ∏ 𝔭 ∈ S, (1 - w.val 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) ≠ 0 :=
     Finset.prod_ne_zero_iff.mpr fun 𝔭 _ ↦ (isUnit_one_sub_of_norm_lt_one <| by
       rw [norm_div, div_lt_one (zero_lt_one.trans (𝔭.one_lt_norm_absNorm_cpow hs))]
       exact (w.norm_le_one _).trans_lt (𝔭.one_lt_norm_absNorm_cpow hs)).ne_zero
   -- The continued `L`-function with the Euler factors at the primes dividing `m` deleted has
   -- cancellation; dividing by those factors, which are nonzero on `Re s > 0`, restores them.
   refine ⟨fun s ↦ continuedLFunctionOfWeight (w.restrictAway (S : Set _) S.finite_toSet) s /
-      ∏ 𝔭 ∈ S, (1 - w.1 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s), ?_, fun s hs ↦ ?_⟩
+      ∏ 𝔭 ∈ S, (1 - w.val 𝔭.asIdeal / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s), ?_, fun s hs ↦ ?_⟩
   · refine (differentiableOn_continuedLFunctionOfWeight
       (MonoidHom.hasCancellation_restrictAway_galoisCharacterUnitaryWeight χ hχ)).div
         hcorr.differentiableOn fun s hs ↦ hne ?_
@@ -260,8 +260,9 @@ private theorem tendsto_norm_prod_LSeries_atTop [IsMulCommutative (F ≃ₐ[K] F
   refine le_trans ?_ ((le_add_of_nonneg_right zero_le_one).trans (Real.add_one_le_exp _))
   refine le_of_eq_of_le (tsum_congr fun P ↦ ?_) (tsum_comp_le_tsum_of_inj
     (Complex.summable_ofReal.mp hsum.summable) (hρ0 σ)
-    (i := fun P : frobeniusPrimeSet K F 1 ↦ (P.1, 0)) fun P Q h ↦ Subtype.ext (congrArg Prod.fst h))
-  simp [hrn P.1 0 P.2 rfl, Real.rpow_neg, div_eq_mul_inv]
+    (i := fun P : frobeniusPrimeSet K F 1 ↦ (P.val, 0)) fun P Q h ↦ Subtype.ext
+        (congrArg Prod.fst h))
+  simp [hrn P.val 0 P.property rfl, Real.rpow_neg, div_eq_mul_inv]
 
 open scoped Classical in
 -- If the continued `L`-series of `χ ≠ 1` vanishes at `1`, then as `σ → 1⁺` the `L`-series of every

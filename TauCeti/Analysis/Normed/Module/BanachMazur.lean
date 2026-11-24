@@ -259,9 +259,9 @@ theorem exists_norm_mul_norm_symm_eq_banachMazurDist [LocallyCompactSpace 𝕜]
   obtain ⟨p₀, hp₀K, -⟩ := hmem le_rfl
   obtain ⟨p, ⟨-, hp₁, hp₂⟩, hmin⟩ := hK.exists_isMinOn ⟨p₀, hp₀K⟩
     ((continuous_fst.norm.mul continuous_snd.norm).continuousOn)
-  refine ⟨.equivOfInverse' p.1 p.2 hp₁ hp₂, le_antisymm ?_ (banachMazurDist_le _)⟩
-  simp only [ContinuousLinearEquiv.toContinuousLinearMap_equivOfInverse',
-    ContinuousLinearEquiv.symm_equivOfInverse']
+  refine ⟨.ofContinuousLinearMap p.1 p.2 hp₁ hp₂, le_antisymm ?_ (banachMazurDist_le _)⟩
+  simp only [ContinuousLinearEquiv.toContinuousLinearMap_ofContinuousLinearMap,
+    ContinuousLinearEquiv.symm_ofContinuousLinearMap]
   have : Nonempty (E ≃L[𝕜] F) := ⟨T₀⟩
   refine le_ciInf fun T ↦ ?_
   rcases le_or_gt (‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖) P with hT | hT

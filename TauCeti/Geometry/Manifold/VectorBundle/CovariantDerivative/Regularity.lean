@@ -6,27 +6,41 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 import Mathlib.Geometry.Manifold.BumpFunction
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import Mathlib.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
 /-!
-# Regularity of covariant derivatives along vector fields
+# Regularity and smooth-section bundling of covariant derivatives
 
-This file records the regularity of evaluating a smooth covariant derivative on a smooth vector
-field.  It turns the hom-bundle-valued regularity supplied by
-`CovariantDerivative.ContMDiffCovariantDerivative` into regularity of the resulting section.
+This file records the regularity of a smooth covariant derivative on sections and along vector
+fields, turning the hom-bundle-valued regularity supplied by
+`CovariantDerivative.ContMDiffCovariantDerivative` into bundled linear maps on `ContMDiffSection`
+and local open-set regularity.
 That class asks for regularity of `∇σ` only for sections `σ` which are regular everywhere, and
 `ContMDiffCovariantDerivativeOn` on a set `s` only for sections regular on all of `s`; on a
 smooth real manifold, cutting off by bump functions shows that this gives the same regularity of
 `∇σ` on every open subset where `σ` is regular, which is the form used to read a connection in a
 local frame.
 
-## Main results
+## Main definitions and results
 
+* `CovariantDerivative.contMDiff_covariantDerivative`: the covariant derivative `∇σ` of a
+  `C^(n + 1)` section is a `C^n` section of `Hom(TM, V)`.
+* `CovariantDerivative.smoothCovariantDerivative`: a smooth connection `∇` bundled as a `𝕜`-linear
+  map from smooth sections of `V` to smooth sections of `Hom(TM, V)`, together with its Leibniz
+  rule (`smoothCovariantDerivative_smul`) and support preservation
+  (`tsupport_smoothCovariantDerivative_subset`,
+  `smoothCovariantDerivative_mem_compactlySupported`).
+* `CovariantDerivative.contMDiffAt_apply`: the pointwise version of the next result.
 * `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
+* `CovariantDerivative.alongVectorField`: hence a smooth covariant derivative along a smooth vector
+  field `X` is a linear operator `∇_X` on smooth sections.
+* `CovariantDerivative.alongVectorField_smul`: the Leibniz rule for `∇_X`.
 * `ContMDiffCovariantDerivativeOn.mono_of_isOpen_of_eventuallyEq`: on a smooth real manifold, an
   operator from sections to one-forms which is `C^n` on a set and local at the points of an open
   subset is `C^n` on that subset.
@@ -57,6 +71,72 @@ variable
   [FiberBundle F V] [IsManifold I 1 M] [VectorBundle 𝕜 F V]
   {n : ℕ∞ω}
 
+/-- The covariant derivative `∇σ` of a `C^(n + 1)` section for a `C^n` covariant derivative is a
+`C^n` section of the bundle `Hom(TM, V)` of `V`-valued one-forms. -/
+theorem contMDiff_covariantDerivative
+    (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov n]
+    {σ : Π x : M, V x} (hσ : CMDiff (n + 1) (T% σ)) :
+    ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (E →L[𝕜] F) (E := fun y ↦ TangentSpace I y →L[𝕜] V y) x (cov σ x)) :=
+  contMDiffOn_univ.mp (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)
+
+/-- The covariant derivative `∇` bundled as a `𝕜`-linear map from smooth sections of `V` to smooth
+sections of `Hom(TM, V)`. -/
+def smoothCovariantDerivative (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] :
+    Cₛ^∞⟮I; F, V⟯ →ₗ[𝕜] Cₛ^∞⟮I; E →L[𝕜] F, fun x ↦ TangentSpace I x →L[𝕜] V x⟯ where
+  toFun σ := ⟨cov σ, cov.contMDiff_covariantDerivative (by simpa using σ.contMDiff)⟩
+  map_add' σ τ := ContMDiffSection.ext fun x ↦
+    cov.isCovariantDerivativeOnUniv.add σ.mdifferentiableAt τ.mdifferentiableAt
+  map_smul' c σ := ContMDiffSection.ext fun x ↦
+    cov.isCovariantDerivativeOnUniv.smul_const c σ.mdifferentiableAt
+
+@[simp]
+theorem smoothCovariantDerivative_apply (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    cov.smoothCovariantDerivative σ x = cov σ x :=
+  (rfl)
+
+/-- **The Leibniz rule for `smoothCovariantDerivative`**:
+`∇(a • σ) x v = a x • ∇σ x v + da(v) • σ x`. -/
+theorem smoothCovariantDerivative_smul (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] (a : C^∞⟮I, M; 𝕜⟯) (σ : Cₛ^∞⟮I; F, V⟯)
+    (x : M) (v : TangentSpace I x) :
+    cov.smoothCovariantDerivative (a • σ) x v =
+      a x • cov.smoothCovariantDerivative σ x v + d% a x v • σ x := by
+  have hfun : ⇑(a • σ) = (⇑a : M → 𝕜) • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply a σ y
+  rw [smoothCovariantDerivative_apply, smoothCovariantDerivative_apply, hfun,
+    cov.isCovariantDerivativeOnUniv.leibniz_apply σ.mdifferentiableAt
+      (a.contMDiff.mdifferentiableAt (by simp)) v]
+
+/-- Covariant differentiation does not enlarge the closed support of a smooth section. -/
+theorem tsupport_smoothCovariantDerivative_subset (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] (σ : Cₛ^∞⟮I; F, V⟯) :
+    (cov.smoothCovariantDerivative σ).tsupport ⊆ σ.tsupport := by
+  refine (ContMDiffSection.tsupport_subset_iff σ.isClosed_tsupport).2 fun x hx ↦ ?_
+  rw [ContMDiffSection.tsupport_def] at hx
+  rw [smoothCovariantDerivative_apply]
+  exact cov.apply_eq_zero_of_notMem_closure hx
+
+/-- Covariant differentiation preserves compactly supported smooth sections. -/
+theorem smoothCovariantDerivative_mem_compactlySupported (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] {σ : Cₛ^∞⟮I; F, V⟯}
+    (hσ : σ ∈ ContMDiffSection.compactlySupported I F ∞ V) :
+    cov.smoothCovariantDerivative σ ∈
+      ContMDiffSection.compactlySupported I (E →L[𝕜] F) ∞ (fun x ↦ TangentSpace I x →L[𝕜] V x) := by
+  rw [ContMDiffSection.mem_compactlySupported] at hσ ⊢
+  exact hσ.of_isClosed_subset (ContMDiffSection.isClosed_tsupport _)
+    (cov.tsupport_smoothCovariantDerivative_subset σ)
+
+/-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a vector field which is
+`C^n` at `x` produces a section which is `C^n` at `x`. -/
+theorem contMDiffAt_apply
+    (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov n]
+    {X : Π x : M, TangentSpace I x} {σ : Π x : M, V x} {x : M}
+    (hX : CMDiffAt n (T% X) x) (hσ : CMDiff (n + 1) (T% σ)) :
+    CMDiffAt n (T% (fun x ↦ cov σ x (X x))) x :=
+  (cov.contMDiff_covariantDerivative hσ x).clm_bundle_apply hX
+
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a `C^n` vector field
 produces a `C^n` section. -/
 theorem contMDiff_apply
@@ -64,8 +144,47 @@ theorem contMDiff_apply
     {X : Π x : M, TangentSpace I x} {σ : Π x : M, V x}
     (hX : CMDiff n (T% X)) (hσ : CMDiff (n + 1) (T% σ)) :
     CMDiff n (T% (fun x ↦ cov σ x (X x))) :=
-  (contMDiffOn_univ.mp
-    (ContMDiffCovariantDerivative.contMDiff.contMDiff hσ.contMDiffOn)).clm_bundle_apply hX
+  fun x ↦ cov.contMDiffAt_apply (hX x) hσ
+
+/-- The covariant derivative `∇_X` along a smooth vector field `X`, as a linear operator on the
+smooth sections: it sends `σ` to `x ↦ ∇_{X x} σ`. -/
+def alongVectorField (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
+    Cₛ^∞⟮I; F, V⟯ →ₗ[𝕜] Cₛ^∞⟮I; F, V⟯ where
+  toFun σ := ⟨fun x ↦ cov σ x (X x), cov.contMDiff_apply X.contMDiff (by simpa using σ.contMDiff)⟩
+  map_add' σ τ := ContMDiffSection.ext fun x ↦ by
+    simp [cov.isCovariantDerivativeOnUniv.add σ.mdifferentiableAt
+      τ.mdifferentiableAt]
+  map_smul' c σ := ContMDiffSection.ext fun x ↦ by
+    simp [cov.isCovariantDerivativeOnUniv.smul_const c σ.mdifferentiableAt]
+
+@[simp]
+theorem alongVectorField_apply (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (σ : Cₛ^∞⟮I; F, V⟯) (x : M) : cov.alongVectorField X σ x = cov σ x (X x) :=
+  (rfl)
+
+/-- **The Leibniz rule for `∇_X`**: `∇_X (a σ) = a ∇_X σ + X(a) σ` for a smooth function `a`. -/
+theorem alongVectorField_smul (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (a : C^∞⟮I, M; 𝕜⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    cov.alongVectorField X (a • σ) x =
+      a x • cov.alongVectorField X σ x + mvfderiv I a x (X x) • σ x := by
+  rw [alongVectorField_apply, ← smoothCovariantDerivative_apply, smoothCovariantDerivative_smul,
+    smoothCovariantDerivative_apply, alongVectorField_apply]
+
+/-- Adding a `C^n` endomorphism-valued one-form preserves the regularity of a connection.
+The model fibre need not have finite dimension. -/
+theorem ContMDiffCovariantDerivative.addOneForm
+    {cov : CovariantDerivative I F V} (hcov : ContMDiffCovariantDerivative cov n)
+    {A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x}
+    (hA : ContMDiff I (I.prod 𝓘(𝕜, F →L[𝕜] E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (F →L[𝕜] E →L[𝕜] F)
+        (E := fun y ↦ V y →L[𝕜] TangentSpace I y →L[𝕜] V y) x (A x))) :
+    ContMDiffCovariantDerivative (cov.addOneForm A) n where
+  contMDiff.contMDiff {σ} hσ := by
+    have h := hA.contMDiffOn.clm_bundle_apply (hσ.of_le le_self_add)
+    exact hcov.contMDiff.contMDiff hσ |>.add_section h
 
 section Real
 

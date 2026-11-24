@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import TauCeti.Analysis.InnerProductSpace.Dual
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
@@ -34,6 +35,7 @@ frame smoothness API replace those constructions.
 
 * `Riemannian.Tensor.rieszDual` is the fibrewise Riesz equivalence supplied by the canonical
   metric.
+* `Riemannian.Tensor.rieszDual_eq_sum` expands the Riesz dual in an orthonormal basis.
 * `Riemannian.Tensor.rieszDual_eq_sum_chartLocalFrame` gives the inverse-Gram-matrix coordinate
   formula for the Riesz dual.
 * `Riemannian.Tensor.norm_sq_eq_apply_rieszDual` and
@@ -99,6 +101,17 @@ theorem eq_rieszDual_iff_inner_eq {x : M} {v : TangentSpace I x}
     v = rieszDual (I := I) x φ ↔ ∀ w, inner ℝ v w = φ w := by
   refine ⟨fun h w ↦ h ▸ inner_rieszDual φ w, fun h ↦ ?_⟩
   exact ext_inner_right ℝ fun w ↦ (h w).trans (inner_rieszDual φ w).symm
+
+/-- The Riesz dual in an orthonormal basis `eᵢ` of the tangent space:
+`φ♯ = ∑ᵢ φ(eᵢ) eᵢ`. -/
+theorem rieszDual_eq_sum {x : M} (φ : TangentSpace I x →L[ℝ] ℝ) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
+    rieszDual (I := I) x φ = ∑ i, φ (b i) • b i := by
+  let _ : FiniteDimensional ℝ (TangentSpace I x) :=
+    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
+  let _ := FiniteDimensional.completeSpace ℝ (TangentSpace I x)
+  refine (InnerProductSpace.toDual_symm_eq_sum φ b).trans ?_
+  simp only [conj_trivial]
 
 /-- The coordinate formula for the fibrewise Riesz dual in a chart-local frame. Its coefficient
 vector is the inverse Gram matrix applied to the evaluations of the covector on the frame. -/
@@ -217,15 +230,6 @@ theorem contMDiffAt_rieszDual (a : M) {x : M} (hx : x ∈ (chartAt H a).source)
         (chartAt H a).source := by
     simpa only [TangentBundle.trivializationAt_baseSet] using
       contMDiffOn_chartInvGramMatrix_entry (I := I) (n := n) a i j
-  have hframe (i : Fin (Module.finrank ℝ E)) :
-      ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
-        (fun y : M ↦ TotalSpace.mk' E y (chartLocalFrame (I := I) a i y)) x := by
-    have : ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
-        (fun y : M ↦ TotalSpace.mk' E y (chartLocalFrame (I := I) a i y))
-        (chartAt H a).source := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        contMDiffOn_chartLocalFrame (I := I) (n := n) a i
-    exact this.contMDiffAt (hopen.mem_nhds hx)
   let c : Fin (Module.finrank ℝ E) → M → ℝ := fun i y ↦
     ∑ j, chartInvGramMatrix (I := I) a y i j *
       Φ y (chartLocalFrame (I := I) a j y)
@@ -235,9 +239,10 @@ theorem contMDiffAt_rieszDual (a : M) {x : M} (hx : x ∈ (chartAt H a).source)
       ((hGinv i j).contMDiffAt (hopen.mem_nhds hx)).mul (hΦ j)
   have hform : ContMDiffAt I (I.prod 𝓘(ℝ, E)) n
       (fun y : M ↦ TotalSpace.mk' E y
-        (∑ i, c i y • chartLocalFrame (I := I) a i y)) x := by
-    refine ContMDiffAt.sum_section fun i _ ↦ ?_
-    exact ContMDiffAt.smul_section (hc i) (hframe i)
+        (∑ i, c i y • chartLocalFrame (I := I) a i y)) x :=
+    ContMDiffAt.sum_section fun i _ ↦
+      ContMDiffAt.smul_section (hc i)
+        (contMDiffAt_chartLocalFrame_of_mem_chart_source (I := I) (n := n) a hx i)
   refine hform.congr_of_eventuallyEq ?_
   filter_upwards [hopen.mem_nhds hx] with y hy
   simpa only [c, Matrix.mulVec, dotProduct] using congrArg (TotalSpace.mk' E y)
@@ -259,14 +264,9 @@ theorem _root_.ContMDiffAt.rieszDual_innerSL_comp {η : Π y : M, TangentSpace I
       (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x)
     (hτ : CMDiffAt n (T% τ) x) :
     ContMDiffAt I I.tangent n
-      (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x := by
-  refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
-  have hframe : CMDiffAt n (T% (chartLocalFrame (I := I) x j)) x := by
-    have hOn : CMDiff[(chartAt H x).source] n (T% (chartLocalFrame (I := I) x j)) := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        contMDiffOn_chartLocalFrame (I := I) (n := n) x j
-    exact hOn.contMDiffAt ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))
-  exact hτ.inner_bundle (hη.clm_bundle_apply hframe)
+      (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x :=
+  contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦
+    hτ.inner_bundle (hη.clm_bundle_apply (contMDiffAt_chartLocalFrame (I := I) (n := n) x j))
 
 /-- For a `C^n` section `η` of `Hom(TM, V)` and a `C^n` section `τ` of `V`, the tangent vector
 field fibrewise Riesz-dual to `v ↦ ⟪τ, η v⟫` is `C^n`. -/
@@ -305,12 +305,6 @@ theorem mdifferentiableAt_rieszDual (a : M) {x : M} (hx : x ∈ (chartAt H a).so
       simpa only [TangentBundle.trivializationAt_baseSet] using
         contMDiffOn_chartInvGramMatrix_entry (I := I) (n := 1) a i j
     exact (hOn.contMDiffAt hmem).mdifferentiableAt one_ne_zero
-  have hframe (i : Fin (Module.finrank ℝ E)) :
-      MDiffAt (T% (chartLocalFrame (I := I) a i)) x := by
-    have hOn : CMDiff[(chartAt H a).source] 1 (T% (chartLocalFrame (I := I) a i)) := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        contMDiffOn_chartLocalFrame (I := I) (n := 1) a i
-    exact (hOn.contMDiffAt hmem).mdifferentiableAt one_ne_zero
   have hc (i : Fin (Module.finrank ℝ E)) : MDiffAt (fun y ↦
       ∑ j, chartInvGramMatrix (I := I) a y i j * Φ y (chartLocalFrame (I := I) a j y)) x := by
     simpa only [Finset.sum_fn, Pi.mul_apply] using MDifferentiableAt.sum (t := Finset.univ)
@@ -318,7 +312,9 @@ theorem mdifferentiableAt_rieszDual (a : M) {x : M} (hx : x ∈ (chartAt H a).so
   have hsum : MDiffAt (T% fun y ↦
       ∑ i, (∑ j, chartInvGramMatrix (I := I) a y i j *
         Φ y (chartLocalFrame (I := I) a j y)) • chartLocalFrame (I := I) a i y) x :=
-    MDifferentiableAt.sum_section fun i _ ↦ (hc i).smul_section (hframe i)
+    MDifferentiableAt.sum_section fun i _ ↦ (hc i).smul_section
+      ((contMDiffAt_chartLocalFrame_of_mem_chart_source (I := I) (n := 1) a hx i).mdifferentiableAt
+        one_ne_zero)
   refine hsum.congr_of_eventuallyEq (Filter.eventually_of_mem hmem fun y hy ↦ ?_)
   simpa only [Matrix.mulVec, dotProduct] using congrArg (TotalSpace.mk' E y)
     (rieszDual_eq_sum_chartLocalFrame (I := I) a hy (Φ y))
@@ -337,14 +333,9 @@ theorem _root_.MDifferentiableAt.rieszDual_innerSL_comp
     (hτ : MDiffAt (T% τ) x) :
     MDiffAt (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x := by
   have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
-  refine mdifferentiableAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
-  have hframe : MDiffAt (T% (chartLocalFrame (I := I) x j)) x := by
-    have hOn : CMDiff[(chartAt H x).source] 1 (T% (chartLocalFrame (I := I) x j)) := by
-      simpa only [TangentBundle.trivializationAt_baseSet] using
-        contMDiffOn_chartLocalFrame (I := I) (n := 1) x j
-    exact (hOn.contMDiffAt
-      ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))).mdifferentiableAt one_ne_zero
-  exact hτ.inner_bundle (hη.clm_bundle_apply hframe)
+  exact mdifferentiableAt_rieszDual x (mem_chart_source H x) fun j ↦
+    hτ.inner_bundle (hη.clm_bundle_apply
+      ((contMDiffAt_chartLocalFrame (I := I) (n := 1) x j).mdifferentiableAt one_ne_zero))
 
 end Differentiable
 

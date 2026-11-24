@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hessian
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
 
 /-!
 # The squared norm of a section and the maximum principle for the rough Laplacian
@@ -121,7 +121,8 @@ theorem sum_norm_sq_le_inner_roughLaplacian_of_isLocalMax (hcov : cov.IsMetricCo
     exact ((hσ.inner_bundle hσ).of_le (by simp)).contMDiffAt
   have hmax2 : IsLocalMax (fun y ↦ ‖σ y‖ ^ 2) x :=
     Filter.Eventually.mono hmax fun _ hy ↦ pow_le_pow_left₀ (norm_nonneg _) hy 2
-  have hlap := TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax hsq hmax2
+  have hlap := TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax hsq
+    BoundarylessManifold.isInteriorPoint hmax2
   rw [hcov.laplaceBeltrami_norm_sq hσ x b] at hlap
   linarith
 

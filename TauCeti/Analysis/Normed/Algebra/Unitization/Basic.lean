@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
+public import Mathlib.Algebra.Algebra.Spectrum.Quasispectrum
 public import Mathlib.Algebra.Algebra.Subalgebra.Unitization
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
 public import Mathlib.Analysis.Normed.Field.Basic
@@ -27,7 +28,9 @@ The ℓ¹ unitization of a commutative normed algebra is moreover a commutative 
 (`WithLp.instUnitizationNormedCommRing`).
 
 The canonical inclusion and nonunital coordinate projection of the ℓ¹ unitization are
-also bundled as bounded linear maps.
+also bundled as bounded linear maps, the scalar augmentation is bundled as a continuous unital
+algebra homomorphism (`WithLp.unitizationFstA`), and the spectrum in the ℓ¹ unitization is
+identified with the quasispectrum (`WithLp.spectrum_unitizationInrL`).
 
 No normalization of the norm of the identity is assumed. The forward map is bounded by
 `max ‖(1 : A)‖ 1`, so the results apply to any complete nontrivially normed scalar field.
@@ -189,6 +192,21 @@ theorem unitizationInrL_mul (a b : A) :
   apply (unitizationAlgEquiv 𝕜).injective
   simp
 
+/-- The scalar coordinate projection (augmentation) on the external ℓ¹ unitization as a continuous
+unital algebra homomorphism. -/
+noncomputable def unitizationFstA : WithLp 1 (Unitization 𝕜 A) →A[𝕜] 𝕜 :=
+  { (Unitization.fstHom 𝕜 A).comp (unitizationAlgEquiv 𝕜).toAlgHom with
+    cont := AddMonoidHomClass.continuous_of_bound
+      ((Unitization.fstHom 𝕜 A).comp (unitizationAlgEquiv 𝕜).toAlgHom) 1 fun u ↦ by
+        rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, unitizationAlgEquiv_apply,
+          Unitization.fstHom_apply, one_mul, unitization_norm_def]
+        exact le_add_of_nonneg_right (norm_nonneg (ofLp u).snd) }
+
+/-- The continuous scalar projection recovers the scalar coordinate. -/
+@[simp]
+theorem unitizationFstA_apply (u : WithLp 1 (Unitization 𝕜 A)) :
+    unitizationFstA 𝕜 A u = (ofLp u).fst := (rfl)
+
 variable {𝕜 A}
 
 /-- Every element of the ℓ¹ unitization is the sum of its scalar and nonunital parts. -/
@@ -197,6 +215,34 @@ theorem unitization_eq_fst_smul_one_add_inr (u : WithLp 1 (Unitization 𝕜 A)) 
   apply (unitizationAlgEquiv 𝕜).injective
   simp [← Algebra.algebraMap_eq_smul_one, Unitization.algebraMap_eq_inl,
     Unitization.inl_fst_add_inr_snd_eq]
+
+/-- An element of the ℓ¹ unitization lies in the image of the nonunital algebra precisely when its
+scalar coordinate vanishes. -/
+theorem mem_range_unitizationInrL_iff {u : WithLp 1 (Unitization 𝕜 A)} :
+    u ∈ Set.range (unitizationInrL 𝕜 A) ↔ unitizationFstA 𝕜 A u = 0 := by
+  constructor
+  · rintro ⟨a, rfl⟩
+    simp
+  · intro h
+    refine ⟨unitizationSndL 𝕜 A u, ?_⟩
+    conv_rhs => rw [unitization_eq_fst_smul_one_add_inr u]
+    rw [unitizationFstA_apply] at h
+    simp [h]
+
+/-- The spectrum of an element embedded into the ℓ¹ unitization is its quasispectrum. -/
+theorem spectrum_unitizationInrL (a : A) :
+    spectrum 𝕜 (unitizationInrL 𝕜 A a) = quasispectrum 𝕜 a := by
+  let e : WithLp 1 (Unitization 𝕜 A) ≃ₐ[𝕜] Unitization 𝕜 A := unitizationAlgEquiv 𝕜
+  rw [unitizationInrL_apply, ← AlgEquiv.spectrum_eq e]
+  dsimp only [e]
+  rw [unitizationAlgEquiv_apply, ofLp_toLp, Unitization.quasispectrum_eq_spectrum_inr]
+
+/-- Zero belongs to the spectrum of any element embedded into the ℓ¹ unitization. -/
+theorem zero_mem_spectrum_unitizationInrL {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedRing A]
+    [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (unitizationInrL 𝕜 A a) := by
+  rw [spectrum_unitizationInrL]
+  exact quasispectrum.zero_mem 𝕜 a
 
 variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedCommRing A] [NormedSpace 𝕜 A]
   [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
@@ -239,3 +285,39 @@ theorem norm_comp_unitizationSndL_le (D : A →L[𝕜] E) :
   exact D.le_opNorm _ |>.trans (by gcongr; exact le_add_of_nonneg_left (norm_nonneg _))
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+
+/-- The spectrum of `WithLp.toLp 1 (a : Unitization 𝕜 A)` in the ℓ¹ unitization equals
+`quasispectrum 𝕜 a`. -/
+@[simp]
+theorem spectrum_unitization_toLp_inr (a : A) :
+    spectrum 𝕜 (WithLp.toLp 1 (a : Unitization 𝕜 A)) = quasispectrum 𝕜 a := by
+  rw [← AlgEquiv.spectrum_eq (WithLp.unitizationAlgEquiv (𝕜 := 𝕜) (A := A) 𝕜),
+    WithLp.unitizationAlgEquiv_apply, WithLp.ofLp_toLp,
+    ← Unitization.quasispectrum_eq_spectrum_inr]
+
+/-- The spectrum of `WithLp.unitizationInrL 𝕜 A a` in the ℓ¹ unitization equals
+`quasispectrum 𝕜 a`. -/
+theorem spectrum_unitizationInrL (a : A) :
+    spectrum 𝕜 (WithLp.unitizationInrL 𝕜 A a) = quasispectrum 𝕜 a := by
+  rw [WithLp.unitizationInrL_apply, spectrum_unitization_toLp_inr]
+
+/-- Zero lies in the spectrum of `WithLp.toLp 1 (a : Unitization 𝕜 A)` for every element `a` of a
+nonunital normed algebra over a normed field `𝕜`. -/
+theorem zero_mem_spectrum_unitization_toLp_inr (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (WithLp.toLp 1 (a : Unitization 𝕜 A)) := by
+  rw [spectrum_unitization_toLp_inr]
+  exact quasispectrum.zero_mem 𝕜 a
+
+/-- Zero lies in the spectrum of `WithLp.unitizationInrL 𝕜 A a` for every element `a` of a
+nonunital normed algebra over a normed field `𝕜`. -/
+theorem zero_mem_spectrum_unitizationInrL (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (WithLp.unitizationInrL 𝕜 A a) := by
+  rw [spectrum_unitizationInrL]
+  exact quasispectrum.zero_mem 𝕜 a
+
+end TauCeti

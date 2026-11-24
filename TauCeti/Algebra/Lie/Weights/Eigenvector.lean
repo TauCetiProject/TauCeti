@@ -98,7 +98,7 @@ theorem lie_mem_biSup_iInf_eigenspace_ad {S : AddSubsemigroup (B → R)} {x y : 
   | mem χ x hx =>
     induction hy using Submodule.iSup_induction' with
     | mem ψ y hy =>
-      refine Submodule.mem_iSup_of_mem ⟨χ + ψ, add_mem χ.2 ψ.2⟩ ?_
+      refine Submodule.mem_iSup_of_mem ⟨χ + ψ, add_mem χ.property ψ.property⟩ ?_
       simpa only [Pi.add_apply] using lie_mem_iInf_eigenspace_ad hx hy
     | zero => simp
     | add y₁ y₂ _ _ h₁ h₂ => rw [lie_add]; exact add_mem h₁ h₂

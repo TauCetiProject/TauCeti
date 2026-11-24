@@ -20,15 +20,14 @@ section values and fibre vectors.
 
 * `IsCovariantDerivativeOn.neg` and `IsCovariantDerivativeOn.sub`: a covariant derivative over
   `u` commutes with negation and subtraction of sections differentiable at a point of `u`.
-* `IsCovariantDerivativeOn.eq_zero_of_notMem_closure` and
-  `CovariantDerivative.covariantDerivative_eq_zero_of_notMem_closure`: a covariant derivative
-  vanishes outside the closure of a section's nonzero locus.
-* `TauCeti.Manifold.covariantDerivative_sum`: a covariant derivative over `u` commutes with finite
-  sums of sections differentiable at a point of `u`.
-* `CovariantDerivative.covariantDerivative_smul_section_apply` and
+* `IsCovariantDerivativeOn.sum`: a covariant derivative over `u` commutes with finite sums of
+  sections differentiable at a point of `u`.
+* `IsCovariantDerivativeOn.leibniz_apply` and
   `CovariantDerivative.covariantDerivative_smul_section_vectorField`: the Leibniz rule for the
   covariant derivative of a function multiple of a section at a tangent vector and along a
   vector field.
+* `CovariantDerivative.apply_eq_zero_of_notMem_closure`: a covariant derivative of a section
+  vanishes off the closure of its nonzero locus.
 * `CovariantDerivative.addOneForm_apply`: evaluate a connection perturbed by an
   endomorphism-valued one-form on a section.
 * `CovariantDerivative.difference_apply`: evaluate the difference of two connections on the value
@@ -45,39 +44,6 @@ open scoped Manifold ContDiff Topology
 
 noncomputable section
 
-namespace TauCeti.Manifold
-
-variable
-  {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {x : M}
-  {cov : (Π x : M, V x) → (Π x : M, TangentSpace I x →L[𝕜] V x)}
-
-/-- A covariant derivative over `u` commutes with finite sums of sections differentiable at a
-point of `u`. -/
-theorem covariantDerivative_sum {κ : Type*} {u : Set M} {s : Finset κ} {τ : κ → Π x : M, V x}
-    (hcov : IsCovariantDerivativeOn F cov u) (hx : x ∈ u)
-    (hτ : ∀ i ∈ s, MDiffAt (T% (τ i)) x) :
-    cov (∑ i ∈ s, τ i) x = ∑ i ∈ s, cov (τ i) x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using hcov.zero hx
-  | insert i s hi ih =>
-    simp only [Finset.mem_insert, forall_eq_or_imp] at hτ
-    have hsum : MDiffAt (T% (∑ j ∈ s, τ j)) x := by
-      simpa [Finset.sum_apply] using
-        MDifferentiableAt.sum_section (t := fun j (y : M) ↦ τ j y) (s := s) hτ.2
-    rw [Finset.sum_insert hi, hcov.add hτ.1 hsum hx, ih hτ.2, Finset.sum_insert hi]
-
-end TauCeti.Manifold
-
 namespace IsCovariantDerivativeOn
 
 variable
@@ -93,13 +59,13 @@ variable
   {cov : (Π x : M, V x) → (Π x : M, TangentSpace I x →L[𝕜] V x)} {u : Set M}
   {σ σ' : Π x : M, V x} {x : M}
 
+omit [VectorBundle 𝕜 F V] in
 /-- A covariant derivative over `u` sends the negative of a section differentiable at a point of
 `u` to the negative of its covariant derivative there. -/
 theorem neg (hcov : IsCovariantDerivativeOn F cov u) (hσ : MDiffAt (T% σ) x)
     (hx : x ∈ u := by trivial) :
     cov (-σ) x = -cov σ x := by
-  rw [eq_neg_iff_add_eq_zero, ← hcov.add (mdifferentiableAt_neg_section hσ) hσ hx,
-    neg_add_cancel, hcov.zero hx]
+  rw [← neg_one_smul 𝕜 σ, hcov.smul_const (-1) hσ hx, neg_one_smul]
 
 /-- A covariant derivative over `u` sends the difference of two sections differentiable at a point
 of `u` to the difference of their covariant derivatives there. -/
@@ -109,19 +75,30 @@ theorem sub (hcov : IsCovariantDerivativeOn F cov u) (hσ : MDiffAt (T% σ) x)
   rw [sub_eq_add_neg, hcov.add hσ (mdifferentiableAt_neg_section hσ') hx, hcov.neg hσ' hx,
     ← sub_eq_add_neg]
 
-/-- A covariant derivative on a neighbourhood `u` of `x` vanishes at `x` whenever `x` lies outside
-the closure of the nonzero locus of `σ`, without assuming differentiability of `σ` elsewhere. -/
-theorem eq_zero_of_notMem_closure (hcov : IsCovariantDerivativeOn F cov u) (hu : u ∈ 𝓝 x)
-    (hx : x ∉ closure {y | σ y ≠ 0}) :
-    cov σ x = 0 := by
-  have hzero : ∀ᶠ y in 𝓝 x, σ y = (0 : Π z, V z) y :=
-    Filter.eventually_of_mem (isClosed_closure.isOpen_compl.mem_nhds hx) fun y hy ↦
-      by_contra fun h ↦ hy (subset_closure h)
-  have h0 : MDiffAt (T% (0 : Π z, V z)) x := mdifferentiableAt_zeroSection ..
-  have hT : (T% σ) =ᶠ[𝓝 x] (T% (0 : Π z, V z)) :=
-    hzero.mono fun y hy ↦ congrArg (TotalSpace.mk' F y) hy
-  rw [hcov.congr_of_eventuallyEq (h0.congr_of_eventuallyEq hT) h0 hu hzero,
-    hcov.zero (mem_of_mem_nhds hu)]
+/-- A covariant derivative over `u` commutes with finite sums of sections differentiable at a
+point of `u`. -/
+theorem sum (hcov : IsCovariantDerivativeOn F cov u) {κ : Type*} {s : Finset κ}
+    {τ : κ → Π x : M, V x} (hτ : ∀ i ∈ s, MDiffAt (T% (τ i)) x) (hx : x ∈ u := by trivial) :
+    cov (∑ i ∈ s, τ i) x = ∑ i ∈ s, cov (τ i) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using hcov.zero hx
+  | insert i s hi ih =>
+    simp only [Finset.mem_insert, forall_eq_or_imp] at hτ
+    have hsum : MDiffAt (T% (∑ j ∈ s, τ j)) x := by
+      simpa [Finset.sum_apply] using
+        MDifferentiableAt.sum_section (t := fun j (y : M) ↦ τ j y) (s := s) hτ.2
+    rw [Finset.sum_insert hi, hcov.add hτ.1 hsum hx, ih hτ.2, Finset.sum_insert hi]
+
+omit [VectorBundle 𝕜 F V] in
+/-- **Leibniz rule at a tangent vector.** The covariant derivative over `u` of `f • σ` at a point
+`x` of `u` along `v` is `f x • ∇_v σ + df_x(v) • σ x`, for `f` and `σ` differentiable at `x`. -/
+theorem leibniz_apply (hcov : IsCovariantDerivativeOn F cov u) {f : M → 𝕜}
+    (hσ : MDiffAt (T% σ) x) (hf : MDiffAt f x) (v : TangentSpace I x)
+    (hx : x ∈ u := by trivial) :
+    cov (f • σ) x v = f x • cov σ x v + d% f x v • σ x := by
+  rw [hcov.leibniz hσ hf hx]
+  simp [add_apply, ContinuousLinearMap.smulRight_apply]
 
 end IsCovariantDerivativeOn
 
@@ -138,12 +115,6 @@ variable
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
 
-/-- A covariant derivative vanishes off the closure of a section's nonzero locus. -/
-theorem covariantDerivative_eq_zero_of_notMem_closure (cov : CovariantDerivative I F V)
-    {σ : Π x : M, V x} {x : M} (hx : x ∉ closure {y | σ y ≠ 0}) :
-    cov σ x = 0 :=
-  cov.isCovariantDerivativeOnUniv.eq_zero_of_notMem_closure Filter.univ_mem hx
-
 omit [VectorBundle 𝕜 F V] in
 /-- Adding an endomorphism-valued one-form, evaluated on a section. -/
 @[simp]
@@ -151,16 +122,6 @@ theorem addOneForm_apply (cov : CovariantDerivative I F V)
     (A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x)
     (σ : Π x : M, V x) (x : M) :
     cov.addOneForm A σ x = cov σ x + A x (σ x) := (rfl)
-
-omit [VectorBundle 𝕜 F V] in
-/-- **Leibniz rule at a tangent vector.** The covariant derivative of `f • σ` at `x` along `v` is
-`f x • ∇_v σ + df_x(v) • σ x`, for `f` and `σ` differentiable at `x`. -/
-theorem covariantDerivative_smul_section_apply (cov : CovariantDerivative I F V)
-    {f : M → 𝕜} {σ : Π x : M, V x} {x : M} (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x)
-    (v : TangentSpace I x) :
-    cov (f • σ) x v = f x • cov σ x v + d% f x v • σ x := by
-  rw [cov.isCovariantDerivativeOnUniv.leibniz hσ hf]
-  simp [add_apply, ContinuousLinearMap.smulRight_apply]
 
 omit [VectorBundle 𝕜 F V] in
 /-- **Leibniz rule along a vector field.** The covariant derivative of `f • σ` along a vector
@@ -172,12 +133,21 @@ theorem covariantDerivative_smul_section_vectorField (cov : CovariantDerivative 
     (fun y ↦ cov (f • σ) y (Z y)) =
       f • (fun y ↦ cov σ y (Z y)) + (fun y ↦ d% f y (Z y)) • σ := by
   funext y
-  have h := cov.isCovariantDerivativeOnUniv.leibniz (hσ y) (hf y)
-  -- `h` is an equality of continuous linear maps; expose its value at `Z y` through the
-  -- pointwise `Pi` operations before rewriting by it.
-  change cov (f • σ) y (Z y) = f y • cov σ y (Z y) + d% f y (Z y) • σ y
-  rw [h]
-  simp [add_apply, ContinuousLinearMap.smulRight_apply]
+  rw [cov.isCovariantDerivativeOnUniv.leibniz_apply (hσ y) (hf y)]
+  simp only [Pi.add_apply, Pi.smul_apply']
+
+/-- **Locality.** A covariant derivative of a section vanishes off the closure of the nonzero
+locus of the section. -/
+theorem apply_eq_zero_of_notMem_closure (cov : CovariantDerivative I F V) {σ : Π x : M, V x}
+    {x : M} (hx : x ∉ closure {y | σ y ≠ 0}) : cov σ x = 0 := by
+  have hev : ∀ᶠ y in 𝓝 x, σ y = (0 : Π y : M, V y) y := by
+    filter_upwards [isClosed_closure.isOpen_compl.mem_nhds hx] with y hy
+    by_contra h
+    exact hy (subset_closure h)
+  have h0 : MDiffAt (T% (0 : Π y : M, V y)) x := mdifferentiableAt_zeroSection ..
+  have hσ : MDiffAt (T% σ) x := h0.congr_of_eventuallyEq (hev.mono fun y hy ↦ by simp [hy])
+  rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hσ h0 Filter.univ_mem hev]
+  exact congrFun cov.zero x
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [ContMDiffVectorBundle 1 F V I]
 

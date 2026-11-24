@@ -331,7 +331,7 @@ theorem composeDiagram_capCup_capCup_comm (hac : a ≠ c) (had : a ≠ d) (hbc :
   · rw [capCup_self, composeDiagram_permToBrauer_one_left, composeDiagram_permToBrauer_one_right]
   obtain rfl | hcd := eq_or_ne c d
   · rw [capCup_self, composeDiagram_permToBrauer_one_right, composeDiagram_permToBrauer_one_left]
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rcases eq_or_ne i a with rfl | hia
     · rw [composeDiagram_val_inl_eq_inl_of_cap_upper _ _ (capCup_val_inl_of_ne hac had)

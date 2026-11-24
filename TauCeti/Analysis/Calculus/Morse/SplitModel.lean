@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Calculus.Morse.Stable
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # The split quadratic model of a Morse flow

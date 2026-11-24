@@ -72,10 +72,10 @@ theorem exists_finite_polyhedral_chart_cover {s U : Set M} (hs : IsCompact s)
       (e x).symm.image_mem_nhds ((e x).map_source (mem_chart_source (ι → ℝ) x))
         (ball_mem_nhds _ (hr x hx))
   obtain ⟨a, has, hcover⟩ := hs.elim_nhds_subcover V hV
-  let c : Fin a.card → M := fun i => ((a.equivFin).symm i).1
+  let c : Fin a.card → M := fun i => ((a.equivFin).symm i).val
   refine ⟨a.card, c, fun i => r (c i), ?_, ?_, ?_⟩
   · intro i
-    have hci : c i ∈ s := has _ ((a.equivFin).symm i).2
+    have hci : c i ∈ s := has _ ((a.equivFin).symm i).property
     refine ⟨hci, hr _ hci, fun y hy => (hsub _ hci hy).1, ?_⟩
     rintro _ ⟨y, hy, rfl⟩
     exact (hsub _ hci hy).2
@@ -85,8 +85,8 @@ theorem exists_finite_polyhedral_chart_cover {s U : Set M} (hs : IsCompact s)
       simpa only [c, Equiv.symm_apply_apply, V, e] using hxy⟩
   · intro i j
     -- Compactness of the closed patches makes the partial PL transition's overlap finite.
-    have hci : c i ∈ s := has _ ((a.equivFin).symm i).2
-    have hcj : c j ∈ s := has _ ((a.equivFin).symm j).2
+    have hci : c i ∈ s := has _ ((a.equivFin).symm i).property
+    have hcj : c j ∈ s := has _ ((a.equivFin).symm j).property
     have htrans := (mem_PLGroupoid_iff 𝓘(ℝ, ι → ℝ)).mp
       ((PLGroupoid 𝓘(ℝ, ι → ℝ)).compatible
         (chart_mem_atlas (ι → ℝ) (c i)) (chart_mem_atlas (ι → ℝ) (c j)))

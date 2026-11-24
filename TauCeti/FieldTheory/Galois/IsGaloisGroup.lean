@@ -25,6 +25,8 @@ form, which Mathlib's ring-of-integers instance then lifts to `𝓞 (M ^ H) ⊆ 
 
 * `IsGaloisGroup.index_eq_finrank`: `H.index = Module.finrank E F`.
 * `IsGaloisGroup.fixedField`: `H` is a Galois group of `M` over `IntermediateField.fixedField H`.
+* `IsGaloisGroup.range_restrictScalarsHom`: the image of `Gal(M/L)` in `Gal(M/K)` under
+  restriction of scalars is a Galois group of `M / L`.
 
 ## Provenance
 
@@ -57,8 +59,22 @@ instance fixedField {K M : Type*} [Field K] [Field M] [Algebra K M]
     -- The subgroup action evaluates the underlying automorphism, and fixed-field scalar
     -- multiplication is multiplication by the coerced field element. `change` exposes these
     -- definitions so `map_mul` and fixed-field membership apply to the resulting equality.
-    change g.1 (a.1 * b) = a.1 * g.1 b
-    rw [map_mul, (IntermediateField.mem_fixedField_iff H a.1).1 a.2 g g.2]⟩
+    change g.val (a.val * b) = a.val * g.val b
+    rw [map_mul, (IntermediateField.mem_fixedField_iff H a.val).1 a.property g g.property]⟩
   isInvariant := ⟨fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+
+/-- **The image of `Gal(M/L)` in `Gal(M/K)` is a Galois group of `M / L`.** For a tower of fields
+`K ⊆ L ⊆ M` with `M / L` Galois, the subgroup of `Gal(M/K)` obtained by restricting scalars from
+`Gal(M/L)` is a Galois group of `M` over `L`. -/
+theorem range_restrictScalarsHom (K L M : Type*) [Field K] [Field L] [Field M]
+    [Algebra K L] [Algebra K M] [Algebra L M] [IsScalarTower K L M] [IsGalois L M] :
+    IsGaloisGroup (AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)).range L M := by
+  have hf : Function.Injective (AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)) :=
+    AlgEquiv.restrictScalarsHom_injective K
+  have : SMulCommClass (AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)).range L M :=
+    ⟨fun ⟨_, τ, rfl⟩ e x ↦ by simp [Subgroup.mk_smul, AlgEquiv.smul_def, Algebra.smul_def]⟩
+  exact of_mulEquiv_algEquiv (MonoidHom.ofInjective hf).symm fun h x ↦ by
+    rw [Subgroup.smul_def, AlgEquiv.smul_def, ← MonoidHom.apply_ofInjective_symm hf h,
+      AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_apply]
 
 end IsGaloisGroup

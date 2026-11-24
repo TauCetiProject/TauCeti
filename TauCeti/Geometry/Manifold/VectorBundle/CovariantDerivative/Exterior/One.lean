@@ -190,26 +190,8 @@ variable [ContMDiffCovariantDerivative cov ∞]
 
 /-- The covariant derivative of a smooth section, viewed as a smooth bundle-valued one-form.
 This is exterior covariant differentiation in degree zero. -/
-def covariantOneForm : ContMDiffSection I F ∞ V →ₗ[ℝ] SmoothBundleForm I F V 1 where
-  toFun σ := SmoothBundleForm.degreeOneEquiv.symm ⟨cov σ, by
-    exact contMDiffOn_univ.mp
-      (ContMDiffCovariantDerivative.contMDiff.contMDiff (by simpa using σ.contMDiff.contMDiffOn))⟩
-  map_add' σ τ := by
-    apply SmoothBundleForm.ext
-    intro x v
-    simp only [SmoothBundleForm.degreeOneEquiv_symm_apply_apply, ContMDiffSection.coeFn_mk,
-      ContMDiffSection.coe_add, Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply]
-    rw [cov.isCovariantDerivativeOnUniv.add
-      (σ.contMDiff.mdifferentiableAt (by simp)) (τ.contMDiff.mdifferentiableAt (by simp))]
-    rfl
-  map_smul' c σ := by
-    apply SmoothBundleForm.ext
-    intro x v
-    simp only [SmoothBundleForm.degreeOneEquiv_symm_apply_apply, ContMDiffSection.coeFn_mk,
-      ContMDiffSection.coe_smul, Submodule.coe_smul, Pi.smul_apply,
-      ContinuousAlternatingMap.smul_apply, RingHom.id_apply]
-    rw [cov.isCovariantDerivativeOnUniv.smul_const c (σ.contMDiff.mdifferentiableAt (by simp))]
-    rfl
+def covariantOneForm : ContMDiffSection I F ∞ V →ₗ[ℝ] SmoothBundleForm I F V 1 :=
+  SmoothBundleForm.degreeOneEquiv.symm.toLinearMap ∘ₗ cov.smoothCovariantDerivative
 
 omit [FiniteDimensional ℝ E] in
 /-- Evaluation of the covariant derivative as a one-form. -/
@@ -217,9 +199,8 @@ omit [FiniteDimensional ℝ E] in
 theorem covariantOneForm_apply (σ : ContMDiffSection I F ∞ V) (x : M)
     (v : Fin 1 → TangentSpace I x) :
     (cov.covariantOneForm σ).val x v = cov σ x (v 0) := by
-  simp only [covariantOneForm, LinearMap.coe_mk, AddHom.coe_mk,
-    SmoothBundleForm.degreeOneEquiv_symm_apply_apply]
-  rfl
+  simp only [covariantOneForm, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    SmoothBundleForm.degreeOneEquiv_symm_apply_apply, smoothCovariantDerivative_apply]
 
 variable [T2Space M] [ContMDiffVectorBundle ∞ F V I]
 

@@ -73,11 +73,11 @@ def shrinkingIsotopy (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) {c : ℝ} (hc : 
     simp
   isSmoothEmbedding t := by
     have hpos : 0 < 1 - (t : ℝ) + (t : ℝ) * c := by
-      have := t.2.1
-      have := t.2.2
+      have := t.property.1
+      have := t.property.2
       by_cases ht : (t : ℝ) = 0
       · simp [ht]
-      · have := mul_pos (lt_of_le_of_ne t.2.1 (Ne.symm ht)) hc
+      · have := mul_pos (lt_of_le_of_ne t.property.1 (Ne.symm ht)) hc
         linarith
     let e : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 _ hpos.ne')
     simpa [e, Function.comp_def] using
@@ -94,11 +94,11 @@ theorem shrinkingIsotopy_mapsTo_image (f : SmoothEmbedding 𝓘(ℝ, E) J n E N)
     (t : unitInterval) : MapsTo (fun x => f.shrinkingIsotopy hc (t, x)) s (f '' s) := by
   intro x hx
   have h₀ : 0 ≤ 1 - (t : ℝ) + (t : ℝ) * c := by
-    have := t.2.1
-    have := t.2.2
+    have := t.property.1
+    have := t.property.2
     positivity
   have h₁ : 1 - (t : ℝ) + (t : ℝ) * c ≤ 1 := by
-    have := t.2.1
+    have := t.property.1
     nlinarith
   exact ⟨_, hs.smul_mem hx h₀ h₁, (f.shrinkingIsotopy_apply hc (t, x)).symm⟩
 
@@ -149,11 +149,11 @@ def compRadialContractionIsotopy (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn 
     f.contMDiff.comp (contMDiff_radialContraction 0 hn
       ((contDiff_id.mul contDiff_const).contMDiff.comp
         (contMDiff_subtypeVal_Icc.comp contMDiff_fst))
-      (fun p => mul_nonneg p.1.2.1 hκ) contMDiff_snd)⟩
+      (fun p => mul_nonneg p.1.property.1 hκ) contMDiff_snd)⟩
   map_zero_left x := by simp
   map_one_left x := by simp
   isSmoothEmbedding t := by
-    have h := (f.compRadialContraction hn (mul_nonneg t.2.1 hκ)).isSmoothEmbedding
+    have h := (f.compRadialContraction hn (mul_nonneg t.property.1 hκ)).isSmoothEmbedding
     rwa [coe_compRadialContraction] at h
 
 @[simp]
@@ -172,11 +172,11 @@ def transRadialContractionIsotopy (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
   toContMDiffMap := ⟨fun p => radialContraction c ((p.1 : ℝ) * κ) (f p.2),
     contMDiff_radialContraction c hn ((contDiff_id.mul contDiff_const).contMDiff.comp
         (contMDiff_subtypeVal_Icc.comp contMDiff_fst))
-      (fun p => mul_nonneg p.1.2.1 hκ) (f.contMDiff.comp contMDiff_snd)⟩
+      (fun p => mul_nonneg p.1.property.1 hκ) (f.contMDiff.comp contMDiff_snd)⟩
   map_zero_left x := by simp
   map_one_left x := by simp
   isSmoothEmbedding t := by
-    have h := (f.transRadialContraction c hn (mul_nonneg t.2.1 hκ)).isSmoothEmbedding
+    have h := (f.transRadialContraction c hn (mul_nonneg t.property.1 hκ)).isSmoothEmbedding
     rwa [coe_transRadialContraction] at h
 
 @[simp]
@@ -191,7 +191,7 @@ theorem transRadialContractionIsotopy_mem_ball (f : SmoothEmbedding I 𝓘(ℝ, 
     (hn : n ≤ ∞) {c : E}
     {r κ : ℝ} (hκ : 0 ≤ κ) (hf : ∀ x, f x ∈ Euclidean.ball c r) (p : unitInterval × M) :
     f.transRadialContractionIsotopy c hn hκ p ∈ Euclidean.ball c r :=
-  (euclideanDist_radialContraction_le c _ (mul_nonneg p.1.2.1 hκ)).trans_lt (hf p.2)
+  (euclideanDist_radialContraction_le c _ (mul_nonneg p.1.property.1 hκ)).trans_lt (hf p.2)
 
 end SmoothEmbedding
 

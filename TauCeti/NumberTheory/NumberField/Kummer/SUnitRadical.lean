@@ -114,7 +114,7 @@ theorem le_kummerField_sUnits_of_isCyclic {S : Set (HeightOneSpectrum (𝓞 K))}
   have hF_eq : F = K⟮(β : E)⟯ := by
     rw [← IntermediateField.lift_adjoin_simple, hβ, IntermediateField.lift_top]
   rw [hF_eq, adjoin_simple_le_iff]
-  refine mem_kummerField_sUnits_of_pow_eq hS hF β.2 (a := b ^ k) ?_
+  refine mem_kummerField_sUnits_of_pow_eq hS hF β.property (a := b ^ k) ?_
   rw [hk, pow_mul, map_pow]
   congr 1
   simpa using congrArg (algebraMap F E) hb.symm

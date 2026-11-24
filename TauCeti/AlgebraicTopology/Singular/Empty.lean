@@ -27,11 +27,13 @@ The formal infrastructure is Mathlib's relative simplicial chains: the compariso
 quotient natural transformation `SSetPair.chainComplexFunctorπ`, and its invertibility for a
 pair whose subcomplex is empty is Mathlib's `SSetPair.isIso_chainComplexπ`.
 
-For any pair whose subspace is empty, the singular simplicial set of the subspace has no simplices
-(`TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty`), so by Mathlib's
+The singular simplicial set of an empty space has no simplices
+(`TopCat.hasDimensionLT_toSSet_of_isEmpty`), so neither has that of the subspace of a pair whose
+subspace is empty (`TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty`). By Mathlib's
 `SSetPair.isIso_chainComplexπ` the quotient map `TopPair.singularHomologyπ` from ambient to
-relative singular homology is an isomorphism, found by instance resolution. Hence a map of pairs
-with empty subspaces is an isomorphism on ambient homology when it is one on relative homology
+relative singular homology of such a pair is therefore an isomorphism, found by instance
+resolution. Hence a map of pairs with empty subspaces is an isomorphism on ambient homology when
+it is one on relative homology
 (`TopPair.isIso_homologyMap_fst_of_isEmpty`).
 -/
 
@@ -42,6 +44,13 @@ noncomputable section
 open CategoryTheory Limits
 
 universe w v u
+
+/-- The singular simplicial set of an empty space has no simplices: a simplex has a value at a
+vertex. -/
+instance TopCat.hasDimensionLT_toSSet_of_isEmpty (X : TopCat.{w}) [IsEmpty X] :
+    (TopCat.toSSet.obj X).HasDimensionLT 0 :=
+  (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+    isEmptyElim (TopCat.toSSetObj₀Equiv σ)
 
 namespace TopPair
 
@@ -54,10 +63,7 @@ instance isEmpty_incl_obj_snd (X : TopCat.{w}) : IsEmpty (incl.obj X).snd :=
 /-- The singular simplicial set of an empty subspace has no simplices. -/
 instance hasDimensionLT_toSSetPair_left_of_isEmpty (P : TopPair.{w}) [IsEmpty P.snd] :
     (toSSetPair.obj P).left.HasDimensionLT 0 :=
-  (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun h ↦ by
-    obtain ⟨σ⟩ := h
-    rw [toSSetPair_obj_left] at σ
-    exact isEmptyElim (TopCat.toSSetObj₀Equiv σ)
+  inferInstanceAs ((TopCat.toSSet.obj P.snd).HasDimensionLT 0)
 
 /-- Ordinary singular chains are the ambient chains of the singular pair associated to `(X, ∅)`. -/
 lemma singularChainComplexFunctor_eq_incl_chainComplexFunctorRight :

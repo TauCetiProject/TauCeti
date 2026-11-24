@@ -130,7 +130,7 @@ set.** Inside a field `A` containing the number field `K`, only finitely many fi
 theorem finite_of_finrank_le_of_ramifiedSupport_subset (A : Type*) [Field A] [Algebra K A]
     (d : ℕ) (S : Finset (HeightOneSpectrum (𝓞 K))) :
     {L : {F : IntermediateField K A // FiniteDimensional K F} |
-      haveI : NumberField L := haveI := L.2; NumberField.of_module_finite K L
+      haveI : NumberField L := haveI := L.property; NumberField.of_module_finite K L
       finrank K L ≤ d ∧ ramifiedSupport K L ⊆ S}.Finite := by
   have : CharZero A := charZero_of_injective_algebraMap (algebraMap K A).injective
   set B := Ideal.absNorm (Ideal.span {(d.factorial : 𝓞 K)} * ∏ v ∈ S, v.asIdeal) *
@@ -142,7 +142,8 @@ theorem finite_of_finrank_le_of_ramifiedSupport_subset (A : Type*) [Field A] [Al
     exact ⟨by exact_mod_cast d.factorial_ne_zero, fun ⟨v, _, hv⟩ ↦ v.ne_bot hv⟩
   let φ : {F : IntermediateField K A // FiniteDimensional K F} →
       {F : IntermediateField ℚ A // FiniteDimensional ℚ F} := fun L ↦
-    ⟨L.1.restrictScalars ℚ, haveI := L.2; (NumberField.of_module_finite K L.1).to_finiteDimensional⟩
+    ⟨L.val.restrictScalars ℚ, haveI := L.property; (NumberField.of_module_finite K
+        L.val).to_finiteDimensional⟩
   have hφ : Function.Injective φ := fun L₁ L₂ h ↦
     Subtype.ext (IntermediateField.restrictScalars_injective ℚ (congrArg Subtype.val h))
   refine ((finite_of_discr_bdd A (B ^ d)).preimage hφ.injOn).subset ?_
@@ -151,7 +152,7 @@ theorem finite_of_finrank_le_of_ramifiedSupport_subset (A : Type*) [Field A] [Al
   -- `L.restrictScalars ℚ` and `L` have the same underlying subfield of `A`
   let e : L.restrictScalars ℚ ≃+* L :=
     .subfieldCongr (IntermediateField.restrictScalars_toSubfield ℚ)
-  have : NumberField (L.restrictScalars ℚ) := @NumberField.mk _ _ inferInstance (φ ⟨L, hL⟩).2
+  have : NumberField (L.restrictScalars ℚ) := @NumberField.mk _ _ inferInstance (φ ⟨L, hL⟩).property
   rw [Set.mem_preimage, Set.mem_ofPred_eq, discr_eq_discr_of_ringEquiv _ e, Int.abs_eq_natAbs,
     Nat.cast_le]
   refine (Nat.le_of_dvd (pow_pos hB _)

@@ -183,6 +183,16 @@ theorem mem_gradedPiece_of_reducedInclusion {G : InternalGrading R M ℤ} {D : �
     rw [map_smul]
     exact Submodule.smul_mem _ _ hu
 
+/-- The first `n` letters of a natural-indexed family of homogeneous letters form a coaugmented
+word in the graded piece of their total degree. -/
+theorem reducedInclusion_of_tprod_mem_gradedPiece (G : InternalGrading R M ℤ) {n : ℕ} (hn : 0 < n)
+    (x : ℕ → M) (𝒟 : ℕ → ℤ) (hx : ∀ i < n, x i ∈ G.piece (𝒟 i)) :
+    reducedInclusion R M (ReducedTensorWords.of R M ⟨n, hn⟩
+      (PiTensorProduct.tprod R fun j : Fin n ↦ x j)) ∈
+        gradedPiece G (∑ i ∈ Finset.range n, 𝒟 i) := by
+  rw [reducedInclusion_of, ← Fin.sum_univ_eq_sum_range]
+  exact mem_gradedPiece_of_tprod G _ (fun j : Fin n ↦ 𝒟 j) fun j ↦ hx j j.isLt
+
 /-- Deleting the empty word preserves total letter degree. -/
 theorem isHomogeneous_reducedProjection (G : InternalGrading R M ℤ) :
     LinearMap.IsHomogeneous (reducedProjection R M) (gradedPiece G)

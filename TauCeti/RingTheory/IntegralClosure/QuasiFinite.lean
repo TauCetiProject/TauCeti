@@ -77,7 +77,7 @@ theorem Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosu
   refine ⟨r, hrq, ?_⟩
   -- The integral closure of `P` in `B` lies in that of `A`, where it spans a finite submodule `N`.
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := P) (M := integralClosure P B)
-  let incl (d : integralClosure P B) : integralClosure A B := ⟨d.1, d.2.tower_top⟩
+  let incl (d : integralClosure P B) : integralClosure A B := ⟨d.val, d.property.tower_top⟩
   let N : Submodule A (integralClosure A B) := Submodule.span A (incl '' s)
   have hincl (d : integralClosure P B) : incl d ∈ N := by
     have hd : d ∈ Submodule.span P (s : Set (integralClosure P B)) := hs ▸ Submodule.mem_top
@@ -87,10 +87,10 @@ theorem Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosu
     | add d e _ _ hd he => exact N.add_mem hd he
     | smul p d _ hd =>
       convert N.smul_mem (algebraMap P A p) hd using 1
-      exact Subtype.ext (algebraMap_smul A p d.1).symm
+      exact Subtype.ext (algebraMap_smul A p d.val).symm
   -- Every element of the integral closure of `A` lies in `N` up to a power of `r`.
   have hN (c : integralClosure A B) : ∃ n, r ^ n • c ∈ N := by
-    obtain ⟨n, hn⟩ := c.2.exists_isIntegral_algebraMap_pow_mul H
+    obtain ⟨n, hn⟩ := c.property.exists_isIntegral_algebraMap_pow_mul H
     refine ⟨n, ?_⟩
     convert hincl ⟨_, hn⟩ using 1
     exact Subtype.ext (by simp [incl, Algebra.smul_def])
@@ -121,10 +121,11 @@ a Noetherian N-1 domain with fraction field `K`, for instance an integrally clos
 domain, let `A` be a finite type quasi-finite `P`-algebra, and let `B` be an `A`-algebra that is
 torsion-free over `P` with finite étale generic fibre `K ⊗[P] B`. Then the integral closure of `A`
 in `B` is a finite `A`-module. -/
-theorem finite_integralClosure_of_quasiFinite_of_etale [IsDomain P] [IsNoetherianRing P]
+theorem finite_integralClosure_of_quasiFinite_of_etale [IsNoetherianRing P]
     [Ring.IsN1 P] (K : Type*) [Field K] [Algebra P K] [IsFractionRing P K]
     [Algebra.FiniteType P A] [Algebra.QuasiFinite P A] [Module.IsTorsionFree P B]
     [Algebra.Etale K (K ⊗[P] B)] : Module.Finite A (integralClosure A B) :=
+  have := IsDomain.of_faithfulSMul P K
   have := Ring.finite_integralClosure_of_isTorsionFree_of_etale (R := P) K B
   finite_integralClosure_of_quasiFinite (P := P)
 

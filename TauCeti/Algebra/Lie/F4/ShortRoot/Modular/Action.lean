@@ -121,8 +121,8 @@ theorem coe_f4ShortRootSignedSimpleAdjoint_apply
     (k : Fin 4 ⊕ Fin 4) (y : f4ShortRootLieIdeal) :
     (f4ShortRootSignedSimpleAdjoint k y : f4ModularChevalleyLieAlgebra) =
       ⁅f4ModularRootVector (f4SignedSimpleRootIndex k),
-        (y : f4ModularChevalleyLieAlgebra)⁆ := by
-  simp only [f4ShortRootSignedSimpleAdjoint, coe_f4ShortRootAdjoint_apply]
+        (y : f4ModularChevalleyLieAlgebra)⁆ :=
+  coe_f4ShortRootAdjoint_apply _ y
 
 /-- The signed simple-root operator is the restricted adjoint action of its root vector. -/
 @[simp] theorem f4ShortRootSignedSimpleAdjoint_apply (k : Fin 4 ⊕ Fin 4)

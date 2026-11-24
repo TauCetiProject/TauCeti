@@ -178,7 +178,7 @@ theorem mem_fixingSubgroup_divisionField_iff {σ : AbsoluteGaloisGroup K} :
     set Q := (AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm P
     have hQ : W.pointCoeffEquiv Q = P := by simp [Q]
     rw [coe_smul_torsionCoeff, ← hQ, smul_pointCoeffEquiv,
-      (Affine.Point.map_eq_self_iff σ.toAlgHom Q).2 ⟨h.1 Q.2, h.2 Q.2⟩]
+      (Affine.Point.map_eq_self_iff σ.toAlgHom Q).2 ⟨h.1 Q.property, h.2 Q.property⟩]
   all_goals
     have hσ := congrArg Subtype.val (h (AddEquiv.torsionByCongr W.pointCoeffEquiv m ⟨P, hP⟩))
     rw [coe_smul_torsionCoeff, AddEquiv.torsionByCongr_apply_coe, smul_pointCoeffEquiv,
@@ -239,7 +239,7 @@ theorem forall_smul_torsionCoeff_eq_self_iff [W.IsElliptic] (hm : (m : K) ≠ 0)
     congr 1
     refine Affine.Point.map_injective (W' := W) (separableClosure K (AlgebraicClosure K)).val ?_
     rw [← Affine.Point.map_map_separableClosure_val,
-      h _ (by rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 Q.2, map_zero])]
+      h _ (by rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 Q.property, map_zero])]
 
 variable (W m)
 

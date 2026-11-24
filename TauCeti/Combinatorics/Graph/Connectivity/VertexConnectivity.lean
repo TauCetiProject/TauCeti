@@ -198,3 +198,19 @@ theorem vertexConnectivity_ofSimpleGraph (H : SimpleGraph α) :
   (toSimpleGraphOfSimpleGraphIso H).vertexConnectivity_eq.symm
 
 end Graph
+
+namespace SimpleGraph.Subgraph
+
+variable {α : Type u} {H : SimpleGraph α} {S : H.Subgraph}
+
+@[simp]
+theorem isVertexConnected_toGraph_iff (k : ℕ) :
+    S.toGraph.IsVertexConnected k ↔ S.coe.IsVertexConnected k :=
+  S.toSimpleGraphToGraphIso.isVertexConnected_iff.symm
+
+@[simp]
+theorem vertexConnectivity_toGraph :
+    S.toGraph.vertexConnectivity = S.coe.vertexConnectivity :=
+  S.toSimpleGraphToGraphIso.vertexConnectivity_eq.symm
+
+end SimpleGraph.Subgraph

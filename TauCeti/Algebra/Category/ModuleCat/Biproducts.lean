@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.RingTheory.Finiteness.Defs
+import Mathlib.RingTheory.Finiteness.Basic
 
 /-!
 # The carrier of a biproduct in `ModuleCat`
@@ -24,7 +27,9 @@ Krull-Schmidt theorem among them — can be read as results about biproducts in 
 For a binary biproduct, Mathlib's `ModuleCat.biprodIsoProd` identifies `M ⊞ N` with the product
 module `M × N`; this file also records that it reads off the two biproduct projections and
 carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`, and that the biproduct
-`biprod.map f g` of two bijective maps is bijective.
+`biprod.map f g` of two bijective maps is bijective. A finite biproduct of finitely generated
+modules over an arbitrary ring is finitely generated (`ModuleCat.finite_biproduct`), and so is
+each summand of a finitely generated biproduct (`ModuleCat.finite_of_finite_biproduct`).
 
 ## Main definitions
 
@@ -43,11 +48,20 @@ carries the biproduct inclusions to `LinearMap.inl` and `LinearMap.inr`, and tha
   `ModuleCat.biprodIsoProd`, the binary biproduct inclusions are `LinearMap.inl` and
   `LinearMap.inr`.
 * `ModuleCat.bijective_biprod_map`: `biprod.map f g` is bijective when `f` and `g` are.
+* `ModuleCat.finite_biproduct`: a finite biproduct of finitely generated modules is finitely
+  generated.
+* `ModuleCat.finite_of_finite_biproduct`: the summands of a finitely generated biproduct are
+  finitely generated.
 
 * `ModuleCat.biprod_inl_fst_apply`, `ModuleCat.biprod_inr_fst_apply`,
   `ModuleCat.biprod_inl_snd_apply`, `ModuleCat.biprod_inr_snd_apply` and
   `ModuleCat.biprod_inl_fst_add_inr_snd_apply`: the binary biproduct projections and inclusions on
   elements.
+
+* `CategoryTheory.Functor.sum_map_ι_map_π_apply`: for an additive functor `F` to modules, an
+  element of `F.obj (⨁ f)` is the sum of the images of its components.
+* `CategoryTheory.Functor.finite_obj_biproduct`: such a functor has finitely generated value on a
+  finite biproduct of objects with finitely generated values.
 -/
 
 public section
@@ -175,4 +189,49 @@ theorem biprod_inl_fst_add_inr_snd_apply (x : ↑(M ⊞ N)) :
   simpa only [hom_add, LinearMap.add_apply, ConcreteCategory.comp_apply, id_apply] using
     ConcreteCategory.congr_hom (biprod.total (X := M) (Y := N)) x
 
+/-- A finite biproduct of finitely generated modules in `ModuleCat R` is finitely generated. -/
+theorem finite_biproduct {ι : Type*} [Finite ι] (V : ι → ModuleCat.{v} R)
+    [∀ i, Module.Finite R (V i)] :
+    Module.Finite R (⨁ V : ModuleCat.{v} R) := by
+  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ι
+  exact Module.Finite.equiv (((biproduct.whiskerEquiv e.symm fun _ ↦ Iso.refl _).symm ≪≫
+    biproductIsoPi (fun j : Fin m ↦ V (e.symm j)))).symm.toLinearEquiv
+
+/-- A summand of a finitely generated biproduct in `ModuleCat R` is finitely generated: it is the
+image of the projection onto it. -/
+theorem finite_of_finite_biproduct {ι : Type*} [Finite ι] (V : ι → ModuleCat.{v} R)
+    [Module.Finite R (⨁ V : ModuleCat.{v} R)] (i : ι) : Module.Finite R (V i) :=
+  Module.Finite.of_surjective (biproduct.π V i).hom fun x ↦
+    ⟨(biproduct.ι V i).hom x, by rw [← ConcreteCategory.comp_apply, biproduct.ι_π_self, id_apply]⟩
+
 end ModuleCat
+
+namespace CategoryTheory.Functor
+
+open CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [Preadditive C] {R : Type*} [Ring R] (F : C ⥤ ModuleCat R)
+  [F.Additive]
+
+/-- For an additive functor to modules, an element of the value on a finite biproduct is the sum
+of the images of its components. -/
+theorem sum_map_ι_map_π_apply {ι : Type*} [Fintype ι] (f : ι → C) [HasBiproduct f]
+    (v : F.obj (⨁ f)) :
+    ∑ j, (F.map (biproduct.ι f j)).hom ((F.map (biproduct.π f j)).hom v) = v := by
+  have := congrArg (fun φ ↦ (F.map φ).hom v) (biproduct.total (f := f))
+  simp only [F.map_sum, F.map_comp, F.map_id, ModuleCat.hom_sum, ModuleCat.hom_comp,
+    ModuleCat.hom_id, LinearMap.sum_apply, LinearMap.comp_apply,
+    LinearMap.id_apply] at this
+  exact this
+
+/-- An additive functor to modules has finitely generated value on a finite biproduct of objects
+with finitely generated values. -/
+instance finite_obj_biproduct {ι : Type*} [Finite ι] (f : ι → C) [HasBiproduct f]
+    [∀ j, Module.Finite R (F.obj (f j))] : Module.Finite R (F.obj (⨁ f)) := by
+  have := Fintype.ofFinite ι
+  refine Module.Finite.of_surjective
+    (∑ j, (F.map (biproduct.ι f j)).hom ∘ₗ LinearMap.proj (R := R) j) fun v ↦ ?_
+  refine ⟨fun j ↦ (F.map (biproduct.π f j)).hom v, ?_⟩
+  simpa using F.sum_map_ι_map_π_apply f v
+
+end CategoryTheory.Functor

@@ -107,7 +107,7 @@ theorem mem_selmerGroup_iff {c : H1 G M} :
 /-- Every localisation of a Selmer class satisfies the corresponding local condition. -/
 theorem localization_mem (c : 𝓕.selmerGroup) (i : ι) :
     𝓕.localization i c ∈ 𝓕.localCondition i :=
-  (mem_selmerGroup_iff 𝓕).mp c.2 i
+  (mem_selmerGroup_iff 𝓕).mp c.property i
 
 end SelmerStructure
 
