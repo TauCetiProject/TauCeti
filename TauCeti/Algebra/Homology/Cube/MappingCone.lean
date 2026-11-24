@@ -142,43 +142,43 @@ variable {ι : Type w} [Fintype ι] [LinearOrder ι] (F : Finset (WithBot ι) �
 /-- The inclusion of the totalization of the `0`-face into the cube complex. -/
 private def faceZeroι (r : ℤ) : F.cubeFaceZero.cubeComplex.X r ⟶ F.cubeComplex.X r :=
   F.cubeFaceZero.cubeComplexDesc fun S ↦
-    F.cubeComplexι ⟨S.1.map Function.Embedding.coeWithBot, by rw [card_map, S.2]⟩
+    F.cubeComplexι ⟨S.val.map Function.Embedding.coeWithBot, by rw [card_map, S.property]⟩
 
 /-- The projection of the cube complex onto the totalization of the `0`-face. -/
 private def faceZeroπ (r : ℤ) : F.cubeComplex.X r ⟶ F.cubeFaceZero.cubeComplex.X r :=
   F.cubeFaceZero.cubeComplexLift fun S ↦
-    F.cubeComplexπ ⟨S.1.map Function.Embedding.coeWithBot, by rw [card_map, S.2]⟩
+    F.cubeComplexπ ⟨S.val.map Function.Embedding.coeWithBot, by rw [card_map, S.property]⟩
 
 /-- The inclusion of the totalization of the `1`-face into the cube complex, raising the degree by
 one. -/
 private def faceOneι (s r : ℤ) (h : s + 1 = r) :
     F.cubeFaceOne.cubeComplex.X s ⟶ F.cubeComplex.X r :=
   F.cubeFaceOne.cubeComplexDesc fun S ↦
-    F.cubeComplexι ⟨WithBot.insertBot S.1, by simp [S.2, h]⟩
+    F.cubeComplexι ⟨WithBot.insertBot S.val, by simp [S.property, h]⟩
 
 /-- The projection of the cube complex onto the totalization of the `1`-face, lowering the degree
 by one. -/
 private def faceOneπ (s r : ℤ) (h : s + 1 = r) :
     F.cubeComplex.X r ⟶ F.cubeFaceOne.cubeComplex.X s :=
   F.cubeFaceOne.cubeComplexLift fun S ↦
-    F.cubeComplexπ ⟨WithBot.insertBot S.1, by simp [S.2, h]⟩
+    F.cubeComplexπ ⟨WithBot.insertBot S.val, by simp [S.property, h]⟩
 
 @[reassoc (attr := simp)]
 private lemma cubeComplexι_faceZeroι {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
     F.cubeFaceZero.cubeComplexι S ≫ F.faceZeroι r =
-      F.cubeComplexι ⟨S.1.map Function.Embedding.coeWithBot, by rw [card_map, S.2]⟩ :=
+      F.cubeComplexι ⟨S.val.map Function.Embedding.coeWithBot, by rw [card_map, S.property]⟩ :=
   F.cubeFaceZero.ι_cubeComplexDesc _ S
 
 @[reassoc (attr := simp)]
 private lemma cubeComplexι_faceOneι {s r : ℤ} (h : s + 1 = r)
     (S : {S : Finset ι // (#S : ℤ) = s}) :
     F.cubeFaceOne.cubeComplexι S ≫ F.faceOneι s r h =
-      F.cubeComplexι ⟨WithBot.insertBot S.1, by simp [S.2, h]⟩ :=
+      F.cubeComplexι ⟨WithBot.insertBot S.val, by simp [S.property, h]⟩ :=
   F.cubeFaceOne.ι_cubeComplexDesc _ S
 
 @[reassoc (attr := simp)]
 private lemma cubeComplexι_faceZeroπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
-    F.cubeComplexι ⟨S.1.map Function.Embedding.coeWithBot, by rw [card_map, S.2]⟩ ≫
+    F.cubeComplexι ⟨S.val.map Function.Embedding.coeWithBot, by rw [card_map, S.property]⟩ ≫
       F.faceZeroπ r = F.cubeFaceZero.cubeComplexι S := by
   ext T
   simp only [faceZeroπ, Category.assoc, cubeComplexLift_π]
@@ -192,7 +192,7 @@ private lemma cubeComplexι_faceZeroπ {r : ℤ} (S : {S : Finset ι // (#S : �
 @[reassoc (attr := simp)]
 private lemma cubeComplexι_faceOneπ {s r : ℤ} (h : s + 1 = r)
     (S : {S : Finset ι // (#S : ℤ) = s}) :
-    F.cubeComplexι ⟨WithBot.insertBot S.1, by simp [S.2, h]⟩ ≫ F.faceOneπ s r h =
+    F.cubeComplexι ⟨WithBot.insertBot S.val, by simp [S.property, h]⟩ ≫ F.faceOneπ s r h =
       F.cubeFaceOne.cubeComplexι S := by
   ext T
   simp only [faceOneπ, Category.assoc, cubeComplexLift_π]
@@ -206,7 +206,7 @@ private lemma cubeComplexι_faceOneπ {s r : ℤ} (h : s + 1 = r)
 @[reassoc]
 private lemma cubeComplexι_insertBot_faceZeroπ {s r : ℤ} (h : s + 1 = r)
     (S : {S : Finset ι // (#S : ℤ) = s}) :
-    F.cubeComplexι ⟨WithBot.insertBot S.1, by simp [S.2, h]⟩ ≫ F.faceZeroπ r = 0 := by
+    F.cubeComplexι ⟨WithBot.insertBot S.val, by simp [S.property, h]⟩ ≫ F.faceZeroπ r = 0 := by
   ext T
   simp only [faceZeroπ, Category.assoc, cubeComplexLift_π, zero_comp]
   exact cubeComplexι_π_of_ne _ fun e ↦
@@ -215,7 +215,7 @@ private lemma cubeComplexι_insertBot_faceZeroπ {s r : ℤ} (h : s + 1 = r)
 @[reassoc (attr := simp)]
 private lemma cubeComplexι_map_faceOneπ {s r : ℤ} (h : s + 1 = r)
     (S : {S : Finset ι // (#S : ℤ) = r}) :
-    F.cubeComplexι ⟨S.1.map Function.Embedding.coeWithBot, by rw [card_map, S.2]⟩ ≫
+    F.cubeComplexι ⟨S.val.map Function.Embedding.coeWithBot, by rw [card_map, S.property]⟩ ≫
       F.faceOneπ s r h = 0 := by
   ext T
   simp only [faceOneπ, Category.assoc, cubeComplexLift_π, zero_comp]
@@ -273,7 +273,7 @@ private lemma faceZeroι_d (r : ℤ) :
     NatTrans.ι_cubeComplexMap_f_assoc, ι_cubeComplex_d_assoc, Preadditive.sum_comp,
     cubeComplexι_faceOneι]
   -- The indices outside the vertex `S` of the `0`-face are `⊥` and the indices outside `S`.
-  rw [← (optionComplEquivComplMapCoeWithBot S.1).sum_comp, Fintype.sum_option]
+  rw [← (optionComplEquivComplMapCoeWithBot S.val).sum_comp, Fintype.sum_option]
   refine (congrArg₂ (· + ·) ?_ ?_).trans (add_comm _ _)
   · simpa using F.map_homOfLE_comp_cubeComplexι_congr
       (by rw [coe_optionComplEquivComplMapCoeWithBot_none, WithBot.insertBot_eq_insert]) _ _
@@ -295,7 +295,7 @@ private lemma faceOneι_d {s r s' r' : ℤ} (h : s + 1 = r) (hs : s + 1 = s') (h
     Preadditive.sum_comp, ← Finset.sum_neg_distrib]
   -- The indices outside the vertex `WithBot.insertBot S` of the `1`-face are the indices outside
   -- `S`.
-  rw [← (complEquivComplInsertBot S.1).sum_comp]
+  rw [← (complEquivComplInsertBot S.val).sum_comp]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   simp only [coe_complEquivComplInsertBot, card_filter_lt_coe_insertBot, pow_succ, mul_neg_one,
     neg_smul, Preadditive.zsmul_comp, Category.assoc, cubeComplexι_faceOneι]
@@ -396,7 +396,7 @@ lemma inl_v_cubeComplexMappingConeIso_hom_f (p : ℤ) (S : {S : Finset ι // (#S
     F.cubeFaceZero.cubeComplexι S ≫
         (mappingCone.inl (NatTrans.cubeComplexMap F.cubeFaceMap)).v (p + 1) p (by omega) ≫
           F.cubeComplexMappingConeIso.hom.f p =
-      F.cubeComplexι ⟨S.1.map Function.Embedding.coeWithBot, by rw [card_map, S.2]⟩ := by
+      F.cubeComplexι ⟨S.val.map Function.Embedding.coeWithBot, by rw [card_map, S.property]⟩ := by
   simp [cubeComplexMappingConeIso, mappingConeIsoHomOfDegreewiseSplit, mappingCone.map,
     mappingConeHomOfDegreewiseSplitXIso, faceSplitting, shiftFunctorCompIsoId]
 
@@ -407,7 +407,7 @@ lemma inr_f_cubeComplexMappingConeIso_hom_f (p : ℤ) (S : {S : Finset ι // (#S
     F.cubeFaceOne.cubeComplexι S ≫
         (mappingCone.inr (NatTrans.cubeComplexMap F.cubeFaceMap)).f p ≫
           F.cubeComplexMappingConeIso.hom.f p =
-      -F.cubeComplexι ⟨WithBot.insertBot S.1, by simp [S.2]⟩ := by
+      -F.cubeComplexι ⟨WithBot.insertBot S.val, by simp [S.property]⟩ := by
   simp [cubeComplexMappingConeIso, mappingConeIsoHomOfDegreewiseSplit, mappingCone.map,
     mappingConeHomOfDegreewiseSplitXIso, faceSplitting, shiftFunctorCompIsoId,
     shiftFunctorZero_inv_app_f, shiftFunctorAdd'_hom_app_f']
@@ -418,7 +418,7 @@ containing `⊥` to the same vertex of the `0`-face, placed in the mapping cone 
 @[reassoc (attr := simp)]
 lemma cubeComplexι_cubeComplexMappingConeIso_inv_f (p : ℤ)
     (S : {S : Finset ι // (#S : ℤ) = p + 1}) :
-    F.cubeComplexι ⟨S.1.map Function.Embedding.coeWithBot, by rw [card_map, S.2]⟩ ≫
+    F.cubeComplexι ⟨S.val.map Function.Embedding.coeWithBot, by rw [card_map, S.property]⟩ ≫
         F.cubeComplexMappingConeIso.inv.f p =
       F.cubeFaceZero.cubeComplexι S ≫
         (mappingCone.inl (NatTrans.cubeComplexMap F.cubeFaceMap)).v (p + 1) p (by omega) := by
@@ -432,7 +432,7 @@ cube complex to the negative of the vertex `S` of the `1`-face, placed in the ma
 @[reassoc (attr := simp)]
 lemma cubeComplexι_insertBot_cubeComplexMappingConeIso_inv_f (p : ℤ)
     (S : {S : Finset ι // (#S : ℤ) = p}) :
-    F.cubeComplexι ⟨WithBot.insertBot S.1, by simp [S.2]⟩ ≫
+    F.cubeComplexι ⟨WithBot.insertBot S.val, by simp [S.property]⟩ ≫
         F.cubeComplexMappingConeIso.inv.f p =
       -(F.cubeFaceOne.cubeComplexι S ≫
         (mappingCone.inr (NatTrans.cubeComplexMap F.cubeFaceMap)).f p) := by
@@ -629,14 +629,14 @@ lemma inl_v_cubeComplexMappingConeIsoAt_hom_f (p : ℤ)
     (F.cubeFaceZeroAt c).cubeComplexι S ≫
         (mappingCone.inl (NatTrans.cubeComplexMap (F.cubeFaceMapAt c))).v (p + 1) p (by omega) ≫
           (F.cubeComplexMappingConeIsoAt c).hom.f p =
-      F.cubeComplexι ⟨S.1.map c.succAboveEmb, by rw [card_map, S.2]⟩ := by
+      F.cubeComplexι ⟨S.val.map c.succAboveEmb, by rw [card_map, S.property]⟩ := by
   dsimp only [cubeComplexMappingConeIsoAt, cubeComplexFunctor, Functor.mapIso]
   simp only [Iso.trans_hom, mappingCone.mapIso_hom, Iso.symm_hom, HomologicalComplex.comp_f,
     CochainComplex.shiftFunctor_map_f', mappingCone.inl_v_map_f_assoc,
     NatTrans.ι_cubeComplexMap_f_assoc,
     inl_v_cubeComplexMappingConeIso_hom_f_assoc,
     F.cubeComplexι_cubeComplexReindexIso_frontEquiv_inv_f c _ _
-      (map_succAboveEmb_map_frontEquiv c S.1), inversions_map_succAboveEmb]
+      (map_succAboveEmb_map_frontEquiv c S.val), inversions_map_succAboveEmb]
   simp [cubeFrontFaceZeroIso]
 
 /-- The isomorphism `Functor.cubeComplexMappingConeIsoAt` sends a vertex `S` of the `1`-face,
@@ -647,8 +647,8 @@ lemma inr_f_cubeComplexMappingConeIsoAt_hom_f (p : ℤ) (S : {S : Finset (Fin n)
     (F.cubeFaceOneAt c).cubeComplexι S ≫
         (mappingCone.inr (NatTrans.cubeComplexMap (F.cubeFaceMapAt c))).f p ≫
           (F.cubeComplexMappingConeIsoAt c).hom.f p =
-      -((-1 : ℤ) ^ #{a ∈ S.1 | a.castSucc < c} •
-        F.cubeComplexι ⟨insert c (S.1.map c.succAboveEmb), by
+      -((-1 : ℤ) ^ #{a ∈ S.val | a.castSucc < c} •
+        F.cubeComplexι ⟨insert c (S.val.map c.succAboveEmb), by
           rw [card_insert_of_notMem (by simp [Fin.succAbove_ne]), card_map]
           push_cast
           omega⟩) := by
@@ -657,7 +657,7 @@ lemma inr_f_cubeComplexMappingConeIsoAt_hom_f (p : ℤ) (S : {S : Finset (Fin n)
     CochainComplex.shiftFunctor_map_f', mappingCone.inr_f_map_f_assoc,
     NatTrans.ι_cubeComplexMap_f_assoc, inr_f_cubeComplexMappingConeIso_hom_f_assoc,
     Preadditive.neg_comp, F.cubeComplexι_cubeComplexReindexIso_frontEquiv_inv_f c _ _
-      (insert_map_succAboveEmb_map_frontEquiv c S.1), card_inversions_insert_map_succAboveEmb]
+      (insert_map_succAboveEmb_map_frontEquiv c S.val), card_inversions_insert_map_succAboveEmb]
   simp [cubeFrontFaceOneIso]
 
 /-- The inverse of `Functor.cubeComplexMappingConeIsoAt` sends a vertex of the cube complex not
@@ -666,7 +666,7 @@ containing `c` to the corresponding vertex of the `0`-face, placed in the mappin
 @[reassoc (attr := simp)]
 lemma cubeComplexι_cubeComplexMappingConeIsoAt_inv_f (p : ℤ)
     (S : {S : Finset (Fin n) // (#S : ℤ) = p + 1}) :
-    F.cubeComplexι ⟨S.1.map c.succAboveEmb, by rw [card_map, S.2]⟩ ≫
+    F.cubeComplexι ⟨S.val.map c.succAboveEmb, by rw [card_map, S.property]⟩ ≫
         (F.cubeComplexMappingConeIsoAt c).inv.f p =
       (F.cubeFaceZeroAt c).cubeComplexι S ≫
         (mappingCone.inl (NatTrans.cubeComplexMap (F.cubeFaceMapAt c))).v (p + 1) p (by omega) := by
@@ -679,12 +679,12 @@ the sign `-(-1) ^ #{a ∈ S | a.castSucc < c}`. -/
 @[reassoc (attr := simp)]
 lemma cubeComplexι_insert_cubeComplexMappingConeIsoAt_inv_f (p : ℤ)
     (S : {S : Finset (Fin n) // (#S : ℤ) = p}) :
-    F.cubeComplexι ⟨insert c (S.1.map c.succAboveEmb), by
+    F.cubeComplexι ⟨insert c (S.val.map c.succAboveEmb), by
           rw [card_insert_of_notMem (by simp [Fin.succAbove_ne]), card_map]
           push_cast
           omega⟩ ≫
         (F.cubeComplexMappingConeIsoAt c).inv.f p =
-      -((-1 : ℤ) ^ #{a ∈ S.1 | a.castSucc < c} •
+      -((-1 : ℤ) ^ #{a ∈ S.val | a.castSucc < c} •
         (F.cubeFaceOneAt c).cubeComplexι S ≫
           (mappingCone.inr (NatTrans.cubeComplexMap (F.cubeFaceMapAt c))).f p) := by
   have h := F.inr_f_cubeComplexMappingConeIsoAt_hom_f_assoc c p S

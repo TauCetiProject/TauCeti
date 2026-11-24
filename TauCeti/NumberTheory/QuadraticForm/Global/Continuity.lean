@@ -53,7 +53,7 @@ theorem continuous_atRealPlace
     [TopologicalSpace (RealScalarExtension (V := V) w)]
     [IsModuleTopology ℝ (RealScalarExtension (V := V) w)] :
     Continuous (Q.atRealPlace w) := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   exact (Q.atRealPlace w).continuous
 
 /-- A quadratic form localized through a complex embedding is continuous for the module

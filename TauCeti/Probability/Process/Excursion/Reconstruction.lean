@@ -28,7 +28,6 @@ used here.  What the identity above needs is a pushforward along a measurable ma
 inverse to reading the excursions off, not a bijection.
 
 This change of variables does not require any symmetry or mixture representation of the process.
-The specialization to a recurrent process is in `TauCeti.Probability.Recurrent.Excursion`.
 
 ## Main results
 

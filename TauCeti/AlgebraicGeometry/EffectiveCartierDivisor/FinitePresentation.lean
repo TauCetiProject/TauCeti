@@ -39,12 +39,10 @@ variable {X S : Scheme.{u}} {I : X.IdealSheafData}
 an arbitrary ambient scheme. -/
 theorem locallyOfFinitePresentation_subschemeι_of_isEffectiveCartier (hI : I.IsEffectiveCartier) :
     LocallyOfFinitePresentation I.subschemeι := by
-  apply IsClosedImmersion.locallyOfFinitePresentation_iff_exists_fg.mpr
+  apply I.locallyOfFinitePresentation_subschemeι_of_locallyPrincipal
   intro x
   obtain ⟨U, hx, a, -, hUa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI x
-  refine ⟨U, hx, ?_⟩
-  rw [I.ker_subschemeι, hUa]
-  exact Submodule.fg_span_singleton a
+  exact ⟨U, hx, a, hUa⟩
 
 /-- An effective Cartier divisor on a scheme locally of finite presentation over `S` is
 locally of finite presentation over `S`. -/
@@ -55,3 +53,16 @@ theorem locallyOfFinitePresentation_subschemeι_comp_of_isEffectiveCartier
   infer_instance
 
 end TauCeti
+
+
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+variable {X : Scheme.{u}} {E : X.IdealSheafData}
+
+/-- An effective Cartier ideal has finitely generated section ideals on every affine open. -/
+theorem IsEffectiveCartier.fg_ideal (hE : E.IsEffectiveCartier) (U : X.affineOpens) :
+    (E.ideal U).FG := by
+  have := TauCeti.locallyOfFinitePresentation_subschemeι_of_isEffectiveCartier hE
+  exact E.fg_ideal U
+
+end AlgebraicGeometry.Scheme.IdealSheafData

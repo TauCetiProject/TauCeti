@@ -41,6 +41,9 @@ sides: they have the shape `arccos x ≤ y ↔ cos y ≤ x` where the `arcsin` f
 * `Real.lt_cos_of_mem_Icc` — the unimodality corollary: `cos` has no interior minimum on
   `[-π, π]`. For `-π ≤ a`, `b ≤ π` and `θ ∈ [a, b]`, if `k < cos a` and `k < cos b` then
   `k < cos θ`; nothing is assumed of `k`.
+* `Real.le_pi_div_arccos_iff`, `Real.le_pi_div_arccos_iff'`, `Real.lt_pi_div_arccos_iff`, and
+  `Real.pi_div_arccos_lt_iff` — equivalences comparing `π / arccos x` with a threshold `y` via
+  comparisons between `x` and `cos (π / y)`.
 -/
 
 public section
@@ -155,5 +158,45 @@ theorem lt_cos_of_mem_Icc {k a b θ : ℝ} (ha : -π ≤ a) (hb : b ≤ π) (hθ
   rw [lt_cos_iff_mem_Ioo hk ⟨ha.trans hab, hb⟩] at hkb
   rw [lt_cos_iff_mem_Ioo hk ⟨ha.trans hθ.1, hθ.2.trans hb⟩]
   exact ordConnected_Ioo.out hka hkb hθ
+
+/-- For `x ∈ [-1, 1)` and `1 ≤ y`, `y ≤ π / arccos x` holds exactly when `cos (π / y) ≤ x`. -/
+theorem le_pi_div_arccos_iff {x y : ℝ} (hx₀ : -1 ≤ x) (hx₁ : x < 1) (hy : 1 ≤ y) :
+    y ≤ π / arccos x ↔ cos (π / y) ≤ x := by
+  have hy₀ : 0 < y := zero_lt_one.trans_le hy
+  rw [le_div_iff₀ (arccos_pos.2 hx₁), ← le_div_iff₀' hy₀,
+    arccos_le_iff_cos_le hx₀ ⟨(div_pos pi_pos hy₀).le, div_le_self pi_pos.le hy⟩]
+
+/-- For `1 < y` and arbitrary `x : ℝ`, `y ≤ π / arccos x` holds exactly when `cos (π / y) ≤ x` and
+`x < 1`. Excluding `y = 1` drops the lower bound `-1 ≤ x` (at `y = 1` and `x < -1`, `π / arccos x =
+1` whereas `cos π = -1 > x`), while `x < 1` excludes `arccos x = 0`. -/
+theorem le_pi_div_arccos_iff' {x y : ℝ} (hy : 1 < y) :
+    y ≤ π / arccos x ↔ cos (π / y) ≤ x ∧ x < 1 := by
+  have hy₀ : 0 < y := zero_lt_one.trans hy
+  rcases lt_or_ge x 1 with hx₁ | hx₁
+  · rw [le_div_iff₀ (arccos_pos.2 hx₁), ← le_div_iff₀' hy₀,
+      arccos_le_iff_cos_le' ⟨(div_pos pi_pos hy₀).le, div_lt_self pi_pos hy⟩]
+    exact (and_iff_left hx₁).symm
+  · exact iff_of_false (by rw [arccos_of_one_le hx₁, div_zero]; exact hy₀.not_ge)
+      fun h ↦ h.2.not_ge hx₁
+
+/-- For `1 ≤ y` and arbitrary `x : ℝ`, `y < π / arccos x` holds exactly when `cos (π / y) < x` and
+`x < 1`. -/
+theorem lt_pi_div_arccos_iff {x y : ℝ} (hy : 1 ≤ y) :
+    y < π / arccos x ↔ cos (π / y) < x ∧ x < 1 := by
+  have hy₀ : 0 < y := zero_lt_one.trans_le hy
+  rcases lt_or_ge x 1 with hx₁ | hx₁
+  · rw [lt_div_iff₀ (arccos_pos.2 hx₁), ← lt_div_iff₀' hy₀,
+      arccos_lt_iff_cos_lt' ⟨div_pos pi_pos hy₀, div_le_self pi_pos.le hy⟩]
+    exact (and_iff_left hx₁).symm
+  · exact iff_of_false (by rw [arccos_of_one_le hx₁, div_zero]; exact hy₀.le.not_gt)
+      fun h ↦ h.2.not_ge hx₁
+
+/-- For `x < 1` and `1 < y`, `π / arccos x < y` holds exactly when `x < cos (π / y)`; no lower
+bound on `x` is required. -/
+theorem pi_div_arccos_lt_iff {x y : ℝ} (hx : x < 1) (hy : 1 < y) :
+    π / arccos x < y ↔ x < cos (π / y) := by
+  have hy₀ : 0 < y := zero_lt_one.trans hy
+  rw [div_lt_iff₀ (arccos_pos.2 hx), ← div_lt_iff₀' hy₀,
+    lt_arccos_iff_lt_cos' ⟨(div_pos pi_pos hy₀).le, div_lt_self pi_pos hy⟩]
 
 end Real

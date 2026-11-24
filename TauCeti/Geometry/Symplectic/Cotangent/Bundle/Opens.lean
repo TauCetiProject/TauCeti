@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Opens
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Fiberwise
+import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 
 /-!
 # Canonical cotangent forms on open restrictions
@@ -43,6 +45,15 @@ ambient maps rests on the fact that the cotangent inclusion `T*U → T*M` intert
 and dilations of `T*U` by restricted data with those of `T*M`
 (`TauCeti.CotangentBundle.openInclusion_vectorBundleTranslateDiffeomorph`,
 `TauCeti.CotangentBundle.openInclusion_vectorBundleScalarDiffeomorph`).
+
+Canonical transformations defined only between the cotangent bundles of open subsets `U ⊆ M` and
+`V ⊆ N` are canonical transformations of the ambient cotangent bundles: conjugating by
+`CotangentBundle.restrictOpen` and reading the result in `T*M` and `T*N` gives a partial
+diffeomorphism which preserves the canonical symplectic forms and agrees with the original one
+through the cotangent inclusions
+(`TauCeti.CotangentBundle.exists_partialDiffeomorph_openInclusion_eq`). This lets a construction
+which needs Hausdorff base manifolds, such as a bump-function extension, be carried out over
+chart domains.
 
 ## References
 
@@ -84,7 +95,7 @@ theorem mpullback_openInclusion_liouvilleForm (U : Opens M) :
     ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
     ((contMDiff_openInclusion U).mdifferentiableAt (by simp)) (v 0)
   have hU := mfderiv_comp_apply z
-    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
     ((contMDiff_proj (fun x : U ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
     (v 0)
   rw [hproj, hU] at hM
@@ -97,7 +108,7 @@ restriction of the ambient Liouville form to `π⁻¹(U)`. -/
 theorem mpullback_restrictOpen_liouvilleForm (U : Opens M) :
     SmoothForm.mpullback (restrictOpen U) (restrictOpen U).contMDiff
       (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-        contMDiff_subtype_val (liouvilleForm I M)) = liouvilleForm I U := by
+        contMDiff_subtypeVal (liouvilleForm I M)) = liouvilleForm I U := by
   rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
   simpa only [Function.comp_def, coe_restrictOpen] using
     mpullback_openInclusion_liouvilleForm (I := I) U
@@ -122,7 +133,7 @@ restriction of the ambient symplectic form to `π⁻¹(U)`. -/
 theorem mpullback_restrictOpen_symplecticForm (U : Opens M) :
     SmoothForm.mpullback (restrictOpen U) (restrictOpen U).contMDiff
       (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-        contMDiff_subtype_val (symplecticForm I M)) = symplecticForm I U := by
+        contMDiff_subtypeVal (symplecticForm I M)) = symplecticForm I U := by
   rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
   simpa only [Function.comp_def, coe_restrictOpen] using
     mpullback_openInclusion_symplecticForm (I := I) U
@@ -142,7 +153,7 @@ theorem mpullback_restrictOpen_symm_liouvilleForm (U : Opens M) :
     SmoothForm.mpullback (restrictOpen U).symm (restrictOpen U).symm.contMDiff
         (liouvilleForm I U) =
       SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-        contMDiff_subtype_val (liouvilleForm I M) :=
+        contMDiff_subtypeVal (liouvilleForm I M) :=
   SmoothForm.mpullback_symm_eq_of_mpullback_eq (mpullback_restrictOpen_liouvilleForm U)
 
 /-- The cotangent inclusion `T*U → T*M` intertwines the fibre translation of `T*U` by the
@@ -150,9 +161,9 @@ restriction to `U` of a one-form `α` on `M` with the fibre translation of `T*M`
 theorem openInclusion_vectorBundleTranslateDiffeomorph (U : Opens M) (α : SmoothForm I M ℝ 1)
     (z : CotangentBundle I U) :
     openInclusion U (vectorBundleTranslateDiffeomorph
-        (SmoothForm.degreeOneEquiv (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α))
+        (SmoothForm.degreeOneEquiv (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal α))
         (SmoothForm.degreeOneEquiv
-          (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)).contMDiff z) =
+          (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal α)).contMDiff z) =
       vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
         (SmoothForm.degreeOneEquiv α).contMDiff (openInclusion U z) := by
   rw [vectorBundleTranslateDiffeomorph_apply, vectorBundleTranslateDiffeomorph_apply,
@@ -174,17 +185,17 @@ private theorem mpullback_conj_restrictOpen {k : ℕ} (U : Opens M)
     (γU : SmoothForm (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (CotangentBundle I U) ℝ k)
     (hγ : SmoothForm.mpullback (restrictOpen U) (restrictOpen U).contMDiff
       (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-        contMDiff_subtype_val γ) = γU) :
+        contMDiff_subtypeVal γ) = γU) :
     SmoothForm.mpullback (Diffeomorph.diffCongr (restrictOpen U) g)
         (Diffeomorph.diffCongr (restrictOpen U) g).contMDiff
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val γ) =
+          contMDiff_subtypeVal γ) =
       SmoothForm.mpullback (restrictOpen U).symm (restrictOpen U).symm.contMDiff
         (SmoothForm.mpullback g g.contMDiff γU) := by
   suffices ∀ φ, φ = ((restrictOpen U).symm.trans g).trans (restrictOpen U) →
       SmoothForm.mpullback φ φ.contMDiff
           (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-            contMDiff_subtype_val γ) =
+            contMDiff_subtypeVal γ) =
         SmoothForm.mpullback (restrictOpen U).symm (restrictOpen U).symm.contMDiff
           (SmoothForm.mpullback g g.contMDiff γU) from
     this _ (Diffeomorph.diffCongr_apply _ _)
@@ -216,7 +227,7 @@ read as a covector of `M` through the identification `T_x U = T_x M`. -/
 theorem coe_overOpenTranslateDiffeomorph (U : Opens M) (β : SmoothForm I U ℝ 1)
     (z : overOpen (I := I) U) :
     (overOpenTranslateDiffeomorph U β z : CotangentBundle I M) =
-      TotalSpace.mk' (E →L[ℝ] ℝ) z.val.proj (z.val.2 +
+      TotalSpace.mk' (E →L[ℝ] ℝ) z.val.proj (z.val.snd +
         SmoothForm.degreeOneEquiv β ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩ ∘L
           (Manifold.tangentSpaceOpenEquiv (I := I)
             ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩).symm.toContinuousLinearMap) := by
@@ -264,7 +275,7 @@ theorem overOpenTranslateDiffeomorph_symm (U : Opens M) (β : SmoothForm I U ℝ
 the restriction of the fibre translation of `T*M` by `α`. -/
 theorem coe_overOpenTranslateDiffeomorph_mpullback_subtype_val (U : Opens M)
     (α : SmoothForm I M ℝ 1) (z : overOpen (I := I) U) :
-    (overOpenTranslateDiffeomorph U (SmoothForm.mpullback Subtype.val contMDiff_subtype_val α)
+    (overOpenTranslateDiffeomorph U (SmoothForm.mpullback Subtype.val contMDiff_subtypeVal α)
         z : CotangentBundle I M) =
       vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
         (SmoothForm.degreeOneEquiv α).contMDiff z := by
@@ -280,9 +291,9 @@ theorem mpullback_overOpenTranslateDiffeomorph_liouvilleForm (U : Opens M)
     SmoothForm.mpullback (overOpenTranslateDiffeomorph U β)
         (overOpenTranslateDiffeomorph U β).contMDiff
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (liouvilleForm I M)) =
+          contMDiff_subtypeVal (liouvilleForm I M)) =
       SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (liouvilleForm I M) +
+          contMDiff_subtypeVal (liouvilleForm I M) +
         SmoothForm.mpullback (restrictOpen U).symm (restrictOpen U).symm.contMDiff
           (SmoothForm.mpullback (TotalSpace.proj : CotangentBundle I U → U)
             (contMDiff_proj _) β) :=
@@ -297,9 +308,9 @@ theorem mpullback_overOpenScalarDiffeomorph_liouvilleForm (U : Opens M) {c : ℝ
     SmoothForm.mpullback (overOpenScalarDiffeomorph U (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
         (overOpenScalarDiffeomorph U (fun _ ↦ c) contMDiff_const fun _ ↦ hc).contMDiff
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (liouvilleForm I M)) =
+          contMDiff_subtypeVal (liouvilleForm I M)) =
       c • SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (liouvilleForm I M) := by
+          contMDiff_subtypeVal (liouvilleForm I M) := by
   rw [overOpenScalarDiffeomorph_eq_diffCongr]
   exact (mpullback_conj_restrictOpen U _ _ _ (mpullback_restrictOpen_liouvilleForm U)).trans <|
     (congrArg _ (mpullback_vectorBundleScalarDiffeomorph_liouvilleForm hc)).trans <|
@@ -318,7 +329,7 @@ theorem mpullback_restrictOpen_symm_symplecticForm (U : Opens M) :
     SmoothForm.mpullback (restrictOpen U).symm (restrictOpen U).symm.contMDiff
         (symplecticForm I U) =
       SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-        contMDiff_subtype_val (symplecticForm I M) :=
+        contMDiff_subtypeVal (symplecticForm I M) :=
   SmoothForm.mpullback_symm_eq_of_mpullback_eq (mpullback_restrictOpen_symplecticForm U)
 
 /-- **Fibre translation of `π⁻¹(U)` shifts the canonical symplectic form.** Translating the
@@ -329,9 +340,9 @@ theorem mpullback_overOpenTranslateDiffeomorph_symplecticForm (U : Opens M)
     SmoothForm.mpullback (overOpenTranslateDiffeomorph U β)
         (overOpenTranslateDiffeomorph U β).contMDiff
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (symplecticForm I M)) =
+          contMDiff_subtypeVal (symplecticForm I M)) =
       SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (symplecticForm I M) -
+          contMDiff_subtypeVal (symplecticForm I M) -
         SmoothForm.mpullback (restrictOpen U).symm (restrictOpen U).symm.contMDiff
           (SmoothForm.mpullback (TotalSpace.proj : CotangentBundle I U → U)
             (contMDiff_proj _) (mextDerivₗ I 1 β)) :=
@@ -347,9 +358,9 @@ theorem mpullback_overOpenTranslateDiffeomorph_symplecticForm_eq_self_iff (U : O
     SmoothForm.mpullback (overOpenTranslateDiffeomorph U β)
         (overOpenTranslateDiffeomorph U β).contMDiff
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (symplecticForm I M)) =
+          contMDiff_subtypeVal (symplecticForm I M)) =
       SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (symplecticForm I M) ↔ β.IsClosed := by
+          contMDiff_subtypeVal (symplecticForm I M) ↔ β.IsClosed := by
   have hinj : Function.Injective (SmoothForm.mpullback (F := ℝ) (k := 2)
       (restrictOpen (I := I) U).symm (restrictOpen U).symm.contMDiff) :=
     SmoothForm.mpullback_injective_of_rightInverse _ (restrictOpen U).contMDiff
@@ -366,14 +377,87 @@ theorem mpullback_overOpenScalarDiffeomorph_symplecticForm (U : Opens M) {c : �
     SmoothForm.mpullback (overOpenScalarDiffeomorph U (fun _ ↦ c) contMDiff_const fun _ ↦ hc)
         (overOpenScalarDiffeomorph U (fun _ ↦ c) contMDiff_const fun _ ↦ hc).contMDiff
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (symplecticForm I M)) =
+          contMDiff_subtypeVal (symplecticForm I M)) =
       c • SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (symplecticForm I M) := by
+          contMDiff_subtypeVal (symplecticForm I M) := by
   rw [overOpenScalarDiffeomorph_eq_diffCongr]
   exact (mpullback_conj_restrictOpen U _ _ _ (mpullback_restrictOpen_symplecticForm U)).trans <|
     (congrArg _ (mpullback_vectorBundleScalarDiffeomorph_symplecticForm hc)).trans <|
       (map_smul _ _ _).trans (congrArg (c • ·) (mpullback_restrictOpen_symm_symplecticForm U))
 
 end FiberwiseSymplectic
+
+/-! ### Canonical transformations between open subsets -/
+
+section Transport
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I ∞ M] [IsManifold J ∞ N]
+
+/-- **Canonical transformations between open subsets, read in the ambient cotangent bundles.** Let
+`Φ : T*U → T*V` be a partial diffeomorphism between the cotangent bundles of open subsets `U ⊆ M`
+and `V ⊆ N`, with `U` nonempty, which preserves the canonical symplectic forms on its source.
+Through the cotangent inclusions it is a partial diffeomorphism `Ψ : T*M → T*N` with the same
+property: the source of `Ψ` is the image of the source of `Φ`, and `Ψ (ι z) = ι (Φ z)` there. -/
+theorem exists_partialDiffeomorph_openInclusion_eq {U : Opens M} {V : Opens N} [Nonempty U]
+    (Φ : PartialDiffeomorph (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ))
+      (CotangentBundle I U) (CotangentBundle J V) ∞)
+    (hΦ : ∀ z ∈ Φ.source, mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ
+      (symplecticForm J V).val z = (symplecticForm I U).val z) :
+    ∃ Ψ : PartialDiffeomorph (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ))
+        (CotangentBundle I M) (CotangentBundle J N) ∞,
+      Ψ.source = openInclusion U '' Φ.source ∧
+      (∀ z ∈ Φ.source, Ψ (openInclusion U z) = openInclusion V (Φ z)) ∧
+      ∀ z ∈ Ψ.source, mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Ψ
+        (symplecticForm J N).val z = (symplecticForm I M).val z := by
+  obtain ⟨x⟩ := ‹Nonempty U›
+  have hA : Nonempty (overOpen (I := I) U) :=
+    ⟨restrictOpen U (TotalSpace.mk' (E →L[ℝ] ℝ) x 0)⟩
+  have hB : Nonempty (overOpen (I := J) V) :=
+    ⟨restrictOpen V (Φ (TotalSpace.mk' (E →L[ℝ] ℝ) x 0))⟩
+  -- Conjugate `Φ` by the identifications `T*U ≃ π⁻¹(U)` and `T*V ≃ π⁻¹(V)`, then lift it.
+  let r := restrictOpen (I := I) U
+  let r' := restrictOpen (I := J) V
+  let Φ' := r.symm.toPartialDiffeomorph.trans (Φ.trans r'.toPartialDiffeomorph)
+  let Ψ := Φ'.liftOpens hA hB
+  have hΦ' : (Φ' : overOpen (I := I) U → overOpen (I := J) V) = r' ∘ Φ ∘ r.symm := by
+    funext a
+    simp [Φ', Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
+  have hsrc (a : overOpen (I := I) U) : a ∈ Φ'.source ↔ r.symm a ∈ Φ.source := by
+    simp [Φ', Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
+  have hΨsrc : Ψ.source = openInclusion U '' Φ.source := by
+    rw [Φ'.liftOpens_source]
+    ext w
+    constructor
+    · rintro ⟨a, ha, rfl⟩
+      exact ⟨r.symm a, (hsrc a).1 ha,
+        (coe_restrictOpen U _).symm.trans (congrArg Subtype.val (r.apply_symm_apply a))⟩
+    · rintro ⟨z, hz, rfl⟩
+      exact ⟨r z, (hsrc _).2 (by rwa [r.symm_apply_apply]), coe_restrictOpen U z⟩
+  refine ⟨Ψ, hΨsrc, fun z _ ↦ ?_, fun z hz ↦ ?_⟩
+  · have h := Φ'.liftOpens_apply_coe hA hB (r z)
+    rw [hΦ', Function.comp_apply, Function.comp_apply, r.symm_apply_apply] at h
+    rw [← coe_restrictOpen, ← coe_restrictOpen]
+    exact h
+  -- The symplectic forms: pull back along the inclusion of `π⁻¹(U)`, where `Ψ` is `r' ∘ Φ ∘ r⁻¹`.
+  rw [Φ'.liftOpens_source] at hz
+  obtain ⟨a, ha, rfl⟩ := hz
+  have haΦ := (hsrc a).1 ha
+  have hrU := congrArg Subtype.val (SmoothForm.mpullback_symm_eq_of_mpullback_eq
+    (mpullback_restrictOpen_symplecticForm (I := I) U))
+  have hrV := congrArg Subtype.val (mpullback_restrictOpen_symplecticForm (I := J) V)
+  simp only [SmoothForm.coe_mpullback] at hrU hrV
+  have hΦa := Φ.mdifferentiableAt (by simp) haΦ
+  rw [mpullback_liftOpens_apply_coe Φ' (by simp) hA hB _ ha, hΦ', ← Function.comp_assoc,
+    mpullback_comp_at (r.symm.mdifferentiable (by simp) _)
+      ((r'.mdifferentiable (by simp) _).comp _ hΦa),
+    mpullback_apply_congr (η := mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ
+      (symplecticForm J V).val)
+      (by rw [mpullback_comp_at hΦa (r'.mdifferentiable (by simp) _), hrV]),
+    mpullback_apply_congr (hΦ _ haΦ), hrU]
+  exact mpullback_subtype_val_apply _ a
+
+end Transport
 
 end TauCeti.CotangentBundle

@@ -99,7 +99,7 @@ theorem isVertexStrong_iff : IsVertexStrong D.AdjHom k ↔
       ∀ s t : ↑((X : Set V)ᶜ), ReflTransGen (D.induce (X : Set V)ᶜ).Adj s t := by
   rw [TauCeti.isVertexStrong_def]
   refine and_congr_right fun _ ↦ ⟨fun h X hX s t ↦ ?_, fun h X hX s hs t ht ↦ ?_⟩
-  · exact reflTransGen_induce_compl_iff.mpr (h X hX s.2 t.2)
+  · exact reflTransGen_induce_compl_iff.mpr (h X hX s.property t.property)
   · let s' : ↑((X : Set V)ᶜ) := ⟨s, by simpa⟩
     let t' : ↑((X : Set V)ᶜ) := ⟨t, by simpa⟩
     exact reflTransGen_induce_compl_iff.mp (h X hX s' t')

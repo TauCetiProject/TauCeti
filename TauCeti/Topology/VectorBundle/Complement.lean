@@ -48,7 +48,7 @@ variable {𝕜 B F V : Type*} [RCLike 𝕜] [TopologicalSpace B]
   [FiberBundle F E] [VectorBundle 𝕜 F E]
 
 variable (j : ∀ x, E x →L[𝕜] V)
-  (hj : Continuous (fun p : TotalSpace F E ↦ j p.proj p.2))
+  (hj : Continuous (fun p : TotalSpace F E ↦ j p.proj p.snd))
   (hinj : ∀ x, Injective (j x))
 
 section Projections
@@ -231,7 +231,7 @@ def bundleComplementHomeomorph :
   have h := (Bundle.Trivial.homeomorphProd B V).symm.continuous.comp
     ((FiberBundle.continuous_proj (F × G) (E ×ᵇ D)).prodMk (h₁.add h₂))
   have hc : Continuous (fun p : TotalSpace (F × G) (E ×ᵇ D) ↦
-      TotalSpace.mk' V p.proj (bundleComplementFiberEquiv (F := F) j hinj p.proj p.2)) :=
+      TotalSpace.mk' V p.proj (bundleComplementFiberEquiv (F := F) j hinj p.proj p.snd)) :=
     h.congr (fun _ ↦ rfl)
   exact (bundleHomeomorph (fun x ↦ bundleComplementFiberEquiv (F := F) j hinj x) hc).trans
     (Bundle.Trivial.homeomorphProd B V)
@@ -240,7 +240,7 @@ def bundleComplementHomeomorph :
 theorem bundleComplementHomeomorph_apply
     (p : TotalSpace (F × (Fin (Module.finrank 𝕜 V - Module.finrank 𝕜 F) → 𝕜))
       (E ×ᵇ fun x ↦ (bundleComplementProjection (F := F) j x).range)) :
-    bundleComplementHomeomorph (F := F) j hj hinj p = (p.proj, j p.proj p.2.1 + p.2.2) := by
+    bundleComplementHomeomorph (F := F) j hj hinj p = (p.proj, j p.proj p.snd.1 + p.snd.2) := by
   let := bundleComplementFiberBundle (F := F) j hj hinj
   let := bundleComplementVectorBundle (F := F) j hj hinj
   dsimp only [bundleComplementHomeomorph, Homeomorph.trans_apply]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.StrongLaw
+import TauCeti.Probability.IdentDistrib
 
 /-!
 # The almost-sure renewal law of large numbers
@@ -126,9 +127,7 @@ theorem ae_tendsto_natCast_div_arrival
         filter_upwards [(lintegral_eq_zero_iff' (hid 0).aemeasurable_fst.coe_nnreal_ennreal).1 h0]
           with ω hω
         simpa using hω
-      have hz' (n : ℕ) : ∀ᵐ ω ∂P, T n ω = 0 :=
-        (hid n).symm.ae_mem_snd (measurableSet_singleton (0 : ℝ≥0)) h0'
-      filter_upwards [ae_all_iff.2 hz'] with ω hω
+      filter_upwards [ae_forall_eq_of_identDistrib hid h0'] with ω hω
       simp [h0, arrival_def, hω]
     have hint : Integrable (X 0) P :=
       ⟨(hXm 0).aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal hpos).2

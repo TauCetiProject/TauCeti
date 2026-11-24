@@ -238,23 +238,23 @@ def internalEdges (S : Finset G.vertexSet) : Finset G.edgeSet :=
   by
     classical
     exact Finset.univ.filter fun e ↦
-      ∃ x ∈ S, ∃ y ∈ S, G.IsLink e.1 x.1 y.1
+      ∃ x ∈ S, ∃ y ∈ S, G.IsLink e.val x.val y.val
 
 /-- The actual edge identities with at least one endpoint in `S`. -/
 def incidentEdges (S : Finset G.vertexSet) : Finset G.edgeSet :=
   by
     classical
-    exact Finset.univ.filter fun e ↦ ∃ x ∈ S, G.Inc e.1 x.1
+    exact Finset.univ.filter fun e ↦ ∃ x ∈ S, G.Inc e.val x.val
 
 @[simp]
 theorem mem_internalEdges {S : Finset G.vertexSet} {e : G.edgeSet} :
-    e ∈ G.internalEdges S ↔ ∃ x ∈ S, ∃ y ∈ S, G.IsLink e.1 x.1 y.1 := by
+    e ∈ G.internalEdges S ↔ ∃ x ∈ S, ∃ y ∈ S, G.IsLink e.val x.val y.val := by
   classical
   simp [internalEdges]
 
 @[simp]
 theorem mem_incidentEdges {S : Finset G.vertexSet} {e : G.edgeSet} :
-    e ∈ G.incidentEdges S ↔ ∃ x ∈ S, G.Inc e.1 x.1 := by
+    e ∈ G.incidentEdges S ↔ ∃ x ∈ S, G.Inc e.val x.val := by
   classical
   simp [incidentEdges]
 
@@ -264,7 +264,7 @@ internal-edge membership. Vertices outside `V(G)` do not contribute. -/
 theorem mem_internalEdges_subtype [DecidablePred (· ∈ V(G))]
     {S : Finset α} {e : G.edgeSet} :
     e ∈ G.internalEdges (S.subtype (· ∈ V(G))) ↔
-      ∃ x ∈ S, ∃ y ∈ S, G.IsLink e.1 x y := by
+      ∃ x ∈ S, ∃ y ∈ S, G.IsLink e.val x y := by
   simp only [mem_internalEdges, Finset.mem_subtype]
   constructor
   · rintro ⟨x, hx, y, hy, hxy⟩
@@ -277,7 +277,7 @@ incident-edge membership. Vertices outside `V(G)` do not contribute. -/
 @[simp high]
 theorem mem_incidentEdges_subtype [DecidablePred (· ∈ V(G))]
     {S : Finset α} {e : G.edgeSet} :
-    e ∈ G.incidentEdges (S.subtype (· ∈ V(G))) ↔ ∃ x ∈ S, G.Inc e.1 x := by
+    e ∈ G.incidentEdges (S.subtype (· ∈ V(G))) ↔ ∃ x ∈ S, G.Inc e.val x := by
   simp only [mem_incidentEdges, Finset.mem_subtype]
   constructor
   · rintro ⟨x, hx, hex⟩
@@ -328,7 +328,7 @@ theorem incidentEdges_univ [Fintype G.vertexSet] :
     G.incidentEdges Finset.univ = Finset.univ := by
   ext e
   simp only [mem_incidentEdges, Finset.mem_univ, iff_true]
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   exact ⟨⟨x, hxy.left_mem⟩, trivial, hxy.inc_left⟩
 
 @[simp]
@@ -336,7 +336,7 @@ theorem internalEdges_univ [Fintype G.vertexSet] :
     G.internalEdges Finset.univ = Finset.univ := by
   ext e
   simp only [mem_internalEdges, Finset.mem_univ, iff_true]
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   exact ⟨⟨x, hxy.left_mem⟩, trivial, ⟨y, hxy.right_mem⟩, trivial, hxy⟩
 
 /-- Every edge internal to `S` is incident with `S`. -/
@@ -368,7 +368,7 @@ theorem incidentEdges_compl [Fintype G.vertexSet] [DecidableEq G.vertexSet]
     [DecidableEq G.edgeSet] (S : Finset G.vertexSet) :
     (G.incidentEdges S)ᶜ = G.internalEdges Sᶜ := by
   ext e
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
   simp only [Finset.mem_compl, mem_incidentEdges, mem_internalEdges, not_exists, not_and]
   constructor
   · intro h
@@ -387,41 +387,41 @@ theorem card_incidentEdges_add_card_internalEdges_compl [Fintype G.vertexSet]
 
 /-- The cardinality of the finite incident-edge set of a singleton is its incidence count. -/
 theorem card_incidentEdges_singleton (x : G.vertexSet) :
-    (G.incidentEdges {x}).card = G.incidenceCount x.1 := by
+    (G.incidentEdges {x}).card = G.incidenceCount x.val := by
   rw [incidenceCount]
   rw [← Set.ncard_coe_finset]
   calc
     (↑(G.incidentEdges {x}) : Set G.edgeSet).ncard =
-        {e : G.edgeSet | e.1 ∈ G.incidenceSet x.1}.ncard := by
+        {e : G.edgeSet | e.val ∈ G.incidenceSet x.val}.ncard := by
       congr 1
       ext e
       simp
-    _ = (G.incidenceSet x.1 ∩ G.edgeSet).ncard :=
-      Set.ncard_subtype (fun e ↦ e ∈ G.edgeSet) (G.incidenceSet x.1)
-    _ = (G.incidenceSet x.1).ncard := by
-      rw [inter_eq_left.mpr (G.incidenceSet_subset_edgeSet x.1)]
+    _ = (G.incidenceSet x.val ∩ G.edgeSet).ncard :=
+      Set.ncard_subtype (fun e ↦ e ∈ G.edgeSet) (G.incidenceSet x.val)
+    _ = (G.incidenceSet x.val).ncard := by
+      rw [inter_eq_left.mpr (G.incidenceSet_subset_edgeSet x.val)]
 
 /-- The number of internal edges of a singleton is the number of loops at its vertex. -/
 theorem card_internalEdges_singleton (x : G.vertexSet) :
-    (G.internalEdges {x}).card = (G.loopSet x.1).ncard := by
+    (G.internalEdges {x}).card = (G.loopSet x.val).ncard := by
   rw [← Set.ncard_coe_finset]
   calc
     (↑(G.internalEdges {x}) : Set G.edgeSet).ncard =
-        {e : G.edgeSet | e.1 ∈ G.loopSet x.1}.ncard := by
+        {e : G.edgeSet | e.val ∈ G.loopSet x.val}.ncard := by
       congr 1
       ext e
       simp
-    _ = (G.loopSet x.1 ∩ G.edgeSet).ncard :=
-      Set.ncard_subtype (fun e ↦ e ∈ G.edgeSet) (G.loopSet x.1)
-    _ = (G.loopSet x.1).ncard := by
+    _ = (G.loopSet x.val ∩ G.edgeSet).ncard :=
+      Set.ncard_subtype (fun e ↦ e ∈ G.edgeSet) (G.loopSet x.val)
+    _ = (G.loopSet x.val).ncard := by
       rw [inter_eq_left.mpr <|
-        (G.loopSet_subset_incidenceSet x.1).trans (G.incidenceSet_subset_edgeSet x.1)]
+        (G.loopSet_subset_incidenceSet x.val).trans (G.incidenceSet_subset_edgeSet x.val)]
 
 /-- Summing over `S` the values of the edges incident with each vertex counts every actual edge
 once for each vertex of `S` incident with it. -/
 theorem sum_sum_incidentEdges_eq_sum_sum_filter_inc {M : Type*} [AddCommMonoid M]
     [∀ e x, Decidable (G.Inc e x)] (S : Finset G.vertexSet) (f : G.edgeSet → M) :
-    ∑ x ∈ S, ∑ e ∈ G.incidentEdges {x}, f e = ∑ e, ∑ x ∈ S with G.Inc e.1 x.1, f e :=
+    ∑ x ∈ S, ∑ e ∈ G.incidentEdges {x}, f e = ∑ e, ∑ x ∈ S with G.Inc e.val x.val, f e :=
   Finset.sum_comm' fun x e ↦ by simp [and_comm]
 
 end

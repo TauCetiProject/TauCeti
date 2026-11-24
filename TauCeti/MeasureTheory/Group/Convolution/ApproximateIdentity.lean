@@ -43,7 +43,9 @@ concentrated near `1`. Neither σ-finiteness of `μ` nor any countability of `G`
   and `‖L_y u - u‖ ≤ ε` for `y ∈ S`, then `‖k ⋆ u - u‖ ≤ ε`.
 * `MeasureTheory.Lp.tendsto_convolutionL_left`: `k i ⋆ u → u` in `Lᵖ` for kernels concentrating at
   the identity, for `1 ≤ p < ∞`.
-* `MeasureTheory.Lp.tendsto_convolutionL_right`: `h ⋆ k i → h` in real `L¹` for such kernels.
+* `MeasureTheory.Lp.tendsto_convolutionL_right`,
+  `MeasureTheory.Lp.tendsto_convolutionL_ofRealCLM_compLp_right`: `h ⋆ k i → h` in real and
+  `RCLike`-valued `L¹` for nonnegative kernels concentrating at the identity.
 
 ## References
 
@@ -102,21 +104,36 @@ section ModularInversion
 
 variable [LocallyCompactSpace G] [μ.IsHaarMeasure] [μ.Regular]
 
-/-- **Right approximate identity.** Convolution on the right with nonnegative kernels of integral
-one which concentrate at the identity converges strongly to the identity on real `L¹`. -/
-theorem tendsto_convolutionL_right {ι : Type*} {l : Filter ι} {k : ι → Lp ℝ 1 μ}
-    (hk : ∀ i, 0 ≤ k i) (hk1 : ∀ i, ∫ y, k i y ∂μ = 1)
-    (hkl : ∀ U ∈ 𝓝 (1 : G), ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ U → k i y = 0) (h : Lp ℝ 1 μ) :
-    Tendsto (fun i => convolutionL μ 1 ENNReal.one_ne_top h (k i)) l (𝓝 h) := by
-  -- Apply the isometry `J`, which turns `h ⋆ k i` into `J (k i) ⋆ J h`.
-  rw [(modularInversion (E := ℝ) μ 1 ℝ).toHomeomorph.isInducing.tendsto_nhds_iff]
-  simp only [comp_def, LinearIsometryEquiv.coe_toHomeomorph, modularInversion_convolutionL]
+/-- **Right approximate identity over an `RCLike` field.** Convolution on the right with nonnegative
+real kernels of integral one which concentrate at the identity converges strongly to the identity on
+`L¹(G, μ; 𝕜)`. -/
+theorem tendsto_convolutionL_ofRealCLM_compLp_right {𝕜 : Type*} [RCLike 𝕜] {ι : Type*}
+    {l : Filter ι} {k : ι → Lp ℝ 1 μ} (hk : ∀ i, 0 ≤ k i) (hk1 : ∀ i, ∫ y, k i y ∂μ = 1)
+    (hkl : ∀ U ∈ 𝓝 (1 : G), ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ U → k i y = 0) (h : Lp 𝕜 1 μ) :
+    Tendsto (fun i =>
+      convolutionL μ 1 ENNReal.one_ne_top h ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp (k i)))
+      l (𝓝 h) := by
+  rw [(modularInversion (E := 𝕜) μ 1 𝕜).toHomeomorph.isInducing.tendsto_nhds_iff]
+  simp only [comp_def, LinearIsometryEquiv.coe_toHomeomorph, modularInversion_convolutionL,
+    modularInversion_ofRealCLM_compLp, convolutionL_ofRealCLM_compLp_left]
   refine tendsto_convolutionL_left (fun i => by simpa using modularInversion_mono (hk i))
     (fun i => by rw [integral_modularInversion, hk1]) (fun U hU => ?_) _
   filter_upwards [hkl _ (inv_mem_nhds_one G hU)] with i hi
   filter_upwards [coeFn_modularInversion (𝕜 := ℝ) (k i),
     (quasiMeasurePreserving_inv_of_regular μ).ae hi] with x hx hx' hxU
   rw [hx, hx' (by simpa using hxU), smul_zero]
+
+/-- **Right approximate identity.** Convolution on the right with nonnegative kernels of integral
+one which concentrate at the identity converges strongly to the identity on real `L¹`. -/
+theorem tendsto_convolutionL_right {ι : Type*} {l : Filter ι} {k : ι → Lp ℝ 1 μ}
+    (hk : ∀ i, 0 ≤ k i) (hk1 : ∀ i, ∫ y, k i y ∂μ = 1)
+    (hkl : ∀ U ∈ 𝓝 (1 : G), ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ U → k i y = 0) (h : Lp ℝ 1 μ) :
+    Tendsto (fun i => convolutionL μ 1 ENNReal.one_ne_top h (k i)) l (𝓝 h) := by
+  have hk_id (i : ι) : (RCLike.ofRealCLM : ℝ →L[ℝ] ℝ).compLp (k i) = k i := by
+    refine Lp.ext ?_
+    filter_upwards [(RCLike.ofRealCLM : ℝ →L[ℝ] ℝ).coeFn_compLp (k i)] with x hx
+    simpa using hx
+  simpa only [hk_id] using tendsto_convolutionL_ofRealCLM_compLp_right (𝕜 := ℝ) hk hk1 hkl h
 
 end ModularInversion
 

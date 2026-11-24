@@ -288,7 +288,7 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue {x : F}
   · have : IsEmpty (Σ P : {P : Place k F // P ∈ (∅ : Finset (Place k F))},
         Fin ((P : Place k F).ord x).toNat ×
           Fin (Module.finrank k (P : Place k F).ResidueField)) :=
-      ⟨fun i ↦ Finset.notMem_empty _ i.1.2⟩
+      ⟨fun i ↦ Finset.notMem_empty _ i.1.property⟩
     exact linearIndependent_empty_type
   have hx0 : x ≠ 0 := by rintro rfl; simpa using hS P₁ hP₁
   -- Linear independence of the residue vectors already forces each lift to be nonzero.
@@ -311,9 +311,10 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue {x : F}
       {a | ∃ j, (q ⟨P₀, a, j⟩).coeff 0 ≠ 0} ⟨a₂, j₂, hq₂⟩
   have hAlt : ((A : ℕ) : ℤ) < (P₀ : Place k F).ord x := by
     have _ := A.isLt
-    have h2 := hS (P₀ : Place k F) P₀.2
+    have h2 := hS (P₀ : Place k F) P₀.property
     omega
-  have hkey := valuation_sum_eq_exp_neg (hS (P₀ : Place k F) P₀.2) (ht1 P₀) (humem P₀) (hlib P₀) _
+  have hkey := valuation_sum_eq_exp_neg (hS (P₀ : Place k F) P₀.property) (ht1 P₀) (humem P₀)
+      (hlib P₀) _
     ⟨j₀, hAex⟩ (fun a ha j ↦ by_contra fun h ↦ hAmin a ⟨j, h⟩ ha) hAlt
   have hother : ∀ P ∈ Finset.univ \ {P₀},
       (P₀ : Place k F).valuation (∑ a : Fin ((P : Place k F).ord x).toNat,
@@ -326,8 +327,8 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue {x : F}
     have hne : (P₀ : Place k F) ≠ (P : Place k F) := fun h ↦
       (Finset.notMem_singleton.1 (Finset.mem_sdiff.1 hP).2) (Subtype.ext h.symm)
     rw [hkey]
-    exact (valuation_sum_le_exp_neg_ord (hS _ P₀.2) (ht0 P _ P₀.2 hne) (hune P)
-      (fun j ↦ huord P j _ P₀.2 hne) _).trans_lt (WithZero.exp_lt_exp.mpr (by omega))
+    exact (valuation_sum_le_exp_neg_ord (hS _ P₀.property) (ht0 P _ P₀.property hne) (hune P)
+      (fun j ↦ huord P j _ P₀.property hne) _).trans_lt (WithZero.exp_lt_exp.mpr (by omega))
   have hsum0 := (P₀ : Place k F).valuation.map_sum_eq_of_lt (Finset.mem_univ P₀) hother
   rw [hsumF, map_zero, hkey] at hsum0
   exact WithZero.exp_ne_zero hsum0.symm

@@ -127,17 +127,17 @@ private lemma adFromCoordinates_injective (p : ι) :
     simpa [adCoordinateMatrix_apply] using h
   have hm : adCoordinateMatrix R ι p c = 0 := by simpa [ha0] using ha.symm
   funext ij
-  have h := congrArg (fun X : Matrix ι ι R => X ij.1.1 ij.1.2) hm
-  simpa only [adCoordinateMatrix_apply, of_apply, dite_eq_right ij.2, Matrix.zero_apply,
+  have h := congrArg (fun X : Matrix ι ι R => X ij.val.1 ij.val.2) hm
+  simpa only [adCoordinateMatrix_apply, of_apply, dite_eq_right ij.property, Matrix.zero_apply,
     Pi.zero_apply] using h
 
 private lemma adFromCoordinates_normalize (p : ι) (X : Matrix ι ι R) :
     adFromCoordinates R ι p
-        (fun ij => X ij.1.1 ij.1.2 - if ij.1.1 = ij.1.2 then X p p else 0) =
+        (fun ij => X ij.val.1 ij.val.2 - if ij.val.1 = ij.val.2 then X p p else 0) =
       (LieAlgebra.ad R (Matrix ι ι R)).rangeRestrict X := by
   classical
   let c : {ij : ι × ι // ij ≠ (p, p)} → R :=
-    fun ij => X ij.1.1 ij.1.2 - if ij.1.1 = ij.1.2 then X p p else 0
+    fun ij => X ij.val.1 ij.val.2 - if ij.val.1 = ij.val.2 then X p p else 0
   have hmatrix : adCoordinateMatrix R ι p c = X - scalar ι (X p p) := by
     ext i j
     by_cases h : (i, j) = (p, p)
@@ -171,10 +171,10 @@ theorem adRangeEquivPi_apply_ad (p : ι) (X : Matrix ι ι R)
     (ij : {ij : ι × ι // ij ≠ (p, p)}) :
     adRangeEquivPi R ι p
         ⟨LieAlgebra.ad R (Matrix ι ι R) X, (LieAlgebra.ad R _).mem_range_self X⟩ ij =
-      X ij.1.1 ij.1.2 - if ij.1.1 = ij.1.2 then X p p else 0 := by
+      X ij.val.1 ij.val.2 - if ij.val.1 = ij.val.2 then X p p else 0 := by
   classical
   let c : {ij : ι × ι // ij ≠ (p, p)} → R :=
-    fun ij => X ij.1.1 ij.1.2 - if ij.1.1 = ij.1.2 then X p p else 0
+    fun ij => X ij.val.1 ij.val.2 - if ij.val.1 = ij.val.2 then X p p else 0
   have h : adFromCoordinates R ι p c =
       (LieAlgebra.ad R (Matrix ι ι R)).rangeRestrict X :=
     adFromCoordinates_normalize R ι p X
@@ -200,12 +200,12 @@ theorem adRangeEquivPi_symm_apply (p : ι)
 @[simp]
 theorem adRangeEquivPi_symm_single (p : ι) (ij : {ij : ι × ι // ij ≠ (p, p)}) :
     (adRangeEquivPi R ι p).symm (Pi.single ij 1) =
-      (LieAlgebra.ad R (Matrix ι ι R)).rangeRestrict (single ij.1.1 ij.1.2 1) := by
+      (LieAlgebra.ad R (Matrix ι ι R)).rangeRestrict (single ij.val.1 ij.val.2 1) := by
   apply (adRangeEquivPi R ι p).injective
   ext kl
-  have hpp : single ij.1.1 ij.1.2 (1 : R) p p = 0 := by
+  have hpp : single ij.val.1 ij.val.2 (1 : R) p p = 0 := by
     apply single_apply_of_ne
-    exact fun h => ij.2 (Prod.ext h.1 h.2)
+    exact fun h => ij.property (Prod.ext h.1 h.2)
   simp only [LinearEquiv.apply_symm_apply, LieHom.rangeRestrict_apply,
     adRangeEquivPi_apply_ad, hpp, ite_self, sub_zero]
   simp [Pi.single_apply, single_apply, Subtype.ext_iff, Prod.ext_iff, eq_comm]

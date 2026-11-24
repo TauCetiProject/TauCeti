@@ -41,12 +41,12 @@ noncomputable def placePermHomOfInvariant {S : Finset (Place k F)}
     (hS : ∀ (g : G) (P : Place k F), P ∈ S → φ g • P ∈ S) :
     G →* Equiv.Perm S where
   toFun g := {
-    toFun P := ⟨φ g • P, hS g P.1 P.2⟩
+    toFun P := ⟨φ g • P, hS g P.val P.property⟩
     invFun P := ⟨(φ g)⁻¹ • P, by
       rw [← map_inv]
-      exact hS g⁻¹ P.1 P.2⟩
-    left_inv P := Subtype.ext (inv_smul_smul (φ g) P.1)
-    right_inv P := Subtype.ext (smul_inv_smul (φ g) P.1) }
+      exact hS g⁻¹ P.val P.property⟩
+    left_inv P := Subtype.ext (inv_smul_smul (φ g) P.val)
+    right_inv P := Subtype.ext (smul_inv_smul (φ g) P.val) }
   map_one' := by
     apply Equiv.ext
     intro P
@@ -61,12 +61,12 @@ noncomputable def placePermHomOfInvariant {S : Finset (Place k F)}
 /-- Evaluating the restricted permutation recovers the action on places. -/
 @[simp] theorem placePermHomOfInvariant_apply {S : Finset (Place k F)}
     (hS : ∀ (g : G) (P : Place k F), P ∈ S → φ g • P ∈ S) (g : G) (P : S) :
-    ((placePermHomOfInvariant φ hS g) P).1 = φ g • P.1 := (rfl)
+    ((placePermHomOfInvariant φ hS g) P).val = φ g • P.val := (rfl)
 
 /-- Evaluating the inverse of the restricted permutation. -/
 @[simp] theorem placePermHomOfInvariant_symm_apply {S : Finset (Place k F)}
     (hS : ∀ (g : G) (P : Place k F), P ∈ S → φ g • P ∈ S) (g : G) (P : S) :
-    (((placePermHomOfInvariant φ hS g).symm) P).1 = (φ g)⁻¹ • P.1 := (rfl)
+    (((placePermHomOfInvariant φ hS g).symm) P).val = (φ g)⁻¹ • P.val := (rfl)
 
 /-- **An invariant set of at least `2g + 3` rational places detects the kernel**: an element acting
 trivially on the set already acts trivially on `F`. -/
@@ -80,7 +80,7 @@ theorem ker_placePermHomOfInvariant_le (hF : IsFunctionField k F)
   rw [MonoidHom.mem_ker] at hg ⊢
   refine eq_one_of_two_mul_genus_add_three_le_card hF hex (S := S) (fun P hP ↦ ⟨hrat P hP, ?_⟩)
     hcard
-  have h := congrArg (fun e : Equiv.Perm S ↦ (e ⟨P, hP⟩).1) hg
+  have h := congrArg (fun e : Equiv.Perm S ↦ (e ⟨P, hP⟩).val) hg
   simpa using h
 
 /-- The restricted action is faithful when the invariant set contains at least `2g + 3`

@@ -147,7 +147,7 @@ theorem mdifferentiable_descend (D : Γ.CuspDatum) (f : ℍ → ℂ)
   apply MDifferentiableAt.comp q
     (DifferentiableAt.mdifferentiableAt <|
       differentiableAt_cuspExtension_of_ne_zero D f hf hhol
-        (fun h ↦ q.2 (Complex.UnitDisc.coe_injective h)) q.1.norm_lt_one)
+        (fun h ↦ q.property (Complex.UnitDisc.coe_injective h)) q.val.norm_lt_one)
   exact TauCeti.Complex.UnitDisc.mdifferentiable_coe_punctured q
 
 /-- If an invariant function is holomorphic at all sufficiently large normalized heights and

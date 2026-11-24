@@ -407,22 +407,22 @@ theorem IsDeformationOfOrder.exists_isFormalDeformation
   -- Every deformation of order `m` extends by one order without changing its coefficients up to
   -- order `m`, since its obstruction class vanishes.
   have step (m : ℕ) (χ : {χ // 𝒜.IsDeformationOfOrder m χ}) :
-      ∃ χ', 𝒜.IsDeformationOfOrder (m + 1) χ' ∧ ∀ i ≤ m, χ' i = χ.1 i := by
-    obtain ⟨ψ, hψ⟩ := (χ.2.obstructionClass_eq_zero_iff).1 (Subsingleton.elim _ _)
-    exact ⟨_, hψ, fun i hi ↦ Function.update_of_ne (a' := m + 1) (by omega) ψ χ.1⟩
+      ∃ χ', 𝒜.IsDeformationOfOrder (m + 1) χ' ∧ ∀ i ≤ m, χ' i = χ.val i := by
+    obtain ⟨ψ, hψ⟩ := (χ.property.obstructionClass_eq_zero_iff).1 (Subsingleton.elim _ _)
+    exact ⟨_, hψ, fun i hi ↦ Function.update_of_ne (a' := m + 1) (by omega) ψ χ.val⟩
   choose next hnext hagree using step
   -- Extend `φ` one order at a time.
   let seq : (j : ℕ) → {χ // 𝒜.IsDeformationOfOrder (n + j) χ} :=
     fun j ↦ Nat.rec ⟨φ, h⟩ (fun j χ ↦ ⟨next (n + j) χ, hnext (n + j) χ⟩) j
-  have hseq (j : ℕ) : (seq (j + 1)).1 = next (n + j) (seq j) := rfl
-  have hstable {j j' : ℕ} (hj : j ≤ j') : ∀ i ≤ n + j, (seq j').1 i = (seq j).1 i := by
+  have hseq (j : ℕ) : (seq (j + 1)).val = next (n + j) (seq j) := rfl
+  have hstable {j j' : ℕ} (hj : j ≤ j') : ∀ i ≤ n + j, (seq j').val i = (seq j).val i := by
     induction j', hj using Nat.le_induction with
     | base => exact fun _ _ ↦ rfl
     | succ j' hj ih =>
       intro i hi
       rw [hseq, hagree _ _ i (by omega), ih i hi]
-  refine ⟨fun i ↦ (seq i).1 i, fun m ↦ ?_, fun i hi ↦ ?_⟩
-  · exact ((seq m).2.mono (by omega)).congr fun i hi ↦ hstable hi i (by omega)
+  refine ⟨fun i ↦ (seq i).val i, fun m ↦ ?_, fun i hi ↦ ?_⟩
+  · exact ((seq m).property.mono (by omega)).congr fun i hi ↦ hstable hi i (by omega)
   · exact hstable (Nat.zero_le i) i (by omega)
 
 end TauCeti.AInfinityAlgebra

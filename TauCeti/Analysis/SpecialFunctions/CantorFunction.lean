@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import TauCeti.Analysis.Real.OfDigits
 public import TauCeti.MeasureTheory.Measure.Lebesgue.CantorSet
+public import TauCeti.MeasureTheory.Measure.Stieltjes
 
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
@@ -89,7 +89,7 @@ private lemma range_ternary : range ternary = cantorSet := by
   ext x
   refine ⟨?_, fun hx ↦ ⟨cantorSetEquivNatToBool ⟨x, hx⟩, ?_⟩⟩
   · rintro ⟨s, rfl⟩
-    exact (cantorSetEquivNatToBool.symm s).2
+    exact (cantorSetEquivNatToBool.symm s).property
   · simp [ternary]
 
 private lemma bddAbove_image_dyadic (S : Set (ℕ → Bool)) : BddAbove (dyadic '' S) :=
@@ -200,9 +200,9 @@ theorem continuous_cantorFunction : Continuous cantorFunction := by
   have hsurj : Function.Surjective g := fun y ↦ by
     obtain ⟨x, hx⟩ : (y : ℝ) ∈ range cantorFunction := by
       rw [range_cantorFunction]
-      exact y.2
+      exact y.property
     exact ⟨x, Subtype.ext hx⟩
-  exact continuous_subtype_val.comp (hg.continuous_of_surjective hsurj)
+  exact continuous_subtypeVal.comp (hg.continuous_of_surjective hsurj)
 
 /-- The Cantor function is measurable. -/
 @[fun_prop]
@@ -318,10 +318,8 @@ instance : IsProbabilityMeasure cantorStieltjesFunction.measure :=
       (cantorFunction_of_one_le hx).symm))
 
 /-- The Cantor measure has no atoms, since the Cantor function is continuous. -/
-instance : NullSingletonClass cantorStieltjesFunction.measure where
-  measure_singleton x := by
-    rw [StieltjesFunction.measure_singleton, coe_cantorStieltjesFunction,
-      continuous_cantorFunction.continuousWithinAt.leftLim_eq, sub_self, ENNReal.ofReal_zero]
+instance : NullSingletonClass cantorStieltjesFunction.measure :=
+  cantorStieltjesFunction.nullSingletonClass_measure_of_continuous continuous_cantorFunction
 
 /-- The Cantor measure is concentrated on the Cantor set. -/
 theorem cantorStieltjesFunction_measure_compl_cantorSet :

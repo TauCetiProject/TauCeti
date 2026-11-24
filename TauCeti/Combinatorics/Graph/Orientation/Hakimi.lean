@@ -61,20 +61,20 @@ actual vertices of `G`. There is one arrow from each edge node to each distinct 
 edge, so a loop has a single arrow, and there are no other arrows. The family is exposed so that
 its `Fintype` instance compiles consistently in importing modules. -/
 @[expose] def EndpointHom (G : Graph V E) : G.edgeSet ⊕ G.vertexSet → G.edgeSet ⊕ G.vertexSet → Type
-  | .inl e, .inr x => PLift (G.Inc e.1 x.1)
+  | .inl e, .inr x => PLift (G.Inc e.val x.val)
   | .inl _, .inl _ => PEmpty
   | .inr _, _ => PEmpty
 
 namespace EndpointHom
 
 /-- The arrow from an edge node to an end of the edge. -/
-def arrow {e : G.edgeSet} {x : G.vertexSet} (h : G.Inc e.1 x.1) :
+def arrow {e : G.edgeSet} {x : G.vertexSet} (h : G.Inc e.val x.val) :
     G.EndpointHom (.inl e) (.inr x) :=
   ⟨h⟩
 
 /-- The target of an arrow leaving an edge node is an end of the edge. -/
 theorem inc {e : G.edgeSet} {x : G.vertexSet} (p : G.EndpointHom (.inl e) (.inr x)) :
-    G.Inc e.1 x.1 :=
+    G.Inc e.val x.val :=
   PLift.down p
 
 instance instSubsingleton (e : G.edgeSet) (x : G.vertexSet) :
@@ -91,7 +91,7 @@ instance instIsEmptyInr (x : G.vertexSet) (y : G.edgeSet ⊕ G.vertexSet) :
 noncomputable instance instFintype : ∀ y z, Fintype (G.EndpointHom y z)
   | .inl e, .inr x => by
     classical
-    exact inferInstanceAs (Fintype (PLift (G.Inc e.1 x.1)))
+    exact inferInstanceAs (Fintype (PLift (G.Inc e.val x.val)))
   | .inl _, .inl _ => inferInstanceAs (Fintype PEmpty)
   | .inr _, _ => inferInstanceAs (Fintype PEmpty)
 
@@ -222,20 +222,20 @@ variable (f : ExcessIntervalFlow (0 : Assignment G.EndpointHom ℤ) 1 (endpointB
   (endpointBound b))
 
 private theorem apply_eq_zero_or_eq_one {y z} (p : G.EndpointHom y z) :
-    f.1 p = 0 ∨ f.1 p = 1 := by
-  have h₀ : 0 ≤ f.1 p := f.mem_Icc.1 _ _ p
-  have h₁ : f.1 p ≤ 1 := f.mem_Icc.2 _ _ p
+    f.val p = 0 ∨ f.val p = 1 := by
+  have h₀ : 0 ≤ f.val p := f.mem_Icc.1 _ _ p
+  have h₁ : f.val p ≤ 1 := f.mem_Icc.2 _ _ p
   omega
 
 private theorem sum_sum_eq_one (e : G.edgeSet) :
-    ∑ x, ∑ p : G.EndpointHom (.inl e) (.inr x), f.1 p = 1 := by
+    ∑ x, ∑ p : G.EndpointHom (.inl e) (.inr x), f.val p = 1 := by
   have h₁ := f.excessAt_mem_Icc.1 (.inl e)
   have h₂ := f.excessAt_mem_Icc.2 (.inl e)
   simp only [endpointBound_inl, excessAt_inl] at h₁ h₂
   omega
 
 private theorem exists_eq_one (e : G.edgeSet) :
-    ∃ x, ∃ p : G.EndpointHom (.inl e) (.inr x), f.1 p = 1 := by
+    ∃ x, ∃ p : G.EndpointHom (.inl e) (.inr x), f.val p = 1 := by
   by_contra! h
   have := sum_sum_eq_one f e
   rw [sum_eq_zero fun x _ ↦ sum_eq_zero fun p _ ↦
@@ -244,9 +244,9 @@ private theorem exists_eq_one (e : G.edgeSet) :
 
 private theorem eq_of_eq_one {e : G.edgeSet} {x y : G.vertexSet}
     {p : G.EndpointHom (.inl e) (.inr x)} {q : G.EndpointHom (.inl e) (.inr y)}
-    (hp : f.1 p = 1) (hq : f.1 q = 1) : x = y := by
+    (hp : f.val p = 1) (hq : f.val q = 1) : x = y := by
   by_contra hxy
-  have h := add_le_sum (f := fun z ↦ ∑ r : G.EndpointHom (.inl e) (.inr z), f.1 r)
+  have h := add_le_sum (f := fun z ↦ ∑ r : G.EndpointHom (.inl e) (.inr z), f.val r)
     (fun z _ ↦ sum_nonneg fun r _ ↦ f.mem_Icc.1 _ _ r) (mem_univ x) (mem_univ y) hxy
   rw [Fintype.sum_subsingleton _ p, Fintype.sum_subsingleton _ q, hp, hq,
     sum_sum_eq_one] at h
@@ -256,11 +256,11 @@ private theorem eq_of_eq_one {e : G.edgeSet} {x y : G.vertexSet}
 private noncomputable def headOf (e : G.edgeSet) : G.vertexSet :=
   (exists_eq_one f e).choose
 
-private theorem inc_headOf (e : G.edgeSet) : G.Inc e.1 (headOf f e).1 :=
+private theorem inc_headOf (e : G.edgeSet) : G.Inc e.val (headOf f e).val :=
   (exists_eq_one f e).choose_spec.choose.inc
 
 private theorem apply_eq_ite [DecidableEq G.vertexSet] {e : G.edgeSet} {x : G.vertexSet}
-    (p : G.EndpointHom (.inl e) (.inr x)) : f.1 p = if headOf f e = x then 1 else 0 := by
+    (p : G.EndpointHom (.inl e) (.inr x)) : f.val p = if headOf f e = x then 1 else 0 := by
   obtain ⟨q, hq⟩ := (exists_eq_one f e).choose_spec
   split_ifs with h
   · subst h
@@ -268,7 +268,7 @@ private theorem apply_eq_ite [DecidableEq G.vertexSet] {e : G.edgeSet} {x : G.ve
   · exact (apply_eq_zero_or_eq_one f p).resolve_right fun hp ↦ h (eq_of_eq_one f hq hp)
 
 private theorem headOf_eq {o : Orientation G}
-    (hf : ∀ y z (p : G.EndpointHom y z), f.1 p = o.headAssignment p) (e : G.edgeSet) :
+    (hf : ∀ y z (p : G.EndpointHom y z), f.val p = o.headAssignment p) (e : G.edgeSet) :
     headOf f e = o.head e := by
   classical
   obtain ⟨p, hp⟩ := (exists_eq_one f e).choose_spec
@@ -291,13 +291,13 @@ noncomputable def orientationEndpointEquiv (a b : G.vertexSet → ℕ) :
     {o : Orientation G // ∀ x, o.indegree x ∈ Set.Icc (a x) (b x)} ≃
       ExcessIntervalFlow (0 : Assignment G.EndpointHom ℤ) 1 (endpointBound a)
         (endpointBound b) where
-  toFun o := ⟨o.1.headAssignment, o.1.headAssignment_mem_Icc, by
+  toFun o := ⟨o.val.headAssignment, o.val.headAssignment_mem_Icc, by
     rw [Orientation.excessAt_headAssignment]
-    exact endpointBound_mem_Icc_iff.2 o.2⟩
+    exact endpointBound_mem_Icc_iff.2 o.property⟩
   invFun f := ⟨Orientation.ofHead (EndpointHom.headOf f) (EndpointHom.inc_headOf f), by
     classical
     refine endpointBound_mem_Icc_iff.1 ?_
-    rw [← excessAt_eq_endpointBound (g := f.1) fun e x p ↦ by
+    rw [← excessAt_eq_endpointBound (g := f.val) fun e x p ↦ by
       rw [EndpointHom.apply_eq_ite f p, Orientation.ofHead_head]]
     exact f.excessAt_mem_Icc⟩
   left_inv o := Subtype.ext <| Orientation.ext_of_head fun e ↦ by
@@ -318,7 +318,7 @@ noncomputable def orientationEndpointEquiv (a b : G.vertexSet → ℕ) :
 @[simp]
 theorem orientationEndpointEquiv_apply_coe (a b : G.vertexSet → ℕ)
     (o : {o : Orientation G // ∀ x, o.indegree x ∈ Set.Icc (a x) (b x)}) :
-    (orientationEndpointEquiv a b o).1 = o.1.headAssignment :=
+    (orientationEndpointEquiv a b o).val = o.val.headAssignment :=
   (rfl)
 
 /-- The orientation of a feasible assignment of the edge-to-endpoint network chooses as head of
@@ -326,8 +326,8 @@ an edge the end whose arrow carries the edge's unit. -/
 theorem orientationEndpointEquiv_symm_head_eq_iff {a b : G.vertexSet → ℕ}
     (f : ExcessIntervalFlow (0 : Assignment G.EndpointHom ℤ) 1 (endpointBound a)
       (endpointBound b))
-    {e : G.edgeSet} {x : G.vertexSet} (h : G.Inc e.1 x.1) :
-    ((orientationEndpointEquiv a b).symm f).1.head e = x ↔ f.1 (EndpointHom.arrow h) = 1 := by
+    {e : G.edgeSet} {x : G.vertexSet} (h : G.Inc e.val x.val) :
+    ((orientationEndpointEquiv a b).symm f).val.head e = x ↔ f.val (EndpointHom.arrow h) = 1 := by
   classical
   rw [← (orientationEndpointEquiv a b).apply_symm_apply f, orientationEndpointEquiv_apply_coe,
     Equiv.symm_apply_apply, Orientation.headAssignment_apply]
@@ -339,8 +339,8 @@ at the corresponding vertex node. -/
 theorem orientationEndpointEquiv_symm_indegree {a b : G.vertexSet → ℕ}
     (f : ExcessIntervalFlow (0 : Assignment G.EndpointHom ℤ) 1 (endpointBound a)
       (endpointBound b)) (x : G.vertexSet) :
-    (((orientationEndpointEquiv a b).symm f).1.indegree x : ℤ) =
-      excessAt f.1 (.inr x) := by
+    (((orientationEndpointEquiv a b).symm f).val.indegree x : ℤ) =
+      excessAt f.val (.inr x) := by
   rw [← endpointBound_inr]
   rw [← Orientation.excessAt_headAssignment]
   have h := congrArg Subtype.val ((orientationEndpointEquiv a b).apply_symm_apply f)
@@ -364,7 +364,7 @@ private theorem cutBound_eq [DecidableEq (G.edgeSet ⊕ G.vertexSet)]
 omit [Fintype G.edgeSet] [Fintype G.vertexSet] in
 /-- An edge with an end in `S` has an arrow into `S`. -/
 private theorem one_le_sum_card {e : G.edgeSet} {x : G.vertexSet} {S : Finset G.vertexSet}
-    (hx : x ∈ S) (h : G.Inc e.1 x.1) :
+    (hx : x ∈ S) (h : G.Inc e.val x.val) :
     (1 : ℤ) ≤ ∑ y ∈ S, (Fintype.card (G.EndpointHom (.inl e) (.inr y)) : ℤ) := by
   have : 0 < Fintype.card (G.EndpointHom (.inl e) (.inr x)) :=
     Fintype.card_pos_iff.2 ⟨EndpointHom.arrow h⟩
@@ -421,7 +421,7 @@ private theorem neg_cutBound_le_sum_endpointBound [DecidableEq (G.edgeSet ⊕ G.
     split_ifs with hE
     · omega
     rw [zero_add]
-    obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+    obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
     have : ⟨x, hxy.left_mem⟩ ∉ S ∨ ⟨y, hxy.right_mem⟩ ∉ S := by
       by_contra! h
       exact hE (G.mem_internalEdges.2 ⟨_, h.1, _, h.2, hxy⟩)

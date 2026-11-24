@@ -209,7 +209,7 @@ theorem one_lt_valuation_pointPlace_div {y : F}
       CoordinateRing.mk_mem_XYIdeal_iff h])
   rw [map_div₀, HeightOneSpectrum.valuation_of_algebraMap,
     HeightOneSpectrum.valuation_of_algebraMap, hp1, one_div,
-    one_lt_inv₀ (zero_lt_iff.mpr (HeightOneSpectrum.intValuation_ne_zero _ _ hq0))]
+    one_lt_inv₀ (pos_iff_ne_zero.mpr (HeightOneSpectrum.intValuation_ne_zero _ _ hq0))]
   refine (HeightOneSpectrum.intValuation_lt_one_iff_mem _ _).mpr ?_
   rwa [WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
     CoordinateRing.mk_mem_XYIdeal_iff h]
@@ -243,17 +243,18 @@ private noncomputable def equationToDegreeOnePlace
     (p : {xy : F × F // W.Equation xy.1 xy.2}) :
     {v : HeightOneSpectrum W.CoordinateRing //
       Module.finrank F (W.CoordinateRing ⧸ v.asIdeal) = 1} :=
-  ⟨WeierstrassCurve.Affine.CoordinateRing.pointPlace p.2,
-      WeierstrassCurve.Affine.CoordinateRing.pointPlace.finrank_residueField_eq_one p.2⟩
+  ⟨WeierstrassCurve.Affine.CoordinateRing.pointPlace p.property,
+      WeierstrassCurve.Affine.CoordinateRing.pointPlace.finrank_residueField_eq_one p.property⟩
 
 variable (W) in
 /-- Sending an equation solution to its degree-one place is bijective. -/
 private theorem equationToDegreeOnePlace_bijective :
     Function.Bijective (WeierstrassCurve.Affine.CoordinateRing.equationToDegreeOnePlace W) :=
   ⟨fun p q h ↦ Subtype.ext <| Prod.ext_iff.mpr <|
-      (WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff p.2 q.2).mp (Subtype.ext_iff.mp h),
+      (WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff p.property q.property).mp
+          (Subtype.ext_iff.mp h),
     fun v ↦ by
-      obtain ⟨x, y, h, hv⟩ := WeierstrassCurve.Affine.CoordinateRing.exists_pointPlace_eq v.2
+      obtain ⟨x, y, h, hv⟩ := WeierstrassCurve.Affine.CoordinateRing.exists_pointPlace_eq v.property
       exact ⟨⟨(x, y), h⟩, Subtype.ext hv⟩⟩
 
 variable (W) in
@@ -273,7 +274,7 @@ noncomputable def equationEquivDegreeOnePlace :
 theorem equationEquivDegreeOnePlace_apply_coe
     (p : {xy : F × F // W.Equation xy.1 xy.2}) :
     (WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace W p : HeightOneSpectrum
-        W.CoordinateRing) = WeierstrassCurve.Affine.CoordinateRing.pointPlace p.2 := by
+        W.CoordinateRing) = WeierstrassCurve.Affine.CoordinateRing.pointPlace p.property := by
   rw [WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace, Equiv.ofBijective_apply]
   rfl
 
@@ -284,7 +285,8 @@ theorem
     (v : {v : HeightOneSpectrum W.CoordinateRing //
       Module.finrank F (W.CoordinateRing ⧸ v.asIdeal) = 1}) :
     WeierstrassCurve.Affine.CoordinateRing.pointPlace
-        ((WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace W).symm v).2 = v.1 :=
+        ((WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace W).symm v).property =
+            v.val :=
             by
   rw [← WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace_apply_coe]
   exact congrArg Subtype.val ((WeierstrassCurve.Affine.CoordinateRing.equationEquivDegreeOnePlace

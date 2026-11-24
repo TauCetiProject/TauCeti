@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Basic
+public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.Algebra.Group.Action.Basic
 public import Mathlib.Algebra.Ring.Idempotent
 
@@ -53,6 +53,9 @@ consume, but not the passage from a square root of one to the idempotent pair.
   of one the pair is orthogonal and idempotent.
 * `TauCeti.mul_halfOneAdd`, `TauCeti.mul_halfOneAdd_neg`: `ω` acts on the two idempotents by
   `1` and `-1`, so in every module they project onto the `±1`-eigenvectors of `ω`.
+* `TauCeti.mul_halfOneAdd_eq_halfOneAdd_neg_mul`: an element anticommuting with `ω` exchanges the
+  two idempotents.
+* `TauCeti.map_halfOneAdd`: algebra homomorphisms carry the pair of `ω` to the pair of its image.
 * `TauCeti.halfOneAdd_mul_add_mul`: **the multiplication rule** `(e₊ a + e₋ b) (e₊ c + e₋ d)
   = e₊ (a c) + e₋ (b d)`, for `a` and `b` commuting with `ω`.
 -/
@@ -73,6 +76,11 @@ noncomputable def halfOneAdd (ω : A) : A := (⅟2 : R) • (1 + ω)
 
 /-- The defining formula for `TauCeti.halfOneAdd`. -/
 theorem halfOneAdd_def (ω : A) : halfOneAdd R ω = (⅟2 : R) • (1 + ω) := (rfl)
+
+/-- An algebra homomorphism carries `½ (1 + ω)` to `½ (1 + f ω)`. -/
+theorem map_halfOneAdd {B F : Type*} [Ring B] [Algebra R B] [FunLike F A B] [AlgHomClass F R A B]
+    (f : F) (ω : A) : f (halfOneAdd R ω) = halfOneAdd R (f ω) := by
+  rw [halfOneAdd_def, halfOneAdd_def, map_smul, map_add, map_one]
 
 /-- **The pair is complementary**: `½ (1 + ω) + ½ (1 - ω) = 1`. -/
 @[simp]
@@ -142,6 +150,14 @@ needed, so a central `ω` gives a central pair. -/
 theorem commute_halfOneAdd {x : A} (h : Commute ω x) : Commute (halfOneAdd R ω) x := by
   rw [halfOneAdd_def]
   exact Commute.smul_left ((Commute.one_left x).add_left h) _
+
+/-- **An element anticommuting with `ω` exchanges the pair**: if `ω x = -(x ω)`, then
+`x · ½ (1 + ω) = ½ (1 - ω) · x`, so in every module `x` carries the `1`-eigenvectors of `ω` to its
+`-1`-eigenvectors. -/
+theorem mul_halfOneAdd_eq_halfOneAdd_neg_mul {x : A} (h : ω * x = -(x * ω)) :
+    x * halfOneAdd R ω = halfOneAdd R (-ω) * x := by
+  rw [halfOneAdd_def, halfOneAdd_def, mul_smul_comm, smul_mul_assoc, mul_add, mul_one, add_mul,
+    one_mul, neg_mul, h, neg_neg]
 
 /-- **The multiplication rule a splitting rests on**: the pair being orthogonal, idempotent and
 commuting with `a` and `b`, elements of the form `e₊ a + e₋ b` multiply componentwise. -/

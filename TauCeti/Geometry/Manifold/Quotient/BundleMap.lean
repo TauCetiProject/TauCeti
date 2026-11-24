@@ -66,7 +66,7 @@ transition functions is needed for this comparison of the two regularity predica
 theorem contMDiff_totalSpaceMap_orbitRelQuotientRec_iff (hm : m ≤ n) :
     ContMDiff (I.prod 𝓘(𝕜, F₁)) (I.prod 𝓘(𝕜, F₂)) m
         (fun p : TotalSpace F₁ V ↦ TotalSpace.mk' F₂ p.proj
-          (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ p.proj p.2)) ↔
+          (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ p.proj p.snd)) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
         (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
           TotalSpace (F₁ →L[𝕜] F₂)
@@ -82,7 +82,7 @@ it is the pullback of a unique family inducing a `C^m` map of total spaces downs
 theorem existsUnique_contMDiff_bundleMap_iff (hm : m ≤ n) :
     (∃! ψ : ∀ q, V q →L[𝕜] W q,
       ContMDiff (I.prod 𝓘(𝕜, F₁)) (I.prod 𝓘(𝕜, F₂)) m
-          (fun p : TotalSpace F₁ V ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.2)) ∧
+          (fun p : TotalSpace F₁ V ↦ TotalSpace.mk' F₂ p.proj (ψ p.proj p.snd)) ∧
         ∀ x : M, ψ (Quotient.mk (MulAction.orbitRel G M) x) = φ x) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
         (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
@@ -101,15 +101,13 @@ theorem existsUnique_contMDiff_bundleMap_iff (hm : m ≤ n) :
     intro ψ hψ
     exact MulAction.eq_orbitRelQuotientRec_iff.2 hψ.2
 
-variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
-
 /-- The descended linear family underlies a `C^m` diffeomorphism of total spaces exactly when
 its pulled-back Hom section is `C^m` and all its fibre maps upstairs are bijective. Smoothness of
 the inverse downstairs follows automatically. -/
 theorem exists_bundleDiffeomorph_orbitRelQuotientRec_iff (hm : m ≤ n) :
     (∃ Φ : TotalSpace F₁ V ≃ₘ^m⟮I.prod 𝓘(𝕜, F₁), I.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ W,
       ⇑Φ = fun p ↦ TotalSpace.mk' F₂ p.proj
-        (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ p.proj p.2)) ↔
+        (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ p.proj p.snd)) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m
           (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
             TotalSpace (F₁ →L[𝕜] F₂)

@@ -63,6 +63,10 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   multiplies a given element into a given open subring.
 * `TauCeti.Huber.IsTateRing.of_continuous`: a continuous homomorphism out of a Tate ring makes a
   Huber target Tate.
+* `TauCeti.Huber.IsBounded.image_of_isPseudoUniformizer` and
+  `TauCeti.Huber.IsPowerBounded.map_of_isPseudoUniformizer`: out of a topological monoid with zero
+  admitting a pseudouniformiser, any morphism continuous at zero preserves boundedness and
+  power-boundedness.
 * `TauCeti.Huber.IsHuberRing.toNonarchimedeanRing`: a Huber ring is nonarchimedean.
 * `TauCeti.Huber.IsHuberRing.isCountablyGenerated_nhds_zero`: its neighbourhoods of zero are
   countably generated. With the previous bullet these are exactly the two hypotheses Henkel's open
@@ -156,7 +160,7 @@ theorem exists_sum_eq_of_mem_span_mul (G : Finset R) (K : Ideal R) {b : R}
     exacts [ha _, K.zero_mem]
   · rw [Finsupp.sum_fintype _ _ (by simp),
       ← Finset.sum_finset_coe (fun z ↦ z * if h : z ∈ G then a ⟨z, h⟩ else 0) G]
-    exact Finset.sum_congr rfl fun i _ ↦ by simp [Finset.mem_coe.mp i.2, mul_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [Finset.mem_coe.mp i.property, mul_comm]
 
 end SpanMul
 
@@ -212,6 +216,49 @@ theorem IsPseudoUniformizer.map {A B F : Type*} [MonoidWithZero A] [TopologicalS
     {φ : F} (hφ : Continuous φ) {a : A} (ha : IsPseudoUniformizer a) :
     IsPseudoUniformizer (φ a) :=
   isPseudoUniformizer_iff.mpr ⟨ha.isUnit.map φ, ha.isTopologicallyNilpotent.map hφ⟩
+
+/-- **A product of pseudouniformisers is a pseudouniformiser**: a topologically nilpotent element
+is power-bounded, and a power-bounded element times a topologically nilpotent one is
+topologically nilpotent. -/
+theorem IsPseudoUniformizer.mul {A : Type*} [CommMonoidWithZero A] [TopologicalSpace A]
+    [ContinuousMul A] {a b : A} (ha : IsPseudoUniformizer a) (hb : IsPseudoUniformizer b) :
+    IsPseudoUniformizer (a * b) :=
+  isPseudoUniformizer_iff.mpr ⟨ha.isUnit.mul hb.isUnit,
+    (IsPowerBounded.of_isTopologicallyNilpotent
+      ha.isTopologicallyNilpotent).isTopologicallyNilpotent_mul hb.isTopologicallyNilpotent⟩
+
+/-- **Out of a topological monoid with zero admitting a pseudouniformiser, any morphism continuous
+at zero sends bounded sets to bounded sets.** -/
+theorem IsBounded.image_of_isPseudoUniformizer {A B F : Type*} [MonoidWithZero A]
+    [TopologicalSpace A] [MonoidWithZero B] [TopologicalSpace B] [ContinuousMul B]
+    [FunLike F A B] [MonoidWithZeroHomClass F A B] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {φ : F} (hφ : ContinuousAt φ 0) {S : Set A} (hS : IsBounded S) :
+    IsBounded (φ '' S) := by
+  refine isBounded_iff.mpr fun U hU ↦ ?_
+  obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := Filter.mem_prod_iff.mp
+    ((by simpa [nhds_prod_eq] using (continuous_mul (M := B)).tendsto ((0 : B), (0 : B)) :
+      Filter.Tendsto (fun p : B × B ↦ p.1 * p.2) (𝓝 0 ×ˢ 𝓝 0) (𝓝 0)) hU)
+  obtain ⟨m, hm⟩ := hS.exists_pow_mul_subset hϖ.isTopologicallyNilpotent (hφ (map_zero φ ▸ hW₂))
+  obtain ⟨u, hu⟩ := hϖ.isUnit.pow m
+  let v : Bˣ := Units.map (MonoidHom.ofClass φ) u
+  refine ⟨(· * (↑v⁻¹ : B)) ⁻¹' W₁,
+    (continuous_id.mul continuous_const).continuousAt.preimage_mem_nhds (by simpa using hW₁), ?_⟩
+  rintro _ ⟨b, hb, _, ⟨s, hs, rfl⟩, rfl⟩
+  have hmem₂ : (v : B) * φ s ∈ W₂ := by
+    simpa [v, hu, ← map_pow, ← map_mul] using hm (Set.mul_mem_mul (Set.mem_singleton _) hs)
+  simpa [mul_assoc] using hW (Set.mk_mem_prod hb hmem₂)
+
+/-- **Out of a topological monoid with zero admitting a pseudouniformiser, any morphism continuous
+at zero preserves power-boundedness.** -/
+theorem IsPowerBounded.map_of_isPseudoUniformizer {A B F : Type*} [MonoidWithZero A]
+    [TopologicalSpace A] [MonoidWithZero B] [TopologicalSpace B] [ContinuousMul B]
+    [FunLike F A B] [MonoidWithZeroHomClass F A B] {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {φ : F} (hφ : ContinuousAt φ 0) {a : A} (ha : IsPowerBounded a) :
+    IsPowerBounded (φ a) := by
+  refine isPowerBounded_iff.mpr
+    (((isPowerBounded_iff.mp ha).image_of_isPseudoUniformizer hϖ hφ).subset ?_)
+  rintro _ ⟨n, rfl⟩
+  exact ⟨a ^ n, ⟨n, rfl⟩, map_pow φ a n⟩
 
 /-- A *Tate ring* is a Huber ring containing a pseudouniformiser, that is, a topologically
 nilpotent unit. -/
@@ -273,7 +320,7 @@ theorem idealImage_le_ringOfDefinition (P : PairOfDefinition A) (n : ℕ) :
     P.idealImage n ≤ P.ringOfDefinition.toAddSubgroup := by
   intro x hx
   obtain ⟨y, -, rfl⟩ := (P.mem_idealImage n).mp hx
-  exact y.2
+  exact y.property
 
 /-- `Iⁿ ⊆ A` absorbs multiplication by an element of the ring of definition. -/
 theorem mul_mem_idealImage (P : PairOfDefinition A) {n : ℕ} {a x : A}
@@ -506,8 +553,8 @@ def map {B : Type*} [CommRing B] [TopologicalSpace B]
   let A₀ : Subring B := P.ringOfDefinition.map f
   let f₀ : P.ringOfDefinition →+* A₀ :=
     (f.comp P.ringOfDefinition.subtype).codRestrict A₀ fun a ↦
-      Subring.mem_map.mpr ⟨a, a.2, rfl⟩
-  have hf₀_cont : Continuous f₀ := (hf.continuous.comp continuous_subtype_val).subtype_mk _
+      Subring.mem_map.mpr ⟨a, a.property, rfl⟩
+  have hf₀_cont : Continuous f₀ := (hf.continuous.comp continuous_subtypeVal).subtype_mk _
   have hf₀_open : IsOpenMap f₀ :=
     hf.isOpenMap.subtype_map P.isOpen_ringOfDefinition
       (fun a ha ↦ Subring.mem_map.mpr ⟨a, ha, rfl⟩)
@@ -542,7 +589,7 @@ theorem map_idealOfDefinition {B : Type*} [CommRing B]
     (P.map f hf).idealOfDefinition = P.idealOfDefinition.map
       ((f.comp P.ringOfDefinition.subtype).codRestrict
         (P.map f hf).ringOfDefinition fun a ↦
-          P.map_ringOfDefinition f hf ▸ Subring.mem_map.mpr ⟨a, a.2, rfl⟩) :=
+          P.map_ringOfDefinition f hf ▸ Subring.mem_map.mpr ⟨a, a.property, rfl⟩) :=
   (rfl)
 
 /-- **The neighbourhood basis of the image pair is the image of the original one**: the image in
@@ -555,7 +602,7 @@ theorem map_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
     (P.map f hf).idealImage n = (P.idealImage n).map (f : A →+ B) := by
   set f₀ : P.ringOfDefinition →+* (P.map f hf).ringOfDefinition :=
     (f.comp P.ringOfDefinition.subtype).codRestrict
-      (P.map f hf).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+      (P.map f hf).ringOfDefinition fun a ↦ Subring.mem_map.mpr ⟨a, a.property, rfl⟩
   have hf₀ : Function.Surjective f₀ := by
     rintro ⟨x, hx⟩
     obtain ⟨a, ha, rfl⟩ := Subring.mem_map.mp hx
@@ -579,7 +626,7 @@ instance finiteType_map {B : Type*} [CommRing B] [TopologicalSpace B]
     Algebra.FiniteType (P.map f hf).ringOfDefinition B := by
   let f₀ : P.ringOfDefinition →+* (P.map f hf).ringOfDefinition :=
     (f.comp P.ringOfDefinition.subtype).codRestrict _ fun a ↦
-      Subring.mem_map.mpr ⟨a, a.2, rfl⟩
+      Subring.mem_map.mpr ⟨a, a.property, rfl⟩
   have hcomp : ((algebraMap (P.map f hf).ringOfDefinition B).comp f₀).FiniteType :=
     (RingHom.finiteType_algebraMap.mpr hfg).comp_surjective hf.surjective
   exact RingHom.finiteType_algebraMap.mp (RingHom.FiniteType.of_comp_finiteType hcomp)
@@ -630,7 +677,7 @@ noncomputable def comap {B : Type*} [CommRing B] [TopologicalSpace B]
     (hP : P.ringOfDefinition ≤ f.range) : PairOfDefinition B :=
   let e := P.comapRingOfDefinitionEquiv f hf.injective hP
   have he : IsInducing e :=
-    (hf.isInducing.comp IsInducing.subtypeVal).codRestrict fun b ↦ b.2
+    (hf.isInducing.comp IsInducing.subtypeVal).codRestrict fun b ↦ b.property
   { ringOfDefinition := P.ringOfDefinition.comap f
     isOpen_ringOfDefinition := P.isOpen_ringOfDefinition.preimage hf.continuous
     idealOfDefinition := P.idealOfDefinition.comap e
@@ -656,7 +703,7 @@ theorem mem_comap_idealOfDefinition {B : Type*} [CommRing B]
     (hf : IsEmbedding f) (hP : P.ringOfDefinition ≤ f.range)
     {b : (P.comap f hf hP).ringOfDefinition} :
     b ∈ (P.comap f hf hP).idealOfDefinition ↔
-      (⟨f b, Subring.mem_comap.mp (P.comap_ringOfDefinition f hf hP ▸ b.2)⟩ :
+      (⟨f b, Subring.mem_comap.mp (P.comap_ringOfDefinition f hf hP ▸ b.property)⟩ :
         P.ringOfDefinition) ∈ P.idealOfDefinition :=
   Ideal.mem_comap.trans <| Iff.of_eq <| congrArg (· ∈ P.idealOfDefinition) <| Subtype.ext <|
     P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP b
@@ -680,7 +727,7 @@ theorem comap_idealImage {B : Type*} [CommRing B] [TopologicalSpace B]
   · rintro ⟨y, hy, rfl⟩
     exact ⟨e y, hy, P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP y⟩
   · rintro ⟨z, hz, hzx⟩
-    have hx : f x ∈ P.ringOfDefinition := hzx ▸ z.2
+    have hx : f x ∈ P.ringOfDefinition := hzx ▸ z.property
     have hez : e ⟨x, hx⟩ = z := Subtype.ext <|
       (P.coe_comapRingOfDefinitionEquiv_apply f hf.injective hP ⟨x, hx⟩).trans hzx.symm
     exact ⟨⟨x, hx⟩, by rwa [Ideal.mem_comap, hez], rfl⟩
@@ -896,6 +943,15 @@ theorem IsTateRing.exists_hasBasis_nhds_zero (A : Type*) [CommRing A] [Topologic
   obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
   exact ⟨a, P, ha, ha.hasBasis_nhds_zero P⟩
 
+/-- Every ring of definition of a Tate ring contains a pseudouniformiser of the ambient ring: a
+high enough power of any pseudouniformiser lies in it. -/
+theorem PairOfDefinition.exists_isPseudoUniformizer [IsTateRing A] (P : PairOfDefinition A) :
+    ∃ ϖ : P.ringOfDefinition, IsPseudoUniformizer (ϖ : A) := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  obtain ⟨N, hN⟩ := eventually_atTop.mp (hϖ.eventually_pow_mem_ringOfDefinition P)
+  exact ⟨⟨ϖ ^ (N + 1), hN _ N.le_succ⟩, isPseudoUniformizer_iff.mpr
+    ⟨hϖ.isUnit.pow _, hϖ.isTopologicallyNilpotent.pow N.succ_ne_zero⟩⟩
+
 /-- In a Tate ring, finitely many elements are moved into `A°` by a common unit `c ∈ A°`, which
 may be taken to be a power of a pseudouniformiser. -/
 theorem IsTateRing.exists_isUnit_mul_mem_powerBoundedSubring [IsTateRing A] {s : Set A}
@@ -925,7 +981,7 @@ theorem _root_.Subring.isAdic_span_singleton_of_isOpen_of_isBounded :
   rw [isAdic_iff]
   refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
   · rw [SubsemiringClass.coe_span_singleton_pow A₀ hϖA₀]
-    exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtype_val
+    exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtypeVal
   · rw [IsInducing.subtypeVal.nhds_eq_comap, ZeroMemClass.coe_zero, Filter.mem_comap] at hs
     obtain ⟨t, ht, hts⟩ := hs
     obtain ⟨n, hn⟩ := hb.exists_pow_mul_subset hϖ.isTopologicallyNilpotent ht

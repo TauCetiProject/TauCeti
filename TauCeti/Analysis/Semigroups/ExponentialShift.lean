@@ -53,7 +53,7 @@ def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
     have h_exp : Filter.Tendsto (fun t : ℝ≥0 => Real.exp (-(lambda * (t : ℝ))))
         (nhds 0) (nhds 1) := by
       have h_cont : ContinuousAt (fun t : ℝ≥0 => Real.exp (-(lambda * (t : ℝ)))) 0 :=
-        (Real.continuous_exp.comp ((continuous_const.mul continuous_subtype_val).neg)).continuousAt
+        (Real.continuous_exp.comp ((continuous_const.mul continuous_subtypeVal).neg)).continuousAt
       simpa using h_cont.tendsto
     have h_orbit := S.continuousAt_zero_tendsto x
     simpa [ContinuousAt, S.map_zero_apply] using h_exp.smul h_orbit
@@ -129,7 +129,7 @@ def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
   toStronglyContinuousSemigroup := S.expShift lambda
   contracting t := by
     have h := hb.expShift (lambda := lambda)
-    have hbound := h.bound (t : ℝ) (by exact_mod_cast t.2)
+    have hbound := h.bound (t : ℝ) (by exact_mod_cast t.property)
     rw [realOperator_coe] at hbound
     rw [sub_self, zero_mul, Real.exp_zero, mul_one] at hbound
     exact hbound
