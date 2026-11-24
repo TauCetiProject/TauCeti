@@ -9,6 +9,7 @@ public import TauCeti.Probability.Moments.HansonWright
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
 import TauCeti.Analysis.Matrix.MeasurableSpace
+import TauCeti.Analysis.Matrix.SampleCovariance.Measurable
 import TauCeti.Probability.Independence.Matrix
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 
@@ -45,20 +46,22 @@ namespace ProbabilityTheory.iIndepFun
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] [DecidableEq ι]
   {P : Measure Ω} {Z : ι → Ω → ℂ} {K : ℝ≥0}
 
-/-- A scaled independent Hermitian resolvent quadratic form concentrates about its trace.
-The real scale `c` may vanish or be negative. The norm is the complex modulus, and `K` is the
-common directional sub-Gaussian variance proxy. At real spectral parameters the bound is trivial. -/
-theorem measureReal_norm_star_dotProduct_inv_sub_smul_one_mulVec_sub_trace_gt_le
+/-- A scaled independent Hermitian resolvent quadratic form concentrates about its trace
+multiplied by the common second moment.
+The real scale `c` may vanish or be negative, and `d` bounds the number of coordinates.
+The norm is the complex modulus, and `K` is the common directional sub-Gaussian variance proxy.
+At real spectral parameters the bound is trivial. -/
+theorem measureReal_norm_star_dotProduct_inv_sub_smul_one_mulVec_sub_smul_trace_gt_le
     (hind : iIndepFun Z P)
     (hZ : ∀ i (u : ℂ), HasSubgaussianMGF (fun ω ↦ (star u * Z i ω).re) (‖u‖₊ ^ 2 * K) P)
-    (hunit : ∀ i, ∫ ω, ‖Z i ω‖ ^ 2 ∂P = 1)
+    {v : ℝ} (hv : ∀ i, ∫ ω, ‖Z i ω‖ ^ 2 ∂P = v)
     {A : Ω → Matrix ι ι ℂ} (hA : AEMeasurable A P)
     (hherm : ∀ᵐ ω ∂P, (A ω).IsHermitian) (hAZ : IndepFun A (fun ω i ↦ Z i ω) P)
-    (z : ℂ) (c : ℝ) {t : ℝ} :
+    (z : ℂ) (c : ℝ) {d : ℝ} (hd : (Fintype.card ι : ℝ) ≤ d) {t : ℝ} :
     P.real {ω | t < ‖(c : ℂ) * (star (fun i ↦ Z i ω) ⬝ᵥ
-        (A ω - z • 1)⁻¹ *ᵥ (fun i ↦ Z i ω) - (A ω - z • 1)⁻¹.trace)‖} ≤
+        (A ω - z • 1)⁻¹ *ᵥ (fun i ↦ Z i ω) - (v : ℂ) * (A ω - z • 1)⁻¹.trace)‖} ≤
       2 * exp (-(1 / 150528) *
-        min (t ^ 2 / ((K : ℝ) ^ 2 * (c ^ 2 * Fintype.card ι * |z.im|⁻¹ ^ 2)))
+        min (t ^ 2 / ((K : ℝ) ^ 2 * (c ^ 2 * d * |z.im|⁻¹ ^ 2)))
           (t / ((K : ℝ) * (|c| * |z.im|⁻¹)))) := by
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   by_cases hz : z.im = 0
@@ -71,12 +74,13 @@ theorem measureReal_norm_star_dotProduct_inv_sub_smul_one_mulVec_sub_trace_gt_le
     simpa only [norm_smul, Complex.norm_real, Real.norm_eq_abs, RCLike.im_eq_complex_im] using
       mul_le_mul_of_nonneg_left (hω.l2_opNorm_inv_sub_smul_one_le hz) (abs_nonneg c)
   have hfrob : ∀ᵐ ω ∂P, ∑ i, ∑ j, ‖((c : ℂ) • (A ω - z • 1)⁻¹) i j‖ ^ 2 ≤
-      c ^ 2 * Fintype.card ι * |z.im|⁻¹ ^ 2 := by
+      c ^ 2 * d * |z.im|⁻¹ ^ 2 := by
     filter_upwards [hop] with ω hω
     calc
       _ ≤ (Fintype.card ι : ℝ) * ‖(c : ℂ) • (A ω - z • 1)⁻¹‖ ^ 2 :=
         Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq _
       _ ≤ (Fintype.card ι : ℝ) * (|c| * |z.im|⁻¹) ^ 2 := by gcongr
+      _ ≤ d * (|c| * |z.im|⁻¹) ^ 2 := mul_le_mul_of_nonneg_right hd (sq_nonneg _)
       _ = _ := by rw [mul_pow, sq_abs]; ring
   have h := hind.measureReal_norm_star_dotProduct_mulVec_sub_sum_diag_gt_le_of_ae_bound
     hZ (hm.comp_aemeasurable hA) (hAZ.comp hm measurable_id) hfrob hop (t := t)
@@ -84,10 +88,11 @@ theorem measureReal_norm_star_dotProduct_inv_sub_smul_one_mulVec_sub_trace_gt_le
       star (fun i ↦ Z i ω) ⬝ᵥ ((c : ℂ) • (A ω - z • 1)⁻¹) *ᵥ (fun i ↦ Z i ω) -
         ∑ i, ((c : ℂ) • (A ω - z • 1)⁻¹) i i * ((P[fun ω' ↦ ‖Z i ω'‖ ^ 2] : ℝ) : ℂ) =
       (c : ℂ) * (star (fun i ↦ Z i ω) ⬝ᵥ (A ω - z • 1)⁻¹ *ᵥ
-        (fun i ↦ Z i ω) - (A ω - z • 1)⁻¹.trace) := by
-    simp only [Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul, hunit, Complex.ofReal_one,
-      mul_one, Matrix.smul_apply, ← Finset.mul_sum, Matrix.trace, Matrix.diag]
-    rw [mul_sub]
+        (fun i ↦ Z i ω) - (v : ℂ) * (A ω - z • 1)⁻¹.trace) := by
+    simp only [Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul, hv, Matrix.smul_apply, mul_sub]
+    congr 1
+    simp only [Matrix.trace, Matrix.diag, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun _ _ ↦ by ring
   convert h using 1
   congr 1
   ext ω
@@ -116,21 +121,19 @@ theorem measureReal_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_t
       2 * exp (-(1 / 150528) *
         min ((Fintype.card n : ℝ) ^ 2 * t ^ 2 * |z.im| ^ 2 /
           ((K : ℝ) ^ 2 * Fintype.card p)) ((Fintype.card n : ℝ) * t * |z.im| / K)) := by
-  have hcov : Measurable (sampleCovariance : Matrix p n ℂ → Matrix p p ℂ) := by
-    rw [funext sampleCovariance_def]
-    exact (TauCeti.measurable_matrix_mul_conjTranspose (R := ℂ) (m := p) (n := n)
-      continuous_star.measurable).const_smul (1 / (Fintype.card n : ℝ))
+  have hcov : Measurable (sampleCovariance : Matrix p n ℂ → Matrix p p ℂ) :=
+    measurable_sampleCovariance
   have hup : Measurable (fun M : Matrix p n ℂ ↦ M.updateCol k 0) := by
     apply Measurable.of_eval_matrix
     intro i j
     simp only [Matrix.updateCol_apply]
     split_ifs <;> fun_prop
   have hcol := hind.precomp (g := fun i : p ↦ (i, k)) (by intro i j h; exact congrArg Prod.fst h)
-  have h := hcol.measureReal_norm_star_dotProduct_inv_sub_smul_one_mulVec_sub_trace_gt_le
+  have h := hcol.measureReal_norm_star_dotProduct_inv_sub_smul_one_mulVec_sub_smul_trace_gt_le
     hX hunit ((hcov.comp hup).comp_aemeasurable hm)
     (.of_forall fun ω ↦ isHermitian_sampleCovariance _)
     ((hind.indepFun_updateCol_zero hm k).comp hcov measurable_id) z
-    (Fintype.card n : ℝ)⁻¹ (t := t)
+    (Fintype.card n : ℝ)⁻¹ (d := Fintype.card p) le_rfl (t := t)
   have hrate :
       min (t ^ 2 / ((K : ℝ) ^ 2 *
         ((Fintype.card n : ℝ)⁻¹ ^ 2 * Fintype.card p * |z.im|⁻¹ ^ 2)))
@@ -142,7 +145,7 @@ theorem measureReal_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_t
   have hcomp : ((sampleCovariance ∘ fun M : Matrix p n ℂ ↦ M.updateCol k 0) ∘ X) =
       (fun ω ↦ sampleCovariance ((X ω).updateCol k 0)) := by funext ω; rfl
   rw [hrate, hcomp] at h
-  simpa only [Complex.ofReal_inv, Complex.ofReal_natCast] using h
+  simpa only [Complex.ofReal_inv, Complex.ofReal_natCast, Complex.ofReal_one, one_mul] using h
 
 /-- A simultaneous leave-one-column-out covariance resolvent estimate. The union bound has
 one term per column and requires no additional independence between the quadratic forms. -/

@@ -113,10 +113,10 @@ is basic for `f`. -/
 theorem IsSubmersion.exists_smoothForm_mpullback_eq_iff (hf : IsSubmersion I I' ∞ f)
     (hsurj : Surjective f) {α : SmoothForm I M F k} :
     (∃ β : SmoothForm I' M' F k, SmoothForm.mpullback f hf.contMDiff β = α) ↔
-      RoughForm.IsBasic (V := F) I' f α.1 := by
+      RoughForm.IsBasic (V := F) I' f α.val := by
   simp only [Subtype.ext_iff, SmoothForm.coe_mpullback]
   rw [← RoughForm.exists_mpullback_eq_iff_isBasic (hf.hasRightInverse_mfderiv (by simp))]
-  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.1, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
+  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.val, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
   -- The descended rough form is smooth because its pullback `α` is.
   exact IsSmoothForm.mem_smoothBundleForms
     ((hf.isSmoothForm_mpullback_iff hsurj (by simp)).mp (hβ ▸ α.isSmoothForm))
@@ -141,19 +141,19 @@ variable [IsManifold I 1 M] [IsManifold I' 1 M'] [I.Boundaryless]
 boundaryless source: the unique smooth form on `M'` whose pullback along `f` is `α`
 (`TauCeti.SmoothForm.eq_descendedForm_iff`). -/
 def descendedForm (hf : IsSubmersion I I' ∞ f) (hsurj : Surjective f) (α : SmoothForm I M F k)
-    (hα : RoughForm.IsBasic (V := F) I' f α.1) : SmoothForm I' M' F k :=
-  ⟨RoughForm.descendedForm (V := F) I I' f α.1, IsSmoothForm.mem_smoothBundleForms <|
+    (hα : RoughForm.IsBasic (V := F) I' f α.val) : SmoothForm I' M' F k :=
+  ⟨RoughForm.descendedForm (V := F) I I' f α.val, IsSmoothForm.mem_smoothBundleForms <|
     (hf.isSmoothForm_mpullback_iff hsurj (by simp)).mp <| by
       rw [hα.mpullback_descendedForm (hf.hasRightInverse_mfderiv (by simp))]
       exact α.isSmoothForm⟩
 
 variable {hf : IsSubmersion I I' ∞ f} {hsurj : Surjective f} {α : SmoothForm I M F k}
-  {hα : RoughForm.IsBasic (V := F) I' f α.1}
+  {hα : RoughForm.IsBasic (V := F) I' f α.val}
 
 /-- The underlying rough form of the smooth descent is the rough descent. -/
 @[simp]
 theorem coe_descendedForm :
-    (descendedForm hf hsurj α hα).1 = RoughForm.descendedForm (V := F) I I' f α.1 := (rfl)
+    (descendedForm hf hsurj α hα).val = RoughForm.descendedForm (V := F) I I' f α.val := (rfl)
 
 /-- A smooth basic form is the pullback of its descent. -/
 @[simp]
@@ -178,7 +178,7 @@ theorem descendedForm_mpullback (β : SmoothForm I' M' F k) :
 /-- The descent of a smooth basic form evaluates on images under the derivative of `f` as the
 form. -/
 theorem descendedForm_apply_mfderiv (x : M) (v : Fin k → TangentSpace I x) :
-    (descendedForm hf hsurj α hα).1 (f x) (fun i ↦ mfderiv I I' f x (v i)) = α.1 x v :=
+    (descendedForm hf hsurj α hα).val (f x) (fun i ↦ mfderiv I I' f x (v i)) = α.val x v :=
   hα.descendedForm_apply_mfderiv (hf.hasRightInverse_mfderiv (by simp)) x v
 
 variable [IsManifold I 2 M] [IsManifold I' 2 M']
@@ -186,8 +186,8 @@ variable [IsManifold I 2 M] [IsManifold I' 2 M']
 /-- The exterior derivative of a smooth form that is basic for a surjective smooth submersion is
 basic. -/
 theorem isBasic_mextDerivₗ (hf : IsSubmersion I I' ∞ f) (hsurj : Surjective f)
-    {α : SmoothForm I M F k} (hα : RoughForm.IsBasic (V := F) I' f α.1) :
-    RoughForm.IsBasic (V := F) I' f (mextDerivₗ I k α).1 := by
+    {α : SmoothForm I M F k} (hα : RoughForm.IsBasic (V := F) I' f α.val) :
+    RoughForm.IsBasic (V := F) I' f (mextDerivₗ I k α).val := by
   obtain ⟨β, rfl⟩ := (hf.exists_smoothForm_mpullback_eq_iff hsurj).mpr hα
   rw [mextDerivₗ_mpullback, coe_mpullback]
   exact RoughForm.isBasic_mpullback _

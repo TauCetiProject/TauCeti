@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.RepresentationTheory.Continuous.Basic
+import Mathlib.Analysis.ODE.ExistUnique
 import TauCeti.Analysis.Calculus.DifferentialForm.Invariant
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Calculus.Moser

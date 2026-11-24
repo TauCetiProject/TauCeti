@@ -31,6 +31,10 @@ circle computes the higher homotopy groups of a torus.
   product of the homotopy groups.
 * `HomotopyGroup.prodMulEquiv`, `HomotopyGroup.piMulEquiv`: the
   positive-dimensional multiplicative forms.
+* `HomotopyGroup.map_prodMk`: the map induced by a pair of continuous maps into a product is the
+  product of the induced maps.
+* `HomotopyGroup.map_prodMk_const_map_fst`: if the homotopy group of `Y` is trivial, every
+  homotopy class of `X × Y` comes from a slice `X × {y}`.
 -/
 
 public section
@@ -44,7 +48,7 @@ variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : 
 
 /-- The coordinatewise product of two generalized loops. -/
 def prod (p : Ω^ N X x) (q : Ω^ N Y y) : Ω^ N (X × Y) (x, y) :=
-  ⟨ContinuousMap.prodMk p.1 q.1, fun t ht ↦
+  ⟨ContinuousMap.prodMk p.val q.val, fun t ht ↦
     Prod.ext (_root_.GenLoop.boundary p t ht) (_root_.GenLoop.boundary q t ht)⟩
 
 @[simp]
@@ -92,7 +96,7 @@ variable {ι : Type*} {Z : ι → Type*} [∀ i, TopologicalSpace (Z i)] {z : �
 
 /-- The coordinatewise indexed product of generalized loops. -/
 def pi (p : ∀ i, Ω^ N (Z i) (z i)) : Ω^ N (∀ i, Z i) z :=
-  ⟨ContinuousMap.pi fun i ↦ (p i).1, fun t ht ↦
+  ⟨ContinuousMap.pi fun i ↦ (p i).val, fun t ht ↦
     funext fun i ↦ _root_.GenLoop.boundary (p i) t ht⟩
 
 @[simp]
@@ -171,6 +175,49 @@ theorem prod_map_fst_map_snd (a : HomotopyGroup N (X × Y) (x, y)) :
   intro p
   rw [map_mk, map_mk, prod_mk, GenLoop.prod_map_fst_map_snd]
   rfl
+
+/-- The map induced by a pair `(f, g)` of continuous maps into a product sends a homotopy class to
+the product of its images under `f` and `g`. -/
+@[simp low]
+theorem map_prodMk {W : Type*} [TopologicalSpace W] {w : W} (f : C(W, X)) (g : C(W, Y))
+    (hf : f w = x) (hg : g w = y) (a : HomotopyGroup N W w) :
+    map (f.prodMk g) (Prod.ext hf hg : f.prodMk g w = (x, y)) a =
+      prod (map f hf a) (map g hg a) := by
+  subst hf hg
+  refine Quotient.inductionOn a fun p ↦ ?_
+  rw [map_mk, map_mk, map_mk, prod_mk]
+  congr 1
+  apply _root_.GenLoop.ext
+  intro t
+  -- Both sides are `(f (p t), g (p t))`. The loops live over the base points `(f.prodMk g) w` and
+  -- `(f w, g w)`, which agree only after unfolding `prodMk`, so `GenLoop.prod_apply` cannot be
+  -- used to rewrite; the two sides are equal by definition.
+  change _ = (GenLoop.map f rfl p t, GenLoop.map g rfl p t)
+  rw [GenLoop.map_apply, GenLoop.map_apply, GenLoop.map_apply]
+  rfl
+
+/-- The slice inclusion `x' ↦ (x', y)` sends a homotopy class `a` of `X` to the product of `a`
+with the class of the constant generalized loop at `y`. -/
+@[simp]
+theorem map_prodMk_const (a : HomotopyGroup N X x) :
+    map (y := (x, y)) ((ContinuousMap.id X).prodMk (ContinuousMap.const X y)) rfl a =
+      prod a (⟦_root_.GenLoop.const⟧ : HomotopyGroup N Y y) :=
+  (map_prodMk _ _ rfl rfl a).trans
+    (congrArg₂ prod (map_id_apply a) (map_continuousMap_const_apply y rfl a))
+
+/-- **Homotopy classes of a product with a factor of trivial homotopy group.** If the homotopy
+group of `Y` at `y` is trivial, every homotopy class of `X × Y` at `(x, y)` is the image of its
+first coordinate under the slice inclusion `x' ↦ (x', y)`. -/
+@[simp high]
+theorem map_prodMk_const_map_fst [Subsingleton (HomotopyGroup N Y y)]
+    (a : HomotopyGroup N (X × Y) (x, y)) :
+    map (y := (x, y)) ((ContinuousMap.id X).prodMk (ContinuousMap.const X y)) rfl
+      (map (y := x) (ContinuousMap.fst : C(X × Y, X)) rfl a) = a := by
+  have h : (⟦_root_.GenLoop.const⟧ : HomotopyGroup N Y y) =
+      map (ContinuousMap.snd : C(X × Y, Y)) rfl a :=
+    Subsingleton.elim (α := HomotopyGroup N Y y) _ _
+  rw [map_prodMk_const, h]
+  exact prod_map_fst_map_snd a
 
 /-- The homotopy group of a binary product is the product of the homotopy groups. -/
 def prodEquiv (x : X) (y : Y) :

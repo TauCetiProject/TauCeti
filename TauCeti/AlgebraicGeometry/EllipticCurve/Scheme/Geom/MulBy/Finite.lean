@@ -72,28 +72,28 @@ private theorem finite_preimage_range_mulBy_left {K : Type u} [Field K] [IsAlgCl
     by_cases h : ∃ x₀ : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap, x₀ ^ n = s
     · obtain ⟨x₀, hx₀⟩ := h
       exact .of_injective (β := {x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap //
-        x ^ n = 1}) (fun x ↦ ⟨x.1 / x₀, by rw [div_zpow, x.2, hx₀, div_self']⟩)
+        x ^ n = 1}) (fun x ↦ ⟨x.val / x₀, by rw [div_zpow, x.property, hx₀, div_self']⟩)
         fun x y hxy ↦ Subtype.ext (div_left_injective (congrArg Subtype.val hxy))
     · have : IsEmpty {x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap // x ^ n = s} :=
-        ⟨fun x ↦ h ⟨x.1, x.2⟩⟩
+        ⟨fun x ↦ h ⟨x.val, x.property⟩⟩
       infer_instance
   -- a closed point `z` of the fibre is the image of the `K`-point `pointOfClosedPoint z`, and
   -- `[n]` sends that point to `σ`, as both are `K`-points with the same image
   refine Set.finite_coe_iff.mp (Finite.of_injective (β := {x : 𝟙_ (Over (Spec (.of K))) ⟶
     Over.mk E.structureMap // x ^ n = s})
-    (fun z ↦ ⟨Over.homMk (pointOfClosedPoint E.structureMap z.1 z.2.2)
-      (by simpa using pointOfClosedPoint_comp E.structureMap z.1 z.2.2), ?_⟩) ?_)
+    (fun z ↦ ⟨Over.homMk (pointOfClosedPoint E.structureMap z.val z.property.2)
+      (by simpa using pointOfClosedPoint_comp E.structureMap z.val z.property.2), ?_⟩) ?_)
   · have hsec (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap) :
         x.left ≫ E.structureMap = 𝟙 _ := by simpa using x.w
     rw [← comp_mulBy]
     ext1
     refine ext_of_apply_closedPoint_eq E.structureMap (hsec _) (hsec s) ?_
     simp only [Over.comp_left, Over.homMk_left, s]
-    obtain ⟨a, ha⟩ := z.2.1
+    obtain ⟨a, ha⟩ := z.property.1
     exact (Scheme.Hom.comp_apply ..).trans ((congrArg _ (pointOfClosedPoint_apply ..)).trans
       (ha.symm.trans (congrArg σ (Subsingleton.elim _ _))))
   · intro z z' h
-    have := congrArg (fun x ↦ x.1.left (IsLocalRing.closedPoint K)) h
+    have := congrArg (fun x ↦ x.val.left (IsLocalRing.closedPoint K)) h
     simp only [Over.homMk_left] at this
     exact Subtype.ext ((pointOfClosedPoint_apply ..).symm.trans
       (this.trans (pointOfClosedPoint_apply ..)))
@@ -137,5 +137,10 @@ finite morphism `[n]` along the zero section. -/
 theorem isFinite_torsion_hom {n : ℤ} (hn : n ≠ 0) : IsFinite (E.torsion n).X.hom :=
   have := E.isFinite_mulBy_left hn
   MorphismProperty.of_isPullback (E.isPullback_torsion n) this
+
+/-- For `n ≠ 0`, the `n`-torsion `E[n]` is finite over `S`. -/
+instance isFinite_torsion_hom_of_neZero {n : ℤ} [NeZero n] :
+    IsFinite (E.torsion n).X.hom :=
+  E.isFinite_torsion_hom (NeZero.ne n)
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

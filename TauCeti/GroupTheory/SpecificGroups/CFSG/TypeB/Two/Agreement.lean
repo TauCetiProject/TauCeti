@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.RootSubgroup.Basic
-public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Generation
+public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Symplectic.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Two.Basic
 
 /-!
@@ -77,25 +77,25 @@ variable (d : RankTwoBLieIndex)
 
 /-- The standard symplectic matrix group `Sp₄` over the algebraic closure of the index's prime
 field. -/
-abbrev StandardGroup : Type := GLSymplecticFin 2 d.1.Closure
+abbrev StandardGroup : Type := GLSymplecticFin 2 d.val.Closure
 
 /-- The algebraic-closure-valued points of the pinned symplectic group scheme `Sp₄` over `ℤ`. -/
 noncomputable abbrev PinnedGroup : Type :=
-  ((Spec (CommRingCat.of d.1.Closure)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+  ((Spec (CommRingCat.of d.val.Closure)).asOver (Spec (CommRingCat.of ℤ)) ⟶
     (Symplectic.groupScheme ℤ 2).X)
 
 /-- The canonical matrix realization of the pinned symplectic scheme points. -/
 noncomputable def pinnedEquivSymplectic : d.PinnedGroup ≃* d.StandardGroup :=
-  Symplectic.schemePointsMulEquiv (R := ℤ) 2 d.1.Closure
+  Symplectic.schemePointsMulEquiv (R := ℤ) 2 d.val.Closure
 
 /-- **The explicit rank-two type-`C` carrier is the standard symplectic matrix group.** The
 equivalence preserves the underlying matrix. -/
 noncomputable def carrierEquivSymplectic : d.AmbientGroup ≃* d.StandardGroup :=
-  SpStd.pointsMulEquivGLSymplecticFin 1 d.1.Closure
+  SpStd.pointsMulEquivGLSymplecticFin 1 d.val.Closure
 
 /-- The carrier equivalence acts through the canonical identification with symplectic matrices. -/
 theorem carrierEquivSymplectic_apply (g : d.AmbientGroup) :
-    d.carrierEquivSymplectic g = SpStd.pointsMulEquivGLSymplecticFin 1 d.1.Closure g :=
+    d.carrierEquivSymplectic g = SpStd.pointsMulEquivGLSymplecticFin 1 d.val.Closure g :=
   (rfl)
 
 /-- **The explicit rank-two type-`C` carrier is equivalent to the points of the pinned `Sp₄/ℤ`
@@ -108,36 +108,36 @@ noncomputable def carrierEquivPinned : d.AmbientGroup ≃* d.PinnedGroup :=
 /-- **The symplectic root at the Bourbaki-numbered simple root `i` of `B₂`**: the positive long
 root `2e₁` at the long node, which is the final carrier node, and the difference short root
 `e₀ - e₁` at the short one. -/
-noncomputable def symplecticRootIndex (i : Fin d.1.rank) : GLSymplecticFin.RootSubgroupIndex 2 :=
+noncomputable def symplecticRootIndex (i : Fin d.val.rank) : GLSymplecticFin.RootSubgroupIndex 2 :=
   ![.difference 0 1 (by decide), .positiveLong 1] (d.carrierNode i)
 
 /-- The symplectic root at the final carrier node is the positive long root `2e₁`. -/
-theorem symplecticRootIndex_of_carrierNode_eq_one {i : Fin d.1.rank}
+theorem symplecticRootIndex_of_carrierNode_eq_one {i : Fin d.val.rank}
     (h : d.carrierNode i = 1) : d.symplecticRootIndex i = .positiveLong 1 := by
   rw [symplecticRootIndex, h]
   rfl
 
 /-- The symplectic root at the initial carrier node is the difference short root `e₀ - e₁`. -/
-theorem symplecticRootIndex_of_carrierNode_eq_zero {i : Fin d.1.rank}
+theorem symplecticRootIndex_of_carrierNode_eq_zero {i : Fin d.val.rank}
     (h : d.carrierNode i = 0) : d.symplecticRootIndex i = .difference 0 1 (by decide) := by
   rw [symplecticRootIndex, h]
   rfl
 
 /-- Every Bourbaki-numbered simple root of `B₂` sits at one of the two carrier nodes. -/
-private theorem carrierNode_eq_zero_or_eq_one (i : Fin d.1.rank) :
+private theorem carrierNode_eq_zero_or_eq_one (i : Fin d.val.rank) :
     d.carrierNode i = 0 ∨ d.carrierNode i = 1 := by
   generalize d.carrierNode i = c
   revert c
   decide
 
 /-- **At a long simple root the symplectic root is the positive long root `2e₁`.** -/
-theorem symplecticRootIndex_of_isLongSimpleRoot (i : Fin d.1.rank)
-    (hi : d.1.dynkinType.IsLongSimpleRoot i) : d.symplecticRootIndex i = .positiveLong 1 :=
+theorem symplecticRootIndex_of_isLongSimpleRoot (i : Fin d.val.rank)
+    (hi : d.val.dynkinType.IsLongSimpleRoot i) : d.symplecticRootIndex i = .positiveLong 1 :=
   d.symplecticRootIndex_of_carrierNode_eq_one ((d.carrierNode_eq_one_iff i).mpr hi)
 
 /-- **At a short simple root the symplectic root is the difference short root `e₀ - e₁`.** -/
-theorem symplecticRootIndex_of_not_isLongSimpleRoot (i : Fin d.1.rank)
-    (hi : ¬d.1.dynkinType.IsLongSimpleRoot i) :
+theorem symplecticRootIndex_of_not_isLongSimpleRoot (i : Fin d.val.rank)
+    (hi : ¬d.val.dynkinType.IsLongSimpleRoot i) :
     d.symplecticRootIndex i = .difference 0 1 (by decide) :=
   d.symplecticRootIndex_of_carrierNode_eq_zero
     ((d.carrierNode_eq_zero_or_eq_one i).resolve_right
@@ -145,16 +145,16 @@ theorem symplecticRootIndex_of_not_isLongSimpleRoot (i : Fin d.1.rank)
 
 /-- The positive simple-root subgroup of the standard symplectic matrix group at the
 Bourbaki-numbered node `i` of `B₂`. -/
-noncomputable def symplecticSimpleRootSubgroup (i : Fin d.1.rank) :
-    Multiplicative d.1.Closure →* d.StandardGroup :=
+noncomputable def symplecticSimpleRootSubgroup (i : Fin d.val.rank) :
+    Multiplicative d.val.Closure →* d.StandardGroup :=
   (d.symplecticRootIndex i).hom
 
 /-- The positive simple-root subgroup of the pinned symplectic group scheme at the
 Bourbaki-numbered node `i` of `B₂`. -/
-noncomputable def pinnedSimpleRootSubgroup (i : Fin d.1.rank) :
-    Multiplicative d.1.Closure →* d.PinnedGroup where
+noncomputable def pinnedSimpleRootSubgroup (i : Fin d.val.rank) :
+    Multiplicative d.val.Closure →* d.PinnedGroup where
   toFun u :=
-    (AdditiveGroup.schemePointsMulEquiv d.1.Closure).symm u ≫
+    (AdditiveGroup.schemePointsMulEquiv d.val.Closure).symm u ≫
       (Symplectic.rootSubgroup (R := ℤ) (d.symplecticRootIndex i)).hom.hom
   map_one' := by simp
   map_mul' u v := by
@@ -166,18 +166,18 @@ noncomputable def pinnedSimpleRootSubgroup (i : Fin d.1.rank) :
 /-- Entrywise `q`-power Frobenius on the standard symplectic matrix group, for `q` the field order
 the index records. -/
 noncomputable def symplecticFrobenius : d.StandardGroup →* d.StandardGroup :=
-  GLSymplecticFin.map 2 d.1.Closure
-    (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)
+  GLSymplecticFin.map 2 d.val.Closure
+    (iterateFrobenius d.val.Closure d.val.characteristic d.val.fieldExponent)
 
 /-- The matrix Frobenius is the entrywise map along the `q`-power Frobenius of the closure. -/
 theorem symplecticFrobenius_def :
-    d.symplecticFrobenius = GLSymplecticFin.map 2 d.1.Closure
-      (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent) :=
+    d.symplecticFrobenius = GLSymplecticFin.map 2 d.val.Closure
+      (iterateFrobenius d.val.Closure d.val.characteristic d.val.fieldExponent) :=
   (rfl)
 
 /-- Entrywise prime-field Frobenius on the standard symplectic matrix group. -/
 noncomputable def symplecticPrimeFrobenius : d.StandardGroup →* d.StandardGroup :=
-  GLSymplecticFin.map 2 d.1.Closure (iterateFrobenius d.1.Closure d.1.characteristic 1)
+  GLSymplecticFin.map 2 d.val.Closure (iterateFrobenius d.val.Closure d.val.characteristic 1)
 
 /-- The `q`-power Frobenius on the pinned symplectic scheme points, defined through their canonical
 matrix realization and independently of the explicit carrier. -/
@@ -195,14 +195,14 @@ noncomputable def pinnedPrimeFrobenius : d.PinnedGroup →* d.PinnedGroup :=
 /-- Under the canonical matrix realization, a pinned simple-root element is its standard symplectic
 root matrix. -/
 @[simp]
-theorem pinnedEquivSymplectic_pinnedSimpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem pinnedEquivSymplectic_pinnedSimpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.pinnedEquivSymplectic (d.pinnedSimpleRootSubgroup i u) =
       d.symplecticSimpleRootSubgroup i u := by
   -- Expose the `toFun` of the bundled `pinnedSimpleRootSubgroup` homomorphism so that the
   -- scheme-point root-subgroup equation can recognize the displayed composition.
-  change Symplectic.schemePointsMulEquiv (R := ℤ) 2 d.1.Closure
-      ((AdditiveGroup.schemePointsMulEquiv d.1.Closure).symm u ≫
+  change Symplectic.schemePointsMulEquiv (R := ℤ) 2 d.val.Closure
+      ((AdditiveGroup.schemePointsMulEquiv d.val.Closure).symm u ≫
         (Symplectic.rootSubgroup (R := ℤ) (d.symplecticRootIndex i)).hom.hom) = _
   rw [Symplectic.schemePointsMulEquiv_rootSubgroup, MulEquiv.apply_symm_apply,
     symplecticSimpleRootSubgroup]
@@ -234,8 +234,8 @@ private theorem zero_ne_last : (0 : Fin 2) ≠ Fin.last 1 := by decide
 /-- **The carrier equivalence identifies each numbered simple-root subgroup with its standard
 symplectic root one-parameter subgroup.** -/
 @[simp]
-theorem carrierEquivSymplectic_simpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem carrierEquivSymplectic_simpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.carrierEquivSymplectic (d.simpleRootSubgroup i u) =
       d.symplecticSimpleRootSubgroup i u := by
   rw [carrierEquivSymplectic, simpleRootSubgroup_def, symplecticSimpleRootSubgroup]
@@ -281,8 +281,8 @@ theorem pinnedEquivSymplectic_carrierEquivPinned (g : d.AmbientGroup) :
 
 /-- **The carrier-to-pinned equivalence matches the numbered simple root subgroups.** -/
 @[simp]
-theorem carrierEquivPinned_simpleRootSubgroup (i : Fin d.1.rank)
-    (u : Multiplicative d.1.Closure) :
+theorem carrierEquivPinned_simpleRootSubgroup (i : Fin d.val.rank)
+    (u : Multiplicative d.val.Closure) :
     d.carrierEquivPinned (d.simpleRootSubgroup i u) = d.pinnedSimpleRootSubgroup i u := by
   apply d.pinnedEquivSymplectic.injective
   rw [pinnedEquivSymplectic_carrierEquivPinned, carrierEquivSymplectic_simpleRootSubgroup,

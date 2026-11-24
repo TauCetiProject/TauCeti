@@ -235,7 +235,7 @@ private theorem mapValue_weightParabolicGenericPoint (w : Fin N → ℤ)
         ((weightParabolicPointsIso R w).hom.app (CommAlgCat.of R A) g)
     (⟨AlgHom.mapValue g.ofConv
         (gP : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) PAlg),
-      Cocharacter.parabolic_le_comap g.ofConv gP.2⟩ :
+      Cocharacter.parabolic_le_comap g.ofConv gP.property⟩ :
         Cocharacter.parabolic (CommAlgCat.of R A) (weightCocharacter (R := R) w)) = gA := by
   let P := weightParabolicCoordinateHopfAlgebra R w
   let PAlg : CommAlgCat.{u} R := CommAlgCat.of R P
@@ -253,7 +253,7 @@ private theorem mapValue_weightParabolicGenericPoint (w : Fin N → ℤ)
   -- abbreviations above so the following subtype proof can name both parabolic points explicitly.
   change (⟨AlgHom.mapValue g.ofConv
       (gP : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) PAlg),
-    Cocharacter.parabolic_le_comap g.ofConv gP.2⟩ :
+    Cocharacter.parabolic_le_comap g.ofConv gP.property⟩ :
       Cocharacter.parabolic (CommAlgCat.of R A) (weightCocharacter (R := R) w)) = gA
   apply Subtype.ext
   calc
@@ -317,7 +317,7 @@ private theorem quotientPointsHom_mapPointsFunctor_weightParabolicLimitCoordinat
     (hgP : (⟨AlgHom.mapValue g.ofConv
           (gP : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N)
             (CommAlgCat.of R (weightParabolicCoordinateHopfAlgebra R w))),
-        Cocharacter.parabolic_le_comap g.ofConv gP.2⟩ :
+        Cocharacter.parabolic_le_comap g.ofConv gP.property⟩ :
           Cocharacter.parabolic (CommAlgCat.of R A) (weightCocharacter (R := R) w)) = gA) :
     CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra R N)
         (weightLeviDefiningHopfIdeal R w) (CommAlgCat.of R A)
@@ -357,7 +357,7 @@ private theorem quotientPointsHom_mapPointsFunctor_weightParabolicLimitCoordinat
       congrArg (AlgHom.mapValue g.ofConv) hambient
     _ = Cocharacter.limit (CommAlgCat.of R A) (weightCocharacter (R := R) w)
           ⟨AlgHom.mapValue g.ofConv gP,
-            Cocharacter.parabolic_le_comap g.ofConv gP.2⟩ :=
+            Cocharacter.parabolic_le_comap g.ofConv gP.property⟩ :=
       Cocharacter.mapValue_limit g.ofConv gP
     _ = Cocharacter.limit (CommAlgCat.of R A) (weightCocharacter (R := R) w) gA :=
       congrArg (Cocharacter.limit (CommAlgCat.of R A)
@@ -405,7 +405,7 @@ theorem mapPointsFunctor_weightParabolicLimitCoordinateMap_app (w : Fin N → �
   have hgP :
       (⟨AlgHom.mapValue g.ofConv
           (gP : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) PAlg),
-        Cocharacter.parabolic_le_comap g.ofConv gP.2⟩ :
+        Cocharacter.parabolic_le_comap g.ofConv gP.property⟩ :
           Cocharacter.parabolic (CommAlgCat.of R A)
             (weightCocharacter (R := R) w)) = gA := by
     simpa only [P, PAlg, q, gP, gA] using mapValue_weightParabolicGenericPoint R w g

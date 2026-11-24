@@ -252,9 +252,9 @@ theorem eq_zero_of_comp_reducedSingularHomologyFunctor_map_inclusion {Y : TopCat
   -- preimages `U` and `V` of `A` and `B`; these are homeomorphic to `A` and `B` over `Y`.
   let U : Set (of ↥(A ∪ B)) := Subtype.val ⁻¹' A
   let V : Set (of ↥(A ∪ B)) := Subtype.val ⁻¹' B
-  have hU : IsOpen U := hA.preimage continuous_subtype_val
-  have hV : IsOpen V := hB.preimage continuous_subtype_val
-  have hUV : U ∪ V = univ := eq_univ_of_forall fun y ↦ y.2
+  have hU : IsOpen U := hA.preimage continuous_subtypeVal
+  have hV : IsOpen V := hB.preimage continuous_subtypeVal
+  have hUV : U ∪ V = univ := eq_univ_of_forall fun y ↦ y.property
   let eU : ↥U ≃ₜ ↥A := IsEmbedding.subtypeVal.homeomorphOfSubsetRange
     (subset_union_left.trans Subtype.range_coe.symm.subset)
   let eV : ↥V ≃ₜ ↥B := IsEmbedding.subtypeVal.homeomorphOfSubsetRange
@@ -322,9 +322,9 @@ def reducedMayerVietorisIsoOfIsZero {Y : TopCat.{w}} {A B D E : Set Y} (hA : IsO
   have hBE : B ⊆ range (Subtype.val : E → Y) := hE ▸ subset_union_right.trans Subtype.range_coe.ge
   let A' : Set (of ↥E) := Subtype.val ⁻¹' A
   let B' : Set (of ↥E) := Subtype.val ⁻¹' B
-  have hA' : IsOpen A' := hA.preimage continuous_subtype_val
-  have hB' : IsOpen B' := hB.preimage continuous_subtype_val
-  have hAB' : A' ∪ B' = univ := eq_univ_of_forall fun y ↦ (hE ▸ y.2 : (y : Y) ∈ A ∪ B)
+  have hA' : IsOpen A' := hA.preimage continuous_subtypeVal
+  have hB' : IsOpen B' := hB.preimage continuous_subtypeVal
+  have hAB' : A' ∪ B' = univ := eq_univ_of_forall fun y ↦ (hE ▸ y.property : (y : Y) ∈ A ∪ B)
   let iA : of ↥A' ≅ of ↥A := isoOfHomeo (IsEmbedding.subtypeVal.homeomorphOfSubsetRange hAE)
   let iB : of ↥B' ≅ of ↥B := isoOfHomeo (IsEmbedding.subtypeVal.homeomorphOfSubsetRange hBE)
   -- `A' ∩ B'` is `Subtype.val ⁻¹' (A ∩ B)` by `Set.preimage_inter`, which holds by definition.

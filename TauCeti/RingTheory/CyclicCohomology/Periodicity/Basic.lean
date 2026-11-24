@@ -123,16 +123,17 @@ theorem cyclicTotalPeriodicity_injective (m : ℕ) :
 /-- A total cochain of degree `m + 2` lies in the image of the periodicity map exactly when its
 components in columns zero and one, the rows `m + 2` and `m + 1`, vanish. -/
 theorem mem_range_cyclicTotalPeriodicity_iff {m : ℕ} {x : cyclicTotalCochains R A M (m + 2)} :
-    x ∈ LinearMap.range (cyclicTotalPeriodicity R A M m) ↔ x.1 (m + 1) = 0 ∧ x.1 (m + 2) = 0 := by
-  refine ⟨?_, fun ⟨h₁, h₂⟩ ↦ ⟨⟨x.1, ?_⟩, rfl⟩⟩
+    x ∈ LinearMap.range (cyclicTotalPeriodicity R A M m) ↔ x.val (m + 1) = 0 ∧ x.val (m + 2) = 0
+        := by
+  refine ⟨?_, fun ⟨h₁, h₂⟩ ↦ ⟨⟨x.val, ?_⟩, rfl⟩⟩
   · rintro ⟨y, rfl⟩
-    exact ⟨mem_cyclicTotalCochains_iff.1 y.2 _ (by omega),
-      mem_cyclicTotalCochains_iff.1 y.2 _ (by omega)⟩
+    exact ⟨mem_cyclicTotalCochains_iff.1 y.property _ (by omega),
+      mem_cyclicTotalCochains_iff.1 y.property _ (by omega)⟩
   · refine mem_cyclicTotalCochains_iff.2 fun q hq ↦ ?_
     obtain rfl | rfl | hq : q = m + 1 ∨ q = m + 2 ∨ m + 2 < q := by omega
     · exact h₁
     · exact h₂
-    · exact mem_cyclicTotalCochains_iff.1 x.2 q hq
+    · exact mem_cyclicTotalCochains_iff.1 x.property q hq
 
 /-! ### The projection onto column zero -/
 
@@ -146,7 +147,7 @@ def cyclicTotalToHochschild (m : ℕ) :
 /-- The projection onto column zero takes the component in row `m`. -/
 @[simp]
 theorem cyclicTotalToHochschild_apply {m : ℕ} (x : cyclicTotalCochains R A M m) :
-    cyclicTotalToHochschild R A M m x = x.1 m :=
+    cyclicTotalToHochschild R A M m x = x.val m :=
   (rfl)
 
 /-- The projection onto column zero vanishes on the image of the periodicity map. -/
@@ -172,11 +173,11 @@ theorem cyclicTotalToHochschild_cyclicCochainsToTotal {m : ℕ} (φ : cyclicCoch
 does not change its horizontal differential. -/
 private theorem cyclicBicomplexHorizontal_sub_apply {m : ℕ} (x : cyclicTotalCochains R A M m)
     (k : ℕ) :
-    cyclicBicomplexHorizontal R A M (m + 2 - k) k (x.1 k) =
-      cyclicBicomplexHorizontal R A M (m - k) k (x.1 k) := by
+    cyclicBicomplexHorizontal R A M (m + 2 - k) k (x.val k) =
+      cyclicBicomplexHorizontal R A M (m - k) k (x.val k) := by
   by_cases hk : k ≤ m
   · rw [Nat.sub_add_comm hk, cyclicBicomplexHorizontal_add_two]
-  · rw [mem_cyclicTotalCochains_iff.1 x.2 k (by omega), map_zero, map_zero]
+  · rw [mem_cyclicTotalCochains_iff.1 x.property k (by omega), map_zero, map_zero]
 
 end CyclicOperators
 
@@ -189,11 +190,11 @@ variable {R A M : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module 
 does not change its vertical differential. -/
 private theorem cyclicBicomplexVertical_sub_apply {m : ℕ} (x : cyclicTotalCochains R A M m)
     (k : ℕ) :
-    cyclicBicomplexVertical R A M (m + 2 - k) k (x.1 k) =
-      cyclicBicomplexVertical R A M (m - k) k (x.1 k) := by
+    cyclicBicomplexVertical R A M (m + 2 - k) k (x.val k) =
+      cyclicBicomplexVertical R A M (m - k) k (x.val k) := by
   by_cases hk : k ≤ m
   · rw [Nat.sub_add_comm hk, cyclicBicomplexVertical_add_two]
-  · rw [mem_cyclicTotalCochains_iff.1 x.2 k (by omega), map_zero, map_zero]
+  · rw [mem_cyclicTotalCochains_iff.1 x.property k (by omega), map_zero, map_zero]
 
 /-- The periodicity map commutes with the total differential. -/
 @[simp]
@@ -217,7 +218,8 @@ theorem cyclicTotalToHochschild_cyclicTotalDifferential {m : ℕ}
     cyclicTotalToHochschild R A M (m + 1) (cyclicTotalDifferential R A M m x) =
       hochschildCoboundary R A M m (cyclicTotalToHochschild R A M m x) := by
   rw [cyclicTotalToHochschild_apply, cyclicTotalDifferential_apply_succ, Nat.sub_self,
-    cyclicBicomplexVertical_of_even Even.zero, mem_cyclicTotalCochains_iff.1 x.2 (m + 1) (by omega),
+    cyclicBicomplexVertical_of_even Even.zero, mem_cyclicTotalCochains_iff.1 x.property (m + 1)
+        (by omega),
     map_zero, add_zero, cyclicTotalToHochschild_apply]
 
 end Differential
@@ -232,17 +234,17 @@ vanishes in column zero and whose column-one component is a cocycle for the bar 
 the contraction `s` gives `y (m + 1) = b' (s (y (m + 1)))`, adding the total differential of
 `s (y (m + 1))`, placed in column one, moves `y` into the image of the periodicity map. -/
 theorem exists_cyclicTotalPeriodicity_eq_add_cyclicTotalDifferential {m : ℕ}
-    (y : cyclicTotalCochains R A M (m + 2)) (hy₂ : y.1 (m + 2) = 0)
-    (hy₁ : barCoboundary R A M (m + 1) (y.1 (m + 1)) = 0) :
+    (y : cyclicTotalCochains R A M (m + 2)) (hy₂ : y.val (m + 2) = 0)
+    (hy₁ : barCoboundary R A M (m + 1) (y.val (m + 1)) = 0) :
     ∃ w z, cyclicTotalPeriodicity R A M m w = y + cyclicTotalDifferential R A M (m + 1) z := by
   let z : cyclicTotalCochains R A M (m + 1) :=
-    ⟨Pi.single m (barContraction R A M m (y.1 (m + 1))),
+    ⟨Pi.single m (barContraction R A M m (y.val (m + 1))),
       single_mem_cyclicTotalCochains (Nat.le_succ m) _⟩
-  have hz₁ : (cyclicTotalDifferential R A M (m + 1) z).1 (m + 1) = -y.1 (m + 1) := by
-    have h := barCoboundary_barContraction_add_barContraction_barCoboundary (y.1 (m + 1))
+  have hz₁ : (cyclicTotalDifferential R A M (m + 1) z).val (m + 1) = -y.val (m + 1) := by
+    have h := barCoboundary_barContraction_add_barContraction_barCoboundary (y.val (m + 1))
     rw [hy₁, map_zero, add_zero] at h
     simp [z, h]
-  have hz₂ : (cyclicTotalDifferential R A M (m + 1) z).1 (m + 2) = 0 := by
+  have hz₂ : (cyclicTotalDifferential R A M (m + 1) z).val (m + 2) = 0 := by
     have hne : m + 1 + 1 ≠ m := by omega
     simp [z, Pi.single_eq_of_ne hne]
   obtain ⟨w, hw⟩ := (mem_range_cyclicTotalPeriodicity_iff
@@ -263,23 +265,23 @@ coboundary. -/
 private theorem exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential {m : ℕ}
     (x : cyclicTotalCochains R A M (m + 2)) (hx : cyclicTotalDifferential R A M (m + 2) x = 0)
     (χ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 2) ↦ A) M)
-    (hχ : hochschildCoboundary R A M (m + 1) χ = x.1 (m + 2)) :
-    ∃ w b, x.1 =
-      (cyclicTotalPeriodicity R A M m w).1 + (cyclicTotalDifferential R A M (m + 1) b).1 := by
+    (hχ : hochschildCoboundary R A M (m + 1) χ = x.val (m + 2)) :
+    ∃ w b, x.val =
+      (cyclicTotalPeriodicity R A M m w).val + (cyclicTotalDifferential R A M (m + 1) b).val := by
   -- The statement compares underlying families, since the total differential of a cochain of
   -- degree `m + 1` lands in `cyclicTotalCochains R A M (m + 1 + 1)` rather than in degree `m + 2`.
   -- the cochain `χ` in column zero, and the remainder `y = x - D χ`
   let c : cyclicTotalCochains R A M (m + 1) :=
     ⟨Pi.single (m + 1) χ, single_mem_cyclicTotalCochains le_rfl χ⟩
   let y : cyclicTotalCochains R A M (m + 2) := x - cyclicTotalDifferential R A M (m + 1) c
-  have hc₂ : (cyclicTotalDifferential R A M (m + 1) c).1 (m + 2) = x.1 (m + 2) := by
+  have hc₂ : (cyclicTotalDifferential R A M (m + 1) c).val (m + 2) = x.val (m + 2) := by
     simp [c, hχ]
-  have hy₂ : y.1 (m + 2) = 0 := by
+  have hy₂ : y.val (m + 2) = 0 := by
     simp only [y, Submodule.coe_sub, Pi.sub_apply, hc₂, sub_self]
   -- the component `y` in column one is a cocycle for the bar coboundary
-  have hy₁ : barCoboundary R A M (m + 1) (y.1 (m + 1)) = 0 := by
-    have hx' := congrArg (fun z ↦ z.1 (m + 2)) hx
-    have hc₁ : (cyclicTotalDifferential R A M (m + 1) c).1 (m + 1) =
+  have hy₁ : barCoboundary R A M (m + 1) (y.val (m + 1)) = 0 := by
+    have hx' := congrArg (fun z ↦ z.val (m + 2)) hx
+    have hc₁ : (cyclicTotalDifferential R A M (m + 1) c).val (m + 1) =
         χ - cyclicOperator R A M (m + 1) χ := by
       simp [c]
     have hb := LinearMap.congr_fun
@@ -450,10 +452,10 @@ theorem homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk {m : �
     (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
     HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) m
         (cyclicTotalHomologyMk R A M m x) =
-      hochschildCohomology.mk R A M m ⟨x.1.1 m, mem_hochschildCocycles_iff.2 (by
+      hochschildCohomology.mk R A M m ⟨x.val.val m, mem_hochschildCocycles_iff.2 (by
         rw [← cyclicTotalToHochschild_apply, ← cyclicTotalToHochschild_cyclicTotalDifferential,
-          LinearMap.mem_ker.1 x.2, map_zero])⟩ := by
-  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.1).1 x.2
+          LinearMap.mem_ker.1 x.property, map_zero])⟩ := by
+  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.val).1 x.property
   rw [cyclicTotalHomologyMk_eq_homologyπ x ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1)
       (CochainComplex.next ℕ m) hx) (by simp),
     HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
@@ -466,10 +468,10 @@ periodicity map. -/
 theorem cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk {m : ℕ}
     (x : LinearMap.ker (cyclicTotalDifferential R A M m)) :
     cyclicTotalHomologyPeriodicity R A M m (cyclicTotalHomologyMk R A M m x) =
-      cyclicTotalHomologyMk R A M (m + 2) ⟨cyclicTotalPeriodicity R A M m x.1, by
+      cyclicTotalHomologyMk R A M (m + 2) ⟨cyclicTotalPeriodicity R A M m x.val, by
         rw [LinearMap.mem_ker, cyclicTotalDifferential_cyclicTotalPeriodicity,
-          LinearMap.mem_ker.1 x.2, map_zero]⟩ := by
-  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.1).1 x.2
+          LinearMap.mem_ker.1 x.property, map_zero]⟩ := by
+  have hx := (mem_ker_cyclicTotalDifferential_iff R A M m x.val).1 x.property
   rw [cyclicTotalHomologyMk_eq_homologyπ x ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1)
       (CochainComplex.next ℕ m) hx) (by simp),
     cyclicTotalHomologyPeriodicity_homologyπ]
@@ -503,11 +505,11 @@ theorem exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHoc
     rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
       hochschildCohomology.mk_eq_zero_iff, mem_hochschildCoboundaries_succ_iff] at hc
     obtain ⟨χ, hχ⟩ := hc
-    have hx : cyclicTotalDifferential R A M (m + 2) x.1 = 0 := LinearMap.mem_ker.1 x.2
-    obtain ⟨w, b, hwb⟩ := exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential x.1 hx χ hχ
+    have hx : cyclicTotalDifferential R A M (m + 2) x.val = 0 := LinearMap.mem_ker.1 x.property
+    obtain ⟨w, b, hwb⟩ := exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential x.val hx χ hχ
     -- `D b` lies in `cyclicTotalCochains R A M (m + 1 + 1)`, definitionally degree `m + 2`
-    have hSw : cyclicTotalPeriodicity R A M m w = x.1 -
-        ⟨_, (cyclicTotalDifferential R A M (m + 1) b).2⟩ :=
+    have hSw : cyclicTotalPeriodicity R A M m w = x.val -
+        ⟨_, (cyclicTotalDifferential R A M (m + 1) b).property⟩ :=
       Subtype.ext (by rw [Submodule.coe_sub, hwb, add_sub_cancel_right])
     have hw : cyclicTotalDifferential R A M m w = 0 := by
       apply cyclicTotalPeriodicity_injective R A M (m + 1)
@@ -543,5 +545,29 @@ theorem homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComp
     cyclicCohomology.toHochschild_def]
 
 end CyclicCohomology
+
+section MapRows
+variable {R A B M N : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [NonUnitalSemiring B] [Module R B]
+  [IsScalarTower R B B] [SMulCommClass R B B] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N]
+
+/-- A rowwise induced map on `Hᵐ(Tot)` commutes with `cyclicTotalHomologyPeriodicity`. -/
+@[simp] theorem cyclicTotalHomologyMapRows_cyclicTotalHomologyPeriodicity
+    (g : ∀ q : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ A) M →ₗ[R]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (q + 1) ↦ B) N)
+    (hh : ∀ p q φ, g q (cyclicBicomplexHorizontal R A M p q φ) =
+      cyclicBicomplexHorizontal R B N p q (g q φ))
+    (hv : ∀ p q φ, g (q + 1) (cyclicBicomplexVertical R A M p q φ) =
+      cyclicBicomplexVertical R B N p q (g q φ))
+    (m : ℕ) (c : (cyclicTotalComplex R A M).homology m) :
+    cyclicTotalHomologyMapRows g hh hv (m + 2) (cyclicTotalHomologyPeriodicity R A M m c) =
+      cyclicTotalHomologyPeriodicity R B N m (cyclicTotalHomologyMapRows g hh hv m c) := by
+  obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective m c
+  simp only [cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk,
+    cyclicTotalHomologyMapRows_cyclicTotalHomologyMk]
+  exact congrArg (cyclicTotalHomologyMk R B N (m + 2))
+    (Subtype.ext <| Subtype.ext <| funext fun q ↦ by simp)
+end MapRows
 
 end TauCeti

@@ -196,6 +196,32 @@ theorem bimoduleModuleTensorTmul_mem {p q : ℤ} {m : M} {n : N}
       (bimoduleModuleTensorObj Γ Δ M N).grading.piece (p + q) :=
   BalancedTensorProduct.tmul_mem_grading (𝒜 := Δ.piece) M.grading N.grading hm hn
 
+/-- The pure left-module tensor is additive in the first slot. -/
+@[simp]
+theorem bimoduleModuleTensorTmul_add_left (m m' : M) (n : N) :
+    bimoduleModuleTensorTmul Γ Δ M N (m + m') n =
+      bimoduleModuleTensorTmul Γ Δ M N m n + bimoduleModuleTensorTmul Γ Δ M N m' n :=
+  BalancedTensorProduct.add_tmul k B m m' n
+
+/-- The pure left-module tensor is additive in the second slot. -/
+@[simp]
+theorem bimoduleModuleTensorTmul_add_right (m : M) (n n' : N) :
+    bimoduleModuleTensorTmul Γ Δ M N m (n + n') =
+      bimoduleModuleTensorTmul Γ Δ M N m n + bimoduleModuleTensorTmul Γ Δ M N m n' :=
+  BalancedTensorProduct.tmul_add k B m n n'
+
+/-- The pure left-module tensor is homogeneous in the first slot for the scalars `k`. -/
+@[simp]
+theorem bimoduleModuleTensorTmul_smul_left (r : k) (m : M) (n : N) :
+    bimoduleModuleTensorTmul Γ Δ M N (r • m) n = r • bimoduleModuleTensorTmul Γ Δ M N m n :=
+  BalancedTensorProduct.smul_tmul k B r m n
+
+/-- The pure left-module tensor is homogeneous in the second slot for the scalars `k`. -/
+@[simp]
+theorem bimoduleModuleTensorTmul_smul_right (r : k) (m : M) (n : N) :
+    bimoduleModuleTensorTmul Γ Δ M N m (r • n) = r • bimoduleModuleTensorTmul Γ Δ M N m n :=
+  BalancedTensorProduct.tmul_smul k B r m n
+
 /-- The quotient map from the ground-ring tensor product to the left-module tensor product. -/
 noncomputable def bimoduleModuleTensorMkQ : M ⊗[k] N →ₗ[k] bimoduleModuleTensorObj Γ Δ M N :=
   BalancedTensorProduct.mkQ k B
@@ -358,8 +384,7 @@ theorem bimoduleModuleTensorMap_add_left (f f' : M ⟶ M') (g : N ⟶ N') :
       bimoduleModuleTensorMap Γ Δ f g + bimoduleModuleTensorMap Γ Δ f' g := by
   apply bimoduleModuleTensor_hom_ext Γ Δ
   intro m n
-  simp only [hom_add, LinearMap.add_apply, bimoduleModuleTensorMap_tmul]
-  exact BalancedTensorProduct.add_tmul k B _ _ _
+  simp
 
 /-- The left-module tensor of morphisms is additive in the second morphism. -/
 @[simp]
@@ -368,8 +393,7 @@ theorem bimoduleModuleTensorMap_add_right (f : M ⟶ M') (g g' : N ⟶ N') :
       bimoduleModuleTensorMap Γ Δ f g + bimoduleModuleTensorMap Γ Δ f g' := by
   apply bimoduleModuleTensor_hom_ext Γ Δ
   intro m n
-  simp only [hom_add, LinearMap.add_apply, bimoduleModuleTensorMap_tmul]
-  exact BalancedTensorProduct.tmul_add k B _ _ _
+  simp
 
 /-- The left-module tensor of morphisms is homogeneous in the first morphism for the scalars `k`. -/
 @[simp]
@@ -377,8 +401,7 @@ theorem bimoduleModuleTensorMap_smul_left (c : k) (f : M ⟶ M') (g : N ⟶ N') 
     bimoduleModuleTensorMap Γ Δ (c • f) g = c • bimoduleModuleTensorMap Γ Δ f g := by
   apply bimoduleModuleTensor_hom_ext Γ Δ
   intro m n
-  simp only [hom_smul, LinearMap.smul_apply, bimoduleModuleTensorMap_tmul]
-  exact BalancedTensorProduct.smul_tmul k B _ _ _
+  simp
 
 /-- The left-module tensor of morphisms is homogeneous in the second morphism for the scalars
 `k`. -/
@@ -387,8 +410,7 @@ theorem bimoduleModuleTensorMap_smul_right (c : k) (f : M ⟶ M') (g : N ⟶ N')
     bimoduleModuleTensorMap Γ Δ f (c • g) = c • bimoduleModuleTensorMap Γ Δ f g := by
   apply bimoduleModuleTensor_hom_ext Γ Δ
   intro m n
-  simp only [hom_smul, LinearMap.smul_apply, bimoduleModuleTensorMap_tmul]
-  exact BalancedTensorProduct.tmul_smul k B _ _ _
+  simp
 
 /-- Balanced tensor action of graded bimodules on graded left modules. -/
 -- Expose the object assignment so action maps and associator components have computed types.
@@ -422,22 +444,16 @@ theorem bimoduleModuleTensor_obj_obj : ((bimoduleModuleTensor Γ Δ).obj M).obj 
     bimoduleModuleTensorObj Γ Δ M N := (rfl)
 
 /-- The action of the left-module tensor bifunctor on a morphism in the second variable is the
-tensor of the identity of the first variable with it, up to the object identification. -/
+tensor of the identity of the first variable with it. -/
 @[simp, reassoc]
 theorem bimoduleModuleTensor_obj_map (g : N ⟶ N') :
-    ((bimoduleModuleTensor Γ Δ).obj M).map g =
-      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
-        bimoduleModuleTensorMap Γ Δ (𝟙 M) g ≫
-        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N')).symm := (rfl)
+    ((bimoduleModuleTensor Γ Δ).obj M).map g = bimoduleModuleTensorMap Γ Δ (𝟙 M) g := (rfl)
 
 /-- The component at `N` of the left-module tensor of a morphism in the first variable is the tensor
-of that morphism with the identity of `N`, up to the object identification. -/
+of that morphism with the identity of `N`. -/
 @[simp, reassoc]
 theorem bimoduleModuleTensor_map_app (f : M ⟶ M') :
-    ((bimoduleModuleTensor Γ Δ).map f).app N =
-      eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M) (N := N)) ≫
-        bimoduleModuleTensorMap Γ Δ f (𝟙 N) ≫
-        eqToHom (bimoduleModuleTensor_obj_obj Γ Δ (M := M') (N := N)).symm := (rfl)
+    ((bimoduleModuleTensor Γ Δ).map f).app N = bimoduleModuleTensorMap Γ Δ f (𝟙 N) := (rfl)
 
 -- Grading projections may compute for concrete gradings, so do not index on them.
 instance : Functor.Additive

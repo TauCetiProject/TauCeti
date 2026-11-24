@@ -50,21 +50,21 @@ theorem exists_natCast_dvd_sub_pow (hplus : IsRingOfIntegralElements Rplus)
   obtain ⟨y, z, hz⟩ := exists_mul_natCast_dvd_sub_pow_of_forall_exists_natCast_dvd_sub_pow
     (isRingOfIntegralElements_powerBoundedSubring R) hϖ hdvd
     IsPerfectoidTateRing.exists_natCast_dvd_sub_pow
-    (⟨x, hplus.le_powerBoundedSubring x.2⟩ : powerBoundedSubring R)
+    (⟨x, hplus.le_powerBoundedSubring x.property⟩ : powerBoundedSubring R)
   have hzR : (x : R) - (y : R) ^ p = (ϖ : R) * p * (z : R) := by
     simpa only [map_sub, map_pow, map_mul, map_natCast, Subring.subtype_apply]
       using congrArg (powerBoundedSubring R).subtype hz
   have hϖz : (ϖ : R) * (z : R) ∈ Rplus :=
     hplus.mem_of_isTopologicallyNilpotent <| by
       rw [mul_comm]
-      exact (mem_powerBoundedSubring.mp z.2).isTopologicallyNilpotent_mul
+      exact (mem_powerBoundedSubring.mp z.property).isTopologicallyNilpotent_mul
         hϖ.isTopologicallyNilpotent
   have hy : (y : R) ∈ Rplus := by
     apply hplus.mem_of_pow_mem (Fact.out : p.Prime).pos
     have heq : (y : R) ^ p = x - p * ((ϖ : R) * z) := by
       linear_combination -hzR
     rw [heq]
-    exact Rplus.sub_mem x.2 (Rplus.mul_mem (natCast_mem Rplus p) hϖz)
+    exact Rplus.sub_mem x.property (Rplus.mul_mem (natCast_mem Rplus p) hϖz)
   refine ⟨⟨y, hy⟩, ⟨⟨(ϖ : R) * z, hϖz⟩, ?_⟩⟩
   apply Rplus.subtype_injective
   simp only [map_sub, map_pow, map_mul, map_natCast, Subring.subtype_apply]
@@ -80,7 +80,7 @@ theorem exists_pseudoUniformizer_natCast_eq_pow_mul
   obtain ⟨c, hc⟩ := r.rootPB_pow_dvd 0
   have hnil : IsTopologicallyNilpotent ((r.rootPB 0 : R) ^ (p - 1) * (c : R)) := by
     rw [r.coe_rootPB, mul_comm]
-    exact (mem_powerBoundedSubring.mp c.2).isTopologicallyNilpotent_mul
+    exact (mem_powerBoundedSubring.mp c.property).isTopologicallyNilpotent_mul
       (r.isPseudoUniformizer_root_zero.isTopologicallyNilpotent.pow
         (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt).ne')
   refine ⟨⟨r.root 1, hplus.mem_of_isTopologicallyNilpotent
@@ -124,7 +124,7 @@ theorem not_isUnit_natCast [Nontrivial R] (hplus : IsRingOfIntegralElements Rplu
   apply hplus.not_isUnit_of_isTopologicallyNilpotent
   have hcR : (p : R) = (ϖ : R) ^ p * (c : R) := by exact_mod_cast hc
   rw [Subring.coe_natCast, hcR]
-  exact (hplus.isPowerBounded_of_mem (Rplus.pow_mem ϖ.2 p)).isTopologicallyNilpotent_mul hnil
+  exact (hplus.isPowerBounded_of_mem (Rplus.pow_mem ϖ.property p)).isTopologicallyNilpotent_mul hnil
 
 /-- Frobenius on Mathlib's `ModP R⁺ p` is surjective for every ring of integral elements
 of a perfectoid Tate ring. The nonunit hypothesis required to form this Frobenius is

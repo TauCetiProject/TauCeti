@@ -213,33 +213,33 @@ theorem map_restrictMap_restrict_carrier (L : IntegralLattice V) (S : Submodule 
       rw [LinearMap.range_comp, Submodule.range_subtype]
 
 /-- Restriction to a full ambient submodule contained in the carrier, retaining the original
-rational ambient space. Fullness is supplied as an `IsLattice ℚ` instance. The constructor
+rational ambient space. Fullness is supplied as an `IsFullLattice ℚ` instance. The constructor
 `restrict` needs no span condition because it builds its own rational ambient space. -/
 def restrictFull (L : IntegralLattice V) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
-    [N.IsLattice ℚ] : IntegralLattice V :=
+    [N.IsFullLattice ℚ] : IntegralLattice V :=
   ofSubmodule N L.form L.isSymm (L.le_dualSubmodule_of_le_carrier hN)
 
 /-- The carrier of the full restriction is the chosen ambient submodule. -/
 @[simp]
 theorem restrictFull_carrier (L : IntegralLattice V) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
-    [N.IsLattice ℚ] : (L.restrictFull N hN).carrier = N :=
+    [N.IsFullLattice ℚ] : (L.restrictFull N hN).carrier = N :=
   ofSubmodule_carrier _ _ _ _
 
 /-- Full restriction retains the original rational form. -/
 @[simp]
 theorem restrictFull_form (L : IntegralLattice V) (N : Submodule ℤ V) (hN : N ≤ L.carrier)
-    [N.IsLattice ℚ] : (L.restrictFull N hN).form = L.form :=
+    [N.IsFullLattice ℚ] : (L.restrictFull N hN).form = L.form :=
   ofSubmodule_form _ _ _ _
 
 /-- Full restriction of a nondegenerate lattice is nondegenerate, since the form is unchanged. -/
 instance instIsNondegenerateRestrictFull (L : IntegralLattice V) [L.IsNondegenerate]
-    (N : Submodule ℤ V) (hN : N ≤ L.carrier) [N.IsLattice ℚ] :
+    (N : Submodule ℤ V) (hN : N ≤ L.carrier) [N.IsFullLattice ℚ] :
     (L.restrictFull N hN).IsNondegenerate :=
   ⟨by rw [restrictFull_form]; exact L.form_nondegenerate⟩
 
 /-- Full restriction of an even lattice is even. -/
 theorem isEven_restrictFull {L : IntegralLattice V} (hL : L.IsEven) (N : Submodule ℤ V)
-    (hN : N ≤ L.carrier) [N.IsLattice ℚ] : (L.restrictFull N hN).IsEven := by
+    (hN : N ≤ L.carrier) [N.IsFullLattice ℚ] : (L.restrictFull N hN).IsEven := by
   rw [isEven_iff_forall_norm]
   rintro ⟨x, hx⟩
   rw [restrictFull_carrier] at hx
@@ -248,7 +248,8 @@ theorem isEven_restrictFull {L : IntegralLattice V} (hL : L.IsEven) (N : Submodu
 
 /-- The intersection of the carriers of two integral lattices on the same rational space is a
 full lattice. -/
-instance isLattice_carrier_inf (L M : IntegralLattice V) : (L.carrier ⊓ M.carrier).IsLattice ℚ :=
+instance isFullLattice_carrier_inf (L M : IntegralLattice V) :
+    (L.carrier ⊓ M.carrier).IsFullLattice ℚ :=
   have := L.finiteDimensional
   inferInstance
 
@@ -269,16 +270,16 @@ theorem inf_form (L M : IntegralLattice V) : (L.inf M).form = L.form :=
 
 /-- Fullness supplies the surjectivity needed to bundle the comparison as an isometry. -/
 private theorem restrictMap_bijective (L : IntegralLattice V) (S : Submodule ℤ L)
-    [(S.map L.carrier.subtype).IsLattice ℚ] : Function.Bijective (L.restrictMap S) := by
+    [(S.map L.carrier.subtype).IsFullLattice ℚ] : Function.Bijective (L.restrictMap S) := by
   refine ⟨L.restrictMap_injective S, LinearMap.range_eq_top.mp ?_⟩
   rw [L.range_restrictMap S]
-  exact Submodule.IsLattice.span_eq_top
+  exact Submodule.IsFullLattice.span_eq_top
 
 /-- For a full submodule, restriction in its own rationalization is canonically isometric to
 restriction in the original ambient space. The underlying map is the rational extension of the
 inclusion, so this identifies both the carriers and the forms. -/
 noncomputable def restrictFullIsometry (L : IntegralLattice V) (S : Submodule ℤ L)
-    [(S.map L.carrier.subtype).IsLattice ℚ] : Isometry (L.restrict S)
+    [(S.map L.carrier.subtype).IsFullLattice ℚ] : Isometry (L.restrict S)
       (L.restrictFull (S.map L.carrier.subtype) (L.carrier.map_subtype_le S)) :=
   Isometry.ofCarrierEquiv
     ((L.restrictCarrierEquiv S).symm.trans
@@ -298,12 +299,12 @@ noncomputable def restrictFullIsometry (L : IntegralLattice V) (S : Submodule �
 /-- The canonical comparison applies the rational extension of the inclusion. -/
 @[simp]
 theorem restrictFullIsometry_apply (L : IntegralLattice V) (S : Submodule ℤ L)
-    [(S.map L.carrier.subtype).IsLattice ℚ] (x : ℚ ⊗[ℤ] S) :
+    [(S.map L.carrier.subtype).IsFullLattice ℚ] (x : ℚ ⊗[ℤ] S) :
     L.restrictFullIsometry S x = L.restrictMap S x := by
   let e := (L.restrictCarrierEquiv S).symm.trans
     ((Submodule.equivMapOfInjective L.carrier.subtype L.carrier.injective_subtype S).trans
       (LinearEquiv.ofEq _ _ (L.restrictFull_carrier _ (L.carrier.map_subtype_le S)).symm))
-  have he := LinearEquiv.eq_extendOfIsLattice e
+  have he := LinearEquiv.eq_extendOfIsFullLattice e
     (LinearEquiv.ofBijective (L.restrictMap S) (L.restrictMap_bijective S)) (by
       intro y
       obtain ⟨s, rfl⟩ := (L.restrictCarrierEquiv S).surjective y

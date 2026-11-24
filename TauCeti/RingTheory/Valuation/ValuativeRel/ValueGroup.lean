@@ -33,6 +33,8 @@ apply to unramified algebraic extensions and to completions without requiring fi
 
 ## Main results
 
+* `ValuativeRel.isDiscreteValuationRing_integer`: the valuation ring of a nontrivial discrete
+  valuative relation of rank at most one on a field is a discrete valuation ring.
 * `ValuativeExtension.mapValueGroupWithZero_comp`: functoriality of `mapValueGroupWithZero` in an
   algebra tower.
 * `ValuativeExtension.mapValueGroupWithZero_surjective_of_forall_exists_veq` and
@@ -57,6 +59,20 @@ open ValuativeRel IsLocalRing
 section SingleField
 
 variable {K : Type*} [Field K] [ValuativeRel K]
+
+/-- The valuation ring of a nontrivial discrete valuative relation of rank at most one on a field
+is a discrete valuation ring. -/
+instance ValuativeRel.isDiscreteValuationRing_integer [IsDiscrete K] [IsNontrivial K]
+    [IsRankLeOne K] : IsDiscreteValuationRing 𝒪[K] := by
+  have hM : MulArchimedean (ValueGroupWithZero K) := isRankLeOne_iff_mulArchimedean.mp ‹_›
+  obtain ⟨e⟩ := ValueGroupWithZero.nonempty_orderMonoidIso_withZeroMulInt_iff.mpr
+    ⟨‹_›, ‹_›, hM⟩
+  have : IsCyclic (ValueGroupWithZero K)ˣ :=
+    (Units.mapEquiv e.toMulEquiv).isCyclic.mpr inferInstance
+  have : (valuation K).IsNontrivial := (isNontrivial_iff_isNontrivial (valuation K)).mp ‹_›
+  -- `𝒪[K]` is by definition the subring `(valuation K).integer`, which is also the carrier of
+  -- `(valuation K).valuationSubring`, so the instance on the latter applies by unfolding.
+  exact inferInstanceAs (IsDiscreteValuationRing (valuation K).valuationSubring)
 
 /-- When `𝒪[K]` is a discrete valuation ring, the canonical valuation of `K` is rank-one
 discrete. -/
@@ -112,7 +128,7 @@ theorem mapValueGroupWithZero_comp :
   congr 1
   · exact (IsScalarTower.algebraMap_apply A B C r).symm
   · ext
-    exact (IsScalarTower.algebraMap_apply A B C s.1).symm
+    exact (IsScalarTower.algebraMap_apply A B C s.val).symm
 
 /-- Applying `mapValueGroupWithZero` in two steps along a tower agrees with the composite map. -/
 @[simp]

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Sylvester
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Sylvester
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 
 /-!

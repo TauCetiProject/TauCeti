@@ -5,77 +5,128 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.UniqueProds.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
+public import Mathlib.Algebra.Group.UniqueProds.Basic
 
 /-!
-# Nonzero divisors in twisted monoid algebras
+# Zero divisors in twisted monoid algebras
 
-In the twisted monoid algebra `twistedMonoidAlgebra k G α` of a normalized factor set
-`α : G → G → kˣ`, multiplying two basis elements scales the product basis element by the unit
-`α g h`. Consequently, whenever a pair `(g₀, h₀)` in the supports of `x` and `y` represents its
-product `g₀ * h₀` uniquely (`UniqueMul`), the `(g₀ * h₀)`-coordinate of `x * y` is
-`x_{g₀} * y_{h₀} * α g₀ h₀`.
+A twisted monoid algebra over a monoid with unique products has no zero divisors whenever
+its scalar semiring has none. In particular, the based quantum torus of a free abelian
+lattice over a domain ring is a domain, including at finite-order parameters.
+This is the algebraic input to constructing its fraction division ring.
 
-When `k` has no zero divisors and `G` has unique products (`UniqueProds G` — in particular for
-`Multiplicative L` of any torsion-free abelian group `L`), `twistedMonoidAlgebra k G α` therefore
-has no zero divisors.
+The coefficient formula is stated using the existing monomial basis. At a uniquely
+represented product of support elements, the coefficient is the product of the two
+coefficients times the factor-set unit, so it cannot vanish.
 
-## Main results
-
-* `TauCeti.TwistedMonoidAlgebra.repr_mul_apply_mul_of_uniqueMul`: a uniquely represented product of
-  support elements carries coordinate `x_{g₀} * y_{h₀} * α g₀ h₀`.
-* `TauCeti.TwistedMonoidAlgebra.instNoZeroDivisors`: `NoZeroDivisors (twistedMonoidAlgebra k G α)`
-  from `[NoZeroDivisors k]` and `[UniqueProds G]`.
+The unique-product argument adapts `MonoidAlgebra.coeff_mul_mul_of_uniqueMul` and the
+`NoZeroDivisors` and `IsCancelMulZero` instances in `Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors`
+to the table of `TwistedMonoidAlgebra.of`. No ordering or finite generation of the monoid is
+required.
 -/
 
 public section
 
 namespace TauCeti.TwistedMonoidAlgebra
 
-open Finsupp
+variable {k G : Type*} [CommSemiring k] [Monoid G]
+  {α : G → G → kˣ} [IsFactorSet α]
 
-section Coordinates
-
-variable {k G : Type*} [CommSemiring k] [Monoid G] {α : G → G → kˣ} [IsFactorSet α]
-
-/-- If `(g₀, h₀)` is the unique pair in the supports of `x` and `y` with product `g₀ * h₀`, then
-the `(g₀ * h₀)`-coordinate of `x * y` is `x_{g₀} * y_{h₀} * α g₀ h₀`. -/
-theorem repr_mul_apply_mul_of_uniqueMul {x y : twistedMonoidAlgebra k G α} {g₀ h₀ : G}
-    (h : UniqueMul ((basis k G α).repr x).support ((basis k G α).repr y).support g₀ h₀) :
-    (basis k G α).repr (x * y) (g₀ * h₀) =
-      (basis k G α).repr x g₀ * (basis k G α).repr y h₀ * (α g₀ h₀ : k) := by
+/-- If no pair in the supports of `f` and `g` other than `(a, b)` has product `a * b`, the
+coefficient of `f * g` at `a * b` is
+`(basis k G α).repr f a * (basis k G α).repr g b * α a b`. -/
+theorem repr_mul_apply_of_uniqueMul {f g : twistedMonoidAlgebra k G α} {a b : G}
+    (h : UniqueMul ((basis k G α).repr f).support ((basis k G α).repr g).support a b) :
+    (basis k G α).repr (f * g) (a * b) =
+      (basis k G α).repr f a * (basis k G α).repr g b * (α a b : k) := by
   classical
   rw [repr_mul]
-  simp_rw [Finsupp.sum_apply, single_apply, sum, ← Finset.sum_product']
-  refine (Finset.sum_eq_single (g₀, h₀) ?_ ?_).trans (ite_eq_left rfl) <;>
-    simp_rw [Finset.mem_product]
-  · refine fun gh hmem hne ↦ ite_eq_right fun he ↦ hne <| Prod.ext ?_ ?_
-    exacts [(h hmem.1 hmem.2 he).1, (h hmem.1 hmem.2 he).2]
-  · refine fun hnotMem ↦ ite_eq_right_iff.mpr fun _ ↦ ?_
-    rcases not_and_or.mp hnotMem with gx | hy
-    · rw [notMem_support_iff.mp gx, zero_mul, zero_mul]
-    · rw [notMem_support_iff.mp hy, mul_zero, zero_mul]
+  simp only [Finsupp.sum, Finsupp.finsetSum_apply, Finsupp.single_apply]
+  rw [← Finset.sum_product']
+  refine (Finset.sum_eq_single (a, b) ?_ ?_).trans (ite_eq_left rfl)
+  · intro p hp hpne
+    rw [Finset.mem_product] at hp
+    exact ite_eq_right fun he ↦ hpne (Prod.ext (h hp.1 hp.2 he).1 (h hp.1 hp.2 he).2)
+  · intro hab
+    simp only [Finset.mem_product, not_and_or] at hab
+    rcases hab with ha | hb
+    · simp [Finsupp.notMem_support_iff.mp ha]
+    · simp [Finsupp.notMem_support_iff.mp hb]
 
-/-- If `k` has no zero divisors and `G` has unique products, the twisted monoid algebra
-`twistedMonoidAlgebra k G α` has no zero divisors. -/
-instance instNoZeroDivisors [NoZeroDivisors k] [UniqueProds G] :
+/-- A unit-valued twist does not introduce zero divisors on a unique-product monoid. -/
+instance [NoZeroDivisors k] [UniqueProds G] :
     NoZeroDivisors (twistedMonoidAlgebra k G α) where
-  eq_zero_or_eq_zero_of_mul_eq_zero {x y} hxy := by
-    contrapose! hxy
-    have hx : ((basis k G α).repr x).support.Nonempty :=
-      support_nonempty_iff.mpr ((basis k G α).repr.map_eq_zero_iff.not.mpr hxy.1)
-    have hy : ((basis k G α).repr y).support.Nonempty :=
-      support_nonempty_iff.mpr ((basis k G α).repr.map_eq_zero_iff.not.mpr hxy.2)
-    obtain ⟨g₀, hg₀, h₀, hh₀, huniq⟩ := UniqueProds.uniqueMul_of_nonempty hx hy
-    intro hzero
-    have hcoord : (basis k G α).repr (x * y) (g₀ * h₀) = 0 := by simp [hzero]
-    rw [repr_mul_apply_mul_of_uniqueMul huniq] at hcoord
-    have hprod : (basis k G α).repr x g₀ * (basis k G α).repr y h₀ = 0 := by
-      have hunit := congrArg (· * (((α g₀ h₀)⁻¹ : kˣ) : k)) hcoord
-      simpa [mul_assoc, ← Units.val_mul] using hunit
-    exact mul_ne_zero (mem_support_iff.mp hg₀) (mem_support_iff.mp hh₀) hprod
+  eq_zero_or_eq_zero_of_mul_eq_zero {f g} hfg := by
+    contrapose! hfg
+    have hf : ((basis k G α).repr f).support.Nonempty :=
+      Finsupp.support_nonempty_iff.mpr ((map_ne_zero_iff _ (basis k G α).repr.injective).mpr hfg.1)
+    have hg : ((basis k G α).repr g).support.Nonempty :=
+      Finsupp.support_nonempty_iff.mpr ((map_ne_zero_iff _ (basis k G α).repr.injective).mpr hfg.2)
+    obtain ⟨a, ha, b, hb, hab⟩ := UniqueProds.uniqueMul_of_nonempty hf hg
+    have : Nontrivial k := ⟨⟨(basis k G α).repr f a, 0, Finsupp.mem_support_iff.mp ha⟩⟩
+    intro heq
+    have hc := repr_mul_apply_of_uniqueMul hab
+    rw [heq, map_zero, Finsupp.zero_apply] at hc
+    exact (mul_ne_zero (mul_ne_zero (Finsupp.mem_support_iff.mp ha)
+      (Finsupp.mem_support_iff.mp hb)) (α a b).ne_zero) hc.symm
 
-end Coordinates
+/-- An additive self-map `φ` of a twisted monoid algebra over an additively cancellative
+semiring is injective if, whenever `φ g₁ = φ g₂` and `g₁` or `g₂` is nonzero, some monomial in
+the union of their supports has the same coefficient in `g₁` and `g₂`. Removing that monomial
+from both reduces the union of supports, which drives the induction. -/
+private theorem injective_of_exists_repr_eq [IsCancelAdd k] [DecidableEq G]
+    {φ : twistedMonoidAlgebra k G α → twistedMonoidAlgebra k G α}
+    (hφ : ∀ x y, φ (x + y) = φ x + φ y)
+    (h : ∀ g₁ g₂, φ g₁ = φ g₂ →
+      (((basis k G α).repr g₁).support ∪ ((basis k G α).repr g₂).support).Nonempty →
+      ∃ a ∈ ((basis k G α).repr g₁).support ∪ ((basis k G α).repr g₂).support,
+        (basis k G α).repr g₁ a = (basis k G α).repr g₂ a) :
+    Function.Injective φ := by
+  intro g₁ g₂ eq
+  induction hg : ((basis k G α).repr g₁).support ∪ ((basis k G α).repr g₂).support
+    using Finset.eraseInduction generalizing g₁ g₂ with
+  | _ s ih =>
+  obtain hs | hs := s.eq_empty_or_nonempty <;> subst s
+  · simp_all
+  obtain ⟨a, ha, hc⟩ := h g₁ g₂ eq hs
+  have decomp (g : twistedMonoidAlgebra k G α) :
+      g = (basis k G α).repr.symm (((basis k G α).repr g).erase a) +
+        (basis k G α).repr.symm (Finsupp.single a ((basis k G α).repr g a)) := by
+    rw [← map_add, Finsupp.erase_add_single, LinearEquiv.symm_apply_apply]
+  rw [decomp g₁, decomp g₂, hc] at eq ⊢
+  rw [hφ, hφ, add_left_inj] at eq
+  rw [ih a ha eq]
+  simp [Finset.erase_union_distrib]
+
+/-- Multiplication by a nonzero element of a twisted monoid algebra is cancellative over an
+additively and multiplicatively cancellative semiring on a unique-product monoid. -/
+instance [IsCancelAdd k] [IsCancelMulZero k] [UniqueProds G] :
+    IsCancelMulZero (twistedMonoidAlgebra k G α) where
+  mul_left_cancel_of_ne_zero {f} hf := by
+    classical
+    refine injective_of_exists_repr_eq (mul_add f) fun g₁ g₂ eq h ↦ ?_
+    have hf : ((basis k G α).repr f).support.Nonempty :=
+      Finsupp.support_nonempty_iff.mpr ((map_ne_zero_iff _ (basis k G α).repr.injective).mpr hf)
+    obtain ⟨af, haf, ag, hag, uniq⟩ := UniqueProds.uniqueMul_of_nonempty hf h
+    have h := repr_mul_apply_of_uniqueMul (uniq.mono subset_rfl Finset.subset_union_left)
+    rw [eq, repr_mul_apply_of_uniqueMul (uniq.mono subset_rfl Finset.subset_union_right)] at h
+    exact ⟨ag, hag, mul_left_cancel₀ (Finsupp.mem_support_iff.mp haf)
+      ((Units.mul_left_inj _).mp h).symm⟩
+  mul_right_cancel_of_ne_zero {f} hf := by
+    classical
+    refine injective_of_exists_repr_eq (fun _ _ ↦ add_mul _ _ f) fun g₁ g₂ eq h ↦ ?_
+    have hf : ((basis k G α).repr f).support.Nonempty :=
+      Finsupp.support_nonempty_iff.mpr ((map_ne_zero_iff _ (basis k G α).repr.injective).mpr hf)
+    obtain ⟨ag, hag, af, haf, uniq⟩ := UniqueProds.uniqueMul_of_nonempty h hf
+    have h := repr_mul_apply_of_uniqueMul (uniq.mono Finset.subset_union_left subset_rfl)
+    rw [eq, repr_mul_apply_of_uniqueMul (uniq.mono Finset.subset_union_right subset_rfl)] at h
+    exact ⟨ag, hag, mul_right_cancel₀ (Finsupp.mem_support_iff.mp haf)
+      ((Units.mul_left_inj _).mp h).symm⟩
+
+/-- A twisted monoid algebra over an additively cancellative domain semiring and a
+unique-product monoid is a domain. -/
+instance [IsCancelAdd k] [IsDomain k] [UniqueProds G] :
+    IsDomain (twistedMonoidAlgebra k G α) where
 
 end TauCeti.TwistedMonoidAlgebra
