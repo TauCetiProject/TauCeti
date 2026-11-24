@@ -71,6 +71,12 @@ example : IsFractionRing (S.integer K) K := inferInstance
 @[simp] lemma _root_.Set.mem_integer_iff {x : K} :
     x ∈ S.integer K ↔ ∀ v ∉ S, v.valuation K x ≤ 1 := Iff.rfl
 
+/-- The `S`-integers grow with `S`: enlarging the set of allowed primes only weakens the
+condition `v x ≤ 1` for `v ∉ S`. -/
+lemma _root_.Set.integer_mono {S S' : Set (HeightOneSpectrum R)} (h : S ⊆ S') :
+    S.integer K ≤ S'.integer K :=
+  fun _ hx ↦ (Set.mem_integer_iff ..).2 fun v hv ↦ (Set.mem_integer_iff ..).1 hx v (hv <| h ·)
+
 /-- The integers outside the empty set of primes are exactly the images of the base ring. -/
 lemma _root_.Set.mem_integer_empty_iff {x : K} :
     x ∈ (∅ : Set (HeightOneSpectrum R)).integer K ↔ ∃ a : R, algebraMap R K a = x := by
@@ -294,10 +300,6 @@ namespace IsDedekindDomain
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
   [IsFractionRing R K] {S S' : Set (HeightOneSpectrum R)}
-
-/-- Enlarging the set of inverted primes enlarges the subalgebra of `S`-integers. -/
-lemma _root_.Set.integer_mono (hSS' : S ⊆ S') : S.integer K ≤ S'.integer K :=
-  fun _ hx v hv ↦ hx v fun hvS ↦ hv (hSS' hvS)
 
 /-- For `S ⊆ S'`, the `S.integer K`-algebra structure on `S'.integer K` induced by
 `Subalgebra.inclusion`. -/

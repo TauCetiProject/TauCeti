@@ -54,6 +54,7 @@ unfolded by hand.
   `UpperHalfPlane.σ g` is the identity or complex conjugation according to the sign of `det g`.
 * `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
   `SL(2, R)`-action.
+* `ModularGroup.denom_mapGL`: the automorphy factor of `(a b; c d) ∈ SL(2, ℤ)` is `c z + d`.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
   `SL(2, ℝ)` for which a function satisfies the weight-`k` transformation law on all of `ℍ` form a
   subgroup, so that the law need only be checked on generators.
@@ -305,6 +306,15 @@ pointwise-image counterpart of `ModularGroup.sl_moeb`. This is useful as a rewri
 the two actions are definitionally equal. -/
 @[simp]
 theorem sl_smul_set (γ : SL(2, ℤ)) (S : Set ℍ) : γ • S = (γ : GL (Fin 2) ℝ) • S := (rfl)
+
+/-- The automorphy factor of the image of `γ = (a b; c d) ∈ SL(2, ℤ)` in `GL(2, ℝ)` under
+`Matrix.SpecialLinearGroup.mapGL` is `c z + d`, the `mapGL` counterpart of Mathlib's
+`ModularGroup.denom_apply`. -/
+theorem denom_mapGL (γ : SL(2, ℤ)) (z : ℂ) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ γ) z = (γ 1 0 : ℂ) * z + γ 1 1 := by
+  simp only [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix, algebraMap_int_eq,
+    Matrix.SpecialLinearGroup.map_apply_coe, Int.coe_castRingHom, Matrix.map_apply,
+    Complex.ofReal_intCast]
 
 /-- Elements of `SL(2, ℤ)` that agree up to sign act alike on `ℍ`, since `-1` acts trivially
 (`ModularGroup.SL_neg_smul`). This absorbs the sign ambiguity `g = k ∨ g = -k` in the cases of

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DiophantineApproximation.ContinuedFractions.Basic
+public import TauCeti.NumberTheory.DiophantineApproximation.ContinuedFractions.Convergents
 
 /-!
 # Convergents are best approximations
@@ -53,9 +53,10 @@ private theorem abs_den_convergent_mul_sub_num_convergent_le_of_pos (ξ : ℝ) (
     (hq : 0 < q) (hq' : q < (ξ.convergent (n + 1)).den) (p : ℤ) :
     |(ξ.convergent n).den * ξ - (ξ.convergent n).num| ≤ |q * ξ - p| := by
   by_cases hn : (of ξ).TerminatedAt n
-  · rw [den_convergent_mul_sub_num_convergent_eq_zero ξ hn, abs_zero]
+  · rw [← convNum_def, ← convDen_def, ← convErr_def, convErr_eq_zero_of_terminatedAt hn, abs_zero]
     exact abs_nonneg _
-  have hdet := num_convergent_mul_den_convergent_succ_sub ξ hn
+  have hdet := convNum_mul_convDen_succ_sub_convNum_succ_mul_convDen hn
+  rw [convNum_def, convNum_def, convDen_def, convDen_def] at hdet
   have hD : ((-1 : ℤ) ^ (n + 1)) * (-1) ^ (n + 1) = 1 := by rw [← mul_pow]; simp
   -- The coordinates of `(p, q)` in the basis `(pₙ, qₙ)`, `(pₙ₊₁, qₙ₊₁)`.
   obtain ⟨a, b, hqab, hpab⟩ : ∃ a b : ℤ,
@@ -67,10 +68,11 @@ private theorem abs_den_convergent_mul_sub_num_convergent_le_of_pos (ξ : ℝ) (
       by linear_combination (-p) * hD - p * (-1) ^ (n + 1) * hdet⟩
   -- The signs of the errors `εₖ = qₖ ξ - pₖ` alternate; `εₙ₊₁` vanishes after termination.
   set s : ℝ := (-1) ^ n
-  have hx := neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos ξ hn
+  have hx := neg_one_pow_mul_convErr_pos hn
+  rw [convErr_def, convNum_def, convDen_def] at hx
   have hy : s * ((ξ.convergent (n + 1)).den * ξ - (ξ.convergent (n + 1)).num) ≤ 0 := by
-    have := neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg ξ (n + 1)
-    rw [pow_succ] at this
+    have := neg_one_pow_mul_convErr_nonneg ξ (n + 1)
+    rw [convErr_def, convNum_def, convDen_def, pow_succ] at this
     linarith
   have hqR : (q : ℝ) = a * (ξ.convergent n).den + b * (ξ.convergent (n + 1)).den := by
     exact_mod_cast hqab

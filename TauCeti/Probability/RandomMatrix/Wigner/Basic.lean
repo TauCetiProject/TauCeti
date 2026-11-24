@@ -16,6 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Wigner matrices
@@ -783,10 +784,7 @@ absolute moments at most `σ ^ 2`, every entry of the `n × n` Wigner matrix has
 order `m + 2` at most `b ^ m * min (σ ^ 2 / n) (b ^ 2)`, where `b = K / √n` bounds the normalized
 entries. -/
 theorem integral_norm_wignerMatrix_apply_pow_add_two_le [IsProbabilityMeasure P] {n : ℕ}
-    {K σ : ℝ}
-    (hξm : ∀ ij : StrictUpper, ij.val.2 < n → AEStronglyMeasurable (ξ ij) P)
-    (hηm : ∀ i < n, AEStronglyMeasurable (η i) P)
-    (hξK : ∀ ij : StrictUpper, ij.val.2 < n → ∀ᵐ ω ∂P, ‖ξ ij ω‖ ≤ K)
+    {K σ : ℝ} (hξK : ∀ ij : StrictUpper, ij.val.2 < n → ∀ᵐ ω ∂P, ‖ξ ij ω‖ ≤ K)
     (hηK : ∀ i < n, ∀ᵐ ω ∂P, ‖η i ω‖ ≤ K)
     (hξσ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P ≤ σ ^ 2)
     (hησ : ∀ i < n, ∫ ω, ‖η i ω‖ ^ 2 ∂P ≤ σ ^ 2) (i j : Fin n) (m : ℕ) :
@@ -794,10 +792,6 @@ theorem integral_norm_wignerMatrix_apply_pow_add_two_le [IsProbabilityMeasure P]
       (K / Real.sqrt n) ^ m * min (σ ^ 2 / n) ((K / Real.sqrt n) ^ 2) := by
   have hn : 0 < n := i.pos
   have hsqrt : 0 < Real.sqrt n := Real.sqrt_pos.mpr (Nat.cast_pos.mpr hn)
-  have hK₀ : 0 ≤ K := (hηK 0 hn).exists.elim fun _ h ↦ (norm_nonneg _).trans h
-  have hξp (p : ℕ) : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) p P :=
-    fun ij hij ↦ .of_bound (hξm ij hij) K (hξK ij hij)
-  have hηp (p : ℕ) : ∀ i < n, MemLp (η i) p P := fun i hi ↦ .of_bound (hηm i hi) K (hηK i hi)
   -- The normalized entries are bounded by `K / √n`.
   have hent : ∀ᵐ ω ∂P, ‖wignerMatrix ξ η n ω i j‖ ≤ K / Real.sqrt n := by
     by_cases hij : i = j
@@ -810,25 +804,10 @@ theorem integral_norm_wignerMatrix_apply_pow_add_two_le [IsProbabilityMeasure P]
         min_lt_max.mpr (Fin.val_ne_of_ne hij)⟩ (max_lt i.isLt j.isLt)] with ω hω
       rw [norm_wignerMatrix_apply_of_ne _ _ _ hij, inv_mul_eq_div]
       exact div_le_div_of_nonneg_right hω hsqrt.le
-  have hint : Integrable (fun ω ↦ ‖wignerMatrix ξ η n ω i j‖ ^ 2) P :=
-    (memLp_wignerMatrix_apply (hξp 2) (hηp 2) i j).integrable_norm_pow two_ne_zero
   have hσn : ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P ≤ σ ^ 2 / n := by
     have := integral_norm_wignerMatrix_apply_pow_le (k := 2) hξσ hησ i j
     rwa [inv_pow, Real.sq_sqrt (Nat.cast_nonneg n), inv_mul_eq_div] at this
-  have hbb : ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P ≤ (K / Real.sqrt n) ^ 2 := by
-    calc _ ≤ ∫ _ : Ω, (K / Real.sqrt n) ^ 2 ∂P := integral_mono_ae hint (integrable_const _)
-          (hent.mono fun ω hω ↦ pow_le_pow_left₀ (norm_nonneg _) hω 2)
-      _ = (K / Real.sqrt n) ^ 2 := by simp
-  calc _ ≤ ∫ ω, (K / Real.sqrt n) ^ m * ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P :=
-        integral_mono_ae ((memLp_wignerMatrix_apply (hξp (m + 2)) (hηp (m + 2)) i j)
-          |>.integrable_norm_pow (Nat.succ_ne_zero _)) (hint.const_mul _)
-          (hent.mono fun ω hω ↦ by
-            simp only [pow_add]
-            exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) hω m)
-              (sq_nonneg _))
-    _ = (K / Real.sqrt n) ^ m * ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P := integral_const_mul _ _
-    _ ≤ _ := mul_le_mul_of_nonneg_left (le_min hσn hbb)
-        (pow_nonneg (div_nonneg hK₀ hsqrt.le) m)
+  exact integral_norm_pow_add_two_le hent hσn m
 
 open scoped Matrix.Norms.Frobenius in
 /-- If the corner entries of size `n` are square-integrable, the squared Frobenius norm of the
