@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.ExteriorPowerCoords
 public import TauCeti.Topology.VectorBundle.FiniteRank.CoordinateFunctor
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Exterior powers of finite-rank bundle cores
@@ -260,17 +261,25 @@ transitions of the core. -/
   rw [det_def, coordChange_exteriorPower_obj]
   exact ContinuousLinearMap.exteriorPowerCoords_self _
 
-/-- The determinant core of a bundle in standard `Fin n → 𝕜` coordinates has transition scalar
-equal to the determinant of the bundle transition in the preferred charts. -/
-theorem coordChange_det_ofLinearEquiv_refl (n : ℕ) (E : B → Type*)
-    [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
-    [∀ x, TopologicalSpace (E x)] [TopologicalSpace (Bundle.TotalSpace (Fin n → 𝕜) E)]
-    [FiberBundle (Fin n → 𝕜) E] [VectorBundle 𝕜 (Fin n → 𝕜) E] (i i' x : B) :
-    (ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin n → 𝕜)) E).det.core.coordChange i i' x =
-      ((trivializationAt (Fin n → 𝕜) E i).coordChangeL 𝕜
-        (trivializationAt (Fin n → 𝕜) E i') x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)).det •
-        ContinuousLinearMap.id 𝕜 _ := by
-  rw [coordChange_det, coordChange_ofLinearEquiv_refl]
+section OfLinearEquiv
+
+variable {r : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  (e : F ≃L[𝕜] (Fin r → 𝕜)) (V : B → Type*)
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (Bundle.TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- The determinant transitions of `ofLinearEquiv e V` depend only on the chart transitions of `V`
+on its model fibre `F`, and not on the chosen coordinate equivalence `e`. -/
+theorem coordChange_ofLinearEquiv_det (b c x : B) :
+    (ofLinearEquiv e V).det.core.coordChange b c x =
+      ((trivializationAt F V b).coordChangeL 𝕜
+          (trivializationAt F V c) x : F →L[𝕜] F).det •
+        ContinuousLinearMap.id 𝕜 (Fin (ofLinearEquiv e V).det.rank → 𝕜) := by
+  rw [coordChange_det, coordChange_ofLinearEquiv]
+  exact congrArg (· • ContinuousLinearMap.id 𝕜 _) (e.det_arrowCongr_self _)
+
+end OfLinearEquiv
 
 /-! ### Pullback -/
 

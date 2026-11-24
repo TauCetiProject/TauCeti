@@ -699,7 +699,7 @@ def ofLinearEquivDetHomeomorph :
       simp
     -- Reconstructed-core fibres are aliases of the model; expose them for the coordinate formula.
     erw [trivialization_apply_mk _ hx', VectorBundleCore.localTriv_apply, A.det.indexAt_eq,
-      FiniteRankBundleCore.coordChange_det_ofLinearEquiv_refl, hsmul,
+      FiniteRankBundleCore.coordChange_ofLinearEquiv_det _ E, hsmul,
       ofLinearEquivDetFiberEquiv_apply, chartCoord_chartCoord_symm]
 
 @[simp]

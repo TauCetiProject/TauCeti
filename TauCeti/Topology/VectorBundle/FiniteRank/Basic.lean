@@ -417,17 +417,6 @@ theorem baseSet_ofLinearEquiv (b : B) :
       e.arrowCongr e ((trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x) :=
   (rfl)
 
-/-- For the identity coordinate equivalence on `Fin r → 𝕜`, the chart transitions of
-`ofLinearEquiv` agree with Mathlib's `coordChangeL` between the preferred trivializations. -/
-theorem coordChange_ofLinearEquiv_refl (r : ℕ) (W : B → Type z)
-    [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜 (W x)]
-    [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace (Fin r → 𝕜) W)]
-    [FiberBundle (Fin r → 𝕜) W] [VectorBundle 𝕜 (Fin r → 𝕜) W] (b c x : B) :
-    (ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜)) W).core.coordChange b c x =
-      ((trivializationAt (Fin r → 𝕜) W b).coordChangeL 𝕜
-        (trivializationAt (Fin r → 𝕜) W c) x : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) :=
-  ContinuousLinearMap.ext fun _ ↦ rfl
-
 /-- For the identity coordinate equivalence on `Fin r → 𝕜`, the underlying `VectorBundleCore` of
 `ofLinearEquiv` equals `pointIndexedCore 𝕜 (Fin r → 𝕜) W`. -/
 theorem core_ofLinearEquiv_refl (r : ℕ) (W : B → Type z)

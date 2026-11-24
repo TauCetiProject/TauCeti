@@ -80,11 +80,10 @@ noncomputable def ofLinearEquivChangeIso :
 @[simp] theorem ofLinearEquivChangeIso_self :
     ofLinearEquivChangeIso e₁ e₁ V = Iso.refl (ofLinearEquiv e₁ V) :=
   Iso.ext <| hom_ext fun x ↦ by
-    rw [fiberMap_ofLinearEquivChangeIso_hom, Iso.refl_hom, fiberMap_id]
-    ext v : 1
-    exact (ContinuousLinearEquiv.trans_apply e₁.symm e₁ v).trans
-      ((e₁.apply_symm_apply v).trans
-        (ContinuousLinearMap.id_apply (M₁ := Fin (ofLinearEquiv e₁ V).rank → 𝕜) v).symm)
+    ext v
+    simp [fiberMap_ofLinearEquivChangeIso_hom]
+    -- `(ofLinearEquiv e₁ V).rank` reduces definitionally to `r₁`.
+    rfl
 
 /-- Inverting a coordinate-change isomorphism reverses the two coordinate equivalences. -/
 @[simp] theorem ofLinearEquivChangeIso_symm :
@@ -98,13 +97,8 @@ change. -/
     (ofLinearEquivChangeIso e₁ e₂ V).hom ≫ (ofLinearEquivChangeIso e₂ e₃ V).hom =
       (ofLinearEquivChangeIso e₁ e₃ V).hom :=
   hom_ext fun x ↦ by
-    ext v : 1
-    rw [fiberMap_comp, ContinuousLinearMap.comp_apply]
-    exact (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_hom e₂ e₃ V x) _).trans
-      ((congrArg (fun w ↦ e₃ (e₂.symm w))
-        (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_hom e₁ e₂ V x) v)).trans
-      ((congrArg e₃ (e₂.symm_apply_apply (e₁.symm v))).trans
-      (DFunLike.congr_fun (fiberMap_ofLinearEquivChangeIso_hom e₁ e₃ V x) v).symm))
+    ext v
+    simp [fiberMap_ofLinearEquivChangeIso_hom]
 
 /-- Composing the inverse maps of successive coordinate changes yields the direct inverse
 coordinate change. -/
@@ -131,13 +125,12 @@ theorem ofLinearEquivTotalSpaceHomeomorph_changeIso_hom
   rcases p with ⟨x, u⟩
   rw [CoordinateHom.totalSpaceMap_mk, fiberMap_ofLinearEquivChangeIso_hom,
     ofLinearEquivTotalSpaceHomeomorph_apply, ofLinearEquivTotalSpaceHomeomorph_apply]
-  refine congrArg (TotalSpace.mk' F x) ?_
-  -- `u : (ofLinearEquiv e₁ V).core.Fiber x` is definitionally `Fin r₁ → 𝕜` via `@[expose]`.
-  exact (ofLinearEquivFiberEquiv_apply e₂ V x _).trans
-    ((congrArg (fun y ↦ (trivializationAt F V x).symm x (e₂.symm y))
-      (ContinuousLinearEquiv.trans_apply e₁.symm e₂ u)).trans
-      ((congrArg ((trivializationAt F V x).symm x) (e₂.symm_apply_apply (e₁.symm u))).trans
-        (ofLinearEquivFiberEquiv_apply e₁ V x u).symm))
+  -- `u : (ofLinearEquiv e₁ V).core.Fiber x` is definitionally `Fin r₁ → 𝕜`.
+  let u' : Fin r₁ → 𝕜 := u
+  change TotalSpace.mk' F x (ofLinearEquivFiberEquiv e₂ V x
+      ((e₁.symm.trans e₂ : (Fin r₁ → 𝕜) →L[𝕜] (Fin r₂ → 𝕜)) u')) =
+    TotalSpace.mk' F x (ofLinearEquivFiberEquiv e₁ V x u')
+  simp
 
 end Change
 
