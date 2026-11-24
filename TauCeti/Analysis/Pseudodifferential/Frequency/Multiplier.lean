@@ -68,11 +68,13 @@ Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)`, the Schwartz-space form of
 * `TauCeti.Symbol.quantizeUniformCLM_comp_quantizeFrequencyCLM`,
   `TauCeti.Symbol.quantizeFrequencyCLM_comp_quantizeUniformCLM`: for a smooth frequency
   coefficient `b(ξ)` with the symbol estimates `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m' - k)` of some order
-  `m'`, the operator forms `Op(a) ∘ b(D) = Op(a b)` and `b(D) ∘ Op(a) = Op(b # a)` as continuous
-  linear maps of Schwartz spaces.
+  `m'`, the operator forms `Op(a) ∘ b(D) = Op(a b)` for a uniform symbol `a` and
+  `b(D) ∘ Op(a) = Op(b # a)` for `a` with compact spatial support, as continuous linear maps of
+  Schwartz spaces.
 * `TauCeti.Symbol.quantizeUniformCLM_comp_besselMultiplier`,
   `TauCeti.Symbol.besselMultiplier_comp_quantizeUniformCLM`: their Bessel cases
-  `Op(a) ∘ J^t = Op(a ⟨ξ / 2π⟩ ^ t)` and `J^t ∘ Op(a) = Op(⟨ξ / 2π⟩ ^ t # a)`.
+  `Op(a) ∘ J^t = Op(a ⟨ξ / 2π⟩ ^ t)` for uniform `a` and `J^t ∘ Op(a) = Op(⟨ξ / 2π⟩ ^ t # a)` for
+  `a` with compact spatial support.
 * `TauCeti.Symbol.quantizeUniformCLM_comp_besselPotential_two`: `Op(a) ∘ J²` is `J² ∘ Op(a)` plus
   `(2π)⁻²` times the quantization of the Laplacian commutator symbol.
 
@@ -324,8 +326,10 @@ theorem quantizeUniformCLM_comp_besselMultiplier (a : Symbol n V W m) (ha : a.Is
     quantizeUniformCLM a ha ∘L SchwartzMap.fourierMultiplierCLM V
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) =
       quantizeUniformCLM (a.comp (besselPotential t)) (ha.comp (isUniform_besselPotential t)) := by
+  simp only [besselPotential_eq_ofFrequency]
   rw [← quantizeFrequencyCLM_besselWeight (E := CoordinateSpace n) (V := V) t]
-  exact quantizeUniformCLM_comp_quantizeFrequencyCLM (U := V) _ _ a ha
+  exact quantizeUniformCLM_comp_quantizeFrequencyCLM (contDiff_besselWeight_smul_id t)
+    (exists_norm_iteratedFDeriv_besselWeight_smul_id_le t) a ha
 
 omit [CompleteSpace V] in
 /-- **Composition with a frequency multiplier on the left.** For a smooth frequency coefficient
@@ -354,8 +358,10 @@ theorem besselMultiplier_comp_quantizeUniformCLM {a : Symbol n V W m}
           quantizeUniformCLM a ha.isUniform =
       quantizeUniformCLM ((besselPotential t).sharp a ha)
         ((isUniform_besselPotential t).sharp ha) := by
+  simp only [besselPotential_eq_ofFrequency]
   rw [← quantizeFrequencyCLM_besselWeight (E := CoordinateSpace n) (V := W) t]
-  exact quantizeFrequencyCLM_comp_quantizeUniformCLM (U := W) _ _ ha
+  exact quantizeFrequencyCLM_comp_quantizeUniformCLM (contDiff_besselWeight_smul_id t)
+    (exists_norm_iteratedFDeriv_besselWeight_smul_id_le t) ha
 
 /-- The commutator with `J²` in the form `Op(a) ∘ J² = J² ∘ Op(a) + (2π)⁻² Op(c)`, where
 `c = (Δ_x + 2i ⟪ξ, ∇_x⟫) a` and `Op(a) ∘ J²` is the quantization of `a ⟨ξ / 2π⟩²`. -/
