@@ -45,10 +45,6 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
 * `AdjoinRoot.basisXPowSubC`: for `n ≠ 0`, the basis `1, root, …, root ^ (n - 1)` of
   `R[X]/(X ^ n - C a)` indexed by `Fin n`, over any nontrivial commutative ring. It is Mathlib's
   `AdjoinRoot.powerBasis'` reindexed along `natDegree (X ^ n - C a) = n`.
-* `AdjoinRoot.twistXPowSubC`: for `ζ ^ n = 1`, the `R`-algebra endomorphism of
-  `R[X]/(X ^ n - C a)` sending that root to `ζ` times it, over any commutative ring, with
-  `AdjoinRoot.twistXPowSubC_pow_eq_one`. Over a field this is the action of `ζ` in Mathlib's
-  `autAdjoinRootXPowSubC`.
 * `AdjoinRoot.isUnit_mk_iff_isCoprime`: the class of `g` is a unit of `AdjoinRoot f` exactly when
   `f` and `g` are coprime.
 * `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
@@ -215,34 +211,6 @@ noncomputable def basisXPowSubC [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
 theorem basisXPowSubC_apply [Nontrivial R] (n : ℕ) [NeZero n] (a : R) (i : Fin n) :
     basisXPowSubC n a i = root (X ^ n - C a) ^ (i : ℕ) := by
   simp [basisXPowSubC]
-
-section Twist
-
-variable (n : ℕ) {ζ : R} (a : R) (hζ : ζ ^ n = 1)
-
-/-- The **twist** of `R[X]/(X ^ n - C a)` by an element `ζ` with `ζ ^ n = 1`: the `R`-algebra
-endomorphism sending the class of `X` to `ζ` times it, which is well defined because
-`(ζ • root) ^ n = ζ ^ n • a = a`. Over a field, with `ζ` an `n`-th root of unity, this is the
-automorphism `autAdjoinRootXPowSubC n a η` of Mathlib for the root of unity `η` with value `ζ`. -/
-noncomputable def twistXPowSubC : AdjoinRoot (X ^ n - C a) →ₐ[R] AdjoinRoot (X ^ n - C a) :=
-  liftAlgHom _ (Algebra.ofId R _) (ζ • root _) <| by
-    simp [smul_pow, hζ, algebraMap_eq]
-
-/-- The twist sends the class of `X` to `ζ` times it. -/
-@[simp]
-theorem twistXPowSubC_root : twistXPowSubC n a hζ (root _) = ζ • root _ :=
-  liftAlgHom_root _ _ _ _
-
-/-- The `n`-th power of the twist by `ζ` is the identity, since `ζ ^ n = 1`. -/
-theorem twistXPowSubC_pow_eq_one : twistXPowSubC n a hζ ^ n = 1 := by
-  have h (k : ℕ) : (twistXPowSubC n a hζ ^ k) (root _) = ζ ^ k • root _ := by
-    induction k with
-    | zero => rw [pow_zero, pow_zero, one_smul, AlgHom.one_apply]
-    | succ k ih =>
-      rw [pow_succ', AlgHom.mul_apply, ih, map_smul, twistXPowSubC_root, smul_smul, pow_succ]
-  exact algHom_ext (by rw [h, hζ, one_smul, AlgHom.one_apply])
-
-end Twist
 
 /-- **The units of `AdjoinRoot f`.** The class of `g` is a unit of `AdjoinRoot f` exactly when
 `f` and `g` are coprime, that is, when `g` is invertible modulo `f`. -/

@@ -10,7 +10,6 @@ public import TauCeti.Algebra.BrauerGroup.Group
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
-import Mathlib.RingTheory.IsAdjoinRoot
 import TauCeti.Algebra.BrauerGroup.Trivial
 import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
@@ -217,15 +216,13 @@ noncomputable def algEquivEndAdjoinRoot (hζ : IsPrimitiveRoot ζ n) (ha : a ≠
   have := isSimpleRing hζ ha one_ne_zero
   have := finite (a := a) (b := 1) hζ.pow_eq_one
   have := (monic_X_pow_sub_C a (NeZero.ne n)).finite_adjoinRoot
-  have := (monic_X_pow_sub_C a (NeZero.ne n)).free_adjoinRoot
+  have := (standardTameCover_free K a n NeZero.one_le).1
   have : Nontrivial (AdjoinRoot (X ^ n - C a)) := AdjoinRoot.nontrivial _ (by
     rw [degree_X_pow_sub_C (NeZero.pos n)]
     exact_mod_cast NeZero.ne n)
   AlgEquiv.ofBijective (toEndAdjoinRoot a hζ.pow_eq_one) <| by
     have hinj := (toEndAdjoinRoot a hζ.pow_eq_one).toRingHom.injective
-    have hfin : Module.finrank K (AdjoinRoot (X ^ n - C a)) = n :=
-      (AdjoinRoot.isAdjoinRootMonic _ (monic_X_pow_sub_C a (NeZero.ne n))).finrank.trans
-        (natDegree_X_pow_sub_C (n := n) a)
+    have hfin := (standardTameCover_free K a n NeZero.one_le).2
     refine ⟨hinj, ?_⟩
     exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f :=
       (toEndAdjoinRoot a hζ.pow_eq_one).toLinearMap)
