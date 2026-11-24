@@ -166,9 +166,11 @@ private theorem tendsto_measure_lintegral_stoppedProcess_diag [IsFiniteMeasure P
   simpa only [Function.comp_apply, id_eq, Pi.sub_apply, Function.uncurry_apply_pair,
       sub_add_sub_cancel] using MeasureTheory.tendsto_measure_lintegral_enorm_add_sq
     (.of_forall fun k ω ↦
-      (((Finance.isStronglyPredictable_simpleHolding (hcm k)).stronglyMeasurable_path.sub
-        (hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable.stronglyMeasurable_path)
-          |>.eNorm.pow_const 2).aemeasurable)
+      (IsStronglyPredictable.measurable_enorm_sq_path
+        (H := fun s ω ↦ Finance.simpleHolding (γ k) (N k) (c k) s ω -
+          if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0)
+        ((Finance.isStronglyPredictable_simpleHolding (hcm k)).sub
+          (hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable)).aemeasurable)
     he₁ (hH.tendsto_measure_lintegral_ite_le_dyadicCeilTime_sub_sq hσ T) hε
 
 /-- **Optional stopping for the continuous Brownian Itô integral**: stopping `I` at a stopping time
@@ -218,11 +220,7 @@ theorem ite_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
         if (t : WithTop ℝ≥0) ≤ σ ω then H t ω else 0 := by
     ext t ω
     have hle := hστ ω
-    by_cases h1 : (t : WithTop ℝ≥0) ≤ σ ω <;> by_cases h2 : (t : WithTop ℝ≥0) ≤ τ ω
-    · rw [ite_eq_right (fun h ↦ h.1.not_ge h1), ite_eq_left h2, ite_eq_left h1, sub_self]
-    · exact (h2 (h1.trans hle)).elim
-    · rw [ite_eq_left ⟨lt_of_not_ge h1, h2⟩, ite_eq_left h2, ite_eq_right h1, sub_zero]
-    · rw [ite_eq_right (fun h ↦ h2 h.2), ite_eq_right h2, ite_eq_right h1, sub_zero]
+    split_ifs <;> simp_all <;> grind
   rw [heq]
   exact (hI.stoppedProcess hW hτ).sub (hI.stoppedProcess hW hσ)
 

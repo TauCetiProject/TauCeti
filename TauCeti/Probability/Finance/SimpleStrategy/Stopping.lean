@@ -64,16 +64,14 @@ private theorem simpleHolding_dyadicStopHeight {T t : ℝ≥0} (ht : t ∈ Ioc 0
       (le_div_iff₀ (by positivity)).2 (hj1 ▸ Nat.le_ceil _)⟩
   rw [simpleHolding_of_mem_Ioc ((strictMono_coe_dyadicNNRat k).monotone.monotoneOn _) hjM hmem,
     dyadicStopHeight]
-  congr 1
+  refine if_congr ?_ rfl rfl
   cases τ ω with
-  | top =>
-    simp only [dyadicCeilTime_top]
-    exact propext (iff_of_true (WithTop.coe_lt_top _) le_top)
+  | top => simp only [dyadicCeilTime_top, WithTop.coe_lt_top, le_top]
   | coe s =>
     simp only [dyadicCeilTime_coe, WithTop.coe_lt_coe, WithTop.coe_le_coe, coe_dyadicNNRat]
     rw [div_lt_div_iff_of_pos_right (by positivity), le_div_iff₀ (by positivity), Nat.cast_lt,
       ← Nat.ceil_le, ← hj1]
-    exact propext (by omega)
+    omega
 
 private theorem simpleGains_dyadicStopHeight {G : ℝ≥0 → Ω → ℝ} {T s : ℝ≥0} (hs : s ≤ T) {ω : Ω}
     (hG0 : G 0 ω = 0) (k : ℕ) :
@@ -88,8 +86,9 @@ private theorem simpleGains_dyadicStopHeight {G : ℝ≥0 → Ω → ℝ} {T s :
   rw [simpleGains_def]
   rcases le_or_gt (s : WithTop ℝ≥0) (dyadicCeilTime k (τ ω)) with hle | hgt
   · have hfM : f M = G s ω := by dsimp only [f]; rw [min_eq_right hsM]
-    rw [stoppedProcess_eq_of_le (τ := fun ω ↦ dyadicCeilTime k (τ ω)) hle,
-      ← hfM, ← sub_zero (f M), ← hf0, ← sum_range_sub f M]
+    have hsum : G s ω = ∑ j ∈ range M, (f (j + 1) - f j) := by
+      rw [sum_range_sub, hf0, hfM, sub_zero]
+    rw [stoppedProcess_eq_of_le (τ := fun ω ↦ dyadicCeilTime k (τ ω)) hle, hsum]
     refine sum_congr rfl fun j _ ↦ ?_
     by_cases hdj : (dyadicNNRat k j : ℝ≥0) < s
     · rw [dyadicStopHeight, ite_eq_left ((WithTop.coe_lt_coe.mpr hdj).trans_le hle), one_mul]
@@ -112,7 +111,10 @@ private theorem simpleGains_dyadicStopHeight {G : ℝ≥0 → Ω → ℝ} {T s :
         rw [min_eq_left hrs.le]
       have hfilt : (range M).filter (· < r) = range r := by
         ext j; simp only [mem_filter, Finset.mem_range]; omega
-      rw [← hfr, ← sub_zero (f r), ← hf0, ← sum_range_sub f r, ← hfilt, sum_filter]
+      have hsum : MeasureTheory.stoppedProcess G (fun ω ↦ dyadicCeilTime k (τ ω)) s ω =
+          ∑ j ∈ range r, (f (j + 1) - f j) := by
+        rw [sum_range_sub, hf0, hfr, sub_zero]
+      rw [hsum, ← hfilt, sum_filter]
       refine sum_congr rfl fun j _ ↦ ?_
       have hiff : ((dyadicNNRat k j : ℝ≥0) : WithTop ℝ≥0) < dyadicCeilTime k (τ ω) ↔ j < r := by
         rw [hρ, WithTop.coe_lt_coe, (strictMono_coe_dyadicNNRat k).lt_iff_lt]
@@ -140,11 +142,11 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime
   let l (p : Fin M × Fin n) : ℝ≥0 := max (σ p.2.val) (dyadicNNRat k p.1.val : ℝ≥0)
   let u (p : Fin M × Fin n) : ℝ≥0 := min (σ (p.2.val + 1)) (dyadicNNRat k (p.1.val + 1) : ℝ≥0)
   let α (p : Fin M × Fin n) (ω : Ω) : ℝ := dyadicStopHeight τ k p.1.val ω * a p.2.val ω
-  obtain ⟨N, γ, c, hγ0, hγ, hcm, hcb, hhold, hgains⟩ :=
+  obtain ⟨N, γ, c, hγ0, hγ, -, -, hcm, -, hcb, hhold, hgains⟩ :=
     exists_simpleHolding_simpleGains_eq_sum ℱ (univ : Finset (Fin M × Fin n)) l u α fun p _ ↦
       ((stronglyMeasurable_dyadicStopHeight hτ k p.1.val).mono (ℱ.mono (le_max_right _ _))).mul
         ((ha p.2.val p.2.isLt).mono (ℱ.mono (le_max_left _ _)))
-  refine ⟨N, γ, c, hγ0, hγ, hcm, fun j hj ω ↦ (hcb j hj ω).trans ?_,
+  refine ⟨N, γ, c, hγ0, hγ, fun j _ ↦ hcm j, fun j hj ω ↦ (hcb j hj ω).trans ?_,
     fun t ht ω ↦ ?_, fun X s hs ω ↦ ?_⟩
   · rw [Fintype.sum_prod_type]
     refine (sum_le_sum (g := fun _ ↦ ∑ i ∈ range n, ‖a i ω‖) fun _ _ ↦ ?_).trans_eq (by simp [M])

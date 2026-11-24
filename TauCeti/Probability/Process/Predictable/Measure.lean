@@ -564,6 +564,17 @@ namespace MeasureTheory.IsStronglyPredictable
 open Filter
 open scoped Topology
 
+/-- For a strongly predictable process `H` and an s-finite measure `μ` on time, the pathwise
+square energy `ω ↦ ∫⁻ s, ‖H s ω‖ₑ ^ 2 ∂μ` is measurable. -/
+theorem measurable_lintegral_enorm_sq
+    {ι Ω' E : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
+    [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
+    {mΩ' : MeasurableSpace Ω'} {ℱ' : Filtration ι mΩ'}
+    {μ : Measure ι} [SFinite μ] [TopologicalSpace E] [ContinuousENorm E]
+    {H : ι → Ω' → E} (hH : IsStronglyPredictable ℱ' H) :
+    Measurable fun ω ↦ ∫⁻ s, ‖H s ω‖ₑ ^ 2 ∂μ :=
+  ((hH.mono ℱ'.predictable_le_prod).eNorm.pow_const 2).lintegral_prod_left'
+
 /-- Product-`L²` convergence to zero of differences between two families of strongly predictable
 processes implies that the pathwise square energy of their difference tends to zero in
 `Q`-measure. -/

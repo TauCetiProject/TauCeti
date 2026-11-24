@@ -107,11 +107,12 @@ private theorem tendsto_measure_lintegral_of_ae_eventually_eqOn [IsFiniteMeasure
     (ε : ℝ≥0∞) (hε : 0 < ε) :
     Tendsto (fun k ↦ P {ω | ε ≤
       ∫⁻ s, ‖L k s ω - H s ω‖ₑ ^ 2 ∂Probability.timeMeasure T}) atTop (𝓝 0) := by
-  have hm {g : ℝ≥0 → Ω → ℝ} (hg : IsStronglyPredictable ℱ g) (k : ℕ) :
-      Measurable (fun ω ↦ ∫⁻ s, ‖L k s ω - g s ω‖ₑ ^ 2 ∂Probability.timeMeasure T) :=
-    ((((hL k).sub hg).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2).lintegral_prod_left'
   refine MeasureTheory.tendsto_measure_ge_of_ae_eventually_le
-    (hm hH) (fun k ↦ hm (hHs k) k) (hstage ε hε) ?_
+    (fun k ↦ IsStronglyPredictable.measurable_lintegral_enorm_sq
+      (H := fun s ω ↦ L k s ω - H s ω) ((hL k).sub hH))
+    (fun k ↦ IsStronglyPredictable.measurable_lintegral_enorm_sq
+      (H := fun s ω ↦ L k s ω - H_stage k s ω) ((hL k).sub (hHs k)))
+    (hstage ε hε) ?_
   filter_upwards [heq] with ω hω
   filter_upwards [hω] with k hk
   exact (lintegral_congr_ae ((Probability.ae_mem_Ioc_timeMeasure T).mono fun s hs ↦ by

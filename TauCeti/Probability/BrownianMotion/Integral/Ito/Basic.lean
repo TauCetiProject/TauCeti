@@ -98,11 +98,6 @@ structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I :
         atTop (𝓝 0)) ∧
     TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ k) (n k) (a k) W t) atTop (I t)
 
-private theorem aemeasurable_enorm_sq_sub {K H : ℝ≥0 → Ω → ℝ} (hK : IsStronglyPredictable ℱ K)
-    (hH : IsStronglyPredictable ℱ H) (t : ℝ≥0) (ω : Ω) :
-    AEMeasurable (fun s ↦ ‖K s ω - H s ω‖ₑ ^ 2) (timeMeasure t) :=
-  ((hK.stronglyMeasurable_path.sub hH.stronglyMeasurable_path).eNorm.pow_const 2).aemeasurable
-
 /-- If simple strategies on nondecreasing deterministic grids (allowing repeated dates) with
 left-measurable heights approximate `H` in pathwise square energy in probability on `(0, t]`,
 their elementary gains against a filtered pre-Brownian motion `W` converge in probability to `I t`,
@@ -126,8 +121,11 @@ theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianRe
       MeasureTheory.tendsto_measure_lintegral_enorm_add_sq
         (f := fun k s ω ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω)
         (g := fun k s ω ↦ H s ω - Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω)
-        (.of_forall fun k ω ↦ aemeasurable_enorm_sq_sub
-          (Finance.isStronglyPredictable_simpleHolding (ha k)) hI.isStronglyPredictable t ω)
+        (.of_forall fun k ω ↦
+          (IsStronglyPredictable.measurable_enorm_sq_path
+            (H := fun s ω ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω)
+            ((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
+              hI.isStronglyPredictable)).aemeasurable)
         henergy (by simpa only [eNorm_sub_rev] using he₁) hε
   have hdiff := (hW.tendstoInMeasure_simpleGains_of_energy
     (fun k ↦ (hσ k).monotoneOn) hbm t he_sub).congr_left fun k ↦ .of_forall (hgains_sub k W t)
@@ -367,8 +365,11 @@ theorem add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
       (hg₁.add hg₂).congr (fun k ↦ .of_forall fun ω ↦ (hgains k W t ω).symm) .rfl⟩
     simp_rw [hhold, Pi.add_apply, add_sub_add_comm]
     exact MeasureTheory.tendsto_measure_lintegral_enorm_add_sq
-      (.of_forall fun k ω ↦ aemeasurable_enorm_sq_sub
-        (Finance.isStronglyPredictable_simpleHolding (ha₁ k)) hI.isStronglyPredictable t ω)
+      (.of_forall fun k ω ↦
+        (IsStronglyPredictable.measurable_enorm_sq_path
+          (H := fun s ω ↦ Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω)
+          ((Finance.isStronglyPredictable_simpleHolding (ha₁ k)).sub
+            hI.isStronglyPredictable)).aemeasurable)
       he₁ he₂ hε
 
 /-- Subtracting two integrands subtracts their Itô integrals. -/

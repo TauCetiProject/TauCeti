@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 public import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
-import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 
 /-!
 # Iterated `Lᵖ` seminorms on a product measure
@@ -32,11 +31,6 @@ Only the second measure needs to be s-finite.
   is the iterated integral of the squared extended norm, integrating over `μ` first.
 * `TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm` — convergence to zero in
   `L²(μ ⊗ ν)` makes the section square energies over `μ` converge to zero in `ν`-measure.
-* `MeasureTheory.tendsto_measure_lintegral_mono`,
-  `MeasureTheory.tendsto_measure_lintegral_enorm_sq_bdd_mul`,
-  `MeasureTheory.tendsto_measure_lintegral_enorm_add_sq` — inner-measure monotonicity transfer
-  and algebraic stability for convergence in measure of slice square lower integrals
-  `y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ`.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 * `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
@@ -250,79 +244,3 @@ theorem MeasureTheory.MemLp.ae_memLp_prod_right [SFinite ν] {f : α × β → �
   · filter_upwards [hf.aestronglyMeasurable.prodMk_left] with x hx
     simp [hg, eLpNorm_exponent_zero hx]
   · exact TauCeti.ae_lt_top_of_eLpNorm_ne_top hp0 h.ne
-
-namespace MeasureTheory
-
-/-- Monotonicity in the inner measure transfers convergence to `0` in `ν`-measure of lower
-integrals `y ↦ ∫⁻ x, f i x y ∂μ₂` to any dominated inner measure `μ₁ ≤ μ₂`, with no
-measurability or finiteness assumptions. -/
-theorem tendsto_measure_lintegral_mono {α β ι : Type*}
-    [MeasurableSpace α] [MeasurableSpace β] {μ₁ μ₂ : Measure α} {ν : Measure β}
-    (hμ : μ₁ ≤ μ₂) {l : Filter ι} {f : ι → α → β → ℝ≥0∞}
-    (he : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, f i x y ∂μ₂}) l (𝓝 0))
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, f i x y ∂μ₁}) l (𝓝 0) :=
-  tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (he ε hε)
-    (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ hω ↦ hω.trans (lintegral_mono' hμ le_rfl)
-
-/-- If `‖f i x y‖ₑ ≤ ‖ξ y‖ₑ * ‖g i x y‖ₑ` with `ξ` uniformly norm-bounded and the slice square
-lower integrals `y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` converge to `0` in `ν`-measure along `l`, then so
-do the slice square lower integrals of `f i`. Neither measurability nor finiteness of `μ` or `ν`
-is needed. -/
-theorem tendsto_measure_lintegral_enorm_sq_bdd_mul {α β ι E F G : Type*}
-    {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α} {ν : Measure β}
-    [ENorm E] [ENorm F] [SeminormedAddCommGroup G] {l : Filter ι}
-    {f : ι → α → β → E} {g : ι → α → β → F} {ξ : β → G} {C : ℝ}
-    (hC : ∀ y, ‖ξ y‖ ≤ C)
-    (he : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0))
-    (hle : ∀ i x y, ‖f i x y‖ₑ ≤ ‖ξ y‖ₑ * ‖g i x y‖ₑ) {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
-  let M : NNReal := ⟨max C 1, by positivity⟩
-  have hM0 : (M : ℝ≥0∞) ≠ 0 :=
-    ENNReal.coe_ne_zero.mpr (NNReal.coe_pos.mp (lt_of_lt_of_le zero_lt_one (le_max_right _ _))).ne'
-  have hξM (y : β) : ‖ξ y‖ₑ ≤ M := by
-    rw [eNorm_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]; exact (hC y).trans (le_max_left _ _)
-  have hM2_pos : (0 : ℝ≥0∞) < (M : ℝ≥0∞) ^ 2 := sq (M : ℝ≥0∞) ▸ ENNReal.mul_pos hM0 hM0
-  have hM2_top : (M : ℝ≥0∞) ^ 2 ≠ ∞ := ENNReal.pow_ne_top ENNReal.coe_ne_top
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (he (ε / (M : ℝ≥0∞) ^ 2) (ENNReal.div_pos hε.ne' hM2_top))
-    (fun _ ↦ zero_le) fun i ↦ measure_mono fun y hy ↦ ?_
-  rw [Set.mem_ofPred_eq, ENNReal.div_le_iff_le_mul (Or.inl hM2_pos.ne') (Or.inl hM2_top), mul_comm]
-  exact hy.trans <| (lintegral_mono fun x ↦ ((pow_le_pow_left' (hle i x y) 2).trans_eq
-    (mul_pow _ _ 2)).trans (mul_le_mul_of_nonneg_right (pow_le_pow_left' (hξM y) 2)
-      zero_le)).trans_eq (lintegral_const_mul' _ _ hM2_top)
-
-/-- If eventually in `l`, for every `y`, the squared norm `x ↦ ‖f i x y‖ₑ ^ 2` of the first
-slice is `μ`-almost-everywhere measurable, and the slice square lower integrals
-`y ↦ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ` and `y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` both converge to `0` in
-`ν`-measure along `l`, then so does the slice square lower integral of `f i + g i`. -/
-theorem tendsto_measure_lintegral_enorm_add_sq {α β ι E : Type*}
-    {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α} {ν : Measure β}
-    [SeminormedAddCommGroup E] {l : Filter ι} {f g : ι → α → β → E}
-    (hf : ∀ᶠ i in l, ∀ y, AEMeasurable (fun x ↦ ‖f i x y‖ₑ ^ 2) μ)
-    (he₁ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0))
-    (he₂ : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0))
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, ‖f i x y + g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
-  have hδ : 0 < ε / 4 := ENNReal.div_pos hε.ne' (by norm_num)
-  have hsum : Tendsto (fun i ↦ ν {y | ε / 4 ≤ ∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ} +
-      ν {y | ε / 4 ≤ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ}) l (𝓝 0) := by
-    simpa using (he₁ _ hδ).add (he₂ _ hδ)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
-    (.of_forall fun _ ↦ zero_le) (hf.mono fun i hi ↦ (measure_mono fun y hy ↦ ?_).trans
-      (measure_union_le _ _))
-  have hbd : (∫⁻ x, ‖f i x y + g i x y‖ₑ ^ 2 ∂μ) ≤
-      2 * ((∫⁻ x, ‖f i x y‖ₑ ^ 2 ∂μ) + ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ) := by
-    simpa only [Pi.zero_apply, sub_zero, sub_neg_eq_add, eNorm_neg] using
-      TauCeti.lintegral_enorm_sub_sq_le_two_mul (f := (f i · y)) (g := fun x ↦ -g i x y)
-        (h := 0) (by simpa only [Pi.zero_apply, sub_zero] using hi y)
-  by_contra hnot
-  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
-  have h4 : (2 : ℝ≥0∞) * (ε / 4 + ε / 4) ≤ ε := by
-    rw [← two_mul, ← mul_assoc, two_mul, two_add_two_eq_four]
-    exact ENNReal.mul_div_le
-  exact (hy.trans hbd).not_gt <|
-    (ENNReal.mul_lt_mul_right (by norm_num) (by norm_num)
-      (ENNReal.add_lt_add hnot.1 hnot.2)).trans_le h4
-
-end MeasureTheory

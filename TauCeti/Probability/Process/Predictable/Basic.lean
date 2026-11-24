@@ -381,6 +381,16 @@ theorem MeasureTheory.IsStronglyPredictable.stronglyMeasurable_path {ι Ω E : T
     StronglyMeasurable (fun t ↦ H t ω) :=
   (hH.mono ℱ.predictable_le_prod).of_uncurry_right
 
+/-- Each time-section (path) of a strongly predictable process has measurable squared extended
+norm `t ↦ ‖H t ω‖ₑ ^ 2`. -/
+theorem MeasureTheory.IsStronglyPredictable.measurable_enorm_sq_path {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace ι] [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
+    [TopologicalSpace E] [ContinuousENorm E] {ℱ : Filtration ι m} {H : ι → Ω → E}
+    (hH : IsStronglyPredictable ℱ H) {ω : Ω} :
+    Measurable (fun t ↦ ‖H t ω‖ₑ ^ 2) :=
+  hH.stronglyMeasurable_path.eNorm.pow_const 2
+
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- An adapted process with almost-surely left-continuous paths has a predictable
 indistinguishable version on the same raw filtration. No completeness or right continuity of

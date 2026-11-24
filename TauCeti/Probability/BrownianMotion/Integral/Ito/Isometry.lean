@@ -72,29 +72,38 @@ namespace TauCeti.Probability
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
   {W H I : ℝ≥0 → Ω → ℝ}
 
-private theorem exists_simpleHolding_tendsto_l2Integral
+private structure SimpleHoldingApprox {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H : ℝ≥0 → Ω → ℝ)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) where
+  n : ℕ → ℕ
+  τ : ℕ → ℕ → ℝ≥0
+  a : ℕ → ℕ → Ω → ℝ
+  C : ℕ → ℝ
+  tau_zero : ∀ m, τ m 0 = 0
+  strictMonoOn : ∀ m, StrictMonoOn (τ m) (Iic (n m))
+  stronglyMeasurable : ∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)
+  norm_le : ∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m
+  martingale : ∀ m, Martingale (Finance.simpleGains (τ m) (n m) (a m) W) ℱ P
+  memLp : ∀ m T, MemLp (Finance.simpleGains (τ m) (n m) (a m) W T) 2 P
+  tendsto_holding : ∀ T, Tendsto (fun m ↦ eLpNorm
+    (fun p ↦ Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2
+      ((timeMeasure T).prod P)) atTop (𝓝 0)
+  tendsto_l2Integral : ∀ T, Tendsto (fun m ↦ (memLp m T).toLp
+    (Finance.simpleGains (τ m) (n m) (a m) W T)) atTop
+    (𝓝 (hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))))
+
+private theorem exists_simpleHoldingApprox
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) :
-    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ)
-      (_ : ∀ m, τ m 0 = 0)
-      (_ : ∀ m, StrictMonoOn (τ m) (Iic (n m)))
-      (_ : ∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j))
-      (_ : ∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m)
-      (_ : ∀ m, Martingale (Finance.simpleGains (τ m) (n m) (a m) W) ℱ P)
-      (hmem : ∀ m T, MemLp (Finance.simpleGains (τ m) (n m) (a m) W T) 2 P),
-      (∀ T, Tendsto (fun m ↦ eLpNorm
-        (fun p ↦ Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2
-          ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
-      ∀ T, Tendsto (fun m ↦ (hmem m T).toLp (Finance.simpleGains (τ m) (n m) (a m) W T)) atTop
-        (𝓝 (hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)))) := by
+    Nonempty (SimpleHoldingApprox ℱ P W H hW hH) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨n, τ, a, C, hτ₀, hτ, ha, hb, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
   have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P :=
     MemLp.of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m)
       (.of_forall (hb m j hj))
-  refine ⟨n, τ, a, C, hτ₀, hτ, ha, hb,
+  refine ⟨⟨n, τ, a, C, hτ₀, hτ, ha, hb,
     fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
       ⟨C m, .of_forall fun ω ↦ by simpa [Real.norm_eq_abs] using hb m j hj ω⟩,
-    fun m T ↦ hW.memLp_simpleGains (hτ m).monotoneOn (ha m) (ha₂ m) T, herr, fun T ↦ ?_⟩
+    fun m T ↦ hW.memLp_simpleGains (hτ m).monotoneOn (ha m) (ha₂ m) T, herr, fun T ↦ ?_⟩⟩
   have hu : Tendsto (fun m ↦ (Finance.memLp_simpleHolding_predictableMeasure (ha m) (ha₂ m) T).toLp
       (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m)))) atTop
       (𝓝 ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))) := by
@@ -107,6 +116,46 @@ private theorem exists_simpleHolding_tendsto_l2Integral
     hW.l2Integral_simpleHolding (hτ m).monotoneOn (ha m) T
       (Finance.memLp_simpleHolding_predictableMeasure (ha m) (ha₂ m) T)
       (hW.memLp_simpleGains (hτ m).monotoneOn (ha m) (ha₂ m) T)
+
+private structure ItoIntegralApprox {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H : ℝ≥0 → Ω → ℝ)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) where
+  I : ℝ≥0 → Ω → ℝ
+  approx : SimpleHoldingApprox ℱ P W H hW hH
+  isItoIntegral : IsItoIntegral ℱ P W H I
+  isStronglyPredictable : IsStronglyPredictable ℱ I
+  martingale : Martingale I ℱ P
+  tendsto_l2_gains : ∀ T : ℝ≥0, Tendsto (fun m ↦
+    eLpNorm (Finance.simpleGains (approx.τ m) (approx.n m) (approx.a m) W T - I T) 2 P)
+      atTop (𝓝 0)
+  tendsto_unif_inMeasure : ∀ (T : ℝ≥0) (ε : ℝ≥0), 0 < ε → Tendsto (fun m ↦ P {ω | ∃ t ≤ T,
+    (ε : ℝ) < ‖Finance.simpleGains (approx.τ m) (approx.n m) (approx.a m) W t ω - I t ω‖})
+      atTop (𝓝 0)
+  subseq : ℕ → ℕ
+  strictMono_subseq : StrictMono subseq
+  ae_tendstoUniformlyOn : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, TendstoUniformlyOn (fun m t ↦
+    Finance.simpleGains (approx.τ (subseq m)) (approx.n (subseq m))
+      (approx.a (subseq m)) W t ω) (fun t ↦ I t ω) atTop (Iic T)
+
+private theorem exists_itoIntegralApprox
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    (hH : BrownianIntegrable ℱ P H) :
+    Nonempty (ItoIntegralApprox ℱ P W H hW hH) := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨h⟩ := exists_simpleHoldingApprox hW hH
+  obtain ⟨I, hIm, hIp, hIlim, hIunif, φ, hφ, hIpath⟩ :=
+    exists_continuous_martingale_of_cauchySeq_Lp h.martingale
+      (fun _ ↦ hcont.mono fun _ hω ↦ Finance.continuous_simpleGains hω) h.memLp
+      fun T ↦ (h.tendsto_l2Integral T).cauchySeq
+  have hIto : IsItoIntegral ℱ P W H I :=
+    ⟨hH.isStronglyPredictable, hIpath.mono fun _ h ↦ h.1, fun t ↦
+      ⟨h.n, h.τ, h.a, fun m ↦ (h.strictMonoOn m).monotoneOn, h.stronglyMeasurable,
+        fun _ hε ↦ IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
+          (fun m ↦ Finance.isStronglyPredictable_simpleHolding (h.stronglyMeasurable m))
+          (fun _ ↦ hH.isStronglyPredictable) (h.tendsto_holding t) hε,
+        tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩
+  exact ⟨⟨I, h, hIto, hIp, hIm, fun T ↦ (hIlim T).2, hIunif, φ, hφ, hIpath.mono fun _ h ↦ h.2⟩⟩
 
 /-- **Existence and uniform approximation of the `L²` Brownian Itô integral**: every
 `BrownianIntegrable` integrand against a filtered pre-Brownian motion `W` with a.s. continuous
@@ -134,22 +183,12 @@ theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ᵐ ω ∂P, ∀ T : ℝ≥0,
         TendstoUniformlyOn (fun m t ↦ Finance.simpleGains (τ (φ m)) (n (φ m)) (a (φ m)) W t ω)
           (fun t ↦ I t ω) atTop (Iic T) := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, C, hτ₀, hτ, ha, hb, hMm, hmem, herr, hlim⟩ :=
-    exists_simpleHolding_tendsto_l2Integral hW hH
-  obtain ⟨I, hIm, hIp, hIlim, hIunif, φ, hφ, hIpath⟩ :=
-    exists_continuous_martingale_of_cauchySeq_Lp hMm
-      (fun _ ↦ hcont.mono fun _ hω ↦ Finance.continuous_simpleGains hω) hmem
-      fun T ↦ (hlim T).cauchySeq
-  have hIto : IsItoIntegral ℱ P W H I :=
-    ⟨hH.isStronglyPredictable, hIpath.mono fun _ h ↦ h.1, fun t ↦
-      ⟨n, τ, a, fun m ↦ (hτ m).monotoneOn, ha,
-        fun _ hε ↦ IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
-          (fun m ↦ Finance.isStronglyPredictable_simpleHolding (ha m))
-          (fun _ ↦ hH.isStronglyPredictable) (herr t) hε,
-        tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩
-  exact ⟨I, n, τ, a, C, hIto, hIp, hIm, hτ₀, hτ, ha, hb, herr, fun T ↦ (hIlim T).2, hIunif,
-    φ, hφ, hIpath.mono fun _ h ↦ h.2⟩
+  obtain ⟨h⟩ := exists_itoIntegralApprox hW hcont hH
+  exact ⟨h.I, h.approx.n, h.approx.τ, h.approx.a, h.approx.C, h.isItoIntegral,
+    h.isStronglyPredictable, h.martingale, h.approx.tau_zero, h.approx.strictMonoOn,
+    h.approx.stronglyMeasurable, h.approx.norm_le, h.approx.tendsto_holding,
+    h.tendsto_l2_gains, h.tendsto_unif_inMeasure, h.subseq, h.strictMono_subseq,
+    h.ae_tendstoUniformlyOn⟩
 
 /-- **Existence of the Itô integral for square-integrable integrands.** Against a pre-Brownian
 motion relative to the filtration with almost surely continuous paths, every predictable
@@ -158,8 +197,8 @@ is a predictable martingale. No usual conditions on the filtration are assumed. 
 theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral (hH : BrownianIntegrable ℱ P H)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) :
     ∃ I, IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P := by
-  obtain ⟨I, _, _, _, _, hI, hIp, hIm, _⟩ := hH.exists_isItoIntegral_approx hW hWc
-  exact ⟨I, hI, hIp, hIm⟩
+  obtain ⟨h⟩ := exists_itoIntegralApprox hW hWc hH
+  exact ⟨h.I, h.isItoIntegral, h.isStronglyPredictable, h.martingale⟩
 
 /-- Every Itô integral of a `BrownianIntegrable` integrand agrees `P`-a.s. at horizon `T`
 with `hW.l2Integral T`, without assuming path continuity of `W`. -/
@@ -167,14 +206,14 @@ theorem IsItoIntegral.ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     (hH : BrownianIntegrable ℱ P H) (hI : IsItoIntegral ℱ P W H I) (T : ℝ≥0) :
     I T =ᵐ[P] hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H)) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, -, -, hτ, ha, -, -, hmem, herr, hlim⟩ :=
-    exists_simpleHolding_tendsto_l2Integral hW hH
-  exact hI.ae_eq_of_tendstoInMeasure hW (fun m ↦ (hτ m).monotoneOn) ha
+  obtain ⟨h⟩ := exists_simpleHoldingApprox hW hH
+  exact hI.ae_eq_of_tendstoInMeasure hW (fun m ↦ (h.strictMonoOn m).monotoneOn)
+    h.stronglyMeasurable
     (fun _ hε ↦ IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
-      (fun m ↦ Finance.isStronglyPredictable_simpleHolding (ha m))
-      (fun _ ↦ hH.isStronglyPredictable) (herr T) hε)
-    ((MeasureTheory.tendstoInMeasure_of_tendsto_Lp (hlim T)).congr_left
-      fun m ↦ (hmem m T).coeFn_toLp)
+      (fun m ↦ Finance.isStronglyPredictable_simpleHolding (h.stronglyMeasurable m))
+      (fun _ ↦ hH.isStronglyPredictable) (h.tendsto_holding T) hε)
+    ((MeasureTheory.tendstoInMeasure_of_tendsto_Lp (h.tendsto_l2Integral T)).congr_left
+      fun m ↦ (h.memLp m T).coeFn_toLp)
 
 /-- **The martingale property of the Itô integral.** Against a pre-Brownian motion relative to
 the filtration, an adapted Itô integral of a Brownian-integrable integrand is a martingale.
@@ -183,14 +222,13 @@ theorem IsItoIntegral.martingale (hI : IsItoIntegral ℱ P W H I)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     (hIa : StronglyAdapted ℱ I) : Martingale I ℱ P := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, -, -, -, -, -, hmart, hmem, -, hlim⟩ :=
-    exists_simpleHolding_tendsto_l2Integral hW hH
-  obtain ⟨Z, hZ, hZlim⟩ :=
-    exists_martingale_of_cauchySeq_Lp hmart hmem fun t ↦ (hlim t).cauchySeq
+  obtain ⟨h⟩ := exists_simpleHoldingApprox hW hH
+  obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp h.martingale h.memLp
+    fun t ↦ (h.tendsto_l2Integral t).cauchySeq
   refine hZ.congr hIa fun t ↦ (tendstoInMeasure_ae_unique
     (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)
-    ((MeasureTheory.tendstoInMeasure_of_tendsto_Lp (hlim t)).congr_left
-      fun m ↦ (hmem m t).coeFn_toLp)).trans (hI.ae_eq_l2Integral hW hH t).symm
+    ((MeasureTheory.tendstoInMeasure_of_tendsto_Lp (h.tendsto_l2Integral t)).congr_left
+      fun m ↦ (h.memLp m t).coeFn_toLp)).trans (hI.ae_eq_l2Integral hW hH t).symm
 
 /-- An Itô integral of a Brownian-integrable integrand against a pre-Brownian motion relative to
 the filtration is square integrable at every time. -/

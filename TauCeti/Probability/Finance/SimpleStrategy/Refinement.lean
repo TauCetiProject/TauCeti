@@ -202,9 +202,9 @@ theorem exists_simpleHolding_simpleGains_eq_add [OrderBot ι] {mΩ : MeasurableS
       (∀ t ω, simpleHolding ρ N c t ω = simpleHolding τ n a t ω + simpleHolding σ m b t ω) ∧
       ∀ (X : ι → Ω → ℝ) t ω, simpleGains ρ N c X t ω =
         simpleGains τ n a X t ω + simpleGains σ m b X t ω := by
-  obtain ⟨N, ρ, c, hρ₀, hρ, -, -, hc, -, -, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
-    ((range n).disjSum (range m)) (Sum.elim τ σ) (Sum.elim (fun j ↦ τ (j + 1)) fun j ↦ σ (j + 1))
-    (Sum.elim a b) (by
+  obtain ⟨N, ρ, c, hρ₀, hρ, -, -, hc, -, -, hhold, hgain⟩ :=
+    exists_simpleHolding_simpleGains_eq_sum ℱ ((range n).disjSum (range m)) (Sum.elim τ σ)
+      (Sum.elim (fun j ↦ τ (j + 1)) fun j ↦ σ (j + 1)) (Sum.elim a b) (by
       rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
       · exact ha j hj
       · exact hb j hj)

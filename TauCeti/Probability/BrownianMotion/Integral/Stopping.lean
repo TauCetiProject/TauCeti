@@ -125,8 +125,7 @@ theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_dyadicCeilTim
         if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0) :=
     (hH.ite_le (hσ.dyadicCeilTime k)).isStronglyPredictable.sub
       (hH.ite_le hσ).isStronglyPredictable
-  have hDm (k : ℕ) : Measurable (D k) :=
-    ((hpred k).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2 |>.lintegral_prod_left'
+  have hDm (k : ℕ) : Measurable (D k) := (hpred k).measurable_lintegral_enorm_sq
   simpa only [measure_empty] using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop
     MeasurableSet.empty (fun k ↦ measurableSet_le measurable_const (hDm k)) <| by
     filter_upwards [hH.ae_memLp] with ω hω
@@ -149,7 +148,7 @@ theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_dyadicCeilTim
             fun k hk ↦ by dsimp only; rw [ite_eq_right hk.not_ge, ite_eq_right hs]; simp
     have hD0 : Tendsto (fun k ↦ D k ω) atTop (𝓝 0) := by
       simpa [D] using tendsto_lintegral_of_dominated_convergence (fun s ↦ ‖H s ω‖ₑ ^ 2)
-        (fun k ↦ (hpred k).stronglyMeasurable_path.measurable.eNorm.pow_const 2)
+        (fun k ↦ (hpred k).measurable_enorm_sq_path)
         (fun k ↦ .of_forall (hdom k))
         ((AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top
           hT.aestronglyMeasurable).mp hT).ne (.of_forall hpt)
