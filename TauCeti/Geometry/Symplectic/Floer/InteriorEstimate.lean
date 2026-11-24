@@ -302,11 +302,10 @@ theorem exists_forall_setIntegral_norm_fderiv_sq_le_mul_setIntegral_floerLineari
   set a := ‖(ω.flatEquiv : V →L[ℝ] V →L[ℝ] ℝ)‖
   set b := ‖(ω.flatEquiv.symm : (V →L[ℝ] ℝ) →L[ℝ] V)‖
   refine ⟨a ^ 2 * C * b ^ 2, by positivity, fun η hη hηK ↦ ?_⟩
-  set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η w)
+  set ζ : ℝ × ℝ → V := fun w ↦ ω.flatEquiv.symm (η w) with hζ_def
   have hζ : ContDiff ℝ 2 ζ := ω.flatEquiv.symm.contDiff.comp hη
   have hdη (z v : ℝ × ℝ) : fderiv ℝ η z v = ω.flatEquiv (fderiv ℝ ζ z v) := by
-    rw [show fderiv ℝ ζ z v = _ from fderiv_flatEquiv_symm_comp_apply ω z v,
-      ContinuousLinearEquiv.apply_symm_apply]
+    rw [hζ_def, fderiv_flatEquiv_symm_comp_apply, ContinuousLinearEquiv.apply_symm_apply]
   have hsq₁ (v : V) : ‖ω.flatEquiv v‖ ^ 2 ≤ a ^ 2 * ‖v‖ ^ 2 :=
     (pow_le_pow_left₀ (norm_nonneg _) (le_opNorm (ω.flatEquiv : V →L[ℝ] V →L[ℝ] ℝ) v) 2).trans_eq
       (mul_pow _ _ 2)
