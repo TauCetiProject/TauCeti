@@ -98,7 +98,7 @@ theorem IsAdmissible.exists_form_globalInvariants_eq_of_rank_eq_two
   let Q : _root_.QuadraticForm K (Fin 2 → K) :=
     weightedSumSquares K ![(a : K), -(a * (-d) : K)]
   have hQ : Q.Nondegenerate :=
-    _root_.QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul a (-d)
+    QuadraticMap.nondegenerate_weightedSumSquares_neg_self_mul a (-d)
   -- The scaled norm plane has the prescribed discriminant and finite Hasse signs.
   have hdiscr : (Q.globalInvariants hQ).discr = I.discr := by
     rw [_root_.QuadraticForm.globalInvariants_discr]
