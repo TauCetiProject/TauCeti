@@ -205,12 +205,6 @@ theorem brauerClass_eq_mk (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) (hb : b �
   -- The instance arguments are propositions, so they agree with those chosen in `brauerClass`.
   rw [brauerClass]
 
-/-- `K[X]/(X ^ n - a)` is nontrivial, being free of rank `n ≠ 0` (`standardTameCover_free`). -/
-private instance : Nontrivial (AdjoinRoot (X ^ n - C a)) :=
-  Module.nontrivial_of_finrank_pos (R := K) <| by
-    rw [(standardTameCover_free K a n NeZero.one_le).2]
-    exact NeZero.pos n
-
 /-- `(a, 1)_ζ` is the endomorphism algebra of the `n`-dimensional space `K[X]/(X ^ n - a)`, through
 its representation `TauCeti.SymbolAlgebra.toEndAdjoinRoot`. -/
 noncomputable def algEquivEndAdjoinRoot (hζ : IsPrimitiveRoot ζ n) (ha : a ≠ 0) :

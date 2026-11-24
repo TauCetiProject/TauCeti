@@ -212,6 +212,14 @@ theorem basisXPowSubC_apply [Nontrivial R] (n : ℕ) [NeZero n] (a : R) (i : Fin
     basisXPowSubC n a i = root (X ^ n - C a) ^ (i : ℕ) := by
   simp [basisXPowSubC]
 
+/-- `R[X]/(X ^ n - C a)` is nontrivial over a nontrivial commutative ring when `n ≠ 0`, since
+`X ^ n - C a` is monic of positive degree. -/
+instance nontrivial_X_pow_sub_C [Nontrivial R] (n : ℕ) [NeZero n] (a : R) :
+    Nontrivial (AdjoinRoot (X ^ n - C a)) :=
+  (nontrivial_iff_of_monic (monic_X_pow_sub_C a (NeZero.ne n))).2 <| by
+    rw [degree_X_pow_sub_C (NeZero.pos n)]
+    exact_mod_cast NeZero.pos n
+
 /-- **The units of `AdjoinRoot f`.** The class of `g` is a unit of `AdjoinRoot f` exactly when
 `f` and `g` are coprime, that is, when `g` is invertible modulo `f`. -/
 @[simp]
