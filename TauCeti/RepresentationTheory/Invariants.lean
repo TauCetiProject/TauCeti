@@ -17,6 +17,7 @@ import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.CategoryTheory.Filtered.Final
 import Mathlib.RepresentationTheory.Rep.Iso
 import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.Finsupp
 import TauCeti.RepresentationTheory.Intertwining
@@ -174,8 +175,8 @@ variable (ρ : Representation k G V) [Fintype G] [Invertible (Fintype.card G : k
 `Representation.norm`, scaled by the inverse of the group order. -/
 theorem averageMap_eq_invOf_card_smul_norm :
     ρ.averageMap = ⅟(Fintype.card G : k) • ρ.norm := by
-  simp only [averageMap, GroupAlgebra.average, map_smul, map_sum, MonoidAlgebra.of_apply,
-    asAlgebraHom_single_one, norm]
+  simp only [averageMap, GroupAlgebra.average, map_smul, MonoidAlgebra.of_apply,
+    asAlgebraHom_sum_single_one]
 
 /-- The averaging projection of `v` is the normalized group sum `⅟#G • ∑ g, ρ g v`. -/
 theorem averageMap_apply (v : V) :
