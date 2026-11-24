@@ -520,9 +520,6 @@ theorem kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChang
         (_root_.CommHopfAlgCat.ofHom
           (AdditiveGroup.gaScalarTensorBialgEquiv (k := ℤ) (K := A))) =
       kostantRootSubgroupToralBaseChangePresentationCoordinateMap e h ρ M hM hnil b wt A i := by
-  let _ : Epi (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A n)
-      (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A)) :=
-    ConcreteCategory.epi_of_surjective _ (CommHopfAlgCat.mkQuotient_surjective _ _)
   apply (cancel_epi (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A n)
     (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A))).1
   rw [← Category.assoc, mkQuotient_comp_kostantToralBaseChangePresentationIsoOfEq_hom,
@@ -575,9 +572,6 @@ theorem kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChange
             (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup κ)))) =
       kostantWeightTorusToralBaseChangePresentationCoordinateMap e h ρ M hM hnil b wt A := by
-  let _ : Epi (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A n)
-      (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A)) :=
-    ConcreteCategory.epi_of_surjective _ (CommHopfAlgCat.mkQuotient_surjective _ _)
   apply (cancel_epi (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A n)
     (kostantToralBaseChangePresentationIdeal e h ρ M hM hnil b wt A))).1
   rw [← Category.assoc, mkQuotient_comp_kostantToralBaseChangePresentationIsoOfEq_hom,
