@@ -19,7 +19,8 @@ For `0 < 4ε ≤ δ`, put `Λ = log (δ / ε)` and `λ(r) = log (r / ε) / Λ`, 
 `r ≤ 0`. It is smooth and nondecreasing, vanishes on `(-∞, ε]`, equals `1` on `[δ, ∞)` and
 equals the logarithmic interpolation `λ` on `[2ε, δ / 2]`. Its derivative is nonnegative
 everywhere and satisfies
-`ψ'(r) ≤ c₀ / (r Λ)` for `r ≥ 0`, with `c₀ = 1 + sup τ'`. This bound makes its Dirichlet
+`ψ'(r) ≤ c₀ / (r Λ)` for `r > 0` (and `0 ≤ 0` at `r = 0` under Lean's totalized division
+`x / 0 = 0`), with `c₀ = 1 + sup τ'`. This bound makes its Dirichlet
 energy on a surface of order `1 / Λ`.
 
 ## Main definitions
@@ -31,7 +32,8 @@ energy on a surface of order `1 / Λ`.
 
 * `TauCeti.contDiff_logCutoffProfile`: `ψ` is smooth.
 * `TauCeti.monotone_logCutoffProfile`: `ψ` is nondecreasing.
-* `TauCeti.deriv_logCutoffProfile_le`: `ψ'(r) ≤ c₀ / (r Λ)` for `r ≥ 0`.
+* `TauCeti.deriv_logCutoffProfile_le`: `ψ'(r) ≤ c₀ / (r Λ)` for `r > 0` (and `0 ≤ 0` at `r = 0`
+  via Lean's `x / 0 = 0`).
 * `TauCeti.deriv_logCutoffProfile_of_mem_Icc`: `ψ'(r) = 1 / (r Λ)` on `[2ε, δ / 2]`.
 
 Adapted from Giada Franz’s formalization in
@@ -214,7 +216,8 @@ end LogVariable
 theorem logCutoffProfile_of_nonpos (hr : r ≤ 0) : logCutoffProfile ε δ r = 0 := by
   rw [logCutoffProfile_def, ite_eq_left hr]
 
-/-- For `0 < r ≤ δ / 2`, the profile is `λ(r) τ(log₂ (r / ε))`. -/
+/-- For `0 < r ≤ δ / 2`, the profile is `λ(r) τ(log₂ (r / ε))` (both sides are `0` when
+`log (δ / ε) = 0` under Lean's totalized division `x / 0 = 0`). -/
 theorem logCutoffProfile_of_le_half (hr0 : 0 < r) (hr : r ≤ δ / 2) :
     logCutoffProfile ε δ r =
       Real.log (r / ε) / Real.log (δ / ε) * smoothTransition (Real.logb 2 (r / ε)) := by
@@ -222,7 +225,8 @@ theorem logCutoffProfile_of_le_half (hr0 : 0 < r) (hr : r ≤ δ / 2) :
     smoothTransition.one_of_one_le (one_le_logb_two hr0 (by linarith))]
   ring
 
-/-- For `2ε ≤ r` and `ε > 0`, the profile is `1 - (1 - λ(r)) τ(log₂ (δ / r))`. -/
+/-- For `2ε ≤ r` and `ε > 0`, the profile is `1 - (1 - λ(r)) τ(log₂ (δ / r))`, with `λ(r) = 0`
+when `log (δ / ε) = 0` under Lean's totalized division `x / 0 = 0`. -/
 theorem logCutoffProfile_of_two_mul_le (hε : 0 < ε) (hr : 2 * ε ≤ r) :
     logCutoffProfile ε δ r =
       1 - (1 - Real.log (r / ε) / Real.log (δ / ε)) *
@@ -333,7 +337,9 @@ theorem logCutoffProfile_nonneg (hε : 0 < ε) (hεδ : 2 * ε ≤ δ) (r : ℝ)
   · exact (logCutoffProfile_eq_zero_of_le hεδ le_rfl).symm.trans_le
       (monotone_logCutoffProfile hε hεδ hr)
 
-/-- For `2ε ≤ δ`, the derivative of the logarithmic cutoff profile vanishes on `(-∞, ε]`. -/
+/-- For `2ε ≤ δ` and `r ≤ ε`, Lean's `deriv (logCutoffProfile ε δ) r` is `0`. Except at the
+degenerate triple `ε = δ = r = 0` (where the profile has a jump discontinuity from `0` to `1` and
+`deriv` takes its default value `0`), the profile is differentiable at `r` with derivative `0`. -/
 @[simp]
 theorem deriv_logCutoffProfile_eq_zero_of_le (hεδ : 2 * ε ≤ δ) (hr : r ≤ ε) :
     deriv (logCutoffProfile ε δ) r = 0 := by
@@ -379,7 +385,8 @@ theorem deriv_logCutoffProfile_eq_zero_of_ge (hε : 0 < ε) (hεδ : 2 * ε ≤ 
 
 /-! ### Derivative formulas and estimates -/
 
-/-- The derivative bound `ψ'(r) ≤ c₀ / (r log (δ / ε))` for `0 < 4ε ≤ δ` and `0 ≤ r`.
+/-- The derivative bound `ψ'(r) ≤ c₀ / (r log (δ / ε))` for `0 < 4ε ≤ δ` and `r > 0`. At `r = 0`,
+the derivative is `0` and the right-hand side is `0` by Lean's totalized division `x / 0 = 0`.
 See `deriv_logCutoffProfile_nonneg` for the lower bound. -/
 theorem deriv_logCutoffProfile_le (hε : 0 < ε) (h4 : 4 * ε ≤ δ) (hr : 0 ≤ r) :
     deriv (logCutoffProfile ε δ) r ≤ logCutoffConst / (r * Real.log (δ / ε)) := by
@@ -390,8 +397,10 @@ theorem deriv_logCutoffProfile_le (hε : 0 < ε) (h4 : 4 * ε ≤ δ) (hr : 0 �
     rw [deriv_logCutoffProfile_eq hΛ hr0, mul_comm r, ← div_div]
     exact div_le_div_of_nonneg_right (logProfileDeriv_le hε h4 _) hr0.le
 
-/-- For `0 < r ≤ δ / 2`, the derivative is `(τ(a) + a τ'(a)) / (r log (δ / ε))`
-with `a = log₂ (r / ε)`. -/
+/-- For `0 < r ≤ δ / 2`, the derivative is `(τ(a) + a τ'(a)) / (r log (δ / ε))` with
+`a = log₂ (r / ε)` when `log (δ / ε) ≠ 0`. When `log (δ / ε) = 0` (`ε = 0` or `|ε| = δ`), the
+derivative at `r` is `0`, matching the right-hand side under Lean's totalized division
+`x / 0 = 0`. -/
 theorem deriv_logCutoffProfile_of_le_half (hr0 : 0 < r) (hr : r ≤ δ / 2) :
     deriv (logCutoffProfile ε δ) r =
       (smoothTransition (Real.logb 2 (r / ε)) +
@@ -420,8 +429,10 @@ theorem deriv_logCutoffProfile_of_le_half (hr0 : 0 < r) (hr : r ≤ δ / 2) :
     field_simp
     ring
 
-/-- For `0 < ε` and `2ε ≤ r`, the derivative is `(τ(b) + b τ'(b)) / (r log (δ / ε))`
-with `b = log₂ (δ / r)`. -/
+/-- For `0 < ε` and `2ε ≤ r`, the derivative is `(τ(b) + b τ'(b)) / (r log (δ / ε))` with
+`b = log₂ (δ / r)` when `log (δ / ε) ≠ 0`. When `log (δ / ε) = 0` (`δ = 0` or `|δ| = ε`), the
+profile is locally constant equal to `1` near `r` so its derivative is `0`, matching the
+right-hand side under Lean's totalized division `x / 0 = 0`. -/
 theorem deriv_logCutoffProfile_of_two_mul_le (hε : 0 < ε) (hr : 2 * ε ≤ r) :
     deriv (logCutoffProfile ε δ) r =
       (smoothTransition (Real.logb 2 (δ / r)) +
