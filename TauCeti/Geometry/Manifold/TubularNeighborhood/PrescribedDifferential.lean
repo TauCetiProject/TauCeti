@@ -294,9 +294,7 @@ private theorem exists_partialDiffeomorph_transportedNormalExp [I.Boundaryless] 
   have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace H' N
   have : MetrizableSpace N := Manifold.metrizableSpace K N
   have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : LocallyCompactSpace (ModelProd H P) := (I.prod 𝓘(ℝ, P)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) :=
-    ChartedSpace.locallyCompactSpace (ModelProd H P) _
+  have : LocallyCompactSpace Q := ChartedSpace.locallyCompactSpace H Q
   have : MetrizableSpace (TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) :=
     Manifold.metrizableSpace (I.prod 𝓘(ℝ, P)) _
   have : Nonempty (TotalSpace P (fun q ↦ i.isImmersion.NormalSpace q hn)) :=
