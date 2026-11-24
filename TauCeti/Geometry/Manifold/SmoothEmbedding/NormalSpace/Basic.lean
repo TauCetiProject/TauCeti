@@ -14,16 +14,15 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 At a point of a smoothly embedded submanifold, the normal space is the ambient tangent space
 modulo the image of the differential of the embedding. This quotient is intrinsic: it needs no
-metric or choice of complementary subspace. It is the fibrewise linear object from which a normal
-bundle, and eventually a tubular neighbourhood, must be constructed. It is the normal space
-`Manifold.IsImmersion.NormalSpace` of the underlying immersion.
+metric or choice of complementary subspace. It is the normal space
+`Manifold.IsImmersion.NormalSpace` of the underlying immersion `f.isImmersion`, where its
+algebraic and topological structure, its quotient map and its dimension are developed. This file
+adds the results that are stated for bundled embeddings.
 
-The differential is injective for an immersion of positive smoothness. Consequently the normal
-space has the expected codimension in finite dimensions. The quotient map also characterizes
-exactly which ambient tangent vectors represent zero normal vectors.
-
-A continuous linear map out of the ambient tangent space whose kernel is exactly the tangent range
-identifies the normal space with any target of the same dimension
+An ambient tangent equivalence carrying one tangent range onto another induces an equivalence of
+normal spaces (`TauCeti.SmoothEmbedding.normalSpaceEquivOfMapTangentRange`). A continuous linear
+map out of the ambient tangent space whose kernel is exactly the tangent range identifies the
+normal space with any target of the same dimension
 (`TauCeti.SmoothEmbedding.normalSpaceEquivOfKer`).
 
 The inclusion of an open subset is the extreme case: it is tangent to every ambient direction
@@ -49,137 +48,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω}
 
-/-- The tangent subspace of the ambient manifold determined by a positive-regularity embedding
-at `x`. It is the range of the differential, regarded as a linear map of tangent spaces. -/
-@[expose] noncomputable def tangentRange (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    Submodule 𝕜 (TangentSpace J (f x)) :=
-  f.isImmersion.tangentRange x hn
-
-/-- An ambient tangent vector is tangent to the embedding precisely when it is a differential
-image. -/
-@[simp]
-theorem mem_tangentRange_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (v : TangentSpace J (f x)) :
-    v ∈ f.tangentRange x hn ↔ ∃ u : TangentSpace I x, mfderiv I J (f : M → N) x u = v :=
-  Iff.rfl
-
-/-- The normal space of a smooth embedding at `x`: ambient tangent vectors modulo vectors
-tangent to the embedded submanifold. -/
-@[expose]
-noncomputable def NormalSpace
-    (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) : Type _ :=
-  f.isImmersion.NormalSpace x hn
-
-/-- The tangent range is closed because the differential of an immersion has a continuous
-left inverse. -/
-theorem isClosed_tangentRange (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    IsClosed (f.tangentRange x hn : Set (TangentSpace J (f x))) :=
-  f.isImmersion.isClosed_tangentRange x hn
-
-noncomputable instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    AddCommGroup (f.NormalSpace x hn) :=
-  inferInstanceAs (AddCommGroup (f.isImmersion.NormalSpace x hn))
-
-noncomputable instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    Module 𝕜 (f.NormalSpace x hn) :=
-  inferInstanceAs (Module 𝕜 (f.isImmersion.NormalSpace x hn))
-
-noncomputable instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    TopologicalSpace (f.NormalSpace x hn) :=
-  inferInstanceAs (TopologicalSpace (f.isImmersion.NormalSpace x hn))
-
-instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    T3Space (f.NormalSpace x hn) :=
-  inferInstanceAs (T3Space (f.isImmersion.NormalSpace x hn))
-
-instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    IsTopologicalAddGroup (f.NormalSpace x hn) :=
-  inferInstanceAs (IsTopologicalAddGroup (f.isImmersion.NormalSpace x hn))
-
-instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    ContinuousSMul 𝕜 (f.NormalSpace x hn) :=
-  inferInstanceAs (ContinuousSMul 𝕜 (f.isImmersion.NormalSpace x hn))
-
-/-- A normal space into a finite-dimensional model is finite-dimensional. -/
-instance [FiniteDimensional 𝕜 F] (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    FiniteDimensional 𝕜 (f.NormalSpace x hn) :=
-  inferInstanceAs (FiniteDimensional 𝕜 (f.isImmersion.NormalSpace x hn))
-
-/-- Project an ambient tangent vector to its normal class. -/
-@[expose] noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn :=
-  f.isImmersion.normalClass x hn
-
-/-- The normal-class map is the linear quotient map by the tangent range. -/
-theorem normalClass_def (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    f.normalClass x hn = (f.tangentRange x hn).mkQ := (rfl)
-
-/-- The kernel of the normal-class map is exactly the tangent range. -/
-@[simp]
-theorem normalClass_ker (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    (f.normalClass x hn).ker = f.tangentRange x hn :=
-  (f.tangentRange x hn).ker_mkQ
-
-/-- The continuous quotient map from ambient tangent vectors to normal classes. -/
-noncomputable def normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    TangentSpace J (f x) →L[𝕜] f.NormalSpace x hn :=
-  f.isImmersion.normalClassL x hn
-
-/-- The continuous normal-class map gives the normal space its quotient topology. -/
-theorem isQuotientMap_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    Topology.IsQuotientMap (f.normalClassL x hn) :=
-  f.isImmersion.isQuotientMap_normalClassL x hn
-
-/-- The continuous normal-class map is an open quotient map. -/
-theorem isOpenQuotientMap_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    IsOpenQuotientMap (f.normalClassL x hn) :=
-  f.isImmersion.isOpenQuotientMap_normalClassL x hn
-
-/-- The continuous normal-class map has `normalClass` as its underlying linear map. -/
-@[simp]
-theorem normalClassL_toLinearMap (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    (f.normalClassL x hn).toLinearMap = f.normalClass x hn :=
-  f.isImmersion.normalClassL_toLinearMap x hn
-
-/-- The continuous normal-class map agrees pointwise with the linear normal-class map. -/
-@[simp]
-theorem normalClassL_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (v : TangentSpace J (f x)) :
-    f.normalClassL x hn v = f.normalClass x hn v :=
-  f.isImmersion.normalClassL_apply x hn v
-
-/-- A continuous linear map vanishing on tangent vectors descends continuously to normal
-classes. -/
-noncomputable def normalLiftL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →L[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) : f.NormalSpace x hn →L[𝕜] V :=
-  f.isImmersion.normalLiftL x hn g hg
-
-/-- The continuous quotient lift recovers the original map after composition with the
-continuous normal-class map. -/
-@[simp]
-theorem normalLiftL_comp_normalClassL (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →L[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
-    (f.normalLiftL x hn g hg).comp (f.normalClassL x hn) = g :=
-  f.isImmersion.normalLiftL_comp_normalClassL x hn g hg
-
-/-- The continuous quotient lift sends the normal class of an ambient tangent vector to the
-value of the original map on that vector. -/
-theorem normalLiftL_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →L[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : TangentSpace J (f x)) :
-    f.normalLiftL x hn g hg (f.normalClass x hn v) = g v :=
-  f.isImmersion.normalLiftL_normalClass x hn g hg v
-
-/-- Every normal vector has an ambient tangent representative. -/
-theorem normalClass_surjective (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    Function.Surjective (f.normalClass x hn) :=
-  f.isImmersion.normalClass_surjective x hn
-
 section Equiv
 
 variable {E' F' : Type*}
@@ -198,137 +66,28 @@ variable {E' F' : Type*}
 induces an equivalence of their intrinsic normal spaces. -/
 noncomputable def normalSpaceEquivOfMapTangentRange
     (e : TangentSpace J (f x) ≃L[𝕜] TangentSpace J' (g y))
-    (h : (f.tangentRange x hn).map e.toLinearMap = g.tangentRange y hm) :
-    f.NormalSpace x hn ≃L[𝕜] g.NormalSpace y hm :=
-  e.quotientEquiv (f.tangentRange x hn) (g.tangentRange y hm) h
+    (h : (f.isImmersion.tangentRange x hn).map e.toLinearMap = g.isImmersion.tangentRange y hm) :
+    f.isImmersion.NormalSpace x hn ≃L[𝕜] g.isImmersion.NormalSpace y hm :=
+  e.quotientEquiv (f.isImmersion.tangentRange x hn) (g.isImmersion.tangentRange y hm) h
 
 /-- The normal-space equivalence induced by an ambient tangent equivalence applies it to
 representatives. -/
 @[simp]
 theorem normalSpaceEquivOfMapTangentRange_normalClass
     (e : TangentSpace J (f x) ≃L[𝕜] TangentSpace J' (g y))
-    (h : (f.tangentRange x hn).map e.toLinearMap = g.tangentRange y hm)
+    (h : (f.isImmersion.tangentRange x hn).map e.toLinearMap = g.isImmersion.tangentRange y hm)
     (w : TangentSpace J (f x)) :
-    f.normalSpaceEquivOfMapTangentRange g x y hn hm e h (f.normalClass x hn w) =
-      g.normalClass y hm (e w) := by
-  exact e.quotientEquiv_mk (f.tangentRange x hn) (g.tangentRange y hm) h w
+    f.normalSpaceEquivOfMapTangentRange g x y hn hm e h (f.isImmersion.normalClass x hn w) =
+      g.isImmersion.normalClass y hm (e w) := by
+  exact e.quotientEquiv_mk (f.isImmersion.tangentRange x hn) (g.isImmersion.tangentRange y hm) h w
 
 end Equiv
-
-/-- An ambient tangent vector has zero normal class precisely when it is tangent to the image. -/
-@[simp]
-theorem normalClass_eq_zero_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (v : TangentSpace J (f x)) :
-    f.normalClass x hn v = 0 ↔ v ∈ f.tangentRange x hn :=
-  by
-    -- Expose the quotient hidden by `NormalSpace` so the standard quotient criterion applies.
-    change (Submodule.Quotient.mk v : TangentSpace J (f x) ⧸ f.tangentRange x hn) = 0 ↔ _
-    exact Submodule.Quotient.mk_eq_zero (p := f.tangentRange x hn) (x := v)
-
-/-- The differential of the embedding has zero normal class. -/
-@[simp]
-theorem normalClass_mfderiv (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (v : TangentSpace I x) :
-    f.normalClass x hn (mfderiv I J (f : M → N) x v) = 0 :=
-  (f.normalClass_eq_zero_iff x hn _).2 ⟨v, rfl⟩
-
-/-- Two ambient tangent vectors represent the same normal vector exactly when their difference
-is tangent to the embedded submanifold. -/
-@[simp]
-theorem normalClass_eq_iff (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (v w : TangentSpace J (f x)) :
-    f.normalClass x hn v = f.normalClass x hn w ↔ v - w ∈ f.tangentRange x hn := by
-  -- Expose the quotient hidden by `NormalSpace` to use the standard equivalence relation.
-  change (Submodule.Quotient.mk v : TangentSpace J (f x) ⧸ f.tangentRange x hn) =
-    Submodule.Quotient.mk w ↔ _
-  exact Submodule.Quotient.eq (f.tangentRange x hn)
-
-/-- A linear map vanishing on tangent vectors descends to the normal space. -/
-noncomputable def normalLift (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →ₗ[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) : f.NormalSpace x hn →ₗ[𝕜] V :=
-  f.isImmersion.normalLift x hn g hg
-
-/-- The underlying linear map of the continuous normal lift is the linear normal lift. -/
-@[simp]
-theorem normalLiftL_toLinearMap (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →L[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
-    (f.normalLiftL x hn g hg).toLinearMap =
-      f.normalLift x hn g.toLinearMap (fun v hv => hg v hv) :=
-  f.isImmersion.normalLiftL_toLinearMap x hn g hg
-
-/-- The continuous normal lift agrees pointwise with the linear normal lift. -/
-@[simp]
-theorem normalLiftL_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →L[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : f.NormalSpace x hn) :
-    f.normalLiftL x hn g hg v =
-      f.normalLift x hn g.toLinearMap (fun w hw => hg w hw) v :=
-  f.isImmersion.normalLiftL_apply x hn g hg v
-
-/-- Composing the quotient lift with the normal-class map recovers the original linear map. -/
-@[simp]
-theorem normalLift_comp_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →ₗ[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) :
-    (f.normalLift x hn g hg).comp (f.normalClass x hn) = g :=
-  f.isImmersion.normalLift_comp_normalClass x hn g hg
-
-/-- The quotient lift sends the normal class of an ambient tangent vector to the value of the
-original linear map on that vector. -/
-@[simp]
-theorem normalLift_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →ₗ[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0) (v : TangentSpace J (f x)) :
-    f.normalLift x hn g hg (f.normalClass x hn v) = g v :=
-  f.isImmersion.normalLift_normalClass x hn g hg v
-
-/-- A map out of the normal space is determined by its values on ambient tangent classes. -/
-theorem normalLift_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →ₗ[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0)
-    (h : f.NormalSpace x hn →ₗ[𝕜] V) (hh : h.comp (f.normalClass x hn) = g) :
-    h = f.normalLift x hn g hg :=
-  f.isImmersion.normalLift_unique x hn g hg h hh
-
-/-- A continuous linear map out of the normal space is determined by its composition with
-the continuous normal-class map. -/
-theorem normalLiftL_unique (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    {V : Type*} [TopologicalSpace V] [AddCommGroup V] [Module 𝕜 V]
-    (g : TangentSpace J (f x) →L[𝕜] V)
-    (hg : ∀ v ∈ f.tangentRange x hn, g v = 0)
-    (h : f.NormalSpace x hn →L[𝕜] V) (hh : h.comp (f.normalClassL x hn) = g) :
-    h = f.normalLiftL x hn g hg :=
-  f.isImmersion.normalLiftL_unique x hn g hg h hh
 
 /-- The tangent spaces of a positive-regularity embedding into a manifold with
 finite-dimensional model space are finite-dimensional, since the differential is injective. -/
 theorem finiteDimensional_tangentSpace (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
     [FiniteDimensional 𝕜 F] : FiniteDimensional 𝕜 (TangentSpace I x) :=
   .of_injective (mfderiv I J (f : M → N) x).toLinearMap (f.isImmersion.mfderiv_injective hn x)
-
-/-- The normal dimension plus the tangent dimension equals the ambient dimension for a
-finite-dimensional smooth embedding. -/
-theorem finrank_normalSpace_add_finrank (f : SmoothEmbedding I J n M N) (x : M)
-    (hn : n ≠ 0) [FiniteDimensional 𝕜 F] :
-    Module.finrank 𝕜 (f.NormalSpace x hn) + Module.finrank 𝕜 (TangentSpace I x) =
-      Module.finrank 𝕜 (TangentSpace J (f x)) :=
-  f.isImmersion.finrank_normalSpace_add_finrank x hn
-
-/-- The dimension of the normal space is the codimension of the embedded manifold. -/
-theorem finrank_normalSpace (f : SmoothEmbedding I J n M N) (x : M)
-    (hn : n ≠ 0) [FiniteDimensional 𝕜 F] :
-    Module.finrank 𝕜 (f.NormalSpace x hn) =
-      Module.finrank 𝕜 (TangentSpace J (f x)) - Module.finrank 𝕜 (TangentSpace I x) := by
-  have h := f.finrank_normalSpace_add_finrank x hn
-  omega
 
 section KerEquiv
 
@@ -340,34 +99,35 @@ variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] {V : Type*} [AddCommGro
 range, into a space of the dimension of the normal space, descends to a continuous linear
 equivalence from the normal space: the normal class `[v]` corresponds to `g v`. -/
 noncomputable def normalSpaceEquivOfKer (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hdim : Module.finrank 𝕜 (f.NormalSpace x hn) = Module.finrank 𝕜 V) :
-    f.NormalSpace x hn ≃L[𝕜] V :=
-  let φ := f.normalLiftL x hn g fun v ↦ (hg v).2
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (f.isImmersion.NormalSpace x hn) = Module.finrank 𝕜 V) :
+    f.isImmersion.NormalSpace x hn ≃L[𝕜] V :=
+  let φ := f.isImmersion.normalLiftL x hn g fun v ↦ (hg v).2
   have hinj : Function.Injective φ := by
     refine (injective_iff_map_eq_zero φ).2 fun w hw ↦ ?_
-    obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn w
-    rw [normalLiftL_normalClass, hg] at hw
-    exact (f.normalClass_eq_zero_iff x hn v).2 hw
+    obtain ⟨v, rfl⟩ := f.isImmersion.normalClass_surjective x hn w
+    rw [Manifold.IsImmersion.normalLiftL_normalClass, hg] at hw
+    exact (f.isImmersion.normalClass_eq_zero_iff x hn v).2 hw
   (φ.toLinearMap.linearEquivOfInjective hinj hdim).toContinuousLinearEquiv
 
 /-- The normal class `[v]` corresponds to `g v`. -/
 @[simp]
 theorem normalSpaceEquivOfKer_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hdim : Module.finrank 𝕜 (f.NormalSpace x hn) = Module.finrank 𝕜 V)
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (f.isImmersion.NormalSpace x hn) = Module.finrank 𝕜 V)
     (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivOfKer x hn g hg hdim (f.normalClass x hn v) = g v := by
+    f.normalSpaceEquivOfKer x hn g hg hdim (f.isImmersion.normalClass x hn v) = g v := by
   rw [normalSpaceEquivOfKer, LinearEquiv.coe_toContinuousLinearEquiv',
-    LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe, normalLiftL_normalClass]
+    LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe,
+        Manifold.IsImmersion.normalLiftL_normalClass]
 
 /-- The value `g v` corresponds to the normal class `[v]`. -/
 @[simp]
 theorem normalSpaceEquivOfKer_symm_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hdim : Module.finrank 𝕜 (f.NormalSpace x hn) = Module.finrank 𝕜 V)
+    (g : TangentSpace J (f x) →L[𝕜] V) (hg : ∀ v, g v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hdim : Module.finrank 𝕜 (f.isImmersion.NormalSpace x hn) = Module.finrank 𝕜 V)
     (v : TangentSpace J (f x)) :
-    (f.normalSpaceEquivOfKer x hn g hg hdim).symm (g v) = f.normalClass x hn v :=
+    (f.normalSpaceEquivOfKer x hn g hg hdim).symm (g v) = f.isImmersion.normalClass x hn v :=
   (ContinuousLinearEquiv.symm_apply_eq _).2
     (f.normalSpaceEquivOfKer_normalClass x hn g hg hdim v).symm
 
@@ -377,15 +137,16 @@ end KerEquiv
 whole tangent space, since the inclusion is a local diffeomorphism. -/
 @[simp]
 theorem tangentRange_ofOpens [IsManifold I n M] (s : TopologicalSpace.Opens M) (x : s)
-    (hn : n ≠ 0) : (ofOpens (I := I) (n := n) s).tangentRange x hn = ⊤ := by
+    (hn : n ≠ 0) : (ofOpens (I := I) (n := n) s).isImmersion.tangentRange x hn = ⊤ := by
   obtain ⟨e, he⟩ := (isLocalDiffeomorph_subtype_val (I := I) (n := n) x).isInvertible_mfderiv hn
-  refine eq_top_iff.2 fun v _ ↦ (mem_tangentRange_iff _ x hn v).2 ?_
+  refine eq_top_iff.2 fun v _ ↦ (Manifold.IsImmersion.mem_tangentRange_iff _ x hn v).2 ?_
   rw [coe_ofOpens, ← he]
   exact e.surjective v
 
 /-- The normal spaces of the inclusion of an open subset are zero. -/
 instance subsingleton_normalSpace_ofOpens [IsManifold I n M] (s : TopologicalSpace.Opens M)
-    (x : s) (hn : n ≠ 0) : Subsingleton ((ofOpens (I := I) (n := n) s).NormalSpace x hn) :=
+    (x : s) (hn : n ≠ 0) : Subsingleton
+        ((ofOpens (I := I) (n := n) s).isImmersion.NormalSpace x hn) :=
   Submodule.Quotient.subsingleton_iff.2 (tangentRange_ofOpens s x hn)
 
 end TauCeti.SmoothEmbedding

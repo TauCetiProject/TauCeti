@@ -161,7 +161,7 @@ variable {E : Type} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fi
   [IsManifold J 1 S] {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
   [I.Boundaryless] [IsManifold I 2 M] (h : i.IsCriticalSubmanifold f)
   {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
-  (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+  (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E') {r : ℕ}
 
 /-- **The homology of the negative disc bundle from a Thom class, in dimensions.** Let `i` be a
@@ -227,7 +227,7 @@ theorem finrank_singularHomology_negativeDiscSpherePair
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) {ε : ℝ} (hε : 0 < ε) (K : Type) [CommRing K]
     [Nontrivial K] (h2 : (2 : K) = 0) (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
@@ -256,7 +256,7 @@ private theorem exists_isThomClass_negativeNormalSpace_of_two_eq_zero
     (h2 : (2 : K) = 0) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ∃ (g : ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn)
+    ∃ (g : ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn)
       (hV : HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric)),
       letI := subbundleTopology P (F' := Fin r → ℝ)
         (h.negativeNormalSpace hn g.toRiemannianMetric)
@@ -353,11 +353,11 @@ theorem exists_cut_sum_finrank_sublevelPair_eq_sum (d : ι → ℕ → ℕ)
 section ThomPair
 
 variable (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j))
-  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
 
 include h
 
@@ -373,9 +373,9 @@ level `f = c`. -/
 theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair
     (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j) {a b c : ℝ} (hac : a < c)
     (hcb : c < b) (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c) (n : ℕ) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
         fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
@@ -387,9 +387,9 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair
       ∑ j : {j // ∀ s, f (i j s) = c}, finrank K ((thomPair (Fin (r j) → ℝ) fun s ↦
         (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s
         ).singularHomology (ModuleCat.of K K) n : ModuleCat K) := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
       fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
@@ -410,9 +410,9 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair
   have := ModuleCat.finite_of_finite_biproduct V
   rw [e'.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct]
 
-variable (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+variable (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
@@ -427,9 +427,9 @@ negative normal bundles `ν⁻ j` of ranks `r j` given by the local frames `hV j
 `dim Hₙ({f ≤ b}, {f ≤ a}; K) = ∑ d j (n - r j)`, the sum running over the pieces on the level
 `f = c` of index at most `n`. -/
 theorem finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair (d : ι → ℕ → ℕ)
-    (hd : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (hd : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
           fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
@@ -444,9 +444,9 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair (d : ι
     finrank K ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) n :
         ModuleCat K) =
       ∑ j with (∀ s, f (i j s) = c) ∧ r j ≤ n, d j (n - r j) := by
-  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
       fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
@@ -477,7 +477,7 @@ section ThomClass
 variable (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j))
   (hK : ∀ j, letI := (i j).normalSpaceFiberBundle hn (hdim j)
     letI := (i j).normalSpaceVectorBundle hn (hdim j)
-    ∃ (g : ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+    ∃ (g : ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
       (hV : HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn g.toRiemannianMetric)),
       letI := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
@@ -604,7 +604,8 @@ private theorem exists_isThomClass_of_two_eq_zero (j : ι) :
     letI := (i j).normalSpaceVectorBundle hn (finrank_euclideanSpace_fin (𝕜 := ℝ)
       (n := finrank ℝ E - finrank ℝ (E' j)))
     ∃ (g : ContMDiffRiemannianMetric (J j) ∞
-        (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j)))) fun s ↦ (i j).NormalSpace s hn)
+        (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j)))) fun s ↦
+            (i j).isImmersion.NormalSpace s hn)
       (hV : HasLocalSubbundleFrames (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j))))
         (Fin (r j))
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn g.toRiemannianMetric)),
@@ -698,11 +699,11 @@ end TwoEqZero
 section Orientation
 
 variable (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j))
-  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
   (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
   (o : ∀ j, (h.isNondegenerateCriticalSubmanifold j).NegativeNormalBundleOrientation hn
     h.contMDiff (hdim j) (g j) (hr j))
@@ -716,7 +717,7 @@ have Thom classes with coefficients in every field `K`. -/
 private theorem exists_isThomClass_of_orientation (j : ι) :
     letI := (i j).normalSpaceFiberBundle hn (hdim j)
     letI := (i j).normalSpaceVectorBundle hn (hdim j)
-    ∃ (g' : ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+    ∃ (g' : ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
       (hV : HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn g'.toRiemannianMetric)),
       letI := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
@@ -815,7 +816,8 @@ private theorem exists_isThomClass_of_simplyConnectedSpace (j : ι) :
     letI := (i j).normalSpaceVectorBundle hn (finrank_euclideanSpace_fin (𝕜 := ℝ)
       (n := finrank ℝ E - finrank ℝ (E' j)))
     ∃ (g : ContMDiffRiemannianMetric (J j) ∞
-        (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j)))) fun s ↦ (i j).NormalSpace s hn)
+        (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j)))) fun s ↦
+            (i j).isImmersion.NormalSpace s hn)
       (hV : HasLocalSubbundleFrames (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ (E' j))))
         (Fin (r j))
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn g.toRiemannianMetric)),

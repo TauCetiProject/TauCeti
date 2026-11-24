@@ -59,14 +59,14 @@ induced map from the intrinsic normal bundle, with model fibre `P` of the codime
 `C^m`. -/
 theorem contMDiff_normalSpaceEquivOfKer (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : finrank 𝕜 P = finrank 𝕜 V - finrank 𝕜 E) (g : ∀ x, TangentSpace J (f x) →L[𝕜] E₂ x)
-    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hgdim : ∀ x, finrank 𝕜 (f.NormalSpace x hn) = finrank 𝕜 (E₂ x))
+    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hgdim : ∀ x, finrank 𝕜 (f.isImmersion.NormalSpace x hn) = finrank 𝕜 (E₂ x))
     (hgs : ContMDiff (I.prod 𝓘(𝕜, V)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         TotalSpace.mk' W (E := E₂) p.proj (g p.proj p.snd))) :
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(𝕜, P)) (I.prod 𝓘(𝕜, W)) m
-      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
+      (fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
         TotalSpace.mk' W (E := E₂) p.proj
           (f.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj) p.snd)) := by
   let := f.normalSpaceFiberBundle hn hdim
@@ -83,13 +83,13 @@ bundle, with model fibre `P` of the codimension, is `C^m`-diffeomorphic to `E₂
 of `M`, by `[v] ↦ g x v` on each fibre. -/
 def normalBundleDiffeomorphOfKer (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : finrank 𝕜 P = finrank 𝕜 V - finrank 𝕜 E) (g : ∀ x, TangentSpace J (f x) →L[𝕜] E₂ x)
-    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hgdim : ∀ x, finrank 𝕜 (f.NormalSpace x hn) = finrank 𝕜 (E₂ x))
+    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hgdim : ∀ x, finrank 𝕜 (f.isImmersion.NormalSpace x hn) = finrank 𝕜 (E₂ x))
     (hgs : ContMDiff (I.prod 𝓘(𝕜, V)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         TotalSpace.mk' W (E := E₂) p.proj (g p.proj p.snd))) :
     letI := f.normalSpaceFiberBundle hn hdim
-    TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(𝕜, P), I.prod 𝓘(𝕜, W)⟯
+    TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^m⟮I.prod 𝓘(𝕜, P), I.prod 𝓘(𝕜, W)⟯
       TotalSpace W E₂ :=
   letI := f.normalSpaceFiberBundle hn hdim
   letI := f.normalSpaceVectorBundle hn hdim
@@ -100,12 +100,12 @@ def normalBundleDiffeomorphOfKer (hn : n ≠ 0) (hm : m + 1 ≤ n)
 @[simp]
 theorem normalBundleDiffeomorphOfKer_apply (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : finrank 𝕜 P = finrank 𝕜 V - finrank 𝕜 E) (g : ∀ x, TangentSpace J (f x) →L[𝕜] E₂ x)
-    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hgdim : ∀ x, finrank 𝕜 (f.NormalSpace x hn) = finrank 𝕜 (E₂ x))
+    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hgdim : ∀ x, finrank 𝕜 (f.isImmersion.NormalSpace x hn) = finrank 𝕜 (E₂ x))
     (hgs : ContMDiff (I.prod 𝓘(𝕜, V)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         TotalSpace.mk' W (E := E₂) p.proj (g p.proj p.snd)))
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :
     letI := f.normalSpaceFiberBundle hn hdim
     f.normalBundleDiffeomorphOfKer hn hm hdim g hg hgdim hgs p =
       ⟨p.proj, f.normalSpaceEquivOfKer p.proj hn (g p.proj) (hg p.proj) (hgdim p.proj) p.snd⟩ := by
@@ -118,8 +118,8 @@ theorem normalBundleDiffeomorphOfKer_apply (hn : n ≠ 0) (hm : m + 1 ≤ n)
 @[simp]
 theorem normalBundleDiffeomorphOfKer_symm_apply (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hdim : finrank 𝕜 P = finrank 𝕜 V - finrank 𝕜 E) (g : ∀ x, TangentSpace J (f x) →L[𝕜] E₂ x)
-    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.tangentRange x hn)
-    (hgdim : ∀ x, finrank 𝕜 (f.NormalSpace x hn) = finrank 𝕜 (E₂ x))
+    (hg : ∀ x v, g x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn)
+    (hgdim : ∀ x, finrank 𝕜 (f.isImmersion.NormalSpace x hn) = finrank 𝕜 (E₂ x))
     (hgs : ContMDiff (I.prod 𝓘(𝕜, V)) (I.prod 𝓘(𝕜, W)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) ↦
         TotalSpace.mk' W (E := E₂) p.proj (g p.proj p.snd)))

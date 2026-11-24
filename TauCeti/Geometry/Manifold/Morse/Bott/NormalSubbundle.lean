@@ -121,13 +121,13 @@ private theorem exists_contMDiffOn_negativeNormalSpace_eq_map
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) (s₀ : S) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) (s₀ : S) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    let e := trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀
+    let e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀
     ∃ p : S → P →L[ℝ] P, ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k p e.baseSet ∧
       ∀ s ∈ e.baseSet, IsIdempotentElem (p s) ∧
         h.negativeNormalSpace hn g.toRiemannianMetric s = (p s).range.map (e.symmₗ ℝ s) ∧
@@ -141,7 +141,7 @@ private theorem exists_contMDiffOn_negativeNormalSpace_eq_map
   let := i.normalSpaceVectorBundle hn hdim
   have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
   let := i.normalSpaceContMDiffVectorBundle hn hk hdim
-  set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀
+  set e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀
   -- The metric read in the trivialization.
   set G : S → P →L[ℝ] P →L[ℝ] ℝ := fun s ↦
     ((g.inner s).toLinearMap₁₂.compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)).toContinuousBilinearMap
@@ -156,8 +156,9 @@ private theorem exists_contMDiffOn_negativeNormalSpace_eq_map
   obtain ⟨hidem, hrange, hker, -, -, -, -, hrank, hnull⟩ := hps s ⟨hs, hs⟩
   -- Pulled back along the inverse trivialization, the metric is `G s`.
   set L := (e.linearEquivAt ℝ s hs).symm
-  have hgL : (g.toRiemannianMetric.inner s).toBilinForm.compl₁₂ (L : P →ₗ[ℝ] i.NormalSpace s hn)
-      (L : P →ₗ[ℝ] i.NormalSpace s hn) = (G s).toBilinForm := by
+  have hgL : (g.toRiemannianMetric.inner s).toBilinForm.compl₁₂
+      (L : P →ₗ[ℝ] i.isImmersion.NormalSpace s hn)
+      (L : P →ₗ[ℝ] i.isImmersion.NormalSpace s hn) = (G s).toBilinForm := by
     ext u v
     simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, L,
       Trivialization.linearEquivAt_symm_apply, ContinuousLinearMap.toBilinForm_apply, G,
@@ -165,7 +166,8 @@ private theorem exists_contMDiffOn_negativeNormalSpace_eq_map
       e.symmₗ_apply hs]
     -- The underlying metric of `g` has the inner products of `g`, by definition.
     rfl
-  have hL : (L : P →ₗ[ℝ] i.NormalSpace s hn) = e.symmₗ ℝ s := e.coe_linearEquivAt_symm ℝ hs
+  have hL : (L : P →ₗ[ℝ] i.isImmersion.NormalSpace s hn) = e.symmₗ ℝ s :=
+      e.coe_linearEquivAt_symm ℝ hs
   refine ⟨hidem, ?_, ?_, hrank, hnull⟩
   · rw [IsCriticalSubmanifold.negativeNormalSpace_def, ← hL,
       ← LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ L, hgL, hL, hrange]
@@ -187,7 +189,7 @@ theorem hasLocalContMDiffSubbundleFrames_negativeNormalSpace
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -206,10 +208,11 @@ theorem hasLocalContMDiffSubbundleFrames_negativeNormalSpace
   refine hasLocalContMDiffSubbundleFrames_iff.mpr fun s₀ ↦ ?_
   obtain ⟨p, hp, hps⟩ := exists_contMDiffOn_negativeNormalSpace_eq_map hn h hk hf hdim g s₀
   obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ :=
-    (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).exists_isSubbundleFrameOn_map_symmₗ
-      (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl hp
+    (trivializationAt P
+        (fun s ↦ i.isImmersion.NormalSpace s hn) s₀).exists_isSubbundleFrameOn_map_symmₗ
+      (trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀).open_baseSet subset_rfl hp
       (fun s hs ↦ (hps s hs).2.2.2.1.trans (hr s))
-      (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
+      (mem_baseSet_trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀)
   exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent,
     fun hy ↦ (hX.span_eq hy).trans (hps _ (hUe hy)).2.1.symm⟩, hXk⟩
 
@@ -228,7 +231,7 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I (-f) (i s) = r) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -247,18 +250,20 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace
   refine hasLocalContMDiffSubbundleFrames_iff.mpr fun s₀ ↦ ?_
   obtain ⟨p, hp, hps⟩ := exists_contMDiffOn_negativeNormalSpace_eq_map hn h hk hf hdim g s₀
   -- The kernel of a projection `p` is the range of the complementary projection `1 - p`.
-  have hker (s : S) (hs : s ∈ (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).baseSet) :
+  have hker (s : S)
+      (hs : s ∈ (trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀).baseSet) :
       (1 - p s).range = (p s).ker := by
     have hP : IsIdempotentElem (p s : P →ₗ[ℝ] P) := congr(($((hps s hs).1) : P →ₗ[ℝ] P))
     rw [LinearMap.IsIdempotentElem.ker_eq_range_one_sub hP,
       ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_one]
   obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ :=
-    (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).exists_isSubbundleFrameOn_map_symmₗ
-      (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl
+    (trivializationAt P
+        (fun s ↦ i.isImmersion.NormalSpace s hn) s₀).exists_isSubbundleFrameOn_map_symmₗ
+      (trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀).open_baseSet subset_rfl
       (A := fun s ↦ 1 - p s) ((contDiff_const.sub contDiff_id :
         ContDiff ℝ k fun A : P →L[ℝ] P ↦ 1 - A).contMDiff.comp_contMDiffOn hp)
       (fun s hs ↦ (hker s hs ▸ (hps s hs).2.2.2.2).trans (hr s))
-      (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
+      (mem_baseSet_trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀)
   exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent, fun hy ↦
     (hX.span_eq hy).trans (by rw [hker _ (hUe hy), (hps _ (hUe hy)).2.2.1])⟩, hXk⟩
 
@@ -274,7 +279,7 @@ theorem hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_preconnectedSpac
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) (s₀ : S) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) (s₀ : S) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -298,7 +303,7 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace_of_preconnectedSpac
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) (s₀ : S) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) (s₀ : S) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -322,15 +327,16 @@ theorem contMDiff_projection_negativeNormalSpace
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     ContMDiff (J.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, P)) k
-      (fun w : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
-        TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj ((h.negativeNormalSpace hn
+      (fun w : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) ↦
+        TotalSpace.mk' P (E := fun s ↦ i.isImmersion.NormalSpace s hn) w.proj
+            ((h.negativeNormalSpace hn
           g.toRiemannianMetric w.proj).projection (h.positiveNormalSpace hn g.toRiemannianMetric
             w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj) w.snd)) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
@@ -344,7 +350,7 @@ theorem contMDiff_projection_negativeNormalSpace
   rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨(Bundle.contMDiff_proj _).contMDiffAt, ?_⟩
   obtain ⟨p, hp, hps⟩ := exists_contMDiffOn_negativeNormalSpace_eq_map hn h hk hf hdim g w₀.proj
-  set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj
+  set e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) w₀.proj
   have hw₀ : w₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt P _ w₀.proj
   have hpw : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P →L[ℝ] P) k (fun w ↦ p w.proj) w₀ :=
     (hp.contMDiffAt (e.open_baseSet.mem_nhds hw₀)).comp w₀ (Bundle.contMDiff_proj _).contMDiffAt
@@ -382,15 +388,16 @@ theorem contMDiff_projection_positiveNormalSpace
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     ContMDiff (J.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, P)) k
-      (fun w : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
-        TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) w.proj ((h.positiveNormalSpace hn
+      (fun w : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) ↦
+        TotalSpace.mk' P (E := fun s ↦ i.isImmersion.NormalSpace s hn) w.proj
+            ((h.positiveNormalSpace hn
           g.toRiemannianMetric w.proj).projection (h.negativeNormalSpace hn g.toRiemannianMetric
             w.proj) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn _ _ w.proj).symm
           w.snd)) := by
@@ -406,7 +413,7 @@ theorem contMDiff_projection_positiveNormalSpace
     (contMDiff_projection_negativeNormalSpace hn h hk hf hdim g w₀)
   rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨hA.1, ?_⟩
-  set e := trivializationAt P (fun s ↦ i.NormalSpace s hn) w₀.proj
+  set e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) w₀.proj
   have hw₀ : w₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt P _ w₀.proj
   have he : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P) k (fun w ↦ (e w).2) w₀ :=
     ((e.contMDiffOn (IB := J) (n := k)).contMDiffAt
@@ -415,7 +422,8 @@ theorem contMDiff_projection_positiveNormalSpace
   filter_upwards [(FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
     (e.open_baseSet.mem_nhds hw₀)] with w hw
   -- In the trivialization, the fibre coordinate is linear on the fibre over `w.proj`.
-  have hlin (x : i.NormalSpace w.proj hn) : (e ⟨w.proj, x⟩).2 = e.linearMapAt ℝ w.proj x := by
+  have hlin (x : i.isImmersion.NormalSpace w.proj hn) : (e ⟨w.proj, x⟩).2 =
+      e.linearMapAt ℝ w.proj x := by
     rw [e.coe_linearMapAt_of_mem hw]
   simp only [TotalSpace.mk', hlin]
   rw [Submodule.projection_eq_self_sub_projection, map_sub]
@@ -436,7 +444,7 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -492,7 +500,7 @@ theorem continuous_negativeNormalSpaceEquiv
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -535,7 +543,7 @@ theorem exists_bundleDiffeomorph_positiveNormalSpace
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I (-f) (i s) = r) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -602,15 +610,15 @@ theorem contMDiff_normalMetricChange
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     ContMDiff (J.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, P)) k
-      (fun v : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
-        TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) v.proj
+      (fun v : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) ↦
+        TotalSpace.mk' P (E := fun s ↦ i.isImmersion.NormalSpace s hn) v.proj
           (h.normalMetricChange hn g₀.toRiemannianMetric g₁.toRiemannianMetric v.proj v.snd)) := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -639,14 +647,14 @@ def normalMetricChangeDiffeomorph
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    TotalSpace P (fun s ↦ i.NormalSpace s hn) ≃ₘ^k⟮J.prod 𝓘(ℝ, P), J.prod 𝓘(ℝ, P)⟯
-      TotalSpace P (fun s ↦ i.NormalSpace s hn) :=
+    TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) ≃ₘ^k⟮J.prod 𝓘(ℝ, P), J.prod 𝓘(ℝ, P)⟯
+      TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) :=
   haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -668,8 +676,8 @@ theorem normalMetricChangeDiffeomorph_apply
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn)
-    (v : TotalSpace P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn)
+    (v : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -696,8 +704,8 @@ theorem normalMetricChangeDiffeomorph_symm_apply
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn)
-    (v : TotalSpace P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn)
+    (v : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
     haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -729,7 +737,7 @@ theorem exists_bundleDiffeomorph_prod_negativeNormalSpace_positiveNormalSpace
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J k P fun s ↦ i.NormalSpace s hn) {r r' : ℕ}
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn) {r r' : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (hr' : ∀ s, manifoldMorseIndex I (-f) (i s) = r') :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -744,8 +752,8 @@ theorem exists_bundleDiffeomorph_prod_negativeNormalSpace_positiveNormalSpace
           ((fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) ×ᵇ
             fun s ↦ h.positiveNormalSpace hn g.toRiemannianMetric s)
         ≃ₘ^k⟮J.prod 𝓘(ℝ, (Fin r → ℝ) × (Fin r' → ℝ)), J.prod 𝓘(ℝ, P)⟯
-        TotalSpace P (fun s ↦ i.NormalSpace s hn),
-      ∀ v, Φ v = ⟨v.proj, (v.snd.1 : i.NormalSpace v.proj hn) + v.snd.2⟩ := by
+        TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn),
+      ∀ v, Φ v = ⟨v.proj, (v.snd.1 : i.isImmersion.NormalSpace v.proj hn) + v.snd.2⟩ := by
   have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
@@ -783,7 +791,7 @@ theorem hasLocalSubbundleFrames_negativeNormalSpace
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
@@ -814,7 +822,8 @@ of size `r`, then the Morse index of `f` is `r` all along the submanifold, since
 normal space has the dimension of the index (`finrank_negativeNormalSpace`). This is the converse
 of `hasLocalSubbundleFrames_negativeNormalSpace`. -/
 theorem manifoldMorseIndex_eq_of_hasLocalSubbundleFrames
-    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f)
+        (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
     {r : ℕ} (hV : HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g)) (s : S) :
     manifoldMorseIndex I f (i s) = r := by
   rw [← h.finrank_negativeNormalSpace hn g, hV.finrank_eq, Fintype.card_fin]

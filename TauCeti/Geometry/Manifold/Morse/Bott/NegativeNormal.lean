@@ -188,7 +188,8 @@ at `s₀`, and let `G` be a fibre metric `g` read in `e`. Then the negative spec
 `Q` relative to `G` reads, through `e`, the projection of the normal space onto the negative normal
 space for `g` along the positive normal space for `g`. -/
 theorem normalSpaceTrivialization_symm_negativeSpectralProjection_apply [IsManifold I 2 M]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f)
+        (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') {s₀ s : S}
     (hs : s ∈ (i.normalSpaceTrivialization hn hdim s₀).baseSet) {Q G : P →L[ℝ] P →L[ℝ] ℝ}
     (hQ : ∀ u v, h.normalHessian hn s ((i.normalSpaceTrivialization hn hdim s₀).symm s u)
@@ -258,7 +259,8 @@ Euclidean fibre model `P` over a set `U`. Then over the intersection of `U` with
 positive normal spaces for `g` are read in `e` by a `C^k` family of operators on `P`. This
 identifies the family of `exists_contMDiffOn_negativeNormalProjection` for the fibre metric `g`. -/
 theorem exists_contMDiffOn_projection_negativeNormalSpace {k : ℕ∞ω} [IsManifold I (k + 2) M]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+    (h : i.IsNondegenerateCriticalSubmanifold f)
+        (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
     (hk : k ≤ n) (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') (s₀ : S)
     {U : Set S} {G : S → P →L[ℝ] P →L[ℝ] ℝ}

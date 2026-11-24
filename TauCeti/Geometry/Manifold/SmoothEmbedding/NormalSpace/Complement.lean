@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Coordinates
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Coordinates
 public import TauCeti.Analysis.Calculus.QuotientRange
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Topology.VectorBundle.Coordinates
@@ -13,12 +13,12 @@ import TauCeti.Topology.VectorBundle.Coordinates
 /-!
 # Fixed complementary coordinates for intrinsic normal spaces
 
-Near a point of a smooth immersion, the intrinsic normal fibres can all be identified with
+Near a point of a smooth embedding, the intrinsic normal fibres can all be identified with
 one closed subspace of the ambient model. These identifications take tangent-chart coordinates
 of an ambient representative and then project along the moving tangent range. Their inverse
 uses the fixed complementary representative in the same tangent chart.
 
-The coordinate operators have one less derivative than the immersion. At a point this includes
+The coordinate operators have one less derivative than the embedding. At a point this includes
 smooth and analytic regularity; for finite or analytic regularity we also obtain one open
 neighbourhood on which the operators have that regularity. Smoothness at a point alone does not
 supply a single neighbourhood for all derivative orders. These are fibre coordinates, independent
@@ -40,7 +40,7 @@ noncomputable section
 open Set Filter Topology Bundle
 open scoped Manifold ContDiff
 
-namespace Manifold.IsImmersion
+namespace TauCeti.SmoothEmbedding
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F : Type*}
@@ -50,7 +50,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
   {M N : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
-  {n : ℕ∞ω} {f : M → N}
+  {n : ℕ∞ω}
 
 section Coordinates
 
@@ -58,41 +58,42 @@ variable {P : Type*} [TopologicalSpace P] [AddCommGroup P] [Module 𝕜 P]
 
 /-- Intrinsic normal coordinates in a fixed complementary parameter space. The complement
 is specified by `B`; invertibility says it complements the coordinate differential's range. -/
-def normalSpaceEquivOfComplement (hf : IsImmersion I J n f) (hn : n ≠ 0)
+def normalSpaceEquivOfComplement (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt G (f x₀)).source) (B : P →L[𝕜] F)
-    (hB : ((inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₀ x).coprod B).IsInvertible) :
-    hf.NormalSpace x hn ≃L[𝕜] P :=
-  (hf.normalSpaceEquivInTangentCoordinates hn hx hy).trans
-    ((inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₀ x).quotientRangeEquiv B hB)
+    (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible) :
+    f.isImmersion.NormalSpace x hn ≃L[𝕜] P :=
+  (f.normalSpaceEquivInTangentCoordinates hn hx hy).trans
+    ((inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x).quotientRangeEquiv B hB)
 
 /-- On ambient tangent representatives, normal coordinates take the complementary component
 of tangent-chart coordinates. -/
 @[simp] theorem normalSpaceEquivOfComplement_normalClass
-    (hf : IsImmersion I J n f) (hn : n ≠ 0)
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt G (f x₀)).source) (B : P →L[𝕜] F)
-    (hB : ((inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₀ x).coprod B).IsInvertible)
+    (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
     (v : TangentSpace J (f x)) :
-    hf.normalSpaceEquivOfComplement hn hx hy B hB (hf.normalClass x hn v) =
-      (inTangentCoordinates I J _root_.id f
-        (mfderiv I J f) x₀ x).quotientRangeCoordinate B
+    f.normalSpaceEquivOfComplement hn hx hy B hB (f.isImmersion.normalClass x hn v) =
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B
         ((trivializationAt F (TangentSpace J) (f x₀)) ⟨f x, v⟩).2 := by
   simp [normalSpaceEquivOfComplement]
 
 /-- Inverse normal coordinates use the chosen complementary vector in the inverse ambient
 tangent chart and take its normal class. -/
 @[simp] theorem normalSpaceEquivOfComplement_symm_apply
-    (hf : IsImmersion I J n f) (hn : n ≠ 0)
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt G (f x₀)).source) (B : P →L[𝕜] F)
-    (hB : ((inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₀ x).coprod B).IsInvertible) (w : P) :
-    (hf.normalSpaceEquivOfComplement hn hx hy B hB).symm w =
-      hf.normalClass x hn ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
+    (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible) (w : P) :
+    (f.normalSpaceEquivOfComplement hn hx hy B hB).symm w =
+      f.isImmersion.normalClass x hn
+          ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
   simp [normalSpaceEquivOfComplement]
 
 /-- Changing the complement and the ambient tangent chart gives the normal-coordinate
@@ -101,18 +102,18 @@ Use this rule with `rw`; expanding a general transition during simplification ca
 the cancellation of a coordinate equivalence with its inverse. -/
 theorem normalSpaceEquivOfComplement_apply_symm_eq_quotientRangeCoordinate_coordChangeL
     {P' : Type*} [TopologicalSpace P'] [AddCommGroup P'] [Module 𝕜 P']
-    (hf : IsImmersion I J n f) (hn : n ≠ 0) {x₀ x₁ x : M}
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) {x₀ x₁ x : M}
     (hx₀ : x ∈ (chartAt H x₀).source) (hy₀ : f x ∈ (chartAt G (f x₀)).source)
     (hx₁ : x ∈ (chartAt H x₁).source) (hy₁ : f x ∈ (chartAt G (f x₁)).source)
     (B : P →L[𝕜] F) (C : P' →L[𝕜] F)
-    (hB : ((inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₀ x).coprod B).IsInvertible)
-    (hC : ((inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₁ x).coprod C).IsInvertible) (w : P) :
-    hf.normalSpaceEquivOfComplement hn hx₁ hy₁ C hC
-        ((hf.normalSpaceEquivOfComplement hn hx₀ hy₀ B hB).symm w) =
-      (inTangentCoordinates I J _root_.id f
-        (mfderiv I J f) x₁ x).quotientRangeCoordinate C
+    (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible)
+    (hC : ((inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₁ x).coprod C).IsInvertible) (w : P) :
+    f.normalSpaceEquivOfComplement hn hx₁ hy₁ C hC
+        ((f.normalSpaceEquivOfComplement hn hx₀ hy₀ B hB).symm w) =
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₁ x).quotientRangeCoordinate C
         (((trivializationAt F (TangentSpace J) (f x₀)).coordChangeL 𝕜
           (trivializationAt F (TangentSpace J) (f x₁)) (f x)) (B w)) := by
   rw [normalSpaceEquivOfComplement_symm_apply, normalSpaceEquivOfComplement_normalClass,
@@ -121,13 +122,13 @@ theorem normalSpaceEquivOfComplement_apply_symm_eq_quotientRangeCoordinate_coord
 /-- Normal coordinates recover a parameter from its complementary representative. -/
 -- Cancel before the inverse-coordinate simp rule expands the inner argument.
 @[simp↓] theorem normalSpaceEquivOfComplement_apply_symm_apply
-    (hf : IsImmersion I J n f) (hn : n ≠ 0)
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt G (f x₀)).source) (B : P →L[𝕜] F)
-    (hB : ((inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₀ x).coprod B).IsInvertible) (w : P) :
-    hf.normalSpaceEquivOfComplement hn hx hy B hB
-        ((hf.normalSpaceEquivOfComplement hn hx hy B hB).symm w) = w :=
+    (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x).coprod B).IsInvertible) (w : P) :
+    f.normalSpaceEquivOfComplement hn hx hy B hB
+        ((f.normalSpaceEquivOfComplement hn hx hy B hB).symm w) = w :=
   ContinuousLinearEquiv.apply_symm_apply _ w
 
 end Coordinates
@@ -135,56 +136,56 @@ end Coordinates
 variable [CompleteSpace F] {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
 
 /-- For any valid fixed complement, the normal-coordinate operator is `C^m` at the chart
-centre when the immersion is `C^(m+1)` there. This includes smooth and analytic regularity. -/
+centre when the embedding is `C^(m+1)` there. This includes smooth and analytic regularity. -/
 theorem contMDiffAt_inTangentCoordinates_quotientRangeCoordinate
-    (hf : IsImmersion I J n f) {m : ℕ∞ω} (hm : m + 1 ≤ n) (x₀ : M)
+    (f : SmoothEmbedding I J n M N) {m : ℕ∞ω} (hm : m + 1 ≤ n) (x₀ : M)
     (B : P →L[𝕜] F)
-    (hB : ((inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₀ x₀).coprod B).IsInvertible) :
+    (hB : ((inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x₀).coprod B).IsInvertible) :
     ContMDiffAt I 𝓘(𝕜, F →L[𝕜] P) m
-      (fun x => (inTangentCoordinates I J _root_.id f
-        (mfderiv I J f) x₀ x).quotientRangeCoordinate B) x₀ := by
+      (fun x => (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) x₀ := by
   have : CompleteSpace (E × P) :=
     ContinuousLinearMap.completeSpace_of_isInvertible hB
   have hq : ContDiffAt 𝕜 m (fun L : E →L[𝕜] F => L.quotientRangeCoordinate B)
-      (inTangentCoordinates I J _root_.id f
-        (mfderiv I J f) x₀ x₀) :=
+      (inTangentCoordinates I J _root_.id (f : M → N)
+        (mfderiv I J (f : M → N)) x₀ x₀) :=
     (contDiffAt_id (𝕜 := 𝕜)).quotientRangeCoordinate B hB
-  exact hq.comp_contMDiffAt (hf.contMDiff.contMDiffAt.mfderiv_const hm)
+  exact hq.comp_contMDiffAt (f.contMDiff.contMDiffAt.mfderiv_const hm)
 
-/-- A positive-regularity immersion has a fixed closed complementary model for its intrinsic
+/-- A positive-regularity embedding has a fixed closed complementary model for its intrinsic
 normal fibres near each point. For every finite or analytic order `m` with `m + 1 ≤ n`, the
 complementary coordinate operators are `C^m` on one open neighbourhood contained in the
 source and ambient tangent-chart domains. No metric or finite-dimensionality is required. -/
 theorem exists_contMDiffOn_inTangentCoordinates_quotientRangeCoordinate
     {m : ℕ∞ω} [IsManifold I m M]
-    (hf : IsImmersion I J n f) (hm : m + 1 ≤ n) (hm' : m ≠ ∞)
+    (f : SmoothEmbedding I J n M N) (hm : m + 1 ≤ n) (hm' : m ≠ ∞)
     (x₀ : M) :
     ∃ Q : Submodule 𝕜 F, IsClosed (Q : Set F) ∧
       ∃ U : Set M, IsOpen U ∧ x₀ ∈ U ∧
         U ⊆ (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source ∧
-        (∀ x ∈ U, ((inTangentCoordinates I J _root_.id f
-          (mfderiv I J f) x₀ x).coprod Q.subtypeL).IsInvertible) ∧
+        (∀ x ∈ U, ((inTangentCoordinates I J _root_.id (f : M → N)
+          (mfderiv I J (f : M → N)) x₀ x).coprod Q.subtypeL).IsInvertible) ∧
         ContMDiffOn I 𝓘(𝕜, F →L[𝕜] Q) m
-          (fun x => (inTangentCoordinates I J _root_.id f
-            (mfderiv I J f) x₀ x).quotientRangeCoordinate Q.subtypeL) U := by
+          (fun x => (inTangentCoordinates I J _root_.id (f : M → N)
+            (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate Q.subtypeL) U := by
   have hn : n ≠ 0 := ENat.one_le_iff_ne_zero_withTop.mp ((le_add_left le_rfl).trans hm)
-  let A := inTangentCoordinates I J _root_.id f
-    (mfderiv I J f) x₀
+  let A := inTangentCoordinates I J _root_.id (f : M → N)
+    (mfderiv I J (f : M → N)) x₀
   have hA : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F) m A x₀ :=
-    hf.contMDiff.contMDiffAt.mfderiv_const hm
+    f.contMDiff.contMDiffAt.mfderiv_const hm
   -- The differential at `x₀` is split-injective, hence so is its tangent-coordinate expression.
-  have hleft : (inTangentCoordinates I J _root_.id f
-      (mfderiv I J f) x₀ x₀).HasLeftInverse := by
+  have hleft : (inTangentCoordinates I J _root_.id (f : M → N)
+      (mfderiv I J (f : M → N)) x₀ x₀).HasLeftInverse := by
     rw [inTangentCoordinates, id_eq, ContinuousLinearMap.hasLeftInverse_inCoordinates_iff
       (FiberBundle.mem_baseSet_trivializationAt' x₀)
       (FiberBundle.mem_baseSet_trivializationAt' (f x₀))]
-    exact isDiffImmersionAt_iff.1 (hf.isDiffImmersionAt hn x₀)
+    exact isDiffImmersionAt_iff.1 (f.isImmersion.isDiffImmersionAt hn x₀)
   obtain ⟨Q, hQ, W, hW, hxW, hInv⟩ := hA.continuousAt.exists_isInvertible_coprod_subtypeL hleft
   obtain ⟨V, hV, hAV⟩ := (contMDiffAt_iff_contMDiffOn_nhds hm').mp hA
   let S := (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source
   have hS : IsOpen S := (chartAt H x₀).open_source.inter
-    ((chartAt G (f x₀)).open_source.preimage hf.contMDiff.continuous)
+    ((chartAt G (f x₀)).open_source.preimage f.contMDiff.continuous)
   have hxS : x₀ ∈ S := ⟨mem_chart_source H x₀, mem_chart_source G (f x₀)⟩
   obtain ⟨V', hV'sub, hV', hxV'⟩ := mem_nhds_iff.mp hV
   have : CompleteSpace (E × Q) :=
@@ -198,4 +199,4 @@ theorem exists_contMDiffOn_inTangentCoordinates_quotientRangeCoordinate
   exact hq.contMDiffAt.comp_contMDiffWithinAt x
     ((hAV x (hV'sub hx.1.2)).mono (fun _ hy => hV'sub hy.1.2))
 
-end Manifold.IsImmersion
+end TauCeti.SmoothEmbedding

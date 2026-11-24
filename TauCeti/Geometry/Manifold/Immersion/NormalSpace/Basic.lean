@@ -25,8 +25,8 @@ ambient tangent vectors represent zero normal vectors, and linear and continuous
 vanishing on the tangent range descend to the normal space (`Manifold.IsImmersion.normalLift`,
 `Manifold.IsImmersion.normalLiftL`), uniquely.
 
-The normal spaces of a bundled smooth embedding, `TauCeti.SmoothEmbedding.NormalSpace`, are these
-normal spaces of its underlying immersion.
+The normal spaces of a bundled smooth embedding `f` are those of its underlying immersion,
+`f.isImmersion.NormalSpace`.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the normal-bundle
 construction preceding Theorem 6.24.

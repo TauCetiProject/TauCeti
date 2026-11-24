@@ -143,7 +143,7 @@ tangent to the image. -/
 theorem contactPairing_eq_zero_iff_mem_tangentRange
     (hf : IsLegendrianImmersion I α.kerDistribution f) (hn : n ≠ 0) (x : M)
     (v : TangentSpace J (f x)) :
-    f.contactPairing α x v = 0 ↔ v ∈ f.tangentRange x hn := by
+    f.contactPairing α x v = 0 ↔ v ∈ f.isImmersion.tangentRange x hn := by
   rw [Prod.ext_iff, contactPairing_apply_snd, Prod.fst_zero, Prod.snd_zero]
   constructor
   · rintro ⟨hdα, hv⟩
@@ -182,11 +182,11 @@ Legendrian immersion for the kernel of a contact form `α`, the normal class `[v
 tangent vector `v` at `f x` corresponds to the pair `(dα_(f x)(df_x ·, v), α_(f x)(v))`. -/
 def normalSpaceEquivOfIsLegendrianImmersion (hf : IsLegendrianImmersion I α.kerDistribution f)
     (hn : n ≠ 0) (x : M) :
-    f.NormalSpace x hn ≃L[ℝ] (TangentSpace I x →L[ℝ] ℝ) × ℝ :=
+    f.isImmersion.NormalSpace x hn ≃L[ℝ] (TangentSpace I x →L[ℝ] ℝ) × ℝ :=
   haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
   f.normalSpaceEquivOfKer x hn (f.contactPairing α x)
     (f.contactPairing_eq_zero_iff_mem_tangentRange hf hn x) <| by
-    rw [f.finrank_normalSpace x hn, finrank_tangentSpace, finrank_tangentSpace]
+    rw [f.isImmersion.finrank_normalSpace x hn, finrank_tangentSpace, finrank_tangentSpace]
     exact (finrank_prod_eq_sub_of_isLegendrianImmersion hf).symm
 
 /-- The normal class `[v]` of an ambient tangent vector at `f x` corresponds to the pair
@@ -195,7 +195,7 @@ def normalSpaceEquivOfIsLegendrianImmersion (hf : IsLegendrianImmersion I α.ker
 theorem normalSpaceEquivOfIsLegendrianImmersion_normalClass
     (hf : IsLegendrianImmersion I α.kerDistribution f) (hn : n ≠ 0) (x : M)
     (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivOfIsLegendrianImmersion hf hn x (f.normalClass x hn v) =
+    f.normalSpaceEquivOfIsLegendrianImmersion hf hn x (f.isImmersion.normalClass x hn v) =
       f.contactPairing α x v :=
   haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
   f.normalSpaceEquivOfKer_normalClass x hn _ _ _ v
@@ -206,7 +206,7 @@ theorem normalSpaceEquivOfIsLegendrianImmersion_symm_contactPairing
     (hf : IsLegendrianImmersion I α.kerDistribution f) (hn : n ≠ 0) (x : M)
     (v : TangentSpace J (f x)) :
     (f.normalSpaceEquivOfIsLegendrianImmersion hf hn x).symm (f.contactPairing α x v) =
-      f.normalClass x hn v :=
+      f.isImmersion.normalClass x hn v :=
   haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
   f.normalSpaceEquivOfKer_symm_apply x hn _ _ _ v
 
@@ -215,7 +215,7 @@ theorem normalSpaceEquivOfIsLegendrianImmersion_symm_contactPairing
 theorem normalSpaceEquivOfIsLegendrianImmersion_normalClass_reebVectorField
     (hf : IsLegendrianImmersion I α.kerDistribution f) (hn : n ≠ 0) (x : M) :
     f.normalSpaceEquivOfIsLegendrianImmersion hf hn x
-        (f.normalClass x hn (α.reebVectorField (f x))) = (0, 1) := by
+        (f.isImmersion.normalClass x hn (α.reebVectorField (f x))) = (0, 1) := by
   have hα := hf.isContactForm
   rw [normalSpaceEquivOfIsLegendrianImmersion_normalClass, Prod.ext_iff, contactPairing_apply_snd,
     hα.apply_reebVectorField]
@@ -226,7 +226,7 @@ theorem normalSpaceEquivOfIsLegendrianImmersion_normalClass_reebVectorField
 theorem normalSpaceEquivOfIsLegendrianImmersion_symm_zero_one
     (hf : IsLegendrianImmersion I α.kerDistribution f) (hn : n ≠ 0) (x : M) :
     (f.normalSpaceEquivOfIsLegendrianImmersion hf hn x).symm (0, 1) =
-      f.normalClass x hn (α.reebVectorField (f x)) :=
+      f.isImmersion.normalClass x hn (α.reebVectorField (f x)) :=
   (ContinuousLinearEquiv.symm_apply_eq _).2
     (f.normalSpaceEquivOfIsLegendrianImmersion_normalClass_reebVectorField hf hn x).symm
 
@@ -245,7 +245,7 @@ theorem contMDiff_normalSpaceEquivOfIsLegendrianImmersion
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (I.prod 𝓘(ℝ, (E →L[ℝ] ℝ) × ℝ)) m
-      (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
+      (fun p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ↦
         TotalSpace.mk' ((E →L[ℝ] ℝ) × ℝ)
           (E := (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ×ᵇ Trivial M ℝ) p.proj
           (f.normalSpaceEquivOfIsLegendrianImmersion hf hn p.proj p.snd)) := by
@@ -266,7 +266,7 @@ def normalBundleDiffeomorphOfIsLegendrianImmersion
     (hm' : m + 1 ≤ ∞) (hdim : finrank ℝ P = finrank ℝ F - finrank ℝ E) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
-    TotalSpace P (fun x ↦ f.NormalSpace x hn)
+    TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)
       ≃ₘ^m⟮I.prod 𝓘(ℝ, P), (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ, ℝ)⟯ CotangentBundle I M × ℝ :=
   haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   haveI : IsManifold J (m + 1) N := .of_le hm'
@@ -284,7 +284,7 @@ and a real number. -/
 theorem normalBundleDiffeomorphOfIsLegendrianImmersion_apply
     (hf : IsLegendrianImmersion I α.kerDistribution f) (hn : n ≠ 0) (hm : m + 1 ≤ n)
     (hm' : m + 1 ≤ ∞) (hdim : finrank ℝ P = finrank ℝ F - finrank ℝ E)
-    (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) :
+    (p : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn)) :
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     f.normalBundleDiffeomorphOfIsLegendrianImmersion hf hn hm hm' hdim p =
@@ -326,7 +326,7 @@ theorem normalBundleDiffeomorphOfIsLegendrianImmersion_normalClass
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     f.normalBundleDiffeomorphOfIsLegendrianImmersion hf hn hm hm' hdim
-        ⟨x, f.normalClass x hn v⟩ =
+        ⟨x, f.isImmersion.normalClass x hn v⟩ =
       (⟨x, f.pairingCovector (mextDerivₗ J 1 α) x v⟩, α.val (f x) ![v]) := by
   rw [normalBundleDiffeomorphOfIsLegendrianImmersion_apply,
     normalSpaceEquivOfIsLegendrianImmersion_normalClass, contactPairing_apply_fst,

@@ -98,18 +98,19 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 namespace IsCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M] (h : i.IsCriticalSubmanifold f)
-  (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) {s : S} {v w : i.NormalSpace s hn}
+  (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn) {s : S}
+      {v w : i.isImmersion.NormalSpace s hn}
 
 /-- The **negative normal space** of a critical submanifold at `s`, relative to a fibre metric
 `g` on the normal spaces: the span of the normal vectors `v` with `Hess v = μ g v` for some
 `μ < 0`, where `Hess` is the normal Hessian. -/
-def negativeNormalSpace (s : S) : Submodule ℝ (i.NormalSpace s hn) :=
+def negativeNormalSpace (s : S) : Submodule ℝ (i.isImmersion.NormalSpace s hn) :=
   (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) (Iio 0)
 
 /-- The **positive normal space** of a critical submanifold at `s`, relative to a fibre metric
 `g` on the normal spaces: the span of the normal vectors `v` with `Hess v = μ g v` for some
 `μ > 0`, where `Hess` is the normal Hessian. -/
-def positiveNormalSpace (s : S) : Submodule ℝ (i.NormalSpace s hn) :=
+def positiveNormalSpace (s : S) : Submodule ℝ (i.isImmersion.NormalSpace s hn) :=
   (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) (Ioi 0)
 
 /-- The negative normal space is the relative spectral subspace of the normal Hessian selected by
@@ -177,7 +178,8 @@ end IsCriticalSubmanifold
 namespace IsNondegenerateCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ E]
-  (h : i.IsNondegenerateCriticalSubmanifold f) (g g' : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+  (h : i.IsNondegenerateCriticalSubmanifold f)
+      (g g' : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
 
 /-- **The negative normal space has the dimension of the Morse index**, for every fibre metric. -/
 theorem finrank_negativeNormalSpace (s : S) :
@@ -232,7 +234,7 @@ def negativeNormalSpaceEquiv (s : S) :
 the negative normal space for `g'` along the positive normal space for `g'`. -/
 @[simp]
 theorem coe_negativeNormalSpaceEquiv_apply {s : S} (v : h.negativeNormalSpace hn g s) :
-    (h.negativeNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
+    (h.negativeNormalSpaceEquiv hn g g' s v : i.isImmersion.NormalSpace s hn) =
       (h.negativeNormalSpace hn g' s).projection (h.positiveNormalSpace hn g' s)
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s) v := by
   rw [negativeNormalSpaceEquiv, LinearEquiv.trans_apply,
@@ -263,7 +265,7 @@ def positiveNormalSpaceEquiv (s : S) :
 the positive normal space for `g'` along the negative normal space for `g'`. -/
 @[simp]
 theorem coe_positiveNormalSpaceEquiv_apply {s : S} (v : h.positiveNormalSpace hn g s) :
-    (h.positiveNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
+    (h.positiveNormalSpaceEquiv hn g g' s v : i.isImmersion.NormalSpace s hn) =
       (h.positiveNormalSpace hn g' s).projection (h.negativeNormalSpace hn g' s)
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm v := by
   rw [positiveNormalSpaceEquiv, LinearEquiv.trans_apply,
