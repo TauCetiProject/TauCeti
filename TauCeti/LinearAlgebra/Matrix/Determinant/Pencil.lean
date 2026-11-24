@@ -31,7 +31,7 @@ a small integral matrix (`TauCeti.LinearAlgebra.Matrix.ReductionKernel`).
 ## Main results
 
 * `Polynomial.eval_det_X_add_C`: `det (X • A + B)`, evaluated at `t`, is `det (t • A + B)`.
-* `Submodule.eq_span_singleton_of_forall_det_ne_zero`: a subspace of matrices whose invertible
+* `Submodule.eq_span_singleton_of_mem_of_det_ne_zero`: a subspace of matrices whose invertible
   elements are the nonzero multiples of one invertible matrix is spanned by it.
 -/
 
@@ -61,7 +61,7 @@ variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
 /-- **A subspace with a unique invertible line is that line.** Let `V` be a subspace of `n × n`
 matrices over a field with more than `n` elements. If `V` contains an invertible matrix `X`, and
 every invertible element of `V` is a scalar multiple of `X`, then `V` is spanned by `X`. -/
-theorem eq_span_singleton_of_forall_det_ne_zero (V : Submodule K (Matrix n n K))
+theorem eq_span_singleton_of_mem_of_det_ne_zero (V : Submodule K (Matrix n n K))
     (hK : Fintype.card n < Cardinal.mk K) {X : Matrix n n K} (hXV : X ∈ V) (hX : X.det ≠ 0)
     (h : ∀ Y ∈ V, Y.det ≠ 0 → ∃ c : K, Y = c • X) : V = K ∙ X := by
   refine le_antisymm (fun Y hYV ↦ ?_) ((span_singleton_le_iff_mem X V).2 hXV)

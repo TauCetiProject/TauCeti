@@ -33,23 +33,26 @@ The reduction has rank `N - 1`, so after adjoining a standard basis vector `eⱼ
 modulo `p`. A row of the adjugate of `Mᵀ` is the vector of cofactors along the adjoined row: it
 pairs each row of `A` with the determinant of a square matrix all of whose rows are rows of `A`.
 Such a determinant is divisible by `p`, since `x` is in the kernel of its reduction, and is
-smaller than `p` in absolute value by Hadamard's crude bound `N! * B ^ N`, so it vanishes. Its
+smaller than `p` in absolute value by the Leibniz-expansion bound `N! * B ^ N` (`Matrix.det_le`),
+so it vanishes. Its
 pairing with `eⱼ` is `det M`, which is nonzero modulo `p`. Dividing the cofactor vector by the
 gcd of its entries makes it primitive without changing its reduction up to a unit.
 
 For square matrices of size `n`, a subspace of matrices over `ZMod p` in which every invertible
 element is a multiple of one invertible `X` is the line through `X`, once `p > n`
-(`Submodule.eq_span_singleton_of_forall_det_ne_zero`). Thus a unique invertible projective
+(`Submodule.eq_span_singleton_of_mem_of_det_ne_zero`). Thus a unique invertible projective
 solution `X` of small integral linear equations has a primitive integral representative `Q` of
 small height, with `det Q` prime to `p`
 (`Matrix.exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero`). This reconstruction is how
 an element of `PGL₂(𝔽_p)` cut out by a few small congruences is identified with the reduction of
 an integral matrix of determinant prime to `p`, for instance in arguments of Bakker and Tsimerman
-on curves in products of modular curves. The sign of `det Q` is not determined: `-Q` has the same
-determinant for `n = 2`. For `n = 2`, a primitive `Q` and `diagonal ![1, det Q]` have the same
-determinant and only units as common divisors of their entries, so the elementary divisor
-classification `Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff` writes `Q` as
-`U * diagonal ![1, det Q] * V` with `U` and `V` in `SL₂(ℤ)`.
+on curves in products of modular curves. Since a nonzero minor modulo `p` is a nonzero integer,
+the rational solutions also form a line, so the primitive `Q` is unique up to sign. For even `n`,
+in particular `n = 2`, `det (-Q) = det Q`, so `det Q` is determined, sign included. For `n = 2`, a
+primitive `Q` and `diagonal ![1, det Q]` have the same determinant and only units as common
+divisors of their entries, so the elementary divisor classification
+`Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff` writes `Q` as `U * diagonal ![1, det Q] * V`
+with `U` and `V` in `SL₂(ℤ)`.
 
 ## Main results
 
@@ -61,8 +64,9 @@ classification `Matrix.exists_SL_mul_mul_eq_of_det_eq_of_dvd_iff` writes `Q` as
 
 ## References
 
-* B. Bakker and J. Tsimerman, *The geometric Frey–Mazur conjecture*, proofs of Lemma 15 and of
-  Propositions 17 and 18.
+* B. Bakker and J. Tsimerman, *p-torsion monodromy representations of elliptic curves over
+  geometric function fields*, Ann. of Math. 184 (2016), 709–744, doi:10.4007/annals.2016.184.3.2,
+  proofs of Lemma 15 and of Propositions 17 and 18.
 -/
 
 public section
@@ -82,7 +86,7 @@ private theorem det_eq_zero_of_forall_exists_eq_row [DecidableEq κ] {A : Matrix
     {x : κ → ZMod p} (hx : x ≠ 0) (hAx : A.map (Int.castRingHom (ZMod p)) *ᵥ x = 0)
     {M : Matrix κ κ ℤ} (hM : ∀ k, ∃ i, M k = A i) : M.det = 0 := by
   refine Int.eq_zero_of_abs_lt_dvd ((ZMod.intCast_zmod_eq_zero_iff_dvd _ p).1 ?_) ?_
-  · rw [← eq_intCast (Int.castRingHom (ZMod p)), RingHom.map_det]
+  · rw [Int.cast_det]
     refine exists_mulVec_eq_zero_iff.1 ⟨x, hx, funext fun k ↦ ?_⟩
     obtain ⟨i, hi⟩ := hM k
     simpa [mulVec, dotProduct, hi] using congrFun hAx i
@@ -95,14 +99,12 @@ private theorem det_eq_zero_of_forall_exists_eq_row [DecidableEq κ] {A : Matrix
 integer matrix `M` with a row `Pi.single j₀ 1`, where `x j₀ ≠ 0`, whose other rows are rows of
 `A`, and whose determinant is nonzero modulo `p`. -/
 private theorem exists_det_map_ne_zero [DecidableEq κ] {A : Matrix ι κ ℤ} {x : κ → ZMod p}
-    (hx : x ≠ 0)
+    (hx : x ≠ 0) (hAx : A.map (Int.castRingHom (ZMod p)) *ᵥ x = 0)
     (hker : LinearMap.ker (A.map (Int.castRingHom (ZMod p))).mulVecLin = ZMod p ∙ x) :
     ∃ (M : Matrix κ κ ℤ) (k₀ j₀ : κ), M k₀ = Pi.single j₀ 1 ∧ (∀ k ≠ k₀, ∃ i, M k = A i) ∧
       x j₀ ≠ 0 ∧ (M.map (Int.castRingHom (ZMod p))).det ≠ 0 := by
   classical
   set A' := A.map (Int.castRingHom (ZMod p))
-  have hAx : A' *ᵥ x = 0 := by
-    simpa using (hker ▸ Submodule.mem_span_singleton_self x : x ∈ LinearMap.ker A'.mulVecLin)
   obtain ⟨j₀, hj₀⟩ : ∃ j, x j ≠ 0 := by simpa [funext_iff] using hx
   have hcard : 0 < Fintype.card κ := Fintype.card_pos_iff.2 ⟨j₀⟩
   -- The reduction has rank `N - 1`: choose `N - 1` independent rows.
@@ -190,7 +192,7 @@ theorem exists_primitive_mulVec_eq_zero_of_ker_map_eq_span (A : Matrix ι κ ℤ
   have hAx : A.map (Int.castRingHom (ZMod p)) *ᵥ x = 0 := by
     simpa using (hker ▸ Submodule.mem_span_singleton_self x :
       x ∈ LinearMap.ker (A.map (Int.castRingHom (ZMod p))).mulVecLin)
-  obtain ⟨M, k₀, j₀, hMk₀, hM, -, hdet⟩ := exists_det_map_ne_zero hx hker
+  obtain ⟨M, k₀, j₀, hMk₀, hM, -, hdet⟩ := exists_det_map_ne_zero hx hAx hker
   -- The cofactors `w` along row `k₀`: pairing with `w` is the determinant with row `k₀` replaced.
   set w : κ → ℤ := Mᵀ.adjugate k₀
   have hw (a : κ → ℤ) : (M.updateRow k₀ a).det = w ⬝ᵥ a := by
@@ -205,8 +207,7 @@ theorem exists_primitive_mulVec_eq_zero_of_ker_map_eq_span (A : Matrix ι κ ℤ
     · obtain ⟨i', hi'⟩ := hM k hk
       exact ⟨i', by simp [updateRow_ne hk, hi']⟩
   have hwj₀ : ((w j₀ : ℤ) : ZMod p) ≠ 0 := by
-    rwa [← dotProduct_single_one w j₀, ← hw, ← hMk₀, updateRow_eq_self,
-      ← eq_intCast (Int.castRingHom (ZMod p)), RingHom.map_det]
+    rwa [← dotProduct_single_one w j₀, ← hw, ← hMk₀, updateRow_eq_self, Int.cast_det]
   have hwbound (j : κ) : |w j| ≤ ((Fintype.card κ)! * max B 1 ^ Fintype.card κ : ℕ) := by
     rw [← dotProduct_single_one w j, ← hw]
     refine (det_le (abv := AbsoluteValue.abs) (x := ((max B 1 : ℕ) : ℤ)) fun k j' ↦ ?_).trans
@@ -245,7 +246,7 @@ theorem exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero {n : Type*} [F
   set A' := A.map (Int.castRingHom (ZMod p))
   set N := Fintype.card (n × n)
   have hpos : 0 < max B 1 ^ N := pow_pos (lt_max_of_lt_right one_pos) N
-  -- `p` exceeds the size `n` of the matrices, and the Hadamard bound `N! * B ^ N`.
+  -- `p` exceeds the size `n` of the matrices, and the Leibniz bound `N! * B ^ N`.
   have hcard : (Fintype.card n : Cardinal) < Cardinal.mk (ZMod p) := by
     rw [Cardinal.mk_fintype, ZMod.card, Nat.cast_lt]
     calc Fintype.card n ≤ N := by simpa [N, Fintype.card_prod] using Nat.le_mul_self _
@@ -257,7 +258,7 @@ theorem exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero {n : Type*} [F
   -- The solutions modulo `p` form the line through `X`.
   let vecₗ : Matrix n n (ZMod p) →ₗ[ZMod p] n × n → ZMod p :=
     { toFun := vec, map_add' := vec_add, map_smul' := vec_smul }
-  have hV := (LinearMap.ker (A'.mulVecLin ∘ₗ vecₗ)).eq_span_singleton_of_forall_det_ne_zero hcard
+  have hV := (LinearMap.ker (A'.mulVecLin ∘ₗ vecₗ)).eq_span_singleton_of_mem_of_det_ne_zero hcard
     (by simpa [vecₗ] using hAX) hX fun Y hY hYdet ↦ huniq Y hYdet (by simpa [vecₗ] using hY)
   have hker : LinearMap.ker A'.mulVecLin = ZMod p ∙ X.vec := by
     ext y
@@ -265,7 +266,7 @@ theorem exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero {n : Type*} [F
     constructor
     · intro hy
       -- `y` is the vectorization of the matrix with entries `y (j, i)`.
-      have hy' : (Matrix.of fun i j ↦ y (j, i)).vec = y := funext fun _ ↦ rfl
+      have hy' : (Matrix.of fun i j ↦ y (j, i)).vec = y := by rw [vec_of]; rfl
       have hY : Matrix.of (fun i j ↦ y (j, i)) ∈ ZMod p ∙ X := by
         rw [← hV, LinearMap.mem_ker, LinearMap.comp_apply, mulVecLin_apply]
         exact hy' ▸ hy
@@ -282,8 +283,7 @@ theorem exists_primitive_mulVec_vec_eq_zero_of_unique_det_ne_zero {n : Type*} [F
     simpa [Q] using congrFun hv (j, i)
   refine ⟨Q, hAv, fun e he ↦ hprim e fun ij ↦ he ij.2 ij.1, fun i j ↦ hbound (j, i),
     ⟨c, hc, hQ⟩, ?_⟩
-  rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, ← eq_intCast (Int.castRingHom (ZMod p)),
-    RingHom.map_det, RingHom.mapMatrix_apply, hQ, det_smul]
+  rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, Int.cast_det, ← Int.coe_castRingHom, hQ, det_smul]
   exact mul_ne_zero (pow_ne_zero _ hc) hX
 
 end Matrix
