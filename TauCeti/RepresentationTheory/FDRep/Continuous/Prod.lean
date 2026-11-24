@@ -44,7 +44,7 @@ noncomputable def ofContRepresentationProdIso
   let Y := ContFDRep.ofContRepresentation ρ hρ
   let F := (FDRep.isContinuous 𝕜 G).ι
   exact F.preimageIso (
-    eqToIso (ofContRepresentation_obj _ _) ≪≫
+    eqToIso (ofContRepresentation_obj (π.prod ρ) (π.continuous_prod ρ hπ hρ)) ≪≫
       eqToIso (congrArg FDRep.ofShrink (ContRepresentation.toRepresentation_prod π ρ)) ≪≫
       FDRep.ofShrinkProdIso π.toRepresentation ρ.toRepresentation ≪≫
       biprod.mapIso (eqToIso (ofContRepresentation_obj π hπ)).symm

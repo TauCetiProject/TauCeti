@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Biproducts
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
 # Hom to and from a biproduct in a linear category
@@ -116,6 +117,28 @@ section Binary
 variable {k} (Z A B : C) [HasBinaryBiproduct A B]
 
 variable (k) in
+/-- Morphisms from a binary biproduct are pairs of morphisms from its summands. -/
+noncomputable def homBiprodLinearEquiv : (A ⊞ B ⟶ Z) ≃ₗ[k] (A ⟶ Z) × (B ⟶ Z) where
+  toFun f := (biprod.inl ≫ f, biprod.inr ≫ f)
+  invFun f := biprod.desc f.1 f.2
+  left_inv f := biprod.hom_ext' _ _ (by simp) (by simp)
+  right_inv f := by simp
+  map_add' f g := by simp
+  map_smul' r f := by simp
+
+/-- The equivalence reads off the restrictions of a morphism to the two summands. -/
+@[simp]
+theorem homBiprodLinearEquiv_apply (f : A ⊞ B ⟶ Z) :
+    homBiprodLinearEquiv k Z A B f = (biprod.inl ≫ f, biprod.inr ≫ f) :=
+  (rfl)
+
+/-- The inverse assembles a pair of morphisms by the biproduct desc map. -/
+@[simp]
+theorem homBiprodLinearEquiv_symm_apply (f : (A ⟶ Z) × (B ⟶ Z)) :
+    (homBiprodLinearEquiv k Z A B).symm f = biprod.desc f.1 f.2 :=
+  (rfl)
+
+variable (k) in
 /-- Morphisms into a binary biproduct are pairs of morphisms into its summands. -/
 noncomputable def homToBiprodLinearEquiv : (Z ⟶ A ⊞ B) ≃ₗ[k] (Z ⟶ A) × (Z ⟶ B) where
   toFun f := (f ≫ biprod.fst, f ≫ biprod.snd)
@@ -136,6 +159,25 @@ theorem homToBiprodLinearEquiv_apply (f : Z ⟶ A ⊞ B) :
 theorem homToBiprodLinearEquiv_symm_apply (f : (Z ⟶ A) × (Z ⟶ B)) :
     (homToBiprodLinearEquiv k Z A B).symm f = biprod.lift f.1 f.2 :=
   (rfl)
+
+/-- Finite Hom modules out of both summands give a finite Hom module out of a binary
+biproduct. -/
+instance moduleFinite_hom_biprod [Module.Finite k (A ⟶ Z)] [Module.Finite k (B ⟶ Z)] :
+    Module.Finite k (A ⊞ B ⟶ Z) :=
+  .equiv (homBiprodLinearEquiv k Z A B).symm
+
+/-- Finite Hom modules into both summands give a finite Hom module into a binary biproduct. -/
+instance moduleFinite_homTo_biprod [Module.Finite k (Z ⟶ A)] [Module.Finite k (Z ⟶ B)] :
+    Module.Finite k (Z ⟶ A ⊞ B) :=
+  .equiv (homToBiprodLinearEquiv k Z A B).symm
+
+variable (k) in
+/-- The rank of Hom out of a binary biproduct is the sum of the ranks from its summands, when
+these are finite free modules. -/
+theorem finrank_hom_biprod [StrongRankCondition k] [Module.Free k (A ⟶ Z)]
+    [Module.Finite k (A ⟶ Z)] [Module.Free k (B ⟶ Z)] [Module.Finite k (B ⟶ Z)] :
+    Module.finrank k (A ⊞ B ⟶ Z) = Module.finrank k (A ⟶ Z) + Module.finrank k (B ⟶ Z) := by
+  rw [(homBiprodLinearEquiv k Z A B).finrank_eq, Module.finrank_prod]
 
 variable (k) in
 /-- The rank of Hom into a binary biproduct is the sum of the ranks into its summands, when

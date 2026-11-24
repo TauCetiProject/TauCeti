@@ -43,6 +43,8 @@ continuous representations, is built in
   in any universe, continuous for the operator norm, as an object of `ContFDRep k G`.
 * `TauCeti.ContFDRep.ofContRepresentationIso`: an equivariant linear equivalence of carriers as an
   isomorphism of the corresponding objects of `ContFDRep k G`.
+* `TauCeti.ContFDRep.homOfContRepresentationLinearEquiv`: the morphisms between the objects of two
+  continuous representations are their continuous intertwiners.
 
 ## Main statements
 
@@ -57,8 +59,9 @@ continuous representations, is built in
 * `TauCeti.ContFDRep.isZero_ofContRepresentation`: a representation on a zero space is a zero
   object of `ContFDRep k G`.
 * `TauCeti.ContFDRep.finrank_hom_ofContRepresentation`: the morphisms between the objects of two
-  continuous representations are their continuous intertwiners, so the two spaces have the same
-  dimension.
+  continuous representations have the same dimension as their continuous intertwiners.
+* `TauCeti.ContFDRep.exists_iso_ofContRepresentation`: every object of `ContFDRep 𝕜 G` comes from
+  a continuous representation on a coordinate space `Fin n → 𝕜`.
 -/
 
 public section
@@ -228,7 +231,7 @@ variable {G}
 nontrivially normed field, in any universe, as an object of `ContFDRep 𝕜 G`. Its underlying object
 is `FDRep.ofShrink π.toRepresentation`, whose representation is equivalent to `π`
 (`FDRep.ofShrinkEquiv`). -/
-noncomputable def ContFDRep.ofContRepresentation {𝕜 : Type u} [NontriviallyNormedField 𝕜]
+@[expose] noncomputable def ContFDRep.ofContRepresentation {𝕜 : Type u} [NontriviallyNormedField 𝕜]
     [CompleteSpace 𝕜] {V : Type w} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
     [FiniteDimensional 𝕜 V] (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     ContFDRep 𝕜 G :=
@@ -291,20 +294,73 @@ variable {𝕜 : Type u} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 
 /-- **Morphisms between continuous representations are their continuous intertwiners.** The
 morphisms between the objects of `ContFDRep 𝕜 G` given by two continuous representations on
-finite-dimensional normed spaces form a space of the same dimension as the continuous intertwiners
-between them. -/
+finite-dimensional normed spaces are the continuous intertwining maps between them. -/
+noncomputable def homOfContRepresentationLinearEquiv (hπ : Continuous π) (hρ : Continuous ρ) :
+    (ofContRepresentation π hπ ⟶ ofContRepresentation ρ hρ) ≃ₗ[𝕜] (π →ⁱL ρ) :=
+  InducedCategory.homLinearEquiv ≪≫ₗ (FDRep.forget₂HomLinearEquiv _ _).symm ≪≫ₗ
+    Rep.homLinearEquiv _ _ ≪≫ₗ
+    (FDRep.ofShrinkEquiv π.toRepresentation).intertwiningMapCongr
+      (FDRep.ofShrinkEquiv ρ.toRepresentation) ≪≫ₗ
+    ContRepresentation.intertwiningMapEquiv.symm
+
+/-- The continuous intertwiner of a morphism acts by the morphism on the shrunk carriers. -/
+@[simp]
+theorem homOfContRepresentationLinearEquiv_apply_apply (hπ : Continuous π) (hρ : Continuous ρ)
+    (f : ofContRepresentation π hπ ⟶ ofContRepresentation ρ hρ) (v : V) :
+    homOfContRepresentationLinearEquiv hπ hρ f v =
+      FDRep.ofShrinkEquiv ρ.toRepresentation
+        (f.hom.hom.hom.hom ((FDRep.ofShrinkEquiv π.toRepresentation).symm v)) := by
+  rw [homOfContRepresentationLinearEquiv, LinearEquiv.trans_apply,
+    intertwiningMapEquiv_symm_apply_apply]
+  exact Representation.Equiv.intertwiningMapCongr_apply (FDRep.ofShrinkEquiv π.toRepresentation)
+    (FDRep.ofShrinkEquiv ρ.toRepresentation) _ v
+
+/-- The morphism of a continuous intertwiner acts by the intertwiner on the shrunk carriers. -/
+@[simp]
+theorem homOfContRepresentationLinearEquiv_symm_apply_hom (hπ : Continuous π)
+    (hρ : Continuous ρ) (f : π →ⁱL ρ) (v : FDRep.ofShrink π.toRepresentation) :
+    ((homOfContRepresentationLinearEquiv hπ hρ).symm f).hom.hom.hom.hom v =
+      (FDRep.ofShrinkEquiv ρ.toRepresentation).symm
+        (f (FDRep.ofShrinkEquiv π.toRepresentation v)) := by
+  rw [homOfContRepresentationLinearEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+    intertwiningMapEquiv_apply]
+  exact Representation.Equiv.intertwiningMapCongr_symm_apply
+    (FDRep.ofShrinkEquiv π.toRepresentation) (FDRep.ofShrinkEquiv ρ.toRepresentation)
+    f.toIntertwiningMap v
+
+/-- The morphisms between the objects of `ContFDRep 𝕜 G` given by two continuous representations
+on finite-dimensional normed spaces form a space of the same dimension as the continuous
+intertwiners between them. -/
 theorem finrank_hom_ofContRepresentation (hπ : Continuous π) (hρ : Continuous ρ) :
     Module.finrank 𝕜 (ofContRepresentation π hπ ⟶ ofContRepresentation ρ hρ) =
-      Module.finrank 𝕜 (π →ⁱL ρ) := by
-  let e : (ofContRepresentation π hπ ⟶ ofContRepresentation ρ hρ) ≃ₗ[𝕜] (π →ⁱL ρ) :=
-    InducedCategory.homLinearEquiv ≪≫ₗ
-      Linear.homCongr 𝕜 (eqToIso (ofContRepresentation_obj π hπ))
-        (eqToIso (ofContRepresentation_obj ρ hρ)) ≪≫ₗ
-      (FDRep.forget₂HomLinearEquiv _ _).symm ≪≫ₗ Rep.homLinearEquiv _ _ ≪≫ₗ
-      (FDRep.ofShrinkEquiv π.toRepresentation).intertwiningMapCongr
-        (FDRep.ofShrinkEquiv ρ.toRepresentation) ≪≫ₗ
-      ContRepresentation.intertwiningMapEquiv.symm
-  exact e.finrank_eq
+      Module.finrank 𝕜 (π →ⁱL ρ) :=
+  (homOfContRepresentationLinearEquiv hπ hρ).finrank_eq
+
+/-- **Every continuous finite-dimensional representation comes from a continuous representation
+on a normed space.** Transporting along a basis, an object `X` of `ContFDRep 𝕜 G` is isomorphic to
+the object of a continuous representation on the coordinate space `Fin (finrank 𝕜 X) → 𝕜`. -/
+theorem exists_iso_ofContRepresentation (X : ContFDRep 𝕜 G) :
+    ∃ (σ : ContRepresentation 𝕜 G (Fin (Module.finrank 𝕜 X.obj) → 𝕜)) (hσ : Continuous σ),
+      Nonempty (X ≅ ofContRepresentation σ hσ) := by
+  let b := Module.finBasis 𝕜 X.obj
+  let σ : ContRepresentation 𝕜 G (Fin (Module.finrank 𝕜 X.obj) → 𝕜) :=
+    .ofMonoidHom ((Module.End.toContinuousLinearMap _).toMonoidHom.comp
+      (b.equivFun.conjRingEquiv.toMonoidHom.comp X.obj.ρ))
+  have hσ : Continuous σ := continuous_clm_apply.2 fun v ↦ continuous_pi fun i ↦
+    (X.property (b.coord i) (b.equivFun.symm v)).congr fun _ ↦ rfl
+  let E : X.obj ≃ₗ[𝕜] FDRep.ofShrink σ.toRepresentation :=
+    b.equivFun ≪≫ₗ (FDRep.ofShrinkEquiv σ.toRepresentation).toLinearEquiv.symm
+  refine ⟨σ, hσ, ⟨ObjectProperty.isoMk _ (E.toFDRepIso fun g x ↦ ?_)⟩⟩
+  let e := FDRep.ofShrinkEquiv σ.toRepresentation
+  apply e.toLinearEquiv.injective
+  have he := Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g (E x)
+  simp only [E, LinearEquiv.trans_apply] at he ⊢
+  rw [LinearEquiv.apply_symm_apply]
+  refine Eq.trans ?_ he.symm
+  change b.equivFun (X.obj.ρ g x) = σ g (e.toLinearEquiv (e.toLinearEquiv.symm (b.equivFun x)))
+  rw [LinearEquiv.apply_symm_apply]
+  change _ = b.equivFun (X.obj.ρ g (b.equivFun.symm (b.equivFun x)))
+  rw [LinearEquiv.symm_apply_apply]
 
 end ContFDRep
 
