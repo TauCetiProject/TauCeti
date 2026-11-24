@@ -30,6 +30,9 @@ We also define *full* elements of a topological ring (`TauCeti.IsFull`, generati
 two-sided ideal), together with basic facts for units (`TauCeti.IsFull.of_isUnit`,
 `TauCeti.isFull_one`) and zero (`TauCeti.not_isFull_zero`).
 
+The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed
+(`TwoSidedIdeal.isClosed_comap`).
+
 The quotient-ring construction generalizes Patrick Massot's
 `QuotientRing.topologicalRing_quotient` in Mathlib from commutative rings, using
 the same native additive quotient and open quotient-map argument.
@@ -160,6 +163,20 @@ theorem isClosed_ker {f : F} (hf : Continuous f) : IsClosed (TwoSidedIdeal.ker f
   exact isClosed_singleton.preimage hf
 
 end ClosedKer
+
+section ClosedComap
+
+variable {F R S : Type*} [NonUnitalNonAssocRing R] [NonUnitalNonAssocRing S] [TopologicalSpace R]
+  [TopologicalSpace S] [FunLike F R S] [NonUnitalRingHomClass F R S]
+
+/-- The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed. -/
+theorem isClosed_comap {φ : F} (hφ : Continuous φ) {J : TwoSidedIdeal S}
+    (hJ : IsClosed (J : Set S)) : IsClosed (J.comap φ : Set R) := by
+  have : (J.comap φ : Set R) = φ ⁻¹' J := Set.ext fun _ => mem_comap φ
+  rw [this]
+  exact hJ.preimage hφ
+
+end ClosedComap
 
 section ApproximateUnit
 
