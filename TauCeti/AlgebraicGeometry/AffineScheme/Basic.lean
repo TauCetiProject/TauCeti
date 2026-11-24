@@ -56,6 +56,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
   `R → Γ(X, U)` it induces.
 * `AlgebraicGeometry.IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map`: for affine opens
   `V ≤ U`, restriction induces an open immersion `Spec Γ(X, V) ⟶ Spec Γ(X, U)`.
+* `AlgebraicGeometry.IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv` and
+  `AlgebraicGeometry.IsAffineOpen.isPullback_SpecMap_presheaf_map_isoSpec_inv`: for affine opens
+  `V ≤ U`, restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)` corresponds to the inclusion `V ⟶ U`.
 * `AlgebraicGeometry.IsAffineOpen.exists_SpecMap_comp_fromSpec_eq`: a morphism `Spec R ⟶ X` with
   image in an affine open `U` is the spectrum of a ring map `Γ(X, U) ⟶ R` followed by
   `Spec Γ(X, U) ⟶ X`.
@@ -77,6 +80,8 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.Scheme.Hom.span_range_appTop_sub_eq_top_iff`: for an endomorphism `f` of an
   affine scheme, the elements `f^*(a) - a` generate the unit ideal if and only if every point of
   `X` fixed by `f` has values in an empty scheme.
+* `AlgebraicGeometry.isIso_SpecMap_morphismRestrict_basicOpen_iff`: a spectral map is an
+  isomorphism over a basic open exactly when the corresponding localization map is bijective.
 * `AlgebraicGeometry.isIso_SpecMap_morphismRestrict_basicOpen_of_injective`: for an `R`-algebra `B`
   embedded in a localization of `R` away from `a`, the morphism `Spec B ⟶ Spec R` restricts to an
   isomorphism over `D(a)`.
@@ -215,6 +220,24 @@ theorem IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map {X : Scheme.{u}} {U V 
     rw [IsAffineOpen.map_fromSpec _ hV]
     infer_instance
   exact IsOpenImmersion.of_comp _ hU.fromSpec
+
+/-- On affine opens `V ≤ U` of a scheme, the isomorphisms `U ≅ Spec Γ(X, U)` and
+`V ≅ Spec Γ(X, V)` carry the restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)` to the inclusion `V ⟶ U`. -/
+theorem IsAffineOpen.SpecMap_presheaf_map_comp_isoSpec_inv {X : Scheme.{u}} {U V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
+    Spec.map (X.presheaf.map (homOfLE h).op) ≫ hU.isoSpec.inv = hV.isoSpec.inv ≫ X.homOfLE h := by
+  rw [← cancel_mono U.ι, Category.assoc, Category.assoc, Scheme.homOfLE_ι,
+    IsAffineOpen.isoSpec_inv_ι, IsAffineOpen.isoSpec_inv_ι]
+  exact IsAffineOpen.map_fromSpec hU hV (homOfLE h).op
+
+/-- On affine opens `V ≤ U` of a scheme, the square relating the restriction
+`Spec Γ(X, V) ⟶ Spec Γ(X, U)` to the inclusion `V ⟶ U` through `U ≅ Spec Γ(X, U)` and
+`V ≅ Spec Γ(X, V)` is a pullback square, as its vertical sides are isomorphisms. -/
+theorem IsAffineOpen.isPullback_SpecMap_presheaf_map_isoSpec_inv {X : Scheme.{u}}
+    {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V) (h : V ≤ U) :
+    CategoryTheory.IsPullback (Spec.map (X.presheaf.map (homOfLE h).op)) hV.isoSpec.inv
+      hU.isoSpec.inv (X.homOfLE h) :=
+  CategoryTheory.IsPullback.of_vert_isIso ⟨hU.SpecMap_presheaf_map_comp_isoSpec_inv hV h⟩
 
 /-- A morphism `f : Spec R ⟶ X` whose image lies in an affine open `U` of `X` is the spectrum of a
 ring map `Γ(X, U) ⟶ R` followed by `Spec Γ(X, U) ⟶ X`. -/
@@ -412,6 +435,15 @@ theorem Scheme.toSpecΓ_apply_asIdeal_eq_smul {X : Scheme.{u}} {G : Type*} [Grou
   rw [h, Spec.map_apply, hc, Ideal.mem_comap, Ideal.mem_pointwise_smul_iff_inv_smul_mem,
     Scheme.globalSectionsMulSemiringAction_smul_def, inv_inv]
 
+/-- For arbitrary commutative rings, a spectral map is an isomorphism over `D(r)` exactly
+when the induced map between the localizations away from `r` and its image is bijective. -/
+theorem isIso_SpecMap_morphismRestrict_basicOpen_iff {R S : CommRingCat.{u}}
+    (f : R ⟶ S) (r : R) :
+    IsIso (Spec.map f ∣_ PrimeSpectrum.basicOpen r) ↔
+      Function.Bijective (Localization.awayMap f.hom r) :=
+  ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
+    (SpecMapRestrictBasicOpenIso f r)).trans isIso_SpecMap_iff
+
 /-- **`Spec` of an intermediate ring of a localization.** Let `S` be a localization of `R` away
 from `a`, and let `B` be an `R`-algebra whose map to `S` is injective, for instance an
 `R`-subalgebra of `S`. Then `Spec B ⟶ Spec R` restricts to an isomorphism over the basic open
@@ -421,13 +453,9 @@ theorem isIso_SpecMap_morphismRestrict_basicOpen_of_injective {R B : Type u} {S 
     [IsScalarTower R B S] (a : R) [IsLocalization.Away a S]
     (h : Function.Injective (algebraMap B S)) :
     IsIso (Spec.map (CommRingCat.ofHom (algebraMap R B)) ∣_ PrimeSpectrum.basicOpen a) := by
-  -- Over `D(a)`, the morphism is `Spec` of the isomorphism `R_a ≅ B_a`.
-  have : IsIso (CommRingCat.ofHom (Localization.awayMap (algebraMap R B) a)) :=
-    (RingEquiv.ofBijective _
-      (IsLocalization.Away.bijective_awayMap_of_injective a h)).toCommRingCatIso.isIso_hom
-  exact ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
-    (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap R B)) a)).mpr
-    (inferInstanceAs (IsIso (Spec.map _)))
+  exact (isIso_SpecMap_morphismRestrict_basicOpen_iff
+    (CommRingCat.ofHom (algebraMap R B)) a).mpr
+    (IsLocalization.Away.bijective_awayMap_of_injective a h)
 
 /-- On an affine open `U`, the basic open of `f ∈ Γ(X, U)` is covered by the basic opens of a set
 `s` of functions on `U` iff `f` lies in the radical of the ideal generated by `s`. -/

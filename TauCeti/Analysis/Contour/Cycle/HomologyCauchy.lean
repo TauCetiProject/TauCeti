@@ -265,9 +265,7 @@ theorem homologyCauchyTheorem {E : Type*} [NormedAddCommGroup E] [NormedSpace �
       intervalIntegrable_of_mem_support (hf.continuousOn.mono (isIn_iff.mp hCU))]
     exact homologyCauchyTheorem_complex hU hCU (ℓ.differentiable.comp_differentiableOn hf) hnull
   · -- Without completeness every Bochner integral valued in `E` vanishes.
-    rw [integral_eq_sum_support]
-    exact Finset.sum_eq_zero fun γ _ ↦ by
-      simp [intervalIntegral, integral_of_not_completeSpace hE]
+    exact integral_of_not_completeSpace hE f C
 
 /-- **Homologous cycles have equal integrals.** Let `f` be holomorphic on `U \ K`, with `U` open
 and `K` closed, and let `C` and `D` be cycles in `U \ K` that are null-homologous in `U`. If `C`

@@ -75,7 +75,11 @@ are the constant terms of the logarithm of the characteristic series of the Witt
   `B(X) e^{X/2} = Â(X)` and `B(2X) e^X = Â(2X)`.
 * `TauCeti.map_aHatSeries`, `TauCeti.map_hirzebruchLSeries`: `Â` and `L` commute with ring
   homomorphisms between `ℚ`-algebras.
-* `TauCeti.logOf_aHatSeries`: `log Â(X) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`.
+* `TauCeti.logOf_aHatSeries`, `TauCeti.coeff_logOf_aHatSeries`:
+  `log Â(X) = -∑_{n ≥ 2} Bₙ Xⁿ / (n · n!)`; its odd coefficients vanish
+  (`TauCeti.coeff_logOf_aHatSeries_of_odd`), and `TauCeti.coeff_two_logOf_aHatSeries` and
+  `TauCeti.coeff_four_logOf_aHatSeries` give the `X²`- and `X⁴`-coefficients `-1/24` and
+  `1/2880`.
 
 ## References
 
@@ -335,6 +339,34 @@ theorem logOf_aHatSeries :
     linear_combination (Â * X) * hXT + (d⁄dX Â * X + C c * X * Â) * hA - (X * Â) * hd +
       (Â ^ 2 * k * X) * h2C
   exact sub_eq_zero.1 (mul_X_cancel (mul_X_cancel (by simpa using key)))
+
+/-- The coefficients of the logarithm of the Â series: for `n ≠ 1`, the coefficient of `Xⁿ` in
+`log Â(X)` is `-Bₙ / (n · n!)`. -/
+theorem coeff_logOf_aHatSeries {n : ℕ} (hn : n ≠ 1) :
+    coeff n (logOf (aHatSeries A)) = algebraMap ℚ A (-bernoulli n / (n * n !)) := by
+  simp [logOf_aHatSeries, hn]
+
+/-- The odd coefficients of the logarithm of the Â series vanish. -/
+@[simp]
+theorem coeff_logOf_aHatSeries_of_odd {n : ℕ} (hn : Odd n) :
+    coeff n (logOf (aHatSeries A)) = 0 := by
+  obtain rfl | hlt : n = 1 ∨ 1 < n := by have := hn.pos; omega
+  · simp [logOf_aHatSeries]
+  · simp [coeff_logOf_aHatSeries A hlt.ne', bernoulli_eq_zero_of_odd hn hlt]
+
+/-- The `X²`-coefficient of `log Â(X)` is `-1/24`; numerically, this is `2 G₂(0) / 2!`. -/
+@[simp]
+theorem coeff_two_logOf_aHatSeries :
+    coeff 2 (logOf (aHatSeries A)) = algebraMap ℚ A (-1 / 24) := by
+  rw [coeff_logOf_aHatSeries A (by decide), bernoulli_two]
+  norm_num [Nat.factorial]
+
+/-- The `X⁴`-coefficient of `log Â(X)` is `1/2880`; numerically, this is `2 G₄(0) / 4!`. -/
+@[simp]
+theorem coeff_four_logOf_aHatSeries :
+    coeff 4 (logOf (aHatSeries A)) = algebraMap ℚ A (1 / 2880) := by
+  rw [coeff_logOf_aHatSeries A (by decide), bernoulli_four]
+  norm_num [Nat.factorial]
 
 /-! ### The L series -/
 
