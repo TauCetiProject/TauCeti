@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Coadjoint.Orbit
 
 import TauCeti.Geometry.Lie.AutomaticSmoothness
 import TauCeti.Geometry.Lie.Functor
+import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 
 /-!
 # Coadjoint orbits along homomorphisms of Lie groups
@@ -37,7 +38,8 @@ When `𝔤 = 0`, `φ` need not be smooth, but then `ν = 0` and `ν ∘ dφ = 0`
 and both KKS forms vanish (`Module.Dual.coadjointOrbitForm_zero`).
 
 The two orbits have the same dimension, since `[ξ] ↦ [dφ ξ]` identifies their tangent models
-`𝔨 ⧸ 𝔨_{ν ∘ dφ}` and `𝔤 ⧸ 𝔤_ν`, and the differentials of `Φ` are onto, so `Φ` is a local
+`𝔨 ⧸ 𝔨_{ν ∘ dφ}` and `𝔤 ⧸ 𝔤_ν`, and the differentials of `Φ` are injective, since `Φ` pulls the
+nondegenerate form `ω_ν` back to the nondegenerate form `ω_{ν ∘ dφ}`. So `Φ` is a local
 diffeomorphism.
 
 **Homomorphisms meeting every coset.** If moreover `φ` meets every coset of `G_ν`, for instance if
@@ -192,33 +194,8 @@ private theorem finrank_quotientModelSpace_eq :
       (by rwa [ContMDiffMonoidMorphism.coe_groupLieAlgebraLieHom])
       (by rw [ContMDiffMonoidMorphism.toLinearMap_groupLieAlgebraLieHom])).finrank_eq
 
-/-- The differentials of the map `[k] ↦ [φ k]` of coadjoint orbits are surjective when `φ` is
-smooth. -/
-private theorem surjective_mfderiv_coadjointOrbitQuotientMap (hφ : ContMDiff J I ∞ φ)
-    (x : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
-      (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) :
-    Surjective (mfderiv
-      𝓘(ℝ, Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
-        (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)))
-      𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-      (φ.coadjointOrbitQuotientMap hdφ ν) x) := by
-  obtain ⟨k, rfl⟩ := QuotientGroup.mk_surjective x
-  have hπK := Dual.isSubmersion_quotientMk_stabilizer_coadjointRepresentation (I := J) (G := K)
-    (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)
-  have hπG := ν.isSubmersion_quotientMk_stabilizer_coadjointRepresentation
-  -- Differentiate `Φ ∘ π_K = π_G ∘ φ` at `k`.
-  have hcomp := mfderiv_comp k
-    ((φ.contMDiff_coadjointOrbitQuotientMap hdφ ν).mdifferentiableAt (by simp))
-    (hπK.contMDiff.mdifferentiableAt (by simp))
-  rw [φ.coadjointOrbitQuotientMap_comp_mk hdφ ν,
-    mfderiv_comp k (hπG.contMDiff.mdifferentiableAt (by simp)) (hφ.mdifferentiableAt (by simp))]
-    at hcomp
-  refine Surjective.of_comp (g := mfderiv J _ QuotientGroup.mk k) fun w ↦ ?_
-  obtain ⟨v, hv⟩ := (hπG.surjective_mfderiv (by simp) (φ k)).comp
-    (ContMDiffMonoidMorphism.surjective_mfderiv_of_surjective_groupLieAlgebraMap ⟨φ, hφ⟩ hdφ k) w
-  exact ⟨v, (congrArg (· v) hcomp).symm.trans hv⟩
-
-/-- The differentials of the map `[k] ↦ [φ k]` of coadjoint orbits are injective. -/
+/-- The differentials of the map `[k] ↦ [φ k]` of coadjoint orbits are injective: it pulls the
+nondegenerate KKS form `ω_ν` back to the nondegenerate KKS form `ω_{ν ∘ dφ}`. -/
 private theorem injective_mfderiv_coadjointOrbitQuotientMap
     (x : K ⧸ (coadjointRepresentation ℝ J K).stabilizer
       (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) :
@@ -226,22 +203,11 @@ private theorem injective_mfderiv_coadjointOrbitQuotientMap
       𝓘(ℝ, Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
         (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)))
       𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
-      (φ.coadjointOrbitQuotientMap hdφ ν) x) := by
-  rcases subsingleton_or_nontrivial E with hE | hE
-  · -- If `𝔤 = 0`, both orbits are zero-dimensional.
-    have := subsingleton_groupLieAlgebra (I := I) (G := G) hE
-    have : Subsingleton (Subgroup.QuotientModelSpace J ((coadjointRepresentation ℝ J K).stabilizer
-        (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap))) := by
-      rw [← finrank_zero_iff (R := ℝ), finrank_quotientModelSpace_eq φ hdφ ν,
-        Dual.finrank_quotientModelSpace_eq_finrank_quotient_lieAnnihilator]
-      exact finrank_zero_of_subsingleton
-    exact fun a b _ ↦ Subsingleton.elim (α := Subgroup.QuotientModelSpace J
-      ((coadjointRepresentation ℝ J K).stabilizer (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)))
-      a b
-  · exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-      (finrank_quotientModelSpace_eq φ hdφ ν)).2
-        (surjective_mfderiv_coadjointOrbitQuotientMap φ hdφ ν
-          (contMDiff_of_surjective_groupLieAlgebraMap hdφ) x)
+      (φ.coadjointOrbitQuotientMap hdφ ν) x) :=
+  ((ν.isSymplectic_coadjointOrbitForm.isNondegenerate.isNondegenerate_mpullback_iff
+    (φ.contMDiff_coadjointOrbitQuotientMap hdφ ν)).1
+    (φ.mpullback_coadjointOrbitQuotientMap_coadjointOrbitForm hdφ ν ▸
+      (Dual.isSymplectic_coadjointOrbitForm _).isNondegenerate)).2 x
 
 /-- **The induced map of coadjoint orbits is a local diffeomorphism.** A surjective differential at
 the identity suffices: `φ` need not be smooth or surjective. -/

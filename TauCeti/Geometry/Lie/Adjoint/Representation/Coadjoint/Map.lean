@@ -205,7 +205,7 @@ theorem coadjointOrbitQuotientMap_smul (k : K)
       (ν.comp (φ.groupLieAlgebraMap J I).toLinearMap)) :
     φ.coadjointOrbitQuotientMap hdφ ν (k • x) = φ k • φ.coadjointOrbitQuotientMap hdφ ν x := by
   induction x using QuotientGroup.induction_on with
-  | H a => simp [smul_eq_mul]
+  | H a => exact QuotientGroup.mapComap_smul φ ((coadjointRepresentation 𝕜 I G).stabilizer ν) k a
 
 /-- **The induced map intertwines the orbit maps.** The image in `𝔨*` of a point `x` of the
 coadjoint orbit of `ν ∘ dφ` is the pullback along `dφ` of the image in `𝔤*` of its image in the
