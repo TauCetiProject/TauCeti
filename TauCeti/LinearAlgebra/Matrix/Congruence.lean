@@ -37,6 +37,10 @@ one factor after the other.
   entries of congruence under the basis substitution `r ↦ r + a + b`.
 * `Matrix.transpose_map_mul_mul_mul` — `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`.
 * `Matrix.mul_mul_transpose_apply` — entrywise expansion of `(P * M * Qᵀ) i j` as a double sum.
+* `Matrix.mul_mul_mul_transpose_sub_mul_smul` and
+  `Matrix.mul_mul_transpose_sub_smul_of_mul_eq_one`: the similitude defect
+  `f(X, r) = X D Xᵀ - r D` of a product and of a left inverse, the identities behind closure of
+  similitude groups under multiplication and inversion.
 
 ## References
 
@@ -125,6 +129,36 @@ theorem mul_mul_transpose_apply {l m n p R : Type*} [Fintype m] [Fintype n]
     (P * M * Qᵀ) i j = ∑ x : m, ∑ y : n, P i x * M x y * Q j y := by
   simp only [Matrix.mul_apply, transpose_apply, Finset.sum_mul]
   exact Finset.sum_comm
+
+section Similitude
+
+variable {n R : Type*} [Fintype n] [CommRing R]
+
+/-- **The similitude defect of a product**: for `f(X, r) = X D Xᵀ - r D`,
+`f(Y Z, r₁ r₂) = Y f(Z, r₂) Yᵀ + r₂ f(Y, r₁)`. -/
+theorem mul_mul_mul_transpose_sub_mul_smul (Y Z D : Matrix n n R) (r₁ r₂ : R) :
+    Y * Z * D * (Y * Z)ᵀ - (r₁ * r₂) • D =
+      Y * (Z * D * Zᵀ - r₂ • D) * Yᵀ + r₂ • (Y * D * Yᵀ - r₁ • D) := by
+  rw [Matrix.transpose_mul, Matrix.mul_sub, Matrix.sub_mul, smul_sub, Matrix.mul_smul,
+    Matrix.smul_mul, smul_smul, mul_comm r₂ r₁]
+  simp only [Matrix.mul_assoc]
+  abel
+
+/-- Congruence by a left inverse undoes congruence: if `W X = 1`, then `W (X D Xᵀ) Wᵀ = D`. -/
+theorem mul_mul_mul_transpose_mul_transpose_of_mul_eq_one [DecidableEq n] {W X : Matrix n n R}
+    (hW : W * X = 1) (D : Matrix n n R) : W * (X * D * Xᵀ) * Wᵀ = D := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hW, Matrix.one_mul, Matrix.mul_assoc,
+    ← Matrix.transpose_mul, hW, Matrix.transpose_one, Matrix.mul_one]
+
+/-- **The similitude defect of a left inverse**: for `f(X, r) = X D Xᵀ - r D`, if `W X = 1` and
+`s r = 1`, then `f(W, s) = -(s W f(X, r) Wᵀ)`. -/
+theorem mul_mul_transpose_sub_smul_of_mul_eq_one [DecidableEq n] {W X : Matrix n n R} {r s : R}
+    (hW : W * X = 1) (hs : s * r = 1) (D : Matrix n n R) :
+    W * D * Wᵀ - s • D = -(s • (W * (X * D * Xᵀ - r • D) * Wᵀ)) := by
+  rw [Matrix.mul_sub, Matrix.sub_mul, mul_mul_mul_transpose_mul_transpose_of_mul_eq_one hW,
+    Matrix.mul_smul, Matrix.smul_mul, smul_sub, smul_smul, hs, one_smul, neg_sub]
+
+end Similitude
 
 section BasisSubstitution
 

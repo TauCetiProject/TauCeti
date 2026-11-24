@@ -23,12 +23,14 @@ for `Jₘ` the standard alternating form in `Fin (m + m)` coordinates: the speci
 `(h, r) ↦ r`. On every commutative `R`-algebra `A`, its points are the pairs `(h, r)` in
 `GL (m + m) (A) × Aˣ` with `h Jₘ hᵀ = r Jₘ` (`TauCeti.SymplecticSimilitude.pointsMulEquiv`); since
 `Jₘ² = -1`, this is equivalent to the column convention `hᵀ Jₘ h = r Jₘ`
-(`TauCeti.SymplecticSimilitude.mem_pointsSubgroup_iff'`). The sign of `Jₘ` does not matter, so these
-are also the similitudes of `-Jₘ = [[0, I], [-I, 0]]`.
+(`TauCeti.SymplecticSimilitude.mem_pointsSubgroup_iff'`, via
+`TauCeti.transpose_mul_JFin_mul_eq_smul`). The sign of `Jₘ` does not matter, so these are also
+the similitudes of `-Jₘ = [[0, I], [-I, 0]]`.
 
-The points with multiplier `1` are exactly the points of `Sp₂ₘ`
-(`TauCeti.SymplecticSimilitude.mem_ker_multiplierPoints_iff`), and for `m = 1` the multiplier is
-the determinant, so that `GSp₂(A) ≃ GL₂(A)` (`TauCeti.SymplecticSimilitude.pointsMulEquivGLTwo`).
+A point lies in the kernel of the multiplier exactly when it is a pair `(h, 1)` with `h`
+symplectic (`TauCeti.SymplecticSimilitude.mem_ker_multiplierPoints_iff`); such pairs are built
+with `TauCeti.SymplecticSimilitude.mk_one_mem_pointsSubgroup`. For `m = 1` the multiplier is the
+determinant, so that `GSp₂(A) ≃ GL₂(A)` (`TauCeti.SymplecticSimilitude.pointsMulEquivGLTwo`).
 
 ## Main declarations
 
@@ -41,8 +43,9 @@ the determinant, so that `GSp₂(A) ≃ GL₂(A)` (`TauCeti.SymplecticSimilitude
 * `TauCeti.SymplecticSimilitude.pointsSubgroup` and
   `TauCeti.SymplecticSimilitude.pointsMulEquiv`: the group of points.
 * `TauCeti.SymplecticSimilitude.multiplierPoints` and
-  `TauCeti.SymplecticSimilitude.mem_ker_multiplierPoints_iff`: the multiplier on points, whose
-  kernel is `Sp₂ₘ(A)`.
+  `TauCeti.SymplecticSimilitude.mem_ker_multiplierPoints_iff`: the multiplier on points; a point
+  is in its kernel exactly when it is a pair `(h, 1)` with `h` symplectic
+  (`TauCeti.SymplecticSimilitude.mk_one_mem_pointsSubgroup` builds such pairs).
 * `TauCeti.SymplecticSimilitude.pointsMulEquivGLTwo`: `GSp₂(A) ≃ GL₂(A)`, with multiplier the
   determinant.
 
@@ -103,28 +106,6 @@ theorem mem_pointsSubgroup_iff (p : GL (Fin (m + m)) A × Aˣ) :
           (p.1 : Matrix (Fin (m + m)) (Fin (m + m)) A)ᵀ = (p.2 : A) • JFin m A := by
   rw [ConstantFormSimilitude.mem_pointsSubgroup_iff, JFin_map]
 
-/-- A similitude of `Jₘ` in the row convention is one in the column convention: if
-`M Jₘ Mᵀ = r Jₘ` with `r` a unit, then `Mᵀ Jₘ M = r Jₘ`. -/
-theorem transpose_mul_JFin_mul_eq_smul {M : Matrix (Fin (m + m)) (Fin (m + m)) A} (r : Aˣ)
-    (h : M * JFin m A * Mᵀ = (r : A) • JFin m A) :
-    Mᵀ * JFin m A * M = (r : A) • JFin m A := by
-  -- `M (J Mᵀ J) = r J J = -r`, so `-r⁻¹ J Mᵀ J` is a right, hence a left, inverse of `M`.
-  have hright : M * (-((r⁻¹ : Aˣ) : A) • (JFin m A * Mᵀ * JFin m A)) = 1 := by
-    rw [Matrix.mul_smul, ← Matrix.mul_assoc, ← Matrix.mul_assoc, h, Matrix.smul_mul,
-      JFin_mul_self, smul_smul, neg_mul, Units.inv_mul, smul_neg, neg_smul, one_smul, neg_neg]
-  have hleft := mul_eq_one_comm.mp hright
-  rw [Matrix.smul_mul] at hleft
-  calc Mᵀ * JFin m A * M
-      = -(JFin m A * (JFin m A * Mᵀ * JFin m A * M)) := by
-        simp only [← Matrix.mul_assoc, JFin_mul_self, Matrix.neg_mul, Matrix.one_mul, neg_neg]
-    _ = (r : A) • JFin m A := by
-        have hJ : JFin m A * Mᵀ * JFin m A * M = (-(r : A)) • (1 : Matrix _ _ A) := by
-          calc JFin m A * Mᵀ * JFin m A * M
-              = ((-(r : A)) * -((r⁻¹ : Aˣ) : A)) • (JFin m A * Mᵀ * JFin m A * M) := by
-                rw [neg_mul_neg, Units.mul_inv, one_smul]
-            _ = (-(r : A)) • (1 : Matrix _ _ A) := by rw [← smul_smul, hleft]
-        rw [hJ, Matrix.mul_smul, Matrix.mul_one, neg_smul, neg_neg]
-
 /-- **Membership in `GSp₂ₘ(A)` in the column convention** `hᵀ Jₘ h = r Jₘ`. -/
 theorem mem_pointsSubgroup_iff' (p : GL (Fin (m + m)) A × Aˣ) :
     p ∈ pointsSubgroup R m A ↔
@@ -146,7 +127,7 @@ noncomputable def pointsMulEquiv :
   ConstantFormSimilitude.pointsMulEquiv R (m + m) (JFin m R)
 
 /-- The multiplier on points, `GSp₂ₘ(A) → Aˣ`, `(h, r) ↦ r`. -/
-@[expose] def multiplierPoints : pointsSubgroup R m A →* Aˣ :=
+def multiplierPoints : pointsSubgroup R m A →* Aˣ :=
   (MonoidHom.snd _ _).comp (pointsSubgroup R m A).subtype
 
 variable {R m A}
@@ -154,7 +135,8 @@ variable {R m A}
 /-- The multiplier of a point is its unit component. -/
 @[simp]
 theorem multiplierPoints_apply (p : pointsSubgroup R m A) :
-    multiplierPoints R m A p = (p : GL (Fin (m + m)) A × Aˣ).2 :=
+    multiplierPoints R m A p = (p : GL (Fin (m + m)) A × Aˣ).2 := by
+  unfold multiplierPoints
   rfl
 
 /-- Under the points identification, the multiplier on points is the multiplier character. -/
@@ -165,8 +147,9 @@ theorem multiplierPoints_pointsMulEquiv
         (LaurentPolynomial.T 1)) :=
   ConstantFormSimilitude.pointsMulEquiv_snd R (m + m) (JFin m R) f
 
-/-- **The kernel of the multiplier is `Sp₂ₘ(A)`**: a similitude has multiplier `1` exactly when
-its multiplier is `1` and its matrix is symplectic. -/
+/-- **The kernel of the multiplier**: a similitude lies in the kernel of the multiplier exactly
+when it is a pair `(h, 1)` with `h` symplectic. Such pairs are built with
+`TauCeti.SymplecticSimilitude.mk_one_mem_pointsSubgroup`. -/
 theorem mem_ker_multiplierPoints_iff (p : pointsSubgroup R m A) :
     p ∈ (multiplierPoints R m A).ker ↔
       (p : GL (Fin (m + m)) A × Aˣ).1 ∈ GLSymplecticFin m A ∧
@@ -184,30 +167,11 @@ theorem mk_one_mem_pointsSubgroup {h : GL (Fin (m + m)) A} (hh : h ∈ GLSymplec
 
 /-! ### `GSp₂ = GL₂` -/
 
-/-- The standard alternating form in rank two is `[[0, -1], [1, 0]]`. -/
-theorem JFin_one_eq : JFin 1 A = !![0, -1; 1, 0] := by
-  rw [JFin_eq_submatrix]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.J, finSumFinEquiv, Fin.addCases, Matrix.fromBlocks]
-
-/-- For a `2 × 2` matrix, `M J₁ Mᵀ = det(M) J₁`. -/
-theorem mul_JFin_one_mul_transpose (M : Matrix (Fin (1 + 1)) (Fin (1 + 1)) A) :
-    M * JFin 1 A * Mᵀ = M.det • JFin 1 A := by
-  rw [JFin_one_eq]
-  change (M : Matrix (Fin 2) (Fin 2) A) * !![0, -1; 1, 0] * Mᵀ = Matrix.det (M : Matrix (Fin 2)
-    (Fin 2) A) • !![0, -1; 1, 0]
-  rw [Matrix.det_fin_two, Matrix.eta_fin_two M]
-  simp only [Matrix.transpose, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-
 /-- **In rank two the multiplier is the determinant**: `(h, r) ∈ GSp₂(A)` exactly when
 `r = det h`. -/
 theorem mem_pointsSubgroup_one_iff (p : GL (Fin (1 + 1)) A × Aˣ) :
     p ∈ pointsSubgroup R 1 A ↔ p.2 = Matrix.GeneralLinearGroup.det p.1 := by
-  rw [mem_pointsSubgroup_iff, mul_JFin_one_mul_transpose, Units.ext_iff,
+  rw [mem_pointsSubgroup_iff, Matrix.mul_JFin_one_mul_transpose_eq_det_smul, Units.ext_iff,
     Matrix.GeneralLinearGroup.val_det_apply]
   constructor
   · intro h
@@ -221,13 +185,32 @@ variable (R A)
 
 /-- **`GSp₂ = GL₂`**: every invertible `2 × 2` matrix is a symplectic similitude, with multiplier
 its determinant. -/
-@[expose] noncomputable def pointsSubgroupOneMulEquiv :
+noncomputable def pointsSubgroupOneMulEquiv :
     GL (Fin (1 + 1)) A ≃* pointsSubgroup R 1 A where
   toFun h := ⟨(h, Matrix.GeneralLinearGroup.det h), (mem_pointsSubgroup_one_iff _).mpr rfl⟩
   invFun p := (p : GL (Fin (1 + 1)) A × Aˣ).1
   left_inv _ := rfl
   right_inv p := Subtype.ext (Prod.ext rfl ((mem_pointsSubgroup_one_iff _).mp p.property).symm)
   map_mul' g h := Subtype.ext (Prod.ext rfl (map_mul _ g h))
+
+variable {R A}
+
+/-- The similitude attached to `h : GL₂(A)` is `(h, det h)`. -/
+@[simp]
+theorem coe_pointsSubgroupOneMulEquiv_apply (h : GL (Fin (1 + 1)) A) :
+    (pointsSubgroupOneMulEquiv R A h : GL (Fin (1 + 1)) A × Aˣ) =
+      (h, Matrix.GeneralLinearGroup.det h) := by
+  unfold pointsSubgroupOneMulEquiv
+  rfl
+
+/-- The matrix of a rank-two similitude is its first component. -/
+@[simp]
+theorem pointsSubgroupOneMulEquiv_symm_apply (p : pointsSubgroup R 1 A) :
+    (pointsSubgroupOneMulEquiv R A).symm p = (p : GL (Fin (1 + 1)) A × Aˣ).1 := by
+  unfold pointsSubgroupOneMulEquiv
+  rfl
+
+variable (R A)
 
 /-- **`GSp₂ = GL₂` on points**: the group of algebra-valued points of `GSp₂` is `GL₂(A)`. -/
 noncomputable def pointsMulEquivGLTwo :
@@ -240,8 +223,8 @@ variable {R A}
 /-- Under `GSp₂ = GL₂`, the multiplier is the determinant. -/
 theorem multiplierPoints_pointsSubgroupOneMulEquiv (h : GL (Fin (1 + 1)) A) :
     multiplierPoints R 1 A (pointsSubgroupOneMulEquiv R A h) =
-      Matrix.GeneralLinearGroup.det h :=
-  rfl
+      Matrix.GeneralLinearGroup.det h := by
+  rw [multiplierPoints_apply, coe_pointsSubgroupOneMulEquiv_apply]
 
 end Points
 

@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
+import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # The similitude subgroup scheme of a constant form
@@ -228,17 +229,6 @@ private theorem comul_multiplierCoord :
     LaurentPolynomial.comul_T, TensorProduct.map_tmul]
   simp [Algebra.TensorProduct.tmul_mul_tmul]
 
-/-- The matrix identity behind closure under comultiplication:
-`f(Y Z, r₁ r₂) = Y f(Z, r₂) Yᵀ + r₂ f(Y, r₁)` for `f(X, r) = X D Xᵀ - r D`. -/
-private theorem comul_identity {S : Type*} [CommRing S] (Y Z D : Matrix (Fin n) (Fin n) S)
-    (r₁ r₂ : S) :
-    Y * Z * D * (Y * Z)ᵀ - (r₁ * r₂) • D =
-      Y * (Z * D * Zᵀ - r₂ • D) * Yᵀ + r₂ • (Y * D * Yᵀ - r₁ • D) := by
-  rw [Matrix.transpose_mul, Matrix.mul_sub, Matrix.sub_mul, smul_sub, Matrix.mul_smul,
-    Matrix.smul_mul, smul_smul, mul_comm r₂ r₁]
-  simp only [Matrix.mul_assoc]
-  abel
-
 /-- The comultiplication of the relation matrix decomposes as a left-tensor-framed copy of the
 right tensor relations plus the right multiplier times the left tensor relations. -/
 private theorem relationMatrix_map_comul :
@@ -248,7 +238,7 @@ private theorem relationMatrix_map_comul :
         rightCopy R n (multiplierCoord R n) • (relationMatrix R n C).map (leftCopy R n) := by
   rw [relationMatrix_map R n C, relationMatrix_map R n C, relationMatrix_map R n C,
     map_comul_matrixCoord, comul_multiplierCoord]
-  exact comul_identity n _ _ _ _ _
+  exact Matrix.mul_mul_mul_transpose_sub_mul_smul _ _ _ _ _
 
 /-- The comultiplication of every defining relation lies in the sum of the left and right tensor
 ideals of the span of the relations. -/
@@ -294,17 +284,6 @@ private theorem antipode_multiplierCoord_mul :
     LaurentPolynomial.antipode_T, ← map_mul, ← LaurentPolynomial.T_add, neg_add_cancel,
     LaurentPolynomial.T_zero, map_one]
 
-/-- The matrix identity behind closure under the antipode: if `W X = 1` and `s r = 1`, then
-`f(W, s) = -(s W f(X, r) Wᵀ)` for `f(X, r) = X D Xᵀ - r D`. -/
-private theorem antipode_identity {S : Type*} [CommRing S] (W X D : Matrix (Fin n) (Fin n) S)
-    (r s : S) (hW : W * X = 1) (hs : s * r = 1) :
-    W * D * Wᵀ - s • D = -(s • (W * (X * D * Xᵀ - r • D) * Wᵀ)) := by
-  have hWX : W * (X * D * Xᵀ) * Wᵀ = D := by
-    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hW, Matrix.one_mul, Matrix.mul_assoc,
-      ← Matrix.transpose_mul, hW, Matrix.transpose_one, Matrix.mul_one]
-  rw [Matrix.mul_sub, Matrix.sub_mul, hWX, Matrix.mul_smul, Matrix.smul_mul, smul_sub,
-    smul_smul, hs, one_smul, neg_sub]
-
 /-- The antipode image of the relation matrix is the negative of the relation matrix framed by
 the antipode of the generic matrix and scaled by the inverse multiplier. -/
 private theorem relationMatrix_map_antipode :
@@ -318,8 +297,8 @@ private theorem relationMatrix_map_antipode :
             ((matrixCoord R n).map
               (HopfAlgebra.antipodeAlgHom (R := R) (A := ambientHopfAlgebra R n)))ᵀ)) := by
   rw [relationMatrix_map R n C, relationMatrix]
-  exact antipode_identity _ _ _ _ _ _ (map_antipode_matrixCoord_mul R n)
-    (antipode_multiplierCoord_mul R n)
+  exact Matrix.mul_mul_transpose_sub_smul_of_mul_eq_one (map_antipode_matrixCoord_mul R n)
+    (antipode_multiplierCoord_mul R n) _
 
 /-- The antipode carries every defining relation into the span of the relations. -/
 private theorem antipode_relationMatrix_mem (i j : Fin n) :
@@ -359,10 +338,10 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
     (definingHopfIdeal R n C).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       (matrixCoord R n).map phi * C.map (algebraMap R T) * ((matrixCoord R n).map phi)ᵀ =
         phi (multiplierCoord R n) • C.map (algebraMap R T) := by
-  rw [definingHopfIdeal_toIdeal, Ideal.span_le, ← sub_eq_zero, ← relationMatrix_map]
-  refine ⟨fun h ↦ Matrix.ext fun i j ↦ h (relationMatrix_mem_relationSet R n C i j), ?_⟩
-  rintro h _ ⟨ij, rfl⟩
-  exact congrFun (congrFun h ij.1) ij.2
+  rw [definingHopfIdeal_toIdeal, Ideal.span_le, relationSet, Set.range_subset_iff, Prod.forall,
+    ← sub_eq_zero, ← relationMatrix_map]
+  simp only [SetLike.mem_coe]
+  exact Matrix.forall_mem_ker_iff_map_eq_zero
 
 /-- The coordinate Hopf algebra of the similitude group scheme of `C`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
@@ -447,30 +426,37 @@ noncomputable def ambientPointsMulEquiv (A : Type w) [CommRing A] [Algebra R A] 
   (castPoints R n A).trans (AffineGroup.Product.pointsMulEquiv.trans
     (MulEquiv.prodCongr (GeneralLinear.pointsMulEquiv n) MultiplicativeGroup.pointsMulEquiv))
 
+/-- An ambient point corresponds to the pair of its restrictions to the two factors, read as an
+invertible matrix and a unit. -/
+theorem ambientPointsMulEquiv_apply
+    (g : HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A)) :
+    ambientPointsMulEquiv R n A g =
+      (GeneralLinear.pointsMulEquiv n (BialgHom.mapDomain (inl R n).hom g),
+        MultiplicativeGroup.pointsMulEquiv (BialgHom.mapDomain (inr R n).hom g)) := by
+  rw [ambientPointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
+    AffineGroup.Product.pointsMulEquiv_apply]
+  -- `castPoints` is `MulEquiv.refl` and `MulEquiv.prodCongr` acts componentwise.
+  rfl
+
 /-- The matrix of an ambient point is its value on the generic matrix of the product. -/
+@[simp]
 theorem coe_ambientPointsMulEquiv_fst
     (g : HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A)) :
     ((ambientPointsMulEquiv R n A g).1 : Matrix (Fin n) (Fin n) A) =
       (matrixCoord R n).map g.ofConv := by
-  rw [ambientPointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    AffineGroup.Product.pointsMulEquiv_apply]
-  change ((GeneralLinear.pointsMulEquiv n (BialgHom.mapDomain (inl R n).hom g) : GL (Fin n) A) :
-    Matrix (Fin n) (Fin n) A) = _
-  rw [GeneralLinear.pointsMulEquiv_apply,
+  rw [ambientPointsMulEquiv_apply, GeneralLinear.pointsMulEquiv_apply,
     ← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
   ext i j
   rw [Matrix.map_apply, Matrix.map_apply, matrixCoord, Matrix.map_apply,
     ← BialgHom.mapDomain_apply_apply]
 
 /-- The unit of an ambient point is its value on the multiplier coordinate. -/
+@[simp]
 theorem coe_ambientPointsMulEquiv_snd
     (g : HopfAlgebra.points (R := R) (H := ambientHopfAlgebra R n) (CommAlgCat.of R A)) :
     ((ambientPointsMulEquiv R n A g).2 : A) = g.ofConv (multiplierCoord R n) := by
-  rw [ambientPointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
-    AffineGroup.Product.pointsMulEquiv_apply]
-  change ((MultiplicativeGroup.pointsMulEquiv (BialgHom.mapDomain (inr R n).hom g) : Aˣ) : A) = _
-  rw [MultiplicativeGroup.pointsMulEquiv_apply, laurentEvalEquiv_symm_apply, multiplierCoord,
-    ← BialgHom.mapDomain_apply_apply]
+  rw [ambientPointsMulEquiv_apply, MultiplicativeGroup.pointsMulEquiv_apply,
+    laurentEvalEquiv_symm_apply, multiplierCoord, ← BialgHom.mapDomain_apply_apply]
 
 /-- **The subgroup of `GLₙ(A) × Aˣ` of similitudes of `C`**: pairs `(h, r)` with
 `h C hᵀ = r C`. -/
@@ -481,31 +467,15 @@ def pointsSubgroup (A : Type w) [CommRing A] [Algebra R A] : Subgroup (GL (Fin n
     simp only [Set.mem_ofPred_eq, Prod.fst_one, Prod.snd_one, Units.val_one, Matrix.one_mul,
       Matrix.transpose_one, Matrix.mul_one, one_smul]
   mul_mem' {p q} hp hq := by
-    simp only [Set.mem_ofPred_eq, Prod.fst_mul, Prod.snd_mul, Units.val_mul,
-      Matrix.transpose_mul] at hp hq ⊢
-    calc (p.1 : Matrix (Fin n) (Fin n) A) * q.1 * C.map (algebraMap R A) *
-          ((q.1 : Matrix (Fin n) (Fin n) A)ᵀ * (p.1 : Matrix (Fin n) (Fin n) A)ᵀ)
-        = (p.1 : Matrix (Fin n) (Fin n) A) *
-            ((q.1 : Matrix (Fin n) (Fin n) A) * C.map (algebraMap R A) *
-              (q.1 : Matrix (Fin n) (Fin n) A)ᵀ) * (p.1 : Matrix (Fin n) (Fin n) A)ᵀ := by
-          simp only [Matrix.mul_assoc]
-      _ = ((p.2 : A) * q.2) • C.map (algebraMap R A) := by
-          rw [hq, Matrix.mul_smul, Matrix.smul_mul, hp, smul_smul, mul_comm]
+    simp only [Set.mem_ofPred_eq, Prod.fst_mul, Prod.snd_mul, Units.val_mul] at hp hq ⊢
+    rw [← sub_eq_zero] at hp hq ⊢
+    rw [Matrix.mul_mul_mul_transpose_sub_mul_smul, hp, hq, Matrix.mul_zero, Matrix.zero_mul,
+      smul_zero, add_zero]
   inv_mem' {p} hp := by
     simp only [Set.mem_ofPred_eq, Prod.fst_inv, Prod.snd_inv] at hp ⊢
-    have hl : ((p.1⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A) * p.1 = 1 := by
-      rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-    calc ((p.1⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A) * C.map (algebraMap R A) *
-          ((p.1⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A)ᵀ
-        = ((p.2⁻¹ : Aˣ) : A) • (((p.1⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A) *
-            ((p.2 : A) • C.map (algebraMap R A)) *
-            ((p.1⁻¹ : GL (Fin n) A) : Matrix (Fin n) (Fin n) A)ᵀ) := by
-          rw [Matrix.mul_smul, Matrix.smul_mul, smul_smul, Units.inv_mul, one_smul]
-      _ = ((p.2⁻¹ : Aˣ) : A) • C.map (algebraMap R A) := by
-          rw [← hp]
-          congr 1
-          rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hl, Matrix.one_mul, Matrix.mul_assoc,
-            ← Matrix.transpose_mul, hl, Matrix.transpose_one, Matrix.mul_one]
+    rw [← sub_eq_zero] at hp ⊢
+    rw [Matrix.mul_mul_transpose_sub_smul_of_mul_eq_one (Units.inv_mul p.1) (Units.inv_mul p.2),
+      hp, Matrix.mul_zero, Matrix.zero_mul, smul_zero, neg_zero]
 
 /-- Membership in the subgroup of similitudes of `C`. -/
 @[simp]
@@ -557,6 +527,8 @@ theorem pointsMulEquiv_coe
       (pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ) := by
   have hcomponent := CommHopfAlgCat.quotientPointsSubgroupNatIso_hom_app_apply
     (ambientHopfAlgebra R n) (definingHopfIdeal R n C) (CommAlgCat.of R A) f
+  -- `pointsMulEquiv` is the natural isomorphism followed by `MulEquiv.subgroupMap` and
+  -- `MulEquiv.subgroupCongr`, both of which apply `ambientPointsMulEquiv` to the underlying point.
   exact congrArg (ambientPointsMulEquiv R n A) (congrArg Subtype.val hcomponent).symm
 
 /-- The multiplier of a point, read through the points identification, is its unit
@@ -566,10 +538,11 @@ theorem pointsMulEquiv_snd
     (((pointsMulEquiv R n C (A := A) f : GL (Fin n) A × Aˣ).2 : Aˣ) : A) =
       f.ofConv ((multiplierCoordinateMap R n C).hom (LaurentPolynomial.T 1)) := by
   rw [← pointsMulEquiv_coe, coe_ambientPointsMulEquiv_snd,
-    CommHopfAlgCat.quotientPointsHom_apply_apply, multiplierCoord]
-  rfl
+    CommHopfAlgCat.quotientPointsHom_apply_apply, multiplierCoord, multiplierCoordinateMap,
+    coordinateMap_def, _root_.CommHopfAlgCat.hom_comp, CommHopfAlgCat.hom_mkQuotient,
+    BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk]
 
-variable {B : Type w} [CommRing B] [Algebra R B]
+variable {B : Type*} [CommRing B] [Algebra R B]
 
 /-- The ambient points equivalence is natural in the value algebra. -/
 theorem ambientPointsMulEquiv_mapValue (phi : A →ₐ[R] B)
