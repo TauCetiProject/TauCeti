@@ -178,11 +178,8 @@ variable [Fact (1 ≤ p)]
 
 /-- The intersection `Lᵖ ∩ L²` is dense in `Lᵖ` when `p < ∞`. -/
 theorem dense_lpTwoSubmodule (hp : p ≠ ∞) :
-    Dense (lpTwoSubmodule (E := E) (p := p) (μ := μ) : Set (Lp E p μ)) := by
-  apply (Lp.simpleFunc.dense (E := E) (p := p) (μ := μ) hp).mono
-  intro f hf
-  exact (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp 2
-    ⟨f, hf⟩).ae_eq (Lp.simpleFunc.toSimpleFunc_eq_toFun _)
+    Dense (lpTwoSubmodule (E := E) (p := p) (μ := μ) : Set (Lp E p μ)) :=
+  Lp.dense_setOf_memLp hp 2
 
 /-- A function `φ`, truncated to `Sₖ = spanningSets μ k ∩ {‖φ‖ ≤ k, |b| ≤ k}`, lies in every
 `Lʳ`, and so does its product with `b`: both are bounded and vanish off a set of finite measure.

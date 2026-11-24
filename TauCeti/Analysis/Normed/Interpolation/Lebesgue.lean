@@ -210,14 +210,8 @@ with support of finite measure lie in `L^{p₀} ∩ L^{p₁}` and are dense in `
 `p₀ < ∞` and `p₁ = ∞`, every element of the intersection is at `L^∞` distance at least `1 / 2`
 from the constant function `1`. -/
 theorem isRegular_lebesgue (hp₀ : p₀ ≠ ∞) (hp₁ : p₁ ≠ ∞) : (lebesgue 𝕜 E μ p₀ p₁).IsRegular :=
-  ⟨(Lp.simpleFunc.denseRange hp₀).mono <| Set.range_subset_iff.2 fun g =>
-      mem_range_lebesgue_interFst_iff.2 <| (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top
-        (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' hp₀ p₁ g).ae_eq
-          (Lp.simpleFunc.toSimpleFunc_eq_toFun g),
-    (Lp.simpleFunc.denseRange hp₁).mono <| Set.range_subset_iff.2 fun g =>
-      mem_range_lebesgue_interSnd_iff.2 <| (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top
-        (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne' hp₁ p₀ g).ae_eq
-          (Lp.simpleFunc.toSimpleFunc_eq_toFun g)⟩
+  ⟨(Lp.dense_setOf_memLp hp₀ p₁).mono fun _ => mem_range_lebesgue_interFst_iff.2,
+    (Lp.dense_setOf_memLp hp₁ p₀).mono fun _ => mem_range_lebesgue_interSnd_iff.2⟩
 
 end Regular
 
