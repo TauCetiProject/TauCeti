@@ -21,8 +21,8 @@ the homogeneous Sobolev space `\dot H^s = \dot B^s_{2,2}`.
 
 * `TauCeti.HomogeneousBesovSpace.exists_isFrequencyEnvelope`: for every `u ∈ \dot B^s_{p,2}` the
   weighted block sizes `2^{ks} ‖P_k u‖_{Lᵖ}` have a frequency envelope `c` that is
-  `(-σ₁, σ₂)`-admissible, with `‖c‖_{ℓ²} ≲ ‖u‖_{\dot B^s_{p,2}}`, the constant depending only on
-  the rates.
+  `(-σ₁, σ₂)`-admissible, with `‖c‖_{ℓ²} ≲ ‖u‖_{\dot B^s_{p,2}}` and a constant independent of
+  `u`.
 
 ## References
 

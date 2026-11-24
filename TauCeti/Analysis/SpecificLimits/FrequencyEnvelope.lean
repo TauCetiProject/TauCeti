@@ -85,6 +85,13 @@ structure IsFrequencyEnvelope (δ : ℝ) (a c : ℤ → ℝ) : Prop where
   /-- The envelope is slowly varying with both rates `δ`. -/
   isSlowlyVarying : IsSlowlyVarying δ δ c
 
+/-- A frequency envelope is nonnegative. -/
+theorem IsFrequencyEnvelope.nonneg {δ : ℝ} {a c : ℤ → ℝ} (h : IsFrequencyEnvelope δ a c) (k : ℤ) :
+    0 ≤ c k := by
+  rcases h.pos_or_eq_zero with hc | rfl
+  · exact (hc k).le
+  · exact le_rfl
+
 /-- A sequence is **`(-σ₁, σ₂)`-admissible** (with the loss `ε`) if it is slowly varying with the
 rates `σ₁(1 - ε)` and `σ₂(1 - ε)`:
 `2^{-σ₁(1-ε)(j-k)} c_j ≲ c_k ≲ 2^{σ₂(1-ε)(j-k)} c_j` for `j > k`. -/
@@ -385,10 +392,10 @@ theorem isFrequencyCompatible_add_mul_dyadicLowSum {c d : ℤ → ℝ} {M σ ε 
 `r > 0` and `a ∈ ℓ²` it majorizes `a`, satisfies `c_k ≤ 2^{r|k-k'|} c_{k'}`, and
 `‖c‖_{ℓ²}² = (∑_m 2^{-2r|m|}) ‖a‖_{ℓ²}²`. -/
 def frequencyEnvelopeOf (r : ℝ) (a : ℤ → ℝ) (k : ℤ) : ℝ :=
-  √(∑' j, (2 : ℝ) ^ (-(2 * r) * |((j - k : ℤ) : ℝ)|) * a j ^ 2)
+  √(∑' j : ℤ, (2 : ℝ) ^ (-(2 * r) * |(j - k : ℝ)|) * a j ^ 2)
 
 theorem frequencyEnvelopeOf_def (r : ℝ) (a : ℤ → ℝ) (k : ℤ) :
-    frequencyEnvelopeOf r a k = √(∑' j, (2 : ℝ) ^ (-(2 * r) * |((j - k : ℤ) : ℝ)|) * a j ^ 2) :=
+    frequencyEnvelopeOf r a k = √(∑' j : ℤ, (2 : ℝ) ^ (-(2 * r) * |(j - k : ℝ)|) * a j ^ 2) :=
   (rfl)
 
 /-- The envelope is nonnegative. -/
@@ -397,7 +404,7 @@ theorem frequencyEnvelopeOf_nonneg (r : ℝ) (a : ℤ → ℝ) (k : ℤ) : 0 ≤
 
 /-- The square of the envelope: `c_k² = ∑_j 2^{-2r|j-k|} a_j²`. -/
 theorem sq_frequencyEnvelopeOf (r : ℝ) (a : ℤ → ℝ) (k : ℤ) :
-    frequencyEnvelopeOf r a k ^ 2 = ∑' j, (2 : ℝ) ^ (-(2 * r) * |((j - k : ℤ) : ℝ)|) * a j ^ 2 :=
+    frequencyEnvelopeOf r a k ^ 2 = ∑' j : ℤ, (2 : ℝ) ^ (-(2 * r) * |(j - k : ℝ)|) * a j ^ 2 :=
   Real.sq_sqrt (tsum_nonneg fun j ↦ mul_nonneg (by positivity) (sq_nonneg _))
 
 private theorem two_rpow_neg_mul_abs_le_one {r x : ℝ} (hr : 0 ≤ r) :
@@ -407,7 +414,7 @@ private theorem two_rpow_neg_mul_abs_le_one {r x : ℝ} (hr : 0 ≤ r) :
 
 private theorem summable_weight_mul_sq {r : ℝ} (hr : 0 ≤ r) {a : ℤ → ℝ}
     (ha : Summable fun k ↦ a k ^ 2) (k : ℤ) :
-    Summable fun j ↦ (2 : ℝ) ^ (-(2 * r) * |((j - k : ℤ) : ℝ)|) * a j ^ 2 :=
+    Summable fun j : ℤ ↦ (2 : ℝ) ^ (-(2 * r) * |(j - k : ℝ)|) * a j ^ 2 :=
   ha.of_nonneg_of_le (fun j ↦ by positivity) fun j ↦
     mul_le_of_le_one_left (sq_nonneg _) (two_rpow_neg_mul_abs_le_one (by linarith))
 
@@ -423,21 +430,20 @@ theorem le_frequencyEnvelopeOf {r : ℝ} (hr : 0 ≤ r) {a : ℤ → ℝ}
 /-- The envelope of `a` with rate `r ≥ 0` varies by at most `2^{r|k-k'|}`. -/
 theorem frequencyEnvelopeOf_le {r : ℝ} (hr : 0 ≤ r) {a : ℤ → ℝ}
     (ha : Summable fun k ↦ a k ^ 2) (k k' : ℤ) :
-    frequencyEnvelopeOf r a k ≤ 2 ^ (r * |((k - k' : ℤ) : ℝ)|) * frequencyEnvelopeOf r a k' := by
-  have hsq : (2 : ℝ) ^ (2 * r * |((k - k' : ℤ) : ℝ)|) =
-      ((2 : ℝ) ^ (r * |((k - k' : ℤ) : ℝ)|)) ^ 2 := by
+    frequencyEnvelopeOf r a k ≤ 2 ^ (r * |(k - k' : ℝ)|) * frequencyEnvelopeOf r a k' := by
+  have hsq : (2 : ℝ) ^ (2 * r * |(k - k' : ℝ)|) =
+      ((2 : ℝ) ^ (r * |(k - k' : ℝ)|)) ^ 2 := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
     congr 1
     push_cast
     ring
   rw [frequencyEnvelopeOf, frequencyEnvelopeOf, ← Real.sqrt_sq (by positivity : (0 : ℝ) ≤
-    2 ^ (r * |((k - k' : ℤ) : ℝ)|)), ← Real.sqrt_mul (by positivity), ← hsq, ← tsum_mul_left]
+    2 ^ (r * |(k - k' : ℝ)|)), ← Real.sqrt_mul (by positivity), ← hsq, ← tsum_mul_left]
   refine Real.sqrt_le_sqrt (Summable.tsum_le_tsum (fun j ↦ ?_) (summable_weight_mul_sq hr ha k)
     ((summable_weight_mul_sq hr ha k').mul_left _))
   rw [← mul_assoc, ← Real.rpow_add two_pos]
   refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_exponent_le one_le_two ?_)
     (sq_nonneg _)
-  push_cast
   nlinarith [abs_sub_le (j : ℝ) k k', abs_nonneg ((j : ℝ) - k), abs_nonneg ((k : ℝ) - k')]
 
 /-- The envelope of `a` with rate `r ≥ 0` is slowly varying with all rates `σ₁, σ₂ ≥ r`, with
@@ -445,8 +451,7 @@ constant `1`. -/
 theorem isSlowlyVarying_frequencyEnvelopeOf {r σ₁ σ₂ : ℝ} (hr : 0 ≤ r) (h₁ : r ≤ σ₁)
     (h₂ : r ≤ σ₂) {a : ℤ → ℝ} (ha : Summable fun k ↦ a k ^ 2) :
     IsSlowlyVarying σ₁ σ₂ (frequencyEnvelopeOf r a) :=
-  .of_le_two_rpow_mul_abs (frequencyEnvelopeOf_nonneg r a) h₁ h₂ fun k k' ↦ by
-    simpa only [Int.cast_sub] using frequencyEnvelopeOf_le hr ha k k'
+  .of_le_two_rpow_mul_abs (frequencyEnvelopeOf_nonneg r a) h₁ h₂ (frequencyEnvelopeOf_le hr ha)
 
 /-- The envelope of `a` is positive unless `a = 0`, in which case it is `0`. -/
 theorem frequencyEnvelopeOf_pos_or_eq_zero {r : ℝ} (hr : 0 ≤ r) {a : ℤ → ℝ}
@@ -483,8 +488,8 @@ theorem hasSum_sq_frequencyEnvelopeOf {r : ℝ} (hr : 0 < r) {a : ℤ → ℝ}
       right_inv := fun p ↦ by simp }
   have hf : Summable (Function.uncurry fun k j : ℤ ↦ w (j - k) * a j ^ 2) :=
     (e.summable_iff (f := fun p : ℤ × ℤ ↦ w p.1 * a p.2 ^ 2)).2 hprod
-  have hsq : ∀ k, frequencyEnvelopeOf r a k ^ 2 = ∑' j, w (j - k) * a j ^ 2 :=
-    sq_frequencyEnvelopeOf r a
+  have hsq : ∀ k, frequencyEnvelopeOf r a k ^ 2 = ∑' j, w (j - k) * a j ^ 2 := fun k ↦ by
+    simp only [sq_frequencyEnvelopeOf, w, Int.cast_sub]
   simp only [hsq]
   refine hf.prod.hasSum_iff.2 ?_
   simp only [Function.uncurry_apply_pair]
