@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.GroupTheory.Index.NSmul
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # Power classes of local units

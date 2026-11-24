@@ -15,7 +15,7 @@ The unitary elements of a product of star monoids are the pairs of unitary eleme
 packages that identification as a multiplicative equivalence. It also records that a unit is
 unitary exactly when its adjoint is its inverse. A star-preserving multiplicative map that
 sends `1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism, maps unitaries to
-unitaries.
+unitaries, and the ring inverse of a unitary element is its adjoint.
 
 ## Main definitions and results
 
@@ -26,6 +26,7 @@ unitaries.
   `unitary A × unitary B`.
 * `Unitary.map_mem_of_map_one`: a star-preserving multiplicative map with `f 1 = 1` maps
   unitaries to unitaries.
+* `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
 * `Units.isSelfAdjoint_add_inv_of_mem_unitary`, `Units.star_sub_inv_of_mem_unitary`: for a unitary
@@ -66,6 +67,12 @@ theorem map_mem_of_map_one {R S F : Type*} [Monoid R] [StarMul R] [Monoid S] [St
   Unitary.mem_iff.mpr
     ⟨by rw [← map_star, ← map_mul, Unitary.star_mul_self_of_mem hr, hf],
       by rw [← map_star, ← map_mul, Unitary.mul_star_self_of_mem hr, hf]⟩
+
+/-- The ring inverse of a unitary element is its adjoint. -/
+@[simp]
+theorem ringInverse_coe {R : Type*} [MonoidWithZero R] [StarMul R] (u : unitary R) :
+    Ring.inverse (u : R) = star (u : R) :=
+  Ring.inverse_unit (Unitary.toUnits u)
 
 end Unitary
 
