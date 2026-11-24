@@ -44,10 +44,6 @@ private theorem pairwise_disjoint_preimage (hdisj : Pairwise (Disjoint on V)) :
   rw [Function.onFun, disjoint_iff, ← Scheme.Hom.preimage_inf, disjoint_iff.mp (hdisj hij),
     Scheme.Hom.preimage_bot]
 
-/-- Preimages of a cover form a cover. -/
-private theorem iSup_preimage_eq_top (hcover : ⨆ j, V j = ⊤) : ⨆ j, f ⁻¹ᵁ V j = ⊤ := by
-  rw [← Scheme.Hom.preimage_iSup, hcover, Scheme.Hom.preimage_top]
-
 /-- **Higher direct images of a module prescribed on a disjoint cover.** For a quasi-compact
 quasi-separated `f : X ⟶ S`, a cover of `S` by pairwise disjoint affine opens `V j` and a
 quasicoherent module `F j` on each `f⁻¹(V j)`, the sections over `V j` of the higher direct image
@@ -58,7 +54,7 @@ def higherDirectImageSectionsDisjointGlueAddEquiv [QuasiCompact f] [QuasiSeparat
     Γ((f.higherDirectImage n).obj (disjointGlue (fun j ↦ f ⁻¹ᵁ V j) F), V j) ≃+
       Scheme.Modules.Cohomology (F j) n :=
   haveI := isQuasicoherent_disjointGlue F (pairwise_disjoint_preimage f hdisj)
-    (iSup_preimage_eq_top f hcover)
+    (f.iSup_preimage_eq_top hcover)
   (f.higherDirectImageSectionsAddEquiv _ n (hV j)).symm.trans
     (cohomologyOnDisjointGlueIso F (pairwise_disjoint_preimage f hdisj) j
       n).addCommGroupIsoToAddEquiv

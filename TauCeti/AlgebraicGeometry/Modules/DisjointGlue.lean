@@ -47,7 +47,7 @@ variable {X : Scheme.{u}} {J : Type u} (U : J → X.Opens) (F : ∀ j, (U j).toS
 
 /-- The module on `X` that is `F j` on each of the pairwise disjoint opens `U j`: the product of
 the pushforwards of the `F j` along the inclusions `U j → X`. -/
-def disjointGlue : X.Modules :=
+abbrev disjointGlue : X.Modules :=
   ∏ᶜ fun j ↦ (pushforward (U j).ι).obj (F j)
 
 /-- Unfolding lemma for `disjointGlue`. -/
