@@ -100,9 +100,8 @@ theorem fixedPoints_generalLinearGroup_smul_eq_ker (A : GL ι ℤ) :
       ((1 - (A : Matrix ι ι ℤ)).smulVecHom (AddCircle p) :
         (ι → AddCircle p) →+ (ι → AddCircle p)).ker := by
   ext x
-  rw [mem_fixedPoints_iff, SetLike.mem_coe, AddMonoidHom.mem_ker_ofClass, smulVecHom_sub_apply,
-    smulVecHom_one, ContinuousAddMonoidHom.coe_id, id_eq, sub_eq_zero,
-    generalLinearGroup_smul_eq_smulVecHom, eq_comm]
+  simp [IsFixedPt, smulVecHom_sub_apply, sub_eq_zero, generalLinearGroup_smul_eq_smulVecHom,
+    eq_comm (a := x)]
 
 /-- **Fixed points through the covering map.** The point `[t]` of the torus is fixed by `A`
 exactly when every coordinate of `(1 - A) t` is an integer multiple of `p`. -/
