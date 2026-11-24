@@ -72,7 +72,8 @@ is the global dimension `TauCeti.globalDim C` of every pivotal structure on `C`.
 * `TauCeti.normalizedDoubleDualIso` and `TauCeti.normalizedExactPairing`: for a simple object
   `X`, the isomorphism `a : X ≅ Xᘁᘁ` normalized by `doubleDualTrace a.invᘁ = 𝟙 (𝟙_ C)`, unique by
   `TauCeti.eq_normalizedDoubleDualIso`, and the
-  pairing of `Xᘁ` and `X` transported along it, whose two closed loops are `𝟙 (𝟙_ C)` and the
+  pairing of `Xᘁ` and `X` transported along it (`TauCeti.normalizedExactPairing_evaluation` and
+  `TauCeti.normalizedExactPairing_coevaluation`), whose two closed loops are `𝟙 (𝟙_ C)` and the
   squared norm of `X`;
 * `TauCeti.normGlobalDim`: the global dimension as a sum of squared norms, independent of the
   isomorphisms by `TauCeti.normGlobalDim_congr` and equal to the pivotal global dimension by
@@ -332,8 +333,9 @@ private theorem exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id (X : C) [S
 
 /-- The **normalized isomorphism** `X ≅ Xᘁᘁ` of a simple object `X`: the trace
 `doubleDualTrace a.invᘁ` of the right adjoint mate of its inverse is `𝟙 (𝟙_ C)`
-(`TauCeti.doubleDualTrace_normalizedDoubleDualIso_inv`). Any isomorphism `X ≅ Xᘁᘁ` is a
-scalar multiple of it, and rescaling it changes this trace, so the normalization pins it down. -/
+(`TauCeti.doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv`). Any isomorphism
+`X ≅ Xᘁᘁ` is a scalar multiple of it, and rescaling it changes this trace, so the normalization
+pins it down. -/
 noncomputable def normalizedDoubleDualIso (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
     X ≅ (Xᘁ : C)ᘁ :=
   (exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id k X).choose
@@ -341,7 +343,7 @@ noncomputable def normalizedDoubleDualIso (X : C) [Simple X] [FiniteDimensional 
 /-- The trace of the right adjoint mate of the inverse of the normalized isomorphism `X ≅ Xᘁᘁ` is
 the identity of the unit. -/
 @[simp]
-theorem doubleDualTrace_normalizedDoubleDualIso_inv (X : C) [Simple X]
+theorem doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv (X : C) [Simple X]
     [FiniteDimensional k (X ⟶ X)] :
     doubleDualTrace ((normalizedDoubleDualIso k X).invᘁ) = 𝟙 (𝟙_ C) :=
   (exists_iso_doubleDualTrace_rightAdjointMate_inv_eq_id k X).choose_spec
@@ -356,7 +358,7 @@ theorem eq_normalizedDoubleDualIso {X : C} [Simple X] [FiniteDimensional k (X �
     rw [← Category.id_comp a.inv, ← (normalizedDoubleDualIso k X).inv_hom_id, Category.assoc, ← hs,
       Linear.comp_smul, Category.comp_id]
   rw [hinv, rightAdjointMate_smul, doubleDualTrace_smul,
-    doubleDualTrace_normalizedDoubleDualIso_inv] at ha
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv] at ha
   rw [smul_left_injective k (id_ne_zero (𝟙_ C)) (ha.trans (one_smul k _).symm), one_smul] at hinv
   exact Iso.ext ((Iso.inv_eq_inv _ _).mp hinv)
 
@@ -369,13 +371,28 @@ noncomputable def normalizedExactPairing (X : C) [Simple X] [FiniteDimensional k
     ExactPairing Xᘁ X :=
   exactPairingCongrRight (normalizedDoubleDualIso k X)
 
+/-- The evaluation `X ⊗ Xᘁ ⟶ 𝟙_ C` of `TauCeti.normalizedExactPairing k X`. -/
+@[reassoc]
+theorem normalizedExactPairing_evaluation (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    @ExactPairing.evaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
+      (normalizedDoubleDualIso k X).hom ▷ Xᘁ ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) :=
+  exactPairingCongrRight_evaluation _
+
+/-- The coevaluation `𝟙_ C ⟶ Xᘁ ⊗ X` of `TauCeti.normalizedExactPairing k X`. -/
+@[reassoc]
+theorem normalizedExactPairing_coevaluation (X : C) [Simple X] [FiniteDimensional k (X ⟶ X)] :
+    @ExactPairing.coevaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
+      η_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ Xᘁ ◁ (normalizedDoubleDualIso k X).inv :=
+  exactPairingCongrRight_coevaluation _
+
 /-- Closing up the coevaluation of `TauCeti.normalizedExactPairing k X` with the evaluation of
 `X` gives the identity of the unit. -/
 theorem normalizedExactPairing_coevaluation_comp_evaluation (X : C) [Simple X]
     [FiniteDimensional k (X ⟶ X)] :
     @ExactPairing.coevaluation C _ _ Xᘁ X (normalizedExactPairing k X) ≫ ε_ X Xᘁ = 𝟙 (𝟙_ C) := by
-  rw [normalizedExactPairing, exactPairingCongrRight_coevaluation, Category.assoc,
-    ← doubleDualTrace_rightAdjointMate, doubleDualTrace_normalizedDoubleDualIso_inv]
+  rw [normalizedExactPairing_coevaluation, Category.assoc,
+    ← doubleDualTrace_rightAdjointMate,
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv]
 
 /-- Closing up the coevaluation of `X` with the evaluation of `TauCeti.normalizedExactPairing k X`
 gives the squared norm of `X`. -/
@@ -383,8 +400,9 @@ theorem coevaluation_comp_normalizedExactPairing_evaluation (X : C) [Simple X]
     [FiniteDimensional k (X ⟶ X)] :
     η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (normalizedExactPairing k X) =
       squaredNorm (normalizedDoubleDualIso k X) := by
-  rw [normalizedExactPairing, exactPairingCongrRight_evaluation, squaredNorm_def,
-    doubleDualTrace_normalizedDoubleDualIso_inv, Category.comp_id, doubleDualTrace_def]
+  rw [normalizedExactPairing_evaluation, squaredNorm_def,
+    doubleDualTrace_rightAdjointMate_normalizedDoubleDualIso_inv, Category.comp_id,
+    doubleDualTrace_def]
 
 end Normalized
 
