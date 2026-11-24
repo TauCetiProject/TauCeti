@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.Topology.Instances.AddCircle.Torus
 
 /-!
@@ -96,11 +97,11 @@ private theorem map_one_sub (A : Matrix ι ι ℤ) :
 matrix `1 - A`. -/
 theorem fixedPoints_generalLinearGroup_smul_eq_ker (A : GL ι ℤ) :
     (fixedPoints fun x : ι → AddCircle p ↦ A • x) =
-      ((1 - (A : Matrix ι ι ℤ)).smulVecHom (AddCircle p)).toAddMonoidHom.ker := by
+      ((1 - (A : Matrix ι ι ℤ)).smulVecHom (AddCircle p) :
+        (ι → AddCircle p) →+ (ι → AddCircle p)).ker := by
   ext x
-  simp only [mem_fixedPoints_iff, SetLike.mem_coe, AddMonoidHom.mem_ker,
-    ContinuousAddMonoidHom.coe_toAddMonoidHom, AddMonoidHom.coe_ofClass]
-  rw [smulVecHom_sub_apply, smulVecHom_one, ContinuousAddMonoidHom.coe_id, id_eq, sub_eq_zero,
+  rw [mem_fixedPoints_iff, SetLike.mem_coe, AddMonoidHom.mem_ker_ofClass, smulVecHom_sub_apply,
+    smulVecHom_one, ContinuousAddMonoidHom.coe_id, id_eq, sub_eq_zero,
     generalLinearGroup_smul_eq_smulVecHom, eq_comm]
 
 /-- **Fixed points through the covering map.** The point `[t]` of the torus is fixed by `A`
