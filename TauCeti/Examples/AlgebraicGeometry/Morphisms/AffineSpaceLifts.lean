@@ -23,11 +23,11 @@ the coordinates of `a`. Two lifts differ by a tuple of sections in the kernel of
   `n → ker (Γ(T', ⊤) → Γ(T, ⊤))`.
 * `TauCeti.AffineSpaceLifts.nonempty_lifts`: a lift exists when `i` is a closed immersion, `T'`
   is affine and `a` lies over `i ≫ g`.
-* `AlgebraicGeometry.Scheme.Hom.ker_appTop_eq_ideal_ker`: for `T'` affine, the kernel is
-  `Γ(T', I)` for the ideal sheaf `I = i.ker`.
 
-For `n` a singleton and `T'` affine, the lifts of `T ⟶ 𝔸¹_S` along a closed immersion `T ⟶ T'`
-form a torsor under `Γ(T', I)`.
+For `T'` affine, `AlgebraicGeometry.Scheme.Hom.ker_appTop_eq_ideal_ker` (in
+`TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop`) identifies the kernel with `Γ(T', I)` for the
+ideal sheaf `I = i.ker`. So for `n` a singleton and `T'` affine, the lifts of `T ⟶ 𝔸¹_S` along a
+closed immersion `T ⟶ T'` form a torsor under `Γ(T', I)`.
 -/
 
 public noncomputable section
@@ -137,13 +137,3 @@ theorem nonempty_lifts [IsAffine T'] [IsClosedImmersion i] (ha : a ≫ 𝔸(n; S
   exact ⟨Lifts.mk' v hv ha⟩
 
 end TauCeti.AffineSpaceLifts
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-/-- For `Y` affine, the kernel of `Γ(Y, ⊤) → Γ(X, ⊤)` is the module of global sections of the
-ideal sheaf of `f`. -/
-theorem ker_appTop_eq_ideal_ker {X Y : Scheme} (f : X ⟶ Y) [IsAffine Y] :
-    RingHom.ker f.appTop.hom = f.ker.ideal ⟨⊤, isAffineOpen_top Y⟩ := by
-  simp [Scheme.ker_of_isAffine]
-
-end AlgebraicGeometry.Scheme.Hom
