@@ -12,6 +12,7 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 
+import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
@@ -212,8 +213,7 @@ theorem exists_toTop_map_eq (t : toTop.{u}.obj n) :
     Nat.exists_eq_add_one.2 (Finset.card_pos.2 (support_toTopWeights_nonempty t))
   set e := (toTopWeights t).support.orderEmbOfFin hk
   have he : Set.BijOn e (e ⁻¹' ↑(toTopWeights t).support) ↑(toTopWeights t).support :=
-    ⟨Set.mapsTo_preimage _ _, e.injective.injOn, by
-      simp [e, Set.SurjOn, Set.image_preimage_eq_inter_range, Finset.range_orderEmbOfFin]⟩
+    Set.bijOn_preimage_iff.2 ⟨e.injective.injOn, (Finset.range_orderEmbOfFin _ hk).superset⟩
   refine ⟨⦋k⦌ₛ, homEquiv.symm e, ⟨StdSimplex.comap t.down he⟩, ?_,
     ULift.ext ((toTop_map_down _ _).trans (StdSimplex.map_comap t.down he))⟩
   rintro ⟨i, hi⟩

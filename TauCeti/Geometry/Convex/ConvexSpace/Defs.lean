@@ -15,13 +15,14 @@ Complements to Mathlib's `Convexity.StdSimplex`, mostly about the maps `StdSimpl
 is determined by its weight function (`StdSimplex.toFun_comp_weights_injective`), and
 `StdSimplex.extendWeights p` inverts the weight function on its range, sending every other
 function to the fallback point `p`.  An arbitrary map adds weights over its fibres.  An injective
-map embeds a standard simplex as a face of a larger
-one and keeps the weights of a point, so it is injective; a point can be pulled back along any map
-restricting to a bijection from the preimage of its support onto its support (`StdSimplex.comap`),
-giving an inverse to `StdSimplex.map` over strict ordered semirings (`StdSimplex.map_comap`,
-`StdSimplex.comap_map`).  For `f = j.succAbove` its image is the
-facet on which the `j`-th weight vanishes; for the last vertex this facet is the smaller simplex
-with a zero last weight appended.  A function taking a constant value on every facet
+map embeds a standard simplex as a face of a larger one and keeps the weights of a point, so it is
+injective; a point `y` can be pulled back along any map `f` restricting to a bijection from the
+full preimage of `y`'s support onto `y`'s support (`StdSimplex.comap`).  Over strict ordered
+semirings, `StdSimplex.map_comap` recovers `y` under that bijection hypothesis on `y`'s support,
+and `StdSimplex.comap_map` recovers `x` from `x.map f` when `f` restricts to a bijection from the
+full preimage of `(x.map f)`'s support onto `(x.map f)`'s support.  For `f = j.succAbove` its image
+is the facet on which the `j`-th weight vanishes; for the last vertex this facet is the smaller
+simplex with a zero last weight appended.  A function taking a constant value on every facet
 takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, meet in the
 codimension-two face opposite both: a common point of the two facets comes from that face through
 both composites of face maps, the two sides of the simplicial identity
@@ -102,10 +103,11 @@ theorem weights_one_add_weights_two_le_one [AddRightMono R] (x : StdSimplex R (F
 
 variable {X Y : Type*}
 
-/-- A point of `StdSimplex R Y` pulled back to `StdSimplex R X` along a map `f : X → Y` that
-restricts to a bijection from the preimage of its support onto its support. When `R` is a strict
-ordered semiring, `StdSimplex.map_comap` and `StdSimplex.comap_map` give the inverse identities
-with `StdSimplex.map f`. -/
+/-- A point `y` of `StdSimplex R Y` pulled back to `StdSimplex R X` along a map `f : X → Y` that
+restricts to a bijection from the full preimage of `y`'s support onto `y`'s support. When `R` is a
+strict ordered semiring, `StdSimplex.map_comap` recovers `y` under this bijection hypothesis on
+`y`'s support, and `StdSimplex.comap_map` recovers `x` from `x.map f` when `f` restricts to a
+bijection from the full preimage of `(x.map f)`'s support onto `(x.map f)`'s support. -/
 noncomputable def comap {f : X → Y} (y : StdSimplex R Y)
     (hf : Set.BijOn f (f ⁻¹' ↑y.weights.support) ↑y.weights.support) : StdSimplex R X where
   weights := Finsupp.comapDomain f y.weights hf.injOn
@@ -170,16 +172,17 @@ theorem sum_filter_weights_map [Fintype X] [Fintype Y] (f : X → Y) (x : StdSim
     ← Finsupp.sum_fintype x.weights (fun a r ↦ if P (f a) then r else 0) (by simp)]
   simpa only [Finsupp.sum, ← Finset.sum_filter] using sum_filter_support_weights_map f x P
 
-/-- Pulling back a point along a map that restricts to a bijection from the preimage of its support
-onto its support, and then mapping forward again, recovers the point. -/
+/-- Pulling back a point `y` along a map `f` that restricts to a bijection from the full preimage
+of `y`'s support onto `y`'s support, and then mapping forward along `f`, recovers `y`. -/
 @[simp]
 theorem map_comap {f : X → Y} (y : StdSimplex R Y)
     (hf : Set.BijOn f (f ⁻¹' ↑y.weights.support) ↑y.weights.support) : (comap y hf).map f = y := by
   rw [← weights_inj, weights_map, weights_comap, Finsupp.mapDomain]
   exact (Finsupp.sum_comapDomain f y.weights Finsupp.single hf).trans (Finsupp.sum_single y.weights)
 
-/-- Mapping a point forward along a map that restricts to a bijection over the image's support and
-pulling it back again recovers the point. -/
+/-- Mapping a point `x` forward along a map `f` that restricts to a bijection from the full
+preimage of `(x.map f)`'s support onto `(x.map f)`'s support, and pulling back again, recovers
+`x`. -/
 @[simp]
 theorem comap_map {f : X → Y} (x : StdSimplex R X)
     (hf : Set.BijOn f (f ⁻¹' ↑(x.map f).weights.support) ↑(x.map f).weights.support) :

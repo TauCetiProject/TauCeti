@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
+import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
@@ -99,9 +100,8 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
     obtain _ | n := n
     · simp at hj
     have hsupp : Set.BijOn j.succAbove (j.succAbove ⁻¹' ↑w.weights.support) ↑w.weights.support :=
-      ⟨Set.mapsTo_preimage _ _, Fin.succAbove_right_injective.injOn, fun b hb ↦ by
-        obtain ⟨i, rfl⟩ := Fin.exists_succAbove_eq (x := b) (y := j) (fun h ↦ by simp [h, hj] at hb)
-        exact ⟨i, hb, rfl⟩⟩
+      Set.bijOn_preimage_iff.2 ⟨Fin.succAbove_right_injective.injOn, by
+        simp [Fin.range_succAbove, Set.subset_compl_singleton_iff, hj]⟩
     obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
       ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap w hsupp)
     refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
@@ -316,9 +316,8 @@ private noncomputable def pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fi
     (hz : z ∈ piece k) : StdSimplex ℝ (Fin (p + 2)) :=
   StdSimplex.comap (f := prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val)
     (prismMeasure z.1 z.2)
-    ⟨Set.mapsTo_preimage _ _, (injective_objEquiv_nonDegenerateEquiv.{u} k).injOn, by
-      simpa [Set.SurjOn, Set.image_preimage_eq_inter_range] using
-        support_prismMeasure_subset hz⟩
+    (Set.bijOn_preimage_iff.2
+      ⟨(injective_objEquiv_nonDegenerateEquiv.{u} k).injOn, support_prismMeasure_subset hz⟩)
 
 private lemma map_pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) :

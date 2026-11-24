@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.LSPath.Realization
 
 import Mathlib.Data.Finset.Sort
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Cardinality
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
@@ -285,8 +286,7 @@ private theorem isDistinguished_support_chainSimplexTimed {n : ℕ} {S : Set V} 
         (chainSimplexTimed (v ∘ φ) w').map (fun x ↦ x.1⁻¹ • x.2) = List.ofFn (v ∘ φ) := by
   intro φ
   have hbij : Set.BijOn φ (φ ⁻¹' ↑w.weights.support) ↑w.weights.support :=
-    ⟨Set.mapsTo_preimage _ _, φ.injective.injOn, by
-      simp [φ, Set.SurjOn, Set.image_preimage_eq_inter_range]⟩
+    Set.bijOn_preimage_iff.2 ⟨φ.injective.injOn, by simp [φ]⟩
   let w' := w.comap hbij
   have hw'pos (i : Fin w.weights.support.card) : 0 < w'.weights i := by
     rw [Convexity.StdSimplex.weights_comap_apply]
