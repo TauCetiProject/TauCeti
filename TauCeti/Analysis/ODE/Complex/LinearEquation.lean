@@ -198,23 +198,6 @@ theorem initialJet_apply {a : ℂ} (ha : a ∈ U) (f : E.solutionSpace) (j : Fin
     E.initialJet ha f j = iteratedDeriv j (HolomorphicFunctions.extend f.val) a :=
   HolomorphicFunctions.jet_apply ha n f.val j
 
-/-- Bundle an ambient scalar solution as an element of `E.solutionSpace`. -/
-def IsSolution.toSolutionSpace (hy : E.IsSolution y) : E.solutionSpace :=
-  ⟨HolomorphicFunctions.of U y hy.analyticOnNhd.differentiableOn,
-    hy.congr fun z hz ↦ by simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩]⟩
-
-/-- The bundled scalar solution agrees with the ambient representative on `U`. -/
-@[simp]
-theorem IsSolution.toSolutionSpace_apply (hy : E.IsSolution y) (z : U) :
-    hy.toSolutionSpace.val.val z = y z := by
-  simp [toSolutionSpace]
-
-/-- The initial jet of a bundled scalar solution records the iterated derivatives of `y` at `a`. -/
-@[simp]
-theorem IsSolution.initialJet_toSolutionSpace (hy : E.IsSolution y) {a : ℂ} (ha : a ∈ U) :
-    E.initialJet ha hy.toSolutionSpace = fun j : Fin n ↦ iteratedDeriv j y a :=
-  funext fun j ↦ HolomorphicFunctions.jet_of ha n y hy.analyticOnNhd.differentiableOn j
-
 /-- An analytic vector solves the companion system if its derivative is the matrix action. -/
 def IsCompanionSolution (v : ℂ → Fin n → ℂ) : Prop :=
   AnalyticOnNhd ℂ v U ∧ ∀ z ∈ U, HasDerivAt v (E.companion z *ᵥ v z) z
