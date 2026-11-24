@@ -358,14 +358,20 @@ def irreducibleCharactersOver (N : Subgroup G) (θ : N → k) : Set (G → k) :=
 
 variable {k}
 
+/-- Membership in `TauCeti.irreducibleCharactersOver`, in the defining form with a `finsum` over
+`N`, which needs no `Fintype N` instance. -/
+theorem mem_irreducibleCharactersOver {N : Subgroup G} {θ : N → k} {ψ : G → k} :
+    ψ ∈ irreducibleCharactersOver k N θ ↔
+      ψ ∈ irreducibleCharacters k G ∧ ∑ᶠ n : N, ψ n * θ n⁻¹ ≠ 0 :=
+  Iff.rfl
+
 /-- Membership in `TauCeti.irreducibleCharactersOver`, with the defining sum over the finite
 subgroup `N` written as a `Finset` sum. -/
 @[simp]
 theorem mem_irreducibleCharactersOver_iff {N : Subgroup G} [Fintype N] {θ : N → k} {ψ : G → k} :
     ψ ∈ irreducibleCharactersOver k N θ ↔
       ψ ∈ irreducibleCharacters k G ∧ ∑ n : N, ψ n * θ n⁻¹ ≠ 0 := by
-  rw [← finsum_eq_sum_of_fintype]
-  exact Iff.rfl
+  rw [mem_irreducibleCharactersOver, finsum_eq_sum_of_fintype]
 
 /-- The irreducible characters lying over `θ` are irreducible characters. -/
 theorem irreducibleCharactersOver_subset {N : Subgroup G} (θ : N → k) :
