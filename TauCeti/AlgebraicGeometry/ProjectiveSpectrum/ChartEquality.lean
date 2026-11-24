@@ -93,3 +93,67 @@ theorem SpecMap_awayLift_awayι_eq_iff (f g : A →+* B) {t : A} (ht : t ∈ �
     rw [h]
 
 end AlgebraicGeometry.Proj
+
+namespace AlgebraicGeometry.Proj
+
+universe u
+
+section Transition
+
+open CategoryTheory.Limits
+
+variable {A σ : Type u} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
+  (𝒜 : ℕ → σ) [GradedRing 𝒜] {d : ℕ} (hd : 0 < d) {f g : A}
+  (hf : f ∈ 𝒜 d) (hg : g ∈ 𝒜 d) {Z : Scheme.{u}}
+  (p : Z ⟶ Spec (.of (Away 𝒜 f))) (q : Z ⟶ Spec (.of (Away 𝒜 g)))
+  (h : p ≫ awayι 𝒜 f hf hd = q ≫ awayι 𝒜 g hg hd)
+
+include h
+
+/-- Two chart lifts of the same projective morphism pull back a
+homogeneous coordinate with the usual change of denominator. -/
+theorem appTop_awayMk_eq_mul (a : A) (ha : a ∈ 𝒜 (1 • d)) :
+    ((Scheme.ΓSpecIso _).inv ≫ q.appTop).hom (Away.mk 𝒜 hg 1 a ha) =
+      ((Scheme.ΓSpecIso _).inv ≫ p.appTop).hom (Away.mk 𝒜 hf 1 a ha) *
+        ((Scheme.ΓSpecIso _).inv ≫ q.appTop).hom
+          (Away.mk 𝒜 hg 1 f (by simpa using hf)) := by
+  let w : Z ⟶ Spec (.of (Away 𝒜 (f * g))) :=
+    pullback.lift p q h ≫ (pullbackAwayιIso 𝒜 hf hd hg hd rfl).hom
+  have key : ∀ {B : CommRingCat.{u}} (r : B ⟶ .of (Away 𝒜 (f * g)))
+      (s : Z ⟶ Spec B), w ≫ Spec.map r = s → ∀ b,
+      ((Scheme.ΓSpecIso B).inv ≫ s.appTop).hom b =
+        ((Scheme.ΓSpecIso _).inv ≫ w.appTop).hom (r.hom b) := by
+    rintro B r s rfl b
+    have e : (Scheme.ΓSpecIso B).inv ≫ (w ≫ Spec.map r).appTop =
+        r ≫ (Scheme.ΓSpecIso _).inv ≫ w.appTop := by
+      rw [Scheme.Hom.comp_appTop, ← Category.assoc,
+        ← Scheme.ΓSpecIso_inv_naturality, Category.assoc]
+    rw [e]
+    rfl
+  have hp := key (CommRingCat.ofHom (awayMap 𝒜 hg rfl)) p (by
+    -- Expand only the chosen overlap lift to use its projection identity.
+    rw [show w = _ from rfl, Category.assoc,
+      pullbackAwayιIso_hom_SpecMap_awayMap_left, pullback.lift_fst])
+  have hq := key (CommRingCat.ofHom (awayMap 𝒜 hf (mul_comm f g))) q (by
+    -- Expand only the chosen overlap lift to use its projection identity.
+    rw [show w = _ from rfl, Category.assoc,
+      pullbackAwayιIso_hom_SpecMap_awayMap_right, pullback.lift_snd])
+  rw [hq _, hq _, hp _, ← map_mul]
+  exact congrArg _ (HomogeneousLocalization.awayMap_mk_one_eq_mul 𝒜 hf hg ha)
+
+/-- The ratio of two chart denominators is invertible wherever
+both charts describe the same projective morphism. -/
+theorem isUnit_appTop_awayMk :
+    IsUnit (((Scheme.ΓSpecIso _).inv ≫ q.appTop).hom
+      (Away.mk 𝒜 hg 1 f (by simpa using hf))) := by
+  have he : ((Scheme.ΓSpecIso _).inv ≫ q.appTop).hom
+        (Away.mk 𝒜 hg 1 f (by simpa using hf)) *
+      ((Scheme.ΓSpecIso _).inv ≫ p.appTop).hom
+        (Away.mk 𝒜 hf 1 g (by simpa using hg)) = 1 := by
+    rw [mul_comm, ← appTop_awayMk_eq_mul 𝒜 hd hf hg p q h g (by simpa using hg)]
+    simp
+  exact ⟨⟨_, _, he, by rw [mul_comm]; exact he⟩, rfl⟩
+
+end Transition
+
+end AlgebraicGeometry.Proj

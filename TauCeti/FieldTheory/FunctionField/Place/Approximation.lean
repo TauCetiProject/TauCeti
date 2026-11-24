@@ -185,7 +185,7 @@ theorem exists_residue_eq_and_forall_mem_ord_eq (y : P.ResidueField) (r : Place 
   have hmem : g ∈ P.integers := by
     have hrw : g = g - (z : F) + (z : F) := by ring
     rw [hrw]
-    exact add_mem hsub z.2
+    exact add_mem hsub z.property
   refine ⟨g, hmem, ?_, fun Q hQ hQP ↦ ?_⟩
   · have hne : g - (z : F) ≠ 0 := fun h ↦ by simp [h] at hgP
     have hvaluation : P.valuation (g - (z : F)) < 1 := by
@@ -258,7 +258,7 @@ theorem exists_forall_residue_eq (hP : Function.Injective P) (y : ∀ i, (P i).R
     intro i
     have : g = g - (z i : F) + (z i : F) := by ring
     rw [this]
-    exact add_mem (hsub i) (z i).2
+    exact add_mem (hsub i) (z i).property
   refine ⟨g, hmem, fun i ↦ ?_⟩
   have key : IsLocalRing.residue (P i).integers (⟨g, hmem i⟩ - z i) = 0 := by
     rw [(P i).residue_eq_zero_iff_valuation_lt_one]

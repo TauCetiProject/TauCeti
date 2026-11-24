@@ -35,7 +35,8 @@ and orbit-theoretic properties of the reduced space:
   residual torus `T / N_Δ` acts continuously on `M_Δ` by the action of a quotient group on the
   orbits of its kernel (`AddAction.orbitRel.Quotient.instAddActionQuotientAddGroup`). For a Delzant
   polytope and an integral lattice, `facetTorusHom` is surjective with kernel `N_Δ`, so `T / N_Δ` is
-  the torus `V / 2π i(N)`.
+  the torus `V / 2π i(N)`. Through it, `T` itself acts continuously on `M_Δ`
+  (`TauCeti.Toric.DelzantQuotient.vadd_mk`).
 * **Stabilizers.** The class of `θ ∈ T` fixes the class of a point `z ∈ Z` exactly when `θ` agrees
   with an element of `N_Δ` on the coordinates `j` with `z_j ≠ 0`
   (`TauCeti.Toric.DelzantQuotient.coe_vadd_mk_eq_mk_iff`). In terms of the moment value `y ∈ Δ`,
@@ -143,7 +144,7 @@ theorem mk_eq_mk_iff {x y : delzantLevel i u c} :
     mk x = mk y ↔ ∃ θ ∈ (facetTorusHom i u (2 * π)).ker, θ +ᵥ y = x := by
   unfold mk DelzantQuotient
   rw [Quotient.eq, AddAction.orbitRel_apply, AddAction.mem_orbit_iff]
-  exact ⟨fun ⟨θ, h⟩ ↦ ⟨θ, θ.2, h⟩, fun ⟨θ, hθ, h⟩ ↦ ⟨⟨θ, hθ⟩, h⟩⟩
+  exact ⟨fun ⟨θ, h⟩ ↦ ⟨θ, θ.property, h⟩, fun ⟨θ, hθ, h⟩ ↦ ⟨⟨θ, hθ⟩, h⟩⟩
 
 /-- Elements of the kernel torus do not change the class of a point. -/
 @[simp]
@@ -156,7 +157,7 @@ quotient. -/
 def lift {β : Type*} (f : delzantLevel i u c → β)
     (hf : ∀ θ ∈ (facetTorusHom i u (2 * π)).ker, ∀ x, f (θ +ᵥ x) = f x) :
     DelzantQuotient i u c → β :=
-  AddAction.orbitRelQuotientLift f fun θ x ↦ hf θ θ.2 x
+  AddAction.orbitRelQuotientLift f fun θ x ↦ hf θ θ.property x
 
 @[simp]
 theorem lift_mk {β : Type*} (f : delzantLevel i u c → β)
@@ -198,6 +199,27 @@ instance : ContinuousVAdd ((ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2
   refine ⟨((QuotientAddGroup.isOpenQuotientMap_mk.prodMap
     isOpenQuotientMap_mk).continuous_comp_iff).1 ?_⟩
   exact (continuous_mk.comp continuous_vadd).congr fun p ↦ (coe_vadd_mk p.1 p.2).symm
+
+/-- The torus `(ℝ / 2πℤ)^ι` acts on the Delzant quotient through the residual torus
+`(ℝ / 2πℤ)^ι / N_Δ`. -/
+instance : AddAction (ι → AddCircle (2 * π)) (DelzantQuotient i u c) :=
+  AddAction.compHom _ (QuotientAddGroup.mk' (facetTorusHom i u (2 * π)).ker)
+
+/-- An angle acts on the Delzant quotient as its class in the residual torus does. -/
+theorem coe_vadd (θ : ι → AddCircle (2 * π)) (q : DelzantQuotient i u c) :
+    (θ : (ι → AddCircle (2 * π)) ⧸ (facetTorusHom i u (2 * π)).ker) +ᵥ q = θ +ᵥ q :=
+  (rfl)
+
+/-- The torus acts on classes through representatives. -/
+@[simp]
+theorem vadd_mk (θ : ι → AddCircle (2 * π)) (x : delzantLevel i u c) :
+    θ +ᵥ mk x = mk (θ +ᵥ x) :=
+  coe_vadd_mk θ x
+
+/-- The torus acts continuously on the Delzant quotient. -/
+instance : ContinuousVAdd (ι → AddCircle (2 * π)) (DelzantQuotient i u c) :=
+  ⟨(continuous_vadd.comp ((QuotientAddGroup.continuous_mk.comp continuous_fst).prodMk
+    continuous_snd)).congr fun p ↦ coe_vadd p.1 p.2⟩
 
 /-! ### Topology -/
 
@@ -259,11 +281,13 @@ private theorem eq_of_forall_apply_eq {y y' : StrongDual ℝ V}
 `j` (`TauCeti.Toric.DelzantQuotient.reducedMomentMap_mk_eq_iff`), that is with `μ(z) = β_ℝ^* y`
 (`TauCeti.Toric.DelzantQuotient.delzantMomentMap_eq_comp_reducedMomentMap`). -/
 def reducedMomentMap : DelzantQuotient i u c → StrongDual ℝ V :=
-  Quotient.lift (fun x : delzantLevel i u c ↦ (mem_delzantLevel_iff.1 x.2).choose) fun x y h ↦ by
+  Quotient.lift (fun x : delzantLevel i u c ↦ (mem_delzantLevel_iff.1 x.property).choose) fun x y h
+      ↦ by
     obtain ⟨n, rfl⟩ := AddAction.orbitRel_apply.1 h
     refine eq_of_forall_apply_eq hβ fun j ↦ ?_
-    rw [← (mem_delzantLevel_iff.1 (n +ᵥ y).2).choose_spec j,
-      ← (mem_delzantLevel_iff.1 y.2).choose_spec j, AddSubgroup.vadd_def, coe_vadd_delzantLevel,
+    rw [← (mem_delzantLevel_iff.1 (n +ᵥ y).property).choose_spec j,
+      ← (mem_delzantLevel_iff.1 y.property).choose_spec j, AddSubgroup.vadd_def,
+          coe_vadd_delzantLevel,
       torusRotation_apply_normSq]
 
 /-- **The defining property of the reduced moment map**: `⟨μ_Δ [z], u_j⟩ = ½ |z_j|² + c_j`. -/
@@ -272,7 +296,7 @@ theorem reducedMomentMap_mk_apply (x : delzantLevel i u c) (j : ι) :
     reducedMomentMap hβ (mk x) (i (u j)) =
       ((x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι).1 j ^ 2 +
         (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι).2 j ^ 2) / 2 + c j :=
-  ((mem_delzantLevel_iff.1 x.2).choose_spec j).symm
+  ((mem_delzantLevel_iff.1 x.property).choose_spec j).symm
 
 /-- The reduced moment map at the class of `z` is the unique `y ∈ V*` with
 `½ |z_j|² + c_j = ⟨y, u_j⟩` for every `j`. -/
@@ -316,6 +340,13 @@ theorem reducedMomentMap_vadd (θ : (ι → AddCircle (2 * π)) ⧸ (facetTorusH
   intro j
   rw [coe_vadd_delzantLevel, torusRotation_apply_normSq, reducedMomentMap_mk_apply]
 
+/-- The reduced moment map is invariant under the torus `(ℝ / 2πℤ)^ι`, which acts through the
+residual torus. -/
+@[simp]
+theorem reducedMomentMap_vadd' (θ : ι → AddCircle (2 * π)) (q : DelzantQuotient i u c) :
+    reducedMomentMap hβ (θ +ᵥ q) = reducedMomentMap hβ q := by
+  rw [← coe_vadd, reducedMomentMap_vadd]
+
 /-- The reduced moment map is continuous. -/
 theorem continuous_reducedMomentMap :
     Continuous (reducedMomentMap hβ (i := i) (u := u) (c := c)) := by
@@ -323,7 +354,7 @@ theorem continuous_reducedMomentMap :
   -- On `v = β_ℝ t`, the reduced moment map evaluates to the component `⟨μ, t⟩`.
   obtain ⟨t, rfl⟩ := hβ v
   refine ((ContinuousLinearMap.apply ℝ ℝ t).continuous.comp
-    ((continuous_delzantMomentMap c).comp continuous_subtype_val)).congr fun x ↦ by
+    ((continuous_delzantMomentMap c).comp continuous_subtypeVal)).congr fun x ↦ by
       simp [delzantMomentMap_eq_comp_reducedMomentMap hβ x]
 
 /-- **The fibres of the reduced moment map are the orbits of the residual torus.** -/

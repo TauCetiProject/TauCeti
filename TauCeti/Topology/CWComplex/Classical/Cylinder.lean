@@ -160,7 +160,7 @@ private theorem continuous_intervalCellMap : Continuous intervalCellMap :=
   (continuous_projIcc (h := zero_le_one)).comp (by fun_prop : Continuous fun t : ℝ ↦ (t + 1) / 2)
 
 private theorem continuous_intervalCellMap_symm : Continuous intervalCellMap.symm :=
-  (continuous_const.mul continuous_subtype_val).sub continuous_const
+  (continuous_const.mul continuous_subtypeVal).sub continuous_const
 
 private theorem image_ball_intervalCellMap : intervalCellMap '' ball 0 1 = Ioo 0 1 :=
   intervalCellMap_source ▸ intervalCellMap.image_source_eq_target
@@ -168,7 +168,7 @@ private theorem image_ball_intervalCellMap : intervalCellMap '' ball 0 1 = Ioo 0
 private theorem image_closedBall_intervalCellMap : intervalCellMap '' closedBall 0 1 = univ := by
   refine eq_univ_of_forall fun s ↦ ⟨2 * s - 1, ?_, ?_⟩
   · rw [Real.closedBall_eq_Icc, zero_sub, zero_add, mem_Icc]
-    constructor <;> linarith [s.2.1, s.2.2]
+    constructor <;> linarith [s.property.1, s.property.2]
   · rw [intervalCellMap_apply, sub_add_cancel, mul_div_cancel_left₀ _ two_ne_zero, projIcc_val]
 
 private theorem image_sphere_intervalCellMap : intervalCellMap '' sphere 0 1 = {0, 1} := by

@@ -32,6 +32,12 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   `a ≤ b + c`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
+* `ENNReal.ofReal_truncateToReal_le`: the truncation `truncateToReal t x` of `x` at `t`, read back
+  in `ℝ≥0∞`, is at most `x`.
+* `Continuous.ennreal_toReal`: a continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous
+  real projection `fun z ↦ (c z).toReal`.
+* `Continuous.exists_forall_le_coe_of_ne_top`: on a compact space, a continuous `ℝ≥0∞`-valued
+  function that avoids `∞` is bounded above by a finite `ℝ≥0` constant.
 -/
 
 public section
@@ -161,5 +167,28 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     simpa [Function.comp_def] using
       (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
+
+/-- The truncation `truncateToReal t x = (min t x).toReal` of `x` at `t`, read back in `ℝ≥0∞`, is
+at most `x`. -/
+theorem _root_.ENNReal.ofReal_truncateToReal_le (t x : ℝ≥0∞) :
+    ENNReal.ofReal (ENNReal.truncateToReal t x) ≤ x := by
+  rw [ENNReal.truncateToReal]
+  exact ENNReal.ofReal_toReal_le.trans (min_le_right t x)
+
+/-- A continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous real projection
+`fun z ↦ (c z).toReal`. -/
+theorem _root_.Continuous.ennreal_toReal {Z : Type*} [TopologicalSpace Z] {c : Z → ℝ≥0∞}
+    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) : Continuous fun z ↦ (c z).toReal :=
+  ENNReal.continuousOn_toReal.comp_continuous hc hfin
+
+/-- On a compact space, a continuous `ℝ≥0∞`-valued function that avoids `∞` is bounded above by a
+finite `ℝ≥0` constant. -/
+theorem _root_.Continuous.exists_forall_le_coe_of_ne_top {Z : Type*} [TopologicalSpace Z]
+    [CompactSpace Z] {c : Z → ℝ≥0∞} (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) :
+    ∃ B : ℝ≥0, ∀ z, c z ≤ B := by
+  obtain ⟨M, hM⟩ := (isCompact_range (hc.ennreal_toReal hfin)).bddAbove
+  refine ⟨Real.toNNReal M, fun z ↦ ?_⟩
+  rw [← ENNReal.ofReal_toReal (hfin z), ← ENNReal.ofReal_coe_nnreal]
+  exact ENNReal.ofReal_le_ofReal ((hM (Set.mem_range_self z)).trans (Real.le_coe_toNNReal M))
 
 end TauCeti

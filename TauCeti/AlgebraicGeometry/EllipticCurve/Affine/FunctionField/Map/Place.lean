@@ -17,6 +17,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
 -- Proof-only: a valuation bounded on a Dedekind domain is equivalent to an adic valuation, and a
 -- generating set of a height one prime contains an element of order one.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+-- Proof-only: equivalent surjective valuations are equal.
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Places of points under change of the coefficient field
@@ -119,8 +121,8 @@ private theorem comap_valuation_ofPrime_pointPlace_map {x y : F} (h : W.Nonsingu
 /-- **The place of `f P` restricts to the place of `P`**: for every function `z` on `W`, the value
 of `f^* z` at `f P` is the value of `z` at `P`. -/
 theorem comap_valuation_pointEquivDegreeOnePlace_map (P : W.Point) :
-    (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).1.valuation.comap (map W f) =
-      (pointEquivDegreeOnePlace W P).1.valuation := by
+    (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).val.valuation.comap (map W f) =
+      (pointEquivDegreeOnePlace W P).val.valuation := by
   rcases P with _ | ⟨x, y, h⟩
   · rw [← Point.zero_def, Point.mapAlong_zero, Point.zero_def, Point.zero_def,
       coe_pointEquivDegreeOnePlace_zero, coe_pointEquivDegreeOnePlace_zero]
@@ -132,8 +134,8 @@ theorem comap_valuation_pointEquivDegreeOnePlace_map (P : W.Point) :
 does not ramify the places of points. -/
 @[simp]
 theorem ord_pointEquivDegreeOnePlace_map (P : W.Point) (z : W.FunctionField) :
-    (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).1.ord (map W f z) =
-      (pointEquivDegreeOnePlace W P).1.ord z := by
+    (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).val.ord (map W f z) =
+      (pointEquivDegreeOnePlace W P).val.ord z := by
   rw [Place.ord_def, Place.ord_def, ← comap_valuation_pointEquivDegreeOnePlace_map W f P,
     Valuation.comap_apply]
 
@@ -161,8 +163,8 @@ place `w` of `K(W.map f)` to `F(W)` is equivalent to the place of a point `P` of
 the place of `f P`. -/
 theorem eq_pointEquivDegreeOnePlace_mapAlong_of_isEquiv (w : Place K (W.map f).FunctionField)
     (P : W.Point)
-    (h : (w.valuation.comap (map W f)).IsEquiv (pointEquivDegreeOnePlace W P).1.valuation) :
-    w = (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).1 := by
+    (h : (w.valuation.comap (map W f)).IsEquiv (pointEquivDegreeOnePlace W P).val.valuation) :
+    w = (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).val := by
   have := isTrivialOn_comap_valuation_map W f w
   rcases P with _ | ⟨x, y, hP⟩
   · -- `x` has a pole at the restriction, hence at `w`
@@ -193,22 +195,22 @@ field.** If the divisor of `g` is `∑ D(P) (P)` for a divisor `D` on the points
 divisor of `f^* g` is `∑ D(P) (f P)`. -/
 theorem principal_map_eq_pushforward {g : W.FunctionFieldˣ} {D : WeilDivisor W.Point}
     (hg : Divisor.principal W.isFunctionField g =
-      WeilDivisor.pushforward (fun P ↦ (pointEquivDegreeOnePlace W P).1) D) :
+      WeilDivisor.pushforward (fun P ↦ (pointEquivDegreeOnePlace W P).val) D) :
     Divisor.principal (W.map f).isFunctionField (Units.map (map W f).toMonoidHom g) =
       WeilDivisor.pushforward
-        (fun P ↦ (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).1) D := by
+        (fun P ↦ (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).val) D := by
   classical
-  have hρ : Function.Injective fun P ↦ (pointEquivDegreeOnePlace W P).1 :=
+  have hρ : Function.Injective fun P ↦ (pointEquivDegreeOnePlace W P).val :=
     Subtype.val_injective.comp (pointEquivDegreeOnePlace W).injective
   have hρ' : Function.Injective
-      fun P : W.Point ↦ (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).1 :=
+      fun P : W.Point ↦ (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).val :=
     (Subtype.val_injective.comp (pointEquivDegreeOnePlace (W.map f)).injective).comp
       (Point.mapAlong_injective f f.injective)
   refine WeilDivisor.ext fun w ↦ ?_
   simp only [Divisor.coeff_principal, RingHom.toMonoidHom_eq_coe, Units.coe_map,
     MonoidHom.coe_ofClass]
   by_cases hw : w ∈ Set.range
-      fun P : W.Point ↦ (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).1
+      fun P : W.Point ↦ (pointEquivDegreeOnePlace (W.map f) (P.mapAlong f f.injective)).val
   · -- at the place of `f P`, both sides are the order of `g` at `P`
     obtain ⟨P, rfl⟩ := hw
     rw [ord_pointEquivDegreeOnePlace_map, ← WeilDivisor.coeff_pullback hρ',
