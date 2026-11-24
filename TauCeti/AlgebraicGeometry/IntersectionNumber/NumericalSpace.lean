@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.NumericalClassGroup
@@ -110,8 +111,7 @@ commutative ring `A`: the `A`-linear base change of the intersection number on `
 `A = ℚ` and `A = ℝ` it is the intersection number on `N¹(X/k)_ℚ` and `N¹(X/k)_ℝ`. -/
 def numericalIntersectionNumberBaseChange (A : Type*) [CommRing A] :
     A ⊗[ℤ] Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x) →ₗ[A] A :=
-  (Algebra.TensorProduct.rid ℤ A A).toLinearMap ∘ₗ
-    (numericalIntersectionNumberHom k hi hC).toIntLinearMap.baseChange A
+  Module.Dual.baseChange A (numericalIntersectionNumberHom k hi hC).toIntLinearMap
 
 /-- The base-changed intersection number of `a ⊗ α` is `a · (α · C)`. -/
 @[simp]
@@ -119,7 +119,7 @@ theorem numericalIntersectionNumberBaseChange_tmul {A : Type*} [CommRing A] (a :
     (α : Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x)) :
     numericalIntersectionNumberBaseChange x hi hC A (a ⊗ₜ α) =
       a * numericalIntersectionNumber k hi hC α.toMul := by
-  simp [numericalIntersectionNumberBaseChange, mul_comm]
+  simp [numericalIntersectionNumberBaseChange, zsmul_eq_mul, mul_comm]
 
 /-- The base-changed intersection number is compatible with a change of coefficients `A ⟶ B`. -/
 theorem numericalIntersectionNumberBaseChange_rTensor {A B : Type*} [CommRing A] [CommRing B]
