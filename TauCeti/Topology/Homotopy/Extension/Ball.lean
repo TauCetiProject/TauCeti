@@ -324,7 +324,7 @@ theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y
   · -- The closed ball is contractible, so every map out of it is null-homotopic.
     rintro ⟨G, hG⟩
     let ι : C(sphere (0 : E) 1, closedBall (0 : E) 1) :=
-      ⟨fun y ↦ ⟨y, sphere_subset_closedBall y.property⟩, by fun_prop⟩
+      ContinuousMap.inclusion sphere_subset_closedBall
     have hg : g = (G.comp (ContinuousMap.id _)).comp ι := by
       ext y
       exact (hG y).symm
@@ -344,17 +344,17 @@ theorem homotopicRel_const_singleton_sphere_iff_exists_extension_closedBall
   · rintro ⟨G, hG⟩
     -- Straight-line segments inside the convex closed ball deform every point to `s₀`.
     let ι : C(sphere (0 : E) 1, closedBall (0 : E) 1) :=
-      ⟨fun y ↦ ⟨y, sphere_subset_closedBall y.property⟩, by fun_prop⟩
+      ContinuousMap.inclusion sphere_subset_closedBall
     let H := Homotopy.affineOfConvex (convex_closedBall (0 : E) 1) ι (ContinuousMap.const _ (ι s₀))
     refine ⟨{
       toContinuousMap := G.comp H.toContinuousMap
-      map_zero_left y := by simp [H.apply_zero, ι, hG y]
-      map_one_left y := by simp [H.apply_one, ι, hG s₀]
+      map_zero_left y := (congrArg G (H.apply_zero y)).trans (hG y)
+      map_one_left y := (congrArg G (H.apply_one y)).trans (hG s₀)
       prop' t y hy := by
         rw [mem_singleton_iff.mp hy]
         have ht : H (t, s₀) = ι s₀ :=
           Homotopy.affineOfConvex_eq_of_eq (convex_closedBall (0 : E) 1) t rfl
-        simpa [ht, ι] using hG s₀ }⟩
+        exact (congrArg G ht).trans (hG s₀) }⟩
 
 /-- **Pointed and free null-homotopy agree on the unit sphere** of a real seminormed space. -/
 theorem homotopicRel_const_singleton_sphere_iff_nullhomotopic

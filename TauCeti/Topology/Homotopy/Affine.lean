@@ -36,8 +36,8 @@ variable {X E : Type*} [TopologicalSpace X]
 
 private theorem affine_mem_of_convex {s : Set E} (hs : Convex ℝ s) (f g : C(X, s))
     (p : I × X) :
-    affine (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ f)
-      (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ g) p ∈ s := by
+    affine ((ContinuousMap.subtypeVal s).comp f)
+      ((ContinuousMap.subtypeVal s).comp g) p ∈ s := by
   rw [affine_apply, ← Path.segment_apply]
   exact hs.segment_subset (f p.2).property (g p.2).property
     (Path.range_segment (f p.2 : E) (g p.2 : E) ▸ Set.mem_range_self p.1)
@@ -45,18 +45,18 @@ private theorem affine_mem_of_convex {s : Set E} (hs : Convex ℝ s) (f g : C(X,
 /-- The straight-line homotopy between two continuous maps into a convex subset `s` of a real
 topological vector space. -/
 def affineOfConvex {s : Set E} (hs : Convex ℝ s) (f g : C(X, s)) : f.Homotopy g where
-  toFun p := ⟨affine (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ f)
-    (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ g) p,
+  toFun p := ⟨affine ((ContinuousMap.subtypeVal s).comp f)
+    ((ContinuousMap.subtypeVal s).comp g) p,
     affine_mem_of_convex hs f g p⟩
   continuous_toFun :=
-    (affine (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ f)
-      (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ g)).continuous.subtype_mk _
+    (affine ((ContinuousMap.subtypeVal s).comp f)
+      ((ContinuousMap.subtypeVal s).comp g)).continuous.subtype_mk _
   map_zero_left x := Subtype.ext
-    ((affine (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ f)
-      (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ g)).apply_zero x)
+    ((affine ((ContinuousMap.subtypeVal s).comp f)
+      ((ContinuousMap.subtypeVal s).comp g)).apply_zero x)
   map_one_left x := Subtype.ext
-    ((affine (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ f)
-      (ContinuousMap.comp ⟨Subtype.val, continuous_subtypeVal⟩ g)).apply_one x)
+    ((affine ((ContinuousMap.subtypeVal s).comp f)
+      ((ContinuousMap.subtypeVal s).comp g)).apply_one x)
 
 /-- Pointwise ambient value of `ContinuousMap.Homotopy.affineOfConvex`. -/
 @[simp]

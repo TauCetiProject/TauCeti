@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.FiberBundle.Principal.MilnorJoin.Bundle
+public import TauCeti.Topology.FiberBundle.Principal.MilnorJoin.Basic
 public import TauCeti.Topology.Homotopy.Extension.Ball
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.FundamentalGroupAction
 public import TauCeti.Topology.Homotopy.Path
 import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Topology.Algebra.InfiniteSum.Order
-import Mathlib.Topology.MetricSpace.ProperSpace
+import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 /-!
 # Weak contractibility of the strong-coordinate Milnor join
@@ -20,17 +18,21 @@ import Mathlib.Topology.MetricSpace.ProperSpace
 Following Milnor (*Construction of universal bundles, II*, §3) and tom Dieck (*Algebraic Topology*,
 §14.4.3), we prove weak contractibility of `TauCeti.MilnorTotalSpace G` directly from the strong
 coordinate topology: for any map `f : C(X, MilnorTotalSpace G)` with compact image, compactness
-selects a uniform cutoff `N` with `1 / 2 < S_N(f x)`, renormalizing tail weights (`i ≥ N`) deforms
-`f` to `tailTruncationMap`, and linear interpolation cones it to `vertex N a` at the fresh index.
+selects a uniform cutoff `N` with `1 / 2 < S_N(f x)`, scaling the tail weights (`i ≥ N`) to zero
+while renormalizing the retained weights (`i < N`) deforms `f` to `tailTruncationMap`, and linear
+interpolation cones it to `vertex N a` at the fresh index.
 
 ## Main definitions and results
 
 * `TauCeti.MilnorTotalSpace.partialWeightSum`, `tailTruncationMap`, `tailTruncationHomotopy`,
-  `coneAtFreshIndexHomotopy`, `exists_gt_half_partialWeightSum_of_isCompact_range`.
+  `weight_tailTruncationHomotopy`, `label_tailTruncationHomotopy`, `coneAtFreshIndexHomotopy`,
+  `weight_coneAtFreshIndexHomotopy`, `label_coneAtFreshIndexHomotopy_self`,
+  `label_coneAtFreshIndexHomotopy_of_ne`,
+  `exists_one_half_lt_partialWeightSum_of_isCompact_range`.
 * `ContinuousMap.nullhomotopic_to_milnorTotalSpace_of_isCompact_range`,
   `ContinuousMap.nullhomotopic_to_milnorTotalSpace`, `HomotopyGroup.subsingleton_milnorTotalSpace`,
-  `TauCeti.exists_extension_closedBall_milnorTotalSpace`,
-  `TauCeti.homotopicRel_const_singleton_sphere_milnorTotalSpace`.
+  `ContinuousMap.exists_extension_closedBall_milnorTotalSpace`,
+  `ContinuousMap.homotopicRel_const_singleton_sphere_milnorTotalSpace`.
 
 ## References
 
@@ -50,81 +52,6 @@ universe u v
 namespace TauCeti
 
 namespace MilnorTotalSpace
-
-/-! ### Constructing join points from finite-support weights and labels -/
-
-section CoordBuilder
-
-variable {G : Type u}
-
-private def labelEmbedding (ℓ : ℕ → G) : ℕ ↪ Σ _ : ℕ, G :=
-  ⟨fun i ↦ ⟨i, ℓ i⟩, fun _ _ h ↦ (Sigma.ext_iff.mp h).1⟩
-
-private theorem labelEmbedding_apply (ℓ : ℕ → G) (i : ℕ) :
-    labelEmbedding ℓ i = ⟨i, ℓ i⟩ := rfl
-
-private theorem fst_comp_labelEmbedding (ℓ : ℕ → G) :
-    Sigma.fst ∘ labelEmbedding ℓ = id := rfl
-
-private def ofFinsetCoordVal (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G) : (Σ _ : ℕ, G) →₀ ℝ :=
-  (Finsupp.indicator S fun i _ ↦ w i).embDomain (labelEmbedding ℓ)
-
-private theorem ofFinsetCoordVal_apply_self (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G) (i : ℕ) :
-    ofFinsetCoordVal S w ℓ ⟨i, ℓ i⟩ = if i ∈ S then w i else 0 := by
-  rw [ofFinsetCoordVal, ← labelEmbedding_apply ℓ i, Finsupp.embDomain_apply_self,
-    Finsupp.indicator_apply, dite_eq_ite]
-
-private def ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
-    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) : MilnorTotalSpace G :=
-  ofRealization ⟨ofFinsetCoordVal S w ℓ, mem_indexedJoin_realization_iff.mpr <| by
-    classical
-    refine ⟨?_, ?_, ?_⟩
-    · intro v
-      rw [ofFinsetCoordVal, Finsupp.embDomain_apply]
-      split_ifs with h
-      · rw [Finsupp.indicator_apply]
-        split_ifs with hs
-        · exact hw_nonneg _ hs
-        · exact le_rfl
-      · exact le_rfl
-    · rw [ofFinsetCoordVal, Finsupp.sum_embDomain,
-        Finsupp.sum_indicator_index (h_zero := fun _ _ ↦ rfl)]
-      exact hw_sum
-    · intro v₁ v₂ hv₁ hv₂ h12
-      rw [← Finsupp.mem_support_iff, ofFinsetCoordVal, Finsupp.support_embDomain,
-        Finset.mem_map] at hv₁ hv₂
-      obtain ⟨j₁, _, rfl⟩ := hv₁
-      obtain ⟨j₂, _, rfl⟩ := hv₂
-      obtain rfl : j₁ = j₂ := h12
-      rfl⟩
-
-private theorem weight_ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
-    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) (i : ℕ) :
-    weight i (ofFinsetCoord S w ℓ hw_nonneg hw_sum) = if i ∈ S then w i else 0 := by
-  classical
-  have hval : (ofFinsetCoord S w ℓ hw_nonneg hw_sum).val =
-      (Finsupp.indicator S fun i _ ↦ w i).embDomain (labelEmbedding ℓ) :=
-    val_ofRealization _
-  rw [weight_def, hval, Finsupp.embDomain_eq_mapDomain, ← Finsupp.mapDomain_comp,
-    fst_comp_labelEmbedding, Finsupp.mapDomain_id, Finsupp.indicator_apply, dite_eq_ite]
-
-private theorem label_ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
-    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) {i : ℕ}
-    (hi : i ∈ S) (hwi : 0 < w i) :
-    label i (ofFinsetCoord S w ℓ hw_nonneg hw_sum) = ℓ i := by
-  refine (eq_label_of_val_pos (p := ofFinsetCoord S w ℓ hw_nonneg hw_sum) ?_).symm
-  rw [ofFinsetCoord, val_ofRealization, ofFinsetCoordVal_apply_self]
-  simpa [hi] using hwi
-
-private theorem weight_eq_zero_of_notMem {p : MilnorTotalSpace G} {i : ℕ}
-    (hi : i ∉ (finite_support_weight p).toFinset) : weight i p = 0 :=
-  not_not.mp fun hne ↦ hi ((finite_support_weight p).mem_toFinset.mpr hne)
-
-private theorem sum_weight_of_support_subset {p : MilnorTotalSpace G} {S : Finset ℕ}
-    (hS : ∀ i, i ∉ S → weight i p = 0) : ∑ i ∈ S, weight i p = 1 :=
-  (tsum_eq_sum hS).symm.trans (tsum_weight p)
-
-end CoordBuilder
 
 /-! ### Partial weight sums and compact tail bounds -/
 
@@ -163,25 +90,29 @@ theorem exists_partialWeightSum_eq_one (p : MilnorTotalSpace G) :
     weight_eq_zero_of_notMem fun hmem ↦
       hi (Finset.mem_range.mpr (Nat.lt_succ_of_le (supp.le_sup (f := id) hmem)))⟩
 
-theorem exists_gt_half_partialWeightSum (p : MilnorTotalSpace G) :
+/-- Every point of `MilnorTotalSpace G` has some cutoff `N` with
+`1 / 2 < partialWeightSum G N p`. -/
+theorem exists_one_half_lt_partialWeightSum (p : MilnorTotalSpace G) :
     ∃ N, 1 / 2 < partialWeightSum G N p := by
   obtain ⟨N, hN⟩ := exists_partialWeightSum_eq_one p; exact ⟨N, by linarith⟩
 
 /-- **Compact tail bound:** a single cutoff `N` satisfies `1 / 2 < S_N(f x)` for all `x : X`. -/
-theorem exists_gt_half_partialWeightSum_of_isCompact_range {X : Type v} [TopologicalSpace X]
+theorem exists_one_half_lt_partialWeightSum_of_isCompact_range {X : Type v} [TopologicalSpace X]
     {f : C(X, MilnorTotalSpace G)} (hf : IsCompact (Set.range f)) :
     ∃ N, ∀ x, 1 / 2 < partialWeightSum G N (f x) := by
   obtain ⟨N, hN⟩ := hf.elim_directed_cover
     (fun N ↦ {p : MilnorTotalSpace G | 1 / 2 < partialWeightSum G N p})
     (fun N ↦ isOpen_lt continuous_const (partialWeightSum G N).continuous)
-    (fun p _ ↦ Set.mem_iUnion.mpr (exists_gt_half_partialWeightSum p))
+    (fun p _ ↦ Set.mem_iUnion.mpr (exists_one_half_lt_partialWeightSum p))
     (directed_of_isDirected_le fun _ _ h _ hp ↦ lt_of_lt_of_le hp (partialWeightSum_mono h _))
   exact ⟨N, fun x ↦ hN (Set.mem_range_self x)⟩
 
-theorem exists_gt_half_partialWeightSum_of_compactSpace {X : Type v} [TopologicalSpace X]
+/-- For a continuous map `f` from a compact space `X`, a single cutoff `N` satisfies
+`1 / 2 < S_N(f x)` for all `x : X`. -/
+theorem exists_one_half_lt_partialWeightSum_of_compactSpace {X : Type v} [TopologicalSpace X]
     [CompactSpace X] (f : C(X, MilnorTotalSpace G)) :
     ∃ N, ∀ x, 1 / 2 < partialWeightSum G N (f x) :=
-  exists_gt_half_partialWeightSum_of_isCompact_range (isCompact_range f.continuous)
+  exists_one_half_lt_partialWeightSum_of_isCompact_range (isCompact_range f.continuous)
 
 end PartialWeightSum
 
@@ -311,6 +242,23 @@ def tailTruncationHomotopy (N : ℕ) (f : C(X, MilnorTotalSpace G))
         (by simpa [weight_tailTruncationPt] using mem_coordSet_iff.mp hi))
   map_one_left _ := rfl
 
+/-- The `i`-th barycentric weight along `tailTruncationHomotopy N f hf` at `(s, x)`. -/
+@[simp] theorem weight_tailTruncationHomotopy (N : ℕ) (f : C(X, MilnorTotalSpace G))
+    (hf : ∀ x, 0 < partialWeightSum G N (f x)) (s : I) (x : X) (i : ℕ) :
+    weight i (tailTruncationHomotopy N f hf (s, x)) =
+      (if i < N then weight i (f x) else (1 - (s : ℝ)) * weight i (f x)) /
+        (partialWeightSum G N (f x) + (1 - (s : ℝ)) * (1 - partialWeightSum G N (f x))) :=
+  weight_tailTruncationPt N f hf (s, x) i
+
+/-- Along `tailTruncationHomotopy N f hf`, every positive-weight coordinate retains the original
+vertex label `label i (f x)`. -/
+@[simp] theorem label_tailTruncationHomotopy (N : ℕ) (f : C(X, MilnorTotalSpace G))
+    (hf : ∀ x, 0 < partialWeightSum G N (f x)) {s : I} {x : X} {i : ℕ}
+    (h : tailTruncationHomotopy N f hf (s, x) ∈ coordSet G i) :
+    label i (tailTruncationHomotopy N f hf (s, x)) = label i (f x) :=
+  label_tailTruncationPt N f hf
+    (weight_tailTruncationPt N f hf (s, x) i ▸ mem_coordSet_iff.mp h)
+
 private def coneWeight (N : ℕ) (g : C(X, MilnorTotalSpace G)) (z : I × X) (i : ℕ) : ℝ :=
   if i = N then (z.1 : ℝ) else (1 - (z.1 : ℝ)) * weight i (g z.2)
 
@@ -398,6 +346,30 @@ def coneAtFreshIndexHomotopy (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
         · subst hiN; exact (label_conePt_self i a g hg zero_lt_one).trans (label_vertex i a).symm
         · simp [coneWeight, hiN] at hi')
 
+/-- The `i`-th barycentric weight along `coneAtFreshIndexHomotopy N a g hg` at `(s, x)`. -/
+@[simp] theorem weight_coneAtFreshIndexHomotopy (N : ℕ) (a : G)
+    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) (s : I) (x : X) (i : ℕ) :
+    weight i (coneAtFreshIndexHomotopy N a g hg (s, x)) =
+      if i = N then (s : ℝ) else (1 - (s : ℝ)) * weight i (g x) :=
+  weight_conePt N a g hg (s, x) i
+
+/-- When `0 < (s : ℝ)`, the label at the fresh index `N` along `coneAtFreshIndexHomotopy` is
+`a`. -/
+@[simp] theorem label_coneAtFreshIndexHomotopy_self (N : ℕ) (a : G)
+    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) {s : I} (hs : 0 < (s : ℝ))
+    (x : X) :
+    label N (coneAtFreshIndexHomotopy N a g hg (s, x)) = a :=
+  label_conePt_self N a g hg (z := (s, x)) hs
+
+/-- For `i ≠ N`, every positive-weight coordinate along `coneAtFreshIndexHomotopy N a g hg`
+retains the original vertex label `label i (g x)`. -/
+@[simp] theorem label_coneAtFreshIndexHomotopy_of_ne (N : ℕ) (a : G)
+    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) {s : I} {x : X} {i : ℕ}
+    (hiN : i ≠ N) (h : coneAtFreshIndexHomotopy N a g hg (s, x) ∈ coordSet G i) :
+    label i (coneAtFreshIndexHomotopy N a g hg (s, x)) = label i (g x) :=
+  label_conePt_of_ne N a g hg hiN
+    (weight_conePt N a g hg (s, x) i ▸ mem_coordSet_iff.mp h)
+
 end Homotopies
 
 end MilnorTotalSpace
@@ -415,7 +387,7 @@ variable {X : Type v} [TopologicalSpace X] {G : Type u} [TopologicalSpace G]
 theorem nullhomotopic_to_milnorTotalSpace_of_isCompact_range [Nonempty G]
     {f : C(X, MilnorTotalSpace G)} (hf : IsCompact (Set.range f)) : f.Nullhomotopic := by
   obtain ⟨a⟩ := ‹Nonempty G›
-  obtain ⟨N, hN⟩ := MilnorTotalSpace.exists_gt_half_partialWeightSum_of_isCompact_range hf
+  obtain ⟨N, hN⟩ := MilnorTotalSpace.exists_one_half_lt_partialWeightSum_of_isCompact_range hf
   have hN_pos (x) : 0 < MilnorTotalSpace.partialWeightSum G N (f x) := by linarith [hN x]
   exact ⟨MilnorTotalSpace.vertex N a, ⟨(MilnorTotalSpace.tailTruncationHomotopy N f hN_pos).trans
     (MilnorTotalSpace.coneAtFreshIndexHomotopy N a (MilnorTotalSpace.tailTruncationMap N f hN_pos)
@@ -434,18 +406,6 @@ namespace TauCeti
 section ConnectivityAndHomotopyGroups
 
 variable (G : Type u) [TopologicalSpace G]
-
-instance instPathConnectedSpaceMilnorTotalSpace [Nonempty G] :
-    PathConnectedSpace (MilnorTotalSpace G) :=
-  letI := pathConnectedSpace_realization_indexedJoin
-    (A := fun _ : ℕ ↦ G) (Set.infinite_univ.mono fun _ _ ↦ ‹Nonempty G›)
-  Function.Surjective.pathConnectedSpace (f := MilnorTotalSpace.ofRealization)
-    (fun p ↦ ⟨p.toRealization, rfl⟩) MilnorTotalSpace.continuous_ofRealization
-
-instance instPathConnectedSpaceMilnorClassifyingSpace [Group G] :
-    PathConnectedSpace (MilnorClassifyingSpace G) :=
-  letI := MulAction.orbitRel Gᵐᵒᵖ (MilnorTotalSpace G)
-  Quotient.mk_surjective.pathConnectedSpace continuous_quotient_mk'
 
 instance instSimplyConnectedSpaceMilnorTotalSpace [Nonempty G] :
     SimplyConnectedSpace (MilnorTotalSpace G) :=
@@ -477,9 +437,9 @@ instance subsingleton_milnorTotalSpace
 
 end HomotopyGroup
 
-namespace TauCeti
+namespace ContinuousMap
 
-section SphereExtension
+open TauCeti
 
 variable {E : Type v} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
   {G : Type u} [TopologicalSpace G]
@@ -502,6 +462,4 @@ theorem homotopicRel_const_singleton_sphere_milnorTotalSpace
   (g.homotopicRel_const_singleton_sphere_iff_nullhomotopic s₀).mpr
     g.nullhomotopic_to_milnorTotalSpace
 
-end SphereExtension
-
-end TauCeti
+end ContinuousMap

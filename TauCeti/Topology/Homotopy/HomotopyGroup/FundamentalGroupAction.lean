@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
-import TauCeti.Topology.Homotopy.Path
 
 /-!
 # The action of the fundamental group on the higher homotopy groups
@@ -407,22 +406,15 @@ theorem subsingleton_homotopyGroup_of_compact_nullhomotopic.{u} {X : Type u} [To
     Subsingleton (HomotopyGroup N X x) := by
   classical
   let _ : Fintype N := Fintype.ofFinite N
-  have hpi1_one : ∀ g : FundamentalGroup X x, g = 1 := fun g ↦ by
-    obtain ⟨γ, hγ⟩ := Quotient.exists_rep g.toPath
-    have : CompactSpace (Set.range γ) :=
-      isCompact_iff_compactSpace.mp (isCompact_range γ.continuous)
-    have hq : g.toPath = Path.Homotopic.Quotient.refl x :=
-      hγ.symm.trans <| Quotient.sound <| Path.Homotopic.refl_of_forall_mem_of_nullhomotopic
-        (hnull ⟨Subtype.val, continuous_subtypeVal⟩) γ Set.mem_range_self
-    exact CategoryTheory.End.ext hq
-  have : Subsingleton (FundamentalGroup X x) := ⟨fun a b ↦ (hpi1_one a).trans (hpi1_one b).symm⟩
   have h_one : ∀ a : HomotopyGroup N X x, a = 1 := fun a ↦ by
     induction a using Quotient.inductionOn with | h p =>
     have : CompactSpace (Set.range p) :=
       isCompact_iff_compactSpace.mp (isCompact_range p.val.continuous)
     obtain ⟨g, hg⟩ := one_mem_orbit_of_forall_mem_of_nullhomotopic
-      (hnull ⟨Subtype.val, continuous_subtypeVal⟩) p Set.mem_range_self
-    exact (fundamentalGroup_smul_eq_self g _).symm.trans hg
+      (hnull (ContinuousMap.subtypeVal (Set.range p))) p Set.mem_range_self
+    let b : HomotopyGroup N X x := ⟦p⟧
+    change g • b = 1 at hg
+    exact (inv_smul_smul g b).symm.trans (by rw [hg, smul_one])
   exact ⟨fun a b ↦ (h_one a).trans (h_one b).symm⟩
 
 end TauCeti

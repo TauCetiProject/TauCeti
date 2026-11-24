@@ -6,12 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Action
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
-public import Mathlib.Topology.Algebra.MulAction
 import Mathlib.Topology.Algebra.InfiniteSum.Order
-import Mathlib.Topology.Separation.Hausdorff
 
 /-!
 # The strong-coordinate Milnor join of a topological space or group
@@ -24,12 +20,15 @@ with the weak simplicial topology and left group action on `universalGSpace G`.
 
 ## Main definitions and results
 
-* `TauCeti.MilnorTotalSpace`, `weight`, `coordSet`, `label`, `map`, `continuous_iff`, `instT2Space`:
-  strong-topology join, coordinates `(t_i, g_i)`, universal continuity criterion, and Hausdorffness.
-* `TauCeti.MilnorTotalSpace.instContinuousSMul`, `invEquiv`, `TauCeti.weakToMilnorTotalSpace`,
-  `MilnorTotalSpace.map_basepoint`, `MilnorTotalSpace.map_op_smul`: joint continuity of the right
-  `Gᵐᵒᵖ`-action from `ContinuousMul`, label-inversion dictionary (`g⁻¹ • x ↦ (invEquiv x) · g`),
-  and homomorphism compatibility.
+* `TauCeti.MilnorTotalSpace`, `weight`, `coordSet`, `label`, `ofFinsetCoord`, `map`,
+  `continuous_iff`, `instPathConnectedSpaceMilnorTotalSpace`, `instT2Space`: strong-topology join,
+  coordinates `(t_i, g_i)`, finite-support coordinate constructor, universal continuity criterion,
+  path-connectedness, and Hausdorffness.
+* `TauCeti.MilnorTotalSpace.instContinuousSMul`, `instIsCancelSMulOp`, `invEquiv`,
+  `TauCeti.weakToMilnorTotalSpace`, `MilnorTotalSpace.map_basepoint`,
+  `MilnorTotalSpace.map_op_smul`, `ContinuousMonoidHom.map_comp_weakToMilnorTotalSpace`: joint
+  continuity and freeness of the right `Gᵐᵒᵖ`-action, label-inversion dictionary
+  (`g⁻¹ • x ↦ (invEquiv x) · g`), and homomorphism naturality.
 
 ## References
 
@@ -188,7 +187,8 @@ theorem exists_weight_pos (p : MilnorTotalSpace G) : ∃ i, 0 < weight i p := by
 @[simp] theorem iUnion_coordSet (G : Type u) : ⋃ i, coordSet G i = univ :=
   eq_univ_of_forall fun p ↦ mem_iUnion.mpr (exists_weight_pos p)
 
-/-- The `i`-th vertex label `g_i(p)` of `p : MilnorTotalSpace G` (unique when `0 < weight i p`). -/
+/-- The `i`-th vertex label `g_i(p)` of `p : MilnorTotalSpace G`; uniquely determined when
+`0 < weight i p`, and an arbitrary choice when `weight i p = 0`. -/
 def label (i : ℕ) (p : MilnorTotalSpace G) : G := by
   classical
   exact if h : ∃ a : G, p.val ⟨i, a⟩ ≠ 0 then h.choose else (nonempty_of_milnorTotalSpace p).some
@@ -241,21 +241,24 @@ theorem ext_coord {p q : MilnorTotalSpace G} (hw : ∀ i, weight i p = weight i 
 @[simp] theorem label_basepoint (G : Type u) [One G] : label 0 (basepoint G) = 1 :=
   label_vertex 0 1
 
+private def relabelSimplicialMap {X : Type u} {Y : Type v} (f : X → Y) :=
+  indexedJoinMap (A := fun _ : ℕ ↦ X) (B := fun _ : ℕ ↦ Y)
+    _root_.id Function.injective_id (fun _ ↦ f)
+
 /-- Vertex relabelling `MilnorTotalSpace X → MilnorTotalSpace Y` induced by `f : X → Y`. -/
 def relabel {X : Type u} {Y : Type v} (f : X → Y) (p : MilnorTotalSpace X) : MilnorTotalSpace Y :=
   letI := Classical.decEq ℕ; letI := Classical.decEq X; letI := Classical.decEq Y
-  ofRealization ((indexedJoinMap (A := fun _ : ℕ ↦ X) (B := fun _ : ℕ ↦ Y)
-    _root_.id Function.injective_id (fun _ ↦ f)).realizationMap p.toRealization)
+  ofRealization ((relabelSimplicialMap f).realizationMap p.toRealization)
 
 theorem val_relabel {X : Type u} {Y : Type v} (f : X → Y) (p : MilnorTotalSpace X) :
     (relabel f p).val =
       Finsupp.mapDomain (fun v : Σ _ : ℕ, X ↦ (⟨v.1, f v.2⟩ : Σ _ : ℕ, Y)) p.val := by
   let _ := Classical.decEq ℕ; let _ := Classical.decEq X; let _ := Classical.decEq Y
-  exact (PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val
-    (indexedJoinMap (A := fun _ : ℕ ↦ X) (B := fun _ : ℕ ↦ Y)
-      _root_.id Function.injective_id (fun _ ↦ f)) p.toRealization).trans
-    (congrArg (Finsupp.mapDomain · p.val) (funext (indexedJoinMap_apply
-      (A := fun _ : ℕ ↦ X) (B := fun _ : ℕ ↦ Y) _root_.id Function.injective_id (fun _ ↦ f))))
+  refine (PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val
+    (relabelSimplicialMap f) p.toRealization).trans ?_
+  unfold relabelSimplicialMap
+  exact congrArg (Finsupp.mapDomain · p.val) (funext (indexedJoinMap_apply
+    (A := fun _ : ℕ ↦ X) (B := fun _ : ℕ ↦ Y) _root_.id Function.injective_id (fun _ ↦ f)))
 
 @[simp] theorem weight_relabel {X : Type u} {Y : Type v} (f : X → Y) (i : ℕ)
     (p : MilnorTotalSpace X) : weight i (relabel f p) = weight i p := by
@@ -277,6 +280,81 @@ theorem val_relabel {X : Type u} {Y : Type v} (f : X → Y) (p : MilnorTotalSpac
     (g : Y → Z) (f : X → Y) (p : MilnorTotalSpace X) :
     relabel g (relabel f p) = relabel (g ∘ f) p :=
   ext_val (by simp only [val_relabel, ← Finsupp.mapDomain_comp]; rfl)
+
+private def labelEmbedding (ℓ : ℕ → G) : ℕ ↪ Σ _ : ℕ, G :=
+  ⟨fun i ↦ ⟨i, ℓ i⟩, fun _ _ h ↦ (Sigma.ext_iff.mp h).1⟩
+
+private theorem labelEmbedding_apply (ℓ : ℕ → G) (i : ℕ) :
+    labelEmbedding ℓ i = ⟨i, ℓ i⟩ := rfl
+
+private theorem fst_comp_labelEmbedding (ℓ : ℕ → G) :
+    Sigma.fst ∘ labelEmbedding ℓ = _root_.id := rfl
+
+private def ofFinsetCoordVal (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G) : (Σ _ : ℕ, G) →₀ ℝ :=
+  (Finsupp.indicator S fun i _ ↦ w i).embDomain (labelEmbedding ℓ)
+
+private theorem ofFinsetCoordVal_apply_self (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G) (i : ℕ) :
+    ofFinsetCoordVal S w ℓ ⟨i, ℓ i⟩ = if i ∈ S then w i else 0 := by
+  rw [ofFinsetCoordVal, ← labelEmbedding_apply ℓ i, Finsupp.embDomain_apply_self,
+    Finsupp.indicator_apply, dite_eq_ite]
+
+/-- Construct a point of `MilnorTotalSpace G` from a finite index set `S : Finset ℕ`, nonnegative
+weights `w` summing to `1` over `S`, and vertex labels `ℓ`. -/
+def ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
+    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) : MilnorTotalSpace G :=
+  ofRealization ⟨ofFinsetCoordVal S w ℓ, mem_indexedJoin_realization_iff.mpr <| by
+    classical
+    refine ⟨?_, ?_, ?_⟩
+    · intro v
+      rw [ofFinsetCoordVal, Finsupp.embDomain_apply]
+      split_ifs with h
+      · rw [Finsupp.indicator_apply]
+        split_ifs with hs
+        · exact hw_nonneg _ hs
+        · exact le_rfl
+      · exact le_rfl
+    · rw [ofFinsetCoordVal, Finsupp.sum_embDomain,
+        Finsupp.sum_indicator_index (h_zero := fun _ _ ↦ rfl)]
+      exact hw_sum
+    · intro v₁ v₂ hv₁ hv₂ h12
+      rw [← Finsupp.mem_support_iff, ofFinsetCoordVal, Finsupp.support_embDomain,
+        Finset.mem_map] at hv₁ hv₂
+      obtain ⟨j₁, _, rfl⟩ := hv₁
+      obtain ⟨j₂, _, rfl⟩ := hv₂
+      obtain rfl : j₁ = j₂ := h12
+      rfl⟩
+
+/-- The `i`-th barycentric weight of `ofFinsetCoord S w ℓ` is `w i` when `i ∈ S` and `0`
+otherwise. -/
+@[simp] theorem weight_ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
+    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) (i : ℕ) :
+    weight i (ofFinsetCoord S w ℓ hw_nonneg hw_sum) = if i ∈ S then w i else 0 := by
+  classical
+  have hval : (ofFinsetCoord S w ℓ hw_nonneg hw_sum).val =
+      (Finsupp.indicator S fun i _ ↦ w i).embDomain (labelEmbedding ℓ) :=
+    val_ofRealization _
+  rw [weight_def, hval, Finsupp.embDomain_eq_mapDomain, ← Finsupp.mapDomain_comp,
+    fst_comp_labelEmbedding, Finsupp.mapDomain_id, Finsupp.indicator_apply, dite_eq_ite]
+
+/-- When `i ∈ S` and `0 < w i`, the `i`-th label of `ofFinsetCoord S w ℓ` is `ℓ i`. -/
+@[simp] theorem label_ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
+    (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) {i : ℕ}
+    (hi : i ∈ S) (hwi : 0 < w i) :
+    label i (ofFinsetCoord S w ℓ hw_nonneg hw_sum) = ℓ i := by
+  refine (eq_label_of_val_pos (p := ofFinsetCoord S w ℓ hw_nonneg hw_sum) ?_).symm
+  rw [ofFinsetCoord, val_ofRealization, ofFinsetCoordVal_apply_self]
+  simpa [hi] using hwi
+
+/-- Any index outside the finite weight support of `p` has weight `0`. -/
+theorem weight_eq_zero_of_notMem {p : MilnorTotalSpace G} {i : ℕ}
+    (hi : i ∉ (finite_support_weight p).toFinset) : weight i p = 0 :=
+  not_not.mp fun hne ↦ hi ((finite_support_weight p).mem_toFinset.mpr hne)
+
+/-- The barycentric weights of `p` sum to `1` over any finite set `S` outside which all weights
+vanish. -/
+theorem sum_weight_of_support_subset {p : MilnorTotalSpace G} {S : Finset ℕ}
+    (hS : ∀ i, i ∉ S → weight i p = 0) : ∑ i ∈ S, weight i p = 1 :=
+  (tsum_eq_sum hS).symm.trans (tsum_weight p)
 
 end Coordinates
 
@@ -314,6 +392,8 @@ theorem continuous_iff {Z : Type*} [TopologicalSpace Z] {f : Z → MilnorTotalSp
       simp only [mem_preimage, mem_inter_iff, mem_coordSet_iff, mem_ofPred_eq] at hz ⊢
       exact ⟨fun h ↦ ⟨(hz.mp ⟨h.2, h.1⟩).1, h.1⟩, fun h ↦ ⟨h.2, (hz.mpr h).1⟩⟩
 
+/-- Each coordinate weight `weight i : MilnorTotalSpace G → ℝ` is continuous in the strong
+coordinate topology. -/
 @[fun_prop, continuity]
 theorem continuous_weight (i : ℕ) : Continuous (weight i : MilnorTotalSpace G → ℝ) :=
   (continuous_iff.mp continuous_id).1 i
@@ -321,10 +401,14 @@ theorem continuous_weight (i : ℕ) : Continuous (weight i : MilnorTotalSpace G 
 theorem isOpen_coordSet (i : ℕ) : IsOpen (coordSet G i) :=
   isOpen_lt continuous_const (continuous_weight i)
 
+/-- The `i`-th vertex label `label i` is continuous on the positive-weight domain
+`coordSet G i = {p | 0 < weight i p}`. -/
 theorem continuousOn_label (i : ℕ) :
     ContinuousOn (label i : MilnorTotalSpace G → G) (coordSet G i) :=
   (continuous_iff.mp continuous_id).2 i
 
+/-- Vertex inclusion `vertex i : G → MilnorTotalSpace G` into the `i`-th coordinate copy is
+continuous. -/
 @[fun_prop, continuity]
 theorem continuous_vertex (i : ℕ) : Continuous (vertex i : G → MilnorTotalSpace G) := by
   rw [continuous_iff]
@@ -334,6 +418,110 @@ theorem continuous_vertex (i : ℕ) : Continuous (vertex i : G → MilnorTotalSp
     exact continuousOn_id
   · simp only [weight_vertex, hij, ↓reduceIte, lt_self_iff_false, Set.ofPred_false]
     exact continuousOn_empty _
+
+private def lineToVertexWeight (N : ℕ) (p : MilnorTotalSpace G) (t : unitInterval) (i : ℕ) : ℝ :=
+  if i = N then (t : ℝ) else (1 - (t : ℝ)) * weight i p
+
+private def lineToVertexPt (N : ℕ) (a : G) (p : MilnorTotalSpace G)
+    (hp : weight N p = 0) (t : unitInterval) : MilnorTotalSpace G :=
+  let S := (finite_support_weight p).toFinset
+  have hN : N ∉ S := fun hm ↦ (finite_support_weight p).mem_toFinset.mp hm hp
+  ofFinsetCoord (insert N S) (lineToVertexWeight N p t) (fun i ↦ if i = N then a else label i p)
+    (fun i _ ↦ by
+      unfold lineToVertexWeight; split_ifs
+      exacts [t.property.1, mul_nonneg (sub_nonneg.mpr t.property.2) (weight_nonneg i p)])
+    (by
+      unfold lineToVertexWeight
+      rw [Finset.sum_insert hN, ite_eq_left rfl,
+        Finset.sum_congr rfl fun _ hi ↦ ite_eq_right (ne_of_mem_of_not_mem hi hN),
+        ← Finset.mul_sum, sum_weight_of_support_subset fun _ ↦ weight_eq_zero_of_notMem,
+        mul_one, add_sub_cancel])
+
+omit [TopologicalSpace G] in
+private theorem weight_lineToVertexPt (N : ℕ) (a : G) (p : MilnorTotalSpace G)
+    (hp : weight N p = 0) (t : unitInterval) (i : ℕ) :
+    weight i (lineToVertexPt N a p hp t) = lineToVertexWeight N p t i := by
+  unfold lineToVertexPt; rw [weight_ofFinsetCoord]
+  by_cases hiN : i = N
+  · simp [hiN]
+  · simp only [Finset.mem_insert, hiN, false_or]
+    split_ifs with hi
+    · rfl
+    · simp [lineToVertexWeight, hiN, weight_eq_zero_of_notMem hi]
+
+omit [TopologicalSpace G] in
+private theorem label_lineToVertexPt_self (N : ℕ) (a : G) (p : MilnorTotalSpace G)
+    (hp : weight N p = 0) {t : unitInterval} (ht : 0 < (t : ℝ)) :
+    label N (lineToVertexPt N a p hp t) = a := by
+  unfold lineToVertexPt
+  rw [label_ofFinsetCoord _ _ _ _ _ (Finset.mem_insert_self N _) (by simp [lineToVertexWeight, ht])]
+  exact ite_eq_left rfl
+
+omit [TopologicalSpace G] in
+private theorem label_lineToVertexPt_of_ne (N : ℕ) (a : G) (p : MilnorTotalSpace G)
+    (hp : weight N p = 0) {t : unitInterval} {i : ℕ} (hiN : i ≠ N)
+    (ht : 0 < lineToVertexWeight N p t i) :
+    label i (lineToVertexPt N a p hp t) = label i p := by
+  have hpi : 0 < weight i p := by
+    by_contra hle
+    simp [lineToVertexWeight, hiN, le_antisymm (not_lt.mp hle) (weight_nonneg i p)] at ht
+  unfold lineToVertexPt
+  rw [label_ofFinsetCoord _ _ _ _ _
+    (Finset.mem_insert_of_mem ((finite_support_weight p).mem_toFinset.mpr hpi.ne')) ht]
+  exact ite_eq_right hiN
+
+private def lineToVertexPath (N : ℕ) (a : G) (p : MilnorTotalSpace G)
+    (hp : weight N p = 0) : Path p (vertex N a) where
+  toFun := lineToVertexPt N a p hp
+  continuous_toFun := continuous_iff.mpr ⟨fun i ↦ by
+      simp_rw [weight_lineToVertexPt]; unfold lineToVertexWeight
+      by_cases hiN : i = N <;> simp only [hiN, ↓reduceIte]
+      exacts [continuous_subtypeVal, by fun_prop], fun i ↦ by
+      simp_rw [weight_lineToVertexPt]
+      by_cases hiN : i = N
+      · subst hiN; exact (continuousOn_const (c := a)).congr fun _ ht ↦
+          label_lineToVertexPt_self i a p hp (by simpa [lineToVertexWeight] using ht)
+      · exact (continuousOn_const (c := label i p)).congr fun _ ht ↦
+          label_lineToVertexPt_of_ne N a p hp hiN ht⟩
+  source' := (ext_coord
+    (fun i ↦ by
+      rw [weight_lineToVertexPt]; by_cases hiN : i = N
+      · subst hiN; simp [lineToVertexWeight, hp]
+      · simp [lineToVertexWeight, hiN])
+    (fun i hi ↦ by
+      have hiN : i ≠ N := fun h ↦ (mem_coordSet_iff.mp hi).ne' (h ▸ hp)
+      exact (label_lineToVertexPt_of_ne N a p hp hiN (t := 0)
+        (by simpa [lineToVertexWeight, hiN] using mem_coordSet_iff.mp hi)).symm)).symm
+  target' := ext_coord
+    (fun i ↦ by
+      rw [weight_lineToVertexPt, weight_vertex]
+      by_cases hiN : i = N <;> simp [lineToVertexWeight, hiN])
+    (fun i hi ↦ by
+      have hi' : 0 < lineToVertexWeight N p 1 i :=
+        weight_lineToVertexPt N a p hp 1 i ▸ mem_coordSet_iff.mp hi
+      by_cases hiN : i = N
+      · subst hiN
+        exact (label_lineToVertexPt_self i a p hp zero_lt_one).trans (label_vertex i a).symm
+      · simp [lineToVertexWeight, hiN] at hi')
+
+/-- `MilnorTotalSpace G` is path-connected whenever `G` is nonempty: any two points join to a
+vertex at an index beyond both of their finite supports. -/
+instance instPathConnectedSpaceMilnorTotalSpace [Nonempty G] :
+    PathConnectedSpace (MilnorTotalSpace G) where
+  nonempty := inferInstance
+  joined p q := by
+    classical
+    obtain ⟨a⟩ := ‹Nonempty G›
+    let S := (finite_support_weight p).toFinset ∪ (finite_support_weight q).toFinset
+    let N := S.sup _root_.id + 1
+    have hN_not_mem (r : MilnorTotalSpace G)
+        (hr : (finite_support_weight r).toFinset ⊆ S) :
+        N ∉ (finite_support_weight r).toFinset :=
+      fun hm ↦ Nat.not_succ_le_self (S.sup _root_.id) (S.le_sup (f := _root_.id) (hr hm))
+    have hp : weight N p = 0 := weight_eq_zero_of_notMem (hN_not_mem p Finset.subset_union_left)
+    have hq : weight N q = 0 := weight_eq_zero_of_notMem (hN_not_mem q Finset.subset_union_right)
+    exact ⟨(lineToVertexPath N a p hp).trans (lineToVertexPath N a q hq).symm⟩
+
 
 instance instT2Space [T2Space G] : T2Space (MilnorTotalSpace G) :=
   t2Space_iff_disjoint_nhds.mpr fun p q hpq ↦ by
@@ -433,6 +621,8 @@ section Monoid
 
 variable [Monoid G]
 
+/-- Right scalar multiplication by `Gᵐᵒᵖ` on `MilnorTotalSpace G` multiplies every vertex label
+on the right: `(op g • p)` relabels `a ↦ a * g`. -/
 instance instSMulOp : SMul Gᵐᵒᵖ (MilnorTotalSpace G) := ⟨fun g p ↦ relabel (· * g.unop) p⟩
 
 private theorem smul_def (g : Gᵐᵒᵖ) (p : MilnorTotalSpace G) :
@@ -443,6 +633,8 @@ theorem val_op_smul (g : G) (p : MilnorTotalSpace G) :
       Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2 * g⟩ : Σ _ : ℕ, G)) p.val :=
   val_relabel (· * g) p
 
+/-- Right multiplication on vertex labels defines a `MulAction` of the opposite monoid `Gᵐᵒᵖ` on
+`MilnorTotalSpace G`. -/
 instance instMulActionOp : MulAction Gᵐᵒᵖ (MilnorTotalSpace G) where
   one_smul p := by
     have hid : (· * (1 : G)) = _root_.id := funext mul_one
@@ -481,6 +673,8 @@ section Group
 
 variable [Group G]
 
+/-- The right `Gᵐᵒᵖ`-action on `MilnorTotalSpace G` is free (`IsCancelSMul`): any point has a
+positive-weight coordinate whose vertex label determines the acting group element uniquely. -/
 instance instIsCancelSMulOp : IsCancelSMul Gᵐᵒᵖ (MilnorTotalSpace G) :=
   (isCancelSMul_iff_eq_one_of_smul_eq (α := Gᵐᵒᵖ) (β := MilnorTotalSpace G)).mpr fun g p hgp ↦ by
     obtain ⟨i, hi⟩ := exists_weight_pos p
@@ -491,29 +685,38 @@ private def invRealizationHomeomorph (G : Type u) [Group G] :
     universalGSpace G ≃ₜ universalGSpace G :=
   letI : DecidableEq ℕ := Classical.decEq ℕ
   letI : DecidableEq G := Classical.decEq G
-  let f := indexedJoinMap (A := fun _ : ℕ ↦ G) (B := fun _ : ℕ ↦ G)
-    _root_.id Function.injective_id (fun _ a ↦ a⁻¹)
-  have hff : f.comp f =
+  have hff : (relabelSimplicialMap (Inv.inv : G → G)).comp
+        (relabelSimplicialMap (Inv.inv : G → G)) =
       PreAbstractSimplicialComplex.SimplicialMap.id
         (indexedJoin fun _ : ℕ ↦ G).toPreAbstractSimplicialComplex := by
+    unfold relabelSimplicialMap
     rw [← indexedJoinMap_comp]
     simp only [Function.comp_id, inv_inv]
     exact indexedJoinMap_id
-  f.realizationHomeomorph f hff hff
+  (relabelSimplicialMap (Inv.inv : G → G)).realizationHomeomorph
+    (relabelSimplicialMap (Inv.inv : G → G)) hff hff
+
+private theorem ofRealization_invRealizationHomeomorph (x : universalGSpace G) :
+    ofRealization (invRealizationHomeomorph G x) = relabel Inv.inv (ofRealization x) := by
+  let _ := Classical.decEq ℕ; let _ := Classical.decEq G
+  exact congrArg ofRealization
+    (PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply _ _ _ _ x)
 
 /-- Equivalence `universalGSpace G ≃ MilnorTotalSpace G` inverting every vertex label. -/
 def invEquiv (G : Type u) [Group G] : universalGSpace G ≃ MilnorTotalSpace G :=
   (invRealizationHomeomorph G).toEquiv.trans (equivRealization G).symm
 
+/-- Applying `invEquiv G` agrees pointwise with relabelling by `Inv.inv`. -/
+theorem invEquiv_apply (x : universalGSpace G) :
+    invEquiv G x = relabel Inv.inv (ofRealization x) := by
+  rw [invEquiv, Equiv.trans_apply, Homeomorph.coe_toEquiv, equivRealization_symm_apply]
+  exact ofRealization_invRealizationHomeomorph x
+
 theorem val_invEquiv (x : universalGSpace G) :
     (invEquiv G x).val =
       Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2⁻¹⟩ : Σ _ : ℕ, G)) x.val := by
-  let : DecidableEq ℕ := Classical.decEq ℕ
-  let : DecidableEq G := Classical.decEq G
-  rw [invEquiv, Equiv.trans_apply, Homeomorph.coe_toEquiv, equivRealization_symm_apply,
-    invRealizationHomeomorph,
-    PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply]
-  exact val_relabel (fun a : G ↦ a⁻¹) (ofRealization x)
+  rw [invEquiv_apply]
+  exact val_relabel Inv.inv (ofRealization x)
 
 @[simp] theorem invEquiv_basepoint : invEquiv G (universalGSpaceBasepoint G) = basepoint G :=
   ext_val (by
@@ -560,18 +763,50 @@ def weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
     ⟨MilnorTotalSpace.ofRealization, MilnorTotalSpace.continuous_ofRealization⟩
     (MilnorTotalSpace.invRealizationHomeomorph G : C(universalGSpace G, universalGSpace G))
 
+/-- Pointwise formula for the comparison map `weakToMilnorTotalSpace G`. -/
+theorem weakToMilnorTotalSpace_apply (G : Type u) [Group G] [TopologicalSpace G]
+    (x : universalGSpace G) :
+    weakToMilnorTotalSpace G x = MilnorTotalSpace.invEquiv G x := by
+  rw [weakToMilnorTotalSpace, ContinuousMap.comp_apply]
+  exact (MilnorTotalSpace.ofRealization_invRealizationHomeomorph x).trans
+    (MilnorTotalSpace.invEquiv_apply x).symm
+
 @[simp] theorem coe_weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
     (weakToMilnorTotalSpace G : universalGSpace G → MilnorTotalSpace G) =
-      MilnorTotalSpace.invEquiv G := (rfl)
+      MilnorTotalSpace.invEquiv G :=
+  funext (weakToMilnorTotalSpace_apply G)
+
 @[simp] theorem weakToMilnorTotalSpace_basepoint (G : Type u) [Group G] [TopologicalSpace G] :
-    weakToMilnorTotalSpace G (universalGSpaceBasepoint G) = MilnorTotalSpace.basepoint G :=
-  MilnorTotalSpace.invEquiv_basepoint
+    weakToMilnorTotalSpace G (universalGSpaceBasepoint G) = MilnorTotalSpace.basepoint G := by
+  rw [weakToMilnorTotalSpace_apply, MilnorTotalSpace.invEquiv_basepoint]
+
 @[simp] theorem weakToMilnorTotalSpace_smul {G : Type u} [Group G] [TopologicalSpace G]
     (g : G) (x : universalGSpace G) :
-    weakToMilnorTotalSpace G (g • x) = op g⁻¹ • weakToMilnorTotalSpace G x :=
-  MilnorTotalSpace.invEquiv_smul g x
+    weakToMilnorTotalSpace G (g • x) = op g⁻¹ • weakToMilnorTotalSpace G x := by
+  simp only [weakToMilnorTotalSpace_apply, MilnorTotalSpace.invEquiv_smul]
 
 end TauCeti
+
+namespace ContinuousMonoidHom
+
+open TauCeti
+
+variable {G : Type u} {H : Type v} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
+
+/-- **Naturality of `weakToMilnorTotalSpace`** with respect to continuous group homomorphisms. -/
+theorem map_comp_weakToMilnorTotalSpace (φ : G →ₜ* H) :
+    (MilnorTotalSpace.map (φ : C(G, H))).comp (weakToMilnorTotalSpace G) =
+      (weakToMilnorTotalSpace H).comp φ.toMonoidHom.universalGSpaceMap := by
+  ext1 x
+  apply MilnorTotalSpace.ext_val
+  simp only [ContinuousMap.comp_apply, weakToMilnorTotalSpace_apply,
+    MilnorTotalSpace.val_map, MilnorTotalSpace.val_invEquiv,
+    MonoidHom.universalGSpaceMap_val, ← Finsupp.mapDomain_comp]
+  congr 1
+  funext ⟨_, _⟩
+  simp
+
+end ContinuousMonoidHom
 
 namespace Continuous
 
