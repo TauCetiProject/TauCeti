@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Geometry.Manifold.MFDeriv.Localized
+import TauCeti.Geometry.Manifold.VectorBundle.Section.FundamentalLemma
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
@@ -77,8 +78,8 @@ compositions.
   either, and both sides are `0` by convention.
 * `LinearMap.IsFormalTranspose.mem_differentialOperators`: a formal transpose of a differential
   operator of order at most `m` that is a differential operator has order at most `m`.
-* `LinearMap.IsFormalTranspose.smoothPrincipalSymbol_eq`: on a boundaryless manifold, its principal
-  symbol is `(-1) ^ m` times that of the operator.
+* `LinearMap.IsFormalTranspose.smoothPrincipalSymbol_eq`: at interior points, its principal symbol
+  is `(-1) ^ m` times that of the operator.
 * `LinearMap.IsFormalTranspose.mem_differentialOperators_of_neg_one_pow_smul`,
   `LinearMap.IsFormalTranspose.mem_differentialOperators_two_mul_of_self`: if `(-1) ^ m D` is a
   formal transpose of an operator `D` of order at most `m + 1`, then `D` has order at most `m`; in
@@ -334,13 +335,10 @@ theorem isFormalTranspose_withDensity_iff [OpensMeasurableSpace M] (ρ : (C^∞�
       D.IsFormalTranspose (mulLeft ℝ (ρ : C^∞⟮I, M; ℝ⟯) ∘ₗ D' ∘ₗ mulLeft ℝ ↑ρ⁻¹) μ := by
   -- `ρ⁻¹` is a positive density that undoes `ρ`, so the forward direction is the backward one
   -- applied to the measure `ρ μ` and the density `ρ⁻¹`.
-  have hρρ (x : M) : (ρ : C^∞⟮I, M; ℝ⟯) x * (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x = 1 := by
-    simpa only [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.coe_one, Pi.one_apply] using
-      congrArg (fun φ : C^∞⟮I, M; ℝ⟯ ↦ φ x) ρ.mul_inv
   have hinv (x : M) : (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x = ((ρ : C^∞⟮I, M; ℝ⟯) x)⁻¹ :=
-    eq_inv_of_mul_eq_one_right (hρρ x)
+    map_units_inv (ContMDiffMap.evalRingHom x) ρ
   have hpos (x : M) : 0 < (ρ : C^∞⟮I, M; ℝ⟯) x :=
-    (hρ x).lt_of_ne fun h ↦ by simpa [← h] using hρρ x
+    (hρ x).lt_of_ne (ρ.isUnit.map (ContMDiffMap.evalRingHom x)).ne_zero.symm
   have hρ' (x : M) : 0 ≤ (↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x := hinv x ▸ inv_nonneg.2 (hρ x)
   have hμ : ((μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)).withDensity
       fun x ↦ ENNReal.ofReal ((↑ρ⁻¹ : C^∞⟮I, M; ℝ⟯) x)) = μ := by
@@ -359,35 +357,32 @@ section Unique
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [OpensMeasurableSpace M]
   [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
 
+open Bundle in
 /-- **Uniqueness of formal transposes.** With respect to a measure that is finite on compact sets
 and positive on open sets of a Hausdorff manifold, a linear operator on `C^∞(M)` has at most one
 formal transpose. -/
 theorem IsFormalTranspose.unique (h₁ : D.IsFormalTranspose D₁ μ) (h₂ : D.IsFormalTranspose D₂ μ) :
     D₁ = D₂ := by
   ext g x
-  by_contra hne
-  -- Test both transposes against `χ h`, where `h = D₁ g - D₂ g` and `χ` is a smooth bump function
-  -- at `x`: the integral of `χ h²` vanishes, although `χ h²` is nonnegative and nonzero at `x`.
-  obtain ⟨χ⟩ : Nonempty (SmoothBumpFunction I x) := inferInstance
-  set h := D₁ g - D₂ g with hh
-  set f : C^∞⟮I, M; ℝ⟯ := ⟨χ, χ.contMDiff⟩ * h
-  have hf (y : M) : f y = χ y * h y := rfl
-  have hfc : HasCompactSupport f := χ.hasCompactSupport.mul_right
-  have hcont (k : C^∞⟮I, M; ℝ⟯) : Continuous fun y ↦ f y * k y :=
-    f.contMDiff.continuous.mul k.contMDiff.continuous
-  have hint (k : C^∞⟮I, M; ℝ⟯) : Integrable (fun y ↦ f y * k y) μ :=
-    (hcont k).integrable_of_hasCompactSupport hfc.mul_right
-  have hzero : ∫ y, f y * h y ∂μ = 0 := by
-    simp only [hh, ContMDiffMap.coe_sub, Pi.sub_apply, mul_sub]
-    rw [integral_sub (hint _) (hint _), sub_eq_zero]
-    exact (h₁ f g (.inl hfc)).symm.trans (h₂ f g (.inl hfc))
-  refine ((hcont h).integral_pos_of_hasCompactSupport_nonneg_ne_zero hfc.mul_right
-    (fun y ↦ ?_) (x := x) ?_).ne' hzero
-  · rw [Pi.zero_apply, hf, mul_assoc]
-    exact mul_nonneg χ.nonneg (mul_self_nonneg _)
-  · rw [hf, χ.eq_one, one_mul, ne_eq, mul_self_eq_zero, hh, ContMDiffMap.coe_sub, Pi.sub_apply,
-      sub_eq_zero]
-    exact hne
+  -- On the trivial line bundle, the fields `v ↦ v Dᵢ g` have the same integral against every
+  -- compactly supported test section by `h₁` and `h₂`, so they agree by the fundamental lemma.
+  have hcont (c : C^∞⟮I, M; ℝ⟯) : ContinuousOn
+      (fun p : TotalSpace ℝ (Trivial M ℝ) ↦ ContinuousLinearMap.mul ℝ ℝ (c p.proj) p.snd)
+      (π ℝ (Trivial M ℝ) ⁻¹' Set.univ) := by
+    simp only [ContinuousLinearMap.mul_apply']
+    exact ((c.contMDiff.continuous.comp (FiberBundle.continuous_proj ℝ (Trivial M ℝ))).mul
+      (Trivial.homeomorphProd M ℝ).continuous.snd).continuousOn
+  have heq := IsOpen.eq_of_integral_clm_apply_contMDiffSection_eq (I := I) (n := ∞) (μ := μ)
+    (F := ℝ) (V := Trivial M ℝ) (G := ℝ) (η := fun y ↦ ContinuousLinearMap.mul ℝ ℝ (D₁ g y))
+    (ζ := fun y ↦ ContinuousLinearMap.mul ℝ ℝ (D₂ g y)) isOpen_univ (hcont _) (hcont _)
+    (fun s hs _ ↦ ?_) x trivial
+  · simpa only [ContinuousLinearMap.mul_apply', mul_one] using congr($heq 1)
+  · -- A test section of the trivial bundle is a compactly supported smooth function.
+    have hsm : ContMDiff I 𝓘(ℝ, ℝ) ∞ fun y ↦ (s y : ℝ) := fun y ↦ by
+      simpa using (contMDiffAt_section_iff y).1 (s.contMDiff y)
+    rw [s.tsupport_def, ← Function.support, ← tsupport] at hs
+    have h := (h₁ ⟨_, hsm⟩ g (.inl hs)).symm.trans (h₂ ⟨_, hsm⟩ g (.inl hs))
+    simpa only [ContinuousLinearMap.mul_apply', mul_comm, ContMDiffMap.coeFn_mk] using h
 
 /-- A formal transpose of `D` is `LinearMap.formalTranspose D μ`. -/
 theorem IsFormalTranspose.formalTranspose_eq (h : D.IsFormalTranspose D' μ) :
@@ -477,17 +472,21 @@ theorem formalTranspose_withDensity [FiniteDimensional ℝ E] [IsManifold I ∞ 
     (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
     D.formalTranspose (μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)) =
       mulLeft ℝ ↑ρ⁻¹ ∘ₗ D.formalTranspose μ ∘ₗ mulLeft ℝ ↑ρ := by
+  -- Conjugation by multiplication by a unit `u` is `T ↦ u T u⁻¹`.
+  have hconj (u : (C^∞⟮I, M; ℝ⟯)ˣ) (T : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
+      (u.mulLeftLinearEquiv ℝ C^∞⟮I, M; ℝ⟯).conj T = mulLeft ℝ ↑u ∘ₗ T ∘ₗ mulLeft ℝ ↑u⁻¹ := by
+    simp only [LinearEquiv.conj_apply, Units.symm_mulLeftLinearEquiv,
+      Units.toLinearMap_mulLeftLinearEquiv, LinearMap.comp_assoc]
   -- Conjugation by multiplication by `ρ` carries transposes for `ρ μ` to transposes for `μ`.
   set e := ρ.mulLeftLinearEquiv ℝ C^∞⟮I, M; ℝ⟯ with he
   have hiff (D' : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :
       D.IsFormalTranspose D' (μ.withDensity fun x ↦ ENNReal.ofReal ((ρ : C^∞⟮I, M; ℝ⟯) x)) ↔
         D.IsFormalTranspose (e.conj D') μ := by
-    rw [isFormalTranspose_withDensity_iff ρ hρ, LinearEquiv.conj_apply, LinearMap.comp_assoc, he,
-      Units.symm_mulLeftLinearEquiv, Units.toLinearMap_mulLeftLinearEquiv,
-      Units.toLinearMap_mulLeftLinearEquiv]
-  rw [show mulLeft ℝ ↑ρ⁻¹ ∘ₗ D.formalTranspose μ ∘ₗ mulLeft ℝ ↑ρ = e.symm.conj (D.formalTranspose μ)
-    by rw [LinearEquiv.symm_conj_apply, LinearMap.comp_assoc, he, Units.symm_mulLeftLinearEquiv,
-      Units.toLinearMap_mulLeftLinearEquiv, Units.toLinearMap_mulLeftLinearEquiv]]
+    rw [isFormalTranspose_withDensity_iff ρ hρ, he, hconj]
+  have hsymm : mulLeft ℝ ↑ρ⁻¹ ∘ₗ D.formalTranspose μ ∘ₗ mulLeft ℝ ↑ρ =
+      e.symm.conj (D.formalTranspose μ) := by
+    rw [he, Units.symm_mulLeftLinearEquiv, hconj, inv_inv]
+  rw [hsymm]
   by_cases h : ∃ T, D.IsFormalTranspose T μ
   · obtain ⟨T, hT⟩ := h
     have hR := (hiff (e.symm.conj (D.formalTranspose μ))).mpr <| by
@@ -602,15 +601,14 @@ theorem IsFormalTranspose.mem_differentialOperators_two_mul_of_self {k : ℕ}
     D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ (2 * k) :=
   IsFormalTranspose.mem_differentialOperators_of_neg_one_pow_smul (by simpa using h) hD
 
-/-- **The principal symbol of a formal transpose.** On a boundaryless manifold, if `D'` is a formal
+/-- **The principal symbol of a formal transpose.** At an interior point `x`, if `D'` is a formal
 transpose of `D`, both differential operators of order at most `m`, then
 `σ(D')(ξ) = (-1) ^ m σ(D)(ξ)`. -/
-theorem IsFormalTranspose.smoothPrincipalSymbol_eq [BoundarylessManifold I M] {m : ℕ}
+theorem IsFormalTranspose.smoothPrincipalSymbol_eq {m : ℕ}
     {D D' : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m}
     (h : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯).IsFormalTranspose D' μ) {x : M}
-    (ξ : TangentSpace I x →L[ℝ] ℝ) :
-    smoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint D' ξ =
-      (-1) ^ m * smoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint D ξ := by
+    (hx : I.IsInteriorPoint x) (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol I hx D' ξ = (-1) ^ m * smoothPrincipalSymbol I hx D ξ := by
   obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) ξ
   -- The `m`-fold commutators of `D` and `D'` with `f` have order zero, so they are their own
   -- transposes, and by uniqueness `(-1) ^ m [⋯[D', f], …, f] = [⋯[D, f], …, f]`.
