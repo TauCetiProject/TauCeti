@@ -83,56 +83,100 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Algebra.IsSeparable K L]
 
+/-- Transport a linear equivalence between linear maps to a continuous linear equivalence on
+`ModulePontryaginDual`, given continuous-map realizations of both directions. -/
+private def pontryaginDualEquivOfLinearEquiv {R₁ R₂ S E₁ E₂ M : Type*}
+    [CommRing R₁] [CommRing R₂] [CommSemiring S]
+    [AddCommGroup E₁] [Module R₁ E₁] [Module S E₁] [SMulCommClass R₁ S E₁]
+    [TopologicalSpace E₁] [IsTopologicalAddGroup E₁] [ContinuousConstSMul S E₁]
+    [AddCommGroup E₂] [Module R₂ E₂] [Module S E₂] [SMulCommClass R₂ S E₂]
+    [TopologicalSpace E₂] [IsTopologicalAddGroup E₂] [ContinuousConstSMul S E₂]
+    [AddCommGroup M] [Module R₁ M] [Module R₂ M] [TopologicalSpace M]
+    (e : (M →ₗ[R₁] E₁) ≃ₗ[S] (M →ₗ[R₂] E₂))
+    (hto : ∃ F : C(M, E₁) → C(M, E₂), Continuous F ∧
+      ∀ (φ : ModulePontryaginDual R₁ E₁ M) (m : M),
+        e φ.toContinuousLinearMap.toLinearMap m = F φ.toContinuousMap m)
+    (hinv : ∃ G : C(M, E₂) → C(M, E₁), Continuous G ∧
+      ∀ (ψ : ModulePontryaginDual R₂ E₂ M) (m : M),
+        e.symm ψ.toContinuousLinearMap.toLinearMap m = G ψ.toContinuousMap m) :
+    ModulePontryaginDual R₁ E₁ M ≃L[S] ModulePontryaginDual R₂ E₂ M where
+  toFun φ :=
+    ⟨⟨e φ.toContinuousLinearMap.toLinearMap,
+      (hto.choose φ.toContinuousMap).continuous.congr fun m ↦ (hto.choose_spec.2 φ m).symm⟩⟩
+  invFun ψ :=
+    ⟨⟨e.symm ψ.toContinuousLinearMap.toLinearMap,
+      (hinv.choose ψ.toContinuousMap).continuous.congr fun m ↦ (hinv.choose_spec.2 ψ m).symm⟩⟩
+  left_inv _ := ext fun m ↦ LinearMap.congr_fun (e.symm_apply_apply _) m
+  right_inv _ := ext fun m ↦ LinearMap.congr_fun (e.apply_symm_apply _) m
+  map_add' _ _ := ext fun m ↦ LinearMap.congr_fun (e.map_add _ _) m
+  map_smul' a _ := ext fun m ↦ LinearMap.congr_fun (e.map_smul a _) m
+  continuous_toFun := isInducing_toContinuousMap.continuous_iff.mpr <|
+    (hto.choose_spec.1.comp continuous_toContinuousMap).congr fun φ ↦
+      ContinuousMap.ext fun m ↦ by simp [hto.choose_spec.2 φ m]
+  continuous_invFun := isInducing_toContinuousMap.continuous_iff.mpr <|
+    (hinv.choose_spec.1.comp continuous_toContinuousMap).congr fun ψ ↦
+      ContinuousMap.ext fun m ↦ by simp [hinv.choose_spec.2 ψ m]
+
+/-- Postcomposition by `traceDualQuotientMap` realizes the forward direction of
+`traceDualLinearMapEquiv` as a continuous map on `C(M, L ⧸ 𝒪[L]ᵛ)`. -/
+private theorem exists_continuousMap_traceDualLinearMapEquiv (M : Type*) [AddCommGroup M]
+    [Module 𝒪[L] M] [Module 𝒪[K] M] [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M] :
+    haveI := finite_of_valuativeExtension K L
+    haveI := isIntegralClosure_integerRing K L
+    ∃ F : C(M, L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) →
+        C(M, K ⧸ (1 : Submodule 𝒪[K] K)),
+      Continuous F ∧
+        ∀ (φ : ModulePontryaginDual 𝒪[L]
+            (L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) M) (m : M),
+          traceDualLinearMapEquiv 𝒪[K] K 𝒪[L] L M φ.toContinuousLinearMap.toLinearMap m =
+            F φ.toContinuousMap m := by
+  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
+  let trCM : C(L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L),
+      K ⧸ (1 : Submodule 𝒪[K] K)) :=
+    ⟨traceDualQuotientMap 𝒪[K] K 𝒪[L] L, continuous_of_discreteTopology⟩
+  exact ⟨fun g ↦ trCM.comp g, ContinuousMap.continuous_postcomp trCM, fun φ m ↦ by
+    simp [trCM]⟩
+
+/-- A finite trace-dual family realizes `(traceDualLinearMapEquiv).symm` as a continuous map on
+`C(M, K ⧸ 𝒪[K])`. -/
+private theorem exists_continuousMap_traceDualLinearMapEquiv_symm (M : Type*) [AddCommGroup M]
+    [Module 𝒪[L] M] [Module 𝒪[K] M] [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M]
+    [ContinuousConstSMul 𝒪[L] M] :
+    haveI := finite_of_valuativeExtension K L
+    haveI := isIntegralClosure_integerRing K L
+    ∃ G : C(M, K ⧸ (1 : Submodule 𝒪[K] K)) →
+        C(M, L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)),
+      Continuous G ∧
+        ∀ (ψ : ModulePontryaginDual 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) M) (m : M),
+          (traceDualLinearMapEquiv 𝒪[K] K 𝒪[L] L M).symm ψ.toContinuousLinearMap.toLinearMap m =
+            G ψ.toContinuousMap m := by
+  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
+  obtain ⟨n, b, y, hy, hsum⟩ := exists_sum_trace_mul_smul_eq 𝒪[K] K (B := 𝒪[L]) (L := L)
+  let mulCM (i : Fin n) :
+      C(K ⧸ (1 : Submodule 𝒪[K] K), L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) :=
+    ⟨mulByTraceDualQuotientMap 𝒪[K] K 𝒪[L] L (y i) (hy i), continuous_of_discreteTopology⟩
+  let smulCM (i : Fin n) : C(M, M) := ⟨(b i • ·), continuous_const_smul (b i)⟩
+  refine ⟨fun g ↦ ∑ i, (mulCM i).comp (g.comp (smulCM i)),
+    continuous_finsetSum Finset.univ fun i _ ↦
+      (ContinuousMap.continuous_postcomp (mulCM i)).comp
+        (ContinuousMap.continuous_precomp (smulCM i)),
+    fun ψ m ↦ ?_⟩
+  simpa [mulCM, smulCM] using
+    traceDualLinearMapEquiv_symm_apply_of_dualFamily 𝒪[K] K 𝒪[L] L b y hy hsum
+      ψ.toContinuousLinearMap.toLinearMap m
+
 /-- **Topological inverse-different trace comparison**: postcomposition with the trace map
 `L ⧸ 𝒪[L]ᵛ → K ⧸ 𝒪[K]` gives a canonical continuous `𝒪[K]`-linear equivalence
 `ModulePontryaginDual 𝒪[L] (L ⧸ 𝒪[L]ᵛ) M ≃L[𝒪[K]] ModulePontryaginDual 𝒪[K] (K ⧸ 𝒪[K]) M`. -/
 def traceDualPontryaginEquiv (M : Type*) [AddCommGroup M] [Module 𝒪[L] M] [Module 𝒪[K] M]
     [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M] [ContinuousConstSMul 𝒪[L] M] :
     ModulePontryaginDual 𝒪[L] (L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) M ≃L[𝒪[K]]
-      ModulePontryaginDual 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) M := by
-  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
-  choose n b y hy hsum using exists_sum_trace_mul_smul_eq 𝒪[K] K (B := 𝒪[L]) (L := L)
-  let DL := L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)
-  let DK := K ⧸ (1 : Submodule 𝒪[K] K)
-  let e := traceDualLinearMapEquiv 𝒪[K] K 𝒪[L] L M
-  let trCM : C(DL, DK) := ⟨traceDualQuotientMap 𝒪[K] K 𝒪[L] L, continuous_of_discreteTopology⟩
-  let mulCM (i : Fin n) : C(DK, DL) :=
-    ⟨mulByTraceDualQuotientMap 𝒪[K] K 𝒪[L] L (y i) (hy i), continuous_of_discreteTopology⟩
-  let smulCM (i : Fin n) : C(M, M) := ⟨(b i • ·), continuous_const_smul (b i)⟩
-  let toF : ModulePontryaginDual 𝒪[L] DL M → ModulePontryaginDual 𝒪[K] DK M := fun φ ↦
-    ⟨⟨e φ.toContinuousLinearMap.toLinearMap, (trCM.continuous.comp (map_continuous φ)).congr fun m ↦
-      (traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L _ m).symm⟩⟩
-  let invF : ModulePontryaginDual 𝒪[K] DK M → ModulePontryaginDual 𝒪[L] DL M := fun ψ ↦
-    ⟨⟨e.symm ψ.toContinuousLinearMap.toLinearMap,
-      (continuous_finsetSum Finset.univ fun i _ ↦
-        (mulCM i).continuous.comp ((map_continuous ψ).comp (smulCM i).continuous)).congr fun m ↦
-          (traceDualLinearMapEquiv_symm_apply_of_dualFamily 𝒪[K] K 𝒪[L] L b y hy hsum _ m).symm⟩⟩
-  have hto :
-      ModulePontryaginDual.toContinuousMap ∘ toF = fun φ ↦ trCM.comp φ.toContinuousMap := by
-    ext φ m
-    simp only [Function.comp_apply, toContinuousMap_apply, ContinuousMap.comp_apply]
-    exact traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L φ.toContinuousLinearMap.toLinearMap m
-  have hinv :
-      ModulePontryaginDual.toContinuousMap ∘ invF =
-        fun ψ ↦ ∑ i, (mulCM i).comp (ψ.toContinuousMap.comp (smulCM i)) := by
-    ext ψ m
-    simp only [Function.comp_apply, toContinuousMap_apply, ContinuousMap.coe_sum,
-      Finset.sum_apply, ContinuousMap.comp_apply]
-    exact traceDualLinearMapEquiv_symm_apply_of_dualFamily 𝒪[K] K 𝒪[L] L b y hy hsum _ m
-  refine
-    { toFun := toF, invFun := invF,
-      left_inv := fun _ ↦ ext fun m ↦ LinearMap.congr_fun (e.symm_apply_apply _) m,
-      right_inv := fun _ ↦ ext fun m ↦ LinearMap.congr_fun (e.apply_symm_apply _) m,
-      map_add' := fun _ _ ↦ ext fun m ↦ LinearMap.congr_fun (e.map_add _ _) m,
-      map_smul' := fun a _ ↦ ext fun m ↦ LinearMap.congr_fun (e.map_smul a _) m,
-      continuous_toFun := by
-        rw [isInducing_toContinuousMap.continuous_iff, hto]
-        exact (ContinuousMap.continuous_postcomp trCM).comp continuous_toContinuousMap,
-      continuous_invFun := by
-        rw [isInducing_toContinuousMap.continuous_iff, hinv]
-        exact continuous_finsetSum Finset.univ fun i _ ↦
-          (ContinuousMap.continuous_postcomp (mulCM i)).comp
-            ((ContinuousMap.continuous_precomp (smulCM i)).comp continuous_toContinuousMap) }
+      ModulePontryaginDual 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) M :=
+  haveI := finite_of_valuativeExtension K L
+  haveI := isIntegralClosure_integerRing K L
+  pontryaginDualEquivOfLinearEquiv (traceDualLinearMapEquiv 𝒪[K] K 𝒪[L] L M)
+    (exists_continuousMap_traceDualLinearMapEquiv K L M)
+    (exists_continuousMap_traceDualLinearMapEquiv_symm K L M)
 
 section TraceDualApply
 

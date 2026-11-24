@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.LinearAlgebra.Prod
@@ -41,8 +42,8 @@ right generality, is not keyed on `Submodule`.
 * `Submodule.instDiscreteTopologyProd`: the product of two discrete submodules is discrete.
 * `Submodule.prodContEquiv`: a product submodule is continuously linearly equivalent to
   the product of its submodules.
-* `TauCeti.isOpen_annihilator_elem`: the annihilator of an element in a discrete module with
-  continuous scalar action is open.
+* `TauCeti.isOpen_torsionOf`: the torsion ideal `Ideal.torsionOf R M m` of an element in a
+  discrete module with continuous scalar action is open.
 -/
 
 public section
@@ -107,11 +108,11 @@ instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [Add
   DiscreteTopology.of_continuous_injective (p.prodContEquiv q).continuous
     (p.prodContEquiv q).injective
 
-/-- For a discrete module `M` with continuous `R`-action, the annihilator of each element is an
-open ideal of `R`. -/
-theorem TauCeti.isOpen_annihilator_elem {R M : Type*} [CommRing R] [TopologicalSpace R]
+/-- For a discrete module `M` with continuous `R`-action, the torsion ideal `Ideal.torsionOf R M m`
+of each element is an open ideal of `R`. -/
+theorem TauCeti.isOpen_torsionOf {R M : Type*} [CommRing R] [TopologicalSpace R]
     [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
     [ContinuousSMul R M] (m : M) :
-    IsOpen (LinearMap.ker (LinearMap.toSpanSingleton R M m) : Set R) :=
+    IsOpen (Ideal.torsionOf R M m : Set R) :=
   (isOpen_discrete {(0 : M)}).preimage
     (continuous_id.smul (continuous_const : Continuous fun _ : R ↦ m))

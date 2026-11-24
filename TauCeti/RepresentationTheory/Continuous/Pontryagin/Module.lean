@@ -163,43 +163,27 @@ theorem isOpen_stabilizer_contragredient_of_compact [CompactSpace M] [DiscreteTo
 
 end JointContinuity
 
-/-- Full faithfulness of `ContIntertwiningMap.contragredient` follows from `G`-equivariant
-biduality equivalences. -/
-private theorem contragredient_bijective_of_equiv
+/-- Full faithfulness of `ContIntertwiningMap.contragredient` follows from bijectivity of
+`ContinuousLinearMap.pontryaginDualMap` via `ContIntertwiningMap.toContinuousLinearMap`
+injectivity. -/
+private theorem contragredient_bijective_of_pontryaginDualMap_bijective
     {ρ₁ : ContRepresentation R G M} {ρ₂ : ContRepresentation R G N}
-    (e₁ : ρ₁.Equiv ((ρ₁.contragredient E).contragredient E))
-    (e₂ : ρ₂.Equiv ((ρ₂.contragredient E).contragredient E))
-    (he₁ : ∀ x φ, e₁ x φ = φ x) (he₂ : ∀ x φ, e₂ x φ = φ x) :
+    (hbij : Function.Bijective
+      (ContinuousLinearMap.pontryaginDualMap (R := R) (E := E) (M := M) (N := N))) :
     Function.Bijective
       (ContIntertwiningMap.contragredient (E := E) (ρ₁ := ρ₁) (ρ₂ := ρ₂)) := by
-  refine Function.bijective_iff_has_inverse.mpr ⟨fun g ↦
-    e₂.symm.toContIntertwiningMap.comp ((g.contragredient E).comp e₁.toContIntertwiningMap),
-    fun f ↦ by
-      ext x
-      have h2 : (f.contragredient E).contragredient E (e₁ x) = e₂ (f x) :=
-        ext fun φ ↦ by simp [he₁, he₂]
-      rw [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
-        ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContRepresentation.Equiv.coe_toContIntertwiningMap,
-        ContRepresentation.Equiv.coe_toContIntertwiningMap, h2, e₂.symm_apply_apply],
-    fun g ↦ by
-      ext φ x
-      rw [ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContIntertwiningMap.contragredient_apply,
-        ← ContIntertwiningMap.toContinuousLinearMap_apply (e₂.symm.toContIntertwiningMap.comp _),
-        ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
-        ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContIntertwiningMap.toContinuousLinearMap_apply,
-        ContRepresentation.Equiv.coe_toContIntertwiningMap,
-        ContRepresentation.Equiv.coe_toContIntertwiningMap,
-        ← he₂ _ φ, e₂.apply_symm_apply, ContIntertwiningMap.contragredient_apply, he₁]⟩
+  refine ⟨fun f₁ f₂ h ↦ ContIntertwiningMap.ext <|
+      hbij.1 (congrArg ContIntertwiningMap.toContinuousLinearMap h), fun g ↦ ?_⟩
+  obtain ⟨f₀, hf₀⟩ := hbij.2 g.toContinuousLinearMap
+  refine ⟨⟨f₀, fun a ↦ hbij.1 <| ContinuousLinearMap.ext fun φ ↦
+    ModulePontryaginDual.ext fun x ↦ ?_⟩, ContIntertwiningMap.ext hf₀⟩
+  have h1 := DFunLike.congr_fun (DFunLike.congr_fun hf₀ (ρ₂.contragredient E a⁻¹ φ)) x
+  have h2 := DFunLike.congr_fun (DFunLike.congr_fun hf₀ φ) (ρ₁ a x)
+  have h3 := DFunLike.congr_fun (g.isIntertwining a⁻¹ φ) x
+  simp only [ContinuousLinearMap.pontryaginDualMap_apply, ContinuousLinearMap.comp_apply,
+    ContRepresentation.contragredient_apply, inv_inv,
+    ContIntertwiningMap.toContinuousLinearMap_apply] at h1 h2 h3 ⊢
+  exact (h1.trans (h3.trans h2.symm)).symm
 
 end Basic
 
@@ -241,9 +225,8 @@ theorem contragredient_bijective_of_compact {N₁ N₂ : Type*}
     (ρ₁ : ContRepresentation R G N₁) (ρ₂ : ContRepresentation R G N₂) :
     Function.Bijective
       (ContIntertwiningMap.contragredient (E := E) (ρ₁ := ρ₁) (ρ₂ := ρ₂)) :=
-  contragredient_bijective_of_equiv E
-    (evalEquivOfCompactRep E hE hN₁ ρ₁) (evalEquivOfCompactRep E hE hN₂ ρ₂)
-    (evalEquivOfCompactRep_apply E hE hN₁ ρ₁) (evalEquivOfCompactRep_apply E hE hN₂ ρ₂)
+  contragredient_bijective_of_pontryaginDualMap_bijective E
+    (pontryaginDualMap_bijective_of_compact hE hN₁ hN₂)
 
 end CompactBiduality
 
@@ -286,9 +269,8 @@ theorem contragredient_bijective_of_discrete {M₁ M₂ : Type*}
     (ρ₁ : ContRepresentation R G M₁) (ρ₂ : ContRepresentation R G M₂) :
     Function.Bijective
       (ContIntertwiningMap.contragredient (E := E) (ρ₁ := ρ₁) (ρ₂ := ρ₂)) :=
-  contragredient_bijective_of_equiv E
-    (evalEquivOfDiscreteRep E hE ρ₁) (evalEquivOfDiscreteRep E hE ρ₂)
-    (evalEquivOfDiscreteRep_apply E hE ρ₁) (evalEquivOfDiscreteRep_apply E hE ρ₂)
+  contragredient_bijective_of_pontryaginDualMap_bijective E
+    (pontryaginDualMap_bijective_of_discrete hE)
 
 end DiscreteBiduality
 

@@ -210,8 +210,7 @@ end
     hx.symm
   rw [← Ideal.Quotient.mk_eq_mk]
   simp only [quotientMaximalIdealPowEquivTorsionBySet, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk, LinearEquiv.coe_ofEq_apply, hsymm]
-  rfl
+    Submodule.quotEquivOfEq_mk, LinearEquiv.coe_ofEq_apply, hsymm, x]
 
 /-- **Cogenerator condition for `K ⧸ 𝒪[K]`**: `Hom_𝒪[K](𝒪[K] ⧸ 𝔪, K ⧸ 𝒪[K])` has length `1` for
 every maximal ideal `𝔪` of `𝒪[K]`. -/

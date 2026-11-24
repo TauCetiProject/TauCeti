@@ -149,12 +149,13 @@ theorem continuousSMul_iff_isTorsion {K} [Field K] [ValuativeRel K] [Topological
     {M : Type*} [AddCommGroup M] [Module 𝒪[K] M] [TopologicalSpace M] [DiscreteTopology M] :
     ContinuousSMul 𝒪[K] M ↔ Module.IsTorsion 𝒪[K] M := by
   refine ⟨fun _ m ↦ ?_, fun htor ↦ ⟨continuous_prod_of_discrete_right.mpr fun m ↦ ?_⟩⟩
-  · obtain ⟨n, hn⟩ := (isAdic_maximalIdeal K).exists_pow_succ_le (isOpen_annihilator_elem m)
+  · obtain ⟨n, hn⟩ := (isAdic_maximalIdeal K).exists_pow_succ_le (isOpen_torsionOf m)
     obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
     have hpow_ne : π ^ (n + 1) ≠ 0 := pow_ne_zero (n + 1) hπ.ne_zero
-    have hpow_mem : π ^ (n + 1) ∈ LinearMap.ker (LinearMap.toSpanSingleton 𝒪[K] M m) :=
+    have hpow_mem : π ^ (n + 1) ∈ Ideal.torsionOf 𝒪[K] M m :=
       hn (Ideal.pow_mem_pow (hπ.maximalIdeal_eq ▸ Ideal.subset_span rfl) (n + 1))
-    exact ⟨⟨π ^ (n + 1), mem_nonZeroDivisors_of_ne_zero hpow_ne⟩, LinearMap.mem_ker.mp hpow_mem⟩
+    exact ⟨⟨π ^ (n + 1), mem_nonZeroDivisors_of_ne_zero hpow_ne⟩,
+      (Ideal.mem_torsionOf_iff m _).mp hpow_mem⟩
   · obtain ⟨⟨a, ha⟩, ham⟩ := @htor m
     obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
     obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible

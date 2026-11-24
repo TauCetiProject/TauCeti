@@ -25,7 +25,7 @@ equivalence `(L ⧸ 𝒪[L]) ≃L[𝒪[L]] (L ⧸ 𝒪[L]ᵛ)`
 By contrast, the naive pairing `directTracePairing : L ⧸ 𝒪[L] → Hom_𝒪[K](𝒪[L], K ⧸ 𝒪[K])` is
 injective iff `L / K` is unramified (`TauCeti.ker_directTracePairing_eq_bot_iff_isUnramified`),
 with `[ϖ⁻¹]` a nonzero kernel element whenever `L / K` is ramified
-(`TauCeti.mk_inv_uniformizer_mem_ker_directTracePairing`).
+(`TauCeti.mk_inv_uniformizer_ne_zero` and `TauCeti.mk_inv_uniformizer_mem_ker_directTracePairing`).
 
 ## References
 
@@ -72,9 +72,9 @@ def quotientEquivTraceDualQuotientOfUniformizer {ϖ : 𝒪[L]} (hϖ : Irreducibl
     quotientEquivTraceDualQuotientOfUniformizer K L hϖ (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (x / ((ϖ : L) ^ differentExponent K L)) := by
   have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
-  dsimp only [quotientEquivTraceDualQuotientOfUniformizer, ContinuousLinearEquiv.coe_mk,
-    LinearEquiv.coe_toEquiv]
-  rw [quotientEquivTraceDualQuotientOfDifferentIdealEqSpan_mk, map_pow]; rfl
+  simp only [quotientEquivTraceDualQuotientOfUniformizer, ContinuousLinearEquiv.coe_mk,
+    quotientEquivTraceDualQuotientOfDifferentIdealEqSpan_mk, map_pow,
+    Algebra.algebraMap_ofSubsemiring_apply]
 
 /-- **Exact criterion for the naive trace pairing**: `directTracePairing` is injective if and only
 if `L / K` is unramified. -/

@@ -352,23 +352,14 @@ theorem ker_directTracePairing :
     LinearMap.ker (directTracePairing A K B L) =
       ((Submodule.traceDual A K (1 : Submodule B L)).restrictScalars A).map
         ((1 : Submodule B L).mkQ.restrictScalars A) := by
-  let f := (directTracePairing A K B L).comp ((1 : Submodule B L).mkQ.restrictScalars A)
-  have hker :
-      LinearMap.ker f = (Submodule.traceDual A K (1 : Submodule B L)).restrictScalars A := by
-    ext x
-    exact mem_ker_directTracePairing_iff A K B L x
-  have hle : (1 : Submodule B L).restrictScalars A ≤ LinearMap.ker f := by
-    rw [hker]
-    exact Submodule.one_le_traceDual_one
-  have hlift : ((1 : Submodule B L).restrictScalars A).liftQ f hle =
-      (directTracePairing A K B L :
-        (L ⧸ (1 : Submodule B L).restrictScalars A) →ₗ[A] _) :=
-    LinearMap.ext fun q ↦ by
-      obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-      rfl
-  have hq := Submodule.ker_liftQ ((1 : Submodule B L).restrictScalars A) f hle
-  rw [hlift, hker] at hq
-  exact hq
+  ext q
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+  rw [mem_ker_directTracePairing_iff, Submodule.mem_map]
+  refine ⟨fun hx ↦ ⟨x, hx, rfl⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
+  have hxy : y - x ∈ (1 : Submodule B L) :=
+    (Submodule.Quotient.eq (1 : Submodule B L)).mp hyx
+  simpa using (Submodule.traceDual A K (1 : Submodule B L)).sub_mem hy
+    (Submodule.one_le_traceDual_one hxy)
 
 /-- The direct trace pairing `L ⧸ B → Hom_A(B, K ⧸ A)` is injective iff `Bᵛ = B`. -/
 theorem ker_directTracePairing_eq_bot_iff :
