@@ -117,13 +117,19 @@ theorem outerIntegral_eq_zero_of_not_bddBelow {μ : Measure α} {f : α → ℝ}
     outerIntegral μ f = 0 := by
   rw [outerIntegral_def, Real.iInf_of_not_bddBelow h]
 
+private theorem exists_measurable_integrable_ge_neg_iff {μ : Measure α} {f : α → ℝ} :
+    (∃ u, Measurable u ∧ Integrable u μ ∧ -f ≤ u) ↔
+      ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f :=
+  ⟨fun ⟨u, hu_meas, hu_int, hfu⟩ ↦ ⟨-u, hu_meas.neg, hu_int.neg, neg_le.mp hfu⟩,
+   fun ⟨l, hl_meas, hl_int, hlf⟩ ↦ ⟨-l, hl_meas.neg, hl_int.neg, neg_le_neg hlf⟩⟩
+
 /-- If `f` admits no measurable integrable minorant, then `innerIntegral μ f = 0`. -/
 theorem innerIntegral_eq_zero_of_not_exists {μ : Measure α} {f : α → ℝ}
     (hl : ¬ ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f) :
     innerIntegral μ f = 0 := by
-  rw [innerIntegral_def, outerIntegral_eq_zero_of_not_exists, neg_zero]
-  rintro ⟨u, hu_meas, hu_int, hfu⟩
-  exact hl ⟨-u, hu_meas.neg, hu_int.neg, neg_le.mp hfu⟩
+  rw [innerIntegral_def,
+    outerIntegral_eq_zero_of_not_exists (exists_measurable_integrable_ge_neg_iff.not.mpr hl),
+    neg_zero]
 
 /-- If the integrals of measurable integrable minorants of `f` are not bounded above, then
 `innerIntegral μ f = 0`. -/
@@ -137,31 +143,42 @@ theorem innerIntegral_eq_zero_of_not_bddAbove {μ : Measure α} {f : α → ℝ}
 
 section OuterIntegral
 
+private theorem bddBelow_range_integral_majorants {μ : Measure α} {f : α → ℝ}
+    (hl : ∃ l, Integrable l μ ∧ l ≤ᵐ[μ] f) :
+    BddBelow (Set.range fun h : {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f ≤ g} ↦
+      ∫ ω, h.val ω ∂μ) := by
+  obtain ⟨l, hl_int, hlf⟩ := hl
+  refine ⟨∫ ω, l ω ∂μ, ?_⟩
+  rintro _ ⟨h, rfl⟩
+  exact integral_mono_ae hl_int h.property.2.1 (hlf.trans (ae_of_all _ h.property.2.2))
+
+private theorem outerIntegral_le_integral_of_ae_of_bddBelow {μ : Measure α} {f g : α → ℝ}
+    (hg : Integrable g μ) (hfg : f ≤ᵐ[μ] g) (hu : ∃ u, Measurable u ∧ f ≤ u)
+    (hbdd : BddBelow (Set.range fun h : {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f ≤ g} ↦
+      ∫ ω, h.val ω ∂μ)) :
+    outerIntegral μ f ≤ ∫ ω, g ω ∂μ := by
+  obtain ⟨u, hu_meas, hfu⟩ := hu
+  obtain ⟨g', hg'_meas, hfg', hg'_ae⟩ :=
+    hg.aemeasurable.exists_measurable_ge_ae_eq_of_ae_le hfg hu_meas hfu
+  calc outerIntegral μ f ≤ ∫ ω, g' ω ∂μ :=
+        ciInf_le hbdd ⟨g', hg'_meas, hg.congr hg'_ae, hfg'⟩
+    _ = ∫ ω, g ω ∂μ := integral_congr_ae hg'_ae.symm
+
 /-- `outerIntegral μ f` is bounded above by `∫ g ∂μ` for any measurable integrable majorant
 `g ≥ f`, provided `f` admits an integrable minorant so that the infimum is bounded below. -/
 theorem outerIntegral_le_integral {μ : Measure α} {f g : α → ℝ}
     (hg_meas : Measurable g) (hg_int : Integrable g μ) (hfg : f ≤ g)
     (hl : ∃ l, Integrable l μ ∧ l ≤ᵐ[μ] f) :
-    outerIntegral μ f ≤ ∫ ω, g ω ∂μ := by
-  obtain ⟨l, hl_int, hlf⟩ := hl
-  rw [outerIntegral_def]
-  refine ciInf_le (f := fun h : {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f ≤ g} ↦
-    ∫ ω, h.val ω ∂μ) ⟨∫ ω, l ω ∂μ, ?_⟩ ⟨g, hg_meas, hg_int, hfg⟩
-  rintro _ ⟨h, rfl⟩
-  exact integral_mono_ae hl_int h.property.2.1 (hlf.trans (ae_of_all _ h.property.2.2))
+    outerIntegral μ f ≤ ∫ ω, g ω ∂μ :=
+  ciInf_le (bddBelow_range_integral_majorants hl) ⟨g, hg_meas, hg_int, hfg⟩
 
 /-- `outerIntegral μ f` is bounded above by `∫ g ∂μ` for any integrable `g` with `f ≤ᵐ[μ] g`,
 provided `f` admits a measurable majorant and an integrable minorant. -/
 theorem outerIntegral_le_integral_of_ae {μ : Measure α} {f g : α → ℝ}
     (hg : Integrable g μ) (hfg : f ≤ᵐ[μ] g)
     (hu : ∃ u, Measurable u ∧ f ≤ u) (hl : ∃ l, Integrable l μ ∧ l ≤ᵐ[μ] f) :
-    outerIntegral μ f ≤ ∫ ω, g ω ∂μ := by
-  obtain ⟨u, hu_meas, hfu⟩ := hu
-  obtain ⟨g', hg'_meas, hfg', hg'_ae⟩ :=
-    hg.aemeasurable.exists_measurable_ge_ae_eq_of_ae_le hfg hu_meas hfu
-  calc outerIntegral μ f ≤ ∫ ω, g' ω ∂μ :=
-        outerIntegral_le_integral hg'_meas (hg.congr hg'_ae) hfg' hl
-    _ = ∫ ω, g ω ∂μ := integral_congr_ae hg'_ae.symm
+    outerIntegral μ f ≤ ∫ ω, g ω ∂μ :=
+  outerIntegral_le_integral_of_ae_of_bddBelow hg hfg hu (bddBelow_range_integral_majorants hl)
 
 /-- Universal lower bound for `outerIntegral`: if `f` has a measurable integrable majorant and
 `c ≤ ∫ g ∂μ` for every measurable integrable `g ≥ f`, then `c ≤ outerIntegral μ f`. -/
@@ -322,6 +339,43 @@ private theorem lintegral_min_negPart_le_of_bddBelow {μ : Measure α} [IsFinite
   rw [← ofReal_integral_eq_lintegral_ofReal hq_int (ae_of_all _ hq_nn)]
   exact ENNReal.ofReal_le_ofReal (by linarith)
 
+private theorem iSup_ofReal_min_nat (x : ℝ) :
+    (⨆ n : ℕ, ENNReal.ofReal (min x n)) = ENNReal.ofReal x := by
+  refine le_antisymm (iSup_le fun _ ↦ ENNReal.ofReal_le_ofReal (min_le_left _ _)) ?_
+  obtain ⟨n, hn⟩ := exists_nat_ge x
+  exact le_iSup_of_le n (by rw [min_eq_left hn])
+
+private theorem integrable_of_aemeasurable_of_bddBelow {μ : Measure α} [IsFiniteMeasure μ]
+    {f u : α → ℝ} (hf : AEMeasurable f μ) (hu_meas : Measurable u) (hu_int : Integrable u μ)
+    (hfu : f ≤ u)
+    (hbdd : BddBelow (Set.range fun g :
+      {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f ≤ g} ↦ ∫ ω, g.val ω ∂μ)) :
+    Integrable f μ := by
+  obtain ⟨M, hM⟩ := hbdd
+  let f₀ : α → ℝ := hf.mk f
+  have hf₀_meas : Measurable f₀ := hf.measurable_mk
+  have hp_int : Integrable (fun ω ↦ max (f₀ ω) 0) μ := integrable_of_le_of_le
+    (hf₀_meas.max measurable_const).aestronglyMeasurable
+    (ae_of_all _ fun _ ↦ le_max_right _ _)
+    ((hf.ae_eq_mk.symm.le.trans (ae_of_all _ hfu)).mono fun _ hω ↦ max_le_max_right _ hω)
+    (integrable_zero α ℝ μ) (hu_int.sup (integrable_zero α ℝ μ))
+  have hneg_fin : ∫⁻ ω, ENNReal.ofReal (max (-f₀ ω) 0) ∂μ < ⊤ := by
+    simp_rw [← iSup_ofReal_min_nat (max (-f₀ _) 0)]
+    have hq_meas : ∀ n : ℕ, Measurable fun ω ↦ ENNReal.ofReal (min (max (-f₀ ω) 0) n) :=
+      fun n ↦ ((hf₀_meas.neg.max measurable_const).min measurable_const).ennreal_ofReal
+    rw [lintegral_iSup hq_meas
+      (fun _ _ hmn ω ↦ ENNReal.ofReal_le_ofReal (min_le_min_left _ (Nat.cast_le.mpr hmn)))]
+    exact lt_of_le_of_lt
+      (iSup_le fun n ↦ lintegral_min_negPart_le_of_bddBelow hf hu_meas hu_int hfu hp_int
+        (fun g ↦ hM ⟨g, rfl⟩) n)
+      ENNReal.ofReal_lt_top
+  have hneg_int : Integrable (fun ω ↦ max (-f₀ ω) 0) μ :=
+    ⟨(hf₀_meas.neg.max measurable_const).aestronglyMeasurable,
+      (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun _ ↦ le_max_right _ _)).mpr hneg_fin⟩
+  have heq : f₀ = (fun ω ↦ max (f₀ ω) 0) - fun ω ↦ max (-f₀ ω) 0 :=
+    funext fun ω ↦ (max_zero_sub_eq_self (f₀ ω)).symm
+  exact (hp_int.sub hneg_int).congr ((EventuallyEq.of_eq heq.symm).trans hf.ae_eq_mk.symm)
+
 /-- Under a finite measure, `outerIntegral` agrees with the Bochner integral for any
 a.e.-measurable function admitting a measurable majorant (without assuming integrability). -/
 theorem outerIntegral_eq_integral_of_aemeasurable {μ : Measure α} [IsFiniteMeasure μ]
@@ -332,39 +386,8 @@ theorem outerIntegral_eq_integral_of_aemeasurable {μ : Measure α} [IsFiniteMea
   rw [integral_undef hf_int]
   by_cases hu' : ∃ u, Measurable u ∧ Integrable u μ ∧ f ≤ u
   · obtain ⟨u, hu_meas, hu_int, hfu⟩ := hu'
-    have hnbdd : ¬ BddBelow (Set.range fun g :
-        {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ f ≤ g} ↦ ∫ ω, g.val ω ∂μ) := by
-      rintro ⟨M, hM⟩
-      let f₀ : α → ℝ := hf.mk f
-      have hf₀_meas : Measurable f₀ := hf.measurable_mk
-      have hp_int : Integrable (fun ω ↦ max (f₀ ω) 0) μ := integrable_of_le_of_le
-        (hf₀_meas.max measurable_const).aestronglyMeasurable
-        (ae_of_all _ fun _ ↦ le_max_right _ _)
-        ((hf.ae_eq_mk.symm.le.trans (ae_of_all _ hfu)).mono fun _ hω ↦ max_le_max_right _ hω)
-        (integrable_zero α ℝ μ) (hu_int.sup (integrable_zero α ℝ μ))
-      have hsup_eq : ∀ ω, (⨆ n : ℕ, ENNReal.ofReal (min (max (-f₀ ω) 0) n)) =
-          ENNReal.ofReal (max (-f₀ ω) 0) := fun ω ↦ by
-        refine le_antisymm (iSup_le fun _ ↦ ENNReal.ofReal_le_ofReal (min_le_left _ _)) ?_
-        obtain ⟨n, hn⟩ := exists_nat_ge (max (-f₀ ω) 0)
-        exact le_iSup_of_le n (by rw [min_eq_left hn])
-      have hneg_fin : ∫⁻ ω, ENNReal.ofReal (max (-f₀ ω) 0) ∂μ < ⊤ := by
-        simp_rw [← hsup_eq]
-        have hq_meas : ∀ n : ℕ, Measurable fun ω ↦ ENNReal.ofReal (min (max (-f₀ ω) 0) n) :=
-          fun n ↦ ((hf₀_meas.neg.max measurable_const).min measurable_const).ennreal_ofReal
-        rw [lintegral_iSup hq_meas
-          (fun _ _ hmn ω ↦ ENNReal.ofReal_le_ofReal (min_le_min_left _ (Nat.cast_le.mpr hmn)))]
-        exact lt_of_le_of_lt
-          (iSup_le fun n ↦ lintegral_min_negPart_le_of_bddBelow hf hu_meas hu_int hfu hp_int
-            (fun g ↦ hM ⟨g, rfl⟩) n)
-          ENNReal.ofReal_lt_top
-      have hneg_int : Integrable (fun ω ↦ max (-f₀ ω) 0) μ :=
-        ⟨(hf₀_meas.neg.max measurable_const).aestronglyMeasurable,
-          (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun _ ↦ le_max_right _ _)).mpr hneg_fin⟩
-      have heq : f₀ = (fun ω ↦ max (f₀ ω) 0) - fun ω ↦ max (-f₀ ω) 0 :=
-        funext fun ω ↦ (max_zero_sub_eq_self (f₀ ω)).symm
-      exact hf_int ((hp_int.sub hneg_int).congr
-        ((EventuallyEq.of_eq heq.symm).trans hf.ae_eq_mk.symm))
-    exact outerIntegral_eq_zero_of_not_bddBelow hnbdd
+    exact outerIntegral_eq_zero_of_not_bddBelow fun hbdd ↦
+      hf_int (integrable_of_aemeasurable_of_bddBelow hf hu_meas hu_int hfu hbdd)
   · exact outerIntegral_eq_zero_of_not_exists hu'
 
 /-- If `0 ≤ᵐ[μ] f`, then `0 ≤ outerIntegral μ f` (including when the majorant set is empty). -/
@@ -675,6 +698,21 @@ end OuterIntegral
 
 section InnerIntegral
 
+private theorem exists_measurable_ge_neg {f : α → ℝ}
+    (hl : ∃ l, Measurable l ∧ l ≤ f) :
+    ∃ u, Measurable u ∧ -f ≤ u :=
+  let ⟨l, hl_meas, hlf⟩ := hl
+  ⟨-l, hl_meas.neg, neg_le_neg hlf⟩
+
+private theorem exists_integrable_le_ae_neg {μ : Measure α} {f : α → ℝ}
+    (hu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u) :
+    ∃ l, Integrable l μ ∧ l ≤ᵐ[μ] -f :=
+  let ⟨u, hu_int, hfu⟩ := hu
+  ⟨-u, hu_int.neg, hfu.mono fun _ hω ↦ neg_le_neg hω⟩
+
+private theorem ae_le_neg {μ : Measure α} {f g : α → ℝ} (h : f ≤ᵐ[μ] g) : -g ≤ᵐ[μ] -f :=
+  h.mono fun _ hω ↦ neg_le_neg hω
+
 /-- `innerIntegral μ (-f) = -outerIntegral μ f`. -/
 @[simp]
 theorem innerIntegral_neg (μ : Measure α) (f : α → ℝ) :
@@ -725,10 +763,9 @@ theorem innerIntegral_le {μ : Measure α} {f : α → ℝ} {c : ℝ}
     (hl : ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f)
     (h : ∀ g, Measurable g → Integrable g μ → g ≤ f → ∫ ω, g ω ∂μ ≤ c) :
     innerIntegral μ f ≤ c := by
-  obtain ⟨l, hl_meas, hl_int, hlf⟩ := hl
   rw [innerIntegral_def, neg_le]
-  refine le_outerIntegral ⟨-l, hl_meas.neg, hl_int.neg, neg_le_neg hlf⟩ fun g hg_meas hg_int hfg ↦
-    ?_
+  refine le_outerIntegral (exists_measurable_integrable_ge_neg_iff.mpr hl)
+    fun g hg_meas hg_int hfg ↦ ?_
   have hneg := h (-g) hg_meas.neg hg_int.neg (neg_le.mp hfg)
   simp only [Pi.neg_apply, integral_neg] at hneg
   linarith
@@ -739,10 +776,9 @@ theorem integral_le_innerIntegral {μ : Measure α} {f g : α → ℝ}
     (hg_meas : Measurable g) (hg_int : Integrable g μ) (hgf : g ≤ f)
     (hu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u) :
     ∫ ω, g ω ∂μ ≤ innerIntegral μ f := by
-  obtain ⟨u, hu_int, hfu⟩ := hu
   rw [innerIntegral_def, le_neg, ← integral_neg]
   exact outerIntegral_le_integral hg_meas.neg hg_int.neg (neg_le_neg hgf)
-    ⟨-u, hu_int.neg, hfu.mono fun _ hω ↦ neg_le_neg hω⟩
+    (exists_integrable_le_ae_neg hu)
 
 /-- Universal upper-bound characterization for `innerIntegral` when `f` admits a measurable
 integrable minorant and an integrable majorant. -/
@@ -759,11 +795,9 @@ theorem integral_le_innerIntegral_of_ae {μ : Measure α} {f g : α → ℝ}
     (hg : Integrable g μ) (hgf : g ≤ᵐ[μ] f)
     (hl : ∃ l, Measurable l ∧ l ≤ f) (hu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u) :
     ∫ ω, g ω ∂μ ≤ innerIntegral μ f := by
-  obtain ⟨l, hl_meas, hlf⟩ := hl
-  obtain ⟨u, hu_int, hfu⟩ := hu
   rw [innerIntegral_def, le_neg, ← integral_neg]
-  exact outerIntegral_le_integral_of_ae hg.neg (hgf.mono fun _ hω ↦ neg_le_neg hω)
-    ⟨-l, hl_meas.neg, neg_le_neg hlf⟩ ⟨-u, hu_int.neg, hfu.mono fun _ hω ↦ neg_le_neg hω⟩
+  exact outerIntegral_le_integral_of_ae hg.neg (ae_le_neg hgf)
+    (exists_measurable_ge_neg hl) (exists_integrable_le_ae_neg hu)
 
 /-- `innerIntegral μ f` is bounded above by the integral of any integrable majorant `u ≥ᵐ[μ] f`,
 provided `f` admits a measurable integrable minorant. -/
@@ -771,10 +805,9 @@ theorem innerIntegral_le_integral {μ : Measure α} {f u : α → ℝ}
     (hu : Integrable u μ) (hfu : f ≤ᵐ[μ] u)
     (hl : ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f) :
     innerIntegral μ f ≤ ∫ ω, u ω ∂μ := by
-  obtain ⟨l, hl_meas, hl_int, hlf⟩ := hl
   rw [innerIntegral_def, neg_le, ← integral_neg]
-  exact integral_le_outerIntegral hu.neg (hfu.mono fun _ hω ↦ neg_le_neg hω)
-    ⟨-l, hl_meas.neg, hl_int.neg, neg_le_neg hlf⟩
+  exact integral_le_outerIntegral hu.neg (ae_le_neg hfu)
+    (exists_measurable_integrable_ge_neg_iff.mpr hl)
 
 /-- `innerIntegral μ f ≤ outerIntegral μ f` whenever `f` admits both a measurable integrable
 majorant and a measurable integrable minorant. -/
@@ -782,13 +815,12 @@ theorem innerIntegral_le_outerIntegral {μ : Measure α} {f : α → ℝ}
     (hu : ∃ u, Measurable u ∧ Integrable u μ ∧ f ≤ u)
     (hl : ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f) :
     innerIntegral μ f ≤ outerIntegral μ f := by
-  obtain ⟨u, hu_meas, hu_int, hfu⟩ := hu
-  obtain ⟨l, hl_meas, hl_int, hlf⟩ := hl
+  have ⟨u, _, hu_int, hfu⟩ := hu
+  have ⟨l, _, hl_int, hlf⟩ := hl
   rw [innerIntegral_def, neg_le]
   have h0 : 0 ≤ outerIntegral μ f + outerIntegral μ (-f) := by
-    have hsum := outerIntegral_add_le ⟨u, hu_meas, hu_int, hfu⟩
-      ⟨-l, hl_meas.neg, hl_int.neg, neg_le_neg hlf⟩
-      ⟨l, hl_int, ae_of_all _ hlf⟩ ⟨-u, hu_int.neg, ae_of_all _ (neg_le_neg hfu)⟩
+    have hsum := outerIntegral_add_le hu (exists_measurable_integrable_ge_neg_iff.mpr hl)
+      ⟨l, hl_int, ae_of_all _ hlf⟩ (exists_integrable_le_ae_neg ⟨u, hu_int, ae_of_all _ hfu⟩)
     rwa [add_neg_cancel, outerIntegral_zero_fun] at hsum
   linarith
 
@@ -798,37 +830,28 @@ theorem innerIntegral_mono_ae {μ : Measure α} {f₁ f₂ : α → ℝ} (h : f�
     (hl₂ : ∃ l, Measurable l ∧ l ≤ f₂)
     (hu₂ : ∃ u, Integrable u μ ∧ f₂ ≤ᵐ[μ] u) :
     innerIntegral μ f₁ ≤ innerIntegral μ f₂ := by
-  obtain ⟨l₁, hl₁_meas, hl₁_int, hl₁f₁⟩ := hl₁
-  obtain ⟨l₂, hl₂_meas, hl₂f₂⟩ := hl₂
-  obtain ⟨u₂, hu₂_int, hf₂u₂⟩ := hu₂
   rw [innerIntegral_def, innerIntegral_def, neg_le_neg_iff]
-  exact outerIntegral_mono_ae (h.mono fun _ hω ↦ neg_le_neg hω)
-    ⟨-l₂, hl₂_meas.neg, neg_le_neg hl₂f₂⟩
-    ⟨-l₁, hl₁_meas.neg, hl₁_int.neg, neg_le_neg hl₁f₁⟩
-    ⟨-u₂, hu₂_int.neg, hf₂u₂.mono fun _ hω ↦ neg_le_neg hω⟩
+  exact outerIntegral_mono_ae (ae_le_neg h)
+    (exists_measurable_ge_neg hl₂) (exists_measurable_integrable_ge_neg_iff.mpr hl₁)
+    (exists_integrable_le_ae_neg hu₂)
 
 /-- Monotonicity of `innerIntegral`. -/
 theorem innerIntegral_mono {μ : Measure α} {f₁ f₂ : α → ℝ} (h : f₁ ≤ f₂)
     (hl₁ : ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f₁)
     (hu₂ : ∃ u, Integrable u μ ∧ f₂ ≤ᵐ[μ] u) :
     innerIntegral μ f₁ ≤ innerIntegral μ f₂ := by
-  obtain ⟨l, hl_meas, hl_int, hlf₁⟩ := hl₁
-  obtain ⟨u, hu_int, hf₂u⟩ := hu₂
   rw [innerIntegral_def, innerIntegral_def, neg_le_neg_iff]
-  exact outerIntegral_mono (neg_le_neg h) ⟨-l, hl_meas.neg, hl_int.neg, neg_le_neg hlf₁⟩
-    ⟨-u, hu_int.neg, hf₂u.mono fun _ hω ↦ neg_le_neg hω⟩
+  exact outerIntegral_mono (neg_le_neg h) (exists_measurable_integrable_ge_neg_iff.mpr hl₁)
+    (exists_integrable_le_ae_neg hu₂)
 
 /-- Functions equal almost everywhere that each admit a measurable minorant have equal
 `innerIntegral`. -/
 theorem innerIntegral_congr_ae {μ : Measure α} {f₁ f₂ : α → ℝ} (h : f₁ =ᵐ[μ] f₂)
     (hl₁ : ∃ l, Measurable l ∧ l ≤ f₁) (hl₂ : ∃ l, Measurable l ∧ l ≤ f₂) :
     innerIntegral μ f₁ = innerIntegral μ f₂ := by
-  obtain ⟨l₁, hl₁_meas, hl₁f₁⟩ := hl₁
-  obtain ⟨l₂, hl₂_meas, hl₂f₂⟩ := hl₂
   have hneg : (-f₁) =ᵐ[μ] (-f₂) := h.mono fun _ hω ↦ congrArg Neg.neg hω
   rw [innerIntegral_def, innerIntegral_def,
-    outerIntegral_congr_ae hneg ⟨-l₁, hl₁_meas.neg, neg_le_neg hl₁f₁⟩
-      ⟨-l₂, hl₂_meas.neg, neg_le_neg hl₂f₂⟩]
+    outerIntegral_congr_ae hneg (exists_measurable_ge_neg hl₁) (exists_measurable_ge_neg hl₂)]
 
 /-- Superadditivity of `innerIntegral`. -/
 theorem le_innerIntegral_add {μ : Measure α} {f g : α → ℝ}
@@ -837,17 +860,12 @@ theorem le_innerIntegral_add {μ : Measure α} {f g : α → ℝ}
     (hfu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u)
     (hgu : ∃ u, Integrable u μ ∧ g ≤ᵐ[μ] u) :
     innerIntegral μ f + innerIntegral μ g ≤ innerIntegral μ (f + g) := by
-  obtain ⟨lf, hlf_meas, hlf_int, hlf⟩ := hfl
-  obtain ⟨lg, hlg_meas, hlg_int, hlg⟩ := hgl
-  obtain ⟨uf, huf_int, huf⟩ := hfu
-  obtain ⟨ug, hug_int, hug⟩ := hgu
   rw [innerIntegral_def, innerIntegral_def, innerIntegral_def, neg_add, ← neg_add_rev,
     add_comm (outerIntegral μ (-g)), neg_le_neg_iff]
   simpa [neg_add] using outerIntegral_add_le
-    ⟨-lf, hlf_meas.neg, hlf_int.neg, neg_le_neg hlf⟩
-    ⟨-lg, hlg_meas.neg, hlg_int.neg, neg_le_neg hlg⟩
-    ⟨-uf, huf_int.neg, huf.mono fun _ hω ↦ neg_le_neg hω⟩
-    ⟨-ug, hug_int.neg, hug.mono fun _ hω ↦ neg_le_neg hω⟩
+    (exists_measurable_integrable_ge_neg_iff.mpr hfl)
+    (exists_measurable_integrable_ge_neg_iff.mpr hgl)
+    (exists_integrable_le_ae_neg hfu) (exists_integrable_le_ae_neg hgu)
 
 /-- Adding a measurable integrable function shifts `innerIntegral` by its integral. -/
 theorem innerIntegral_add_of_measurable {μ : Measure α} {f g : α → ℝ}
@@ -855,12 +873,9 @@ theorem innerIntegral_add_of_measurable {μ : Measure α} {f g : α → ℝ}
     (hfl : ∃ l, Measurable l ∧ Integrable l μ ∧ l ≤ f)
     (hfu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u) :
     innerIntegral μ (f + g) = innerIntegral μ f + ∫ ω, g ω ∂μ := by
-  obtain ⟨l, hl_meas, hl_int, hlf⟩ := hfl
-  obtain ⟨u, hu_int, hfu'⟩ := hfu
   rw [innerIntegral_def, innerIntegral_def, neg_add,
     outerIntegral_add_of_measurable hg_meas.neg hg_int.neg
-      ⟨-l, hl_meas.neg, hl_int.neg, neg_le_neg hlf⟩
-      ⟨-u, hu_int.neg, hfu'.mono fun _ hω ↦ neg_le_neg hω⟩]
+      (exists_measurable_integrable_ge_neg_iff.mpr hfl) (exists_integrable_le_ae_neg hfu)]
   simp only [Pi.neg_apply, integral_neg]
   ring
 
@@ -878,8 +893,7 @@ Bochner integral. -/
 theorem innerIntegral_eq_integral {μ : Measure α} {f : α → ℝ}
     (hf : Integrable f μ) (hl : ∃ l, Measurable l ∧ l ≤ f) :
     innerIntegral μ f = ∫ ω, f ω ∂μ := by
-  obtain ⟨l, hl_meas, hlf⟩ := hl
-  rw [innerIntegral_def, outerIntegral_eq_integral hf.neg ⟨-l, hl_meas.neg, neg_le_neg hlf⟩]
+  rw [innerIntegral_def, outerIntegral_eq_integral hf.neg (exists_measurable_ge_neg hl)]
   simp [Pi.neg_apply, integral_neg]
 
 /-- For a measurable integrable function, `innerIntegral` agrees with the Bochner integral. -/
@@ -893,9 +907,8 @@ a.e.-measurable function admitting a measurable minorant (without assuming integ
 theorem innerIntegral_eq_integral_of_aemeasurable {μ : Measure α} [IsFiniteMeasure μ]
     {f : α → ℝ} (hf : AEMeasurable f μ) (hl : ∃ l, Measurable l ∧ l ≤ f) :
     innerIntegral μ f = ∫ ω, f ω ∂μ := by
-  obtain ⟨l, hl_meas, hlf⟩ := hl
   rw [innerIntegral_def,
-    outerIntegral_eq_integral_of_aemeasurable hf.neg ⟨-l, hl_meas.neg, neg_le_neg hlf⟩]
+    outerIntegral_eq_integral_of_aemeasurable hf.neg (exists_measurable_ge_neg hl)]
   simp [Pi.neg_apply, integral_neg]
 
 /-- If `0 ≤ᵐ[μ] f`, then `0 ≤ innerIntegral μ f` (with no majorant or finiteness hypotheses). -/
@@ -906,12 +919,9 @@ theorem innerIntegral_nonneg {μ : Measure α} {f : α → ℝ} (hf : 0 ≤ᵐ[�
   · by_cases hbdd : BddBelow (Set.range fun g :
         {g : α → ℝ // Measurable g ∧ Integrable g μ ∧ -f ≤ g} ↦ ∫ ω, g.val ω ∂μ)
     · obtain ⟨u, hu_meas, _, hfu⟩ := hu
-      obtain ⟨g', hg'_meas, hfg', hg'_ae⟩ :=
-        (integrable_zero α ℝ μ).aemeasurable.exists_measurable_ge_ae_eq_of_ae_le
-          (hf.mono fun _ hω ↦ neg_nonpos.mpr hω) hu_meas hfu
-      calc outerIntegral μ (-f) ≤ ∫ ω, g' ω ∂μ :=
-            ciInf_le hbdd ⟨g', hg'_meas, (integrable_zero α ℝ μ).congr hg'_ae, hfg'⟩
-        _ = ∫ _ : α, (0 : ℝ) ∂μ := integral_congr_ae hg'_ae.symm
+      calc outerIntegral μ (-f) ≤ ∫ _ : α, (0 : ℝ) ∂μ :=
+            outerIntegral_le_integral_of_ae_of_bddBelow (integrable_zero α ℝ μ)
+              (hf.mono fun _ hω ↦ neg_nonpos.mpr hω) ⟨u, hu_meas, hfu⟩ hbdd
         _ = 0 := integral_zero α ℝ
     · rw [outerIntegral_eq_zero_of_not_bddBelow hbdd]
   · rw [outerIntegral_eq_zero_of_not_exists hu]
@@ -939,17 +949,13 @@ theorem exists_measurable_le_innerIntegral_eq {μ : Measure α} {f : α → ℝ}
     (hu : ∃ u, Integrable u μ ∧ f ≤ᵐ[μ] u) :
     ∃ g : α → ℝ, Measurable g ∧ Integrable g μ ∧ g ≤ f ∧ ∫ ω, g ω ∂μ = innerIntegral μ f ∧
       ∀ h : α → ℝ, AEMeasurable h μ → h ≤ᵐ[μ] f → h ≤ᵐ[μ] g := by
-  obtain ⟨l, hl_meas, hl_int, hlf⟩ := hl
-  obtain ⟨u, hu_int, hfu⟩ := hu
   obtain ⟨g', hg'_meas, hg'_int, hfg', hg'_eq, hg'_min⟩ :=
     exists_measurable_ge_outerIntegral_eq
-      ⟨-l, hl_meas.neg, hl_int.neg, neg_le_neg hlf⟩
-      ⟨-u, hu_int.neg, hfu.mono fun _ hω ↦ neg_le_neg hω⟩
+      (exists_measurable_integrable_ge_neg_iff.mpr hl) (exists_integrable_le_ae_neg hu)
   refine ⟨-g', hg'_meas.neg, hg'_int.neg, neg_le.mp hfg', ?_, fun h hh hhf ↦ ?_⟩
   · rw [innerIntegral_def, ← hg'_eq]
     simp [Pi.neg_apply, integral_neg]
-  · exact (hg'_min (-h) hh.neg (hhf.mono fun _ hω ↦ neg_le_neg hω)).mono fun ω hω ↦
-      le_neg.mp hω
+  · exact (hg'_min (-h) hh.neg (ae_le_neg hhf)).mono fun ω hω ↦ le_neg.mp hω
 
 end InnerIntegral
 

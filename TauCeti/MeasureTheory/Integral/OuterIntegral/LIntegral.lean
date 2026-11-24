@@ -124,11 +124,15 @@ theorem outerLIntegral_congr_ae {μ : Measure α} {f₁ f₂ : α → ℝ≥0∞
     outerLIntegral μ f₁ = outerLIntegral μ f₂ :=
   le_antisymm (outerLIntegral_mono_ae h.le) (outerLIntegral_mono_ae h.symm.le)
 
+/-- `outerLIntegral` of the constant zero function is `0`. -/
+@[simp]
+theorem outerLIntegral_zero (μ : Measure α) : outerLIntegral μ (fun _ ↦ 0) = 0 := by
+  rw [outerLIntegral_eq_lintegral aemeasurable_const, lintegral_zero]
+
 /-- `outerLIntegral` of the zero function is `0`. -/
 @[simp]
-theorem outerLIntegral_zero (μ : Measure α) : outerLIntegral μ 0 = 0 := by
-  rw [outerLIntegral_eq_lintegral (f := (0 : α → ℝ≥0∞)) aemeasurable_const, Pi.zero_def,
-    lintegral_zero]
+theorem outerLIntegral_zero_fun (μ : Measure α) : outerLIntegral μ 0 = 0 := by
+  rw [Pi.zero_def, outerLIntegral_zero]
 
 /-- `outerLIntegral` of a constant function `c` is `c * μ Set.univ`. -/
 @[simp]
@@ -312,7 +316,7 @@ theorem outerLIntegral_eq_zero_iff {μ : Measure α} {f : α → ℝ≥0∞} :
     have hg0 : g =ᵐ[μ] 0 := (lintegral_eq_zero_iff hg_meas).mp hg_eq
     exact hg0.mono fun ω hω ↦ le_antisymm ((hfg ω).trans_eq hω) zero_le
   · intro h0
-    rw [outerLIntegral_congr_ae h0, outerLIntegral_zero]
+    rw [outerLIntegral_congr_ae h0, outerLIntegral_zero_fun]
 
 /-- Subadditivity of `outerLIntegral`. -/
 theorem outerLIntegral_add_le (μ : Measure α) (f g : α → ℝ≥0∞) :
