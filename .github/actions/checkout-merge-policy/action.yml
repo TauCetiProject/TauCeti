@@ -1,15 +1,14 @@
-name: Checkout the pinned merge policy
+name: Checkout the merge policy
 description: >-
-  Check out TauCetiReview's runner (read-only) into .tauceti-review, at the same commit as the
-  reusable review workflow. Read-only readiness and reporting consumers use this policy.
+  Check out TauCetiReview's runner (read-only) into .tauceti-review, at TauCetiReview main.
+  Read-only readiness and reporting consumers use this policy.
 
-# This is the only place in TauCeti that names the policy commit outside the reusable workflow `uses:` lines,
-# which GitHub requires to be literal. scripts/test_workflow_pins.py fails if the pins disagree.
-# To re-pin, replace the SHA everywhere at once:
-#   git grep -l <old-sha> | xargs sed -i 's/<old-sha>/<new-sha>/g'
+# TauCeti reads the merge policy from TauCetiReview main, as it runs TauCetiTools main.
+# The reusable review workflow in review.yml is the one exception: it requires an immutable
+# review_ref, so it stays pinned to a commit. TauCetiTools tests/project/tauceti/test_workflow_pins.py
+# checks both.
 #
-# Production callers use a trusted checkout. The independent infrastructure tests also
-# use this action from an unprivileged PR checkout, without secrets or write access.
+# Callers use a trusted checkout.
 # A sparse checkout must include .github/actions/checkout-merge-policy.
 
 runs:
@@ -18,7 +17,7 @@ runs:
     - uses: actions/checkout@v4
       with:
         repository: TauCetiProject/TauCetiReview
-        ref: ddb128180df46b7cc8e0a53188871578f2510498
+        ref: main
         path: .tauceti-review
         sparse-checkout: runner
         persist-credentials: false

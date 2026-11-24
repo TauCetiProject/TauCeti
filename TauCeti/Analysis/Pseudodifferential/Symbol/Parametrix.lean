@@ -78,7 +78,7 @@ def leftInverseTerms : (k : ℕ) →
         (sharpTerm (k + 1 - (i + j)) (leftInverseTerms i) (a.term j)).castDegree
           (m' := -m + m - (k + 1 : ℕ)) (by rw [Nat.cast_sub h]; push_cast; ring)
       else 0).comp (a.principal.inverse ha)).castDegree (by push_cast; ring))
-  decreasing_by exact Finset.mem_range.1 i.2
+  decreasing_by exact Finset.mem_range.1 i.property
 
 @[simp]
 theorem coefficient_leftInverseTerms_zero (z : CoordinateSpace n × CoordinateSpace n) :
@@ -170,7 +170,7 @@ def rightInverseTerms : (k : ℕ) →
         (sharpTerm (k + 1 - (i + j)) (a.term i) (rightInverseTerms j)).castDegree
           (m' := m + -m - (k + 1 : ℕ)) (by rw [Nat.cast_sub h]; push_cast; ring)
       else 0)).castDegree (by push_cast; ring)
-  decreasing_by exact Finset.mem_range.1 j.2
+  decreasing_by exact Finset.mem_range.1 j.property
 
 @[simp]
 theorem coefficient_rightInverseTerms_zero (z : CoordinateSpace n × CoordinateSpace n) :

@@ -44,6 +44,13 @@ characteristic, from the combinatorics of the side pairing.
 * `ConvexPolygon.SidePairing.mem_orbit_iff_of_mem_carrier`: two points of `P` are `Γ`-equivalent
   exactly when they coincide, are related by one side-pairing map, or are finite vertices in the
   same cycle.
+* `ConvexPolygon.eq_of_quotientMk_eq_of_mem_interior` and
+  `ConvexPolygon.quotientMk_notMem_image_interior_of_mem_frontier`: interior points of `P` are
+  only `Γ`-equivalent to themselves, and never to boundary points.
+* `ConvexPolygon.SidePairing.eq_or_eq_map_smul_of_quotientMk_eq`,
+  `ConvexPolygon.SidePairing.eq_and_eq_or_eq_pair_and_eq_map_smul_of_quotientMk_eq`, and
+  `ConvexPolygon.SidePairing.exists_vertex_eq_inl_of_quotientMk_eq`: orbit identifications of
+  non-endpoint side points and finite vertices of `P`.
 * `ConvexPolygon.SidePairing.identification_iff_orbitRel`: on the points of `P`, the side-pairing
   identification is the orbit relation of `Γ`.
 
@@ -59,6 +66,34 @@ public section
 
 open MulAction Set Topology UpperHalfPlane
 open scoped MatrixGroups Pointwise
+
+namespace TauCeti.UpperHalfPlane.ConvexPolygon
+
+variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} {Γ : Subgroup PSL(2, ℝ)}
+
+/-- A point of `P` in the same `Γ`-orbit as an interior point of `P` equals that point. -/
+theorem eq_of_quotientMk_eq_of_mem_interior
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {z w : ℍ} (hz : z ∈ interior P.carrier) (hw : w ∈ P.carrier)
+    (h : (Quotient.mk'' w : orbitRel.Quotient Γ ℍ) = Quotient.mk'' z) : w = z := by
+  obtain ⟨⟨g, hg⟩, hgz⟩ := mem_orbit_iff.1 (orbitRel_apply.1 (Quotient.eq''.1 h))
+  rw [Subgroup.mk_smul] at hgz
+  rw [← hgz, P.eq_of_smul_interior_inter_smul_carrier_nonempty hdisj hg Γ.one_mem
+    ⟨w, hgz ▸ smul_mem_smul_set hz, by rwa [one_smul]⟩, one_smul]
+
+/-- A boundary point of `P` does not share a `Γ`-orbit with any interior point of `P`. -/
+theorem quotientMk_notMem_image_interior_of_mem_frontier
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {z : ℍ} (hz : z ∈ frontier P.carrier) :
+    (Quotient.mk'' z : orbitRel.Quotient Γ ℍ) ∉ Quotient.mk'' '' interior P.carrier := by
+  rintro ⟨w, hw, h⟩
+  obtain rfl := P.eq_of_quotientMk_eq_of_mem_interior hdisj hw
+    (P.isClosed_carrier.closure_eq ▸ hz.1) h.symm
+  exact hz.2 hw
+
+end TauCeti.UpperHalfPlane.ConvexPolygon
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
 
@@ -102,7 +137,7 @@ theorem identification_of_mem_cycle {j k : Fin n} {z w : ℍ} (hz : P.vertex j =
 theorem orbitRel_of_identification (hmap : ∀ i, σ.map i ∈ Γ) {z w : ℍ}
     (h : σ.identification z w) : orbitRel Γ ℍ z w :=
   haveI := (orbitRel Γ ℍ).iseqv.isEquiv
-  Relation.EqvGen.eqvGen_le (fun z _ ⟨i, _, h⟩ ↦
+  Relation.eqvGen_le (fun z _ ⟨i, _, h⟩ ↦
     h ▸ (orbitRel Γ ℍ).symm (mem_orbit z (⟨σ.map i, hmap i⟩ : Γ))) _ _ h
 
 /-! ### Orbits of points of a fundamental polygon -/
@@ -185,6 +220,56 @@ theorem identification_iff_orbitRel (hmap : ∀ i, σ.map i ∈ Γ)
   · exact σ.identification.symm (σ.identification_map_smul hi)
   · exact σ.identification.symm (σ.identification_of_mem_cycle hj hk hjk)
 
+/-- A point of `P` in the same `Γ`-orbit as a point of side `i` away from its finite endpoints is
+either that point or its image under `σ.map i`. -/
+theorem eq_or_eq_map_smul_of_quotientMk_eq {i : Fin n} (hmap : σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {z w : ℍ} (hz : z ∈ P.side i) (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z)
+    (hw : w ∈ P.carrier) (h : (Quotient.mk'' w : orbitRel.Quotient Γ ℍ) = Quotient.mk'' z) :
+    w = z ∨ w = σ.map i • z := by
+  obtain ⟨⟨g, hg⟩, hgz⟩ := mem_orbit_iff.1 (orbitRel_apply.1 (Quotient.eq''.1 h))
+  rw [Subgroup.mk_smul] at hgz
+  rcases σ.eq_one_or_eq_map_pair_of_smul_mem_side
+      (by simpa only [σ.map_pair] using Γ.inv_mem hmap) hdisj (Γ.inv_mem hg) hw hz hzp hzq
+      (by rw [← hgz, inv_smul_smul]) with hg1 | hgp
+  · exact Or.inl (by rw [← hgz, inv_eq_one.1 hg1, one_smul])
+  · rw [σ.map_pair, inv_inj] at hgp
+    exact Or.inr (by rw [← hgz, hgp])
+
+/-- Two points in the same `Γ`-orbit lying on sides `i` and `j` away from their finite endpoints
+either coincide on the same side or lie on paired sides and are carried to one another by
+`σ.map i`. -/
+theorem eq_and_eq_or_eq_pair_and_eq_map_smul_of_quotientMk_eq {i j : Fin n} (hmap : σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {z w : ℍ} (hz : z ∈ P.side i) (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z)
+    (hw : w ∈ P.side j) (hwp : P.vertex j ≠ .inl w) (hwq : P.vertex (j + 1) ≠ .inl w)
+    (h : (Quotient.mk'' w : orbitRel.Quotient Γ ℍ) = Quotient.mk'' z) :
+    (j = i ∧ w = z) ∨ (j = σ.pair i ∧ w = σ.map i • z) := by
+  rcases σ.eq_or_eq_map_smul_of_quotientMk_eq hmap hdisj hz hzp hzq (P.side_subset_carrier j hw) h
+    with rfl | rfl
+  · exact Or.inl ⟨P.eq_of_mem_side_of_mem_side hw hwp hwq hz, rfl⟩
+  · exact Or.inr ⟨P.eq_of_mem_side_of_mem_side hw hwp hwq (σ.map_smul_mem_side hz), rfl⟩
+
+/-- A point of `P` in the same `Γ`-orbit as a finite vertex of `P` is itself a finite vertex of
+`P`. -/
+theorem exists_vertex_eq_inl_of_quotientMk_eq (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    {j : Fin n} {v w : ℍ} (hv : P.vertex j = .inl v) (hw : w ∈ P.carrier)
+    (h : (Quotient.mk'' w : orbitRel.Quotient Γ ℍ) = Quotient.mk'' v) :
+    ∃ k, P.vertex k = .inl w := by
+  rw [Quotient.eq'', orbitRel_apply] at h
+  rcases (σ.mem_orbit_iff_of_mem_carrier hmap hdisj
+      (P.side_subset_carrier j (P.mem_side_of_vertex_eq_inl hv)) hw).1 h with
+    rfl | ⟨k, hk, rfl⟩ | ⟨-, k, -, hk, -⟩
+  · exact ⟨j, hv⟩
+  · rcases P.eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side hv hk with rfl | rfl
+    · exact ⟨σ.pair j + 1, by simpa [hv] using (σ.map_smul_vertex j).symm⟩
+    · exact ⟨σ.pair k, by simpa [hv] using (σ.map_smul_vertex_add_one k).symm⟩
+  · exact ⟨k, hk⟩
+
 /-! ### The identification space -/
 
 /-- The side-pairing identification of the points of `P`. The quotient of `P` by it, with the
@@ -211,7 +296,8 @@ noncomputable def carrierQuotientHomeomorph (hmap : ∀ i, σ.map i ∈ Γ)
   have hq := isQuotientMap_quotientMk_domRestrict_of_locallyFinite_smul (G := Γ)
     P.isClosed_carrier (σ.iUnion_smul_carrier_eq_univ hmap hlf) hlf
   (Homeomorph.Quotient.congrRight (r := σ.carrierSetoid) fun z w ↦
-      (σ.identification_iff_orbitRel hmap hdisj z.2 w.2).trans Quotient.eq''.symm).trans
+      (σ.identification_iff_orbitRel hmap hdisj z.property w.property).trans
+          Quotient.eq''.symm).trans
     (IsQuotientMap.homeomorph (f := ⟨_, hq.continuous⟩) hq)
 
 /-- The homeomorphism sends the class of a point of `P` to its orbit. -/

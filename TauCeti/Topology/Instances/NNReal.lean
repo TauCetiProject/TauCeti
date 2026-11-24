@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen, The Tau Ceti contributors
 -/
 module
 
@@ -10,15 +10,21 @@ public import Mathlib.Topology.Order.WithTop
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Order-topological limits in `ℝ≥0` and `WithTop ι`
+# Strict bounds and monotone approximations in `ℝ≥0`
 
-This file collects elementary monotone approximations in `ℝ≥0` and `WithTop ι`:
-- natural-number casts `(n : WithTop ι)` tend to `⊤` in any unbounded Archimedean ordered
-  semiring with the order topology;
+A strict bound `c < a` persists for `c * C ^ n` when `C` is slightly greater than one. This
+absorbs a small multiplicative loss in estimates with a fixed natural power.
+
+We also collect elementary monotone approximations in `ℝ≥0` and `WithTop ℝ≥0`:
 - the truncated left shifts `t - 1 / (n + 1 : ℝ≥0)` are monotone and converge to `t` both in `ℝ≥0`
   and after coercion to `WithTop ℝ≥0`;
-- strict inequalities `x < (t : WithTop ℝ≥0)` are witnessed by positive dyadic/reciprocal cushions
+- strict inequalities `x < (t : WithTop ℝ≥0)` are witnessed by positive reciprocal cushions
   `x + 1 / (k + 1) ≤ t`.
+
+## References
+
+* https://github.com/frenzymath/lean-eval-submissions
+* https://github.com/frenzymath/PoincareConjecture
 -/
 
 public section
@@ -26,14 +32,19 @@ public section
 open Filter Set
 open scoped NNReal Topology
 
-/-- Natural-number casts in `WithTop ι` converge to `⊤` in any unbounded Archimedean ordered
-semiring with the order topology. -/
-theorem WithTop.tendsto_coe_natCast_atTop {ι : Type*} [Semiring ι] [LinearOrder ι]
-    [IsOrderedRing ι] [NoMaxOrder ι] [Archimedean ι] [TopologicalSpace ι] [OrderTopology ι] :
-    Tendsto (fun n : ℕ ↦ ((n : ι) : WithTop ι)) atTop (𝓝 ⊤) :=
-  WithTop.tendsto_coe_atTop.comp tendsto_natCast_atTop_atTop
-
 namespace NNReal
+
+/-- A strict coefficient bound persists after multiplication by a fixed natural power of some
+factor greater than one. -/
+theorem exists_one_lt_mul_pow_lt (c : ℝ≥0) {a : ℝ≥0} (hca : c < a) (n : ℕ) :
+    ∃ C : ℝ≥0, 1 < C ∧ c * C ^ n < a := by
+  have hcont : ContinuousAt (fun C : ℝ≥0 ↦ c * C ^ n) 1 := by fun_prop
+  have hnear : ∀ᶠ C in 𝓝 (1 : ℝ≥0), c * C ^ n < a :=
+    hcont.eventually_lt_const (by simpa only [one_pow, mul_one] using hca)
+  obtain ⟨C, hCa, hC⟩ :=
+    ((hnear.filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists
+      (f := 𝓝[>] (1 : ℝ≥0))
+  exact ⟨C, hC, hCa⟩
 
 /-- Truncated left shifts `t - 1 / (n + 1)` form a monotone sequence in `ℝ≥0`. -/
 theorem monotone_tsub_one_div_add_one (t : ℝ≥0) :

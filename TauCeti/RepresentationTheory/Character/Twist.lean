@@ -64,6 +64,8 @@ representation need neither.
   irreducible**, and conversely.
 * `Representation.char_charTwist`: the trace character of the twist is `χ` times the character
   of `ρ`.
+* `Representation.invariants_charTwist_trivial_eq_bot`: if `χ g - 1` acts injectively on `V` for
+  some `g`, then `G` acting on `V` through `χ` has no nonzero invariant vector.
 * `Representation.asAlgebraHom_charTwist`: on the group algebra, the twist acts through the
   algebra automorphism `MonoidAlgebra.charTwist χ` of `k[G]`.
 
@@ -268,8 +270,10 @@ exactly when it intertwines `charTwist χ ρ` and `charTwist χ σ`
 are identified, keeping the underlying linear map. -/
 def charTwistLinearEquiv :
     IntertwiningMap ρ σ ≃ₗ[k] IntertwiningMap (charTwist χ ρ) (charTwist χ σ) where
-  toFun f := ⟨f.toLinearMap, fun g => (comp_charTwist_eq_charTwist_comp_iff χ _ g).mpr (f.2 g)⟩
-  invFun f := ⟨f.toLinearMap, fun g => (comp_charTwist_eq_charTwist_comp_iff χ _ g).mp (f.2 g)⟩
+  toFun f := ⟨f.toLinearMap, fun g => (comp_charTwist_eq_charTwist_comp_iff χ _ g).mpr
+      (f.isIntertwining' g)⟩
+  invFun f := ⟨f.toLinearMap, fun g => (comp_charTwist_eq_charTwist_comp_iff χ _ g).mp
+      (f.isIntertwining' g)⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv _ := rfl
@@ -288,6 +292,23 @@ theorem coe_charTwistLinearEquiv_symm (f : IntertwiningMap (charTwist χ ρ) (ch
 end IntertwiningMap
 
 end CommSemiring
+
+section Invariants
+
+variable [CommRing k] [Group G] [AddCommGroup V] [Module k V] (χ : G →* kˣ)
+
+/-- **A character moving every vector fixes none.** Let `G` act on a module `V` through the
+character `χ`, `g` acting as multiplication by `χ g`. If `χ g - 1` acts injectively on `V` for some
+`g`, the invariants are zero, since an invariant `v` has `(χ g - 1) • v = 0`. For a sign character
+this applies as soon as `χ g = -1` and multiplication by `2` is injective on `V`. For the trivial
+character the twist is the trivial representation, whose invariants are all of `V`. -/
+theorem invariants_charTwist_trivial_eq_bot {g : G} (hg : IsSMulRegular V ((χ g : k) - 1)) :
+    (charTwist χ (trivial k G V)).invariants = ⊥ := by
+  refine eq_bot_iff.2 fun v hv ↦ (Submodule.mem_bot k).2 <| hg ?_
+  have hv' : (χ g : k) • v = v := by simpa [charTwist_apply_apply] using hv g
+  simp only [smul_zero, sub_smul, one_smul, hv', sub_self]
+
+end Invariants
 
 section Field
 

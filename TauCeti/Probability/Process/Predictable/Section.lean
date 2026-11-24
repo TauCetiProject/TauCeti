@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Instances.NNReal
+import TauCeti.Topology.Order.WithTop
 
 /-!
 # The predictable section theorem and graph announcement
@@ -192,17 +193,6 @@ theorem measurableSet_predictable_of_mem_predictablePaving {u : Set (ℝ≥0 × 
 
 end PavingProperties
 
--- Decompose any closed upper stochastic ray `[σ, ∞)` into bounded closed intervals `[[σ, m]]`.
-private theorem setOf_le_eq_iUnion_Icc_natCast (σ : Ω → WithTop ℝ≥0) :
-    {p : ℝ≥0 × Ω | σ p.2 ≤ p.1} =
-      ⋃ m : ℕ, {p : ℝ≥0 × Ω | σ p.2 ≤ p.1 ∧ (p.1 : WithTop ℝ≥0) ≤ (m : ℝ≥0)} := by
-  ext ⟨t, ω⟩
-  have ht : ∃ m : ℕ, t ≤ (m : ℝ≥0) := by
-    simpa only [mem_iUnion, mem_Iic] using
-      (TauCeti.iUnion_Iic_natCast (R := ℝ≥0)).ge (mem_univ t)
-  simp only [mem_ofPred_eq, mem_iUnion, WithTop.coe_le_coe]
-  exact ⟨fun h ↦ let ⟨m, hm⟩ := ht; ⟨m, h, hm⟩, fun ⟨_, h, _⟩ ↦ h⟩
-
 /-- `predictablePaving` generates the predictable sigma-algebra `ℱ.predictable`. -/
 theorem generateFrom_predictablePaving :
     MeasurableSpace.generateFrom ℱ.predictablePaving = ℱ.predictable := by
@@ -211,7 +201,7 @@ theorem generateFrom_predictablePaving :
   rw [ℱ.predictable_eq_generateFrom_isPredictableTime_le]
   refine MeasurableSpace.generateFrom_le ?_
   rintro _ ⟨σ, hσ, rfl⟩
-  rw [setOf_le_eq_iUnion_Icc_natCast]
+  rw [TauCeti.setOf_le_coe_eq_iUnion_le_natCast (fun p ↦ σ p.2) Prod.fst]
   exact MeasurableSet.iUnion fun m ↦ MeasurableSpace.measurableSet_generateFrom
     (ℱ.Icc_mem_predictablePaving hσ (isStoppingTime_const ℱ m) fun _ ↦ WithTop.coe_ne_top)
 
@@ -223,7 +213,7 @@ variable {ℱ}
 private theorem setOf_le_mem_souslinClosure {σ : Ω → WithTop ℝ≥0}
     (hσ : TauCeti.IsPredictableTime ℱ σ) :
     {p : ℝ≥0 × Ω | σ p.2 ≤ p.1} ∈ TauCeti.souslinClosure ℱ.predictablePaving := by
-  rw [setOf_le_eq_iUnion_Icc_natCast]
+  rw [TauCeti.setOf_le_coe_eq_iUnion_le_natCast (fun p ↦ σ p.2) Prod.fst]
   exact TauCeti.iUnion_mem_souslinClosure fun m ↦ TauCeti.subset_souslinClosure
     (ℱ.Icc_mem_predictablePaving hσ (isStoppingTime_const ℱ m) fun _ ↦ WithTop.coe_ne_top)
 
@@ -319,22 +309,15 @@ theorem isPredictableTime_debut_iInter {e : ℕ → Set (ℝ≥0 × Ω)} (hanti 
 theorem debut_iInter_le_coe_eq {e : ℕ → Set (ℝ≥0 × Ω)} (hanti : Antitone e)
     (he : ∀ k, e k ∈ ℱ.predictablePaving) (t : ℝ≥0) :
     {ω | TauCeti.debut (⋂ k, e k) ω ≤ t} = ⋂ k, Prod.snd '' (e k ∩ (Iic t ×ˢ univ)) := by
-  have hfib (k : ℕ) (ω : Ω) :
-      {u : ℝ≥0 | (u, ω) ∈ e k ∩ (Iic t ×ˢ univ)} = {u : ℝ≥0 | (u, ω) ∈ e k} ∩ Iic t := by
-    ext u; simp
-  have hK (k : ℕ) (ω : Ω) : IsCompact {u : ℝ≥0 | (u, ω) ∈ e k ∩ (Iic t ×ˢ univ)} :=
-    hfib k ω ▸ (ℱ.isCompact_fiber_of_mem_predictablePaving (he k) ω).inter_right isClosed_Iic
-  have hanti' : Antitone (fun k ↦ e k ∩ (Iic t ×ˢ univ)) :=
-    fun _ _ h ↦ inter_subset_inter_left _ (hanti h)
-  rw [← TauCeti.image_snd_iInter_eq_of_isCompact hanti' hK]
   ext ω
-  simp only [mem_ofPred_eq,
-    TauCeti.debut_le_coe_iff_of_isCompact
-      (TauCeti.isCompact_fiber_iInter fun k ↦ ℱ.isCompact_fiber_of_mem_predictablePaving (he k) ω),
-    mem_image, Prod.exists, exists_eq_right, mem_iInter, mem_inter_iff, mem_prod, mem_Iic,
-    mem_univ, and_true]
-  exact ⟨fun ⟨u, hut, hu⟩ ↦ ⟨u, fun k ↦ ⟨hu k, hut⟩⟩,
-    fun ⟨u, hu⟩ ↦ ⟨u, (hu 0).2, fun k ↦ (hu k).1⟩⟩
+  rw [mem_ofPred_eq,
+    TauCeti.debut_iInter_eq_iSup_of_isCompact hanti
+      (fun k ↦ ℱ.isCompact_fiber_of_mem_predictablePaving (he k) ω),
+    iSup_le_iff, mem_iInter]
+  refine forall_congr' fun k ↦ ?_
+  rw [TauCeti.debut_le_coe_iff_of_isCompact
+    (ℱ.isCompact_fiber_of_mem_predictablePaving (he k) ω)]
+  simp [and_comm]
 
 /-- For an antitone sequence in `predictablePaving`, the sample-space projection of the intersection
 is ambient-measurable without completing the measure space. -/

@@ -76,7 +76,7 @@ theorem differentExponent_eq_zero_of_aeval_additivePolynomial_eq_of_mem_integers
     differentExponent k F P' = 0 := by
   classical
   have hint (c : V) : (c : F) ∈ (P'.restrict k F).integers := by
-    rw [mem_integers_iff_ord_nonneg, ord_eq_zero_of_isAlgebraic _ (hV c c.2)]
+    rw [mem_integers_iff_ord_nonneg, ord_eq_zero_of_isAlgebraic _ (hV c c.property)]
   -- `a_V` is the image of a polynomial over the valuation ring.
   have hcoeff (i : ℕ) : V.additivePolynomial.coeff i ∈ (P'.restrict k F).integers := by
     have hmap : V.additivePolynomial =
@@ -90,9 +90,10 @@ theorem differentExponent_eq_zero_of_aeval_additivePolynomial_eq_of_mem_integers
       finprod_eq_prod_of_fintype, map_prod, map_prod]
     refine Finset.prod_eq_one fun c _ ↦ ?_
     have hc0 : algebraMap F F' c ≠ 0 :=
-      (_root_.map_ne_zero _).mpr (by simpa using c.2)
+      (_root_.map_ne_zero _).mpr (by simpa using c.property)
     rw [map_neg, Valuation.map_neg]
-    exact P'.valuation_eq_one_of_isAlgebraic (((hV _ c.1.2).algebraMap (A := F')).tower_top k') hc0
+    exact P'.valuation_eq_one_of_isAlgebraic (((hV _ c.val.property).algebraMap (A
+        := F')).tower_top k') hc0
   refine differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k F hgen
     (V.monic_additivePolynomial_sub_C a) (fun i ↦ ?_) (by rw [map_sub, hy, aeval_C, sub_self])
     hder

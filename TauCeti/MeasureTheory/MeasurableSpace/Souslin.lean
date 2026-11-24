@@ -358,7 +358,7 @@ private lemma iInter_prunedSet_subset (f : List ℕ → Set α) (N : ℕ → ℕ
       · exact Finset.mem_Iic.mp (Fintype.mem_piFinset.mp hw ⟨m, hm⟩)
       · exact Nat.zero_le _
     · have heq : (fun i : Fin (k + 1) ↦ if hm : (i : ℕ) < k + 1 then w ⟨i, hm⟩ else 0) = w :=
-        funext fun i ↦ dite_eq_left i.2
+        funext fun i ↦ dite_eq_left i.isLt
       simpa only [mem_ofPred_eq, heq] using hxw
   obtain ⟨β, hβ⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K
     (fun k β hβ ↦ ⟨hβ.1, hβ.2.1⟩) hK_ne hK0_compact hK_closed
@@ -458,7 +458,7 @@ theorem exists_antitone_mem_of_lt_of_mem_souslinClosure {E : Set (Set α)}
   rintro x hx
   obtain ⟨β, hβF, hxβ⟩ := mem_iUnion₂.mp hx
   exact mem_iUnion₂.mpr ⟨fun i : Fin (k + 1) ↦ β i,
-    Fintype.mem_piFinset.mpr fun i ↦ Finset.mem_Iic.mpr (hF_mem (k + 1) β hβF i i.2),
+    Fintype.mem_piFinset.mpr fun i ↦ Finset.mem_Iic.mpr (hF_mem (k + 1) β hβF i i.isLt),
     mem_prefixInter_of_forall (mem_iInter.mp hxβ) k⟩
 
 end TauCeti

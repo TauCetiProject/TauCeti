@@ -74,7 +74,7 @@ def classifyingSpaceFirstHomologyAddEquiv :
     ((singularChains ℤ).obj (TopCat.of (classifyingSpace G))).homology 1 ≃+
       Additive (Group.Abelianization G) :=
   (hurewiczHomologyAddEquiv (X := TopCat.of (classifyingSpace G))
-      (classifyingSpaceBasepoint G)).symm.trans
+      (classifyingSpaceBasepoint G) (.refl ℤ)).symm.trans
     (MulEquiv.toAdditive (classifyingSpaceFundamentalGroupMulEquiv G).abelianizationCongr)
 
 variable {G}
@@ -86,7 +86,7 @@ theorem classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv
     (γ : FundamentalGroup (classifyingSpace G) (classifyingSpaceBasepoint G)) :
     classifyingSpaceFirstHomologyAddEquiv G
         (hurewiczHomologyAddEquiv (X := TopCat.of (classifyingSpace G))
-          (classifyingSpaceBasepoint G) (Additive.ofMul (Group.Abelianization.of γ))) =
+          (classifyingSpaceBasepoint G) (.refl ℤ) (Additive.ofMul (Group.Abelianization.of γ))) =
       Additive.ofMul (Group.Abelianization.of (classifyingSpaceFundamentalGroupMulEquiv G γ)) := by
   rw [classifyingSpaceFirstHomologyAddEquiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply]
   exact congrArg Additive.ofMul (Group.abelianizationCongr_of _ γ)
@@ -96,7 +96,7 @@ group element `p` represents under `classifyingSpaceFundamentalGroupMulEquiv`. -
 theorem classifyingSpaceFirstHomologyAddEquiv_loopClass
     (p : Path (classifyingSpaceBasepoint G) (classifyingSpaceBasepoint G)) :
     classifyingSpaceFirstHomologyAddEquiv G
-        (H₁AddEquivHomology _ (loopClass (X := TopCat.of (classifyingSpace G)) p)) =
+        (H₁AddEquivHomology ℤ _ (loopClass ℤ (X := TopCat.of (classifyingSpace G)) p)) =
       Additive.ofMul (Group.Abelianization.of (classifyingSpaceFundamentalGroupMulEquiv G
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p)))) := by
   rw [← hurewiczHomologyAddEquiv_ofMul_of_mk,
@@ -106,7 +106,7 @@ theorem classifyingSpaceFirstHomologyAddEquiv_loopClass
 theorem classifyingSpaceFirstHomologyAddEquiv_symm_ofMul_of (g : G) :
     (classifyingSpaceFirstHomologyAddEquiv G).symm (Additive.ofMul (Group.Abelianization.of g)) =
       hurewiczHomologyAddEquiv (X := TopCat.of (classifyingSpace G))
-        (classifyingSpaceBasepoint G)
+        (classifyingSpaceBasepoint G) (.refl ℤ)
         (Additive.ofMul
           (Group.Abelianization.of ((classifyingSpaceFundamentalGroupMulEquiv G).symm g))) := by
   rw [AddEquiv.symm_apply_eq, classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv,
@@ -121,8 +121,8 @@ theorem classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEqu
     {x : X} (γ : Path (f x) (classifyingSpaceBasepoint G)) (a : FundamentalGroup X x) :
     classifyingSpaceFirstHomologyAddEquiv G
         ((HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom f)) 1).hom
-          (hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Group.Abelianization.of
-              a)))) =
+          (hurewiczHomologyAddEquiv (X := TopCat.of X) x (.refl ℤ)
+            (Additive.ofMul (Group.Abelianization.of a)))) =
       Additive.ofMul (Group.Abelianization.of (classifyingSpaceFundamentalGroupMulEquiv G
         (FundamentalGroup.fundamentalGroupMulEquivOfPath γ (FundamentalGroup.map f x a)))) := by
   rw [homologyMap_hurewiczHomologyAddEquiv, toMul_ofMul, Group.Abelianization.map_of]
@@ -141,7 +141,7 @@ theorem classifyingSpaceFirstHomologyAddEquiv_homologyMap {H : Type} [Group H] (
           ((singularChains ℤ).map (TopCat.ofHom φ.classifyingSpaceMap)) 1).hom x) =
       (Group.Abelianization.map φ).toAdditive (classifyingSpaceFirstHomologyAddEquiv G x) := by
   obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (classifyingSpace G))
-    (classifyingSpaceBasepoint G)).surjective x
+    (classifyingSpaceBasepoint G) (.refl ℤ)).surjective x
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
   -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and
   -- `Group.Abelianization.of`
@@ -192,7 +192,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_hurewiczHomologyAddEq
     (γ : FundamentalGroup (classifyingSpace G) (classifyingSpaceBasepoint G)) :
     classifyingSpaceFirstHomologyAddEquivGroupHomology G
         (hurewiczHomologyAddEquiv (X := TopCat.of (classifyingSpace G))
-          (classifyingSpaceBasepoint G) (Additive.ofMul (Group.Abelianization.of γ))) =
+          (classifyingSpaceBasepoint G) (.refl ℤ) (Additive.ofMul (Group.Abelianization.of γ))) =
       H1π (Rep.trivial ℤ G ℤ) ((cycles₁IsoOfIsTrivial (Rep.trivial ℤ G ℤ)).inv
         (Finsupp.single (classifyingSpaceFundamentalGroupMulEquiv G γ) 1)) := by
   rw [classifyingSpaceFirstHomologyAddEquivGroupHomology, AddEquiv.trans_apply,
@@ -205,7 +205,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_hurewiczHomologyAddEq
 theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_loopClass
     (p : Path (classifyingSpaceBasepoint G) (classifyingSpaceBasepoint G)) :
     classifyingSpaceFirstHomologyAddEquivGroupHomology G
-        (H₁AddEquivHomology _ (loopClass (X := TopCat.of (classifyingSpace G)) p)) =
+        (H₁AddEquivHomology ℤ _ (loopClass ℤ (X := TopCat.of (classifyingSpace G)) p)) =
       H1π (Rep.trivial ℤ G ℤ) ((cycles₁IsoOfIsTrivial (Rep.trivial ℤ G ℤ)).inv
         (Finsupp.single (classifyingSpaceFundamentalGroupMulEquiv G
           (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p))) 1)) := by

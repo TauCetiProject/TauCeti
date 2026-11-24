@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
+public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Data.ENat.Monoid
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
@@ -27,9 +28,11 @@ The pulled-back almost complex structure is
 on `M` (`TauCeti.ContMDiffAlmostComplexStructure.pullback h J hnr`). The native smooth
 pullback is its infinite-order specialization. It is characterized by making every
 differential of `h` complex linear, `dh_x ((h^* J)_x v) = J_(h x) (dh_x v)`
-(`TauCeti.SmoothAlmostComplexStructure.mfderiv_pullback_apply`). Pulling back is contravariantly
-functorial. At the smooth endpoint, it carries structures tamed by, invariant under, or
-compatible with a two-form `σ` on `N` to structures with the same relation to `h^* σ`.
+(`TauCeti.SmoothAlmostComplexStructure.mfderiv_pullback_apply`), that is, `h` is pseudoholomorphic
+from `h^* J` to `J` (`TauCeti.SmoothAlmostComplexStructure.isPseudoholomorphic_pullback`). Pulling
+back is contravariantly functorial. At the smooth endpoint, it carries structures tamed by,
+invariant under, or compatible with a two-form `σ` on `N` to structures with the same relation to
+`h^* σ`.
 
 For a symplectomorphism `φ` of `(M, σ)` this gives the structure `φ^* J` that a time-dependent
 family of almost complex structures on a mapping torus has to reach after one turn of the seam
@@ -283,6 +286,12 @@ theorem mfderiv_pullback_apply (x : M) (v : TangentSpace I x) :
   simpa only [pullback, ContMDiffAlmostComplexStructure.toSmooth_apply, toContMDiff_apply]
     using ContMDiffAlmostComplexStructure.mfderiv_pullback_apply h (J.toContMDiff ⊤)
       (by simp) x v
+
+/-- A diffeomorphism is pseudoholomorphic from the pulled-back structure to the original one. -/
+theorem isPseudoholomorphic_pullback : IsPseudoholomorphic (pullback h J) J h :=
+  isPseudoholomorphic_iff.2 fun x ↦
+    isPseudoholomorphicAt_of_hasMFDerivAt ((h.mdifferentiable (by simp)) x).hasMFDerivAt
+      (mfderiv_pullback_apply h J x)
 
 /-- Pulling back a family of smooth almost complex structures on `N`, depending smoothly on a
 parameter in a manifold `Q`, along a diffeomorphism `h : M → N` gives a family of almost complex

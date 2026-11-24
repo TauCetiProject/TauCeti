@@ -9,6 +9,7 @@ public import TauCeti.Probability.Process.StochasticInterval
 public import TauCeti.Probability.Process.Stopping
 import Mathlib.Topology.Order.MonotoneConvergence
 import TauCeti.Topology.Instances.NNReal
+import TauCeti.Topology.Order.WithTop
 
 /-!
 # Pointwise and almost-sure announcing sequences
