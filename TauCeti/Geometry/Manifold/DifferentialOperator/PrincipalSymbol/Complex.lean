@@ -82,6 +82,8 @@ order at most one into such a derivation and multiplication by `D 1` is
   has vanishing commutator symbol at every point of a dense set of interior points, or vanishing
   commutator or principal symbol at every point of a boundaryless manifold, exactly when it has
   order at most `m`.
+* `TauCeti.complexSmoothPrincipalSymbol_sum`, `TauCeti.complexSmoothPrincipalSymbol_congr`: the
+  principal symbol is additive over finite sums and depends only on the underlying operator.
 * `TauCeti.complexSmoothPrincipalSymbol_eq_apply_one`: an operator `D` of order zero has principal
   symbol `(D 1)(x)`.
 * `TauCeti.complexSmoothPrincipalSymbol_smul_covector`: the principal symbol is homogeneous of
@@ -203,18 +205,13 @@ theorem forall_mem_complexSmoothCommutatorSymbol_eq_zero_iff {s : Set M} (hs : D
       (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∈
         differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
           C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
-  rw [← commutatorSymbol_eq_zero_iff]
-  constructor
-  · intro h
-    -- The iterated commutators are linear over the complex smooth functions, so it suffices that
-    -- their values at `1` vanish. These are continuous functions vanishing on the dense set `s`.
-    refine MultilinearMap.ext fun f ↦ LinearMap.ext_ring <| ContMDiffMap.coe_injective <|
-      Continuous.ext_on hs (ContMDiffMap.contMDiff _).continuous
-      (ContMDiffMap.contMDiff _).continuous fun y hy ↦ ?_
-    rw [← complexSmoothCommutatorSymbol_mvfderiv (hsI y hy), h y hy]
-    simp
-  · exact fun h x hx ↦ complexSmoothCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D
-      ((commutatorSymbol_eq_zero_iff D).1 h)
+  -- Evaluation at the points of `s` detects zero: a complex smooth function vanishing on the
+  -- dense set `s` is zero by continuity.
+  refine Subtype.forall.symm.trans <| forall_pointCommutatorSymbol_eq_zero_iff
+    (fun x : s ↦ ker_complexEvalAlgHom_eq_complexSmoothVanishingIdeal (x : M))
+    (fun x ↦ complexSmoothCotangentEquiv (hsI x x.property)) (fun g hg ↦ ?_) D
+  exact ContMDiffMap.coe_injective <| Continuous.ext_on hs (ContMDiffMap.contMDiff _).continuous
+    (ContMDiffMap.contMDiff _).continuous fun y hy ↦ by simpa using hg ⟨y, hy⟩
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` on complex smooth functions
 has vanishing commutator symbol at every point if and only if it has order at most `m`. -/
@@ -307,6 +304,30 @@ theorem complexSmoothPrincipalSymbol_sub (hx : I.IsInteriorPoint x) {m : ℕ}
     complexSmoothPrincipalSymbol I hx (D₁ - D₂) ξ =
       complexSmoothPrincipalSymbol I hx D₁ ξ - complexSmoothPrincipalSymbol I hx D₂ ξ :=
   pointPrincipalSymbol_sub _ _ _ D₁ D₂ ξ
+
+/-- The principal symbol is additive over finite sums of operators. -/
+@[simp]
+theorem complexSmoothPrincipalSymbol_sum (hx : I.IsInteriorPoint x) {m : ℕ} {κ : Type*}
+    (s : Finset κ)
+    (D : κ → differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m)
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothPrincipalSymbol I hx (∑ j ∈ s, D j) ξ =
+      ∑ j ∈ s, complexSmoothPrincipalSymbol I hx (D j) ξ :=
+  pointPrincipalSymbol_sum _ _ _ s D ξ
+
+/-- The principal symbol only depends on the underlying operator and on the order `m` through
+its value: the same operator, as an element of `differentialOperators` at equal orders, has the
+same principal symbol. -/
+theorem complexSmoothPrincipalSymbol_congr (hx : I.IsInteriorPoint x) {m m' : ℕ} (h : m = m')
+    {D : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m}
+    {D' : differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m'}
+    (hD : (D : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) = D')
+    (ξ : TangentSpace I x →L[ℝ] ℂ) :
+    complexSmoothPrincipalSymbol I hx D ξ = complexSmoothPrincipalSymbol I hx D' ξ :=
+  pointPrincipalSymbol_congr _ _ _ h hD ξ
 
 /-- An operator `D` of order zero is multiplication by `D 1`, and its principal symbol at `x` is
 the constant `(D 1)(x)`. -/

@@ -68,6 +68,9 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
   `TauCeti.pointCommutatorSymbol_toCotangent`, `TauCeti.pointCommutatorSymbol_comp_perm`,
   `TauCeti.pointCommutatorSymbol_comp_const`: the point commutator symbol in terms of the cotangent
   symbol, on classes of elements of `J`, its symmetry, and its composition law on the diagonal.
+* `TauCeti.forall_pointCommutatorSymbol_eq_zero_iff`: for a family of points that jointly detect
+  zero, an operator of order at most `m + 1` has vanishing point commutator symbols at all of them
+  if and only if it has order at most `m`.
 * `TauCeti.pointPrincipalSymbol_smul_right`, `TauCeti.pointPrincipalSymbol_eq_apply_one`,
   `TauCeti.pointPrincipalSymbol_comp`: the homogeneity of the point principal symbol, its value
   `φ (D 1)` in order zero, and its multiplicativity under composition.
@@ -532,11 +535,9 @@ private noncomputable def quotientEval (hJ : J ≤ RingHom.ker φ) :
       (by rw [smul_eq_mul, Ideal.mul_top])).restrictScalars 𝕜).toLinearMap
 
 private theorem quotientEval_mk (hJ : J ≤ RingHom.ker φ) (a : A) :
-    quotientEval hJ (Submodule.Quotient.mk a) = φ a := by
-  rw [quotientEval, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply,
-    Submodule.quotEquivOfEq_mk, Ideal.Quotient.mk_eq_mk, AlgHom.toLinearMap_apply,
-    Ideal.Quotient.liftₐ_apply]
-  exact Ideal.Quotient.lift_mk _ _ _
+    quotientEval hJ (Submodule.Quotient.mk a) = φ a :=
+  -- Both quotient maps send `a` to its class, and the lift sends that class to `φ a`.
+  rfl
 
 /-- The `𝕜`-multilinear form underlying `TauCeti.pointCommutatorSymbol`. -/
 private noncomputable def pointCommutatorForm (hJ : J ≤ RingHom.ker φ) (e : J.Cotangent ≃ₗ[𝕜] V)
@@ -642,6 +643,28 @@ theorem pointCommutatorSymbol_eq_zero_of_mem_differentialOperators
     (e.surjective.comp J.toCotangent_surjective).comp_left v
   simp [pointCommutatorSymbol_toCotangent, (commutatorSymbol_eq_zero_iff D).2 hD]
 
+omit e in
+/-- **Detecting the order by point symbols.** Let `φᵢ` be a family of `𝕜`-points of `A`, with
+kernels `Jᵢ` identified with `Vᵢ` by `eᵢ : Jᵢ / Jᵢ² ≃ Vᵢ`, that jointly detect zero: `a = 0`
+whenever `φᵢ a = 0` for all `i`. An operator of order at most `m + 1` has vanishing point
+commutator symbols at every `φᵢ` if and only if it has order at most `m`. -/
+theorem forall_pointCommutatorSymbol_eq_zero_iff {ι : Type*} {J : ι → Ideal A}
+    {φ : ι → A →ₐ[𝕜] 𝕜} (hJ : ∀ i, RingHom.ker (φ i) = J i) {V : ι → Type*}
+    [∀ i, AddCommGroup (V i)] [∀ i, Module 𝕜 (V i)] (e : ∀ i, (J i).Cotangent ≃ₗ[𝕜] V i)
+    (hφ : ∀ a : A, (∀ i, φ i a = 0) → a = 0) {m : ℕ}
+    (D : differentialOperators 𝕜 A A A (m + 1)) :
+    (∀ i, pointCommutatorSymbol (φ i) (hJ i).ge (e i) D = 0) ↔
+      (D : A →ₗ[𝕜] A) ∈ differentialOperators 𝕜 A A A m := by
+  rw [← commutatorSymbol_eq_zero_iff]
+  refine ⟨fun h ↦ MultilinearMap.ext fun a ↦ LinearMap.ext_ring ?_, fun h i ↦
+    pointCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D
+      ((commutatorSymbol_eq_zero_iff D).1 h)⟩
+  -- The iterated commutators are `A`-linear, so it suffices that their values at `1` vanish,
+  -- and these are detected by the points `φᵢ`.
+  refine (hφ _ fun i ↦ ?_).trans (by simp)
+  rw [← pointCommutatorSymbol_toCotangent_add_algebraMap (e i) (hJ i), h i]
+  rfl
+
 /-- Composition multiplies point commutator symbols on the diagonal: for `P` of order at most `m`
 and `Q` of order at most `k`, the point commutator symbol of `P ∘ Q` at `(v, …, v)` is
 `(m + k).choose m` times the product of the point commutator symbols at `(v, …, v)`. -/
@@ -658,9 +681,9 @@ theorem pointCommutatorSymbol_comp_const {m k : ℕ}
   rw [pointCommutatorSymbol_toCotangent e _ fun _ ↦ a,
     pointCommutatorSymbol_toCotangent e _ fun _ ↦ a,
     pointCommutatorSymbol_toCotangent e _ fun _ ↦ a, commutatorSymbol_comp_const,
-    LinearMap.smul_apply, map_nsmul, LinearMap.comp_apply,
-    ← Dual.apply_one_mul_eq (commutatorSymbol 𝕜 A A A m P fun _ ↦ (a : A)), map_mul,
-    nsmul_eq_mul]
+    LinearMap.smul_apply, LinearMap.comp_apply,
+    ← Dual.apply_one_mul_eq (commutatorSymbol 𝕜 A A A m P fun _ ↦ (a : A))]
+  simp [map_mul, nsmul_eq_mul]
 
 end Point
 
@@ -717,6 +740,26 @@ theorem pointPrincipalSymbol_sub (D₁ D₂ : differentialOperators 𝕜 A A A m
       pointPrincipalSymbol φ hJ e D₁ v - pointPrincipalSymbol φ hJ e D₂ v := by
   rw [sub_eq_add_neg D₁ D₂, pointPrincipalSymbol_add, pointPrincipalSymbol_neg, ← sub_eq_add_neg]
 
+/-- The point principal symbol is additive over finite sums of operators. -/
+@[simp]
+theorem pointPrincipalSymbol_sum {κ : Type*} (s : Finset κ)
+    (D : κ → differentialOperators 𝕜 A A A m) (v : V) :
+    pointPrincipalSymbol φ hJ e (∑ j ∈ s, D j) v =
+      ∑ j ∈ s, pointPrincipalSymbol φ hJ e (D j) v := by
+  simp [pointPrincipalSymbol_def, Finset.mul_sum]
+
+/-- The point principal symbol only depends on the underlying operator and on the order `m`
+through its value: the same operator, as an element of `differentialOperators` at equal orders, has
+the same point principal symbol. -/
+theorem pointPrincipalSymbol_congr {m' : ℕ} [Invertible (m'.factorial : 𝕜)] (h : m = m')
+    {D : differentialOperators 𝕜 A A A m} {D' : differentialOperators 𝕜 A A A m'}
+    (hD : (D : A →ₗ[𝕜] A) = D') (v : V) :
+    pointPrincipalSymbol φ hJ e D v = pointPrincipalSymbol φ hJ e D' v := by
+  subst h
+  obtain rfl := Subtype.ext hD
+  congr
+  exact Subsingleton.elim _ _
+
 /-- The point principal symbol of an operator of order at most `m` is homogeneous of degree `m`. -/
 theorem pointPrincipalSymbol_smul_right (D : differentialOperators 𝕜 A A A m) (c : 𝕜)
     (v : V) : pointPrincipalSymbol φ hJ e D (c • v) = c ^ m * pointPrincipalSymbol φ hJ e D v := by
@@ -747,17 +790,24 @@ theorem pointPrincipalSymbol_eq_zero_of_mem_differentialOperators
   simp [pointPrincipalSymbol_def,
     pointCommutatorSymbol_eq_zero_of_mem_differentialOperators e D hD]
 
-/-- When `𝕜` has no additive torsion, the point commutator symbol of `D` vanishes if and only if
-its point principal symbol vanishes everywhere: the commutator symbol is symmetric, so by
-polarization it is determined by its values on the diagonal. -/
-theorem pointCommutatorSymbol_eq_zero_iff_forall_pointPrincipalSymbol_eq_zero [HasUniqueDiv 𝕜]
+/-- The point commutator symbol of `D` vanishes if and only if its point principal symbol vanishes
+everywhere: the commutator symbol is symmetric, so by polarization `m!` times its value at any
+point is an alternating sum of its values on the diagonal, and `m!` is invertible. -/
+theorem pointCommutatorSymbol_eq_zero_iff_forall_pointPrincipalSymbol_eq_zero
     (D : differentialOperators 𝕜 A A A m) :
     pointCommutatorSymbol φ hJ e D = 0 ↔ ∀ v, pointPrincipalSymbol φ hJ e D v = 0 := by
-  refine ⟨fun h v ↦ by simp [pointPrincipalSymbol_def, h], fun h ↦ ?_⟩
-  refine MultilinearMap.eq_zero_of_apply_const_eq_zero (pointCommutatorSymbol_comp_perm e D)
-    fun v ↦ ?_
-  simpa [pointPrincipalSymbol_def, mul_invOf_cancel_left] using
-    congrArg ((m.factorial : 𝕜) * ·) (h v)
+  refine ⟨fun h v ↦ by simp [pointPrincipalSymbol_def, h], fun h ↦ MultilinearMap.ext fun v ↦ ?_⟩
+  have hdiag (w : V) : pointCommutatorSymbol φ hJ e D (fun _ ↦ w) = 0 := by
+    simpa [pointPrincipalSymbol_def, mul_invOf_cancel_left] using
+      congrArg ((m.factorial : 𝕜) * ·) (h w)
+  -- Polarization: `m! • σ v` is an alternating sum of diagonal values of `σ`, which vanish.
+  have hpol := (pointCommutatorSymbol φ hJ e D).sum_neg_one_pow_card_smul_apply_sum_compl v
+  have hperm : ∑ σ : Equiv.Perm (Fin m), pointCommutatorSymbol φ hJ e D (fun i ↦ v (σ i)) =
+      ∑ _σ : Equiv.Perm (Fin m), pointCommutatorSymbol φ hJ e D v :=
+    Finset.sum_congr rfl fun σ _ ↦ pointCommutatorSymbol_comp_perm e D v σ
+  simp only [hdiag, smul_zero, Finset.sum_const_zero, hperm, Finset.sum_const, Finset.card_univ,
+    Fintype.card_perm, Fintype.card_fin, nsmul_eq_mul] at hpol
+  simpa [invOf_mul_cancel_left] using congrArg (⅟(m.factorial : 𝕜) * ·) hpol.symm
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the point principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the

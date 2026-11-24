@@ -269,18 +269,13 @@ theorem forall_mem_smoothCommutatorSymbol_eq_zero_iff {s : Set M} (hs : Dense s)
     (∀ (x : M) (hx : x ∈ s), smoothCommutatorSymbol I (hsI x hx) D = 0) ↔
       (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
         differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m := by
-  rw [← commutatorSymbol_eq_zero_iff]
-  constructor
-  · intro h
-    -- The iterated commutators are linear over the smooth functions, so it suffices that their
-    -- values at `1` vanish. These are continuous functions vanishing on the dense set `s`.
-    refine MultilinearMap.ext fun f ↦ LinearMap.ext_ring <| ContMDiffMap.coe_injective <|
-      Continuous.ext_on hs (ContMDiffMap.contMDiff _).continuous
-      (ContMDiffMap.contMDiff _).continuous fun y hy ↦ ?_
-    rw [← smoothCommutatorSymbol_mvfderiv (hsI y hy), h y hy]
-    simp
-  · exact fun h x hx ↦ smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators _ D
-      ((commutatorSymbol_eq_zero_iff D).1 h)
+  -- Evaluation at the points of `s` detects zero: a smooth function vanishing on the dense set
+  -- `s` is zero by continuity.
+  refine Subtype.forall.symm.trans <| forall_pointCommutatorSymbol_eq_zero_iff
+    (fun x : s ↦ ker_evalAlgHom_eq_smoothVanishingIdeal (x : M))
+    (fun x ↦ smoothCotangentEquiv (hsI x x.property)) (fun g hg ↦ ?_) D
+  exact ContMDiffMap.coe_injective <| Continuous.ext_on hs (ContMDiffMap.contMDiff _).continuous
+    (ContMDiffMap.contMDiff _).continuous fun y hy ↦ by simpa using hg ⟨y, hy⟩
 
 /-- On a boundaryless manifold, an operator of order at most `m + 1` has vanishing commutator
 symbol at every point if and only if it has order at most `m`. -/
@@ -366,8 +361,8 @@ theorem smoothPrincipalSymbol_sub (hx : I.IsInteriorPoint x) {m : ℕ}
 theorem smoothPrincipalSymbol_sum (hx : I.IsInteriorPoint x) {m : ℕ} {κ : Type*}
     (s : Finset κ) (D : κ → differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
-    smoothPrincipalSymbol I hx (∑ j ∈ s, D j) ξ = ∑ j ∈ s, smoothPrincipalSymbol I hx (D j) ξ := by
-  simp [smoothPrincipalSymbol_def, Finset.mul_sum]
+    smoothPrincipalSymbol I hx (∑ j ∈ s, D j) ξ = ∑ j ∈ s, smoothPrincipalSymbol I hx (D j) ξ :=
+  pointPrincipalSymbol_sum _ _ _ s D ξ
 
 /-- The principal symbol only depends on the underlying operator and on the order `m` through
 its value: the same operator, as an element of `differentialOperators` at equal orders, has the
@@ -376,9 +371,8 @@ theorem smoothPrincipalSymbol_congr (hx : I.IsInteriorPoint x) {m m' : ℕ} (h :
     {D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m}
     {D' : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m'}
     (hD : (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) = D') (ξ : TangentSpace I x →L[ℝ] ℝ) :
-    smoothPrincipalSymbol I hx D ξ = smoothPrincipalSymbol I hx D' ξ := by
-  subst h
-  rw [Subtype.ext hD]
+    smoothPrincipalSymbol I hx D ξ = smoothPrincipalSymbol I hx D' ξ :=
+  pointPrincipalSymbol_congr _ _ _ h hD ξ
 
 /-- An operator `D` of order zero is multiplication by `D 1`, and its principal symbol at `x` is
 the constant `(D 1)(x)`. -/
