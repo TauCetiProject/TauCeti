@@ -54,6 +54,9 @@ Hausdorff bases, and with singular `H²(X; ℤ)` for CW complexes. The determina
 * `TauCeti.SpinCStructure.twistEquiv_toEquiv_mk`,
   `TauCeti.SpinCStructure.twistTrivialEquiv_toEquiv_mk`: the formulas of the equivalences of
   twists.
+* `TauCeti.SpinCStructure.twistEquiv_refl`, `TauCeti.SpinCStructure.twistEquiv_symm`,
+  `TauCeti.SpinCStructure.twistEquiv_trans`: twisting respects identities, inverses and
+  composites.
 
 ## References
 
@@ -180,6 +183,70 @@ theorem twistEquiv_toEquiv_inl {s t : SpinCStructure F V n} (φ : s.Equiv t)
     (congrArg (Extend.inl (spinCGroup.mulCircle _ hQ) (spinCGroup.continuous_mulCircle _ _)
       (P := (t.fiberProd Circle L').P)) (φ.fiberProd_toEquiv_mk ψ hψ hψc hψc' x p l))
 
+/-- Twisting by the identity equivalence of `s` and the identity of `L` gives the identity
+equivalence of the twist. -/
+@[simp]
+theorem twistEquiv_refl
+    (hψ : ∀ x (l : L x) (w : Circle), _root_.Equiv.refl (L x) (op w • l) =
+      op w • _root_.Equiv.refl (L x) l)
+    (hψc : Continuous fun l : TotalSpace Circle L ↦
+      (⟨l.proj, _root_.Equiv.refl (L l.proj) l.snd⟩ : TotalSpace Circle L))
+    (hψc' : Continuous fun l : TotalSpace Circle L ↦
+      (⟨l.proj, (_root_.Equiv.refl (L l.proj)).symm l.snd⟩ : TotalSpace Circle L)) :
+    twistEquiv (OrthonormalFrameLift.Equiv.refl s) (fun x ↦ _root_.Equiv.refl (L x)) hψ hψc hψc' =
+      OrthonormalFrameLift.Equiv.refl (s.twist L) := by
+  rw [twistEquiv, OrthonormalFrameLift.Equiv.fiberProd_refl]
+  exact OrthonormalFrameLift.Equiv.extend_refl _ _ _ _ _ _
+
+/-- Twisting by the inverses of `φ` and `ψ` gives the inverse of the twist by `φ` and `ψ`. -/
+@[simp]
+theorem twistEquiv_symm {s t : SpinCStructure F V n} (φ : s.Equiv t)
+    {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
+    [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
+    (ψ : ∀ x, L x ≃ L' x) (hψ : ∀ x (l : L x) (w : Circle), ψ x (op w • l) = op w • ψ x l)
+    (hψc : Continuous fun l : TotalSpace Circle L ↦
+      (⟨l.proj, ψ l.proj l.snd⟩ : TotalSpace Circle L'))
+    (hψc' : Continuous fun l : TotalSpace Circle L' ↦
+      (⟨l.proj, (ψ l.proj).symm l.snd⟩ : TotalSpace Circle L))
+    (hψs : ∀ x (l : L' x) (w : Circle), (ψ x).symm (op w • l) = op w • (ψ x).symm l)
+    (hψsc : Continuous fun l : TotalSpace Circle L' ↦
+      (⟨l.proj, (ψ l.proj).symm l.snd⟩ : TotalSpace Circle L))
+    (hψsc' : Continuous fun l : TotalSpace Circle L ↦
+      (⟨l.proj, (ψ l.proj).symm.symm l.snd⟩ : TotalSpace Circle L')) :
+    twistEquiv φ.symm (fun x ↦ (ψ x).symm) hψs hψsc hψsc' =
+      (twistEquiv φ ψ hψ hψc hψc').symm := by
+  rw [twistEquiv, twistEquiv, OrthonormalFrameLift.Equiv.fiberProd_symm φ ψ hψ hψc hψc']
+  exact OrthonormalFrameLift.Equiv.extend_symm _ _ _ _ _ _
+
+/-- Twisting by composites of equivalences gives the composite of the twists. -/
+@[simp]
+theorem twistEquiv_trans {s t u : SpinCStructure F V n} (φ : s.Equiv t) (φ' : t.Equiv u)
+    {L' : X → Type} [TopologicalSpace (TotalSpace Circle L')] [∀ x, TopologicalSpace (L' x)]
+    [FiberBundle Circle L'] [∀ x, MulAction Circleᵐᵒᵖ (L' x)] [PrincipalBundle Circle L']
+    {L'' : X → Type} [TopologicalSpace (TotalSpace Circle L'')] [∀ x, TopologicalSpace (L'' x)]
+    [FiberBundle Circle L''] [∀ x, MulAction Circleᵐᵒᵖ (L'' x)] [PrincipalBundle Circle L'']
+    (ψ : ∀ x, L x ≃ L' x) (hψ : ∀ x (l : L x) (w : Circle), ψ x (op w • l) = op w • ψ x l)
+    (hψc : Continuous fun l : TotalSpace Circle L ↦
+      (⟨l.proj, ψ l.proj l.snd⟩ : TotalSpace Circle L'))
+    (hψc' : Continuous fun l : TotalSpace Circle L' ↦
+      (⟨l.proj, (ψ l.proj).symm l.snd⟩ : TotalSpace Circle L))
+    (ψ' : ∀ x, L' x ≃ L'' x) (hψ' : ∀ x (l : L' x) (w : Circle), ψ' x (op w • l) = op w • ψ' x l)
+    (hψ'c : Continuous fun l : TotalSpace Circle L' ↦
+      (⟨l.proj, ψ' l.proj l.snd⟩ : TotalSpace Circle L''))
+    (hψ'c' : Continuous fun l : TotalSpace Circle L'' ↦
+      (⟨l.proj, (ψ' l.proj).symm l.snd⟩ : TotalSpace Circle L'))
+    (hψψ' : ∀ x (l : L x) (w : Circle),
+      (ψ x).trans (ψ' x) (op w • l) = op w • (ψ x).trans (ψ' x) l)
+    (hψψ'c : Continuous fun l : TotalSpace Circle L ↦
+      (⟨l.proj, (ψ l.proj).trans (ψ' l.proj) l.snd⟩ : TotalSpace Circle L''))
+    (hψψ'c' : Continuous fun l : TotalSpace Circle L'' ↦
+      (⟨l.proj, ((ψ l.proj).trans (ψ' l.proj)).symm l.snd⟩ : TotalSpace Circle L)) :
+    twistEquiv (φ.trans φ') (fun x ↦ (ψ x).trans (ψ' x)) hψψ' hψψ'c hψψ'c' =
+      (twistEquiv φ ψ hψ hψc hψc').trans (twistEquiv φ' ψ' hψ' hψ'c hψ'c') := by
+  rw [twistEquiv, twistEquiv, twistEquiv,
+    OrthonormalFrameLift.Equiv.fiberProd_trans φ φ' ψ hψ hψc hψc' ψ' hψ' hψ'c hψ'c']
+  exact OrthonormalFrameLift.Equiv.extend_trans _ _ _ _ _ _ _
+
 /-- **Twisting by the trivial bundle changes nothing**: the twist of a `Spinᶜ` structure `s` by
 the trivial principal `U(1)`-bundle is equivalent to `s`, by `[(p, w), a] ↦ p • [1, w] a`. -/
 noncomputable def twistTrivialEquiv : (s.twist (Bundle.Trivial X Circle)).Equiv s :=
@@ -187,14 +254,9 @@ noncomputable def twistTrivialEquiv : (s.twist (Bundle.Trivial X Circle)).Equiv 
     (fun x z ↦ op (spinCGroup.ofCircle _ hQ z.snd) • z.fst)
     (fun x z g ↦ by
       obtain ⟨a, w⟩ := g
-      have key (p : s.P x) (z : Circle) :
-          op (spinCGroup.ofCircle _ hQ (op w • z)) • op a • p =
-            op (spinCGroup.mulCircle _ hQ (a, w)) • op (spinCGroup.ofCircle _ hQ z) • p := by
-        rw [← mul_smul, ← mul_smul, ← op_mul, ← op_mul, op_smul_eq_mul,
-          spinCGroup.ofCircle_mul_mulCircle, spinCGroup.mulCircle_apply]
-      -- `(a, w)` acts on the fibre `(s.fiberProd …).P x` componentwise by the definition of
-      -- `OrthonormalFrameLift.fiberProd`, which `exact` unfolds but `rw` cannot.
-      exact key z.fst z.snd)
+      rw [OrthonormalFrameLift.fiberProd_fst_smul, OrthonormalFrameLift.fiberProd_snd_smul,
+        unop_op, smul_smul, smul_smul, ← op_mul, ← op_mul, op_smul_eq_mul,
+        spinCGroup.ofCircle_mul_mulCircle, spinCGroup.mulCircle_apply])
     (by
       refine Continuous.totalSpaceMk_smul (G := spinCGroup (realCliffordForm n 0) hQ)
         (f := fun z : TotalSpace _ (FiberProd s.P (Bundle.Trivial X Circle)) ↦ z.proj)

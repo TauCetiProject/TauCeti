@@ -84,6 +84,22 @@ theorem toFrame_fiberProd_mk (x : X) (p : s.P x) (q : Q x) :
 
 variable {H Q}
 
+/-- `G × H` acts on the first component of the fibres of the fibre product of a lift with `Q`
+through `G`. -/
+@[simp]
+theorem fiberProd_fst_smul (x : X) (z : (s.fiberProd H Q).P x) (g : (G × H)ᵐᵒᵖ) :
+    FiberProd.fst (P := s.P) (Q := Q) (g • z) =
+      op g.unop.1 • FiberProd.fst (P := s.P) (Q := Q) z :=
+  (rfl)
+
+/-- `G × H` acts on the second component of the fibres of the fibre product of a lift with `Q`
+through `H`. -/
+@[simp]
+theorem fiberProd_snd_smul (x : X) (z : (s.fiberProd H Q).P x) (g : (G × H)ᵐᵒᵖ) :
+    FiberProd.snd (P := s.P) (Q := Q) (g • z) =
+      op g.unop.2 • FiberProd.snd (P := s.P) (Q := Q) z :=
+  (rfl)
+
 /-- **Equivalences of fibre products**: an equivalence `φ : s ≃ t` of lifts along `ρ` and a
 fibrewise equivariant bijection `ψ` from `Q` to a principal `H`-bundle `Q'`, continuous on total
 spaces in both directions, induce an equivalence of the fibre products
@@ -122,6 +138,118 @@ theorem Equiv.fiberProd_toEquiv_mk {s t : OrthonormalFrameLift F E n G ρ} (φ :
     (φ.fiberProd ψ hψ hψc hψc').toEquiv x (FiberProd.mk p q) =
       FiberProd.mk (φ.toEquiv x p) (ψ x q) :=
   (rfl)
+
+@[simp]
+theorem Equiv.fiberProd_toEquiv_fst {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    {Q' : X → Type w} [TopologicalSpace (TotalSpace H Q')] [∀ x, TopologicalSpace (Q' x)]
+    [FiberBundle H Q'] [∀ x, MulAction Hᵐᵒᵖ (Q' x)] [PrincipalBundle H Q']
+    (ψ : ∀ x, Q x ≃ Q' x) (hψ : ∀ x (q : Q x) (h : H), ψ x (op h • q) = op h • ψ x q)
+    (hψc : Continuous fun q : TotalSpace H Q ↦ (⟨q.proj, ψ q.proj q.snd⟩ : TotalSpace H Q'))
+    (hψc' : Continuous fun q : TotalSpace H Q' ↦
+      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
+    (x : X) (z : (s.fiberProd H Q).P x) :
+    FiberProd.fst (P := t.P) (Q := Q') ((φ.fiberProd ψ hψ hψc hψc').toEquiv x z) =
+      φ.toEquiv x (FiberProd.fst (P := s.P) (Q := Q) z) :=
+  (rfl)
+
+@[simp]
+theorem Equiv.fiberProd_toEquiv_snd {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    {Q' : X → Type w} [TopologicalSpace (TotalSpace H Q')] [∀ x, TopologicalSpace (Q' x)]
+    [FiberBundle H Q'] [∀ x, MulAction Hᵐᵒᵖ (Q' x)] [PrincipalBundle H Q']
+    (ψ : ∀ x, Q x ≃ Q' x) (hψ : ∀ x (q : Q x) (h : H), ψ x (op h • q) = op h • ψ x q)
+    (hψc : Continuous fun q : TotalSpace H Q ↦ (⟨q.proj, ψ q.proj q.snd⟩ : TotalSpace H Q'))
+    (hψc' : Continuous fun q : TotalSpace H Q' ↦
+      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
+    (x : X) (z : (s.fiberProd H Q).P x) :
+    FiberProd.snd (P := t.P) (Q := Q') ((φ.fiberProd ψ hψ hψc hψc').toEquiv x z) =
+      ψ x (FiberProd.snd (P := s.P) (Q := Q) z) :=
+  (rfl)
+
+@[simp]
+theorem Equiv.fiberProd_toEquiv_symm_fst {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    {Q' : X → Type w} [TopologicalSpace (TotalSpace H Q')] [∀ x, TopologicalSpace (Q' x)]
+    [FiberBundle H Q'] [∀ x, MulAction Hᵐᵒᵖ (Q' x)] [PrincipalBundle H Q']
+    (ψ : ∀ x, Q x ≃ Q' x) (hψ : ∀ x (q : Q x) (h : H), ψ x (op h • q) = op h • ψ x q)
+    (hψc : Continuous fun q : TotalSpace H Q ↦ (⟨q.proj, ψ q.proj q.snd⟩ : TotalSpace H Q'))
+    (hψc' : Continuous fun q : TotalSpace H Q' ↦
+      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
+    (x : X) (z : (t.fiberProd H Q').P x) :
+    FiberProd.fst (P := s.P) (Q := Q) (((φ.fiberProd ψ hψ hψc hψc').toEquiv x).symm z) =
+      (φ.toEquiv x).symm (FiberProd.fst (P := t.P) (Q := Q') z) :=
+  (rfl)
+
+@[simp]
+theorem Equiv.fiberProd_toEquiv_symm_snd {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    {Q' : X → Type w} [TopologicalSpace (TotalSpace H Q')] [∀ x, TopologicalSpace (Q' x)]
+    [FiberBundle H Q'] [∀ x, MulAction Hᵐᵒᵖ (Q' x)] [PrincipalBundle H Q']
+    (ψ : ∀ x, Q x ≃ Q' x) (hψ : ∀ x (q : Q x) (h : H), ψ x (op h • q) = op h • ψ x q)
+    (hψc : Continuous fun q : TotalSpace H Q ↦ (⟨q.proj, ψ q.proj q.snd⟩ : TotalSpace H Q'))
+    (hψc' : Continuous fun q : TotalSpace H Q' ↦
+      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
+    (x : X) (z : (t.fiberProd H Q').P x) :
+    FiberProd.snd (P := s.P) (Q := Q) (((φ.fiberProd ψ hψ hψc hψc').toEquiv x).symm z) =
+      (ψ x).symm (FiberProd.snd (P := t.P) (Q := Q') z) :=
+  (rfl)
+
+/-- The identity equivalence of a lift and the identity of `Q` induce the identity equivalence of
+the fibre product. -/
+@[simp]
+theorem Equiv.fiberProd_refl (s : OrthonormalFrameLift F E n G ρ)
+    (hψ : ∀ x (q : Q x) (h : H), _root_.Equiv.refl (Q x) (op h • q) =
+      op h • _root_.Equiv.refl (Q x) q)
+    (hψc : Continuous fun q : TotalSpace H Q ↦
+      (⟨q.proj, _root_.Equiv.refl (Q q.proj) q.snd⟩ : TotalSpace H Q))
+    (hψc' : Continuous fun q : TotalSpace H Q ↦
+      (⟨q.proj, (_root_.Equiv.refl (Q q.proj)).symm q.snd⟩ : TotalSpace H Q)) :
+    (refl s).fiberProd (fun x ↦ _root_.Equiv.refl (Q x)) hψ hψc hψc' = refl (s.fiberProd H Q) := by
+  ext x z
+  refine FiberProd.ext (P := s.P) (Q := Q) ?_ ?_ <;> simp
+
+/-- The inverses of an equivalence of lifts and of an equivariant bijection `ψ` induce the inverse
+of the induced equivalence of fibre products. -/
+@[simp]
+theorem Equiv.fiberProd_symm {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    {Q' : X → Type w} [TopologicalSpace (TotalSpace H Q')] [∀ x, TopologicalSpace (Q' x)]
+    [FiberBundle H Q'] [∀ x, MulAction Hᵐᵒᵖ (Q' x)] [PrincipalBundle H Q']
+    (ψ : ∀ x, Q x ≃ Q' x) (hψ : ∀ x (q : Q x) (h : H), ψ x (op h • q) = op h • ψ x q)
+    (hψc : Continuous fun q : TotalSpace H Q ↦ (⟨q.proj, ψ q.proj q.snd⟩ : TotalSpace H Q'))
+    (hψc' : Continuous fun q : TotalSpace H Q' ↦
+      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
+    (hψs : ∀ x (q : Q' x) (h : H), (ψ x).symm (op h • q) = op h • (ψ x).symm q)
+    (hψsc : Continuous fun q : TotalSpace H Q' ↦
+      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
+    (hψsc' : Continuous fun q : TotalSpace H Q ↦
+      (⟨q.proj, (ψ q.proj).symm.symm q.snd⟩ : TotalSpace H Q')) :
+    φ.symm.fiberProd (fun x ↦ (ψ x).symm) hψs hψsc hψsc' = (φ.fiberProd ψ hψ hψc hψc').symm := by
+  ext x z
+  refine FiberProd.ext (P := s.P) (Q := Q) ?_ ?_ <;> simp
+
+/-- Composites of equivalences of lifts and of equivariant bijections induce the composite of the
+induced equivalences of fibre products. -/
+@[simp]
+theorem Equiv.fiberProd_trans {s t u : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (φ' : t.Equiv u)
+    {Q' : X → Type w} [TopologicalSpace (TotalSpace H Q')] [∀ x, TopologicalSpace (Q' x)]
+    [FiberBundle H Q'] [∀ x, MulAction Hᵐᵒᵖ (Q' x)] [PrincipalBundle H Q']
+    {Q'' : X → Type w} [TopologicalSpace (TotalSpace H Q'')] [∀ x, TopologicalSpace (Q'' x)]
+    [FiberBundle H Q''] [∀ x, MulAction Hᵐᵒᵖ (Q'' x)] [PrincipalBundle H Q'']
+    (ψ : ∀ x, Q x ≃ Q' x) (hψ : ∀ x (q : Q x) (h : H), ψ x (op h • q) = op h • ψ x q)
+    (hψc : Continuous fun q : TotalSpace H Q ↦ (⟨q.proj, ψ q.proj q.snd⟩ : TotalSpace H Q'))
+    (hψc' : Continuous fun q : TotalSpace H Q' ↦
+      (⟨q.proj, (ψ q.proj).symm q.snd⟩ : TotalSpace H Q))
+    (ψ' : ∀ x, Q' x ≃ Q'' x) (hψ' : ∀ x (q : Q' x) (h : H), ψ' x (op h • q) = op h • ψ' x q)
+    (hψ'c : Continuous fun q : TotalSpace H Q' ↦ (⟨q.proj, ψ' q.proj q.snd⟩ : TotalSpace H Q''))
+    (hψ'c' : Continuous fun q : TotalSpace H Q'' ↦
+      (⟨q.proj, (ψ' q.proj).symm q.snd⟩ : TotalSpace H Q'))
+    (hψψ' : ∀ x (q : Q x) (h : H), (ψ x).trans (ψ' x) (op h • q) = op h • (ψ x).trans (ψ' x) q)
+    (hψψ'c : Continuous fun q : TotalSpace H Q ↦
+      (⟨q.proj, (ψ q.proj).trans (ψ' q.proj) q.snd⟩ : TotalSpace H Q''))
+    (hψψ'c' : Continuous fun q : TotalSpace H Q'' ↦
+      (⟨q.proj, ((ψ q.proj).trans (ψ' q.proj)).symm q.snd⟩ : TotalSpace H Q)) :
+    (φ.trans φ').fiberProd (fun x ↦ (ψ x).trans (ψ' x)) hψψ' hψψ'c hψψ'c' =
+      (φ.fiberProd ψ hψ hψc hψc').trans (φ'.fiberProd ψ' hψ' hψ'c hψ'c') := by
+  ext x z
+  refine FiberProd.ext (P := u.P) (Q := Q'') ?_ ?_ <;> simp
 
 end OrthonormalFrameLift
 
