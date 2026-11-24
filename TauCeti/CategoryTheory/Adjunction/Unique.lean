@@ -27,7 +27,7 @@ variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
 
 /-- For any two right adjoints to the same left adjoint, postcomposing the hom-set bijection with
 the comparison `rightAdjointUniq` yields the second adjunction's hom-set bijection. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem homEquiv_comp_rightAdjointUniq_hom_app {F : C ⥤ D} {G G' : D ⥤ C}
     (adj1 : F ⊣ G) (adj2 : F ⊣ G') {x : C} {y : D} (f : F.obj x ⟶ y) :
     adj1.homEquiv x y f ≫ (rightAdjointUniq adj1 adj2).hom.app y = adj2.homEquiv x y f := by

@@ -88,6 +88,22 @@ lemma freeι_comp_map (n : ℕ) (K : PointedSSet.{0}) {m : ℕ}
   rw [freeι, evaluationLeftAdjoint_obj_map]
   exact (Limits.Sigma.ι_comp_desc _ _).trans (by rw [Category.id_comp])
 
+/-- Level `m` of `G_n K` is the coproduct of copies of `K` indexed by bijections `Fin n ≃ Fin m`. -/
+noncomputable def freeLevelIso (n m : ℕ) (K : PointedSSet.{0}) :
+    ((free n).obj K).functor.obj (FiniteBijection.mk m) ≅
+      ∐ fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K :=
+  -- `free n` evaluates at `mk m` to this coproduct by definition of `evaluationLeftAdjoint`.
+  Iso.refl _
+
+/-- Under `freeLevelIso`, the action of `σ : mk n ⟶ mk m` on the universal generator `freeι n K`
+is the `σ`-summand inclusion into the coproduct. -/
+@[reassoc]
+lemma freeι_comp_map_comp_freeLevelIso_hom (n m : ℕ) (K : PointedSSet.{0})
+    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
+    freeι n K ≫ ((free n).obj K).functor.map σ ≫ (freeLevelIso n m K).hom =
+      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ :=
+  freeι_comp_map n K σ
+
 /-- A morphism out of `(G_n K)_m` is determined on the summands `freeι n K ≫ (G_n K).map σ`. -/
 @[ext]
 lemma free_level_hom_ext {n m : ℕ} {K Y : PointedSSet.{0}}
@@ -96,13 +112,11 @@ lemma free_level_hom_ext {n m : ℕ} {K Y : PointedSSet.{0}}
       freeι n K ≫ ((free n).obj K).functor.map σ ≫ f =
         freeι n K ≫ ((free n).obj K).functor.map σ ≫ g) :
     f = g := by
-  have hσ (σ) : Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ ≫ f =
-      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ ≫ g :=
-    ((freeι_comp_map n K σ).symm =≫ f).trans
-      ((Category.assoc _ _ _).trans ((h σ).trans ((Category.assoc _ _ _).symm.trans
-        ((freeι_comp_map n K σ) =≫ g))))
-  dsimp only [free, Functor.comp_obj, DayFunctor.equiv, evaluationLeftAdjoint_obj_obj] at f g hσ
-  exact Limits.Sigma.hom_ext _ _ hσ
+  rw [← cancel_epi (freeLevelIso n m K).inv]
+  refine Limits.Sigma.hom_ext _ _ fun σ ↦ ?_
+  rw [← freeι_comp_map_comp_freeLevelIso_hom_assoc, Iso.hom_inv_id_assoc,
+    ← freeι_comp_map_comp_freeLevelIso_hom_assoc, Iso.hom_inv_id_assoc]
+  exact h σ
 
 /-- The unit of the free symmetric sequence adjunction is the universal generator. -/
 @[simp]

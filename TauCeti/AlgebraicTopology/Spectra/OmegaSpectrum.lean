@@ -20,7 +20,7 @@ adjoint structure map `E_n ⟶ Ω E_(1+n)` is a weak equivalence of simplicial s
 
 Using the free-spectrum mapping-space identifications `Map(F_n K, E) ≅ Map_*(K, E_n)`
 (`SymmetricSpectrum.mappingSpaceFreeIso`) and `Map(F_n S⁰, E) ≅ E_n`
-(`SymmetricSpectrum.mappingSpaceFreeZeroIso`) from `Spectra/Cotensor.lean`, precomposition along
+(`SymmetricSpectrum.mappingSpaceFreeZeroIso`) from `Spectra/MappingSpace.lean`, precomposition along
 the stabilization map `freeStabilizationMap n K : F_(1+n)(S¹ ∧ K) ⟶ F_n K` agrees with
 `Map_*(K, σ'_n) : Map_*(K, E_n) ⟶ Map_*(K, Ω E_(1+n))`, and for `K = S⁰` with the adjoint
 structure map `σ'_n : E_n ⟶ Ω E_(1+n)` itself.
@@ -161,24 +161,14 @@ theorem mappingSpace_freeStabilizationMap_eq (n : ℕ) (K : PointedSSet.{0})
       (mappingSpaceFreeIso n K).hom.app E ≫
         (CategoryTheory.ihom K).map (E.smashPowAdjointStructureMap n) := by
   let L := (mappingSpace ((free n).obj K)).obj E
-  let p : L ⟶ (mappingSpace ((free (1 + n)).obj (PointedSSet.circle ⊗ K))).obj E :=
-    (mappingSpaceBifunctor.map (freeStabilizationMap n K).op).app E
-  let adj₁ := levelSmashMappingSpaceAdjunction ((free (1 + n)).obj (PointedSSet.circle ⊗ K))
   let ε : (levelSmash ((free n).obj K)).obj L ⟶ E :=
     (levelSmashMappingSpaceAdjunction ((free n).obj K)).counit.app E
-  have hassoc : (mappingSpaceBifunctor.map (freeStabilizationMap n K).op).app E ≫
-      (mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ K)).hom.app E ≫
-      (MonoidalClosed.ihomCurryIso PointedSSet.circle K ((evaluation (1 + n)).obj E)).hom =
-      (p ≫ (mappingSpaceFreeIso (1 + n) (PointedSSet.circle ⊗ K)).hom.app E) ≫
-      (MonoidalClosed.ihomCurryIso PointedSSet.circle K ((evaluation (1 + n)).obj E)).hom :=
-    (Category.assoc _ _ _).symm
-  rw [hassoc]
+  erw [← Category.assoc, ← homEquiv_levelSmashRight_counit n K E]
+  change (((levelSmashMappingSpaceAdjunction _).homEquiv L E _ ≫ _) ≫ _) = _
   apply MonoidalClosed.uncurry_injective
   apply MonoidalClosed.uncurry_injective
-  rw [MonoidalClosed.uncurry_uncurry_comp_ihomCurryIso_hom]
-  have hL' : p = adj₁.homEquiv L E ((levelSmashRight L).map (freeStabilizationMap n K) ≫ ε) :=
-    (homEquiv_levelSmashRight_counit n K E).symm
-  rw [hL', homEquiv_comp_mappingSpaceFreeIso_hom_app, MonoidalClosed.uncurry_curry,
+  rw [MonoidalClosed.uncurry_uncurry_comp_ihomCurryIso_hom,
+    homEquiv_comp_mappingSpaceFreeIso_hom_app, MonoidalClosed.uncurry_curry,
     MonoidalClosed.uncurry_natural_right, uncurry_mappingSpaceFreeIso_hom_app,
     MonoidalClosed.uncurry_natural_left, Mod.uncurry_smashPowAdjointStructureMap,
     ← cancel_epi (α_ PointedSSet.circle K L).hom, Iso.hom_inv_id_assoc]

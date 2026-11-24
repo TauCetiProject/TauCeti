@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Spectra.Cotensor
-public import TauCeti.AlgebraicTopology.Spectra.StructureMap
 public import Mathlib.CategoryTheory.Adjunction.Parametrized
 
 import Mathlib.CategoryTheory.Adjunction.ParametrizedLimits
@@ -511,119 +510,5 @@ instance (Y : SymmetricSpectrum) :
     have : ∀ K : SSet.{0}, PreservesColimitsOfShape Jᵒᵖ (simplicialTensor.flip.flip.obj K) :=
       fun K ↦ inferInstanceAs (PreservesColimitsOfShape Jᵒᵖ (simplicialTensor.obj K))
     simplicialTensorMappingSpaceAdjunction₂.preservesLimitsOfShape_flip_obj J Y
-
-/-! ### Structure maps of levelwise smash -/
-
-/-- Passing across `tensorFreeZeroι` intertwines the Day structure map of `X` with that of
-`X ∧ L`. -/
-private lemma tensorFreeZeroι_comp_levelSmash_dayStructureMap_aux
-    (X : SymmetricSpectrum) (L : PointedSSet.{0}) (p q : FiniteBijection) :
-    (α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q)
-        (((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0))).hom ≫
-        SymmetricSequence.sphere.functor.obj p ◁
-          (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app (q, FiniteBijection.mk 0) ≫
-        SymmetricSequence.sphere.functor.obj p ◁
-          (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ q).hom ≫
-        (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ (SymmetricSequence.free 0).obj L)).app
-          (p, q) ≫
-        (α_ SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)).inv.natTrans.app
-          (p ⊗ q) ≫
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-          (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q) =
-      (DayFunctor.η SymmetricSequence.sphere X.X).app (p, q) ▷
-          ((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0) ≫
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X)).natTrans.app (p ⊗ q) ▷
-          ((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0) ≫
-        (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app (p ⊗ q, FiniteBijection.mk 0) ≫
-        (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ (p ⊗ q)).hom := by
-  have hη : SymmetricSequence.sphere.functor.obj p ◁
-        (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ q).hom ≫
-      (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ (SymmetricSequence.free 0).obj L)).app (p, q) =
-      (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ (SymmetricSequence.free 0).obj L)).app
-          (p, q ⊗ FiniteBijection.mk 0) ≫
-        (SymmetricSequence.sphere ⊗ (X.X ⊗ (SymmetricSequence.free 0).obj L)).functor.map
-          (p ◁ (ρ_ q).hom) := by
-    simpa using (DayFunctor.η SymmetricSequence.sphere
-      (X.X ⊗ (SymmetricSequence.free 0).obj L)).naturality
-      ((𝟙 p, (ρ_ q).hom) : (p, q ⊗ FiniteBijection.mk 0) ⟶ (p, q))
-  have hγNat : ((SymmetricSequence.sphere ⊗ X.X) ⊗ (SymmetricSequence.free 0).obj L).functor.map
-        (ρ_ (p ⊗ q)).hom ≫
-      (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-        (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q) =
-      (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-          (SymmetricSequence.free 0).obj L).natTrans.app ((p ⊗ q) ⊗ FiniteBijection.mk 0) ≫
-        (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ (p ⊗ q)).hom :=
-    (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-      (SymmetricSequence.free 0).obj L).natTrans.naturality (ρ_ (p ⊗ q)).hom
-  have hday := DayFunctor.whiskerLeft_η_app_comp_η_app_comp_associator_inv_natTrans_app_assoc
-    SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L) p q (FiniteBijection.mk 0)
-    (((SymmetricSequence.sphere ⊗ X.X) ⊗ (SymmetricSequence.free 0).obj L).functor.map
-        (p ◁ (ρ_ q).hom) ≫
-      (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-        (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q))
-  slice_lhs 3 4 => rw [hη]
-  slice_lhs 4 5 =>
-    rw [(α_ SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)).inv.natTrans.naturality
-      ((p ◁ (ρ_ q).hom : p ⊗ q ⊗ FiniteBijection.mk 0 ⟶ p ⊗ q))]
-  rw [Category.assoc
-    ((α_ SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)).inv.natTrans.app _)]
-  rw [hday, Iso.hom_inv_id_assoc]
-  congr 1
-  slice_lhs 2 3 =>
-    rw [← Functor.map_comp,
-      show (α_ p q (FiniteBijection.mk 0)).hom ≫ p ◁ (ρ_ q).hom = (ρ_ (p ⊗ q)).hom by
-        -- Expose `FiniteBijection.mk 0` as `𝟙_ FiniteBijection` so `monoidal` applies.
-        change (α_ p q (𝟙_ FiniteBijection)).hom ≫ p ◁ (ρ_ q).hom = (ρ_ (p ⊗ q)).hom
-        monoidal]
-  slice_lhs 2 3 => rw [hγNat]
-  rw [DayFunctor.η_app_comp_whiskerRight_natTrans_app_assoc]
-
-/-- Passing across `tensorFreeZeroι` intertwines the structure map of `X` with the structure map
-of `X ∧ L`. -/
-@[reassoc]
-lemma tensorFreeZeroι_comp_levelSmash_smashPowStructureMap
-    (X : SymmetricSpectrum) (L : PointedSSet.{0}) (n : ℕ) :
-    X.smashPowStructureMap n ▷ L ≫
-        SymmetricSequence.tensorFreeZeroι X.X L (1 + n) =
-      (α_ PointedSSet.circle (X.X.functor.obj (FiniteBijection.mk n)) L).hom ≫
-        PointedSSet.circle ◁ SymmetricSequence.tensorFreeZeroι X.X L n ≫
-        ((levelSmash X).obj L).smashPowStructureMap n := by
-  let p := FiniteBijection.mk 1
-  let q := FiniteBijection.mk n
-  have hday : (α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q) L).hom ≫
-        SymmetricSequence.sphere.functor.obj p ◁ SymmetricSequence.tensorFreeZeroι X.X L n ≫
-        ((levelSmash X).obj L).dayStructureMap p q =
-      X.dayStructureMap p q ▷ L ≫
-        SymmetricSequence.tensorFreeZeroι X.X L (1 + n) := by
-    calc
-      (α_ _ _ _).hom ≫ SymmetricSequence.sphere.functor.obj p ◁
-            SymmetricSequence.tensorFreeZeroι X.X L n ≫
-          ((levelSmash X).obj L).dayStructureMap p q
-          = (SymmetricSequence.sphere.functor.obj p ⊗ X.X.functor.obj q) ◁
-                SymmetricSequence.freeι 0 L ≫
-              ((α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q)
-                  (((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0))).hom ≫
-                SymmetricSequence.sphere.functor.obj p ◁
-                  (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app
-                    (q, FiniteBijection.mk 0) ≫
-                SymmetricSequence.sphere.functor.obj p ◁
-                  (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ q).hom ≫
-                (DayFunctor.η SymmetricSequence.sphere
-                    (X.X ⊗ (SymmetricSequence.free 0).obj L)).app (p, q) ≫
-                (α_ SymmetricSequence.sphere X.X
-                    ((SymmetricSequence.free 0).obj L)).inv.natTrans.app (p ⊗ q) ≫
-                (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-                  (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q)) := by
-            simp only [SymmetricSequence.tensorFreeZeroι_def, Mod.dayStructureMap_def,
-              Mod.tensorLeft_smul, DayFunctor.comp_natTrans, NatTrans.comp_app,
-              whiskerLeft_comp, Category.assoc]
-            rw [← associator_naturality_right_assoc]
-      _ = X.dayStructureMap p q ▷ L ≫ SymmetricSequence.tensorFreeZeroι X.X L (1 + n) := by
-            rw [tensorFreeZeroι_comp_levelSmash_dayStructureMap_aux]
-            rw [← comp_whiskerRight_assoc, ← Mod.dayStructureMap_def, whisker_exchange_assoc]
-            congr 1
-            exact (SymmetricSequence.tensorFreeZeroι_def X.X L (1 + n)).symm
-  rw [Mod.smashPowStructureMap_def, Mod.smashPowStructureMap_def, comp_whiskerRight,
-    Category.assoc, hday.symm, associator_naturality_left_assoc, whisker_exchange_assoc]
 
 end TauCeti.SymmetricSpectrum
