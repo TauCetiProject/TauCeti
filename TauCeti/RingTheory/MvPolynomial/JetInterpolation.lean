@@ -442,21 +442,20 @@ theorem firstJetMap_surjective_iff :
 theorem wellPoised_of_subsingleton [Finite σ] [Subsingleton ι] (P : ι → σ → R) (hd : 1 ≤ d) :
     WellPoised P d := by
   classical
-  have := Fintype.ofFinite σ
   refine WellPoised.mono (fun t ↦ ?_) hd
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
   · exact ⟨0, funext hι.elim⟩
-  have hX (j : σ) : (X j : MvPolynomial σ R) ∈ restrictTotalDegree σ R 1 := by
-    rw [← one_mul (X j), ← C_1, C_mul_X_eq_monomial]
-    exact monomial_mem_restrictTotalDegree (by simp) 1
-  have hC (a : R) : (C a : MvPolynomial σ R) ∈ restrictTotalDegree σ R 1 :=
-    (mem_restrictTotalDegree σ 1 _).2 (by simp)
-  refine ⟨⟨C (t i₀ none) + ∑ j, t i₀ (some j) • (X j - C (P i₀ j)),
-    add_mem (hC _) (Submodule.sum_mem _ fun j _ ↦
-      Submodule.smul_mem _ _ (sub_mem (hX j) (hC _)))⟩, ?_⟩
+  obtain ⟨f, hf_deg, hf_jet⟩ :=
+    exists_totalDegree_le_one_jetAlgebra_eq (P i₀) ⟨t i₀ none, fun j ↦ t i₀ (some j)⟩
+  refine ⟨⟨f, (mem_restrictTotalDegree σ 1 f).2 hf_deg⟩, ?_⟩
   funext i z
   obtain rfl := Subsingleton.elim i i₀
-  cases z <;> simp [Pi.single_apply]
+  cases z with
+  | none =>
+    simpa using (fst_jetAlgebra (P i) f).symm.trans (congrArg TrivSqZeroExt.fst hf_jet)
+  | some j =>
+    simpa using (snd_jetAlgebra_apply (P i) f j).symm.trans
+      (congrFun (congrArg TrivSqZeroExt.snd hf_jet) j)
 
 /-- Over a field, points are well poised iff their first-jet matrix has full row rank. -/
 theorem wellPoised_iff_rank {k : Type*} [Field k] [Fintype ι] [Fintype σ] {P : ι → σ → k} :
@@ -469,38 +468,31 @@ end CommRing
 
 section Univariate
 
-private def optionUniqueEquivFinTwo (σ : Type*) [Unique σ] : Option σ ≃ Fin 2 where
-  toFun z := z.elim 0 fun _ ↦ 1
-  invFun k := if k = 0 then none else some default
-  left_inv z := by cases z with | none => rfl | some j => simp [Unique.eq_default j]
-  right_inv k := by fin_cases k <;> rfl
-
-@[simp]
-private theorem optionUniqueEquivFinTwo_symm_zero (σ : Type*) [Unique σ] :
-    (optionUniqueEquivFinTwo σ).symm 0 = none := rfl
-
-@[simp]
-private theorem optionUniqueEquivFinTwo_symm_one (σ : Type*) [Unique σ] :
-    (optionUniqueEquivFinTwo σ).symm 1 = some default := rfl
-
 private noncomputable def firstJetRowsEquivFinTwo (ι σ R : Type*) [CommSemiring R] [Unique σ] :
     (ι → Option σ → R) ≃ₗ[R] (ι → Fin 2 → R) :=
-  LinearEquiv.piCongrRight fun _ ↦ LinearEquiv.funCongrLeft R R (optionUniqueEquivFinTwo σ).symm
+  LinearEquiv.piCongrRight fun _ ↦
+    LinearEquiv.funCongrLeft R R
+      ((_root_.finSuccEquiv 1).trans (Equiv.optionCongr (Equiv.ofUnique (Fin 1) σ)))
 
 @[simp]
 private theorem firstJetRowsEquivFinTwo_apply {ι σ R : Type*} [CommSemiring R] [Unique σ]
     (v : ι → Option σ → R) (i : ι) (k : Fin 2) :
-    firstJetRowsEquivFinTwo ι σ R v i k = v i ((optionUniqueEquivFinTwo σ).symm k) := by
+    firstJetRowsEquivFinTwo ι σ R v i k =
+      v i (((_root_.finSuccEquiv 1).trans (Equiv.optionCongr (Equiv.ofUnique (Fin 1) σ))) k) := by
   rw [firstJetRowsEquivFinTwo, LinearEquiv.piCongrRight_apply, LinearEquiv.funCongrLeft_apply,
     LinearMap.funLeft_apply]
 
 private theorem firstJetMap_unique_eq_hasseJet {σ ι R : Type*} [CommSemiring R] [Unique σ]
     (P : ι → σ → R) (d : ℕ) (f : restrictTotalDegree σ R d) (i : ι) (k : Fin 2) :
-    firstJetMap P d f i ((optionUniqueEquivFinTwo σ).symm k) =
+    firstJetMap P d f i
+        (((_root_.finSuccEquiv 1).trans (Equiv.optionCongr (Equiv.ofUnique (Fin 1) σ))) k) =
       Polynomial.hasseJet (fun i ↦ P i default) (fun _ ↦ 2) (uniqueAlgEquiv R σ f.val) i k := by
-  fin_cases k
-  · simp [-uniqueAlgEquiv_apply, eval_uniqueAlgEquiv]
-  · simp [-uniqueAlgEquiv_apply, ← uniqueAlgEquiv_pderiv (default : σ), eval_uniqueAlgEquiv]
+  cases k using Fin.cases with
+  | zero => simp [-uniqueAlgEquiv_apply, eval_uniqueAlgEquiv]
+  | succ j =>
+    rw [Equiv.trans_apply, _root_.finSuccEquiv_succ]
+    simp [-uniqueAlgEquiv_apply, ← uniqueAlgEquiv_pderiv (default : σ), eval_uniqueAlgEquiv,
+      Fin.eq_zero j]
 
 private theorem firstJetRowsEquivFinTwo_comp_firstJetMap_comp_inclusion
     [CommSemiring R] [Unique σ] [Fintype ι] (P : ι → σ → R) {d : ℕ}

@@ -152,9 +152,8 @@ theorem finrank_restrictTotalDegree (σ R : Type*) [Fintype σ] [CommSemiring R]
     Module.finrank R (restrictTotalDegree σ R m) =
       (m + Fintype.card σ).choose (Fintype.card σ) := by
   classical
-  rw [restrictTotalDegree_eq_restrictSupport, finrank_restrictSupport]
-  exact (Nat.card_eq_fintype_card (α := {s : σ →₀ ℕ // s.degree ≤ m})).trans
-    ((Finsupp.card_degree_le m).trans (by rw [Nat.add_comm, Nat.choose_symm_add]))
+  rw [restrictTotalDegree_eq_restrictSupport, finrank_restrictSupport, Set.coe_ofPred,
+    Nat.card_eq_fintype_card, Finsupp.card_degree_le, Nat.add_comm, Nat.choose_symm_add]
 
 /-- The degree-`w` homogeneous polynomials in two variables have dimension `w + 1`. -/
 theorem finrank_homogeneousSubmodule_fin_two (R : Type*) [CommSemiring R]

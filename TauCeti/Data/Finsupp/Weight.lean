@@ -356,7 +356,9 @@ theorem card_degree_le {σ : Type*} [Fintype σ] (n : ℕ) [Fintype {s : σ →�
     Fintype.card {s : σ →₀ ℕ // s.degree ≤ n} = (Fintype.card σ + n).choose n := by
   classical
   rw [Fintype.card_congr (degreeLeEquivOptionDegreeEq n), card_degree_eq, Fintype.card_option,
-    Nat.multichoose_eq, Nat.add_right_comm, Nat.add_sub_cancel]
+    Nat.multichoose_eq]
+  congr 1
+  omega
 
 end Finsupp
 

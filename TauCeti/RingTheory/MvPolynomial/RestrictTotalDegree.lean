@@ -127,15 +127,18 @@ theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degr
   -- `{t | t.degree ≤ m}` that indexes `basisRestrictSupport`; the two subtypes agree by definition.
   exact basisRestrictSupport_apply_coe (s := {t : σ →₀ ℕ | t.degree ≤ m}) s
 
+private theorem setOf_degree_le_eq_lt [Unique σ] (d : ℕ) :
+    {μ : σ →₀ ℕ | μ.degree ≤ d} = {μ : σ →₀ ℕ | μ default < d + 1} := by
+  ext μ
+  simp [Finsupp.degree_eq_sum]
+
 /-- In one variable, `uniqueAlgEquiv` maps `restrictTotalDegree σ R d` onto
 `Polynomial.degreeLT R (d + 1)`. -/
 theorem map_restrictTotalDegree_uniqueAlgEquiv [Unique σ] (d : ℕ) :
     (restrictTotalDegree σ R d).map (uniqueAlgEquiv R σ).toLinearMap =
       Polynomial.degreeLT R (d + 1) := by
-  have hset : {μ : σ →₀ ℕ | μ.degree ≤ d} = {μ : σ →₀ ℕ | μ default < d + 1} := by
-    ext μ
-    simp [Finsupp.degree_eq_sum]
-  rw [restrictTotalDegree_eq_restrictSupport, hset, map_restrictSupport_uniqueAlgEquiv]
+  rw [restrictTotalDegree_eq_restrictSupport, setOf_degree_le_eq_lt,
+    map_restrictSupport_uniqueAlgEquiv]
 
 /-- In one variable, the image of a polynomial under `uniqueAlgEquiv` has degree below `d + 1` if
 and only if the polynomial lies in `restrictTotalDegree σ R d`. -/
@@ -143,9 +146,8 @@ theorem uniqueAlgEquiv_mem_degreeLT_iff_mem_restrictTotalDegree [Unique σ] {d :
     {p : MvPolynomial σ R} :
     uniqueAlgEquiv R σ p ∈ Polynomial.degreeLT R (d + 1) ↔
       p ∈ restrictTotalDegree σ R d := by
-  rw [← map_restrictTotalDegree_uniqueAlgEquiv (σ := σ), ← AlgEquiv.toLinearEquiv_toLinearMap,
-    Submodule.mem_map_equiv, ← AlgEquiv.toLinearEquiv_symm, AlgEquiv.toLinearEquiv_apply,
-    AlgEquiv.symm_apply_apply]
+  rw [restrictTotalDegree_eq_restrictSupport, setOf_degree_le_eq_lt,
+    uniqueAlgEquiv_mem_degreeLT_iff]
 
 variable (σ R) in
 /-- In one variable, `uniqueAlgEquiv` restricts to an `R`-linear equivalence between
