@@ -155,8 +155,8 @@ private theorem map_prefix_succ_eq_compProd (n : ℕ) (hA : ActionGivenStates ν
           (by fun_prop)]
         congr 1
         funext x
-        refine Prod.ext (funext fun i ↦ ?_) rfl
-        refine Fin.lastCases ?_ (fun j ↦ ?_) i <;> simp
+        exact Prod.ext (congrFun (MeasureTheory.prefix_succ_eq_finSnoc_comp (n + 1))
+          fun k ↦ (x k).1) rfl
     _ = ((((μ.map fun x (i : Fin (n + 1)) ↦ x i) ⊗ₘ
           τ.comap (fun z : Fin (n + 1) → α × β ↦ z (Fin.last n)) hlast) ⊗ₘ
             (ρ.comap (Prod.snd : (Fin (n + 1) → α) × α → α) measurable_snd).comap
