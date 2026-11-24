@@ -214,7 +214,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped ContDiff Manifold Topology
+open scoped ContDiff Manifold Matrix Topology
 
 namespace TauCeti
 
@@ -374,6 +374,12 @@ theorem _root_.Filter.EventuallyEq.hamiltonianVectorField_eq (σ : SmoothTwoForm
     (hfg : f =ᶠ[𝓝 x] g) : σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hfg.mvfderiv_eq]
 
+/-- The Hamiltonian vector field at `x` depends only on the differential of the Hamiltonian at
+`x`. -/
+theorem hamiltonianVectorField_eq_of_mvfderiv_eq {x : M} (h : mvfderiv I f x = mvfderiv I g x) :
+    σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, h]
+
 /-- At a point where the flat map of `σ` is invertible, the Hamiltonian vector field of `f` is the
 unique vector whose contraction with `σ` is `df`. -/
 theorem hamiltonianVectorField_eq_iff_of_isInvertible_flat {x : M}
@@ -459,6 +465,17 @@ theorem hamiltonianVectorField_fun_sum {ι : Type*} {s : Finset ι} {F : ι → 
       ∑ i ∈ s, σ.hamiltonianVectorField (F i) x := by
   simp only [hamiltonianVectorField_def, mvfderiv_fun_sum hF, map_sum]
 
+/-- The Hamiltonian vector field of a dot product `v ⬝ᵥ F = ∑ i, vᵢ Fᵢ` with constant
+coefficients is the combination `∑ i, vᵢ X_{Fᵢ}` of the Hamiltonian vector fields of the
+components. -/
+theorem hamiltonianVectorField_dotProduct {ι : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
+    (hF : ∀ i, MDifferentiableAt I 𝓘(ℝ) (F · i) x) (v : ι → ℝ) :
+    σ.hamiltonianVectorField (fun y ↦ v ⬝ᵥ F y) x =
+      ∑ i, v i • σ.hamiltonianVectorField (F · i) x := by
+  rw [show (fun y ↦ v ⬝ᵥ F y) = fun y ↦ ∑ i, v i * F y i from funext fun y ↦ by rw [dotProduct],
+    hamiltonianVectorField_fun_sum (F := fun i y ↦ v i * F y i) fun i _ ↦ (hF i).const_smul (v i)]
+  exact Finset.sum_congr rfl fun i _ ↦ hamiltonianVectorField_const_smul (v i) _
+
 /-- At fixed `x`, the derivative in the real coefficient of `f + t • g`, read in the model
 space of the tangent fiber, is the Hamiltonian vector of `g` at `x`. -/
 theorem hasDerivAt_hamiltonianVectorField_add_smul {x : M}
@@ -481,6 +498,18 @@ theorem hamiltonianVectorField_comp {φ : ℝ → ℝ} {x : M} (hφ : Differenti
     σ.hamiltonianVectorField (φ ∘ f) x = deriv φ (f x) • σ.hamiltonianVectorField f x := by
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_scalar_comp hf hφ,
     map_smul]
+
+/-- **The Hamiltonian vector field of a pulled-back function only depends on the differential
+downstairs.** If `p` is differentiable at `x`, and `g` and `g'` are differentiable at `p x` with
+the same differential there, then `X_{g ∘ p}` and `X_{g' ∘ p}` agree at `x`. -/
+theorem hamiltonianVectorField_comp_eq_of_mvfderiv_eq {F H' B : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace B]
+    [ChartedSpace H' B] {p : M → B} {g g' : B → ℝ} {x : M} (hp : MDifferentiableAt I J p x)
+    (hg : MDifferentiableAt J 𝓘(ℝ) g (p x)) (hg' : MDifferentiableAt J 𝓘(ℝ) g' (p x))
+    (hgg' : mvfderiv J g (p x) = mvfderiv J g' (p x)) :
+    σ.hamiltonianVectorField (g ∘ p) x = σ.hamiltonianVectorField (g' ∘ p) x :=
+  hamiltonianVectorField_eq_of_mvfderiv_eq <| by
+    rw [mvfderiv_comp x hg hp, mvfderiv_comp x hg' hp, hgg']
 
 /-- Along the chart variation `TauCeti.Manifold.sinChartVariation` of a `C^n` curve `γ`, `n ≥ 1`,
 for `C^n` data, the integrand `σ(∂_t w - X_{H_t}(w), ∂_s w)` of the first variation of an action

@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
 import TauCeti.AlgebraicGeometry.Cohomology.Flasque
-import TauCeti.AlgebraicGeometry.Modules.Pushforward.HomologicalComplex
+public import TauCeti.AlgebraicGeometry.Modules.Pushforward.HomologicalComplex
 import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 
 /-!
@@ -149,5 +149,26 @@ lemma higherDirectImagePresheafToPresheafIso_naturality {M N : X.Modules} (φ : 
   -- Compose the five naturality squares without unfolding their objectwise isomorphisms.
   exact ((CommSq.mk h₁).vert_comp ((CommSq.mk h₂).vert_comp
     ((CommSq.mk h₃).vert_comp ((CommSq.mk h₄).vert_comp (CommSq.mk h₅))))).w
+
+/-- The comparison `higherDirectImagePresheafToPresheafIso` computed from the chosen injective
+resolution `P` of `M`: the homology of `f_* P` as a presheaf of modules, read as a presheaf of
+abelian groups, is the homology of the complex `Γ(f⁻¹ -, P)` of presheaves, which is the cohomology
+presheaf of `M` on preimages. -/
+lemma higherDirectImagePresheafToPresheafIso_def (M : X.Modules) (n : ℕ) :
+    letI := Functor.additive_of_preserves_binary_products
+      (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y)
+    f.higherDirectImagePresheafToPresheafIso M n =
+      (PresheafOfModules.toPresheaf Y.ringCatSheaf.obj).mapIso
+          ((injectiveResolution M).isoRightDerivedObj
+            (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y) n) ≪≫
+        (Functor.mapHomologicalComplexCompHomologyFunctorIso
+          (PresheafOfModules.toPresheaf Y.ringCatSheaf.obj) _ n).symm.app _ ≪≫
+        (HomologicalComplex.homologyFunctor _ _ n).mapIso
+          ((pushforwardSectionsComplexIso f).app (injectiveResolution M).cocomplex) ≪≫
+        (((whiskeringLeft Y.Opensᵒᵖ X.Opensᵒᵖ AddCommGrpCat.{u}).obj
+          (Opens.map f.base).op).mapHomologicalComplexCompHomologyFunctorIso _ n).app _ ≪≫
+        ((whiskeringLeft Y.Opensᵒᵖ X.Opensᵒᵖ AddCommGrpCat.{u}).obj (Opens.map f.base).op).mapIso
+          ((injectiveResolution M).cohomologyPresheafIso n) :=
+  (rfl)
 
 end AlgebraicGeometry.Scheme.Hom
