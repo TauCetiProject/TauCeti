@@ -11,7 +11,6 @@ import TauCeti.Analysis.Calculus.BumpFunction.Escaping
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!

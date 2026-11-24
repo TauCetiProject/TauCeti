@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Escaping profiles

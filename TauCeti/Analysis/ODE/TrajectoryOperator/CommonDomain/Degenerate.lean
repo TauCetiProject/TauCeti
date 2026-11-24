@@ -9,7 +9,7 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
 import TauCeti.Analysis.Calculus.BumpFunction.Escaping
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Analysis.Sobolev.GraphStep.Coordinates
-import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!

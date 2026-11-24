@@ -5,15 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import Mathlib.Analysis.Calculus.Deriv.Support
-import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 
 /-!
@@ -41,10 +35,6 @@ proved separately in `TauCeti.MeasureTheory.Function.Lp.LocallyCompact`.
 * `CompactlySupportedContinuousMap.norm_toLp`: `‖toLp p μ 𝕜 f‖ = ENNReal.toReal (eLpNorm f p μ)`.
 * `CompactlySupportedContinuousMap.toLp_injective` and `CompactlySupportedContinuousMap.toLp_inj`:
   `toLp` is injective when `μ` gives positive measure to every nonempty open set.
-* `Continuous.integrable_sq_of_hasCompactSupport` and
-  `ContDiff.integrable_deriv_sq_of_hasCompactSupport`: the square of a continuous compactly
-  supported real function, and the square of the derivative of a `C¹` compactly supported
-  function on `ℝ`, are integrable.
 -/
 
 public section
@@ -115,18 +105,3 @@ theorem toLp_inj [OpensMeasurableSpace X] {p : ℝ≥0∞} {μ : Measure X}
   (toLp_injective p μ 𝕜).eq_iff
 
 end CompactlySupportedContinuousMap
-
-/-- The square of a continuous compactly supported real function is integrable for any measure
-that is finite on compact sets. -/
-theorem Continuous.integrable_sq_of_hasCompactSupport {X : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
-    {f : X → ℝ} (hf : Continuous f) (hfc : HasCompactSupport f) :
-    Integrable (fun x ↦ f x ^ 2) μ :=
-  (hf.memLp_of_hasCompactSupport (μ := μ) (p := 2) hfc).integrable_sq
-
-/-- The square of the derivative of a `C¹` compactly supported function on `ℝ` is integrable for
-any measure that is finite on compact sets. -/
-theorem ContDiff.integrable_deriv_sq_of_hasCompactSupport {μ : Measure ℝ}
-    [IsFiniteMeasureOnCompacts μ] {φ : ℝ → ℝ} {n : WithTop ℕ∞} (hφ : ContDiff ℝ n φ)
-    (hφc : HasCompactSupport φ) (hn : 1 ≤ n) : Integrable (fun s ↦ deriv φ s ^ 2) μ :=
-  (hφ.continuous_deriv hn).integrable_sq_of_hasCompactSupport hφc.deriv
