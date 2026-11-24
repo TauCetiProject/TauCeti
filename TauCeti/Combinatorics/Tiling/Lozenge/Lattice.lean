@@ -612,6 +612,10 @@ theorem rot_mem_edges_rot {e : TriEdge} {f : TriFace} :
     rot e ∈ (TriFace.rot f).edges ↔ e ∈ f.edges := by
   rw [TriFace.edges_rot, Finset.mem_map_equiv, Equiv.symm_apply_apply]
 
+theorem vadd_mem_edges_vadd {w : ℤ × ℤ} {e : TriEdge} {f : TriFace} :
+    w +ᵥ e ∈ (w +ᵥ f).edges ↔ e ∈ f.edges := by
+  rw [TriFace.edges_vadd, Finset.vadd_mem_vadd_finset_iff]
+
 @[simp] theorem whiteFace_rot (e : TriEdge) : (rot e).whiteFace = TriFace.rot e.whiteFace :=
   (eq_whiteFace_of_mem_edges (rot_mem_edges_rot.2 e.mem_whiteFace_edges) (by simp)).symm
 

@@ -148,43 +148,34 @@ private theorem mem_matchingEdges {P : (SimpleGraph.induce R hexGraph).Subgraph}
     rw [Sym2.map_mk]
     exact (TriEdge.dualEdge_eq_iff.2 ⟨fun hfg => h.ne (Subtype.ext hfg), h₁, h₂⟩).symm
 
-private theorem faces_eq_of_adj {P : (SimpleGraph.induce R hexGraph).Subgraph} {e : TriEdge}
-    {f g f' g' : R} (hfg : f ≠ g) (hf : e ∈ f.val.edges) (hg : e ∈ g.val.edges)
-    (hf' : e ∈ f'.val.edges) (hg' : e ∈ g'.val.edges) (hP : P.Adj f' g') :
-    P.Adj f g := by
-  have hne : f'.val ≠ g'.val := fun h => hP.ne (Subtype.ext h)
-  rcases TriFace.eq_or_eq_of_mem_edges hne hf' hg' hf with h₁ | h₁ <;>
-    rcases TriFace.eq_or_eq_of_mem_edges hne hf' hg' hg with h₂ | h₂
-  · exact absurd (Subtype.ext (h₁.trans h₂.symm)) hfg
-  · rwa [Subtype.ext h₁, Subtype.ext h₂]
-  · rw [Subtype.ext h₁, Subtype.ext h₂]
-    exact hP.symm
-  · exact absurd (Subtype.ext (h₁.trans h₂.symm)) hfg
+/-- Two distinct faces of `R` sharing an edge of `matchingEdges P` are adjacent in `P`: the edge
+of `hexGraph` crossing it is `s(f, g)`, and it comes from an edge of `P`. -/
+private theorem adj_of_mem_matchingEdges {P : (SimpleGraph.induce R hexGraph).Subgraph}
+    {e : TriEdge} (hm : e ∈ matchingEdges P) (hfg : f ≠ g) (hf : e ∈ f.val.edges)
+    (hg : e ∈ g.val.edges) : P.Adj f g := by
+  rw [matchingEdges, Set.mem_preimage,
+    TriEdge.dualEdge_eq_iff.2 ⟨fun h => hfg (Subtype.ext h), hf, hg⟩, ← Sym2.map_mk] at hm
+  exact (Sym2.map.injective Subtype.val_injective).mem_set_image.1 hm
 
 private theorem isTiling_matchingEdges {P : (SimpleGraph.induce R hexGraph).Subgraph}
     (hP : P.IsPerfectMatching) : IsTiling R (matchingEdges P) := by
-  refine isTiling_def.2 ⟨fun e he k hk => ?_, fun f hf => ?_⟩
-  · obtain ⟨f, g, hfg, hf, hg⟩ := mem_matchingEdges.1 he
+  have hR : ∀ e ∈ matchingEdges P, ∀ k : TriFace, e ∈ k.edges → k ∈ R := by
+    intro e he k hk
+    obtain ⟨f, g, hfg, hf, hg⟩ := mem_matchingEdges.1 he
     rcases TriFace.eq_or_eq_of_mem_edges (fun h => hfg.ne (Subtype.ext h)) hf hg hk with rfl | rfl
     exacts [f.property, g.property]
-  · obtain ⟨g, hfg, huniq⟩ := SimpleGraph.Subgraph.isPerfectMatching_iff.1 hP ⟨f, hf⟩
-    obtain ⟨e, ⟨hfe, hge⟩, -⟩ := existsUnique_mem_edges_of_hexGraph_adj (P.adj_sub hfg)
-    refine ⟨e, ⟨mem_matchingEdges.2 ⟨_, g, hfg, hfe, hge⟩, hfe⟩, fun e' ⟨hm, he'⟩ => ?_⟩
-    obtain ⟨f', g', hfg', hf', hg'⟩ := mem_matchingEdges.1 hm
-    have hadj : P.Adj ⟨f, hf⟩ (if f = f'.val then g' else f') := by
-      split_ifs with h
-      · rwa [show (⟨f, hf⟩ : R) = f' from Subtype.ext h]
-      · rcases TriFace.eq_or_eq_of_mem_edges (fun h => hfg'.ne (Subtype.ext h)) hf' hg' he'
-          with h' | h'
-        · exact absurd h' h
-        · rw [show (⟨f, hf⟩ : R) = g' from Subtype.ext h']
-          exact hfg'.symm
-    have hg'' := huniq _ hadj
-    have hmem : e' ∈ g.val.edges := by
-      rw [← hg'']
-      split_ifs
-      exacts [hg', hf']
-    exact TriFace.eq_of_mem_edges_of_mem_edges (fun h => hfg.ne (Subtype.ext h)) he' hmem hfe hge
+  refine isTiling_def.2 ⟨hR, fun f hf => ?_⟩
+  obtain ⟨g, hfg, huniq⟩ := SimpleGraph.Subgraph.isPerfectMatching_iff.1 hP ⟨f, hf⟩
+  obtain ⟨e, ⟨hfe, hge⟩, -⟩ := existsUnique_mem_edges_of_hexGraph_adj (P.adj_sub hfg)
+  refine ⟨e, ⟨mem_matchingEdges.2 ⟨_, g, hfg, hfe, hge⟩, hfe⟩, fun e' ⟨hm, he'⟩ => ?_⟩
+  -- The second face `g'` of `e'` is adjacent to `f` in `P`, hence is the partner `g` of `f`.
+  obtain ⟨g', hg'f, hg'⟩ := TriFace.exists_ne_mem_edges he'
+  have hg'' := huniq ⟨g', hR e' hm g' hg'⟩ (adj_of_mem_matchingEdges hm
+    (fun h => hg'f (congrArg Subtype.val h).symm) he' hg')
+  have hmem : e' ∈ g.val.edges := by
+    rw [← hg'']
+    exact hg'
+  exact TriFace.eq_of_mem_edges_of_mem_edges (fun h => hfg.ne (Subtype.ext h)) he' hmem hfe hge
 
 private theorem tilingSubgraph_matchingEdges {P : (SimpleGraph.induce R hexGraph).Subgraph}
     (hP : P.IsPerfectMatching) : tilingSubgraph R (matchingEdges P) = P := by
@@ -194,8 +185,7 @@ private theorem tilingSubgraph_matchingEdges {P : (SimpleGraph.induce R hexGraph
     rw [tilingSubgraph_adj]
     constructor
     · rintro ⟨hfg, e, hm, hf, hg⟩
-      obtain ⟨f', g', hP', hf', hg'⟩ := mem_matchingEdges.1 hm
-      exact faces_eq_of_adj hfg hf hg hf' hg' hP'
+      exact adj_of_mem_matchingEdges hm hfg hf hg
     · intro h
       obtain ⟨e, ⟨hf, hg⟩, -⟩ := existsUnique_mem_edges_of_hexGraph_adj (P.adj_sub h)
       exact ⟨h.ne, e, mem_matchingEdges.2 ⟨f, g, h, hf, hg⟩, hf, hg⟩

@@ -336,23 +336,21 @@ theorem three_mul_card_eq_two_mul_ncard_interiorEdges_add_ncard_boundaryEdges
     (R : Finset TriFace) :
     3 * R.card =
       2 * (interiorEdges (R : Set TriFace)).ncard + (boundaryEdges (R : Set TriFace)).ncard := by
+  -- Double count the incidences between the faces of `R` and the finite set `T` of their edges:
+  -- each face has three edges, and an edge of `T` lies in two faces of `R` when it is interior
+  -- and in one when it is a boundary edge.
   set T := R.biUnion TriFace.edges
-  have hT : ∀ e, e ∈ T ↔ e ∈ regionEdges (R : Set TriFace) := by simp [T, mem_regionEdges]
+  have hT : regionEdges (R : Set TriFace) = ↑T := by ext; simp [T, mem_regionEdges]
   have hint : interiorEdges (R : Set TriFace) =
       ↑(T.filter fun e => e.whiteFace ∈ R ∧ e.blackFace ∈ R) := by
     ext e
-    simp only [Finset.coe_filter, Set.mem_ofPred_eq, hT, mem_interiorEdges_iff, Finset.mem_coe]
-    exact ⟨fun h => ⟨mem_regionEdges_iff.2 (Or.inl h.1), h⟩, And.right⟩
+    simp only [Finset.coe_filter, Set.mem_ofPred_eq, mem_interiorEdges_iff]
+    refine ⟨fun h => ⟨?_, h⟩, And.right⟩
+    rw [← Finset.mem_coe, ← hT]
+    exact mem_regionEdges_iff.2 (Or.inl h.1)
   have hbd : boundaryEdges (R : Set TriFace) =
       ↑(T.filter fun e => ¬(e.whiteFace ∈ R ∧ e.blackFace ∈ R)) := by
-    ext e
-    simp only [Finset.coe_filter, Set.mem_ofPred_eq, hT]
-    constructor
-    · intro h
-      exact ⟨h.1, fun hp => (notMem_boundaryEdges_iff h.1).2 (mem_interiorEdges_iff.2 hp) h⟩
-    · rintro ⟨h, hp⟩
-      by_contra hb
-      exact hp (mem_interiorEdges_iff.1 ((notMem_boundaryEdges_iff h).1 hb))
+    rw [boundaryEdges, hint, hT, Finset.filter_not, Finset.coe_sdiff]
   rw [hint, hbd, Set.ncard_coe_finset, Set.ncard_coe_finset]
   have hdc := Finset.sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow
     (s := R) (t := T) (r := fun f e => e ∈ f.edges)
@@ -371,7 +369,7 @@ theorem three_mul_card_eq_two_mul_ncard_interiorEdges_add_ncard_boundaryEdges
       simp [Finset.bipartiteBelow, and_comm]
     rw [hfil]
     have hw := e.whiteFace_ne_blackFace
-    rw [hT, mem_regionEdges_iff] at he
+    rw [← Finset.mem_coe, ← hT, mem_regionEdges_iff] at he
     rw [TriEdge.faces_def, Finset.filter_insert, Finset.filter_singleton]
     by_cases h₁ : e.whiteFace ∈ R <;> by_cases h₂ : e.blackFace ∈ R <;> simp_all
   rw [Finset.sum_congr rfl habove, Finset.sum_congr rfl hbelow, Finset.sum_ite] at hdc
@@ -391,13 +389,17 @@ theorem notMem_boundaryVertices_iff (hu : u ∈ regionVertices R) :
       refine hb ⟨e, mem_boundaryEdges_iff.2 ?_, he⟩
       tauto
     obtain ⟨x, y⟩ := u
+    -- Consecutive faces around `u = (x, y)` share an edge at `u`. With `W(·)`, `B(·)` the white
+    -- and black faces, the five edges below link the six faces of `vertexFaces u` in a chain:
+    -- `h₅ : W(u) ~ B(u - e₂)`, `h₁ : W(u) ~ B(u)`, `h₂ : B(u) ~ W(u - e₁)`,
+    -- `h₃ : W(u - e₁) ~ B(u - e₁ - e₂)` and `h₄ : B(u - e₁ - e₂) ~ W(u - e₁ - e₂)`.
     have h₁ := key ⟨(x, y), 2⟩ (by simp)
     have h₂ := key ⟨(x, y), 1⟩ (by simp)
     have h₃ := key ⟨(x - 1, y), 0⟩ (by simp)
     have h₄ := key ⟨(x - 1, y - 1), 2⟩ (by simp)
-    have h₆ := key ⟨(x, y), 0⟩ (by simp)
-    simp only [TriEdge.whiteFace_mk, TriEdge.blackFace_mk] at h₁ h₂ h₃ h₄ h₆
-    norm_num [Prod.ext_iff] at h₁ h₂ h₃ h₄ h₆
+    have h₅ := key ⟨(x, y), 0⟩ (by simp)
+    simp only [TriEdge.whiteFace_mk, TriEdge.blackFace_mk] at h₁ h₂ h₃ h₄ h₅
+    norm_num [Prod.ext_iff] at h₁ h₂ h₃ h₄ h₅
     have hall : ∀ g ∈ vertexFaces (x, y), (g ∈ R ↔ (⟨(x, y), true⟩ : TriFace) ∈ R) := by
       intro g hg
       simp only [vertexFaces_def, Finset.mem_insert, Finset.mem_singleton, Prod.mk_sub_mk,
@@ -407,7 +409,7 @@ theorem notMem_boundaryVertices_iff (hu : u ∈ regionVertices R) :
       · exact h₂.trans h₁.symm
       · exact h₄.trans (h₃.symm.trans (h₂.trans h₁.symm))
       · exact h₁.symm
-      · exact h₆.symm
+      · exact h₅.symm
       · exact h₃.symm.trans (h₂.trans h₁.symm)
     obtain ⟨g, hg, hug⟩ := hu
     rw [← mem_vertexFaces] at hug
@@ -452,6 +454,12 @@ theorem boundaryVertices_facesOf {V : Set (ℤ × ℤ)} (hV : V ⊆ regionVertic
       (TriFace.mem_vertices_of_mem_endpoints e.mem_whiteFace_edges (he ▸ Sym2.mem_mk_right u u')))
 
 /-! ### Symmetries -/
+
+/- The constructions are transported along a permutation `φ` of the faces, `ψ` of the edges and `χ`
+of the vertices compatible with incidence. The translation and rotation lemmas below instantiate
+these with `AddAction.toPerm w` and `latticeRot.toEquiv`, whose coercions to functions are
+definitionally `(w +ᵥ ·)` and `latticeRot`, so that `AddAction.toPerm w '' s` is `w +ᵥ s` and
+`latticeRot.toEquiv '' s` is `latticeRot '' s` by definition. -/
 
 section Transfer
 
@@ -565,11 +573,6 @@ section Translation
 
 variable (w : ℤ × ℤ)
 
-private theorem vadd_mem_edges_vadd (e : TriEdge) (f : TriFace) :
-    (AddAction.toPerm w : Equiv.Perm TriEdge) e ∈
-      ((AddAction.toPerm w : Equiv.Perm TriFace) f).edges ↔ e ∈ f.edges := by
-  simp
-
 private theorem endpoints_toPerm (e : TriEdge) :
     ((AddAction.toPerm w : Equiv.Perm TriEdge) e).endpoints =
       e.endpoints.map (AddAction.toPerm w : Equiv.Perm (ℤ × ℤ)) := by
@@ -581,15 +584,18 @@ private theorem vadd_mem_vertices_vadd (f : TriFace) (u : ℤ × ℤ) :
   simp
 
 @[simp] theorem regionEdges_vadd (R : Set TriFace) : regionEdges (w +ᵥ R) = w +ᵥ regionEdges R :=
-  regionEdges_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_edges_vadd w)
+  regionEdges_image (AddAction.toPerm w) (AddAction.toPerm w)
+    fun _ _ => TriEdge.vadd_mem_edges_vadd
 
 @[simp] theorem interiorEdges_vadd (R : Set TriFace) :
     interiorEdges (w +ᵥ R) = w +ᵥ interiorEdges R :=
-  interiorEdges_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_edges_vadd w)
+  interiorEdges_image (AddAction.toPerm w) (AddAction.toPerm w)
+    fun _ _ => TriEdge.vadd_mem_edges_vadd
 
 @[simp] theorem boundaryEdges_vadd (R : Set TriFace) :
     boundaryEdges (w +ᵥ R) = w +ᵥ boundaryEdges R :=
-  boundaryEdges_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_edges_vadd w)
+  boundaryEdges_image (AddAction.toPerm w) (AddAction.toPerm w)
+    fun _ _ => TriEdge.vadd_mem_edges_vadd
 
 @[simp] theorem regionVertices_vadd (R : Set TriFace) :
     regionVertices (w +ᵥ R) = w +ᵥ regionVertices R :=
@@ -599,33 +605,36 @@ private theorem vadd_mem_vertices_vadd (f : TriFace) (u : ℤ × ℤ) :
 @[simp] theorem boundaryVertices_vadd (R : Set TriFace) :
     boundaryVertices (w +ᵥ R) = w +ᵥ boundaryVertices R :=
   boundaryVertices_image (AddAction.toPerm w) (AddAction.toPerm w) (AddAction.toPerm w)
-    (vadd_mem_edges_vadd w) (endpoints_toPerm w)
+    (fun _ _ => TriEdge.vadd_mem_edges_vadd) (endpoints_toPerm w)
 
 @[simp] theorem isConnectedRegion_vadd_iff (R : Set TriFace) :
     IsConnectedRegion (w +ᵥ R) ↔ IsConnectedRegion R :=
   isConnectedRegion_image (AddAction.toPerm w) (AddAction.toPerm w) (AddAction.toPerm w)
-    (vadd_mem_edges_vadd w) (endpoints_toPerm w) (vadd_mem_vertices_vadd w)
+    (fun _ _ => TriEdge.vadd_mem_edges_vadd) (endpoints_toPerm w)
+    (vadd_mem_vertices_vadd w)
 
 @[simp] theorem regionGraph_adj_vadd (R : Set TriFace) :
     (regionGraph (w +ᵥ R)).Adj (w + u) (w + u') ↔ (regionGraph R).Adj u u' :=
   regionGraph_adj_image (AddAction.toPerm w) (AddAction.toPerm w) (AddAction.toPerm w)
-    (vadd_mem_edges_vadd w) (endpoints_toPerm w)
+    (fun _ _ => TriEdge.vadd_mem_edges_vadd) (endpoints_toPerm w)
 
 theorem boundaryGraph_adj_vadd {R : Set TriFace} {p p' : boundaryVertices R}
     {q q' : boundaryVertices (w +ᵥ R)} (hq : q.val = w + p.val) (hq' : q'.val = w + p'.val) :
     (boundaryGraph (w +ᵥ R)).Adj q q' ↔ (boundaryGraph R).Adj p p' :=
   boundaryGraph_adj_image (AddAction.toPerm w) (AddAction.toPerm w) (AddAction.toPerm w)
-    (vadd_mem_edges_vadd w) (endpoints_toPerm w) hq hq'
+    (fun _ _ => TriEdge.vadd_mem_edges_vadd) (endpoints_toPerm w) hq hq'
 
 @[simp] theorem facesOf_vadd (V : Set (ℤ × ℤ)) : facesOf (w +ᵥ V) = w +ᵥ facesOf V :=
   facesOf_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_vertices_vadd w) V
 
 /-- Translating a region by `w` translates `F(R)` by `w ∈ ℤ² ⊆ ℝ²`. -/
 @[simp] theorem regionUnion_vadd (R : Set TriFace) :
-    regionUnion (w +ᵥ R) = ((w.1 : ℝ), (w.2 : ℝ)) +ᵥ regionUnion R :=
-  regionUnion_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_vertices_vadd w)
+    regionUnion (w +ᵥ R) = ((w.1 : ℝ), (w.2 : ℝ)) +ᵥ regionUnion R := by
+  refine (regionUnion_image (AddAction.toPerm w) (AddAction.toPerm w) (vadd_mem_vertices_vadd w)
     (AffineEquiv.constVAdd ℝ (ℝ × ℝ) ((w.1 : ℝ), (w.2 : ℝ))).toAffineMap
-    (fun u => by simp [vadd_eq_add])
+    (fun u => by simp [vadd_eq_add])).trans ?_
+  rw [← Set.image_vadd]
+  exact congrArg (· '' _) (funext fun p => by simp)
 
 end Translation
 
@@ -684,9 +693,9 @@ theorem facesOf_rot (V : Set (ℤ × ℤ)) : facesOf (latticeRot '' V) = TriFace
 `latticeRot`. -/
 @[simp] theorem regionUnion_rot (R : Set TriFace) :
     regionUnion (TriFace.rot '' R) = (fun p : ℝ × ℝ => (-p.2, p.1 - p.2)) '' regionUnion R :=
-  regionUnion_image (χ := latticeRot.toEquiv) _ latticeRot_mem_vertices_rot
+  (regionUnion_image (χ := latticeRot.toEquiv) _ latticeRot_mem_vertices_rot
     ((-LinearMap.snd ℝ ℝ ℝ).prod (LinearMap.fst ℝ ℝ ℝ - LinearMap.snd ℝ ℝ ℝ)).toAffineMap
-    (fun u => by simp)
+    (fun u => by simp)).trans (congrArg (· '' _) (funext fun p => by simp))
 
 end Rotation
 

@@ -233,55 +233,44 @@ theorem IsFreeTiling.isTiling_iff (h : IsFreeTiling R M) :
 
 /-! ### Symmetries -/
 
-private theorem isTiling_image (φ : Equiv.Perm TriFace) (ψ : Equiv.Perm TriEdge)
-    (hψ : ∀ e f, ψ e ∈ (φ f).edges ↔ e ∈ f.edges) :
-    IsTiling (φ '' R) (ψ '' M) ↔ IsTiling R M := by
-  constructor
-  · rintro ⟨h₁, h₂⟩
-    refine ⟨fun e he f hf => ?_, fun f hf => ?_⟩
-    · simpa [φ.injective.mem_set_image] using
-        h₁ (ψ e) (Set.mem_image_of_mem ψ he) (φ f) ((hψ e f).2 hf)
-    · refine (ψ.existsUnique_congr fun {e} => ?_).2 (h₂ (φ f) (Set.mem_image_of_mem φ hf))
-      rw [ψ.injective.mem_set_image, hψ]
-  · rintro ⟨h₁, h₂⟩
-    refine ⟨?_, ?_⟩
-    · rintro _ ⟨e, he, rfl⟩ g hg
-      obtain ⟨f, rfl⟩ := φ.surjective g
-      exact Set.mem_image_of_mem φ (h₁ e he f ((hψ e f).1 hg))
-    · rintro _ ⟨f, hf, rfl⟩
-      refine (ψ.existsUnique_congr fun {e} => ?_).1 (h₂ f hf)
-      rw [ψ.injective.mem_set_image, hψ]
+/- Tilings and free tilings are transported along permutations `φ` of the faces and `ψ` of the
+edges compatible with incidence. The translation lemmas instantiate these with
+`AddAction.toPerm w`, whose image of a set is `w +ᵥ ·` of it by definition. -/
 
-/-- Translations map tilings of `R` to tilings of the translated region. -/
-@[simp] theorem isTiling_vadd_iff (w : ℤ × ℤ) : IsTiling (w +ᵥ R) (w +ᵥ M) ↔ IsTiling R M :=
-  isTiling_image (AddAction.toPerm w) (AddAction.toPerm w) fun e f => by
-    simp [Finset.vadd_mem_vadd_finset_iff]
-
-/-- The rotation `ρ` maps tilings of `R` to tilings of the rotated region. -/
-@[simp] theorem isTiling_rot_iff :
-    IsTiling (TriFace.rot '' R) (TriEdge.rot '' M) ↔ IsTiling R M :=
-  isTiling_image _ _ fun _ _ => TriEdge.rot_mem_edges_rot
-
-private theorem isFreeTiling_image (φ : Equiv.Perm TriFace) (ψ : Equiv.Perm TriEdge)
-    (hψ : ∀ e f, ψ e ∈ (φ f).edges ↔ e ∈ f.edges)
-    (hE : regionEdges (φ '' R) = ψ '' regionEdges R) :
-    IsFreeTiling (φ '' R) (ψ '' M) ↔ IsFreeTiling R M := by
-  rw [isFreeTiling_def, isFreeTiling_def, hE, Set.image_subset_image_iff ψ.injective,
-    Set.forall_mem_image]
+/-- Both tiling conditions, `M ⊆ E R` and the unique edge of `M` in each face of `R`, transported
+along `φ` and `ψ`, for an edge set `E R` of the region compatible with them. -/
+private theorem image_iff (φ : Equiv.Perm TriFace) (ψ : Equiv.Perm TriEdge)
+    (hψ : ∀ e f, ψ e ∈ (φ f).edges ↔ e ∈ f.edges) (E : Set TriFace → Set TriEdge)
+    (hE : E (φ '' R) = ψ '' E R) :
+    (ψ '' M ⊆ E (φ '' R) ∧ ∀ f ∈ φ '' R, ∃! e, e ∈ ψ '' M ∧ e ∈ f.edges) ↔
+      (M ⊆ E R ∧ ∀ f ∈ R, ∃! e, e ∈ M ∧ e ∈ f.edges) := by
+  rw [hE, Set.image_subset_image_iff ψ.injective, Set.forall_mem_image]
   refine and_congr_right fun _ => forall₂_congr fun f _ =>
     (ψ.existsUnique_congr fun {e} => ?_).symm
   rw [ψ.injective.mem_set_image, hψ]
 
+/-- Translations map tilings of `R` to tilings of the translated region. -/
+@[simp] theorem isTiling_vadd_iff (w : ℤ × ℤ) : IsTiling (w +ᵥ R) (w +ᵥ M) ↔ IsTiling R M := by
+  rw [isTiling_iff_subset_interiorEdges, isTiling_iff_subset_interiorEdges]
+  exact image_iff (AddAction.toPerm w) (AddAction.toPerm w)
+    (fun _ _ => TriEdge.vadd_mem_edges_vadd) interiorEdges (interiorEdges_vadd w R)
+
+/-- The rotation `ρ` maps tilings of `R` to tilings of the rotated region. -/
+@[simp] theorem isTiling_rot_iff :
+    IsTiling (TriFace.rot '' R) (TriEdge.rot '' M) ↔ IsTiling R M := by
+  rw [isTiling_iff_subset_interiorEdges, isTiling_iff_subset_interiorEdges]
+  exact image_iff _ _ (fun _ _ => TriEdge.rot_mem_edges_rot) interiorEdges (interiorEdges_rot R)
+
 /-- Translations map free tilings of `R` to free tilings of the translated region. -/
 @[simp] theorem isFreeTiling_vadd_iff (w : ℤ × ℤ) :
     IsFreeTiling (w +ᵥ R) (w +ᵥ M) ↔ IsFreeTiling R M :=
-  isFreeTiling_image (AddAction.toPerm w) (AddAction.toPerm w)
-    (fun e f => by simp [Finset.vadd_mem_vadd_finset_iff]) (regionEdges_vadd w R)
+  image_iff (AddAction.toPerm w) (AddAction.toPerm w)
+    (fun _ _ => TriEdge.vadd_mem_edges_vadd) regionEdges (regionEdges_vadd w R)
 
 /-- The rotation `ρ` maps free tilings of `R` to free tilings of the rotated region. -/
 @[simp] theorem isFreeTiling_rot_iff :
     IsFreeTiling (TriFace.rot '' R) (TriEdge.rot '' M) ↔ IsFreeTiling R M :=
-  isFreeTiling_image _ _ (fun _ _ => TriEdge.rot_mem_edges_rot) (regionEdges_rot R)
+  image_iff _ _ (fun _ _ => TriEdge.rot_mem_edges_rot) regionEdges (regionEdges_rot R)
 
 /-! ### Lozenges as placed tiles -/
 
