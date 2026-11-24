@@ -41,27 +41,6 @@ open scoped Real ENNReal
 
 namespace TauCeti
 
-/-- A holomorphic function on the upper half-plane with real values is constant. -/
-private theorem eqOn_const_of_im_eq_zero {G : ℂ → ℂ}
-    (hG : DifferentiableOn ℂ G UpperHalfPlane.upperHalfPlaneSet)
-    (him : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, (G z).im = 0) :
-    ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, G z = G I := by
-  have hU := UpperHalfPlane.isOpen_upperHalfPlaneSet
-  have hI : I ∈ UpperHalfPlane.upperHalfPlaneSet := by
-    simp [UpperHalfPlane.upperHalfPlaneSet]
-  rcases (hG.analyticOnNhd hU).is_constant_or_isOpen
-      (convex_halfSpace_im_gt 0).isPreconnected with ⟨w, hw⟩ | hopen
-  · exact fun z hz ↦ (hw z hz).trans (hw I hI).symm
-  · -- The image of `ℂ₊` would be an open subset of the real axis containing `G i`.
-    exfalso
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp (hopen _ subset_rfl hU) (G I) ⟨I, hI, rfl⟩
-    obtain ⟨z, hz, hGz⟩ := hball (show G I + (ε / 2 : ℝ) * I ∈ Metric.ball (G I) ε by
-      simp [abs_of_pos hε, hε])
-    have := him z hz
-    rw [hGz] at this
-    simp [him I hI] at this
-    linarith
-
 /-- The function `F(z) = c z + i S[ν](z)` attached to a representation `(c, ν)`. -/
 private noncomputable def reprFun (c : ℝ) (ν : Measure ℝ) (z : ℂ) : ℂ :=
   c * z + I * upperHalfPlaneSchwarzIntegral ν z
@@ -104,17 +83,19 @@ theorem eq_and_eq_of_mul_im_add_upperHalfPlanePoissonIntegral_eq {c c' : ℝ} {�
         c' * z.im + upperHalfPlanePoissonIntegral ν' z) :
     c = c' ∧ ν = ν' := by
   -- The two holomorphic functions differ by a real constant, which vanishes at `i`.
-  have hconst := eqOn_const_of_im_eq_zero
-    ((differentiableOn_reprFun c ν).sub (differentiableOn_reprFun c' ν'))
-    fun z hz ↦ by simp [im_reprFun, h z hz]
+  have hU := UpperHalfPlane.isOpen_upperHalfPlaneSet
+  have hI₀ : I ∈ UpperHalfPlane.upperHalfPlaneSet := by simp [UpperHalfPlane.upperHalfPlaneSet]
+  obtain ⟨w, hw⟩ := (((differentiableOn_reprFun c ν).sub
+    (differentiableOn_reprFun c' ν')).analyticOnNhd hU).eq_const_of_im_eq_const (c₀ := 0)
+    (fun z hz ↦ by simp [im_reprFun, h z hz]) hU ((convex_halfSpace_im_gt 0).isConnected ⟨I, hI₀⟩)
   have hI : reprFun c ν I - reprFun c' ν' I = 0 := by
     apply Complex.ext
     · simp [re_reprFun_I]
-    · have := h I (by simp [UpperHalfPlane.upperHalfPlaneSet])
+    · have := h I hI₀
       simp only [I_im, mul_one] at this
       simp [im_reprFun, this]
   have hF : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, reprFun c ν z = reprFun c' ν' z :=
-    fun z hz ↦ sub_eq_zero.mp ((hconst z hz).trans hI)
+    fun z hz ↦ sub_eq_zero.mp (((hw z hz).trans (hw I hI₀).symm).trans hI)
   have hrep := fun z (_ : z ∈ UpperHalfPlane.upperHalfPlaneSet) ↦ reprFun_eq c ν z
   have hrep' := fun z (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) ↦
     (hF z hz).trans (reprFun_eq c' ν' z)
