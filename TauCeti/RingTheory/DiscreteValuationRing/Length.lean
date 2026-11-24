@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Squarefree.Basic
 # Quotient lengths and squarefreeness in discrete valuation rings
 
 The length of `R/I` for a nonzero ideal of a discrete valuation ring is the exponent of its
-maximal ideal in `I`. This is the local length calculation used for different ideals.
+maximal ideal in `I`, and `I` is the maximal ideal raised to that length. This is the local length
+calculation used for different ideals and for relative ideal norms.
 
 An element is squarefree exactly when the length of the quotient by its principal
 ideal (`Ring.ord`) is at most one. This detects reducedness of principal divisors at
@@ -39,6 +40,15 @@ theorem length_quotient_eq_multiplicity (I : Ideal R) (hI : I ≠ ⊥) :
   rw [← span_singleton_generator I, ← Ring.ord]
   exact (Ring.ord_eq_addVal _).trans
     (TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton hgen)
+
+/-- A nonzero ideal `I` of a discrete valuation ring is the power of the maximal ideal whose
+exponent is the length of `R ⧸ I`. -/
+theorem eq_maximalIdeal_pow_length_quotient (I : Ideal R) (hI : I ≠ ⊥) :
+    I = maximalIdeal R ^ (Module.length R (R ⧸ I)).toNat := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  obtain ⟨n, rfl⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI hϖ
+  rw [← span_singleton_pow, ← hϖ.maximalIdeal_eq,
+    IsDiscreteValuationRing.length_quotient_pow_maximalIdeal, ENat.toNat_natCast]
 
 end Ideal
 
