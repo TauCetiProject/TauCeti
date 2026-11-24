@@ -22,7 +22,7 @@ The map is natural in `R`, so the Witt-vector Frobenius, which in characteristic
 induced by the Frobenius of `R`, fixes it: Frobenius is a map over `ℤ_p`. Like every ring
 homomorphism out of `ℤ_[p]`, the map is continuous for every adic topology on `𝕎 R` defined by an
 ideal containing `p`, such as the `(p, [ϖ])`-adic topology of `A_inf`
-(`PadicInt.continuous_of_isAdic`, in `TauCeti.NumberTheory.Padics.FractionField`).
+(`PadicInt.continuous_of_isAdic`, in `TauCeti.RingTheory.Huber.Padic.Basic`).
 
 ## Main definitions
 
