@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.Analysis.RCLike.Basic
-import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Convex.Simons
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 import TauCeti.Topology.Algebra.Module.WeakSpace
@@ -55,7 +53,7 @@ open Bornology Filter Finset RCLike Set Topology
 
 namespace TauCeti
 
-variable {𝕜 Y : Type*} [RCLike 𝕜] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+variable {𝕜 Y : Type*} [RCLike 𝕜] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
 
 /-- A lower bound on the norms of finite convex combinations of a bounded sequence passes to its
 countable convex combinations. -/
@@ -115,7 +113,7 @@ theorem exists_mem_frequently_lt_re_apply_of_forall_le_norm [CompleteSpace Y]
     (fun w _ hw ↦ by
       obtain ⟨b, hbB, hb⟩ := hB (∑' n, (w n : 𝕜) • u n)
       refine ⟨b, hbB, fun b' hb' ↦ ?_⟩
-      simp only [mem_setOf_eq, hval w hw, hb]
+      simp only [hval w hw, hb]
       exact hre_le b' hb' _)
     (fun w hw0 hw ↦ by
       obtain ⟨b, hbB, hb⟩ := hB (∑' n, (w n : 𝕜) • u n)

@@ -8,13 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.Normed.Module.WeakDual
-import Mathlib.Analysis.Complex.Basic
 import TauCeti.Analysis.Normed.Module.Dual.JamesBoundary
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
-import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
 # Norm-attaining functionals and reflexivity
