@@ -22,9 +22,12 @@ with `X ×_S Y ×_S Z` written as `X ×_S (Y ×_S Z)`. It is Tau Ceti's graph cl
 `TauCeti.AlgebraicGeometry.graphClosure` of `(f_U, (g ∘ f)_U) : U → Y ×_S Z`, so the graph
 closure API applies to it.
 
-For `X` Noetherian and integral, `W_{f,g}` is integral (no integrality of `Y ×_S Z` is used), and
-replacing `U` by a smaller dense open does not change it. Over a field `K`, for `X` Noetherian and
-integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has the dimension of `X`.
+For `X` Noetherian and integral, `W_{f,g}` is integral: instance search finds this through the
+graph closure, from `TauCeti.AlgebraicGeometry.Scheme.Hom.isIntegral_image`. Replacing `U` by a
+smaller dense open does not change `W_{f,g}`: this is
+`TauCeti.AlgebraicGeometry.ker_homOfLE_comp_opensGraph`, which applies to `W_{f,g}` directly.
+Over a field `K`, for `X` Noetherian and integral and `X`, `Y`, `Z` locally of finite type,
+`W_{f,g}` has the dimension of `X`.
 
 ## Main definitions
 
@@ -39,10 +42,6 @@ integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has the dimension o
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.RationalMap.isIntegral_compositeCorrespondence`: for `X` Noetherian
-  and integral, `W_{f,g}` is integral.
-* `AlgebraicGeometry.Scheme.RationalMap.ker_homOfLE_comp_opensGraph_compositeLift`: the image of
-  the restriction to a smaller dense open is `W_{f,g}`.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_compositeCorrespondence`: over a
   field, for `X` Noetherian and integral and `X`, `Y`, `Z` locally of finite type, `W_{f,g}` has
   the dimension of `X`.
@@ -204,23 +203,6 @@ variable [NoetherianSpace X]
 /-- The open `U` is nonempty when `X` is: it is dense. -/
 instance nonempty_compositeDomain [Nonempty X] : Nonempty (compositeDomain f g) :=
   (dense_compositeDomain f g).nonempty.to_subtype
-
-/-- For `X` Noetherian and integral, the correspondence `W_{f,g}` is integral. -/
-theorem isIntegral_compositeCorrespondence [IsIntegral X] :
-    IsIntegral (compositeCorrespondence sX sY sZ f g) :=
-  inferInstance
-
-omit [NoetherianSpace X] in
-/-- **Independence of the open.** For a dense open `V ⊆ U`, the restriction of
-`(ι_U, f_U, (g ∘ f)_U)` to `V` has the same kernel, hence the same scheme-theoretic image
-`W_{f,g}`. -/
-theorem ker_homOfLE_comp_opensGraph_compositeLift {V : X.Opens} (hV : Dense (V : Set X))
-    (hVU : V ≤ compositeDomain f g) :
-    (X.homOfLE hVU ≫ opensGraph sX (pullback.fst sY sZ ≫ sY) (compositeDomain f g)
-        (compositeLift sX sY sZ f g) (compositeLift_comp sX sY sZ f g)).ker =
-      (opensGraph sX (pullback.fst sY sZ ≫ sY) (compositeDomain f g)
-        (compositeLift sX sY sZ f g) (compositeLift_comp sX sY sZ f g)).ker :=
-  ker_homOfLE_comp_opensGraph hV hVU
 
 end Noetherian
 

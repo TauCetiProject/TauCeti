@@ -36,9 +36,15 @@ gives the two properties of the construction used in Chow's lemma:
   where `X* ⟶ P' i` lands in the image of `j i`, the first projection factors through the
   second, so there `X*` is cut out of `P` as a graph.
 
-No Noetherian, reducedness or irreducibility hypothesis is needed: scheme-theoretic density
-replaces topological density, and the quasi-compactness of `U ⟶ X` (with `q` quasi-separated)
-keeps it under restriction to opens.
+These two properties need no Noetherian, reducedness or irreducibility hypothesis:
+scheme-theoretic density replaces topological density, and the quasi-compactness of `U ⟶ X`
+(with `q` quasi-separated) keeps it under restriction to opens.
+
+Two further results use such hypotheses. For `X` reduced, restricting the graph to a dense open
+`V ⊆ U` does not change the graph closure. For `q` separated and `U ⟶ X` quasi-compact, the
+inclusion of `U` into the graph closure is an open immersion; hence over a field, for `X`
+irreducible, `U` nonempty and `f`, `q` locally of finite type, the graph closure has the
+dimension of `X`.
 
 ## Main definitions
 
@@ -58,7 +64,8 @@ keeps it under restriction to opens.
 * `TauCeti.AlgebraicGeometry.isOpenImmersion_toGraphClosure`: for `q` separated and `U ⟶ X`
   quasi-compact, the inclusion of `U` into the graph closure is an open immersion.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_graphClosure`: over a field, for `X` irreducible,
-  `U` nonempty and `f`, `q` locally of finite type, the graph closure has the dimension of `X`.
+  `U` nonempty with `U ⟶ X` quasi-compact, `q` separated and `f`, `q` locally of finite type, the
+  graph closure has the dimension of `X`.
 * `TauCeti.AlgebraicGeometry.isModification_graphClosureFst`: for `q` proper, `U ⟶ X`
   quasi-compact and `U` dense, the projection to `X` is a modification.
 * `TauCeti.AlgebraicGeometry.isImmersion_graphClosureSnd`: for `f` separated, `q`
@@ -271,7 +278,7 @@ instance isIso_graphClosureFst_restrict [IsSeparated q] :
 
 omit [QuasiSeparated q] in
 /-- For `q` separated and `U ⟶ X` quasi-compact, the inclusion of `U` into the graph closure is an
-open immersion, onto the preimage of `U` under the projection to `X`. -/
+open immersion. -/
 instance isOpenImmersion_toGraphClosure [IsSeparated q] :
     IsOpenImmersion (toGraphClosure f q U g hg) := by
   have hO : Set.range (toGraphClosure f q U g hg) ⊆
