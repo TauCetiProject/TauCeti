@@ -143,7 +143,7 @@ subspace topology. -/
 subgroups has no small additive subgroups in the subspace topology. -/]
 theorem HasNoSmallSubgroups.subgroup (hG : HasNoSmallSubgroups G) (K : Subgroup G) :
     HasNoSmallSubgroups K :=
-  hG.of_injective K.subtype continuous_subtype_val.continuousAt Subtype.val_injective
+  hG.of_injective K.subtype continuous_subtypeVal.continuousAt Subtype.val_injective
 
 /-- Every discrete group has no small subgroups. -/
 @[to_additive hasNoSmallAddSubgroups_of_discreteTopology

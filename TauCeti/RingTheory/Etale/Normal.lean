@@ -1,14 +1,16 @@
 /-
 Copyright (c) 2026 Taylor Dupuy, Thomas Tucker, Zhuoran Wang. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
+Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.RingTheory.LocalProperties.IntegrallyClosed
+public import TauCeti.RingTheory.Etale.Field
 public import TauCeti.RingTheory.Flat.IntegrallyClosed
 public import TauCeti.RingTheory.IntegralClosure.ReducedArtinian
 public import TauCeti.RingTheory.Localization.LocalizationLocalization
+public import TauCeti.RingTheory.Localization.Normal
 public import TauCeti.RingTheory.Smooth.IntegralClosure
 public import TauCeti.RingTheory.Unramified.Field
 
@@ -38,11 +40,26 @@ The statements need no Noetherian, depth or dimension hypotheses.
   integrally closed.
 * `TauCeti.Algebra.isNormalDomain_iff_of_etale`: Stacks 025P; normality is expressed by
   `IsDomain` and `IsIntegrallyClosed` since Mathlib has no predicate "normal domain".
+* `TauCeti.Algebra.Etale.forall_isDomain_and_isIntegrallyClosed`: an étale algebra over a normal
+  ring (one whose localizations at primes are integrally closed domains, Stacks, Definition
+  10.37.11 (00GV)) is normal (Stacks, Lemma 10.163.9 (033C)).
+* `TauCeti.forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_etale`: for an étale
+  `A`-algebra `S` and an `A`-algebra `B` that is a normal ring, `S ⊗[A] B` is normal.
+* `TauCeti.forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isSeparable`: for a
+  finite separable field extension `K / k` and a `k`-algebra `B` that is a normal ring,
+  `K ⊗[k] B` is normal. This is the finite case of Stacks, Lemma 10.165.5 (06DF) with `A = K`;
+  the general case writes a finitely generated separable extension as a finite separable
+  extension of a rational function field `k(t_1, …, t_n)`, and `k(t_1, …, t_n) ⊗[k] B` as a
+  localization of `B[t_1, …, t_n]`, and uses
+  `TauCeti.MvPolynomial.forall_isDomain_and_isIntegrallyClosed` and
+  `IsLocalization.forall_isDomain_and_isIntegrallyClosed`.
 
 ## References
 
-* [Stacks Project, Proposition 41.19.7](https://stacks.math.columbia.edu/tag/025P) and
-  [Lemma 10.163.9](https://stacks.math.columbia.edu/tag/033C).
+* [Stacks Project, Proposition 41.19.7](https://stacks.math.columbia.edu/tag/025P),
+  [Definition 10.37.11](https://stacks.math.columbia.edu/tag/00GV),
+  [Lemma 10.163.9](https://stacks.math.columbia.edu/tag/033C) and
+  [Lemma 10.165.5](https://stacks.math.columbia.edu/tag/06DF).
 * Ported from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
@@ -234,6 +251,54 @@ theorem isNormalDomain_iff_of_etale {A B C : Type*} [CommRing A] [CommRing B]
     have : Module.FaithfullyFlat A B := Module.FaithfullyFlat.of_flat_of_isLocalHom
     exact ⟨IsDomain.of_faithfulSMul A B, IsIntegrallyClosed.of_faithfullyFlat A B⟩
 
+namespace Etale
+
+/-- **An étale algebra over a normal ring is normal.** If `A → S` is étale and every localization
+of `A` at a prime is an integrally closed domain, then so is every localization of `S` at a prime.
+Stacks, Lemma 10.163.9 (033C), étale case. -/
+@[stacks 033C "étale case"]
+theorem forall_isDomain_and_isIntegrallyClosed {A S : Type*} [CommRing A] [CommRing S]
+    [_root_.Algebra A S] [_root_.Algebra.Etale A S]
+    (hA : ∀ (p : Ideal A) [p.IsPrime],
+      IsDomain (Localization.AtPrime p) ∧ IsIntegrallyClosed (Localization.AtPrime p))
+    (q : Ideal S) [q.IsPrime] :
+    IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q) := by
+  obtain ⟨_, _⟩ := hA (q.under A)
+  exact ⟨isDomain_localization_atPrime_of_localization_under A q,
+    isIntegrallyClosed_localization_atPrime_of_localization_under A q⟩
+
+end Etale
+
 end Algebra
+
+/-- **Étale base change preserves normality.** If `S` is an étale `A`-algebra and `B` is an
+`A`-algebra whose localizations at primes are integrally closed domains, then so are the
+localizations at primes of `S ⊗[A] B`, which is étale over `B`. -/
+theorem forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_etale {A S B : Type*} [CommRing A]
+    [CommRing S] [CommRing B] [_root_.Algebra A S] [_root_.Algebra A B]
+    [_root_.Algebra.Etale A S]
+    (hB : ∀ (p : Ideal B) [p.IsPrime],
+      IsDomain (Localization.AtPrime p) ∧ IsIntegrallyClosed (Localization.AtPrime p))
+    (q : Ideal (S ⊗[A] B)) [q.IsPrime] :
+    IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q) :=
+  (_root_.Algebra.TensorProduct.comm A B S).toRingEquiv.forall_isDomain_and_isIntegrallyClosed
+    (Algebra.Etale.forall_isDomain_and_isIntegrallyClosed (A := B) hB) q
+
+/-- **Finite separable base change of the ground field preserves normality.** For a finite
+separable field extension `K / k` and a `k`-algebra `B` whose localizations at primes are
+integrally closed domains, the localizations at primes of `K ⊗[k] B` are integrally closed
+domains. `K` is étale over `k`, so this is a case of
+`TauCeti.forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_etale`. Stacks,
+Lemma 10.165.5 (06DF), for `A = K` finite separable over `k`. -/
+@[stacks 06DF "`A` a finite separable field extension"]
+theorem forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_isSeparable {k K B : Type*}
+    [Field k] [Field K] [CommRing B] [_root_.Algebra k K] [_root_.Algebra k B]
+    [FiniteDimensional k K] [_root_.Algebra.IsSeparable k K]
+    (hB : ∀ (p : Ideal B) [p.IsPrime],
+      IsDomain (Localization.AtPrime p) ∧ IsIntegrallyClosed (Localization.AtPrime p))
+    (q : Ideal (K ⊗[k] B)) [q.IsPrime] :
+    IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q) :=
+  have : _root_.Algebra.Etale k K := _root_.Algebra.Etale.of_isSeparable k K
+  forall_isDomain_and_isIntegrallyClosed_tensorProduct_of_etale hB q
 
 end TauCeti

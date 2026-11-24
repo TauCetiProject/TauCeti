@@ -38,14 +38,14 @@ private noncomputable def rowCellsEquiv (μ : YoungDiagram) :
     rowBlocks μ.rowLens ≃ ↥μ.cells where
   toFun x := ⟨(x.1, x.2), by
     rw [YoungDiagram.mem_cells, YoungDiagram.mem_iff_lt_rowLen, ← YoungDiagram.get_rowLens]
-    exact x.2.2⟩
+    exact x.2.isLt⟩
   invFun c :=
-    ⟨⟨c.1.1, by
+    ⟨⟨c.val.1, by
       rw [YoungDiagram.length_rowLens]
-      exact (_root_.YoungDiagram.mem_iff_lt_colLen.mp c.2).trans_le
-        (μ.colLen_anti 0 c.1.2 c.1.2.zero_le)⟩,
-      ⟨c.1.2, by
-        have hj := _root_.YoungDiagram.mem_iff_lt_rowLen.mp c.2
+      exact (_root_.YoungDiagram.mem_iff_lt_colLen.mp c.property).trans_le
+        (μ.colLen_anti 0 c.val.2 c.val.2.zero_le)⟩,
+      ⟨c.val.2, by
+        have hj := _root_.YoungDiagram.mem_iff_lt_rowLen.mp c.property
         rw [← YoungDiagram.get_rowLens] at hj
         exact hj⟩⟩
   left_inv _ := rfl
@@ -114,7 +114,7 @@ theorem rowYoungConjugator_youngBlocksEquiv {μ : YoungDiagram} (t : YoungTablea
         let y := sortedBlocksEquivRows μ x
         calc
           (x.2 : ℕ) = y.2 := (sortedBlocksEquivRows_snd μ x).symm
-          _ < μ.rowLens.get y.1 := y.2.2
+          _ < μ.rowLens.get y.1 := y.2.isLt
           _ = μ.rowLen y.1 := YoungDiagram.get_rowLens
           _ = μ.rowLen x.1 := congrArg μ.rowLen (sortedBlocksEquivRows_fst μ x)⟩ := by
   simp only [rowYoungConjugator, Equiv.trans_apply, Equiv.symm_apply_apply]
@@ -199,15 +199,15 @@ theorem rowYoungConjugator_rowSuperstandard (μ : YoungDiagram) :
     YoungDiagram.readingIndex_def, youngBlocksEquiv_apply]
   congr 1
   have hpart : ∀ j : Fin ((shapePartition μ).parts.sort (· ≥ ·)).length,
-      ((shapePartition μ).parts.sort (· ≥ ·)).get j = μ.rowLen j.1 := fun j => by
-    rw [List.get_eq_getElem, ← List.getD_eq_getElem _ 0 j.2, ← YoungDiagram.rowLen_ofPartition,
+      ((shapePartition μ).parts.sort (· ≥ ·)).get j = μ.rowLen j.val := fun j => by
+    rw [List.get_eq_getElem, ← List.getD_eq_getElem _ 0 j.isLt, ← YoungDiagram.rowLen_ofPartition,
       ofPartition_shapePartition]
   calc
     ∑ i ∈ Finset.range x.1, μ.rowLen i
         = ∑ i : Fin x.1, μ.rowLen (i : ℕ) := (Fin.sum_univ_eq_sum_range μ.rowLen x.1).symm
     _ = ∑ i : Fin x.1,
-          ((shapePartition μ).parts.sort (· ≥ ·)).get (Fin.castLE x.1.2.le i) :=
-        Finset.sum_congr rfl fun i _ => (hpart (Fin.castLE x.1.2.le i)).symm
+          ((shapePartition μ).parts.sort (· ≥ ·)).get (Fin.castLE x.1.isLt.le i) :=
+        Finset.sum_congr rfl fun i _ => (hpart (Fin.castLE x.1.isLt.le i)).symm
 
 /-- Every `μ`-tableau is obtained from the row-superstandard tableau by relabeling with its
 `rowYoungConjugator`. -/

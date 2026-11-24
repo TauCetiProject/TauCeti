@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Upper.Basic
-import TauCeti.Analysis.Complex.HasPrimitives
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -86,16 +86,16 @@ def upperStripTracesMap : C.upperStripTraces →L[ℂ] D.upperStripTraces :=
       mem_upperStripTraces_iff.2 ⟨_, (C.isUpperStripFunction_upperStripFunction g).map T₀ T₁ h⟩
 
 @[simp] theorem coe_upperStripTracesMap_fst (g : C.upperStripTraces) :
-    (upperStripTracesMap T₀ T₁ h g).1.1 = T₀.compLeftContinuousBounded _ g.1.1 := (rfl)
+    (upperStripTracesMap T₀ T₁ h g).val.1 = T₀.compLeftContinuousBounded _ g.val.1 := (rfl)
 
 @[simp] theorem coe_upperStripTracesMap_snd (g : C.upperStripTraces) :
-    (upperStripTracesMap T₀ T₁ h g).1.2 = T₁.compLeftContinuousBounded _ g.1.2 := (rfl)
+    (upperStripTracesMap T₀ T₁ h g).val.2 = T₁.compLeftContinuousBounded _ g.val.2 := (rfl)
 
 theorem upperStripTracesMap_apply_fst (g : C.upperStripTraces) (p : offDiag (univ : Set ℝ)) :
-    (upperStripTracesMap T₀ T₁ h g).1.1 p = T₀ (g.1.1 p) := by simp
+    (upperStripTracesMap T₀ T₁ h g).val.1 p = T₀ (g.val.1 p) := by simp
 
 theorem upperStripTracesMap_apply_snd (g : C.upperStripTraces) (p : offDiag (univ : Set ℝ)) :
-    (upperStripTracesMap T₀ T₁ h g).1.2 p = T₁ (g.1.2 p) := by simp
+    (upperStripTracesMap T₀ T₁ h g).val.2 p = T₁ (g.val.2 p) := by simp
 
 theorem isUpperStripFunction_upperStripTracesMap (g : C.upperStripTraces) :
     D.IsUpperStripFunction
@@ -121,16 +121,16 @@ theorem upperStripTracesMap_id
   refine Subtype.ext <| Prod.ext ?_ ?_ <;> exact BoundedContinuousFunction.ext fun _ => by simp
 
 theorem norm_upperStripTracesMap_fst_le {M₀ : ℝ} (hM₀ : 0 ≤ M₀) (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖)
-    (g : C.upperStripTraces) : ‖(upperStripTracesMap T₀ T₁ h g).1.1‖ ≤ M₀ * ‖g‖ := by
+    (g : C.upperStripTraces) : ‖(upperStripTracesMap T₀ T₁ h g).val.1‖ ≤ M₀ * ‖g‖ := by
   rw [coe_upperStripTracesMap_fst]
   exact (T₀.norm_compLeftContinuousBounded_apply_le _).trans
-    (mul_le_mul (T₀.opNorm_le_bound hM₀ h₀) (norm_fst_le g.1) (norm_nonneg _) hM₀)
+    (mul_le_mul (T₀.opNorm_le_bound hM₀ h₀) (norm_fst_le g.val) (norm_nonneg _) hM₀)
 
 theorem norm_upperStripTracesMap_snd_le {M₁ : ℝ} (hM₁ : 0 ≤ M₁) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖)
-    (g : C.upperStripTraces) : ‖(upperStripTracesMap T₀ T₁ h g).1.2‖ ≤ M₁ * ‖g‖ := by
+    (g : C.upperStripTraces) : ‖(upperStripTracesMap T₀ T₁ h g).val.2‖ ≤ M₁ * ‖g‖ := by
   rw [coe_upperStripTracesMap_snd]
   exact (T₁.norm_compLeftContinuousBounded_apply_le _).trans
-    (mul_le_mul (T₁.opNorm_le_bound hM₁ h₁) (norm_snd_le g.1) (norm_nonneg _) hM₁)
+    (mul_le_mul (T₁.opNorm_le_bound hM₁ h₁) (norm_snd_le g.val) (norm_nonneg _) hM₁)
 
 theorem norm_upperStripTracesMap_le {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
     (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (g : C.upperStripTraces) :
@@ -558,9 +558,13 @@ variable (θ) in
 endpoints induce a continuous linear equivalence `[X₀, X₁]^θ ≃L[ℂ] [Y₀, Y₁]^θ` lying over the
 sum-space lift. -/
 def mapEquiv : C.UpperComplexMethodSpace θ ≃L[ℂ] D.UpperComplexMethodSpace θ :=
-  ContinuousLinearEquiv.equivOfInverse (map θ e₀ e₁ h) (map θ e₀.symm e₁.symm hsymm)
-    (leftInverse_map _ _ h _ _ hsymm e₀.symm_apply_apply e₁.symm_apply_apply)
-    (leftInverse_map _ _ hsymm _ _ h e₀.apply_symm_apply e₁.apply_symm_apply)
+  ContinuousLinearEquiv.ofContinuousLinearMap (map θ e₀ e₁ h) (map θ e₀.symm e₁.symm hsymm)
+    (ContinuousLinearMap.ext fun v ↦
+      leftInverse_map _ _ hsymm _ _ h (fun _ ↦ e₀.apply_symm_apply _)
+        (fun _ ↦ e₁.apply_symm_apply _) v)
+    (ContinuousLinearMap.ext fun u ↦
+      leftInverse_map _ _ h _ _ hsymm (fun _ ↦ e₀.symm_apply_apply _)
+        (fun _ ↦ e₁.symm_apply_apply _) u)
 
 theorem mapEquiv_apply (u : C.UpperComplexMethodSpace θ) :
     mapEquiv θ e₀ e₁ h hsymm u = map θ e₀ e₁ h u := (rfl)

@@ -18,8 +18,8 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.Localization
 Let `O` be a Dedekind domain with fraction field `K`, and let `v` be a height-one prime of `O`.
 A Weierstrass equation `W` over `K` has two natural local notions of integrality and minimality at
 `v`: over the localization `Oᵥ = Localization.AtPrime v.asIdeal` inside `K`, and after base change
-to the completion `K_v` over its ring of integers `O_v = v.adicCompletionIntegers K` (or, when the
-residue field is finite, over `𝒪[K_v]`).
+to the completion `K_v` over its ring of integers `O_v = v.adicCompletionIntegers K` (or over
+`𝒪[K_v]`).
 
 This file proves that both notions agree, without any residue-characteristic, perfectness, or
 ellipticity hypothesis:
@@ -42,8 +42,8 @@ local minimal discriminant valuation is unchanged by completion.
   integral over `O_v` if and only if `W` is integral over `Oᵥ`.
 * `WeierstrassCurve.isMinimal_adicCompletionIntegers_baseChange_iff`: `W.baseChange K_v` is
   minimal over `O_v` if and only if `W` is minimal over `Oᵥ`.
-* `WeierstrassCurve.isMinimal_adicCompletion_baseChange_iff`: when `O ⧸ v` is finite, minimality at
-  `𝒪[K_v]` agrees with minimality at `Oᵥ`.
+* `WeierstrassCurve.isMinimal_adicCompletion_baseChange_iff`: minimality at `𝒪[K_v]` agrees with
+  minimality at `Oᵥ`.
 * `WeierstrassCurve.IsGlobalMinimal.isMinimal_adicCompletionIntegers` and
   `WeierstrassCurve.IsGlobalMinimal.isMinimal_adicCompletion`: a globally minimal equation over `O`
   remains minimal over `O_v` and `𝒪[K_v]`.
@@ -231,18 +231,17 @@ instance isMinimal_adicCompletionIntegers_baseChange (W : WeierstrassCurve K)
     IsMinimal (v.adicCompletionIntegers K) (W.baseChange (v.adicCompletion K)) :=
   (isMinimal_adicCompletionIntegers_baseChange_iff v W).mpr inferInstance
 
-/-- When the residue field `O ⧸ v` is finite, minimality of `W.baseChange K_v` at the valuative
-ring of integers `𝒪[K_v]` agrees with minimality of `W` at `Oᵥ`. -/
-theorem isMinimal_adicCompletion_baseChange_iff [Finite (O ⧸ v.asIdeal)]
-    (W : WeierstrassCurve K) :
+/-- Minimality of `W.baseChange K_v` at the valuative ring of integers `𝒪[K_v]` agrees with
+minimality of `W` at `Oᵥ`. -/
+theorem isMinimal_adicCompletion_baseChange_iff (W : WeierstrassCurve K) :
     (W.baseChange (v.adicCompletion K)).IsMinimal 𝒪[v.adicCompletion K] ↔
       IsMinimal (Localization.AtPrime v.asIdeal) W :=
   (isMinimal_adicCompletion_iff (W.baseChange (v.adicCompletion K))).trans
     (isMinimal_adicCompletionIntegers_baseChange_iff v W)
 
-/-- When `O ⧸ v` is finite, an equation minimal at `Oᵥ` becomes minimal at `𝒪[K_v]`. -/
-instance isMinimal_adicCompletion_baseChange [Finite (O ⧸ v.asIdeal)]
-    (W : WeierstrassCurve K) [IsMinimal (Localization.AtPrime v.asIdeal) W] :
+/-- An equation minimal at `Oᵥ` becomes minimal at `𝒪[K_v]`. -/
+instance isMinimal_adicCompletion_baseChange (W : WeierstrassCurve K)
+    [IsMinimal (Localization.AtPrime v.asIdeal) W] :
     (W.baseChange (v.adicCompletion K)).IsMinimal 𝒪[v.adicCompletion K] :=
   (isMinimal_adicCompletion_baseChange_iff v W).mpr inferInstance
 
@@ -253,10 +252,9 @@ theorem IsGlobalMinimal.isMinimal_adicCompletionIntegers {W : WeierstrassCurve K
   have := h.isMinimal v
   infer_instance
 
-/-- A globally minimal equation over `O` is minimal over `𝒪[K_v]` at every prime `v` with finite
-residue field. -/
+/-- A globally minimal equation over `O` is minimal over `𝒪[K_v]` at every height-one prime `v`. -/
 theorem IsGlobalMinimal.isMinimal_adicCompletion {W : WeierstrassCurve K} [W.IsElliptic]
-    (h : IsGlobalMinimal O W) (v : HeightOneSpectrum O) [Finite (O ⧸ v.asIdeal)] :
+    (h : IsGlobalMinimal O W) (v : HeightOneSpectrum O) :
     (W.baseChange (v.adicCompletion K)).IsMinimal 𝒪[v.adicCompletion K] := by
   have := h.isMinimal v
   infer_instance

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupportTopology
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topology
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
@@ -49,8 +49,13 @@ The converse direction of the universal property is
 * `Bundle.Trivialization.continuous_chartLocalization`: it is continuous.
 * `Bundle.Trivialization.chartTestSection_chartLocalization`: extending the localization through
   the chart recovers `ψ • s`.
+* `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, every point lies in a
+  smooth chart into the model space with smooth inverse, inside the base set of the trivialization
+  at that point.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
   inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
+* `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
+  finite sums of chart extensions of native test functions.
 * `ContMDiffSection.continuous_compactlySupportedTopology_iff_chartTestSection`: the universal
   property of the test topology with respect to chart extensions.
 * `ContMDiffSection.compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSection`:
@@ -203,14 +208,14 @@ theorem continuous_chartLocalization (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     funext s
     ext y
     simp only [ContMDiffMap.restrict_apply, ContDiffMapSupportedIn.coe_toContMDiffMap]
-    exact localizationFun_eq_zero t c hct ψ L hψ s y.2
+    exact localizationFun_eq_zero t c hct ψ L hψ s y.property
   | true =>
     -- On the chart target, compose the frame coefficients with the inverse chart and multiply by
     -- `ψ ∘ c⁻¹`.
     have hsymm : ContMDiff 𝓘(ℝ, E) I n (fun y : W true ↦ c.symm y) :=
-      hc.comp_contMDiff (contMDiff_subtype_val (U := W true)) fun y ↦ y.2
+      hc.comp_contMDiff (contMDiff_subtypeVal (U := W true)) fun y ↦ y.property
     let j : C^n⟮𝓘(ℝ, E), W true; I, chartSource c⟯ :=
-      ⟨fun y ↦ ⟨c.symm y, c.map_target y.2⟩,
+      ⟨fun y ↦ ⟨c.symm y, c.map_target y.property⟩,
         (TauCeti.ContMDiff.subtypeVal_comp_iff (chartSource c) _).mp hsymm⟩
     let A : C^n⟮𝓘(ℝ, E), W true; 𝓘(ℝ, F →L[ℝ] F), F →L[ℝ] F⟯ :=
       ⟨fun y ↦ ψ (c.symm y) • ContinuousLinearMap.id ℝ F,
@@ -226,7 +231,7 @@ theorem continuous_chartLocalization (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     simp only [Function.comp_apply, ContMDiffMap.restrict_apply,
       ContMDiffMap.clmApplyLinearMap_apply, ContMDiffMap.comp_apply,
       ContDiffMapSupportedIn.coe_toContMDiffMap, frameCoordinates_apply]
-    exact localizationFun_of_mem t c hct ψ s y.2
+    exact localizationFun_of_mem t c hct ψ s y.property
 
 end Continuity
 
@@ -237,7 +242,7 @@ the closed support of `ψ` lies in the chart source. -/
 theorem chartTestSection_chartLocalization (hc' : ContMDiffOn I 𝓘(ℝ, E) n c c.source)
     (hψc : tsupport ψ ⊆ c.source) (s : Cₛ^n⟮I; F, V⟯) :
     (t.chartTestSection c hc' hct
-      (TestFunction.ofSupportedIn hL (t.chartLocalization c hc hct ψ L hL hψ s))).1 = ψ • s := by
+      (TestFunction.ofSupportedIn hL (t.chartLocalization c hc hct ψ L hL hψ s))).val = ψ • s := by
   ext x
   by_cases hx : x ∈ c.source
   · rw [chartTestSection_apply_of_mem t c hc' hct _ hx, TestFunction.coe_ofSupportedIn,
@@ -291,6 +296,16 @@ private theorem contMDiffOn_testChart_symm {n : ℕ∞ω} [IsManifold I n M] (x 
     ContMDiffOn 𝓘(ℝ, E) I n (testChart F I V x).symm (testChart F I V x).target :=
   OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ (restr_chartAt_mem_maximalAtlas V x)
     contDiff_id
+
+variable (I F) in
+/-- On a manifold without boundary, every point `x` lies in the source of a smooth chart into the
+model space with smooth inverse, whose source lies in the base set of the trivialization at `x`. -/
+theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
+      ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
+      x ∈ c.source :=
+  ⟨testChart F I V x, contMDiffOn_testChart V x, contMDiffOn_testChart_symm V x,
+    testChart_source_subset V x, mem_testChart_source V x⟩
 
 end TestChart
 
@@ -402,8 +417,25 @@ private theorem exists_ofSupportedIn_eq_sum (K : Compacts M) :
   by_cases hy : y ∈ K
   · rw [ContMDiffMap.coe_sum]
     simp [hsum y hy]
-  · rw [(σ : Cₛ^n⟮I; F, V⟯).eq_zero_of_notMem_tsupport fun h ↦ hy (mem_supportedIn.1 σ.2 h),
+  · rw [(σ : Cₛ^n⟮I; F, V⟯).eq_zero_of_notMem_tsupport fun h ↦ hy (mem_supportedIn.1 σ.property h),
       smul_zero]
+
+/-- **Compactly supported sections are spanned by chart extensions.** On a boundaryless Hausdorff
+`σ`-compact manifold with finite-dimensional model, every compactly supported section is a finite
+sum of chart extensions of native test functions. In particular a linear map on compactly supported
+sections is determined by its composites with the chart extensions. -/
+theorem span_iUnion_range_chartTestSection_eq_top :
+    Submodule.span ℝ (⋃ p : ChartTestData I F V n, range p.chartTestSection) = ⊤ := by
+  refine Submodule.eq_top_iff'.2 fun s ↦ ?_
+  let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
+  let σ : supportedIn I F n V K := ⟨s, mem_supportedIn.2 subset_rfl⟩
+  obtain ⟨t, ψ, L, hL, hψ, hdecomp⟩ := exists_ofSupportedIn_eq_sum (I := I) (F := F) (V := V)
+    (n := n) K
+  have hs : s = ofSupportedIn K σ := Subtype.ext (ofSupportedIn_apply K σ).symm
+  rw [hs, hdecomp σ]
+  refine Submodule.sum_mem _ fun x _ ↦ Submodule.subset_span (mem_iUnion.2
+    ⟨⟨trivializationAt F V x, testChart F I V x, contMDiffOn_testChart V x,
+      testChart_source_subset V x⟩, mem_range_self _⟩)
 
 variable {ι : Type*} (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
@@ -444,7 +476,7 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
     (supportedIn I F n V K).subtype, fun x _ ↦ ?_, LinearMap.ext fun σ ↦ ?_⟩
   · exact (TestFunction.ofSupportedInCLM ℝ (hL x)).continuous.comp
       ((continuous_chartLocalization _ _ (contMDiffOn_testChart_symm V x) _ _ _ (hL x) (hψ x) e U hU
-        hcover).comp continuous_subtype_val)
+        hcover).comp continuous_subtypeVal)
   · simp [p, hdecomp σ]
 
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]

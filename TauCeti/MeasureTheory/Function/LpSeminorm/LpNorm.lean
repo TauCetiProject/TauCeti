@@ -27,6 +27,10 @@ most `c` (`MeasureTheory.lpNorm_smul_le_mul_lpNorm_of_ae_le`). For `1 ≤ p`, th
 `Lᵖ` with norm at most `β ‖G‖ + γ ‖V‖` (`MeasureTheory.memLp_inner_add_mul_and_lpNorm_le`), so
 they can be moved to the right-hand side of an equation
 (`MeasureTheory.Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq`).
+
+For `p = 2`, the squared `L²` norm of an almost everywhere strongly measurable function is the
+integral of its squared pointwise norm (`MeasureTheory.lpNorm_two_sq_eq_integral_norm_sq`), the
+`p = 2` analogue of Mathlib's `MeasureTheory.lpNorm_one_eq_integral_norm`.
 -/
 
 public section
@@ -106,5 +110,14 @@ theorem Lp.exists_ae_eq_norm_le_of_add_inner_add_mul_ae_eq {𝕜 E : Type*} [RCL
   filter_upwards [heq, Lp.coeFn_sub f (hL.toLp _), hL.coeFn_toLp] with x hx h1 h2
   rw [h1, Pi.sub_apply, h2, ← hx]
   ring
+
+/-- **The squared `L²` norm as an integral.** The squared `L²` norm of an almost everywhere
+strongly measurable function is the integral of its squared pointwise norm. -/
+theorem lpNorm_two_sq_eq_integral_norm_sq {f : α → F} (hf : AEStronglyMeasurable f μ) :
+    lpNorm f 2 μ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  rw [lpNorm_eq_integral_norm_rpow_toReal two_ne_zero ENNReal.ofNat_ne_top hf,
+    ENNReal.toReal_ofNat, ← Real.rpow_natCast,
+    ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
+  norm_num
 
 end MeasureTheory

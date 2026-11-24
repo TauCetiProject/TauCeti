@@ -60,7 +60,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F]
 
 @[simp]
 theorem sphereBundleFiberIncl_unitSphereOfSphereBundle (q : sphereBundle F E) :
-    sphereBundleFiberIncl F E q.1.proj (unitSphereOfSphereBundle q) = q :=
+    sphereBundleFiberIncl F E q.val.proj (unitSphereOfSphereBundle q) = q :=
   Subtype.ext (by simp)
 
 @[simp]
@@ -119,7 +119,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 /-- Over its base set, the induced sphere-bundle chart reads a point of the fibre sphere `S(E_b)`
 by normalizing its coordinates in `e`. -/
 theorem coe_sphereBundle_sphereBundleFiberIncl (e : Trivialization F (π F E)) [e.IsLinear ℝ]
-    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) {b : B} (hb : b ∈ e.baseSet)
+    (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) {b : B} (hb : b ∈ e.baseSet)
     (p : sphere (0 : E b) 1) :
     ((e.sphereBundle hnorm (sphereBundleFiberIncl F E b p)).2 : F) =
       NormedSpace.normalize (e ⟨b, (p : E b)⟩).2 := by
@@ -140,7 +140,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
 is continuous on the total space and `π_k(B, b)` is trivial for every `k ≤ m`, then the fibre
 inclusion `S(E_b) → S(E)` is an `m`-connected map: it induces bijections on `π_k` for `k < m` and a
 surjection on `π_m`. -/
-theorem isNConnected_sphereBundleFiberIncl (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+theorem isNConnected_sphereBundleFiberIncl (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖)
     {b : B} {m : ℕ} (hB : ∀ k ≤ m, Subsingleton (π_ k B b)) :
     (sphereBundleFiberIncl F E b).IsNConnected m := by
   let p : _root_.TopCat.of (sphereBundle F E) ⟶ _root_.TopCat.of B :=

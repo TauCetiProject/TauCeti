@@ -49,6 +49,8 @@ on all rectangles are simultaneously close to their means
 * `TauCeti.PairColorSystem.exists_coupled_recoloring_abs_card_filter_sub_le`: a recoloring between
   `s` and `t` with small rectangle discrepancy toward `p` and, when `S.IsRegularPair η s t`,
   total-variation edit bound on `s ×ˢ t`.
+* `TauCeti.PairColorSystem.exists_recoloring_colorOfPair_eq`: keyed gluing of local
+  pair-color systems across a partition `P` into a single reversal-preserving system.
 
 ## References
 
@@ -76,7 +78,8 @@ and keep all other colors of `S`. -/
 private noncomputable def recolorProduct (S : PairColorSystem κ V) {s t : Finset V}
     (hst : Disjoint s t) (x : V × V → κ) : PairColorSystem κ V where
   color q :=
-    if q.1 ∈ s ×ˢ t then x q.1 else if q.1.swap ∈ s ×ˢ t then S.rev (x q.1.swap) else S.color q
+    if q.val ∈ s ×ˢ t then x q.val else if q.val.swap ∈ s ×ˢ t then S.rev
+        (x q.val.swap) else S.color q
   rev := S.rev
   rev_involutive := S.rev_involutive
   color_rev q := by
@@ -136,9 +139,9 @@ theorem exists_recoloring_abs_pairColorDensity_sub_le [Fintype κ] (S : PairColo
   have hε6 : (ε ^ 3) ^ 2 = ε ^ 6 := by ring
   -- A coloring of `s ×ˢ t` with small deviations on all rectangles `s' ×ˢ t'`.
   obtain ⟨x, hx⟩ := exists_forall_abs_card_filter_sub_mul_card_lt hp hp1
-    (I := ↥(s.powerset ×ˢ t.powerset)) (fun i ↦ i.1.1 ×ˢ i.1.2) (N := #s * #t)
+    (I := ↥(s.powerset ×ˢ t.powerset)) (fun i ↦ i.val.1 ×ˢ i.val.2) (N := #s * #t)
     (fun i ↦ by
-      obtain ⟨hs', ht'⟩ := mem_product.1 i.2
+      obtain ⟨hs', ht'⟩ := mem_product.1 i.property
       rw [card_product]
       exact Nat.mul_le_mul (card_le_card (mem_powerset.1 hs')) (card_le_card (mem_powerset.1 ht')))
     (a := ε ^ 3 * #s * #t)
@@ -235,7 +238,7 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [Fintype κ] (S : PairC
     by_contra! h; nlinarith [mul_nonpos_of_nonneg_of_nonpos (sq_nonneg η) h,
       (Nat.cast_nonneg (Fintype.card κ) : (0 : ℝ) ≤ _)]
   set I := ↥(s.powerset ×ˢ t.powerset)
-  set Trect : I → Finset (V × V) := fun i ↦ i.1.1 ×ˢ i.1.2
+  set Trect : I → Finset (V × V) := fun i ↦ i.val.1 ×ˢ i.val.2
   have hcardI : Fintype.card I = 2 ^ #s * 2 ^ #t := by
     simp [I, card_product, card_powerset]
   have hub : 2 * (2 ^ #s * 2 ^ #t + 1 : ℕ) * Fintype.card κ *
@@ -265,14 +268,14 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [Fintype κ] (S : PairC
       rw [hf, hmul, card_product, Nat.cast_mul, mul_div_cancel_right₀ _ (mul_pos hs0 ht0).ne']
     obtain ⟨x, _, hedit, hdisc⟩ := exists_recoloring_abs_card_filter_sub_mul_card_le
       (s ×ˢ t) x₀ hp hp1 Trect
-      (fun i ↦ product_subset_product (mem_powerset.1 (mem_product.1 i.2).1)
-        (mem_powerset.1 (mem_product.1 i.2).2))
+      (fun i ↦ product_subset_product (mem_powerset.1 (mem_product.1 i.property).1)
+        (mem_powerset.1 (mem_product.1 i.property).2))
       ha (fun i c ↦ by
-        obtain ⟨hs', ht'⟩ := mem_product.1 i.2
+        obtain ⟨hs', ht'⟩ := mem_product.1 i.property
         have hs's := mem_powerset.1 hs'
         have ht't := mem_powerset.1 ht'
-        have hf : {q ∈ i.1.1 ×ˢ i.1.2 | x₀ q = c} =
-            {q ∈ i.1.1 ×ˢ i.1.2 | S.colorOfPair q.1 q.2 = some c} :=
+        have hf : {q ∈ i.val.1 ×ˢ i.val.2 | x₀ q = c} =
+            {q ∈ i.val.1 ×ˢ i.val.2 | S.colorOfPair q.1 q.2 = some c} :=
           filter_congr fun q hq ↦ hx₀_eq (product_subset_product hs's ht't hq) c
         dsimp only [Trect]
         rw [hf, hx₀_dens, card_product, Nat.cast_mul, ← mul_assoc]
@@ -322,7 +325,7 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [Fintype κ] (S : PairC
       gcongr
     obtain ⟨x, hx⟩ := exists_forall_abs_card_filter_sub_mul_card_lt hp hp1 Trect
       (N := #s * #t) (fun i ↦ by
-        obtain ⟨hs', ht'⟩ := mem_product.1 i.2
+        obtain ⟨hs', ht'⟩ := mem_product.1 i.property
         dsimp only [Trect]
         rw [card_product]
         exact Nat.mul_le_mul (card_le_card (mem_powerset.1 hs'))
@@ -341,6 +344,51 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [Fintype κ] (S : PairC
         ≤ η * #s * #t := hd
       _ ≤ 2 * (max (Fintype.card κ) 1 : ℕ) * η * (#s * #t) := by
           nlinarith [mul_pos hs0 ht0]
+
+/-- **Keyed gluing of local pair-color systems.** Given a partition `P` of `V`, a key
+`f : P.parts → α` into a linearly ordered type `α`, and local systems `T A B` with
+`(T A B).rev = S.rev` whenever `f A < f B`, selecting `T A B` for `f A < f B`, `T B A` for
+`f B < f A`, and `S` for `f A = f B` produces a global `R : PairColorSystem κ V` with
+`R.rev = S.rev` agreeing with `T A B` on `A ×ˢ B` whenever `f A < f B` and with `S` whenever
+`f A = f B`. -/
+theorem exists_recoloring_colorOfPair_eq {α : Type*} [LinearOrder α] [Fintype V] [DecidableEq V]
+    (S : PairColorSystem κ V) (P : Finpartition (univ : Finset V))
+    (f : P.parts → α) (T : P.parts → P.parts → PairColorSystem κ V)
+    (hrev : ∀ A B, f A < f B → (T A B).rev = S.rev) :
+    ∃ R : PairColorSystem κ V, R.rev = S.rev ∧
+      (∀ A B : P.parts, f A < f B → ∀ x ∈ A.val, ∀ y ∈ B.val,
+        R.colorOfPair x y = (T A B).colorOfPair x y) ∧
+      (∀ A B : P.parts, f A = f B → ∀ x ∈ A.val, ∀ y ∈ B.val,
+        R.colorOfPair x y = S.colorOfPair x y) := by
+  classical
+  let cell (x : V) : P.parts := ⟨P.part x, P.part_mem.2 (mem_univ x)⟩
+  have hcell (A : P.parts) {x : V} (hx : x ∈ A.val) : cell x = A :=
+    Subtype.ext (P.part_eq_of_mem A.property hx)
+  -- Ordered pairs choose the local system indexed by the smaller key; equal keys preserve `S`.
+  let R : PairColorSystem κ V :=
+    { color := fun p ↦
+        let A := cell p.val.1
+        let B := cell p.val.2
+        if f A < f B then (T A B).color p
+        else if f B < f A then (T B A).color p
+        else S.color p
+      rev := S.rev
+      rev_involutive := S.rev_involutive
+      color_rev := fun p ↦ by
+        obtain ⟨⟨u, v⟩, huv⟩ := p
+        by_cases h₁ : f (cell u) < f (cell v)
+        · have h₂ : ¬ f (cell v) < f (cell u) := lt_asymm h₁
+          simpa [h₁, h₂, hrev _ _ h₁] using (T (cell u) (cell v)).color_rev ⟨(u, v), huv⟩
+        · by_cases h₂ : f (cell v) < f (cell u)
+          · simpa [h₁, h₂, hrev _ _ h₂] using (T (cell v) (cell u)).color_rev ⟨(u, v), huv⟩
+          · simpa [h₁, h₂] using S.color_rev ⟨(u, v), huv⟩ }
+  refine ⟨R, rfl, fun A B hAB x hx y hy ↦ ?_, fun A B hAB x hx y hy ↦ ?_⟩
+  · by_cases hxy : x = y
+    · simp [hxy]
+    · simp [colorOfPair_of_ne _ hxy, R, hcell A hx, hcell B hy, hAB]
+  · by_cases hxy : x = y
+    · simp [hxy]
+    · simp [colorOfPair_of_ne _ hxy, R, hcell A hx, hcell B hy, hAB]
 
 end PairColorSystem
 

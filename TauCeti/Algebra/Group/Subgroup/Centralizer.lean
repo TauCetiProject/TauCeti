@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `Subgroup.centralizer` occurs in the statement below.
-public import Mathlib.GroupTheory.Subgroup.Centralizer
+public import Mathlib.Algebra.Group.Conj
 -- `Commute.units_val_iff` transports commutation between units and their values.
 public import Mathlib.Algebra.Group.Commute.Units
-public import Mathlib.Order.Zorn
 -- `Subgroup.zpowers` occurs in `Subgroup.zpowers_le_centralizer_singleton`.
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Data.Set.Finite.Basic
+-- `Subgroup.centralizer` occurs in the statement below.
+public import Mathlib.GroupTheory.Subgroup.Centralizer
+public import Mathlib.Order.Zorn
 import TauCeti.Algebra.Group.Torsion
 -- `group` proves the conjugation identity behind `commute_conj_zpow_of_inv_mul_mem_centralizer`.
 import Mathlib.Tactic.Group
@@ -40,6 +42,8 @@ which is the form every concrete centralizer computation in a matrix group start
   centralizer as their base in groups with unique roots.
 * `Group.commute_conj_zpow_of_inv_mul_mem_centralizer`: conjugates of powers of `u` by `y` and
   `y'` commute when `y⁻¹ * y'` centralizes `u`.
+* `Group.infinite_setOf_isConj_of_notMem_center`: in a group with unique roots, every noncentral
+  element has an infinite conjugacy class.
 -/
 
 public section
@@ -63,7 +67,7 @@ theorem exists_maximal_isMulCommutative {G : Type*} [Group G] (H : Subgroup G)
   classical
   apply zorn_le_nonempty₀ {K : Subgroup G | IsMulCommutative K} ?_ H hH
   intro c hc hcc y hy
-  have : ∀ K : c, IsMulCommutative (K : Subgroup G) := fun K => hc K.2
+  have : ∀ K : c, IsMulCommutative (K : Subgroup G) := fun K => hc K.property
   have hcomm : IsMulCommutative (sSup c : Subgroup G) := by
     rw [sSup_eq_iSup']
     have : Nonempty c := ⟨⟨y, hy⟩⟩
@@ -130,5 +134,23 @@ theorem commute_conj_zpow_of_inv_mul_mem_centralizer {u y y' : G} (e e' : ℤ)
       _ = y * u ^ e' * y⁻¹ := by rw [hc.eq, mul_inv_cancel_right]
   rw [this, Commute.conj_iff]
   exact Commute.zpow_zpow_self u e e'
+
+/-- In a group with unique roots, every element outside the center has an infinite conjugacy
+class. -/
+theorem infinite_setOf_isConj_of_notMem_center [HasUniqueRoots G] {g : G}
+    (hg : g ∉ Subgroup.center G) : {x : G | IsConj g x}.Infinite := by
+  rw [Subgroup.mem_center_iff] at hg
+  push Not at hg
+  obtain ⟨u, hug⟩ := hg
+  refine Set.infinite_of_injective_forall_mem (f := fun n : ℤ => u ^ n * g * (u ^ n)⁻¹)
+    (fun m n hmn => ?_) (fun n => isConj_iff.2 ⟨u ^ n, rfl⟩)
+  by_contra hne
+  dsimp only at hmn
+  have hcomm : Commute (u ^ (m - n)) g := by
+    rw [Commute, SemiconjBy]
+    calc u ^ (m - n) * g = (u ^ n)⁻¹ * ((u ^ m * g * (u ^ m)⁻¹) * u ^ m) := by group
+      _ = (u ^ n)⁻¹ * ((u ^ n * g * (u ^ n)⁻¹) * u ^ m) := by rw [hmn]
+      _ = g * u ^ (m - n) := by group
+  exact hug ((Commute.zpow_left_iff (sub_ne_zero.2 hne)).1 hcomm).eq
 
 end Group

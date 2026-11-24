@@ -112,7 +112,7 @@ def steinbergIndexedRels (ι : Type*) (R : Type*) [Ring R] :
     Set (FreeGroup ({p : ι × ι // p.1 ≠ p.2} × R)) :=
   {r | (∃ (p : {p : ι × ι // p.1 ≠ p.2}) (a b : R),
           r = FreeGroup.of (p, a) * FreeGroup.of (p, b) * (FreeGroup.of (p, a + b))⁻¹) ∨
-       (∃ (p q : {p : ι × ι // p.1 ≠ p.2}) (a b : R), p.1.2 ≠ q.1.1 ∧ p.1.1 ≠ q.1.2 ∧
+       (∃ (p q : {p : ι × ι // p.1 ≠ p.2}) (a b : R), p.val.2 ≠ q.val.1 ∧ p.val.1 ≠ q.val.2 ∧
           r = FreeGroup.of (p, a) * FreeGroup.of (q, b) * (FreeGroup.of (p, a))⁻¹ *
             (FreeGroup.of (q, b))⁻¹) ∨
        (∃ (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) (a b : R),
@@ -128,7 +128,7 @@ theorem mem_steinbergIndexedRels_iff {ι R : Type*} [Ring R]
     r ∈ steinbergIndexedRels ι R ↔
       (∃ (p : {p : ι × ι // p.1 ≠ p.2}) (a b : R),
         r = FreeGroup.of (p, a) * FreeGroup.of (p, b) * (FreeGroup.of (p, a + b))⁻¹) ∨
-      (∃ (p q : {p : ι × ι // p.1 ≠ p.2}) (a b : R), p.1.2 ≠ q.1.1 ∧ p.1.1 ≠ q.1.2 ∧
+      (∃ (p q : {p : ι × ι // p.1 ≠ p.2}) (a b : R), p.val.2 ≠ q.val.1 ∧ p.val.1 ≠ q.val.2 ∧
         r = FreeGroup.of (p, a) * FreeGroup.of (q, b) * (FreeGroup.of (p, a))⁻¹ *
           (FreeGroup.of (q, b))⁻¹) ∨
       (∃ (i j k : ι) (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) (a b : R),
@@ -154,13 +154,13 @@ def x {i j : ι} (hij : i ≠ j) (a : R) : IndexedSteinbergGroup ι R :=
 /-- Each raw presentation generator `PresentedGroup.of (p, a)` is `x p.2 a`. -/
 @[simp]
 theorem of_eq_x (p : {p : ι × ι // p.1 ≠ p.2}) (a : R) :
-    (PresentedGroup.of (p, a) : IndexedSteinbergGroup ι R) = x p.2 a :=
+    (PresentedGroup.of (p, a) : IndexedSteinbergGroup ι R) = x p.property a :=
   (rfl)
 
 /-! ### Defining relations and algebraic consequences -/
 
 private theorem mk_freeGroup_of (p : {p : ι × ι // p.1 ≠ p.2}) (a : R) :
-    PresentedGroup.mk (steinbergIndexedRels ι R) (FreeGroup.of (p, a)) = x p.2 a :=
+    PresentedGroup.mk (steinbergIndexedRels ι R) (FreeGroup.of (p, a)) = x p.property a :=
   of_eq_x p a
 
 /-- Additivity of Steinberg generators in the parameter:
@@ -253,10 +253,10 @@ theorem induction_on {motive : IndexedSteinbergGroup ι R → Prop}
   | one => simpa only [map_one] using one
   | of pa =>
     rcases pa with ⟨p, a⟩
-    simpa only [mk_freeGroup_of] using x p.2 a
+    simpa only [mk_freeGroup_of] using x p.property a
   | inv_of pa _ =>
     rcases pa with ⟨p, a⟩
-    simpa only [map_inv, mk_freeGroup_of, x_inv] using x p.2 (-a)
+    simpa only [map_inv, mk_freeGroup_of, x_inv] using x p.property (-a)
   | mul w₁ w₂ ih₁ ih₂ => simpa only [map_mul] using mul _ _ ih₁ ih₂
 
 /-- Two homomorphisms out of `IndexedSteinbergGroup ι R` agree when they agree on every generator
@@ -292,7 +292,7 @@ private theorem lift_rels {G : Type*} [Group G] (f : ∀ ⦃i j : ι⦄, i ≠ j
     (hchain : ∀ ⦃i j k : ι⦄ (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) (a b : R),
       ⁅f hij a, f hjk b⁆ = f hik (a * b)) :
     ∀ r ∈ steinbergIndexedRels ι R,
-      FreeGroup.lift (fun pa : {p : ι × ι // p.1 ≠ p.2} × R ↦ f pa.1.2 pa.2) r = 1 := by
+      FreeGroup.lift (fun pa : {p : ι × ι // p.1 ≠ p.2} × R ↦ f pa.1.property pa.2) r = 1 := by
   rintro r (⟨⟨⟨i, j⟩, hij⟩, a, b, rfl⟩ | ⟨⟨⟨i, j⟩, hij⟩, ⟨⟨k, l⟩, hkl⟩, a, b, hjk, hik, rfl⟩ |
     ⟨i, j, k, hij, hjk, hik, a, b, rfl⟩)
   · simp [hadd hij a b]
@@ -810,7 +810,7 @@ private theorem toDirectLimit_ofFin (n : ℕ) (u : IndexedSteinbergGroup (Fin n)
   have hhom : (toDirectLimit (R := R)).comp (ofFin R n) = ofDirectLimit n := by
     ext i j hij a
     simp only [MonoidHom.comp_apply, ofFin_x, toDirectLimit, IndexedSteinbergGroup.lift_x]
-    exact ofDirectLimit_x_eq (Fin.val_ne_of_ne hij) a i.2 j.2
+    exact ofDirectLimit_x_eq (Fin.val_ne_of_ne hij) a i.isLt j.isLt
   exact DFunLike.congr_fun hhom u
 
 variable (R) in
@@ -891,7 +891,7 @@ theorem toStableGL_ofFin (n : ℕ) (u : IndexedSteinbergGroup (Fin n) R) :
       (StableGeneralLinearGroup.of R n).comp IndexedSteinbergGroup.toGL := by
     ext i j hij a
     simp only [MonoidHom.comp_apply, ofFin_x, toStableGL_x, IndexedSteinbergGroup.toGL_x]
-    exact stableTransvection_eq_of ⟨(i.1, j.1), Fin.val_ne_of_ne hij⟩ a i.2 j.2
+    exact stableTransvection_eq_of ⟨(i.val, j.val), Fin.val_ne_of_ne hij⟩ a i.isLt j.isLt
   exact DFunLike.congr_fun hhom u
 
 /-- The image of `toStableGL R` in `GL_∞(R)` is the stable elementary subgroup `E_∞(R)`. -/

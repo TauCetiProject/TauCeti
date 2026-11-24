@@ -133,7 +133,7 @@ theorem ext_cell_colorAt {P Q : Polyad3 S} (hcell : ∀ i, P.cell i = Q.cell i)
 
 @[simp]
 theorem ofTriple_cell (x : {x : Fin 3 → V // Function.Injective x}) (i : Fin 3) :
-    (ofTriple S x).cell i = S.vertexPart.part (x.1 i) := by
+    (ofTriple S x).cell i = S.vertexPart.part (x.val i) := by
   fin_cases i <;> simp
 
 @[simp]
@@ -259,7 +259,7 @@ theorem perm_injective (σ : Equiv.Perm (Fin 3)) :
 /-- Precomposing an injective triple with `σ` permutes its polyad by `σ`. -/
 theorem ofTriple_comp_perm (x : {x : Fin 3 → V // Function.Injective x})
     (σ : Equiv.Perm (Fin 3)) :
-    ofTriple S ⟨x.1 ∘ σ, x.2.comp σ.injective⟩ = (ofTriple S x).perm σ :=
+    ofTriple S ⟨x.val ∘ σ, x.property.comp σ.injective⟩ = (ofTriple S x).perm σ :=
   ext_cell_colorAt (fun i ↦ by simp) fun i j hij ↦ by
     simp only [ofTriple_colorAt, perm_colorAt]
     exact congrArg S.pairColors.color (Subtype.ext (by simp))
@@ -267,7 +267,7 @@ theorem ofTriple_comp_perm (x : {x : Fin 3 → V // Function.Injective x})
 /-- Precomposing `x` with `σ` lands in `(P.perm σ).support` if and only if `x ∈ P.support`. -/
 theorem comp_mem_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3))
     (x : {x : Fin 3 → V // Function.Injective x}) :
-    ⟨x.1 ∘ σ, x.2.comp σ.injective⟩ ∈ (P.perm σ).support ↔ x ∈ P.support := by
+    ⟨x.val ∘ σ, x.property.comp σ.injective⟩ ∈ (P.perm σ).support ↔ x ∈ P.support := by
   rw [mem_support_iff_eq_ofTriple, ofTriple_comp_perm, (perm_injective σ).eq_iff,
     ← mem_support_iff_eq_ofTriple]
 
@@ -275,11 +275,11 @@ theorem comp_mem_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3))
 `σ⁻¹`. -/
 theorem mem_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3))
     (x : {x : Fin 3 → V // Function.Injective x}) :
-    x ∈ (P.perm σ).support ↔ ⟨x.1 ∘ ⇑σ⁻¹, x.2.comp σ⁻¹.injective⟩ ∈ P.support := by
-  have hx : (⟨(x.1 ∘ ⇑σ⁻¹) ∘ σ, (x.2.comp σ⁻¹.injective).comp σ.injective⟩ :
+    x ∈ (P.perm σ).support ↔ ⟨x.val ∘ ⇑σ⁻¹, x.property.comp σ⁻¹.injective⟩ ∈ P.support := by
+  have hx : (⟨(x.val ∘ ⇑σ⁻¹) ∘ σ, (x.property.comp σ⁻¹.injective).comp σ.injective⟩ :
       {x : Fin 3 → V // Function.Injective x}) = x :=
     Subtype.ext (funext fun i ↦ by simp)
-  simpa only [hx] using P.comp_mem_support_perm σ ⟨x.1 ∘ ⇑σ⁻¹, x.2.comp σ⁻¹.injective⟩
+  simpa only [hx] using P.comp_mem_support_perm σ ⟨x.val ∘ ⇑σ⁻¹, x.property.comp σ⁻¹.injective⟩
 
 private theorem support_perm_eq_map (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) :
     (P.perm σ).support =

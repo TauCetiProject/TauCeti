@@ -100,7 +100,7 @@ theorem form_flip (L : IntegralLattice V) : L.form.flip = L.form :=
 /-- The value of the rational form on lattice vectors is integral. -/
 theorem form_mem_one (L : IntegralLattice V) (x y : L) :
     L.form x y ∈ (1 : Submodule ℤ ℚ) :=
-  L.le_dual x.2 (y : V) y.2
+  L.le_dual x.property (y : V) y.property
 
 /-- Every ambient submodule contained in the carrier is integral for the lattice form. -/
 theorem le_dualSubmodule_of_le_carrier (L : IntegralLattice V) {N : Submodule ℤ V}

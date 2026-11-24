@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Topology.Grassmannian.Orthonormal
 public import TauCeti.Topology.VectorBundle.IdempotentRange
 
@@ -76,10 +77,10 @@ variable {𝕜 : Type*} [RCLike 𝕜] {r N : ℕ}
 /-- A point `V` of the finite Grassmannian, an `r`-dimensional subspace of `Fin N → 𝕜`,
 transported to a subspace of `EuclideanSpace 𝕜 (Fin N)` by the coordinate identification. -/
 def toEuclidean (V : finiteGrassmannian 𝕜 r N) : Submodule 𝕜 (EuclideanSpace 𝕜 (Fin N)) :=
-  V.1.comap (WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).toLinearMap
+  V.val.comap (WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).toLinearMap
 
 @[simp] theorem mem_toEuclidean {V : finiteGrassmannian 𝕜 r N} {x : EuclideanSpace 𝕜 (Fin N)} :
-    x ∈ V.toEuclidean ↔ WithLp.ofLp x ∈ V.1 := Iff.rfl
+    x ∈ V.toEuclidean ↔ WithLp.ofLp x ∈ V.val := Iff.rfl
 
 /-- Distinct points of the Grassmannian give distinct Euclidean subspaces. -/
 theorem toEuclidean_injective :
@@ -91,7 +92,7 @@ theorem toEuclidean_injective :
 @[simp] theorem finrank_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
     finrank 𝕜 V.toEuclidean = r := by
   rw [toEuclidean, Submodule.comap_equiv_eq_map_symm]
-  exact ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).symm.finrank_map_eq V.1).trans V.2
+  exact ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).symm.finrank_map_eq V.val).trans V.property
 
 /-- The orthogonal complement of `V` in `EuclideanSpace 𝕜 (Fin N)` has dimension `N - r`. -/
 @[simp] theorem finrank_orthogonal_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
@@ -104,7 +105,7 @@ theorem toEuclidean_injective :
 vectors. -/
 theorem toEuclidean_frameSpan (f : finiteFullRankFrame 𝕜 r N) :
     (frameSpan f).toEuclidean =
-      Submodule.span 𝕜 (range fun i ↦ (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N))) := by
+      Submodule.span 𝕜 (range fun i ↦ (WithLp.toLp 2 (f.val i) : EuclideanSpace 𝕜 (Fin N))) := by
   rw [toEuclidean, coe_frameSpan, Submodule.comap_equiv_eq_map_symm, Submodule.map_span,
     ← range_comp]
   simp [Function.comp_def]
@@ -119,16 +120,16 @@ theorem continuous_starProjection_toEuclidean :
   refine isQuotientMap_frameSpan_toFullRankFrame.continuous_iff.2 <|
     Orthonormal.continuous_starProjection
       (f := fun f : finiteOrthonormalFrame 𝕜 r N ↦ fun i ↦
-        (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N)))
+        (WithLp.toLp 2 (f.val i) : EuclideanSpace 𝕜 (Fin N)))
       (continuous_pi fun i ↦
-        (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val))
-      (fun f ↦ f.2) fun f ↦ ?_
+        (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtypeVal))
+      (fun f ↦ f.property) fun f ↦ ?_
   rw [toEuclidean_frameSpan, finiteOrthonormalFrame.coe_toFullRankFrame]
 
 /-- The range of the complementary projection is the orthogonal complement. -/
 theorem range_one_sub_starProjection_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
     (1 - V.toEuclidean.starProjection).range = V.toEuclideanᗮ := by
-  rw [← Submodule.starProjection_orthogonal', Submodule.range_starProjection]
+  simp
 
 /-- The complementary projections `1 - p` depend continuously on the point of the Grassmannian. -/
 theorem continuous_one_sub_starProjection_toEuclidean :
@@ -145,17 +146,17 @@ abbrev Tautological : finiteGrassmannian 𝕜 r N → Type _ :=
 
 /-- The tautological fibre identified with the original coordinate subspace. -/
 noncomputable def tautologicalEquiv (V : finiteGrassmannian 𝕜 r N) :
-    Tautological 𝕜 r N V ≃ₗ[𝕜] V.1 :=
+    Tautological 𝕜 r N V ≃ₗ[𝕜] V.val :=
   (LinearEquiv.ofEq _ _ (Submodule.range_starProjection V.toEuclidean)).trans
-    ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).ofSubmodule' V.1)
+    ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).ofSubmodule' V.val)
 
 @[simp] theorem tautologicalEquiv_apply (V : finiteGrassmannian 𝕜 r N)
     (v : Tautological 𝕜 r N V) : (tautologicalEquiv 𝕜 r N V v : Fin N → 𝕜) =
-      WithLp.ofLp v.1 := (rfl)
+      WithLp.ofLp v.val := (rfl)
 
-@[simp] theorem tautologicalEquiv_symm_apply (V : finiteGrassmannian 𝕜 r N) (v : V.1) :
+@[simp] theorem tautologicalEquiv_symm_apply (V : finiteGrassmannian 𝕜 r N) (v : V.val) :
     ((tautologicalEquiv 𝕜 r N V).symm v : EuclideanSpace 𝕜 (Fin N)) =
-      WithLp.toLp 2 v.1 := (rfl)
+      WithLp.toLp 2 v.val := (rfl)
 
 /-- The orthogonal complement `γ⊥` of the tautological bundle over the finite Grassmannian: its
 fibre over `V` is the range of `1 - p`, for `p` the orthogonal projection onto `V`, that is, the
@@ -230,7 +231,7 @@ theorem tautologicalProdOrthogonalHomeomorph_apply
     (v : TotalSpace ((Fin r → 𝕜) × (Fin (N - r) → 𝕜))
       (Tautological 𝕜 r N ×ᵇ TautologicalOrthogonal 𝕜 r N)) :
     tautologicalProdOrthogonalHomeomorph 𝕜 r N v =
-      (v.proj, (v.2.1 : EuclideanSpace 𝕜 (Fin N)) + v.2.2) :=
+      (v.proj, (v.snd.1 : EuclideanSpace 𝕜 (Fin N)) + v.snd.2) :=
   rangeProdRangeOneSubHomeomorph_apply _ _ _ _ v
 
 /-- The inverse of `γ ⊕ γ⊥ ≅ 𝕜ᴺ` splits a vector by the orthogonal projections onto `V` and onto
@@ -248,7 +249,7 @@ span give bases of the same fibre type. -/
 noncomputable def frameBasis (f : finiteFullRankFrame 𝕜 r N) {V : finiteGrassmannian 𝕜 r N}
     (hV : frameSpan f = V) : Basis (Fin r) 𝕜 (Tautological 𝕜 r N V) :=
   basisOfLinearIndependentOfCardEqFinrank'
-    (fun i ↦ ⟨WithLp.toLp 2 (f.1 i), by
+    (fun i ↦ ⟨WithLp.toLp 2 (f.val i), by
       rw [Submodule.range_starProjection, ← hV, toEuclidean_frameSpan]
       exact Submodule.subset_span ⟨i, rfl⟩⟩)
     (.of_comp (Submodule.subtype _) f.linearIndependent_toLp) <| (Fintype.card_fin r).trans <|
@@ -259,7 +260,7 @@ noncomputable def frameBasis (f : finiteFullRankFrame 𝕜 r N) {V : finiteGrass
 @[simp]
 theorem coe_frameBasis_apply (f : finiteFullRankFrame 𝕜 r N) {V : finiteGrassmannian 𝕜 r N}
     (hV : frameSpan f = V) (i : Fin r) :
-    (frameBasis f hV i : EuclideanSpace 𝕜 (Fin N)) = WithLp.toLp 2 (f.1 i) := by
+    (frameBasis f hV i : EuclideanSpace 𝕜 (Fin N)) = WithLp.toLp 2 (f.val i) := by
   simp [frameBasis]
 
 /-- Acting on a frame by a matrix `A` changes the basis of the tautological fibre by `A`. -/
@@ -289,7 +290,7 @@ theorem continuous_mk_frameBasis (i : Fin r) :
   (isEmbedding_totalSpace_range _ _).continuous_iff.2 <| by
     simp only [Function.comp_def, coe_frameBasis_apply]
     exact continuous_frameSpan.prodMk <| (PiLp.continuous_toLp 2 _).comp <|
-      (continuous_apply i).comp continuous_subtype_val
+      (continuous_apply i).comp continuous_subtypeVal
 
 end finiteGrassmannian
 

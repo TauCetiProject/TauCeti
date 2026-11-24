@@ -126,8 +126,8 @@ theorem eq_and_eq_of_mul_add_eq_mul_add_of_isDistinguished {g q q' : W'} {s : �
       PowerSeries.coeff m (PowerSeries.map (toTate σ K : W →+* Tate) (p : PowerSeries W)) = 0 := by
     simp [Polynomial.coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))]
   obtain ⟨hqq, -⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add zero_lt_one
-    (fun _ ↦ norm_mul _ _) (restrictedOptionEquiv (toTate _ K q)).2
-    (restrictedOptionEquiv (toTate _ K q')).2 (hz r hr) (hz r' hr') hmap
+    (fun _ ↦ norm_mul _ _) (restrictedOptionEquiv (toTate _ K q)).property
+    (restrictedOptionEquiv (toTate _ K q')).property (hz r hr) (hz r' hr') hmap
   obtain rfl : q = q' := toTate_injective (restrictedOptionEquiv.injective (Subtype.ext hqq))
   exact ⟨rfl, polynomialToOption_injective (add_left_cancel h)⟩
 
@@ -211,7 +211,8 @@ private theorem exists_mul_add_eq_series_of_isRestricted {ρ r : ℝ} [Fact (0 <
   -- Divide at the fixed radius `r` over the Banach ring of radius-`ρ` series.
   obtain ⟨Q, R, hQ, hR, hQR⟩ := (PowerSeries.isMulDistinguished_iff_isUnit.mpr
     ⟨hd, hu⟩).exists_mul_add_eq (zero_lt_one.trans (hρ.trans_le hρr))
-    (isRestricted_of_map_subtype_eq_optionEquivLeft hρr hgr hGmap) (restrictedOptionEquiv fC).2
+    (isRestricted_of_map_subtype_eq_optionEquivLeft hρr hgr hGmap)
+        (restrictedOptionEquiv fC).property
   -- Pull `Q` and `R` back to the overconvergent algebras and compare formal series.
   let φ : IsRestricted.subring (R := K) (fun _ : σ ↦ ρ) →+* W :=
     (washnitzerAlgebra.ofRestricted hρ fun _ ↦ le_rfl).toRingHom
@@ -237,7 +238,7 @@ private theorem exists_mul_add_eq_series {g : W'} {s : ℕ}
     ∃ (q : W') (r : PowerSeries W),
       (∀ m, s ≤ m → PowerSeries.coeff m r = 0) ∧
         optionSeries q * optionSeries g + r = optionSeries f := by
-  obtain ⟨ρ₀, hρ₀, hf⟩ := mem_washnitzerAlgebra.mp f.2
+  obtain ⟨ρ₀, hρ₀, hf⟩ := mem_washnitzerAlgebra.mp f.property
   obtain ⟨ρ, hρpos, r, hρ, hρr, hr₀, hgr, G, hG, hd, huG⟩ :=
     exists_isDistinguished_isUnit_of_isDistinguished_one hg hu hρ₀
   exact exists_mul_add_eq_series_of_isRestricted hρ hρr hgr hG hd huG f
@@ -284,7 +285,7 @@ theorem exists_mul_add_eq_and_norm_le_of_isDistinguished {g : W'} {s : ℕ}
     rw [← hf]
     simp [Polynomial.polynomial_map_coe]
   have hnorm := hg.gaussNorm_mul_add_eq_max one_pos (fun x ↦ norm_mul _ _)
-    (restrictedOptionEquiv (toTate _ K q)).2 hrφ
+    (restrictedOptionEquiv (toTate _ K q)).property hrφ
   rw [← map_toTate_optionSeries, ← map_toTate_optionSeries,
     ← hmap, ← norm_eq_gaussNorm_map_optionSeries,
     ← norm_eq_gaussNorm_map_optionSeries,

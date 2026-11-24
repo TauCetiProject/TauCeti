@@ -129,7 +129,7 @@ theorem linearIndependent_of_strictMono_valuation (hk : ∀ c : k, algebraMap k 
   rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₁⟩⟩
   · exact linearIndependent_empty_type
   have hx : A.valuation x < 1 := (hxy i₁).trans_lt (hy i₁)
-  have hxpos : 0 < A.valuation x := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 hx0)
+  have hxpos : 0 < A.valuation x := pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 hx0)
   have hy0 : ∀ i, y i ≠ 0 := fun i ↦ (Valuation.ne_zero_iff _).1 (hxpos.trans_le (hxy i)).ne'
   have hkle : ∀ c : k, A.valuation (algebraMap k F c) ≤ 1 :=
     fun c ↦ (A.valuation_le_one_iff _).2 (hk c)
@@ -193,18 +193,19 @@ private theorem exists_max_valuation_lt_one (hF : IsFunctionField k F)
   have hu0 : u ≠ 0 := fun h ↦ hu (h ▸ A.zero_mem)
   have hui0 : u⁻¹ ≠ 0 := inv_ne_zero hu0
   have hui : A.valuation u⁻¹ < 1 := by
-    rw [map_inv₀, inv_lt_one₀ (zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 hu0))]
+    rw [map_inv₀, inv_lt_one₀ (pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 hu0))]
     exact lt_of_not_ge fun h ↦ hu ((A.valuation_le_one_iff u).1 h)
   by_contra hcon
   push Not at hcon
   -- Otherwise the valuations of the nonunits climb forever, contradicting the chain bound.
   let g : {z : F // z ≠ 0 ∧ A.valuation z < 1} → {z : F // z ≠ 0 ∧ A.valuation z < 1} :=
-    fun t ↦ ⟨(hcon t.1 t.2.1 t.2.2).choose, (hcon t.1 t.2.1 t.2.2).choose_spec.1,
-      (hcon t.1 t.2.1 t.2.2).choose_spec.2.1⟩
-  have hg : ∀ t, A.valuation t.1 < A.valuation (g t).1 :=
-    fun t ↦ (hcon t.1 t.2.1 t.2.2).choose_spec.2.2
+    fun t ↦ ⟨(hcon t.val t.property.1 t.property.2).choose,
+        (hcon t.val t.property.1 t.property.2).choose_spec.1,
+      (hcon t.val t.property.1 t.property.2).choose_spec.2.1⟩
+  have hg : ∀ t, A.valuation t.val < A.valuation (g t).val :=
+    fun t ↦ (hcon t.val t.property.1 t.property.2).choose_spec.2.2
   refine not_exists_seq_valuation_strictMono hF hk hui0
-    (y := fun n ↦ (g^[n] ⟨u⁻¹, hui0, hui⟩).1) (fun n ↦ (g^[n] _).2.2)
+    (y := fun n ↦ (g^[n] ⟨u⁻¹, hui0, hui⟩).val) (fun n ↦ (g^[n] _).property.2)
     (fun n ↦ ?_) le_rfl
   rw [Function.iterate_succ_apply']
   exact hg _
@@ -215,19 +216,20 @@ theorem isDiscreteValuationRing_of_isFunctionField (hF : IsFunctionField k F)
     (hk : ∀ c : k, algebraMap k F c ∈ A) (hA : A ≠ ⊤) : IsDiscreteValuationRing A := by
   obtain ⟨t, ht0, ht1, htmax⟩ := exists_max_valuation_lt_one hF hk hA
   have htA : t ∈ A := (A.valuation_le_one_iff t).1 ht1.le
-  have htpos : 0 < A.valuation t := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 ht0)
+  have htpos : 0 < A.valuation t := pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 ht0)
   refine IsDiscreteValuationRing.ofHasUnitMulPowIrreducibleFactorization
     ⟨⟨t, htA⟩, ⟨fun hu ↦ ht1.ne ((A.valuation_eq_one_iff _).1 hu), fun a b hab ↦ ?_⟩, ?_⟩
   · -- Irreducibility: a factor of smaller valuation than `t` is impossible.
     have hcoe : t = (a : F) * (b : F) := congrArg Subtype.val hab
     have ha0 : (a : F) ≠ 0 := fun h ↦ ht0 (by rw [hcoe, h, zero_mul])
-    rcases eq_or_lt_of_le ((A.valuation_le_one_iff (a : F)).2 a.2) with hva | hva
+    rcases eq_or_lt_of_le ((A.valuation_le_one_iff (a : F)).2 a.property) with hva | hva
     · exact Or.inl ((A.valuation_eq_one_iff a).2 hva)
-    refine Or.inr ((A.valuation_eq_one_iff b).2 (le_antisymm ((A.valuation_le_one_iff _).2 b.2)
+    refine Or.inr ((A.valuation_eq_one_iff b).2 (le_antisymm ((A.valuation_le_one_iff _).2
+        b.property)
       (not_lt.1 fun hlt ↦ absurd (htmax _ ha0 hva) (not_le.2 ?_))))
     calc A.valuation t = A.valuation (a : F) * A.valuation (b : F) := by rw [hcoe, map_mul]
       _ < A.valuation (a : F) * 1 :=
-          mul_lt_mul_of_pos_left hlt (zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 ha0))
+          mul_lt_mul_of_pos_left hlt (pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 ha0))
       _ = A.valuation (a : F) := mul_one _
   · -- Factorisation: dividing by `t` repeatedly must eventually reach a unit.
     intro z hz
@@ -245,7 +247,7 @@ theorem isDiscreteValuationRing_of_isFunctionField (hF : IsFunctionField k F)
         | zero =>
           refine lt_of_le_of_ne ?_ (hcon 0)
           rw [pow_zero, div_one]
-          exact (A.valuation_le_one_iff _).2 z.2
+          exact (A.valuation_le_one_iff _).2 z.property
         | succ n ih =>
           refine lt_of_le_of_ne ?_ (hcon (n + 1))
           rw [hval, pow_succ, ← div_div, ← hval, div_le_one₀ htpos]
@@ -253,7 +255,7 @@ theorem isDiscreteValuationRing_of_isFunctionField (hF : IsFunctionField k F)
       refine not_exists_seq_valuation_strictMono hF hk hz0
         (y := fun n ↦ (z : F) / t ^ n) hall (fun n ↦ ?_) (by simp)
       rw [hval, hval]
-      exact (div_lt_div_iff_of_pos_left (zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 hz0))
+      exact (div_lt_div_iff_of_pos_left (pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 hz0))
         (pow_pos htpos _) (pow_pos htpos _)).2
         (pow_lt_pow_right_of_lt_one₀ htpos ht1 n.lt_succ_self)
     have hwA : (z : F) / t ^ N ∈ A := (A.valuation_le_one_iff _).1 hN.le

@@ -358,7 +358,7 @@ private theorem exists_homogeneousComponent_defectPoint (hf : PowerSeries.consta
         (hz : constantCoeff z.val = 0) : constantCoeff (defectPoint G hf y z).val = 0 :=
       order_ne_zero_iff_constCoeff_eq_zero.mp fun h ↦ by
         have := (le_order_defectPoint hf hΨ hy hz).trans_eq h
-        exact hn (by exact_mod_cast le_zero_iff.mp this)
+        exact hn (by exact_mod_cast nonpos_iff_eq_zero.mp this)
     have hA := G.le_order_subst_sub_sub hn (le_order_defectPoint hf hΨ (hx 0) (hx 1))
       (h0 hx01 (hx 2))
     have hC := G.le_order_subst_sub_sub hn (le_order_defectPoint hf hΨ (hx 1) (hx 2))
@@ -445,7 +445,8 @@ theorem homogeneousComponent_homDefect_eq_smul_lazardCocycle
   have hco := congrArg (coeff (Finsupp.single () (p ^ k))) hsum
   simp only [coeff_homogeneousComponent, Finsupp.degree_single, ↓reduceIte,
     MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coeff_coe,
-    MvPolynomial.coeff_smul, MvPolynomial.coeff_neg, MvPolynomial.coeff_X_pow] at hco
+    AddMonoidAlgebra.coeff_smul_apply, AddMonoidAlgebra.coeff_neg, Finsupp.neg_apply,
+    MvPolynomial.coeff_X_pow] at hco
   rw [← PowerSeries.coeff_def Finsupp.single_eq_same] at hco
   rw [← neg_sub, map_neg, hco]
   simp

@@ -231,7 +231,7 @@ private theorem orthogonalSpanSingletonForm_apply_ne_zero (o : Orientation ℝ E
   rw [orthogonalSpanSingletonForm_apply]
   exact volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_orthogonal_span_singleton hp
-      (b.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (b i).2)
+      (b.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (b i).property)
 
 /-- The orientation of the orthogonal complement `(ℝ ∙ p)ᗮ` of a nonzero vector `p` of an
 oriented space for which `p` is a positive normal: a basis `b` of `(ℝ ∙ p)ᗮ` is positive exactly

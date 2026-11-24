@@ -110,14 +110,14 @@ private theorem isClopen_combSpace_coe (n : ℕ) :
       ({(⟨((n : OnePoint ℕ), True), Or.inr ⟨trivial, rfl⟩⟩ : combSpace)} : Set combSpace) := by
   constructor
   · convert (isClosed_singleton (x := (n : OnePoint ℕ)).prod (isClosed_univ (X := Prop))).preimage
-      (continuous_subtype_val (p := (· ∈ combSpace)))
+      (continuous_subtypeVal (p := (· ∈ combSpace)))
     ext ⟨⟨a, p⟩, hz⟩
     simp only [mem_singleton_iff, Subtype.ext_iff, Prod.ext_iff, mem_preimage, mem_prod, mem_univ,
       and_true]
     exact ⟨fun h ↦ h.1, fun ha ↦ ⟨ha, snd_eq_true_of_mem_combSpace (ha ▸ hz)⟩⟩
   · convert ((OnePoint.isOpen_singleton_coe.2 (isOpen_discrete {n})).prod
         isOpen_singleton_true).preimage
-      (continuous_subtype_val (p := (· ∈ combSpace)))
+      (continuous_subtypeVal (p := (· ∈ combSpace)))
     ext ⟨⟨a, p⟩, _⟩
     simp [Subtype.ext_iff]
 
@@ -128,7 +128,7 @@ private theorem continuous_combInfty : Continuous combInfty :=
 
 private theorem isClosed_combInfty_false : IsClosed ({combInfty False} : Set combSpace) := by
   convert (OnePoint.isClosed_infty.prod isClosed_singleton_false).preimage
-    (continuous_subtype_val (p := (· ∈ combSpace)))
+    (continuous_subtypeVal (p := (· ∈ combSpace)))
   ext ⟨⟨a, p⟩, _⟩
   simp [combInfty, Subtype.ext_iff]
 
@@ -170,7 +170,7 @@ private theorem openCoversSplit_combSpace : OpenCoversSplit combSpace := by
       have heq : combInfty False = ⟨((n : OnePoint ℕ), True), hwz⟩ := mem_singleton_iff.1
         ((isClopen_combSpace_coe n).connectedComponent_subset rfl
           ((connectedComponent_eq hw) ▸ hzc))
-      exact (OnePoint.coe_ne_infty n (congrArg (fun z : combSpace ↦ z.1.1) heq).symm).elim
+      exact (OnePoint.coe_ne_infty n (congrArg (fun z : combSpace ↦ z.val.1) heq).symm).elim
     | infty =>
       by_cases hq : q
       · exact (not_isClosed_combInfty_true (by simpa [combInfty, eq_true hq] using hwcl)).elim
@@ -193,7 +193,7 @@ public theorem exists_spectralSpace_openCoversSplit_and_not_isWLocalSpace :
       have hp : p = True := snd_eq_true_of_mem_combSpace hz
       subst hp
       exact ⟨fun h ↦ (h (isClopen_combSpace_coe n).isClosed).elim,
-        fun h ↦ (OnePoint.coe_ne_infty n (congrArg (fun z : combSpace ↦ z.1.1) h)).elim⟩
+        fun h ↦ (OnePoint.coe_ne_infty n (congrArg (fun z : combSpace ↦ z.val.1) h)).elim⟩
     | infty =>
       by_cases hp : p
       · have hpT : p = True := eq_true hp
@@ -202,7 +202,7 @@ public theorem exists_spectralSpace_openCoversSplit_and_not_isWLocalSpace :
       · have hpF : p = False := eq_false hp
         subst hpF
         exact ⟨fun h ↦ (h isClosed_combInfty_false).elim, fun h ↦
-          ((congrArg (fun z : combSpace ↦ z.1.2) h).symm.mp trivial).elim⟩
+          ((congrArg (fun z : combSpace ↦ z.val.2) h).symm.mp trivial).elim⟩
   have hzT_open : IsOpen ({combInfty True} : Set combSpace) :=
     hcompl_eq ▸ hw.isClosed_closedPoints.isOpen_compl
   obtain ⟨W, hWo, hWpre⟩ := isOpen_induced_iff.1 hzT_open
@@ -219,6 +219,6 @@ public theorem exists_spectralSpace_openCoversSplit_and_not_isWLocalSpace :
   have hzn : (⟨((n : OnePoint ℕ), True), Or.inr ⟨trivial, rfl⟩⟩ : combSpace) ∈
       ({combInfty True} : Set combSpace) :=
     hWpre ▸ mem_preimage.2 haW
-  exact OnePoint.coe_ne_infty n (congrArg (fun z : combSpace ↦ z.1.1) (mem_singleton_iff.1 hzn))
+  exact OnePoint.coe_ne_infty n (congrArg (fun z : combSpace ↦ z.val.1) (mem_singleton_iff.1 hzn))
 
 end TauCeti.Examples.WLocal

@@ -69,7 +69,7 @@ def cyclesMap (f : DGAlgHom hA hB) : hA.cyclesDeg →ₐᵍ[R] hB.cyclesDeg wher
     calc
       dB ((f.toGradedAlgHom.toAlgHom.comp hA.cycles.val) z) =
           f (dA (z : A)) := f.map_d (z : A)
-      _ = 0 := by rw [hA.mem_cycles.mp z.2, map_zero]
+      _ = 0 := by rw [hA.mem_cycles.mp z.property, map_zero]
   map_mem hz :=
     hB.mem_cyclesDeg.mpr (f.toGradedAlgHom.map_mem (hA.mem_cyclesDeg.mp hz))
 

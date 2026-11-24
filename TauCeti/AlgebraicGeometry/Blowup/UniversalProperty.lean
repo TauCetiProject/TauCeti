@@ -165,8 +165,8 @@ theorem projReesAlgebra_hom_ext {g₁ g₂ : T ⟶ Proj (grade I)}
   refine Scheme.hom_ext_of_forall _ _ fun x ↦ ?_
   obtain ⟨U, hxU, a, ha, hUa⟩ := (isEffectiveCartier_iff _).mp hf x
   rw [ideal_comap_ofIdealTop_map_ΓSpecIso_inv] at hUa
-  have hU : IsAffineOpen U.1 := U.2
-  refine ⟨U.1, hxU, ?_⟩
+  have hU : IsAffineOpen U.val := U.property
+  refine ⟨U.val, hxU, ?_⟩
   rw [← cancel_epi hU.isoSpec.inv, ← Category.assoc, ← Category.assoc, hU.isoSpec_inv_ι]
   exact eq_of_comp_eq_SpecMap ha hUa (by rw [Category.assoc, hU.fromSpec_comp_eq_SpecMap])
     (by rw [Category.assoc, ← h, hU.fromSpec_comp_eq_SpecMap])
@@ -196,15 +196,15 @@ private theorem exists_lift_of_mem {f : T ⟶ Spec (.of R)}
   obtain ⟨U, hxU, a, ha, hUa⟩ := (isEffectiveCartier_iff _).mp hf x
   rw [ideal_comap_ofIdealTop_map_ΓSpecIso_inv] at hUa
   set ψ := (Scheme.ΓSpecIso (.of R)).inv ≫ f.appLE ⊤ U le_top
-  have hcover := _root_.AlgebraicGeometry.iSup_basicOpen_of_span_eq_top U.1 _
+  have hcover := _root_.AlgebraicGeometry.iSup_basicOpen_of_span_eq_top U.val _
     (Ideal.span_setOf_mul_eq_eq_top ha hUa)
   obtain ⟨c, ⟨i, hi, hci⟩, hxc⟩ : ∃ c ∈ {c | ∃ i ∈ I, c * a = ψ i}, x ∈ T.basicOpen c := by
     have hx : x ∈ ⨆ c ∈ {c | ∃ i ∈ I, c * a = ψ i}, T.basicOpen c := by
       rw [hcover]
       exact hxU
     simpa only [TopologicalSpace.Opens.mem_iSup, exists_prop] using hx
-  have hV : IsAffineOpen (T.basicOpen c) := U.2.basicOpen c
-  have hVU : T.basicOpen c ≤ U.1 := T.basicOpen_le c
+  have hV : IsAffineOpen (T.basicOpen c) := U.property.basicOpen c
+  have hVU : T.basicOpen c ≤ U.val := T.basicOpen_le c
   set ρ := T.presheaf.map (homOfLE hVU).op
   have hψV : ψ ≫ ρ = (Scheme.ΓSpecIso (.of R)).inv ≫ f.appLE ⊤ (T.basicOpen c) le_top := by
     rw [Category.assoc]
@@ -213,7 +213,7 @@ private theorem exists_lift_of_mem {f : T ⟶ Spec (.of R)}
   have hi' : (ψ ≫ ρ) i = ρ c * ρ a := by
     rw [CommRingCat.comp_apply, ← hci, map_mul]
   obtain ⟨g, hg⟩ := exists_comp_eq_SpecMap (ψ ≫ ρ) hi
-    (by rw [hi']; exact (hunit.isSMulRegular _).mul (U.2.isSMulRegular_map hVU ha))
+    (by rw [hi']; exact (hunit.isSMulRegular _).mul (U.property.isSMulRegular_map hVU ha))
     (by
       rw [CommRingCat.hom_comp, ← Ideal.map_map, hUa, Ideal.map_span, Set.image_singleton, hi',
         Ideal.span_singleton_le_span_singleton]
@@ -307,7 +307,7 @@ theorem blowup_hom_ext {g₁ g₂ : T ⟶ I.blowup}
     rintro _ ⟨y, rfl⟩
     rw [← Scheme.Hom.coe_opensRange, opensRange_blowupChart, SetLike.mem_coe,
       Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply, Category.assoc, hg]
-    exact y.2
+    exact y.property
   have hlift (g : T ⟶ I.blowup) (hg : g ≫ I.blowupToBase = f) :
       (IsOpenImmersion.lift (I.blowupChart hV) _ (hrange g hg) ≫
           Proj.toSpecZero (reesAlgebra.grade (I.ideal ⟨V, hV⟩)) ≫
@@ -347,21 +347,22 @@ private theorem exists_comp_blowupToBase_eq_of_isAffineOpen {f : T ⟶ X}
 /-- Existence in the universal property, by gluing the lifts over the affine opens of `X`. -/
 private theorem exists_comp_blowupToBase_eq {f : T ⟶ X} (hf : (I.comap f).IsEffectiveCartier) :
     ∃ g : T ⟶ I.blowup, g ≫ I.blowupToBase = f := by
-  choose g hg using fun V : X.affineOpens ↦ I.exists_comp_blowupToBase_eq_of_isAffineOpen hf V.2
+  choose g hg using fun V : X.affineOpens ↦ I.exists_comp_blowupToBase_eq_of_isAffineOpen hf
+      V.property
   -- The local lifts agree on overlaps, by uniqueness over the overlap.
   have compat (V W : X.affineOpens) :
-      Limits.pullback.fst (f ⁻¹ᵁ V.1).ι (f ⁻¹ᵁ W.1).ι ≫ g V =
-        Limits.pullback.snd (f ⁻¹ᵁ V.1).ι (f ⁻¹ᵁ W.1).ι ≫ g W := by
-    have key : (Limits.pullback.fst (f ⁻¹ᵁ V.1).ι (f ⁻¹ᵁ W.1).ι ≫ g V) ≫ I.blowupToBase =
-        (Limits.pullback.fst (f ⁻¹ᵁ V.1).ι (f ⁻¹ᵁ W.1).ι ≫ (f ⁻¹ᵁ V.1).ι) ≫ f := by
+      Limits.pullback.fst (f ⁻¹ᵁ V.val).ι (f ⁻¹ᵁ W.val).ι ≫ g V =
+        Limits.pullback.snd (f ⁻¹ᵁ V.val).ι (f ⁻¹ᵁ W.val).ι ≫ g W := by
+    have key : (Limits.pullback.fst (f ⁻¹ᵁ V.val).ι (f ⁻¹ᵁ W.val).ι ≫ g V) ≫ I.blowupToBase =
+        (Limits.pullback.fst (f ⁻¹ᵁ V.val).ι (f ⁻¹ᵁ W.val).ι ≫ (f ⁻¹ᵁ V.val).ι) ≫ f := by
       rw [Category.assoc, hg, Category.assoc]
     refine I.blowup_hom_ext ?_ ?_
     · rw [key, Category.assoc, Category.assoc, hg, Limits.pullback.condition_assoc]
     · rw [key, comap_comp]
       exact hf.comap _
-  have hcover : ⨆ V : X.affineOpens, f ⁻¹ᵁ V.1 = ⊤ := by
+  have hcover : ⨆ V : X.affineOpens, f ⁻¹ᵁ V.val = ⊤ := by
     rw [← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top, Scheme.Hom.preimage_top]
-  let 𝒰 := T.openCoverOfIsOpenCover (fun V : X.affineOpens ↦ f ⁻¹ᵁ V.1) hcover
+  let 𝒰 := T.openCoverOfIsOpenCover (fun V : X.affineOpens ↦ f ⁻¹ᵁ V.val) hcover
   exact ⟨𝒰.glueMorphisms g compat, 𝒰.hom_ext _ _ fun V ↦
     (𝒰.ι_glueMorphisms_assoc g compat V _).trans (hg V)⟩
 

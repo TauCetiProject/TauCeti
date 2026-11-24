@@ -313,7 +313,7 @@ theorem coe_subtypeVal (s : Set X) : ⇑(subtypeVal s) = Subtype.val :=
 
 /-- Evaluating `DSmoothMap.subtypeVal s` at `x` returns `x.1`. -/
 @[simp]
-theorem subtypeVal_apply (s : Set X) (x : s) : subtypeVal s x = x.1 :=
+theorem subtypeVal_apply (s : Set X) (x : s) : subtypeVal s x = x.val :=
   (rfl)
 
 /-- The coercion from bundled smooth maps to functions is injective. -/
@@ -378,13 +378,13 @@ theorem isPlot_iff {n : ℕ} {p : 𝔼ⁿ → DSmoothMap X Y} :
 evaluation is smooth on `u × X` (where `u` carries the subspace diffeology). -/
 theorem isPlotOn_iff {n : ℕ} {u : Set (𝔼ⁿ)} {p : 𝔼ⁿ → DSmoothMap X Y} :
     TauCeti.Diffeology.IsPlotOn u p ↔
-      _root_.Diffeology.DSmooth (fun ux : u × X ↦ p ux.1.1 ux.2) := by
+      _root_.Diffeology.DSmooth (fun ux : u × X ↦ p ux.1.val ux.2) := by
   constructor
   · intro hp m q hq
-    have hq1 : ContDiff ℝ ∞ (fun v ↦ (q v).1.1) :=
+    have hq1 : ContDiff ℝ ∞ (fun v ↦ (q v).1.val) :=
       _root_.Diffeology.isPlot_iff_contDiff.mp (isPlot_subtype_iff.mp (isPlot_prod_iff.mp hq).1)
-    have hpq : _root_.Diffeology.IsPlot (p ∘ fun v ↦ (q v).1.1) :=
-      hp.isPlot_comp (fun v _ ↦ (q v).1.2) hq1
+    have hpq : _root_.Diffeology.IsPlot (p ∘ fun v ↦ (q v).1.val) :=
+      hp.isPlot_comp (fun v _ ↦ (q v).1.property) hq1
     have harg : _root_.Diffeology.IsPlot (fun v : 𝔼ᵐ ↦ (v, (q v).2)) :=
       isPlot_prod_iff.mpr ⟨_root_.Diffeology.isPlot_id, (isPlot_prod_iff.mp hq).2⟩
     exact isPlot_iff.mp hpq m _ harg

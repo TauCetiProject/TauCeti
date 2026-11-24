@@ -50,13 +50,13 @@ namespace TauCeti.UnitizationExample
 /-- The coordinate function `t ↦ t` in `C(unitInterval, ℂ)`. -/
 def coord : C(unitInterval, ℂ) where
   toFun t := ((t : ℝ) : ℂ)
-  continuous_toFun := Complex.continuous_ofReal.comp continuous_subtype_val
+  continuous_toFun := Complex.continuous_ofReal.comp continuous_subtypeVal
 
 /-- The square-root coordinate function `t ↦ √t` in `C(unitInterval, ℂ)`. -/
 def sqrtCoord : C(unitInterval, ℂ) where
   toFun t := ((Real.sqrt (t : ℝ) : ℝ) : ℂ)
   continuous_toFun :=
-    Complex.continuous_ofReal.comp (Real.continuous_sqrt.comp continuous_subtype_val)
+    Complex.continuous_ofReal.comp (Real.continuous_sqrt.comp continuous_subtypeVal)
 
 @[simp]
 theorem coord_apply (t : unitInterval) : coord t = ((t : ℝ) : ℂ) := (rfl)
@@ -65,7 +65,7 @@ theorem coord_apply (t : unitInterval) : coord t = ((t : ℝ) : ℂ) := (rfl)
 theorem sqrtCoord_apply (t : unitInterval) : sqrtCoord t = ((Real.sqrt (t : ℝ) : ℝ) : ℂ) := (rfl)
 
 theorem coord_nonneg : 0 ≤ coord :=
-  fun t ↦ by simpa [Complex.le_def] using t.2.1
+  fun t ↦ by simpa [Complex.le_def] using t.property.1
 
 theorem sqrtCoord_nonneg : 0 ≤ sqrtCoord :=
   fun _ ↦ by simp [Complex.le_def]
@@ -73,7 +73,7 @@ theorem sqrtCoord_nonneg : 0 ≤ sqrtCoord :=
 @[simp]
 theorem sqrtCoord_mul_self : sqrtCoord * sqrtCoord = coord := by
   ext t
-  simp [← Complex.ofReal_mul, Real.mul_self_sqrt t.2.1]
+  simp [← Complex.ofReal_mul, Real.mul_self_sqrt t.property.1]
 
 /-- In `C(unitInterval, ℂ)`, the C⋆-algebraic square root `CFC.sqrt coord` is `t ↦ √t`. -/
 @[simp]
@@ -166,7 +166,7 @@ def truncInvSqrt (n : ℕ) : C(unitInterval, ℂ) where
   continuous_toFun := by
     refine Complex.continuous_ofReal.comp (Continuous.div continuous_const ?_ fun _ ↦ ?_)
     · exact continuous_const.max
-        (continuous_const.mul (Real.continuous_sqrt.comp continuous_subtype_val))
+        (continuous_const.mul (Real.continuous_sqrt.comp continuous_subtypeVal))
     · exact (zero_lt_one.trans_le (le_max_left 1 _)).ne'
 
 @[simp]
@@ -196,7 +196,7 @@ theorem norm_coord_mul_truncInvSqrt_sub_sqrtCoord_le {n : ℕ} (hn : 1 ≤ n) :
   refine (ContinuousMap.norm_le _ (by positivity)).mpr fun t ↦ ?_
   set s : ℝ := Real.sqrt (t : ℝ) with hs_def
   have hs_nonneg : 0 ≤ s := Real.sqrt_nonneg _
-  have hs_sq : s * s = (t : ℝ) := Real.mul_self_sqrt t.2.1
+  have hs_sq : s * s = (t : ℝ) := Real.mul_self_sqrt t.property.1
   have hval : (coord * truncInvSqrt n - sqrtCoord) t =
       (((s * s * ((n : ℝ) / max 1 ((n : ℝ) * s)) - s) : ℝ) : ℂ) := by
     rw [ContinuousMap.sub_apply, ContinuousMap.mul_apply, coord_apply, truncInvSqrt_apply,
@@ -236,7 +236,7 @@ theorem tendsto_coord_mul_truncInvSqrt :
 /-- The coordinate function `t ↦ t` in `C₀(Set.Ioc (0 : ℝ) 1, ℂ)`, vanishing as `t → 0⁺`. -/
 def coordIoc : C₀(Set.Ioc (0 : ℝ) 1, ℂ) where
   toFun x := ((x : ℝ) : ℂ)
-  continuous_toFun := Complex.continuous_ofReal.comp continuous_subtype_val
+  continuous_toFun := Complex.continuous_ofReal.comp continuous_subtypeVal
   zero_at_infty' := by
     rw [Metric.tendsto_nhds]
     intro ε hε
@@ -250,8 +250,8 @@ def coordIoc : C₀(Set.Ioc (0 : ℝ) 1, ℂ) where
     filter_upwards [Filter.mem_cocompact.mpr ⟨K, hK, Set.Subset.rfl⟩] with x hx
     have hxlt : (x : ℝ) < ε / 2 := by
       by_contra hge
-      exact hx ⟨not_lt.mp hge, x.2.2⟩
-    rw [dist_zero_right, Complex.norm_real, Real.norm_of_nonneg x.2.1.le]
+      exact hx ⟨not_lt.mp hge, x.property.2⟩
+    rw [dist_zero_right, Complex.norm_real, Real.norm_of_nonneg x.property.1.le]
     linarith
 
 @[simp]
@@ -264,7 +264,7 @@ theorem no_identity_Ioc :
   have he1 (x : Set.Ioc (0 : ℝ) 1) : e x = 1 := by
     have hx : e x * ((x : ℝ) : ℂ) = 1 * ((x : ℝ) : ℂ) := by
       simpa using congrArg (fun f : C₀(Set.Ioc (0 : ℝ) 1, ℂ) ↦ f x) (he coordIoc).1
-    exact mul_right_cancel₀ (Complex.ofReal_ne_zero.mpr x.2.1.ne') hx
+    exact mul_right_cancel₀ (Complex.ofReal_ne_zero.mpr x.property.1.ne') hx
   have : NoncompactSpace (Set.Ioc (0 : ℝ) 1) :=
     not_compactSpace_iff.mp (mt isCompact_iff_compactSpace.mpr (by simp))
   exact one_ne_zero (tendsto_nhds_unique (tendsto_const_nhds.congr fun x ↦ (he1 x).symm)
@@ -287,7 +287,7 @@ theorem norm_lift_Lmul_one_sub_coordIoc :
       simp [T, u, Algebra.algebraMap_eq_smul_one]
       ring
     have h1x : |1 - (x : ℝ)| ≤ 1 :=
-      abs_le.mpr ⟨by linarith [x.2.2], by linarith [x.2.1]⟩
+      abs_le.mpr ⟨by linarith [x.property.2], by linarith [x.property.1]⟩
     calc
       ‖(T f).toBCF x‖ = |1 - (x : ℝ)| * ‖f x‖ := by
         rw [ZeroAtInftyContinuousMap.toBCF_apply, hfx, norm_mul, Complex.norm_real,

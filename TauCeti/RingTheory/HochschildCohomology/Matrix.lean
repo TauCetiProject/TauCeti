@@ -112,7 +112,7 @@ variable {A ι : Type*} [AddCommMonoid A] [Mul A] [One A] [Fintype ι] [Decidabl
 def matrixHomotopyTuple : Fin (n + 2) → Matrix ι ι A :=
   Fin.cons (a 0 * Matrix.single (p 0) r (1 : A)) fun j : Fin (n + 1) ↦
     if hj : j < k then
-      Matrix.single r r (a ⟨(j : ℕ) + 1, by have := k.2; omega⟩ (p ⟨j, Nat.lt_succ_of_lt hj⟩)
+      Matrix.single r r (a ⟨(j : ℕ) + 1, by have := k.isLt; omega⟩ (p ⟨j, Nat.lt_succ_of_lt hj⟩)
         (p ⟨(j : ℕ) + 1, Nat.add_lt_add_right hj 1⟩))
     else if j = k then Matrix.single r (p (Fin.last k)) (1 : A) else a j
 /-- Entry `0` of `matrixHomotopyTuple` right-multiplies `a 0` by `Matrix.single (p 0) r 1`. -/
@@ -121,7 +121,7 @@ def matrixHomotopyTuple : Fin (n + 2) → Matrix ι ι A :=
 /-- For `j < k`, entry `j + 1` places `a (j + 1) (p j) (p (j + 1))` in the `(r, r)` corner. -/
 @[simp] theorem matrixHomotopyTuple_succ_of_lt {j : Fin (n + 1)} (hj : j < k) :
     matrixHomotopyTuple r k p a j.succ =
-      Matrix.single r r (a ⟨(j : ℕ) + 1, by have := k.2; omega⟩ (p ⟨j, Nat.lt_succ_of_lt hj⟩)
+      Matrix.single r r (a ⟨(j : ℕ) + 1, by have := k.isLt; omega⟩ (p ⟨j, Nat.lt_succ_of_lt hj⟩)
         (p ⟨(j : ℕ) + 1, Nat.add_lt_add_right hj 1⟩)) := by simp [matrixHomotopyTuple, hj]
 /-- Entry `k + 1` of `matrixHomotopyTuple` is the unit matrix unit `E_{r, pₖ}`. -/
 @[simp] theorem matrixHomotopyTuple_succ_self :
@@ -181,7 +181,8 @@ private theorem extPath_insertNth_eq_natInsertIdx {ι : Type*} (r : ι) {k : ℕ
     simp only [show ¬t < j by omega, show t ≠ j by omega, show t - 1 < k + 1 by omega, ↓reduceIte,
       ↓reduceDIte]; exact congrArg q (Fin.ext rfl)
 private theorem extTuple_comp_val {B : Type*} [Zero B] {m : ℕ} (a : Fin m → B) :
-    (fun t : Fin m ↦ extTuple a t) = a := funext fun t ↦ by simp only [extTuple, t.2, ↓reduceDIte]
+    (fun t : Fin m ↦ extTuple a t) = a
+        := funext fun t ↦ by simp only [extTuple, t.isLt, ↓reduceDIte]
 private theorem hochschildFace_castSucc_comp_val {B : Type*} [Mul B] {N : ℕ} (j : Fin (N + 1))
     (b : ℕ → B) : hochschildFace j.castSucc (fun t : Fin (N + 2) ↦ b t) =
       fun s : Fin (N + 1) ↦ natContractMul j b s :=
@@ -230,11 +231,11 @@ private theorem matrixHomotopyTuple_eq_natMatrixHomotopyTuple {n : ℕ} (k : Fin
     · simp [natMatrixHomotopyTuple, natHomotopyTuple, extPath, Fin.last]
     · have : (k : ℕ) < j := hgt
       simp [hgt, show (j : ℕ) ≠ k by omega, natMatrixHomotopyTuple, natHomotopyTuple, extTuple,
-        show ¬(j : ℕ) + 1 < (k : ℕ) + 1 by omega, j.2]
+        show ¬(j : ℕ) + 1 < (k : ℕ) + 1 by omega, j.isLt]
 private theorem natMatrixHomotopyTuple_comp_val {N k : ℕ} (hkN : k ≤ N) (p : Fin (k + 1) → ι)
     (b : ℕ → Matrix ι ι A) : natMatrixHomotopyTuple r k p (fun t : Fin (N + 1) ↦ b t) =
       fun s : Fin (N + 2) ↦ natHomotopyTuple r k (extPath r p) b s := by
-  funext s; have := s.2; unfold natMatrixHomotopyTuple natHomotopyTuple extTuple
+  funext s; have := s.isLt; unfold natMatrixHomotopyTuple natHomotopyTuple extTuple
   split_ifs <;> first | omega | rfl
 end NatIdentities
 
@@ -248,7 +249,7 @@ private theorem sum_hochschildFace_natMatrixHomotopyTuple_of_le
     ∑ p : Fin ((k' : ℕ) + 2) → ι,
         φ (hochschildFace m.castSucc (natMatrixHomotopyTuple r ((k' : ℕ) + 1) p a)) =
       ∑ q : Fin ((k' : ℕ) + 1) → ι, φ (natMatrixHomotopyTuple r k' q (hochschildFace m a)) := by
-  have := k'.2; let j : Fin ((k' : ℕ) + 2) := ⟨m, by omega⟩
+  have := k'.isLt; let j : Fin ((k' : ℕ) + 2) := ⟨m, by omega⟩
   let m₀ : Fin (n + 1) := ⟨m, by omega⟩
   have hm_eq : m = m₀.castSucc := Fin.ext (Fin.val_castSucc m₀).symm
   let b := extTuple a; have ha : a = fun t : Fin (n + 2) ↦ b t := (extTuple_comp_val a).symm
@@ -293,15 +294,15 @@ private theorem hochschildFace_succ_natMatrixHomotopyTuple_of_lt (a : Fin (n + 2
     (m : Fin (n + 2)) (k' : Fin (n + 1)) (hkm : (k' : ℕ) < m) (p : Fin ((k' : ℕ) + 1) → ι) :
     hochschildFace m.succ (natMatrixHomotopyTuple r k' p a) =
       natMatrixHomotopyTuple r k' p (hochschildFace m a) := by
-  have := k'.2; let b := extTuple a
+  have := k'.isLt; let b := extTuple a
   have ha : a = fun t : Fin (n + 2) ↦ b t := (extTuple_comp_val a).symm
   rw [ha, natMatrixHomotopyTuple_comp_val r (by omega) p b]
   induction m using Fin.lastCases with
   | last =>
     rw [Fin.succ_last, hochschildFace_last_comp_val, hochschildFace_last_comp_val,
-      natMatrixHomotopyTuple_comp_val r (Nat.le_of_lt_succ k'.2) p
+      natMatrixHomotopyTuple_comp_val r (Nat.le_of_lt_succ k'.isLt) p
         (fun t ↦ if t = 0 then b (n + 1) * b 0 else b t)]
-    exact funext fun s ↦ natLastFace_natHomotopyTuple_of_le r (Nat.le_of_lt_succ k'.2) _ b s
+    exact funext fun s ↦ natLastFace_natHomotopyTuple_of_le r (Nat.le_of_lt_succ k'.isLt) _ b s
   | cast m₀ =>
     have hkm' : (k' : ℕ) < m₀ := by simpa using hkm
     rw [Fin.succ_castSucc, hochschildFace_castSucc_comp_val, hochschildFace_castSucc_comp_val,
@@ -317,7 +318,7 @@ private theorem sum_hochschildFace_diagonal_succ_eq_superdiagonal
         φ (hochschildFace j.succ.castSucc (natMatrixHomotopyTuple r ((j : ℕ) + 1) q a)) =
       ∑ p : Fin ((j : ℕ) + 1) → ι,
         φ (hochschildFace j.castSucc.succ (natMatrixHomotopyTuple r j p a)) := by
-  have := j.2; let L : Fin ((j : ℕ) + 2) := Fin.last ((j : ℕ) + 1); let b := extTuple a
+  have := j.isLt; let L : Fin ((j : ℕ) + 2) := Fin.last ((j : ℕ) + 1); let b := extTuple a
   have ha : a = fun t : Fin (n + 2) ↦ b t := (extTuple_comp_val a).symm
   rw [← (L.insertNthEquiv (fun _ : Fin ((j : ℕ) + 2) ↦ ι)).sum_comp, Fintype.sum_prod_type,
     Finset.sum_comm]
@@ -381,7 +382,7 @@ private theorem sum_hochschildFace_last_natMatrixHomotopyTuple_last [SMulCommCla
   | succ m =>
     simp only [Fin.cons_succ, natMatrixHomotopyTuple, natHomotopyTuple, extPath, extTuple,
       Fin.val_succ, Fin.val_castSucc, Nat.add_eq_zero_iff, one_ne_zero, and_false, ↓reduceIte,
-      Nat.add_lt_add_iff_right, m.2, Nat.add_sub_cancel, Nat.lt_succ_of_lt m.2,
+      Nat.add_lt_add_iff_right, m.isLt, Nat.add_sub_cancel, Nat.lt_succ_of_lt m.isLt,
       Equiv.arrowCongr_apply, Equiv.symm_symm, Equiv.refl_apply, Function.comp_apply]
     exact congrArg (fun x ↦ Matrix.single r r (a m.succ (p x) (p (finRotate (n + 1) m.succ))))
       (Fin.finRotate_castSucc m).symm
@@ -584,7 +585,7 @@ noncomputable def matrixExtension (n : ℕ) :
 @[simp] theorem matrixExtension_mk {n : ℕ} (φ : hochschildCocycles R A M n) :
     matrixExtension M ι n (mk R A M n φ) =
       mk R (Matrix ι ι A) M n ⟨matrixCochainExtension ι n φ,
-        matrixCochainExtension_mem_hochschildCocycles φ.2⟩ := desc_mk _ _ _ φ
+        matrixCochainExtension_mem_hochschildCocycles φ.property⟩ := desc_mk _ _ _ φ
 
 variable (M) in
 /-- `HHⁿ(Matrix ι ι A, Hom_R(Matrix ι ι A, M)) →ₗ[R] HHⁿ(A, Hom_R(A, M))` via `(r, r)` corner. -/
@@ -596,7 +597,7 @@ noncomputable def matrixRestriction [DecidableEq ι] (r : ι) (n : ℕ) :
     (φ : hochschildCocycles R (Matrix ι ι A) M n) :
     matrixRestriction M r n (mk R (Matrix ι ι A) M n φ) =
       mk R A M n ⟨matrixCochainRestriction r n φ,
-        matrixCochainRestriction_mem_hochschildCocycles r φ.2⟩ := by
+        matrixCochainRestriction_mem_hochschildCocycles r φ.property⟩ := by
   simp only [matrixRestriction, map_mk, matrixCochainRestriction_def,
     Matrix.singleNonUnitalAlgHom_toLinearMap]
 /-- Corner restriction is a left inverse to matrix extension on Hochschild cohomology. -/
@@ -615,7 +616,7 @@ variable {R A M : Type*} [CommRing R] [Semiring A] [Module R A]
     matrixExtension M ι n (matrixRestriction M r n c) = c := by
   obtain ⟨φ, rfl⟩ := mk_surjective R (Matrix ι ι A) M n c
   rw [matrixRestriction_mk, matrixExtension_mk, eq_comm, mk_eq_mk_iff]
-  exact sub_matrixCochainExtension_matrixCochainRestriction_mem_hochschildCoboundaries r φ.2
+  exact sub_matrixCochainExtension_matrixCochainRestriction_mem_hochschildCoboundaries r φ.property
 
 section Nonempty
 variable [Nonempty ι]

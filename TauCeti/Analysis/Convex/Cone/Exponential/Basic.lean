@@ -208,12 +208,12 @@ private def halfspaceCone : PointedCone ℝ (ℝ × ℝ × ℝ) where
     rw [Prod.fst_add, Prod.snd_add, Prod.fst_add, Prod.snd_add, hsplit]
     exact add_le_add (hp.2.2 a) (hq.2.2 a)
   smul_mem' c {q} hq := by
-    refine ⟨mul_nonneg c.2 hq.1, mul_nonneg c.2 hq.2.1, fun a ↦ ?_⟩
-    have hscale : Real.exp a * (c.1 * q.2.2 + (1 - a) * (c.1 * q.2.1)) =
-        c.1 * (Real.exp a * (q.2.2 + (1 - a) * q.2.1)) := by
+    refine ⟨mul_nonneg c.property hq.1, mul_nonneg c.property hq.2.1, fun a ↦ ?_⟩
+    have hscale : Real.exp a * (c.val * q.2.2 + (1 - a) * (c.val * q.2.1)) =
+        c.val * (Real.exp a * (q.2.2 + (1 - a) * q.2.1)) := by
       ring
     simpa only [← Nonneg.coe_smul, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, hscale] using
-      mul_le_mul_of_nonneg_left (hq.2.2 a) c.2
+      mul_le_mul_of_nonneg_left (hq.2.2 a) c.property
 
 private theorem coe_halfspaceCone : (halfspaceCone : Set (ℝ × ℝ × ℝ)) = halfspaceSet := rfl
 
@@ -323,8 +323,23 @@ example : (1, 1, 0) ∈ cone :=
 example : (2, 0, -1) ∈ cone := by
   simp
 
+example : ((2, 0, -1) : ℝ × ℝ × ℝ) ∈ closure positive := by
+  have hlim : Tendsto (fun δ : ℝ ↦ ((2 + δ, δ, -1) : ℝ × ℝ × ℝ)) (𝓝[>] (0 : ℝ))
+      (𝓝 (2, 0, -1)) := by
+    have hcont : Continuous (fun δ : ℝ ↦ ((2 + δ, δ, -1) : ℝ × ℝ × ℝ)) := by fun_prop
+    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
+  refine mem_closure_of_tendsto hlim ?_
+  filter_upwards [self_mem_nhdsWithin] with δ hδ
+  exact mem_positive_add_of_nonneg_of_nonpos (by norm_num) (by norm_num) hδ
+
 example : (1, 0, 1) ∉ cone := by
   simp
+
+example : (1, 0, 1) ∉ cone := by
+  intro h
+  have hlog := (mem_cone_iff_forall_exp.mp h).2.2 (Real.log 2)
+  rw [Real.exp_log two_pos] at hlog
+  norm_num at hlog
 
 example : (1, -1, 0) ∉ cone :=
   notMem_cone_of_neg (by norm_num)
@@ -334,6 +349,9 @@ example : IsClosed (cone : Set (ℝ × ℝ × ℝ)) :=
 
 example : Convex ℝ (cone : Set (ℝ × ℝ × ℝ)) :=
   cone.convex
+
+example : (0 : ℝ) • ((1, 1, 0) : ℝ × ℝ × ℝ) = 0 ∧ (0 : ℝ) • ((1, 1, 0) : ℝ × ℝ × ℝ) ∈ cone :=
+  ⟨zero_smul _ _, cone.smul_mem le_rfl (positive_subset_cone (by simp))⟩
 
 example : (3 / 2, 1 / 2, -1 / 2) ∈ cone := by
   have h1 : (1, 1, 0) ∈ cone := positive_subset_cone (by simp)

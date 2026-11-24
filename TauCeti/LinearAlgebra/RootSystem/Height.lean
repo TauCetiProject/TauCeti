@@ -25,6 +25,8 @@ height: reflection in a simple root subtracts the corresponding Cartan integer.
 
 ## Main definitions
 
+* `RootPairing.Base.supportPerm` is the permutation of `b.support` induced by an automorphism
+  stabilizing `b.support`.
 * `TauCeti.heightLinearMap` is the linear extension of root height to the weight
   space of a root system.
 
@@ -114,6 +116,25 @@ theorem mem_support_indexEquiv_iff (b : P.Base) {u : P.Aut}
   rw [← hsupp, Finset.mem_image] at hi
   obtain ⟨j, hj, hij⟩ := hi
   exact u.indexEquiv.injective hij ▸ hj
+
+/-- The permutation of `b.support` induced by an automorphism stabilizing `b.support`. -/
+noncomputable def supportPerm (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) : Equiv.Perm b.support :=
+  Equiv.Perm.subtypePerm σ.indexEquiv (b.mem_support_indexEquiv_iff hσ)
+
+@[simp] theorem coe_supportPerm_apply (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (i : b.support) :
+    (b.supportPerm hσ i : ι) = σ.indexEquiv i := by simp [supportPerm]
+@[simp] theorem coe_supportPerm_symm_apply (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (i : b.support) :
+    ((b.supportPerm hσ).symm i : ι) = σ.indexEquiv.symm i := by rfl
+
+@[simp] theorem sameCycle_supportPerm_iff (b : P.Base) {σ : P.Aut}
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {i j : b.support} :
+    Equiv.Perm.SameCycle (b.supportPerm hσ) i j ↔
+      Equiv.Perm.SameCycle σ.indexEquiv (i : ι) (j : ι) :=
+  exists_congr fun k ↦ by
+    rw [← Subtype.coe_inj, supportPerm, Equiv.Perm.subtypePerm_zpow, Equiv.Perm.subtypePerm_apply]
 
 /-- **Heights are transported along equivalences of root pairings.** The image of a root under an
 equivalence `e` has, relative to the transported base `b.map e`, the height of the original root

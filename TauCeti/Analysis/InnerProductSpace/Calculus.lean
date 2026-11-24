@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
@@ -36,8 +40,18 @@ proves that both are smooth; this file computes their derivatives. The first is
 `v ↦ s v - s³ ⟪x, v⟫ x`, where `s = 1 / √(1 + ‖x‖²)`: a multiple `s` of the identity on the
 orthogonal complement of `x`, multiplying `x` itself by `s³`. The second is `r` times the first.
 
+## Phases of Fourier integrals under a change of variables
+
+A change of variables `f` in a Fourier integral produces the phases `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫`. Their
+derivative in a direction `v` is `⟪v, (Df(x))† ζ - ξ⟫`, and their derivatives of order at least one
+are bounded by `‖ζ‖` times those of `f`, plus `‖ξ‖`.
+
 ## Main results
 
+* `TauCeti.fderiv_inner_sub_inner_apply`: the derivative of `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` in the
+  direction `v` is `⟪v, (Df(x))† ζ - ξ⟫`.
+* `TauCeti.norm_iteratedFDeriv_succ_inner_sub_inner_le`: the bound on the derivatives of order at
+  least one of `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫`.
 * `HasDerivAt.inner_comp_conj`: if `f` has derivative `f'` at `conj z` and `g` has derivative `g'`
   at `z`, then `w ↦ ⟪f (conj w), g w⟫` has derivative `⟪f', g z⟫ + ⟪f (conj z), g'⟫` at `z`.
 * `OpenPartialHomeomorph.hasFDerivAt_univUnitBall`: the derivative of the radial map onto the
@@ -48,7 +62,7 @@ orthogonal complement of `x`, multiplying `x` itself by `s³`. The second is `r`
 
 public section
 
-open scoped InnerProductSpace ComplexConjugate
+open scoped InnerProductSpace ComplexConjugate RealInnerProductSpace InnerProduct
 
 variable {X : Type*} [NormedAddCommGroup X] [InnerProductSpace ℂ X]
 
@@ -109,3 +123,45 @@ theorem OpenPartialHomeomorph.hasFDerivAt_univBall {r : ℝ} (hr : 0 < r) (c x :
   · rw [smul_sub, smul_smul, smul_smul, div_eq_mul_inv, div_eq_mul_inv, inv_pow]
 
 end UnitBall
+
+section Phase
+
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
+  [InnerProductSpace ℝ F]
+
+/-- The derivatives of order at least one of the phase `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` are bounded by
+`‖ζ‖` times those of `f`, plus `‖ξ‖`. -/
+theorem norm_iteratedFDeriv_succ_inner_sub_inner_le {f : E → F} {x : E} {k : ℕ}
+    (hf : ContDiffAt ℝ (k + 1 : ℕ) f x) (ξ : E) (ζ : F) :
+    ‖iteratedFDeriv ℝ (k + 1) (fun y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫) x‖ ≤
+      ‖ζ‖ * ‖iteratedFDeriv ℝ (k + 1) f x‖ + ‖ξ‖ := by
+  have hζ : (fun y ↦ ⟪f y, ζ⟫) = innerSL ℝ ζ ∘ f := by
+    ext y
+    simp [real_inner_comm]
+  have hξ : (fun y : E ↦ ⟪y, ξ⟫) = innerSL ℝ ξ := by
+    ext y
+    simp [real_inner_comm]
+  rw [fun_iteratedFDeriv_sub_apply (hf.inner ℝ contDiffAt_const)
+    (contDiffAt_fun_id.inner ℝ contDiffAt_const), hζ, hξ]
+  refine (norm_sub_le _ _).trans (add_le_add ?_ ?_)
+  · rw [← innerSL_apply_norm ℝ ζ]
+    exact (innerSL ℝ ζ).norm_iteratedFDeriv_comp_left hf le_rfl
+  · rw [← innerSL_apply_norm ℝ ξ]
+    exact (innerSL ℝ ξ).norm_iteratedFDeriv_le_norm k.succ_pos x
+
+/-- The derivative of the phase `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` at `x` in the direction `v` is
+`⟪v, (Df(x))† ζ - ξ⟫`. -/
+theorem fderiv_inner_sub_inner_apply [CompleteSpace E] [CompleteSpace F] {f : E → F} {x : E}
+    (hf : DifferentiableAt ℝ f x) (ξ : E) (ζ : F) (v : E) :
+    fderiv ℝ (fun y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫) x v = ⟪v, ((fderiv ℝ f x)†) ζ - ξ⟫ := by
+  rw [fderiv_fun_sub (hf.inner ℝ (differentiableAt_const ζ))
+      (differentiableAt_fun_id.inner ℝ (differentiableAt_const ξ)),
+    sub_apply, fderiv_inner_apply ℝ hf (differentiableAt_const ζ),
+    fderiv_inner_apply ℝ differentiableAt_fun_id (differentiableAt_const ξ)]
+  simp [inner_sub_right, ContinuousLinearMap.adjoint_inner_right]
+
+end TauCeti
+
+end Phase

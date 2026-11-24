@@ -195,7 +195,7 @@ theorem dimensionShiftDownSES_tensorLeft_shortExact (A M : Rep k G) :
 def dimensionShiftUpMap {A B : Rep k G} (f : A ⟶ B) :
     dimensionShiftUp A ⟶ dimensionShiftUp B :=
   cokernel.map (coindBotUnit A) (coindBotUnit B) f (coindBotMap f)
-    (coindBotUnit_naturality f).symm
+    (coindBotUnit_naturality f)
 
 /-- The map on upward shifts commutes with their quotient projections. -/
 @[reassoc (attr := simp)]

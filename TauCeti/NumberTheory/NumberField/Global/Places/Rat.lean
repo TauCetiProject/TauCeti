@@ -75,22 +75,22 @@ namespace NumberField.FinitePlace
 `Rat.HeightOneSpectrum.primesEquiv`, not merely a positive power of that absolute value. -/
 theorem val_eq_padic (v : FinitePlace ℚ) :
     letI : Fact (primesEquiv v.maximalIdeal : ℕ).Prime := ⟨(primesEquiv v.maximalIdeal).property⟩
-    v.1 = Rat.AbsoluteValue.padic (primesEquiv v.maximalIdeal) := by
+    v.val = Rat.AbsoluteValue.padic (primesEquiv v.maximalIdeal) := by
   let p : Nat.Primes := primesEquiv v.maximalIdeal
   let : Fact (p : ℕ).Prime := ⟨p.property⟩
   -- Mathlib defines the value of `primesEquiv` to be `natGenerator`.
   have hpval : (p : ℕ) = natGenerator v.maximalIdeal := rfl
-  have hvp : v.1 (p : ℚ) = (p : ℝ)⁻¹ := by
+  have hvp : v.val (p : ℚ) = (p : ℝ)⁻¹ := by
     rw [← coe_apply, ← v.mk_maximalIdeal, hpval]
     exact finitePlace_mk_natGenerator v.maximalIdeal
   have hp1 : (1 : ℝ) < p := by exact_mod_cast p.property.one_lt
-  have hsmall : v.1 (p : ℚ) < 1 := by
+  have hsmall : v.val (p : ℚ) < 1 := by
     rw [hvp]
     exact inv_lt_one_of_one_lt₀ hp1
   have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr p.property.ne_zero
-  have hnt : v.1.IsNontrivial := ⟨(p : ℚ), hp0, hsmall.ne⟩
-  have hbdd (n : ℕ) : v.1 (n : ℚ) ≤ 1 :=
-    IsNonarchimedean.apply_natCast_le_one (f := v.1) (by simp) v.1.map_one v.add_le
+  have hnt : v.val.IsNontrivial := ⟨(p : ℚ), hp0, hsmall.ne⟩
+  have hbdd (n : ℕ) : v.val (n : ℚ) ≤ 1 :=
+    IsNonarchimedean.apply_natCast_le_one (f := v.val) (by simp) v.val.map_one v.add_le
   obtain ⟨q, ⟨hq, hv⟩, -⟩ := Rat.AbsoluteValue.equiv_padic_of_bounded hnt hbdd
   have hqp : q = (p : ℕ) := by
     have hlt := hv.lt_one_iff.mp hsmall
@@ -118,7 +118,7 @@ namespace Nat.Primes
 has exactly the usual `p`-adic absolute value. -/
 theorem finitePlace_mk_val_eq_padic (p : Nat.Primes) :
     letI : Fact (p : ℕ).Prime := ⟨p.property⟩
-    (FinitePlace.mk ((primesEquiv (R := 𝓞 ℚ)).symm p)).1 = Rat.AbsoluteValue.padic p := by
+    (FinitePlace.mk ((primesEquiv (R := 𝓞 ℚ)).symm p)).val = Rat.AbsoluteValue.padic p := by
   simpa only [FinitePlace.maximalIdeal_mk, Equiv.apply_symm_apply] using
     (FinitePlace.mk ((primesEquiv (R := 𝓞 ℚ)).symm p)).val_eq_padic
 

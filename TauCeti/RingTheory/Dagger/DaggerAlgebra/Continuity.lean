@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Map
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.ResidueNorm
 
+import TauCeti.RingTheory.Affinoid.Continuity
 import TauCeti.RingTheory.Affinoid.PowerBounded
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.FaithfullyFlat
 import TauCeti.RingTheory.Dagger.QuotientCompletion
@@ -75,6 +76,19 @@ dagger algebras:
   `TauCeti.Dagger.IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one`,
   `TauCeti.Dagger.IsDaggerAlgebra.isTopologicallyNilpotent_iff_supSeminorm_lt_one`: comparison of
   residue norms, `supSeminorm`, power-boundedness, and topological nilpotence.
+* `TauCeti.Dagger.washnitzerAlgebra.continuous_algHom_of_finiteDimensional`: automatic continuity
+  from the (incomplete) algebra `W_σ` into finite-dimensional topological `K`-algebras.
+* `TauCeti.Dagger.completionQuotientEquiv`, `TauCeti.Dagger.isEmbedding_toCompletion_quotient`:
+  the completion of `W_σ ⧸ I` is `T_σ ⧸ I T_σ`, and `toCompletion` is a topological embedding for
+  the quotient Gauss norm.
+* `TauCeti.Dagger.IsDaggerAlgebra.continuous_algHom_of_isInducing`,
+  `TauCeti.Dagger.IsDaggerAlgebra.uniformContinuous_algHom_of_isInducing`, and
+  `TauCeti.Dagger.IsDaggerAlgebra.isPowerBounded_map`: automatic (uniform) continuity and
+  preservation of power-boundedness for any topologies induced from the affinoid completions.
+* `TauCeti.Dagger.exists_mul_norm_le_and_norm_le_mul_quotientKerAlgEquivOfSurjective_symm` and
+  `TauCeti.Dagger.induced_quotientKerAlgEquivOfSurjective_symm_toUniformSpace`: every presentation
+  residue norm is bi-Lipschitz equivalent to `residueNormedCommRing K A` and induces the same
+  uniformity.
 
 ## References
 
@@ -681,3 +695,325 @@ theorem isPowerBounded_map_of_isDaggerAlgebra (φ : A →ₐ[K] B) {a : A} :
       ((IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one (K := K) (a := a)).mp ha)
 
 end AlgHom
+
+/-! ### Automatic continuity from `W_σ` into finite-dimensional algebras -/
+
+namespace TauCeti.Dagger
+
+open _root_.MvPowerSeries
+
+namespace washnitzerAlgebra
+
+variable {K σ : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [Finite σ]
+
+local notation "W " α:max => washnitzerAlgebra α K
+
+/-- **Automatic continuity from `W_σ` into finite-dimensional algebras.** Every `K`-algebra
+homomorphism from a Monsky–Washnitzer algebra into a finite-dimensional topological `K`-algebra is
+continuous. The target need not be commutative, Hausdorff, or complete. -/
+theorem continuous_algHom_of_finiteDimensional {E : Type*} [Ring E] [Algebra K E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul K E] [Module.Finite K E]
+    (f : W σ →ₐ[K] E) : Continuous f := by
+  let I := RingHom.ker f
+  have : Module.Finite K (W σ ⧸ I) :=
+    Module.Finite.equiv (Ideal.quotientKerEquivRange f).symm.toLinearEquiv
+  let g : W σ ⧸ I →ₐ[K] E := Ideal.kerLiftAlg f
+  have hg : Continuous g := g.toLinearMap.continuous_of_finiteDimensional
+  exact (hg.comp continuous_quot_mk).congr fun x ↦ Ideal.kerLiftAlg_mk f x
+
+end washnitzerAlgebra
+
+/-! ### Continuity of the completion lift and completions of presentation quotients -/
+
+section CompletionLift
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A C : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [NormedCommRing C] [NormedAlgebra K C] [IsUltrametricDist C] [CompleteSpace C]
+
+/-- `completionLift hC χ` into a completely normed affinoid algebra is continuous. -/
+theorem continuous_completionLift (hC : IsAffinoidAlgebra K C) (χ : A →ₐ[K] C) :
+    Continuous (completionLift hC χ) :=
+  have := (isAffinoidAlgebra_completion (K := K) (A := A)).isNoetherianRing
+  IsAffinoidAlgebra.continuous_algHom (K := K) (A := C) (B := completion K A) hC
+    (completionLift hC χ)
+
+end CompletionLift
+
+section PresentationCompletion
+
+variable {K σ : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [Finite σ]
+
+local notation "W " α:max => washnitzerAlgebra α K
+local notation "T " α:max => IsRestricted.subring (R := K) (fun _ : α ↦ (1 : ℝ))
+
+/-- **The affinoid completion of a presentation quotient `W_σ ⧸ I` is `T_σ ⧸ I T_σ`**, compatibly
+with `toCompletion` and `toTate`. -/
+noncomputable def completionQuotientEquiv (I : Ideal (W σ)) :
+    completion K (W σ ⧸ I) ≃A[K] (T σ ⧸ I.map (washnitzerAlgebra.toTate σ K)) :=
+  ((Ideal.Quotient.mkₐ K I).daggerPresentationCompletionContinuousAlgEquiv
+    (Ideal.Quotient.mkₐ_surjective K I)).trans <|
+    IsAffinoidAlgebra.toContinuousAlgEquiv (K := K)
+      (A := T σ ⧸ (RingHom.ker (Ideal.Quotient.mkₐ K I)).map (washnitzerAlgebra.toTate σ K))
+      (B := T σ ⧸ I.map (washnitzerAlgebra.toTate σ K))
+      ((isAffinoidAlgebra_tate (K := K) (σ := σ)).quotient _)
+      (Ideal.quotientEquivAlgOfEq K
+        (congrArg (Ideal.map (washnitzerAlgebra.toTate σ K)) (Ideal.Quotient.mkₐ_ker K I)))
+
+/-- `completionQuotientEquiv I` sends `toCompletion` of the class of `f` to the class of
+`toTate σ K f`. -/
+@[simp]
+theorem completionQuotientEquiv_toCompletion_mk (I : Ideal (W σ)) (f : W σ) :
+    completionQuotientEquiv I (toCompletion K (W σ ⧸ I) (Ideal.Quotient.mk I f)) =
+      Ideal.Quotient.mk (I.map (washnitzerAlgebra.toTate σ K))
+        (washnitzerAlgebra.toTate σ K f) := by
+  have h := (Ideal.Quotient.mkₐ K I).daggerPresentationCompletionContinuousAlgEquiv_toCompletion
+    (Ideal.Quotient.mkₐ_surjective K I) f
+  rw [Ideal.Quotient.mkₐ_eq_mk] at h
+  rw [completionQuotientEquiv, ContinuousAlgEquiv.trans_apply, h,
+    IsAffinoidAlgebra.coe_toContinuousAlgEquiv, Ideal.quotientEquivAlgOfEq_mk]
+
+/-- The inverse of `completionQuotientEquiv I` sends the class of `toTate σ K f` to
+`toCompletion K (W_σ ⧸ I) (Ideal.Quotient.mk I f)`. -/
+@[simp]
+theorem completionQuotientEquiv_symm_mk_toTate (I : Ideal (W σ)) (f : W σ) :
+    (completionQuotientEquiv I).symm
+        (Ideal.Quotient.mk (I.map (washnitzerAlgebra.toTate σ K))
+          (washnitzerAlgebra.toTate σ K f)) =
+      toCompletion K (W σ ⧸ I) (Ideal.Quotient.mk I f) :=
+  (completionQuotientEquiv I).symm_apply_eq.mpr
+    (completionQuotientEquiv_toCompletion_mk I f).symm
+
+/-- On `W_σ` with its Gauss norm, `toCompletion` is a topological embedding. -/
+theorem isEmbedding_toCompletion_washnitzerAlgebra :
+    Topology.IsEmbedding (toCompletion K (W σ)) := by
+  have h : ⇑(washnitzerAlgebra.completionContinuousAlgEquiv σ K) ∘ ⇑(toCompletion K (W σ)) =
+      ⇑(washnitzerAlgebra.toTate σ K) :=
+    funext washnitzerAlgebra.completionContinuousAlgEquiv_toCompletion
+  exact (washnitzerAlgebra.completionContinuousAlgEquiv σ K).toHomeomorph.isEmbedding.of_comp_iff.mp
+    (h ▸ washnitzerAlgebra.isometry_toTate.isEmbedding)
+
+/-- On a presentation quotient `W_σ ⧸ I` with its quotient Gauss norm, `toCompletion` is a
+topological embedding. -/
+theorem isEmbedding_toCompletion_quotient (I : Ideal (W σ)) :
+    Topology.IsEmbedding (toCompletion K (W σ ⧸ I)) := by
+  let ιI : W σ ⧸ I →ₐ[K] _ :=
+    Ideal.quotientMapₐ (I.map (washnitzerAlgebra.toTate σ K)) (washnitzerAlgebra.toTate σ K)
+      Ideal.le_comap_map
+  have hι : Isometry ιI := I.isometry_quotientMap_toTate
+  have h : ⇑(completionQuotientEquiv I) ∘ ⇑(toCompletion K (W σ ⧸ I)) = ⇑ιI := by
+    funext x
+    obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+    exact completionQuotientEquiv_toCompletion_mk I f
+  exact (completionQuotientEquiv I).toHomeomorph.isEmbedding.of_comp_iff.mp (h ▸ hι.isEmbedding)
+
+end PresentationCompletion
+
+end TauCeti.Dagger
+
+namespace AlgHom
+
+open TauCeti TauCeti.Dagger
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {σ τ : Type*} [_root_.Finite σ] [_root_.Finite τ]
+
+local notation "W " α:max => washnitzerAlgebra α K
+
+/-- `washnitzerPresentationContinuousAlgEquiv` sends the residue class of `d` in the first
+presentation to its residue class in the second presentation. -/
+@[simp]
+theorem washnitzerPresentationContinuousAlgEquiv_quotientKerAlgEquivOfSurjective_symm
+    {D : Type*} [CommRing D] [Algebra K D]
+    (π₁ : W σ →ₐ[K] D) (hπ₁ : Function.Surjective π₁)
+    (π₂ : W τ →ₐ[K] D) (hπ₂ : Function.Surjective π₂) (d : D) :
+    π₁.washnitzerPresentationContinuousAlgEquiv hπ₁ π₂ hπ₂
+        ((Ideal.quotientKerAlgEquivOfSurjective hπ₁).symm d) =
+      (Ideal.quotientKerAlgEquivOfSurjective hπ₂).symm d := by
+  simp [washnitzerPresentationContinuousAlgEquiv]
+
+end AlgHom
+
+/-! ### Automatic continuity for arbitrary inducing topologies and equivalence of residue norms -/
+
+namespace TauCeti.Dagger
+
+section DaggerContinuity
+
+variable {K σ : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [Finite σ]
+
+local notation "W " α:max => washnitzerAlgebra α K
+
+namespace IsDaggerAlgebra
+
+variable {A B : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+  [CommRing B] [Algebra K B] [IsDaggerAlgebra K B]
+
+/-- **Automatic continuity of homomorphisms of dagger algebras** (general topology form). If
+`toCompletion K A` is continuous and `B` carries the topology induced from `toCompletion K B` — for
+instance `W_σ`, `W_σ ⧸ I`, or `residueNormedCommRing` — then every `K`-algebra homomorphism
+`φ : A →ₐ[K] B` is continuous. -/
+theorem continuous_algHom_of_isInducing [TopologicalSpace A] [TopologicalSpace B]
+    (hA : Continuous (toCompletion K A)) (hB : Topology.IsInducing (toCompletion K B))
+    (φ : A →ₐ[K] B) : Continuous φ :=
+  hB.continuous_iff.mpr <| by
+    rw [← AlgHom.coe_comp,
+      ← completionLift_comp_toCompletion isAffinoidAlgebra_completion ((toCompletion K B).comp φ)]
+    exact (continuous_completionLift (C := completion K B)
+      (isAffinoidAlgebra_completion (K := K) (A := B)) ((toCompletion K B).comp φ)).comp hA
+
+/-- **Automatic uniform continuity of homomorphisms of dagger algebras** (general uniformity form).
+If `A` and `B` carry uniform additive group structures such that `toCompletion K A` is continuous
+and the topology of `B` is induced from `toCompletion K B`, then every `K`-algebra homomorphism
+`φ : A →ₐ[K] B` is uniformly continuous. -/
+theorem uniformContinuous_algHom_of_isInducing [UniformSpace A] [IsUniformAddGroup A]
+    [UniformSpace B] [IsUniformAddGroup B]
+    (hA : Continuous (toCompletion K A)) (hB : Topology.IsInducing (toCompletion K B))
+    (φ : A →ₐ[K] B) : UniformContinuous φ :=
+  uniformContinuous_addMonoidHom_of_continuous (continuous_algHom_of_isInducing hA hB φ)
+
+/-- Every `K`-algebra homomorphism `φ : A →ₐ[K] B` is uniformly continuous for the residue norms. -/
+theorem uniformContinuous_algHom (φ : A →ₐ[K] B) :
+    letI := residueNormedCommRing K A
+    letI := residueNormedCommRing K B
+    UniformContinuous φ :=
+  letI := residueNormedCommRing K A
+  letI := residueNormedCommRing K B
+  uniformContinuous_algHom_of_isInducing
+    (isometry_toCompletion K A).continuous
+    (isometry_toCompletion K B).isEmbedding.isInducing φ
+
+/-- An element of a dagger algebra carrying the topology induced from its affinoid completion is
+power-bounded if and only if its image in `completion K A` is power-bounded. -/
+theorem isPowerBounded_toCompletion_iff_of_isInducing [TopologicalSpace A]
+    (hA : Topology.IsInducing (toCompletion K A)) {a : A} :
+    Huber.IsPowerBounded (toCompletion K A a) ↔ Huber.IsPowerBounded a := by
+  have hτA : ‹TopologicalSpace A› =
+      (residueNormedCommRing K A).toUniformSpace.toTopologicalSpace :=
+    hA.eq_induced.trans (residueNormedCommRing_toTopologicalSpace_eq_induced K A).symm
+  subst hτA
+  exact isPowerBounded_toCompletion_iff a
+
+/-- Every `K`-algebra homomorphism from a dagger algebra (carrying the topology induced from
+`toCompletion K A`) into a completely normed `K`-affinoid algebra maps power-bounded elements to
+power-bounded elements. -/
+theorem isPowerBounded_map_of_isAffinoidAlgebra [TopologicalSpace A]
+    (hA : Topology.IsInducing (toCompletion K A))
+    {C : Type*} [NormedCommRing C] [NormedAlgebra K C] [IsUltrametricDist C] [CompleteSpace C]
+    (hC : IsAffinoidAlgebra K C) (χ : A →ₐ[K] C) {a : A} (ha : Huber.IsPowerBounded a) :
+    Huber.IsPowerBounded (χ a) := by
+  have := (isAffinoidAlgebra_completion (K := K) (A := A)).isNoetherianRing
+  rw [← completionLift_toCompletion hC χ a]
+  exact IsAffinoidAlgebra.isPowerBounded_map (K := K) (A := C) (B := completion K A)
+    hC (completionLift hC χ) ((isPowerBounded_toCompletion_iff_of_isInducing hA).mpr ha)
+
+/-- Every `K`-algebra homomorphism of dagger algebras maps power-bounded elements to power-bounded
+elements (for the canonical topologies induced from `toCompletion`). -/
+theorem isPowerBounded_map [TopologicalSpace A] [TopologicalSpace B]
+    (hA : Topology.IsInducing (toCompletion K A)) (hB : Topology.IsInducing (toCompletion K B))
+    (φ : A →ₐ[K] B) {a : A} (ha : Huber.IsPowerBounded a) :
+    Huber.IsPowerBounded (φ a) :=
+  (isPowerBounded_toCompletion_iff_of_isInducing hB).mp <|
+    isPowerBounded_map_of_isAffinoidAlgebra (C := completion K B) hA
+      (isAffinoidAlgebra_completion (K := K) (A := B)) ((toCompletion K B).comp φ) ha
+
+end IsDaggerAlgebra
+
+
+section NormEquivalence
+
+variable {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+/-- **Bi-Lipschitz equivalence of presentation residue norms** (Grosse-Klönne, Proposition
+1.6 (2)). For any surjective presentation `π : W_σ →ₐ[K] A`, the quotient Gauss norm on
+`W_σ ⧸ ker π` is bi-Lipschitz equivalent to `residueNormedCommRing K A`. -/
+theorem exists_mul_norm_le_and_norm_le_mul_quotientKerAlgEquivOfSurjective_symm
+    (π : W σ →ₐ[K] A) (hπ : Function.Surjective π) :
+    letI := residueNormedCommRing K A
+    ∃ c₁ > 0, ∃ c₂ > 0, ∀ a : A,
+      c₁ * ‖a‖ ≤ ‖(Ideal.quotientKerAlgEquivOfSurjective hπ).symm a‖ ∧
+        ‖(Ideal.quotientKerAlgEquivOfSurjective hπ).symm a‖ ≤ c₂ * ‖a‖ :=
+  letI := residueNormedCommRing K A
+  by
+    let e := (presentation K A).washnitzerPresentationContinuousAlgEquiv
+      (presentation_surjective K A) π hπ
+    obtain ⟨c₂, hc₂, hub⟩ := e.toAlgHom.exists_pos_forall_norm_map_le_washnitzerAlgebra_quotient
+    obtain ⟨d, hd, hlb⟩ := e.symm.toAlgHom.exists_pos_forall_norm_map_le_washnitzerAlgebra_quotient
+    refine ⟨d⁻¹, inv_pos.mpr hd, c₂, hc₂, fun a ↦ ?_⟩
+    have he : e (residueAlgEquiv K A a) = (Ideal.quotientKerAlgEquivOfSurjective hπ).symm a := by
+      rw [residueAlgEquiv_def]
+      exact AlgHom.washnitzerPresentationContinuousAlgEquiv_quotientKerAlgEquivOfSurjective_symm _
+        (presentation_surjective K A) π hπ a
+    refine ⟨?_, by rw [← he, ← norm_residueAlgEquiv]; exact hub (residueAlgEquiv K A a)⟩
+    rw [inv_mul_le_iff₀ hd, ← norm_residueAlgEquiv]
+    have hsymm : e.symm.toAlgHom ((Ideal.quotientKerAlgEquivOfSurjective hπ).symm a) =
+        residueAlgEquiv K A a := by
+      rw [← he, AlgEquiv.toAlgHom_apply, ContinuousAlgEquiv.coe_toAlgEquiv,
+        ContinuousAlgEquiv.symm_apply_apply]
+    exact hsymm ▸ hlb ((Ideal.quotientKerAlgEquivOfSurjective hπ).symm a)
+
+/-- **Presentation-independence of the induced uniformity.** Every surjective presentation
+`π : W_σ →ₐ[K] A` induces the same `UniformSpace A` as `residueNormedCommRing K A`, and hence the
+same topology on `A`. -/
+theorem induced_quotientKerAlgEquivOfSurjective_symm_toUniformSpace
+    (π : W σ →ₐ[K] A) (hπ : Function.Surjective π) :
+    (NormedCommRing.induced A (W σ ⧸ RingHom.ker π)
+        (Ideal.quotientKerAlgEquivOfSurjective hπ).symm
+        (Ideal.quotientKerAlgEquivOfSurjective hπ).symm.injective).toUniformSpace =
+      (residueNormedCommRing K A).toUniformSpace := by
+  let e₁ := (Ideal.quotientKerAlgEquivOfSurjective hπ).symm
+  let e₂ := residueAlgEquiv K A
+  let φ := π.washnitzerPresentationContinuousAlgEquiv hπ (presentation K A)
+    (presentation_surjective K A)
+  have hφ : ⇑φ ∘ ⇑e₁ = ⇑e₂ := funext fun a ↦
+    (AlgHom.washnitzerPresentationContinuousAlgEquiv_quotientKerAlgEquivOfSurjective_symm π hπ _
+      (presentation_surjective K A) a).trans (by simp only [e₂, residueAlgEquiv_def])
+  have h1 : (NormedCommRing.induced A (W σ ⧸ RingHom.ker π) e₁ e₁.injective).toUniformSpace =
+      UniformSpace.comap e₁ inferInstance :=
+    letI := NormedCommRing.induced A (W σ ⧸ RingHom.ker π) e₁ e₁.injective
+    (AddMonoidHomClass.isometry_of_norm e₁ fun _ ↦ rfl).isUniformInducing.comap_uniformSpace.symm
+  have h2 : (residueNormedCommRing K A).toUniformSpace =
+      UniformSpace.comap e₂ inferInstance :=
+    letI := residueNormedCommRing K A
+    (AddMonoidHomClass.isometry_of_norm e₂
+      (norm_residueAlgEquiv K A)).isUniformInducing.comap_uniformSpace.symm
+  rw [h1, h2, ← hφ, UniformSpace.comap_comap,
+    φ.isUniformEmbedding.isUniformInducing.comap_uniformSpace]
+
+/-- On `W_σ`, the uniformity of `residueNormedCommRing K (W_σ)` agrees with the Gauss norm
+uniformity. -/
+theorem residueNormedCommRing_toUniformSpace_washnitzerAlgebra :
+    (residueNormedCommRing K (W σ)).toUniformSpace = (inferInstance : UniformSpace (W σ)) :=
+  residueNormedCommRing_toUniformSpace_eq isEmbedding_toCompletion_washnitzerAlgebra.isInducing
+
+/-- On a presentation quotient `W_σ ⧸ I`, the uniformity of `residueNormedCommRing K (W_σ ⧸ I)`
+agrees with the quotient Gauss norm uniformity. -/
+theorem residueNormedCommRing_toUniformSpace_quotient (I : Ideal (W σ)) :
+    (residueNormedCommRing K (W σ ⧸ I)).toUniformSpace =
+      (inferInstance : UniformSpace (W σ ⧸ I)) :=
+  residueNormedCommRing_toUniformSpace_eq (isEmbedding_toCompletion_quotient I).isInducing
+
+end NormEquivalence
+
+/-! ### Edge-case checks -/
+
+section Examples
+
+-- Automatic continuity holds on the zero dagger algebra `W_0 ⧸ ⊤`.
+example : Continuous (AlgHom.id K (W (Fin 0) ⧸ (⊤ : Ideal (W (Fin 0))))) :=
+  AlgHom.continuous_washnitzerAlgebra_quotient _
+
+-- Automatic continuity holds on nonreduced dagger algebras such as `W_1 ⧸ (X²)`.
+example (φ : (W (Fin 1) ⧸ Ideal.span {washnitzerAlgebra.X (Fin 1) K 0 ^ 2}) →ₐ[K]
+    (W (Fin 1) ⧸ Ideal.span {washnitzerAlgebra.X (Fin 1) K 0 ^ 2})) :
+    Continuous φ :=
+  φ.continuous_washnitzerAlgebra_quotient
+
+end Examples
+
+end DaggerContinuity
+
+end TauCeti.Dagger

@@ -69,10 +69,10 @@ theorem IsOfType.exists_delBar_eventually_eq_of_pi {q : ℕ}
     {U K : ι → Set ℂ} (hU : ∀ i, IsOpen (U i)) (hK : ∀ i, IsCompact (K i))
     (hKU : ∀ i, K i ⊆ U i)
     (hclosed : ∀ z ∈ univ.pi U,
-      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) :
+      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).val z = 0) :
     ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F q,
       f.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 q ∧ ∀ᶠ z in 𝓝ˢ (univ.pi K),
-        ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).1 z = η.1 z := by
+        ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).val z = η.val z := by
   classical
   -- Order the coordinates, to index the coefficients of forms by increasing families.
   let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
@@ -114,11 +114,11 @@ theorem IsOfType.exists_delBar_eq_of_polydisc {q : ℕ}
     (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 (q + 1)) {c : ι → ℂ} {r r' : ι → ℝ}
     (hr : ∀ i, r' i < r i)
     (hclosed : ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r i),
-      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) :
+      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).val z = 0) :
     ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F q,
       f.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 q ∧
         ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r' i),
-          ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).1 z = η.1 z := by
+          ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).val z = η.val z := by
   obtain ⟨f, hf, hfη⟩ := hη.exists_delBar_eventually_eq_of_pi (fun i ↦ Metric.isOpen_ball)
     (fun i ↦ isCompact_closedBall (c i) (r' i)) (fun i ↦ Metric.closedBall_subset_ball (hr i))
     hclosed

@@ -124,8 +124,9 @@ theorem exists_eq_range_sectionSet_union_range_sectorSet [PreconnectedSpace X] [
     -- The preconnected sector `j` is covered by the open cells that are not graphs.
     let 𝒪 := {C | C ∈ 𝒜 ∧ C ∉ range (sectionSet θ)}
     refine (isPreconnected_sectorSet hc hθ j).subset_of_subset_iUnion (u := ((↑) : 𝒪 → _))
-      (i := ⟨B, hB, hBS⟩) (fun C ↦ (hsector C C.2.1 C.2.2).1)
-      (fun C C' hCC' ↦ hdisj C.2.1 C'.2.1 (Subtype.coe_injective.ne hCC')) (fun w hw ↦ ?_)
+      (i := ⟨B, hB, hBS⟩) (fun C ↦ (hsector C C.property.1 C.property.2).1)
+      (fun C C' hCC' ↦ hdisj C.property.1 C'.property.1 (Subtype.coe_injective.ne hCC'))
+          (fun w hw ↦ ?_)
       (hBne.mono fun w hw ↦ ⟨hj hw, hw⟩)
     obtain ⟨C, hC, hCS, hwC⟩ := hmem hw
     exact mem_iUnion.2 ⟨⟨C, hC, hCS⟩, hwC⟩

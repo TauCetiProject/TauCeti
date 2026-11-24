@@ -125,9 +125,9 @@ noncomputable def restrictLevelOrderIso :
     Set.Iic (⟨m⟩ : RamificationIndex) ≃o IntermediateField K⸨X⸩ (level K m) :=
   OrderIso.ofSurjective
     (OrderEmbedding.ofMapLEIff
-      (fun n ↦ restrict (level_le_level_of_dvd K (RamificationIndex.le_iff_dvd.mp n.2)))
-      fun a b ↦ (restrict_level_le_restrict_level_iff K (RamificationIndex.le_iff_dvd.mp a.2)
-        (RamificationIndex.le_iff_dvd.mp b.2)).trans
+      (fun n ↦ restrict (level_le_level_of_dvd K (RamificationIndex.le_iff_dvd.mp n.property)))
+      fun a b ↦ (restrict_level_le_restrict_level_iff K (RamificationIndex.le_iff_dvd.mp a.property)
+        (RamificationIndex.le_iff_dvd.mp b.property)).trans
         (RamificationIndex.le_iff_dvd.symm.trans Subtype.coe_le_coe))
     fun E ↦ by
       obtain ⟨n, h, rfl⟩ := E.exists_eq_restrict_level
@@ -137,7 +137,7 @@ noncomputable def restrictLevelOrderIso :
 @[simp]
 theorem restrictLevelOrderIso_apply (n : Set.Iic (⟨m⟩ : RamificationIndex)) :
     restrictLevelOrderIso K m n =
-      restrict (level_le_level_of_dvd K (RamificationIndex.le_iff_dvd.mp n.2)) :=
+      restrict (level_le_level_of_dvd K (RamificationIndex.le_iff_dvd.mp n.property)) :=
   (rfl)
 
 /-- The inverse of the Galois correspondence on level `m` sends an intermediate field to its
@@ -149,7 +149,7 @@ theorem _root_.IntermediateField.coe_toPNat_restrictLevelOrderIso_symm
   conv_rhs => rw [← (restrictLevelOrderIso K m).apply_symm_apply E]
   rw [restrictLevelOrderIso_apply]
   exact (finrank_restrict_level K
-    (RamificationIndex.le_iff_dvd.mp ((restrictLevelOrderIso K m).symm E).2)).symm
+    (RamificationIndex.le_iff_dvd.mp ((restrictLevelOrderIso K m).symm E).property)).symm
 
 end Galois
 

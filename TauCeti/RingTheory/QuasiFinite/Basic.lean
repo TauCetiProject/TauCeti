@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.QuasiFinite.Basic
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 public import TauCeti.RingTheory.LocalRing.Localization
+import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.Ideal.GoingUp
 
 /-!
@@ -21,10 +22,17 @@ For a quasi-finite local homomorphism `R → S` of local rings, the residue fiel
 extension of the residue field of `R`. More generally, an integral quasi-finite algebra over a ring
 with finitely many maximal ideals itself has finitely many maximal ideals.
 
+A quasi-finite algebra `S` over `R` which is a domain contracts every nonzero ideal to a nonzero
+ideal of `R`, as integral extensions of domains do. This is what makes a proper closed subset of
+an integral affine scheme quasi-finite over `Spec R` map into the zero locus of a single nonzero
+element of `R`.
+
 ## Main results
 
 * `Ideal.isArtinianRing_quotient_of_quasiFiniteAt`: the local fibre at a quasi-finite prime is
   Artinian.
+* `Algebra.QuasiFinite.under_ne_bot`: a nonzero ideal of a quasi-finite algebra which is a domain
+  contracts to a nonzero ideal.
 * `IsLocalRing.ResidueField.finite_of_quasiFinite`: the residue field extension of a quasi-finite
   local homomorphism of local rings is finite.
 * `TauCeti.finite_maximalSpectrum_of_isIntegral_of_quasiFinite`: an integral quasi-finite algebra
@@ -60,6 +68,42 @@ instance isArtinianRing_quotient_of_quasiFiniteAt (q : Ideal S) [q.IsPrime]
   exact (Ideal.quotientEquiv _ _ e.toRingEquiv hmap.symm).symm.isArtinianRing
 
 end Ideal
+
+namespace Algebra.QuasiFinite
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+variable (R) in
+/-- **Nonzero ideals of a quasi-finite domain contract to nonzero ideals.** If `S` is a domain and
+quasi-finite over `R`, then every nonzero ideal `I` of `S` has `I.under R ≠ ⊥`. This is the
+quasi-finite counterpart of Mathlib's `Ideal.IsIntegral.under_ne_bot`. -/
+theorem under_ne_bot [IsDomain S] [QuasiFinite R S] {I : Ideal S} (hI : I ≠ ⊥) :
+    I.under R ≠ ⊥ := by
+  intro hIR
+  -- The kernel of `R → S` lies in `I.under R = ⊥`, so `R → S` is injective and `R` is a domain.
+  have hinj : Function.Injective (algebraMap R S) := by
+    refine (injective_iff_map_eq_zero _).mpr fun r hr ↦ ?_
+    have : r ∈ I.under R := by simp [hr]
+    simpa [hIR] using this
+  have : IsDomain R := hinj.isDomain
+  -- A prime `P ⊇ I` avoiding the nonzero elements of `R` lies over `⊥`, as `⊥ ⊆ P` does, so
+  -- incomparability for quasi-finite algebras gives `P = ⊥`, and then `I = ⊥`.
+  obtain ⟨P, _, hIP, hPM⟩ :=
+    I.exists_le_prime_disjoint (algebraMapSubmonoid S (nonZeroDivisors R)) <| by
+      rw [Set.disjoint_left]
+      rintro _ hx ⟨r, hr, rfl⟩
+      have : r ∈ I.under R := (Ideal.mem_under R I).mpr hx
+      rw [hIR, Ideal.mem_bot] at this
+      exact zero_notMem_nonZeroDivisors (this ▸ hr)
+  have hPR : (⊥ : Ideal S).under R = P.under R := by
+    rw [Ideal.under_def, Ideal.comap_bot_of_injective _ hinj, eq_comm, eq_bot_iff]
+    intro r hr
+    by_contra h0
+    exact Set.disjoint_left.mp hPM ((Ideal.mem_under R P).mp hr)
+      ⟨r, mem_nonZeroDivisors_of_ne_zero h0, rfl⟩
+  exact hI (eq_bot_iff.mpr (hIP.trans (eq_of_le_of_under_eq ⊥ P bot_le hPR).symm.le))
+
+end Algebra.QuasiFinite
 
 namespace IsLocalRing.ResidueField
 
@@ -98,6 +142,6 @@ theorem finite_maximalSpectrum_of_isIntegral_of_quasiFinite (R : Type*) {B : Typ
     (fun M ↦
       have := M.isMaximal
       ⟨⟨M.asIdeal.under R, inferInstance⟩, ⟨M.asIdeal, M.isMaximal.isPrime, ⟨rfl⟩⟩⟩)
-    fun M₁ M₂ h ↦ MaximalSpectrum.ext (congrArg (fun x ↦ x.2.1) h)
+    fun M₁ M₂ h ↦ MaximalSpectrum.ext (congrArg (fun x ↦ x.2.val) h)
 
 end TauCeti

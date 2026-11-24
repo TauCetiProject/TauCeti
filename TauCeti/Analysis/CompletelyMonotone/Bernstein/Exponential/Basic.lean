@@ -37,7 +37,7 @@ the right-hand side converge pointwise to `f'`.  Complete monotonicity survives 
 less, since it constrains only one member of the family.
 
 The remaining hypotheses of `TauCeti.IsBernsteinFunction` are recovered from the exponentials
-rather than assumed, through `TauCeti.contDiffOn_of_contDiffOn_exp_const_mul`: smoothness of `f`
+rather than assumed, through `TauCeti.contDiffOn_exp_const_mul_iff`: smoothness of `f`
 on `(0, ∞)` comes from that of `e^{-x f}`, and only right-continuity of `f` at `0` is left to
 hypothesize, the rest of its continuity on `[0, ∞)` following from the smoothness.
 Nonnegativity of `f` is genuinely independent — the constant `-1` has `e^{x}` for its
@@ -74,7 +74,7 @@ theorem isCompletelyMonotoneOnIoi_deriv_mul_exp_neg_mul {x : ℝ} (hx : 0 < x)
     (h : IsCompletelyMonotoneOnIoi fun t => Real.exp (-x * f t)) :
     IsCompletelyMonotoneOnIoi fun t => deriv f t * Real.exp (-x * f t) := by
   have hsmooth : ContDiffOn ℝ ∞ f (Ioi 0) :=
-    contDiffOn_of_contDiffOn_exp_const_mul (neg_ne_zero.mpr hx.ne') h.contDiffOn
+    (contDiffOn_exp_const_mul_iff (neg_ne_zero.mpr hx.ne')).mp h.contDiffOn
   refine (h.neg_deriv.smul (c := x⁻¹) (by positivity)).congr fun t ht => ?_
   have hdf : HasDerivAt f (deriv f t) t :=
     (hsmooth.differentiableOn (by simp)).differentiableAt (isOpen_Ioi.mem_nhds ht) |>.hasDerivAt
@@ -96,7 +96,7 @@ theorem isBernsteinFunction_of_forall_isCompletelyMonotoneOnIoi_exp_neg_mul
     (h : ∀ x : ℝ, 0 < x → IsCompletelyMonotoneOnIoi fun t => Real.exp (-x * f t)) :
     IsBernsteinFunction f := by
   have hsmooth : ContDiffOn ℝ ∞ f (Ioi 0) :=
-    contDiffOn_of_contDiffOn_exp_const_mul (neg_ne_zero.mpr one_ne_zero) (h 1 one_pos).contDiffOn
+    (contDiffOn_exp_const_mul_iff (neg_ne_zero.mpr one_ne_zero)).mp (h 1 one_pos).contDiffOn
   have hcont : ContinuousOn f (Ici 0) := by
     intro u hu
     rcases (mem_Ici.mp hu).lt_or_eq with hupos | hu0
@@ -125,7 +125,8 @@ theorem isBernsteinFunction_iff_nonneg_and_forall_isContinuousCompletelyMonotone
     hf.isContinuousCompletelyMonotoneOnIoi_exp_neg_mul hx.le⟩, fun ⟨hnonneg, h⟩ => ?_⟩
   refine isBernsteinFunction_of_forall_isCompletelyMonotoneOnIoi_exp_neg_mul ?_ hnonneg
     fun x hx => (h x hx).isCompletelyMonotoneOnIoi
-  exact continuousOn_of_continuousOn_exp_const_mul (neg_ne_zero.mpr one_ne_zero)
-    (h 1 one_pos).continuousOn 0 (mem_Ici.mpr le_rfl)
+  exact (Real.isOpenEmbedding_exp.comp (Homeomorph.mulLeft₀ (-1 : ℝ)
+    (neg_ne_zero.mpr one_ne_zero)).isOpenEmbedding).isInducing.continuousWithinAt_iff.mpr
+    ((h 1 one_pos).continuousOn 0 (mem_Ici.mpr le_rfl))
 
 end TauCeti

@@ -202,7 +202,7 @@ theorem isPGroup_map_mk' {P : Subgroup G} (hP : IsProP p P)
   rw [← MonoidHom.domRestrict_range]
   apply hP.isPGroup_range
   simpa [MonoidHom.ker_domRestrict, Subgroup.coe_subgroupOf] using
-    U.isOpen.preimage continuous_subtype_val
+    U.isOpen.preimage continuous_subtypeVal
 
 /-- **Open normal subgroups of large `p`-power relative index.** In an infinite pro-`p` group every
 open normal subgroup `U` contains, for every `n`, an open normal subgroup `V` with
@@ -254,7 +254,7 @@ theorem _root_.Subgroup.isProP_subgroupOf_iff {G : Type u} [Group G] [Topologica
     {H K : Subgroup G} (hHK : H ≤ K) : IsProP p (H.subgroupOf K) ↔ IsProP p H :=
   isProP_congr
     { toMulEquiv := Subgroup.subgroupOfEquivOfLe hHK
-      continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
 
 end TauCeti

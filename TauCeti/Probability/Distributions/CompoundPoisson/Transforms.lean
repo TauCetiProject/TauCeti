@@ -52,7 +52,7 @@ theorem integrable_exp_mul_compoundPoissonMeasure (r : ℝ≥0) (hf : Measurable
         rw [Measure.convolutionPower_succ, Measure.conv,
           integrable_map_measure (by fun_prop) (by fun_prop)]
         simpa only [Function.comp_def, map_add, mul_add, exp_add] using ih.mul_prod ht
-  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete
+  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete.aemeasurable
     (by fun_prop)]
   refine ⟨ae_of_all _ hpow, ?_⟩
   simp_rw [Real.norm_of_nonneg (exp_pos _).le]
@@ -70,7 +70,7 @@ theorem integrable_exp_mul_compoundPoissonMeasure_iff {r : ℝ≥0} (hr : r ≠ 
     Integrable (fun x ↦ exp (t * f x)) (compoundPoissonMeasure r μ) ↔
       Integrable (fun x ↦ exp (t * f x)) μ := by
   refine ⟨fun h ↦ ?_, integrable_exp_mul_compoundPoissonMeasure r hf⟩
-  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete
+  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete.aemeasurable
     (by fun_prop)] at h
   -- A positive Poisson intensity assigns positive mass to the one-jump event.
   have hone := (ae_iff_of_countable.mp h.1) 1

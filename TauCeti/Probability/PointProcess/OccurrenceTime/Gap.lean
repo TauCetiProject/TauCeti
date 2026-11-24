@@ -242,7 +242,7 @@ theorem IsIntegerValued.lt_occurrenceGap_succ_iff (hμ : μ.IsIntegerValued) {n 
     (hn : μ.occurrenceTime n ≠ ∞) (hs : μ {(μ.occurrenceTime n).toNNReal} ≤ 1) (s : ℝ≥0) :
     (s : ℝ≥0∞) < μ.occurrenceGap (n + 1) ↔
       μ (Ioc (μ.occurrenceTime n).toNNReal ((μ.occurrenceTime n).toNNReal + s)) = 0 := by
-  rw [hμ.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff hn hs (le_add_of_nonneg_right s.2),
+  rw [hμ.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff hn hs (le_add_of_nonneg_right s.property),
     occurrenceGap_succ_of_ne_top hn]
   cases hnext : μ.occurrenceTime (n + 1) using ENNReal.recTopCoe with
   | top => simp [hn, lt_top_iff_ne_top.mpr hn]

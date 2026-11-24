@@ -328,7 +328,7 @@ theorem locOpensComap_spaBasicOpen (T' : Finset A) (s' : A) :
   rw [← comap_preimage_rationalSubset_inter_spa (toCompletionLoc P T s S hden)
     (continuous_toCompletionLoc P T s S hden)
     fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha]
-  exact ⟨fun h ↦ ⟨h, v.2⟩, And.left⟩
+  exact ⟨fun h ↦ ⟨h, v.property⟩, And.left⟩
 
 /-- Pulling back along `spaComapLoc` commutes with intersections of opens. -/
 @[simp]

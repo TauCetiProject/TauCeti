@@ -68,6 +68,6 @@ lemma full_res {φ : H →* G} (hφ : Function.Surjective φ) :
     refine ⟨ConcreteCategory.ofHom (C := TopRep k G) ⟨f.hom.toContinuousLinearMap, fun g ↦ ?_⟩,
       by ext a; rfl⟩
     obtain ⟨h, rfl⟩ := hφ g
-    exact f.hom.2 h
+    exact f.hom.isIntertwining' h
 
 end TopRep

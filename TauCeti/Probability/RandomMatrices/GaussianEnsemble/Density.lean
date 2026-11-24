@@ -319,7 +319,7 @@ theorem hasLaw_withDensity_goePDF_iff {Ω : Type*} [MeasurableSpace Ω] {P : Mea
     {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)} :
     HasLaw H ((symmetricLebesgue n).withDensity (goePDF n)) P ↔
       iIndepFun (fun (ij : upperTriangle n) ω ↦
-          (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) P ∧
+          (H ω : Matrix (Fin n) (Fin n) ℝ) ij.val.1 ij.val.2) P ∧
         (∀ i : Fin n, HasLaw (fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) i i)
           (gaussianReal 0 (2 / n)) P) ∧
         (∀ ⦃i j : Fin n⦄, i < j →

@@ -48,14 +48,14 @@ variable {n : ℕ}
 /-- The homogeneous ratio `X_j X_k⁻¹`. Outside the chart `X_k ≠ 0` it is zero, following
 the convention for inverses in `ℍ`. -/
 def ratio (k j : Fin (n + 1)) : QuaternionicProjectiveSpace n → ℍ :=
-  QuaternionicProjectiveSpace.lift n (fun v ↦ v.1 j * (v.1 k)⁻¹) fun q v ↦ by
+  QuaternionicProjectiveSpace.lift n (fun v ↦ v.val j * (v.val k)⁻¹) fun q v ↦ by
     simp only [Sphere.coe_op_sphere_smul, PiLp.smul_apply, op_smul_eq_mul, unop_op, mul_inv_rev,
       mul_assoc, mul_inv_cancel_left₀ (ne_zero_of_mem_unit_sphere q)]
 
 /-- Homogeneous ratios can be computed on any unit-vector representative. -/
 @[simp]
 theorem ratio_mk (k j : Fin (n + 1)) (v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
-    ratio k j (mk n v) = v.1 j * (v.1 k)⁻¹ :=
+    ratio k j (mk n v) = v.val j * (v.val k)⁻¹ :=
   QuaternionicProjectiveSpace.lift_mk n _ _ v
 
 /-- The standard affine open where the `k`th homogeneous coordinate is nonzero. -/
@@ -71,7 +71,7 @@ theorem mem_affineOpen_iff (k : Fin (n + 1)) (p : QuaternionicProjectiveSpace n)
 nonzero. -/
 theorem mk_mem_affineOpen_iff (k : Fin (n + 1))
     (v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :
-    mk n v ∈ affineOpen k ↔ v.1 k ≠ 0 := by
+    mk n v ∈ affineOpen k ↔ v.val k ≠ 0 := by
   simp
 
 /-- The normalizing homogeneous ratio is one on its affine chart domain. -/
@@ -79,14 +79,14 @@ theorem mk_mem_affineOpen_iff (k : Fin (n + 1))
 theorem ratio_self_eq_one (k : Fin (n + 1)) {p : QuaternionicProjectiveSpace n}
     (hp : p ∈ affineOpen k) : ratio k k p = 1 := by
   obtain ⟨v, rfl⟩ := mk_surjective n p
-  have hk : v.1 k ≠ 0 := by simpa using hp
+  have hk : v.val k ≠ 0 := by simpa using hp
   simpa only [ratio_mk] using mul_inv_cancel₀ hk
 
 /-- The homogeneous-coordinate chart domains are open for the sphere-quotient topology. -/
 theorem isOpen_affineOpen (k : Fin (n + 1)) : IsOpen (affineOpen k) := by
   apply (isOpenQuotientMap_mk n).isQuotientMap.isOpen_preimage.mp
   convert (isOpen_ne_fun
-    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp continuous_subtype_val)
+    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp continuous_subtypeVal)
     (continuous_const (y := (0 : ℍ)))) using 1
   ext v
   simp
@@ -97,20 +97,20 @@ theorem exists_mem_affineOpen (p : QuaternionicProjectiveSpace n) :
   induction p using QuaternionicProjectiveSpace.inductionOn with
   | h v =>
     by_contra! h
-    have hv : v.1 = 0 := PiLp.ext fun k ↦ by simpa using h k
-    simpa [hv] using v.2
+    have hv : v.val = 0 := PiLp.ext fun k ↦ by simpa using h k
+    simpa [hv] using v.property
 
 /-- Homogeneous ratios are continuous on any chart where their denominator is nonzero. -/
 theorem continuousOn_ratio (k j : Fin (n + 1)) : ContinuousOn (ratio k j) (affineOpen k) := by
   intro p hp
   obtain ⟨v, rfl⟩ := mk_surjective n p
-  have hk : v.1 k ≠ 0 := by simpa using hp
+  have hk : v.val k ≠ 0 := by simpa using hp
   apply ContinuousAt.continuousWithinAt
   apply continuousAt_lift
   exact ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) j).comp
-    continuous_subtype_val).continuousAt.mul
+    continuous_subtypeVal).continuousAt.mul
     ((((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp
-      continuous_subtype_val).continuousAt).inv₀ hk)
+      continuous_subtypeVal).continuousAt).inv₀ hk)
 
 private def affineVector (k : Fin (n + 1)) (z : Fin n → ℍ) : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ :=
   WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℍ) k 1 z)
@@ -158,23 +158,23 @@ theorem affineParam_ratio (k : Fin (n + 1)) {p : QuaternionicProjectiveSpace n}
     (hp : p ∈ affineOpen k) :
     affineParam k (fun j ↦ ratio k (k.succAbove j) p) = p := by
   obtain ⟨v, rfl⟩ := mk_surjective n p
-  have hk : v.1 k ≠ 0 := by simpa using hp
+  have hk : v.val k ≠ 0 := by simpa using hp
   simp only [ratio_mk]
-  let z := fun j ↦ v.1 (k.succAbove j) * (v.1 k)⁻¹
+  let z := fun j ↦ v.val (k.succAbove j) * (v.val k)⁻¹
   let w := affineSphere k z
-  have hw (j) : w.1 j = ‖affineVector k z‖⁻¹ • (v.1 j * (v.1 k)⁻¹) := by
+  have hw (j) : w.val j = ‖affineVector k z‖⁻¹ • (v.val j * (v.val k)⁻¹) := by
     induction j using k.succAboveCases with
     | x => simp [w, affineSphere, NormedSpace.normalize, affineVector, hk]
     | p j => simp [w, affineSphere, NormedSpace.normalize, affineVector, z]
   -- The normalized representative is the right multiple of `v` by `c`.
-  let c : ℍ := ‖affineVector k z‖⁻¹ • (v.1 k)⁻¹
-  have hsmul : v.1 <• c = w.1 := PiLp.ext fun j ↦ by
+  let c : ℍ := ‖affineVector k z‖⁻¹ • (v.val k)⁻¹
+  have hsmul : v.val <• c = w.val := PiLp.ext fun j ↦ by
     rw [hw]
     simp [c]
   have hc : ‖c‖ = 1 := by
     have h := congrArg norm hsmul
-    simpa only [norm_smul, norm_op, mem_sphere_zero_iff_norm.1 v.2,
-      mem_sphere_zero_iff_norm.1 w.2, mul_one] using h
+    simpa only [norm_smul, norm_op, mem_sphere_zero_iff_norm.1 v.property,
+      mem_sphere_zero_iff_norm.1 w.property, mul_one] using h
   exact (mk_eq_mk_iff n w v).2 ⟨⟨c, mem_sphere_zero_iff_norm.2 hc⟩, Subtype.ext hsmul⟩
 
 /-- The standard homogeneous-ratio chart on the sphere-quotient projective space. -/

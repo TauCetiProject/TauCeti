@@ -146,7 +146,7 @@ vanishing on `N`.** The bracket again lands in `N` and vanishes there. -/
 theorem lie_mem_comap_homVanishingOn (N : LieSubmodule K L M) (x : L)
     (ψ : homScalarOn (L := L) N) :
     ⁅x, ψ⁆ ∈ (homVanishingOn N).comap (homScalarOn N).incl := by
-  obtain ⟨hψ, c, hc⟩ := mem_homScalarOn.1 ψ.2
+  obtain ⟨hψ, c, hc⟩ := mem_homScalarOn.1 ψ.property
   simp only [LieSubmodule.mem_comap, LieSubmodule.incl_apply, LieSubmodule.coe_bracket]
   refine mem_homVanishingOn.2 ⟨fun m ↦ ?_, fun n hn ↦ ?_⟩
   · rw [LieHom.lie_apply]
@@ -175,7 +175,7 @@ theorem exists_isCompl_of_equivariant_projection {N : LieSubmodule K L M} {ψ : 
   let f : M →ₗ⁅K,L⁆ N := LieModuleHom.codRestrict N g hψmem
   refine ⟨f.ker, ?_⟩
   rw [← LieSubmodule.isCompl_toSubmodule, LieModuleHom.ker_toSubmodule]
-  exact LinearMap.isCompl_of_proj fun n ↦ Subtype.ext (hψid n n.2)
+  exact LinearMap.isCompl_of_proj fun n ↦ Subtype.ext (hψid n n.property)
 
 end Projection
 
@@ -278,7 +278,7 @@ private theorem exists_invariant_notMem_of_forall_lie_mem {d : ℕ} (ih : Invari
     rw [Ne, LieSubmodule.comap_incl_eq_top]
     exact fun hc ↦ hv₀N (hWle (hc hv₀P))
   obtain ⟨p, hpmem, hpinv⟩ := ih (W.comap P.incl) hPrank hWcomap
-    (fun x q ↦ (W.mem_normalizer q).1 (hnormalizer ((hPmem _).1 q.2)) x)
+    (fun x q ↦ (W.mem_normalizer q).1 (hnormalizer ((hPmem _).1 q.property)) x)
   refine ⟨(p : M), fun hpN ↦ hpmem ?_, fun x ↦ ?_⟩
   · -- Modularity gives `(W + K v₀) ∩ N = W`, since `v₀ ∉ N`.
     have hinf : ((W : Submodule K M) ⊔ Submodule.span K {v₀}) ⊓
@@ -286,7 +286,7 @@ private theorem exists_invariant_notMem_of_forall_lie_mem {d : ℕ} (ih : Invari
       rw [sup_inf_assoc_of_le _ ((LieSubmodule.toSubmodule_le_toSubmodule _ _).2 hWle),
         (Submodule.disjoint_span_singleton_of_notMem hv₀N).symm.eq_bot, sup_bot_eq]
     rw [LieSubmodule.mem_comap, LieSubmodule.incl_apply, ← LieSubmodule.mem_toSubmodule, ← hinf]
-    exact ⟨(hPmem _).1 p.2, hpN⟩
+    exact ⟨(hPmem _).1 p.property, hpN⟩
   · simpa only [LieSubmodule.coe_bracket, ZeroMemClass.coe_zero] using
       congrArg Subtype.val (hpinv x)
 
@@ -407,7 +407,7 @@ theorem HasInvariantOutsideIrreducible.exists_equivariant_projection
     h.exists_invariant_notMem ((homVanishingOn N).comap (homScalarOn (L := L) N).incl) hproper
       (lie_mem_comap_homVanishingOn N)
   rw [LieSubmodule.mem_comap, LieSubmodule.incl_apply] at hφmem
-  obtain ⟨hφN, c, hc⟩ := mem_homScalarOn.1 φ.2
+  obtain ⟨hφN, c, hc⟩ := mem_homScalarOn.1 φ.property
   have hc0 : c ≠ 0 := by
     rintro rfl
     exact hφmem (mem_homVanishingOn.2 ⟨hφN, fun n hn ↦ by rw [hc n hn, zero_smul]⟩)

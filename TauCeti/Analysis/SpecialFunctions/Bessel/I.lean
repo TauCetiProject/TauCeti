@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-public import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # The modified Bessel function of the first kind
@@ -281,39 +281,27 @@ section CircleIntegral
 
 open Complex (I)
 
-private theorem integral_exp_mul_cos_mul_cexp_natCast (κ : ℝ) (n : ℕ) :
-    ∫ θ in -π..π, (exp (κ * cos θ) : ℂ) * Complex.exp (n * θ * I) = 2 * π * besselI n κ := by
-  -- Both sides are `2π ∑ₗ (κ / 2) ^ (2 l + n) / (l! (l + n)!)`.
-  have h := Complex.hasSum_integral_exp_mul_cos_mul_cexp_natCast κ n
-  simp only [← Complex.ofReal_mul, ← Complex.ofReal_exp] at h
-  refine h.unique ?_
-  convert (Complex.hasSum_ofReal.mpr (hasSum_besselI_natCast n κ)).mul_left (2 * (π : ℂ))
-    using 2 with l
-  push_cast
-  ring
-
 /-- **The circle integral of `I_n`, complex form.** For an integer `n` and real `κ`,
 `∫_{-π}^{π} e^{κ cos θ} e^{i n θ} dθ = 2π I_{|n|}(κ)`: the `n`-th Fourier coefficient of
 `θ ↦ e^{κ cos θ}` on `[-π, π]` is `I_{|n|}(κ)`. -/
 theorem integral_exp_mul_cos_mul_cexp (κ : ℝ) (n : ℤ) :
     ∫ θ in -π..π, (exp (κ * cos θ) : ℂ) * Complex.exp (n * θ * I) =
       2 * π * besselI n.natAbs κ := by
-  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
-  · simpa using integral_exp_mul_cos_mul_cexp_natCast κ m
-  · have h := intervalIntegral.integral_comp_neg (a := -π) (b := π)
-      (fun θ : ℝ => (exp (κ * cos θ) : ℂ) * Complex.exp (m * θ * I))
-    rw [neg_neg, integral_exp_mul_cos_mul_cexp_natCast] at h
-    rw [Int.natAbs_neg, Int.natAbs_natCast, ← h]
-    refine intervalIntegral.integral_congr fun θ _ => ?_
-    simp only [cos_neg, Complex.ofReal_neg, Int.cast_neg, Int.cast_natCast]
-    ring_nf
+  have h := Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp (κ : ℂ) n
+  simp only [← Complex.ofReal_mul, ← Complex.ofReal_exp] at h
+  refine h.unique ?_
+  convert (Complex.hasSum_ofReal.mpr (hasSum_besselI_natCast n.natAbs κ)).mul_left (2 * (π : ℂ))
+    using 2 with l
+  push_cast
+  ring
 
 /-- **The circle integral of `I_n`.** For a natural order `n` and real `κ`,
 `∫_{-π}^{π} e^{κ cos θ} cos (n θ) dθ = 2π I_n(κ)`, that is,
 `I_n(κ) = (2π)⁻¹ ∫_{-π}^{π} e^{κ cos θ} cos (n θ) dθ`. -/
 theorem integral_exp_mul_cos_mul_cos (κ : ℝ) (n : ℕ) :
     ∫ θ in -π..π, exp (κ * cos θ) * cos (n * θ) = 2 * π * besselI n κ := by
-  have h := congrArg Complex.re (integral_exp_mul_cos_mul_cexp_natCast κ n)
+  have h := congrArg Complex.re (integral_exp_mul_cos_mul_cexp κ n)
+  simp only [Int.cast_natCast, Int.natAbs_natCast] at h
   rw [← RCLike.re_to_complex, ← intervalIntegral.intervalIntegral_re
     ((by fun_prop : Continuous fun θ : ℝ =>
       (exp (κ * cos θ) : ℂ) * Complex.exp (n * θ * I)).intervalIntegrable _ _)] at h

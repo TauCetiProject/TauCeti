@@ -305,15 +305,15 @@ theorem IsSemialgebraic.preimage_eval {s : Set (τ → R)} (hs : IsSemialgebraic
     (f : τ → MvPolynomial σ R) :
     IsSemialgebraic ((fun x i => eval x (f i)) ⁻¹' s) := by
   have hbind (x : σ → R) (p : MvPolynomial τ R) :
-      eval (fun i => eval x (f i)) p = eval x (bind₁ f p) := by
+      eval (fun i => eval x (f i)) p = eval x (aeval f p) := by
     simp only [← coe_aeval_eq_eval]
-    exact (aeval_bind₁ x f p).symm
+    exact (comp_aeval_apply f (aeval x) p).symm
   refine setOf_isSemialgebraic_subset (ℬ := {t | IsSemialgebraic ((fun x i => eval x (f i)) ⁻¹' t)})
     ⟨by simp, fun t ht => ?_, fun t u ht hu => ?_⟩ (fun p => ?_) (fun p => ?_) hs
   · simpa using ht.compl
   · simpa using ht.union hu
-  · simpa [hbind] using isSemialgebraic_eval_eq_zero (bind₁ f p)
-  · simpa [hbind] using isSemialgebraic_eval_pos (bind₁ f p)
+  · simpa [hbind] using isSemialgebraic_eval_eq_zero (aeval f p)
+  · simpa [hbind] using isSemialgebraic_eval_pos (aeval f p)
 
 /-- Over an ordered field, the inverse image of a semialgebraic set under a coordinatewise rational
 map `x ↦ (eval x (N i) / eval x (D i))` (with Lean's total division `a / 0 = 0`) is semialgebraic,

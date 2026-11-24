@@ -74,7 +74,7 @@ variable {R S : Type*} [NormedRing R] [NormedRing S] {R₀ : ℝ}
 radius `R₀`. -/
 noncomputable def mapHom : OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring S R₀ :=
   ((PowerSeries.map φ).comp (OnOpenDisc.subring R R₀).subtype).codRestrict _ fun f ↦
-    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.2).map φ hφ)
+    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.property).map φ hφ)
 
 /-- `mapHom` acts by `PowerSeries.map` on the underlying formal power series. -/
 @[simp]
@@ -130,6 +130,13 @@ theorem mapHom_mapHom {T : Type*} [NormedRing T] (ψ : S →+* T) {C₂ : ℝ}
           (norm_nonneg _)).trans <| mul_le_mul_of_nonneg_left (hφ x) (le_max_right C₂ 0)) f :=
   Subtype.ext <| PowerSeries.ext fun _ ↦ by simp
 
+/-- Bounded coefficient maps act on scalar multiples by applying `φ` to the scalar, over any
+normed rings. -/
+@[simp]
+theorem mapHom_smul (a : R) (f : OnOpenDisc.subring R R₀) :
+    mapHom φ hφ (a • f) = φ a • mapHom φ hφ f :=
+  Subtype.ext <| PowerSeries.ext fun n ↦ by simp
+
 /-- `mapHom` intertwines polynomial inclusions with `Polynomial.map`. -/
 @[simp]
 theorem mapHom_polynomialHom (p : Polynomial R) :
@@ -157,7 +164,7 @@ theorem exists_mapHom_eq_and_norm_coeff_le {C' : ℝ}
   have hcoeff (n : ℕ) : coeff n f = lift (coeff n (g : S⟦X⟧)) := (rfl)
   have hf : f.OnOpenDisc R₀ := onOpenDisc_iff.mpr fun r hr hrR ↦
     MvPowerSeries.isRestricted_map _ lift hnorm_lift
-      (onOpenDisc_iff.mp (OnOpenDisc.mem_subring.mp g.2) r hr hrR)
+      (onOpenDisc_iff.mp (OnOpenDisc.mem_subring.mp g.property) r hr hrR)
   refine ⟨⟨f, OnOpenDisc.mem_subring.mpr hf⟩, Subtype.ext (PowerSeries.ext fun n ↦ ?_),
     fun n ↦ by simpa only [hcoeff] using hnorm_lift _⟩
   rw [coeff_mapHom, hcoeff, hφ_lift]
@@ -182,12 +189,6 @@ theorem mapHom_algebraMap (a : R) :
     mapHom (R₀ := R₀) φ hφ (algebraMap R _ a) = algebraMap S _ (φ a) :=
   Subtype.ext (by simp)
 
-/-- Bounded coefficient maps act on scalar multiples by applying `φ` to the scalar. -/
-@[simp]
-theorem mapHom_smul (a : R) (f : OnOpenDisc.subring R R₀) :
-    mapHom φ hφ (a • f) = φ a • mapHom φ hφ f :=
-  Subtype.ext <| PowerSeries.ext fun n ↦ by simp
-
 end NormedCommRing
 
 section Evaluation
@@ -201,7 +202,7 @@ commutative. -/
 theorem hasSum_evalAt_mapHom {b : S} (hb : ‖b‖ < R₀) (f : OnOpenDisc.subring R R₀) :
     HasSum (fun n ↦ φ (coeff n (f : R⟦X⟧)) * b ^ n) ((mapHom φ hφ f : S⟦X⟧).evalAt b) := by
   simpa only [coe_mapHom, coeff_map, smul_eq_mul] using
-    (OnOpenDisc.mem_subring.mp (mapHom φ hφ f).2).hasSum_evalAt hb
+    (OnOpenDisc.mem_subring.mp (mapHom φ hφ f).property).hasSum_evalAt hb
 
 end Evaluation
 
@@ -295,7 +296,7 @@ bounded by `C` times any smaller closed-disc Gauss norm whose radius bounds `‖
 theorem norm_evalAt_mapHom_le {b : S} (r : Set.Ioo (0 : ℝ) R₀) (hbr : ‖b‖ ≤ r)
     (f : OnOpenDisc.subring R R₀) :
     ‖(mapHom φ hφ f : S⟦X⟧).evalAt b‖ ≤ C * ‖restrict r f‖ := by
-  have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict r (mapHom φ hφ f)).2
+  have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict r (mapHom φ hφ f)).property
   rw [coe_restrict] at hf
   calc ‖(mapHom φ hφ f : S⟦X⟧).evalAt b‖
       ≤ (mapHom φ hφ f : S⟦X⟧).gaussNorm norm r := norm_evalAt_le_gaussNorm hf hbr
@@ -318,7 +319,7 @@ omit [IsUltrametricDist R] [IsUltrametricDist S] [CompleteSpace S] in
 theorem evalAt_mapHom {a : R} (ha : ‖a‖ < R₀) (f : OnOpenDisc.subring R R₀) :
     (mapHom φ hφ f : S⟦X⟧).evalAt (φ a) = φ ((f : R⟦X⟧).evalAt a) := by
   rw [coe_mapHom]
-  exact (OnOpenDisc.mem_subring.mp f.2).evalAt_map φ
+  exact (OnOpenDisc.mem_subring.mp f.property).evalAt_map φ
     (AddMonoidHomClass.continuous_of_bound φ C hφ) ha
 
 /-- **Bounded coefficient maps commute with Taylor translation** on an open disc whenever the
@@ -327,7 +328,7 @@ theorem mapHom_taylorHom {a : R} (ha : ‖a‖ < R₀) (hφa : ‖φ a‖ < R₀
     (f : OnOpenDisc.subring R R₀) :
     mapHom φ hφ (taylorHom ha f) = taylorHom hφa (mapHom φ hφ f) := by
   refine Subtype.ext <| PowerSeries.ext fun n ↦ ?_
-  simpa using (((OnOpenDisc.mem_subring.mp f.2).hasseDeriv n).evalAt_map φ
+  simpa using (((OnOpenDisc.mem_subring.mp f.property).hasseDeriv n).evalAt_map φ
     (AddMonoidHomClass.continuous_of_bound φ C hφ) ha).symm
 
 /-- **Bounded coefficient maps commute with analytic substitution** on open discs whenever the

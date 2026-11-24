@@ -154,7 +154,7 @@ theorem ContinuousLinearMap.IsInvertible.exists_path_to_id {T : E →L[ℂ] E}
   have h₁ : JoinedIn {S : E →L[ℂ] E | S.IsInvertible} T (u : E →L[ℂ] E) := ⟨γ, hγ⟩
   obtain ⟨δ⟩ := (Unitary.joined_one u).symm
   have h₂ : JoinedIn {S : E →L[ℂ] E | S.IsInvertible} (u : E →L[ℂ] E) 1 := by
-    refine ⟨δ.map continuous_subtype_val, fun t ↦ ?_⟩
+    refine ⟨δ.map continuous_subtypeVal, fun t ↦ ?_⟩
     obtain ⟨v, hv⟩ := Unitary.isUnit_coe (U := δ t)
     refine ⟨ContinuousLinearEquiv.unitsEquiv ℂ E v, ?_⟩
     ext x

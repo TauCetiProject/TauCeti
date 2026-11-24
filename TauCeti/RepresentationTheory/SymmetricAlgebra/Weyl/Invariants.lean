@@ -284,7 +284,7 @@ theorem exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset
   let _ : Finite P.weylGroup := P.finite_weylGroup_of_base b
   let _ := P.weylGroupRootRep.dual.symmetricAlgebraMulSemiringAction
   let e := P.posRootsEquivReflectingHyperplanes b
-  let ℓ (H : P.weylGroupRootRep.reflectingHyperplanes) : Module.Dual K M := P.coroot' (e.symm H).1
+  let ℓ (H : P.weylGroupRootRep.reflectingHyperplanes) : Module.Dual K M := P.coroot' (e.symm H).val
   have hker (H : P.weylGroupRootRep.reflectingHyperplanes) : LinearMap.ker (ℓ H) = H.val :=
     (P.coe_posRootsEquivReflectingHyperplanes b (e.symm H)).symm.trans
       (congrArg Subtype.val (e.apply_symm_apply H))
@@ -296,10 +296,10 @@ theorem exists_jacobian_eq_algebraMap_mul_prod_posRootsFinset
   have hpow : (∏ H : P.weylGroupRootRep.reflectingHyperplanes,
       SymmetricAlgebra.ι K (Module.Dual K M) (ℓ H) ^
         (Nat.card ((Ideal.span {SymmetricAlgebra.ι K (Module.Dual K M) (ℓ H)}).inertia
-          P.weylGroup) - 1)) = ∏ H : P.weylGroupRootRep.reflectingHyperplanes, g (e.symm H).1 :=
+          P.weylGroup) - 1)) = ∏ H : P.weylGroupRootRep.reflectingHyperplanes, g (e.symm H).val :=
     Finset.prod_congr rfl fun H _ ↦ by
       dsimp only [ℓ]
-      rw [P.natCard_inertia_coroot'_weylGroup (e.symm H).1, pow_one]
+      rw [P.natCard_inertia_coroot'_weylGroup (e.symm H).val, pow_one]
   let eFin : ↥(posRootsFinset P b) ≃ posRoots P b :=
     Equiv.subtypeEquivRight (mem_posRootsFinset P b)
   let _ : Fintype (posRoots P b) := Fintype.ofEquiv _ eFin
@@ -362,7 +362,7 @@ theorem charpoly_weylGroupRootRep_of_isRegularWeight_of_smul_eq
   let B : Module.Basis κ K (Module.Dual K M) :=
     (Module.finBasis K (Module.Dual K M)).reindex (Fintype.equivFinOfCardEq hcard).symm
   exact P.weylGroupRootRep.charpoly_eq_prod_of_eigenvector_of_jacobian_ne_zero
-    B d hf (fun k ↦ (f k).2) w x c hw
+    B d hf (fun k ↦ (f k).property) w x c hw
     ((P.lift_jacobian_ne_zero_iff_isRegularWeight b B hf hbij x).2 hx)
 
 end Base

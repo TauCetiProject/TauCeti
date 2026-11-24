@@ -46,14 +46,14 @@ def mappingPathFiberMap : C(MappingPathFiber f k, MappingPathFiber g k) where
     ((H.evalAt p.val.1).symm.trans ⟨p.val.2, p.property.1, p.property.2⟩).toContinuousMap),
     Path.source _, Path.target _⟩
   continuous_toFun := by
-    refine (continuous_subtype_val.fst.prodMk ?_).subtype_mk _
+    refine (continuous_subtypeVal.fst.prodMk ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
     exact Path.trans_continuous_family
       (fun p : MappingPathFiber f k ↦ (H.evalAt p.val.1).symm)
       (H.continuous.comp ((continuous_symm.comp continuous_snd).prodMk
-        (continuous_subtype_val.fst.comp continuous_fst)))
+        (continuous_subtypeVal.fst.comp continuous_fst)))
       (fun p ↦ ⟨p.val.2, p.property.1, p.property.2⟩)
-      (continuous_subtype_val.snd.comp continuous_fst |>.eval continuous_snd)
+      (continuous_subtypeVal.snd.comp continuous_fst |>.eval continuous_snd)
 
 @[simp]
 theorem mappingPathFiberMap_val_fst (p : MappingPathFiber f k) :
@@ -98,12 +98,12 @@ private def reflHomotopy :
     (Path.delayReflLeft q.1 ⟨q.2.val.2, q.2.property.1, q.2.property.2⟩).toContinuousMap),
     Path.source _, Path.target _⟩
   continuous_toFun := by
-    refine ((continuous_subtype_val.fst.comp continuous_snd).prodMk ?_).subtype_mk _
+    refine ((continuous_subtypeVal.fst.comp continuous_snd).prodMk ?_).subtype_mk _
     apply ContinuousMap.continuous_of_continuous_uncurry
     exact Path.delayReflLeft_continuous_family
       (fun q : I × MappingPathFiber f k ↦
         ⟨q.2.val.2, q.2.property.1, q.2.property.2⟩)
-      (((continuous_subtype_val.snd.comp continuous_snd).comp continuous_fst).eval continuous_snd)
+      (((continuous_subtypeVal.snd.comp continuous_snd).comp continuous_fst).eval continuous_snd)
       ContinuousMap.fst
   map_zero_left p := by
     apply Subtype.ext
@@ -137,17 +137,17 @@ private def backtrackHomotopy :
         ⟨q.2.val.2, q.2.property.1, q.2.property.2⟩)).toContinuousMap),
       Path.source _, Path.target _⟩
     continuous_toFun := by
-      refine ((continuous_subtype_val.fst.comp continuous_snd).prodMk ?_).subtype_mk _
+      refine ((continuous_subtypeVal.fst.comp continuous_snd).prodMk ?_).subtype_mk _
       apply ContinuousMap.continuous_of_continuous_uncurry
       have hα : Continuous ↿fun q : I × MappingPathFiber f k ↦ α q.1 q.2.val.1 := by
         exact H.continuous.comp
           ((by fun_prop : Continuous (fun q : (I × MappingPathFiber f k) × I ↦
             Set.Icc.convexComb 0 q.1.1 q.2)).prodMk
-            (continuous_subtype_val.fst.comp (continuous_snd.comp continuous_fst)))
+            (continuous_subtypeVal.fst.comp (continuous_snd.comp continuous_fst)))
       let γ (q : I × MappingPathFiber f k) : Path (f q.2.val.1) k :=
         ⟨q.2.val.2, q.2.property.1, q.2.property.2⟩
       have hγ : Continuous ↿γ :=
-        (((continuous_subtype_val.snd.comp continuous_snd).comp continuous_fst).eval continuous_snd)
+        (((continuous_subtypeVal.snd.comp continuous_snd).comp continuous_fst).eval continuous_snd)
       have hβ := Path.trans_continuous_family
         (fun q : I × MappingPathFiber f k ↦ (α q.1 q.2.val.1).symm)
         (Path.symm_continuous_family _ hα) γ hγ

@@ -87,7 +87,7 @@ theorem ofMul_N (g h l : M) : (ofMul M).N g h l = if g * h = l then 1 else 0 := 
 /-- A fusion channel `g ⊗ h → l` of the group fusion rules exists only for `l = g * h`. -/
 theorem mul_eq_of_ofMul {g h l : M} (i : Fin ((ofMul M).N g h l)) : g * h = l := by
   by_contra hne
-  simpa [ofMul_N, hne] using i.2
+  simpa [ofMul_N, hne] using i.isLt
 
 /-- There is no fusion channel `g ⊗ h → l` of the group fusion rules for `l ≠ g * h`. -/
 theorem isEmpty_fin_ofMul_N {g h l : M} (hl : g * h ≠ l) : IsEmpty (Fin ((ofMul M).N g h l)) :=

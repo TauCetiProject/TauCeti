@@ -73,7 +73,7 @@ theorem orbit_eq_of_invariant {G α S : Type*} {β : Sort*} [SetLike S G] [SMul 
     (hW : W ⊆ (H : Set G)) (hcov : s ⊆ (· • a) '' W) :
     orbit H a = s :=
   Set.Subset.antisymm
-    (orbit_subset_of_invariant f (fun g : H ↦ hf g g.2) hs)
+    (orbit_subset_of_invariant f (fun g : H ↦ hf g g.property) hs)
     (hcov.trans (image_smul_subset_orbit hW))
 
 /-- The `H`-orbit of `a` equals `s` when a function `f` takes the constant value `f a` along the

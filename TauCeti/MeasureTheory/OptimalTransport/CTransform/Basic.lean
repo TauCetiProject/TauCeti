@@ -167,6 +167,18 @@ theorem le_cTransformSymm (h : ∀ y, a ≤ (c (x, y) : EReal) - ψ y) : a ≤ c
   by simpa only [cTransformSymm_eq_cTransform] using
     le_cTransform (c := fun p : Y × X => c (p.2, p.1)) h
 
+/-- The `c`-transform at `y` is strictly below `a` if and only if some source point witnesses the
+strict bound. -/
+theorem cTransform_lt_iff :
+    cTransform c φ y < a ↔ ∃ x, (c (x, y) : EReal) - φ x < a :=
+  iInf_lt_iff
+
+/-- The symmetric `c`-transform at `x` is strictly below `a` if and only if some target point
+witnesses the strict bound. -/
+theorem cTransformSymm_lt_iff :
+    cTransformSymm c ψ x < a ↔ ∃ y, (c (x, y) : EReal) - ψ y < a :=
+  iInf_lt_iff
+
 /-- The `c`-transform of `φ` is dual feasible against `φ`. -/
 theorem add_cTransform_le (c : X × Y → ℝ) (φ : X → EReal) (x : X) (y : Y) :
     φ x + cTransform c φ y ≤ (c (x, y) : EReal) := by
@@ -272,6 +284,16 @@ theorem cTransformSymm_lt_top_of_ne_bot (c : X × Y → ℝ) (hy : ψ y ≠ ⊥)
     cTransformSymm c ψ x < ⊤ := by
   simpa only [cTransformSymm_eq_cTransform] using
     cTransform_lt_top_of_ne_bot (fun p : Y × X => c (p.2, p.1)) hy x
+
+/-- If the `c`-transform avoids `-∞` at one target point, the source potential avoids `⊤`
+everywhere. -/
+theorem ne_top_of_cTransform_ne_bot (hy : cTransform c φ y ≠ ⊥) (x : X) : φ x ≠ ⊤ := fun hx =>
+  hy <| eq_bot_iff.2 <| by simpa [hx] using cTransform_le c φ x y
+
+/-- If the symmetric `c`-transform avoids `-∞` at one source point, the target potential avoids `⊤`
+everywhere. -/
+theorem ne_top_of_cTransformSymm_ne_bot (hx : cTransformSymm c ψ x ≠ ⊥) (y : Y) : ψ y ≠ ⊤ :=
+  ne_top_of_cTransform_ne_bot (c := fun p : Y × X => c (p.2, p.1)) hx y
 
 /-- The symmetric `c`-transform of a potential on an empty target is `⊤`. -/
 @[simp]

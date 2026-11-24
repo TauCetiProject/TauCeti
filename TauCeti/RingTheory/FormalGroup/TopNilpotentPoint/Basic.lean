@@ -275,7 +275,8 @@ nilpotent constant coefficient, under substitution into `F`, is the group of poi
 exactly when its constant coefficient is nilpotent, and substitution is evaluation. -/
 noncomputable def pointEquivTopNilpotentPoint :
     F.Point σ ≃+ F.TopNilpotentPoint (MvPowerSeries σ R) where
-  toFun x := ⟨x.val, WithPiTopology.isTopologicallyNilpotent_of_constantCoeff_isNilpotent x.2⟩
+  toFun x := ⟨x.val, WithPiTopology.isTopologicallyNilpotent_of_constantCoeff_isNilpotent
+      x.property⟩
   invFun x := ⟨x.val,
     (WithPiTopology.isTopologicallyNilpotent_iff_constantCoeff_isNilpotent x.val).1 x.hasEval⟩
   left_inv _ := rfl

@@ -166,7 +166,7 @@ theorem ramificationIndex_mul_inertiaDegree :
     ← Ideal.sum_ramification_inertia_eq_finrank 𝓂[K] 𝒪[L]]
   symm
   refine Fintype.sum_eq_single (⟨𝓂[L], hmem⟩ : ↥(Ideal.primesOver 𝓂[K] 𝒪[L])) fun q hq ↦ ?_
-  exact absurd (Subtype.ext (by simpa [hs] using q.2)) hq
+  exact absurd (Subtype.ext (by simpa [hs] using q.property)) hq
 
 /-- **Transport of the ramification index along a valuation-preserving ring isomorphism.** Given
 ring equivalences `e : K ≃+* K'` and `eL : L ≃+* L'` commuting with `algebraMap` such that `e`

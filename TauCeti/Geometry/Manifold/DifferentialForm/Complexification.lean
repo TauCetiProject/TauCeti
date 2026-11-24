@@ -48,7 +48,7 @@ theorem ofReal_realPart_add_I_smul_ofReal_imaginaryPart (ω : SmoothForm I M ℂ
   funext x
   ext v
   simpa [RoughForm.mapCoeff_apply, smul_eq_mul, mul_comm] using
-    Complex.re_add_im (ω.1 x v)
+    Complex.re_add_im (ω.val x v)
 
 /-- The real part of `α + i β`, for real-valued smooth forms `α` and `β`, is `α`. -/
 @[simp]

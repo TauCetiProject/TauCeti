@@ -311,7 +311,7 @@ theorem mem_center_skewZigzagQuotient_iff [Fintype V] (t : ∀ i : V, {j : V // 
       have := sub_mem hz hvol
       rwa [hzsum, add_sub_cancel_right] at this
     exact ⟨f, g, (sum_smul_skewZigzagMk_vertexIdempotent_mem_center_iff k G c
-      (fun i => ⟨(t i).1, (t i).2⟩) f).mp hidem, hzsum⟩
+      (fun i => ⟨(t i).val, (t i).property⟩) f).mp hidem, hzsum⟩
   · rintro ⟨f, g, hf, rfl⟩
     exact add_mem (sum_smul_skewZigzagMk_vertexIdempotent_mem_center k G c f hf)
       (sum_mem fun i _ => Subalgebra.smul_mem _ (skewZigzagVolume_mem_center k G c (t i)) _)

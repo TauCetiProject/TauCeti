@@ -146,7 +146,7 @@ theorem isClosed_setOf_hasFDerivAt_extend_comp {𝕜 : Type*} {E : Type u} {Y Z 
   intro J j hJ hjlim x
   -- The derivative fields, extended by zero outside `s`.
   let D : (s →ᵇ Z) → E → E →L[𝕜] Y := fun B y ↦ if h : y ∈ s then L (B ⟨y, h⟩) else 0
-  have hD : ∀ (B : s →ᵇ Z) (y : s), D B y = L (B y) := fun B y ↦ dite_eq_left y.2
+  have hD : ∀ (B : s →ᵇ Z) (y : s), D B y = L (B y) := fun B y ↦ dite_eq_left y.property
   have hext : ∀ (g : s → Y) (y : s), Function.extend Subtype.val g 0 (y : E) = g y :=
     fun g y ↦ Subtype.val_injective.extend_apply g 0 y
   have hv := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
@@ -156,7 +156,7 @@ theorem isClosed_setOf_hasFDerivAt_extend_comp {𝕜 : Type*} {E : Type u} {Y Z 
   rw [← hD]
   refine hasFDerivAt_of_tendstoUniformlyOn
     (f := fun n ↦ Function.extend Subtype.val ((J n).1 : s → Y) 0) (f' := fun n ↦ D (J n).2)
-    (g' := D j.2) (l := atTop) hs ?_ ?_ ?_ x.2
+    (g' := D j.2) (l := atTop) hs ?_ ?_ ?_ x.property
   · rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
     simpa only [Function.comp_def, hD] using hL.comp_tendstoUniformly hd
   · intro n y hy

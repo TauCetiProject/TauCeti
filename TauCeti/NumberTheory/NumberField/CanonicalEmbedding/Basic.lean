@@ -65,8 +65,8 @@ variable (K : Type*) [Field K]
 an element of `mixedSpace K` whose `w`-coordinate agrees with `mixedEmbedding K (g w)`. -/
 noncomputable def mixedDiag : (InfinitePlace K → K) →+* mixedSpace K :=
   RingHom.prod
-    (RingHom.pi fun w ↦ (embedding_of_isReal w.2).comp (Pi.evalRingHom _ w.1))
-    (RingHom.pi fun w ↦ w.1.embedding.comp (Pi.evalRingHom _ w.1))
+    (RingHom.pi fun w ↦ (embedding_of_isReal w.property).comp (Pi.evalRingHom _ w.val))
+    (RingHom.pi fun w ↦ w.val.embedding.comp (Pi.evalRingHom _ w.val))
 
 variable {K}
 
@@ -74,14 +74,14 @@ variable {K}
 @[simp]
 theorem mixedDiag_apply_isReal (g : InfinitePlace K → K)
     (w : {w : InfinitePlace K // IsReal w}) :
-    (mixedDiag K g).1 w = embedding_of_isReal w.2 (g w.1) := by
+    (mixedDiag K g).1 w = embedding_of_isReal w.property (g w.val) := by
   rfl
 
 /-- Complex coordinate of `mixedDiag K g` at a complex infinite place `w`. -/
 @[simp]
 theorem mixedDiag_apply_isComplex (g : InfinitePlace K → K)
     (w : {w : InfinitePlace K // IsComplex w}) :
-    (mixedDiag K g).2 w = w.1.embedding (g w.1) := by
+    (mixedDiag K g).2 w = w.val.embedding (g w.val) := by
   rfl
 
 /-- On a constant family `fun _ ↦ x`, `mixedDiag K` reduces to `mixedEmbedding K x`. -/

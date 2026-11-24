@@ -410,7 +410,7 @@ def openExteriorEmbedding (F : DehnFilling h s Y) : h.openExterior → Y :=
 @[simp]
 theorem openExteriorEmbedding_apply (F : DehnFilling h s Y) (x : h.openExterior) :
     F.openExteriorEmbedding x =
-      F.exteriorEmbedding ⟨x, h.openExterior_subset_knotExterior x.2⟩ :=
+      F.exteriorEmbedding ⟨x, h.openExterior_subset_knotExterior x.property⟩ :=
   (rfl)
 
 /-- **The open exterior is the complement of the filling solid torus** in the filled space. -/
@@ -420,13 +420,13 @@ theorem range_openExteriorEmbedding (F : DehnFilling h s Y) :
   constructor
   · rintro ⟨x, rfl⟩ ⟨p, hp⟩
     obtain ⟨q, -, hq⟩ := F.exteriorEmbedding_eq_solidTorusEmbedding_iff.1 hp.symm
-    refine h.mem_openExterior.1 x.2 ⟨SolidTorus.boundaryInclusion (F.gluing q), ?_⟩
+    refine h.mem_openExterior.1 x.property ⟨SolidTorus.boundaryInclusion (F.gluing q), ?_⟩
     rw [← h.coe_exteriorBoundaryInclusion_apply, ← hq]
   · intro hy
     obtain ⟨x, rfl⟩ := (eq_univ_iff_forall.1 F.range_union_range y).resolve_right hy
     refine ⟨⟨x, ?_⟩, rfl⟩
     rw [← SetLike.mem_coe, h.coe_openExterior, ← knotExterior_sdiff_range]
-    refine ⟨x.2, ?_⟩
+    refine ⟨x.property, ?_⟩
     rintro ⟨q, hq⟩
     have hx : x = h.exteriorBoundaryInclusion (F.gluing (F.gluing.symm q)) := by
       rw [Homeomorph.apply_symm_apply]
@@ -474,7 +474,7 @@ def meridianDehnFilling (h : IsSolidTorusNeighborhood f Φ) :
     rintro _ ⟨hx, p, rfl⟩
     rw [Subtype.range_coe, mem_knotExterior] at hx
     have hp : ‖(p.1 : ℂ)‖ = 1 :=
-      le_antisymm (mem_closedBall_zero_iff.mp p.1.2) (not_lt.mp fun hp ↦ hx ⟨p, hp, rfl⟩)
+      le_antisymm (mem_closedBall_zero_iff.mp p.1.property) (not_lt.mp fun hp ↦ hx ⟨p, hp, rfl⟩)
     rw [range_comp, SolidTorus.range_boundaryInclusion]
     exact mem_image_of_mem _ hp
   fillingSlope_gluing := h.fillingSlope_refl

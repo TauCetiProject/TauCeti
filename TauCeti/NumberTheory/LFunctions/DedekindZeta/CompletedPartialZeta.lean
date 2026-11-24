@@ -155,10 +155,8 @@ private theorem tsum_unit_setIntegral_archGaussian {D : Set (realSpace K)}
           archGaussian y (idealLatticeNeZeroEquiv I (𝔟, u) : mixedSpace K) ∂archHaar K) =
       ((Units.torsionOrder K : ℂ) *
         (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K) *
-        ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-s)) *
-        (Ideal.absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-  have hI_nonneg : 0 ≤ (FractionalIdeal.absNorm I.1 : ℝ) :=
-    Rat.cast_nonneg.mpr (FractionalIdeal.absNorm_nonneg I.1)
+        ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s)) *
+        (Ideal.absNorm (𝔟.val : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
   set x₀ := mixedEmbedding K (coneGen I 𝔟)
   have hx₀ : mixedEmbedding.norm x₀ ≠ 0 :=
     (norm_pos_of_mem (mixedEmbedding_coneGen_mem I 𝔟)).ne'
@@ -174,7 +172,7 @@ private theorem tsum_unit_setIntegral_archGaussian {D : Set (realSpace K)}
   simp_rw [hu_eq]
   rw [← torsionOrder_smul_integral_archHaar_eq_tsum_unitCone hD hint₀, nsmul_eq_mul,
     integral_archGaussian_mul_archNorm_cpow hx₀ hs0, norm_mixedEmbedding_coneGen, ofReal_mul,
-    mul_cpow_ofReal_nonneg (Nat.cast_nonneg _) hI_nonneg, ofReal_natCast, ofReal_ratCast]
+    ofReal_mul_cpow (Nat.cast_nonneg _), ofReal_natCast, ofReal_ratCast]
   ring
 
 /-- Sum over `(𝓞 K)ˣ` of the norm-weighted real Gaussian cone integrals along one ideal orbit. -/
@@ -186,10 +184,10 @@ private theorem tsum_unit_setIntegral_norm_archGaussian {D : Set (realSpace K)}
           archNorm y ^ (σ / 2) ∂archHaar K) =
       ((Units.torsionOrder K : ℝ) *
         ‖Gammaℝ σ ^ nrRealPlaces K * Gammaℝ (2 * σ) ^ nrComplexPlaces K‖ *
-        (FractionalIdeal.absNorm I.1 : ℝ) ^ (-σ)) *
-        (Ideal.absNorm (𝔟.1 : Ideal (𝓞 K)) : ℝ) ^ (-σ) := by
+        (FractionalIdeal.absNorm I.val : ℝ) ^ (-σ)) *
+        (Ideal.absNorm (𝔟.val : Ideal (𝓞 K)) : ℝ) ^ (-σ) := by
   have hσ0 : (0 : ℝ) < (σ : ℂ).re := by simpa using hσ_pos
-  have hI_pos : 0 < (FractionalIdeal.absNorm I.1 : ℝ) :=
+  have hI_pos : 0 < (FractionalIdeal.absNorm I.val : ℝ) :=
     Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
   let g : (𝓞 K)ˣ → ℝ := fun u ↦ ∫ y in unitCone D,
     ‖archGaussian y (idealLatticeNeZeroEquiv I (𝔟, u) : mixedSpace K)‖ *
@@ -210,15 +208,15 @@ private theorem tsum_unit_setIntegral_norm_archGaussian {D : Set (realSpace K)}
   have htsum : ((∑' u, g u : ℝ) : ℂ) =
       ((Units.torsionOrder K : ℂ) *
         (Gammaℝ σ ^ nrRealPlaces K * Gammaℝ (2 * σ) ^ nrComplexPlaces K) *
-        ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-(σ : ℂ))) *
-        (Ideal.absNorm (𝔟.1 : Ideal (𝓞 K)) : ℂ) ^ (-(σ : ℂ)) := by
+        ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-(σ : ℂ))) *
+        (Ideal.absNorm (𝔟.val : Ideal (𝓞 K)) : ℂ) ^ (-(σ : ℂ)) := by
     rw [ofReal_tsum]
     simp_rw [hg_coe]
     exact tsum_unit_setIntegral_archGaussian hD I 𝔟 hσ0
   have hnorm := congrArg Norm.norm htsum
   rw [Complex.norm_real, Real.norm_of_nonneg (tsum_nonneg hg_nonneg), norm_mul, norm_mul, norm_mul,
     Complex.norm_natCast, ← ofReal_ratCast, norm_cpow_eq_rpow_re_of_pos hI_pos,
-    Complex.norm_natCast_cpow_of_pos (Ideal.absNorm_pos_of_nonZeroDivisors 𝔟.1),
+    Complex.norm_natCast_cpow_of_pos (Ideal.absNorm_pos_of_nonZeroDivisors 𝔟.val),
     neg_re, ofReal_re] at hnorm
   exact hnorm
 
@@ -282,7 +280,7 @@ theorem integrableOn_archNorm_cpow_mul_latticeTheta_sub_one {D : Set (realSpace 
     fun x y ↦ (archNorm y : ℂ) ^ (s / 2) * archGaussian y (x : mixedSpace K)
   have hF_int (x : {x : idealLattice K I // x ≠ 0}) : Integrable (F x) μ :=
     integrableOn_unitCone_archNorm_cpow_mul_archGaussian D
-      (norm_ne_zero_of_mem_idealLattice x.1.2 (Submodule.coe_eq_zero.not.mpr x.2))
+      (norm_ne_zero_of_mem_idealLattice x.val.property (Submodule.coe_eq_zero.not.mpr x.property))
       (zero_lt_one.trans hs)
   have hsum : Summable fun x ↦ ∫ y, ‖F x y‖ ∂μ :=
     summable_setIntegral_norm_archNorm_cpow_mul_archGaussian hD I hs
@@ -308,10 +306,10 @@ open scoped Classical in
 `|d_K|`. -/
 private theorem covolume_sq_idealLattice_cpow (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s : ℂ) :
     (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) =
-      ((FractionalIdeal.absNorm I.1 : ℝ) : ℂ) ^ s *
+      ((FractionalIdeal.absNorm I.val : ℝ) : ℂ) ^ s *
         (((2⁻¹ : ℝ) : ℂ) ^ s) ^ nrComplexPlaces K *
         (((|discr K| : ℤ) : ℂ)) ^ (s / 2) := by
-  set N_I : ℝ := (FractionalIdeal.absNorm I.1 : ℝ)
+  set N_I : ℝ := (FractionalIdeal.absNorm I.val : ℝ)
   set D_K : ℝ := ((|discr K| : ℤ) : ℝ)
   have hNI_pos : 0 < N_I := Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
   have hDK_pos : 0 < D_K := Int.cast_pos.mpr (abs_pos.mpr (discr_ne_zero K))
@@ -324,8 +322,8 @@ private theorem covolume_sq_idealLattice_cpow (I : (FractionalIdeal (𝓞 K)⁰ 
     rw [covolume_idealLattice]
     simp [N_I, D_K]
   rw [h1, hcov, ofReal_mul,
-    mul_cpow_ofReal_nonneg (mul_nonneg hNI_pos.le (by positivity)) (Real.sqrt_nonneg _),
-    ofReal_mul, mul_cpow_ofReal_nonneg hNI_pos.le (by positivity), ofReal_pow,
+    ofReal_mul_cpow (mul_nonneg hNI_pos.le (by positivity)),
+    ofReal_mul, ofReal_mul_cpow hNI_pos.le, ofReal_pow,
     TauCeti.ofReal_pow_cpow (by positivity) (nrComplexPlaces K) s, cpow_nat_mul,
     Real.sqrt_eq_rpow, ← cpow_mul_ofReal_nonneg hDK_pos.le, ofReal_intCast |discr K|]
   congr 2
@@ -340,29 +338,29 @@ private theorem covolume_gamma_mul_eq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s
         (ZLattice.covolume (idealLattice K I) ^ 2 : ℂ) ^ (s / 2) *
         ((Units.torsionOrder K : ℂ) *
           (Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K) *
-          ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-s)) =
+          ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s)) =
       ((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ nrRealPlaces K *
         Gammaℂ s ^ nrComplexPlaces K := by
   set r₁ := nrRealPlaces K
   set r₂ := nrComplexPlaces K
-  set N_I : ℝ := (FractionalIdeal.absNorm I.1 : ℝ)
+  set N_I : ℝ := (FractionalIdeal.absNorm I.val : ℝ)
   have hNI_pos : 0 < N_I := Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
   have hw : (Units.torsionOrder K : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Units.torsionOrder_ne_zero K)
   have h2gamma : (2 : ℂ) ^ r₂ * Gammaℝ (2 * s) ^ r₂ = ((2 : ℂ) ^ s) ^ r₂ * Gammaℂ s ^ r₂ := by
     rw [← mul_pow, two_mul_Gammaℝ_two_mul, mul_pow]
   have h2cancel : (((2⁻¹ : ℝ) : ℂ) ^ s) ^ r₂ * ((2 : ℂ) ^ s) ^ r₂ = 1 := by
-    rw [← ofReal_ofNat, ← mul_pow, ← mul_cpow_ofReal_nonneg (by positivity) (by positivity)]
+    rw [← ofReal_ofNat, ← mul_pow, ← ofReal_mul_cpow (by positivity)]
     norm_num
-  have hNI_cancel : (N_I : ℂ) ^ s * ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-s) = 1 := by
+  have hNI_cancel : (N_I : ℂ) ^ s * ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s) = 1 := by
     rw [← ofReal_ratCast, ← cpow_add _ _ (ofReal_ne_zero.mpr hNI_pos.ne'), add_neg_cancel,
       cpow_zero]
   rw [covolume_sq_idealLattice_cpow]
   calc (2 : ℂ) ^ r₂ / (Units.torsionOrder K : ℂ) *
           ((N_I : ℂ) ^ s * (((2⁻¹ : ℝ) : ℂ) ^ s) ^ r₂ * ((|discr K| : ℤ) : ℂ) ^ (s / 2)) *
           ((Units.torsionOrder K : ℂ) * (Gammaℝ s ^ r₁ * Gammaℝ (2 * s) ^ r₂) *
-            ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-s))
+            ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s))
       = (((Units.torsionOrder K : ℂ) / (Units.torsionOrder K : ℂ)) *
-          ((N_I : ℂ) ^ s * ((FractionalIdeal.absNorm I.1 : ℚ) : ℂ) ^ (-s)) *
+          ((N_I : ℂ) ^ s * ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s)) *
           ((((2⁻¹ : ℝ) : ℂ) ^ s) ^ r₂ * ((2 : ℂ) ^ r₂ * Gammaℝ (2 * s) ^ r₂)) *
           (((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ r₁)) := by ring
     _ = ((|discr K| : ℤ) : ℂ) ^ (s / 2) * Gammaℝ s ^ r₁ * Gammaℂ s ^ r₂ := by
@@ -391,7 +389,8 @@ private theorem unitCone_integral_eq_tsum {D : Set (realSpace K)}
     fun x y ↦ (archNorm y : ℂ) ^ (s / 2) * archGaussian y (x : mixedSpace K)
   have hF_int (x : {x : idealLattice K I // x ≠ 0}) : Integrable (F x) μ :=
     integrableOn_unitCone_archNorm_cpow_mul_archGaussian D
-      (norm_ne_zero_of_mem_idealLattice x.1.2 (Submodule.coe_eq_zero.not.mpr x.2)) hs0
+      (norm_ne_zero_of_mem_idealLattice x.val.property (Submodule.coe_eq_zero.not.mpr x.property))
+          hs0
   have hF_sum : Summable fun x ↦ ∫ y, ‖F x y‖ ∂μ :=
     summable_setIntegral_norm_archNorm_cpow_mul_archGaussian hD I hs
   have hint_eq : (∫ y in unitCone D, (archNorm y : ℂ) ^ (s / 2) *

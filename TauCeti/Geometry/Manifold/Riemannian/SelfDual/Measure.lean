@@ -54,10 +54,10 @@ measure. This combines
 `TauCeti.SmoothForm.integralTopForm_wedge_self`. -/
 theorem integral_inner_self_eq_two_mul_sub (o : Manifold.Orientation I M (Fin (k + k)))
     (hk : Even k) {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
-    ∫ x, alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) ∂riemannianVolume I M =
-      2 * ∫ x, alternatingFormInner (TangentSpace I x) k ((selfDualPart o α).1 x)
-        ((selfDualPart o α).1 x) ∂riemannianVolume I M -
-      integralTopForm o (RoughForm.wedge α.1 α.1) := by
+    ∫ x, alternatingFormInner (TangentSpace I x) k (α.val x) (α.val x) ∂riemannianVolume I M =
+      2 * ∫ x, alternatingFormInner (TangentSpace I x) k ((selfDualPart o α).val x)
+        ((selfDualPart o α).val x) ∂riemannianVolume I M -
+      integralTopForm o (RoughForm.wedge α.val α.val) := by
   -- `contMDiff_alternatingFormInner` needs `C^(∞ + 1)` charts.
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   -- The energy density of a compactly supported form is continuous with compact support.

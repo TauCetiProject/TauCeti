@@ -62,7 +62,7 @@ variable {G : Graph α β} {H : Graph α' β'} {I : Graph α'' β''}
 endpoints, even when the endpoints are only propositionally equal. -/
 private theorem apply_eq_of_fst_eq {R : Type w'} (φ : Assignment G.BidirectedHom R)
     {x y x' y' : V(G)} (a : G.BidirectedHom x y) (b : G.BidirectedHom x' y') (hx : x = x')
-    (hy : y = y') (hab : a.1 = b.1) : φ a = φ b := by
+    (hy : y = y') (hab : a.val = b.val) : φ a = φ b := by
   subst hx hy
   rw [Subtype.ext hab]
 

@@ -76,7 +76,7 @@ namespace TauCeti
 /-- Setoid of `K`-algebra isomorphism on finite intermediate fields of `AlgebraicClosure K`. -/
 private def finiteIntermediateFieldSetoid (K : Type u) [Field K] :
     Setoid {M : IntermediateField K (AlgebraicClosure K) // Module.Finite K M} where
-  r M₁ M₂ := Nonempty (M₁.1 ≃ₐ[K] M₂.1)
+  r M₁ M₂ := Nonempty (M₁.val ≃ₐ[K] M₂.val)
   iseqv := ⟨fun _ ↦ ⟨.refl⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e₁⟩ ⟨e₂⟩ ↦ ⟨e₁.trans e₂⟩⟩
 
 /-- The type of `K`-isomorphism classes of finite field extensions of `K`, realized as the quotient
@@ -153,7 +153,8 @@ def lift {α : Sort*}
     (hf : ∀ (L₁ L₂ : Type u) [Field L₁] [Algebra K L₁] [Module.Finite K L₁]
       [Field L₂] [Algebra K L₂] [Module.Finite K L₂], (L₁ ≃ₐ[K] L₂) → f L₁ = f L₂)
     (c : FiniteExtensionClass K) : α :=
-  Quotient.liftOn c (fun M ↦ @f M.1 _ _ M.2) fun M₁ M₂ ⟨e⟩ ↦ @hf M₁.1 M₂.1 _ _ M₁.2 _ _ M₂.2 e
+  Quotient.liftOn c (fun M ↦ @f M.val _ _ M.property) fun M₁ M₂
+      ⟨e⟩ ↦ @hf M₁.val M₂.val _ _ M₁.property _ _ M₂.property e
 
 /-- Evaluating `FiniteExtensionClass.lift` on `mk K L` recovers the value on `L`. -/
 @[simp]

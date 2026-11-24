@@ -146,7 +146,7 @@ noncomputable def ofPolePoint (Q : polePoints W₂ (Place.infinity W₁)) : Hom 
     ofIsogeny ⟨CoordinateRing.evalAlgHom (Point.nonsingular_coords hQ).left,
       CoordinatePullback.mapsInfinity_of_one_lt_infinityPlace _ (algebraMap F[X] _ X) (by
         rw [AdjoinRoot.algebraMap_eq, CoordinateRing.evalAlgHom_of_X, ← Place.valuation_infinity]
-        exact ((mem_polePoints_iff _ _ _).1 Q.2).resolve_left hQ)⟩
+        exact ((mem_polePoints_iff _ _ _).1 Q.property).resolve_left hQ)⟩
 
 /-- **The tautological point of `ofPolePoint Q` is `Q`.** -/
 @[simp]

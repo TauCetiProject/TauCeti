@@ -140,7 +140,7 @@ theorem mem_map_restrict_iff [DecidableEq ι] (K : PreAbstractSimplicialComplex 
     refine ⟨(mem_restrict_iff K s τ).mp hτ, ?_⟩
     rintro v hv
     obtain ⟨w, _, rfl⟩ := Finset.mem_image.mp hv
-    exact w.2
+    exact w.property
   · rintro ⟨hσ, hs⟩
     have heq : (σ.subtype (· ∈ s)).image Subtype.val = σ := by
       simpa only [Finset.map_eq_image, Function.Embedding.coe_subtype] using
@@ -181,7 +181,7 @@ def restrict (K : AbstractSimplicialComplex ι) (s : Set ι) : AbstractSimplicia
     (PreAbstractSimplicialComplex.restrict K.toPreAbstractSimplicialComplex s) fun v => by
       rw [PreAbstractSimplicialComplex.mem_faces, PreAbstractSimplicialComplex.mem_restrict_iff,
         Finset.image_singleton, mem_toPreAbstractSimplicialComplex]
-      exact K.singleton_mem v.1
+      exact K.singleton_mem v.val
 
 /-- Forgetting singletons commutes with restricting the vertex set. -/
 @[simp]

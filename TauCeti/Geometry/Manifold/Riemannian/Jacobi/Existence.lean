@@ -84,12 +84,13 @@ private theorem exists_isJacobiFieldOn_maximalGeodesic_initialData
       alongCurveWithin (leviCivitaConnection I M) (maximalGeodesic I M p v) V
         (geodesicInterval I M p v) 0 = w := by
   obtain ⟨σ, hσ₀, hσ, hu, hw⟩ :=
-    (leviCivitaConnection I M).exists_contMDiffAt_tangentCurve_initialData p v u w 0
+    (leviCivitaConnection I M).exists_contMDiffAt_tangentCurve_initialData
+      p BoundarylessManifold.isInteriorPoint v u w 0
   have hJ := isJacobiFieldOn_variationField_maximalGeodesic (hσ.of_le (by norm_num))
   have hD := alongCurveWithin_variationField_maximalGeodesic_zero (hσ.of_le (by norm_num))
   rw [hw] at hD
   rw [hσ₀] at hJ hD
-  refine ⟨variationField I (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).2), hJ, ?_, hD⟩
+  refine ⟨variationField I (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).snd), hJ, ?_, hD⟩
   rw [variationField_maximalGeodesic_zero, hu]
 
 /-! ### Arbitrary geodesics on preconnected parameter sets -/

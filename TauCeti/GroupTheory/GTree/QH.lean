@@ -180,7 +180,7 @@ theorem eq_bot_or_exists_le_map_conj_boundarySubgroup {K : Subgroup (stabilizer 
       K.map (stabilizer G v).subtype ≤ (q.boundarySubgroup j).map (MulAut.conj s).toMonoidHom := by
   rcases Signed.isPeripheral_iff.mp (q.isPeripheral_map K hK) with h | ⟨j, s, h⟩
   · exact .inl ((map_eq_bot_iff_of_injective _ q.surfaceEquiv.injective).mp h)
-  · exact .inr ⟨j, _, (q.surfaceEquiv.symm s).2, q.map_surfaceEquiv_le_map_conj_iff.mp h⟩
+  · exact .inr ⟨j, _, (q.surfaceEquiv.symm s).property, q.map_surfaceEquiv_le_map_conj_iff.mp h⟩
 
 /-- A boundary component is used when some nontrivial incident subgroup is carried into a
 conjugate of its boundary subgroup. The incident subgroups are the incident edge stabilizers and
@@ -208,7 +208,7 @@ theorem isUsed_iff_exists_le_map_conj_boundarySubgroup {j : Fin q.boundary} :
   rw [isUsed_iff]
   refine exists_congr fun K => and_congr_right fun _ => and_congr_right fun _ => ⟨?_, ?_⟩
   · rintro ⟨s, hs⟩
-    exact ⟨_, (q.surfaceEquiv.symm s).2, q.map_surfaceEquiv_le_map_conj_iff.mp hs⟩
+    exact ⟨_, (q.surfaceEquiv.symm s).property, q.map_surfaceEquiv_le_map_conj_iff.mp hs⟩
   · rintro ⟨s, hs, hle⟩
     refine ⟨q.surfaceEquiv ⟨s, hs⟩, q.map_surfaceEquiv_le_map_conj_iff.mpr ?_⟩
     rwa [MulEquiv.symm_apply_apply]
