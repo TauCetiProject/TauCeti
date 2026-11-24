@@ -9,10 +9,7 @@ public import TauCeti.Geometry.Manifold.Algebra.LeftToRight
 public import TauCeti.Geometry.Manifold.FiberBundle.MapFiber
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
-import TauCeti.Geometry.Manifold.GroupAction.Orbit
-import TauCeti.Geometry.Manifold.GroupAction.TransverseSlice
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
-import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # Free proper quotients are smooth principal bundles
@@ -54,8 +51,6 @@ diffeomorphic to `M` by `⟨q, x⟩ ↦ x` (`ProperSMul.orbitFiberDiffeomorph`).
 
 ## Main results
 
-* `ProperSMul.isLocalDiffeomorphAt_smul_section`: a smooth local section of the orbit projection
-  is a transverse slice.
 * `ProperSMul.principalBundle_orbitFiber`: the orbits form a principal `G`-bundle.
 * `ProperSMul.contMDiffFiberBundle_orbitFiber`: this principal bundle is smooth.
 * `ProperSMul.exists_principalBundle_orbitFiber`: the existential form, for a free proper smooth
@@ -182,47 +177,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ContMDiffSMul I I' ∞ G M] [ProperSMul G M] [IsCancelSMul G M]
   {U : Set (MulAction.orbitRel.Quotient G M)} {s : MulAction.orbitRel.Quotient G M → M}
 
-/-! ### Smooth local sections are transverse slices -/
-
-/-- **Smooth local sections are slices.** Let `s` be a smooth section of the orbit projection over
-an open set `U` of `M ⧸ G`. Then the slice map `(g, q) ↦ g • s q` is a smooth local
-diffeomorphism at every point of `G × U`: the range of `ds` is a complement of the orbit tangent
-space `𝔤 · s q`, the kernel of the differential of the projection. -/
-theorem isLocalDiffeomorphAt_smul_section (hU : IsOpen U)
-    (hs : letI := orbitRelQuotientChartedSpace I G I' M
-      ContMDiffOn 𝓘(ℝ, QuotientModelSpace E E') I' ∞ s U)
-    (hsec : ∀ q ∈ U, Quotient.mk _ (s q) = q) {q : MulAction.orbitRel.Quotient G M} (hq : q ∈ U)
-    (g : G) :
-    letI := orbitRelQuotientChartedSpace I G I' M
-    IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, QuotientModelSpace E E')) I' ∞
-      (fun p : G × MulAction.orbitRel.Quotient G M ↦ p.1 • s p.2) (g, q) := by
-  let _ := orbitRelQuotientChartedSpace I G I' M
-  set J := 𝓘(ℝ, QuotientModelSpace E E')
-  have hsd : MDifferentiableAt J I' s q :=
-    (hs.contMDiffAt (hU.mem_nhds hq)).mdifferentiableAt (by simp)
-  have hπd : MDifferentiableAt I' J (Quotient.mk (MulAction.orbitRel G M)) (s q) :=
-    (contMDiff_quotientMk (I := I) (G := G) (I' := I') (M := M) (s q)).mdifferentiableAt
-      (by simp)
-  -- The differential of the projection is a left inverse of that of the section.
-  have hcomp : (mfderiv I' J (Quotient.mk (MulAction.orbitRel G M)) (s q)).toLinearMap ∘ₗ
-      (mfderiv J I' s q).toLinearMap = LinearMap.id := by
-    have hev : Quotient.mk (MulAction.orbitRel G M) ∘ s =ᶠ[𝓝 q] id :=
-      eventually_of_mem (hU.mem_nhds hq) hsec
-    have h : mfderiv J J (Quotient.mk (MulAction.orbitRel G M) ∘ s) q = mfderiv J J id q :=
-      hev.mfderiv_eq
-    rw [mfderiv_id, mfderiv_comp q hπd hsd] at h
-    exact LinearMap.ext fun v ↦ DFunLike.congr_fun h v
-  have hbij : Bijective ((mfderiv I' J (Quotient.mk (MulAction.orbitRel G M)) (s q)).toLinearMap ∘ₗ
-      (mfderiv J I' s q).toLinearMap) := by
-    rw [hcomp]
-    exact bijective_id
-  obtain ⟨hinj, hcompl, -⟩ := LinearMap.bijective_comp_iff.1 hbij
-  have hslice := (isLocalDiffeomorphAt_smul_slice_iff (I := I) (G := G) hs hU hq).2
-    ⟨isotropy_fundamental_eq_bot_of_properSMul_of_stabilizer_eq_bot
-      (IsCancelSMul.stabilizer_eq_bot (s q)), hinj, by
-        rw [← ker_mfderiv_quotientMk (I := I) (G := G) (s q)]
-        exact hcompl.symm⟩
-  exact hslice.eventually_forall_smul_slice.self_of_nhds g
+/-! ### The inverse trivialization is a local diffeomorphism -/
 
 /-- Over `U`, the map `(q, g) ↦ s q · g` is a smooth local diffeomorphism: up to the
 diffeomorphism `(q, g) ↦ (g⁻¹, q)` it is the slice map of `s`. -/
