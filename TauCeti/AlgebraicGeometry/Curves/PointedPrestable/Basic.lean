@@ -231,6 +231,13 @@ theorem coe_markingPoint {K : Type u} [Field K] (P : PointedPrestableFamily (Spe
     (i : Fin n) : (P.markingPoint i : P.total) = P.marking i default :=
   (rfl)
 
+/-- The points at the markings of a reindexed pointed prestable curve are the points at the
+reindexed markings. -/
+@[simp]
+theorem markingPoint_reindex {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n)
+    (e : Fin m ↪ Fin n) (i : Fin m) : (P.reindex e).markingPoint i = P.markingPoint (e i) :=
+  (rfl)
+
 end PointedPrestableFamily
 
 end TauCeti.AlgebraicGeometry

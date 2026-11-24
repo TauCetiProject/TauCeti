@@ -71,6 +71,8 @@ here.
   `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_marking_eq_iff`: a marking is attached to the
   component carrying the point over it.
 * `AlgebraicGeometry.Scheme.dualGraph_genus`: the genus of a vertex is the genus of its component.
+* `AlgebraicGeometry.Scheme.dualGraph_comp`: composing the marked points with a map of index
+  types reindexes the markings.
 
 ## References
 
@@ -315,6 +317,13 @@ def dualGraph {ι : Type v} (p : ι → (X ↘ Spec (.of K)).smoothLocus) : Dual
   connected := reflTransGen_adj X
 
 variable {ι : Type v} (p : ι → (X ↘ Spec (.of K)).smoothLocus)
+
+/-- Composing the marked points with a map of index types reindexes the markings of the dual
+graph. -/
+@[simp]
+theorem dualGraph_comp {κ : Type*} (e : κ → ι) :
+    X.dualGraph (p ∘ e) = (X.dualGraph p).reindex e :=
+  (rfl)
 
 /-- The vertices of the dual graph are the irreducible components of the blowup of the curve
 along its singular subscheme. -/

@@ -24,6 +24,12 @@ every vertex the map contracts, and exactly those when the fibres of `h` are dis
 instance when `h` is locally quasi-finite or injective on points: the image of a vertex is
 irreducible, and an irreducible subset of a discrete set has at most one point.
 
+The image `ν(v)` is irreducible (`isIrreducible_image_blowupToBase`), and the contraction
+criterion is stated on it (`isContractedVertex_iff_image`). That `ν(v)` is moreover an irreducible
+component of `C`, so that the component lemmas of the curve apply to it, is not proved here: it
+needs `ν` to be an isomorphism over the smooth locus, and the smooth locus to be dense in every
+component of `C`, neither of which the nodal blowup API provides yet.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.PrestableMap.IsContractedVertex`: a vertex of the dual graph of the
@@ -33,6 +39,8 @@ irreducible, and an irreducible subset of a discrete set has at most one point.
 
 In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
 
+* `isContractedVertex_iff_image`: a vertex is contracted when the map is constant on its image
+  in the source curve.
 * `isContractedVertex_const`: a constant map contracts every vertex.
 * `IsContractedVertex.postcomp`: postcomposition contracts every vertex the map contracts.
 * `isContractedVertex_postcomp_iff_of_isDiscrete`: postcomposition with a morphism of targets with
@@ -70,6 +78,21 @@ theorem isContractedVertex_iff (v : F.curve.dualGraph.Vertex) :
       (((F.curve.total.singularLocus K).blowupToBase ≫ F.map) ''
         (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)).Subsingleton :=
   Iff.rfl
+
+/-- The image `ν(v)` in the source curve of the component `v` of the blowup is irreducible. -/
+theorem isIrreducible_image_blowupToBase (v : F.curve.dualGraph.Vertex) :
+    IsIrreducible ((F.curve.total.singularLocus K).blowupToBase ''
+      (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _)) :=
+  (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v).prop.1.image _
+    (Scheme.Hom.continuous _).continuousOn
+
+/-- A vertex `v` is contracted exactly when the map is constant on the image `ν(v)` of its
+component in the source curve. -/
+theorem isContractedVertex_iff_image (v : F.curve.dualGraph.Vertex) :
+    F.IsContractedVertex v ↔
+      (F.map '' ((F.curve.total.singularLocus K).blowupToBase ''
+        (F.curve.total.dualGraphVertexEquiv F.curve.markingPoint v : Set _))).Subsingleton := by
+  rw [isContractedVertex_iff, Scheme.Hom.image_comp]
 
 /-- Over a separably closed field, a constant map contracts every vertex of the dual graph of its
 source curve. -/

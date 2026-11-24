@@ -21,6 +21,11 @@ prestable curve over `K`, the markings are the values of its sections at the poi
 
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraph`: the dual graph of a pointed
   prestable curve over a separably closed field, with its markings.
+
+## Main results
+
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.dualGraph_reindex`: reindexing the markings
+  of the curve reindexes the markings of its dual graph.
 -/
 
 public section
@@ -35,13 +40,22 @@ universe u
 
 namespace PointedPrestableFamily
 
-variable {K : Type u} [Field K] {n : ℕ} (P : PointedPrestableFamily (Spec (.of K)) n)
+variable {K : Type u} [Field K] {m n : ℕ} (P : PointedPrestableFamily (Spec (.of K)) n)
 
 /-- The **dual graph** of a pointed prestable curve over a separably closed field: the dual graph
 `AlgebraicGeometry.Scheme.dualGraph` of its total space, with the `i`th marking at the point of
 the `i`th section. -/
 abbrev dualGraph [IsSepClosed K] : DualGraph.{u} (Fin n) :=
   P.total.dualGraph P.markingPoint
+
+/-- The dual graph of a reindexed pointed prestable curve is the dual graph with reindexed
+markings. -/
+@[simp]
+theorem dualGraph_reindex [IsSepClosed K] (e : Fin m ↪ Fin n) :
+    (P.reindex e).dualGraph = P.dualGraph.reindex e := by
+  rw [dualGraph, show (P.reindex e).markingPoint = P.markingPoint ∘ e from
+    funext (P.markingPoint_reindex e)]
+  exact P.total.dualGraph_comp P.markingPoint e
 
 end PointedPrestableFamily
 
