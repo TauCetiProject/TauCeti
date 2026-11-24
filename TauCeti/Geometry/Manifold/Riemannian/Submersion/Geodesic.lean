@@ -611,10 +611,8 @@ theorem eqOn_of_isGeodesicCurveOn_horizontalLift [I.Boundaryless] [T2Space M]
     h.isSubmersion.contMDiff.mdifferentiableAt (by simp)
   have htan : tangentMap I J f (curveVelocityLiftWithin I γ₁ s t₀) =
       tangentMap I J f (curveVelocityLiftWithin I γ₂ s t₀) := by
-    rw [tangentMap_curveVelocityLiftWithin hf₁ (hγ₁.mdifferentiableOn t₀ ht₀)
-        (hγ₁.uniqueDiffOn t₀ ht₀).uniqueMDiffWithinAt,
-      tangentMap_curveVelocityLiftWithin hf₂ (hγ₂.mdifferentiableOn t₀ ht₀)
-        (hγ₂.uniqueDiffOn t₀ ht₀).uniqueMDiffWithinAt]
+    rw [tangentMap_curveVelocityLiftWithin hf₁ (hγ₁.mdifferentiableOn t₀ ht₀),
+      tangentMap_curveVelocityLiftWithin hf₂ (hγ₂.mdifferentiableOn t₀ ht₀)]
     exact (hfγ.eventuallyEq_of_mem self_mem_nhdsWithin).curveVelocityLiftWithin_eq
       (congrArg f hpt)
   rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply] at htan ⊢

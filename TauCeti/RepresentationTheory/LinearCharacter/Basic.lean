@@ -49,6 +49,9 @@ representation, and its irreducibility is what the Mackey criterion decides.
   subrepresentation.
 * `Representation.IsIrreducible.nonempty_equiv_ofLinearCharacter_iff`: an irreducible
   representation is the line of `χ` exactly when each `g` acts by the scalar `χ g`.
+* `Representation.stabilizer_ofLinearCharacter_one` and
+  `Representation.ker_le_stabilizer_ofLinearCharacter`: the stabilizer of `1` is the kernel of
+  `χ`, which fixes every vector.
 * `FDRep.ofLinearCharacter_def`: the bundled representation is the unbundled one, bundled.
 * `FDRep.finrank_ofLinearCharacter`: it is a line.
 * `FDRep.simple_ofLinearCharacter`: it is a simple object of `FDRep k G`, being a line.
@@ -161,6 +164,24 @@ theorem IsIrreducible.nonempty_equiv_ofLinearCharacter_iff [Field k] [Monoid G] 
       simpa [h, mul_smul] using smul_comm (χ g : k) c v
   have hf : f ≠ 0 := fun h0 ↦ hv (by simpa [f] using DFunLike.congr_fun h0 1)
   exact ⟨(f.ofBijective ((IsIrreducible.bijective_or_eq_zero f).resolve_right hf)).symm⟩
+
+section Stabilizer
+
+variable [CommSemiring k] [Group G]
+
+/-- The stabilizer of `1` in the representation of a linear character `χ` is the kernel of `χ`. -/
+@[simp]
+theorem stabilizer_ofLinearCharacter_one (χ : G →* kˣ) :
+    (ofLinearCharacter χ).stabilizer 1 = χ.ker := by
+  ext g
+  simp [mem_stabilizer, Units.val_eq_one]
+
+/-- The kernel of a linear character `χ` fixes every vector of its representation. -/
+theorem ker_le_stabilizer_ofLinearCharacter (χ : G →* kˣ) (x : k) :
+    χ.ker ≤ (ofLinearCharacter χ).stabilizer x := by
+  simpa using (ofLinearCharacter χ).le_stabilizer_smul x 1
+
+end Stabilizer
 
 end Representation
 
