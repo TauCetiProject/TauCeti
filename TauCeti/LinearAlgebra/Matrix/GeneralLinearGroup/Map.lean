@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 
 /-!
 # Change of scalars on general linear groups
@@ -20,6 +21,8 @@ all of which a construction transporting a group of matrices along a change of s
 * `Matrix.GeneralLinearGroup.map_injective`: entrywise application of an injective ring hom is
   injective on general linear groups.
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
+* `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
+  `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
 * `Matrix.GeneralLinearGroup.map_mem_glpos_iff`: a monotone ring hom preserves and reflects
   membership in the positive-determinant subgroups.
 * `Subgroup.map_mapGL`: extending a subgroup of `SL(n, R)` to `GL n S` and then to `GL n T`
@@ -46,6 +49,16 @@ protected theorem map_neg (f : R →+* S) (g : GL n R) :
     Matrix.GeneralLinearGroup.map f (-g) = -Matrix.GeneralLinearGroup.map f g := by
   ext i j
   simp [Matrix.GeneralLinearGroup.map_apply]
+
+/-- The kernel of reduction `GL n R → GL n (R ⧸ I)`, the principal congruence level of `I`,
+consists of the matrices congruent to the identity matrix entrywise modulo `I`. -/
+theorem mem_ker_map_quotientMk_iff (I : Ideal R) {g : GL n R} :
+    g ∈ (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker ↔
+      ∀ i j, (g : Matrix n n R) i j - (1 : Matrix n n R) i j ∈ I := by
+  rw [MonoidHom.mem_ker, Matrix.GeneralLinearGroup.ext_iff]
+  refine forall₂_congr fun i j ↦ ?_
+  rw [Matrix.GeneralLinearGroup.map_apply, Matrix.GeneralLinearGroup.coe_one, ← Ideal.Quotient.eq,
+    Matrix.one_apply, Matrix.one_apply, apply_ite (Ideal.Quotient.mk I), map_one, map_zero]
 
 section StrictOrdered
 
