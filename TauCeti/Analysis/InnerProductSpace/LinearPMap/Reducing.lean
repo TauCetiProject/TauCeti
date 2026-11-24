@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.LinearAlgebra.LinearPMap.Restrict
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Intertwining
 
 /-!
 # Reducing subspaces of partial linear maps
@@ -33,6 +34,8 @@ orthogonal decomposition into reducing subspaces.
 * `LinearPMap.IsReducing.orthogonal`: if `U` reduces `A`, so does `Uᗮ`.
 * `LinearPMap.isReducing_iff_starProjection_mem_graph`: `U` reduces `A` exactly when the
   orthogonal projection onto `U` commutes with `A`.
+* `LinearPMap.isReducing_iff_intertwines_starProjection`: equivalently, the orthogonal projection
+  onto `U` intertwines `A` with itself.
 * `LinearPMap.isReducing_toPMap_top_iff`: for everywhere-defined maps, reduction agrees with
   `Submodule.IsReducing`.
 * `LinearPMap.IsReducing.dense_restrict_domain`: the reduced part of a densely defined map is
@@ -127,6 +130,13 @@ theorem isReducing_iff_starProjection_mem_graph :
   · have hg := h _ _ (A.mem_graph x)
     rw [(U.starProjection_apply_eq_zero_iff).2 hx] at hg
     exact (U.starProjection_apply_eq_zero_iff).1 (A.graph_fst_eq_zero_snd hg rfl)
+
+/-- **Reduction is self-intertwining of the projection.** A subspace reduces a partial linear map
+exactly when the orthogonal projection onto it intertwines the map with itself. -/
+theorem isReducing_iff_intertwines_starProjection :
+    A.IsReducing U ↔ A.Intertwines A U.starProjection := by
+  rw [isReducing_iff_starProjection_mem_graph, intertwines_iff_forall_mem_graph]
+  exact ⟨fun h p hp ↦ h p.1 p.2 hp, fun h x y hxy ↦ h (x, y) hxy⟩
 
 /-- For an everywhere-defined linear map, reduction in the sense of partial linear maps is
 reduction in the sense of `Submodule.IsReducing`. -/

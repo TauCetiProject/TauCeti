@@ -46,6 +46,8 @@ to maps whose source has strictly larger dimension, where higher regularity is n
 * `TauCeti.dense_setOf_forall_surjective_fderiv`: the regular values of a map differentiable
   along a set, restricted to that set, are dense; `Differentiable.dense_compl_image_criticalPoints`
   is the case of a globally differentiable map.
+* `TauCeti.exists_norm_lt_forall_det_one_sub_ne_zero`: arbitrarily small regular values of the
+  displacement `z ↦ z - g z` of a self-map, at which `det (1 - g')` does not vanish.
 
 The measure-theoretic input follows Sébastien Gouëzel's Mathlib formalization of the change of
 variables theorem, itself based on Fremlin, *Measure Theory*, volume 2.
@@ -172,5 +174,25 @@ theorem _root_.Differentiable.dense_compl_image_criticalPoints
   refine (dense_setOf_forall_surjective_fderiv (s := univ) (fun x _ ↦ hf x) hdim).mono ?_
   rintro _ hy ⟨x, hx, rfl⟩
   exact hx (hy x (mem_univ x) rfl)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Regular values of `z ↦ z - g z` exist near `0`.** For a map `g` of a finite-dimensional real
+normed space that has derivative `g' z` at every point `z` of a set `s`, there are vectors `v` of
+arbitrarily small norm such that `1 - g' z` is invertible at every `z ∈ s` with `z - g z = v`.
+This is `TauCeti.dense_setOf_forall_surjective_fderiv` for `z ↦ z - g z`. -/
+theorem exists_norm_lt_forall_det_one_sub_ne_zero {s : Set E} {g : E → E}
+    {g' : E → E →L[ℝ] E} (hg : ∀ z ∈ s, HasFDerivAt g (g' z) z) {η : ℝ} (hη : 0 < η) :
+    ∃ v : E, ‖v‖ < η ∧ ∀ z ∈ s, z - g z = v → (1 - g' z).det ≠ 0 := by
+  let _ : MeasurableSpace E := borel E
+  have _ : BorelSpace E := ⟨rfl⟩
+  have hD (z : E) (hz : z ∈ s) : HasFDerivAt (fun x ↦ x - g x) (1 - g' z) z :=
+    (hasFDerivAt_id z).sub (hg z hz)
+  obtain ⟨v, hv, hvη⟩ := (dense_setOf_forall_surjective_fderiv (f := fun x ↦ x - g x)
+    (fun z hz ↦ (hD z hz).differentiableAt) rfl).exists_mem_open Metric.isOpen_ball
+    ⟨0, Metric.mem_ball_self hη⟩
+  refine ⟨v, mem_ball_zero_iff.1 hvη, fun z hz hzv ↦ ?_⟩
+  have hs : Surjective ⇑(1 - g' z) := (hD z hz).fderiv ▸ hv z hz hzv
+  exact (LinearMap.isUnit_det _ ((Module.End.isUnit_iff _).2
+    ⟨LinearMap.injective_iff_surjective.2 hs, hs⟩)).ne_zero
 
 end TauCeti

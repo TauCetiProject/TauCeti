@@ -17,17 +17,22 @@ symbol `a # b` (`TauCeti.Symbol.sharp`) quantizes on Schwartz functions to `Op(a
 (`TauCeti.Symbol.quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue`). This file transfers this
 to the bounded extensions `H^s → H^{s - m}` of `TauCeti.Symbol.quantizeSobolev`: the operator
 `Op(a # b) : H^s → H^{s - (m' + m)}` is `Op(a) ∘ Op(b)`, as maps of tempered distributions
-(`TauCeti.Symbol.toDistr_quantizeSobolev_sharp`).
+(`TauCeti.Symbol.toDistr_quantizeSobolev_sharp`). In particular, multiplying `Op(a) v` by a
+compactly supported Schwartz function `ψ` gives `Op(ψ # a) v`
+(`TauCeti.Symbol.smulLeftCLM_toDistr_quantizeSobolev`), so `ψ Op(a) = Op(ψ a)` as operators
+`H^t → H^{t - m}` (`TauCeti.Symbol.smulLeftCLM_comp_quantizeSobolev_eq_quantizeSobolev_smulLeft`).
 
 Combined with the locality of the composition symbol
 (`TauCeti.Symbol.isSmoothing_sharp_sub_comp`), this shows that `Op(c) v` only depends on `v` near
 the positions where the symbol `c` does not vanish, up to a smoothing operator: if `c` has compact
 spatial support and vanishes outside `K`, and `χ` is a compactly supported Schwartz function equal
 to `1` on a neighbourhood of `K`, then `Op(c) v = Op(c) (χ v) + Op(e) v` for a smoothing symbol `e`
-(`Symbol.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_smulLeftCLM_add`),
+(`TauCeti.Symbol.exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_smulLeftCLM_add`)
 and hence `‖Op(c) v‖_{H^{t - m}} ≤ C (‖χ v‖_{H^t} + ‖v‖_{H^r})` for every `r ≤ t`
 (`TauCeti.Symbol.exists_norm_quantizeSobolev_le_smulLeftCLM`). Estimates of this form localize the
-lower order terms in elliptic estimates.
+lower order terms in elliptic estimates. In the same situation `Op(c) v - Op(c) (χ v)` lies in every
+`H^r` (`TauCeti.Symbol.memSobolev_toDistr_quantizeSobolev_sub_quantizeSobolev_smulLeftCLM`), so
+`Op(c) v` is as regular as `χ v` allows.
 
 If a symbol `e` of order `-m` is a left inverse of `a(x, ξ)` at all large frequencies and all
 positions `x` near the support of a Schwartz function `φ`, then the symbol `q = φ e` is a local
@@ -75,6 +80,39 @@ theorem toDistr_quantizeSobolev_sharp {a : Symbol n W U m'} {b : Symbol n V W m}
     simp [hb.quantizeSobolev_toBesselPotentialSpaceCLM,
       quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb]
   simpa using congrArg (fun T ↦ (T u).toDistr) key
+
+/-- **Multiplication after quantization.** For a Schwartz function `ψ` whose multiplication symbol
+`ψ(x) id` has compact spatial support (for instance `ψ` compactly supported,
+`TauCeti.Symbol.hasCompactSpatialSupport_ofSpatial_smul_id`) and a symbol `a` with compact spatial
+support, multiplying `Op(a) v` by `ψ` gives `Op(ψ # a) v` for every `v ∈ H^t`. -/
+theorem smulLeftCLM_toDistr_quantizeSobolev {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)}
+    (hψ : (ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).HasCompactSpatialSupport)
+    (t : ℝ) (v : H^{t}(CoordinateSpace n, V)) :
+    TemperedDistribution.smulLeftCLM W (ψ : CoordinateSpace n → ℂ)
+        (a.quantizeSobolev ha t v).toDistr =
+      (((ofSpatial _ _).sharp a ha).quantizeSobolev (hψ.sharp ha) t v).toDistr := by
+  rw [toDistr_quantizeSobolev_sharp hψ ha, toDistr_quantizeSobolev_ofSpatial_smul_id ψ hψ,
+    BesselPotentialSpace.toDistr_smulLeftCLM]
+
+/-- **Multiplication after quantization, as operators on Sobolev spaces.** For a compactly
+supported Schwartz function `ψ` and a symbol `a` with compact spatial support, multiplying by `ψ`
+after `Op(a) : H^t → H^{t - m}` is the quantization `Op(ψ a)` of the symbol `ψ(x) a(x, ξ)`
+(`TauCeti.Symbol.smulLeft`). -/
+theorem smulLeftCLM_comp_quantizeSobolev_eq_quantizeSobolev_smulLeft {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ : HasCompactSupport ψ)
+    (t : ℝ) :
+    BesselPotentialSpace.smulLeftCLM (t - m) ψ ∘L a.quantizeSobolev ha t =
+      (smulLeft (ψ.smooth ⊤) a).quantizeSobolev (ha.smulLeft (ψ.smooth ⊤)) t := by
+  ext1 v
+  refine BesselPotentialSpace.ext ?_
+  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_smulLeftCLM,
+    smulLeftCLM_toDistr_quantizeSobolev ha (hasCompactSpatialSupport_ofSpatial_smul_id hψ)]
+  -- `ψ # a = ψ a`.
+  exact toDistr_quantizeSobolev_congr
+    (funext fun p ↦ (coefficient_ofSpatial_smul_id_sharp ha ψ p.1 p.2).trans
+      (coefficient_smulLeft _ a p).symm) _ _ rfl
 
 /-- **Locality modulo smoothing operators.** Let the symbol `c` with compact spatial support vanish
 at positions outside `K`, and let the Schwartz function `χ` have compact support and equal `1` on a
@@ -158,6 +196,24 @@ theorem exists_norm_quantizeSobolev_le_smulLeftCLM {c : Symbol n V W m}
           norm_nonneg (BesselPotentialSpace.smulLeftCLM t χ v),
           norm_nonneg (BesselPotentialSpace.inclusion hrt v)]
 
+/-- **Pseudolocality on Sobolev spaces.** `Op(c) v` only depends on `v` near the positions where
+the symbol `c` does not vanish, up to a smoothing operator: if `c` has compact spatial support and
+vanishes at positions outside `K`, and the Schwartz function `χ` has compact support and equals `1`
+on a neighbourhood of `K`, then `Op(c) v - Op(c) (χ v)` lies in every `H^r`, for every `v ∈ H^t`.
+-/
+theorem memSobolev_toDistr_quantizeSobolev_sub_quantizeSobolev_smulLeftCLM
+    {c : Symbol n V W m} (hc : c.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
+    (hcK : ∀ x ∉ K, ∀ ξ, c.coefficient (x, ξ) = 0) {χ : 𝓢(CoordinateSpace n, ℂ)}
+    (hχ : HasCompactSupport χ) (hχK : ∀ᶠ x in 𝓝ˢ K, χ x = 1) (t r : ℝ)
+    (v : H^{t}(CoordinateSpace n, V)) :
+    TemperedDistribution.MemSobolev r 2 ((c.quantizeSobolev hc t v).toDistr -
+      (c.quantizeSobolev hc t (BesselPotentialSpace.smulLeftCLM t χ v)).toDistr) := by
+  obtain ⟨e, he, hsm, hdec⟩ :=
+    exists_isSmoothing_and_toDistr_quantizeSobolev_eq_quantizeSobolev_smulLeftCLM_add hc hcK hχ
+      hχK
+  rw [hdec t v, add_sub_cancel_left]
+  exact hsm.memSobolev_toDistr_quantizeSobolev he t r v
+
 /-- The decomposition `F = q # a - (q ∘ a - F) - (q # a - q ∘ a)` behind the local parametrix
 identity, on `H^s`, with `Op(q # a) = Op(q) ∘ Op(a)`. -/
 private theorem toDistr_quantizeSobolev_eq_sub_sub {a : Symbol n V W m}
@@ -213,14 +269,14 @@ theorem exists_isSmoothing_toDistr_smulLeftCLM_eq_quantizeSobolev_sub_sub
   have hφ0 : ∀ x ∉ tsupport φ, φ x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   -- The parametrix symbol `q = φ e`: `q ∘ a - φ` vanishes at large frequencies, and
   -- `q # a - q ∘ a` is a symbol `rem` of order `-1` vanishing outside `tsupport φ`.
-  set q := inclusion (zero_add (-m)).le (F.comp e)
-  have hq : q.HasCompactSpatialSupport := (hF.comp_right e).inclusion _
+  set q := smulLeft (φ.smooth ⊤) e
+  have hq : q.HasCompactSpatialSupport := hasCompactSpatialSupport_smulLeft (φ.smooth ⊤) hφ e
   set sm := q.comp a - Symbol.inclusion (le_of_eq (by ring)) F
   have hsm : sm.IsSmoothing := isSmoothing_of_coefficient_eq_zero R fun x ξ hξ ↦ by
     by_cases hx : x ∈ tsupport φ
-    · simp only [sm, q, F, coefficient_sub, coefficient_comp, coefficient_inclusion,
-        coefficient_ofSpatial, Pi.sub_apply, he x (hφU hx) ξ hξ, ContinuousLinearMap.smul_comp,
-        ContinuousLinearMap.id_comp, sub_self]
+    · simp only [sm, q, F, coefficient_sub, coefficient_comp, coefficient_smulLeft,
+        coefficient_inclusion, coefficient_ofSpatial, Pi.sub_apply, ContinuousLinearMap.smul_comp,
+        he x (hφU hx) ξ hξ, sub_self]
     · simp [sm, q, F, hφ0 x hx]
   have hsmK : sm.HasCompactSpatialSupport := (hq.comp_right a).sub (hF.inclusion _)
   set rem := q.sharpRemainder a ha 1
@@ -231,8 +287,8 @@ theorem exists_isSmoothing_toDistr_smulLeftCLM_eq_quantizeSobolev_sub_sub
   have hsm0 : -m + m ≤ 0 := (neg_add_cancel m).le
   have hrem1 : -m + m - ((1 : ℕ) : ℝ) ≤ -1 := by push_cast; linarith
   refine ⟨q, hq, inclusion hsm0 sm, hsmK.inclusion hsm0, inclusion hrem1 rem,
-    hremK.inclusion hrem1, hsm.inclusion hsm0, fun x hx ξ ↦ by simp [q, F, hφ0 x hx],
-    fun x hx ξ ↦ by rw [coefficient_inclusion, ← hrem]; simp [q, F, hφ0 x hx], fun s u ↦ ?_⟩
+    hremK.inclusion hrem1, hsm.inclusion hsm0, fun x hx ξ ↦ by simp [q, hφ0 x hx],
+    fun x hx ξ ↦ by rw [coefficient_inclusion, ← hrem]; simp [q, hφ0 x hx], fun s u ↦ ?_⟩
   rw [← toDistr_quantizeSobolev_ofSpatial_smul_id φ hF,
     toDistr_quantizeSobolev_eq_sub_sub ha hq hF hsmK,
     toDistr_quantizeSobolev_congr (coefficient_inclusion _ _).symm hsmK (hsmK.inclusion hsm0) rfl,

@@ -30,6 +30,11 @@ variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 def zeroCellPoint (i : cell C 0) : ↑(skeletonLT C ((1 : ℕ) : ℕ∞)) :=
   ⟨map 0 i ![], closedCell_subset_skeletonLT 0 i (by simp [closedCell_zero_eq_singleton])⟩
 
+/-- The point of a zero-cell is the image of the unique point of `Fin 0 → ℝ` under its
+characteristic map. -/
+@[simp]
+theorem coe_zeroCellPoint (i : cell C 0) : (zeroCellPoint C i : X) = map 0 i ![] := (rfl)
+
 /-- Distinct zero-cells have distinct points. -/
 theorem zeroCellPoint_injective : Function.Injective (zeroCellPoint C) :=
   fun _ _ h ↦ injective_map_zero C (congrArg Subtype.val h)
@@ -61,6 +66,14 @@ instance zeroSkeletonDiscreteTopology :
       rw [closedCell_zero_eq_singleton]
       exact ((Set.finite_singleton _).subset Set.inter_subset_right).isClosed
   exact Subtype.val_injective.preimage_image A ▸ hc.preimage continuous_subtypeVal
+
+variable {C} in
+/-- An open cell containing a point of the zero-skeleton is a zero-cell. -/
+lemma eq_zero_of_mem_skeletonLT_one_of_mem_openCell {y : X} (hy : y ∈ skeletonLT C 1) {n : ℕ}
+    {j : cell C n} (h : y ∈ openCell n j) : n = 0 := by
+  by_contra hn
+  exact Set.disjoint_left.1 (CWComplex.disjoint_skeletonLT_openCell
+    (by exact_mod_cast Nat.one_le_iff_ne_zero.2 hn)) hy h
 
 /-- The stage before the zero-skeleton is empty for an absolute CW complex. -/
 instance zeroSkeletonPreviousIsEmpty : IsEmpty (↑(skeletonLT C ((0 : ℕ) : ℕ∞))) :=

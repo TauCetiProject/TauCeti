@@ -9,13 +9,15 @@ public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Data.Finset.NatAntidiagonal
+public import Mathlib.Topology.MetricSpace.Ultra.Basic
 import Mathlib.Algebra.BigOperators.NatAntidiagonal
 import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
 /-!
-# Single-point families and associativity of discrete convolution
+# Single-point families, associativity and group reindexing of discrete convolution
 
 Mathlib's `DiscreteConvolution.single_convolution` says that `Pi.single 1 e` is a unit for
 convolution when `e` acts as one. More generally, the convolution of two families supported at one
@@ -25,6 +27,9 @@ Mathlib has no associativity for `DiscreteConvolution.ringConvolution`. Both bra
 `f ⋆ᵣ g ⋆ᵣ h` are sums of `f a * g b * h c` over the triples with `a * b * c = x`, grouped in two
 ways; when that triple family is summable and each inner convolution sum converges, the two
 groupings agree.
+
+On a group, the fibre of multiplication at `x` is parametrised by either coordinate, which turns
+convolution into the familiar sums `∑' y, L (f (x / y)) (g y)` and `∑' y, L (f y) (g (y⁻¹ * x))`.
 
 ## Main results
 
@@ -37,19 +42,30 @@ groupings agree.
 * `DiscreteConvolution.ringConvolution_assoc` and its additive version
   `DiscreteConvolution.addRingConvolution_assoc`: ring convolution is associative when the triple
   family and the inner convolutions are summable.
-* `DiscreteConvolution.addFiberEquivSub`: on an additive group, `y ↦ (x - y, y)` identifies `M`
-  with the fibre `addFiber x` of addition at `x`.
-* `DiscreteConvolution.addConvolution_eq_tsum_sub` and its ring version
-  `DiscreteConvolution.addRingConvolution_eq_tsum_sub`: on an additive group,
-  `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`.
-* `DiscreteConvolution.AddConvolutionExistsAt.hasSum_sub`: when the convolution exists at `x`,
-  the series `∑' y, L (f (x - y)) (g y)` converges to `(f ⋆₊[L] g) x`.
-* `DiscreteConvolution.addConvolution_eq_tsum_neg_add` and its ring version
-  `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`: on an additive group,
-  `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`.
-* `DiscreteConvolution.hasSum_tsum_mul_sub`: on an additive group, the convolution
-  `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable families in a complete normed ring
-  sums to `(∑ f) (∑ g)`.
+* `DiscreteConvolution.mulFiberEquivDiv` and its additive version
+  `DiscreteConvolution.addFiberEquivSub`: on a group, `y ↦ (x / y, y)` identifies `M` with the
+  fibre `mulFiber x` of multiplication at `x`.
+* `DiscreteConvolution.convolution_eq_tsum_div` and its ring version
+  `DiscreteConvolution.ringConvolution_eq_tsum_div`: on a group,
+  `(f ⋆[L] g) x = ∑' y, L (f (x / y)) (g y)`; additively
+  `DiscreteConvolution.addConvolution_eq_tsum_sub` and
+  `DiscreteConvolution.addRingConvolution_eq_tsum_sub`.
+* `DiscreteConvolution.ConvolutionExistsAt.hasSum_div` and its additive version
+  `DiscreteConvolution.AddConvolutionExistsAt.hasSum_sub`: when the convolution exists at `x`,
+  the series `∑' y, L (f (x / y)) (g y)` converges to `(f ⋆[L] g) x`.
+* `DiscreteConvolution.convolution_eq_tsum_inv_mul` and its ring version
+  `DiscreteConvolution.ringConvolution_eq_tsum_inv_mul`: on a group,
+  `(f ⋆[L] g) x = ∑' y, L (f y) (g (y⁻¹ * x))`; additively
+  `DiscreteConvolution.addConvolution_eq_tsum_neg_add` and
+  `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`.
+* `DiscreteConvolution.norm_ringConvolution_apply_le` and its additive version
+  `DiscreteConvolution.norm_addRingConvolution_apply_le`: on a group, over an ultrametric ring, if
+  the coefficient norms of `f` and `g` are bounded by `A` and `B`, those of `f ⋆ᵣ g` are bounded by
+  `A B`.
+* `DiscreteConvolution.hasSum_tsum_mul_div` and its additive version
+  `DiscreteConvolution.hasSum_tsum_mul_sub`: on a group, for two absolutely summable families
+  in a complete normed ring, `x ↦ ∑' y, f y * g (x / y)` (their convolution when the group is
+  commutative) sums to `(∑ f) (∑ g)`.
 * `DiscreteConvolution.tsum_mul_sub_eq_sum_antidiagonal`,
   `DiscreteConvolution.tsum_mul_sub_eq_zero_of_neg`: the convolution `∑' i, f i * g (m - i)` of
   two families on `ℤ` supported in nonnegative degrees is the finite antidiagonal sum at a
@@ -143,93 +159,127 @@ theorem ringConvolution_assoc {f g h : M → R} (hfg : ConvolutionExists (.mul �
 
 end Assoc
 
-section AddGroup
+section Group
 
-variable {M S E E' F R : Type*} [AddGroup M]
+variable {M S E E' F R : Type*} [Group M]
 
-/-- On an additive group, the fibre of addition at `x` is parametrised by its second
-coordinate. -/
-def addFiberEquivSub (x : M) : M ≃ addFiber x where
-  toFun y := ⟨(x - y, y), mem_addFiber.2 (sub_add_cancel x y)⟩
+/-- On a group, the fibre of multiplication at `x` is parametrised by its second coordinate. -/
+@[to_additive
+  /-- On an additive group, the fibre of addition at `x` is parametrised by its second
+  coordinate. -/]
+def mulFiberEquivDiv (x : M) : M ≃ mulFiber x where
+  toFun y := ⟨(x / y, y), mem_mulFiber.2 (div_mul_cancel x y)⟩
   invFun ab := ab.val.2
   left_inv _ := rfl
-  right_inv ab := Subtype.ext <| Prod.ext (eq_sub_of_add_eq (mem_addFiber.1 ab.property)).symm rfl
+  right_inv ab := Subtype.ext <| Prod.ext (eq_div_of_mul_eq' (mem_mulFiber.1 ab.property)).symm rfl
 
-@[simp]
-theorem coe_addFiberEquivSub_apply (x y : M) : (addFiberEquivSub x y : M × M) = (x - y, y) :=
+@[to_additive (attr := simp)]
+theorem coe_mulFiberEquivDiv_apply (x y : M) : (mulFiberEquivDiv x y : M × M) = (x / y, y) :=
   (rfl)
 
-@[simp]
-theorem addFiberEquivSub_symm_apply (x : M) (ab : addFiber x) :
-    (addFiberEquivSub x).symm ab = ab.val.2 :=
+@[to_additive (attr := simp)]
+theorem mulFiberEquivDiv_symm_apply (x : M) (ab : mulFiber x) :
+    (mulFiberEquivDiv x).symm ab = ab.val.2 :=
   (rfl)
 
-/-- On an additive group, the fibre of addition at `x` is parametrised by its second coordinate,
-so additive convolution is the familiar sum `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`. -/
-@[simp]
-theorem addConvolution_eq_tsum_sub [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E']
-    [AddCommMonoid F] [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
-    (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (g : M → E') (x : M) :
-    (f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y) := by
-  rw [addConvolution]
-  exact ((addFiberEquivSub x).tsum_eq fun ab ↦ L (f ab.val.1) (g ab.val.2)).symm
+section Bilinear
 
-/-- On an additive group, when the convolution of `f` and `g` exists at `x`, the series
-`∑' y, L (f (x - y)) (g y)` converges to `(f ⋆₊[L] g) x`. -/
-theorem AddConvolutionExistsAt.hasSum_sub [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E']
-    [AddCommMonoid F] [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
-    {L : E →ₗ[S] E' →ₗ[S] F} {f : M → E} {g : M → E'} {x : M}
-    (hfg : AddConvolutionExistsAt L f g x) :
-    HasSum (fun y ↦ L (f (x - y)) (g y)) ((f ⋆₊[L] g) x) := by
-  rw [addConvolution_eq_tsum_sub]
-  exact ((addFiberEquivSub x).summable_iff.2 hfg).hasSum
+variable [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E'] [AddCommMonoid F] [Module S E]
+  [Module S E'] [Module S F] [TopologicalSpace F]
 
-/-- On an additive group, `(f ⋆ᵣ₊ g) x = ∑' y, f (x - y) * g y`. -/
-theorem addRingConvolution_eq_tsum_sub [NonUnitalNonAssocSemiring R] [TopologicalSpace R]
-    (f g : M → R) (x : M) :
-    (f ⋆ᵣ₊ g) x = ∑' y, f (x - y) * g y :=
-  addConvolution_eq_tsum_sub _ f g x
+/-- On a group, the fibre of multiplication at `x` is parametrised by its second coordinate, so
+convolution is the sum `(f ⋆[L] g) x = ∑' y, L (f (x / y)) (g y)`. -/
+@[to_additive (dont_translate := S E E' F) (attr := simp) addConvolution_eq_tsum_sub
+  /-- On an additive group, the fibre of addition at `x` is parametrised by its second
+  coordinate, so additive convolution is the familiar sum
+  `(f ⋆₊[L] g) x = ∑' y, L (f (x - y)) (g y)`. -/]
+theorem convolution_eq_tsum_div (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (g : M → E') (x : M) :
+    (f ⋆[L] g) x = ∑' y, L (f (x / y)) (g y) := by
+  rw [convolution]
+  exact ((mulFiberEquivDiv x).tsum_eq fun ab ↦ L (f ab.val.1) (g ab.val.2)).symm
 
-/-- On an additive group, the fibre of addition at `x` is also parametrised by its first
-coordinate, so `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`. -/
-theorem addConvolution_eq_tsum_neg_add [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E']
-    [AddCommMonoid F] [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
-    (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (g : M → E') (x : M) :
-    (f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x)) := by
-  let e : M ≃ addFiber x :=
-    { toFun y := ⟨(y, -y + x), mem_addFiber.2 (add_neg_cancel_left y x)⟩
+/-- On a group, when the convolution of `f` and `g` exists at `x`, the series
+`∑' y, L (f (x / y)) (g y)` converges to `(f ⋆[L] g) x`. -/
+@[to_additive (dont_translate := S E E' F)
+  /-- On an additive group, when the convolution of `f` and `g` exists at `x`, the series
+  `∑' y, L (f (x - y)) (g y)` converges to `(f ⋆₊[L] g) x`. -/]
+theorem ConvolutionExistsAt.hasSum_div {L : E →ₗ[S] E' →ₗ[S] F} {f : M → E} {g : M → E'}
+    {x : M} (hfg : ConvolutionExistsAt L f g x) :
+    HasSum (fun y ↦ L (f (x / y)) (g y)) ((f ⋆[L] g) x) := by
+  rw [convolution_eq_tsum_div]
+  exact ((mulFiberEquivDiv x).summable_iff.2 hfg).hasSum
+
+/-- On a group, the fibre of multiplication at `x` is also parametrised by its first coordinate,
+so `(f ⋆[L] g) x = ∑' y, L (f y) (g (y⁻¹ * x))`. -/
+@[to_additive (dont_translate := S E E' F) addConvolution_eq_tsum_neg_add
+  /-- On an additive group, the fibre of addition at `x` is also parametrised by its first
+  coordinate, so `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`. -/]
+theorem convolution_eq_tsum_inv_mul (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (g : M → E') (x : M) :
+    (f ⋆[L] g) x = ∑' y, L (f y) (g (y⁻¹ * x)) := by
+  let e : M ≃ mulFiber x :=
+    { toFun y := ⟨(y, y⁻¹ * x), mem_mulFiber.2 (mul_inv_cancel_left y x)⟩
       invFun ab := ab.val.1
       left_inv _ := rfl
       right_inv ab :=
-        Subtype.ext <| Prod.ext rfl (eq_neg_add_of_add_eq (mem_addFiber.1 ab.property)).symm }
-  rw [addConvolution]
+        Subtype.ext <| Prod.ext rfl (eq_inv_mul_of_mul_eq (mem_mulFiber.1 ab.property)).symm }
+  rw [convolution]
   exact (e.tsum_eq fun ab ↦ L (f ab.val.1) (g ab.val.2)).symm
 
-/-- On an additive group, `(f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x)`. -/
-theorem addRingConvolution_eq_tsum_neg_add [NonUnitalNonAssocSemiring R] [TopologicalSpace R]
-    (f g : M → R) (x : M) :
-    (f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x) :=
-  addConvolution_eq_tsum_neg_add _ f g x
+end Bilinear
 
-/-- On an additive group, the convolution `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable
-families in a complete normed ring sums to `(∑ f) (∑ g)`. -/
-theorem hasSum_tsum_mul_sub [NormedRing R] [CompleteSpace R] {f g : M → R}
+/-- On a group, `(f ⋆ᵣ g) x = ∑' y, f (x / y) * g y`. -/
+@[to_additive (dont_translate := R) addRingConvolution_eq_tsum_sub
+  /-- On an additive group, `(f ⋆ᵣ₊ g) x = ∑' y, f (x - y) * g y`. -/]
+theorem ringConvolution_eq_tsum_div [NonUnitalNonAssocSemiring R] [TopologicalSpace R]
+    (f g : M → R) (x : M) :
+    (f ⋆ᵣ g) x = ∑' y, f (x / y) * g y :=
+  convolution_eq_tsum_div _ f g x
+
+/-- On a group, `(f ⋆ᵣ g) x = ∑' y, f y * g (y⁻¹ * x)`. -/
+@[to_additive (dont_translate := R) addRingConvolution_eq_tsum_neg_add
+  /-- On an additive group, `(f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x)`. -/]
+theorem ringConvolution_eq_tsum_inv_mul [NonUnitalNonAssocSemiring R] [TopologicalSpace R]
+    (f g : M → R) (x : M) :
+    (f ⋆ᵣ g) x = ∑' y, f y * g (y⁻¹ * x) :=
+  convolution_eq_tsum_inv_mul _ f g x
+
+/-- On a group, over an ultrametric ring, if the coefficient norms of `f` and `g` are bounded by
+`A` and `B`, those of `f ⋆ᵣ g` are bounded by `A B`. -/
+@[to_additive (dont_translate := R) norm_addRingConvolution_apply_le
+  /-- On an additive group, over an ultrametric ring, if the coefficient norms of `f` and `g` are
+  bounded by `A` and `B`, those of `f ⋆ᵣ₊ g` are bounded by `A B`. -/]
+theorem norm_ringConvolution_apply_le [SeminormedRing R] [IsUltrametricDist R] {f g : M → R}
+    {A B : ℝ} (hf : ∀ x, ‖f x‖ ≤ A) (hg : ∀ x, ‖g x‖ ≤ B) (x : M) : ‖(f ⋆ᵣ g) x‖ ≤ A * B := by
+  have hA : 0 ≤ A := (norm_nonneg _).trans (hf 1)
+  rw [ringConvolution_eq_tsum_div]
+  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg hA ((norm_nonneg _).trans (hg 1))) fun y ↦
+      (norm_mul_le _ _).trans (mul_le_mul (hf _) (hg _) (norm_nonneg _) hA)
+
+/-- On a group, for two absolutely summable families `f`, `g` in a complete normed ring, the
+family `x ↦ ∑' y, f y * g (x / y)` (the convolution of `f` and `g` when `M` is commutative) sums
+to `(∑ f) (∑ g)`. -/
+@[to_additive (dont_translate := R) hasSum_tsum_mul_sub
+  /-- On an additive group, for two absolutely summable families `f`, `g` in a complete normed
+  ring, the family `x ↦ ∑' y, f y * g (x - y)` (the convolution of `f` and `g` when `M` is
+  commutative) sums to `(∑ f) (∑ g)`. -/]
+theorem hasSum_tsum_mul_div [NormedRing R] [CompleteSpace R] {f g : M → R}
     (hf : Summable fun y ↦ ‖f y‖) (hg : Summable fun z ↦ ‖g z‖) :
-    HasSum (fun x ↦ ∑' y, f y * g (x - y)) ((∑' y, f y) * ∑' z, g z) := by
-  -- reindex the product `∑ (y, z), f y g z` by `(x, y) = (z + y, y)`
+    HasSum (fun x ↦ ∑' y, f y * g (x / y)) ((∑' y, f y) * ∑' z, g z) := by
+  -- reindex the product `∑ (y, z), f y g z` by `(x, y) = (z * y, y)`
   let e : M × M ≃ M × M :=
-    { toFun p := (p.2 + p.1, p.1)
-      invFun q := (q.2, q.1 - q.2)
+    { toFun p := (p.2 * p.1, p.1)
+      invFun q := (q.2, q.1 / q.2)
       left_inv p := by simp
       right_inv q := by simp }
-  have hF : HasSum (fun p : M × M ↦ f p.2 * g (p.1 - p.2)) ((∑' y, f y) * ∑' z, g z) := by
+  have hF : HasSum (fun p : M × M ↦ f p.2 * g (p.1 / p.2)) ((∑' y, f y) * ∑' z, g z) := by
     rw [← e.hasSum_iff]
     convert hf.of_norm.hasSum.mul hg.of_norm.hasSum (summable_mul_of_summable_norm hf hg) using 1
     ext p
     simp [e]
   exact hF.prod_fiberwise fun x ↦ (hF.summable.prod_factor x).hasSum
 
-end AddGroup
+end Group
 
 section Int
 

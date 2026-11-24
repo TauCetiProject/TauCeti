@@ -51,7 +51,8 @@ sequence is degreewise bounded:
 The degreewise boundedness of the spectral sequence is imposed through the vanishing of the
 graded cohomology at all indices beyond a bound, as in the exhaustive case. The successive
 approximation above is elementwise and uses no `lim¹` sequence. The weak convergence of a regular
-spectral sequence that is not degreewise bounded is not treated here.
+spectral sequence that is not degreewise bounded is in
+`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Regular`.
 
 ## References
 

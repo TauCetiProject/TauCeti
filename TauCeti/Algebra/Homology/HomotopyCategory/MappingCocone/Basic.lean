@@ -20,8 +20,9 @@ import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 The mapping cocone `mappingCocone φ` of a morphism `φ : K ⟶ L` of cochain complexes is
 `(mappingCone φ)⟦-1⟧`, and its projections `mappingCocone.fst φ : mappingCocone φ ⟶ K` and
 `mappingCocone.snd φ` are built from those of the mapping cone. This file records the components
-of these projections, the differential of the second projection, and their naturality
-with respect to the shifted mapping cone map induced by a commutative square.
+of these projections, the differential of the second projection and of the two inclusions, and
+the naturality of the projections with respect to the shifted mapping cone map induced by a
+commutative square.
 
 For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of cochain complexes in an abelian category,
 the first map lifts to the mapping cocone of the second, and this lift `X₁ ⟶ mappingCocone S.g`
@@ -35,6 +36,9 @@ compares the mapping cone of the first map with the third term.
 * `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst` and
   `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v`: the projections of
   the mapping cocone are natural in commutative squares.
+* `CochainComplex.mappingCocone.inl_v_d`, `CochainComplex.mappingCocone.inr_v_d`: the
+  differential of the mapping cocone on the two inclusions; in particular `inr φ` sends cocycles
+  to cocycles (`CochainComplex.mappingCocone.comp_inr_v_d_eq_zero`).
 * `CochainComplex.mappingCocone.triangle_mor₃_f_shiftFunctorObjXIso_hom`: the connecting morphism
   of `CochainComplex.mappingCocone.triangle` is, in components, `CochainComplex.mappingCocone.inr`.
 * `CochainComplex.mappingCocone.isStrictlyGE`: the mapping cocone of a morphism of complexes
@@ -148,6 +152,35 @@ lemma ext_to {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + 
     (h₂ : f ≫ (snd φ).v p q hpq = g ≫ (snd φ).v p q hpq) : f = g := by
   rw [← Category.comp_id f, ← Category.comp_id g, ← id_X φ p q hpq, Preadditive.comp_add,
     Preadditive.comp_add, reassoc_of% h₁, reassoc_of% h₂]
+
+/-- The differential of the mapping cocone on the inclusion of `K`:
+`d (inl a) = inl (d a) - inr (φ a)`. -/
+@[reassoc]
+lemma inl_v_d {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + 1 = q) :
+    (inl φ).v p p (add_zero p) ≫ (mappingCocone φ).d p q =
+      K.d p q ≫ (inl φ).v q q (add_zero q) - φ.f p ≫ (inr φ).val.v p q hpq := by
+  obtain rfl : q = p + 1 := hpq.symm
+  apply ext_to φ (p + 1) p (by lia)
+  · rw [Category.assoc, ← (fst φ).comm, inl_v_fst_f_assoc]
+    simp
+  · simp [d_snd_v]
+
+/-- The inclusion `inr φ` of `L` is a cocycle of degree `1`:
+`d (inr b) = -inr (d b)`. -/
+@[reassoc]
+lemma inr_v_d {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q r : ℤ) (hpq : p + 1 = q)
+    (hqr : q + 1 = r) :
+    (inr φ).val.v p q hpq ≫ (mappingCocone φ).d q r = -(L.d p q ≫ (inr φ).val.v q r hqr) := by
+  have h := δ_v 1 2 rfl (inr φ).val p r (by lia) q q (by lia) hpq
+  rw [Cocycle.δ_eq_zero, Cochain.zero_v, Int.negOnePow_even 2 ⟨1, rfl⟩, one_smul] at h
+  exact eq_neg_of_add_eq_zero_left h.symm
+
+/-- The inclusion `inr φ` sends cocycles of `L` to cocycles of the mapping cocone: if
+`x ≫ d = 0`, then `(x ≫ inr φ) ≫ d = 0`. -/
+lemma comp_inr_v_d_eq_zero {K L : CochainComplex C ℤ} (φ : K ⟶ L) {A : C} (p q r : ℤ)
+    (hpq : p + 1 = q) (hqr : q + 1 = r) (x : A ⟶ L.X p) (hx : x ≫ L.d p q = 0) :
+    (x ≫ (inr φ).val.v p q hpq) ≫ (mappingCocone φ).d q r = 0 := by
+  simp [inr_v_d φ p q r hpq hqr, reassoc_of% hx]
 
 /-- The connecting morphism `L ⟶ (mappingCocone φ)⟦1⟧` of the triangle `mappingCocone.triangle φ`
 is, in components, the inclusion `mappingCocone.inr φ` of `L` into the mapping cocone, without

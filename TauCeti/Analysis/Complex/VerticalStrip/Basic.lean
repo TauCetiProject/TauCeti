@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Complex.HasPrimitives
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 
 /-!
 # Vertical strips
@@ -18,7 +18,7 @@ strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under 
 This file records their membership criteria, behavior under reflection, convexity, closure, the
 exponential gauge multiplier `scaleFactor` normalizing strip boundary bounds, and holomorphic
 primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip
-(specializing `TauCeti.Analysis.Complex.HasPrimitives` to
+(specializing `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
 `verticalClosedStrip a b = Icc a b ×ℂ univ`), and the Cauchy rectangle contour-shift identity
 `DiffContOnCl.intervalIntegral_add_mul_I_eq` equating vertical line integrals of vertically
 periodic holomorphic strip functions.
