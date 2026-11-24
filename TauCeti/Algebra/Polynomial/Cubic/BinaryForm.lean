@@ -219,10 +219,17 @@ theorem discr_smul :
 @[simp]
 theorem scalar_smul (u : Rˣ) :
     GeneralLinearGroup.scalar (Fin 2) u • P = ⟨u * P.a, u * P.b, u * P.c, u * P.d⟩ := by
-  have hu (x : R) : ((u⁻¹ : Rˣ) : R) ^ 2 * (x * u ^ 3) = u * x := by
-    calc ((u⁻¹ : Rˣ) : R) ^ 2 * (x * u ^ 3) = ((u⁻¹ : Rˣ) * u : R) ^ 2 * (u * x) := by ring
-      _ = u * x := by rw [Units.inv_mul, one_pow, one_mul]
-  ext <;> simp [← pow_succ, ← pow_succ', hu]
+  -- Each coefficient becomes `(u²)⁻¹ · u³ · x`, which `u⁻² u² = 1` reduces to `u · x`.
+  have hu : (↑(u ^ 2)⁻¹ : R) * (u : R) ^ 2 = 1 := by
+    rw [← Units.val_pow_eq_pow_val, Units.inv_mul]
+  ext <;> simp only [smul_a, smul_b, smul_c, smul_d, polynomialAction_a, polynomialAction_b,
+    polynomialAction_c, polynomialAction_d, GeneralLinearGroup.coe_scalar,
+    GeneralLinearGroup.det_scalar, Fintype.card_fin, scalar_apply, diagonal_apply_eq,
+    diagonal_apply_ne _ zero_ne_one, diagonal_apply_ne _ one_ne_zero]
+  · linear_combination (u : R) * P.a * hu
+  · linear_combination (u : R) * P.b * hu
+  · linear_combination (u : R) * P.c * hu
+  · linear_combination (u : R) * P.d * hu
 
 /-- The twisted action commutes with base change of the coefficients along a ring
 homomorphism. -/
