@@ -186,9 +186,9 @@ theorem target_eq : target a₁ a₃ = gammaOneThreeForm
     rw [target_eq_map, map_a₆, Ideal.Quotient.eq_zero_iff_mem]
     exact Ideal.subset_span (by simp)
   ext
-  · rw [target_eq_smul, smul_gammaOneThreeForm_a₁, gammaOneThreeForm_a₁]
+  · rw [target_eq_smul, variableChange_gammaOneThreeForm_a₁, gammaOneThreeForm_a₁]
   · rw [gammaOneThreeForm_a₂]; exact h₂
-  · rw [target_eq_smul, smul_gammaOneThreeForm_a₃, gammaOneThreeForm_a₃]
+  · rw [target_eq_smul, variableChange_gammaOneThreeForm_a₃, gammaOneThreeForm_a₃]
   · rw [gammaOneThreeForm_a₄]; exact h₄
   · rw [gammaOneThreeForm_a₆]; exact h₆
 
@@ -290,21 +290,21 @@ end
 /-- The relation `a₂ = 0` of `Γ`: `3r = s² + a₁s`. -/
 theorem three_mul_r : 3 * (r : ArrowRing a₁ a₃) = s ^ 2 + algebraMap B _ a₁ * s := by
   have h := congrArg WeierstrassCurve.a₂ (target_eq (a₁ := a₁) (a₃ := a₃))
-  rw [target_eq_smul, smul_gammaOneThreeForm_a₂, gammaOneThreeForm_a₂] at h
+  rw [target_eq_smul, variableChange_gammaOneThreeForm_a₂, gammaOneThreeForm_a₂] at h
   linear_combination h
 
 /-- The relation `a₄ = 0` of `Γ`. -/
 theorem relation_a₄ : -(s * algebraMap B _ a₃) - (t + r * s) * algebraMap B _ a₁ + 3 * r ^ 2 -
     2 * s * t = (0 : ArrowRing a₁ a₃) := by
   have h := congrArg WeierstrassCurve.a₄ (target_eq (a₁ := a₁) (a₃ := a₃))
-  rw [target_eq_smul, smul_gammaOneThreeForm_a₄, gammaOneThreeForm_a₄] at h
+  rw [target_eq_smul, variableChange_gammaOneThreeForm_a₄, gammaOneThreeForm_a₄] at h
   exact h
 
 /-- The relation `a₆ = 0` of `Γ`. -/
 theorem relation_a₆ : r ^ 3 - t * algebraMap B _ a₃ - t ^ 2 - r * t * algebraMap B _ a₁ =
     (0 : ArrowRing a₁ a₃) := by
   have h := congrArg WeierstrassCurve.a₆ (target_eq (a₁ := a₁) (a₃ := a₃))
-  rw [target_eq_smul, smul_gammaOneThreeForm_a₆, gammaOneThreeForm_a₆] at h
+  rw [target_eq_smul, variableChange_gammaOneThreeForm_a₆, gammaOneThreeForm_a₆] at h
   exact h
 
 end ArrowRing
@@ -618,8 +618,8 @@ private def repVec (p : MvPolynomial (Fin 3) B) : Fin 8 → B :=
 private theorem rep_a₂ :
     rep a₁ a₃ (strictChange B • (gammaOneThreeForm a₁ a₃).map C).a₂ = 0 := by
   have h := congrArg WeierstrassCurve.a₂ (map_strictChange_smul a₁ a₃ (rep a₁ a₃))
-  simp only [WeierstrassCurve.map_a₂, smul_gammaOneThreeForm_a₂, rep_X_zero, rep_X_one, rep_X_two,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h
+  simp only [WeierstrassCurve.map_a₂, variableChange_gammaOneThreeForm_a₂, rep_X_zero,
+    rep_X_one, rep_X_two, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h
   rw [h]
   linear_combination (repS a₁ a₃ ^ 2 + algebraMap B _ a₁ * repS a₁ a₃) *
     three_mul_algebraMap_invOf B (RepAlg a₁ a₃)
@@ -627,8 +627,8 @@ private theorem rep_a₂ :
 private theorem repVec_a₄ :
     repVec a₁ a₃ (strictChange B • (gammaOneThreeForm a₁ a₃).map C).a₄ = 0 := by
   have h := congrArg WeierstrassCurve.a₄ (map_strictChange_smul a₁ a₃ (rep a₁ a₃))
-  simp only [WeierstrassCurve.map_a₄, smul_gammaOneThreeForm_a₄, rep_X_zero, rep_X_one, rep_X_two,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h
+  simp only [WeierstrassCurve.map_a₄, variableChange_gammaOneThreeForm_a₄, rep_X_zero,
+    rep_X_one, rep_X_two, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h
   rw [repVec, h]
   simp only [repVal, map_add, map_sub, map_mul, map_pow, map_neg, map_ofNat, AlgHom.commutes,
     repVal_repS, repVal_repT₉]
@@ -651,8 +651,8 @@ private theorem repVec_a₄ :
 private theorem repVec_a₆ :
     repVec a₁ a₃ (strictChange B • (gammaOneThreeForm a₁ a₃).map C).a₆ = 0 := by
   have h := congrArg WeierstrassCurve.a₆ (map_strictChange_smul a₁ a₃ (rep a₁ a₃))
-  simp only [WeierstrassCurve.map_a₆, smul_gammaOneThreeForm_a₆, rep_X_zero, rep_X_one, rep_X_two,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h
+  simp only [WeierstrassCurve.map_a₆, variableChange_gammaOneThreeForm_a₆, rep_X_zero,
+    rep_X_one, rep_X_two, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h
   rw [repVec, h]
   simp only [repVal, map_add, map_sub, map_mul, map_pow, AlgHom.commutes, repVal_repS,
     repVal_repT₉]

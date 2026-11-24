@@ -86,29 +86,29 @@ section VariableChange
 variable (r s t : B)
 
 /-- The coefficient `a₁` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
-theorem smul_gammaOneThreeForm_a₁ :
+theorem variableChange_gammaOneThreeForm_a₁ :
     ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₁ = a₁ + 2 * s := by
   simp [variableChange_a₁]
 
 /-- The coefficient `a₂` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
-theorem smul_gammaOneThreeForm_a₂ :
+theorem variableChange_gammaOneThreeForm_a₂ :
     ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₂ = 3 * r - s ^ 2 - s * a₁ := by
   simp [variableChange_a₂]
   ring
 
 /-- The coefficient `a₃` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
-theorem smul_gammaOneThreeForm_a₃ :
+theorem variableChange_gammaOneThreeForm_a₃ :
     ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₃ = a₃ + r * a₁ + 2 * t := by
   simp [variableChange_a₃]
 
 /-- The coefficient `a₄` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
-theorem smul_gammaOneThreeForm_a₄ :
+theorem variableChange_gammaOneThreeForm_a₄ :
     ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₄ =
       -(s * a₃) - (t + r * s) * a₁ + 3 * r ^ 2 - 2 * s * t := by
   simp [variableChange_a₄]
 
 /-- The coefficient `a₆` of the image of `Y² + a₁XY + a₃Y = X³` under `(1, r, s, t)`. -/
-theorem smul_gammaOneThreeForm_a₆ :
+theorem variableChange_gammaOneThreeForm_a₆ :
     ((⟨1, r, s, t⟩ : VariableChange B) • gammaOneThreeForm a₁ a₃).a₆ =
       r ^ 3 - t * a₃ - t ^ 2 - r * t * a₁ := by
   simp [variableChange_a₆]
