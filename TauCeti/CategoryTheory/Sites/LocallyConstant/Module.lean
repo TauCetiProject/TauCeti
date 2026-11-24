@@ -13,7 +13,8 @@ public import Mathlib.CategoryTheory.Sites.PreservesLocallyBijective
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
 public import TauCeti.CategoryTheory.Sites.Continuous
-public import TauCeti.CategoryTheory.Sites.LocallyConstant
+public import TauCeti.CategoryTheory.Sites.Limits
+public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
 
 /-!
 # Kernels and cokernels of locally constant sheaves of modules
@@ -268,12 +269,6 @@ end Constant
 section Closure
 
 variable [HasSheafify J (ModuleCat.{w} Λ)]
-
-/-- The constant sheaf functor preserves finite limits: it is the constant presheaf functor
-followed by sheafification, both of which preserve finite limits. -/
-instance preservesFiniteLimits_constantSheaf :
-    PreservesFiniteLimits (constantSheaf J (ModuleCat.{w} Λ)) :=
-  inferInstanceAs (PreservesFiniteLimits (Functor.const Cᵒᵖ ⋙ presheafToSheaf J _))
 
 /-- The constant sheaf functor preserves finite colimits: it is the constant presheaf functor
 followed by sheafification, both of which preserve finite colimits. -/
