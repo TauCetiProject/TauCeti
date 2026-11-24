@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Orthogonality
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
-import TauCeti.NumberTheory.DirichletCharacter.Primitive.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Primitive
 
 /-!
 # Continued Dirichlet `L`-functions of primitive characters

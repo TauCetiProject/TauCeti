@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.DedekindZeta
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
-import TauCeti.NumberTheory.DirichletCharacter.Primitive.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Primitive
 
 /-!
 # Cyclotomic factorizations of the continued Dedekind zeta function

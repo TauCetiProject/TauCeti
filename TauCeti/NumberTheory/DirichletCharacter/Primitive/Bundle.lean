@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Basic
+public import TauCeti.NumberTheory.DirichletCharacter.Primitive
 
 /-!
 # Primitive Dirichlet characters bundled with their conductor
