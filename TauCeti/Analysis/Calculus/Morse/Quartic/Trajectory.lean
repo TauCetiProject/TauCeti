@@ -236,18 +236,16 @@ theorem quarticTrajectoryPoint_mem_Icc (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i
 
 /-- **The flow translates the time shifts**: flowing for time `s` adds `s` to every time shift. -/
 theorem quarticWellSumFlow_quarticTrajectoryPoint (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1)
-    (hpq : ∀ i, p i ≠ q i → p i = 0) (s : ℝ) (τ : {i // p i ≠ q i} → ℝ) :
+    (s : ℝ) (τ : {i // p i ≠ q i} → ℝ) :
     quarticWellSumFlow s (quarticTrajectoryPoint p q τ) =
       quarticTrajectoryPoint p q fun j ↦ s + τ j := by
-  have hp := forall_eq_neg_one_or_eq_zero_or_eq_one_left hq hpq
   funext i
   rw [quarticWellSumFlow_apply]
   by_cases h : p i = q i
-  · rw [quarticTrajectoryPoint_apply_of_eq _ h, quarticTrajectoryPoint_apply_of_eq _ h]
-    rcases hp i with h' | h' | h' <;> simp [h']
+  · rw [quarticTrajectoryPoint_apply_of_eq _ h, quarticTrajectoryPoint_apply_of_eq _ h, h]
+    rcases hq i with h' | h' | h' <;> simp [h']
   · rw [quarticTrajectoryPoint_apply_of_ne _ h, quarticTrajectoryPoint_apply_of_ne _ h]
-    rcases eq_neg_one_or_eq_one_of_ne hq hpq h with h' | h' <;>
-      simp [h', intervalBaseFlow_neg]
+    rcases hq i with h' | h' | h' <;> simp [h', intervalBaseFlow_neg]
 
 /-- The point with time shifts `τ` lies on a trajectory from `p` to `q`. -/
 theorem quarticTrajectoryPoint_mem_quarticConnectingSet (hq : ∀ i, q i = -1 ∨ q i = 0 ∨ q i = 1)
@@ -318,7 +316,7 @@ theorem quarticTimeShift_quarticWellSumFlow (hy : y ∈ quarticConnectingSet p q
     quarticTimeShift p q (quarticWellSumFlow s y) = fun j ↦ s + quarticTimeShift p q y j := by
   obtain ⟨hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
   conv_lhs => rw [← quarticTrajectoryPoint_quarticTimeShift hy,
-    quarticWellSumFlow_quarticTrajectoryPoint hq hpq]
+    quarticWellSumFlow_quarticTrajectoryPoint hq]
   exact quarticTimeShift_quarticTrajectoryPoint hq hpq _
 
 /-! ### Parametrized trajectories -/
@@ -342,7 +340,7 @@ theorem isIntegralCurve_quarticTrajectoryPoint (hq : ∀ i, q i = -1 ∨ q i = 0
     (hpq : ∀ i, p i ≠ q i → p i = 0) (τ : {i // p i ≠ q i} → ℝ) :
     IsIntegralCurve (fun t ↦ quarticTrajectoryPoint p q fun j ↦ t + τ j)
       (fun _ z i ↦ -∇ (intervalBasePotential 1) (z i)) := by
-  simpa only [quarticWellSumFlow_quarticTrajectoryPoint hq hpq] using
+  simpa only [quarticWellSumFlow_quarticTrajectoryPoint hq] using
     isIntegralCurve_quarticWellSumFlow (quarticTrajectoryPoint_mem_Icc hq hpq τ)
 
 /-- **The parametrized trajectories from `p` to `q`.** A negative gradient trajectory of the
@@ -355,10 +353,10 @@ theorem eq_quarticTrajectoryPoint_of_isIntegralCurve {γ : ℝ → ι → ℝ}
     (htop : Tendsto γ atTop (𝓝 q)) :
     γ = fun t ↦ quarticTrajectoryPoint p q fun j ↦ t + quarticTimeShift p q (γ 0) j := by
   have h0 := mem_quarticConnectingSet_of_isIntegralCurve hγ hmem hbot htop
-  obtain ⟨hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet h0
+  obtain ⟨hq, -⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet h0
   conv_lhs => rw [eq_quarticWellSumFlow_of_isIntegralCurve hγ hmem,
     ← quarticTrajectoryPoint_quarticTimeShift h0]
-  simp only [quarticWellSumFlow_quarticTrajectoryPoint hq hpq]
+  simp only [quarticWellSumFlow_quarticTrajectoryPoint hq]
 
 /-- Every negative gradient trajectory of the Euclidean quartic from `p` to `q` staying in the cube
 is `t ↦ quarticTrajectoryPoint p q (t + τ)` for unique time shifts `τ`. -/
@@ -399,7 +397,7 @@ theorem exists_quarticWellSumFlow_eq_iff (hy : y ∈ quarticConnectingSet p q) {
     (hy' : y' ∈ quarticConnectingSet p q) :
     (∃ s, quarticWellSumFlow s y = y') ↔
       quarticTimeShift p q y' - quarticTimeShift p q y ∈ ℝ ∙ (1 : {i // p i ≠ q i} → ℝ) := by
-  obtain ⟨hq, hpq⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
+  obtain ⟨hq, -⟩ := forall_eq_or_eq_of_mem_quarticConnectingSet hy
   rw [Submodule.mem_span_singleton]
   constructor
   · rintro ⟨s, rfl⟩
@@ -410,7 +408,7 @@ theorem exists_quarticWellSumFlow_eq_iff (hy : y ∈ quarticConnectingSet p q) {
   · rintro ⟨s, hs⟩
     refine ⟨s, ?_⟩
     rw [← quarticTrajectoryPoint_quarticTimeShift hy, ← quarticTrajectoryPoint_quarticTimeShift hy',
-      quarticWellSumFlow_quarticTrajectoryPoint hq hpq]
+      quarticWellSumFlow_quarticTrajectoryPoint hq]
     congr 1
     funext j
     have := congrFun hs j

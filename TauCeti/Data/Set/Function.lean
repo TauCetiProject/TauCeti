@@ -18,6 +18,8 @@ public import Mathlib.Data.Set.Function
   `s ∩ f ⁻¹' t`.
 * `Set.mapsTo_preimage_of_apply_eq`: a map compatible with maps `q` and `q'` to a common type
   carries preimages under `q` into preimages under `q'`.
+* `Set.bijOn_preimage_iff`: a map restricts to a bijection from the preimage of `t` onto `t` if
+  and only if it is injective on that preimage and `t` is contained in its range.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 * `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
@@ -56,6 +58,13 @@ carries preimages under `q` into preimages under `q'`. -/
 theorem mapsTo_preimage_of_apply_eq {γ : Type*} (f : α → β) {q : α → γ} {q' : β → γ}
     (hf : ∀ x, q' (f x) = q x) (S : Set γ) : MapsTo f (q ⁻¹' S) (q' ⁻¹' S) :=
   fun x hx ↦ by rw [mem_preimage, hf]; exact hx
+
+/-- A map restricts to a bijection from the preimage of `t` onto `t` if and only if it is
+injective on that preimage and `t` is contained in its range. -/
+theorem bijOn_preimage_iff {t : Set β} :
+    BijOn f (f ⁻¹' t) t ↔ InjOn f (f ⁻¹' t) ∧ t ⊆ range f :=
+  ⟨fun h ↦ ⟨h.injOn, h.surjOn.trans (image_subset_range _ _)⟩, fun ⟨hinj, hsub⟩ ↦ by
+    simpa only [image_preimage_eq_of_subset hsub] using hinj.bijOn_image⟩
 
 end Set
 

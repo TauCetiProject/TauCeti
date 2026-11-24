@@ -49,6 +49,8 @@ topology for the subspace topology (`LinearMap.isStrictMap_of_isModuleTopology_r
 
 Restriction of scalars along a finite algebra carrying the module topology preserves the
 module topology (`IsModuleTopology.restrictScalars`). No finiteness of the module is needed.
+Over finite index types, matrices with entries in a module with the module topology carry the
+module topology (`IsModuleTopology.instMatrix`).
 
 A family `f : X → (M →ₗ[R] N)` of linear maps out of a finite module `M` with its module topology,
 into a topological module `N`, is jointly continuous on `X × M` exactly when each orbit map
@@ -109,6 +111,13 @@ theorem restrictScalars (R S M : Type*) [CommRing R] [Ring S] [Algebra R S]
   exact @IsModuleTopology.continuous_of_linearMap S _ _ M _ _ τM hM
     M _ _ τ (ModuleTopology.continuousAdd R M) this (LinearMap.id : M →ₗ[S] M)
 
+/-- Matrices with entries in a module with the module topology carry the module topology: the
+topology on `Matrix m n A` is the product topology on `m → n → A`. -/
+instance instMatrix {R A m n : Type*} [Semiring R] [TopologicalSpace R] [AddCommMonoid A]
+    [Module R A] [TopologicalSpace A] [IsModuleTopology R A] [Finite m] [Finite n] :
+    IsModuleTopology R (Matrix m n A) :=
+  inferInstanceAs (IsModuleTopology R (m → n → A))
+
 section JointContinuity
 
 variable {R M N X ι : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalSemiring R]
@@ -164,6 +173,21 @@ theorem continuous_iff_forall_dual (R : Type*) {M X : Type*} [Semiring R] [Topol
   exact (continuous_finsetSum Finset.univ fun j _ => (h (φ j)).smul continuous_const).congr
     fun x => hb (f x)
 
+/-- Joint continuity of `f : X → M →ₗ[R] N` from orbit continuity on a finite spanning family `v`
+equipped with continuous dual coordinates `φ` satisfying `∑ j, φ j m • v j = m`. -/
+private theorem continuous_linearMap_apply_of_sum_dual_smul_eq {R M N X ι : Type*} [Semiring R]
+    [TopologicalSpace R] [IsTopologicalSemiring R] [AddCommMonoid M] [Module R M]
+    [TopologicalSpace M] [IsModuleTopology R M] [AddCommMonoid N] [Module R N]
+    [TopologicalSpace N] [ContinuousAdd N] [ContinuousSMul R N] [TopologicalSpace X] [Fintype ι]
+    {f : X → M →ₗ[R] N} {v : ι → M} {φ : ι → Module.Dual R M}
+    (hv : ∀ m, ∑ j, φ j m • v j = m) (horb : ∀ j, Continuous fun x => f x (v j)) :
+    Continuous fun p : X × M => f p.1 p.2 := by
+  have := IsModuleTopology.toContinuousAdd R M
+  refine (continuous_finsetSum Finset.univ (f := fun j (p : X × M) => φ j p.2 • f p.1 (v j))
+    fun j _ => ((IsModuleTopology.continuous_of_linearMap (φ j)).comp continuous_snd).smul
+      ((horb j).comp continuous_fst)).congr fun p => ?_
+  simpa only [map_sum, map_smul] using congrArg (f p.1) (hv p.2)
+
 /-- **Joint continuity of a family of linear maps on a finite projective module.** Over a
 topological semiring `R`, for a finite projective module `M` with its module topology and a
 topological `R`-module `N`, a family `f : X → M →ₗ[R] N` is jointly continuous on `X × M` if and
@@ -176,11 +200,7 @@ theorem continuous_linearMap_apply_iff_of_projective {R M N X : Type*} [Semiring
     (Continuous fun p : X × M => f p.1 p.2) ↔ ∀ m, Continuous fun x => f x m := by
   refine ⟨fun hf m => hf.comp (continuous_id.prodMk continuous_const), fun h => ?_⟩
   obtain ⟨n, b, φ, hb⟩ := TauCeti.exists_sum_dual_smul_eq (R := R) (M := M)
-  have := IsModuleTopology.toContinuousAdd R M
-  have hφ (j : Fin n) : Continuous (φ j) := IsModuleTopology.continuous_of_linearMap (φ j)
-  have hF : Continuous fun p : X × M => ∑ j : Fin n, φ j p.2 • f p.1 (b j) := by fun_prop
-  refine hF.congr fun p => ?_
-  simpa only [map_sum, map_smul] using congrArg (f p.1) (hb p.2)
+  exact continuous_linearMap_apply_of_sum_dual_smul_eq hb fun j => h (b j)
 
 /-- **Joint continuity from matrix coefficients on finite projective modules.** Over a topological
 semiring `R`, for finite projective modules `M` and `N` carrying their `R`-module topologies, a
@@ -418,21 +438,14 @@ theorem continuous_linearMap_apply_iff_continuous_repr (b : _root_.Module.Basis 
     exact (IsModuleTopology.continuous_of_linearMap (c.coord i)).comp
       (h.comp (continuous_id.prodMk continuous_const))
   · cases nonempty_fintype ι
-    have := IsModuleTopology.toContinuousAdd R M
     have := IsModuleTopology.toContinuousAdd R N
-    have hd (j : ι) : Continuous fun m : M => b.repr m j :=
-      IsModuleTopology.continuous_of_linearMap (b.coord j)
     have hcol (j : ι) : Continuous fun x => f x (b j) := by
       rw [← (equivFunHomeomorph c).comp_continuous_iff, continuous_pi_iff]
       intro i
       simpa only [Function.comp_def, equivFunHomeomorph_apply, Module.Basis.equivFun_apply] using
         h i j
-    have hF : Continuous fun p : X × M => ∑ j : ι, b.repr p.2 j • f p.1 (b j) := by
-      have : Continuous fun p : X × M => ∑ j : ι, (fun m => b.repr m j) p.2 • f p.1 (b j) := by
-        fun_prop
-      exact this
-    refine hF.congr fun p => ?_
-    simpa only [map_sum, map_smul] using congrArg (f p.1) (b.sum_repr p.2)
+    exact IsModuleTopology.continuous_linearMap_apply_of_sum_dual_smul_eq
+      (φ := b.coord) b.sum_equivFun hcol
 
 end Repr
 

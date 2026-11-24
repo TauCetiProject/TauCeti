@@ -15,6 +15,7 @@ public import TauCeti.Algebra.Module.ZLattice.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Dual.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import Mathlib.Topology.DiscreteSubset
@@ -250,6 +251,16 @@ theorem IsIntegralLattice.realCharacter_apply (h : IsIntegralLattice i)
     (m : N →+ ℤ) (n : N) : h.realCharacter m (i n) = (m n : ℝ) := by
   simpa [IsIntegralLattice.realCharacter] using
     h.isBaseChange.toDual_comp_apply m.toIntLinearMap n
+
+/-- For prescribed characters, contraction adds a transverse lattice line to their
+common real kernel. No independence or codimension assumption is needed. -/
+theorem IsIntegralLattice.ker_realCharacter_apply_smul_sub_apply_smul (h : IsIntegralLattice i)
+    (f g : N →+ ℤ) (v : N)
+    (hv : i v ∉ (h.realCharacter f).ker ⊓ (h.realCharacter g).ker) :
+    (h.realCharacter (f v • g - g v • f)).ker =
+      (h.realCharacter f).ker ⊓ (h.realCharacter g).ker ⊔ ℝ ∙ i v := by
+  simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ] using
+    LinearMap.ker_apply_smul_sub_apply_smul (h.realCharacter f) (h.realCharacter g) hv
 
 /-- A real-linear functional agreeing with an integral character on lattice points is *the* real
 extension of that character. -/

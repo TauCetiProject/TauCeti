@@ -810,58 +810,60 @@ map `A → B`. -/
 noncomputable def Hom.baseChange (f : Hom ρ σ) : Hom (ρ.baseChange B) (σ.baseChange B) :=
   haveI := IsModuleTopology.toContinuousAdd B (B ⊗[A] N)
   .ofIntertwiningMap
-    ((f.toLinearMap.baseChange B).intertwiningMap_of_isIntertwiningMap _ _ fun g x => by
-      simpa only [coe_toRepresentation, baseChange_apply, Representation.baseChange_apply,
-        ← Representation.IntertwiningMap.toLinearMap_baseChange,
-        Representation.IntertwiningMap.toLinearMap_apply] using
-        (f.toIntertwiningMap.baseChange B).isIntertwining _ _ g x)
+    { toLinearMap := (f.toIntertwiningMap.baseChange B).toLinearMap
+      isIntertwining' g := by
+        rw [toRepresentation_baseChange, toRepresentation_baseChange]
+        exact (f.toIntertwiningMap.baseChange B).isIntertwining' g }
 
 /-- The linear map underlying `f.baseChange B` is the base change of `f.toLinearMap`. -/
 @[simp]
 theorem Hom.toLinearMap_baseChange (f : Hom ρ σ) :
     (f.baseChange B).toLinearMap = f.toLinearMap.baseChange B :=
-  (rfl)
+  f.toIntertwiningMap.toLinearMap_baseChange B
 
 /-- On pure tensors, `Hom.baseChange` acts on the second factor. -/
 @[simp]
 theorem Hom.baseChange_tmul (f : Hom ρ σ) (b : B) (x : M) :
     f.baseChange B (b ⊗ₜ x) = b ⊗ₜ f x :=
-  LinearMap.baseChange_tmul f.toLinearMap b x
+  f.toIntertwiningMap.baseChange_tmul B b x
 
 /-- Scalar extension preserves the zero morphism. -/
 @[simp]
 theorem Hom.baseChange_zero :
-    (0 : Hom ρ σ).baseChange B = 0 :=
-  Hom.toLinearMap_injective LinearMap.baseChange_zero
+    (0 : Hom ρ σ).baseChange B = 0 := by
+  apply Hom.toLinearMap_injective
+  simp
 
 /-- Scalar extension preserves addition of morphisms. -/
 @[simp]
 theorem Hom.baseChange_add [ContinuousAdd N] [ContinuousAdd (B ⊗[A] N)] (f g : Hom ρ σ) :
-    (f + g).baseChange B = f.baseChange B + g.baseChange B :=
-  Hom.toLinearMap_injective (LinearMap.baseChange_add ..)
+    (f + g).baseChange B = f.baseChange B + g.baseChange B := by
+  apply Hom.toLinearMap_injective
+  simp
 
 /-- Scalar extension preserves the identity morphism. -/
 @[simp]
 theorem Hom.baseChange_id :
-    (Hom.id ρ).baseChange B = .id (ρ.baseChange B) :=
-  Hom.toLinearMap_injective LinearMap.baseChange_id
+    (Hom.id ρ).baseChange B = .id (ρ.baseChange B) := by
+  apply Hom.toLinearMap_injective
+  simp
 
 /-- Scalar extension preserves composition of morphisms. -/
 @[simp]
 theorem Hom.baseChange_comp [TopologicalSpace (B ⊗[A] P)] [IsModuleTopology B (B ⊗[A] P)]
     (f : Hom σ τ) (g : Hom ρ σ) :
-    (f.comp g).baseChange B = (f.baseChange B).comp (g.baseChange B) :=
-  Hom.toLinearMap_injective (LinearMap.baseChange_comp ..)
+    (f.comp g).baseChange B = (f.baseChange B).comp (g.baseChange B) := by
+  apply Hom.toLinearMap_injective
+  simp [LinearMap.baseChange_comp]
 
 /-- Scalar extension commutes with `Iso.toHom`. -/
 @[simp]
 theorem Iso.toHom_baseChange (e : Iso ρ σ) :
-    (e.baseChange B).toHom = e.toHom.baseChange B :=
-  Hom.toLinearMap_injective (LinearMap.restrictScalars_injective A
-    (TensorProduct.ext' fun b m => by
-      simpa only [LinearMap.restrictScalars_apply,
-        Representation.IntertwiningMap.toLinearMap_apply, Hom.coe_toIntertwiningMap,
-        Iso.coe_toHom] using (e.baseChange_tmul B b m).trans (e.toHom.baseChange_tmul B b m).symm))
+    (e.baseChange B).toHom = e.toHom.baseChange B := by
+  ext x
+  induction x using TensorProduct.inductionOn with
+  | tmul b m => simp
+  | add x y hx hy => simp_all
 
 end BaseChange
 

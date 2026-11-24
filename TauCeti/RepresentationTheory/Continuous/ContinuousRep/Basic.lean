@@ -68,6 +68,8 @@ finitely many vectors.
   along `A → C`.
 * `TauCeti.ContinuousRep.baseChangeOfCharacterIso`: the base change of a character line is the
   line of the character composed with `Aˣ → Bˣ`.
+* `TauCeti.ContinuousRep.baseChangeTrivialIso`: the base change of the trivial representation is
+  the trivial representation.
 * `TauCeti.ContinuousRep.dual`: the contragredient representation on `Module.Dual A M`, using
   `Representation.dual`.
 
@@ -79,6 +81,8 @@ finitely many vectors.
   `TauCeti.ContinuousRep.range_toContRepresentation`: a continuous representation is determined
   by its operators, and the Mathlib continuous representations arising this way are those with
   jointly continuous action.
+* `TauCeti.ContinuousRep.finite_range`: a continuous representation on a finite carrier has
+  finite image.
 * `TauCeti.ContinuousRep.continuous_toMatrix`: the matrix coefficients in a finite basis are
   continuous.
 * `TauCeti.ContinuousRep.nonempty_iso_ofCharacter_iff`: two character lines are isomorphic
@@ -207,6 +211,13 @@ theorem trivial_apply (g : Γ) (x : M) : trivial Γ A M g x = x :=
 /-- Every operator of the trivial representation is `LinearMap.id`. -/
 theorem trivial_apply_eq_id (g : Γ) : trivial Γ A M g = LinearMap.id :=
   (rfl)
+
+/-- **Finite image.** A continuous representation on a finite carrier takes only finitely many
+values. -/
+theorem finite_range [Finite M] (ρ : ContinuousRep Γ A M) :
+    (Set.range (ρ : Γ → Module.End A M)).Finite :=
+  have : Finite (Module.End A M) := .of_injective _ DFunLike.coe_injective
+  Set.toFinite _
 
 section Subquotient
 
@@ -558,6 +569,11 @@ theorem toContinuousLinearEquiv_trans (e : Iso ρ σ) (f : Iso σ τ) :
       e.toContinuousLinearEquiv.trans f.toContinuousLinearEquiv :=
   (rfl)
 
+@[simp]
+theorem ofEquiv_symm [TopologicalSpace A] [IsModuleTopology A M] [IsModuleTopology A N]
+    (e : ρ.toRepresentation.Equiv σ.toRepresentation) : (ofEquiv e).symm = ofEquiv e.symm :=
+  (rfl)
+
 end Iso
 
 end Basic
@@ -679,6 +695,21 @@ theorem Iso.baseChange_tmul (e : Iso ρ σ) (b : B) (x : M) :
   Representation.Equiv.baseChange_tmul _ B b x
 
 end Iso
+
+variable (Γ A M) in
+/-- **Extension of scalars of the trivial representation is trivial**, through the identity of
+`B ⊗[A] M`. -/
+def baseChangeTrivialIso : Iso ((trivial Γ A M).baseChange B) (trivial Γ B (B ⊗[A] M)) :=
+  .ofEquiv (.mk (.refl _ _) fun g => by ext; simp)
+
+@[simp]
+theorem baseChangeTrivialIso_apply (x : B ⊗[A] M) : baseChangeTrivialIso Γ A M B x = x :=
+  (rfl)
+
+@[simp]
+theorem baseChangeTrivialIso_symm_apply (x : B ⊗[A] M) :
+    (baseChangeTrivialIso Γ A M B).symm x = x :=
+  (rfl)
 
 end BaseChange
 

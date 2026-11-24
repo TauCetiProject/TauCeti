@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Opposite
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
@@ -158,10 +157,8 @@ theorem bruhatCell_subset_iff {w v : (t.simplyConnectedRootDatum ht).weylGroup} 
     D.bruhatCell K w ⊆ D.bruhatCell K v ↔ w = v := by
   refine ⟨fun h => ?_, fun h => h ▸ subset_rfl⟩
   obtain ⟨n, rfl⟩ := D.weylProjection_surjective K w
-  have hn : (n : D.points K) ∈ D.bruhatCell K (D.weylProjection K n) := by
-    rw [D.bruhatCell_weylProjection]
-    exact DoubleCoset.mem_doubleCoset.mpr ⟨1, one_mem _, 1, one_mem _, by rw [one_mul, mul_one]⟩
-  exact D.eq_of_mem_bruhatCell_of_mem K hn (h hn)
+  exact D.eq_of_mem_bruhatCell_of_mem K (D.mem_bruhatCell_weylProjection K n)
+    (h (D.mem_bruhatCell_weylProjection K n))
 
 /-- Every element of `D.elementarySubgroup K` belongs to a unique Bruhat cell. -/
 theorem existsUnique_mem_bruhatCell_of_mem_elementarySubgroup {g : D.points K}
@@ -291,10 +288,9 @@ private theorem exists_inversionPoints_mul_borelSubgroup_of_ncard_eq (k : ℕ) :
         (P := t.simplyConnectedRootDatum ht) (b := t.simplyConnectedBase ht)
         (inv_ne_one.mpr hne)
       omega
-    have hnB : (n : D.points K) ∈ D.borelSubgroup K :=
-      D.range_torusPoints_le_borelSubgroup K
-        (Subgroup.mem_subgroupOf.mp
-          ((D.ker_weylProjection K).le ((D.weylProjection K).mem_ker.mpr hw1)))
+    have hnB : (n : D.points K) ∈ D.borelSubgroup K := by
+      have hn := D.mem_bruhatCell_weylProjection K n
+      rwa [hw1, D.bruhatCell_one] at hn
     refine ⟨1, one_mem _, (n : D.points K)⁻¹ * u₁ * (n : D.points K),
       mul_mem (mul_mem (inv_mem hnB) (D.positivePoints_le_borelSubgroup K hu₁)) hnB, ?_⟩
     group
@@ -353,10 +349,8 @@ theorem existsUnique_mul_mul_eq_of_mem_bruhatCell (n : D.weylSubgroup K) {g : D.
   rw [D.bruhatCell_weylProjection K n] at hg
   obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
   obtain ⟨u₁, hu₁, s, rfl⟩ := (D.mem_borelSubgroup_iff K).mp hb₁
-  have ht' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K := by
-    have hnorm := D.weylSubgroup_le_normalizer_range_torusPoints K n⁻¹.property
-    exact D.range_torusPoints_le_borelSubgroup K
-      ((Subgroup.mem_normalizer_iff.mp hnorm (D.torusPoints K s)).mp ⟨s, rfl⟩)
+  have ht' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K :=
+    D.weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup K n s
   obtain ⟨u, hu, b₀, hb₀, heq⟩ :=
     D.exists_inversionPoints_mul_borelSubgroup_of_ncard_eq K _ n rfl hu₁
   let bFinal := b₀ * ((n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K)) * b₂

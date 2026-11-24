@@ -33,6 +33,7 @@ are also those of the DG right modules of chains of a space with a right action 
 
 * `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
   `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
+* `TauCeti.cubicalChainSumMap_injective`: the push-forward along an injective map is injective.
 * `TauCeti.cubicalChain_isDGAlgebra`: `normalizedCubicalChainAlgebra G R` with this grading and
   differential is a differential graded algebra.
 
@@ -203,6 +204,41 @@ theorem cubicalChainDifferential_lof_succ (k : ℕ) (y : NormalizedCubicalChain 
   rw [cubicalChainDifferential_lof]
   rfl
 
+variable {G R} in
+/-- The component of dimension `j` of the differential of an element of the algebra of cubical
+chains is the boundary of its component of dimension `j + 1`. -/
+@[simp]
+theorem cubicalChainDifferential_apply (z : normalizedCubicalChainAlgebra G R) (j : ℕ) :
+    cubicalChainDifferential G R z j = NormalizedCubicalChain.boundary G R j (z (j + 1)) := by
+  induction z using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    cases n with
+    | zero =>
+      have h0 := cubicalChainDifferential_lof_zero G R y
+      simp only [DirectSum.lof_eq_of] at h0
+      rw [h0, DirectSum.of_eq_of_ne _ _ _ (Nat.succ_ne_zero j), map_zero, DirectSum.zero_apply]
+    | succ i =>
+      have h1 := cubicalChainDifferential_lof_succ G R i y
+      simp only [DirectSum.lof_eq_of] at h1
+      rw [h1]
+      rcases eq_or_ne j i with rfl | hji
+      · rw [DirectSum.of_eq_same, DirectSum.of_eq_same]
+      · rw [DirectSum.of_eq_of_ne _ _ _ hji, DirectSum.of_eq_of_ne _ _ _ (by omega : j + 1 ≠ i + 1),
+          map_zero]
+  | add z z' hz hz' => simp [hz, hz']
+
+variable {G R} in
+/-- The homogeneous components of a cycle of the algebra of cubical chains are cycles. -/
+theorem cubicalChainDifferential_lof_apply_eq_zero {z : normalizedCubicalChainAlgebra G R}
+    (hz : cubicalChainDifferential G R z = 0) (j : ℕ) :
+    cubicalChainDifferential G R (cubicalChainLof G R j (z j)) = 0 := by
+  cases j with
+  | zero => exact cubicalChainDifferential_lof_zero _ _ _
+  | succ i =>
+    rw [cubicalChainDifferential_lof_succ, ← cubicalChainDifferential_apply, hz]
+    simp
+
 /-- The sign `(-1) ^ (-n)` acts on the graded algebra as `(-1) ^ n ∈ R`. -/
 theorem negOnePow_neg_natCast_smul (n : ℕ) (x : normalizedCubicalChainAlgebra G R) :
     (-(n : ℤ)).negOnePow • x = (-1 : R) ^ n • x := by
@@ -272,6 +308,11 @@ theorem cubicalChainSumMap_lof (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalCha
 theorem cubicalChainSumMap_apply (f : C(X, Y)) (x : normalizedCubicalChainAlgebra X R) (n : ℕ) :
     cubicalChainSumMap R f x n = map R f n (x n) :=
   DirectSum.lmap_apply _ x n
+
+/-- The push-forward along an injective map is injective. -/
+theorem cubicalChainSumMap_injective {f : C(X, Y)} (hf : Function.Injective f) :
+    Function.Injective (cubicalChainSumMap R f) :=
+  (DirectSum.lmap_injective _).2 fun n ↦ NormalizedCubicalChain.map_injective R f hf n
 
 /-- The push-forward along the identity is the identity. -/
 @[simp]
