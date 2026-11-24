@@ -8,9 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.SeparableDescent
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.GaloisModule
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.CharacterLattice
-public import TauCeti.Algebra.AlgebraicGroup.Torus.CharacterLattice.Characterization
-public import TauCeti.Algebra.AlgebraicGroup.Torus.Characterization
-public import TauCeti.Algebra.AlgebraicGroup.Torus.Cocharacter.Basic
 public import TauCeti.Algebra.Bialgebra.GroupLike.BaseChange
 
 /-!
@@ -24,8 +21,8 @@ character is defined over `k`, so the characters over `k` are exactly the Galois
 characters.
 
 Consequently a group of multiplicative type is diagonalizable over `k` exactly when the absolute
-Galois group acts trivially on its geometric characters, and a torus is split exactly when the
-Galois action on its character lattice, or equivalently on its cocharacter lattice, is trivial.
+Galois group acts trivially on its geometric characters. The corresponding criteria for split tori
+are in `TauCeti.Algebra.AlgebraicGroup.Torus.CharacterLattice.Rational`.
 
 No perfectness of `k` is assumed. A fixed geometric character `χ` determines the equivariant map
 from the characters of the diagonalizable group `D(⟨χ⟩)` sending the tautological character to
@@ -44,12 +41,6 @@ to `χ`.
 * `TauCeti.multiplicativeTypeCommHopfAlgProperty.groupLikeSpannedProperty_iff_forall_smul_eq`: a
   group of multiplicative type is diagonalizable exactly when the Galois action on its geometric
   characters is trivial.
-* `TauCeti.torusCommHopfAlgProperty.splitTorusCommHopfAlgProperty_iff_forall_smul_eq`: a torus is
-  split exactly when the Galois action on its character lattice is trivial.
-* `TauCeti.MultiplicativeTypeCommHopfAlgCat.smul_cocharacter_eq_of_forall_smul_eq`: a Galois
-  element fixing every character fixes every cocharacter.
-* `TauCeti.TorusCommHopfAlgCat.splitTorusCommHopfAlgProperty_iff_forall_smul_cocharacter_eq`: a
-  torus is split exactly when the Galois action on its cocharacter lattice is trivial.
 
 ## References
 
@@ -112,9 +103,8 @@ theorem exists_groupLikeBaseChange_eq_of_forall_smul_eq
   have hf (σ : Field.absoluteGaloisGroup k) x : f (σ • x) = σ • f x := by
     rw [DiagonalizableGroup.smul_geometricCharacterGroup_eq_self]
     obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (e x).property
-    simp only [f, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype]
-    change _ = σ • ((e x : Subgroup.zpowers χ) : CommHopfAlgCat.geometricCharacterGroup H.obj)
-    rw [← hn, smul_zpow', hχ]
+    simp only [f, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype, ← hn,
+      smul_zpow', hχ]
   obtain ⟨φ, hφ⟩ := (existsUnique_geometricCharacterMap_eq_of_multiplicativeType
     (DiagonalizableGroup.multiplicativeType_coordinateRing k G) hH f hf).exists
   -- The tautological character of `D(⟨χ⟩)` is defined over `k`; its image is the descent of `χ`.
@@ -187,86 +177,5 @@ theorem groupLikeSpannedProperty_iff_forall_smul_eq
         ((multiplicativeTypeCommHopfAlgProperty_iff k H).mp hH))
 
 end multiplicativeTypeCommHopfAlgProperty
-
-namespace torusCommHopfAlgProperty
-
-variable {k : Type u} [Field k] {H : FiniteTypeCommHopfAlgCat.{u, u} k}
-
-/-- **A torus is split exactly when the absolute Galois group acts trivially on its character
-lattice.** This holds over every field. -/
-theorem splitTorusCommHopfAlgProperty_iff_forall_smul_eq (hH : torusCommHopfAlgProperty k H) :
-    splitTorusCommHopfAlgProperty k H ↔
-      ∀ (σ : Field.absoluteGaloisGroup k) (χ : CommHopfAlgCat.geometricCharacterGroup H.obj),
-        σ • χ = χ := by
-  rw [← (hH.multiplicativeType k H).groupLikeSpannedProperty_iff_forall_smul_eq]
-  refine ⟨splitTorusCommHopfAlgProperty.groupLikeSpanned k H, fun hspan ↦ ?_⟩
-  rw [← DiagonalizableGroup.essImage_coordinateRingFunctor] at hspan
-  obtain ⟨G, ⟨i⟩⟩ := hspan
-  -- The character group of the diagonalizable presentation is torsion-free, since `H` is a torus.
-  have : IsMulTorsionFree G :=
-    (torus_iff_isMulTorsionFree_of_baseChange_iso_coordinateRing
-      G ((DiagonalizableGroup.baseChangeCoordinateRingIso k (AlgebraicClosure k) G).symm ≪≫
-        (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := AlgebraicClosure k)).mapIso i)).mp hH
-  exact (splitTorusCommHopfAlgProperty k).prop_of_iso i
-    (splitTorusCommHopfAlgProperty_coordinateRing k G)
-
-end torusCommHopfAlgProperty
-
-namespace MultiplicativeTypeCommHopfAlgCat
-
-variable {k : Type u} [Field k]
-
-/-- An absolute Galois element fixing every geometric character of a group of multiplicative type
-fixes every cocharacter, since the Galois action on cocharacters is contragredient. -/
-theorem smul_cocharacter_eq_of_forall_smul_eq (T : MultiplicativeTypeCommHopfAlgCat k)
-    {σ : Field.absoluteGaloisGroup k}
-    (hσ : ∀ χ : CommHopfAlgCat.geometricCharacterGroup T.obj.obj, σ • χ = χ)
-    (f : cocharacterLattice T) : σ • f = f := by
-  apply cocharacterLattice_ext
-  intro x
-  have hx : σ⁻¹ • x = x := by
-    apply Additive.toMul.injective
-    rw [CommHopfAlgCat.toMul_smul, inv_smul_eq_iff, hσ]
-  rw [cocharacterLattice_smul_def, cocharacterGaloisRepresentation_apply_apply, hx]
-
-end MultiplicativeTypeCommHopfAlgCat
-
-namespace TorusCommHopfAlgCat
-
-variable {k : Type u} [Field k]
-
-/-- An absolute Galois element fixes every cocharacter of a torus exactly when it fixes every
-character: the two lattices are in perfect, Galois-invariant duality. -/
-theorem forall_smul_cocharacter_eq_iff (T : TorusCommHopfAlgCat k)
-    (σ : Field.absoluteGaloisGroup k) :
-    (∀ f : MultiplicativeTypeCommHopfAlgCat.cocharacterLattice
-        (toMultiplicativeTypeCommHopfAlgCat T), σ • f = f) ↔
-      ∀ χ : CommHopfAlgCat.geometricCharacterGroup T.obj.obj, σ • χ = χ := by
-  refine ⟨fun hf χ ↦ ?_, fun hχ ↦
-    MultiplicativeTypeCommHopfAlgCat.smul_cocharacter_eq_of_forall_smul_eq _ hχ⟩
-  let P := MultiplicativeTypeCommHopfAlgCat.characterCocharacterPairing
-    (toMultiplicativeTypeCommHopfAlgCat T)
-  -- The pairing is perfect for a torus, so a character is determined by its pairings.
-  apply Additive.ofMul.injective
-  apply P.toPerfPair.injective
-  apply LinearMap.ext
-  intro f
-  have hσχ : Additive.ofMul (σ • χ) = σ • Additive.ofMul χ := by
-    apply Additive.toMul.injective
-    rw [CommHopfAlgCat.toMul_smul, toMul_ofMul, toMul_ofMul]
-  have hP : P (σ • Additive.ofMul χ) (σ • f) = P (Additive.ofMul χ) f :=
-    MultiplicativeTypeCommHopfAlgCat.characterCocharacterPairing_galois_invariant _ σ _ f
-  simpa only [LinearMap.toPerfPair_apply, hf, hσχ] using hP
-
-/-- **A torus is split exactly when the absolute Galois group acts trivially on its cocharacter
-lattice.** This holds over every field. -/
-theorem splitTorusCommHopfAlgProperty_iff_forall_smul_cocharacter_eq (T : TorusCommHopfAlgCat k) :
-    splitTorusCommHopfAlgProperty k T.obj ↔
-      ∀ (σ : Field.absoluteGaloisGroup k) (f : MultiplicativeTypeCommHopfAlgCat.cocharacterLattice
-        (toMultiplicativeTypeCommHopfAlgCat T)), σ • f = f := by
-  simp only [forall_smul_cocharacter_eq_iff,
-    T.property.splitTorusCommHopfAlgProperty_iff_forall_smul_eq]
-
-end TorusCommHopfAlgCat
 
 end TauCeti
