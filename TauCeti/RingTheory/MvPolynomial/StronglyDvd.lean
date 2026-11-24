@@ -73,7 +73,7 @@ public section
 
 namespace MvPolynomial
 
-variable {R S σ : Type*} [CommRing R] [CommRing S]
+variable {R S σ : Type*} [CommRing R] [CommSemiring S]
 
 /-- `q` *strongly divides* the polynomial `f` at the point `a` modulo `p` if `q` divides the
 value of `f` at every point congruent to `a` modulo `p`, coordinatewise. For `R = ℤ`, a prime `p`
