@@ -23,6 +23,8 @@ of such coordinates determines a unique nonunital Witt vector.
 
 ## Main definitions
 
+* `NonUnitalBigWitt.coeff_add`, `NonUnitalBigWitt.coeff_mul`, and `NonUnitalBigWitt.coeff_neg`:
+  coordinate formulas for the ring operations.
 * `NonUnitalBigWitt.ghostComponent` and `NonUnitalBigWitt.ghostMap`: the ghost homomorphisms.
 * `NonUnitalBigWitt.restrict`: restriction to a smaller truncation set.
 * `NonUnitalBigWitt.map`: functoriality in the nonunital coefficient ring.
@@ -38,9 +40,13 @@ public section
 
 namespace TauCeti
 
-open BigWitt
+open BigWitt MvPolynomial
 
-/-- The Witt ring of a unitization, using its standalone zero instance in the carrier. -/
+/-- Supplies the ambient ring structure for the `NonUnitalSubring.comap` defining
+`NonUnitalBigWitt`. The carrier `BigWittVector S (Unitization ℤ R)` uses the standalone
+`Unitization.instZero` as a type parameter. The generic Witt ring instance uses the zero
+projected from the coefficient ring, and typeclass search does not match the two in the
+kernel declaration. This specialization registers the same ring structure on that carrier. -/
 @[instance_reducible]
 noncomputable instance BigWittVector.unitizationCommRing {S : TruncationSet} {R : Type*}
     [NonUnitalCommRing R] : CommRing (BigWittVector S (Unitization ℤ R)) :=
@@ -159,6 +165,49 @@ private theorem coordinates_toBigWitt (x : NonUnitalBigWitt S R) :
   · exact toBigWitt_coeff x ⟨n, hn⟩
   · simp [coordinates, BigWittVector.coeff_eq_zero_of_notMem _ n hn]
 
+private theorem coeff_toBigWitt_pair (x y : NonUnitalBigWitt S R) :
+    (fun ik : Fin 2 × ℕ ↦ (![toBigWitt x, toBigWitt y] ik.1).coeff ik.2) =
+      fun ik ↦ (Unitization.inr (coordinates (![x, y] ik.1) ik.2) : Unitization ℤ R) := by
+  funext ⟨i, k⟩
+  revert i
+  rw [Fin.forall_fin_two]
+  exact ⟨congrFun (coordinates_toBigWitt x) k, congrFun (coordinates_toBigWitt y) k⟩
+
+/-- The coordinates of a sum are the addition structure polynomials evaluated on the
+summands' coordinates via the integral unitization. -/
+theorem coeff_add (x y : NonUnitalBigWitt S R) (n : S) :
+    coeff (x + y) n = (eval₂ (Int.castRingHom (Unitization ℤ R)) (fun ik : Fin 2 × ℕ ↦
+      (Unitization.inr (coordinates (![x, y] ik.1) ik.2) : Unitization ℤ R))
+      (wittStructure (X 0 + X 1) n)).snd := by
+  rw [coeff, map_add, BigWittVector.coeff_add_of_mem (R := Unitization ℤ R) _ _ n.property,
+    coeff_toBigWitt_pair]
+  simp only [aeval_def, algebraMap_int_eq]
+
+/-- The coordinates of a product are the multiplication structure polynomials evaluated on the
+factors' coordinates via the integral unitization. -/
+theorem coeff_mul (x y : NonUnitalBigWitt S R) (n : S) :
+    coeff (x * y) n = (eval₂ (Int.castRingHom (Unitization ℤ R)) (fun ik : Fin 2 × ℕ ↦
+      (Unitization.inr (coordinates (![x, y] ik.1) ik.2) : Unitization ℤ R))
+      (wittStructure (X 0 * X 1) n)).snd := by
+  rw [coeff, map_mul, BigWittVector.coeff_mul_of_mem (R := Unitization ℤ R) _ _ n.property,
+    coeff_toBigWitt_pair]
+  simp only [aeval_def, algebraMap_int_eq]
+
+/-- The coordinates of a negative are the negation structure polynomials evaluated on the
+vector's coordinates via the integral unitization. -/
+theorem coeff_neg (x : NonUnitalBigWitt S R) (n : S) :
+    coeff (-x) n = (eval₂ (Int.castRingHom (Unitization ℤ R)) (fun ik : Fin 1 × ℕ ↦
+      (Unitization.inr (coordinates x ik.2) : Unitization ℤ R))
+      (wittStructure (-X 0) n)).snd := by
+  rw [coeff, map_neg, BigWittVector.coeff_neg_of_mem (R := Unitization ℤ R) _ n.property]
+  have h : (fun ik : Fin 1 × ℕ ↦ (![toBigWitt x] ik.1).coeff ik.2) =
+      fun ik ↦ (Unitization.inr (coordinates x ik.2) : Unitization ℤ R) := by
+    funext ⟨i, k⟩
+    rw [Subsingleton.elim i 0]
+    exact congrFun (coordinates_toBigWitt x) k
+  rw [h]
+  simp only [aeval_def, algebraMap_int_eq]
+
 private noncomputable def unitalGhostComponent (n : S) :
     BigWittVector S (Unitization ℤ R) →+* Unitization ℤ R :=
   (Pi.evalRingHom _ n).comp (BigWittVector.ghostMap (R := Unitization ℤ R))
@@ -166,6 +215,7 @@ private noncomputable def unitalGhostComponent (n : S) :
 private theorem inr_ghostPolynomial (x : NonUnitalBigWitt S R) (n : S) :
     (Unitization.inr (ghostPolynomial n (coordinates x)) : Unitization ℤ R) =
       unitalGhostComponent n (toBigWitt x) := by
+  -- Use the bundled form of the inclusion to apply polynomial naturality.
   change (Unitization.inrNonUnitalAlgHom ℤ R) (ghostPolynomial n (coordinates x)) = _
   rw [map_ghostPolynomial]
   simp only [unitalGhostComponent, RingHom.comp_apply, Pi.evalRingHom_apply,
