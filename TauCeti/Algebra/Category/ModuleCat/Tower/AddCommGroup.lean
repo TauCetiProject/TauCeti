@@ -280,9 +280,11 @@ abbrev limPadicModule (hA : ∀ n (x : A.obj n), p ^ n • x = 0) : Module ℤ_[
   -- each axiom holds coordinatewise because `pⁿ` kills `Aₙ` and `appr` respects `+`, `*`, `0`
   -- and `1` modulo `pⁿ`
   { one_smul y := A.lim_ext fun n ↦ by
+      -- the local scalar action is defined coordinatewise by `appr`, so this holds by definition
       change (1 : ℤ_[p]).appr n • _ = _
       simpa using nsmul_eq_nsmul_of_modEq (PadicInt.appr_natCast_modEq 1 n) (hA n _)
     mul_smul a b y := A.lim_ext fun n ↦ by
+      -- the local scalar action is defined coordinatewise by `appr`, so this holds by definition
       change (a * b).appr n • _ = a.appr n • b.appr n • _
       rw [smul_smul]
       exact nsmul_eq_nsmul_of_modEq (PadicInt.appr_mul_modEq a b n) (hA n _)
@@ -291,6 +293,7 @@ abbrev limPadicModule (hA : ∀ n (x : A.obj n), p ^ n • x = 0) : Module ℤ_[
     add_smul a b y := A.lim_ext fun n ↦ (nsmul_eq_nsmul_of_modEq
       (PadicInt.appr_add_modEq a b n) (hA n _)).trans (add_nsmul _ _ _)
     zero_smul y := A.lim_ext fun n ↦ by
+      -- the local scalar action is defined coordinatewise by `appr`, so this holds by definition
       change (0 : ℤ_[p]).appr n • _ = _
       simpa using nsmul_eq_nsmul_of_modEq (PadicInt.appr_natCast_modEq 0 n) (hA n _) }
 
