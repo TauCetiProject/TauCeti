@@ -15,10 +15,7 @@ public import TauCeti.Analysis.Meromorphic.Divisor
 Mathlib's `completedRiemannZeta` is `Λ(s) = Λ₀(s) - 1/s - 1/(1 - s)` with `Λ₀` entire
 (`completedRiemannZeta_eq`, `differentiable_completedZeta₀`). This file reads off the
 consequences in the language of meromorphic functions: `Λ` is meromorphic on `ℂ`, analytic away
-from `0` and `1`, and has a simple pole, of order exactly `-1`, at each of `0` and `1`. Since
-`ζ(s) = Λ(s) / Γ_ℝ(s)` for `s ≠ 0` and `1 / Γ_ℝ` is entire, the Riemann zeta function itself is
-meromorphic on `ℂ` too; this is what lets a factorization through `ζ` serve as a meromorphic
-continuation.
+from `0` and `1`, and has a simple pole, of order exactly `-1`, at each of `0` and `1`.
 
 ## Main results
 
@@ -26,8 +23,6 @@ continuation.
 * `TauCeti.analyticAt_completedRiemannZeta`
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_zero`,
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
-* `TauCeti.meromorphic_riemannZeta` and `TauCeti.meromorphicOrderAt_riemannZeta_one`: the
-  uncompleted function `riemannZeta` is meromorphic on `ℂ` with a simple pole at `1`.
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
 * `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
@@ -82,17 +77,6 @@ theorem meromorphicOrderAt_completedRiemannZeta_one :
   rw [← h]
   congr 1
   exact funext fun z ↦ (completedRiemannZeta_one_sub z).symm
-
-/-- Mathlib's Riemann zeta function is meromorphic on `ℂ`. Away from `1` it is analytic
-(`analyticOn_riemannZeta`); its pole at `1` is that of `completedRiemannZeta`. -/
-theorem meromorphic_riemannZeta : Meromorphic riemannZeta := by
-  intro z
-  rcases eq_or_ne z 1 with rfl | hz
-  · refine ((meromorphic_completedRiemannZeta 1).mul
-      (Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicAt).congr ?_
-    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
-    rw [riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, Pi.mul_apply]
-  · exact (analyticOn_riemannZeta z hz).meromorphicAt
 
 /-- The completed Riemann zeta function does not vanish on the half-plane `1 < re s`. -/
 theorem completedRiemannZeta_ne_zero_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
@@ -152,24 +136,6 @@ theorem divisor_completedRiemannZeta_one :
     MeromorphicOn.divisor completedRiemannZeta univ 1 = -1 := by
   rw [(meromorphicOn_univ.2 meromorphic_completedRiemannZeta).divisor_apply (mem_univ 1),
     meromorphicOrderAt_completedRiemannZeta_one]
-  rfl
-
-/-- The Riemann zeta function has a simple pole at `1`. -/
-theorem meromorphicOrderAt_riemannZeta_one :
-    meromorphicOrderAt riemannZeta 1 = (-1 : ℤ) := by
-  have hev : riemannZeta =ᶠ[𝓝[≠] 1] (fun z ↦ (Gammaℝ z)⁻¹) * completedRiemannZeta := by
-    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
-    rw [riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, Pi.mul_apply, mul_comm]
-  rw [meromorphicOrderAt_congr hev,
-    meromorphicOrderAt_mul_of_ne_zero (Complex.differentiable_Gammaℝ_inv.analyticAt 1)
-      (inv_ne_zero (Gammaℝ_ne_zero_of_re_pos (by norm_num))),
-    meromorphicOrderAt_completedRiemannZeta_one]
-
-/-- The divisor of the Riemann zeta function is `-1` at its pole `1`. -/
-theorem divisor_riemannZeta_one :
-    MeromorphicOn.divisor riemannZeta univ 1 = -1 := by
-  rw [(meromorphicOn_univ.2 meromorphic_riemannZeta).divisor_apply (mem_univ 1),
-    meromorphicOrderAt_riemannZeta_one]
   rfl
 
 /-- The completed Riemann zeta function has a zero of positive multiplicity exactly at the zeros

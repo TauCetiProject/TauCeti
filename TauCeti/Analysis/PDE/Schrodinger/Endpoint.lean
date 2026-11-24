@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 public import TauCeti.Analysis.PDE.Strichartz.Endpoint
 import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Function.Lp.MixedNorm
+import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
 import TauCeti.MeasureTheory.Integral.Prod
 
@@ -157,9 +157,9 @@ theorem exists_enorm_setIntegral_inner_schrodingerPropagator_sub_le_of_endpoint 
       rw [ENNReal.coe_one, ← ofReal_norm]
       exact ENNReal.ofReal_le_one.2 (norm_phasePropagator_le _ _))
     (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le_top hst g)
-    (fun G hG hUG ↦ by
-      simp_rw [adjoint_schrodingerPropagator] at hUG ⊢
-      exact hK G hG hUG)
+    (fun G hG _ ↦ by
+      simp_rw [adjoint_schrodingerPropagator]
+      exact hK G hG)
     (fun G hG ↦ by
       simp_rw [adjoint_schrodingerPropagator]
       exact aestronglyMeasurable_phasePropagator_apply laplacianSymbol
@@ -222,8 +222,8 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le_of_endpoint
   obtain ⟨C, hC⟩ := exists_enorm_integral_inner_schrodingerPropagator_le_of_endpoint
     (r' := (1 - r⁻¹)⁻¹) hn hr
   exact ⟨C, fun f ↦ (continuous_phasePropagator_apply laplacianSymbol f).aestronglyMeasurable
-    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (q' := 2) (r' := (1 - r⁻¹)⁻¹)
-      ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ hC f G hG⟩
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (p' := 2) (q' := (1 - r⁻¹)⁻¹)
+      fun G hG _ ↦ hC f G hG⟩
 
 /-- **The retarded endpoint Strichartz estimate for the Schrödinger equation, in weak form.** In
 dimension `n ≥ 3`, let `r` be the endpoint exponent, `1 + n / r = n / 2`, with Hölder conjugate
@@ -268,15 +268,14 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le_of_e
       eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, schrodingerPropagator ℂ (t - s) (F s) :
           Lp ℂ 2 (volume : Measure E))) r volume) 2 volume ≤
         C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) 2 volume := by
-  have hr2 : 2 ≤ r := two_le_of_endpoint hn hr
   have : r.HolderConjugate r' := (inferInstance : r'.HolderConjugate r).symm
   obtain ⟨C, hC⟩ :=
     exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_of_endpoint
       (r' := r') hn hr
   refine ⟨C, fun F hF ↦ (aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub laplacianSymbol
     hF.aestronglyMeasurable
-    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := 2) (r' := r')
-      ENNReal.ofNat_ne_top hr2 fun G hG _ ↦ ?_)⟩
+    |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (p' := 2) (q' := r')
+      fun G hG _ ↦ ?_)⟩
   simp_rw [inner_setIntegral_Iio_phasePropagator_sub _ hF]
   exact hC F G hF hG
 

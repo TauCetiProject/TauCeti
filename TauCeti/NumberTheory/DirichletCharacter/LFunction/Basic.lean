@@ -5,35 +5,49 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Meromorphic.Basic
+public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.Analysis.Meromorphic.Order
 
 /-!
-# Analyticity and meromorphy of continued Dirichlet L-functions
+# Regularity, meromorphy, and poles of continued Dirichlet `L`-functions
 
-Mathlib's `DirichletCharacter.LFunction χ` continues the Dirichlet series of a character `χ` mod
-`N` (`N ≠ 0`) to a function differentiable everywhere except at `s = 1` when `χ = 1`, where
-`(s - 1) L(s, 1)` extends to the entire function `DirichletCharacter.LFunctionTrivChar₁ N`. Since
-differentiability on an open subset of `ℂ` implies analyticity, `χ.LFunction` is analytic away from
-that pole and meromorphic on the whole complex plane.
+Mathlib's continued Dirichlet `L`-function `DirichletCharacter.LFunction χ` is entire for every
+nonprincipal character `χ ≠ 1` and differentiable away from `s = 1` for the principal character
+`LFunctionTrivChar N` (`DirichletCharacter.differentiableAt_LFunction`,
+`DirichletCharacter.LFunctionTrivChar_residue_one`).
 
-## Main results
+This file packages the basic regularity and meromorphic-order API for the uncompleted continued
+function `χ.LFunction`, without going through completed `L`-functions or Gamma factors:
 
-* `DirichletCharacter.analyticAt_LFunction`: `χ.LFunction` is analytic at `s` whenever `s ≠ 1` or
-  `χ ≠ 1`.
-* `DirichletCharacter.meromorphic_LFunction`: `χ.LFunction` is meromorphic on `ℂ`.
 * `DirichletCharacter.LFunction_eq_of_changeLevel_eq`: equal levels with compatible `changeLevel`
   give equal continued `L`-functions.
+* `TauCeti.not_differentiableAt_LFunctionTrivChar_one` and
+  `DirichletCharacter.differentiableAt_LFunction_iff`: `χ.LFunction` is differentiable at `s` if
+  and only if `s ≠ 1` or `χ ≠ 1`.
+* `DirichletCharacter.analyticAt_LFunction`, `DirichletCharacter.analyticAt_LFunction_iff`, and
+  `DirichletCharacter.meromorphic_LFunction`: `χ.LFunction` is analytic at `s` if and only if
+  `s ≠ 1` or `χ ≠ 1`, and is meromorphic on `ℂ` (with the forward analyticity and meromorphy
+  lemmas registered as `@[fun_prop]` rules).
+* `TauCeti.meromorphicOrderAt_LFunctionTrivChar_one` and
+  `DirichletCharacter.meromorphicOrderAt_LFunction_pos_iff`: `LFunctionTrivChar N` has a simple
+  pole (meromorphic order `-1`) at `s = 1`, so positive meromorphic order characterizes the zeros
+  of `χ.LFunction` away from that pole.
+* `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
+  simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
 
 ## References
 
 * D. Loeffler, M. Stoll, `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
+* M. Stoll, D. Loeffler, T. Tao, `Mathlib.NumberTheory.LSeries.Nonvanishing`.
 * H. Davenport, *Multiplicative Number Theory*, Ch. 4.
 -/
 
 public section
 
+open Complex Filter
 open scoped Topology
 
 namespace DirichletCharacter
@@ -77,5 +91,71 @@ theorem LFunction_eq_of_changeLevel_eq {M : ℕ} [NeZero M]
   rw [changeLevel_self] at h
   subst h
   rfl
+
+end DirichletCharacter
+
+namespace TauCeti
+
+open DirichletCharacter
+
+/-- The principal Dirichlet `L`-function modulo `N` has a simple pole (meromorphic order `-1`) at
+`s = 1`. -/
+@[simp]
+theorem meromorphicOrderAt_LFunctionTrivChar_one {N : ℕ} [NeZero N] :
+    meromorphicOrderAt (LFunctionTrivChar N) 1 = -1 := by
+  simpa using ((1 : DirichletCharacter ℂ N).meromorphic_LFunction 1)
+    |>.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul (LFunctionTrivChar₁_apply_one_ne_zero N)
+    (by simpa using LFunctionTrivChar_residue_one (N := N))
+
+/-- The principal Dirichlet `L`-function modulo `N` is not differentiable at its simple pole
+`s = 1`. -/
+theorem not_differentiableAt_LFunctionTrivChar_one {N : ℕ} [NeZero N] :
+    ¬ DifferentiableAt ℂ (LFunctionTrivChar N) 1 := by
+  intro hd
+  have hnonneg : 0 ≤ meromorphicOrderAt (LFunctionTrivChar N) 1 :=
+    Filter.BoundedAtFilter.meromorphicOrderAt_nonneg
+      ((hd.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).isBigO_one ℝ)
+  rw [meromorphicOrderAt_LFunctionTrivChar_one] at hnonneg
+  exact not_lt_of_ge hnonneg (by simpa using WithTop.coe_lt_coe.mpr (by norm_num : (-1 : ℤ) < 0))
+
+end TauCeti
+
+namespace DirichletCharacter
+
+variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+
+/-- The continued Dirichlet `L`-function `χ.LFunction` is differentiable at `s` if and only if
+`s ≠ 1` or `χ ≠ 1`. -/
+@[simp]
+theorem differentiableAt_LFunction_iff (s : ℂ) :
+    DifferentiableAt ℂ χ.LFunction s ↔ s ≠ 1 ∨ χ ≠ 1 := by
+  refine ⟨fun hd ↦ by_contra fun h ↦ ?_, χ.differentiableAt_LFunction s⟩
+  obtain ⟨hs1, hχ1⟩ := not_or.mp h
+  rw [not_ne_iff.mp hs1, not_ne_iff.mp hχ1] at hd
+  exact TauCeti.not_differentiableAt_LFunctionTrivChar_one hd
+
+/-- The continued Dirichlet `L`-function `χ.LFunction` is analytic at `s` if and only if
+`s ≠ 1` or `χ ≠ 1`. -/
+@[simp]
+theorem analyticAt_LFunction_iff (s : ℂ) :
+    AnalyticAt ℂ χ.LFunction s ↔ s ≠ 1 ∨ χ ≠ 1 :=
+  ⟨fun ha ↦ (χ.differentiableAt_LFunction_iff s).mp ha.differentiableAt, χ.analyticAt_LFunction⟩
+
+/-- The continued Dirichlet `L`-function `χ.LFunction` has positive meromorphic order at `s` if and
+only if `χ.LFunction s = 0` and `(s ≠ 1 ∨ χ ≠ 1)`. -/
+@[simp]
+theorem meromorphicOrderAt_LFunction_pos_iff {s : ℂ} :
+    0 < meromorphicOrderAt χ.LFunction s ↔ χ.LFunction s = 0 ∧ (s ≠ 1 ∨ χ ≠ 1) := by
+  by_cases hs : s = 1 ∧ χ = 1
+  · obtain ⟨rfl, rfl⟩ := hs
+    rw [← LFunctionTrivChar]
+    simp
+  · have hs' := not_and_or.mp hs
+    simp [(χ.analyticAt_LFunction hs').meromorphicOrderAt_pos_iff_eq_zero, hs']
+
+/-- Every zero of `χ.LFunction` away from the simple pole `(s = 1, χ = 1)` lies in `s.re < 1`. -/
+theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h : χ.LFunction s = 0) :
+    s.re < 1 :=
+  not_le.mp fun hs ↦ χ.LFunction_ne_zero_of_one_le_re h1.symm hs h
 
 end DirichletCharacter

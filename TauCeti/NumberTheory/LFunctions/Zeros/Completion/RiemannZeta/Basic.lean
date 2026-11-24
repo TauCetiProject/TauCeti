@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.Divisor
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # The entire completion of the Riemann zeta function
@@ -179,9 +180,9 @@ theorem analyticOrderAt_zetaEntireCompletion_eq_riemannZeta {s : ℂ} (hs : 0 < 
     analyticOrderAt zetaEntireCompletion s = analyticOrderAt riemannZeta s := by
   rcases eq_or_ne s 1 with rfl | hs1
   · have hnot : ¬ AnalyticAt ℂ riemannZeta 1 := fun ha ↦ by
-      have hm : ((0 : ℤ) : WithTop ℤ) ≤ (-1 : ℤ) :=
+      have hm : (0 : WithTop ℤ) ≤ -1 :=
         meromorphicOrderAt_riemannZeta_one ▸ ha.meromorphicOrderAt_nonneg
-      exact absurd (WithTop.coe_le_coe.mp hm) (by omega)
+      exact absurd hm (by decide)
     rw [(differentiable_zetaEntireCompletion.analyticAt 1).analyticOrderAt_eq_zero.mpr (by simp),
       analyticOrderAt_of_not_analyticAt hnot]
   · have hs0 : s ≠ 0 := by rintro rfl; simp at hs
@@ -217,7 +218,8 @@ theorem zeroCount_zetaEntireCompletion_eq_riemannZeta {R : Set ℂ}
   zeroCount_congr_divisor fun s hs ↦ by
     rcases eq_or_ne s 1 with rfl | hs1
     · rw [(differentiable_zetaEntireCompletion.analyticAt 1).divisor_apply_eq_zero (by simp),
-        divisor_riemannZeta_one]
+        (meromorphicOn_univ.2 meromorphic_riemannZeta).divisor_apply (Set.mem_univ 1),
+        meromorphicOrderAt_riemannZeta_one]
       rfl
     · rw [divisor_zetaEntireCompletion_eq_riemannZeta (hR s hs) hs1]
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
-import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # The Dedekind zeta function of `ℚ` is the Riemann zeta function

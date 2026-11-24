@@ -55,8 +55,20 @@ totalizations of morphisms, on which these formulas rest, is in
   associator and its inverse on the summand `X.X p ⊗ Y.X q ⊗ Z.X r`, with arbitrary intermediate
   degrees.
 
-The analogous formula for the differential of a tensor product is
-`HomologicalComplex.ι_tensorObj_d` in `TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`.
+The analogous formulas for the differential of a tensor product are in
+`TauCeti/Algebra/Homology/Monoidal/Tensor/Differential.lean`.  For
+`HomologicalComplex.tensorObj X Y` of any shape `c` with tensor signs,
+`HomologicalComplex.ιTensorObj_d_of_rel` applies when both summand degrees have outgoing shape
+relations (`c.Rel p p'` and `c.Rel q q'`) towards the target degree `j'` with `p' + q = j'` (the
+tensor signs then force `p + q' = j'`).  When one factor has no outgoing shape relation and the
+other has one landing in `j'` (`p + q' = j'`, resp. `p' + q = j'`), use the boundary rules
+`HomologicalComplex.ιTensorObj_d_of_not_rel_left` and
+`HomologicalComplex.ιTensorObj_d_of_not_rel_right`; when neither factor has an outgoing shape
+relation, `HomologicalComplex.ιTensorObj_d_eq_zero` gives zero.  For the monoidal tensor product
+`X ⊗ Y`, `HomologicalComplex.tensor_d` identifies its differential with that of
+`HomologicalComplex.tensorObj X Y` for any shape with tensor signs, and
+`HomologicalComplex.ιTensorObj_tensor_d` specializes the formula to `X ⊗ Y` of cochain complexes
+indexed by `ℤ`.
 -/
 
 public section

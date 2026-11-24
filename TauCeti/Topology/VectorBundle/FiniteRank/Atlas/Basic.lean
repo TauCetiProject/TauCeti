@@ -8,6 +8,9 @@ module
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
+import TauCeti.Topology.FiberBundle.Sigma
+import TauCeti.Topology.LocallyConstant.Fiber
+
 /-!
 # Small variable-rank vector-bundle atlases
 
@@ -60,8 +63,8 @@ abbrev Fiber (x : X) := Fin (A.rank x) → 𝕜
 
 /-- Package the point-indexed coordinate core on the rank-`n` clopen stratum of `A` as a
 `FiniteRankBundleCore`. -/
--- Expose the rank projection so the dependent coordinate model reduces to `Fin n → 𝕜`.
-@[expose]
+-- Reduce the rank also during implicit-argument matching of coordinate-map simp lemmas.
+@[expose, implicit_reducible]
 def stratumCore (n : ℕ) : FiniteRankBundleCore 𝕜 {x : X // A.rank x = n} where
   rank := n
   core := A.charts n
@@ -154,6 +157,13 @@ theorem range_stratum (n : ℕ) :
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
 
+/-- Including a single fibre into the reconstructed total space of a variable-rank atlas is
+inducing. -/
+theorem isInducing_mk (x : X) :
+    IsInducing (fun v : A.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit A.Fiber)) :=
+  FiberBundle.isInducing_of_comp_eq_sigmaMk_totalSpaceMk (A.rank x) ⟨x, rfl⟩
+    A.totalSpaceHomeomorph.symm.isInducing fun v ↦ A.totalSpaceHomeomorph_symm_apply ⟨x, v⟩
+
 section Continuity
 
 variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
@@ -163,26 +173,11 @@ to the rank strata, read in the native core total spaces, are continuous. -/
 theorem continuous_mk_iff_rankStrata (hb : Continuous b) (s : ∀ y, A.Fiber (b y)) :
     Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit A.Fiber)) ↔
       ∀ n : ℕ, Continuous (fun y : {y : Y // A.rank (b y) = n} =>
-        (⟨⟨b y, y.property⟩, fun i => s y (Fin.cast y.property.symm i)⟩ : (A.charts n).TotalSpace))
-            := by
-  constructor
-  · intro hs n
-    apply (IsEmbedding.sigmaMk (σ := fun n => (A.charts n).TotalSpace)).continuous_iff.2
-    convert A.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtypeVal) using 1
-    funext ⟨y, hy⟩
-    cases hy
-    simp only [Function.comp_apply, totalSpaceHomeomorph_symm_apply, Fin.cast_refl, id_eq]
-  · intro hs
-    apply continuous_of_cover_nhds (s := fun n : ℕ => {y : Y | A.rank (b y) = n})
-    · intro y
-      exact ⟨A.rank (b y), ((A.rank.isLocallyConstant.isOpen_fiber _).preimage hb).mem_nhds rfl⟩
-    · intro n
-      rw [continuousOn_iff_continuous_domRestrict]
-      convert A.totalSpaceHomeomorph.continuous.comp (continuous_sigmaMk.comp (hs n)) using 1
-      funext ⟨y, hy⟩
-      cases hy
-      simp only [Set.domRestrict_apply, Function.comp_apply, totalSpaceHomeomorph_apply,
-        Fin.cast_refl, id_eq]
+        (⟨⟨b y, y.property⟩, fun i => s y (Fin.cast y.property.symm i)⟩ :
+          (A.charts n).TotalSpace)) := by
+  rw [A.totalSpaceHomeomorph.symm.isInducing.continuous_iff]
+  exact (A.rank.isLocallyConstant.comp_continuous hb).continuous_iff_of_eq_sigmaMk _
+    fun n ⟨y, hy⟩ ↦ by cases hy; simp
 
 /-- The zero section of a variable-rank atlas is continuous. -/
 @[fun_prop]
