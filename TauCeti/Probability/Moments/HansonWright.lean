@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Analysis.Matrix.Realify
 public import TauCeti.Probability.Independence.Decoupling
-public import TauCeti.Probability.Moments.SubGaussian
+public import TauCeti.Probability.Moments.SubGaussian.ExponentialMoments
 import TauCeti.Analysis.Complex.Euclidean.Matrix
 import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Probability.Independence.Integration
+import TauCeti.Probability.Moments.SubGaussian.LinearForms
 import TauCeti.Probability.Moments.SubExponential
 
 /-!
