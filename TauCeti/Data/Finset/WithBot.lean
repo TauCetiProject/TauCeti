@@ -84,8 +84,8 @@ variable [Fintype α] [DecidableEq α]
 /-- The elements outside the image of `S` in `WithBot α` are `⊥` and the elements outside `S`. -/
 noncomputable def optionComplEquivComplMapCoeWithBot (S : Finset α) :
     Option ↥Sᶜ ≃ ↥(S.map Function.Embedding.coeWithBot)ᶜ :=
-  .ofBijective (fun o ↦ o.elim ⟨⊥, by simp⟩
-    fun a ↦ ⟨a.val, by simpa using mem_compl.1 a.property⟩) <| by
+  .ofBijective (fun o ↦ o.elim ⟨⊥, by simp⟩ fun a ↦ ⟨a.val, by simpa using mem_compl.1 a.property⟩)
+      <| by
     refine ⟨fun o o' e ↦ ?_, fun a ↦ ?_⟩
     · replace e := congrArg Subtype.val e
       rcases o with _ | ⟨a, ha⟩ <;> rcases o' with _ | ⟨a', ha'⟩

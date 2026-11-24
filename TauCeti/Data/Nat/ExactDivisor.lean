@@ -469,8 +469,8 @@ def primeFactorsEquiv (N : ℕ) : ExactDivisor N ≃ {s : Finset ℕ // s ⊆ N.
   toFun Q := ⟨Q.val.primeFactors, Q.property.primeFactors_subset⟩
   invFun s := ⟨prodPrimePow N s.val, isExactDivisor_prodPrimePow⟩
   left_inv Q := ext Q.property.prodPrimePow_primeFactors
-  right_inv s := Subtype.ext <|
-    primeFactors_prodPrimePow.trans (Finset.inter_eq_left.mpr s.property)
+  right_inv s := Subtype.ext <| primeFactors_prodPrimePow.trans
+      (Finset.inter_eq_left.mpr s.property)
 
 /-- `primeFactorsEquiv` sends an exact divisor to its set of prime factors. -/
 @[simp]

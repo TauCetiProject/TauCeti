@@ -28,8 +28,9 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
-vector of the Hilbert sum; this is how the von Neumann density theorem passes from one vector to
-finitely many.
+vector of the Hilbert sum; in particular, `PiLp.diagStarAlgHom_mem_centralizer_centralizer` sends
+the double commutant `s''` of any set of operators `s` into the double commutant of its diagonal
+copy, which is how the von Neumann density theorem passes from one vector to finitely many.
 -/
 
 public section
@@ -184,6 +185,29 @@ theorem diagStarAlgHom_apply_single [DecidableEq ι] (s : H →L[𝕜] H) (j : �
   by_cases hk : k = j
   · subst hk; simp
   · simp [hk]
+
+/-- The diagonal amplification of an operator in `s''` lies in the double commutant of the
+diagonal amplification of `s`. -/
+theorem diagStarAlgHom_mem_centralizer_centralizer {s : Set (H →L[𝕜] H)} {x : H →L[𝕜] H}
+    (hx : x ∈ s.centralizer.centralizer) :
+    diagStarAlgHom 𝕜 H ι x ∈ (diagStarAlgHom 𝕜 H ι '' s).centralizer.centralizer := by
+  classical
+  intro T hT
+  -- the matrix entries of an operator commuting with the diagonal copy of `s` lie in `s'`
+  have hentry (i j : ι) : T.piLpEntry i j ∈ s.centralizer := by
+    intro a ha
+    have haT := hT _ ⟨a, ha, rfl⟩
+    ext h
+    have h' := congr_arg (fun w => w i) (DFunLike.congr_fun haT (PiLp.single 2 j h))
+    simp only [mul_apply_eq_comp, diagStarAlgHom_apply, diagStarAlgHom_apply_single] at h'
+    simpa [mul_apply_eq_comp] using h'
+  ext w i
+  simp only [mul_apply_eq_comp]
+  rw [ContinuousLinearMap.apply_eq_sum_piLpEntry, diagStarAlgHom_apply,
+    ContinuousLinearMap.apply_eq_sum_piLpEntry, map_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [diagStarAlgHom_apply]
+  simpa using DFunLike.congr_fun (hx _ (hentry i j)) (w j)
 
 end PiLp
 

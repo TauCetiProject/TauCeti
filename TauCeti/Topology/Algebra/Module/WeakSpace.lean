@@ -19,7 +19,9 @@ weak convergence be used without unfolding the definition of `WeakSpace` as a `W
 No injectivity of the duality pairing is needed, since the weak topology is induced by the
 evaluations. Sequential closedness of an image `toWeakSpace 𝕜 E '' s` likewise translates directly
 to closure of `s` under limits of weakly convergent sequences
-(`TauCeti.isSeqClosed_toWeakSpace_image_iff`).
+(`TauCeti.isSeqClosed_toWeakSpace_image_iff`), and a weakly Cauchy sequence converges weakly as
+soon as one of its subsequences does
+(`TauCeti.tendsto_toWeakSpace_of_forall_cauchySeq_of_tendsto_subseq`).
 
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
@@ -68,6 +70,23 @@ theorem tendsto_of_tendsto_toWeakSpace_of_isCompact [T2Space (WeakSpace 𝕜 E)]
     hy.tendsto_comp ((toWeakSpaceCLM 𝕜 E).continuous.tendsto y)
   exact eq_of_nhds_neBot (hy'.neBot.mono (inf_le_inf_left _ h))
 
+section Uniform
+
+variable {𝕜 E : Type*} [CommSemiring 𝕜] [UniformSpace 𝕜] [ContinuousAdd 𝕜]
+  [ContinuousConstSMul 𝕜 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
+
+/-- A weakly Cauchy sequence, one whose values under every continuous linear functional form a
+Cauchy sequence, converges weakly to the weak limit of any of its subsequences. -/
+theorem tendsto_toWeakSpace_of_forall_cauchySeq_of_tendsto_subseq {u : ℕ → E}
+    (hu : ∀ f : StrongDual 𝕜 E, CauchySeq fun n ↦ f (u n)) {φ : ℕ → ℕ}
+    (hφ : Tendsto φ atTop atTop) {x : E}
+    (hlim : Tendsto (fun n ↦ toWeakSpace 𝕜 E (u (φ n))) atTop (𝓝 (toWeakSpace 𝕜 E x))) :
+    Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) := by
+  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto] at hlim ⊢
+  exact fun f ↦ tendsto_nhds_of_cauchySeq_of_subseq (hu f) hφ (hlim f)
+
+end Uniform
+
 section Field
 
 variable {𝕜 E : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
@@ -89,7 +108,7 @@ theorem exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero
   rw [nhds_pi] at ht
   obtain ⟨I, s, hs, hst⟩ := Filter.mem_pi'.1 ht
   -- The common kernel of the functionals in `I` has finite codimension, so it is nonzero.
-  let Φ : E →ₗ[𝕜] (I → 𝕜) := LinearMap.pi fun f ↦ (f.1 : E →L[𝕜] 𝕜).toLinearMap
+  let Φ : E →ₗ[𝕜] (I → 𝕜) := LinearMap.pi fun f ↦ (f.val : E →L[𝕜] 𝕜).toLinearMap
   obtain ⟨x, hx, hx0⟩ : ∃ x ∈ LinearMap.ker Φ, x ≠ 0 :=
     Submodule.exists_mem_ne_zero_of_ne_bot fun hker ↦
       hE (FiniteDimensional.of_injective Φ (LinearMap.ker_eq_bot.1 hker))

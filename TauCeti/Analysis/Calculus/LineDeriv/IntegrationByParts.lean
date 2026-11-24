@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Topology.Algebra.Support
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
@@ -64,6 +65,10 @@ Lipschitz test function.
   `TauCeti.integrable_mul_sq_of_hasCompactSupport` and
   `TauCeti.integrable_sq_of_hasCompactSupport` record the integrability of `-L (∂_w ∂_v u) * L u`
   and of the weighted squares `g · (L u) ^ 2`.
+* `TauCeti.integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply`: integration
+  by parts twice, `∫ B f (∂_v ∂_w g) = ∫ B (∂_w ∂_v f) g`, for compactly supported `g`.
+  `TauCeti.integrable_bilinear_of_forall_notMem_tsupport_eq_zero` records the integrability of
+  a bilinear pairing of continuous maps one of which vanishes off a compact support.
 * `TauCeti.integral_bilinear_fderiv_apply_comm`: the integral of `B (∂_v u) (∂_w u)` is symmetric
   in the two directions, and `TauCeti.integral_bilinForm_fderiv_apply_comm` its form for a
   bilinear form on a finite-dimensional space.
@@ -111,6 +116,17 @@ variable {E V W : Type*}
   [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → V}
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
+/-- A continuous bilinear pairing `B (p x) (q x)` of continuous maps is integrable when `q`
+vanishes off the support of a compactly supported function `g`. -/
+theorem integrable_bilinear_of_forall_notMem_tsupport_eq_zero [IsFiniteMeasureOnCompacts μ]
+    {V' α : Type*} [NormedAddCommGroup V'] [NormedSpace ℝ V'] [Zero α] (B : V →L[ℝ] V' →L[ℝ] W)
+    {g : E → α} (hgc : HasCompactSupport g) {p : E → V} {q : E → V'} (hp : Continuous p)
+    (hq : Continuous q) (hq0 : ∀ x, x ∉ tsupport g → q x = 0) :
+    Integrable (fun x ↦ B (p x) (q x)) μ :=
+  ((B.continuous.comp hp).clm_apply hq).integrable_of_hasCompactSupport <|
+    hgc.mono' <| Function.support_subset_iff'.2 fun x hx ↦ by simp [hq0 x hx]
+
 /-- **Integration by parts against a compactly supported map.** For a continuous bilinear map `B`,
 a compactly supported `C¹` map `g` and a map `f` that is `C¹` at every point of the support of
 `g`, integrating by parts in the direction `v` gives `∫ B f (∂_v g) = -∫ B (∂_v f) g`. Nothing is
@@ -133,23 +149,16 @@ theorem integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport {V' : Ty
     · rw [(hFf x hx).fderiv_eq]
     · simp [image_eq_zero_of_notMem_tsupport hx]
   simp only [← hFf₁, ← hFf₂]
-  -- a bilinear pairing whose right factor has compact support has compact support
-  have hcs : ∀ (P : E → V) (Q : E → V'), HasCompactSupport Q →
-      HasCompactSupport fun x ↦ B (P x) (Q x) :=
-    fun P Q hQ ↦ hQ.mono fun x hx ↦ by
-      simp only [Function.mem_support] at hx ⊢
-      contrapose hx
-      simp [hx]
   have hdF : Continuous fun x ↦ fderiv ℝ F x v :=
     (hF.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hg0 : ∀ x, x ∉ tsupport g → g x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   exact integral_bilinear_fderiv_right_eq_neg_left_of_integrable
-    (Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hdF).clm_apply hg.continuous)
-      (hcs _ _ hsupp))
-    (Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hF.continuous).clm_apply
-      ((hg.continuous_fderiv one_ne_zero).clm_apply continuous_const))
-      (hcs _ _ (hsupp.fderiv_apply (𝕜 := ℝ) v)))
-    (Continuous.integrable_of_hasCompactSupport ((B.continuous.comp hF.continuous).clm_apply
-      hg.continuous) (hcs _ _ hsupp))
+    (integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hsupp hdF hg.continuous hg0)
+    (integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hsupp hF.continuous
+      ((hg.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+      fun x hx ↦ by simp [fderiv_of_notMem_tsupport ℝ hx])
+    (integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hsupp hF.continuous hg.continuous
+      hg0)
     (fun x _ ↦ hF.differentiable one_ne_zero x) fun x _ ↦ hg.differentiable one_ne_zero x
 
 /-- **Integration by parts against a directional derivative.** For a continuous bilinear map `B`,
@@ -186,6 +195,29 @@ theorem integral_neg_fderiv_fderiv_apply_mul_eq_integral_sq (L : V →L[ℝ] ℝ
     (hu.of_le (by norm_num)) hsupp v v
   simp only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.mul_apply'] at h
   simp only [sq, h, neg_mul, integral_neg]
+
+/-- **Integration by parts twice.** For a continuous bilinear map `B`, a compactly supported `C²`
+map `g` and a map `f` that is `C²` at every point of the support of `g`, the second derivative
+can be moved from `g` to `f`: `∫ B f (∂_v ∂_w g) = ∫ B (∂_w ∂_v f) g`. Nothing is assumed about
+`f` away from the support of `g`. -/
+theorem integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply {V' : Type*}
+    [NormedAddCommGroup V'] [NormedSpace ℝ V'] (B : V →L[ℝ] V' →L[ℝ] W) {f : E → V}
+    {g : E → V'} (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ 2 f x) (hg : ContDiff ℝ 2 g)
+    (hgc : HasCompactSupport g) (v w : E) :
+    ∫ x, B (f x) (fderiv ℝ (fderiv ℝ g) x v w) ∂μ =
+      ∫ x, B (fderiv ℝ (fderiv ℝ f) x w v) (g x) ∂μ := by
+  -- Integrate by parts in `v` against the compactly supported `C¹` map `x ↦ ∂_w g x`, whose
+  -- support lies in that of `g`, then in `w` against `g`.
+  have hsnd : ∀ x, fderiv ℝ (fun y ↦ fderiv ℝ g y w) x v = fderiv ℝ (fderiv ℝ g) x v w :=
+    fun x ↦ by simp [(hg.contDiffAt.hasFDerivAt_fderiv_apply le_rfl w).fderiv]
+  have h := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := μ) B
+    (f := f) (g := fun x ↦ fderiv ℝ g x w)
+    (fun x hx ↦ (hf x (tsupport_fderiv_apply_subset ℝ w hx)).of_le one_le_two)
+    ((hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const)
+    (hgc.fderiv_apply (𝕜 := ℝ) w) v
+  simp only [hsnd] at h
+  rw [h, integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply B hf
+    (hg.of_le (by norm_num)) hgc v w, neg_neg]
 
 /-- Exchanging the two differentiation directions does not change the integral of a continuous
 bilinear pairing of two directional derivatives of a compactly supported `C²` map. -/
@@ -244,8 +276,7 @@ omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 theorem integrable_neg_fderiv_fderiv_apply_mul_of_hasCompactSupport [IsFiniteMeasureOnCompacts μ]
     (L : V →L[ℝ] ℝ) (hu : ContDiff ℝ 2 u) (hsupp : HasCompactSupport u) (v w : E) :
     Integrable (fun x ↦ -L (fderiv ℝ (fderiv ℝ u) x w v) * L (u x)) μ :=
-  ((L.continuous.comp ((((hu.fderiv_right (m := 1) (by norm_num)).continuous_fderiv
-    one_ne_zero).clm_apply continuous_const).clm_apply continuous_const)).neg.mul
+  ((L.continuous.comp (hu.continuous_fderiv_fderiv_apply le_rfl w v)).neg.mul
       (L.continuous.comp hu.continuous)).integrable_of_hasCompactSupport <|
     hsupp.mono_of_eq_zero fun x hx ↦ by simp [hx]
 

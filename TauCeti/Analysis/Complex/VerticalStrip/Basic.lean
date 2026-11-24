@@ -7,18 +7,22 @@ module
 
 public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.HasPrimitives
-import TauCeti.Analysis.Complex.HasPrimitives
+import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 
 /-!
 # Vertical strips
 
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
-This file records their membership criteria, behavior under reflection, convexity, closure, the
+This file records their membership criteria, behavior under reflection, convexity, closure,
+their images in annuli under the translated exponential `w ↦ z₀ + exp w`, the
 exponential gauge multiplier `scaleFactor` normalizing strip boundary bounds, and holomorphic
 primitives `Complex.wedgeIntegral` for functions satisfying `DiffContOnCl` on a vertical strip
-(specializing `TauCeti.Analysis.Complex.HasPrimitives` to
-`verticalClosedStrip a b = Icc a b ×ℂ univ`).
+(specializing `TauCeti.Analysis.Complex.HasPrimitives.Basic` to
+`verticalClosedStrip a b = Icc a b ×ℂ univ`), and the Cauchy rectangle contour-shift identity
+`DiffContOnCl.intervalIntegral_add_mul_I_eq` equating vertical line integrals of vertically
+periodic holomorphic strip functions.
 -/
 
 public section
@@ -81,6 +85,30 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
 theorem closure_verticalStrip (hab : a < b) :
     closure (verticalStrip a b) = verticalClosedStrip a b := by
   rw [verticalStrip, closure_preimage_re, closure_Ioo hab.ne, verticalClosedStrip]
+
+/-- The translated exponential `w ↦ z₀ + exp w` maps the open strip `log r₁ < re w < log r₂` into
+the open annulus `r₁ < ‖z - z₀‖ < r₂`. No sign condition on `r₁` is needed, since
+`r₁ ≤ exp (log r₁)` for every real `r₁`. -/
+theorem mapsTo_add_exp_verticalStrip (z₀ : ℂ) (r₁ : ℝ) {r₂ : ℝ} (hr₂ : 0 < r₂) :
+    MapsTo (fun w => z₀ + exp w) (verticalStrip (Real.log r₁) (Real.log r₂))
+      (Metric.ball z₀ r₂ \ Metric.closedBall z₀ r₁) := by
+  intro w hw
+  rw [mem_verticalStrip_iff] at hw
+  rw [mem_sdiff, mem_ball_iff_norm, mem_closedBall_iff_norm, add_sub_cancel_left, norm_exp, not_le]
+  exact ⟨(Real.lt_log_iff_exp_lt hr₂).1 hw.2,
+    (Real.le_exp_log r₁).trans_lt (Real.exp_lt_exp.2 hw.1)⟩
+
+/-- The translated exponential `w ↦ z₀ + exp w` maps the closed strip `log r₁ ≤ re w ≤ log r₂`
+into the closed annulus `r₁ ≤ ‖z - z₀‖ ≤ r₂`. No sign condition on `r₁` is needed, since
+`r₁ ≤ exp (log r₁)` for every real `r₁`. -/
+theorem mapsTo_add_exp_verticalClosedStrip (z₀ : ℂ) (r₁ : ℝ) {r₂ : ℝ} (hr₂ : 0 < r₂) :
+    MapsTo (fun w => z₀ + exp w) (verticalClosedStrip (Real.log r₁) (Real.log r₂))
+      (Metric.closedBall z₀ r₂ \ Metric.ball z₀ r₁) := by
+  intro w hw
+  rw [mem_verticalClosedStrip_iff] at hw
+  rw [mem_sdiff, mem_closedBall_iff_norm, mem_ball_iff_norm, add_sub_cancel_left, norm_exp, not_lt]
+  exact ⟨(Real.le_log_iff_exp_le hr₂).1 hw.2,
+    (Real.le_exp_log r₁).trans (Real.exp_le_exp.2 hw.1)⟩
 
 section ScaleFactor
 
@@ -215,3 +243,45 @@ theorem DiffContOnCl.diffContOnCl_wedgeIntegral_verticalStrip [CompleteSpace E] 
     closure_verticalStrip hab ▸ hf.continuousOn_wedgeIntegral_verticalClosedStrip hab hz₀⟩
 
 end Primitive
+
+section ContourShift
+
+open TauCeti.Complex.HadamardThreeLines
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E} {a b : ℝ}
+
+/-- **Contour shift across a vertical strip.** If `f : ℂ → E` is holomorphic on `verticalStrip a b`
+(`a ≤ b`), continuous on its closure, and vertically periodic of period `T` on `[a, b]`, then its
+vertical interval integrals along `re z = a` and `re z = b` over `0..T` agree. -/
+theorem DiffContOnCl.intervalIntegral_add_mul_I_eq (hf : DiffContOnCl ℂ f (verticalStrip a b))
+    (hab : a ≤ b) (T : ℝ) (hper : ∀ x ∈ Icc a b, f (x + T * I) = f x) :
+    (∫ y : ℝ in 0..T, f (a + y * I)) = ∫ y : ℝ in 0..T, f (b + y * I) := by
+  rcases hab.eq_or_lt with rfl | hab; · rfl
+  have hrect := Complex.integral_boundary_rect_eq_zero_of_continuousOn_of_differentiableOn f
+    ⟨a, 0⟩ ⟨b, T⟩
+    (hf.continuousOn.mono fun _ hz => by
+      rw [closure_verticalStrip hab]; simpa [uIcc_of_le hab.le] using hz.1)
+    (hf.differentiableOn.mono fun _ hz => by
+      simpa [min_eq_left hab.le, max_eq_right hab.le] using hz.1)
+  have htop : (∫ x : ℝ in a..b, f (x + T * I)) = ∫ x : ℝ in a..b, f (x + (0 : ℝ) * I) :=
+    intervalIntegral.integral_congr fun x hx => by
+      rw [ofReal_zero, zero_mul, add_zero]; exact hper x (uIcc_of_le hab.le ▸ hx)
+  rw [htop, sub_self, zero_add, sub_eq_zero, smul_right_inj I_ne_zero] at hrect; exact hrect.symm
+
+/-- Twisting a `T`-vertically periodic strip function by `exp (-(2π m / T) z)` (`m : ℤ`) preserves
+vertical `T`-periodicity, so its vertical integrals over `0..T` along `re z = a` and `re z = b`
+agree. -/
+theorem DiffContOnCl.intervalIntegral_exp_smul_add_mul_I_eq
+    (hf : DiffContOnCl ℂ f (verticalStrip a b)) (hab : a ≤ b) (T : ℝ)
+    (hper : ∀ x ∈ Icc a b, f (x + T * I) = f x) (m : ℤ) :
+    (∫ y : ℝ in 0..T, exp (-(2 * Real.pi * m / T : ℂ) * (a + y * I)) • f (a + y * I)) =
+      ∫ y : ℝ in 0..T, exp (-(2 * Real.pi * m / T : ℂ) * (b + y * I)) • f (b + y * I) := by
+  rcases eq_or_ne T 0 with rfl | hT; · simp
+  set ω : ℂ := -(2 * Real.pi * m / T : ℂ)
+  refine ((by fun_prop : Differentiable ℂ fun z : ℂ => exp (ω * z)).diffContOnCl.smul
+    hf).intervalIntegral_add_mul_I_eq hab T fun x hx => ?_
+  have hωT : ω * (T * I) = ((-m : ℤ) : ℂ) * (2 * Real.pi * I) := by
+    have : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT; simp only [ω]; push_cast; field_simp
+  simp only [hper x hx, mul_add, Complex.exp_add, hωT, Complex.exp_int_mul_two_pi_mul_I, mul_one]
+
+end ContourShift

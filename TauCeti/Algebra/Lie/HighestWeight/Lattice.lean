@@ -175,7 +175,8 @@ theorem exists_weightBasis_highestWeightLattice (hlam : IsDominantIntegral b.bas
   have hV : ∀ x : M, (x : irreducibleQuotient b.base lam) ∈
       ⨆ wt : ι → ℤ,
         jointWeightSpace b.h (representation ℚ L (irreducibleQuotient b.base lam)) wt :=
-    fun x => b.mem_iSup_jointWeightSpace_of_mem_highestWeightLattice lam hlam.isIntegralWeight x.2
+    fun x => b.mem_iSup_jointWeightSpace_of_mem_highestWeightLattice lam hlam.isIntegralWeight
+        x.property
   exact ⟨_, kostantWeightBasisFin (rootGenerator b) b.h _ M hM hV,
     kostantWeightFin b.h _ M,
     isCartanWeightVector_kostantWeightBasisFin (rootGenerator b) b.h _ M hM hV⟩

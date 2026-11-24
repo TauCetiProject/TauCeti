@@ -56,8 +56,8 @@ theorem mem_unitCone {D : Set (realSpace K)} {y : realSpace K} :
 theorem surfaceScale_mem_unitCone_iff (D : Set (realSpace K)) (x : normOneSurface K)
     {t : ℝ} (ht : 0 < t) : surfaceScale (x : realSpace K) t ∈ unitCone D ↔
       (x : realSpace K) ∈ D := by
-  rw [mem_unitCone, surfacePart_surfaceScale x.2 ht]
-  exact and_iff_right (surfaceScale_pos (mem_normOneSurface.mp x.2).1 ht)
+  rw [mem_unitCone, surfacePart_surfaceScale x.property ht]
+  exact and_iff_right (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht)
 
 /-- A measurable surface set has a measurable cone. -/
 theorem measurableSet_unitCone {D : Set (realSpace K)} (hD : MeasurableSet D) :

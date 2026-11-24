@@ -71,7 +71,7 @@ open _root_.CuspForm
 theorem finrank_cuspForm_Gamma1_eq_sum_card_divisors_mul {N : ℕ} [NeZero N] (k : ℤ) :
     Module.finrank ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
       ∑ M : {M : ℕ+ // (M : ℕ) ∣ N},
-        #(N / M.1).divisors * Module.finrank ℂ (cuspFormsNew M.1 k) := by
+        #(N / M.val).divisors * Module.finrank ℂ (cuspFormsNew M.val k) := by
   rw [finrank_eq_sum_finrank_of_isInternal (isInternal_map_levelRaiseₗ_cuspFormsNew N k)]
   simp_rw [CuspForm.finrank_map_levelRaiseₗ]
   simpa only [smul_eq_mul] using
@@ -84,9 +84,9 @@ theorem finrank_cuspFormCharSpace_eq_sum_dite_card_divisors_mul {N : ℕ} [NeZer
     (χ : (ZMod N)ˣ →* ℂˣ) :
     Module.finrank ℂ (cuspFormCharSpace k χ) =
       ∑ M : {M : ℕ+ // (M : ℕ) ∣ N},
-        if h : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ M.1 then
-          #(N / M.1).divisors *
-            Module.finrank ℂ ↥(cuspFormsNew M.1 k ⊓ cuspFormCharSpace k
+        if h : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ M.val then
+          #(N / M.val).divisors *
+            Module.finrank ℂ ↥(cuspFormsNew M.val k ⊓ cuspFormCharSpace k
               (DirichletCharacter.changeLevel h
                 (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ))).toUnitHom)
         else 0 := by
@@ -106,13 +106,13 @@ theorem finrank_cuspFormCharSpace_eq_sum_dite_card_divisors_mul {N : ℕ} [NeZer
 theorem finrank_cuspForm_Gamma0_eq_sum_card_divisors_mul {N : ℕ} [NeZero N] (k : ℤ) :
     Module.finrank ℂ (CuspForm ((Gamma0 N).map (mapGL ℝ)) k) =
       ∑ M : {M : ℕ+ // (M : ℕ) ∣ N},
-        #(N / M.1).divisors *
-          Module.finrank ℂ ↥(cuspFormsNew M.1 k ⊓
-            cuspFormCharSpace k (1 : (ZMod M.1)ˣ →* ℂˣ)) := by
+        #(N / M.val).divisors *
+          Module.finrank ℂ ↥(cuspFormsNew M.val k ⊓
+            cuspFormCharSpace k (1 : (ZMod M.val)ˣ →* ℂˣ)) := by
   rw [← (cuspFormCharSpaceOneEquiv N k).finrank_eq,
     finrank_cuspFormCharSpace_eq_sum_dite_card_divisors_mul k (1 : (ZMod N)ˣ →* ℂˣ)]
   refine Finset.sum_congr rfl fun M _ ↦ ?_
-  have hdvd : DirichletCharacter.conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* ℂˣ)) ∣ M.1 := by
+  have hdvd : DirichletCharacter.conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* ℂˣ)) ∣ M.val := by
     rw [DirichletCharacter.conductor_ofUnitHom_one]
     exact one_dvd _
   rw [dite_eq_left hdvd, DirichletCharacter.changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom]
@@ -141,7 +141,7 @@ theorem natCast_finrank_cuspFormsNew_eq_sum_divisors {N : ℕ} [NeZero N] (k : �
   rw [hm, ← Finset.sum_coe_sort m.divisors, ← Equiv.sum_comp (pnatDvdEquivDivisors m)]
   refine Finset.sum_congr rfl fun M _ ↦ ?_
   dsimp only [f]
-  rw [coe_pnatDvdEquivDivisors_apply, dite_eq_left M.1.ne_zero, Nat.cast_mul]
+  rw [coe_pnatDvdEquivDivisors_apply, dite_eq_left M.val.ne_zero, Nat.cast_mul]
 
 /-- Dimension in `ℤ` of the fixed-nebentypus newspace `S_k(d, χ_d)ⁿᵉʷ` for `cond(χ) ∣ d` and
 `d ≠ 0`, extended by `0` elsewhere. -/
@@ -180,19 +180,19 @@ private lemma finrank_cuspFormCharSpace_changeLevel_eq_sum_divisors {N m : ℕ} 
   refine Finset.sum_congr rfl fun M _ ↦ ?_
   dsimp only [F]
   rw [coe_pnatDvdEquivDivisors_apply, newCharSpaceDim]
-  by_cases hcM : c ∣ M.1
-  · have hcM' : DirichletCharacter.conductor (MulChar.ofUnitHom χm) ∣ M.1 := hcond_m ▸ hcM
-    have hcM0 : c ∣ M.1 ∧ (M.1 : ℕ) ≠ 0 := ⟨hcM, M.1.ne_zero⟩
+  by_cases hcM : c ∣ M.val
+  · have hcM' : DirichletCharacter.conductor (MulChar.ofUnitHom χm) ∣ M.val := hcond_m ▸ hcM
+    have hcM0 : c ∣ M.val ∧ (M.val : ℕ) ≠ 0 := ⟨hcM, M.val.ne_zero⟩
     rw [dite_eq_left hcM0, dite_eq_left hcM', Nat.cast_mul]
     have hchar : (DirichletCharacter.changeLevel hcM'
         (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χm))).toUnitHom =
         (DirichletCharacter.changeLevel hcM ψ₀).toUnitHom :=
-      (DirichletCharacter.eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq M.2
+      (DirichletCharacter.eq_changeLevel_primitiveCharacter_toUnitHom_of_comp_unitsMap_eq M.property
         (by rw [← DirichletCharacter.changeLevel_toUnitHom, ← DirichletCharacter.changeLevel_trans])
         hcM').symm
     rw [hchar]
-  · have hcM' : ¬ DirichletCharacter.conductor (MulChar.ofUnitHom χm) ∣ M.1 := hcond_m ▸ hcM
-    have hcM0 : ¬ (c ∣ M.1 ∧ (M.1 : ℕ) ≠ 0) := fun h ↦ hcM h.1
+  · have hcM' : ¬ DirichletCharacter.conductor (MulChar.ofUnitHom χm) ∣ M.val := hcond_m ▸ hcM
+    have hcM0 : ¬ (c ∣ M.val ∧ (M.val : ℕ) ≠ 0) := fun h ↦ hcM h.1
     rw [dite_eq_right hcM0, dite_eq_right hcM', mul_zero, Nat.cast_zero]
 
 /-- **Dimension of the fixed-nebentypus newspace `S_k(N, χ)ⁿᵉʷ`** (Diamond–Shurman,

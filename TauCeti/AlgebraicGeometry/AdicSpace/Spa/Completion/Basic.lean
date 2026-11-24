@@ -90,11 +90,10 @@ theorem exists_isContinuous_comap_coeRingHom_eq {v : Spv A} (hv : v.IsContinuous
     convert ofValuation_valuation v using 2
     ext a
     -- `F` sends the image of `a` in `Â` to the image of `algebraMap A κ(v) a` in `κ(v)^`
-    have hF : F (a : Completion A) =
-        (algebraMap A (WithVal (residueFieldValuation v)) a :
-          (residueFieldValuation v).Completion) := Completion.mapRingHom_coe _ a
+    have hF : F (a : Completion A) = residueFieldCompletionMap v a :=
+      (Completion.mapRingHom_coe _ a).trans (residueFieldCompletionMap_apply v a).symm
     rw [Valuation.comap_apply, Valuation.comap_apply, Completion.coeRingHom_apply, hF,
-      Valued.valuedCompletion_apply, valued_algebraMap_residueFieldValuation]
+      valued_residueFieldCompletionMap]
 
 /-- **The surjectivity half of Wedhorn Proposition 7.48, for any subring `A⁺`.** Pullback along
 `A → Â` maps `Spa (Â, Â⁺)` onto `Spa (A, A⁺)`, where `Â⁺` is the closure of the image of `A⁺`.

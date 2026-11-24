@@ -152,7 +152,7 @@ the factored weight-torus morphism. -/
 theorem coe_kostantWeightTorusInToral
     (hwt : Submodule.span ℤ (Set.range wt) = ⊤) :
     let _ := isClosedImmersion_kostantWeightTorusToToral e h ρ M hM hnil b wt hwt
-    (kostantWeightTorusInToral e h ρ M hM hnil b wt hwt).1 =
+    (kostantWeightTorusInToral e h ρ M hM hnil b wt hwt).val =
       Subobject.mk (kostantWeightTorusToToral e h ρ M hM hnil b wt) := by
   have _ := isClosedImmersion_kostantWeightTorusToToral e h ρ M hM hnil b wt hwt
   rw [kostantWeightTorusInToral]

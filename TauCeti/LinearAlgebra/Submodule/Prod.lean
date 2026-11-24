@@ -14,7 +14,7 @@ public import Mathlib.Order.SupIndep
 Products of submodules commute with indexed suprema, and a family of products is independent
 exactly when both families of factors are. The two coordinate copies `Submodule.fst` and
 `Submodule.snd` of the factors of a product module are cut out by the vanishing of the other
-coordinate and are complementary.
+coordinate.
 
 ## Main declarations
 

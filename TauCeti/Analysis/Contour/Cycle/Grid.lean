@@ -512,7 +512,7 @@ theorem IsCompact.exists_open_segments_cycle_windingNumber_eq_one.{u} {K G : Set
     exact (isCompact_Icc.image AffineMap.lineMap_continuous).isClosed
   let W₁ : Set ℂ := Subtype.val '' {z : {z : ℂ // z ∉ Cycle.trace Γ} | Cycle.windingNumber z Γ = 1}
   have hW₁_open : IsOpen W₁ :=
-    (Cycle.isCompact_trace Γ).isClosed.isOpen_compl.isOpenMap_subtype_val _
+    (Cycle.isCompact_trace Γ).isClosed.isOpen_compl.isOpenMap_subtypeVal _
       ((Cycle.isLocallyConstant_windingNumber Γ).isOpen_fiber 1)
   refine ⟨G ∩ Sᶜ ∩ W₁, E, Γ, (hG.inter hS_closed.isOpen_compl).inter hW₁_open,
     fun z hz ↦ ⟨⟨hKG hz, fun hzS ↦ (hsub hzS).2 hz⟩,

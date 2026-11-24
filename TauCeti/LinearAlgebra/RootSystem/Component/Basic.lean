@@ -354,7 +354,7 @@ theorem componentProj_reflection_of_ne {C : P.Component} {i : ι} (h : P.compone
     (x : M) : P.componentProj C (P.reflection i x) = P.componentProj C x := by
   ext
   rw [coe_componentProj_reflection, reflection_apply,
-    coroot'_eq_zero_of_mem_componentSpace h (P.componentProj C x).2, zero_smul, sub_zero]
+    coroot'_eq_zero_of_mem_componentSpace h (P.componentProj C x).property, zero_smul, sub_zero]
 
 end Projection
 

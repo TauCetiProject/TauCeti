@@ -35,6 +35,8 @@ receives `S.doubleι : X[0] ⟶ (Y ⟶ Z)`.
 * `HomologicalComplex.homOfDegreewiseSplit_doubleSplitting_comp_shiftIso`: for cochain complexes
   indexed by `ℤ`, the connecting morphism of the split sequence `X₁[i₁] ⟶ (X₀ ⟶ X₁) ⟶ X₀[i₀]`
   is `g`.
+* `CategoryTheory.ShortComplex.map_doubleι_comp_doubleToMapHomologicalComplex`: the chain map
+  `X[0] ⟶ (Y ⟶ Z)` commutes with applying a functor termwise.
 -/
 
 public section
@@ -109,5 +111,22 @@ theorem doubleι_doubleMap {S' : ShortComplex C} (φ : S ⟶ S') :
       φ.comm₂₃ = (HomologicalComplex.single C (.up ℤ) 0).map φ.τ₁ ≫ S'.doubleι := by
   apply HomologicalComplex.from_single_hom_ext
   simp [doubleι_f_zero, HomologicalComplex.single_map_f_self, reassoc_of% φ.comm₁₂]
+
+/-- The chain map `X[0] ⟶ (Y ⟶ Z)` commutes with applying a functor `F` termwise, through the
+comparisons `HomologicalComplex.doubleToMapHomologicalComplex` and Mathlib's
+`HomologicalComplex.singleMapHomologicalComplex`. -/
+@[reassoc]
+theorem map_doubleι_comp_doubleToMapHomologicalComplex {D : Type*} [Category D]
+    [HasZeroMorphisms D] [HasZeroObject D] (F : C ⥤ D) [F.PreservesZeroMorphisms] :
+    (S.map F).doubleι ≫ HomologicalComplex.doubleToMapHomologicalComplex F S.g
+        ComplexShape.up_rel_zero_one zero_ne_one =
+      (HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) 0).inv.app S.X₁ ≫
+        (F.mapHomologicalComplex (.up ℤ)).map S.doubleι := by
+  apply HomologicalComplex.from_single_hom_ext
+  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, doubleι_f_zero,
+    HomologicalComplex.doubleToMapHomologicalComplex_f₀,
+    HomologicalComplex.singleMapHomologicalComplex_inv_app_self,
+    Functor.mapHomologicalComplex_map_f, doubleι_f_zero]
+  simp only [map_f, map_g, map_X₁, Category.assoc, Iso.inv_hom_id_assoc, ← Functor.map_comp]
 
 end CategoryTheory.ShortComplex

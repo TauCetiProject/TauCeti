@@ -71,7 +71,7 @@ theorem isEquiv_restrictToIdeal_comap (v : Valuation S Γ₀) (I : Ideal S)
     ((v.restrictToIdeal I hfg).comap f).IsEquiv (v.comap f) := by
   have hkeep {a : R} (ha : v (f a) ≠ 0) : v.restrictToIdeal I hfg (f a) ≠ 0 := by
     obtain ⟨n, hn⟩ := exists_pow_lt_of_isTopologicallyNilpotent
-      (((isContinuous_def.mp hv) a).mem_nhds (by simpa using zero_lt_iff.mpr ha)) htnil
+      (((isContinuous_def.mp hv) a).mem_nhds (by simpa using pos_iff_ne_zero.mpr ha)) htnil
     apply v.restrictToIdeal_ne_zero_of_le I hfg
       (((ht.pow n).map f).map (v.restrictToIdeal I hfg).toMonoidWithZeroHom).ne_zero
     simpa using hn.le

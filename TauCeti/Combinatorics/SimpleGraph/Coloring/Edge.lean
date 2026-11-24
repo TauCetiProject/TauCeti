@@ -75,7 +75,7 @@ def ofLE (h : G ≤ H) (c : H.EdgeColoring C) : G.EdgeColoring C :=
 /-- Restricting a proper edge-colouring keeps the colour of each edge. -/
 @[simp]
 theorem ofLE_apply (h : G ≤ H) (c : H.EdgeColoring C) (e : G.edgeSet) :
-    c.ofLE h e = c ⟨e, edgeSet_mono h e.2⟩ := by
+    c.ofLE h e = c ⟨e, edgeSet_mono h e.property⟩ := by
   simp [ofLE, Copy.lineGraph, Copy.toLineGraphEmbedding]
 
 end EdgeColoring

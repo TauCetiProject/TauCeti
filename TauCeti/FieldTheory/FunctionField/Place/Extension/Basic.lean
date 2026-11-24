@@ -15,6 +15,8 @@ public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.RingTheory.Valuation.NontrivialComap
+-- Proof-only: a surjective valuation is nontrivial.
+import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
 # Extensions of places: the ramification index and the relative degree
@@ -205,7 +207,7 @@ theorem isIntegral_algebraMap_iff_mem_integers {x : F} :
     IsIntegral ↥P.integers (algebraMap F F' x) ↔ x ∈ P.integers :=
   (isIntegral_algHom_iff (IsScalarTower.toAlgHom ↥P.integers F F')
       (algebraMap F F').injective (x := x)).trans
-    ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.2) hx,
+    ⟨fun hx ↦ P.mem_integers_of_isIntegral (fun r ↦ r.property) hx,
       fun hx ↦ isIntegral_algebraMap (x := (⟨x, hx⟩ : P.integers))⟩
 
 end LocalModel
@@ -538,7 +540,7 @@ theorem algebraMap_mem_integers_of_mem_integralClosure
     algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
   rw [Subalgebra.algebraMap_eq]
   exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
-    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
+    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.property) b.property
 
 variable {k F} in
 /-- An element of the local model `𝒪'_P` times one vanishing to order `a` at a place `Q'` over `P`
@@ -599,7 +601,7 @@ instance instHasExtensionValuation :
 latter is an algebra over the former. -/
 noncomputable instance instAlgebraIntegers : Algebra (P'.restrict k F).integers P'.integers :=
   (((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)).codRestrict
-    P'.integers fun x ↦ (mem_integers_restrict_iff k F P' (x : F)).mp x.2).toAlgebra
+    P'.integers fun x ↦ (mem_integers_restrict_iff k F P' (x : F)).mp x.property).toAlgebra
 
 @[simp]
 theorem coe_algebraMap_integers (x : (P'.restrict k F).integers) :
@@ -846,7 +848,7 @@ private theorem exists_valuation_sum_eq {e : ℕ} (A : Fin e → F')
     simp only [Finset.mem_sdiff, Finset.mem_singleton] at hj
     by_cases hAj : A j = 0
     · rw [hAj, map_zero]
-      exact zero_lt_iff.mpr ((Valuation.ne_zero_iff _).mpr hj₀A)
+      exact pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hj₀A)
     · obtain ⟨m, hm⟩ := hAord j hAj
       obtain ⟨m₀, hm₀⟩ := hAord j₀ hj₀A
       have hne : P'.ord (A j) ≠ P'.ord (A j₀) := by
@@ -1048,9 +1050,9 @@ theorem linearIndependent_mul_pow_of_linearIndependent_residue {ι : Type*}
   have hI := linearIndependent_mul_pow_of_linearIndependent_residue_finite k F P'
     (fun i : I ↦ s i) (hind.comp Subtype.val Subtype.val_injective) ht
   let f : S → I × Fin (ramificationIdx F P') :=
-    fun p ↦ (⟨p.1.1, Finset.mem_image_of_mem Prod.fst p.2⟩, p.1.2)
+    fun p ↦ (⟨p.val.1, Finset.mem_image_of_mem Prod.fst p.property⟩, p.val.2)
   exact hI.comp f fun p q h ↦ Subtype.ext <|
-    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
+    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.val, x.2)) h
 
 /-- **Expansion to finite order.** If the residues of `u i ∈ 𝒪_{P'}` span the residue field of
 `P'` over that of the place below, and `t` is a uniformizer at `P'`, then every function regular
@@ -1189,7 +1191,7 @@ theorem linearIndependent_of_ord_neg_of_restrict_eq {ι : Type*} {P₁ : Place k
     (P := fun i : T ↦ P i) (fun i ↦ hP i) (i₀ := ⟨i₀, Finset.mem_insert_self _ _⟩) hz₀ hord₀
     (fun i hi ↦ hpole i fun h ↦ hi (Subtype.ext h))
     (fun i j hij ↦ hreg i j fun h ↦ hij (Subtype.ext h))
-  exact hT.comp (fun i : S ↦ (⟨i, Finset.mem_insert_of_mem i.2⟩ : T))
+  exact hT.comp (fun i : S ↦ (⟨i, Finset.mem_insert_of_mem i.property⟩ : T))
     (fun _ _ h ↦ Subtype.ext (congrArg (fun i : T ↦ (i : ι)) h))
 
 end IndependenceOverPlace

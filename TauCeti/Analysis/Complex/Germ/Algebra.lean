@@ -14,16 +14,18 @@ import Mathlib.Analysis.Calculus.DSlope
 /-!
 # Holomorphic germs near a set
 
-`holomorphicGerms s` is the complex subalgebra of `Filter.Germ (𝓝ˢ s) ℂ` represented
-by functions holomorphic on an open neighbourhood of `s`. Its elements remember the
-function near the whole set, not just its values on that set. This is the domain for
-a holomorphic functional calculus near a spectrum, including disconnected spectra.
+For a set `s` in a complex normed space `V`, `holomorphicGerms s` is the complex subalgebra of
+`Filter.Germ (𝓝ˢ s) ℂ` represented by functions `V → ℂ` analytic at every point of `s`. Its
+elements remember the function near the whole set, not just its values on that set. For `s ⊆ ℂ`
+this is the domain for a holomorphic functional calculus near a spectrum, including disconnected
+spectra.
 
-We construct evaluation, restriction, and composition homomorphisms and characterize units by
-nonvanishing on `s`; the inverse of a unit is represented by the pointwise reciprocal. A germ
-vanishes at a point `x ∈ s` exactly when it is divisible by `z - x`. The spectrum of a
-represented germ is exactly the image of `s`, and the coordinate germ has spectrum `s`. No
-compactness or nonemptiness is needed; at the empty set the germ algebra is the zero algebra.
+We construct evaluation and restriction homomorphisms and characterize units by nonvanishing on
+`s`; the inverse of a unit is represented by the pointwise reciprocal. For `s ⊆ ℂ` we also
+construct composition homomorphisms, show that a germ vanishes at a point `x ∈ s` exactly when it
+is divisible by `z - x`, and show that the spectrum of a represented germ is exactly the image of
+`s`, so the coordinate germ has spectrum `s`. No compactness or nonemptiness is needed; at the
+empty set the germ algebra is the zero algebra.
 
 The construction uses Mathlib's `AnalyticOnNhd.congr'` for independence of representatives
 and `Filter.Germ` (including `Filter.Germ.compTendsto'`) for the quotient, its pointwise
@@ -33,12 +35,17 @@ operations, and germ composition.
 public noncomputable section
 
 open Filter Set Topology
+open scoped Ring
 
 namespace TauCeti
 
+section General
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
 /-- Germs along `𝓝ˢ s` represented by functions holomorphic near every point of `s`. -/
-def holomorphicGerms (s : Set ℂ) : Subalgebra ℂ (Germ (𝓝ˢ s) ℂ) where
-  carrier := {g | ∃ f : ℂ → ℂ, AnalyticOnNhd ℂ f s ∧ (f : Germ (𝓝ˢ s) ℂ) = g}
+def holomorphicGerms (s : Set V) : Subalgebra ℂ (Germ (𝓝ˢ s) ℂ) where
+  carrier := {g | ∃ f : V → ℂ, AnalyticOnNhd ℂ f s ∧ (f : Germ (𝓝ˢ s) ℂ) = g}
   algebraMap_mem' c := ⟨fun _ ↦ c, analyticOnNhd_const, rfl⟩
   add_mem' := by
     rintro _ _ ⟨f, hf, rfl⟩ ⟨g, hg, rfl⟩
@@ -48,19 +55,21 @@ def holomorphicGerms (s : Set ℂ) : Subalgebra ℂ (Germ (𝓝ˢ s) ℂ) where
     exact ⟨f * g, hf.mul hg, Germ.coe_mul f g⟩
 
 /-- Membership means admitting a holomorphic representative. -/
-theorem mem_holomorphicGerms_iff {s : Set ℂ} {g : Germ (𝓝ˢ s) ℂ} :
+theorem mem_holomorphicGerms_iff {s : Set V} {g : Germ (𝓝ˢ s) ℂ} :
     g ∈ holomorphicGerms s ↔
-      ∃ f : ℂ → ℂ, AnalyticOnNhd ℂ f s ∧ (f : Germ (𝓝ˢ s) ℂ) = g := Iff.rfl
+      ∃ f : V → ℂ, AnalyticOnNhd ℂ f s ∧ (f : Germ (𝓝ˢ s) ℂ) = g := Iff.rfl
 
 /-- Whether a function represents a holomorphic germ is independent of its representative. -/
 @[simp]
-theorem coe_mem_holomorphicGerms_iff {s : Set ℂ} {f : ℂ → ℂ} :
+theorem coe_mem_holomorphicGerms_iff {s : Set V} {f : V → ℂ} :
     (f : Germ (𝓝ˢ s) ℂ) ∈ holomorphicGerms s ↔ AnalyticOnNhd ℂ f s := by
   constructor
   · rintro ⟨g, hg, hgf⟩
     exact hg.congr' (Germ.coe_eq.mp hgf)
   · intro hf
     exact ⟨f, hf, rfl⟩
+
+end General
 
 /-- Representatives are holomorphic on an actual open neighbourhood of the set. -/
 theorem mem_holomorphicGerms_iff_exists_open {s : Set ℂ} {g : Germ (𝓝ˢ s) ℂ} :
@@ -75,39 +84,41 @@ theorem mem_holomorphicGerms_iff_exists_open {s : Set ℂ} {g : Germ (𝓝ˢ s) 
 
 namespace holomorphicGerms
 
-variable {s t : Set ℂ}
+section General
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {s t : Set V}
 
 /-- A function holomorphic near `s`, as an element of the algebra of germs. -/
-def ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) : holomorphicGerms s :=
+def ofFun (f : V → ℂ) (hf : AnalyticOnNhd ℂ f s) : holomorphicGerms s :=
   ⟨f, coe_mem_holomorphicGerms_iff.mpr hf⟩
 
 @[simp]
-theorem coe_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) :
+theorem coe_ofFun (f : V → ℂ) (hf : AnalyticOnNhd ℂ f s) :
     (ofFun f hf : Germ (𝓝ˢ s) ℂ) = f := (rfl)
 
 /-- Every holomorphic germ has a holomorphic representative. -/
 theorem exists_ofFun_eq (g : holomorphicGerms s) :
-    ∃ (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s), ofFun f hf = g := by
+    ∃ (f : V → ℂ) (hf : AnalyticOnNhd ℂ f s), ofFun f hf = g := by
   obtain ⟨f, hf, hfg⟩ := g.property
   exact ⟨f, hf, Subtype.ext hfg⟩
 
 /-- Two holomorphic representatives define the same germ exactly when they agree near `s`. -/
-theorem ofFun_eq_iff {f g : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
+theorem ofFun_eq_iff {f g : V → ℂ} (hf : AnalyticOnNhd ℂ f s)
     (hg : AnalyticOnNhd ℂ g s) : ofFun f hf = ofFun g hg ↔ f =ᶠ[𝓝ˢ s] g := by
   rw [Subtype.ext_iff, coe_ofFun, coe_ofFun, Germ.coe_eq]
 
 @[simp]
-theorem ofFun_add (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+theorem ofFun_add (f g : V → ℂ) (hf : AnalyticOnNhd ℂ f s)
     (hg : AnalyticOnNhd ℂ g s) : ofFun (f + g) (hf.add hg) = ofFun f hf + ofFun g hg :=
   Subtype.ext (Germ.coe_add f g)
 
 @[simp]
-theorem ofFun_sub (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+theorem ofFun_sub (f g : V → ℂ) (hf : AnalyticOnNhd ℂ f s)
     (hg : AnalyticOnNhd ℂ g s) : ofFun (f - g) (hf.sub hg) = ofFun f hf - ofFun g hg :=
   Subtype.ext (Germ.coe_sub f g)
 
 @[simp]
-theorem ofFun_mul (f g : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
+theorem ofFun_mul (f g : V → ℂ) (hf : AnalyticOnNhd ℂ f s)
     (hg : AnalyticOnNhd ℂ g s) : ofFun (f * g) (hf.mul hg) = ofFun f hf * ofFun g hg :=
   Subtype.ext (Germ.coe_mul f g)
 
@@ -118,10 +129,25 @@ theorem ofFun_const (c : ℂ) :
 
 @[simp]
 theorem ofFun_one :
-    ofFun (1 : ℂ → ℂ) (analyticOnNhd_const : AnalyticOnNhd ℂ (1 : ℂ → ℂ) s) = 1 := (rfl)
+    ofFun (1 : V → ℂ) (analyticOnNhd_const : AnalyticOnNhd ℂ (1 : V → ℂ) s) = 1 := (rfl)
+
+@[simp]
+theorem ofFun_smul (c : ℂ) (f : V → ℂ) (hf : AnalyticOnNhd ℂ f s) :
+    ofFun (c • f) ((analyticOnNhd_const (v := c)).smul hf) = c • ofFun f hf :=
+  Subtype.ext (Germ.coe_smul c f)
+
+/-- A holomorphic germ vanishes exactly when its representatives vanish near `s`. -/
+theorem ofFun_eq_zero_iff {f : V → ℂ} (hf : AnalyticOnNhd ℂ f s) :
+    ofFun f hf = 0 ↔ f =ᶠ[𝓝ˢ s] 0 :=
+  ofFun_eq_iff hf analyticOnNhd_const
+
+/-- Functions agreeing on an open neighbourhood of `s` define the same holomorphic germ. -/
+theorem ofFun_eq_of_eqOn {f g : V → ℂ} (hf : AnalyticOnNhd ℂ f s) (hg : AnalyticOnNhd ℂ g s)
+    {U : Set V} (hU : IsOpen U) (hsU : s ⊆ U) (h : EqOn f g U) : ofFun f hf = ofFun g hg :=
+  (ofFun_eq_iff hf hg).2 (eventually_of_mem (hU.mem_nhdsSet.2 hsU) h)
 
 /-- Evaluation of a germ at a point of its base set. -/
-noncomputable def eval (x : ℂ) (hx : x ∈ s) : holomorphicGerms s →ₐ[ℂ] ℂ where
+noncomputable def eval (x : V) (hx : x ∈ s) : holomorphicGerms s →ₐ[ℂ] ℂ where
   toFun g := Germ.liftOn g.val (fun f ↦ f x)
     (fun _ _ h ↦ h.self_of_nhdsSet hx)
   map_zero' := rfl
@@ -137,7 +163,7 @@ noncomputable def eval (x : ℂ) (hx : x ∈ s) : holomorphicGerms s →ₐ[ℂ]
   commutes' _ := rfl
 
 @[simp]
-theorem eval_ofFun (x : ℂ) (hx : x ∈ s) (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) :
+theorem eval_ofFun (x : V) (hx : x ∈ s) (f : V → ℂ) (hf : AnalyticOnNhd ℂ f s) :
     eval x hx (ofFun f hf) = f x := (rfl)
 
 /-- Restriction of a germ near `s` to a subset `t`. -/
@@ -160,7 +186,7 @@ def restrict (h : t ⊆ s) : holomorphicGerms s →ₐ[ℂ] holomorphicGerms t w
   commutes' _ := rfl
 
 @[simp]
-theorem restrict_ofFun (h : t ⊆ s) (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s) :
+theorem restrict_ofFun (h : t ⊆ s) (f : V → ℂ) (hf : AnalyticOnNhd ℂ f s) :
     restrict h (ofFun f hf) = ofFun f (hf.mono h) := (rfl)
 
 @[simp]
@@ -171,19 +197,20 @@ theorem restrict_refl : restrict (Subset.rfl : s ⊆ s) = AlgHom.id ℂ (holomor
 
 /-- Successive restrictions are restriction along the composite inclusion. -/
 @[simp]
-theorem restrict_comp_restrict {u : Set ℂ} (htu : u ⊆ t) (hst : t ⊆ s) :
+theorem restrict_comp_restrict {u : Set V} (htu : u ⊆ t) (hst : t ⊆ s) :
     (restrict htu).comp (restrict hst) = restrict (htu.trans hst) := by
   ext g
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   rfl
 
 @[simp]
-theorem eval_restrict (h : t ⊆ s) (x : ℂ) (hx : x ∈ t) (g : holomorphicGerms s) :
+theorem eval_restrict (h : t ⊆ s) (x : V) (hx : x ∈ t) (g : holomorphicGerms s) :
     eval x hx (restrict h g) = eval x (h hx) g := by
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
   rfl
 
-private theorem ofFun_mul_ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
+/-- A representative with no zero on `s` times its pointwise inverse is the unit germ. -/
+theorem ofFun_mul_ofFun_inv {f : V → ℂ} (hf : AnalyticOnNhd ℂ f s)
     (hne : ∀ x ∈ s, f x ≠ 0) :
     ofFun f hf * ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = 1 := by
   apply Subtype.ext
@@ -195,7 +222,7 @@ private theorem ofFun_mul_ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f 
 
 /-- A holomorphic germ is a unit exactly when it is nonzero at every point of the set. -/
 theorem isUnit_iff (g : holomorphicGerms s) :
-    IsUnit g ↔ ∀ (x : ℂ) (hx : x ∈ s), eval x hx g ≠ 0 := by
+    IsUnit g ↔ ∀ (x : V) (hx : x ∈ s), eval x hx g ≠ 0 := by
   constructor
   · intro hg x hx
     exact isUnit_iff_ne_zero.mp (hg.map (eval x hx).toMonoidHom)
@@ -205,10 +232,17 @@ theorem isUnit_iff (g : holomorphicGerms s) :
     exact IsUnit.of_mul_eq_one _ (ofFun_mul_ofFun_inv hf hne)
 
 /-- The reciprocal of a function with no zero on the base set represents the inverse germ. -/
-theorem ofFun_inv {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x ∈ s, f x ≠ 0) :
-    ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = Ring.inverse (ofFun f hf) := by
+@[simp]
+theorem ofFun_inv {f : V → ℂ} (hf : AnalyticOnNhd ℂ f s) (hne : ∀ x ∈ s, f x ≠ 0) :
+    ofFun (fun z ↦ (f z)⁻¹) (hf.inv hne) = (ofFun f hf)⁻¹ʳ := by
   have h := ofFun_mul_ofFun_inv hf hne
   rw [← (Ring.inverse_mul_eq_iff_eq_mul _ _ _ (IsUnit.of_mul_eq_one _ h)).mpr h.symm, mul_one]
+
+end General
+
+section Specific
+
+variable {s t : Set ℂ}
 
 /-- A holomorphic germ vanishes at a point of the base set exactly when the coordinate minus
 that point divides it. The quotient is represented by the `dslope` of a representative, which
@@ -335,6 +369,8 @@ theorem comp_comp {u : Set ℂ} (f : holomorphicGerms s) (hf : spectrum ℂ f �
   obtain ⟨g₀, hg₀, rfl⟩ := exists_ofFun_eq g
   obtain ⟨h₀, hh₀, rfl⟩ := exists_ofFun_eq h
   simp [Function.comp_assoc]
+
+end Specific
 
 end holomorphicGerms
 

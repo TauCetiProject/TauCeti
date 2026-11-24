@@ -67,11 +67,11 @@ theorem circleBasis_repr_circleBaseChange_tmul (a : S) (x : CircleTensor R ι)
 The scalar outside the indexed tensor is retained even when the circle set is empty. -/
 theorem circleBaseChange_tmul_tprod (a : S) (x : ι → R[ε]) :
     circleBaseChange R S ι (a ⊗ₜ tprod R x) =
-      a • tprod S (fun i ↦ dualNumberAlgebraTensorAlgEquiv R S (1 ⊗ₜ x i)) := by
+      a • tprod S (fun i ↦ dualNumberAlgebraTensorAlgEquiv R S S (1 ⊗ₜ x i)) := by
   let _ := Fintype.ofFinite ι
   refine (circleBasis S ι).ext_elem fun l ↦ ?_
   have h (i : ι) :
-      (labelBasis S).repr (dualNumberAlgebraTensorAlgEquiv R S (1 ⊗ₜ x i)) (l i) =
+      (labelBasis S).repr (dualNumberAlgebraTensorAlgEquiv R S S (1 ⊗ₜ x i)) (l i) =
         algebraMap R S ((labelBasis R).repr (x i) (l i)) := by
     cases l i <;> simp
   simp [circleBasis_repr_circleBaseChange_tmul, circleBasis_repr_tprod, h, mul_comm]

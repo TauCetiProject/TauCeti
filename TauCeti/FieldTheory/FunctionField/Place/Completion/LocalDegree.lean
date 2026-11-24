@@ -138,9 +138,9 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
     (I := maximalIdeal (P'.restrict k F).completionPlace.integers) fun y ↦ ?_
   obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
   obtain ⟨y₀, hy₀⟩ := P'.exists_filtration_sub_completionEmbedding_mem (ramificationIdx F P')
-    ⟨y, P'.completionPlace.mem_filtration_zero_iff.mpr y.2⟩
+    ⟨y, P'.completionPlace.mem_filtration_zero_iff.mpr y.property⟩
   obtain ⟨c, hc⟩ := exists_sub_sum_mem_filtration k F P' u hu (y := y₀) (by simpa using ht)
-    (ramificationIdx F P') (P'.mem_filtration_zero_iff.mp y₀.2)
+    (ramificationIdx F P') (P'.mem_filtration_zero_iff.mp y₀.property)
   refine ⟨fun p ↦ (P'.restrict k F).completionIntegersEmbedding (c p.2 p.1), ?_⟩
   rw [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq]
   refine mem_maximalIdeal_smul_top_of_mem_filtration (P'.restrict k F) P' rfl ?_
@@ -204,7 +204,8 @@ private theorem exists_ord_sum_completion_eq_mul_of_approx [Fintype ι] (u : ι 
     refine Submodule.sum_mem _ fun i _ ↦ ?_
     simpa using P'.completionPlace.mul_mem_filtration
       (completionExtension_mem_filtration_one (P'.restrict k F) P' rfl (hd i))
-      (P'.completionPlace.mem_filtration_zero_iff.mpr (P'.completionIntegersEmbedding (u i)).2)
+      (P'.completionPlace.mem_filtration_zero_iff.mpr (P'.completionIntegersEmbedding
+          (u i)).property)
   have hvT : Valued.v (P'.completionEmbedding T) = 1 := by
     rw [valuation_completionEmbedding, P'.valuation_eq_exp_neg_ord hT0, hT, neg_zero,
       WithZero.exp_zero]
@@ -250,7 +251,7 @@ private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.int
     intro i
     obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem 1
       ⟨c i / c i₀, (P'.restrict k F).completionPlace.mem_filtration_zero_iff.mpr (hdiv i)⟩
-    exact ⟨⟨d, (P'.restrict k F).mem_filtration_zero_iff.mp d.2⟩, hd⟩
+    exact ⟨⟨d, (P'.restrict k F).mem_filtration_zero_iff.mp d.property⟩, hd⟩
   choose d hd using happrox
   have hunit : IsUnit (d i₀) := by
     have h : ((d i₀ : (P'.restrict k F).integers) : F) - 1 ∈ (P'.restrict k F).filtration 1 := by
@@ -336,9 +337,9 @@ theorem linearIndependent_completionEmbedding_mul_pow (u : ι → P'.integers)
   have hI := linearIndependent_completionEmbedding_mul_pow_of_finite P P' hP (fun i : I ↦ u i)
     (hu.comp Subtype.val Subtype.val_injective) ht
   let f : S → I × Fin (ramificationIdx F P') :=
-    fun p ↦ (⟨p.1.1, Finset.mem_image_of_mem Prod.fst p.2⟩, p.1.2)
+    fun p ↦ (⟨p.val.1, Finset.mem_image_of_mem Prod.fst p.property⟩, p.val.2)
   exact hI.comp f fun p q h ↦ Subtype.ext <|
-    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.1, x.2)) h
+    congrArg (fun x : I × Fin (ramificationIdx F P') ↦ (x.1.val, x.2)) h
 
 /-- The expansion family spans the completion of `F'` at `P'` over the completion of `F` at
 `P`: a completed function becomes regular at `P'` after multiplication by a power of a

@@ -100,8 +100,8 @@ private abbrev ShenIndex {r : ℕ} (x : Fin r → ℤ) (k₀ : Fin r) : Type :=
 
 private def shenRawHom {r : ℕ} (x : Fin r → ℤ) (k₀ : Fin r) :
     (Fin r → ℤ) →+ (ShenIndex x k₀ → ℤ) where
-  toFun y := Sum.elim (fun i => y i.1)
-    (Sum.elim (fun j => y k₀ + y j.1) (fun j => y j.1))
+  toFun y := Sum.elim (fun i => y i.val)
+    (Sum.elim (fun j => y k₀ + y j.val) (fun j => y j.val))
   map_zero' := by ext (_ | (_ | _)) <;> simp
   map_add' y₁ y₂ := by ext (_ | (_ | _)) <;> simp; abel
 
@@ -114,16 +114,16 @@ private theorem shenRawHom_mono {r : ℕ} (x : Fin r → ℤ) (k₀ : Fin r) :
 
 private def shenRawWeights {r : ℕ} (x : Fin r → ℤ) (k₀ : Fin r)
     (w h : Fin r → G) : ShenIndex x k₀ → G :=
-  Sum.elim (fun i => w i.1) (Sum.elim (fun j => h j.1) (fun j => w j.1 - h j.1))
+  Sum.elim (fun i => w i.val) (Sum.elim (fun j => h j.val) (fun j => w j.val - h j.val))
 
 private theorem shenRawWeights_nonneg {r : ℕ} {x : Fin r → ℤ} {k₀ : Fin r}
     {w h : Fin r → G} (hw : ∀ i, 0 ≤ w i)
     (hh : ∀ j ∈ Finset.univ.filter (fun j => x j < 0), 0 ≤ h j ∧ h j ≤ w j) :
     ∀ u, 0 ≤ shenRawWeights x k₀ w h u := by
   rintro (i | (j | j))
-  · exact hw i.1
-  · exact (hh j.1 j.2).1
-  · exact sub_nonneg.mpr (hh j.1 j.2).2
+  · exact hw i.val
+  · exact (hh j.val j.property).1
+  · exact sub_nonneg.mpr (hh j.val j.property).2
 
 omit [PartialOrder G] [IsOrderedAddMonoid G] in
 private theorem shenRawSum_eq {r : ℕ} {x : Fin r → ℤ} {k₀ : Fin r}
@@ -160,19 +160,19 @@ private theorem shenRawHom_natAbs_le {r : ℕ} {x : Fin r → ℤ} {M : ℕ}
     (u : ShenIndex x k₀) :
     (shenRawHom x k₀ x u).natAbs ≤ M := by
   rcases u with i | (j | j)
-  · exact hbound i.1
-  · have hlt := (Finset.mem_filter.mp j.2).2
-    have hb := hbound j.1
+  · exact hbound i.val
+  · have hlt := (Finset.mem_filter.mp j.property).2
+    have hb := hbound j.val
     simp only [shenRawHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk, Sum.elim_inr, Sum.elim_inl, hxk₀]
     omega
-  · exact hbound j.1
+  · exact hbound j.val
 
 private theorem shenRawHom_mid_ne {r : ℕ} {x : Fin r → ℤ} {M : ℕ}
     (hbound : ∀ i, (x i).natAbs ≤ M) {k₀ : Fin r} (hxk₀ : x k₀ = (M : ℤ))
     (j : {j : Fin r // j ∈ Finset.univ.filter (fun j => x j < 0)}) :
     (shenRawHom x k₀ x (Sum.inr (Sum.inl j))).natAbs ≠ M := by
-  have hlt := (Finset.mem_filter.mp j.2).2
-  have hb := hbound j.1
+  have hlt := (Finset.mem_filter.mp j.property).2
+  have hb := hbound j.val
   simp only [shenRawHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk, Sum.elim_inr, Sum.elim_inl, hxk₀]
   omega
 
@@ -190,8 +190,8 @@ private theorem shenRawCard_lt {r : ℕ} {x : Fin r → ℤ} {M : ℕ}
       (j : {j : Fin r // j ∈ Finset.univ.filter (fun j => x j < 0)}),
       proj (Sum.inl i) ≠ proj (Sum.inr (Sum.inr j)) := by
     intro i j hp
-    have hi := (Finset.mem_filter.mp (Finset.mem_erase.mp i.2).2).2
-    have hj := (Finset.mem_filter.mp j.2).2
+    have hi := (Finset.mem_filter.mp (Finset.mem_erase.mp i.property).2).2
+    have hj := (Finset.mem_filter.mp j.property).2
     simp only [proj, Sum.elim_inl, Sum.elim_inr] at hp
     rw [hp] at hi
     omega
@@ -207,9 +207,9 @@ private theorem shenRawCard_lt {r : ℕ} {x : Fin r → ℤ} {M : ℕ}
     rw [Finset.ssubset_iff_of_subset]
     · refine ⟨k₀, by simp [Sr, hxk₀], fun hk₀_im => ?_⟩
       obtain ⟨i | (j | j), hu, hpu⟩ := Finset.mem_image.mp hk₀_im
-      · exact (Finset.mem_erase.mp i.2).1 hpu
+      · exact (Finset.mem_erase.mp i.property).1 hpu
       · exact hno_mid j hu
-      · have hlt := (Finset.mem_filter.mp j.2).2
+      · have hlt := (Finset.mem_filter.mp j.property).2
         simp only [proj, Sum.elim_inr] at hpu
         rw [hpu] at hlt
         omega

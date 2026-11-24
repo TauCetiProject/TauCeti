@@ -73,16 +73,16 @@ iterates `x, f x, …, f^[N-1] x` lie in `D`. The inverse sends `x` to `i ↦ f^
 def periodicChainEquiv :
     {z : ZMod N → X // ∀ i, z i ∈ D ∧ f (z i) = z (i + 1)} ≃
       {x : X // (∀ k < N, f^[k] x ∈ D) ∧ IsPeriodicPt f N x} where
-  toFun z := ⟨z.1 0, fun k _ ↦
-      apply_natCast_eq_iterate_apply_zero (fun i ↦ (z.2 i).2) k ▸ (z.2 k).1, by
+  toFun z := ⟨z.val 0, fun k _ ↦
+      apply_natCast_eq_iterate_apply_zero (fun i ↦ (z.property i).2) k ▸ (z.property k).1, by
     -- The value at `N = 0` in `ℤ/N` is both `z 0` and `f^[N] (z 0)`.
-    have h := apply_natCast_eq_iterate_apply_zero (fun i ↦ (z.2 i).2) N
+    have h := apply_natCast_eq_iterate_apply_zero (fun i ↦ (z.property i).2) N
     rw [ZMod.natCast_self] at h
     exact h.symm⟩
-  invFun x := ⟨fun i ↦ f^[i.val] x.1, fun i ↦
-    ⟨x.2.1 _ (ZMod.val_lt i), (x.2.2.iterate_val_add_one_apply i).symm⟩⟩
+  invFun x := ⟨fun i ↦ f^[i.val] x.val, fun i ↦
+    ⟨x.property.1 _ (ZMod.val_lt i), (x.property.2.iterate_val_add_one_apply i).symm⟩⟩
   left_inv z := Subtype.ext <| funext fun i ↦
-    (apply_eq_iterate_val_apply_zero (fun i ↦ (z.2 i).2) i).symm
+    (apply_eq_iterate_val_apply_zero (fun i ↦ (z.property i).2) i).symm
   right_inv x := Subtype.ext <| by simp [ZMod.val_zero]
 
 variable {f D N}
@@ -90,14 +90,14 @@ variable {f D N}
 /-- The marked point of a periodic chain is its value at `0`. -/
 @[simp]
 theorem coe_periodicChainEquiv (z : {z : ZMod N → X // ∀ i, z i ∈ D ∧ f (z i) = z (i + 1)}) :
-    (periodicChainEquiv f D N z : X) = z.1 0 :=
+    (periodicChainEquiv f D N z : X) = z.val 0 :=
   (rfl)
 
 /-- The periodic chain of a marked periodic point `x` is its orbit `i ↦ f^[i] x`. -/
 @[simp]
 theorem coe_periodicChainEquiv_symm_apply
     (x : {x : X // (∀ k < N, f^[k] x ∈ D) ∧ IsPeriodicPt f N x}) (i : ZMod N) :
-    ((periodicChainEquiv f D N).symm x : ZMod N → X) i = f^[i.val] x.1 :=
+    ((periodicChainEquiv f D N).symm x : ZMod N → X) i = f^[i.val] x.val :=
   (rfl)
 
 /-- **Shifting a periodic chain moves its marked point along the orbit.** The marked point of a
@@ -106,18 +106,19 @@ cyclic shift `i ↦ z (i + 1)` of `z`. -/
 theorem coe_periodicChainEquiv_eq_iff
     {z z' : {z : ZMod N → X // ∀ i, z i ∈ D ∧ f (z i) = z (i + 1)}} :
     (periodicChainEquiv f D N z' : X) = f (periodicChainEquiv f D N z) ↔
-      z'.1 = fun i ↦ z.1 (i + 1) := by
+      z'.val = fun i ↦ z.val (i + 1) := by
   simp only [coe_periodicChainEquiv]
   constructor
   · -- Both `z'` and the shift of `z` are chains, and they agree at `0`.
     intro h
     funext i
-    have hshift := apply_eq_iterate_val_apply_zero (z := fun i ↦ z.1 (i + 1))
-      (fun i ↦ (z.2 (i + 1)).2) i
+    have hshift := apply_eq_iterate_val_apply_zero (z := fun i ↦ z.val (i + 1))
+      (fun i ↦ (z.property (i + 1)).2) i
     rw [zero_add] at hshift
-    rw [hshift, apply_eq_iterate_val_apply_zero (fun i ↦ (z'.2 i).2) i, h, (z.2 0).2, zero_add]
+    rw [hshift, apply_eq_iterate_val_apply_zero (fun i ↦ (z'.property i).2) i, h, (z.property 0).2,
+        zero_add]
   · intro h
     rw [h]
-    exact (z.2 0).2.symm
+    exact (z.property 0).2.symm
 
 end Function

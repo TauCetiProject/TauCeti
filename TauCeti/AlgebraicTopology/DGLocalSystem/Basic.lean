@@ -32,9 +32,12 @@ such families back component by component (`DGLocalSystemFamily.pullback`), agai
 to the canonical isomorphisms.  The pullback along maps that do not preserve the chosen basepoints
 changes basepoints by tensoring with chains on Moore paths; it is
 `TauCeti.DGLocalSystemFamily.pullbackBasepointChange` in
-`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Family`.  Changing the basepoint
+`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Family.Basic`.  Changing the basepoint
 commutes with this pullback up to a natural quasi-isomorphism
-(`TauCeti.AlgebraicTopology.DGLocalSystem.Path.FamilyPullback`).
+(`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Family.Pullback`), and the pullback satisfies the
+identity and composition laws up to natural quasi-isomorphisms, so that the DG local systems on a
+space do not depend on the chosen basepoints
+(`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Family.Functoriality`).
 
 ## Main definitions
 
@@ -71,6 +74,17 @@ variable (B : Type*) [TopologicalSpace B] (b : B) (R : Type*) [CommRing R]
 modules over the chain algebra `C_*(Ω_b B; R)` of the Moore loop space. -/
 abbrev DGLocalSystem : Type _ :=
   DGRightModuleCat.{_, _, uM} (loopChain_isDGAlgebra B b R)
+
+/- Instance search finds different, but definitionally equal, instances on the chain algebra of
+the loop space than those recorded in `DGRightModuleCat.gradedSMul`, and does not see through
+them. So constructions on modules over the chain algebra, such as twisted complexes, do not find
+the bundled field; it is restated here in the form instance search produces. -/
+/-- The action of `C_*(Ω_b B; R)` on a DG local system respects degrees. -/
+instance (𝓕 : DGLocalSystem.{uM} B b R) :
+    SetLike.GradedSMul
+      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
+      𝓕.grading :=
+  𝓕.gradedSMul
 
 end Pointed
 

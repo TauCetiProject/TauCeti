@@ -39,9 +39,9 @@ namespace IsPrimitiveRoot
 
 open TauCeti
 
-universe u
+universe u v w
 
-variable {K L G : Type u} [Field K] [Field L] [Algebra K L] [CharZero K]
+variable {K : Type u} {L : Type w} {G : Type v} [Field K] [Field L] [Algebra K L] [CharZero K]
   [Group G] [Finite G] [IsAlgClosed L]
   {n : ℕ} [NeZero n] {ζ : K}
 
@@ -50,16 +50,16 @@ virtual-character lattice with the lattice over an algebraically closed extensio
 noncomputable def cyclotomicVirtualCharacterEquiv (hζ : IsPrimitiveRoot ζ n)
     (hG : Monoid.exponent G ∣ n) : virtualCharacters K G ≃+ virtualCharacters L G := by
   let f : virtualCharacters K G →+ virtualCharacters L G :=
-    { toFun χ := ⟨algebraMap K L ∘ χ.1, (algebraMap K L).comp_mem_virtualCharacters χ.2⟩
+    { toFun χ := ⟨algebraMap K L ∘ χ.val, (algebraMap K L).comp_mem_virtualCharacters χ.property⟩
       map_zero' := by ext g; simp
       map_add' χ ψ := by ext g; simp }
   refine AddEquiv.ofBijective f ⟨?_, ?_⟩
   · intro χ ψ h
     apply Subtype.ext
     funext g
-    exact (algebraMap K L).injective (congrArg (fun χ => χ.1 g) h)
+    exact (algebraMap K L).injective (congrArg (fun χ => χ.val g) h)
   · intro χ
-    have hχ := χ.2
+    have hχ := χ.property
     simp only [virtualCharacters_eq_map_of_isPrimitiveRoot hζ hG] at hχ
     obtain ⟨ψ, hψ, hψχ⟩ := AddSubgroup.mem_map.mp hχ
     exact ⟨⟨ψ, hψ⟩, Subtype.ext hψχ⟩
@@ -68,7 +68,7 @@ noncomputable def cyclotomicVirtualCharacterEquiv (hζ : IsPrimitiveRoot ζ n)
 @[simp]
 theorem cyclotomicVirtualCharacterEquiv_apply (hζ : IsPrimitiveRoot ζ n)
     (hG : Monoid.exponent G ∣ n) (χ : virtualCharacters K G) (g : G) :
-    (cyclotomicVirtualCharacterEquiv (L := L) hζ hG χ).1 g = algebraMap K L (χ.1 g) :=
+    (cyclotomicVirtualCharacterEquiv (L := L) hζ hG χ).val g = algebraMap K L (χ.val g) :=
 by
   unfold cyclotomicVirtualCharacterEquiv
   rfl
@@ -87,7 +87,7 @@ noncomputable def cyclotomicVirtualCharacterAction (hζ : IsPrimitiveRoot ζ n)
     ext χ g
     simp only [AddEquiv.trans_apply, RingEquiv.virtualCharacterEquiv_apply,
       cyclotomicVirtualCharacterEquiv_apply]
-    exact congrArg (fun χ => χ.1 g)
+    exact congrArg (fun χ => χ.val g)
       ((cyclotomicVirtualCharacterEquiv (L := L) hζ hG).apply_symm_apply χ)
   map_mul' σ τ := by
     apply congrArg Multiplicative.ofAdd
@@ -99,19 +99,19 @@ splitting field. -/
 theorem cyclotomicVirtualCharacterAction_equiv_apply (hζ : IsPrimitiveRoot ζ n)
     (hG : Monoid.exponent G ∣ n) (σ : Gal(K/ℚ)) (χ : virtualCharacters K G) (g : G) :
     (Multiplicative.toAdd (cyclotomicVirtualCharacterAction (L := L) hζ hG σ)
-      (cyclotomicVirtualCharacterEquiv hζ hG χ)).1 g = algebraMap K L (σ (χ.1 g)) := by
+      (cyclotomicVirtualCharacterEquiv hζ hG χ)).val g = algebraMap K L (σ (χ.val g)) := by
   simp [cyclotomicVirtualCharacterAction]
 
 /-- The cyclotomic Galois action on every virtual character is the power map on group elements. -/
 @[simp]
 theorem cyclotomicVirtualCharacterAction_apply (hζ : IsPrimitiveRoot ζ n)
     (hG : Monoid.exponent G ∣ n) (σ : Gal(K/ℚ)) (χ : virtualCharacters L G) (g : G) :
-    (Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ) χ).1 g =
-      χ.1 (g ^ (hζ.autToPow ℚ σ : ZMod n).val) := by
+    (Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ) χ).val g =
+      χ.val (g ^ (hζ.autToPow ℚ σ : ZMod n).val) := by
   obtain ⟨ψ, rfl⟩ := (cyclotomicVirtualCharacterEquiv (L := L) hζ hG).surjective χ
   rw [cyclotomicVirtualCharacterAction_equiv_apply, cyclotomicVirtualCharacterEquiv_apply]
   apply congrArg (algebraMap K L)
-  obtain ⟨A, B, hψ⟩ := exists_eq_character_sub_character ψ.2
+  obtain ⟨A, B, hψ⟩ := exists_eq_character_sub_character ψ.property
   rw [hψ, Pi.sub_apply, Pi.sub_apply, map_sub]
   have hg : g ^ n = 1 := by
     obtain ⟨m, rfl⟩ := hG
@@ -126,15 +126,15 @@ theorem cyclotomicVirtualCharacterAction_apply (hζ : IsPrimitiveRoot ζ n)
 /-- The cyclotomic Galois action preserves irreducible characters. -/
 theorem cyclotomicVirtualCharacterAction_mem_irreducibleCharacters
     (hζ : IsPrimitiveRoot ζ n) (hG : Monoid.exponent G ∣ n) (σ : Gal(K/ℚ))
-    (χ : virtualCharacters L G) (hχ : χ.1 ∈ irreducibleCharacters L G) :
-    (Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ) χ).1 ∈
+    (χ : virtualCharacters L G) (hχ : χ.val ∈ irreducibleCharacters L G) :
+    (Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ) χ).val ∈
       irreducibleCharacters L G := by
   let : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
   let : Fintype G := Fintype.ofFinite G
   let : Invertible (Nat.card G : K) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   let : Invertible (Nat.card G : L) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   obtain ⟨ψ, rfl⟩ := (cyclotomicVirtualCharacterEquiv (L := L) hζ hG).surjective χ
-  let F : ClassFunction K G := ⟨ψ.1, virtualCharacters_le_classFunction ψ.2⟩
+  let F : ClassFunction K G := ⟨ψ.val, virtualCharacters_le_classFunction ψ.property⟩
   obtain ⟨d, ρ, hρ, hρχ⟩ := mem_irreducibleCharacters_iff.mp hχ
   have := hρ
   have hF : ClassFunction.map (algebraMap K L) F = ClassFunction.ofCharacter ρ := by
@@ -146,9 +146,9 @@ theorem cyclotomicVirtualCharacterAction_mem_irreducibleCharacters
     rw [← ClassFunction.characterPairing_map, hF]
     simp
   have haction :
-      (ClassFunction.map (algebraMap K L) (ClassFunction.map σ.toAlgHom.toRingHom F)).1 =
+      (ClassFunction.map (algebraMap K L) (ClassFunction.map σ.toAlgHom.toRingHom F)).val =
       (Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ)
-        (cyclotomicVirtualCharacterEquiv hζ hG ψ)).1 := by
+        (cyclotomicVirtualCharacterEquiv hζ hG ψ)).val := by
     funext g
     simp only [ClassFunction.map_apply, cyclotomicVirtualCharacterAction_equiv_apply]
     rfl
@@ -156,12 +156,12 @@ theorem cyclotomicVirtualCharacterAction_mem_irreducibleCharacters
   refine mem_irreducibleCharacters_of_characterPairing_self_eq_one ?_ ?_ (n := d) ?_
   · rw [haction]
     exact (Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ)
-      (cyclotomicVirtualCharacterEquiv hζ hG ψ)).2
+      (cyclotomicVirtualCharacterEquiv hζ hG ψ)).property
   · rw [ClassFunction.characterPairing_map, ClassFunction.characterPairing_map, hnorm]
     simp
   · have h1 := congrFun hρχ 1
     rw [Representation.char_one] at h1
-    have hdeg : F.1 1 = d := by
+    have hdeg : F.val 1 = d := by
       apply (algebraMap K L).injective
       simpa [F] using h1.symm
     rw [ClassFunction.map_apply, ClassFunction.map_apply, hdeg]
@@ -174,12 +174,12 @@ noncomputable def cyclotomicIrreducibleCharacterAction (hζ : IsPrimitiveRoot ζ
   let : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
   let : Invertible (Nat.card G : L) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   let ι : irreducibleCharacters L G → virtualCharacters L G := fun χ =>
-    ⟨χ.1, by
+    ⟨χ.val, by
       rw [virtualCharacters_eq_closure_irreducibleCharacters]
-      exact AddSubgroup.subset_closure χ.2⟩
+      exact AddSubgroup.subset_closure χ.property⟩
   let f (σ : Gal(K/ℚ)) (χ : irreducibleCharacters L G) : irreducibleCharacters L G :=
-    ⟨(Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ) (ι χ)).1,
-      cyclotomicVirtualCharacterAction_mem_irreducibleCharacters hζ hG σ (ι χ) χ.2⟩
+    ⟨(Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ) (ι χ)).val,
+      cyclotomicVirtualCharacterAction_mem_irreducibleCharacters hζ hG σ (ι χ) χ.property⟩
   have hinj (σ : Gal(K/ℚ)) : Function.Injective (f σ) := by
     intro χ ψ h
     have hv := (Multiplicative.toAdd (cyclotomicVirtualCharacterAction hζ hG σ)).injective
@@ -200,13 +200,13 @@ noncomputable def cyclotomicIrreducibleCharacterAction (hζ : IsPrimitiveRoot ζ
 @[simp]
 theorem cyclotomicIrreducibleCharacterAction_apply (hζ : IsPrimitiveRoot ζ n)
     (hG : Monoid.exponent G ∣ n) (σ : Gal(K/ℚ)) (χ : irreducibleCharacters L G) (g : G) :
-    (cyclotomicIrreducibleCharacterAction hζ hG σ χ).1 g =
-      χ.1 (g ^ (hζ.autToPow ℚ σ : ZMod n).val) := by
+    (cyclotomicIrreducibleCharacterAction hζ hG σ χ).val g =
+      χ.val (g ^ (hζ.autToPow ℚ σ : ZMod n).val) := by
   let : CharZero L := charZero_of_injective_algebraMap (algebraMap K L).injective
   let : Invertible (Nat.card G : L) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
   exact cyclotomicVirtualCharacterAction_apply hζ hG σ
-    ⟨χ.1, by
+    ⟨χ.val, by
       rw [virtualCharacters_eq_closure_irreducibleCharacters]
-      exact AddSubgroup.subset_closure χ.2⟩ g
+      exact AddSubgroup.subset_closure χ.property⟩ g
 
 end IsPrimitiveRoot

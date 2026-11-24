@@ -352,7 +352,7 @@ theorem isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ {M : Type*} [TopologicalS
   obtain ⟨x⟩ := e.symm.nonempty
   let _ : ChartedSpace E U := TopologicalSpace.Opens.instChartedSpace ⟨U, hUo⟩
   have hUc : IsCompact U := isCompact_iff_compactSpace.2 (e.compactSpace_of_sphere hE hF)
-  exact IsClopen.eq_univ ⟨hUc.isClosed, hUo⟩ ⟨x.1, x.2⟩
+  exact IsClopen.eq_univ ⟨hUc.isClosed, hUo⟩ ⟨x.val, x.property⟩
 
 -- Dimension-matching sharpness check: for a nontrivial real normed space `F`, the cylinder
 -- `sphere (0 : F) 1 × ℝ` is homotopy equivalent to `sphere (0 : F) 1` yet noncompact.

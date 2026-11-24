@@ -57,10 +57,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The inclusion of an open subset `W` of `M`, as a smooth map `C^∞⟮IM, W; IM, M⟯`. -/
 private def subtypeValMap (W : Opens M) : C^∞⟮IM, W; IM, M⟯ :=
-  ⟨Subtype.val, contMDiff_subtype_val⟩
+  ⟨Subtype.val, contMDiff_subtypeVal⟩
 
 private theorem subtypeValMap_apply (W : Opens M) (x : W) :
-    subtypeValMap IM W x = x.1 :=
+    subtypeValMap IM W x = x.val :=
   rfl
 
 variable (V : Type u) [NormedAddCommGroup V] [NormedSpace 𝕜 V]
@@ -123,7 +123,7 @@ theorem smulEnd_hom_app_apply (g : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) (W : Open
     (f : C^∞⟮IM, W; 𝓘(𝕜, V), V⟯) (x : W) :
     @DFunLike.coe (no_index C^∞⟮IM, W; 𝓘(𝕜, V), V⟯) (no_index ↥W) (fun _ ↦ V) _
         (no_index ((smulEnd IM V g).hom.app (op W) f)) x =
-      g x.1 • f x := by
+      g x.val • f x := by
   rw [smulEnd_hom_app, smulAppHom_apply]
   simp [subtypeValMap_apply]
 
@@ -135,7 +135,7 @@ theorem smulEnd_hom_app_eq_of_eqOn {g₁ g₂ : C^∞⟮IM, M; 𝓘(𝕜), 𝕜�
   rw [smulEnd_hom_app, smulEnd_hom_app]
   congr 1
   ext x
-  simpa [subtypeValMap_apply] using h x.2
+  simpa [subtypeValMap_apply] using h x.property
 
 /-- Pointwise multiplication by `g₁ + g₂` is the sum of the corresponding sheaf endomorphisms. -/
 theorem smulEnd_add (g₁ g₂ : C^∞⟮IM, M; 𝓘(𝕜), 𝕜⟯) :

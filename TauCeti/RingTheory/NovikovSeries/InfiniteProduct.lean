@@ -80,7 +80,7 @@ theorem prod_sub_one_mem_periodFiltration (s : Finset ι)
         (f i : NovikovSeries R H N) * ((∏ j ∈ s, (f j : NovikovSeries R H N)) - 1) +
           ((f i : NovikovSeries R H N) - 1) := by ring
     rw [heq]
-    have hi0 := mem_periodFiltration.2 (mem_nonnegSubring.1 (f i).2)
+    have hi0 := mem_periodFiltration.2 (mem_nonnegSubring.1 (f i).property)
     have hmul := mul_mem_periodFiltration hi0
       (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
     exact add_mem (by simpa only [zero_add] using hmul) (hf i (Finset.mem_insert_self _ _))
@@ -94,7 +94,7 @@ theorem prod_sub_prod_mem_periodFiltration {s t : Finset ι} (hst : s ⊆ t)
   classical
   have hs : (∏ i ∈ s, (f i : NovikovSeries R H N)) ∈ periodFiltration R N 0 :=
     mem_periodFiltration.2 (mem_nonnegSubring.1
-      ((nonnegSubring R N).prod_mem fun i _ => (f i).2))
+      ((nonnegSubring R N).prod_mem fun i _ => (f i).property))
   have h := mul_mem_periodFiltration (prod_sub_one_mem_periodFiltration (t \ s)
     fun i hi => hf i (Finset.mem_sdiff.1 hi).1 (Finset.mem_sdiff.1 hi).2) hs
   simpa only [add_zero, sub_mul, one_mul, Finset.prod_sdiff hst] using h
@@ -238,7 +238,7 @@ theorem hasProd_eulerProduct (hfin : Tendsto (fun i => N (γ i)) cofinite atTop)
 theorem eulerProduct_mem_nonnegSubring (r : ι → R) (m : ι → ℤ) :
     eulerProduct γ hγ r m ∈ nonnegSubring R N :=
   tprod_mem isClosed_nonnegSubring fun i => (↑(unitsOneSubSingle (hγ i) (r i) ^ m i) :
-    nonnegSubring R N).2
+    nonnegSubring R N).property
 
 /-- The Euler product is congruent to `1` above every lower bound `c` of the periods. In
 particular, when `c > 0`, its coefficients of period `< c`, so all those of nonpositive period,

@@ -44,42 +44,42 @@ sends `(u, d)` to `d • u`. -/
 noncomputable def homeomorphSphereProdOfNormPos (r : ℝ) (hr : 0 < r) :
     {x : E | 0 < ‖x‖} ≃ₜ (sphere (0 : E) r × Ioi (0 : ℝ)) where
   toFun x :=
-    have hx : 0 < ‖x.1‖ := x.2
-    (⟨r • ‖x.1‖⁻¹ • x.1, by simp [norm_smul, abs_of_pos hr, hx.ne']⟩,
-      ⟨‖x.1‖ / r, mem_Ioi.mpr (div_pos hx hr)⟩)
-  invFun p := ⟨p.2.1 • p.1.1, by
-    have hd : 0 < (p.2 : ℝ) := mem_Ioi.mp p.2.2
+    have hx : 0 < ‖x.val‖ := x.property
+    (⟨r • ‖x.val‖⁻¹ • x.val, by simp [norm_smul, abs_of_pos hr, hx.ne']⟩,
+      ⟨‖x.val‖ / r, mem_Ioi.mpr (div_pos hx hr)⟩)
+  invFun p := ⟨p.2.val • p.1.val, by
+    have hd : 0 < (p.2 : ℝ) := mem_Ioi.mp p.2.property
     simpa only [mem_ofPred_eq, norm_smul, Real.norm_eq_abs, norm_eq_of_mem_sphere p.1,
       abs_of_pos hd] using mul_pos hd hr⟩
   left_inv x := by
-    have hx : 0 < ‖x.1‖ := x.2
+    have hx : 0 < ‖x.val‖ := x.property
     ext
     calc
-      (‖x.1‖ / r) • (r • ‖x.1‖⁻¹ • x.1) =
-          ‖x.1‖ • ‖x.1‖⁻¹ • x.1 := by rw [smul_smul, div_mul_cancel₀ _ hr.ne']
-      _ = x.1 := smul_inv_smul₀ hx.ne' x.1
+      (‖x.val‖ / r) • (r • ‖x.val‖⁻¹ • x.val) =
+          ‖x.val‖ • ‖x.val‖⁻¹ • x.val := by rw [smul_smul, div_mul_cancel₀ _ hr.ne']
+      _ = x.val := smul_inv_smul₀ hx.ne' x.val
   right_inv p := by
     obtain ⟨⟨u, hu⟩, ⟨d, hd⟩⟩ := p
     rw [mem_Ioi] at hd
     rw [mem_sphere_zero_iff_norm] at hu
     simp [norm_smul, smul_smul, abs_of_pos hd, hu, hr.ne', hd.ne']
   continuous_toFun := by
-    have hnorm : Continuous (fun x : {x : E | 0 < ‖x‖} => ‖x.1‖) :=
-      continuous_subtype_val.norm
-    have hdir := ((hnorm.inv₀ fun x => ne_of_gt x.2).smul continuous_subtype_val).const_smul r
+    have hnorm : Continuous (fun x : {x : E | 0 < ‖x‖} => ‖x.val‖) :=
+      continuous_subtypeVal.norm
+    have hdir := ((hnorm.inv₀ fun x => ne_of_gt x.property).smul continuous_subtypeVal).const_smul r
     exact (hdir.subtype_mk _).prodMk ((hnorm.div_const r).subtype_mk _)
   continuous_invFun := by fun_prop
 
 @[simp]
 theorem homeomorphSphereProdOfNormPos_apply_fst_coe (r : ℝ) (hr : 0 < r)
     (x : {x : E | 0 < ‖x‖}) :
-    ((homeomorphSphereProdOfNormPos E r hr x).1 : E) = r • ‖x.1‖⁻¹ • x.1 :=
+    ((homeomorphSphereProdOfNormPos E r hr x).1 : E) = r • ‖x.val‖⁻¹ • x.val :=
   (rfl)
 
 @[simp]
 theorem homeomorphSphereProdOfNormPos_apply_snd_coe (r : ℝ) (hr : 0 < r)
     (x : {x : E | 0 < ‖x‖}) :
-    ((homeomorphSphereProdOfNormPos E r hr x).2 : ℝ) = ‖x.1‖ / r :=
+    ((homeomorphSphereProdOfNormPos E r hr x).2 : ℝ) = ‖x.val‖ / r :=
   (rfl)
 
 @[simp]
@@ -97,12 +97,12 @@ noncomputable def homeomorphUnitSphereProdOfNormPos :
 
 @[simp]
 theorem homeomorphUnitSphereProdOfNormPos_apply_fst_coe (x : {x : E | 0 < ‖x‖}) :
-    ((homeomorphUnitSphereProdOfNormPos E x).1 : E) = ‖x.1‖⁻¹ • x.1 := by
+    ((homeomorphUnitSphereProdOfNormPos E x).1 : E) = ‖x.val‖⁻¹ • x.val := by
   simp [homeomorphUnitSphereProdOfNormPos]
 
 @[simp]
 theorem homeomorphUnitSphereProdOfNormPos_apply_snd_coe (x : {x : E | 0 < ‖x‖}) :
-    ((homeomorphUnitSphereProdOfNormPos E x).2 : ℝ) = ‖x.1‖ := by
+    ((homeomorphUnitSphereProdOfNormPos E x).2 : ℝ) = ‖x.val‖ := by
   simp [homeomorphUnitSphereProdOfNormPos]
 
 @[simp]
@@ -121,7 +121,7 @@ theorem _root_.Topology.IsOpenEmbedding.smul_coe_sphere {Y : Type*} [Topological
   have hρ' : Topology.IsOpenEmbedding (codRestrict ρ (Ioi 0) fun y ↦ mem_Ioi.2 (hpos y)) := by
     refine ⟨hρ.isEmbedding.codRestrict _ _, ?_⟩
     rw [range_codRestrict]
-    exact hρ.isOpen_range.preimage continuous_subtype_val
+    exact hρ.isOpen_range.preimage continuous_subtypeVal
   exact (isOpen_lt continuous_const continuous_norm).isOpenEmbedding_subtypeVal.comp
     ((homeomorphUnitSphereProdOfNormPos E).symm.isOpenEmbedding.comp
       (Topology.IsOpenEmbedding.id.prodMap hρ'))

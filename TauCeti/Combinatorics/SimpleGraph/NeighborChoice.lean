@@ -95,8 +95,7 @@ theorem IsCycle.exists_forall_adj_and_apply_apply_ne {u : V} {p : G.Walk u u} (h
   choose! idx hidx using fun s (hs : s ∈ p.support) => hp.exists_getVert_eq hs
   have hinj : ∀ i < p.length, idx (p.getVert i) = i := fun i hi => by
     obtain ⟨hlt, heq⟩ := hidx _ (p.getVert_mem_support i)
-    exact hp.getVert_injOn' (by simp only [Set.mem_ofPred_eq]; omega)
-      (by simp only [Set.mem_ofPred_eq]; omega) heq
+    exact hp.getVert_injOn' (Set.mem_Iio.2 (by omega)) (Set.mem_Iio.2 (by omega)) heq
   refine ⟨fun s => p.getVert (idx s + 1), fun s hs => ?_⟩
   obtain ⟨i, hi, rfl⟩ := hp.exists_getVert_eq hs
   simp only [hinj i hi]

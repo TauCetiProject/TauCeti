@@ -68,6 +68,7 @@ theorem occurrenceGap_succ_of_eq_top {μ : Measure ℝ≥0} {n : ℕ} (hn : μ.o
   simp [occurrenceGap_succ, hn]
 
 /-- Gap `n` is infinite if and only if occurrence `n` never happens. -/
+@[simp]
 theorem occurrenceGap_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
     μ.occurrenceGap n = ∞ ↔ μ.occurrenceTime n = ∞ := by
   cases n with
@@ -80,11 +81,28 @@ theorem occurrenceGap_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
       simp [hn, hnext]
     · simp [hn, ENNReal.sub_eq_top_iff]
 
+/-- Gap `n` is finite if and only if occurrence `n` is finite. -/
+@[simp]
+theorem occurrenceGap_lt_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
+    μ.occurrenceGap n < ∞ ↔ μ.occurrenceTime n < ∞ := by
+  simp only [lt_top_iff_ne_top, ne_eq, occurrenceGap_eq_top_iff]
+
 /-- When occurrence `n` is finite, gap `n + 1` is positive if and only if the next occurrence
 (possibly infinite) is strictly later. -/
 theorem occurrenceGap_succ_pos_iff {μ : Measure ℝ≥0} {n : ℕ} (hn : μ.occurrenceTime n ≠ ∞) :
     0 < μ.occurrenceGap (n + 1) ↔ μ.occurrenceTime n < μ.occurrenceTime (n + 1) := by
   rw [occurrenceGap_succ_of_ne_top hn, tsub_pos_iff_lt]
+
+/-- For consecutive finite occurrences, the real-valued interarrival gap is the difference of the
+real-valued occurrence times. -/
+theorem toReal_occurrenceGap_succ {μ : Measure ℝ≥0} {n : ℕ}
+    (h : μ.occurrenceTime (n + 1) ≠ ∞) :
+    (μ.occurrenceGap (n + 1)).toReal =
+      (μ.occurrenceTime (n + 1)).toReal - (μ.occurrenceTime n).toReal := by
+  have hn : μ.occurrenceTime n ≠ ∞ :=
+    ne_top_of_le_ne_top h (μ.monotone_occurrenceTime (Nat.le_succ n))
+  rw [occurrenceGap_succ_of_ne_top hn,
+    ENNReal.toReal_sub_of_le (μ.monotone_occurrenceTime (Nat.le_succ n)) h]
 
 /-- The zero measure has all interarrival gaps infinite. -/
 @[simp]
@@ -179,6 +197,15 @@ open TauCeti.Probability
 
 variable {μ ν : Measure ℝ≥0} [IsLocallyFiniteMeasure μ]
 
+/-- For a locally finite measure, the first interarrival gap is positive if and only if the
+origin carries mass strictly less than one. -/
+theorem occurrenceGap_zero_pos_iff (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
+    0 < μ.occurrenceGap 0 ↔ μ {0} < 1 := by
+  have hIic : Iic (0 : ℝ≥0) = {0} := by ext x; simp
+  have hle : μ.occurrenceGap 0 ≤ 0 ↔ 1 ≤ μ {0} := by
+    simpa [occurrenceGap_zero, hIic] using μ.occurrenceTime_le_iff 0 0
+  simpa [pos_iff_ne_zero] using not_congr hle
+
 /-- A locally finite integer-valued measure is reconstructed from the partial sums of its
 interarrival gaps. -/
 theorem IsIntegerValued.eq_occurrenceTimeMeasure_sum_occurrenceGap (hμ : μ.IsIntegerValued) :
@@ -197,12 +224,8 @@ theorem IsIntegerValued.occurrenceGap_inj [IsLocallyFiniteMeasure ν]
 no occurrence at zero. Empty configurations satisfy both sides. -/
 theorem IsIntegerValued.occurrenceGap_zero_pos_iff (hμ : μ.IsIntegerValued) :
     0 < μ.occurrenceGap 0 ↔ μ {0} = 0 := by
-  have hIic : Iic (0 : ℝ≥0) = {0} := by
-    ext x
-    simp
-  rw [occurrenceGap_zero, ← not_le, ← ENNReal.coe_zero,
-    μ.occurrenceTime_le_iff 0 0, hIic, Nat.cast_zero, zero_add]
-  exact ⟨fun h => by_contra fun hne => h (hμ.one_le_apply hne),
+  rw [Measure.occurrenceGap_zero_pos_iff]
+  exact ⟨fun h => by_contra fun hne => h.not_ge (hμ.one_le_apply hne),
     fun h => by simp [h]⟩
 
 /-- For a locally finite counting measure, simplicity (every singleton has mass at most one)
@@ -242,7 +265,7 @@ theorem IsIntegerValued.lt_occurrenceGap_succ_iff (hμ : μ.IsIntegerValued) {n 
     (hn : μ.occurrenceTime n ≠ ∞) (hs : μ {(μ.occurrenceTime n).toNNReal} ≤ 1) (s : ℝ≥0) :
     (s : ℝ≥0∞) < μ.occurrenceGap (n + 1) ↔
       μ (Ioc (μ.occurrenceTime n).toNNReal ((μ.occurrenceTime n).toNNReal + s)) = 0 := by
-  rw [hμ.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff hn hs (le_add_of_nonneg_right s.2),
+  rw [hμ.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff hn hs (le_add_of_nonneg_right s.property),
     occurrenceGap_succ_of_ne_top hn]
   cases hnext : μ.occurrenceTime (n + 1) using ENNReal.recTopCoe with
   | top => simp [hn, lt_top_iff_ne_top.mpr hn]

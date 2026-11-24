@@ -142,10 +142,10 @@ theorem IsCompact.exists_opens_nonempty_smoothEmbedding_euclidean [I.Boundaryles
   let W : Opens M := ⟨interior L, isOpen_interior⟩
   have hemb : IsEmbedding (F ∘ ((↑) : W → M)) := by
     have : CompactSpace L := isCompact_iff_compactSpace.1 hL
-    exact ((hF.continuous.comp continuous_subtype_val).isClosedEmbedding
+    exact ((hF.continuous.comp continuous_subtypeVal).isClosedEmbedding
       hFi.injective).isEmbedding.comp (IsEmbedding.inclusion interior_subset)
   refine ⟨W, hKL, hL.closure_of_subset interior_subset, n, ⟨.ofIsSmoothEmbedding _
-    ⟨(hF.comp contMDiff_subtype_val).isImmersion_of_injective_mfderiv (by simp) fun x v w hvw ↦
-      hFd _ (interior_subset x.2) ?_, hemb⟩⟩⟩
+    ⟨(hF.comp contMDiff_subtypeVal).isImmersion_of_injective_mfderiv (by simp) fun x v w hvw ↦
+      hFd _ (interior_subset x.property) ?_, hemb⟩⟩⟩
   rwa [← TauCeti.Manifold.mfderiv_comp_subtype_val_apply,
     ← TauCeti.Manifold.mfderiv_comp_subtype_val_apply]

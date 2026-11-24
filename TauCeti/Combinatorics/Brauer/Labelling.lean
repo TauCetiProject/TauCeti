@@ -144,7 +144,7 @@ section LowerEnd
 end. -/
 def isConstantOnArcsEquiv (D : BrauerDiagram k) :
     {m : Fin k ⊕ Fin k → ι // D.IsConstantOnArcs m} ≃ ({x // D.IsLowerEnd x} → ι) where
-  toFun m x := m.1 x
+  toFun m x := m.val x
   invFun g := ⟨fun x =>
       if h : D.IsLowerEnd x then g ⟨x, h⟩
       else g ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd h⟩,
@@ -155,20 +155,20 @@ def isConstantOnArcsEquiv (D : BrauerDiagram k) :
   left_inv m := Subtype.ext <| funext fun x => by
     by_cases h : D.IsLowerEnd x
     · simp [h]
-    · simp [h, (D.isConstantOnArcs_def _).mp m.2 x]
-  right_inv g := funext fun x => by simp [x.2]
+    · simp [h, (D.isConstantOnArcs_def _).mp m.property x]
+  right_inv g := funext fun x => by simp [x.property]
 
 @[simp]
 theorem isConstantOnArcsEquiv_apply (D : BrauerDiagram k)
     (m : {m : Fin k ⊕ Fin k → ι // D.IsConstantOnArcs m}) (x : {x // D.IsLowerEnd x}) :
-    D.isConstantOnArcsEquiv m x = m.1 x :=
+    D.isConstantOnArcsEquiv m x = m.val x :=
   (rfl)
 
 /-- The labelling with prescribed labels at the lower ends carries, at every boundary point, the
 label of the lower end of its arc. -/
 theorem isConstantOnArcsEquiv_symm_apply (D : BrauerDiagram k) (g : {x // D.IsLowerEnd x} → ι)
     (x : Fin k ⊕ Fin k) :
-    (D.isConstantOnArcsEquiv.symm g).1 x =
+    (D.isConstantOnArcsEquiv.symm g).val x =
       if h : D.IsLowerEnd x then g ⟨x, h⟩
       else g ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd h⟩ :=
   (rfl)
@@ -181,10 +181,10 @@ theorem exists_forall_isConstantOnArcs_iff_eq [Fintype ι] (hk : k ≤ Fintype.c
     ∃ ℓ : Fin k ⊕ Fin k → ι, ∀ D' : BrauerDiagram k, D'.IsConstantOnArcs ℓ ↔ D' = D := by
   obtain ⟨g⟩ : Nonempty ({x // D.IsLowerEnd x} ↪ ι) :=
     Function.Embedding.nonempty_of_card_le (by rwa [D.card_isLowerEnd])
-  refine ⟨(D.isConstantOnArcsEquiv.symm g).1, fun D' => ⟨fun h => ?_, ?_⟩⟩
+  refine ⟨(D.isConstantOnArcsEquiv.symm g).val, fun D' => ⟨fun h => ?_, ?_⟩⟩
   · -- two points with the same label are the two ends of an arc of `D`
     have hsame (x y : Fin k ⊕ Fin k)
-        (hxy : (D.isConstantOnArcsEquiv.symm g).1 x = (D.isConstantOnArcsEquiv.symm g).1 y) :
+        (hxy : (D.isConstantOnArcsEquiv.symm g).val x = (D.isConstantOnArcsEquiv.symm g).val y) :
         y = x ∨ y = D.val x := by
       simp only [isConstantOnArcsEquiv_symm_apply] at hxy
       split_ifs at hxy with hx hy hy <;> have hxy := congrArg Subtype.val (g.injective hxy) <;>
@@ -195,7 +195,7 @@ theorem exists_forall_isConstantOnArcs_iff_eq [Fintype ι] (hk : k ≤ Fintype.c
       · exact Or.inl (D.val.injective hxy).symm
     ext x
     exact (hsame x (D'.val x) (h x).symm).resolve_left (D'.apply_ne x)
-  · exact fun h => h ▸ (D.isConstantOnArcsEquiv.symm g).2
+  · exact fun h => h ▸ (D.isConstantOnArcsEquiv.symm g).property
 
 end LowerEnd
 
@@ -407,7 +407,7 @@ private def restrictLoopMin
     (m : {m : Fin k → ι // D₁.IsConstantOnArcs (Sum.elim m v) ∧
       D₂.IsConstantOnArcs (Sum.elim u m)}) :
     {a : Fin k // IsMiddleLoopMin D₁ D₂ a} → ι :=
-  fun p => m.1 p.1
+  fun p => m.val p.val
 
 /-- A middle labelling is determined by its labels on the least points of the closed loops. -/
 private theorem restrictLoopMin_injective : Function.Injective (restrictLoopMin D₁ D₂ u v) := by
@@ -459,7 +459,8 @@ private theorem restrictLoopMin_surjective
         rw [hoff ha hac hz,
           hoff hb ((MiddleAdj.reflTransGen_symm (.single hadj)).trans hac) hz])
     (fun b z hz => hoff (not_onMiddleLoop_of_isAttach hz) .refl hz)
-  exact ⟨⟨m, hm⟩, funext fun p => hloop ((isMiddleLoopMin_def D₁ D₂ _).mp p.2).1 p.2 .refl⟩
+  exact ⟨⟨m, hm⟩, funext fun p => hloop ((isMiddleLoopMin_def D₁ D₂ _).mp p.property).1 p.property
+      .refl⟩
 
 /-- **The loop rule for labellings.** Stack `D₁` above `D₂` and label the outer boundary by
 `Sum.elim u v`, constant on the arcs of the composite `TauCeti.composeDiagram D₁ D₂`. Its

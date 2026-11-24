@@ -47,7 +47,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A tensor in `E* ⊗ F` acts on `E` by evaluation in its first factor. -/
 noncomputable def toOperator : StrongDual 𝕜 E ⊗[𝕜] F →ₗ[𝕜] E →L[𝕜] F :=
-  TensorProduct.lift (ContinuousLinearMap.smulRightLₗ 𝕜 E F)
+  TensorProduct.lift (StrongDual.smulRightL 𝕜 E F).toLinearMap₁₂
 
 /-- A pure tensor acts as the corresponding rank-one operator. -/
 @[simp]
@@ -281,13 +281,13 @@ variable (𝕜 E F) in
 /-- Canonical contraction from the projective tensor product `StrongDual 𝕜 E ⊗π F` to bounded
 operators `E →L[𝕜] F`, sending `⟨f ⊗ₜ y⟩` to `x ↦ f x • y`. -/
 noncomputable def toOperator : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F →L[𝕜] E →L[𝕜] F :=
-  liftIsometry 𝕜 (StrongDual 𝕜 E) F (E →L[𝕜] F) (ContinuousLinearMap.smulRightL 𝕜 E F)
+  liftIsometry 𝕜 (StrongDual 𝕜 E) F (E →L[𝕜] F) (StrongDual.smulRightL 𝕜 E F)
 
 /-- On wrapped algebraic tensors, `ProjectiveTensor.toOperator` agrees with
 `TensorProduct.toOperator`. -/
 @[simp] theorem toOperator_mk (u : StrongDual 𝕜 E ⊗[𝕜] F) :
     toOperator 𝕜 E F ⟨u⟩ = TensorProduct.toOperator u := by
-  rw [toOperator, liftIsometry_apply, TensorProduct.toOperator]; rfl
+  rw [toOperator, liftIsometry_apply, TensorProduct.toOperator]
 
 /-- `ProjectiveTensor.toOperator` sends a pure tensor `⟨f ⊗ₜ y⟩` to the rank-one operator
 `f.smulRight y`. -/

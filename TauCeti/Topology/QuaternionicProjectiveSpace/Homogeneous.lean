@@ -141,7 +141,7 @@ exactly when its column `0` vanishes below the corner, that is, when it maps `e�
 quaternionic multiple of `e₀`. -/
 theorem mem_stabilizer_basePoint_iff {A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)} :
     A ∈ MulAction.stabilizer (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) (basePoint n) ↔
-      ∀ i : Fin n, A.1 i.succ 0 = 0 := by
+      ∀ i : Fin n, A.val i.succ 0 = 0 := by
   rw [MulAction.mem_stabilizer_iff, basePoint_def, smul_mk, mk_eq_mk_iff]
   constructor
   · rintro ⟨q, hq⟩ i
@@ -154,7 +154,7 @@ theorem mem_stabilizer_basePoint_iff {A : unitary (Matrix (Fin (n + 1)) (Fin (n 
   · intro hA
     -- The image of `e₀` is its column `0`, the multiple `e₀ A₀₀`, and `A₀₀` is a unit quaternion.
     obtain ⟨⟨q, B⟩, hqB⟩ := Matrix.mem_range_unitaryProdBlockSucc_iff.2 hA
-    refine ⟨⟨q, by simp [CStarRing.norm_of_mem_unitary q.2]⟩, Subtype.ext ?_⟩
+    refine ⟨⟨q, by simp [CStarRing.norm_of_mem_unitary q.property]⟩, Subtype.ext ?_⟩
     refine PiLp.ext fun i ↦ ?_
     simp only [Sphere.coe_op_sphere_smul, coe_quaternionUnitary_smul_sphere,
       quaternionUnitaryIsometry_apply, WithLp.ofLp_smul, WithLp.ofLp_toLp,

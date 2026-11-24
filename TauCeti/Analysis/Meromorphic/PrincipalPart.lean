@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Polynomial.BigOperators
 public import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.DSlope.Basic
 public import TauCeti.Analysis.Meromorphic.Germ
+import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # The principal part of a meromorphic germ
@@ -50,6 +51,9 @@ splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
 * `TauCeti.eq_zero_of_sum_div_sub_pow_eq`: polar terms `c / (z - a) ^ (j + 1)` at the points of
   a multiset whose sum agrees off those points with a function continuous there have zero
   coefficients.
+* `TauCeti.multiset_prod_X_sub_C_dvd_of_forall_eval_eq_mul`: a polynomial that is
+  `∏_{a ∈ D} (X - a)` times a function continuous at the points of `D` is divisible by that
+  product.
 * `TauCeti.meromorphicGerms.evalInvSub`: the ring homomorphism `P ↦ P((z - a)⁻¹)` into the
   meromorphic germs at `a`; it is injective (`evalInvSub_injective`).
 * `TauCeti.meromorphicGerms.principalPart`: the principal part, a `𝕜`-linear map to polynomials.
@@ -165,6 +169,39 @@ theorem eq_zero_of_sum_div_sub_pow_eq [DecidableEq 𝕜] {D : Multiset 𝕜} {c 
       exact ⟨(Finset.mem_filter.1 hi).2, by simpa using hk.symm⟩,
     coeff_C_mul_X_pow, ite_eq_left rfl] at hP
 
+/-! ### Divisibility by a split polynomial -/
+
+/-- **A continuous quotient by a split polynomial is a polynomial.** Let `P = ∏_{a ∈ D} (X - a)`
+for a multiset `D` of points of `𝕜`. If a polynomial `Q` equals `P g` on all of `𝕜`, for a function
+`g` continuous at the points of `D`, then `P` divides `Q`. -/
+theorem multiset_prod_X_sub_C_dvd_of_forall_eval_eq_mul {D : Multiset 𝕜} {Q : 𝕜[X]} {g : 𝕜 → 𝕜}
+    (hg : ∀ a ∈ D, ContinuousAt g a)
+    (h : ∀ z, Q.eval z = (D.map fun a ↦ X - C a).prod.eval z * g z) :
+    (D.map fun a ↦ X - C a).prod ∣ Q := by
+  induction D using Multiset.induction_on generalizing Q with
+  | empty => simp
+  | cons a D ih =>
+    simp only [Multiset.map_cons, Multiset.prod_cons, eval_mul, eval_sub, eval_X, eval_C] at h ⊢
+    have hQ : (X - C a) * (Q /ₘ (X - C a)) = Q :=
+      mul_divByMonic_eq_iff_isRoot.2 (by simpa using h a)
+    rw [← hQ]
+    refine mul_dvd_mul_left _ (ih (fun b hb ↦ hg b (Multiset.mem_cons_of_mem hb)) fun z ↦ ?_)
+    -- Off `a` the factor `z - a` cancels; at `a` both sides are continuous.
+    have hne (w : 𝕜) (hw : w ≠ a) :
+        (Q /ₘ (X - C a)).eval w = (D.map fun a ↦ X - C a).prod.eval w * g w := by
+      have hw' := h w
+      rw [← hQ, eval_mul, eval_sub, eval_X, eval_C, mul_assoc] at hw'
+      exact mul_left_cancel₀ (sub_ne_zero.2 hw) hw'
+    rcases eq_or_ne z a with rfl | hz
+    · have hQ' := (Polynomial.continuous (Q /ₘ (X - C z))).continuousAt (x := z)
+      have hP' := ((Polynomial.continuous (D.map fun a ↦ X - C a).prod).continuousAt (x := z)).mul
+        (hg z (Multiset.mem_cons_self z D))
+      exact tendsto_nhds_unique (hQ'.tendsto.mono_left nhdsWithin_le_nhds)
+        ((hP'.tendsto.mono_left nhdsWithin_le_nhds).congr'
+          (eventually_nhdsWithin_of_forall fun w hw ↦
+            (hne w (Set.mem_compl_singleton_iff.1 hw)).symm))
+    · exact hne z hz
+
 /-- **Principal part splitting of `(z - a)⁻ᴺ h`.** For every function `h` and every `N`, off `a`,
 `(z - a)⁻ᴺ h z = P((z - a)⁻¹) + q z` with `P = Σ_{j<N} c_j X ^ (N - j)`, where
 `c_j = (swap dslope a)^[j] h a` and `q = (swap dslope a)^[N] h`. -/
@@ -216,7 +253,7 @@ a function analytic at `a`. -/
 private theorem exists_principalPart (φ : meromorphicGerms 𝕜 a) :
     ∃ P : 𝕜[X], P.coeff 0 = 0 ∧ ∃ g : 𝕜 → 𝕜, AnalyticAt 𝕜 g a ∧
       ((φ - evalInvSub a P : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g := by
-  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
+  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.1 φ.property
   refine ⟨_, coeff_zero_sum_C_mul_X_pow_sub
     (fun j ↦ (swap dslope a)^[j] (fun z ↦ (z - a) ^ N • f z) a) N, _,
     hN.iterate_dslope (a := a) N, ?_⟩

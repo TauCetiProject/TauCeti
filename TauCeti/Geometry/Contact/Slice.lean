@@ -115,10 +115,10 @@ variable [IsManifold J ∞ S] {α : SmoothForm I M ℝ 1}
 vector field `Z` satisfy `α(Z) = 1` and `ι_Z dα = 0`, as the Reeb vector field of a contact form
 does, and let `ι : S → M` be smooth. At every point of its domain, the local flow map
 `(s, t) ↦ φₜ(ι s)` pulls `α` back to `dt + ι^* α`, the contactization form of `-ι^* α`. -/
-theorem mpullback_flowOf_comp_apply_eq_contactization (hαZ : ∀ x, α.1 x ![Z x] = 1)
-    (hZα : (mextDeriv α.1).interior Z = 0) {p : S × ℝ} (hp : (p.2, ι p.1) ∈ flowDomain Z) :
-    mpullback (J.prod 𝓘(ℝ)) I (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) α.1 p =
-      (-SmoothForm.mpullback ι hι α).contactization.1 p := by
+theorem mpullback_flowOf_comp_apply_eq_contactization (hαZ : ∀ x, α.val x ![Z x] = 1)
+    (hZα : (mextDeriv α.val).interior Z = 0) {p : S × ℝ} (hp : (p.2, ι p.1) ∈ flowDomain Z) :
+    mpullback (J.prod 𝓘(ℝ)) I (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) α.val p =
+      (-SmoothForm.mpullback ι hι α).contactization.val p := by
   -- The local flow preserves the form: `(φₜ^* α)_x = α_x`.
   have hinv := mpullback_flowOf_apply_of_interior_mextDeriv_eq_zero (hZ.of_le (by simp)) hαZ hZα hp
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
@@ -141,9 +141,9 @@ its domain, the local flow map `(s, t) ↦ φₜ(ι s)` pulls `dα` back to the 
 (`TauCeti.SmoothForm.mextDeriv_contactization_apply`). No normalization of `α(Z)` is needed: the
 flow preserves `dα`, and `Z` lies in its kernel. -/
 theorem mpullback_flowOf_comp_mextDeriv_apply_eq_mextDeriv_contactization
-    (hZα : (mextDeriv α.1).interior Z = 0) {p : S × ℝ} (hp : (p.2, ι p.1) ∈ flowDomain Z) :
-    mpullback (J.prod 𝓘(ℝ)) I (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) (mextDeriv α.1) p =
-      mextDeriv (-SmoothForm.mpullback ι hι α).contactization.1 p := by
+    (hZα : (mextDeriv α.val).interior Z = 0) {p : S × ℝ} (hp : (p.2, ι p.1) ∈ flowDomain Z) :
+    mpullback (J.prod 𝓘(ℝ)) I (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) (mextDeriv α.val) p =
+      mextDeriv (-SmoothForm.mpullback ι hι α).contactization.val p := by
   -- `Z` lies in the kernel of `dα`, on either side.
   have hZl (x : M) (w : TangentSpace I x) : (mextDerivₗ I 1 α).bilinFormAt x (Z x) w = 0 := by
     have h := congrArg (fun β : RoughForm I M ℝ 1 ↦ β x ![w]) hZα
@@ -183,8 +183,8 @@ theorem mpullback_flowOf_comp_mextDeriv_apply_eq_mextDeriv_contactization
 field `Z` satisfy `α(Z) = 1` and `ι_Z dα = 0`, and let `ι : S → M` be smooth. At a point `(s, t)` of
 its domain at which `d(ι^* α)` is nondegenerate on `T_s S`, the local flow map
 `(s, t) ↦ φₜ(ι s)` has injective differential. -/
-theorem injective_mfderiv_flowOf_comp_of_nondegenerate (hαZ : ∀ x, α.1 x ![Z x] = 1)
-    (hZα : (mextDeriv α.1).interior Z = 0) {p : S × ℝ}
+theorem injective_mfderiv_flowOf_comp_of_nondegenerate (hαZ : ∀ x, α.val x ![Z x] = 1)
+    (hZα : (mextDeriv α.val).interior Z = 0) {p : S × ℝ}
     (hβ : ((mextDerivₗ J 1 (SmoothForm.mpullback ι hι α)).bilinFormAt p.1).Nondegenerate)
     (hp : (p.2, ι p.1) ∈ flowDomain Z) :
     Function.Injective (mfderiv (J.prod 𝓘(ℝ)) I (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) p) := by
@@ -192,14 +192,14 @@ theorem injective_mfderiv_flowOf_comp_of_nondegenerate (hαZ : ∀ x, α.1 x ![Z
   set e := Manifold.tangentSpaceProdEquiv (I := J) (J := 𝓘(ℝ)) p
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
   -- A vector killed by `dΦ` is killed by `Φ^* α = dt + β` and is `Φ^* dα`-orthogonal to everything.
-  have hα0 : (-β).contactization.1 p ![v] = 0 := by
+  have hα0 : (-β).contactization.val p ![v] = 0 := by
     rw [← mpullback_flowOf_comp_apply_eq_contactization hZ hι hαZ hZα hp, mpullback_apply]
-    simpa [hv] using (α.1 _).map_coord_zero 0 rfl
+    simpa [hv] using (α.val _).map_coord_zero 0 rfl
   have hd0 (u : TangentSpace (J.prod 𝓘(ℝ)) p) :
-      mextDeriv (-β).contactization.1 p ![v, u] = 0 := by
+      mextDeriv (-β).contactization.val p ![v, u] = 0 := by
     rw [← mpullback_flowOf_comp_mextDeriv_apply_eq_mextDeriv_contactization hZ hι hZα hp,
       mpullback_apply_pair, hv]
-    exact (mextDeriv α.1 _).map_coord_zero 0 rfl
+    exact (mextDeriv α.val _).map_coord_zero 0 rfl
   -- The `S`-component is in the kernel of `dβ`, tested against the vectors `(w, 0)`.
   have h₁ : (e v).1 = 0 := hβ.1 _ fun w ↦ by
     have := hd0 (e.symm (w, 0))
@@ -208,7 +208,7 @@ theorem injective_mfderiv_flowOf_comp_of_nondegenerate (hαZ : ∀ x, α.1 x ![Z
     rwa [SmoothForm.bilinFormAt_apply]
   -- Its real component is then `dt` of `v`, which vanishes.
   have h₂ : (e v).2 = 0 := by
-    rw [SmoothForm.contactization_apply, h₁, ((-β).1 p.1).map_coord_zero 0 rfl, sub_zero] at hα0
+    rw [SmoothForm.contactization_apply, h₁, ((-β).val p.1).map_coord_zero 0 rfl, sub_zero] at hα0
     exact (NormedSpace.fromTangentSpace p.2).map_eq_zero_iff.1 hα0
   exact e.injective (by rw [map_zero]; exact Prod.ext h₁ h₂)
 
@@ -217,8 +217,8 @@ vector field `Z` satisfy `α(Z) = 1` and `ι_Z dα = 0`, and let `ι : S → M` 
 boundaryless manifold of one dimension less. At a point `(s, t)` of its domain at which `d(ι^* α)`
 is nondegenerate on `T_s S`, the local flow map `(s, t) ↦ φₜ(ι s)` is a local diffeomorphism. -/
 theorem isLocalDiffeomorphAt_flowOf_comp_of_nondegenerate [FiniteDimensional ℝ E']
-    [J.Boundaryless] (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hαZ : ∀ x, α.1 x ![Z x] = 1)
-    (hZα : (mextDeriv α.1).interior Z = 0) {p : S × ℝ}
+    [J.Boundaryless] (hdim : finrank ℝ E' + 1 = finrank ℝ E) (hαZ : ∀ x, α.val x ![Z x] = 1)
+    (hZα : (mextDeriv α.val).interior Z = 0) {p : S × ℝ}
     (hβ : ((mextDerivₗ J 1 (SmoothForm.mpullback ι hι α)).bilinFormAt p.1).Nondegenerate)
     (hp : (p.2, ι p.1) ∈ flowDomain Z) :
     IsLocalDiffeomorphAt (J.prod 𝓘(ℝ)) I ∞ (fun q : S × ℝ ↦ flowOf Z q.2 (ι q.1)) p := by

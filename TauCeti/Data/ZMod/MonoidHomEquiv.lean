@@ -109,8 +109,8 @@ noncomputable def zmodProdMonoidHomEquiv (G : Type*) [CommGroup G] :
     (Multiplicative (ZMod N × ZMod N) →* G) ≃ {g : G // g ^ N = 1} × {g : G // g ^ N = 1} where
   toFun φ := (zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inl _ _).toMultiplicative),
     zmodMonoidHomEquiv N G (φ.comp (AddMonoidHom.inr _ _).toMultiplicative))
-  invFun g :=
-    ((zmodLift g.1.val g.1.property).coprod (zmodLift g.2.val g.2.property)).toMultiplicativeLeft
+  invFun g := ((zmodLift g.1.val g.1.property).coprod
+      (zmodLift g.2.val g.2.property)).toMultiplicativeLeft
   left_inv φ := by
     refine MonoidHom.ext fun z ↦ ?_
     obtain ⟨a, b, rfl⟩ : ∃ a b : ℕ, z = .ofAdd ((a : ZMod N), (b : ZMod N)) :=

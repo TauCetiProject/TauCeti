@@ -30,6 +30,8 @@ of the restricted sheaf in `TauCeti.CategoryTheory.Sites.SheafCohomology.Over`.
 
 * `TauCeti.CategoryTheory.PresheafExtensionByZero.functor`: extension by zero of presheaves.
 * `TauCeti.CategoryTheory.PresheafExtensionByZero.adjunction`: its adjunction to restriction.
+* `TauCeti.CategoryTheory.SheafExtensionByZero.sheafPullbackIsoSheafify`: Mathlib's canonical
+  left adjoint to restriction is the sheafification of the presheaf extension by zero.
 * `TauCeti.CategoryTheory.SheafExtensionByZero.preservesFiniteLimits_sheafPullback`: left
   exactness of Mathlib's canonical extension functor for sheaves with values in a category with
   a zero object and finite limits.
@@ -266,19 +268,21 @@ instance isRightAdjoint_sheafPushforwardContinuous_forget :
     ((Over.forget U).sheafPushforwardContinuous D (J.over U) J).IsRightAdjoint :=
   (extensionAdjunction U J).isRightAdjoint
 
-variable [HasFiniteLimits D]
+/-- On a preorder site, Mathlib's canonical left adjoint to restriction to a lower interval is the
+sheafification of the presheaf extension by zero. -/
+def sheafPullbackIsoSheafify :
+    (Over.forget U).sheafPullback D (J.over U) J ≅
+      sheafToPresheaf (J.over U) D ⋙ PresheafExtensionByZero.functor U ⋙ presheafToSheaf J D :=
+  ((Over.forget U).sheafAdjunctionContinuous D (J.over U) J).leftAdjointUniq
+    (extensionAdjunction U J)
 
-private instance : PreservesFiniteLimits (extension (D := D) U J) := by
-  unfold extension
-  infer_instance
+variable [HasFiniteLimits D]
 
 /-- On a preorder site, the left adjoint to restriction to a lower interval is exact.
 In particular, this applies to extension by zero along an open inclusion. -/
 instance preservesFiniteLimits_sheafPullback :
     PreservesFiniteLimits ((Over.forget U).sheafPullback D (J.over U) J) :=
-  preservesFiniteLimits_of_natIso
-    ((extensionAdjunction U J).leftAdjointUniq
-      ((Over.forget U).sheafAdjunctionContinuous D (J.over U) J))
+  preservesFiniteLimits_of_natIso (sheafPullbackIsoSheafify U J).symm
 
 end SheafExtensionByZero
 

@@ -120,13 +120,13 @@ noncomputable def strongAdmissibleOpenOrderIso : StrongAdmissibleOpen K B ≃o S
   { toFun W := ⟨hφ.mapStrongAdmissibleOpen hA.out W, Set.mem_Iic.mpr <| SetLike.coe_subset_coe.mp <|
       (hφ.mapStrongAdmissibleOpen_subset hA.out W).trans_eq
         (StrongAdmissibleOpen.setEmbedding_apply U)⟩
-    invFun V := V.1.comap φ
+    invFun V := V.val.comap φ
     left_inv W := SetLike.coe_injective <| Set.ext fun y ↦ by
       simp [(hφ.maximalSpectrumComap_injective hA.out).mem_set_image]
     right_inv V := Subtype.ext <| SetLike.coe_injective <| by
       rw [coe_mapStrongAdmissibleOpen, StrongAdmissibleOpen.coe_comap, Set.image_preimage_eq_iff,
         hφ.range_maximalSpectrumComap hA.out, StrongAdmissibleOpen.setEmbedding_apply]
-      exact Set.mem_Iic.mp V.2
+      exact Set.mem_Iic.mp V.property
     map_rel_iff' := by
       simp [← SetLike.coe_subset_coe,
         Set.image_subset_image_iff (hφ.maximalSpectrumComap_injective hA.out)] }

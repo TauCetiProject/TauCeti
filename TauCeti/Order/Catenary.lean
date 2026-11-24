@@ -173,8 +173,8 @@ nonempty and all its elements are equivalent. -/
 theorem krullDim_Icc_eq_zero_of_le_of_le (hab : a ≤ b) (hba : b ≤ a) :
     krullDim (Set.Icc a b) = 0 :=
   have : Nonempty (Set.Icc a b) := ⟨⟨a, le_rfl, hab⟩⟩
-  le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ =>
-      y.property.2.trans (hba.trans x.property.1))
+  le_antisymm (krullDim_nonpos_iff_forall_isMax.2 fun x y _ => y.property.2.trans
+      (hba.trans x.property.1))
     krullDim_nonneg
 
 end TauCeti.Order
@@ -192,8 +192,8 @@ theorem krullDim_Icc (hab : a ⋖ b) : Order.krullDim (Set.Icc a b) = 1 := by
   by_cases hxa : (x : α) ≤ a
   · exact Or.inl fun y _ => hxa.trans y.property.1
   · exact Or.inr fun y _ =>
-      y.property.2.trans
-        (not_lt_iff_le_imp_ge.1 (hab.2 (x.property.1.lt_of_not_ge hxa)) x.property.2)
+      y.property.2.trans (not_lt_iff_le_imp_ge.1 (hab.2 (x.property.1.lt_of_not_ge hxa))
+          x.property.2)
 
 end CovBy
 

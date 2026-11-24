@@ -184,21 +184,21 @@ theorem not_isLowerEnd_val (D : BrauerDiagram k) {x : Fin k ⊕ Fin k}
 /-- The points that are not lower ends correspond to the lower ends, through the matching. -/
 def notLowerEndEquiv (D : BrauerDiagram k) :
     {x // ¬D.IsLowerEnd x} ≃ {x // D.IsLowerEnd x} where
-  toFun x := ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd x.2⟩
-  invFun x := ⟨D.val x, D.not_isLowerEnd_val x.2⟩
+  toFun x := ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd x.property⟩
+  invFun x := ⟨D.val x, D.not_isLowerEnd_val x.property⟩
   left_inv x := Subtype.ext (D.apply_apply x)
   right_inv x := Subtype.ext (D.apply_apply x)
 
 /-- `notLowerEndEquiv` sends a point that is not a lower end to its partner. -/
 @[simp]
 theorem notLowerEndEquiv_apply (D : BrauerDiagram k) (x : {x // ¬D.IsLowerEnd x}) :
-    D.notLowerEndEquiv x = ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd x.2⟩ :=
+    D.notLowerEndEquiv x = ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd x.property⟩ :=
   (rfl)
 
 /-- The inverse of `notLowerEndEquiv` sends a lower end to its partner. -/
 @[simp]
 theorem notLowerEndEquiv_symm_apply (D : BrauerDiagram k) (x : {x // D.IsLowerEnd x}) :
-    D.notLowerEndEquiv.symm x = ⟨D.val x, D.not_isLowerEnd_val x.2⟩ :=
+    D.notLowerEndEquiv.symm x = ⟨D.val x, D.not_isLowerEnd_val x.property⟩ :=
   (rfl)
 
 /-- **A Brauer diagram on `k` strands has `k` arcs**: its `2 * k` boundary points split evenly into
@@ -302,9 +302,9 @@ end BrauerDiagram
 noncomputable def permToBrauerEquiv (k : ℕ) :
     Equiv.Perm (Fin k) ≃ {D : BrauerDiagram k // ∀ x, D.IsThrough x} where
   toFun σ := ⟨permToBrauer σ, BrauerDiagram.isThrough_permToBrauer σ⟩
-  invFun D := BrauerDiagram.throughPerm D.1 D.2
+  invFun D := BrauerDiagram.throughPerm D.val D.property
   left_inv σ := BrauerDiagram.throughPerm_permToBrauer σ
-  right_inv D := Subtype.ext (BrauerDiagram.permToBrauer_throughPerm D.2)
+  right_inv D := Subtype.ext (BrauerDiagram.permToBrauer_throughPerm D.property)
 
 @[simp]
 theorem permToBrauerEquiv_apply {k : ℕ} (σ : Equiv.Perm (Fin k)) :
@@ -312,7 +312,7 @@ theorem permToBrauerEquiv_apply {k : ℕ} (σ : Equiv.Perm (Fin k)) :
 
 @[simp]
 theorem permToBrauerEquiv_symm_apply {k : ℕ} (D : {D : BrauerDiagram k // ∀ x, D.IsThrough x}) :
-    (permToBrauerEquiv k).symm D = BrauerDiagram.throughPerm D.1 D.2 := (rfl)
+    (permToBrauerEquiv k).symm D = BrauerDiagram.throughPerm D.val D.property := (rfl)
 
 /-- The Brauer diagrams with no cap and no cup are `k !` in number. -/
 theorem card_brauerDiagram_forall_isThrough (k : ℕ) :

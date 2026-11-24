@@ -25,6 +25,7 @@ invertible.
 
 ## Main results
 
+* `Ideal.moduleInvertible_of_ne_bot`: a nonzero projective ideal of a domain is invertible.
 * `Module.Invertible.rankAtStalk_eq_one`: an invertible module has rank one at every prime.
 * `Module.Invertible.of_rankAtStalk_eq_one`: a finite projective module of rank one at every prime
   is invertible.
@@ -86,3 +87,38 @@ theorem invertible_iff_rankAtStalk_eq_one :
     fun ⟨_, _, h⟩ ↦ .of_rankAtStalk_eq_one h⟩
 
 end Module
+
+namespace Ideal
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- A nonzero projective ideal of a domain is an invertible module. -/
+theorem moduleInvertible_of_ne_bot (I : Ideal R) [Module.Projective R I]
+    (hI : I ≠ ⊥) : Module.Invertible R I := by
+  classical
+  obtain ⟨a, ha, hane⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
+  obtain ⟨s, hs⟩ := Module.projective_def.mp (inferInstance : Module.Projective R I)
+  -- The splitting of every element is supported on the splitting of one nonzero element.
+  have : Module.Finite R I := by
+    refine Module.Finite.of_fg_top ⟨(s ⟨a, ha⟩).support, ?_⟩
+    apply top_unique
+    intro x _
+    rw [← hs x, Finsupp.linearCombination_apply]
+    apply Submodule.sum_mem
+    intro y hy
+    apply Submodule.smul_mem
+    apply Submodule.subset_span
+    apply Finset.mem_coe.mpr
+    by_contra h
+    have hy0 : (s ⟨a, ha⟩) y = 0 := Finsupp.notMem_support_iff.mp h
+    have hx : a • x = (x : R) • (⟨a, ha⟩ : I) := Subtype.ext (mul_comm _ _)
+    have heq := congrArg (fun z : I →₀ R ↦ z y) (congrArg s hx)
+    simp only [map_smul, Finsupp.smul_apply, smul_eq_mul] at heq
+    rw [hy0, mul_zero] at heq
+    exact (Finsupp.mem_support_iff.mp hy) ((mul_eq_zero.mp heq).resolve_left hane)
+  exact .of_rankAtStalk_eq_one fun p ↦ by
+    rw [Module.rankAtStalk_eq, p.asIdeal.finrank_fiber_eq_finrank]
+    exact le_antisymm ((Submodule.finrank_le I).trans (by simp))
+      (Submodule.one_le_finrank_iff.mpr hI)
+
+end Ideal

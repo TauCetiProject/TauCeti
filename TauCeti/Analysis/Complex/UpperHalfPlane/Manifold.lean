@@ -156,7 +156,7 @@ theorem mdifferentiable_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι) {a : ι 
     MDiff fun τ : ℍ ↦ ((∏ i ∈ s, (X - C (a i τ))).coeff k : ℂ) := by
   -- index the roots by `s`: the coefficient is an analytic function of the tuple of roots
   have hv : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, s → ℂ) fun τ : ℍ ↦ fun i : s ↦ a i τ :=
-    mdifferentiable_pi_space_iff.2 fun i ↦ ha i i.2
+    mdifferentiable_pi_space_iff.2 fun i ↦ ha i i.property
   have hg : Differentiable ℂ fun v : s → ℂ ↦ (∏ i : s, (X - C (v i))).coeff k := fun v ↦
     (TauCeti.Polynomial.analyticAt_coeff_prod_X_sub_C Finset.univ k v).differentiableAt
   convert Differentiable.comp_mdifferentiable hg hv using 1
@@ -179,7 +179,7 @@ lemma not_accPt_zeros_comp_ofComplex {g : ℍ → ℂ} (hg : MDiff g) (hg0 : g �
     analyticAt_comp_ofComplex hg hw
   obtain ⟨τ, hτ⟩ := Function.ne_iff.mp hg0
   have hcod := hall.preimage_zero_mem_codiscreteWithin (x := (τ : ℂ))
-    (by simpa [Function.comp, ofComplex_apply] using hτ) τ.2
+    (by simpa [Function.comp, ofComplex_apply] using hτ) τ.coe_im_pos
     ⟨⟨Complex.I, by simp⟩, (convex_halfSpace_im_gt 0).isPreconnected⟩
   have hne := mem_codiscreteWithin_accPt.mp hcod x hx
   have hset : {z : ℂ | 0 < z.im ∧ (g ∘ ofComplex) z = 0} =

@@ -193,8 +193,8 @@ noncomputable def extend : parabolic A l →* WithConv (H →ₐ[R] Polynomial A
 theorem ofPolyPoint_extend (g : parabolic A l) :
     ofPolyPoint A (extend A l g) = conjugate A l (g : WithConv (H →ₐ[R] A)) := by
   have := (MonoidHom.ofInjective (ofPolyPoint_injective (R := R) (H := H) A)).apply_symm_apply
-    (⟨conjugate A l (g : WithConv (H →ₐ[R] A)), g.property⟩ :
-      (ofPolyPoint (R := R) (H := H) A).range)
+    (⟨conjugate A l (g : WithConv (H →ₐ[R] A)), g.property⟩ : (ofPolyPoint (R := R) (H
+        := H) A).range)
   exact congrArg Subtype.val this
 
 /-- The extension over the origin is unique. -/
@@ -372,8 +372,8 @@ theorem extend_mapValue (g : parabolic A l) :
 /-- The limit homomorphism is natural in the value algebra. -/
 theorem mapValue_limit (g : parabolic A l) :
     AlgHom.mapValue φ (limit A l g) =
-      limit B l
-        ⟨AlgHom.mapValue φ (g : WithConv (H →ₐ[R] A)), parabolic_le_comap φ g.property⟩ := by
+      limit B l ⟨AlgHom.mapValue φ (g : WithConv (H →ₐ[R] A)), parabolic_le_comap φ g.property⟩
+          := by
   rw [limit_apply, limit_apply, extend_mapValue, mapValue_evalZeroPoint]
 
 /-- The unipotent subgroup is preserved by change of value algebra. -/

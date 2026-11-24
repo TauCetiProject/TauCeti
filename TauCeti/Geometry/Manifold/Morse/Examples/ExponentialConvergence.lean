@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.Morse.Pi
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # Exponential convergence of gradient trajectories: two test cases
@@ -45,7 +47,9 @@ the rate of that theorem.
 
 The trajectories are identified with the maximal integral curves of `-grad f` by uniqueness of
 integral curves (`TauCeti.Manifold.eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt`), and on
-a flat space the Riemannian distance is the norm distance (`IsRiemannianManifold`).
+a flat space the Riemannian distance is the norm distance (`IsRiemannianManifold`). The sharpness
+of the rate `2` reduces to a comparison of exponentials
+(`TauCeti.not_exists_ofReal_mul_exp_le_mul_exp`).
 
 ## References
 
@@ -209,9 +213,8 @@ private theorem hasDerivAt_sqSubSqTrajectory (a t : ℝ) :
       (-gradient (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2)
         (EuclideanSpace.single 0 (a * Real.exp (-(2 * t))))) t := by
   rw [(hasGradientAt_sq_sub_sq _).gradient]
-  have h : HasDerivAt (fun s ↦ a * Real.exp (-(2 * s))) (a * (Real.exp (-(2 * t)) * -2)) t := by
-    simpa using (((hasDerivAt_id t).const_mul 2).neg.exp).const_mul a
-  convert h.smul_const (EuclideanSpace.single (0 : Fin 2) (1 : ℝ)) using 1
+  convert (hasDerivAt_mul_exp_neg_mul 2 a t).smul_const
+    (EuclideanSpace.single (0 : Fin 2) (1 : ℝ)) using 1
   · ext s i
     fin_cases i <;> simp
   · ext i
@@ -254,19 +257,8 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
           0 ≤
         ENNReal.ofReal (C * Real.exp (-(μ * t))) := by
   rintro ⟨C, hC, h⟩
-  have hgrow : Tendsto (fun t : ℝ ↦ Real.exp ((μ - 2) * t)) atTop atTop :=
-    Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop (sub_pos.2 hμ))
-  obtain ⟨t, ht, hbig⟩ := (h.and (hgrow.eventually_gt_atTop (C / |a|))).exists
-  rw [riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_sub_sq,
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at ht
-  -- Multiplying the bound by `exp (μ t)` gives `|a| exp ((μ - 2) t) ≤ C`.
-  have hle : |a| * Real.exp ((μ - 2) * t) ≤ C :=
-    calc |a| * Real.exp ((μ - 2) * t) = |a| * Real.exp (-(2 * t)) * Real.exp (μ * t) := by
-          rw [mul_assoc, ← Real.exp_add]
-          ring_nf
-      _ ≤ C * Real.exp (-(μ * t)) * Real.exp (μ * t) := by gcongr
-      _ = C := by simp [Real.exp_neg]
-  linarith [(div_lt_iff₀ (abs_pos.2 ha)).1 hbig]
+  refine not_exists_ofReal_mul_exp_le_mul_exp (abs_pos.2 ha) hμ ⟨C, hC, h.mono fun t ht ↦ ?_⟩
+  rwa [← riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_sub_sq]
 
 /-- A property holding near the origin of the Euclidean plane holds at some nonzero point of each
 coordinate axis. -/

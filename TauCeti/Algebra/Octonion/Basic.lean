@@ -854,8 +854,8 @@ private def imaginaryLinearEquivProd (R : Type*) [CommRing R] :
   map_smul' _ _ := rfl
   invFun p := ⟨⟨p.1, -p.1, p.2.1, p.2.2⟩, by simp⟩
   left_inv x :=
-    Subtype.ext
-      (Octonion.ext rfl (neg_eq_iff_add_eq_zero.mpr (mem_imaginary.mp x.property)) rfl rfl)
+    Subtype.ext (Octonion.ext rfl (neg_eq_iff_add_eq_zero.mpr (mem_imaginary.mp x.property)) rfl
+        rfl)
   right_inv _ := rfl
 
 /-- **The imaginary split octonions are `7`-dimensional**: a vanishing trace pins the second

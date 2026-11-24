@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Group.Submodule
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Expand
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
+public import TauCeti.Topology.MetricSpace.Algebra
 
 /-!
 # `q`-adic expansion components in coefficient submodules
@@ -57,7 +57,8 @@ noncomputable def restrictedExpandComponentFamily [∀ i, Fact (0 < r i)] (hq : 
   ⟨fun α ↦ ⟨coeff α (restrictedExpandComponent hq hr ν z : _root_.MvPowerSeries σ K'),
       (coeff_restrictedExpandComponent hq hr ν α z).symm ▸ hz (q • α + ν)⟩,
     IsRestrictedFamily.mem_addSubgroup.mpr <|
-      ((isRestrictedFamily_coeff_iff _).mpr (restrictedExpandComponent hq hr ν z).2).of_norm_le
+      ((isRestrictedFamily_coeff_iff _).mpr (restrictedExpandComponent hq hr ν
+          z).property).of_norm_le
         (C := 1) fun _ ↦ (one_mul _).symm.le⟩
 
 @[simp]

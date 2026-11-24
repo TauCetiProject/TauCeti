@@ -110,7 +110,7 @@ private theorem exists_homeomorph_closure_of_pos :
   have hφ : Continuous φ := by fun_prop
   have hφb (x : sphere (0 : E) 1) (t : ℝ) (ht : t ∈ Icc (-1 : ℝ) 1) : φ (b (x, t)) = t := by
     simp [φ, hlat x t ht, inner_add_left, real_inner_smul_left,
-      Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e x : (ℝ ∙ (p : F))ᗮ).2]
+      Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e x : (ℝ ∙ (p : F))ᗮ).property]
   refine ⟨φ, hφ, hgσ, hφb, fun y hy ↦ ?_⟩
   -- The closure of the domain of `y` is the preimage of the closed hemisphere about `p`.
   have hz : φ (b (x₀, -1)) < 0 := by
@@ -146,7 +146,7 @@ private theorem exists_homeomorph_closure_of_pos :
       rw [hh₁ _ ((hgσ _).2 ⟨x, (hz.trans hzx).symm⟩), hz, hzx, ← hb.apply_zero,
         hlat x 0 (by norm_num)]
       simp
-    have hBx : h₁ (Homeomorph.setCongr hcl z) = B ⟨x, sphere_subset_closedBall x.2⟩ :=
+    have hBx : h₁ (Homeomorph.setCongr hcl z) = B ⟨x, sphere_subset_closedBall x.property⟩ :=
       Subtype.ext (Subtype.ext (by simpa [B, e] using hgx))
     simp [hBx]
   · -- `B` preserves the unit sphere, and `h₁` sends exactly the image of `σ` to it.
@@ -247,7 +247,7 @@ which carries `ball (0 : E) 1` onto `connectedComponentIn (range σ)ᶜ y`. -/
 theorem exists_isClosedEmbedding_closedBall (hb : IsBicollar σ b)
     (hEF : finrank ℝ F = finrank ℝ E + 1) {y : sphere (0 : F) 1} (hy : y ∉ range σ) :
     ∃ g : closedBall (0 : E) 1 → sphere (0 : F) 1, IsClosedEmbedding g ∧
-      (∀ x : sphere (0 : E) 1, g ⟨x, sphere_subset_closedBall x.2⟩ = σ x) ∧
+      (∀ x : sphere (0 : E) 1, g ⟨x, sphere_subset_closedBall x.property⟩ = σ x) ∧
       range g = closure (connectedComponentIn (range σ)ᶜ y) ∧
       (∀ z : closedBall (0 : E) 1,
         (z : E) ∈ ball (0 : E) 1 ↔ g z ∈ connectedComponentIn (range σ)ᶜ y) := by
@@ -259,16 +259,16 @@ theorem exists_isClosedEmbedding_closedBall (hb : IsBicollar σ b)
     fun x ↦ ?_, by simp [g], fun z ↦ ?_⟩
   · have hxmem : σ x ∈ closure (connectedComponentIn (range σ)ᶜ y) :=
       hcl ▸ Or.inr (mem_range_self x)
-    have hxeq : h ⟨σ x, hxmem⟩ = ⟨x, sphere_subset_closedBall x.2⟩ :=
+    have hxeq : h ⟨σ x, hxmem⟩ = ⟨x, sphere_subset_closedBall x.property⟩ :=
       Subtype.ext (hh_inv ⟨σ x, hxmem⟩ x rfl)
     simpa [g] using congrArg (Subtype.val ∘ h.symm) hxeq.symm
   · have hz_norm : (z : E) ∈ ball (0 : E) 1 ↔ (z : E) ∉ sphere (0 : E) 1 := by
       rw [mem_ball_zero_iff, mem_sphere_zero_iff_norm]
-      exact (mem_closedBall_zero_iff.1 z.2).lt_iff_ne
+      exact (mem_closedBall_zero_iff.1 z.property).lt_iff_ne
     have hdisj : Disjoint (connectedComponentIn (range σ)ᶜ y) (range σ) :=
       subset_compl_iff_disjoint_right.1 (connectedComponentIn_subset _ _)
     rw [hz_norm, ← not_iff_not, not_not]
-    have hmem : g z ∈ connectedComponentIn (range σ)ᶜ y ∪ range σ := hcl ▸ (h.symm z).2
+    have hmem : g z ∈ connectedComponentIn (range σ)ᶜ y ∪ range σ := hcl ▸ (h.symm z).property
     have hiff := hh_sph (h.symm z)
     rw [h.apply_symm_apply] at hiff
     rw [hiff]

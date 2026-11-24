@@ -17,7 +17,11 @@ import Mathlib.RingTheory.RingHom.Integral
 In any cartesian square of schemes, the topological image of either projection is the preimage of
 the image of the opposite morphism (`AlgebraicGeometry.Scheme.Pullback.range_fst_of_isPullback`
 and `AlgebraicGeometry.Scheme.Pullback.range_snd_of_isPullback`), extending Mathlib's
-`range_fst` and `range_snd` from chosen pullbacks to arbitrary cartesian squares.
+`range_fst` and `range_snd` from chosen pullbacks to arbitrary cartesian squares. If moreover the
+second projection is injective on points, the fibre of the first projection over a point `x` has
+the same cardinality as the fibre of the opposite map over the image of `x`
+(`AlgebraicGeometry.Scheme.natCard_preimage_fst_singleton_of_isPullback`), as for the inverse
+image of a closed subscheme.
 
 Let `t` be a point of `X ×_S Y` lying over `x ∈ X`, `y ∈ Y` and `s ∈ S`. Mathlib's
 `AlgebraicGeometry.Scheme.Pullback.ofPointTensor` is the canonical map
@@ -36,6 +40,9 @@ Lemma 58.31.1 (0EYD).
 * `AlgebraicGeometry.Scheme.Pullback.range_fst_of_isPullback` and
   `AlgebraicGeometry.Scheme.Pullback.range_snd_of_isPullback`: the topological range of a
   projection in a cartesian square of schemes is the preimage of the opposite morphism's range.
+* `AlgebraicGeometry.Scheme.natCard_preimage_fst_singleton_of_isPullback`: if the second
+  projection of a pullback square is injective, the fibres of the first projection have the same
+  cardinality as the corresponding fibres of the opposite map.
 * `AlgebraicGeometry.Scheme.Pullback.ofPointTensor_surjective`: `κ(x) ⊗[κ(s)] κ(y) ⟶ κ(t)` is
   surjective when `κ(x)` is integral over `κ(s)`.
 * `AlgebraicGeometry.Scheme.Pullback.closure_range_residueFieldMap_eq_top`: in that case `κ(t)`
@@ -161,3 +168,20 @@ theorem surjective_liftEquiv_residueFieldMap (t : ↑(pullback f g))
   exact fun z ↦ (AlgHom.mem_range _).mp (hle (Subring.mem_top z))
 
 end AlgebraicGeometry.Scheme.Pullback
+
+namespace AlgebraicGeometry.Scheme
+
+universe u
+
+variable {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ S} {g : Y ⟶ S}
+
+/-- In a pullback square of schemes whose second projection `snd` is injective, the fibre of `fst`
+over `x` has the same cardinality as the fibre of `g` over `f x`: `snd` maps the first injectively
+onto the second (Mathlib's `Scheme.image_preimage_eq_of_isPullback`). -/
+theorem natCard_preimage_fst_singleton_of_isPullback (H : IsPullback fst snd f g)
+    (hsnd : Function.Injective snd) (x : X) :
+    Nat.card (fst ⁻¹' {x}) = Nat.card (g ⁻¹' {f x}) := by
+  rw [← Nat.card_image_of_injective hsnd, Scheme.image_preimage_eq_of_isPullback H,
+    Set.image_singleton]
+
+end AlgebraicGeometry.Scheme

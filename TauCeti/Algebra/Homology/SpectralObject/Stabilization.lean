@@ -29,8 +29,9 @@ bound, the page-`r` object is `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)`
 as a quotient of every page; for filtered complexes of modules whose filtration is moreover
 exhaustive in degree `p + q - 1`,
 `TauCeti.Algebra.Homology.SpectralSequence.Filtered.BoundedBelow` shows that it is their direct
-limit along these maps. The maps `spectralSequencePageXToPageX` are not yet identified with the
-spectral sequence's own maps from page `r` to page `r + 1`.
+limit along these maps. From page `r` to page `r + 1`, the map `spectralSequencePageXToPageX`
+is the spectral sequence's own map, the projection onto the homology of page `r`
+(`TauCeti.Algebra.Homology.SpectralObject.PageHomology`).
 
 ## Main definitions
 

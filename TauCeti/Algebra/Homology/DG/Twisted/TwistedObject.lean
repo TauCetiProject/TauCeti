@@ -248,16 +248,16 @@ noncomputable def twistMatrixEquiv : TwistingCocycle 𝒜 d P ind ≃
     (dgDifferential_twistMatrix_eq_dgComp_iff _ _).2 m.twisting,
     fun _ _ ↦ dgHomEquiv_twistMatrix_eq_zero m⟩
   invFun δ :=
-    { m := fun x y ↦ -shiftCoeff (DGAdditiveClosure.dgHomEquiv R _ _ 1 δ.1 y x)
-      mem_graded := neg_shiftCoeff_mem δ.1
-      twisting := (dgDifferential_twistMatrix_eq_dgComp_iff _ (neg_shiftCoeff_mem δ.1)).1 <| by
+    { m := fun x y ↦ -shiftCoeff (DGAdditiveClosure.dgHomEquiv R _ _ 1 δ.val y x)
+      mem_graded := neg_shiftCoeff_mem δ.val
+      twisting := (dgDifferential_twistMatrix_eq_dgComp_iff _ (neg_shiftCoeff_mem δ.val)).1 <| by
         rw [twistMatrix_neg_shiftCoeff]
-        exact δ.2.1
-      one_sided := fun x y hxy ↦ by rw [δ.2.2 y x hxy, map_zero, neg_zero] }
+        exact δ.property.1
+      one_sided := fun x y hxy ↦ by rw [δ.property.2 y x hxy, map_zero, neg_zero] }
   left_inv m := TwistingCocycle.ext fun x y ↦ by
     dsimp only
     rw [shiftCoeff_twistMatrix, neg_neg]
-  right_inv δ := Subtype.ext (twistMatrix_neg_shiftCoeff δ.1)
+  right_inv δ := Subtype.ext (twistMatrix_neg_shiftCoeff δ.val)
 
 @[simp]
 theorem coe_twistMatrixEquiv_apply (m : TwistingCocycle 𝒜 d P ind) :
@@ -272,7 +272,7 @@ theorem twistMatrixEquiv_symm_apply_m
       dgDifferential R 1 δ = dgComp R δ δ rfl ∧
         ∀ x y, ind y ≤ ind x → DGAdditiveClosure.dgHomEquiv R _ _ 1 δ x y = 0}) (x y : P) :
     ((twistMatrixEquiv h ind).symm δ).m x y =
-      -shiftCoeff (DGAdditiveClosure.dgHomEquiv R _ _ 1 δ.1 y x) := by
+      -shiftCoeff (DGAdditiveClosure.dgHomEquiv R _ _ 1 δ.val y x) := by
   unfold twistMatrixEquiv
   rfl
 
@@ -313,7 +313,7 @@ private noncomputable def homEquiv (n : ℤ) :
     (DGAdditiveClosure.dgHomEquiv R _ _ n).symm fun x _ ↦
       ofShiftCoeff (((n + 1) * ind x).negOnePow • (g : P → A) x) <| by
         rw [show n + ((0 : ℤ) - -ind x) = n + ind x by ring]
-        exact Submodule.smul_of_tower_mem _ _ (mem_twistedTotalGrading_iff.1 g.2 x)
+        exact Submodule.smul_of_tower_mem _ _ (mem_twistedTotalGrading_iff.1 g.property x)
   map_add' f g := Subtype.ext <| funext fun x ↦ by simp [smul_add]
   map_smul' r f := Subtype.ext <| funext fun x ↦ by simp [smul_comm r]
   left_inv f := (DGTwistedObject.dgHomEquiv R _ _ n).injective <|
@@ -336,7 +336,7 @@ private theorem homEquiv_dgDifferential (n : ℤ)
       twistedDifferential m.m 𝒜 d (homEquiv m n f) := by
   funext x
   have hg (y : P) : (homEquiv m n f : P → A) y ∈ 𝒜 (n + ind y) :=
-    mem_twistedTotalGrading_iff.1 (homEquiv m n f).2 y
+    mem_twistedTotalGrading_iff.1 (homEquiv m n f).property y
   -- Expand both sides at `x` into elements of `A`: on the left, the twisted differential of the
   -- Hom complex, where the twist of `⋆[0]` vanishes; on the right, that of `K_m`.
   rw [homEquiv_apply, twistedDifferential_apply, DGTwistedObject.dgHomEquiv_dgDifferential]

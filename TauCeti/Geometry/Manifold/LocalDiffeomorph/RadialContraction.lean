@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-public import TauCeti.Analysis.InnerProductSpace.Euclidean.RadialContraction
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Radial.Contraction
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace

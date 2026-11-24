@@ -101,7 +101,7 @@ theorem exists_isMinimal_of_forall_cover (S T : GradedModuleCat.{v} 𝒜 → Pro
     (M : GradedModuleCat.{v} 𝒜) (hM : S M) :
     ∃ r : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 M.grading,
       r.IsMinimal ∧ ∀ n, T (r.termObj n) := by
-  choose P π hP hπ hmin hT hS using fun N : {N // S N} => hcover N.1 N.2
+  choose P π hP hπ hmin hT hS using fun N : {N // S N} => hcover N.val N.property
   -- The successive kernels, starting from `M`.
   let K : ℕ → {N // S N} := fun n => Nat.rec ⟨M, hM⟩ (fun _ N => ⟨kernelObj (π N), hS N⟩) n
   refine ⟨{
@@ -120,7 +120,7 @@ theorem exists_isMinimal_of_forall_cover (S T : GradedModuleCat.{v} 𝒜 → Pro
       rw [GradedModuleCat.hom_comp, hom_kernelι, GradedModuleCat.hom_comp, hom_kernelι,
         (Submodule.injective_subtype _).comp_exact_iff_exact]
       exact (hπ (K (n + 2))).comp_exact_iff_exact.mpr (LinearMap.exact_subtype_ker_map _) },
-    isMinimal_iff.mpr fun n x => hmin (K n) _ (π (K (n + 1)) |>.hom x).2, fun n => hT (K n)⟩
+    isMinimal_iff.mpr fun n x => hmin (K n) _ (π (K (n + 1)) |>.hom x).property, fun n => hT (K n)⟩
 
 variable [DirectSum.Decomposition 𝒜]
 

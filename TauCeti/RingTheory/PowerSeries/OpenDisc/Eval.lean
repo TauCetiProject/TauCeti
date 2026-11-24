@@ -124,9 +124,8 @@ theorem OnOpenDisc.evalAt_add (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀) 
 /-- Evaluation at a point of norm less than `R₀` commutes with scalar multiplication of series on
 the open disc of radius `R₀`. -/
 theorem OnOpenDisc.evalAt_smul (hf : f.OnOpenDisc R₀) (c : R) (hb : ‖b‖ < R₀) :
-    (c • f).evalAt b = c • f.evalAt b := by
-  rw [evalAt_def]
-  exact HasSum.tsum_eq (by simpa [mul_smul] using (hf.hasSum_evalAt hb).const_smul c)
+    (c • f).evalAt b = c • f.evalAt b :=
+  evalAt_smul_of_summable (hf.hasSum_evalAt hb).summable c
 
 /-- Evaluation at a point of norm less than `R₀` is multiplicative on series on the open disc of
 radius `R₀`. -/
@@ -146,9 +145,11 @@ open disc of radius `R₀` to a complete normed algebra, for a point `b` with `�
 noncomputable def OnOpenDisc.evalAtHom (hb : ‖b‖ < R₀) : OnOpenDisc.subring R R₀ →+* A where
   toFun f := (f : R⟦X⟧).evalAt b
   map_one' := evalAt_one b
-  map_mul' f g := (OnOpenDisc.mem_subring.mp f.2).evalAt_mul (OnOpenDisc.mem_subring.mp g.2) hb
+  map_mul' f g := (OnOpenDisc.mem_subring.mp f.property).evalAt_mul
+      (OnOpenDisc.mem_subring.mp g.property) hb
   map_zero' := evalAt_zero b
-  map_add' f g := (OnOpenDisc.mem_subring.mp f.2).evalAt_add (OnOpenDisc.mem_subring.mp g.2) hb
+  map_add' f g := (OnOpenDisc.mem_subring.mp f.property).evalAt_add
+      (OnOpenDisc.mem_subring.mp g.property) hb
 
 /-- The evaluation homomorphism at `b` sends a series `f` on the open disc to `f(b)`. -/
 @[simp]
@@ -191,7 +192,7 @@ containing `b`, and evaluating it there at `b`, is evaluation at `b` on the open
 theorem isRestrictedEvalAtHom_comp_restrict [IsUltrametricDist A] (r : Set.Ioo (0 : ℝ) R₀)
     (hbr : ‖b‖ ≤ r) :
     (IsRestricted.evalAtHom R hbr).comp (restrict r) =
-      OnOpenDisc.evalAtHom R (hbr.trans_lt r.2.2) := by
+      OnOpenDisc.evalAtHom R (hbr.trans_lt r.property.2) := by
   ext f
   simp
 
@@ -203,7 +204,7 @@ theorem continuous_evalAtHom (hb : ‖b‖ < R₀) : Continuous (OnOpenDisc.eval
   obtain ⟨r, hbr⟩ : ∃ r : Set.Ioo (0 : ℝ) R₀, ‖b‖ < r := by
     obtain ⟨r, hbr, hrR⟩ := exists_between hb
     exact ⟨⟨r, (norm_nonneg b).trans_lt hbr, hrR⟩, hbr⟩
-  have hr : 0 < (r : ℝ) := r.2.1
+  have hr : 0 < (r : ℝ) := r.property.1
   set q := ‖b‖ / r
   have hq₀ : 0 ≤ q := by positivity
   have hq₁ : q < 1 := (div_lt_one hr).mpr hbr
@@ -214,7 +215,7 @@ theorem continuous_evalAtHom (hb : ‖b‖ < R₀) : Continuous (OnOpenDisc.eval
     simpa only [map_zero] using (uniformContinuous_restrict (R := R) r).continuous.tendsto 0
   refine squeeze_zero_norm
     (a := fun f ↦ (‖(1 : A)‖ + 1) * ‖restrict r f‖ * (1 - q)⁻¹) (fun f ↦ ?_) ?_
-  · have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict r f).2
+  · have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict r f).property
     rw [coe_restrict] at hf
     rw [OnOpenDisc.evalAtHom_apply, TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict]
     exact norm_evalAt_le_mul_gaussNorm hf hq₀ hq₁ hbq

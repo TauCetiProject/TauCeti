@@ -91,7 +91,7 @@ theorem radonNikodymMap_add {T₁ T₂ : K →L[ℂ] K} (hT₁ : 0 ≤ T₁) (hT
 theorem radonNikodymMap_smul (c : ℝ≥0) {T : K →L[ℂ] K} (hT : 0 ≤ T)
     (hcomm : ∀ a, Commute T (π a)) :
     π.radonNikodymMap V (c • T) = c • π.radonNikodymMap V T := by
-  have hcT : 0 ≤ c • T := NNReal.smul_def c T ▸ smul_nonneg c.2 hT
+  have hcT : 0 ≤ c • T := NNReal.smul_def c T ▸ smul_nonneg c.property hT
   have hccomm : ∀ a, Commute (c • T) (π a) := fun a => by
     simp only [Commute, SemiconjBy, smul_mul_assoc, mul_smul_comm, (hcomm a).eq]
   ext a
@@ -233,42 +233,45 @@ noncomputable def radonNikodymOrderIso (φ : A →CP (H →L[ℂ] H))
     (hmin : (Submodule.span ℂ {x : K | ∃ (a : A) (ξ : H), x = π a (V ξ)}).topologicalClosure = ⊤) :
     {T : K →L[ℂ] K // T ∈ Set.Icc 0 1 ∧ ∀ a, Commute T (π a)} ≃o
       Set.Icc (0 : A →CP (H →L[ℂ] H)) φ where
-  toFun T := ⟨π.radonNikodymMap V T.1, π.radonNikodymMap_mem_Icc V hφ T.2.1 T.2.2⟩
+  toFun T := ⟨π.radonNikodymMap V T.val, π.radonNikodymMap_mem_Icc V hφ T.property.1 T.property.2⟩
   invFun ψ :=
-    let h := (φ.radonNikodym_nonUnital ψ.1 π V hφ hmin ψ.2.2).choose_spec.1
-    ⟨(φ.radonNikodym_nonUnital ψ.1 π V hφ hmin ψ.2.2).choose, ⟨h.1, h.2.1⟩, h.2.2.1⟩
+    let h := (φ.radonNikodym_nonUnital ψ.val π V hφ hmin ψ.property.2).choose_spec.1
+    ⟨(φ.radonNikodym_nonUnital ψ.val π V hφ hmin ψ.property.2).choose, ⟨h.1, h.2.1⟩, h.2.2.1⟩
   left_inv T := Subtype.ext <|
-    ((φ.radonNikodym_nonUnital (π.radonNikodymMap V T.1) π V hφ hmin
-      (π.radonNikodymMap_mem_Icc V hφ T.2.1 T.2.2).2).choose_spec.2 T.1
-      ⟨T.2.1.1, T.2.1.2, T.2.2, fun a => π.radonNikodymMap_apply V T.2.1.1 T.2.2 a⟩).symm
+    ((φ.radonNikodym_nonUnital (π.radonNikodymMap V T.val) π V hφ hmin
+      (π.radonNikodymMap_mem_Icc V hφ T.property.1 T.property.2).2).choose_spec.2 T.val
+      ⟨T.property.1.1, T.property.1.2, T.property.2, fun a => π.radonNikodymMap_apply V
+          T.property.1.1 T.property.2 a⟩).symm
   right_inv ψ := Subtype.ext <| CompletelyPositiveMap.ext fun a =>
-    let h := (φ.radonNikodym_nonUnital ψ.1 π V hφ hmin ψ.2.2).choose_spec.1
+    let h := (φ.radonNikodym_nonUnital ψ.val π V hφ hmin ψ.property.2).choose_spec.1
     (π.radonNikodymMap_apply V h.1 h.2.2.1 a).trans (h.2.2.2 a).symm
   map_rel_iff' {T₁ T₂} := ⟨fun hle => by
     obtain ⟨θ, hθ⟩ := Subtype.mk_le_mk.mp hle
-    have hθ_le : θ ≤ φ := le_trans ⟨π.radonNikodymMap V T₁.1, add_comm θ _ ▸ hθ⟩
-      (π.radonNikodymMap_mem_Icc V hφ T₂.2.1 T₂.2.2).2
+    have hθ_le : θ ≤ φ := le_trans ⟨π.radonNikodymMap V T₁.val, add_comm θ _ ▸ hθ⟩
+      (π.radonNikodymMap_mem_Icc V hφ T₂.property.1 T₂.property.2).2
     obtain ⟨S, ⟨hS0, _, hScomm, hSθ⟩, _⟩ := φ.radonNikodym_nonUnital θ π V hφ hmin hθ_le
     have hθ_eq : θ = π.radonNikodymMap V S :=
       CompletelyPositiveMap.ext fun a =>
         (hSθ a).trans (π.radonNikodymMap_apply V hS0 hScomm a).symm
-    have hsum : π.radonNikodymMap V T₂.1 = π.radonNikodymMap V (T₁.1 + S) := by
-      rw [hθ, hθ_eq, ← π.radonNikodymMap_add V T₁.2.1.1 hS0 T₁.2.2 hScomm]
-    have hT₂_eq : T₂.1 = T₁.1 + S :=
-      π.radonNikodym_unique V hmin T₂.2.2 (fun a => (T₁.2.2 a).add_left (hScomm a)) fun a => by
-        rw [← π.radonNikodymMap_apply V T₂.2.1.1 T₂.2.2 a, hsum,
-          π.radonNikodymMap_apply V (add_nonneg T₁.2.1.1 hS0)
-            (fun b => (T₁.2.2 b).add_left (hScomm b)) a]
+    have hsum : π.radonNikodymMap V T₂.val = π.radonNikodymMap V (T₁.val + S) := by
+      rw [hθ, hθ_eq, ← π.radonNikodymMap_add V T₁.property.1.1 hS0 T₁.property.2 hScomm]
+    have hT₂_eq : T₂.val = T₁.val + S :=
+      π.radonNikodym_unique V hmin T₂.property.2
+        (fun a => (T₁.property.2 a).add_left (hScomm a)) fun a => by
+        rw [← π.radonNikodymMap_apply V T₂.property.1.1 T₂.property.2 a, hsum,
+          π.radonNikodymMap_apply V (add_nonneg T₁.property.1.1 hS0)
+            (fun b => (T₁.property.2 b).add_left (hScomm b)) a]
     exact Subtype.mk_le_mk.mpr (hT₂_eq ▸ le_add_of_nonneg_right hS0), fun h12 =>
     Subtype.mk_le_mk.mpr
-      (π.radonNikodymMap_mono V T₁.2.1.1 (Subtype.mk_le_mk.mp h12) T₁.2.2 T₂.2.2)⟩
+      (π.radonNikodymMap_mono V T₁.property.1.1 (Subtype.mk_le_mk.mp h12) T₁.property.2
+          T₂.property.2)⟩
 
 @[simp] theorem coe_radonNikodymOrderIso_apply (φ : A →CP (H →L[ℂ] H))
     (π : A →⋆ₙₐ[ℂ] (K →L[ℂ] K)) (V : H →L[ℂ] K)
     (hφ : ∀ a, φ a = V.adjoint.comp ((π a).comp V))
     (hmin : (Submodule.span ℂ {x : K | ∃ (a : A) (ξ : H), x = π a (V ξ)}).topologicalClosure = ⊤)
     (T : {T : K →L[ℂ] K // T ∈ Set.Icc 0 1 ∧ ∀ a, Commute T (π a)}) :
-    (φ.radonNikodymOrderIso π V hφ hmin T : A →CP (H →L[ℂ] H)) = π.radonNikodymMap V T.1 := (rfl)
+    (φ.radonNikodymOrderIso π V hφ hmin T : A →CP (H →L[ℂ] H)) = π.radonNikodymMap V T.val := (rfl)
 
 end NonUnital
 

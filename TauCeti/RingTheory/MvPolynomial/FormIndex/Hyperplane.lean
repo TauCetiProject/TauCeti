@@ -34,13 +34,14 @@ characteristic (using Hasse derivatives rather than naive partial derivatives) a
   and the columns of `B h : ι → τ → K` span `ker (M h)` in each block, there exists `I` of exact
   weighted order `∑ h, (∑ i, I (h, i)) / d h = formIndex d M P` such that
   `aeval (blockLinearForm B) (hasseDeriv I P) ≠ 0`.
-* `MvPolynomial.exists_eval_hasseDeriv_ne_zero_of_formIndex_ne_top`,
-  `MvPolynomial.exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero`, and
+* `MvPolynomial.exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero`,
+  `MvPolynomial.exists_eval_hasseDeriv_ne_zero_of_formIndex_ne_top`, and
   `MvPolynomial.le_formIndex_iff_forall_eval_hasseDeriv_eq_zero`: over an infinite field `K`, for
-  nonzero linear forms `M` (`∀ h, M h ≠ 0`), `formIndex d M P ≠ ⊤` (in particular `P ≠ 0` with
-  `∀ h, d h ≠ 0`) yields a point `x : κ × ι → K` in the product of kernels `∏ h, ker (M h)` at which
-  `hasseDeriv I P` is nonzero, and characterizes `t ≤ formIndex d M P` by pointwise vanishing of
-  low-order Hasse derivatives on the product of kernels `∏ h, ker (M h)`. Over a finite field, even
+  nonzero linear forms `M` (`∀ h, M h ≠ 0`), any `P ≠ 0` (for arbitrary weights `d`, in
+  particular whenever `formIndex d M P ≠ ⊤`) yields a point `x : κ × ι → K` in the product of
+  kernels `∏ h, ker (M h)` at which `hasseDeriv I P` is nonzero, and characterizes
+  `t ≤ formIndex d M P` by pointwise vanishing of low-order Hasse derivatives on the product of
+  kernels `∏ h, ker (M h)`. Over a finite field, even
   a nonzero homogeneous polynomial of `formIndex` zero can vanish at every rational point of the
   product of kernels (see the `ZMod 2` example at the end of the file).
 
@@ -239,13 +240,16 @@ end PivotHelpers
 derivative does not vanish after projecting onto `∏ h, ker (M h)`. -/
 private theorem exists_aeval_kerForm_hasseDeriv_ne_zero [DecidableEq ι]
     {d : κ → ℕ} {M : κ → ι → K} {i₀ : κ → ι} (hi₀ : ∀ h, M h (i₀ h) ≠ 0)
-    {P : MvPolynomial (κ × ι) K} (htop : formIndex d M P ≠ ⊤) :
+    {P : MvPolynomial (κ × ι) K} (hP : P ≠ 0) :
     ∃ I : κ × ι →₀ ℕ,
       ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h = formIndex d M P ∧
       aeval (kerForm M i₀) (hasseDeriv I P) ≠ 0 := by
   classical
   set Q := substFormInv M i₀ P
-  have hQne : Q ≠ 0 := fun h0 ↦ htop (by simp [formIndex_eq_iInf hi₀, Q, h0])
+  have hQne : Q ≠ 0 := fun h0 ↦ hP (by
+    rw [← substForm_substFormInv hi₀ P]
+    change substForm M i₀ Q = 0
+    rw [h0, map_zero])
   obtain ⟨n₀, hn₀, hmin⟩ := Finset.exists_min_image Q.support
     (fun n ↦ ∑ h, (n (h, i₀ h) : ℝ≥0∞) / d h) (support_nonempty.mpr hQne)
   have hidx : ∑ h, (n₀ (h, i₀ h) : ℝ≥0∞) / d h = formIndex d M P := by
@@ -290,7 +294,8 @@ theorem exists_aeval_blockLinearForm_hasseDeriv_ne_zero_of_formIndex_ne_top [Fin
       aeval (blockLinearForm B) (hasseDeriv I P) ≠ 0 := by
   classical
   choose i₀ hi₀ using fun h ↦ Function.ne_iff.mp (hM h)
-  obtain ⟨I, hI, hIne⟩ := exists_aeval_kerForm_hasseDeriv_ne_zero hi₀ htop
+  obtain ⟨I, hI, hIne⟩ :=
+    exists_aeval_kerForm_hasseDeriv_ne_zero (d := d) (P := P) hi₀ fun h0 ↦ htop (by simp [h0])
   refine ⟨I, hI, fun h0 ↦ hIne ?_⟩
   -- Express each basis vector of `kerForm M i₀` as a combination of the columns of `B h`.
   have hker (h : κ) (j : ι) (hj : j ≠ i₀ h) :
@@ -298,19 +303,19 @@ theorem exists_aeval_blockLinearForm_hasseDeriv_ne_zero_of_formIndex_ne_top [Fin
     rw [← Finset.add_sum_erase _ _ (mem_univ (i₀ h)),
       Finset.sum_eq_single j (fun i hi hij ↦ by simp [ne_of_mem_erase hi, hij]) (by simp [hj])]
     simp [hj, mul_div_cancel₀ _ (hi₀ h)]
-  choose c hc using fun h (j : {j : ι // j ≠ i₀ h}) ↦ hBspan h _ (hker h j.1 j.2)
+  choose c hc using fun h (j : {j : ι // j ≠ i₀ h}) ↦ hBspan h _ (hker h j.val j.property)
   set ψ : MvPolynomial (κ × τ) K →ₐ[K] MvPolynomial (κ × ι) K :=
-    aeval (Function.uncurry fun h a ↦ ∑ j : {j : ι // j ≠ i₀ h}, C (c h j a) * X (h, j.1))
+    aeval (Function.uncurry fun h a ↦ ∑ j : {j : ι // j ≠ i₀ h}, C (c h j a) * X (h, j.val))
   suffices ψ.comp (aeval (blockLinearForm B)) = aeval (kerForm M i₀) by
     rw [← this, AlgHom.comp_apply, h0, map_zero]
   ext ⟨h, i⟩ : 1
   simp only [AlgHom.comp_apply, aeval_X, blockLinearForm_apply, map_sum, map_mul, algHom_C,
     algebraMap_eq, ψ, Function.uncurry_apply_pair]
   have hstep :
-      (∑ a, C (B h i a) * ∑ j : {j : ι // j ≠ i₀ h}, C (c h j a) * X (h, j.1)) =
+      (∑ a, C (B h i a) * ∑ j : {j : ι // j ≠ i₀ h}, C (c h j a) * X (h, j.val)) =
         ∑ j : {j : ι // j ≠ i₀ h},
-          C (if i = i₀ h then - (M h j.1 / M h (i₀ h)) else if i = j.1 then 1 else 0) *
-            X (h, j.1) := by
+          C (if i = i₀ h then - (M h j.val / M h (i₀ h)) else if i = j.val then 1 else 0) *
+            X (h, j.val) := by
     simp only [Finset.mul_sum, ← mul_assoc, ← C_mul]
     rw [Finset.sum_comm]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [← Finset.sum_mul, ← map_sum, ← hc h j i]
@@ -327,19 +332,19 @@ theorem exists_aeval_blockLinearForm_hasseDeriv_ne_zero_of_formIndex_ne_top [Fin
     simp [kerForm, hi]
 
 /-- **Pointwise nonvanishing Hasse derivative on the product of kernels.** Over an infinite field
-`K`, if every linear form `M h` is nonzero (`∀ h, M h ≠ 0`) and `formIndex d M P ≠ ⊤`, then there
-exist a multi-index `I` of exact weighted order `formIndex d M P` and a point `x : κ × ι → K` in
-the product of kernels `∏ h, ker (M h)` such that `eval x (hasseDeriv I P) ≠ 0`. -/
-theorem exists_eval_hasseDeriv_ne_zero_of_formIndex_ne_top [Infinite K]
-    {d : κ → ℕ} {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) {P : MvPolynomial (κ × ι) K}
-    (htop : formIndex d M P ≠ ⊤) :
+`K`, for nonzero linear forms `M` (`∀ h, M h ≠ 0`) and a nonzero polynomial `P`, there exist a
+multi-index `I` of exact weighted order `formIndex d M P` and a point `x : κ × ι → K` in the product
+of kernels `∏ h, ker (M h)` at which `hasseDeriv I P` does not vanish. No positivity of the degree
+weights `d` is needed: when some `d h = 0`, both sides of the order equation may be `⊤`. -/
+theorem exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero [Infinite K] {d : κ → ℕ}
+    {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) {P : MvPolynomial (κ × ι) K} (hP : P ≠ 0) :
     ∃ (I : κ × ι →₀ ℕ) (x : κ × ι → K),
       ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h = formIndex d M P ∧
       (∀ h, ∑ i, M h i * x (h, i) = 0) ∧
       eval x (hasseDeriv I P) ≠ 0 := by
   classical
   choose i₀ hi₀ using fun h ↦ Function.ne_iff.mp (hM h)
-  obtain ⟨I, hI, hIne⟩ := exists_aeval_kerForm_hasseDeriv_ne_zero hi₀ htop
+  obtain ⟨I, hI, hIne⟩ := exists_aeval_kerForm_hasseDeriv_ne_zero (d := d) hi₀ hP
   obtain ⟨z, hz⟩ : ∃ z : κ × ι → K, eval z (aeval (kerForm M i₀) (hasseDeriv I P)) ≠ 0 := by
     by_contra! hall
     exact hIne (MvPolynomial.funext fun z ↦ by simp [hall z])
@@ -348,19 +353,18 @@ theorem exists_eval_hasseDeriv_ne_zero_of_formIndex_ne_top [Infinite K]
   · have hcomp := comp_aeval_apply (kerForm M i₀) (aeval z) (hasseDeriv I P)
     simpa only [aeval_eq_eval] using hcomp.symm.trans_ne hz
 
-/-- Over an infinite field `K`, for nonzero linear forms `M` (`∀ h, M h ≠ 0`), positive degree
-weights `d` (`∀ h, d h ≠ 0`), and a nonzero polynomial `P`, there exist a multi-index `I` of exact
-weighted order `formIndex d M P` and a point `x : κ × ι → K` in the product of kernels
-`∏ h, ker (M h)` at which `hasseDeriv I P` does not vanish. -/
-theorem exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero [Infinite K] {d : κ → ℕ}
-    {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) (hd : ∀ h, d h ≠ 0) {P : MvPolynomial (κ × ι) K}
-    (hP : P ≠ 0) :
+/-- Over an infinite field `K`, if every linear form `M h` is nonzero (`∀ h, M h ≠ 0`) and
+`formIndex d M P ≠ ⊤`, then there exist a multi-index `I` of exact weighted order
+`formIndex d M P` and a point `x : κ × ι → K` in the product of kernels `∏ h, ker (M h)` such that
+`eval x (hasseDeriv I P) ≠ 0`. -/
+theorem exists_eval_hasseDeriv_ne_zero_of_formIndex_ne_top [Infinite K]
+    {d : κ → ℕ} {M : κ → ι → K} (hM : ∀ h, M h ≠ 0) {P : MvPolynomial (κ × ι) K}
+    (htop : formIndex d M P ≠ ⊤) :
     ∃ (I : κ × ι →₀ ℕ) (x : κ × ι → K),
       ∑ h, (∑ i, I (h, i) : ℝ≥0∞) / d h = formIndex d M P ∧
       (∀ h, ∑ i, M h i * x (h, i) = 0) ∧
       eval x (hasseDeriv I P) ≠ 0 :=
-  exists_eval_hasseDeriv_ne_zero_of_formIndex_ne_top hM
-    ((formIndex_eq_top_iff hM hd).not.mpr hP)
+  exists_sum_div_eq_formIndex_and_eval_hasseDeriv_ne_zero hM fun h0 ↦ htop (by simp [h0])
 
 /-- **Pointwise Hasse-derivative characterization of `formIndex`.** Over an infinite field `K`, for
 nonzero linear forms `M` (`∀ h, M h ≠ 0`), `t ≤ formIndex d M P` if and only if every Hasse

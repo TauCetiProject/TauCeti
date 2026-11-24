@@ -541,8 +541,8 @@ theorem presentationLimitMap_comp {U V W : Opens ↥(spa Aplus)} (h₁ : W ≤ V
 section `z` over `V`. -/
 theorem presentationLimitMap_apply_presentationLimitMap_apply {U V W : Opens ↥(spa Aplus)}
     (h₁ : W ≤ V) (h₂ : U ≤ W) (z : presentationLimit (P := P) Aplus V) :
-    (presentationLimitMap (P := P) h₂).hom.1 ((presentationLimitMap (P := P) h₁).hom.1 z) =
-      (presentationLimitMap (P := P) (h₂.trans h₁)).hom.1 z :=
+    (presentationLimitMap (P := P) h₂).hom.val ((presentationLimitMap (P := P) h₁).hom.val z) =
+      (presentationLimitMap (P := P) (h₂.trans h₁)).hom.val z :=
   ConcreteCategory.congr_hom (presentationLimitMap_comp h₁ h₂) z
 
 /-- **A transport between presentation limits along an equality of opens is a restriction

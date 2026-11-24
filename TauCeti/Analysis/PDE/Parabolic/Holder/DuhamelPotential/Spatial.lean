@@ -47,7 +47,7 @@ theorem contDiff_spatialSlice_heatDuhamelPotentialHolderL
     (f : HolderSpace α (slab (E := E) 0 T) F) (t : Icc (0 : ℝ) T) :
     ContDiff ℝ 2 (fun x => heatDuhamelPotentialHolderL hα hα₂ f (slabMk x t)) := by
   simp only [heatDuhamelPotentialHolderL_apply, time_slabMk, space_slabMk]
-  rcases t.2.1.eq_or_lt with hzero | hpos
+  rcases t.property.1.eq_or_lt with hzero | hpos
   · simp only [← hzero, heatDuhamelPotential_zero, Pi.zero_apply]
     exact contDiff_const
   · exact contDiff_heatDuhamelPotential_of_holderWith
@@ -102,7 +102,7 @@ private theorem norm_hessian_le (hα : 0 < α) (hα₁ : α < 1)
   have hd : dist p q ≤ Real.sqrt T := by
     simp only [Subtype.dist_eq, ParabolicSpaceTime.dist_eq, q, space_slabMk, time_slabMk,
       dist_self, zero_add, sub_zero]
-    have hp := (slabTime p).2
+    have hp := (slabTime p).property
     rw [coe_slabTime] at hp
     rw [abs_of_nonneg hp.1]
     exact Real.sqrt_le_sqrt hp.2

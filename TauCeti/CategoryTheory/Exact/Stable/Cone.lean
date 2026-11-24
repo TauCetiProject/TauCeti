@@ -233,7 +233,7 @@ theorem conflation_coneSequence (f : X ⟶ Y) : E.Conflation (hE.coneSequence f)
           ⟨hE.coneConnectingMap f, hE.coneInclusion_comp_coneConnectingMap f⟩ :=
       Subtype.ext hπ
     simpa only [S, coneSequence] using congrArg
-      (fun z : Z => ShortComplex.mk (hE.coneInclusion f) z.1 z.2) hz
+      (fun z : Z => ShortComplex.mk (hE.coneInclusion f) z.val z.property) hz
   rw [← hchange]
   exact E.conflation_cobaseChange (hE.suspensionPresentation X).conflation sq
 

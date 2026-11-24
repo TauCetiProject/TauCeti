@@ -115,7 +115,7 @@ theorem IndV.mk_one_injective {k : Type u} {G : Type v} [CommRing k] [Group G] (
     Function.Injective (IndV.mk S.subtype ρ 1) := by
   classical
   -- Mathlib's induction-to-coinduction map, evaluated at `1`, is a left inverse.
-  have key (x : A) : (Rep.indToCoind (Rep.of ρ) (IndV.mk S.subtype ρ 1 x)).1 1 = x :=
+  have key (x : A) : (Rep.indToCoind (Rep.of ρ) (IndV.mk S.subtype ρ 1 x)).val 1 = x :=
     congrFun (TauCeti.indToCoind_mk (A := Rep.of ρ) 1 x) 1 |>.trans
       (Rep.indToCoindAux_self (A := Rep.of ρ) 1 x)
   intro a b h
@@ -170,7 +170,7 @@ This is the unbundled form of `Rep.indMap`. -/
 noncomputable def ind (f : IntertwiningMap ρ σ) :
     IntertwiningMap (Representation.ind φ ρ) (Representation.ind φ σ) where
   toLinearMap := Coinvariants.map _ _ ⟨f.toLinearMap.lTensor _, by
-    simp [LinearMap.lTensor_comp_map, f.2, LinearMap.map_comp_lTensor]⟩
+    simp [LinearMap.lTensor_comp_map, f.isIntertwining', LinearMap.map_comp_lTensor]⟩
   isIntertwining' _ := by ext; simp
 
 theorem ind_mk (f : IntertwiningMap ρ σ) (h : H) (a : A) :

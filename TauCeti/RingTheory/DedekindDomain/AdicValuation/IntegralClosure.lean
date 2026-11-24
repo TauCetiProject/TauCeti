@@ -104,7 +104,7 @@ theorem adicCompletionIntegers_isIntegralClosure :
     rw [Valuation.Integers.isIntegral_iff_valuation_le_one
         (v.valuation_integers_adicCompletionIntegers (K := K)) x,
       ← w.mem_adicCompletionIntegers_iff_valuation_le_one (K := L) x]
-    exact ⟨fun h ↦ ⟨⟨x, h⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.2⟩
+    exact ⟨fun h ↦ ⟨⟨x, h⟩, rfl⟩, fun ⟨y, hy⟩ ↦ hy ▸ y.property⟩
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure

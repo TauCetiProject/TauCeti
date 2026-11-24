@@ -117,9 +117,9 @@ theorem secondCountableTopology_of_preimage_isOpen_cover [PreconnectedSpace E]
     (hSU : ∀ i, f ⁻¹' U i ⊆ ⋃ j, S i j) : SecondCountableTopology E := by
   obtain ⟨T, hTc, hTcover⟩ := isOpen_iUnion_countable U hUo
   have := hTc.to_subtype
-  let V : (Σ i : T, κ i.1) → Set E := fun a ↦ S a.1.1 a.2
-  have hVo (a) : IsOpen (V a) := hSo a.1.1 a.2
-  have hVsc (a) : SecondCountableTopology (V a) := hSsc a.1.1 a.2
+  let V : (Σ i : T, κ i.val) → Set E := fun a ↦ S a.1.val a.2
+  have hVo (a) : IsOpen (V a) := hSo a.1.val a.2
+  have hVsc (a) : SecondCountableTopology (V a) := hSsc a.1.val a.2
   refine secondCountableTopology_of_isOpen_cover V hVo ?_ hVsc fun a ↦ ?_
   · refine eq_univ_of_forall fun e ↦ ?_
     have hx : f e ∈ ⋃ i ∈ T, U i := hTcover ▸ hU (mem_range_self e)
@@ -127,16 +127,16 @@ theorem secondCountableTopology_of_preimage_isOpen_cover [PreconnectedSpace E]
     obtain ⟨j, hj⟩ := mem_iUnion.mp (hSU i hei)
     exact mem_iUnion.mpr ⟨⟨⟨i, hiT⟩, j⟩, hj⟩
   · have hsub : {b | (V a ∩ V b).Nonempty} ⊆
-        ⋃ i : T, Sigma.mk i '' {j | (V a ∩ S i.1 j).Nonempty} := by
+        ⋃ i : T, Sigma.mk i '' {j | (V a ∩ S i.val j).Nonempty} := by
       rintro ⟨i, j⟩ hb
       exact mem_iUnion.mpr ⟨i, j, hb, rfl⟩
     refine Countable.mono hsub (countable_iUnion fun i ↦ Countable.image ?_ _)
     have := (hVsc a).to_separableSpace
     exact Set.PairwiseDisjoint.countable_of_isOpen
-      (s := fun j ↦ ((↑) : V a → E) ⁻¹' S i.1 j)
-      (a := {j | (V a ∩ S i.1 j).Nonempty})
-      (fun j₁ _ j₂ _ hne ↦ (hSd i.1 hne).preimage _)
-      (fun j _ ↦ (hSo i.1 j).preimage continuous_subtype_val)
+      (s := fun j ↦ ((↑) : V a → E) ⁻¹' S i.val j)
+      (a := {j | (V a ∩ S i.val j).Nonempty})
+      (fun j₁ _ j₂ _ hne ↦ (hSd i.val hne).preimage _)
+      (fun j _ ↦ (hSo i.val j).preimage continuous_subtypeVal)
       (fun j ⟨e, he, he'⟩ ↦ ⟨⟨e, he⟩, he'⟩)
 
 end TauCeti

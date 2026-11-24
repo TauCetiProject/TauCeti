@@ -43,7 +43,7 @@ theorem optionRestrict_eq_none_iff {x : s} : s.optionRestrict t g hg x = none �
 theorem unattach_optionRestrict (x : s) : (s.optionRestrict t g hg x).unattach = g x := by
   cases h : g x with
   | none => rw [optionRestrict_eq_none_iff.2 h, Option.unattach_none]
-  | some y =>
-    rw [(optionRestrict_eq_some_iff (y := ⟨y, hg h x.property⟩)).2 h, Option.unattach_some]
+  | some y => rw [(optionRestrict_eq_some_iff (y := ⟨y, hg h x.property⟩)).2 h,
+      Option.unattach_some]
 
 end Set

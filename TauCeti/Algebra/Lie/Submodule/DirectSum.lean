@@ -271,7 +271,7 @@ theorem nonempty_lieModuleEquiv_sigma_of_isInternal (N : ι → LieSubmodule R L
   -- property is that its label is `q.1`.
   have hg : ∀ q : Σ s : σ, Fin (m s), c (g q) = q.1 := fun q ↦ by
     simpa only [g, Equiv.trans_apply, Equiv.sigmaCongrRight_apply,
-      Equiv.sigmaFiberEquiv_apply] using ((Finite.equivFinOfCardEq (hcard q.1)).symm q.2).2
+      Equiv.sigmaFiberEquiv_apply] using ((Finite.equivFinOfCardEq (hcard q.1)).symm q.2).property
   have e : ∀ q : Σ s : σ, Fin (m s), (N (g q) : Type w) ≃ₗ⁅R,L⁆ S q.1 := fun q ↦
     (hg q ▸ hc (g q) : Nonempty ((N (g q) : Type w) ≃ₗ⁅R,L⁆ S q.1)).some
   exact ⟨(lieModuleEquivOfIsInternal N h).symm.trans

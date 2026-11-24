@@ -106,8 +106,8 @@ theorem finite_eigenvalues_norm_ge (hK : IsCompactOperator K) {ε : ℝ} (hε : 
   classical
   by_contra h
   let e := (Set.not_finite.mp h).natEmbedding
-  exact hK.not_injective_eigenvalues_of_norm_ge hε (fun n ↦ (e n).1)
-    (fun n ↦ (e n).2.1) (fun n ↦ (e n).2.2) (Subtype.coe_injective.comp e.injective)
+  exact hK.not_injective_eigenvalues_of_norm_ge hε (fun n ↦ (e n).val)
+    (fun n ↦ (e n).property.1) (fun n ↦ (e n).property.2) (Subtype.coe_injective.comp e.injective)
 
 /-- The set of eigenvalues of a compact operator is countable, even when the ambient space
 is not complete. -/

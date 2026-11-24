@@ -127,7 +127,7 @@ fixed-degree divisors. -/
 @[simp]
 lemma coe_ofSym_append (s : Sym X d) (t : Sym X e) :
     WeilDivisor.ofFinsupp
-        (letI := Classical.decEq X; ((Sym.equivNatSum X (d + e)) (s.append t)).1) =
+        (letI := Classical.decEq X; ((Sym.equivNatSum X (d + e)) (s.append t)).val) =
       (ofSym s : WeilDivisor X) + (ofSym t : WeilDivisor X) := by
   rw [← coe_ofSym, ← coe_add, add_ofSym]
 

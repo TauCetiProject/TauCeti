@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
+import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # The weak maximum principle for the heat equation
@@ -41,6 +42,8 @@ differentiable in time), together with continuity on the closed cylinder `[0, T]
 
 ## Main declarations
 
+* `TauCeti.le_of_hasDerivAt_nonpos_of_isLocalMax_Icc`: compact-domain weak comparison on an
+  arbitrary closed time interval.
 * `TauCeti.le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary`: the perturbation argument,
   for any operator for which `∂ₜu ≤ 0` at a spatial local maximum above the bound.
 * `TauCeti.le_of_continuousOn_of_forall_mem_Ico_le`: continuity carries a bound below the top of
@@ -340,6 +343,41 @@ theorem eqOn_of_deriv_sub_laplacian_eq_of_eqOn_parabolicBoundary (hK : IsCompact
     EqOn (Function.uncurry u) (Function.uncurry v) (Icc 0 T ×ˢ K) :=
   eqOn_of_deriv_sub_laplacian_sub_fderiv_eq_of_eqOn_parabolicBoundary (b := 0) hK hucont hvcont
     hucd hvcd hudiff hvdiff (fun t ht x hx ↦ by simpa using hL ht hx) hinit hlat
+
+/-- Compact-domain parabolic comparison on an arbitrary closed time interval. -/
+theorem le_of_hasDerivAt_nonpos_of_isLocalMax_Icc
+    {X : Type*} [TopologicalSpace X] {C : Set X} (hC : IsCompact C)
+    {a b : ℝ} {u v : ℝ → X → ℝ}
+    (hcont : ContinuousOn (Function.uncurry u) (Icc a b ×ˢ C))
+    (hderiv : ∀ t ∈ Ioo a b, ∀ x ∈ interior C, HasDerivAt (fun s ↦ u s x) (v t x) t)
+    (hloc : ∀ t ∈ Ioo a b, ∀ x ∈ interior C, IsLocalMax (u t) x → 0 < u t x → v t x ≤ 0)
+    (hinit : ∀ x ∈ C, u a x ≤ 0)
+    (hlat : ∀ t ∈ Icc a b, ∀ x ∈ frontier C, u t x ≤ 0) :
+    ∀ t ∈ Icc a b, ∀ x ∈ C, u t x ≤ 0 := by
+  have hshift : MapsTo (fun s : ℝ ↦ a + s) (Icc 0 (b - a)) (Icc a b) := by
+    intro s hs
+    constructor <;> linarith [hs.1, hs.2]
+  have hc : ContinuousOn (fun p : ℝ × X ↦ u (a + p.1) p.2)
+      (Icc 0 (b - a) ×ˢ C) :=
+    hcont.comp ((continuous_const.add continuous_fst).prodMk continuous_snd).continuousOn
+      (fun p hp ↦ ⟨hshift hp.1, hp.2⟩)
+  have htime {s : ℝ} (hs : s ∈ Ioo 0 (b - a)) : a + s ∈ Ioo a b := by
+    constructor <;> linarith [hs.1, hs.2]
+  have hd {s : ℝ} (hs : s ∈ Ioo 0 (b - a)) {x : X} (hx : x ∈ interior C) :
+      HasDerivAt (fun r ↦ u (a + r) x) (v (a + s) x) s := by
+    simpa only [Function.comp_def, mul_one] using
+      (hderiv (a + s) (htime hs) x hx).comp s ((hasDerivAt_id s).const_add a)
+  have h := TauCeti.le_of_deriv_nonpos_of_isLocalMax_le_parabolicBoundary
+    (u := fun s x ↦ u (a + s) x) (T := b - a) (m := 0) hC hc
+    (fun _ hs _ hx ↦ (hd hs hx).differentiableAt)
+    (fun _ hs _ hx hmax hpos ↦ by
+      rw [(hd hs hx).deriv]
+      exact hloc _ (htime hs) _ hx hmax hpos)
+    (fun x hx ↦ by simpa only [add_zero] using hinit x hx)
+    (fun s hs x hx ↦ hlat _ (hshift hs) x hx)
+  intro t ht x hx
+  have ht' : t - a ∈ Icc 0 (b - a) := by constructor <;> linarith [ht.1, ht.2]
+  simpa only [add_sub_cancel] using h ht' hx
 
 end TauCeti
 

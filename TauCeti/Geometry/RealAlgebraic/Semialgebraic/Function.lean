@@ -24,7 +24,9 @@ more generally functions whose graph over a semialgebraic domain is cut out by p
 operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
 eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
 assembling a function from its coordinates (`TauCeti.IsSemialgebraicOn.pi`),
-precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise
+precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), constant fibers
+and their complements (`TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq_const`,
+`TauCeti.IsSemialgebraicOn.isSemialgebraic_inter_setOf_ne_const`), pointwise
 negation (`TauCeti.IsSemialgebraicOn.neg`), and bijective changes of the input or output
 coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
 `TauCeti.isSemialgebraicOn_comp_equiv_iff`).  It deliberately does not assert closure under
@@ -323,6 +325,28 @@ theorem IsSemialgebraicOn.comp_eval {f : (σ → R) → (τ → R)} {s : Set (σ
 theorem IsSemialgebraicMap.comp_eval {f : (σ → R) → (τ → R)} (hf : IsSemialgebraicMap f)
     (p : σ → MvPolynomial σ' R) : IsSemialgebraicMap (f ∘ fun x i => eval x (p i)) := by
   simpa using (isSemialgebraicOn_univ.2 hf).comp_eval p
+
+/-- The fiber of a semialgebraic function over a constant value `c` inside its domain is
+semialgebraic. No projection is needed: the fiber is the inverse image of the graph under the
+polynomial slice `x ↦ (x, c)`. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_eq_const {f : (σ → R) → (τ → R)}
+    {s : Set (σ → R)} (hf : IsSemialgebraicOn f s) (c : τ → R) :
+    IsSemialgebraic (s ∩ {x | f x = c}) := by
+  convert hf.graph.preimage_eval (Sum.elim X fun j ↦ C (c j)) using 1
+  ext x
+  rw [mem_inter_iff, mem_preimage, mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [Function.comp_def, Sum.elim_inl, Sum.elim_inr, eval_X, eval_C]
+  rfl
+
+/-- The complement of a constant fiber of a semialgebraic function inside its domain is
+semialgebraic. -/
+theorem IsSemialgebraicOn.isSemialgebraic_inter_setOf_ne_const {f : (σ → R) → (τ → R)}
+    {s : Set (σ → R)} (hf : IsSemialgebraicOn f s) (c : τ → R) :
+    IsSemialgebraic (s ∩ {x | f x ≠ c}) := by
+  convert hf.isSemialgebraic.sdiff (hf.isSemialgebraic_inter_setOf_eq_const c) using 1
+  ext x
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_sdiff]
+  tauto
 
 /-- The pointwise negation of a semialgebraic function is semialgebraic.  No projection is needed:
 the new graph is the inverse image of the old one under negation of the output coordinates. -/
