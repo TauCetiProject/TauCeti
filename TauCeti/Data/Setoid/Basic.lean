@@ -17,9 +17,9 @@ This file records small generic additions to Mathlib's `Setoid` API.
 
 * `TauCeti.Setoid.map_of_le_mk`: the quotient map induced by a setoid inequality sends a
   representative to the same representative in the larger quotient.
-* `Setoid.comapValQuotientEquiv`, `Setoid.coe_comapValQuotientEquiv_mk`, and
+* `Setoid.comapValQuotientEquiv`, `Setoid.comapValQuotientEquiv_mk`, and
   `Setoid.comapValQuotientEquiv_symm_mk`: the restriction of `s` to `K` is in bijection with
-  `Quotient.mk s '' K`, sending `⟦x⟧` to `Quotient.mk s x.val` and back.
+  `Quotient.mk s '' K`, sending `⟦x⟧` to `⟨Quotient.mk s x.val, ⟨x.val, x.property, rfl⟩⟩` and back.
 * `Setoid.ofPred_rel_eq_iff`: two elements have the same class exactly when they are related.
 * `Setoid.map_of_le_surjective`: the quotient map induced by a setoid inequality is surjective.
 * `Setoid.preimage_image_quotientMk_eq_relPreimage` and `Setoid.preimage_image_quotientMk`: the
@@ -55,10 +55,10 @@ noncomputable def comapValQuotientEquiv {α : Type*} (s : Setoid α) (K : Set α
   (comapQuotientEquiv _ _).trans (Set.equivOfEq (by rw [Set.range_comp, Subtype.range_coe]))
 
 /-- `Setoid.comapValQuotientEquiv` sends the equivalence class of `x : K` to `Quotient.mk s x.val`
-in `Quotient s`. -/
+in `Quotient.mk s '' K`. -/
 @[simp]
-theorem coe_comapValQuotientEquiv_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K) :
-    (comapValQuotientEquiv s K ⟦x⟧ : Quotient s) = Quotient.mk s x.val := by
+theorem comapValQuotientEquiv_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K) :
+    comapValQuotientEquiv s K ⟦x⟧ = ⟨Quotient.mk s x.val, ⟨x.val, x.property, rfl⟩⟩ := by
   rfl
 
 /-- The inverse of `Setoid.comapValQuotientEquiv` sends the image point represented by `x : K`
@@ -67,7 +67,7 @@ back to `⟦x⟧`. -/
 theorem comapValQuotientEquiv_symm_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K)
     (hx : Quotient.mk s x.val ∈ Quotient.mk s '' K) :
     (comapValQuotientEquiv s K).symm ⟨Quotient.mk s x.val, hx⟩ = ⟦x⟧ := by
-  simp [Equiv.symm_apply_eq, ← Subtype.coe_inj]
+  simp [Equiv.symm_apply_eq]
 
 /-- Two elements have the same class exactly when they are related. -/
 theorem ofPred_rel_eq_iff {α : Type*} {r : Setoid α} {x y : α} :
