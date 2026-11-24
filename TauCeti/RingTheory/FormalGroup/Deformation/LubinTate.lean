@@ -5,25 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.LazardRing.Generators
+public import TauCeti.RingTheory.FormalGroup.LazardRing.LeadingTerm
 
 /-!
 # The generic Lubin–Tate law
 
 Let `F` be a commutative formal group law over a commutative ring `R` and `h` a natural number.
-Lubin and Tate deform `F` over the power series ring `R⟦t₁, …, t_{h-1}⟧` by moving its Lazard
-coordinates `x_{pⁱ - 1}`, `0 < i < h`, by the independent parameters `tᵢ`
-(`FormalGroup.lubinTateLaw`). Setting every `tᵢ` to zero gives back `F`, so when `F` lifts a law
-`F₀` over a field `k` along `ρ : R →+* k`, the generic law reduces to `F₀` along `ρ` composed with
-the constant coefficient. Every commutative law over `k` has such a lift when `ρ` is surjective
-(`FormalGroup.exists_map_eq_of_surjective`). Lubin and Tate show that, for `F₀` of height `h`,
-such a law is a universal deformation of `F₀`; that theorem is not proved here.
+This file builds a generic deformation of `F`, in the sense of Lubin and Tate, over the power
+series ring `R⟦t₁, …, t_{h-1}⟧` (`FormalGroup.lubinTateLaw`). It is built through Lazard
+coordinates: the coordinates `x_{pⁱ - 1}`, `0 < i < h`, of `F` are moved by the independent
+parameters `tᵢ`. This is not the construction of Lubin and Tate, who start from a law `F₀` in a
+normal form. Setting every `tᵢ` to zero gives back `F`, so when `F` lifts a law `F₀` over a field
+`k` along `ρ : R →+* k`, the generic law reduces to `F₀` along `ρ` composed with the constant
+coefficient. Every commutative law over `k` has such a lift when `ρ` is surjective
+(`FormalGroup.exists_map_eq_of_surjective`). Lubin and Tate show that, for `F₀` of height `h`, a
+deformation whose derivatives in the parameters have suitable leading terms is universal. Their
+criterion applies to this law through its leading terms `C_{pⁱ}` described below; the universality
+of this law is not proved here.
 
 The parameter `tᵢ` enters the law in degree `pⁱ` and not before, through the Lazard cocycle
 `C_{pⁱ}`, since the Lazard coordinate `x_{pⁱ - 1}` does
-(`TauCeti.LazardRing.homogeneousComponent_map_sub_map`). Precisely, if two specializations `g` and
-`g'` of the parameters agree on the coefficients and on `t_j`, `j < i`, then the two specialized
-laws agree below degree `pⁱ` and differ by `(g tᵢ - g' tᵢ) C_{pⁱ}` in degree `pⁱ`. Over the dual
+(`TauCeti.LazardRing.homogeneousComponent_map_sub_map_eq_smul_lazardCocycle`). Precisely, if two
+specializations `g` and `g'` of the parameters agree on the coefficients and on `t_j`, `j < i`,
+then the two specialized laws agree below degree `pⁱ` and differ by `(g tᵢ - g' tᵢ) C_{pⁱ}` in
+degree `pⁱ`. Over the dual
 numbers `k[ε]`, with `g tᵢ = g' tᵢ + ε`, this says that the derivative of the law in the
 direction `tᵢ` has leading term `C_{pⁱ}`. In the proof of the Lubin–Tate theorem these leading
 terms show that the derivatives of the generic law in the directions `tᵢ` give a basis of the
@@ -49,8 +54,9 @@ the construction.
 * `FormalGroup.map_lubinTateLaw`: the generic law is natural in the coefficient ring.
 * `FormalGroup.lubinTateLaw_of_le_one`: in height at most one there are no parameters.
 * `FormalGroup.le_order_map_lubinTateLaw_sub_map` and
-  `FormalGroup.homogeneousComponent_map_lubinTateLaw_sub_map`: specializations differing first in
-  `tᵢ` agree below degree `pⁱ` and differ by a multiple of `C_{pⁱ}` in degree `pⁱ`.
+  `FormalGroup.homogeneousComponent_map_lubinTateLaw_sub_map_eq_smul_lazardCocycle`:
+  specializations differing first in `tᵢ` agree below degree `pⁱ` and differ by a multiple of
+  `C_{pⁱ}` in degree `pⁱ`.
 
 ## References
 
@@ -132,20 +138,29 @@ private theorem map_lubinTateShift (hp : 1 < p) (g : R →+* S) (n : ℕ+) :
 
 variable (F : FormalGroup R) [F.IsComm] (hp : 1 < p)
 
+/-- The homomorphism out of the Lazard ring classifying the generic Lubin–Tate law: the Lazard
+coordinates of `F` moved by `lubinTateShift`. -/
+private def lubinTateHom (h : ℕ) : LazardRing →+* MvPowerSeries (Fin (h - 1)) R :=
+  homEquiv.symm fun n ↦ C (LazardRing.lift ⟨F, inferInstance⟩ (generator n)) + lubinTateShift hp h n
+
+@[simp]
+private theorem lubinTateHom_apply_generator (n : ℕ+) :
+    lubinTateHom F hp h (generator n) =
+      C (LazardRing.lift ⟨F, inferInstance⟩ (generator n)) + lubinTateShift hp h n :=
+  homEquiv_symm_apply_generator _ n
+
 /-- **The generic Lubin–Tate law.** The commutative formal group law over `R⟦t₁, …, t_{h-1}⟧` whose
 Lazard coordinates are those of `F`, except that the coordinate `x_{pⁱ - 1}` is moved by `tᵢ`
 for `0 < i < h`; the variable `i : Fin (h - 1)` stands for `t_{i+1}`. -/
 def lubinTateLaw (h : ℕ) : FormalGroup (MvPowerSeries (Fin (h - 1)) R) :=
-  LazardRing.formalGroup.map (homEquiv.symm fun n ↦
-    C (LazardRing.lift ⟨F, inferInstance⟩ (generator n)) + lubinTateShift hp h n)
+  LazardRing.formalGroup.map (lubinTateHom F hp h)
 
 instance : (F.lubinTateLaw hp h).IsComm :=
   isComm_map _ _
 
 /-- The homomorphism out of the Lazard ring classifying the generic Lubin–Tate law. -/
 private theorem lift_lubinTateLaw :
-    LazardRing.lift ⟨F.lubinTateLaw hp h, inferInstance⟩ = homEquiv.symm fun n ↦
-      C (LazardRing.lift ⟨F, inferInstance⟩ (generator n)) + lubinTateShift hp h n := by
+    LazardRing.lift ⟨F.lubinTateLaw hp h, inferInstance⟩ = lubinTateHom F hp h := by
   rw [← Equiv.eq_symm_apply]
   exact Subtype.ext (LazardRing.coe_lift_symm _).symm
 
@@ -155,7 +170,7 @@ parameter `t_{i+1}`. -/
 theorem lift_lubinTateLaw_generator_lubinTateIndex (i : Fin (h - 1)) :
     LazardRing.lift ⟨F.lubinTateLaw hp h, inferInstance⟩ (generator (lubinTateIndex hp i)) =
       C (LazardRing.lift ⟨F, inferInstance⟩ (generator (lubinTateIndex hp i))) + X i := by
-  rw [lift_lubinTateLaw, homEquiv_symm_apply_generator, lubinTateShift_lubinTateIndex]
+  rw [lift_lubinTateLaw, lubinTateHom_apply_generator, lubinTateShift_lubinTateIndex]
 
 /-- The Lazard coordinates of the generic Lubin–Tate law at generators other than the
 `x_{pⁱ - 1}`, `0 < i < h`, are those of `F`. -/
@@ -163,15 +178,13 @@ theorem lift_lubinTateLaw_generator_of_forall_ne {n : ℕ+}
     (hn : ∀ i : Fin (h - 1), lubinTateIndex hp i ≠ n) :
     LazardRing.lift ⟨F.lubinTateLaw hp h, inferInstance⟩ (generator n) =
       C (LazardRing.lift ⟨F, inferInstance⟩ (generator n)) := by
-  rw [lift_lubinTateLaw, homEquiv_symm_apply_generator, lubinTateShift_of_forall_ne hp hn,
+  rw [lift_lubinTateLaw, lubinTateHom_apply_generator, lubinTateShift_of_forall_ne hp hn,
     _root_.add_zero]
 
 /-- Setting the Lubin–Tate parameters to zero gives back `F`. -/
 @[simp]
 theorem map_constantCoeff_lubinTateLaw : (F.lubinTateLaw hp h).map constantCoeff = F := by
-  have h₁ : constantCoeff.comp (homEquiv.symm fun n ↦
-      C (LazardRing.lift ⟨F, inferInstance⟩ (generator n)) + lubinTateShift hp h n) =
-      LazardRing.lift ⟨F, inferInstance⟩ :=
+  have h₁ : constantCoeff.comp (lubinTateHom F hp h) = LazardRing.lift ⟨F, inferInstance⟩ :=
     ringHom_ext fun n ↦ by simp [constantCoeff_lubinTateShift]
   rw [lubinTateLaw, map_comp, h₁, map_lift]
 
@@ -179,19 +192,17 @@ theorem map_constantCoeff_lubinTateLaw : (F.lubinTateLaw hp h).map constantCoeff
 coefficientwise map of `g` is the generic law of the base change of `F` along `g`. -/
 theorem map_lubinTateLaw (g : R →+* S) :
     (F.lubinTateLaw hp h).map (MvPowerSeries.map g) = (F.map g).lubinTateLaw hp h := by
-  rw [lubinTateLaw, lubinTateLaw, map_comp, comp_homEquiv_symm, LazardRing.lift_map]
-  congr 2
+  rw [lubinTateLaw, lubinTateLaw, map_comp]
+  congr 1
   ext n
-  simp [map_lubinTateShift]
+  simp [map_lubinTateShift, LazardRing.lift_map]
 
 /-- In height at most one the generic Lubin–Tate law has no parameters: it is `F` over the power
 series ring in no variables. -/
 theorem lubinTateLaw_of_le_one (hh : h ≤ 1) : F.lubinTateLaw hp h = F.map C := by
-  have h₁ : (homEquiv.symm fun n ↦
-      C (LazardRing.lift ⟨F, inferInstance⟩ (generator n)) + lubinTateShift hp h n) =
-      C.comp (LazardRing.lift ⟨F, inferInstance⟩) :=
+  have h₁ : lubinTateHom F hp h = C.comp (LazardRing.lift ⟨F, inferInstance⟩) :=
     ringHom_ext fun n ↦ by
-      rw [homEquiv_symm_apply_generator,
+      rw [lubinTateHom_apply_generator,
         lubinTateShift_of_forall_ne hp fun i ↦ absurd i.isLt (by omega), _root_.add_zero,
         RingHom.comp_apply]
   rw [lubinTateLaw, h₁, ← map_comp, map_lift]
@@ -203,9 +214,10 @@ coordinates of the generic law below the index `lubinTateIndex hp i`. -/
 private theorem apply_lubinTateLaw_coordinate_eq {g g' : MvPowerSeries (Fin (h - 1)) R →+* A}
     (hC : g.comp C = g'.comp C) {i : Fin (h - 1)} (hX : ∀ j < i, g (X j) = g' (X j)) {m : ℕ+}
     (hm : m < lubinTateIndex hp i) :
-    g (C (LazardRing.lift ⟨F, inferInstance⟩ (generator m)) + lubinTateShift hp h m) =
-      g' (C (LazardRing.lift ⟨F, inferInstance⟩ (generator m)) + lubinTateShift hp h m) := by
-  rw [map_add, map_add, ← RingHom.comp_apply, hC, RingHom.comp_apply]
+    (g.comp (lubinTateHom F hp h)) (generator m) =
+      (g'.comp (lubinTateHom F hp h)) (generator m) := by
+  rw [RingHom.comp_apply, RingHom.comp_apply, lubinTateHom_apply_generator, map_add, map_add,
+    ← RingHom.comp_apply, hC, RingHom.comp_apply]
   congr 1
   by_cases hn : ∃ j : Fin (h - 1), lubinTateIndex hp j = m
   · obtain ⟨j, rfl⟩ := hn
@@ -213,35 +225,34 @@ private theorem apply_lubinTateLaw_coordinate_eq {g g' : MvPowerSeries (Fin (h -
     exact hX j (Fin.lt_def.2 ((lubinTateIndex_lt_lubinTateIndex_iff hp).1 hm))
   · rw [lubinTateShift_of_forall_ne hp (not_exists.1 hn), map_zero, map_zero]
 
-/-- **The parameter `tᵢ` does not enter below degree `pⁱ`.** If two specializations `g` and `g'`
-of the generic Lubin–Tate law agree on the coefficients and on the parameters `t_j`, `j < i`, the
-specialized laws agree below degree `pⁱ`. Here `i : Fin (h - 1)` stands for `t_{i+1}`. -/
+/-- **The parameter `X i` does not enter below degree `p ^ (i + 1)`.** If two specializations `g`
+and `g'` of the generic Lubin–Tate law agree on the coefficients and on `X j` for `j < i`, the
+specialized laws agree below degree `p ^ (i + 1)`. -/
 theorem le_order_map_lubinTateLaw_sub_map {g g' : MvPowerSeries (Fin (h - 1)) R →+* A}
     (hC : g.comp C = g'.comp C) {i : Fin (h - 1)} (hX : ∀ j < i, g (X j) = g' (X j)) :
     ((p ^ (i + 1 : ℕ) : ℕ) : ℕ∞) ≤
       (((F.lubinTateLaw hp h).map g).toPowerSeries -
         ((F.lubinTateLaw hp h).map g').toPowerSeries).order := by
   rw [lubinTateLaw, map_comp, map_comp, ← coe_lubinTateIndex_add_one hp]
-  exact succ_le_order_map_sub_map fun m hm ↦ by
-    simpa using apply_lubinTateLaw_coordinate_eq hC hX hm
+  exact succ_le_order_map_sub_map fun _ hm ↦ apply_lubinTateLaw_coordinate_eq hC hX hm
 
-/-- **The parameter `tᵢ` enters through `C_{pⁱ}`.** If two specializations `g` and `g'` of the
-generic Lubin–Tate law agree on the coefficients and on the parameters `t_j`, `j < i`, the
-specialized laws differ by `(g tᵢ - g' tᵢ) C_{pⁱ}` in degree `pⁱ`. Here `i : Fin (h - 1)` stands
-for `t_{i+1}`. -/
-theorem homogeneousComponent_map_lubinTateLaw_sub_map {g g' : MvPowerSeries (Fin (h - 1)) R →+* A}
+/-- **The parameter `X i` enters through `C_{p^(i+1)}`.** If two specializations `g` and `g'` of
+the generic Lubin–Tate law agree on the coefficients and on `X j` for `j < i`, the specialized
+laws differ by `(g (X i) - g' (X i)) • C_{p^(i+1)}` in degree `p ^ (i + 1)`. -/
+theorem homogeneousComponent_map_lubinTateLaw_sub_map_eq_smul_lazardCocycle
+    {g g' : MvPowerSeries (Fin (h - 1)) R →+* A}
     (hC : g.comp C = g'.comp C) {i : Fin (h - 1)} (hX : ∀ j < i, g (X j) = g' (X j)) :
     homogeneousComponent (p ^ (i + 1 : ℕ))
         (((F.lubinTateLaw hp h).map g).toPowerSeries -
           ((F.lubinTateLaw hp h).map g').toPowerSeries) =
       ↑((g (X i) - g' (X i)) • lazardCocycle (p ^ (i + 1 : ℕ)) A) := by
   rw [lubinTateLaw, map_comp, map_comp, ← coe_lubinTateIndex_add_one hp,
-    homogeneousComponent_map_sub_map fun m hm ↦ by
-      simpa using apply_lubinTateLaw_coordinate_eq hC hX hm]
+    homogeneousComponent_map_sub_map_eq_smul_lazardCocycle fun _ hm ↦
+      apply_lubinTateLaw_coordinate_eq hC hX hm]
   have hc := RingHom.congr_fun hC
     (LazardRing.lift ⟨F, inferInstance⟩ (generator (lubinTateIndex hp i)))
   simp only [RingHom.comp_apply] at hc
-  simp only [RingHom.comp_apply, homEquiv_symm_apply_generator, lubinTateShift_lubinTateIndex,
+  simp only [RingHom.comp_apply, lubinTateHom_apply_generator, lubinTateShift_lubinTateIndex,
     map_add, hc, add_sub_add_left_eq_sub]
 
 end FormalGroup

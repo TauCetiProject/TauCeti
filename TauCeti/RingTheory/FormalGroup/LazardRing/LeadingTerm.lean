@@ -9,42 +9,34 @@ public import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 public import TauCeti.RingTheory.MvPowerSeries.Order
 
 /-!
-# Formal group laws with prescribed Lazard coordinates
+# Leading terms of the Lazard coordinates
 
-By Lazard's theorem the Lazard ring is the polynomial ring `ℤ[x₁, x₂, …]` on the generators
-`xₙ = TauCeti.LazardRing.generator n`, so a ring homomorphism `L →+* R`, and hence a commutative
-formal group law over `R`, is the same as a family `(vₙ)` of elements of `R`, the values of the
-generators (`TauCeti.LazardRing.homEquiv`). We call them the Lazard coordinates of the law.
+By Lazard's theorem a commutative formal group law over `R` is determined by its Lazard
+coordinates, the values `vₙ` of the generators `xₙ = TauCeti.LazardRing.generator n` of
+`L = ℤ[x₁, x₂, …]` (`TauCeti.LazardRing.homEquiv`).
 
 The generator `xₙ` has degree `2n`, the degree of the coefficients of the monomials of total degree
 `n + 1`. This file shows that the coordinate `xₙ` first appears in total degree `n + 1`, and there
 exactly through the Lazard cocycle `C_{n+1}`: if two commutative formal group laws `F` and `G`
 have the same coordinates `x_m` for `m < n`, then `F - G` vanishes below degree `n + 1`, and its
 part of degree `n + 1` is `(xₙ(F) - xₙ(G)) C_{n+1}`. Indeed a coefficient of total degree at most
-`n` is a polynomial in the `x_m` with `2m` at most its degree, and a coefficient `a_{i,n+1-i}` is
-`(n+1).choose i / d_{n+1}` times `xₙ` plus a polynomial in the `x_m`, `m < n`
+`n` is a polynomial in the `x_m` with `2m` at most its degree, and for `0 < i ≤ n` a coefficient
+`a_{i,n+1-i}` is `(n+1).choose i / d_{n+1}` times `xₙ` plus a polynomial in the `x_m`, `m < n`
 (`TauCeti.LazardRing.lt_of_mem_vars_mvPolynomialEquiv_symm_sub_smul_X`). For laws agreeing below
 degree `n + 1`, `FormalGroup.exists_homogeneousComponent_sub_eq_smul_lazardCocycle` gives the part
 of degree `n + 1` of `F - G` as some multiple of `C_{n+1}`; here that multiple is the difference of
 the Lazard coordinates.
 
-This gives the generic deformation of Lubin and Tate of a formal group law of height `h`
-(`FormalGroup.lubinTateLaw`): moving the coordinates `x_{pⁱ - 1}`, `0 < i < h`, by independent
-parameters `tᵢ` changes the law by `tᵢ C_{pⁱ}` in degree `pⁱ` and not at all below it.
-
-## Main definitions
-
-* `TauCeti.LazardRing.homEquiv`: ring homomorphisms `L →+* R` are families `ℕ+ → R`, by their
-  values on the generators.
+This is what the generic Lubin–Tate deformation of a formal group law of height `h`
+(`FormalGroup.lubinTateLaw`) needs: moving the coordinates `x_{pⁱ - 1}`, `0 < i < h`, by
+independent parameters `tᵢ` changes the law by `tᵢ C_{pⁱ}` in degree `pⁱ` and not at all below it.
 
 ## Main results
 
-* `TauCeti.LazardRing.ringHom_ext`: a ring homomorphism out of `L` is determined by its values on
-  the generators.
 * `TauCeti.LazardRing.succ_le_order_map_sub_map`: if `φ` and `ψ` agree on `x_m` for `m < n`, then
   the base changes of the universal law along them agree below degree `n + 1`.
-* `TauCeti.LazardRing.homogeneousComponent_map_sub_map`: their difference in degree `n + 1` is
-  `(φ xₙ - ψ xₙ) C_{n+1}`.
+* `TauCeti.LazardRing.homogeneousComponent_map_sub_map_eq_smul_lazardCocycle`: their difference in
+  degree `n + 1` is `(φ xₙ - ψ xₙ) C_{n+1}`.
 
 ## References
 
@@ -63,46 +55,6 @@ namespace TauCeti.LazardRing
 
 variable {R : Type*} [CommRing R]
 
-/-- **Lazard coordinates.** Ring homomorphisms out of the Lazard ring `L = ℤ[x₁, x₂, …]` are the
-same as families of elements indexed by the generators: `φ` corresponds to `n ↦ φ xₙ`. -/
-def homEquiv : (LazardRing →+* R) ≃ (ℕ+ → R) where
-  toFun φ n := φ (generator n)
-  invFun v := (MvPolynomial.homEquiv.symm v).comp mvPolynomialEquiv.symm.toRingEquiv.toRingHom
-  left_inv φ := by
-    have h : (fun n ↦ φ (generator n)) = MvPolynomial.homEquiv
-        (φ.comp mvPolynomialEquiv.toRingEquiv.toRingHom) := by
-      ext n
-      simp [MvPolynomial.homEquiv]
-    ext x
-    simp [h]
-  right_inv v := funext fun n ↦ by simp [MvPolynomial.homEquiv]
-
-@[simp]
-theorem homEquiv_apply (φ : LazardRing →+* R) (n : ℕ+) : homEquiv φ n = φ (generator n) :=
-  (rfl)
-
-/-- The homomorphism with Lazard coordinates `v` evaluates a polynomial in the generators at `v`. -/
-theorem homEquiv_symm_apply (v : ℕ+ → R) (x : LazardRing) :
-    homEquiv.symm v x =
-      MvPolynomial.eval₂Hom (Int.castRingHom R) v (mvPolynomialEquiv.symm x) :=
-  (rfl)
-
-/-- The homomorphism with Lazard coordinates `v` sends the generator `xₙ` to `v n`. -/
-@[simp]
-theorem homEquiv_symm_apply_generator (v : ℕ+ → R) (n : ℕ+) :
-    homEquiv.symm v (generator n) = v n := by
-  simp [homEquiv_symm_apply]
-
-/-- A ring homomorphism out of the Lazard ring is determined by its values on the generators. -/
-theorem ringHom_ext {φ ψ : LazardRing →+* R} (h : ∀ n, φ (generator n) = ψ (generator n)) :
-    φ = ψ :=
-  homEquiv.injective (funext h)
-
-/-- The Lazard coordinates of a base change are the images of the Lazard coordinates. -/
-theorem comp_homEquiv_symm {S : Type*} [CommRing S] (g : R →+* S) (v : ℕ+ → R) :
-    g.comp (homEquiv.symm v) = homEquiv.symm (g ∘ v) :=
-  ringHom_ext fun n ↦ by simp
-
 /-- Two homomorphisms agreeing on the generators occurring in `mvPolynomialEquiv.symm x` agree on
 `x`. -/
 private theorem apply_eq_of_vars {φ ψ : LazardRing →+* R} {x : LazardRing}
@@ -110,7 +62,7 @@ private theorem apply_eq_of_vars {φ ψ : LazardRing →+* R} {x : LazardRing}
     φ x = ψ x := by
   rw [← homEquiv.symm_apply_apply φ, ← homEquiv.symm_apply_apply ψ, homEquiv_symm_apply,
     homEquiv_symm_apply]
-  exact MvPolynomial.eval₂Hom_congr' rfl (fun m hm _ ↦ h m hm) rfl
+  exact MvPolynomial.eval₂Hom_congr' rfl (fun m hm _ ↦ by simpa using h m hm) rfl
 
 variable {φ ψ : LazardRing →+* R} {n : ℕ+}
 
@@ -171,8 +123,8 @@ private theorem apply_coeff_formalGroup_sub_of_degree_eq
   · -- the monomials `X^(n+1)` and `Y^(n+1)` have coefficient zero on both sides
     have hy : coeff d formalGroup.toPowerSeries = 0 := by
       rw [formalGroup_toPowerSeries, coeff_lazardSeries_eq]
-      have := n.pos
-      split_ifs <;> first | rfl | tauto | omega
+      have h1 : d 0 + d 1 ≠ 1 := by have := n.pos; omega
+      rw [ite_eq_right hd0, ite_eq_right h1]
     rw [hy, map_zero, map_zero, sub_zero, coeff_lazardCocycle]
     split_ifs with h0
     exacts [absurd h0.2 hd0, (zero_mul _).symm]
@@ -190,7 +142,8 @@ theorem succ_le_order_map_sub_map (h : ∀ m < n, φ (generator m) = ψ (generat
 /-- **The Lazard coordinate `xₙ` enters through `C_{n+1}`.** If `φ` and `ψ` agree on the
 generators `x_m`, `m < n`, then in degree `n + 1` the base changes of the universal formal group
 law along them differ by `(φ xₙ - ψ xₙ) C_{n+1}`. -/
-theorem homogeneousComponent_map_sub_map (h : ∀ m < n, φ (generator m) = ψ (generator m)) :
+theorem homogeneousComponent_map_sub_map_eq_smul_lazardCocycle
+    (h : ∀ m < n, φ (generator m) = ψ (generator m)) :
     homogeneousComponent (n + 1)
         ((formalGroup.map φ).toPowerSeries - (formalGroup.map ψ).toPowerSeries) =
       ↑((φ (generator n) - ψ (generator n)) • lazardCocycle (n + 1) R) := by
