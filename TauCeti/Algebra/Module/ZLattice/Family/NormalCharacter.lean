@@ -159,59 +159,6 @@ private theorem mfderiv_torusFamilyProjection_smul (g : rootsOfUnity m ℂ)
     L.hasFDerivAt.hasMFDerivAt.mfderiv] at h
   exact h
 
-/-- The `C^n` embedding of the reduced multiple fibre, presented as the quotient of the
-central torus, into the cyclic quotient of the family. -/
-def torusFamilyMultipleFiberEmbedding :
-    letI := periodAddAction P
-    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
-    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul hbmul
-      (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul
-      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g)
-    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul
-      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) (fun l ↦ (hP l).continuous)
-      (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
-    SmoothEmbedding 𝓘(ℂ, E) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
-      (orbitRel.Quotient (rootsOfUnity m ℂ)
-        (AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E))
-      (orbitRel.Quotient (rootsOfUnity m ℂ)
-        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
-  letI := periodAddAction P
-  letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-  letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
-  letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul hbmul
-      (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
-  letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul
-      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g)
-  letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul
-      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) (fun l ↦ (hP l).continuous)
-      (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
-  SmoothEmbedding.ofIsSmoothEmbedding _
-    (isSmoothEmbedding_orbitRelQuotientMap_torusFamilyFiberMulActionHom
-      P hinj hP R ρ hequiv b hb hone hmul hbmul hR hbc hfree
-      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) hn)
-
-/-- On a lift to the central torus the multiple-fibre inclusion is the central-torus inclusion
-followed by the ambient orbit map. -/
-@[simp]
-theorem torusFamilyMultipleFiberEmbedding_mk
-    (x : AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E) :
-    letI := periodAddAction P
-    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
-    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) P hinj R ρ hequiv b hb hone hmul hbmul
-      (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hequiv b hb hbmul
-      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g)
-    letI := torusFamilyFiberQuotientChartedSpace P R ρ hequiv b hb hone hmul hbmul
-      (fun g ↦ smul_rootsOfUnityBall_of_coe_eq_zero hu₀ g) (fun l ↦ (hP l).continuous)
-      (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous) hfree
-    torusFamilyMultipleFiberEmbedding P hinj hP R ρ hequiv b hb hone hmul hbmul hR hbc hfree
-      hu₀ hn (Quotient.mk _ x) = Quotient.mk _ (torusFamilyFiberMap P u₀ x) := by
-  simp [torusFamilyMultipleFiberEmbedding, MulActionHom.orbitRelQuotientMap_mk,
-    coe_torusFamilyFiberMulActionHom]
-
 private def centralTorusNormalQuotientEquiv
     (x : AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E) :
     letI := periodAddAction P
@@ -410,13 +357,9 @@ private theorem torusFamilyMultipleFiberNormalCoord_symm_smul_mfderiv
       hR hbc hfree hu₀ hn (g • x)).symm hchar).symm.trans
     (torusFamilyMultipleFiberNormalCoord_symm_mfderiv P hinj hP R ρ hequiv b hb hone hmul hbmul
       hR hbc hfree hu₀ hn (g • x) w')
-  have hq : q ∘ (g • ·) = q :=
-    funext fun z ↦ (Quotient.sound ⟨g, rfl⟩ : q (g • z) = q z)
   have hdq := (isLocalDiffeomorph_torusFamilyAffineQuotient_mk
     P hinj hP R ρ hequiv b hb hone hmul hbmul hR hbc hfree).contMDiff.mdifferentiable hn₀
-  have hd := congrArg (fun f ↦ mfderiv A A f y w) hq
-  rw [mfderiv_comp y hdq.mdifferentiableAt
-    ((contMDiff_const_smul (n := n) g).mdifferentiableAt hn₀)] at hd
+  have hd := mfderiv_quotientMk_smul_apply (I := A) hn₀ (g := g) (x := y) (hdq (g • y)) w
   dsimp only [p, y] at hleft ⊢
   rw [hleft, torusFamilyMultipleFiberNormalCoord_symm_mfderiv]
   have hqt : (Quotient.mk (orbitRel (rootsOfUnity m ℂ) _) (g • x)) = Quotient.mk _ x :=
