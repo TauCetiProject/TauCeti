@@ -289,6 +289,15 @@ theorem mem_of_spectralInvariant_eq_coe (hI : Monotone I)
   have := hr ▸ spectralInvariant_le_of_mem hσb
   exact (EReal.coe_le_coe_iff.1 this).not_gt hb
 
+/-- If the spectral invariant of `σ` is a real number `r`, then for every `ε > 0` the element `σ`
+is represented at some level in `[r, r + ε)`. -/
+theorem exists_mem_Ico_of_spectralInvariant_eq_coe {r ε : ℝ} (hr : spectralInvariant I σ = r)
+    (hε : 0 < ε) : ∃ b ∈ Set.Ico r (r + ε), σ ∈ I b := by
+  obtain ⟨b, hσb, hb⟩ := spectralInvariant_lt_iff.mp
+    (hr.trans_lt (EReal.coe_lt_coe_iff.mpr (lt_add_of_pos_right r hε)))
+  exact ⟨b, ⟨EReal.coe_le_coe_iff.mp (hr ▸ spectralInvariant_le_of_mem hσb),
+    EReal.coe_lt_coe_iff.mp hb⟩, hσb⟩
+
 /-- **Spectrality for a closed set.** If the filtration only changes at the points of a closed
 set `S`, in the sense that `I b ≤ I a` whenever `a ≤ b` and `[a, b]` does not meet `S`, then a
 finite spectral invariant lies in `S`. Neither monotonicity nor left continuity is needed. -/
@@ -297,14 +306,11 @@ theorem mem_of_spectralInvariant_eq_coe_of_isClosed {S : Set ℝ} (hS : IsClosed
     (hr : spectralInvariant I σ = r) : r ∈ S := by
   by_contra hrS
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hS.isOpen_compl r hrS
-  obtain ⟨b, hσb, hb⟩ := spectralInvariant_lt_iff.mp
-    (hr.trans_lt (EReal.coe_lt_coe_iff.mpr (lt_add_of_pos_right r (half_pos hε))))
-  have hb' := EReal.coe_lt_coe_iff.mp hb
-  have hrb : r ≤ b := EReal.coe_le_coe_iff.mp (hr ▸ spectralInvariant_le_of_mem hσb)
+  obtain ⟨b, ⟨hrb, hb⟩, hσb⟩ := exists_mem_Ico_of_spectralInvariant_eq_coe hr (half_pos hε)
   have hdisj : Disjoint S (Set.Icc (r - ε / 2) b) := by
     refine Set.disjoint_left.mpr fun t htS ht ↦ hball ?_ htS
-    rw [Metric.mem_ball, Real.dist_eq, abs_lt]
-    constructor <;> linarith [ht.1, ht.2]
+    rw [Real.ball_eq_Ioo]
+    exact ⟨by linarith [ht.1], by linarith [ht.2]⟩
   have hle := spectralInvariant_le_of_mem (hIS _ _ (by linarith) hdisj hσb)
   rw [hr, EReal.coe_le_coe_iff] at hle
   linarith
@@ -318,13 +324,10 @@ theorem mem_apply_of_spectralInvariant_eq_coe {S : Set ℝ} (hS : Sᶜ ∈ Filte
     (hr : spectralInvariant I σ = r) : σ ∈ I r := by
   obtain ⟨ε, hε, hball⟩ :=
     Metric.mem_nhdsWithin_iff.mp (mem_codiscrete_iff_forall_mem_nhdsNE.mp hS r)
-  obtain ⟨b, hσb, hb⟩ := spectralInvariant_lt_iff.mp
-    (hr.trans_lt (EReal.coe_lt_coe_iff.mpr (lt_add_of_pos_right r hε)))
-  have hb' := EReal.coe_lt_coe_iff.mp hb
-  have hrb : r ≤ b := EReal.coe_le_coe_iff.mp (hr ▸ spectralInvariant_le_of_mem hσb)
+  obtain ⟨b, ⟨hrb, hb⟩, hσb⟩ := exists_mem_Ico_of_spectralInvariant_eq_coe hr hε
   refine hIS r b hrb (Set.disjoint_left.mpr fun t htS ht ↦ hball ⟨?_, ht.1.ne'⟩ htS) hσb
-  rw [Metric.mem_ball, Real.dist_eq, abs_lt]
-  constructor <;> linarith [ht.1, ht.2]
+  rw [Real.ball_eq_Ioo]
+  exact ⟨by linarith [ht.1], by linarith [ht.2]⟩
 
 /-- For an increasing filtration, the spectral invariant of `σ` is at least every level at which
 `σ` is not represented. -/
