@@ -301,12 +301,8 @@ theorem selfClutchMap_eq_selfClutchMap_iff (a b : GluedCurve d) :
       a = b ∨ s(a, b) = s(Quotient.mk _ (m.point (.inr 0)), Quotient.mk _ (m.point (.inr 1))) := by
   induction a using Quotient.inductionOn with | _ x => ?_
   induction b using Quotient.inductionOn with | _ y => ?_
-  have hmk (k : Fin 2) (z : Σ i, X i) :
-      Quotient.mk (gluedRelSetoid d) z = Quotient.mk _ (m.point (.inr k)) ↔ z = m.point (.inr k) :=
-    ⟨fun h ↦ (eq_of_mk_eq_of_notMem_flagPointSet (m.point_notMem_flagPointSet _) h.symm).symm,
-      fun h ↦ h ▸ rfl⟩
   simp only [selfClutchMap_mk, Quotient.eq, gluedRelSetoid_r, gluedRel_def, flagRel_selfClutch_iff,
-    Sym2.eq_iff, hmk]
+    Sym2.eq_iff, m.mk_eq_mk_point_iff]
   tauto
 
 /-- **Self-clutching of a connected curve is connected.** -/
@@ -879,16 +875,8 @@ theorem inlClutchMap_eq_inrClutchMap_iff (a : GluedCurve d₁) (b : GluedCurve d
       a = Quotient.mk _ (m₁.point none) ∧ b = Quotient.mk _ (m₂.point none) := by
   induction a using Quotient.inductionOn with | _ x => ?_
   induction b using Quotient.inductionOn with | _ y => ?_
-  have hmk₁ : Quotient.mk (gluedRelSetoid d₁) x = Quotient.mk _ (m₁.point none) ↔
-      x = m₁.point none :=
-    ⟨fun h ↦ (eq_of_mk_eq_of_notMem_flagPointSet (m₁.point_notMem_flagPointSet _) h.symm).symm,
-      fun h ↦ h ▸ rfl⟩
-  have hmk₂ : Quotient.mk (gluedRelSetoid d₂) y = Quotient.mk _ (m₂.point none) ↔
-      y = m₂.point none :=
-    ⟨fun h ↦ (eq_of_mk_eq_of_notMem_flagPointSet (m₂.point_notMem_flagPointSet _) h.symm).symm,
-      fun h ↦ h ▸ rfl⟩
-  simp [hmk₁, hmk₂, Quotient.eq, gluedRel_def, flagRel_selfClutch_iff,
-    sigmaMap_inl_ne_sigmaMap_inr, (sigmaMap_inl_ne_sigmaMap_inr _ _).symm,
+  simp [m₁.mk_eq_mk_point_iff, m₂.mk_eq_mk_point_iff, Quotient.eq, gluedRel_def,
+    flagRel_selfClutch_iff, sigmaMap_inl_ne_sigmaMap_inr, (sigmaMap_inl_ne_sigmaMap_inr _ _).symm,
     sigmaMap_inl_injective.eq_iff, sigmaMap_inr_injective.eq_iff]
 
 /-- **The two curves of an external clutching meet exactly at the new node.** -/
