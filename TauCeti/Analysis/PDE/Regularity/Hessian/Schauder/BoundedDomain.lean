@@ -345,6 +345,36 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderi
         exact le_add_self
     _ = (A + 2 * δ ^ (-(α : ℝ))) * (K + N) := by ring
 
+/-- **The global estimate with a bound on `‖Du‖ + ‖D²u‖`.** Under the hypotheses of the global
+estimate, if `|u| ≤ N` and `‖Du‖ + ‖D²u‖ ≤ T` on `closure Ω`, then `D²u` is `α`-Hölder on
+`closure Ω` with constant `C (K + (N + T))`. -/
+private theorem exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_le {α : ℝ≥0}
+    (hα : 0 < α) (hα1 : α < 1) {Ω : Set E} (hΩo : IsOpen Ω) (hΩ : Bornology.IsBounded Ω)
+    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
+      ContDiff ℝ 2 γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ (∀ z, ‖fderiv ℝ γ z‖ ≤ G) ∧
+      (∀ z, ‖fderiv ℝ (fderiv ℝ γ) z‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ 0 < r ∧
+      ball x r ∩ Ω = ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
+    {lam : ℝ} (Lam : ℝ) (L M : ℝ≥0) (hlam : 0 < lam) :
+    ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
+      (∀ z ∈ closure Ω, ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ (a z).toQuadraticForm' ξ) →
+      (∀ z ∈ closure Ω, ∀ ξ : E, (a z).toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
+      (∀ i j, HolderOnWith L α (fun z => a z i j) (closure Ω)) →
+      (∀ z ∈ closure Ω, ∀ i j, |a z i j| ≤ M) →
+      ∀ {U : Set E} {u : E → ℝ} {N K V T : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
+        ContDiffOn ℝ 2 u U → (∀ z ∈ frontier Ω, u z = 0) → (∀ z ∈ closure Ω, |u z| ≤ N) →
+        (∀ z ∈ closure Ω, ‖fderiv ℝ u z‖ + ‖iteratedFDeriv ℝ 2 u z‖ ≤ T) →
+        HolderOnWith V α (iteratedFDeriv ℝ 2 u) (closure Ω) →
+        HolderOnWith K α (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
+        HolderOnWith (C * (K + (N + T))) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
+  obtain ⟨C, hC⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv hα
+    hα1 hΩo hΩ hbdry Lam L M hlam
+  refine ⟨C, fun {a} hEll hEll' hL hM {U u N K V T} hU hΩU hu hu0 hN hT hV hK => ?_⟩
+  refine hC hEll hEll' hL hM hU hΩU hu hu0 (fun z hz => ?_) (fun z hz => ?_) (fun z hz => ?_) hV hK
+  · push_cast; linarith [hN z hz, T.coe_nonneg]
+  · push_cast; linarith [hT z hz, norm_nonneg (iteratedFDeriv ℝ 2 u z), N.coe_nonneg]
+  · push_cast; linarith [hT z hz, norm_nonneg (fderiv ℝ u z), N.coe_nonneg]
+
 /-- A `C^{2,α}` boundary patch is a Lipschitz boundary patch: `γ` is `G`-Lipschitz since
 `‖Dγ‖ ≤ G`. -/
 private theorem exists_lipschitzWith_patch {α : ℝ≥0} {Ω : Set E}
@@ -399,7 +429,7 @@ private theorem exists_norm_fderiv_add_norm_iteratedFDeriv_two_le {α : ℝ≥0}
         HolderOnWith K α (fun z => ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ u) z
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) Ω →
         ∀ z ∈ closure Ω, ‖fderiv ℝ u z‖ + ‖iteratedFDeriv ℝ 2 u z‖ ≤ B * (K + N) := by
-  obtain ⟨C₁, hC₁⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv hα
+  obtain ⟨C₁, hC₁⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_le hα
     hα1 hΩo hΩ hbdry Lam L M hlam
   obtain ⟨CI, hCI, ε₀, hε₀, hint⟩ :=
     exists_forall_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_closure (F := ℝ) hΩ
@@ -418,13 +448,9 @@ private theorem exists_norm_fderiv_add_norm_iteratedFDeriv_two_le {α : ℝ≥0}
   have hS0 : 0 ≤ S := Real.sSup_nonneg (by rintro _ ⟨z, -, rfl⟩; positivity)
   have hfS : ∀ z ∈ closure Ω, ‖fderiv ℝ u z‖ + ‖iteratedFDeriv ℝ 2 u z‖ ≤ S := fun z hz =>
     le_csSup hbdd ⟨z, hz, rfl⟩
-  -- The estimate with `N + S` bounding `|u|`, `‖Du‖` and `‖D²u‖`.
-  have hN' : ((N + S.toNNReal : ℝ≥0) : ℝ) = N + S := by simp [hS0]
-  have hold := hC₁ hEll hEll' hL hM hU hΩU hu hu0 (N := N + S.toNNReal)
-    (fun z hz => by rw [hN']; linarith [hN z hz])
-    (fun z hz => by
-      rw [hN']; linarith [hfS z hz, norm_nonneg (iteratedFDeriv ℝ 2 u z), N.coe_nonneg])
-    (fun z hz => by rw [hN']; linarith [hfS z hz, norm_nonneg (fderiv ℝ u z), N.coe_nonneg]) hV hK
+  -- The estimate with `S` bounding `‖Du‖ + ‖D²u‖`.
+  have hold := hC₁ hEll hEll' hL hM hU hΩU hu hu0 hN (T := S.toNNReal)
+    (fun z hz => by rw [Real.coe_toNNReal _ hS0]; exact hfS z hz) hV hK
   -- The interpolation inequalities at scale `ε` absorb `S`.
   have hI := hint ε hε hεε₀ hU hΩU hu hold (M := N)
     (fun z hz => by rw [Real.norm_eq_abs]; exact hN z hz)
@@ -482,7 +508,7 @@ theorem
           HolderOnWith (C * (K + N)) α (iteratedFDeriv ℝ 2 u) (closure Ω) := by
   obtain ⟨B, hB, hsup⟩ :=
     exists_norm_fderiv_add_norm_iteratedFDeriv_two_le hα hα1 hΩo hΩ hbdry Lam L M hlam
-  obtain ⟨C₁, hC₁⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_sum_smul_fderiv_fderiv hα
+  obtain ⟨C₁, hC₁⟩ := exists_holderOnWith_iteratedFDeriv_two_closure_of_norm_add_norm_le hα
     hα1 hΩo hΩ hbdry Lam L M hlam
   have hBB : ((B.toNNReal : ℝ≥0) : ℝ) = B := Real.coe_toNNReal B (by linarith)
   refine ⟨C₁ * (1 + B.toNNReal) + B.toNNReal,
@@ -493,14 +519,9 @@ theorem
     push_cast
     rw [hBB]
     nlinarith [mul_nonneg C₁.coe_nonneg (mul_nonneg (by linarith : (0 : ℝ) ≤ B) hKN)]
-  -- The estimate with `N + B (K + N)` bounding `|u|`, `‖Du‖` and `‖D²u‖`.
-  set N' : ℝ≥0 := N + B.toNNReal * (K + N)
-  have hN' : (N' : ℝ) = N + B * (K + N) := by simp [N', hBB]
-  have hold := hC₁ hEll hEll' hL hM hU hΩU hu hu0 (N := N')
-    (fun z hz => by rw [hN']; nlinarith [hN z hz, mul_nonneg (by linarith : (0 : ℝ) ≤ B) hKN])
-    (fun z hz => by
-      rw [hN']; linarith [hs z hz, norm_nonneg (iteratedFDeriv ℝ 2 u z), N.coe_nonneg])
-    (fun z hz => by rw [hN']; linarith [hs z hz, norm_nonneg (fderiv ℝ u z), N.coe_nonneg]) hV hK
+  -- The estimate with `B (K + N)` bounding `‖Du‖ + ‖D²u‖`.
+  have hold := hC₁ hEll hEll' hL hM hU hΩU hu hu0 hN (T := B.toNNReal * (K + N))
+    (fun z hz => by push_cast; rw [hBB]; exact hs z hz) hV hK
   refine ⟨fun z hz => ?_, fun z hz => ?_, hold.mono_const ?_⟩
   · linarith [hs z hz, norm_nonneg (iteratedFDeriv ℝ 2 u z)]
   · linarith [hs z hz, norm_nonneg (fderiv ℝ u z)]

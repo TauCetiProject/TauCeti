@@ -107,16 +107,6 @@ theorem norm_apply_apply_le_of_hasFDerivWithinAt {s : Set E} {g : E → F}
   rw [norm_smul, Real.norm_two] at h1 h4
   nlinarith [mul_le_mul_of_nonneg_left hy H.coe_nonneg]
 
-/-- The derivatives of a function that is `C²` on an open set `U ⊇ s`, within `s`. -/
-private theorem hasFDerivWithinAt_of_contDiffOn {U s : Set E} {u : E → F} (hU : IsOpen U)
-    (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) :
-    (∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y) ∧
-      ∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y :=
-  ⟨fun y hy => ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt
-      (by norm_num)).hasFDerivAt.hasFDerivWithinAt,
-    fun y hy =>
-      ((hu.contDiffAt (hU.mem_nhds (hsU hy))).hasFDerivAt_fderiv le_rfl).hasFDerivWithinAt⟩
-
 omit [NormedSpace ℝ E] in
 /-- A direction `w` from `x` towards a point of `closedBall p ρ` has norm at most
 `dist x p + ρ`. -/
@@ -139,7 +129,7 @@ theorem norm_iteratedFDeriv_two_le_of_contDiffOn_of_forall_segment_subset {U s :
     {x p : E} {ρ R : ℝ} (hρ : 0 < ρ) (hR : dist x p + ρ ≤ R)
     (hseg : ∀ z ∈ closedBall p ρ, segment ℝ x z ⊆ s) :
     ‖iteratedFDeriv ℝ 2 u x‖ ≤ (64 * M + 48 * H * R ^ (2 + (α : ℝ))) / ρ ^ 2 := by
-  obtain ⟨hd1, hd2⟩ := hasFDerivWithinAt_of_contDiffOn hU hu hsU
+  obtain ⟨hd1, hd2⟩ := hu.hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hsU
   have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   have hx : x ∈ s := hseg p (mem_closedBall_self hρ.le) (left_mem_segment ℝ x p)
   have hsymm := (hu.contDiffAt (hU.mem_nhds (hsU hx))).isSymmSndFDerivAt (by simp)
@@ -161,7 +151,7 @@ theorem norm_fderiv_le_of_contDiffOn_of_forall_segment_subset {U s : Set E}
     (hseg : ∀ z ∈ closedBall p ρ, segment ℝ x z ⊆ s) :
     ‖fderiv ℝ u x‖ ≤
       (4 * M + ‖iteratedFDeriv ℝ 2 u x‖ * R ^ 2 + 2 * H * R ^ (2 + (α : ℝ))) / ρ := by
-  obtain ⟨hd1, hd2⟩ := hasFDerivWithinAt_of_contDiffOn hU hu hsU
+  obtain ⟨hd1, hd2⟩ := hu.hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hsU
   have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
   refine (ContinuousLinearMap.opNorm_le_of_forall_mem_closedBall_norm_apply_le hρ (d := p - x)
