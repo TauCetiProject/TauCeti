@@ -189,6 +189,9 @@ variable (R A M : Type*) [CommRing R] [Ring A] [AddCommMonoid M] [Module R M] [M
 /-- Commuting actions of a commutative ring `R` and a ring `A` on `M` combine into the action of
 `R ⊗[ℤ] A` on `M` by `R`-linear endomorphisms, `r ⊗ a ↦ (m ↦ r • a • m)`. -/
 noncomputable def toModuleEnd : R ⊗[ℤ] A →ₐ[R] Module.End R M :=
+  -- `M` is only an `AddCommMonoid`, so `Module.End R M` has no canonical `Ring` instance; this
+  -- local one, induced by the `R`-algebra structure, exists only so that `RingHom.toIntAlgHom`
+  -- applies. The declared type uses only the semiring structure of `Module.End R M`.
   letI : Ring (Module.End R M) := _root_.Algebra.semiringToRing R
   lift (Algebra.ofId R _) (Module.toModuleEnd R (S := A) M).toIntAlgHom
     fun r _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _
