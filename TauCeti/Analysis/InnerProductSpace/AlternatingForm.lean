@@ -44,6 +44,8 @@ product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧
   the interior product by `u`.
 * `TauCeti.alternatingFormEquiv_wedgeLeft_apply`: it carries exterior multiplication by `u` to
   the wedge with the covector `⟪u, ·⟫`.
+* `TauCeti.alternatingFormEquiv_ιMulti_twoVectorContraction`: on two-forms, the interior product
+  by `u` is the covector of the contraction `u ⌟ x`.
 * `LinearIsometry.alternatingFormEquiv_map`: musical identification commutes with isometries.
 * `ContinuousAlternatingMap.abs_alternatingFormInner_le_sqrt_mul_sqrt`: the Cauchy–Schwarz
   inequality `|⟨α, β⟩| ≤ √⟨α, α⟩ √⟨β, β⟩` for the inner product of forms.
@@ -183,6 +185,25 @@ theorem alternatingFormEquiv_wedgeLeft_apply (u : V) {k : ℕ} (x : ⋀[ℝ]^k V
     simp [inner_ιMulti_ιMulti]
   rw [hu, ← alternatingFormEquiv_wedge, alternatingFormEquiv_apply_comp_cast]
   simp [ExteriorAlgebra.ιMulti_apply]
+
+/-- **The interior product of a two-form**: the interior product by `u` of the form of
+`x ∈ ⋀² V` is the covector of the contraction `u ⌟ x`. -/
+theorem alternatingFormEquiv_ιMulti_twoVectorContraction (x : ⋀[ℝ]^2 V) (u : V) :
+    alternatingFormEquiv V 1 (ιMulti ℝ 1 ![twoVectorContraction x u]) =
+      (alternatingFormEquiv V 2 x).curryLeft u := by
+  ext v
+  have hv : Matrix.vecCons u v = ![u, v 0] := funext (Fin.forall_fin_two.2 ⟨rfl, rfl⟩)
+  simp [inner_ιMulti_ιMulti, hv]
+
+/-- The form of `u ∧ w` is the wedge `⟪u, ·⟫ ∧ ⟪w, ·⟫` of the covectors of `u` and `w`. -/
+theorem alternatingFormEquiv_ιMulti_pair (u w : V) :
+    alternatingFormEquiv V 2 (ιMulti ℝ 2 ![u, w]) =
+      (ContinuousAlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ u)).wedge
+        (alternatingFormEquiv V 1 (ιMulti ℝ 1 ![w])) := by
+  ext v
+  have h := alternatingFormEquiv_wedgeLeft_apply u (ιMulti ℝ 1 ![w]) v
+  rw [ExteriorAlgebra.wedgeLeft_ιMulti] at h
+  simpa using h
 
 variable (V) in
 /-- The pointwise inner product of alternating `k`-forms, transported from the inner product of
