@@ -40,7 +40,8 @@ map `T` stretches lengths by at most `√Λ` and its inverse by at most `1 / √
 ## Main declarations
 
 * `TauCeti.PDE.exists_continuousLinearEquiv_laplacian_comp_eq`: an elliptic constant-coefficient
-  operator is the Laplacian after a linear change of variables with controlled condition number.
+  operator is the Laplacian after a linear change of variables with controlled condition number,
+  in which its quadratic form is the squared Euclidean norm.
 * `TauCeti.PDE.harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero`: after such a change of
   variables, a `C²` solution on an open set becomes a harmonic function.
 * `TauCeti.PDE.harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero`: so does the
@@ -67,18 +68,19 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {F : Type*} [NormedAddCommGr
 
 /-- **A constant-coefficient operator is the Laplacian in suitable linear coordinates.** Let `A`
 be a square matrix whose quadratic form satisfies `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` with `0 < λ`. Then
-there is a continuous linear automorphism `e` of `EuclideanSpace ℝ ι`, with
-`‖e⁻¹ x‖ ≤ ‖x‖ / √λ` and `‖e y‖ ≤ √Λ ‖y‖`, such that
+there is a continuous linear automorphism `e` of `EuclideanSpace ℝ ι`, with `‖e y‖² = yᵀ A y`, so
+that `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` and `‖e y‖ ≤ √Λ ‖y‖`, such that
 
 `Δ (u ∘ e) y = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu (e y)`
 
 for every `u` twice continuously differentiable near `e y`. So `u` solves `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0`
-exactly when `u ∘ e` is harmonic. One can take `e` to be the square root of the symmetric part of
-`A`; only the symmetric part matters, since the second derivative of `u` is symmetric. -/
+exactly when `u ∘ e` is harmonic, and on the Fourier side the symbol `ξᵀ A ξ` of the operator
+becomes `‖e ξ‖²`. One can take `e` to be the square root of the symmetric part of `A`; only the
+symmetric part matters, since the second derivative of `u` is symmetric. -/
 theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {lam Lam : ℝ}
     (hlam : 0 < lam) (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hA' : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) :
-    ∃ e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι,
+    ∃ e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι, (∀ y, ‖e y‖ ^ 2 = A.toQuadraticForm' y) ∧
       (∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) ∧ (∀ y, ‖e y‖ ≤ √Lam * ‖y‖) ∧
       ∀ (u : EuclideanSpace ℝ ι → F) (y : EuclideanSpace ℝ ι), ContDiffAt ℝ 2 u (e y) →
         Δ (u ∘ e) y = ∑ i, ∑ j, A i j •
@@ -110,7 +112,7 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
     rw [Matrix.toEuclideanCLE_apply, ← real_inner_self_eq_norm_sq, ← hSq, ← hTT]
     simpa [Matrix.toQuadraticForm'_apply, EuclideanSpace.inner_eq_star_dotProduct, hTt,
       dotProduct_comm] using h
-  refine ⟨e, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
+  refine ⟨e, hnorm, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
   · exact e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => (hnorm y).symm ▸ hA y) x
   · exact Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg y) ((hnorm y).le.trans (hA' y))
   · -- Only the symmetric part of `A` enters, because the second derivative is symmetric.

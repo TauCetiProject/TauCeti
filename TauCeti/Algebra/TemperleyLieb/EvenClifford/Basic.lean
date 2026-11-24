@@ -8,9 +8,9 @@ module
 public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
--- Private: ring involution identities, basis coordinate transport, orthogonal generator and
--- even-bivector identities, functoriality of Clifford involutions, and real-form positivity are
--- used only inside proofs and internal transport constructions.
+-- Private: ring involution identities, `√2 * √2 = 2` in `ℂ`, basis coordinate transport,
+-- orthogonal generator and even-bivector identities, functoriality of Clifford involutions, and
+-- real-form positivity are used only inside proofs and internal transport constructions.
 import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Basic.Complex.BigOperators
@@ -708,7 +708,7 @@ noncomputable def evenCliffordHom (m : ℕ) :
     (fun {i j} h ↦ Subtype.ext <| by
       simp only [Subalgebra.coe_mul, evenCliffordGenerator, smul_mul_assoc, mul_smul_comm,
         cliffordProjection_mul_cliffordProjection_mul_cliffordProjection h, smul_smul]
-      rw [Complex.ofReal_sqrt_two_mul_self]
+      rw [Complex.mul_self_ofReal_sqrt zero_le_two]
       norm_num)
     (fun {i j} h ↦ Subtype.ext <| by
       simp only [Subalgebra.coe_mul, evenCliffordGenerator]
@@ -761,7 +761,7 @@ private theorem majorana_mul_succ_mem_range_ambient {m : ℕ} (j : ℕ) (hj : j 
       (Real.sqrt 2 : ℂ) • cliffordProjection m i :=
     coe_evenCliffordHom_e m i
   have hscale : ((Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ)) * (2 : ℂ)⁻¹ = 1 := by
-    rw [Complex.ofReal_sqrt_two_mul_self]
+    rw [Complex.mul_self_ofReal_sqrt zero_le_two]
     norm_num
   rw [map_smul, map_sub, map_smul, he, cliffordProjection_def, smul_smul, smul_smul, hscale]
   simp [smul_smul, i]

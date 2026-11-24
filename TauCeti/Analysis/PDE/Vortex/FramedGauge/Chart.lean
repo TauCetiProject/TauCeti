@@ -37,8 +37,8 @@ exponential is a homomorphism, two charts differ by a translation of the model s
 common domain (`TauCeti.Vortex.gaugeChart_symm_trans_eqOn_add`), so `G_s` is a manifold of every
 smoothness class `n` over `ℝ`, analytic included
 (`TauCeti.Vortex.SobolevTopologicalGaugeGroup.instIsManifold`). The group operations are smooth
-in these charts (`TauCeti.Analysis.PDE.Vortex.FramedGauge.LieGroup`); the action of `G_(k+1)` on
-the field space `A_m^k` is not treated here.
+in these charts (`TauCeti.Analysis.PDE.Vortex.FramedGauge.LieGroup`), and so is the action of
+`G_(k+1)` on the field space `A_m^k` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothAction`).
 
 ## References
 
@@ -123,17 +123,17 @@ theorem exists_norm_subOne_expGauge_sub_le (hs : 1 < s) :
   refine ⟨C, hC, fun {F G R} hFR hGR ↦ ?_⟩
   have h : 0 ≤ s := zero_le_one.trans hs.le
   have hd := finrank_real_complex_lt_two_mul hs
-  have hae (F : realSubmodule ℂ h) :
-      (inclusion h (F : H^{s}(ℂ))).toLp =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) := by
-    rw [toLp_inclusion]
-    exact coeFn_inclusionLp_ae_eq_continuousRep hd F
-  have key := hlip (hae F) (hae G)
-    (memSobolev_toLp_inclusion h _) (memSobolev_toLp_inclusion h _) (R := R)
-    (by rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion])
-    (by rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion])
-    (coeFn_toLp_inclusion_subOne_expGauge hs h F) (coeFn_toLp_inclusion_subOne_expGauge hs h G)
-    (memSobolev_toLp_inclusion h _) (memSobolev_toLp_inclusion h _)
-  simp only [toBesselPotentialSpace_memSobolev_toLp_inclusion] at key
+  have hexp (F : realSubmodule ℂ (zero_le_one.trans hs.le)) :
+      inclusionLp h (subOne (expGauge hs F)) =ᵐ[volume]
+        fun z ↦ (Circle.exp (continuousRep F z) : ℂ) - 1 := by
+    simpa only [toLp_inclusion] using coeFn_toLp_inclusion_subOne_expGauge hs h F
+  have key := hlip (coeFn_inclusionLp_ae_eq_continuousRep hd F)
+    (coeFn_inclusionLp_ae_eq_continuousRep hd G)
+    (memSobolev_inclusionLp h _) (memSobolev_inclusionLp h _) (R := R)
+    (by rwa [toBesselPotentialSpace_memSobolev_inclusionLp])
+    (by rwa [toBesselPotentialSpace_memSobolev_inclusionLp])
+    (hexp F) (hexp G) (memSobolev_inclusionLp h _) (memSobolev_inclusionLp h _)
+  simp only [toBesselPotentialSpace_memSobolev_inclusionLp] at key
   exact key
 
 /-- **The exponential is continuous** from the real phases to `G_s`. -/
@@ -157,14 +157,17 @@ theorem exists_expGauge_eq_and_norm_le (hs : 1 < s) :
   obtain ⟨C, hC, harg⟩ := exists_memSobolev_ae_eq_arg_and_norm_sub_le hs
   refine ⟨C, hC, fun {u R} huR hCR ↦ ?_⟩
   have h : 0 ≤ s := zero_le_one.trans hs.le
-  obtain ⟨A, A', hA, hA', hAs, hAs', hle⟩ := harg (coeFn_toLp_inclusion_subOne h u)
-    (coeFn_toLp_inclusion_subOne h (1 : SobolevTopologicalGaugeGroup hs))
-    (memSobolev_toLp_inclusion h _)
-    (memSobolev_toLp_inclusion h _) (R := R)
-    (by rwa [toBesselPotentialSpace_memSobolev_toLp_inclusion])
-    (by rw [toBesselPotentialSpace_memSobolev_toLp_inclusion, subOne_one, norm_zero]
+  have hsub (v : SobolevTopologicalGaugeGroup hs) :
+      inclusionLp h (subOne v) =ᵐ[volume] fun z ↦ ((toSubgroup hs v : ℂ → Circle) z : ℂ) - 1 := by
+    simpa only [toLp_inclusion] using coeFn_toLp_inclusion_subOne h v
+  obtain ⟨A, A', hA, hA', hAs, hAs', hle⟩ := harg (hsub u)
+    (hsub (1 : SobolevTopologicalGaugeGroup hs))
+    (memSobolev_inclusionLp h _)
+    (memSobolev_inclusionLp h _) (R := R)
+    (by rwa [toBesselPotentialSpace_memSobolev_inclusionLp])
+    (by rw [toBesselPotentialSpace_memSobolev_inclusionLp, subOne_one, norm_zero]
         exact (norm_nonneg _).trans huR) hCR
-  simp only [toBesselPotentialSpace_memSobolev_toLp_inclusion, subOne_one, sub_zero] at hle
+  simp only [toBesselPotentialSpace_memSobolev_inclusionLp, subOne_one, sub_zero] at hle
   -- The phase of the identity is zero.
   have hA'0 : hAs'.toBesselPotentialSpace = 0 := by
     have hA'z : A' = 0 := Lp.ext <| by

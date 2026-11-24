@@ -90,11 +90,6 @@ private theorem levelMap_injective (V : OpenNormalSubgroup Γ) :
   (QuotientGroup.map_injective_iff _ V.toSubgroup H.subtype _).mpr
     (V.toSubgroup_comap H.subtype H.continuous_subtype).ge
 
-/-- Intersecting with `H` is monotone on the open normal subgroups of `Γ`. -/
-private theorem comap_subtype_mono {V₁ V₂ : OpenNormalSubgroup Γ} (h : V₁ ≤ V₂) :
-    V₁.comap H.subtype H.continuous_subtype ≤ V₂.comap H.subtype H.continuous_subtype :=
-  fun _ hk ↦ h hk
-
 /-- For a level `V ≤ H`, the class of `g` modulo `V` comes from `H` exactly when `g ∈ H`. -/
 private theorem mk_mem_range_levelMap {V : OpenNormalSubgroup Γ} (hV : V.toSubgroup ≤ H)
     (g : Γ) : ((g : Γ ⧸ V.toSubgroup) ∈ Set.range (levelMap H V)) ↔ g ∈ H := by
@@ -107,7 +102,8 @@ private theorem mk_mem_range_levelMap {V : OpenNormalSubgroup Γ} (hV : V.toSubg
 /-- Restricting to `H` commutes with passing from a level `V₁ ≤ H` to a coarser level `V₂ ≤ H`. -/
 private theorem mapDomain_comapDomain_levelMap {V₁ V₂ : OpenNormalSubgroup Γ} (h₁₂ : V₁ ≤ V₂)
     (hV₂ : V₂.toSubgroup ≤ H) (y : MonoidAlgebra R (Γ ⧸ V₁.toSubgroup)) :
-    mapDomain (QuotientGroup.mapOfLE (comap_subtype_mono H h₁₂))
+    mapDomain
+        (QuotientGroup.mapOfLE (OpenNormalSubgroup.comap_mono H.subtype H.continuous_subtype h₁₂))
         (comapDomain (levelMap H V₁) (levelMap_injective H V₁) y) =
       comapDomain (levelMap H V₂) (levelMap_injective H V₂)
         (mapDomain (QuotientGroup.mapOfLE h₁₂) y) := by
@@ -149,9 +145,9 @@ private theorem restrictAt_eq {V₁ V₂ : OpenNormalSubgroup Γ} (hV₁ : V₁.
     (h₁ : V₁.comap H.subtype H.continuous_subtype ≤ W)
     (h₂ : V₂.comap H.subtype H.continuous_subtype ≤ W) (x : completedGroupAlgebra R Γ) :
     restrictAt R H V₁ W h₁ x = restrictAt R H V₂ W h₂ x :=
-  (restrictAt_eq_of_le R H inf_le_left hV₁ ((comap_subtype_mono H inf_le_left).trans h₁) h₁
-    x).symm.trans
-    (restrictAt_eq_of_le R H inf_le_right hV₂ ((comap_subtype_mono H inf_le_left).trans h₁) h₂ x)
+  have h := (OpenNormalSubgroup.comap_mono H.subtype H.continuous_subtype inf_le_left).trans h₁
+  (restrictAt_eq_of_le R H inf_le_left hV₁ h h₁ x).symm.trans
+    (restrictAt_eq_of_le R H inf_le_right hV₂ h h₂ x)
 
 variable [SeparatelyContinuousMul Γ] {H} (hH : IsOpen (H : Set Γ)) [H.FiniteIndex]
 

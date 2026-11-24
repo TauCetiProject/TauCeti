@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Existence
-public import TauCeti.Analysis.PDE.Vortex.Flux
+public import TauCeti.Analysis.PDE.Vortex.Flux.Basic
 public import TauCeti.Analysis.PDE.Vortex.ModulusBound
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp

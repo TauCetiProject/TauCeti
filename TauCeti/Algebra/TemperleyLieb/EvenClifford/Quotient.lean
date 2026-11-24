@@ -336,7 +336,7 @@ theorem isMarkovTrace_evenCliffordTrace :
             ring
       _ = (Real.sqrt 2 : ℂ) ^ (n + 1) *
             CliffordAlgebra.scalarTrace (cliffordForm (n + 1)) (evenCliffordHom (n + 1) x) := by
-            rw [Complex.ofReal_sqrt_two_mul_self]
+            rw [Complex.mul_self_ofReal_sqrt zero_le_two]
             norm_num
 
 namespace IsMarkovTrace
@@ -536,7 +536,7 @@ theorem evenCliffordHom_jonesWenzl_three :
     evenCliffordHom 3 (jonesWenzl (Real.sqrt 2 : ℂ) 3) = 0 := by
   have hq3 : qInt ℂ (Real.sqrt 2 : ℂ) 3 = 1 := by
     rw [qInt_add_two (Real.sqrt 2 : ℂ) 1, qInt_two, qInt_one,
-      Complex.ofReal_sqrt_two_mul_self]
+      Complex.mul_self_ofReal_sqrt zero_le_two]
     norm_num
   have hq4 : qInt ℂ (Real.sqrt 2 : ℂ) 4 = 0 := by
     rw [qInt_add_two (Real.sqrt 2 : ℂ) 2, hq3, qInt_two]

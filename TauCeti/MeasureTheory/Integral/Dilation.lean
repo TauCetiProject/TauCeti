@@ -32,6 +32,8 @@ factors, and so rescales the Bochner integral by the same factor (`TauCeti.integ
   `|r ^ n|`.
 * `MeasureTheory.Measure.lintegral_comp_homothety`: the same law for the homothety of ratio `r`
   about any centre.
+* `MeasureTheory.Measure.setLIntegral_comp_add_smul`: the same law for the affine map
+  `y ↦ c + r • y`, on the preimage of any set.
 * `MeasureTheory.Measure.map_mul_pi_addHaar_eq_smul`: the image of an additive Haar measure on
   `ℝ^ι` under `x ↦ (cᵢ xᵢ)ᵢ` is the measure scaled by `|∏ᵢ cᵢ|⁻¹`.
 * `TauCeti.integral_comp_mul_pi`: `∫ x, F (fun i ↦ cᵢ xᵢ) = |∏ᵢ cᵢ|⁻¹ • ∫ y, F y` on `ℝ^ι`.
@@ -69,6 +71,23 @@ theorem lintegral_comp_homothety (g : E → ℝ≥0∞) (x : E) {r : ℝ} (hr : 
   simp only [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add]
   rw [lintegral_sub_right_eq_self (fun z => g (r • z + x)) x,
     lintegral_comp_smul μ (fun z => g (z + x)) hr, lintegral_add_right_eq_self]
+
+/-- **Affine scaling of a set lower Lebesgue integral.** Precomposing with `y ↦ c + r • y`,
+`r ≠ 0`, and integrating over the preimage of a set `s` gives `|(r ^ n)⁻¹|` times the integral over
+`s`, where `n` is the dimension of the ambient space. Neither `g` nor `s` need be measurable. -/
+theorem setLIntegral_comp_add_smul (g : E → ℝ≥0∞) (c : E) {r : ℝ} (hr : r ≠ 0) (s : Set E) :
+    ∫⁻ y in (fun y ↦ c + r • y) ⁻¹' s, g (c + r • y) ∂μ =
+      ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| * ∫⁻ z in s, g z ∂μ := by
+  have he : MeasurableEmbedding fun y : E ↦ c + r • y :=
+    (measurableEmbedding_addLeft c).comp (measurableEmbedding_const_smul₀ hr)
+  have hmap : μ.map (fun y ↦ c + r • y) = ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| • μ := by
+    calc μ.map (fun y ↦ c + r • y) = (μ.map (r • ·)).map (c + ·) :=
+          (Measure.map_map (measurable_const_add c) (measurable_const_smul r)).symm
+      _ = _ := by
+          rw [map_addHaar_smul μ hr, Measure.map_smul _ (measurable_const_add c).aemeasurable,
+            map_add_left_eq_self]
+  rw [← he.lintegral_map, ← he.restrict_map, hmap, Measure.restrict_smul, lintegral_smul_measure,
+    smul_eq_mul]
 
 /-- **Rescaling the coordinates of `ℝ^ι`.** The image of an additive Haar measure under the
 map multiplying the `i`-th coordinate by `cᵢ ≠ 0` is the measure scaled by `|∏ᵢ cᵢ|⁻¹`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.CartanCriterion
 public import Mathlib.Algebra.Lie.Matrix
 public import Mathlib.Algebra.Lie.Semisimple.Lemmas
+public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Symplectic.Cartan
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Tactic.NoncommRing
@@ -67,6 +68,8 @@ Lie algebra.
   `κ(X, θ Y) = -((2 n + 2) trace (X * Yᵀ))`.
 * `LieAlgebra.Symplectic.killingForm_cartanInvolution_self_neg`: `κ(X, θ X) < 0` for nonzero `X`
   over an ordered field.
+* `LieAlgebra.Symplectic.isCartanInvolution_cartanInvolution`: `θ` is a Cartan involution
+  (`LieEquiv.IsCartanInvolution`) over an ordered field.
 
 ## References
 
@@ -296,9 +299,8 @@ theorem killingForm_cartanInvolution_apply (X Y : sp l K) :
 
 end Field
 
-/-- **`θ X = -Xᵀ` is a Cartan involution of `sp l K`** over an ordered field: `κ(X, θ X) < 0`
-for every nonzero `X`, since `-κ(X, θ X)` is `2 n + 2` times the sum of the squares of the
-entries of `X`. -/
+/-- Over an ordered field, `κ(X, θ X) < 0` for every nonzero `X ∈ sp l K`, where `θ X = -Xᵀ`,
+since `-κ(X, θ X)` is `2 n + 2` times the sum of the squares of the entries of `X`. -/
 theorem killingForm_cartanInvolution_self_neg {K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] {X : sp l K} (hX : X ≠ 0) :
     killingForm K (sp l K) X (cartanInvolution l K X) < 0 := by
@@ -312,5 +314,11 @@ theorem killingForm_cartanInvolution_self_neg {K : Type*} [Field K] [LinearOrder
       ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ mul_self_nonneg _)
         ⟨j, Finset.mem_univ _, mul_self_pos.mpr hij⟩⟩
   positivity
+
+/-- **`θ X = -Xᵀ` is a Cartan involution of `sp l K`** over an ordered field. -/
+theorem isCartanInvolution_cartanInvolution {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] : (cartanInvolution l K).IsCartanInvolution :=
+  LieEquiv.isCartanInvolution_iff.mpr
+    ⟨cartanInvolution_cartanInvolution, fun _ ↦ killingForm_cartanInvolution_self_neg⟩
 
 end LieAlgebra.Symplectic

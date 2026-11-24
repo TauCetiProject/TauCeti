@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The principal square root and the slit plane
@@ -14,12 +15,14 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane. These facts control the branches in algebraic transformations
 involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, and packages the principal square
-root of a nonzero complex number as a unit, `Complex.sqrtUnit`.
+`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane and the splitting `√(r z) = √r √z`
+for real `r ≥ 0`, records that the real square root of a nonnegative real, cast to `ℂ`, squares
+back to it, and packages the principal square root of a nonzero complex number as a unit,
+`Complex.sqrtUnit`.
 
 The real square root `√2`, cast to `ℂ`, is nonzero and squares to `2`
-(`Complex.ofReal_sqrt_two_sq`, `Complex.ofReal_sqrt_two_mul_self`), and so its inverse squares to
-`2⁻¹` (`Complex.ofReal_sqrt_two_inv_mul_self`). Together with `1 + i ≠ 0`
+(`Complex.ofReal_sqrt_two_sq`), and so its inverse squares to `2⁻¹`
+(`Complex.ofReal_sqrt_two_inv_mul_self`). Together with `1 + i ≠ 0`
 (`Complex.one_add_I_ne_zero`), these are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
 -/
 
@@ -28,6 +31,12 @@ public section
 open scoped Real
 
 namespace Complex
+
+/-- The real square root of a nonnegative real, cast to `ℂ`, squares back to it:
+`(√x : ℂ) * √x = x`. -/
+@[simp]
+theorem mul_self_ofReal_sqrt {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) * √x = x := by
+  exact_mod_cast Real.mul_self_sqrt hx
 
 /-- The square of the principal square root is the original complex number. -/
 @[simp]
@@ -39,6 +48,10 @@ theorem sq_sqrt (z : ℂ) : sqrt z ^ 2 = z :=
 theorem sqrt_eq_zero_iff {z : ℂ} : sqrt z = 0 ↔ z = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ sqrt_zero⟩
   rw [← sq_sqrt z, h, zero_pow two_ne_zero]
+
+/-- The principal square root splits across a nonnegative real factor: `√(r z) = √r √z`. -/
+theorem sqrt_ofReal_mul {r : ℝ} (hr : 0 ≤ r) (z : ℂ) : sqrt (r * z) = sqrt r * sqrt z :=
+  TauCeti.ofReal_mul_cpow hr z 2⁻¹
 
 /-- The principal square root of `i` is `e^{π i / 4}`. -/
 theorem sqrt_I_eq_exp : sqrt I = exp (π * I / 4) := by
@@ -123,13 +136,9 @@ theorem ofReal_sqrt_two_ne_zero : (Real.sqrt 2 : ℂ) ≠ 0 := by
 theorem ofReal_sqrt_two_sq : (Real.sqrt 2 : ℂ) ^ 2 = 2 := by
   exact_mod_cast Real.sq_sqrt zero_le_two
 
-/-- The real square root `√2`, cast to `ℂ`, times itself is `2`. -/
-theorem ofReal_sqrt_two_mul_self : (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
-  rw [← _root_.sq, ofReal_sqrt_two_sq]
-
 /-- The inverse of the real square root `√2`, cast to `ℂ`, times itself is `2⁻¹`. -/
 theorem ofReal_sqrt_two_inv_mul_self : (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
-  rw [← mul_inv, ofReal_sqrt_two_mul_self]
+  rw [← mul_inv, mul_self_ofReal_sqrt zero_le_two]
 
 /-- The complex number `1 + i` is nonzero. -/
 theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
