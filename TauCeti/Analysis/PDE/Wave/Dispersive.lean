@@ -17,7 +17,7 @@ import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
 import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
-import TauCeti.MeasureTheory.Function.Lp.Star
+import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 
 /-!
 # The dispersive estimate for frequency-localized half-wave propagators
@@ -69,11 +69,10 @@ is non-stationary on the support of `a`, so `𝓕 G_t (s) = O(|t|^(-N))`
   `c > 0`.
 * `TauCeti.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le`: the `L¹ → L^∞` dispersive
   estimate for `W₊(t)` localized by a multiplier with symbol `ψ (2^{-j} ·)`.
-* `TauCeti.smul_star_ae_eq_dilate_mul_star`: the symbol `m • star m` of `Pⱼ Pⱼ*` is the dilate
-  of `|ψ|²`, so the time pairings `U(s) U(t)*` of `U(t) = W₊(t) Pⱼ` are `W₊(s - t)` localized by
-  that dilate.
 * `TauCeti.exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint_le_top`: the
-  same estimate for the time pairings `U(s) U(t)*` of `U(t) = W₊(t) Pⱼ`.
+  same estimate for the time pairings `U(s) U(t)*` of `U(t) = W₊(t) Pⱼ`, which are `W₊(s - t)`
+  localized by the symbol `m • star m` of `Pⱼ Pⱼ*`, the dilate of `|ψ|²`
+  (`MeasureTheory.Lp.smul_star_ae_eq_mul_star`).
 * `ContDiffBump.exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewoodPaley_le`:
   the kernel bound for the dyadic cutoffs, `C 2^{jn} (1 + 2^j |t|)^(-(n - 1)/2)`.
 * `ContDiffBump.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le`: the
@@ -529,19 +528,6 @@ theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le {ψ : E → �
   rw [SchwartzMap.fourierInv_coe, hσ]
   exact hC (zpow_pos two_pos j) t z
 
-/-- **The symbol of `Pⱼ Pⱼ*`.** If `m` is almost everywhere the dilated cutoff `ψ (2^{-j} ·)`,
-then `m • star m`, the symbol of `Pⱼ Pⱼ*` for the `L²` multiplier `Pⱼ` with symbol `m`, is almost
-everywhere the dilate of `|ψ|² = ψ * star ψ`. With
-`halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint` and
-`Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply`, this identifies the time pairings
-`U(s) U(t)*` of `U(t) = W₊(t) Pⱼ` with `W₊(s - t)` localized by the dilate of `|ψ|²`. -/
-theorem smul_star_ae_eq_dilate_mul_star {ψ : E → ℂ} {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
-    (hm : m =ᵐ[volume] (fun ξ ↦ ψ (((2 : ℝ) ^ j)⁻¹ • ξ))) :
-    (m • star m : Lp ℂ ∞ (volume : Measure E)) =ᵐ[volume]
-      fun ξ ↦ ψ (((2 : ℝ) ^ j)⁻¹ • ξ) * star (ψ (((2 : ℝ) ^ j)⁻¹ • ξ)) := by
-  filter_upwards [Lp.coeFn_lpSMul (r := ∞) m (star m), Lp.coeFn_star m, hm] with ξ h₁ h₂ h₃
-  rw [h₁, Pi.smul_apply', h₂, Pi.star_apply, h₃, smul_eq_mul]
-
 open scoped InnerProduct in
 /-- **The dispersive estimate for the time pairings of the frequency-localized half-wave
 propagators.** Let `E` have dimension `n`, let `ψ` be smooth, compactly supported and vanish near
@@ -568,7 +554,7 @@ theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoin
   rw [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
     Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
   by_cases hg : MemLp g 1 volume
-  · refine (hC j _ (smul_star_ae_eq_dilate_mul_star hm) (s - t) g
+  · refine (hC j _ (Lp.smul_star_ae_eq_mul_star hm) (s - t) g
       (memLp_one_iff_integrable.1 hg)).trans ?_
     gcongr ?_ * _
     exact ENNReal.ofReal_le_ofReal (by gcongr; linarith)

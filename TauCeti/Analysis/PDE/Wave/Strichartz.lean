@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Strichartz.TTStar
 public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Function.Lp.Star
+import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
 /-!
@@ -300,7 +300,7 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_appl
   refine ⟨A, hA0, fun j m hm s t hst g ↦ ?_⟩
   rw [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
     Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
-  exact hA j _ (smul_star_ae_eq_dilate_mul_star hm) (s - t) (sub_ne_zero.2 hst) g
+  exact hA j _ (Lp.smul_star_ae_eq_mul_star hm) (s - t) (sub_ne_zero.2 hst) g
 
 /-! ### The Strichartz estimates -/
 
