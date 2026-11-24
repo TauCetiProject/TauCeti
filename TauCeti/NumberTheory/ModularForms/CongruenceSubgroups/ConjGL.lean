@@ -92,6 +92,7 @@ theorem finiteIndex_conjGL_of_finiteIndex (Γ : Subgroup SL(2, ℤ)) [Γ.FiniteI
     (g : GL (Fin 2) ℚ) : (conjGL Γ (g.map (Rat.castHom ℝ))).FiniteIndex := by
   have := Subgroup.IsArithmetic.conj (Γ.map (mapGL ℝ)) g⁻¹
   rw [map_inv] at this
+  unfold conjGL
   exact Subgroup.IsArithmetic.finiteIndex_comap _
 
 /-- The scaling `diag(d, 1)⁻¹ Γ diag(d, 1) ∩ SL(2, ℤ)` of a finite-index subgroup has finite
