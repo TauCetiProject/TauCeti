@@ -199,6 +199,10 @@ private theorem continuous_charts_iff_of_subsingleton (A : FiniteRankAtlas 𝕜 
   obtain ⟨i⟩ := hne
   refine ((FiberBundle.continuous_totalSpaceMk (Fin n → 𝕜) (A.charts n).Fiber i).comp hf).congr
     fun y => ?_
+  -- `Function.comp_apply` cannot rewrite here: the composite only typechecks after unfolding
+  -- `VectorBundleCore.Fiber`, since `(f y).snd` lies in the fibre over `(f y).proj` while
+  -- `TotalSpace.mk i` expects the fibre over `i`. Every fibre of the core is by definition
+  -- `Fin n → 𝕜`, so `change` states the goal with that fibre and the composite applied to `y`.
   change TotalSpace.mk' (Fin n → 𝕜) i (f y).snd = f y
   generalize f y = p
   obtain ⟨b, v⟩ := p
