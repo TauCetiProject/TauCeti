@@ -480,16 +480,15 @@ theorem four_le_finrank_maxGenEigenspace_focusFocusPoly {A : Module.End ℝ V}
   have hfv : aeval A (focusFocusPoly a b) v = 0 :=
     aeval_focusFocusPoly_apply_eq_zero hAv hAw
   have hvG : v ∈ G := (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simpa using hfv⟩
-  obtain ⟨r, hr⟩ := (ω.restrict G hGs.nondegenerate_restrict).even_finrank
-  have hpos : finrank ℝ G ≠ 0 := fun h0 ↦
-    hv ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hvG))
+  obtain ⟨r, hr⟩ := hGs.even_finrank
+  have h2 : 2 ≤ finrank ℝ G := hGs.two_le_finrank_of_mem hvG hv
   -- On a plane, `A² = κ` and the polynomial acts as `(κ + a² + b²)² - 4a²κ > 0`.
   have hne2 : finrank ℝ G ≠ 2 := by
-    intro h2
+    intro hG2
     have hmaps : ∀ x ∈ G, A x ∈ G := fun _ hx ↦
       Module.End.mapsTo_genEigenspace_aeval_of_comm (Commute.refl A) _ 0 ⊤ hx
     obtain ⟨κ, hκ⟩ := exists_mul_self_eq_smul_one (ω := ω.restrict G hGs.nondegenerate_restrict)
-      h2 ⟨_, restrict_mem_skewAdjointLieSubalgebra hA hGs.nondegenerate_restrict hmaps⟩
+      hG2 ⟨_, restrict_mem_skewAdjointLieSubalgebra hA hGs.nondegenerate_restrict hmaps⟩
     have hAAv : (A ^ 2) v = κ • v := by
       simpa [pow_two, mul_apply_eq_comp, LinearMap.coe_restrict_apply] using
         congrArg Subtype.val (LinearMap.congr_fun hκ ⟨v, hvG⟩)

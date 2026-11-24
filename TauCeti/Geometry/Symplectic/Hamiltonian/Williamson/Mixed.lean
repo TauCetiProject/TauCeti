@@ -286,13 +286,9 @@ private theorem finrank_maxGenEigenspace_prod_focusFocusPoly_add_card_mul_two_le
   -- Each `G μ` contains an eigenvector of `A²`, so it is a nonzero symplectic subspace.
   have hG2 (μ : s) : 2 ≤ finrank ℝ (G μ) := by
     obtain ⟨x, hx⟩ := (hAs μ μ.property).exists_hasEigenvector
-    obtain ⟨r, hr⟩ := (ω.restrict (G μ)
-      (isSymplectic_maxGenEigenspace_sq_sub hA μ).nondegenerate_restrict).even_finrank
-    have hxG : x ∈ G μ :=
-      Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C (by simpa [sq] using hx.apply_eq_smul)
-    have hpos : finrank ℝ (G μ) ≠ 0 := fun h0 ↦
-      hx.2 ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hxG))
-    omega
+    exact (isSymplectic_maxGenEigenspace_sq_sub hA μ).two_le_finrank_of_mem
+      (Module.End.mem_maxGenEigenspace_aeval_X_sq_sub_C (by simpa [sq] using hx.apply_eq_smul))
+      hx.2
   set K : Option s → Submodule ℝ V := fun o ↦ o.elim L fun μ ↦ G μ
   have hKs (o : Option s) : ω.IsSymplectic (K o) := by
     rcases o with _ | μ

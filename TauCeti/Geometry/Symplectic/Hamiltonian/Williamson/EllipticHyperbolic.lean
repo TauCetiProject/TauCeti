@@ -175,14 +175,8 @@ private theorem finrank_maxGenEigenspace_sq_sub
   -- `G μ` is a nonzero symplectic subspace of dimension at most two, hence a plane.
   have hle2 : finrank ℝ (G μ) ≤ 2 :=
     (Submodule.finrank_mono hle).trans ((finrank_range_le_card _).trans (by simp))
-  obtain ⟨r, hr⟩ := (ω.restrict (G μ)
-    (isSymplectic_maxGenEigenspace_sq_sub hA μ).nondegenerate_restrict).even_finrank
-  have hx' : x ⟨μ, hμ⟩ ∈ G μ := hxG ⟨μ, hμ⟩
-  have hpos : finrank ℝ (G μ) ≠ 0 := fun h0 ↦
-    hx0 _ ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hx'))
-  -- `omega` needs the goal stated with the same atom `G μ` as the hypotheses.
-  change finrank ℝ (G μ) = 2
-  omega
+  exact le_antisymm hle2
+    ((isSymplectic_maxGenEigenspace_sq_sub hA μ).two_le_finrank_of_mem (hxG ⟨μ, hμ⟩) (hx0 _))
 
 /-- On the plane of vectors killed by a power of `A² - μ`, the square of `A` is `μ`. -/
 private theorem apply_apply_eq_of_mem_maxGenEigenspace_sq_sub
