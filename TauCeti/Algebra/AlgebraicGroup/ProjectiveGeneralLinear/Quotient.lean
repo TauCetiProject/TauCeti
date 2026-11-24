@@ -106,7 +106,7 @@ theorem exists_lift_conjugationMap (A : CommAlgCat.{u} R)
     ext
     simp [φ, S]
   refine ⟨CommAlgCat.of R (∀ c, S c), CommAlgCat.ofHom φ,
-    AlgHom.pi fun c => (g c c.2).ofConv, ?_, ?_, ?_⟩
+    AlgHom.pi fun c => (g c c.property).ofConv, ?_, ?_, ?_⟩
   · rw [CommAlgCat.hom_ofHom, hφ]
     refine RingHom.FaithfullyFlat.pi_algebraMap_localizationAway _ ?_
     rwa [Subtype.range_coe_subtype, Finset.setOfPred_mem]
@@ -115,9 +115,9 @@ theorem exists_lift_conjugationMap (A : CommAlgCat.{u} R)
     rw [CommAlgCat.hom_ofHom, hφ]
     exact RingHom.finitePresentation_algebraMap.2 inferInstance
   · ext x c
-    have := DFunLike.congr_fun (congrArg ofConv (hg c c.2)) x
+    have := DFunLike.congr_fun (congrArg ofConv (hg c c.property)) x
     rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply_apply (conjugationMap n R)
-      (CommAlgCat.of R (S c)) (g c c.2) x, HopfAlgebra.mapPoints_apply] at this
+      (CommAlgCat.of R (S c)) (g c c.property) x, HopfAlgebra.mapPoints_apply] at this
     simpa [φ, S] using this
 
 /-- **`GLₙ → PGLₙ` is an fppf quotient map**: over any commutative ring, the comparison from the

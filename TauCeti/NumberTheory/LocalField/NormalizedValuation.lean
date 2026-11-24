@@ -489,8 +489,7 @@ For a nonzero element `x`, its value is `q ^ (-v_K(x))`, where
 noncomputable def normalizedAbsoluteValue : AbsoluteValue K ℚ≥0 :=
   (intValuation K).toAbsoluteValue
     (WithZeroMulInt.toNNRat (one_lt_residueFieldCard (K := K)).ne_zero)
-    (fun _ _ h ↦
-      (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone h)
+    (WithZeroMulInt.toNNRat_strictMono (one_lt_residueFieldCard (K := K))).monotone
     (fun _ ↦ map_eq_zero _)
     (fun _ ↦ (intValuation K).zero_iff)
 

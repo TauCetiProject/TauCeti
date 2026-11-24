@@ -57,7 +57,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 /-- **Geometric connectedness of a commutative Hopf algebra can be tested after algebraically
 closed field extensions.** -/
@@ -96,7 +96,7 @@ namespace HopfAlgebra
 
 /-- Two specializations of a domain-valued algebra homomorphism agree on an idempotent. -/
 private theorem algHom_apply_eq_of_isIdempotentElem
-    {K H A : Type u} [CommSemiring K] [Semiring H] [Algebra K H]
+    {K : Type u} {H : Type v} {A : Type w} [CommSemiring K] [Semiring H] [Algebra K H]
     [CommSemiring A] [Algebra K A] [IsDomain A]
     (e : H) (he : IsIdempotentElem e) (q : H →ₐ[K] A)
     (phi psi : A →ₐ[K] K) :
@@ -106,7 +106,7 @@ private theorem algHom_apply_eq_of_isIdempotentElem
 /-- If a point of a finite-type Hopf algebra is connected to the identity by a path valued in a
 domain, its right translation fixes every idempotent. -/
 theorem rightTranslationAlgHom_eq_self_of_path
-    {K H D : Type u} [Field K] [CommRing H] [_root_.HopfAlgebra K H]
+    {K : Type u} {H : Type v} {D : Type w} [Field K] [CommRing H] [_root_.HopfAlgebra K H]
     [Algebra.FiniteType K H] [CommRing D] [Algebra K D] [IsDomain D]
     [IsAlgClosed K] (e : H) (he : IsIdempotentElem e)
     (g : WithConv (H →ₐ[K] K)) (x : WithConv (H →ₐ[K] D))
@@ -141,7 +141,7 @@ theorem rightTranslationAlgHom_eq_self_of_path
 /-- If right translation by every rational point fixes every idempotent of a finite-type Hopf
 algebra over an algebraically closed field, its prime spectrum is connected. -/
 theorem connectedSpace_primeSpectrum_of_forall_rightTranslationAlgHom_eq_self
-    {K H : Type u} [Field K] [CommRing H] [_root_.HopfAlgebra K H]
+    {K : Type u} {H : Type v} [Field K] [CommRing H] [_root_.HopfAlgebra K H]
     [Algebra.FiniteType K H] [IsAlgClosed K]
     (htranslate : ∀ (e : H), IsIdempotentElem e →
       ∀ g : WithConv (H →ₐ[K] K), rightTranslationAlgHom g e = e) :

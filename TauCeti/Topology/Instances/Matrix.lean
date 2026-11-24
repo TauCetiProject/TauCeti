@@ -16,7 +16,9 @@ public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
+public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.Topology.Algebra.IsOpenUnits
+public import TauCeti.Topology.PiCurry
 
 /-!
 # Topological properties of matrices
@@ -59,8 +61,15 @@ The Kronecker product of two continuously varying matrices is continuous in the 
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous. So are
 both partial traces of a continuously varying matrix on a product index.
 
-The matrices with nonnegative diagonal form a closed set
+A matrix-valued function converges exactly when each of its entries does
+(`Matrix.tendsto_iff_tendsto_apply`). The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
+
+`Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
+Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α` is a
+homeomorphism for the entrywise product topologies (`TauCeti.piMatrixHomeomorph`), matching
+`TauCeti.piMatrixLinearEquiv` as a bijection and yielding continuity of `piMatrixLinearEquiv` and
+its inverse.
 
 ## References
 
@@ -95,6 +104,93 @@ instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [SigmaComp
 instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpace R]
     [ContinuousAdd R] [ContinuousMul R] : ContinuousSMul (Matrix n n R) (n → R) :=
   ⟨continuous_fst.matrix_mulVec continuous_snd⟩
+
+end TauCeti
+
+namespace Matrix
+
+/-- `Matrix.of` bundled as a homeomorphism between curried functions `m → n → α` and matrices
+`Matrix m n α` with the entrywise product topology. -/
+def ofHomeomorph {m n α : Type*} [TopologicalSpace α] : (m → n → α) ≃ₜ Matrix m n α where
+  toEquiv := of
+  continuous_toFun := continuous_id.matrixOf
+  continuous_invFun := continuous_pi fun i ↦ continuous_pi fun j ↦ continuous_id.matrix_elem i j
+
+@[simp]
+theorem ofHomeomorph_toEquiv {m n α : Type*} [TopologicalSpace α] :
+    (ofHomeomorph : (m → n → α) ≃ₜ Matrix m n α).toEquiv = of := (rfl)
+
+@[simp]
+theorem ofHomeomorph_apply {m n α : Type*} [TopologicalSpace α] (f : m → n → α) :
+    ofHomeomorph f = of f := (rfl)
+
+@[simp]
+theorem ofHomeomorph_symm_apply {m n α : Type*} [TopologicalSpace α] (A : Matrix m n α) :
+    ofHomeomorph.symm A = of.symm A := (rfl)
+
+end Matrix
+
+namespace TauCeti
+
+section MatrixCoordinates
+
+variable {ι : Type*} (κ μ : ι → Type*) (α : Type*) [TopologicalSpace α]
+
+/-- Flatten a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to a single coordinate tuple
+indexed by `Σ i, κ i × μ i`, as a homeomorphism for the entrywise product topologies. -/
+def piMatrixHomeomorph :
+    ((i : ι) → Matrix (κ i) (μ i) α) ≃ₜ ((p : Σ i, κ i × μ i) → α) :=
+  (Homeomorph.piCongrRight fun _ ↦
+      Matrix.ofHomeomorph.symm.trans Homeomorph.piCurry.symm).trans
+    (piCurryHomeomorph fun (_ : ι) (_ : κ _ × μ _) ↦ α).symm
+
+@[simp]
+theorem piMatrixHomeomorph_apply (A : (i : ι) → Matrix (κ i) (μ i) α) (p : Σ i, κ i × μ i) :
+    piMatrixHomeomorph κ μ α A p = A p.1 p.2.1 p.2.2 := by
+  simp [piMatrixHomeomorph, Function.uncurry]
+
+@[simp]
+theorem piMatrixHomeomorph_symm_apply (a : (p : Σ i, κ i × μ i) → α) (i : ι) (j : κ i) (k : μ i) :
+    (piMatrixHomeomorph κ μ α).symm a i j k = a ⟨i, j, k⟩ := by
+  simp [piMatrixHomeomorph, Function.curry]
+
+/-- As an underlying equivalence, `TauCeti.piMatrixHomeomorph` agrees with
+`TauCeti.piMatrixLinearEquiv`. -/
+theorem piMatrixHomeomorph_toEquiv (R : Type*) [Semiring R] [AddCommMonoid α] [Module R α] :
+    (piMatrixHomeomorph κ μ α).toEquiv = (piMatrixLinearEquiv R κ μ α).toEquiv := by
+  ext A p; simp
+
+/-- The forward map of `TauCeti.piMatrixHomeomorph` agrees with `TauCeti.piMatrixLinearEquiv`. -/
+theorem coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv (R : Type*) [Semiring R]
+    [AddCommMonoid α] [Module R α] :
+    ⇑(piMatrixHomeomorph κ μ α) = ⇑(piMatrixLinearEquiv R κ μ α) := by
+  ext A p; simp
+
+/-- The inverse map of `TauCeti.piMatrixHomeomorph` agrees with the inverse of
+`TauCeti.piMatrixLinearEquiv`. -/
+theorem coe_piMatrixHomeomorph_symm_eq_piMatrixLinearEquiv_symm (R : Type*) [Semiring R]
+    [AddCommMonoid α] [Module R α] :
+    ⇑(piMatrixHomeomorph κ μ α).symm = ⇑(piMatrixLinearEquiv R κ μ α).symm := by
+  ext a i j k; simp
+
+variable {κ μ α}
+
+/-- The linear equivalence `TauCeti.piMatrixLinearEquiv` is continuous for the entrywise product
+topologies. -/
+@[continuity, fun_prop]
+theorem continuous_piMatrixLinearEquiv {R : Type*} [Semiring R] [AddCommMonoid α] [Module R α] :
+    Continuous (piMatrixLinearEquiv R κ μ α) :=
+  coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ μ α R ▸ (piMatrixHomeomorph κ μ α).continuous
+
+/-- The inverse of `TauCeti.piMatrixLinearEquiv` is continuous for the entrywise product
+topologies. -/
+@[continuity, fun_prop]
+theorem continuous_piMatrixLinearEquiv_symm {R : Type*} [Semiring R]
+    [AddCommMonoid α] [Module R α] : Continuous (piMatrixLinearEquiv R κ μ α).symm :=
+  coe_piMatrixHomeomorph_symm_eq_piMatrixLinearEquiv_symm κ μ α R ▸
+    (piMatrixHomeomorph κ μ α).symm.continuous
+
+end MatrixCoordinates
 
 end TauCeti
 
@@ -259,6 +355,13 @@ theorem continuous_oneKroneckerStarAlgHom :
 end Matrix
 
 namespace Matrix
+
+open Filter Topology in
+/-- Convergence of a matrix-valued function is entrywise convergence. -/
+theorem tendsto_iff_tendsto_apply {α m n R : Type*} [TopologicalSpace R] {l : Filter α}
+    {M : α → Matrix m n R} {D : Matrix m n R} :
+    Tendsto M l (𝓝 D) ↔ ∀ i j, Tendsto (fun x ↦ M x i j) l (𝓝 (D i j)) :=
+  tendsto_pi_nhds.trans <| forall_congr' fun _ ↦ tendsto_pi_nhds
 
 /-- The matrices with nonnegative diagonal form a closed set. -/
 theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]

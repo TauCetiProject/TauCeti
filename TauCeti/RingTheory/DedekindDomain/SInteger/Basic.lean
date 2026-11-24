@@ -79,8 +79,8 @@ instance : IsIntegrallyClosed (S.integer K) := by
   -- `𝒪_S` is the intersection of the valuation subalgebras at the `v ∉ S`, each of which is
   -- integrally closed, so `IsIntegrallyClosed.iInf` applies.
   have he : S.integer K = ⨅ v : {v : HeightOneSpectrum R // v ∉ S},
-      ({ (v.1.valuation K).valuationSubring.toSubring with
-          algebraMap_mem' := fun r ↦ v.1.valuation_le_one r } : Subalgebra R K) := by
+      ({ (v.val.valuation K).valuationSubring.toSubring with
+          algebraMap_mem' := fun r ↦ v.val.valuation_le_one r } : Subalgebra R K) := by
     ext x
     simp only [Algebra.mem_iInf, Subtype.forall, Set.mem_integer_iff]
     -- What remains is membership in the anonymous `Subalgebra` assembled above. Mathlib has no
@@ -91,7 +91,7 @@ instance : IsIntegrallyClosed (S.integer K) := by
     rfl
   rw [he]
   exact IsIntegrallyClosed.iInf _ fun v ↦
-    inferInstanceAs (IsIntegrallyClosed (v.1.valuation K).valuationSubring)
+    inferInstanceAs (IsIntegrallyClosed (v.val.valuation K).valuationSubring)
 
 /-!
 ### Primes in `S` become the unit ideal
@@ -178,21 +178,32 @@ lemma denIdeal_not_le {x : K} {w : HeightOneSpectrum R} (hx : w.valuation K x �
   rw [Algebra.mem_denIdeal_iff]
   exact ⟨n, by rw [mul_comm]; exact hnd⟩
 
+/-- A nonzero ideal of `R` whose extension to `𝒪_S` is not the unit ideal lies in a prime outside
+`S`: the contraction of a maximal ideal of `𝒪_S` containing the extension. -/
+lemma exists_notMem_le_of_integer_map_ne_top {J : Ideal R} (hJ : J ≠ ⊥)
+    (h : Ideal.map (algebraMap R (S.integer K)) J ≠ ⊤) :
+    ∃ v ∉ S, J ≤ v.asIdeal := by
+  obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ h
+  have hJM : J ≤ M.comap (algebraMap R (S.integer K)) :=
+    Ideal.le_comap_map.trans (Ideal.comap_mono hle)
+  refine ⟨⟨_, hM.isPrime.comap _, fun h0 ↦ hJ (le_bot_iff.mp (h0 ▸ hJM))⟩, fun hv ↦ hM.ne_top
+    (top_le_iff.mp ((integer_map_asIdeal_eq_top K S hv).ge.trans Ideal.map_comap_le)), hJM⟩
+
+/-- A prime ideal of `R` containing the denominator ideal of an `S`-integer is a prime of `S`: it
+is nonzero because the denominator ideal is, and it is not outside `S` by `denIdeal_not_le`. -/
+lemma exists_mem_asIdeal_eq_of_denIdeal_le {x : K} (hx : x ∈ S.integer K) {P : Ideal R}
+    [hP : P.IsPrime] (h : Algebra.denIdeal K x ≤ P) : ∃ v ∈ S, v.asIdeal = P :=
+  ⟨⟨P, hP, fun h0 ↦ Algebra.denIdeal_ne_bot K R⁰ x (le_bot_iff.1 (h0 ▸ h))⟩,
+    by_contra fun hw ↦ denIdeal_not_le K (hx _ hw) h, rfl⟩
+
 /-- The denominator ideal of an `S`-integer extends to the unit ideal of `𝒪_S`: all its prime
 factors lie in `S`, and each of those extends to the unit ideal by `integer_map_asIdeal_eq_top`. -/
 @[simp] lemma integer_map_denIdeal_eq_top {x : K} (hx : x ∈ S.integer K) :
     Ideal.map (algebraMap R (S.integer K)) (Algebra.denIdeal K x) = ⊤ := by
   by_contra h
-  obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ h
-  have h𝔭le : Algebra.denIdeal K x ≤ M.comap (algebraMap R (S.integer K)) :=
-    (Ideal.le_comap_map).trans (Ideal.comap_mono hle)
-  have h𝔭ne : M.comap (algebraMap R (S.integer K)) ≠ ⊥ :=
-    fun h0 ↦ Algebra.denIdeal_ne_bot K R⁰ x (le_bot_iff.mp (h0 ▸ h𝔭le))
-  have hprime : (M.comap (algebraMap R (S.integer K))).IsPrime := hM.isPrime.comap _
-  have hwS : (⟨_, hprime, h𝔭ne⟩ : HeightOneSpectrum R) ∈ S :=
-    by_contra fun hwn ↦ denIdeal_not_le K (hx _ hwn) h𝔭le
-  have htop := integer_map_asIdeal_eq_top K S hwS
-  exact hM.ne_top (top_le_iff.mp (htop.ge.trans Ideal.map_comap_le))
+  obtain ⟨v, hv, hle⟩ :=
+    exists_notMem_le_of_integer_map_ne_top K S (Algebra.denIdeal_ne_bot K R⁰ x) h
+  exact denIdeal_not_le K (hx v hv) hle
 
 /-- **Every ideal of `𝒪_S` is extended from `R`.** -/
 @[simp] theorem integer_map_comap_eq (I : Ideal (S.integer K)) :
@@ -247,7 +258,7 @@ lemma integer_comap_ne_bot {P : Ideal (S.integer K)} (hP : P ≠ ⊥) :
 noncomputable abbrev integerIdealUnder (I : (Ideal (S.integer K))⁰) : (Ideal R)⁰ :=
   ⟨(I : Ideal (S.integer K)).under R,
     mem_nonZeroDivisors_iff_ne_zero.mpr
-      (integer_comap_ne_bot K S (mem_nonZeroDivisors_iff_ne_zero.mp I.2))⟩
+      (integer_comap_ne_bot K S (mem_nonZeroDivisors_iff_ne_zero.mp I.property))⟩
 
 @[simp] lemma coe_integerIdealUnder (I : (Ideal (S.integer K))⁰) :
     (integerIdealUnder K S I : Ideal R) = (I : Ideal (S.integer K)).under R := rfl

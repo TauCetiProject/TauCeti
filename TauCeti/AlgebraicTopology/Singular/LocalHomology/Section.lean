@@ -105,9 +105,6 @@ theorem existsUnique_singularHomology_localHomologyRestriction_eq_of_invariant [
       ∀ x : M, singularHomologyToLocalHomology N x n γ = α x := by
   obtain ⟨β, hβ, huniq⟩ :=
     existsUnique_localHomologyRestriction_eq_of_invariant N hn isCompact_univ α hα
-  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
-    simp only [compl_univ]
-    exact inferInstanceAs (IsEmpty (∅ : Set M))
   let e := asIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
     (C := ModuleCat.{w} Λ) N n)
   refine ⟨e.inv β, fun x ↦ (singularHomologyToLocalHomology_apply N x _).trans ?_, fun δ hδ ↦ ?_⟩

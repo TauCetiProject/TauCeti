@@ -64,7 +64,7 @@ theorem exists_isAlmostSplit_arTranslate
     k ((E).functor.obj M) hi (fun h ↦ hpM (((E).map_projective_iff M).mp h))
   have := hB
   let a : arTranslate.{u, v, w, t} k Q M hM ≅
-      (F).obj (ModuleCat.arTranslate.{u, max u v w, t} k ((E).functor.obj M)) :=
+      (F).obj (ModuleCat.arTranslate.{u, max u v w, t} k k ((E).functor.obj M)) :=
     eqToIso (arTranslate_eq_quiverRepFunctor_obj k Q M hM)
   let c : (F).obj ((E).functor.obj M) ≅ M := by
     simpa only [Functor.comp_obj, Functor.id_obj, quiverRepEquivalence_inverse] using

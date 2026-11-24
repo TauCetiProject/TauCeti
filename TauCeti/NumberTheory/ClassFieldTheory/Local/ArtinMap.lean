@@ -74,11 +74,17 @@ for instance from a completion of a number field to a concrete model such as `�
   comparison of absolute Galois groups.
 * `TauCeti.ClassFieldTheory.artinMap_restrict`: the finite restrictions of the absolute local
   Artin map are the finite local Artin maps.
+* `TauCeti.ClassFieldTheory.restrictNormalHom_eq_one_iff_mem_normGroup_of_mk_eq_artinMap`: for a
+  finite abelian Galois extension `L/K`, the restriction of an Artin representative of `x ∈ Kˣ` to
+  `L` is trivial exactly when `x ∈ N_{L/K}(Lˣ)`.
 * `TauCeti.ClassFieldTheory.abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap`:
   restricting `artinMap K x` from `K^{ab}` to a finite subextension `M` computes
   `normResidue K M x`.
-* `TauCeti.ClassFieldTheory.mem_normGroup_of_mk_eq_artinMap_of_fixes`: an element whose Artin
-  symbol fixes a finite Galois extension `M/K` is a norm from `M`.
+* `TauCeti.ClassFieldTheory.mem_normGroup_of_mk_eq_artinMap_of_restrictNormalHom_eq_one`,
+  `TauCeti.ClassFieldTheory.mem_normGroup_iff_restrictNormalHom_eq_one_of_mk_eq_artinMap`,
+  `TauCeti.ClassFieldTheory.mem_normGroup_of_mk_eq_artinMap_of_fixes`: an element whose Artin
+  symbol restricts trivially to (or fixes) a finite Galois extension `M/K` is a norm from `M`, and
+  conversely when `M/K` is abelian.
 * `TauCeti.ClassFieldTheory.mem_normGroup_fixedField_iff`: for a finite abelian extension `M/K`,
   an element is a norm from the fixed field of `H ≤ Gal(M/K)` exactly when its norm residue
   symbol lies in `H`.
@@ -165,6 +171,19 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
     abelianizationRestrict_mk V ⟨_, hmem⟩, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     Group.abelianizationCongr_of, layerGalEquiv_mk]
 
+/-- **Artin-restriction norm criterion for finite abelian extensions.** If `L/K` is a finite
+abelian Galois extension embedded in the separable closure by `ι` and
+`σ ∈ Gal(AlgebraicClosure K/K)` represents `artinMap K x`, then the restriction of `σ` to `L` is
+trivial if and only if `x` lies in the norm group `N_{L/K}(Lˣ)`. -/
+theorem restrictNormalHom_eq_one_iff_mem_normGroup_of_mk_eq_artinMap
+    (L : Type*) [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
+    [IsMulCommutative Gal(L/K)] (ι : L →ₐ[K] SeparableClosure K) (x : Kˣ)
+    (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x) :
+    ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 ↔ x ∈ normGroup K L := by
+  rw [← localArtinMap_eq_zero_iff K L ι x, artinMap_restrict K L ι x σ hσ, ofMul_eq_zero,
+    ← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff]
+
 /-- **Finite restrictions of `artinMap K` on `K^{ab}/K`.** Let `M` be a finite intermediate field
 of `maximalAbelianExtension K (AlgebraicClosure K) / K`. Reading `artinMap K x` as an automorphism
 of `K^{ab}` via `topologicalAbelianizationEquivMaximalAbelianExtension` and restricting to `M`
@@ -204,6 +223,29 @@ theorem abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap
       hcomp]
   rw [hres, normResidue_mk K M ι x, artinMap_restrict K M ι x σ hσ, toMul_ofMul]
 
+/-- If a representative `σ ∈ Gal(AlgebraicClosure K/K)` of the absolute Artin symbol of `x ∈ Kˣ`
+restricts trivially to a finite Galois extension `L/K` along `ι : L →ₐ[K] SeparableClosure K`, then
+`x` is a norm from `L`. -/
+theorem mem_normGroup_of_mk_eq_artinMap_of_restrictNormalHom_eq_one (L : Type*) [Field L]
+    [Algebra K L] [FiniteDimensional K L] [IsGalois K L] (ι : L →ₐ[K] SeparableClosure K)
+    {x : Kˣ} (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x)
+    (h : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1) :
+    x ∈ normGroup K L := by
+  rw [← localArtinMap_eq_zero_iff K L ι, artinMap_restrict K L ι x σ hσ, h, map_one, ofMul_one]
+
+open scoped IsMulCommutative in
+/-- **Abelian Artin-restriction norm criterion.** For a finite abelian Galois extension `L/K`
+embedded in `SeparableClosure K` by `ι`, an element `x ∈ Kˣ` is a norm from `L` if and only if any
+representative `σ ∈ Gal(AlgebraicClosure K/K)` of `artinMap K x` restricts to `1` on `L`. -/
+theorem mem_normGroup_iff_restrictNormalHom_eq_one_of_mk_eq_artinMap (L : Type*) [Field L]
+    [Algebra K L] [FiniteDimensional K L] [IsGalois K L] [IsMulCommutative Gal(L/K)]
+    (ι : L →ₐ[K] SeparableClosure K) {x : Kˣ} (σ : Field.absoluteGaloisGroup K)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization K) = artinMap K x) :
+    x ∈ normGroup K L ↔ ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 := by
+  rw [← localArtinMap_eq_zero_iff K L ι, artinMap_restrict K L ι x σ hσ, ofMul_eq_zero,
+    ← map_one Group.Abelianization.of, Group.Abelianization.of_injective.eq_iff]
+
 /-- **An Artin symbol that fixes a finite Galois extension comes from a norm.** If
 `σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ` and fixes
 pointwise a finite Galois extension `M` of `K` inside the algebraic closure, then `x` is a norm
@@ -219,16 +261,15 @@ theorem mem_normGroup_of_mk_eq_artinMap_of_fixes {x : Kˣ} (σ : Field.absoluteG
     M.val.codRestrict (separableClosure K (AlgebraicClosure K)).toSubalgebra
       fun z ↦ mem_separableClosure_iff.2 ((Algebra.IsSeparable.isSeparable K z).map M.val
         M.val.injective)
-  have h1 : ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) = 1 := by
-    refine AlgEquiv.ext fun y ↦ ι.injective <|
-      (ι.restrictNormalHom_commutes _ y).trans (Subtype.ext ?_)
-    rw [AlgEquiv.one_apply]
-    refine (coe_absoluteGaloisGroupRestrictEquiv_apply K σ (ι y)).trans ?_
-    have hιy : ((ι y : SeparableClosure K) : AlgebraicClosure K) = y :=
-      AlgHom.coe_codRestrict _ _ _ y
-    rw [hιy, hσM y]
-    exact hιy.symm
-  rw [← localArtinMap_eq_zero_iff K M ι, artinMap_restrict K M ι x σ hσ, h1, map_one, ofMul_one]
+  refine mem_normGroup_of_mk_eq_artinMap_of_restrictNormalHom_eq_one K M ι σ hσ ?_
+  refine AlgEquiv.ext fun y ↦ ι.injective <|
+    (ι.restrictNormalHom_commutes _ y).trans (Subtype.ext ?_)
+  rw [AlgEquiv.one_apply]
+  refine (coe_absoluteGaloisGroupRestrictEquiv_apply K σ (ι y)).trans ?_
+  have hιy : ((ι y : SeparableClosure K) : AlgebraicClosure K) = y :=
+    AlgHom.coe_codRestrict _ _ _ y
+  rw [hιy, hσM y]
+  exact hιy.symm
 
 variable {K} {M : Type*} [Field M] [Algebra K M] [FiniteDimensional K M] [IsAbelianGalois K M] in
 /-- **Norms from a subextension of an abelian extension.** Let `M/K` be a finite abelian extension
