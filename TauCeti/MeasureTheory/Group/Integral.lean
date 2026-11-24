@@ -81,16 +81,6 @@ theorem integral_inv_measure {G E : Type*} [MeasurableSpace G] [InvolutiveInv G]
   rw [Measure.inv_def]
   exact integral_map_equiv (MeasurableEquiv.inv G) f
 
-/-- For a measure invariant under right addition, the integral over `ball x₀ R` is the integral
-over `ball 0 R` of the translate `y ↦ f (y + x₀)`. No integrability hypothesis is needed. -/
-theorem setIntegral_ball_eq_setIntegral_ball_zero_add
-    {E F : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E] [MeasurableAdd E]
-    {μ : Measure E} [μ.IsAddRightInvariant] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (f : E → F) (x₀ : E) (R : ℝ) :
-    ∫ x in ball x₀ R, f x ∂μ = ∫ y in ball (0 : E) R, f (y + x₀) ∂μ := by
-  simpa using ((measurePreserving_add_right μ x₀).setIntegral_preimage_emb
-    (MeasurableEquiv.addRight x₀).measurableEmbedding f (ball x₀ R)).symm
-
 /-- For a measure invariant under right addition, integrating the translate `y ↦ f (y + a)` over
 `ball x₀ R` is integrating `f` over the translated ball `ball (x₀ + a) R`. No integrability
 hypothesis is needed. -/
@@ -101,6 +91,15 @@ theorem setIntegral_ball_comp_add_right
     ∫ y in ball x₀ R, f (y + a) ∂μ = ∫ y in ball (x₀ + a) R, f y ∂μ := by
   simpa using ((measurePreserving_add_right μ a).setIntegral_preimage_emb
     (MeasurableEquiv.addRight a).measurableEmbedding f (ball (x₀ + a) R))
+
+/-- For a measure invariant under right addition, the integral over `ball x₀ R` is the integral
+over `ball 0 R` of the translate `y ↦ f (y + x₀)`. No integrability hypothesis is needed. -/
+theorem setIntegral_ball_eq_setIntegral_ball_zero_add
+    {E F : Type*} [SeminormedAddCommGroup E] [MeasurableSpace E] [MeasurableAdd E]
+    {μ : Measure E} [μ.IsAddRightInvariant] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : E → F) (x₀ : E) (R : ℝ) :
+    ∫ x in ball x₀ R, f x ∂μ = ∫ y in ball (0 : E) R, f (y + x₀) ∂μ := by
+  simpa using (setIntegral_ball_comp_add_right f 0 x₀ R).symm
 
 /-- For a measure invariant under right addition and under negation, such as an additive Haar
 measure on a finite-dimensional real normed space, the integral of `x - x₀` over `ball x₀ R`

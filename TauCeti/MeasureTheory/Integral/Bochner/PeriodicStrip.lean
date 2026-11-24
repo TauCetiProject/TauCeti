@@ -24,13 +24,15 @@ band `s ×ˢ [a, a + c)` (`TauCeti.integrableOn_prod_Ico_sub_of_periodic`,
 integral over one period (`TauCeti.integrableOn_prod_Ico_sub_add_of_periodic`,
 `TauCeti.setIntegral_prod_Ico_sub_add_of_periodic`).
 
-When `α` is a metric space, the ball of radius `c` about `(x, a)` lies in these two periods, and
-the integral of `f` over the ball about `(x, a + n * c)`, `n ∈ ℤ`, is the integral over the ball
-about `(x, a)`. So the integral of a nonnegative such `f` over it is at most twice the integral over
-one period (`TauCeti.setIntegral_ball_le_two_mul_of_periodic`). For the energy density of a map on
-the cylinder `ℝ × S¹`, lifted to a map on `ℝ × ℝ` that is `1`-periodic in `t`, this bounds the
-energy over a disc of radius `1` about an integer point `(s, n)` by twice the energy over the strip
-`ℝ × [0, 1)`.
+When `α` is a metric space, the integral of a function periodic in its second variable with
+period `d` over a ball about `(x, t + d)` is its integral over the ball about `(x, t)`
+(`TauCeti.setIntegral_ball_add_of_periodic`). The ball of radius `c` about `(x, a)` lies in the two
+periods above, and the integral of `f` over the ball about `(x, a + n * c)`, `n ∈ ℤ`, is the
+integral over the ball about `(x, a)`. So the integral of a nonnegative such `f` over it is at
+most twice the integral over one period (`TauCeti.setIntegral_ball_le_two_mul_of_periodic`). For
+the energy density of a map on the cylinder `ℝ × S¹`, lifted to a map on `ℝ × ℝ` that is
+`1`-periodic in `t`, this bounds the energy over a disc of radius `1` about an integer point
+`(s, n)` by twice the energy over the strip `ℝ × [0, 1)`.
 
 For densities `e i ≥ 0`, periodic in the second variable with energy at most `M` over one period,
 energy concentrating at a point of that period also concentrates on the two periods about it. So a
@@ -150,7 +152,7 @@ private lemma ball_subset_univ_prod_Ico_sub_add (x : α) :
 
 /-- A function periodic in the second variable with period `d` has the same integral over the ball
 of radius `r` about `(x, t + d)` as over the ball about `(x, t)`. -/
-private lemma setIntegral_ball_add_of_periodic {d : ℝ} (hf : ∀ x t, f (x, t + d) = f (x, t))
+theorem setIntegral_ball_add_of_periodic {d : ℝ} (hf : ∀ x t, f (x, t + d) = f (x, t))
     (x : α) (t r : ℝ) :
     ∫ z in Metric.ball (x, t + d) r, f z ∂μ.prod volume =
       ∫ z in Metric.ball (x, t) r, f z ∂μ.prod volume := by

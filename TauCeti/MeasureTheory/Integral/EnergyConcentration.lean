@@ -232,16 +232,12 @@ have at most `E / δ` elements (`TauCeti.card_mul_le_of_forall_eventually_le_set
 theorem finite_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : Filter ι} [l.NeBot]
     {e : ι → X → ℝ} (hδ : 0 < δ) (hΩ : MeasurableSet Ω) (he : ∀ i, ∀ y ∈ Ω, 0 ≤ e i y)
     (hint : ∀ i, IntegrableOn (e i) Ω μ) (hE : ∀ i, ∫ y in Ω, e i y ∂μ ≤ E) {T : Set X}
-    (hT : ∀ z ∈ T, ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ) : T.Finite := by
-  by_contra h
-  obtain ⟨F, hF, hFc⟩ := Set.Infinite.exists_subset_card_eq h (⌊E / δ⌋₊ + 1)
-  have h1 := card_mul_le_of_forall_eventually_le_setIntegral_ball hΩ he hint hE
-    fun z hz ↦ hT z (hF hz)
-  have h2 := Nat.lt_floor_add_one (E / δ)
-  rw [hFc] at h1
-  push_cast at h1
-  rw [div_lt_iff₀ hδ] at h2
-  linarith
+    (hT : ∀ z ∈ T, ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ y in ball z ε ∩ Ω, e i y ∂μ) : T.Finite :=
+  Set.finite_of_forall_finset_card_mul_le (ENNReal.ofReal_pos.2 hδ).ne' ENNReal.ofReal_ne_top
+    fun F hF ↦ by
+      rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)]
+      exact ENNReal.ofReal_le_ofReal (card_mul_le_of_forall_eventually_le_setIntegral_ball hΩ he
+        hint hE fun z hz ↦ hT z (hF hz))
 
 /-- **Concentration without the area term.** Let `e i ≥ 0` be integrable densities on a measurable
 set `Ω`, and let `z` be a point of measure zero about which some ball has finite measure. If for
