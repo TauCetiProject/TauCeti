@@ -8,9 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Holder.Basic
-import TauCeti.Analysis.Holder.FaaDiBruno
-import TauCeti.Analysis.Holder.IsBigO
-import TauCeti.Analysis.Holder.Leibniz
+import TauCeti.Analysis.Holder.OpenSetComp
+import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -33,15 +32,14 @@ Let `s` have `C^{k,α}` readings in the charts of `A`, and fix a chart `j` of `B
 of the compact closure of the image of chart `j` is the image of a point `x` of the closure of the
 chart domain, and `x` lies in the domain of some chart `i` of `A`. On an open neighbourhood of `y`
 the reading of `s` in chart `j` is `Φ(z) (wᵢ (τ z))`
-(`TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord_of_mem`), where `wᵢ` is the reading in
+(`TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord`), where `wᵢ` is the reading in
 chart `i`, `τ` is the chart transition and `Φ` is the coordinate change of the bundle (the change
-of frame) read in chart `j`. Both `τ` and `Φ` are `Cⁿ`. The `k`-th derivative of `wᵢ ∘ τ` is
-`α`-Hölder near `y` by the Hölder chain rule
-`TauCeti.exists_holderOnWith_iteratedFDerivWithin_comp`, and the Leibniz rule
-`ContinuousLinearMap.exists_holderOnWith_iteratedFDeriv_comp₂` multiplies it by the `C^{k+1}` field
-`Φ`. These local Hölder bounds combine over the compact closure of the chart
-image by a Lebesgue number argument (`IsCompact.exists_holderOnWith_thickening_and_norm_le`), and
-the derivatives of lower order are continuous near the compact closure, hence bounded on it.
+of frame) read in chart `j`. Both `τ` and `Φ` are `Cⁿ`, so the `k`-th derivative of this reading
+is `α`-Hölder near `y` by
+`TauCeti.CkHolderSpaceOn.exists_holderOnWith_iteratedFDeriv_clm_apply_comp`. These local Hölder
+bounds combine over the compact closure of the chart image by a Lebesgue number argument
+(`IsCompact.exists_holderOnWith_thickening_and_norm_le`), and the derivatives of lower order are
+continuous near the compact closure, hence bounded on it.
 
 The identity on underlying sections has closed graph, since the readings of an element at a point
 depend continuously on it, and two readings of the same point in charts of `A` and `B` differ by
@@ -50,17 +48,14 @@ continuous.
 
 ## Main results
 
-* `TauCeti.CkHolderSpaceOn.exists_holderOnWith_iteratedFDeriv_clm_apply_comp`: after a `C^{k+1}`
-  change of variables and multiplication by a `C^{k+1}` field of linear maps, an element of
-  `C^{k,α}(Ω, F)` still has locally `α`-Hölder `k`-th derivative.
-* `TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord_of_mem`: readings of a section in charts
-  of two atlases differ by the coordinate change of the bundle.
 * `TauCeti.FiniteBundleAtlas.MemHolderSection.of_atlas` and
   `TauCeti.FiniteBundleAtlas.memHolderSection_iff_of_atlas`: having `C^{k,α}` readings does not
   depend on the atlas.
 * `TauCeti.HolderSection.continuous_coord_toSection`: readings depend continuously on the element.
 * `TauCeti.HolderSection.atlasLinearEquiv` and `TauCeti.HolderSection.atlasEquiv`: the identity on
-  underlying sections, as a linear equivalence and as an isomorphism of Banach spaces.
+  underlying sections, as a linear equivalence and as an isomorphism of Banach spaces, compatible
+  with inversion and composition (`TauCeti.HolderSection.atlasEquiv_symm`,
+  `TauCeti.HolderSection.atlasEquiv_trans`).
 * `TauCeti.HolderSection.exists_norm_atlasEquiv_le`: the norms of the two atlases are equivalent.
 
 ## References
@@ -86,80 +81,7 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [To
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   (A B : FiniteBundleAtlas E M F V)
 
-namespace CkHolderSpaceOn
-
-variable {k : ℕ} {α : ℝ≥0}
-
-/-- **Local Hölder bound after a change of chart and frame.** Let `f ∈ C^{k,α}(Ω, F)` for an open
-set `Ω`, let `τ` be a `C^{k+1}` map from an open set `N` into `Ω`, and let `Φ` be a `C^{k+1}`
-field of linear maps of `F` on `N`. For `α ≤ 1`, the `k`-th derivative of
-`z ↦ Φ z (f (τ z))` is `α`-Hölder on a ball inside `N` around every point of `N`. -/
-theorem exists_holderOnWith_iteratedFDeriv_clm_apply_comp {Ω : Opens E}
-    (f : CkHolderSpaceOn k α Ω F) {N : Set E} (hN : IsOpen N) {τ : E → E} {Φ : E → F →L[ℝ] F}
-    (hτ : ContDiffOn ℝ (k + 1) τ N) (hΦ : ContDiffOn ℝ (k + 1) Φ N) (hτN : MapsTo τ N Ω)
-    (hα : α ≤ 1) {y : E} (hy : y ∈ N) :
-    ∃ r > 0, Metric.ball y r ⊆ N ∧ ∃ L : ℝ≥0,
-      HolderOnWith L α (_root_.iteratedFDeriv ℝ k fun z ↦ Φ z (f.extend (τ z)))
-        (Metric.ball y r) := by
-  have hk : ((k : ℕ) : WithTop ℕ∞) ≤ k + 1 := by exact_mod_cast le_self_add
-  -- The `k`-th derivative of `f ∘ τ` is Hölder on a ball, by the Hölder chain rule.
-  have hH : HolderOnWith _ α (iteratedFDerivWithin ℝ k f.extend Ω) Ω := fun a ha b hb ↦ by
-    rw [iteratedFDerivWithin_of_isOpen k Ω.isOpen ha, iteratedFDerivWithin_of_isOpen k Ω.isOpen hb]
-    exact f.holderOnWith_iteratedFDeriv_extend a ha b hb
-  obtain ⟨r₁, hr₁, L₁, hL₁⟩ := exists_holderOnWith_iteratedFDerivWithin_comp hα
-    (hN.mem_nhds hy) Ω.isOpen.uniqueDiffOn hτ f.contDiffOn_extend hτN self_mem_nhdsWithin hH
-  -- The `k`-th derivative of `Φ` is `C¹`, hence Hölder on a ball.
-  obtain ⟨r₂, hr₂, L₂, hL₂⟩ := (((hΦ.contDiffAt (hN.mem_nhds hy)).iteratedFDeriv_right
-    (m := 1) (i := k) (by rw [add_comm])).isBigO_sub_dist_rpow one_ne_zero
-      hα).exists_holderOnWith_ball
-  obtain ⟨r₃, hr₃, hr₃N⟩ := Metric.isOpen_iff.1 hN _ hy
-  set ρ := min r₁ (min r₂ r₃)
-  have hρ₁ : Metric.ball y ρ ⊆ Metric.ball y r₁ := Metric.ball_subset_ball (min_le_left _ _)
-  have hρ₂ : Metric.ball y ρ ⊆ Metric.ball y r₂ :=
-    Metric.ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _))
-  have hρN : Metric.ball y ρ ⊆ N :=
-    (Metric.ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _))).trans hr₃N
-  have hGH : HolderOnWith L₁ α (_root_.iteratedFDeriv ℝ k (f.extend ∘ τ)) (Metric.ball y ρ) :=
-    fun a ha b hb ↦ by
-      rw [← iteratedFDerivWithin_of_isOpen k hN (hρN ha),
-        ← iteratedFDerivWithin_of_isOpen k hN (hρN hb)]
-      exact hL₁ a (hρ₁ ha) b (hρ₁ hb)
-  -- The Leibniz rule multiplies the two.
-  obtain ⟨r, hr, hrρ, -, K, hK⟩ := ContinuousLinearMap.exists_holderOnWith_iteratedFDeriv_comp₂
-    (ContinuousLinearMap.id ℝ (F →L[ℝ] F)) (Metric.ball_mem_nhds _ (lt_min hr₁ (lt_min hr₂ hr₃)))
-    hα ((hΦ.of_le hk).mono hρN) ((f.contDiffOn_extend.comp (hτ.of_le hk) hτN).mono hρN)
-    (hL₂.mono hρ₂) hGH
-  exact ⟨r, hr, hrρ.trans hρN, K, hK⟩
-
-end CkHolderSpaceOn
-
 namespace FiniteBundleAtlas
-
-omit [NormedSpace ℝ E] in
-/-- At a point over the domain of chart `i` of `A` and the base set of bundle chart `j` of `B`,
-the reading of a section in chart `j` of `B` is the coordinate change of the bundle applied to its
-reading in chart `i` of `A`. -/
-theorem coord_eq_coordChangeL_coord_of_mem {i : Fin A.n} {j : Fin B.n} (s : ∀ x, V x) {y : E}
-    (hi : (B.chart j).symm y ∈ A.dom i) (hj : (B.chart j).symm y ∈ (B.triv j).baseSet) :
-    B.coord j s y = (A.triv i).coordChangeL ℝ (B.triv j) ((B.chart j).symm y)
-      (A.coord i s (A.chart i ((B.chart j).symm y))) := by
-  rw [A.coord_chart s hi, B.coord_def]
-  exact (Trivialization.coordChangeL_apply_snd ℝ (A.triv i) (B.triv j) (p := ⟨_, s _⟩)
-    (A.dom_subset_baseSet i hi) hj).symm
-
-omit [NormedSpace ℝ E] in
-/-- At a point of the domains of chart `i` of `A` and chart `j` of `B`, the reading of a section
-in chart `j` of `B` is the coordinate change of the bundle applied to its reading in chart `i` of
-`A`. -/
-theorem coord_chart_eq_coordChangeL_coord_chart {i : Fin A.n} {j : Fin B.n} (s : ∀ x, V x)
-    {x : M} (hi : x ∈ A.dom i) (hj : x ∈ B.dom j) :
-    B.coord j s (B.chart j x) =
-      (A.triv i).coordChangeL ℝ (B.triv j) x (A.coord i s (A.chart i x)) := by
-  have hx : (B.chart j).symm (B.chart j x) = x :=
-    (B.chart j).left_inv (B.dom_subset_chart_source j hj)
-  have h := A.coord_eq_coordChangeL_coord_of_mem B s (y := B.chart j x) (by rw [hx]; exact hi)
-    (by rw [hx]; exact B.dom_subset_baseSet j hj)
-  rwa [hx] at h
 
 variable {A B} {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] [ContMDiffVectorBundle n F V 𝓘(ℝ, E)]
   {k : ℕ} {α : ℝ≥0}
@@ -199,7 +121,7 @@ private theorem exists_contDiffOn_and_holderOnWith (hα : α ≤ 1) (hn : (k : W
         ⟨A.dom_subset_baseSet i hz.2.1, hz.2.2⟩
   -- The reading in chart `j` is `Φ (wᵢ ∘ τ)` on `N`.
   have heq : EqOn (B.coord j s) (fun z ↦ Φ z (f.extend (τ z))) N := fun z hz ↦ by
-    rw [A.coord_eq_coordChangeL_coord_of_mem B s hz.2.1 hz.2.2]
+    rw [A.coord_eq_coordChangeL_coord B s hz.2.2 hz.2.1]
     simp only [hΦdef, hτdef]
     rw [← hf ⟨_, hτN hz⟩, ← CkHolderSpaceOn.extend_apply]
     rfl
@@ -293,6 +215,26 @@ theorem toSection_atlasLinearEquiv_symm (hα : α ≤ 1) (hn : (k : WithTop ℕ�
     toSection ((atlasLinearEquiv A B k α hα hn).symm w) = toSection w :=
   toSection_ofSection _ _
 
+/-- The inverse of the identification of the Hölder spaces of `A` and `B` is the identification
+of those of `B` and `A`. -/
+theorem atlasLinearEquiv_symm (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) :
+    (atlasLinearEquiv A B k α hα hn).symm = atlasLinearEquiv B A k α hα hn :=
+  LinearEquiv.ext fun w ↦ ext (by simp)
+
+/-- The identification of the Hölder space of an atlas with itself is the identity. -/
+@[simp]
+theorem atlasLinearEquiv_refl (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) :
+    atlasLinearEquiv A A k α hα hn = LinearEquiv.refl ℝ _ :=
+  LinearEquiv.ext fun w ↦ ext (by simp)
+
+/-- The identifications of Hölder spaces compose. -/
+@[simp]
+theorem atlasLinearEquiv_trans (C : FiniteBundleAtlas E M F V) (hα : α ≤ 1)
+    (hn : (k : WithTop ℕ∞) + 1 ≤ n) :
+    (atlasLinearEquiv A B k α hα hn).trans (atlasLinearEquiv B C k α hα hn) =
+      atlasLinearEquiv A C k α hα hn :=
+  LinearEquiv.ext fun w ↦ ext (by simp)
+
 variable [CompleteSpace F]
 
 /-- When the model fibre is complete, the identification of the Hölder spaces of two atlases is
@@ -331,9 +273,33 @@ theorem toSection_atlasEquiv (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤
   toSection_atlasLinearEquiv hα hn w
 
 @[simp]
+theorem toLinearEquiv_atlasEquiv (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) :
+    (atlasEquiv A B k α hα hn).toLinearEquiv = atlasLinearEquiv A B k α hα hn :=
+  LinearEquiv.ext fun w ↦ ext (by simp)
+
+@[simp]
 theorem toSection_atlasEquiv_symm (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n)
     (w : HolderSection B k α) : toSection ((atlasEquiv A B k α hα hn).symm w) = toSection w :=
   toSection_atlasLinearEquiv_symm hα hn w
+
+/-- The inverse of the continuous identification of the Hölder spaces of `A` and `B` is that of
+`B` and `A`. -/
+theorem atlasEquiv_symm (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) :
+    (atlasEquiv A B k α hα hn).symm = atlasEquiv B A k α hα hn :=
+  ContinuousLinearEquiv.ext <| funext fun w ↦ ext (by simp)
+
+/-- The continuous identification of the Hölder space of an atlas with itself is the identity. -/
+@[simp]
+theorem atlasEquiv_refl (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) :
+    atlasEquiv A A k α hα hn = ContinuousLinearEquiv.refl ℝ _ :=
+  ContinuousLinearEquiv.ext <| funext fun w ↦ ext (by simp)
+
+/-- The continuous identifications of Hölder spaces compose. -/
+@[simp]
+theorem atlasEquiv_trans (C : FiniteBundleAtlas E M F V) (hα : α ≤ 1)
+    (hn : (k : WithTop ℕ∞) + 1 ≤ n) :
+    (atlasEquiv A B k α hα hn).trans (atlasEquiv B C k α hα hn) = atlasEquiv A C k α hα hn :=
+  ContinuousLinearEquiv.ext <| funext fun w ↦ ext (by simp)
 
 /-- **Equivalence of the `C^{k,α}` norms of two atlases.** There is a constant `C` such that each
 of the two norms of an element is at most `C` times the other. -/
