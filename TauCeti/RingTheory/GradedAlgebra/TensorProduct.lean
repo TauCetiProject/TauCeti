@@ -124,6 +124,31 @@ instance instGradedMonoidTensorProductPiece {R : Type uR} {A : Type uA} {B : Typ
     [SetLike.GradedMonoid GA.piece] [SetLike.GradedMonoid GB.piece] :
     SetLike.GradedMonoid (GA.tensorProduct GB).piece where
 
+section GradedAction
+
+variable {R A B M : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra R B] [AddCommMonoid M] [Module R M] [Module (A ⊗[R] B) M]
+  (GA : InternalGrading R A ℤ) (GB : InternalGrading R B ℤ) {G : ℤ → Submodule R M}
+  [SetLike.GradedSMul (GA.tensorProduct GB).piece G] {p q : ℤ} {x : M}
+
+/-- A homogeneous element of the first tensor factor acts with its own degree. -/
+theorem tmul_one_smul_mem_tensorProduct [SetLike.GradedOne GB.piece] {a : A}
+    (ha : a ∈ GA.piece p) (hx : x ∈ G q) :
+    (a ⊗ₜ[R] (1 : B)) • x ∈ G (p + q) :=
+  SetLike.GradedSMul.smul_mem
+    (by simpa only [add_zero] using
+      (GA.tmul_mem_tensorProduct GB ha (SetLike.one_mem_graded GB.piece))) hx
+
+/-- A homogeneous element of the second tensor factor acts with its own degree. -/
+theorem one_tmul_smul_mem_tensorProduct [SetLike.GradedOne GA.piece] {b : B}
+    (hb : b ∈ GB.piece p) (hx : x ∈ G q) :
+    ((1 : A) ⊗ₜ[R] b) • x ∈ G (p + q) :=
+  SetLike.GradedSMul.smul_mem
+    (by simpa only [zero_add] using
+      (GA.tmul_mem_tensorProduct GB (SetLike.one_mem_graded GA.piece) hb)) hx
+
+end GradedAction
+
 end InternalGrading
 
 /-- The total-degree grading turns the ordinary tensor product `A ⊗[R] B` of two `ℤ`-graded
