@@ -18,7 +18,8 @@ In a seminormed additive group, the squared distance between two points is at mo
 of their squared distances to any third point: the triangle inequality through `c`, squared with
 `(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`; likewise the squared norm of a sum of three vectors is at most
 three times the sum of their squared norms. The extended norm satisfies the triangle inequality
-`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
+`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, and membership in an open ball of extended radius is an
+extended-norm bound. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
 `c > 0` bounds `‖a‖²` by `2 / c * r + 2 ‖b‖²`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a
 squared distance is at most `1`.
 
@@ -37,6 +38,8 @@ Near `0`, the product `‖x‖ * R` is eventually less than any positive bound. 
 `‖g i‖ < r` for every `r > s` pass to `f` along a filter on which `‖f i - g i‖ → 0`.
 
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
+
+The sum of the squared norms of a nonzero finite family is positive.
 
 The terms of a sequence whose norms decrease strictly are nonzero.
 
@@ -60,6 +63,7 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
   point.
 * `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
 * `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub` -- the triangle inequality for the extended norm.
+* `TauCeti.mem_eball_iff_eNorm` -- `b ∈ eball a r ↔ ‖b - a‖ₑ < r`.
 * `TauCeti.norm_sq_le_of_mul_norm_sub_sq_le` -- `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by
   `2 / c * r + 2 ‖b‖²`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
@@ -81,6 +85,7 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt` -- eventual bounds `‖g i‖ < r` for
   all `r > s` pass to `f` when `‖f i - g i‖ → 0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
+* `TauCeti.sum_norm_sq_pos` -- `0 < ∑ i, ‖v i‖ ^ 2` for a nonzero finite family `v`.
 * `TauCeti.ne_zero_of_strictAnti_norm` -- the terms of a family with strictly decreasing norms,
   indexed without a maximum, are nonzero.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
@@ -122,6 +127,12 @@ extended-norm form of `norm_sub_le_norm_sub_add_norm_sub`. -/
 theorem eNorm_sub_le_eNorm_sub_add_eNorm_sub {G : Type*} [SeminormedAddCommGroup G] (u v w : G) :
     ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
   simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
+
+/-- A point lies in the open ball `Metric.eball a r` of extended radius exactly when its extended
+norm distance to `a` is less than `r`, the extended-radius form of `mem_ball_iff_norm`. -/
+theorem mem_eball_iff_eNorm {E : Type*} [SeminormedAddCommGroup E] {a b : E} {r : ℝ≥0∞} :
+    b ∈ eball a r ↔ ‖b - a‖ₑ < r := by
+  rw [mem_eball, eDist_eq_eNorm_sub]
 
 /-- If `c ‖a - b‖² ≤ r` with `c > 0`, then `‖a‖² ≤ 2 / c * r + 2 ‖b‖²`: the squared triangle
 inequality through `b`. -/
@@ -184,6 +195,13 @@ theorem _root_.Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt {ι : Typ
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
     z + a ≠ 0 :=
   fun h' ↦ h.ne' (by rw [eq_neg_of_add_eq_zero_left h', norm_neg])
+
+/-- The sum `∑ i, ‖v i‖ ^ 2` of the squared norms of a nonzero finite family `v` is positive. -/
+theorem sum_norm_sq_pos {ι E : Type*} [Fintype ι] [NormedAddGroup E] {v : ι → E} (hv : v ≠ 0) :
+    0 < ∑ i, ‖v i‖ ^ 2 := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+  exact Finset.sum_pos' (fun j _ ↦ by positivity)
+    ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
 
 /-- If the norms of a family `d` indexed by an order without maximum decrease strictly, every
 term of `d` is nonzero: its norm exceeds the nonnegative norm of a later term. -/

@@ -44,6 +44,8 @@ gauge action is a left action and curvature transforms by `Ad(O)`.
 
 * `TauCeti.gaugeAction_one`, `TauCeti.gaugeAction_gaugeAction`: `1·A = A` and
   `O·(O'·A) = (OO')·A`.
+* `TauCeti.gaugeAction_const_of_commute`: a constant unit commuting with the values of `A` acts
+  trivially.
 * `TauCeti.rightMaurerCartan_mul`, `TauCeti.rightMaurerCartan_ringInverse`:
   `(OO');x = O;x + Ad(O)(O';x)` and `(O⁻¹);x = -Ad(O⁻¹)(O;x)`.
 * `TauCeti.fderiv_mul_mul_ringInverse_apply`: `∂ᵥ(Ad(O)B) = Ad(O)∂ᵥB + [O;v, Ad(O)B]`.
@@ -147,6 +149,13 @@ theorem gaugeAction_const (c : 𝔸) (A : E → E →L[𝕜] 𝔸) :
 theorem gaugeAction_one (A : E → E →L[𝕜] 𝔸) : gaugeAction 𝕜 (fun _ ↦ (1 : 𝔸)) A = A := by
   ext x v
   simp
+
+/-- A constant gauge transformation by a unit `c` commuting with every value of the one-form acts
+trivially. -/
+theorem gaugeAction_const_of_commute {c : 𝔸} (hc : IsUnit c) {A : E → E →L[𝕜] 𝔸}
+    (hA : ∀ x v, Commute c (A x v)) : gaugeAction 𝕜 (fun _ ↦ c) A = A := by
+  ext x v
+  simp [(hA x v).eq, mul_assoc, Ring.mul_inverse_cancel _ hc]
 
 /-! ### Commutative coefficients -/
 
