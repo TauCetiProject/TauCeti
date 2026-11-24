@@ -23,20 +23,20 @@ For a real number `C`, the completed combinations vanishing at every generator o
 `> C`, that is, those all of whose generators have valuation at least `-C`, form the subgroup
 `U_C` of the potential-cutoff topology (`TauCeti.NovikovModule.potentialFiltration`). This file
 shows that `U_C` is a module over the nonnegative subring `Λ₀` of Novikov series, the *shifted
-lattice* `lattice hF C` of cutoff `C` (`TauCeti.NovikovModule.lattice`), and develops its basic
+lattice* `lattice R hF C` of cutoff `C` (`TauCeti.NovikovModule.lattice`), and develops its basic
 properties:
 
 * the lattices increase with the cutoff, so that `C ≤ D` gives the injective inclusion
-  `Submodule.inclusion : lattice hF C → lattice hF D`; they exhaust the completed combinations,
+  `Submodule.inclusion : lattice R hF C → lattice R hF D`; they exhaust the completed combinations,
   and meet only in `0`;
-* the monomial `e^h` maps `lattice hF (C + N h)` onto `lattice hF C`;
+* the monomial `e^h` maps `lattice R hF (C + N h)` onto `lattice R hF C`;
 * if the monomials `e^m`, `m ∈ M`, have periods unbounded above, then the inclusion of any
   lattice is a localization at these monomials: the completed module over the full Novikov ring
   is obtained from a single lattice by inverting them. In the action-weighted case, with
   exponents `G × ℝ`, periods `(g, t) ↦ E g + t` and the monomials `T^t = e^(0, t)`, `t ≥ 0`,
-  this says that the completed module is `⋃ₜ T^(-t) (lattice hF 0)`, and
-  `T^(-t) (lattice hF 0) = lattice hF t`;
-* chosen lifts `r` all of potential `C` form a basis of `lattice hF C` over `Λ₀`. When the period
+  this says that the completed module is `⋃ₜ T^(-t) (lattice R hF 0)`, and
+  `T^(-t) (lattice R hF 0) = lattice R hF t`;
+* chosen lifts `r` all of potential `C` form a basis of `lattice R hF C` over `Λ₀`. When the period
   map is surjective, as in the action-weighted case, such lifts always exist, so each lattice is
   a finite free `Λ₀`-module.
 
@@ -49,15 +49,15 @@ not restrict to one on a lattice without a shift of the cutoff.
 
 ## Main definitions
 
-* `TauCeti.NovikovModule.lattice hF C`: the completed combinations of valuation at least `-C`, as
+* `TauCeti.NovikovModule.lattice R hF C`: the completed combinations of valuation at least `-C`, as
   a submodule over the nonnegative subring of Novikov series.
-* `TauCeti.NovikovModule.latticeBasis hF r hr`: the basis of `lattice hF C` given by lifts `r`
+* `TauCeti.NovikovModule.latticeBasis hF r hr`: the basis of `lattice R hF C` given by lifts `r`
   all of potential `C`.
 
 ## Main results
 
 * `TauCeti.NovikovModule.single_smul_mem_lattice_iff`:
-  `e^h • a ∈ lattice hF C ↔ a ∈ lattice hF (C + N h)`.
+  `e^h • a ∈ lattice R hF C ↔ a ∈ lattice R hF (C + N h)`.
 * `TauCeti.NovikovModule.iUnion_lattice`, `TauCeti.NovikovModule.iInf_lattice`: the lattices
   exhaust the completed combinations and meet in `0`.
 * `TauCeti.NovikovModule.isLocalizedModule_lattice`: the inclusion of a lattice is a localization
@@ -287,8 +287,8 @@ theorem isLocalizedModule_lattice {M : AddSubmonoid H} (hM : ∀ D : ℝ, ∃ m 
 /-- **Action-weighted localization of a lattice.** On the exponent group `G × ℝ` with periods
 `(g, r) ↦ E g + r`, the inclusion of any lattice is a localization at the monomials
 `T^r = e^(0, r)`, `r ≥ 0`. Since `single_smul_mem_lattice_iff` gives
-`T^(-r) (lattice hF 0) = lattice hF r`, this says that the completed module is
-`⋃ᵣ T^(-r) (lattice hF 0)`. -/
+`T^(-r) (lattice R hF 0) = lattice R hF r`, this says that the completed module is
+`⋃ᵣ T^(-r) (lattice R hF 0)`. -/
 theorem isLocalizedModule_lattice_map_inr {G : Type*} [AddCommGroup G] {E : G →+ ℝ}
     {P : ι → Type*} [∀ i, AddTorsor (G × ℝ) (P i)] {F : (Σ i, P i) → ℝ}
     (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - E.coprod (AddMonoidHom.id ℝ) h) (C : ℝ) :
