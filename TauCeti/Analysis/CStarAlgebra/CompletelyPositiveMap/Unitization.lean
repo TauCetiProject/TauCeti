@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Star.Unitization
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
@@ -34,10 +35,9 @@ continuous `2`-positive map is the limit of `‖φ e‖` along any increasing ap
 
 ## Main declarations
 
-* `TauCeti.unitizationMap`: the extension `λ + a ↦ t λ + φ a` of a linear map to the
-  unitizations.
-* `TauCeti.IsNPositive.unitizationMap`: the extension of an `n`-positive map that is bounded by `t`
-  on positive contractions is `n`-positive.
+* `TauCeti.IsNPositive.unitizationLinearMap`: the extension `Unitization.linearMap t φ`,
+  `λ + a ↦ t λ + φ a`, of an `n`-positive map that is bounded by `t` on positive contractions is
+  `n`-positive.
 * `TauCeti.IsNPositive.norm_apply_le_of_forall_nonneg`: a `2`-positive map bounded by `t` on
   positive contractions is bounded by `t`.
 * `TauCeti.IsNPositive.tendsto_norm_nhds_opNorm`: for a continuous `2`-positive map `ψ`,
@@ -57,38 +57,6 @@ open Filter Topology
 open scoped CStarAlgebra ComplexOrder
 
 namespace TauCeti
-
-section Def
-
-variable {A B : Type*} [AddCommMonoid A] [Module ℂ A] [AddCommMonoid B] [Module ℂ B]
-
-/-- The extension `λ + a ↦ t λ + φ a` of a complex-linear map `φ : A → B` to the unitizations
-`A⁺¹ → B⁺¹`. -/
-def unitizationMap (t : ℂ) (φ : A →ₗ[ℂ] B) : A⁺¹ →ₗ[ℂ] B⁺¹ where
-  toFun x := Unitization.inl (t * x.fst) + (φ x.snd : B⁺¹)
-  map_add' x y := by ext <;> simp [mul_add]
-  map_smul' c x := by ext <;> simp [mul_left_comm]
-
-theorem unitizationMap_apply (t : ℂ) (φ : A →ₗ[ℂ] B) (x : A⁺¹) :
-    unitizationMap t φ x = Unitization.inl (t * x.fst) + (φ x.snd : B⁺¹) :=
-  (rfl)
-
-@[simp]
-theorem unitizationMap_inr (t : ℂ) (φ : A →ₗ[ℂ] B) (a : A) :
-    unitizationMap t φ (a : A⁺¹) = (φ a : B⁺¹) := by
-  simp [unitizationMap_apply]
-
-@[simp]
-theorem unitizationMap_inl (t : ℂ) (φ : A →ₗ[ℂ] B) (c : ℂ) :
-    unitizationMap t φ (Unitization.inl c) = Unitization.inl (t * c) := by
-  simp [unitizationMap_apply]
-
-@[simp]
-theorem unitizationMap_one (t : ℂ) (φ : A →ₗ[ℂ] B) :
-    unitizationMap t φ 1 = Unitization.inl t := by
-  simp [unitizationMap_apply]
-
-end Def
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -128,8 +96,8 @@ private theorem sum_fst_smul_nonneg {n : ℕ} {M : CStarMatrix (Fin n) (Fin n) A
 
 /-- The extension `λ + a ↦ t λ + φ a` of an `n`-positive map `φ` with `‖φ p‖ ≤ t` for every
 positive contraction `p` is `n`-positive. -/
-theorem IsNPositive.unitizationMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) {t : ℝ}
-    (ht : ∀ p, 0 ≤ p → ‖p‖ ≤ 1 → ‖φ p‖ ≤ t) : IsNPositive n (unitizationMap t φ) := by
+theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPositive n φ) {t : ℝ}
+    (ht : ∀ p, 0 ≤ p → ‖p‖ ≤ 1 → ‖φ p‖ ≤ t) : IsNPositive n (Unitization.linearMap (t : ℂ) φ) := by
   refine isNPositive_iff.mpr fun M hM => ?_
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact isNPositive_iff.mp (isNPositive_zero _) M hM
@@ -140,23 +108,24 @@ theorem IsNPositive.unitizationMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ : IsNPo
   have hlim : Tendsto (fun e => ∑ i, ∑ j, star (w i) *
       (Unitization.inl (t * (M i j).fst) + (φ (e * (M i j).snd * e) : B⁺¹)) * w j)
       (CStarAlgebra.approximateUnit A)
-      (𝓝 (∑ i, ∑ j, star (w i) * (M.map (TauCeti.unitizationMap t φ)) i j * w j)) := by
+      (𝓝 (∑ i, ∑ j, star (w i) * (M.map (Unitization.linearMap (t : ℂ) φ)) i j * w j)) := by
     refine tendsto_finsetSum _ fun i _ => tendsto_finsetSum _ fun j _ => ?_
+    rw [CStarMatrix.map_apply, Unitization.linearMap_apply]
     refine ((tendsto_const_nhds.add ?_).const_mul _).mul_const _
     exact (Unitization.continuous_inr.comp hcont).tendsto _ |>.comp (hl.tendsto_mul_self _)
   refine ge_of_tendsto hlim ?_
   filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he0 he1
-  have hee : 0 ≤ φ (e * e) := hφ.map_nonneg hn (by
-    simpa [he0.star_eq] using star_mul_self_nonneg e)
+  have hee0 : 0 ≤ e * e := by simpa [he0.star_eq] using star_mul_self_nonneg e
+  have hee : 0 ≤ φ (e * e) := hφ.map_nonneg hn hee0
   have hc : 0 ≤ Unitization.inl (t : ℂ) - (φ (e * e) : B⁺¹) := by
     have h1 := IsSelfAdjoint.le_algebraMap_norm_self (φ (e * e) : B⁺¹)
       (Unitization.inr_nonneg_iff ℂ |>.mpr hee).isSelfAdjoint
-    have h2 : ‖φ (e * e)‖ ≤ t := ht _ (by simpa [he0.star_eq] using star_mul_self_nonneg e)
-      ((norm_mul_le _ _).trans (by nlinarith [norm_nonneg e]))
+    have h2 : ‖φ (e * e)‖ ≤ t := ht _ hee0 ((norm_mul_le _ _).trans (by nlinarith [norm_nonneg e]))
     rw [sub_nonneg]
     refine h1.trans ?_
-    rw [Unitization.norm_inr, show Unitization.inl (t : ℂ) = algebraMap ℝ B⁺¹ t from
-      (congrFun (Unitization.algebraMap_eq_inl_comp ℝ ℂ B) t).symm]
+    have hinl : Unitization.inl (t : ℂ) = algebraMap ℝ B⁺¹ t := by
+      simp [Unitization.algebraMap_eq_inl_comp]
+    rw [Unitization.norm_inr, hinl]
     exact algebraMap_mono _ h2
   have hy := hφ.map_cstarMatrix_nonneg (compress_nonneg hM he0.star_eq)
   have hy' := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
@@ -177,7 +146,7 @@ theorem IsNPositive.norm_apply_le_of_forall_nonneg {φ : A →ₗ[ℂ] B} (hφ :
     {t : ℝ} (ht : ∀ p, 0 ≤ p → ‖p‖ ≤ 1 → ‖φ p‖ ≤ t) (a : A) : ‖φ a‖ ≤ t * ‖a‖ := by
   have h0 : 0 ≤ t := by simpa using ht 0 le_rfl (by simp)
   simpa [Unitization.norm_inr, ← Unitization.algebraMap_eq_inl, norm_algebraMap',
-    abs_of_nonneg h0] using (hφ.unitizationMap ht).norm_apply_le (a : A⁺¹)
+    abs_of_nonneg h0] using (hφ.unitizationLinearMap ht).norm_apply_le (a : A⁺¹)
 
 /-- The norm of a continuous `2`-positive map `ψ` is the limit of `‖ψ e‖` along any increasing
 approximate unit. -/
@@ -197,15 +166,11 @@ theorem IsNPositive.tendsto_norm_nhds_opNorm {ψ : A →L[ℂ] B} (hψ : IsNPosi
       with e he he0 he1
     refine he.trans_le ?_
     have hle : e * p * e ≤ e := by
-      refine le_trans ?_ (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he0 he1)
-      rw [← Unitization.inr_le_inr_iff ℂ]
-      have hp' : (p : A⁺¹) ≤ 1 := by
-        refine (IsSelfAdjoint.le_algebraMap_norm_self (p : A⁺¹)
-          (Unitization.inr_nonneg_iff ℂ |>.mpr hp0).isSelfAdjoint).trans ?_
-        simpa [Unitization.norm_inr] using algebraMap_mono A⁺¹ hp1
-      have h := star_left_conjugate_le_conjugate hp' (e : A⁺¹)
-      rw [← Unitization.inr_star, he0.star_eq, mul_one] at h
-      simpa only [Unitization.inr_mul] using h
+      have h := CStarAlgebra.star_left_conjugate_le_norm_smul e p hp0.isSelfAdjoint
+      rw [he0.star_eq] at h
+      have hee0 : 0 ≤ e * e := by simpa [he0.star_eq] using star_mul_self_nonneg e
+      exact h.trans ((smul_le_of_le_one_left hee0 hp1).trans
+        (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he0 he1))
     have h0 : 0 ≤ e * p * e := by simpa [he0.star_eq] using star_left_conjugate_nonneg hp0 e
     simpa [hψ.toPositiveLinearMap_apply] using
       CStarAlgebra.norm_le_norm_of_le_of_nonneg
@@ -246,16 +211,27 @@ variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
 /-- The unital extension `λ + a ↦ λ + φ a` of a completely positive contraction `φ : A → B` is a
 unital completely positive map `A⁺¹ →CP B⁺¹`. -/
 noncomputable def unitization (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) : A⁺¹ →CP B⁺¹ :=
-  ofIsNPositive (unitizationMap 1 φ.toLinearMap) fun n => by
-    simpa using (φ.isNPositive n).unitizationMap (t := 1) fun p _ hp => (hφ p).trans hp
+  ofIsNPositive (Unitization.linearMap 1 φ.toLinearMap) fun n => by
+    simpa using (φ.isNPositive n).unitizationLinearMap (t := 1) fun p _ hp => (hφ p).trans hp
+
+/-- The underlying linear map of `φ.unitization hφ` is `Unitization.linearMap 1 φ`. -/
+theorem toLinearMap_unitization (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) :
+    (φ.unitization hφ).toLinearMap = Unitization.linearMap 1 φ.toLinearMap := by
+  ext x <;> simp [unitization]
 
 theorem unitization_apply (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
     φ.unitization hφ x = Unitization.inl x.fst + (φ x.snd : B⁺¹) := by
-  simp [unitization, unitizationMap_apply]
+  simp [unitization, Unitization.linearMap_apply]
 
 @[simp]
 theorem unitization_apply_inr (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (a : A) :
     φ.unitization hφ (a : A⁺¹) = (φ a : B⁺¹) := by
+  simp [unitization_apply]
+
+/-- The unital extension is the identity on scalars. -/
+@[simp]
+theorem unitization_apply_inl (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (c : ℂ) :
+    φ.unitization hφ (Unitization.inl c) = Unitization.inl c := by
   simp [unitization_apply]
 
 @[simp]
