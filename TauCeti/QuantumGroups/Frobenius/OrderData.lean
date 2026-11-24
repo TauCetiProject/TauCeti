@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
@@ -387,6 +388,19 @@ theorem diagramGraph_modifiedDatum_cartan (L : ℕ) (hL : 0 < L) :
     diagramGraph (A.modifiedDatum L hL).cartan = diagramGraph A.cartan := by
   ext i j
   simp only [diagramGraph_adj, ne_eq, modifiedDatum_cartan_eq_zero_iff]
+
+/-- Modifying the datum preserves the braid lengths: both Coxeter matrices only see the Cartan
+products `aᵢⱼ aⱼᵢ` (`TauCeti.SymmetrizableDatum.modifiedDatum_cartan_mul_cartan`). -/
+@[simp]
+theorem coxeterMatrixOfGeneralizedCartanMatrix_modifiedDatum_cartan [DecidableEq I] (L : ℕ)
+    (hL : 0 < L) :
+    coxeterMatrixOfGeneralizedCartanMatrix (A.modifiedDatum L hL).cartan =
+      coxeterMatrixOfGeneralizedCartanMatrix A.cartan := by
+  ext i j
+  rcases eq_or_ne i j with rfl | hij
+  · simp
+  · simp only [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne _ hij,
+      modifiedDatum_cartan_mul_cartan]
 
 /-- Modifying the datum preserves indecomposability of the Cartan matrix. -/
 @[simp]
