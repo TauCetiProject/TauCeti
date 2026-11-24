@@ -33,6 +33,9 @@ transported to the mixed space along the injective embedding.
 * `NumberField.mixedEmbedding.idealEquivIdealLattice` and
   `NumberField.mixedEmbedding.neZeroIdealEquivIdealLattice`: additive and nonzero-point
   equivalences between a nonzero integral ideal `𝔞` and `idealLattice K (FractionalIdeal.mk0 K 𝔞)`.
+* `NumberField.mixedEmbedding.fractionalIdealEquivIdealLattice` and
+  `NumberField.mixedEmbedding.neZeroFractionalIdealEquivIdealLattice`: additive and nonzero-point
+  equivalences between an invertible fractional ideal `I` and `idealLattice K I`.
 
 ## Main results
 
@@ -142,17 +145,31 @@ theorem norm_coe_idealLattice_eq_zero_iff {I : (FractionalIdeal (𝓞 K)⁰ K)ˣ
   rw [← ha, norm_eq_zero_iff' ⟨a, rfl⟩, ha, Submodule.coe_eq_zero]
 
 omit [NumberField K] in
+/-- The `ℤ`-linear embedding of an integral ideal `𝔞` into `mixedSpace K`. -/
+private noncomputable def idealToMixedSpace (𝔞 : Ideal (𝓞 K)) : 𝔞 →ₗ[ℤ] mixedSpace K :=
+  (mixedEmbedding K).toIntAlgHom.toLinearMap.comp
+    (((Algebra.linearMap (𝓞 K) K).restrictScalars ℤ).comp (𝔞.subtype.restrictScalars ℤ))
+
+omit [NumberField K] in
+@[simp]
+private theorem idealToMixedSpace_apply (𝔞 : Ideal (𝓞 K)) (a : 𝔞) :
+    idealToMixedSpace (K := K) 𝔞 a = mixedEmbedding K ((a : 𝓞 K) : K) :=
+  rfl
+
+private theorem idealToMixedSpace_injective (𝔞 : Ideal (𝓞 K)) :
+    Function.Injective (idealToMixedSpace (K := K) 𝔞) := fun _ _ hab ↦
+  Subtype.ext (RingOfIntegers.coe_injective (mixedEmbedding_injective K hab))
+
+omit [NumberField K] in
 /-- Embed an integral ideal `𝔞` of `𝓞 K` into the mixed-space integer lattice `idealLattice K 1`. -/
-noncomputable def idealToIntegerLattice (𝔞 : Ideal (𝓞 K)) : 𝔞 →+ idealLattice K 1 where
-  toFun a := ⟨mixedEmbedding K ((a : 𝓞 K) : K),
+noncomputable def idealToIntegerLattice (𝔞 : Ideal (𝓞 K)) : 𝔞 →+ idealLattice K 1 :=
+  ((idealToMixedSpace (K := K) 𝔞).codRestrict (idealLattice K 1) fun a ↦
     (mem_idealLattice K 1).mpr ⟨((a : 𝓞 K) : K), by
       have h1 : ((1 : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
           ((⊤ : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) := by simp
       change ((a : 𝓞 K) : K) ∈ ((1 : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K)
       rw [h1]
-      exact (FractionalIdeal.mem_coeIdeal (𝓞 K)⁰).mpr ⟨a, trivial, rfl⟩, rfl⟩⟩
-  map_zero' := Subtype.ext (by simp)
-  map_add' _ _ := Subtype.ext (by simp)
+      exact (FractionalIdeal.mem_coeIdeal (𝓞 K)⁰).mpr ⟨a, trivial, rfl⟩, rfl⟩).toAddMonoidHom
 
 omit [NumberField K] in
 /-- The underlying `mixedSpace K` vector of `idealToIntegerLattice 𝔞 a` is `mixedEmbedding K a`. -/
@@ -164,10 +181,8 @@ theorem coe_idealToIntegerLattice (𝔞 : Ideal (𝓞 K)) (a : 𝔞) :
 
 /-- `idealToIntegerLattice 𝔞` is injective. -/
 theorem idealToIntegerLattice_injective (𝔞 : Ideal (𝓞 K)) :
-    Function.Injective (idealToIntegerLattice (K := K) 𝔞) := by
-  intro a b hab
-  exact Subtype.ext (RingOfIntegers.coe_injective
-    (mixedEmbedding_injective K (congrArg Subtype.val hab)))
+    Function.Injective (idealToIntegerLattice (K := K) 𝔞) := fun _ _ hab ↦
+  idealToMixedSpace_injective 𝔞 (congrArg Subtype.val hab)
 
 /-- A point of `mixedSpace K` belongs to `idealLattice K (FractionalIdeal.mk0 K 𝔞)` if and only
 if it is the mixed embedding of an element of `𝔞`. -/
@@ -189,23 +204,19 @@ theorem mem_idealLattice_mk0 {𝔞 : (Ideal (𝓞 K))⁰} {x : mixedSpace K} :
 `idealLattice K (FractionalIdeal.mk0 K 𝔞)`. -/
 noncomputable def idealEquivIdealLattice (𝔞 : (Ideal (𝓞 K))⁰) :
     (𝔞 : Ideal (𝓞 K)) ≃+ idealLattice K (FractionalIdeal.mk0 K 𝔞) :=
-  AddEquiv.ofBijective
-    ({ toFun a := ⟨mixedEmbedding K ((a : 𝓞 K) : K), mem_idealLattice_mk0.mpr ⟨a, rfl⟩⟩
-       map_zero' := Subtype.ext (by simp)
-       map_add' _ _ := Subtype.ext (by simp) } :
-      (𝔞 : Ideal (𝓞 K)) →+ idealLattice K (FractionalIdeal.mk0 K 𝔞))
-    ⟨fun a b hab ↦ Subtype.ext (RingOfIntegers.coe_injective
-        (mixedEmbedding_injective K (congrArg Subtype.val hab))),
-     fun x ↦ by
-       obtain ⟨a, ha⟩ := mem_idealLattice_mk0.mp x.property
-       exact ⟨a, Subtype.ext ha⟩⟩
+  ((LinearEquiv.ofInjective (idealToMixedSpace (K := K) (𝔞 : Ideal (𝓞 K)))
+      (idealToMixedSpace_injective (𝔞 : Ideal (𝓞 K)))).trans
+    (LinearEquiv.ofEq _ (idealLattice K (FractionalIdeal.mk0 K 𝔞)) (by
+      ext x
+      rw [LinearMap.mem_range, mem_idealLattice_mk0]
+      simp))).toAddEquiv
 
 /-- The underlying `mixedSpace K` vector of `idealEquivIdealLattice 𝔞 a` is `mixedEmbedding K a`. -/
 @[simp]
 theorem coe_idealEquivIdealLattice (𝔞 : (Ideal (𝓞 K))⁰) (a : (𝔞 : Ideal (𝓞 K))) :
     ((idealEquivIdealLattice 𝔞 a : idealLattice K (FractionalIdeal.mk0 K 𝔞)) : mixedSpace K) =
       mixedEmbedding K ((a : 𝓞 K) : K) := by
-  simp [idealEquivIdealLattice, AddEquiv.ofBijective]
+  simp [idealEquivIdealLattice]
 
 /-- Equivalence between the nonzero elements of a nonzero integral ideal `𝔞` and the nonzero
 points of `idealLattice K (FractionalIdeal.mk0 K 𝔞)`. -/
@@ -223,6 +234,41 @@ theorem coe_neZeroIdealEquivIdealLattice (𝔞 : (Ideal (𝓞 K))⁰)
       idealLattice K (FractionalIdeal.mk0 K 𝔞)) : mixedSpace K) =
       mixedEmbedding K (((a : (𝔞 : Ideal (𝓞 K))) : 𝓞 K) : K) := by
   simp [neZeroIdealEquivIdealLattice]
+
+/-- Additive equivalence between an invertible fractional ideal `I` and `idealLattice K I`. -/
+noncomputable def fractionalIdealEquivIdealLattice (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    (I : Submodule (𝓞 K) K) ≃+ idealLattice K I :=
+  (LinearEquiv.ofInjective
+    ((mixedEmbedding K).toIntAlgHom.toLinearMap ∘ₗ
+      ((I : Submodule (𝓞 K) K).subtype.restrictScalars ℤ))
+    (show Function.Injective ((mixedEmbedding K).toIntAlgHom.toLinearMap ∘ₗ
+        ((I : Submodule (𝓞 K) K).subtype.restrictScalars ℤ)) from
+      fun _ _ hab ↦ Subtype.ext (mixedEmbedding_injective K hab))).toAddEquiv
+
+/-- The underlying `mixedSpace K` vector of `fractionalIdealEquivIdealLattice I a` is
+`mixedEmbedding K a`. -/
+@[simp]
+theorem coe_fractionalIdealEquivIdealLattice (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    (a : (I : Submodule (𝓞 K) K)) :
+    ((fractionalIdealEquivIdealLattice I a : idealLattice K I) : mixedSpace K) =
+      mixedEmbedding K (a : K) := by
+  simp [fractionalIdealEquivIdealLattice]
+
+/-- Equivalence between the nonzero elements of an invertible fractional ideal `I` and the nonzero
+points of `idealLattice K I`. -/
+noncomputable def neZeroFractionalIdealEquivIdealLattice (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    {a : (I : Submodule (𝓞 K) K) // a ≠ 0} ≃
+      {x : idealLattice K I // x ≠ 0} :=
+  Equiv.subtypeEquiv (fractionalIdealEquivIdealLattice I).toEquiv fun _ ↦ by simp
+
+/-- The underlying `mixedSpace K` vector of `neZeroFractionalIdealEquivIdealLattice I a` is
+`mixedEmbedding K a`. -/
+@[simp]
+theorem coe_neZeroFractionalIdealEquivIdealLattice (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    (a : {a : (I : Submodule (𝓞 K) K) // a ≠ 0}) :
+    ((neZeroFractionalIdealEquivIdealLattice I a : idealLattice K I) : mixedSpace K) =
+      mixedEmbedding K ((a : (I : Submodule (𝓞 K) K)) : K) := by
+  simp [neZeroFractionalIdealEquivIdealLattice]
 
 end NumberField.mixedEmbedding
 

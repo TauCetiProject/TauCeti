@@ -238,4 +238,32 @@ theorem surfacePart_mul {c : realSpace K} (hc : archNorm c = 1) (y : realSpace K
   ext w
   simp [surfacePart_def, map_mul, hc, mul_assoc]
 
+/-- If `g : realSpace K → E` is continuous at all positive parameters, then
+`x ↦ g (surfaceScale x t)` is continuous on `normOneSurface K` for any `t > 0`. -/
+theorem continuous_comp_surfaceScale {E : Type*} [TopologicalSpace E] {g : realSpace K → E}
+    (hg : ∀ {y₀ : realSpace K}, (∀ w, 0 < y₀ w) → ContinuousAt g y₀)
+    {t : ℝ} (ht : 0 < t) :
+    Continuous fun x : normOneSurface K ↦ g (surfaceScale (x : realSpace K) t) :=
+  continuous_iff_continuousAt.mpr fun x ↦ ContinuousAt.comp (g := g)
+    (hg (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
+    (continuous_surfaceScale.comp (continuous_subtypeVal.prodMk continuous_const)).continuousAt
+
+/-- If `g : realSpace K → E` is uniformly bounded on every closed positive orthant
+`{y | ∀ w, δ ≤ y w}` (`δ > 0`), then `g (surfaceScale x t)` is uniformly bounded for
+`x ∈ D ∩ normOneSurface K` and `t ≥ t₀ > 0`. -/
+theorem exists_norm_surfaceScale_le_of_isBounded {E : Type*} [Norm E] {g : realSpace K → E}
+    (hg : ∀ {δ : ℝ}, 0 < δ → ∃ B : ℝ, ∀ y : realSpace K, (∀ w, δ ≤ y w) → ‖g y‖ ≤ B)
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D) {t₀ : ℝ} (ht₀ : 0 < t₀) :
+    ∃ B : ℝ, ∀ t ≥ t₀, ∀ x : normOneSurface K, (x : realSpace K) ∈ D →
+      ‖g (surfaceScale (x : realSpace K) t)‖ ≤ B := by
+  obtain ⟨C, _, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  let δ := C⁻¹ * t₀ ^ (1 / (Module.finrank ℚ K : ℝ))
+  have hδ : 0 < δ := by positivity
+  obtain ⟨B, hB⟩ := hg hδ
+  refine ⟨B, fun t ht x hx ↦ hB _ fun w ↦ ?_⟩
+  rw [surfaceScale_apply]
+  exact mul_le_mul (hC x hx x.property w).1
+    (Real.rpow_le_rpow ht₀.le ht (by positivity)) (by positivity)
+    ((mem_normOneSurface.mp x.property).1 w).le
+
 end TauCeti.LFunctions

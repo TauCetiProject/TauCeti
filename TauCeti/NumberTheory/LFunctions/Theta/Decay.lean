@@ -41,7 +41,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- A Gaussian at parameters at least `t`, `t ≥ 1`, is bounded by a fixed summable Gaussian
 times an exponentially decreasing factor, provided the vector has squared length at least `δ`. -/
-theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
+private theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
     (hδ : δ ≤ mixedInner K x x) (ht : 1 ≤ t) {y : realSpace K} (hy : ∀ w, t ≤ y w) :
     ‖archGaussian y x‖ ≤ Real.exp (-(Real.pi * δ / 2) * t) *
       ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) x‖ := by
@@ -147,11 +147,11 @@ theorem isBigO_latticeTheta_surfaceScale_sub_one_rpow
     (hD : Bornology.IsBounded D) (hS : D ⊆ normOneSurface K)
     {x : ℝ → realSpace K} (hx : ∀ᶠ u in atTop, x u ∈ D) (r : ℝ) :
     (fun u ↦ latticeTheta L (surfaceScale (x u) u) - 1) =O[atTop] (fun u ↦ u ^ r) := by
-  obtain ⟨c, hc, C, _, h⟩ := exists_norm_latticeTheta_surfaceScale_sub_one_le L hD hS
-  apply TauCeti.isBigO_rpow_of_isBigO_exp_neg hc
+  obtain ⟨c, hc, C, hC, h⟩ := exists_norm_latticeTheta_surfaceScale_sub_one_le L hD hS
+  refine TauCeti.isBigO_rpow_of_eventually_norm_le_exp_neg
     (inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K))))
-  apply Asymptotics.IsBigO.of_bound C
+    ⟨c, hc, C, hC, ?_⟩ r
   filter_upwards [h, hx] with u hu hxu
-  simpa only [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] using hu (x u) hxu
+  exact hu (x u) hxu
 
 end TauCeti.LFunctions

@@ -129,35 +129,6 @@ theorem mellinKernel_inv (D : Set (realSpace K)) (L : Submodule ℤ (mixedSpace 
   ring
 
 open scoped Classical in
-/-- If `g : realSpace K → ℂ` is uniformly bounded on every closed positive orthant
-`{y | ∀ w, δ ≤ y w}` (`δ > 0`), then `g (surfaceScale x t)` is uniformly bounded for
-`x ∈ D ∩ normOneSurface K` and `t ≥ t₀ > 0`. -/
-theorem exists_norm_surfaceScale_le_of_isBounded {g : realSpace K → ℂ}
-    (hg : ∀ {δ : ℝ}, 0 < δ → ∃ B : ℝ, ∀ y : realSpace K, (∀ w, δ ≤ y w) → ‖g y‖ ≤ B)
-    {D : Set (realSpace K)} (hD : Bornology.IsBounded D) {t₀ : ℝ} (ht₀ : 0 < t₀) :
-    ∃ B : ℝ, ∀ t ≥ t₀, ∀ x : normOneSurface K, (x : realSpace K) ∈ D →
-      ‖g (surfaceScale (x : realSpace K) t)‖ ≤ B := by
-  obtain ⟨C, _, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
-  let δ := C⁻¹ * t₀ ^ (1 / (Module.finrank ℚ K : ℝ))
-  have hδ : 0 < δ := by positivity
-  obtain ⟨B, hB⟩ := hg hδ
-  refine ⟨B, fun t ht x hx ↦ hB _ fun w ↦ ?_⟩
-  rw [surfaceScale_apply]
-  exact mul_le_mul (hC x hx x.property w).1
-    (Real.rpow_le_rpow ht₀.le ht (by positivity)) (by positivity)
-    ((mem_normOneSurface.mp x.property).1 w).le
-
-/-- If `g : realSpace K → ℂ` is continuous at all positive parameters, then
-`x ↦ g (surfaceScale x t)` is continuous on `normOneSurface K` for any `t > 0`. -/
-theorem continuous_comp_surfaceScale {g : realSpace K → ℂ}
-    (hg : ∀ {y₀ : realSpace K}, (∀ w, 0 < y₀ w) → ContinuousAt g y₀)
-    {t : ℝ} (ht : 0 < t) :
-    Continuous fun x : normOneSurface K ↦ g (surfaceScale (x : realSpace K) t) :=
-  continuous_iff_continuousAt.mpr fun x ↦ ContinuousAt.comp (g := g)
-    (hg (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
-    (continuous_surfaceScale.comp (continuous_subtypeVal.prodMk continuous_const)).continuousAt
-
-open scoped Classical in
 /-- A bounded continuous surface weight `w` multiplied by a positive-orthant continuous,
 orthant-bounded function `g (surfaceScale x t)` is integrable over any bounded measurable
 surface set `D` for `t > 0`. -/
@@ -351,35 +322,6 @@ theorem exists_norm_mul_integral_surfaceScale_sub_le
         mul_le_mul_of_nonneg_left (norm_setIntegral_le_of_norm_le_const hfin hnorm) (norm_nonneg _)
     _ = ‖A‖ * (W * C * (surfaceHaar K).real S) * e := by ring
 
-/-- Promote an eventual stretched-exponential bound on `F u - L₀` to every ray `[a, ∞)` (`a > 0`)
-using continuity of `F` on `(0, ∞)`. -/
-theorem exists_norm_sub_le_on_Ici_of_eventually {F : ℝ → ℂ} {L₀ : ℂ}
-    (hcont : ContinuousOn F (Ioi 0))
-    (hev : ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop,
-      ‖F u - L₀‖ ≤ C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹))
-    {a : ℝ} (ha : 0 < a) :
-    ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ici a,
-      ‖F u - L₀‖ ≤ C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
-  obtain ⟨c, hc, _, _, h⟩ := hev
-  have hcont' : ContinuousOn (fun u ↦ F u - L₀) (Ici a) :=
-    (hcont.mono (Ici_subset_Ioi.mpr ha)).sub continuousOn_const
-  obtain ⟨C, hC, hbound⟩ :=
-    exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_eventually (.inl ha) hcont' h
-  exact ⟨c, hc, C, hC, hbound⟩
-
-/-- Deduce faster-than-every-power decay of `F u - L₀` from an eventual stretched-exponential
-bound with exponent `[K : ℚ]⁻¹`. -/
-theorem isBigO_sub_rpow_of_eventually_exp {F : ℝ → ℂ} {L₀ : ℂ}
-    (hev : ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop,
-      ‖F u - L₀‖ ≤ C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹))
-    (r : ℝ) : (fun u ↦ F u - L₀) =O[atTop] (· ^ r) := by
-  obtain ⟨c, hc, C, _, h⟩ := hev
-  refine isBigO_rpow_of_isBigO_exp_neg hc
-    (inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K))))
-    (Asymptotics.IsBigO.of_bound C ?_) r
-  filter_upwards [h] with u hu
-  rwa [Real.norm_of_nonneg (Real.exp_pos _).le]
-
 open scoped Classical in
 /-- **The Mellin kernel at `∞`**: over a bounded measurable set `D` of parameters the kernel of a
 full lattice tends to `(2^r₂ / w) vol(D)`, `vol = surfaceHaar K`, with an error
@@ -413,8 +355,9 @@ theorem exists_norm_mellinKernel_sub_le_on_Ici {D : Set (realSpace K)} (hDm : Me
       ‖mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
           ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)‖ ≤
         C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) :=
-  exists_norm_sub_le_on_Ici_of_eventually (continuousOn_mellinKernel hDm hD L)
-    (exists_norm_mellinKernel_sub_le hDm hD L) ha
+  exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_exists_eventually (.inl ha)
+    (((continuousOn_mellinKernel hDm hD L).mono (Ici_subset_Ioi.mpr ha)).sub continuousOn_const)
+    (exists_norm_mellinKernel_sub_le hDm hD L)
 
 open scoped Classical in
 /-- Over a bounded measurable set `D` of parameters the kernel of a full lattice minus
@@ -424,7 +367,9 @@ theorem isBigO_mellinKernel_sub_rpow {D : Set (realSpace K)} (hDm : MeasurableSe
     [IsZLattice ℝ L] (r : ℝ) :
     (fun u ↦ mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
         ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)) =O[atTop] (· ^ r) :=
-  isBigO_sub_rpow_of_eventually_exp (exists_norm_mellinKernel_sub_le hDm hD L) r
+  isBigO_rpow_of_eventually_norm_le_exp_neg
+    (inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K))))
+    (exists_norm_mellinKernel_sub_le hDm hD L) r
 
 end
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic
-public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Coordinates
 
 /-!
 # Regularity, triviality, and radial scaling for `Grossencharacter.archWeight`

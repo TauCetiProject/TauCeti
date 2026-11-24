@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Compatibility
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Residue
 import Mathlib.NumberTheory.MulChar.Lemmas
+import TauCeti.NumberTheory.MulChar.Real
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Quotient.Representative
 
@@ -203,6 +204,33 @@ theorem coe_finiteCharacterK_of_algebraMap_eq (χ : Grossencharacter K 𝔪)
   rw [finiteCharacterK_apply, Units.val_mul, ← hideal,
     χ.coe_idealCharacter_integralIdealsAwayHom ⟨_, hmem⟩]
 
+private theorem idealCharacter_principalIdealAway_congr {φ₁ φ₂ : HeckeCharacter K}
+    (h : φ₁ = φ₂) {s₁ s₂ : Finset (HeightOneSpectrum (𝓞 K))}
+    (hs₁ : (⟨φ₁.finiteConductor, φ₁.finiteConductor_ne_bot, ∅⟩ : Modulus K).support ⊆ s₁)
+    (hs₂ : (⟨φ₂.finiteConductor, φ₂.finiteConductor_ne_bot, ∅⟩ : Modulus K).support ⊆ s₂)
+    {x : (s₁ : Set (HeightOneSpectrum (𝓞 K)))ᶜ.unit K}
+    {y : (s₂ : Set (HeightOneSpectrum (𝓞 K)))ᶜ.unit K} (hxy : (x : Kˣ) = y) :
+    φ₁.idealCharacter (NumberFieldArithmetic.idealsAwayInclusion K hs₁
+      (NumberFieldArithmetic.principalIdealAway K s₁ x)) =
+    φ₂.idealCharacter (NumberFieldArithmetic.idealsAwayInclusion K hs₂
+      (NumberFieldArithmetic.principalIdealAway K s₂ y)) := by
+  subst h
+  congr 1
+  ext1
+  simp [hxy]
+
+/-- Two presentations of the same Hecke character take the same `finiteCharacterK` values on any
+element of `Kˣ` prime to both moduli. -/
+theorem finiteCharacterK_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪}
+    {ψ : Grossencharacter K 𝔫} (h : χ.toHeckeCharacter = ψ.toHeckeCharacter)
+    {x : primeToSubgroup 𝔪} {y : primeToSubgroup 𝔫} (hxy : (x : Kˣ) = y) :
+    χ.finiteCharacterK x = ψ.finiteCharacterK y := by
+  rw [finiteCharacterK_apply, finiteCharacterK_apply,
+    idealCharacter_principalIdealAway_congr h (Modulus.support_mono χ.mk_finiteConductor_dvd)
+      (Modulus.support_mono ψ.mk_finiteConductor_dvd) hxy]
+  congr 1
+  simp [archimedeanValue_apply, h, hxy]
+
 /-! ### The residue character -/
 
 /-- **The residue character** of a presentation: the character of `𝓞 K ⧸ 𝔪₀` through which the
@@ -219,6 +247,15 @@ theorem residueCharacter_residue (χ : Grossencharacter K 𝔪) (x : primeToSubg
     χ.residueCharacter (residue 𝔪 x) = χ.finiteCharacterK x := by
   rw [← coe_residueHom, residueCharacter, MulChar.ofUnitHom_coe,
     MonoidHom.liftOfRightInverse_comp_apply]
+
+/-- Every value of `χ.finiteCharacterK` on `primeToSubgroup 𝔪` has norm `1`. -/
+@[simp]
+theorem norm_finiteCharacterK (χ : Grossencharacter K 𝔪) (x : primeToSubgroup 𝔪) :
+    ‖(χ.finiteCharacterK x : ℂ)‖ = 1 := by
+  have : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
+    Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+  rw [← χ.residueCharacter_residue x, ← coe_residueHom]
+  exact χ.residueCharacter.norm_apply_unit (residueHom 𝔪 x)
 
 /-! ### The finite character on algebraic integers -/
 
@@ -311,11 +348,8 @@ theorem norm_finiteCharacter_le_one (χ : Grossencharacter K 𝔪) (a : 𝓞 K) 
   have : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
     Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
   by_cases hu : IsUnit (Ideal.Quotient.mk 𝔪.finitePart a)
-  · obtain ⟨u, hu⟩ := hu
-    let := Fintype.ofFinite (𝓞 K ⧸ 𝔪.finitePart)ˣ
-    rw [← hu, ← MulChar.coe_equivToUnitHom]
-    exact (Complex.norm_eq_one_of_mem_rootsOfUnity
-      (χ.residueCharacter.apply_mem_rootsOfUnity u)).le
+  · rw [← hu.unit_spec]
+    exact (χ.residueCharacter.norm_apply_unit hu.unit).le
   · rw [MulChar.map_nonunit _ hu, norm_zero]
     exact zero_le_one
 
