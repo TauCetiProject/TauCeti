@@ -47,11 +47,11 @@ variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A]
   [AddCommGroup P₀] [Module A P₀] [Module.Finite A P₀] [Module.Projective A P₀]
   [AddCommGroup P₁] [Module A P₁] [Module.Finite A P₁] [Module.Projective A P₁]
 
-omit [Module.Finite A P₀] in
+omit [Module.Finite A P₀] [Module.Projective A P₁] in
 private theorem finite_ext_translate (f : P₁ →ₗ[A] P₀) :
     Module.Finite k (Ext (ModuleCat.of A (P₀ ⧸ range f))
-      (ModuleCat.of A (AuslanderReitenTranslate k f)) 1) := by
-  let T := ModuleCat.of A (AuslanderReitenTranslate k f)
+      (ModuleCat.of A (AuslanderReitenTranslate k k f)) 1) := by
+  let T := ModuleCat.of A (AuslanderReitenTranslate k k f)
   let := Module.restrictScalars k A P₁
   have := IsScalarTower.restrictScalars k A P₁
   let := Module.Finite.trans (R := k) A P₁
@@ -69,15 +69,15 @@ private theorem finite_ext_translate (f : P₁ →ₗ[A] P₀) :
 class annihilated by every pushforward along a map that is not a split monomorphism.
 No minimality of the presentation or algebraic closedness of the field is required. -/
 theorem exists_auslanderReitenExt_ne_zero (f : P₁ →ₗ[A] P₀)
-    [IsLocalRing (End (ModuleCat.of A (AuslanderReitenTranslate k f)))]
-    (hi : ¬ Injective (ModuleCat.of A (AuslanderReitenTranslate k f))) :
+    [IsLocalRing (End (ModuleCat.of A (AuslanderReitenTranslate k k f)))]
+    (hi : ¬ Injective (ModuleCat.of A (AuslanderReitenTranslate k k f))) :
     ∃ α : Ext (ModuleCat.of A (P₀ ⧸ range f))
-        (ModuleCat.of A (AuslanderReitenTranslate k f)) 1,
+        (ModuleCat.of A (AuslanderReitenTranslate k k f)) 1,
       α ≠ 0 ∧ ∀ (N : ModuleCat.{max u v w} A)
-        (g : ModuleCat.of A (AuslanderReitenTranslate k f) ⟶ N),
+        (g : ModuleCat.of A (AuslanderReitenTranslate k k f) ⟶ N),
         ¬ IsSplitMono g → α.comp (Ext.mk₀ g) (add_zero 1) = 0 := by
   classical
-  let T := ModuleCat.of A (AuslanderReitenTranslate k f)
+  let T := ModuleCat.of A (AuslanderReitenTranslate k k f)
   let F := (ExactStructure.abelian (ModuleCat.{max u v w} A)).injectiveStableFunctor
   let : Module k (T ⟶ T) := Linear.homModule (R := k) T T
   let q := F.mapLinearMap k (X := T) (Y := T)

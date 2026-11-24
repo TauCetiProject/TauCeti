@@ -62,28 +62,22 @@ def degreeMutation (row : K ↪ I) (B : Matrix I K ℤ) (k : K) (g : I → G) : 
 variable (row : K ↪ I) (B : Matrix I K ℤ) (k : K) (g g₁ g₂ : I → G)
 
 /-- Definitional presentation of degree mutation via `Function.update`. -/
-theorem degreeMutation_def :
-    degreeMutation row B k g =
-      Function.update g (row k)
-        (-g (row k) + ∑ i ∈ Finset.univ.erase (row k), (-B i k)⁺ • g i) :=
+theorem degreeMutation_def : degreeMutation row B k g =
+    Function.update g (row k) (-g (row k) + ∑ i ∈ Finset.univ.erase (row k), (-B i k)⁺ • g i) :=
   (rfl)
 
 /-- Entrywise formula for degree mutation. -/
-theorem degreeMutation_apply (j : I) :
-    degreeMutation row B k g j =
-      if j = row k then -g (row k) + ∑ i ∈ Finset.univ.erase (row k), (-B i k)⁺ • g i
-      else g j := by
+theorem degreeMutation_apply (j : I) : degreeMutation row B k g j =
+    if j = row k then -g (row k) + ∑ i ∈ Finset.univ.erase (row k), (-B i k)⁺ • g i else g j := by
   simp [degreeMutation, Function.update_apply]
 
 /-- Formula for `degreeMutation` at the mutated coordinate `row k`. -/
 theorem degreeMutation_apply_row :
     degreeMutation row B k g (row k) =
-      -g (row k) + ∑ i ∈ Finset.univ.erase (row k), (-B i k)⁺ • g i := by
-  simp [degreeMutation]
+      -g (row k) + ∑ i ∈ Finset.univ.erase (row k), (-B i k)⁺ • g i := by simp [degreeMutation]
 
 @[simp]
-theorem degreeMutation_apply_of_ne {j : I} (hj : j ≠ row k) :
-    degreeMutation row B k g j = g j := by
+theorem degreeMutation_apply_of_ne {j : I} (hj : j ≠ row k) : degreeMutation row B k g j = g j := by
   simp [degreeMutation, hj]
 
 /-- Coordinates outside the mutable rows are fixed by every degree mutation. -/
@@ -103,12 +97,9 @@ theorem degreeMutation_eq_sum_matrixMutationLeft_smul (j : I) :
     degreeMutation row B k g j = ∑ i, matrixMutationLeft row B k 1 i j • g i := by
   by_cases hj : j = row k
   · subst j
-    rw [degreeMutation_apply_row,
-      ← Finset.add_sum_erase Finset.univ _ (Finset.mem_univ (row k))]
+    rw [degreeMutation_apply_row, ← Finset.add_sum_erase Finset.univ _ (Finset.mem_univ (row k))]
     simp only [matrixMutationLeft_apply_col, ite_true, neg_one_smul, neg_mul, one_mul]
-    congr 1
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    simp [(Finset.mem_erase.mp hi).1]
+    exact congrArg _ (Finset.sum_congr rfl fun i hi ↦ by simp [(Finset.mem_erase.mp hi).1])
   · simp [hj, Matrix.one_apply]
 
 private theorem sum_matrixMutationLeft_smul_sum_matrixMutationLeft_smul (ε : ℤ) (l : I) :
@@ -126,39 +117,30 @@ private theorem sum_matrixMutationLeft_smul_sum_matrixMutationLeft_smul (ε : �
 
 /-- Applying `degreeMutation` twice with the same matrix and direction is the identity. -/
 @[simp]
-theorem degreeMutation_self :
-    degreeMutation row B k (degreeMutation row B k g) = g := by
-  ext l
-  simp_rw [degreeMutation_eq_sum_matrixMutationLeft_smul]
+theorem degreeMutation_self : degreeMutation row B k (degreeMutation row B k g) = g := by
+  ext l; simp_rw [degreeMutation_eq_sum_matrixMutationLeft_smul]
   exact sum_matrixMutationLeft_smul_sum_matrixMutationLeft_smul row B k g 1 l
 
 @[simp]
 theorem degreeMutation_zero : degreeMutation row B k (0 : I → G) = 0 := by
-  ext j
-  simp [degreeMutation_eq_sum_matrixMutationLeft_smul]
+  ext j; simp [degreeMutation_eq_sum_matrixMutationLeft_smul]
 
 theorem degreeMutation_add :
-    degreeMutation row B k (g₁ + g₂) =
-      degreeMutation row B k g₁ + degreeMutation row B k g₂ := by
-  ext j
-  simp [degreeMutation_eq_sum_matrixMutationLeft_smul, smul_add, Finset.sum_add_distrib]
+    degreeMutation row B k (g₁ + g₂) = degreeMutation row B k g₁ + degreeMutation row B k g₂ := by
+  ext j; simp [degreeMutation_eq_sum_matrixMutationLeft_smul, smul_add, Finset.sum_add_distrib]
 
 @[simp]
-theorem degreeMutation_neg :
-    degreeMutation row B k (-g) = -degreeMutation row B k g := by
-  ext j
-  simp [degreeMutation_eq_sum_matrixMutationLeft_smul, Finset.sum_neg_distrib]
+theorem degreeMutation_neg : degreeMutation row B k (-g) = -degreeMutation row B k g := by
+  ext j; simp [degreeMutation_eq_sum_matrixMutationLeft_smul, Finset.sum_neg_distrib]
 
 theorem degreeMutation_sub :
-    degreeMutation row B k (g₁ - g₂) =
-      degreeMutation row B k g₁ - degreeMutation row B k g₂ := by
+    degreeMutation row B k (g₁ - g₂) = degreeMutation row B k g₁ - degreeMutation row B k g₂ := by
   simp only [sub_eq_add_neg, degreeMutation_add, degreeMutation_neg]
 
 /-- Additive group homomorphisms commute with degree mutation. -/
 theorem comp_degreeMutation (φ : G →+ H) :
     φ ∘ degreeMutation row B k g = degreeMutation row B k (φ ∘ g) := by
-  ext j
-  simp [degreeMutation_eq_sum_matrixMutationLeft_smul, map_sum, map_zsmul]
+  ext j; simp [degreeMutation_eq_sum_matrixMutationLeft_smul, map_sum, map_zsmul]
 
 /-- Evaluating an additive homomorphism on a mutated degree equals mutating the mapped degrees. -/
 theorem map_degreeMutation_apply (φ : G →+ H) (j : I) :
@@ -210,9 +192,7 @@ theorem degreeMutation_neg_left (hkk : B (row k) k = 0) (hcol : ∑ i, B i k •
     degreeMutation row (-B) k g = degreeMutation row B k g := by
   ext j
   by_cases hj : j = row k
-  · subst j
-    rw [degreeMutation_apply_row, degreeMutation_apply_row_posPart row B k g hkk hcol]
-    simp
+  · simp [hj, degreeMutation_apply_row, degreeMutation_apply_row_posPart row B k g hkk hcol]
   · simp [hj]
 
 /-- Mutating along `B` and then along `matrixMutation row B k` in the same direction recovers `g`
@@ -232,23 +212,17 @@ mutable columns. -/
 theorem degreeMutation_submatrix [DecidableEq I'] [Fintype I'] {row' : K' ↪ I'}
     {f : I' → I} {hK : K' → K} (hf : Function.Bijective f)
     (h : ∀ a, f (row' a) = row (hK a)) (k : K') :
-    degreeMutation row' (B.submatrix f hK) k (g ∘ f) =
-      degreeMutation row B (hK k) g ∘ f := by
+    degreeMutation row' (B.submatrix f hK) k (g ∘ f) = degreeMutation row B (hK k) g ∘ f := by
   let e : I' ≃ I := Equiv.ofBijective f hf
   ext j
   have hrow : j = row' k ↔ f j = row (hK k) := by rw [← h, hf.injective.eq_iff]
   by_cases hj : j = row' k
   · subst j
-    simp only [Function.comp_apply, degreeMutation_apply_row, h]
-    congr 1
-    rw [Finset.sum_erase_eq_sub (Finset.mem_univ _),
-      Finset.sum_erase_eq_sub (Finset.mem_univ _)]
-    have hcomp :
-        ∑ x : I', (-B (f x) (hK k))⁺ • g (f x) = ∑ i : I, (-B i (hK k))⁺ • g i :=
-      e.sum_comp (fun i ↦ (-B i (hK k))⁺ • g i)
-    simp only [submatrix_apply, h, hcomp]
-  · have hfj : f j ≠ row (hK k) := mt hrow.mpr hj
-    simp [hj, hfj]
+    simp only [Function.comp_apply, degreeMutation_apply_row, h,
+      Finset.sum_erase_eq_sub (Finset.mem_univ _), submatrix_apply]
+    exact congrArg (-g (row (hK k)) + ·)
+      (congrArg (· - _) (e.sum_comp fun i ↦ (-B i (hK k))⁺ • g i))
+  · simp [hj, mt hrow.mpr hj]
 
 section Preservation
 
@@ -273,20 +247,17 @@ theorem sum_matrixMutation_ediv_smul_degreeMutation {r : K → ℤ}
     rw [← Finset.sum_smul]
     congr 1
     simp_rw [mul_comm (matrixMutation row B k _ j / r j)]
-    have hfac := congrFun (congrFun
+    simpa only [Matrix.mul_apply, β, of_apply] using congrFun (congrFun
       (matrixMutationLeft_mul_of_matrixMutation_ediv row B r k 1 hr hdvd hkk (Or.inl rfl)) a) j
-    simpa only [Matrix.mul_apply, β, of_apply] using hfac
   rw [hstep]
   by_cases hj : j = k
-  · subst j
-    simp [mul_matrixMutationRight_apply, β, Finset.sum_neg_distrib]
+  · subst j; simp [mul_matrixMutationRight_apply, β, Finset.sum_neg_distrib]
   · have hrk : ((r k * 1) * β (row k) j)⁺ = r k * (B (row k) j / r j)⁺ := by
       simp only [mul_one, β, of_apply, posPart_def, mul_max_of_nonneg _ _ (hr k).le, mul_zero]
     simp only [hj, ite_false, mul_matrixMutationRight_apply, hrk, add_smul]
     simp only [β, of_apply]
     rw [Finset.sum_add_distrib, Finset.smul_sum]
-    refine congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun a _ ↦ ?_)
-    simp [smul_smul, mul_comm]
+    exact congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun a _ ↦ by simp [smul_smul, mul_comm])
 
 /-- Along the mutation column `k`, the mutated matrix pairs with the mutated degrees by the
 negative of the original pairing whenever `B (row k) k = 0`. -/
@@ -302,8 +273,7 @@ theorem sum_matrixMutation_ediv_smul_degreeMutation_eq_zero {r : K → ℤ}
     (hr : ∀ j, 0 < r j) (hdvd : ∀ i j, r j ∣ B i j) (hkk : B (row k) k = 0)
     (hg : ∀ j, ∑ i, (B i j / r j) • g i = 0) (j : K) :
     ∑ i, (matrixMutation row B k i j / r j) • degreeMutation row B k g i = 0 := by
-  rw [sum_matrixMutation_ediv_smul_degreeMutation row B k g hr hdvd hkk j]
-  simp [hg]
+  simp [sum_matrixMutation_ediv_smul_degreeMutation row B k g hr hdvd hkk j, hg]
 
 /-- Divided-column annihilation is preserved and reflected by simultaneous matrix and degree
 mutation when `B (row k) k = 0` and positive degrees divide every column. -/
@@ -311,8 +281,7 @@ theorem forall_sum_matrixMutation_ediv_smul_degreeMutation_eq_zero_iff {r : K �
     (hr : ∀ j, 0 < r j) (hdvd : ∀ i j, r j ∣ B i j) (hkk : B (row k) k = 0) :
     (∀ j, ∑ i, (matrixMutation row B k i j / r j) • degreeMutation row B k g i = 0) ↔
       ∀ j, ∑ i, (B i j / r j) • g i = 0 := by
-  refine ⟨fun h' ↦ ?_, fun h ↦
-    sum_matrixMutation_ediv_smul_degreeMutation_eq_zero row B k g hr hdvd hkk h⟩
+  refine ⟨fun h' ↦ ?_, sum_matrixMutation_ediv_smul_degreeMutation_eq_zero row B k g hr hdvd hkk⟩
   have hk : ∑ i, (B i k / r k) • g i = 0 := by
     have hk' := h' k
     rw [sum_matrixMutation_ediv_smul_degreeMutation row B k g hr hdvd hkk k] at hk'
@@ -362,16 +331,9 @@ theorem degreeMutation_fromBlocks_inl (k : K₁) :
   · by_cases hi : i = row₁ k
     · subst i
       rw [Sum.elim_inl, ← hrow, degreeMutation_apply_row, degreeMutation_apply_row, hrow]
-      simp only [Sum.elim_inl]
-      congr 1
-      rw [Finset.sum_erase_eq_sub (Finset.mem_univ _),
-        Finset.sum_erase_eq_sub (Finset.mem_univ _), Fintype.sum_sum_type]
-      simp
-    · have hne : (Sum.inl i : I₁ ⊕ I₂) ≠ (row₁.sumMap row₂) (Sum.inl k) := by
-        rw [hrow]; simp [hi]
-      simp [degreeMutation_apply_of_ne _ _ _ _ hne, hi]
-  · have hne : (Sum.inr i : I₁ ⊕ I₂) ≠ (row₁.sumMap row₂) (Sum.inl k) := by rw [hrow]; simp
-    simp [degreeMutation_apply_of_ne _ _ _ _ hne]
+      simp [Finset.sum_erase_eq_sub (Finset.mem_univ _), Fintype.sum_sum_type]
+    · simp [degreeMutation_apply, hi]
+  · simp [degreeMutation_apply]
 
 /-- Mutating a block-diagonal matrix in the second summand mutates the second degree family and
 fixes the first. -/
@@ -381,19 +343,12 @@ theorem degreeMutation_fromBlocks_inr (k : K₂) :
       Sum.elim g₁ (degreeMutation row₂ B₂ k g₂) := by
   have hrow : (row₁.sumMap row₂) (Sum.inr k) = Sum.inr (row₂ k) := by simp
   ext (i | i)
-  · have hne : (Sum.inl i : I₁ ⊕ I₂) ≠ (row₁.sumMap row₂) (Sum.inr k) := by rw [hrow]; simp
-    simp [degreeMutation_apply_of_ne _ _ _ _ hne]
+  · simp [degreeMutation_apply]
   · by_cases hi : i = row₂ k
     · subst i
       rw [Sum.elim_inr, ← hrow, degreeMutation_apply_row, degreeMutation_apply_row, hrow]
-      simp only [Sum.elim_inr]
-      congr 1
-      rw [Finset.sum_erase_eq_sub (Finset.mem_univ _),
-        Finset.sum_erase_eq_sub (Finset.mem_univ _), Fintype.sum_sum_type]
-      simp
-    · have hne : (Sum.inr i : I₁ ⊕ I₂) ≠ (row₁.sumMap row₂) (Sum.inr k) := by
-        rw [hrow]; simp [hi]
-      simp [degreeMutation_apply_of_ne _ _ _ _ hne, hi]
+      simp [Finset.sum_erase_eq_sub (Finset.mem_univ _), Fintype.sum_sum_type]
+    · simp [degreeMutation_apply, hi]
 
 end BlockSum
 
@@ -411,18 +366,15 @@ def degreeMutationWord (row : K ↪ I) (B : Matrix I K ℤ) (g : I → G) : List
 variable (row : K ↪ I) (B : Matrix I K ℤ) (g g₁ g₂ : I → G)
 
 @[simp]
-theorem degreeMutationWord_nil : degreeMutationWord row B g [] = g :=
-  (rfl)
+theorem degreeMutationWord_nil : degreeMutationWord row B g [] = g := (rfl)
 
 @[simp]
 theorem degreeMutationWord_cons (k : K) (w : List K) :
     degreeMutationWord row B g (k :: w) =
-      degreeMutationWord row (matrixMutation row B k) (degreeMutation row B k g) w :=
-  (rfl)
+      degreeMutationWord row (matrixMutation row B k) (degreeMutation row B k g) w := (rfl)
 
 theorem degreeMutationWord_singleton (k : K) :
-    degreeMutationWord row B g [k] = degreeMutation row B k g :=
-  (rfl)
+    degreeMutationWord row B g [k] = degreeMutation row B k g := (rfl)
 
 /-- Concatenation applies the left word to both the matrix and the grading, followed by the
 right word. -/
@@ -446,8 +398,7 @@ theorem degreeMutationWord_apply_of_notMem_range {j : I} (hj : j ∉ Set.range r
     rw [degreeMutationWord_cons, ih, degreeMutation_apply_of_notMem_range row B k g hj]
 
 @[simp]
-theorem degreeMutationWord_zero (w : List K) :
-    degreeMutationWord row B (0 : I → G) w = 0 := by
+theorem degreeMutationWord_zero (w : List K) : degreeMutationWord row B (0 : I → G) w = 0 := by
   induction w generalizing B with
   | nil => rfl
   | cons k w ih => simp [ih]
@@ -476,8 +427,7 @@ theorem comp_degreeMutationWord (φ : G →+ H) (w : List K) :
     φ ∘ degreeMutationWord row B g w = degreeMutationWord row B (φ ∘ g) w := by
   induction w generalizing B g with
   | nil => rfl
-  | cons k w ih =>
-    rw [degreeMutationWord_cons, degreeMutationWord_cons, ← comp_degreeMutation, ih]
+  | cons k w ih => rw [degreeMutationWord_cons, degreeMutationWord_cons, ← comp_degreeMutation, ih]
 
 /-- Evaluating an additive homomorphism on a word-mutated degree equals mutating the mapped
 degrees. -/
@@ -528,20 +478,18 @@ theorem degreeMutationWord_fromBlocks (w : List (K₁ ⊕ K₂)) :
 /-- A word in the first block mutates the first degree family and fixes the second. -/
 @[simp]
 theorem degreeMutationWord_fromBlocks_inl (w : List K₁) :
-    degreeMutationWord (row₁.sumMap row₂) (fromBlocks B₁ 0 0 B₂) (Sum.elim h₁ h₂)
-        (w.map Sum.inl) =
+    degreeMutationWord (row₁.sumMap row₂) (fromBlocks B₁ 0 0 B₂) (Sum.elim h₁ h₂) (w.map Sum.inl) =
       Sum.elim (degreeMutationWord row₁ B₁ h₁ w) h₂ := by
-  simpa [Function.comp_def] using degreeMutationWord_fromBlocks row₁ row₂ B₁ B₂ h₁ h₂
-    (w.map Sum.inl)
+  simpa [Function.comp_def] using
+    degreeMutationWord_fromBlocks row₁ row₂ B₁ B₂ h₁ h₂ (w.map Sum.inl)
 
 /-- A word in the second block mutates the second degree family and fixes the first. -/
 @[simp]
 theorem degreeMutationWord_fromBlocks_inr (w : List K₂) :
-    degreeMutationWord (row₁.sumMap row₂) (fromBlocks B₁ 0 0 B₂) (Sum.elim h₁ h₂)
-        (w.map Sum.inr) =
+    degreeMutationWord (row₁.sumMap row₂) (fromBlocks B₁ 0 0 B₂) (Sum.elim h₁ h₂) (w.map Sum.inr) =
       Sum.elim h₁ (degreeMutationWord row₂ B₂ h₂ w) := by
-  simpa [Function.comp_def] using degreeMutationWord_fromBlocks row₁ row₂ B₁ B₂ h₁ h₂
-    (w.map Sum.inr)
+  simpa [Function.comp_def] using
+    degreeMutationWord_fromBlocks row₁ row₂ B₁ B₂ h₁ h₂ (w.map Sum.inr)
 
 end BlockSumWord
 
@@ -555,6 +503,12 @@ theorem degreeMutationWord_append_cons_cons_self (u v : List K) (k : K)
     matrixMutation_matrixMutation, degreeMutation_degreeMutation _ _ _ _ hkk hcol,
     ← degreeMutationWord_append]
 
+omit [Fintype I] in
+private theorem hdiag_cons {B : Matrix I K ℤ} {k : K} {w : List K}
+    (hdiag : ∀ u l v, k :: w = u ++ l :: v → matrixMutationWord row B u (row l) l = 0) :
+    ∀ u l v, w = u ++ l :: v → matrixMutationWord row (matrixMutation row B k) u (row l) l = 0 :=
+  fun u l v hw ↦ by simpa only [matrixMutationWord_cons] using hdiag (k :: u) l v (by simp [hw])
+
 /-- Divided-column annihilation persists along any word whose prefix matrices have zero diagonal
 at each step's mutation direction. -/
 theorem sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero {r : K → ℤ}
@@ -566,15 +520,10 @@ theorem sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero {r : K → �
   | nil => simpa using hg j
   | cons k w ih =>
     have hkk : B (row k) k = 0 := by simpa using hdiag [] k w rfl
-    have hdvd' : ∀ i l, r l ∣ matrixMutation row B k i l :=
-      fun i l ↦ dvd_matrixMutation (hdvd · l) k i
-    have hg' : ∀ l, ∑ i, (matrixMutation row B k i l / r l) • degreeMutation row B k g i = 0 :=
-      sum_matrixMutation_ediv_smul_degreeMutation_eq_zero row B k g hr hdvd hkk hg
     simp only [matrixMutationWord_cons, degreeMutationWord_cons]
-    exact ih (matrixMutation row B k) (degreeMutation row B k g) hdvd'
-      (fun u l v hw ↦ by
-        simpa only [List.cons_append, matrixMutationWord_cons] using
-          hdiag (k :: u) l v (by simp [hw])) hg'
+    exact ih (matrixMutation row B k) (degreeMutation row B k g)
+      (fun i l ↦ dvd_matrixMutation (hdvd · l) k i) (hdiag_cons row hdiag)
+      (sum_matrixMutation_ediv_smul_degreeMutation_eq_zero row B k g hr hdvd hkk hg)
 
 /-- Divided-column annihilation is preserved and reflected along any word whose prefix matrices
 have zero diagonal at each step's mutation direction. -/
@@ -587,14 +536,9 @@ theorem forall_sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero_iff {
   | nil => simp
   | cons k w ih =>
     have hkk : B (row k) k = 0 := by simpa using hdiag [] k w rfl
-    have hdvd' : ∀ i l, r l ∣ matrixMutation row B k i l :=
-      fun i l ↦ dvd_matrixMutation (hdvd · l) k i
-    have hdiag' : ∀ u l v, w = u ++ l :: v →
-        matrixMutationWord row (matrixMutation row B k) u (row l) l = 0 :=
-      fun u l v hw ↦ by
-        simpa only [matrixMutationWord_cons] using hdiag (k :: u) l v (by simp [hw])
     simp only [matrixMutationWord_cons, degreeMutationWord_cons]
-    exact (ih (matrixMutation row B k) (degreeMutation row B k g) hdvd' hdiag').trans
+    exact (ih (matrixMutation row B k) (degreeMutation row B k g)
+      (fun i l ↦ dvd_matrixMutation (hdvd · l) k i) (hdiag_cons row hdiag)).trans
       (forall_sum_matrixMutation_ediv_smul_degreeMutation_eq_zero_iff row B k g hr hdvd hkk)
 
 /-- Ordinary column annihilation persists along any word whose prefix matrices have zero diagonal
@@ -626,16 +570,12 @@ theorem degreeMutationWord_degreeMutationWord_reverse (w : List K)
   | nil => simp
   | cons k w ih =>
     have hkk : B (row k) k = 0 := by simpa using hdiag [] k w rfl
-    have hg' : ∀ j, ∑ i, matrixMutation row B k i j • degreeMutation row B k g i = 0 :=
-      sum_matrixMutation_smul_degreeMutation_eq_zero row B k g hkk hg
-    have hdiag' : ∀ u l v, w = u ++ l :: v →
-        matrixMutationWord row (matrixMutation row B k) u (row l) l = 0 :=
-      fun u l v hw ↦ by
-        simpa only [matrixMutationWord_cons] using hdiag (k :: u) l v (by simp [hw])
     rw [List.reverse_cons, degreeMutationWord_append]
     simp only [matrixMutationWord_cons, degreeMutationWord_cons]
-    rw [ih _ _ hdiag' hg', matrixMutationWord_matrixMutationWord_reverse,
-      degreeMutationWord_nil, degreeMutation_degreeMutation row B k g hkk (hg k)]
+    rw [ih _ _ (hdiag_cons row hdiag)
+        (sum_matrixMutation_smul_degreeMutation_eq_zero row B k g hkk hg),
+      matrixMutationWord_matrixMutationWord_reverse, degreeMutationWord_nil,
+      degreeMutation_degreeMutation row B k g hkk (hg k)]
 
 end Word
 
@@ -643,6 +583,13 @@ namespace ExchangeMatrix
 
 variable {I K G : Type*} [DecidableEq I] [DecidableEq K] [Fintype I]
   [AddCommGroup G] {row : K ↪ I} (B : ExchangeMatrix row)
+
+omit [Fintype I] in
+private theorem matrixMutationWord_row_self (w : List K) :
+    ∀ u k v, w = u ++ k :: v → matrixMutationWord row B.matrix u (row k) k = 0 := by
+  intro u k _ _
+  rw [← B.mutationWord_matrix]
+  exact (B.mutationWord u).matrix_row_self k
 
 /-- Every mutation word on a bundled exchange matrix preserves divided-column annihilation of
 positive exchange degrees. -/
@@ -652,9 +599,7 @@ theorem sum_mutationWord_ediv_smul_degreeMutationWord_eq_zero {r : K → ℤ}
     ∑ i, ((B.mutationWord w).matrix i j / r j) • degreeMutationWord row B.matrix g w i = 0 := by
   rw [B.mutationWord_matrix]
   exact sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero row B.matrix g hr hdvd w
-    (fun u k _ _ ↦ by
-      rw [← B.mutationWord_matrix]
-      exact (B.mutationWord u).matrix_row_self k) hg j
+    (B.matrixMutationWord_row_self w) hg j
 
 /-- Every mutation word on a bundled exchange matrix preserves and reflects divided-column
 annihilation of positive exchange degrees. -/
@@ -664,9 +609,7 @@ theorem forall_sum_mutationWord_ediv_smul_degreeMutationWord_eq_zero_iff {r : K 
       ∀ j, ∑ i, (B.matrix i j / r j) • g i = 0 := by
   simp_rw [B.mutationWord_matrix]
   exact forall_sum_matrixMutationWord_ediv_smul_degreeMutationWord_eq_zero_iff row B.matrix g
-    hr hdvd w fun u k _ _ ↦ by
-      rw [← B.mutationWord_matrix]
-      exact (B.mutationWord u).matrix_row_self k
+    hr hdvd w (B.matrixMutationWord_row_self w)
 
 /-- Every mutation word on a bundled exchange matrix preserves ordinary column annihilation. -/
 theorem sum_mutationWord_smul_degreeMutationWord_eq_zero {g : I → G}
@@ -674,9 +617,7 @@ theorem sum_mutationWord_smul_degreeMutationWord_eq_zero {g : I → G}
     ∑ i, (B.mutationWord w).matrix i j • degreeMutationWord row B.matrix g w i = 0 := by
   rw [B.mutationWord_matrix]
   exact sum_matrixMutationWord_smul_degreeMutationWord_eq_zero row B.matrix g w
-    (fun u k _ _ ↦ by
-      rw [← B.mutationWord_matrix]
-      exact (B.mutationWord u).matrix_row_self k) hg j
+    (B.matrixMutationWord_row_self w) hg j
 
 /-- Every mutation word on a bundled exchange matrix preserves and reflects ordinary column
 annihilation. -/
@@ -685,9 +626,7 @@ theorem forall_sum_mutationWord_smul_degreeMutationWord_eq_zero_iff (g : I → G
       ∀ j, ∑ i, B.matrix i j • g i = 0 := by
   simp_rw [B.mutationWord_matrix]
   exact forall_sum_matrixMutationWord_smul_degreeMutationWord_eq_zero_iff row B.matrix g w
-    fun u k _ _ ↦ by
-      rw [← B.mutationWord_matrix]
-      exact (B.mutationWord u).matrix_row_self k
+    (B.matrixMutationWord_row_self w)
 
 /-- Equal adjacent directions cancel in `degreeMutationWord` on a bundled exchange matrix for any
 initial column-annihilating grading. -/
@@ -695,11 +634,10 @@ theorem degreeMutationWord_append_cons_cons_self {g : I → G}
     (hg : ∀ j, ∑ i, B.matrix i j • g i = 0) (u v : List K) (k : K) :
     degreeMutationWord row B.matrix g (u ++ k :: k :: v) =
       degreeMutationWord row B.matrix g (u ++ v) := by
-  refine TauCeti.degreeMutationWord_append_cons_cons_self row B.matrix g u v k ?_ ?_
-  · rw [← B.mutationWord_matrix]
-    exact (B.mutationWord u).matrix_row_self k
-  · rw [← B.mutationWord_matrix]
-    exact B.sum_mutationWord_smul_degreeMutationWord_eq_zero hg u k
+  refine TauCeti.degreeMutationWord_append_cons_cons_self row B.matrix g u v k
+    (B.matrixMutationWord_row_self (u ++ [k]) u k [] rfl) ?_
+  rw [← B.mutationWord_matrix]
+  exact B.sum_mutationWord_smul_degreeMutationWord_eq_zero hg u k
 
 /-- Reversing a word on a bundled exchange matrix inverts its action on any column-annihilating
 grading. -/
@@ -709,9 +647,7 @@ theorem degreeMutationWord_degreeMutationWord_reverse {g : I → G}
         (degreeMutationWord row B.matrix g w) w.reverse = g := by
   rw [B.mutationWord_matrix]
   exact TauCeti.degreeMutationWord_degreeMutationWord_reverse row B.matrix g w
-    (fun u k _ _ ↦ by
-      rw [← B.mutationWord_matrix]
-      exact (B.mutationWord u).matrix_row_self k) hg
+    (B.matrixMutationWord_row_self w) hg
 
 end ExchangeMatrix
 
@@ -719,17 +655,15 @@ end ExchangeMatrix
 holds initially for `g = ![0, 1, 1]` and persists after mutating in direction `0`, where `g`
 updates to `![3, 1, 1]`. -/
 example : degreeMutation (Fin.castSuccEmb (n := 2)) !![0, 2; -3, 0; 3, 0] 0
-    (![0, 1, 1] : Fin 3 → ℤ) = ![3, 1, 1] := by
-  decide
+    (![0, 1, 1] : Fin 3 → ℤ) = ![3, 1, 1] := by decide
 
 example : ∀ j : Fin 2, ∑ i : Fin 3,
     (matrixMutation (Fin.castSuccEmb (n := 2)) !![0, 2; -3, 0; 3, 0] 0 i j /
       (![3, 2] : Fin 2 → ℤ) j) •
       degreeMutation (Fin.castSuccEmb (n := 2)) !![0, 2; -3, 0; 3, 0] 0
-        (![0, 1, 1] : Fin 3 → ℤ) i = 0 := by
-  apply sum_matrixMutation_ediv_smul_degreeMutation_eq_zero
+        (![0, 1, 1] : Fin 3 → ℤ) i = 0 :=
+  sum_matrixMutation_ediv_smul_degreeMutation_eq_zero
     (Fin.castSuccEmb (n := 2)) !![0, 2; -3, 0; 3, 0] 0 ![0, 1, 1]
-    (by decide) (fun a b ↦ by fin_cases a <;> fin_cases b <;> decide)
-    (by decide) (by decide)
+    (by decide) (fun a b ↦ by fin_cases a <;> fin_cases b <;> decide) (by decide) (by decide)
 
 end TauCeti

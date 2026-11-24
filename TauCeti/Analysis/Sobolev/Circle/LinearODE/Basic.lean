@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.ContinuousMap.Basic
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 public import TauCeti.Analysis.Sobolev.Circle.OfContinuousMap
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import TauCeti.Topology.Algebra.Module.ComplexSmulI
 
 /-!
 # Periodic linear differential operators on the circle Sobolev spaces
@@ -49,6 +50,8 @@ comparing weak and classical derivatives
 * `TauCeti.CircleSobolev.mulLoop T hs S`: for `s > 1/2`, the bounded real-linear map
   `H^s(E) → H⁰(E)` multiplying the continuous representative pointwise by `S`.
 * `TauCeti.CircleSobolev.loopOperator T S`: the operator `ζ ↦ ζ' - S ζ`, `H¹(E) → H⁰(E)`.
+* `TauCeti.CircleSobolev.complexLoopOperator`: `L_S` as a complex-linear operator, for a loop `S`
+  of complex-linear maps (`TauCeti.CircleSobolev.loopOperator_I_smul`).
 
 ## Main statements
 
@@ -56,14 +59,28 @@ comparing weak and classical derivatives
   `TauCeti.CircleSobolev.loopOperator_sub`: the zero-order term and `L_S` depend linearly on the
   coefficient loop `S`.
 * `TauCeti.CircleSobolev.mulLoop_const_smul_id`: multiplication by a constant complex scalar loop
-  is multiplication by that scalar.
+  is multiplication by that scalar, so `L_S` is complex linear for such a loop
+  (`TauCeti.CircleSobolev.loopOperator_const_smul_id_apply_smul`).
+* `TauCeti.CircleSobolev.mulLoop_rotate`, `TauCeti.CircleSobolev.loopOperator_rotate`: the
+  rotation of the circle by `θ` intertwines `L_S` with `L` of the translated loop
+  `x ↦ S (x + θ)`, so `L_S` commutes with the rotation when `S (x + θ) = S x`
+  (`TauCeti.CircleSobolev.loopOperator_rotate_of_invariant`).
+* `TauCeti.CircleSobolev.loopOperator_I_smul`: for a loop of complex-linear maps, `L_S` is
+  complex linear.
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
+* `TauCeti.CircleSobolev.norm_mulLoop_le`: for a loop with `‖S t‖ ≤ M`, the zero-order term has
+  norm at most `M` for the `H⁰` norms, and `TauCeti.CircleSobolev.norm_sq_le_of_loopOperator`
+  controls the `H¹` norm of `a` by the `H⁰` norms of `a` and of `L_S a`.
 * `TauCeti.CircleSobolev.isFredholm_loopOperator`, `TauCeti.CircleSobolev.index_loopOperator`:
   `L_S` is a Fredholm operator of index zero.
 * `TauCeti.CircleSobolev.loopOperator_eq_zero_iff`: the kernel of `L_S` consists of the elements
   whose continuous representative solves `ζ' = S ζ` classically.
 * `TauCeti.CircleSobolev.isInvertible_loopOperator_iff`: `L_S` is invertible exactly when
   `ζ' = S ζ` has no nonzero continuous periodic solution.
+* `TauCeti.CircleSobolev.isFredholm_I_smul_loopOperator`,
+  `TauCeti.CircleSobolev.index_I_smul_loopOperator`,
+  `TauCeti.CircleSobolev.I_smul_loopOperator_sub_smul_const_I`: Fredholmness, index zero, and
+  constant-`I` loop shift of `I • loopOperator T S`.
 
 ## References
 
@@ -145,6 +162,18 @@ theorem mulLoop_const_smul_id (hs : 1 / 2 < s) (z : ℂ) (a : CircleSobolev s E)
   ext x
   simp
 
+/-- **Rotation equivariance of the zero-order term.** Multiplication by `S` intertwines the
+rotation by `θ` with multiplication by the translated loop `x ↦ S (x + θ)`. -/
+@[simp]
+theorem mulLoop_rotate (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) (θ : AddCircle T)
+    (a : CircleSobolev s E) :
+    mulLoop T hs (S.comp (ContinuousMap.addRight θ)) (rotate θ a) =
+      rotate θ (mulLoop T hs S a) := by
+  rw [mulLoop_apply, mulLoop_apply, rotate_ofContinuousMap]
+  congr 1
+  ext x
+  simp
+
 /-- **The zero-order term is compact.** For `s > 1/2`, multiplication by a continuous loop `S` is
 a compact operator `H^s(E) → H⁰(E)`: it factors through the compact inclusion into `H^t` for any
 `1/2 < t < s`. -/
@@ -168,11 +197,60 @@ theorem loopOperator_apply (S : C(AddCircle T, E →L[ℝ] E)) (a : CircleSobole
       derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a - mulLoop T (by norm_num) S a :=
   (rfl)
 
+/-- For the zero loop, `L_0 ζ = ζ'` is the derivative. -/
+@[simp]
+theorem loopOperator_zero :
+    loopOperator (E := E) T 0 =
+      (derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num)).restrictScalars ℝ := by
+  ext a : 1
+  simp [loopOperator_apply, mulLoop_apply]
+
+/-- **Complex-linear loops give complex-linear operators.** If every `S t` commutes with
+multiplication by `I`, so does `L_S ζ = ζ' - S ζ`. -/
+theorem loopOperator_I_smul {S : C(AddCircle T, E →L[ℝ] E)}
+    (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
+    loopOperator T S (I • a) = I • loopOperator T S a := by
+  have h : applyContinuousLinearMap S (toContinuousMap T (by norm_num) (I • a)) =
+      I • applyContinuousLinearMap S (toContinuousMap T (by norm_num) a) := by
+    ext t
+    simp [hS]
+  rw [loopOperator_apply, loopOperator_apply, mulLoop_apply, mulLoop_apply, map_smul, h,
+    map_smul, smul_sub]
+
 /-- Subtracting `S₂` from the coefficient loop adds multiplication by `S₂` to `L_S`. -/
 theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
     loopOperator T (S₁ - S₂) = loopOperator T S₁ + mulLoop T (by norm_num) S₂ := by
   rw [loopOperator, loopOperator, mulLoop_sub]
   abel
+
+/-- **Complex linearity for a constant complex scalar loop.** For `z : ℂ`, the operator
+`ζ ↦ ζ' - z ζ` commutes with multiplication by complex scalars. -/
+theorem loopOperator_const_smul_id_apply_smul (z c : ℂ) (a : CircleSobolev 1 E) :
+    loopOperator T (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) (c • a) =
+      c • loopOperator T (ContinuousMap.const _ (z • ContinuousLinearMap.id ℝ E)) a := by
+  simp only [loopOperator_apply, mulLoop_const_smul_id T (s := 1) (by norm_num), map_smul,
+    smul_sub, smul_comm z c]
+
+/-- **Rotation equivariance.** If `ζ' - S ζ = η`, then the rotated loop `x ↦ ζ (x + θ)` solves
+the equation of the translated loop `x ↦ S (x + θ)` with right side `x ↦ η (x + θ)`. In particular
+`L_S` commutes with the rotation by `θ` when `S (x + θ) = S x`
+(`TauCeti.CircleSobolev.loopOperator_rotate_of_invariant`). -/
+@[simp]
+theorem loopOperator_rotate (S : C(AddCircle T, E →L[ℝ] E)) (θ : AddCircle T)
+    (a : CircleSobolev 1 E) :
+    loopOperator T (S.comp (ContinuousMap.addRight θ)) (rotate θ a) =
+      rotate θ (loopOperator T S a) := by
+  rw [loopOperator_apply, loopOperator_apply, mulLoop_rotate, derivative_rotate, map_sub]
+
+/-- If the loop `S` is invariant under the rotation by `θ`, `S (x + θ) = S x`, then `L_S` commutes
+with that rotation. -/
+theorem loopOperator_rotate_of_invariant {S : C(AddCircle T, E →L[ℝ] E)} {θ : AddCircle T}
+    (hS : ∀ x, S (x + θ) = S x) (a : CircleSobolev 1 E) :
+    loopOperator T S (rotate θ a) = rotate θ (loopOperator T S a) := by
+  have hS' : S.comp (ContinuousMap.addRight θ) = S := by
+    ext1 x
+    simp [hS]
+  rw [← loopOperator_rotate, hS']
 
 /-- The periodic first-order operator depends continuously in operator norm on its
 coefficient loop, with the uniform norm on coefficients. -/
@@ -248,6 +326,107 @@ theorem isInvertible_loopOperator_iff (S : C(AddCircle T, E →L[ℝ] E)) :
         ((h _ ((loopOperator_eq_zero_iff T S a).1 ha)).trans (map_zero _).symm)
     exact (isFredholm_loopOperator T S).isInvertible_of_injective_of_index_eq_zero hinj
       (index_loopOperator T S)
+
+/-- `I • loopOperator T S` is a Fredholm operator of real Banach spaces. -/
+theorem isFredholm_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
+    (I • loopOperator T S).IsFredholm := by
+  rw [← Complex.smulIEquiv_comp]
+  exact (isFredholm_loopOperator T S).equiv_comp (Complex.smulIEquiv _)
+
+/-- `I • loopOperator T S` has Fredholm index zero. -/
+@[simp]
+theorem index_I_smul_loopOperator (S : C(AddCircle T, E →L[ℝ] E)) :
+    (I • loopOperator T S).index = 0 := by
+  rw [← Complex.smulIEquiv_comp, ContinuousLinearMap.index_equiv_comp, index_loopOperator]
+
+/-- Subtracting the constant complex-structure loop `δ • (I • id)` from `S` subtracts `δ • ι` from
+the asymptotic loop operator `I • loopOperator T S`. -/
+theorem I_smul_loopOperator_sub_smul_const_I (S : C(AddCircle T, E →L[ℝ] E)) (δ : ℝ) :
+    I • loopOperator T (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ E)) =
+      I • loopOperator T S - δ • (inclusion (E := E) zero_le_one).restrictScalars ℝ := by
+  ext a : 1
+  simp only [smul_apply, loopOperator_sub, add_apply, mulLoop_smul,
+    mulLoop_const_smul_id T (s := 1) (by norm_num), smul_add, sub_apply,
+    ContinuousLinearMap.coe_restrictScalars']
+  rw [← Complex.coe_smul δ (I • inclusion zero_le_one a), smul_smul, smul_smul,
+    show I * (δ : ℂ) * I = -(δ : ℂ) by linear_combination (δ : ℂ) * I_sq, neg_smul,
+    Complex.coe_smul, sub_eq_add_neg]
+
+/-! ### Loops of complex-linear maps -/
+
+section ComplexLinear
+
+variable {S : C(AddCircle T, E →L[ℝ] E)}
+
+/-- Multiplication by a loop of complex-linear maps commutes with multiplication by `I`. -/
+theorem mulLoop_apply_I_smul (hs : 1 / 2 < s) (hS : ∀ t v, S t (I • v) = I • S t v)
+    (a : CircleSobolev s E) : mulLoop T hs S (I • a) = I • mulLoop T hs S a := by
+  rw [mulLoop_apply, mulLoop_apply, map_smul (toContinuousMap T hs), ← map_smul (ofContinuousMap T)]
+  refine congrArg (ofContinuousMap T) (ContinuousMap.ext fun t ↦ ?_)
+  simp [hS]
+
+/-- **The loop operator of a loop of complex-linear maps is complex linear.** This is
+`ζ ↦ ζ' - S ζ` as a complex-linear operator `H¹(E) → H⁰(E)`. It is given by its fields, rather
+than by `ContinuousLinearMap.complexOfMapISmul`, so that its underlying real operator is
+`TauCeti.CircleSobolev.loopOperator T S` by definition, and complex orientations of its
+determinant line are elements of the determinant line of `L_S`. -/
+@[expose]
+def complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
+    CircleSobolev 1 E →L[ℂ] CircleSobolev 0 E where
+  toFun := loopOperator T S
+  map_add' := map_add _
+  map_smul' := by
+    exact (loopOperator T S : CircleSobolev 1 E →ₗ[ℝ] CircleSobolev 0 E).map_smul_of_map_I_smul
+      (loopOperator_I_smul T hS)
+  cont := (loopOperator T S).continuous
+
+@[simp]
+theorem complexLoopOperator_apply (hS : ∀ t v, S t (I • v) = I • S t v) (a : CircleSobolev 1 E) :
+    complexLoopOperator T hS a = loopOperator T S a :=
+  (rfl)
+
+/-- The real operator underlying `TauCeti.CircleSobolev.complexLoopOperator` is the loop
+operator. -/
+@[simp]
+theorem restrictScalars_complexLoopOperator (hS : ∀ t v, S t (I • v) = I • S t v) :
+    (complexLoopOperator T hS).restrictScalars ℝ = loopOperator T S :=
+  (rfl)
+
+end ComplexLinear
+
+section Inner
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **The multiplication operator is bounded on `H⁰`.** If `‖S t‖ ≤ M` for every `t`,
+multiplication by the loop `S` has `H⁰` norm at most `M` times the `H⁰` norm of its argument, by
+Parseval's identity. -/
+theorem norm_mulLoop_le (hs : 1 / 2 < s) {S : C(AddCircle T, F →L[ℝ] F)} {M : ℝ}
+    (hM : ∀ t, ‖S t‖ ≤ M) (a : CircleSobolev s F) :
+    ‖mulLoop T hs S a‖ ≤ M * ‖inclusion (show (0 : ℝ) ≤ s by linarith) a‖ := by
+  have := FiniteDimensional.completeSpace ℂ F
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  rw [mulLoop_apply, ← ofContinuousMap_toContinuousMap T hs a]
+  refine norm_ofContinuousMap_le_of_forall_norm_le T hM0 fun x ↦ ?_
+  rw [applyContinuousLinearMap_apply]
+  exact (S x).le_of_opNorm_le (hM x) _
+
+/-- **The `H¹` estimate for `ζ ↦ ζ' - S ζ`.** If `‖S t‖ ≤ M` for every `t`, the `H¹` norm of `a`
+is controlled by the `H⁰` norms of `a` and of `L_S a = a' - S a`:
+`‖a‖² ≤ 2 ‖a‖²_{H⁰} + 2 (T / 2π)² (‖L_S a‖ + M ‖a‖_{H⁰})²`. -/
+theorem norm_sq_le_of_loopOperator {S : C(AddCircle T, F →L[ℝ] F)} {M : ℝ} (hM : ∀ t, ‖S t‖ ≤ M)
+    (a : CircleSobolev 1 F) :
+    ‖a‖ ^ 2 ≤ 2 * ‖inclusion zero_le_one a‖ ^ 2 +
+      2 * (T / (2 * π)) ^ 2 * (‖loopOperator T S a‖ + M * ‖inclusion zero_le_one a‖) ^ 2 := by
+  have hd : ‖derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a‖ ≤
+      ‖loopOperator T S a‖ + M * ‖inclusion zero_le_one a‖ := by
+    rw [show derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a =
+      loopOperator T S a + mulLoop T (by norm_num) S a by rw [loopOperator_apply, sub_add_cancel]]
+    exact (norm_add_le _ _).trans (add_le_add_right (norm_mulLoop_le T _ hM a) _)
+  refine (norm_sq_le_of_derivative T (show (0 : ℝ) + 1 = 1 by norm_num) a).trans ?_
+  gcongr
+
+end Inner
 
 end CircleSobolev
 

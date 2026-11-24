@@ -16,8 +16,8 @@ public import TauCeti.Combinatorics.Network.Hoffman
 
 An assignment on a finite directed multigraph whose excesses are integers can be rounded
 arrowwise to integers without changing any excess.  Each rounded value lies between the floor
-and ceiling of the original value.  Consequently, integer lower and upper bounds, circulations,
-and flows of prescribed integer value are preserved.
+and ceiling of the original value.  Consequently, integer lower and upper bounds, prescribed
+excess, circulations, and bounded or ordinary flows of prescribed integer value are preserved.
 
 The existence proof applies the additive-subgroup integrality part of Hoffman's feasibility
 theorem to the floor and ceiling bounds.  The original assignment witnesses feasibility over the
@@ -96,6 +96,44 @@ theorem exists_integerRounding_mem_Icc (lo hi : Assignment Q ℤ) (f : Assignmen
   · exact (Int.le_floor.mpr (by simpa using hf.1 x y e)).trans (hg e).1
   · exact (hg e).2.trans (Int.ceil_le.mpr (by simpa using hf.2 x y e))
 
+/-- A feasible assignment between integer bounds with prescribed integer excess can be rounded
+to an integer-valued feasible assignment with the same prescribed excess. -/
+theorem ExcessFlow.exists_integerRounding {lo hi : Assignment Q ℤ} {b : V → ℤ}
+    (f : ExcessFlow (lo.map (Int.castAddHom R)) (hi.map (Int.castAddHom R))
+      (fun x ↦ (b x : R))) :
+    Nonempty (ExcessFlow lo hi b) := by
+  obtain ⟨g, hgmem, hgex⟩ :=
+    exists_integerRounding_mem_Icc lo hi f.val b f.mem_Icc f.excessAt_eq
+  exact ⟨g, hgmem, funext hgex⟩
+
+/-- A signed bounded terminal assignment between integer bounds and of prescribed integer value
+can be rounded to an integer-valued bounded terminal assignment of the same value. In particular,
+neither the arrow values nor the terminal value need be nonnegative. -/
+theorem BoundedFlow.exists_integerRounding {lo hi : Assignment Q ℤ} {s t : V}
+    (f : BoundedFlow (lo.map (Int.castAddHom R)) (hi.map (Int.castAddHom R)) s t)
+    (q : ℤ) (hq : f.val = (q : R)) :
+    ∃ g : BoundedFlow lo hi s t, g.val = q := by
+  classical
+  let b : V → ℤ := Pi.single t q - Pi.single s q
+  have hb : ∀ x, excessAt f.toFun x = (b x : R) := fun x ↦ by
+    rw [f.excessAt_eq_single_sub_single, hq]
+    simp [b, Pi.single_apply]
+  obtain ⟨g, hgmem, hgex⟩ :=
+    exists_integerRounding_mem_Icc lo hi f.toFun b f.mem_Icc hb
+  let g' : BoundedFlow lo hi s t :=
+    { toFun := g
+      mem_Icc := hgmem
+      conserve := fun x hxs hxt ↦ by simp [hgex x, b, hxs, hxt] }
+  refine ⟨g', ?_⟩
+  rw [BoundedFlow.val_def, hgex t]
+  by_cases hts : t = s
+  · subst s
+    have hq0 : q = 0 := by
+      apply Int.cast_injective (α := R)
+      rw [Int.cast_zero, ← hq, f.val_eq_zero_of_eq rfl]
+    simp [b, hq0]
+  · simp [b, hts]
+
 /-- A circulation over the ambient ordered ring can be rounded arrowwise to an integer
 circulation between its floor and ceiling. -/
 theorem exists_integerRounding_isCirculation (f : Assignment Q R) (hf : IsCirculation f) :
@@ -111,41 +149,26 @@ of the same value. -/
 theorem Flow.exists_integerRounding {cap : Assignment Q ℤ} {s t : V}
     (f : Flow (cap.map (Int.castAddHom R)) s t) (q : ℤ) (hq : f.val = (q : R)) :
     ∃ g : Flow cap s t, g.val = q := by
-  classical
-  let b : V → ℤ := fun x ↦ if x = s then -q else if x = t then q else 0
-  have hb : ∀ x, excessAt f.toFun x = (b x : R) := by
-    intro x
-    by_cases hxs : x = s
-    · subst x
-      rw [f.excessAt_source, hq]
-      simp [b]
-    · by_cases hxt : x = t
-      · subst x
-        rw [← BoundedFlow.val_def, hq]
-        simp [b, hxs]
-      · rw [f.conserve x hxs hxt]
-        simp [b, hxs, hxt]
-  obtain ⟨g, hgmem, hgex⟩ := exists_integerRounding_mem_Icc 0 cap f.toFun b
-    (by simpa only [Assignment.map_zero] using f.mem_Icc) hb
   have hqnonneg : 0 ≤ q := by
     have hnonneg : (0 : R) ≤ f.val := by
       rw [BoundedFlow.val_def]
       exact f.excessAt_sink_nonneg
     rw [hq] at hnonneg
     exact_mod_cast hnonneg
-  have hqzero (hst : s = t) : q = 0 := by
-    apply Int.cast_injective (α := R)
-    rw [Int.cast_zero, ← hq, f.val_eq_zero_of_eq hst]
-  have hbt : b t = q := by
-    by_cases hts : t = s
-    · simp [b, hts, hqzero hts.symm]
-    · simp [b, hts]
+  let f' : BoundedFlow ((0 : Assignment Q ℤ).map (Int.castAddHom R))
+      (cap.map (Int.castAddHom R)) s t :=
+    { toFun := f.toFun
+      mem_Icc := by simpa only [Assignment.map_zero] using f.mem_Icc
+      conserve := f.conserve }
+  have hq' : f'.val = (q : R) := by
+    simpa only [f', BoundedFlow.val_def] using hq
+  obtain ⟨g, hg⟩ := f'.exists_integerRounding q hq'
   let F : Flow cap s t :=
-    { toFun := g
-      mem_Icc := hgmem
-      conserve := fun x hxs hxt ↦ by simp [hgex x, b, hxs, hxt]
-      excessAt_sink_nonneg := by rw [hgex t, hbt]; exact hqnonneg }
-  exact ⟨F, by simp [BoundedFlow.val_def, F, hgex t, hbt]⟩
+    { toBoundedFlow := g
+      excessAt_sink_nonneg := by
+        rw [← BoundedFlow.val_def, hg]
+        exact hqnonneg }
+  exact ⟨F, hg⟩
 
 /-- Rational assignments with integer excess admit integer roundings. -/
 theorem exists_integerRounding_rat (f : Assignment Q ℚ) (b : V → ℤ)

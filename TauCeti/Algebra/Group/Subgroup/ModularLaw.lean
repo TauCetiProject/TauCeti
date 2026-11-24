@@ -22,6 +22,8 @@ other (`Subgroup.coe_mul_of_left_le_normalizer_right`,
 
 * `Subgroup.inf_sup_assoc_of_le`: `(K ⊓ H) ⊔ N = K ⊓ (H ⊔ N)` for `↑(H ⊔ N) = ↑H * ↑N` and
   `N ≤ K`.
+* `Subgroup.sup_inf_assoc_of_le_of_normal`: `(A ⊔ B) ⊓ C = A ⊔ (B ⊓ C)` for `A ≤ C` and normal
+  `B`.
 -/
 
 public section
@@ -42,5 +44,13 @@ theorem inf_sup_assoc_of_le {H K N : Subgroup G}
   rw [← SetLike.mem_coe, coe_inf, hHN, ← inf_mul_assoc K H N h] at hx
   obtain ⟨y, hy, z, hz, rfl⟩ := hx
   exact mul_mem_sup hy hz
+
+/-- **Dedekind's modular law** in `Subgroup G`, for a normal middle term: if `A ≤ C` and `B` is
+normal, then `(A ⊔ B) ⊓ C = A ⊔ (B ⊓ C)`. -/
+@[to_additive /-- **Dedekind's modular law** in `AddSubgroup G`, for a normal middle term: if
+`A ≤ C` and `B` is normal, then `(A ⊔ B) ⊓ C = A ⊔ (B ⊓ C)`. -/]
+theorem sup_inf_assoc_of_le_of_normal {A C : Subgroup G} (B : Subgroup G) [B.Normal]
+    (h : A ≤ C) : (A ⊔ B) ⊓ C = A ⊔ (B ⊓ C) := by
+  simpa only [inf_comm, sup_comm] using (inf_sup_assoc_of_le (normal_mul B A) h).symm
 
 end Subgroup

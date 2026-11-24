@@ -120,9 +120,10 @@ theorem IsJordanSplitting.exists_mem_apply_eq_two_pow [Module.Free ℤ_[2] M]
   obtain ⟨C, hC, hCp⟩ := isModular_def.mp (h.isModular k)
   have hBC (y z : N k) : 2 ^ k * C y z = B y z := by
     simpa using LinearMap.congr_fun₂ hC y z
-  have hCs : C.IsSymm := IsSymm.of_smul h2k (hC ▸ hB.restrict (N k))
+  have hCs : C.IsSymm := (IsSMulRegular.of_ne_zero (pow_ne_zero k two_ne_zero)).isSymm_smul_iff.mp
+    (hC ▸ hB.restrict (N k))
   have hCeven (y : N k) : 2 ∣ C y y := by
-    obtain ⟨c, hc⟩ := heven y y.2
+    obtain ⟨c, hc⟩ := heven y y.property
     exact ⟨c, (mul_cancel_left_mem_nonZeroDivisors h2k).mp (by
       rw [hBC]; linear_combination hc)⟩
   -- A perfect pairing on a nonzero free module takes the value `1`.
@@ -133,7 +134,7 @@ theorem IsJordanSplitting.exists_mem_apply_eq_two_pow [Module.Free ℤ_[2] M]
   obtain ⟨y, hy⟩ := hCp.bijective_left.2 (b.coord i)
   obtain ⟨e, f, hef, hUV⟩ := hCs.exists_hyperbolic_or_exists_two_one_one_two
     (PadicInt.card_residueField 2) hCeven (x := y) (y := b i) (by simp [hy])
-  refine ⟨e, e.2, f, f.2, by rw [← hBC, hef, mul_one], ?_⟩
+  refine ⟨e, e.property, f, f.property, by rw [← hBC, hef, mul_one], ?_⟩
   rcases hUV with ⟨he, hf⟩ | ⟨he, hf⟩
   · exact .inl ⟨by rw [← hBC, he, mul_zero], by rw [← hBC, hf, mul_zero]⟩
   · exact .inr ⟨by rw [← hBC, he, pow_succ], by rw [← hBC, hf, pow_succ]⟩
