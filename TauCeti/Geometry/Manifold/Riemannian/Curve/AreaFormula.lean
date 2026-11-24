@@ -256,10 +256,10 @@ theorem map_withDensity_enorm_curveVelocity_eq_hausdorffMeasure (hO : IsOpen O)
       μH[1].restrict (γ '' A) := by
   have hγA : AEMeasurable γ (Measure.map (↑) (Measure.comap ((↑) : A → ℝ)
       (volume.withDensity fun s ↦ ‖curveVelocity I γ s‖ₑ))) := by
-    rw [map_comap_subtype_coe hA]
+    rw [map_comap_subtypeVal hA]
     exact (hγ.continuousOn.mono hAO).aemeasurable hA
-  rw [← restrict_withDensity hA, ← map_comap_subtype_coe hA,
-    hγA.map_map_of_aemeasurable measurable_subtype_coe.aemeasurable]
+  rw [← restrict_withDensity hA, ← map_comap_subtypeVal hA,
+    hγA.map_map_of_aemeasurable measurable_subtypeVal.aemeasurable]
   exact restrict_map_withDensity_enorm_curveVelocity_eq_hausdorffMeasure hO hγ hA hAO hinj
 
 /-- **The weighted area formula for injective curves.** For a `C¹` curve `γ` on an open parameter
@@ -276,8 +276,8 @@ theorem lintegral_image_eq_lintegral_enorm_curveVelocity_mul (hO : IsOpen O)
   rw [← restrict_map_withDensity_enorm_curveVelocity_eq_hausdorffMeasure hO hγ hA hAO hinj,
     (ContinuousOn.measurableEmbedding hA (hγ.continuousOn.mono hAO) hinj).lintegral_map]
   simp only [domRestrict_apply]
-  rw [← (MeasurableEmbedding.subtype_coe hA).lintegral_map (fun s ↦ g (γ s)),
-    map_comap_subtype_coe hA,
+  rw [← (MeasurableEmbedding.subtypeVal hA).lintegral_map (fun s ↦ g (γ s)),
+    map_comap_subtypeVal hA,
     setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable₀ _ hspeed _ hA
       (.of_forall fun _ ↦ eNorm_lt_top)]
   simp only [Pi.mul_apply]

@@ -104,7 +104,8 @@ private theorem exists_mem_nhds_forall_apply_eq_zero_section
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) he).mem_iff.mp he
   let c := e.cutoffLocalFrameCoeff b ⟨ρ, ρ.contMDiff⟩ hρ
   obtain ⟨fr', hfr', hfreq⟩ :=
-    e.exists_contMDiff_eventuallyEq_localFrame (I := I) b (mem_baseSet_trivializationAt F V x₀)
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := ∞) b le_rfl
+      (mem_baseSet_trivializationAt F V x₀)
   let fr (i : Fin (finrank ℝ F)) : Cₛ^∞⟮I; F, V⟯ := ⟨fr' i, hfr' i⟩
   -- Near `x₀`, `ρ = 1` and the global sections `fr i` agree with the local frame of `e`.
   set G := {y | ρ y = 1 ∧ ∀ i, fr' i y = e.localFrame b i y}

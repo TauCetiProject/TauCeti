@@ -34,6 +34,9 @@ them, so the linear equations with arbitrary coefficient fields are special case
 
 * `TauCeti.isWeakCauchyRiemannOn_iff_forall_hasWeakFDerivOn`: the equation does not depend on
   which weak derivative is used, since weak derivatives agree almost everywhere.
+* `TauCeti.isWeakCauchyRiemannOn_iff_continuousOn_memWkpLoc_interior`: on any set `U`, such as a
+  half-disc, the equation is continuity and `W^{1,p}_loc` up to the boundary of `U` together with
+  the equation on the interior of `U`.
 * `TauCeti.isWeakCauchyRiemannOn_congr` and `TauCeti.isWeakCauchyRiemannOn_congr_ae`: the
   equation only sees `u` on `U`, and `J` and `η` along the graph of `u` almost everywhere on the
   interior.
@@ -185,6 +188,18 @@ theorem isWeakCauchyRiemannOn_iff_forall_hasWeakFDerivOn :
     fun ⟨hc, hw, hall⟩ => ?_⟩
   obtain ⟨hu, D, hD, hDp⟩ := memWkpLoc_succ_iff.1 hw
   exact ⟨hc, hu, D, hD, memWkpLoc_zero_iff.1 hDp, hall D hD⟩
+
+/-- **The equation on a half-disc.** The weak equation holds on a set `U`, such as a half-disc
+relatively open in the closed upper half-plane, exactly when `u` is continuous on `U`, lies in
+`W^{1,p}_loc` of `U` with `Lᵖ` bounds up to the boundary of `U`, and solves the weak equation on
+the interior of `U`. -/
+theorem isWeakCauchyRiemannOn_iff_continuousOn_memWkpLoc_interior :
+    IsWeakCauchyRiemannOn p U J η u ↔
+      ContinuousOn u U ∧ MemWkpLoc p U 1 u ∧ IsWeakCauchyRiemannOn p (interior U) J η u := by
+  refine ⟨fun h ↦ ⟨h.continuousOn, h.memWkpLoc_one, h.mono interior_subset⟩,
+    fun ⟨hc, hw, h⟩ ↦ isWeakCauchyRiemannOn_iff_forall_hasWeakFDerivOn.2 ⟨hc, hw, fun D hD ↦ ?_⟩⟩
+  have hO : Opens.interior (interior U) = Opens.interior U := Opens.ext interior_interior
+  simpa only [interior_interior] using h.ae_eq_of_hasWeakFDerivOn (D := D) (hO ▸ hD)
 
 /-! ### Comparison with the classical equation -/
 

@@ -26,7 +26,7 @@ namespace TauCeti.Contour
 theorem _root_.AbsolutelyContinuousOnInterval.isLocallyConstant_windingNumber
     {γ : ℝ → ℂ} {a b : ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) :
-    IsLocallyConstant (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.1) := by
+    IsLocallyConstant (fun z : {z : ℂ // z ∉ γ '' uIcc a b} ↦ windingNumber γ a b z.val) := by
   exact hγ.continuousOn.isLocallyConstant_windingNumber_of_integer
     hγ.intervalIntegrable_deriv_of_finiteDimensional
     (fun _ hz ↦ hγ.exists_int_windingNumber hclosed hz)
