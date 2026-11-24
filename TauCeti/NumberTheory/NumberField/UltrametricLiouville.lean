@@ -14,7 +14,7 @@ import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 import Mathlib.NumberTheory.NumberField.Norm
 import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
-import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.NumberTheory.Padics.Basic
 

@@ -20,9 +20,10 @@ most `‖q n‖ r ^ n (‖y‖ / r) ^ n ≤ M (‖y‖ / r) ^ T`.
 Over `ℂ` the corresponding statement (Mathlib's
 `Complex.dist_le_mul_div_pow_of_mapsTo_ball_of_isLittleO`) assumes a bound for the values of `f`
 on the disc whose radius appears in the denominator. Here the hypothesis is instead a bound for
-the coefficients at the radius `r`, and nothing is assumed about the field of scalars or the
-domain. This is the form in which Schwarz's lemma enters transcendence proofs at a `p`-adic
-place: a function with a zero of order `T` at the centre is small on a smaller disc.
+the coefficients at the radius `r`. The scalars may form any nontrivially normed field and the
+domain any normed space over it; only the norm of the codomain has to be ultrametric. This is
+the form in which Schwarz's lemma enters transcendence proofs at a `p`-adic place: a function with
+a zero of order `T` at the centre is small on a smaller disc.
 
 ## Main results
 

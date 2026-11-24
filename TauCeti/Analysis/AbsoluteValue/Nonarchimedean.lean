@@ -41,9 +41,7 @@ finite place of the extension.
   integral over `R`. Over `ℤ` the hypothesis on `R` is automatic,
   `IsNonarchimedean.apply_le_one_of_isIntegral_int`. This is the absolute-value analogue of
   Mathlib's `Valuation.Integers.isIntegral_iff_v_le_one`, and the proof follows the same size
-  argument on the equation of integrality. For a power-multiplicative ultrametric
-  seminorm on a ring it says that algebraic integers lie in the closed unit ball,
-  `IsUltrametricDist.norm_le_one_of_isIntegral`.
+  argument on the equation of integrality.
 * `AbsoluteValue.nonarchRpow`: for `t > 0`, the function `x ↦ v x ^ t` is again an absolute value
   when `v` is nonarchimedean, equivalent to `v`, nonarchimedean, and lying over the corresponding
   power of the restriction of `v`. For an archimedean absolute value only `t ≤ 1` works in
@@ -167,26 +165,6 @@ theorem apply_le_one_of_isIntegral_int (hv : IsNonarchimedean v) {x : F} (hx : I
   simpa using hv.apply_intCast_le_one (by simp) v.map_one v.map_neg (n := r)
 
 end IsNonarchimedean
-
-/-- In a seminormed ring whose seminorm is power-multiplicative and ultrametric, every element
-integral over `ℤ` has norm at most `1`. -/
-theorem IsUltrametricDist.norm_le_one_of_isIntegral {R : Type*} [SeminormedRing R]
-    [IsUltrametricDist R] (hR : IsPowMul (‖·‖ : R → ℝ)) {x : R} (hx : IsIntegral ℤ x) :
-    ‖x‖ ≤ 1 := by
-  by_contra! hx1
-  have : Nontrivial R := ⟨x, 0, by rintro rfl; rw [norm_zero] at hx1; linarith⟩
-  -- `‖1‖ = ‖1‖ ^ 2`, and `‖1‖ ≠ 0` as `‖x‖ ≤ ‖x‖ ‖1‖`, so the integers have norm at most `1`.
-  have h1 : ‖(1 : R)‖ = 1 := by
-    have h2 := hR 1 (n := 2) (by norm_num)
-    have h3 : ‖x‖ ≤ ‖x‖ * ‖(1 : R)‖ := by simpa using norm_mul_le x 1
-    rw [one_pow] at h2
-    nlinarith [norm_nonneg (1 : R)]
-  obtain ⟨p, hpm, hp⟩ := hx
-  obtain ⟨i, hi, hle⟩ := (hpm.map (algebraMap ℤ R)).exists_apply_pow_le_apply_coeff_of_eval_eq_zero
-    norm_nonneg norm_mul_le hR isNonarchimedean_norm (by rwa [eval_map])
-  rw [coeff_map, eq_intCast] at hle
-  exact (one_lt_pow₀ hx1 (Nat.sub_pos_of_lt hi).ne').not_ge (hle.trans
-    (isNonarchimedean_norm.apply_intCast_le_one (by simp [h1]) h1 norm_neg))
 
 namespace AbsoluteValue
 
