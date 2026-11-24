@@ -395,38 +395,17 @@ theorem mem_ker_unitaryProdCircleToUnitaryGroup_iff {p : unitary ℍ[ℝ] × Cir
     p ∈ unitaryProdCircleToUnitaryGroup.ker ↔ p = 1 ∨ p = -1 := by
   refine ⟨fun hp => ?_, ?_⟩
   · obtain ⟨⟨a, ha⟩, w⟩ := p
-    have hm := congrArg (fun g : Matrix.unitaryGroup (Fin 2) ℂ => (g : Matrix (Fin 2) (Fin 2) ℂ))
-      (MonoidHom.mem_ker.mp hp)
-    simp only [coe_unitaryProdCircleToUnitaryGroup_apply, OneMemClass.coe_one,
-      toComplexMatrix_apply] at hm
-    -- Compare the entries `(0, 0)`, `(0, 1)` and `(1, 1)` of `w • toComplexMatrix a = 1`.
-    have h00 := congrFun (congrFun hm 0) 0
-    have h01 := congrFun (congrFun hm 0) 1
-    have h11 := congrFun (congrFun hm 1) 1
-    simp only [Matrix.smul_apply, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one, smul_eq_mul,
-      Matrix.one_apply_eq, Matrix.one_apply_ne zero_ne_one] at h00 h01 h11
-    have hw := Circle.coe_ne_zero w
-    have hJK : (a.imJ : ℂ) + a.imK * Complex.I = 0 := (mul_eq_zero.mp h01).resolve_left hw
-    have hJ : a.imJ = 0 := by simpa using congrArg Complex.re hJK
-    have hK : a.imK = 0 := by simpa using congrArg Complex.im hJK
-    have hI : a.imI = 0 := by
-      have := congrArg Complex.im (mul_left_cancel₀ hw (h00.trans h11.symm))
-      simp at this
-      linarith
-    have hre : (a.re - 1) * (a.re + 1) = 0 := by
-      have := (mem_unitary_iff_normSq_eq_one a).mp ha
-      rw [normSq_def'] at this
-      linear_combination (by simpa [hI, hJ, hK, sq] using this : a.re ^ 2 = 1)
-    have hwre : (w : ℂ) * a.re = 1 := by simpa [hI] using h00
-    rcases mul_eq_zero.mp hre with h | h
-    · have h1 : a.re = 1 := by linarith
-      refine Or.inl (Prod.ext (Subtype.ext ?_) (Circle.ext (by simpa [h1] using hwre)))
-      ext <;> simp [h1, hI, hJ, hK]
-    · have h1 : a.re = -1 := by linarith
-      refine Or.inr (Prod.ext (Subtype.ext ?_)
-        (Circle.ext (by simpa [h1, neg_eq_iff_eq_neg] using hwre)))
-      ext <;> simp [h1, hI, hJ, hK, Unitary.coe_neg]
+    have hm : (w : ℂ) • toComplexMatrix a = 1 := congrArg Subtype.val (MonoidHom.mem_ker.mp hp)
+    -- Taking determinants gives `w ^ 2 = 1`; then `toComplexMatrix a = w • 1` forces `a = w`.
+    have hw : (w : ℂ) ^ 2 = 1 := by
+      simpa [Matrix.det_smul, (mem_unitary_iff_normSq_eq_one a).mp ha] using
+        congrArg Matrix.det hm
+    rcases sq_eq_one_iff.mp hw with h | h
+    · refine Or.inl (Prod.ext (Subtype.ext (toComplexMatrix_injective ?_)) (Circle.ext h))
+      simpa [h] using hm
+    · refine Or.inr (Prod.ext (Subtype.ext (toComplexMatrix_injective ?_)) (Circle.ext ?_))
+      · simpa [h, Unitary.coe_neg, neg_eq_iff_eq_neg] using hm
+      · simpa using h
   · rintro (rfl | rfl)
     · exact one_mem _
     · refine MonoidHom.mem_ker.mpr (Subtype.ext ?_)
