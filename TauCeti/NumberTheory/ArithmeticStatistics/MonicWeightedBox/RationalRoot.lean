@@ -106,12 +106,6 @@ private theorem ncard_coeff_zero_ne_zero_root_le (n : ℕ) (X : ℝ) :
     · exact h1
     · simpa [coeff_divX] using congrArg (fun p : ℤ[X] ↦ p.coeff k) h2
 
-/-- The weight `k(k+1)/2` of the degree `k` box grows by `k + 1` in degree `k + 1`. This is
-Mathlib's `Nat.triangle_succ`, written for the box weight. -/
-private theorem succ_mul_succ_succ_div_two (k : ℕ) :
-    (k + 1) * (k + 1 + 1) / 2 = k * (k + 1) / 2 + (k + 1) := by
-  simpa only [Nat.add_sub_cancel, Nat.mul_comm] using Nat.triangle_succ (k + 1)
-
 /-- In degree `n + 2`, splitting by the constant term bounds the polynomials with a rational root
 by `3^(n+1) X^(T+n+1) + 4 · 3^n X^(T+n+2) (1 + (n + 2) log X)`, where `T = n(n+1)/2`. -/
 private theorem ncard_rat_root_le_add (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
@@ -124,7 +118,8 @@ private theorem ncard_rat_root_le_add (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
     (Set.ncard_union_le _ _)
   have hA : ({f ∈ monicWeightedBox (n + 2) X | f.coeff 0 = 0}.ncard : ℝ) ≤
       3 ^ (n + 1) * X ^ (n * (n + 1) / 2 + (n + 1)) := by
-    rw [← succ_mul_succ_succ_div_two]
+    -- The weight of the degree `n + 1` box exceeds that of the degree `n` box by `n + 1`.
+    rw [show n * (n + 1) / 2 + (n + 1) = (n + 1) * (n + 1 + 1) / 2 by grind]
     exact (Nat.cast_le.mpr (ncard_coeff_zero_eq_zero_le (n + 1) X)).trans
       (ncard_monicWeightedBox_le (n + 1) hX)
   have hB : ({f ∈ monicWeightedBox (n + 2) X | f.coeff 0 ≠ 0 ∧ ∃ z : ℤ, f.eval z = 0}.ncard :
@@ -166,9 +161,7 @@ theorem ncard_monicWeightedBox_rat_root_le (n : ℕ) {X : ℝ} (hX : 2 ≤ X) :
       _ = _ := by ring
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
   -- With `T = m(m+1)/2`, the target weight `D - n + 1` is `T + m + 2`.
-  have hT : (m + 2) * (m + 2 + 1) / 2 - (m + 2) + 1 = m * (m + 1) / 2 + (m + 2) := by
-    rw [succ_mul_succ_succ_div_two, succ_mul_succ_succ_div_two]
-    omega
+  have hT : (m + 2) * (m + 2 + 1) / 2 - (m + 2) + 1 = m * (m + 1) / 2 + (m + 2) := by grind
   have h := ncard_rat_root_le_add m hX1
   rw [hT]
   set T := m * (m + 1) / 2

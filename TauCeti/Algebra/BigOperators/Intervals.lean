@@ -30,6 +30,7 @@ and the nonpositive part `∑ j ∈ range (a + 1), F (-(j : ℤ))`. In a ring, t
 `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are `0` or `1`.
 The sum of squares `∑_{r < n} r ^ 2 = n (n - 1) (2 n - 1) / 6` holds in `ℕ`, and with the
 denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r = n (n - 1)`.
+Read backwards, `∑_{j < n} (n - j) = n (n + 1) / 2` in `ℕ`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
@@ -48,6 +49,7 @@ A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the sh
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
   `Finset.sum_range_natCast_sq_mul_six`: Gauss's sum in a ring and the sum of squares below `n`.
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
+* `Finset.sum_range_sub_id`: the sum of `n - j` over `j < n` is `n (n + 1) / 2`.
 * `Finset.sum_Icc_neg_one_pow_add_one`: `∑ k ∈ Icc 1 n, (-1) ^ (k + 1)` is `0` for even `n` and
   `1` for odd `n`.
 * `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`: twice `∑_{0 ≤ j < k} j - ∑_{k ≤ j < 0} j` is
@@ -195,6 +197,16 @@ theorem sum_range_sub_mul_two (r e : ℕ) (he : e ≤ r + 1) :
     sum_range_natCast_mul_two]
   simp
   ring
+
+/-- Gauss's sum read backwards: the sum of `n - j` over `j < n` is `1 + 2 + ⋯ + n`, which is
+`n (n + 1) / 2`. -/
+theorem sum_range_sub_id (n : ℕ) : ∑ j ∈ range n, (n - j) = n * (n + 1) / 2 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [sum_range_succ']
+    simp only [Nat.add_sub_add_right, Nat.sub_zero, ih]
+    grind
 
 /-- The partial sums `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are
 `0` for even `n` and `1` for odd `n`; this is Mathlib's `neg_one_geom_sum` with the index shifted

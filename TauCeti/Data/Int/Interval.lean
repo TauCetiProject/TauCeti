@@ -73,8 +73,7 @@ variable {K : Type*} [Ring K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing
 theorem setOf_abs_intCast_lt_eq_Ioo (Y : K) :
     {c : ℤ | |(c : K)| < Y} = ↑(Finset.Ioo (-⌈Y⌉) ⌈Y⌉) := by
   ext c
-  rw [Set.mem_ofPred_eq, Finset.coe_Ioo, Set.mem_Ioo, abs_lt, neg_lt, ← Int.cast_neg,
-    ← Int.lt_ceil, ← Int.lt_ceil, neg_lt]
+  simp [abs_lt, Int.lt_ceil, neg_lt]
 
 /-- There are finitely many integers of absolute value less than `Y`. -/
 theorem finite_setOf_abs_intCast_lt (Y : K) : {c : ℤ | |(c : K)| < Y}.Finite := by

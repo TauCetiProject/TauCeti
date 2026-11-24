@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Set.Card
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import Mathlib.Tactic.Positivity
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 import TauCeti.Data.Int.Interval
 
@@ -105,18 +106,6 @@ theorem finite_monicWeightedBox (n : ℕ) (X : ℝ) : (monicWeightedBox n X).Fin
   (TauCeti.Polynomial.finite_setOf_natDegree_le_coeff_mem_pi n
     fun i ↦ (coeffBox n X i).finite_toSet).subset (monicWeightedBox_subset n X)
 
-/-- The exponents `n - i` for `i < n` are `1, …, n`, which sum to `n(n+1)/2`. -/
-private theorem sum_fin_sub_eq (n : ℕ) : ∑ i : Fin n, (n - (i : ℕ)) = n * (n + 1) / 2 := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Fin.sum_univ_succ]
-    simp only [Fin.val_zero, Fin.val_succ, Nat.add_sub_add_right, Nat.sub_zero, ih]
-    have := Nat.triangle_succ (n + 1)
-    rw [Nat.add_sub_cancel, Nat.add_sub_cancel] at this
-    rw [Nat.mul_comm (n + 1 + 1), Nat.mul_comm (n + 1) n] at this
-    omega
-
 /-- For `X ≥ 1`, the degree `n` weighted box has at most `3^n X^(n(n+1)/2)` elements. -/
 theorem ncard_monicWeightedBox_le (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
     ((monicWeightedBox n X).ncard : ℝ) ≤ 3 ^ n * X ^ (n * (n + 1) / 2) := by
@@ -137,6 +126,6 @@ theorem ncard_monicWeightedBox_le (n : ℕ) {X : ℝ} (hX : 1 ≤ X) :
         Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦ hcard i
     _ = 3 ^ n * X ^ (n * (n + 1) / 2) := by
         rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-          Finset.prod_pow_eq_pow_sum, sum_fin_sub_eq]
+          Finset.prod_pow_eq_pow_sum, Fin.sum_univ_eq_sum_range (n - ·), Finset.sum_range_sub_id]
 
 end TauCeti
