@@ -49,6 +49,12 @@ Local integrability on the trace `U ∩ s` of a closed set on an open set is loc
 A function locally integrable on `s` up to the closure of a null-measurable set `t`, cut off to
 `t`, is locally integrable on `s` (`MeasureTheory.LocallyIntegrableOn.indicator_of_closure`).
 
+A function locally integrable on `s` stays so after multiplication by a measurable factor that is
+bounded where the function does not vanish
+(`MeasureTheory.LocallyIntegrableOn.bdd_mul_of_ne_zero`), and an integer-valued function locally
+integrable on `s` has support of finite measure in the compact subsets of `s`
+(`MeasureTheory.LocallyIntegrableOn.measure_setOf_intCast_ne_zero_inter_ne_top`).
+
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
@@ -126,6 +132,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   integrability.
 * `MeasureTheory.LocallyIntegrable.indicator₀`: restriction to a null-measurable set preserves
   local integrability.
+* `MeasureTheory.LocallyIntegrableOn.bdd_mul_of_ne_zero`: a factor bounded on the support
+  preserves local integrability.
+* `MeasureTheory.LocallyIntegrableOn.measure_setOf_intCast_ne_zero_inter_ne_top`: an integer-valued
+  locally integrable function has support of finite measure in compact subsets.
 * `MeasureTheory.Lp.locallyIntegrableOn`: an `Lᵖ` function on a set, with `1 ≤ p`, is locally
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
@@ -134,6 +144,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
+* `Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport`: the same after multiplying by
+  the square of a continuous real weight.
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
@@ -502,6 +514,40 @@ theorem mul_bdd {𝕜 : Type*} [NormedRing 𝕜] {u v : X → 𝕜} {C : ℝ} (h
 
 end MeasureTheory.LocallyIntegrable
 
+namespace MeasureTheory.LocallyIntegrableOn
+
+open scoped ENNReal
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X} {s : Set X}
+
+/-- The product of a function locally integrable on `s` with an almost everywhere strongly
+measurable factor that is bounded almost everywhere on the support of the function is locally
+integrable on `s`, a local form of Mathlib's `MeasureTheory.Integrable.bdd_mul` with the bound
+needed only where the function does not vanish. -/
+theorem bdd_mul_of_ne_zero {𝕜 : Type*} [NormedRing 𝕜] {u v : X → 𝕜} {C : ℝ}
+    (hu : LocallyIntegrableOn u s μ) (hv : AEStronglyMeasurable v μ)
+    (hvC : ∀ᵐ x ∂μ, u x ≠ 0 → ‖v x‖ ≤ C) : LocallyIntegrableOn (fun x ↦ v x * u x) s μ :=
+  fun x hx ↦ by
+  obtain ⟨t, ht, hint⟩ := hu x hx
+  refine ⟨t, ht, hint.norm.const_mul C |>.mono' (hv.restrict.mul hint.aestronglyMeasurable)
+    (ae_restrict_of_ae (hvC.mono fun y hy ↦ ?_))⟩
+  by_cases h : u y = 0
+  · simp [h]
+  · exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hy h) (norm_nonneg _))
+
+/-- An integer-valued function that is locally integrable on `s` as a real function has support of
+finite measure in every compact subset of `s`, since its absolute value is at least one on its
+support: a consequence of Mathlib's `MeasureTheory.Integrable.measure_norm_ge_lt_top`. -/
+theorem measure_setOf_intCast_ne_zero_inter_ne_top {θ : X → ℤ}
+    (hθ : LocallyIntegrableOn (fun x ↦ (θ x : ℝ)) s μ) {K : Set X}
+    (hK : IsCompact K) (hKs : K ⊆ s) : μ ({x | θ x ≠ 0} ∩ K) ≠ ∞ := by
+  refine ((Measure.le_restrict_apply _ _).trans (measure_mono ?_)).trans_lt
+    ((hθ.integrableOn_compact_subset hKs hK).measure_norm_ge_lt_top one_pos) |>.ne
+  intro x (hx : θ x ≠ 0)
+  simpa [Real.norm_eq_abs] using (Int.cast_le (R := ℝ)).2 (Int.one_le_abs hx)
+
+end MeasureTheory.LocallyIntegrableOn
+
 namespace MeasureTheory.Lp
 
 variable {X E : Type*} [MeasurableSpace X] [TopologicalSpace X]
@@ -542,6 +588,15 @@ theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
     (hf : Continuous f) (hcf : HasCompactSupport f) : Integrable (fun x ↦ ‖f x‖ ^ 2) μ := by
   apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
   exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
+
+/-- A continuous real weight squared, times the squared norm of a continuous compactly supported
+function, is integrable for any measure finite on compact sets. The weight need not be compactly
+supported. -/
+theorem Continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport {F : Type*}
+    [SeminormedAddCommGroup F] {f : X → ℝ} {g : X → F} (hf : Continuous f) (hg : Continuous g)
+    (hcg : HasCompactSupport g) : Integrable (fun x ↦ f x ^ 2 * ‖g x‖ ^ 2) μ :=
+  ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
+    (hcg.mono fun x hx hzero ↦ hx (by simp [hzero]))
 
 /-- The product of a continuous compactly supported function `f`, whose support lies in a set
 `U`, with a function `g` continuous on `U` is integrable, for any measure finite on compact sets.

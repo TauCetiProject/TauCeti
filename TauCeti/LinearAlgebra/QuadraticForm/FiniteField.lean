@@ -198,7 +198,7 @@ theorem represents_weightedSumSquares_two_of_finite
   · have h2 : (2 : K) ≠ 0 := Ring.two_ne_zero hchar
     let : Invertible (2 : K) := invertibleOfNonzero h2
     have hnd : (weightedSumSquares K ![(a : K), (b : K)]).Nondegenerate :=
-      QuadraticMap.nondegenerate_weightedSumSquares fun i ↦ by
+      QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun i ↦ by
         fin_cases i
         · exact a.isUnit.isRegular
         · exact b.isUnit.isRegular

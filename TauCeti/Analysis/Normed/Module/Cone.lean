@@ -57,6 +57,8 @@ transform decays is transported along the transposed derivative of a change of v
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `IsOpen.exists_isOpen_cone_subset_isClosed_cone`: an open cone `Γ` containing `ξ` contains the
   nonzero elements of a closed cone `F` which contains an open cone `Γ'` containing `ξ`.
+* `IsOpen.exists_pos_setOf_norm_fst_lt_subset`: an open cone of `E × D` containing the nonzero
+  vectors of `{0} × D` contains a cone `‖ζ.1‖ < c ‖ζ.2‖` around them.
 * `IsOpen.exists_cone_mul_add_le_norm_sub`: for a linear automorphism `B`, an open cone `Γ'`
   around `B η₀` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` for `ξ ∈ Γ'` and `ζ ∉ Γ` or `‖ζ‖ < c ‖ξ‖`.
 * `TauCeti.mem_of_mem_closure_of_forall_closedBall_subset`: the nonzero points of the closure of
@@ -275,6 +277,30 @@ theorem exists_cone_mul_add_le_norm_sub {Γ : Set E} (hΓ : IsOpen Γ)
     exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (by positivity)).trans h
   · have hcB : c ≤ 1 / (4 * (1 + M)) := min_le_right _ _
     exact mul_add_le_norm_sub_of_norm_lt _ hc ((le_div_iff₀ (by positivity)).1 hcB) hζ
+
+/-- An open cone of `E × D` containing the nonzero vectors of `{0} × D` contains a cone
+`‖ζ.1‖ < c ‖ζ.2‖` around them, by compactness of the unit sphere of `D`. -/
+theorem exists_pos_setOf_norm_fst_lt_subset {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
+    [ProperSpace D] {Γ : Set (E × D)} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ, t • ζ ∈ Γ) (hD : ∀ b : D, b ≠ 0 → ((0 : E), b) ∈ Γ) :
+    ∃ c > 0, {ζ : E × D | ‖ζ.1‖ < c * ‖ζ.2‖} ⊆ Γ := by
+  have hι : Continuous fun b : D ↦ ((0 : E), b) := continuous_const.prodMk continuous_id
+  obtain ⟨c, hc, hcΓ⟩ := ((isCompact_sphere (0 : D) 1).image hι).exists_cthickening_subset_open
+    hΓ (image_subset_iff.2 fun b hb ↦ hD b (ne_zero_of_mem_unit_sphere ⟨b, hb⟩))
+  refine ⟨c, hc, fun ζ hζ ↦ ?_⟩
+  -- Rescaled to a unit second component, `ζ` lies within `c` of a conormal direction.
+  have hs : 0 < ‖ζ.2‖ := pos_of_mul_pos_right ((norm_nonneg _).trans_lt hζ) hc.le
+  set s := ‖ζ.2‖
+  have hmem : s⁻¹ • ζ ∈ Γ := by
+    refine hcΓ (mem_cthickening_of_dist_le _ ((0 : E), s⁻¹ • ζ.2) _ _
+      (mem_image_of_mem _ ?_) ?_)
+    · simp [norm_smul, inv_mul_cancel₀ hs.ne', s]
+    · simp only [Prod.dist_eq, Prod.smul_fst, Prod.smul_snd, dist_self, dist_zero_right,
+        norm_smul, norm_inv, Real.norm_of_nonneg hs.le]
+      refine max_le ?_ hc.le
+      rw [inv_mul_le_iff₀ hs, mul_comm]
+      exact le_of_lt hζ
+  simpa [smul_smul, mul_inv_cancel₀ hs.ne'] using hcone s hs _ hmem
 
 end IsOpen
 
@@ -595,12 +621,13 @@ theorem exists_forall_le_of_diff_singleton_subset_biUnion {X ι : Type*} [Zero X
     _ ≤ |f 0| + ∑ ξ ∈ t, |C ξ| := le_add_of_nonneg_left (abs_nonneg _)
 
 /-- **Finitely many neighbourhoods and cones over a compact set.** Given at each point `x` of a
-compact set `K` a neighbourhood `U x` and an open set `Γ x` containing `ξ` and closed under
-multiplication by positive reals, finitely many of the interiors of the `U x` cover `K`, and the
-intersection of the corresponding sets `Γ x` is again open, contains `ξ` and is closed under
-multiplication by positive reals. -/
-theorem exists_finset_subset_biUnion_interior_and_isOpen_cone [Module ℝ E] {K : Set E} {ξ : E}
-    (hK : IsCompact K) {U Γ : K → Set E} (hU : ∀ x : K, U x ∈ nhds (x : E))
+compact set `K` a neighbourhood `U x` and an open set `Γ x`, in a possibly different space,
+containing `ξ` and closed under multiplication by positive reals, finitely many of the interiors
+of the `U x` cover `K`, and the intersection of the corresponding sets `Γ x` is again open,
+contains `ξ` and is closed under multiplication by positive reals. -/
+theorem exists_finset_subset_biUnion_interior_and_isOpen_cone {X F : Type*}
+    [TopologicalSpace X] [TopologicalSpace F] [SMul ℝ F] {K : Set X} {ξ : F} (hK : IsCompact K)
+    {U : K → Set X} {Γ : K → Set F} (hU : ∀ x : K, U x ∈ nhds (x : X))
     (hΓ : ∀ x, IsOpen (Γ x)) (hξΓ : ∀ x, ξ ∈ Γ x)
     (hcone : ∀ x, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ x, t • η ∈ Γ x) :
     ∃ t : Finset K, K ⊆ ⋃ x ∈ t, interior (U x) ∧ IsOpen (⋂ x ∈ t, Γ x) ∧ ξ ∈ ⋂ x ∈ t, Γ x ∧
