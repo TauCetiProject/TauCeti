@@ -243,19 +243,10 @@ theorem eventually_of_entranceFace (hX : IsAdaptedPseudoGradient f X) {q y₁ : 
       (w ∈ hX.flow.stableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).snd = 0)) ∧
     Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ *
       ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) (𝓝 y₁) (𝓝 0) := by
-  set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-    fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))
-  have hΦc : ContinuousAt Φ y₁ :=
-    (φ.splitCoordL.continuous.continuousAt.comp (φ.toChart.continuousAt hy₁φ)).congr
-      (.of_forall fun _ ↦ φ.splitCoordL_apply _)
-  have hy₁fst : Tendsto (fun w ↦ ‖(Φ w).fst‖) (𝓝 y₁) (𝓝 ε) := by
-    have h : ContinuousAt (fun w ↦ ‖(Φ w).fst‖) y₁ :=
-      ((WithLp.continuous_fst 2 _ _).norm.continuousAt (x := Φ y₁)).comp hΦc
-    simpa only [Φ, hy₁ε] using h.tendsto
-  have hy₁snd : Tendsto (fun w ↦ ‖(Φ w).snd‖) (𝓝 y₁) (𝓝 0) := by
-    have h : ContinuousAt (fun w ↦ ‖(Φ w).snd‖) y₁ :=
-      ((WithLp.continuous_snd 2 _ _).norm.continuousAt (x := Φ y₁)).comp hΦc
-    simpa only [Φ, hy₁s, norm_zero] using h.tendsto
+  have hy₁fst := φ.tendsto_norm_fst_splitCoord_coord_toChart hy₁φ
+  have hy₁snd := φ.tendsto_norm_snd_splitCoord_coord_toChart hy₁φ
+  rw [hy₁ε] at hy₁fst
+  rw [hy₁s, norm_zero] at hy₁snd
   refine ⟨?_, by simpa only [mul_zero] using hy₁fst.mul hy₁snd⟩
   filter_upwards [φ.toChart.open_source.mem_nhds hy₁φ, hy₁fst.eventually (lt_mem_nhds hε),
     hy₁fst.eventually (gt_mem_nhds (by linarith : ε < 2 * ε)),
@@ -292,20 +283,11 @@ theorem eventually_of_morseBox (hX : IsAdaptedPseudoGradient f X) {q y₁ y₂ :
       ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) (𝓝 y₁) (𝓝 0) ∧
     Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ *
       ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) (𝓝 y₂) (𝓝 0) := by
-  set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-    fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))
   obtain ⟨h₁, hy₁κ⟩ := hX.eventually_of_entranceFace φ hε hερ hloc hy₁φ hy₁s hy₁ε
-  have hΦc : ContinuousAt Φ y₂ :=
-    (φ.splitCoordL.continuous.continuousAt.comp (φ.toChart.continuousAt hy₂φ)).congr
-      (.of_forall fun _ ↦ φ.splitCoordL_apply _)
-  have hy₂snd : Tendsto (fun w ↦ ‖(Φ w).snd‖) (𝓝 y₂) (𝓝 ε) := by
-    have h : ContinuousAt (fun w ↦ ‖(Φ w).snd‖) y₂ :=
-      ((WithLp.continuous_snd 2 _ _).norm.continuousAt (x := Φ y₂)).comp hΦc
-    simpa only [Φ, hy₂ε] using h.tendsto
-  have hy₂fst : Tendsto (fun w ↦ ‖(Φ w).fst‖) (𝓝 y₂) (𝓝 0) := by
-    have h : ContinuousAt (fun w ↦ ‖(Φ w).fst‖) y₂ :=
-      ((WithLp.continuous_fst 2 _ _).norm.continuousAt (x := Φ y₂)).comp hΦc
-    simpa only [Φ, hy₂u, norm_zero] using h.tendsto
+  have hy₂snd := φ.tendsto_norm_snd_splitCoord_coord_toChart hy₂φ
+  have hy₂fst := φ.tendsto_norm_fst_splitCoord_coord_toChart hy₂φ
+  rw [hy₂ε] at hy₂snd
+  rw [hy₂u, norm_zero] at hy₂fst
   refine ⟨h₁, ?_, hy₁κ, by simpa only [zero_mul] using hy₂fst.mul hy₂snd⟩
   filter_upwards [φ.toChart.open_source.mem_nhds hy₂φ, hy₂snd.eventually (lt_mem_nhds hε),
     hy₂snd.eventually (gt_mem_nhds (by linarith : ε < 2 * ε)),
