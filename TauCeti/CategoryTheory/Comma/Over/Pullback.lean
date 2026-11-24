@@ -11,12 +11,12 @@ public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 
 /-!
-# Base change in over categories: coherence, faithfulness, and epimorphism preservation
+# Base change in over categories: coherence, commuting squares, faithfulness, and epimorphisms
 
 Mathlib identifies base change `Over.pullback` along an identity with the identity functor
 (`Over.pullbackId`) and base change along a composite with the composite of base changes
 (`Over.pullbackComp`). This file records that these identifications are coherent, up to the
-equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
+equalities `f ≫ 𝟙 Y = f`, `𝟙 X ≫ f = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
@@ -28,8 +28,10 @@ equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
   counit built from `pullbackId` and `pullbackComp` satisfy the triangle identity for
   `pullback e.hom` and `pullback e.inv`.
 
-For a commuting square `i' ≫ g = t ≫ i`, `CategoryTheory.Over.fiberBaseChangeIso` identifies the
-fiber at `i'` of the base change along `g` with the base change along `t` of the fiber at `i`.
+For a commuting square `i' ≫ g = t ≫ i`, `CategoryTheory.Over.pullbackPullbackIsoOfComm`
+identifies base change along `g` and then along `i'` with base change along `i` and then along `t`;
+when `i` and `i'` are points, this says the fiber at `i'` of the base change along `g` is the base
+change along `t` of the fiber at `i`.
 
 It also establishes faithfulness and epimorphism preservation for the base-change functors
 `Over.pullback f : Over Y ⥤ Over X` and `Over.star X : C ⥤ Over X`:
@@ -125,25 +127,26 @@ theorem pullback_iso_triangle {X Y : C} (e : X ≅ Y) (A : Over Y) :
 
 end Coherence
 
-section FiberBaseChange
+section CommSquare
 
 variable {S S' s s' : C} {g : S' ⟶ S} {i : s ⟶ S} {i' : s' ⟶ S'} {t : s' ⟶ s}
   [HasPullbacksAlong g] [HasPullbacksAlong i] [HasPullbacksAlong i'] [HasPullbacksAlong t]
 
-/-- **Fibers of a base change.** If `i' : s' ⟶ S'` lies over `i : s ⟶ S` through `t : s' ⟶ s`,
-the fiber at `i'` of the base change of `A` along `g : S' ⟶ S` is the base change along `t` of the
-fiber of `A` at `i`. -/
-noncomputable def fiberBaseChangeIso (A : Over S) (h : i' ≫ g = t ≫ i) :
+/-- For a commuting square `i' ≫ g = t ≫ i`, base change of `A` along `g : S' ⟶ S` and then
+along `i' : s' ⟶ S'` is base change along `i : s ⟶ S` and then along `t : s' ⟶ s`. When `i` and
+`i'` are points, this is the **fiber of a base change**: the fiber at `i'` of the base change of
+`A` along `g` is the base change along `t` of the fiber of `A` at `i`. -/
+noncomputable def pullbackPullbackIsoOfComm (A : Over S) (h : i' ≫ g = t ≫ i) :
     (pullback i').obj ((pullback g).obj A) ≅ (pullback t).obj ((pullback i).obj A) :=
   (pullbackComp i' g).symm.app A ≪≫ eqToIso (by simp only [h]) ≪≫ (pullbackComp t i).app A
 
-/-- The fiber isomorphism commutes with the projections to `A`. -/
+/-- `pullbackPullbackIsoOfComm` commutes with the projections to `A`. -/
 @[reassoc (attr := simp)]
-theorem fiberBaseChangeIso_hom_left_fst (A : Over S) (h : i' ≫ g = t ≫ i) :
-    (fiberBaseChangeIso A h).hom.left ≫ pullback.fst (pullback.snd A.hom i) t ≫
+theorem pullbackPullbackIsoOfComm_hom_left_fst (A : Over S) (h : i' ≫ g = t ≫ i) :
+    (pullbackPullbackIsoOfComm A h).hom.left ≫ pullback.fst (pullback.snd A.hom i) t ≫
         pullback.fst A.hom i =
       pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
-  simp only [fiberBaseChangeIso, Iso.trans_hom, Iso.app_hom, Iso.symm_hom, eqToIso.hom,
+  simp only [pullbackPullbackIsoOfComm, Iso.trans_hom, Iso.app_hom, Iso.symm_hom, eqToIso.hom,
     comp_left, eqToHom_left, Category.assoc]
   have h₁ : ((pullbackComp t i).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
       pullback.fst A.hom i = pullback.fst A.hom (t ≫ i) := by
@@ -153,14 +156,14 @@ theorem fiberBaseChangeIso_hom_left_fst (A : Over S) (h : i' ≫ g = t ≫ i) :
     simp [pullbackComp]
   rw [h₁, eqToHom_comp_pullback_fst A.hom h, h₂]
 
-/-- The fiber isomorphism commutes with the projections to `s'`. -/
+/-- `pullbackPullbackIsoOfComm` commutes with the projections to `s'`. -/
 @[reassoc (attr := simp)]
-theorem fiberBaseChangeIso_hom_left_snd (A : Over S) (h : i' ≫ g = t ≫ i) :
-    (fiberBaseChangeIso A h).hom.left ≫ pullback.snd (pullback.snd A.hom i) t =
+theorem pullbackPullbackIsoOfComm_hom_left_snd (A : Over S) (h : i' ≫ g = t ≫ i) :
+    (pullbackPullbackIsoOfComm A h).hom.left ≫ pullback.snd (pullback.snd A.hom i) t =
       pullback.snd (pullback.snd A.hom g) i' :=
-  Over.w (fiberBaseChangeIso A h).hom
+  Over.w (pullbackPullbackIsoOfComm A h).hom
 
-end FiberBaseChange
+end CommSquare
 
 /-- Base change `Over.pullback f : Over Y ⥤ Over X` preserves epimorphisms whenever `Over.forget Y`
 does and epimorphisms in `C` are stable under base change. -/

@@ -19,9 +19,9 @@ These are examples checking `TauCeti.AlgebraicGeometry.Neron.NeronModel.baseChan
   compatible with the generic isomorphisms, up to the identification `A ×_η η ≅ A`.
 * **Fibres of the base change.** For a point `s' ⟶ S'` lying over a point `s ⟶ S` through
   `t : s' ⟶ s`, the fibre of the base-changed model at `s'` is the base change along `t` of the
-  fibre of the model at `s` (`CategoryTheory.Over.fiberBaseChangeIso`). For an extension `R → R'`
-  of discrete valuation rings with `Spec R' ⟶ Spec R` étale, this says that the special fibre of
-  the base-changed model is the base change of the special fibre along the extension
+  fibre of the model at `s` (`CategoryTheory.Over.pullbackPullbackIsoOfComm`). For an extension
+  `R → R'` of discrete valuation rings with `Spec R' ⟶ Spec R` étale, this says that the special
+  fibre of the base-changed model is the base change of the special fibre along the extension
   `κ(R) → κ(R')` of residue fields; the statement below needs only a local homomorphism of local
   rings whose `Spec` map is smooth.
 -/
@@ -75,7 +75,7 @@ example [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A) {i : s ⟶ S
     {t : s' ⟶ s} (h : i' ≫ g = t ≫ i) :
     (Over.pullback i').obj (M.baseChange sq).model ≅
       (Over.pullback t).obj ((Over.pullback i).obj M.model) :=
-  Over.fiberBaseChangeIso M.model h
+  Over.pullbackPullbackIsoOfComm M.model h
 
 end Fibre
 
@@ -96,7 +96,7 @@ example [Smooth (Spec.map (CommRingCat.ofHom φ))]
         (M.baseChange sq).model ≅
       (Over.pullback (Spec.map (CommRingCat.ofHom (IsLocalRing.ResidueField.map φ)))).obj
         ((Over.pullback (Spec.map (CommRingCat.ofHom (IsLocalRing.residue R)))).obj M.model) :=
-  Over.fiberBaseChangeIso M.model (specMap_residue_comp_specMap φ)
+  Over.pullbackPullbackIsoOfComm M.model (specMap_residue_comp_specMap φ)
 
 end SpecialFibre
 
