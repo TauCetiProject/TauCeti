@@ -73,13 +73,7 @@ lemma cyclesMap_single [DecidableEq X] [DecidableEq Y] (f : X ⟶ Y) [f.IsOver (
     (h : Function.locallyFinsuppWithin.single x n ∈ cyclesOfDimension X d) :
     (cyclesMap k f ⟨_, h⟩ : AlgebraicCycle Y ℤ) =
       Function.locallyFinsuppWithin.single (f x) (n * f.residueDegree x) := by
-  ext y
-  rw [cyclesMap_apply, Function.locallyFinsuppWithin.single_apply]
-  rw [finsum_eq_single _ x fun z hz => by
-    simp [Function.locallyFinsuppWithin.single_apply, hz]]
-  by_cases h : y = f x
-  · simp [h, Function.locallyFinsuppWithin.single_apply]
-  · simp [Function.locallyFinsuppWithin.single_apply, h, Ne.symm h]
+  rw [coe_cyclesMap, AlgebraicCycle.map_height_single k]
 
 open Polynomial
 
