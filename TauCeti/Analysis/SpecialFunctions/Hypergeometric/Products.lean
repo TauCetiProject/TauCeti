@@ -626,33 +626,13 @@ private theorem exists_norm_bcCoeff_mul_coeff_le (a b c : ℂ) : ∃ D : ℝ, �
     have := norm_nonneg (c - a)
     have := norm_nonneg (c - b)
     rcases hx with rfl | rfl | rfl | rfl <;> linarith
-  -- `‖1 / Γ(c + k)‖ k! ≤ ‖1 / Γ(c + N)‖ (M + N + k) ^ N`, from
-  -- `1 / Γ(c + k) = (c + k)_N / Γ(c + k + N)` and the factorial decay of `1 / Γ` on `1 ≤ re`.
-  have hgam (k : ℕ) : ‖(Gamma (c + k))⁻¹‖ * k ! ≤
-      ‖(Gamma (c + N))⁻¹‖ * (((M + N : ℕ) : ℝ) + k) ^ N := by
-    rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (c + k) N, norm_mul]
-    have h₁ : ‖(ascPochhammer ℂ N).eval (c + k)‖ ≤ (((M + N : ℕ) : ℝ) + k) ^ N := by
-      have hc : ‖c + k‖ ≤ ((M + k + 1 : ℕ) : ℝ) := by
-        have := norm_sub_norm_le c a
-        have := norm_nonneg b
-        have := norm_nonneg (c - b)
-        refine (norm_add_le _ _).trans ?_
-        push_cast
-        rw [Complex.norm_natCast]
-        linarith
-      refine (TauCeti.norm_ascPochhammer_eval_le_ascFactorial N hc).trans ?_
-      have := Nat.ascFactorial_le_pow_add (M + k) N
-      rw [show M + k + N = M + N + k by omega] at this
-      exact_mod_cast this
-    have h₂ : ‖(Gamma (c + k + N))⁻¹‖ * k ! ≤ ‖(Gamma (c + N))⁻¹‖ := by
-      have := norm_inv_Gamma_add_natCast_le (s := c + N) (by simp; linarith) k
-      rw [show c + k + N = c + N + k by ring]
-      rwa [le_div_iff₀ (by positivity)] at this
-    calc ‖(ascPochhammer ℂ N).eval (c + k)‖ * ‖(Gamma (c + k + N))⁻¹‖ * k !
-        = ‖(ascPochhammer ℂ N).eval (c + k)‖ * (‖(Gamma (c + k + N))⁻¹‖ * k !) := by ring
-      _ ≤ (((M + N : ℕ) : ℝ) + k) ^ N * ‖(Gamma (c + N))⁻¹‖ := by gcongr
-      _ = ‖(Gamma (c + N))⁻¹‖ * (((M + N : ℕ) : ℝ) + k) ^ N := by ring
-  exact ⟨_, _, norm_bcCoeff_mul_coeff_le a b c (by positivity) hpoch hgam⟩
+  have hc : ‖c‖ ≤ M := by
+    have := norm_sub_norm_le c a
+    have := norm_nonneg b
+    have := norm_nonneg (c - b)
+    linarith
+  exact ⟨_, _, norm_bcCoeff_mul_coeff_le a b c (R := (M : ℝ) + N) (by positivity) hpoch
+    (norm_inv_Gamma_add_natCast_mul_factorial_le hN hc)⟩
 
 /-- Absolute convergence of the Burchnall–Chaundy double series for `0 ≤ x, y < 1`. -/
 private theorem summable_norm_bcCoeff_mul_tsum (a b c : ℂ) {x y : ℝ} (hx₀ : 0 ≤ x) (hx : x < 1)
