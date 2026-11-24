@@ -192,8 +192,9 @@ variable (hcone : ∀ σ, ∀ s ∈ L, P σ s → (∀ w ∈ s, w ≤ v σ) ∧ 
   (hψd : ∀ n, boundary R n ∘ₗ ψ (n + 1) = ψ n ∘ₗ boundary R n)
 
 include hcone hφ hψ hε in
-/-- **The homotopy identity in degree `0`**: if `φ` and `ψ` agree after augmentation, then
-`∂ D = φ - ψ` on `0`-chains. -/
+/-- **The homotopy identity in degree `0`**: if every `P σ` lies in the closed cone at `v σ` and
+supports `φ σ` and `ψ σ`, and `φ` and `ψ` agree after augmentation, then `∂ D = φ - ψ` on
+`0`-chains. -/
 theorem boundary_comp_carrierHomotopy_zero :
     boundary R 0 ∘ₗ carrierHomotopy R φ ψ v 0 = φ 0 - ψ 0 := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
@@ -233,8 +234,10 @@ private theorem boundary_comp_carrierHomotopy_succ_of_boundary {n : ℕ}
     sub_add_cancel]
 
 include hcone hinsert hmono hφ hψ hε hφd hψd in
-/-- **The homotopy identity in positive degrees**: if `φ` and `ψ` are chain maps agreeing after
-augmentation, then `∂ D + D ∂ = φ - ψ` on `(n + 1)`-chains. -/
+/-- **The homotopy identity in positive degrees**: if `v` and `P` form a cone carrier for `φ` and
+`ψ` (every `P σ` lies in the closed cone at `v σ`, is closed under adjoining `v σ`, increases with
+`σ`, and supports `φ σ` and `ψ σ`), and `φ` and `ψ` are chain maps agreeing after augmentation,
+then `∂ D + D ∂ = φ - ψ` on `(n + 1)`-chains. -/
 theorem boundary_comp_carrierHomotopy_succ (n : ℕ) :
     boundary R (n + 1) ∘ₗ carrierHomotopy R φ ψ v (n + 1) +
         carrierHomotopy R φ ψ v n ∘ₗ boundary R n = φ (n + 1) - ψ (n + 1) := by
