@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 public import Mathlib.RingTheory.Ideal.Height
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
-import Mathlib.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.MvPowerSeries.Rescale
 
 /-!
 # Coordinate ideals of restricted power series
@@ -23,8 +23,9 @@ is again restricted (`MvPowerSeries.IsRestricted.of_X_mul`).
 
 Consequently the coordinate ideals are prime over a normed domain, they grow strictly with `s`,
 and the coordinate ideal of a finite `s` has height `s.ncard` once the restricted series form a
-noetherian ring, as they do over a complete nonarchimedean field. In `n` variables the ideals
-`(X₀, …, X_{i-1})`, `0 ≤ i ≤ n`, form a chain of primes of length `n`
+noetherian ring, as they do in finitely many variables at positive radii over a complete
+nonarchimedean field (`TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring`). In `n`
+variables the ideals `(X₀, …, X_{i-1})`, `0 ≤ i ≤ n`, form a chain of primes of length `n`
 (`TauCeti.MvPowerSeries.strictMono_map_span_X_image_setOf_lt`), whose last term has height `n`,
 the Krull dimension of the Tate algebra `K⟨X₁, …, Xₙ⟩`.
 
@@ -33,8 +34,6 @@ its quotient `Σₙ Xⱼⁿ` by `Xᵢ` is not, so it does not lie in the ideal g
 
 ## Main results
 
-* `MvPowerSeries.IsRestricted.of_X_mul`: if `Xᵢ f` is restricted and `c i ≠ 0`, then `f` is
-  restricted.
 * `TauCeti.MvPowerSeries.mk_X_dvd_iff`: `Xᵢ` divides a restricted series exactly when its
   coefficients vanish at the exponents not involving `Xᵢ`.
 * `TauCeti.MvPowerSeries.mem_map_span_X_image_iff`: the coefficient criterion for membership in
@@ -50,24 +49,6 @@ its quotient `Σₙ Xⱼⁿ` by `Xᵢ` is not, so it does not lie in the ideal g
 -/
 
 public section
-
-namespace MvPowerSeries
-
-variable {σ R : Type*} [NormedRing R] {c : σ → ℝ}
-
-/-- Dividing a restricted series by a variable whose radius is nonzero keeps it restricted: the
-weighted coefficients of `f` are those of `Xᵢ f`, shifted by `Xᵢ` and divided by `c i`. -/
-theorem IsRestricted.of_X_mul {i : σ} (hc : c i ≠ 0) {f : MvPowerSeries σ R}
-    (h : IsRestricted c (X i * f)) : IsRestricted c f := by
-  have h' := (h.comp (add_right_injective (Finsupp.single i 1)).tendsto_cofinite).const_mul
-    (c i)⁻¹
-  rw [mul_zero] at h'
-  refine h'.congr fun t ↦ ?_
-  simp only [Function.comp_apply, X, coeff_add_monomial_mul, one_mul, prod_pow_add,
-    pow_zero, Finsupp.prod_single_index, pow_one]
-  field_simp
-
-end MvPowerSeries
 
 namespace TauCeti.MvPowerSeries
 
@@ -85,25 +66,6 @@ theorem mk_X_dvd_iff {i : σ} (hc : c i ≠ 0) {f : IsRestricted.subring (R := R
   refine ⟨fun ⟨g, hg⟩ ↦ ⟨g, by rw [hg, Subring.coe_mul]⟩, fun ⟨g, hg⟩ ↦ ?_⟩
   have hgr : IsRestricted c g := IsRestricted.of_X_mul hc (hg ▸ f.property)
   exact ⟨⟨g, hgr⟩, Subtype.ext hg⟩
-
-open Classical in
-/-- Rescaling by the indicator of the complement of `s` sets the variables of `s` to zero. -/
-private theorem coeff_rescale_indicator_compl {A : Type*} [CommSemiring A] (s : Set σ)
-    (f : _root_.MvPowerSeries σ A) (t : σ →₀ ℕ) :
-    coeff t (rescale (sᶜ.indicator 1) f) = if ∀ j ∈ s, t j = 0 then coeff t f else 0 := by
-  rw [coeff_rescale, Finsupp.prod,
-    Finset.prod_congr rfl fun j hj ↦ (?_ : _ = if j ∈ sᶜ then (1 : A) else 0),
-    Finset.prod_boole]
-  · have : (∀ j ∈ t.support, j ∈ sᶜ) ↔ ∀ j ∈ s, t j = 0 := by
-      simp only [Finsupp.mem_support_iff, Set.mem_compl_iff]
-      exact ⟨fun h j hj ↦ by_contra fun h' ↦ h j h' hj, fun h j hj hjs ↦ hj (h j hjs)⟩
-    by_cases h : ∀ j ∈ s, t j = 0
-    · simp only [this, eq_true h, ↓reduceIte, one_mul]
-    · simp only [this, eq_false h, ↓reduceIte, zero_mul]
-  · rw [Set.indicator_apply]
-    split_ifs
-    · exact one_pow _
-    · exact zero_pow (Finsupp.mem_support_iff.mp hj)
 
 /-- Setting the variables of `s` to zero, as a ring homomorphism from restricted series to
 formal power series. -/
@@ -125,6 +87,23 @@ private theorem coeff_evalZeroOn_of_exists {s : Set σ} {t : σ →₀ ℕ} (ht 
   have h : ¬∀ j ∈ s, t j = 0 := fun h ↦ htj (h j hj)
   simp only [evalZeroOn, RingHom.comp_apply, coeff_rescale_indicator_compl, eq_false h,
     ↓reduceIte]
+
+/-- Setting variables to zero keeps a restricted series restricted. -/
+private theorem isRestricted_evalZeroOn (s : Set σ) (f : IsRestricted.subring (R := R) c) :
+    IsRestricted c (evalZeroOn s f) :=
+  f.property.of_norm_coeff_le (C := 1) fun t ↦ by
+    by_cases ht : ∃ j ∈ s, t j ≠ 0
+    · rw [coeff_evalZeroOn_of_exists ht, norm_zero, one_mul]
+      exact norm_nonneg _
+    · rw [coeff_evalZeroOn_of_forall (by simpa using ht), one_mul]
+
+/-- If setting the variables of `s` to zero kills a restricted series, then each of its monomials
+involves one of these variables. -/
+private theorem exists_mem_ne_zero_of_evalZeroOn_eq_zero {s : Set σ}
+    {f : IsRestricted.subring (R := R) c} (hf : evalZeroOn s f = 0) (t : σ →₀ ℕ)
+    (ht : coeff t (f : _root_.MvPowerSeries σ R) ≠ 0) : ∃ i ∈ s, t i ≠ 0 := by
+  by_contra! h
+  exact ht (by rw [← coeff_evalZeroOn_of_forall h, hf, map_zero])
 
 /-- The variables of `s` generate an ideal killed by setting them to zero. -/
 private theorem map_span_X_image_le_ker (s : Set σ) :
@@ -148,10 +127,8 @@ direction holds for every set `s` and all polyradii. -/
 theorem exists_mem_ne_zero_of_mem_map_span_X_image {s : Set σ}
     {f : IsRestricted.subring (R := R) c}
     (hf : f ∈ (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted c)) (t : σ →₀ ℕ)
-    (ht : coeff t (f : _root_.MvPowerSeries σ R) ≠ 0) : ∃ i ∈ s, t i ≠ 0 := by
-  by_contra! h
-  have hf' : evalZeroOn s f = 0 := map_span_X_image_le_ker s hf
-  exact ht (by rw [← coeff_evalZeroOn_of_forall h, hf', map_zero])
+    (ht : coeff t (f : _root_.MvPowerSeries σ R) ≠ 0) : ∃ i ∈ s, t i ≠ 0 :=
+  exists_mem_ne_zero_of_evalZeroOn_eq_zero (map_span_X_image_le_ker s hf) t ht
 
 /-- **Membership in a coordinate ideal.** For a finite set `s` of variables with nonzero radii, a
 restricted series lies in the ideal generated by the variables `Xᵢ`, `i ∈ s`, exactly when each of
@@ -175,12 +152,7 @@ theorem mem_map_span_X_image_iff {s : Set σ} (hs : s.Finite) (hc : ∀ i ∈ s,
       (Ideal.span_mono (Set.image_mono (f := (MvPolynomial.X : σ → MvPolynomial σ R))
         (Set.subset_insert i s)))
     -- Split `f` into its part `g` free of `Xᵢ`, and the rest, which `Xᵢ` divides.
-    have hg : IsRestricted c (evalZeroOn {i} f) := f.property.of_norm_coeff_le (C := 1) fun t ↦ by
-      by_cases ht : t i = 0
-      · rw [coeff_evalZeroOn_of_forall (by simpa using ht), one_mul]
-      · rw [coeff_evalZeroOn_of_exists ⟨i, rfl, ht⟩, norm_zero, one_mul]
-        exact norm_nonneg _
-    set g : IsRestricted.subring (R := R) c := ⟨evalZeroOn {i} f, hg⟩
+    set g : IsRestricted.subring (R := R) c := ⟨evalZeroOn {i} f, isRestricted_evalZeroOn {i} f⟩
     have hgs : g ∈ (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted c) := by
       refine ih (fun j hj ↦ hc j (Set.mem_insert_of_mem i hj)) fun t ht ↦ ?_
       by_cases hti : t i = 0
@@ -204,11 +176,10 @@ theorem mem_map_span_X_image_iff {s : Set σ} (hs : s.Finite) (hc : ∀ i ∈ s,
 setting these variables to zero. -/
 private theorem map_span_X_image_eq_ker {s : Set σ} (hs : s.Finite) (hc : ∀ i ∈ s, c i ≠ 0) :
     (Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted (R := R) c) =
-      RingHom.ker (evalZeroOn s) := by
-  refine le_antisymm (map_span_X_image_le_ker s) fun f hf ↦
-    (mem_map_span_X_image_iff hs hc).mpr fun t ht ↦ ?_
-  by_contra! h
-  exact ht (by rw [← coeff_evalZeroOn_of_forall h, RingHom.mem_ker.mp hf, map_zero])
+      RingHom.ker (evalZeroOn s) :=
+  le_antisymm (map_span_X_image_le_ker s) fun _ hf ↦
+    (mem_map_span_X_image_iff hs hc).mpr
+      (exists_mem_ne_zero_of_evalZeroOn_eq_zero (RingHom.mem_ker.mp hf))
 
 /-- **Coordinate ideals are prime.** Over a normed domain, the ideal of restricted series
 generated by the variables `Xᵢ`, `i ∈ s`, is prime whenever their radii are nonzero; `s` may be
@@ -283,8 +254,9 @@ theorem ncard_le_height_map_span_X_image [IsDomain R] {s : Set σ} (hs : s.Finit
       _ ≤ _ := Ideal.height_add_one_le_of_lt_of_isPrime hlt
 
 /-- **Heights of coordinate ideals.** If the restricted series over a normed domain form a
-noetherian ring, as they do over a complete nonarchimedean field, then the ideal generated by
-the variables of a finite set `s` with nonzero radii has height `s.ncard`. -/
+noetherian ring, as they do in finitely many variables at positive radii over a complete
+nonarchimedean field (`TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring`), then the
+ideal generated by the variables of a finite set `s` with nonzero radii has height `s.ncard`. -/
 theorem height_map_span_X_image [IsDomain R] [IsNoetherianRing (IsRestricted.subring (R := R) c)]
     {s : Set σ} (hs : s.Finite) (hc : ∀ i ∈ s, c i ≠ 0) :
     ((Ideal.span (MvPolynomial.X '' s)).map (polynomialToRestricted (R := R) c)).height =

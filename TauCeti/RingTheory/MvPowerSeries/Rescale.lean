@@ -20,7 +20,9 @@ Hence rescaling by multiplicative units transports weighted coefficient norms, a
 restrictedness, when the weights are changed by the corresponding scalar norms; in particular,
 rescaling by the inverses of multiplicative units `uᵢ` turns the weighted coefficient norms at the
 radii `‖uᵢ‖⁻¹` into plain coefficient norms. Rescaling by a
-family of units and then by their inverses is the identity. Substituting a family into a rescaled
+family of units and then by their inverses is the identity. Rescaling by the indicator of the
+complement of a set of variables sets these variables to zero
+(`MvPowerSeries.coeff_rescale_indicator_compl`). Substituting a family into a rescaled
 power series is substituting the rescaled family: `f(a X)` at `X = v` is `f(a v)`; in particular,
 `s • g = f(s X)` gives `s • g(v) = f(s v)`.
 -/
@@ -83,6 +85,25 @@ theorem rescale_inv_rescale {A : Type*} [CommSemiring A] (u : σ → Aˣ) (f : M
     funext i
     simp
   rw [rescale_rescale, h, rescale_one, RingHom.id_apply]
+
+open Classical in
+/-- Rescaling by the indicator of the complement of `s` sets the variables of `s` to zero. -/
+theorem coeff_rescale_indicator_compl {A : Type*} [CommSemiring A] (s : Set σ)
+    (f : MvPowerSeries σ A) (t : σ →₀ ℕ) :
+    coeff t (rescale (sᶜ.indicator 1) f) = if ∀ j ∈ s, t j = 0 then coeff t f else 0 := by
+  rw [coeff_rescale, Finsupp.prod,
+    Finset.prod_congr rfl fun j hj ↦ (?_ : _ = if j ∈ sᶜ then (1 : A) else 0),
+    Finset.prod_boole]
+  · have : (∀ j ∈ t.support, j ∈ sᶜ) ↔ ∀ j ∈ s, t j = 0 := by
+      simp only [Finsupp.mem_support_iff, Set.mem_compl_iff]
+      exact ⟨fun h j hj ↦ by_contra fun h' ↦ h j h' hj, fun h j hj hjs ↦ hj (h j hjs)⟩
+    by_cases h : ∀ j ∈ s, t j = 0
+    · simp only [this, eq_true h, ↓reduceIte, one_mul]
+    · simp only [this, eq_false h, ↓reduceIte, zero_mul]
+  · rw [Set.indicator_apply]
+    split_ifs
+    · exact one_pow _
+    · exact zero_pow (Finsupp.mem_support_iff.mp hj)
 
 /-- Substituting a family `v` into the rescaling `f(a X)` of `f` substitutes the rescaled family:
 `f(a X)` at `X = v` is `f(a v)`. -/

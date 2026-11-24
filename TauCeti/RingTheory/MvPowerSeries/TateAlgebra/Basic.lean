@@ -51,6 +51,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound against a
   restricted series preserves restrictedness and gives the same Gauss-norm bound, even across
   different coefficient rings.
+* `MvPowerSeries.IsRestricted.of_X_mul`: dividing a restricted series by a variable of nonzero
+  radius keeps it restricted.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
   polyradius the norm is the largest coefficient norm, and it is attained.
@@ -139,6 +141,20 @@ theorem IsRestricted.of_norm_coeff_le {S : Type*} [NormedRing S] {c : σ → ℝ
     (fun t ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg t)) fun t ↦ ?_
   rw [← mul_assoc]
   exact mul_le_mul_of_nonneg_right (h t) (prod_abs_pow_nonneg t)
+
+/-- Dividing a restricted series by a variable whose radius is nonzero keeps it restricted: the
+weighted coefficients of `f` are those of `Xᵢ f`, shifted by `Xᵢ` and divided by `c i`. -/
+theorem IsRestricted.of_X_mul {c : σ → ℝ} {i : σ} (hc : c i ≠ 0) {f : MvPowerSeries σ R}
+    (h : IsRestricted c (X i * f)) : IsRestricted c f := by
+  have h' := (h.comp (add_right_injective (Finsupp.single i 1)).tendsto_cofinite).const_mul
+    (c i)⁻¹
+  rw [mul_zero] at h'
+  refine h'.congr fun t ↦ ?_
+  simp only [Function.comp_apply, X, coeff_add_monomial_mul, one_mul,
+    Finsupp.prod_add_index' (h := fun j n ↦ c j ^ n) (fun _ ↦ pow_zero _)
+      fun _ _ _ ↦ pow_add _ _ _,
+    pow_zero, Finsupp.prod_single_index, pow_one]
+  field_simp
 
 /-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
 `(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
