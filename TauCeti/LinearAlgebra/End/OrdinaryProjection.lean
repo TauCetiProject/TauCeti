@@ -36,8 +36,9 @@ The main results are:
 * `Module.End.range_ordinaryProjection_eq_of_isCompl`,
   `Module.End.ker_ordinaryProjection_eq_of_isCompl`: uniqueness of the decomposition into a
   summand on which `U` is surjective and a summand on which `U` is locally nilpotent;
-* `Module.End.ordinaryProjection_comp_eq_comp_ordinaryProjection`: naturality for equivariant
-  maps between finite modules;
+* `Module.End.ordinaryProjection_comp_eq_comp_ordinaryProjection`,
+  `Module.End.ordinaryProjection_apply_comm`: naturality for equivariant maps between finite
+  modules;
 * `Module.End.map_range_ordinaryProjection_of_exact`,
   `Module.End.map_range_ordinaryProjection_of_surjective` and their kernel versions: taking
   ordinary and non-ordinary parts is exact on equivariant exact sequences of finite modules; in
@@ -263,6 +264,13 @@ theorem ordinaryProjection_comp_eq_comp_ordinaryProjection [Finite N] {U₁ : Mo
     ordinaryProjection_eq_pow_factorial (le_max_right (Nat.card M) (Nat.card N))]
   exact commute_pow_left_of_commute h _
 
+/-- Naturality of the ordinary projector, applied form: if `f` intertwines `U₁` and `U₂`, then
+`e_{U₂} (f x) = f (e_{U₁} x)`. -/
+theorem ordinaryProjection_apply_comm [Finite N] {U₁ : Module.End R M} {U₂ : Module.End R N}
+    {f : M →ₗ[R] N} (h : U₂ ∘ₗ f = f ∘ₗ U₁) (x : M) :
+    U₂.ordinaryProjection (f x) = f (U₁.ordinaryProjection x) :=
+  LinearMap.congr_fun (ordinaryProjection_comp_eq_comp_ordinaryProjection h) x
+
 /-- An intertwining map sends ordinary parts into ordinary parts. -/
 theorem map_range_ordinaryProjection_le [Finite N] {U₁ : Module.End R M} {U₂ : Module.End R N}
     {f : M →ₗ[R] N} (h : U₂ ∘ₗ f = f ∘ₗ U₁) :
@@ -276,8 +284,7 @@ theorem map_ker_ordinaryProjection_le [Finite N] {U₁ : Module.End R M} {U₂ :
     (ker U₁.ordinaryProjection).map f ≤ ker U₂.ordinaryProjection := by
   rintro _ ⟨x, hx, rfl⟩
   rw [SetLike.mem_coe, mem_ker] at hx
-  rw [mem_ker, ← LinearMap.comp_apply, ordinaryProjection_comp_eq_comp_ordinaryProjection h,
-    LinearMap.comp_apply, hx, map_zero]
+  rw [mem_ker, ordinaryProjection_apply_comm h, hx, map_zero]
 
 variable {U' : Module.End R N} {U'' : Module.End R P}
 
@@ -292,8 +299,8 @@ theorem map_range_ordinaryProjection_of_exact [Finite N] {f : N →ₗ[R] M} {g 
   · rintro x ⟨hxg, hxe⟩
     obtain ⟨y, rfl⟩ := (hfg x).mp (mem_ker.mp hxg)
     refine ⟨U'.ordinaryProjection y, mem_range_self _ y, ?_⟩
-    rw [← LinearMap.comp_apply, ← ordinaryProjection_comp_eq_comp_ordinaryProjection hf,
-      LinearMap.comp_apply, isIdempotentElem_ordinaryProjection.mem_range_iff.mp hxe]
+    rw [← ordinaryProjection_apply_comm hf,
+      isIdempotentElem_ordinaryProjection.mem_range_iff.mp hxe]
 
 /-- A surjection intertwining `U` and `U''` maps the ordinary part of `M` onto that of `P`. -/
 theorem map_range_ordinaryProjection_of_surjective [Finite P] {g : M →ₗ[R] P} (hg : Surjective g)
@@ -302,9 +309,7 @@ theorem map_range_ordinaryProjection_of_surjective [Finite P] {g : M →ₗ[R] P
   refine le_antisymm (map_range_ordinaryProjection_le h) ?_
   rintro _ ⟨z, rfl⟩
   obtain ⟨y, rfl⟩ := hg z
-  refine ⟨U.ordinaryProjection y, mem_range_self _ y, ?_⟩
-  rw [← LinearMap.comp_apply g, ← ordinaryProjection_comp_eq_comp_ordinaryProjection h,
-    LinearMap.comp_apply]
+  exact ⟨U.ordinaryProjection y, mem_range_self _ y, (ordinaryProjection_apply_comm h y).symm⟩
 
 end Semiring
 
@@ -356,9 +361,7 @@ theorem map_ker_ordinaryProjection_of_exact [Finite N] {f : N →ₗ[R] M} {g : 
     obtain ⟨y, rfl⟩ := (hfg x).mp (mem_ker.mp hxg)
     refine ⟨(1 - U'.ordinaryProjection) y,
       isIdempotentElem_ordinaryProjection.ker_eq_range_one_sub.ge (mem_range_self _ y), ?_⟩
-    rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, ← LinearMap.comp_apply f,
-      ← ordinaryProjection_comp_eq_comp_ordinaryProjection hf, LinearMap.comp_apply,
-      mem_ker.mp hxe, sub_zero]
+    simp [← ordinaryProjection_apply_comm hf, mem_ker.mp hxe]
 
 /-- A surjection intertwining `U` and `U''` maps the non-ordinary part of `M` onto that of `P`. -/
 theorem map_ker_ordinaryProjection_of_surjective [Finite P] {g : M →ₗ[R] P} (hg : Surjective g)
@@ -368,9 +371,7 @@ theorem map_ker_ordinaryProjection_of_surjective [Finite P] {g : M →ₗ[R] P} 
   obtain ⟨y, rfl⟩ := hg z
   refine ⟨(1 - U.ordinaryProjection) y,
     isIdempotentElem_ordinaryProjection.ker_eq_range_one_sub.ge (mem_range_self _ y), ?_⟩
-  rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, ← LinearMap.comp_apply g,
-    ← ordinaryProjection_comp_eq_comp_ordinaryProjection h, LinearMap.comp_apply, mem_ker.mp hz,
-    sub_zero]
+  simp [← ordinaryProjection_apply_comm h, mem_ker.mp hz]
 
 /-- The ordinary part of the quotient of `M` by a `U`-stable submodule `Q` is the image of the
 ordinary part of `M`. -/
