@@ -70,6 +70,29 @@ and empty blocks.
 
 namespace Matrix
 
+/-- With fixed off-diagonal blocks, the assembled matrix determines both diagonal blocks. -/
+public theorem fromBlocks₁₁₂₂_injective {m n p q α : Type*}
+    (B : Matrix m q α) (C : Matrix n p α) :
+    Function.Injective (fun a : Matrix m p α × Matrix n q α ↦ fromBlocks a.1 B C a.2) := by
+  rintro ⟨A₁, D₁⟩ ⟨A₂, D₂⟩ h
+  simpa only [fromBlocks_inj, and_true, true_and, Prod.mk.injEq] using h
+
+
+/-- A nonnegative bound on absolute products of corresponding entries of a block diagonal
+matrix is equivalent to the same bounds within the two blocks. Each column selects a row
+through an arbitrary function. -/
+public theorem forall_abs_mul_le_fromBlocks_zero₁₂_zero₂₁_iff {m n p q α : Type*}
+    [NonUnitalNonAssocRing α] [Lattice α]
+    (A : Matrix m p α) (D : Matrix n q α) (row₁ : p → m) (row₂ : q → n)
+    (bound : α) (hbound : 0 ≤ bound) :
+    (∀ i j, i ≠ j →
+      |fromBlocks A 0 0 D (Sum.map row₁ row₂ i) j *
+        fromBlocks A 0 0 D (Sum.map row₁ row₂ j) i| ≤ bound) ↔
+      (∀ i j, i ≠ j → |A (row₁ i) j * A (row₁ j) i| ≤ bound) ∧
+        (∀ i j, i ≠ j → |D (row₂ i) j * D (row₂ j) i| ≤ bound) := by
+  have hzero : |(0 : α)| = 0 := by simp [abs]
+  simp [Sum.forall, hzero, hbound]
+
 section ToBlocksMul
 
 variable {n o l m p q α : Type*} [Fintype l] [Fintype m] [AddCommMonoid α] [Mul α]
