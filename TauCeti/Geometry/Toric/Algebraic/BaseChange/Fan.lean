@@ -235,9 +235,8 @@ noncomputable instance : (Φ.affineChartOpenCover R).LocallyDirected where
   trans_comp f g := (Φ.affineChartDiagram R).map_comp f g
   w {τ σ} f := faceAffineChartMap_comp_affineChartι R (τ := τ) (σ := σ) _
   directed x := by
-    -- The cover is definitionally Mathlib's cover of the colimit by the members of the diagram;
-    -- a tactic proof sees through the chart inclusions to the colimit inclusions.
-    exact (Scheme.IsLocallyDirected.openCover (Φ.affineChartDiagram R)).exists_lift_trans_eq x
+    -- The chart inclusions are by definition the colimit inclusions of the chart diagram.
+    exact Scheme.IsLocallyDirected.exists_pullback_lift_eq (Φ.affineChartDiagram R) x
   property_trans f := isOpenImmersion_affineChartDiagram_map R f
 
 /-- The transition maps of the affine chart open cover are the face chart morphisms. -/

@@ -41,6 +41,22 @@ namespace TauCeti.Toric.Fan
 
 variable {N V : Type} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V} (Φ : Fan i)
 
+-- The change of exponent notation intertwines the multiplicative and additive face ring maps.
+private theorem faceAffineCoordinateRingMap_comp_toMultiplicativeAlgEquiv {τ σ : Φ.cones}
+    (hτσ : τ.val.IsFaceOf σ.val) :
+    (faceAffineCoordinateRingMap Φ.lattice hτσ).comp
+        (AddMonoidAlgebra.toMultiplicativeAlgEquiv ℂ ℂ (dualSemigroup Φ.lattice σ.val) :
+          _ →ₐ[ℂ] _) =
+      (AddMonoidAlgebra.toMultiplicativeAlgEquiv ℂ ℂ (dualSemigroup Φ.lattice τ.val) :
+          _ →ₐ[ℂ] _).comp (faceAffineChartRingMap ℂ Φ.lattice hτσ) :=
+  AddMonoidAlgebra.algHom_ext (fun m ↦ by
+    simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
+      AddMonoidAlgebra.toMultiplicativeAlgEquiv_single, faceAffineCoordinateRingMap_single,
+      faceAffineChartRingMap_single]
+    -- On a monomial both sides give the monomial of the same character of `τ`.
+    exact congrArg (MonoidAlgebra.single · 1) (congrArg Multiplicative.ofAdd
+      (Subtype.ext (AddSubmonoid.coe_inclusion _ m).symm))) (Subsingleton.elim _ _)
+
 /-- The change of exponent notation identifies the diagram of affine toric charts in
 multiplicative notation with the diagram of complex affine charts in additive notation. -/
 noncomputable def affineChartDiagramComplexIso : Φ.affineToricDiagram ≅ Φ.affineChartDiagram ℂ :=
@@ -48,19 +64,6 @@ noncomputable def affineChartDiagramComplexIso : Φ.affineToricDiagram ≅ Φ.af
     (fun σ ↦ (Over.forget _).mapIso (affineToricSchemeIsoAddMonoidAlgebraSpec Φ.lattice σ))
     fun {τ σ} f ↦ by
       have hτσ := Φ.isFaceOf_of_le σ.property τ.property (leOfHom f)
-      have hring : (faceAffineCoordinateRingMap Φ.lattice hτσ).comp
-          (AddMonoidAlgebra.toMultiplicativeAlgEquiv ℂ ℂ (dualSemigroup Φ.lattice σ.val) :
-            _ →ₐ[ℂ] _) =
-          (AddMonoidAlgebra.toMultiplicativeAlgEquiv ℂ ℂ (dualSemigroup Φ.lattice τ.val) :
-            _ →ₐ[ℂ] _).comp (faceAffineChartRingMap ℂ Φ.lattice hτσ) :=
-        AddMonoidAlgebra.algHom_ext (fun m ↦ by
-          simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply,
-            AddMonoidAlgebra.toMultiplicativeAlgEquiv_single, faceAffineCoordinateRingMap_single,
-            faceAffineChartRingMap_single]
-          -- On a monomial both sides give the monomial of the same character of `τ`.
-          exact congrArg (MonoidAlgebra.single · 1) (congrArg Multiplicative.ofAdd
-            (Subtype.ext (AddSubmonoid.coe_inclusion _ m).symm))) (Subsingleton.elim _ _)
-      -- The diagram maps and the components unfold to spectra of the ring maps in `hring`.
       have key :
           Spec.map (CommRingCat.ofHom (faceAffineCoordinateRingMap Φ.lattice hτσ).toRingHom) ≫
           Spec.map (CommRingCat.ofHom (AddMonoidAlgebra.toMultiplicativeAlgEquiv ℂ ℂ
@@ -69,9 +72,10 @@ noncomputable def affineChartDiagramComplexIso : Φ.affineToricDiagram ≅ Φ.af
             (dualSemigroup Φ.lattice τ.val) : _ →ₐ[ℂ] _).toRingHom) ≫
           Spec.map (CommRingCat.ofHom (faceAffineChartRingMap ℂ Φ.lattice hτσ).toRingHom) := by
         rw [← Spec.map_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
-        exact congrArg (fun φ : _ →ₐ[ℂ] _ ↦ Spec.map (CommRingCat.ofHom φ.toRingHom)) hring
-      rw [Functor.mapIso_hom, Functor.mapIso_hom, Over.forget_map, Over.forget_map,
-        affineToricSchemeIsoAddMonoidAlgebraSpec_hom_left,
+        exact congrArg (fun φ : _ →ₐ[ℂ] _ ↦ Spec.map (CommRingCat.ofHom φ.toRingHom))
+          (faceAffineCoordinateRingMap_comp_toMultiplicativeAlgEquiv Φ hτσ)
+      -- The diagram maps and the components unfold to the spectra of the ring maps in `key`.
+      simp only [Functor.mapIso_hom, Over.forget_map,
         affineToricSchemeIsoAddMonoidAlgebraSpec_hom_left, affineToricDiagram_map,
         affineChartDiagram_map, faceAffineToricSchemeMap_def, faceAffineChartMap_def]
       exact key

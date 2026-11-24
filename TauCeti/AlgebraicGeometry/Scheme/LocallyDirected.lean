@@ -29,6 +29,8 @@ the images of the `F j` in the colimit meet.
   and `F j` meet inside the image of `F (i ⊓ j)`.
 * `AlgebraicGeometry.Scheme.IsLocallyDirected.ι_eq_ι_iff_inf`: over a meet-semilattice, points of
   `F i` and `F j` are identified in the colimit exactly along `F (i ⊓ j)`.
+* `AlgebraicGeometry.Scheme.IsLocallyDirected.exists_pullback_lift_eq`: every point of the
+  pullback of the inclusions of `F i` and `F j` comes from some `F k` mapping to both.
 * The open cover `AlgebraicGeometry.Scheme.IsLocallyDirected.openCover` of the colimit of a thin
   locally directed diagram is locally directed, with the diagram maps as transition maps.
 * `AlgebraicGeometry.Scheme.range_pushout_inl_union_range_pushout_inr`: a pushout of two open
@@ -99,10 +101,10 @@ theorem isLocallyDirected_of_range_inter_subset
   replace hij : F.map fi xi = F.map fj xj := hij
   obtain ⟨x, hx⟩ := h fi fj ⟨⟨xi, rfl⟩, ⟨xj, hij.symm⟩⟩
   refine ⟨i ⊓ j, homOfLE inf_le_left, homOfLE inf_le_right, x, ?_, ?_⟩
-  · change F.map (homOfLE inf_le_left) x = xi
+  · rw [Functor.comp_map, Scheme.forget_map, TypeCat.ofHom_apply]
     apply (F.map fi).isOpenEmbedding.injective
     rw [← Scheme.Hom.comp_apply, ← F.map_comp, hx]
-  · change F.map (homOfLE inf_le_right) x = xj
+  · rw [Functor.comp_map, Scheme.forget_map, TypeCat.ofHom_apply]
     apply (F.map fj).isOpenEmbedding.injective
     rw [← Scheme.Hom.comp_apply, ← F.map_comp, ← hij, ← hx,
       Subsingleton.elim (homOfLE inf_le_right ≫ fj) (homOfLE inf_le_left ≫ fi)]
@@ -130,6 +132,21 @@ variable {J : Type w} [Category.{v} J] (F : J ⥤ Scheme.{u})
   [∀ {i j} (f : i ⟶ j), IsOpenImmersion (F.map f)] [(F ⋙ Scheme.forget).IsLocallyDirected]
   [Quiver.IsThin J] [Small.{u} J]
 
+/-- Every point of the pullback of the inclusions of `F i` and `F j` into the colimit of a thin
+locally directed diagram of open immersions comes from a point of some `F k` mapping to both. -/
+theorem exists_pullback_lift_eq {i j : J}
+    (x : (pullback (colimit.ι F i) (colimit.ι F j)).carrier) :
+    ∃ (k : J) (fi : k ⟶ i) (fj : k ⟶ j) (z : F.obj k),
+      pullback.lift (F.map fi) (F.map fj) ((colimit.w F fi).trans (colimit.w F fj).symm) z =
+        x := by
+  obtain ⟨k, fi, fj, z, hzi, -⟩ := (ι_eq_ι_iff F).1
+    congr($(pullback.condition (f := colimit.ι F i) (g := colimit.ι F j)) x)
+  refine ⟨k, fi, fj, z, ?_⟩
+  -- The first projection of a pullback along an open immersion is injective.
+  apply (pullback.fst (colimit.ι F i) (colimit.ι F j)).isOpenEmbedding.injective
+  exact congr($(pullback.lift_fst (F.map fi) (F.map fj)
+    ((colimit.w F fi).trans (colimit.w F fj).symm)) z).trans hzi
+
 /-- The open cover of a locally directed colimit by its members is indexed by the index category
 of the diagram. -/
 instance instCategoryI₀OpenCover : Category.{v} (openCover F).I₀ :=
@@ -142,15 +159,7 @@ noncomputable instance instLocallyDirectedOpenCover : (openCover F).LocallyDirec
   trans_id i := F.map_id i
   trans_comp f g := F.map_comp f g
   w f := colimit.w F f
-  -- State the indices in `J`, where the instances of the diagram are found.
-  directed {i j : J} x := by
-    obtain ⟨k, fi, fj, z, hzi, -⟩ := (ι_eq_ι_iff F).1
-      congr($(pullback.condition (f := colimit.ι F i) (g := colimit.ι F j)) x)
-    refine ⟨k, fi, fj, z, ?_⟩
-    -- The first projection of a pullback along an open immersion is injective.
-    apply (pullback.fst (colimit.ι F i) (colimit.ι F j)).isOpenEmbedding.injective
-    exact congr($(pullback.lift_fst (F.map fi) (F.map fj)
-      ((colimit.w F fi).trans (colimit.w F fj).symm)) z).trans hzi
+  directed x := exists_pullback_lift_eq F x
   property_trans {i j : J} (f : i ⟶ j) := inferInstanceAs (IsOpenImmersion (F.map f))
 
 /-- The transition maps of the open cover of a locally directed colimit are the maps of the

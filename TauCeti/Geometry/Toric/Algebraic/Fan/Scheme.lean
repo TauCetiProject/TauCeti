@@ -333,9 +333,8 @@ noncomputable instance : Φ.affineToricOpenCover.LocallyDirected where
   directed x := by
     have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map f
     have := isLocallyDirected_affineToricDiagram (Φ := Φ)
-    -- The cover is definitionally Mathlib's cover of the colimit by the members of the diagram;
-    -- a tactic proof sees through the chart inclusions to the colimit inclusions.
-    exact (Scheme.IsLocallyDirected.openCover Φ.affineToricDiagram).exists_lift_trans_eq x
+    -- The chart inclusions are by definition the colimit inclusions of the chart diagram.
+    exact Scheme.IsLocallyDirected.exists_pullback_lift_eq Φ.affineToricDiagram x
   property_trans f := isOpenImmersion_affineToricDiagram_map f
 
 /-- The transition maps of the affine toric open cover are the face morphisms. -/
