@@ -74,7 +74,7 @@ theorem isHomeomorph_unitsMeasureEquivKerPsi_weak :
       (⟨Units.val, Units.continuous_val⟩ : C(ℤ_[p]ˣ, ℤ_[p]))).congr
         fun ν ↦ (unitsMeasureEquivKerPsi_apply ν).symm
   · exact ((continuous_restrictUnits_weak (p := p) (R := R)).comp
-      continuous_subtype_val).congr fun μ ↦ (unitsMeasureEquivKerPsi_symm_apply μ).symm
+      continuous_subtypeVal).congr fun μ ↦ (unitsMeasureEquivKerPsi_symm_apply μ).symm
 
 end Weak
 
@@ -133,7 +133,7 @@ theorem isHomeomorph_unitsMeasureEquivKerPsi_strong :
       (⟨Units.val, Units.continuous_val⟩ : C(ℤ_[p]ˣ, ℤ_[p]))).congr
         fun ν ↦ (unitsMeasureEquivKerPsi_apply ν).symm
   · exact ((continuous_restrictUnits_strong (p := p) (K := K)).comp
-      continuous_subtype_val).congr fun μ ↦ (unitsMeasureEquivKerPsi_symm_apply μ).symm
+      continuous_subtypeVal).congr fun μ ↦ (unitsMeasureEquivKerPsi_symm_apply μ).symm
 
 end Norm
 

@@ -16,9 +16,9 @@ For a tower `k → L → K`, the scalar-tower homomorphism extends characters wi
 splitting assumption. A commutative `k`-bialgebra split over `L` has the same
 characters over `L` and `K`, provided `L` is a domain, `L ⊗[k] A` is torsion-free
 over `L`, and `Spec K` is connected.
-The comparison extends the coefficients of a character, and intertwines compatible
-scalar automorphisms of `L` and `K`. This identifies splitting-field characters with
-geometric characters while retaining the Galois action.
+The comparison extends the coefficients of a character, intertwines compatible
+scalar automorphisms of `L` and `K`, and commutes with bialgebra morphisms. This identifies
+splitting-field characters with geometric characters while retaining the Galois action.
 
 The construction uses `groupLikeBaseChangeEquiv` and `baseChangeTowerBialgEquiv`.
 -/
@@ -49,6 +49,22 @@ theorem val_groupLikeScalarTowerHom (x : _root_.GroupLike L (L ⊗[k] A)) :
   simp only [groupLikeScalarTowerHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     BialgEquiv.val_mapGroupLike, val_groupLikeBaseChange]
   exact TensorProduct.baseChangeTowerBialgEquiv_one_tmul k L A K x.val
+
+/-- Extending the coefficients of a character through a tower commutes with a bialgebra
+morphism. -/
+@[simp]
+theorem _root_.BialgHom.groupLikeScalarTowerHom_mapGroupLike {B : Type*} [Semiring B]
+    [Bialgebra k B] (f : A →ₐc[k] B) (x : _root_.GroupLike L (L ⊗[k] A)) :
+    groupLikeScalarTowerHom (K := K)
+        ((Bialgebra.TensorProduct.map (BialgHom.id L L) f).mapGroupLike x) =
+      (Bialgebra.TensorProduct.map (BialgHom.id K K) f).mapGroupLike
+        (groupLikeScalarTowerHom x) := by
+  apply _root_.GroupLike.val_injective
+  simp only [val_groupLikeScalarTowerHom, BialgHom.val_mapGroupLike]
+  induction x.val using TensorProduct.inductionOn with
+  | add a b ha hb => simp only [map_add, ha, hb]
+  | tmul a b => simp only [Algebra.TensorProduct.map_tmul, Bialgebra.TensorProduct.map_tmul,
+      IsScalarTower.toAlgHom_apply, AlgHom.id_apply, BialgHom.id_apply]
 
 end Map
 
@@ -97,5 +113,26 @@ theorem groupLikeScalarTowerEquiv_smul
   | add x y hx hy => simp only [smul_add, map_add, hx, hy]
   | tmul a b => simp only [ScalarAut.smul_tmul, Algebra.TensorProduct.map_tmul,
       IsScalarTower.toAlgHom_apply, AlgHom.id_apply, hστ]
+
+/-- The character comparison through a tower commutes with a bialgebra morphism between
+split bialgebras.
+
+This is an explicit rewrite rule: `simp` cannot infer the spanning proof of the source
+from the left-hand side. -/
+theorem groupLikeScalarTowerEquiv_mapGroupLike {B : Type*} [CommRing B] [Bialgebra k B]
+    [Module.IsTorsionFree L (L ⊗[k] B)]
+    (hA : Submodule.span L
+      (Set.range (_root_.GroupLike.val (R := L) (A := L ⊗[k] A))) = ⊤)
+    (hB : Submodule.span L
+      (Set.range (_root_.GroupLike.val (R := L) (A := L ⊗[k] B))) = ⊤)
+    (f : A →ₐc[k] B) (x : _root_.GroupLike L (L ⊗[k] A)) :
+    groupLikeScalarTowerEquiv (K := K) hB
+        ((Bialgebra.TensorProduct.map (BialgHom.id L L) f).mapGroupLike x) =
+      (Bialgebra.TensorProduct.map (BialgHom.id K K) f).mapGroupLike
+        (groupLikeScalarTowerEquiv (K := K) hA x) := by
+  apply _root_.GroupLike.val_injective
+  rw [val_groupLikeScalarTowerEquiv, ← val_groupLikeScalarTowerHom,
+    BialgHom.groupLikeScalarTowerHom_mapGroupLike, BialgHom.val_mapGroupLike,
+    BialgHom.val_mapGroupLike, val_groupLikeScalarTowerHom, val_groupLikeScalarTowerEquiv]
 
 end TauCeti

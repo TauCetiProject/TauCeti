@@ -63,7 +63,7 @@ noncomputable def evenUnitaryGroupEquivSymplecticGroup
     (he : ∀ x, e (reverseEven Q x) = -(J l R * (e x)ᵀ * J l R)) :
     evenUnitaryGroup Q ≃* symplecticGroup l R :=
   evenUnitaryGroupEquivOfAlgEquiv Q e (· ∈ symplecticGroup l R) (symplecticGroup l R).subtype
-    Subtype.val_injective (fun a ha => ⟨a, ha⟩) (fun _ _ => rfl) (fun g => g.2) fun x => by
+    Subtype.val_injective (fun a ha => ⟨a, ha⟩) (fun _ _ => rfl) (fun g => g.property) fun x => by
       rw [SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one, ← Matrix.neg_mul, ← he,
         ← map_mul, ← map_one e, e.injective.eq_iff]
 
@@ -139,7 +139,7 @@ theorem mem_range_evenUnitaryGroupToSymplecticGroup_iff [FaithfulSMul R A]
       ∃ y ∈ even Q, ofBaseChangeAux A Q y = (e.symm g : CliffordAlgebra (Q.baseChange A)) := by
   constructor
   · rintro ⟨x, rfl⟩
-    exact ⟨_, evenUnitaryGroup.mem_even Q x.2, by simp⟩
+    exact ⟨_, evenUnitaryGroup.mem_even Q x.property, by simp⟩
   · rintro ⟨y, hy, hyg⟩
     -- The unit of `C₀ ⊗ A` corresponding to `g`; its reverse norms are one.
     set u := (evenUnitaryGroupEquivSymplecticGroup (Q.baseChange A) e he).symm g

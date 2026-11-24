@@ -255,7 +255,7 @@ def diagonalTorusClosedSubgroup :
 /-- The bundled diagonal torus has the subobject represented by its inclusion. -/
 @[simp]
 theorem coe_diagonalTorusClosedSubgroup :
-    (diagonalTorusClosedSubgroup r R).1 = Subobject.mk (diagonalTorus r R) :=
+    (diagonalTorusClosedSubgroup r R).val = Subobject.mk (diagonalTorus r R) :=
   ClosedSubgroupScheme.coe_mk _
 
 end

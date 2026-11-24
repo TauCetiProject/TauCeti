@@ -412,7 +412,7 @@ noncomputable def naiveExactOrderRepresentableBy :
   homEquiv :=
     { toFun u := ⟨u ≫ naiveLocusι (E.torsionPointHom N) ≫ E.torsionι N,
         isOfNaiveExactOrder_comp_naiveLocusι u⟩
-      invFun x := naiveExactOrderLift (mem_naiveExactOrderSubfunctor_obj.mp x.2)
+      invFun x := naiveExactOrderLift (mem_naiveExactOrderSubfunctor_obj.mp x.property)
       left_inv u := by
         -- both sides are morphisms into an open subscheme of `E[N]`, a monomorphism into `E`
         refine (cancel_mono (naiveLocusι (E.torsionPointHom N) ≫ E.torsionι N)).mp ?_
@@ -480,7 +480,7 @@ theorem exists_lift_naiveExactOrderPreimageι_iff {x : Z ⟶ Over.mk E.structure
       ext1
       simp [u, hx, ← hl, hP.w]
     rw [← hux, ← coe_naiveExactOrderRepresentableBy_homEquiv u]
-    exact ((E.naiveExactOrderRepresentableBy N).homEquiv u).2
+    exact ((E.naiveExactOrderRepresentableBy N).homEquiv u).property
   · -- conversely, the point of the scheme of points of naive exact order `N` given by `x` lifts
     -- `Z ⟶ S`
     let u := (E.naiveExactOrderRepresentableBy N).homEquiv.symm ⟨x, h⟩

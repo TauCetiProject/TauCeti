@@ -90,7 +90,7 @@ theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
   have hU (x : U) : IsNilpotent (rho x - 1) := by
     let n : X ⟶ CommHopfAlgCat.grpObj H := (ePoint x).left
     let p := CommHopfAlgCat.grpObjPointsMulEquiv H X n
-    have hxright : (ePoint x).right = 1 := x.2
+    have hxright : (ePoint x).right = 1 := x.property
     have hpoint : x = BialgHom.mapDomain A.coordinateInl.hom p := by
       apply ePoint.injective
       rw [A.pointMulEquiv_mapDomain_coordinateInl, MulEquiv.symm_apply_apply]
@@ -98,7 +98,7 @@ theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
     exact HopfAlgebra.IsUnipotentPoint.isNilpotent_pointsRepresentation_sub_one
       (hpoint ▸ (hH p).mapDomain A.coordinateInl.hom) M
   have hW (x : W) : IsNilpotent (rho x - 1) := by
-    obtain ⟨r, hr⟩ := x.2
+    obtain ⟨r, hr⟩ := x.property
     let p := CommHopfAlgCat.grpObjPointsMulEquiv K X r
     have hpoint : x = BialgHom.mapDomain A.coordinateInr.hom p := by
       apply ePoint.injective

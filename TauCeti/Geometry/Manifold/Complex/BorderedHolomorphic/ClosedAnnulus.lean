@@ -151,7 +151,7 @@ private theorem continuousOn_log_chart {ρ d : ℂ}
     |>.continuousOn_iff).2 fun z hz ↦ ?_
   exact (continuousAt_const.mul (ContinuousAt.comp
     (f := fun x : closedAnnulus r₁ r₂ ↦ (x : ℂ) / ρ) (continuousAt_clog (hs z hz))
-    (continuous_subtype_val.div_const _).continuousAt)).continuousWithinAt
+    (continuous_subtypeVal.div_const _).continuousAt)).continuousWithinAt
 
 /-- The inverse of a logarithmic chart, with `im w` capped at `L`, is continuous. -/
 private theorem continuous_exp_chart {ρ c : ℂ} {L : ℝ}
@@ -160,9 +160,53 @@ private theorem continuous_exp_chart {ρ c : ℂ} {L : ℝ}
       (fun w : ClosedUpperHalfPlane ↦ (⟨ρ * exp (c * capIm L w), h w⟩ : closedAnnulus r₁ r₂)) :=
   Topology.IsInducing.subtypeVal.continuous_iff.2
     (continuous_const.mul (continuous_const.mul ((continuous_capIm _).comp
-      continuous_subtype_val)).cexp)
+      continuous_subtypeVal)).cexp)
 
 /-! ### The logarithmic charts -/
+
+/-- The open set of the closed upper half-plane on which the logarithmic charts take values: the
+points with `|re w| < π` and `im w < log (r₂ / r₁)`. -/
+def chartTarget (r₁ r₂ : ℝ) : Set ClosedUpperHalfPlane :=
+  {w | |(w : ℂ).re| < π ∧ (w : ℂ).im < Real.log (r₂ / r₁)}
+
+/-- A point lies in the chart target exactly when `|re w| < π` and `im w < log (r₂ / r₁)`. -/
+@[simp]
+theorem mem_chartTarget_iff {w : ClosedUpperHalfPlane} :
+    w ∈ chartTarget r₁ r₂ ↔ |(w : ℂ).re| < π ∧ (w : ℂ).im < Real.log (r₂ / r₁) :=
+  Iff.rfl
+
+private theorem isOpen_chartTarget : IsOpen (chartTarget r₁ r₂) :=
+  ((continuous_abs.comp (continuous_re.comp continuous_subtypeVal)).isOpen_preimage _
+    isOpen_Iio).inter ((continuous_im.comp continuous_subtypeVal).isOpen_preimage _ isOpen_Iio)
+
+private theorem abs_im_neg_I_mul_lt {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
+    |(-I * (w : ℂ)).im| < π := by
+  simpa using hw.1
+
+private theorem abs_im_I_mul_lt {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
+    |(I * (w : ℂ)).im| < π := by
+  simpa using hw.1
+
+section LowerRadius
+
+variable [hr₁ : Fact (0 < r₁)]
+
+private theorem norm_coe_pos (z : closedAnnulus r₁ r₂) : 0 < ‖(z : ℂ)‖ :=
+  hr₁.out.trans_le (closedAnnulus.le_norm_coe z)
+
+/-- The inner chart has nonnegative imaginary part on the closed annulus. -/
+private theorem im_inner_nonneg {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnulus r₁ r₂) :
+    0 ≤ (I * log ((z : ℂ) / (r₁ * ζ))).im := by
+  rw [im_I_mul_log, norm_div_ofReal_mul hr₁.out hζ]
+  exact Real.log_nonneg ((one_le_div hr₁.out).2 (closedAnnulus.le_norm_coe z))
+
+/-- On the points with `‖z‖ < r₂`, the inner chart has imaginary part below `log (r₂ / r₁)`. -/
+private theorem im_inner_lt {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnulus r₁ r₂)
+    (hz : ‖(z : ℂ)‖ < r₂) : (I * log ((z : ℂ) / (r₁ * ζ))).im < Real.log (r₂ / r₁) := by
+  rw [im_I_mul_log, norm_div_ofReal_mul hr₁.out hζ]
+  exact Real.log_lt_log (div_pos (norm_coe_pos z) hr₁.out) (div_lt_div_of_pos_right hz hr₁.out)
+
+end LowerRadius
 
 section Charts
 
@@ -184,37 +228,6 @@ private theorem mul_exp_neg_log_div : r₂ * Real.exp (-Real.log (r₂ / r₁)) 
   rw [Real.exp_neg, Real.exp_log (div_pos (zero_lt_r₂ r₁ r₂) hr₁.out)]
   field_simp [hr₁.out.ne', (zero_lt_r₂ r₁ r₂).ne']
 
-omit hr₁₂ in
-private theorem norm_coe_pos (z : closedAnnulus r₁ r₂) : 0 < ‖(z : ℂ)‖ :=
-  hr₁.out.trans_le (closedAnnulus.le_norm_coe z)
-
-/-- The open set of the closed upper half-plane on which the logarithmic charts take values: the
-points with `|re w| < π` and `im w < log (r₂ / r₁)`. -/
-def chartTarget (r₁ r₂ : ℝ) : Set ClosedUpperHalfPlane :=
-  {w | |(w : ℂ).re| < π ∧ (w : ℂ).im < Real.log (r₂ / r₁)}
-
-omit hr₁ hr₁₂ in
-/-- A point lies in the chart target exactly when `|re w| < π` and `im w < log (r₂ / r₁)`. -/
-@[simp]
-theorem mem_chartTarget_iff {w : ClosedUpperHalfPlane} :
-    w ∈ chartTarget r₁ r₂ ↔ |(w : ℂ).re| < π ∧ (w : ℂ).im < Real.log (r₂ / r₁) :=
-  Iff.rfl
-
-omit hr₁ hr₁₂ in
-private theorem isOpen_chartTarget : IsOpen (chartTarget r₁ r₂) :=
-  ((continuous_abs.comp (continuous_re.comp continuous_subtype_val)).isOpen_preimage _
-    isOpen_Iio).inter ((continuous_im.comp continuous_subtype_val).isOpen_preimage _ isOpen_Iio)
-
-omit hr₁ hr₁₂ in
-private theorem abs_im_neg_I_mul_lt {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
-    |(-I * (w : ℂ)).im| < π := by
-  simpa using hw.1
-
-omit hr₁ hr₁₂ in
-private theorem abs_im_I_mul_lt {w : ClosedUpperHalfPlane} (hw : w ∈ chartTarget r₁ r₂) :
-    |(I * (w : ℂ)).im| < π := by
-  simpa using hw.1
-
 /-- The inverse of the inner chart lands in the closed annulus. -/
 private theorem mem_closedAnnulus_inner {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : ClosedUpperHalfPlane) :
     (r₁ : ℂ) * ζ * exp (-I * capIm (Real.log (r₂ / r₁)) w) ∈ closedAnnulus r₁ r₂ := by
@@ -223,7 +236,7 @@ private theorem mem_closedAnnulus_inner {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : Clo
     simp [im_capIm]
   rw [mem_closedAnnulus, norm_ofReal_mul_mul_exp hr₁.out.le hζ, him]
   constructor
-  · exact le_mul_of_one_le_right hr₁.out.le (Real.one_le_exp (le_min w.2 hL))
+  · exact le_mul_of_one_le_right hr₁.out.le (Real.one_le_exp (le_min w.property hL))
   · calc r₁ * Real.exp (min (w : ℂ).im (Real.log (r₂ / r₁)))
         ≤ r₁ * Real.exp (Real.log (r₂ / r₁)) :=
           mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (min_le_right _ _)) hr₁.out.le
@@ -242,14 +255,7 @@ private theorem mem_closedAnnulus_outer {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : Clo
       _ ≤ r₂ * Real.exp (-min (w : ℂ).im (Real.log (r₂ / r₁))) :=
           mul_le_mul_of_nonneg_left (Real.exp_le_exp.2 (neg_le_neg (min_le_right _ _))) hr₂.le
   · exact mul_le_of_le_one_right hr₂.le
-      (Real.exp_le_one_iff.2 (neg_nonpos.2 (le_min w.2 hL)))
-
-omit hr₁₂ in
-/-- The inner chart has nonnegative imaginary part on the closed annulus. -/
-private theorem im_inner_nonneg {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnulus r₁ r₂) :
-    0 ≤ (I * log ((z : ℂ) / (r₁ * ζ))).im := by
-  rw [im_I_mul_log, norm_div_ofReal_mul hr₁.out hζ]
-  exact Real.log_nonneg ((one_le_div hr₁.out).2 (closedAnnulus.le_norm_coe z))
+      (Real.exp_le_one_iff.2 (neg_nonpos.2 (le_min w.property hL)))
 
 /-- The outer chart has nonnegative imaginary part on the closed annulus. -/
 private theorem im_outer_nonneg {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnulus r₁ r₂) :
@@ -257,13 +263,6 @@ private theorem im_outer_nonneg {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnul
   rw [im_neg_I_mul_log, norm_div_ofReal_mul (zero_lt_r₂ r₁ r₂) hζ, neg_nonneg]
   exact Real.log_nonpos (div_nonneg (norm_nonneg _) (zero_lt_r₂ r₁ r₂).le)
     ((div_le_one (zero_lt_r₂ r₁ r₂)).2 (closedAnnulus.norm_coe_le z))
-
-omit hr₁₂ in
-/-- On the points with `‖z‖ < r₂`, the inner chart has imaginary part below `log (r₂ / r₁)`. -/
-private theorem im_inner_lt {ζ : ℂ} (hζ : ‖ζ‖ = 1) (z : closedAnnulus r₁ r₂)
-    (hz : ‖(z : ℂ)‖ < r₂) : (I * log ((z : ℂ) / (r₁ * ζ))).im < Real.log (r₂ / r₁) := by
-  rw [im_I_mul_log, norm_div_ofReal_mul hr₁.out hζ]
-  exact Real.log_lt_log (div_pos (norm_coe_pos z) hr₁.out) (div_lt_div_of_pos_right hz hr₁.out)
 
 /-- The inner logarithmic chart attached to a point `ζ` of the unit circle: the map
 `z ↦ I log (z / (r₁ ζ))` from the points of the closed annulus with `‖z‖ < r₂` and `z / ζ` off
@@ -298,8 +297,8 @@ def innerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     rw [capIm_of_im_le hw.2.le]
     exact mul_log_mul_exp_div (ofReal_mul_ne_zero hr₁.out hζ)
       (by rw [neg_mul, I_mul_I, neg_neg]) (abs_im_neg_I_mul_lt hw)
-  open_source := (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).inter
-    (isOpen_slitPlane.preimage (continuous_subtype_val.div_const _))
+  open_source := (isOpen_lt (continuous_norm.comp continuous_subtypeVal) continuous_const).inter
+    (isOpen_slitPlane.preimage (continuous_subtypeVal.div_const _))
   open_target := isOpen_chartTarget
   continuousOn_toFun := by exact continuousOn_log_chart _ fun _ hz ↦ hz.2
   continuousOn_invFun := (continuous_exp_chart _).continuousOn
@@ -345,8 +344,8 @@ def outerChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     rw [capIm_of_im_le hw.2.le]
     exact mul_log_mul_exp_div (ofReal_mul_ne_zero (zero_lt_r₂ r₁ r₂) hζ)
       (by rw [mul_neg, I_mul_I, neg_neg]) (abs_im_I_mul_lt hw)
-  open_source := (isOpen_lt continuous_const (continuous_norm.comp continuous_subtype_val)).inter
-    (isOpen_slitPlane.preimage (continuous_subtype_val.div_const _))
+  open_source := (isOpen_lt continuous_const (continuous_norm.comp continuous_subtypeVal)).inter
+    (isOpen_slitPlane.preimage (continuous_subtypeVal.div_const _))
   open_target := isOpen_chartTarget
   continuousOn_toFun := by exact continuousOn_log_chart _ fun _ hz ↦ hz.2
   continuousOn_invFun := (continuous_exp_chart _).continuousOn
@@ -424,20 +423,20 @@ theorem im_outerChart_apply (z : closedAnnulus r₁ r₂) :
   rw [coe_outerChart_apply, im_neg_I_mul_log, norm_div_ofReal_mul (zero_lt_r₂ r₁ r₂) hζ,
     ← Real.log_inv, inv_div]
 
+end Charts
+
 /-! ### The atlas -/
 
-omit hr₁ hr₁₂ in
 /-- The direction of the preferred chart at `z`: `1` if `0 ≤ re z`, and `-1` otherwise. -/
 def chartDirection (z : closedAnnulus r₁ r₂) : ℂ :=
   if 0 ≤ (z : ℂ).re then 1 else -1
 
-omit hr₁ hr₁₂ in
 /-- The direction of the preferred chart lies on the unit circle. -/
 theorem norm_chartDirection (z : closedAnnulus r₁ r₂) : ‖chartDirection z‖ = 1 := by
   unfold chartDirection
   split_ifs <;> simp
 
-omit hr₁₂ in
+variable [hr₁ : Fact (0 < r₁)] in
 /-- For `ρ > 0`, the point `z / (ρ ζ)` lies in the slit plane when `ζ` is the direction of the
 preferred chart at `z`. -/
 private theorem div_mem_slitPlane {ρ : ℝ} (hρ : 0 < ρ) (z : closedAnnulus r₁ r₂) :
@@ -453,6 +452,10 @@ private theorem div_mem_slitPlane {ρ : ℝ} (hρ : 0 < ρ) (z : closedAnnulus r
       · simpa using him
   · rw [mul_neg_one, div_neg, mem_slitPlane_iff, neg_re, div_ofReal_re]
     exact Or.inl (neg_pos.2 (div_neg_of_neg_of_pos (not_le.1 h) hρ))
+
+section Atlas
+
+variable [hr₁ : Fact (0 < r₁)] [hr₁₂ : Fact (r₁ < r₂)]
 
 /-- The closed annulus `r₁ ≤ ‖z‖ ≤ r₂` is a charted space modelled on the closed upper
 half-plane. The atlas consists of the inner and outer logarithmic charts. The chart at `z` is the
@@ -484,6 +487,8 @@ theorem mem_atlas_iff {e : OpenPartialHomeomorph (closedAnnulus r₁ r₂) Close
       ∃ (ζ : ℂ) (hζ : ‖ζ‖ = 1), e = innerChart ζ hζ ∨ e = outerChart ζ hζ :=
   Iff.rfl
 
+end Atlas
+
 /-! ### Transition maps -/
 
 /-- A chart of the closed annulus whose inverse is `w ↦ ρ exp (c w)` on its target and which is
@@ -493,20 +498,6 @@ private def IsLogChart (e : OpenPartialHomeomorph (closedAnnulus r₁ r₂) Clos
   ∃ ρ c d : ℂ, (∀ w ∈ e.target, ((e.symm w : closedAnnulus r₁ r₂) : ℂ) = ρ * exp (c * w)) ∧
     ∀ z ∈ e.source, (z : ℂ) / ρ ∈ slitPlane ∧ (e z : ℂ) = d * log ((z : ℂ) / ρ)
 
-private theorem isLogChart_of_mem_atlas
-    {e : OpenPartialHomeomorph (closedAnnulus r₁ r₂) ClosedUpperHalfPlane}
-    (he : e ∈ atlas ClosedUpperHalfPlane (closedAnnulus r₁ r₂)) : IsLogChart e := by
-  obtain ⟨ζ, hζ, rfl | rfl⟩ := he
-  · exact ⟨r₁ * ζ, -I, I, fun w hw ↦ coe_innerChart_symm_apply hw, fun z hz ↦ ⟨hz.2, rfl⟩⟩
-  · exact ⟨r₂ * ζ, I, -I, fun w hw ↦ coe_outerChart_symm_apply hw, fun z hz ↦ ⟨hz.2, rfl⟩⟩
-
-end Charts
-
-section Transitions
-
-variable [hr₁ : Fact (0 < r₁)] [hr₁₂ : Fact (r₁ < r₂)]
-
-omit hr₁ hr₁₂ in
 /-- The transition map from a log chart `e` to a log chart `e'` is
 `w ↦ d' log (ρ exp (c w) / ρ')`, analytic at each point of its source. -/
 private theorem transition_contDiffAt
@@ -525,7 +516,6 @@ private theorem transition_contDiffAt
       ((contDiffAt_const.mul (contDiffAt_const.mul contDiffAt_id).cexp).div_const _))
   · rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply, (he' _ hw.2).2, he w hw.1]
 
-omit hr₁ hr₁₂ in
 private theorem symm_trans_mem_borderedHolomorphicGroupoid
     {e e' : OpenPartialHomeomorph (closedAnnulus r₁ r₂) ClosedUpperHalfPlane}
     (he : IsLogChart e) (he' : IsLogChart e') :
@@ -540,6 +530,17 @@ private theorem symm_trans_mem_borderedHolomorphicGroupoid
   rw [← OpenPartialHomeomorph.symm_source, hsymm] at hw
   rw [hsymm]
   exact transition_contDiffAt hes' hee w hw
+
+section Transitions
+
+variable [hr₁ : Fact (0 < r₁)] [hr₁₂ : Fact (r₁ < r₂)]
+
+private theorem isLogChart_of_mem_atlas
+    {e : OpenPartialHomeomorph (closedAnnulus r₁ r₂) ClosedUpperHalfPlane}
+    (he : e ∈ atlas ClosedUpperHalfPlane (closedAnnulus r₁ r₂)) : IsLogChart e := by
+  obtain ⟨ζ, hζ, rfl | rfl⟩ := he
+  · exact ⟨r₁ * ζ, -I, I, fun w hw ↦ coe_innerChart_symm_apply hw, fun z hz ↦ ⟨hz.2, rfl⟩⟩
+  · exact ⟨r₂ * ζ, I, -I, fun w hw ↦ coe_outerChart_symm_apply hw, fun z hz ↦ ⟨hz.2, rfl⟩⟩
 
 /-- The closed annulus, with its logarithmic charts, is a Riemann surface with boundary. -/
 instance instHasGroupoid : HasGroupoid (closedAnnulus r₁ r₂) borderedHolomorphicGroupoid where
@@ -590,7 +591,7 @@ theorem contMDiff_coe_borderedInterior :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω
       (fun z : borderedInterior (closedAnnulus r₁ r₂) ↦ ((z : closedAnnulus r₁ r₂) : ℂ)) := by
   intro x
-  refine contMDiffAt_iff.2 ⟨(continuous_subtype_val.comp continuous_subtype_val).continuousAt, ?_⟩
+  refine contMDiffAt_iff.2 ⟨(continuous_subtypeVal.comp continuous_subtypeVal).continuousAt, ?_⟩
   simp only [mfld_simps]
   refine ContDiffAt.contDiffWithinAt ?_
   obtain ⟨ρ, c, -, hsymm, -⟩ :=

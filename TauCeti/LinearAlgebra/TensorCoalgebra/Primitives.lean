@@ -100,21 +100,21 @@ theorem deconcatenation_ofLetter (a : M) : deconcatenation R M (ofLetter R M a) 
 /-- The `(1, n - 1)` bidegree part of reduced deconcatenation, evaluated on a pure tensor word of
 length `m`: only the cut after the first letter can contribute, and it does so exactly when
 `m = n`. -/
-private theorem map_component_deconcatenation_tprod (n m : {n : ℕ // 0 < n}) (hn : 2 ≤ n.1)
-    (x : Fin m.1 → M) :
-    TensorProduct.map (component R M 1) (component R M ⟨n.1 - 1, by omega⟩)
+private theorem map_component_deconcatenation_tprod (n m : {n : ℕ // 0 < n}) (hn : 2 ≤ n.val)
+    (x : Fin m.val → M) :
+    TensorProduct.map (component R M 1) (component R M ⟨n.val - 1, by omega⟩)
         (deconcatenation R M (of R M m (PiTensorProduct.tprod R x))) =
-      TensorPower.splitAt R M n.1 1 (by omega)
+      TensorPower.splitAt R M n.val 1 (by omega)
         (component R M n (of R M m (PiTensorProduct.tprod R x))) := by
   rw [deconcatenation_of, deconcatenationComponent_tprod]
   simp only [map_sum, TensorProduct.map_tmul]
   rcases eq_or_ne m n with rfl | hmn
   · rw [component_of, TensorPower.splitAt_tprod,
-      Finset.sum_eq_single (⟨0, by omega⟩ : Fin (m.1 - 1))]
+      Finset.sum_eq_single (⟨0, by omega⟩ : Fin (m.val - 1))]
     · simp only [Fin.val_mk, Nat.zero_add]
       erw [component_of, component_of]
     · intro i _ hi
-      have hi0 : i.1 ≠ 0 := fun h ↦ hi (Fin.ext h)
+      have hi0 : i.val ≠ 0 := fun h ↦ hi (Fin.ext h)
       rw [component_of_of_ne R M
         (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega),
         TensorProduct.zero_tmul]
@@ -123,24 +123,24 @@ private theorem map_component_deconcatenation_tprod (n m : {n : ℕ // 0 < n}) (
   · rw [component_of_of_ne R M hmn, map_zero]
     have hmn' : (m : ℕ) ≠ (n : ℕ) := fun h ↦ hmn (Subtype.ext h)
     refine Finset.sum_eq_zero fun i _ ↦ ?_
-    have hi1 : i.1 + 1 < (m : ℕ) := by have := i.isLt; omega
-    rcases eq_or_ne i.1 0 with hi | hi
+    have hi1 : i.val + 1 < (m : ℕ) := by have := i.isLt; omega
+    rcases eq_or_ne i.val 0 with hi | hi
     · have h2 := component_of_of_ne R M
-        (m := (⟨(m : ℕ) - (i.1 + 1), by omega⟩ : {n : ℕ // 0 < n}))
+        (m := (⟨(m : ℕ) - (i.val + 1), by omega⟩ : {n : ℕ // 0 < n}))
         (n := (⟨(n : ℕ) - 1, by omega⟩ : {n : ℕ // 0 < n}))
         (by simp only [ne_eq, Subtype.mk.injEq]; omega)
       rw [h2, TensorProduct.tmul_zero]
     · have h1 := component_of_of_ne R M
-        (m := (⟨i.1 + 1, by omega⟩ : {n : ℕ // 0 < n})) (n := 1)
+        (m := (⟨i.val + 1, by omega⟩ : {n : ℕ // 0 < n})) (n := 1)
         (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega)
       rw [h1, TensorProduct.zero_tmul]
 
 /-- Reading off the `(1, n - 1)` bidegree part of reduced deconcatenation recovers the cut of a
 word of length `n` after its first letter. -/
-theorem map_component_deconcatenation (n : {n : ℕ // 0 < n}) (hn : 2 ≤ n.1) :
-    TensorProduct.map (component R M 1) (component R M ⟨n.1 - 1, by omega⟩) ∘ₗ
+theorem map_component_deconcatenation (n : {n : ℕ // 0 < n}) (hn : 2 ≤ n.val) :
+    TensorProduct.map (component R M 1) (component R M ⟨n.val - 1, by omega⟩) ∘ₗ
         deconcatenation R M =
-      TensorPower.splitAt R M n.1 1 (by omega) ∘ₗ component R M n := by
+      TensorPower.splitAt R M n.val 1 (by omega) ∘ₗ component R M n := by
   refine linearMap_ext R M fun m x ↦ ?_
   simp only [LinearMap.comp_apply]
   exact map_component_deconcatenation_tprod R M n m hn x
@@ -159,11 +159,11 @@ theorem eq_of_deconcatenation_eq_of_letter_eq {x y : ReducedTensorWords R M}
   · have h := congrArg (TensorPower.oneEquiv R M).symm hl
     rwa [letter_apply, letter_apply, LinearEquiv.symm_apply_apply,
       LinearEquiv.symm_apply_apply] at h
-  · have h2 : 2 ≤ n.1 := by
-      rcases Nat.lt_or_ge n.1 2 with h | h
-      · exact absurd (Subtype.ext (by omega : n.1 = 1)) hn
+  · have h2 : 2 ≤ n.val := by
+      rcases Nat.lt_or_ge n.val 2 with h | h
+      · exact absurd (Subtype.ext (by omega : n.val = 1)) hn
       · exact h
-    refine TensorPower.splitAt_injective R M n.1 1 (by omega) ?_
+    refine TensorPower.splitAt_injective R M n.val 1 (by omega) ?_
     have hx := congrArg (fun f ↦ f x) (map_component_deconcatenation R M n h2)
     have hy := congrArg (fun f ↦ f y) (map_component_deconcatenation R M n h2)
     simp only [LinearMap.comp_apply] at hx hy
@@ -278,10 +278,29 @@ theorem letter_of_two (a b : M) :
     letter R M (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) = 0 := by
   rw [← prepend_ofLetter, letter_prepend]
 
+/-- Two linear maps out of `ReducedTensorWords R M` agree if they agree on single letters and on
+prepended words. -/
+theorem linearMap_ext_ofLetter_prepend {N : Type*} [AddCommMonoid N] [Module R N]
+    {f g : ReducedTensorWords R M →ₗ[R] N}
+    (h1 : ∀ a, f (ofLetter R M a) = g (ofLetter R M a))
+    (h2 : ∀ a w, f (prepend R M a w) = g (prepend R M a w)) : f = g :=
+  linearMap_ext R M fun ⟨n, hn⟩ x ↦ by match n with
+    | 0 => omega
+    | 1 =>
+      have hx : of R M ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R M (x 0) := by
+        rw [ofLetter_eq_of_tprod]; exact of_tprod_congr R M hn rfl <| Fin.forall_fin_one.2 rfl
+      rw [hx, h1]
+    | k + 2 =>
+      have hx : of R M ⟨k + 2, hn⟩ (PiTensorProduct.tprod R x) = prepend R M (x 0)
+          (of R M ⟨k + 1, Nat.succ_pos k⟩ (PiTensorProduct.tprod R fun i ↦ x i.succ)) := by
+        rw [prepend_of_tprod]
+        exact of_tprod_congr R M hn rfl fun i ↦ by cases i using Fin.cases <;> simp
+      rw [hx, h2]
+
 end Prepend
 
 /-- A word whose length is not one has no letter component. -/
-theorem letter_of_of_ne_one {n : {n : ℕ // 0 < n}} (hn : n ≠ 1) (z : TensorPower R n.1 M) :
+theorem letter_of_of_ne_one {n : {n : ℕ // 0 < n}} (hn : n ≠ 1) (z : TensorPower R n.val M) :
     letter R M (of R M n z) = 0 := by
   rw [letter_apply, component_of_of_ne R M hn z, map_zero]
 

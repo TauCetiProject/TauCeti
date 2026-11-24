@@ -106,14 +106,14 @@ variable {σ}
 /-- A smooth vector field is symplectic exactly when its contraction is closed. -/
 @[simp]
 theorem mem_symplecticVectorFields_iff {X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯} :
-    X ∈ σ.symplecticVectorFields ↔ mextDeriv (RoughForm.interior X σ.1) = 0 := by
+    X ∈ σ.symplecticVectorFields ↔ mextDeriv (RoughForm.interior X σ.val) = 0 := by
   rw [symplecticVectorFields, Submodule.mem_comap, mem_closedForms, coe_interiorₗ]
 
 /-- For a closed two-form, a smooth vector field is symplectic exactly when its Lie derivative
 annihilates the form, `L_X σ = 0`. -/
 theorem mem_symplecticVectorFields_iff_mlieDerivForm_eq_zero (hσ : σ.IsClosed)
     {X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯} :
-    X ∈ σ.symplecticVectorFields ↔ mlieDerivForm X σ.1 = 0 := by
+    X ∈ σ.symplecticVectorFields ↔ mlieDerivForm X σ.val = 0 := by
   rw [mem_symplecticVectorFields_iff,
     SmoothForm.mlieDerivForm_eq_mextDeriv_interior (X.contMDiff.mdifferentiable (by simp)) hσ]
 
@@ -122,7 +122,7 @@ finite-dimensional manifold and a smooth one-form `β`, the vector field `X = (�
 `ι_X σ = β` has `L_X σ = dβ`. This is Cartan's formula `L_X σ = d(ι_X σ) + ι_X dσ`. -/
 theorem IsSymplectic.mlieDerivForm_interiorEquiv_symm [FiniteDimensional ℝ E]
     (hσ : σ.IsSymplectic) (β : SmoothForm I M ℝ 1) :
-    mlieDerivForm (hσ.isNondegenerate.interiorEquiv.symm β) σ.1 = mextDeriv β.1 := by
+    mlieDerivForm (hσ.isNondegenerate.interiorEquiv.symm β) σ.val = mextDeriv β.val := by
   rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior
     ((hσ.isNondegenerate.interiorEquiv.symm β).contMDiff.mdifferentiable (by simp)) hσ.isClosed,
     hσ.isNondegenerate.interior_interiorEquiv_symm]
@@ -131,16 +131,16 @@ theorem IsSymplectic.mlieDerivForm_interiorEquiv_symm [FiniteDimensional ℝ E]
 is the exterior derivative of that form. -/
 theorem isHamiltonianVectorField_iff_interiorₗ_eq {φ : SmoothForm I M ℝ 0}
     {X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯} :
-    σ.IsHamiltonianVectorField (fun y ↦ φ.1 y 0) X ↔ σ.interiorₗ X = mextDerivₗ I 0 φ := by
+    σ.IsHamiltonianVectorField (fun y ↦ φ.val y 0) X ↔ σ.interiorₗ X = mextDerivₗ I 0 φ := by
   -- Compare the underlying rough forms, expressing the `0`-form by its scalar function.
-  rw [isHamiltonianVectorField_iff_interior_eq, ← RoughForm.eq_ofFunction φ.1,
+  rw [isHamiltonianVectorField_iff_interior_eq, ← RoughForm.eq_ofFunction φ.val,
     ← coe_interiorₗ, ← mextDerivₗ_apply, SetLike.coe_eq_coe]
 
 /-- **Hamiltonian vector fields are symplectic**: if `ι_X σ = df` for a smooth function `f`, then
 `ι_X σ` is closed. -/
 theorem mem_symplecticVectorFields_of_isHamiltonianVectorField {φ : SmoothForm I M ℝ 0}
     {X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯}
-    (hX : σ.IsHamiltonianVectorField (fun y ↦ φ.1 y 0) X) : X ∈ σ.symplecticVectorFields := by
+    (hX : σ.IsHamiltonianVectorField (fun y ↦ φ.val y 0) X) : X ∈ σ.symplecticVectorFields := by
   rw [symplecticVectorFields, Submodule.mem_comap, isHamiltonianVectorField_iff_interiorₗ_eq.1 hX]
   exact mextDerivₗ_mem_closedForms I 0 φ
 
@@ -154,7 +154,8 @@ def interiorClass : σ.symplecticVectorFields →ₗ[ℝ] deRhamCohomology I M 1
 /-- The class of a symplectic vector field is the class of its contraction. -/
 theorem interiorClass_apply (X : σ.symplecticVectorFields) :
     σ.interiorClass X = deRhamCohomology.mk I 1
-      ⟨σ.interiorₗ X, by simpa only [symplecticVectorFields, Submodule.mem_comap] using X.2⟩ :=
+      ⟨σ.interiorₗ X, by simpa only [symplecticVectorFields, Submodule.mem_comap] using X.property⟩
+          :=
   (rfl)
 
 variable {σ}
@@ -171,7 +172,7 @@ theorem interiorClass_eq_zero_iff_exists_mextDerivₗ (X : σ.symplecticVectorFi
 field of a smooth function. -/
 theorem interiorClass_eq_zero_iff (X : σ.symplecticVectorFields) :
     σ.interiorClass X = 0 ↔ ∃ φ : SmoothForm I M ℝ 0,
-      σ.IsHamiltonianVectorField (fun y ↦ φ.1 y 0) (X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) := by
+      σ.IsHamiltonianVectorField (fun y ↦ φ.val y 0) (X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) := by
   simp only [interiorClass_eq_zero_iff_exists_mextDerivₗ, isHamiltonianVectorField_iff_interiorₗ_eq]
 
 /-! ### The exact sequence of a nondegenerate form -/
@@ -201,7 +202,7 @@ def negHamiltonianₗ : SmoothForm I M ℝ 0 →ₗ[ℝ] σ.symplecticVectorFiel
 @[simp]
 theorem coe_negHamiltonianₗ (φ : SmoothForm I M ℝ 0) (x : M) :
     (h.negHamiltonianₗ φ : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) x =
-      -σ.hamiltonianVectorField (fun y ↦ φ.1 y 0) x := by
+      -σ.hamiltonianVectorField (fun y ↦ φ.val y 0) x := by
   -- Both sides are `-(σ♭)⁻¹` of the differential `d(φ)`, read once as a form and once through
   -- `mvfderiv`.
   simp only [negHamiltonianₗ, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coe_neg,
@@ -249,13 +250,13 @@ vector field, namely of `X = (σ♭)⁻¹ α` for a closed representative `α`. 
 theorem interiorClass_surjective : Function.Surjective σ.interiorClass := by
   intro c
   obtain ⟨α, rfl⟩ := deRhamCohomology.mk_surjective I 1 c
-  have hX : h.interiorEquiv.symm α.1 ∈ σ.symplecticVectorFields := by
+  have hX : h.interiorEquiv.symm α.val ∈ σ.symplecticVectorFields := by
     rw [symplecticVectorFields, Submodule.mem_comap, interiorₗ_interiorEquiv_symm]
-    exact α.2
+    exact α.property
   refine ⟨⟨_, hX⟩, ?_⟩
   rw [interiorClass_apply]
   congr 1
-  exact Subtype.ext (h.interiorₗ_interiorEquiv_symm α.1)
+  exact Subtype.ext (h.interiorₗ_interiorEquiv_symm α.val)
 
 end IsNondegenerate
 

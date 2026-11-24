@@ -88,7 +88,7 @@ theorem bijective_domRestrict_maximalProPQuotient_mk (hP : IsProPSylow p P) :
         mul_inv_eq_one]
       exact hxy
     exact mul_inv_eq_one.mp (Subgroup.disjoint_def.mp hP.isProP.disjoint_proPKernel
-      (P.mul_mem x.2 (P.inv_mem y.2)) hmem)
+      (P.mul_mem x.property (P.inv_mem y.property)) hmem)
   · -- Surjectivity: the image of `P` is a Sylow pro-`p` subgroup of the pro-`p` group `G(p)`.
     have himage : P.map (maximalProPQuotient.mk p G) = ⊤ :=
       (hP.map_of_surjective _ (maximalProPQuotient.continuous_mk p G)
@@ -105,7 +105,7 @@ noncomputable def continuousMulEquivMaximalProPQuotient (hP : IsProPSylow p P) :
     P ≃ₜ* maximalProPQuotient p G :=
   have : CompactSpace P := isCompact_iff_compactSpace.mp hP.isClosed.isCompact
   have hcont : Continuous ((maximalProPQuotient.mk p G).domRestrict P) :=
-    (maximalProPQuotient.continuous_mk p G).comp continuous_subtype_val
+    (maximalProPQuotient.continuous_mk p G).comp continuous_subtypeVal
   ContinuousMulEquiv.mk (MulEquiv.ofBijective _ hP.bijective_domRestrict_maximalProPQuotient_mk)
     hcont (hcont.continuous_symm_of_equiv_compact_to_t2
       (f := (MulEquiv.ofBijective _ hP.bijective_domRestrict_maximalProPQuotient_mk).toEquiv))
@@ -130,7 +130,7 @@ theorem isProPSylow_iff_isClosed_and_bijective_domRestrict_maximalProPQuotient_m
   -- quotient map is injective on `Q` and already surjective on `P`, so `P = Q`.
   have : CompactSpace P := isCompact_iff_compactSpace.mp hclosed.isCompact
   have hcont : Continuous ((maximalProPQuotient.mk p G).domRestrict P) :=
-    (maximalProPQuotient.continuous_mk p G).comp continuous_subtype_val
+    (maximalProPQuotient.continuous_mk p G).comp continuous_subtypeVal
   have hP : IsProP p P :=
     (isProP_maximalProPQuotient (p := p) (G := G)).of_equiv
       (ContinuousMulEquiv.mk (MulEquiv.ofBijective _ hbij) hcont

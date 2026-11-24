@@ -117,7 +117,7 @@ def cayleyWord {v w : (cayley α).V} (p : (cayley α).Path v w) : List (α × Bo
   simp [cayleyWord]
 
 @[simp] theorem cayleyWord_cons {a b c : (cayley α).V} (p : (cayley α).Path a b)
-    (e : Quiver.Hom b c) : cayleyWord (p.cons e) = cayleyWord p ++ [(cayleyDartEquiv e.1).2] := by
+    (e : Quiver.Hom b c) : cayleyWord (p.cons e) = cayleyWord p ++ [(cayleyDartEquiv e.val).2] := by
   simp [cayleyWord]
 
 @[simp] theorem cayleyWord_comp {a b c : (cayley α).V} (p : (cayley α).Path a b)
@@ -149,7 +149,7 @@ theorem cayleyVertexEquiv_mul_mk_cayleyWord {v w : (cayley α).V} (p : (cayley �
     cases p with
     | nil => exact iff_of_true (by simp) (Path.isReduced_toPath _ e)
     | cons p f =>
-      rw [Path.isReduced_cons_cons, ← ih, cayley_ne_rev_iff (e.2.1.trans f.2.2.symm),
+      rw [Path.isReduced_cons_cons, ← ih, cayley_ne_rev_iff (e.property.1.trans f.property.2.symm),
         cayleyWord_cons (p.cons f) e, cayleyWord_cons p f, FreeGroup.IsReduced,
         List.isChain_append, ← FreeGroup.IsReduced]
       simp

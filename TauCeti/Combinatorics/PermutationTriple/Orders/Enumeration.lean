@@ -51,25 +51,25 @@ This enumerates literal triples, including all relabelings, rather than isomorph
 /-- The finite search succeeds if and only if a connected triple with those exact orders exists. -/
 theorem nonempty_connectedTriplesWithExactOrders_iff :
     (connectedTriplesWithExactOrders n a b c).Nonempty ↔
-      ∃ t : ConnectedTriple n, t.1.HasExactOrders a b c := by
+      ∃ t : ConnectedTriple n, t.val.HasExactOrders a b c := by
   simp only [Finset.Nonempty, mem_connectedTriplesWithExactOrders]
   constructor
   · rintro ⟨t, ht, ho⟩
     exact ⟨⟨t, ht⟩, ho⟩
   · rintro ⟨t, ho⟩
-    exact ⟨t.1, t.2, ho⟩
+    exact ⟨t.val, t.property, ho⟩
 
 /-- A connected triple with specified exact orders exists if and only if its signature occurs
 in the computed order table for that degree. -/
 theorem exists_hasExactOrders_iff_mem_image_computedOrderTriple :
-    (∃ t : ConnectedTriple n, t.1.HasExactOrders a b c) ↔
+    (∃ t : ConnectedTriple n, t.val.HasExactOrders a b c) ↔
       (a, b, c) ∈ (connectedTriples n).image PermutationTriple.computedOrderTriple := by
   rw [Finset.mem_image]
   simp only [mem_connectedTriples, PermutationTriple.computedOrderTriple_eq,
     ← PermutationTriple.hasExactOrders_iff]
   constructor
   · rintro ⟨t, ho⟩
-    exact ⟨t.1, t.2, ho⟩
+    exact ⟨t.val, t.property, ho⟩
   · rintro ⟨t, ht, ho⟩
     exact ⟨⟨t, ht⟩, ho⟩
 
@@ -99,7 +99,7 @@ theorem image_computedOrderTriple_connectedTriples_three :
 /-- A connected degree-three triple with specified exact orders exists precisely for one of
 the seven signatures in the complete table. -/
 theorem exists_hasExactOrders_three_iff (a b c : ℕ) :
-    (∃ t : ConnectedTriple 3, t.1.HasExactOrders a b c) ↔
+    (∃ t : ConnectedTriple 3, t.val.HasExactOrders a b c) ↔
       (a, b, c) ∈ ({(1, 3, 3), (3, 1, 3), (3, 3, 1), (2, 2, 3),
         (2, 3, 2), (3, 2, 2), (3, 3, 3)} : Finset (ℕ × ℕ × ℕ)) := by
   rw [exists_hasExactOrders_iff_mem_image_computedOrderTriple,

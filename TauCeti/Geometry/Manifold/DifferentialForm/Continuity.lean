@@ -15,7 +15,9 @@ import TauCeti.Topology.VectorBundle.Trivialization
 
 The coordinate expression of a differential form is the fiber coordinate of its section in the
 existing alternating tangent-bundle trivialization. Consequently even `C⁰` section regularity
-implies coordinate continuity on the extended chart target, including boundary and corner points.
+implies coordinate continuity on the extended chart target, including boundary and corner points,
+and hence boundedness of the coordinate expression on a ball around the chart centre
+(`TauCeti.IsSmoothForm.exists_ball_norm_inChartAt_le`).
 The zero set of a regular form is closed, as can be checked in local bundle trivializations. A
 `C⁰` form evaluated on tangent vectors that converge in the tangent bundle converges to the value
 on the limit vectors (`TauCeti.IsSmoothForm.tendsto_apply`), as can likewise be read off in the
@@ -87,6 +89,23 @@ theorem IsSmoothForm.continuousOn_inChartAt {n : WithTop ℕ∞} {φ : RoughForm
   intro z hz
   exact φ.inChartAt_eq_trivializationAt α hz
 
+/-- On a boundaryless manifold, the coordinate expression of a regular differential form,
+including a continuous one, in the preferred chart at `α` is bounded on some ball around the image
+of `α` contained in the chart target. -/
+theorem IsSmoothForm.exists_ball_norm_inChartAt_le [I.Boundaryless] {n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I n φ) (α : M) :
+    ∃ r > 0, ∃ B, 0 ≤ B ∧ Metric.ball (extChartAt I α α) r ⊆ (extChartAt I α).target ∧
+      ∀ z ∈ Metric.ball (extChartAt I α α) r, ‖φ.inChartAt α z‖ ≤ B := by
+  obtain ⟨r₁, hr₁, hψ⟩ := Metric.continuousAt_iff.1
+    ((hφ.continuousOn_inChartAt α).continuousAt (extChartAt_target_mem_nhds α)) 1 one_pos
+  obtain ⟨r₂, hr₂, hball⟩ := Metric.isOpen_iff.1 (isOpen_extChartAt_target α)
+    (extChartAt I α α) (mem_extChartAt_target α)
+  refine ⟨min r₁ r₂, lt_min hr₁ hr₂, ‖φ.inChartAt α (extChartAt I α α)‖ + 1, by positivity,
+    (Metric.ball_subset_ball (min_le_right _ _)).trans hball, fun z hz ↦ ?_⟩
+  have h := hψ (lt_of_lt_of_le hz (min_le_left _ _))
+  rw [dist_eq_norm] at h
+  linarith [norm_le_insert' (φ.inChartAt α z) (φ.inChartAt α (extChartAt I α α))]
+
 /-- The zero set of a regular differential form is closed, including for a continuous form.
 Neither closedness of the form nor a Hausdorff base is needed. -/
 theorem IsSmoothForm.isClosed_zeroSet {n : WithTop ℕ∞} {φ : RoughForm I M F k}
@@ -144,5 +163,15 @@ theorem IsSmoothForm.tendsto_apply {φ : RoughForm I M F k} (hφ : IsSmoothForm 
   rw [hφA x₀ hx₀]
   refine ((continuous_eval.tendsto _).comp ((hA.tendsto.comp hx).prodMk_nhds hcoord)).congr'
     ((hx.eventually_mem (T.open_baseSet.mem_nhds hx₀)).mono fun i hi ↦ (hφA (x i) hi (v i)).symm)
+
+/-- **Evaluating a continuous form on continuous families of tangent vectors.** If `f` is continuous
+and, for each `j`, the tangent vectors `v y j ∈ T_(f y) M` depend continuously on `y` in the tangent
+bundle, then `y ↦ φ (f y) (v y)` is continuous for every `C⁰` form `φ`. -/
+theorem IsSmoothForm.continuous_apply {φ : RoughForm I M F k} (hφ : IsSmoothForm I 0 φ)
+    {Y : Type*} [TopologicalSpace Y] {f : Y → M} {v : (y : Y) → Fin k → TangentSpace I (f y)}
+    (hf : Continuous f) (hv : ∀ j, Continuous fun y ↦ (⟨f y, v y j⟩ : TangentBundle I M)) :
+    Continuous fun y ↦ φ (f y) (v y) :=
+  continuous_iff_continuousAt.2 fun y ↦
+    hφ.tendsto_apply (hf.tendsto y) fun j ↦ (hv j).tendsto y
 
 end TauCeti

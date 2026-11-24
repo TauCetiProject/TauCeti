@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.LaplaceTransform
+public import TauCeti.Analysis.LaplaceTransform.Truncated
 
 /-!
 # Gaussian transforms over a compact interval

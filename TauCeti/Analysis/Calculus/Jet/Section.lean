@@ -52,7 +52,7 @@ def FirstJetAt (𝕜 : Type*) {E : Type*} (F : Type*) [NontriviallyNormedField �
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     (x : E) :=
   Quotient (Setoid.ker (fun s : {s : E → F // ContDiffAt 𝕜 ∞ s x} ↦
-    (s.1 x, fderiv 𝕜 s.1 x)))
+    (s.val x, fderiv 𝕜 s.val x)))
 
 namespace FirstJetAt
 

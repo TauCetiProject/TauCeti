@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Padics.TwistedUnits
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.Group.Subgroup.ZPowers
-import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.Topology.Algebra.Group.Subgroup
 
@@ -493,7 +492,7 @@ theorem relIndex_map_powMonoidHom_two_eq_two_or_exists_eq_unitsPlusMinus {A : Su
   · exact Or.inl (relIndex_map_powMonoidHom_unitsPrincipal (by omega) fun _ ↦ hf)
   · exact Or.inr ⟨f, hf, rfl⟩
   · exact Or.inl (Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one
-      PadicInt.units_neg_one_ne_one)
+      (neg_units_ne_self 1))
   · exact Or.inl (relIndex_map_powMonoidHom_two_topologicalClosure_zpowers_two hf
       (neg_mem_unitsPrincipal_two_of_val_eq hu))
 
