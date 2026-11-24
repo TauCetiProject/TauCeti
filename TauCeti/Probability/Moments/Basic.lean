@@ -11,6 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Basic facts about moments and moment-generating functions
@@ -199,15 +200,13 @@ theorem integrable_exp_mul_sum_of_integrable_exp_mul {ι : Type*} {X : ι → Ω
     {p : ι → ℝ} {t : ℝ} (hp : ∀ i ∈ s, 0 < p i) (hp_sum : ∑ i ∈ s, (p i)⁻¹ = 1)
     (hX : ∀ i ∈ s, Integrable (fun ω ↦ exp (p i * t * X i ω)) μ) :
     Integrable (fun ω ↦ exp (t * ∑ i ∈ s, X i ω)) μ := by
-  have hexp : (∑ i ∈ s, (ENNReal.ofReal (p i))⁻¹)⁻¹ = 1 := by
+  have hexp : ∑ i ∈ s, (ENNReal.ofReal (p i))⁻¹ = 1 := by
     rw [← Finset.sum_congr rfl fun i hi ↦ ENNReal.ofReal_inv_of_pos (hp i hi),
-      ← ENNReal.ofReal_sum_of_nonneg fun i hi ↦ (inv_pos.2 (hp i hi)).le, hp_sum]
-    simp
-  have h := MemLp.fun_prod fun i hi ↦
+      ← ENNReal.ofReal_sum_of_nonneg fun i hi ↦ (inv_pos.2 (hp i hi)).le, hp_sum,
+      ENNReal.ofReal_one]
+  simpa only [Finset.mul_sum, exp_sum] using integrable_fun_prod_of_memLp (fun i hi ↦
     memLp_exp_of_integrable_exp_mul (Z := fun ω ↦ t * X i ω) (hp i hi)
-      (by simpa only [mul_assoc] using hX i hi)
-  rw [hexp, memLp_one_iff_integrable] at h
-  simpa only [Finset.mul_sum, exp_sum] using h
+      (by simpa only [mul_assoc] using hX i hi)) hexp
 
 /-- **Exponential integrability of a sum** without independence: if `exp (2θX)` and `exp (2θY)`
 are integrable, then so is `exp (θ (X + Y))`, their pointwise geometric mean. -/

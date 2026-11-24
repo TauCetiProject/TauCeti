@@ -56,6 +56,8 @@ how the rational points of an affine group over a number field sit in its adelic
   or open embedding of coefficient rings.
 * `AlgHom.isClosed_range_mapValue` and `AlgHom.isDiscrete_range_mapValue`: change of
   coefficients along an injective map with closed, respectively discrete, image.
+* `BialgHom.isClosedEmbedding_mapDomain_of_surjective`: a closed immersion of affine groups induces
+  a closed embedding of groups of points over a T1 ring.
 
 ## References
 
@@ -187,3 +189,24 @@ theorem AlgHom.isDiscrete_range_mapValue [CommSemiring H] [Bialgebra k H] [Algeb
     isHomeomorph_ofConv.continuous.continuousOn WithConv.ofConv_injective
 
 end Range
+
+section ClosedImmersion
+
+variable {k H₁ H₂ R : Type*} [CommSemiring k] [Ring H₁] [Bialgebra k H₁] [Ring H₂]
+  [Bialgebra k H₂] [CommRing R] [Algebra k R] [TopologicalSpace R] [T1Space R]
+
+open Topology TauCeti.PointTopology
+
+/-- Over a T1 ring of coefficients, precomposition with a surjective bialgebra map `φ : H₁ → H₂`,
+that is, a closed immersion of affine groups, is a closed embedding of groups of points. -/
+theorem BialgHom.isClosedEmbedding_mapDomain_of_surjective {φ : H₁ →ₐc[k] H₂}
+    (hφ : Function.Surjective φ) : IsClosedEmbedding (mapDomain (A := R) φ) := by
+  have hcomp : ofConv ∘ mapDomain (A := R) φ =
+      (fun x : H₂ →ₐ[k] R ↦ x.comp (φ : H₁ →ₐ[k] H₂)) ∘ ofConv := by
+    funext x
+    simp [BialgHom.mapDomain_apply]
+  rw [← (isHomeomorph_ofConv (k := k) (A := H₁) (R := R)).isClosedEmbedding.of_comp_iff, hcomp]
+  exact (isClosedEmbedding_comap_of_surjective (φ : H₁ →ₐ[k] H₂) hφ).comp
+    (isHomeomorph_ofConv (k := k) (A := H₂) (R := R)).isClosedEmbedding
+
+end ClosedImmersion

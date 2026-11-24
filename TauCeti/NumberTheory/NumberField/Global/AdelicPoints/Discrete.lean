@@ -7,10 +7,12 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.AdelicPoints.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Discrete
+public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
 public import TauCeti.Topology.Algebra.PointTopology.Group
+public import TauCeti.Topology.Algebra.PointTopology.Separation
 
 /-!
-# Rational points are discrete and closed in the adelic points
+# Discreteness of rational points in the adelic points
 
 Let `K` be a number field with adele ring `𝔸_K`, and let `G = Spec H` be an affine group scheme
 over `K`. The rational diagonal `G(K) → G(𝔸_K)` is injective
@@ -31,6 +33,17 @@ many variables `σ`, the points are `𝔸_K^σ` with the product topology, in wh
 of `0` constrains only finitely many coordinates and so contains nonzero points of `K^σ`. Nor can
 the infinite component of the adeles: `K` is dense in the finite adeles.
 
+For the fraction field `K` of a Dedekind domain `R`, the rational points `G(K)` need not be
+discrete in the finite adelic points `G(𝔸_{K,f})`: for a number field `K`, the additive group `K`
+is not discrete in `𝔸_{K,f}`, because it meets the compact open integral adeles in the infinite
+ring of integers `𝒪_K`. This file also proves the criterion: `G(K)` is discrete in `G(𝔸_{K,f})`
+exactly when it meets one compact neighbourhood `U` of the identity, for instance a compact open
+subgroup, in a finite set. Since the condition does not depend on `U`, it holds for one compact
+neighbourhood exactly when it holds for every one. The criterion is
+`Subgroup.discreteTopology_iff_finite_inter_of_isCompact` applied to the range of the rational
+diagonal `TauCeti.AdelicPoints.finiteDiagonal`; the points `G(𝔸_{K,f})` form a Hausdorff
+topological group in the point topology.
+
 ## Main results
 
 * `TauCeti.AdelicPoints.isClosed_range_diagonal`: `G(K)` is closed in `G(𝔸_K)`.
@@ -38,20 +51,26 @@ the infinite component of the adeles: `K` is dense in the finite adeles.
   commutative of finite type.
 * `TauCeti.AdelicPoints.discreteTopology_range_diagonal`: for a commutative Hopf algebra of finite
   type, `G(K)` is a discrete subgroup of `G(𝔸_K)`.
+* `TauCeti.AdelicPoints.discreteTopology_range_finiteDiagonal_iff`: the rational points are
+  discrete in the finite adelic points exactly when they meet a compact neighbourhood of the
+  identity in a finite set.
 
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
   Example 2.3, p. 3.
 * A. Borel, *Some finiteness properties of adele groups over number fields*, Publ. Math. IHÉS 16
-  (1963), §1.2, p. 7.
+  (1963), §1.2, p. 7, and §1.8, p. 9.
 -/
 
 public section
 
-open NumberField
+open IsDedekindDomain NumberField
+open scoped Topology
 
 namespace TauCeti.AdelicPoints
+
+section Full
 
 variable (K H : Type*) [Field K] [NumberField K]
 
@@ -80,5 +99,23 @@ instance discreteTopology_range_diagonal [CommSemiring H] [HopfAlgebra K H]
     [Algebra.FiniteType K H] : DiscreteTopology (diagonal (𝓞 K) K H).range := by
   rw [← SetLike.isDiscrete_iff_discreteTopology, MonoidHom.coe_range]
   exact isDiscrete_range_diagonal K H
+
+end Full
+
+section Finite
+
+variable {R K H : Type*} [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
+  [IsFractionRing R K] [Semiring H] [HopfAlgebra K H]
+
+/-- **Discreteness of rational points in the finite adelic points.** The rational points `G(K)`
+are discrete in `G(𝔸_{K,f})` exactly when they meet a compact neighbourhood `U` of the identity,
+for instance a compact open subgroup, in a finite set. -/
+theorem discreteTopology_range_finiteDiagonal_iff {U : Set (FiniteAdelicPoints R K H)}
+    (hU : IsCompact U) (hU1 : U ∈ 𝓝 1) :
+    DiscreteTopology (finiteDiagonal R K H).range ↔
+      (((finiteDiagonal R K H).range : Set (FiniteAdelicPoints R K H)) ∩ U).Finite :=
+  (finiteDiagonal R K H).range.discreteTopology_iff_finite_inter_of_isCompact hU hU1
+
+end Finite
 
 end TauCeti.AdelicPoints
