@@ -537,6 +537,30 @@ def conjugateTargetPullbackHomeomorph (f : K) :
     Homeomorph.trans_apply, ConjugateBundle.toConjHomeomorph_symm_apply,
     pullbackHomeomorph_apply, ConjugateBundle.toConjHomeomorph_apply]
 
+/-- The inverse source comparison is the inverse canonical determinant pullback. -/
+@[simp↓] theorem conjugateSourcePullbackHomeomorph_symm_apply (f : K)
+    (p : TotalSpace ℂ
+      (DetBundle ℂ (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E)))) :
+    (conjugateSourcePullbackHomeomorph (F := F) (E := E) f).symm p =
+      ⟨p.proj, (pullbackEquiv (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E)
+        (f : X → B) p.proj).symm p.snd⟩ := by
+  exact pullbackHomeomorph_symm_apply (𝕜 := ℂ) (F := Conjugate F)
+    (E := ConjugateBundle E) f p
+
+/-- The inverse target comparison conjugates the inverse canonical determinant pullback. -/
+@[simp↓] theorem conjugateTargetPullbackHomeomorph_symm_apply (f : K)
+    (p : TotalSpace (Conjugate ℂ)
+      (ConjugateBundle (DetBundle ℂ F ((f : X → B) *ᵖ E)))) :
+    (conjugateTargetPullbackHomeomorph (F := F) (E := E) f).symm p =
+      ⟨p.proj, toConj ((pullbackEquiv (𝕜 := ℂ) (F := F) (E := E)
+        (f : X → B) p.proj).symm (ofConj p.snd))⟩ := by
+  simp only [conjugateTargetPullbackHomeomorph, Homeomorph.symm_trans_apply,
+    Homeomorph.symm_symm, ConjugateBundle.toConjHomeomorph_symm_apply,
+    pullbackHomeomorph_symm_apply, ConjugateBundle.toConjHomeomorph_apply,
+    ConjugateBundle.pullbackHomeomorph_symm_apply]
+  -- The component formulas leave only the definitionally equal reindexed fibre presentations.
+  rfl
+
 omit [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℂ F E] in
 private theorem chartCoord_conjugate_pullback
     (e : Trivialization F (π F E)) [e.IsLinear ℂ] (f : K) {y : X}

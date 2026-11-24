@@ -212,4 +212,32 @@ theorem unitBase_bundleIso_naturality (x : Unit)
     (E' := Trivial Unit (ULift.{u} Plane))
     (fun _ => (ULift.moduleEquiv (R := ℂ) (M := Plane)).symm.toContinuousLinearEquiv) x v
 
+/-- The source inverse computes arbitrary rank-two vectors over the nonidentity map `z ↦ z²`.
+The base is nonempty and no forward/inverse cancellation is supplied to the simplifier. -/
+theorem square_pullback_source_inverse :
+    let f : C(ℂ, ℂ) := ⟨fun z => z ^ 2, continuous_id.pow 2⟩
+    ∀ p : TotalSpace ℂ (DetBundle ℂ (Conjugate Plane)
+      (ConjugateBundle ((f : ℂ → ℂ) *ᵖ (Trivial ℂ Plane)))),
+    (DetBundle.conjugateSourcePullbackHomeomorph (F := Plane)
+      (E := Trivial ℂ Plane) f).symm p =
+      ⟨p.proj, (DetBundle.pullbackEquiv (𝕜 := ℂ) (F := Conjugate Plane)
+        (E := ConjugateBundle (Trivial ℂ Plane)) (f : ℂ → ℂ) p.proj).symm p.snd⟩ := by
+  dsimp only
+  intro p
+  simp
+
+/-- The target inverse computes arbitrary conjugate determinant vectors on the same rank-two
+pullback, using the inverse comparison rather than an exposed definition body. -/
+theorem square_pullback_target_inverse :
+    let f : C(ℂ, ℂ) := ⟨fun z => z ^ 2, continuous_id.pow 2⟩
+    ∀ p : TotalSpace (Conjugate ℂ)
+      (ConjugateBundle (DetBundle ℂ Plane ((f : ℂ → ℂ) *ᵖ (Trivial ℂ Plane)))),
+    (DetBundle.conjugateTargetPullbackHomeomorph (F := Plane)
+      (E := Trivial ℂ Plane) f).symm p =
+      ⟨p.proj, toConj ((DetBundle.pullbackEquiv (𝕜 := ℂ) (F := Plane)
+        (E := Trivial ℂ Plane) (f : ℂ → ℂ) p.proj).symm (ofConj p.snd))⟩ := by
+  dsimp only
+  intro p
+  simp
+
 end TauCeti.Examples.DetBundleConjugate
