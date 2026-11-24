@@ -28,26 +28,28 @@ that the band of `[eₖ]` sits at `(-2k, k)`, with coefficients in a ring `R`.
   `TauCeti.isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction` on `ℝℙᴺ`.
 * **First differentials.** The differential from the band of the maximum to the band of the
   saddle, `R ⟶ R` from `(-4, 2)` to `(-2, 1)`, has cokernel `R / 2R`
-  (`nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiveMomentFunction`)
-  and is injective when right multiplication by `2` is injective on `R`
-  (`TauCeti.mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction`). With integer
-  coefficients its cokernel is `ℤ/2`
-  (`nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_zmod_projectiveMomentFunction`),
-  and
-  `filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul_projectiveMomentFunction`
+  (`nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_neg_four_two_iso`) and is
+  injective when right multiplication by `2` is injective on `R`
+  (`mono_filteredSpaceSpectralSequence_page_two_d_neg_four_two`). With integer coefficients its
+  cokernel is `ℤ/2`
+  (`nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_neg_four_two_iso_zmod`), and
+  `filteredSpaceSpectralSequence_page_two_d_neg_four_two_eq_two_smul_or_eq_neg_two_smul`
   deduces that it is multiplication by `±2`. The differential from the band of the saddle to the
   band of the minimum vanishes
-  (`TauCeti.filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction` on `ℝℙᴺ`).
+  (`TauCeti.filteredSpaceSpectralSequence_page_two_d_neg_two_one_eq_zero_projectiveMomentFunction`
+  on `ℝℙᴺ`).
 * **Second page.** The object at `(0, 0)` of the second page (numbered `3`) is one copy of the
   coefficients
   (`TauCeti.nonempty_filteredSpaceSpectralSequence_page_three_X_zero_iso_projectiveMomentFunction`
   on `ℝℙᴺ`), the object at `(-2, 1)` is `R / 2R`
-  (`TauCeti.nonempty_filteredSpaceSpectralSequence_page_three_X_iso_projectiveMomentFunction`), or
-  `ℤ/2` with integer coefficients
-  (`TauCeti.nonempty_filteredSpaceSpectralSequence_page_three_X_iso_zmod_projectiveMomentFunction`),
-  and when right multiplication by `2` is injective on `R` every other object is zero
-  (`TauCeti.isZero_filteredSpaceSpectralSequence_page_three_X_projectiveMomentFunction`). So the
-  integral second page consists of the integral homology groups `ℤ`, `ℤ/2`, `0` of `ℝℙ²`.
+  (`nonempty_filteredSpaceSpectralSequence_page_three_X_neg_two_one_iso`), or `ℤ/2` with integer
+  coefficients (`nonempty_filteredSpaceSpectralSequence_page_three_X_neg_two_one_iso_zmod`), and
+  when right multiplication by `2` is injective on `R` every other object is zero
+  (`isZero_filteredSpaceSpectralSequence_page_three_X`). So the integral second page consists of
+  the integral homology groups `ℤ`, `ℤ/2`, `0` of `ℝℙ²`.
+
+The results specific to `ℝℙ²` are in the namespace `TauCeti.RealProjectivePlane`, and all of them
+concern the spectral sequence of the filtration by sublevels of the moment function above.
 
 So the first page is the relative homology of the bands, free on the critical points, but it is not
 yet the second page: its differential can be nonzero, and the critical counts `1, 1, 1` exceed the
@@ -81,7 +83,7 @@ noncomputable section
 open CategoryTheory Limits Set Projectivization
 open scoped Manifold LinearAlgebra.Projectivization
 
-namespace TauCeti
+namespace TauCeti.RealProjectivePlane
 
 variable {w : Fin 3 → ℝ} {a : ℤ → ℝ} (R : Type) [Ring R]
 
@@ -201,7 +203,7 @@ hypotheses of
 coefficients in a ring `R` on which right multiplication by `2` is injective, the differential from
 `(-4, 2)` to `(-2, 1)` on the first page, the connecting map from the band of the maximum to the
 band of the saddle, is a monomorphism. -/
-theorem mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction
+theorem mono_filteredSpaceSpectralSequence_page_two_d_neg_four_two
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1)))
     (h2 : IsRightRegular (2 : R)) :
     Mono (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
@@ -216,7 +218,7 @@ the hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
 coefficients in a ring `R`, the cokernel of the differential from `(-4, 2)` to `(-2, 1)` on the
 first page is `R / 2R`. -/
-theorem nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiveMomentFunction
+theorem nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_neg_four_two_iso
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
     Nonempty (cokernel (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
       (ModuleCat.of R R) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d
@@ -230,14 +232,13 @@ Under the hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
 integer coefficients, the cokernel of the differential from `(-4, 2)` to `(-2, 1)` on the first
 page is `ℤ/2`. -/
-theorem nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_zmod_projectiveMomentFunction
+theorem nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_neg_four_two_iso_zmod
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
     Nonempty (cokernel (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
       (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d
         (-4, 2) (-2, 1)) ≅ ModuleCat.of ℤ (ZMod 2)) := by
   obtain ⟨e⟩ :=
-    nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiveMomentFunction ℤ ha
-      hcut
+    nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_neg_four_two_iso ℤ ha hcut
   exact ⟨e ≪≫ (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv.toModuleIso⟩
 
 /-- **The differential of index two on the first page of `ℝℙ²` is multiplication by `±2`.**
@@ -246,8 +247,7 @@ Under the hypotheses of
 integer coefficients, read through any identifications of the objects at `(-4, 2)` and `(-2, 1)` of
 the first page with `ℤ`, the differential between them is multiplication by `2` or by `-2`; the
 sign depends on the identifications. -/
-theorem
-    filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul_projectiveMomentFunction
+theorem filteredSpaceSpectralSequence_page_two_d_neg_four_two_eq_two_smul_or_eq_neg_two_smul
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1)))
     (e₂ : ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
       (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).X
@@ -262,8 +262,7 @@ theorem
         (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d
           (-4, 2) (-2, 1) ≫ e₁.hom = (-2 : ℤ) • 𝟙 _ := by
   obtain ⟨e⟩ :=
-    nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_zmod_projectiveMomentFunction
-      ha hcut
+    nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_neg_four_two_iso_zmod ha hcut
   exact ModuleCat.eq_smul_id_or_eq_neg_smul_id_of_cokernel_iso_zmod (n := 2) _
     (cokernelEpiComp _ _ ≪≫ cokernelCompIsIso _ _ ≪≫ e)
 
@@ -272,7 +271,7 @@ hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
 coefficients in a ring `R` on which right multiplication by `2` is injective, every object of the
 second page (numbered `3`) other than those at `(0, 0)` and `(-2, 1)` is zero. -/
-theorem isZero_filteredSpaceSpectralSequence_page_three_X_projectiveMomentFunction
+theorem isZero_filteredSpaceSpectralSequence_page_three_X
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1)))
     (h2 : IsRightRegular (2 : R)) (pq : ℤ × ℤ) (hpq₀ : pq ≠ (0, 0)) (hpq₁ : pq ≠ (-2, 1)) :
     IsZero (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
@@ -291,7 +290,7 @@ theorem isZero_filteredSpaceSpectralSequence_page_three_X_projectiveMomentFuncti
     have h₀ := isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction
       (ModuleCat.of R R) ha hcut (-6, 3) (by intro k; fin_cases k <;> simp)
     rw [ShortComplex.exact_iff_mono _ (h₀.eq_of_src _ _)]
-    exact mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction R ha hcut h2
+    exact mono_filteredSpaceSpectralSequence_page_two_d_neg_four_two R ha hcut h2
   · refine E.isZero_page_X_of_le (r := 2) (by norm_num)
       (isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction _ ha hcut pq ?_)
       3 (by norm_num)
@@ -305,7 +304,7 @@ theorem isZero_filteredSpaceSpectralSequence_page_three_X_projectiveMomentFuncti
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
 coefficients in a ring `R`, the object at `(-2, 1)` on the second page (numbered `3`) is `R / 2R`,
 the cokernel of the differential of index two on the first page. -/
-theorem nonempty_filteredSpaceSpectralSequence_page_three_X_iso_projectiveMomentFunction
+theorem nonempty_filteredSpaceSpectralSequence_page_three_X_neg_two_one_iso
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
     Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
       (ModuleCat.of R R) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 3).X
@@ -313,11 +312,11 @@ theorem nonempty_filteredSpaceSpectralSequence_page_three_X_iso_projectiveMoment
   set E := filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
     (ModuleCat.of R R) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)
   obtain ⟨e⟩ :=
-    nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiveMomentFunction R ha
-      hcut
+    nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_neg_four_two_iso R ha hcut
   exact ⟨(E.iso 2 3 (-2, 1)).symm ≪≫
     (E.page 2).isoHomologyι (-2, 1) (0, 0) ((ComplexShape.up' _).next_eq' (by norm_num))
-      (filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction _ ha hcut) ≪≫
+      (filteredSpaceSpectralSequence_page_two_d_neg_two_one_eq_zero_projectiveMomentFunction _ ha
+        hcut) ≪≫
     (E.page 2).opcyclesIsoSc' (-4, 2) (-2, 1) (0, 0) ((ComplexShape.up' _).prev_eq' (by norm_num))
       ((ComplexShape.up' _).next_eq' (by norm_num)) ≪≫
     ((E.page 2).sc' (-4, 2) (-2, 1) (0, 0)).opcyclesIsoCokernel ≪≫ e⟩
@@ -325,13 +324,13 @@ theorem nonempty_filteredSpaceSpectralSequence_page_three_X_iso_projectiveMoment
 /-- **The integral second page of `ℝℙ²` in total degree `-1` is `ℤ/2`.** Under the hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
 integer coefficients, the object at `(-2, 1)` on the second page (numbered `3`) is `ℤ/2`. -/
-theorem nonempty_filteredSpaceSpectralSequence_page_three_X_iso_zmod_projectiveMomentFunction
+theorem nonempty_filteredSpaceSpectralSequence_page_three_X_neg_two_one_iso_zmod
     (ha : Monotone a) (hcut : ∀ k : Fin 3, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
     Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin 3 → ℝ)))
       (ModuleCat.of ℤ ℤ) ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 3).X
         (-2, 1) ≅ ModuleCat.of ℤ (ZMod 2)) := by
   obtain ⟨e⟩ :=
-    nonempty_filteredSpaceSpectralSequence_page_three_X_iso_projectiveMomentFunction ℤ ha hcut
+    nonempty_filteredSpaceSpectralSequence_page_three_X_neg_two_one_iso ℤ ha hcut
   exact ⟨e ≪≫ (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv.toModuleIso⟩
 
-end TauCeti
+end TauCeti.RealProjectivePlane

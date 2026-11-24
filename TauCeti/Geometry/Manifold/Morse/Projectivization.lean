@@ -66,10 +66,7 @@ makes the moment function Morse–Bott.
 * `TauCeti.image_criticalPoints_projectiveMomentFunction`: the critical values are the weights.
 * `TauCeti.criticalPoints_projectiveMomentFunction`: for distinct weights its critical points are
   the coordinate points `[eₖ]`.
-* `TauCeti.continuous_projectiveMomentFunction` and `TauCeti.projectiveMomentFunction_mem_Icc`:
-  it is continuous, and for increasing weights its values lie between the extreme weights.
-* `TauCeti.isPathConnected_setOf_projectiveMomentFunction_le`: a sublevel containing `[eₖ]` but
-  no other weight is path-connected.
+* `TauCeti.continuous_projectiveMomentFunction`: it is continuous.
 * `TauCeti.criticalPoints_projectiveMomentFunction_inter_preimage_singleton`: for distinct weights,
   `[eₖ]` is the only critical point on the level `w k`.
 * `TauCeti.range_map_eq_criticalPoints_inter_preimage_projectiveMomentFunction`: the projective
@@ -610,22 +607,6 @@ theorem continuous_projectiveMomentFunction (w : Fin (n + 1) → ℝ) :
     Continuous (projectiveMomentFunction 𝕜 w) :=
   (contMDiff_projectiveMomentFunction (r := 0) w).continuous
 
-/-- For increasing weights, the moment function takes its values between the extreme weights. -/
-theorem projectiveMomentFunction_mem_Icc {w : Fin (n + 1) → ℝ} (hw : Monotone w)
-    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
-    projectiveMomentFunction 𝕜 w x ∈ Icc (w 0) (w (Fin.last n)) :=
-  ⟨le_projectiveMomentFunction (fun i ↦ hw (Fin.zero_le i)) x,
-    projectiveMomentFunction_le (fun i ↦ hw (Fin.le_last i)) x⟩
-
-/-- **The sublevel of the moment function below the second weight is path-connected.** If
-`w k ≤ s` and every other weight exceeds `s`, then the sublevel `{f ≤ s}` of the moment function
-is contractible, so path-connected. -/
-theorem isPathConnected_setOf_projectiveMomentFunction_le {w : Fin (n + 1) → ℝ} {k : Fin (n + 1)}
-    {s : ℝ} (hk : w k ≤ s) (hs : ∀ i, i ≠ k → s < w i) :
-    IsPathConnected {x : ℙ 𝕜 (Fin (n + 1) → 𝕜) | projectiveMomentFunction 𝕜 w x ≤ s} := by
-  have := contractibleSpace_sublevel_projectiveMomentFunction (𝕜 := 𝕜) hk hs
-  exact isPathConnected_iff_pathConnectedSpace.2 inferInstance
-
 private theorem mk_single_mem_source (k : Fin (n + 1)) :
     mk 𝕜 (Pi.single k 1) (by simp) ∈ (affineOpenPartialHomeomorph (K := 𝕜) k).source := by
   simp
@@ -705,12 +686,7 @@ theorem mk_mem_criticalPoints_projectiveMomentFunction_and_eq_iff {w : Fin (n + 
   refine ⟨fun ⟨h, hc⟩ i hi ↦ (h i).resolve_right (hc ▸ hi), fun h ↦ ?_⟩
   -- Every nonzero coordinate carries the weight `c`, so the value at `[v]` is `c`.
   have hval : projectiveMomentFunction 𝕜 w (mk 𝕜 v hv) = c := by
-    obtain ⟨k, hk⟩ := Function.ne_iff.1 hv
-    have hpos : 0 < ∑ i, ‖v i‖ ^ 2 :=
-      (pow_pos (norm_pos_iff.2 hk) 2).trans_le
-        (Finset.single_le_sum (f := fun i ↦ ‖v i‖ ^ 2) (fun i _ ↦ by positivity)
-          (Finset.mem_univ k))
-    rw [projectiveMomentFunction_mk, div_eq_iff hpos.ne', Finset.mul_sum]
+    rw [projectiveMomentFunction_mk, div_eq_iff (sum_norm_sq_pos hv).ne', Finset.mul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     by_cases hi : w i = c
     · rw [hi]

@@ -125,8 +125,9 @@ theorem projectiveHyperplaneMomentFunction_mk (v : Fin (N + 1) → ℝ) (hv : v 
 
 /-- The moment function is at most `1`, its value on the critical hyperplane. -/
 theorem projectiveHyperplaneMomentFunction_le_one (x : ℙ ℝ (Fin (N + 1) → ℝ)) :
-    projectiveHyperplaneMomentFunction N x ≤ 1 :=
-  projectiveMomentFunction_le (fun i ↦ by split_ifs <;> norm_num) x
+    projectiveHyperplaneMomentFunction N x ≤ 1 := by
+  rw [projectiveHyperplaneMomentFunction_def]
+  exact projectiveMomentFunction_le (fun i ↦ by split_ifs <;> norm_num) x
 
 /-- The level set `f⁻¹(1)` is the hyperplane `{v_N = 0}`, the complement of the affine open where
 the last homogeneous coordinate is nonzero. -/
@@ -190,6 +191,7 @@ theorem manifoldMorseIndex_projectiveHyperplaneMomentFunction_mk_single_castSucc
 coordinate is nonzero. -/
 theorem sublevel_projectiveHyperplaneMomentFunction_subset_affineOpen {c : ℝ} (hc : c < 1) :
     {x | projectiveHyperplaneMomentFunction N x ≤ c} ⊆ affineOpen (Fin.last N) := fun x hx ↦ by
+  rw [mem_ofPred_eq, projectiveHyperplaneMomentFunction_def] at hx
   by_contra h
   exact (lt_projectiveMomentFunction_of_notMem_affineOpen (fun i hi ↦ by simpa [hi] using hc) h
     |>.trans_le hx).false
@@ -197,8 +199,9 @@ theorem sublevel_projectiveHyperplaneMomentFunction_subset_affineOpen {c : ℝ} 
 /-- **The sublevels below the critical hyperplane are contractible.** For `0 ≤ c < 1`, the
 sublevel `{f ≤ c}` is contractible. -/
 theorem contractibleSpace_sublevel_projectiveHyperplaneMomentFunction {c : ℝ} (hc₀ : 0 ≤ c)
-    (hc₁ : c < 1) : ContractibleSpace {x | projectiveHyperplaneMomentFunction N x ≤ c} :=
-  contractibleSpace_sublevel_projectiveMomentFunction (k := Fin.last N) (by simpa using hc₀)
+    (hc₁ : c < 1) : ContractibleSpace {x | projectiveHyperplaneMomentFunction N x ≤ c} := by
+  rw [projectiveHyperplaneMomentFunction_def]
+  exact contractibleSpace_sublevel_projectiveMomentFunction (k := Fin.last N) (by simpa using hc₀)
     fun i hi ↦ by simpa [hi] using hc₁
 
 /-! ### The relative homology of a band crossing the top level -/

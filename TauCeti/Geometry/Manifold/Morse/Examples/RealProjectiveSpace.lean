@@ -31,7 +31,8 @@ degree `-n`, so that the band of `[eₖ]` sits at `(-2k, k)`.
   (`TauCeti.isZero_filteredSpaceSpectralSequence_page_two_X_projectiveMomentFunction`).
 * **The differential into the minimum.** For any coefficients, the first differential from
   `(-2, 1)`, the position of `[e₁]` when `N ≥ 1`, to `(0, 0)`, the position of the minimum `[e₀]`,
-  vanishes (`TauCeti.filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction`).
+  vanishes
+  (`TauCeti.filteredSpaceSpectralSequence_page_two_d_neg_two_one_eq_zero_projectiveMomentFunction`).
   So the object at `(0, 0)` of the second page (numbered `3`) is still one copy of the
   coefficients
   (`TauCeti.nonempty_filteredSpaceSpectralSequence_page_three_X_zero_iso_projectiveMomentFunction`).
@@ -213,7 +214,7 @@ private def firstPageXOneIso (ha : Monotone a) :
 /-- **The first differential into the minimum vanishes.** Under the hypotheses of
 `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, for any
 coefficients, the differential from `(-2, 1)` to `(0, 0)` on the first page is zero. -/
-theorem filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction
+theorem filteredSpaceSpectralSequence_page_two_d_neg_two_one_eq_zero_projectiveMomentFunction
     (ha : Monotone a) (hcut : ∀ k : Fin (N + 1), w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) :
     ((filteredSpaceSpectralSequence (Y := TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ))) R
       ((sublevel_mono (projectiveMomentFunction ℝ w)).comp ha)).page 2).d (-2, 1) (0, 0) = 0 := by
@@ -251,7 +252,8 @@ theorem nonempty_filteredSpaceSpectralSequence_page_three_X_zero_iso_projectiveM
     R ha hcut 0
   exact ⟨(E.iso 2 3 (0, 0)).symm ≪≫
     ((E.page 2).isoHomologyπ (-2, 1) (0, 0) ((ComplexShape.up' _).prev_eq' (by norm_num))
-      (filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunction R ha hcut)).symm ≪≫
+      (filteredSpaceSpectralSequence_page_two_d_neg_two_one_eq_zero_projectiveMomentFunction R ha
+        hcut)).symm ≪≫
     (E.page 2).iCyclesIso (0, 0) (2, -1) ((ComplexShape.up' _).next_eq' (by norm_num))
       ((isZero_filteredSpaceSpectralSequence_page_two_X _ _ (2, -1) (by norm_num)).eq_of_tgt
         _ _) ≪≫

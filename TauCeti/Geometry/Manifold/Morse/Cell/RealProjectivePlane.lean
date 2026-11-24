@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Projectivization
 public import TauCeti.Topology.Sphere.StandardCircle
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Circle
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.Projectivization.Map
 
 /-!
@@ -469,9 +470,7 @@ private theorem dropLast_addLast (w : Fin 2 → ℝ) : dropLast (addLast w) = w 
 
 private theorem sum_sq_pos {v : Fin 3 → ℝ} (hv : v ≠ 0) :
     0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by
-  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
-  simpa [Fin.sum_univ_three] using
-    Finset.sum_pos' (fun j _ ↦ sq_nonneg (v j)) ⟨i, Finset.mem_univ i, sq_pos_of_ne_zero hi⟩
+  simpa [Fin.sum_univ_three] using sum_norm_sq_pos hv
 
 /-- A point lies below the maximum value `2` exactly when it is off the maximum `[0 : 0 : 1]`,
 that is, when its first two homogeneous coordinates do not both vanish. -/
