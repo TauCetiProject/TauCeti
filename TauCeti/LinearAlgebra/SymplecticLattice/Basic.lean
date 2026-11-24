@@ -54,8 +54,11 @@ this file specializes it to symplectic lattices.
 * `TauCeti.SymplecticOLattice.le_dual`: the image of `L` lies in `L^#`.
 * `TauCeti.SymplecticOLattice.dualIndex_eq_relIndex`: the dual index is the index of the image
   of `L` in `L^#`.
+* `TauCeti.SymplecticOLattice.exists_tmul_eq_dualIndex_smul`: `[L^# : L] • L^#` lies in the image
+  of `L`.
 * `TauCeti.SymplecticOLattice.dualIndex_eq_natAbs_det`: the dual index is the absolute value of
   the Gram determinant of any `ℤ`-basis.
+* `TauCeti.SymplecticOLattice.isSelfDualAt_iff`: self-duality at `p` stated over `L^#`.
 * `TauCeti.SymplecticOLattice.isSelfDualAt_of_not_dvd_dualIndex`: `L` is self-dual at every
   `p ∤ [L^# : L]`.
 * `TauCeti.SymplecticOLattice.dualIndex_zero`: the zero lattice has dual index one.
@@ -200,6 +203,12 @@ theorem dualIndex_eq_relIndex :
     AddSubgroup.map_comap_eq_self_of_surjective (f := e) (TensorProduct.comm ℤ L ℚ).surjective]
   exact Λ.form.dualIndex_def
 
+/-- `[L^# : L] • L^#` lies in the image of `L` in `L ⊗ ℚ`. -/
+theorem exists_tmul_eq_dualIndex_smul {x : L ⊗[ℤ] ℚ} (hx : x ∈ Λ.dual) :
+    ∃ y : L, y ⊗ₜ[ℤ] (1 : ℚ) = Λ.dualIndex • x := by
+  obtain ⟨y, hy⟩ := Λ.form.exists_tmul_eq_dualIndex_smul hx
+  exact ⟨y, (TensorProduct.comm ℤ L ℚ).injective (by simpa using hy)⟩
+
 /-- **The dual index is the Gram determinant.** For every `ℤ`-basis `b` of `L`,
 `[L^# : L] = |det ⟨b i, b j⟩|`. -/
 theorem dualIndex_eq_natAbs_det {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
@@ -216,6 +225,16 @@ theorem dualIndex_ne_zero [Module.Free ℤ L] [Module.Finite ℤ L] : Λ.dualInd
 image of `L`. For `p` prime this says that `L` and `L^#` agree after localizing at `p`. -/
 abbrev IsSelfDualAt (p : ℕ) : Prop :=
   Λ.form.IsSelfDualAt p
+
+/-- Self-duality at `p` in terms of the `O`-stable dual lattice `L^#` in `L ⊗ ℚ`: every element of
+`L^#` has a multiple prime to `p` in the image of `L`. -/
+theorem isSelfDualAt_iff {p : ℕ} :
+    Λ.IsSelfDualAt p ↔ ∀ x ∈ Λ.dual, ∃ n : ℕ, ¬p ∣ n ∧ ∃ y : L, y ⊗ₜ[ℤ] (1 : ℚ) = n • x := by
+  refine Λ.form.isSelfDualAt_iff.trans ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · obtain ⟨n, hn, y, hy⟩ := h _ hx
+    exact ⟨n, hn, y, (TensorProduct.comm ℤ L ℚ).injective (by simpa using hy)⟩
+  · obtain ⟨n, hn, y, hy⟩ := h ((TensorProduct.comm ℤ L ℚ).symm x) (by simpa using hx)
+    exact ⟨n, hn, y, by simpa using congrArg (TensorProduct.comm ℤ L ℚ) hy⟩
 
 /-- A symplectic lattice is self-dual at every `p` not dividing its dual index `[L^# : L]`. -/
 theorem isSelfDualAt_of_not_dvd_dualIndex {p : ℕ} (hp : ¬p ∣ Λ.dualIndex) :
