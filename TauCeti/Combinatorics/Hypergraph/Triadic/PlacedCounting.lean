@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Triadic.ExceptionalPrediction
 import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
-import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Algebra.Order.BigOperators.Group.Finset
 import TauCeti.Algebra.Order.Ring.Abs
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Data.Fintype.BigOperators

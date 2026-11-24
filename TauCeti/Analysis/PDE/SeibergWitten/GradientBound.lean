@@ -60,8 +60,9 @@ coarse bound `|α|² ≤ 1 + K₃ / r` controlling `f` where `|α| > 1`, gives e
 
 `|∇_a α|² ≤ (K₂ + 1) r w₊ + 4 (K₁ + K₂ + K₁ K₂) / 3 + (K₂ + 1) K₃`
 
-(`TauCeti.SeibergWitten.norm_sq_le_mul_max_one_sub_add`). The constants depend only on `K₁`,
-`K₂` and `K₃`, not on `r`, the manifold or the solution.
+(`TauCeti.SeibergWitten.norm_sq_le_mul_max_one_sub_add`). The first inequality alone gives the
+coarse bound with `K₃ = 4 K₁` (`TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div`). The
+constants depend only on `K₁`, `K₂` and `K₃`, not on `r`, the manifold or the solution.
 
 ## The joint bound
 
@@ -187,7 +188,8 @@ theorem norm_sq_le_of_isLocalMax (hr : 0 < r) (hK₂ : 0 ≤ K₂) {x₀ : M}
     (hf : (K₂ + 1) * r * (1 - ‖α x₀‖ ^ 2) ≤ ‖Dα x₀‖ ^ 2) :
     ‖Dα x₀‖ ^ 2 ≤ 4 / 3 * (K₁ + K₂ + K₁ * K₂) := by
   exact le_of_add_mul_nonpos (by positivity) (by positivity) hr hK₂ hW hB
-    (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hDα hα hmax) hf
+    (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hDα hα
+      BoundarylessManifold.isInteriorPoint hmax) hf
 
 /-- **Taubes's pointwise gradient bound** `|∇_a α|² ≤ C r w₊ + C`, with `w₊ = max (1 - |α|²) 0`.
 On a compact boundaryless Riemannian manifold, suppose `|α|²` and `|∇_a α|²` are `C²` and satisfy
@@ -638,7 +640,8 @@ theorem norm_sq_add_mul_norm_sq_le (hc : 0 ≤ c) (hr : 1 ≤ r)
     isCompact_univ.exists_isMaxOn ⟨x, Set.mem_univ x⟩ hf₂.continuous.continuousOn
   -- At the maximum `x₀` the Laplacian of `f` is nonpositive.
   have hlap : laplaceBeltrami I f x₀ ≤ 0 :=
-    laplaceBeltrami_nonpos_of_isLocalMax hf₂.contMDiffAt (hx₀.isLocalMax Filter.univ_mem)
+    laplaceBeltrami_nonpos_of_isLocalMax hf₂.contMDiffAt
+      BoundarylessManifold.isInteriorPoint (hx₀.isLocalMax Filter.univ_mem)
   rw [hf, laplaceBeltrami_add I ((h₁.add h₂).add h₃) h₄, laplaceBeltrami_add I (h₁.add h₂) h₃,
     laplaceBeltrami_add I h₁ h₂, laplaceBeltrami_smul I _ hDα₂, laplaceBeltrami_smul I _ hDβ₂,
     laplaceBeltrami_smul I _ hα₂, laplaceBeltrami_smul I _ hβ₂] at hlap
