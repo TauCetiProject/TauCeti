@@ -9,26 +9,28 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Operator
 
 /-!
-# The linearized operator of a Floer pair of pants is semi-Fredholm on `W^{1,2}`
+# Linearized Floer operators on the pair of pants are semi-Fredholm on `W^{1,2}`
 
-Let `u` be a Floer pair of pants: a solution of the Floer equation on `S = ℂ ∖ {0, 1}` for the
-pair-of-pants perturbation of period-one Hamiltonians `H_q`, with values in a finite-dimensional
-symplectic vector space `(V, ω)`, whose three ends converge to nondegenerate one-periodic orbits.
-Its linearized operator is realized on the Sobolev space `W^{1,2}_0(S, V)` of the cylindrical
-metric, `TauCeti.ConformalSobolev.H1 V S ρ` for the cylindrical weight
-`ρ = TauCeti.Floer.cylindricalWeight`, by `TauCeti.SymplecticForm.floerConformalSobolevOperator`
+Let `H_q` be jointly `C²` period-one Hamiltonians on the three ends of the pair of pants
+`S = ℂ ∖ {0, 1}`, on a finite-dimensional symplectic vector space `(V, ω)`. Let `(J, K_s, K_t)` be
+Floer data on `S` which far out on each end, beyond a height `R₁`, are cylindrical,
+`J(φ'_q(s, t)) = J_q(t)` for `C¹` families `J_q`, with `(K_s, K_t)` the components of the
+pair-of-pants perturbation of `H` (`TauCeti.Floer.pairOfPantsPerturbation`). Let `u` be `C¹` on
+`S`, solve the Floer equation for these data beyond `R₁` on each end, and have ends converging to
+nondegenerate one-periodic orbits `x_q` of `H_q`, with `J_q` compatible with `ω` along `x_q`. On
+all of `S` the data need only be regular along `u`: `J` is `C¹` and compatible with `ω` along `u`,
+and `K_s`, `K_t` are `C²` along `u`. The linearized operator of `u` is realized on the Sobolev
+space `W^{1,2}_0(S, V)` of the cylindrical metric, `TauCeti.ConformalSobolev.H1 V S ρ` for the
+cylindrical weight `ρ = TauCeti.Floer.cylindricalWeight`, by
+`TauCeti.SymplecticForm.floerConformalSobolevOperator`
 (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Operator`). This file proves that this
 realization `D_u : W^{1,2}_0(S, V) → L²(S, V)` has finite-dimensional kernel and closed range, the
 first half of the Fredholm property behind the pair-of-pants product.
 
-Every result here holds more generally for Floer data `(J, K_s, K_t)` on `S` that are cylindrical
-and equal to the pair-of-pants data far out on the ends, along a map `u` that solves the Floer
-equation there: the semi-Fredholm estimate and the bound on the coefficient field use the
-pair-of-pants data only on the ends, and elsewhere the data need only be `C²` along `u`. This
-covers the families that modify the pair-of-pants datum away from its ends, such as the pair of
-pants with continuation necks
-(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation.SemiFredholm`). A Floer pair of pants
-is the case of the pair-of-pants data on all of `S`.
+A Floer pair of pants, a solution of the Floer equation for the pair-of-pants data on all of `S`,
+is the special case where `(K_s, K_t)` are these components everywhere. The pair of pants with
+continuation necks (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation.SemiFredholm`)
+is another case: it modifies the pair-of-pants datum away from the ends.
 
 The semi-Fredholm estimate for `C²` sections with compact support in `S`
 (`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add` in
@@ -53,7 +55,7 @@ the coordinates of `ℂ` on the truncation `S_T`. The norm of `H1` is instead th
   (`TauCeti.SymplecticForm.norm_floerConformalSobolevOperator_sq`), and on the compact set `K` the
   `L²` norm of `ξ` is controlled by that of `√ρ ξ`, since `ρ` is bounded below there
   (`TauCeti.ConformalSobolev.exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq`).
-* **Along a Floer pair of pants.** The uniform convergence of the loops of `u` in the end charts
+* **Along `u`.** The uniform convergence of the loops of `u` in the end charts
   to the asymptotic orbits, and of the slice defects to zero, bounds `u` and the slice defects far
   out on the ends over a band of angular width one, so the coefficient field is essentially bounded
   (`TauCeti.SymplecticForm.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn`). With
