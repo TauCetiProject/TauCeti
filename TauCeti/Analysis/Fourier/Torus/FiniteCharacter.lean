@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import TauCeti.Topology.Algebra.Module.Matrix
 import TauCeti.Analysis.Fourier.Monomial
-import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 
 /-!

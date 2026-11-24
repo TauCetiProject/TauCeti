@@ -9,8 +9,6 @@ public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
-import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
@@ -59,9 +57,9 @@ on the ball `‖n‖ ≤ R`, so `V_R ⋆ f = f` almost everywhere
 (`MeasureTheory.Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul`). Its coefficients are the
 values at the points `n / R` of the symbol `τ(ξ) = ∏ i, χ (ξ i)` on `ℝᵈ`. By Poisson summation
 `V_R` is the periodization of the kernel `𝓕⁻ (τ (· / R))` on `ℝᵈ`, a dilate of `𝓕⁻ τ`, so its `L¹`
-norm on the torus is at most `∫ ‖𝓕⁻ τ‖`, whatever `R`
+norm on the torus is at most `∫ ‖𝓕⁻ τ‖` for every `R > 0`
 (`SchwartzMap.lintegral_eNorm_tsum_fourier_mul_mFourier_le`). Hence `V_R` is bounded in `L¹`
-uniformly in `R`, while `‖V_R‖_∞ ≤ (7 R) ^ d` by counting its frequencies, and the logarithmic
+uniformly in `R > 0`, while `‖V_R‖_∞ ≤ (7 R) ^ d` by counting its frequencies, and the logarithmic
 convexity of `Lʳ` norms (`MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow`) gives
 `‖V_R‖_r ≤ C R ^ (d (1 - 1/r))` for `1 ≤ r ≤ ∞`. Young's inequality with `1/r + 1/p = 1 + 1/q`
 (`MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`) gives Nikol'skii's inequality.
@@ -146,7 +144,7 @@ private theorem card_box_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R) :
 vanishing wherever one coordinate exceeds `2` in absolute value. By Poisson summation the
 trigonometric polynomial `x ↦ ∑ n, τ (n / R) e_n(x)` is the periodization of the kernel
 `𝓕⁻ (τ (· / R))` on `ℝᵈ`, a dilate of `𝓕⁻ τ`, so its `L¹` norm on the torus is at most
-`∫ ‖𝓕⁻ τ‖`, whatever the scale `R` (`SchwartzMap.eLpNorm_periodicKernel_le`). -/
+`∫ ‖𝓕⁻ τ‖`, uniformly over the scales `R > 0` (`SchwartzMap.eLpNorm_periodicKernel_le`). -/
 private theorem eLpNorm_sum_box_le [DecidableEq d] {τ : EuclideanSpace ℝ d → ℂ}
     (hτ : ContDiff ℝ ∞ τ) (h0 : ∀ (ξ : EuclideanSpace ℝ d) i, 2 < |ξ i| → τ ξ = 0) {R : ℝ}
     (hR : 0 < R) :
@@ -154,7 +152,7 @@ private theorem eLpNorm_sum_box_le [DecidableEq d] {τ : EuclideanSpace ℝ d �
       ENNReal.ofReal (∫ y, ‖𝓕⁻ τ y‖) := by
   -- The dilated symbol `τ (· / R)` as a Schwartz function.
   have hcR : HasCompactSupport fun ξ : EuclideanSpace ℝ d ↦ τ (R⁻¹ • ξ) :=
-    (EuclideanSpace.hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc (fun _ ↦ -2)
+    (hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc (fun _ ↦ -2)
       (fun _ ↦ 2) fun ξ i hi ↦ h0 ξ i (not_le.1 fun h ↦ hi (abs_le.1 h))).comp_smul
         (inv_ne_zero hR.ne')
   have hsR : ContDiff ℝ ∞ fun ξ : EuclideanSpace ℝ d ↦ τ (R⁻¹ • ξ) :=
@@ -348,7 +346,8 @@ private theorem derivKernel_eq_sum [DecidableEq d] (v : d → ℝ) {R : ℝ} (hR
   push_cast
   field_simp
 
-/-- The `L¹` norm of the derivative kernel along `v` at scale `R` is at most `C R ‖v‖`. -/
+/-- The `L¹` norm of the derivative kernel along `v` at a scale `R > 0` is at most `C R ‖v‖`,
+with `C` depending only on `d`. -/
 private theorem eLpNorm_derivKernel_le [DecidableEq d] (v : d → ℝ) {R : ℝ} (hR : 0 < R) :
     eLpNorm (derivKernel v R) 1 volume ≤ ENNReal.ofReal (2 * Real.pi *
       (∑ i : d, ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖) * R * ‖v‖) := by
@@ -459,8 +458,9 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm :
 /-- **Bernstein's inequality for one derivative at a fixed exponent.** If `f` is integrable with
 Fourier coefficients vanishing outside the ball `‖n‖ ≤ R`, and `g` is integrable with Fourier
 coefficients `2πi ⟪n, v⟫ f̂(n)`, so that `g` agrees almost everywhere with the derivative along
-`v` of the trigonometric polynomial representing `f`, then `‖g‖_p ≤ C R ‖v‖ ‖f‖_p`, with `C`
-depending only on `d` and not on the complex Banach space `E` of values. -/
+`v` of the trigonometric polynomial representing `f`, then for `R > 0` and `1 ≤ p ≤ ∞`
+`‖g‖_p ≤ C R ‖v‖ ‖f‖_p`, with `C` depending only on `d` and not on `p` or on the complex Banach
+space `E` of values. -/
 private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
       {p : ℝ≥0∞}, 1 ≤ p → ∀ (v : d → ℝ) {R : ℝ}, 0 < R →
@@ -491,9 +491,12 @@ private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_derivSymbol_smul :
         · exact eLpNorm_derivKernel_le v hR
     _ = _ := by rw [one_mul]
 
-/-- **Bernstein's inequality for `k` derivatives at a fixed exponent**, by iterating the case of
-one derivative through the intermediate trigonometric polynomials. The constant `C` depends only on
-`d` and not on the complex Banach space `E` of values. -/
+/-- **Bernstein's inequality for `k` derivatives at a fixed exponent.** If `f` is integrable with
+Fourier coefficients vanishing outside the ball `‖n‖ ≤ R`, and `g` is integrable with Fourier
+coefficients `(∏ l, 2πi ⟪n, v l⟫) f̂(n)`, then for `R > 0` and `1 ≤ p ≤ ∞`
+`‖g‖_p ≤ (C R) ^ k ∏ l, ‖v l‖ ‖f‖_p`, with `C` depending only on `d` and not on `p` or on the
+complex Banach space `E` of values. The proof iterates the case of one derivative through the
+intermediate trigonometric polynomials. -/
 private theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
       {p : ℝ≥0∞}, 1 ≤ p → ∀ (k : ℕ) (v : Fin k → d → ℝ) {R : ℝ}, 0 < R →

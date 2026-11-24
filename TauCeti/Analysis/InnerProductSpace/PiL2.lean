@@ -35,11 +35,12 @@ Borel measurable structure on the scalar field.
 
 ## Additional results
 
+* `TauCeti.hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc`: a function on real Euclidean
+  space vanishing wherever some coordinate leaves its interval, so outside a coordinate box, has
+  compact support.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
-* `EuclideanSpace.hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc`: a function vanishing
-  wherever some coordinate leaves its interval, so outside a coordinate box, has compact support.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
@@ -105,19 +106,6 @@ theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
   rw [Set.ofPred_forall]
   exact MeasurableSet.iInter fun i ↦
     measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
-
-/-- A function on real Euclidean space that vanishes at every point with some coordinate `x i`
-outside `[a i, b i]`, that is, outside the coordinate box `∏ i, [a i, b i]`, has compact
-support. -/
-theorem hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc {ι α : Type*}
-    [Zero α] {f : EuclideanSpace ℝ ι → α} (a b : ι → ℝ)
-    (hf : ∀ x i, x i ∉ Set.Icc (a i) (b i) → f x = 0) :
-    HasCompactSupport f :=
-  HasCompactSupport.intro ((EuclideanSpace.equiv ι ℝ).toHomeomorph.isCompact_preimage.2
-    (isCompact_univ_pi fun i ↦ isCompact_Icc (a := a i) (b := b i))) fun x hx ↦ by
-    simp only [Set.mem_preimage, Set.mem_univ_pi, not_forall] at hx
-    obtain ⟨i, hi⟩ := hx
-    exact hf x i hi
 
 /-- A quadratic form `∑ i, w i * x i ^ 2` that is diagonal in the coordinates of real Euclidean
 space is positive definite exactly when all of its weights are positive. This is
@@ -598,6 +586,19 @@ end finCastLE
 end EuclideanSpace
 
 namespace TauCeti
+
+/-- A function on real Euclidean space that vanishes at every point with some coordinate `x i`
+outside `[a i, b i]`, that is, outside the coordinate box `∏ i, [a i, b i]`, has compact
+support. -/
+theorem hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc {ι α : Type*}
+    [Zero α] {f : EuclideanSpace ℝ ι → α} (a b : ι → ℝ)
+    (hf : ∀ x i, x i ∉ Set.Icc (a i) (b i) → f x = 0) :
+    HasCompactSupport f :=
+  HasCompactSupport.intro ((EuclideanSpace.equiv ι ℝ).toHomeomorph.isCompact_preimage.2
+    (isCompact_univ_pi fun i ↦ isCompact_Icc (a := a i) (b := b i))) fun x hx ↦ by
+    simp only [Set.mem_preimage, Set.mem_univ_pi, not_forall] at hx
+    obtain ⟨i, hi⟩ := hx
+    exact hf x i hi
 
 variable {𝕜 : Type*} [RCLike 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
