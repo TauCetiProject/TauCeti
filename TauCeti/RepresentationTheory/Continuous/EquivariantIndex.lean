@@ -37,10 +37,12 @@ representations on either side. For unitary representations on Hilbert spaces, t
 kernel of the adjoint, so `ind_G T = [ker T] - [ker T†]` and `ind_G T† = - ind_G T`.
 
 The Hom rank `TauCeti.SplitK0.homFinrank 𝕜 σ` of a finite-dimensional continuous representation
-`σ` takes `ind_G T` to `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. When `G` is compact and `σ`
-is irreducible with only scalar self-intertwiners (always the case over `ℂ`), this is the
-multiplicity of `σ` in `ind_G T`; for any irreducible `σ` of a compact group it is that
-multiplicity times the dimension of the self-intertwiners of `σ`. For strongly continuous unitary
+`σ` takes `ind_G T` to `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. When `𝕜` is `ℝ` or `ℂ`,
+`G` is compact and `σ` is irreducible, continuous finite-dimensional representations split into
+irreducibles, and this is the multiplicity of `σ` in `ind_G T` times the dimension of the
+self-intertwiners of `σ`; over `ℂ` it is the multiplicity itself. Over a general complete
+nontrivially normed field this reading can fail, as representations of a compact group need not
+be semisimple there. For strongly continuous unitary
 representations of a group on Hilbert spaces, this difference is the index of the action of `T`
 on the multiplicity spaces of `σ`, so it is constant along a norm-continuous family of equivariant
 Fredholm operators over a preconnected parameter set: every Hom rank of the equivariant index is
@@ -164,9 +166,9 @@ theorem repRingCharacter_equivariantIndex_one :
   simp [repRingCharacter_equivariantIndex, ContinuousLinearMap.index_eq_finrank_sub]
 
 /-- The Hom rank of a finite-dimensional continuous representation `σ` on the equivariant index
-is the dimension of the intertwiners from `σ` into the kernel minus that into the cokernel. When
-`G` is compact and `σ` is irreducible with only scalar self-intertwiners (as over `ℂ`), this is
-the multiplicity of `σ` in the equivariant index. -/
+is the dimension of the intertwiners from `σ` into the kernel minus that into the cokernel. Over
+`𝕜 = ℂ`, for a compact group `G` and an irreducible `σ`, this is the multiplicity of `σ` in the
+equivariant index. -/
 @[simp]
 theorem homFinrank_equivariantIndex {V : Type*} [NormedAddCommGroup V]
     [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V] (σ : ContRepresentation 𝕜 G V)
