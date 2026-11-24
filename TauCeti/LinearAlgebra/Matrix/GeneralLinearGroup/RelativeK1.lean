@@ -25,7 +25,7 @@ homomorphism of nonunital algebras induces a homomorphism of relative `K₁` thr
 of forced unitizations, which preserves the augmentation.
 
 The matrices `1 + a` do not involve the scalar ring (`TauCeti.unitizationGLFstOneEquiv`). Hence,
-for an algebra `R → S` and an `S`-algebra `A`, the map `Unitization R A → Unitization S A`,
+for an algebra `R → S` and an `S`-algebra `A`, the change of scalars `Unitization.mapScalars`,
 `(r, a) ↦ (algebraMap R S r, a)`, induces a surjection from the relative `K₁` of `A` over `R`
 onto that over `S`; for `ℤ → ℂ` it compares the relative `K₁` of a nonunital complex algebra on
 its integral and complex unitizations. No injectivity is claimed: relative `K₁` can depend on the
@@ -171,7 +171,8 @@ theorem exists_mk_eq {x : AlgebraicK1 (Unitization R A)} (hx : x ∈ relativeAlg
   · rw [unitizationGLFstOne_def, MonoidHom.mem_ker, map_mul, map_inv, mul_inv_eq_one]
     ext i j
     simp [s, t]
-  · rw [map_mul, map_inv, ← AlgebraicK1.map_mk, hs, map_one, inv_one, mul_one]
+  · rw [map_mul, map_inv, ← AlgebraicK1.map_mk, hs]
+    simp
 
 section Map
 
@@ -225,37 +226,24 @@ section ChangeOfScalars
 variable {S : Type*} [CommRing S] [Algebra R S] [Module S A] [IsScalarTower S A A]
   [SMulCommClass S A A] [IsScalarTower R S A]
 
-/-- The map `Unitization R A → Unitization S A`, `(r, a) ↦ (algebraMap R S r, a)`, lies over
-`algebraMap R S` on the augmentations. -/
-private theorem fstHom_comp_lift :
-    (Unitization.fstHom S A : Unitization S A →+* S).comp
-        (Unitization.lift ((Unitization.inrNonUnitalAlgHom S A).restrictScalars R) :
-          Unitization R A →+* Unitization S A) =
-      (algebraMap R S).comp (Unitization.fstHom R A : Unitization R A →+* R) := by
-  ext x
-  simp
-
 variable (S) in
 /-- Change of the scalar ring of relative `K₁`: for an algebra `R → S` and an `S`-algebra `A`,
-the homomorphism `K₁(A⁺_R) → K₁(A⁺_S)` induced by the map of forced unitizations
-`Unitization R A → Unitization S A`, `(r, a) ↦ (algebraMap R S r, a)`, restricted to relative
-classes. This map is surjective (`relativeAlgebraicK1.mapScalars_surjective`); no injectivity
-is claimed. -/
+the homomorphism `K₁(A⁺_R) → K₁(A⁺_S)` induced by the change of scalars of forced unitizations
+`Unitization.mapScalars`, `(r, a) ↦ (algebraMap R S r, a)`, restricted to relative classes.
+This map is surjective (`relativeAlgebraicK1.mapScalars_surjective`); no injectivity is
+claimed. -/
 def mapScalars : relativeAlgebraicK1 R A →* relativeAlgebraicK1 S A :=
-  ((AlgebraicK1.map (Unitization.lift ((Unitization.inrNonUnitalAlgHom S A).restrictScalars R) :
-      Unitization R A →+* Unitization S A)).comp (relativeAlgebraicK1 R A).subtype).codRestrict _
+  ((AlgebraicK1.map (Unitization.mapScalars R S A : Unitization R A →+* Unitization S A)).comp
+      (relativeAlgebraicK1 R A).subtype).codRestrict _
     fun x ↦ by
-      rw [mem_relativeAlgebraicK1_iff, MonoidHom.comp_apply, AlgebraicK1.map_map, fstHom_comp_lift,
-        ← AlgebraicK1.map_map, Subgroup.coe_subtype, mem_relativeAlgebraicK1_iff.1 x.property,
-        map_one]
+      simp [← AlgebraicK1.map_map _ (algebraMap R S), mem_relativeAlgebraicK1_iff.1 x.property]
 
 /-- The change of scalars of relative `K₁` is the homomorphism of `K₁` induced by the map of
 forced unitizations. -/
 @[simp]
 theorem coe_mapScalars_apply (x : relativeAlgebraicK1 R A) :
     (mapScalars S x : AlgebraicK1 (Unitization S A)) =
-      AlgebraicK1.map (Unitization.lift ((Unitization.inrNonUnitalAlgHom S A).restrictScalars R) :
-        Unitization R A →+* Unitization S A) x :=
+      AlgebraicK1.map (Unitization.mapScalars R S A : Unitization R A →+* Unitization S A) x :=
   (rfl)
 
 /-- For an algebra `R → S` and an `S`-algebra `A`, every relative class over `Unitization S A`
@@ -277,13 +265,11 @@ theorem mapScalars_map {B : Type*} [NonUnitalRing B] [Module S B] [IsScalarTower
     [SMulCommClass S B B] [Module R B] [IsScalarTower R S B] [IsScalarTower R B B]
     [SMulCommClass R B B] (f : A →ₙₐ[S] B) (x : relativeAlgebraicK1 R A) :
     mapScalars S (map (f.restrictScalars R) x) = map f (mapScalars S x) := by
-  have h : (Unitization.lift ((Unitization.inrNonUnitalAlgHom S B).restrictScalars R) :
-        Unitization R B →+* Unitization S B).comp
-          (Unitization.map (f.restrictScalars R) : Unitization R A →+* Unitization R B) =
+  have h : (Unitization.mapScalars R S B : Unitization R B →+* Unitization S B).comp
+        (Unitization.map (f.restrictScalars R) : Unitization R A →+* Unitization R B) =
       (Unitization.map f : Unitization S A →+* Unitization S B).comp
-        (Unitization.lift ((Unitization.inrNonUnitalAlgHom S A).restrictScalars R) :
-          Unitization R A →+* Unitization S A) := by
-    ext y <;> simp
+        (Unitization.mapScalars R S A : Unitization R A →+* Unitization S A) :=
+    RingHom.ext (Unitization.mapScalars_map f)
   apply Subtype.ext
   simp only [coe_mapScalars_apply, coe_map_apply, AlgebraicK1.map_map, h]
 

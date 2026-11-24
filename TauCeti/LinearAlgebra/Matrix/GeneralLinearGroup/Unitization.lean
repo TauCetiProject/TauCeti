@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Algebra.Quasiregular
+public import TauCeti.Algebra.Algebra.Unitization
 
 /-!
 # Invertible matrices over a forced unitization
@@ -18,7 +19,7 @@ identity matrix form a subgroup `unitizationGLFstOne R A n` of `GLₙ(A⁺)`, th
 to `GLₙ(R)` induced by the augmentation. Such a matrix is `1 + x` for a matrix `x` over `A`, and
 `(1 + x) * (1 + y) = 1 + (x + y + x * y)`, so this subgroup is the group of quasi-units of the
 nonunital matrix ring `Mₙ(A)`. In particular it does not depend on the scalar ring `R`: for an
-algebra `R → S` and an `S`-algebra `A`, the map `Unitization R A → Unitization S A`,
+algebra `R → S` and an `S`-algebra `A`, the change of scalars `Unitization.mapScalars`,
 `(r, a) ↦ (algebraMap R S r, a)`, matches the two subgroups. When `A` itself has an identity,
 quasi-units of `Mₙ(A)` are invertible matrices over `A`, and the subgroup is isomorphic to
 `GLₙ(A)` through the map `Unitization R A → A`, `(r, a) ↦ r • 1 + a`.
@@ -81,8 +82,7 @@ the identity matrix. -/
 theorem mem_unitizationGLFstOne_iff {u : GL n (Unitization R A)} :
     u ∈ unitizationGLFstOne R A n ↔
       (fstHom R A : Unitization R A →+* R).mapMatrix (u : Matrix n n (Unitization R A)) = 1 := by
-  rw [unitizationGLFstOne, MonoidHom.mem_ker, Units.ext_iff]
-  rfl
+  simp [unitizationGLFstOne, Units.ext_iff]
 
 section Helpers
 
@@ -208,11 +208,11 @@ variable {R S A : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S] [NonUni
   [IsScalarTower R A A] [SMulCommClass R A A] {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The isomorphisms `unitizationGLFstOneEquiv` for scalar rings `R` and `S` are compatible with
-the map `Unitization R A → Unitization S A`, `(r, a) ↦ (algebraMap R S r, a)`: the matrix
+the change of scalars `Unitization.mapScalars`, `(r, a) ↦ (algebraMap R S r, a)`: the matrix
 `1 + x` over `Unitization R A` goes to the matrix `1 + x` over `Unitization S A`. -/
 theorem units_map_unitizationGLFstOneEquiv_symm (x : (PreQuasiregular (Matrix n n A))ˣ) :
-    Units.map ((lift ((inrNonUnitalAlgHom S A).restrictScalars R) :
-        Unitization R A →+* Unitization S A).mapMatrix (m := n)).toMonoidHom
+    Units.map ((mapScalars R S A : Unitization R A →+* Unitization S A).mapMatrix
+        (m := n)).toMonoidHom
       ((unitizationGLFstOneEquiv R A n).symm x) = (unitizationGLFstOneEquiv S A n).symm x := by
   ext i j : 2
   by_cases hij : i = j <;> simp [hij]
