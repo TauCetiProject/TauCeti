@@ -45,7 +45,7 @@ definitions accept every `k : ℕ`, but only `k ≥ 1` gives a discrete series o
 * `TauCeti.discreteSeries k μ`: `D_k(μ)`, with the rays `TauCeti.positiveDiscreteSeries k μ` and
   `TauCeti.negativeDiscreteSeries k μ`.
 * `TauCeti.CompactWeightModule.reflection k μ`: `v_ℓ ↦ v_{-ℓ}`.
-* `TauCeti.compactCasimir`: the Casimir operator `Ω = (H_c² + 2X_cY_c + 2Y_cX_c) / 4` of a
+* `TauCeti.glTwoCasimir`: the Casimir operator `Ω = (H_c² + 2X_cY_c + 2Y_cX_c) / 4` of a
   `𝔤𝔩₂(ℂ)`-module.
 
 ## Main results
@@ -56,8 +56,8 @@ definitions accept every `k : ℕ`, but only `k ≥ 1` gives a discrete series o
   on `v_ℓ` by `e^{iℓθ}`.
 * `TauCeti.CompactWeightModule.one_lie_lieSubmodule`, `TauCeti.one_lie_discreteSeries`: the central
   scalar of `D_k(μ)`, and of every Lie submodule of `TauCeti.CompactWeightModule k μ`, is `μ`.
-* `TauCeti.CompactWeightModule.compactCasimir_lieSubmodule`,
-  `TauCeti.compactCasimir_discreteSeries`: the Casimir operator of `D_k(μ)`, and of every Lie
+* `TauCeti.CompactWeightModule.glTwoCasimir_lieSubmodule`,
+  `TauCeti.glTwoCasimir_discreteSeries`: the Casimir operator of `D_k(μ)`, and of every Lie
   submodule of `TauCeti.CompactWeightModule k μ`, is `k (k - 2) / 4`.
 * `TauCeti.discreteSeries_eq_sup`: `D_k(μ)` is the sum of its two rays.
 * `TauCeti.CompactWeightModule.reflection_lie`: the reflection intertwines the action of `M` with
@@ -66,8 +66,8 @@ definitions accept every `k : ℕ`, but only `k ≥ 1` gives a discrete series o
 
 Explicit checks: `TauCeti.lie_compactCartanY_weightVector_self`,
 `TauCeti.lie_compactCartanX_weightVector_self`, `TauCeti.lie_compactCartanY_weightVector_add_two`,
-`TauCeti.lie_compactCartanX_weightVector_neg_self`, `TauCeti.compactCasimir_discreteSeries_two`
-and `TauCeti.compactCasimir_discreteSeries_one`.
+`TauCeti.lie_compactCartanX_weightVector_neg_self`, `TauCeti.glTwoCasimir_discreteSeries_two`
+and `TauCeti.glTwoCasimir_discreteSeries_one`.
 
 ## Implementation notes
 
@@ -592,37 +592,37 @@ theorem lie_glTwoRotationGenerator_weightVector (ℓ : ℤ) :
 
 /-- The **Casimir operator** `Ω = (H_c² + 2 X_c Y_c + 2 Y_c X_c) / 4` of a `𝔤𝔩₂(ℂ)`-module: half of
 the Casimir operator `TauCeti.sl2Casimir` of the compact triple. -/
-def compactCasimir (V : Type*) [AddCommGroup V] [Module ℂ V]
+def glTwoCasimir (V : Type*) [AddCommGroup V] [Module ℂ V]
     [LieRingModule (Matrix (Fin 2) (Fin 2) ℂ) V] [LieModule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V] :
     Module.End ℂ V :=
   (2⁻¹ : ℂ) • sl2Casimir ℂ compactCartanH compactCartanX compactCartanY V
 
-section CompactCasimir
+section GlTwoCasimir
 
 variable {V : Type*} [AddCommGroup V] [Module ℂ V] [LieRingModule (Matrix (Fin 2) (Fin 2) ℂ) V]
   [LieModule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V]
 
 /-- `Ω v = (H_c² v + 2 X_c Y_c v + 2 Y_c X_c v) / 4`. -/
-theorem compactCasimir_apply (v : V) :
-    compactCasimir V v = (4⁻¹ : ℂ) • (⁅compactCartanH, ⁅compactCartanH, v⁆⁆ +
+theorem glTwoCasimir_apply (v : V) :
+    glTwoCasimir V v = (4⁻¹ : ℂ) • (⁅compactCartanH, ⁅compactCartanH, v⁆⁆ +
       (2 : ℂ) • ⁅compactCartanX, ⁅compactCartanY, v⁆⁆ +
       (2 : ℂ) • ⁅compactCartanY, ⁅compactCartanX, v⁆⁆) := by
-  rw [compactCasimir, LinearMap.smul_apply, sl2Casimir_apply]
+  rw [glTwoCasimir, LinearMap.smul_apply, sl2Casimir_apply]
   module
 
 /-- The Casimir operator of a Lie submodule is the restriction of that of the ambient module. -/
-theorem coe_compactCasimir_lieSubmodule {N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V}
-    (v : N) : (compactCasimir N v : V) = compactCasimir V (v : V) := by
-  simp [compactCasimir_apply]
+theorem coe_glTwoCasimir_lieSubmodule {N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V}
+    (v : N) : (glTwoCasimir N v : V) = glTwoCasimir V (v : V) := by
+  simp [glTwoCasimir_apply]
 
-end CompactCasimir
+end GlTwoCasimir
 
 /-- **The Casimir operator acts by `k(k - 2)/4`** on every vector of
 `TauCeti.CompactWeightModule k μ`. -/
-theorem compactCasimir_compactWeightModule :
-    compactCasimir (CompactWeightModule k μ) = (k * (k - 2) / 4) • 1 := by
+theorem glTwoCasimir_compactWeightModule :
+    glTwoCasimir (CompactWeightModule k μ) = (k * (k - 2) / 4) • 1 := by
   refine (weightBasis k μ).ext fun ℓ ↦ ?_
-  simp only [weightBasis_apply, compactCasimir_apply, LinearMap.smul_apply,
+  simp only [weightBasis_apply, glTwoCasimir_apply, LinearMap.smul_apply,
     lie_compactCartanH_weightVector, lie_compactCartanX_weightVector,
     lie_compactCartanY_weightVector, lie_smul, sub_add_cancel, add_sub_cancel_right, smul_smul,
     one_apply_eq_self]
@@ -635,11 +635,11 @@ namespace CompactWeightModule
 
 /-- The Casimir operator acts by `k(k - 2)/4` on every Lie submodule of
 `TauCeti.CompactWeightModule k μ`. -/
-theorem compactCasimir_lieSubmodule
+theorem glTwoCasimir_lieSubmodule
     (N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) (CompactWeightModule k μ)) (v : N) :
-    compactCasimir N v = (k * (k - 2) / 4) • v := by
+    glTwoCasimir N v = (k * (k - 2) / 4) • v := by
   ext
-  rw [coe_compactCasimir_lieSubmodule, compactCasimir_compactWeightModule, LieSubmodule.coe_smul]
+  rw [coe_glTwoCasimir_lieSubmodule, glTwoCasimir_compactWeightModule, LieSubmodule.coe_smul]
   rfl
 
 /-- The identity matrix acts by `μ` on every Lie submodule of `TauCeti.CompactWeightModule k μ`. -/
@@ -849,9 +849,9 @@ theorem weightVector_mem_negativeDiscreteSeries {k : ℕ} {ℓ : ℤ}
   weightVector_mem_weightLieSubmodule hℓ
 
 /-- **The Casimir operator of `D_k(μ)` is `k (k - 2) / 4`.** -/
-theorem compactCasimir_discreteSeries (k : ℕ) (v : discreteSeries k μ) :
-    compactCasimir (discreteSeries k μ) v = ((k : ℂ) * (k - 2) / 4) • v :=
-  CompactWeightModule.compactCasimir_lieSubmodule _ v
+theorem glTwoCasimir_discreteSeries (k : ℕ) (v : discreteSeries k μ) :
+    glTwoCasimir (discreteSeries k μ) v = ((k : ℂ) * (k - 2) / 4) • v :=
+  CompactWeightModule.glTwoCasimir_lieSubmodule _ v
 
 /-- **The central scalar of `D_k(μ)` is `μ`.** -/
 theorem one_lie_discreteSeries (k : ℕ) (v : discreteSeries k μ) :
@@ -1011,15 +1011,15 @@ theorem lie_compactCartanX_weightVector_neg_self (k : ℕ) :
 
 /-- `D₂` has Casimir `0`, the infinitesimal character of the trivial representation; the scalar
 `(k² - 1) / 4` would give `3 / 4`. -/
-theorem compactCasimir_discreteSeries_two (v : discreteSeries 2 μ) :
-    compactCasimir (discreteSeries 2 μ) v = 0 := by
-  rw [compactCasimir_discreteSeries]
+theorem glTwoCasimir_discreteSeries_two (v : discreteSeries 2 μ) :
+    glTwoCasimir (discreteSeries 2 μ) v = 0 := by
+  rw [glTwoCasimir_discreteSeries]
   norm_num
 
 /-- The limit `D₁` has Casimir `-1/4`. -/
-theorem compactCasimir_discreteSeries_one (v : discreteSeries 1 μ) :
-    compactCasimir (discreteSeries 1 μ) v = (-1 / 4 : ℂ) • v := by
-  rw [compactCasimir_discreteSeries]
+theorem glTwoCasimir_discreteSeries_one (v : discreteSeries 1 μ) :
+    glTwoCasimir (discreteSeries 1 μ) v = (-1 / 4 : ℂ) • v := by
+  rw [glTwoCasimir_discreteSeries]
   norm_num
 
 end TauCeti
