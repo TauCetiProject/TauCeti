@@ -312,9 +312,9 @@ theorem atkinLehnerPseudoEigenvalue_self (f : Newform N k) (h : N ∥ N) :
     have := Nat.gcd_eq_gcd_ab N (N / N)
     have hNN : ((N / N : ℕ) : ℤ) = 1 := by rw [Nat.div_self h.pos, Nat.cast_one]
     rwa [h.coprime, Nat.cast_one, hNN, one_mul] at this
-  let γ : SL(2, ℤ) := ⟨!![-1, 1; -N * Nat.gcdA N (N / N), -Nat.gcdB N (N / N)], by
+  let γ : SL(2, ℤ) := .mk !![-1, 1; -N * Nat.gcdA N (N / N), -Nat.gcdB N (N / N)] (by
     rw [Matrix.det_fin_two_of]
-    linear_combination -hbez⟩
+    linear_combination -hbez)
   have hγ : γ ∈ Gamma0 N := by
     rw [Gamma0_mem]
     simp [γ]

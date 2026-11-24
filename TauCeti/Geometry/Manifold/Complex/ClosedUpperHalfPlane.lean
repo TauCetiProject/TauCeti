@@ -415,14 +415,14 @@ theorem ClosedUpperHalfPlane.toHomeomorph_euclideanHalfSpaceDiffeomorph (n : ℕ
   Homeomorph.ext fun z ↦ Subtype.ext (by simp)
 
 /-- The canonical native half-space charts of a closed-upper-half-plane charted space.
-The original charts are composed with the existing real coordinate homeomorphism. This is
-an explicitly chosen charted-space structure, rather than a global instance on every `M`. -/
+The original charts are followed by the existing real coordinate homeomorphism
+(`Homeomorph.chartedSpaceComp`). This is an explicitly chosen charted-space structure, rather
+than a global instance on every `M`. -/
 @[instance_reducible]
 def ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace (M : Type*)
     [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] :
     ChartedSpace (EuclideanHalfSpace (1 + 1)) M :=
-  letI := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  ChartedSpace.comp (EuclideanHalfSpace (1 + 1)) ClosedUpperHalfPlane M
+  euclideanHalfSpaceHomeomorph.chartedSpaceComp M
 
 /-- The preferred chart of the native half-space transfer is the original chart followed by
 the existing real coordinate homeomorphism. -/
@@ -431,8 +431,8 @@ theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace (M : Type*)
     letI := euclideanHalfSpaceChartedSpace M
     chartAt (EuclideanHalfSpace (1 + 1)) x =
       (chartAt ClosedUpperHalfPlane x).trans
-        euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph := by
-  rfl
+        euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph :=
+  euclideanHalfSpaceHomeomorph.chartAt_chartedSpaceComp x
 
 /-- Evaluation of the preferred chart in the native half-space transfer. -/
 @[simp]
@@ -474,7 +474,6 @@ theorem ClosedUpperHalfPlane.isManifold_euclideanHalfSpace {n : ℕ∞ω} (M : T
     [IsManifold closedUpperHalfPlaneModel n M] :
     letI := euclideanHalfSpaceChartedSpace M
     IsManifold (𝓡∂ (1 + 1)) n M := by
-  let := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
   have h := (euclideanHalfSpaceDiffeomorph n).isManifold_chartedSpaceComp M
   rwa [toHomeomorph_euclideanHalfSpaceDiffeomorph] at h
 
