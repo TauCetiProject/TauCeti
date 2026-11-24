@@ -53,7 +53,7 @@ namespace Polynomial
 
 /-- For an `R[X]`-algebra `S` whose `R`-algebra structure factors through `R[X]`, the algebra map
 `R[X] → S` is evaluation at the image of `X`. -/
-theorem algebraMap_eq_aeval {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+theorem algebraMap_eq_aeval {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
     [Algebra R[X] S] [IsScalarTower R R[X] S] (f : R[X]) :
     algebraMap R[X] S f = aeval (algebraMap R[X] S X) f := by
   rw [← IsScalarTower.coe_toAlgHom' R, aeval_algHom_apply, aeval_X_left_apply]

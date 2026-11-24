@@ -159,6 +159,7 @@ theorem Ideal.bijective_algebraMap_residueField_of_mem_minimalPrimes (p : Ideal 
   have : Ring.KrullDimLE 0 (Localization.AtPrime p) := .of_isLocalization _ hp _
   have hm := IsLocalRing.isField_iff_maximalIdeal_eq.mp
     (Ring.KrullDimLE.isField_of_isReduced (R := Localization.AtPrime p))
+  rw [IsLocalRing.ResidueField.algebraMap_eq]
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, IsLocalRing.residue_surjective⟩
-  rw [IsLocalRing.ResidueField.algebraMap_eq, IsLocalRing.residue_eq_zero_iff, hm] at hx
+  rw [IsLocalRing.residue_eq_zero_iff, hm] at hx
   exact Ideal.mem_bot.mp hx

@@ -7,9 +7,7 @@ module
 
 public import Mathlib.RingTheory.Algebraic.Defs
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
-public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
-import Mathlib.RingTheory.Algebraic.Basic
 import TauCeti.Algebra.Polynomial.AlgebraMap
 
 /-!
@@ -18,7 +16,7 @@ import TauCeti.Algebra.Polynomial.AlgebraMap
 Let `B` be a reduced `R[X]`-algebra. If the image of `X` in the residue field of every minimal
 prime of `B` is transcendental over `R`, then `R[X]` embeds into every component of `Spec B`, so
 `B` is torsion-free over `R[X]` by
-`TauCeti.isTorsionFree_of_injective_algebraMap_quotient_minimalPrimes`.
+`TauCeti.isTorsionFree_of_algebraMap_quotient_minimalPrimes_ne_zero`.
 
 ## Main results
 
@@ -42,9 +40,10 @@ theorem isTorsionFree_polynomial_of_forall_transcendental [IsReduced B]
     (h : ∀ (p : Ideal B) [p.IsPrime], p ∈ minimalPrimes B →
       Transcendental R (algebraMap R[X] p.ResidueField X)) :
     Module.IsTorsionFree R[X] B := by
-  refine isTorsionFree_of_injective_algebraMap_quotient_minimalPrimes fun p hp ↦ ?_
+  refine isTorsionFree_of_algebraMap_quotient_minimalPrimes_ne_zero fun p hp f hf hf0 ↦ ?_
   have := hp.1.1
-  refine (injective_iff_map_eq_zero _).mpr fun f hf ↦ transcendental_iff.mp (h p hp) f ?_
-  rw [← algebraMap_eq_aeval, IsScalarTower.algebraMap_apply R[X] (B ⧸ p), hf, map_zero]
+  have : Nontrivial R[X] := (algebraMap R[X] (B ⧸ p)).domain_nontrivial
+  refine nonZeroDivisors.ne_zero hf (transcendental_iff.mp (h p hp) f ?_)
+  rw [← algebraMap_eq_aeval, IsScalarTower.algebraMap_apply R[X] (B ⧸ p), hf0, map_zero]
 
 end TauCeti

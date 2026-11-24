@@ -39,7 +39,8 @@ these results requires constructing, near each point of the special fibre, a coo
 such that `A` is quasi-finite over `R[x]` at the chosen point, `B` is torsion-free over `R[x]`,
 and `K(x) ⊗[R[x]] B` is étale over `K(x)`. This coordinate is constructed by
 `TauCeti.exists_quasiFiniteAt_and_forall_isSeparable_adjoin`, and
-`TauCeti.finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one` applies it.
+`TauCeti.finite_integralClosure_of_forall_transcendental_and_finrank_kaehlerDifferential_eq_one`
+applies it.
 
 ## Main results
 

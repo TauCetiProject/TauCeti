@@ -9,10 +9,11 @@ public import TauCeti.RingTheory.Etale.GenericFiber
 public import TauCeti.RingTheory.IntegralClosure.QuasiFinite
 public import TauCeti.RingTheory.Kaehler.SeparatingLift
 
+import Mathlib.RingTheory.LocalProperties.Reduced
 import TauCeti.RingTheory.Ideal.MinimalPrime.Polynomial
 import TauCeti.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.Localization.Integral
-import TauCeti.RingTheory.Unramified.Localization
+import TauCeti.RingTheory.Unramified.LocalRing
 
 /-!
 # Finite normalization in a generic fibre smooth of dimension one
@@ -35,12 +36,17 @@ coordinate `x : A` which is quasi-finite at `q` and separating on every componen
 closed Noetherian domain, the integral closure of `R[X]` in `B` is finite
 (`TauCeti.Ring.finite_integralClosure_of_isTorsionFree_of_etale`), and Zariski's main theorem
 (`Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosure`) makes the integral
-closure of `A` in `B` finite near `q`.
+closure of `A` in `B` finite near `q`. This local step, for any coordinate quasi-finite at `q`
+and separating on every component of `B`, is
+`TauCeti.exists_notMem_finite_localizedModule_integralClosure_of_forall_isSeparable`.
 
 ## Main results
 
-* `TauCeti.finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one`: the integral
-  closure of `A` in `B = A[1/π]` is a finite `A`-module.
+* `TauCeti.exists_notMem_finite_localizedModule_integralClosure_of_forall_isSeparable`: a
+  coordinate quasi-finite at `q` and separating on every component of `B` makes the integral
+  closure of `A` in `B` finite near `q`.
+* `TauCeti.finite_integralClosure_of_forall_transcendental_and_finrank_kaehlerDifferential_eq_one`:
+  the integral closure of `A` in `B = A[1/π]` is a finite `A`-module.
 
 ## References
 
@@ -59,12 +65,18 @@ variable {R K A B : Type*} [CommRing R] [Field K] [Algebra R K] [CommRing A] [Al
   [CommRing B] [Algebra A B] [Algebra R B] [IsScalarTower R A B] [Algebra K B]
   [IsScalarTower R K B]
 
-/-- Near a prime `q`, a coordinate `x : A` that is quasi-finite at `q` over `R[X]` and separating on
-every component of `B` makes the integral closure of `A` in `B` finite. Through `x`, the ring `B`
-is a torsion-free `R[X]`-algebra with finite étale generic fibre, so the integral closure of `R[X]`
-in `B` is finite, and Zariski's main theorem concludes. -/
-private lemma exists_notMem_finite_of_quasiFiniteAt_of_forall_isSeparable [IsNoetherianRing R]
-    [IsIntegrallyClosed R] [IsFractionRing R K] [Algebra.FiniteType R A]
+/-- **A separating coordinate makes the integral closure finite near a point.** Let `R` be an
+integrally closed Noetherian domain with fraction field `K`, let `A` be a finite type
+`R`-algebra and `B` a reduced `A`-algebra which is also a `K`-algebra essentially of finite type.
+Let `x : A` be a coordinate whose image in the residue field of every minimal prime of `B` is a
+separating transcendental element over `K`, and such that `A` is quasi-finite over `R[X]` at a
+prime `q` through `x`. Then the integral closure of `A` in `B` is finite after inverting some
+`r ∉ q`.
+
+Through `x`, the ring `B` is a torsion-free `R[X]`-algebra with finite étale generic fibre, so the
+integral closure of `R[X]` in `B` is finite, and Zariski's main theorem concludes. -/
+theorem exists_notMem_finite_localizedModule_integralClosure_of_forall_isSeparable
+    [IsNoetherianRing R] [IsIntegrallyClosed R] [IsFractionRing R K] [Algebra.FiniteType R A]
     [Algebra.EssFiniteType K B] [IsReduced B] (x : A) (q : Ideal A) [q.IsPrime]
     (hx : letI := (aeval (R := R) x).toAlgebra; Algebra.QuasiFiniteAt R[X] q)
     (hsep : ∀ (p : Ideal B) [p.IsPrime], p ∈ minimalPrimes B →
@@ -88,10 +100,20 @@ private lemma exists_notMem_finite_of_quasiFiniteAt_of_forall_isSeparable [IsNoe
     exact congrArg _ (aeval_X x)
   have : Module.IsTorsionFree R[X] B := isTorsionFree_polynomial_of_forall_transcendental
     fun p _ hp ↦ hX p ▸ (hsep p hp).1.restrictScalars (IsFractionRing.injective R K)
+  -- The generic fibre of `B` over `R[X]` is a localization of `B`, hence reduced, and it is
+  -- essentially of finite type over the fraction field of `R[X]`.
+  let : Algebra B (FractionRing R[X] ⊗[R[X]] B) := Algebra.TensorProduct.rightAlgebra
+  have := IsLocalization.tensorRight (FractionRing R[X]) (nonZeroDivisors R[X]) (S := B)
+  let M := Algebra.algebraMapSubmonoid B (nonZeroDivisors R[X])
+  let e := IsLocalization.algEquiv M (FractionRing R[X] ⊗[R[X]] B) (Localization M)
+  have : IsReduced (FractionRing R[X] ⊗[R[X]] B) := isReduced_of_injective e.toRingHom e.injective
+  have : Algebra.EssFiniteType R K := .of_isLocalization K (nonZeroDivisors R)
+  have : Algebra.EssFiniteType R B := .comp R K B
+  have : Algebra.EssFiniteType R[X] B := .of_comp R R[X] B
   have : Algebra.Etale (FractionRing R[X]) (FractionRing R[X] ⊗[R[X]] B) :=
     etale_tensorProduct_polynomial_of_forall_isSeparable (K := K) fun p _ hp _ ↦ by
       rw [hX p]
-      exact hsep p hp
+      exact (hsep p hp).2
   have := Ring.finite_integralClosure_of_isTorsionFree_of_etale (R := R[X]) (FractionRing R[X]) B
   have := hx
   exact Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosure (P := R[X]) q
@@ -103,7 +125,8 @@ finite type `R`-algebra, and let `B = A[1/π]` for some `π : R`, carrying a com
 that the residue field of every minimal prime of `B` is a transcendental extension of `K` with
 one-dimensional Kähler differentials. Then the integral closure of `A` in `B` is a finite
 `A`-module. No excellence or Japanese hypothesis on `R` is needed. -/
-theorem finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one [IsNoetherianRing R]
+theorem finite_integralClosure_of_forall_transcendental_and_finrank_kaehlerDifferential_eq_one
+    [IsNoetherianRing R]
     [IsIntegrallyClosed R] [IsFractionRing R K] [Algebra.FiniteType R A]
     {π : R} [IsLocalization.Away (algebraMap R A π) B]
     [Ring.KrullDimLE 1 (A ⧸ Ideal.span {algebraMap R A π})] [IsReduced B]
@@ -149,7 +172,7 @@ theorem finite_integralClosure_of_forall_finrank_kaehlerDifferential_eq_one [IsN
         exact Ideal.mem_map_of_mem _ ((Ideal.mem_under R q).mpr hπq))
     (fun i ↦ (h i.val i.property).2)
   rw [← hqf]
-  exact exists_notMem_finite_of_quasiFiniteAt_of_forall_isSeparable x _ hx
+  exact exists_notMem_finite_localizedModule_integralClosure_of_forall_isSeparable x _ hx
     fun p _ hp ↦ hsep ⟨p, hp⟩
 
 end TauCeti

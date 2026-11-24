@@ -345,8 +345,9 @@ theorem IsLocalization.finite_localizedModule_integralClosure {A B : Type*} [Com
     -- Write `c = b / m` in `B`, so that `m • c = b • 1` in the integral closure.
     obtain ⟨⟨b, m⟩, hb⟩ := IsLocalization.surj M c.val
     have hbm : b • (1 : integralClosure A B) = m • c := Subtype.ext <| by
-      rw [Subalgebra.coe_smul, Subalgebra.coe_one, Algebra.smul_def, mul_one, Submonoid.smul_def,
-        Subalgebra.coe_smul, Algebra.smul_def, mul_comm, hb]
+      simp only [Submonoid.smul_def, Algebra.smul_def, mul_one, Subalgebra.coe_mul,
+        Subalgebra.coe_algebraMap]
+      rw [← hb, mul_comm c.val]
     refine ⟨_, Submodule.mem_span_singleton.mpr ⟨b, rfl⟩, m * t, ?_⟩
     rw [← IsLocalizedModule.mk_eq_mk', hbm]
     exact LocalizedModule.mk_cancel_common_left m t c
