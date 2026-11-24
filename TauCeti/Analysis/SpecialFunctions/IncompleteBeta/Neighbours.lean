@@ -75,10 +75,8 @@ theorem incompleteBetaKernel_add_snd_one {ξ : ℂ} (hξ : -ξ ∈ slitPlane) (v
     rw [e₁, e₂, sub_sub_sub_comm, sub_conj, sub_conj, log_im, log_im]
     push_cast
     field_simp
-  · have hd := ((hasStrictDerivAt_log (hmemS.1 hz)).hasDerivAt.comp z (hasDerivAt_neg z)).sub
-      ((hasStrictDerivAt_log (h1S hz)).hasDerivAt.comp z ((hasDerivAt_id z).const_sub 1))
-    convert hd using 1
-    · rfl
+  · convert ((hasDerivAt_neg z).clog (hmemS.1 hz)).sub
+      (((hasDerivAt_id' z).const_sub 1).clog (h1S hz)) using 1
     have := h0 hz
     have := h1 hz
     rw [zpow_neg_one, zpow_neg_one]
@@ -115,8 +113,7 @@ theorem incompleteBetaKernel_add_snd_one_left {ξ : ℂ} (hξ : ξ ∈ slitPlane
     push_cast
     field_simp
   · have := slitPlane_ne_zero hz
-    convert (hasStrictDerivAt_log hz).hasDerivAt.sub (hasDerivAt_id z) using 1
-    · rfl
+    convert ((hasDerivAt_id' z).clog hz).sub (hasDerivAt_id' z) using 1
     rw [zpow_one, zpow_neg_one]
     field_simp
   · exact ((continuousOn_const.sub continuousOn_id).zpow₀ 1 fun _ _ => Or.inr zero_le_one).mul

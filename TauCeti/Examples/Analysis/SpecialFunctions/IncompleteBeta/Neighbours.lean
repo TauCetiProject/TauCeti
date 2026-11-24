@@ -26,16 +26,18 @@ private theorem pos : (0 : ℝ) < 1 / 3 := by norm_num
 
 private theorem sum_lt : (1 / 3 : ℝ) + 1 / 3 < 1 := by norm_num
 
+private theorem sin_ratio : Real.sin (π * (1 / 3)) / Real.sin (π * (1 - 1 / 3 - 1 / 3)) = 1 := by
+  rw [show (1 : ℝ) - 1 / 3 - 1 / 3 = 1 / 3 by norm_num,
+    div_self (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by linarith [Real.pi_pos])).ne']
+
 -- At `s = t = 1/3` the complex slope is `e^{πi/3}`.
 example : complexSlope (1 / 3) (1 / 3) = exp (↑(π / 3) * I) := by
-  rw [complexSlope_def, show (1 : ℝ) - 1 / 3 - 1 / 3 = 1 / 3 by norm_num,
-    div_self (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by linarith [Real.pi_pos])).ne']
+  rw [complexSlope_def, sin_ratio]
   simp [div_eq_mul_inv, mul_comm]
 
 /-- At `s = t = 1/3` the complex slope has modulus `1`. -/
 theorem norm_complexSlope_third : ‖complexSlope (1 / 3) (1 / 3)‖ = 1 := by
-  rw [norm_complexSlope pos pos sum_lt, show (1 : ℝ) - 1 / 3 - 1 / 3 = 1 / 3 by norm_num,
-    div_self (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by linarith [Real.pi_pos])).ne']
+  rw [norm_complexSlope pos pos sum_lt, sin_ratio]
 
 /-- At `s = t = 1/3` the complex slope has imaginary part `√3 / 2`. -/
 theorem im_complexSlope_third : (complexSlope (1 / 3) (1 / 3)).im = √3 / 2 := by
