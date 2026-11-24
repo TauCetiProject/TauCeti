@@ -15,11 +15,13 @@ public import TauCeti.CategoryTheory.Sites.JointlySurjective
 # Étale sheaves on a field as continuous discrete Galois sets
 
 Let `K` be a field with separable closure `Ω`. Étale sheaves on `Spec K` are sheaves on finite
-continuous `Gal(Ω/K)`-sets for the topology `TauCeti.FiniteEtaleScheme.galoisTopology K Ω`
-transported from finite étale `K`-schemes (`TauCeti.FiniteEtaleScheme.galoisSheafEquiv`). This
-file shows that this topology is the jointly surjective topology
+étale `K`-schemes (`TauCeti.FiniteEtaleScheme.fieldSheafEquiv`), and Galois theory transports
+their topology to the topology `TauCeti.FiniteEtaleScheme.galoisTopology K Ω` on finite continuous
+`Gal(Ω/K)`-sets. This file shows that this topology is the jointly surjective topology
 `ContAction.jointlySurjectiveTopology Gal(Ω/K)` (`TauCeti.FiniteEtaleScheme.galoisTopology_eq`),
-and composes with `ContAction.sheafEquiv`, which identifies sheaves of sets for the jointly
+so that étale sheaves on `Spec K` are sheaves for the jointly surjective topology
+(`TauCeti.FiniteEtaleScheme.jointlySurjectiveSheafEquiv`). It then composes with
+`ContAction.sheafEquiv`, which identifies sheaves of sets for the jointly
 surjective topology with `Gal(Ω/K)`-sets whose stabilizers are open. The result,
 `TauCeti.VanishingCycles.fieldSheavesEquiv K Ω`, identifies étale sheaves of sets on `Spec K`
 with continuous discrete `Gal(Ω/K)`-sets.
