@@ -79,6 +79,7 @@ variable {M : Type*} [AddCommGroup M]
 /-- An isotropic 10-sequence for a `ℤ`-valued bilinear form `B`: ten vectors `f₁, …, f₁₀` with
 `fᵢ · fⱼ = 1 - δᵢⱼ`, together with a vector `δ` such that `3δ = f₁ + ⋯ + f₁₀`. The vectors are
 indexed by `Fin 10`, so `f i` is `fᵢ₊₁`. -/
+@[ext]
 structure IsotropicTenSequence (B : LinearMap.BilinForm ℤ M) where
   /-- The ten isotropic vectors, `f i` being `fᵢ₊₁`. -/
   f : Fin 10 → M
@@ -102,27 +103,18 @@ theorem apply_f_self (i : Fin 10) : B (s.f i) (s.f i) = 0 := by
 theorem apply_f_f_of_ne {i j : Fin 10} (h : i ≠ j) : B (s.f i) (s.f j) = 1 := by
   simp [s.apply_f_f, h]
 
-private theorem sum_ite_eq_zero_else_one {n : ℕ} (i : Fin n) :
-    ∑ j : Fin n, (if i = j then (0 : ℤ) else 1) = n - 1 := by
-  simp only [Finset.sum_ite, Finset.filter_ne, Finset.sum_const_zero, Finset.sum_const,
-    Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, Fintype.card_fin,
-    zero_add, nsmul_eq_mul, mul_one]
-  have := i.pos
-  omega
-
 /-- `fᵢ · δ = 3`. -/
 @[simp]
 theorem apply_f_δ (i : Fin 10) : B (s.f i) s.δ = 3 := by
   have h := congrArg (B (s.f i)) s.three_smul_δ
-  simp only [map_smul, map_sum, s.apply_f_f, sum_ite_eq_zero_else_one, smul_eq_mul] at h
+  simp [s.apply_f_f, Finset.sum_ite, Finset.filter_ne] at h
   omega
 
 /-- `δ · fᵢ = 3`. -/
 @[simp]
 theorem apply_δ_f (i : Fin 10) : B s.δ (s.f i) = 3 := by
   have h := congrArg (fun x ↦ B x (s.f i)) s.three_smul_δ
-  simp only [map_smul, map_sum, LinearMap.smul_apply, LinearMap.sum_apply, s.apply_f_f,
-    @eq_comm _ _ i, sum_ite_eq_zero_else_one, smul_eq_mul] at h
+  simp [LinearMap.sum_apply, s.apply_f_f, @eq_comm _ _ i, Finset.sum_ite, Finset.filter_ne] at h
   omega
 
 /-- `δ · δ = 10`. -/
@@ -480,15 +472,16 @@ def ofGram (g : Fin 9 → M) (δ : M) (hgg : ∀ i j, B (g i) (g j) = if i = j t
       cases j using Fin.lastCases with
       | last =>
         simp only [Fin.snoc_last]
-        simp [map_sum, LinearMap.sum_apply, hgg, hgδ, hδg, hδδ, sum_ite_eq_zero_else_one]
+        simp [map_sum, LinearMap.sum_apply, hgg, hgδ, hδg, hδδ, Finset.sum_ite, Finset.filter_ne]
       | cast j =>
         simp only [Fin.snoc_last, Fin.snoc_castSucc, (Fin.castSucc_ne_last j).symm, ite_false]
-        simp [map_sum, LinearMap.sum_apply, hgg, hδg, @eq_comm _ _ j, sum_ite_eq_zero_else_one]
+        simp [map_sum, LinearMap.sum_apply, hgg, hδg, @eq_comm _ _ j, Finset.sum_ite,
+          Finset.filter_ne]
     | cast i =>
       cases j using Fin.lastCases with
       | last =>
         simp only [Fin.snoc_last, Fin.snoc_castSucc, Fin.castSucc_ne_last i, ite_false]
-        simp [map_sum, hgg, hgδ, sum_ite_eq_zero_else_one]
+        simp [map_sum, hgg, hgδ, Finset.sum_ite, Finset.filter_ne]
       | cast j => simp [hgg]
   three_smul_δ := by
     rw [Fin.sum_univ_castSucc]
