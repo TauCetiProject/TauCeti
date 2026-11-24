@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+public import Mathlib.Analysis.Fourier.FourierTransform
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # Cutting off a Schwartz function
@@ -47,7 +49,10 @@ derivatives are bounded independently of `R`, so its `(k, n)` seminorm is `O(R�
 * `SchwartzMap.tendsto_smulLeftCLM_contDiffBump`: the truncations `φ (R⁻¹ ·) • f` by a
   `ContDiffBump` converge to `f` as `R → ∞`, for complex-valued multipliers.
 * `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (R⁻¹ ·)` of a `ContDiffBump`, as a
-  complex Schwartz function.
+  complex Schwartz function, and `ContDiffBump.mul_lowPassSchwartz_of_support_subset`: it fixes
+  every symbol supported in the closed ball of radius `R φ.rIn`.
+* `ContDiffBump.fourierInv_lowPassSchwartz_apply`: its kernel is the `L¹`-normalised dilate
+  `R^n 𝓕⁻ φ (R ·)` of the kernel at scale `1`.
 * Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 * `IsCompact.exists_schwartzMap_cutoff`: a compact subset `K` of an open set `U` has a compactly
@@ -243,7 +248,7 @@ theorem hasSum_smulLeftCLM_latticeBump_sub (f : 𝓢(EuclideanSpace ℝ (Fin n),
   have hK : 0 ≤ K := Finset.sum_nonneg fun i _ ↦ by have := hB0 i; positivity
   set R := √n + K / ε + 1
   have hRn : 0 < R - √n := by have := div_nonneg hK hε.le; simp only [R]; linarith
-  filter_upwards [Filter.eventually_ge_atTop (finite_setOf_norm_latticePoint_lt R).toFinset]
+  filter_upwards [Filter.eventually_ge_atTop (finite_setOf_norm_latticePoint_le R).toFinset]
     with s hs
   rw [schwartzSeminormFamily_apply]
   -- The partial sum is `f` times `∑_{j ∈ s} χ(· - j) - 1`, which vanishes on `‖y‖ < R - √n`.
@@ -253,7 +258,7 @@ theorem hasSum_smulLeftCLM_latticeBump_sub (f : 𝓢(EuclideanSpace ℝ (Fin n),
     (B := fun i ↦ B i * (1 + (n : ℝ)) ^ n * S + 1) (fun i y ↦ ?_) hRn (fun y hy ↦ ?_)
     (f := f) (fun y ↦ ?_) k j).trans_lt ?_
   · exact norm_iteratedFDeriv_sum_latticeBump_sub_sub_one_le (hB i) s y
-  · simp [sum_latticeBump_sub_eq_one (fun j hj ↦ hs ((Set.Finite.mem_toFinset _).2 hj))
+  · simp [sum_latticeBump_sub_eq_one (fun j hj ↦ hs ((Set.Finite.mem_toFinset _).2 hj.le))
       (by linarith : ‖y‖ + √n < R)]
   · simp [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub _),
       Finset.sum_smul, sub_smul]
@@ -293,6 +298,29 @@ theorem coe_lowPassSchwartz_eq_comp {R : ℝ} (hR : R ≠ 0) :
     ⇑(φ.lowPassSchwartz hR) = fun ξ ↦ φ.lowPassSchwartz one_ne_zero (R⁻¹ • ξ) := by
   ext ξ
   simp
+
+/-- **The low-pass symbol fixes low-frequency symbols.** Multiplication by `φ (R⁻¹ ·)`, `R > 0`,
+fixes every function supported in the closed ball of radius `R φ.rIn`, where `φ (R⁻¹ ·) = 1`. -/
+theorem mul_lowPassSchwartz_of_support_subset {R : ℝ} (hR : 0 < R) {g : E → ℂ}
+    (hg : Function.support g ⊆ closedBall 0 (R * φ.rIn)) :
+    g * ⇑(φ.lowPassSchwartz hR.ne') = g := by
+  ext ξ
+  by_cases hξ : g ξ = 0
+  · simp [hξ]
+  rw [Pi.mul_apply, lowPassSchwartz_apply, φ.one_of_mem_closedBall, Complex.ofReal_one, mul_one]
+  rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, inv_mul_le_iff₀ hR]
+  exact mem_closedBall_zero_iff.1 (hg hξ)
+
+open FourierTransform in
+/-- The kernel `𝓕⁻ (φ (R⁻¹ ·))` of the low-pass symbol at a scale `R > 0` is the
+`L¹`-normalised dilate `R^n 𝓕⁻ φ (R ·)` of the kernel at scale `1`, where `n` is the dimension. -/
+theorem fourierInv_lowPassSchwartz_apply {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (φ : ContDiffBump (0 : E)) {R : ℝ} (hR : 0 < R) (y : E) :
+    𝓕⁻ (⇑(φ.lowPassSchwartz hR.ne')) y =
+      (R ^ Module.finrank ℝ E) • 𝓕⁻ (⇑(φ.lowPassSchwartz one_ne_zero)) (R • y) := by
+  rw [coe_lowPassSchwartz_eq_comp, TauCeti.fourierInv_comp_smul, inv_inv, inv_pow, abs_inv,
+    inv_inv, abs_of_pos (by positivity)]
 
 end ContDiffBump
 

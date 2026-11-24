@@ -1230,12 +1230,18 @@ theorem Rad_pow_eq_normalClosure (hι : Function.Injective ι) {n : ℕ}
   rw [Rad_def, hV, I_singleton_comp hι]
   simp [Set.range_unique]
 
+/-- In a group `H` with unique roots, the equation `u ^ n * w ^ n = 1` (`n ≠ 0`) in two words `u`
+and `w` has the same solutions as `u * w = 1`: the only `n`-th root of `(w ^ n)⁻¹` is `w⁻¹`. -/
+theorem V_pow_mul_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (u w : GX G X) :
+    V ι {u ^ n * w ^ n} = V ι {u * w} := by
+  ext v
+  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+
 /-- In a group `H` with unique roots, the equation `x ^ n * b ^ n = 1` (`n ≠ 0`) has the same
 solutions as `x * b = 1`: the only `n`-th root of `(b ^ n)⁻¹` is `b⁻¹`. -/
 theorem V_pow_mul_inl_pow [HasUniqueRoots H] {n : ℕ} (hn : n ≠ 0) (x : X) (b : G) :
     V ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = V ι {inr (of x) * inl b} := by
-  ext v
-  simp [mul_eq_one_iff_eq_inv, ← inv_pow, pow_left_inj hn]
+  rw [map_pow, V_pow_mul_pow hn]
 
 /-- In a group `H` with unique roots, the equations `x ^ n * b ^ n = 1` (`n ≠ 0`) and `x * b = 1`
 have the same radical. -/

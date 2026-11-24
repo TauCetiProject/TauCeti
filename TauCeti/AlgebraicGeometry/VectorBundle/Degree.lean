@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
-public import TauCeti.AlgebraicGeometry.Curves.Cohomology
+public import TauCeti.AlgebraicGeometry.Curves.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree

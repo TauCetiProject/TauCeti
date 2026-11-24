@@ -161,8 +161,9 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq [FiniteD
       Injective (mfderiv 𝓘(ℂ, E) 𝓘(ℂ, EuclideanSpace ℂ (Fin n)) ι z) :=
     injective_mvfderiv_iff.1 (hinj_mvC z)
   have hinj_mfR (z : (Projectivization.affineChart i).symm ⁻¹' X) :
-      Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℂ (Fin n)) ι z) :=
-    injective_mfderiv_restrictScalars ℝ (hinj_mfC z)
+      Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, EuclideanSpace ℂ (Fin n)) ι z) := by
+    have h := injective_mfderiv_restrictScalars ℝ (hinj_mfC z)
+    rwa [modelWithCornersSelf_restrictScalars, modelWithCornersSelf_restrictScalars] at h
   -- Step 3: choose a generic centre `c` so `ρ(z) = ‖ι z - c‖²` is Morse on `Z`, and identify the
   -- pullback `F ∘ j` of `affineChartInvOneAddDistSq i c` with `(1 + ρ)⁻¹`.
   let _ : InnerProductSpace ℝ (EuclideanSpace ℂ (Fin n)) := InnerProductSpace.rclikeToReal ℂ _
