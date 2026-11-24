@@ -259,20 +259,17 @@ theorem exists_eq_C_mul_of_order_taylor_eq (hf : f.IsEntire) (hg : g.IsEntire)
   have heq : f₁ = g₁ := hf₁.eq_of_order_taylor_eq hg₁ hf₁_const hg₁_const hord1
   have hord0 : f.order.toNat = g.order.toNat := by
     simpa [_root_.PowerSeries.taylor_zero] using congrArg ENat.toNat (h 0)
-  have hcf0 : coeff f.order.toNat f ≠ 0 := _root_.PowerSeries.coeff_order hf0
-  have hcg0 : coeff g.order.toNat g ≠ 0 := _root_.PowerSeries.coeff_order hg0
-  refine ⟨coeff f.order.toNat f * (coeff g.order.toNat g)⁻¹,
-    mul_ne_zero hcf0 (inv_ne_zero hcg0), ?_⟩
-  have hcg : C (coeff g.order.toNat g) * C (coeff g.order.toNat g)⁻¹ = (1 : PowerSeries K) := by
+  set cf : K := coeff f.order.toNat f
+  set cg : K := coeff g.order.toNat g
+  have hcf0 : cf ≠ 0 := _root_.PowerSeries.coeff_order hf0
+  have hcg0 : cg ≠ 0 := _root_.PowerSeries.coeff_order hg0
+  refine ⟨cf * cg⁻¹, mul_ne_zero hcf0 (inv_ne_zero hcg0), ?_⟩
+  have hcg : C cg * C cg⁻¹ = (1 : PowerSeries K) := by
     rw [← map_mul, mul_inv_cancel₀ hcg0, map_one]
-  calc f = C (coeff f.order.toNat f) * X ^ f.order.toNat * f₁ := hff₁
-    _ = (C (coeff g.order.toNat g) * C (coeff g.order.toNat g)⁻¹) *
-          (C (coeff f.order.toNat f) * X ^ f.order.toNat * f₁) := by rw [hcg, one_mul]
-    _ = C (coeff f.order.toNat f * (coeff g.order.toNat g)⁻¹) *
-          (C (coeff g.order.toNat g) * X ^ g.order.toNat * g₁) := by
-        rw [heq, hord0, map_mul]
-        ring
-    _ = C (coeff f.order.toNat f * (coeff g.order.toNat g)⁻¹) * g := by rw [← hgg₁]
+  conv_lhs => rw [hff₁, heq, hord0]
+  conv_rhs => rhs; rw [hgg₁]
+  rw [map_mul]
+  linear_combination (-(C cf * X ^ g.order.toNat * g₁)) * hcg
 
 /-- **Finitely many zeros, normalised form.** Let `f` be an entire series with constant coefficient
 `1` over an algebraically closed complete ultrametric normed field. If all zeros of `f` lie in the

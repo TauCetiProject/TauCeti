@@ -323,11 +323,11 @@ theorem IsEntire.exists_eq_C_mul_X_pow_mul_with_constantCoeff_eq_one (hf : f.IsE
     simpa [coeff_X_pow_mul', coeff_zero_eq_constantCoeff_apply] using
       congrArg (coeff f.order.toNat) hfg₀
   refine ⟨C (constantCoeff g₀)⁻¹ * g₀, (isEntire_C _).mul hg₀, by simp [hg₀0], ?_, fun x hx0 ↦ ?_⟩
-  · rw [hcoeff]
-    calc f = X ^ f.order.toNat * g₀ := hfg₀
-      _ = (C (constantCoeff g₀) * C (constantCoeff g₀)⁻¹) * (X ^ f.order.toNat * g₀) := by
-          rw [← map_mul, mul_inv_cancel₀ hg₀0, map_one, one_mul]
-      _ = C (constantCoeff g₀) * X ^ f.order.toNat * (C (constantCoeff g₀)⁻¹ * g₀) := by ring
+  · have hcg : C (constantCoeff g₀) * C (constantCoeff g₀)⁻¹ = (1 : K⟦X⟧) := by
+      rw [← map_mul, mul_inv_cancel₀ hg₀0, map_one]
+    rw [hcoeff]
+    conv_lhs => rw [hfg₀]
+    linear_combination (-(X ^ f.order.toNat * g₀)) * hcg
   · rw [hg₀.order_taylor_C_mul (inv_ne_zero hg₀0) x]
     conv_rhs => rw [hfg₀]
     rw [(isEntire_X.pow _).taylor_mul hg₀ x, order_mul, order_taylor_X_pow_of_ne_zero hx0,

@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 public import TauCeti.RingTheory.PowerSeries.Taylor
 import Mathlib.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Analysis.Normed.Ring.Basic
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Taylor translation of entire power series
@@ -110,7 +111,7 @@ the order of its Taylor translates. -/
 theorem IsEntire.order_taylor_smul [NoZeroDivisors R] (hf : f.IsEntire) {c : R} (hc : c ≠ 0)
     (a : R) : (taylor a (c • f)).order = (taylor a f).order := by
   rw [hf.taylor_smul, smul_eq_C_mul, order_mul,
-    not_ne_iff.mp (mt order_ne_zero_iff_constCoeff_eq_zero.mp (by simpa using hc)), zero_add]
+    order_eq_zero_iff_constantCoeff_ne_zero.mpr (by simpa using hc), zero_add]
 
 /-- Over a ring with no zero divisors, multiplying an entire series on the left by a nonzero
 constant series preserves the order of its Taylor translates. -/

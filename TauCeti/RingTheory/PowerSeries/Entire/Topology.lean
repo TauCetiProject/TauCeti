@@ -93,7 +93,7 @@ when its factors are not units.
 * `TauCeti.PowerSeries.IsEntire.hasProd_iff`,
   `TauCeti.PowerSeries.IsEntire.multipliable_iff`,
   `TauCeti.PowerSeries.IsEntire.restrict_tprod`,
-  `Multipliable.evalAt_tprod` and
+  `TauCeti.PowerSeries.IsEntire.evalAt_tprod` and
   `TauCeti.PowerSeries.IsEntire.constantCoeff_tprod`: unconditional infinite products of entire
   series.
 * `TauCeti.PowerSeries.IsEntire.evalAt_hasProd`,
@@ -618,7 +618,7 @@ theorem evalAt_hasProd {ι A : Type*} [NormedCommRing A] [Algebra R A] [IsBounde
 
 /-- Evaluation at a point of a complete normed commutative algebra with bounded scalar action
 commutes with convergent infinite products of entire series. -/
-theorem _root_.Multipliable.evalAt_tprod {ι A : Type*} [NormedCommRing A] [Algebra R A]
+theorem evalAt_tprod {ι A : Type*} [NormedCommRing A] [Algebra R A]
     [IsBoundedSMul R A] [CompleteSpace A] {f : ι → IsEntire.subring R} (hf : Multipliable f)
     (b : A) :
     ((∏' i, f i : IsEntire.subring R) : R⟦X⟧).evalAt b = ∏' i, (f i : R⟦X⟧).evalAt b :=
@@ -655,9 +655,9 @@ theorem gaussNorm_sub_one_le_of_hasProd {ι : Type*} {f : ι → IsEntire.subrin
     (hB : B ≤ 1) (h : ∀ i, ((f i : R⟦X⟧) - 1).gaussNorm norm r ≤ B) :
     ((g : R⟦X⟧) - 1).gaussNorm norm r ≤ B := by
   rcases hr.eq_or_lt with rfl | hr0
-  · simpa only [_root_.PowerSeries.gaussNorm_at_zero, map_sub, map_one] using
+  · simpa only [_root_.PowerSeries.gaussNorm_zero_right, map_sub, map_one] using
       (hasProd_constantCoeff hf).norm_sub_one_le hB0 hB fun i ↦ by
-        simpa only [_root_.PowerSeries.gaussNorm_at_zero, map_sub, map_one] using h i
+        simpa only [_root_.PowerSeries.gaussNorm_zero_right, map_sub, map_one] using h i
   · have : Fact (0 < r) := ⟨hr0⟩
     simpa only [norm_restrict_sub_one ⟨r, hr0⟩] using
       (hasProd_iff.mp hf ⟨r, hr0⟩).norm_sub_one_le hB0 hB fun i ↦ by
@@ -670,9 +670,9 @@ theorem gaussNorm_sub_one_lt_of_hasProd {ι : Type*} {f : ι → IsEntire.subrin
     (hε : ε ≤ 1) (h : ∀ i, ((f i : R⟦X⟧) - 1).gaussNorm norm r < ε) :
     ((g : R⟦X⟧) - 1).gaussNorm norm r < ε := by
   rcases hr.eq_or_lt with rfl | hr0
-  · simpa only [_root_.PowerSeries.gaussNorm_at_zero, map_sub, map_one] using
+  · simpa only [_root_.PowerSeries.gaussNorm_zero_right, map_sub, map_one] using
       (hasProd_constantCoeff hf).norm_sub_one_lt hε0 hε fun i ↦ by
-        simpa only [_root_.PowerSeries.gaussNorm_at_zero, map_sub, map_one] using h i
+        simpa only [_root_.PowerSeries.gaussNorm_zero_right, map_sub, map_one] using h i
   · have : Fact (0 < r) := ⟨hr0⟩
     simpa only [norm_restrict_sub_one ⟨r, hr0⟩] using
       (hasProd_iff.mp hf ⟨r, hr0⟩).norm_sub_one_lt hε0 hε fun i ↦ by

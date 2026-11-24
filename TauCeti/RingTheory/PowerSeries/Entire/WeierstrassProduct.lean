@@ -125,8 +125,7 @@ private theorem encard_sigma_zeros_eq {f : K⟦X⟧} (hf : f.IsEntire) (hf0 : f 
       rw [Set.encard, ENat.card_congr e, ENat.card_eq_coe_fintype_card, Fintype.card_fin,
         ENat.natCast_toNat (hf.order_taylor_ne_top hf0 y)]
     · have hord0 : (_root_.PowerSeries.taylor y f).order = 0 :=
-        not_not.mp (order_ne_zero_iff_constCoeff_eq_zero.not.mpr
-          (by rwa [constantCoeff_taylor]))
+        order_eq_zero_iff_constantCoeff_ne_zero.mpr (by rwa [constantCoeff_taylor])
       rw [hord0, Set.encard_eq_zero, Set.eq_empty_iff_forall_notMem]
       intro p hp
       exact hyz (hp ▸ p.1.property.2)

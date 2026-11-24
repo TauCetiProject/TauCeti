@@ -57,7 +57,7 @@ enumeration-independent unconditional infinite product in `PowerSeries.IsEntire.
   `multipliable_polynomialHom_one_sub_C_mul_X_of_tendsto_cofinite_zero`): unconditional
   convergence of `∏' i, (1 - cᵢ X)` in `PowerSeries.IsEntire.subring R` iff `c → 0` cofinitely.
 * `TauCeti.PowerSeries.IsEntire.constantCoeff_tprod_one_sub_polynomialHom_C_mul_X`,
-  `Filter.Tendsto.hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X`,
+  `TauCeti.PowerSeries.IsEntire.hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X`,
   `TauCeti.PowerSeries.IsEntire.gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_le`, and
   `TauCeti.PowerSeries.IsEntire.gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_lt`:
   constant coefficient, pointwise evaluation, and closed/strict Gauss-norm bounds for
@@ -224,7 +224,7 @@ private theorem coe_polynomialHom_one_sub_C_mul_X (c : R) :
 commutative ring `R`, if `c → 0` along the cofinite filter, then at every element `b` of a
 complete normed commutative `R`-algebra with bounded scalar action, evaluating `∏' i, (1 - cᵢ X)`
 gives the unconditional product `∏' i, (1 - cᵢ • b)`. -/
-theorem _root_.Filter.Tendsto.hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X
+theorem hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X
     [CompleteSpace R] {A ι : Type*} [NormedCommRing A] [Algebra R A] [IsBoundedSMul R A]
     [CompleteSpace A] {c : ι → R} (hc : Tendsto c cofinite (𝓝 0)) (b : A) :
     HasProd (fun i ↦ 1 - c i • b)
@@ -559,7 +559,7 @@ theorem _root_.PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_s
     · have hfib : {i : ι | α i = x} = {i : ι | i.1 = ⟨x, hx⟩} := by
         ext i
         simp [α, Subtype.ext_iff]
-      rw [hfib, TauCeti.encard_sigma_fst_fiber_eq, ENat.card_eq_coe_fintype_card,
+      rw [hfib, Set.encard_setOf_sigma_fst_eq, ENat.card_eq_coe_fintype_card,
         Fintype.card_fin, ENat.natCast_toNat_eq_self.mpr (hf.order_taylor_ne_top hf0 x)]
     · have hemp : {i : ι | α i = x} = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun i hi ↦
         hx (hi ▸ i.1.property)
@@ -599,7 +599,7 @@ theorem exists_isEntire_constantCoeff_eq_one_order_taylor_eq
   refine ⟨F, _root_.PowerSeries.IsEntire.mem_subring.mp F.property, by simp [F], fun x ↦ ?_⟩
   have hord := order_taylor_tprod_polynomialHom_one_sub_C_inv_mul_X (L := K) hfin hα x
   simp only [Algebra.algebraMap_self, _root_.PowerSeries.map_id, id_eq, RingHom.id_apply] at hord
-  rw [hord, TauCeti.encard_sigma_fst_fiber_eq, ENat.card_eq_coe_fintype_card, Fintype.card_fin]
+  rw [hord, Set.encard_setOf_sigma_fst_eq, ENat.card_eq_coe_fintype_card, Fintype.card_fin]
 
 /-- **Existence of an entire series with prescribed zero divisor.** Given `m : K → ℕ` whose support
 meets every closed disc in a finite set, there exists a nonzero entire series over `K` whose Taylor
