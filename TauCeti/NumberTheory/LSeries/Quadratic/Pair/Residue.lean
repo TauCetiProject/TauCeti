@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Basic
 public import TauCeti.Analysis.Contour.Residue.Basic
-import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # Regularity and poles of the four-factor Dirichlet L-function product
