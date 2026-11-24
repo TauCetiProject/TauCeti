@@ -14,6 +14,7 @@ import Mathlib.Probability.Independence.InfinitePi
 import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.MeasureTheory.Measure.Prod
+import TauCeti.Probability.Distributions.Bernoulli.Basic
 import TauCeti.Probability.Distributions.Bernoulli.Measurability
 import TauCeti.Probability.Independence.Map
 import TauCeti.Probability.Kernel.Composition.MeasureCompProd
@@ -44,8 +45,8 @@ Borel space:
 * Connecting the general marking and thinning results in `Poisson.Marking` with the temporal
   count-splitting API in `Poisson.Splitting` yields simultaneous count-path additivity and
   interval and increment Poisson count laws (`ae_nat_count_eq_add_compl_of_ae_map_fst`,
-  `ae_nat_count_eq_add_compl_of_compProd`, `hasLaw_nat_count_Ioc_of_compProd`,
-  `hasLaw_nat_count_sub_of_compProd`).
+  `ae_nat_count_eq_add_compl_of_compProd`, `hasLaw_nat_count_prod_Ioc_of_compProd`,
+  `hasLaw_nat_count_prod_sub_of_compProd`).
 
 ## References
 
@@ -106,7 +107,7 @@ theorem ae_nat_count_eq_add_compl_of_compProd [IsLocallyFiniteMeasure Λ] [IsFin
 /-- Each measurable mark-set interval count of a temporal Poisson random measure with
 composition-product intensity `Λ ⊗ₘ κ` has Poisson law with parameter `∫⁻ x in Ioc s t, κ x B ∂Λ`,
 including empty intervals and atomic intensities. -/
-theorem hasLaw_nat_count_Ioc_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
+theorem hasLaw_nat_count_prod_Ioc_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
     (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {B : Set E} (hB : MeasurableSet B) (s t : ℝ≥0) :
     HasLaw (fun ω => ⌊(M ω (Ioc s t ×ˢ B)).toNNReal⌋₊)
       (poissonMeasure (∫⁻ x in Ioc s t, κ x B ∂Λ).toNNReal) P := by
@@ -116,7 +117,7 @@ theorem hasLaw_nat_count_Ioc_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKe
 /-- Each measurable mark-set count increment over `(s, t]` of a temporal Poisson random measure
 with composition-product intensity `Λ ⊗ₘ κ` has Poisson law with parameter
 `∫⁻ x in Ioc s t, κ x B ∂Λ`. -/
-theorem hasLaw_nat_count_sub_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
+theorem hasLaw_nat_count_prod_sub_of_compProd [IsLocallyFiniteMeasure Λ] [IsFiniteKernel κ]
     (hM : IsPoissonRandomMeasure P M (Λ ⊗ₘ κ)) {B : Set E} (hB : MeasurableSet B)
     {s t : ℝ≥0} (hst : s ≤ t) :
     HasLaw (fun ω => ⌊(M ω (Ioc 0 t ×ˢ B)).toNNReal⌋₊ -
@@ -277,20 +278,8 @@ theorem IsPoissonRandomMeasure.exists_bernoulli_thinning_of_measurable
       IndepFun (fun z ↦ z.2.1) (fun z ↦ z.2.2) (P ⊗ₘ η.comap N hN.measurable) ∧
       ∀ᵐ z ∂(P ⊗ₘ η.comap N hN.measurable), z.2.1 + z.2.2 = N z.1 := by
   obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := exists_bool_thinning hN (Kernel.bernoulli true false hp)
-  have htrue : (fun x ↦ Kernel.bernoulli true false hp x {true}) =
-      fun x ↦ (unitInterval.toNNReal (p x) : ℝ≥0∞) :=
-    funext fun x ↦ by
-      rw [Kernel.bernoulli_apply,
-        bernoulliMeasure_apply_of_mem_of_notMem (p x) (measurableSet_singleton true) rfl
-          (by decide)]
-  have hfalse : (fun x ↦ Kernel.bernoulli true false hp x {false}) =
-      fun x ↦ ((1 - unitInterval.toNNReal (p x) : ℝ≥0) : ℝ≥0∞) :=
-    funext fun x ↦ by
-      rw [Kernel.bernoulli_apply,
-        bernoulliMeasure_apply_of_notMem_of_mem (p x) (measurableSet_singleton false)
-          (by decide) rfl,
-        unitInterval.toNNReal_symm]
-  exact ⟨η, hη, htrue ▸ h₁, hfalse ▸ h₂, hind, hadd⟩
+  simp only [Kernel.bernoulli_apply, bernoulliMeasure_apply_singleton_bool, ↓reduceIte] at h₁ h₂
+  exact ⟨η, hη, h₁, h₂, hind, hadd⟩
 
 /-- **Constant-probability Bernoulli thinning of an uncoloured Poisson random measure**, including
 the boundary probabilities `p = 0` and `p = 1` and zero ground intensity `Λ = 0`. -/

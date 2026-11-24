@@ -10,17 +10,21 @@ public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.Probability.GeneratingFunction
+import TauCeti.Topology.UnitInterval.NNReal
 
 /-!
 # Elementary theory of the Bernoulli distribution
 
 This file computes the elementary moments and transforms of the real-valued Bernoulli law
 `Ber((1 : ℝ), 0, p)`, together with the probability-generating function of the native ℕ-valued law
-`Ber((1 : ℕ), 0, p)`. It uses Mathlib's convention that the value `1` has mass `p` and the value
-`0` has mass `1 - p`.
+`Ber((1 : ℕ), 0, p)`, and singleton evaluation of the Boolean Bernoulli law `Ber(true, false, p)`.
+It uses Mathlib's convention that the value `1` (or `true`) has mass `p` and the value `0` (or
+`false`) has mass `1 - p`.
 
 ## Main results
 
+* `ProbabilityTheory.bernoulliMeasure_apply_singleton_bool` evaluates `Ber(true, false, p)` on
+  singleton sets;
 * `integral_id_bernoulliMeasure` and `variance_id_bernoulliMeasure` give the mean and variance;
 * `integral_of_hasLaw_bernoulliMeasure` and `variance_of_hasLaw_bernoulliMeasure` give the
   corresponding random-variable statements;
@@ -38,7 +42,20 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory
 
-open scoped ProbabilityTheory unitInterval
+open scoped ProbabilityTheory unitInterval NNReal ENNReal
+
+namespace ProbabilityTheory
+
+/-- Evaluating `bernoulliMeasure true false p` at `{b}` gives `p` for `true` and `1 - p` for
+`false`. -/
+theorem bernoulliMeasure_apply_singleton_bool (p : unitInterval) (b : Bool) :
+    bernoulliMeasure true false p {b} =
+      ((if b then unitInterval.toNNReal p else 1 - unitInterval.toNNReal p : ℝ≥0) : ENNReal) := by
+  cases b
+  · simp [unitInterval.toNNReal_symm]
+  · simp
+
+end ProbabilityTheory
 
 namespace TauCeti
 

@@ -78,9 +78,7 @@ theorem IsPoissonRandomMeasure.ae_isIntegerValued_restrict [MeasurableSpace.Coun
     h.ae_exists_eq_natCast ((hmeas B hB).inter hA)
       ((measure_mono inter_subset_right).trans_lt hfin)
   filter_upwards [(ae_ball_iff hcount).2 hcounts] with ω hω
-  refine Measure.isIntegerValued_of_isPiSystem hgen hpi (fun B hB => ?_) ?_
-  · simpa only [Measure.restrict_apply (hmeas B hB)] using hω B hB
-  · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using hω univ huniv
+  exact Measure.isIntegerValued_restrict_of_isPiSystem hgen hpi huniv hω
 
 /-- On a countably generated measurable space, a Poisson random measure with sigma-finite
 intensity is almost surely integer-valued, simultaneously on all measurable sets. -/

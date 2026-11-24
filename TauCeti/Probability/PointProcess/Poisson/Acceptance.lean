@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Probability.Distributions.Bernoulli.Measurability
 public import TauCeti.Topology.UnitInterval.NNReal
+import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
 # Poisson acceptance regions and monotone coupling

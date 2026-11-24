@@ -131,13 +131,11 @@ theorem measurableSet_isIntegerValued_and_forall_ne_top
       exact hint.exists_eq_natCast ((hCm A hA).inter (hs n))
         ((measure_mono inter_subset_right).trans_lt (lt_top_iff_ne_top.mpr (hfin n)))
     · intro h
-      refine ⟨isIntegerValued_of_restrict hcover fun n => ?_, fun n => ?_⟩
-      · refine isIntegerValued_of_isPiSystem hgen hpi (fun A hA => ?_) ?_
-        · simpa only [Measure.restrict_apply (hCm A hA)] using h n A hA
-        · simpa only [Measure.restrict_apply MeasurableSet.univ, univ_inter] using h n univ huniv
-      · obtain ⟨k, hk⟩ := h n univ huniv
-        rw [univ_inter] at hk
-        simp [hk]
+      refine ⟨isIntegerValued_of_restrict hcover fun n =>
+        isIntegerValued_restrict_of_isPiSystem hgen hpi huniv (h n), fun n => ?_⟩
+      obtain ⟨k, hk⟩ := h n univ huniv
+      rw [univ_inter] at hk
+      simp [hk]
   rw [heq]
   refine MeasurableSet.iInter fun n => MeasurableSet.biInter hcount fun A hA =>
     MeasurableSet.iUnion fun k => ?_

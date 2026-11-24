@@ -41,9 +41,6 @@ The theorem is proved at two main levels of generality:
   constant mark kernel `Kernel.const X Q`, the intensity reduces to `Λ.prod Q`
   (`IsPoissonRandomMeasure.exists_isMarkovKernel_marking_prod`).
 
-We also record `ae_map_fst_restrict_univ_prod_add_compl_of_ae_map_fst`, splitting a marked
-realization recovering `N` along a measurable mark set and its complement.
-
 ## References
 
 * G. Last and M. Penrose, *Lectures on the Poisson Process*, Cambridge University Press,
@@ -126,44 +123,41 @@ theorem IsPoissonRandomMeasure.ae_map_fst_compProd_optionalTupleMarking
 
 end Enumeration
 
-section General
-
-variable {Ω X E : Type*} [MeasurableSpace Ω] [MeasurableSpace X] [MeasurableSpace E]
-  {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X} {κ : Kernel X E}
-
-/-- For any marked random measure `M` whose ground projection equals `N` almost surely and any
-measurable mark set `B`, projecting `M` restricted to `B` and `Bᶜ` recovers `N` as a sum almost
-surely. -/
-theorem ae_map_fst_restrict_univ_prod_add_compl_of_ae_map_fst
-    {M : Ω → Measure (X × E)} (hproj : ∀ᵐ ω ∂P, (M ω).map Prod.fst = N ω)
-    {B : Set E} (hB : MeasurableSet B) :
-    ∀ᵐ ω ∂P,
-      ((M ω).restrict (univ ×ˢ B)).map Prod.fst +
-        ((M ω).restrict (univ ×ˢ Bᶜ)).map Prod.fst = N ω := by
-  filter_upwards [hproj] with ω hω
-  rw [Set.univ_prod, Set.univ_prod, Set.preimage_compl,
-    ← Measure.map_add _ _ measurable_fst, Measure.restrict_add_restrict_compl (measurable_snd hB),
-    hω]
-
-end General
-
 section StandardBorel
 
 variable {Ω X E : Type*} [MeasurableSpace Ω]
   [MeasurableSpace X] [StandardBorelSpace X] [MeasurableSpace E]
   {P : Measure Ω} {N : Ω → Measure X} {Λ : Measure X} {κ : Kernel X E}
 
-private theorem ae_eq_sum_markingOfCover_enumeration [SigmaFinite Λ]
-    (h : IsPoissonRandomMeasure P N Λ) {s : ℕ → Set X}
-    (hs : ∀ n, MeasurableSet (s n)) (hΛ : ∀ n, Λ (s n) < ∞)
-    {e : Measure X → ℕ → Option X}
-    (hrec : ∀ μ : Measure X, μ.IsIntegerValued → (∀ n, μ (s n) ≠ ∞) →
-      μ = Measure.sum fun n => (e μ n).elim 0 Measure.dirac) :
-    ∀ᵐ ω ∂P, N ω = Measure.sum fun n => (e (N ω) n).elim 0 Measure.dirac := by
+private theorem exists_enumeration_ae_eq_sum_markingOfCover
+    (h : IsPoissonRandomMeasure P N Λ) (κ : Kernel X E) [IsMarkovKernel κ]
+    {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = univ)
+    (hΛ : ∀ n, Λ (s n) < ∞) :
+    SigmaFinite Λ ∧
+      ∃ (e : Measure X → ℕ → Option X) (he : Measurable e),
+        κ.markingOfCover hs hcover = (κ.optionalTupleMarking ℕ).comap e he ∧
+        ∀ᵐ ω ∂P, N ω = Measure.sum fun n => (e (N ω) n).elim 0 Measure.dirac := by
+  have hsf : SigmaFinite Λ :=
+    Measure.sigmaFinite_of_countable
+      (countable_range s) (forall_mem_range.2 hΛ) (by rwa [sUnion_range])
+  obtain ⟨e, he, hrec, hmark⟩ := κ.exists_enumeration_markingOfCover hs hcover
   have hfin : ∀ n, ∀ᵐ ω ∂P, N ω (s n) ≠ ∞ :=
     fun n => (h.ae_lt_top (hs n) (hΛ n)).mono fun _ hω => hω.ne
+  refine ⟨hsf, e, he, hmark, ?_⟩
   filter_upwards [h.ae_isIntegerValued, ae_all_iff.mpr hfin] with ω hωint hωfin
   exact hrec (N ω) hωint hωfin
+
+/-- Joint realization of independent marking on `Ω × Measure (X × E)` via `markingOfCover`:
+the second coordinate is a Poisson random measure of intensity `Λ ⊗ₘ κ`. -/
+theorem IsPoissonRandomMeasure.isPoissonRandomMeasure_compProd_markingOfCover
+    [IsMarkovKernel κ] (h : IsPoissonRandomMeasure P N Λ)
+    {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = univ)
+    (hΛ : ∀ n, Λ (s n) < ∞) :
+    IsPoissonRandomMeasure (P ⊗ₘ ((κ.markingOfCover hs hcover).comap N h.measurable))
+      Prod.snd (Λ ⊗ₘ κ) := by
+  obtain ⟨_, e, he, hmark, hrep⟩ := exists_enumeration_ae_eq_sum_markingOfCover h κ hs hcover hΛ
+  rw [hmark, ← Kernel.comap_comp_right]
+  exact h.compProd_optionalTupleMarking κ (he.comp h.measurable) hrep
 
 /-- **Poisson marking theorem via `Kernel.markingOfCover`.** On a standard Borel space,
 independently marking a Poisson random measure whose intensity `Λ` is finite on a countable
@@ -174,31 +168,14 @@ theorem IsPoissonRandomMeasure.isPoissonRandomMeasure_comp_markingOfCover
     (hΛ : ∀ n, Λ (s n) < ∞) :
     IsPoissonRandomMeasure ((κ.markingOfCover hs hcover) ∘ₘ (P.map N)) id (Λ ⊗ₘ κ) := by
   let := h.isProbabilityMeasure
-  have : SigmaFinite Λ :=
-    Measure.sigmaFinite_of_countable
-      (countable_range s) (forall_mem_range.2 hΛ) (by rwa [sUnion_range])
-  obtain ⟨e, he, hrec, hmark⟩ := κ.exists_enumeration_markingOfCover hs hcover
-  have hrep := ae_eq_sum_markingOfCover_enumeration h hs hΛ hrec
-  rw [hmark, Measure.bind_map h.measurable.aemeasurable
-    ((κ.optionalTupleMarking ℕ).comap e he).aemeasurable]
-  simpa only [Kernel.comap_apply, Function.comp_apply] using
-    h.bind_optionalTupleMarking κ (he.comp h.measurable).aemeasurable hrep
-
-/-- Joint realization of independent marking on `Ω × Measure (X × E)` via `markingOfCover`:
-the second coordinate is a Poisson random measure of intensity `Λ ⊗ₘ κ`. -/
-theorem IsPoissonRandomMeasure.isPoissonRandomMeasure_compProd_markingOfCover
-    [IsMarkovKernel κ] (h : IsPoissonRandomMeasure P N Λ)
-    {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n)) (hcover : ⋃ n, s n = univ)
-    (hΛ : ∀ n, Λ (s n) < ∞) :
-    IsPoissonRandomMeasure (P ⊗ₘ ((κ.markingOfCover hs hcover).comap N h.measurable))
-      Prod.snd (Λ ⊗ₘ κ) := by
-  have : SigmaFinite Λ :=
-    Measure.sigmaFinite_of_countable
-      (countable_range s) (forall_mem_range.2 hΛ) (by rwa [sUnion_range])
-  obtain ⟨e, he, hrec, hmark⟩ := κ.exists_enumeration_markingOfCover hs hcover
-  have hrep := ae_eq_sum_markingOfCover_enumeration h hs hΛ hrec
-  rw [hmark, ← Kernel.comap_comp_right]
-  exact h.compProd_optionalTupleMarking κ (he.comp h.measurable) hrep
+  have hjoint := h.isPoissonRandomMeasure_compProd_markingOfCover (κ := κ) hs hcover hΛ
+  have hmap : (P ⊗ₘ ((κ.markingOfCover hs hcover).comap N h.measurable)).map Prod.snd =
+      (κ.markingOfCover hs hcover) ∘ₘ (P.map N) := by
+    rw [← Measure.snd, Measure.snd_compProd,
+      Measure.bind_map h.measurable.aemeasurable (κ.markingOfCover hs hcover).aemeasurable]
+    simp only [Kernel.coe_comap, Function.comp_def]
+  exact hjoint.of_identDistrib measurable_id
+    ⟨measurable_snd.aemeasurable, measurable_id.aemeasurable, by rw [Measure.map_id, hmap]⟩
 
 /-- On the joint marking space `Ω × Measure (X × E)`, forgetting marks almost surely recovers
 the original Poisson realization `N`. -/
@@ -208,11 +185,7 @@ theorem IsPoissonRandomMeasure.ae_map_fst_compProd_markingOfCover
     (hΛ : ∀ n, Λ (s n) < ∞) :
     ∀ᵐ p ∂(P ⊗ₘ ((κ.markingOfCover hs hcover).comap N h.measurable)),
       p.2.map Prod.fst = N p.1 := by
-  have : SigmaFinite Λ :=
-    Measure.sigmaFinite_of_countable
-      (countable_range s) (forall_mem_range.2 hΛ) (by rwa [sUnion_range])
-  obtain ⟨e, he, hrec, hmark⟩ := κ.exists_enumeration_markingOfCover hs hcover
-  have hrep := ae_eq_sum_markingOfCover_enumeration h hs hΛ hrec
+  obtain ⟨_, e, he, hmark, hrep⟩ := exists_enumeration_ae_eq_sum_markingOfCover h κ hs hcover hΛ
   rw [hmark, ← Kernel.comap_comp_right]
   exact h.ae_map_fst_compProd_optionalTupleMarking κ (he.comp h.measurable) hrep
 

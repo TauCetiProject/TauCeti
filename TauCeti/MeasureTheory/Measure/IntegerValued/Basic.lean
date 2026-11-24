@@ -195,6 +195,17 @@ theorem isIntegerValued_of_isPiSystem {S : Set (Set X)}
       tsum_eq_sum (s := hsupport.toFinset) (fun i hi => by simpa using hi)]
     simp [hn]
 
+/-- A measure restricted to `s` is integer-valued if its intersections with every set in a
+generating π-system containing `Set.univ` have natural-number masses. -/
+theorem isIntegerValued_restrict_of_isPiSystem {S : Set (Set X)}
+    (hgen : ‹MeasurableSpace X› = .generateFrom S) (hpi : IsPiSystem S)
+    (huniv : Set.univ ∈ S) {s : Set X} (hS : ∀ A ∈ S, ∃ n : ℕ, μ (A ∩ s) = n) :
+    (μ.restrict s).IsIntegerValued := by
+  refine isIntegerValued_of_isPiSystem hgen hpi (fun A hA => ?_) ?_
+  · have hAm : MeasurableSet A := hgen ▸ MeasurableSpace.measurableSet_generateFrom hA
+    simpa only [restrict_apply hAm] using hS A hA
+  · simpa only [restrict_apply MeasurableSet.univ, Set.univ_inter] using hS Set.univ huniv
+
 /-- Integrality can be checked on the restrictions to any countable cover.
 The cover need not be disjoint or measurable. -/
 theorem isIntegerValued_of_restrict {s : ℕ → Set X}
