@@ -105,16 +105,8 @@ theorem tendsto_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ) 
     (i j : Fin n) :
     Tendsto (fun x ↦ pullbackMetricCoeff I φ x i j) (Bornology.cobounded _)
       (𝓝 (if i = j then 1 else 0)) := by
-  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
-  have hC0 := (tendsto_norm_rpow_cobounded (E := EuclideanSpace ℝ (Fin n))
-    (neg_lt_zero.2 ht)).const_mul C
-  rw [mul_zero] at hC0
-  have h0 : Tendsto (fun x ↦ (pullbackMetricCoeff I φ x - 1) i j) (Bornology.cobounded _)
-      (𝓝 0) := by
-    refine squeeze_zero_norm' ?_ hC0
-    filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop R)] with x hx
-    simpa using hC 0 (by norm_num) i j x (by simpa using hx)
-  simpa [Matrix.one_apply] using tendsto_sub_nhds_zero_iff.1 h0
+  simpa [Matrix.sub_apply, Matrix.one_apply] using
+    (h.isSymbolAtInfinity_pullbackMetricCoeff_sub_one i j).tendsto_of_sub (neg_lt_zero.2 ht)
 
 /-- The derivatives of the metric coefficients of an end of positive order are `o(|x|⁻¹)` at
 infinity, since `|∂g_ij| ≤ C |x| ^ (-t - 1)`. -/
@@ -122,16 +114,10 @@ theorem isLittleO_fderiv_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I
     (ht : 0 < t) (i j : Fin n) :
     (fun x ↦ fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x) =o[Bornology.cobounded _]
       fun x ↦ ‖x‖⁻¹ := by
-  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
   have h1 : (fun x ↦ fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x)
-      =O[Bornology.cobounded _] fun x ↦ ‖x‖ ^ (-t - 1) := by
-    refine Asymptotics.IsBigO.of_bound C ?_
-    filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop R)] with x hx
-    have hfd : fderiv ℝ (fun y ↦ (pullbackMetricCoeff I φ y - 1) i j) x =
-        fderiv ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x := by
-      simp only [Matrix.sub_apply, fderiv_sub_const]
-    rw [← hfd, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]
-    simpa using hC 1 (by norm_num) i j x (by simpa using hx)
+      =O[Bornology.cobounded _] fun x ↦ ‖x‖ ^ (-t - 1) :=
+    (h.isSymbolAtInfinity_pullbackMetricCoeff_sub_one i j).fderiv.isBigO.congr_left fun x ↦ by
+      simp [Matrix.sub_apply, fderiv_sub_const]
   exact h1.trans_isLittleO ((isLittleO_norm_rpow_norm_rpow_cobounded (by linarith)).congr_right
     fun _ ↦ Real.rpow_neg_one _)
 
