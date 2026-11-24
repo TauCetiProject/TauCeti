@@ -19,9 +19,9 @@ Stabilization and unitization results for Murray–von Neumann equivalence
 (`TauCeti.Analysis.CStarAlgebra.Projection.Equivalence`) on `CStarMatrix` over a (possibly
 non-unital) C⋆-algebra `A`: rectangular unitization descent, the self-adjoint unitary
 `stabilizedConjUnitary` sending `blockSum p 0` to `blockSum 0 q`, the exponential unitary path
-`stabilizedConjUnitaryPath` (packaged from `Unitary.expUnitaryPathToOne`) and conjugation formula
-`expUnitary_conj_blockSum_eq_stabilizedProjRot` over a star-ordered unital C⋆-algebra `A`, the
-unit-free projection path `stabilizedProjPath`, and stabilized comparison with
+`stabilizedConjUnitaryPath` (built from Mathlib's `selfAdjoint.expUnitaryPathToOne`) and
+conjugation formula `expUnitary_conj_blockSum_eq_stabilizedProjRot` over a star-ordered unital
+C⋆-algebra `A`, the unit-free projection path `stabilizedProjPath`, and stabilized comparison with
 `TauCeti.IsUnitarilyEquivalent` and `TauCeti.IsHomotopicProjection`.
 
 ## Main definitions and statements
@@ -351,21 +351,23 @@ theorem expUnitary_conj_blockSum_eq_stabilizedProjRot (t : ℝ) :
     hv.expUnitary_smul_stabilizedNegProj_mul_fromRows hp hq t, conjTranspose_smul,
     CStarMatrix.smul_mul_smul, hzz, one_smul, hv.stabilizedProjRotRows_mul_conjTranspose hp hq t]
 /-- Continuous path `t ↦ expUnitary ((t * π) • stabilizedNegProj v p q)` from `1` to
-`stabilizedConjUnitary` over a star-ordered unital C⋆-algebra, packaged from
-`Unitary.expUnitaryPathToOne`. -/
+`stabilizedConjUnitary` over a star-ordered unital C⋆-algebra, built from Mathlib's
+`selfAdjoint.expUnitaryPathToOne`. -/
 def stabilizedConjUnitaryPath :
     Path (1 : unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A)) (hv.stabilizedConjUnitary hp hq) :=
-  Unitary.expUnitaryPathToOne (hv.stabilizedConjUnitary hp hq)
-    (hv.isSelfAdjoint_stabilizedConjUnitary hp hq)
+  (selfAdjoint.expUnitaryPathToOne (Real.pi • ⟨stabilizedNegProj v p q,
+    (hv.isStarProjection_stabilizedNegProj hp hq).isSelfAdjoint⟩)).cast rfl (by
+    refine (Unitary.expUnitary_pi_smul_half_one_sub (hv.stabilizedConjUnitary hp hq)
+      (hv.isSelfAdjoint_stabilizedConjUnitary hp hq)).symm.trans ?_
+    exact congrArg selfAdjoint.expUnitary
+      (congrArg (Real.pi • ·) (Subtype.ext (hv.stabilizedNegProj_eq_half_one_sub hp hq).symm)))
 /-- Pointwise exponential evaluation of `stabilizedConjUnitaryPath`. -/
 @[simp low] theorem stabilizedConjUnitaryPath_apply (t : unitInterval) :
     hv.stabilizedConjUnitaryPath hp hq t =
       selfAdjoint.expUnitary (((t : ℝ) * Real.pi) • ⟨stabilizedNegProj v p q,
         (hv.isStarProjection_stabilizedNegProj hp hq).isSelfAdjoint⟩) := by
-  rw [stabilizedConjUnitaryPath, Unitary.expUnitaryPathToOne_apply]
-  congr 1
-  exact congrArg (((t : ℝ) * Real.pi) • ·)
-    (Subtype.ext (hv.stabilizedNegProj_eq_half_one_sub hp hq).symm)
+  rw [stabilizedConjUnitaryPath, Path.cast_coe, selfAdjoint.expUnitaryPathToOne_apply]
+  congr 1; exact smul_smul (t : ℝ) Real.pi _
 /-- Pointwise conjugation of `blockSum p 0` along `stabilizedConjUnitaryPath` yields
 `stabilizedProjRot v p q t`. -/
 theorem stabilizedConjUnitaryPath_conj (t : unitInterval) :

@@ -295,8 +295,10 @@ end MurrayVonNeumannEquiv
 section
 variable [NonUnitalSemiring A] [StarRing A]
 
-private theorem mvn_reindexₐ_congr (R) [Semiring R] [Module R A] (e₁ : k ≃ l) (e₂ : m ≃ n)
-    {p : CStarMatrix k k A} {q : CStarMatrix m m A} (h : p.MurrayVonNeumannEquiv q) :
+/-- Reindexing the index types of Murray–von Neumann equivalent projections preserves
+equivalence. -/
+protected theorem MurrayVonNeumannEquiv.reindexₐ (R) [Semiring R] [Module R A] (e₁ : k ≃ l)
+    (e₂ : m ≃ n) {p : CStarMatrix k k A} {q : CStarMatrix m m A} (h : p.MurrayVonNeumannEquiv q) :
     (reindexₐ R A e₁ p).MurrayVonNeumannEquiv (reindexₐ R A e₂ q) :=
   murrayVonNeumannEquiv_iff_matrix.mpr <| by
     simpa only [ofMatrix_symm_reindexₐ] using (murrayVonNeumannEquiv_iff_matrix.mp h).reindex e₁ e₂
@@ -312,14 +314,14 @@ theorem _root_.IsStarProjection.murrayVonNeumannEquiv_reindexₐ {p : CStarMatri
 @[simp] theorem murrayVonNeumannEquiv_reindexₐ_right_iff [Semiring R] [Module R A] (e : m ≃ n)
     {p : CStarMatrix l l A} {q : CStarMatrix m m A} :
     p.MurrayVonNeumannEquiv (reindexₐ R A e q) ↔ p.MurrayVonNeumannEquiv q :=
-  ⟨fun h => by simpa [reindexₐ_symm] using mvn_reindexₐ_congr R (.refl l) e.symm h,
-   fun h => by simpa using mvn_reindexₐ_congr R (.refl l) e h⟩
+  ⟨fun h => by simpa [reindexₐ_symm] using h.reindexₐ R (.refl l) e.symm,
+   fun h => by simpa using h.reindexₐ R (.refl l) e⟩
 
 @[simp] theorem murrayVonNeumannEquiv_reindexₐ_left_iff [Semiring R] [Module R A] (e : l ≃ m)
     {p : CStarMatrix l l A} {q : CStarMatrix n n A} :
     (reindexₐ R A e p).MurrayVonNeumannEquiv q ↔ p.MurrayVonNeumannEquiv q :=
-  ⟨fun h => by simpa [reindexₐ_symm] using mvn_reindexₐ_congr R e.symm (.refl n) h,
-   fun h => by simpa using mvn_reindexₐ_congr R e (.refl n) h⟩
+  ⟨fun h => by simpa [reindexₐ_symm] using h.reindexₐ R e.symm (.refl n),
+   fun h => by simpa using h.reindexₐ R e (.refl n)⟩
 
 /-- Padding a star projection by a lower-right zero block yields an equivalent projection. -/
 theorem _root_.IsStarProjection.murrayVonNeumannEquiv_blockSum_zero {p : CStarMatrix m m A}

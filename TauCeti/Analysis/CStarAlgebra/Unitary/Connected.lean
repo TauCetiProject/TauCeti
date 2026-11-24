@@ -21,9 +21,8 @@ supplies the reflection factor of the invertible path-connectedness argument in 
 III §7, Lemma 7.7, p. 203.
 
 Separately, any self-adjoint unitary in a complete normed complex `⋆`-algebra is joined to the
-identity by the explicit exponential path `Unitary.expUnitaryPathToOne`
-(`Unitary.joined_one_of_isSelfAdjoint`). Neither result asserts connectedness of the unitary group
-of a general C⋆-algebra.
+identity by an explicit exponential path (`Unitary.joined_one_of_isSelfAdjoint`). Neither result
+asserts connectedness of the unitary group of a general C⋆-algebra.
 
 ## References
 
@@ -60,5 +59,10 @@ theorem Unitary.joined_one_of_isSelfAdjoint
     {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [StarRing A] [ContinuousStar A]
     [CompleteSpace A] [StarModule ℂ A]
     (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u :=
-  ⟨Unitary.expUnitaryPathToOne u hu⟩
+  -- Mathlib's `selfAdjoint.joined_one_expUnitary` requires `[CStarAlgebra A]`, so build the path.
+  ⟨{ toFun := fun t => selfAdjoint.expUnitary (((t : ℝ) * Real.pi) • ⟨(2⁻¹ : ℝ) • (1 - (u : A)),
+      (Unitary.isStarProjection_half_one_sub u hu).isSelfAdjoint⟩)
+     continuous_toFun := by fun_prop
+     source' := by simp
+     target' := by simpa using Unitary.expUnitary_pi_smul_half_one_sub u hu }⟩
 
