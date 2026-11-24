@@ -22,9 +22,13 @@ band `s ×ˢ [a, a + c)` (`TauCeti.integrableOn_prod_Ico_sub_of_periodic`,
 integral over one period (`TauCeti.integrableOn_prod_Ico_sub_add_of_periodic`,
 `TauCeti.setIntegral_prod_Ico_sub_add_of_periodic`).
 
-For the energy density of a map on the cylinder `ℝ × S¹`, lifted to a map on `ℝ × ℝ` that is
-`1`-periodic in `t`, this bounds the energy over a disc of radius `1` about a point of the strip
-`ℝ × [0, 1)` by twice the energy over the strip.
+When `α` is a metric space, the ball of radius `c` about `(x, a)` lies in these two periods, so the
+integral of a nonnegative such `f` over it is at most twice the integral over one period
+(`TauCeti.setIntegral_ball_le_two_mul_of_periodic`). For the energy density of a map on the
+cylinder `ℝ × S¹`, lifted to a map on `ℝ × ℝ` that is `1`-periodic in `t`, this bounds the energy
+over a disc of radius `1` about a point `(s, 0)` by twice the energy over the strip `ℝ × [0, 1)`.
+The analogue for lower Lebesgue integrals of functions of period one, over a unit ball about any
+point, is `TauCeti.CylinderSobolev.setLIntegral_ball_le_two_mul_of_periodic`.
 -/
 
 public section
@@ -106,5 +110,33 @@ theorem setIntegral_prod_Ico_sub_add_of_periodic (hs : MeasurableSet s)
     setIntegral_union (disjoint_prod.2 (Or.inr Ico_disjoint_Ico_same))
       (hs.prod measurableSet_Ico) (integrableOn_prod_Ico_sub_of_periodic hf h) h,
     setIntegral_prod_Ico_sub_of_periodic hf, two_nsmul]
+
+section Ball
+
+variable [PseudoMetricSpace α]
+
+omit [MeasurableSpace α] in
+/-- The ball of radius `c` about `(x, a)` lies in the two periods `univ ×ˢ [a - c, a + c)`. -/
+private lemma ball_subset_univ_prod_Ico_sub_add (x : α) :
+    Metric.ball (x, a) c ⊆ univ ×ˢ Ico (a - c) (a + c) := by
+  rw [← ball_prod_same, Real.ball_eq_Ioo]
+  exact prod_mono (subset_univ _) Ioo_subset_Ico_self
+
+/-- The integral of a nonnegative function periodic in the second variable with period `c` over
+the ball of radius `c` about a point `(x, a)` is at most twice its integral over one period
+`univ ×ˢ [a, a + c)`, if it is integrable over one period. -/
+theorem setIntegral_ball_le_two_mul_of_periodic {f : α × ℝ → ℝ} (hf0 : ∀ z, 0 ≤ f z)
+    (hf : ∀ x t, f (x, t + c) = f (x, t))
+    (h : IntegrableOn f (univ ×ˢ Ico a (a + c)) (μ.prod volume)) (x : α) :
+    ∫ z in Metric.ball (x, a) c, f z ∂μ.prod volume ≤
+      2 * ∫ z in univ ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
+  calc ∫ z in Metric.ball (x, a) c, f z ∂μ.prod volume
+      ≤ ∫ z in univ ×ˢ Ico (a - c) (a + c), f z ∂μ.prod volume :=
+        setIntegral_mono_set (integrableOn_prod_Ico_sub_add_of_periodic hf h)
+          (Filter.Eventually.of_forall hf0) (ball_subset_univ_prod_Ico_sub_add x).eventuallySubset
+    _ = 2 * ∫ z in univ ×ˢ Ico a (a + c), f z ∂μ.prod volume := by
+        rw [setIntegral_prod_Ico_sub_add_of_periodic MeasurableSet.univ hf h, two_nsmul, two_mul]
+
+end Ball
 
 end TauCeti
