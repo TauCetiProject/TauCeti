@@ -103,7 +103,7 @@ theorem continuous_noncentralBetaMeasure :
   apply ProbabilityMeasure.tendsto_of_tendsto_integral_pow (K := Icc (0 : ℝ) 1) isCompact_Icc
   · exact ae_iff.1 (ae_mem_Icc_noncentralBetaMeasure p.1 p.2.1 p.2.2)
   · intro n
-    exact .of_forall fun q ↦ integrable_pow_noncentralBetaMeasure q.1 q.2.1 q.2.2 n
+    exact .of_forall fun q ↦ integrable_pow_noncentralBetaMeasure q.1 q.2.1 q.2.2 (2 * n)
   · intro n
     exact (continuous_integral_pow_noncentralBetaMeasure n).tendsto p
 
