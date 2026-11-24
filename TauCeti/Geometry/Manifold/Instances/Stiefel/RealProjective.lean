@@ -58,7 +58,7 @@ point `x` of the round sphere `S²` of `ℝ³` goes to the class of the unit qua
 conjugation is the rotation with columns `x`, `dι w` and `x ⨯₃ dι w`, where `ι` is the inclusion of
 the sphere into `ℝ³`. -/
 def sphereUnitTangentHomeomorphRealProjectiveSpace :
-    {p : TangentBundle (𝓡 2) (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) | ‖p.2‖ = 1} ≃ₜ
+    {p : TangentBundle (𝓡 2) (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) | ‖p.snd‖ = 1} ≃ₜ
       RealProjectiveSpace 3 :=
   sphereUnitTangentHomeomorphSpecialOrthogonalGroup.trans
     RealProjectiveSpace.homeomorphSpecialOrthogonalGroup.symm
@@ -67,7 +67,7 @@ def sphereUnitTangentHomeomorphRealProjectiveSpace :
 columns `x`, `dι w` and `x ⨯₃ dι w`. -/
 @[simp]
 theorem homeomorphSpecialOrthogonalGroup_sphereUnitTangentHomeomorphRealProjectiveSpace
-    (p : {p : TangentBundle (𝓡 2) (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) | ‖p.2‖ = 1}) :
+    (p : {p : TangentBundle (𝓡 2) (sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) | ‖p.snd‖ = 1}) :
     RealProjectiveSpace.homeomorphSpecialOrthogonalGroup
         (sphereUnitTangentHomeomorphRealProjectiveSpace p) =
       sphereUnitTangentHomeomorphSpecialOrthogonalGroup p := by
@@ -80,7 +80,7 @@ coordinates `x`. -/
 @[simp]
 theorem proj_sphereUnitTangentHomeomorphRealProjectiveSpace_symm_mk
     (x : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :
-    ((sphereUnitTangentHomeomorphRealProjectiveSpace.symm (RealProjectiveSpace.mk 3 x)).1.proj :
+    ((sphereUnitTangentHomeomorphRealProjectiveSpace.symm (RealProjectiveSpace.mk 3 x)).val.proj :
         EuclideanSpace ℝ (Fin 3)) =
       toLp 2 ((rotationMatrix (linearIsometryEquivTuple.symm x)).col 0) := by
   rw [sphereUnitTangentHomeomorphRealProjectiveSpace, Homeomorph.symm_trans_apply,
@@ -96,8 +96,8 @@ theorem mfderiv_sphereUnitTangentHomeomorphRealProjectiveSpace_symm_mk
     (x : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :
     mfderiv (𝓡 2) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3))
         ((↑) : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 → EuclideanSpace ℝ (Fin 3))
-        (sphereUnitTangentHomeomorphRealProjectiveSpace.symm (RealProjectiveSpace.mk 3 x)).1.proj
-        (sphereUnitTangentHomeomorphRealProjectiveSpace.symm (RealProjectiveSpace.mk 3 x)).1.2 =
+        (sphereUnitTangentHomeomorphRealProjectiveSpace.symm (RealProjectiveSpace.mk 3 x)).val.proj
+        (sphereUnitTangentHomeomorphRealProjectiveSpace.symm (RealProjectiveSpace.mk 3 x)).val.snd =
       toLp 2 ((rotationMatrix (linearIsometryEquivTuple.symm x)).col 1) := by
   rw [sphereUnitTangentHomeomorphRealProjectiveSpace, Homeomorph.symm_trans_apply,
     Homeomorph.symm_symm, RealProjectiveSpace.homeomorphSpecialOrthogonalGroup_mk,

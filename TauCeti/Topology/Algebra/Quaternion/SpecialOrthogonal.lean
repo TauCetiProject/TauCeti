@@ -75,6 +75,29 @@ private theorem swapZeroTwo_mul_self : swapZeroTwo * swapZeroTwo = 1 := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [swapZeroTwo, Matrix.mul_apply, Fin.sum_univ_three]
 
+private theorem swapZeroTwo_mem_orthogonalGroup : swapZeroTwo ∈ orthogonalGroup (Fin 3) ℝ := by
+  rw [mem_orthogonalGroup_iff']
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [swapZeroTwo, Matrix.mul_apply, Fin.sum_univ_three]
+
+private theorem swapZeroTwo_mul_swapZeroTwo_mul (A : Matrix (Fin 3) (Fin 3) ℝ) :
+    swapZeroTwo * (swapZeroTwo * A) = A := by
+  rw [← Matrix.mul_assoc, swapZeroTwo_mul_self, Matrix.one_mul]
+
+/-- Conjugating by `swapZeroTwo` twice is the identity. -/
+private theorem swapZeroTwo_mul_mul_swapZeroTwo (A : Matrix (Fin 3) (Fin 3) ℝ) :
+    swapZeroTwo * (swapZeroTwo * A * swapZeroTwo) * swapZeroTwo = A := by
+  simp [Matrix.mul_assoc, swapZeroTwo_mul_self, swapZeroTwo_mul_swapZeroTwo_mul]
+
+private theorem det_swapZeroTwo : swapZeroTwo.det = -1 := by
+  simp [swapZeroTwo, det_fin_three]
+
+/-- Applying the conjugate of `A` by `swapZeroTwo`, then `swapZeroTwo`, is applying `swapZeroTwo`,
+then `A`. -/
+private theorem swapZeroTwo_mulVec_conj_mulVec (A : Matrix (Fin 3) (Fin 3) ℝ) (v : Fin 3 → ℝ) :
+    swapZeroTwo *ᵥ ((swapZeroTwo * A * swapZeroTwo) *ᵥ v) = A *ᵥ (swapZeroTwo *ᵥ v) := by
+  simp [mulVec_mulVec, ← Matrix.mul_assoc, swapZeroTwo_mul_self]
+
 /-- The matrix of the pure quaternion `v₀ i + v₁ j + v₂ k` is `i` times the Pauli matrix of
 `(v₂, v₁, v₀)`. -/
 private theorem toComplexMatrix_mk_zero (v : Fin 3 → ℝ) :
@@ -90,35 +113,27 @@ private theorem rotationMatrix_eq_swapZeroTwo_mul (q : unitary ℍ[ℝ]) :
       (TauCeti.SU2.toSO3 (unitaryEquivSpecialUnitaryGroup q) : Matrix (Fin 3) (Fin 3) ℝ) *
         swapZeroTwo := by
   refine rotationMatrix_eq_iff.mpr fun v ↦ toComplexMatrix_injective ?_
+  -- Conjugation by `q` on `I • pauli w` is `I •` the Pauli rotation of `w = swapZeroTwo *ᵥ v`.
   have hv := TauCeti.pauli_pauliRotation_mulVec
     (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup
       (unitaryEquivSpecialUnitaryGroup q)) (swapZeroTwo *ᵥ v)
   simp only [Submonoid.coe_inclusion, coe_unitaryEquivSpecialUnitaryGroup_apply] at hv
-  rw [map_mul, map_mul, map_star, toComplexMatrix_mk_zero, toComplexMatrix_mk_zero,
-    TauCeti.SU2.coe_toSO3, ← mulVec_mulVec, ← mulVec_mulVec,
-    mulVec_mulVec (M := swapZeroTwo) (N := swapZeroTwo),
-    swapZeroTwo_mul_self, one_mulVec, hv, mul_smul_comm, smul_mul_assoc]
+  simp only [map_mul, map_star, toComplexMatrix_mk_zero, TauCeti.SU2.coe_toSO3,
+    swapZeroTwo_mulVec_conj_mulVec, hv, mul_smul_comm, smul_mul_assoc]
 
 /-- **Every rotation of `ℝ³` is conjugation by a unit quaternion.** -/
 theorem unitaryToSpecialOrthogonalGroup_surjective :
     Function.Surjective (unitaryToSpecialOrthogonalGroup (R := ℝ)) := by
   intro A
+  obtain ⟨hA, hdet⟩ := mem_specialOrthogonalGroup_iff.mp A.property
   have hP : swapZeroTwo * (A : Matrix (Fin 3) (Fin 3) ℝ) * swapZeroTwo ∈
       specialOrthogonalGroup (Fin 3) ℝ := by
-    obtain ⟨hA, hdet⟩ := mem_specialOrthogonalGroup_iff.mp A.2
-    have hS : swapZeroTwo ∈ orthogonalGroup (Fin 3) ℝ := by
-      rw [mem_orthogonalGroup_iff']
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp [swapZeroTwo, Matrix.mul_apply, Fin.sum_univ_three]
-    refine mem_specialOrthogonalGroup_iff.mpr ⟨mul_mem (mul_mem hS hA) hS, ?_⟩
-    rw [det_mul, det_mul, mul_right_comm, ← det_mul, swapZeroTwo_mul_self, det_one, one_mul]
-    exact hdet
+    refine mem_specialOrthogonalGroup_iff.mpr ⟨mul_mem (mul_mem swapZeroTwo_mem_orthogonalGroup hA)
+      swapZeroTwo_mem_orthogonalGroup, ?_⟩
+    simp [det_swapZeroTwo, hdet]
   obtain ⟨g, hg⟩ := TauCeti.SU2.toSO3_surjective ⟨_, hP⟩
   refine ⟨unitaryEquivSpecialUnitaryGroup.symm g, Subtype.ext ?_⟩
-  rw [coe_unitaryToSpecialOrthogonalGroup_apply, rotationMatrix_eq_swapZeroTwo_mul,
-    MulEquiv.apply_symm_apply, hg, Subtype.coe_mk]
-  simp only [← mul_assoc, swapZeroTwo_mul_self, one_mul]
-  rw [mul_assoc, swapZeroTwo_mul_self, mul_one]
+  simp [rotationMatrix_eq_swapZeroTwo_mul, hg, swapZeroTwo_mul_mul_swapZeroTwo]
 
 /-! ### Continuity and the covering map -/
 
@@ -135,7 +150,7 @@ theorem continuous_unitaryToSpecialOrthogonalGroup :
     Continuous (unitaryToSpecialOrthogonalGroup (R := ℝ)) :=
   continuous_induced_rng.mpr <| by
     simpa only [Function.comp_def, coe_unitaryToSpecialOrthogonalGroup_apply] using
-      continuous_rotationMatrix.comp continuous_subtype_val
+      continuous_rotationMatrix.comp continuous_subtypeVal
 
 end Quaternion
 
@@ -213,6 +228,7 @@ theorem homeomorphSpecialOrthogonalGroup_symm_apply (q : unitary ℍ[ℝ]) :
 
 /-- The identity rotation corresponds to the class of the unit quaternion `1`, that is, of
 `(1, 0, 0, 0)`. -/
+@[simp]
 theorem homeomorphSpecialOrthogonalGroup_symm_one :
     homeomorphSpecialOrthogonalGroup.symm 1 = mk 3 (unitaryHomeomorphEuclideanSphere 1) := by
   rw [← map_one unitaryToSpecialOrthogonalGroup, homeomorphSpecialOrthogonalGroup_symm_apply]

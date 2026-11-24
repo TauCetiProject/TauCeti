@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Algebra.Quaternion.NormForm
 import Mathlib.Tactic.LinearCombination
@@ -164,7 +163,7 @@ theorem rotationMatrix_mem_specialOrthogonalGroup {q : ℍ[R]} (hq : q ∈ unita
 /-- **The unit quaternions act on `R³` by rotations**: the homomorphism sending a unit quaternion
 `q` to the matrix of `v ↦ q * v * star q`. -/
 def unitaryToSpecialOrthogonalGroup : unitary ℍ[R] →* specialOrthogonalGroup (Fin 3) R where
-  toFun q := ⟨rotationMatrix q, rotationMatrix_mem_specialOrthogonalGroup q.2⟩
+  toFun q := ⟨rotationMatrix q, rotationMatrix_mem_specialOrthogonalGroup q.property⟩
   map_one' := Subtype.ext rotationMatrix_one
   map_mul' p q := Subtype.ext <| by
     simp only [Submonoid.coe_mul, rotationMatrix_mul]
@@ -219,28 +218,26 @@ theorem rotationMatrix_eq_one_iff {q : ℍ[R]} : rotationMatrix q = 1 ↔ q = 1 
   have hsq : (q.re - 1) * (q.re + 1) = 0 := by
     linear_combination h00 - q.imI * hi + q.imJ * hj + q.imK * hk
   rcases mul_eq_zero.mp hsq with h1 | h1
-  · left
-    ext <;> simp [hi, hj, hk]
-    linear_combination h1
-  · right
-    ext <;> simp [hi, hj, hk]
-    linear_combination h1
+  · have hr : q.re = 1 := by linear_combination h1
+    left
+    ext <;> simp [hr, hi, hj, hk]
+  · have hr : q.re = -1 := by linear_combination h1
+    right
+    ext <;> simp [hr, hi, hj, hk]
 
 attribute [local instance] starRingOfComm
-
-/-- **Two unit quaternions give the same rotation exactly when they agree up to sign.** -/
-theorem unitaryToSpecialOrthogonalGroup_eq_iff {p q : unitary ℍ[R]} :
-    unitaryToSpecialOrthogonalGroup p = unitaryToSpecialOrthogonalGroup q ↔ p = q ∨ p = -q := by
-  have h1 : ((1 : unitary ℍ[R]) : ℍ[R]) = 1 := OneMemClass.coe_one _
-  have hn : ((-1 : unitary ℍ[R]) : ℍ[R]) = -1 := by rw [Unitary.coe_neg, h1]
-  rw [← div_eq_one, ← map_div, Subtype.ext_iff, coe_unitaryToSpecialOrthogonalGroup_apply,
-    OneMemClass.coe_one, rotationMatrix_eq_one_iff, ← hn, ← h1, Subtype.coe_inj, Subtype.coe_inj,
-    div_eq_one, div_eq_iff_eq_mul, neg_one_mul]
 
 /-- **The kernel of the action of the unit quaternions on `R³` is `{1, -1}`.** -/
 theorem unitaryToSpecialOrthogonalGroup_eq_one_iff {q : unitary ℍ[R]} :
     unitaryToSpecialOrthogonalGroup q = 1 ↔ q = 1 ∨ q = -1 := by
-  rw [← map_one unitaryToSpecialOrthogonalGroup, unitaryToSpecialOrthogonalGroup_eq_iff]
+  simp only [Subtype.ext_iff, coe_unitaryToSpecialOrthogonalGroup_apply, OneMemClass.coe_one,
+    Unitary.coe_neg, rotationMatrix_eq_one_iff]
+
+/-- **Two unit quaternions give the same rotation exactly when they agree up to sign.** -/
+theorem unitaryToSpecialOrthogonalGroup_eq_iff {p q : unitary ℍ[R]} :
+    unitaryToSpecialOrthogonalGroup p = unitaryToSpecialOrthogonalGroup q ↔ p = q ∨ p = -q := by
+  rw [← div_eq_one, ← map_div, unitaryToSpecialOrthogonalGroup_eq_one_iff, div_eq_one,
+    div_eq_iff_eq_mul, neg_one_mul]
 
 end Kernel
 
