@@ -237,23 +237,62 @@ theorem curvature_swap (c₁ : RightConnection (E := E) D₁)
   ext x
   simp
 
-/-- The gauge group `E ≃ₗ[Aᵐᵒᵖ] E` acts on connections by conjugation, `u • c = u c u⁻¹`. -/
-instance : MulAction (E ≃ₗ[Aᵐᵒᵖ] E) (RightConnection (E := E) D) where
+section Gauge
+
+omit [IsScalarTower k Aᵐᵒᵖ E]
+
+variable [LinearMap.CompatibleSMul E E k Aᵐᵒᵖ]
+
+/-- The gauge transformation of a connection by a right-module automorphism,
+`u • c = u c u⁻¹`. -/
+instance : SMul (E ≃ₗ[Aᵐᵒᵖ] E) (RightConnection (E := E) D) where
   smul u c :=
     { toLinearMap := (u.restrictScalars k).conj c.toLinearMap
       leibniz' a x := by simp [c.leibniz'] }
-  one_smul c := ext fun x ↦ rfl
-  mul_smul u v c := ext fun x ↦ rfl
 
 @[simp]
 protected theorem smul_apply (u : E ≃ₗ[Aᵐᵒᵖ] E) (c : RightConnection (E := E) D) (x : E) :
     (u • c) x = u (c (u.symm x)) := (rfl)
 
+/-- The gauge group `E ≃ₗ[Aᵐᵒᵖ] E` acts on connections by conjugation. -/
+instance : MulAction (E ≃ₗ[Aᵐᵒᵖ] E) (RightConnection (E := E) D) where
+  one_smul c := by
+    ext x
+    simp [← LinearEquiv.coe_inv]
+  mul_smul u v c := by
+    ext x
+    simp [← LinearEquiv.coe_inv, mul_inv_rev, mul_apply_eq_comp]
+
+/-- Gauge transformations conjugate the difference of two connections. -/
+@[simp]
+theorem difference_smul (u : E ≃ₗ[Aᵐᵒᵖ] E) (c c' : RightConnection (E := E) D) :
+    difference (u • c) (u • c') = u.conjRingEquiv (difference c c') := by
+  ext x
+  simp
+
+/-- Gauge transformations conjugate the induced derivative on endomorphisms. -/
+@[simp]
+theorem derivativeEnd_smul (u : E ≃ₗ[Aᵐᵒᵖ] E) (c : RightConnection (E := E) D)
+    (T : E →ₗ[Aᵐᵒᵖ] E) :
+    derivativeEnd (u • c) (u.conjRingEquiv T) = u.conjRingEquiv (derivativeEnd c T) := by
+  ext x
+  simp
+
 /-- Gauge transformations conjugate the curvature: `F(u • c₁, u • c₂) = u F(c₁, c₂) u⁻¹`. -/
+@[simp]
 theorem curvature_smul (c₁ : RightConnection (E := E) D₁)
     (c₂ : RightConnection (E := E) D₂)
     (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) (u : E ≃ₗ[Aᵐᵒᵖ] E) :
     curvature (u • c₁) (u • c₂) hD = u.conjRingEquiv (curvature c₁ c₂ hD) := by
+  ext x
+  simp
+
+end Gauge
+
+/-- Gauge transformations commute with adding a conjugated endomorphism. -/
+@[simp]
+theorem addEnd_smul (u : E ≃ₗ[Aᵐᵒᵖ] E) (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) :
+    addEnd (u • c) (u.conjRingEquiv T) = u • addEnd c T := by
   ext x
   simp
 
