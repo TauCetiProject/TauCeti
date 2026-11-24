@@ -37,6 +37,9 @@ its Lie algebra: the one-parameter group of `s • X` is the one-parameter group
   speeds.
 * `TauCeti.Semigroups.StronglyContinuousGroup.rescale_neg_one`: rescaling by `-1` is time
   reversal.
+* `TauCeti.Semigroups.StronglyContinuousGroup.rescale_reflect` and
+  `TauCeti.Semigroups.StronglyContinuousGroup.reflect_rescale`: time reversal turns rescaling by
+  `s` into rescaling by `-s`.
 * `TauCeti.Semigroups.StronglyContinuousGroup.rescale_domain`: for `s ≠ 0`, rescaling does not
   change the generator domain.
 * `TauCeti.Semigroups.StronglyContinuousGroup.rescale_generator`: for `s ≠ 0`, the generator of
@@ -90,6 +93,18 @@ theorem rescale_rescale (U : StronglyContinuousGroup X) (s r : ℝ) :
 @[simp]
 theorem rescale_neg_one (U : StronglyContinuousGroup X) : U.rescale (-1) = U.reflect :=
   ext fun t => by rw [rescale_apply, reflect_apply, neg_one_mul]
+
+/-- Rescaling the time reversal by `s` is rescaling by `-s`. -/
+@[simp]
+theorem rescale_reflect (U : StronglyContinuousGroup X) (s : ℝ) :
+    U.reflect.rescale s = U.rescale (-s) :=
+  ext fun t => by rw [rescale_apply, reflect_apply, rescale_apply, neg_mul]
+
+/-- The time reversal of the group rescaled by `s` is the group rescaled by `-s`. -/
+@[simp]
+theorem reflect_rescale (U : StronglyContinuousGroup X) (s : ℝ) :
+    (U.rescale s).reflect = U.rescale (-s) :=
+  ext fun t => by rw [reflect_apply, rescale_apply, rescale_apply, mul_neg, neg_mul]
 
 /-- The generator of the constant group `U.rescale 0` is the zero operator, defined on the whole
 space. -/

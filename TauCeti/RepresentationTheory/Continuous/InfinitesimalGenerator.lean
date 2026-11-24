@@ -215,6 +215,7 @@ variable (π hπ)
 
 /-- **Scaling the Lie algebra scales the generator.** For `s ≠ 0`, the infinitesimal generator
 of `s • X` is `s • A_X`, defined on the domain of `A_X`. -/
+@[simp]
 theorem lieGenerator_smul {s : ℝ} (hs : s ≠ 0) (X : LeftInvariantDerivation I G) :
     π.lieGenerator hπ (s • X) = s • π.lieGenerator hπ X := by
   rw [lieGenerator_def, lieGenerator_def, lieOneParameterGroup_smul,
