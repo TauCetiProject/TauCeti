@@ -15,15 +15,16 @@ import Mathlib.Tactic.NormNum.RealSqrt
 /-!
 # Checks for the Arakelov degree of hermitian lines
 
-The degree checks of ArakelovGeometryAndAbelianHeights §§1.3-1.4, for the degree
-`log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` of `TauCeti.HermitianMetric.sectionDegree`.
+Checks for the degree `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` of
+`TauCeti.HermitianMetric.sectionDegree`.
 
-* §1.3: the Gaussian ideal `(1 + i)` of `ℚ(i)` with its standard metric has degree `-log 2` and
-  normalized degree `-(1/2) log 2`; over `ℚ`, `(ℤ, r |·|)` has degree `-log r`.
-* §1.4, section independence term by term: in `Ō_ℚ`, the section `2` has finite term `log 2` and
-  archimedean term `log 2`. In `ℚ(√2)`, the unit `1 + √2` leaves the finite term and the sum of
-  the archimedean terms unchanged, although its norm at the embedding `√2 ↦ √2` is `1 + √2`, not
-  `1`. On the trivial line over `ℚ(i)`, replacing `1` by `2` raises the finite term by `log 4`
+* Degrees of hermitian lines: the Gaussian ideal `(1 + i)` of `ℚ(i)` with its standard metric
+  has degree `-log 2` and normalized degree `-(1/2) log 2`; over `ℚ`, `(ℤ, r |·|)` has degree
+  `-log r`.
+* Independence of the section, term by term: in `Ō_ℚ`, the section `2` has finite term `log 2`
+  and archimedean term `log 2`. In `ℚ(√2)`, the unit `1 + √2` leaves the finite term and the sum
+  of the archimedean terms unchanged, although it changes the norm at the embedding `√2 ↦ √2`.
+  On the trivial line over `ℚ(i)`, replacing `1` by `2` raises the finite term by `log 4`
   and the sum over the two complex embeddings by `2 log 2`, whereas the sum over the single
   complex place, without its multiplicity `2`, is only `log 2`.
 
@@ -52,7 +53,7 @@ abbrev K := QuadraticAlgebra ℚ ((-1 : ℤ) : ℚ) 0
 /-- The real quadratic field `ℚ(√2)`. -/
 abbrev L := QuadraticAlgebra ℚ ((2 : ℤ) : ℚ) 0
 
-/-! ### §1.3 -/
+/-! ### Degrees of hermitian lines -/
 
 /-- `(ℤ, r |·|)` over `ℚ`, the trivial line with every norm multiplied by `r = e^{log r}`, has
 degree `-log r`. -/
@@ -86,7 +87,7 @@ example :
     simpa using congrArg QuadraticAlgebra.re h
   have hI : ((Ideal.span {e.symm ⟨1, 1⟩} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) ≠ 0 := by
     rw [Ne, FractionalIdeal.coeIdeal_eq_zero, Ideal.span_singleton_eq_bot]
-    exact fun h ↦ hne (by rw [h]; rfl)
+    exact fun h ↦ hne (by rw [h, RingOfIntegers.coe_eq_algebraMap, map_zero])
   have hs : (⟨_, hmem⟩ : (((Ideal.span {e.symm ⟨1, 1⟩} : Ideal (𝓞 K)) :
       FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) ≠ 0 :=
     fun h ↦ hne (congrArg Subtype.val h)
@@ -97,7 +98,7 @@ example :
   rw [hdeg, QuadraticAlgebra.finrank_eq_two]
   ring
 
-/-! ### §1.4 -/
+/-! ### Independence of the section -/
 
 /-- In `Ō_ℚ`, the section `2` has finite term `log #(ℤ / 2) = log 2` and archimedean term
 `log |2| = log 2`, so its degree is `0`, as for the section `1`. -/
@@ -110,12 +111,11 @@ example :
     have : (2 : 𝓞 ℚ) = algebraMap ℤ (𝓞 ℚ) 2 := by simp
     rw [this, Algebra.norm_algebraMap, NumberField.RingOfIntegers.rank, Module.finrank_self]
     norm_num
-  · simp [HermitianMetric.norm_trivial_tmul, NumberField.Embeddings.card]
-    rfl
+  · simp [HermitianMetric.norm_trivial_tmul, NumberField.Embeddings.card, map_ofNat]
 
 /-- In `ℚ(√2)`, replacing the section `1` of `Ō_K` by the unit `1 + √2` leaves the finite term
 and the sum of the archimedean terms unchanged, although the norm at the embedding `√2 ↦ √2`
-changes from `1` to `1 + √2`. -/
+changes. -/
 example :
     let e := QuadraticAlgebra.ringOfIntegersEquiv (d := 2) Int.prime_two.squarefree
       (by norm_num)
@@ -144,7 +144,7 @@ example :
       ← Algebra.coe_norm_int, ← Algebra.coe_norm_int]
     norm_num [e, QuadraticAlgebra.norm_ringOfIntegersEquiv_symm]
   · rw [HermitianMetric.norm_trivial_tmul, HermitianMetric.norm_trivial_tmul, RingHom.coe_coe,
-      show ((1 : 𝓞 L) : L) = 1 from rfl, map_one, norm_one]
+      RingOfIntegers.coe_eq_algebraMap (1 : 𝓞 L), map_one, map_one, norm_one]
     rw [← Complex.abs_re_eq_norm.mpr (QuadraticAlgebra.im_sqrtEmbedding
       (by norm_num : (0 : ℚ) ≤ ((2 : ℤ) : ℚ)) _)]
     norm_num [e, QuadraticAlgebra.ringOfIntegersEquiv_symm_apply_coe,
@@ -173,13 +173,13 @@ example :
       QuadraticAlgebra.finrank_eq_two]
     norm_num
   · simp only [HermitianMetric.norm_trivial_tmul (K := K)]
-    have h2 : ((2 : 𝓞 K) : K) = 2 := rfl
-    have h1 : ((1 : 𝓞 K) : K) = 1 := rfl
+    have h2 : ((2 : 𝓞 K) : K) = 2 := by rw [RingOfIntegers.coe_eq_algebraMap, map_ofNat]
+    have h1 : ((1 : 𝓞 K) : K) = 1 := by rw [RingOfIntegers.coe_eq_algebraMap, map_one]
     simp only [h1, h2, map_ofNat, map_one, norm_one, Real.log_one, Finset.sum_const_zero,
       zero_add, Finset.sum_const, Finset.card_univ, NumberField.Embeddings.card,
       QuadraticAlgebra.finrank_eq_two, nsmul_eq_mul, Nat.cast_ofNat, Complex.norm_ofNat]
   · simp only [HermitianMetric.placeNorm_trivial (K := K)]
-    have h2 : ((2 : 𝓞 K) : K) = 2 := rfl
+    have h2 : ((2 : 𝓞 K) : K) = 2 := by rw [RingOfIntegers.coe_eq_algebraMap, map_ofNat]
     have hv (v : InfinitePlace K) : v 2 = 2 := by simpa using v.map_natCast 2
     have := QuadraticAlgebra.isTotallyComplex_iff.mpr (by norm_num : ((-1 : ℤ) : ℚ) < 0)
     have hcard : Fintype.card (InfinitePlace K) = 1 := by
