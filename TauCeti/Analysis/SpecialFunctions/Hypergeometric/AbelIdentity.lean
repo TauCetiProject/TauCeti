@@ -145,7 +145,8 @@ theorem _root_.IsOpen.exists_eq_mul_add_mul_of_hypergeometricEquation {f₁ f₂
   exact hU.exists_eq_mul_add_mul_of_secondOrderLinearEquation hUc hS (P := fun z => z * (1 - z))
     (Q := fun z => c - (a + b + 1) * z) (R := fun _ => -(a * b))
     (fun z hz => mul_ne_zero hz.2.1 (sub_ne_zero.mpr (Ne.symm hz.2.2))) hf₁ hf₂ hw
-    (fun z hz => by linear_combination hf₁' z hz) (fun z hz => by linear_combination hf₂' z hz)
-    (fun z hz => by linear_combination hw' z hz) hz₀ hW
+    (fun z hz => by linear_combination hf₁' z hz.1)
+    (fun z hz => by linear_combination hf₂' z hz.1) (fun z hz => by linear_combination hw' z hz.1)
+    hz₀ hW
 
 end TauCeti

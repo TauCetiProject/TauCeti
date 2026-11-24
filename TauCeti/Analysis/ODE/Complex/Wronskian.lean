@@ -160,35 +160,36 @@ end LinearEquation
 
 /-- **The span criterion** for a second-order linear equation `P w'' + Q w' + R w = 0` on a
 preconnected open set `U ⊆ ℂ` whose leading coefficient `P` is nonzero on `U ∩ S` for a dense
-set `S`: if `f₁` and `f₂` are holomorphic solutions on `U` whose Wronskian `𝒲{f₁, f₂}` is nonzero
-at a point `z₀ ∈ U`, then every holomorphic solution `w` on `U` is `A f₁ + B f₂` with constants
-`A`, `B`. The coefficients need not be continuous, and `U` may contain zeros of `P`. -/
+set `S`: if `f₁` and `f₂` are holomorphic on `U`, solve the equation on `U ∩ S`, and have a
+Wronskian `𝒲{f₁, f₂}` nonzero at a point `z₀ ∈ U`, then every function `w` holomorphic on `U`
+that solves the equation on `U ∩ S` is `A f₁ + B f₂` on `U` with constants `A`, `B`. The
+coefficients need not be continuous, and `U` may contain zeros of `P`. -/
 theorem _root_.IsOpen.exists_eq_mul_add_mul_of_secondOrderLinearEquation {U S : Set ℂ}
     (hU : IsOpen U) (hUc : IsPreconnected U) (hS : Dense S) {P Q R f₁ f₂ w : ℂ → ℂ}
     (hP : ∀ z ∈ U ∩ S, P z ≠ 0)
     (hf₁ : DifferentiableOn ℂ f₁ U) (hf₂ : DifferentiableOn ℂ f₂ U)
     (hw : DifferentiableOn ℂ w U)
-    (hf₁' : ∀ z ∈ U, P z * deriv (deriv f₁) z + Q z * deriv f₁ z + R z * f₁ z = 0)
-    (hf₂' : ∀ z ∈ U, P z * deriv (deriv f₂) z + Q z * deriv f₂ z + R z * f₂ z = 0)
-    (hw' : ∀ z ∈ U, P z * deriv (deriv w) z + Q z * deriv w z + R z * w z = 0)
+    (hf₁' : ∀ z ∈ U ∩ S, P z * deriv (deriv f₁) z + Q z * deriv f₁ z + R z * f₁ z = 0)
+    (hf₂' : ∀ z ∈ U ∩ S, P z * deriv (deriv f₂) z + Q z * deriv f₂ z + R z * f₂ z = 0)
+    (hw' : ∀ z ∈ U ∩ S, P z * deriv (deriv w) z + Q z * deriv w z + R z * w z = 0)
     {z₀ : ℂ} (hz₀ : z₀ ∈ U) (hW : f₁ z₀ * deriv f₂ z₀ - deriv f₁ z₀ * f₂ z₀ ≠ 0) :
     ∃ A B : ℂ, ∀ z ∈ U, w z = A * f₁ z + B * f₂ z := by
   -- On `U ∩ S` every Wronskian of two solutions satisfies Abel's identity, so it is a constant
   -- multiple of `𝒲{f₁, f₂}`, which is nonzero at `z₀`.
   have habel {g₁ g₂ : ℂ → ℂ} (hg₁ : DifferentiableOn ℂ g₁ U) (hg₂ : DifferentiableOn ℂ g₂ U)
-      (hg₁' : ∀ z ∈ U, P z * deriv (deriv g₁) z + Q z * deriv g₁ z + R z * g₁ z = 0)
-      (hg₂' : ∀ z ∈ U, P z * deriv (deriv g₂) z + Q z * deriv g₂ z + R z * g₂ z = 0)
+      (hg₁' : ∀ z ∈ U ∩ S, P z * deriv (deriv g₁) z + Q z * deriv g₁ z + R z * g₁ z = 0)
+      (hg₂' : ∀ z ∈ U ∩ S, P z * deriv (deriv g₂) z + Q z * deriv g₂ z + R z * g₂ z = 0)
       (z : ℂ) (hz : z ∈ U ∩ S) :
       HasDerivAt (fun ζ ↦ g₁ ζ * deriv g₂ ζ - deriv g₁ ζ * g₂ ζ)
         (-(Q z / P z) * (g₁ z * deriv g₂ z - deriv g₁ z * g₂ z)) z :=
     (hg₁.differentiableAt (hU.mem_nhds hz.1)).hasDerivAt_wronskian_of_secondOrderLinearEquation
       (hP z hz) ((hg₁.deriv hU).differentiableAt (hU.mem_nhds hz.1))
       (hg₂.differentiableAt (hU.mem_nhds hz.1))
-      ((hg₂.deriv hU).differentiableAt (hU.mem_nhds hz.1)) (hg₁' z hz.1) (hg₂' z hz.1)
+      ((hg₂.deriv hU).differentiableAt (hU.mem_nhds hz.1)) (hg₁' z hz) (hg₂' z hz)
   have hW₁₂ := (hf₁.mul (hf₂.deriv hU)).sub ((hf₁.deriv hU).mul hf₂)
   have hratio {g₁ g₂ : ℂ → ℂ} (hg₁ : DifferentiableOn ℂ g₁ U) (hg₂ : DifferentiableOn ℂ g₂ U)
-      (hg₁' : ∀ z ∈ U, P z * deriv (deriv g₁) z + Q z * deriv g₁ z + R z * g₁ z = 0)
-      (hg₂' : ∀ z ∈ U, P z * deriv (deriv g₂) z + Q z * deriv g₂ z + R z * g₂ z = 0) :
+      (hg₁' : ∀ z ∈ U ∩ S, P z * deriv (deriv g₁) z + Q z * deriv g₁ z + R z * g₁ z = 0)
+      (hg₂' : ∀ z ∈ U ∩ S, P z * deriv (deriv g₂) z + Q z * deriv g₂ z + R z * g₂ z = 0) :
       ∃ K : ℂ, ∀ z ∈ U, g₁ z * deriv g₂ z - deriv g₁ z * g₂ z =
         K * (f₁ z * deriv f₂ z - deriv f₁ z * f₂ z) :=
     hU.exists_eq_const_mul_of_hasDerivAt_mul hUc hS
