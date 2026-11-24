@@ -44,7 +44,8 @@ space (`TauCeti.BoundarylessModel`).
 ## Main results
 
 * `TauCeti.nontrivial_singularHomology_of_subsingleton_units`: the top homology of a nonempty
-  compact manifold is nontrivial with coefficients in a nontrivial ring whose only unit is `1`.
+  compact manifold is nontrivial with coefficients in a nontrivial Dedekind-finite ring whose
+  only unit is `1`.
 * `TauCeti.exists_le_nontrivial_homotopyGroup`: a nonempty compact `n`-manifold with `n ≥ 1` is
   not `n`-connected.
 * `TauCeti.finrank_eq_zero_of_subsingleton_homotopyGroup`: a compact manifold whose homotopy groups
