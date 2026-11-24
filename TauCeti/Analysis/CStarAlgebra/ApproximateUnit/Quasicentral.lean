@@ -54,11 +54,12 @@ the off-diagonal products `d_i^* d_j` (`i ≠ j`) are uniformly small, whereas t
   `Filter.IsIncreasingApproximateUnit` on `I`.
 * `TwoSidedIdeal.IsQuasicentralApproximateUnit.map`: a surjective `⋆`-algebra homomorphism carries
   a quasicentral approximate unit of `I` to one of `I.map f` (and hence of its closure).
-* `TwoSidedIdeal.quasicentralSet`, `TwoSidedIdeal.mem_quasicentralSet_iff`, and
-  `TwoSidedIdeal.quasicentralApproximateUnit`: the finite-set quasicentral approximation
-  neighborhoods of `I` and the canonical filter they generate, characterized by
-  `hasBasis_quasicentralApproximateUnit`, `mem_quasicentralApproximateUnit_iff`, and the universal
-  property `isQuasicentralApproximateUnit_iff_neBot_and_le`.
+* `TwoSidedIdeal.quasicentralSet`, `TwoSidedIdeal.mem_quasicentralSet_iff`,
+  `TwoSidedIdeal.quasicentralSet_anti`, and `TwoSidedIdeal.quasicentralApproximateUnit`: the
+  finite-set quasicentral approximation neighborhoods of `I` and the canonical filter they
+  generate, characterized by `hasBasis_quasicentralApproximateUnit`,
+  `mem_quasicentralApproximateUnit_iff`, and the universal property
+  `isQuasicentralApproximateUnit_iff_neBot_and_le`.
 * `TwoSidedIdeal.quasicentralSet_nonempty`,
   `TwoSidedIdeal.quasicentralApproximateUnit_neBot`,
   `TwoSidedIdeal.isQuasicentralApproximateUnit_quasicentralApproximateUnit`, and
@@ -97,18 +98,6 @@ private theorem eventually_forall_mem_mul_sub_lt {α A : Type*} [NonUnitalSemino
   G.eventually_all.mpr fun x hx =>
     (TauCeti.tendsto_nhds_iff_norm_sub_lt.mp (hmr x hx) ε hε).and
       (TauCeti.tendsto_nhds_iff_norm_sub_lt.mp (hml x hx) ε hε)
-
-private theorem tendsto_mul_left_coe_iff {A : Type*} [NonUnitalCStarAlgebra A]
-    {I : TwoSidedIdeal A} {l : Filter I} {x : I} :
-    Tendsto (fun e : I => (x : A) * (e : A)) l (𝓝 (x : A)) ↔ Tendsto (x * ·) l (𝓝 x) := by
-  rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-  simp only [Function.comp_def, MulMemClass.coe_mul]
-
-private theorem tendsto_mul_right_coe_iff {A : Type*} [NonUnitalCStarAlgebra A]
-    {I : TwoSidedIdeal A} {l : Filter I} {x : I} :
-    Tendsto (fun e : I => (e : A) * (x : A)) l (𝓝 (x : A)) ↔ Tendsto (· * x) l (𝓝 x) := by
-  rw [IsInducing.subtypeVal.tendsto_nhds_iff]
-  simp only [Function.comp_def, MulMemClass.coe_mul]
 
 section Basic
 
@@ -468,7 +457,8 @@ private theorem norm_sub_mul_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G 
   obtain ⟨_, hright⟩ := hG x hx
   exact hright
 
-private theorem quasicentralSet_anti (I : TwoSidedIdeal A) {G₁ G₂ : Finset I} (hG : G₁ ⊆ G₂)
+/-- `I.quasicentralSet G F ε` is antitone in `(G, F)` and monotone in `ε`. -/
+theorem quasicentralSet_anti (I : TwoSidedIdeal A) {G₁ G₂ : Finset I} (hG : G₁ ⊆ G₂)
     {F₁ F₂ : Finset A} (hF : F₁ ⊆ F₂) {ε₁ ε₂ : ℝ} (hε : ε₂ ≤ ε₁) :
     I.quasicentralSet G₂ F₂ ε₂ ⊆ I.quasicentralSet G₁ F₁ ε₁ := by
   intro _ he
