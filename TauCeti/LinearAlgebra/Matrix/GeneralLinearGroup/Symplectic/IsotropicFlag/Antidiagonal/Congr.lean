@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.PEquiv
 public import Mathlib.LinearAlgebra.Matrix.Block
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag.Antidiagonal
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag.Antidiagonal.Basic
 
 /-!
 # A signed permutation congruence from the antidiagonal form to `JFin`
@@ -69,11 +69,24 @@ theorem antidiagSign_mul_self (i : Fin (m + m)) : antidiagSign m R i * antidiagS
   · simp [Fin.natAdd_eq_addNat]
 
 @[simp]
+theorem isUnit_antidiagSign (i : Fin (m + m)) : IsUnit (antidiagSign m R i) :=
+  .of_mul_eq_one _ (antidiagSign_mul_self i)
+
+@[simp]
 theorem antidiagSign_flagOrder (i : Fin (m + m)) :
     antidiagSign m R (flagOrder m i) = antidiagSign m R i := by
   refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i
   · simp
   · simp [Fin.natAdd_eq_addNat]
+
+/-- Conjugating by the permutation matrix `P_σ` of the self-dual flag order permutes rows and
+columns by `σ`, since `σ` is an involution. -/
+theorem toMatrix_flagOrder_mul_mul (M : Matrix (Fin (m + m)) (Fin (m + m)) R) :
+    (flagOrder m).toPEquiv.toMatrix * M * (flagOrder m).toPEquiv.toMatrix =
+      M.submatrix (flagOrder m) (flagOrder m) := by
+  rw [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, submatrix_submatrix,
+    flagOrder_symm]
+  rfl
 
 variable (m R)
 
@@ -84,19 +97,19 @@ def antidiagCongrMatrix : Matrix (Fin (m + m)) (Fin (m + m)) R :=
 
 variable {m R}
 
+/-- The entries of `P`: row `i` has the single nonzero entry `s_i`, in column `σ i`. -/
+theorem antidiagCongrMatrix_apply (i j : Fin (m + m)) :
+    antidiagCongrMatrix m R i j = if j = flagOrder m i then antidiagSign m R i else 0 := by
+  simp [antidiagCongrMatrix, PEquiv.toMatrix_apply, eq_comm]
+
 /-- Congruence by the signed permutation matrix: `P M Pᵀ` is `M` permuted by the flag order with
 the signs `s_i s_j` on its entries. -/
 theorem antidiagCongrMatrix_mul_mul_transpose (M : Matrix (Fin (m + m)) (Fin (m + m)) R) :
     antidiagCongrMatrix m R * M * (antidiagCongrMatrix m R)ᵀ =
       diagonal (antidiagSign m R) * M.submatrix (flagOrder m) (flagOrder m) *
         diagonal (antidiagSign m R) := by
-  have h : (flagOrder m).toPEquiv.toMatrix * M * (flagOrder m).symm.toPEquiv.toMatrix =
-      M.submatrix (flagOrder m) (flagOrder m) := by
-    rw [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, Equiv.symm_symm,
-      submatrix_submatrix]
-    rfl
   rw [antidiagCongrMatrix, transpose_mul, diagonal_transpose, ← PEquiv.toMatrix_symm,
-    ← Equiv.toPEquiv_symm, ← h]
+    ← Equiv.toPEquiv_symm, flagOrder_symm, ← toMatrix_flagOrder_mul_mul]
   simp only [Matrix.mul_assoc]
 
 /-- The transposed congruence: `Pᵀ M P` is `diag(s) M diag(s)` permuted by the flag order. -/
@@ -104,14 +117,8 @@ theorem transpose_antidiagCongrMatrix_mul_mul (M : Matrix (Fin (m + m)) (Fin (m 
     (antidiagCongrMatrix m R)ᵀ * M * antidiagCongrMatrix m R =
       (diagonal (antidiagSign m R) * M * diagonal (antidiagSign m R)).submatrix (flagOrder m)
         (flagOrder m) := by
-  have h (X : Matrix (Fin (m + m)) (Fin (m + m)) R) :
-      (flagOrder m).symm.toPEquiv.toMatrix * X * (flagOrder m).toPEquiv.toMatrix =
-        X.submatrix (flagOrder m) (flagOrder m) := by
-    rw [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, submatrix_submatrix,
-      flagOrder_symm]
-    rfl
   rw [antidiagCongrMatrix, transpose_mul, diagonal_transpose, ← PEquiv.toMatrix_symm,
-    ← Equiv.toPEquiv_symm, ← h]
+    ← Equiv.toPEquiv_symm, flagOrder_symm, ← toMatrix_flagOrder_mul_mul]
   simp only [Matrix.mul_assoc]
 
 theorem diagonal_antidiagSign_mul_self :
@@ -119,15 +126,22 @@ theorem diagonal_antidiagSign_mul_self :
   rw [diagonal_mul_diagonal, ← diagonal_one]
   exact congrArg diagonal (funext antidiagSign_mul_self)
 
+@[simp]
 theorem antidiagCongrMatrix_mul_transpose :
     antidiagCongrMatrix m R * (antidiagCongrMatrix m R)ᵀ = 1 := by
   have h := antidiagCongrMatrix_mul_mul_transpose (m := m) (R := R) 1
   rwa [Matrix.mul_one, submatrix_one_equiv, Matrix.mul_one, diagonal_antidiagSign_mul_self] at h
 
+@[simp]
 theorem transpose_antidiagCongrMatrix_mul :
     (antidiagCongrMatrix m R)ᵀ * antidiagCongrMatrix m R = 1 := by
   have h := transpose_antidiagCongrMatrix_mul_mul (m := m) (R := R) 1
   rwa [Matrix.mul_one, Matrix.mul_one, diagonal_antidiagSign_mul_self, submatrix_one_equiv] at h
+
+/-- The inverse of `P` is its transpose. -/
+@[simp]
+theorem inv_antidiagCongrMatrix : (antidiagCongrMatrix m R)⁻¹ = (antidiagCongrMatrix m R)ᵀ :=
+  inv_eq_left_inv transpose_antidiagCongrMatrix_mul
 
 variable (m R)
 
@@ -153,13 +167,10 @@ theorem coe_antidiagCongr_inv :
 theorem antidiagCongr_mul_JAntidiag_mul_transpose :
     (antidiagCongr m R : Matrix (Fin (m + m)) (Fin (m + m)) R) * JAntidiag m R *
         (antidiagCongr m R : Matrix (Fin (m + m)) (Fin (m + m)) R)ᵀ = JFin m R := by
-  have hσ (i : Fin (m + m)) : flagOrder m (flagOrder m i) = i := by
-    have := (flagOrder m).symm_apply_apply i
-    rwa [flagOrder_symm] at this
   rw [coe_antidiagCongr, antidiagCongrMatrix_mul_mul_transpose,
     JAntidiag_eq_neg_submatrix_flagOrder]
   ext i j
-  simp only [diagonal_mul, mul_diagonal, submatrix_apply, Matrix.neg_apply, hσ]
+  simp only [diagonal_mul, mul_diagonal, submatrix_apply, Matrix.neg_apply, flagOrder_flagOrder]
   refine Fin.addCases (fun a ↦ ?_) (fun a ↦ ?_) i <;>
     refine Fin.addCases (fun b ↦ ?_) (fun b ↦ ?_) j <;>
     simp only [antidiagSign, Fin.addCases_left, Fin.addCases_right, JFin_eq_submatrix,
@@ -197,21 +208,7 @@ theorem blockTriangular_antidiagCongr_inv_mul_mul_iff (M : Matrix (Fin (m + m)) 
         (antidiagCongr m R : Matrix (Fin (m + m)) (Fin (m + m)) R)).BlockTriangular id ↔
       (M.submatrix (flagOrder m) (flagOrder m)).BlockTriangular id := by
   rw [antidiagCongr_inv_mul_mul]
-  simp only [BlockTriangular, submatrix_apply, diagonal_mul, mul_diagonal, id]
-  refine forall₂_congr fun i j ↦ imp_congr_right fun _ ↦ ?_
-  have hi := antidiagSign_mul_self (R := R) (flagOrder m i)
-  have hj := antidiagSign_mul_self (R := R) (flagOrder m j)
-  constructor
-  · intro h
-    calc M (flagOrder m i) (flagOrder m j)
-        = antidiagSign m R (flagOrder m i) *
-            (antidiagSign m R (flagOrder m i) * M (flagOrder m i) (flagOrder m j) *
-              antidiagSign m R (flagOrder m j)) * antidiagSign m R (flagOrder m j) := by
-          linear_combination (-(M (flagOrder m i) (flagOrder m j) *
-            antidiagSign m R (flagOrder m j) * antidiagSign m R (flagOrder m j))) * hi -
-            M (flagOrder m i) (flagOrder m j) * hj
-      _ = 0 := by rw [h, mul_zero, zero_mul]
-  · intro h
-    rw [h, mul_zero, zero_mul]
+  simp only [BlockTriangular, submatrix_apply, diagonal_mul, mul_diagonal, id,
+    IsUnit.mul_left_eq_zero, IsUnit.mul_right_eq_zero, isUnit_antidiagSign]
 
 end TauCeti

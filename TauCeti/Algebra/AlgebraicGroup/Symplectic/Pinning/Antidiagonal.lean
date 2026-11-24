@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Pinning.Congruence
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag.AntidiagonalCongr
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.IsotropicFlag.Antidiagonal.Congr
 
 /-!
 # The symplectic group of the antidiagonal form
@@ -25,7 +25,8 @@ records the consequences:
 * it carries the standard pinning of `Sp₂ₘ` transported along `P`
   (`TauCeti.Symplectic.antidiagPinning`), whose torus and Borel subgroup are the pullbacks of the
   diagonal torus and of the isotropic-flag Borel subgroup of `Sp₂ₘ`
-  (`TauCeti.Symplectic.antidiagPinning_torus`, `TauCeti.Symplectic.antidiagPinning_borel`).
+  (`TauCeti.Symplectic.constantFormPinning_torus`, `TauCeti.Symplectic.constantFormPinning_borel`,
+  which apply to it directly since it is an abbreviation).
 
 On points, the identification sends a matrix `M` preserving `JFin` to `P⁻¹ M P`
 (`TauCeti.ConstantForm.pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr`). By
@@ -58,29 +59,11 @@ instance instSmoothCoordinateHopfAlgebraJAntidiag :
 
 /-- **The pinning of the antidiagonal model.** The standard pinning of `Sp₂ₘ` transported to the
 subgroup scheme preserving the antidiagonal form along the signed permutation congruence
-`TauCeti.antidiagCongr`. -/
-noncomputable def antidiagPinning [Nontrivial R] [ConnectedSpace (PrimeSpectrum R)] :
+`TauCeti.antidiagCongr`. Its torus and Borel subgroup are computed by
+`TauCeti.Symplectic.constantFormPinning_torus` and
+`TauCeti.Symplectic.constantFormPinning_borel`. -/
+noncomputable abbrev antidiagPinning [Nontrivial R] [ConnectedSpace (PrimeSpectrum R)] :
     Pinning R (ConstantForm.coordinateHopfAlgebra R (m + m) (JAntidiag m R)) m :=
   constantFormPinning (antidiagCongr m R) antidiagCongr_mul_JAntidiag_mul_transpose
-
-/-- The torus of the antidiagonal pinning is the pullback of the diagonal torus of `Sp₂ₘ` along
-the congruence. -/
-theorem antidiagPinning_torus [Nontrivial R] [ConnectedSpace (PrimeSpectrum R)] :
-    (antidiagPinning R m).torus =
-      (splitMaximalTorus R m).comapOfIso (ConstantForm.coordinateHopfAlgebraCongr
-        (antidiagCongr m R) antidiagCongr_mul_JAntidiag_mul_transpose) :=
-  constantFormPinning_torus _ _
-
-/-- The Borel subgroup of the antidiagonal pinning is the pullback of the isotropic-flag Borel
-subgroup of `Sp₂ₘ` along the congruence. -/
-theorem antidiagPinning_borel [Nontrivial R] [ConnectedSpace (PrimeSpectrum R)] :
-    (antidiagPinning R m).borel =
-      (IsotropicFlag.definingHopfIdeal R m).comapOfSurjective
-        (ConstantForm.coordinateHopfAlgebraCongr (antidiagCongr m R)
-          antidiagCongr_mul_JAntidiag_mul_transpose).hom.hom
-        (ConcreteCategory.bijective_of_isIso
-          (ConstantForm.coordinateHopfAlgebraCongr (antidiagCongr m R)
-            antidiagCongr_mul_JAntidiag_mul_transpose).hom).2 :=
-  constantFormPinning_borel _ _
 
 end TauCeti.Symplectic
