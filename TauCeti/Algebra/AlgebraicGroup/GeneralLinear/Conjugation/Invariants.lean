@@ -21,9 +21,11 @@ universal pair of `GLₙ`-points valued in `O(GLₙ) ⊗ O(GLₙ)`. The constant
 `R[c₀^{±1}, c₁, …, c_{n-1}] → O(GLₙ)^{GLₙ}`
 
 (`TauCeti.GeneralLinear.charpolyCoeffAlgHom`), for `n ≥ 1`. Equivalently, the characteristic
-polynomial `TauCeti.GeneralLinear.charpolyMap : GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ` factors uniquely through the
-quotient map `χ : GLₙ ⟶ Conj_{GLₙ} = GLₙ // GLₙ`, by `TauCeti.GeneralLinear.charpolyQuotientMap`
-(`TauCeti.GeneralLinear.existsUnique_conjugationQuotientMap_comp_eq_charpolyMap`).
+polynomial `TauCeti.GeneralLinear.charpolyMap : GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ` is conjugation invariant
+(`TauCeti.GeneralLinear.conjugationCoact_comp_charpolyMap`), so it factors through the quotient
+map `χ : GLₙ ⟶ Conj_{GLₙ} = GLₙ // GLₙ`, by `TauCeti.GeneralLinear.charpolyQuotientMap`, which is
+the spectrum of `charpolyCoeffAlgHom` (`TauCeti.GeneralLinear.charpolyQuotientMap_eq`). The
+factorization is unique by `TauCeti.HopfAlgebra.existsUnique_conjugationQuotientMap_comp_eq`.
 
 Over a field, `charpolyCoeffAlgHom` is expected to be an isomorphism, identifying the conjugation
 invariants of `GLₙ` with the Laurent polynomial ring `R[c₀^{±1}, c₁, …, c_{n-1}]`: the invariants
@@ -40,10 +42,12 @@ with no further relations. That identification is outside the scope of this file
   polynomial on the conjugation quotient.
 * `TauCeti.GeneralLinear.charpolyMap`: the characteristic polynomial `GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ`, as a
   morphism of schemes.
+* `TauCeti.GeneralLinear.conjugationCoact_comp_charpolyMap`: `charpolyMap` is conjugation
+  invariant.
 * `TauCeti.GeneralLinear.charpolyQuotientMap`: the characteristic polynomial on `Conj_{GLₙ}`, as a
-  morphism of schemes, with `TauCeti.GeneralLinear.conjugationQuotientMap_comp_charpolyQuotientMap`.
-* `TauCeti.GeneralLinear.existsUnique_conjugationQuotientMap_comp_eq_charpolyMap`: the
-  characteristic polynomial factors uniquely through `Conj_{GLₙ}`.
+  morphism of schemes, with `TauCeti.GeneralLinear.conjugationQuotientMap_comp_charpolyQuotientMap`
+  and its description `TauCeti.GeneralLinear.charpolyQuotientMap_eq` as the spectrum of
+  `charpolyCoeffAlgHom`.
 
 ## References
 
@@ -170,7 +174,7 @@ theorem charpolyMap_def :
 
 /-- `charpolyMap` is invariant under the conjugation action, since the coefficients of the
 characteristic polynomial are conjugation invariant. -/
-private theorem conjugationCoact_comp_charpolyMap :
+theorem conjugationCoact_comp_charpolyMap :
     Spec.map (CommRingCat.ofHom
         (HopfAlgebra.conjugationCoactAlgHom R (coordinateHopfAlgebra R n)).toRingHom) ≫
       charpolyMap R n =
@@ -203,17 +207,26 @@ theorem conjugationQuotientMap_comp_charpolyQuotientMap :
   rw [HopfAlgebra.conjugationQuotientMap_def, charpolyQuotientMap]
   exact ComoduleAlgebra.AffineQuotient.projection_desc _ _
 
-/-- **The characteristic polynomial factors through `Conj_{GLₙ}`.** The morphism `charpolyMap`
-factors uniquely through the quotient map `χ : GLₙ ⟶ Conj_{GLₙ}`, by `charpolyQuotientMap`. -/
-theorem existsUnique_conjugationQuotientMap_comp_eq_charpolyMap :
-    ∃! g : HopfAlgebra.conjugationQuotient R (coordinateHopfAlgebra R n) ⟶
-        Spec (CommRingCat.of
-          (Localization.Away (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R))),
-      HopfAlgebra.conjugationQuotientMap R (coordinateHopfAlgebra R n) ≫ g = charpolyMap R n :=
-  ⟨charpolyQuotientMap R n, conjugationQuotientMap_comp_charpolyQuotientMap R n, fun _ hg ↦
-    (HopfAlgebra.existsUnique_conjugationQuotientMap_comp_eq _
-      (conjugationCoact_comp_charpolyMap R n)).unique hg
-      (conjugationQuotientMap_comp_charpolyQuotientMap R n)⟩
+/-- `charpolyQuotientMap` is the spectrum of `charpolyCoeffAlgHom`, after identifying `Conj_{GLₙ}`
+with the spectrum of the conjugation invariants. -/
+theorem charpolyQuotientMap_eq :
+    charpolyQuotientMap R n =
+      eqToHom (HopfAlgebra.conjugationQuotient_eq R (coordinateHopfAlgebra R n)) ≫
+        Spec.map (CommRingCat.ofHom (charpolyCoeffAlgHom R n).toRingHom) := by
+  let := HopfAlgebra.conjugationComoduleAlgebra (R := R) (H := coordinateHopfAlgebra R n)
+  -- Equal subalgebras give the same morphism `Spec H ⟶ Spec S`, up to `eqToHom`.
+  have key {S T : Subalgebra R (coordinateHopfAlgebra R n)} (h : S = T)
+      (h' : Spec (CommRingCat.of S) = Spec (CommRingCat.of T)) :
+      Spec.algebraMap S (coordinateHopfAlgebra R n) ≫ eqToHom h' =
+        Spec.algebraMap T (coordinateHopfAlgebra R n) := by
+    subst h
+    simp
+  apply ComoduleAlgebra.AffineQuotient.hom_ext
+  rw [← HopfAlgebra.conjugationQuotientMap_def, conjugationQuotientMap_comp_charpolyQuotientMap,
+    HopfAlgebra.conjugationQuotientMap_def, ComoduleAlgebra.AffineQuotient.projection_def,
+    ← Category.assoc, key (HopfAlgebra.conjugationInvariants_def R _).symm, charpolyMap_def,
+    Spec.algebraMap, ← Spec.map_comp]
+  rfl
 
 end Scheme
 
