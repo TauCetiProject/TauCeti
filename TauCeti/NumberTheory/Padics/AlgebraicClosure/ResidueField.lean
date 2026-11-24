@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.ZMod
-public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.Topology.Algebra.Valued.ResidueField
@@ -20,7 +19,7 @@ import TauCeti.Topology.Algebra.Valued.Integer
 Let `O = 𝒪[PadicAlgCl p] = {x | ‖x‖ ≤ 1}` be the valuation ring of the algebraic closure
 `PadicAlgCl p` of `ℚ_p` for its spectral norm, and `κ = 𝓀[PadicAlgCl p]` its residue field. This
 file proves that `κ` is an algebraic closure of `𝔽_p = ZMod p`, hence non-canonically isomorphic to
-`AlgebraicClosure (ZMod p)`.
+`AlgebraicClosure (ZMod p)` through Mathlib's `IsAlgClosure.equiv`.
 
 * `κ` is algebraically closed, as is the residue field of every algebraically closed valued
   field (`Valued.instIsAlgClosedResidueField`).
@@ -32,8 +31,6 @@ file proves that `κ` is an algebraic closure of `𝔽_p = ZMod p`, hence non-ca
 
 * `PadicAlgCl.instAlgebraZModResidueField`: the `𝔽_p`-algebra structure on `𝓀[PadicAlgCl p]`,
   which has characteristic `p`.
-* `TauCeti.PadicAlgCl.residueFieldAlgEquiv`: a (non-canonical) `𝔽_p`-isomorphism of
-  `𝓀[PadicAlgCl p]` with `AlgebraicClosure (ZMod p)`.
 
 ## Main results
 
@@ -137,12 +134,5 @@ instance _root_.PadicAlgCl.instIsAlgebraicZModResidueField :
 instance _root_.PadicAlgCl.instIsAlgClosureZModResidueField :
     IsAlgClosure (ZMod p) 𝓀[PadicAlgCl p] :=
   ⟨inferInstance, inferInstance⟩
-
-variable (p) in
-/-- The residue field of `PadicAlgCl p` is isomorphic over `𝔽_p` to `AlgebraicClosure (ZMod p)`.
-The isomorphism is not canonical. -/
-noncomputable def residueFieldAlgEquiv :
-    𝓀[PadicAlgCl p] ≃ₐ[ZMod p] AlgebraicClosure (ZMod p) :=
-  IsAlgClosure.equiv (ZMod p) _ _
 
 end TauCeti.PadicAlgCl
