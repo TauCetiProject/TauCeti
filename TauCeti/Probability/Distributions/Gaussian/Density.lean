@@ -125,16 +125,12 @@ theorem multivariateGaussianPDFReal_smul (c : ℝ) (m x : EuclideanSpace ℝ ι)
     multivariateGaussianPDFReal m (c • S) x =
       (2 * π) ^ (-(Fintype.card ι : ℝ) / 2) * (c ^ Fintype.card ι * S.det) ^ (-(1 : ℝ) / 2) *
         exp (-(c⁻¹ * ⟪x - m, S⁻¹.toEuclideanLin (x - m)⟫) / 2) := by
+  -- `c • S` is `algebraMap c * S`; the inverse of a product reverses unconditionally, and the
+  -- inverse of the scalar matrix `algebraMap c` is `algebraMap c⁻¹`, also for `c = 0`.
   have hinv : (c • S)⁻¹ = c⁻¹ • S⁻¹ := by
-    rcases eq_or_ne c 0 with rfl | hc
-    · simp
-    by_cases hS : IsUnit S.det
-    · simpa [Units.smul_def] using Matrix.inv_smul' S (Units.mk0 c hc) hS
-    · have hcS : ¬IsUnit (c • S).det := by
-        rw [Matrix.det_smul, isUnit_iff_ne_zero, mul_ne_zero_iff, not_and_or]
-        exact .inr (by simpa [isUnit_iff_ne_zero] using hS)
-      rw [Matrix.nonsing_inv_apply_not_isUnit _ hcS, Matrix.nonsing_inv_apply_not_isUnit _ hS,
-        smul_zero]
+    rw [Algebra.smul_def, Matrix.mul_inv_rev,
+      Matrix.nonsing_inv_eq_ringInverse (algebraMap ℝ _ c), ← map_inv_eq_ringInverse_map,
+      ← Algebra.commutes, ← Algebra.smul_def]
   rw [multivariateGaussianPDFReal_def, Matrix.det_smul, hinv]
   simp [inner_smul_right]
 

@@ -12,7 +12,6 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 import TauCeti.Probability.Distributions.Gaussian.Independence
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
-import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.Probability.Distributions.Gaussian.Density
@@ -45,13 +44,15 @@ every partial derivative `∂ₗ f X`.
 * `TauCeti.Probability.integral_sub_smul_eq_sum_smul_integral_fderiv_multivariateGaussian`:
   the coordinate form for `multivariateGaussian m S`.
 * `TauCeti.Probability.integral_sub_mul_eq_mul_integral_fderiv_multivariateGaussian`: Stein's
-  identity `E[(Xᵢ - θᵢ) f(X)] = v E[∂ᵢ f(X)]` for `X ~ N(θ, v I)`, `v ≥ 0`, a differentiable real
-  `f` and only the partial derivative `∂ᵢ f` integrable. For `v > 0` the proof integrates by parts
-  against the density of `N(θ, v I)` along `eᵢ`; at `v = 0` both sides vanish.
+  identity `E[(Xᵢ - θᵢ) f(X)] = v E[∂ᵢ f(X)]` for `X ~ N(θ, v I)`, `v ≥ 0`, and a differentiable
+  real `f` such that `f`, `(xᵢ - θᵢ) f` and the partial derivative `∂ᵢ f` are integrable. For
+  `v > 0` the proof integrates by parts against the density of `N(θ, v I)` along `eᵢ`; at `v = 0`
+  both sides vanish.
 * `TauCeti.Probability.gaussian_integration_by_parts`: the same identity
-  `E[(Xᵢ - θᵢ) gᵢ(X)] = v E[∂ᵢ gᵢ(X)]` for the coordinates of an `L²` vector field `g`, with
-  `TauCeti.Probability.integrable_sub_mul_apply_of_memLp` supplying the integrability of
-  `(xᵢ - θᵢ) gᵢ(x)`.
+  `E[(Xᵢ - θᵢ) gᵢ(X)] = v E[∂ᵢ gᵢ(X)]` for the coordinates of a differentiable `L²` vector field
+  `g` whose diagonal partial derivative `∂ᵢ gᵢ` is integrable; the integrability of
+  `(xᵢ - θᵢ) gᵢ(x)` is `TauCeti.Probability.integrable_sub_mul_apply_of_memLp` from
+  `TauCeti.Probability.Distributions.Gaussian.Multivariate`.
 
 ## Implementation notes
 
@@ -247,15 +248,6 @@ theorem integral_sub_smul_eq_sum_smul_integral_fderiv_multivariateGaussian {ι F
   have h := hX.integral_repr_sub_smul_eq_sum_covariance_smul_integral_fderiv
     (EuclideanSpace.basisFun ι ℝ).toBasis f hf i (by simpa using hxf) (by simpa using hdf)
   simpa [covariance_eval_multivariateGaussian hS] using h
-
-/-- Under a Gaussian law on `EuclideanSpace ℝ ι`, the product of a centered coordinate
-`x i - θ i` with the coordinate `g x i` of an `L²` vector field `g` is integrable. -/
-theorem integrable_sub_mul_apply_of_memLp {ι : Type*} [Fintype ι]
-    {μ : Measure (EuclideanSpace ℝ ι)} [IsGaussian μ]
-    {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hg : MemLp g 2 μ) (θ : EuclideanSpace ℝ ι)
-    (i : ι) : Integrable (fun x ↦ (x i - θ i) * g x i) μ :=
-  ((IsGaussian.memLp_dual μ (EuclideanSpace.proj i) 2 (by simp)).sub (memLp_const _)).integrable_mul
-    ((EuclideanSpace.proj (𝕜 := ℝ) i).comp_memLp' hg)
 
 section Isotropic
 
