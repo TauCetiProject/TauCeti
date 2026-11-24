@@ -46,10 +46,10 @@ point into `Y`: when `Y` is `(d + 1)`-connected, the inclusion `Ω²Q → P_{Q�
 evaluation over a point of `Y` is an isomorphism on `H_m` for `m ≤ d`. In the based mapping space
 model `Map_*(S², -)` of double loop spaces, the fibre of evaluation, the composite
 `Ω²Sᵏ → Ω²Q → P_{Q→Y} 𝓛₀Q` is therefore injective on `H_m` for `m ≤ d`
-(`TauCeti.IsFramedTube.injective_singularHomologyMap_preimageInclusion_comp_map`), so it keeps
-`j_!α₀` of infinite order. In the source this composite is `j_{Y!} α = j^{(Y)}_* j_! β`, through the
-shriek maps of DG Morse homology, which are not formalized here; what is proved is the statement
-about the topological maps that the source's argument reduces to.
+(`TauCeti.IsFramedTube.injective_singularHomologyMap_preimageInclusion_comp_basedMapMap`), so it
+keeps `j_!α₀` of infinite order. In the source this composite is `j_{Y!} α = j^{(Y)}_* j_! β`,
+through the shriek maps of DG Morse homology, which are not formalized here; what is proved is the
+statement about the topological maps that the source's argument reduces to.
 
 ## Main results
 
@@ -59,9 +59,9 @@ about the topological maps that the source's argument reduces to.
   smooth sphere meeting the core of a smooth tube once, transversely.
 * `TauCeti.SmoothEmbedding.injective_singularHomologyMap_map_map_of_transverse`: the same for a
   smooth sphere meeting a smoothly framed compact submanifold once, transversely.
-* `TauCeti.IsFramedTube.injective_singularHomologyMap_preimageInclusion_comp_map`: followed by the
-  inclusion into the maps `S² → Q` sending the base point into a `(d + 1)`-connected core, the
-  double loops of such a sphere stay injective on `H_m` for `m ≤ d`.
+* `TauCeti.IsFramedTube.injective_singularHomologyMap_preimageInclusion_comp_basedMapMap`:
+  followed by the inclusion into the maps `S² → Q` sending the base point into a
+  `(d + 1)`-connected core, the double loops of such a sphere stay injective on `H_m` for `m ≤ d`.
 
 ## References
 
@@ -108,7 +108,7 @@ into the maps `S² → Q` sending a base point `b₀` into `Y`,
 `Ω²Sⁿ⁺² → Ω²Q → ev⁻¹(Y) = P_{Q→Y} 𝓛₀Q`, are injective on `H_m` for every `m ≤ d`, with any
 coefficients. Double loops are taken in their based mapping space model `Map_*(S², -)`, the fibre
 of evaluation at `b₀`. -/
-theorem injective_singularHomologyMap_preimageInclusion_comp_map (h : IsFramedTube f τ)
+theorem injective_singularHomologyMap_preimageInclusion_comp_basedMapMap (h : IsFramedTube f τ)
     (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)
     (σ : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, Q)) {x : sphere (0 : EuclideanSpace ℝ
       (Fin (n + 3))) 1} (hx : σ ⁻¹' range f = {x})
@@ -134,10 +134,10 @@ theorem injective_singularHomologyMap_preimageInclusion_comp_map (h : IsFramedTu
   have hmap := BasedMap.injective_singularHomologyMap_map_of_surjective_singularHomologyMap
     (b₀ := b₀) (x := x) rfl (h.bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere s₀
       (by omega) σ hx hσ).2 R m
-  intro a b hab
-  simp only [ContinuousMap.singularHomologyMap_comp] at hab
-  exact hmap (((basedMapHomeomorphPreimage b₀ (σ x)).toHomotopyEquiv.bijective_singularHomologyMap
-    R m).injective (hincl.injective hab))
+  simp only [ContinuousMap.singularHomologyMap_comp', LinearMap.coe_comp]
+  exact hincl.injective.comp
+    (((basedMapHomeomorphPreimage b₀ (σ x)).toHomotopyEquiv.bijective_singularHomologyMap
+      R m).injective.comp hmap)
 
 section Transverse
 
