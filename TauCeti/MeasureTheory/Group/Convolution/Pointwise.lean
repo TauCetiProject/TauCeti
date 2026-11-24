@@ -373,7 +373,7 @@ theorem convolutionL_ae_eq_modularCharacter {hp : p ≠ ∞} (h : Lp 𝕜 1 μ) 
     convolutionL μ p hp h f =ᵐ[μ]
       fun x => ∫ z, (Measure.modularCharacter z : ℝ) • (h (x * z⁻¹) • f z) ∂μ :=
   (convolutionL_ae_eq h f).trans <| .of_forall fun x =>
-    TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul (μ := μ) h f x
+    TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul_of_regular (μ := μ) h f x
 
 end PointwiseConvolutionL
 

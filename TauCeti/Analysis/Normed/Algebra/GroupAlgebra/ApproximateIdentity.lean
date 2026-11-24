@@ -45,7 +45,7 @@ net approximate identity `L1GroupAlgebra.approximateIdentity 𝕜 μ` on `TauCet
   every nonzero character satisfies `χ (approximateIdentity 𝕜 μ U) → 1` along `atBot` and has
   operator norm `‖χ.toStrongDual‖ = 1`
   (`L1GroupAlgebra.tendsto_character_approximateIdentity`,
-  `L1GroupAlgebra.norm_character_toStrongDual`). Haar integration
+  `L1GroupAlgebra.norm_toStrongDual_eq_one_of_ne_zero`). Haar integration
   `L1GroupAlgebra.integralNonUnitalAlgHom 𝕜 μ` provides an explicit nonzero character of norm `1`.
 
 ## References
@@ -316,7 +316,7 @@ theorem tendsto_character_approximateIdentity {χ : L1GroupAlgebra 𝕜 μ →�
 
 /-- **Every nonzero algebraic character of `L¹(G)` is bounded of operator norm `1`.** No continuity
 is assumed on `χ`. -/
-theorem norm_character_toStrongDual {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜} (hχ : χ ≠ 0) :
+theorem norm_toStrongDual_eq_one_of_ne_zero {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜} (hχ : χ ≠ 0) :
     ‖χ.toStrongDual‖ = 1 :=
   NonUnitalAlgHom.norm_toStrongDual_eq_one_of_isApproximateUnit
     isApproximateUnit_map_approximateIdentity hχ
@@ -340,7 +340,7 @@ theorem integralNonUnitalAlgHom_ne_zero : integralNonUnitalAlgHom 𝕜 μ ≠ 0 
 @[simp]
 theorem norm_integralCLM : ‖integralCLM 𝕜 μ‖ = 1 := by
   rw [← toStrongDual_integralNonUnitalAlgHom]
-  exact norm_character_toStrongDual integralNonUnitalAlgHom_ne_zero
+  exact norm_toStrongDual_eq_one_of_ne_zero integralNonUnitalAlgHom_ne_zero
 
 end RegularHaar
 

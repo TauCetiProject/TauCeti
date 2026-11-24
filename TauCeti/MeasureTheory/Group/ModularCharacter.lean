@@ -65,8 +65,8 @@ none of this assumes σ-finiteness.
   and `y ↦ y⁻¹ * x` preserve null sets of a regular Haar measure.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul_of_regular`,
   `TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular`,
-  `TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul`, and their lower Lebesgue
-  versions `TauCeti.lintegral_mul_right_eq_modularCharacter_mul_of_regular` and
+  `TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul_of_regular`, and their lower
+  Lebesgue versions `TauCeti.lintegral_mul_right_eq_modularCharacter_mul_of_regular` and
   `TauCeti.lintegral_inv_eq_lintegral_modularCharacter_mul_of_regular`: the change-of-variables
   formulas for every integrand, against a regular Haar measure.
 
@@ -548,7 +548,7 @@ theorem integral_inv_eq_integral_modularCharacter_smul_of_regular (f : G → E) 
 measure `μ` on a locally compact group `G`, substituting `y = x * z⁻¹` using left invariance and
 the modular inversion formula transforms `∫ y, g y • u (y⁻¹ * x) ∂μ` into
 `∫ z, c(z) • (g (x * z⁻¹) • u z) ∂μ`, where `c` is the modular character. -/
-theorem integral_smul_inv_mul_eq_integral_modularCharacter_smul
+theorem integral_smul_inv_mul_eq_integral_modularCharacter_smul_of_regular
     {α : Type*} [SMul α E] (g : G → α) (u : G → E) (x : G) :
     ∫ y, g y • u (y⁻¹ * x) ∂μ =
       ∫ z, (Measure.modularCharacter z : ℝ) • (g (x * z⁻¹) • u z) ∂μ := by
