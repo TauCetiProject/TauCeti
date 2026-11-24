@@ -31,8 +31,6 @@ open Matrix
 
 variable {K : Type*} [Field K] {n : ℕ}
 
-attribute [local instance] TauCeti.neZero_card_fin
-
 /-- The symmetric product as a bilinear map on Mathlib's actual trace-zero Lie algebra. -/
 def symmetricProduct [NeZero (n : K)] :
     LieAlgebra.SpecialLinear.sl (Fin n) K →ₗ[K]

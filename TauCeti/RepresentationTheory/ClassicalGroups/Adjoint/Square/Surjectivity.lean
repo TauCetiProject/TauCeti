@@ -13,8 +13,9 @@ import TauCeti.Algebra.Lie.GeneralLinear.Basic
 
 /-! # Surjectivity of the two adjoint-square contractions
 
-Off-diagonal matrix units factor through the third index. The two remaining
-diagonal coordinates use differences of diagonal units, since the trace is zero.
+The Lie-bracket contraction onto trace-zero three-by-three matrices is surjective over any
+commutative ring. The traceless symmetric contraction is surjective over a field when
+three is nonzero. These results give the injectivity of the two trace-transpose embeddings.
 -/
 
 public section
@@ -44,15 +45,22 @@ private theorem surjective_of_units (f : (𝔰 K ⊗[K] 𝔰 K) →ₗ[K] 𝔰 K
   intro X
   let N := LinearMap.range ((𝔰 K).toSubmodule.subtype.comp f)
   have hx : X.val ∈ N := by
-    apply TauCeti.mem_of_trace_eq_zero_of_single_mem (N := N) (fun h => off _ _ h)
+    apply TauCeti.mem_of_trace_eq_zero_of_single_mem (N := N)
+    · intro i j hij c
+      obtain ⟨t, ht⟩ := off i j hij c
+      exact LinearMap.mem_range.mpr ⟨t, by
+        simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht⟩
     · intro i j c
       by_cases h : i = j
       · subst j
         simpa only [sub_self] using N.zero_mem
-      · exact diag i j h c
+      · obtain ⟨t, ht⟩ := diag i j h c
+        exact LinearMap.mem_range.mpr ⟨t, by
+          simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht⟩
     · exact LieAlgebra.SpecialLinear.mem_sl_iff.mp X.property
-  obtain ⟨t, ht⟩ := hx
-  exact ⟨t, Subtype.ext ht⟩
+  obtain ⟨t, ht⟩ := LinearMap.mem_range.mp hx
+  refine ⟨t, Subtype.ext ?_⟩
+  simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht
 
 private theorem alternating_chain (i k j : Fin 3) (hik : i ≠ k) (hkj : k ≠ j) (hij : i ≠ j)
     (c : K) : (alternatingProductMap K 3 (pair i k k j hik hkj c)).val = Matrix.single i j c := by

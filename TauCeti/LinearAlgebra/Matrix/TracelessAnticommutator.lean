@@ -31,8 +31,8 @@ the field, the correction is zero. -/
 def tracelessAnticommutator (X Y : Matrix ι ι K) : Matrix ι ι K :=
   X * Y + Y * X - ((2 / (Fintype.card ι : K)) * trace (X * Y)) • 1
 
-/-- Expand the trace correction in computations outside this module, where the definition
-is not exposed. -/
+/-- The traceless anticommutator is the sum of the two products minus the scalar trace
+correction. -/
 theorem tracelessAnticommutator_def (X Y : Matrix ι ι K) :
     tracelessAnticommutator X Y =
       X * Y + Y * X - ((2 / (Fintype.card ι : K)) * trace (X * Y)) • 1 :=

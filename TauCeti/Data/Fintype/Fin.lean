@@ -48,7 +48,7 @@ theorem isUnit_card_fin {K : Type*} [GroupWithZero K] [NatCast K] {n : ℕ}
   exact hn (Fin.pos_iff_nonempty.mpr h).ne'
 
 /-- A nonzero cast of `n` gives a nonzero cast of the cardinality of `Fin n`. -/
-theorem neZero_card_fin (K : Type*) [NatCast K] [Zero K] (n : ℕ) [NeZero (n : K)] :
+instance neZero_card_fin (K : Type*) [NatCast K] [Zero K] (n : ℕ) [NeZero (n : K)] :
     NeZero (Fintype.card (Fin n) : K) := by
   rw [Fintype.card_fin]
   infer_instance

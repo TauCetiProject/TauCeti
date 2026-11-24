@@ -26,7 +26,7 @@ local notation "V" => LieAlgebra.SpecialLinear.sl (Fin 3) K
 
 /-- The tensor flip negates the image of the transposed Lie bracket. -/
 theorem comm_alternatingEmbeddingMap (X : V) :
-    TensorProduct.comm K V V (alternatingEmbeddingMap X) = -alternatingEmbeddingMap X := by
+    TensorProduct.comm K V V (alternatingEmbeddingMap K X) = -alternatingEmbeddingMap K X := by
   apply squareTrace.injective
   apply LinearMap.ext
   intro t
@@ -35,7 +35,7 @@ theorem comm_alternatingEmbeddingMap (X : V) :
 
 /-- The tensor flip fixes the image of the transposed symmetric product. -/
 theorem comm_symmetricEmbeddingMap (X : V) :
-    TensorProduct.comm K V V (symmetricEmbeddingMap X) = symmetricEmbeddingMap X := by
+    TensorProduct.comm K V V (symmetricEmbeddingMap K X) = symmetricEmbeddingMap K X := by
   apply squareTrace.injective
   apply LinearMap.ext
   intro t

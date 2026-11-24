@@ -16,6 +16,7 @@ public import Mathlib.RepresentationTheory.Subrepresentation
 import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.Data.Fintype.Fin
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
@@ -58,16 +59,17 @@ theorem matrixAdjointRep_apply (g : SpecialLinearGroup (Fin n) K)
     (X : Matrix (Fin n) (Fin n) K) :
     matrixAdjointRep K n g X =
       (g : Matrix (Fin n) (Fin n) K) * X * (g⁻¹ : SpecialLinearGroup (Fin n) K) := by
-  apply (Matrix.toLin' : Matrix (Fin n) (Fin n) K ≃ₗ[K]
-    Module.End K (Fin n → K)).injective
-  apply LinearMap.ext
-  intro v
-  simp only [matrixAdjointRep, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv,
-    LinearEquiv.conjRingEquiv_apply_apply,
-    LinearEquiv.symm_symm, LinearEquiv.apply_symm_apply, Representation.linHom_apply,
-    stdSLRep_apply, Matrix.toLin'_apply', LinearMap.comp_apply, Matrix.mulVecLin_apply,
-    Matrix.mulVec_mulVec, Matrix.mul_assoc]
+  let e : Matrix (Fin n) (Fin n) K ≃ₗ[K] Module.End K (Fin n → K) := Matrix.toLin'
+  apply e.injective
+  simp only [matrixAdjointRep, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv]
+  have h := LinearMap.congr_fun (e.symm.conjRingEquiv_apply_comp
+    (Representation.linHom (stdSLRep K n) (stdSLRep K n) g)) (e X)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] at h
+  rw [h, LinearEquiv.apply_symm_apply, Representation.linHom_apply]
+  dsimp only [e]
+  rw [Matrix.toLin'_mul, Matrix.toLin'_mul]
+  simp only [stdSLRep_apply, Matrix.toLin'_apply', LinearMap.comp_assoc]
 
 /-- Conjugation preserves the trace-zero submodule. -/
 def tracelessSubrep : Subrepresentation (matrixAdjointRep K n) where
@@ -126,8 +128,6 @@ end
 section
 
 variable (K : Type*) [Field K] (n : ℕ)
-
-attribute [local instance] TauCeti.neZero_card_fin
 
 /-- The trace pairing is an equivariant self-duality of the adjoint representation. -/
 noncomputable def traceDualEquiv [NeZero (n : K)] :

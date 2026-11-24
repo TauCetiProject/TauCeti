@@ -56,31 +56,39 @@ private theorem liftMap_pairing (f : Representation.IntertwiningMap σ ρ) (x : 
   rw [← squareTraceEquiv_apply, liftMap_apply, Representation.Equiv.apply_symm_apply,
     LinearMap.dualMap_apply, Representation.IntertwiningMap.toLinearMap_apply]
 
+variable (K)
+
 /-- The trace transpose of the Lie bracket as an equivariant map into the tensor square. -/
 noncomputable def alternatingEmbeddingMap : Representation.IntertwiningMap ρ σ :=
   liftMap (alternatingProductMap (K := K) (n := 3))
 
 /-- The alternating product is surjective, so its trace transpose is injective. -/
-theorem alternatingEmbeddingMap_injective : Function.Injective (alternatingEmbeddingMap (K := K)) :=
+theorem alternatingEmbeddingMap_injective : Function.Injective (alternatingEmbeddingMap K) :=
   liftMap_injective _ (alternatingProductMap_surjective K)
+
+variable {K}
 
 /-- The trace pairing on the tensor square characterizes the alternating embedding. -/
 theorem alternatingEmbeddingMap_pairing (x : V) (t : T) :
-    squareTrace (alternatingEmbeddingMap x) t =
+    squareTrace (alternatingEmbeddingMap K x) t =
       (SLAdjoint.traceDualEquiv K 3 x) (alternatingProductMap K 3 t) :=
   liftMap_pairing _ x t
+
+variable (K)
 
 /-- The trace transpose of the traceless symmetric product into the tensor square. -/
 noncomputable def symmetricEmbeddingMap : Representation.IntertwiningMap ρ σ :=
   liftMap (symmetricProductMap K 3)
 
 /-- The symmetric product is surjective, so its trace transpose is injective. -/
-theorem symmetricEmbeddingMap_injective : Function.Injective (symmetricEmbeddingMap (K := K)) :=
+theorem symmetricEmbeddingMap_injective : Function.Injective (symmetricEmbeddingMap K) :=
   liftMap_injective _ (symmetricProductMap_surjective K)
+
+variable {K}
 
 /-- The trace pairing on the tensor square characterizes the symmetric embedding. -/
 theorem symmetricEmbeddingMap_pairing (x : V) (t : T) :
-    squareTrace (symmetricEmbeddingMap x) t =
+    squareTrace (symmetricEmbeddingMap K x) t =
       (SLAdjoint.traceDualEquiv K 3 x) (symmetricProductMap K 3 t) :=
   liftMap_pairing _ x t
 

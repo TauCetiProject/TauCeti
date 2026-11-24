@@ -25,14 +25,15 @@ variable (K : Type*) [Field K] [NeZero (3 : K)]
 /-- Swapping factors has opposite signs on the two images, so their intersection vanishes
 when `2 ≠ 0`. -/
 theorem disjoint_range_alternatingEmbeddingMap_symmetricEmbeddingMap [NeZero (2 : K)] :
-    Disjoint (LinearMap.range (alternatingEmbeddingMap (K := K)).toLinearMap)
-      (LinearMap.range (symmetricEmbeddingMap (K := K)).toLinearMap) := by
+    Disjoint (LinearMap.range (alternatingEmbeddingMap K).toLinearMap)
+      (LinearMap.range (symmetricEmbeddingMap K).toLinearMap) := by
   rw [disjoint_iff_inf_le]
   intro x hx
-  obtain ⟨u, hu⟩ := hx.1
-  obtain ⟨v, hv⟩ := hx.2
-  have ha := comm_alternatingEmbeddingMap (K := K) u
-  have hs := comm_symmetricEmbeddingMap (K := K) v
+  obtain ⟨hxAlt, hxSymm⟩ := Submodule.mem_inf.mp hx
+  obtain ⟨u, hu⟩ := LinearMap.mem_range.mp hxAlt
+  obtain ⟨v, hv⟩ := LinearMap.mem_range.mp hxSymm
+  have ha := comm_alternatingEmbeddingMap u
+  have hs := comm_symmetricEmbeddingMap v
   rw [Representation.IntertwiningMap.toLinearMap_apply] at hu hv
   rw [hu] at ha
   rw [hv] at hs
@@ -44,24 +45,24 @@ theorem disjoint_range_alternatingEmbeddingMap_symmetricEmbeddingMap [NeZero (2 
 
 /-- The alternating copy of the adjoint has dimension eight. -/
 theorem finrank_range_alternatingEmbeddingMap :
-    Module.finrank K (LinearMap.range (alternatingEmbeddingMap (K := K)).toLinearMap) = 8 := by
-  rw [LinearMap.finrank_range_of_inj (alternatingEmbeddingMap_injective (K := K))]
+    Module.finrank K (LinearMap.range (alternatingEmbeddingMap K).toLinearMap) = 8 := by
+  rw [LinearMap.finrank_range_of_inj (alternatingEmbeddingMap_injective K)]
   simp [TauCeti.finrank_sl]
 
 /-- The symmetric copy of the adjoint has dimension eight. -/
 theorem finrank_range_symmetricEmbeddingMap :
-    Module.finrank K (LinearMap.range (symmetricEmbeddingMap (K := K)).toLinearMap) = 8 := by
-  rw [LinearMap.finrank_range_of_inj (symmetricEmbeddingMap_injective (K := K))]
+    Module.finrank K (LinearMap.range (symmetricEmbeddingMap K).toLinearMap) = 8 := by
+  rw [LinearMap.finrank_range_of_inj (symmetricEmbeddingMap_injective K)]
   simp [TauCeti.finrank_sl]
 
 /-- The span of the two disjoint octet images has dimension sixteen when `2 ≠ 0`. -/
 theorem finrank_range_alternatingEmbeddingMap_sup_range_symmetricEmbeddingMap [NeZero (2 : K)] :
     Module.finrank K
-      ↥(LinearMap.range (alternatingEmbeddingMap (K := K)).toLinearMap ⊔
-        LinearMap.range (symmetricEmbeddingMap (K := K)).toLinearMap) = 16 := by
+      ↥(LinearMap.range (alternatingEmbeddingMap K).toLinearMap ⊔
+        LinearMap.range (symmetricEmbeddingMap K).toLinearMap) = 16 := by
   have h := Submodule.finrank_sup_add_finrank_inf_eq
-    (LinearMap.range (alternatingEmbeddingMap (K := K)).toLinearMap)
-    (LinearMap.range (symmetricEmbeddingMap (K := K)).toLinearMap)
+    (LinearMap.range (alternatingEmbeddingMap K).toLinearMap)
+    (LinearMap.range (symmetricEmbeddingMap K).toLinearMap)
   rw [(disjoint_range_alternatingEmbeddingMap_symmetricEmbeddingMap K).eq_bot, finrank_bot,
     add_zero, finrank_range_alternatingEmbeddingMap K, finrank_range_symmetricEmbeddingMap K] at h
   exact h

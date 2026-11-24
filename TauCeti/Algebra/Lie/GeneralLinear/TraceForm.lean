@@ -383,11 +383,15 @@ theorem traceForm_apply (X Y : LieAlgebra.SpecialLinear.sl ι K) :
   unfold traceForm
   rw [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, traceBilinForm_apply]
 
-/-- The restricted trace form is symmetric, because `TauCeti.traceBilinForm` is. -/
+/-- The trace form on the special linear Lie algebra is symmetric. -/
+theorem traceForm_isSymm : (traceForm K ι).IsSymm := by
+  unfold traceForm
+  exact (traceBilinForm_isSymm K ι).restrict (LieAlgebra.SpecialLinear.sl ι K).toSubmodule
+
+/-- Exchanging the two trace-zero matrices leaves their trace pairing unchanged. -/
 theorem traceForm_comm (X Y : LieAlgebra.SpecialLinear.sl ι K) :
     traceForm K ι X Y = traceForm K ι Y X :=
-  ((traceBilinForm_isSymm K ι).restrict
-    (LieAlgebra.SpecialLinear.sl ι K).toSubmodule).eq X Y
+  (traceForm_isSymm K ι).eq X Y
 
 end
 
@@ -409,11 +413,8 @@ private theorem eq_zero_of_forall_trace_mul_eq_zero [NeZero (Fintype.card ι : K
 
 /-- Both radicals of the trace pairing vanish when the index cardinality is nonzero in `K`. -/
 theorem traceForm_nondegenerate [NeZero (Fintype.card ι : K)] : (traceForm K ι).Nondegenerate := by
-  apply ((traceBilinForm_isSymm K ι).restrict
-    (LieAlgebra.SpecialLinear.sl ι K).toSubmodule).isRefl.nondegenerate_iff_separatingLeft.mpr
+  apply (traceForm_isSymm K ι).isRefl.nondegenerate_iff_separatingLeft.mpr
   intro X h
-  -- Name the restricted bilinear form in the radical hypothesis so traceForm_apply rewrites it.
-  change ∀ Y, traceForm K ι X Y = 0 at h
   exact eq_zero_of_forall_trace_mul_eq_zero K ι X fun Y => by
     simpa only [traceForm_apply] using h Y
 
