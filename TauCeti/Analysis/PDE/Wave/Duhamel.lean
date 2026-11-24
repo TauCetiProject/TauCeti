@@ -169,18 +169,20 @@ theorem norm_dAlembertDuhamel_le {K : ℝ}
   have hinner : ∀ s ∈ Ι (0 : ℝ) t,
       ‖∫ y in x - (t - s)..x + (t - s), G s y‖ ≤ 2 * K * |t - s| := by
     intro s hs
-    have h := norm_integral_le_of_norm_le_const
-      fun y hy ↦ hG s (uIoc_subset_uIcc hs) y (uIoc_subset_uIcc hy)
-    rwa [show x + (t - s) - (x - (t - s)) = 2 * (t - s) by ring, abs_mul, abs_two,
-      ← mul_assoc, mul_comm K] at h
+    calc ‖∫ y in x - (t - s)..x + (t - s), G s y‖
+        ≤ K * |x + (t - s) - (x - (t - s))| := norm_integral_le_of_norm_le_const
+          fun y hy ↦ hG s (uIoc_subset_uIcc hs) y (uIoc_subset_uIcc hy)
+      _ = 2 * K * |t - s| := by
+        rw [show x + (t - s) - (x - (t - s)) = 2 * (t - s) by ring, abs_mul, abs_two]
+        ring
   have habs : |(∫ s in (0 : ℝ)..t, |t - s|)| = t ^ 2 / 2 := by
     rw [integral_comp_sub_left (fun u ↦ |u|), sub_self, sub_zero]
+    have ht2 : 0 ≤ t ^ 2 / 2 := by positivity
     rcases le_total 0 t with ht | ht
-    · rw [integral_congr fun u hu ↦ abs_of_nonneg (uIcc_of_le ht ▸ hu).1, integral_id,
-        zero_pow two_ne_zero, sub_zero, abs_of_nonneg (by positivity)]
-    · rw [integral_congr fun u hu ↦ abs_of_nonpos (uIcc_of_ge ht ▸ hu).2,
-        intervalIntegral.integral_neg, integral_id, zero_pow two_ne_zero, sub_zero, abs_neg,
-        abs_of_nonneg (by positivity)]
+    · simp [integral_congr fun _ hu ↦ abs_of_nonneg (uIcc_of_le ht ▸ hu).1, ht2]
+    · rw [integral_congr fun _ hu ↦ abs_of_nonpos (uIcc_of_ge ht ▸ hu).2,
+        intervalIntegral.integral_neg]
+      simp [ht2]
   have houter := norm_integral_le_abs_of_norm_le (μ := volume)
     ((ae_restrict_iff' measurableSet_uIoc).2 (ae_of_all _ hinner))
     ((by fun_prop : Continuous fun s : ℝ ↦ 2 * K * |t - s|).intervalIntegrable 0 t)
@@ -436,6 +438,32 @@ section CauchyProblem
 
 variable {G G' : ℝ → ℝ → F} {u v : ℝ → ℝ → F}
 
+/-- The wave operator `∂ₜ²w - ∂ₓ²w` of the sum `w = u + v` of two `C²` space-time functions is the
+sum of the wave operators of `u` and `v`. -/
+private theorem deriv_deriv_sub_deriv_deriv_add (hu : ContDiff ℝ 2 (uncurry u))
+    (hv : ContDiff ℝ 2 (uncurry v)) (t x : ℝ) :
+    deriv (fun s ↦ deriv (fun r ↦ u r x + v r x) s) t - deriv (deriv fun y ↦ u t y + v t y) x =
+      (deriv (fun s ↦ deriv (fun r ↦ u r x) s) t - deriv (deriv (u t)) x) +
+        (deriv (fun s ↦ deriv (fun r ↦ v r x) s) t - deriv (deriv (v t)) x) := by
+  rw [deriv_deriv_fun_add (f := fun r ↦ u r x) (g := fun r ↦ v r x)
+      (hu.comp (contDiff_prodMk_left x)).contDiffAt (hv.comp (contDiff_prodMk_left x)).contDiffAt,
+    deriv_deriv_fun_add (f := u t) (g := v t)
+      (hu.comp (contDiff_prodMk_right t)).contDiffAt (hv.comp (contDiff_prodMk_right t)).contDiffAt]
+  abel
+
+/-- The wave operator `∂ₜ²w - ∂ₓ²w` of the difference `w = u - v` of two `C²` space-time functions
+is the difference of the wave operators of `u` and `v`. -/
+private theorem deriv_deriv_sub_deriv_deriv_sub (hu : ContDiff ℝ 2 (uncurry u))
+    (hv : ContDiff ℝ 2 (uncurry v)) (t x : ℝ) :
+    deriv (fun s ↦ deriv (fun r ↦ u r x - v r x) s) t - deriv (deriv fun y ↦ u t y - v t y) x =
+      (deriv (fun s ↦ deriv (fun r ↦ u r x) s) t - deriv (deriv (u t)) x) -
+        (deriv (fun s ↦ deriv (fun r ↦ v r x) s) t - deriv (deriv (v t)) x) := by
+  rw [deriv_deriv_fun_sub (f := fun r ↦ u r x) (g := fun r ↦ v r x)
+      (hu.comp (contDiff_prodMk_left x)).contDiffAt (hv.comp (contDiff_prodMk_left x)).contDiffAt,
+    deriv_deriv_fun_sub (f := u t) (g := v t)
+      (hu.comp (contDiff_prodMk_right t)).contDiffAt (hv.comp (contDiff_prodMk_right t)).contDiffAt]
+  abel
+
 /-- The difference of two `C²` solutions of `∂ₜ²u = ∂ₓ²u + G` with the same forcing solves the
 homogeneous wave equation. -/
 private theorem deriv_deriv_sub_eq (hu : ContDiff ℝ 2 (uncurry u))
@@ -445,11 +473,7 @@ private theorem deriv_deriv_sub_eq (hu : ContDiff ℝ 2 (uncurry u))
     (t x : ℝ) :
     deriv (fun s ↦ deriv (fun r ↦ u r x - v r x) s) t =
       deriv (deriv fun y ↦ u t y - v t y) x := by
-  have hut : ContDiffAt ℝ 2 (fun r ↦ u r x) t := (hu.comp (contDiff_prodMk_left x)).contDiffAt
-  have hvt : ContDiffAt ℝ 2 (fun r ↦ v r x) t := (hv.comp (contDiff_prodMk_left x)).contDiffAt
-  have hux : ContDiffAt ℝ 2 (u t) x := (hu.comp (contDiff_prodMk_right t)).contDiffAt
-  have hvx : ContDiffAt ℝ 2 (v t) x := (hv.comp (contDiff_prodMk_right t)).contDiffAt
-  rw [deriv_deriv_fun_sub hut hvt, deriv_deriv_fun_sub hux hvx, hwu, hwv]
+  rw [← sub_eq_zero, deriv_deriv_sub_deriv_deriv_sub hu hv, hwu, hwv]
   abel
 
 /-- For a `C²` solution of `∂ₜ²u = ∂ₓ²u + G`, the forcing `G` is the difference of the second
@@ -490,16 +514,8 @@ theorem deriv_deriv_dAlembert_add_dAlembertDuhamel {f g : ℝ → F} (hf : ContD
     (hg : ContDiff ℝ 1 g) (t x : ℝ) :
     deriv (fun s ↦ deriv (fun r ↦ dAlembert f g r x + dAlembertDuhamel G r x) s) t =
       deriv (deriv fun y ↦ dAlembert f g t y + dAlembertDuhamel G t y) x + G t x := by
-  have hU := contDiff_dAlembert hf hg
-  have hW := contDiff_dAlembertDuhamel hG hGd hGd'
-  have hUt : ContDiffAt ℝ 2 (fun r ↦ dAlembert f g r x) t :=
-    (hU.comp (contDiff_prodMk_left x)).contDiffAt
-  have hWt : ContDiffAt ℝ 2 (fun r ↦ dAlembertDuhamel G r x) t :=
-    (hW.comp (contDiff_prodMk_left x)).contDiffAt
-  have hUx : ContDiffAt ℝ 2 (dAlembert f g t) x := (hU.comp (contDiff_prodMk_right t)).contDiffAt
-  have hWx : ContDiffAt ℝ 2 (dAlembertDuhamel G t) x :=
-    (hW.comp (contDiff_prodMk_right t)).contDiffAt
-  rw [deriv_deriv_fun_add hUt hWt, deriv_deriv_fun_add hUx hWx, deriv_deriv_dAlembert hf hg,
+  rw [← sub_eq_iff_eq_add', deriv_deriv_sub_deriv_deriv_add (contDiff_dAlembert hf hg)
+    (contDiff_dAlembertDuhamel hG hGd hGd'), deriv_deriv_dAlembert hf hg,
     deriv_deriv_dAlembertDuhamel hG hGd hGd']
   abel
 
@@ -515,11 +531,10 @@ private theorem eq_dAlembert_add_dAlembertDuhamel_of_differentiable
   have h := eq_dAlembert_of_deriv_deriv_eq (u := fun t x ↦ u t x - dAlembertDuhamel G t x)
     (hu.sub hW) (deriv_deriv_sub_eq hu hW hwave (deriv_deriv_dAlembertDuhamel hG hGd hGd')) t x
   have h1 (y : ℝ) : deriv (fun s ↦ u s y - dAlembertDuhamel G s y) 0 = deriv (fun s ↦ u s y) 0 := by
-    have hu0 : DifferentiableAt ℝ (fun s ↦ u s y) 0 :=
-      (hu.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0
-    have hW0 : DifferentiableAt ℝ (fun s ↦ dAlembertDuhamel G s y) 0 :=
-      (hW.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0
-    rw [deriv_fun_sub hu0 hW0, deriv_dAlembertDuhamel_zero hG, sub_zero]
+    rw [deriv_fun_sub (f := fun s ↦ u s y)
+      ((hu.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0)
+      (hasDerivAt_dAlembertDuhamel_time hG 0 y).differentiableAt,
+      deriv_dAlembertDuhamel_zero hG, sub_zero]
   simp only [dAlembertDuhamel_time_zero, sub_zero, h1] at h
   exact eq_add_of_sub_eq h
 
