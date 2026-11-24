@@ -190,6 +190,17 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_cohomologyOnRes {N
   ConcreteCategory.congr_hom (((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).naturality (homOfLE h).op) x
 
+variable {M} in
+/-- The maps on cohomology induced by a morphism of sheaves commute with restriction, as an equality
+of morphisms. -/
+@[reassoc]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnRes_comp_cohomologyOnMap
+    {N : X.Modules} (f : M ⟶ N) (n : ℕ) {U V : Opens X} (h : U ≤ V) :
+    cohomologyOnRes M n h ≫ Scheme.Modules.cohomologyOnMap f n U =
+      Scheme.Modules.cohomologyOnMap f n V ≫ cohomologyOnRes N n h :=
+  ((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
+    ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f)).naturality (homOfLE h).op
+
 variable (X) in
 /-- The cohomology `Hⁿ(U, -)` of an open subset `U`, as a functor from sheaves of modules to
 abelian groups: its value on `M` is `cohomologyOn M n U` and its value on a morphism `f` is

@@ -64,6 +64,9 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
 * `CliffordAlgebra.finite_spinCKernel`: the diagonal kernel is finite.
 * `CliffordAlgebra.spinCGroup.mk_eq_mk_iff`: `[s, z] = [s', z']` exactly when
   `(s', z') = (s, z)` or `(s', z') = (-s, -z)`.
+* `CliffordAlgebra.spinCGroup.mem_ker_toSpecialOrthogonal_iff`: the kernel of the rotation
+  homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle `{[1, z]}`, and
+  `CliffordAlgebra.spinCGroup.ker_toSpecialOrthogonal` is its subgroup form.
 * `CliffordAlgebra.spinCGroup.mem_ker_toSpecialOrthogonal_prod_det_iff`: the kernel of
   `Spinᶜ(Q) → SO(Q) × U(1)` is `{1, [1, -1]}`.
 * `CliffordAlgebra.spinCGroup.coe_ker_toSpecialOrthogonal_prod_det`: the underlying set of that
@@ -311,6 +314,30 @@ theorem toSpecialOrthogonal_ofSpin (s : spinGroup Q) :
 theorem toSpecialOrthogonal_ofCircle (z : Circle) :
     toSpecialOrthogonal Q hQ (ofCircle Q hQ z) = 1 := by
   simp [ofCircle_apply]
+
+/-- **The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle**
+`{[1, z]}`, for a finite-dimensional nondegenerate quadratic form. -/
+theorem mem_ker_toSpecialOrthogonal_iff [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
+    (x : spinCGroup Q hQ) :
+    x ∈ (toSpecialOrthogonal Q hQ).ker ↔ ∃ z : Circle, x = ofCircle Q hQ z := by
+  have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
+  constructor
+  · intro hx
+    obtain ⟨⟨s, z⟩, rfl⟩ := mk_surjective Q hQ x
+    rw [MonoidHom.mem_ker, toSpecialOrthogonal_mk] at hx
+    rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQn s).mp hx with rfl | rfl
+    · exact ⟨z, (ofCircle_apply Q hQ z).symm⟩
+    · refine ⟨-z, ?_⟩
+      rw [← ofSpin_mul_ofCircle, ofSpin_negOne, ← map_mul, neg_one_mul]
+  · rintro ⟨z, rfl⟩
+    exact toSpecialOrthogonal_ofCircle Q hQ z
+
+/-- The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the range of `ofCircle`, for a
+finite-dimensional nondegenerate quadratic form. -/
+theorem ker_toSpecialOrthogonal [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate) :
+    (toSpecialOrthogonal Q hQ).ker = (ofCircle Q hQ).range :=
+  Subgroup.ext fun x ↦ (mem_ker_toSpecialOrthogonal_iff Q hQ hQn x).trans <|
+    exists_congr fun _ ↦ eq_comm
 
 /-! ### `Spinᶜ(Q)` as a double cover of `SO(Q) × U(1)` -/
 
