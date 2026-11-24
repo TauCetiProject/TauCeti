@@ -63,13 +63,6 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   {Ω : Opens ℂ} {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {ξ η : ℂ → V}
 
-/-- Adding a field `A` to the zeroth-order coefficient adds `Aᵀ φ` to the formal adjoint. -/
-private theorem inner_crFormalAdjoint_add_zeroth (A : ℂ → V →L[ℝ] V) (φ : ℂ → V) (z : ℂ) (w : V) :
-    ⟪crFormalAdjoint J DJ (fun z => S z + A z) φ z, w⟫_ℝ =
-      ⟪crFormalAdjoint J DJ S φ z, w⟫_ℝ + ⟪φ z, A z w⟫_ℝ := by
-  rw [inner_crFormalAdjoint, inner_crFormalAdjoint, add_apply, inner_add_right]
-  ring
-
 namespace IsWeakCRSolution
 
 /-- **The equation for `∂_t ξ`.** Let `ξ` be a weak solution of `∂_s ξ + J ∂_t ξ + S ξ = η` on
