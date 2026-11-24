@@ -367,18 +367,6 @@ private theorem exists_flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGrad
   rw [Flow.map_add, Flow.map_add, h₁, h₃, ← h₂, Flow.map_neg_apply_map]
 
 omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
-points of the chart. -/
-theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm {q : M}
-    (φ : MorseChart E f q)
-    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
-    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
-    ContinuousAt (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) z :=
-  (φ.toChart.continuousAt_symm hz).comp (f := fun z ↦ φ.coord.symm (φ.splitCoord.symm z))
-    ((φ.splitCoordL.symm.continuous.continuousAt (x := z)).congr
-      (.of_forall fun _ ↦ φ.splitCoordL_symm_apply _))
-
-omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- If a Morse chart contains the cube of radius `ε`, reading pairs of split coordinates back on
 `M` is continuous at the gluing pairs of the box of radius `ε`, and at the pair of coordinates of
 two points of the chart. -/
@@ -410,9 +398,9 @@ theorem continuousAt_toChart_symm_of_mem_insert_splitGluingPairs {q y₁ y₂ : 
           (mem_splitPassage_source.1 hsrc).1.le (mem_splitPassage_source.1 hsrc).2.2,
         MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε₁
           (mem_splitPassage_target.1 htgt).2.2 (mem_splitPassage_target.1 htgt).1.le⟩
-  exact ((continuousAt_toChart_symm_coord_symm_splitCoord_symm φ hb₁).comp
+  exact ((φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm hb₁).comp
     continuous_fst.continuousAt).prodMk
-    ((continuousAt_toChart_symm_coord_symm_splitCoord_symm φ hb₂).comp continuous_snd.continuousAt)
+    ((φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm hb₂).comp continuous_snd.continuousAt)
 
 /-- **The flow carries a set transverse to an unstable manifold along it.** Let `Z` be a set
 through a point `y` of `W^u(q)`, flattened near `y` by a chart of the maximal atlas and transverse
@@ -543,7 +531,7 @@ theorem exists_lipschitzOnWith_entranceFace_graph (hX : IsAdaptedPseudoGradient 
     fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
   -- Near `0`, the points of the disc lie near `y₁`, inside the box near its entrance face.
   have hΨψ : Tendsto (fun z ↦ Ψ (ψ z)) (𝓝 0) (𝓝 y₁) := by
-    have hc := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    have hc := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (z := φ.splitCoord (φ.coord (φ.toChart y₁))) (by simpa using φ.toChart.map_source hy₁φ)
     have h' := hc.tendsto.comp (hψ₀ ▸ hψ.continuousAt.tendsto)
     rwa [show φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm
@@ -658,7 +646,7 @@ private theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceCha
     (fun w hw hwρ ↦ (hloc w hw hwρ).2) (hX.mem_unstableSet_inter_stableSet_self hq).1 hφZ hZ
     hqφZ hqZ htr
   have hN' : (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) ⁻¹' N ∈ 𝓝 0 :=
-    (continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    (φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (by simpa using hε₁ 0 (by simp [hε.le]))).preimage_mem_nhds (by simpa using hN)
   obtain ⟨T, ⟨y, hy, hbox, hW, hxη, hgraph⟩, hT0⟩ :=
     ((eventually_exists_splitQuadraticFlow_snd_eq hδ hη hg (fun y hy ↦ (hpts y hy).1) hk hk₀
@@ -738,14 +726,14 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
     WithLp.ofLp_injective 2 (Prod.ext (by simpa using hy₂u.symm) (by simp))
   -- Near `0`, the points of the discs lie near the entrance and exit points.
   have hΨψ : Tendsto (fun z ↦ Ψ (ψ z)) (𝓝 0) (𝓝 y₁) := by
-    have hc : ContinuousAt Ψ (Φ y₁) := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    have hc : ContinuousAt Ψ (Φ y₁) := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (by simpa [hΦdef] using φ.toChart.map_source hy₁φ)
     have hψc := hψ.continuousAt.tendsto
     rw [hψ₀] at hψc
     have h := hc.tendsto.comp hψc
     rwa [hΨΦ y₁ hy₁φ] at h
   have hΨχ : Tendsto (fun z ↦ Ψ (χ z)) (𝓝 0) (𝓝 y₂) := by
-    have hc : ContinuousAt Ψ (Φ y₂) := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    have hc : ContinuousAt Ψ (Φ y₂) := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (by simpa [hΦdef] using φ.toChart.map_source hy₂φ)
     have hχc := hχ.continuousAt.tendsto
     rw [hχ₀] at hχc

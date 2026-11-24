@@ -676,7 +676,7 @@ private theorem continuous_toChart_symm_coord_symm_splitCoord_symm_comp {q : M}
     (hc : Continuous c) (hcε : ∀ a, ‖(c a).fst‖ ≤ 2 * ε ∧ ‖(c a).snd‖ ≤ 2 * ε) :
     Continuous fun a ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (c a))) :=
   continuous_iff_continuousAt.2 fun a ↦
-    (continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+    (φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
       (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε₂ (hcε a).1
         (hcε a).2)).comp hc.continuousAt
 
@@ -940,7 +940,7 @@ private theorem IsMorseSmale.exists_centreGluingArc {hX : IsAdaptedPseudoGradien
   obtain ⟨η, hη, Kk, k, hk, hk₀, hkZ, hkexh⟩ := hX.exists_lipschitzOnWith_graph_of_isSliceChart φ
     hρ (fun w hw hwρ ↦ (hloc w hw hwρ).2) hqq.1 hφZ hZ hqφZ hqZ hdim htr
   -- A cube around the centre on which `f < f a₁`.
-  have hΨc0 : ContinuousAt Ψ 0 := continuousAt_toChart_symm_coord_symm_splitCoord_symm φ
+  have hΨc0 : ContinuousAt Ψ 0 := φ.continuousAt_toChart_symm_coord_symm_splitCoord_symm
     (by simpa using hε₁ 0 (by simp [hε.le]))
   have hfq : ∀ᶠ w in 𝓝 q, f w < f a₁ :=
     hX.mdifferentiable.continuous.continuousAt.eventually (gt_mem_nhds hfa₁.1)

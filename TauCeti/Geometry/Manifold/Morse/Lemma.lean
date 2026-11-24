@@ -364,6 +364,16 @@ theorem continuousAt_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.sou
   (φ.splitCoordL.continuous.continuousAt.comp (φ.toChart.continuousAt hy)).congr
     (.of_forall fun _ ↦ φ.splitCoordL_apply _)
 
+/-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
+points of the chart. -/
+theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
+    ContinuousAt (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) z :=
+  (φ.toChart.continuousAt_symm hz).comp (f := fun z ↦ φ.coord.symm (φ.splitCoord.symm z))
+    ((φ.splitCoordL.symm.continuous.continuousAt (x := z)).congr
+      (.of_forall fun _ ↦ φ.splitCoordL_symm_apply _))
+
 /-- The norm of the first split coordinate, read through a Morse chart, is continuous at the
 points of its source. -/
 theorem tendsto_norm_fst_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.source) :
