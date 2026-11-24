@@ -54,6 +54,9 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_left_unitality_app` and
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
+* `AlgebraicGeometry.Scheme.Modules.pullbackCompIsoOfCommSq`: the comparison `t^* r^* ≅ l^* b^*`
+  of composite pullbacks around a commutative square, and
+  `AlgebraicGeometry.Scheme.Modules.pullbackCompIsoId`: `f^* g^* ≅ 𝟭` for a section `f` of `g`;
 * `AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv`: along an isomorphism of schemes,
   pullback is direct image along the inverse, and
   `AlgebraicGeometry.Scheme.Modules.isEquivalence_pullback` shows it is an equivalence;
@@ -226,6 +229,35 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app (f : X ⟶ Y)
       eqToHom (by rw [p]) ≫ (pullbackComp f b).inv.app M := by
   subst p
   simp [pullbackCongr]
+
+/-- The comparison `t^* r^* ≅ l^* b^*` of composite pullbacks around a commutative square
+`t ≫ r = l ≫ b` of schemes, through `(t ≫ r)^* = (l ≫ b)^*`. -/
+def pullbackCompIsoOfCommSq {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) : pullback r ⋙ pullback t ≅ pullback b ⋙ pullback l :=
+  pullbackComp t r ≪≫ pullbackCongr sq.w ≪≫ (pullbackComp l b).symm
+
+@[simp]
+lemma pullbackCompIsoOfCommSq_hom_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) (M : Z.Modules) :
+    (pullbackCompIsoOfCommSq sq).hom.app M =
+      (pullbackComp t r).hom.app M ≫ (pullbackCongr sq.w).hom.app M ≫
+        (pullbackComp l b).inv.app M :=
+  (rfl)
+
+@[simp]
+lemma pullbackCompIsoOfCommSq_inv_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) (M : Z.Modules) :
+    (pullbackCompIsoOfCommSq sq).inv.app M =
+      (pullbackComp l b).hom.app M ≫ (pullbackCongr sq.w).inv.app M ≫
+        (pullbackComp t r).inv.app M :=
+  (rfl)
+
+/-- For a section `f` of `g`, i.e. `f ≫ g = 𝟙 X`, pulling back along `g` and then along `f` is
+the identity: `f^* g^* ≅ (f ≫ g)^* = (𝟙 X)^* ≅ 𝟭`. Along an isomorphism `g`, with `f = inv g`,
+this identifies `g^* (inv g)^*` with the identity. -/
+def pullbackCompIsoId {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) :
+    pullback g ⋙ pullback f ≅ 𝟭 X.Modules :=
+  pullbackComp f g ≪≫ pullbackCongr h ≪≫ pullbackId X
 
 end Coherence
 

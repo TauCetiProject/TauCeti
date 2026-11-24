@@ -24,14 +24,14 @@ which can differ from the levelwise kernels, as the multiplication-by-`t` exampl
 Pullback along an isomorphism of adic thickening systems is an equivalence of categories of
 coherent formal modules (`CoherentFormalModule.pullback_isEquivalence`), so the abelian structure
 transports along such isomorphisms (`CoherentFormalModule.abelianOfIso`). Through the
-identifications `spf I ≅ Spf Î` of the system `Spec (R ⧸ I ^ (n + 1))` with the formal spectrum of
-the `I`-adic completion, and `X/V(I) ≅ spf J` of the formal completion of an affine scheme with
-such a system, coherent formal modules form an abelian category on `spf I` for every ideal `I` of a
-noetherian ring and on the formal completion `X/V(I)` of every affine locally noetherian scheme
-`X` along any closed subscheme. This is the affine case of the statement that coherent formal
-modules on the formal completion of a noetherian scheme form an abelian category
-(Stacks, Lemma 30.23.2), to which the general case reduces by gluing kernels along an affine
-open cover.
+identifications `spf I ≅ Spf R̂` of the system `Spec (R ⧸ I ^ (n + 1))` with the formal spectrum
+of the `I`-adic completion `R̂` of `R`, and `X/V(I) ≅ spf J` of the formal completion of an affine
+scheme with such a system, coherent formal modules form an abelian category on `spf I` for every
+ideal `I` of a noetherian ring and on the formal completion `X/V(I)` of every affine locally
+noetherian scheme `X` along any closed subscheme. This is the affine case of the statement that
+coherent formal modules on the formal completion of a noetherian scheme form an abelian category
+(Stacks, Lemma 30.23.2), to which the general case reduces by gluing kernels along an affine open
+cover.
 
 ## Main definitions
 
@@ -109,13 +109,10 @@ noncomputable instance [IsLocallyNoetherian X] :
   -- Under `X.isoSpec`, `I` corresponds to the ideal sheaf `K` on `Spec Γ(X, ⊤)`, which is cut out
   -- by an ideal of `Γ(X, ⊤)` since `Spec Γ(X, ⊤)` is affine.
   let K := I.comap X.isoSpec.inv
-  let J : Ideal Γ(X, ⊤) :=
-    (equivOfIsAffine K).map (ΓSpecIso (CommRingCat.of Γ(X, ⊤))).hom.hom
-  have hJ : ofIdealTop (J.map (ΓSpecIso (CommRingCat.of Γ(X, ⊤))).inv.hom) = K := by
-    rw [Ideal.map_map, ← CommRingCat.hom_comp, Iso.hom_inv_id, CommRingCat.hom_id]
-    -- `Spec Γ(X, ⊤)` and `Spec (CommRingCat.of Γ(X, ⊤))` agree only definitionally, so the
-    -- identity ring map is removed by unification rather than by rewriting.
-    exact (congrArg ofIdealTop (Ideal.map_id _)).trans (equivOfIsAffine.symm_apply_apply K)
+  let e := (ΓSpecIso (CommRingCat.of Γ(X, ⊤))).commRingCatIsoToRingEquiv
+  let J : Ideal Γ(X, ⊤) := (equivOfIsAffine K).map e
+  have hJ : ofIdealTop (J.map (ΓSpecIso (CommRingCat.of Γ(X, ⊤))).inv.hom) = K :=
+    (congrArg ofIdealTop (Ideal.map_of_equiv e)).trans (equivOfIsAffine.symm_apply_apply K)
   CoherentFormalModule.abelianOfIso <| mapIso X.isoSpec
     (by rw [hJ, ← comap_comp, Iso.hom_inv_id, comap_id]) ≪≫ specIso J
 
