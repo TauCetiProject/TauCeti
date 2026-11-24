@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.OrderedEulerProdu
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.PrimeSum
 public import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import Mathlib.NumberTheory.MulChar.Lemmas
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Ordered limits of a Dirichlet `L`-function at `s = 1`
@@ -51,6 +52,9 @@ conjugated limit (`DirichletCharacter.tendsto_prod_primesLE_filter_notMem_inv_in
 
 * `DirichletCharacter.tendsto_sum_Icc_div_LFunction_one`: the ordered partial sums of the
   Dirichlet series of `χ` converge to `L(χ, 1)`.
+* `DirichletCharacter.norm_LFunction_one_sub_sum_Icc_div_le`: if the partial sums of `χ` are at
+  most `B`, the partial sum of the Dirichlet series up to `K` is within `2 B / (K + 1)` of
+  `L(χ, 1)`, by Abel's inequality `TauCeti.norm_sub_sum_Icc_smul_le_of_tendsto`.
 * `DirichletCharacter.exists_tendsto_sum_Icc_eulerLogCoeff_div`: the ordered sums of
   `χ.eulerLogCoeff n / n` converge to a logarithm of `L(χ, 1)`.
 * `DirichletCharacter.tendsto_prod_primesLE_inv_LFunction_one`: the ordered Euler product
@@ -92,6 +96,23 @@ theorem tendsto_sum_Icc_div_LFunction_one [NeZero N] (hχ : χ ≠ 1) :
   TauCeti.LSeries.boundedDirichlet_tendsto_ordered_at_one (fun n _ ↦ χ.norm_le_one n)
     isOpen_univ (Set.subset_univ _) (differentiable_LFunction hχ).differentiableOn
     fun _ hs ↦ χ.LFunction_eq_LSeries hs ▸ (χ.LSeriesSummable_of_one_lt_re hs).LSeriesHasSum
+
+/-- **Truncating `L(χ, 1)`.** If every partial sum `∑ n ∈ Icc 1 K, χ n` of a nontrivial
+Dirichlet character `χ` of positive level has norm at most `B`, then the partial sum of the
+Dirichlet series up to `K` is within `2 * B / (K + 1)` of `L(χ, 1)`. With the Pólya–Vinogradov
+bound for `B`, this is the standard truncation of `L(χ, 1)` at a cutoff larger than the modulus. -/
+theorem norm_LFunction_one_sub_sum_Icc_div_le [NeZero N] (hχ : χ ≠ 1) {B : ℝ}
+    (hB : ∀ K : ℕ, ‖∑ n ∈ Icc 1 K, χ n‖ ≤ B) (K : ℕ) :
+    ‖LFunction χ 1 - ∑ n ∈ Icc 1 K, χ n / (n : ℂ)‖ ≤ 2 * B / (K + 1) := by
+  have hsmul (n : ℕ) : ((n : ℝ)⁻¹ : ℝ) • χ n = χ n / (n : ℂ) := by
+    simp [Complex.real_smul, div_eq_inv_mul]
+  have hw : AntitoneOn (fun n : ℕ ↦ (n : ℝ)⁻¹) (Set.Ioi K) := fun m hm n _ hmn ↦
+    inv_anti₀ (Nat.cast_pos.mpr (Nat.zero_lt_of_lt hm)) (Nat.cast_le.mpr hmn)
+  have h := TauCeti.norm_sub_sum_Icc_smul_le_of_tendsto (a := fun n ↦ χ n) hw
+    (fun n _ ↦ inv_nonneg.mpr n.cast_nonneg) hB
+    (by simpa only [hsmul] using χ.tendsto_sum_Icc_div_LFunction_one hχ)
+  simp only [hsmul] at h
+  rwa [Nat.cast_add, Nat.cast_one, ← div_eq_mul_inv] at h
 
 /-- **The ordered logarithmic sums at `s = 1`.** For a nontrivial Dirichlet character `χ` of
 positive level, the ordered partial sums `∑ n ∈ Icc 1 K, χ n Λ n / (n log n)` converge to a
