@@ -29,12 +29,12 @@ constant sheaf with value `X` to the constant sheaf with value `G X`, on any sit
 
 Separately, since the constant sheaf functor is left adjoint to sections over a terminal object
 `T`, a constant sheaf whose sections over `T` vanish is zero
-(`CategoryTheory.Sheaf.isZero_of_isConstant`).
+(`CategoryTheory.Sheaf.isZero_of_isConstant_of_isZero_obj`).
 
 ## Main declarations
 
-* `CategoryTheory.Sheaf.isZero_of_isConstant`: a constant sheaf with vanishing sections over a
-  terminal object is zero.
+* `CategoryTheory.Sheaf.isZero_of_isConstant_of_isZero_obj`: a constant sheaf with vanishing
+  sections over a terminal object is zero.
 
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom`: the comparison `u^* (X_J) ⟶ X_K`.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom_naturality`: the comparison is natural
@@ -219,8 +219,8 @@ variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Cat
 /-- A constant sheaf whose sections over a terminal object `T` vanish is zero: by the adjunction
 `constantSheafAdj`, endomorphisms of the constant sheaf on `N` are maps from `N` to its sections
 over `T`. -/
-theorem isZero_of_isConstant {T : C} (hT : IsTerminal T) (F : Sheaf J D) [F.IsConstant J]
-    (hF : IsZero (F.obj.obj (Opposite.op T))) : IsZero F := by
+theorem isZero_of_isConstant_of_isZero_obj {T : C} (hT : IsTerminal T) (F : Sheaf J D)
+    [F.IsConstant J] (hF : IsZero (F.obj.obj (Opposite.op T))) : IsZero F := by
   obtain ⟨N, ⟨e⟩⟩ := F.mem_essImage_of_isConstant
   refine (IsZero.iff_id_eq_zero F).2 ?_
   have h := ((constantSheafAdj J D hT).homEquiv N F).injective

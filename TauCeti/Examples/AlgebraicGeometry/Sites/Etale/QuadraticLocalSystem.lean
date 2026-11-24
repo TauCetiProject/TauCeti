@@ -16,23 +16,26 @@ public import TauCeti.FieldTheory.Galois.Complex
 # A nonconstant finite lisse `ℤ/3` sheaf on `Spec ℝ`
 
 The quadratic character of `Gal(ℂ/ℝ)`, through which complex conjugation acts by `-1`, makes
-`ℤ/3` a representation of `Gal(ℂ/ℝ)` (`TauCeti.AlgebraicGeometry.signRepresentation`). The
-corresponding étale sheaf of `ℤ/3`-modules on `Spec ℝ`
-(`TauCeti.AlgebraicGeometry.quadraticLocalSystem`, an instance of
-`TauCeti.FiniteEtaleScheme.galoisModuleSheaf`) is finite lisse, because the cover
+`ℤ/3` a representation of `Gal(ℂ/ℝ)`
+(`TauCeti.Examples.QuadraticLocalSystem.signRepresentation`). The corresponding étale sheaf of
+`ℤ/3`-modules on `Spec ℝ` (`TauCeti.Examples.QuadraticLocalSystem.quadraticLocalSystem`, an
+instance of `TauCeti.FiniteEtaleScheme.galoisModuleSheaf`) is finite lisse, because the cover
 `Spec ℂ ⟶ Spec ℝ` is finite étale and surjective. It is not constant
 (`TauCeti.FiniteEtaleScheme.not_isConstant_galoisModuleSheaf`): its sections over `Spec ℝ`
-are the invariants, which vanish (`TauCeti.AlgebraicGeometry.invariants_signRepresentation`),
-since a vector fixed by complex conjugation equals its negative and `2` is invertible in
-`ℤ/3`, so a constant such sheaf would be zero, while it is nonzero.
+are the invariants, which vanish
+(`TauCeti.Examples.QuadraticLocalSystem.invariants_signRepresentation`), since a vector fixed by
+complex conjugation equals its negative and `2` is invertible in `ℤ/3`, so a constant such sheaf
+would be zero, while it is nonzero.
 
 The identification of its stalk at `Spec ℂ` with `ℤ/3`, on which complex conjugation acts by
 `-1`, is not part of this file.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.isFiniteLisse_quadraticLocalSystem`: the sheaf is finite lisse.
-* `TauCeti.AlgebraicGeometry.not_isConstant_quadraticLocalSystem`: the sheaf is not constant.
+* `TauCeti.Examples.QuadraticLocalSystem.isFiniteLisse_quadraticLocalSystem`: the sheaf is finite
+  lisse.
+* `TauCeti.Examples.QuadraticLocalSystem.not_isConstant_quadraticLocalSystem`: the sheaf is not
+  constant.
 -/
 
 public section
@@ -40,7 +43,7 @@ public section
 open CategoryTheory Limits Opposite AlgebraicGeometry FintypeCatDiscrete Complex
   TauCeti.FiniteEtaleScheme ContAction
 
-namespace TauCeti.AlgebraicGeometry
+namespace TauCeti.Examples.QuadraticLocalSystem
 
 /-- The quadratic character of `Gal(ℂ/ℝ)` as a representation on `ℤ/3`: the identity acts
 trivially and complex conjugation acts by `-1`. -/
@@ -77,4 +80,4 @@ theorem not_isConstant_quadraticLocalSystem :
     ¬ quadraticLocalSystem.IsConstant (Scheme.smallEtaleTopology (Spec (.of ℝ))) :=
   not_isConstant_galoisModuleSheaf _ invariants_signRepresentation
 
-end TauCeti.AlgebraicGeometry
+end TauCeti.Examples.QuadraticLocalSystem

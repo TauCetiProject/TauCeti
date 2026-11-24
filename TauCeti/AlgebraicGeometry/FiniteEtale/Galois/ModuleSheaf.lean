@@ -31,8 +31,8 @@ When `Ω` is finite over `K`, as `ℂ` is over `ℝ`, the geometric point `Spec 
 surjective and étale, so the sheaf of a finitely generated module over a Noetherian ring is finite
 lisse (`TauCeti.FiniteEtaleScheme.isFiniteLisse_galoisModuleSheaf`). The constant sheaf on a
 module `N` maps to a sheaf exactly as `N` maps to its sections over the terminal object `Spec K`
-(`CategoryTheory.Sheaf.isZero_of_isConstant`), so if `M ≠ 0` has no nonzero invariants, the sheaf
-is not constant
+(`CategoryTheory.Sheaf.isZero_of_isConstant_of_isZero_obj`), so if `M ≠ 0` has no nonzero
+invariants, the sheaf is not constant
 (`TauCeti.FiniteEtaleScheme.not_isConstant_galoisModuleSheaf`).
 
 ## Main definitions
@@ -230,7 +230,7 @@ theorem not_isConstant_galoisModuleSheaf [FiniteDimensional K Ω] [Nontrivial M]
   have hT : IsTerminal ((toEtale _).obj (ofHom (𝟙 (Spec (.of K))))) :=
     (Scheme.Etale.mkIdTerminal _).ofIso (toEtaleObjOfHomIso _ (𝟙 _)).symm
   have := subsingleton_galoisModuleSheaf_obj_ofHom_id ρ hρ
-  have hz := Sheaf.isZero_of_isConstant _ hT (galoisModuleSheaf K Ω ρ)
+  have hz := Sheaf.isZero_of_isConstant_of_isZero_obj _ hT (galoisModuleSheaf K Ω ρ)
     (ModuleCat.isZero_of_subsingleton _)
   obtain ⟨a, b, hab⟩ :=
     (nontrivial_galoisModuleSheaf_obj_regular (K := K) (Ω := Ω) ρ).exists_pair_ne
