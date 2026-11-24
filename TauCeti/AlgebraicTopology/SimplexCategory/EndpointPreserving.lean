@@ -13,20 +13,21 @@ public import Mathlib.CategoryTheory.Widesubcategory
 
 This file defines three wide subcategories of `SimplexCategory`, all with the objects `⦋n⦌`:
 
-* `SimplexCategory.BotPreserving` (often written `Δ_⊥`): the monotone maps sending the least
-  vertex `0` to the least vertex;
-* `SimplexCategory.TopPreserving` (often written `Δ_⊤`): the monotone maps sending the greatest
-  vertex `Fin.last` to the greatest vertex;
-* `SimplexCategory.EndpointPreserving` (often written `Δ_∂`): the monotone maps preserving both
-  endpoints. It contains `⦋0⦌`, whose two endpoints coincide, and `⦋0⦌` is terminal in it.
+* `TauCeti.SimplexCategory.BotPreserving` (often written `Δ_⊥`): the monotone maps sending the
+  least vertex `0` to the least vertex;
+* `TauCeti.SimplexCategory.TopPreserving` (often written `Δ_⊤`): the monotone maps sending the
+  greatest vertex `Fin.last` to the greatest vertex;
+* `TauCeti.SimplexCategory.EndpointPreserving` (often written `Δ_∂`): the monotone maps
+  preserving both endpoints. It contains `⦋0⦌`, whose two endpoints coincide, and `⦋0⦌` is
+  terminal in it.
 
 They are the wide subcategories `WideSubcategory P` for the multiplicative morphism properties
-`SimplexCategory.preservesBot`, `SimplexCategory.preservesTop` and
-`SimplexCategory.preservesEndpoints`, so the identities, composition and the faithful inclusion
-into `SimplexCategory` come from Mathlib's wide-subcategory API. Every degeneracy `σ i` preserves
-both endpoints, while the face `δ i` preserves the least vertex exactly when `i ≠ 0` and the
-greatest one exactly when `i ≠ Fin.last _`; the corresponding restricted faces and degeneracies
-are `BotPreserving.δ`, `TopPreserving.δ`, `EndpointPreserving.δ` and the three `σ`.
+`TauCeti.SimplexCategory.preservesBot`, `TauCeti.SimplexCategory.preservesTop` and
+`TauCeti.SimplexCategory.preservesEndpoints`, so the identities, composition and the faithful
+inclusion into `SimplexCategory` come from Mathlib's wide-subcategory API. Every degeneracy `σ i`
+preserves both endpoints, while the face `δ i` preserves the least vertex exactly when `i ≠ 0`
+and the greatest one exactly when `i ≠ Fin.last _`; the corresponding restricted faces and
+degeneracies are `BotPreserving.δ`, `TopPreserving.δ`, `EndpointPreserving.δ` and the three `σ`.
 
 These categories describe the hom-categories of the free adjunction: the hom-categories between
 its two distinct objects are `Δ_⊤` and `Δ_⊥`, and `Δ_∂` is the opposite of the augmented simplex
@@ -44,7 +45,9 @@ public section
 
 open CategoryTheory Simplicial
 
-namespace SimplexCategory
+namespace TauCeti.SimplexCategory
+
+open _root_.SimplexCategory
 
 /-- The morphisms of `SimplexCategory` sending the least vertex to the least vertex. -/
 def preservesBot : MorphismProperty SimplexCategory :=
@@ -259,4 +262,4 @@ def isTerminalZero : Limits.IsTerminal (mk 0) :=
 
 end EndpointPreserving
 
-end SimplexCategory
+end TauCeti.SimplexCategory

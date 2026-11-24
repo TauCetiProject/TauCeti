@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplexCategory.Augmented.Basic
 public import Mathlib.AlgebraicTopology.SimplicialObject.II
+public import Mathlib.CategoryTheory.IsoCat
+public import TauCeti.AlgebraicTopology.SimplexCategory.Augmented
 public import TauCeti.AlgebraicTopology.SimplexCategory.EndpointPreserving
 
 /-!
@@ -18,32 +19,29 @@ least and greatest elements (the empty and the full initial segment, which coinc
 `j : Fin (m + 1)` to the number of `i` with `α i < j`, and this cut map preserves both endpoints.
 This gives an isomorphism of categories between the opposite `Δ₊ᵒᵖ` of the augmented simplex
 category, with the ordinal with `n` elements going to `⦋n⦌`, and the category
-`SimplexCategory.EndpointPreserving` (`Δ_∂`) of endpoint-preserving monotone maps.
+`TauCeti.SimplexCategory.EndpointPreserving` (`Δ_∂`) of endpoint-preserving monotone maps.
 
 On nonempty ordinals the cut map is Mathlib's `SimplexCategory.II.map'`, the action of the
 Gabriel–Zisman functor `SimplexCategory.II : SimplexCategory ⥤ SimplexCategoryᵒᵖ` on morphisms.
 Its characteristic property is the Galois condition `i < cut α j ↔ α i < j`
-(`SimplexCategory.II.castSucc_lt_map'_iff`, `SimplexCategory.castSucc_lt_cutOrderHom_iff`). For
-an endpoint-preserving `β : Fin (n + 1) →o Fin (m + 1)` the map `Fin m →o Fin n` sending `i` to
+(`SimplexCategory.II.castSucc_lt_map'_iff`, `TauCeti.SimplexCategory.castSucc_lt_cutOrderHom_iff`).
+For an endpoint-preserving `β : Fin (n + 1) →o Fin (m + 1)` the map `Fin m →o Fin n` sending `i` to
 the greatest `j` with `β j ≤ i` satisfies the same condition, so it is the inverse of the cut map
-(`SimplexCategory.uncutOrderHom`).
+(`TauCeti.SimplexCategory.uncutOrderHom`).
 
 ## Main definitions and results
 
-* `SimplexCategory.cutOrderHom`, `SimplexCategory.uncutOrderHom`: the cut map of a monotone map
-  of finite ordinals and its inverse, with the Galois conditions characterizing them, their
-  functoriality, and `cutOrderHom_uncutOrderHom`, `uncutOrderHom_cutOrderHom`.
-* `SimplexCategory.II.toEndpointPreserving`: the functor `SimplexCategory.II`, with opposites
-  arranged as `Δᵒᵖ ⥤ Δ`, factored through `Δ_∂`.
-* `AugmentedSimplexCategory.card`, `AugmentedSimplexCategory.toOrderHom`: the number of elements
-  of an augmented simplex object and the monotone map underlying a morphism, and
-  `AugmentedSimplexCategory.ofCard`, `AugmentedSimplexCategory.homOfOrderHom` in the other
-  direction.
-* `AugmentedSimplexCategory.cut : Δ₊ᵒᵖ ⥤ Δ_∂`, which extends `II.toEndpointPreserving` to the
-  empty ordinal by sending it to `⦋0⦌` (`AugmentedSimplexCategory.inclusion_op_comp_cut`), its
-  explicit inverse `AugmentedSimplexCategory.uncut`, the two identities
-  `AugmentedSimplexCategory.cut_comp_uncut` and `AugmentedSimplexCategory.uncut_comp_cut`, and
-  the resulting equivalence `AugmentedSimplexCategory.cutEquivalence`.
+* `TauCeti.SimplexCategory.cutOrderHom`, `TauCeti.SimplexCategory.uncutOrderHom`: the cut map
+  of a monotone map of finite ordinals and its inverse, with the Galois conditions
+  characterizing them, their functoriality, and `cutOrderHom_uncutOrderHom`,
+  `uncutOrderHom_cutOrderHom`.
+* `TauCeti.SimplexCategory.II.toEndpointPreserving`: the functor `SimplexCategory.II`, with
+  opposites arranged as `Δᵒᵖ ⥤ Δ`, factored through `Δ_∂`.
+* `TauCeti.AugmentedSimplexCategory.cut : Δ₊ᵒᵖ ⥤ Δ_∂`, which extends `II.toEndpointPreserving`
+  to the empty ordinal by sending it to `⦋0⦌` (`inclusion_op_comp_cut`), its explicit inverse
+  `TauCeti.AugmentedSimplexCategory.uncut`, the two identities `cut_comp_uncut` and
+  `uncut_comp_cut`, and the resulting isomorphism of categories
+  `TauCeti.AugmentedSimplexCategory.cutIsoCat`.
 
 ## References
 
@@ -78,11 +76,17 @@ lemma castSucc_lt_map'_iff {n m : ℕ} (f : Fin (n + 1) →o Fin (m + 1)) (x : F
 
 end II
 
+end SimplexCategory
+
+namespace TauCeti.SimplexCategory
+
+open _root_.SimplexCategory
+
 /-! ### Cut maps of finite ordinals -/
 
 /-- The cut map of a monotone map `α : Fin n →o Fin m` of finite ordinals: it sends the cut
-`j : Fin (m + 1)` of `Fin m` to the cut of `Fin n` below the elements `i` with `α i < j`, that
-is, to the number of these `i`. On nonempty ordinals it is `II.map'`. -/
+`j : Fin (m + 1)` of `Fin m` to the cut of `Fin n` whose lower part is the set of `i` with
+`α i < j`, that is, to the number of these `i`. On nonempty ordinals it is `II.map'`. -/
 def cutOrderHom : {n m : ℕ} → (Fin n →o Fin m) → (Fin (m + 1) →o Fin (n + 1))
   | 0, _, _ => OrderHom.const _ 0
   | _ + 1, 0, α => (α 0).elim0
@@ -136,18 +140,28 @@ lemma cutOrderHom_comp (f : Fin n →o Fin m) (g : Fin m →o Fin p) :
 
 /-! ### The inverse of the cut map -/
 
+/-- The elements `j` with `β j ≤ i`, whose greatest element defines `uncutOrderHom`; it contains
+`0` when `β 0 = 0`. -/
+private lemma filter_le_castSucc_nonempty (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
+    (i : Fin m) : (Finset.univ.filter fun j ↦ β j ≤ i.castSucc).Nonempty :=
+  Finset.filter_nonempty_iff.2 ⟨0, Finset.mem_univ _, by simp [h₀]⟩
+
+/-- The greatest `j` with `β j ≤ i` is not the greatest vertex, since `β` preserves it. -/
+private lemma max'_filter_le_castSucc_ne_last (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
+    (h : β (Fin.last n) = Fin.last m) (i : Fin m) :
+    (Finset.univ.filter fun j ↦ β j ≤ i.castSucc).max' (filter_le_castSucc_nonempty β h₀ i) ≠
+      Fin.last n := fun he ↦ by
+  have hmem := Finset.max'_mem _ (filter_le_castSucc_nonempty β h₀ i)
+  rw [he] at hmem
+  simp [h] at hmem
+
 /-- For a monotone map `β : Fin (n + 1) →o Fin (m + 1)` preserving both endpoints, the monotone
 map `Fin m →o Fin n` sending `i` to the greatest `j` with `β j ≤ i`. It is the inverse of
 `cutOrderHom` (`cutOrderHom_uncutOrderHom`, `uncutOrderHom_cutOrderHom`). -/
 def uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
     (h : β (Fin.last n) = Fin.last m) : Fin m →o Fin n where
   toFun i := ((Finset.univ.filter fun j ↦ β j ≤ i.castSucc).max'
-      (Finset.filter_nonempty_iff.2 ⟨0, Finset.mem_univ _, by simp [h₀]⟩)).castPred
-    fun he ↦ by
-      have hmem := Finset.max'_mem (Finset.univ.filter fun j ↦ β j ≤ i.castSucc)
-        (Finset.filter_nonempty_iff.2 ⟨0, Finset.mem_univ _, by simp [h₀]⟩)
-      rw [he] at hmem
-      simp [h] at hmem
+      (filter_le_castSucc_nonempty β h₀ i)).castPred (max'_filter_le_castSucc_ne_last β h₀ h i)
   monotone' i i' hii' := by
     rw [Fin.castPred_le_castPred_iff]
     exact Finset.max'_subset _ fun j ↦ by
@@ -156,13 +170,12 @@ def uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
 /-- The Galois condition characterizing `uncutOrderHom β h₀ h`: it lies below `j` exactly when
 `i < β j`. -/
 @[simp]
-lemma uncutOrderHom_castSucc_lt_iff (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
+lemma castSucc_uncutOrderHom_lt_iff (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
     (h : β (Fin.last n) = Fin.last m) (i : Fin m) (j : Fin (n + 1)) :
     (uncutOrderHom β h₀ h i).castSucc < j ↔ i.castSucc < β j := by
   have hi : (uncutOrderHom β h₀ h i).castSucc =
-      (Finset.univ.filter fun j ↦ β j ≤ i.castSucc).max'
-      (Finset.filter_nonempty_iff.2 ⟨0, Finset.mem_univ _, by simp [h₀]⟩) :=
-    rfl
+      (Finset.univ.filter fun j ↦ β j ≤ i.castSucc).max' (filter_le_castSucc_nonempty β h₀ i) :=
+    Fin.castSucc_castPred _ (max'_filter_le_castSucc_ne_last β h₀ h i)
   rw [hi, Finset.max'_lt_iff]
   simp only [Finset.mem_filter, Finset.mem_univ, true_and]
   refine ⟨fun H ↦ ?_, fun H s hs ↦ ?_⟩
@@ -175,12 +188,12 @@ lemma uncutOrderHom_castSucc_lt_iff (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : 
 lemma eq_uncutOrderHom_apply_iff (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
     (h : β (Fin.last n) = Fin.last m) (i : Fin m) (a : Fin n) :
     a = uncutOrderHom β h₀ h i ↔ ∀ j : Fin (n + 1), a.castSucc < j ↔ i.castSucc < β j := by
-  refine ⟨fun ha j ↦ ha ▸ uncutOrderHom_castSucc_lt_iff β h₀ h i j, fun H ↦ ?_⟩
+  refine ⟨fun ha j ↦ ha ▸ castSucc_uncutOrderHom_lt_iff β h₀ h i j, fun H ↦ ?_⟩
   have key {a b : Fin n} (hab : ∀ j : Fin (n + 1), a.castSucc < j → b.castSucc < j) : b ≤ a :=
     Fin.castSucc_lt_succ_iff.1 (hab a.succ Fin.castSucc_lt_succ)
   exact le_antisymm
-    (key fun j hj ↦ (H j).2 ((uncutOrderHom_castSucc_lt_iff β h₀ h i j).1 hj))
-    (key fun j hj ↦ (uncutOrderHom_castSucc_lt_iff β h₀ h i j).2 ((H j).1 hj))
+    (key fun j hj ↦ (H j).2 ((castSucc_uncutOrderHom_lt_iff β h₀ h i j).1 hj))
+    (key fun j hj ↦ (castSucc_uncutOrderHom_lt_iff β h₀ h i j).2 ((H j).1 hj))
 
 @[simp]
 lemma uncutOrderHom_id (h₀ : (OrderHom.id : Fin (n + 1) →o Fin (n + 1)) 0 = 0)
@@ -203,7 +216,7 @@ lemma cutOrderHom_uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0
     (h : β (Fin.last n) = Fin.last m) : cutOrderHom (uncutOrderHom β h₀ h) = β := by
   ext j : 2
   refine ((eq_cutOrderHom_apply_iff _ j _).2 fun i ↦ ?_).symm
-  rw [uncutOrderHom_castSucc_lt_iff]
+  rw [castSucc_uncutOrderHom_lt_iff]
 
 @[simp]
 lemma uncutOrderHom_cutOrderHom (α : Fin n →o Fin m) (h₀ : cutOrderHom α 0 = 0)
@@ -221,6 +234,8 @@ functor to the endpoint-preserving maps `Δ_∂`: it sends `⦋n⦌` to `⦋n + 
 def II.toEndpointPreserving : SimplexCategoryᵒᵖ ⥤ EndpointPreserving where
   obj X := EndpointPreserving.mk (X.unop.len + 1)
   map f := EndpointPreserving.homMk (II.map f.unop).unop (II.map'_zero _) (II.map'_last _)
+  -- After `simp only`, each `rfl` unfolds `II.obj ⦋n⦌` to the object `⦋n + 1⦌` of `mk (n + 1)`
+  -- and the identity and composition of `WideSubcategory` to those of `SimplexCategory`.
   map_id X := WideSubcategory.hom_ext _ (by simp only [unop_id, II.map_id]; rfl)
   map_comp f g := WideSubcategory.hom_ext _ (by simp only [unop_comp, II.map_comp]; rfl)
 
@@ -245,115 +260,22 @@ lemma II.toEndpointPreserving_map_σ_op {n : ℕ} (i : Fin (n + 1)) :
     rw [II.toEndpointPreserving_map_hom, EndpointPreserving.δ_hom]
     exact congrArg Quiver.Hom.unop (II_σ i))
 
+/-- `II.toEndpointPreserving` factors `SimplexCategory.II`, as a functor `Δᵒᵖ ⥤ Δ`, through the
+inclusion `Δ_∂ ⥤ Δ`. -/
 lemma II.toEndpointPreserving_comp_inclusion :
     II.toEndpointPreserving ⋙ wideSubcategoryInclusion _ = Functor.leftOp II :=
   rfl
 
-end SimplexCategory
+end TauCeti.SimplexCategory
 
-namespace AugmentedSimplexCategory
+namespace TauCeti.AugmentedSimplexCategory
 
-open SimplexCategory
-
-/-! ### Finite ordinals in the augmented simplex category -/
-
-/-- The number of elements of an object of the augmented simplex category: `0` for the empty
-ordinal and `n + 1` for `⦋n⦌`. -/
-@[expose]
-def card : AugmentedSimplexCategory → ℕ
-  | .star => 0
-  | .of x => x.len + 1
-
-@[simp]
-lemma card_star : card .star = 0 := rfl
-
-@[simp]
-lemma card_of (x : SimplexCategory) : card (.of x) = x.len + 1 := rfl
-
-/-- The monotone map of finite ordinals underlying a morphism of the augmented simplex
-category. -/
-@[expose]
-def toOrderHom : {X Y : AugmentedSimplexCategory} → (X ⟶ Y) → (Fin X.card →o Fin Y.card)
-  | .of _, .of _, f => (WithInitial.down f).toOrderHom
-  | .star, _, _ => ⟨fun a ↦ a.elim0, fun a ↦ a.elim0⟩
-  | .of _, .star, f => (f : PEmpty).elim
-
-@[simp]
-lemma toOrderHom_of {x y : SimplexCategory} (f : WithInitial.of x ⟶ WithInitial.of y) :
-    toOrderHom f = (WithInitial.down f).toOrderHom := rfl
-
-@[simp]
-lemma toOrderHom_id (X : AugmentedSimplexCategory) : toOrderHom (𝟙 X) = OrderHom.id := by
-  cases X with
-  | of x => exact id_toOrderHom x
-  | star => ext a; exact a.elim0
-
-@[simp]
-lemma toOrderHom_comp {X Y Z : AugmentedSimplexCategory} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    toOrderHom (f ≫ g) = (toOrderHom g).comp (toOrderHom f) :=
-  match X, Y, Z, f, g with
-  | .of _, .of _, .of _, _, _ => rfl
-  | .star, _, _, _, _ => by ext a; exact a.elim0
-  | .of _, .star, _, f, _ => (f : PEmpty).elim
-  | .of _, .of _, .star, _, g => (g : PEmpty).elim
-
-lemma hom_ext {X Y : AugmentedSimplexCategory} {f g : X ⟶ Y}
-    (h : toOrderHom f = toOrderHom g) : f = g :=
-  match X, Y, f, g with
-  | .of _, .of _, _, _ => Hom.ext _ _ h
-  | .star, _, _, _ => (WithInitial.starInitial.hom_ext _ _)
-  | .of _, .star, f, _ => (f : PEmpty).elim
-
-/-- The object of the augmented simplex category with `n` elements: the empty ordinal for
-`n = 0` and `⦋n - 1⦌` otherwise. -/
-@[expose]
-def ofCard : ℕ → AugmentedSimplexCategory
-  | 0 => .star
-  | n + 1 => .of ⦋n⦌
-
-@[simp]
-lemma ofCard_zero : ofCard 0 = .star := rfl
-
-@[simp]
-lemma ofCard_succ (n : ℕ) : ofCard (n + 1) = .of ⦋n⦌ := rfl
-
-lemma card_ofCard (n : ℕ) : card (ofCard n) = n := by
-  cases n <;> rfl
-
-lemma ofCard_card (X : AugmentedSimplexCategory) : ofCard (card X) = X := by
-  cases X <;> rfl
-
-/-- The morphism of the augmented simplex category given by a monotone map of finite
-ordinals. -/
-@[expose]
-def homOfOrderHom : {n m : ℕ} → (Fin n →o Fin m) → (ofCard n ⟶ ofCard m)
-  | 0, _, _ => WithInitial.starInitial.to _
-  | _ + 1, 0, f => (f 0).elim0
-  | _ + 1, _ + 1, f => (mkHom f : ⦋_⦌ ⟶ ⦋_⦌)
-
-@[simp]
-lemma down_homOfOrderHom {n m : ℕ} (f : Fin (n + 1) →o Fin (m + 1)) :
-    WithInitial.down (homOfOrderHom f) = mkHom f := rfl
-
-@[simp]
-lemma homOfOrderHom_id (n : ℕ) : homOfOrderHom (OrderHom.id : Fin n →o Fin n) = 𝟙 _ := by
-  cases n with
-  | zero => exact WithInitial.starInitial.hom_ext _ _
-  | succ n => rfl
-
-@[simp]
-lemma homOfOrderHom_comp {n m p : ℕ} (f : Fin n →o Fin m) (g : Fin m →o Fin p) :
-    homOfOrderHom (g.comp f) = homOfOrderHom f ≫ homOfOrderHom g :=
-  match n, m, p, f, g with
-  | 0, _, _, _, _ => WithInitial.starInitial.hom_ext _ _
-  | _ + 1, 0, _, f, _ => (f 0).elim0
-  | _ + 1, _ + 1, 0, _, g => (g 0).elim0
-  | _ + 1, _ + 1, _ + 1, _, _ => rfl
+open _root_.SimplexCategory _root_.AugmentedSimplexCategory TauCeti.SimplexCategory
 
 /-! ### The cut duality -/
 
 /-- The functor `Δ₊ᵒᵖ ⥤ Δ_∂` sending the ordinal with `n` elements to `⦋n⦌`, its chain of cuts,
-and a monotone map to its cut map `SimplexCategory.cutOrderHom`. -/
+and a monotone map to its cut map `TauCeti.SimplexCategory.cutOrderHom`. -/
 @[expose, simps obj]
 def cut : AugmentedSimplexCategoryᵒᵖ ⥤ EndpointPreserving where
   obj X := EndpointPreserving.mk X.unop.card
@@ -368,11 +290,12 @@ lemma cut_map_hom_toOrderHom {X Y : AugmentedSimplexCategoryᵒᵖ} (f : X ⟶ Y
 
 /-- On nonempty ordinals, `cut` is the Gabriel–Zisman functor `II`. -/
 lemma inclusion_op_comp_cut : inclusion.op ⋙ cut = II.toEndpointPreserving :=
-  -- `cutOrderHom` is defined to be `II.map'` on nonempty ordinals.
-  (rfl)
+  CategoryTheory.Functor.hext (fun _ ↦ rfl) fun _ _ f ↦ heq_of_eq (EndpointPreserving.hom_ext' <|
+    (congrArg cutOrderHom (toOrderHom_inclusion_map f.unop)).trans
+      (OrderHom.ext _ _ (cutOrderHom_succ_succ _)))
 
 /-- The inverse `Δ_∂ ⥤ Δ₊ᵒᵖ` of the cut functor: it sends `⦋n⦌` to the ordinal with `n` elements
-and an endpoint-preserving map to `SimplexCategory.uncutOrderHom`. -/
+and an endpoint-preserving map to `TauCeti.SimplexCategory.uncutOrderHom`. -/
 @[expose, simps obj]
 def uncut :
     EndpointPreserving ⥤ AugmentedSimplexCategoryᵒᵖ where
@@ -388,6 +311,8 @@ lemma uncut_map_unop {X Y : EndpointPreserving} (f : X ⟶ Y) :
       (EndpointPreserving.hom_toOrderHom_zero f) (EndpointPreserving.hom_toOrderHom_last f)) :=
   rfl
 
+/-- `uncut` is a left inverse of `cut`: one half of the isomorphism of categories
+`Δ₊ᵒᵖ ≅ Δ_∂`. -/
 theorem cut_comp_uncut : cut ⋙ uncut = 𝟭 _ := by
   refine CategoryTheory.Functor.hext (fun X ↦ congrArg op (ofCard_card X.unop)) fun X Y f ↦ ?_
   obtain ⟨X⟩ := X
@@ -395,11 +320,14 @@ theorem cut_comp_uncut : cut ⋙ uncut = 𝟭 _ := by
   -- After the case split both sides have definitionally equal types, so `≍` becomes `=`.
   cases X <;> cases Y
   · refine heq_of_eq (Quiver.Hom.unop_inj (hom_ext ?_))
-    exact uncutOrderHom_cutOrderHom _ (cutOrderHom_zero _) (cutOrderHom_last _)
+    exact (toOrderHom_homOfOrderHom _).trans
+      (uncutOrderHom_cutOrderHom _ (cutOrderHom_zero _) (cutOrderHom_last _))
   · exact heq_of_eq (Quiver.Hom.unop_inj (WithInitial.starInitial.hom_ext _ _))
   · exact (f.unop : PEmpty).elim
   · exact heq_of_eq (Quiver.Hom.unop_inj (WithInitial.starInitial.hom_ext _ _))
 
+/-- `uncut` is a right inverse of `cut`: the other half of the isomorphism of categories
+`Δ₊ᵒᵖ ≅ Δ_∂`. -/
 theorem uncut_comp_cut : uncut ⋙ cut = 𝟭 _ := by
   refine CategoryTheory.Functor.hext (fun X ↦ ?_) fun X Y f ↦ ?_
   · obtain ⟨⟨n⟩⟩ := X
@@ -414,24 +342,17 @@ theorem uncut_comp_cut : uncut ⋙ cut = 𝟭 _ := by
       simp [Fin.ext_iff] at h
     · ext i : 2
       exact Subsingleton.elim (α := Fin 1) _ _
-    · -- On nonempty ordinals `toOrderHom (homOfOrderHom g)` is `g` by definition.
-      exact cutOrderHom_uncutOrderHom _ (EndpointPreserving.hom_toOrderHom_zero f)
-        (EndpointPreserving.hom_toOrderHom_last f)
+    · exact (congrArg cutOrderHom (toOrderHom_homOfOrderHom _)).trans
+        (cutOrderHom_uncutOrderHom _ (EndpointPreserving.hom_toOrderHom_zero f)
+          (EndpointPreserving.hom_toOrderHom_last f))
 
-/-- The isomorphism of categories `Δ₊ᵒᵖ ≌ Δ_∂` given by the cut functor and its inverse, with
-identity unit and counit up to `eqToIso`. -/
-def cutEquivalence : AugmentedSimplexCategoryᵒᵖ ≌ EndpointPreserving where
+/-- The isomorphism of categories `Δ₊ᵒᵖ ≅ Δ_∂` given by the cut functor and its inverse. The
+underlying equivalence is `cutIsoCat.toEquivalence`. -/
+@[expose, simps functor inverse]
+def cutIsoCat : IsoCat AugmentedSimplexCategoryᵒᵖ EndpointPreserving where
   functor := cut
   inverse := uncut
-  unitIso := eqToIso cut_comp_uncut.symm
-  counitIso := eqToIso uncut_comp_cut
-  functor_unitIso_comp X := by
-    simp [eqToHom_map]
+  unit_eq := cut_comp_uncut.symm
+  counit_eq := uncut_comp_cut
 
-@[simp]
-lemma cutEquivalence_functor : cutEquivalence.functor = cut := (rfl)
-
-@[simp]
-lemma cutEquivalence_inverse : cutEquivalence.inverse = uncut := (rfl)
-
-end AugmentedSimplexCategory
+end TauCeti.AugmentedSimplexCategory
