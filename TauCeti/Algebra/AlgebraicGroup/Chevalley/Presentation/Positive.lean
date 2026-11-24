@@ -13,7 +13,6 @@ import TauCeti.Algebra.Group.Subgroup.OrderedProduct
 import TauCeti.LinearAlgebra.RootSystem.Finite.PositiveCombinations
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Rational
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
 # The positive subgroup of Steinberg's presented group
@@ -118,14 +117,6 @@ end Definition
 
 variable {t : DynkinType} {ht : t.Valid} {A : Type u} [CommRing A]
 
-/-- A root generator of the presented group is the class of the corresponding letter. -/
-private theorem steinbergRootSubgroup_ofAdd (γ : Fin t.numRoots) (a : A) :
-    t.steinbergRootSubgroup ht A γ (ofAdd a) =
-      PresentedGroup.mk (t.steinbergRelators ht A) (steinbergRoot γ a) := by
-  rw [steinbergRootSubgroup_apply, toAdd_ofAdd]
-  -- `PresentedGroup.of` is by definition the class of the letter.
-  rfl
-
 /-- A relator `⁅X_α(u), X_β(v)⁆ w⁻¹` of the presentation gives the equation
 `⁅X_α(u), X_β(v)⁆ = w` in the presented group. -/
 private theorem commutatorElement_eq_of_isSteinbergRelator {α β : Fin t.numRoots} {u v : A}
@@ -133,32 +124,40 @@ private theorem commutatorElement_eq_of_isSteinbergRelator {α β : Fin t.numRoo
     (hr : IsSteinbergRelator A t ht (⁅steinbergRoot α u, steinbergRoot β v⁆ * w⁻¹)) :
     ⁅t.steinbergRootSubgroup ht A α (ofAdd u), t.steinbergRootSubgroup ht A β (ofAdd v)⁆ =
       PresentedGroup.mk (t.steinbergRelators ht A) w := by
-  rw [steinbergRootSubgroup_ofAdd, steinbergRootSubgroup_ofAdd, ← map_commutatorElement]
+  rw [steinbergRootSubgroup_apply, steinbergRootSubgroup_apply, toAdd_ofAdd, toAdd_ofAdd,
+    PresentedGroup.of, PresentedGroup.of, ← map_commutatorElement]
   exact PresentedGroup.mk_eq_mk_of_mul_inv_mem ((t.mem_steinbergRelators ht A).mpr hr)
 
-/-- Root generators commute when the sum of their roots is neither a root nor zero. -/
-private theorem commutatorElement_eq_one_of_isSteinbergRelator {α β : Fin t.numRoots}
+/-- Positive root generators commute when the sum of their roots is not a root: as positive roots
+never cancel, the sum is not zero either. -/
+private theorem commutatorElement_eq_one_of_mem_posRoots {α β : Fin t.numRoots}
+    (hα : α ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (hβ : β ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∉
       Set.range (t.simplyConnectedRootDatum ht).root)
-    (h₀ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ≠ 0)
     (u v : A) :
     ⁅t.steinbergRootSubgroup ht A α (ofAdd u), t.steinbergRootSubgroup ht A β (ofAdd v)⁆ = 1 := by
-  rw [steinbergRootSubgroup_ofAdd, steinbergRootSubgroup_ofAdd, ← map_commutatorElement]
+  rw [posRoots_rationalRootSystem] at hα hβ
+  have h₀ := root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone _ _ hα
+    (root_mem_posRootCone_of_mem_posRoots _ _ hβ)
+  rw [steinbergRootSubgroup_apply, steinbergRootSubgroup_apply, toAdd_ofAdd, toAdd_ofAdd,
+    PresentedGroup.of, PresentedGroup.of, ← map_commutatorElement]
   exact PresentedGroup.one_of_mem ((t.mem_steinbergRelators ht A).mpr (.commute h h₀ u v))
 
 /-- A generator at a positive root of height larger than those of `α` and `β` lies in the join
 of the root generators of such roots. -/
-private theorem steinbergRootSubgroup_mem_iSup_height {α β d : Fin t.numRoots}
+private theorem mk_steinbergRoot_mem_iSup_height {α β d : Fin t.numRoots}
     (hd : d ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     (hheight : max ((t.rationalBase ht).height α) ((t.rationalBase ht).height β) <
       (t.rationalBase ht).height d) (w : A) :
-    t.steinbergRootSubgroup ht A d (ofAdd w) ∈
+    PresentedGroup.mk (t.steinbergRelators ht A) (steinbergRoot d w) ∈
       ⨆ γ ∈ {γ ∈ posRootsFinset (t.rationalRootSystem ht) (t.rationalBase ht) |
         max ((t.rationalBase ht).height α) ((t.rationalBase ht).height β) <
           (t.rationalBase ht).height γ},
         (t.steinbergRootSubgroup ht A γ).range :=
   (le_iSup₂ (f := fun γ _ => (t.steinbergRootSubgroup ht A γ).range) d
-    (Finset.mem_filter.mpr ⟨(mem_posRootsFinset _ _ d).mpr hd, hheight⟩)) ⟨ofAdd w, rfl⟩
+    (Finset.mem_filter.mpr ⟨(mem_posRootsFinset _ _ d).mpr hd, hheight⟩))
+    ⟨ofAdd w, t.steinbergRootSubgroup_apply ht A d (ofAdd w)⟩
 
 /-- Outside `G₂`, two linearly independent roots `α`, `β` never have both `2α + β` and
 `α + 2β` as roots. -/
@@ -212,10 +211,9 @@ private theorem commutatorElement_mem_iSup_height_of_root_eq_add
     have hδheight := (t.rationalBase ht).height_add hδQ
     rw [commutatorElement_eq_of_isSteinbergRelator (IsSteinbergRelator.commutator_two_nsmul_add
       hγ hδ (three_nsmul_add_notMem_range_root α β)
-      (add_two_nsmul_notMem_range_root hlin ⟨δ, hδ⟩) u v), map_mul,
-      ← steinbergRootSubgroup_ofAdd, ← steinbergRootSubgroup_ofAdd]
-    exact Subgroup.mul_mem _ (steinbergRootSubgroup_mem_iSup_height hγpos (by omega) _)
-      (steinbergRootSubgroup_mem_iSup_height hδpos (by omega) _)
+      (add_two_nsmul_notMem_range_root hlin ⟨δ, hδ⟩) u v), map_mul]
+    exact Subgroup.mul_mem _ (mk_steinbergRoot_mem_iSup_height hγpos (by omega) _)
+      (mk_steinbergRoot_mem_iSup_height hδpos (by omega) _)
   · by_cases hdouble' : R.root α + 2 • R.root β ∈ Set.range R.root
     · -- The root string `α, α + β, α + 2β`.
       obtain ⟨δ, hδ⟩ := hdouble'
@@ -229,14 +227,13 @@ private theorem commutatorElement_mem_iSup_height_of_root_eq_add
         rw [add_comm]
         exact three_nsmul_add_notMem_range_root β α
       rw [commutatorElement_eq_of_isSteinbergRelator
-        (IsSteinbergRelator.commutator_add_two_nsmul hγ hδ hdouble hthree u v),
-        map_mul, ← steinbergRootSubgroup_ofAdd, ← steinbergRootSubgroup_ofAdd]
-      exact Subgroup.mul_mem _ (steinbergRootSubgroup_mem_iSup_height hγpos (by omega) _)
-        (steinbergRootSubgroup_mem_iSup_height hδpos (by omega) _)
+        (IsSteinbergRelator.commutator_add_two_nsmul hγ hδ hdouble hthree u v), map_mul]
+      exact Subgroup.mul_mem _ (mk_steinbergRoot_mem_iSup_height hγpos (by omega) _)
+        (mk_steinbergRoot_mem_iSup_height hδpos (by omega) _)
     · -- Neither double string: the one-factor relation.
       rw [commutatorElement_eq_of_isSteinbergRelator
-        (IsSteinbergRelator.commutator_add hγ hdouble hdouble' u v), ← steinbergRootSubgroup_ofAdd]
-      exact steinbergRootSubgroup_mem_iSup_height hγpos (by omega) _
+        (IsSteinbergRelator.commutator_add hγ hdouble hdouble' u v)]
+      exact mk_steinbergRoot_mem_iSup_height hγpos (by omega) _
 
 /-- Outside `G₂`, the commutator of two positive root generators is a product of generators at
 positive roots of strictly larger height. -/
@@ -253,25 +250,9 @@ private theorem commutatorElement_mem_iSup_height [(t.rationalRootSystem ht).IsN
       Set.range (t.simplyConnectedRootDatum ht).root
   · obtain ⟨γ, hγ⟩ := hsum
     exact commutatorElement_mem_iSup_height_of_root_eq_add hα hβ hγ u v
-  · -- Without a root sum the generators commute; positivity rules out opposite roots.
-    have hzero : (t.simplyConnectedRootDatum ht).root α +
-        (t.simplyConnectedRootDatum ht).root β ≠ 0 := by
-      intro hz
-      have hdeg := congrArg (t.weightDegree ht) hz
-      have ha := t.weightDegree_root_pos ht hα
-      have hb := t.weightDegree_root_pos ht hβ
-      rw [map_add, map_zero] at hdeg
-      linarith
-    rw [commutatorElement_eq_one_of_isSteinbergRelator hsum hzero u v]
+  · -- Without a root sum the generators commute.
+    rw [commutatorElement_eq_one_of_mem_posRoots hα hβ hsum u v]
     exact Subgroup.one_mem _
-
--- The finite certificates repeatedly expose the same opaque root and length tables of `G₂`.
-local macro "g2_table" : tactic => `(tactic|
-  (try simp only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root, Set.mem_range]
-   try dsimp +instances only [numRoots, rank]
-   simp only [g2Root_apply, g2Length_apply]
-   try dsimp +instances only [numRoots, rank]
-   decide))
 
 /-- A generator at a positive root of `G₂` of larger index in the native table lies in the
 join of the generators at such roots. -/
@@ -279,7 +260,7 @@ private theorem g2_mk_steinbergRoot_mem_iSup {ht : G2.Valid} {j k : Fin 6} (hk :
     PresentedGroup.mk (G2.steinbergRelators ht A) (steinbergRoot (Fin.castAdd 6 k) a) ∈
       ⨆ k : Fin 6, ⨆ (_ : j < k), (G2.steinbergRootSubgroup ht A (Fin.castAdd 6 k)).range :=
   (le_iSup₂ (f := fun k _ => (G2.steinbergRootSubgroup ht A (Fin.castAdd 6 k)).range) k hk)
-    ⟨ofAdd a, steinbergRootSubgroup_ofAdd _ a⟩
+    ⟨ofAdd a, G2.steinbergRootSubgroup_apply ht A _ (ofAdd a)⟩
 
 /-- In type `G₂`, the commutator of two positive root generators is a product of generators at
 positive roots of strictly larger index in the native root table. -/
@@ -294,17 +275,14 @@ private theorem g2_commutatorElement_mem_iSup {ht : G2.Valid} (i j : Fin 6) (hij
       (hsum : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 k) =
         (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
           (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j))
-      (hleft : 2 • (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∉
-          Set.range (G2.simplyConnectedRootDatum ht).root)
-      (hright : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-        2 • (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∉
-          Set.range (G2.simplyConnectedRootDatum ht).root) :
+      (hij' : (i = 0 ∧ j = 3) ∨ (i = 1 ∧ j = 4) ∨ (i = 2 ∧ j = 3)) :
       ⁅G2.steinbergRootSubgroup ht A (Fin.castAdd 6 i) (ofAdd u),
         G2.steinbergRootSubgroup ht A (Fin.castAdd 6 j) (ofAdd v)⁆ ∈ P := by
+    have hdouble := two_nsmul_add_notMem_range_root_g2 ht i j hij'
     rw [commutatorElement_eq_of_isSteinbergRelator
-      (IsSteinbergRelator.commutator_add hsum hleft hright u v)]
+      (IsSteinbergRelator.commutator_add hsum hdouble.1 hdouble.2 u v)]
     exact mem k hk _
+  obtain ⟨h2, h3, h4, h5, h5'⟩ := root_castAdd_eq_add_g2 ht
   -- Three sum pairs use the one-factor relation, (0, 1) the short–long relation and (0, 2) the
   -- short–short relation; all other pairs commute.
   by_cases hsum : (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
@@ -312,15 +290,13 @@ private theorem g2_commutatorElement_mem_iSup {ht : G2.Valid} (i j : Fin 6) (hij
         Set.range (G2.simplyConnectedRootDatum ht).root
   · rcases index_pair_of_root_add_mem_range_root_g2 ht i j hij hsum with
       ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · -- State the equation through the generators, so that the indices of the relator are
-      -- normalized to the concrete indices of the goal.
+    · -- Stating the equation through the generators normalizes the indices of the relator.
       have h : ⁅G2.steinbergRootSubgroup ht A (Fin.castAdd 6 0) (ofAdd u),
           G2.steinbergRootSubgroup ht A (Fin.castAdd 6 1) (ofAdd v)⁆ = _ :=
         commutatorElement_eq_of_isSteinbergRelator (IsSteinbergRelator.g2_short_long
           (α := Fin.castAdd 6 (0 : Fin 6)) (β := Fin.castAdd 6 (1 : Fin 6))
           (γ := Fin.castAdd 6 (2 : Fin 6)) (δ := Fin.castAdd 6 (3 : Fin 6))
-          (ε := Fin.castAdd 6 (4 : Fin 6)) (ζ := Fin.castAdd 6 (5 : Fin 6))
-          (by g2_table) (by g2_table) (by g2_table) (by g2_table) u v)
+          (ε := Fin.castAdd 6 (4 : Fin 6)) (ζ := Fin.castAdd 6 (5 : Fin 6)) h2 h3 h4 h5 u v)
       rw [h, map_mul, map_mul, map_mul]
       exact P.mul_mem (P.mul_mem (P.mul_mem (mem 2 (by decide) _) (mem 3 (by decide) _))
         (mem 4 (by decide) _)) (mem 5 (by decide) _)
@@ -331,14 +307,16 @@ private theorem g2_commutatorElement_mem_iSup {ht : G2.Valid} (i j : Fin 6) (hij
           (i := Fin.castAdd 6 (0 : Fin 6)) (j := Fin.castAdd 6 (2 : Fin 6))
           (k := Fin.castAdd 6 (3 : Fin 6)) (l := Fin.castAdd 6 (4 : Fin 6))
           (m := Fin.castAdd 6 (5 : Fin 6))
-          (by g2_table) (by g2_table) (by g2_table) (by g2_table) (by g2_table) (by g2_table) u v)
+          (by rw [g2Length_apply]; rfl) (by rw [g2Length_apply]; rfl)
+          (by rw [g2Length_apply]; rfl) h3 h4 h5 u v)
       rw [h, map_mul, map_mul]
       exact P.mul_mem (P.mul_mem (mem 3 (by decide) _) (mem 4 (by decide) _))
         (mem 5 (by decide) _)
-    · exact one_factor 4 (by decide) (by g2_table) (by g2_table) (by g2_table)
-    · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
-    · exact one_factor 5 (by decide) (by g2_table) (by g2_table) (by g2_table)
-  · rw [commutatorElement_eq_one_of_isSteinbergRelator hsum (root_add_root_ne_zero_g2 ht i j) u v]
+    · exact one_factor 4 (by decide) h4 (by decide)
+    · exact one_factor 5 (by decide) h5' (by decide)
+    · exact one_factor 5 (by decide) (h5.trans (add_comm _ _)) (by decide)
+  · rw [commutatorElement_eq_one_of_mem_posRoots ((mem_posRoots_rational_g2_iff ht _).mpr i.isLt)
+      ((mem_posRoots_rational_g2_iff ht _).mpr j.isLt) hsum u v]
     exact P.one_mem
 
 /-! ## Collection in the positive subgroup -/

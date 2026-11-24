@@ -17,9 +17,10 @@ the rational system, without importing the Lie-algebra or root-subgroup developm
 
 The native integral positivity results remain in `G2.Positive`, independently of the uniform
 assembly and rational base change. In the same table order, the sums of two positive roots are
-recorded by `TauCeti.DynkinType.index_pair_of_root_add_mem_range_root_g2` and
-`TauCeti.DynkinType.root_add_root_ne_zero_g2`; these drive the collection of positive root
-subgroups in type `G₂`.
+recorded by `TauCeti.DynkinType.index_pair_of_root_add_mem_range_root_g2`,
+`TauCeti.DynkinType.root_castAdd_eq_add_g2` and
+`TauCeti.DynkinType.two_nsmul_add_notMem_range_root_g2`; these drive the collection of positive
+root subgroups in type `G₂`.
 -/
 
 public section
@@ -53,14 +54,43 @@ theorem index_pair_of_root_add_mem_range_root_g2 (ht : G2.Valid) : ∀ i j : Fin
   simp only [g2Root_apply]
   decide
 
-/-- Two positive roots of `G₂`, read in the first six entries of the native root table, never sum
-to zero. -/
-theorem root_add_root_ne_zero_g2 (ht : G2.Valid) (i j : Fin 6) :
-    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
-      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ≠ 0 := by
+/-- **Additive relations among the positive roots of `G₂`.** Writing `rₖ` for the root at index
+`k` of the native root table: `r₂ = r₀ + r₁`, `r₃ = r₀ + r₂`, `r₄ = r₀ + r₃`, `r₅ = r₃ + r₂` and
+`r₅ = r₁ + r₄`. -/
+theorem root_castAdd_eq_add_g2 (ht : G2.Valid) :
+    (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 2) =
+        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 0) +
+          (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 1) ∧
+      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 3) =
+        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 0) +
+          (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 2) ∧
+      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 4) =
+        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 0) +
+          (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 3) ∧
+      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 5) =
+        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 3) +
+          (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 2) ∧
+      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 5) =
+        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 1) +
+          (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 4) := by
+  simp only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]
+  dsimp +instances only [numRoots, rank]
+  simp only [g2Root_apply]
+  decide
+
+/-- **Root strings of length two in `G₂`.** For the pairs `(0, 3)`, `(1, 4)` and `(2, 3)` of the
+native root table, whose roots `a` and `b` sum to a root, neither `2a + b` nor `a + 2b` is a
+root. -/
+theorem two_nsmul_add_notMem_range_root_g2 (ht : G2.Valid) (i j : Fin 6)
+    (hij : (i = 0 ∧ j = 3) ∨ (i = 1 ∧ j = 4) ∨ (i = 2 ∧ j = 3)) :
+    2 • (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
+        (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∉
+          Set.range (G2.simplyConnectedRootDatum ht).root ∧
+      (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 i) +
+        2 • (G2.simplyConnectedRootDatum ht).root (Fin.castAdd 6 j) ∉
+          Set.range (G2.simplyConnectedRootDatum ht).root := by
   revert i j
-  simp only [ne_eq, funext_iff, Pi.add_apply, Pi.zero_apply, simplyConnectedRootDatum_G2,
-    g2SimplyConnectedRootDatum_root]
+  simp only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root, Set.mem_range]
   dsimp +instances only [numRoots, rank]
   simp only [g2Root_apply]
   decide

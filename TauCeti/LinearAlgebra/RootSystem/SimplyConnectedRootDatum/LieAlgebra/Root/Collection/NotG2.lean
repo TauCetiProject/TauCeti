@@ -140,12 +140,9 @@ private theorem commutator_mem_higher_roots
           (by simpa only [one_nsmul] using hγ)⟩
     have hzero : (t.simplyConnectedRootDatum ht).root α +
         (t.simplyConnectedRootDatum ht).root β ≠ 0 := by
-      intro hz
-      have hdeg := congrArg (t.weightDegree ht) hz
-      have ha := t.weightDegree_root_pos ht hα
-      have hb := t.weightDegree_root_pos ht hβ
-      rw [map_add, map_zero] at hdeg
-      linarith
+      rw [posRoots_rationalRootSystem] at hα hβ
+      exact root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone _ _ hα
+        (root_mem_posRootCone_of_mem_posRoots _ _ hβ)
     rw [(commute_chevalleyRootSubgroup ρ M hM hnil hsumZ hzero A u v).commutator_eq]
     exact H.one_mem
 
