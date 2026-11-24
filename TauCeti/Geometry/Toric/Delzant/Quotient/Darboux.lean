@@ -93,7 +93,7 @@ open scoped Manifold ContDiff
 namespace TauCeti.Toric
 
 variable {ι N V : Type*} [Fintype ι] [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {i : N →+ V} {u : ι → N} {c : ι → ℝ} [FiniteDimensional ℝ V] {v : StrongDual ℝ V}
+  {i : N →+ V} {u : ι → N} {c : ι → ℝ} {v : StrongDual ℝ V}
 
 namespace DelzantQuotient
 
@@ -240,8 +240,9 @@ namespace IsDelzant
 
 open DelzantQuotient
 
-variable (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i) (hv : IsSmoothVertex i u c v)
-  (hvP : v ∈ facetPolyhedron i u c) [Fintype (activeSet (facetPairing i u) c v)]
+variable [FiniteDimensional ℝ V] (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i)
+  (hv : IsSmoothVertex i u c v) (hvP : v ∈ facetPolyhedron i u c)
+  [Fintype (activeSet (facetPairing i u) c v)]
 
 /-- **The inverse vertex chart is smooth.** On its target it is the class of the smooth lift
 `vertexLift w` into the level `Z`, followed by the smooth projection `Z → M_Δ`. -/
