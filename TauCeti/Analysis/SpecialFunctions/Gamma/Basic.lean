@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import Mathlib.Topology.Instances.Nat
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -55,8 +56,10 @@ sides of either limit being `0` at the poles `s = -k`. The second limit is the a
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
-* `Real.Gamma_pos_of_mem_Ioo`, `Real.Gamma_neg_of_mem_Ioo` — the sign of `Γ` between consecutive
-  poles: positive on `(-2n, -2n + 1)` and negative on `(-2n - 1, -2n)`.
+* `Real.neg_one_pow_mul_Gamma_pos_of_mem_Ioo` — the sign of `Γ` between consecutive poles:
+  `(-1)ᵏ Γ s > 0` on `(-k, -k + 1)`, with the even and odd cases `Real.Gamma_pos_of_mem_Ioo` and
+  `Real.Gamma_neg_of_mem_Ioo`.
+* `Real.pi_div_factorial_le_Gamma_of_mem_Ioo` — `π / (2n)! ≤ Γ s` on `(-2n, -2n + 1)`, `n ≥ 1`.
 * `Real.Gamma_le_one_of_mem_Icc` — `Γ s ≤ 1` for `s ∈ [1, 2]`.
 * `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
@@ -74,6 +77,7 @@ sides of either limit being `0` at the poles `s = -k`. The second limit is the a
   `-1` avoids `−ℕ`.
 * `Real.ne_neg_natCast_of_mem_Ioo` — a real number strictly between `-(k + 1)` and `-k` avoids
   `−ℕ`.
+* `Real.eventually_ne_neg_natCast` — the points near a real number off `−ℕ` are off `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
@@ -185,31 +189,56 @@ theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
     rw [Finset.prod_range_succ, mul_right_comm, ih, Nat.cast_succ, ← add_assoc,
       Gamma_add_one (by positivity), mul_comm]
 
+/-- The sign of `Γ` between consecutive poles: `(-1)ᵏ Γ s > 0` for `s ∈ (-k, -k + 1)`. For
+`k = 0` this is the interval `(0, 1)`. -/
+theorem neg_one_pow_mul_Gamma_pos_of_mem_Ioo {k : ℕ} {s : ℝ}
+    (hs : s ∈ Set.Ioo (-(k : ℝ)) (-k + 1)) : 0 < (-1) ^ k * Gamma s := by
+  -- reflection: `Γ(s) Γ(1 - s) = π / sin(π s)`, with `Γ(1 - s) > 0` and `(-1)ᵏ sin(π s) > 0`
+  have hsin : 0 < (-1) ^ k * sin (π * s) := by
+    rw [← sin_add_nat_mul_pi]
+    exact sin_pos_of_pos_of_lt_pi (by nlinarith [hs.1, pi_pos]) (by nlinarith [hs.2, pi_pos])
+  have h1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
+  have hsin0 : sin (π * s) ≠ 0 := fun h => by simp [h] at hsin
+  have h2 : (-1) ^ k * Gamma s * (Gamma (1 - s) * ((-1) ^ k * sin (π * s))) = π := by
+    rw [show (-1) ^ k * Gamma s * (Gamma (1 - s) * ((-1) ^ k * sin (π * s))) =
+      ((-1) ^ k) ^ 2 * (Gamma s * Gamma (1 - s)) * sin (π * s) by ring, Gamma_mul_Gamma_one_sub,
+      ← pow_mul, pow_mul', neg_one_sq, one_pow, one_mul, div_mul_cancel₀ _ hsin0]
+  exact pos_of_mul_pos_left (h2 ▸ pi_pos) (by positivity)
+
 /-- `Γ` is positive between the poles `-2n` and `-2n + 1`. -/
 theorem Gamma_pos_of_mem_Ioo {n : ℕ} {s : ℝ} (hs : s ∈ Set.Ioo (-2 * (n : ℝ)) (-2 * n + 1)) :
     0 < Gamma s := by
-  -- reflection: `Γ(s) Γ(1 - s) = π / sin(π s)`, with `Γ(1 - s) > 0` and `sin(π s) > 0`
-  have hsin : 0 < sin (π * s) := by
-    rw [← sin_add_nat_mul_two_pi _ n]
-    exact sin_pos_of_pos_of_lt_pi (by nlinarith [hs.1, pi_pos]) (by nlinarith [hs.2, pi_pos])
-  have h1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
-  have h2 : 0 < Gamma s * Gamma (1 - s) := by
-    rw [Gamma_mul_Gamma_one_sub]
-    positivity
-  exact pos_of_mul_pos_left h2 h1.le
+  simpa [pow_mul] using neg_one_pow_mul_Gamma_pos_of_mem_Ioo (k := 2 * n)
+    (by push_cast; constructor <;> linarith [hs.1, hs.2])
 
 /-- `Γ` is negative between the poles `-2n - 1` and `-2n`. -/
 theorem Gamma_neg_of_mem_Ioo {n : ℕ} {s : ℝ} (hs : s ∈ Set.Ioo (-2 * (n : ℝ) - 1) (-2 * n)) :
     Gamma s < 0 := by
-  -- reflection: `Γ(s) Γ(1 - s) = π / sin(π s)`, with `Γ(1 - s) > 0` and `sin(π s) < 0`
-  have hsin : sin (π * s) < 0 := by
-    rw [← sin_add_nat_mul_two_pi _ n]
-    exact sin_neg_of_neg_of_neg_pi_lt (by nlinarith [hs.2, pi_pos]) (by nlinarith [hs.1, pi_pos])
-  have h1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
-  have h2 : Gamma s * Gamma (1 - s) < 0 := by
-    rw [Gamma_mul_Gamma_one_sub]
-    exact div_neg_of_pos_of_neg pi_pos hsin
-  exact neg_of_mul_neg_left h2 h1.le
+  simpa [pow_succ, pow_mul] using neg_one_pow_mul_Gamma_pos_of_mem_Ioo (k := 2 * n + 1)
+    (by push_cast; constructor <;> linarith [hs.1, hs.2])
+
+/-- `Γ s ≥ π / (2n)!` between the poles `-2n` and `-2n + 1`, for `n ≥ 1`: in the reflection formula
+`Γ(s) Γ(1 - s) sin(π s) = π` the factor `Γ(1 - s)` is at most `Γ(2n + 1) = (2n)!`. -/
+theorem pi_div_factorial_le_Gamma_of_mem_Ioo {n : ℕ} (hn : 1 ≤ n) {s : ℝ}
+    (hs : s ∈ Set.Ioo (-2 * (n : ℝ)) (-2 * n + 1)) : π / ((2 * n).factorial : ℝ) ≤ Gamma s := by
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  have hG := Gamma_pos_of_mem_Ioo hs
+  have hG1 : 0 < Gamma (1 - s) := Gamma_pos_of_pos (by linarith [hs.2])
+  have h := Gamma_mul_Gamma_one_sub s
+  have hsin : 0 < sin (π * s) := by
+    have : 0 < π / sin (π * s) := by rw [← h]; positivity
+    exact (div_pos_iff_of_pos_left pi_pos).1 this
+  have hle : Gamma (1 - s) ≤ ((2 * n).factorial : ℝ) := by
+    rw [← Gamma_nat_eq_factorial]
+    exact Gamma_strictMonoOn_Ici.monotoneOn (Set.mem_Ici.2 (by linarith [hs.2]))
+      (Set.mem_Ici.2 (by push_cast; linarith)) (by push_cast; linarith [hs.1])
+  rw [div_le_iff₀ (by positivity)]
+  calc π = Gamma s * Gamma (1 - s) * sin (π * s) := by
+        rw [h, div_mul_cancel₀ _ hsin.ne']
+    _ ≤ Gamma s * ((2 * n).factorial : ℝ) * 1 := by
+        gcongr
+        exact sin_le_one _
+    _ = _ := by ring
 
 /-- The real Gamma function is at most `1` on `[1, 2]`: it is convex there, with
 `Γ 1 = Γ 2 = 1`. -/
@@ -403,6 +432,15 @@ theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Set.Ioo (-(k +
   have h₂ : (k : ℝ) < n := by linarith [ha.2]
   norm_cast at h₁ h₂
   omega
+
+/-- The points near a real number off `−ℕ` are off `−ℕ`: the poles of `Γ` are isolated. -/
+theorem eventually_ne_neg_natCast {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    ∀ᶠ y in 𝓝 x, ∀ m : ℕ, y ≠ -(m : ℝ) := by
+  have hcl : IsClosed (Set.range fun m : ℕ => -(m : ℝ)) := by
+    have := (Homeomorph.neg ℝ).isClosedMap _ Nat.isClosedEmbedding_coe_real.isClosed_range
+    rwa [← Set.range_comp] at this
+  filter_upwards [hcl.isOpen_compl.mem_nhds fun ⟨m, hm⟩ => hx m hm.symm] with y hy m hm
+  exact hy ⟨m, hm.symm⟩
 
 /-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
 `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of

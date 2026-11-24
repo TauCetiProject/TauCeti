@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Topology.Instances.Nat
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
 /-!
@@ -186,15 +186,6 @@ theorem differentiableAt_digamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) 
     exact hG.deriv.differentiableAt.div hG.differentiableAt (Complex.Gamma_ne_zero hc)
   simpa [Complex.digamma_ofReal] using hd.hasDerivAt.real_of_complex.differentiableAt
 
-/-- Near a regular real point every point is regular: the poles of Gamma are isolated. -/
-private theorem eventually_ne_neg_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
-    ∀ᶠ y in 𝓝 x, ∀ m : ℕ, y ≠ -(m : ℝ) := by
-  have hcl : IsClosed (Set.range fun m : ℕ => -(m : ℝ)) := by
-    have := (Homeomorph.neg ℝ).isClosedMap _ Nat.isClosedEmbedding_coe_real.isClosed_range
-    rwa [← Set.range_comp] at this
-  filter_upwards [hcl.isOpen_compl.mem_nhds fun ⟨m, hm⟩ => hx m hm.symm] with y hy m hm
-  exact hy ⟨m, hm.symm⟩
-
 /-- The derivative of the digamma recurrence: `ψ'(x + n) = ψ'(x) - ∑_{k < n} 1 / (x + k)²` at
 every regular real point. -/
 theorem deriv_digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (n : ℕ) :
@@ -206,7 +197,7 @@ theorem deriv_digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ
       ((hasDerivAt_id x).add_const (k : ℝ)).inv (hk k hk'))).unique
     (((differentiableAt_digamma hxn).hasDerivAt.comp_add_const x (n : ℝ)).congr_of_eventuallyEq
       (by
-        filter_upwards [eventually_ne_neg_nat hx] with y hy
+        filter_upwards [eventually_ne_neg_natCast hx] with y hy
         simp only [Pi.add_apply, Pi.inv_apply, id]
         exact (digamma_apply_add_nat hy n).symm))
   simp only [id, div_eq_mul_inv, neg_one_mul, Finset.sum_neg_distrib] at h
