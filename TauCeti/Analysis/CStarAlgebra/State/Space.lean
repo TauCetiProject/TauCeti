@@ -176,6 +176,14 @@ theorem pullbackFunctional_apply (f : F) (φ : WeakDual ℂ B) (a : A) :
     pullbackFunctional A f φ a = φ (f a) :=
   (rfl)
 
+/-- Restricting the functional induced by a positive functional `σ` of `B` along `f` gives the
+functional induced by `σ ∘ f`. -/
+@[simp]
+theorem pullbackFunctional_toWeakDual (f : F) (σ : B →P[ℂ] ℂ) :
+    pullbackFunctional A f (StrongDual.toWeakDual (σ : B →L[ℂ] ℂ)) =
+      StrongDual.toWeakDual ((σ.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) :=
+  DFunLike.ext _ _ fun _ => by simp
+
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the
 composite can drop, for instance to `0`. -/
