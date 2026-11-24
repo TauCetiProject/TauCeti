@@ -13,15 +13,14 @@ import TauCeti.AlgebraicGeometry.Frobenius.Perfection
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
-import TauCeti.AlgebraicGeometry.Noetherian
-import TauCeti.Topology.Sober
 
 /-!
 # Dense smooth loci over a field
 
-For a scheme `X` locally of finite presentation over a field `k`, the smooth locus `X_sm` of
-`X ⟶ Spec k` is dense exactly when `X` is geometrically reduced over `k`. This is the setting
-of the Nash blowup: a reduced scheme locally of finite type over `k` whose smooth locus is dense.
+For a reduced scheme `X` locally of finite presentation over a field `k`, the smooth locus `X_sm`
+of `X ⟶ Spec k` is dense exactly when `X` is geometrically reduced over `k`; the direction
+geometrically reduced ⇒ dense needs no reducedness. This is the setting of the Nash blowup: a
+reduced scheme locally of finite type over `k` whose smooth locus is dense.
 
 The forward direction uses no hypothesis on `k`. The inclusion `X_sm ⟶ X` is quasi-compact, since
 `X` is locally Noetherian, and dominant, so it is scheme-theoretically dominant on the reduced
@@ -35,19 +34,11 @@ closure of `k`. The projection `X ×_k k' ⟶ X` is a universal homeomorphism, t
 of the reduced `X ×_k k'` is dense, and its image `W` is a dense open of `X` with preimage `W'`.
 So `W ×_k k' ≅ W'` is smooth over `k'`, and smoothness descends along `Spec k' ⟶ Spec k`.
 
-In a locally Noetherian scheme a dense open, such as a dense smooth locus, contains the generic
-point of every irreducible component and meets every irreducible component in a dense subset.
-
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.smooth_ι_comp_iff_le_smoothLocus`: `f` is smooth on an open `U`
-  exactly when `U` lies in the smooth locus of `f`.
 * `AlgebraicGeometry.Scheme.Hom.geometricallyReduced_of_dense_smoothLocus` and
   `AlgebraicGeometry.Scheme.Hom.dense_smoothLocus_of_geometricallyReduced`: the two directions,
   combined in `AlgebraicGeometry.Scheme.Hom.dense_smoothLocus_iff_geometricallyReduced`.
-* `AlgebraicGeometry.Scheme.Opens.genericPoints_subset_of_dense` and
-  `AlgebraicGeometry.Scheme.Opens.closure_inter_eq_of_dense`: a dense open of a locally Noetherian
-  scheme contains every component-generic point and is dense in every irreducible component.
 
 ## References
 
@@ -62,37 +53,7 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- In a locally Noetherian scheme, a dense open contains the generic point of every irreducible
-component. -/
-theorem Scheme.Opens.genericPoints_subset_of_dense {X : Scheme.{u}} [IsLocallyNoetherian X]
-    (U : X.Opens) (hU : Dense (U : Set X)) : genericPoints X ⊆ U :=
-  hU.genericPoints_subset_of_nonempty_interior
-    (fun _ hx ↦ TauCeti.AlgebraicGeometry.nonempty_interior_of_mem_irreducibleComponents hx)
-    U.isOpen.stableUnderGeneralization
-
-/-- In a locally Noetherian scheme, a dense open `U` meets every irreducible component `C` in a
-dense subset of `C`. -/
-theorem Scheme.Opens.closure_inter_eq_of_dense {X : Scheme.{u}} [IsLocallyNoetherian X]
-    (U : X.Opens) (hU : Dense (U : Set X)) {C : Set X} (hC : C ∈ irreducibleComponents X) :
-    closure ((U : Set X) ∩ C) = C := by
-  have hCc := isClosed_of_mem_irreducibleComponents C hC
-  have hη := hC.1.isGenericPoint_genericPoint_closure
-  rw [hCc.closure_eq] at hη
-  refine subset_antisymm ((closure_mono Set.inter_subset_right).trans hCc.closure_subset) ?_
-  have hηU : hC.1.genericPoint ∈ U :=
-    U.genericPoints_subset_of_dense hU (show closure {_} ∈ _ by rwa [hη.def])
-  calc C = closure {hC.1.genericPoint} := hη.def.symm
-    _ ⊆ closure ((U : Set X) ∩ C) := closure_mono (Set.singleton_subset_iff.mpr ⟨hηU, hη.mem⟩)
-
 namespace Scheme.Hom
-
-/-- A morphism `f` locally of finite presentation is smooth on an open `U` exactly when `U` lies in
-the smooth locus of `f`. -/
-theorem smooth_ι_comp_iff_le_smoothLocus {X S : Scheme.{u}} (f : X ⟶ S)
-    [LocallyOfFinitePresentation f] (U : X.Opens) :
-    Smooth (U.ι ≫ f) ↔ U ≤ f.smoothLocus := by
-  rw [← smoothLocus_eq_top_iff, ← preimage_smoothLocus_eq, ← top_le_iff]
-  exact ⟨fun h x hx ↦ h (Set.mem_univ (⟨x, hx⟩ : U)), fun h x _ ↦ h x.property⟩
 
 variable {k : Type u} [Field k] {X : Scheme.{u}} (f : X ⟶ Spec (.of k))
 
