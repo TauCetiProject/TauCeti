@@ -81,11 +81,11 @@ theorem mextDeriv_mextDeriv (φ : RoughForm I M F k)
 /-- In particular, the second exterior derivative of a bundled smooth form vanishes. -/
 @[simp]
 theorem SmoothForm.mextDeriv_mextDeriv (φ : SmoothForm I M F k) :
-    mextDeriv (mextDeriv φ.1) = 0 := by
-  have hφ : IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) 2 φ.1 := by
+    mextDeriv (mextDeriv φ.val) = 0 := by
+  have hφ : IsSmoothBundleForm (I := I) (F := F) (V := Trivial M F) 2 φ.val := by
     rw [isSmoothBundleForm_def]
     exact φ.contMDiff.of_le (by simp)
-  exact TauCeti.mextDeriv_mextDeriv φ.1 hφ
+  exact TauCeti.mextDeriv_mextDeriv φ.val hφ
 
 /-- The second exterior derivative of the `0`-form of a `C²` function vanishes. -/
 @[simp]

@@ -146,6 +146,14 @@ noncomputable def b2SpecialIsogeny :
   rw [b2SpecialIsogeny]
   simp
 
+/-- In fundamental-weight coordinates, `b2SpecialIsogeny.weightMap` evaluates `χ` at
+`lengthPermRankTwo i` and rescales by the squared root length at `lengthPermRankTwo i`. -/
+theorem b2SpecialIsogeny_weightMap_apply (χ : Fin 2 → ℤ) (i : Fin 2) :
+    b2SpecialIsogeny.weightMap χ i =
+      (B 2).rootLength (lengthPermRankTwo i) * χ (lengthPermRankTwo i) := by
+  fin_cases i <;>
+    simp [b2SpecialIsogenyMatrix_def, rootLength_B, Matrix.vecHead, Matrix.vecTail]
+
 @[simp] lemma b2SpecialIsogeny_coweightMap :
     b2SpecialIsogeny.coweightMap = b2SpecialIsogenyMatrixᵀ.mulVecLin := by
   rw [b2SpecialIsogeny]
@@ -224,9 +232,8 @@ theorem b2SpecialIsogeny_exponent_typeBSimpleIndex_eq_one_iff (i : Fin 2) :
 
 /-- Every exponent of `b2SpecialIsogeny` is either `1` or `2`. -/
 theorem b2SpecialIsogeny_exponent_eq_one_or_eq_two (i : Fin (2 * 2 ^ 2)) :
-    b2SpecialIsogeny.exponent i = 1 ∨ b2SpecialIsogeny.exponent i = 2 := by
-  rw [b2SpecialIsogeny_exponent]
-  exact b2SpecialIsogenyExponent_eq_one_or_eq_two i
+    b2SpecialIsogeny.exponent i = 1 ∨ b2SpecialIsogeny.exponent i = 2 :=
+  b2SpecialIsogeny_exponent i ▸ b2SpecialIsogenyExponent_eq_one_or_eq_two i
 
 /-- The `B₂` special isogeny permutes the assembled simple-root indices by `lengthPermRankTwo`. -/
 theorem b2SpecialIsogeny_indexEquiv_simpleIndex (ht : (B 2).Valid) (i : Fin (B 2).rank) :
@@ -278,6 +285,14 @@ def g2SpecialIsogeny :
     g2SpecialIsogeny.weightMap = g2SpecialIsogenyMatrix.mulVecLin := by
   rw [g2SpecialIsogeny]
   simp
+
+/-- In fundamental-weight coordinates, `g2SpecialIsogeny.weightMap` evaluates `χ` at
+`lengthPermRankTwo i` and rescales by the squared root length at `lengthPermRankTwo i`. -/
+theorem g2SpecialIsogeny_weightMap_apply (χ : Fin 2 → ℤ) (i : Fin 2) :
+    g2SpecialIsogeny.weightMap χ i =
+      G2.rootLength (lengthPermRankTwo i) * χ (lengthPermRankTwo i) := by
+  fin_cases i <;>
+    simp [g2SpecialIsogenyMatrix_def, rootLength_G2, Matrix.vecHead, Matrix.vecTail]
 
 @[simp] lemma g2SpecialIsogeny_coweightMap :
     g2SpecialIsogeny.coweightMap = g2SpecialIsogenyMatrixᵀ.mulVecLin := by
@@ -346,9 +361,8 @@ theorem g2SpecialIsogeny_exponent_castLE_eq_one_iff (i : Fin 2) :
 
 /-- Every exponent of `g2SpecialIsogeny` is either `1` or `3`. -/
 theorem g2SpecialIsogeny_exponent_eq_one_or_eq_three (i : Fin 12) :
-    g2SpecialIsogeny.exponent i = 1 ∨ g2SpecialIsogeny.exponent i = 3 := by
-  rw [g2SpecialIsogeny_exponent]
-  exact g2Length_eq_one_or_eq_three i
+    g2SpecialIsogeny.exponent i = 1 ∨ g2SpecialIsogeny.exponent i = 3 :=
+  g2SpecialIsogeny_exponent i ▸ g2Length_eq_one_or_eq_three i
 
 /-- The `G₂` special isogeny permutes the assembled simple-root indices by `lengthPermRankTwo`. -/
 theorem g2SpecialIsogeny_indexEquiv_simpleIndex (ht : G2.Valid) (i : Fin G2.rank) :
@@ -379,6 +393,15 @@ noncomputable def f4SpecialIsogeny :
     f4SpecialIsogeny.weightMap = f4SpecialIsogenyMatrix.mulVecLin := by
   rw [f4SpecialIsogeny]
   simp
+
+/-- In fundamental-weight coordinates, `f4SpecialIsogeny.weightMap` evaluates `χ` at
+`lengthPermF4 i` and rescales by the squared root length at `lengthPermF4 i`. -/
+theorem f4SpecialIsogeny_weightMap_apply (χ : Fin 4 → ℤ) (i : Fin 4) :
+    f4SpecialIsogeny.weightMap χ i =
+      F4.rootLength (lengthPermF4 i) * χ (lengthPermF4 i) := by
+  fin_cases i <;>
+    simp [f4SpecialIsogenyMatrix_def, rootLength_F4, lengthPermF4_apply,
+      Matrix.vecHead, Matrix.vecTail]
 
 @[simp] lemma f4SpecialIsogeny_coweightMap :
     f4SpecialIsogeny.coweightMap = f4SpecialIsogenyMatrixᵀ.mulVecLin := by
@@ -447,9 +470,8 @@ theorem f4SpecialIsogeny_exponent_castAdd_eq_one_iff (i : Fin 4) :
 
 /-- Every exponent of `f4SpecialIsogeny` is either `1` or `2`. -/
 theorem f4SpecialIsogeny_exponent_eq_one_or_eq_two (i : Fin 48) :
-    f4SpecialIsogeny.exponent i = 1 ∨ f4SpecialIsogeny.exponent i = 2 := by
-  rw [f4SpecialIsogeny_exponent]
-  exact f4Length_eq_one_or_eq_two i
+    f4SpecialIsogeny.exponent i = 1 ∨ f4SpecialIsogeny.exponent i = 2 :=
+  f4SpecialIsogeny_exponent i ▸ f4Length_eq_one_or_eq_two i
 
 /-- The `F₄` special isogeny permutes the assembled simple-root indices by `lengthPermF4`. -/
 theorem f4SpecialIsogeny_indexEquiv_simpleIndex (ht : F4.Valid) (i : Fin F4.rank) :

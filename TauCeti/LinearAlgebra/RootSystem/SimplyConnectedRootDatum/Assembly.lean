@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.Basic
@@ -46,7 +46,7 @@ make this explicit data available without requiring downstream users to unfold t
 * `TauCeti.DynkinType.pairing_simpleIndex` and `TauCeti.DynkinType.pairingIn_simpleIndex`: the
   Cartan integers at the simple indices are the entries of the Bourbaki-numbered Cartan matrix.
 * `TauCeti.DynkinType.card_support_simplyConnectedBase`: the pinned base has `t.rank` elements.
-* `TauCeti.DynkinType.toLinearMap_simplyConnectedRootDatum` and
+* `TauCeti.DynkinType.toLinearMap_simplyConnectedRootDatum_apply_apply` and
   `TauCeti.DynkinType.coroot'_simplyConnectedRootDatum_apply`: the pinned pairing and coroot
   functionals are given by the dot product, uniformly in the type.
 * `TauCeti.DynkinType.coroot'_simpleIndex_apply`: evaluation at a simple coroot extracts the
@@ -159,21 +159,18 @@ theorem g2_add_mem_range_iff {ht : G2.Valid} (i j : Fin G2.numRoots) :
     (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j ∈
         Set.range (G2.simplyConnectedRootDatum ht).root ↔
       g2Root i + g2Root j ∈ Set.range g2Root := by
-  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-    rank, numRoots]
+  rw [root_simplyConnectedRootDatum_G2]; rfl
 
 /-- Vanishing of a root sum in the assembled `G₂` datum is equivalent to vanishing in `g2Root`. -/
 theorem g2_add_eq_zero_iff {ht : G2.Valid} (i j : Fin G2.numRoots) :
     (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j = 0 ↔
       g2Root i + g2Root j = 0 := by
-  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-    rank, numRoots, Pi.zero_def]
+  rw [root_simplyConnectedRootDatum_G2]; rfl
 
 /-- Reflecting a root of the assembled `G₂` datum in itself shifts its index by `6`. -/
 theorem reflectionPerm_self_G2 (ht : G2.Valid) (α : Fin 12) :
-    (G2.simplyConnectedRootDatum ht).reflectionPerm α α = (α + 6 : Fin 12) := by
-  rw [simplyConnectedRootDatum_G2]
-  exact g2SimplyConnectedRootDatum_reflectionPerm_self α
+    (G2.simplyConnectedRootDatum ht).reflectionPerm α α = (α + 6 : Fin 12) :=
+  simplyConnectedRootDatum_G2 ht ▸ g2SimplyConnectedRootDatum_reflectionPerm_self α
 
 -- A base is indexed by its datum, so each base equation explicitly transports along the
 -- corresponding datum equation instead of exposing either dispatcher's implementation.
@@ -221,7 +218,7 @@ def simpleIndex (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) : Fin t.numRoot
   Fin.castLE (rank_le_numRoots ht) i
 
 /-- The root enumeration index of a simple root has the same zero-based value as its node. -/
-@[simp] theorem simpleIndex_val (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) :
+@[simp] theorem val_simpleIndex (t : DynkinType) (ht : t.Valid) (i : Fin t.rank) :
     (t.simpleIndex ht i : ℕ) = i := (rfl)
 
 /-! The families `A` to `E₈` each enumerate their own roots and name their own simple-root index.
@@ -233,44 +230,44 @@ private theorem simpleIndex_A (n : ℕ) (ht : (A n).Valid) (i : Fin n) :
     (A n).simpleIndex ht i = typeASimpleIndex n i := by
   apply Fin.ext
   rw [typeASimpleIndex_val]
-  exact simpleIndex_val (A n) ht i
+  exact val_simpleIndex (A n) ht i
 
 /-- The simple-root index of the dispatcher at type `B n` is type `B`'s own simple-root index. -/
 @[simp] theorem simpleIndex_B (n : ℕ) (ht : (B n).Valid) (i : Fin n) :
     (B n).simpleIndex ht i = typeBSimpleIndex n i := by
   apply Fin.ext
   rw [typeBSimpleIndex_val]
-  exact simpleIndex_val (B n) ht i
+  exact val_simpleIndex (B n) ht i
 
 private theorem simpleIndex_C (n : ℕ) (ht : (C n).Valid) (i : Fin n) :
     (C n).simpleIndex ht i = typeCSimpleIndex n i := by
   apply Fin.ext
   rw [typeCSimpleIndex_val]
-  exact simpleIndex_val (C n) ht i
+  exact val_simpleIndex (C n) ht i
 
 private theorem simpleIndex_D (n : ℕ) (ht : (D n).Valid) (i : Fin n) :
     (D n).simpleIndex ht i = typeDSimpleIndex n (valid_D.mp ht) i := by
   apply Fin.ext
   rw [typeDSimpleIndex_val]
-  exact simpleIndex_val (D n) ht i
+  exact val_simpleIndex (D n) ht i
 
 private theorem simpleIndex_E6 (ht : E6.Valid) (i : Fin 6) :
     E6.simpleIndex ht i = e6SimpleIndex i := by
   apply Fin.ext
   rw [e6SimpleIndex_val]
-  exact simpleIndex_val E6 ht i
+  exact val_simpleIndex E6 ht i
 
 private theorem simpleIndex_E7 (ht : E7.Valid) (i : Fin 7) :
     E7.simpleIndex ht i = e7SimpleIndex i := by
   apply Fin.ext
   rw [e7SimpleIndex_val]
-  exact simpleIndex_val E7 ht i
+  exact val_simpleIndex E7 ht i
 
 private theorem simpleIndex_E8 (ht : E8.Valid) (i : Fin 8) :
     E8.simpleIndex ht i = e8SimpleIndex i := by
   apply Fin.ext
   rw [e8SimpleIndex_val]
-  exact simpleIndex_val E8 ht i
+  exact val_simpleIndex E8 ht i
 
 /-- The simple-root index of the dispatcher at type `F₄` is the first four root indices of the `F₄`
 module, `Fin.castAdd 44`. -/
@@ -352,7 +349,7 @@ def simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid) :
   (Fin.castLEquiv (rank_le_numRoots ht)).trans
     (Equiv.subtypeEquivRight fun _ ↦ (mem_support_simplyConnectedBase t ht).symm)
 
-@[simp] theorem coe_simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid)
+@[simp] theorem coe_simpleSupportEquivSimplyConnectedBase_apply (t : DynkinType) (ht : t.Valid)
     (i : Fin t.rank) :
     ((t.simpleSupportEquivSimplyConnectedBase ht i : Fin t.numRoots)) = t.simpleIndex ht i :=
   (rfl)
@@ -380,13 +377,12 @@ zero-based value. -/
 @[simp]
 theorem card_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
     (t.simplyConnectedBase ht).support.card = t.rank := by
-  classical
   rw [← Fintype.card_coe,
     ← Fintype.card_congr (t.simpleSupportEquivSimplyConnectedBase ht), Fintype.card_fin]
 
 /-- **The pinned pairing is the dot product** of the fundamental-weight and simple-coroot
 coordinates, uniformly in the Dynkin type. -/
-theorem toLinearMap_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid)
+theorem toLinearMap_simplyConnectedRootDatum_apply_apply (t : DynkinType) (ht : t.Valid)
     (x y : Fin t.rank → ℤ) :
     (t.simplyConnectedRootDatum ht).toLinearMap x y = x ⬝ᵥ y := by
   -- Unlike the entrywise pinning above, no index is retained in a dependent motive here: the case
@@ -431,7 +427,7 @@ theorem coroot'_simplyConnectedRootDatum_apply (t : DynkinType) (ht : t.Valid)
     (k : Fin t.numRoots) (mu : Fin t.rank → ℤ) :
     (t.simplyConnectedRootDatum ht).coroot' k mu =
       mu ⬝ᵥ (t.simplyConnectedRootDatum ht).coroot k := by
-  rw [LinearMap.flip_apply, t.toLinearMap_simplyConnectedRootDatum ht]
+  rw [LinearMap.flip_apply, t.toLinearMap_simplyConnectedRootDatum_apply_apply ht]
 
 /-- Evaluation at the `i`-th simple coroot extracts the `i`-th fundamental-weight coordinate.
 
@@ -449,7 +445,7 @@ coroot is a standard basis vector, so the dot product picks out one entry. -/
 @[simp] theorem pairing_simpleIndex (t : DynkinType) (ht : t.Valid) (i j : Fin t.rank) :
     (t.simplyConnectedRootDatum ht).pairing (t.simpleIndex ht i) (t.simpleIndex ht j) =
       t.cartanMatrix i j := by
-  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum,
+  rw [← RootPairing.root_coroot_eq_pairing, toLinearMap_simplyConnectedRootDatum_apply_apply,
     root_simpleIndex, coroot_simpleIndex, dotProduct_single, mul_one]
 
 /-- The integral form of `TauCeti.DynkinType.pairing_simpleIndex`.
@@ -483,21 +479,8 @@ theorem hasCartanType_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid) :
 /-- The coroots of the pinned datum span the cocharacter lattice. This is the simply connected
 lattice condition consumed by the pinned Chevalley--Demazure construction. -/
 theorem span_coroot_simplyConnectedRootDatum (t : DynkinType) (ht : t.Valid) :
-    Submodule.span ℤ (Set.range (t.simplyConnectedRootDatum ht).coroot) = ⊤ := by
-  cases t with
-  | A n => exact corootSpan_typeASimplyConnectedRootDatum_eq_top n
-  | B n => exact corootSpan_typeBSimplyConnectedRootDatum_eq_top n
-  | C n => exact corootSpan_typeCSimplyConnectedRootDatum_eq_top n
-  | D n => exact corootSpan_typeDSimplyConnectedRootDatum_eq_top n (valid_D.mp ht)
-  | E6 => exact corootSpan_e6SimplyConnectedRootDatum_eq_top
-  | E7 => exact corootSpan_e7SimplyConnectedRootDatum_eq_top
-  | E8 => exact corootSpan_e8SimplyConnectedRootDatum_eq_top
-  | F4 =>
-    exact simplyConnectedRootDatum_F4 ht ▸
-      RootPairing.IsRootSystem.span_coroot_eq_top (P := f4SimplyConnectedRootDatum)
-  | G2 =>
-    exact simplyConnectedRootDatum_G2 ht ▸
-      RootPairing.IsRootSystem.span_coroot_eq_top (P := g2SimplyConnectedRootDatum)
+    Submodule.span ℤ (Set.range (t.simplyConnectedRootDatum ht).coroot) = ⊤ :=
+  corootSpan_eq_top_of_coroot_eq_single (coroot_simpleIndex t ht)
 
 end
 

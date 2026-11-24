@@ -119,8 +119,7 @@ private theorem g2_rat_root_eq_add_iff (α β γ : Fin G2.numRoots) :
       (G2.rationalRootSystem ht).root α + (G2.rationalRootSystem ht).root β ↔
     g2Root γ = g2Root α + g2Root β := by
   have h := G2.root_rationalRootSystem_eq_add_zsmul_iff ht β α γ 1
-  rw [Int.cast_one, one_smul, one_zsmul, g2_root_add_iff] at h
-  exact h
+  rwa [Int.cast_one, one_smul, one_zsmul, g2_root_add_iff] at h
 
 private theorem g2SC_peel {i₀ : Fin 2} {β γ : Fin 12} {r : ℕ}
     (h : (γ : ℕ) < 6 ∧ 1 < (γ : ℕ) ∧ g2Root γ = g2Root (Fin.castAdd 10 i₀) + g2Root β ∧
@@ -140,15 +139,13 @@ private theorem g2SC_peel {i₀ : Fin 2} {β γ : Fin 12} {r : ℕ}
   change Fin 2 at i; change Fin 12 at β₀
   have hsum' : g2Root γ = g2Root (Fin.castAdd 10 i) + g2Root β₀ := by
     simpa only [simpleIndex_G2] using (g2_rat_root_eq_add_iff (G2.simpleIndex ht i) β₀ γ).1 hsum
-  have hi_eq : i = i₀ := by
+  obtain rfl : i₀ = i := by
     rcases lt_trichotomy i i₀ with hi | rfl | hi
     · exact (hmin i hi β₀ hsum').elim
     · rfl
     · exact (hlt i₀ hi β ((g2_rat_root_eq_add_iff (G2.simpleIndex ht i₀) β γ).2
         (by simpa only [simpleIndex_G2] using hadd))).elim
-  subst i
-  have hβ_eq : β₀ = β := g2Root.injective (add_left_cancel (hsum'.symm.trans hadd))
-  subst β₀
+  obtain rfl : β = β₀ := g2Root.injective (add_left_cancel (hadd.symm.trans hsum'))
   have hadd' := (g2_root_add_iff (ht := ht) (Fin.castAdd 10 i₀) β γ).mpr hadd
   have hbot := g2_chainBotCoeff_eq (ht := ht) hadd hmem hnot
   rw [← simpleIndex_G2 ht i₀] at hadd' hbot ⊢
@@ -165,9 +162,7 @@ private theorem g2_lie_reflectionPerm_self_lie (α β : Fin 12) :
   have hrefl : ⁅G2.chevalleySystem ht α, G2.chevalleySystem ht (α + 6 : Fin 12)⁆ =
       ∑ i : Fin 2, g2Coroot α i • (G2.lieBasis ht).h i := by
     rw [← reflectionPerm_self_G2 ht α, G2.lie_chevalleySystem_reflectionPerm_self ht α]
-    have hsum := G2.coroot_rootEquiv_eq_sum ht α
-    rw [coroot_simplyConnectedRootDatum_G2] at hsum
-    exact hsum
+    have hsum := G2.coroot_rootEquiv_eq_sum ht α; rwa [coroot_simplyConnectedRootDatum_G2] at hsum
   have hh (i : Fin 2) : ⁅(G2.lieBasis ht).h i, G2.chevalleySystem ht β⁆ =
       g2Root β i • G2.chevalleySystem ht β := by
     simpa only [root_simplyConnectedRootDatum_G2, Int.cast_smul_eq_zsmul] using
@@ -186,8 +181,7 @@ private theorem g2SC_neg_of_notMem {α α' β γ : Fin 12} {c q : ℤ} (hc : g2S
   have hneg' := (g2_root_add_iff (ht := ht) (α + 6 : Fin 12) γ β).mpr
     (by rw [g2Root_add_six, hadd]; abel)
   have hz : ⁅G2.chevalleySystem ht (α + 6 : Fin 12), G2.chevalleySystem ht β⁆ = 0 :=
-    lie_chevalleySystem_eq_zero
-      ((g2_add_mem_range_iff (ht := ht) (α + 6 : Fin 12) β).not.mpr hnot)
+    lie_chevalleySystem_eq_zero ((g2_add_mem_range_iff (ht := ht) (α + 6 : Fin 12) β).not.mpr hnot)
       ((g2_add_eq_zero_iff (ht := ht) (α + 6 : Fin 12) β).not.mpr hne)
   have hjac := g2_lie_reflectionPerm_self_lie (ht := ht) α β
   rw [lie_lie, hz, lie_zero, zero_sub, lie_chevalleySystem_eq_structureConstant_zsmul hadd',
@@ -223,10 +217,9 @@ local macro "g2_dec" : tactic => `(tactic|
 private theorem g2SC_pos_seeds :
     g2SC ht 0 1 = 1 ∧ g2SC ht 0 2 = 2 ∧ g2SC ht 0 3 = 3 ∧ g2SC ht 1 4 = 1 ∧ g2SC ht 2 3 = -3 := by
   have s01 : g2SC ht 0 1 = 1 := g2SC_peel (i₀ := 0) (γ := 2) (r := 0) (by g2_dec)
-  have s02 : g2SC ht 0 2 = 2 := g2SC_peel (i₀ := 0) (γ := 3) (r := 1) (by g2_dec)
   have s03 : g2SC ht 0 3 = 3 := g2SC_peel (i₀ := 0) (γ := 4) (r := 2) (by g2_dec)
   have s14 : g2SC ht 1 4 = 1 := g2SC_peel (i₀ := 1) (γ := 5) (r := 0) (by g2_dec)
-  refine ⟨s01, s02, s03, s14, ?_⟩
+  refine ⟨s01, g2SC_peel (i₀ := 0) (γ := 3) (r := 1) (by g2_dec), s03, s14, ?_⟩
   have leq {α β γ : Fin 12} (h : g2Root γ = g2Root α + g2Root β) :
       ⁅G2.chevalleySystem ht α, G2.chevalleySystem ht β⁆ = g2SC ht α β • G2.chevalleySystem ht γ :=
     lie_chevalleySystem_eq_structureConstant_zsmul ((g2_root_add_iff (ht := ht) α β γ).mpr h)
@@ -235,8 +228,8 @@ private theorem g2SC_pos_seeds :
       ((g2_add_mem_range_iff (ht := ht) (1 : Fin 12) (3 : Fin 12)).not.mpr (by g2_dec))
       ((g2_add_eq_zero_iff (ht := ht) (1 : Fin 12) (3 : Fin 12)).not.mpr (by g2_dec))
   refine ((eq_structureConstant_iff (t := G2) (ht := ht)
-    ((g2_root_add_iff (ht := ht) (2 : Fin 12) (3 : Fin 12) (5 : Fin 12)).mpr
-      (by g2_dec)) (-3)).2 ?_).symm
+    ((g2_root_add_iff (ht := ht) (2 : Fin 12) (3 : Fin 12) (5 : Fin 12)).mpr (by g2_dec))
+    (-3)).2 ?_).symm
   have l01 := leq (α := 0) (β := 1) (γ := 2) (by g2_dec); rw [s01, one_smul] at l01
   rw [← l01, lie_lie, l13, lie_zero, zero_sub, leq (γ := 4) (by g2_dec), s03, lie_zsmul,
     leq (γ := 5) (by g2_dec), s14, one_smul, neg_smul]
@@ -248,36 +241,27 @@ private def g2IsBasePair : Fin 12 → Fin 12 → Bool := fun α β =>
 
 private theorem g2StructureConstant_of_isBasePair {α β : Fin 12} (h : g2IsBasePair α β = true) :
     g2SC ht α β = g2StructureConstant α β := by
+  have sk {i j : Fin 12} {c : ℤ} (hc : g2SC ht i j = c) : g2SC ht j i = -c := hc ▸ g2SC_skew i j
   obtain ⟨s01, s02, s03, s14, s23⟩ := g2SC_pos_seeds (ht := ht)
   have s62 : g2SC ht 6 2 = 3 := g2SC_neg_of_notMem s01 (by g2_dec)
-  have s72 : g2SC ht 7 2 = -1 :=
-    g2SC_neg_of_notMem (by rw [g2SC_skew 0 1, s01] : g2SC ht 1 0 = -1) (by g2_dec)
+  have s72 : g2SC ht 7 2 = -1 := g2SC_neg_of_notMem (sk s01) (by g2_dec)
   have s63 : g2SC ht 6 3 = 2 := g2SC_neg_of_add (δ := 1) s62 s01 s02 (by g2_dec)
-  have s83 : g2SC ht 8 3 = -2 := g2SC_neg_of_add (δ := 7)
-    ((g2SC_add_six_skew 6 2).trans s62 : g2SC ht 8 0 = 3)
-    (by rw [g2SC_skew 7 2, s72]; omega : g2SC ht 2 7 = 1)
-    (by rw [g2SC_skew 0 2, s02] : g2SC ht 2 0 = -2) (by g2_dec)
+  have s83 : g2SC ht 8 3 = -2 := g2SC_neg_of_add (δ := 7) ((g2SC_add_six_skew 6 2).trans s62)
+    (sk s72) (sk s02) (by g2_dec)
   have s64 : g2SC ht 6 4 = 1 := g2SC_neg_of_add (δ := 2) s63 s02 s03 (by g2_dec)
-  have s94 : g2SC ht 9 4 = -1 := g2SC_neg_of_add (δ := 8)
-    ((g2SC_add_six_skew 6 3).trans s63 : g2SC ht 9 0 = 2)
-    (by rw [g2SC_skew 8 3, s83]; omega : g2SC ht 3 8 = 2)
-    (by rw [g2SC_skew 0 3, s03] : g2SC ht 3 0 = -3) (by g2_dec)
+  have s94 : g2SC ht 9 4 = -1 := g2SC_neg_of_add (δ := 8) ((g2SC_add_six_skew 6 3).trans s63)
+    (sk s83) (sk s03) (by g2_dec)
   have s75 : g2SC ht 7 5 = 1 := g2SC_neg_of_notMem s14 (by g2_dec)
-  have s105 : g2SC ht 10 5 = -1 :=
-    g2SC_neg_of_notMem (by rw [g2SC_skew 1 4, s14] : g2SC ht 4 1 = -1) (by g2_dec)
-  have s85 : g2SC ht 8 5 = -1 := g2SC_neg_of_add (δ := 0) s83
-    (by rw [g2SC_skew 0 2, s02] : g2SC ht 2 0 = -2) s23 (by g2_dec)
-  have s95 : g2SC ht 9 5 = 1 := g2SC_neg_of_add (δ := 6)
-    ((g2SC_add_six_skew 8 3).trans s83 : g2SC ht 9 2 = -2)
-    (by rw [g2SC_skew 6 3, s63] : g2SC ht 3 6 = -2)
-    (by rw [g2SC_skew 2 3, s23]; omega : g2SC ht 3 2 = 3) (by g2_dec)
+  have s105 : g2SC ht 10 5 = -1 := g2SC_neg_of_notMem (sk s14) (by g2_dec)
+  have s85 : g2SC ht 8 5 = -1 := g2SC_neg_of_add (δ := 0) s83 (sk s02) s23 (by g2_dec)
+  have s95 : g2SC ht 9 5 = 1 := g2SC_neg_of_add (δ := 6) ((g2SC_add_six_skew 8 3).trans s83)
+    (sk s63) (sk s23) (by g2_dec)
   simp only [g2IsBasePair, decide_eq_true_eq] at h
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
-      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
-      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
+      ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
     first | exact s01 | exact s62 | exact s72 | exact s02 | exact s63 | exact s83 | exact s03 |
-      exact s64 | exact s94 | exact s14 | exact s75 | exact s105 | exact s23 | exact s85 |
-      exact s95
+      exact s64 | exact s94 | exact s14 | exact s75 | exact s105 | exact s23 | exact s85 | exact s95
 
 private theorem g2StructureConstant_cases (α β : Fin 12) :
     (g2Root α + g2Root β ∉ Set.range g2Root ∧ g2StructureConstant α β = 0) ∨
@@ -300,12 +284,10 @@ theorem structureConstant_G2 (ht : G2.Valid) (α β : Fin G2.numRoots) :
   change Fin 12 at α β
   rcases g2StructureConstant_cases α β with ⟨hnot, hzero⟩ | hbase | ⟨hskew, hval⟩ |
       ⟨hneg, hval⟩ | ⟨hboth, hval⟩
-  · rw [hzero]
-    exact structureConstant_eq_zero ((g2_add_mem_range_iff (ht := ht) α β).not.mpr hnot)
+  · exact hzero ▸ structureConstant_eq_zero ((g2_add_mem_range_iff (ht := ht) α β).not.mpr hnot)
   · exact g2StructureConstant_of_isBasePair hbase
   · rw [g2SC_skew, g2StructureConstant_of_isBasePair hskew, hval]
-  · have h := g2SC_add_six (ht := ht) α β
-    rw [g2StructureConstant_of_isBasePair hneg] at h; omega
+  · have h := g2SC_add_six (ht := ht) α β; rw [g2StructureConstant_of_isBasePair hneg] at h; omega
   · rw [← g2SC_add_six_skew, g2StructureConstant_of_isBasePair hboth, hval]
 
 end TauCeti.DynkinType

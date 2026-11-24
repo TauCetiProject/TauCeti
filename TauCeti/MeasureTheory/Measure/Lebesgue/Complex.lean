@@ -5,19 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
 public import TauCeti.Analysis.Complex.Euclidean.Space
+public import Mathlib.Topology.Sets.Opens
+import TauCeti.Analysis.Complex.ReImTopology
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
+import Mathlib.Analysis.Complex.Isometry
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Planar area of coordinate lines, graphs and rectangles
 
+Mathlib's measurable equivalence `Complex.measurableEquivRealProd` is the map
+`Complex.equivRealProdCLM` (`Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM`).
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
-Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
+Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure,
+so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
@@ -27,6 +36,8 @@ side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
+Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
+(`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
 
 public section
@@ -41,6 +52,12 @@ theorem MeasurableSet.reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : Meas
   exact (Complex.continuous_re.measurable hs).inter (Complex.continuous_im.measurable ht)
 
 namespace Complex
+
+/-- Mathlib's measurable equivalence `ℂ ≃ᵐ ℝ × ℝ`, along which `volume` is preserved, is the map
+`equivRealProdCLM`. -/
+theorem coe_measurableEquivRealProd_eq_equivRealProdCLM :
+    (measurableEquivRealProd : ℂ → ℝ × ℝ) = equivRealProdCLM :=
+  funext fun w ↦ by rw [measurableEquivRealProd_apply, equivRealProdCLM_apply]
 
 /-- A vertical coordinate line has zero planar area. -/
 theorem volume_setOf_re_eq (c : ℝ) : volume {z : ℂ | z.re = c} = 0 := by
@@ -152,9 +169,28 @@ theorem setLIntegral_reProdIm_comp_im (s t : Set ℝ) {F : ℝ → ℝ≥0∞} (
   rw [← h2, ← h]
   rfl
 
+/-- Multiplication by a complex number of modulus one preserves Lebesgue measure on `ℂ`, so it
+does not change integrals. -/
+theorem integral_comp_mul_left_of_norm_eq_one {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {c : ℂ} (hc : ‖c‖ = 1) (g : ℂ → E) :
+    ∫ z, g (c * z) = ∫ z, g z := by
+  set a : Circle := ⟨c, by simpa [Submonoid.unitSphere] using hc⟩
+  simpa only [rotation_apply] using MeasureTheory.integral_comp (rotation a) g
+
 end Complex
 
 namespace TauCeti
+
+open TopologicalSpace
+
+/-- The half-disc `Ω ∩ {0 ≤ im}` and its interior `Ω ∩ {0 < im}` agree up to a null set: they
+differ by a subset of the real axis. So the half-disc and its interior carry the same restricted
+Lebesgue measure. -/
+theorem inter_setOf_im_nonneg_ae_eq_interior (Ω : Opens ℂ) :
+    ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im} : Set ℂ) =ᵐ[volume]
+      (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ) := by
+  rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
+  exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
 
 /-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
 including on an empty coordinate type. -/
@@ -169,5 +205,14 @@ theorem volume_preserving_complexToRealEuclidean {ι : Type*} [Fintype ι] :
     ext j
     cases j <;> simp [Function.comp_def, MeasurableEquiv.sumPiEquivProdPi,
       MeasurableEquiv.arrowProdEquivProdArrow])
+
+/-- Splitting complex coordinates into plain functions on real and imaginary blocks preserves
+volume. -/
+theorem volume_preserving_complexToRealPi {ι : Type*} [Fintype ι] :
+    MeasurePreserving (complexToRealPi ι) volume volume := by
+  convert (PiLp.volume_preserving_ofLp (ι ⊕ ι)).comp
+    (volume_preserving_complexToRealEuclidean (ι := ι)) using 1
+  ext z k
+  simp
 
 end TauCeti

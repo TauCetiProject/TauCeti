@@ -30,12 +30,16 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
 
 * `TauCeti.DGRightModuleHom.IsQuasiIso`, `TauCeti.DGRightModuleCat.IsQuasiIso`: quasi-isomorphisms.
 * `TauCeti.DGRightModuleCat.quasiIsos h`: the quasi-isomorphisms, as a `MorphismProperty`.
+  The cohomology functor inverts them
+  (`TauCeti.DGRightModuleCat.quasiIsos_isInvertedBy_cohomologyFunctor`).
 
 ## Main results
 
 * `TauCeti.DGRightModuleHom.isQuasiIso_id`, `TauCeti.DGRightModuleHom.IsQuasiIso.comp`,
   `IsQuasiIso.of_comp_left`, `IsQuasiIso.of_comp_right`: identity, composition and two out of
   three.
+* `TauCeti.DGRightModuleCat.IsQuasiIso.comp`, `TauCeti.DGRightModuleCat.isQuasiIso_of_isIso`:
+  composites of quasi-isomorphisms and isomorphisms of bundled modules are quasi-isomorphisms.
 * `TauCeti.DGRightModuleHom.IsQuasiIso.cohomologyLinearEquiv`: the induced isomorphism of
   cohomology.
 * `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse`,
@@ -43,6 +47,8 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
   over the ground ring is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`: quasi-isomorphisms are the morphisms
   whose relative cycles are relative boundaries.
+* `TauCeti.DGRightModuleHom.isQuasiIso_of_subsingleton`: a morphism between modules without
+  nonzero elements is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`: a morphism is a quasi-isomorphism
   when it is, compatibly, a homotopy retract of a map whose relative cycles are relative
   boundaries.
@@ -138,7 +144,7 @@ theorem isQuasiIso_of_homotopyInverse (f : DGRightModuleHom hM hN) (g : N →ₗ
       at hc
     obtain ⟨y, hy⟩ := hc
     rw [hM.quotientMk_eq_zero_iff, hM.mem_boundaries]
-    have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.2
+    have hz : dM (z : M) = 0 := hM.mem_cycles.mp z.property
     refine ⟨g y - K z, ?_⟩
     have key := hK z
     rw [hz, map_zero, add_zero, ← hy, ← hg] at key
@@ -146,7 +152,7 @@ theorem isQuasiIso_of_homotopyInverse (f : DGRightModuleHom hM hN) (g : N →ₗ
     abel
   · intro c
     obtain ⟨w, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-    have hw : dN (w : N) = 0 := hN.mem_cycles.mp w.2
+    have hw : dN (w : N) = 0 := hN.mem_cycles.mp w.property
     have hgw : g (w : N) ∈ hM.cycles := by
       rw [hM.mem_cycles, hg, hw, map_zero]
     refine ⟨Submodule.Quotient.mk ⟨g w, hgw⟩, ?_⟩
@@ -183,7 +189,7 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
     rw [Submodule.coe_sub, cyclesMap_apply_coe] at hv
     have hv' : dN v = f c - (y - f u₀) := hv
     refine ⟨u₀ + c, -v, ?_, ?_⟩
-    · rw [map_add, hu₀', hM.mem_cycles.mp c.2, add_zero]
+    · rw [map_add, hu₀', hM.mem_cycles.mp c.property, add_zero]
     · rw [map_add, map_neg, hv']
       abel
   · intro H
@@ -194,17 +200,23 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
       rw [cohomologyMap_mk, hN.quotientMk_eq_zero_iff, hN.mem_boundaries, cyclesMap_apply_coe]
         at hz
       obtain ⟨y, hy⟩ := hz
-      obtain ⟨u, -, hu, -⟩ := H z y (hM.mem_cycles.mp z.2) hy.symm
+      obtain ⟨u, -, hu, -⟩ := H z y (hM.mem_cycles.mp z.property) hy.symm
       rw [hM.quotientMk_eq_zero_iff, hM.mem_boundaries]
       exact ⟨u, hu⟩
     · intro w
       obtain ⟨w, rfl⟩ := Submodule.Quotient.mk_surjective _ w
-      obtain ⟨u, v, hu, huv⟩ := H 0 w (map_zero dM) (by rw [map_zero, hN.mem_cycles.mp w.2])
+      obtain ⟨u, v, hu, huv⟩ := H 0 w (map_zero dM) (by rw [map_zero, hN.mem_cycles.mp w.property])
       refine ⟨Submodule.Quotient.mk ⟨u, hM.mem_cycles.mpr hu⟩, ?_⟩
       rw [cohomologyMap_mk, Submodule.Quotient.eq, hN.mem_boundaries]
       refine ⟨-v, ?_⟩
       rw [Submodule.coe_sub, cyclesMap_apply_coe, map_neg, ← huv]
       exact (sub_add_cancel_left _ _).symm
+
+/-- A morphism between DG right modules without nonzero elements is a quasi-isomorphism. -/
+theorem isQuasiIso_of_subsingleton [Subsingleton M] [Subsingleton N]
+    (f : DGRightModuleHom hM hN) : f.IsQuasiIso := by
+  rw [isQuasiIso_iff_forall_exists]
+  exact fun _ _ _ _ ↦ ⟨0, 0, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
 
 /-- **Quasi-isomorphisms through homotopy retracts.** Let `f₀ : M₀ → N₀` be a map of complexes
 over the ground ring whose relative cycles are relative boundaries, as for a quasi-isomorphism
@@ -279,6 +291,29 @@ theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
   rw [quasiIsos, MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff,
     CategoryTheory.ConcreteCategory.isIso_iff_bijective]
   exact Iff.rfl
+
+/-- A morphism is a quasi-isomorphism exactly when its map on cohomology is an isomorphism. -/
+theorem isQuasiIso_iff_isIso_cohomologyFunctor_map {M N : DGRightModuleCat.{uR, uA, uM} h}
+    (f : M ⟶ N) : IsQuasiIso f ↔ IsIso (cohomologyFunctor.map f) :=
+  (quasiIsos_iff f).symm
+
+/-- A composite of quasi-isomorphisms of bundled DG right modules is a quasi-isomorphism. This is
+`TauCeti.DGRightModuleHom.IsQuasiIso.comp` in diagrammatic order, stated for bundled modules so
+that no instance search on their carriers is needed. -/
+theorem IsQuasiIso.comp {M N P : DGRightModuleCat.{uR, uA, uM} h} {f : M ⟶ N} {g : N ⟶ P}
+    (hf : IsQuasiIso f) (hg : IsQuasiIso g) : IsQuasiIso (f ≫ g) :=
+  DGRightModuleHom.IsQuasiIso.comp hg hf
+
+/-- An isomorphism of bundled DG right modules is a quasi-isomorphism. -/
+theorem isQuasiIso_of_isIso {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) [IsIso f] :
+    IsQuasiIso f :=
+  (isQuasiIso_iff_isIso_cohomologyFunctor_map f).2 inferInstance
+
+variable (h) in
+/-- The cohomology functor inverts the quasi-isomorphisms. -/
+theorem quasiIsos_isInvertedBy_cohomologyFunctor :
+    (quasiIsos h).IsInvertedBy cohomologyFunctor := fun _ _ f hf ↦ by
+  rwa [quasiIsos, MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff] at hf
 
 end DGRightModuleCat
 

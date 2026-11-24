@@ -31,6 +31,11 @@ characteristic two that translates an element by a scalar is an involution on th
 Finally, every unit of `ℤ` casts to `1` in any additive group with one of characteristic two
 (`TauCeti.intCast_units_eq_one_of_charTwo`).
 
+Since `1 + 1 = 0`, the exclusive-or of bits is their sum: the indicator of a bit of an exclusive-or
+of natural numbers accumulated over a list is the sum of the indicators of that bit of the terms
+(`TauCeti.ite_testBit_foldl_xor_of_charTwo`). This compares a computation on binary
+representations with a sum in the semiring.
+
 -/
 
 public section
@@ -82,6 +87,19 @@ theorem add_eq_map_add_add_of_charTwo (R : Type*) {V W F : Type*} [Semiring R] [
 theorem intCast_units_eq_one_of_charTwo {R : Type*} [AddGroupWithOne R] [CharP R 2] (ε : ℤˣ) :
     ((ε : ℤ) : R) = 1 := by
   rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [CharTwo.neg_one_eq_one]
+
+/-- In characteristic two, the indicator of a bit of an exclusive-or accumulated over a list is
+the sum of the indicators of that bit of the initial value and of the terms. -/
+theorem ite_testBit_foldl_xor_of_charTwo {R α : Type*} [NonAssocSemiring R] [CharP R 2]
+    (f : α → ℕ) (l : List α) (a p : ℕ) :
+    (if (l.foldl (fun acc i ↦ acc ^^^ f i) a).testBit p then (1 : R) else 0) =
+      (if a.testBit p then (1 : R) else 0) +
+        (l.map fun i ↦ if (f i).testBit p then (1 : R) else 0).sum := by
+  induction l generalizing a with
+  | nil => rw [List.foldl_nil, List.map_nil, List.sum_nil, add_zero]
+  | cons x l ih =>
+    rw [List.foldl_cons, ih, Nat.testBit_xor, List.map_cons, List.sum_cons, ← add_assoc]
+    cases a.testBit p <;> cases (f x).testBit p <;> simp [CharTwo.add_self_eq_zero]
 
 end TauCeti
 

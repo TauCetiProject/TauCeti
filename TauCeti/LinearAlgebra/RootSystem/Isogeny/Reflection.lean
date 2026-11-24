@@ -66,13 +66,8 @@ private theorem indexEquiv_reflectionPerm_and_exponent (f : RootPairingIsogeny P
   set k₂ := Q.reflectionPerm (f.indexEquiv i) (f.indexEquiv j)
   have hw : (f.exponent (P.reflectionPerm i j) : R) • Q.root k₁ =
       (f.exponent j : R) • Q.root k₂ := by
-    calc (f.exponent (P.reflectionPerm i j) : R) • Q.root k₁
-        = f.weightMap (P.reflection i (P.root j)) := by
-          rw [← f.root_weightMap, P.root_reflectionPerm]
-      _ = Q.reflection (f.indexEquiv i) ((f.exponent j : R) • Q.root (f.indexEquiv j)) := by
-          rw [f.weightMap_reflection, f.root_weightMap]
-      _ = (f.exponent j : R) • Q.root k₂ := by
-          rw [map_smul, Q.root_reflectionPerm]
+    rw [← f.root_weightMap, P.root_reflectionPerm, f.weightMap_reflection, f.root_weightMap,
+      map_smul, Q.root_reflectionPerm]
   have he₁ := f.exponent_pos (P.reflectionPerm i j)
   have he₂ := f.exponent_pos j
   have hdep : ¬LinearIndependent R ![Q.root k₁, Q.root k₂] :=
