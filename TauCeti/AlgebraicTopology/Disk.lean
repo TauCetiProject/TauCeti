@@ -14,6 +14,8 @@ public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
+import TauCeti.AlgebraicTopology.Sphere.Puncture
+import TauCeti.Analysis.Convex.Contractible
 import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.UnitInterval.OpenSquare
 
@@ -26,7 +28,8 @@ path-connected when the disk has
 dimension at least two, so `TopCat.sphere (n + 1)` is path-connected
 (`TauCeti.TopCat.pathConnectedSpace_sphere`).  The disk is a `T₃` space, in particular Hausdorff,
 so the inclusion of its boundary sphere is a closed embedding
-(`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
+(`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`), and every sphere `TopCat.sphere n` is
+Hausdorff and compact (`TauCeti.TopCat.t2Space_sphere`, `TauCeti.TopCat.compactSpace_sphere`).
 This module also constructs the standard `TopPair` consisting of a disk and its boundary, providing
 the topological input for relative-homology calculations. A map out of the boundary sphere is
 null-homotopic exactly when it extends over the disk
@@ -41,8 +44,9 @@ dimension `n + 1` is homeomorphic to `TopCat.sphere n` (`TauCeti.sphereHomeomorp
 transporting homotopy equivalences via `ContinuousMap.HomotopyEquiv.topCatSphere`), which lets
 results about unit spheres of inner product spaces in that universe be applied to it.  In
 particular the boundary of the `n`-disk is empty exactly
-when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), and a point of the boundary `S⁰` of the
-`1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`), so `S⁰`
+when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), removing a single point leaves a contractible
+subspace (`TauCeti.contractibleSpace_diskBoundary_compl_singleton`), and a point of the boundary
+`S⁰` of the `1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`), so `S⁰`
 (`TopCat.sphere 0`) is a finite discrete two-point space (`TauCeti.TopCat.finite_sphere_zero`,
 `TauCeti.TopCat.discreteTopology_sphere_zero`) consisting of the poles `e₀` and `-e₀`
 (`TauCeti.spherePlus`, `TauCeti.sphereMinus`, `TauCeti.eq_sphereMinus_or_eq_spherePlus` on
@@ -82,8 +86,6 @@ instance contractibleSpace_disk (n : ℕ) :
     ContractibleSpace (TopCat.disk n) := by
   -- `TopCat.disk` stores its metric closed ball inside a `ULift`; the lift of the contractible
   -- closed ball is contractible by `ULift.contractibleSpace`.
-  have : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
-    Metric.contractibleSpace_closedBall (x := 0) (r := 1) (by norm_num)
   exact inferInstanceAs
     (ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
@@ -338,6 +340,30 @@ instance t2Space_diskBoundary (n : ℕ) : T2Space (TopCat.diskBoundary.{u} n) :=
   -- Expose the carrier once here, so consumers need not unfold the `TopCat` wrapper.
   inferInstanceAs (T2Space (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
+/-- A disk boundary is compact, as a lifted sphere in Euclidean space. -/
+instance compactSpace_diskBoundary (n : ℕ) : CompactSpace (TopCat.diskBoundary.{u} n) :=
+  -- Expose the carrier once here, so consumers need not unfold the `TopCat` wrapper.
+  inferInstanceAs (CompactSpace (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
+
+/-- The `n`-sphere is Hausdorff, being the boundary of the `(n + 1)`-disk. -/
+instance t2Space_sphere (n : ℕ) : T2Space (TopCat.sphere.{u} n) :=
+  inferInstanceAs (T2Space (TopCat.diskBoundary.{u} (n + 1)))
+
+/-- The `n`-sphere is compact, being the boundary of the `(n + 1)`-disk. -/
+instance compactSpace_sphere (n : ℕ) : CompactSpace (TopCat.sphere.{u} n) :=
+  inferInstanceAs (CompactSpace (TopCat.diskBoundary.{u} (n + 1)))
+
+/-- **A punctured boundary sphere is contractible**: removing a single point from
+`TopCat.diskBoundary n` leaves a contractible subspace, in every universe and every dimension. -/
+theorem contractibleSpace_diskBoundary_compl_singleton {n : ℕ}
+    (s : TopCat.diskBoundary.{u} n) :
+    ContractibleSpace ({s}ᶜ : Set (TopCat.diskBoundary.{u} n)) :=
+  let e : (TopCat.diskBoundary.{u} n : Type u) ≃ₜ
+      Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1 := Homeomorph.ulift
+  (e.subtype (q := (· ∈ ({e s}ᶜ : Set _))) fun _ ↦
+    e.injective.ne_iff.symm).contractibleSpace_iff.mpr
+    (contractibleSpace_sphere_compl_singleton (e s))
+
 /-- The boundary of the `0`-disk is empty. -/
 instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
   have : Subsingleton (EuclideanSpace ℝ (ULift.{u} (Fin 0))) :=
@@ -345,6 +371,11 @@ instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
   have : IsEmpty (Metric.sphere (0 : EuclideanSpace ℝ (ULift.{u} (Fin 0))) 1) :=
     Set.isEmpty_coe_sort.mpr (Metric.sphere_eq_empty_of_subsingleton one_ne_zero)
   (diskBoundaryHomeomorph 0).toEquiv.isEmpty
+
+/-- The `0`-disk is a single point, the origin of the zero space. -/
+instance uniqueDiskZero : Unique (TopCat.disk.{u} 0) where
+  default := diskCenter 0
+  uniq _ := ULift.ext (Subtype.ext (Subsingleton.elim _ _))
 
 /-- A point of the boundary `S⁰` of the `1`-disk is determined by its coordinate. -/
 lemma diskBoundary_one_ext {p q : TopCat.diskBoundary.{u} 1}

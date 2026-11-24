@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Data.List.FinRange
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # Iterated directional derivatives along a list of directions
@@ -34,6 +35,7 @@ evaluated on the directions.
   which is `C^m` whenever `m + k ≤ n`.
 * `ContDiffOn.iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_add_apply_of_isOpen`: the
   same smoothness, and additivity, for maps which are only `C^n` on an open set.
+* `TauCeti.iteratedFDerivAlong_sum`: additivity over finite sums of `C^n` maps.
 * `TauCeti.iteratedFDerivAlong_comp_of_hasFDerivAt`: the chain rule for an affine change of
   variables.
 * `List.Perm.iteratedFDerivAlong_eq`, `List.Perm.iteratedFDerivAlong_eq_of_contDiffAt`: reordering
@@ -86,6 +88,11 @@ theorem iteratedFDerivAlong_append (vs ws : List E) (f : E → F) :
   induction vs with
   | nil => rfl
   | cons v vs ih => rw [List.cons_append, iteratedFDerivAlong_cons, ih, iteratedFDerivAlong_cons]
+
+/-- Differentiating along `vs ++ [w]` differentiates in the direction `w` first, then along `vs`. -/
+theorem iteratedFDerivAlong_append_singleton (vs : List E) (w : E) (f : E → F) :
+    iteratedFDerivAlong 𝕜 (vs ++ [w]) f = iteratedFDerivAlong 𝕜 vs fun x => fderiv 𝕜 f x w := by
+  rw [iteratedFDerivAlong_append, iteratedFDerivAlong_cons, iteratedFDerivAlong_nil]
 
 /-- Every nonempty iterated directional derivative of a constant map vanishes. -/
 @[simp]
@@ -176,6 +183,22 @@ theorem iteratedFDerivAlong_add {f g : E → F} (hf : ContDiff 𝕜 n f) (hg : C
     iteratedFDerivAlong 𝕜 vs (f + g) = iteratedFDerivAlong 𝕜 vs f + iteratedFDerivAlong 𝕜 vs g :=
   funext fun _ => iteratedFDerivAlong_add_apply_of_isOpen hf.contDiffOn hg.contDiffOn isOpen_univ
     vs hvs (Set.mem_univ _)
+
+/-- Iterated directional derivatives are additive over finite sums of maps which are `C^k`, for a
+list of `k` directions. -/
+theorem iteratedFDerivAlong_sum {ι : Type*} (s : Finset ι) {f : ι → E → F}
+    (hf : ∀ i ∈ s, ContDiff 𝕜 n (f i)) (vs : List E) (hvs : vs.length ≤ n) :
+    iteratedFDerivAlong 𝕜 vs (∑ i ∈ s, f i) = ∑ i ∈ s, iteratedFDerivAlong 𝕜 vs (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    have hs : ContDiff 𝕜 n (∑ j ∈ s, f j) := by
+      simpa only [Finset.sum_fn] using
+        ContDiff.sum fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      iteratedFDerivAlong_add (hf i (Finset.mem_insert_self i s)) hs vs hvs,
+      ih fun j hj => hf j (Finset.mem_insert_of_mem hj)]
 
 theorem iteratedFDerivAlong_neg (f : E → F) (vs : List E) :
     iteratedFDerivAlong 𝕜 vs (-f) = -iteratedFDerivAlong 𝕜 vs f := by
@@ -373,8 +396,8 @@ theorem _root_.ContDiffAt.iteratedFDerivAlong_ofFn_eq_iteratedFDeriv {f : E → 
     have hd : DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 j f) y :=
       ((hfs y hy).contDiffAt (hs.mem_nhds hy)).differentiableAt_iteratedFDeriv hlt
     rw [List.ofFn_succ, iteratedFDerivAlong_cons_apply, hev.fderiv_eq,
-      fderiv_continuousMultilinear_apply_const_apply hd, iteratedFDeriv_succ_apply_left]
-    rfl
+      fderiv_iteratedFDeriv_apply hd]
+    exact congrArg _ (Fin.cons_self_tail u)
 
 /-- The iterated directional derivative of a `C^k` map along the directions `m 0, …, m (k - 1)` is
 the `k`-th iterated derivative evaluated on them. -/

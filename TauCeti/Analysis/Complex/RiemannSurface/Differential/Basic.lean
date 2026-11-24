@@ -115,9 +115,7 @@ chart. -/
 theorem mvfderiv_mfderiv_symm (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ e.target) :
     mvfderiv 𝓘(ℂ) e (e.symm z)
       (mfderiv 𝓘(ℂ) 𝓘(ℂ) e.symm z ((NormedSpace.fromTangentSpace z).symm 1)) = 1 := by
-  have hd : e.MDifferentiable 𝓘(ℂ) 𝓘(ℂ) :=
-    ⟨fun _ hx ↦ (mdifferentiableAt_of_mem_maximalAtlas he hx).mdifferentiableWithinAt,
-      fun _ hz ↦ (mdifferentiableAt_symm_of_mem_maximalAtlas he hz).mdifferentiableWithinAt⟩
+  have hd : e.MDifferentiable 𝓘(ℂ) 𝓘(ℂ) := mdifferentiable_of_mem_maximalAtlas he
   have := congrArg (fun L ↦ L ((NormedSpace.fromTangentSpace (𝕜 := ℂ) z).symm 1))
     (hd.comp_symm_deriv hz)
   simp only [ContinuousLinearMap.comp_apply] at this
@@ -392,6 +390,13 @@ theorem HolomorphicAt.eventually_holomorphicAt [IsManifold 𝓘(ℂ) 1 X] (hω :
 theorem isOpen_setOf_holomorphicAt [IsManifold 𝓘(ℂ) 1 X] (ω : OneForm X) :
     IsOpen {x | ω.HolomorphicAt x} :=
   isOpen_iff_mem_nhds.2 fun _ hx ↦ HolomorphicAt.eventually_holomorphicAt hx
+
+/-- On a compact Riemann surface, a `1`-form meromorphic everywhere is holomorphic away from a
+finite set. -/
+theorem finite_setOf_not_holomorphicAt [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X]
+    (hω : ∀ x, ω.MeromorphicAt x) : {x | ¬ ω.HolomorphicAt x}.Finite :=
+  mem_cofinite.1 (cofinite_le_codiscrete
+    (mem_codiscrete_iff_forall_mem_nhdsNE.2 fun x ↦ (hω x).eventually_holomorphicAt))
 
 /-- A `1`-form meromorphic and of finite order at `x` does not vanish on a punctured
 neighbourhood of `x`. -/

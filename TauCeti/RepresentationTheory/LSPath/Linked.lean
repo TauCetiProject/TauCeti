@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
 public import TauCeti.RepresentationTheory.LSPath.Basic
+
+import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Lakshmibai–Seshadri paths from linked lists of directions
@@ -37,6 +40,9 @@ concatenated, and it does not change the piecewise-linear path that the list pre
 
 * `TauCeti.LSPath.linked_iff_getElem`: a list is linked exactly when each of its breaks carries an
   `a`-chain at the total duration before it.
+* `TauCeti.LSPath.linked_ofFn_iff_den_dvd`: **the integral break test**, a Bruhat chain of
+  minimal coset representatives with durations is linked exactly when the denominator of each
+  break divides the interval bond gcd of its two directions.
 * `TauCeti.LSPath.Linked.split`: subdividing an entry keeps a list linked.
 * `TauCeti.LSPath.Linked.exists_sum_take_sub_mul_eq_intCast`: along a linked list, the height at a
   break `a` before the direction `τ` differs from `a ⟨τ λ, -⟩` by an integer.
@@ -281,6 +287,37 @@ theorem linked_iff_getElem {t : ℚ} {l : List (P.weylGroup × ℚ)} :
           simpa using h 0 (by simp)
         · simpa [add_assoc] using h (k + 1) (by simpa using hk)
 
+/-- **Linked chains.** For a dominant shape, minimal coset representatives `τ₀ ≥ τ₁ ≥ ⋯ ≥ τ_s` and
+durations `d`, the list `[(τ₀, d₀), …, (τ_s, d_s)]` is linked from time `0` exactly when each break
+`a_{j+1} = d₀ + ⋯ + d_j` has denominator dividing the interval bond gcd `d_λ(τ_j, τ_{j+1})`. -/
+theorem linked_ofFn_iff_den_dvd (hlam : lam ∈ dominantChamber P b) {s : ℕ}
+    {τ : Fin (s + 1) → P.weylGroup}
+    (hmin : ∀ j, (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) (τ j))
+    (hle : ∀ j : Fin s, (weylCoxeterSystem P b).BruhatLE (τ j.succ) (τ j.castSucc))
+    (d : Fin (s + 1) → ℚ) :
+    Linked P b lam 0 (List.ofFn fun j ↦ (τ j, d j)) ↔ ∀ j : Fin s,
+      (∑ k ∈ Finset.Iic j.castSucc, d k).den ∣ intervalBondGcd b lam (τ j.castSucc) (τ j.succ) := by
+  have hbreak (j : Fin s) : (((List.ofFn fun j ↦ (τ j, d j)).take (j + 1)).map Prod.snd).sum =
+      ∑ k ∈ Finset.Iic j.castSucc, d k := by
+    rw [List.map_take, List.map_ofFn, List.sum_take_ofFn]
+    exact Finset.sum_congr (by ext k; simp [Fin.le_iff_val_le_val]) fun _ _ ↦ rfl
+  rw [linked_iff_getElem]
+  constructor
+  · intro h j
+    obtain ⟨C, hhead, hlast, hC⟩ := h j (by simp)
+    rw [zero_add, hbreak, isAChain_iff_den_dvd_intervalBondGcd hlam, hhead, hlast] at hC
+    simp only [List.getElem_ofFn] at hC
+    exact hC
+  · intro h k hk
+    have hk' : k < s := by simpa using hk
+    obtain ⟨C, hhead, hlast, hC⟩ := (exists_isAChain_iff_den_dvd_intervalBondGcd hlam (hmin _)
+      (hmin _) (hle ⟨k, hk'⟩)).mpr (h ⟨k, hk'⟩)
+    refine ⟨C, ?_, ?_, by rw [zero_add, hbreak ⟨k, hk'⟩]; exact hC⟩
+    · simp only [List.getElem_ofFn]
+      exact hhead
+    · simp only [List.getElem_ofFn]
+      exact hlast
+
 /-- Splitting an entry `(w, d₁ + d₂)` of a linked list into two consecutive entries `(w, d₁)` and
 `(w, d₂)` keeps it linked. -/
 theorem Linked.split {t : ℚ} {l₁ l₂ : List (P.weylGroup × ℚ)} {w : P.weylGroup} {d₁ d₂ : ℚ}
@@ -333,6 +370,33 @@ theorem Linked.exists_sum_take_sub_mul_eq_intCast
     g hj
   rw [Finset.sum_range_succ, ← hhgt j hj.le, hτl j hj, ht_succ j hj] at hz
   exact ⟨z, by linear_combination hz⟩
+
+/-- Along a linked list starting at time `0`, if the height at the `j`-th break lies strictly
+between two consecutive integers, then `a_j g(τ_j λ)` is not an integer. -/
+theorem Linked.not_exists_sum_take_mul_eq_intCast
+    (hlam : lam ∈ dominantChamber P b) {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam 0 l)
+    (g : Module.Dual ℤ M) {j : ℕ} (hj : j < l.length) {z : ℤ}
+    (h₁ : z < ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum)
+    (h₂ : ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum < z + 1) :
+    ¬∃ m : ℤ, ((l.take j).map Prod.snd).sum * g (l[j].1 • lam) = m := by
+  rintro ⟨m, hm⟩
+  obtain ⟨m', hm'⟩ := hl.exists_sum_take_sub_mul_eq_intCast hlam g hj
+  rw [hm, sub_eq_iff_eq_add, ← Int.cast_add] at hm'
+  rw [hm'] at h₁ h₂
+  have h₁' : z < m' + m := by exact_mod_cast h₁
+  have h₂' : m' + m < z + 1 := by exact_mod_cast h₂
+  omega
+
+/-- Along a linked list starting at time `0`, if the height reaches an integer after the fraction
+`θ` of the `j`-th segment, then `(a_j + θ d_j) g(τ_j λ)` is an integer. -/
+theorem Linked.exists_sum_take_add_mul_mul_eq_intCast
+    (hlam : lam ∈ dominantChamber P b) {l : List (P.weylGroup × ℚ)} (hl : Linked P b lam 0 l)
+    (g : Module.Dual ℤ M) {j : ℕ} (hj : j < l.length) (θ : ℚ) {z : ℤ}
+    (h : ((l.take j).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum +
+      θ * (l[j].2 * g (l[j].1 • lam)) = z) :
+    ∃ m : ℤ, (((l.take j).map Prod.snd).sum + θ * l[j].2) * g (l[j].1 • lam) = m := by
+  obtain ⟨m, hm⟩ := hl.exists_sum_take_sub_mul_eq_intCast hlam g hj
+  exact ⟨z - m, by push_cast; linear_combination h - hm⟩
 
 /-! ### Merging linked lists -/
 
@@ -451,6 +515,19 @@ durations. -/
 theorem map_snd_timed (π : LSPath P b lam) (f : M →+ V) :
     (π.timed 𝕜 f).map Prod.snd = π.dirDurations.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam) := by
   simp [timed_def, dirDurations, List.map_ofFn, Function.comp_def]
+
+omit [Finite ι] [P.IsReduced] in
+/-- For a form `F` inducing an integral linear form `g` through `f`, the height under `F` after
+the first `k` segments presented by a list of directions and durations is the rational height
+`∑_{m < k} d_m g(τ_m λ)`. -/
+theorem apply_sum_take_map_smul (l : List (P.weylGroup × ℚ)) (f : M →+ V) (F : Module.Dual 𝕜 V)
+    (g : Module.Dual ℤ M) (hF : ∀ m, F (f m) = (g m : 𝕜)) (k : ℕ) :
+    F ((l.map fun p ↦ (p.2 : 𝕜) • f (p.1 • lam)).take k).sum =
+      (((l.take k).map fun p ↦ p.2 * (g (p.1 • lam) : ℚ)).sum : 𝕜) := by
+  simp only [← List.map_take, map_list_sum, List.map_map, Rat.cast_list_sum]
+  congr 1
+  refine List.map_congr_left fun p _ ↦ ?_
+  simp [hF]
 
 /-- The LS path presented by a linked list `[(τ₀, d₀), …, (τ_l, d_l)]`, starting at time `0`, of
 minimal coset representatives with nonnegative durations adding up to `1`. Its directions are

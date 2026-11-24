@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 
 /-!
@@ -79,7 +79,7 @@ theorem comp_pointConjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
       WithConv.toConv (x.ofConv.comp (pointConjugationAlgHom g)) := by
     rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv]
   rw [← hmapValue, toConv_pointConjugationAlgHom, map_mul, map_mul, map_inv]
-  rw [WithConv.mapValue_algebraOfId]
+  rw [AlgHom.mapValue_mapValue_ofId]
   simp [AlgHom.mapValue_apply]
 
 /-- On rational points, precomposition by point conjugation is conjugation by `g` in the group

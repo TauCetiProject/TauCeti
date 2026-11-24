@@ -168,6 +168,14 @@ theorem det_fst_comp_pos_iff_exists_path_of_norm_snd_lt [FiniteDimensional ℝ E
     rwa [← h₀, det_fst_comp_pos_iff_of_norm_snd_lt L.continuous hL 0 1, h₁, ← comp_assoc,
       fst_comp_inl, id_comp]
 
+/-- An operator preserving `‖u‖² - ‖v‖²` maps the open negative cone `‖v‖ < ‖u‖` into
+itself. -/
+theorem norm_snd_apply_lt_norm_fst_apply_of_norm_sq_sub (A : E × F →L[ℝ] E × F)
+    (hA : ∀ z : E × F, ‖(A z).1‖ ^ 2 - ‖(A z).2‖ ^ 2 = ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2) {z : E × F}
+    (hz : ‖z.2‖ < ‖z.1‖) : ‖(A z).2‖ < ‖(A z).1‖ := by
+  have hz2 : ‖z.2‖ ^ 2 < ‖z.1‖ ^ 2 := pow_lt_pow_left₀ hz (norm_nonneg _) two_ne_zero
+  exact lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (by linarith [hA z])
+
 /-- **Orientations of negative frames multiply.** Let `A` map the open negative cone
 `‖v‖ < ‖u‖` into itself and let `L` be a frame whose nonzero values lie in that cone. Then the
 orientation of the frame `A ∘ L` relative to `E` is the product of the orientations of `A ∘ inl`

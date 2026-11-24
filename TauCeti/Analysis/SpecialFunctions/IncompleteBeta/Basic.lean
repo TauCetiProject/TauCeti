@@ -317,24 +317,9 @@ theorem regularizedIncompleteBeta_pos_iff (ha : 0 < a) (hb : 0 < b) :
 theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ} (hu01 : u0 < 1) :
     ∫ w in Ioi (u0 / (1 - u0)), w ^ (a - 1) * (1 + w) ^ (-(a + b)) =
       ∫ u in Ioo u0 1, u ^ (a - 1) * (1 - u) ^ (b - 1) := by
-  have hderiv : ∀ u ∈ Ioo u0 1,
-      HasDerivWithinAt (fun u : ℝ => u / (1 - u)) ((1 - u) ^ 2)⁻¹ (Ioo u0 1) u :=
-    fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt
-  let k0 : ℝ → ℝ := fun w => w ^ (a - 1) * (1 + w) ^ (-(a + b))
-  let k : ℝ → ℝ := fun u => u ^ (a - 1) * (1 - u) ^ (b - 1)
-  have hcov : ∀ u ∈ Ioo u0 1, |((1 - u) ^ 2)⁻¹| • k0 (u / (1 - u)) = k u := by
-    intro u hu
-    simpa [k0, k] using abs_deriv_smul_one_add_rpow a b hu.2
-  have himg :
-      (fun u : ℝ => u / (1 - u)) '' Ioo u0 1 = Ioi (u0 / (1 - u0)) := by
-    rw [image_div_one_sub_Ioo hu01]
-  have h21 : ∫ u in Ioo u0 1, |((1 - u) ^ 2)⁻¹| • k0 (u / (1 - u)) =
-      ∫ w in Ioi (u0 / (1 - u0)), k0 w := by
-    rw [← integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo hderiv
-        (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self) k0, himg]
-  have h2 : ∫ w in Ioi (u0 / (1 - u0)), k0 w = ∫ u in Ioo u0 1, k u := by
-    rw [← h21, setIntegral_congr_fun measurableSet_Ioo hcov]
-  simpa [k0, k] using h2
+  rw [integral_Ioi_eq_integral_div_one_sub _ hu01]
+  refine setIntegral_congr_fun measurableSet_Ioo fun u hu => ?_
+  exact inv_sq_smul_rpow_mul_one_add_rpow a b hu.2
 
 /-- The upper tail of the first beta-integral kernel is the total beta mass minus the normalized
 lower incomplete beta mass. -/
@@ -749,7 +734,7 @@ theorem regularizedIncompleteBeta_add_one_left (ha : 0 < a) (hb : 0 < b)
   -- expand the integral of the derivative, and split off one power of `1 - t`
   rw [intervalIntegral.integral_sub (hA.const_mul a) (hJ.const_mul b),
     intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    integral_rpow_mul_one_sub_rpow_add_one_right ha hb hx0 hx1] at hftc
+    integral_rpow_mul_one_sub_rpow_add_one_right ha hb] at hftc
   rw [regularizedIncompleteBeta_def_of_mem_Icc ha1 hb hmem,
     regularizedIncompleteBeta_def_of_mem_Icc ha hb hmem, add_sub_cancel_right,
     beta_add_one_left ha.ne' hab.ne']

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Analysis.Calculus.Morse.OneDimensional
+public import TauCeti.Geometry.Manifold.Flow.Damping
 
 /-!
 # Properness, lower bounds and completeness on the real line
@@ -47,7 +48,10 @@ with three functions on `ℝ`, none of which is covered by the compact theory.
 
 Any comparison of Morse homology with the homology of a noncompact manifold therefore has to state
 its properness, lower-bound and completeness hypotheses separately, or construct a complete
-pseudo-gradient instead of the gradient.
+pseudo-gradient instead of the gradient. Properness is enough for the latter: damping the
+negative gradient by the factor `TauCeti.rateDamping` of `df(-f') = -f'²`, which leaves it
+unchanged where `f'² ≤ 1`, gives a complete field with the same trajectories
+(`TauCeti.NoncompactLineExample.isCompleteVectorField_rateDampedField_sq_add_pow_four`).
 
 ## Main results
 
@@ -68,6 +72,8 @@ pseudo-gradient instead of the gradient.
   exists on `[T, 0]` exactly when `log (2 / 3) / 4 < T`.
 * `TauCeti.NoncompactLineExample.not_isNegativeGradient_sq_add_pow_four`: `x² + x⁴` has no negative
   gradient flow.
+* `TauCeti.NoncompactLineExample.isCompleteVectorField_rateDampedField_sq_add_pow_four`: its damped
+  negative gradient is complete.
 
 ## References
 
@@ -356,6 +362,18 @@ theorem not_isNegativeGradient_sq_add_pow_four (φ : Flow ℝ ℝ) :
 theorem not_lipschitzWith_gradient_sq_add_pow_four (K : ℝ≥0) :
     ¬LipschitzWith K (∇ fun x : ℝ ↦ x ^ 2 + x ^ 4) := fun hK ↦
   not_isNegativeGradient_sq_add_pow_four _ (isNegativeGradient_negativeGradientFlow _ hK)
+
+/-- **The damped negative gradient of `x² + x⁴` is complete.** The negative gradient field
+`x ↦ -(2 x + 4 x³)` of `x² + x⁴`, which has the escaping trajectory `escapeCurve`, becomes complete
+after multiplication by the damping factor `TauCeti.rateDamping` of the rate `-(2 x + 4 x³)²`,
+because `x² + x⁴` is proper. -/
+theorem isCompleteVectorField_rateDampedField_sq_add_pow_four :
+    IsCompleteVectorField (rateDampedField (modelWithCornersSelf ℝ ℝ)
+      (fun x : ℝ ↦ x ^ 2 + x ^ 4) fun x : ℝ ↦ -(2 * x + 4 * x ^ 3)) :=
+  isCompleteVectorField_rateDampedField isProperMap_sq_add_pow_four
+    (by fun_prop : ContDiff ℝ 2 fun x : ℝ ↦ x ^ 2 + x ^ 4).contMDiff
+    (contMDiff_vectorSpace_iff_contDiff.2
+      ((contDiff_const.mul contDiff_id).add (contDiff_const.mul (contDiff_id.pow 3))).neg)
 
 end Escape
 

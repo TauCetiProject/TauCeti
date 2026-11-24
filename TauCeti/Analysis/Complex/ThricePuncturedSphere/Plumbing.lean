@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import TauCeti.Analysis.Complex.RealChart
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.RingTheory.Complex
@@ -70,9 +70,15 @@ maps on the plumbed sphere is computed.
   truncation `Σ_R`; `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_div_two`: for
   `R = L/2` it is `S_{L/2} ∪ ψ_{q,L}(S_{L/2})`.
 * `TauCeti.ThricePuncturedSphere.Puncture.mem_plumbedSphere_of_endSign_mul_re_endCoord_le`,
-  `Puncture.plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le`:
+  `Puncture.plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le`,
+  `Puncture.realChart_plumbingMap_mem_plumbedSphere`:
   the part `s_q ≤ L/2` of `S` and the image of the part `-s_∞ ≤ L/2` of `S'` lie in the
-  four-punctured sphere.
+  four-punctured sphere, also in real coordinates.
+* `Puncture.plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le`: for `L > 1` the plumbing
+  map of a finite end `q` carries the whole part `-s_∞ ≤ L/2` of the plane, including `0` and `1`,
+  to the capped puncture `c_q` or into `ℂ ∖ {0, 1}`;
+  `Puncture.plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le` is the consequence `ψ_L(w) ≠ 0` for
+  the end at `1`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
   `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
   compact subset of the four-punctured sphere.
@@ -144,6 +150,13 @@ theorem plumbingFactor_eq_mul_ofReal (q : Puncture) (L : ℝ) :
   rw [plumbingFactor_def, Complex.ofReal_div, Complex.ofReal_exp]
   push_cast
   ring_nf
+
+/-- The plumbing factor of the input end `0` is the real number `e^{-2πL} / 4`. -/
+theorem plumbingFactor_zero (L : ℝ) :
+    zero.plumbingFactor L = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
+  rw [plumbingFactor_eq_mul_ofReal, endScale_zero]
+  push_cast
+  ring
 
 /-- The plumbing scale depends smoothly on the real neck length. -/
 theorem contDiff_plumbingFactor (q : Puncture) {n : WithTop ℕ∞} :
@@ -515,6 +528,20 @@ open TauCeti.Complex (realChart realChart_apply realChart_injective contDiff_rea
 
 variable {q : Puncture} {L : ℝ}
 
+/-- In real coordinates, the map `ζ ↦ (ζ - c_q) / ψ'` undoes the plumbing map `ψ`. -/
+theorem leftInverse_realChart_plumbingMap (q : Puncture) (L : ℝ) :
+    Function.LeftInverse (realChart fun ζ ↦ (ζ - q.endCenter) / q.plumbingFactor L)
+      (realChart (q.plumbingMap L)) := fun z ↦ by
+  rw [realChart_apply, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+    plumbingMap_sub_endCenter_div_plumbingFactor, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- In real coordinates, the plumbing map `ψ` undoes the map `ζ ↦ (ζ - c_q) / ψ'`. -/
+theorem rightInverse_realChart_plumbingMap (q : Puncture) (L : ℝ) :
+    Function.RightInverse (realChart fun ζ ↦ (ζ - q.endCenter) / q.plumbingFactor L)
+      (realChart (q.plumbingMap L)) := fun z ↦ by
+  rw [realChart_apply, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+    plumbingMap_sub_endCenter_div, ContinuousLinearEquiv.apply_symm_apply]
+
 /-- The plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, in real coordinates, is open. -/
 theorem isOpen_plumbedSphere (q : Puncture) (L : ℝ) :
     IsOpen {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
@@ -566,6 +593,46 @@ theorem plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le (hq : q ≠ 
   rw [endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L hw.1]
   rw [endSign_inf, neg_one_mul] at hwL
   linarith
+
+/-- The plumbing map `ψ_L` of a finite end `q`, for `L > 1`, carries every point of the inserted
+plane `ℂ` outside the circle `s_∞ = -L/2` of the end at `∞` to the capped puncture `c_q` or a point
+of `ℂ ∖ {0, 1}`: points of the disc `‖w‖ ≤ 2 exp (2π)` land within `exp (-2π(L - 1)) / 2 < 1` of
+`c_q`, away from the other finite puncture, and the other points land in the plumbed
+four-punctured sphere. -/
+theorem plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le (hq : q ≠ inf) (hL : 1 < L)
+    {w : ℂ} (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) :
+    q.plumbingMap L w = q.endCenter ∨ q.plumbingMap L w ≠ 0 ∧ q.plumbingMap L w ≠ 1 := by
+  by_cases hw : ‖w‖ ≤ 2 * Real.exp (2 * π)
+  · have h := (norm_sub_endCenter_div_plumbingFactor_le_iff hq L 1).1
+      (by rwa [plumbingMap_sub_endCenter_div_plumbingFactor, mul_one])
+    have hexp : Real.exp (-(2 * π * (L - 1))) < 1 :=
+      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
+    have hlt : ‖q.plumbingMap L w - q.endCenter‖ < 1 := by linarith
+    refine (eq_or_ne _ _).imp id fun hc ↦ ⟨fun h0 ↦ ?_, fun h1 ↦ ?_⟩ <;>
+      [rw [h0] at hc hlt; rw [h1] at hc hlt] <;> cases q <;> simp_all
+  · have h1 : (1 : ℝ) ≤ 2 * Real.exp (2 * π) := by
+      linarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
+    exact Or.inr (plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le hq (by linarith)
+      ⟨fun h ↦ hw (by rw [h, norm_zero]; positivity),
+        fun h ↦ hw (by rw [h, norm_one]; exact h1)⟩ hwL).1
+
+/-- The plumbing map `ψ_L` of the end at `1`, for `L > 1`, carries every point of the inserted
+plane `ℂ` outside the circle `s_∞ = -L/2` of the end at `∞` to a nonzero point. -/
+theorem plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (hL : 1 < L) {w : ℂ}
+    (hwL : inf.endSign * (inf.endCoord w).re ≤ L / 2) : one.plumbingMap L w ≠ 0 :=
+  (plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le (by simp) hL hwL).elim
+    (fun h ↦ by simp [h]) And.left
+
+/-- The plumbing map carries a point of the inserted thrice-punctured sphere outside the circle
+`s_∞ = -L/2` into the plumbed four-punctured sphere, in real coordinates. -/
+theorem realChart_plumbingMap_mem_plumbedSphere (hq : q ≠ inf) (hL : 0 < L)
+    {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1)
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2) :
+    (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ 0 ∧
+      Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ 1) ∧
+      Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ q.plumbingMap L 1 := by
+  rw [equivRealProdCLM_symm_realChart]
+  exact plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le hq hL hw hwL
 
 /-- The plumbing map carries the inserted truncation `S_{L/2}` into the plumbed four-punctured
 sphere. -/

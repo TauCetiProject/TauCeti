@@ -9,8 +9,10 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.GroupTheory.Perm.Fin
+public import TauCeti.GroupTheory.Perm.Basic
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.Logic.Equiv.Fin.Basic
+import Mathlib.Tactic
 import Mathlib.Data.Fintype.Fin
 -- Non-public: a cycle and an adjacent transposition generate the permutation group.
 import Mathlib.GroupTheory.Perm.Closure
@@ -28,6 +30,10 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   are stated on natural numbers, ready for `omega`.
 * `List.formPerm_finRange`, `Fin.formPerm_sort_univ`: the cycle through the points of `Fin n` in
   increasing order is the rotation `finRotate n`, that is `i ↦ i + 1` modulo `n`.
+* `Fin.swap_apply_lt_swap_apply`: an adjacent transposition `(a a+1)` of `Fin n` keeps every
+  strict pair in order except `a < a + 1` itself.
+* `Fin.cons_comp_perm`: prepending a fixed first entry commutes with permuting the other entries,
+  through the permutation `Equiv.Perm.decomposeFin.symm (0, σ)` of `Fin (n + 1)` fixing `0`.
 * `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
 * `TauCeti.closure_finRotate_swap_eq_top`: the rotation `finRotate n` and the transposition `(0 1)`
   generate the permutations of `Fin n`.
@@ -36,6 +42,10 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   `decide +kernel` certificate small.
 * `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
   `Fin (n + 1)` counts each value `n!` times.
+* `Equiv.Perm.consFin`, `Equiv.Perm.snocFin`: ordered insertion and its sign in every
+  dimension, including the empty tail missing from the primed Mathlib decomposition.
+* `TauCeti.sum_sign_smul_eq_sum_consFin`: reindex a signed permutation sum through ordered
+  first-coordinate insertion, including dimension zero.
 * `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
 -/
 
@@ -74,6 +84,24 @@ the rotation `i ↦ i + 1` modulo `n`. -/
 theorem formPerm_sort_univ (n : ℕ) :
     (Finset.univ : Finset (Fin n)).sort.formPerm = finRotate n := by
   rw [sort_univ, List.formPerm_finRange]
+
+/-- An adjacent transposition `(a b)`, with `b = a + 1`, preserves the strict order of every pair
+of elements of `Fin n` other than the pair `a < b` itself. -/
+theorem swap_apply_lt_swap_apply {n : ℕ} {a b i j : Fin n} (hab : (a : ℕ) + 1 = b) (hij : i < j)
+    (hne : ¬(i = a ∧ j = b)) : Equiv.swap a b i < Equiv.swap a b j := by
+  simp only [Equiv.swap_apply_def]
+  simp only [Fin.lt_def, Fin.ext_iff] at hij hne ⊢
+  split_ifs <;> simp_all <;> omega
+
+/-- Prepending a fixed first entry commutes with permuting the other entries: the permutation `σ`
+of the last `n` coordinates extends, by `Equiv.Perm.decomposeFin`, to the permutation of
+`Fin (n + 1)` that fixes `0`. -/
+theorem cons_comp_perm {α : Type*} {n : ℕ} (a : α) (y : Fin n → α) (σ : Equiv.Perm (Fin n)) :
+    (cons a (y ∘ σ) : Fin (n + 1) → α) =
+      (cons a y : Fin (n + 1) → α) ∘ Equiv.Perm.decomposeFin.symm (0, σ) := by
+  funext i
+  cases i using Fin.cases <;>
+    simp [Equiv.Perm.decomposeFin_symm_apply_zero, Equiv.Perm.decomposeFin_symm_apply_succ]
 
 end Fin
 
@@ -166,3 +194,155 @@ theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
 end
 
 end Equiv.Perm
+
+noncomputable section
+
+namespace Equiv.Perm
+
+
+/-- Ordered first-coordinate insertion, extending Mathlib's primed decomposition to the
+empty tail. The positive-dimensional cases are exactly `decomposeFin'Symm`. -/
+def consFin : {n : ℕ} → Fin (n + 1) → Perm (Fin n) → Perm (Fin (n + 1))
+  | 0, _, _ => 1
+  | _ + 1, j, π => decomposeFin'Symm j π
+
+/-- Positive-dimensional ordered insertion is the native Mathlib construction. -/
+lemma consFin_eq_decomposeFin'Symm {n : ℕ} (j : Fin (n + 2)) (π : Perm (Fin (n + 1))) :
+    consFin j π = decomposeFin'Symm j π := by
+  rfl
+
+/-- The distinguished coordinate is first. -/
+@[simp]
+lemma consFin_zero {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    consFin j π 0 = j := by
+  cases n with
+  | zero => exact Subsingleton.elim (α := Fin 1) _ _
+  | succ n => exact decomposeFin'Symm_zero j π
+
+/-- The remaining coordinates preserve their increasing-coordinate identification. -/
+@[simp]
+lemma consFin_succ {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) (k : Fin n) :
+    consFin j π k.succ = j.succAbove (π k) := by
+  cases n with
+  | zero => exact k.elim0
+  | succ n => exact decomposeFin'Symm_succ j π k
+
+/-- The first coordinate has position zero. -/
+@[simp]
+lemma consFin_symm_self {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    (consFin j π).symm j = 0 := by
+  cases n with
+  | zero => exact Subsingleton.elim (α := Fin 1) _ _
+  | succ n => exact decomposeFin'Symm_symm_eq_zero j π
+
+/-- The position of another coordinate is its position in the smaller permutation, plus one. -/
+@[simp]
+lemma consFin_symm_succAbove {n : ℕ} (j : Fin (n + 1))
+    (π : Perm (Fin n)) (k : Fin n) :
+    (consFin j π).symm (j.succAbove (π k)) = k.succ := by
+  cases n with
+  | zero => exact k.elim0
+  | succ n => exact decomposeFin'Symm_symm_succAbove j π k
+
+/-- Ordered insertion has the native coordinate insertion sign, including the empty tail. -/
+@[simp]
+lemma sign_consFin {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    (consFin j π).sign = (-1) ^ (j : ℕ) * π.sign := by
+  cases n with
+  | zero =>
+    have hj : j = 0 := Subsingleton.elim (α := Fin 1) _ _
+    have hπ : π = 1 := Subsingleton.elim _ _
+    subst j
+    subst π
+    simp [consFin]
+  | succ n => exact sign_decomposeFin'Symm j π
+
+/-- Every permutation is uniquely an ordered insertion. For a nonempty tail this is the
+inverse of Mathlib's `decomposeFin'`; the empty-tail case is the unique map. -/
+def consFinEquiv : (n : ℕ) → Fin (n + 1) × Perm (Fin n) ≃ Perm (Fin (n + 1))
+  | 0 => Equiv.ofBijective (fun p : Fin 1 × Perm (Fin 0) ↦
+      (consFin p.1 p.2 : Perm (Fin 1)))
+      (Function.bijective_of_subsingleton' (α := Fin 1 × Perm (Fin 0))
+        (β := Perm (Fin 1)) _)
+  | _ + 1 => decomposeFin'.symm
+
+/-- The first-coordinate equivalence evaluates to ordered insertion. -/
+@[simp]
+lemma consFinEquiv_apply {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    consFinEquiv n (j, π) = consFin j π := by
+  cases n with
+  | zero => exact Subsingleton.elim (α := Perm (Fin 1)) _ _
+  | succ n => exact decomposeFin'_symm j π
+
+/-- The ordering obtained by placing the distinguished coordinate last. -/
+def snocFin {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    Perm (Fin (n + 1)) := consFin j π * finRotate (n + 1)
+
+/-- The earlier steps of the last-coordinate ordering follow the smaller permutation. -/
+@[simp]
+lemma snocFin_castSucc {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n))
+    (i : Fin n) : snocFin j π i.castSucc = j.succAbove (π i) := by
+  have hi : finRotate (n + 1) i.castSucc = i.succ := by
+    apply Fin.ext
+    rw [coe_finRotate_of_ne_last (Fin.castSucc_ne_last i)]
+    rfl
+  simp [snocFin, Perm.mul_apply, hi]
+
+/-- The distinguished coordinate is the last step. -/
+@[simp]
+lemma snocFin_last {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    snocFin j π (Fin.last (n)) = j := by
+  simp [snocFin, Perm.mul_apply]
+
+/-- The distinguished coordinate has the last position in this ordering. -/
+@[simp]
+lemma snocFin_symm_self {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    (snocFin j π).symm j = Fin.last (n) := by
+  apply (snocFin j π).injective
+  simp
+
+/-- The position of an earlier coordinate in the last-coordinate ordering. -/
+@[simp]
+lemma snocFin_symm_succAbove {n : ℕ} (j : Fin (n + 1))
+    (π : Perm (Fin n)) (i : Fin n) :
+    (snocFin j π).symm (j.succAbove (π i)) = i.castSucc := by
+  apply (snocFin j π).injective
+  simp
+
+/-- The sign of the ordering with the distinguished coordinate last. -/
+@[simp]
+lemma sign_snocFin {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    (snocFin j π).sign = (-1) ^ ((j : ℕ) + n) * π.sign := by
+  simp [snocFin, Perm.sign_mul, sign_consFin, sign_finRotate,
+    pow_add, mul_assoc, mul_comm]
+
+/-- Every permutation is uniquely a last-coordinate insertion, including the empty tail. -/
+def snocFinEquiv (n : ℕ) : Fin (n + 1) × Perm (Fin n) ≃ Perm (Fin (n + 1)) :=
+  (consFinEquiv n).trans (Equiv.mulRight (finRotate (n + 1)))
+
+/-- The last-coordinate equivalence evaluates to ordered insertion. -/
+@[simp]
+lemma snocFinEquiv_apply {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    snocFinEquiv n (j, π) = snocFin j π := by
+  simp [snocFinEquiv, snocFin]
+
+end Equiv.Perm
+
+end
+
+namespace TauCeti
+
+open Equiv
+
+/-- Reindex a signed permutation sum by the first coordinate and the remaining ordering.
+This is the common decomposition step in simplex and cube boundary formulas. -/
+theorem sum_sign_smul_eq_sum_consFin {A : Type*} [AddCommGroup A] (n : ℕ)
+    (F : Perm (Fin (n + 1)) → A) :
+    ∑ π : Perm (Fin (n + 1)), π.sign • F π =
+      ∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
+        ∑ π : Perm (Fin n), π.sign • F (Perm.consFin j π) := by
+  rw [← (Perm.consFinEquiv n).sum_comp, Fintype.sum_prod_type]
+  simp only [Perm.consFinEquiv_apply, Perm.sign_consFin, mul_smul, Finset.smul_sum,
+    Units.smul_def, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
+
+end TauCeti

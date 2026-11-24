@@ -173,6 +173,15 @@ instance (priority := 100) isN1 [IsReduced R] [IsNagata R] : IsN1 R := by
     .of_isLocalization (S := FractionRing R) (nonZeroDivisors R)
   exact ⟨finite_integralClosure (FractionRing R)⟩
 
+/-- For a reduced Nagata ring `R` and any localization `S` of `R` at a submonoid `M`, the integral
+closure of `R` in `S` is a finite `R`-module. -/
+theorem finite_integralClosure_of_isLocalization [IsReduced R] [IsNagata R]
+    (M : Submonoid R) (S : Type*) [CommRing S] [Algebra R S] [IsLocalization M S] :
+    Module.Finite R (integralClosure R S) :=
+  have : IsReduced S := _root_.IsLocalization.isReduced M S
+  have : Algebra.EssFiniteType R S := .of_isLocalization (S := S) M
+  finite_integralClosure S
+
 /-- A Noetherian ring of Krull dimension zero, for instance an Artinian ring or the zero ring, is
 Nagata. -/
 theorem of_krullDimLE_zero [IsNoetherianRing R] [Ring.KrullDimLE 0 R] : IsNagata R where

@@ -21,7 +21,11 @@ transpose over any star semiring, and `Matrix.conjTranspose_mul_mul_mem_unitary`
 unitarity along a possibly rectangular matrix whose conjugate transpose is a two-sided inverse.
 
 `Matrix.diagonal_update_one_mem_unitary_iff` says that a diagonal matrix with all diagonal entries
-`1` except one is unitary exactly when that entry is.
+`1` except one is unitary exactly when that entry is. Multiplying one column `j` of a unitary
+matrix `A` by `star (det A)` therefore keeps it unitary and makes its determinant
+`det A * star (det A) = 1`: this is `Matrix.UnitaryGroup.toSpecialUnitaryAt j A`, a special unitary
+matrix with the same columns as `A` away from `j`
+(`Matrix.UnitaryGroup.toSpecialUnitaryAt_mulVec_single`).
 -/
 
 public section
@@ -74,6 +78,41 @@ theorem diagonal_update_one_mem_unitary_iff {n α : Type*} [Fintype n] [Decidabl
     [Semiring α] [StarRing α] {a : α} {i : n} :
     diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
   simp [Pi.mem_unitary_iff, Function.forall_update_iff]
+
+namespace UnitaryGroup
+
+variable {R : Type u} [CommRing R] [StarRing R]
+variable {n : Type v} [Fintype n] [DecidableEq n]
+
+/-- The unitary matrix `A` with its column `j` multiplied by `star (det A)`. It is unitary, and its
+determinant is `det A * star (det A) = 1` since `det A` is a unitary scalar, so it is special
+unitary. Its columns other than `j` are those of `A`
+(`Matrix.UnitaryGroup.toSpecialUnitaryAt_mulVec_single`). -/
+def toSpecialUnitaryAt (j : n) (A : unitaryGroup n R) : specialUnitaryGroup n R :=
+  ⟨A.val * diagonal (Function.update 1 j (star (A : Matrix n n R).det)),
+    mem_specialUnitaryGroup_iff.2 ⟨mul_mem A.property
+      (diagonal_update_one_mem_unitary_iff.2 (Unitary.star_mem (det_of_mem_unitary A.property))), by
+        rw [det_mul, det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ j)]
+        simpa using (det_of_mem_unitary A.property).2⟩⟩
+
+theorem coe_toSpecialUnitaryAt (j : n) (A : unitaryGroup n R) :
+    (toSpecialUnitaryAt j A : Matrix n n R) =
+      A.val * diagonal (Function.update 1 j (star (A : Matrix n n R).det)) :=
+  (rfl)
+
+/-- Away from the column `j`, the columns of `toSpecialUnitaryAt j A` are those of `A`. -/
+theorem toSpecialUnitaryAt_mulVec_single {j k : n} (hk : k ≠ j) (A : unitaryGroup n R) :
+    (toSpecialUnitaryAt j A : Matrix n n R) *ᵥ Pi.single k 1 = A.val *ᵥ Pi.single k 1 := by
+  rw [coe_toSpecialUnitaryAt, ← mulVec_mulVec, diagonal_mulVec_single,
+    Function.update_of_ne hk, Pi.one_apply, one_mul]
+
+/-- A special unitary matrix is its own correction. -/
+@[simp]
+theorem toSpecialUnitaryAt_of_det_eq_one (j : n) {A : unitaryGroup n R}
+    (hA : (A : Matrix n n R).det = 1) : (toSpecialUnitaryAt j A : Matrix n n R) = A := by
+  simp [coe_toSpecialUnitaryAt, hA]
+
+end UnitaryGroup
 
 variable {R : Type u} [Semiring R] [StarRing R]
 variable {n : Type v} [Fintype n] [DecidableEq n]

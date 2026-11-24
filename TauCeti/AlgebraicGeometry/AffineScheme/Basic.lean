@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
@@ -83,6 +84,8 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective`: when `S` is
   recovered from its sections over an open `W` of `Spec S`, the sections of a scheme identified
   with `W` over `Spec R` are `S`, compatibly with the maps from `R`.
+* `TauCeti.AlgebraicGeometry.commSq_SpecMap_ofHom`: a commutative square of commutative rings
+  gives a commutative square of their spectra.
 * `TauCeti.AlgebraicGeometry.exists_affine_pair_comp_eq`: for a morphism `f : T' ⟶ T` of affine
   `S`-schemes, the affine `S`-scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)] Γ(T', 𝒪))` carries two maps to
   `T'` that agree after composing with `f` and induce the two tensor factor inclusions.
@@ -440,6 +443,16 @@ namespace TauCeti.AlgebraicGeometry
 
 open _root_.AlgebraicGeometry
 
+/-- A commutative square of commutative rings `b ∘ a = d ∘ c` gives a commutative square of their
+spectra, `Spec b ≫ Spec a = Spec d ≫ Spec c`. -/
+lemma commSq_SpecMap_ofHom {R S T U : Type u} [CommRing R] [CommRing S] [CommRing T]
+    [CommRing U] {a : R →+* S} {b : S →+* T} {c : R →+* U} {d : U →+* T}
+    (h : b.comp a = d.comp c) :
+    CommSq (Spec.map (CommRingCat.ofHom b)) (Spec.map (CommRingCat.ofHom d))
+      (Spec.map (CommRingCat.ofHom a)) (Spec.map (CommRingCat.ofHom c)) :=
+  ⟨by rw [← Spec.map_comp, ← Spec.map_comp, ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp,
+    h]⟩
+
 /-- Let `j : T ⟶ S` be a morphism to an affine scheme, `Y` a scheme over `S` and `Y'` an affine
 scheme over `S`. If restriction of global sections `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism,
 then base change along `j` is a bijection from morphisms `Y ⟶ Y'` over `S` to morphisms
@@ -541,3 +554,49 @@ theorem exists_affine_pair_comp_eq {S : Scheme.{u}} {T T' : Over S} (f : T' ⟶ 
   exact ⟨Z, this, g₁, g₂, κ, Over.OverMorphism.ext hι, hκ χ₁, hκ χ₂⟩
 
 end TauCeti.AlgebraicGeometry
+
+open scoped AlgebraicGeometry
+
+/-- A finite subset of an affine open has a basic-open neighbourhood contained in any
+prescribed open containing the subset. -/
+theorem AlgebraicGeometry.IsAffineOpen.exists_basicOpen_superset_le
+    {X : AlgebraicGeometry.Scheme} {V W : X.Opens} (hV : AlgebraicGeometry.IsAffineOpen V)
+    {s : Set X} (hs : s.Finite) (hsV : s ⊆ V) (hsW : s ⊆ W) :
+    ∃ r : Γ(X, V), s ⊆ X.basicOpen r ∧ X.basicOpen r ≤ W := by
+  classical
+  let _ := hs.fintype
+  let primes : s → Ideal Γ(X, V) := fun x ↦ (hV.primeIdealOf ⟨x.val, hsV x.property⟩).asIdeal
+  let sections : Set Γ(X, V) := {r | X.basicOpen r ≤ W}
+  have hnot : ¬ (Ideal.span sections : Set Γ(X, V)) ⊆
+      ⋃ P ∈ Set.range primes, (P : Set Γ(X, V)) := by
+    rw [Ideal.subset_union_prime_finite (Set.finite_range primes) ⊤ ⊤ (by
+      rintro _ ⟨x, rfl⟩ _ _
+      exact (hV.primeIdealOf ⟨x.val, hsV x.property⟩).isPrime)]
+    rintro ⟨P, ⟨x, rfl⟩, hle⟩
+    obtain ⟨r, hrW, hrx⟩ := hV.exists_basicOpen_le ⟨x.val, hsW x.property⟩ (hsV x.property)
+    exact (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x.val, hsV x.property⟩ r).mp hrx
+      (hle (Ideal.subset_span hrW))
+  obtain ⟨r, hrI, hr⟩ := Set.not_subset.mp hnot
+  refine ⟨r, ?_, ?_⟩
+  · intro x hx
+    apply (hV.mem_basicOpen_iff_notMem_primeIdealOf ⟨x, hsV hx⟩ r).mpr
+    intro h
+    apply hr
+    exact Set.mem_iUnion.mpr ⟨primes ⟨x, hx⟩,
+      Set.mem_iUnion.mpr ⟨Set.mem_range_self _, h⟩⟩
+  · exact (hV.basicOpen_le_iSup_basicOpen_iff.mpr
+      (Ideal.le_radical hrI)).trans (iSup₂_le fun r hr ↦ hr)
+
+/-- An affine morphism transfers a finite affine neighbourhood from the target, and the source
+neighbourhood can be chosen inside any prescribed open containing the finite set. -/
+theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom
+    {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) [AlgebraicGeometry.IsAffineHom f]
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W)
+    (hY : ∃ V : Y.Opens, AlgebraicGeometry.IsAffineOpen V ∧ f '' s ⊆ V) :
+    ∃ U : X.Opens, AlgebraicGeometry.IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨V, hV, hsV⟩ := hY
+  have hpre := hV.preimage f
+  have hsPre : s ⊆ f ⁻¹ᵁ V := fun x hx ↦ f.mem_preimage.mpr
+    (hsV (Set.mem_image_of_mem f hx))
+  obtain ⟨r, hsr, hrW⟩ := hpre.exists_basicOpen_superset_le hs hsPre hsW
+  exact ⟨X.basicOpen r, hpre.basicOpen r, hsr, hrW⟩

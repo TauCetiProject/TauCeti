@@ -38,6 +38,8 @@ multiplies the determinant by a unit of `ℤ[q,q⁻¹]`.
 
 ## Main results
 
+* `TauCeti.gradedFiniteProjectiveResolutionExactStructure_conflation_iff`: its conflations are
+  the short exact sequences of graded modules with terms in that subcategory.
 * `TauCeti.gradedCartanMap_apply`: the graded Cartan map factors through the modules admitting
   finite graded-projective resolutions.
 * `TauCeti.gradedCartanInverse_of_eq_foldAlternating`: the inverse sends the class of a finite
@@ -103,6 +105,20 @@ def gradedFiniteProjectiveResolutionExactStructure :
       gradedFiniteProjectiveModules_le_isProjective_gradedAbelian)
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution_inverseImage_shift
       gradedFiniteProjectiveModules_gradedAbelian_shift)
+
+/-- The conflations of graded modules admitting finite graded-projective resolutions are the
+short exact sequences of graded modules whose three terms admit such resolutions. -/
+@[simp]
+theorem gradedFiniteProjectiveResolutionExactStructure_conflation_iff
+    (S : ShortComplex ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
+      (gradedFiniteProjectiveModules 𝒜)).FullSubcategory) :
+    (gradedFiniteProjectiveResolutionExactStructure 𝒜).Conflation S ↔
+      (S.map ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
+        (gradedFiniteProjectiveModules 𝒜)).ι).ShortExact := by
+  rw [gradedFiniteProjectiveResolutionExactStructure,
+    GradedExactStructure.fullSubcategory_conflation_iff]
+  simp only [gradedModuleCanonicalExactStructure, GradedExactStructure.abelian_toExactStructure,
+    ExactStructure.abelian_conflation]
 
 /-- The graded resolution theorem for modules admitting finite resolutions by finite graded
 projectives. -/
