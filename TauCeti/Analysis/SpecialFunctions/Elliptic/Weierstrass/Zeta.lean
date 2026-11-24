@@ -45,6 +45,8 @@ Eisenstein series of level `Γ(N)`, as the values of `℘` are in weight two.
 * `PeriodPair.weierstrassZeta_add_coe`: the quasi-periodicity `ζ(z + l) = ζ(z) + η(l)`.
 * `PeriodPair.quasiPeriod_eq_intCast_mul_add`: `η(m ω₁ + n ω₂) = m η(ω₁) + n η(ω₂)`.
 * `PeriodPair.quasiPeriod_eq_two_mul_weierstrassZeta`: `η(l) = 2 ζ(l / 2)`.
+* `PeriodPair.weierstrassZeta_eq_of_lattice_eq`, `PeriodPair.quasiPeriod_eq_of_lattice_eq`: `ζ`
+  and `η` depend only on the lattice.
 
 ## References
 
@@ -214,5 +216,16 @@ theorem quasiPeriod_eq_two_mul_weierstrassZeta (l : L.lattice) :
   have h := L.weierstrassZeta_add_coe (-((l : ℂ) / 2)) l
   rw [neg_add_eq_sub, sub_half, weierstrassZeta_neg] at h
   linear_combination -h
+
+/-- `ζ` depends only on the lattice, not on the chosen basis. -/
+theorem weierstrassZeta_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+    L.weierstrassZeta = L'.weierstrassZeta := by
+  ext z
+  rw [weierstrassZeta, weierstrassZeta, h]
+
+/-- The quasi-periods depend only on the lattice, not on the chosen basis. -/
+theorem quasiPeriod_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice)
+    (l : L.lattice) : L.quasiPeriod l = L'.quasiPeriod ⟨l, h ▸ l.property⟩ := by
+  rw [← weierstrassZeta_coe, ← weierstrassZeta_coe, weierstrassZeta_eq_of_lattice_eq h]
 
 end PeriodPair

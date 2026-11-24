@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ImplicitFunction.Theorem
+public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 public import TauCeti.Geometry.Manifold.LinearSlice
 public import TauCeti.Geometry.Manifold.Projectivization.Polynomial
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Level

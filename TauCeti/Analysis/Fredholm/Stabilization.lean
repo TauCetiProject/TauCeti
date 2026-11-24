@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Basic
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import TauCeti.Analysis.Normed.Operator.Splitting.Family
-import TauCeti.Analysis.Calculus.ImplicitFunction.Theorem
+import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!

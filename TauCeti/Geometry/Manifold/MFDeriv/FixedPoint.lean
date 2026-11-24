@@ -101,6 +101,8 @@ computed in any chart, also on manifolds with boundary or corners
 * `TauCeti.IsNondegenerateUpToPeriod.finite_ptsOfPeriod`,
   `TauCeti.IsNondegenerateUpToPeriod.finite_setOf_isPeriodicPt`: finitely many periodic points of
   period at most `N` on a compact manifold.
+* `TauCeti.finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod`: a map nondegenerate up to
+  every period has finitely many fixed points of each positive iterate.
 * `TauCeti.IsNondegenerateUpToPeriod.eq_zero_of_pow_apply_eq_smul`,
   `TauCeti.IsNondegenerateUpToPeriod.det_smul_one_sub_pow_ne_zero`: nondegeneracy up to period
   `N` excludes every `ε` with `ε ^ j = 1` as an eigenvalue of the return map of the `m`-fold cover
@@ -457,6 +459,15 @@ theorem finite_setOf_isPeriodicPt (h : IsNondegenerateUpToPeriod I f N) (hf : Co
   exact Set.mem_biUnion ⟨hk, hkN⟩ hx
 
 end IsNondegenerateUpToPeriod
+
+/-- On a compact manifold modelled on a finite-dimensional space over a complete field, a
+continuous map nondegenerate up to every period has only finitely many fixed points of each
+positive iterate. -/
+theorem finite_ptsOfPeriod_of_forall_isNondegenerateUpToPeriod [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] [CompactSpace M] [T2Space M]
+    (h : ∀ N, IsNondegenerateUpToPeriod I f N) (hf : Continuous f) :
+    ∀ n, 0 < n → (ptsOfPeriod f n).Finite :=
+  fun n hn ↦ (h n).finite_ptsOfPeriod hf hn le_rfl
 
 /-! ### The fixed-point derivative
 

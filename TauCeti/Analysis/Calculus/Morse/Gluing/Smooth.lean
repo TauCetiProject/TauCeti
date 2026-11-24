@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Gluing.Compactification
-import TauCeti.Analysis.Calculus.ImplicitFunction.Theorem
+import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 

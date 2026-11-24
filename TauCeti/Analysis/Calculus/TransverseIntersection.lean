@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ImplicitFunction.Theorem
+public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.Chart
 public import TauCeti.Analysis.Calculus.TangentCone.LevelSet
 import Mathlib.Analysis.Calculus.ContDiff.RCLike

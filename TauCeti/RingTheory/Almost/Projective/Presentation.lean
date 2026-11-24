@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Almost.Projective.Basic
 
 import TauCeti.RingTheory.Almost.Finiteness.Presentation
 import TauCeti.Algebra.Module.Projective.Schanuel
-import TauCeti.RingTheory.Ideal.IdempotentFG
+import TauCeti.RingTheory.Ideal.Idempotent.FG
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!

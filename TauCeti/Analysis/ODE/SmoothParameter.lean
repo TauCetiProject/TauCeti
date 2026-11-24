@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.Analysis.Calculus.ContinuousMap.Local
-public import TauCeti.Analysis.Calculus.ImplicitFunction.Theorem
+public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 
 /-!
 # Smooth parameter dependence for autonomous ODEs
