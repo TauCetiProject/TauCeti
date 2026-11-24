@@ -20,7 +20,6 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Set.Finite.Range
 import Mathlib.Algebra.Group.Submonoid.BigOperators
-public import TauCeti.GroupTheory.GroupAlgGeom.VarSubgroup
 
 /-!
 # Quadratic words and standard quadratic equations
