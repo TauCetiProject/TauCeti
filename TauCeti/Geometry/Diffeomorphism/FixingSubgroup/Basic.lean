@@ -11,12 +11,15 @@ public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.GroupTheory.GroupAction.FixingSubgroup
 
 /-!
-# Diffeomorphisms fixing a subset pointwise
+# Diffeomorphisms fixing a subset pointwise or near the subset
 
 Relative diffeomorphism groups, such as `Diff(M, ∂M)`, are subgroups of the self-diffeomorphism
 group whose elements fix a specified subset pointwise. Mathlib already provides the generic
 pointwise fixing subgroup `fixingSubgroup` for any group action; this file specializes that
 construction to the tautological action of the diffeomorphism group on its manifold.
+
+It also introduces the smaller subgroup `Diffeomorph.nhdsFixingSubgroup s` of diffeomorphisms
+that are equal to the identity on some neighbourhood of `s`, rather than only on `s` itself.
 
 In particular `Diff(M, ∂M)` is the subgroup fixing the boundary pointwise. Only the group structure
 is treated here: for a compact source manifold,
@@ -26,10 +29,10 @@ the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
 ## Main definitions
 
 * `Diffeomorph.fixingSubgroup s`: self-diffeomorphisms fixing every point of `s`.
+* `TauCeti.RelativeDiff I M n s`: the corresponding relative diffeomorphism group,
+  as a type abbreviation for `Diffeomorph.fixingSubgroup s`.
 * `Diffeomorph.nhdsFixingSubgroup s`: self-diffeomorphisms equal to the identity on a neighbourhood
   of `s`.
-* `TauCeti.RelativeDiff I M n s`: the corresponding relative diffeomorphism group,
-  as a type abbreviation for that subgroup.
 
 ## Main results
 

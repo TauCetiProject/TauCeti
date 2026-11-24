@@ -328,7 +328,9 @@ theorem continuous_straightenIcc (hn : n ≠ 0) :
     fun q ↦ ContMDiffMap.ext fun p ↦ ?_
   rw [Function.comp_apply, Function.comp_apply, ContMDiffMap.comp_apply,
     Diffeomorph.coe_toContMDiffMap, straightenIcc_apply]
-  simp [ι]
+  simp only [ι, ContMDiffMap.coe_add, ContMDiffMap.coe_subtypeValIcc, ContMDiffMap.coe_smul,
+    ContMDiffMap.coe_sub, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, ContMDiffMap.comp_apply,
+    Diffeomorph.coe_coe, smul_eq_mul, Icc.coe_convexComb]
   ring
 
 variable (a b) in

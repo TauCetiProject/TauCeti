@@ -325,7 +325,7 @@ and `(a, b]` otherwise, the right chart. -/
 theorem mem_extChartAt_Icc_source_iff (α x : Icc a b) :
     x ∈ (extChartAt (𝓡∂ 1) α).source ↔ if (α : ℝ) < b then (x : ℝ) < b else a < (x : ℝ) := by
   rw [extChartAt_source, Icc_chartedSpaceChartAt]
-  split_ifs <;> rfl
+  split_ifs <;> simp [IccLeftChart, IccRightChart]
 
 /-- The source of a preferred interval chart is cut out by its coordinate: a point lies in it
 exactly when its coordinate is below the length `b - a` of the interval. -/
