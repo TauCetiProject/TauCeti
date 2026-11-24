@@ -46,20 +46,15 @@ theorem Function.Surjective.bijOn_preimage_irreducibleComponents {f : X → Y}
   have hle : T ⊆ f ⁻¹' Z := image_subset_iff.mp (subset_closure.trans hTZ)
   exact ⟨Z, hZ, subset_antisymm (hT.2 (hmaps hZ).1 hle) hle⟩
 
-/-- A homeomorphism maps irreducible components onto irreducible components. -/
-theorem Homeomorph.image_mem_irreducibleComponents (h : X ≃ₜ Y) {c : Set X}
-    (hc : c ∈ irreducibleComponents X) : h '' c ∈ irreducibleComponents Y :=
-  image_mem_irreducibleComponents_of_isPreirreducible_fiber h h.continuous h.isOpenMap
-    (fun _ ↦ (subsingleton_singleton.preimage h.injective).isPreirreducible) h.surjective hc
-
 /-- A homeomorphism `h : X ≃ₜ Y` induces a bijection of irreducible components, sending a
-component to its image under `h` and back under `h.symm`. -/
+component to its image under `h` (`Homeomorph.coe_irreducibleComponentsEquiv_apply`). It is the
+inverse of Mathlib's `irreducibleComponentsEquivOfIsPreirreducibleFiber` for `h`, whose fibres are
+singletons. -/
 def Homeomorph.irreducibleComponentsEquiv (h : X ≃ₜ Y) :
-    irreducibleComponents X ≃ irreducibleComponents Y where
-  toFun c := ⟨h '' c, h.image_mem_irreducibleComponents c.property⟩
-  invFun c := ⟨h.symm '' c, h.symm.image_mem_irreducibleComponents c.property⟩
-  left_inv c := Subtype.ext (h.symm_image_image c)
-  right_inv c := Subtype.ext (h.image_symm_image c)
+    irreducibleComponents X ≃ irreducibleComponents Y :=
+  (irreducibleComponentsEquivOfIsPreirreducibleFiber h h.continuous h.isOpenMap
+    (fun _ ↦ (subsingleton_singleton.preimage h.injective).isPreirreducible)
+    h.surjective).symm.toEquiv
 
 /-- The bijection of irreducible components induced by a homeomorphism sends a component to its
 image. -/
@@ -74,7 +69,7 @@ component to its image under `h.symm`. -/
 theorem Homeomorph.coe_irreducibleComponentsEquiv_symm_apply (h : X ≃ₜ Y)
     (c : irreducibleComponents Y) :
     (h.irreducibleComponentsEquiv.symm c : Set X) = h.symm '' c :=
-  (rfl)
+  (congrFun h.image_symm c).symm
 
 namespace TauCeti
 

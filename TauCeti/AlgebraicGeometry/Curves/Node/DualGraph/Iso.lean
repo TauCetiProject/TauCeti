@@ -87,9 +87,11 @@ private def blowupComponentsEquiv :
 /-- The component through a point goes to the component through its image. -/
 private theorem blowupComponentsEquiv_irreducibleComponentOf (b : (X.singularLocus K).blowup) :
     blowupComponentsEquiv e he (irreducibleComponentOf b) =
-      irreducibleComponentOf ((singularLocusBlowupIso e he).hom b) :=
-  (Scheme.homeoOfIso _).irreducibleComponentsEquiv_irreducibleComponentOf
-    (existsUnique_mem_irreducibleComponents_of_unique_minimalPrime_stalk _)
+      irreducibleComponentOf ((singularLocusBlowupIso e he).hom b) := by
+  rw [blowupComponentsEquiv]
+  simpa only [Scheme.coe_homeoOfIso] using
+    (Scheme.homeoOfIso _).irreducibleComponentsEquiv_irreducibleComponentOf
+      (existsUnique_mem_irreducibleComponents_of_unique_minimalPrime_stalk _)
 
 include he in
 /-- An isomorphism of prestable curves over `K` matches their smooth loci. -/
@@ -114,8 +116,8 @@ private theorem genus_blowupComponent_blowupComponentsEquiv
   have hpre : f.hom ⁻¹ᵁ Y.blowupComponent (blowupComponentsEquiv e he v) = X.blowupComponent v := by
     ext1
     rw [Scheme.Hom.coe_preimage, coe_blowupComponent, coe_blowupComponent, blowupComponentsEquiv,
-      Homeomorph.coe_irreducibleComponentsEquiv_apply]
-    exact Set.preimage_image_eq _ (Scheme.homeoOfIso f).injective
+      Homeomorph.coe_irreducibleComponentsEquiv_apply, ← Scheme.coe_homeoOfIso,
+      Homeomorph.preimage_image]
   let g := ((X.singularLocus K).blowup.isoOfEq hpre.symm).hom ≫ f.hom ∣_ _
   have : g.IsOver (Spec (.of K)) := ⟨by simp [g, f, he]⟩
   exact (TauCeti.AlgebraicGeometry.genus_eq_of_isIso K g).symm
@@ -166,8 +168,10 @@ private theorem ends_edgeEquivOfIso (x : (X.dualGraph p).Edge) :
   obtain ⟨j₁, hj₁⟩ := exists_singularLocusBlowupIso_hom_branchPointEquiv e he x' 1
   have hne : j₀ ≠ j₁ := by
     rintro rfl
-    have := (X.branchPointEquiv x').injective (Subtype.ext
-      ((Scheme.homeoOfIso (singularLocusBlowupIso e he)).injective (hj₀.trans hj₁.symm)))
+    have hinj : Function.Injective (singularLocusBlowupIso e he).hom := by
+      simpa only [Scheme.coe_homeoOfIso] using
+        (Scheme.homeoOfIso (singularLocusBlowupIso e he)).injective
+    have := (X.branchPointEquiv x').injective (Subtype.ext (hinj (hj₀.trans hj₁.symm)))
     exact zero_ne_one this
   -- The branch indices `j₀ ≠ j₁` are `0` and `1` in some order.
   have hj : s((0 : Fin 2), 1) = s(j₀, j₁) :=
@@ -261,18 +265,19 @@ compatibility of `e.symm` with the structure morphisms and the markings is deriv
 `hpq`. -/
 theorem dualGraphIsoOfIso_symm :
     dualGraphIsoOfIso e.symm (by rw [Iso.symm_hom, Iso.inv_comp_eq, he]) q p
-        (fun i ↦ by rw [Iso.symm_hom, ← hpq]; exact (Scheme.homeoOfIso e).symm_apply_apply _) =
+        (fun i ↦ by rw [Iso.symm_hom, ← hpq, Scheme.hom_inv_apply]) =
       (dualGraphIsoOfIso e he p q hpq).symm := by
   ext w
   · rw [DualGraph.Iso.symm_vertexEquiv, Equiv.eq_symm_apply]
     refine (Y.dualGraphVertexEquiv q).injective (Subtype.ext ?_)
     simp only [coe_dualGraphVertexEquiv_dualGraphIsoOfIso_vertexEquiv,
       singularLocusBlowupIso_symm e he]
-    exact (Scheme.homeoOfIso (singularLocusBlowupIso e he)).toEquiv.image_symm_image _
+    rw [Iso.symm_hom, Set.image_image]
+    simp only [Scheme.inv_hom_apply, Set.image_id']
   · rw [DualGraph.Iso.symm_edgeEquiv, Equiv.eq_symm_apply]
     refine (Y.dualGraphEdgeEquiv q).injective (Subtype.ext ?_)
     simp only [dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv]
-    exact (Scheme.homeoOfIso e).apply_symm_apply _
+    rw [Iso.symm_hom, Scheme.inv_hom_apply]
 
 /-- The isomorphism of dual graphs induced by a composite of isomorphisms is the composite. The
 compatibility of `e ≪≫ e'` with the structure morphisms and the markings is derived from those of
