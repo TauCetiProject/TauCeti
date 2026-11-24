@@ -368,7 +368,7 @@ theorem mem_irreducibleCharactersOver {N : Subgroup G} {θ : N → k} {ψ : G �
 /-- Membership in `TauCeti.irreducibleCharactersOver`, with the defining sum over the finite
 subgroup `N` written as a `Finset` sum. -/
 @[simp]
-theorem mem_irreducibleCharactersOver_iff {N : Subgroup G} [Fintype N] {θ : N → k} {ψ : G → k} :
+theorem mem_irreducibleCharactersOver_iff_sum {N : Subgroup G} [Fintype N] {θ : N → k} {ψ : G → k} :
     ψ ∈ irreducibleCharactersOver k N θ ↔
       ψ ∈ irreducibleCharacters k G ∧ ∑ n : N, ψ n * θ n⁻¹ ≠ 0 := by
   rw [mem_irreducibleCharactersOver, finsum_eq_sum_of_fintype]
@@ -497,10 +497,9 @@ section Orthonormal
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
   [NeZero (Nat.card G : k)]
 
-open scoped Classical in
 /-- **Row orthogonality for the set of irreducible characters**, in a form free of division: the
 sum `∑ g, β g β' g⁻¹` is `|G|` when `β = β'` and `0` otherwise. -/
-theorem sum_mul_inv_of_mem_irreducibleCharacters {β β' : G → k}
+theorem sum_mul_inv_of_mem_irreducibleCharacters [DecidableEq (G → k)] {β β' : G → k}
     (hβ : β ∈ irreducibleCharacters k G) (hβ' : β' ∈ irreducibleCharacters k G) :
     ∑ g, β g * β' g⁻¹ = if β = β' then (Nat.card G : k) else 0 := by
   have hG : (Nat.card G : k) ≠ 0 := NeZero.ne _
@@ -520,12 +519,14 @@ theorem sum_mul_inv_of_mem_irreducibleCharacters {β β' : G → k}
 /-- An irreducible character has norm `|G|`: `∑ g, β g β g⁻¹ = |G|`. -/
 theorem sum_mul_inv_self_of_mem_irreducibleCharacters {β : G → k}
     (hβ : β ∈ irreducibleCharacters k G) : ∑ g, β g * β g⁻¹ = Nat.card G := by
+  classical
   simpa using sum_mul_inv_of_mem_irreducibleCharacters hβ hβ
 
 /-- Distinct irreducible characters are orthogonal: `∑ g, β g β' g⁻¹ = 0`. -/
 theorem sum_mul_inv_eq_zero_of_mem_irreducibleCharacters {β β' : G → k}
     (hβ : β ∈ irreducibleCharacters k G) (hβ' : β' ∈ irreducibleCharacters k G) (h : β ≠ β') :
     ∑ g, β g * β' g⁻¹ = 0 := by
+  classical
   simpa [h] using sum_mul_inv_of_mem_irreducibleCharacters hβ hβ'
 
 end Orthonormal

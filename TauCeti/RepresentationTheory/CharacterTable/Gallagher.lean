@@ -184,7 +184,7 @@ theorem exists_mem_irreducibleCharacters_eq_mul_comp_mk {θ : N → k}
   classical
   have := Fintype.ofFinite G
   have hθ' : (fun n : N => χ n) ∈ irreducibleCharacters k N := funext hres ▸ hθ
-  obtain ⟨hψ, hsum⟩ := mem_irreducibleCharactersOver_iff.mp hψ
+  obtain ⟨hψ, hsum⟩ := mem_irreducibleCharactersOver_iff_sum.mp hψ
   by_contra hcon
   have hzero (i : Fin (Nat.card (ConjClasses (G ⧸ N)))) :
       ∑ g : G, ψ g * (χ g⁻¹ * irreducibleCharacter k i ((g⁻¹ : G) : G ⧸ N)) = 0 :=
@@ -237,7 +237,7 @@ theorem gallagher_bijOn {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G)
   have hQ0 : (Nat.card (G ⧸ N) : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   obtain ⟨d, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hχ
   have hiso := sum_mul_comp_mk_mul_mul_comp_mk_inv ρ N hθ'
-  refine ⟨fun β hβ => mem_irreducibleCharactersOver_iff.mpr
+  refine ⟨fun β hβ => mem_irreducibleCharactersOver_iff_sum.mpr
       ⟨mul_comp_mk_mem_irreducibleCharacters hχ hθ' hβ, ?_⟩,
     fun β hβ β' hβ' heq => ?_,
     fun ψ hψ => exists_mem_irreducibleCharacters_eq_mul_comp_mk hχ hres hθ hψ⟩
