@@ -45,6 +45,8 @@ multiplication and `g` acting by `x ↦ (g • x) * (f g)⁻¹`. It has class `f
 
 * `TauCeti.NonabelianH1.SmoothTorsor.cls_eq_cls_iff`: two smooth torsors have the same class
   exactly when they are isomorphic.
+* `TauCeti.NonabelianH1.SmoothTorsor.cls_eq_one_iff`: a smooth torsor has the trivial class
+  exactly when `G` fixes one of its points.
 * `TauCeti.NonabelianH1.SmoothTorsor.cls_torsor`: the torsor of a cocycle has its class.
 * `TauCeti.NonabelianH1.SmoothTorsor.cls_surjective`: for discrete `A` with a continuous action,
   every class is the class of a smooth torsor.
@@ -75,7 +77,7 @@ structure SmoothTorsor where
   /-- The action of `G`. -/
   [mulActionG : MulAction G carrier]
   /-- The actions are compatible: `g • (a • x) = (g • a) • (g • x)`. -/
-  smul_smul_eq : ∀ (g : G) (a : A) (x : carrier), g • a • x = (g • a) • g • x
+  smul_distrib_smul : ∀ (g : G) (a : A) (x : carrier), g • a • x = (g • a) • g • x
   /-- The stabilizers of `G` are open. -/
   isOpen_stabilizer : ∀ x : carrier, IsOpen (MulAction.stabilizer G x : Set G)
 
@@ -135,19 +137,22 @@ end Iso
 
 variable (P : SmoothTorsor.{u, v, w} G A)
 
+private theorem eq_inv_sdiv_smul {X : Type*} [Torsor A X] (x y : X) : y = (x /ₛ y)⁻¹ • x := by
+  rw [inv_sdiv_eq_sdiv_rev, sdiv_smul]
+
 variable [TopologicalSpace A] [ContinuousMul G]
 
 /-- The **cocycle of a smooth torsor at a point** `x`: the cocycle `f` with
-`g • x = (f g)⁻¹ • x`, that is `f g = x /ₛ (g • x)`. It is continuous because it is constant on
-the left cosets of the open stabilizer of `x`. -/
+`g • x = (f g)⁻¹ • x`, that is `f g = x /ₛ (g • x)`. -/
 noncomputable def cocycle (x : P.carrier) : Cocycle G A where
   toFun g := x /ₛ (g • x)
   continuous_toFun := by
+    -- It is constant on the left cosets of the open stabilizer of `x`.
     refine IsLocallyConstant.continuous (IsLocallyConstant.iff_exists_open _ |>.mpr fun g ↦ ?_)
     refine ⟨(g⁻¹ * ·) ⁻¹' (MulAction.stabilizer G x : Set G),
       (P.isOpen_stabilizer x).preimage (continuous_const.mul continuous_id), by simp,
       fun h hh ↦ ?_⟩
-    have hh : (g⁻¹ * h) • x = x := hh
+    rw [Set.mem_preimage, SetLike.mem_coe, MulAction.mem_stabilizer_iff] at hh
     have : h • x = g • x :=
       calc h • x = g • (g⁻¹ * h) • x := by rw [smul_smul, mul_inv_cancel_left]
         _ = g • x := by rw [hh]
@@ -155,9 +160,9 @@ noncomputable def cocycle (x : P.carrier) : Cocycle G A where
   map_mul' g h := by
     -- With `a = x /ₛ (g • x)` and `b = x /ₛ (h • x)`, so that `g • x = a⁻¹ • x` and
     -- `h • x = b⁻¹ • x`, compute `(g * h) • x = (g • b)⁻¹ • a⁻¹ • x = (a * g • b)⁻¹ • x`.
-    have hx (k : G) : k • x = (x /ₛ (k • x))⁻¹ • x := by rw [inv_sdiv_eq_sdiv_rev, sdiv_smul]
     have hgh : (g * h) • x = ((x /ₛ (g • x)) * g • (x /ₛ (h • x)))⁻¹ • x := by
-      conv_lhs => rw [mul_smul, hx h, P.smul_smul_eq, hx g, smul_smul]
+      conv_lhs => rw [mul_smul, eq_inv_sdiv_smul x (h • x), P.smul_distrib_smul,
+        eq_inv_sdiv_smul x (g • x), smul_smul]
       rw [mul_inv_rev, smul_inv']
     rw [hgh, sdiv_smul_eq_sdiv_div, sdiv_self, one_div, inv_inv]
 
@@ -166,8 +171,8 @@ theorem cocycle_apply (x : P.carrier) (g : G) : P.cocycle x g = x /ₛ (g • x)
   (rfl)
 
 /-- The defining property of the cocycle at `x`: `g • x = (f g)⁻¹ • x`. -/
-theorem smul_eq_cocycle (x : P.carrier) (g : G) : g • x = (P.cocycle x g)⁻¹ • x := by
-  rw [cocycle_apply, inv_sdiv_eq_sdiv_rev, sdiv_smul]
+theorem smul_eq_inv_cocycle_smul (x : P.carrier) (g : G) : g • x = (P.cocycle x g)⁻¹ • x :=
+  eq_inv_sdiv_smul x (g • x)
 
 theorem cocycle_apply_eq_iff {x : P.carrier} {g : G} {a : A} :
     P.cocycle x g = a ↔ g • x = a⁻¹ • x := by
@@ -176,7 +181,7 @@ theorem cocycle_apply_eq_iff {x : P.carrier} {g : G} {a : A} :
 /-- Moving the point by `b` changes the cocycle to `g ↦ b * f g * (g • b)⁻¹`. -/
 theorem cocycle_smul (x : P.carrier) (b : A) (g : G) :
     P.cocycle (b • x) g = b * P.cocycle x g * (g • b)⁻¹ := by
-  rw [cocycle_apply_eq_iff, P.smul_smul_eq, smul_eq_cocycle, smul_smul, smul_smul]
+  rw [cocycle_apply_eq_iff, P.smul_distrib_smul, smul_eq_inv_cocycle_smul, smul_smul, smul_smul]
   congr 1
   group
 
@@ -193,13 +198,27 @@ noncomputable def cls : NonabelianH1 G A :=
 theorem cls_eq (x : P.carrier) : P.cls = NonabelianH1.mk (P.cocycle x) :=
   P.mk_cocycle_eq _ x
 
+/-- A smooth torsor has the trivial class exactly when `G` fixes one of its points. -/
+theorem cls_eq_one_iff : P.cls = 1 ↔ ∃ x : P.carrier, ∀ g : G, g • x = x := by
+  refine ⟨fun h ↦ ?_, fun ⟨x, hx⟩ ↦ ?_⟩
+  · obtain ⟨x⟩ := (inferInstance : Nonempty P.carrier)
+    obtain ⟨a, ha⟩ := mk_eq_one_iff.mp (P.cls_eq x ▸ h)
+    refine ⟨a • x, fun g ↦ ?_⟩
+    have h1 : P.cocycle (a • x) g = 1 := by
+      rw [cocycle_smul, ha, mul_inv_cancel_left, mul_inv_cancel]
+    rw [cocycle_apply_eq_iff, inv_one, one_smul] at h1
+    exact h1
+  · rw [P.cls_eq x, mk_eq_one_iff]
+    exact ⟨1, fun g ↦ by rw [cocycle_apply_eq_iff, smul_one, inv_one, one_mul, inv_one, one_smul,
+      hx]⟩
+
 variable {P} {Q : SmoothTorsor.{u, v, w'} G A}
 
 /-- An isomorphism of smooth torsors preserves cocycles. -/
 @[simp]
 theorem Iso.cocycle_eq (e : P.Iso Q) (x : P.carrier) : Q.cocycle (e.toEquiv x) = P.cocycle x :=
   Cocycle.ext fun g ↦ by
-    rw [cocycle_apply_eq_iff, ← e.map_smul_G, ← e.map_smul_A, ← smul_eq_cocycle]
+    rw [cocycle_apply_eq_iff, ← e.map_smul_G, ← e.map_smul_A, ← smul_eq_inv_cocycle_smul]
 
 /-- Smooth torsors with equal cocycles at two points are isomorphic, by the bijection
 `a • x ↦ a • y`. -/
@@ -213,8 +232,8 @@ noncomputable def isoOfCocycleEq {x : P.carrier} {y : Q.carrier}
     simp only [Equiv.trans_apply, Equiv.coe_smulConst_symm, Equiv.coe_smulConst]
     -- Write `z = (z /ₛ x) • x` and move `g` past it on both sides.
     conv_lhs => rw [← sdiv_smul z x]
-    rw [P.smul_smul_eq, smul_eq_cocycle P x g, smul_smul, smul_sdiv, Q.smul_smul_eq,
-      smul_eq_cocycle Q y g, smul_smul, h]
+    rw [P.smul_distrib_smul, smul_eq_inv_cocycle_smul P x g, smul_smul, smul_sdiv,
+      Q.smul_distrib_smul, smul_eq_inv_cocycle_smul Q y g, smul_smul, h]
 
 @[simp]
 theorem isoOfCocycleEq_apply {x : P.carrier} {y : Q.carrier} (h : P.cocycle x = Q.cocycle y)
@@ -295,12 +314,12 @@ end TorsorCarrier
 variable [DiscreteTopology A] [ContinuousSMul G A]
 
 /-- The **smooth torsor of a cocycle** `f`: the set `TorsorCarrier f`, a copy of `A`, with `A`
-acting by left multiplication and `g : G` by `x ↦ (g • x) * (f g)⁻¹`. Its stabilizers are open
-since `A` is discrete and the action of `G` on `A` is continuous. -/
+acting by left multiplication and `g : G` by `x ↦ (g • x) * (f g)⁻¹`. -/
 noncomputable abbrev torsor (f : Cocycle G A) : SmoothTorsor.{u, v, v} G A where
   carrier := TorsorCarrier f
-  smul_smul_eq g a x := TorsorCarrier.ext (by simp [smul_mul', mul_assoc])
+  smul_distrib_smul g a x := TorsorCarrier.ext (by simp [smul_mul', mul_assoc])
   isOpen_stabilizer x := by
+    -- The stabilizers are open since `A` is discrete and the action of `G` on `A` is continuous.
     have hc : Continuous fun g : G ↦ (g • x.val, f g) :=
       (continuous_id.smul continuous_const).prodMk f.continuous
     have hs : (MulAction.stabilizer G x : Set G) =
@@ -325,7 +344,7 @@ namespace SmoothTorsor
 
 variable {G A} [DiscreteTopology A] [ContinuousSMul G A] [ContinuousMul G]
 
-/-- **Every class is the class of a smooth torsor**: the torsor of a cocycle has its class. -/
+/-- The smooth torsor of a cocycle `f` has class `[f]`. -/
 @[simp]
 theorem cls_torsor (f : Cocycle G A) : f.torsor.cls = NonabelianH1.mk f := by
   rw [cls_eq _ (⟨1⟩ : Cocycle.TorsorCarrier f), Cocycle.cocycle_torsor]
