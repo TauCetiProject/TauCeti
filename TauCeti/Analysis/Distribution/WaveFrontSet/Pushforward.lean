@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.Pushforward
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
 import TauCeti.Analysis.Normed.Module.Cone
@@ -211,23 +212,6 @@ private theorem contDiffOn_fourierChar_neg_inner {Φ : E → E'} (hΦ : ContDiff
     (TauCeti.fourierAtom_eq_fourierChar _ _).symm
 
 omit [FiniteDimensional ℝ E'] in
-/-- The product of a test function `φ` with the phase factor `𝐞 (-⟪Φ ·, η⟫)` of a map `Φ` smooth
-on `Ω` is a test function. -/
-private theorem exists_eq_mul_fourierChar {Φ : E → E'} (hΦ : ContDiffOn ℝ ∞ Φ Ω) (φ : 𝓓(Ω, ℂ))
-    (η : E') : ∃ ψ : 𝓓(Ω, ℂ), ∀ y, ψ y = φ y * 𝐞 (-⟪Φ y, η⟫) := by
-  -- Multiply `φ` by a smooth function equal to the phase factor near `tsupport φ`.
-  obtain ⟨g, hg, -, -, -, hgφ⟩ :=
-    (contDiffOn_fourierChar_neg_inner hΦ η).exists_contDiff_eventuallyEq_on_isCompact
-      φ.hasCompactSupport Ω.isOpen φ.tsupport_subset
-  refine ⟨bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg φ, fun y ↦ ?_⟩
-  have h : bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) hg φ y = φ y * g y := by
-    simp [bilinLeftCLM_apply]
-  rw [h]
-  by_cases hy : φ y = 0
-  · simp [hy]
-  · rw [(hgφ y (subset_tsupport _ hy)).eq_of_nhds]
-
-omit [FiniteDimensional ℝ E'] in
 /-- A smooth map `Ψ` on all of `E` agreeing with `Φ` near a compact set `K ⊆ Ω`, written as an
 oscillatory phase `x ↦ (x, Ψ x)`: the Fourier coefficients of `χ (𝐞 (-⟪Φ ·, η⟫))` on the support
 of `χ` are oscillatory integrals with the phase `pairCovector m η ∘ (x ↦ (x, Ψ x))`. -/
@@ -331,7 +315,7 @@ private theorem exists_forall_one_add_pow_mul_norm_le [MeasurableSpace E] [Borel
       c₀ * ‖pairCovector m η‖ ≤ ‖pairCovector m η ∘L fderiv ℝ (fun y ↦ (y, Ψ y)) x‖ := by
     intro x hx
     have hxK : x ∈ tsupport χ := by
-      simpa [tsupport, Function.support, ofReal_eq_zero] using hx
+      exact tsupport_comp_subset ofReal_zero χ hx
     rw [hdΨ, pairCovector_comp_prod, innerSL_apply_norm, hdΦΨ x hxK]
     obtain ⟨h1, h2⟩ := hΓ' x (hχUΩ hxK).1 η hη
     refine mul_norm_pairCovector_le hc (le_max_right _ _) h1 ?_ h2 hA
@@ -445,7 +429,7 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone_forall_decay_fourierChar {T : �
   · exact (closedBall_subset_closedBall (mul_le_mul_of_nonneg_right (min_le_left _ _)
       (norm_nonneg _))).trans (hball _ (hVΓ' x' hx' η' hη').1)
 
-omit [FiniteDimensional ℝ E'] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
 /-- Let `φ = φ₀ + ∑ᵢ φᵢ` with `φ₀` supported off the support of `T`. A bound on the pairings of
 `T` with the pieces `φᵢ 𝐞 (-⟪Φ ·, η⟫)` bounds the pairing with `φ 𝐞 (-⟪Φ ·, η⟫)` by their sum. -/
 private theorem one_add_pow_mul_norm_complexPairing_le_sum {T : 𝓓'(Ω, ℂ)} {Φ : E → E'}
@@ -455,8 +439,11 @@ private theorem one_add_pow_mul_norm_complexPairing_le_sum {T : 𝓓'(Ω, ℂ)} 
       (1 + ‖η‖) ^ N * ‖T.complexPairing ψ‖ ≤ C i)
     {ψ : 𝓓(Ω, ℂ)} (hψ : ∀ y, ψ y = φ y * 𝐞 (-⟪Φ y, η⟫)) :
     (1 + ‖η‖) ^ N * ‖T.complexPairing ψ‖ ≤ ∑ i, C i := by
-  obtain ⟨ψ₀, hψ₀⟩ := exists_eq_mul_fourierChar hΦ φ₀ η
-  choose ψs hψs using fun i ↦ exists_eq_mul_fourierChar hΦ (φs i) η
+  have hmul (φ' : 𝓓(Ω, ℂ)) : ∃ ψ' : 𝓓(Ω, ℂ), ∀ y, ψ' y = φ' y * 𝐞 (-⟪Φ y, η⟫) :=
+    (exists_coe_eq_smul_of_contDiffOn (contDiffOn_fourierChar_neg_inner hΦ η) φ').imp
+      fun _ h y ↦ (congrFun h y).trans (mul_comm _ _)
+  obtain ⟨ψ₀, hψ₀⟩ := hmul φ₀
+  choose ψs hψs using fun i ↦ hmul (φs i)
   have hψsum : ψ = ψ₀ + ∑ i, ψs i := by
     ext y
     simp only [hψ, add_apply, sum_apply, hψ₀, hψs, ← Finset.sum_mul, ← add_mul, ← hsum]
@@ -554,9 +541,10 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {T : 𝓓'(Ω, ℂ)} {y η :
   obtain ⟨C, hC⟩ := hdecay ψ₀ hψ₀ N
   refine ⟨C, fun η' hη' ↦ ?_⟩
   -- The localized Fourier transform is `T` paired with `ψ₀ 𝐞 (-⟪Φ ·, η'⟫)`.
-  obtain ⟨ψ, hψ⟩ := exists_eq_mul_fourierChar hΦ ψ₀ η'
-  rw [localFourier_cutoffPushforwardCLM_eq_complexPairing T f η' hψ]
-  exact hC η' hη' _ hψ
+  obtain ⟨ψ, hψ⟩ := exists_coe_eq_smul_of_contDiffOn (contDiffOn_fourierChar_neg_inner hΦ η') ψ₀
+  have hψ' (x : E) : ψ x = ψ₀ x * 𝐞 (-⟪Φ x, η'⟫) := (congrFun hψ x).trans (mul_comm _ _)
+  rw [localFourier_cutoffPushforwardCLM_eq_complexPairing T f η' hψ']
+  exact hC η' hη' _ hψ'
 
 /-- **The wave front set of a pushforward along a smooth map** (Hörmander I, Theorem 8.2.13).
 Every covector `(y, η)` in the wave front set of the pushforward `Φ_* (χ T)` lies over a point `x`
