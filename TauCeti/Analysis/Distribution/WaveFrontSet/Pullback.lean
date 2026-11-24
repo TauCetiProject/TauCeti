@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import Mathlib.Analysis.LocallyConvex.Barrelled
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -16,7 +16,6 @@ import TauCeti.Analysis.Distribution.TestFunction.Frechet
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.Prod
-import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Mollifier
 import TauCeti.Analysis.Fourier.Prod
@@ -536,12 +535,12 @@ theorem pullbackInl_add (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E)
     (hT : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
     (hS : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ S.waveFrontSet)
-    (hTS : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ (T + S).waveFrontSet) :
-    (T + S).pullbackInl hU hTS = T.pullbackInl hU hT + S.pullbackInl hU hS := by
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ S.waveFrontSet) :
+    (T + S).pullbackInl hU (fun x hx η hη hm ↦
+      (waveFrontSet_add_subset T S hm).elim (hT x hx η hη) (hS x hx η hη)) =
+      T.pullbackInl hU hT + S.pullbackInl hU hS := by
   ext ψ
-  refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU hTS ψ) ?_
+  refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) ?_
   simpa using (tendsto_apply_tensorCLM_pullbackInl T hU hT ψ).add
     (tendsto_apply_tensorCLM_pullbackInl S hU hS ψ)
 
@@ -549,33 +548,30 @@ theorem pullbackInl_add (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E)
 theorem pullbackInl_smul (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W) (c : ℂ)
     {T : 𝓓'(W, ℂ)}
     (hT : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
-    (hcT : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ (c • T).waveFrontSet) :
-    (c • T).pullbackInl hU hcT = c • T.pullbackInl hU hT := by
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) :
+    (c • T).pullbackInl hU (fun x hx η hη hm ↦ hT x hx η hη (waveFrontSet_smul_subset c T hm)) =
+      c • T.pullbackInl hU hT := by
   ext ψ
-  refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU hcT ψ) ?_
+  refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) ?_
   simpa using (tendsto_apply_tensorCLM_pullbackInl T hU hT ψ).const_smul c
 
 /-- The pullback of the zero distribution is zero. -/
 @[simp]
-theorem pullbackInl_zero (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
-    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ (0 : 𝓓'(W, ℂ)).waveFrontSet) :
-    (0 : 𝓓'(W, ℂ)).pullbackInl hU h = 0 := by
+theorem pullbackInl_zero (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W) :
+    (0 : 𝓓'(W, ℂ)).pullbackInl hU (fun _ _ _ _ hm ↦ notMem_empty _ (waveFrontSet_zero.subset hm)) =
+      0 := by
   ext ψ
-  exact tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU h ψ) (by simp)
+  exact tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) (by simp)
 
 /-- The pullback commutes with negation of the distribution. -/
 theorem pullbackInl_neg (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     {T : 𝓓'(W, ℂ)}
     (hT : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
-    (hnT : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ (-T).waveFrontSet) :
-    (-T).pullbackInl hU hnT = -T.pullbackInl hU hT := by
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) :
+    (-T).pullbackInl hU (fun x hx η hη hm ↦ hT x hx η hη ((waveFrontSet_neg T).subset hm)) =
+      -T.pullbackInl hU hT := by
   ext ψ
-  refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU hnT ψ) ?_
+  refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) ?_
   simpa using (tendsto_apply_tensorCLM_pullbackInl T hU hT ψ).neg
 
 /-- The pullback commutes with subtraction of distributions. -/
@@ -584,12 +580,12 @@ theorem pullbackInl_sub (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E)
     (hT : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
     (hS : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ S.waveFrontSet)
-    (hTS : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ (T - S).waveFrontSet) :
-    (T - S).pullbackInl hU hTS = T.pullbackInl hU hT - S.pullbackInl hU hS := by
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ S.waveFrontSet) :
+    (T - S).pullbackInl hU (fun x hx η hη hm ↦
+      (waveFrontSet_sub_subset T S hm).elim (hT x hx η hη) (hS x hx η hη)) =
+      T.pullbackInl hU hT - S.pullbackInl hU hS := by
   ext ψ
-  refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU hTS ψ) ?_
+  refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) ?_
   simpa using (tendsto_apply_tensorCLM_pullbackInl T hU hT ψ).sub
     (tendsto_apply_tensorCLM_pullbackInl S hU hS ψ)
 

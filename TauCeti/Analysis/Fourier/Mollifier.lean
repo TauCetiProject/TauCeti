@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 
 /-!
 # Fourier transforms of mollifiers
@@ -54,22 +54,11 @@ theorem norm_fourier_sub_integral_le {f : D → F} {r : ℝ} (hf : support f ⊆
   by_cases hy : f y = 0
   · simp [hy]
   have hyr : ‖y‖ ≤ r := by simpa using hf hy
-  rw [Circle.smul_def, show ((𝐞 (-⟪y, b⟫) : Circle) : ℂ) • f y - f y =
-      (((𝐞 (-⟪y, b⟫) : Circle) : ℂ) - 1) • f y by rw [sub_smul, one_smul], norm_smul]
-  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg (f y))
-  -- `𝐞 (-⟪y, b⟫) = exp (i (-2π ⟪y, b⟫))`, at distance at most `2π |⟪y, b⟫|` from one.
-  have hexp : ((𝐞 (-⟪y, b⟫) : Circle) : ℂ) = Complex.exp (I * ((-(2 * π * ⟪y, b⟫) : ℝ) : ℂ)) := by
-    rw [Real.fourierChar_apply]
-    push_cast
-    ring_nf
-  rw [hexp]
-  refine Real.norm_exp_I_mul_ofReal_sub_one_le.trans ?_
-  rw [Real.norm_eq_abs, abs_neg, abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 2 * π)]
-  calc 2 * π * |⟪y, b⟫| ≤ 2 * π * (‖y‖ * ‖b‖) := by
-        gcongr
-        exact abs_real_inner_le_norm y b
-    _ ≤ 2 * π * (r * ‖b‖) := by gcongr
-    _ = 2 * π * ‖b‖ * r := by ring
+  -- `‖𝐞 ⟪-b, y⟫ • f y - 𝐞 ⟪-b, 0⟫ • f y‖ ≤ 2π ‖-b‖ ‖y - 0‖ ‖f y‖`.
+  have h := norm_fourierChar_smul_sub_fourierChar_smul_le (-b) y 0 (f y)
+  rw [inner_zero_right, AddChar.map_zero_eq_one, one_smul, inner_neg_left, real_inner_comm y b,
+    norm_neg, sub_zero] at h
+  exact h.trans (by gcongr)
 
 /-- If the supports of `f i` shrink to `0`, their `L¹` norms stay bounded and their integrals
 tend to `v`, then their Fourier transforms tend to `v` at every frequency. -/
