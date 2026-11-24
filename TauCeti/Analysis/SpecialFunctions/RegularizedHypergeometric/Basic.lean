@@ -18,6 +18,7 @@ import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.RingTheory.Polynomial.Pochhammer
+import TauCeti.Topology.Algebra.InfiniteSum.Sigma
 
 /-!
 # Regularized hypergeometric functions `₀F₁` and `₂F₁`
@@ -471,8 +472,7 @@ theorem hasSum_norm_choose_mul_coeff_regularizedGaussHGFunSeries (a b c : ℂ) {
       ⟨fun n => Summable.of_finite, hy.congr fun n => ?_⟩
     rw [tsum_fintype]
     exact ((sum_coe_sort (antidiagonal n) g).trans (hfib n)).symm
-  have hgrp := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hgs.hasSum).sigma
-    fun n => Finset.hasSum (antidiagonal n) g
+  have hgrp := hgs.hasSum.sum_antidiagonal
   rw [show (fun n => ∑ q ∈ antidiagonal n, g q) = _ from funext hfib] at hgrp
   have hg := hgs.hasSum
   rwa [← hgrp.tsum_eq] at hg
@@ -489,8 +489,7 @@ theorem hasSum_choose_mul_coeff_regularizedGaussHGFunSeries (a b c : ℂ) {u z :
     (regularizedGaussHGFunSeries a b c).coeff (q.1 + q.2) * (u ^ q.1 * z ^ q.2)
   have hs : Summable f :=
     (hasSum_norm_choose_mul_coeff_regularizedGaussHGFunSeries a b c h).summable.of_norm
-  have hgrp := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hs.hasSum).sigma
-    fun n => Finset.hasSum (antidiagonal n) f
+  have hgrp := hs.hasSum.sum_antidiagonal
   have hfib (n : ℕ) : ∑ q ∈ antidiagonal n, f q =
       (regularizedGaussHGFunSeries a b c).coeff n * (u + z) ^ n := by
     rw [(Commute.all _ _).add_pow', mul_sum]

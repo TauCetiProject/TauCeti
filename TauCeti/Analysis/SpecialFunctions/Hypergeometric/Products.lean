@@ -12,6 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
+import TauCeti.Topology.Algebra.InfiniteSum.Sigma
 
 /-!
 # Product identities for Gauss hypergeometric series
@@ -752,8 +753,7 @@ private theorem hasSum_bcCoeff_of_norm_add_norm_mul_lt_one (a b c : ℂ) {z ζ :
       ring
     · simp only [T]
       ring
-  have h₂ := (HasAntidiagonal.sigmaAntidiagonalEquivProd.hasSum_iff.2 hT).sigma
-    fun n => Finset.hasSum (antidiagonal n) T
+  have h₂ := HasSum.sum_antidiagonal hT
   rw [show (fun n => ∑ q ∈ antidiagonal n, T q) = _ from
     funext (sum_antidiagonal_bcCoeff a b c hz ζ)] at h₂
   have h₃ := (hasSum_regularizedGaussHGFun a b c hζ).mul_right (regularizedGaussHGFun a b c z)
