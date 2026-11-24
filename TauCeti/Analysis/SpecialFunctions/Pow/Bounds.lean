@@ -77,6 +77,9 @@ For `0 < b` and `0 ≤ ε ≤ 1`, `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε`. With `b
 length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which a sharp cutoff at
 `X` and its smoothing at scale `ε` differ.
 
+For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`. This bounds
+all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the sign of `p`.
+
 ## Main results
 
 * `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
@@ -102,6 +105,8 @@ length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which
 * `Real.add_rpow_le_max_two_rpow_mul`: `(x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β` for `0 ≤ t ≤ x`
   and every real `β`.
 * `Real.rpow_sub_rpow_neg_le`: `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε` for `0 < b` and `0 ≤ ε ≤ 1`.
+* `Real.natCast_rpow_le_max_one_rpow`: `n ^ p ≤ max 1 (x ^ p)` for a natural number `n ≤ x` and
+  every real `p`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -362,6 +367,17 @@ theorem rpow_sub_rpow_neg_le {b ε : ℝ} (hb : 0 < b) (hε0 : 0 ≤ ε) (hε1 :
     · nlinarith [mul_le_mul_of_nonneg_left h1 h, sq_nonneg ((b - 1) * ε)]
     · nlinarith
   linarith
+
+/-- For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`, whatever
+the sign of `p`. -/
+theorem natCast_rpow_le_max_one_rpow {n : ℕ} {x : ℝ} (hnx : (n : ℝ) ≤ x) (p : ℝ) :
+    (n : ℝ) ^ p ≤ max 1 (x ^ p) := by
+  rcases le_total p 0 with h | h
+  · refine le_trans ?_ (le_max_left _ _)
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simpa using zero_rpow_le_one p
+    · exact rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) h
+  · exact (rpow_le_rpow (by positivity) hnx h).trans (le_max_right _ _)
 
 end Real
 
