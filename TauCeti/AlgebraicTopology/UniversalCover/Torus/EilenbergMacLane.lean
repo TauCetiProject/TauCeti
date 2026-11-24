@@ -21,6 +21,10 @@ calculation in `TauCeti.AlgebraicTopology.UniversalCover.Circle.EilenbergMacLane
 * `AddCircle.isAspherical_pi`: an indexed product of real circles is aspherical.
 * `AddCircle.isEilenbergMacLaneSpaceOne_pi`: an indexed product of nondegenerate real circles is a
   `K(Π i, ℤ, 1)`.
+* `Circle.isAspherical_pi`: an indexed product of copies of the unit circle of `ℂ` is aspherical.
+  Every topological group isomorphic to a torus `(S¹)ʳ` is therefore aspherical, through
+  `TauCeti.IsAspherical.of_homotopyEquiv`; so is the infinite product `ℕ → S¹`, which is not a
+  torus.
 -/
 
 public section
@@ -47,5 +51,14 @@ theorem isEilenbergMacLaneSpaceOne_pi (p : ι → ℝ) (hp : ∀ i, p i ≠ 0) (
     isEilenbergMacLaneSpaceOne (p i) (hp i) (x i)
 
 end AddCircle
+
+namespace Circle
+
+/-- Every indexed product of copies of the unit circle of `ℂ` is aspherical. No finiteness
+assumption on the index type is needed. -/
+theorem isAspherical_pi {ι : Type*} (x : ι → Circle) : TauCeti.IsAspherical (ι → Circle) x :=
+  TauCeti.IsAspherical.pi fun i ↦ isAspherical (x i)
+
+end Circle
 
 end

@@ -60,6 +60,8 @@ natural number coefficients.
 ## Main declarations
 
 * `TauCeti.bettiNumber`: the `j`-th Betti number of a space with coefficients in `k`.
+* `TauCeti.finrank_singularHomology_uLift_eq_bettiNumber`: the Betti numbers read with
+  coefficients in `ULift k`.
 * `ContinuousMap.HomotopyEquiv.bettiNumber_eq`: Betti numbers are homotopy invariant.
 * `TauCeti.bettiNumber_zero`: the zeroth Betti number is the number of path components.
 * `TauCeti.bettiNumber_eq_zero_of_contractibleSpace`: the positive-degree Betti numbers of a
@@ -143,6 +145,15 @@ theorem bettiNumber_of_contractibleSpace [StrongRankCondition k] [ContractibleSp
   have : ContractibleSpace (TopCat.of X) := ‹ContractibleSpace X›
   rw [bettiNumber_def, ModuleCat.finrank_singularHomology_of_contractibleSpace]
   simp
+
+/-- The Betti numbers may be read with coefficients in `ULift k`, as for singular homology computed
+as twisted homology with constant coefficients. -/
+theorem finrank_singularHomology_uLift_eq_bettiNumber (j : ℕ) :
+    finrank k (((singularHomologyFunctor (ModuleCat.{u} k) j).obj
+        (ModuleCat.of k (ULift.{u} k))).obj (TopCat.of X)) = bettiNumber k X j := by
+  rw [bettiNumber_def]
+  exact ((((singularHomologyFunctor (ModuleCat.{u} k) j).mapIso
+    ULift.moduleEquiv.toModuleIso).app (TopCat.of X)).toLinearEquiv).finrank_eq
 
 end Ring
 
