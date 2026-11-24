@@ -53,7 +53,8 @@ space is continuous exactly when its restriction to every fixed-support space is
 * `TauCeti.LieTestFunction.tsupport_leftDerivWord_subset`: left differentiation does not enlarge
   supports.
 * `TauCeti.LieTestFunction.fixedSupportSeminorm_le_of_tsupport_subset`: on test functions
-  supported in `C`, the fixed-support seminorm is the supremum over `C`.
+  supported in `C`, the fixed-support seminorm is bounded by any bound on `C`; with
+  `TauCeti.LieTestFunction.norm_leftDerivWord_le`, it is the supremum over `C`.
 * `TauCeti.LieTestFunction.FixedSupport.continuous_inclusion`: the inclusions of the
   fixed-support spaces are continuous.
 * `TauCeti.LieTestFunction.continuous_iff_continuous_comp`: the continuity criterion for linear
@@ -127,6 +128,7 @@ def inclusion : FixedSupport I G C →ₗ[ℂ] LieTestFunction I G :=
   (supportedIn I G C).subtype
 
 theorem tsupport_inclusion_subset (a : FixedSupport I G C) : tsupport (inclusion I G C a) ⊆ C :=
+  -- `FixedSupport I G C` is by definition `supportedIn I G C`, so `a` is a subtype element.
   (show supportedIn I G C from a).property
 
 /-- The element of the fixed-support space given by a test function supported in `C`. -/
@@ -193,6 +195,7 @@ theorem leftDeriv_apply (X : GroupLieAlgebra I G) (a : LieTestFunction I G) (g :
     leftDeriv X a g = mvfderiv I a g (mulRightInvariantVectorField X g) :=
   (rfl)
 
+/-- Left differentiation does not enlarge the topological support. -/
 theorem tsupport_leftDeriv_subset (X : GroupLieAlgebra I G) (a : LieTestFunction I G) :
     tsupport (leftDeriv X a) ⊆ tsupport a :=
   tsupport_mvfderiv_apply_subset a _
@@ -212,6 +215,7 @@ theorem leftDerivWord_cons (X : GroupLieAlgebra I G) (w : List (GroupLieAlgebra 
     leftDerivWord (X :: w) = leftDeriv X ∘ₗ leftDerivWord w :=
   (rfl)
 
+/-- Iterated left differentiation along a word does not enlarge the topological support. -/
 theorem tsupport_leftDerivWord_subset (w : List (GroupLieAlgebra I G)) (a : LieTestFunction I G) :
     tsupport (leftDerivWord w a) ⊆ tsupport a := by
   induction w with
@@ -221,8 +225,9 @@ theorem tsupport_leftDerivWord_subset (w : List (GroupLieAlgebra I G)) (a : LieT
 /-! ### The fixed-support seminorms -/
 
 /-- The **fixed-support seminorm** `a ↦ sup_g |L_{X_w} a (g)|` of a word `w` in the Lie algebra.
-On test functions supported in `C` it is the supremum over `C`
-(`TauCeti.LieTestFunction.fixedSupportSeminorm_le_of_tsupport_subset`). -/
+On test functions supported in `C` it is bounded by any bound of `|L_{X_w} a|` on `C`
+(`TauCeti.LieTestFunction.fixedSupportSeminorm_le_of_tsupport_subset`); with
+`TauCeti.LieTestFunction.norm_leftDerivWord_le`, this makes it the supremum over `C`. -/
 def fixedSupportSeminorm (w : List (GroupLieAlgebra I G)) : Seminorm ℂ (LieTestFunction I G) :=
   (normSeminorm ℂ (G →ᵇ ℂ)).comp (toBoundedContinuousFunction I G ∘ₗ leftDerivWord w)
 
@@ -240,8 +245,9 @@ theorem fixedSupportSeminorm_le_iff (w : List (GroupLieAlgebra I G)) (a : LieTes
   rw [fixedSupportSeminorm_apply]
   exact BoundedContinuousFunction.norm_le hc
 
-/-- On a test function supported in `C`, the fixed-support seminorm of `w` is the supremum of
-`|L_{X_w} a|` over `C`. -/
+/-- On a test function supported in `C`, the fixed-support seminorm of `w` is bounded by any
+bound of `|L_{X_w} a|` on `C`. With `TauCeti.LieTestFunction.norm_leftDerivWord_le`, this makes it
+the supremum of `|L_{X_w} a|` over `C`. -/
 theorem fixedSupportSeminorm_le_of_tsupport_subset (w : List (GroupLieAlgebra I G))
     {a : LieTestFunction I G} {C : Set G} (ha : tsupport a ⊆ C) {c : ℝ} (hc : 0 ≤ c)
     (h : ∀ g ∈ C, ‖leftDerivWord w a g‖ ≤ c) : fixedSupportSeminorm w a ≤ c := by
