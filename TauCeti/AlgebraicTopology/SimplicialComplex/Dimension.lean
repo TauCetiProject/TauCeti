@@ -347,3 +347,35 @@ theorem dimension_top_eq_top_of_infinite [Infinite ι] :
   exact PreAbstractSimplicialComplex.dimension_top_eq_top_of_infinite
 
 end AbstractSimplicialComplex
+
+namespace TauCeti.PreAbstractSimplicialComplex
+
+/-- A nonempty family of generators with `n + 1` vertices generates an `n`-dimensional
+precomplex. -/
+theorem dimension_ofGenerators {ι : Type*} {T : Set (Finset ι)} {n : ℕ}
+    (hcard : ∀ t ∈ T, t.card = n + 1) (hne : T.Nonempty) :
+    _root_.PreAbstractSimplicialComplex.dimension (ofGenerators T) = n := by
+  refine le_antisymm (_root_.PreAbstractSimplicialComplex.dimension_le_iff.mpr fun σ hσ => ?_) ?_
+  · obtain ⟨-, t, ht, hσt⟩ := mem_ofGenerators.mp hσ
+    have hle := Finset.card_le_card hσt
+    rw [hcard t ht] at hle
+    exact_mod_cast (by omega : σ.card - 1 ≤ n)
+  · obtain ⟨t, ht⟩ := hne
+    have htne : t.Nonempty := Finset.card_pos.mp (by rw [hcard t ht]; omega)
+    simpa [hcard t ht] using
+      _root_.PreAbstractSimplicialComplex.le_dimension (mem_ofGenerators_of_mem ht htne)
+
+end TauCeti.PreAbstractSimplicialComplex
+
+namespace TauCeti.AbstractSimplicialComplex
+
+/-- A nonempty family of generators with `n + 1` vertices generates an `n`-dimensional complex. -/
+theorem dimension_ofGenerators {ι : Type*} {T : Set (Finset ι)}
+    {hcover : ∀ v, ∃ t ∈ T, v ∈ t} {n : ℕ}
+    (hcard : ∀ t ∈ T, t.card = n + 1) (hne : T.Nonempty) :
+    _root_.AbstractSimplicialComplex.dimension (ofGenerators T hcover) = n := by
+  rw [← _root_.AbstractSimplicialComplex.dimension_toPreAbstractSimplicialComplex,
+    toPreAbstractSimplicialComplex_ofGenerators]
+  exact PreAbstractSimplicialComplex.dimension_ofGenerators hcard hne
+
+end TauCeti.AbstractSimplicialComplex

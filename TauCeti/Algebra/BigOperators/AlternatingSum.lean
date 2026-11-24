@@ -117,12 +117,12 @@ those with `j < i`. With `F i j = φ (d_j (d_i x))` this is `d ∘ d = 0` for an
 faces `dᵢ`; the argument is that of Mathlib's
 `AlgebraicTopology.AlternatingFaceMapComplex.d_squared`. -/
 theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGroup G] {n : ℕ}
-    (F : Fin (n + 3) → Fin (n + 2) → G)
-    (hF : ∀ i j : Fin (n + 2), i ≤ j → F j.succ i = F i.castSucc j) :
-    ∑ i : Fin (n + 3), (-1 : ℤ) ^ (i : ℕ) • ∑ j : Fin (n + 2), (-1 : ℤ) ^ (j : ℕ) • F i j = 0 := by
+    (F : Fin (n + 2) → Fin (n + 1) → G)
+    (hF : ∀ i j : Fin (n + 1), i ≤ j → F j.succ i = F i.castSucc j) :
+    ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) • F i j = 0 := by
   simp only [Finset.smul_sum, smul_smul, ← pow_add, ← Finset.sum_product']
   -- split the index set into the pairs with `i ≤ j` and their complement
-  let S : Finset (Fin (n + 3) × Fin (n + 2)) := {ij | (ij.1 : ℕ) ≤ ij.2}
+  let S : Finset (Fin (n + 2) × Fin (n + 1)) := {ij | (ij.1 : ℕ) ≤ ij.2}
   rw [Finset.univ_product_univ, ← Finset.sum_add_sum_compl S, ← eq_neg_iff_add_eq_zero,
     ← Finset.sum_neg_distrib]
   -- the bijection `(i, j) ↦ (j + 1, i)` from `S` to its complement matches opposite terms

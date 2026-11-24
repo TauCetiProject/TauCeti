@@ -180,8 +180,8 @@ private theorem upperBound_le_of_starfish_finite {C R F K : Type*} [CommSemiring
   have heq : upperBound C (algebraMap R F ∘ x)
       (fun k ↦ algebraMap R F ∘ Function.update x k (x' k)) =
       ⨅ o : Option K, laurentSubalgebra C (algebraMap R F ∘ family o) := by
-    rw [upperBound_def, iInf_option]
-    rfl
+    rw [upperBound_eq_iInf_option]
+    exact iInf_congr fun o ↦ by cases o <;> rfl
   rw [heq]
   refine iInf_laurentSubalgebra_le_range_of_satisfiesSerreS_two hS₂ family fun p hp h1 ↦ ?_
   have hstar := (forall_height_eq_one_mem_starfishOpen_iff x x').mpr hcover ⟨p, hp⟩ h1
@@ -228,7 +228,7 @@ theorem upperBound_le_of_starfish {C R F K : Type*} [CommSemiring C] [CommRing R
     · have hfun : (algebraMap R F ∘ Function.update xM k (x'M k)) ∘ Set.inclusion hSM =
           fun j : S₀ ↦ algebraMap R F (x j) := by
         ext j
-        have hjM : Set.inclusion hSM j ≠ k := fun h ↦ hk (congrArg Subtype.val h ▸ j.2)
+        have hjM : Set.inclusion hSM j ≠ k := fun h ↦ hk (congrArg Subtype.val h ▸ j.property)
         simp [xM, hjM]
       exact laurentSubalgebra_comp_le C (algebraMap R F ∘ Function.update xM k (x'M k))
         (Set.inclusion hSM) (hfun.symm ▸ hS₀)

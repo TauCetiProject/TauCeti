@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Fourier.L2Multiplier
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 
 /-!
 # Second derivatives as a Fourier multiplier of the Laplacian
@@ -27,6 +30,12 @@ and for every Schwartz function `u`
 
 In particular `‖∂_v ∂_w u‖_{L²} ≤ ‖v‖ ‖w‖ ‖Δ u‖_{L²}`.
 
+Away from the origin the symbol is smooth (`TauCeti.contDiffOn_hessianSymbol`) and homogeneous of
+degree `0` (`TauCeti.hessianSymbol_smul`), so it satisfies Mihlin's condition. The bound holds
+uniformly in `v`, `w` and in a linear change of variables `e`
+(`TauCeti.exists_norm_iteratedFDeriv_hessianSymbol_comp_le`); the symbols
+`⟪ξ, v⟫ ⟪ξ, w⟫ / ξᵀ A ξ` of constant-coefficient elliptic operators are of this form.
+
 This realizes `D² Δ⁻¹` as an `L²`-bounded operator, which is the starting point of the
 Calderón–Zygmund theory: combined with the standard bounds on its kernel, the Hessian of the
 Newtonian kernel, that theory upgrades the `L²` bound to `‖∂_v ∂_w u‖_{Lᵖ} ≤ C ‖Δ u‖_{Lᵖ}` for
@@ -36,6 +45,8 @@ Newtonian kernel, that theory upgrades the `L²` bound to `‖∂_v ∂_w u‖_{
 
 * `TauCeti.hessianSymbol`: the symbol `ξ ↦ ⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` of `∂_v ∂_w Δ⁻¹`, with the bound
   `TauCeti.norm_hessianSymbol_le`.
+* `TauCeti.exists_norm_iteratedFDeriv_hessianSymbol_comp_le`: Mihlin's condition for
+  `m_{v,w} ∘ e`, uniformly in `v`, `w` and the linear automorphism `e`.
 * `TauCeti.hessianSymbolLp`: the same symbol as an element of `L^∞`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply_eq_hessianSymbol_smul`: pointwise on the
   Fourier side, `𝓕 (∂_v ∂_w u) = m_{v,w} • 𝓕 (Δ u)`.
@@ -55,7 +66,8 @@ public section
 
 noncomputable section
 
-open scoped ENNReal FourierTransform SchwartzMap RealInnerProductSpace Real Laplacian LineDeriv
+open scoped ENNReal NNReal FourierTransform SchwartzMap RealInnerProductSpace Real Laplacian
+  LineDeriv ContDiff
 open FourierTransform MeasureTheory
 
 namespace TauCeti
@@ -96,6 +108,98 @@ theorem sum_hessianSymbol_self {ι : Type*} [Fintype ι] (b : OrthonormalBasis �
   rw [← Complex.ofReal_sum, ← Finset.sum_div, b.sum_sq_inner_left,
     div_self (pow_ne_zero 2 (norm_ne_zero_iff.2 hξ)), Complex.ofReal_one]
 
+/-- The symbol of `∂_v ∂_w Δ⁻¹` is smooth away from the origin. -/
+theorem contDiffOn_hessianSymbol (v w : E) : ContDiffOn ℝ ∞ (hessianSymbol v w) {0}ᶜ := by
+  have h : ContDiffOn ℝ ∞ (fun ξ : E => ⟪ξ, v⟫ * ⟪ξ, w⟫ / ‖ξ‖ ^ 2) {0}ᶜ :=
+    ((contDiff_id.inner ℝ contDiff_const).mul (contDiff_id.inner ℝ contDiff_const)).contDiffOn.div
+      (contDiff_norm_sq ℝ).contDiffOn fun ξ hξ => by
+        simpa using Set.mem_compl_singleton_iff.1 hξ
+  exact Complex.ofRealCLM.contDiff.comp_contDiffOn h
+
+/-- The symbol of `∂_v ∂_w Δ⁻¹` is homogeneous of degree `0`. -/
+theorem hessianSymbol_smul (v w : E) {t : ℝ} (ht : t ≠ 0) (ξ : E) :
+    hessianSymbol v w (t • ξ) = hessianSymbol v w ξ := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · rw [smul_zero]
+  have hξ' : ‖ξ‖ ≠ 0 := norm_ne_zero_iff.2 hξ
+  simp only [hessianSymbol, real_inner_smul_left, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  congr 1
+  field_simp
+
+/-- The orthogonal projection `a ↦ (⟪η, a⟫ / ‖η‖²) η` onto the line through `η`, and `0` for
+`η = 0`. The Hessian symbols are its matrix coefficients, `m_{v,w}(η) = ⟪w, P_η v⟫`, so it
+carries all of them at once. -/
+private def lineProj (η : E) : E →L[ℝ] E :=
+  ((‖η‖ ^ 2)⁻¹ • innerSL ℝ η).smulRight η
+
+private theorem hessianSymbol_eq_inner_lineProj (v w η : E) :
+    hessianSymbol v w η = ((⟪w, lineProj η v⟫ : ℝ) : ℂ) := by
+  simp [hessianSymbol, lineProj, inner_smul_right, real_inner_comm w η, div_eq_inv_mul, mul_assoc]
+
+private theorem contDiffOn_lineProj : ContDiffOn ℝ ∞ (lineProj (E := E)) {0}ᶜ := by
+  have h₂ : ContDiffOn ℝ ∞ (fun η : E => (‖η‖ ^ 2)⁻¹) {0}ᶜ :=
+    (contDiff_norm_sq ℝ).contDiffOn.inv fun η hη => by
+      simpa using Set.mem_compl_singleton_iff.1 hη
+  exact (h₂.smul (innerSL ℝ (E := E)).contDiff.contDiffOn).smulRight contDiffOn_id
+
+private theorem lineProj_smul {t : ℝ} (ht : 0 < t) (η : E) :
+    lineProj (t • η) = lineProj η := by
+  rcases eq_or_ne η 0 with rfl | hη
+  · rw [smul_zero]
+  ext a
+  have hη' : ‖η‖ ≠ 0 := norm_ne_zero_iff.2 hη
+  simp only [lineProj, ContinuousLinearMap.smulRight_apply, smul_apply,
+    innerSL_apply_apply, inner_smul_left, norm_smul, Real.norm_of_nonneg ht.le,
+    RCLike.conj_to_real, smul_smul, smul_eq_mul]
+  congr 1
+  field_simp
+
+/-- **Mihlin's condition for the symbols of `∂_v ∂_w Δ⁻¹`, uniformly.** For every order `N` there
+is a constant `A₀` such that, for every linear automorphism `e` with `c ‖ξ‖ ≤ ‖e ξ‖`, `c > 0`, the
+symbol `ξ ↦ ⟪e ξ, v⟫ ⟪e ξ, w⟫ / ‖e ξ‖²` satisfies Mihlin's condition of order `N` with constant
+`A₀ ‖v‖ ‖w‖ (‖e‖ / c) ^ k` in order `k`. The constant `A₀` depends neither on `e` nor on `v, w`. -/
+theorem exists_norm_iteratedFDeriv_hessianSymbol_comp_le [FiniteDimensional ℝ E] (N : ℕ) :
+    ∃ A₀ : ℝ≥0, ∀ (e : E ≃L[ℝ] E) (v w : E) {c : ℝ}, 0 < c → (∀ ξ, c * ‖ξ‖ ≤ ‖e ξ‖) →
+      ∀ k ≤ N, ∀ ξ : E, ξ ≠ 0 →
+        ‖iteratedFDeriv ℝ k (hessianSymbol v w ∘ e) ξ‖ ≤
+          A₀ * ‖v‖ * ‖w‖ * (‖(e : E →L[ℝ] E)‖ / c) ^ k / ‖ξ‖ ^ k := by
+  obtain ⟨A₀, hA₀⟩ := exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq (N := N)
+    ((contDiffOn_lineProj (E := E)).of_le (by exact_mod_cast le_top))
+    fun t ht ξ => lineProj_smul ht ξ
+  refine ⟨A₀, fun e v w c hc he k hk ξ hξ => ?_⟩
+  -- Evaluation `β ↦ ⟪w, β v⟫` followed by the inclusion `ℝ → ℂ`, of norm at most `‖v‖ ‖w‖`.
+  set L : (E →L[ℝ] E) →L[ℝ] ℂ := Complex.ofRealCLM.comp
+    ((innerSL ℝ w).comp (ContinuousLinearMap.apply ℝ E v))
+  have hL : ‖L‖ ≤ ‖v‖ * ‖w‖ := by
+    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun β => ?_
+    simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
+      Complex.ofRealCLM_apply, Complex.norm_real, innerSL_apply_apply, Real.norm_eq_abs]
+    calc |⟪w, β v⟫| ≤ ‖w‖ * ‖β v‖ := abs_real_inner_le_norm w (β v)
+      _ ≤ ‖w‖ * (‖β‖ * ‖v‖) := by gcongr; exact β.le_opNorm v
+      _ = ‖v‖ * ‖w‖ * ‖β‖ := by ring
+  have heξ : e ξ ≠ 0 := (map_ne_zero_iff e e.injective).2 hξ
+  have hg : ContDiffAt ℝ ∞ (lineProj ∘ e) ξ :=
+    ((contDiffOn_lineProj (E := E)).contDiffAt
+      (isOpen_compl_singleton.mem_nhds (Set.mem_compl_singleton_iff.2 heξ))).comp ξ
+        e.contDiff.contDiffAt
+  have hcomp : hessianSymbol v w ∘ e = L ∘ (lineProj ∘ e) := by
+    ext ξ
+    simp [L, hessianSymbol_eq_inner_lineProj]
+  rw [hcomp]
+  calc ‖iteratedFDeriv ℝ k (L ∘ (lineProj ∘ e)) ξ‖
+      ≤ ‖L‖ * ‖iteratedFDeriv ℝ k (lineProj ∘ e) ξ‖ :=
+        L.norm_iteratedFDeriv_comp_left hg (by exact_mod_cast le_top)
+    _ ≤ (‖v‖ * ‖w‖) * (‖iteratedFDeriv ℝ k lineProj (e ξ)‖ *
+          ‖(e : E →L[ℝ] E)‖ ^ k) := by
+        gcongr
+        exact (e.norm_iteratedFDeriv_comp_right_le lineProj ξ k).trans_eq (mul_comm _ _)
+    _ ≤ (‖v‖ * ‖w‖) * (A₀ / (c * ‖ξ‖) ^ k * ‖(e : E →L[ℝ] E)‖ ^ k) := by
+        gcongr
+        exact (hA₀ k hk (e ξ) heξ).trans (by gcongr; exact he ξ)
+    _ = A₀ * ‖v‖ * ‖w‖ * (‖(e : E →L[ℝ] E)‖ / c) ^ k / ‖ξ‖ ^ k := by
+        rw [div_pow, mul_pow]
+        field_simp
+
 variable [MeasurableSpace E]
 
 @[fun_prop]
@@ -133,8 +237,7 @@ theorem star_hessianSymbolLp (v w : E) : star (hessianSymbolLp v w) = hessianSym
 
 /-- The `L^∞` norm of the symbol of `∂_v ∂_w Δ⁻¹` is at most `‖v‖ ‖w‖`. -/
 theorem norm_hessianSymbolLp_le (v w : E) : ‖hessianSymbolLp v w‖ ≤ ‖v‖ * ‖w‖ := by
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-  refine ENNReal.toReal_le_of_le_ofReal (by positivity) (eLpNormEssSup_le_of_ae_bound ?_)
+  refine Lp.norm_le_of_ae_bound_top (by positivity) ?_
   filter_upwards [coeFn_hessianSymbolLp v w] with ξ hξ
   rw [hξ]
   exact norm_hessianSymbol_le v w ξ

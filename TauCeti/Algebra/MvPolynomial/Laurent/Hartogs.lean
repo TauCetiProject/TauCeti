@@ -22,7 +22,8 @@ Combining this inclusion with algebraic Hartogs for principal localizations
 `FractionRing R` into `F` along `IsFractionRing.liftAlgHom` shows that for any family of finite
 coordinate tuples `x : ∀ t, I t → R`, the intersection `⋂_t C[x_{t,i}^{±1}]` lies in the image of
 `R` in `F` whenever `depth R_p ≥ 2` at every prime containing each product `∏ i, x t i`, and in
-particular under Serre's condition `(S_2)` when no height-one prime contains every product.
+particular for a nonempty family under Serre's condition `(S_2)` when no height-one prime contains
+every product.
 
 ## Main results
 
@@ -31,8 +32,8 @@ particular under Serre's condition `(S_2)` when no height-one prime contains eve
 * `TauCeti.iInf_laurentSubalgebra_le_range_of_two_le_depth`: intersection of a family of
   finite-coordinate Laurent subalgebras lies in the image of `R` when `depth R_p ≥ 2` on the common
   vanishing locus of the coordinate products.
-* `TauCeti.iInf_laurentSubalgebra_le_range_of_satisfiesSerreS_two`: the `(S_2)` case when the
-  basic opens `D(∏ i, x t i)` cover all height-one primes of `R`.
+* `TauCeti.iInf_laurentSubalgebra_le_range_of_satisfiesSerreS_two`: the `(S_2)` case for a nonempty
+  chart family when the basic opens `D(∏ i, x t i)` cover all height-one primes of `R`.
 
 ## References
 
@@ -99,24 +100,17 @@ private theorem iInf_laurentSubalgebra_le_range_of_two_le_depth_ne_zero {C R F T
   let φ : K →ₐ[C] F := φR.restrictScalars C
   have hcomp (t : T) : φ ∘ (algebraMap R K ∘ x t) = algebraMap R F ∘ x t :=
     funext fun i ↦ φR.commutes (x t i)
-  obtain ⟨t₀⟩ := ‹Nonempty T›
-  intro y hy
-  rw [Algebra.mem_iInf] at hy
-  have hy₀ : y ∈ (laurentSubalgebra C (algebraMap R K ∘ x t₀)).map φ := by
-    rw [map_laurentSubalgebra, hcomp]
-    exact hy t₀
-  obtain ⟨z, -, rfl⟩ := hy₀
-  have hz : z ∈ ⨅ t, laurentSubalgebra C (algebraMap R K ∘ x t) := by
-    refine Algebra.mem_iInf.mpr fun t ↦ ?_
-    have hzt := hy t
-    rw [← hcomp t, ← map_laurentSubalgebra] at hzt
-    obtain ⟨z', hz', hzz'⟩ := hzt
-    exact φ.toRingHom.injective hzz' ▸ hz'
-  obtain ⟨r, hr⟩ := (IsScalarTower.toAlgHom C R K).mem_range.mp
-    (iInf_laurentSubalgebra_le_range_of_two_le_depth_isFractionRing x hx hdepth hz)
-  refine (IsScalarTower.toAlgHom C R F).mem_range.mpr ⟨r, ?_⟩
-  rw [IsScalarTower.toAlgHom_apply, ← φR.commutes r, ← IsScalarTower.toAlgHom_apply C R K r, hr]
-  rfl
+  have hiInf : (⨅ t, laurentSubalgebra C (algebraMap R F ∘ x t)) =
+      (⨅ t, laurentSubalgebra C (algebraMap R K ∘ x t)).map φ := by
+    rw [Algebra.map_iInf φ φ.toRingHom.injective]
+    exact iInf_congr fun t ↦ by rw [map_laurentSubalgebra, hcomp]
+  rw [hiInf]
+  refine (Subalgebra.map_mono
+    (iInf_laurentSubalgebra_le_range_of_two_le_depth_isFractionRing x hx hdepth)).trans ?_
+  rw [← AlgHom.range_comp]
+  refine le_of_eq (congrArg AlgHom.range ?_)
+  ext r
+  exact φR.commutes r
 
 /-- **Algebraic Hartogs for Laurent chart families.** Let `R` be a Noetherian ring embedding
 faithfully into a field `F` over `C`, and let `x : ∀ t, I t → R` be a family of finite coordinate
@@ -132,7 +126,7 @@ theorem iInf_laurentSubalgebra_le_range_of_two_le_depth {C R F T : Type*} [CommS
       (IsScalarTower.toAlgHom C R F).range := by
   have : IsDomain R := (FaithfulSMul.algebraMap_injective R F).isDomain
   let T' := {t : T // ∀ i, x t i ≠ 0}
-  have hprod_mem (p : Ideal R) (hall : ∀ t : T', ∏ i, x t.1 i ∈ p) (t : T) :
+  have hprod_mem (p : Ideal R) (hall : ∀ t : T', ∏ i, x t.val i ∈ p) (t : T) :
       ∏ i, x t i ∈ p := by
     by_cases ht : ∀ i, x t i ≠ 0
     · exact hall ⟨t, ht⟩
@@ -153,9 +147,9 @@ theorem iInf_laurentSubalgebra_le_range_of_two_le_depth {C R F T : Type*} [CommS
           (Localization.AtPrime (⊥ : Ideal R))) = 0 :=
       by_contra fun h ↦ IsLocalRing.maximalIdeal_ne_bot_of_depth_ne_zero h hmax
     exact absurd (h0 ▸ h20) (by decide)
-  exact (le_iInf fun t : T' ↦ iInf_le _ t.1).trans
-    (iInf_laurentSubalgebra_le_range_of_two_le_depth_ne_zero (fun t : T' ↦ x t.1)
-      (fun t ↦ t.2) fun p _ hall ↦ hdepth p (hprod_mem p hall))
+  exact (le_iInf fun t : T' ↦ iInf_le _ t.val).trans
+    (iInf_laurentSubalgebra_le_range_of_two_le_depth_ne_zero (fun t : T' ↦ x t.val)
+      (fun t ↦ t.property) fun p _ hall ↦ hdepth p (hprod_mem p hall))
 
 /-- **Laurent chart intersection under `(S_2)`.** Over a Noetherian ring `R` satisfying `(S_2)` and
 embedding faithfully into a field `F` over `C`, if `x : ∀ t, I t → R` is a nonempty family of
@@ -186,16 +180,12 @@ theorem iInf_laurentSubalgebra_le_range_of_satisfiesSerreS_two {C R F T : Type*}
     · by_cases hj : x t₀ j = 0
       · simp [hj, zero_mem]
       · have hu : IsUnit (x t₀ j) := by
-          by_contra hnu
-          have hne : Ideal.span {x t₀ j} ≠ ⊤ := mt Ideal.span_singleton_eq_top.mp hnu
-          have : Nontrivial (R ⧸ Ideal.span {x t₀ j}) := Ideal.Quotient.nontrivial_iff.mpr hne
-          obtain ⟨P, hPass, -⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing R
-            (1 : R ⧸ Ideal.span {x t₀ j}) one_ne_zero
-          have hP1 := hS₂.height_eq_one_of_isAssociatedPrime_quotient_span_singleton
-            (mem_nonZeroDivisors_of_ne_zero hj) hPass
-          obtain ⟨t, ht⟩ := hcover P hPass.isPrime hP1
+          rw [← Ideal.span_singleton_eq_top, Ideal.eq_top_iff_one]
+          refine hS₂.mem_span_singleton_of_forall_height_eq_one
+            (mem_nonZeroDivisors_of_ne_zero hj) fun P hP hP1 ↦ ?_
+          obtain ⟨t, ht⟩ := hcover P hP hP1
           obtain ⟨i, hi⟩ := hT' t
-          exact ht (Finset.prod_eq_zero (Finset.mem_univ i) hi ▸ P.zero_mem)
+          exact absurd (Finset.prod_eq_zero (Finset.mem_univ i) hi ▸ P.zero_mem) ht
         obtain ⟨u, hu⟩ := hu
         refine (IsScalarTower.toAlgHom C R F).mem_range.mpr ⟨↑u⁻¹, ?_⟩
         rw [IsScalarTower.toAlgHom_apply, Function.comp_apply, ← hu]

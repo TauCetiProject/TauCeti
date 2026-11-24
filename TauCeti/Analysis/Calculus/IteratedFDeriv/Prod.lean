@@ -22,9 +22,13 @@ families in function spaces.
 The same holds for the iterated derivatives of `x ↦ F (x, p.2)` in the first variable of a `C^n`
 map `F` on an open subset `W` of `E × P`: they are continuous in `p` on `W`
 (`ContDiffOn.continuousOn_iteratedFDeriv_partial`), and the first derivative is itself `C^m` on
-`W` when `F` is `C^(m+1)` (`ContDiffOn.fderiv_partial_of_isOpen`). Joint continuity of these
-partial derivatives is the hypothesis for differentiating under an integral over a compact
-parameter space without differentiable structure.
+`W` when `F` is `C^(m+1)` (`ContDiffOn.fderiv_partial_of_isOpen`). More generally, if a family
+`g : Q → E → G` indexed by a bare topological space `Q` agrees locally on `Q × s` (for a set `s`
+with unique derivatives) with `F (·, ξ q)` for a map `F` that is `C^n` at `(z₀, ξ q₀)` and a
+continuous parameter map `ξ`, its iterated derivatives within `s` through order `n` are jointly
+continuous at `(q₀, z₀)` (`ContDiffAt.continuousAt_iteratedFDerivWithin_partial`). Joint
+continuity of these partial derivatives is the hypothesis for differentiating under an integral
+over a compact parameter space without differentiable structure.
 
 The within-set versions require unique derivatives only on the product,
 so they also handle coordinate domains of manifolds with boundary or corners.
@@ -178,7 +182,7 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
   have hgf : ContDiff 𝕜 k (g ∘ Prod.fst : E × A → A) := hg.comp contDiff_fst
   have hle (i : ℕ) :
       ‖iteratedFDeriv 𝕜 i (g ∘ Prod.fst : E × A → A) z‖ ≤ ‖iteratedFDeriv 𝕜 i g z.1‖ :=
-    norm_iteratedFDeriv_comp_fst_le z
+    z.norm_iteratedFDeriv_comp_fst.le
   refine (norm_iteratedFDeriv_mul_le hsnd hgf z le_rfl).trans ?_
   rcases k with _ | m
   · simp
@@ -316,5 +320,44 @@ theorem ContDiffOn.continuousOn_iteratedFDeriv_partial {G : Type v} [NormedAddCo
   simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using
     TauCeti.continuousOn_iteratedFDeriv_partial_clm_apply (L := fun _ ↦ (isoG : eG →L[𝕜] G))
       continuousOn_const hFp (ContDiffOn.continuousOn_iteratedFDeriv_partial_aux k hF' hW)
+
+open scoped Topology in
+/-- If a family `g : Q → E → G` indexed by a topological space `Q` agrees near `(q₀, z₀)` on
+`Q × s` with `F (·, ξ q)` for a map `F : E × P → G` that is `C^n` at `(z₀, ξ q₀)` and a parameter
+map `ξ : Q → P` continuous at `q₀`, and `s` has unique derivatives, then for every `m ≤ n` its
+`m`-th iterated derivative within `s` is jointly continuous at `(q₀, z₀)`. -/
+theorem ContDiffAt.continuousAt_iteratedFDerivWithin_partial {Q : Type*} [TopologicalSpace Q]
+    {G : Type v} [NormedAddCommGroup G] [NormedSpace 𝕜 G] {g : Q → E → G} {s : Set E}
+    {q₀ : Q} {z₀ : s} {F : E × P → G} {ξ : Q → P} {n : WithTop ℕ∞}
+    (hF : ContDiffAt 𝕜 n F ((z₀ : E), ξ q₀)) (hs : UniqueDiffOn 𝕜 s) (hξ : ContinuousAt ξ q₀)
+    (hagree : ∀ᶠ q : Q × s in 𝓝 (q₀, z₀), g q.1 q.2 = F (q.2, ξ q.1))
+    (m : ℕ) (hm : (m : WithTop ℕ∞) ≤ n) :
+    ContinuousAt (fun q : Q × s ↦ iteratedFDerivWithin 𝕜 m (g q.1) s q.2) (q₀, z₀) := by
+  obtain ⟨W, hWo, h₀W, hFW'⟩ := (hF.of_le hm).contDiffOn' le_rfl (by simp)
+  have hFW : ContDiffOn 𝕜 m F W := by simpa using hFW'
+  have hpart_cont : ContinuousAt
+      (fun w : E × P ↦ iteratedFDeriv 𝕜 m (fun b ↦ F (b, w.2)) w.1) ((z₀ : E), ξ q₀) :=
+    (hFW.continuousOn_iteratedFDeriv_partial hWo le_rfl).continuousAt (hWo.mem_nhds h₀W)
+  let Θ : Q × s → E × P := fun q ↦ (q.2, ξ q.1)
+  have hΘ_cont : ContinuousAt Θ (q₀, z₀) :=
+    (continuous_subtypeVal.comp continuous_snd).continuousAt.prodMk
+      (hξ.comp continuous_fst.continuousAt)
+  obtain ⟨Uq, Uz, hUqo, hq₀Uq, hUzo, hz₀Uz, hUqUz⟩ := mem_nhds_prod_iff'.1
+    (hagree.and (hΘ_cont.preimage_mem_nhds (hWo.mem_nhds h₀W)))
+  obtain ⟨Uz', hUz'o, hUz'_eq⟩ := isOpen_induced_iff.1 hUzo
+  refine (hpart_cont.comp_of_eq hΘ_cont rfl).congr ?_
+  filter_upwards [(hUqo.prod hUzo).mem_nhds ⟨hq₀Uq, hz₀Uz⟩] with ⟨q, z⟩ ⟨hq, hz⟩
+  have hzUz' : (z : E) ∈ Uz' := by rwa [← hUz'_eq] at hz
+  have hW_qz : ((z : E), ξ q) ∈ W := (hUqUz ⟨hq, hz⟩).2
+  have hslice : ContDiffAt 𝕜 m (fun b ↦ F (b, ξ q)) (z : E) :=
+    (hFW.contDiffAt (hWo.mem_nhds hW_qz)).comp (z : E) (contDiffAt_id.prodMk contDiffAt_const)
+  have heq : Set.EqOn (g q) (fun b ↦ F (b, ξ q)) (s ∩ Uz') := fun b hb ↦ by
+    have hbUz : (⟨b, hb.1⟩ : s) ∈ Uz := by rw [← hUz'_eq]; exact hb.2
+    exact (hUqUz (Set.mk_mem_prod hq hbUz)).1
+  symm
+  rw [← iteratedFDerivWithin_inter_open hUz'o hzUz',
+    iteratedFDerivWithin_congr heq ⟨z.property, hzUz'⟩,
+    iteratedFDerivWithin_inter_open hUz'o hzUz']
+  exact iteratedFDerivWithin_eq_iteratedFDeriv hs hslice z.property
 
 end PartialDerivatives

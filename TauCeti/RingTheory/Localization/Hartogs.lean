@@ -27,8 +27,6 @@ height one.
 
 ## Main results
 
-* `Module.SatisfiesSerreS.two_le_depth_atPrime_of_mem_nonZeroDivisors_of_height_ne_one`: under
-  `(S_2)`, any prime of height `≠ 1` containing a non-zero-divisor has local depth at least `2`.
 * `TauCeti.mem_range_algebraMap_of_isWeaklyRegular_mem_radical_denIdeal` and
   `TauCeti.mem_range_algebraMap_of_two_le_depth_of_le_radical_denIdeal`: denominator-ideal criteria
   for an element of a total ring of fractions to lie in the base ring.
@@ -50,28 +48,6 @@ public section
 open IsLocalRing RingTheory.Sequence
 
 open scoped nonZeroDivisors
-
-namespace Module.SatisfiesSerreS
-
-/-- Under Serre's condition `(S_2)`, any prime ideal `p` of height not equal to `1` that contains a
-non-zero-divisor has local depth at least `2`. -/
-theorem two_le_depth_atPrime_of_mem_nonZeroDivisors_of_height_ne_one {A : Type*} [CommRing A]
-    (hS₂ : Module.SatisfiesSerreS 2 A A) {p : Ideal A} [p.IsPrime] {b : A} (hb : b ∈ A⁰)
-    (hbp : b ∈ p) (hp1 : p.height ≠ 1) :
-    2 ≤ depth (ModuleCat.of (Localization.AtPrime p) (Localization.AtPrime p)) := by
-  have h1 : 1 ≤ p.height :=
-    (Ideal.one_le_height_span_singleton_of_mem_nonZeroDivisors hb).trans
-      (Ideal.height_mono ((Ideal.span_singleton_le_iff_mem p).mpr hbp))
-  have hp2 : 2 ≤ p.height :=
-    (ENat.add_one_le_iff ENat.one_ne_top).mpr (lt_of_le_of_ne h1 hp1.symm)
-  have hdim : 2 ≤ ringKrullDim (Localization.AtPrime p) := by
-    rw [IsLocalization.AtPrime.ringKrullDim_eq_height p (Localization.AtPrime p)]
-    exact WithBot.coe_le_coe.mpr hp2
-  have hSp := (Module.satisfiesSerreS_self_iff.mp hS₂) p
-  rw [min_eq_left (by exact_mod_cast hdim), ← WithBot.coe_natCast, WithBot.coe_le_coe] at hSp
-  exact_mod_cast hSp
-
-end Module.SatisfiesSerreS
 
 namespace TauCeti
 
@@ -151,27 +127,17 @@ theorem iInf_ofField_powers_eq_bot_of_satisfiesSerreS_two [IsNoetherianRing A]
     (ha : ∀ i, Submonoid.powers (a i) ≤ A⁰)
     (hcover : ∀ p : Ideal A, p.IsPrime → p.height = 1 → ∃ i, a i ∉ p) :
     (⨅ i, ofField K (Submonoid.powers (a i)) (ha i)) = ⊥ := by
-  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
-  · -- With an empty index type, `hcover` rules out height-one primes, forcing `A` to be a field.
-    refine eq_bot_iff.mpr fun z _ ↦ Algebra.mem_bot.mpr ?_
-    obtain ⟨⟨c, b⟩, hcb⟩ := IsLocalization.surj A⁰ z
-    have hb : IsUnit (b : A) := by
-      by_contra hnu
-      have hne : Ideal.span {(b : A)} ≠ ⊤ := mt Ideal.span_singleton_eq_top.mp hnu
-      have : Nontrivial (A ⧸ Ideal.span {(b : A)}) := Ideal.Quotient.nontrivial_iff.mpr hne
-      obtain ⟨P, hPass, -⟩ :=
-        exists_le_isAssociatedPrime_of_isNoetherianRing A (1 : A ⧸ Ideal.span {(b : A)}) one_ne_zero
-      have hP1 := hS₂.height_eq_one_of_isAssociatedPrime_quotient_span_singleton b.2 hPass
-      obtain ⟨i, -⟩ := hcover P hPass.isPrime hP1
-      exact isEmptyElim i
-    obtain ⟨u, hu⟩ := hb
-    exact ⟨↑u⁻¹ * c, by
-      rw [map_mul, ← hcb, ← hu, mul_left_comm, ← map_mul, Units.inv_mul, map_one, mul_one]⟩
-  · refine iInf_ofField_powers_eq_bot_of_two_le_depth a ha fun p hp hall ↦
-      hS₂.two_le_depth_atPrime_of_mem_nonZeroDivisors_of_height_ne_one
-        (ha i₀ ⟨1, pow_one _⟩) (hall i₀) fun h1 ↦ ?_
-    obtain ⟨i, hi⟩ := hcover p hp h1
-    exact hi (hall i)
+  refine eq_bot_iff.mpr fun z hz ↦ Algebra.mem_bot.mpr ?_
+  obtain ⟨⟨c, ⟨b, hb⟩⟩, rfl⟩ := IsLocalization.mk'_surjective A⁰ z
+  dsimp only at hz
+  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp <|
+    hS₂.mem_span_singleton_of_forall_height_eq_one (a := c) hb fun P hP hP1 ↦ by
+      obtain ⟨i, hi⟩ := hcover P hP hP1
+      obtain ⟨n, d, hd⟩ := (mem_ofField_powers_iff (a i) (ha i)).mp (Algebra.mem_iInf.mp hz i)
+      refine ⟨a i ^ n, mt (hP.mem_of_pow_mem n) hi, Ideal.mem_span_singleton'.mpr
+        ⟨d, IsFractionRing.injective A K ?_⟩⟩
+      rw [map_mul, map_mul, map_pow, hd, mul_assoc, IsLocalization.mk'_spec]
+  exact ⟨r, by rw [IsLocalization.eq_mk'_iff_mul_eq, ← map_mul, hr]⟩
 
 /-- Over a Noetherian integrally closed domain `A`, if no height-one prime contains every `a_i`,
 then the principal localizations `A[1 / a_i]` intersect in `A` inside `K`. -/

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Morrey
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.Wkp.LinearIsometry
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Analysis.Sobolev.Wkp.Compactness
 
 /-!
 # Rellich–Kondrachov and Morrey on isometric copies of Lipschitz domains
@@ -24,7 +25,8 @@ local graph charts of `Ω` itself. For `F = ℂ` the isometries are `Complex.equ
 This file proves, for a bounded such `Ω` of dimension `n`:
 
 * the higher-order Rellich–Kondrachov theorem: forgetting the highest weak derivative is a
-  compact operator `W^{k+1,p}(Ω) → W^{k,p}(Ω)` for every `k` and every `1 ≤ p ≤ ∞`;
+  compact operator `W^{k+1,p}(Ω) → W^{k,p}(Ω)` for every `k` and every `1 ≤ p ≤ ∞`, and hence so
+  are every truncation `W^{k,p}(Ω) → W^{j,p}(Ω)` with `j < k` and the `Lᵖ` value map;
 * the higher-order Morrey and Hölder embeddings: for `n < q < ∞` with `1/p - k/n ≤ 1/q ≤ 1/p`,
   and for `n < k p`, members of `W^{k+1,p}(Ω)`, respectively `W^{k,p}(Ω)`, have Hölder
   representatives on `closure Ω`, depending linearly and boundedly on them, and the embeddings
@@ -37,6 +39,10 @@ isometry `closure Ω → closure (e '' Ω)` induced by `e` (`TauCeti.HolderSpace
 
 * `TauCeti.Wkp.isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image`: Rellich–Kondrachov
   on bounded open sets whose isometric image in the model space is a Lipschitz domain.
+* `TauCeti.Wkp.isCompactOperator_toOrderL_of_isLipschitzDomainWith_image` and
+  `TauCeti.Wkp.isCompactOperator_valueL_of_isLipschitzDomainWith_image`: truncation
+  `W^{k,p}(Ω) → W^{j,p}(Ω)` for `j < k`, in particular the `Lᵖ` value map on `W^{k+1,p}(Ω)`, is
+  compact.
 * `TauCeti.Wkp.exists_subseq_tendsto_lowerOrder_of_isLipschitzDomainWith_image`: the
   sequential form.
 * `TauCeti.Wkp.exists_morreyEmbeddingL_of_isLipschitzDomainWith_image`,
@@ -88,6 +94,28 @@ theorem isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image
     lowerOrderL_apply, lowerOrderL_apply]
   exact lowerOrder_compLinearIsometryEquiv _ hUW k v
 
+/-- **Compactness of truncation on Lipschitz domains.** Let `Ω` be a bounded open set whose
+isometric image in the model space is a Lipschitz domain, and `1 ≤ p ≤ ∞`. For `j < k`, forgetting
+the weak derivatives above order `j` is a compact operator `W^{k,p}(Ω) → W^{j,p}(Ω)`. -/
+theorem isCompactOperator_toOrderL_of_isLipschitzDomainWith_image
+    (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) {Ω : Opens F}
+    (hΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F))
+    {j k : ℕ} (h : j < k) :
+    IsCompactOperator (toOrderL (mu := volume) (Omega := Ω) (p := p) h.le) := by
+  obtain ⟨m, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
+  exact isCompactOperator_toOrderL_of_isCompactOperator_lowerOrderL (Nat.le_of_lt_succ h)
+    (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image e hΩ hb m)
+
+/-- **Rellich–Kondrachov into `Lᵖ` at every order.** On a bounded open set whose isometric image in
+the model space is a Lipschitz domain, the `Lᵖ` value map `W^{k+1,p}(Ω) → Lᵖ(Ω)` is compact, for
+`1 ≤ p ≤ ∞`. -/
+theorem isCompactOperator_valueL_of_isLipschitzDomainWith_image
+    (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E)) {Ω : Opens F}
+    (hΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) (k : ℕ) :
+    IsCompactOperator (valueL (mu := volume) (Omega := Ω) (p := p) (k + 1)) :=
+  isCompactOperator_valueL_of_isCompactOperator_lowerOrderL
+    (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image e hΩ hb k)
+
 /-- On a bounded open set whose isometric image in the model space is a Lipschitz domain, a
 bounded sequence in `W^{k+1,p}(Ω)` has a subsequence whose lower-order parts converge in
 `W^{k,p}(Ω)`, for `1 ≤ p ≤ ∞`. -/
@@ -120,7 +148,7 @@ private theorem exists_holderSpaceL_of_image (e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ
   have hmaps : ∀ x ∈ closure (Ω : Set F), e x ∈ closure (W : Set (WithLp 2 (ℝ × E))) :=
     fun x hx ↦ hW ▸ image_closure_subset_closure_image e.continuous (mem_image_of_mem e hx)
   let g : closure (Ω : Set F) → closure (W : Set (WithLp 2 (ℝ × E))) :=
-    fun x ↦ ⟨e x, hmaps x x.2⟩
+    fun x ↦ ⟨e x, hmaps x x.property⟩
   have hg : LipschitzWith 1 g := LipschitzWith.of_dist_le_mul fun x y ↦ by
     simp [g, Subtype.dist_eq, e.dist_map]
   let R : Wkp volume Ω p m →L[ℝ] Wkp volume W p m :=

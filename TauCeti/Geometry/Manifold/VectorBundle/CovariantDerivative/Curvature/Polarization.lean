@@ -255,6 +255,17 @@ theorem curvatureTensor_eq_scalarCurvature_div_two_smul
   norm_num
 
 variable (cov) in
+/-- On a surface, the Ricci tensor of a metric-compatible connection is half the scalar
+curvature times the metric. No torsion assumption is needed. -/
+theorem ricciTensor_eq_scalarCurvature_div_two_smul
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    {x : M} (hx : Module.finrank ℝ (TangentSpace I x) = 2) :
+    cov.ricciTensor x = (cov.scalarCurvature x / 2) • innerₗ (TangentSpace I x) := by
+  rw [cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub x _
+    (cov.curvatureTensor_eq_scalarCurvature_div_two_smul hcov hx)]
+  norm_num [hx]
+
+variable (cov) in
 /-- **The Gaussian curvature of a surface is half its scalar curvature.** In dimension two the
 tangent space at `x` is the only tangent two-plane there, and for a metric-compatible connection
 its sectional curvature is `Scal(x) / 2`. -/

@@ -29,9 +29,9 @@ specialization coordinates.
 ## Main results
 
 * `TauCeti.Mutation.upperBound_laurentSubalgebra`: compatibility with `TauCeti.Mutation.upperBound`.
-* `TauCeti.le_upperBound_iff`, `TauCeti.mem_upperBound_iff`,
+* `TauCeti.le_upperBound_iff`, `TauCeti.mem_upperBound_iff`, `TauCeti.upperBound_eq_iInf_option`,
   `TauCeti.upperBound_le_laurentSubalgebra`, and `TauCeti.upperBound_le_laurentSubalgebra_adjacent`:
-  universal-property and membership characterization of `upperBound`.
+  universal-property, `Option K`-intersection, and membership characterization of `upperBound`.
 * `TauCeti.map_upperBound_of_injective`: transport along injective `C`-algebra homomorphisms of
   division semirings.
 
@@ -94,6 +94,12 @@ theorem upperBound_le_laurentSubalgebra_adjacent (x : I → F) (adjacent : K →
     upperBound C x adjacent ≤ laurentSubalgebra C (adjacent k) :=
   inf_le_right.trans (iInf_le _ k)
 
+/-- Expresses `TauCeti.upperBound` as an intersection indexed by `Option K`. -/
+theorem upperBound_eq_iInf_option (x : I → F) (adjacent : K → I → F) :
+    upperBound C x adjacent = ⨅ o : Option K, laurentSubalgebra C (Option.elim o x adjacent) := by
+  rw [upperBound_def, iInf_option]
+  rfl
+
 /-- With no mutable directions, the upper bound is the initial Laurent subalgebra. -/
 @[simp]
 theorem upperBound_of_isEmpty [IsEmpty K] (x : I → F) (adjacent : K → I → F) :
@@ -108,23 +114,8 @@ theorem map_upperBound_of_injective {C I K F G : Type*} [CommSemiring C] [Divisi
     [Algebra C F] [DivisionSemiring G] [Algebra C G] {φ : F →ₐ[C] G} (hφ : Function.Injective φ)
     (x : I → F) (adjacent : K → I → F) :
     (upperBound C x adjacent).map φ = upperBound C (φ ∘ x) (fun k ↦ φ ∘ adjacent k) := by
-  ext y
-  rw [Subalgebra.mem_map, mem_upperBound_iff]
-  constructor
-  · rintro ⟨z, hz, rfl⟩
-    rw [mem_upperBound_iff] at hz
-    refine ⟨?_, fun k ↦ ?_⟩
-    · rw [← map_laurentSubalgebra]
-      exact ⟨z, hz.1, rfl⟩
-    · rw [← map_laurentSubalgebra]
-      exact ⟨z, hz.2 k, rfl⟩
-  · rintro ⟨hy₀, hy⟩
-    rw [← map_laurentSubalgebra] at hy₀
-    obtain ⟨z, hz₀, rfl⟩ := hy₀
-    refine ⟨z, (mem_upperBound_iff C).mpr ⟨hz₀, fun k ↦ ?_⟩, rfl⟩
-    have hzk := hy k
-    rw [← map_laurentSubalgebra] at hzk
-    obtain ⟨z', hz', hzz'⟩ := hzk
-    exact hφ hzz' ▸ hz'
+  rw [upperBound_eq_iInf_option, Algebra.map_iInf φ hφ, upperBound_eq_iInf_option]
+  refine iInf_congr fun o ↦ ?_
+  cases o <;> simp [map_laurentSubalgebra]
 
 end TauCeti

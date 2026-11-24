@@ -24,6 +24,10 @@ Inserting a first argument intertwines the action up to the action on that argum
 (`AlternatingMap.curryLeft_lie`); this is the identity `[L_x, ι_y] = ι_{[x, y]}` between Lie
 derivatives and interior products.
 
+The action is natural: maps of arguments and values intertwining the action of `y` with that of
+`x` intertwine `⁅y, -⁆` with `⁅x, -⁆` on alternating maps
+(`AlternatingMap.compLinearMap_lie_eq_compAlternatingMap_lie`).
+
 ## References
 
 * C. Chevalley and S. Eilenberg, *Cohomology theory of Lie groups and Lie algebras*,
@@ -107,5 +111,19 @@ theorem curryLeft_lie {n : ℕ} (x : L) (ω : M [⋀^Fin (n + 1)]→ₗ[R] N) (y
   ext v
   simp [Fin.sum_univ_succ, Matrix.vecCons, ← Fin.cons_update, Fin.update_cons_zero]
   abel
+
+/-- Naturality of the action: if `g : M' → M` and `f : N' → N` intertwine the action of `y` with
+that of `x`, then `ω ∘ g = f ∘ ω'` implies `⁅x, ω⁆ ∘ g = f ∘ ⁅y, ω'⁆`. -/
+theorem compLinearMap_lie_eq_compAlternatingMap_lie {L' M' N' : Type*} [LieRing L']
+    [LieAlgebra R L']
+    [AddCommGroup M'] [Module R M'] [LieRingModule L' M'] [LieModule R L' M']
+    [AddCommGroup N'] [Module R N'] [LieRingModule L' N'] [LieModule R L' N']
+    {g : M' →ₗ[R] M} {f : N' →ₗ[R] N} {x : L} {y : L'} (hg : ∀ m, g ⁅y, m⁆ = ⁅x, g m⁆)
+    (hf : ∀ n, f ⁅y, n⁆ = ⁅x, f n⁆) {ω : M [⋀^ι]→ₗ[R] N} {ω' : M' [⋀^ι]→ₗ[R] N'}
+    (h : ω.compLinearMap g = f.compAlternatingMap ω') :
+    ⁅x, ω⁆.compLinearMap g = f.compAlternatingMap ⁅y, ω'⁆ := by
+  have h' (w : ι → M') : ω (fun i ↦ g (w i)) = f (ω' w) := by simpa using congr($h w)
+  ext v
+  simp [← h', hf, apply_update (fun _ ↦ ⇑g), hg]
 
 end AlternatingMap

@@ -43,7 +43,9 @@ the support of `M` imposes no condition.
   ring satisfies `(R_n)` and `(S_n)` for every `n` (`IsRegularRing.satisfiesSerreR` and
   `IsRegularRing.satisfiesSerreS`).
 * `Module.satisfiesSerreS_self_iff`: a ring satisfies `(S_n)` as a module over itself exactly when
-  `depth R_p ≥ min (n, dim R_p)` for every prime `p`.
+  `depth R_p ≥ min (n, dim R_p)` for every prime `p`; under `(S_2)`, any prime of height `≠ 1`
+  containing a nonzerodivisor therefore has local depth at least `2`
+  (`Module.SatisfiesSerreS.two_le_depth_atPrime_of_mem_nonZeroDivisors_of_height_ne_one`).
 * `Ring.SatisfiesSerreR.localization`: `(R_n)` passes to every localization, whose local rings
   are local rings of `R`. Localization of `(S_n)` for modules is proved in
   `TauCeti.RingTheory.SerreCondition.Localization`.
@@ -170,6 +172,25 @@ theorem satisfiesSerreS_self_iff : SatisfiesSerreS n R R ↔ ∀ (p : Ideal R) [
   refine forall_congr' fun p ↦ forall_congr' fun _ ↦ ?_
   let e := LocalizedModule.equivLocalization p.primeCompl
   rw [supportDim_eq_of_equiv e, supportDim_self_eq_ringKrullDim, depth_eq_of_linearEquiv e]
+
+open scoped nonZeroDivisors in
+/-- Under Serre's condition `(S_2)`, any prime ideal `p` of height not equal to `1` that contains a
+nonzerodivisor has local depth at least `2`. -/
+theorem SatisfiesSerreS.two_le_depth_atPrime_of_mem_nonZeroDivisors_of_height_ne_one
+    (hS₂ : SatisfiesSerreS 2 R R) {p : Ideal R} [p.IsPrime] {b : R} (hb : b ∈ R⁰)
+    (hbp : b ∈ p) (hp1 : p.height ≠ 1) :
+    2 ≤ depth (ModuleCat.of (Localization.AtPrime p) (Localization.AtPrime p)) := by
+  have h1 : 1 ≤ p.height :=
+    (Ideal.one_le_height_span_singleton_of_mem_nonZeroDivisors hb).trans
+      (Ideal.height_mono ((Ideal.span_singleton_le_iff_mem p).mpr hbp))
+  have hp2 : 2 ≤ p.height :=
+    (ENat.add_one_le_iff ENat.one_ne_top).mpr (lt_of_le_of_ne h1 hp1.symm)
+  have hdim : 2 ≤ ringKrullDim (Localization.AtPrime p) := by
+    rw [IsLocalization.AtPrime.ringKrullDim_eq_height p (Localization.AtPrime p)]
+    exact WithBot.coe_le_coe.mpr hp2
+  have hSp := (satisfiesSerreS_self_iff.mp hS₂) p
+  rw [min_eq_left (by exact_mod_cast hdim), ← WithBot.coe_natCast, WithBot.coe_le_coe] at hSp
+  exact_mod_cast hSp
 
 end Module
 
