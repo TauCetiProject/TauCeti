@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
 import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
 import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Naturality
-import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 
 /-!
 # The magnetic cotangent reduced space at a coadjoint-fixed value
