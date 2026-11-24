@@ -64,7 +64,7 @@ over a preconnected set, `IsPreconnected.eqOn_const_of_eventually_eq`.
   constant.
 * `TauCeti.PDE.pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: the
   derivative form, the outer normal derivative is positive where it exists.
-* `TauCeti.PDE.pos_fderiv_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: the full derivative
+* `TauCeti.PDE.fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv`: the full derivative
   form, `0 < fderiv ℝ u x₀ (x₀ - y)` when `u` is differentiable at `x₀`.
 * `TauCeti.PDE.eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax`: a
   subsolution with a nonnegative local maximum is constant near it.
@@ -386,7 +386,7 @@ theorem pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR :
 /-- **Hopf's boundary-point lemma, full derivative form.** For a subsolution satisfying
 `pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv` and differentiable at the
 contact point, the derivative applied to the outward radius `x₀ - y` is positive. -/
-theorem pos_fderiv_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR : 0 < R)
+theorem fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR : 0 < R)
     (hx₀ : x₀ ∈ sphere y R) (hlam : 0 < lam)
     (ha : ∀ x ∈ ball y R, ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
     (htr : ∀ x ∈ ball y R, (a x).trace ≤ Λ) (hb : ∀ x ∈ ball y R, ‖b x‖ ≤ β)
@@ -423,7 +423,7 @@ private theorem not_isLocalMax_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR : 
     (hlt : ∀ x ∈ ball y R, u x < u x₀) (hnonneg : 0 ≤ u x₀) :
     ¬IsLocalMax u x₀ := by
   intro hmax
-  have hpos := pos_fderiv_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hR hx₀ hlam ha
+  have hpos := fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hR hx₀ hlam ha
     htr hb hcγ hcd hderiv hsub hlt (Or.inr (Or.inl ⟨hc, hnonneg⟩))
   simp only [hmax.fderiv_eq_zero, _root_.zero_apply, lt_self_iff_false] at hpos
 

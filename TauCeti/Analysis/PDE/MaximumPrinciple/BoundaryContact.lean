@@ -57,7 +57,7 @@ theorem exists_mem_ball_eq_zero_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv
   have hlt (z) (hz : z ∈ ball p r) : w z < w x₀ := by
     rw [hw₀]
     exact lt_of_le_of_ne (hle z hz) fun heq ↦ hnone ⟨z, hB hz, hUball hz, heq⟩
-  have hpos := pos_fderiv_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv
+  have hpos := fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv
     (a := A) (b := b) (c := c) (u := w) hr hxp hlam hA htr hb hc
     hcd hd hsub hlt (Or.inr (Or.inr hw₀))
   have hdir : x₀ - p = (r / R) • (x₀ - y) := by
