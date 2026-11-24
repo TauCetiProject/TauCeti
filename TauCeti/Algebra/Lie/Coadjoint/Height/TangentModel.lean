@@ -48,6 +48,8 @@ orbit whose differential is the quotient coordinate.
 * `TauCeti.IsRootPlaneDecomposition.lieAnnihilator_eq`,
   `TauCeti.IsRootPlaneDecomposition.finrank_quotient_lieAnnihilator`: the stabilizer and the
   dimension of the orbit.
+* `TauCeti.IsRootPlaneDecomposition.mem_of_lie_eq_zero`: the centralizer of an element of `t` at
+  which no root vanishes is `t`.
 * `TauCeti.IsRootPlaneDecomposition.finrank_radical_liftHeightHessian`,
   `TauCeti.IsRootPlaneDecomposition.nondegenerate_liftHeightHessian_iff`: nullity and
   nondegeneracy of the Hessian on the tangent model.
@@ -202,6 +204,21 @@ theorem lieAnnihilator_eq [DecidableEq R] (hD : IsRootPlaneDecomposition B t α 
     _ = t ⊔ ⨆ i ∈ s, E i := by
         rw [sup_inf_assoc_of_le _ hle, (hD.disjoint_biSup_lieAnnihilator hB hsep p).eq_bot,
           sup_bot_eq]
+
+omit [Fintype ι] in
+/-- **The centralizer of a regular element.** For a separating invariant form and `X ∈ t` at
+which no root vanishes, every element of `L` commuting with `X` lies in `t`: the stabilizer of
+`B X` is `t` (`TauCeti.IsRootPlaneDecomposition.lieAnnihilator_eq`). -/
+theorem mem_of_lie_eq_zero [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
+    (hB : B.lieInvariant L) (hsep : B.SeparatingLeft) {X : t} (hX : ∀ i, α i X ≠ 0) {q : L}
+    (h : ⁅(X : L), q⁆ = 0) : q ∈ t := by
+  classical
+  have := Fintype.ofFinite ι
+  have hmem : q ∈ (lieAnnihilator R L (B X)).toSubmodule := by
+    rw [LieSubalgebra.mem_toSubmodule, hB.mem_lieAnnihilator_iff, ← lie_skew, h, neg_zero,
+      map_zero]
+  rw [hD.lieAnnihilator_eq hB hsep X] at hmem
+  simpa [hX] using hmem
 
 /-- The planes `E_i` with `α_i(p) ≠ 0` are a complement of the stabilizer of `ν = B p`, for a
 separating invariant form and `p ∈ t`. -/

@@ -221,8 +221,8 @@ theorem exact_periodicity_toHochschild (m : ℕ) :
   have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
   have hbij₂ := bijective_homologyMap_cyclicCochainComplexToTotal R A M (m + 2)
   have hu : IsUnit (-((m + 1 : R) * (m + 2 : R))) := by
-    simpa using ((isUnit_natCast_add_one (K := R) m).mul
-      (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)).neg
+    simpa using ((isUnit_natCast_add_one ℚ (A := R) m).mul
+      (isUnit_natCast_add_of_ne_zero ℚ (A := R) m two_ne_zero)).neg
   intro x
   refine ⟨fun hx ↦ ?_, ?_⟩
   · have hx' : HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) (m + 2)

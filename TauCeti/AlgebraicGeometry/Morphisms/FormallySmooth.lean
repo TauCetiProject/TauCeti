@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.RingHom.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
@@ -43,6 +44,8 @@ Definitions 37.11.1 (02H0) and 37.8.1 (02HG)). The test thickenings are Tau Ceti
   `formallySmooth_SpecMap_iff` and `formallyEtale_SpecMap_iff`: `Spec A ⟶ Spec R` is formally
   smooth (formally étale) exactly when `A` is, in the sense of Mathlib's `Algebra.FormallySmooth`
   (`Algebra.FormallyEtale`).
+* `TauCeti.AlgebraicGeometry.FormallySmooth.of_smooth_of_isAffine`: a smooth morphism between
+  affine schemes is formally smooth.
 * `TauCeti.AlgebraicGeometry.FormallyEtale.of_isOpenImmersion`: open immersions are formally
   étale, hence formally smooth.
 
@@ -264,6 +267,17 @@ theorem formallySmooth_SpecMap_iff {R A : CommRingCat.{u}} (φ : R ⟶ A) :
     FormallySmooth (Spec.map φ) ↔ φ.hom.FormallySmooth :=
   let := φ.hom.toAlgebra
   formallySmooth_Spec_algebraMap_iff (R := R) (A := A)
+
+/-- A smooth morphism between affine schemes is formally smooth. -/
+instance (priority := 100) FormallySmooth.of_smooth_of_isAffine [IsAffine X] [IsAffine S]
+    (f : X ⟶ S) [Smooth f] : FormallySmooth f := by
+  have hf : RingHom.Smooth f.appTop.hom := (HasRingHomProperty.iff_of_isAffine (P := @Smooth)).1
+    inferInstance
+  have : FormallySmooth (Spec.map f.appTop) := (formallySmooth_SpecMap_iff _).2 hf.formallySmooth
+  have e : f = X.isoSpec.hom ≫ Spec.map f.appTop ≫ S.isoSpec.inv := by
+    rw [Scheme.isoSpec_hom_naturality_assoc, Iso.hom_inv_id, Category.comp_id]
+  rw [e]
+  infer_instance
 
 /-- The morphism `Spec A ⟶ Spec R` induced by a ring map `φ : R ⟶ A` is formally étale if and only
 if `φ` is formally étale. -/
