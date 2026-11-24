@@ -52,10 +52,10 @@ map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleto
 A linear endomorphism commuting with multiplication by each element of a set `s` induces an
 endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap_of_map_mul`).
 
-`Submodule.quotEquivOfEq_ideal_mk` and `Ideal.Quotient.factor_quotEquivOfEq` transport ideal
-quotient constructors and factor maps across ideal equalities. For `Ideal.span {a} * I ≤ J`,
-`Ideal.Quotient.mulLeft a h : (R ⧸ I) →ₗ[R] (R ⧸ J)` is multiplication by `a`, compatible with
-`Ideal.Quotient.factor` and injective when `J ≤ Ideal.span {a} * I` and `a` is left-regular.
+`Submodule.quotEquivOfEq_ideal_mk` transports ideal quotient constructors across ideal
+equalities. For `Ideal.span {a} * I ≤ J`, `Ideal.Quotient.mulLeft a h : (R ⧸ I) →ₗ[R] (R ⧸ J)`
+is multiplication by `a`, compatible with `Ideal.Quotient.factor` and injective when
+`J ≤ Ideal.span {a} * I` and `a` is left-regular.
 -/
 
 public section
@@ -257,21 +257,6 @@ end Submodule
 
 namespace Ideal.Quotient
 
-section Factor
-
-variable {R : Type*} [Ring R]
-
-/-- `Ideal.Quotient.factor` commutes with `Ideal.quotEquivOfEq`. -/
-theorem factor_quotEquivOfEq {I₁ I₂ J₁ J₂ : Ideal R}
-    [I₁.IsTwoSided] [I₂.IsTwoSided] [J₁.IsTwoSided] [J₂.IsTwoSided]
-    (hI : I₁ = I₂) (hJ : J₁ = J₂) (h₁ : I₁ ≤ J₁) (h₂ : I₂ ≤ J₂) (x : R ⧸ I₁) :
-    Ideal.Quotient.factor h₂ (Ideal.quotEquivOfEq hI x) =
-      Ideal.quotEquivOfEq hJ (Ideal.Quotient.factor h₁ x) := by
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rfl
-
-end Factor
-
 section MulLeft
 
 variable {R : Type*} [CommRing R] {I J : Ideal R}
@@ -294,7 +279,7 @@ scalar multiplication by `a`. -/
 theorem mulLeft_factor (a : R) (h : Ideal.span {a} * I ≤ J) (hJI : J ≤ I) (q : R ⧸ J) :
     mulLeft a h (factor hJI q) = a • q := by
   obtain ⟨r, rfl⟩ := mk_surjective q
-  rw [factor_mk, mulLeft_mk, ← mk_eq_mk, ← mk_eq_mk, ← Submodule.Quotient.mk_smul, smul_eq_mul]
+  simp [Algebra.smul_def, algebraMap_eq]
 
 /-- `Ideal.Quotient.mulLeft a h` is injective if and only if `a * r ∈ J` implies `r ∈ I`. -/
 theorem mulLeft_injective_iff (a : R) (h : Ideal.span {a} * I ≤ J) :

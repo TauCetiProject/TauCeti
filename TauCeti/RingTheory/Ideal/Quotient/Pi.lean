@@ -103,19 +103,16 @@ def quotPiSMulTopToPiQuot (ι : Type*) :
     (LinearMap.pi fun i ↦ J.mkQ.comp (LinearMap.proj i)) <| by
       rw [Submodule.smul_le]
       intro r hr x _
-      rw [LinearMap.mem_ker]
       ext i
-      rw [LinearMap.pi_apply, LinearMap.comp_apply, LinearMap.proj_apply, Pi.smul_apply,
-        smul_eq_mul, Submodule.mkQ_apply, Pi.zero_apply, Submodule.Quotient.mk_eq_zero]
-      exact Ideal.IsTwoSided.mul_mem_of_left (x i) hr
+      simpa [← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul] using
+        Ideal.IsTwoSided.mul_mem_of_left (x i) hr
 
 /-- Evaluating `Ideal.quotPiSMulTopToPiQuot` on `Submodule.Quotient.mk x` reduces each coordinate
 modulo `J`. -/
 @[simp, grind =]
 theorem quotPiSMulTopToPiQuot_mk {ι : Type*} (x : ι → R) (i : ι) :
     J.quotPiSMulTopToPiQuot ι (Submodule.Quotient.mk x) i = Ideal.Quotient.mk J (x i) := by
-  rw [quotPiSMulTopToPiQuot, Submodule.liftQ_apply, LinearMap.pi_apply, LinearMap.comp_apply,
-    LinearMap.proj_apply, Submodule.mkQ_apply, Ideal.Quotient.mk_eq_mk]
+  simp [quotPiSMulTopToPiQuot, Ideal.Quotient.mk_eq_mk]
 
 /-- `Ideal.quotPiSMulTopToPiQuot J ι` is always surjective. -/
 theorem quotPiSMulTopToPiQuot_surjective (ι : Type*) :

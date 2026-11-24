@@ -19,8 +19,7 @@ of which it contains a multiple by a regular scalar.
 ## Main results
 
 * `Submodule.mapQ_surjective`: induced maps on quotients preserve surjectivity.
-* `Submodule.factor_quotEquivOfEq`, `Submodule.factor_comp_quotEquivOfEq`: `Submodule.factor`
-  commutes with `Submodule.quotEquivOfEq`.
+* `Submodule.factor_quotEquivOfEq`: `Submodule.factor` commutes with `Submodule.quotEquivOfEq`.
 * `Submodule.isTorsionFree_quotient_iff`: a submodule has torsion-free quotient if and only if
   it is saturated.
 -/
@@ -45,16 +44,7 @@ theorem factor_quotEquivOfEq {p₁ p₂ q₁ q₂ : Submodule R M}
     Submodule.factor h₂ (Submodule.quotEquivOfEq p₁ p₂ hp x) =
       Submodule.quotEquivOfEq q₁ q₂ hq (Submodule.factor h₁ x) := by
   obtain ⟨m, rfl⟩ := p₁.mkQ_surjective x
-  rw [Submodule.factor_mk, Submodule.mkQ_apply, Submodule.quotEquivOfEq_mk,
-    ← Submodule.mkQ_apply, Submodule.factor_mk, Submodule.mkQ_apply, Submodule.mkQ_apply,
-    Submodule.quotEquivOfEq_mk]
-
-/-- `Submodule.factor` commutes with `Submodule.quotEquivOfEq` as linear maps. -/
-theorem factor_comp_quotEquivOfEq {p₁ p₂ q₁ q₂ : Submodule R M}
-    (hp : p₁ = p₂) (hq : q₁ = q₂) (h₁ : p₁ ≤ q₁) (h₂ : p₂ ≤ q₂) :
-    Submodule.factor h₂ ∘ₗ (Submodule.quotEquivOfEq p₁ p₂ hp).toLinearMap =
-      (Submodule.quotEquivOfEq q₁ q₂ hq).toLinearMap ∘ₗ Submodule.factor h₁ :=
-  LinearMap.ext (factor_quotEquivOfEq hp hq h₁ h₂)
+  rfl
 
 /-- The quotient by a submodule is torsion-free if and only if the submodule contains every
 element of which it contains a multiple by a regular scalar. Over a domain the regular scalars

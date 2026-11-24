@@ -135,16 +135,10 @@ section TowerLift
 
 variable [TopologicalSpace M] [IsTopologicalAddGroup M]
 
-/-- Specialization of `continuous_lift_of_hasBasis` to an `I`-adically complete `I`-adic ring. -/
-theorem continuous_strictMono_lift (hI : IsAdic I) [IsAdicComplete I R]
-    {a : ℕ → ℕ} (ha : StrictMono a)
-    (f : (n : ℕ) → M →ₗ[R] R ⧸ (I ^ a n • ⊤ : Submodule R R))
-    (hf : ∀ {m : ℕ}, Submodule.factorPow I R (ha.monotone m.le_succ) ∘ₗ f (m + 1) = f m)
-    (hopen : ∀ n : ℕ, IsOpen (LinearMap.ker (f n) : Set M)) :
-    Continuous (IsAdicComplete.StrictMono.lift I ha f hf) :=
-  have := hI.nonarchimedeanRing
-  IsAdicComplete.StrictMono.continuous_lift_of_hasBasis
-    I hI.hasBasis_nhds_zero_smul_top ha f hf hopen
+private theorem eq_pow_smul_top {R : Type*} [CommRing R] {I : Ideal R} {a : ℕ → ℕ}
+    {K : ℕ → Ideal R} (hK : ∀ n, K n = I ^ a n) (n : ℕ) :
+    K n = (I ^ a n • (⊤ : Submodule R R) : Ideal R) := by
+  rw [hK n, smul_eq_mul, Ideal.mul_top]
 
 section LiftIdealTower
 
@@ -157,16 +151,14 @@ variable (hI : IsAdic I) [IsAdicComplete I R] {a : ℕ → ℕ} (ha : StrictMono
 `M →L[R] R`. -/
 noncomputable def liftIdealTower : M →L[R] R :=
   have := hI.nonarchimedeanRing
-  have heq (n : ℕ) : K n = (I ^ a n • (⊤ : Submodule R R) : Ideal R) := by
-    rw [hK n, smul_eq_mul, Ideal.mul_top]
   let f (n : ℕ) : M →ₗ[R] R ⧸ (I ^ a n • (⊤ : Submodule R R)) :=
-    (Submodule.quotEquivOfEq _ _ (heq n)).toLinearMap.comp (g n)
+    (Submodule.quotEquivOfEq _ _ (eq_pow_smul_top hK n)).toLinearMap.comp (g n)
   have hf : ∀ {n : ℕ},
       Submodule.factorPow I R (ha.monotone n.le_succ) ∘ₗ f (n + 1) = f n := fun {n} ↦ by
     ext m
     simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, f]
-    rw [Submodule.factor_quotEquivOfEq (heq (n + 1)) (heq n) (hle n),
-      Submodule.factor_eq_factor, hcomp n m]
+    rw [Submodule.factor_quotEquivOfEq (eq_pow_smul_top hK (n + 1)) (eq_pow_smul_top hK n)
+      (hle n), Submodule.factor_eq_factor, hcomp n m]
   IsAdicComplete.StrictMono.liftContinuousLinearMap I hI.hasBasis_nhds_zero_smul_top ha f hf
     fun n ↦ by
       rw [LinearMap.ker_comp_of_ker_eq_bot (g n) (LinearEquiv.ker _)]
@@ -178,12 +170,8 @@ noncomputable def liftIdealTower : M →L[R] R :=
 theorem mk_liftIdealTower (n : ℕ) (m : M) :
     Ideal.Quotient.mk (K n) (hI.liftIdealTower ha hK g hopen hcomp m) = g n m := by
   have := hI.nonarchimedeanRing
-  have heq : K n = (I ^ a n • (⊤ : Submodule R R) : Ideal R) := by
-    rw [hK n, smul_eq_mul, Ideal.mul_top]
-  apply (Submodule.quotEquivOfEq _ _ heq).injective
-  rw [Submodule.quotEquivOfEq_ideal_mk, liftIdealTower, ← Ideal.Quotient.mk_eq_mk,
-    IsAdicComplete.StrictMono.mk_liftContinuousLinearMap, LinearMap.comp_apply,
-    LinearEquiv.coe_toLinearMap]
+  apply (Submodule.quotEquivOfEq _ _ (eq_pow_smul_top hK n)).injective
+  simp [liftIdealTower, ← Ideal.Quotient.mk_eq_mk, -smul_eq_mul]
 
 /-- Uniqueness of `IsAdic.liftIdealTower`. -/
 theorem eq_liftIdealTower {F : M →L[R] R}

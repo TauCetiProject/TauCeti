@@ -12,11 +12,11 @@ import TauCeti.Topology.Algebra.Module.Nakayama
 import TauCeti.Topology.Algebra.Ring.Compact
 
 /-!
-# Counterexamples separating the hypotheses of profinite flatness
+# Non-examples of profinite flat modules
 
-Counterexamples showing none of the defining hypotheses of `TauCeti.IsProfiniteFlat` is redundant:
-proper nonzero quotients fail flatness; discrete non-fields fail compactness; the fraction field
-of a compact Hausdorff DVR fails compactness; and nontrivial indiscrete modules fail Hausdorffness.
+Examples of modules that are not profinite flat: nonzero proper quotients of a domain fail
+flatness, discrete non-fields and fraction fields of compact DVRs fail compactness, and
+nontrivial indiscrete modules fail Hausdorffness.
 -/
 
 public section
