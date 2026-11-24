@@ -74,7 +74,8 @@ structure of `exp_E` are in `TauCeti.Analysis.SpecialFunctions.Elliptic.Exponent
 * `WeierstrassCurve.Projective.isInvertible_mfderiv_exp` and
   `WeierstrassCurve.Projective.isLocalDiffeomorphAt_exp`: the derivative of `exp_E` is invertible at
   every point, so `exp_E` is a local biholomorphism.
-* `WeierstrassCurve.Projective.isOpenMap_exp`: `exp_E` is an open map.
+* `WeierstrassCurve.Projective.isOpenMap_exp` and `WeierstrassCurve.Projective.exp_surjective`:
+  `exp_E` is an open map, onto `E(ℂ)` once `E(ℂ)` is known to be connected.
 * `WeierstrassCurve.Projective.pullback_invariantDifferential_exp`: the global holomorphic,
   nowhere-zero invariant differential pulls back to `dz`.
 * `WeierstrassCurve.Projective.mvfderiv_eq_invariantDifferential_of_exp_comp_eventuallyEq_id`:
@@ -255,17 +256,15 @@ private theorem mem_finite_fiber_of_mapClusterPt {g : ℂ →+ W.Point}
     (h : HasDerivAt (fun z ↦ (g z).localParameter) 1 0) {P : W.Point}
     (hP : MapClusterPt P (𝓝[≠] 0) g) :
     P ∈ {Q | (Point.toAffineAddEquiv W Q).xRep 0 = 0} ∪ {0} := by
-  let F := 𝓝[≠] (0 : ℂ) ⊓ comap g (𝓝 P)
-  have : F.NeBot := neBot_inf_comap_iff_map.2 (by simpa [inf_comm] using hP.clusterPt.neBot)
-  have hg : Tendsto g F (𝓝 P) := tendsto_comap.mono_left inf_le_right
+  obtain ⟨F, hF, hg⟩ := mapClusterPt_iff_ultrafilter.1 hP
   obtain ⟨s, hs, he⟩ := Point.exists_contMDiffAt_mk_eq P
   have hcoord : Tendsto (fun z ↦ s (g z)) F (𝓝 (s P)) := hs.continuousAt.tendsto.comp hg
   have ht : Tendsto (fun z ↦ (g z).localParameter) F (𝓝 0) := by
-    simpa using h.continuousAt.tendsto.mono_left (inf_le_left.trans nhdsWithin_le_nhds)
+    simpa using h.continuousAt.tendsto.mono_left (hF.trans nhdsWithin_le_nhds)
   have heq : (fun z ↦ s (g z) 0) =ᶠ[F]
       fun z ↦ -(g z).localParameter * s (g z) 1 := by
-    filter_upwards [hg.eventually he, (h.eventually_ne one_ne_zero (c := 0)).filter_mono
-      inf_le_left] with z ⟨hz, hez⟩ hne
+    filter_upwards [hg.eventually he, (h.eventually_ne one_ne_zero (c := 0)).filter_mono hF]
+      with z ⟨hz, hez⟩ hne
     have htval : (g z).localParameter = -(s (g z) 0 / s (g z) 1) := by
       simpa only [Point.localParameter_mk] using congrArg Point.localParameter hez.symm
     rw [htval] at hne ⊢
@@ -325,14 +324,12 @@ private theorem continuous_of_hasDerivAt_localParameter {g : ℂ →+ W.Point}
   have hlim : Tendsto g (𝓝[≠] (0 : ℂ)) (𝓝 (0 : W.Point)) := by
     apply tendsto_nhds_of_unique_mapClusterPt
     intro P hP
-    let F := 𝓝[≠] (0 : ℂ) ⊓ comap g (𝓝 P)
-    have : F.NeBot := neBot_inf_comap_iff_map.2 (by simpa [inf_comm] using hP.clusterPt.neBot)
-    have hg : Tendsto g F (𝓝 P) := tendsto_comap.mono_left inf_le_right
+    obtain ⟨F, hF, hg⟩ := mapClusterPt_iff_ultrafilter.1 hP
     obtain ⟨Q, hQ⟩ := exists_clusterPt_of_compactSpace
       (Filter.map (fun z : ℂ ↦ g (z / N)) F)
     have hscale : Tendsto (fun z : ℂ ↦ z / N) F (𝓝[≠] 0) := by
       simpa using (((hasDerivAt_id (0 : ℂ)).div_const (N : ℂ)).tendsto_nhdsNE
-        (by simpa using hN.ne')).mono_left inf_le_left
+        (by simpa using hN.ne')).mono_left hF
     have hQc : MapClusterPt Q F (fun z : ℂ ↦ g (z / N)) := hQ
     have hQ0 := hkill Q (hQc.of_comp hscale)
     have hQP := hQc.continuousAt_comp (continuous_nsmul N).continuousAt
@@ -461,6 +458,16 @@ theorem isOpenMap_exp : IsOpenMap W.exp := by
     (G := Multiplicative W.Point)).comp (derivationEquiv W).toHomeomorph.isOpenMap)).comp
     (Homeomorph.isOpenMap _)
 
+/-- **`exp_E` is surjective** when `E(ℂ)` is preconnected (as it always is, by
+`WeierstrassCurve.Projective.Point.instConnectedSpace`): the exponential of a preconnected
+commutative Lie group is surjective (`TauCeti.lieExp_surjective_of_preconnectedSpace`). -/
+theorem exp_surjective [PreconnectedSpace W.Point] : Function.Surjective W.exp := by
+  have : PreconnectedSpace (Multiplicative W.Point) := inferInstanceAs (PreconnectedSpace W.Point)
+  rw [coe_exp, coe_tangentExp]
+  exact (Multiplicative.toAdd.surjective.comp ((TauCeti.lieExp_surjective_of_preconnectedSpace
+    (I := 𝓘(ℝ, ℂ)) (G := Multiplicative W.Point)).comp W.derivationEquiv.surjective)).comp
+    (Homeomorph.surjective _)
+
 /-- **The global pullback identity `exp_E*ω = dz`.** -/
 @[simp]
 theorem pullback_invariantDifferential_exp :
@@ -477,49 +484,44 @@ theorem pullback_invariantDifferential_exp :
 
 section VariableChange
 
-/-- In the chart at infinity, the local parameter of the point with homogeneous coordinates
-`C⁻¹.toMatrix *ᵥ [a : 1 : b]` is `-(u'²a + r'b) / (u'²s'a + u'³ + t'b)`, for
-`C⁻¹ = (u', r', s', t')`. Along a curve through the origin with `a' = -1` and `b' = 0` it has
-derivative `1 / u' = C.u`. -/
+/-- In the chart at infinity, for `C⁻¹ = (u', r', s', t')`, the function
+`-(u'²a + r'b) / (u'²s'a + u'³ + t'b)` has derivative `1 / u' = C.u` at `0` along a curve through
+the origin with `a' = -1` and `b' = 0`. -/
 private theorem hasDerivAt_localParameter_chartAtInfinity (C : VariableChange ℂ) {a b : ℂ → ℂ}
     (ha : HasDerivAt a (-1) 0) (hb : HasDerivAt b 0 0) (ha0 : a 0 = 0) (hb0 : b 0 = 0) :
-    HasDerivAt (fun y ↦ -((C⁻¹.toMatrix *ᵥ ![a y, 1, b y]) 0 /
-      (C⁻¹.toMatrix *ᵥ ![a y, 1, b y]) 1)) (C.u : ℂ) 0 := by
+    HasDerivAt (fun y ↦ -(((C⁻¹.u : ℂ) ^ 2 * a y + C⁻¹.r * b y) /
+      ((C⁻¹.u : ℂ) ^ 2 * C⁻¹.s * a y + (C⁻¹.u : ℂ) ^ 3 + C⁻¹.t * b y))) (C.u : ℂ) 0 := by
   have hU : (C⁻¹.u : ℂ) ≠ 0 := (C⁻¹.u).ne_zero
   have hCU : (C.u : ℂ) = (C⁻¹.u : ℂ)⁻¹ := by simp [VariableChange.inv_def]
   have hN := (ha.const_mul ((C⁻¹.u : ℂ) ^ 2)).add (hb.const_mul C⁻¹.r)
   have hD := (((ha.const_mul ((C⁻¹.u : ℂ) ^ 2 * C⁻¹.s)).add_const ((C⁻¹.u : ℂ) ^ 3)).add
     (hb.const_mul C⁻¹.t))
   convert (hN.div hD (by simp [ha0, hb0, hU])).neg using 1
-  · funext y
-    simp [VariableChange.toMatrix_def, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-  · simp only [Pi.add_apply, ha0, hb0]
-    rw [hCU]
-    field_simp
-    ring
+  simp only [Pi.add_apply, ha0, hb0]
+  rw [hCU]
+  field_simp
+  ring
 
-/-- On the affine chart `Y = 1`, the inverse change of variables `C` gives a point the local
-parameter of the point with homogeneous coordinates `C⁻¹.toMatrix *ᵥ [X / Y : 1 : Z / Y]`. -/
+/-- On the affine chart `Y = 1`, with coordinates `a = X / Y` and `b = Z / Y`, the inverse change
+of variables `C` gives a point the local parameter `-(u'²a + r'b) / (u'²s'a + u'³ + t'b)`, for
+`C⁻¹ = (u', r', s', t')`: this is
+`WeierstrassCurve.Projective.Point.localParameter_addEquivVariableChange_symm_mk` at the
+coordinates `[a : 1 : b]`. -/
 private theorem localParameter_addEquivVariableChange_symm_of_mem_affineOpen
     {E : WeierstrassCurve ℂ} (C : VariableChange ℂ) {P : E.toProjective.Point}
     (hP : P.toProjectivization ∈ affineOpen 1) :
     ((Point.addEquivVariableChange E C).symm P).localParameter =
-      -((C⁻¹.toMatrix *ᵥ ![affineChart 1 P.toProjectivization 0, 1,
-          affineChart 1 P.toProjectivization 1]) 0 /
-        (C⁻¹.toMatrix *ᵥ ![affineChart 1 P.toProjectivization 0, 1,
-          affineChart 1 P.toProjectivization 1]) 1) := by
+      -(((C⁻¹.u : ℂ) ^ 2 * affineChart 1 P.toProjectivization 0 +
+          C⁻¹.r * affineChart 1 P.toProjectivization 1) /
+        ((C⁻¹.u : ℂ) ^ 2 * C⁻¹.s * affineChart 1 P.toProjectivization 0 + (C⁻¹.u : ℂ) ^ 3 +
+          C⁻¹.t * affineChart 1 P.toProjectivization 1)) := by
   obtain ⟨v, hv⟩ := Quotient.exists_rep P.point
   have hns : E.toProjective.NonsingularLift ⟦v⟧ := hv.symm ▸ P.nonsingular
   obtain rfl : Point.mk hns = P := Point.ext hv
   rw [Point.toProjectivization_mk, mk_mem_affineOpen_iff] at hP
-  -- The chart coordinates are the representative `v` rescaled by `(v 1)⁻¹`.
-  have hrep : ![affineChart 1 (Point.mk hns).toProjectivization 0, 1,
-      affineChart 1 (Point.mk hns).toProjectivization 1] = (v 1)⁻¹ • v := by
-    rw [Point.toProjectivization_mk, affineChart_mk]
-    ext i
-    fin_cases i <;> simp [div_eq_inv_mul, hP]
-  rw [hrep, Point.addEquivVariableChange_symm_mk, Point.localParameter_mk, mulVec_smul,
-    Pi.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_div_mul_left _ _ (inv_ne_zero hP)]
+  rw [Point.localParameter_addEquivVariableChange_symm_mk, Point.toProjectivization_mk,
+    affineChart_mk, ← mul_div_mul_left _ _ (inv_ne_zero hP)]
+  congr 2 <;> simp [Fin.succAbove_ne_zero_zero, div_eq_inv_mul] <;> field_simp
 
 /-- **Rescaling naturality of the exponential map**: after a change of variables `C` with
 scaling factor `u`, the exponential map of `C • E` sends `z` to the image of `exp_E (u⁻¹ z)`

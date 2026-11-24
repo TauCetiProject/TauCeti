@@ -32,9 +32,9 @@ variables with `u = 1`, the rescaling naturality `WeierstrassCurve.Projective.ex
 shows that the kernel of `exp_E` is `E.periodLattice` (`WeierstrassCurve.Projective.ker_exp`).
 
 The general theory of the exponential map of a commutative real Lie group gives the global structure
-of `exp_E`: it is an open map whose image is an open, hence closed, subgroup, so it is onto since
-`E(ℂ)` is connected; with discrete kernel it is a covering map, inducing an isomorphism of
-topological groups `ℂ / ker exp_E ≃ E(ℂ)`, which is biholomorphic.
+of `exp_E`: it is an open map, onto since `E(ℂ)` is connected
+(`WeierstrassCurve.Projective.exp_surjective`); with discrete kernel it is a covering map,
+inducing an isomorphism of topological groups `ℂ / ker exp_E ≃ E(ℂ)`, which is biholomorphic.
 
 ## Main definitions
 
@@ -50,8 +50,7 @@ topological groups `ℂ / ker exp_E ≃ E(ℂ)`, which is biholomorphic.
 * `WeierstrassCurve.Projective.ker_exp` and `WeierstrassCurve.Projective.exp_eq_exp_iff`: the
   kernel of `exp_E` is the period lattice of `E`, so two points have the same image exactly when
   they differ by a period.
-* `WeierstrassCurve.Projective.exp_surjective` and `WeierstrassCurve.Projective.isCoveringMap_exp`:
-  `exp_E` is a covering map onto `E(ℂ)`.
+* `WeierstrassCurve.Projective.isCoveringMap_exp`: `exp_E` is a covering map onto `E(ℂ)`.
 * `WeierstrassCurve.Projective.pullback_exp_eq_mvfderiv_id_iff`: the invariant differential is the
   only form pulling back to `dz`.
 * `WeierstrassCurve.Projective.invariantDifferential_eq_inv_smul_mvfderiv`: its agreement with
@@ -198,17 +197,6 @@ instance instDiscreteTopologyKerExp : DiscreteTopology W.exp.ker := by
   exact SetLike.isDiscrete_iff_discreteTopology.mpr inferInstance
 
 /-! ### Global structure of the exponential map -/
-
-/-- **`exp_E` is surjective**, as `E(ℂ)` is connected: its image is an open, hence closed,
-subgroup. -/
-theorem exp_surjective : Function.Surjective W.exp := by
-  have hopen : IsOpen (W.exp.range : Set W.Point) := by
-    rw [AddMonoidHom.coe_range]
-    exact W.isOpenMap_exp.isOpen_range
-  have huniv := (IsClopen.eq_univ ⟨W.exp.range.isClosed_of_isOpen hopen, hopen⟩
-    ⟨0, W.exp.range.zero_mem⟩)
-  rw [AddMonoidHom.coe_range] at huniv
-  exact Set.range_eq_univ.mp huniv
 
 /-- **`exp_E` is a covering map.** It is an open continuous surjective homomorphism with discrete
 kernel. -/

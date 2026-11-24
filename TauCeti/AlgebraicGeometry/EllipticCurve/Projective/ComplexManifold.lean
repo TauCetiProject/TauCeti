@@ -288,7 +288,7 @@ theorem localParameter_eq_neg_affineChart :
   have hns : W.NonsingularLift ⟦v⟧ := hv.symm ▸ P.nonsingular
   have hP : Point.mk hns = P := Point.ext hv
   rw [← hP, localParameter_mk, toProjectivization_mk, affineChart_mk]
-  rfl
+  simp only [Fin.succAbove_ne_zero_zero (one_ne_zero : (1 : Fin 3) ≠ 0)]
 
 omit [W.IsElliptic] in
 /-- The origin `[0 : 1 : 0]` lies in the affine chart `Y = 1`. -/
@@ -428,7 +428,7 @@ private theorem isInvertible_mfderiv_localParameter_zero :
     exact congrArg Neg.neg (TauCeti.mvfderiv_apply_apply hf u 0).symm
   have hY (u : TangentSpace 𝓘(ℂ) (0 : W.Point)) : mvfderiv 𝓘(ℂ) f 0 u 1 = 0 := by
     rw [TauCeti.mvfderiv_apply_apply hf, mvfderiv_apply_eq_mfderiv_apply, hZ]
-    rfl
+    exact zero_apply u
   apply (TauCeti.isInvertible_mfderiv_iff_injective rfl).mpr
   intro v w hvw
   apply hinj
