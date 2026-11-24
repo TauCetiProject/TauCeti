@@ -208,6 +208,32 @@ theorem RoughForm.interior_apply (X : (x : M) → TangentSpace I x)
     (ω : RoughForm I M F (k + 1)) (x : M) (v : Fin k → TangentSpace I x) :
     ω.interior X x v = ω x (Matrix.vecCons (X x) v) := (rfl)
 
+/-- The interior product of a form with a vector field is supported in the topological support
+of the vector field. -/
+theorem RoughForm.tsupport_interior_subset (ω : RoughForm I M F (k + 1))
+    (X : (x : M) → TangentSpace I x) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.interior X) ⊆
+      tsupport (α := E) X := by
+  refine closure_mono fun x hx ↦ Function.mem_support.2 fun h ↦ hx ?_
+  ext v
+  simp only [RoughForm.interior_apply, h]
+  exact (ω x).map_coord_zero 0 rfl
+
+/-- The interior product of a form is supported in the topological support of the form. -/
+theorem RoughForm.tsupport_interior_subset_form (X : (x : M) → TangentSpace I x)
+    (ω : RoughForm I M F (k + 1)) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.interior X) ⊆
+      _root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) ω :=
+  closure_mono fun x hx hω ↦ hx (by ext v; rw [RoughForm.interior_apply, hω]; rfl)
+
+/-- Compact support is preserved by the interior product with any vector field. -/
+theorem RoughForm.isCompact_tsupport_interior (X : (x : M) → TangentSpace I x)
+    {ω : RoughForm I M F (k + 1)}
+    (hω : IsCompact (_root_.tsupport (α := E [⋀^Fin (k + 1)]→L[ℝ] F) ω)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.interior X)) :=
+  hω.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin _]→L[ℝ] F) _)
+    (ω.tsupport_interior_subset_form X)
+
 /-- Insertion of the zero field vanishes. -/
 @[simp]
 theorem RoughForm.interior_zero_field (ω : RoughForm I M F (k + 1)) :
@@ -277,6 +303,15 @@ theorem RoughForm.apply_eq_zero_of_interior_eq {ω : RoughForm I M F 2} {α : Ro
   have h0 := congrArg (fun β : RoughForm I M F 0 ↦ β y ![])
     (RoughForm.interior_eq_zero_of_interior_eq h)
   simpa only [RoughForm.interior_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] using h0
+
+/-- The interior product of a vector field `X` with a two-form `ω` vanishes exactly when
+`ω_x(X_x, w) = 0` for every point `x` and every tangent vector `w`. -/
+theorem RoughForm.interior_eq_zero_iff {ω : RoughForm I M F 2} {X : (x : M) → TangentSpace I x} :
+    ω.interior X = 0 ↔ ∀ x w, ω x ![X x, w] = 0 := by
+  refine ⟨fun h x w ↦ by simpa using congrArg (fun β : RoughForm I M F 1 ↦ β x ![w]) h,
+    fun h ↦ funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_⟩
+  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
+  simpa using h x w
 
 /-- Interior products by two vector fields anticommute. -/
 theorem RoughForm.interior_swap [IsTopologicalAddGroup F]

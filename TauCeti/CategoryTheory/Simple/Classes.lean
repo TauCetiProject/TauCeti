@@ -63,10 +63,10 @@ namespace SimpleClasses
 variable {C}
 
 /-- The chosen representative in `C` of a simple isomorphism class. -/
-noncomputable abbrev repr (S : SimpleClasses C) : C := S.1.out
+noncomputable abbrev repr (S : SimpleClasses C) : C := S.val.out
 
 /-- The chosen representative of a simple class is simple. -/
-instance (S : SimpleClasses C) : Simple S.repr := S.2
+instance (S : SimpleClasses C) : Simple S.repr := S.property
 
 /-- The isomorphism class of a simple object. -/
 noncomputable def classOf (X : C) [Simple X] : SimpleClasses C :=
@@ -80,14 +80,14 @@ noncomputable def classOfReprIso (X : C) [Simple X] : (classOf X).repr ≅ X :=
 @[simp]
 theorem classOf_repr (S : SimpleClasses C) : classOf S.repr = S := by
   apply Subtype.ext
-  exact toSkeleton_fromSkeleton_obj S.1
+  exact toSkeleton_fromSkeleton_obj S.val
 
 /-- Two simple classes are equal exactly when their chosen representatives are isomorphic. -/
 @[simp]
 theorem eq_iff_nonempty_iso (S T : SimpleClasses C) :
     S = T ↔ Nonempty (S.repr ≅ T.repr) := by
-  rw [Subtype.ext_iff, ← toSkeleton_fromSkeleton_obj S.1,
-    ← toSkeleton_fromSkeleton_obj T.1, toSkeleton_eq_toSkeleton_iff]
+  rw [Subtype.ext_iff, ← toSkeleton_fromSkeleton_obj S.val,
+    ← toSkeleton_fromSkeleton_obj T.val, toSkeleton_eq_toSkeleton_iff]
   rfl
 
 /-- Two simple objects determine the same simple class exactly when they are isomorphic. -/

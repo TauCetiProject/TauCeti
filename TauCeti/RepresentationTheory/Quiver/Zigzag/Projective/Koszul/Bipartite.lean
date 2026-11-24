@@ -108,7 +108,7 @@ theorem forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_colori
   -- The colouring of `G` is a colouring of the oriented quiver.
   have hc : ∀ ⦃i j : OrientedQuiver G o⦄, (i ⟶ j) →
       C ((OrientedQuiver.vertexEquiv G o).symm i) ≠ C ((OrientedQuiver.vertexEquiv G o).symm j) :=
-    fun _ _ a => C.valid a.1
+    fun _ _ a => C.valid a.val
   refine (forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_bipartite k hc _ hw
     ?_).1 ?_ <;> rw [← ht]
   · simpa only [map_mul, hF, mapAlgHom_vertexIdempotent] using

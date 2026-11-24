@@ -46,6 +46,8 @@ generators.
 * `TauCeti.SerreGraph.SpanningTree.graphPresentation_reducedLoop_bijective`: every element of
   the presentation relative to a spanning tree is the dart word of exactly one reduced closed
   path.
+* `TauCeti.SerreGraph.SpanningTree.pathGroupEquivGraphPresentation_basedPath`: a path based
+  through the tree is the product of the generators of its darts.
 * `TauCeti.SerreGraph.roseGraphPresentationEquivFreeGroup`: the rose has free fundamental group
   on its petals, the two darts of a petal giving a generator and its inverse.
 * `TauCeti.SerreGraph.IsAcyclic.subsingleton_graphPresentation`: relative to any spanning tree,
@@ -171,7 +173,7 @@ theorem equivFreeGroup_of_eq_dartWord (e : Γ.E) :
   rw [equivFreeGroup_of_eq_dartWord, GraphOfGroups.π₁Tree.dartWord_of_mem he]
 
 @[simp] theorem equivFreeGroup_symm_of (e : ↥(O \ T)) :
-    (equivFreeGroup hO hT).symm (FreeGroup.of e) = PresentedGroup.of e.1 := by
+    (equivFreeGroup hO hT).symm (FreeGroup.of e) = PresentedGroup.of e.val := by
   simp [equivFreeGroup]
 
 end free
@@ -211,6 +213,21 @@ theorem pathGroupEquivGraphPresentation_apply (g : PathGroup Γ v) :
     (T.pathGroupEquivGraphPresentation v).symm (PresentedGroup.of e) = T.loop v e := by
   simp [pathGroupEquivGraphPresentation]
 
+/-- The class of a word in the darts corresponds to the same word in the based tree loops. -/
+@[simp] theorem pathGroupEquivGraphPresentation_symm_mk (r : FreeGroup Γ.E) :
+    (T.pathGroupEquivGraphPresentation v).symm (PresentedGroup.mk _ r) =
+      FreeGroup.lift (T.loop v) r :=
+  FreeGroup.lift_unique ((T.pathGroupEquivGraphPresentation v).symm.toMonoidHom.comp
+    (PresentedGroup.mk _)) (T.pathGroupEquivGraphPresentation_symm_of v)
+
+/-- Based at `v` through the tree, a path is the product of the generators of its darts: the
+tree darts of the two connecting paths are trivial in the presentation. -/
+@[simp] theorem pathGroupEquivGraphPresentation_basedPath {a b : Γ.V} (p : Γ.Path a b) :
+    T.pathGroupEquivGraphPresentation v (T.basedPath v p) =
+      ((Path.darts Γ p).map PresentedGroup.of).prod := by
+  rw [T.basedPath_eq_prod_loop, map_list_prod, List.map_map]
+  simp [Function.comp_def]
+
 /-- Relative to a spanning tree, every element of the presentation of the fundamental group is
 the class of the dart word of exactly one reduced closed path at `v`. -/
 theorem graphPresentation_reducedLoop_bijective :
@@ -242,38 +259,38 @@ theorem IsAcyclic.subsingleton_graphPresentation {Γ : SerreGraph.{u, w}} (h : �
   have := h.subsingleton_pathGroup v
   exact (T.pathGroupEquivGraphPresentation v).symm.injective.subsingleton
 
-/-- The positive darts of a rose are its petals. -/
-private def rosePositiveDartEquiv (α : Type w) :
-    ↥({e : (rose α).E | e.2 = true} \ (∅ : Set (rose α).E)) ≃ α where
-  toFun e := e.1.1
-  invFun a := ⟨(a, true), rfl, Set.notMem_empty _⟩
-  left_inv := by
-    rintro ⟨⟨a, b⟩, hb, -⟩
-    obtain rfl : b = true := hb
-    rfl
-  right_inv _ := rfl
-
 /-- The fundamental group of a rose is free on its petals: the dart `(a, true)` of the petal
 `a` is the free generator `a` and the reverse dart `(a, false)` is its inverse. The spanning
 tree of a rose has no darts. -/
 noncomputable def roseGraphPresentationEquivFreeGroup (α : Type w) :
     (rose α).GraphPresentation ∅ ≃* FreeGroup α :=
-  (GraphPresentation.equivFreeGroup (rose_isOrientation α) (by simp)).trans
-    (FreeGroup.freeGroupCongr (rosePositiveDartEquiv α))
+  (GraphPresentation.equivTreePresentation ∅ (GraphOfGroups.trivial (rose α))).trans
+    (GraphOfGroups.π₁Tree.roseEquivFreeGroup _ ∅)
 
 @[simp] theorem roseGraphPresentationEquivFreeGroup_of_true {α : Type w} (a : α) :
     roseGraphPresentationEquivFreeGroup α
       (PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, true)) = FreeGroup.of a := by
-  have ha : ((a, true) : (rose α).E) ∈ {e : (rose α).E | e.2 = true} \ ∅ :=
-    ⟨rfl, Set.notMem_empty _⟩
-  simp [roseGraphPresentationEquivFreeGroup, GraphPresentation.equivFreeGroup_of _ _ ha,
-    rosePositiveDartEquiv]
+  simp only [roseGraphPresentationEquivFreeGroup, MulEquiv.trans_apply]
+  exact (congrArg (GraphOfGroups.π₁Tree.roseEquivFreeGroup _ ∅)
+    (GraphPresentation.equivTreePresentation_of (GraphOfGroups.trivial (rose α))
+      ((a, true) : (rose α).E))).trans (GraphOfGroups.π₁Tree.roseEquivFreeGroup_edge_true _ _ a)
 
 @[simp] theorem roseGraphPresentationEquivFreeGroup_of_false {α : Type w} (a : α) :
     roseGraphPresentationEquivFreeGroup α
       (PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, false)) = (FreeGroup.of a)⁻¹ := by
   rw [← roseGraphPresentationEquivFreeGroup_of_true, ← map_inv]
   exact congrArg _ (GraphPresentation.of_rev (Γ := rose α) (a, true))
+
+/-- The rose dictionary reads a word in the darts as a word in the petals, the dart `(a, true)`
+as the petal `a` and the dart `(a, false)` as its inverse. -/
+@[simp] theorem roseGraphPresentationEquivFreeGroup_mk {α : Type w} (r : FreeGroup (rose α).E) :
+    roseGraphPresentationEquivFreeGroup α (PresentedGroup.mk _ r) =
+      FreeGroup.lift (fun e => cond e.2 (FreeGroup.of e.1) (FreeGroup.of e.1)⁻¹) r := by
+  refine FreeGroup.lift_unique ((roseGraphPresentationEquivFreeGroup α).toMonoidHom.comp
+    (PresentedGroup.mk _)) fun e => ?_
+  obtain ⟨a, _ | _⟩ := e
+  exacts [roseGraphPresentationEquivFreeGroup_of_false a,
+    roseGraphPresentationEquivFreeGroup_of_true a]
 
 @[simp] theorem roseGraphPresentationEquivFreeGroup_symm_of {α : Type w} (a : α) :
     (roseGraphPresentationEquivFreeGroup α).symm (FreeGroup.of a) =

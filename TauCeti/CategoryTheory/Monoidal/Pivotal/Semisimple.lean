@@ -133,7 +133,8 @@ theorem coevaluation_comp_simpleSwapExactPairing_evaluation [Simple (𝟙_ C)] (
       η_ X Xᘁ ≫ @ExactPairing.evaluation C _ _ Xᘁ X (simpleSwapExactPairing X) := by
     rw [rightTrace_def, @ExactPairing.rightDualIso_hom_whiskerRight_evaluation C _ _ Xᘁ X X p₁ p₂]
   rw [← hhom, ← Category.id_comp (rightTrace (rightDualIso p₁ p₂).hom), ← hinv,
-    leftTrace_inv_comp_rightTrace_hom k (rightDualIso p₁ p₂)]
+    leftTrace_inv_comp_rightTrace_hom_of_surjective
+      (bijective_algebraMap_end_of_simple k X).surjective (rightDualIso p₁ p₂)]
 
 end Spherical
 

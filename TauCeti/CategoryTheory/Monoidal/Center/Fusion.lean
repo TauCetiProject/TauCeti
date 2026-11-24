@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Linear.Adjunction
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.LeftAdjunction
 public import TauCeti.CategoryTheory.Monoidal.Center.Ribbon
+public import TauCeti.CategoryTheory.Monoidal.Center.Simple
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Character
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Semisimple

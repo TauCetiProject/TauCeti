@@ -54,7 +54,7 @@ theorem isDomain_and_isIntegrallyClosed_stalk_iff_of_etale (f : X ⟶ Y) [Etale 
     obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
       Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
     obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-      X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.2.preimage f.continuous)
+      X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
     have het := f.etale_appLE hU hV hVU
     algebraize [(f.appLE U V hVU).hom]
     set q := (hV.primeIdealOf ⟨x, hxV⟩).asIdeal
@@ -76,10 +76,8 @@ theorem isDomain_and_isIntegrallyClosed_stalk_iff_of_etale (f : X ⟶ Y) [Etale 
       ⟨inferInstance, inferInstance⟩
   · rintro ⟨_, _⟩
     let := (f.stalkMap x).hom.toAlgebra
-    have := f.isLocalHom_stalkMap_toAlgebra x
-    have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
     have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
-      .of_flat_of_isLocalHom
+      f.faithfullyFlat_stalkMap x (Flat.stalkMap f x)
     exact ⟨IsDomain.of_faithfulSMul _ (X.presheaf.stalk x),
       TauCeti.IsIntegrallyClosed.of_faithfullyFlat _ (X.presheaf.stalk x)⟩
 

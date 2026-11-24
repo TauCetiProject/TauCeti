@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ModularForms.ThetaSeries.LevelOne
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
+import TauCeti.NumberTheory.Bernoulli.Values
 
 /-!
 # Theta series of even unimodular lattices of rank `8` and `16`
@@ -157,7 +158,7 @@ theorem representationNumber_two_mul_of_finrank_eq_sixteen (hL : IsEven L) (hU :
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   have h := hL.representationNumber_two_mul_of_thetaSeries_eq_E _ ⟨4, rfl⟩
     (by rw [← coe_thetaForm hL hU (k := 8) h16, hL.thetaForm_eq_E_eight hU h16]) hm
-  rw [show bernoulli 8 = -1 / 30 by decide +kernel] at h
+  rw [TauCeti.bernoulli_eight] at h
   exact_mod_cast h.trans (by norm_num : _ = ((480 * σ 7 m : ℕ) : ℂ))
 
 end IsEven

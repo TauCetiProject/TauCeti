@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import TauCeti.CategoryTheory.Semisimple.Basic
 public import TauCeti.CategoryTheory.Simple.Classes
 public import Mathlib.Data.Finsupp.Basic
@@ -229,9 +229,8 @@ theorem simpleMultiplicities_apply_classOf_ne_zero_iff (X S : C) [Simple S] :
   rw [hsum]
   constructor
   · rintro ⟨i, ⟨a⟩⟩
-    refine ⟨a.hom ≫ biproduct.ι A i ≫ e.inv, ?_⟩
-    intro h
-    exact biproduct_ι_comp_inv_ne_zero e i ((cancel_epi a.hom).1 (by simpa using h))
+    exact ⟨a.hom ≫ biproduct.ι A i ≫ e.inv,
+      fun h ↦ Simple.not_isZero S (.of_mono_eq_zero _ h)⟩
   · rintro ⟨f, hf⟩
     obtain ⟨i, hi⟩ : ∃ i, f ≫ e.hom ≫ biproduct.π A i ≠ 0 := by
       by_contra! h

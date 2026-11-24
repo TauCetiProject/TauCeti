@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import TauCeti.NumberTheory.NumberField.Quadratic.Units
 import Mathlib.NumberTheory.NumberField.Norm
 import TauCeti.RingTheory.Norm.Quadratic
+import TauCeti.RingTheory.RootsOfUnity.Basic
 import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
 
 /-!
@@ -134,10 +135,8 @@ theorem eq_one_or_eq_neg_one_of_mem_intAddMulOrder (hK : finrank ℚ K = 2) (hf 
     simpa using hζ.eq_neg_one_of_two_right
   · refine absurd (eq_one_of_mem_intAddMulOrder_of_sq_add_mul_add_one hK huf (t := 1)
       (by norm_num) ?_) hf'
-    have := hζ.geom_sum_eq_zero (by norm_num)
-    simp only [Finset.sum_range_succ, Finset.sum_range_zero, pow_zero, pow_one] at this
     push_cast
-    linear_combination this
+    linear_combination hζ.one_add_add_sq
   · refine absurd (eq_one_of_mem_intAddMulOrder_of_sq_add_mul_add_one hK huf (t := 0)
       (by norm_num) ?_) hf'
     have := (hζ.pow (by norm_num) (show 4 = 2 * 2 by rfl)).eq_neg_one_of_two_right
@@ -162,7 +161,7 @@ theorem coe_range_unitsMap_intAddMulOrder [IsTotallyComplex K] (hK : finrank ℚ
   · rintro ⟨w, rfl⟩
     exact eq_one_or_eq_neg_one_of_mem_intAddMulOrder hK hf
       (torsion_eq_top_of_isTotallyComplex hK ▸ Subgroup.mem_top _)
-      (w : (intAddMulOrder K f).toRingOfIntegers).2
+      (w : (intAddMulOrder K f).toRingOfIntegers).property
   · rintro (rfl | rfl)
     · exact ⟨1, map_one _⟩
     · exact ⟨-1, Units.ext (by simp)⟩

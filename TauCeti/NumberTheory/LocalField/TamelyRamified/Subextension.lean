@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.WildInertia
+public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
 public import TauCeti.NumberTheory.LocalField.TamelyRamified.Basic
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.NumberTheory.LocalField.Unramified.Factorization
@@ -96,7 +96,7 @@ in the maximal tamely ramified subextension of `L`. -/
 private theorem coe_mem_maximalTameExtension_inf (L : IntermediateField K (AlgebraicClosure K))
     {m : ℕ} (hm : ¬ ringChar 𝓀[K] ∣ m) (a : Kˣ) {x : L} (hx : x ^ m = algebraMap K L a) :
     (x : AlgebraicClosure K) ∈ maximalTameExtension K (AlgebraicClosure K) ⊓ L :=
-  ⟨mem_maximalTameExtension_of_pow_eq hm a (by simpa using congrArg Subtype.val hx), x.2⟩
+  ⟨mem_maximalTameExtension_of_pow_eq hm a (by simpa using congrArg Subtype.val hx), x.property⟩
 
 variable (L : IntermediateField K (AlgebraicClosure K))
   [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [ValuativeExtension K L]

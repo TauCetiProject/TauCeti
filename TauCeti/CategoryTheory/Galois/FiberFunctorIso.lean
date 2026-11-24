@@ -8,14 +8,14 @@ module
 public import Mathlib.CategoryTheory.Galois.Prorepresentability
 
 /-!
-# Any two fibre functors of a Galois category are isomorphic
+# Any two fibre functors of a pre-Galois category are isomorphic
 
-Let `C` be a Galois category and `F`, `G : C ⥤ FintypeCat` two fibre functors. This file shows
-that every natural transformation `F ⟶ G` is an isomorphism, and that such a natural
-transformation exists. Hence the fibre functors of `C` form a connected groupoid: in the
-language of étale fundamental groups, any two base points are joined by a path, and conjugation
-along a path (`CategoryTheory.Iso.conjAut`) identifies the fundamental groups `Aut F` and
-`Aut G`, non-canonically.
+Let `C` be a pre-Galois category and `F`, `G : C ⥤ FintypeCat` two fibre functors. Having a
+fibre functor, `C` is a Galois category. This file shows that every natural transformation
+`F ⟶ G` is an isomorphism, and that such a natural transformation exists. Hence the fibre
+functors of `C` form a connected groupoid: in the language of étale fundamental groups, any two
+base points are joined by a path, and conjugation along a path (`CategoryTheory.Iso.conjAut`)
+identifies the fundamental groups `Aut F` and `Aut G`, non-canonically.
 
 Mathlib proves the special case of endomorphisms, `FibreFunctor.end_isIso`, for fibre functors
 valued in `FintypeCat` of the morphism universe of `C`. Here both statements hold for any
@@ -45,7 +45,7 @@ to the case of the morphism universe of `C` along the equivalence `FintypeCat.uS
 * `CategoryTheory.PreGaloisCategory.FiberFunctor.nonempty_hom`: there is a natural
   transformation between any two fibre functors.
 * `CategoryTheory.PreGaloisCategory.FiberFunctor.nonempty_iso`: any two fibre functors are
-  isomorphic.
+  isomorphic, as an instance.
 
 ## References
 
@@ -62,7 +62,7 @@ namespace CategoryTheory.PreGaloisCategory
 
 open Limits
 
-variable {C : Type u₁} [Category.{u₂} C] [GaloisCategory C]
+variable {C : Type u₁} [Category.{u₂} C] [PreGaloisCategory C]
 
 namespace FiberFunctor
 
@@ -72,6 +72,7 @@ variable {F G : C ⥤ FintypeCat.{w}} [FiberFunctor F] [FiberFunctor G]
 
 /-- **A natural transformation between fibre functors is bijective on every fibre.** -/
 theorem bijective_app (η : F ⟶ G) (X : C) : Function.Bijective (η.app X) := by
+  have : GaloisCategory C := ⟨⟨F ⋙ FintypeCat.uSwitch.{w, u₂}, inferInstance⟩⟩
   have nat {Y Z : C} (f : Y ⟶ Z) (y : F.obj Y) : η.app Z (F.map f y) = G.map f (η.app Y y) :=
     congr($(η.naturality f) y)
   constructor
@@ -107,6 +108,7 @@ section Existence
 is pro-represented by its pointed Galois objects. -/
 private theorem nonempty_hom_aux (F G : C ⥤ FintypeCat.{u₂}) [FiberFunctor F] [FiberFunctor G] :
     Nonempty (F ⟶ G) := by
+  have : GaloisCategory C := ⟨⟨F, inferInstance⟩⟩
   -- By the pro-Coyoneda lemma, a natural transformation `F ⟶ G` is a compatible family of
   -- points of `G` on the pointed Galois objects of `F`; these fibres are finite and nonempty.
   let D := PointedGaloisObject.incl F ⋙ (G ⋙ FintypeCat.incl) ⋙ uliftFunctor.{u₁}
@@ -126,15 +128,15 @@ end Existence
 
 variable (F G : C ⥤ FintypeCat.{w}) [FiberFunctor F] [FiberFunctor G]
 
-/-- **There is a natural transformation between any two fibre functors** of a Galois
+/-- **There is a natural transformation between any two fibre functors** of a pre-Galois
 category. -/
 theorem nonempty_hom : Nonempty (F ⟶ G) := by
   obtain ⟨η⟩ := nonempty_hom_aux (F ⋙ FintypeCat.uSwitch.{w, u₂}) (G ⋙ FintypeCat.uSwitch)
   exact ⟨(Functor.FullyFaithful.whiskeringRight
     (Functor.FullyFaithful.ofFullyFaithful FintypeCat.uSwitch.{w, u₂}) C).preimage η⟩
 
-/-- **Any two fibre functors of a Galois category are isomorphic.** -/
-theorem nonempty_iso : Nonempty (F ≅ G) :=
+/-- **Any two fibre functors of a pre-Galois category are isomorphic.** -/
+instance nonempty_iso : Nonempty (F ≅ G) :=
   (nonempty_hom F G).map fun η ↦ asIso η
 
 end FiberFunctor

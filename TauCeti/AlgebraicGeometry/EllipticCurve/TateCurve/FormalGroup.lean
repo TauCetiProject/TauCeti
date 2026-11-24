@@ -133,11 +133,11 @@ private theorem invOneAddX_pow_mul_one_add_X_pow (n : ℕ) : invOneAddX ^ n * (1
 private theorem coeff_unitEval_tateClearedX (N : ℕ) :
     coeff N (unitEval tateClearedX) = (if N = 0 then 1 + X else 0) +
       X ^ 2 * ∑ d ∈ N.divisors, (d : ℤ⟦X⟧) * ((1 + X) ^ d + invOneAddX ^ d - 2) := by
-  rw [coeff_unitEval, tateClearedX_def, map_add, coeff_C, coeff_C_mul, coeff_mk]
+  rw [coeff_unitEval]
   rcases eq_or_ne N 0 with rfl | hN
   · simp
-  simp only [hN, ↓reduceIte, zero_add, map_mul, map_pow, map_sub, map_one,
-    Polynomial.aeval_X, map_sum, map_natCast, map_add, map_ofNat, Finset.mul_sum]
+  simp only [coeff_tateClearedX_of_ne_zero hN, hN, ↓reduceIte, zero_add, map_mul, map_pow,
+    map_sub, map_one, Polynomial.aeval_X, map_sum, map_natCast, map_add, map_ofNat, Finset.mul_sum]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le (Nat.divisor_le hd)
   rw [Nat.add_sub_cancel_left]
@@ -154,11 +154,11 @@ private theorem coeff_unitEval_tateClearedY (N : ℕ) :
     coeff N (unitEval tateClearedY) = (if N = 0 then (1 + X) ^ 2 else 0) -
       X ^ 3 * ∑ d ∈ N.divisors, ((d.choose 2 : ℤ⟦X⟧) * (1 + X) ^ d -
         ((d + 1).choose 2 : ℤ⟦X⟧) * invOneAddX ^ d + (d : ℤ⟦X⟧)) := by
-  rw [coeff_unitEval, tateClearedY_def, map_add, coeff_C, coeff_C_mul, coeff_mk]
+  rw [coeff_unitEval]
   rcases eq_or_ne N 0 with rfl | hN
   · simp
-  simp only [hN, ↓reduceIte, zero_sub, zero_add, map_mul, map_pow, map_sub, map_one,
-    Polynomial.aeval_X, map_sum, map_natCast, map_add, Finset.mul_sum]
+  simp only [coeff_tateClearedY_of_ne_zero hN, hN, ↓reduceIte, zero_sub, map_mul, map_pow,
+    map_sub, map_one, Polynomial.aeval_X, map_sum, map_natCast, map_add, Finset.mul_sum]
   rw [← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_of_le (Nat.divisor_le hd)

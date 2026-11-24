@@ -8,13 +8,20 @@ module
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+
+import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
 # Complex conjugation generates the real Galois group
 
 Mathlib classifies real algebra homomorphisms of `ℂ` as the identity or conjugation. Here that
-classification is expressed as the generator condition used by cyclic group cohomology. The
-quadratic-extension instance makes the Galois structure of `ℂ/ℝ` available to that API.
+classification is expressed as the generator condition used by cyclic group cohomology, and
+conjugation is a nontrivial automorphism (`conjAe_ne_one`). The quadratic-extension instance
+makes the Galois structure of `ℂ/ℝ` available to that API.
+
+Since `ℂ` is an algebraic closure of `ℝ` of degree `2`, `AbsoluteGaloisGroup ℝ` is finite of
+order `2` (`natCard_absoluteGaloisGroup_real`, `finite_absoluteGaloisGroup_real`).
 -/
 
 public section
@@ -25,6 +32,11 @@ namespace TauCeti
 instance instIsQuadraticExtensionRealComplex : Algebra.IsQuadraticExtension ℝ ℂ :=
   ⟨Complex.finrank_real_complex⟩
 
+/-- Complex conjugation is not the identity automorphism of `ℂ`: it sends `I` to `-I`. -/
+theorem conjAe_ne_one : (Complex.conjAe : Gal(ℂ/ℝ)) ≠ 1 := fun h ↦ by
+  have := congrArg (· Complex.I) h
+  norm_num [Complex.ext_iff] at this
+
 /-- Complex conjugation generates the full group of real algebra automorphisms of `ℂ`. -/
 @[simp] theorem zpowers_conjAe_eq_top : Subgroup.zpowers Complex.conjAe = ⊤ :=
   (Subgroup.eq_top_iff' _).2 fun σ ↦
@@ -32,5 +44,15 @@ instance instIsQuadraticExtensionRealComplex : Algebra.IsQuadraticExtension ℝ 
       (fun h ↦ ((AlgEquiv.coe_toAlgHom_injective (h.trans AlgEquiv.refl_toAlgHom.symm)).trans
         AlgEquiv.aut_one.symm) ▸ one_mem _)
       fun h ↦ AlgEquiv.coe_toAlgHom_injective h ▸ Subgroup.mem_zpowers _
+
+/-- The absolute Galois group of `ℝ` has order `2`. -/
+theorem natCard_absoluteGaloisGroup_real : Nat.card (AbsoluteGaloisGroup ℝ) = 2 := by
+  have : IsAlgClosure ℝ ℂ := ⟨inferInstance, inferInstance⟩
+  rw [Nat.card_congr (IsSepClosure.equiv ℝ (SeparableClosure ℝ) ℂ).autCongr.toEquiv,
+    IsGalois.card_aut_eq_finrank, Complex.finrank_real_complex]
+
+/-- The absolute Galois group of `ℝ` is finite. -/
+instance finite_absoluteGaloisGroup_real : Finite (AbsoluteGaloisGroup ℝ) :=
+  Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_real]; decide)
 
 end TauCeti

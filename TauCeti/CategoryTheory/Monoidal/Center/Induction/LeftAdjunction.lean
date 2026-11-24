@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Adjunction.FullyFaithful
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Adjunction
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Coend
 public import TauCeti.CategoryTheory.Semisimple.Rigid
@@ -19,7 +18,7 @@ finite-dimensional morphism spaces. Dual to the right adjunction
 `forgetInductionAdjunction k C : Center.forget C ⊣ Center.induction k C` in
 `TauCeti.CategoryTheory.Monoidal.Center.Induction.Adjunction`, this file constructs the left
 adjunction `inductionForgetAdjunction k C : Center.induction k C ⊣ Center.forget C`, so that
-`Center.induction k C` is two-sided adjoint to `Center.forget C`, exact, and faithful.
+`Center.induction k C` is two-sided adjoint to `Center.forget C` and exact.
 
 No pivotal structure or characteristic-zero assumption is used. To pin the normalization of the
 averaging composite `Z ⟶ (induction k C).obj Z.1 ⟶ Z` without reference to a pivotal structure:
@@ -43,10 +42,9 @@ averaging composite `Z ⟶ (induction k C).obj Z.1 ⟶ Z` without reference to a
   `CategoryTheory.Center.ι_comp_inductionForgetAdjunction_counit_app_f`: explicit formulas for the
   unit and counit;
 * `CategoryTheory.Center.inductionForgetAdjunction_unit_comp_forgetInductionAdjunction_counit`,
-  `CategoryTheory.Center.instIsSplitMonoInductionForgetAdjunctionUnit`,
-  `CategoryTheory.Center.instIsSplitEpiForgetInductionAdjunctionCounit`, and
-  `CategoryTheory.Center.instFaithfulInduction`: splitting of the unit against the counit of
-  `forgetInductionAdjunction`, and faithfulness of `Center.induction k C`.
+  `CategoryTheory.Center.instIsSplitMonoInductionForgetAdjunctionUnit`, and
+  `CategoryTheory.Center.instIsSplitEpiForgetInductionAdjunctionCounit`: splitting of the unit
+  against the counit of `forgetInductionAdjunction`.
 
 ## References
 
@@ -848,10 +846,6 @@ instance instIsSplitEpiForgetInductionAdjunctionCounit (X : C) :
     IsSplitEpi ((forgetInductionAdjunction k C).counit.app X) :=
   IsSplitEpi.mk' ⟨(inductionForgetAdjunction k C).unit.app X,
     inductionForgetAdjunction_unit_comp_forgetInductionAdjunction_counit k C X⟩
-
-/-- The induction functor `Center.induction k C` is faithful. -/
-instance instFaithfulInduction : (induction k C).Faithful :=
-  (inductionForgetAdjunction k C).faithful_L_of_mono_unit_app
 
 end LeftAdjunction
 
