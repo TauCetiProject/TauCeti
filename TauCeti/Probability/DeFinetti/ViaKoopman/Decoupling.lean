@@ -10,7 +10,7 @@ import TauCeti.Probability.Exchangeability.PathSpace.Invariant.BlockTransport
 public import TauCeti.Probability.Process.PathLaw.InvariantConditionalLaw
 import Mathlib.Dynamics.BirkhoffSum.Average
 import TauCeti.Probability.Process.BlockAverage.Basic
-import TauCeti.Probability.Ergodic.CondExpProjection
+import TauCeti.Probability.Ergodic.PointwiseErgodic
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -22,15 +22,15 @@ Appending the coordinate `r + m` to the prefix `0, 1, …, r - 1` gives a strict
 selection for *every* `m`, so the block transport makes the set-integral of the resulting product
 independent of `m`. Averaging over `m < n` therefore leaves the left-hand side unchanged while
 turning the right-hand side into a Birkhoff average of `𝟙_B ∘ (· r)` under the shift — which is
-where the mean ergodic theorem enters.
+where the ergodic theorem enters.
 
 ## Source
 
 The Koopman route to de Finetti follows Kallenberg's first proof (see References). No material is
 adapted from `cameronfreer/exchangeability`: that development carries its own `ViaKoopman` subtree
 covering this argument, but the lemmas here are assembled from Tau Ceti's own pieces — the
-invariant block transport of `PathSpace/Invariant/BlockTransport.lean`, the `L¹` mean ergodic
-bridge of `Ergodic/CondExpProjection.lean`, and the invariant conditional law of
+invariant block transport of `PathSpace/Invariant/BlockTransport.lean`, the `L¹` ergodic theorem
+of `Ergodic/PointwiseErgodic.lean`, and the invariant conditional law of
 `Process/PathLaw/InvariantConditionalLaw.lean`.
 
 ## References
@@ -126,7 +126,7 @@ private theorem birkhoffAverage_shift_coord_eq {B : Set α} (r n : ℕ) (x : ℕ
   rw [shift_iterate_apply]
 
 
-/-- **The Birkhoff averages of a coordinate indicator converge in `L¹`.** The mean ergodic bridge,
+/-- **The Birkhoff averages of a coordinate indicator converge in `L¹`.** The `L¹` ergodic theorem,
 applied to the indicator of `B` at coordinate `r`: the limit is the conditional expectation of that
 same indicator given the shift-invariant σ-algebra. -/
 private theorem tendsto_integral_abs_birkhoffAverage_indicator_coord
@@ -141,8 +141,8 @@ private theorem tendsto_integral_abs_birkhoffAverage_indicator_coord
     (measurable_const.indicator hB).comp (measurable_pi_apply r)
   have hbdd : ∀ y : ℕ → α, ‖B.indicator (fun _ ↦ (1 : ℝ)) (y r)‖ ≤ 1 := fun y ↦ by
     simpa only [norm_one] using norm_indicator_le_norm_self (fun _ ↦ (1 : ℝ)) (y r)
-  exact tendsto_integral_abs_birkhoffAverage_sub_condExp (shift α) hmp
-    (MemLp.of_bound hmeas.aestronglyMeasurable 1 (Filter.Eventually.of_forall hbdd))
+  simpa only [Real.norm_eq_abs] using hmp.tendsto_integral_norm_birkhoffAverage_sub_condExp
+    (Integrable.of_bound hmeas.aestronglyMeasurable 1 (Filter.Eventually.of_forall hbdd))
 
 namespace ContractableLaw
 

@@ -39,11 +39,13 @@ degree reasons, so by the Leibniz rule it sends a cycle of degree `m` to a cycle
 
 The truncations increase with `m` (`TauCeti.DGRightModuleCat.truncLESubmodule_mono`, with the
 morphisms `TauCeti.DGRightModuleCat.truncLEInclusion` between them) and exhaust `M`
-(`TauCeti.DGRightModuleCat.iSup_truncLESubmodule`): every DG module over such an algebra is the
-directed union of sub-DG modules whose cohomology is bounded above, that is, homologically
-bounded below. This reduces statements about DG local systems with cohomology bounded on one
-side, proved through convergent spectral sequences, to arbitrary DG local systems, by passing to
-the directed colimit.
+(`TauCeti.DGRightModuleCat.iSup_truncLESubmodule`), every finite set of elements lying in one of
+them (`TauCeti.DGRightModuleCat.exists_forall_mem_truncLESubmodule`): every DG module over such an
+algebra is the directed union of sub-DG modules whose cohomology is bounded above, that is,
+homologically bounded below. This reduces statements about DG local systems with cohomology
+bounded on one side, proved through convergent spectral sequences, to arbitrary DG local systems,
+by passing to the directed colimit (`TauCeti.Algebra.Homology.DG.Twisted.RowFinite.DirectedUnion`
+does this for twisted complexes).
 
 The hypothesis on `𝒜` cannot be dropped: over the graded algebra `R[t]` with `t` of degree `1`
 and zero differential, acting freely on itself, the cycle `1` of degree `0` lies in `τ^{≤ 0}`
@@ -250,6 +252,15 @@ theorem exists_mem_truncLESubmodule (x : M) : ∃ m, x ∈ M.truncLESubmodule h�
   exact ⟨b + 1, mem_truncLESubmodule.2
     ⟨fun p hp ↦ hzero p (by omega), by rw [hzero (b + 1) (by omega), map_zero]⟩⟩
 
+/-- Every finite set of elements of `M` lies in one truncation `τ^{≤ m} M`: the truncations form a
+directed family exhausting `M`. -/
+theorem exists_forall_mem_truncLESubmodule (s : Finset M) :
+    ∃ m, ∀ x ∈ s, x ∈ M.truncLESubmodule h𝒜 m := by
+  classical
+  choose k hk using fun x : M ↦ exists_mem_truncLESubmodule (h𝒜 := h𝒜) x
+  obtain ⟨b, hb⟩ := (s.image k).bddAbove
+  exact ⟨b, fun x hx ↦ truncLESubmodule_mono (hb (Finset.mem_image_of_mem k hx)) (hk x)⟩
+
 /-- **The truncations exhaust the module.** -/
 theorem iSup_truncLESubmodule : ⨆ m, M.truncLESubmodule h𝒜 m = ⊤ :=
   eq_top_iff.2 fun x _ ↦ by
@@ -335,6 +346,15 @@ theorem ιTruncLE_apply {m : ℤ} (x : M.truncLE h𝒜 m) :
 /-- The inclusion of the truncation is injective. -/
 theorem ιTruncLE_injective (m : ℤ) : Function.Injective (M.ιTruncLE h𝒜 m) :=
   Subtype.val_injective.comp (M.truncLEEquiv h𝒜 m).injective
+
+/-- The image of the inclusion of `τ^{≤ m} M` is `truncLESubmodule`. -/
+@[simp]
+theorem range_ιTruncLE (m : ℤ) :
+    Set.range (M.ιTruncLE h𝒜 m) = M.truncLESubmodule h𝒜 m := by
+  ext x
+  refine ⟨?_, fun hx ↦ ⟨(M.truncLEEquiv h𝒜 m).symm ⟨x, hx⟩, by simp⟩⟩
+  rintro ⟨y, rfl⟩
+  exact (M.truncLEEquiv h𝒜 m y).property
 
 variable (M h𝒜) in
 /-- The inclusion `τ^{≤ m} M ⟶ τ^{≤ m'} M` of truncations for `m ≤ m'`. -/
