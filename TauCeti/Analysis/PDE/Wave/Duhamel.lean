@@ -9,7 +9,9 @@ public import TauCeti.Analysis.PDE.Wave.DAlembert
 import Mathlib.Analysis.Calculus.FDeriv.Partial
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Calculus.Deriv.Second
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
+import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
 # The inhomogeneous one-dimensional wave equation
@@ -32,11 +34,10 @@ real Banach space, and classical solutions are `C²` on the whole space-time pla
 * **Existence.** For `G` continuous with a continuous spatial derivative, `dAlembertDuhamel G` is
   `C²`, solves `∂ₜ²u = ∂ₓ²u + G` and has zero initial data; together with d'Alembert's formula it
   solves the Cauchy problem. No derivative of `G` in time is needed.
-* **Representation, uniqueness and finite speed of propagation.** For `G` continuous with a
-  continuous spatial derivative, every `C²` solution is the sum of d'Alembert's formula for its
-  own data and Duhamel's formula for its forcing. Hence, for such forcings, `u(t, x)` depends only
-  on the data on `[x - |t|, x + |t|]` and on the forcing on the characteristic triangle between
-  `(t, x)` and time `0`. Only uniqueness for the Cauchy problem needs no regularity of `G` at all.
+* **Representation, uniqueness and finite speed of propagation.** Every `C²` solution is the sum
+  of d'Alembert's formula for its own data and Duhamel's formula for its forcing, with no
+  regularity assumption on `G`. Hence `u(t, x)` depends only on the data on `[x - |t|, x + |t|]`
+  and on the forcing on the characteristic triangle between `(t, x)` and time `0`.
 * **Bound.** If `‖G‖ ≤ K` on that triangle, then `‖dAlembertDuhamel G t x‖ ≤ t² K / 2`. The
   real-valued constant forcing `G = K`, with solution `u = t² K / 2`, attains it.
 * **Superposition.** Duhamel's formula is linear in the forcing: `dAlembertDuhamel_smul`, and
@@ -58,8 +59,12 @@ form, with `k` replaced by its spatial derivative and, in time, the boundary ter
 and, with `G'` the spatial derivative of `G`, `∂ₜ²w = G + (1 / 2) ∫_0^t (G' (…) - G' (…)) ds`
 while `∂ₓ²w` is the same integral without the boundary term `G(t, x)`. The partial derivatives are
 jointly continuous, so Mathlib's criterion `hasStrictFDerivAt_uncurry_coprod` makes `w` jointly
-`C²`. The representation then reduces to the homogeneous equation,
-`TauCeti.PDE.eq_dAlembert_of_deriv_deriv_eq`, applied to `u - w`.
+`C²`. When `G` has a continuous spatial derivative, the representation therefore reduces to the
+homogeneous equation, `TauCeti.PDE.eq_dAlembert_of_deriv_deriv_eq`, applied to `u - w`. For a
+general `C²` solution `u`, the forcing `G` is only continuous, but the spatial primitive
+`Q(t, x) = ∫_0^x u(t, y) dy` solves the forced equation with forcing
+`∫_0^x G(t, y) dy - ∂ₓu(t, 0)`, whose spatial derivative is `G`. Differentiating the
+representation of `Q` in `x` gives that of `u`.
 
 ## Main declarations
 
@@ -83,7 +88,7 @@ All declarations are in the `TauCeti.PDE` namespace.
 
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 2.4.1 (the nonhomogeneous
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 2.4.2 (the nonhomogeneous
   problem and Duhamel's principle).
 * F. John, *Partial Differential Equations*, 4th ed., Chapter 2, Section 1.
 -/
@@ -442,27 +447,40 @@ private theorem deriv_deriv_sub_eq (hu : ContDiff ℝ 2 (uncurry u))
   rw [deriv_deriv_fun_sub hut hvt, deriv_deriv_fun_sub hux hvx, hwu, hwv]
   abel
 
+/-- For a `C²` solution of `∂ₜ²u = ∂ₓ²u + G`, the forcing `G` is the difference of the second
+derivatives of `u` in the directions `(1, 0)` and `(0, 1)`. -/
+private theorem forcing_eq_fderiv (hu : ContDiff ℝ 2 (uncurry u))
+    (hwave : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
+    (t x : ℝ) :
+    G t x = fderiv ℝ (fderiv ℝ (uncurry u)) (t, x) (1, 0) (1, 0) -
+      fderiv ℝ (fderiv ℝ (uncurry u)) (t, x) (0, 1) (0, 1) := by
+  have hU1 : Differentiable ℝ (uncurry u) := hu.differentiable (by norm_num)
+  have hD : Differentiable ℝ (fderiv ℝ (uncurry u)) :=
+    (hu.fderiv_right (m := 1) one_add_one_eq_two.le).differentiable one_ne_zero
+  have ht : deriv (fun r ↦ u r x) = fun s ↦ fderiv ℝ (uncurry u) (s, x) (1, 0) :=
+    funext fun s ↦ (hasDerivAt_parameterCurve_uncurry (hU1 (s, x))).deriv
+  have hx : deriv (u t) = fun y ↦ fderiv ℝ (uncurry u) (t, y) (0, 1) :=
+    funext fun y ↦ (hasDerivAt_timeSlice_uncurry (hU1 (t, y))).deriv
+  have h := hwave t x
+  rw [ht, hx, (hasDerivAt_fderiv_apply_fst (hD _) _).deriv,
+    (hasDerivAt_fderiv_apply_snd (hD _) _).deriv] at h
+  rw [h, add_sub_cancel_left]
+
+/-- The forcing of a `C²` solution of `∂ₜ²u = ∂ₓ²u + G` is jointly continuous. -/
+private theorem continuous_forcing (hu : ContDiff ℝ 2 (uncurry u))
+    (hwave : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x) :
+    Continuous (uncurry G) := by
+  have hD2 : Continuous (fderiv ℝ (fderiv ℝ (uncurry u))) :=
+    (hu.fderiv_right (m := 1) one_add_one_eq_two.le).continuous_fderiv one_ne_zero
+  rw [show uncurry G = fun p ↦ fderiv ℝ (fderiv ℝ (uncurry u)) p (1, 0) (1, 0) -
+      fderiv ℝ (fderiv ℝ (uncurry u)) p (0, 1) (0, 1) from
+    funext fun p ↦ forcing_eq_fderiv hu hwave p.1 p.2]
+  exact ((hD2.clm_apply continuous_const).clm_apply continuous_const).sub
+    ((hD2.clm_apply continuous_const).clm_apply continuous_const)
+
 variable [CompleteSpace F]
 
-/-- **Uniqueness for the forced Cauchy problem.** Two `C²` solutions of `∂ₜ²u = ∂ₓ²u + G` on the
-space-time plane with the same initial displacement and the same initial velocity are equal. No
-regularity of the forcing `G` is needed. -/
-theorem eq_of_deriv_deriv_eq_add_of_eq_initial (hu : ContDiff ℝ 2 (uncurry u))
-    (hv : ContDiff ℝ 2 (uncurry v))
-    (hwu : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
-    (hwv : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ v r x) s) t = deriv (deriv (v t)) x + G t x)
-    (h0 : u 0 = v 0) (h1 : ∀ y, deriv (fun s ↦ u s y) 0 = deriv (fun s ↦ v s y) 0) : u = v := by
-  have h := eq_of_deriv_deriv_eq_of_eq_initial (u := fun t x ↦ u t x - v t x)
-    (v := fun _ _ ↦ (0 : F)) (hu.sub hv) contDiff_const (deriv_deriv_sub_eq hu hv hwu hwv)
-    (fun _ _ ↦ by simp) (funext fun y ↦ by simp [h0])
-    (fun y ↦ by
-      have hu0 : DifferentiableAt ℝ (fun s ↦ u s y) 0 :=
-        (hu.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0
-      have hv0 : DifferentiableAt ℝ (fun s ↦ v s y) 0 :=
-        (hv.comp (contDiff_prodMk_left y)).differentiable two_ne_zero 0
-      rw [deriv_fun_sub hu0 hv0, h1, sub_self, deriv_const])
-  funext t x
-  simpa [sub_eq_zero] using congrFun (congrFun h t) x
+section Regular
 
 variable (hG : Continuous (uncurry G)) (hGd : ∀ s, Differentiable ℝ (G s))
   (hGd' : Continuous (uncurry fun s ↦ deriv (G s)))
@@ -490,12 +508,11 @@ theorem deriv_deriv_dAlembert_add_dAlembertDuhamel {f g : ℝ → F} (hf : ContD
     deriv_deriv_dAlembertDuhamel hG hGd hGd']
   abel
 
-/-- **Representation of classical solutions.** For `G` continuous with a continuous spatial
-derivative, every `C²` solution `u` of the forced wave equation `∂ₜ²u = ∂ₓ²u + G` on the
-space-time plane is the sum of d'Alembert's formula for its initial displacement `u(0, ·)` and
-initial velocity `∂ₜu(0, ·)` and Duhamel's formula for the forcing. No growth condition at
-infinity is assumed. -/
-theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2 (uncurry u))
+/-- The representation of classical solutions for `G` continuous with a continuous spatial
+derivative: then `dAlembertDuhamel G` is a classical solution, and `u - dAlembertDuhamel G` solves
+the homogeneous equation. -/
+private theorem eq_dAlembert_add_dAlembertDuhamel_of_differentiable
+    (hu : ContDiff ℝ 2 (uncurry u))
     (hwave : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
     (t x : ℝ) :
     u t x = dAlembert (u 0) (fun y ↦ deriv (fun s ↦ u s y) 0) t x + dAlembertDuhamel G t x := by
@@ -511,14 +528,116 @@ theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2
   simp only [dAlembertDuhamel_time_zero, sub_zero, h1] at h
   exact eq_add_of_sub_eq h
 
+end Regular
+
+/-- The time derivative of the spatial primitive `∫_0^x u(t, y) dy` of a `C¹` function `u` is
+`∫_0^x ∂ₜu(t, y) dy`. -/
+private theorem hasDerivAt_spatialPrimitive_time (hu : ContDiff ℝ 1 (uncurry u)) (t x : ℝ) :
+    HasDerivAt (fun r ↦ ∫ y in 0..x, u r y) (∫ y in 0..x, fderiv ℝ (uncurry u) (t, y) (1, 0))
+      t := by
+  have hU1 : Differentiable ℝ (uncurry u) := hu.differentiable one_ne_zero
+  have hD : Continuous (fderiv ℝ (uncurry u)) := hu.continuous_fderiv one_ne_zero
+  simpa using hasDerivAt_integral_of_hasDerivAt (c := fun _ ↦ x) (c' := 0) (f := u)
+    (f' := fun r y ↦ fderiv ℝ (uncurry u) (r, y) (1, 0)) 0 hu.continuous
+    (fun r y ↦ hasDerivAt_parameterCurve_uncurry (hU1 (r, y))) (hD.clm_apply continuous_const)
+    (hasDerivAt_const t x)
+
+/-- **Integrating a forced wave in space.** The spatial primitive `Q(t, x) = ∫_0^x u(t, y) dy`
+of a `C²` solution of `∂ₜ²u = ∂ₓ²u + G` solves `∂ₜ²Q = ∂ₓ²Q + H` with
+`H(t, x) = ∫_0^x G(t, y) dy - ∂ₓu(t, 0)`, a forcing with the continuous spatial derivative `G`. -/
+private theorem deriv_deriv_spatialPrimitive (hu : ContDiff ℝ 2 (uncurry u))
+    (hwave : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
+    (t x : ℝ) :
+    deriv (fun s ↦ deriv (fun r ↦ ∫ y in 0..x, u r y) s) t =
+      deriv (deriv fun z ↦ ∫ y in 0..z, u t y) x +
+        ((∫ y in 0..x, G t y) - fderiv ℝ (uncurry u) (t, 0) (0, 1)) := by
+  set D := fderiv ℝ (uncurry u)
+  have hD1 : ContDiff ℝ 1 D := hu.fderiv_right (m := 1) one_add_one_eq_two.le
+  have hD : Differentiable ℝ D := hD1.differentiable one_ne_zero
+  have hDc : Continuous D := hD1.continuous
+  have hD2 : Continuous (fderiv ℝ D) := hD1.continuous_fderiv one_ne_zero
+  have hGt : Continuous (G t) := (continuous_forcing hu hwave).comp (Continuous.prodMk_right t)
+  have h₁ : deriv (fun r ↦ ∫ y in 0..x, u r y) = fun s ↦ ∫ y in 0..x, D (s, y) (1, 0) :=
+    funext fun s ↦ (hasDerivAt_spatialPrimitive_time (hu.of_le one_le_two) s x).deriv
+  have h₂ : HasDerivAt (fun s ↦ ∫ y in 0..x, D (s, y) (1, 0))
+      (∫ y in 0..x, fderiv ℝ D (t, y) (1, 0) (1, 0)) t := by
+    simpa using hasDerivAt_integral_of_hasDerivAt (c := fun _ ↦ x) (c' := 0)
+      (f := fun r y ↦ D (r, y) (1, 0)) (f' := fun r y ↦ fderiv ℝ D (r, y) (1, 0) (1, 0)) 0
+      (hDc.clm_apply continuous_const) (fun r y ↦ hasDerivAt_fderiv_apply_fst (hD _) _)
+      ((hD2.clm_apply continuous_const).clm_apply continuous_const) (hasDerivAt_const t x)
+  have hut : Continuous (u t) := hu.continuous.comp (Continuous.prodMk_right t)
+  have hx : deriv (fun z ↦ ∫ y in 0..z, u t y) = u t :=
+    funext fun z ↦ (hut.integral_hasStrictDerivAt 0 z).hasDerivAt.deriv
+  have hxx : Continuous fun y ↦ fderiv ℝ D (t, y) (0, 1) (0, 1) :=
+    ((hD2.comp (Continuous.prodMk_right t)).clm_apply continuous_const).clm_apply continuous_const
+  have hint : ∫ y in 0..x, fderiv ℝ D (t, y) (1, 0) (1, 0) =
+      (D (t, x) (0, 1) - D (t, 0) (0, 1)) + ∫ y in 0..x, G t y := by
+    rw [integral_congr fun y _ ↦ sub_eq_iff_eq_add'.1 (forcing_eq_fderiv hu hwave t y).symm,
+      integral_add (hxx.intervalIntegrable _ _) (hGt.intervalIntegrable _ _),
+      integral_eq_sub_of_hasDerivAt (fun y _ ↦ hasDerivAt_fderiv_apply_snd (hD _) (0, 1))
+        (hxx.intervalIntegrable _ _)]
+  rw [h₁, h₂.deriv, hx, hint,
+    (hasDerivAt_timeSlice_uncurry (hu.differentiable two_ne_zero (t, x))).deriv]
+  abel
+
+/-- **Representation of classical solutions.** Every `C²` solution `u` of the forced wave equation
+`∂ₜ²u = ∂ₓ²u + G` on the space-time plane is the sum of d'Alembert's formula for its initial
+displacement `u(0, ·)` and initial velocity `∂ₜu(0, ·)` and Duhamel's formula for the forcing. No
+regularity of `G` and no growth condition at infinity is assumed: the spatial primitive of `u`
+solves a forced equation whose forcing has a continuous spatial derivative, and differentiating its
+representation in space gives that of `u`. -/
+theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2 (uncurry u))
+    (hwave : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
+    (t x : ℝ) :
+    u t x = dAlembert (u 0) (fun y ↦ deriv (fun s ↦ u s y) 0) t x + dAlembertDuhamel G t x := by
+  set D := fderiv ℝ (uncurry u)
+  have hDc : Continuous D := hu.continuous_fderiv two_ne_zero
+  have hG := continuous_forcing hu hwave
+  have hGs (s : ℝ) : Continuous (G s) := hG.comp (Continuous.prodMk_right s)
+  have hus (s : ℝ) : Continuous (u s) := hu.continuous.comp (Continuous.prodMk_right s)
+  set g : ℝ → F := fun y ↦ deriv (fun s ↦ u s y) 0
+  have hg : g = fun y ↦ D (0, y) (1, 0) := funext fun y ↦
+    (hasDerivAt_parameterCurve_uncurry (hu.differentiable two_ne_zero (0, y))).deriv
+  have hgc : Continuous g := hg ▸ by fun_prop
+  set H : ℝ → ℝ → F := fun s z ↦ (∫ y in 0..z, G s y) - D (s, 0) (0, 1)
+  have hH : Continuous (uncurry H) :=
+    (continuous_parametric_primitive_of_continuous hG).sub (by fun_prop)
+  have hHd (s z : ℝ) : HasDerivAt (H s) (G s z) z :=
+    ((hGs s).integral_hasStrictDerivAt 0 z).hasDerivAt.sub_const _
+  have hHG : (fun s ↦ deriv (H s)) = G := funext fun s ↦ funext fun z ↦ (hHd s z).deriv
+  have hP1 : (fun y ↦ deriv (fun s ↦ ∫ z in 0..y, u s z) 0) = fun y ↦ ∫ z in 0..y, g z := by
+    rw [hg]
+    exact funext fun y ↦ (hasDerivAt_spatialPrimitive_time (hu.of_le one_le_two) 0 y).deriv
+  have hrep := eq_dAlembert_add_dAlembertDuhamel_of_differentiable hH
+    (fun s z ↦ (hHd s z).differentiableAt) (hHG ▸ hG)
+    (u := fun r z ↦ ∫ y in 0..z, u r y) (contDiff_parametric_primitive_of_contDiff hu 0)
+    (deriv_deriv_spatialPrimitive hu hwave) t
+  simp only [hP1] at hrep
+  have hd := ((hasDerivAt_dAlembert_space
+    (fun z ↦ ((hus 0).integral_hasStrictDerivAt 0 z).hasDerivAt.differentiableAt)
+    (continuous_primitive (μ := volume) (hgc.intervalIntegrable · ·) 0) t x).add
+    (hasDerivAt_dAlembertDuhamel_space hH t x))
+  replace hd := hd.congr_of_eventuallyEq (Filter.Eventually.of_forall hrep)
+  have hP0 (z : ℝ) : deriv (fun x ↦ ∫ y in 0..x, u 0 y) z = u 0 z :=
+    ((hus 0).integral_hasStrictDerivAt 0 z).hasDerivAt.deriv
+  have hHsub (s : ℝ) : H s (x + (t - s)) - H s (x - (t - s)) =
+      ∫ y in x - (t - s)..x + (t - s), G s y := by
+    simp only [H, sub_sub_sub_cancel_right]
+    exact integral_interval_sub_left ((hGs s).intervalIntegrable _ _)
+      ((hGs s).intervalIntegrable _ _)
+  rw [((hus t).integral_hasStrictDerivAt 0 x).hasDerivAt.unique hd, hP0, hP0,
+    integral_congr fun s _ ↦ hHsub s, dAlembert_def, dAlembertDuhamel_def,
+    ← integral_interval_sub_left (hgc.intervalIntegrable 0 (x + t))
+      (hgc.intervalIntegrable 0 (x - t))]
+  module
+
 /-- **The domain of dependence.** Let `u` and `v` be `C²` solutions of `∂ₜ²u = ∂ₓ²u + G` and
-`∂ₜ²v = ∂ₓ²v + G'`, with `G` and `G'` continuous with continuous spatial derivatives. If their
-initial displacements and velocities agree on the interval between `x - t` and `x + t`, and the
-forcings agree on the characteristic triangle with apex `(t, x)` and base at time `0`, then `u`
-and `v` agree at `(t, x)`: forced waves also propagate with speed at most one. -/
-theorem eq_of_deriv_deriv_eq_add_of_eqOn (hG' : Continuous (uncurry G'))
-    (hG'd : ∀ s, Differentiable ℝ (G' s)) (hG'd' : Continuous (uncurry fun s ↦ deriv (G' s)))
-    (hu : ContDiff ℝ 2 (uncurry u)) (hv : ContDiff ℝ 2 (uncurry v))
+`∂ₜ²v = ∂ₓ²v + G'`. If their initial displacements and velocities agree on the interval between
+`x - t` and `x + t`, and the forcings agree on the characteristic triangle with apex `(t, x)` and
+base at time `0`, then `u` and `v` agree at `(t, x)`: forced waves also propagate with speed at most
+one. No regularity of `G` or `G'` is needed. -/
+theorem eq_of_deriv_deriv_eq_add_of_eqOn (hu : ContDiff ℝ 2 (uncurry u))
+    (hv : ContDiff ℝ 2 (uncurry v))
     (hwu : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
     (hwv : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ v r x) s) t = deriv (deriv (v t)) x + G' t x)
     {t x : ℝ} (h0 : EqOn (u 0) (v 0) (uIcc (x - t) (x + t)))
@@ -526,9 +645,20 @@ theorem eq_of_deriv_deriv_eq_add_of_eqOn (hG' : Continuous (uncurry G'))
       (uIcc (x - t) (x + t)))
     (hGG' : ∀ s ∈ uIcc 0 t, EqOn (G s) (G' s) (uIcc (x - (t - s)) (x + (t - s)))) :
     u t x = v t x := by
-  rw [eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq hG hGd hGd' hu hwu,
-    eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq hG' hG'd hG'd' hv hwv,
+  rw [eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq hu hwu,
+    eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq hv hwv,
     dAlembert_congr h0 h1, dAlembertDuhamel_congr hGG']
+
+/-- **Uniqueness for the forced Cauchy problem.** Two `C²` solutions of `∂ₜ²u = ∂ₓ²u + G` on the
+space-time plane with the same initial displacement and the same initial velocity are equal. No
+regularity of the forcing `G` is needed. -/
+theorem eq_of_deriv_deriv_eq_add_of_eq_initial (hu : ContDiff ℝ 2 (uncurry u))
+    (hv : ContDiff ℝ 2 (uncurry v))
+    (hwu : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ u r x) s) t = deriv (deriv (u t)) x + G t x)
+    (hwv : ∀ t x, deriv (fun s ↦ deriv (fun r ↦ v r x) s) t = deriv (deriv (v t)) x + G t x)
+    (h0 : u 0 = v 0) (h1 : ∀ y, deriv (fun s ↦ u s y) 0 = deriv (fun s ↦ v s y) 0) : u = v :=
+  funext fun _ ↦ funext fun _ ↦ eq_of_deriv_deriv_eq_add_of_eqOn hu hv hwu hwv
+    (fun y _ ↦ congrFun h0 y) (fun y _ ↦ h1 y) (fun _ _ _ _ ↦ rfl)
 
 end CauchyProblem
 
