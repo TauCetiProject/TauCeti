@@ -16,6 +16,7 @@ import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Integrability.Cpow
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Euler's integral for the Gauss hypergeometric function
@@ -265,14 +266,10 @@ theorem regularizedGaussHGFun_eq_eulerIntegral (a : ℂ) {b c z : ℂ}
         exact (mul_le_of_le_one_right (norm_nonneg z) ht.2).trans_lt hz
       have h := TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) hzt
       rwa [one_div, ← cpow_neg] at h
-  have hmc (n : ℕ) : Ring.multichoose a n = (ascPochhammer ℂ n).eval a / n.factorial := by
-    have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer a n
-    rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-    have hfac : (n.factorial : ℂ) ≠ 0 := mod_cast Nat.factorial_ne_zero n
-    rw [← h, mul_div_cancel_left₀ _ hfac]
   rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow, eulerIntegral_def]
   refine (heuler.congr_fun fun n => ?_).tsum_eq
-  rw [coeff_regularizedGaussHGFunSeries, hmc]
+  rw [coeff_regularizedGaussHGFunSeries,
+    TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
   ring
 
 /-- At `z = 1`, Euler's normalized integral reduces to Euler's Beta integral when `0 < b.re` and
