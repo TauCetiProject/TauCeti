@@ -143,9 +143,8 @@ private theorem exists_positiveContinuousLinearMap_of_ne_zero {x : A} (hx : 0 �
     simpa [ω, sq, ← DoubleCentralizer.coe_mul, DoubleCentralizer.norm_coe] using hω₀ 2
   have hω_mem := pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero
     (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A))
-    (ω₀.toWeakDual_mem_stateSpace_iff.2 hω₀_norm) hx0 (by
-      have h1' : ω₀ (x : 𝓜(ℂ, A)) = ‖x‖ := h1
-      simpa using congrArg norm h1')
+    (ω₀.toWeakDual_mem_stateSpace_iff.2 hω₀_norm) hx0
+    (by simpa [ω] using congrArg norm h1)
   have hω_eq : StrongDual.toWeakDual (ω : A →L[ℂ] ℂ) =
       pullbackFunctional A (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A))
         (StrongDual.toWeakDual (ω₀ : 𝓜(ℂ, A) →L[ℂ] ℂ)) :=
@@ -264,7 +263,8 @@ theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero {a :
   have hz_eq : ‖z‖ = ‖a‖ := by
     have hspec : (‖z‖₊ : ℝ≥0∞) = ‖(a : A⁺¹)‖₊ :=
       hz_norm.trans (IsStarNormal.spectralRadius_eq_nnNorm (a : A⁺¹))
-    exact (congr_arg NNReal.toReal (ENNReal.coe_inj.1 hspec)).trans (Unitization.norm_inr a)
+    simpa [coe_nnNorm, Unitization.norm_inr] using
+      congr_arg NNReal.toReal (ENNReal.coe_inj.1 hspec)
   obtain ⟨ψ, hψ, hψa⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum (a : A⁺¹) hz
   have hψ_norm : ‖ψ (a : A⁺¹)‖ = ‖a‖ := by rw [hψa, hz_eq]
   exact ⟨pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ,
