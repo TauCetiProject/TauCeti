@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian.Pullback
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Pullback
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.SheafH.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Pullback
@@ -23,13 +24,12 @@ intertwines the two.
 The proof writes a torsor class as the class of a torsor of lifts for an embedding of `F` into an
 injective sheaf, pulls back that short exact sequence along the exact functor `u^*`, and compares
 the connecting maps: on torsors by `NonabelianH1.pullback_connecting_of_comp_eq`, on cohomology by
-`Sheaf.H.pullback_δ`, and in degree zero by `Sheaf.H.zeroMulEquivSections_pullback`.
+`Sheaf.H.pullback_δ`, and in degree zero by `Sheaf.H.zeroMulEquivSections_pullback`. The torsors
+are pulled back along `CategoryTheory.Functor.abelianSheafToGrpSheafUnit u J K`, the unit
+`F ⟶ u_* u^* F` on the underlying sheaves of groups.
 
 ## Main declarations
 
-* `CategoryTheory.Functor.abelianSheafToGrpSheafUnit u J K F`: the unit `F ⟶ u_* u^* F`, as a
-  morphism from the sheaf of groups underlying `F` to the pushforward of the one underlying
-  `u^* F`.
 * `CategoryTheory.Sheaf.H.zeroMulEquivSections_pullback`: in degree zero, the pullback of
   cohomology sends a global section `s` of `F` to the global section of `u^* F` whose value over
   `u(U)` is the image of `s` over `U` under the unit.
@@ -55,43 +55,6 @@ variable {C : Type u₁} [Category.{v₁} C] (J : GrothendieckTopology C)
   (u : C ⥤ D) [u.IsContinuous J K]
   [(u.sheafPushforwardContinuous AddCommGrpCat.{w} J K).IsRightAdjoint]
 
-namespace Functor
-
-/-- The unit `F ⟶ u_* u^* F` of the adjunction `u^* ⊣ u_*` on abelian sheaves, as a morphism from
-the sheaf of groups underlying `F` to the pushforward of the sheaf of groups underlying
-`u^* F`: the image of the unit under `abelianSheafToGrpSheaf J`. Use
-`abelianSheafToGrpSheafUnit_hom_app` to compute it. -/
-def abelianSheafToGrpSheafUnit (F : Sheaf J AddCommGrpCat.{w}) :
-    (abelianSheafToGrpSheaf J).obj F ⟶ (u.sheafPushforwardContinuous GrpCat.{w} J K).obj
-      ((abelianSheafToGrpSheaf K).obj ((u.sheafPullback AddCommGrpCat.{w} J K).obj F)) :=
-  (abelianSheafToGrpSheaf J).map ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F) ≫
-    (abelianSheafToGrpSheafPushforwardIso J K u).hom.app _
-
-/-- The unit `F ⟶ u_* u^* F` on the underlying sheaves of groups applies the unit to sections. -/
-@[simp]
-lemma abelianSheafToGrpSheafUnit_hom_app (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ)
-    (a : Multiplicative (F.obj.obj U)) :
-    (u.abelianSheafToGrpSheafUnit J K F).hom.app U (abelianSheafToGrpSheafObjEquiv F U a) =
-      abelianSheafToGrpSheafObjEquiv _ (u.op.obj U) (.ofAdd
-        (((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom.app U a.toAdd)) := by
-  simp only [abelianSheafToGrpSheafUnit]
-  rw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, ConcreteCategory.comp_apply,
-    abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv]
-  exact abelianSheafToGrpSheafPushforwardIso_hom_app_hom_app J K u _ U _
-
-variable {J K} in
-/-- The unit `F ⟶ u_* u^* F` on underlying sheaves of groups is natural in `F`. -/
-lemma abelianSheafToGrpSheafUnit_naturality {F G : Sheaf J AddCommGrpCat.{w}} (f : F ⟶ G) :
-    (abelianSheafToGrpSheaf J).map f ≫ u.abelianSheafToGrpSheafUnit J K G =
-      u.abelianSheafToGrpSheafUnit J K F ≫ (u.sheafPushforwardContinuous GrpCat.{w} J K).map
-        ((abelianSheafToGrpSheaf K).map ((u.sheafPullback AddCommGrpCat.{w} J K).map f)) := by
-  rw [abelianSheafToGrpSheafUnit, abelianSheafToGrpSheafUnit, ← Functor.map_comp_assoc,
-    ← (u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit_naturality, Functor.map_comp_assoc,
-    Category.assoc]
-  exact congrArg (_ ≫ ·) ((abelianSheafToGrpSheafPushforwardIso J K u).hom.naturality _)
-
-end Functor
-
 variable {J K}
 
 namespace Sheaf.H
@@ -109,30 +72,19 @@ lemma zeroMulEquivSections_pullback (F : Sheaf J AddCommGrpCat.{w}) (x : H F 0) 
       (.ofAdd (H.pullback (u.sheafPullback AddCommGrpCat.{w} J K)
         (u.sheafPullbackConstantSheafIso AddCommGrpCat.{w} J K (of (ULift ℤ))).inv F 0 x))).val
           (u.op.obj U) =
-      (u.abelianSheafToGrpSheafUnit J K F).hom.app U
+      ((u.abelianSheafToGrpSheafUnit J K).app F).hom.app U
         ((zeroMulEquivSections F (.ofAdd x)).val U) := by
   obtain ⟨f, rfl⟩ := Ext.addEquiv₀.symm.surjective x
   rw [zeroMulEquivSections_apply_coe, zeroMulEquivSections_apply_coe, toAdd_ofAdd, toAdd_ofAdd,
-    addEquiv₀_pullback, AddEquiv.apply_symm_apply, Functor.abelianSheafToGrpSheafUnit_hom_app,
+    addEquiv₀_pullback, AddEquiv.apply_symm_apply, Functor.abelianSheafToGrpSheafUnit_app_hom_app,
     toAdd_ofAdd]
-  -- Both sides evaluate at `1` morphisms out of the constant presheaf `ℤ` on `C`; compare them
-  -- through the description of `ℤ_K ⟶ u^* ℤ_J` by the unit on constant sections.
-  have key := u.whiskerLeft_toSheafify_comp_sheafPullbackConstantSheafIso_inv
-    AddCommGrpCat.{w} J K (of (ULift ℤ))
-  have nat := congrArg (·.hom)
-    ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit_naturality f)
-  simp only [ObjectProperty.FullSubcategory.comp_hom] at nat
-  have h : Functor.whiskerLeft u.op (toSheafify K _ ≫
-      ((u.sheafPullbackConstantSheafIso AddCommGrpCat.{w} J K (of (ULift ℤ))).inv ≫
-        (u.sheafPullback AddCommGrpCat.{w} J K).map f).hom) =
-      toSheafify J _ ≫ f.hom ≫
-        ((u.sheafAdjunctionContinuous AddCommGrpCat.{w} J K).unit.app F).hom := by
-    rw [ObjectProperty.FullSubcategory.comp_hom, ← Category.assoc, Functor.whiskerLeft_comp, key]
-    exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) nat)
-  have inner := ConcreteCategory.congr_hom (NatTrans.congr_app h U) ⟨1⟩
   simp only [Adjunction.homEquiv_unit, sheafificationAdjunction_unit_app]
+  -- Both sides evaluate at `1` morphisms out of the constant presheaf `ℤ` on `C`, which agree by
+  -- the description of the pulled-back morphism by the unit.
   exact congrArg (fun a ↦ abelianSheafToGrpSheafObjEquiv
-    ((u.sheafPullback AddCommGrpCat.{w} J K).obj F) (u.op.obj U) (.ofAdd a)) inner
+    ((u.sheafPullback AddCommGrpCat.{w} J K).obj F) (u.op.obj U) (.ofAdd a))
+    (ConcreteCategory.congr_hom
+      (NatTrans.congr_app (whiskerLeft_toSheafify_comp_sheafPullback_map (K := K) u F f) U) ⟨1⟩)
 
 end Sheaf.H
 
@@ -153,7 +105,7 @@ pullback `H¹(C, F) → H¹(D, u^* F)` of sheaf cohomology. -/
 theorem equivSheafH_pullback (F : Sheaf J AddCommGrpCat.{w})
     (x : NonabelianH1 ((abelianSheafToGrpSheaf J).obj F)) :
     equivSheafH ((u.sheafPullback AddCommGrpCat.{w} J K).obj F)
-        (pullback (u.abelianSheafToGrpSheafUnit J K F) x) =
+        (pullback ((u.abelianSheafToGrpSheafUnit J K).app F) x) =
       H.pullback (u.sheafPullback AddCommGrpCat.{w} J K)
         (u.sheafPullbackConstantSheafIso AddCommGrpCat.{w} J K (of (ULift ℤ))).inv F 1
           (equivSheafH F x) := by
@@ -163,9 +115,9 @@ theorem equivSheafH_pullback (F : Sheaf J AddCommGrpCat.{w})
   -- injective embedding of `F`, and pull back the short exact sequence along `u^*`.
   obtain ⟨q, rfl⟩ := connecting_surjective_of_injective hF.isGroupExtension x
   rw [pullback_connecting_of_comp_eq hF.isGroupExtension hF'.isGroupExtension
-    (u.abelianSheafToGrpSheafUnit J K _) (u.abelianSheafToGrpSheafUnit J K _)
-    (u.abelianSheafToGrpSheafUnit J K _) (u.abelianSheafToGrpSheafUnit_naturality _)
-    (u.abelianSheafToGrpSheafUnit_naturality _).symm q
+    ((u.abelianSheafToGrpSheafUnit J K).app _) ((u.abelianSheafToGrpSheafUnit J K).app _)
+    ((u.abelianSheafToGrpSheafUnit J K).app _) ((u.abelianSheafToGrpSheafUnit J K).naturality _)
+    ((u.abelianSheafToGrpSheafUnit J K).naturality _).symm q
     (H.zeroMulEquivSections _ (.ofAdd (H.pullback (u.sheafPullback AddCommGrpCat.{w} J K)
       (u.sheafPullbackConstantSheafIso AddCommGrpCat.{w} J K (of (ULift ℤ))).inv _ 0
         ((H.zeroMulEquivSections _).symm q).toAdd))) fun U ↦ ?_]
@@ -180,7 +132,7 @@ theorem equivSheafH_symm_pullback (F : Sheaf J AddCommGrpCat.{w}) (z : H F 1) :
     (equivSheafH ((u.sheafPullback AddCommGrpCat.{w} J K).obj F)).symm
         (H.pullback (u.sheafPullback AddCommGrpCat.{w} J K)
           (u.sheafPullbackConstantSheafIso AddCommGrpCat.{w} J K (of (ULift ℤ))).inv F 1 z) =
-      pullback (u.abelianSheafToGrpSheafUnit J K F) ((equivSheafH F).symm z) := by
+      pullback ((u.abelianSheafToGrpSheafUnit J K).app F) ((equivSheafH F).symm z) := by
   rw [Equiv.symm_apply_eq, equivSheafH_pullback, Equiv.apply_symm_apply]
 
 end Sheaf.NonabelianH1
