@@ -24,7 +24,11 @@ is invariant under translation along `ν`, the shear by `-γ` inverts it
 (`TauCeti.real_inner_shearAlong`), so it carries the height `⟪y, ν⟫` to the height
 `⟪x, ν⟫ - γ x` above the graph of `γ` (`TauCeti.real_inner_shearAlong_sub`). So it flattens
 the region above the graph of `γ` over the hyperplane `ν^⊥` to a half-space, without the
-splitting `E = ℝ × ν^⊥` used by `TauCeti.graphFlattening`.
+splitting `E = ℝ × ν^⊥` used by `TauCeti.graphFlattening`. For continuous `γ`, the closure of the
+region above the graph is the region on or above it (`TauCeti.closure_setOf_lt_real_inner`).
+So if a set `Ω` agrees on an open set `W` with the region above the graph, then on `W` the closure
+of `Ω` is the region on or above the graph (`TauCeti.closure_inter_eq_setOf_le_real_inner_inter`)
+and the frontier of `Ω` is the graph (`TauCeti.frontier_inter_eq_setOf_eq_real_inner_inter`).
 
 This file records the calculus of this shear. It is `C^m` when `γ` is
 (`TauCeti.contDiff_shearAlong`), its derivative is `id + Dγ(y) ν`
@@ -88,6 +92,52 @@ height `⟪y, ν⟫` to the height `⟪x, ν⟫ - γ x` above the graph of `γ`.
 theorem real_inner_shearAlong_sub (hν : ‖ν‖ = 1) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
     (y : E) : ⟪shearAlong γ ν y, ν⟫_ℝ - γ (shearAlong γ ν y) = ⟪y, ν⟫_ℝ := by
   rw [real_inner_shearAlong hν, shearAlong_def, hγν, add_sub_cancel_right]
+
+/-- For a unit vector `ν` and a continuous `γ` invariant along `ν`, the closure of the region
+`{x | γ x < ⟪x, ν⟫}` above the graph of `γ` is the region `{x | γ x ≤ ⟪x, ν⟫}` on or above it:
+a point of the graph is the limit of the points `x + t ν`, `t > 0`, above it. -/
+theorem closure_setOf_lt_real_inner (hν : ‖ν‖ = 1) (hγ : Continuous γ)
+    (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x) :
+    closure {x | γ x < ⟪x, ν⟫_ℝ} = {x | γ x ≤ ⟪x, ν⟫_ℝ} := by
+  refine (closure_lt_subset_le hγ (continuous_id.inner continuous_const)).antisymm
+    fun x (hx : γ x ≤ ⟪x, ν⟫_ℝ) => mem_closure_of_tendsto (f := fun t : ℝ => x + t • ν)
+      (b := nhdsWithin 0 (Ioi 0)) ?_ (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) => ?_)
+  · have hc : Continuous fun t : ℝ => x + t • ν := by fun_prop
+    exact (hc.tendsto' 0 x (by simp)).mono_left nhdsWithin_le_nhds
+  · simp only [mem_ofPred_eq, id_eq, hγν, real_inner_add_smul_self_of_norm_eq_one hν]
+    linarith
+
+/-- If `Ω` agrees on an open set `W` with the region `{y | γ y < ⟪y, ν⟫}` above the graph of a
+continuous function `γ` invariant along a unit vector `ν`, then on `W` the closure of `Ω` is the
+region `{y | γ y ≤ ⟪y, ν⟫}` on or above the graph. -/
+theorem closure_inter_eq_setOf_le_real_inner_inter {Ω W : Set E} (hW : IsOpen W) (hν : ‖ν‖ = 1)
+    (hγ : Continuous γ) (hγν : ∀ y (t : ℝ), γ (y + t • ν) = γ y)
+    (hΩW : Ω ∩ W = {y | γ y < ⟪y, ν⟫_ℝ} ∩ W) :
+    closure Ω ∩ W = {y | γ y ≤ ⟪y, ν⟫_ℝ} ∩ W := by
+  rw [← closure_setOf_lt_real_inner hν hγ hγν]
+  refine Subset.antisymm (fun y hy => ⟨?_, hy.2⟩) fun y hy => ⟨?_, hy.2⟩
+  · -- `closure Ω ∩ W ⊆ closure (Ω ∩ W)`, the closure of a part of the region above the graph.
+    have hy' := hW.closure_inter hy
+    rw [hΩW] at hy'
+    exact closure_mono inter_subset_left hy'
+  · -- `closure {γ < ⟪·, ν⟫} ∩ W ⊆ closure ({γ < ⟪·, ν⟫} ∩ W) = closure (Ω ∩ W)`.
+    have hy' := hW.inter_closure ⟨hy.2, hy.1⟩
+    rw [inter_comm, ← hΩW] at hy'
+    exact closure_mono inter_subset_left hy'
+
+/-- If `Ω` agrees on an open set `W` with the region `{y | γ y < ⟪y, ν⟫}` above the graph of a
+continuous function `γ` invariant along a unit vector `ν`, then on `W` the frontier of `Ω` is the
+graph `{y | γ y = ⟪y, ν⟫}`. -/
+theorem frontier_inter_eq_setOf_eq_real_inner_inter {Ω W : Set E} (hW : IsOpen W)
+    (hν : ‖ν‖ = 1) (hγ : Continuous γ) (hγν : ∀ y (t : ℝ), γ (y + t • ν) = γ y)
+    (hΩW : Ω ∩ W = {y | γ y < ⟪y, ν⟫_ℝ} ∩ W) :
+    frontier Ω ∩ W = {y | γ y = ⟪y, ν⟫_ℝ} ∩ W := by
+  have ho : IsOpen {y | γ y < ⟪y, ν⟫_ℝ} := isOpen_lt hγ (continuous_id.inner continuous_const)
+  -- On the open set `W`, the frontier of `Ω` is that of the open region above the graph.
+  rw [← frontier_inter_open_inter hW, hΩW, frontier_inter_open_inter hW, ho.frontier_eq,
+    closure_setOf_lt_real_inner hν hγ hγν]
+  ext y
+  simp only [mem_inter_iff, mem_sdiff, mem_ofPred_eq, not_lt, ← le_antisymm_iff]
 
 end InnerProduct
 
