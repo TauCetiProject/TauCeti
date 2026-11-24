@@ -403,6 +403,17 @@ theorem baseHomeomorph_footprintMap_mem_footprint_iff {I : Finset A}
   obtain ⟨y, hy, hyx⟩ := 𝒜.mem_footprint.1 h
   exact 𝒜.mem_regLocus_of_footprintMap_eq _ (𝒜.baseHomeomorph.injective hyx) hy
 
+/-- For `I ⊆ J`, a point `x` of the zero set `Z_∅J` lies over the regular footprint `V_I` exactly
+when its image `ψ_IJ(x)` is regular, since `ψ_∅J = ψ_∅I ∘ ψ_IJ`. -/
+theorem baseHomeomorph_footprintMap_mem_footprint_iff_of_subset {I J : Finset A} (hIJ : I ⊆ J)
+    (x : kuranishiZeroSet 𝒜.kuranishi ∅ J) :
+    𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset J) x) ∈ 𝒜.footprint I ↔
+      𝒜.footprintMap hIJ ⟨x.val, kuranishiZeroSet_mono _ (Finset.empty_subset I) J x.property⟩ ∈
+        𝒜.regLocus I := by
+  rw [← 𝒜.footprintMap_footprintMap_mk (Finset.empty_subset I) hIJ
+    ⟨x.val, kuranishiZeroSet_mono _ (Finset.empty_subset I) J x.property⟩ x.property,
+    baseHomeomorph_footprintMap_mem_footprint_iff]
+
 /-- For `I ⊆ K`, the regular footprint `V_I` meets the image `U_∅K` of `ψ_∅K` only inside `V_K`.
 A zero `x ∈ Z_∅K` over `V_I` has a regular image `ψ_IK(x) ∈ X_I^reg`, so it is regular itself
 by the axiom `ψ_IK⁻¹(X_I^reg) ⊆ X_K^reg`. -/
@@ -410,12 +421,8 @@ theorem footprint_inter_image_range_subset {I K : Finset A} (hIK : I ⊆ K) :
     𝒜.footprint I ∩ 𝒜.baseHomeomorph '' range (𝒜.footprintMap (Finset.empty_subset K)) ⊆
       𝒜.footprint K := by
   rintro _ ⟨hI, _, ⟨x, rfl⟩, rfl⟩
-  refine (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff x).2 ?_
-  have hx : x.val ∈ kuranishiZeroSet 𝒜.kuranishi I K :=
-    kuranishiZeroSet_mono _ (Finset.empty_subset I) K x.property
-  rw [← 𝒜.footprintMap_footprintMap_mk (Finset.empty_subset I) hIK ⟨x.val, hx⟩ x.property,
-    baseHomeomorph_footprintMap_mem_footprint_iff] at hI
-  exact 𝒜.mem_regLocus_of_footprintMap_mem hIK ⟨x.val, hx⟩ hI
+  exact (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff x).2 (𝒜.mem_regLocus_of_footprintMap_mem
+    hIK _ ((𝒜.baseHomeomorph_footprintMap_mem_footprint_iff_of_subset hIK x).1 hI))
 
 /-- **The first footprint condition** (Pardon, proof of Proposition 4.3.3): `V_I ∩ V_K ⊆ V_J`
 for `I ⊆ J ⊆ K`. The inclusion can be strict: for the atlas `s(x) = xᵐ` on a point, with

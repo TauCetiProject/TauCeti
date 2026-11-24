@@ -369,8 +369,7 @@ theorem baseHomeomorph_footprintMap_mem_footprint_inter {I J B : Finset A} (hIJ 
       ⟨_, (𝒜.mem_kuranishiZeroSet_iff_footprintMap_mem hIJ ⟨_, hxI⟩).1 hxS⟩ ?_
     rw [𝒜.footprintMap_footprintMap_mk hSI hIJ _ hxS]
     exact hreg
-  rw [← 𝒜.footprintMap_footprintMap_mk (Finset.empty_subset I) hIJ ⟨_, hxI⟩ hx]
-  exact (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff _).2 hreg'
+  exact (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff_of_subset hIJ ⟨_, hx⟩).2 hreg'
 
 /-- For `I ⊆ J ⊆ B`, every point `y` of `V_I ∩ V_J` lies under a point of the support
 `Z_{y} ⊆ D_(I,J,B)`: the point `(0, t, x)`, with `t` the indicator function of `I` and `x` a
@@ -392,14 +391,9 @@ theorem exists_mem_deformationSupport_singleton {I J B : Finset A} (hIJ : I ⊆ 
     refine ⟨fun ⟨_, h⟩ ↦ by_contra fun hα ↦ by simp [hα] at h, fun hα ↦ ⟨hJB (hIJ hα), ?_⟩⟩
     simp [hα]
   -- `ψ_IJ(x)` lies over `y ∈ V_I`, so it is regular.
-  have hxI : x.val ∈ kuranishiZeroSet 𝒜.kuranishi I J :=
-    kuranishiZeroSet_mono _ (Finset.empty_subset I) J x.property
-  have hreg : 𝒜.footprintMap hIJ ⟨_, hxI⟩ ∈ 𝒜.regLocus I := by
-    have hy₀ := (𝒜.mem_kuranishiZeroSet_iff_footprintMap_mem hIJ ⟨_, hxI⟩).1 x.property
-    have hyI := hy.1
-    rw [← 𝒜.footprintMap_footprintMap_mk (Finset.empty_subset I) hIJ ⟨_, hxI⟩ x.property] at hyI
-    exact (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff ⟨_, hy₀⟩).1 hyI
-  -- The regularity condition of `D_(I,J,B)` at `S = {α | t_α > 0} = I`.
+  have hreg := (𝒜.baseHomeomorph_footprintMap_mem_footprint_iff_of_subset hIJ x).1 hy.1
+  -- The regularity condition of `D_(I,J,B)` at `S = {α | t_α > 0} = I`. It is transported along
+  -- `hpos` by generalizing `S`: `subst hpos` and `hpos ▸ hreg` fail, since `t` depends on `I`.
   have hregS : ∀ (S : Finset A) (_ : S = I) (h : S ⊆ J)
       (hx : x.val ∈ kuranishiZeroSet 𝒜.kuranishi S J), 𝒜.footprintMap h ⟨_, hx⟩ ∈ 𝒜.regLocus S := by
     rintro S rfl _ _
