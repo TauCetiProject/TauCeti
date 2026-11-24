@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Bilinear
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.CompLeft
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Inclusion
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
@@ -54,6 +55,10 @@ is the order-`k` form of `TauCeti.ParabolicC2HolderSpace.initialDataL`.
   Lipschitz dependence on the coefficients.
 * `TauCeti.ParabolicCkHolderSpace.equivHolderSpace_parabolicOperatorL`: agreement with the
   operator on `C_b^{2+α,1+α/2}` at order zero.
+* `TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_parabolicOperatorL`: the operator commutes with
+  the inclusions between orders.
+* `TauCeti.ParabolicCkHolderSpace.euclideanSecondOrderCoeff`, `euclideanFirstOrderCoeff` and
+  `euclideanZerothOrderCoeff`: the coefficient fields on `ℝⁿ` assembled from scalar coefficients.
 
 ## References
 
@@ -382,6 +387,101 @@ theorem equivHolderSpace_parabolicOperatorL (hα : α ≤ 1)
         (equivHolderSpace C) (equivParabolicC2HolderSpace u) := by
   refine HolderSpace.ext fun p ↦ ?_
   simp [ParabolicC2HolderSpace.parabolicOperatorL_apply]
+
+/-! ### Reading the operator at a lower order -/
+
+/-- The parabolic operator commutes with the inclusions between orders: reading `P u` at a lower
+order `m` is applying the operator with the coefficients and `u` read at that order. -/
+theorem inclusionOfLEL_parabolicOperatorL (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
+    (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab)
+    (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    inclusionOfLEL hα h (parabolicOperatorL hα A B C u) =
+      parabolicOperatorL hα (inclusionOfLEL hα h A) (inclusionOfLEL hα h B)
+        (inclusionOfLEL hα h C) (inclusionOfLEL hα (Nat.add_le_add_right h 2) u) := by
+  refine ext fun p ↦ ?_
+  obtain ⟨x, t, rfl⟩ : ∃ x t, p = slabMk x t := ⟨_, _, (slabMk_space_slabTime p).symm⟩
+  rw [inclusionOfLEL_apply, parabolicOperatorL_slabMk, parabolicOperatorL_slabMk]
+  simp only [inclusionOfLEL_apply, ParabolicC2HolderSpace.timeExtension_def]
+
+/-! ### Coordinate coefficients on Euclidean space -/
+
+section Euclidean
+
+variable {ι : Type*} [Fintype ι]
+
+/-- A local shortcut for the norm on covectors: instance search for the coefficient spaces of the
+Euclidean operator fails without it, since the norm on their domain arises only as a nested
+instance problem. -/
+local instance instNormedAddCommGroupEuclideanCovector :
+    NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for scalar operations on covectors. -/
+local instance instNormedSpaceEuclideanCovector :
+    NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for the norm on Euclidean Hessians. -/
+local instance instNormedAddCommGroupEuclideanHessian :
+    NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for scalar operations on Euclidean Hessians. -/
+local instance instNormedSpaceEuclideanHessian :
+    NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
+
+variable [DecidableEq ι] {t₀ t₁ : ℝ} {ht : t₀ < t₁}
+
+/-- The second-order coefficient field `H ↦ aⁱʲ H(eᵢ, eⱼ)` on `ℝⁿ = EuclideanSpace ℝ ι`, assembled
+from scalar coefficients `aⁱʲ` in `C_{par,b}^{k+α}`. -/
+def euclideanSecondOrderCoeff
+    (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι)
+      ((EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ) ht :=
+  ∑ i, ∑ j, compLeftL ((ContinuousLinearMap.id ℝ ℝ).smulRight
+    ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
+      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)
+        (EuclideanSpace.single i (1 : ℝ))))) (a i j)
+
+/-- The first-order coefficient field `v ↦ bⁱ v(eᵢ)` on `ℝⁿ = EuclideanSpace ℝ ι`, assembled from
+scalar coefficients `bⁱ` in `C_{par,b}^{k+α}`. -/
+def euclideanFirstOrderCoeff (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ((EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ) ht :=
+  ∑ i, compLeftL ((ContinuousLinearMap.id ℝ ℝ).smulRight
+    (ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ)) :
+      (EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ)) (b i)
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field `y ↦ c y`, assembled from a scalar coefficient `c` in
+`C_{par,b}^{k+α}`. -/
+def euclideanZerothOrderCoeff (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) (ℝ →L[ℝ] ℝ) ht :=
+  compLeftL ((ContinuousLinearMap.id ℝ ℝ).smulRight (ContinuousLinearMap.id ℝ ℝ)) c
+
+/-- The values of the second-order coefficient field. -/
+@[simp]
+theorem euclideanSecondOrderCoeff_apply
+    (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    (H : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :
+    euclideanSecondOrderCoeff a p H =
+      ∑ i, ∑ j, a i j p * H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  simp [euclideanSecondOrderCoeff, Finset.sum_apply]
+
+/-- The values of the first-order coefficient field. -/
+@[simp]
+theorem euclideanFirstOrderCoeff_apply
+    (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) (v : EuclideanSpace ℝ ι →L[ℝ] ℝ) :
+    euclideanFirstOrderCoeff b p v = ∑ i, b i p * v (EuclideanSpace.single i 1) := by
+  simp [euclideanFirstOrderCoeff, Finset.sum_apply]
+
+omit [DecidableEq ι] in
+/-- The values of the zeroth-order coefficient field. -/
+@[simp]
+theorem euclideanZerothOrderCoeff_apply
+    (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) (y : ℝ) :
+    euclideanZerothOrderCoeff c p y = c p * y := by
+  simp [euclideanZerothOrderCoeff]
+
+end Euclidean
 
 end ParabolicCkHolderSpace
 
