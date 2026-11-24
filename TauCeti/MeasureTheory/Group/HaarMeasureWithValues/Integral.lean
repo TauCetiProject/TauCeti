@@ -262,17 +262,30 @@ theorem integral_compactOpenIndicator [T2Space G] (K : CompactOpens G) (m : M) :
       hx (compactOpenIndicator_of_notMem h m)⟩]
   simp
 
+/-- An `A`-linear map on `C_c^∞(G, M)` sending each indicator `1_K • m` of a compact open set to
+`μ(K) • m` sends any expansion `f = ∑ 1_{K_i} • m_i`, possibly overlapping, to
+`∑ μ(K_i) • m_i`. -/
+private theorem apply_eq_sum_smul_of_eq_sum_compactOpenIndicator [T2Space G]
+    (L : compactlySupported A G M →ₗ[A] M)
+    (hL : ∀ (K : CompactOpens G) (m : M),
+      L ⟨compactOpenIndicator K m, compactOpenIndicator_mem_compactlySupported K m⟩ = μ K • m)
+    (f : compactlySupported A G M) {ι : Type*} (s : Finset ι) (K : ι → CompactOpens G)
+    (m : ι → M) (hf : (f : LocallyConstant G M) = ∑ i ∈ s, compactOpenIndicator (K i) (m i)) :
+    L f = ∑ i ∈ s, μ (K i) • m i := by
+  have : f = ∑ i ∈ s, ⟨compactOpenIndicator (K i) (m i),
+      compactOpenIndicator_mem_compactlySupported (K i) (m i)⟩ :=
+    Subtype.ext (by rw [hf, Submodule.coe_sum])
+  rw [this, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ hL (K i) (m i)
+
 /-- **Expansions with overlaps.** If `f = ∑ 1_{K_i} • m_i` is a finite sum of indicators of compact
 open sets, possibly overlapping, then `∫ f dμ = ∑ μ(K_i) • m_i`. -/
 theorem integral_eq_sum_smul_of_eq_sum_compactOpenIndicator [T2Space G]
     (f : compactlySupported A G M) {ι : Type*} (s : Finset ι) (K : ι → CompactOpens G)
     (m : ι → M) (hf : (f : LocallyConstant G M) = ∑ i ∈ s, compactOpenIndicator (K i) (m i)) :
-    μ.integral f = ∑ i ∈ s, μ (K i) • m i := by
-  have : f = ∑ i ∈ s, ⟨compactOpenIndicator (K i) (m i),
-      compactOpenIndicator_mem_compactlySupported (K i) (m i)⟩ :=
-    Subtype.ext (by rw [hf, Submodule.coe_sum])
-  rw [this, map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ integral_compactOpenIndicator μ (K i) (m i)
+    μ.integral f = ∑ i ∈ s, μ (K i) • m i :=
+  apply_eq_sum_smul_of_eq_sum_compactOpenIndicator μ μ.integral (integral_compactOpenIndicator μ)
+    f s K m hf
 
 /-- **Uniqueness.** An `A`-linear map on `C_c^∞(G, M)` sending each indicator `1_K • m` of a
 compact open set to `μ(K) • m` is the integral against `μ`. -/
@@ -282,19 +295,9 @@ theorem eq_integral_of_apply_compactOpenIndicator [T2Space G]
       L ⟨compactOpenIndicator K m, compactOpenIndicator_mem_compactlySupported K m⟩ = μ K • m) :
     L = μ.integral := by
   ext f
-  obtain ⟨s, K, -, -, -, hsum⟩ :=
-    exists_pairwiseDisjoint_sum_indicator (mem_compactlySupported.1 f.property)
-  have hf : (f : LocallyConstant G M) = ∑ m ∈ s, compactOpenIndicator (K m) m :=
-    coe_injective (by
-      simp_rw [hsum, ← coe_compactOpenIndicator]
-      -- `coeFnAddMonoidHom` is the coercion to functions, as an additive monoid hom.
-      exact (map_sum (coeFnAddMonoidHom (X := G) (Y := M))
-        (fun m ↦ compactOpenIndicator (K m) m) s).symm)
-  have : f = ∑ m ∈ s, ⟨compactOpenIndicator (K m) m,
-      compactOpenIndicator_mem_compactlySupported (K m) m⟩ :=
-    Subtype.ext (by rw [hf, Submodule.coe_sum])
-  rw [integral_eq_sum_smul_of_eq_sum_compactOpenIndicator μ f s K id hf, this, map_sum]
-  exact Finset.sum_congr rfl fun m _ ↦ hL (K m) m
+  obtain ⟨s, K, hf⟩ := exists_eq_sum_compactOpenIndicator (mem_compactlySupported.1 f.property)
+  rw [apply_eq_sum_smul_of_eq_sum_compactOpenIndicator μ L hL f s K id hf,
+    integral_eq_sum_smul_of_eq_sum_compactOpenIndicator μ f s K id hf]
 
 /-- **Naturality.** Integration commutes with `A`-linear maps `φ : M → N`. -/
 @[simp]
