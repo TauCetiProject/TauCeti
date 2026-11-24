@@ -11,7 +11,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 # Pullback of local sections
 
 The unit of pullback and pushforward gives a semilinear map on sections over every open.
-These maps commute with coefficient maps, restriction, and composition of scheme morphisms.
+These maps commute with coefficient maps, restriction, the identity and composition of scheme
+morphisms.
 `Scheme.Hom.pullbackSectionsLE` also restricts the pullback to any smaller open in the source.
 The composition equation identifies direct and iterated pullback through the canonical
 pullback-composition isomorphism, so sections can be compared across successive morphisms.
@@ -83,6 +84,18 @@ lemma pullbackObjUnitIso_hom_app_pullbackSections_ε (r : Γ(X, U)) :
   rw [pullback_η, pushforward_ε] at h
   simp only [Scheme.Modules.sectionsFunctor_ε] at h ⊢
   exact h
+/-- The identity comparison `(𝟙 X)^* M ≅ M` carries the pullback of a section along the identity
+back to the section itself. -/
+lemma pullbackSections_id (s : Γ(M, U)) :
+    ((pullbackId X).hom.app M).app U (pullbackSections (𝟙 X) M U s) = s := by
+  have h := CategoryTheory.unit_conjugateEquiv Adjunction.id
+    (pullbackPushforwardAdjunction (𝟙 X)) (pullbackId X).hom M
+  rw [conjugateEquiv_pullbackId_hom] at h
+  have h' := congrArg (fun a ↦ a.app U s) h
+  simp only [Modules.Hom.comp_app, Modules.pushforward_map_app,
+    Modules.pushforwardId_inv_app_app] at h'
+  rw [pullbackSections_apply]
+  exact h'.symm
 variable {Z : Scheme.{u}} (f : Z ⟶ Y)
 /-- The composition comparison carries the pullback of a section to its iterated pullback. -/
 lemma pullbackSections_comp (s : Γ(M, U)) :
@@ -115,6 +128,14 @@ lemma pullbackSectionsLE_map {U' : X.Opens} (i : U' ⟶ U) (hV' : V ≤ g ⁻¹�
   rw [pullbackSectionsLE_apply, pullbackSectionsLE_apply, ← pullbackSections_restrict,
     ← ConcreteCategory.comp_apply, ← Functor.map_comp]
   -- Both sides restrict along a morphism `V ⟶ g⁻¹ U`, and `congr` uses that there is only one.
+  congr 2
+/-- Pullback to a smaller open is compatible with restriction in the source. -/
+lemma presheaf_map_pullbackSectionsLE {V' : Y.Opens} (i : V' ⟶ V) (s : Γ(M, U)) :
+    ((pullback g).obj M).presheaf.map i.op (pullbackSectionsLE g M U V hV s) =
+      pullbackSectionsLE g M U V' (i.le.trans hV) s := by
+  rw [pullbackSectionsLE_apply, pullbackSectionsLE_apply, ← ConcreteCategory.comp_apply,
+    ← Functor.map_comp]
+  -- Both sides restrict along a morphism `V' ⟶ g⁻¹ U`, and `congr` uses that there is only one.
   congr 2
 /-- Pullback to the full inverse image agrees with the canonical section pullback. -/
 @[simp] lemma pullbackSectionsLE_self (s : Γ(M, U)) :

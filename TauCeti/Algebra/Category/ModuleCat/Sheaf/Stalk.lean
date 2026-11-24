@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Stalk
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
+import Mathlib.Algebra.Category.Grp.EpiMono
 import Mathlib.Topology.Sheaves.Sheafify
 
 /-!
@@ -28,6 +29,10 @@ If finitely many sections generate the restriction of a sheaf of modules to a ne
 `x`, their germs span the stalk at `x` over the ring stalk
 (`SheafOfModules.GeneratingSections.span_germ_eq_top`). Thus a linear map out of the stalk of a
 sheaf of finite type is determined by its values on the germs of local generators.
+
+A morphism of sheaves of modules is a monomorphism exactly when all its stalk maps are injective
+(`SheafOfModules.mono_iff_forall_injective_stalkMapCommRing`), as for the underlying sheaves of
+abelian groups.
 -/
 
 public section
@@ -170,5 +175,21 @@ theorem GeneratingSections.span_germ_eq_top {U : Opens X} (G : (M.over U).Genera
   erw [M.val.germ_smul (R := R.obj) x V hxV (a k), he,
     germ_res_apply M.val.presheaf (f ≫ homOfLE hWU) x hxV]
   exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+
+/-- A morphism of sheaves of modules over a sheaf of commutative rings on a topological space is
+a monomorphism exactly when all its stalk maps are injective. -/
+theorem mono_iff_forall_injective_stalkMapCommRing
+    {N : SheafOfModules.{u} (TauCeti.SheafOfModules.ringCatSheaf R)} (g : M ⟶ N) :
+    Mono g ↔
+      ∀ x : X, Function.Injective (PresheafOfModules.stalkMapCommRing (S := R.obj) x g.val) := by
+  simp only [PresheafOfModules.coe_stalkMapCommRing]
+  constructor
+  · intro _ x
+    exact (AddCommGrpCat.mono_iff_injective _).mp (Functor.map_mono
+      (TopCat.Sheaf.forget AddCommGrpCat X ⋙ TopCat.Presheaf.stalkFunctor _ x) ((toSheaf _).map g))
+  · intro h
+    have (x : X) : Mono ((stalkFunctor AddCommGrpCat x).map ((toSheaf _).map g).hom) :=
+      (AddCommGrpCat.mono_iff_injective _).mpr (h x)
+    exact (toSheaf _).mono_of_mono_map (TopCat.Presheaf.mono_of_stalk_mono _)
 
 end SheafOfModules
