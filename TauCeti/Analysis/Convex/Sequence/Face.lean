@@ -477,8 +477,8 @@ theorem finite_setOf_unitSlope_le (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq
   (Set.finite_Iio u).subset fun _ hi ↦ Set.mem_Iio.mpr <| lt_of_not_ge fun hui ↦
     (hf.lt_unitSlope hh hi.1 hui).not_ge hi.2
 
-/-- **Slope counts lie under the line through the origin.** If `h 0 ≤ a` and `h` has a finite
-face of slope `σ`, let `N` be the number of finite unit edges of slope at most `σ`. Then
+/-- **Slope counts lie under the line of slope `σ` through `(0, a)`.** If `h 0 ≤ a` and `h` has
+a finite face of slope `σ`, let `N` be the number of finite unit edges of slope at most `σ`. Then
 `h N ≤ a + σ N`: these edges are the first `N` edges, and their slopes are at most `σ`. -/
 theorem apply_ncard_setOf_unitSlope_le_le (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
     {a : ℝ} (h0 : h 0 ≤ a) :
