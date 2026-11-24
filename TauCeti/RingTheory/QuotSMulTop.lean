@@ -75,6 +75,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   depends only on its class modulo `I`, up to multiplication by units.
 * `Ideal.isSMulRegular_quotient_smul_top_of_isUnit_mk`: a scalar that is a unit modulo `I` is
   regular on `M ⧸ I • M`.
+* `Ideal.isSMulRegular_quotient_smul_top_of_mem_sup_span_singleton`: if `a ∈ I ⊔ (b)` is regular
+  on `M ⧸ I • M`, then so is `b`.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
 * `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
@@ -421,6 +423,15 @@ theorem isSMulRegular_quotient_smul_top_iff_of_mul_sub_mem (I : Ideal R) {a b u�
   rw [← (hu₁.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right,
     I.isSMulRegular_quotient_smul_top_congr hab,
     (hu₂.isSMulRegular (M ⧸ (I • ⊤ : Submodule R M))).mul_iff_right]
+
+/-- If `a ∈ I ⊔ (b)` and `a` is regular on `M ⧸ I • M`, then so is `b`. -/
+theorem isSMulRegular_quotient_smul_top_of_mem_sup_span_singleton (I : Ideal R) {a b : R}
+    (hab : a ∈ I ⊔ Ideal.span {b}) (ha : IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) a) :
+    IsSMulRegular (M ⧸ (I • ⊤ : Submodule R M)) b := by
+  obtain ⟨i, hi, c, hc, rfl⟩ := Submodule.mem_sup.mp hab
+  obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton'.mp hc
+  -- `i + y b` acts on `M ⧸ I • M` as `y b`
+  exact ((I.isSMulRegular_quotient_smul_top_congr (b := y * b) (by simpa using hi)).mp ha).of_mul
 
 /-- A scalar that is a unit modulo `I` is regular on `M ⧸ I • M`. -/
 theorem isSMulRegular_quotient_smul_top_of_isUnit_mk (I : Ideal R) [I.IsTwoSided] {a : R}

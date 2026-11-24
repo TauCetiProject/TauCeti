@@ -16,8 +16,7 @@ For a weakly regular pair `(a, b)` on a module `M`, powers `bʲ` remain regular 
 regular on `M`. Their powered scalar images intersect in `(aʳ bˢ)M`, without a flatness
 assumption. For `M = R`, this gives the corresponding powered principal-ideal intersection.
 These results supply torsion-freeness of principal-adic completions, patching over
-`D(a) ∪ D(b)`, and powered principal intersections. Whether `(r, a)` is weakly regular depends
-only on `r` and the ideal `(r, a)` (`RingTheory.Sequence.isWeaklyRegular_pair_iff_of_span_eq`).
+`D(a) ∪ D(b)`, and powered principal intersections.
 
 ## References
 
@@ -90,32 +89,6 @@ theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotient_pow_smul_top 
     IsSMulRegular (M ⧸ (Ideal.span {b} ^ n • ⊤ : Submodule R M)) a := by
   rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
   simpa only [pow_one] using h.isSMulRegular_quotSMulTop_pow_swap n 1
-
-/-- If `a ∈ (r, b)` and `a` is regular on `M ⧸ r M`, then so is `b`. -/
-theorem TauCeti.isSMulRegular_quotSMulTop_of_mem_span_pair {r a b : R}
-    (hab : a ∈ Ideal.span {r, b}) (ha : IsSMulRegular (QuotSMulTop r M) a) :
-    IsSMulRegular (QuotSMulTop r M) b := by
-  obtain ⟨x, y, rfl⟩ := Ideal.mem_span_pair.mp hab
-  -- `r` acts as zero on `M ⧸ r M`, so `a = x r + y b` acts as `y b`
-  have hr (m : QuotSMulTop r M) : r • m = 0 :=
-    Module.mem_annihilator.mp (QuotSMulTop.mem_annihilator (M := M) r) m
-  intro m₁ m₂ hm
-  apply ha
-  simp only [add_smul, mul_smul, hr, smul_zero, zero_add]
-  exact congrArg (y • ·) hm
-
-/-- Whether `(r, a)` is a weakly regular sequence on `M` depends only on `r` and the ideal
-`(r, a)`. -/
-theorem RingTheory.Sequence.isWeaklyRegular_pair_iff_of_span_eq {r a b : R}
-    (h : Ideal.span {r, a} = Ideal.span {r, b}) :
-    IsWeaklyRegular M [r, a] ↔ IsWeaklyRegular M [r, b] := by
-  rw [isWeaklyRegular_cons_iff M r [a], isWeaklyRegular_cons_iff M r [b],
-    isWeaklyRegular_singleton_iff, isWeaklyRegular_singleton_iff]
-  refine and_congr_right fun _ ↦
-    ⟨TauCeti.isSMulRegular_quotSMulTop_of_mem_span_pair ?_,
-      TauCeti.isSMulRegular_quotSMulTop_of_mem_span_pair ?_⟩
-  · exact h ▸ Ideal.subset_span (by simp)
-  · exact h.symm ▸ Ideal.subset_span (by simp)
 
 namespace RingTheory.Sequence.IsWeaklyRegular
 

@@ -8,11 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 public import TauCeti.RingTheory.FormalGroup.Height.Regular
-import Mathlib.RingTheory.Regular.Flat
-import Mathlib.Tactic.Algebraize
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Smooth
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Flat
 import TauCeti.RingTheory.QuotSMulTop
 
 /-!
@@ -33,8 +30,10 @@ criterion applies to every elliptic curve, without any flatness assumption.
 
 For the universal Weierstrass curve over `ℤ[a₁, a₂, a₃, a₄, a₆]` the sequence `(p, A)` is regular
 (`WeierstrassCurve.Universal.isRegular_natCast_coeff_invariantDifferential`). Weak regularity
-ascends along flat maps, so `Ê` is Landweber regular whenever the classifying map
-`ℤ[a₁, ⋯, a₆] → R` of `W` is flat (`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat`). In
+ascends along flat maps, so `(p, A)` is weakly regular on `R` whenever the classifying map
+`ℤ[a₁, ⋯, a₆] → R` of `W` is flat
+(`WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat`), and then `Ê` is
+Landweber regular (`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat`). In
 particular the formal group of the universal elliptic curve over `ℤ[a₁, ⋯, a₆][Δ⁻¹]` is Landweber
 regular (`WeierstrassCurve.Universal.isLandweberRegular_formalGroup_ellipticCurve`).
 
@@ -48,11 +47,11 @@ the stack-level hypothesis is that the classifying map of
 `universalChange R • W.baseChange R[u, u⁻¹, r, s, t]` is flat. It follows from flatness of
 `ℤ[a₁, ⋯, a₆] → R`, being the base change of the flat right unit of the Weierstrass Hopf
 algebroid (`WeierstrassCurve.flat_specialize_universalChange_smul_baseChange`). Under this
-hypothesis the formal group of `C • W` is Landweber regular on `R[u, u⁻¹, r, s, t]`. It is
-isomorphic to the base change of `Ê`, and Landweber regularity descends along the faithfully flat
-extension `R → R[u, u⁻¹, r, s, t]`
-(`FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat`). Hence `Ê` is Landweber
-regular on `R` (`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange`).
+hypothesis `(p, A)` is weakly regular on `R` for every prime `p`, without assuming that `W` is
+elliptic
+(`WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat_universalChange`).
+Hence `Ê` is Landweber regular on `R`
+(`WeierstrassCurve.isLandweberRegular_formalGroup_of_flat_universalChange`).
 
 ## Main results
 
@@ -110,15 +109,9 @@ theorem isLandweberRegular_formalGroup_iff (M : Type*) [AddCommGroup M] [Module 
 `ℤ[a₁, a₂, a₃, a₄, a₆] →+* R` of an elliptic Weierstrass curve `W` is flat, then the formal group of
 `W` is Landweber regular on `R`. -/
 theorem isLandweberRegular_formalGroup_of_flat (h : W.specialize.Flat) :
-    (formalGroup W).IsLandweberRegular R := by
-  algebraize [W.specialize]
-  refine (W.isLandweberRegular_formalGroup_iff R).mpr fun p hp ↦ ?_
-  have := (Universal.isRegular_natCast_coeff_invariantDifferential hp).toIsWeaklyRegular.of_flat (S
-      := R)
-  -- specialization carries the universal Hasse invariant to that of `W`
-  simpa only [List.map_cons, List.map_nil, map_natCast, RingHom.algebraMap_toAlgebra,
-    ← PowerSeries.coeff_map, FormalGroup.map_invariantDifferential, ← map_formalGroup,
-    map_specialize] using this
+    (formalGroup W).IsLandweberRegular R :=
+  (W.isLandweberRegular_formalGroup_iff R).mpr fun _ hp ↦
+    W.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat hp h
 
 /-- **Landweber exactness for a flat classifying map to the moduli stack.** Let `W` be an elliptic
 Weierstrass curve over `R` and `S = R[u, u⁻¹, r, s, t]` the ring of changes of variables over `R`.
@@ -127,11 +120,9 @@ The map `Spec S → Spec ℤ[a₁, a₂, a₃, a₄, a₆]` classifying the univ
 If it is flat, then the formal group of `W` is Landweber regular on `R`. -/
 theorem isLandweberRegular_formalGroup_of_flat_universalChange
     (h : (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).specialize.Flat) :
-    (formalGroup W).IsLandweberRegular R := by
-  have hreg := isLandweberRegular_formalGroup_of_flat _ h
-  rw [VariableChange.formalGroup_smul, FormalGroup.isLandweberRegular_smul_iff, baseChange,
-    map_formalGroup] at hreg
-  exact (FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat _ _).mp hreg
+    (formalGroup W).IsLandweberRegular R :=
+  (W.isLandweberRegular_formalGroup_iff R).mpr fun _ hp ↦
+    W.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat_universalChange hp h
 
 namespace Universal
 
