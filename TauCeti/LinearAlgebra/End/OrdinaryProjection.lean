@@ -218,12 +218,12 @@ restriction of `U ^ ((Nat.card M)! - 1)` (`coe_ordinaryEquiv_symm_apply`). -/
     range U.ordinaryProjection ≃ₗ[R] range U.ordinaryProjection where
   toLinearMap := U.restrict U.range_ordinaryProjection_mem_invtSubmodule
   invFun x := ⟨(U ^ ((Nat.card M)! - 1)) x, by
-    obtain ⟨y, hy⟩ := x.2
+    obtain ⟨y, hy⟩ := x.property
     rw [← hy]
     exact ⟨(U ^ ((Nat.card M)! - 1)) y,
       LinearMap.congr_fun ((commute_ordinaryProjection U).pow_left _).eq.symm y⟩⟩
-  left_inv x := Subtype.ext (invOn_range_ordinaryProjection.1 x.2)
-  right_inv x := Subtype.ext (invOn_range_ordinaryProjection.2 x.2)
+  left_inv x := Subtype.ext (invOn_range_ordinaryProjection.1 x.property)
+  right_inv x := Subtype.ext (invOn_range_ordinaryProjection.2 x.property)
 
 @[simp]
 theorem coe_ordinaryEquiv_apply (x : range U.ordinaryProjection) :
