@@ -74,21 +74,30 @@ instance instEnrichedCategoryHomEnriched (U : C) :
   Hom M N := F.presheafHom (S := U) M N
   id M := presheafHomId M
   comp M N P := presheafHomComp M N P
+  -- Objectwise, the tensor product of presheaves of types is the product, so each side is
+  -- composition of local morphisms on a pair (`presheafHomComp_app_apply`), and the laws are those
+  -- of the fibre of `F`. The arguments of `presheafHomComp_app_apply` and
+  -- `presheafHomId_app_apply` are given explicitly: `simp` and `rw` cannot match them, because
+  -- `(P ⊗ Q).obj T` is only definitionally `P.obj T × Q.obj T` and `HomEnriched F U` is a type
+  -- synonym.
   id_comp M N := by
     ext T f
-    exact (presheafHomComp_app_apply M M N T (_, f)).trans
-      ((congrArg (· ≫ f) (presheafHomId_app_apply M T _)).trans (Category.id_comp f))
+    calc _ = (presheafHomId M).app T PUnit.unit ≫ f := presheafHomComp_app_apply M M N T (_, f)
+      _ = 𝟙 _ ≫ f := congrArg (· ≫ f) (presheafHomId_app_apply M T _)
+      _ = f := Category.id_comp f
   comp_id M N := by
     ext T f
-    exact (presheafHomComp_app_apply M N N T (f, _)).trans
-      ((congrArg (f ≫ ·) (presheafHomId_app_apply N T _)).trans (Category.comp_id f))
+    calc _ = f ≫ (presheafHomId N).app T PUnit.unit := presheafHomComp_app_apply M N N T (f, _)
+      _ = f ≫ 𝟙 _ := congrArg (f ≫ ·) (presheafHomId_app_apply N T _)
+      _ = f := Category.comp_id f
   assoc M N P Q := by
     ext T ⟨f, g, h⟩
-    exact (presheafHomComp_app_apply M P Q T (_, h)).trans
-      ((congrArg (· ≫ h) (presheafHomComp_app_apply M N P T (f, g))).trans
-        ((Category.assoc f g h).trans
-          (congrArg (f ≫ ·) (presheafHomComp_app_apply N P Q T (g, h))).symm)) |>.trans
-      (presheafHomComp_app_apply M N Q T (f, _)).symm
+    calc _ = (presheafHomComp M N P).app T (f, g) ≫ h := presheafHomComp_app_apply M P Q T (_, h)
+      _ = (f ≫ g) ≫ h := by rw [presheafHomComp_app_apply M N P T (f, g)]
+      _ = f ≫ g ≫ h := Category.assoc f g h
+      _ = f ≫ (presheafHomComp N P Q).app T (g, h) := by
+        rw [presheafHomComp_app_apply N P Q T (g, h)]
+      _ = _ := (presheafHomComp_app_apply M N Q T (f, _)).symm
 
 section
 
@@ -272,9 +281,9 @@ instance essSurj_toFiber : (toFiber J F U).EssSurj where
 lemma toFiber_map_bijective [F.IsPrestack J] (M N : F.obj (.mk (op U))) :
     Function.Bijective ((toFiber J F U).map : (M ⟶ N) → _) := by
   have := isIso_toSheafify (J.over U) (IsPrestack.isSheaf J M N)
-  have hη : Function.Bijective ((toSheafifySections J U).app (F.presheafHom M N)) :=
-    (isIso_iff_bijective _).1
-      (inferInstanceAs (IsIso ((toSheafify (J.over U) (F.presheafHom M N)).app _)))
+  have hη : Function.Bijective ((toSheafifySections J U).app (F.presheafHom M N)) := by
+    rw [toSheafifySections_app]
+    exact (isIso_iff_bijective _).1 (NatIso.isIso_app_of_isIso _ _)
   exact (Fiber.homEquiv (Fiber.mk M) (Fiber.mk N)).symm.bijective.comp
     (hη.comp F.presheafHomObjHomEquiv.bijective)
 
