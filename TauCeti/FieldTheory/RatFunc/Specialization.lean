@@ -146,6 +146,16 @@ theorem regularEval_algebraMap (t : K) (q : K[X]) :
       q.eval t := by
   simp
 
+/-- The reciprocal of a nonzero polynomial `h` is regular at `t` exactly when `h(t) ≠ 0`. -/
+theorem inv_algebraMap_mem_regularSubring_iff {t : K} {h : K[X]} (hh : h ≠ 0) :
+    (algebraMap K[X] (RatFunc K) h)⁻¹ ∈ regularSubring t ↔ h.eval t ≠ 0 := by
+  -- The denominator of `h⁻¹` is associated to the numerator of `h`, which is `h` itself.
+  have hassoc := RatFunc.associated_denom_inv (x := algebraMap K[X] (RatFunc K) h)
+    (by simpa using hh)
+  rw [RatFunc.num_algebraMap] at hassoc
+  rw [mem_regularSubring_iff, Ne, Ne, ← IsRoot.def, ← IsRoot.def, ← dvd_iff_isRoot,
+    ← dvd_iff_isRoot, hassoc.dvd_iff_dvd_right]
+
 /-- Evaluation at `t` takes every value: the constant `a` has value `a`. -/
 theorem regularEval_surjective (t : K) : Function.Surjective (regularEval t) := fun a ↦
   ⟨⟨algebraMap K[X] (RatFunc K) (C a), algebraMap_mem_regularSubring t _⟩, by simp⟩

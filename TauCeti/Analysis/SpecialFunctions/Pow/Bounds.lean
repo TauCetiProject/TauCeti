@@ -77,6 +77,13 @@ dyadic intervals.
 For `x ≥ 0`, the unit-fraction powers `x ^ (1 / k)` over `3 ≤ k ≤ ⌊log x / log 2⌋₊` satisfy
 `∑_{3 ≤ k ≤ log x / log 2} x ^ (1 / k) ≤ (log x / log 2 - 2)⁺ x ^ (1 / 3)`.
 
+For `0 < b` and `0 ≤ ε ≤ 1`, `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε`. With `b = 2` this bounds the
+length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which a sharp cutoff at
+`X` and its smoothing at scale `ε` differ.
+
+For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`. This bounds
+all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the sign of `p`.
+
 ## Main results
 
 * `Real.abs_rpow_sub_one_le`: `|x ^ y - 1| ≤ 2 |log x · y|` for `0 < x` and `|log x · y| ≤ 1`.
@@ -107,6 +114,9 @@ For `x ≥ 0`, the unit-fraction powers `x ^ (1 / k)` over `3 ≤ k ≤ ⌊log x
 * `Real.sum_rpow_one_div_le`:
   `∑ k ∈ Finset.Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k) ≤`
   `max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)` for `0 ≤ x`.
+* `Real.rpow_sub_rpow_neg_le`: `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε` for `0 < b` and `0 ≤ ε ≤ 1`.
+* `Real.natCast_rpow_le_max_one_rpow`: `n ^ p ≤ max 1 (x ^ p)` for a natural number `n ≤ x` and
+  every real `p`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -393,6 +403,31 @@ theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
   · congr 2
     push_cast
     ring
+
+/-- For `0 < b` and `0 ≤ ε ≤ 1`, `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε`: by Bernoulli's inequality
+`b ^ ε ≤ 1 + (b - 1) ε`, and then `b ^ (-ε) ≥ (1 + (b - 1) ε)⁻¹ ≥ 1 - (b - 1) ε`. -/
+theorem rpow_sub_rpow_neg_le {b ε : ℝ} (hb : 0 < b) (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) :
+    b ^ ε - b ^ (-ε) ≤ 2 * (b - 1) * ε := by
+  have h1 : b ^ ε ≤ 1 + (b - 1) * ε := by
+    simpa [mul_comm] using rpow_one_add_le_one_add_mul_self (s := b - 1) (by linarith) hε0 hε1
+  have hpos : 0 < b ^ ε := rpow_pos_of_pos hb ε
+  have h2 : 1 - (b - 1) * ε ≤ b ^ (-ε) := by
+    rw [rpow_neg hb.le, ← one_div, le_div_iff₀ hpos]
+    rcases le_total 0 (1 - (b - 1) * ε) with h | h
+    · nlinarith [mul_le_mul_of_nonneg_left h1 h, sq_nonneg ((b - 1) * ε)]
+    · nlinarith
+  linarith
+
+/-- For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`, whatever
+the sign of `p`. -/
+theorem natCast_rpow_le_max_one_rpow {n : ℕ} {x : ℝ} (hnx : (n : ℝ) ≤ x) (p : ℝ) :
+    (n : ℝ) ^ p ≤ max 1 (x ^ p) := by
+  rcases le_total p 0 with h | h
+  · refine le_trans ?_ (le_max_left _ _)
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simpa using zero_rpow_le_one p
+    · exact rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) h
+  · exact (rpow_le_rpow (by positivity) hnx h).trans (le_max_right _ _)
 
 end Real
 

@@ -17,8 +17,9 @@ The field with four elements is the actual quadratic algebra over `ZMod 2` with 
 `c` satisfying `c² + c + 1 = 0`. Its Frobenius graphs distinguish a strict degree bound from
 its equality endpoint, and show why a first jet can succeed when all values vanish. Further
 examples over `ℤ`, `ZMod 3` and `ZMod 2` compute exponent-zero collisions, weighted monomials
-and coefficients, evaluation on the substitution graph, and compatibility of evaluated Hasse
-jets, including the boundary where a higher substituted jet survives.
+and coefficients, evaluation on the substitution graph, compatibility of ordinary derivatives
+at `q = 2`, and compatibility of evaluated Hasse jets, including the boundary where a higher
+substituted jet survives.
 -/
 
 public section
@@ -93,6 +94,45 @@ example :
   have hvalues : (0 : QuadraticAlgebra (ZMod 2) 1 1) + 0 = 0 ∧
       (1 : QuadraticAlgebra (ZMod 2) 1 1) + 1 = 0 ∧ c + c ^ 2 = 1 := by decide
   simpa [F] using hvalues
+
+/-- For `F = Z W` at `q = 2` over `ZMod 2`, differentiating `(Z W)(X, X²) = X³` gives
+`3 X² = X²`, which is the substitution of `∂_Z (Z W) = W`. -/
+example :
+    powerSubstitution 2 (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2)) = Polynomial.X ^ 3 ∧
+      Polynomial.derivative (Polynomial.X ^ 3 : Polynomial (ZMod 2)) = Polynomial.X ^ 2 ∧
+      pderiv 0 (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2)) = X 1 ∧
+      powerSubstitution 2 (pderiv 0 (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
+        Polynomial.X ^ 2 := by
+  refine ⟨by simp [← pow_succ'], ?_, by simp, by simp⟩
+  rw [Polynomial.derivative_X_pow, show ((3 : ℕ) : ZMod 2) = 1 by decide]
+  simp
+
+/-- For `F = W` at `q = 2` over `ZMod 2`, both `D (X²) = 2 X` and `∂_Z W` vanish, and the
+ordinary identity holds at every order. -/
+example :
+    Polynomial.derivative (powerSubstitution (2 ^ 1) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) = 0 ∧
+      pderiv 0 (X 1 : MvPolynomial (Fin 2) (ZMod 2)) = 0 ∧
+      ∀ k, Polynomial.derivative^[k]
+          (powerSubstitution (2 ^ 1) (X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
+        powerSubstitution (2 ^ 1) ((pderiv 0)^[k] (X 1 : MvPolynomial (Fin 2) (ZMod 2))) := by
+  exact ⟨by simp [CharTwo.add_self_eq_zero], by simp,
+    fun k ↦ iterate_derivative_powerSubstitution (p := 2) (by decide) k _⟩
+
+/-- Over `ZMod 2`, the first Hasse derivative of `(Z W)(X, X²)` and the substitution of the
+first `Z`-jet of `Z W` are both `X²`, with coefficient `1`. -/
+example :
+    Polynomial.hasseDeriv 1 (powerSubstitution 2 (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
+        Polynomial.X ^ 2 ∧
+      powerSubstitution 2
+        (hasseDeriv (single 0 1) (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) =
+        Polynomial.X ^ 2 := by
+  have h := hasseDeriv_powerSubstitution (p := 2) (e := 1) (k := 1) (by decide)
+    (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2))
+  have hd : Polynomial.hasseDeriv 1
+      (powerSubstitution 2 (X 0 * X 1 : MvPolynomial (Fin 2) (ZMod 2))) = Polynomial.X ^ 2 := by
+    rw [Polynomial.hasseDeriv_one', derivative_powerSubstitution_of_natCast_eq_zero (by decide)]
+    simp
+  exact ⟨hd, h.symm.trans hd⟩
 
 /-- For the generator `c` outside the prime field, the first Hasse derivative of
 `(c Z W)(X, X²)` over the four-element field is `c X²`. -/
