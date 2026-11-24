@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Henselian.Strict
 
 import Mathlib.Algebra.Polynomial.Lifts
-import Mathlib.RingTheory.Polynomial.GaussLemma
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.RingTheory.Polynomial.Monic.Irreducible
 
 /-!
 # Integrally closed local domains with separably closed fraction field
@@ -60,22 +60,6 @@ namespace TauCeti
 variable {R : Type*} [CommRing R] [IsIntegrallyClosed R]
   (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
-/-- A monic polynomial of positive degree over an integrally closed domain `R` has a monic factor
-over `R` that is irreducible over the fraction field `K`, with monic cofactor. -/
-private theorem exists_monic_mul_eq_of_irreducible_map {f : R[X]} (hf : f.Monic)
-    (hdeg : f.natDegree ≠ 0) :
-    ∃ g q : R[X], g.Monic ∧ q.Monic ∧ g * q = f ∧ Irreducible (g.map (algebraMap R K)) := by
-  have hinj := IsFractionRing.injective R K
-  have hu : ¬IsUnit (f.map (algebraMap R K)) := fun h ↦
-    hdeg <| by rw [← hf.natDegree_map (algebraMap R K), natDegree_eq_zero_of_isUnit h]
-  obtain ⟨G, hGm, hGirr, hGdvd⟩ := exists_monic_irreducible_factor _ hu
-  obtain ⟨g, hg⟩ := IsIntegrallyClosed.eq_map_mul_C_of_dvd K hf hGdvd
-  rw [hGm.leadingCoeff, C_1, mul_one] at hg
-  have hgm : g.Monic :=
-    hinj <| by rw [← leadingCoeff_map_of_injective hinj, hg, hGm.leadingCoeff, map_one]
-  obtain ⟨q, rfl⟩ := hf.dvd_of_fraction_map_dvd_fraction_map hgm (hg ▸ hGdvd)
-  exact ⟨g, q, hgm, hgm.of_mul_monic_left hf, rfl, hg ▸ hGirr⟩
-
 omit [IsIntegrallyClosed R] in
 /-- A monic polynomial over `R` with nonzero derivative that is irreducible over the separably
 closed fraction field `K` is linear. -/
@@ -101,7 +85,7 @@ theorem HenselianLocalRing.of_isIntegrallyClosed_of_isSepClosed [IsSepClosed K] 
   have hdeg : f.natDegree ≠ 0 := fun h0 ↦ by
     rw [hf.natDegree_eq_zero.mp h0, eval_one] at h₁
     exact (maximalIdeal.isMaximal R).ne_top ((Ideal.eq_top_iff_one _).mpr h₁)
-  obtain ⟨g, q, hg, hq, rfl, hirr⟩ := exists_monic_mul_eq_of_irreducible_map K hf hdeg
+  obtain ⟨g, q, hg, hq, rfl, hirr⟩ := hf.exists_monic_mul_eq_irreducible_map K hdeg
   rw [derivative_mul, eval_add, eval_mul, eval_mul] at h₂
   rw [eval_mul] at h₁
   rcases (maximalIdeal.isMaximal R).isPrime.mem_or_mem h₁ with hg₁ | hq₁
@@ -126,8 +110,7 @@ theorem HenselianLocalRing.of_isIntegrallyClosed_of_isSepClosed [IsSepClosed K] 
       refine (mem_maximalIdeal _).mp (add_mem ?_ ?_) h₂
       · exact (maximalIdeal R).mul_mem_left _ hq₁
       · exact (maximalIdeal R).mul_mem_left _ ((mem_maximalIdeal _).mpr hnu)
-    have hgdeg : g.natDegree ≠ 0 := fun h0 ↦ hirr.not_isUnit <| by
-      rw [hg.natDegree_eq_zero.mp h0, Polynomial.map_one]; exact isUnit_one
+    have hgdeg : g.natDegree ≠ 0 := (hg.natDegree_map (algebraMap R K) ▸ hirr.natDegree_pos).ne'
     have hlt : q.natDegree < n := by
       rw [← hn, hg.natDegree_mul hq]; omega
     obtain ⟨a, ha, ha₀⟩ := ih _ hlt q hq hq₁ hq₂ rfl
@@ -141,19 +124,16 @@ theorem isSepClosed_residueField_of_isIntegrallyClosed [IsSepClosed K] :
   refine IsSepClosed.of_exists_root _ fun p hpm hirr hsep ↦ ?_
   obtain ⟨f, hfp, -, hf⟩ :=
     lifts_and_natDegree_eq_and_monic (map_surjective _ residue_surjective p) hpm
-  have hpdeg : p.natDegree ≠ 0 := fun h0 ↦ hirr.not_isUnit <| by
-    rw [hpm.natDegree_eq_zero.mp h0]; exact isUnit_one
   have hdeg : f.natDegree ≠ 0 := by
-    rwa [← hf.natDegree_map (residue R), hfp]
-  obtain ⟨g, q, hg, hq, rfl, hgirr⟩ := exists_monic_mul_eq_of_irreducible_map K hf hdeg
+    rw [← hf.natDegree_map (residue R), hfp]; exact hirr.natDegree_pos.ne'
+  obtain ⟨g, q, hg, hq, rfl, hgirr⟩ := hf.exists_monic_mul_eq_irreducible_map K hdeg
   rw [Polynomial.map_mul] at hfp
   -- The reduction of `q` is a monic unit, so `p` is the reduction of `g`.
   have hqu : IsUnit (q.map (residue R)) := by
     refine (hirr.isUnit_or_isUnit hfp.symm).resolve_left fun hu ↦ ?_
     have := natDegree_eq_zero_of_isUnit hu
-    rw [hg.natDegree_map] at this
-    exact hgirr.not_isUnit <| by
-      rw [hg.natDegree_eq_zero.mp this, Polynomial.map_one]; exact isUnit_one
+    rw [hg.natDegree_map, ← hg.natDegree_map (algebraMap R K)] at this
+    exact hgirr.natDegree_pos.ne' this
   have hq1 : q.map (residue R) = 1 :=
     (hq.map _).natDegree_eq_zero.mp (natDegree_eq_zero_of_isUnit hqu)
   rw [hq1, mul_one] at hfp
@@ -180,11 +160,9 @@ theorem isAlgClosed_residueField_of_isIntegrallyClosed [IsAlgClosed K] :
   obtain ⟨f, rfl, -, hf⟩ :=
     lifts_and_natDegree_eq_and_monic (map_surjective _ residue_surjective p) hpm
   have hdeg : (f.map (algebraMap R K)).degree ≠ 0 := by
-    rw [degree_map_eq_of_injective (IsFractionRing.injective R K)]
-    intro h0
-    refine hirr.not_isUnit ?_
-    rw [hf.natDegree_eq_zero.mp (natDegree_eq_of_degree_eq_some h0), Polynomial.map_one]
-    exact isUnit_one
+    rw [degree_map_eq_of_injective (IsFractionRing.injective R K), degree_eq_natDegree hf.ne_zero,
+      ← hf.natDegree_map (residue R)]
+    exact_mod_cast hirr.natDegree_pos.ne'
   obtain ⟨x, hx⟩ := IsAlgClosed.exists_root _ hdeg
   obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp
     ⟨f, hf, by rwa [IsRoot, eval_map] at hx⟩
