@@ -63,8 +63,8 @@ the residue units congruent to `1` modulo `𝔫`
 
 The coefficient and the residue character must be kept apart at `0`. When `𝔪₀ = 𝓞 K`, the residue
 ring has one element, a unit, at which the residue character is `1`, while the coefficient at the
-integer `0` is `0` (`Grossencharacter.residueCharacter_of_finitePart_eq_top`). Accordingly the
-comparison is stated for nonzero integers only.
+integer `0` is `0` (`Grossencharacter.residueCharacter_eq_one_of_finitePart_eq_top`).
+Accordingly the comparison is stated for nonzero integers only.
 
 ## Main definitions
 
@@ -366,7 +366,7 @@ theorem existsUnique_residueCharacter (χ : Grossencharacter K 𝔪) :
 
 /-- **At finite part `𝓞 K` the residue character is trivial**: the residue ring has a single
 element, the unit `1`. The finite character is nevertheless `0` at `0`. -/
-theorem residueCharacter_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+theorem residueCharacter_eq_one_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
     (h : 𝔪.finitePart = ⊤) : χ.residueCharacter = 1 := by
   have : Subsingleton (𝓞 K ⧸ 𝔪.finitePart) := Ideal.Quotient.subsingleton_iff.mpr h
   refine MulChar.ext fun u ↦ ?_
