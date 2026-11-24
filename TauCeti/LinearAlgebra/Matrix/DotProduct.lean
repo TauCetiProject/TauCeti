@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Tactic.FieldSimp
@@ -42,8 +41,6 @@ ordered off-diagonal index pairs.
 * `Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec`: the sesquilinear form of a compression
   `Aᴴ * M * A` is that of `M` pulled back along `A`.
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
-* `Matrix.dotProduct_self_inv_sqrt_smul`: a nonzero real vector rescaled by the inverse of its
-  length is a unit vector.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
 * `TauCeti.exists_dotProduct_self_eq_one_dotProduct_eq_zero`: over a field in which `2 ≠ 0`,
@@ -101,16 +98,6 @@ theorem Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec {k l α : Type*} [Fi
 theorem Matrix.dotProduct_self_nonneg {n R : Type*} [Fintype n] [Ring R] [LinearOrder R]
     [IsStrictOrderedRing R] (v : n → R) : 0 ≤ v ⬝ᵥ v :=
   Fintype.sum_nonneg fun i ↦ mul_self_nonneg (v i)
-
-/-- A nonzero real vector `v` rescaled by the inverse `(√(v ⬝ᵥ v))⁻¹` of its length is a unit
-vector. -/
-theorem Matrix.dotProduct_self_inv_sqrt_smul {n : Type*} [Fintype n] {v : n → ℝ} (hv : v ≠ 0) :
-    ((√(v ⬝ᵥ v))⁻¹ • v) ⬝ᵥ ((√(v ⬝ᵥ v))⁻¹ • v) = 1 := by
-  have hpos : 0 < v ⬝ᵥ v :=
-    (dotProduct_self_nonneg v).lt_of_ne' (dotProduct_self_eq_zero.not.mpr hv)
-  simp only [smul_dotProduct, dotProduct_smul, smul_eq_mul]
-  field_simp
-  exact (Real.sq_sqrt hpos.le).symm
 
 /-- **Scaling by a matrix and by its transpose transforms the dot product.** If `A` sends `x` to
 `a • x'` and `Aᵀ` sends `y'` to `b • y`, then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`. For the

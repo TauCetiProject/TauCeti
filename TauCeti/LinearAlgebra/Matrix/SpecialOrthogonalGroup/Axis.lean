@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
 
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.LinearAlgebra.CrossProduct
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 

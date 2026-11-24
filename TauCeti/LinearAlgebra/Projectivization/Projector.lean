@@ -13,6 +13,8 @@ public import TauCeti.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Trace.Idempotent
 
+import TauCeti.Analysis.Matrix.DotProduct
+
 /-!
 # The rank-one projector of a line
 
