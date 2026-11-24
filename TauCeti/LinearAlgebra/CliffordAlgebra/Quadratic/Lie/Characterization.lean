@@ -92,8 +92,6 @@ theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_r
     rw [ι_ιRangeEquiv_symm_apply]
     rfl
   -- Differentiating the polarized Clifford relation makes `f` skew-adjoint.
-  have : FaithfulSMul K (CliffordAlgebra Q) :=
-    (faithfulSMul_iff_algebraMap_injective K (CliffordAlgebra Q)).2 (algebraMap_injective Q)
   have hf_skew : f ∈ (QuadraticMap.polarBilin Q).skewAdjointSubmodule :=
     (LinearMap.mem_skewAdjointSubmodule f).2 (isSkewAdjoint_polarBilin_of_derivation
       (TauCeti.innerDerivation K x) (by simpa using hf_lie))

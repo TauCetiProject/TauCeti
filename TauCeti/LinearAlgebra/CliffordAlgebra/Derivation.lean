@@ -151,8 +151,6 @@ theorem equivExterior_derivation (D : derivationLieAlgebra R (CliffordAlgebra Q)
   refine changeForm_derivation changeForm.associated_neg_proof (fun m n ↦ ?_) D hD _
     (ExteriorAlgebra.derivationOfEnd_ι A) x
   -- The polar form is twice the associated form, and `2` is invertible.
-  have : FaithfulSMul R (CliffordAlgebra Q) :=
-    (faithfulSMul_iff_algebraMap_injective R (CliffordAlgebra Q)).2 (algebraMap_injective Q)
   have h := isSkewAdjoint_polarBilin_of_derivation D hD m n
   simp only [← QuadraticMap.two_nsmul_associated R Q, LinearMap.smul_apply,
     ← ofNat_smul_eq_nsmul (R := R)] at h
