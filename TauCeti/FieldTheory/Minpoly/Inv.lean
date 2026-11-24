@@ -36,7 +36,6 @@ the nonreciprocal algebraic integers.
 * `TauCeti.isConjRoot_inv_iff_reverse_minpoly_eq_or_eq_neg`: over an integrally closed domain
   `R` with fraction field `K`, an integral `x ≠ 0` is conjugate over `K` to `x⁻¹` exactly when
   `P* = P` or `P* = -P`, where `P = minpoly R x`.
-* `IsConjRoot.isIntegral_inv`: the inverse of a reciprocal integral element is integral over `R`.
 * `IsConjRoot.isUnit_integralClosure`: a reciprocal integral element `x ≠ 0` is a unit of the
   integral closure of `R`; for `R = ℤ`, a reciprocal algebraic integer is a unit.
 * `IsConjRoot.coeff_zero_minpoly_eq_one_or_eq_neg_one`: a reciprocal integral `x ≠ 0` has
@@ -106,17 +105,11 @@ section IsIntegrallyClosed
 variable {R K L : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [Field K] [Algebra R K]
   [IsFractionRing R K] [Field L] [Algebra R L] [Algebra K L] [IsScalarTower R K L] {x : L}
 
-/-- If an element `x` integral over an integrally closed domain `R` is conjugate to `x⁻¹` over
-the fraction field, then `x⁻¹` is integral over `R` as well. -/
-theorem _root_.IsConjRoot.isIntegral_inv (h : IsConjRoot K x x⁻¹) (hx : IsIntegral R x) :
-    IsIntegral R x⁻¹ :=
-  h.isIntegral_of_isIntegrallyClosed hx
-
 /-- If a nonzero element `x` integral over an integrally closed domain `R` is conjugate to `x⁻¹`
 over the fraction field, then `x` is a unit of the integral closure of `R`. -/
 theorem _root_.IsConjRoot.isUnit_integralClosure (h : IsConjRoot K x x⁻¹) (hx : IsIntegral R x)
     (hx0 : x ≠ 0) : IsUnit (⟨x, hx⟩ : integralClosure R L) :=
-  ⟨⟨⟨x, hx⟩, ⟨x⁻¹, h.isIntegral_inv hx⟩, Subtype.ext (mul_inv_cancel₀ hx0),
+  ⟨⟨⟨x, hx⟩, ⟨x⁻¹, h.isIntegral_of_isIntegrallyClosed hx⟩, Subtype.ext (mul_inv_cancel₀ hx0),
     Subtype.ext (inv_mul_cancel₀ hx0)⟩, rfl⟩
 
 /-- Over an integrally closed domain `R` with fraction field `K`, a nonzero element `x` integral
