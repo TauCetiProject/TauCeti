@@ -200,9 +200,11 @@ noncomputable def barraudCorneaCocycle
       (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))).comp
         (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)))
     (fun _ _ _ ↦ hX.source_morseLevelPath ..) (fun _ _ _ ↦ hX.target_morseLevelPath ..) hθ
-    fun x z y u v ↦ hX.morseLevelPath_morseRecordsConcat hf (hdense x y) (fun i ↦ hc i z)
-      (inclusion (morseBrokenTrajectorySpace_subset _ _) u,
-        inclusion (morseBrokenTrajectorySpace_subset _ _) v)
+    fun x z y u v ↦ (congrArg (hX.morseLevelPath hf _)
+      (hX.inclusion_morseBrokenTrajectorySpaceComp hc x z y (u, v))).trans <|
+        hX.morseLevelPath_morseRecordsConcat hf (hdense x y) (fun i ↦ hc i z)
+          (inclusion (morseBrokenTrajectorySpace_subset _ _) u,
+            inclusion (morseBrokenTrajectorySpace_subset _ _) v)
 
 /-- The entry of the Barraud–Cornea cocycle at `(x, y)` is the push-forward of the chain of the
 trajectory space from `x` to `y` along its evaluation into Moore loops. -/

@@ -134,9 +134,6 @@ variable {x z y : M}
 /-- **Concatenation of broken trajectories at `z`** on the trajectory spaces: the restriction of
 `TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat`. It requires that no level of `c` is the level
 `f z`, which holds when `z` is a critical point and the levels are regular values. -/
--- The body is exposed so that the records of a concatenation reduce to `morseRecordsConcat`,
--- which the twisting cocycle of `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle` needs.
-@[expose]
 noncomputable def morseBrokenTrajectorySpaceConcat (hz : ∀ i, c i ≠ f z) :
     C(hX.morseBrokenTrajectorySpace c x z × hX.morseBrokenTrajectorySpace c z y,
       hX.morseBrokenTrajectorySpace c x y) where
@@ -156,6 +153,16 @@ theorem coe_morseBrokenTrajectorySpaceConcat_apply (hz : ∀ i, c i ≠ f z)
     (hX.morseBrokenTrajectorySpaceConcat hz w : c ⁻¹' Ioo (f y) (f x) → M) =
       concatLevelRecords c hz w.1.val w.2.val :=
   hX.coe_morseRecordsConcat hz _
+
+/-- As records of broken trajectories, a concatenation on the trajectory spaces is the
+concatenation `TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat` of the records. -/
+@[simp]
+theorem inclusion_morseBrokenTrajectorySpaceConcat (hz : ∀ i, c i ≠ f z)
+    (w : hX.morseBrokenTrajectorySpace c x z × hX.morseBrokenTrajectorySpace c z y) :
+    inclusion (morseBrokenTrajectorySpace_subset x y) (hX.morseBrokenTrajectorySpaceConcat hz w) =
+      hX.morseRecordsConcat hz (inclusion (morseBrokenTrajectorySpace_subset x z) w.1,
+        inclusion (morseBrokenTrajectorySpace_subset z y) w.2) :=
+  Subtype.ext <| by simp
 
 /-- **Concatenation of broken trajectories is associative.** -/
 theorem morseBrokenTrajectorySpaceConcat_assoc {s : M} (hz : ∀ i, c i ≠ f z) (hs : ∀ i, c i ≠ f s)
@@ -191,9 +198,6 @@ variable (hX : IsAdaptedPseudoGradient f X) {c : ι → ℝ}
 
 /-- **The composition maps of the trajectory spaces**, indexed by the critical points of `f`:
 concatenation at the middle critical point. -/
--- The body is exposed so that the composition maps reduce to
--- `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceConcat`.
-@[expose]
 noncomputable def morseBrokenTrajectorySpaceComp (x y z : criticalPoints 𝓘(ℝ, E) f) :
     C(hX.morseBrokenTrajectorySpace c x y × hX.morseBrokenTrajectorySpace c y z,
       hX.morseBrokenTrajectorySpace c x z) :=
@@ -206,6 +210,17 @@ theorem coe_morseBrokenTrajectorySpaceComp_apply (x y z : criticalPoints 𝓘(�
     (hX.morseBrokenTrajectorySpaceComp hc x y z w : c ⁻¹' Ioo (f z) (f x) → M) =
       concatLevelRecords c (fun i ↦ hc i y) w.1.val w.2.val :=
   hX.coe_morseBrokenTrajectorySpaceConcat_apply _ w
+
+/-- As records of broken trajectories, a composite is the concatenation
+`TauCeti.IsAdaptedPseudoGradient.morseRecordsConcat` of the records. -/
+@[simp]
+theorem inclusion_morseBrokenTrajectorySpaceComp (x y z : criticalPoints 𝓘(ℝ, E) f)
+    (w : hX.morseBrokenTrajectorySpace c x y × hX.morseBrokenTrajectorySpace c y z) :
+    inclusion (morseBrokenTrajectorySpace_subset _ _)
+        (hX.morseBrokenTrajectorySpaceComp hc x y z w) =
+      hX.morseRecordsConcat (fun i ↦ hc i y) (inclusion (morseBrokenTrajectorySpace_subset _ _) w.1,
+        inclusion (morseBrokenTrajectorySpace_subset _ _) w.2) :=
+  hX.inclusion_morseBrokenTrajectorySpaceConcat _ w
 
 /-- The composition maps are associative, in the form of the hypothesis `hι` of
 `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`. -/
