@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.ClassFunction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 
@@ -44,8 +45,8 @@ of the quotient map `χ_G : G → G // G` on points.
 * `TauCeti.HopfAlgebra.mem_conjugationInvariants_iff_forall_conj`: a function is invariant
   exactly when it is constant on conjugacy classes of points with values in every commutative
   algebra.
-* `TauCeti.HopfAlgebra.conjugationInvariants_eq_top`: for a commutative group, every function is
-  invariant.
+* `TauCeti.HopfAlgebra.conjugationInvariants_eq_classFunctions`: the invariant functions are the
+  class functions.
 
 ## References
 
@@ -291,13 +292,14 @@ theorem mem_conjugationInvariants_iff_conjugationAlgHom {f : H} :
     rw [AlgHom.comp_apply, h] at hc
     simpa using hc.symm
 
-/-- **A commutative affine group acts trivially on itself by conjugation**: when `H` is
-cocommutative, every function is conjugation invariant, so the conjugation quotient `G // G` is
-`G` itself. -/
-theorem conjugationInvariants_eq_top [Coalgebra.IsCocomm R H] :
-    conjugationInvariants R H = ⊤ :=
-  eq_top_iff.2 fun _ _ ↦ mem_conjugationInvariants_iff_forall_conj.2 fun _ _ _ g x ↦ by
-    rw [mul_comm g x, mul_inv_cancel_right]
+variable (R H) in
+/-- **The conjugation-invariant functions are the class functions**: the coinvariants of the right
+conjugation coaction are the equalizer `TauCeti.HopfAlgebra.classFunctions` of the left
+conjugation coordinate map and the second-factor inclusion. -/
+theorem conjugationInvariants_eq_classFunctions :
+    conjugationInvariants R H = classFunctions R H :=
+  SetLike.ext fun _ ↦
+    mem_conjugationInvariants_iff_conjugationAlgHom.trans mem_classFunctions_iff.symm
 
 end HopfAlgebra
 

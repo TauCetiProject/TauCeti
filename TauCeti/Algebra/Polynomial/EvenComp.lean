@@ -16,6 +16,7 @@ is a polynomial in `X²`. This is the invariant theory of the group of order two
 Translating by `1` gives the same statement for the reflection `X ↦ -X - 2`, whose invariant is
 `X² + 2X`.
 
+The subalgebra `R[X²]` consists of the polynomials `r(X²)` (`Polynomial.mem_adjoin_X_sq_iff`).
 Over a nontrivial ring, `X` itself is not a polynomial in `X²` (`Polynomial.X_notMem_adjoin_X_sq`),
 and the substitution `X ↦ -X` is an involution (`Polynomial.algEquivAevalNegX_sq`).
 -/
@@ -24,14 +25,19 @@ public section
 
 namespace Polynomial
 
+/-- The subalgebra `R[X²]` consists of the polynomials of the form `r(X²)`. -/
+theorem mem_adjoin_X_sq_iff {R : Type*} [CommSemiring R] {p : R[X]} :
+    p ∈ Algebra.adjoin R {(X ^ 2 : R[X])} ↔ ∃ r : R[X], r.comp (X ^ 2) = p := by
+  simp only [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range, comp_eq_aeval]
+
 /-- **The natural map `R[X²] → R[X]` is not surjective** over a nontrivial ring: `X` is not a
 polynomial in `X²`. -/
 theorem X_notMem_adjoin_X_sq {R : Type*} [CommSemiring R] [Nontrivial R] :
     (X : R[X]) ∉ Algebra.adjoin R {(X ^ 2 : R[X])} := by
-  rw [Algebra.adjoin_singleton_eq_range_aeval]
+  rw [mem_adjoin_X_sq_iff]
   rintro ⟨r, hr⟩
   have h : (expand R 2 r).coeff 1 = 1 := by
-    rw [expand_eq_comp_X_pow, comp_eq_aeval]
+    rw [expand_eq_comp_X_pow]
     exact congrArg (·.coeff 1) hr |>.trans coeff_X_one
   rw [coeff_expand two_pos] at h
   simp at h

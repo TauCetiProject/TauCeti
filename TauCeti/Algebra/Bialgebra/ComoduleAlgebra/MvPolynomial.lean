@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
+public import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
 # Diagonal actions of diagonalizable groups on affine space
@@ -44,7 +44,7 @@ open scoped TensorProduct
 
 namespace TauCeti.ComoduleAlgebra
 
-open MvPolynomial
+open _root_.MvPolynomial
 
 variable {R σ G : Type*} [CommSemiring R] [CommMonoid G]
 
@@ -149,29 +149,10 @@ theorem mem_coinvariants_mvPolynomialWeight_iff (w : σ → G) {p : MvPolynomial
     letI := mvPolynomialWeight (R := R) w
     p ∈ coinvariants R (MonoidAlgebra R G) (MvPolynomial σ R) ↔
       ∀ s ∈ p.support, monomialWeight w s = 1 := by
-  classical
   let := mvPolynomialWeight (R := R) w
-  -- The weight-`1` projection keeps exactly the monomials of weight `1`.
-  have hcoeff (s : σ →₀ ℕ) : (Comodule.weightProj R G (MvPolynomial σ R) 1 p).coeff s =
-      if monomialWeight w s = 1 then p.coeff s else 0 := by
-    rw [Comodule.weightProj_ofWeights_eq_repr_sum (basisMonomials σ R) (monomialWeight w) 1 p,
-      Finsupp.sum, coeff_sum]
-    simp only [apply_ite (fun q : MvPolynomial σ R ↦ q.coeff s), AddMonoidAlgebra.coeff_smul,
-      Finsupp.smul_apply, smul_eq_mul, basisMonomials, AddMonoidAlgebra.coeffLinearEquiv_apply]
-    rw [Finset.sum_eq_single s (fun x _ hx ↦ by simp [hx])
-      (fun hs ↦ by simp [Finsupp.notMem_support_iff.1 hs])]
-    simp
-  -- An invariant is a vector of weight `1`, i.e. a fixed point of the weight-`1` projection.
-  rw [mem_coinvariants, MonoidAlgebra.one_def, ← Comodule.mem_weightSpace]
-  refine ⟨fun hp s hs ↦ ?_, fun h ↦ ?_⟩
-  · by_contra hne
-    exact mem_support_iff.1 hs (by simpa [Comodule.weightProj_of_mem hp, hne] using hcoeff s)
-  · have hp : Comodule.weightProj R G (MvPolynomial σ R) 1 p = p := by
-      ext s
-      rw [hcoeff]
-      split_ifs with hs
-      · rfl
-      · exact (notMem_support_iff.1 fun hs' ↦ hs (h s hs')).symm
-    exact hp ▸ Comodule.weightProj_mem_weightSpace 1 p
+  -- An invariant is a vector of weight `1`.
+  rw [mem_coinvariants, MonoidAlgebra.one_def, ← Comodule.mem_weightSpace,
+    Comodule.mem_weightSpace_ofWeights_iff (basisMonomials σ R)]
+  simp only [Finsupp.mem_support_iff, basisMonomials_repr_apply, mem_support_iff]
 
 end TauCeti.ComoduleAlgebra

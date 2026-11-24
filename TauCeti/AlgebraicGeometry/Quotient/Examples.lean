@@ -11,6 +11,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Coaction
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.MvPolynomial
 public import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.Polynomial.EvenComp
+public import TauCeti.Data.ZMod.MonoidHomEquiv
+public import TauCeti.Data.ZMod.Two
 
 /-!
 # Examples of invariant quotients
@@ -44,7 +46,7 @@ namespace TauCeti.QuotientExamples
 
 section Gm
 
-open MvPolynomial ComoduleAlgebra
+open _root_.MvPolynomial ComoduleAlgebra
 
 variable (R : Type*) [CommSemiring R]
 
@@ -100,11 +102,8 @@ variable (R : Type*) [CommRing R]
 
 /-- The group `C₂ = Multiplicative (ZMod 2)` acting on `R[X]` by `X ↦ -X`, as a homomorphism to
 the automorphisms of `R[X]`: the generator acts by `p(X) ↦ p(-X)`. -/
-noncomputable def negXHom : Multiplicative (ZMod 2) →* (R[X] ≃ₐ[R] R[X]) where
-  toFun g := algEquivAevalNegX ^ g.toAdd.val
-  map_one' := by simp
-  map_mul' g h := by
-    rw [← pow_add, toAdd_mul, ZMod.val_add, ← pow_eq_pow_mod _ algEquivAevalNegX_sq]
+noncomputable def negXHom : Multiplicative (ZMod 2) →* (R[X] ≃ₐ[R] R[X]) :=
+  (zmodMonoidHomEquiv 2 _).symm ⟨algEquivAevalNegX, algEquivAevalNegX_sq⟩
 
 /-- The action of `C₂ = Multiplicative (ZMod 2)` on `R[X]` by `X ↦ -X`.
 
@@ -115,8 +114,8 @@ noncomputable def negXAction : MulSemiringAction (Multiplicative (ZMod 2)) R[X] 
 
 /-- The generator of `C₂` maps to the automorphism `p(X) ↦ p(-X)`. -/
 @[simp]
-theorem negXHom_ofAdd_one : negXHom R (Multiplicative.ofAdd 1) = algEquivAevalNegX := by
-  simp [negXHom, ZMod.val_one]
+theorem negXHom_ofAdd_one : negXHom R (Multiplicative.ofAdd 1) = algEquivAevalNegX :=
+  zmodMonoidHomEquiv_symm_apply_ofAdd_one _
 
 variable {R}
 
@@ -138,8 +137,7 @@ theorem mem_fixedPoints_negX_iff {p : R[X]} :
     p ∈ FixedPoints.subring R[X] (Multiplicative (ZMod 2)) ↔ p.comp (-X) = p := by
   let := negXAction R
   refine ⟨fun hp ↦ (negXAction_smul_ofAdd_one p).symm.trans (hp _), fun hp g ↦ ?_⟩
-  obtain ⟨n, rfl⟩ : ∃ n : ZMod 2, Multiplicative.ofAdd n = g := ⟨g.toAdd, rfl⟩
-  fin_cases n
+  rcases g.eq_one_or_eq_ofAdd_one with rfl | rfl
   · exact one_smul _ p
   · exact (negXAction_smul_ofAdd_one p).trans hp
 
@@ -151,12 +149,12 @@ theorem fixedPoints_negX_eq_adjoin [IsAddTorsionFree R] :
       (Algebra.adjoin R {(X ^ 2 : R[X])}).toSubring := by
   let := negXAction R
   ext p
-  rw [mem_fixedPoints_negX_iff, Subalgebra.mem_toSubring, Algebra.adjoin_singleton_eq_range_aeval]
+  rw [mem_fixedPoints_negX_iff, Subalgebra.mem_toSubring, mem_adjoin_X_sq_iff]
   refine ⟨fun hp ↦ ?_, ?_⟩
   · obtain ⟨r, rfl⟩ := exists_eq_comp_X_sq_of_comp_neg_X_eq hp
-    exact ⟨r, (comp_eq_aeval).symm⟩
+    exact ⟨r, rfl⟩
   · rintro ⟨r, rfl⟩
-    simp [← comp_eq_aeval, comp_assoc]
+    simp [comp_assoc]
 
 /-- **In characteristic two, `C₂` acts trivially on `R[X]`**, since `-X = X`: every polynomial,
 in particular `X`, is invariant. -/
@@ -177,14 +175,8 @@ theorem X_notMem_map_fixedPoints_padicInt :
   let := negXAction ℤ_[2]
   rw [fixedPoints_negX_eq_adjoin]
   rintro ⟨q, hq, hqX⟩
-  have hq' := Subalgebra.mem_toSubring.1 hq
-  rw [Algebra.adjoin_singleton_eq_range_aeval] at hq'
-  obtain ⟨r, rfl⟩ := hq'
-  refine X_notMem_adjoin_X_sq (R := ZMod 2) ?_
-  rw [Algebra.adjoin_singleton_eq_range_aeval]
-  refine ⟨r.map (PadicInt.toZMod (p := 2)), ?_⟩
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, coe_mapRingHom,
-    ← comp_eq_aeval] at hqX ⊢
+  obtain ⟨r, rfl⟩ := mem_adjoin_X_sq_iff.1 (Subalgebra.mem_toSubring.1 hq)
+  refine X_notMem_adjoin_X_sq (R := ZMod 2) (mem_adjoin_X_sq_iff.2 ⟨r.map PadicInt.toZMod, ?_⟩)
   simpa [map_comp] using hqX
 
 end C2
@@ -199,7 +191,7 @@ variable (R : Type*) [CommRing R]
 invariant, so the conjugation quotient `𝔾ₐ // 𝔾ₐ` is `𝔸¹`, although `𝔾ₐ` is not reductive. -/
 theorem conjugationInvariants_ga :
     HopfAlgebra.conjugationInvariants R (SymmetricAlgebra R R) = ⊤ :=
-  HopfAlgebra.conjugationInvariants_eq_top
+  (HopfAlgebra.conjugationInvariants_eq_classFunctions R _).trans HopfAlgebra.classFunctions_eq_top
 
 end Ga
 

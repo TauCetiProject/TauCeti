@@ -41,11 +41,13 @@ spaces, while this one builds a comodule from a basis equipped with a prescribed
 * `TauCeti.Comodule.coefficientMatrix_ofGroupLike`: the coefficient matrix of a group-like basis
   is diagonal.
 * `TauCeti.Comodule.basis_mem_weightSpace_ofWeights`: the `x`-th basis vector has weight `wt x`.
+* `TauCeti.Comodule.mem_weightSpace_ofWeights_iff`: a vector has weight `g` exactly when every
+  basis vector in its support has weight `g`.
 * `TauCeti.Comodule.weightProj_ofWeights_eq`: for distinct weights, weight projection extracts
   the corresponding basis coordinate.
 * `TauCeti.Comodule.weightProj_ofWeights_eq_repr_sum`, `weightProj_ofWeights_eq_sum` and
   `weightProj_ofWeights_pi_eq`: for repeated weights, weight projection keeps the coordinates of the
-  given weight.
+  given weight; `repr_weightProj_ofWeights_apply` says the same coordinatewise.
 
 ## References
 
@@ -164,6 +166,41 @@ theorem weightProj_ofWeights_eq_repr_sum [DecidableEq G] (b : Module.Basis η R 
   · rw [weightProj_of_mem]
     exact h ▸ basis_mem_weightSpace_ofWeights b wt x
   · rw [weightProj_of_mem_of_ne (Ne.symm h) (basis_mem_weightSpace_ofWeights b wt x), smul_zero]
+
+/-- **Coordinates of a weight projection.** The `x`-th coordinate of the projection to the weight
+`g` is the `x`-th coordinate of the vector when `wt x = g`, and `0` otherwise. -/
+theorem repr_weightProj_ofWeights_apply [DecidableEq G] (b : Module.Basis η R M) (wt : η → G)
+    (g : G) (m : M) (x : η) :
+    letI : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+    b.repr (weightProj R G M g m) x = if wt x = g then b.repr m x else 0 := by
+  classical
+  let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+  rw [weightProj_ofWeights_eq_repr_sum, map_finsuppSum, Finsupp.sum_apply]
+  simp only [apply_ite (fun v : M ↦ b.repr v x), map_smul, map_zero, Module.Basis.repr_self,
+    Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    Finsupp.coe_zero, Pi.zero_apply]
+  rw [Finsupp.sum, Finset.sum_eq_single x (fun y _ hy ↦ by simp [hy])
+    (fun hx ↦ by simp [Finsupp.notMem_support_iff.1 hx])]
+  simp
+
+/-- **Weight vectors of a diagonal comodule.** A vector has weight `g` exactly when every basis
+vector in its support has weight `g`. -/
+theorem mem_weightSpace_ofWeights_iff (b : Module.Basis η R M) (wt : η → G) (g : G) (m : M) :
+    letI : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+    m ∈ weightSpace R G M g ↔ ∀ x ∈ (b.repr m).support, wt x = g := by
+  classical
+  let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+  refine ⟨fun hm x hx ↦ ?_, fun h ↦ ?_⟩
+  · by_contra hne
+    refine Finsupp.mem_support_iff.1 hx ?_
+    rw [← weightProj_of_mem hm, repr_weightProj_ofWeights_apply]
+    simp [hne]
+  · have hm : weightProj R G M g m = m := b.repr.injective <| Finsupp.ext fun x ↦ by
+      rw [repr_weightProj_ofWeights_apply]
+      split_ifs with hx
+      · rfl
+      · exact (Finsupp.notMem_support_iff.1 fun hx' ↦ hx (h x hx')).symm
+    exact hm ▸ weightProj_mem_weightSpace g m
 
 /-- In a basis with pairwise distinct weights, projection to the weight of a basis vector
 extracts exactly that basis coordinate. -/
