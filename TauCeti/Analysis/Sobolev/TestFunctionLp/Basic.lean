@@ -33,8 +33,8 @@ passing to the `Lᵖ` class commutes with the vector space structure of the test
 `TauCeti.gradientTestFunctionLp` and `TauCeti.gradientTestFunctionLpₗ` provide the parallel
 construction for the gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function
 space a subspace. On the whole space, passing a test function or its gradient to `Lᵖ`
-commutes with translation, as recorded by `TauCeti.testFunctionLp_translateTestFunction` and
-`TauCeti.gradientTestFunctionLp_translateTestFunction`, and turns dilation of test functions into
+commutes with translation, as recorded by `TauCeti.testFunctionLp_translateOfMapsTo` and
+`TauCeti.gradientTestFunctionLp_translateOfMapsTo`, and turns dilation of test functions into
 the normalized `Lᵖ` dilation `MeasureTheory.Measure.dilateLp`, up to an explicit power of the
 factor, as recorded by `TauCeti.testFunctionLp_dilateTestFunction` and
 `TauCeti.gradientTestFunctionLp_dilateTestFunction`.
@@ -425,7 +425,7 @@ local instance : (mu.restrict (⊤ : Opens E)).IsAddRightInvariant := by
 reversed because `translateOfMapsTo` with `x = -h` evaluates at `y + h`, matching
 `translateLp h`. -/
 @[simp]
-theorem testFunctionLp_translateTestFunction (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+theorem testFunctionLp_translateOfMapsTo (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     testFunctionLp (mu := mu) q
         (phi.translateOfMapsTo (x := -h) (by intro x _; exact Opens.mem_top _)) =
       (mu.restrict (⊤ : Opens E)).translateLp q h (testFunctionLp q phi) := by
@@ -452,7 +452,7 @@ local instance : (mu.restrict (⊤ : Opens E)).IsAddRightInvariant := by
 
 /-- Taking the gradient's `Lᵖ` class commutes with whole-space translation. -/
 @[simp]
-theorem gradientTestFunctionLp_translateTestFunction (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+theorem gradientTestFunctionLp_translateOfMapsTo (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     gradientTestFunctionLp (mu := mu) q
         (phi.translateOfMapsTo (x := -h) (by intro x _; exact Opens.mem_top _)) =
       (mu.restrict (⊤ : Opens E)).translateLp q h (gradientTestFunctionLp q phi) := by

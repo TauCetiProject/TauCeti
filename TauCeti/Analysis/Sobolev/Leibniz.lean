@@ -146,16 +146,12 @@ theorem HasWeakLineDerivOn.contDiffOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace, hu, hu', fun φ => ?_⟩
   -- `ψ φ` and `(∂_v ψ) φ` are test functions on `Ω`.
-  let Φ : 𝓓(Ω, ℝ) := φ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen
-    φ.tsupport_subset hψ
-  let Ψ : 𝓓(Ω, ℝ) := φ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen
-    φ.tsupport_subset hdψ
+  let Φ : 𝓓(Ω, ℝ) := φ.smulLeftOfContDiffOn Ω.isOpen φ.tsupport_subset hψ
+  let Ψ : 𝓓(Ω, ℝ) := φ.smulLeftOfContDiffOn Ω.isOpen φ.tsupport_subset hdψ
   have hΦ : (Φ : E → ℝ) = fun x => ψ x • φ x := funext fun x =>
-    φ.bilinOfContDiffOn_apply (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen φ.tsupport_subset
-      hψ x
+    φ.smulLeftOfContDiffOn_apply Ω.isOpen φ.tsupport_subset hψ x
   have hΨ : (Ψ : E → ℝ) = fun x => fderiv ℝ ψ x v • φ x := funext fun x =>
-    φ.bilinOfContDiffOn_apply (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen φ.tsupport_subset
-      hdψ x
+    φ.smulLeftOfContDiffOn_apply Ω.isOpen φ.tsupport_subset hdψ x
   have hint1 : Integrable (fun x => lineDeriv ℝ (Φ : E → ℝ) x v • u x) μ :=
     integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn Φ v
   have hint2 : Integrable (fun x => (Ψ : E → ℝ) x • u x) μ :=

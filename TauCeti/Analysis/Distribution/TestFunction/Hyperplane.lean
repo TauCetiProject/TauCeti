@@ -150,11 +150,9 @@ theorem StrongDual.exists_interpolation_divergence
     have := ((f.hasFDerivAt (x := x)).sub_const a).const_mul ((n : ℝ) + 1)
     simpa using this
   let θ (n : ℕ) : 𝓓(Ω, E) :=
-    χ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen χ.tsupport_subset
-      (hσ n).contDiffOn
+    χ.smulLeftOfContDiffOn Ω.isOpen χ.tsupport_subset (hσ n).contDiffOn
   have hθ (n : ℕ) : ⇑(θ n) = fun x => σ n x • χ x := funext fun x =>
-    χ.bilinOfContDiffOn_apply (ContinuousLinearMap.lsmul ℝ ℝ).flip Ω.isOpen χ.tsupport_subset
-      (hσ n).contDiffOn x
+    χ.smulLeftOfContDiffOn_apply Ω.isOpen χ.tsupport_subset (hσ n).contDiffOn x
   refine ⟨fun n => φ + θ n, fun n x => ?_, fun n x => ?_⟩
   · have h0 : 0 ≤ σ n x := Real.smoothTransition.nonneg _
     have h1 : 0 ≤ 1 - σ n x := sub_nonneg.2 (Real.smoothTransition.le_one _)

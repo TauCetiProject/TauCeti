@@ -78,48 +78,38 @@ theorem coe_cutoffConvolutionCLM (χ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable
 /-- Cutoff convolution with the zero cutoff vanishes. -/
 @[simp]
 theorem cutoffConvolutionCLM_zero (hK₀ : LocallyIntegrable K₀ μ) :
-    cutoffConvolutionCLM (Ω' := Ω') (F := F) (0 : 𝓓(Ω, ℝ)) hK₀ = 0 := by
-  ext T φ
-  simp
+    cutoffConvolutionCLM (Ω' := Ω') (F := F) (0 : 𝓓(Ω, ℝ)) hK₀ = 0 := by ext T φ; simp
 
 /-- Cutoff convolution is additive in the cutoff. -/
 @[simp]
 theorem cutoffConvolutionCLM_add (χ₁ χ₂ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable K₀ μ) :
     cutoffConvolutionCLM (Ω' := Ω') (F := F) (χ₁ + χ₂) hK₀ =
-      cutoffConvolutionCLM χ₁ hK₀ + cutoffConvolutionCLM χ₂ hK₀ := by
-  ext T φ
-  simp
+      cutoffConvolutionCLM χ₁ hK₀ + cutoffConvolutionCLM χ₂ hK₀ := by ext T φ; simp
 
 /-- Cutoff convolution commutes with negation of the cutoff. -/
 @[simp]
 theorem cutoffConvolutionCLM_neg (χ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable K₀ μ) :
     cutoffConvolutionCLM (Ω' := Ω') (F := F) (-χ) hK₀ = -cutoffConvolutionCLM χ hK₀ := by
-  ext T φ
-  simp
+  ext T φ; simp
 
 /-- Cutoff convolution commutes with subtraction of cutoffs. -/
 @[simp]
 theorem cutoffConvolutionCLM_sub (χ₁ χ₂ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable K₀ μ) :
     cutoffConvolutionCLM (Ω' := Ω') (F := F) (χ₁ - χ₂) hK₀ =
-      cutoffConvolutionCLM χ₁ hK₀ - cutoffConvolutionCLM χ₂ hK₀ := by
-  ext T φ
-  simp
+      cutoffConvolutionCLM χ₁ hK₀ - cutoffConvolutionCLM χ₂ hK₀ := by ext T φ; simp
 
 /-- Cutoff convolution commutes with scalar multiplication of the cutoff. -/
 @[simp]
 theorem cutoffConvolutionCLM_smul (c : ℝ) (χ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable K₀ μ) :
     cutoffConvolutionCLM (Ω' := Ω') (F := F) (c • χ) hK₀ = c • cutoffConvolutionCLM χ hK₀ := by
-  ext T φ
-  simp
+  ext T φ; simp
 
 /-- Cutoff convolution commutes with applying a continuous linear map to the values of `T`. -/
 theorem mapCLM_cutoffConvolutionCLM {F' : Type*} [AddCommGroup F'] [Module ℝ F']
     [TopologicalSpace F'] [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F']
     (A : F →L[ℝ] F') (χ : 𝓓(Ω, ℝ)) (hK₀ : LocallyIntegrable K₀ μ) (T : 𝓓'(Ω, F)) :
     mapCLM A (cutoffConvolutionCLM (Ω' := Ω') χ hK₀ T) =
-      cutoffConvolutionCLM χ hK₀ (mapCLM A T) := by
-  ext φ
-  simp
+      cutoffConvolutionCLM χ hK₀ (mapCLM A T) := by ext φ; simp
 
 /-- Two cutoffs that agree on a neighbourhood of `dsupport T` define the same cutoff convolution. -/
 theorem cutoffConvolutionCLM_congr {χ₁ χ₂ : 𝓓(Ω, ℝ)}

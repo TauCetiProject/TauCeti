@@ -173,9 +173,7 @@ private theorem exists_radius_kernelPotentialOfSupport_eq_zero {T : 𝓓'(Ω, �
     hR₀.trans (closedBall_subset_closedBall (le_max_left _ _))
   obtain ⟨c, hc0, hc1, hmp⟩ := hmp
   refine ⟨(R₁ + 1) / c, div_pos (by linarith) hc0, fun x hx ↦ ?_⟩
-  have hcx : R₁ + 1 < c * ‖x‖ := by
-    rw [mul_comm]
-    exact (div_lt_iff₀ hc0).1 hx
+  have hcx : R₁ + 1 < c * ‖x‖ := by rw [mul_comm]; exact (div_lt_iff₀ hc0).1 hx
   have hnorm_pos : 0 < ‖x‖ := lt_trans (div_pos (by linarith) hc0) hx
   have hx0 : x ≠ 0 := norm_pos_iff.1 hnorm_pos
   have hx_gt : R₁ < ‖x‖ := by linarith [mul_lt_of_lt_one_left hnorm_pos hc1]
@@ -184,22 +182,19 @@ private theorem exists_radius_kernelPotentialOfSupport_eq_zero {T : 𝓓'(Ω, �
   have hχx : tsupport (χ : E → ℝ) ⊆ {x}ᶜ := subset_compl_singleton_iff.2 hxχ
   obtain ⟨P, hPharm, hPlim⟩ := hmp x hx0
   have hPsmooth (N : ℕ) : ContDiffOn ℝ ∞ (P N) {x}ᶜ :=
-    (HarmonicOnNhd.contDiffOn_of_isOpen (fun z _ ↦ hPharm N z) isOpen_compl_singleton)
-  have hχ_sub : tsupport (χ : E → ℝ) ⊆ closedBall 0 (c * ‖x‖) :=
-    hχR₁.trans (closedBall_subset_closedBall (by linarith))
+    HarmonicOnNhd.contDiffOn_of_isOpen (fun z _ ↦ hPharm N z) isOpen_compl_singleton
   have htend := TestFunction.tendsto_smulOfContDiffOn χ isOpen_compl_singleton hχx hPsmooth
-    (hG.contDiffOn_sub_right x) fun k _ ↦ (hPlim k).mono hχ_sub
-  have hT_lim := (T.continuous.tendsto _).comp htend
+    (hG.contDiffOn_sub_right x) fun k _ ↦
+      (hPlim k).mono (hχR₁.trans (closedBall_subset_closedBall (by linarith)))
   have hzero (N : ℕ) :
       T (χ.smulOfContDiffOn isOpen_compl_singleton hχx (hPsmooth N)) = 0 := by
     refine hT (P N) _ (fun z _ ↦ hPharm N z) ?_
-    filter_upwards [hχ1] with y hy
-    simp [hy]
+    filter_upwards [hχ1] with y hy; simp [hy]
   rw [kernelPotentialOfSupport_eq_kernelPotentialPairing T hχT hG hxχ,
     kernelPotentialPairing_eq T hG hxχ
       (φ := χ.smulOfContDiffOn isOpen_compl_singleton hχx (hG.contDiffOn_sub_right x))
-      (fun y ↦ by simp)]
-  exact tendsto_nhds_unique (hT_lim.congr hzero) tendsto_const_nhds
+      fun _ ↦ by simp]
+  exact tendsto_nhds_unique (((T.continuous.tendsto _).comp htend).congr hzero) tendsto_const_nhds
 
 private theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn_real {T : 𝓓'(Ω, ℝ)} {K : Set E}
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) (hfill : IsFilledIn K Ω) (hTK : dsupport T ⊆ K)
@@ -213,24 +208,34 @@ private theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn_real {T : 𝓓'(�
       ((connectedComponentIn_subset Kᶜ x).trans (compl_subset_compl.2 hTK))
   by_cases hxH : x ∈ filledHull K
   · -- A bounded component of `Kᶜ` cannot stay inside `Ω` since `K` is filled in `Ω`.
-    have hnot := (isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
-      hK.isClosed Ω.isOpen hKΩ).1 hfill x ⟨hxH, hx⟩
-    obtain ⟨x₀, hx₀C, hx₀Ω⟩ := not_subset.1 hnot
+    obtain ⟨x₀, hx₀C, hx₀Ω⟩ := not_subset.1 <|
+      (isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
+        hK.isClosed Ω.isOpen hKΩ).1 hfill x ⟨hxH, hx⟩
     exact han.eqOn_zero_of_preconnected_of_eventuallyEq_zero isPreconnected_connectedComponentIn
       hx₀C (eventuallyEq_zero_kernelPotentialOfSupport_of_notMem hK hKΩ hTK hG hT hx₀Ω)
       (mem_connectedComponentIn hx)
   · -- An unbounded component of `Kᶜ` escapes every closed ball, reaching the multipole region.
     obtain ⟨R, _, hRzero⟩ := exists_radius_kernelPotentialOfSupport_eq_zero hK hKΩ hTK hG hmp hT
-    have hunb : ¬IsBounded (connectedComponentIn Kᶜ x) := mt mem_filledHull_iff.2 hxH
-    have hnot : ¬connectedComponentIn Kᶜ x ⊆ closedBall 0 R :=
-      fun hsub ↦ hunb (isBounded_closedBall.subset hsub)
-    obtain ⟨x₀, hx₀C, hx₀R⟩ := not_subset.1 hnot
-    have hx₀_gt : R < ‖x₀‖ := not_le.1 (mt mem_closedBall_zero_iff.2 hx₀R)
+    obtain ⟨x₀, hx₀C, hx₀R⟩ := not_subset.1 fun hsub ↦
+      mt mem_filledHull_iff.2 hxH (isBounded_closedBall.subset hsub)
     have hev : T.kernelPotentialOfSupport hG =ᶠ[𝓝 x₀] 0 := by
-      filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx₀_gt] with z hz
-      exact hRzero z hz
+      filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds
+        (not_le.1 (mt mem_closedBall_zero_iff.2 hx₀R))] with z hz using hRzero z hz
     exact han.eqOn_zero_of_preconnected_of_eventuallyEq_zero isPreconnected_connectedComponentIn
       hx₀C hev (mem_connectedComponentIn hx)
+
+private theorem dsupport_mapCLM_subset_and_vanishes
+    {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E}
+    {T : 𝓓'(Ω, F)} {K : Set E} (hTK : dsupport T ⊆ K)
+    (hT : ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) →
+      T ψ = 0)
+    (ℓ : F →L[ℝ] ℝ) :
+    dsupport (mapCLM ℓ T) ⊆ K ∧
+      ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) →
+        mapCLM ℓ T ψ = 0 :=
+  ⟨(dsupport_comp_subset T (map_zero ℓ)).trans hTK,
+    fun H ψ hH hψ ↦ by simp [hT H ψ hH hψ]⟩
 
 /-- **Unique continuation for off-support kernel potentials on filled compact sets.** For any real
 normed space `F`, if `T : 𝓓'(Ω, F)` has `dsupport T ⊆ K` for a compact set `K ⊆ Ω` filled in `Ω`,
@@ -243,13 +248,11 @@ theorem kernelPotentialOfSupport_eq_zero_of_isFilledIn {T : 𝓓'(Ω, F)} {K : S
     (hT : ∀ (H : E → ℝ) (ψ : 𝓓(Ω, ℝ)), HarmonicOnNhd H Ω → ((ψ : E → ℝ) =ᶠ[𝓝ˢ K] H) → T ψ = 0)
     {x : E} (hx : x ∈ Kᶜ) :
     T.kernelPotentialOfSupport hG x = 0 := by
-  have hcT : IsCompact (dsupport T) := hK.of_isClosed_subset isClosed_dsupport hTK
-  have hxT : x ∉ dsupport T := fun hx' ↦ hx (hTK hx')
   refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_
-  rw [← kernelPotentialOfSupport_mapCLM ℓ hcT (hTK.trans hKΩ) hG hxT]
-  exact kernelPotentialOfSupport_eq_zero_of_isFilledIn_real hK hKΩ hfill
-    ((dsupport_comp_subset T (map_zero ℓ)).trans hTK) hG hmp
-    (fun H ψ hH hψ ↦ by simp [hT H ψ hH hψ]) hx
+  obtain ⟨hTKℓ, hTℓ⟩ := dsupport_mapCLM_subset_and_vanishes hTK hT ℓ
+  rw [← kernelPotentialOfSupport_mapCLM ℓ (hK.of_isClosed_subset isClosed_dsupport hTK)
+    (hTK.trans hKΩ) hG fun hx' ↦ hx (hTK hx')]
+  exact kernelPotentialOfSupport_eq_zero_of_isFilledIn_real hK hKΩ hfill hTKℓ hG hmp hTℓ hx
 
 /-- **Support confinement of the distributional kernel potential.** Under the hypotheses of
 `kernelPotentialOfSupport_eq_zero_of_isFilledIn`, for any real normed space `F` and any cutoff `χ`
@@ -266,18 +269,15 @@ theorem dsupport_cutoffConvolutionCLM_subset_of_isFilledIn [MeasurableSpace E] [
   rw [← disjoint_compl_left_iff_subset]
   refine IsVanishingOn.disjoint_dsupport (fun φ hφ ↦ ?_) hK.isClosed.isOpen_compl
   refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_
-  have hsuppℓ : dsupport (mapCLM ℓ T) ⊆ K := (dsupport_comp_subset T (map_zero ℓ)).trans hTK
-  have hχℓ : ∀ᶠ y in 𝓝ˢ (dsupport (mapCLM ℓ T)), χ y = 1 :=
-    hχ.filter_mono (nhdsSet_mono hsuppℓ)
-  have hdisj : Disjoint (tsupport (φ : E → ℝ)) (dsupport (mapCLM ℓ T)) :=
-    Set.disjoint_left.2 fun z hz hzT ↦ hφ hz (hsuppℓ hzT)
+  obtain ⟨hsuppℓ, hTℓ⟩ := dsupport_mapCLM_subset_and_vanishes hTK hT ℓ
   rw [← mapCLM_apply, mapCLM_cutoffConvolutionCLM,
-    cutoffConvolutionCLM_apply_eq_integral_smul_kernelPotentialOfSupport hχℓ hG_loc hG hG_symm
-      hdisj]
+    cutoffConvolutionCLM_apply_eq_integral_smul_kernelPotentialOfSupport
+      (hχ.filter_mono (nhdsSet_mono hsuppℓ)) hG_loc hG hG_symm
+      (Set.disjoint_left.2 fun _ hz hzT ↦ hφ hz (hsuppℓ hzT))]
   refine integral_eq_zero_of_ae (ae_of_all _ fun x ↦ ?_)
   by_cases hx : x ∈ tsupport (φ : E → ℝ)
-  · simp [kernelPotentialOfSupport_eq_zero_of_isFilledIn_real hK hKΩ hfill hsuppℓ hG hmp
-      (fun H ψ hH hψ ↦ by simp [hT H ψ hH hψ]) (hφ hx)]
+  · simp [kernelPotentialOfSupport_eq_zero_of_isFilledIn_real hK hKΩ hfill hsuppℓ hG hmp hTℓ
+      (hφ hx)]
   · simp [image_eq_zero_of_notMem_tsupport hx]
 
 /-- **Lax–Malgrange harmonic orthogonality from a fundamental solution.** For any real normed space
@@ -307,15 +307,12 @@ theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution [Mea
   have hUo : IsOpen U := isOpen_setOfPred_harmonicAt (f := h)
   obtain ⟨η, -, hη1, hηU⟩ := TestFunction.exists_cutoff_tsupport_subset
     (Ω := (⊤ : Opens E)) (n := ⊤) hK hUo hh (subset_univ _)
-  have hU_harm : HarmonicOnNhd h U := fun _ hy ↦ hy
   let θ : 𝓓((⊤ : Opens E), ℝ) :=
-    η.smulOfContDiffOn hUo hηU (hU_harm.contDiffOn_of_isOpen hUo)
-  have hθh : (θ : E → ℝ) =ᶠ[𝓝ˢ K] h := by
-    filter_upwards [hη1] with y hy
-    simp [θ, hy]
+    η.smulOfContDiffOn hUo hηU (HarmonicOnNhd.contDiffOn_of_isOpen (fun _ hy ↦ hy) hUo)
+  have hθh : (θ : E → ℝ) =ᶠ[𝓝ˢ K] h := by filter_upwards [hη1] with y hy; simp [θ, hy]
   -- Near `K ⊇ dsupport W`, `Δθ = Δh = 0`, so `W (Δθ) = 0`.
-  let Δθ : 𝓓((⊤ : Opens E), ℝ) := laplacianCLM ℝ E _ θ
-  have hΔ0 : (Δθ : E → ℝ) =ᶠ[𝓝ˢ (dsupport W)] (0 : 𝓓((⊤ : Opens E), ℝ)) := by
+  have hΔ0 : ((laplacianCLM ℝ E _ θ : 𝓓((⊤ : Opens E), ℝ)) : E → ℝ) =ᶠ[𝓝ˢ (dsupport W)]
+      (0 : 𝓓((⊤ : Opens E), ℝ)) := by
     refine Filter.EventuallyEq.filter_mono ?_ (nhdsSet_mono hWK)
     obtain ⟨V, hVo, hKV, hθV⟩ := mem_nhdsSet_iff_exists.1 hθh
     filter_upwards [(hVo.inter hUo).mem_nhdsSet.2 (subset_inter hKV hh)] with y ⟨hyV, hyU⟩
@@ -324,8 +321,8 @@ theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution [Mea
     rw [TestFunction.laplacianCLM_apply, ((harmonicAt_congr_nhds hev_y.symm).1 hyU).2.self_of_nhds,
       FunLike.coe_zero, Pi.zero_apply]
   have hW0 : laplacianCLM ℝ E _ W θ = 0 := by
-    rw [Distribution.laplacianCLM_apply_apply, Distribution.map_eq_map_of_eventuallyEq W hΔ0,
-      map_zero]
+    rw [Distribution.laplacianCLM_apply_apply,
+      Distribution.map_eq_map_of_eventuallyEq W hΔ0, map_zero]
   have hχθ0 : T (TestFunction.cutoffTopCLM χ θ) = 0 := by
     have hpois := congrArg (fun D : 𝓓'((⊤ : Opens E), F) ↦ D θ)
       (laplacianCLM_cutoffConvolutionCLM χ hG_loc hG_lap T)
@@ -333,8 +330,7 @@ theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_fundamentalSolution [Mea
     exact neg_eq_zero.1 hpois.symm
   have hψ_eq : (ψ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] TestFunction.cutoffTopCLM χ θ := by
     refine Filter.EventuallyEq.filter_mono ?_ (nhdsSet_mono hTK)
-    filter_upwards [hψ, hχ1, hθh] with y hy₁ hy₂ hy₃
-    simp [hy₁, hy₂, hy₃]
+    filter_upwards [hψ, hχ1, hθh] with y hy₁ hy₂ hy₃; simp [hy₁, hy₂, hy₃]
   rw [Distribution.map_eq_map_of_eventuallyEq T hψ_eq, hχθ0]
 
 end FilledIn
@@ -359,36 +355,31 @@ private theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_of_linearIsometryEq
   let Ω' : Opens E' := ⟨e '' (Ω : Set E), e.toHomeomorph.isOpenMap _ Ω.isOpen⟩
   let K' : Set E' := e '' K
   let e_cle : E' ≃L[ℝ] E := e.symm.toContinuousLinearEquiv
-  have hmaps : MapsTo e_cle Ω' Ω := by
-    rintro _ ⟨x, hx, rfl⟩
-    simpa [e_cle] using hx
+  have hmaps : MapsTo e_cle Ω' Ω := by rintro _ ⟨x, hx, rfl⟩; simpa [e_cle] using hx
   have hmaps_symm : MapsTo e_cle.symm Ω Ω' := fun x hx ↦ ⟨x, hx, rfl⟩
   let T' : 𝓓'(Ω', ℝ) := transportCLM e_cle hmaps T
-  have hT'K' : dsupport T' ⊆ K' := by
-    refine (dsupport_transportCLM_subset e_cle hmaps T).trans fun y hy ↦ ?_
-    exact ⟨e.symm y, hTK hy, e.apply_symm_apply y⟩
+  have hT'K' : dsupport T' ⊆ K' :=
+    (dsupport_transportCLM_subset e_cle hmaps T).trans fun y hy ↦
+      ⟨e.symm y, hTK hy, e.apply_symm_apply y⟩
   have hT' : ∀ (H' : E' → ℝ) (ψ' : 𝓓(Ω', ℝ)),
       HarmonicOnNhd H' Ω' → ((ψ' : E' → ℝ) =ᶠ[𝓝ˢ K'] H') → T' ψ' = 0 := by
     intro H' ψ' hH' hψ'
     rw [transportCLM_apply]
-    refine hT (H' ∘ e) (e_cle.transportTestFunction hmaps ψ') ?_ ?_
-    · intro x hx
-      exact (harmonicAt_comp_linearIsometryEquiv_right_iff e).2 (hH' (e x) ⟨x, hx, rfl⟩)
-    · have hcoe : ((e_cle.transportTestFunction hmaps ψ' : 𝓓(Ω, ℝ)) : E → ℝ) = ψ' ∘ e :=
-        funext fun y ↦ by simp [e_cle]
-      rw [hcoe]
-      exact hψ'.comp_tendsto (e.continuous.tendsto_nhdsSet (mapsTo_image e K))
+    refine hT (H' ∘ e) (e_cle.transportTestFunction hmaps ψ')
+      (fun x hx ↦ (harmonicAt_comp_linearIsometryEquiv_right_iff e).2 (hH' (e x) ⟨x, hx, rfl⟩)) ?_
+    have hcoe : ((e_cle.transportTestFunction hmaps ψ' : 𝓓(Ω, ℝ)) : E → ℝ) = ψ' ∘ e :=
+      funext fun _ ↦ by simp [e_cle]
+    rw [hcoe]
+    exact hψ'.comp_tendsto (e.continuous.tendsto_nhdsSet (mapsTo_image e K))
   have hh' : HarmonicOnNhd (h ∘ e.symm) K' := by
     rintro _ ⟨x, hx, rfl⟩
     simpa using (harmonicAt_comp_linearIsometryEquiv_right_iff e.symm).2 (by simpa using hh x hx)
   let ψ' : 𝓓(Ω', ℝ) := e_cle.symm.transportTestFunction hmaps_symm ψ
   have hψ' : (ψ' : E' → ℝ) =ᶠ[𝓝ˢ K'] (h ∘ e.symm) := by
-    have hcoe : (ψ' : E' → ℝ) = ψ ∘ e.symm := funext fun y ↦ by simp [ψ', e_cle]
-    have hmaps_K : MapsTo e.symm K' K := by
-      rintro _ ⟨x, hx, rfl⟩
-      simpa using hx
+    have hcoe : (ψ' : E' → ℝ) = ψ ∘ e.symm := funext fun _ ↦ by simp [ψ', e_cle]
     rw [hcoe]
-    exact hψ.comp_tendsto (e.symm.continuous.tendsto_nhdsSet hmaps_K)
+    exact hψ.comp_tendsto
+      (e.symm.continuous.tendsto_nhdsSet (by rintro _ ⟨x, hx, rfl⟩; simpa using hx))
   have hfill' : IsFilledIn K' Ω' := by
     convert e.toHomeomorph.isFilledIn_image.2 hfill
     · simp
@@ -460,10 +451,9 @@ theorem apply_eq_zero_of_isFilledIn_of_harmonicOnNhd
     {h : E → ℝ} (hh : HarmonicOnNhd h K) {ψ : 𝓓(Ω, ℝ)} (hψ : (ψ : E → ℝ) =ᶠ[𝓝ˢ K] h) :
     T ψ = 0 := by
   refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_
+  obtain ⟨hTKℓ, hTℓ⟩ := dsupport_mapCLM_subset_and_vanishes hTK hT ℓ
   rw [← mapCLM_apply]
-  exact apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_real hK hKΩ hfill
-    ((dsupport_comp_subset T (map_zero ℓ)).trans hTK)
-    (fun H φ hH hφ ↦ by simp [hT H φ hH hφ]) hh hψ
+  exact apply_eq_zero_of_isFilledIn_of_harmonicOnNhd_real hK hKΩ hfill hTKℓ hTℓ hh hψ
 
 end DimensionFree
 

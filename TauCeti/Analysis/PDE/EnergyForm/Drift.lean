@@ -54,7 +54,9 @@ divergence of `φ b`. -/
 private theorem energyFormH1_drift_ofTestFunctionₗ_eq_integral (hb : ContDiffOn ℝ ∞ b Omega)
     (u : W1p mu Omega 2) (φ : 𝓓(Omega, ℝ)) :
     energyFormH1 0 b 0 (W1p.ofTestFunctionₗ mu Omega 2 φ) u =
-      ∫ x in Omega, (TestFunction.divergenceCLM (smulTestField hb φ) x • W1p.value u x -
+      ∫ x in Omega,
+        (TestFunction.divergenceCLM (φ.smulOfContDiffOn Omega.isOpen φ.tsupport_subset hb) x •
+          W1p.value u x -
         φ x * LinearMap.trace ℝ (EuclideanSpace ℝ ι)
           (fderiv ℝ b x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) * W1p.value u x) ∂mu := by
   rw [energyFormH1_def]
@@ -74,7 +76,9 @@ private theorem energyFormH1_neg_ofTestFunctionₗ_eq_integral (hb : ContDiffOn 
     energyFormH1 0 (-b) (fun x ↦ -LinearMap.trace ℝ (EuclideanSpace ℝ ι)
         (fderiv ℝ b x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι)) u
         (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-      ∫ x in Omega, (-innerSL ℝ (W1p.gradient u x) (smulTestField hb φ x) -
+      ∫ x in Omega,
+        (-innerSL ℝ (W1p.gradient u x)
+          (φ.smulOfContDiffOn Omega.isOpen φ.tsupport_subset hb x) -
         φ x * LinearMap.trace ℝ (EuclideanSpace ℝ ι)
           (fderiv ℝ b x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) * W1p.value u x) ∂mu := by
   rw [energyFormH1_def]
@@ -83,7 +87,7 @@ private theorem energyFormH1_neg_ofTestFunctionₗ_eq_integral (hb : ContDiffOn 
   rw [hx]
   simp only [Pi.zero_apply, Pi.neg_apply, energyIntegrand_apply, matrixBilinearForm_apply,
     Matrix.zero_mulVec, dotProduct_zero, driftForm_apply, jetField_apply, massForm_apply,
-    innerSL_apply_apply, smulTestField_apply, inner_neg_left, inner_smul_right,
+    innerSL_apply_apply, TestFunction.smulOfContDiffOn_apply, inner_neg_left, inner_smul_right,
     real_inner_comm (b x)]
   ring
 
@@ -96,7 +100,7 @@ theorem energyFormH1_drift_ofTestFunctionₗ (hb : ContDiffOn ℝ ∞ b Omega) (
       energyFormH1 0 (-b) (fun x ↦ -LinearMap.trace ℝ (EuclideanSpace ℝ ι)
         (fderiv ℝ b x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι)) u
         (W1p.ofTestFunctionₗ mu Omega 2 φ) := by
-  set Φ := smulTestField hb φ
+  set Φ := φ.smulOfContDiffOn Omega.isOpen φ.tsupport_subset hb
   set tr : EuclideanSpace ℝ ι → ℝ := fun x ↦ LinearMap.trace ℝ (EuclideanSpace ℝ ι)
     (fderiv ℝ b x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι)
   have hu := W1p.hasWeakFDerivOn u

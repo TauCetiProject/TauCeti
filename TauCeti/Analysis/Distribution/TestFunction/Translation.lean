@@ -28,6 +28,9 @@ directional derivatives of regularizations.
 * `TestFunction.tsupport_translateOfMapsTo`: support of a translated test function.
 * `TestFunction.fderiv_translateOfMapsTo`: Fréchet derivatives commute with translation.
 * `TestFunction.lineDeriv_translateOfMapsTo`: directional derivatives commute with translation.
+* `TestFunction.lineDerivOp_translateOfMapsTo`,
+  `TestFunction.iteratedLineDerivOp_translateOfMapsTo`: directional and iterated directional
+  derivative operators commute with translation.
 * `TauCeti.exists_testFunction_eq_intervalIntegral`: segment averages of a test function are test
   functions.
 * `TauCeti.reflectTranslateTestFunction`: the reflected translate `t ↦ ρ (y - t)` of a smooth
@@ -44,7 +47,7 @@ noncomputable section
 
 namespace TestFunction
 
-open Set TopologicalSpace
+open LineDeriv Set TopologicalSpace
 open scoped ContDiff Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -66,8 +69,7 @@ def translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
 @[simp]
 theorem translateOfMapsTo_apply {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
     (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (y : E) :
-    ρ.translateOfMapsTo h y = ρ (y - x) := by
-  rfl
+    ρ.translateOfMapsTo h y = ρ (y - x) := by rfl
 
 /-- The support of `ρ.translateOfMapsTo h` is the translated support of `ρ`. -/
 @[simp]
@@ -91,10 +93,26 @@ theorem lineDeriv_translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
     (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (y w : E) :
     lineDeriv ℝ (ρ.translateOfMapsTo h : E → F) y w = lineDeriv ℝ (ρ : E → F) (y - x) w := by
   simp only [lineDeriv, translateOfMapsTo_apply, sub_eq_add_neg]
-  congr 1
-  funext t
-  congr 1
-  abel
+  congr 1; funext t; congr 1; abel
+
+/-- The directional derivative operator commutes with translating a test function. -/
+@[simp]
+theorem lineDerivOp_translateOfMapsTo (ρ : 𝓓(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (v : E) :
+    ∂_{v} (ρ.translateOfMapsTo h) =
+      (∂_{v} ρ).translateOfMapsTo (h.mono_left (tsupport_lineDerivOp_subset ρ v)) := by
+  ext y; simp
+
+/-- The iterated directional derivative operator commutes with translating a test function. -/
+@[simp]
+theorem iteratedLineDerivOp_translateOfMapsTo (ρ : 𝓓(V, F)) {x : E}
+    (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) {k : ℕ} (m : Fin k → E) :
+    ∂^{m} (ρ.translateOfMapsTo h) =
+      (∂^{m} ρ).translateOfMapsTo (h.mono_left (tsupport_iteratedLineDerivOp_subset ρ m)) := by
+  ext y
+  rw [iteratedLineDerivOp_apply_eq_iteratedFDeriv, translateOfMapsTo_apply,
+    iteratedLineDerivOp_apply_eq_iteratedFDeriv, funext (ρ.translateOfMapsTo_apply h),
+    iteratedFDeriv_comp_sub]
 
 end TestFunction
 

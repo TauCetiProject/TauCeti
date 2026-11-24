@@ -134,6 +134,14 @@ private theorem mapsTo_smul_ball {r : ℝ} {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤
   rw [norm_smul, Real.norm_of_nonneg h0.le]
   exact (mul_le_of_le_one_left (norm_nonneg z) h1).trans_lt hz
 
+/-- Translating by `x₀` maps the support of any test function on `ball (0 : E) r` into `Ω`
+whenever `ball x₀ r ⊆ Ω`. -/
+private theorem mapsTo_add_ball {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
+    (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) :
+    MapsTo (· + x₀) (tsupport (φ : E → ℝ)) Omega := fun z hz => hΩ <| by
+  rw [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff]
+  exact TestFunction.tsupport_subset _ hz
+
 /-- The rescaled profile `y ↦ ε ^ l φ(ε⁻¹ (y - x₀))` as a test function on `Ω`, for a test
 function `φ` on `ball 0 r`, `ball x₀ r ⊆ Ω` and `0 < ε ≤ 1`: the profile dilated by `ε` and
 translated by `x₀`. -/
@@ -142,10 +150,7 @@ private def concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ 
     𝓓(Omega, ℝ) :=
   ε ^ l •
     (dilateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) (Ω := ⟨ball (0 : E) r, isOpen_ball⟩)
-      h0.ne' (mapsTo_smul_ball h0 h1) φ).translateOfMapsTo (x := x₀)
-      (show MapsTo (· + x₀) _ Omega from fun z hz => hΩ <| by
-        rw [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff]
-        exact TestFunction.tsupport_subset _ hz)
+      h0.ne' (mapsTo_smul_ball h0 h1) φ).translateOfMapsTo (x := x₀) (mapsTo_add_ball hΩ _)
 
 private theorem coe_concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
     (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :

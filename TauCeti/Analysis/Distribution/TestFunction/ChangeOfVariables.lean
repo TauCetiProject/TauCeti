@@ -96,8 +96,7 @@ private theorem exists_eqOn_abs_det_fderiv_symm [FiniteDimensional ℝ E] {K : S
       (⟨e.target, e.open_target⟩ ⊓ Ω : Opens E) :=
     (e.symm.contDiffOn_abs_det_fderiv_of_contDiffOn (by simp) he' he).mono fun _ hy ↦ hy.1
   let ρ : 𝓓(⟨e.target, e.open_target⟩ ⊓ Ω, ℝ) :=
-    χ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip
-      (⟨e.target, e.open_target⟩ ⊓ Ω : Opens E).isOpen χ.tsupport_subset hg
+    χ.smulLeftOfContDiffOn (⟨e.target, e.open_target⟩ ⊓ Ω : Opens E).isOpen χ.tsupport_subset hg
   exact ⟨ρ, fun y hy ↦ by simp [ρ, hχ.self_of_nhdsSet y hy]⟩
 
 end Jacobian

@@ -179,10 +179,7 @@ def cutoffTopCLM (χ : 𝓓^{n}(Ω, ℝ)) :
 theorem cutoffTopCLM_apply (χ : 𝓓^{n}(Ω, ℝ)) (T : 𝓓'^{n}(Ω, F))
     (φ : 𝓓^{n}((⊤ : Opens E), ℝ)) :
     cutoffTopCLM χ T φ = T (TestFunction.cutoffTopCLM χ φ) := by
-  rw [cutoffTopCLM, cutoffCLM_apply]
-  congr 1
-  ext x
-  simp
+  rw [cutoffTopCLM, cutoffCLM_apply]; congr 1; ext x; simp
 
 /-- As a function on test functions, `cutoffTopCLM χ T` is `T` composed with
 `TestFunction.cutoffTopCLM χ`. -/
@@ -202,10 +199,7 @@ theorem complexPairing_cutoffTopCLM (χ : 𝓓^{n}(Ω, ℝ)) (T : 𝓓'^{n}(Ω, 
     (ψ : 𝓓^{n}((⊤ : Opens E), ℂ)) :
     (cutoffTopCLM χ T).complexPairing ψ =
       T.complexPairing (TestFunction.cutoffTopCLM χ ψ) := by
-  rw [cutoffTopCLM, complexPairing_cutoffCLM]
-  congr 1
-  ext x
-  simp [-real_smul]
+  rw [cutoffTopCLM, complexPairing_cutoffCLM]; congr 1; ext x; simp [-real_smul]
 
 end Cutoff
 

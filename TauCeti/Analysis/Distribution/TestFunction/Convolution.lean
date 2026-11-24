@@ -148,17 +148,12 @@ theorem tendsto_mollify {ι : Type*} {l : Filter ι} (φ : 𝓓(Ω, F))
     filter_upwards [hρ.eventually (gt_mem_nhds hδ)] with i hi
     simp [σ, hi.le]
   have hσδ (i : ι) : (σ i).rOut ≤ δ := by
-    dsimp [σ]
-    split_ifs with hi
-    · exact hi
-    · exact le_rfl
+    dsimp [σ]; split_ifs with hi <;> [exact hi; exact le_rfl]
   have hσK (i : ι) : closedBall (0 : E) (σ i).rOut + tsupport φ ⊆ (K : Set E) :=
     add_subset_add (closedBall_subset_closedBall (hσδ i)) Subset.rfl
   have hσlim := hρ.congr' (hσ.symm.mono fun i hi => congrArg ContDiffBump.rOut hi)
   refine (tendsto_mollify_of_support_subset φ μ hσlim hKΩ hσK).congr' ?_
-  filter_upwards [hσ] with i hi
-  ext x
-  simp only [mollify_apply, hi]
+  filter_upwards [hσ] with i hi; ext x; simp only [mollify_apply, hi]
 
 end TestFunction
 
@@ -195,18 +190,14 @@ def convolutionCLM (K : Compacts E) {S : Set E} (hS : IsCompact S)
       refine ⟨{i}, ∫ t, ‖κ t‖ ∂μ, fun f ↦ ((P f).seminorm_le_iff ℝ
         (mul_nonneg (integral_nonneg fun _ ↦ norm_nonneg _) (apply_nonneg _ f)) i).2
         fun hi x _ ↦ ?_⟩
-      have hPf : ⇑(P f) = κ ⋆[lsmul ℝ ℝ, μ] (f : E → F) := by
-        ext y
-        simp [P]
+      have hPf : ⇑(P f) = κ ⋆[lsmul ℝ ℝ, μ] (f : E → F) := by ext y; simp [P]
       rw [Finset.sup_singleton, hPf,
         f.hasCompactSupport.iteratedFDeriv_convolution_right (lsmul ℝ ℝ) hκi.locallyIntegrable
           f.contDiff (mod_cast le_top), convolution_def, ← integral_mul_const]
       refine norm_integral_le_of_norm_le (hκi.norm.mul_const _) (ae_of_all _ fun t ↦ ?_)
       have heq : ((compContinuousMultilinearMapL ℝ (fun _ : Fin i ↦ E) F F).comp (lsmul ℝ ℝ))
           (κ t) (iteratedFDeriv ℝ i (f : E → F) (x - t)) =
-          κ t • iteratedFDeriv ℝ i (f : E → F) (x - t) := by
-        ext m
-        simp
+          κ t • iteratedFDeriv ℝ i (f : E → F) (x - t) := by ext m; simp
       rw [heq, norm_smul]
       exact mul_le_mul_of_nonneg_left
         (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm ℝ hi) (norm_nonneg _) }
@@ -216,8 +207,7 @@ def convolutionCLM (K : Compacts E) {S : Set E} (hS : IsCompact S)
 theorem convolutionCLM_apply (K : Compacts E) {S : Set E}
     (hS : IsCompact S) {κ : E → ℝ} {μ : Measure E} [SFinite μ] [μ.IsAddLeftInvariant]
     (hκi : Integrable κ μ) (hκs : Function.support κ ⊆ S) (f : 𝓓_{K}(E, F)) (x : E) :
-    convolutionCLM K hS hκi hκs f x = (κ ⋆[lsmul ℝ ℝ, μ] (f : E → F)) x := by
-  rfl
+    convolutionCLM K hS hκi hκs f x = (κ ⋆[lsmul ℝ ℝ, μ] (f : E → F)) x := by rfl
 
 end ContDiffMapSupportedIn
 
@@ -279,42 +269,34 @@ theorem tsupport_cutoffConvolutionCLM_subset {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)
 @[simp]
 theorem cutoffConvolutionCLM_zero {Ω' : Opens E} {K₀ : E → ℝ} {μ : Measure E}
     [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
-    cutoffConvolutionCLM (Ω' := Ω') (F := F) (0 : 𝓓(Ω, ℝ)) hK₀ = 0 := by
-  ext φ x
-  simp
+    cutoffConvolutionCLM (Ω' := Ω') (F := F) (0 : 𝓓(Ω, ℝ)) hK₀ = 0 := by ext φ x; simp
 
 /-- Cutoff convolution is additive in the cutoff. -/
 @[simp]
 theorem cutoffConvolutionCLM_add {Ω' : Opens E} (χ₁ χ₂ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ} {μ : Measure E}
     [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
     cutoffConvolutionCLM (Ω' := Ω') (F := F) (χ₁ + χ₂) hK₀ =
-      cutoffConvolutionCLM χ₁ hK₀ + cutoffConvolutionCLM χ₂ hK₀ := by
-  ext φ x
-  simp [add_smul]
+      cutoffConvolutionCLM χ₁ hK₀ + cutoffConvolutionCLM χ₂ hK₀ := by ext φ x; simp [add_smul]
 
 /-- Cutoff convolution commutes with negation of the cutoff. -/
 @[simp]
 theorem cutoffConvolutionCLM_neg {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ} {μ : Measure E}
     [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
     cutoffConvolutionCLM (Ω' := Ω') (F := F) (-χ) hK₀ = -cutoffConvolutionCLM χ hK₀ := by
-  ext φ x
-  simp
+  ext φ x; simp
 
 /-- Cutoff convolution commutes with subtraction of cutoffs. -/
 @[simp]
 theorem cutoffConvolutionCLM_sub {Ω' : Opens E} (χ₁ χ₂ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ} {μ : Measure E}
     [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
     cutoffConvolutionCLM (Ω' := Ω') (F := F) (χ₁ - χ₂) hK₀ =
-      cutoffConvolutionCLM χ₁ hK₀ - cutoffConvolutionCLM χ₂ hK₀ := by
-  ext φ x
-  simp [sub_smul]
+      cutoffConvolutionCLM χ₁ hK₀ - cutoffConvolutionCLM χ₂ hK₀ := by ext φ x; simp [sub_smul]
 
 /-- Cutoff convolution commutes with scalar multiplication of the cutoff. -/
 @[simp]
 theorem cutoffConvolutionCLM_smul {Ω' : Opens E} (c : ℝ) (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ}
     {μ : Measure E} [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
     cutoffConvolutionCLM (Ω' := Ω') (F := F) (c • χ) hK₀ = c • cutoffConvolutionCLM χ hK₀ := by
-  ext φ x
-  simp [mul_smul]
+  ext φ x; simp [mul_smul]
 
 end TestFunction

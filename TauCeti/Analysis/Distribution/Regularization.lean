@@ -277,24 +277,20 @@ theorem fderiv_translatePairing_apply (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x 
 theorem translatePairing_lineDerivOp (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
     (hx : MapsTo (· + x) (tsupport ρ) Ω) (v : E) :
     (∂_{v} T).translatePairing ρ x = T.translatePairing (-∂_{v} ρ) x := by
-  have hφ : ∀ y, (-∂_{v} (ρ.translateOfMapsTo hx) : 𝓓(Ω, ℝ)) y = (-∂_{v} ρ : 𝓓(V, ℝ)) (y - x) := by
-    intro y
-    simp only [FunLike.coe_neg, Pi.neg_apply, TestFunction.lineDerivOp_apply_eq_fderiv, neg_inj]
-    rw [funext (ρ.translateOfMapsTo_apply hx), fderiv_comp_sub]
-  rw [translatePairing_eq _ (ρ.translateOfMapsTo_apply hx), translatePairing_eq T hφ,
-    lineDerivOp_apply_apply, map_neg]
+  rw [translatePairing_eq _ (ρ.translateOfMapsTo_apply hx), lineDerivOp_apply_apply,
+    TestFunction.lineDerivOp_translateOfMapsTo,
+    translatePairing_eq T (φ := -((∂_{v} ρ).translateOfMapsTo
+      (hx.mono_left (TestFunction.tsupport_lineDerivOp_subset ρ v)))) fun y ↦ by simp,
+    map_neg]
 
 /-- On admissible translations, regularizing an iterated distributional derivative `∂^{m} T` by `ρ`
 moves the derivatives onto `ρ` with sign `(-1)^k`. -/
 theorem translatePairing_iteratedLineDerivOp (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
     (hx : MapsTo (· + x) (tsupport ρ) Ω) {k : ℕ} (m : Fin k → E) :
     (∂^{m} T).translatePairing ρ x = (-1 : ℝ) ^ k • T.translatePairing (∂^{m} ρ) x := by
-  have hφ : ∀ y, (∂^{m} (ρ.translateOfMapsTo hx)) y = (∂^{m} ρ) (y - x) := fun y ↦ by
-    rw [TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv,
-      TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv,
-      funext (ρ.translateOfMapsTo_apply hx), iteratedFDeriv_comp_sub]
-  rw [translatePairing_eq _ (ρ.translateOfMapsTo_apply hx), translatePairing_eq T hφ,
-    iteratedLineDerivOp_apply_apply, TestFunction.iteratedLineDerivOp_comp_rev]
+  rw [translatePairing_eq _ (ρ.translateOfMapsTo_apply hx), iteratedLineDerivOp_apply_apply,
+    TestFunction.iteratedLineDerivOp_comp_rev, TestFunction.iteratedLineDerivOp_translateOfMapsTo,
+    translatePairing_eq T ((∂^{m} ρ).translateOfMapsTo_apply _)]
 
 /-- **Iterated directional derivatives of a regularization.** At an admissible translation `x`, the
 iterated directional derivative of `T.translatePairing ρ` along `vs` is the regularization of the

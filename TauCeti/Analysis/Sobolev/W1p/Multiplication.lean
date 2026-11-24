@@ -389,11 +389,9 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule (hpsi : ContDiff ℝ ∞ psi) (hM : 0
         (w1p0Submodule mu Omega p : Set (W1p mu Omega p)) := by
     intro phi
     let Phi : 𝓓(Omega, ℝ) :=
-      phi.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip Omega.isOpen
-        phi.tsupport_subset hpsi.contDiffOn
+      phi.smulLeftOfContDiffOn Omega.isOpen phi.tsupport_subset hpsi.contDiffOn
     have hPhi : (Phi : E → ℝ) = psi * (phi : E → ℝ) := funext fun x =>
-      phi.bilinOfContDiffOn_apply (ContinuousLinearMap.lsmul ℝ ℝ).flip Omega.isOpen
-        phi.tsupport_subset hpsi.contDiffOn x
+      phi.smulLeftOfContDiffOn_apply Omega.isOpen phi.tsupport_subset hpsi.contDiffOn x
     simp only [Set.mem_preimage, SetLike.mem_coe, W1p.contDiffSMulL_apply,
       W1p.contDiffSMul_ofTestFunctionₗ hpsi hM hpsiM hgradM phi Phi hPhi]
     exact W1p.ofTestFunctionₗ_mem_w1p0Submodule Phi

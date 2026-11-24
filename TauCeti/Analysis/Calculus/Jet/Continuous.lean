@@ -28,7 +28,7 @@ Every `C^m` function on an open neighbourhood of a compact set `K` defines an `m
   `TauCeti.JetSpace.norm_le_iff`: evaluation, linear isometric equivalence with component
   functions, extensionality, and norm bounds.
 * `TauCeti.JetSpace.ofContDiffOn`: the `m`-jet on a compact `K` of a `C^m` function on an open
-  neighbourhood of `K`, with linearity and germ invariance.
+  neighbourhood of `K`, with linearity.
 -/
 
 public section
@@ -100,28 +100,22 @@ theorem ext {J₁ J₂ : JetSpace E F K m}
   exact BoundedContinuousFunction.ext (h k)
 
 @[simp]
-theorem eval_zero (k : Fin (m + 1)) : (0 : JetSpace E F K m).eval k = 0 := by
-  rfl
+theorem eval_zero (k : Fin (m + 1)) : (0 : JetSpace E F K m).eval k = 0 := by rfl
 
 @[simp]
 theorem eval_add (J₁ J₂ : JetSpace E F K m) (k : Fin (m + 1)) :
-    (J₁ + J₂).eval k = J₁.eval k + J₂.eval k := by
-  rfl
+    (J₁ + J₂).eval k = J₁.eval k + J₂.eval k := by rfl
 
 @[simp]
-theorem eval_neg (J : JetSpace E F K m) (k : Fin (m + 1)) :
-    (-J).eval k = -J.eval k := by
-  rfl
+theorem eval_neg (J : JetSpace E F K m) (k : Fin (m + 1)) : (-J).eval k = -J.eval k := by rfl
 
 @[simp]
 theorem eval_sub (J₁ J₂ : JetSpace E F K m) (k : Fin (m + 1)) :
-    (J₁ - J₂).eval k = J₁.eval k - J₂.eval k := by
-  rfl
+    (J₁ - J₂).eval k = J₁.eval k - J₂.eval k := by rfl
 
 @[simp]
 theorem eval_smul (c : ℝ) (J : JetSpace E F K m) (k : Fin (m + 1)) :
-    (c • J).eval k = c • J.eval k := by
-  rfl
+    (c • J).eval k = c • J.eval k := by rfl
 
 /-- Linear isometric equivalence between `JetSpace E F K m` and the finite product of bounded
 continuous component spaces `Π k : Fin (m + 1), K →ᵇ (E [×k]→L[ℝ] F)`. -/
@@ -141,14 +135,11 @@ instance [CompleteSpace F] : CompleteSpace (JetSpace E F K m) :=
 
 @[simp]
 theorem evalEquiv_apply (J : JetSpace E F K m) (k : Fin (m + 1)) :
-    evalEquiv J k = J.eval k := by
-  rfl
+    evalEquiv J k = J.eval k := by rfl
 
 @[simp]
 theorem eval_evalEquiv_symm (f : Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F))
-    (k : Fin (m + 1)) :
-    (evalEquiv.symm f).eval k = f k := by
-  rfl
+    (k : Fin (m + 1)) : (evalEquiv.symm f).eval k = f k := by rfl
 
 /-- The norm of each order-`k` component of a jet is bounded by the norm of the jet. -/
 theorem norm_eval_le (J : JetSpace E F K m) (k : Fin (m + 1)) : ‖J.eval k‖ ≤ ‖J‖ := by
@@ -167,16 +158,17 @@ theorem norm_eval_apply_le (J : JetSpace E F K m) (k : Fin (m + 1)) (x : K) :
     ‖J.eval k x‖ ≤ ‖J‖ :=
   (BoundedContinuousFunction.norm_coe_le_norm (J.eval k) x).trans (J.norm_eval_le k)
 
+private theorem coe_fin_le {m : ℕ} (k : Fin (m + 1)) :
+    ((k : ℕ) : WithTop ℕ∞) ≤ (m : WithTop ℕ∞) := mod_cast k.is_le
+
 /-- The `m`-jet on a compact set `K` of a function `g : E → F` that is `C^m` on an open
 neighbourhood `U` of `K`. -/
 def ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ)
     {g : E → F} (hg : ContDiffOn ℝ m g U) : JetSpace E F K m :=
   (JetSpace.equivPi E F K m).symm fun k ↦ by
     haveI : CompactSpace K := isCompact_iff_compactSpace.1 hK
-    have hk : ((k : ℕ) : WithTop ℕ∞) ≤ (m : WithTop ℕ∞) := by
-      exact_mod_cast Nat.le_of_lt_succ k.isLt
     have hcont : ContinuousOn (iteratedFDeriv ℝ (k : ℕ) g) U :=
-      (hg.continuousOn_iteratedFDerivWithin hk hU.uniqueDiffOn).congr fun y hy ↦
+      (hg.continuousOn_iteratedFDerivWithin (coe_fin_le k) hU.uniqueDiffOn).congr fun y hy ↦
         (iteratedFDerivWithin_of_isOpen (k : ℕ) hU hy).symm
     exact BoundedContinuousFunction.mkOfCompact
       ⟨fun x : K ↦ iteratedFDeriv ℝ (k : ℕ) g x.val,
@@ -185,14 +177,13 @@ def ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) 
 @[simp]
 theorem eval_ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ)
     {g : E → F} (hg : ContDiffOn ℝ m g U) (k : Fin (m + 1)) (x : K) :
-    (ofContDiffOn hK hU hKU m hg).eval k x = iteratedFDeriv ℝ (k : ℕ) g x.val := by
-  rfl
+    (ofContDiffOn hK hU hKU m hg).eval k x = iteratedFDeriv ℝ (k : ℕ) g x.val := by rfl
 
 /-- The `m`-jet of the zero function vanishes. -/
 @[simp]
 theorem ofContDiffOn_zero {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ) :
     ofContDiffOn hK hU hKU m (contDiffOn_const (c := (0 : F))) = 0 :=
-  ext fun k x ↦ by simp
+  ext fun _ _ ↦ by simp
 
 /-- Taking `m`-jets is additive on `C^m` functions. -/
 @[simp]
@@ -201,12 +192,10 @@ theorem ofContDiffOn_add {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K
     ofContDiffOn hK hU hKU m (hg₁.add hg₂) =
       ofContDiffOn hK hU hKU m hg₁ + ofContDiffOn hK hU hKU m hg₂ :=
   ext fun k x ↦ by
-    have hk : ((k : ℕ) : WithTop ℕ∞) ≤ (m : WithTop ℕ∞) := by
-      exact_mod_cast Nat.le_of_lt_succ k.isLt
     simp only [eval_ofContDiffOn, eval_add, FunLike.coe_add, Pi.add_apply]
     exact iteratedFDeriv_add_apply
-      ((hg₁ x.val (hKU x.property)).contDiffAt (hU.mem_nhds (hKU x.property)) |>.of_le hk)
-      ((hg₂ x.val (hKU x.property)).contDiffAt (hU.mem_nhds (hKU x.property)) |>.of_le hk)
+      ((hg₁.contDiffAt (hU.mem_nhds (hKU x.property))).of_le (coe_fin_le k))
+      ((hg₂.contDiffAt (hU.mem_nhds (hKU x.property))).of_le (coe_fin_le k))
 
 /-- Taking `m`-jets commutes with scalar multiplication on `C^m` functions. -/
 @[simp]
@@ -214,20 +203,9 @@ theorem ofContDiffOn_smul {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : 
     (c : ℝ) {g : E → F} (hg : ContDiffOn ℝ m g U) :
     ofContDiffOn hK hU hKU m (hg.const_smul c) = c • ofContDiffOn hK hU hKU m hg :=
   ext fun k x ↦ by
-    have hk : ((k : ℕ) : WithTop ℕ∞) ≤ (m : WithTop ℕ∞) := by
-      exact_mod_cast Nat.le_of_lt_succ k.isLt
     simp only [eval_ofContDiffOn, eval_smul, FunLike.coe_smul, Pi.smul_apply]
     exact iteratedFDeriv_const_smul_apply
-      ((hg x.val (hKU x.property)).contDiffAt (hU.mem_nhds (hKU x.property)) |>.of_le hk)
-
-/-- Two `C^m` functions that agree on a neighbourhood of `K` have the same `m`-jet on `K`. -/
-theorem ofContDiffOn_eq_of_eventuallyEq {U₁ U₂ : Set E} (hK : IsCompact K) (hU₁ : IsOpen U₁)
-    (hKU₁ : K ⊆ U₁) (hU₂ : IsOpen U₂) (hKU₂ : K ⊆ U₂) (m : ℕ) {g₁ g₂ : E → F}
-    (hg₁ : ContDiffOn ℝ m g₁ U₁) (hg₂ : ContDiffOn ℝ m g₂ U₂) (h : g₁ =ᶠ[𝓝ˢ K] g₂) :
-    ofContDiffOn hK hU₁ hKU₁ m hg₁ = ofContDiffOn hK hU₂ hKU₂ m hg₂ :=
-  ext fun k x ↦ by
-    simp only [eval_ofContDiffOn]
-    exact ((h.filter_mono (nhds_le_nhdsSet x.property)).iteratedFDeriv (𝕜 := ℝ) (k : ℕ)).eq_of_nhds
+      ((hg.contDiffAt (hU.mem_nhds (hKU x.property))).of_le (coe_fin_le k))
 
 end JetSpace
 

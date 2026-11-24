@@ -68,7 +68,7 @@ noncomputable def jetRestrictionCLM (K : Set E) (m : ℕ) {n : ℕ∞} (_hm : (m
 theorem eval_jetRestrictionCLM (K : Set E) (m : ℕ) {n : ℕ∞} (hm : (m : ℕ∞) ≤ n) (L : Compacts E)
     (φ : 𝓓^{n}_{L}(E, F)) (k : Fin (m + 1)) (x : K) :
     (jetRestrictionCLM K m hm L φ).eval k x = iteratedFDeriv ℝ (k : ℕ) (φ : E → F) x.val := by
-  have hk : ((k : ℕ) : ℕ∞) ≤ n := (Nat.cast_le.2 (Nat.le_of_lt_succ k.isLt)).trans hm
+  have hk : ((k : ℕ) : ℕ∞) ≤ n := (Nat.cast_le.2 k.is_le).trans hm
   rw [jetRestrictionCLM, ContinuousLinearMap.comp_apply]
   simp [TauCeti.JetSpace.eval_evalEquiv_symm, hk]
 

@@ -34,8 +34,10 @@ sends tests on `Ω` to tests on `U`. This is `TestFunction.cutoffCLM`, a continu
 distributions and currents defined on the members of an open cover. More generally, pairing a
 `Cⁿ` test function `φ ∈ 𝓓^{n}(Ω, F₁)` with a function `g : E → F₂` that is `Cⁿ` on an open
 neighbourhood of `tsupport φ` via a continuous bilinear map (`TestFunction.bilinOfContDiffOn`), or
-multiplying a scalar cutoff `χ` by `g : E → F` (`TestFunction.smulOfContDiffOn`), produces a test
-function on `Ω` supported in `tsupport φ` (or `tsupport χ`).
+multiplying a scalar cutoff `χ` by `g : E → F` (`TestFunction.smulOfContDiffOn`), or multiplying a
+test function `φ` on the left by a scalar function `g : E → ℝ`
+(`TestFunction.smulLeftOfContDiffOn`), produces a test function on `Ω` supported in `tsupport φ`
+(or `tsupport χ`).
 
 The decomposition multiplies by a finite smooth partition of unity on the compact support
 (`IsCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one`, built from Mathlib's
@@ -133,13 +135,7 @@ def bilinOfContDiffOn {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [Normed
     (hφW : tsupport (φ : E → F₁) ⊆ W) {g : E → F₂} (hg : ContDiffOn ℝ n g W) :
     𝓓^{n}(Ω, F₃) where
   toFun x := B (φ x) (g x)
-  contDiff' :=
-    contDiff_of_contDiffOn_union_of_isOpen
-      (B.isBoundedBilinearMap.contDiff.comp_contDiffOn (φ.contDiff.contDiffOn.prodMk hg))
-      ((contDiffOn_const (c := (0 : F₃))).congr fun _ hx ↦ by
-        simp [image_eq_zero_of_notMem_tsupport (f := (φ : E → F₁)) hx])
-      (Set.eq_univ_of_forall fun x ↦ (em (x ∈ tsupport (φ : E → F₁))).imp (hφW ·) id)
-      hW (isClosed_tsupport (φ : E → F₁)).isOpen_compl
+  contDiff' := B.flip.contDiff_of_tsupport_subset_right hg φ.contDiff.contDiffOn hW hφW
   hasCompactSupport' :=
     HasCompactSupport.of_support_subset_isCompact φ.hasCompactSupport fun _ hx ↦
       subset_tsupport _ fun h0 ↦ Function.mem_support.1 hx (by simp [h0])
@@ -153,8 +149,7 @@ theorem bilinOfContDiffOn_apply {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F�
     [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
     (φ : 𝓓^{n}(Ω, F₁)) (B : F₁ →L[ℝ] F₂ →L[ℝ] F₃) {W : Set E} (hW : IsOpen W)
     (hφW : tsupport (φ : E → F₁) ⊆ W) {g : E → F₂} (hg : ContDiffOn ℝ n g W) (x : E) :
-    φ.bilinOfContDiffOn B hW hφW hg x = B (φ x) (g x) := by
-  rfl
+    φ.bilinOfContDiffOn B hW hφW hg x = B (φ x) (g x) := by rfl
 
 /-- The support of `φ.bilinOfContDiffOn B hW hφW hg` is contained in `tsupport φ`. -/
 theorem tsupport_bilinOfContDiffOn_subset {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁]
@@ -164,6 +159,25 @@ theorem tsupport_bilinOfContDiffOn_subset {F₁ F₂ F₃ : Type*} [NormedAddCom
     tsupport (φ.bilinOfContDiffOn B hW hφW hg : E → F₃) ⊆ tsupport (φ : E → F₁) :=
   closure_minimal (fun _ hx ↦ subset_tsupport _ fun h0 ↦ Function.mem_support.1 hx (by simp [h0]))
     (isClosed_tsupport (φ : E → F₁))
+
+/-- **Multiplying a test function on the left by a scalar function `Cⁿ` near its support.** Given a
+test function `φ ∈ 𝓓^{n}(Ω, F)` and a scalar function `g : E → ℝ` that is `Cⁿ` on an open
+neighbourhood `W` of `tsupport φ`, the pointwise product `x ↦ g x • φ x` is a test function in
+`𝓓^{n}(Ω, F)`. -/
+noncomputable def smulLeftOfContDiffOn (φ : 𝓓^{n}(Ω, F)) {W : Set E} (hW : IsOpen W)
+    (hφW : tsupport (φ : E → F) ⊆ W) {g : E → ℝ} (hg : ContDiffOn ℝ n g W) : 𝓓^{n}(Ω, F) :=
+  φ.bilinOfContDiffOn (ContinuousLinearMap.lsmul ℝ ℝ).flip hW hφW hg
+
+@[simp]
+theorem smulLeftOfContDiffOn_apply (φ : 𝓓^{n}(Ω, F)) {W : Set E} (hW : IsOpen W)
+    (hφW : tsupport (φ : E → F) ⊆ W) {g : E → ℝ} (hg : ContDiffOn ℝ n g W) (x : E) :
+    φ.smulLeftOfContDiffOn hW hφW hg x = g x • φ x := by rfl
+
+/-- The support of `φ.smulLeftOfContDiffOn hW hφW hg` is contained in `tsupport φ`. -/
+theorem tsupport_smulLeftOfContDiffOn_subset (φ : 𝓓^{n}(Ω, F)) {W : Set E} (hW : IsOpen W)
+    (hφW : tsupport (φ : E → F) ⊆ W) {g : E → ℝ} (hg : ContDiffOn ℝ n g W) :
+    tsupport (φ.smulLeftOfContDiffOn hW hφW hg : E → F) ⊆ tsupport (φ : E → F) :=
+  φ.tsupport_bilinOfContDiffOn_subset (ContinuousLinearMap.lsmul ℝ ℝ).flip hW hφW hg
 
 /-- **Multiplying a scalar cutoff by a function `Cⁿ` near its support.** Given a scalar test
 function `χ ∈ 𝓓^{n}(Ω, ℝ)` and a function `g : E → F` that is `Cⁿ` on an open neighbourhood `W` of
@@ -175,8 +189,7 @@ noncomputable def smulOfContDiffOn (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : Is
 @[simp]
 theorem smulOfContDiffOn_apply (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
     (hχW : tsupport (χ : E → ℝ) ⊆ W) {g : E → F} (hg : ContDiffOn ℝ n g W) (x : E) :
-    χ.smulOfContDiffOn hW hχW hg x = χ x • g x := by
-  rfl
+    χ.smulOfContDiffOn hW hχW hg x = χ x • g x := by rfl
 
 /-- The support of `χ.smulOfContDiffOn hW hχW hg` is contained in `tsupport χ`. -/
 theorem tsupport_smulOfContDiffOn_subset (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
@@ -187,42 +200,33 @@ theorem tsupport_smulOfContDiffOn_subset (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (h
 @[simp]
 theorem smulOfContDiffOn_zero (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
     (hχW : tsupport (χ : E → ℝ) ⊆ W) (hg : ContDiffOn ℝ n (0 : E → F) W) :
-    χ.smulOfContDiffOn hW hχW hg = 0 := by
-  ext x
-  simp
+    χ.smulOfContDiffOn hW hχW hg = 0 := by ext x; simp
 
 @[simp]
 theorem smulOfContDiffOn_add (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
     (hχW : tsupport (χ : E → ℝ) ⊆ W) {g₁ g₂ : E → F} (hg₁ : ContDiffOn ℝ n g₁ W)
     (hg₂ : ContDiffOn ℝ n g₂ W) :
     χ.smulOfContDiffOn hW hχW (hg₁.add hg₂) =
-      χ.smulOfContDiffOn hW hχW hg₁ + χ.smulOfContDiffOn hW hχW hg₂ := by
-  ext x
-  simp [smul_add]
+      χ.smulOfContDiffOn hW hχW hg₁ + χ.smulOfContDiffOn hW hχW hg₂ := by ext x; simp [smul_add]
 
 @[simp]
 theorem smulOfContDiffOn_neg (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
     (hχW : tsupport (χ : E → ℝ) ⊆ W) {g : E → F} (hg : ContDiffOn ℝ n g W) :
-    χ.smulOfContDiffOn hW hχW hg.neg = -χ.smulOfContDiffOn hW hχW hg := by
-  ext x
-  simp
+    χ.smulOfContDiffOn hW hχW hg.neg = -χ.smulOfContDiffOn hW hχW hg := by ext x; simp
 
 @[simp]
 theorem smulOfContDiffOn_sub (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
     (hχW : tsupport (χ : E → ℝ) ⊆ W) {g₁ g₂ : E → F} (hg₁ : ContDiffOn ℝ n g₁ W)
     (hg₂ : ContDiffOn ℝ n g₂ W) :
     χ.smulOfContDiffOn hW hχW (hg₁.sub hg₂) =
-      χ.smulOfContDiffOn hW hχW hg₁ - χ.smulOfContDiffOn hW hχW hg₂ := by
-  ext x
-  simp [smul_sub]
+      χ.smulOfContDiffOn hW hχW hg₁ - χ.smulOfContDiffOn hW hχW hg₂ := by ext x; simp [smul_sub]
 
 @[simp]
 theorem smulOfContDiffOn_smul (χ : 𝓓^{n}(Ω, ℝ)) {W : Set E} (hW : IsOpen W)
     (hχW : tsupport (χ : E → ℝ) ⊆ W) (c : ℝ) {g : E → F} (hg : ContDiffOn ℝ n g W) :
     χ.smulOfContDiffOn hW hχW (hg.const_smul c : ContDiffOn ℝ n (c • g) W) =
       c • χ.smulOfContDiffOn hW hχW hg := by
-  ext x
-  rw [smulOfContDiffOn_apply, smul_apply, smulOfContDiffOn_apply, smul_comm]
+  ext x; rw [smulOfContDiffOn_apply, smul_apply, smulOfContDiffOn_apply, smul_comm]
 
 end Cutoff
 

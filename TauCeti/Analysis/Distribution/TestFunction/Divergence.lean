@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
+public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Topology.Algebra.Module.Trace
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
@@ -44,8 +45,7 @@ total variation of a function and the perimeter of a set are suprema of the pair
   is the translate of its divergence.
 * `TauCeti.integral_divergenceCLM_mul_congr_ae`: the pairing `∫ u div φ` only depends on `u`
   almost everywhere on `Ω`.
-* `TauCeti.smulTestField`: a scalar test function times a vector field smooth on `Ω`.
-* `TauCeti.divergenceCLM_smulTestField`: the divergence product rule for this test field.
+* `TauCeti.divergenceCLM_smulTestField`: the divergence product rule for `φ.smulOfContDiffOn`.
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
@@ -154,21 +154,6 @@ open scoped ContDiff Distributions
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω V : Opens E} {h : E}
 
-omit [FiniteDimensional ℝ E] in
-/-- The test vector field `φ b`, for a test function `φ` and a vector field `b` smooth on `Ω`. -/
-noncomputable def smulTestField {b : E → E} (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ)) :
-    𝓓(Ω, E) :=
-  ⟨fun x ↦ φ x • b x, hb.contDiff_smul_of_tsupport_subset Ω.isOpen φ.contDiff.contDiffOn
-    φ.tsupport_subset, φ.hasCompactSupport.smul_right,
-    (tsupport_smul_subset_left _ _).trans φ.tsupport_subset⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- The test field `φ b` evaluated at a point. -/
-@[simp]
-theorem smulTestField_apply {b : E → E} (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ))
-    (x : E) : smulTestField hb φ x = φ x • b x :=
-  (rfl)
-
 /-- **Leibniz rule for the divergence**: `div (χ φ) = χ div φ + Dχ φ`, where the divergence of a
 vector field is the trace of its Fréchet derivative. -/
 theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : DifferentiableAt ℝ χ x)
@@ -203,12 +188,11 @@ theorem divergenceCLM_smulTestField {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {Ω : Opens F} {b : F → F}
     (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ))
     {x : F} (hx : x ∈ Ω) :
-    TestFunction.divergenceCLM (smulTestField hb φ) x =
+    TestFunction.divergenceCLM (φ.smulOfContDiffOn Ω.isOpen φ.tsupport_subset hb) x =
       φ x * LinearMap.trace ℝ F (fderiv ℝ b x : F →ₗ[ℝ] F) +
         ⟪∇ (φ : F → ℝ) x, b x⟫_ℝ := by
-  have hcoe : (smulTestField hb φ : F → F) = fun y ↦ φ y • b y := by
-    funext y
-    exact smulTestField_apply hb φ y
+  have hcoe : (φ.smulOfContDiffOn Ω.isOpen φ.tsupport_subset hb : F → F) = fun y ↦ φ y • b y :=
+    funext (φ.smulOfContDiffOn_apply Ω.isOpen φ.tsupport_subset hb)
   rw [TestFunction.divergenceCLM_apply, hcoe, trace_fderiv_smul
       (φ.contDiff.differentiable (by simp) x)
       ((hb.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt (by simp)), gradient,
