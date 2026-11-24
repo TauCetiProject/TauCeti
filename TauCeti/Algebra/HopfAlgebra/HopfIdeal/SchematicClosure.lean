@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
+public import TauCeti.Algebra.Coalgebra.BaseChange
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 public import TauCeti.RingTheory.Ideal.SchematicClosure
 
@@ -58,16 +59,6 @@ open Algebra.TensorProduct SchematicClosure
 variable {O : Type u} {K : Type v} {B : Type w}
 variable [CommRing O] [CommRing K] [Algebra O K] [CommRing B] [HopfAlgebra O B]
 
-/-- The comultiplication of the base change `K ⊗[O] B` on `1 ⊗ b` is the base change of `Δ b`. -/
-private theorem comul_one_tmul (b : B) :
-    Coalgebra.comul (R := K) ((1 : K) ⊗ₜ[O] b) =
-      TensorProduct.AlgebraTensorModule.distribBaseChange O K B B
-        ((1 : K) ⊗ₜ[O] Coalgebra.comul (R := O) b) := by
-  rw [TensorProduct.comul_tmul]
-  induction Coalgebra.comul (R := O) b using TensorProduct.inductionOn with
-  | tmul x y => simp
-  | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
-
 namespace HopfIdeal
 
 variable (I : HopfIdeal K (K ⊗[O] B))
@@ -98,12 +89,9 @@ private theorem map_comul_eq_zero_of_mem_closureIdeal {b : B}
       (Ideal.Quotient.mkₐ O (closureIdeal K I.toIdeal)) (Coalgebra.comul (R := O) b) = 0 := by
   let q := Ideal.Quotient.mkₐ O (closureIdeal K I.toIdeal)
   let Q := Ideal.Quotient.mkₐ K I.toIdeal
-  let e := closureGenericFibre K (nonZeroDivisors O) I.toIdeal
+  let e := closureGenericFiber K (nonZeroDivisors O) I.toIdeal
   have hQ : Algebra.TensorProduct.map Q Q (Coalgebra.comul (R := K) ((1 : K) ⊗ₜ[O] b)) = 0 := by
-    have hker := AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal Q Q
-      (Ideal.Quotient.mkₐ_surjective K _) (Ideal.Quotient.mkₐ_surjective K _)
-    simp only [AlgHom.ker_coe, Q, Ideal.Quotient.mkₐ_ker] at hker
-    rw [← RingHom.mem_ker, AlgHom.ker_coe, hker]
+    rw [← RingHom.mem_ker, Ideal.ker_tensorProduct_map_quotient_quotient]
     exact I.comul_mem (mem_closureIdeal.mp hb)
   have key : ∀ t : B ⊗[O] B,
       TensorProduct.congr e.toLinearEquiv e.toLinearEquiv
@@ -115,8 +103,9 @@ private theorem map_comul_eq_zero_of_mem_closureIdeal {b : B}
     induction t using TensorProduct.inductionOn with
     | tmul x y => simp [e, q, Q]
     | add x y hx hy => simp only [map_add, TensorProduct.tmul_add, hx, hy]
-  rw [comul_one_tmul, ← key, LinearEquiv.map_eq_zero_iff, LinearEquiv.map_eq_zero_iff] at hQ
-  exact eq_zero_of_one_tmul_eq_zero (O := O) (K := K) hQ
+  rw [Coalgebra.baseChange_comul_tmul K 1 b, ← key, LinearEquiv.map_eq_zero_iff,
+    LinearEquiv.map_eq_zero_iff] at hQ
+  exact Module.IsTorsionFree.eq_zero_of_one_tmul_eq_zero (R := O) (K := K) hQ
 
 /-- **The schematic closure of a closed subgroup.** For a Hopf ideal `I` of the generic fibre
 `K ⊗[O] B`, the closure ideal `I^♮ = B ∩ I` is a Hopf ideal of `B`, provided the tensor square of
@@ -124,12 +113,7 @@ private theorem map_comul_eq_zero_of_mem_closureIdeal {b : B}
 noncomputable def schematicClosure : HopfIdeal O B :=
   ofIdeal (closureIdeal K I.toIdeal)
     (fun {b} hb ↦ by
-      have hker := AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal
-        (Ideal.Quotient.mkₐ O (closureIdeal K I.toIdeal))
-        (Ideal.Quotient.mkₐ O (closureIdeal K I.toIdeal))
-        (Ideal.Quotient.mkₐ_surjective O _) (Ideal.Quotient.mkₐ_surjective O _)
-      simp only [AlgHom.ker_coe, Ideal.Quotient.mkₐ_ker] at hker
-      rw [← hker, RingHom.mem_ker]
+      rw [← Ideal.ker_tensorProduct_map_quotient_quotient, RingHom.mem_ker]
       exact map_comul_eq_zero_of_mem_closureIdeal I hb)
     (fun {_} hb ↦ counit_eq_zero_of_mem_closureIdeal I hb)
     (fun {_} hb ↦ antipode_mem_closureIdeal I hb)

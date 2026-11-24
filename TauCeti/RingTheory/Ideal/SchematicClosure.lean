@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.TensorProduct.Quotient
+public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.RingTheory.Ideal.ScalarTorsion
 
 /-!
@@ -29,7 +30,7 @@ the points of `Spec A` whose generic fibre lies in `V(I)`.
 
 * `TauCeti.SchematicClosure.closureIdeal`: the ideal `I^♮ = A ∩ I`.
 * `TauCeti.SchematicClosure.closure`: the coordinate ring `A ⧸ I^♮` of the closure.
-* `TauCeti.SchematicClosure.closureGenericFibre`: over a localization `K` of `O`, the
+* `TauCeti.SchematicClosure.closureGenericFiber`: over a localization `K` of `O`, the
   isomorphism `K ⊗[O] (A ⧸ I^♮) ≃ₐ[K] (K ⊗[O] A) ⧸ I`.
 
 ## Main results
@@ -40,8 +41,8 @@ the points of `Spec A` whose generic fibre lies in `V(I)`.
   has `J = I^♮`.
 * `TauCeti.SchematicClosure.mem_closure_points`: a point with values in a torsion-free algebra
   kills `I^♮` iff its base change kills `I`.
-* `TauCeti.SchematicClosure.closureIdeal_bot_eq_torsion`: the closure of the zero ideal is the
-  scalar-torsion ideal of `A`.
+* `TauCeti.SchematicClosure.closureIdeal_bot_eq_scalarTorsionIdeal`: the closure of the zero
+  ideal is the scalar-torsion ideal `TauCeti.scalarTorsionIdeal O A` of `A`.
 
 ## References
 
@@ -117,24 +118,24 @@ theorem map_closureIdeal (I : Ideal (K ⊗[O] A)) :
 variable (K) in
 /-- Over a localization `K` of `O`, the generic fibre of the closure `A ⧸ I^♮` is
 `(K ⊗[O] A) ⧸ I`: `k ⊗ (a mod I^♮) ↦ (k ⊗ a) mod I`. -/
-noncomputable def closureGenericFibre (I : Ideal (K ⊗[O] A)) :
+noncomputable def closureGenericFiber (I : Ideal (K ⊗[O] A)) :
     K ⊗[O] closure K I ≃ₐ[K] (K ⊗[O] A) ⧸ I :=
   (tensorQuotientEquiv K A K (closureIdeal K I)).trans
     (Ideal.quotientEquivAlgOfEq K (map_closureIdeal M I))
 
 variable (K) in
 @[simp]
-theorem closureGenericFibre_tmul (I : Ideal (K ⊗[O] A)) (k : K) (a : A) :
-    closureGenericFibre K M I (k ⊗ₜ Ideal.Quotient.mk _ a) = Ideal.Quotient.mk I (k ⊗ₜ a) := by
-  simp [closureGenericFibre]
+theorem closureGenericFiber_tmul (I : Ideal (K ⊗[O] A)) (k : K) (a : A) :
+    closureGenericFiber K M I (k ⊗ₜ Ideal.Quotient.mk _ a) = Ideal.Quotient.mk I (k ⊗ₜ a) := by
+  simp [closureGenericFiber]
 
 include M in
 /-- The generic fibre of the closure `A ⧸ I^♮` is `(K ⊗[O] A) ⧸ I`, by an isomorphism sending
 `k ⊗ (a mod I^♮)` to `(k ⊗ a) mod I`. -/
-theorem exists_closure_genericFibre (I : Ideal (K ⊗[O] A)) :
+theorem exists_closure_genericFiber (I : Ideal (K ⊗[O] A)) :
     ∃ e : K ⊗[O] closure K I ≃ₐ[K] (K ⊗[O] A) ⧸ I,
       ∀ (k : K) (a : A), e (k ⊗ₜ Ideal.Quotient.mk _ a) = Ideal.Quotient.mk I (k ⊗ₜ a) :=
-  ⟨closureGenericFibre K M I, closureGenericFibre_tmul K M I⟩
+  ⟨closureGenericFiber K M I, closureGenericFiber_tmul K M I⟩
 
 end Localization
 
@@ -144,27 +145,18 @@ variable {O : Type u} {K : Type v} {A : Type w}
 variable [CommRing O] [CommRing K] [CommRing A] [Algebra O K] [Algebra O A]
 variable [IsFractionRing O K]
 
-/-- Over the fraction field, if `N` is torsion-free over `O` then `n ↦ 1 ⊗ n` is injective. -/
-theorem eq_zero_of_one_tmul_eq_zero {N : Type x} [AddCommGroup N] [Module O N]
-    [Module.IsTorsionFree O N] {n : N} (h : (1 : K) ⊗ₜ[O] n = 0) : n = 0 := by
-  obtain ⟨s, hs⟩ := (IsLocalizedModule.eq_zero_iff O⁰ (TensorProduct.mk O K N 1)).mp h
-  exact Module.IsTorsionFree.isSMulRegular (isRegular_iff_mem_nonZeroDivisors.mpr s.property)
-    (show (s : O) • n = (s : O) • 0 by rw [smul_zero]; exact hs)
-
 /-- The closure `A ⧸ I^♮` is torsion-free over `O`. -/
 instance isTorsionFree_closure (I : Ideal (K ⊗[O] A)) :
     Module.IsTorsionFree O (closure K I) := by
   refine ⟨fun s hs x y hxy ↦ ?_⟩
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-  simp only at hxy
-  rw [← sub_eq_zero, ← smul_sub, ← map_sub, ← Ideal.Quotient.mk_eq_mk,
-    ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at hxy
+  rw [← sub_eq_zero, ← smul_sub, ← map_sub, ← Ideal.Quotient.mkₐ_eq_mk O, ← map_smul,
+    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, mem_closureIdeal,
+    TensorProduct.tmul_smul] at hxy
   rw [← sub_eq_zero, ← map_sub, Ideal.Quotient.eq_zero_iff_mem, mem_closureIdeal]
-  refine (IsLocalization.smul_mem_iff (R' := K) (N' := I.restrictScalars K)
-    (s := (⟨s, hs.mem_nonZeroDivisors⟩ : O⁰))).mp ?_
-  rw [Submonoid.smul_def, Submodule.restrictScalars_mem, ← TensorProduct.tmul_smul]
-  exact hxy
+  exact (IsLocalization.smul_mem_iff (R' := K) (N' := I.restrictScalars K)
+    (s := (⟨s, hs.mem_nonZeroDivisors⟩ : O⁰))).mp hxy
 
 /-- Over a Dedekind domain, for instance a discrete valuation ring, the closure `A ⧸ I^♮` is
 flat over `O`. -/
@@ -183,7 +175,7 @@ theorem closure_unique {I : Ideal (K ⊗[O] A)} {J : Ideal A}
     have := congrArg (tensorQuotientEquiv (R := O) K A K J).symm
       ((Ideal.Quotient.eq_zero_iff_mem).mpr ha)
     simpa using this
-  exact Ideal.Quotient.eq_zero_iff_mem.mp (eq_zero_of_one_tmul_eq_zero h)
+  exact Ideal.Quotient.eq_zero_iff_mem.mp (Module.IsTorsionFree.eq_zero_of_one_tmul_eq_zero h)
 
 /-- **Points of the closure.** A point `f` of `Spec A` with values in an `O`-algebra `O'`
 that is torsion-free over `O` kills `I^♮` iff its base change `K ⊗ f` kills `I`. -/
@@ -198,14 +190,14 @@ theorem mem_closure_points {O' : Type x} [CommRing O'] [Algebra O O']
     have hfa : f a = 0 := h ha
     simp [hfa]
   · intro h a ha
-    exact eq_zero_of_one_tmul_eq_zero (K := K) (by simpa using h ha)
+    exact Module.IsTorsionFree.eq_zero_of_one_tmul_eq_zero (K := K) (by simpa using h ha)
 
 /-- Over the fraction field, the closure of the zero ideal is zero when `A` is torsion-free:
 `Spec A` is the closure of its generic fibre. -/
 @[simp]
 theorem closureIdeal_bot [Module.IsTorsionFree O A] :
     closureIdeal K (⊥ : Ideal (K ⊗[O] A)) = ⊥ :=
-  eq_bot_iff.mpr fun _ ha ↦ eq_zero_of_one_tmul_eq_zero ha
+  eq_bot_iff.mpr fun _ ha ↦ Module.IsTorsionFree.eq_zero_of_one_tmul_eq_zero ha
 
 /-- **The closure of the zero ideal is the scalar torsion.** Over the fraction field, without
 flatness, `I^♮` for `I = 0` is the scalar-torsion ideal of `A`. -/
