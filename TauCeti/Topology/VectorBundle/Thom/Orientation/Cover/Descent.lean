@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Coordi
 public import TauCeti.AlgebraicTopology.Singular.Twisted.QuotientCovering
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.SignRepresentation
-public import TauCeti.Topology.VectorBundle.Thom.Cover.ChainMap
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap
 public import TauCeti.Topology.VectorBundle.Thom.EquivariantCap
 
 /-!
@@ -170,8 +170,9 @@ theorem isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap {n : ℕ}
       Preadditive.comp_neg]
     have hχ : ((Units.map (Int.castRingHom k).toMonoidHom (-1) : kˣ) : k) = -1 := by simp
     rw [hχ, neg_smul, one_smul]
-    -- the negations of the abelian group of morphisms and of the module agree up to unfolding
-    rfl
+    -- both sides are the same negation; the negated composites differ only in the instances
+    -- matched by `erw` above
+    congr 1
 
 /-! ### Descent of the equivariant Thom isomorphism -/
 

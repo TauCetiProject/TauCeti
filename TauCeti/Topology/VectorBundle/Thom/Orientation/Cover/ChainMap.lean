@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Relative
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.Twisted.ConstantNaturality
-public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Basic
 public import TauCeti.Topology.VectorBundle.Thom.TwistedRankDegreeHomology
 
 /-!

@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Invariants
 public import TauCeti.AlgebraicTopology.Singular.Transfer.Sign
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
-public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Basic
 
 /-!
 # The Thom isomorphism with coefficients in the orientation local system
