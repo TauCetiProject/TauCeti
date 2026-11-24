@@ -9,24 +9,27 @@ public import Mathlib.Analysis.InnerProductSpace.Reproducing
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
-# Orthonormal basis expansion of real reproducing kernels
+# Orthonormal basis expansion of scalar reproducing kernels
 
-The scalar reproducing kernel of a real RKHS is the sum of the products of evaluations
-of any finite orthonormal basis.
+The scalar reproducing kernel of a real or complex RKHS is the sum of the products of
+evaluations of any finite orthonormal basis, conjugating the second factor.
 -/
 
 public section
 
-open scoped InnerProductSpace
+open scoped ComplexConjugate InnerProductSpace
 
 namespace OrthonormalBasis
 
-/-- A real reproducing kernel is the sum of products of evaluations of any orthonormal basis. -/
-theorem sum_apply_mul_apply {H X ι : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
-    [CompleteSpace H] [RKHS ℝ H X ℝ] [Fintype ι] (b : OrthonormalBasis ι ℝ H) (x y : X) :
-    ∑ i, b i x * b i y = RKHS.kernel H x y 1 := by
-  simpa only [RKHS.kerFun_inner, RKHS.inner_kerFun, RKHS.kerFun_apply, Real.inner_apply,
-    mul_one, one_mul, mul_comm] using
-    b.sum_inner_mul_inner (RKHS.kerFun H y 1) (RKHS.kerFun H x 1)
+/-- A scalar reproducing kernel is the sum of products of orthonormal basis evaluations,
+conjugating the second factor. -/
+theorem sum_apply_mul_conj_apply {𝕜 H X ι : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
+    [InnerProductSpace 𝕜 H] [CompleteSpace H] [RKHS 𝕜 H X 𝕜] [Fintype ι]
+    (b : OrthonormalBasis ι 𝕜 H) (x y : X) :
+    ∑ i, b i x * conj (b i y) = RKHS.kernel H x y 1 := by
+  have h := b.sum_inner_mul_inner (RKHS.kerFun H x 1) (RKHS.kerFun H y 1)
+  rw [RKHS.kerFun_inner x 1 (RKHS.kerFun H y 1)] at h
+  simpa only [RKHS.kerFun_inner, RKHS.inner_kerFun, RKHS.kerFun_apply, RCLike.inner_apply,
+    map_one, mul_one, one_mul] using h
 
 end OrthonormalBasis

@@ -227,7 +227,7 @@ theorem kernel_smul (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (x y : Sₘ) :
     RKHS.kernel (harmonicsL2 m d) (e • x) (e • y) 1 =
       RKHS.kernel (harmonicsL2 m d) x y 1 := by
   let b := stdOrthonormalBasis ℝ (harmonicsL2 m d)
-  rw [← b.sum_apply_mul_apply, ← (b.map (actEquiv m d e)).sum_apply_mul_apply]
+  rw [← b.sum_apply_mul_conj_apply, ← (b.map (actEquiv m d e)).sum_apply_mul_conj_apply]
   simp only [coe_eq_toContinuousMap, OrthonormalBasis.map_apply, actEquiv_apply,
     toContinuousMap_act]
 
@@ -237,7 +237,8 @@ theorem sum_toContinuousMap_mul_toContinuousMap_smul {ι : Type*} [Fintype ι]
     (e : Eₘ ≃ₗᵢ[ℝ] Eₘ) (x y : Sₘ) :
     ∑ i, toContinuousMap m d (b i) (e • x) * toContinuousMap m d (b i) (e • y) =
       ∑ i, toContinuousMap m d (b i) x * toContinuousMap m d (b i) y := by
-  simpa only [← coe_eq_toContinuousMap, b.sum_apply_mul_apply] using kernel_smul m d e x y
+  simpa only [← b.sum_apply_mul_conj_apply, conj_trivial, coe_eq_toContinuousMap] using
+    kernel_smul m d e x y
 
 /-- The sum of squares of an orthonormal basis is constant on the sphere. -/
 theorem sum_toContinuousMap_sq_eq {ι : Type*} [Fintype ι]
