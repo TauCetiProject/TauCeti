@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import TauCeti.Analysis.Fredholm.Restriction
+public import TauCeti.Analysis.Normed.Operator.Banach
 
 /-!
 # The transverse-subspace lemma
@@ -43,6 +43,8 @@ covers in particular every finite-dimensional `V` with `V ⊓ ker T₀ = ⊥`.
 * `ContinuousLinearMap.eventually_isFredholm_and_index_eq_of_isTopCompl_map`: near `T₀`, every
   operator is Fredholm with `dim ker T ≤ codim V`, `dim coker T ≤ dim W` and index
   `codim V - dim W`.
+* `ContinuousLinearMap.eventually_finrank_ker_sub_finrank_ker_eq_of_isTopCompl_map`: near `T₀`,
+  every operator satisfies `dim ker T₀ - dim ker T = dim coker T₀ - dim coker T`.
 
 ## References
 
@@ -67,9 +69,14 @@ theorem isInvertible_comp_subtypeL_coprod_iff [CompleteSpace E] [CompleteSpace F
     (hV : IsClosed (V : Set E)) :
     ((T ∘L V.subtypeL).coprod W.subtypeL).IsInvertible ↔
       Disjoint V T.ker ∧ IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W := by
+  have hrange : (T ∘L V.subtypeL).range = V.map (T : E →ₗ[𝕜] F) := by
+    rw [toLinearMap_comp, LinearMap.range_comp, Submodule.toLinearMap_subtypeL,
+      Submodule.range_subtype]
   constructor
   · rintro ⟨e, he⟩
-    have he' (x : V × W) : e x = T x.1 + x.2 := by rw [← ContinuousLinearEquiv.coe_coe, he]; rfl
+    have he' (x : V × W) : e x = T x.1 + x.2 := by
+      rw [← ContinuousLinearEquiv.coe_coe, he, coprod_apply]
+      simp
     have hleft (v : V) : e.symm (T v) = (v, 0) := e.symm_apply_eq.mpr (by simp [he'])
     refine ⟨Submodule.disjoint_def.mpr fun x hxV hxK ↦ ?_, ?_⟩
     · have h0 : e.symm (T x) = 0 := by rw [show T x = 0 from hxK, map_zero]
@@ -77,9 +84,6 @@ theorem isInvertible_comp_subtypeL_coprod_iff [CompleteSpace E] [CompleteSpace F
     -- `T ∘ V.subtype` has the continuous left inverse `fst ∘ e⁻¹`, whose kernel is `W`.
     have hinv : Function.LeftInverse (fst 𝕜 V W ∘L (e.symm : F →L[𝕜] V × W))
         (T ∘L V.subtypeL) := fun v ↦ by simp [hleft]
-    have hrange : (T ∘L V.subtypeL).range = V.map (T : E →ₗ[𝕜] F) := by
-      rw [toLinearMap_comp, LinearMap.range_comp, Submodule.toLinearMap_subtypeL,
-        Submodule.range_subtype]
     have hker : (fst 𝕜 V W ∘L (e.symm : F →L[𝕜] V × W)).ker = W := by
       ext y
       simp only [LinearMap.mem_ker, coe_coe, coe_comp, ContinuousLinearEquiv.coe_coe,
@@ -94,20 +98,9 @@ theorem isInvertible_comp_subtypeL_coprod_iff [CompleteSpace E] [CompleteSpace F
   · rintro ⟨hker, hW⟩
     have : CompleteSpace V := hV.isComplete.completeSpace_coe
     have : CompleteSpace W := hW.isClosed'.isComplete.completeSpace_coe
-    refine ⟨.ofBijective ((T ∘L V.subtypeL).coprod W.subtypeL) ?_ ?_,
-      ContinuousLinearEquiv.coe_ofBijective _ _ _⟩
-    · refine LinearMap.ker_eq_bot'.mpr fun ⟨v, w⟩ h ↦ ?_
-      have h' : T v + w = 0 := by simpa using h
-      have hTv : T v ∈ V.map (T : E →ₗ[𝕜] F) ⊓ W :=
-        ⟨mem_map_of_mem v.property, by rw [eq_neg_of_add_eq_zero_left h']; exact neg_mem w.property⟩
-      rw [hW.isCompl.inf_eq_bot, mem_bot] at hTv
-      have hv : (v : E) = 0 := Submodule.disjoint_def.mp hker v v.property hTv
-      have hw : (w : F) = 0 := by simpa [hTv] using h'
-      ext <;> simp [hv, hw]
-    · refine LinearMap.range_eq_top.mpr fun y ↦ ?_
-      obtain ⟨a, b, ha, hb, rfl⟩ := codisjoint_iff_exists_add_eq.mp hW.isCompl.codisjoint y
-      obtain ⟨v, hv, rfl⟩ := Submodule.mem_map.mp ha
-      exact ⟨(⟨v, hv⟩, ⟨b, hb⟩), by simp⟩
+    exact ⟨(T ∘L V.subtypeL).coprodSubtypeLEquivOfIsCompl (hrange ▸ hW.isCompl)
+      (LinearMap.ker_eq_bot.2 (LinearMap.injective_domRestrict_iff.2 hker)),
+      coe_coprodSubtypeLEquivOfIsCompl ..⟩
 
 /-- **The transverse-subspace lemma** (Atiyah–Singer). Let `V` be a closed subspace of a Banach
 space `E` meeting the kernel of `T₀ : E →L[𝕜] F` trivially, and `W` a topological complement of
@@ -129,22 +122,11 @@ section Fredholm
 
 variable [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F]
 
-omit [CompleteSpace 𝕜] in
-/-- If `T` is injective on a closed subspace `V`, then `T` restricts to an invertible operator from
-`V` onto `T(V)` as soon as `T(V)` has a topological complement. -/
-private theorem isInvertible_restrict_map (hV : IsClosed (V : Set E)) (hker : Disjoint V T.ker)
-    (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
-    (T.restrict (fun _ hx ↦ mem_map_of_mem hx :
-      Set.MapsTo T V (V.map (T : E →ₗ[𝕜] F)))).IsInvertible := by
-  have : CompleteSpace V := hV.isComplete.completeSpace_coe
-  have : CompleteSpace (V.map (T : E →ₗ[𝕜] F)) := hW.isClosed.isComplete.completeSpace_coe
-  refine ⟨.ofBijective _ ?_ ?_, ContinuousLinearEquiv.coe_ofBijective _ _ _⟩
-  · refine LinearMap.ker_eq_bot'.mpr fun v h ↦ ?_
-    have h' : T v = 0 := by simpa using congr(($h : F))
-    exact Subtype.ext (Submodule.disjoint_def.mp hker v v.property h')
-  · refine LinearMap.range_eq_top.mpr fun ⟨y, hy⟩ ↦ ?_
-    obtain ⟨v, hv, rfl⟩ := Submodule.mem_map.mp hy
-    exact ⟨⟨v, hv⟩, rfl⟩
+omit [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
+/-- A subspace `T(V)` with a finite-dimensional complement has finite codimension. -/
+private theorem cofg_map_of_isTopCompl [FiniteDimensional 𝕜 W]
+    (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) : (V.map (T : E →ₗ[𝕜] F)).CoFG :=
+  FG.cofg_of_isCompl hW.isCompl.symm .of_finite
 
 /-- If `T` is injective on a closed finite-codimensional subspace `V` and `T(V)` has a
 finite-dimensional topological complement `W`, then `T` is Fredholm. -/
@@ -152,8 +134,9 @@ theorem isFredholm_of_disjoint_ker_of_isTopCompl_map (hV : IsClosed (V : Set E))
     [FiniteDimensional 𝕜 W] (hker : Disjoint V T.ker)
     (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
     T.IsFredholm :=
-  have : (V.map (T : E →ₗ[𝕜] F)).CoFG := FG.cofg_of_isCompl hW.isCompl.symm .of_finite
-  .of_isInvertible_restrict hV hW.isClosed _ (isInvertible_restrict_map hV hker hW)
+  have := cofg_map_of_isTopCompl hW
+  .of_isInvertible_restrict hV hW.isClosed _
+    (isInvertible_restrict_map_of_disjoint_ker hV hker hW.isClosed)
 
 /-- If `T` is injective on a closed finite-codimensional subspace `V` and `T(V)` has a
 finite-dimensional topological complement `W`, then the index of `T` is `codim V - dim W`. -/
@@ -161,8 +144,8 @@ theorem index_eq_of_disjoint_ker_of_isTopCompl_map (hV : IsClosed (V : Set E)) [
     [FiniteDimensional 𝕜 W] (hker : Disjoint V T.ker)
     (hW : IsTopCompl (V.map (T : E →ₗ[𝕜] F)) W) :
     T.index = finrank 𝕜 (E ⧸ V) - finrank 𝕜 W := by
-  have : (V.map (T : E →ₗ[𝕜] F)).CoFG := FG.cofg_of_isCompl hW.isCompl.symm .of_finite
-  have hinv := isInvertible_restrict_map hV hker hW
+  have := cofg_map_of_isTopCompl hW
+  have hinv := isInvertible_restrict_map_of_disjoint_ker hV hker hW.isClosed
   have h := index_restrict hV hW.isClosed _ hinv.isFredholm
   obtain ⟨e, he⟩ := hinv
   rw [← he, ContinuousLinearEquiv.index_eq_zero,
@@ -194,6 +177,22 @@ theorem eventually_isFredholm_and_index_eq_of_isTopCompl_map (hV : IsClosed (V :
       exact top_unique (hWT.isCompl.sup_eq_top ▸ sup_le_sup_right LinearMap.map_le_range W)
     have h := W.finrank_map_le T.range.mkQ
     rwa [htop, finrank_top] at h
+
+/-- **The transverse-subspace lemma, dimension form.** Under the hypotheses of
+`eventually_isFredholm_and_index_eq_of_isTopCompl_map`, every `T` close enough to `T₀` in the
+operator norm has the index `codim V - dim W` of `T₀`, so
+`dim ker T₀ - dim ker T = dim coker T₀ - dim coker T`. The index equality alone is Mathlib's
+`ContinuousLinearMap.IsFredholm.eventually_nhds_index_eq`. -/
+theorem eventually_finrank_ker_sub_finrank_ker_eq_of_isTopCompl_map (hV : IsClosed (V : Set E))
+    [V.CoFG] [FiniteDimensional 𝕜 W] (hker : Disjoint V T₀.ker)
+    (hW : IsTopCompl (V.map (T₀ : E →ₗ[𝕜] F)) W) :
+    ∀ᶠ T : E →L[𝕜] F in 𝓝 T₀, (finrank 𝕜 T₀.ker : ℤ) - finrank 𝕜 T.ker =
+      finrank 𝕜 (F ⧸ T₀.range) - finrank 𝕜 (F ⧸ T.range) := by
+  filter_upwards [eventually_isFredholm_and_index_eq_of_isTopCompl_map hV hker hW]
+    with T ⟨_, _, _, hT⟩
+  have hT₀ := index_eq_of_disjoint_ker_of_isTopCompl_map hV hker hW
+  rw [index_eq_finrank_sub] at hT hT₀
+  lia
 
 end Fredholm
 
