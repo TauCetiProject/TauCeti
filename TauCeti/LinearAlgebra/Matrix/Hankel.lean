@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Support
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 
 /-!
 # Hankel matrices and Hankel determinants
@@ -44,6 +45,8 @@ coefficient `a 0` does not appear, is `hankelDet (fun k => a (k + 1)) n`.
 * `TauCeti.det_apply_mul_eq_prod_coeff_mul_hankelDet`,
   `TauCeti.det_apply_mul_eq_hankelDet_of_monic`: the invariance of the Hankel determinant under a
   triangular, respectively monic, change of basis.
+* `TauCeti.hankelDet_eq_zero_of_recurrence`: if `m` satisfies a linear recurrence of order `r`,
+  the Hankel determinants of size greater than `r` vanish.
 
 ## References
 
@@ -182,5 +185,54 @@ theorem det_apply_mul_eq_hankelDet_of_monic {p q : Fin n → R[X]} (hp : ∀ i, 
   simp [hp1, hq1]
 
 end ChangeOfBasis
+
+section Recurrence
+
+variable [CommRing R]
+
+/-- If `m (i + r) = ∑_{l < r} c l * m (i + l)` for every `i < n`, and `r < n`, then the Hankel
+determinant `hankelDet m n` vanishes. -/
+theorem hankelDet_eq_zero_of_recurrence {m : ℕ → R} {r n : ℕ} (hrn : r < n) (c : ℕ → R)
+    (h : ∀ i < n, m (i + r) = ∑ l ∈ Finset.range r, c l * m (i + l)) :
+    hankelDet m n = 0 := by
+  -- the coefficients of the dependence between the first `r + 1` columns
+  let w : ℕ → R := fun j => if j < r then c j else if j = r then -1 else 0
+  have hw_lt (j : ℕ) (hj : j < r) : w j = c j := ite_eq_left hj
+  have hw_eq : w r = -1 := by simp [w]
+  have hw_gt (j : ℕ) (hj : r < j) : w j = 0 := by simp [w, hj.not_gt, hj.ne']
+  have hv : hankelMatrix m n *ᵥ (fun j => w j) = 0 := by
+    ext i
+    simp only [mulVec, dotProduct, hankelMatrix_apply, Pi.zero_apply]
+    have hIco : ∑ j ∈ Finset.Ico (r + 1) n, m (i + j) * w j = 0 :=
+      Finset.sum_eq_zero fun j hj => by rw [hw_gt j (Finset.mem_Ico.mp hj).1, mul_zero]
+    have hrange : ∑ j ∈ Finset.range r, m (i + j) * w j = ∑ j ∈ Finset.range r, c j * m (i + j) :=
+      Finset.sum_congr rfl fun j hj => by rw [hw_lt j (Finset.mem_range.mp hj), mul_comm]
+    rw [Fin.sum_univ_eq_sum_range (fun j => m (i + j) * w j) n,
+      ← Finset.sum_range_add_sum_Ico _ (Nat.succ_le_of_lt hrn), hIco, Finset.sum_range_succ,
+      hrange, hw_eq, ← h i i.isLt]
+    ring
+  rw [← det_hankelMatrix]
+  exact det_eq_zero_of_mulVec_eq_zero_of_mem_nonZeroDivisors hv (i := ⟨r, hrn⟩)
+    (by simpa [hw_eq] using isUnit_one.neg.mem_nonZeroDivisors)
+
+end Recurrence
+
+/-! ### Checks for the shifted determinant `D_n(a) = hankelDet (fun k => a (k + 1)) n` -/
+
+/-- For `a j = 2 ^ j`, `D_1(a) = 2` and `D_2(a) = 0`. -/
+example : hankelDet (fun k => (2 : ℤ) ^ (k + 1)) 1 = 2 ∧
+    hankelDet (fun k => (2 : ℤ) ^ (k + 1)) 2 = 0 := by
+  norm_num [hankelDet_two]
+
+/-- For `a 1 = 2`, `a 2 = 3`, `a 3 = 5`, `D_2(a) = 1`, whatever `a 0` is. -/
+example (a : ℕ → ℤ) (h₁ : a 1 = 2) (h₂ : a 2 = 3) (h₃ : a 3 = 5) :
+    hankelDet (fun k => a (k + 1)) 2 = 1 := by
+  norm_num [hankelDet_two, h₁, h₂, h₃]
+
+/-- One vanishing determinant does not force the next one to vanish: for `a 1 = 0`, `a 2 = 1`,
+`a 3 = 0`, `D_1(a) = 0` but `D_2(a) = -1`. -/
+example : hankelDet (fun k => if k + 1 = 2 then (1 : ℤ) else 0) 1 = 0 ∧
+    hankelDet (fun k => if k + 1 = 2 then (1 : ℤ) else 0) 2 = -1 := by
+  norm_num [hankelDet_two]
 
 end TauCeti

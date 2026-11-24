@@ -12,7 +12,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 Scaling arguments compare a quantity on a ball of radius `r` with the same quantity on a larger
 ball of radius `R`, and the comparison is expressed through real powers of the ratio `r / R`.
-This file collects the rearrangements of such powers that these arguments need.
+This file collects the rearrangements of such powers that these arguments need, together with
+comparisons of powers of two comparable quantities, such as a time and a time step.
 
 * A power of `r` is a power of `r / R` times a power of `R`. So a bound `c R^a ≤ M` on a
   dimensionless constant gives `r^{2a} c² ≤ (r / R)^{2a} M²`, and a bound `c² R^{d+2a} ≤ V` gives
@@ -27,6 +28,17 @@ This file collects the rearrangements of such powers that these arguments need.
   ball of radius `R` in dimension `d`, equals `R^d (R^a Q)²` and bounds `c² R^{d+2a}` for
   `0 ≤ c ≤ Q`. So for `b ≤ a` and `R^{a-b} c ≤ Q`, a quantity `r^{2a} c² r^d` of order
   `r^{d+2a}` is at most `(R^{d/2+b} Q)² (r / R)^{d+2b}`.
+* For `0 ≤ p` and `0 ≤ h`, a nonnegative quantity `r ≤ A h` has `r ^ p ≤ A ^ p h ^ p`. This is
+  how, in a temporal Hölder estimate with exponent `p`, a time at most `A` times the time step `h`
+  is bounded by a multiple of `h ^ p`. Consequently, if two points `x` and `y` of a pseudometric
+  space lie within `c t ^ p` and `c t' ^ p` of a common point, with `0 ≤ c`, `0 ≤ p`,
+  `0 ≤ t ≤ A h` and `0 ≤ t' ≤ h`, then `dist x y ≤ (A ^ p + 1) c h ^ p`.
+* For every real exponent `s`, a quantity `x` with `a y ≤ x ≤ b y`, `0 < a` and `0 ≤ y` has
+  `x ^ s ≤ max (a ^ s) (b ^ s) y ^ s`. For `0 < y`, so that `a ≤ b`, the factor is `b ^ s` for
+  `s ≥ 0` and `a ^ s` for `s ≤ 0`; for `y = 0` the hypotheses force `x = 0`, and `b` is
+  unconstrained. At `y = 1` this bounds a power on an interval `[a, b]` by its larger endpoint
+  value. For `a = 1 / 2` and `b = 2` it gives `TauCeti.rpow_le_two_rpow_abs_mul`:
+  `y ^ p ≤ 2 ^ |p| x ^ p` for `x / 2 ≤ y ≤ 2 x` and every real `p`.
 -/
 
 public section
@@ -119,4 +131,78 @@ theorem rpow_mul_mul_rpow_le_rpow_div_two_add_mul_sq_mul_rpow {r R c Q a b d : �
   exact (rpow_mul_mul_rpow_le_mul_rpow_of_le hr hrR hba).trans (mul_le_mul_of_nonneg_right
     (sq_mul_rpow_add_two_mul_le hR (mul_nonneg (rpow_nonneg hR.le _) hc) hcQ) (by positivity))
 
+/-- For `0 ≤ p` and `0 ≤ h`, a nonnegative quantity at most `A h` has `p`-th power at most
+`A ^ p h ^ p`. -/
+theorem rpow_le_rpow_mul_rpow_of_le_mul (r : ℝ) {A h p : ℝ} (hr : 0 ≤ r) (hh : 0 ≤ h)
+    (hrh : r ≤ A * h) (hp : 0 ≤ p) : r ^ p ≤ A ^ p * h ^ p := by
+  rcases le_or_gt 0 A with hA | hA
+  · exact (rpow_le_rpow hr hrh hp).trans_eq (mul_rpow hA hh)
+  -- For `A < 0` the hypotheses force `r = h = 0`.
+  obtain rfl : h = 0 := le_antisymm (by nlinarith) hh
+  obtain rfl : r = 0 := le_antisymm (by simpa using hrh) hr
+  rcases hp.eq_or_lt with rfl | hp
+  · simp
+  · simp [zero_rpow hp.ne']
+
+/-- Powers of comparable quantities are comparable: if `a y ≤ x ≤ b y` with `0 < a` and
+`0 ≤ y`, then `x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s` for every real exponent `s`. For `0 < y` the
+hypotheses give `a ≤ b`, so the maximum is `b ^ s` for `s ≥ 0` and `a ^ s` for `s ≤ 0`. For
+`y = 0` they force `x = 0` and leave `b` unconstrained. -/
+theorem rpow_le_max_mul_rpow {a b x y : ℝ} (ha : 0 < a) (hy : 0 ≤ y) (hax : a * y ≤ x)
+    (hxb : x ≤ b * y) (s : ℝ) : x ^ s ≤ max (a ^ s) (b ^ s) * y ^ s := by
+  rcases hy.eq_or_lt with rfl | hy
+  · -- For `y = 0` the hypotheses force `x = 0`.
+    obtain rfl : x = 0 := le_antisymm (by simpa using hxb) (by simpa using hax)
+    rcases eq_or_ne s 0 with rfl | hs
+    · simp
+    · simp [zero_rpow hs]
+  have hb : 0 ≤ b := by
+    by_contra hb
+    nlinarith [mul_pos ha hy]
+  rcases le_total 0 s with hs | hs
+  · calc x ^ s ≤ (b * y) ^ s := rpow_le_rpow (by nlinarith [mul_pos ha hy]) hxb hs
+      _ = b ^ s * y ^ s := mul_rpow hb hy.le
+      _ ≤ max (a ^ s) (b ^ s) * y ^ s := by
+          gcongr
+          exact le_max_right _ _
+  · calc x ^ s ≤ (a * y) ^ s := rpow_le_rpow_of_nonpos (mul_pos ha hy) hax hs
+      _ = a ^ s * y ^ s := mul_rpow ha.le hy.le
+      _ ≤ max (a ^ s) (b ^ s) * y ^ s := by
+          gcongr
+          exact le_max_left _ _
+
 end Real
+
+namespace TauCeti
+
+/-- If `x / 2 ≤ y ≤ 2 x`, then `y ^ p ≤ 2 ^ |p| x ^ p`, for positive and negative exponents
+alike: the case `a = 1 / 2`, `b = 2` of `Real.rpow_le_max_mul_rpow`. -/
+theorem rpow_le_two_rpow_abs_mul {x y p : ℝ} (hxy : x / 2 ≤ y) (hyx : y ≤ 2 * x) :
+    y ^ p ≤ 2 ^ |p| * x ^ p := by
+  rcases (by linarith : (0 : ℝ) ≤ x).eq_or_lt with rfl | hx
+  · have hy : y = 0 := by linarith
+    rw [hy]
+    exact le_mul_of_one_le_left (Real.rpow_nonneg le_rfl p)
+      (Real.one_le_rpow (by norm_num) (abs_nonneg p))
+  refine (Real.rpow_le_max_mul_rpow (a := 1 / 2) (b := 2) (by norm_num) hx.le (by linarith)
+    hyx p).trans (mul_le_mul_of_nonneg_right (max_le ?_ ?_) (Real.rpow_nonneg hx.le p))
+  · rw [one_div, Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num)]
+    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (neg_le_abs p)
+  · exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (le_abs_self p)
+
+/-- If `x` lies within `c t ^ β` and `y` within `c t' ^ β` of a point `z`, where `0 ≤ c`,
+`0 ≤ β`, `0 ≤ t ≤ A h` and `0 ≤ t' ≤ h`, then `dist x y ≤ (A ^ β + 1) c h ^ β`. -/
+theorem dist_le_rpow_add_one_mul_mul_rpow_of_le_mul {X : Type*} [PseudoMetricSpace X]
+    {x y z : X} {c β A h t t' : ℝ} (hc : 0 ≤ c) (hβ : 0 ≤ β) (ht : 0 ≤ t) (hth : t ≤ A * h)
+    (ht' : 0 ≤ t') (ht'h : t' ≤ h) (hx : dist x z ≤ c * t ^ β) (hy : dist y z ≤ c * t' ^ β) :
+    dist x y ≤ (A ^ β + 1) * c * h ^ β := by
+  have h₁ : t ^ β ≤ A ^ β * h ^ β :=
+    Real.rpow_le_rpow_mul_rpow_of_le_mul t ht (ht'.trans ht'h) hth hβ
+  have h₂ : t' ^ β ≤ h ^ β := Real.rpow_le_rpow ht' ht'h hβ
+  calc dist x y ≤ dist x z + dist y z := dist_triangle_right x y z
+    _ ≤ c * (A ^ β * h ^ β) + c * h ^ β :=
+        add_le_add (hx.trans (mul_le_mul_of_nonneg_left h₁ hc))
+          (hy.trans (mul_le_mul_of_nonneg_left h₂ hc))
+    _ = (A ^ β + 1) * c * h ^ β := by ring
+
+end TauCeti

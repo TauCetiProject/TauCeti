@@ -19,14 +19,15 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
 formal inverses and of words of constant sign, powers of a letter, compatibility of formal
-inversion with membership (`FreeGroup.mem_invRev_iff`), subwords, concatenation of lists of words
-(`FreeGroup.invRev_flatten`), generator renaming (`FreeGroup.map_prodMap_invRev`), and
-factorisations splitting no occurrence of a word (`FreeGroup.invRev_isUnsplit`), and reducedness of
-words `w u w⁻¹` in which no letter cancels at either join, and of words `u⁻¹ v` for reduced `u` and
-`v` with different first letters (`FreeGroup.isReduced_invRev_append`). The reduced word of a
+inversion with subwords, concatenation of lists of words (`FreeGroup.invRev_flatten`), generator
+renaming (`FreeGroup.map_prodMap_invRev`), and factorisations splitting no occurrence of a word
+(`FreeGroup.invRev_isUnsplit`), and reducedness of words `w u w⁻¹` in which no letter cancels at
+either join, and of words `u⁻¹ v` for reduced `u` and `v` with different first letters
+(`FreeGroup.isReduced_invRev_append`). The reduced word of a
 product `of a * of b` of two generators is `[(a, true), (b, true)]` (`FreeGroup.toWord_of_mul_of`).
 A word without repeated generators is reduced, a reduced word representing the identity is
-empty, a word that is not reduced admits a step of free reduction, and inserting a letter followed
+empty, a word is not reduced exactly when it contains a letter immediately followed by its inverse
+(`TauCeti.FreeGroup.not_isReduced_iff_exists_eq_append_cons_cons`), and inserting a letter followed
 by its inverse does not change the element represented.
 Free reductions are non-crossing: in a trivial word, the subword between the only two occurrences
 of a generator is trivial; and a cancelling pair in a concatenation of reduced words straddles
@@ -116,23 +117,10 @@ theorem isReduced_invRev {w : List (α × Bool)} : IsReduced (invRev w) ↔ IsRe
   ⟨fun h => by simpa using IsReduced.invRev h, IsReduced.invRev⟩
 
 /-- A word all of whose letters have the same sign is reduced. -/
-theorem isReduced_of_forall_snd_eq :
-    ∀ {w : List (α × Bool)} {e : Bool}, (∀ x ∈ w, x.2 = e) → IsReduced w
-  | [], _, _ => .nil
-  | [_], _, _ => .singleton
-  | a :: b :: w, _, h =>
-    isReduced_cons_cons.2 ⟨fun _ ↦ (h a (by simp)).trans (h b (by simp)).symm,
-      isReduced_of_forall_snd_eq fun x hx ↦ h x (List.mem_cons_of_mem _ hx)⟩
-
-/-- A signed letter belongs to the formal inverse of `u` if and only if the letter with opposite
-sign belongs to `u`. -/
-@[simp]
-theorem mem_invRev_iff {c : α × Bool} {u : List (α × Bool)} :
-    c ∈ invRev u ↔ (c.1, !c.2) ∈ u := by
-  refine ⟨fun hc ↦ ?_, fun hc ↦ ?_⟩
-  · obtain ⟨⟨a, e⟩, hd, rfl⟩ : ∃ d ∈ u, (d.1, !d.2) = c := by simpa [invRev] using hc
-    simpa using hd
-  · exact List.mem_reverse.2 (List.mem_map.2 ⟨(c.1, !c.2), hc, by simp⟩)
+theorem isReduced_of_forall_snd_eq {w : List (α × Bool)} {e : Bool} (h : ∀ x ∈ w, x.2 = e) :
+    IsReduced w :=
+  (List.pairwise_of_forall_mem_list (r := fun a b : α × Bool ↦ a.1 = b.1 → a.2 = b.2)
+    fun a ha b hb _ ↦ (h a ha).trans (h b hb).symm).isChain
 
 /-- The formal inverse of the concatenation of a list of words is the concatenation of their formal
 inverses in the reverse order. -/
@@ -176,21 +164,21 @@ theorem IsReduced.append_append_invRev {w u : List (α × Bool)} (hw : IsReduced
     (hhead : ∀ a ∈ w.getLast?, (a.1, !a.2) ∉ u.head?)
     (hlast : ∀ a ∈ w.getLast?, a ∉ u.getLast?) :
     IsReduced (w ++ u ++ FreeGroup.invRev w) := by
+  -- The only new adjacent pairs are (last letter of `w`, first letter of `u`) and
+  -- (last letter of `u`, inverse of the last letter of `w`). In each, equal generators with
+  -- unequal signs would make the second letter the inverse of the first.
   refine List.isChain_append.mpr ⟨List.isChain_append.mpr ⟨hw, hu, ?_⟩, hw.invRev, ?_⟩
-  · intro x hx y hy hxy
-    have := hhead x hx
-    rw [Option.mem_def.mp hy] at this
-    cases x; cases y
-    simp_all
-  · intro x hx y hy hxy
-    rw [List.getLast?_append_of_ne_nil _ hu₀] at hx
-    simp only [FreeGroup.invRev, List.head?_reverse, List.getLast?_map, Option.mem_def,
-      Option.map_eq_some_iff] at hy
-    obtain ⟨z, hz, rfl⟩ := hy
-    have := hlast z hz
-    rw [Option.mem_def.mp hx] at this
-    cases x; cases z
-    simp_all [Bool.eq_not]
+  · intro a ha b hb hab
+    by_contra hne
+    obtain rfl : b = (a.1, !a.2) := Prod.ext hab.symm (Bool.eq_not_of_ne (Ne.symm hne))
+    exact hhead a ha hb
+  · intro b hb c hc hbc
+    rw [List.getLast?_append_of_ne_nil _ hu₀] at hb
+    rw [TauCeti.FreeGroup.head?_invRev, Option.mem_map] at hc
+    obtain ⟨a, ha, rfl⟩ := hc
+    by_contra hne
+    obtain rfl : b = a := Prod.ext hbc ((Bool.eq_not_of_ne hne).trans (Bool.not_not _))
+    exact hlast b ha hb
 
 /-- If the reduced words `u` and `v` do not begin with the same letter, then `invRev u ++ v` is
 reduced: the last letter of `invRev u`, the inverse of the first letter of `u`, does not cancel
@@ -198,8 +186,7 @@ against the first letter of `v`. -/
 theorem isReduced_invRev_append {u v : List (α × Bool)} (hu : IsReduced u) (hv : IsReduced v)
     (h : ∀ a ∈ u.head?, a ∉ v.head?) : IsReduced (FreeGroup.invRev u ++ v) := by
   refine List.isChain_append.2 ⟨hu.invRev, hv, fun x hx y hy hxy ↦ ?_⟩
-  simp only [FreeGroup.invRev, List.getLast?_reverse, List.head?_map, Option.mem_def,
-    Option.map_eq_some_iff] at hx
+  rw [TauCeti.FreeGroup.getLast?_invRev, Option.mem_map] at hx
   obtain ⟨a, ha, rfl⟩ := hx
   by_contra hne
   obtain rfl : y = a := Prod.ext hxy.symm (by simpa using Ne.symm hne)
@@ -326,12 +313,16 @@ theorem IsReduced.eq_invRev_of_mk_append_eq_one {L₁ L₂ : List (α × Bool)} 
   rw [← inv_mk]
   exact eq_inv_of_mul_eq_one_right (by rwa [mul_mk])
 
-/-- A word that is not reduced contains a letter followed by its inverse. -/
-theorem exists_eq_append_cons_cons_of_not_isReduced {L : List (α × Bool)} (h : ¬IsReduced L) :
-    ∃ L₁ L₂ x b, L = L₁ ++ (x, b) :: (x, !b) :: L₂ := by
-  simp only [isReduced_iff_not_step, not_forall, not_not] at h
-  obtain ⟨_, ⟨⟩⟩ := h
-  exact ⟨_, _, _, _, rfl⟩
+/-- A word is not reduced exactly when it contains a letter immediately followed by its
+inverse. -/
+theorem _root_.TauCeti.FreeGroup.not_isReduced_iff_exists_eq_append_cons_cons
+    {L : List (α × Bool)} : ¬IsReduced L ↔ ∃ L₁ L₂ x b, L = L₁ ++ (x, b) :: (x, !b) :: L₂ := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · simp only [isReduced_iff_not_step, not_forall, not_not] at h
+    obtain ⟨_, ⟨⟩⟩ := h
+    exact ⟨_, _, _, _, rfl⟩
+  · rintro ⟨L₁, L₂, x, b, rfl⟩ h
+    exact h.not_step Red.Step.not
 
 /-- A step of free reduction does not change the element represented. -/
 theorem Red.Step.mk_eq {L₁ L₂ : List (α × Bool)} (h : Red.Step L₁ L₂) : mk L₁ = mk L₂ :=
@@ -407,6 +398,13 @@ theorem mk_append_cons_cons_of_ne {X Y : List (α × Bool)} {x : α} {b c : Bool
   obtain rfl := Bool.eq_not_of_ne hbc.symm
   exact Red.Step.not.mk_eq
 
+/-- In a reduced word, the second letter is not the inverse of the first: a letter is never
+immediately followed by its inverse. -/
+theorem ne_inv_of_isReduced_cons_cons {a b : α × Bool} {l : List (α × Bool)}
+    (h : IsReduced (a :: b :: l)) : b ≠ (a.1, !a.2) := by
+  rintro rfl
+  simpa using (isReduced_cons_cons.1 h).1 rfl
+
 section Prefix
 
 open List
@@ -423,13 +421,6 @@ theorem toWord_mk_mul_of_invRev_prefix {x : List (α × Bool)} {g : FreeGroup α
     rw [← mk_toWord (x := g), ← hy, ← mul_mk, ← inv_mk]
     exact mul_inv_cancel_left _ _
   rw [hmul, toWord_mk, hred.reduce_eq, ← hy, drop_left' invRev_length]
-
-omit [DecidableEq α] in
-/-- In a reduced word, a letter is never followed by its inverse. -/
-theorem ne_inv_of_isReduced_cons_cons {a b : α × Bool} {l : List (α × Bool)}
-    (h : IsReduced (a :: b :: l)) : b ≠ (a.1, !a.2) := by
-  rintro rfl
-  simpa using (isReduced_cons_cons.1 h).1 rfl
 
 /-- Left multiplication by a letter that does not cancel prepends it to the reduced word. -/
 theorem toWord_mk_singleton_mul_of_head?_ne {a : α × Bool} {g : FreeGroup α}
@@ -642,9 +633,8 @@ theorem mem_closure_image_of_iff [DecidableEq α] {s : Set α} {g : FreeGroup α
       exact (List.mem_append.1 (reduce.red.sublist.subset hl)).elim (hx l) (hy l)
     | inv x _ hx =>
       intro l hl
-      rw [toWord_inv, invRev, List.mem_reverse, List.mem_map] at hl
-      obtain ⟨m, hm, rfl⟩ := hl
-      exact hx m hm
+      rw [toWord_inv, TauCeti.FreeGroup.mem_invRev_iff] at hl
+      exact hx (l.1, !l.2) hl
   · simpa only [mk_toWord, lift_of_apply] using lift_mk_mem_closure_image of h
 
 /-- A free generator lies in the subgroup generated by a set of free generators exactly when it

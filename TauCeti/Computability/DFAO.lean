@@ -24,7 +24,7 @@ require finitely many states; finiteness is imposed where it is used.
 
 * `TauCeti.DFAO`: a deterministic automaton with output.
 * `TauCeti.DFAO.evalFrom`, `TauCeti.DFAO.eval`: the state reached on a word, from a given state
-  or from the initial state.
+  or from the initial state; `TauCeti.DFAO.evalFrom_eq_foldl` unfolds the former.
 * `TauCeti.DFAO.evalFrom_append`: running on `x ++ y` runs on `x` and then on `y`.
 * `TauCeti.DFAO.toDFA`: the Mathlib `DFA` accepting the words whose output lies in a set `S`;
   `TauCeti.DFAO.mem_accepts_toDFA` describes its language.
@@ -76,6 +76,10 @@ def evalFrom (s : σ) (x : List α) : σ :=
 /-- `M.eval x` is the state reached by running `M` on the word `x` from its initial state. -/
 def eval (x : List α) : σ :=
   M.evalFrom M.start x
+
+/-- Running `M` from `s` on `x` folds its transition function along `x`. -/
+theorem evalFrom_eq_foldl (s : σ) (x : List α) : M.evalFrom s x = x.foldl M.step s :=
+  (rfl)
 
 @[simp]
 theorem evalFrom_nil (s : σ) : M.evalFrom s [] = s :=

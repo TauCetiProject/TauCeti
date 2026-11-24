@@ -226,6 +226,10 @@ instance : Linear k (GradedModuleCat.{v} 𝒜) where
   smul_comp _ _ _ _ _ _ := by ext; simp
   comp_smul _ _ _ _ _ _ := by ext; simp
 
+/-- A graded module with subsingleton underlying type is a zero object. -/
+theorem isZero_of_subsingleton (M : GradedModuleCat.{v} 𝒜) [Subsingleton M] : Limits.IsZero M :=
+  (Limits.IsZero.iff_id_eq_zero M).2 (hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _))
+
 end Linear
 
 /-- The isomorphism of graded modules given by an `A`-linear equivalence which preserves and
