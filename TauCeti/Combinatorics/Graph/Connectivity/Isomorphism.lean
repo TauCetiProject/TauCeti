@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.VertexConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Subgraph
 public import TauCeti.Combinatorics.Graph.Simple
 
 /-!
@@ -370,40 +371,20 @@ theorem connectedComponentEquiv_trans {α'' β'' : Type*} {K : Graph α'' β''} 
   ext1 C
   simp [connectedComponentEquiv]
 
+/-- Transporting a connected component as a subgraph gives the corresponding connected component. -/
+@[simp]
+theorem mapSubgraph_connectedComponent (f : Iso G H) (C : G.ConnectedComponent) :
+    f.mapSubgraph ⟨C.val, C.property.le⟩ = (f.connectedComponentEquiv C).val := by
+  apply (Compatible.of_le_le (f.mapSubgraph_le _)
+    (f.connectedComponentEquiv C).property.le).ext
+  · simp [vertexSet_connectedComponentEquiv]
+  · simp [edgeSet_connectedComponentEquiv]
+
 /-- A multigraph isomorphism restricts to an isomorphism from each connected-component subgraph to
 the corresponding connected-component subgraph. -/
 noncomputable def connectedComponentIso (f : Iso G H) (C : G.ConnectedComponent) :
-    Iso C.val (f.connectedComponentEquiv C).val where
-  vertexEquiv :=
-    { toFun x := ⟨f.vertexEquiv ⟨x, C.property.le.vertexSet_mono x.property⟩,
-        (f.vertexEquiv_mem_vertexSet_connectedComponentEquiv_iff C _).mpr x.property⟩
-      invFun y := ⟨f.vertexEquiv.symm ⟨y, (f.connectedComponentEquiv C).property.le.vertexSet_mono
-          y.property⟩, by
-        have h := (f.vertexEquiv_symm_mem_vertexSet_connectedComponentEquiv_symm_iff
-          (f.connectedComponentEquiv C)
-          ⟨y, (f.connectedComponentEquiv C).property.le.vertexSet_mono y.property⟩).mpr y.property
-        simpa using h⟩
-      left_inv _ := Subtype.ext (by simp)
-      right_inv _ := Subtype.ext (by simp) }
-  edgeEquiv :=
-    { toFun e := ⟨f.edgeEquiv ⟨e, C.property.le.edgeSet_mono e.property⟩,
-        (f.edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff C _).mpr e.property⟩
-      invFun e := ⟨f.edgeEquiv.symm ⟨e, (f.connectedComponentEquiv C).property.le.edgeSet_mono
-          e.property⟩, by
-        have h := (f.edgeEquiv_symm_mem_edgeSet_connectedComponentEquiv_symm_iff
-          (f.connectedComponentEquiv C)
-          ⟨e, (f.connectedComponentEquiv C).property.le.edgeSet_mono e.property⟩).mpr e.property
-        simpa using h⟩
-      left_inv _ := Subtype.ext (by simp)
-      right_inv _ := Subtype.ext (by simp) }
-  map_isLink_iff e x y := by
-    have heH : (f.edgeEquiv ⟨e, C.property.le.edgeSet_mono e.property⟩ : β') ∈
-        E((f.connectedComponentEquiv C).val) :=
-      (f.edgeEquiv_mem_edgeSet_connectedComponentEquiv_iff C _).mpr e.property
-    have hlink := f.map_isLink_iff ⟨e, C.property.le.edgeSet_mono e.property⟩
-      ⟨x, C.property.le.vertexSet_mono x.property⟩ ⟨y, C.property.le.vertexSet_mono y.property⟩
-    rw [(f.connectedComponentEquiv C).property.le.isLink_iff', C.property.le.isLink_iff']
-    exact ⟨fun h ↦ ⟨hlink.mp h.1, e.property⟩, fun h ↦ ⟨hlink.mpr h.1, heH⟩⟩
+    Iso C.val (f.connectedComponentEquiv C).val :=
+  f.subgraphIsoOfEq ⟨C.val, C.property.le⟩ (f.mapSubgraph_connectedComponent C)
 
 /-- The vertex equivalence of a restricted component isomorphism acts by the original vertex
 equivalence. -/
@@ -412,7 +393,8 @@ theorem coe_connectedComponentIso_vertexEquiv_apply (f : Iso G H) (C : G.Connect
     (x : V(C.val)) :
     ((f.connectedComponentIso C).vertexEquiv x : α') =
       f.vertexEquiv ⟨x, C.property.le.vertexSet_mono x.property⟩ :=
-  (rfl)
+  f.coe_subgraphIsoOfEq_vertexEquiv_apply ⟨C.val, C.property.le⟩
+    (f.mapSubgraph_connectedComponent C) x
 
 /-- The inverse vertex equivalence of a restricted component isomorphism acts by the original
 inverse vertex equivalence. -/
@@ -421,7 +403,8 @@ theorem coe_connectedComponentIso_vertexEquiv_symm_apply (f : Iso G H) (C : G.Co
     (y : V((f.connectedComponentEquiv C).val)) :
     ((f.connectedComponentIso C).vertexEquiv.symm y : α) =
       f.vertexEquiv.symm ⟨y, (f.connectedComponentEquiv C).property.le.vertexSet_mono y.property⟩ :=
-  (rfl)
+  f.coe_subgraphIsoOfEq_vertexEquiv_symm_apply ⟨C.val, C.property.le⟩
+    (f.mapSubgraph_connectedComponent C) y
 
 /-- The edge equivalence of a restricted component isomorphism acts by the original edge
 equivalence. -/
@@ -430,7 +413,8 @@ theorem coe_connectedComponentIso_edgeEquiv_apply (f : Iso G H) (C : G.Connected
     (e : E(C.val)) :
     ((f.connectedComponentIso C).edgeEquiv e : β') =
       f.edgeEquiv ⟨e, C.property.le.edgeSet_mono e.property⟩ :=
-  (rfl)
+  f.coe_subgraphIsoOfEq_edgeEquiv_apply ⟨C.val, C.property.le⟩
+    (f.mapSubgraph_connectedComponent C) e
 
 /-- The inverse edge equivalence of a restricted component isomorphism acts by the original
 inverse edge equivalence. -/
@@ -439,7 +423,68 @@ theorem coe_connectedComponentIso_edgeEquiv_symm_apply (f : Iso G H) (C : G.Conn
     (e : E((f.connectedComponentEquiv C).val)) :
     ((f.connectedComponentIso C).edgeEquiv.symm e : β) =
       f.edgeEquiv.symm ⟨e, (f.connectedComponentEquiv C).property.le.edgeSet_mono e.property⟩ :=
-  (rfl)
+  f.coe_subgraphIsoOfEq_edgeEquiv_symm_apply ⟨C.val, C.property.le⟩
+    (f.mapSubgraph_connectedComponent C) e
+
+/-- Restricting the identity isomorphism to a connected component gives the identity isomorphism,
+identifying the target component. -/
+@[simp]
+theorem connectedComponentIso_refl (G : Graph α β) (C : G.ConnectedComponent) :
+    (refl G).connectedComponentIso C =
+      (congrArg Subtype.val (by simp : C = (refl G).connectedComponentEquiv C)) ▸ refl C.val := by
+  have key : ∀ {D : G.ConnectedComponent} (h : C = D) (k : Iso C.val D.val),
+      (∀ x : V(C.val), (k.vertexEquiv x : α) = x) →
+      (∀ e : E(C.val), (k.edgeEquiv e : β) = e) →
+      k = (congrArg Subtype.val h) ▸ refl C.val := by
+    rintro D rfl k hv he
+    ext x
+    · simp [hv x]
+    · simp [he x]
+  exact key (by simp) _ (fun x ↦ by simp) (fun e ↦ by simp)
+
+/-- Restricting an inverse isomorphism to the transported connected component equals the inverse of
+the restricted isomorphism, identifying the target component. -/
+@[simp]
+theorem connectedComponentIso_symm (f : Iso G H) (C : G.ConnectedComponent) :
+    (f.connectedComponentIso C).symm =
+      (congrArg Subtype.val
+        (by simp : f.symm.connectedComponentEquiv (f.connectedComponentEquiv C) = C)) ▸
+        f.symm.connectedComponentIso (f.connectedComponentEquiv C) := by
+  have key : ∀ {D : G.ConnectedComponent} (h : D = C)
+      (k₁ : Iso (f.connectedComponentEquiv C).val C.val)
+      (k₂ : Iso (f.connectedComponentEquiv C).val D.val),
+      (∀ y : V((f.connectedComponentEquiv C).val),
+        (k₁.vertexEquiv y : α) = (k₂.vertexEquiv y : α)) →
+      (∀ e : E((f.connectedComponentEquiv C).val),
+        (k₁.edgeEquiv e : β) = (k₂.edgeEquiv e : β)) →
+      k₁ = (congrArg Subtype.val h) ▸ k₂ := by
+    rintro D rfl k₁ k₂ hv he
+    ext y
+    · simp [hv y]
+    · simp [he y]
+  exact key (by simp) _ _ (fun y ↦ by simp) (fun e ↦ by simp)
+
+/-- Restricting a composite isomorphism to a connected component equals the composite of the
+restricted isomorphisms, identifying the target component. -/
+@[simp]
+theorem connectedComponentIso_trans {α'' β'' : Type*} {K : Graph α'' β''}
+    (f : Iso G H) (g : Iso H K) (C : G.ConnectedComponent) :
+    (f.trans g).connectedComponentIso C =
+      (congrArg Subtype.val
+        (by simp : g.connectedComponentEquiv (f.connectedComponentEquiv C) =
+          (f.trans g).connectedComponentEquiv C)) ▸
+        (f.connectedComponentIso C).trans
+          (g.connectedComponentIso (f.connectedComponentEquiv C)) := by
+  have key : ∀ {D₁ D₂ : K.ConnectedComponent} (h : D₁ = D₂)
+      (k₁ : Iso C.val D₂.val) (k₂ : Iso C.val D₁.val),
+      (∀ x : V(C.val), (k₁.vertexEquiv x : α'') = (k₂.vertexEquiv x : α'')) →
+      (∀ e : E(C.val), (k₁.edgeEquiv e : β'') = (k₂.edgeEquiv e : β'')) →
+      k₁ = (congrArg Subtype.val h) ▸ k₂ := by
+    rintro D₁ D₂ rfl k₁ k₂ hv he
+    ext x
+    · simp [hv x]
+    · simp [he x]
+  exact key (by simp) _ _ (fun x ↦ by simp) (fun e ↦ by simp)
 
 /-- The number of connected components is invariant under multigraph isomorphism. -/
 theorem componentCount_eq (f : Iso G H) : H.componentCount = G.componentCount := by

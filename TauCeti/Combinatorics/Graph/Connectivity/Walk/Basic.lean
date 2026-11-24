@@ -80,6 +80,16 @@ theorem copy_cons {x y z x' z' : α} (e : β) (h : G.IsLink e x y) (p : G.Walk y
     (hx : x = x') (hz : z = z') :
     (Walk.cons e h p).copy hx hz = .cons e (hx ▸ h) (p.copy rfl hz) := by subst_vars; rfl
 
+/-- Two `cons` walks with equal endpoints and tails agree up to `Walk.copy`. -/
+theorem cons_eq_copy_cons {x x' y y' z z' : α} {e : β}
+    {h : G.IsLink e x y} {p : G.Walk y z}
+    {h' : G.IsLink e x' y'} {p' : G.Walk y' z'}
+    (hx : x' = x) (hy : y' = y) (hz : z' = z)
+    (hp : p = p'.copy hy hz) :
+    Walk.cons e h p = (Walk.cons e h' p').copy hx hz := by
+  subst hx hy hz hp
+  simp
+
 /-- The one-edge walk associated to an edge linking two vertices. -/
 def _root_.Graph.IsLink.toWalk {e : β} (h : G.IsLink e x y) : G.Walk x y :=
   .cons e h .nil

@@ -352,6 +352,93 @@ theorem subgraphIso_mapSubgraph (f : Iso G H) (S : Set.Iic G) (T : Set.Iic S.val
   · simp only [edgeSet_mapSubgraph, subgraphIso_mapEdgeSet,
       inter_eq_left.mpr (f.mapEdgeSet_mono T.property.edgeSet_mono)]
 
+/-- Restrict an isomorphism to a subgraph whose image equals a prescribed target graph. -/
+def subgraphIsoOfEq (f : Iso G H) (S : Set.Iic G) {T : Graph α' β'}
+    (h : f.mapSubgraph S = T) : Iso S.val T where
+  vertexEquiv := (f.subgraphIso S).vertexEquiv.trans (Equiv.subtypeEquivRight fun _ ↦ by rw [h])
+  edgeEquiv := (f.subgraphIso S).edgeEquiv.trans (Equiv.subtypeEquivRight fun _ ↦ by rw [h])
+  map_isLink_iff e x y := by
+    subst h
+    exact (f.subgraphIso S).map_isLink_iff e x y
+
+/-- With `rfl`, `subgraphIsoOfEq` reduces to `subgraphIso`. -/
+@[simp]
+theorem subgraphIsoOfEq_rfl (f : Iso G H) (S : Set.Iic G) :
+    f.subgraphIsoOfEq S rfl = f.subgraphIso S := by
+  ext x <;> rfl
+
+/-- The vertex equivalence of `subgraphIsoOfEq` acts by the original vertex equivalence. -/
+@[simp, grind =]
+theorem coe_subgraphIsoOfEq_vertexEquiv_apply (f : Iso G H) (S : Set.Iic G) {T : Graph α' β'}
+    (h : f.mapSubgraph S = T) (x : S.val.vertexSet) :
+    ((f.subgraphIsoOfEq S h).vertexEquiv x : α') =
+      f.vertexEquiv ⟨x, S.property.vertexSet_mono x.property⟩ := by
+  subst h
+  simp
+
+/-- The edge equivalence of `subgraphIsoOfEq` acts by the original edge equivalence. -/
+@[simp, grind =]
+theorem coe_subgraphIsoOfEq_edgeEquiv_apply (f : Iso G H) (S : Set.Iic G) {T : Graph α' β'}
+    (h : f.mapSubgraph S = T) (e : S.val.edgeSet) :
+    ((f.subgraphIsoOfEq S h).edgeEquiv e : β') =
+      f.edgeEquiv ⟨e, S.property.edgeSet_mono e.property⟩ := by
+  subst h
+  simp
+
+/-- The inverse vertex equivalence of `subgraphIsoOfEq` acts by the original inverse vertex
+equivalence. -/
+@[simp, grind =]
+theorem coe_subgraphIsoOfEq_vertexEquiv_symm_apply (f : Iso G H) (S : Set.Iic G)
+    {T : Graph α' β'} (h : f.mapSubgraph S = T) (y : T.vertexSet) :
+    ((f.subgraphIsoOfEq S h).vertexEquiv.symm y : α) =
+      f.vertexEquiv.symm ⟨y, (h ▸ f.mapSubgraph_le S).vertexSet_mono y.property⟩ := by
+  subst h
+  simp
+
+/-- The inverse edge equivalence of `subgraphIsoOfEq` acts by the original inverse edge
+equivalence. -/
+@[simp, grind =]
+theorem coe_subgraphIsoOfEq_edgeEquiv_symm_apply (f : Iso G H) (S : Set.Iic G)
+    {T : Graph α' β'} (h : f.mapSubgraph S = T) (e : T.edgeSet) :
+    ((f.subgraphIsoOfEq S h).edgeEquiv.symm e : β) =
+      f.edgeEquiv.symm ⟨e, (h ▸ f.mapSubgraph_le S).edgeSet_mono e.property⟩ := by
+  subst h
+  simp
+
+/-- Restricting an isomorphism via `subgraphIsoOfEq` restricts its action on ambient vertex
+sets. -/
+@[simp, grind =]
+theorem subgraphIsoOfEq_mapVertexSet (f : Iso G H) (S : Set.Iic G) {T : Graph α' β'}
+    (h : f.mapSubgraph S = T) (X : Set α) :
+    (f.subgraphIsoOfEq S h).mapVertexSet X = f.mapVertexSet X ∩ f.mapVertexSet V(S.val) := by
+  subst h
+  simp
+
+/-- Restricting an isomorphism via `subgraphIsoOfEq` restricts its action on ambient edge
+sets. -/
+@[simp, grind =]
+theorem subgraphIsoOfEq_mapEdgeSet (f : Iso G H) (S : Set.Iic G) {T : Graph α' β'}
+    (h : f.mapSubgraph S = T) (F : Set β) :
+    (f.subgraphIsoOfEq S h).mapEdgeSet F = f.mapEdgeSet F ∩ f.mapEdgeSet E(S.val) := by
+  subst h
+  simp
+
+/-- `subgraphIsoOfEq` agrees with ambient transport on sets of selected vertices. -/
+@[simp high, grind =]
+theorem subgraphIsoOfEq_mapVertexSet_of_subset (f : Iso G H) (S : Set.Iic G) {T : Graph α' β'}
+    (h : f.mapSubgraph S = T) {X : Set α} (hX : X ⊆ V(S.val)) :
+    (f.subgraphIsoOfEq S h).mapVertexSet X = f.mapVertexSet X := by
+  subst h
+  simp [hX]
+
+/-- `subgraphIsoOfEq` agrees with ambient transport on sets of selected edges. -/
+@[simp high, grind =]
+theorem subgraphIsoOfEq_mapEdgeSet_of_subset (f : Iso G H) (S : Set.Iic G) {T : Graph α' β'}
+    (h : f.mapSubgraph S = T) {F : Set β} (hF : F ⊆ E(S.val)) :
+    (f.subgraphIsoOfEq S h).mapEdgeSet F = f.mapEdgeSet F := by
+  subst h
+  simp [hF]
+
 /-- Transport of an edgeless subgraph retains all its selected, isolated vertices. -/
 @[simp, grind =]
 theorem mapSubgraph_noEdge (f : Iso G H) (X : Set α) (h : noEdge X β ≤ G) :
@@ -556,33 +643,36 @@ theorem mapSubgraph_inf (f : Iso G H) (S T : Set.Iic G) :
   simpa only [coe_subgraphOrderIso_apply, Iic.coe_inf] using
     congrArg Subtype.val (f.subgraphOrderIso.map_inf S T)
 
+/-- Under matching deleted edge sets, transporting `G.deleteEdges F` yields `H.deleteEdges F'`. -/
+theorem mapSubgraph_deleteEdges_eq (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) :
+    f.mapSubgraph ⟨G.deleteEdges F, deleteEdges_le⟩ = H.deleteEdges F' := by
+  rw [mapSubgraph_deleteEdges_self]
+  apply (Compatible.of_le_le deleteEdges_le deleteEdges_le).ext (by simp)
+  ext e
+  by_cases he : e ∈ E(H)
+  · let e' : H.edgeSet := ⟨e, he⟩
+    have h := (hF (f.edgeEquiv.symm e')).symm
+    simp only [Equiv.apply_symm_apply] at h
+    simp only [edgeSet_deleteEdges, mem_sdiff]
+    refine and_congr_right fun _ ↦ not_congr ?_
+    simpa [e', f.mem_mapEdgeSet_iff F e'] using h
+  · simp [he]
+
 /-- Edge deletion commutes with multigraph isomorphisms when the deleted edge sets correspond
 on actual edges. -/
 def deleteEdgesIso (f : Iso G H) {F : Set β} {F' : Set β'}
     (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) :
-    Iso (G.deleteEdges F) (H.deleteEdges F') where
-  vertexEquiv := f.vertexEquiv
-  edgeEquiv :=
-    { toFun e := ⟨f.edgeEquiv ⟨e, e.property.1⟩,
-        (f.edgeEquiv ⟨e, e.property.1⟩).property,
-        fun hmem ↦ e.property.2 ((hF ⟨e, e.property.1⟩).mp hmem)⟩
-      invFun e := ⟨f.edgeEquiv.symm ⟨e, e.property.1⟩,
-        (f.edgeEquiv.symm ⟨e, e.property.1⟩).property,
-        fun hmem ↦ e.property.2 (by
-          simpa using (hF (f.edgeEquiv.symm ⟨e, e.property.1⟩)).mpr hmem)⟩
-      left_inv _ := Subtype.ext (by simp)
-      right_inv _ := Subtype.ext (by simp) }
-  map_isLink_iff e x y := by
-    have hlink := f.map_isLink_iff ⟨e, e.property.1⟩ x y
-    simp only [deleteEdges_isLink]
-    exact ⟨fun h ↦ ⟨hlink.mp h.1, e.property.2⟩,
-      fun h ↦ ⟨hlink.mpr h.1, fun hmem ↦ e.property.2 ((hF ⟨e, e.property.1⟩).mp hmem)⟩⟩
+    Iso (G.deleteEdges F) (H.deleteEdges F') :=
+  f.subgraphIsoOfEq ⟨G.deleteEdges F, deleteEdges_le⟩ (f.mapSubgraph_deleteEdges_eq hF)
 
 /-- Deleting edges preserves the vertex equivalence of a multigraph isomorphism. -/
 theorem deleteEdgesIso_vertexEquiv (f : Iso G H) {F : Set β} {F' : Set β'}
     (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) :
-    (f.deleteEdgesIso hF).vertexEquiv = f.vertexEquiv :=
-  (rfl)
+    (f.deleteEdgesIso hF).vertexEquiv = f.vertexEquiv := by
+  ext x
+  exact f.coe_subgraphIsoOfEq_vertexEquiv_apply ⟨G.deleteEdges F, deleteEdges_le⟩
+    (f.mapSubgraph_deleteEdges_eq hF) x
 
 /-- The vertex equivalence of a deleted-edge isomorphism acts by the original vertex
 equivalence. -/
@@ -592,7 +682,8 @@ theorem coe_deleteEdgesIso_vertexEquiv_apply (f : Iso G H) {F : Set β} {F' : Se
     (x : (G.deleteEdges F).vertexSet) :
     ((f.deleteEdgesIso hF).vertexEquiv x : α') =
       f.vertexEquiv ⟨x, deleteEdges_le.vertexSet_mono x.property⟩ :=
-  (rfl)
+  f.coe_subgraphIsoOfEq_vertexEquiv_apply ⟨G.deleteEdges F, deleteEdges_le⟩
+    (f.mapSubgraph_deleteEdges_eq hF) x
 
 /-- The inverse vertex equivalence of a deleted-edge isomorphism acts by the original inverse
 vertex equivalence. -/
@@ -602,7 +693,8 @@ theorem coe_deleteEdgesIso_vertexEquiv_symm_apply (f : Iso G H) {F : Set β} {F'
     (y : (H.deleteEdges F').vertexSet) :
     ((f.deleteEdgesIso hF).vertexEquiv.symm y : α) =
       f.vertexEquiv.symm ⟨y, deleteEdges_le.vertexSet_mono y.property⟩ :=
-  (rfl)
+  f.coe_subgraphIsoOfEq_vertexEquiv_symm_apply ⟨G.deleteEdges F, deleteEdges_le⟩
+    (f.mapSubgraph_deleteEdges_eq hF) y
 
 /-- The edge equivalence of a deleted-edge isomorphism acts by the original edge equivalence. -/
 @[simp]
@@ -610,7 +702,8 @@ theorem coe_deleteEdgesIso_edgeEquiv_apply (f : Iso G H) {F : Set β} {F' : Set 
     (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F)
     (e : (G.deleteEdges F).edgeSet) :
     ((f.deleteEdgesIso hF).edgeEquiv e : β') = f.edgeEquiv ⟨e, e.property.1⟩ :=
-  (rfl)
+  f.coe_subgraphIsoOfEq_edgeEquiv_apply ⟨G.deleteEdges F, deleteEdges_le⟩
+    (f.mapSubgraph_deleteEdges_eq hF) e
 
 /-- The inverse edge equivalence of a deleted-edge isomorphism acts by the original inverse. -/
 @[simp]
@@ -618,7 +711,8 @@ theorem coe_deleteEdgesIso_edgeEquiv_symm_apply (f : Iso G H) {F : Set β} {F' :
     (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F)
     (e : (H.deleteEdges F').edgeSet) :
     ((f.deleteEdgesIso hF).edgeEquiv.symm e : β) = f.edgeEquiv.symm ⟨e, e.property.1⟩ :=
-  (rfl)
+  f.coe_subgraphIsoOfEq_edgeEquiv_symm_apply ⟨G.deleteEdges F, deleteEdges_le⟩
+    (f.mapSubgraph_deleteEdges_eq hF) e
 
 /-- Edge deletion sends the identity isomorphism to the identity isomorphism. -/
 @[simp]
@@ -651,14 +745,19 @@ the original isomorphism. -/
 theorem mapVertexSet_deleteEdgesIso (f : Iso G H) {F : Set β} {F' : Set β'}
     (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) (S : Set α) :
     (f.deleteEdgesIso hF).mapVertexSet S = f.mapVertexSet S := by
-  ext y
-  by_cases hy : y ∈ V(H)
-  · have hy' : y ∈ V(H.deleteEdges F') := by rwa [vertexSet_deleteEdges]
-    exact ((f.deleteEdgesIso hF).mem_mapVertexSet_iff S ⟨y, hy'⟩).trans
-      ((f.mem_mapVertexSet_iff S ⟨y, hy⟩).symm)
-  · exact iff_of_false
-      (fun h ↦ hy (vertexSet_deleteEdges (G := H) (F := F') ▸
-        (f.deleteEdgesIso hF).mapVertexSet_subset_vertexSet S h))
-      (fun h ↦ hy (f.mapVertexSet_subset_vertexSet S h))
+  rw [deleteEdgesIso, subgraphIsoOfEq_mapVertexSet, vertexSet_deleteEdges, mapVertexSet_vertexSet,
+    inter_eq_left.mpr (f.mapVertexSet_subset_vertexSet S)]
+
+/-- Transporting an edge set along a deleted-edge isomorphism agrees with transporting it along
+the original isomorphism after removing the deleted target edges. -/
+@[simp]
+theorem mapEdgeSet_deleteEdgesIso (f : Iso G H) {F : Set β} {F' : Set β'}
+    (hF : ∀ e : G.edgeSet, (f.edgeEquiv e : β') ∈ F' ↔ (e : β) ∈ F) (S : Set β) :
+    (f.deleteEdgesIso hF).mapEdgeSet S = f.mapEdgeSet S \ F' := by
+  rw [deleteEdgesIso, subgraphIsoOfEq_mapEdgeSet, ← edgeSet_mapSubgraph,
+    f.mapSubgraph_deleteEdges_eq hF, edgeSet_deleteEdges]
+  ext e
+  exact ⟨fun ⟨hS, _, hnF'⟩ ↦ ⟨hS, hnF'⟩,
+    fun ⟨hS, hnF'⟩ ↦ ⟨hS, f.mapEdgeSet_subset_edgeSet S hS, hnF'⟩⟩
 
 end Graph.Iso
