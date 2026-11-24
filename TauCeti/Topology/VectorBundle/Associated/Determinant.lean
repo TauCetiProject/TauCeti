@@ -117,6 +117,34 @@ theorem detMap_bijective (hn : finrank 𝕜 F = n) (hF' : finrank 𝕜 F' = 1)
   exact h.comp ((LinearEquiv.ofEq _ _ (congrArg (⋀[𝕜]^· (AssociatedBundle G P F x)) hn)).bijective
     |>.comp (DetBundle.linearEquiv 𝕜 F _ x).bijective)
 
+variable (G P) in
+/-- **The determinant line isomorphism on a fibre.** If `F'` is a line and `η ≠ 0`, the fibre map
+`TauCeti.AssociatedBundle.detMap` is a linear isomorphism `det (P ×_G F)_x ≃ (P ×_G F')_x`
+(`TauCeti.AssociatedBundle.detMap_bijective`). -/
+def detEquiv (hn : finrank 𝕜 F = n) (hF' : finrank 𝕜 F' = 1) {η : F [⋀^Fin n]→ₗ[𝕜] F'}
+    (hη₀ : η ≠ 0) (x : B) :
+    DetBundle 𝕜 F (AssociatedBundle G P F) x ≃ₗ[𝕜] AssociatedBundle G P F' x :=
+  LinearEquiv.ofBijective (detMap G P hn η x) (detMap_bijective hn hF' hη₀ x)
+
+/-- `TauCeti.AssociatedBundle.detEquiv` is the determinant map on each fibre. -/
+@[simp]
+theorem detEquiv_apply (hn : finrank 𝕜 F = n) (hF' : finrank 𝕜 F' = 1)
+    {η : F [⋀^Fin n]→ₗ[𝕜] F'} (hη₀ : η ≠ 0) (x : B)
+    (w : DetBundle 𝕜 F (AssociatedBundle G P F) x) :
+    detEquiv G P hn hF' hη₀ x w = detMap G P hn η x w :=
+  (rfl)
+
+/-- **The inverse determinant line isomorphism in a principal frame.** For an equivariant `η`, in
+every frame `p` of `P` over `x`, the inverse of `TauCeti.AssociatedBundle.detEquiv` sends `[p, η v]`
+to `[p, v₀] ∧ ⋯ ∧ [p, vₙ₋₁]`. -/
+@[simp]
+theorem detEquiv_symm_mk (hn : finrank 𝕜 F = n) (hF' : finrank 𝕜 F' = 1)
+    {η : F [⋀^Fin n]→ₗ[𝕜] F'} (hη : ∀ (g : G) (v : Fin n → F), η (fun i ↦ g • v i) = g • η v)
+    (hη₀ : η ≠ 0) {x : B} (p : P x) (v : Fin n → F) :
+    (detEquiv G P hn hF' hη₀ x).symm (mk G p (η v)) =
+      exteriorPower.ιMulti 𝕜 (finrank 𝕜 F) fun i ↦ mk G p (v (Fin.cast hn i)) :=
+  (LinearEquiv.symm_apply_eq _).2 (detMap_ιMulti_mk hn hη p v).symm
+
 /-! ### Continuity -/
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
@@ -186,8 +214,6 @@ theorem continuous_detMap (hn : finrank 𝕜 F = n) {η : F [⋀^Fin n]→ₗ[�
 
 /-! ### The isomorphism of line bundles -/
 
-variable [FiniteDimensional 𝕜 F']
-
 variable (G P) in
 /-- **The determinant line of an associated bundle.** If `F'` is a line and `η` is a nonzero
 equivariant alternating map of `n = dim F` arguments, the fibre maps
@@ -198,27 +224,28 @@ def detHomeomorph (hn : finrank 𝕜 F = n) (hF' : finrank 𝕜 F' = 1) {η : F 
     (hη : ∀ (g : G) (v : Fin n → F), η (fun i ↦ g • v i) = g • η v) (hη₀ : η ≠ 0) :
     TotalSpace 𝕜 (DetBundle 𝕜 F (AssociatedBundle G P F)) ≃ₜ
       TotalSpace F' (AssociatedBundle G P F') :=
+  haveI : FiniteDimensional 𝕜 F' := Module.finite_of_finrank_eq_succ hF'
   bundleHomeomorph
-    (fun x ↦ (LinearEquiv.ofBijective _
-      (detMap_bijective hn hF' hη₀ x)).toContinuousLinearEquivOfIsModuleTopology)
+    (fun x ↦ (detEquiv G P hn hF' hη₀ x).toContinuousLinearEquivOfIsModuleTopology)
     ((continuous_detMap hn hη).congr fun _ ↦ by
-      simp only [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
-        LinearEquiv.ofBijective_apply])
+      simp only [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, detEquiv_apply])
 
 @[simp]
 theorem detHomeomorph_apply (hn : finrank 𝕜 F = n) (hF' : finrank 𝕜 F' = 1)
     {η : F [⋀^Fin n]→ₗ[𝕜] F'} (hη : ∀ (g : G) (v : Fin n → F), η (fun i ↦ g • v i) = g • η v)
     (hη₀ : η ≠ 0) (w : TotalSpace 𝕜 (DetBundle 𝕜 F (AssociatedBundle G P F))) :
     detHomeomorph G P hn hF' hη hη₀ w = ⟨w.proj, detMap G P hn η w.proj w.snd⟩ := by
+  have : FiniteDimensional 𝕜 F' := Module.finite_of_finrank_eq_succ hF'
   rw [detHomeomorph, bundleHomeomorph_apply,
-    LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, LinearEquiv.ofBijective_apply]
+    LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, detEquiv_apply]
 
 @[simp]
 theorem detHomeomorph_symm_apply (hn : finrank 𝕜 F = n) (hF' : finrank 𝕜 F' = 1)
     {η : F [⋀^Fin n]→ₗ[𝕜] F'} (hη : ∀ (g : G) (v : Fin n → F), η (fun i ↦ g • v i) = g • η v)
     (hη₀ : η ≠ 0) (z : TotalSpace F' (AssociatedBundle G P F')) :
     (detHomeomorph G P hn hF' hη hη₀).symm z =
-      ⟨z.proj, (LinearEquiv.ofBijective _ (detMap_bijective hn hF' hη₀ z.proj)).symm z.snd⟩ := by
+      ⟨z.proj, (detEquiv G P hn hF' hη₀ z.proj).symm z.snd⟩ := by
+  have : FiniteDimensional 𝕜 F' := Module.finite_of_finrank_eq_succ hF'
   rw [detHomeomorph, bundleHomeomorph_symm_apply,
     LinearEquiv.symm_toContinuousLinearEquivOfIsModuleTopology,
     LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]

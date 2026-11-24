@@ -156,23 +156,22 @@ theorem alternatingMap_spinorBundle_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ
 alternating form `η` on the model half-spinors induces, for each `x`, a linear isomorphism from
 the fiber `det W^ε_x = ⋀² W^ε_x` of the determinant line bundle `TauCeti.DetBundle` of `W^ε` onto
 the fiber `L_x` of the determinant line bundle, sending `[p, v 0] ∧ [p, v 1]` to `[p, η v]` in
-every frame `p` (`Orientation.spinorDetEquiv_ιMulti_mk`). It is the determinant map
-`TauCeti.AssociatedBundle.detMap` of `η` (`Orientation.spinorDetEquiv_apply`), bijective by
-`TauCeti.AssociatedBundle.detMap_bijective`. -/
+every frame `p` (`Orientation.spinorDetEquiv_ιMulti_mk`). It is the determinant line
+isomorphism `TauCeti.AssociatedBundle.detEquiv` of `η`, given by the determinant map
+`TauCeti.AssociatedBundle.detMap` (`Orientation.spinorDetEquiv_apply`). -/
 def spinorDetEquiv (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
     (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
     (x : B) :
     DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P) x ≃ₗ[ℂ]
       spinCGroup.detLineBundle 4 hpos P x :=
-  LinearEquiv.ofBijective (AssociatedBundle.detMap SpinC P h₂ η x)
-    (AssociatedBundle.detMap_bijective h₂ (spinCGroup.DetFiber.finrank_eq 4 hpos) hη x)
+  AssociatedBundle.detEquiv SpinC P h₂ (spinCGroup.DetFiber.finrank_eq 4 hpos) hη x
 
 /-- `spinorDetEquiv` is the determinant map of `η`. -/
 theorem spinorDetEquiv_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
     (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
     (x : B) (w : DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P) x) :
     o.spinorDetEquiv hQ b ρ ε P h₂ η hη x w = AssociatedBundle.detMap SpinC P h₂ η x w :=
-  (rfl)
+  AssociatedBundle.detEquiv_apply h₂ _ hη x w
 
 /-- **The determinant line isomorphism in a frame.** In every frame `p` of `P` over `x`,
 `spinorDetEquiv` sends `[p, v 0] ∧ [p, v 1]` to `[p, η v]`. -/
@@ -184,8 +183,9 @@ theorem spinorDetEquiv_ιMulti_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ
         (exteriorPower.ιMulti ℂ (finrank ℂ (SpinCHalfSpinor o hQ b ρ ε)) fun i ↦
           AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i))) =
       AssociatedBundle.mk SpinC p (η v) :=
-  AssociatedBundle.detMap_ιMulti_mk h₂ (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η)
-    p v
+  (spinorDetEquiv_apply o hQ b ρ ε P h₂ η hη x _).trans <|
+    AssociatedBundle.detMap_ιMulti_mk h₂ (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η)
+      p v
 
 /-- **The inverse determinant line isomorphism in a frame.** In every frame `p` of `P` over `x`,
 the inverse of `spinorDetEquiv` sends `[p, η v]` to `[p, v 0] ∧ [p, v 1]`. -/
@@ -196,7 +196,8 @@ theorem spinorDetEquiv_symm_mk (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε
     (o.spinorDetEquiv hQ b ρ ε P h₂ η hη x).symm (AssociatedBundle.mk SpinC p (η v)) =
       exteriorPower.ιMulti ℂ (finrank ℂ (SpinCHalfSpinor o hQ b ρ ε)) fun i ↦
         AssociatedBundle.mk SpinC p (v (Fin.cast h₂ i)) :=
-  (LinearEquiv.symm_apply_eq _).2 (spinorDetEquiv_ιMulti_mk o hQ b ρ ε P h₂ η hη p v).symm
+  AssociatedBundle.detEquiv_symm_mk h₂ _ (SpinCHalfSpinor.alternatingMap_apply_smul o hQ b ρ ε h₂ η)
+    hη p v
 
 /-- **The determinant line of the spinor bundle as a line bundle.** If `W^ε` has complex dimension
 two, a nonzero alternating form `η` on the model half-spinors induces an isomorphism of
@@ -216,8 +217,9 @@ theorem spinorDetHomeomorph_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ
     (η : SpinCHalfSpinor o hQ b ρ ε [⋀^Fin 2]→ₗ[ℂ] spinCGroup.DetFiber 4 hpos) (hη : η ≠ 0)
     (w : TotalSpace ℂ (DetBundle ℂ (SpinCHalfSpinor o hQ b ρ ε) (o.spinorBundle hQ b ρ ε P))) :
     o.spinorDetHomeomorph hQ b ρ ε P h₂ η hη w =
-      ⟨w.proj, o.spinorDetEquiv hQ b ρ ε P h₂ η hη w.proj w.snd⟩ :=
-  AssociatedBundle.detHomeomorph_apply _ _ _ _ w
+      ⟨w.proj, o.spinorDetEquiv hQ b ρ ε P h₂ η hη w.proj w.snd⟩ := by
+  rw [spinorDetEquiv_apply]
+  exact AssociatedBundle.detHomeomorph_apply _ _ _ _ w
 
 @[simp]
 theorem spinorDetHomeomorph_symm_apply (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ ε) = 2)
