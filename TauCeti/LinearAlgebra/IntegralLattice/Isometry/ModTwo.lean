@@ -132,6 +132,11 @@ theorem ker_reductionModTwoHom : (reductionModTwoHom hL).ker = congruenceSubgrou
     refine Subtype.ext <| LinearEquiv.ext fun c ↦ ?_
     simpa using LinearMap.congr_fun h c
 
+/-- An element equal to `1` has inverse `1`, whatever its `Invertible` witness. -/
+private theorem invOf_eq_one_of_eq_one {M : Type*} [Monoid M] {a : M} [Invertible a]
+    (h : a = 1) : ⅟a = 1 :=
+  invOf_eq_right_inv (by rw [h, mul_one])
+
 /-- **Root reflections reduce to orthogonal transvections.** The reflection in a lattice vector
 `x` of norm `2` acts on `L / 2L` as the orthogonal transvection in the class of `x`, the
 characteristic-two reflection `y ↦ y + b(y, [x]) [x]` of the quadratic form `Q₂`, for which
@@ -140,9 +145,8 @@ theorem reductionModTwoHom_rootReflection (x : L) (hx : L.integralNorm x = 2)
     [Invertible ((L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x))] :
     reductionModTwoHom hL (rootReflection x hx) =
       QuadraticMap.reflectionOrthogonal _ (Submodule.Quotient.mk x) := by
-  have hinv : ⅟((L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x)) = 1 :=
-    invOf_eq_right_inv <| by
-      rw [reduceModTwo_quadraticForm_mk_of_integralNorm_eq_two hL hx, mul_one]
+  have hinv :=
+    invOf_eq_one_of_eq_one (reduceModTwo_quadraticForm_mk_of_integralNorm_eq_two hL hx)
   ext c
   induction c using Submodule.Quotient.induction_on with
   | _ y =>
@@ -156,9 +160,8 @@ theorem reductionModTwoHom_negRootReflection (x : L) (hx : L.integralNorm x = -2
     [Invertible ((L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x))] :
     reductionModTwoHom hL (negRootReflection x hx) =
       QuadraticMap.reflectionOrthogonal _ (Submodule.Quotient.mk x) := by
-  have hinv : ⅟((L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x)) = 1 :=
-    invOf_eq_right_inv <| by
-      rw [reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two hL hx, mul_one]
+  have hinv :=
+    invOf_eq_one_of_eq_one (reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two hL hx)
   ext c
   induction c using Submodule.Quotient.induction_on with
   | _ y =>

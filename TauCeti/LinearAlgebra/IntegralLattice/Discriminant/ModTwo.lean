@@ -72,8 +72,11 @@ theorem discriminantQuadraticMap_discriminantGroupScaleEquiv_symm (hu : L.IsUnim
     have hdiv : L.integralNorm y / 2 = k := by
       have : L.integralNorm y = 2 * k := by exact_mod_cast (L.integralNorm_cast y).trans hk
       omega
-    simp [hu.discriminantQuadraticMap_discriminantGroupScaleEquiv_symm_mk two_ne_zero, hdiv, hform]
+    rw [hu.discriminantQuadraticMap_discriminantGroupScaleEquiv_symm_mk two_ne_zero, hform,
+      QuadraticForm.reduceModTwo_mk, quadraticForm_apply, hdiv, ZMod.toRatAddCircle_intCast]
+    -- the remaining identity `2k / (2 * 2) = k / 2` holds already in `ℚ`
     congr 1
+    push_cast
     ring
 
 /-- The discriminant form of `L(2)` at a class `a`, read off from `Q₂` at its image in `L / 2L`. -/
