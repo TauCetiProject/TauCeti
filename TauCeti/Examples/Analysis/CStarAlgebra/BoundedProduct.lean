@@ -11,18 +11,18 @@ public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.Normed.Lp.C0Ideal
 
 /-!
-# The quotient of the bounded product of matrix algebras by the `c₀` sum
+# Norms in the quotient of a bounded product of C⋆-algebras by its `c₀` ideal
 
 For a sequence `(A n)` of nonzero unital C⋆-algebras, the bounded product `lp A ∞` modulo its
 `c₀` ideal is a unital C⋆-algebra (`lp.inftyCStarAlgebra`, `TwoSidedIdeal.Quotient.cstarAlgebra`)
 whose norm is the limit superior of the coordinate norms (`lp.norm_mk_c0Ideal`). These examples
 evaluate that norm:
 
-* a family `(aₙ)` with `‖aₙ‖ = 1` for every `n` has quotient norm `1`; in particular so does the
-  unit `(1ₙ)`, and the quotient is nonzero;
-* the family `(aₙ / (n + 1))` has quotient norm `0`.
+* the unit `(1ₙ)` has quotient norm `1` (`lp.norm_mk_c0Ideal_one`), so the quotient is nonzero;
+* for any bounded family `(aₙ)`, the family `(aₙ / (n + 1))` has quotient norm `0`.
 
-For `A n = M_{n+1}` this is the Check `∏ₙ M_{n+1} / ⊕ₙ M_{n+1}` of the CStarAlgebras roadmap, C5.4.
+In particular, for the matrix algebras `M_{n+1}`, the quotient `∏ₙ M_{n+1} / ⊕ₙ M_{n+1}` is
+nonzero.
 -/
 
 public section
@@ -32,36 +32,24 @@ open scoped ENNReal ComplexOrder
 
 namespace TauCeti.BoundedProductExamples
 
-variable {A : ℕ → Type*} [∀ n, CStarAlgebra (A n)] [∀ n, Nontrivial (A n)]
-
-/-- A bounded family of norm-one elements has quotient norm one modulo the `c₀` ideal. -/
-theorem norm_mk_c0Ideal_of_forall_norm_eq_one (a : lp A ∞) (ha : ∀ n, ‖a n‖ = 1) :
-    ‖TwoSidedIdeal.Quotient.mk (lp.c0Ideal A) a‖ = 1 := by
-  rw [lp.norm_mk_c0Ideal]
-  simp [ha]
-
-/-- The unit of the bounded product has quotient norm one modulo the `c₀` ideal. -/
-theorem norm_mk_c0Ideal_one : ‖TwoSidedIdeal.Quotient.mk (lp.c0Ideal A) 1‖ = 1 :=
-  norm_mk_c0Ideal_of_forall_norm_eq_one 1 fun _ ↦ by simp
-
-/-- The quotient of the bounded product of nonzero unital C⋆-algebras by the `c₀` ideal is
-nonzero. -/
-instance nontrivial_quotient_c0Ideal : Nontrivial (lp A ∞ ⧸ lp.c0Ideal A) :=
-  nontrivial_of_ne (TwoSidedIdeal.Quotient.mk (lp.c0Ideal A) 1) 0 fun h ↦ by
-    simpa [h] using (norm_mk_c0Ideal_one (A := A)).symm
-
-/-- If `‖aₙ‖ = 1` for every `n`, the family `(aₙ / (n + 1))` has quotient norm zero modulo the
+/-- The unit of a bounded product of nonzero unital C⋆-algebras has quotient norm one modulo the
 `c₀` ideal. -/
-theorem norm_mk_c0Ideal_of_apply_eq_inv_smul (a b : lp A ∞) (ha : ∀ n, ‖a n‖ = 1)
-    (hb : ∀ n, b n = ((n : ℂ) + 1)⁻¹ • a n) :
+example {A : ℕ → Type*} [∀ n, CStarAlgebra (A n)] [∀ n, Nontrivial (A n)] :
+    ‖TwoSidedIdeal.Quotient.mk (lp.c0Ideal A) 1‖ = 1 :=
+  lp.norm_mk_c0Ideal_one
+
+/-- For a bounded family `(aₙ)`, the family `(aₙ / (n + 1))` has quotient norm zero modulo the
+`c₀` ideal. -/
+example {A : ℕ → Type*} [∀ n, NonUnitalNormedRing (A n)] [∀ n, NormedSpace ℂ (A n)]
+    (a b : lp A ∞) (hb : ∀ n, b n = ((n : ℂ) + 1)⁻¹ • a n) :
     ‖TwoSidedIdeal.Quotient.mk (lp.c0Ideal A) b‖ = 0 := by
   rw [lp.norm_mk_c0Ideal, Nat.cofinite_eq_atTop]
-  refine Tendsto.limsup_eq ?_
-  have h (n : ℕ) : ‖b n‖ = 1 / ((n : ℝ) + 1) := by
-    rw [hb, norm_smul, ha, mul_one, norm_inv, ← Nat.cast_succ, Complex.norm_natCast,
-      Nat.cast_succ, one_div]
-  simpa only [h] using (tendsto_one_div_add_atTop_nhds_zero_nat : Tendsto
-    (fun n : ℕ ↦ 1 / ((n : ℝ) + 1)) atTop (𝓝 0))
+  refine Tendsto.limsup_eq (squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
+    (by simpa using tendsto_one_div_add_atTop_nhds_zero_nat.const_mul ‖a‖))
+  rw [hb, norm_smul, mul_comm, norm_inv]
+  gcongr
+  · exact lp.norm_apply_le_norm ENNReal.top_ne_zero a n
+  · exact_mod_cast (Complex.norm_natCast (n + 1)).ge
 
 /-- **`∏ₙ M_{n+1} / ⊕ₙ M_{n+1}` is nonzero.** -/
 example : Nontrivial

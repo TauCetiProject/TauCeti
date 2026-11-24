@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.LinearAlgebra.Matrix.Reindex
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.InductiveLimit
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 
@@ -18,17 +19,18 @@ embeddings `a ↦ a ⊗ 1₂`. This file builds the connecting ⋆-homomorphisms
 `M_{2^n} → M_{2^(n+1)}`, composes them into a directed system over `ℕ`, and checks with the
 C⋆-inductive limit API of `TauCeti.Analysis.CStarAlgebra.InductiveLimit` that the limit is a
 nonzero unital C⋆-algebra, that it is separable, and that the canonical maps of the stages are
-unital isometric ⋆-homomorphisms.
+unital isometric ⋆-homomorphisms. The CAR algebra is the UHF algebra of type `2^∞`.
 
-This is a Check of the CStarAlgebras roadmap, C5.4. Its simplicity, from the simplicity of the
-stages, is not treated here.
+## References
+
+* K. R. Davidson, *C*-Algebras by Example*, §III.5.
 -/
 
 public section
 
 noncomputable section
 
-open scoped ComplexOrder
+open scoped ComplexOrder Kronecker
 
 namespace TauCeti.CARAlgebra
 
@@ -39,6 +41,11 @@ abbrev Stage (n : ℕ) : Type := CStarMatrix (Fin (2 ^ n)) (Fin (2 ^ n)) ℂ
 def finProdFinTwoEquiv (n : ℕ) : Fin (2 ^ n) × Fin 2 ≃ Fin (2 ^ (n + 1)) :=
   finProdFinEquiv.trans (finCongr (pow_succ 2 n).symm)
 
+@[simp]
+theorem finProdFinTwoEquiv_apply_val (n : ℕ) (p : Fin (2 ^ n) × Fin 2) :
+    (finProdFinTwoEquiv n p : ℕ) = p.2 + 2 * p.1 := by
+  simp [finProdFinTwoEquiv]
+
 /-- The connecting map `M_{2^n} → M_{2^(n+1)}`, `a ↦ a ⊗ 1₂`. -/
 def step (n : ℕ) : Stage n →⋆ₐ[ℂ] Stage (n + 1) :=
   (CStarMatrix.ofMatrixStarAlgEquiv.toStarAlgHom.comp
@@ -46,22 +53,27 @@ def step (n : ℕ) : Stage n →⋆ₐ[ℂ] Stage (n + 1) :=
         (Matrix.kroneckerOneStarAlgHom ℂ (Fin 2) (m := Fin (2 ^ n))))).comp
     CStarMatrix.ofMatrixStarAlgEquiv.symm.toStarAlgHom
 
+@[simp]
+theorem step_apply (n : ℕ) (a : Stage n) :
+    step n a = CStarMatrix.ofMatrix (Matrix.reindex (finProdFinTwoEquiv n)
+      (finProdFinTwoEquiv n) (CStarMatrix.ofMatrix.symm a ⊗ₖ (1 : Matrix (Fin 2) (Fin 2) ℂ))) := by
+  simp only [step, StarAlgHom.comp_apply, Matrix.kroneckerOneStarAlgHom_apply]
+  -- `CStarMatrix.ofMatrixStarAlgEquiv` and its inverse are `CStarMatrix.ofMatrix` and its inverse
+  rfl
+
 /-- The connecting map `a ↦ a ⊗ 1₂` is injective. -/
-theorem step_injective (n : ℕ) : Function.Injective (step n) := by
-  have h₀ : Function.Injective
-      (Matrix.kroneckerOneStarAlgHom ℂ (Fin 2) (α := ℂ) (m := Fin (2 ^ n))) :=
-    fun a b h ↦ Matrix.ext fun i j ↦ by
-      simpa [Matrix.kroneckerOneStarAlgHom_apply, Matrix.kronecker_apply] using
-        congrFun₂ h (i, 0) (j, 0)
-  exact CStarMatrix.ofMatrixStarAlgEquiv.injective.comp
+theorem step_injective (n : ℕ) : Function.Injective (step n) :=
+  CStarMatrix.ofMatrixStarAlgEquiv.injective.comp
     ((Matrix.reindexStarAlgEquiv ℂ ℂ (finProdFinTwoEquiv n)).injective.comp
-      (h₀.comp CStarMatrix.ofMatrixStarAlgEquiv.symm.injective))
+      (Matrix.kroneckerOneStarAlgHom_injective.comp
+        CStarMatrix.ofMatrixStarAlgEquiv.symm.injective))
 
 /-- The connecting map `M_{2^i} → M_{2^j}` for `i ≤ j`, the composite of the maps `a ↦ a ⊗ 1₂`. -/
 def connecting (i j : ℕ) (h : i ≤ j) : Stage i →⋆ₐ[ℂ] Stage j :=
   Nat.leRecOn h (fun {k} g ↦ (step k).comp g) (StarAlgHom.id ℂ _)
 
 /-- The connecting map from a stage to itself is the identity. -/
+@[simp]
 theorem connecting_self (i : ℕ) : connecting i i le_rfl = StarAlgHom.id ℂ _ :=
   Nat.leRecOn_self _
 
@@ -80,8 +92,8 @@ theorem connecting_comp {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
 
 /-- The connecting maps form a directed system. -/
 instance directedSystem : DirectedSystem Stage fun i j h ↦ connecting i j h where
-  map_self i a := by rw [connecting_self]; rfl
-  map_map k j i hij hjk a := congrArg (· a) (congrArg DFunLike.coe (connecting_comp hij hjk))
+  map_self i a := by rw [connecting_self, StarAlgHom.coe_id, id_eq]
+  map_map k j i hij hjk a := by rw [← connecting_comp hij hjk, StarAlgHom.comp_apply]
 
 end TauCeti.CARAlgebra
 
@@ -101,10 +113,6 @@ example : CStarAlgebra CARAlgebra := inferInstance
 /-- The CAR algebra is nonzero. -/
 example : Nontrivial CARAlgebra := inferInstance
 
-/-- The matrix algebras are separable. -/
-instance separableSpace_stage (n : ℕ) : TopologicalSpace.SeparableSpace (Stage n) :=
-  inferInstanceAs (TopologicalSpace.SeparableSpace (Fin (2 ^ n) → Fin (2 ^ n) → ℂ))
-
 /-- The CAR algebra is separable, as a limit of a countable system of finite-dimensional
 algebras. -/
 example : TopologicalSpace.SeparableSpace CARAlgebra := inferInstance
@@ -121,7 +129,7 @@ theorem isometry_of (n : ℕ) :
   CStarInductiveLimit.isometry_of fun j h ↦ connecting_injective n j h
 
 /-- The canonical maps `M_{2^n} → CARAlgebra` are unital. -/
-theorem of_one (n : ℕ) : CStarInductiveLimit.of Stage (fun i j h ↦ connecting i j h) n 1 = 1 :=
+example (n : ℕ) : CStarInductiveLimit.of Stage (fun i j h ↦ connecting i j h) n 1 = 1 :=
   CStarInductiveLimit.of_one n
 
 end CARAlgebra
