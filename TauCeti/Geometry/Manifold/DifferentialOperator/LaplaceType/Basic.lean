@@ -43,6 +43,8 @@ is `h ↦ h Δf + 2 ⟪grad f, grad h⟫` and that its double commutators are mu
 
 ## Main results
 
+* `TauCeti.mem_eigenspace_smoothLaplaceBeltrami_iff`: `u` is a `μ`-eigenfunction of `Δ` exactly
+  when `Δu = μ u` everywhere.
 * `TauCeti.smulCommutator_smulCommutator_smoothLaplaceBeltrami_apply`: the double commutators
   `[[Δ, f], g] h = 2 ⟪grad f, grad g⟫ h`.
 * `TauCeti.smoothLaplaceBeltrami_mem_differentialOperators_two`: `Δ` has order at most two.
@@ -234,6 +236,14 @@ def smoothLaplaceBeltrami : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ�
 theorem smoothLaplaceBeltrami_apply (f : C^∞⟮I, M; ℝ⟯) (x : M) :
     smoothLaplaceBeltrami I M f x = laplaceBeltrami I f x :=
   (rfl)
+
+/-- A smooth function `u` is a `μ`-eigenfunction of the Laplace–Beltrami operator `Δ = div grad`
+exactly when `Δu = μ u` everywhere. -/
+theorem mem_eigenspace_smoothLaplaceBeltrami_iff {μ : ℝ} {u : C^∞⟮I, M; ℝ⟯} :
+    u ∈ Module.End.eigenspace (smoothLaplaceBeltrami I M) μ ↔
+      ∀ x, laplaceBeltrami I u x = μ * u x := by
+  simp only [Module.End.mem_eigenspace_iff, ContMDiffMap.ext_iff, smoothLaplaceBeltrami_apply,
+    ContMDiffMap.coe_smul, Pi.smul_apply, smul_eq_mul]
 
 /-- The commutator of the Laplace–Beltrami operator with multiplication by `f`:
 `[Δ, f] h = h Δf + 2 ⟪grad f, grad h⟫`. -/

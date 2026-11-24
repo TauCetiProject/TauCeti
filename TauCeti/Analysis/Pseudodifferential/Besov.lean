@@ -34,6 +34,10 @@ For `p = ∞` this is the Hölder–Zygmund estimate `‖Op(a) u‖_{𝒞^{s-m}}
 Consequently `Op(a)` extends to a bounded operator `b^s_{p,∞} → b^{s-m}_{p,∞}` between the little
 Besov spaces, the closures of the Schwartz functions (`TauCeti.Symbol.quantizeLittleBesov`), with
 operator norm bounded uniformly in `p`; for `p = ∞` these are the little Hölder–Zygmund spaces.
+For operator-valued symbols `TauCeti.Symbol n V W m` between finite-dimensional spaces, the
+Hölder–Zygmund estimate (`p = q = ∞`) is the theorem
+`HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le_of_finiteDimensional`
+in `TauCeti.Analysis.Pseudodifferential.Zygmund`.
 
 ## The argument
 

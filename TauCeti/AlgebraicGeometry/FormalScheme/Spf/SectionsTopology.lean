@@ -8,12 +8,14 @@ module
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 public import Mathlib.Topology.UniformSpace.Cauchy
 public import Mathlib.Topology.UniformSpace.Pi
-public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.IdealIndependence
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Map
 public import TauCeti.RingTheory.AdicCompletion.InitialTopology
 
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 import TauCeti.Topology.Algebra.Ring.Basic
 import TauCeti.Topology.Discrete
+import TauCeti.Topology.Sheaves.Presheaf
 
 /-!
 # The topology on rings of sections of the formal spectrum
@@ -44,9 +46,9 @@ continuous (`quotientSectionsTopology_restrict`), embeds `Γ(U, O_{Spf A})` as a
 subring of `∏ i, Γ(V i, O_{Spf A})` for every open cover `U = ⋃ i, V i`
 (`quotientSectionsTopology_glue`), and does not depend on the chosen ideal of definition
 (`quotientSectionsTopology_independent`). Moreover, it recovers the topology of `A` on global
-sections when `A` is `I`-adically complete (`isHomeomorph_globalSectionsIso`), and of the completed
-localisation `CompletedAway A f` on `D(f)` when `IsAdicRing A` holds and `I` is finitely generated
-(`quotientSectionsTopology_basic`).
+sections when `A` is `I`-adically complete (`isHomeomorph_globalSectionsIso`,
+`isHomeomorph_topSectionsIso`), and of the completed localisation `CompletedAway A f` on `D(f)` when
+`IsAdicRing A` holds and `I` is finitely generated (`quotientSectionsTopology_basic`).
 
 ## Main definitions
 
@@ -74,14 +76,21 @@ localisation `CompletedAway A f` on `D(f)` when `IsAdicRing A` holds and `I` is 
 * `TauCeti.FormalScheme.Spf.quotientSectionsTopology_glue`: for every open cover `U = ⋃ i, V i`,
   the product of restrictions `Γ(U, O_{Spf A}) → ∏ i, Γ(V i, O_{Spf A})` is a closed embedding.
 * `TauCeti.FormalScheme.Spf.isHomeomorph_globalSectionsIso`,
-  `TauCeti.FormalScheme.Spf.quotientSectionsTopology_basic`: `globalSectionsIso` is a
-  homeomorphism onto `A` when `A` is `I`-adically complete, and `basicOpenSectionsIso` is a
-  homeomorphism onto `CompletedAway A f` when `IsAdicRing A` holds and `I` is finitely generated.
+  `TauCeti.FormalScheme.Spf.isHomeomorph_topSectionsIso`,
+  `TauCeti.FormalScheme.Spf.quotientSectionsTopology_basic`: `globalSectionsIso` and
+  `topSectionsIso` are homeomorphisms onto `A` when `A` is `I`-adically complete (resp.
+  `IsAdicRing A`), and `basicOpenSectionsIso` is a homeomorphism onto `CompletedAway A f` when
+  `IsAdicRing A` holds and `I` is finitely generated.
 * `TauCeti.FormalScheme.Spf.quotientSectionsTopology_independent`,
   `TauCeti.FormalScheme.Spf.isHomeomorph_structureSheafIso`: `structureSheafIso hI hJ` is a
   homeomorphism on sections over every open `U`, and when `IsAdicRing A` holds and `I`, `J` are
   finitely generated it commutes on `D(f)` with `basicOpenSectionsIso`
   (`TauCeti.FormalScheme.Spf.structureSheafIso_hom_app_basicOpen_comp_basicOpenSectionsIso_hom`).
+* `TauCeti.FormalScheme.Spf.continuous_structureSheafMap_sectionsTopology`,
+  `TauCeti.FormalScheme.Spf.continuous_structureSheafMap_quotientSectionsTopology`: for any
+  continuous ring homomorphism `φ : A →+* B` and arbitrary ideals of definition `I` of `A` and
+  `J` of `B`, the structure-sheaf map `structureSheafMap φ hφ hI hJ` is continuous on every open
+  for both `sectionsTopology` and `quotientSectionsTopology`.
 
 ## References
 
@@ -754,6 +763,74 @@ theorem quotientSectionsTopology_independent (hI : IsAdic I) (hJ : IsAdic J)
   let _ := quotientSectionsTopology hJ U
   exact (isHomeomorph_structureSheafIso hI hJ U).isInducing.eq_induced
 
+/-- For a continuous ring homomorphism `φ : A →+* B` and arbitrary ideals of definition `I` of `A`
+and `J` of `B`, the structure-sheaf map `(structureSheafMap φ hφ hI hJ).hom.app (op U)` is
+continuous for `sectionsTopology` over every open `U`. -/
+theorem continuous_structureSheafMap_sectionsTopology {B : Type u} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] {J : Ideal B}
+    (φ : A →+* B) (hφ : Continuous φ) (hI : IsAdic I) (hJ : IsAdic J)
+    (U : Opens (carrier A)) :
+    @Continuous _ _ (sectionsTopology hI U)
+      (sectionsTopology hJ ((Opens.map (TopCat.ofHom (comap φ hφ))).obj U))
+      ((structureSheafMap φ hφ hI hJ).hom.app (op U) :
+        (structureSheaf hI).obj.obj (op U) ⟶ _) := by
+  let W := (Opens.map (TopCat.ofHom (comap φ hφ))).obj U
+  let _ := sectionsTopology hI U
+  refine (continuous_iff_sectionsTopology hJ W).mpr fun n ↦ ?_
+  obtain ⟨m, hm⟩ := hI.exists_pow_succ_le_comap (hJ.isOpen_pow (n + 1)) hφ
+  let _ : TopologicalSpace ((quotientSheaf (is_ideal_adic_pow hJ n.succ_pos)).obj.obj (op W)) := ⊥
+  exact (@Continuous.comp _ _ _ (sectionsTopology hI U) ⊥ ⊥ _ _ continuous_bot
+    (continuous_toQuotientSheaf_app hI (is_ideal_adic_pow hI m.succ_pos) U)).congr fun x ↦
+      (ConcreteCategory.congr_hom (congrArg (·.hom.app (op U))
+        (structureSheafMap_comp_quotientProjection φ hφ hI hJ _ n hm)) x).symm
+
+/-- For a continuous ring homomorphism `φ : A →+* B` and arbitrary ideals of definition `I` of `A`
+and `J` of `B`, the structure-sheaf map `(structureSheafMap φ hφ hI hJ).hom.app (op U)` is
+continuous for `quotientSectionsTopology` over every open `U` (EGA I, Ch. I, 10.2.2). -/
+theorem continuous_structureSheafMap_quotientSectionsTopology {B : Type u} [CommRing B]
+    [TopologicalSpace B] [IsTopologicalRing B] {J : Ideal B}
+    (φ : A →+* B) (hφ : Continuous φ) (hI : IsAdic I) (hJ : IsAdic J)
+    (U : Opens (carrier A)) :
+    @Continuous _ _ (quotientSectionsTopology hI U)
+      (quotientSectionsTopology hJ ((Opens.map (TopCat.ofHom (comap φ hφ))).obj U))
+      ((structureSheafMap φ hφ hI hJ).hom.app (op U) :
+        (structureSheaf hI).obj.obj (op U) ⟶ _) := by
+  let fBase := TopCat.ofHom (comap φ hφ)
+  let η : (structureSheaf hI).obj ⟶ (TopCat.Presheaf.pushforward CommRingCat fBase).obj
+      (structureSheaf hJ).obj := (structureSheafMap φ hφ hI hJ).hom
+  let _ := quotientSectionsTopology hI U
+  refine (continuous_iff_quotientSectionsTopology hJ _).mpr fun b hb ↦ ?_
+  let V (i : { a : A // basicOpen a ≤ U }) : Opens (carrier B) := basicOpen (b * φ i.val)
+  have hVle (i) : V i ≤ basicOpen b := by simp only [V, basicOpen_mul]; exact inf_le_left
+  have hVcov : basicOpen b ≤ ⨆ i, V i := fun q hqb ↦
+    let ⟨a, _, haU⟩ := exists_basicOpen_le (Opens.mem_map.mp (hb hqb))
+    Opens.mem_iSup.mpr ⟨⟨a, haU⟩, by
+      simp only [V, basicOpen_mul]; exact ⟨hqb, by rwa [← comap_basicOpen φ hφ a]⟩⟩
+  let _ := quotientSectionsTopology hJ (basicOpen b)
+  let _ (i) := quotientSectionsTopology hJ (V i)
+  rw [← quotientSectionsTopology_basicOpen hJ b,
+    (quotientSectionsTopology_glue hJ hVle hVcov).isInducing.continuous_iff, continuous_pi_iff]
+  intro ⟨a, haU⟩
+  let _ := sectionsTopology hI (basicOpen a)
+  let _ := sectionsTopology hJ ((Opens.map fBase).obj (basicOpen a))
+  have hVφ : V ⟨a, haU⟩ ≤ (Opens.map fBase).obj (basicOpen a) :=
+    (le_of_eq (basicOpen_mul _ _)).trans (inf_le_right.trans (comap_basicOpen φ hφ a).ge)
+  have hnat : (η.app (op U) : _ ⟶ _) ≫ (structureSheaf hJ).obj.map (homOfLE hb).op ≫
+        (structureSheaf hJ).obj.map (homOfLE (hVle ⟨a, haU⟩)).op =
+      (structureSheaf hI).obj.map (homOfLE haU).op ≫ (η.app (op (basicOpen a)) : _ ⟶ _) ≫
+        (structureSheaf hJ).obj.map (homOfLE hVφ).op := by
+    refine (congrArg (_ ≫ ·) (TopCat.Presheaf.map_comp_eq_map_comp (structureSheaf hJ).obj
+      (homOfLE hb).op (homOfLE (hVle ⟨a, haU⟩)).op
+      ((Opens.map fBase).map (homOfLE haU)).op (homOfLE hVφ).op)).trans ?_
+    rw [← Category.assoc]
+    exact congrArg (· ≫ _) (η.naturality (homOfLE haU).op).symm
+  refine (((quotientSectionsTopology_basicOpen hJ _).symm ▸ sectionsTopology_restrict hJ
+    hVφ : @Continuous _ _ (sectionsTopology hJ ((Opens.map fBase).obj (basicOpen a)))
+      (quotientSectionsTopology hJ (V ⟨a, haU⟩)) _).comp
+    ((continuous_structureSheafMap_sectionsTopology φ hφ hI hJ (basicOpen a)).comp
+      (continuous_restrict_basicOpen_sectionsTopology hI haU))).congr fun x ↦
+    (ConcreteCategory.congr_hom hnat x).symm
+
 end QuotientSectionsTopology
 
 section Identifications
@@ -798,6 +875,16 @@ theorem isHomeomorph_globalSectionsIso [IsAdicComplete I A] (hI : IsAdic I) :
       globalSectionsIso_inv_comp_quotientProjection_assoc, Iso.inv_hom_id, Category.comp_id]
   ext s
   exact congrArg (fun φ ↦ φ s) hhom
+
+/-- `topSectionsIso A` is a homeomorphism from `(Γ(⊤, O_{Spf A}), quotientSectionsTopology _ ⊤)`
+onto `A` (EGA I, Ch. I, 10.1.3). -/
+theorem isHomeomorph_topSectionsIso (A : Type u) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsAdicRing A] :
+    @IsHomeomorph _ _ (quotientSectionsTopology (IsAdicRing.ideal_spec A).2.1 ⊤)
+      ‹TopologicalSpace A› (topSectionsIso A).hom := by
+  have := (IsAdicRing.ideal_spec A).2.2
+  rw [topSectionsIso_def A]
+  exact isHomeomorph_globalSectionsIso (IsAdicRing.ideal_spec A).2.1
 
 /-- For a finitely generated ideal of definition `I`, `basicOpenSectionsAdicCompletionIso hI f` is
 a homeomorphism from `(Γ(D(f), O_{Spf A}), quotientSectionsTopology hI (basicOpen f))` onto

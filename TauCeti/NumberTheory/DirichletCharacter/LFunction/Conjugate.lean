@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.Conjugate
-public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.NumberTheory.MulChar.Lemmas
 
@@ -20,8 +20,8 @@ not the totalized Dirichlet series outside its convergence half-plane.
 
 For quadratic characters this gives reflection of zeros across the real axis and reality at
 real arguments away from the possible principal-character pole at `1`, including the interval
-to its left used in real-zero estimates. We also give the reflection identity for derivatives
-and their real-axis specialization.
+to its left used in real-zero estimates. We also give the reflection identity for derivatives and
+their real-axis specialization.
 
 The continuation is Mathlib's `DirichletCharacter.LFunction`; coefficientwise reflection uses
 `TauCeti.LSeries.LSeries_star`.
@@ -94,15 +94,7 @@ theorem deriv_LFunction_inv_conj (s : ℂ) :
     deriv χ⁻¹.LFunction (conj s) = conj (deriv χ.LFunction s) := by
   by_cases hs : s = 1 ∧ χ = 1
   · obtain ⟨rfl, rfl⟩ := hs
-    have hnd : ¬ DifferentiableAt ℂ (LFunctionTrivChar N) 1 := by
-      intro hd
-      have h0 : Filter.Tendsto (fun z ↦ (z - 1) * LFunctionTrivChar N z) (𝓝[≠] 1) (𝓝 0) := by
-        have h := (((continuous_id.sub (continuous_const (y := (1 : ℂ)))).tendsto (1 : ℂ)).mul
-          hd.continuousAt.tendsto).mono_left (nhdsWithin_le_nhds (s := {1}ᶜ))
-        simpa using h
-      have h1 := tendsto_nhds_unique h0 (LFunctionTrivChar_residue_one (N := N))
-      exact LFunctionTrivChar₁_apply_one_ne_zero N (by simpa using h1.symm)
-    simp [deriv_zero_of_not_differentiableAt hnd]
+    simp [deriv_zero_of_not_differentiableAt TauCeti.not_differentiableAt_LFunctionTrivChar_one]
   have hs := not_and_or.mp hs
   have hloc : χ⁻¹.LFunction =ᶠ[𝓝 (conj s)] conj ∘ χ.LFunction ∘ conj := by
     rcases hs with hs | hχ
