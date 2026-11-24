@@ -13,7 +13,7 @@ import Mathlib.Tactic.Module
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
-# Interpolation of parallel convex sets
+# Outer parallel sets of convex sets
 
 For convex sets `A` and `B`, Minkowski addition and nonnegative scalar multiplication commute
 with weighted interpolation:
@@ -35,17 +35,12 @@ In a real normed space, a convex set `K` containing the closed ball of radius `�
 inclusion and scale under homotheties, such as the perimeter or the surface area, of the outer
 parallel sets are controlled by those of `K` itself.
 
-## Main results
-
-* `Convex.add_smul_interpolation`: interpolation of two parallel convex sets with
-  arbitrary nonnegative weights summing to one.
-* `Convex.add_smul_interpolation_sub`: the same identity with weights `1 - u` and `u`.
-Moving away from a point `y ∈ K` scales the distance to `K` at least proportionally:
-`c * infDist x K ≤ infDist (y + c • (x - y)) K` for `c ≥ 1`. Hence for `t > 0` the frontier of
-the closed parallel set `cthickening t K` is exactly the level set `{x | infDist x K = t}` of the
-distance. For an arbitrary set only the inclusion `⊆` holds (Mathlib's
-`Metric.frontier_cthickening_subset`): the closed `1`-neighbourhood of `{-1, 1}` in `ℝ` is
-`[-2, 2]`, while `0` is at distance `1` from both points.
+For a set `K` star-convex about `y`, moving away from `y` scales the distance to `K` at least
+proportionally: `c * infDist x K ≤ infDist (y + c • (x - y)) K` for `c ≥ 1`. Hence for `t > 0` the
+frontier of the closed parallel set `cthickening t K` is exactly the level set
+`{x | infDist x K = t}` of the distance. For an arbitrary set only the inclusion `⊆` holds
+(Mathlib's `Metric.frontier_cthickening_subset`): the closed `1`-neighbourhood of `{-1, 1}` in `ℝ`
+is `[-2, 2]`, while `0` is at distance `1` from both points.
 
 ## Main results
 
@@ -54,8 +49,10 @@ distance. For an arbitrary set only the inclusion `⊆` holds (Mathlib's
 * `Convex.add_smul_interpolation_sub`: the same identity with weights `1 - u` and `u`.
 * `Convex.add_smul_closedBall_subset_image_homothety`: outer parallel sets of a convex set with
   an interior ball lie in its dilates.
-* `Convex.frontier_cthickening`: the frontier of a closed parallel set of a convex set is a level
-  set of the distance.
+* `StarConvex.mul_infDist_le_infDist_add_smul_sub`: the distance to a star-convex set grows at
+  least linearly along rays from its centre.
+* `StarConvex.frontier_cthickening` and `Convex.frontier_cthickening`: the frontier of a closed
+  parallel set of a star-convex or convex set is a level set of the distance.
 -/
 
 public section
@@ -117,19 +114,20 @@ theorem add_smul_closedBall_subset_image_homothety {K : Set E} (hK : Convex ℝ 
   rw [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add]
   match_scalars <;> simp only [a] <;> field_simp <;> ring
 
-/-- **The distance to a convex set grows along rays from its points.** If `y ∈ K` for a convex set
-`K` and `c ≥ 1`, then the point `y + c • (x - y)` is at least `c` times as far from `K` as `x` is.
--/
-theorem mul_infDist_le_infDist_add_smul_sub {K : Set E} (hK : Convex ℝ K) {x y : E} (hy : y ∈ K)
-    {c : ℝ} (hc : 1 ≤ c) : c * infDist x K ≤ infDist (y + c • (x - y)) K := by
+/-- **The distance to a star-convex set grows along rays from its centre.** If `K` is star-convex
+about `y` and `c ≥ 1`, then the point `y + c • (x - y)` is at least `c` times as far from `K` as `x`
+is. -/
+theorem _root_.StarConvex.mul_infDist_le_infDist_add_smul_sub {K : Set E} {x y : E}
+    (hK : StarConvex ℝ y K) {c : ℝ} (hc : 1 ≤ c) :
+    c * infDist x K ≤ infDist (y + c • (x - y)) K := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · simp
   have hc0 : 0 < c := zero_lt_one.trans_le hc
-  refine (le_infDist ⟨y, hy⟩).2 fun w hw => ?_
+  refine (le_infDist hne).2 fun w hw => ?_
   -- The point `y + c⁻¹ • (w - y)` of `K` is `c` times closer to `x` than `w` is to the image
   -- `y + c • (x - y)` of `x`.
-  have hw' : y + c⁻¹ • (w - y) ∈ K := by
-    convert hK hy hw (sub_nonneg.2 (inv_le_one_of_one_le₀ hc)) (inv_nonneg.2 hc0.le)
-      (sub_add_cancel 1 c⁻¹) using 1
-    module
+  have hw' : y + c⁻¹ • (w - y) ∈ K :=
+    hK.add_smul_sub_mem hw (inv_nonneg.2 hc0.le) (inv_le_one_of_one_le₀ hc)
   have hdist : dist (y + c • (x - y)) w = c * dist x (y + c⁻¹ • (w - y)) := by
     have hvec : y + c • (x - y) - w = c • (x - (y + c⁻¹ • (w - y))) := by
       simp only [smul_sub, smul_add, smul_smul, mul_inv_cancel₀ hc0.ne', one_smul]
@@ -138,6 +136,32 @@ theorem mul_infDist_le_infDist_add_smul_sub {K : Set E} (hK : Convex ℝ K) {x y
   rw [hdist]
   exact mul_le_mul_of_nonneg_left (infDist_le_dist_of_mem hw') hc0.le
 
+/-- **The frontier of a closed parallel set of a star-convex set.** For a star-convex set `K` and
+`t > 0`, the frontier of the closed `t`-neighbourhood of `K` is the set of points at distance
+exactly `t` from `K`. -/
+theorem _root_.StarConvex.frontier_cthickening {K : Set E} {y : E} (hK : StarConvex ℝ y K) {t : ℝ}
+    (ht : 0 < t) : frontier (cthickening t K) = {x | infDist x K = t} := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · simp [ht.ne]
+  ext x
+  refine ⟨fun hx => ?_, fun hx => ?_⟩
+  · have hx' := frontier_cthickening_subset K hx
+    simp only [mem_ofPred_eq] at hx' ⊢
+    rw [infDist, hx', ENNReal.toReal_ofReal ht.le]
+  -- The points beyond `x` on the ray from `y` are farther than `t` from `K`, so `x` is not
+  -- interior.
+  rw [mem_ofPred_eq] at hx
+  rw [frontier_eq_closure_inter_closure, isClosed_cthickening.closure_eq]
+  refine ⟨(TauCeti.mem_cthickening_iff_infDist_le hne ht.le).2 hx.le, ?_⟩
+  have hlim : Tendsto (fun c : ℝ => y + c • (x - y)) (𝓝[>] 1) (𝓝 x) := by
+    have : Continuous fun c : ℝ => y + c • (x - y) := by fun_prop
+    simpa using (this.tendsto 1).mono_left nhdsWithin_le_nhds
+  refine mem_closure_of_tendsto hlim (eventually_nhdsWithin_of_forall fun c (hc : 1 < c) => ?_)
+  rw [TauCeti.compl_cthickening_eq_setOf_lt_infDist hne ht.le, mem_ofPred_eq]
+  calc t < c * t := by nlinarith
+    _ = c * infDist x K := by rw [hx]
+    _ ≤ _ := hK.mul_infDist_le_infDist_add_smul_sub hc.le
+
 /-- **The frontier of a closed parallel set of a convex set.** For a convex set `K` and `t > 0`,
 the frontier of the closed `t`-neighbourhood of `K` is the set of points at distance exactly `t`
 from `K`. -/
@@ -145,24 +169,7 @@ theorem frontier_cthickening {K : Set E} (hK : Convex ℝ K) {t : ℝ} (ht : 0 <
     frontier (cthickening t K) = {x | infDist x K = t} := by
   rcases K.eq_empty_or_nonempty with rfl | ⟨y, hy⟩
   · simp [ht.ne]
-  ext x
-  refine ⟨fun hx => ?_, fun hx => ?_⟩
-  · have hx' := frontier_cthickening_subset K hx
-    simp only [mem_ofPred_eq] at hx' ⊢
-    rw [infDist, hx', ENNReal.toReal_ofReal ht.le]
-  -- The points beyond `x` on the ray from `y ∈ K` are farther than `t` from `K`, so `x` is not
-  -- interior.
-  rw [mem_ofPred_eq] at hx
-  rw [frontier_eq_closure_inter_closure, isClosed_cthickening.closure_eq]
-  refine ⟨(TauCeti.mem_cthickening_iff_infDist_le ⟨y, hy⟩ ht.le).2 hx.le, ?_⟩
-  have hlim : Tendsto (fun c : ℝ => y + c • (x - y)) (𝓝[>] 1) (𝓝 x) := by
-    have : Continuous fun c : ℝ => y + c • (x - y) := by fun_prop
-    simpa using (this.tendsto 1).mono_left nhdsWithin_le_nhds
-  refine mem_closure_of_tendsto hlim (eventually_nhdsWithin_of_forall fun c (hc : 1 < c) => ?_)
-  rw [TauCeti.compl_cthickening_eq_setOf_lt_infDist ⟨y, hy⟩ ht.le, mem_ofPred_eq]
-  calc t < c * t := by nlinarith
-    _ = c * infDist x K := by rw [hx]
-    _ ≤ _ := hK.mul_infDist_le_infDist_add_smul_sub hy hc.le
+  exact (hK.starConvex hy).frontier_cthickening ht
 
 end Normed
 

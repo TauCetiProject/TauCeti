@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Topology
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Analysis.Convex.Join
@@ -26,6 +28,12 @@ gauge of a symmetric convex set.
 
 The interior of a sum of two convex sets with nonempty interiors is the sum of their
 interiors. In particular, this describes the interior of the sum of two interval supports.
+
+In a finite-dimensional real normed space, a convex set and its closure have the same interior,
+hence the same frontier (`Convex.frontier_closure`). With nonempty interior this is Mathlib's
+`Convex.interior_closure_eq_interior_of_nonempty_interior`; otherwise both sets lie in the same
+proper affine subspace. Measurements of the frontier of a bounded convex set, such as its surface
+area, may thus be computed on the compact closure.
 
 A closed segment `segment 𝕜 x y` is compact, being the continuous image of `Icc 0 1`
 (`TauCeti.isCompact_segment`). More generally, for segments from a fixed apex `x₀`, the union
@@ -107,6 +115,23 @@ theorem Convex.zero_mem_interior_of_symmetric {𝕜 E : Type*} [Field 𝕜] [Lin
   have hx' : -x ∈ interior s := (Homeomorph.neg E).isOpenMap.mapsTo_interior hsymm hx
   simpa using hs.interior hx hx' (by norm_num : (0 : 𝕜) ≤ 1 / 2)
     (by norm_num : (0 : 𝕜) ≤ 1 / 2) (by norm_num)
+
+/-- **A convex set and its closure have the same frontier** in a finite-dimensional real normed
+space. In infinite dimensions this fails: a dense proper subspace has empty interior and frontier
+the whole space, while its closure has empty frontier. -/
+theorem Convex.frontier_closure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {s : Set E} (hs : Convex ℝ s) : frontier (closure s) = frontier s := by
+  rw [frontier, frontier, closure_closure]
+  rcases (interior s).eq_empty_or_nonempty with h | h
+  · -- The closure lies in the closed affine span of `s`, which is proper.
+    have hle : affineSpan ℝ (closure s) ≤ affineSpan ℝ s := affineSpan_le.2 <|
+      closure_minimal (subset_affineSpan ℝ s) (affineSpan ℝ s).isClosed_of_finiteDimensional
+    have hcl : interior (closure s) = ∅ := by
+      refine not_nonempty_iff_eq_empty.1 fun hne => ?_
+      rw [hs.closure.interior_nonempty_iff_affineSpan_eq_top, ← top_le_iff] at hne
+      simpa [h] using hs.interior_nonempty_iff_affineSpan_eq_top.2 (top_le_iff.1 (hne.trans hle))
+    rw [h, hcl]
+  · rw [hs.interior_closure_eq_interior_of_nonempty_interior h]
 
 namespace TauCeti
 

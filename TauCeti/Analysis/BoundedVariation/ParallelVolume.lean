@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import Mathlib.Analysis.Convex.Measure
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -22,6 +23,7 @@ import TauCeti.Analysis.Calculus.FDeriv.InfDist
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Module
 import TauCeti.Analysis.Convex.Parallel
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Geometry.Euclidean.Volume.SurfaceArea
 import TauCeti.Topology.MetricSpace.Thickening
@@ -57,9 +59,10 @@ If the closed ball of radius `ρ` about `x₀` lies in `K`, then convexity puts
 `1 + t / ρ`. Perimeter is monotone under inclusion of convex sets
 (`Convex.perimeter_le_of_subset`) and scales by `(1 + t / ρ)^(n - 1)` under this homothety.
 
-The same right derivative is the surface area `Hⁿ⁻¹(frontier K)` of `K`, measured by the
-normalized Euclidean Hausdorff measure (`Convex.hasDerivWithinAt_volume_real_add_smul_closedBall`).
-Comparing the two derivatives identifies the perimeter of a convex body with its surface area,
+When `μ` is the Euclidean `volume`, the same right derivative is the surface area
+`Hⁿ⁻¹(frontier K)` of `K`, measured by the normalized Euclidean Hausdorff measure
+(`Convex.hasDerivWithinAt_volume_real_add_smul_closedBall`). Comparing the two derivatives
+identifies the perimeter of a convex body with respect to `volume` with its surface area,
 `P(K) = Hⁿ⁻¹(frontier K)` (`Convex.perimeter_eq_euclideanHausdorffMeasure_frontier`).
 
 The shell formula is the coarea formula
@@ -80,8 +83,8 @@ derivative statement is then the fundamental theorem of calculus at a point of c
   semicontinuous at zero.
 * `Convex.hasDerivWithinAt_measureReal_add_smul_closedBall`: the right derivative at zero of the
   parallel volume of a compact convex set with nonempty interior is its perimeter.
-* `Convex.perimeter_eq_euclideanHausdorffMeasure_frontier`: the perimeter of a compact convex set
-  with nonempty interior is the Hausdorff measure of its frontier.
+* `Convex.perimeter_eq_euclideanHausdorffMeasure_frontier`: the perimeter with respect to
+  `volume` of a bounded convex set with nonempty interior is the Hausdorff measure of its frontier.
 
 ## References
 
@@ -381,18 +384,22 @@ theorem _root_.Convex.hasDerivWithinAt_measureReal_add_smul_closedBall {K : Set 
   exact (limsup_le_limsup hle).trans
     (by simpa using (ENNReal.Tendsto.mul_const hc (Or.inr hP)).limsup_eq.le)
 
-/-- **The perimeter of a convex body is its surface area.** A compact convex set `K` with nonempty
-interior has perimeter `P(K)` equal to the `(n - 1)`-dimensional Euclidean Hausdorff measure of its
-frontier. Both are the right derivative at `t = 0` of the parallel volume
-`t ↦ |K + t • closedBall 0 1|`. The interior hypothesis cannot be dropped: a segment in the plane
-has perimeter zero and surface area equal to its length. -/
+/-- **The perimeter of a convex body is its surface area.** A bounded convex set `K` with nonempty
+interior has perimeter `P(K)` with respect to the Euclidean `volume` equal to the
+`(n - 1)`-dimensional Euclidean Hausdorff measure of its frontier. The interior hypothesis cannot
+be dropped: a segment in the plane has perimeter zero and surface area equal to its length. -/
 theorem _root_.Convex.perimeter_eq_euclideanHausdorffMeasure_frontier {K : Set E}
-    (hKc : Convex ℝ K) (hK : IsCompact K) (hKi : (interior K).Nonempty) :
-    perimeter volume ⊤ K = μHE[Module.finrank ℝ E - 1] (frontier K) :=
-  (ENNReal.toReal_eq_toReal_iff' (hKc.perimeter_lt_top hK.isBounded).ne
-    (hKc.euclideanHausdorffMeasure_frontier_lt_top hK).ne).1 <|
+    (hKc : Convex ℝ K) (hK : Bornology.IsBounded K) (hKi : (interior K).Nonempty) :
+    perimeter volume ⊤ K = μHE[Module.finrank ℝ E - 1] (frontier K) := by
+  -- Both sides are unchanged when `K` is replaced by its compact closure.
+  have hK' := hK.isCompact_closure
+  have hKi' := hKi.mono (interior_mono subset_closure)
+  rw [perimeter_congr_ae (ae_restrict_of_ae
+    (closure_ae_eq_of_null_frontier (hKc.addHaar_frontier volume)).symm), ← hKc.frontier_closure]
+  exact (ENNReal.toReal_eq_toReal_iff' (hKc.closure.perimeter_lt_top hK'.isBounded).ne
+    (hKc.closure.euclideanHausdorffMeasure_frontier_lt_top hK'.isBounded).ne).1 <|
     (uniqueDiffWithinAt_Ici 0).eq_deriv _
-      (hKc.hasDerivWithinAt_measureReal_add_smul_closedBall hK hKi)
-      (hKc.hasDerivWithinAt_volume_real_add_smul_closedBall hK hKi)
+      (hKc.closure.hasDerivWithinAt_measureReal_add_smul_closedBall hK' hKi')
+      (hKc.closure.hasDerivWithinAt_volume_real_add_smul_closedBall hK'.isBounded hKi')
 
 end TauCeti

@@ -12,10 +12,10 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Normed.Module.Convex
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Topology.Algebra.Affine
 import TauCeti.Analysis.Calculus.FDeriv.InfDist
 import TauCeti.Analysis.Convex.Parallel
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
 import TauCeti.Analysis.Normed.Module.Ball
@@ -28,24 +28,32 @@ import TauCeti.Topology.MetricSpace.Thickening
 
 Let `E` be a finite-dimensional real inner product space of dimension `n`, and measure surfaces
 with the normalized Euclidean Hausdorff measure `Hⁿ⁻¹ = μHE[n - 1]`. This file identifies the
-surface area `Hⁿ⁻¹(frontier K)` of a compact convex set `K` with nonempty interior as the right
+surface area `Hⁿ⁻¹(frontier K)` of a bounded convex set `K` with nonempty interior as the right
 derivative at `t = 0` of its outer parallel volume:
 
 `d/dt|_{t = 0⁺} |K + t • closedBall 0 1| = Hⁿ⁻¹(frontier K)`
 
 (`Convex.hasDerivWithinAt_volume_real_add_smul_closedBall`).
 
+This is the classical definition of the surface area of a convex body as the first variation of
+its volume under outer parallel enlargement. The De Giorgi perimeter `P(K)` has the same right
+derivative (`Convex.hasDerivWithinAt_measureReal_add_smul_closedBall`), so uniqueness of the
+derivative identifies the perimeter of a convex body with the Hausdorff measure of its frontier
+(`Convex.perimeter_eq_euclideanHausdorffMeasure_frontier` in
+`TauCeti.Analysis.BoundedVariation.ParallelVolume`). Isoperimetric and Brunn–Minkowski arguments
+phrased with perimeter thus apply to Hausdorff surface area on convex bodies, and conversely.
+
 ## Main results
 
 * `Convex.hausdorffMeasure_frontier_le` and `Convex.euclideanHausdorffMeasure_frontier_le`: the
-  Hausdorff measure of the frontier is monotone under inclusion of a closed convex set in a
-  bounded set. The nearest-point map onto the convex set is `1`-Lipschitz, and the image of the
+  Hausdorff measure of the frontier is monotone under inclusion of a convex set in a bounded set.
+  The nearest-point map onto the closure of the convex set is `1`-Lipschitz, and the image of the
   frontier of the larger set under it contains the frontier of the smaller one.
 * `TauCeti.volume_cthickening_sdiff_closure_eq_setLIntegral_euclideanHausdorffMeasure`: for every
   set `s`, the volume of the closed shell `cthickening r s \ closure s` is the integral over
   `0 < t ≤ r` of the `Hⁿ⁻¹` measure of the level set `{x | infDist x s = t}`. This is the coarea
   formula for the distance function, whose gradient has norm one off the closure of `s`.
-* `Convex.euclideanHausdorffMeasure_frontier_lt_top`: a compact convex set has finite surface
+* `Convex.euclideanHausdorffMeasure_frontier_lt_top`: a bounded convex set has finite surface
   area.
 * `Convex.hasDerivWithinAt_volume_real_add_smul_closedBall`: the first variation of the parallel
   volume of a convex body is its surface area.
@@ -57,7 +65,9 @@ convex parallel set `K_t = cthickening t K`. Monotonicity gives `Hⁿ⁻¹(front
 Hⁿ⁻¹(frontier K_t)`. If `K` contains the closed ball of radius `ρ` about `x₀`, then `K_t` lies in
 the dilate of `K` about `x₀` by `(ρ + t) / ρ`, so monotonicity and scaling give
 `Hⁿ⁻¹(frontier K_t) ≤ ((ρ + t) / ρ) ^ (n - 1) Hⁿ⁻¹(frontier K)`. The shell formula then squeezes
-`|K_t \ K| / t` between `Hⁿ⁻¹(frontier K)` and `((ρ + t) / ρ) ^ (n - 1) Hⁿ⁻¹(frontier K)`.
+`|K_t \ K| / t` between `Hⁿ⁻¹(frontier K)` and `((ρ + t) / ρ) ^ (n - 1) Hⁿ⁻¹(frontier K)`. A
+bounded convex set has the same frontier as its compact closure (`Convex.frontier_closure`), and
+the same parallel volumes, since the frontiers of convex sets are null.
 
 The interior hypothesis cannot be dropped: a segment in the plane has surface area equal to its
 length, while the right derivative of its parallel area is twice its length (see
@@ -79,11 +89,9 @@ open scoped ENNReal NNReal Pointwise Topology RealInnerProductSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- **Monotonicity of the Hausdorff measure of the frontier for convex sets.** If a closed convex
-set `A` lies in a bounded set `B`, then the frontier of `A` has `d`-dimensional Hausdorff measure
-at most that of the frontier of `B`. -/
-theorem Convex.hausdorffMeasure_frontier_le {A B : Set E} (hA : Convex ℝ A) (hAc : IsClosed A)
-    (hAB : A ⊆ B) (hB : Bornology.IsBounded B) {d : ℝ} (hd : 0 ≤ d) :
+/-- The case of `Convex.hausdorffMeasure_frontier_le` for a closed convex set `A`. -/
+private theorem Convex.hausdorffMeasure_frontier_le_of_isClosed {A B : Set E} (hA : Convex ℝ A)
+    (hAc : IsClosed A) (hAB : A ⊆ B) (hB : Bornology.IsBounded B) {d : ℝ} (hd : 0 ≤ d) :
     μH[d] (frontier A) ≤ μH[d] (frontier B) := by
   rcases A.eq_empty_or_nonempty with rfl | hne
   · simp
@@ -102,7 +110,7 @@ theorem Convex.hausdorffMeasure_frontier_le {A B : Set E} (hA : Convex ℝ A) (h
         exact mul_nonpos_of_nonneg_of_nonpos hs ((hP z).2 _ (hP (γ s)).1)
       simpa [sub_eq_zero] using
         TauCeti.norm_sub_le_norm_sub_of_inner_sub_le_zero ((hP (γ s)).2 q hq) h'
-    obtain ⟨s, hs, hsB⟩ := TauCeti.exists_add_smul_mem_frontier hB (hAB hq)
+    obtain ⟨s, hs, hsB⟩ := hB.exists_add_smul_mem_frontier (hAB hq)
       (sub_ne_zero.2 fun h : z = q => hz (h ▸ hq))
     exact ⟨γ s, hsB, hγP s hs⟩
   have hcompact : IsCompact (frontier B) :=
@@ -122,14 +130,24 @@ theorem Convex.hausdorffMeasure_frontier_le {A B : Set E} (hA : Convex ℝ A) (h
     _ ≤ ((1 : ℝ≥0) : ℝ≥0∞) ^ d * μH[d] (frontier B) := hPL.hausdorffMeasure_image_le hd _
     _ = μH[d] (frontier B) := by simp
 
-/-- **Monotonicity of the surface area of convex sets.** If a closed convex set `A` lies in a
-bounded set `B`, then the frontier of `A` has `k`-dimensional Euclidean Hausdorff measure at most
+/-- **Monotonicity of the Hausdorff measure of the frontier for convex sets.** If a convex set `A`
+lies in a bounded set `B`, then the frontier of `A` has `d`-dimensional Hausdorff measure at most
 that of the frontier of `B`. -/
+theorem Convex.hausdorffMeasure_frontier_le {A B : Set E} (hA : Convex ℝ A) (hAB : A ⊆ B)
+    (hB : Bornology.IsBounded B) {d : ℝ} (hd : 0 ≤ d) :
+    μH[d] (frontier A) ≤ μH[d] (frontier B) := by
+  rw [← hA.frontier_closure]
+  exact (hA.closure.hausdorffMeasure_frontier_le_of_isClosed isClosed_closure (closure_mono hAB)
+    hB.closure hd).trans (measure_mono frontier_closure_subset)
+
+/-- **Monotonicity of the surface area of convex sets.** If a convex set `A` lies in a bounded set
+`B`, then the frontier of `A` has `k`-dimensional Euclidean Hausdorff measure at most that of the
+frontier of `B`. -/
 theorem Convex.euclideanHausdorffMeasure_frontier_le {A B : Set E} (hA : Convex ℝ A)
-    (hAc : IsClosed A) (hAB : A ⊆ B) (hB : Bornology.IsBounded B) (k : ℕ) :
+    (hAB : A ⊆ B) (hB : Bornology.IsBounded B) (k : ℕ) :
     μHE[k] (frontier A) ≤ μHE[k] (frontier B) := by
   simp only [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul]
-  exact mul_le_mul' le_rfl (hA.hausdorffMeasure_frontier_le hAc hAB hB (Nat.cast_nonneg k))
+  exact mul_le_mul' le_rfl (hA.hausdorffMeasure_frontier_le hAB hB (Nat.cast_nonneg k))
 
 namespace TauCeti
 
@@ -189,10 +207,9 @@ private theorem euclideanHausdorffMeasure_frontier_mul_le_volume_cthickening_sdi
       = ∫⁻ _ in Ioc 0 t, μHE[finrank ℝ E - 1] (frontier K) := by
         rw [setLIntegral_const, Real.volume_Ioc, sub_zero]
     _ ≤ _ := by
-      refine lintegral_mono_ae ((ae_restrict_iff' (measurableSet_Ioc (a := (0 : ℝ)) (b := t))).2
-        (Eventually.of_forall fun τ hτ => ?_))
+      refine setLIntegral_mono' measurableSet_Ioc fun τ hτ => ?_
       rw [← hKc.frontier_cthickening hτ.1]
-      exact hKc.euclideanHausdorffMeasure_frontier_le hK.isClosed (self_subset_cthickening K)
+      exact hKc.euclideanHausdorffMeasure_frontier_le (self_subset_cthickening K)
         hK.isBounded.cthickening _
 
 /-- If a compact convex set `K` contains the closed ball of radius `ρ > 0` about `x₀`, then for
@@ -219,8 +236,7 @@ private theorem euclideanHausdorffMeasure_setOf_infDist_eq_le {K : Set E} (hKc :
   rw [← hKc.frontier_cthickening ht]
   calc μHE[finrank ℝ E - 1] (frontier (cthickening t K))
       ≤ μHE[finrank ℝ E - 1] (frontier (H '' K)) :=
-        (hKc.cthickening t).euclideanHausdorffMeasure_frontier_le isClosed_cthickening hsub
-          (hK.image hH).isBounded _
+        (hKc.cthickening t).euclideanHausdorffMeasure_frontier_le hsub (hK.image hH).isBounded _
     _ ≤ μHE[finrank ℝ E - 1] (H '' frontier K) := measure_mono hfr
     _ = _ := by
         rw [euclideanHausdorffMeasure_homothety_image _ _ hc.ne', ENNReal.smul_def, smul_eq_mul,
@@ -240,28 +256,26 @@ private theorem volume_cthickening_sdiff_le {K : Set E} (hKc : Convex ℝ K) (hK
   calc ∫⁻ τ in Ioc 0 t, μHE[finrank ℝ E - 1] {x | infDist x K = τ}
       ≤ ∫⁻ _ in Ioc 0 t, ENNReal.ofReal (((ρ + t) / ρ) ^ (finrank ℝ E - 1)) *
           μHE[finrank ℝ E - 1] (frontier K) := by
-        refine lintegral_mono_ae ((ae_restrict_iff' (measurableSet_Ioc (a := (0 : ℝ)) (b := t))).2
-          (Eventually.of_forall fun τ hτ => ?_))
+        refine setLIntegral_mono' measurableSet_Ioc fun τ hτ => ?_
         refine (euclideanHausdorffMeasure_setOf_infDist_eq_le hKc hK hρ hρK hτ.1).trans ?_
         gcongr
         · exact div_nonneg (by linarith [hτ.1]) hρ.le
         · exact hτ.2
     _ = _ := by rw [setLIntegral_const, Real.volume_Ioc, sub_zero]
 
-/-- **Convex sets have finite surface area.** The frontier of a compact convex set has finite
-`(n - 1)`-dimensional Euclidean Hausdorff measure. -/
+/-- **Bounded convex sets have finite surface area.** The frontier of a bounded convex set has
+finite `(n - 1)`-dimensional Euclidean Hausdorff measure. -/
 theorem _root_.Convex.euclideanHausdorffMeasure_frontier_lt_top {K : Set E} (hKc : Convex ℝ K)
-    (hK : IsCompact K) : μHE[finrank ℝ E - 1] (frontier K) < ∞ := by
-  have h := euclideanHausdorffMeasure_frontier_mul_le_volume_cthickening_sdiff hKc hK 1
-  rw [ENNReal.ofReal_one, mul_one] at h
-  exact h.trans_lt ((measure_mono sdiff_subset).trans_lt hK.cthickening.measure_lt_top)
+    (hK : Bornology.IsBounded K) : μHE[finrank ℝ E - 1] (frontier K) < ∞ := by
+  have h := euclideanHausdorffMeasure_frontier_mul_le_volume_cthickening_sdiff hKc.closure
+    hK.isCompact_closure 1
+  rw [ENNReal.ofReal_one, mul_one, hKc.frontier_closure] at h
+  exact h.trans_lt
+    ((measure_mono sdiff_subset).trans_lt hK.isCompact_closure.cthickening.measure_lt_top)
 
-/-- **The first variation of the parallel volume of a convex body is its surface area.** A compact
-convex set `K` with nonempty interior has outer parallel volume `t ↦ |K + t • closedBall 0 1|` with
-right derivative `Hⁿ⁻¹(frontier K)` at `t = 0`, where `Hⁿ⁻¹ = μHE[n - 1]` is the normalized
-Euclidean Hausdorff measure. The interior hypothesis cannot be dropped: for a segment in the plane
-the right derivative is twice its length. -/
-theorem _root_.Convex.hasDerivWithinAt_volume_real_add_smul_closedBall {K : Set E}
+/-- The case of `Convex.hasDerivWithinAt_volume_real_add_smul_closedBall` for a compact convex
+set `K`. -/
+private theorem hasDerivWithinAt_volume_real_add_smul_closedBall_of_isCompact {K : Set E}
     (hKc : Convex ℝ K) (hK : IsCompact K) (hKi : (interior K).Nonempty) :
     HasDerivWithinAt (fun t : ℝ => volume.real (K + t • closedBall (0 : E) 1))
       (μHE[finrank ℝ E - 1] (frontier K)).toReal (Ici 0) 0 := by
@@ -269,7 +283,7 @@ theorem _root_.Convex.hasDerivWithinAt_volume_real_add_smul_closedBall {K : Set 
   obtain ⟨ρ, hρ, hρK⟩ := nhds_basis_closedBall.mem_iff.1 (mem_interior_iff_mem_nhds.1 hx₀)
   set A := μHE[finrank ℝ E - 1] (frontier K)
   set C : ℝ → ℝ := fun t => ((ρ + t) / ρ) ^ (finrank ℝ E - 1)
-  have hA : A ≠ ∞ := (hKc.euclideanHausdorffMeasure_frontier_lt_top hK).ne
+  have hA : A ≠ ∞ := (hKc.euclideanHausdorffMeasure_frontier_lt_top hK.isBounded).ne
   -- The parallel volume exceeds `|K|` by the volume of the shell `cthickening t K \ K`.
   have hV (t : ℝ) (ht : 0 ≤ t) : volume.real (K + t • closedBall (0 : E) 1) =
       volume.real K + volume.real (cthickening t K \ K) := by
@@ -302,5 +316,29 @@ theorem _root_.Convex.hasDerivWithinAt_volume_real_add_smul_closedBall {K : Set 
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hC
     (eventually_nhdsWithin_of_forall fun t ht => (hslope t ht).1)
     (eventually_nhdsWithin_of_forall fun t ht => (hslope t ht).2)
+
+/-- **The first variation of the parallel volume of a convex body is its surface area.** A bounded
+convex set `K` with nonempty interior has outer parallel volume `t ↦ |K + t • closedBall 0 1|` with
+right derivative `Hⁿ⁻¹(frontier K)` at `t = 0`, where `Hⁿ⁻¹ = μHE[n - 1]` is the normalized
+Euclidean Hausdorff measure. The interior hypothesis cannot be dropped: for a segment in the plane
+the right derivative is twice its length. -/
+theorem _root_.Convex.hasDerivWithinAt_volume_real_add_smul_closedBall {K : Set E}
+    (hKc : Convex ℝ K) (hK : Bornology.IsBounded K) (hKi : (interior K).Nonempty) :
+    HasDerivWithinAt (fun t : ℝ => volume.real (K + t • closedBall (0 : E) 1))
+      (μHE[finrank ℝ E - 1] (frontier K)).toReal (Ici 0) 0 := by
+  -- The parallel sets of `K` and of its closure differ by subsets of null frontiers.
+  have hV (t : ℝ) : volume (K + t • closedBall (0 : E) 1) =
+      volume (closure K + t • closedBall (0 : E) 1) := by
+    have hS : Convex ℝ (K + t • closedBall (0 : E) 1) :=
+      hKc.add ((convex_closedBall 0 1).smul t)
+    refine le_antisymm (measure_mono (add_subset_add_right subset_closure)) ?_
+    rw [← measure_closure_of_null_frontier (hS.addHaar_frontier volume)]
+    refine measure_mono ?_
+    rintro _ ⟨k, hk, b, hb, rfl⟩
+    exact map_mem_closure₂ continuous_add hk (subset_closure hb) fun _ ha _ hb => add_mem_add ha hb
+  rw [← hKc.frontier_closure]
+  simp only [measureReal_def, hV]
+  exact hasDerivWithinAt_volume_real_add_smul_closedBall_of_isCompact hKc.closure
+    hK.isCompact_closure (hKi.mono (interior_mono subset_closure))
 
 end TauCeti

@@ -41,6 +41,8 @@ that conversion.
 
 ## Main results
 
+* `Bornology.IsBounded.exists_add_smul_mem_frontier` — a ray from a point of a bounded set meets
+  its frontier.
 * `TauCeti.exists_mem_frontier_dist_le` — from a point of a bounded set, the ray away from any other
   base point reaches the frontier no sooner than it reaches that point.
 * `TauCeti.diam_le_diam_frontier` and `TauCeti.diam_frontier` — a bounded set is exactly as wide as
@@ -58,11 +60,9 @@ open Bornology Metric Set
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {V : Set E} {x y : E}
 
 /-- **A ray leaving a bounded set crosses its frontier.** For `x` in a bounded set `V` and any
-nonzero direction `v`, the ray `s ↦ x + s • v`, `s ≥ 0`, meets `frontier V`.
-
-The ray leaves `V` because `V` is bounded, the segment traced is connected, and
-`IsPreconnected.inter_frontier_nonempty` therefore hands back a frontier point on it. -/
-theorem exists_add_smul_mem_frontier (hV : IsBounded V) (hx : x ∈ V) {v : E} (hv : v ≠ 0) :
+nonzero direction `v`, the ray `s ↦ x + s • v`, `s ≥ 0`, meets `frontier V`. -/
+theorem _root_.Bornology.IsBounded.exists_add_smul_mem_frontier (hV : IsBounded V) (hx : x ∈ V)
+    {v : E} (hv : v ≠ 0) :
     ∃ s : ℝ, 0 ≤ s ∧ x + s • v ∈ frontier V := by
   obtain ⟨R, hR⟩ := hV.subset_closedBall x
   have hR0 : 0 ≤ R := dist_nonneg.trans (mem_closedBall.1 (hR hx))
@@ -81,13 +81,10 @@ theorem exists_add_smul_mem_frontier (hV : IsBounded V) (hx : x ∈ V) {v : E} (
 
 /-- **A ray leaving a bounded set crosses its frontier, and does so no sooner than it passes
 through a given point of the set.** For `x` in a bounded set `V` and any base point `y ≠ x`, the
-ray from `y` through `x` meets `frontier V` at a point `p` with `dist y x ≤ dist y p`.
-
-The ray is followed from `x` outwards, so the frontier point given by
-`TauCeti.exists_add_smul_mem_frontier` is at least as far from `y` as `x` is. -/
+ray from `y` through `x` meets `frontier V` at a point `p` with `dist y x ≤ dist y p`. -/
 theorem exists_mem_frontier_dist_le (hV : IsBounded V) (hx : x ∈ V) (hne : y ≠ x) :
     ∃ p ∈ frontier V, dist y x ≤ dist y p := by
-  obtain ⟨s, hs, hp⟩ := exists_add_smul_mem_frontier hV hx (sub_ne_zero.2 hne.symm)
+  obtain ⟨s, hs, hp⟩ := hV.exists_add_smul_mem_frontier hx (sub_ne_zero.2 hne.symm)
   refine ⟨_, hp, ?_⟩
   have hsub : x + s • (x - y) - y = (1 + s) • (x - y) := by
     rw [add_smul, one_smul]
