@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import TauCeti.NumberTheory.LSeries.HigherPole.Boundary
+public import TauCeti.NumberTheory.LSeries.HigherPole.PoleBoundary
 import Mathlib.Analysis.Complex.HalfPlane
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Contour.MeromorphicLaurent
@@ -68,7 +68,7 @@ private theorem analyticOnNhd_deriv_remainder {F : ℂ → ℂ} {a A : ℝ} {k :
     (h : PoleBoundary F a k A) :
     AnalyticOnNhd ℂ (deriv fun s : ℂ ↦ F s - (A : ℂ) / (s - a) ^ (k + 1))
       {s : ℂ | a < s.re} :=
-  (h.sub (poleBoundary_div_sub_pow a A k)).interior.deriv
+  (h.sub (poleBoundary_const_div_pow a A k)).interior.deriv
 
 /-- Whenever `0 < ε + u`, the shifted boundary point `((a : ℂ) + ε + y * I) + u` lies in the open
 right half-plane `{s : ℂ | a < s.re}`. -/
@@ -104,12 +104,12 @@ private theorem continuous_regularized_of_pos {R : ℂ → ℂ} {a : ℝ} {k : �
       -∫ u : ℝ in (0 : ℝ)..1,
         deriv R (((a : ℂ) + ε + y * I) + u) * ((u ^ k / (k.factorial : ℝ) : ℝ) : ℂ) := by
   -- Clamp `u` to `max u 0` inside a globally continuous integrand that agrees on `[0, 1]`.
-  let φ : ℝ × ℝ → ℂ := fun p ↦ ((a : ℂ) + ε + p.1 * I) + (max p.2 0 : ℝ)
+  let φ : ℝ × ℝ → ℂ := fun p ↦ ((a : ℂ) + ε + p.fst * I) + (max p.snd 0 : ℝ)
   have hφ_cont : Continuous φ := by fun_prop
   have hφ_mem : ∀ p : ℝ × ℝ, φ p ∈ {s : ℂ | a < s.re} := fun p ↦
     mem_re_gt_of_add_pos (add_pos_of_pos_of_nonneg hε (le_max_right _ _))
   have h_uncurry : Continuous fun p : ℝ × ℝ ↦
-      deriv R (φ p) * (((p.2 ^ k / (k.factorial : ℝ) : ℝ) : ℂ)) :=
+      deriv R (φ p) * (((p.snd ^ k / (k.factorial : ℝ) : ℝ) : ℂ)) :=
     (hR_cont.comp_continuous hφ_cont hφ_mem).mul (by fun_prop)
   have h_param : Continuous fun y : ℝ ↦
       -∫ u : ℝ in (0 : ℝ)..1,
@@ -127,7 +127,7 @@ private theorem exists_tail_bound {R : ℂ → ℂ} {a : ℝ}
     ∃ B : ℝ, 0 ≤ B ∧ ∀ ε ∈ Icc (0 : ℝ) ε₁, ∀ y ∈ Icc (-L) L, ∀ u ∈ Icc δ 1,
       ‖deriv R (((a : ℂ) + ε + y * I) + u)‖ ≤ B := by
   let S : Set (ℝ × ℝ × ℝ) := Icc 0 ε₁ ×ˢ (Icc (-L) L ×ˢ Icc δ 1)
-  let ψ : ℝ × ℝ × ℝ → ℂ := fun p ↦ ((a : ℂ) + p.1 + p.2.1 * I) + p.2.2
+  let ψ : ℝ × ℝ × ℝ → ℂ := fun p ↦ ((a : ℂ) + p.fst + p.snd.fst * I) + p.snd.snd
   have hS_comp : IsCompact (ψ '' S) :=
     (isCompact_Icc.prod (isCompact_Icc.prod isCompact_Icc)).image (by fun_prop)
   have hS_sub : ψ '' S ⊆ {s : ℂ | a < s.re} := by
@@ -147,7 +147,7 @@ private theorem exists_away_local_bound {F : ℂ → ℂ} {a A : ℝ} {k : ℕ}
       ∀ ε ∈ Icc (0 : ℝ) ρ, ∀ y ∈ ball y₀ ρ, ∀ u ∈ Ioc (0 : ℝ) 1,
         ‖deriv R (((a : ℂ) + ε + y * I) + u)‖ ≤ B := by
   intro R
-  obtain ⟨r, hr, R₀, hR₀_an, hR_eq⟩ := (h.sub (poleBoundary_div_sub_pow a A k)).away y₀ hy₀
+  obtain ⟨r, hr, R₀, hR₀_an, hR_eq⟩ := (h.sub (poleBoundary_const_div_pow a A k)).away y₀ hy₀
   let z₀ : ℂ := (a : ℂ) + y₀ * I
   have hderiv_eq : ∀ s ∈ ball z₀ r, a < s.re → deriv R s = deriv R₀ s := by
     intro s hs hsre

@@ -16,7 +16,8 @@ public import TauCeti.Algebra.Quaternion.ComplexMatrix
 The positive plane has a real matrix model with ordered generators
 `X = !![0, 1; 1, 0]` and `Z = !![1, 0; 0, -1]`. The universal Clifford map is an
 isomorphism: every real two-by-two matrix is a unique combination of `1, X, Z, XZ`.
-`realCliffordTwoZeroEquivPauli_symm_apply` gives its inverse in these coordinates.
+`realCliffordTwoZeroEquivPauli_symm_apply` gives its inverse in these coordinates, and
+`ι_range_map_realCliffordTwoZeroEquivPauli` identifies the vectors with `span ℝ {X, Z}`.
 After complexifying its matrix entries, its vector formula agrees with the existing
 Pauli map. This is exactly the signature-switch classifier after removing its scalar tensor factor.
 
@@ -91,6 +92,25 @@ theorem realCliffordTwoZeroEquivPauli_ι (v : Fin 2 → ℝ) :
     realCliffordSignatureSwitchRecurrenceEquiv_ι]
   simp only [realCliffordBottEquiv_ι, hb, hs]
   simp [hp0, hp1]
+
+/-- The Pauli model maps the vectors of `Cliff(2, 0)` onto the plane spanned by
+`X = !![0, 1; 1, 0]` and `Z = !![1, 0; 0, -1]`. -/
+theorem ι_range_map_realCliffordTwoZeroEquivPauli :
+    (LinearMap.range (ι (realCliffordForm 2 0))).map
+        realCliffordTwoZeroEquivPauli.toLinearMap =
+      Submodule.span ℝ {!![0, 1; 1, 0], !![1, 0; 0, -1]} := by
+  apply le_antisymm
+  · rintro _ ⟨_, ⟨v, rfl⟩, rfl⟩
+    refine Submodule.mem_span_pair.mpr ⟨v 0, v 1, ?_⟩
+    rw [AlgEquiv.toLinearMap_apply, realCliffordTwoZeroEquivPauli_ι]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  · rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+    refine ⟨⟨_, LinearMap.mem_range_self _ (Pi.single 0 1), ?_⟩,
+      ⟨_, LinearMap.mem_range_self _ (Pi.single 1 1), ?_⟩⟩ <;>
+    · rw [AlgEquiv.toLinearMap_apply, realCliffordTwoZeroEquivPauli_ι]
+      ext i j
+      fin_cases i <;> fin_cases j <;> simp
 
 /-- The inverse Pauli model expresses a matrix in the Clifford basis `1, e₁, e₂, e₁e₂`. -/
 theorem realCliffordTwoZeroEquivPauli_symm_apply (A : Matrix (Fin 2) (Fin 2) ℝ) :

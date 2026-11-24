@@ -38,10 +38,10 @@ variable [L.Structure M] [L.Structure N]
 /-- Between countably generated structures, every member of a back-and-forth system of finitely
 generated partial equivalences extends to an isomorphism. -/
 theorem exists_le_equiv_of_cg {S : Set (L.FGEquiv M N)}
-    (hforth : ∀ f ∈ S, ∀ m : M, ∃ g ∈ S, m ∈ g.1.dom ∧ f ≤ g)
-    (hback : ∀ f ∈ S, ∀ n : N, ∃ g ∈ S, n ∈ g.1.cod ∧ f ≤ g) {g : L.FGEquiv M N} (hg : g ∈ S)
+    (hforth : ∀ f ∈ S, ∀ m : M, ∃ g ∈ S, m ∈ g.val.dom ∧ f ≤ g)
+    (hback : ∀ f ∈ S, ∀ n : N, ∃ g ∈ S, n ∈ g.val.cod ∧ f ≤ g) {g : L.FGEquiv M N} (hg : g ∈ S)
     (hM : Structure.CG L M) (hN : Structure.CG L N) :
-    ∃ e : M ≃[L] N, g.1 ≤ e.toEmbedding.toPartialEquiv := by
+    ∃ e : M ≃[L] N, g.val ≤ e.toEmbedding.toPartialEquiv := by
   classical
   obtain ⟨X, hX, hXgen⟩ := Structure.cg_iff.mp hM
   obtain ⟨Y, hY, hYgen⟩ := Structure.cg_iff.mp hN
@@ -52,17 +52,17 @@ theorem exists_le_equiv_of_cg {S : Set (L.FGEquiv M N)}
   -- Cofinality is relative to S: no extension may leave the chosen system.
   let D : X ⊕ Y → Order.Cofinal S := fun p => p.elim
     (fun x => {
-      carrier := {f | x.1 ∈ f.1.1.dom}
+      carrier := {f | x.val ∈ f.val.val.dom}
       isCofinal := fun f => by
-        obtain ⟨k, hk, hx, hfk⟩ := hforth f.1 f.2 x.1
+        obtain ⟨k, hk, hx, hfk⟩ := hforth f.val f.property x.val
         exact ⟨⟨k, hk⟩, hx, hfk⟩ })
     (fun y => {
-      carrier := {f | y.1 ∈ f.1.1.cod}
+      carrier := {f | y.val ∈ f.val.val.cod}
       isCofinal := fun f => by
-        obtain ⟨k, hk, hy, hfk⟩ := hback f.1 f.2 y.1
+        obtain ⟨k, hk, hy, hfk⟩ := hback f.val f.property y.val
         exact ⟨⟨k, hk⟩, hy, hfk⟩ })
   let C : ℕ →o M ≃ₚ[L] N :=
-    ⟨fun n => (Order.sequenceOfCofinals (⟨g, hg⟩ : S) D n).1.1,
+    ⟨fun n => (Order.sequenceOfCofinals (⟨g, hg⟩ : S) D n).val.val,
       fun _ _ hij => Order.sequenceOfCofinals.monotone (⟨g, hg⟩ : S) D hij⟩
   let F := DirectLimit.partialEquivLimit C
   have hXdom : X ⊆ F.dom := by
@@ -83,7 +83,7 @@ theorem exists_le_equiv_of_cg {S : Set (L.FGEquiv M N)}
     rwa [← top_le_iff, ← hYgen, Substructure.closure_le]
   refine ⟨PartialEquiv.toEquivOfEqTop hdom hcod, ?_⟩
   -- The chain starts at `g`: this is the defining equation of `Order.sequenceOfCofinals` at `0`.
-  have hC0 : C 0 = g.1 := rfl
+  have hC0 : C 0 = g.val := rfl
   rw [PartialEquiv.toEquivOfEqTop_toEmbedding, Embedding.toPartialEquiv_toEmbedding hdom]
   exact hC0 ▸ DirectLimit.le_partialEquivLimit C 0
 

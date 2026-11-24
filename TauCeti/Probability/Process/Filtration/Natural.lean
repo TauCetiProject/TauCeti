@@ -73,6 +73,22 @@ theorem nullAugment_natural_add_deterministic (W : ι → Ω → ℝ)
   rw [natural_add_deterministic]
   exact (natural W hW).nullAugment_apply_eq_of_absolutelyContinuous hQP hPQ i
 
+/-- Adding a measurable initial random variable `ξ` on the left preserves adaptedness once `ℱ` is
+enlarged by the constant filtration `σ(ξ)`. -/
+theorem _root_.MeasureTheory.Adapted.add_left_sup_comap {E : Type*} [Add E] [MeasurableSpace E]
+    [MeasurableAdd₂ E] {ℱ : Filtration ι m} {W : ι → Ω → E} (hW : Adapted ℱ W) {ξ : Ω → E}
+    (hξ : Measurable ξ) :
+    Adapted (ℱ ⊔ const ι (.comap ξ inferInstance) hξ.comap_le) (fun t ω ↦ ξ ω + W t ω) :=
+  fun t ↦ ((comap_measurable ξ).mono le_sup_right le_rfl).add ((hW t).mono le_sup_left le_rfl)
+
+/-- `t ↦ ξ + W t` is adapted to `Filtration.natural W` enlarged by `σ(ξ)`. -/
+theorem adapted_add_left_natural_sup_comap {E : Type*} [TopologicalSpace E] [MetrizableSpace E]
+    [Add E] [MeasurableSpace E] [BorelSpace E] [MeasurableAdd₂ E] {W : ι → Ω → E}
+    (hmeas : ∀ t, StronglyMeasurable (W t)) {ξ : Ω → E} (hξ : Measurable ξ) :
+    Adapted (natural W hmeas ⊔ const ι (.comap ξ inferInstance) hξ.comap_le)
+      (fun t ω ↦ ξ ω + W t ω) :=
+  (stronglyAdapted_natural hmeas).adapted.add_left_sup_comap hξ
+
 end Preorder
 
 /-- The usual augmented natural filtrations of a process and its deterministic

@@ -43,8 +43,8 @@ instance [Mono p] : Mono (S.fromPreimage p) := mono_of_mono_fac (S.fromPreimage_
 /-- A simplex of `S` lies in the image of the preimage of `S` under `p` exactly when it lies in
 the image of `p`. -/
 lemma mem_range_fromPreimage_app_iff {n : SimplexCategoryᵒᵖ} (x : (S : SSet).obj n) :
-    x ∈ Set.range ((S.fromPreimage p).app n) ↔ x.1 ∈ Set.range (p.app n) :=
-  ⟨fun ⟨a, ha⟩ ↦ ⟨a.1, congr_arg Subtype.val ha⟩,
+    x ∈ Set.range ((S.fromPreimage p).app n) ↔ x.val ∈ Set.range (p.app n) :=
+  ⟨fun ⟨a, ha⟩ ↦ ⟨a.val, congr_arg Subtype.val ha⟩,
     fun ⟨a, ha⟩ ↦ ⟨⟨a, by simp [ha]⟩, Subtype.ext ha⟩⟩
 
 end SSet.Subcomplex
@@ -70,7 +70,7 @@ lemma restrictι_right : (P.restrictι S).right = S.ι := (rfl)
 /-- A simplex of the restricted pair comes from its subcomplex exactly when the underlying simplex
 of `P` comes from the subcomplex of `P`. -/
 lemma mem_range_restrict_hom_app_iff {n : SimplexCategoryᵒᵖ} (x : (P.restrict S).right.obj n) :
-    x ∈ Set.range ((P.restrict S).hom.app n) ↔ x.1 ∈ Set.range (P.hom.app n) :=
+    x ∈ Set.range ((P.restrict S).hom.app n) ↔ x.val ∈ Set.range (P.hom.app n) :=
   S.mem_range_fromPreimage_app_iff P.hom x
 
 variable {P S} {P' : SSetPair.{w}} {S' : P'.right.Subcomplex} (f : P ⟶ P')
@@ -87,15 +87,15 @@ def restrictMap : P.restrict S ⟶ P'.restrict S' :=
       exact SSet.Subcomplex.preimage_monotone P.hom h))
     (SSet.Subcomplex.lift (S.ι ≫ f.right) (by
       rwa [← SSet.Subcomplex.image_eq_range, SSet.Subcomplex.image_le_iff]))
-    (by ext n x; exact Subtype.ext congr($(f.w).app n x.1))
+    (by ext n x; exact Subtype.ext congr($(f.w).app n x.val))
 
 @[simp]
 lemma restrictMap_left_app_coe {n : SimplexCategoryᵒᵖ} (x : (P.restrict S).left.obj n) :
-    ((restrictMap f h).left.app n x).1 = f.left.app n x.1 := (rfl)
+    ((restrictMap f h).left.app n x).val = f.left.app n x.val := (rfl)
 
 @[simp]
 lemma restrictMap_right_app_coe {n : SimplexCategoryᵒᵖ} (x : (P.restrict S).right.obj n) :
-    ((restrictMap f h).right.app n x).1 = f.right.app n x.1 := (rfl)
+    ((restrictMap f h).right.app n x).val = f.right.app n x.val := (rfl)
 
 /-- The restriction of a morphism of pairs commutes with the inclusions of the restricted pairs. -/
 @[reassoc (attr := simp)]

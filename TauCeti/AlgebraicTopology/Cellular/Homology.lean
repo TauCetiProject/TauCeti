@@ -80,9 +80,8 @@ instance isIso_singularHomologyMap_skeletonBasePairToSkeletonPair_zero (k : ℕ)
 skeleta. -/
 private def skeletonBaseTripleToSkeletonTriple (n : ℕ) :
     skeletonBaseTriple C n ⟶ skeletonTriple C n :=
-  ⟨ComposableArrows.homMk₂
-    (TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_zero_subset_skeletonLT C n)))
-    (𝟙 _) (𝟙 _) rfl rfl⟩
+  TopTriple.homMk (TopCat.ofHom (ContinuousMap.inclusion (skeletonLT_zero_subset_skeletonLT C n)))
+    (𝟙 _) (𝟙 _) rfl rfl
 
 /-- The connecting morphism `Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ, X⁻¹)` of the triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)`. -/
 def skeletonBaseTripleδ (n : ℕ) :
@@ -123,7 +122,7 @@ lemma cellularDifferential_eq_skeletonBaseTripleδ_comp_singularHomologyMap (n :
       skeletonBasePairToSkeletonPair C n := by
     refine MorphismProperty.Arrow.Hom.ext ?_ ?_
     · ext x
-      exact Subtype.ext (congrArg (fun g ↦ (g x).1) (skeletonBasePairToSkeletonPair_snd C n)).symm
+      exact Subtype.ext (congrArg (fun g ↦ (g x).val) (skeletonBasePairToSkeletonPair_snd C n)).symm
     · ext x
       exact (congrArg (fun g ↦ g x) (skeletonBasePairToSkeletonPair_fst C n)).symm
   have h₂ : TopTriple.outerPair.map (skeletonBaseTripleToSkeletonTriple C n) = 𝟙 _ := by

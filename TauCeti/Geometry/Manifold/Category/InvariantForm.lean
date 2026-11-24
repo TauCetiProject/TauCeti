@@ -88,7 +88,7 @@ theorem invariantForms.mextDerivₗ_comp_mextDerivₗ :
     (invariantForms.mextDerivₗ I J hs ht V (k + 1)).comp
       (invariantForms.mextDerivₗ I J hs ht V k) = 0 := by
   ext φ : 1
-  exact Subtype.ext (LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I k) φ.1)
+  exact Subtype.ext (LinearMap.congr_fun (TauCeti.mextDerivₗ_comp_mextDerivₗ I k) φ.val)
 
 /-- Wedge products, with any continuous bilinear coefficient pairing, preserve invariance. -/
 theorem wedgeWith_mem_invariantForms {V₁ V₂ V₃ : Type*} [NormedAddCommGroup V₁]
@@ -173,7 +173,7 @@ theorem mextDerivₗ_invariantFormsPullback (Φ : C ⥤q D) (hΦ : ContMDiff I I
         (Φ.invariantFormsPullback hΦ hΦ₁ φ) =
       Φ.invariantFormsPullback hΦ hΦ₁
         (TauCeti.Quiver.invariantForms.mextDerivₗ I' J' hs' ht' V k φ) :=
-  Subtype.ext (SmoothForm.mextDerivₗ_mpullback _ _ k φ.1)
+  Subtype.ext (SmoothForm.mextDerivₗ_mpullback _ _ k φ.val)
 
 /-- The identity prefunctor acts identically on invariant forms. -/
 @[simp]
@@ -181,7 +181,7 @@ theorem invariantFormsPullback_id :
     (𝟭q C).invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs) (ht' := ht)
       (V := V) (k := k) contMDiff_id contMDiff_id = LinearMap.id := by
   ext φ : 1
-  exact Subtype.ext (LinearMap.congr_fun SmoothForm.mpullback_id φ.1)
+  exact Subtype.ext (LinearMap.congr_fun SmoothForm.mpullback_id φ.val)
 
 /-- Pullback on invariant forms reverses composition of smooth prefunctors. -/
 theorem invariantFormsPullback_comp {E'' H'' A'' K'' B : Type*}
@@ -202,7 +202,7 @@ theorem invariantFormsPullback_comp {E'' H'' A'' K'' B : Type*}
       (Φ.invariantFormsPullback (hs' := hs') (ht' := ht') hΦ hΦ₁).comp
         (Ψ.invariantFormsPullback hΨ hΨ₁) := by
   ext φ : 1
-  exact Subtype.ext (SmoothForm.mpullback_mpullback _ _ hΦ hΨ φ.1).symm
+  exact Subtype.ext (SmoothForm.mpullback_mpullback _ _ hΦ hΨ φ.val).symm
 
 end Prefunctor
 
@@ -276,6 +276,6 @@ theorem invariantFormsPullback_eq {B L : Type*} [NormedAddCommGroup B] [NormedSp
     Φ.toPrefunctor.invariantFormsPullback (hs := hs) (ht := ht) (hs' := hs') (ht' := ht')
         (V := V) (k := k) hΦ hΦ₁ = Ψ.toPrefunctor.invariantFormsPullback hΨ hΨ₁ := by
   ext φ : 1
-  exact Subtype.ext (η.mpullback_eq_of_mem_invariantForms hΦ hΨ hη φ.2)
+  exact Subtype.ext (η.mpullback_eq_of_mem_invariantForms hΦ hΨ hη φ.property)
 
 end CategoryTheory.NatTrans

@@ -29,8 +29,8 @@ are arbitrary.
   determinant only by a sign. This holds for any matrix.
 * `Matrix.exists_det_submatrix_eq_units_smul_of_sum_eq_zero`: the two determinants agree up to a
   sign `s : ℤˣ`.
-* `Matrix.abs_det_submatrix_eq_of_sum_eq_zero`: over a commutative ring with a linear order, such
-  as `ℝ`, they have the same absolute value.
+* `Matrix.abs_det_submatrix_eq_of_sum_eq_zero`: over a commutative ring that is also a lattice,
+  such as `ℝ`, they have the same absolute value `|x| = x ⊔ -x`.
 -/
 
 public section
@@ -68,29 +68,15 @@ theorem exists_det_submatrix_eq_units_smul_of_sum_eq_zero (M : Matrix ι κ R)
     Subtype.val_injective.comp e₁.injective
   by_cases h : j₁ = j₂
   · subst h
-    exact exists_det_submatrix_eq_units_smul_of_injective M e₂ he₁ fun k ↦ (e₁ k).2
-  -- Replace the column `j₂` by `-M · j₁`, the sum of the other columns, without changing the
-  -- determinant up to sign. The result chooses its columns along `g`, which avoids `j₂`.
+    exact exists_det_submatrix_eq_units_smul_of_injective M e₂ he₁ fun k ↦ (e₁ k).property
+  -- Swapping `j₁` and `j₂` replaces the column `j₂`, chosen at `k₀`, by the column `j₁`, which
+  -- is minus the sum of the other columns. The result chooses its columns along `g`, which
+  -- avoids `j₂`, and its determinant is minus the original one.
   set k₀ := e₁.symm ⟨j₂, Ne.symm h⟩
-  set g : ι → κ := Function.update (fun k ↦ (e₁ k : κ)) k₀ j₁
-  have hne {k : ι} (hk : k ≠ k₀) : (e₁ k : κ) ≠ j₂ := fun h' ↦
-    hk (e₁.symm_apply_eq.mpr (Subtype.ext h'.symm)).symm
-  have hg : Function.Injective g := by
-    intro a b hab
-    by_cases ha : a = k₀ <;> by_cases hb : b = k₀
-    · rw [ha, hb]
-    · simp only [g, ha, hb, Function.update_self, ne_eq, not_false_eq_true,
-        Function.update_of_ne] at hab
-      exact absurd hab.symm (e₁ b).2
-    · simp only [g, ha, hb, Function.update_self, ne_eq, not_false_eq_true,
-        Function.update_of_ne] at hab
-      exact absurd hab (e₁ a).2
-    · exact he₁ (by simpa [g, ha, hb] using hab)
-  have hgj (k : ι) : g k ≠ j₂ := by
-    by_cases hk : k = k₀
-    · simpa [g, hk] using h
-    · simpa [g, hk] using hne hk
-  obtain ⟨s, hs⟩ := exists_det_submatrix_eq_units_smul_of_injective M e₂ hg hgj
+  set g : ι → κ := fun k ↦ swap j₁ j₂ (e₁ k)
+  have hgj (k : ι) : g k ≠ j₂ := by simpa [g, swap_apply_eq_iff] using (e₁ k).property
+  obtain ⟨s, hs⟩ := exists_det_submatrix_eq_units_smul_of_injective M e₂ (g := g)
+    ((swap j₁ j₂).injective.comp he₁) hgj
   refine ⟨-s, ?_⟩
   have hsum (i : ι) : ∑ k, M i (e₁ k) = -M i j₁ := by
     rw [e₁.sum_comp (fun j ↦ M i j), eq_neg_iff_add_eq_zero, add_comm,
@@ -101,18 +87,20 @@ theorem exists_det_submatrix_eq_units_smul_of_sum_eq_zero (M : Matrix ι κ R)
     ext i k
     by_cases hk : k = k₀
     · subst hk
-      simp [g, hsum]
-    · simp [g, hk]
+      simp [g, k₀, hsum]
+    · -- Away from `k₀`, the column `e₁ k` is neither `j₁` nor `j₂`, so the swap fixes it.
+      have hk₂ : (e₁ k : κ) ≠ j₂ := fun h' ↦ hk (e₁.symm_apply_eq.mpr (Subtype.ext h'.symm)).symm
+      simp [g, hk, swap_apply_of_ne_of_ne (e₁ k).property hk₂]
   have hdet := congrArg det hcol
   rw [det_updateCol_sum, det_updateCol_smul, updateCol_eq_self, one_smul] at hdet
   rw [hdet, hs, Units.neg_smul, neg_one_mul]
 
-/-- **Deleting a column of a matrix whose rows sum to zero**, over a commutative ring with a linear
-order such as `ℝ`: the square matrices obtained by deleting any column and ordering the remaining
-columns arbitrarily all have determinants of the same absolute value. -/
-theorem abs_det_submatrix_eq_of_sum_eq_zero {R : Type*} [CommRing R] [LinearOrder R]
-    (M : Matrix ι κ R) (hM : ∀ i, ∑ j, M i j = 0) {j₁ j₂ : κ} (e₁ : ι ≃ {j // j ≠ j₁})
-    (e₂ : ι ≃ {j // j ≠ j₂}) :
+/-- **Deleting a column of a matrix whose rows sum to zero**, over a commutative ring carrying a
+lattice structure, such as `ℝ`, so that `|x| = x ⊔ -x` is defined: the square matrices obtained by
+deleting any column and ordering the remaining columns arbitrarily all have determinants of the
+same absolute value. -/
+theorem abs_det_submatrix_eq_of_sum_eq_zero [Lattice R] (M : Matrix ι κ R)
+    (hM : ∀ i, ∑ j, M i j = 0) {j₁ j₂ : κ} (e₁ : ι ≃ {j // j ≠ j₁}) (e₂ : ι ≃ {j // j ≠ j₂}) :
     |(M.submatrix id fun k ↦ (e₁ k : κ)).det| = |(M.submatrix id fun k ↦ (e₂ k : κ)).det| := by
   obtain ⟨s, hs⟩ := exists_det_submatrix_eq_units_smul_of_sum_eq_zero M hM e₁ e₂
   rcases Int.units_eq_one_or s with rfl | rfl <;> simp [hs]

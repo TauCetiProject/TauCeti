@@ -9,7 +9,7 @@ public import TauCeti.CategoryTheory.Exact.BaseChange
 public import TauCeti.CategoryTheory.Exact.Biproduct
 public import TauCeti.CategoryTheory.Exact.Functor
 public import TauCeti.CategoryTheory.Exact.Split
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 

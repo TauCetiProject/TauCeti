@@ -19,7 +19,9 @@ square between left tensoring and the functor.
 For an oplax monoidal functor with invertible unit comparison, its tensor comparisons at the
 unit are invertible. Invertibility in either argument propagates across any colimit preserved
 by the two functors in the corresponding tensor comparison. This reduces tensor compatibility
-for objects built from coproducts and cokernels to the unit case.
+for objects built from coproducts and cokernels to the unit case. The unit comparison of an
+oplax monoidal functor carries the image of a left unitor `λ_ X` to the left unitor of the target
+(`CategoryTheory.Functor.OplaxMonoidal.δ_comp_η_tensorHom_comp_leftUnitor_hom`).
 
 A lax monoidal structure transports along a natural isomorphism of functors
 (`CategoryTheory.Functor.LaxMonoidal.transport`), in the same way as Mathlib's
@@ -165,6 +167,14 @@ theorem isIso_δ_of_isColimit_right {J : Type*} [Category* J] (K : J ⥤ C)
     rw [NatTrans.isIso_iff_isIso_app]
     exact h
   exact isIso_app_coconePt_of_preservesColimit K (F.oplaxCommTensorLeft A) c hc
+
+/-- The unit comparison of an oplax monoidal functor carries the image of the left unitor
+`λ_ X` to the left unitor of the target: for any `g : F.obj X ⟶ Y`, the composite
+`F.obj (𝟙_ C ⊗ X) ⟶ 𝟙_ D ⊗ Y ⟶ Y` through `η F ⊗ₘ g` is `F.map (λ_ X).hom ≫ g`. -/
+@[reassoc]
+theorem δ_comp_η_tensorHom_comp_leftUnitor_hom {X : C} {Y : D} (g : F.obj X ⟶ Y) :
+    δ F (𝟙_ C) X ≫ (η F ⊗ₘ g) ≫ (λ_ Y).hom = F.map (λ_ X).hom ≫ g := by
+  rw [δ_comp_η_tensorHom_assoc, leftUnitor_naturality, Iso.inv_hom_id_assoc]
 
 end OplaxMonoidal
 

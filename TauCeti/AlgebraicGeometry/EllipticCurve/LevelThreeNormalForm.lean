@@ -187,9 +187,8 @@ theorem isElliptic_levelThreeNormalForm_iff :
 `27μ³ (μ³ + 8)³ / (μ³ - 1)³`. -/
 theorem levelThreeNormalForm_j {F : Type*} [Field F] (μ : F) [(levelThreeNormalForm μ).IsElliptic] :
     (levelThreeNormalForm μ).j = 27 * μ ^ 3 * (μ ^ 3 + 8) ^ 3 / (μ ^ 3 - 1) ^ 3 := by
-  obtain ⟨h3, hμ⟩ := (isElliptic_levelThreeNormalForm_iff μ).mp inferInstance
+  obtain ⟨h3, _⟩ := (isElliptic_levelThreeNormalForm_iff μ).mp inferInstance
   have h3 : (3 : F) ≠ 0 := h3.ne_zero
-  have hμ : μ ^ 3 - 1 ≠ 0 := hμ.ne_zero
   rw [j_eq, levelThreeNormalForm_c₄, levelThreeNormalForm_Δ, show (27 : F) = 3 ^ 3 by norm_num]
   field_simp
   ring

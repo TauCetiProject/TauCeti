@@ -145,4 +145,25 @@ theorem eq_fifthCyclotomicQuadraticSubfield_of_finrank_eq_two
       Nat.totient_prime (by norm_num : Nat.Prime 5)] at hF
     omega
 
+/-- For a degree-two subfield `F` of a fifth cyclotomic field `K`, an automorphism `σ ∈ Gal(K/ℚ)`
+belongs to `F.fixingSubgroup` if and only if its coordinate under `galEquivZMod 5 K` is `1` or
+`-1`. -/
+theorem mem_fixingSubgroup_zeta5_iff {F : IntermediateField ℚ K}
+    (hF : Module.finrank ℚ F = 2) (σ : Gal(K/ℚ)) :
+    σ ∈ F.fixingSubgroup ↔ galEquivZMod 5 K σ = 1 ∨ galEquivZMod 5 K σ = -1 := by
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {5} ℚ K
+  rw [F.eq_fifthCyclotomicQuadraticSubfield_of_finrank_eq_two hF,
+    fifthCyclotomicQuadraticSubfield, fixingSubgroup_fixedField]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨k, rfl⟩
+    rw [map_zpow, MulEquiv.apply_symm_apply]
+    rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
+    · left
+      rw [← two_mul, zpow_mul, zpow_two, neg_mul_neg, one_mul, one_zpow]
+    · right
+      rw [zpow_add, zpow_one, zpow_mul, zpow_two, neg_mul_neg, one_mul, one_zpow, one_mul]
+  · rintro (h | h)
+    · exact ⟨0, (galEquivZMod 5 K).injective (by simp [h])⟩
+    · exact ⟨1, (galEquivZMod 5 K).injective (by simp [h])⟩
+
 end IntermediateField

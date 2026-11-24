@@ -237,7 +237,7 @@ private theorem eulerChar_gradedFullyBlockedCochainComplex (a : ℤ) :
   simp
 
 private theorem isZero_gradedFullyBlockedFGCochainComplex_X_of_forall_ne (a i : ℤ)
-    (h : ∀ x : GridState n, G.1.maslovOℤ x ≠ -i) :
+    (h : ∀ x : GridState n, G.val.maslovOℤ x ≠ -i) :
     IsZero ((G.gradedFullyBlockedFGCochainComplex a).X i) := by
   rw [G.gradedFullyBlockedFGCochainComplex_X]
   have hfinrank : Module.finrank (ZMod 2) (G.BigradedChainPiece (ZMod 2) (-i, a)) = 0 := by
@@ -262,23 +262,23 @@ cohomological degrees. -/
 private theorem exists_isStrictlyBounded_gradedFullyBlockedFGCochainComplex (a : ℤ) :
     ∃ lo hi : ℤ, (G.gradedFullyBlockedFGCochainComplex a).IsStrictlyGE lo ∧
       (G.gradedFullyBlockedFGCochainComplex a).IsStrictlyLE hi := by
-  let s : Finset ℤ := Finset.univ.image G.1.maslovOℤ
+  let s : Finset ℤ := Finset.univ.image G.val.maslovOℤ
   have hs : s.Nonempty := by
-    refine ⟨G.1.maslovOℤ ⟨Equiv.refl (Fin n)⟩, ?_⟩
+    refine ⟨G.val.maslovOℤ ⟨Equiv.refl (Fin n)⟩, ?_⟩
     simp [s]
   refine ⟨-s.max' hs, -s.min' hs, ?_, ?_⟩
   · rw [CochainComplex.isStrictlyGE_iff]
     intro i hi
     apply G.isZero_gradedFullyBlockedFGCochainComplex_X_of_forall_ne a i
     intro x hx
-    have hle : G.1.maslovOℤ x ≤ s.max' hs :=
+    have hle : G.val.maslovOℤ x ≤ s.max' hs :=
       s.le_max' _ (by simp [s])
     omega
   · rw [CochainComplex.isStrictlyLE_iff]
     intro i hi
     apply G.isZero_gradedFullyBlockedFGCochainComplex_X_of_forall_ne a i
     intro x hx
-    have hle : s.min' hs ≤ G.1.maslovOℤ x :=
+    have hle : s.min' hs ≤ G.val.maslovOℤ x :=
       s.min'_le _ (by simp [s])
     omega
 
@@ -353,8 +353,8 @@ theorem gradedHomologyEulerChar_eq_gradedEulerChar :
 determinant.** -/
 theorem gradedHomologyEulerChar_eq_smul_T_mul_det_weightMatrix :
     G.gradedHomologyEulerChar =
-      (Equiv.Perm.sign G.1.O.toPerm * ((n : ℤ) + 1).negOnePow) •
-        (T G.1.alexanderTwoShift * G.1.weightMatrix.det) := by
+      (Equiv.Perm.sign G.val.O.toPerm * ((n : ℤ) + 1).negOnePow) •
+        (T G.val.alexanderTwoShift * G.val.weightMatrix.det) := by
   rw [G.gradedHomologyEulerChar_eq_gradedEulerChar,
     G.gradedEulerChar_eq_smul_T_mul_det_weightMatrix]
 

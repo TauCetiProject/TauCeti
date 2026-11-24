@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.Homotopy.AddCircle
 public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Sphere
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -101,8 +101,8 @@ private theorem nullhomotopic_subtypeVal_torusCellNhd [∀ i, Fact (0 < p i)] (S
     (subtypeVal (torusCellNhd p S)).Nullhomotopic :=
   ContinuousMap.Nullhomotopic.pi fun i ↦
     (AddCircle.nullhomotopic_subtypeVal_compl_singleton (torusCellAvoided p S i)).comp_left
-      ⟨fun x : torusCellNhd p S ↦ ⟨x.1 i, x.2.1 i⟩,
-        ((continuous_apply i).comp continuous_subtype_val).subtype_mk _⟩
+      ⟨fun x : torusCellNhd p S ↦ ⟨x.val i, x.property.1 i⟩,
+        ((continuous_apply i).comp continuous_subtypeVal).subtype_mk _⟩
 
 /-- Every point lies in the neighbourhood `V_S` of the cell of its set `S` of nonzero
 coordinates. -/
@@ -140,15 +140,16 @@ theorem lsCategoryCount_univ_pi_addCircle_le :
   classical
   let U (k : Fin (Fintype.card ι + 1)) : Opens (∀ i, AddCircle (p i)) :=
     ⟨⋃ S : {S : Finset ι // S.card = k}, torusCellNhd p S,
-      isOpen_iUnion fun S ↦ isOpen_torusCellNhd S.1⟩
+      isOpen_iUnion fun S ↦ isOpen_torusCellNhd S.val⟩
   have hcover : univ ⊆ ⋃ k, (U k : Set (∀ i, AddCircle (p i))) := fun x _ ↦
     mem_iUnion.2 ⟨⟨_, Nat.lt_succ_of_le (Finset.card_le_univ {j | x j ≠ 0})⟩,
       mem_iUnion.2 ⟨⟨_, rfl⟩, mem_torusCellNhd (by simp)⟩⟩
   have hnull (k : Fin (Fintype.card ι + 1)) :
       (subtypeVal (U k : Set (∀ i, AddCircle (p i)))).Nullhomotopic :=
-    nullhomotopic_subtypeVal_iUnion (fun S ↦ isOpen_torusCellNhd S.1)
-      (fun S S' h ↦ disjoint_torusCellNhd (S.2.trans S'.2.symm) (Subtype.coe_ne_coe.2 h))
-      fun S ↦ nullhomotopic_subtypeVal_torusCellNhd S.1
+    nullhomotopic_subtypeVal_iUnion (fun S ↦ isOpen_torusCellNhd S.val)
+      (fun S S' h ↦ disjoint_torusCellNhd (S.property.trans S'.property.symm)
+          (Subtype.coe_ne_coe.2 h))
+      fun S ↦ nullhomotopic_subtypeVal_torusCellNhd S.val
   exact_mod_cast (LSCategoricalCover.mk U hcover hnull).lsCategoryCount_le
 
 variable (p) in

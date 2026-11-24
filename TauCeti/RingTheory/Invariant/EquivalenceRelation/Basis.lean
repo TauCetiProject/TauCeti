@@ -86,7 +86,7 @@ private theorem map_linearCombination (r : ι →₀ (algebraMap A B).eqLocus t)
     t (Finsupp.linearCombination _ a r) =
       Finsupp.linearCombination A b (r.mapRange Subtype.val rfl) := by
   have ht (c : (algebraMap A B).eqLocus t) : t (algebraMap _ A c) = algebraMap A B c :=
-    (mem_eqLocus.mp c.2).symm
+    (mem_eqLocus.mp c.property).symm
   simp [Finsupp.linearCombination_apply, Finsupp.sum_mapRange_index, map_finsuppSum,
     Algebra.smul_def, hb, ht]
 

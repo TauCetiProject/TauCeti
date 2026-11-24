@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.CompMul
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
@@ -42,6 +42,8 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
 
 * `TauCeti.iteratedDeriv_comp_mul_left`: the iterated derivatives of `fun x ↦ f (c * x)`, and
   `TauCeti.deriv_deriv_comp_mul_left` its second derivative.
+* `TauCeti.deriv_deriv_fun_add`, `TauCeti.deriv_deriv_fun_sub`: the second derivative of a sum and
+  of a difference of functions that are `C²` at the point.
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
 * `TauCeti.deriv_const_add_smul`, `TauCeti.iteratedDeriv_two_const_add_smul`: the first and
   second derivatives of the affine line `t ↦ a + t • b`.
@@ -81,6 +83,25 @@ theorem deriv_deriv_comp_mul_left (c : 𝕜) (f : 𝕜 → F) (x : 𝕜) :
 
 end CompMul
 
+section AddSub
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {f g : 𝕜 → F} {x : 𝕜}
+
+/-- The second derivative of a sum of functions that are `C²` at `x`: Mathlib's
+`iteratedDeriv_fun_add` at order two, written with `deriv`. -/
+theorem deriv_deriv_fun_add (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2 g x) :
+    deriv (deriv fun y ↦ f y + g y) x = deriv (deriv f) x + deriv (deriv g) x := by
+  simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using iteratedDeriv_fun_add hf hg
+
+/-- The second derivative of a difference of functions that are `C²` at `x`: Mathlib's
+`iteratedDeriv_fun_sub` at order two, written with `deriv`. -/
+theorem deriv_deriv_fun_sub (hf : ContDiffAt 𝕜 2 f x) (hg : ContDiffAt 𝕜 2 g x) :
+    deriv (deriv fun y ↦ f y - g y) x = deriv (deriv f) x - deriv (deriv g) x := by
+  simpa only [iteratedDeriv_succ, iteratedDeriv_zero] using iteratedDeriv_fun_sub hf hg
+
+end AddSub
+
 section Quadratic
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -103,6 +124,15 @@ theorem deriv_deriv_quadratic (a b c t : 𝕜) :
     funext fun s ↦ (hasDerivAt_quadratic a b c s).deriv
   rw [h]
   simp
+
+/-- Subtracting a quadratic subtracts its exact second derivative. -/
+theorem _root_.ContDiffAt.deriv_deriv_sub_quadratic {B : 𝕜 → 𝕜} {t : 𝕜}
+    (hB : ContDiffAt 𝕜 2 B t) (a b c : 𝕜) :
+    deriv (deriv (fun s ↦ B s - (a + b * s + c * s ^ 2))) t =
+      deriv (deriv B) t - 2 * c := by
+  have hpoly : ContDiffAt 𝕜 2 (fun s ↦ a + b * s + c * s ^ 2) t := by fun_prop
+  have h := iteratedDeriv_sub hB hpoly
+  simpa only [iteratedDeriv_succ, iteratedDeriv_zero, deriv_deriv_quadratic, Pi.sub_def] using h
 
 end Quadratic
 

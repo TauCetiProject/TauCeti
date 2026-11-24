@@ -470,22 +470,24 @@ degree `d`. -/
 private def liftAlgHom (f : {f : A →ₚₗ[R] B // f.IsHomogeneousOfDegree d ∧ f.IsMultiplicative}) :
     RobyAlgebra R A d →ₐ[R] B :=
   AlgHom.ofLinearMap
-    ((homogeneousLawEquiv R A B d).symm ⟨f.1, PolynomialLaw.mem_homogeneousSubmodule.mpr f.2.1⟩ ∘ₗ
+    ((homogeneousLawEquiv R A B d).symm ⟨f.val, PolynomialLaw.mem_homogeneousSubmodule.mpr
+        f.property.1⟩ ∘ₗ
       (linearEquiv R A d).toLinearMap)
     (by
       rw [LinearMap.comp_apply, LinearEquiv.coe_coe, linearEquiv_one,
-        homogeneousLawEquiv_symm_apply_dp, f.2.2.ground_one])
+        homogeneousLawEquiv_symm_apply_dp, f.property.2.ground_one])
     (fun x y ↦ by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, mul_def,
         LinearEquiv.apply_symm_apply]
       exact homogeneousLawEquiv_symm_homogeneousMul d
-        ⟨f.1, PolynomialLaw.mem_homogeneousSubmodule.mpr f.2.1⟩ f.2.2 _ _)
+        ⟨f.val, PolynomialLaw.mem_homogeneousSubmodule.mpr f.property.1⟩ f.property.2 _ _)
 
 /-- The linear map underlying `liftAlgHom f` is the linear map representing `f`. -/
 private theorem toLinearMap_liftAlgHom
     (f : {f : A →ₚₗ[R] B // f.IsHomogeneousOfDegree d ∧ f.IsMultiplicative}) :
     (liftAlgHom f).toLinearMap =
-      (homogeneousLawEquiv R A B d).symm ⟨f.1, PolynomialLaw.mem_homogeneousSubmodule.mpr f.2.1⟩ ∘ₗ
+      (homogeneousLawEquiv R A B d).symm ⟨f.val, PolynomialLaw.mem_homogeneousSubmodule.mpr
+          f.property.1⟩ ∘ₗ
         (linearEquiv R A d).toLinearMap :=
   (rfl)
 

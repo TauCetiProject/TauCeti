@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.Distribution
+public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
@@ -18,11 +19,14 @@ import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.Distribution.Order
+import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Regularization of distributions
@@ -46,7 +50,9 @@ applied to the convolution `f ⋆ ρ`, so regularizations recover `T` as the ker
 commutes `T` with an integral of test functions. On tests supported in a fixed compact set, `T` is
 bounded by finitely many derivatives, hence by the sup norm of a jet with values in a Banach space;
 by Hahn–Banach each scalar functional of `T` extends continuously to that space, where it commutes
-with the Bochner integral.
+with the Bochner integral. The same argument passes `T` under any integral `∫ f y dμ` of test
+functions over a compact parameter space, supported in a common compact set and with jointly
+continuous derivatives, such as the Fourier integral `φ ∫ ψ η e_η dη` of modulated cutoffs.
 
 Differentiability rests on the finite order of a distribution on each compact set,
 `Distribution.exists_norm_apply_le` from `TauCeti.Analysis.Distribution.Order`: the first-order
@@ -63,6 +69,9 @@ derivatives are `o(‖h‖)` uniformly, so its image under `T` is `o(‖h‖)` a
 * `Distribution.apply_eq_integral_smul_translatePairing`: pairing the regularization with an
   integrable compactly supported `f` is `T` applied to the convolution `f ⋆ ρ`,
   `T (f ⋆ ρ) = ∫ f y • T (ρ (· - y)) dy`.
+* `Distribution.apply_eq_integral_of_continuous_iteratedFDeriv`: `T (∫ f y dμ) = ∫ T (f y) dμ` for
+  a compact-parameter family of test functions with jointly continuous derivatives, and its
+  complex form `Distribution.complexPairing_eq_integral_of_continuous_iteratedFDeriv`.
 
 ## References
 
@@ -207,8 +216,9 @@ private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : �
   let φ₀ : 𝓓(Ω, ℝ) := translateOfMapsTo ρ hx
   have hφ₀ : ∀ y, φ₀ y = ρ (y - x) := translateOfMapsTo_apply ρ hx
   obtain ⟨δ, hδ, hδΩ, hδx⟩ := exists_cthickening_tsupport_translateOfMapsTo_subset ρ hx
-  let K : Compacts E := ⟨cthickening δ (tsupport φ₀), φ₀.hasCompactSupport.isCompact.cthickening⟩
-  obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := K) hδΩ
+  let K : Compacts E := (⟨tsupport φ₀, φ₀.hasCompactSupport.isCompact⟩ : Compacts E).cthickening δ
+  have hK : (K : Set E) = cthickening δ (tsupport φ₀) := Compacts.coe_cthickening _ _
+  obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := K) (hK.trans_subset hδΩ)
   -- For `‖h‖ ≤ δ`, the Taylor remainder of the translates of `ρ`, as a test function on `Ω`.
   let R (h : E) : 𝓓(Ω, ℝ) :=
     if hh : ‖h‖ ≤ δ then translateOfMapsTo ρ (hδx h hh) - φ₀ + ∂_{h} φ₀ else 0
@@ -223,7 +233,7 @@ private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : �
   refine (isLittleO_apply_of_norm_iteratedFDeriv_le (R := R) hC hT ?_ fun i _ ε hε => ?_).congr' ?_
     EventuallyEq.rfl
   · filter_upwards [hδ'] with h hh
-    rw [hR h hh]
+    rw [hR h hh, hK]
     exact TauCeti.tsupport_sub_sub_add_fderiv_subset _ hh
   · obtain ⟨r, hr, hrem⟩ := φ₀.hasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le
       φ₀.contDiff (n := ∞) (i := i) (by exact_mod_cast le_top) hε
@@ -553,4 +563,200 @@ theorem apply_eq_integral_smul_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V,
 
 end Convolution
 
+section ParametricIntegral
+
+open MeasureTheory Function
+open scoped BoundedContinuousFunction
+
+variable [CompleteSpace F] {Y : Type*} [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
+  [OpensMeasurableSpace Y] {μ : Measure Y} [IsFiniteMeasure μ]
+
+/-- A family of smooth functions supported in `K` with jointly continuous derivatives has an
+integrable path of jets, which integrates to the jet of the integral of the family. -/
+private theorem integral_basisJetCLM_eq {K : Compacts E} (N : ℕ) {f : Y → 𝓓_{K}(E, ℝ)}
+    (hf : ∀ k : ℕ, Continuous fun p : Y × E ↦ iteratedFDeriv ℝ k (f p.1) p.2)
+    {ψ : 𝓓_{K}(E, ℝ)} (hψ : ∀ x, ψ x = ∫ y, f y x ∂μ) :
+    Integrable (fun y ↦ basisJetCLM K N (f y)) μ ∧
+      ∫ y, basisJetCLM K N (f y) ∂μ = basisJetCLM K N ψ := by
+  have hfc : Continuous f :=
+    ContDiffMapSupportedIn.continuous_of_continuous_iteratedFDeriv fun k _ ↦ hf k
+  have hΘi : Integrable (fun y ↦ basisJetCLM K N (f y)) μ :=
+    ((basisJetCLM K N).continuous.comp hfc).integrable_of_hasCompactSupport (.of_compactSpace _)
+  refine ⟨hΘi, ?_⟩
+  -- The jets of `ψ` are the integrals of the jets of the `f y`.
+  have hderiv (k : ℕ) (x : E) :
+      iteratedFDeriv ℝ k ψ x = ∫ y, iteratedFDeriv ℝ k (f y) x ∂μ := by
+    rw [show (ψ : E → ℝ) = fun z ↦ ∫ y, f y z ∂μ from funext hψ]
+    exact TauCeti.iteratedFDeriv_integral_of_continuous_jets isOpen_univ
+      (fun y ↦ (f y).contDiff.contDiffOn) (fun k ↦ (hf k).continuousOn) k (mem_univ x)
+  ext x k : 2
+  have hL := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ => ℝ) k).comp
+    (BoundedContinuousFunction.evalCLM ℝ x)).integral_comp_comm hΘi
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
+    BoundedContinuousFunction.evalCLM_apply] at hL
+  have hki : Integrable (fun y ↦ iteratedFDeriv ℝ k.1 (f y) x) μ :=
+    ((hf k.1).comp (continuous_id.prodMk continuous_const)).integrable_of_hasCompactSupport
+      (.of_compactSpace _)
+  rw [← hL, basisJetCLM_apply_apply, hderiv, ContinuousMultilinearMap.integral_apply hki]
+  exact integral_congr_ae (ae_of_all _ fun y ↦ by simp [basisJetCLM_apply_apply])
+
+/-- **A distribution passes under a compact-parameter integral.** Let `f y`, for `y` in a compact
+space `Y`, be test functions supported in a fixed compact `K ⊆ Ω` whose derivatives of every
+order are jointly continuous in `y` and the point. If the test function `ψ` is the integral
+`ψ x = ∫ f y x ∂μ` against a finite measure `μ`, then
+
+`T ψ = ∫ T (f y) ∂μ`. -/
+theorem apply_eq_integral_of_continuous_iteratedFDeriv (T : 𝓓'(Ω, F)) {K : Compacts E}
+    (hKΩ : (K : Set E) ⊆ Ω) {f : Y → 𝓓(Ω, ℝ)} (hfK : ∀ y, tsupport (f y) ⊆ K)
+    (hf : ∀ k : ℕ, Continuous fun p : Y × E ↦ iteratedFDeriv ℝ k (f p.1) p.2)
+    {ψ : 𝓓(Ω, ℝ)} (hψ : ∀ x, ψ x = ∫ y, f y x ∂μ) :
+    T ψ = ∫ y, T (f y) ∂μ := by
+  classical
+  -- As in `apply_eq_integral_smul_translatePairing`: the jets of the `f y` form a path in a
+  -- Banach space of jets, integrating to the jet of `ψ`, and Hahn–Banach extends each scalar
+  -- functional of `T` to that space.
+  obtain ⟨N, C, hC0, hbound⟩ := exists_norm_apply_le_mul_norm_basisJetCLM T hKΩ
+  have hsK (y : Y) : support (f y) ⊆ K := (subset_tsupport _).trans (hfK y)
+  let fK : Y → 𝓓_{K}(E, ℝ) := fun y ↦ .of_support_subset (f y).contDiff (hsK y)
+  have hfK' (y : Y) : ⇑(fK y) = f y := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+  have hfKΩ (y : Y) : ofSupportedInCLM ℝ hKΩ (fK y) = f y := by
+    ext x
+    simp [hfK']
+  -- The test function `ψ` is supported in `K`.
+  have hψK : support ψ ⊆ K := fun x hx ↦ by
+    by_contra hxK
+    refine hx ?_
+    rw [hψ]
+    exact integral_eq_zero_of_ae (ae_of_all _ fun y ↦
+      image_eq_zero_of_notMem_tsupport fun h ↦ hxK (hfK y h))
+  let ψK : 𝓓_{K}(E, ℝ) := .of_support_subset ψ.contDiff hψK
+  have hψK' : ⇑ψK = ψ := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+  have hψψK : ofSupportedInCLM ℝ hKΩ ψK = ψ := by
+    ext x
+    simp [hψK']
+  obtain ⟨hΘi, hint⟩ := integral_basisJetCLM_eq (μ := μ) N (f := fK)
+    (fun k ↦ by simpa only [hfK'] using hf k) (ψ := ψK) fun x ↦ by simp [hψK', hfK', hψ]
+  have hTi : Integrable (fun y ↦ T (f y)) μ :=
+    (T.continuous.comp (TestFunction.continuous_of_continuous_iteratedFDeriv K.isCompact hKΩ hfK
+      fun k _ ↦ hf k)).integrable_of_hasCompactSupport (.of_compactSpace _)
+  -- Scalarize, and extend the bounded functional `T` from the jets of tests by Hahn–Banach.
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun ℓ => ?_
+  rw [← ContinuousLinearMap.integral_comp_comm ℓ hTi]
+  obtain ⟨g, hgjet⟩ := exists_continuousLinearMap_comp_basisJetCLM_eq T hKΩ hC0 hbound ℓ
+  calc ℓ (T ψ) = g (∫ y, basisJetCLM K N (fK y) ∂μ) := by rw [hint, hgjet, hψψK]
+    _ = ∫ y, ℓ (T (f y)) ∂μ := by
+      rw [← g.integral_comp_comm hΘi]
+      exact integral_congr_ae (ae_of_all _ fun y ↦ by simp only [hgjet, hfKΩ])
+
+/-- **The complex-linear extension passes under a compact-parameter integral.** Let `f y`, for `y`
+in a compact space `Y`, be complex test functions supported in a fixed compact `K ⊆ Ω` whose
+derivatives of every order are jointly continuous in `y` and the point. If the test function `ψ`
+is the integral `ψ x = ∫ f y x ∂μ` against a finite measure `μ`, then
+
+`T ψ = ∫ T (f y) ∂μ`. -/
+theorem complexPairing_eq_integral_of_continuous_iteratedFDeriv (T : 𝓓'(Ω, ℂ))
+    {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω) {f : Y → 𝓓(Ω, ℂ)} (hfK : ∀ y, tsupport (f y) ⊆ K)
+    (hf : ∀ k : ℕ, Continuous fun p : Y × E ↦ iteratedFDeriv ℝ k (f p.1) p.2)
+    {ψ : 𝓓(Ω, ℂ)} (hψ : ∀ x, ψ x = ∫ y, f y x ∂μ) :
+    T.complexPairing ψ = ∫ y, T.complexPairing (f y) ∂μ := by
+  -- The real and imaginary parts of the `f y` satisfy the same hypotheses.
+  have hpart (L : ℂ →L[ℝ] ℝ) : T (postcompCLM (𝕜 := ℝ) L ψ) =
+      ∫ y, T (postcompCLM (𝕜 := ℝ) L (f y)) ∂μ := by
+    refine T.apply_eq_integral_of_continuous_iteratedFDeriv hKΩ
+      (f := fun y ↦ postcompCLM (𝕜 := ℝ) L (f y)) (fun y ↦ ?_) (fun k ↦ ?_) (fun x ↦ ?_)
+    · rw [postcompCLM_apply]
+      exact (tsupport_comp_subset (map_zero L) _).trans (hfK y)
+    · have h (p : Y × E) : iteratedFDeriv ℝ k (postcompCLM (𝕜 := ℝ) L (f p.1)) p.2 =
+          L.compContinuousMultilinearMap (iteratedFDeriv ℝ k (f p.1) p.2) := by
+        rw [postcompCLM_apply]
+        exact L.iteratedFDeriv_comp_left (f p.1).contDiff.contDiffAt (mod_cast le_top)
+      simp only [h]
+      exact (ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) ℂ ℝ
+        L).continuous.comp (hf k)
+    · have hc : Continuous fun y ↦ f y x := by
+        have h0 := (hf 0).comp (continuous_id.prodMk (continuous_const (y := x)))
+        simpa only [Function.comp_def, id_eq, iteratedFDeriv_zero_apply] using
+          (continuous_eval_const (fun _ : Fin 0 ↦ (0 : E))).comp h0
+      rw [postcompCLM_apply, Function.comp_apply, hψ, ← L.integral_comp_comm
+        (hc.integrable_of_hasCompactSupport (.of_compactSpace _))]
+      simp only [postcompCLM_apply, Function.comp_apply]
+  have hint (L : ℂ →L[ℝ] ℝ) : Integrable (fun y ↦ T (postcompCLM (𝕜 := ℝ) L (f y))) μ :=
+    (T.continuous.comp ((postcompCLM (𝕜 := ℝ) L).continuous.comp
+      (TestFunction.continuous_of_continuous_iteratedFDeriv K.isCompact hKΩ hfK fun k _ ↦ hf k)))
+      |>.integrable_of_hasCompactSupport (.of_compactSpace _)
+  rw [complexPairing_apply, hpart, hpart, ← integral_const_mul,
+    ← integral_add (hint _) ((hint _).const_mul Complex.I)]
+  simp only [complexPairing_apply]
+
+end ParametricIntegral
+
 end Distribution
+
+namespace ContinuousLinearMap
+
+open MeasureTheory Function TestFunction
+
+variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V] {Ω : Opens E}
+  {Y : Type*} [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
+  [OpensMeasurableSpace Y] {μ : Measure Y} [IsFiniteMeasure μ]
+
+/-- **A continuous linear map on vector-valued tests passes under a compact-parameter integral.**
+Let `f y`, for `y` in a compact space `Y`, be test functions with values in a finite-dimensional
+space `F`, supported in a fixed compact `K ⊆ Ω`, whose derivatives of every order are jointly
+continuous in `y` and the point. If the test function `ψ` is the integral `ψ x = ∫ f y x ∂μ`
+against a finite measure `μ`, then `T ψ = ∫ T (f y) ∂μ`. With alternating forms as values, this
+applies to currents. -/
+theorem apply_eq_integral_of_continuous_iteratedFDeriv (T : 𝓓(Ω, F) →L[ℝ] V)
+    {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω) {f : Y → 𝓓(Ω, F)} (hfK : ∀ y, tsupport (f y) ⊆ K)
+    (hf : ∀ k : ℕ, Continuous fun p : Y × E ↦ iteratedFDeriv ℝ k (f p.1) p.2)
+    {ψ : 𝓓(Ω, F)} (hψ : ∀ x, ψ x = ∫ y, f y x ∂μ) :
+    T ψ = ∫ y, T (f y) ∂μ := by
+  classical
+  -- Expand every test function in the coordinates of a basis `b` of `F`, and apply the scalar
+  -- statement to the scalar distributions `φ ↦ T (φ • b j)`.
+  let b := Module.finBasis ℝ F
+  let c (j : Fin (Module.finrank ℝ F)) : F →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (b.coord j)
+  let e (j : Fin (Module.finrank ℝ F)) : ℝ →L[ℝ] F := toSpanSingleton ℝ (b j)
+  have hsum (φ : 𝓓(Ω, F)) :
+      T φ = ∑ j, (T ∘L postcompCLM (𝕜 := ℝ) (e j)) (postcompCLM (𝕜 := ℝ) (c j) φ) := by
+    simp only [coe_comp, Function.comp_apply, ← map_sum]
+    congr 1
+    ext x
+    simp only [postcompCLM_apply, FunLike.coe_sum, Finset.sum_apply,
+      LinearMap.coe_toContinuousLinearMap', c, e]
+    exact (b.sum_repr (φ x)).symm
+  have hcont : Continuous f := TestFunction.continuous_of_continuous_iteratedFDeriv K.isCompact
+    hKΩ hfK fun k _ ↦ hf k
+  have hint (j : Fin (Module.finrank ℝ F)) : Integrable (fun y ↦
+      (T ∘L postcompCLM (𝕜 := ℝ) (e j)) (postcompCLM (𝕜 := ℝ) (c j) (f y))) μ :=
+    ((T ∘L postcompCLM (𝕜 := ℝ) (e j)).continuous.comp
+      ((postcompCLM (𝕜 := ℝ) (c j)).continuous.comp hcont)).integrable_of_hasCompactSupport
+      (.of_compactSpace _)
+  have hj (j : Fin (Module.finrank ℝ F)) :
+      (T ∘L postcompCLM (𝕜 := ℝ) (e j)) (postcompCLM (𝕜 := ℝ) (c j) ψ) =
+        ∫ y, (T ∘L postcompCLM (𝕜 := ℝ) (e j)) (postcompCLM (𝕜 := ℝ) (c j) (f y)) ∂μ := by
+    refine Distribution.apply_eq_integral_of_continuous_iteratedFDeriv
+      (T ∘L postcompCLM (𝕜 := ℝ) (e j) : 𝓓'(Ω, V)) hKΩ
+      (f := fun y ↦ postcompCLM (𝕜 := ℝ) (c j) (f y)) (fun y ↦ ?_) (fun k ↦ ?_) (fun x ↦ ?_)
+    · rw [postcompCLM_apply]
+      exact (tsupport_comp_subset (map_zero _) _).trans (hfK y)
+    · have h (p : Y × E) : iteratedFDeriv ℝ k (postcompCLM (𝕜 := ℝ) (c j) (f p.1)) p.2 =
+          (c j).compContinuousMultilinearMap (iteratedFDeriv ℝ k (f p.1) p.2) := by
+        rw [postcompCLM_apply]
+        exact (c j).iteratedFDeriv_comp_left (f p.1).contDiff.contDiffAt (mod_cast le_top)
+      simp only [h]
+      exact (compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) F ℝ (c j)).continuous.comp
+        (hf k)
+    · have hc : Continuous fun y ↦ f y x := by
+        have h0 := (hf 0).comp (continuous_id.prodMk (continuous_const (y := x)))
+        simpa only [Function.comp_def, id_eq, iteratedFDeriv_zero_apply] using
+          (continuous_eval_const (fun _ : Fin 0 ↦ (0 : E))).comp h0
+      rw [postcompCLM_apply, Function.comp_apply, hψ,
+        ← (c j).integral_comp_comm (hc.integrable_of_hasCompactSupport (.of_compactSpace _))]
+      simp only [postcompCLM_apply, Function.comp_apply]
+  rw [hsum, Finset.sum_congr rfl fun j _ ↦ hj j, ← integral_finsetSum _ fun j _ ↦ hint j]
+  exact integral_congr_ae (ae_of_all _ fun y ↦ (hsum (f y)).symm)
+
+end ContinuousLinearMap

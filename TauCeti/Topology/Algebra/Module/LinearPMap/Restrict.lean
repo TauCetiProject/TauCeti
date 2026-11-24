@@ -30,6 +30,6 @@ theorem IsClosed.restrict {A : E →ₗ.[R] F} (hA : A.IsClosed) {U : Submodule 
     {V : Submodule R F} (hUV : ∀ x : A.domain, (x : E) ∈ U → A x ∈ V) :
     (A.restrict hUV).IsClosed := by
   rw [LinearPMap.IsClosed, graph_restrict, Submodule.comap_coe]
-  exact hA.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
+  exact hA.preimage (continuous_subtypeVal.prodMap continuous_subtypeVal)
 
 end LinearPMap

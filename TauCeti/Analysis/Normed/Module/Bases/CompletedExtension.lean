@@ -57,7 +57,7 @@ theorem exists_continuousLinearEquiv_prod_completedTensor_of_countableType
       ∀ x, (d x).2 = CompletedTensor.map q (.id K W) x := by
   obtain ⟨d, hdi, hdq⟩ := exists_continuousLinearEquiv_prod_of_countableType hv i q hi hq hiq
   let e : CompletedTensor K E W ≃L[K] CompletedTensor K (M × N) W :=
-    .equivOfInverse' (CompletedTensor.map (d : E →L[K] M × N) (.id K W))
+    .ofContinuousLinearMap (CompletedTensor.map (d : E →L[K] M × N) (.id K W))
       (CompletedTensor.map (d.symm : M × N →L[K] E) (.id K W))
       (by apply CompletedTensor.ext; intro x w; simp)
       (by apply CompletedTensor.ext; intro x w; simp)

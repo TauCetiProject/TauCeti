@@ -154,7 +154,8 @@ variable {f : X → ℂ}
 @[simp]
 theorem residue_mvfderiv (hf : RiemannSurface.MeromorphicAt f x) :
     residue (mvfderiv 𝓘(ℂ) f) x = 0 := by
-  rw [residue_def, Contour.residue_congr_nhdsNE (coeff_mvfderiv_eventuallyEq hf)]
+  rw [residue_def, Contour.residue_congr_nhdsNE
+    (coeff_mvfderiv_eventuallyEq.filter_mono nhdsWithin_le_nhds)]
   exact Contour.residue_deriv_eq_zero ((RiemannSurface.meromorphicAt_def f x).1 hf)
 
 /-- **The residue of `df / f` is the order of `f`.** For a function `f` meromorphic at `x` of
@@ -164,7 +165,7 @@ theorem residue_inv_smul_mvfderiv {n : ℤ} (hf : RiemannSurface.MeromorphicAt f
     residue (f⁻¹ • mvfderiv 𝓘(ℂ) f) x = n := by
   have hev : coeff (f⁻¹ • mvfderiv 𝓘(ℂ) f) (chartAt ℂ x) =ᶠ[𝓝[≠] (chartAt ℂ x x)]
       logDeriv (f ∘ (chartAt ℂ x).symm) := by
-    filter_upwards [coeff_mvfderiv_eventuallyEq hf] with z hz
+    filter_upwards [coeff_mvfderiv_eventuallyEq.filter_mono nhdsWithin_le_nhds] with z hz
     rw [coeff_smul, Pi.mul_apply, hz, logDeriv_apply, div_eq_inv_mul]
     rfl
   rw [residue_def, Contour.residue_congr_nhdsNE hev]
