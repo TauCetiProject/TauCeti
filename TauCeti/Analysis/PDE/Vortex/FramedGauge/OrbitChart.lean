@@ -56,8 +56,9 @@ orders of the same field space, `↑(k + 1)` for the gauge action and `↑k + 1`
 are identified by `TauCeti.Vortex.SobolevFieldSpace.congrOrder`.
 
 With these charts, invariance of domain makes the zero divisor a homeomorphism from the vortex
-moduli onto `Sym^m ℂ` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SymmetricPower`). Whether the
-transition maps of the charts are smooth is not treated here.
+moduli onto `Sym^m ℂ` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SymmetricPower`). Cut down to a
+neighbourhood of the orbit, these charts are smoothly compatible
+(`TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothChart`).
 
 ## Main results
 

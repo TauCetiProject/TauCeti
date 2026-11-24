@@ -170,6 +170,25 @@ theorem coe_realSubRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) (j : Fin 4) :
     (realSubRef h x j : H^{s}(ℂ)) = subRef x j :=
   (rfl)
 
+/-- The real coordinates of a field are the real parts of its coordinates in `H^s(ℂ)⁴`. -/
+theorem realSubRef_eq_realPartCLM_subRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) :
+    x.realSubRef h = fun j ↦ realPartCLM ℂ h (subRef x j) :=
+  funext fun j ↦ by rw [← coe_realSubRef h, realPartCLM_coe]
+
+/-- The real coordinates of a field depend continuously on the field. -/
+theorem continuous_realSubRef (h : 0 ≤ s) : Continuous (realSubRef (f := f) (m := m) h) :=
+  continuous_pi fun j ↦ ((continuous_apply j).comp continuous_subRef).subtype_mk _
+
+/-- **The real coordinates for two expressions of the same order** `s = s'` correspond under
+`BesselPotentialSpace.realSubmoduleCongr`. -/
+theorem realSubRef_congrOrder {s' : ℝ} (hss' : s = s') (h : 0 ≤ s) (h' : 0 ≤ s')
+    (x : SobolevFieldSpace f m s) (j : Fin 4) :
+    realSubRef h' (congrOrder hss' x) j = realSubmoduleCongr ℂ hss' h h' (realSubRef h x j) := by
+  subst hss'
+  have hx : congrOrder rfl x = x := by ext z i; simp
+  ext1
+  rw [coe_realSubmoduleCongr, inclusion_self, hx]
+
 /-- The `L²` function of a real coordinate of `x` is the complexification of the coordinate of
 `x - x_m`. -/
 theorem coeFn_inclusionLp_realSubRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) (j : Fin 4) :
@@ -214,6 +233,13 @@ theorem realSubRef_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSu
   filter_upwards [coeFn_inclusionLp_ae_eq_continuousRepField hs u j] with z hz
   rw [hz, ofRealSubRef_apply, add_sub_cancel_left, continuousRepField_apply]
 
+/-- The coordinates in `H^s(ℂ)⁴` of the field with real coordinates `u` are the inclusions of
+`u`. -/
+@[simp]
+theorem subRef_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
+    subRef (ofRealSubRef (f := f) (m := m) hs u) = fun j ↦ (u j : H^{s}(ℂ)) :=
+  funext fun j ↦ by rw [← coe_realSubRef h, realSubRef_ofRealSubRef]
+
 @[simp]
 theorem ofRealSubRef_realSubRef (hs : 1 < s) {h : 0 ≤ s} (x : SobolevFieldSpace f m s) :
     ofRealSubRef hs (realSubRef h x) = x :=
@@ -234,8 +260,7 @@ def realSubRefHomeomorph (hs : 1 < s) {h : 0 ≤ s} :
   invFun := ofRealSubRef hs
   left_inv := ofRealSubRef_realSubRef hs
   right_inv := realSubRef_ofRealSubRef hs
-  continuous_toFun := continuous_pi fun j ↦
-    ((continuous_apply j).comp continuous_subRef).subtype_mk _
+  continuous_toFun := continuous_realSubRef h
   continuous_invFun := by
     refine (isEmbedding_subRef h).continuous_iff.2 (continuous_pi fun j ↦ ?_)
     have : (fun u ↦ subRef (ofRealSubRef (f := f) (m := m) hs u) j) =
