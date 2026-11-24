@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.PDE.Vortex.SpectralGap
 import TauCeti.Topology.Algebra.Support
 
@@ -27,10 +28,11 @@ rows
 `N = L_x Ξ (w, ·) + normalBaseCoupling (D_w Η)`,  `P = L_x* Η (w, ·) + pairedBaseCoupling (D_w Ξ)`,
 
 where `L_x` and `L_x*` (`TauCeti.Vortex.gaugeFixedOperator`, `TauCeti.Vortex.gaugeFixedAdjoint`)
-act on the normal slices, and the couplings are `D 1 + K (D i)` and `D 1 + K' (D i)` for two
-signed coordinate permutations `K`, `K'`. This file proves that the base dependence contributes
-exactly the energy of the families along the base: for compactly supported `C²` families and a
-continuous field `x`,
+act on the normal slices, and the couplings are `D 1 - J' (D i)` and `D 1 + J (D i)` for the
+complex structures `J'` on the target and `J` on variations of `L_x`
+(`TauCeti.Vortex.targetComplexStructure`, `TauCeti.Vortex.variationComplexStructure`). This file
+proves that the base dependence contributes exactly the energy of the families along the base: for
+compactly supported `C²` families and a continuous field `x`,
 
 `∫ (|N|² + |P|²) = ∫ (|L_x Ξ|² + |L_x* Η|² + |∂_s Ξ|² + |∂_t Ξ|² + |∂_s Η|² + |∂_t Η|²)`
 
@@ -46,10 +48,10 @@ Expanding the squares leaves three kinds of cross terms, each of which integrate
   taken. Integrating by parts along the base and then, by Fubini, along each normal slice
   (`TauCeti.Vortex.integral_inner_gaugeFixedOperator`) turns the first pairing into minus the
   second.
-* `⟪L_x Ξ, K ∂_t Η⟫ + ⟪L_x* Η, K' ∂_t Ξ⟫`. The twists intertwine the operator up to sign,
-  `K (L_x y) = -L_x (K' y)`, and `K` is skew, so this is the previous cross term along `t` for the
-  family `K' Ξ`.
-* `⟪∂_s Η, K ∂_t Η⟫` and `⟪∂_s Ξ, K' ∂_t Ξ⟫`. Since `K` and `K'` are skew, these are alternating
+* `-⟪L_x Ξ, J' ∂_t Η⟫ + ⟪L_x* Η, J ∂_t Ξ⟫`. The operator is complex linear,
+  `L_x (J y) = J' (L_x y)` (`TauCeti.Vortex.gaugeFixedOperator_variationComplexStructure`), and
+  `J'` is skew, so this is the previous cross term along `t` for the family `J Ξ`.
+* `-⟪∂_s Η, J' ∂_t Η⟫` and `⟪∂_s Ξ, J ∂_t Ξ⟫`. Since `J'` and `J` are skew, these are alternating
   forms evaluated on two derivatives of a compactly supported map, which integrate to zero
   (`TauCeti.integral_bilinForm_fderiv_apply_eq_zero_of_isAlt`).
 
@@ -90,71 +92,19 @@ open Filter MeasureTheory Complex
 open scoped Topology
 open scoped RealInnerProductSpace InnerProductSpace
 
-/-! ### The twists of the base couplings -/
+/-! ### The base couplings through the complex structures -/
 
 section Twist
 
-/-- The twist `K (v₀, v₁, v₂, v₃) = (-v₁, v₀, v₃, -v₂)` of `normalBaseCoupling`. -/
-private def normalTwist : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-  LinearMap.toContinuousLinearMap
-    { toFun v := !₂[-v 1, v 0, v 3, -v 2]
-      map_add' v w := by ext i; fin_cases i <;> simp <;> ring
-      map_smul' c v := by ext i; fin_cases i <;> simp }
-
-/-- The twist `K' (v₀, v₁, v₂, v₃) = (-v₁, v₀, -v₃, v₂)` of `pairedBaseCoupling`. -/
-private def pairedTwist : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
-  LinearMap.toContinuousLinearMap
-    { toFun v := !₂[-v 1, v 0, -v 3, v 2]
-      map_add' v w := by ext i; fin_cases i <;> simp <;> ring
-      map_smul' c v := by ext i; fin_cases i <;> simp }
-
-private theorem normalTwist_apply (v : EuclideanSpace ℝ (Fin 4)) :
-    normalTwist v = !₂[-v 1, v 0, v 3, -v 2] :=
-  (rfl)
-
-private theorem pairedTwist_apply (v : EuclideanSpace ℝ (Fin 4)) :
-    pairedTwist v = !₂[-v 1, v 0, -v 3, v 2] :=
-  (rfl)
-
 private theorem normalBaseCoupling_eq (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    normalBaseCoupling D = D 1 + normalTwist (D I) := by
+    normalBaseCoupling D = D 1 + Vortex.targetComplexStructure.symm (D I) := by
   ext i
-  fin_cases i <;> simp [normalTwist_apply] <;> ring
+  fin_cases i <;> simp <;> ring
 
 private theorem pairedBaseCoupling_eq (D : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
-    pairedBaseCoupling D = D 1 + pairedTwist (D I) := by
+    pairedBaseCoupling D = D 1 + Vortex.variationComplexStructure (D I) := by
   ext i
-  fin_cases i <;> simp [pairedTwist_apply] <;> ring
-
-private theorem inner_normalTwist_left (u v : EuclideanSpace ℝ (Fin 4)) :
-    ⟪normalTwist u, v⟫ = -⟪u, normalTwist v⟫ := by
-  simp [normalTwist_apply, PiLp.inner_apply, Fin.sum_univ_four]
-  ring
-
-private theorem inner_pairedTwist_left (u v : EuclideanSpace ℝ (Fin 4)) :
-    ⟪pairedTwist u, v⟫ = -⟪u, pairedTwist v⟫ := by
-  simp [pairedTwist_apply, PiLp.inner_apply, Fin.sum_univ_four]
-  ring
-
-private theorem norm_normalTwist_sq (v : EuclideanSpace ℝ (Fin 4)) :
-    ‖normalTwist v‖ ^ 2 = ‖v‖ ^ 2 := by
-  simp [normalTwist_apply, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
-  ring
-
-private theorem norm_pairedTwist_sq (v : EuclideanSpace ℝ (Fin 4)) :
-    ‖pairedTwist v‖ ^ 2 = ‖v‖ ^ 2 := by
-  simp [pairedTwist_apply, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
-  ring
-
-/-- The twists intertwine the gauge-fixed operator up to sign: `K (L_x y) = -L_x (K' y)`. -/
-private theorem normalTwist_gaugeFixedOperator (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    normalTwist (Vortex.gaugeFixedOperator x y z) =
-      -Vortex.gaugeFixedOperator x (fun w ↦ pairedTwist (y w)) z := by
-  ext i
-  fin_cases i <;>
-    simp [normalTwist_apply, pairedTwist_apply, Vortex.gaugeAdjoint_def,
-      Vortex.linearizedEquation_apply_zero, Vortex.linearizedEquation_apply_one,
-      Vortex.linearizedEquation_apply_two] <;> ring
+  fin_cases i <;> simp <;> ring
 
 end Twist
 
@@ -178,18 +128,27 @@ private theorem fderiv_slice_fst_apply (hΦ : DifferentiableAt ℝ Φ p) (v : �
   rw [hΦ.hasFDerivAt_slice_fst.fderiv]
   simp
 
+/-- The gradients of the four coordinates of the normal slice, as a linear function of the
+derivative `D` of a family at a point: the gradient of the coordinate `j` is dual to
+`u ↦ D (0, u) j`. -/
+private def sliceGradients : (ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) →L[ℝ] (Fin 4 → ℂ) :=
+  LinearMap.toContinuousLinearMap
+    { toFun D j := (InnerProductSpace.toDual ℝ ℂ).symm
+        ((EuclideanSpace.proj j).comp (D.comp (ContinuousLinearMap.inr ℝ ℂ ℂ)))
+      map_add' D D' := by
+        funext j; simp [ContinuousLinearMap.add_comp, ContinuousLinearMap.comp_add]
+      map_smul' c D := by
+        funext j; simp [ContinuousLinearMap.smul_comp] }
+
 /-- The gauge-fixed operator on the normal slices, as a linear function of the first jet `(D, c)`
-of a family at a point, for the field value `a`. -/
+of a family at a point, for the field value `a`: the first-order part
+`TauCeti.Vortex.gaugeFixedFirstOrder` on the gradients of the slice coordinates plus the
+zeroth-order part `TauCeti.Vortex.gaugeFixedZerothOrder a c`. -/
 private def jetOperator (a : EuclideanSpace ℝ (Fin 4)) :
     ((ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) × EuclideanSpace ℝ (Fin 4)) →L[ℝ]
       EuclideanSpace ℝ (Fin 4) :=
-  LinearMap.toContinuousLinearMap
-    { toFun q := !₂[q.1 (0, 1) 0 + q.1 (0, I) 1 + a 2 * q.2 3 - a 3 * q.2 2,
-        q.1 (0, I) 0 - q.1 (0, 1) 1 + a 2 * q.2 2 + a 3 * q.2 3,
-        q.1 (0, 1) 2 - q.1 (0, I) 3 - a 0 * q.2 3 - q.2 0 * a 3 - a 1 * q.2 2 - q.2 1 * a 2,
-        q.1 (0, 1) 3 + q.1 (0, I) 2 + a 0 * q.2 2 + q.2 0 * a 2 - a 1 * q.2 3 - q.2 1 * a 3]
-      map_add' q r := by ext i; fin_cases i <;> simp <;> ring
-      map_smul' c q := by ext i; fin_cases i <;> simp <;> ring }
+  Vortex.gaugeFixedFirstOrder ∘L sliceGradients ∘L ContinuousLinearMap.fst ℝ _ _ +
+    Vortex.gaugeFixedZerothOrder a ∘L ContinuousLinearMap.snd ℝ _ _
 
 /-- The adjoint `L_x*` on the normal slices, as a linear function of the first jet. -/
 private def jetAdjoint (a : EuclideanSpace ℝ (Fin 4)) :
@@ -203,12 +162,15 @@ private def jetAdjoint (a : EuclideanSpace ℝ (Fin 4)) :
       map_add' q r := by ext i; fin_cases i <;> simp <;> ring
       map_smul' c q := by ext i; fin_cases i <;> simp <;> ring }
 
+private theorem sliceGradients_apply (D : ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) (j : Fin 4) :
+    sliceGradients D j = (InnerProductSpace.toDual ℝ ℂ).symm
+      ((EuclideanSpace.proj j).comp (D.comp (ContinuousLinearMap.inr ℝ ℂ ℂ))) :=
+  (rfl)
+
 private theorem jetOperator_apply (a : EuclideanSpace ℝ (Fin 4))
     (q : (ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) × EuclideanSpace ℝ (Fin 4)) :
-    jetOperator a q = !₂[q.1 (0, 1) 0 + q.1 (0, I) 1 + a 2 * q.2 3 - a 3 * q.2 2,
-        q.1 (0, I) 0 - q.1 (0, 1) 1 + a 2 * q.2 2 + a 3 * q.2 3,
-        q.1 (0, 1) 2 - q.1 (0, I) 3 - a 0 * q.2 3 - q.2 0 * a 3 - a 1 * q.2 2 - q.2 1 * a 2,
-        q.1 (0, 1) 3 + q.1 (0, I) 2 + a 0 * q.2 2 + q.2 0 * a 2 - a 1 * q.2 3 - q.2 1 * a 3] :=
+    jetOperator a q =
+      Vortex.gaugeFixedFirstOrder (sliceGradients q.1) + Vortex.gaugeFixedZerothOrder a q.2 :=
   (rfl)
 
 private theorem jetAdjoint_apply (a : EuclideanSpace ℝ (Fin 4))
@@ -225,8 +187,13 @@ variable (x : ℂ → EuclideanSpace ℝ (Fin 4))
 private theorem gaugeFixedOperator_slice_eq_jetOperator (hΦ : DifferentiableAt ℝ Φ p) :
     Vortex.gaugeFixedOperator x (fun z ↦ Φ (p.1, z)) p.2 =
       jetOperator (x p.2) (fderiv ℝ Φ p, Φ p) := by
-  ext i
-  fin_cases i <;> simp [jetOperator_apply, Vortex.gaugeAdjoint_def, fderiv_slice_snd_apply_coord hΦ]
+  rw [Vortex.gaugeFixedOperator_eq_gaugeFixedFirstOrder_add, jetOperator_apply]
+  congr 2
+  funext j
+  rw [gradient, sliceGradients_apply]
+  congr 1
+  ext u
+  simpa using fderiv_slice_snd_apply_coord hΦ u j
 
 /-- On the normal slice through a point, `L_x*` is the jet adjoint of the family there. -/
 private theorem gaugeFixedAdjoint_slice_eq_jetAdjoint (hΦ : DifferentiableAt ℝ Φ p) :
@@ -237,18 +204,7 @@ private theorem gaugeFixedAdjoint_slice_eq_jetAdjoint (hΦ : DifferentiableAt �
 
 variable {x}
 
-/-- The jet operator and the jet adjoint are jointly continuous in the field value and the jet. -/
-private theorem continuous_jetOperator :
-    Continuous fun r : EuclideanSpace ℝ (Fin 4) ×
-        ((ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) × EuclideanSpace ℝ (Fin 4)) ↦
-      jetOperator r.1 r.2 := by
-  simp only [jetOperator_apply]
-  exact (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ by
-    fin_cases i <;>
-      simp only [Fin.isValue, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta, Fin.mk_one,
-        Fin.reduceFinMk, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val] <;>
-      fun_prop)
-
+/-- The jet adjoint is jointly continuous in the field value and the jet. -/
 private theorem continuous_jetAdjoint :
     Continuous fun r : EuclideanSpace ℝ (Fin 4) ×
         ((ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4)) × EuclideanSpace ℝ (Fin 4)) ↦
@@ -266,9 +222,9 @@ private theorem continuous_gaugeFixedOperator_slice (hx : Continuous x) (hΦ : C
   have h : (fun p : ℂ × ℂ ↦ Vortex.gaugeFixedOperator x (fun z ↦ Φ (p.1, z)) p.2) =
       fun p ↦ jetOperator (x p.2) (fderiv ℝ Φ p, Φ p) :=
     funext fun p ↦ gaugeFixedOperator_slice_eq_jetOperator x (hΦ.differentiable one_ne_zero p)
-  rw [h]
-  exact continuous_jetOperator.comp ((hx.comp continuous_snd).prodMk
-    ((hΦ.continuous_fderiv one_ne_zero).prodMk hΦ.continuous))
+  have hc := hΦ.continuous
+  simp only [h, jetOperator_apply]
+  fun_prop
 
 /-- `L_x*` on the normal slices of a `C¹` family is jointly continuous. -/
 private theorem continuous_gaugeFixedAdjoint_slice (hx : Continuous x) (hΦ : ContDiff ℝ 1 Φ) :
@@ -419,24 +375,27 @@ section Energy
 variable {μ ν : Measure ℂ} [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
   {x : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The pairing `⟪u, K w⟫` with the twist of `normalBaseCoupling` is alternating. -/
-private theorem isAlt_compl₂_normalTwist :
+/-- The pairing `⟪u, J'⁻¹ w⟫` of `normalBaseCoupling` is alternating, as `J'` is skew. -/
+private theorem isAlt_compl₂_targetComplexStructure_symm :
     ((innerₗ (EuclideanSpace ℝ (Fin 4))).compl₂
-      (normalTwist : EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4))).IsAlt :=
+      Vortex.targetComplexStructure.symm.toLinearEquiv.toLinearMap).IsAlt :=
   fun u ↦ by
-    have h := inner_normalTwist_left u u
+    have h := Vortex.inner_targetComplexStructure_left u u
     rw [real_inner_comm] at h
-    simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe]
+    simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toLinearEquiv, Vortex.targetComplexStructure_symm_apply,
+      inner_neg_right]
     linarith
 
-/-- The pairing `⟪u, K' w⟫` with the twist of `pairedBaseCoupling` is alternating. -/
-private theorem isAlt_compl₂_pairedTwist :
+/-- The pairing `⟪u, J w⟫` of `pairedBaseCoupling` is alternating, as `J` is skew. -/
+private theorem isAlt_compl₂_variationComplexStructure :
     ((innerₗ (EuclideanSpace ℝ (Fin 4))).compl₂
-      (pairedTwist : EuclideanSpace ℝ (Fin 4) →ₗ[ℝ] EuclideanSpace ℝ (Fin 4))).IsAlt :=
+      Vortex.variationComplexStructure.toLinearEquiv.toLinearMap).IsAlt :=
   fun u ↦ by
-    have h := inner_pairedTwist_left u u
+    have h := Vortex.inner_variationComplexStructure_left u u
     rw [real_inner_comm] at h
-    simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe]
+    simp only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toLinearEquiv]
     linarith
 
 /-- The right side of the energy identity is integrable. -/
@@ -477,15 +436,16 @@ private theorem integrable_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAd
 is integrable. -/
 private theorem integrable_inner_fderiv_apply {Φ : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
     (hΦ : ContDiff ℝ 1 Φ) (hΦc : HasCompactSupport Φ)
-    (T : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) :
+    (T : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) :
     Integrable (fun p ↦ ⟪fderiv ℝ Φ p (1, 0), T (fderiv ℝ Φ p (I, 0))⟫) (μ.prod ν) := by
+  have hT := T.continuous
   exact Continuous.integrable_of_hasCompactSupport (by fun_prop) <|
     HasCompactSupport.intro hΦc.isCompact fun p hp ↦ by simp [fderiv_of_notMem_tsupport ℝ hp]
 
 /-- **The pointwise expansion of the two rows of the normal model.** The squared rows are the
 squared normal operators plus the energy along the base, up to twice four cross terms: the
-pairings of `L_x Ξ` with `∂_s Η` and of `L_x* Η` with `∂_s Ξ`, the same along `t` for the twisted
-family `K' Ξ`, and the pairings `⟪∂_s Η, K ∂_t Η⟫`, `⟪∂_s Ξ, K' ∂_t Ξ⟫`. -/
+pairings of `L_x Ξ` with `∂_s Η` and of `L_x* Η` with `∂_s Ξ`, the same along `t` for the family
+`J Ξ`, and the pairings `⟪∂_s Η, J'⁻¹ ∂_t Η⟫`, `⟪∂_s Ξ, J ∂_t Ξ⟫`. -/
 private theorem norm_sq_add_norm_sq_familyNormalModel_eq (hΞ : Differentiable ℝ Ξ)
     (hΗ : Differentiable ℝ Η) (p : ℂ × ℂ) :
     ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2 +
@@ -498,22 +458,21 @@ private theorem norm_sq_add_norm_sq_familyNormalModel_eq (hΞ : Differentiable �
         ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖ ^ 2 + ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖ ^ 2) +
       2 * ((⟪Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2, fderiv ℝ Η p (1, 0)⟫ +
           ⟪Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2, fderiv ℝ Ξ p (1, 0)⟫) +
-        (⟪Vortex.gaugeFixedOperator x (fun z ↦ pairedTwist (Ξ (p.1, z))) p.2,
-            fderiv ℝ Η p (I, 0)⟫ +
+        (⟪Vortex.gaugeFixedOperator x (fun z ↦ Vortex.variationComplexStructure (Ξ (p.1, z)))
+            p.2, fderiv ℝ Η p (I, 0)⟫ +
           ⟪Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2,
-            fderiv ℝ (fun q ↦ pairedTwist (Ξ q)) p (I, 0)⟫) +
-        ⟪fderiv ℝ Η p (1, 0), normalTwist (fderiv ℝ Η p (I, 0))⟫ +
-        ⟪fderiv ℝ Ξ p (1, 0), pairedTwist (fderiv ℝ Ξ p (I, 0))⟫) := by
-  have hdΞ' : fderiv ℝ (fun q ↦ pairedTwist (Ξ q)) p (I, 0) =
-      pairedTwist (fderiv ℝ Ξ p (I, 0)) :=
-    congrArg (fun L ↦ L (I, 0)) (pairedTwist.hasFDerivAt.comp p (hΞ p).hasFDerivAt).fderiv
-  have hL' : Vortex.gaugeFixedOperator x (fun z ↦ pairedTwist (Ξ (p.1, z))) p.2 =
-      -normalTwist (Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2) := by
-    rw [normalTwist_gaugeFixedOperator, neg_neg]
-  rw [normalBaseCoupling_eq, pairedBaseCoupling_eq, hL', hdΞ', fderiv_slice_fst_apply (hΞ p),
+            fderiv ℝ (fun q ↦ Vortex.variationComplexStructure (Ξ q)) p (I, 0)⟫) +
+        ⟪fderiv ℝ Η p (1, 0), Vortex.targetComplexStructure.symm (fderiv ℝ Η p (I, 0))⟫ +
+        ⟪fderiv ℝ Ξ p (1, 0), Vortex.variationComplexStructure (fderiv ℝ Ξ p (I, 0))⟫) := by
+  have hdΞ' : fderiv ℝ (fun q ↦ Vortex.variationComplexStructure (Ξ q)) p (I, 0) =
+      Vortex.variationComplexStructure (fderiv ℝ Ξ p (I, 0)) :=
+    congrArg (fun L ↦ L (I, 0)) (Vortex.variationComplexStructure.comp_fderiv (f := Ξ))
+  rw [normalBaseCoupling_eq, pairedBaseCoupling_eq,
+    Vortex.gaugeFixedOperator_variationComplexStructure, hdΞ', fderiv_slice_fst_apply (hΞ p),
     fderiv_slice_fst_apply (hΞ p), fderiv_slice_fst_apply (hΗ p), fderiv_slice_fst_apply (hΗ p)]
-  simp only [norm_add_sq_real, norm_normalTwist_sq, norm_pairedTwist_sq, inner_add_right,
-    inner_neg_left, inner_normalTwist_left]
+  simp only [norm_add_sq_real, LinearIsometryEquiv.norm_map, norm_neg, inner_add_right,
+    Vortex.targetComplexStructure_symm_apply, inner_neg_right,
+    Vortex.inner_targetComplexStructure_left]
   ring
 
 /-- **The energy identity of the normal model with base dependence.** Let `x` be a continuous
@@ -542,27 +501,34 @@ theorem integral_norm_sq_add_norm_sq_familyNormalModel (hx : Continuous x)
         ∂μ.prod ν := by
   have hΞ₁ : ContDiff ℝ 1 Ξ := hΞ.of_le (by norm_num)
   have hΗ₁ : ContDiff ℝ 1 Η := hΗ.of_le (by norm_num)
-  -- The twisted family `K' Ξ` carries the cross term along `t`.
-  have hΞ' : ContDiff ℝ 2 fun q ↦ pairedTwist (Ξ q) := pairedTwist.contDiff.comp hΞ
+  -- The family `J Ξ` carries the cross term along `t`.
+  have hΞ' : ContDiff ℝ 2 fun q ↦ Vortex.variationComplexStructure (Ξ q) :=
+    Vortex.variationComplexStructure.contDiff.comp hΞ
   -- Each of the four cross terms is integrable and integrates to zero.
   have i₁ := integrable_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAdjoint_slice
     (μ := μ) (ν := ν) hx hΞ₁ hΗ₁ hΗc 1
   have i₂ := integrable_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAdjoint_slice
     (μ := μ) (ν := ν) hx (hΞ'.of_le (by norm_num)) hΗ₁ hΗc I
-  have i₃ := integrable_inner_fderiv_apply (μ := μ) (ν := ν) hΗ₁ hΗc normalTwist
-  have i₄ := integrable_inner_fderiv_apply (μ := μ) (ν := ν) hΞ₁ hΞc pairedTwist
+  have i₃ := integrable_inner_fderiv_apply (μ := μ) (ν := ν) hΗ₁ hΗc
+    Vortex.targetComplexStructure.symm
+  have i₄ := integrable_inner_fderiv_apply (μ := μ) (ν := ν) hΞ₁ hΞc
+    Vortex.variationComplexStructure
   have h₁ := integral_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAdjoint_slice
     (μ := μ) (ν := ν) hx hΞ hΗ hΗc 1
   have h₂ := integral_inner_gaugeFixedOperator_slice_add_inner_gaugeFixedAdjoint_slice
     (μ := μ) (ν := ν) hx hΞ' hΗ hΗc I
-  have h₃ : ∫ p, ⟪fderiv ℝ Η p (1, 0), normalTwist (fderiv ℝ Η p (I, 0))⟫ ∂μ.prod ν = 0 := by
-    simpa only [LinearMap.compl₂_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe] using
-      integral_bilinForm_fderiv_apply_eq_zero_of_isAlt (μ := μ.prod ν) isAlt_compl₂_normalTwist
-        hΗ hΗc (1, 0) (I, 0)
-  have h₄ : ∫ p, ⟪fderiv ℝ Ξ p (1, 0), pairedTwist (fderiv ℝ Ξ p (I, 0))⟫ ∂μ.prod ν = 0 := by
-    simpa only [LinearMap.compl₂_apply, innerₗ_apply_apply, ContinuousLinearMap.coe_coe] using
-      integral_bilinForm_fderiv_apply_eq_zero_of_isAlt (μ := μ.prod ν) isAlt_compl₂_pairedTwist
-        hΞ hΞc (1, 0) (I, 0)
+  have h₃ : ∫ p, ⟪fderiv ℝ Η p (1, 0), Vortex.targetComplexStructure.symm (fderiv ℝ Η p (I, 0))⟫
+      ∂μ.prod ν = 0 := by
+    simpa only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toLinearEquiv] using
+      integral_bilinForm_fderiv_apply_eq_zero_of_isAlt (μ := μ.prod ν)
+        isAlt_compl₂_targetComplexStructure_symm hΗ hΗc (1, 0) (I, 0)
+  have h₄ : ∫ p, ⟪fderiv ℝ Ξ p (1, 0), Vortex.variationComplexStructure (fderiv ℝ Ξ p (I, 0))⟫
+      ∂μ.prod ν = 0 := by
+    simpa only [LinearMap.compl₂_apply, innerₗ_apply_apply, LinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toLinearEquiv] using
+      integral_bilinForm_fderiv_apply_eq_zero_of_isAlt (μ := μ.prod ν)
+        isAlt_compl₂_variationComplexStructure hΞ hΞc (1, 0) (I, 0)
   rw [integral_congr_ae (.of_forall (norm_sq_add_norm_sq_familyNormalModel_eq
       (hΞ₁.differentiable one_ne_zero) (hΗ₁.differentiable one_ne_zero))),
     integral_add (integrable_energy_familyNormalModel hx hΞ₁ hΗ₁ hΞc hΗc) ?_, integral_const_mul,
