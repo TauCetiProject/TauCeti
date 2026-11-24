@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Quotient
+public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
 
 /-!
 # Weil's formula for nonnegative functions
@@ -50,9 +51,12 @@ theorem MulAction.lintegral_eq_lintegral_automorphize {G α : Type*} [Group G] [
     {f : α → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ a, f a ∂μ = ∫⁻ x, automorphize f x ∂ν := by
   obtain ⟨s, hs⟩ := ‹HasFundamentalDomain G α μ›.ExistsIsFundamentalDomain
-  have hmeas : Measurable (automorphize f : Quotient (orbitRel G α) → ℝ≥0∞) :=
-    measurable_from_quotient.mpr (Measurable.tsum fun g ↦ hf.comp (measurable_const_smul g))
+  have hmeas : Measurable (automorphize f : Quotient (orbitRel G α) → ℝ≥0∞) := by
+    refine measurable_from_quotient.mpr ?_
+    simp only [Function.comp_def, Quotient.mk''_eq_mk, automorphize_mk]
+    exact Measurable.tsum fun g ↦ hf.comp (measurable_const_smul g)
   rw [← (hs.measurePreserving_quotient_mk ν).lintegral_comp hmeas, hs.lintegral_eq_tsum'' f]
+  simp only [automorphize_mk]
   exact (lintegral_tsum fun g ↦ (hf.comp (measurable_const_smul g)).aemeasurable).symm
 
 /-- **Weil's formula** for nonnegative measurable functions. Let `μ` be a right-invariant measure
@@ -69,5 +73,6 @@ theorem QuotientGroup.lintegral_eq_lintegral_automorphize {G : Type*} [Group G]
     [MeasurableSpace G] [MeasurableConstSMul Gᵐᵒᵖ G] {Γ : Subgroup G} [Countable Γ]
     {μ : Measure G} [μ.IsMulRightInvariant] [HasFundamentalDomain Γ.op G μ]
     (ν : Measure (G ⧸ Γ)) [QuotientMeasureEqMeasurePreimage μ ν] {f : G → ℝ≥0∞}
-    (hf : Measurable f) : ∫⁻ g, f g ∂μ = ∫⁻ x, automorphize f x ∂ν :=
-  MulAction.lintegral_eq_lintegral_automorphize ν hf
+    (hf : Measurable f) : ∫⁻ g, f g ∂μ = ∫⁻ x, automorphize f x ∂ν := by
+  unfold automorphize
+  exact MulAction.lintegral_eq_lintegral_automorphize ν hf
