@@ -296,6 +296,14 @@ noncomputable def liftModel (n : ℕ∞ω) [ENat.LEInfty n] [IsManifold I n M]
     map_add' u₁ u₂ := by ext y; exact congr_fun (L.map_add u₁ u₂) y
     map_smul' c u := by ext y; exact congr_fun (L.map_smul c u) y }
 
+/-- `ContMDiffSection.liftModel` evaluates pointwise to `FiberBundle.contMDiffExtend` of
+`(trivializationAt F V x).symmL ℝ x u`. -/
+theorem liftModel_apply {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] (x : M) (u : F) (y : M) :
+    liftModel I F V n x u y =
+      FiberBundle.contMDiffExtend I F ((FiberBundle.trivializationAt F V x).symmL ℝ x u) y := by
+  rfl
+
 /-- Near `x`, `ContMDiffSection.liftModel` agrees with the constant-coordinate local sections of
 `trivializationAt F V x`. -/
 theorem liftModel_eventuallyEq {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M]
@@ -305,8 +313,8 @@ theorem liftModel_eventuallyEq {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x
   filter_upwards [FiberBundle.eventually_contMDiffExtend_eq_extend I F (e.symmL ℝ x u),
     e.open_baseSet.mem_nhds hx] with y hy hye
-  change FiberBundle.contMDiffExtend I F (e.symmL ℝ x u) y = e.symmL ℝ y u
-  rw [hy, FiberBundle.extend, Trivialization.symmL_apply e hx, Trivialization.symmL_apply e hye]
+  rw [liftModel_apply, hy, FiberBundle.extend, Trivialization.symmL_apply e hx,
+    Trivialization.symmL_apply e hye]
   simp [e, hx]
 
 /-- At the base point `x`, `ContMDiffSection.liftModel` evaluates to

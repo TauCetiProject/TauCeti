@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
 import Mathlib.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
@@ -534,8 +534,9 @@ theorem wedge_eq_cast_smul_left {l : ℕ} (φ : Ω[0]) (ψ : Ω[l]) :
     ContinuousAlternatingMap.smul_apply, smul_eq_mul, wedge_apply_zero_left]
   exact congrArg (· * _) (congrArg (φ x) (Subsingleton.elim _ _))
 
+/-- Right degree-zero multiplication of the fibrewise wedge product on sections. -/
 @[simp]
-theorem wedge_apply_zero_right {k : ℕ} (φ : Ω[k]) (ψ : Ω[0]) :
+theorem wedge_eq_smul_right {k : ℕ} (φ : Ω[k]) (ψ : Ω[0]) :
     φ.wedge ψ = (constOfIsEmptyEquiv I F n V (Fin 0)).symm ψ • φ := by
   ext x v
   have h0 : (0 : Fin 0 → V x) = isEmptyElim := Subsingleton.elim _ _
@@ -600,7 +601,7 @@ theorem interiorProd_wedge_zero_left {l : ℕ}
 theorem interiorProd_wedge_zero_right {k : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[0]) (a : Cₛ^n⟮I; F, V⟯) :
     (φ.wedge ψ).interiorProd a = (φ.interiorProd a).wedge ψ := by
-  rw [wedge_apply_zero_right, wedge_apply_zero_right, interiorProd_smul_left]
+  rw [wedge_eq_smul_right, wedge_eq_smul_right, interiorProd_smul_left]
 
 /-- Pointwise graded antiderivation law for `ContMDiffSection.interiorProd` across a fibrewise
 wedge of two sections of positive degree:
@@ -628,20 +629,6 @@ theorem interiorProd_wedge_succ {k l : ℕ}
   rw [coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply, cast_apply,
     coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
   exact interiorProd_wedge_succ_apply φ ψ a x w
-
-/-- Converting the smooth real wedge of two forms to a section gives the fibrewise wedge of their
-converted sections. -/
-@[simp]
-theorem _root_.TauCeti.SmoothForm.wedge_toContMDiffSection
-    {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-    [TopologicalSpace M] [ChartedSpace H M] {I : ModelWithCorners ℝ E H}
-    [IsManifold I 1 M] {k l : ℕ}
-    (φ : TauCeti.SmoothForm I M ℝ k) (ψ : TauCeti.SmoothForm I M ℝ l) :
-    (TauCeti.SmoothForm.wedge φ ψ).toContMDiffSection =
-      φ.toContMDiffSection.wedge ψ.toContMDiffSection := by
-  ext x v
-  simp only [TauCeti.SmoothForm.toContMDiffSection_apply, wedge_apply_sum]
-  exact TauCeti.SmoothForm.wedge_apply φ ψ x v
 
 end Wedge
 
