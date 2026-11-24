@@ -54,6 +54,16 @@ theorem finProdFinTwoEquiv_apply_val (n : ℕ) (p : Fin (2 ^ n) × Fin 2) :
     (finProdFinTwoEquiv n p : ℕ) = p.2 + 2 * p.1 := by
   simp [finProdFinTwoEquiv]
 
+@[simp]
+theorem finProdFinTwoEquiv_symm_apply_fst_val (n : ℕ) (i : Fin (2 ^ (n + 1))) :
+    (((finProdFinTwoEquiv n).symm i).1 : ℕ) = i / 2 := by
+  simp [finProdFinTwoEquiv, Fin.divNat]
+
+@[simp]
+theorem finProdFinTwoEquiv_symm_apply_snd_val (n : ℕ) (i : Fin (2 ^ (n + 1))) :
+    (((finProdFinTwoEquiv n).symm i).2 : ℕ) = i % 2 := by
+  simp [finProdFinTwoEquiv, Fin.modNat]
+
 /-- The connecting map `M_{2^n} → M_{2^(n+1)}`, `a ↦ a ⊗ 1₂`. -/
 def step (n : ℕ) : Stage n →⋆ₐ[ℂ] Stage (n + 1) :=
   (CStarMatrix.ofMatrixStarAlgEquiv.toStarAlgHom.comp
