@@ -12,7 +12,8 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 
 For a contraction `a` of a unital C⋆-algebra, `1 - a⋆a` is positive
 (`CStarAlgebra.one_sub_star_mul_self_nonneg`); for a self-adjoint contraction this is `1 - a²`
-(`IsSelfAdjoint.one_sub_mul_self_nonneg`), so `a` has the positive square root `√(1 - a²)`.
+(`IsSelfAdjoint.one_sub_mul_self_nonneg`), so `1 - a²` has the positive square root
+`√(1 - a²)`.
 These are the entries of the self-adjoint unitary `[[a, √(1 - a²)], [√(1 - a²), -a]]` dilating
 `a`.
 -/
