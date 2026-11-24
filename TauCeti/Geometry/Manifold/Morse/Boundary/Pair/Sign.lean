@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Stable.Pair
 public import TauCeti.LinearAlgebra.Orientation.LinearMapSign
+import TauCeti.Data.Set.Card
 
 /-!
 # Signed counts for a Morse–Smale pair of pseudo-gradients
@@ -74,9 +75,10 @@ critical points of sets `S₀` and `S₁` conjugates it by the involutions `Fins
 pseudo-gradients its coefficients reduce modulo two to the numbers of points of the intersections
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmalePair.intCast_signedPairCoeff`), and for the pair
 `(X, X)` with the same orientation data at both ends it is the identity
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedPairMap_self`). That it commutes with the
-integral Morse boundaries needs the signed count of the ends of the one-dimensional intersections,
-and is not proved here.
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedPairMap_self`). Whether it commutes with the
+integral Morse boundaries is reduced to signed counts of broken configurations in
+`TauCeti.Geometry.Manifold.Morse.Boundary.Pair.Commutation`; that these counts agree, which needs
+the oriented ends of the one-dimensional intersections, is not proved.
 
 ## Main definitions
 
@@ -323,12 +325,10 @@ theorem intCast_signedPairCount (h : IsMorseSmalePair hX₀ hX₁) (h₀ : hX₀
     (h₁ : hX₁.IsMorseSmale) (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁ : IsMorse 𝓘(ℝ, E) f₁) :
     (hX₀.signedPairCount hX₁ φp φq op oq hpq : ZMod 2) =
       ((hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet q).ncard : ZMod 2) := by
-  have hfin := h.finite_unstableSet_inter_stableSet h₀ h₁ hf₀ hf₁ hpq.le
-  rw [signedPairCount_def, finsum_mem_eq_finite_toFinset_sum _ hfin, Int.cast_sum,
-    ncard_eq_toFinset_card _ hfin, Finset.card_eq_sum_ones, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun y hy ↦ ?_
-  rw [Finite.mem_toFinset] at hy
-  rcases pairSign_eq_one_or_eq_neg_one hφp hφq h hf₀ hy with h | h <;> rw [h] <;> decide
+  rw [signedPairCount_def]
+  exact intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one
+    (h.finite_unstableSet_inter_stableSet h₀ h₁ hf₀ hf₁ hpq.le) fun _ hy ↦
+      pairSign_eq_one_or_eq_neg_one hφp hφq h hf₀ hy
 
 end Sign
 

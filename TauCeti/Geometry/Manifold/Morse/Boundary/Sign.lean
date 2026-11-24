@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.ChartChange
 public import TauCeti.LinearAlgebra.Orientation.LinearMapSign
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.Normed.Module.Orientation
+import TauCeti.Data.Set.Card
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.LinearAlgebra.Ray
@@ -589,13 +590,11 @@ theorem intCast_signedTrajectoryCount (hMS : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f) :
     (hX.signedTrajectoryCount φp φq op oq hpq : ZMod 2) =
       ((hX.morseTrajectorySlice p q).ncard : ZMod 2) := by
-  have hfin := hMS.finite_morseTrajectorySlice hf hpq
-  rw [signedTrajectoryCount_def, finsum_mem_eq_finite_toFinset_sum _ hfin, Int.cast_sum,
-    ncard_eq_toFinset_card _ hfin, Finset.card_eq_sum_ones, Nat.cast_sum]
-  refine Finset.sum_congr rfl fun y hy ↦ ?_
-  rw [Finite.mem_toFinset, mem_morseTrajectorySlice] at hy
-  rcases trajectorySign_eq_one_or_eq_neg_one hφp hφq hMS hf ⟨hy.1, hy.2.1⟩ with h | h <;>
-    rw [h] <;> decide
+  rw [signedTrajectoryCount_def]
+  exact intCast_finsum_mem_eq_ncard_of_eq_one_or_eq_neg_one
+    (hMS.finite_morseTrajectorySlice hf hpq) fun _ hy ↦ by
+      obtain ⟨hu, hs, -⟩ := hX.mem_morseTrajectorySlice.1 hy
+      exact trajectorySign_eq_one_or_eq_neg_one hφp hφq hMS hf ⟨hu, hs⟩
 
 omit hφp hφq in
 /-- **The mod-two Morse boundary is the reduction of the signed counts.** For critical points of
