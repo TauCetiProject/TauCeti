@@ -36,6 +36,8 @@ kernel.
 
 * `IsLocalRing.algEquivLocalizationAtMaximalIdeal R S`: the `R`-algebra isomorphism from a local
   ring `S` to its localization at its maximal ideal.
+* `IsLocalRing.bijective_algebraMap_atPrime_of_eq_maximalIdeal`: for a local ring `S` and a prime
+  ideal `P = maximalIdeal S`, `algebraMap S L` is bijective for any localization `L` at `P`.
 * `IsLocalization.AtPrime.isLocalHom_lift`: the lift of a homomorphism to a local ring along the
   localization at a prime mapped into the maximal ideal is local.
 * `IsLocalization.AtPrime.isLocalHom_algebraMap_of_liesOver` and
@@ -68,6 +70,16 @@ theorem algEquivLocalizationAtMaximalIdeal_apply (s : S) :
     Algebra.algebraMap_self_apply] using
     (IsLocalization.atUnits S (maximalIdeal S).primeCompl
       fun _ hx ↦ notMem_maximalIdeal.mp hx).commutes s
+
+/-- For a local ring `S` and a prime ideal `P` equal to `maximalIdeal S`, the algebra map from `S`
+to any localization `L` of `S` at `P` is bijective. -/
+theorem bijective_algebraMap_atPrime_of_eq_maximalIdeal {S L : Type*} [CommSemiring S]
+    [CommSemiring L] [IsLocalRing S] [Algebra S L] {P : Ideal S} [P.IsPrime]
+    [IsLocalization.AtPrime L P] (hP : P = maximalIdeal S) :
+    Function.Bijective (algebraMap S L) :=
+  bijective_algebraMap_of_linearEquiv
+    (IsLocalization.atUnits S P.primeCompl fun _ hx ↦
+      notMem_maximalIdeal.mp (hP ▸ hx)).toLinearEquiv
 
 end IsLocalRing
 

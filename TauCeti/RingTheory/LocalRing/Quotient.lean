@@ -49,6 +49,7 @@ is bijective.
   `IsLocalRing.finrank_quotient_map`.
 * `RingHom.map_maximalIdeal_eq_of_quotientMap_bijective`,
   `RingHom.isLocalHom_of_quotientMap_bijective`,
+  `RingHom.maximalIdeal_le_comap_of_quotientMap_pow_bijective`,
   `RingHom.quotientMap_maximalIdeal_pow_bijective`: bijective quotient maps modulo
   ideals inside `𝔪_R` or `𝔪_R ^ n` force `𝔪_R S = 𝔪_S`, locality of `f`, and bijectivity modulo
   `𝔪 ^ n`.
@@ -267,6 +268,18 @@ theorem isLocalHom_of_quotientMap_bijective (f : R →+* S) {J : Ideal R}
     (hbij : Function.Bijective (Ideal.quotientMap (J.map f) f H)) :
     IsLocalHom f :=
   ((local_hom_tfae f).out 1 3).mpr (f.map_maximalIdeal_eq_of_quotientMap_bijective hJ hbij).le
+
+/-- If `f : R →+* S` induces bijections modulo `J ^ n` for an ideal `J ≤ 𝔪_R` and every
+`n ≥ 1`, then `𝔪_R` maps into `𝔪_S`. -/
+theorem maximalIdeal_le_comap_of_quotientMap_pow_bijective (f : R →+* S) {J : Ideal R}
+    (hJ : J ≤ maximalIdeal R)
+    (hbij : ∀ n : ℕ, 1 ≤ n →
+      Function.Bijective (Ideal.quotientMap ((J.map f) ^ n) f
+        ((Ideal.pow_right_mono Ideal.le_comap_map n).trans (Ideal.le_comap_pow _ n)))) :
+    maximalIdeal R ≤ (maximalIdeal S).comap f :=
+  (f.map_maximalIdeal_eq_of_quotientMap_bijective hJ
+    (f.quotientMap_bijective_congr (pow_one J) (pow_one _) (hbij 1 le_rfl)
+      (H₂ := Ideal.le_comap_map))) ▸ Ideal.le_comap_map
 
 /-- If `f : R →+* S` is a homomorphism of local rings and `K ≤ 𝔪_R ^ n` is an ideal such that
 `R ⧸ K → S ⧸ K S` is bijective, then `R ⧸ 𝔪_R ^ n → S ⧸ 𝔪_S ^ n` is bijective. -/
