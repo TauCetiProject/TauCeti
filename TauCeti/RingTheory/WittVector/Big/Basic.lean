@@ -5,467 +5,606 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.MinimalAxioms
 public import Mathlib.Algebra.Ring.Pi
-public import TauCeti.RingTheory.WittVector.Big.Ghost
+public import TauCeti.RingTheory.WittVector.Big.StructurePolynomial
 
-import Mathlib.Algebra.MvPolynomial.CommRing
+public import Mathlib.Data.Fin.VecNotation
+
+import Mathlib.Algebra.Module.Torsion.Free
 import Mathlib.Algebra.MvPolynomial.Counit
-import Mathlib.RingTheory.Ideal.Quotient.Defs
-import TauCeti.RingTheory.MvPolynomial.Expand
+import Mathlib.Algebra.Ring.InjSurj
+import Mathlib.RingTheory.MvPolynomial.Basic
 
 /-!
-# Big Witt rings
+# The big Witt ring
 
-For any truncation set `S` and commutative ring `R`, `BigWitt S R` is the commutative ring
-of big Witt vectors with coordinates indexed by `S`. The ghost components are ring
-homomorphisms, and coefficient homomorphisms and restriction of truncation sets induce
-ring homomorphisms satisfying the usual identity, composition, and compatibility laws.
+For a truncation set `S` and a commutative ring `R`, the big Witt ring `W_S(R)` is the set of
+coordinate sequences `(x_n)_{n ∈ S}` in `R`, with the unique ring structure, natural in `R`, for
+which every ghost component `w_n(x) = ∑_{d ∣ n} d * x_d ^ (n / d)`, `n ∈ S`, is a ring
+homomorphism. Addition, multiplication and negation are given by the big Witt structure
+polynomials `TauCeti.BigWitt.wittStructure` of `X 0 + X 1`, `X 0 * X 1` and `-X 0`, which have
+integer coefficients, so the operations are defined over every commutative ring, including rings
+with torsion where the ghost map is not injective. The unit has coordinates `1, 0, 0, …`.
 
-## Main declarations
+A big Witt vector is stored as its sequence of coordinates indexed by all natural numbers,
+required to vanish outside `S`; two big Witt vectors are equal exactly when all their coordinates
+are. For a prime `p`, the truncation set of divisors of `p ^ (k - 1)` recovers the `p`-typical
+Witt vectors of length `k`, and the truncation set of all positive integers gives the full big
+Witt ring.
 
-* `TauCeti.BigWitt`: the carrier, equipped with a `CommRing` instance.
-* `TauCeti.BigWitt.ghostComponent`, `TauCeti.BigWitt.ghostMap`: the ghost homomorphisms.
-* `TauCeti.BigWitt.ghostMap_injective`: injectivity when multiplication by each prime in
-  the truncation set is injective on the coefficient ring.
-* `TauCeti.BigWitt.map`, `TauCeti.BigWitt.restrict`: coefficient transport and restriction.
+## Main definitions
 
-The integral operation polynomials are constructed using Dwork's criterion over a
-torsion-free polynomial ring. Ring identities are checked there by ghosts and specialized.
+* `TauCeti.BigWittVector S R`: the big Witt vectors of `R` indexed by the truncation set `S`, with
+  its `CommRing` instance.
+* `TauCeti.BigWittVector.mk' x`: the big Witt vector with coordinates `x_n`, `n ∈ S`.
+* `TauCeti.BigWittVector.ghostMap`: the ghost map `W_S(R) →+* (S → R)`, `x ↦ (w_n(x))_{n ∈ S}`.
+* `TauCeti.BigWittVector.map f`: the ring homomorphism `W_S(R) →+* W_S(R')` applying a ring
+  homomorphism `f : R →+* R'` to every coordinate.
+* `TauCeti.BigWittVector.restrict h`: for truncation sets `T ≤ S`, the ring homomorphism
+  `W_S(R) →+* W_T(R)` forgetting the coordinates outside `T`.
+
+## Main results
+
+* `TauCeti.BigWittVector.ghostMap_injective`: the ghost map is injective when no prime in `S` is a
+  zero-divisor of `R`.
+* `TauCeti.BigWittVector.ghostMap_bijective_of_isUnit`: the ghost map is bijective when every
+  element of `S` is a unit of `R`.
+* `TauCeti.BigWittVector.ghostMap_map` and `TauCeti.BigWittVector.ghostMap_restrict`: ghost
+  components commute with coefficient maps and with restriction.
+
+## Implementation notes
+
+The ring axioms are transported, as in Mathlib's construction of the `p`-typical Witt vectors
+(`Mathlib/RingTheory/WittVector/Basic.lean`). Over an integral polynomial ring the ghost map is
+injective and preserves the operations, which gives a commutative ring structure there; every
+commutative ring `R` is a quotient of `ℤ[X_r : r ∈ R]` through `MvPolynomial.counit`, and the
+coordinatewise map along it is surjective and preserves the operations. Natural-number and
+integer multiples, powers and casts are defined recursively from the basic operations.
 
 ## References
 
-* L. Hesselholt, *The big de Rham–Witt complex*, Proposition 1.2,
-  <https://arxiv.org/abs/1006.3125v3>.
+* L. Hesselholt, *The big de Rham–Witt complex*, Acta Math. 214 (2015), §1, Proposition 1.2.
+* J. Commelin and R. Y. Lewis, *Formalizing the ring of Witt vectors*, CPP 2021.
 -/
 
 public section
 
+noncomputable section
+
 namespace TauCeti
 
-/-- Big Witt vectors indexed by the truncation set `S`, with coefficients in `R`. -/
-@[ext]
-structure BigWitt (S : BigWitt.TruncationSet) (R : Type*) where
-  /-- The Witt coordinates. -/
-  coeff : S → R
+open BigWitt _root_.MvPolynomial Function
 
-namespace BigWitt
+/-- The big Witt vectors `W_S(R)` of `R` indexed by the truncation set `S`: sequences of
+coordinates `x_n`, `n ∈ S`, stored as functions on `ℕ` vanishing outside `S`. For a commutative
+ring `R` it carries the ring structure making the ghost components ring homomorphisms. -/
+structure BigWittVector (S : TruncationSet) (R : Type*) [Zero R] where
+  /-- The Witt coordinates of a big Witt vector. They vanish outside the truncation set. -/
+  coeff : ℕ → R
+  /-- A big Witt vector has no coordinates outside its truncation set. -/
+  coeff_eq_zero_of_notMem : ∀ n ∉ S, coeff n = 0
 
-open _root_.MvPolynomial
+namespace BigWittVector
 
-variable {S T U : TruncationSet} {R A B : Type*}
+variable {S T U : TruncationSet} {R R' R'' : Type*}
 
-@[simp]
-theorem coeff_mk (x : S → R) (n : S) : (mk x).coeff n = x n := by rfl
+section Zero
 
-@[simp]
-theorem mk_coeff (x : BigWitt S R) : mk x.coeff = x := by rfl
-
-section
 variable [Zero R]
 
-/-- Extend the coordinates by zero outside their truncation set. -/
-noncomputable def coordinates (x : BigWitt S R) (n : ℕ) : R :=
-  by
-    classical
-    exact if h : n ∈ S then x.coeff ⟨n, h⟩ else 0
-
-open scoped Classical in
-theorem coordinates_apply (x : BigWitt S R) (n : ℕ) :
-    coordinates x n = if h : n ∈ S then x.coeff ⟨n, h⟩ else 0 := by
-  classical
+theorem coeff_injective : Injective (coeff : BigWittVector S R → ℕ → R) := by
+  rintro ⟨x, -⟩ ⟨y, -⟩ rfl
   rfl
 
+/-- Big Witt vectors are equal when all their coordinates are. -/
+@[ext]
+theorem ext {x y : BigWittVector S R} (h : ∀ n, x.coeff n = y.coeff n) : x = y :=
+  coeff_injective (funext h)
+
+instance [Subsingleton R] : Subsingleton (BigWittVector S R) :=
+  ⟨fun _ _ ↦ ext fun _ ↦ Subsingleton.elim _ _⟩
+
+/-- The big Witt vectors indexed by the empty truncation set have no coordinates. -/
+instance : Subsingleton (BigWittVector ⊥ R) :=
+  ⟨fun x y ↦ ext fun n ↦ by
+    rw [x.coeff_eq_zero_of_notMem n TruncationSet.notMem_bot,
+      y.coeff_eq_zero_of_notMem n TruncationSet.notMem_bot]⟩
+
+/-- The big Witt vector with coordinates `x_n`, `n ∈ S`: the coordinates of `x` outside `S` are
+discarded. -/
+def mk' (x : ℕ → R) : BigWittVector S R :=
+  ⟨(S : Set ℕ).indicator x, fun _ hn ↦ Set.indicator_of_notMem hn _⟩
+
+theorem coeff_mk' (x : ℕ → R) (n : ℕ) :
+    (mk' x : BigWittVector S R).coeff n = (S : Set ℕ).indicator x n :=
+  (rfl)
+
 @[simp]
-theorem coordinates_coe (x : BigWitt S R) (n : S) : coordinates x n = x.coeff n := by
-  classical
-  simp [coordinates]
+theorem coeff_mk'_of_mem (x : ℕ → R) {n : ℕ} (hn : n ∈ S) :
+    (mk' x : BigWittVector S R).coeff n = x n :=
+  Set.indicator_of_mem (SetLike.mem_coe.2 hn) _
 
-end
+/-- Every big Witt vector is constructed from its coordinates. -/
+@[simp]
+theorem mk'_coeff (x : BigWittVector S R) : mk' x.coeff = x := by
+  ext n
+  by_cases hn : n ∈ S
+  · exact coeff_mk'_of_mem _ hn
+  · rw [x.coeff_eq_zero_of_notMem n hn]
+    exact Set.indicator_of_notMem hn _
 
-section
-variable [CommRing R] [CommRing A] [CommRing B]
+end Zero
 
-/-- The ghost component before bundling its ring map. -/
-private noncomputable def ghost (x : BigWitt S R) (n : S) : R :=
-  ghostPolynomial n (coordinates x)
+variable [CommRing R] [CommRing R'] [CommRing R'']
 
-/-- Coefficientwise transport, before bundling its ring map. -/
-private def mapData (f : R →+* A) (x : BigWitt S R) : BigWitt S A :=
-  mk fun n ↦ f (x.coeff n)
+/-! ### The ring operations
 
-private theorem coordinates_mapData (f : R →+* A) (x : BigWitt S R) :
-    coordinates (mapData f x) = f ∘ coordinates x := by
-  classical
+The operations are first defined as local instances, from which the `CommRing` instance is
+assembled; afterwards only the `CommRing` instance is in use. -/
+
+section Construction
+
+/-- Evaluation of the big Witt structure polynomials of `Φ` at a family of big Witt vectors. -/
+private def peval {idx : Type*} (Φ : MvPolynomial idx ℤ) (x : idx → BigWittVector S R) :
+    BigWittVector S R where
+  coeff := (S : Set ℕ).indicator fun n ↦
+    aeval (fun ik : idx × ℕ ↦ (x ik.fst).coeff ik.snd) (wittStructure Φ n)
+  coeff_eq_zero_of_notMem _ hn := Set.indicator_of_notMem hn _
+
+private abbrev instZeroAux : Zero (BigWittVector S R) :=
+  ⟨⟨0, fun _ _ ↦ rfl⟩⟩
+
+private abbrev instOneAux : One (BigWittVector S R) :=
+  ⟨mk' (Pi.single 1 1)⟩
+
+private abbrev instAddAux : Add (BigWittVector S R) :=
+  ⟨fun x y ↦ peval (X 0 + X 1) ![x, y]⟩
+
+private abbrev instMulAux : Mul (BigWittVector S R) :=
+  ⟨fun x y ↦ peval (X 0 * X 1) ![x, y]⟩
+
+private abbrev instNegAux : Neg (BigWittVector S R) :=
+  ⟨fun x ↦ peval (-X 0) ![x]⟩
+
+attribute [local instance] instZeroAux instOneAux instAddAux instMulAux instNegAux
+
+private abbrev instSubAux : Sub (BigWittVector S R) :=
+  ⟨fun x y ↦ x + -y⟩
+
+private abbrev instNSMulAux : SMul ℕ (BigWittVector S R) :=
+  ⟨nsmulRec⟩
+
+private abbrev instZSMulAux : SMul ℤ (BigWittVector S R) :=
+  ⟨zsmulRec⟩
+
+private abbrev instPowAux : Pow (BigWittVector S R) ℕ :=
+  ⟨fun x n ↦ npowRec n x⟩
+
+private abbrev instNatCastAux : NatCast (BigWittVector S R) :=
+  ⟨Nat.unaryCast⟩
+
+private abbrev instIntCastAux : IntCast (BigWittVector S R) :=
+  letI := instNatCastAux (S := S) (R := R)
+  ⟨Int.castDef⟩
+
+attribute [local instance] instSubAux instNSMulAux instZSMulAux instPowAux instNatCastAux
+  instIntCastAux
+
+private theorem coeff_one_aux (n : ℕ) :
+    (1 : BigWittVector S R).coeff n = (S : Set ℕ).indicator (Pi.single 1 1) n :=
+  rfl
+
+private theorem add_def (x y : BigWittVector S R) : x + y = peval (X 0 + X 1) ![x, y] :=
+  rfl
+
+private theorem mul_def (x y : BigWittVector S R) : x * y = peval (X 0 * X 1) ![x, y] :=
+  rfl
+
+private theorem neg_def (x : BigWittVector S R) : -x = peval (-X 0) ![x] :=
+  rfl
+
+private theorem coeff_peval_of_mem {idx : Type*} (Φ : MvPolynomial idx ℤ)
+    (x : idx → BigWittVector S R) {n : ℕ} (hn : n ∈ S) :
+    (peval Φ x).coeff n =
+      aeval (fun ik : idx × ℕ ↦ (x ik.fst).coeff ik.snd) (wittStructure Φ n) := by
+  dsimp only [peval]
+  exact Set.indicator_of_mem (SetLike.mem_coe.2 hn) _
+
+/-! ### Ghost components of the operations -/
+
+/-- The ghost components of a big Witt vector, before the ring structure is available. -/
+private def ghostFun (x : BigWittVector S R) : S → R :=
+  fun n ↦ ghostPolynomial n x.coeff
+
+private theorem ghostFun_peval {idx : Type*} (Φ : MvPolynomial idx ℤ)
+    (x : idx → BigWittVector S R) :
+    ghostFun (peval Φ x) = fun n ↦ aeval (fun i ↦ ghostFun (x i) n) Φ := by
   funext n
-  by_cases h : n ∈ S <;> simp [coordinates, mapData, h]
+  exact (ghostPolynomial_congr fun d hd ↦ coeff_peval_of_mem Φ x (S.mem_of_dvd n.prop hd)).trans
+    (ghostPolynomial_aeval_wittStructure Φ _ (S.ne_zero_of_mem n.prop))
 
-private theorem ghost_mapData (f : R →+* A) (x : BigWitt S R) (n : S) :
-    ghost (mapData f x) n = f (ghost x n) := by
-  rw [ghost, coordinates_mapData, ← map_ghostPolynomial]
-  rw [ghost]
+private theorem ghostFun_zero : ghostFun (0 : BigWittVector S R) = 0 :=
+  funext fun n ↦ ghostPolynomial_zero_right n
 
-/-- Ghosts determine a vector when multiplication by each prime in `S` is injective. -/
-private theorem ghost_injective
-    (hR : ∀ p, p.Prime → p ∈ S → Function.Injective (p • · : R → R)) :
-    Function.Injective (ghost : BigWitt S R → S → R) := by
+private theorem ghostFun_one : ghostFun (1 : BigWittVector S R) = 1 :=
+  funext fun n ↦
+    (ghostPolynomial_congr fun _ hd ↦ coeff_mk'_of_mem _ (S.mem_of_dvd n.prop hd)).trans
+      (ghostPolynomial_single_one (S.ne_zero_of_mem n.prop))
+
+private theorem ghostFun_add (x y : BigWittVector S R) :
+    ghostFun (x + y) = ghostFun x + ghostFun y := by
+  rw [add_def, ghostFun_peval]
+  funext n
+  simp
+
+private theorem ghostFun_mul (x y : BigWittVector S R) :
+    ghostFun (x * y) = ghostFun x * ghostFun y := by
+  rw [mul_def, ghostFun_peval]
+  funext n
+  simp
+
+private theorem ghostFun_neg (x : BigWittVector S R) : ghostFun (-x) = -ghostFun x := by
+  rw [neg_def, ghostFun_peval]
+  funext n
+  simp
+
+private theorem ghostFun_sub (x y : BigWittVector S R) :
+    ghostFun (x - y) = ghostFun x - ghostFun y := by
+  rw [sub_eq_add_neg, ← ghostFun_neg, ← ghostFun_add]
+  rfl
+
+private theorem ghostFun_nsmul (n : ℕ) (x : BigWittVector S R) :
+    ghostFun (n • x) = n • ghostFun x := by
+  induction n with
+  | zero => exact ghostFun_zero.trans (zero_nsmul _).symm
+  | succ n ih => exact (ghostFun_add _ _).trans (by rw [succ_nsmul, ← ih]; rfl)
+
+private theorem ghostFun_zsmul (n : ℤ) (x : BigWittVector S R) :
+    ghostFun (n • x) = n • ghostFun x := by
+  cases n with
+  | ofNat n => exact (ghostFun_nsmul n x).trans (natCast_zsmul _ n).symm
+  | negSucc n =>
+    exact (ghostFun_neg _).trans (by rw [negSucc_zsmul, ← ghostFun_nsmul]; rfl)
+
+private theorem ghostFun_pow (x : BigWittVector S R) (n : ℕ) :
+    ghostFun (x ^ n) = ghostFun x ^ n := by
+  induction n with
+  | zero => exact ghostFun_one.trans (pow_zero _).symm
+  | succ n ih => exact (ghostFun_mul _ _).trans (by rw [pow_succ, ← ih]; rfl)
+
+private theorem ghostFun_natCast (n : ℕ) : ghostFun (n : BigWittVector S R) = n := by
+  induction n with
+  | zero => exact ghostFun_zero.trans Nat.cast_zero.symm
+  | succ n ih =>
+    exact (ghostFun_add _ _).trans (by rw [Nat.cast_succ, ← ih, ← ghostFun_one]; rfl)
+
+private theorem ghostFun_intCast (n : ℤ) : ghostFun (n : BigWittVector S R) = n := by
+  cases n with
+  | ofNat n => exact (ghostFun_natCast n).trans (Int.cast_natCast n).symm
+  | negSucc n =>
+    exact (ghostFun_neg _).trans (by rw [Int.cast_negSucc, ← ghostFun_natCast])
+
+private theorem ghostFun_injective (hS : ∀ p ∈ S, p.Prime → IsSMulRegular R (p : R)) :
+    Injective (ghostFun : BigWittVector S R → S → R) := by
   intro x y h
-  apply BigWitt.ext
-  funext n
-  have he := eqOn_of_ghostPolynomial_eq_of_prime_nsmul_injective S hR
-    (x := coordinates x) (y := coordinates y) (fun n hn ↦ congrFun h ⟨n, hn⟩)
-  simpa using he n.property
+  ext n
+  by_cases hn : n ∈ S
+  · exact (eqOn_ghostPolynomial_iff hS).1 (fun k hk ↦ congrFun h ⟨k, hk⟩) hn
+  · rw [x.coeff_eq_zero_of_notMem n hn, y.coeff_eq_zero_of_notMem n hn]
 
-private theorem polynomial_ghost_injective {ι : Type*} :
-    Function.Injective (ghost : BigWitt S (MvPolynomial ι ℤ) → S → MvPolynomial ι ℤ) :=
-  ghost_injective fun _ hp _ ↦ nsmul_right_injective hp.ne_zero
+/-! ### Coordinatewise maps -/
 
-/-- The universal polynomial giving an operation on ghosts has integral Witt coordinates. -/
-private theorem exists_operation (Φ : MvPolynomial Bool ℤ) :
-    ∃ z : ℕ → MvPolynomial (Bool × S) ℤ, ∀ n ∈ S,
-      ghostPolynomial n z =
-        eval₂Hom (Int.castRingHom _) (fun i ↦
-          ghostPolynomial n (coordinates (mk fun d : S ↦ X (i, d)))) Φ := by
-  let P := MvPolynomial (Bool × S) ℤ
-  let b : ℕ → P := fun n ↦ eval₂Hom (Int.castRingHom _)
-    (fun i ↦ ghostPolynomial n (coordinates (mk fun d : S ↦ X (i, d)))) Φ
-  let φ : ℕ → P →+* P := fun p ↦ (expand p).toRingHom
-  have hφ : ∀ p, p.Prime → p ∈ S → ∀ a : P,
-      φ p a - a ^ p ∈ Ideal.span {(p : P)} := by
-    intro p hp _ a
-    have : Fact p.Prime := ⟨hp⟩
-    exact Ideal.mem_span_singleton.2 (MvPolynomial.natCast_dvd_expand_sub_pow p a)
-  apply (ghost_image S φ hφ b).2
-  intro p hp n hn hpn
-  let I : Ideal P := Ideal.span {(p : P) ^ multiplicity p n}
-  apply (Ideal.Quotient.mk_eq_mk_iff_sub_mem _ _).1
-  -- Name the modulus so the two evaluations have the same quotient codomain.
-  change Ideal.Quotient.mk I (b n) = Ideal.Quotient.mk I (φ p (b (n / p)))
-  have hc (i : Bool) :
-      Ideal.Quotient.mk I (ghostPolynomial n (coordinates (mk fun d : S ↦ X (i, d)))) =
-        Ideal.Quotient.mk I (φ p
-          (ghostPolynomial (n / p) (coordinates (mk fun d : S ↦ X (i, d))))) :=
-    (Ideal.Quotient.mk_eq_mk_iff_sub_mem _ _).2
-      (ghostPolynomial_sub_map_ghostPolynomial_div_mem hp (φ p)
-        (hφ p hp (S.mem_of_dvd hn hpn)) n _)
-  simp only [b, map_eval₂Hom]
-  have hcoeff : (Ideal.Quotient.mk I).comp (Int.castRingHom P) =
-      (Ideal.Quotient.mk I).comp ((φ p).comp (Int.castRingHom P)) := Subsingleton.elim _ _
-  rw [hcoeff]
-  exact congrArg (fun g ↦ eval₂Hom _ g Φ) (funext hc)
+/-- Applying a ring homomorphism to every coordinate, before the ring structure is available. -/
+private def mapFun (f : R →+* R') (x : BigWittVector S R) : BigWittVector S R' :=
+  ⟨f ∘ x.coeff, fun n hn ↦ by simp [x.coeff_eq_zero_of_notMem n hn]⟩
 
-private noncomputable def operationPolynomial (Φ : MvPolynomial Bool ℤ) (n : S) :
-    MvPolynomial (Bool × S) ℤ :=
-  (exists_operation Φ).choose n
+private theorem mapFun_peval (f : R →+* R') {idx : Type*} (Φ : MvPolynomial idx ℤ)
+    (x : idx → BigWittVector S R) : mapFun f (peval Φ x) = peval Φ (mapFun f ∘ x) := by
+  ext n
+  by_cases hn : n ∈ S
+  · simp only [mapFun, comp_apply, coeff_peval_of_mem Φ _ hn]
+    exact comp_aeval_apply _ f.toIntAlgHom (wittStructure Φ n)
+  · rw [coeff_eq_zero_of_notMem _ n hn, coeff_eq_zero_of_notMem _ n hn]
 
-private theorem operationPolynomial_ghost (Φ : MvPolynomial Bool ℤ) (n : S) :
-    ghostPolynomial n (coordinates (mk (operationPolynomial Φ))) =
-      eval₂Hom (Int.castRingHom _) (fun i ↦
-        ghostPolynomial n (coordinates (mk fun d : S ↦ X (i, d)))) Φ := by
-  rw [ghostPolynomial_congr (y := (exists_operation Φ).choose)]
-  · exact (exists_operation Φ).choose_spec n n.property
-  · intro d hd
-    simp [coordinates, S.mem_of_dvd n.property hd, operationPolynomial]
+private theorem mapFun_surjective (f : R →+* R') (hf : Surjective f) :
+    Surjective (mapFun f : BigWittVector S R → BigWittVector S R') := by
+  intro x
+  refine ⟨mk' (surjInv hf ∘ x.coeff), ext fun n ↦ ?_⟩
+  by_cases hn : n ∈ S
+  · simp [mapFun, hn, surjInv_eq hf]
+  · simp [coeff_eq_zero_of_notMem _ n hn]
 
-private noncomputable def operation (Φ : MvPolynomial Bool ℤ) (x : Bool → BigWitt S R) :
-    BigWitt S R :=
-  mk fun n ↦ eval₂Hom (Int.castRingHom R) (fun id ↦ (x id.1).coeff id.2)
-    (operationPolynomial Φ n)
+private theorem mapFun_zero (f : R →+* R') : mapFun f (0 : BigWittVector S R) = 0 :=
+  ext fun _ ↦ map_zero f
 
-private theorem mapData_operation (f : R →+* A) (Φ : MvPolynomial Bool ℤ)
-    (x : Bool → BigWitt S R) :
-    mapData f (operation Φ x) = operation Φ (fun i ↦ mapData f (x i)) := by
-  apply BigWitt.ext
-  funext n
-  -- Evaluate the coordinate polynomial before commuting the coefficient map with evaluation.
-  change f (eval₂Hom _ _ _) = eval₂Hom _ _ _
-  rw [map_eval₂Hom]
-  rw [RingHom.eq_intCast' (f.comp (Int.castRingHom R))]
-  -- Both variable assignments apply `f` to the same coordinate through `mapData`.
+private theorem mapFun_one (f : R →+* R') : mapFun f (1 : BigWittVector S R) = 1 := by
+  ext n
+  simp only [mapFun, comp_apply, coeff_one_aux]
+  rcases eq_or_ne n 1 with rfl | h1
+  · by_cases h : 1 ∈ (S : Set ℕ) <;> simp [h]
+  · by_cases h : n ∈ (S : Set ℕ) <;> simp [h, h1]
+
+private theorem mapFun_add (f : R →+* R') (x y : BigWittVector S R) :
+    mapFun f (x + y) = mapFun f x + mapFun f y := by
+  rw [add_def, add_def, mapFun_peval]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
+private theorem mapFun_mul (f : R →+* R') (x y : BigWittVector S R) :
+    mapFun f (x * y) = mapFun f x * mapFun f y := by
+  rw [mul_def, mul_def, mapFun_peval]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
+private theorem mapFun_neg (f : R →+* R') (x : BigWittVector S R) :
+    mapFun f (-x) = -mapFun f x := by
+  rw [neg_def, neg_def, mapFun_peval]
+  congr 1
+  funext i
+  fin_cases i
   rfl
 
-private theorem ghost_operation (Φ : MvPolynomial Bool ℤ) (x : Bool → BigWitt S R) (n : S) :
-    ghost (operation Φ x) n = eval₂Hom (Int.castRingHom R) (fun i ↦ ghost (x i) n) Φ := by
-  let f : MvPolynomial (Bool × S) ℤ →+* R :=
-    eval₂Hom (Int.castRingHom R) fun id ↦ (x id.1).coeff id.2
-  have h (i : Bool) : mapData f (mk fun d : S ↦ X (i, d)) = x i := by
-    ext d
-    simp [mapData, f]
-  have he : mapData f (mk (operationPolynomial Φ)) = operation Φ x := by rfl
-  rw [← he, ghost_mapData]
-  -- The private ghost function at this stage is the original divisor polynomial.
-  change f (ghostPolynomial n _) = _
-  rw [operationPolynomial_ghost, map_eval₂Hom]
-  rw [RingHom.eq_intCast' (f.comp (Int.castRingHom _))]
-  have hi : (fun i ↦ f (ghostPolynomial n (coordinates (mk fun d : S ↦ X (i, d))))) =
-      (fun i ↦ ghost (x i) n) := by
+private theorem mapFun_sub (f : R →+* R') (x y : BigWittVector S R) :
+    mapFun f (x - y) = mapFun f x - mapFun f y :=
+  (mapFun_add f x (-y)).trans (congrArg (mapFun f x + ·) (mapFun_neg f y))
+
+private theorem mapFun_nsmul (f : R →+* R') (n : ℕ) (x : BigWittVector S R) :
+    mapFun f (n • x) = n • mapFun f x := by
+  induction n with
+  | zero => exact mapFun_zero f
+  | succ n ih => exact (mapFun_add f _ _).trans (congrArg (· + mapFun f x) ih)
+
+private theorem mapFun_zsmul (f : R →+* R') (n : ℤ) (x : BigWittVector S R) :
+    mapFun f (n • x) = n • mapFun f x := by
+  cases n with
+  | ofNat n => exact mapFun_nsmul f n x
+  | negSucc n => exact (mapFun_neg f _).trans (congrArg (-·) (mapFun_nsmul f (n + 1) x))
+
+private theorem mapFun_pow (f : R →+* R') (x : BigWittVector S R) (n : ℕ) :
+    mapFun f (x ^ n) = mapFun f x ^ n := by
+  induction n with
+  | zero => exact mapFun_one f
+  | succ n ih => exact (mapFun_mul f _ _).trans (congrArg (· * mapFun f x) ih)
+
+private theorem mapFun_natCast (f : R →+* R') (n : ℕ) :
+    mapFun f (n : BigWittVector S R) = n := by
+  induction n with
+  | zero => exact mapFun_zero f
+  | succ n ih => exact (mapFun_add f _ _).trans (congrArg₂ (· + ·) ih (mapFun_one f))
+
+private theorem mapFun_intCast (f : R →+* R') (n : ℤ) :
+    mapFun f (n : BigWittVector S R) = n := by
+  cases n with
+  | ofNat n => exact mapFun_natCast f n
+  | negSucc n => exact (mapFun_neg f _).trans (congrArg (-·) (mapFun_natCast f (n + 1)))
+
+/-! ### The commutative ring structure -/
+
+/-- Over an integral polynomial ring the ghost map is injective, so the ring axioms can be pulled
+back from the product ring `S → MvPolynomial σ ℤ`. -/
+private abbrev commRingAux (σ : Type*) : CommRing (BigWittVector S (MvPolynomial σ ℤ)) :=
+  (ghostFun_injective fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)).commRing _
+    ghostFun_zero ghostFun_one ghostFun_add ghostFun_mul ghostFun_neg ghostFun_sub
+    ghostFun_nsmul ghostFun_zsmul ghostFun_pow ghostFun_natCast ghostFun_intCast
+
+/-- The commutative ring structure on the big Witt vectors, pushed forward from the integral
+polynomial ring `ℤ[X_r : r ∈ R]` along the surjection `MvPolynomial.counit R`. It is the
+`CommRing` instance on `BigWittVector S R`; its operations are described by `coeff_zero`,
+`coeff_one`, `coeff_add_of_mem`, `coeff_mul_of_mem` and `coeff_neg_of_mem`. -/
+@[instance_reducible]
+def commRing : CommRing (BigWittVector S R) :=
+  letI := commRingAux (S := S) R
+  (mapFun_surjective _ (counit_surjective R)).commRing _ (mapFun_zero _) (mapFun_one _)
+    (mapFun_add _) (mapFun_mul _) (mapFun_neg _) (mapFun_sub _) (mapFun_nsmul _)
+    (mapFun_zsmul _) (mapFun_pow _) (mapFun_natCast _) (mapFun_intCast _)
+
+end Construction
+
+instance : CommRing (BigWittVector S R) :=
+  commRing
+
+private theorem add_eq_peval (x y : BigWittVector S R) : x + y = peval (X 0 + X 1) ![x, y] :=
+  rfl
+
+private theorem mul_eq_peval (x y : BigWittVector S R) : x * y = peval (X 0 * X 1) ![x, y] :=
+  rfl
+
+@[simp]
+theorem coeff_zero (n : ℕ) : (0 : BigWittVector S R).coeff n = 0 :=
+  (rfl)
+
+theorem coeff_one (n : ℕ) :
+    (1 : BigWittVector S R).coeff n = (S : Set ℕ).indicator (Pi.single 1 1) n :=
+  (rfl)
+
+@[simp]
+theorem coeff_one_one (h : 1 ∈ S) : (1 : BigWittVector S R).coeff 1 = 1 := by
+  simp [coeff_one, Set.indicator_of_mem (SetLike.mem_coe.2 h)]
+
+@[simp]
+theorem coeff_one_of_ne_one {n : ℕ} (hn : n ≠ 1) : (1 : BigWittVector S R).coeff n = 0 := by
+  rw [coeff_one]
+  by_cases h : n ∈ (S : Set ℕ)
+  · simp [Set.indicator_of_mem h, hn]
+  · exact Set.indicator_of_notMem h _
+
+/-- The coordinates of a sum are the big Witt structure polynomials of `X 0 + X 1` evaluated at the
+coordinates of the summands. -/
+theorem coeff_add_of_mem (x y : BigWittVector S R) {n : ℕ} (hn : n ∈ S) :
+    (x + y).coeff n = aeval (fun ik : Fin 2 × ℕ ↦ (![x, y] ik.fst).coeff ik.snd)
+      (wittStructure (X 0 + X 1) n) :=
+  coeff_peval_of_mem _ _ hn
+
+/-- The coordinates of a product are the big Witt structure polynomials of `X 0 * X 1` evaluated
+at the coordinates of the factors. -/
+theorem coeff_mul_of_mem (x y : BigWittVector S R) {n : ℕ} (hn : n ∈ S) :
+    (x * y).coeff n = aeval (fun ik : Fin 2 × ℕ ↦ (![x, y] ik.fst).coeff ik.snd)
+      (wittStructure (X 0 * X 1) n) :=
+  coeff_peval_of_mem _ _ hn
+
+/-- The coordinates of a negative are the big Witt structure polynomials of `-X 0` evaluated at the
+coordinates of the vector. -/
+theorem coeff_neg_of_mem (x : BigWittVector S R) {n : ℕ} (hn : n ∈ S) :
+    (-x).coeff n = aeval (fun ik : Fin 1 × ℕ ↦ (![x] ik.fst).coeff ik.snd)
+      (wittStructure (-X 0) n) :=
+  coeff_peval_of_mem _ _ hn
+
+/-! ### The ghost map -/
+
+/-- The ghost map `W_S(R) →+* (S → R)`, sending a big Witt vector `x` to its ghost components
+`w_n(x) = ∑_{d ∣ n} d * x_d ^ (n / d)`, `n ∈ S`. -/
+def ghostMap : BigWittVector S R →+* (S → R) where
+  toFun := ghostFun
+  map_zero' := ghostFun_zero
+  map_one' := ghostFun_one
+  map_add' := ghostFun_add
+  map_mul' := ghostFun_mul
+
+theorem ghostMap_apply (x : BigWittVector S R) (n : S) :
+    ghostMap x n = ghostPolynomial n x.coeff :=
+  (rfl)
+
+/-- **Injectivity of the ghost map.** If no prime in `S` is a zero-divisor of `R`, a big Witt
+vector is determined by its ghost components. -/
+theorem ghostMap_injective (hS : ∀ p ∈ S, p.Prime → IsSMulRegular R (p : R)) :
+    Injective (ghostMap : BigWittVector S R →+* (S → R)) :=
+  ghostFun_injective hS
+
+/-- If every element of `S` is a unit of `R`, the ghost map is bijective: every sequence indexed
+by `S` is the sequence of ghost components of exactly one big Witt vector. -/
+theorem ghostMap_bijective_of_isUnit (hS : ∀ n ∈ S, IsUnit (n : R)) :
+    Bijective (ghostMap : BigWittVector S R →+* (S → R)) := by
+  classical
+  refine ⟨ghostMap_injective fun p hp _ ↦ (hS p hp).isSMulRegular R, fun b ↦ ?_⟩
+  obtain ⟨x, hx⟩ := exists_ghostPolynomial_eq_of_isUnit hS
+    fun n ↦ if h : n ∈ S then b ⟨n, h⟩ else 0
+  refine ⟨mk' x, funext fun n ↦ ?_⟩
+  rw [ghostMap_apply]
+  refine (ghostPolynomial_congr fun d hd ↦ coeff_mk'_of_mem x (S.mem_of_dvd n.prop hd)).trans ?_
+  simp [hx n n.prop]
+
+/-! ### Functoriality in the coefficients -/
+
+/-- The ring homomorphism `W_S(R) →+* W_S(R')` induced by a ring homomorphism `f : R →+* R'`,
+applying `f` to every coordinate. -/
+def map (f : R →+* R') : BigWittVector S R →+* BigWittVector S R' where
+  toFun := mapFun f
+  map_zero' := mapFun_zero f
+  map_one' := mapFun_one f
+  map_add' := mapFun_add f
+  map_mul' := mapFun_mul f
+
+@[simp]
+theorem coeff_map (f : R →+* R') (x : BigWittVector S R) (n : ℕ) :
+    (map f x).coeff n = f (x.coeff n) :=
+  (rfl)
+
+variable (S R) in
+@[simp]
+theorem map_id : map (RingHom.id R) = RingHom.id (BigWittVector S R) := by
+  ext
+  simp
+
+theorem map_comp (g : R' →+* R'') (f : R →+* R') :
+    map (S := S) (g.comp f) = (map g).comp (map f) := by
+  ext
+  simp
+
+theorem map_injective (f : R →+* R') (hf : Injective f) :
+    Injective (map f : BigWittVector S R → BigWittVector S R') :=
+  fun _ _ h ↦ ext fun n ↦ hf (by simpa using congrArg (coeff · n) h)
+
+theorem map_surjective (f : R →+* R') (hf : Surjective f) :
+    Surjective (map f : BigWittVector S R → BigWittVector S R') :=
+  mapFun_surjective f hf
+
+/-- Ghost components commute with coefficient maps. -/
+@[simp]
+theorem ghostMap_map (f : R →+* R') (x : BigWittVector S R) (n : S) :
+    ghostMap (map f x) n = f (ghostMap x n) := by
+  rw [ghostMap_apply, ghostMap_apply, map_ghostPolynomial]
+  exact ghostPolynomial_congr fun d _ ↦ coeff_map f x d
+
+/-! ### Restriction to a smaller truncation set -/
+
+/-- Forgetting the coordinates outside a smaller truncation set, before the ring structure is
+available. -/
+private def restrictFun (_ : T ≤ S) (x : BigWittVector S R) : BigWittVector T R :=
+  mk' x.coeff
+
+private theorem restrictFun_peval (h : T ≤ S) {idx : Type*} (Φ : MvPolynomial idx ℤ)
+    (x : idx → BigWittVector S R) :
+    restrictFun h (peval Φ x) = peval Φ (restrictFun h ∘ x) := by
+  ext n
+  by_cases hn : n ∈ T
+  · rw [coeff_peval_of_mem Φ _ hn]
+    dsimp only [restrictFun]
+    rw [coeff_mk'_of_mem _ hn, coeff_peval_of_mem Φ _ (h hn)]
+    refine aeval_wittStructure_congr Φ fun i d hd ↦ ?_
+    dsimp only [comp_apply, restrictFun]
+    exact (coeff_mk'_of_mem _ (T.mem_of_dvd hn hd)).symm
+  · rw [coeff_eq_zero_of_notMem _ n hn, coeff_eq_zero_of_notMem _ n hn]
+
+/-- For truncation sets `T ≤ S`, the restriction `W_S(R) →+* W_T(R)`, which forgets the
+coordinates outside `T`. -/
+def restrict (h : T ≤ S) : BigWittVector S R →+* BigWittVector T R where
+  toFun := restrictFun h
+  map_zero' := ext fun n ↦ Set.indicator_apply_eq_zero.2 fun _ ↦ coeff_zero n
+  map_one' := ext fun n ↦ by
+    by_cases hn : n ∈ T
+    · simp [restrictFun, coeff_one, hn, h hn]
+    · simp [coeff_eq_zero_of_notMem _ n hn]
+  map_add' x y := by
+    rw [add_eq_peval, add_eq_peval, restrictFun_peval]
+    congr 1
     funext i
-    exact (ghost_mapData f _ n).symm.trans (congrArg (fun z ↦ ghost z n) (h i))
-  rw [hi]
+    fin_cases i <;> rfl
+  map_mul' x y := by
+    rw [mul_eq_peval, mul_eq_peval, restrictFun_peval]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
 
-noncomputable instance : Zero (BigWitt S R) := ⟨mk fun _ ↦ 0⟩
-noncomputable instance : One (BigWitt S R) := ⟨mk fun n ↦ if (n : ℕ) = 1 then 1 else 0⟩
-@[no_expose] noncomputable instance : Add (BigWitt S R) := by
-  exact ⟨fun x y ↦ operation (X false + X true) (fun i ↦ cond i y x)⟩
-@[no_expose] noncomputable instance : Mul (BigWitt S R) := by
-  exact ⟨fun x y ↦ operation (X false * X true) (fun i ↦ cond i y x)⟩
-@[no_expose] noncomputable instance : Neg (BigWitt S R) := by
-  exact ⟨fun x ↦ operation (-X false) (fun _ ↦ x)⟩
-
-@[simp]
-theorem coeff_zero (n : S) : (0 : BigWitt S R).coeff n = 0 := by rfl
+theorem coeff_restrict (h : T ≤ S) (x : BigWittVector S R) (n : ℕ) :
+    (restrict h x).coeff n = (T : Set ℕ).indicator x.coeff n :=
+  (rfl)
 
 @[simp]
-theorem coeff_one (n : S) : (1 : BigWitt S R).coeff n = if (n : ℕ) = 1 then 1 else 0 := by rfl
+theorem coeff_restrict_of_mem (h : T ≤ S) (x : BigWittVector S R) {n : ℕ} (hn : n ∈ T) :
+    (restrict h x).coeff n = x.coeff n :=
+  Set.indicator_of_mem (SetLike.mem_coe.2 hn) _
+
+/-- Ghost components commute with restriction. -/
+@[simp]
+theorem ghostMap_restrict (h : T ≤ S) (x : BigWittVector S R) (n : T) :
+    ghostMap (restrict h x) n = ghostMap x (Set.inclusion h n) := by
+  rw [ghostMap_apply, ghostMap_apply]
+  exact ghostPolynomial_congr fun d hd ↦ coeff_restrict_of_mem h x (T.mem_of_dvd n.prop hd)
 
 @[simp]
-private theorem ghost_zero (n : S) : ghost (0 : BigWitt S R) n = 0 := by
-  classical
-  rw [ghost, ghostPolynomial_eq_sum]
-  apply Finset.sum_eq_zero
-  intro d hd
-  have he := (Nat.div_ne_zero_iff_of_dvd (Nat.dvd_of_mem_divisors hd)).2
-    ⟨S.ne_zero_of_mem n.property, (Nat.pos_of_mem_divisors hd).ne'⟩
-  simp [coordinates, he]
-
-@[simp]
-private theorem ghost_one (n : S) : ghost (1 : BigWitt S R) n = 1 := by
-  classical
-  rw [ghost, ghostPolynomial_eq_sum]
-  have hc : coordinates (1 : BigWitt S R) = fun d ↦ if d = 1 then 1 else 0 := by
-    funext d
-    by_cases hd : d ∈ S
-    · simp [coordinates, hd, coeff_one]
-    · by_cases hd1 : d = 1
-      · subst d
-        exact (hd (S.one_mem_of_mem n.property)).elim
-      · simp [coordinates, hd, hd1]
-  rw [hc, Finset.sum_eq_single 1]
-  · simp
-  · intro d hd hd1
-    have he := (Nat.div_ne_zero_iff_of_dvd (Nat.dvd_of_mem_divisors hd)).2
-      ⟨S.ne_zero_of_mem n.property, (Nat.pos_of_mem_divisors hd).ne'⟩
-    simp [hd1, he]
-  · simp [Nat.mem_divisors, S.ne_zero_of_mem n.property]
-
-@[simp]
-private theorem ghost_add (x y : BigWitt S R) (n : S) :
-    ghost (x + y) n = ghost x n + ghost y n := by
-  exact (ghost_operation (X false + X true) _ n).trans (by simp)
-
-@[simp]
-private theorem ghost_mul (x y : BigWitt S R) (n : S) :
-    ghost (x * y) n = ghost x n * ghost y n := by
-  exact (ghost_operation (X false * X true) _ n).trans (by simp)
-
-@[simp]
-private theorem ghost_neg (x : BigWitt S R) (n : S) : ghost (-x) n = -ghost x n := by
-  exact (ghost_operation (-X false) _ n).trans (by simp)
-
-@[simp] private theorem mapData_zero (f : R →+* A) : mapData f (0 : BigWitt S R) = 0 := by
-  ext n
-  simp [mapData]
-
-@[simp] private theorem mapData_one (f : R →+* A) : mapData f (1 : BigWitt S R) = 1 := by
-  classical
-  ext n
-  simp only [mapData, coeff_mk, coeff_one]
-  split_ifs <;> simp
-
-@[simp] private theorem mapData_add (f : R →+* A) (x y : BigWitt S R) :
-    mapData f (x + y) = mapData f x + mapData f y := by
-  -- The opaque primitive addition is given by evaluation at the two input vectors.
-  change mapData f (operation (X false + X true) (fun i ↦ cond i y x)) =
-    operation (X false + X true) (fun i ↦ cond i (mapData f y) (mapData f x))
-  simpa only [Bool.apply_cond] using
-    mapData_operation f (X false + X true) (fun i ↦ cond i y x)
-
-@[simp] private theorem mapData_mul (f : R →+* A) (x y : BigWitt S R) :
-    mapData f (x * y) = mapData f x * mapData f y := by
-  -- As for addition, expose the primitive operation locally to apply evaluation naturality.
-  change mapData f (operation (X false * X true) (fun i ↦ cond i y x)) =
-    operation (X false * X true) (fun i ↦ cond i (mapData f y) (mapData f x))
-  simpa only [Bool.apply_cond] using
-    mapData_operation f (X false * X true) (fun i ↦ cond i y x)
-
-@[simp] private theorem mapData_neg (f : R →+* A) (x : BigWitt S R) :
-    mapData f (-x) = -mapData f x := mapData_operation f (-X false) _
-
-@[instance_reducible] private noncomputable def polyRing (ι : Type*) :
-    CommRing (BigWitt S (MvPolynomial ι ℤ)) :=
-  CommRing.ofMinimalAxioms
-    (add_assoc := fun x y z ↦
-      polynomial_ghost_injective (funext fun n ↦ by simp [add_assoc]))
-    (zero_add := fun x ↦ polynomial_ghost_injective (funext fun n ↦ by simp))
-    (neg_add_cancel := fun x ↦ polynomial_ghost_injective (funext fun n ↦ by simp))
-    (mul_assoc := fun x y z ↦
-      polynomial_ghost_injective (funext fun n ↦ by simp [mul_assoc]))
-    (mul_comm := fun x y ↦
-      polynomial_ghost_injective (funext fun n ↦ by simp [mul_comm]))
-    (one_mul := fun x ↦ polynomial_ghost_injective (funext fun n ↦ by simp))
-    (left_distrib := fun x y z ↦
-      polynomial_ghost_injective (funext fun n ↦ by simp [mul_add]))
-
-private noncomputable def lift (x : BigWitt S R) : BigWitt S (MvPolynomial R ℤ) :=
-  mk fun n ↦ X (x.coeff n)
-
-private noncomputable abbrev specialize : BigWitt S (MvPolynomial R ℤ) → BigWitt S R :=
-  mapData (counit R)
-
-@[simp] private theorem specialize_lift (x : BigWitt S R) :
-    mapData (counit R) (lift x) = x := by
-  ext n
-  simp [mapData, lift]
-
-noncomputable instance : CommRing (BigWitt S R) :=
-  CommRing.ofMinimalAxioms
-    (add_assoc := fun x y z ↦ by
-      simpa only [specialize, mapData_add, specialize_lift] using
-        congrArg (specialize (S := S) (R := R))
-          ((polyRing (S := S) R).add_assoc (lift x) (lift y) (lift z)))
-    (zero_add := fun x ↦ by
-      simpa only [specialize, mapData_add, mapData_zero, specialize_lift] using
-        congrArg (specialize (S := S) (R := R))
-          ((polyRing (S := S) R).zero_add (lift x)))
-    (neg_add_cancel := fun x ↦ by
-      simpa only [specialize, mapData_add, mapData_neg, mapData_zero, specialize_lift] using
-        congrArg (specialize (S := S) (R := R))
-          ((polyRing (S := S) R).neg_add_cancel (lift x)))
-    (mul_assoc := fun x y z ↦ by
-      simpa only [specialize, mapData_mul, specialize_lift] using
-        congrArg (specialize (S := S) (R := R))
-          ((polyRing (S := S) R).mul_assoc (lift x) (lift y) (lift z)))
-    (mul_comm := fun x y ↦ by
-      simpa only [specialize, mapData_mul, specialize_lift] using
-        congrArg (specialize (S := S) (R := R))
-          ((polyRing (S := S) R).mul_comm (lift x) (lift y)))
-    (one_mul := fun x ↦ by
-      simpa only [specialize, mapData_mul, mapData_one, specialize_lift] using
-        congrArg (specialize (S := S) (R := R))
-          ((polyRing (S := S) R).one_mul (lift x)))
-    (left_distrib := fun x y z ↦ by
-      simpa only [specialize, mapData_mul, mapData_add, specialize_lift] using
-        congrArg (specialize (S := S) (R := R))
-          ((polyRing (S := S) R).left_distrib (lift x) (lift y) (lift z)))
-
-/-- The `n`-th ghost component is a ring homomorphism. -/
-noncomputable def ghostComponent (n : S) : BigWitt S R →+* R where
-  toFun x := ghost x n
-  map_zero' := ghost_zero n
-  map_one' := ghost_one n
-  map_add' x y := ghost_add x y n
-  map_mul' x y := ghost_mul x y n
-
-/-- Evaluate a ghost component by its divisor polynomial. -/
-theorem ghostComponent_apply (n : S) (x : BigWitt S R) :
-    ghostComponent n x = ghostPolynomial n (coordinates x) := by rfl
-
-/-- The joint ghost map to the ring of functions on the truncation set. -/
-noncomputable def ghostMap : BigWitt S R →+* (S → R) :=
-  RingHom.pi ghostComponent
-
-@[simp]
-theorem ghostMap_apply (x : BigWitt S R) (n : S) :
-    ghostMap x n = ghostComponent n x := by rfl
-
-/-- Ghost components determine vectors if multiplication by every prime in the truncation
-set is injective on the coefficient ring. -/
-theorem ghostMap_injective
-    (hR : ∀ p, p.Prime → p ∈ S → Function.Injective (p • · : R → R)) :
-    Function.Injective (ghostMap : BigWitt S R →+* (S → R)) :=
-  ghost_injective hR
-
-/-- Apply a coefficient ring homomorphism to every Witt coordinate. -/
-noncomputable def map (S : TruncationSet) (f : R →+* A) : BigWitt S R →+* BigWitt S A where
-  toFun := mapData f
-  map_zero' := mapData_zero f
-  map_one' := mapData_one f
-  map_add' := mapData_add f
-  map_mul' := mapData_mul f
-
-@[simp]
-theorem map_coeff (f : R →+* A) (x : BigWitt S R) (n : S) :
-    (map S f x).coeff n = f (x.coeff n) := by rfl
-
-@[simp]
-theorem map_id : map S (RingHom.id R) = RingHom.id (BigWitt S R) := by
+theorem restrict_self : restrict (le_refl S) = RingHom.id (BigWittVector S R) := by
   ext x n
-  rfl
+  by_cases hn : n ∈ S
+  · simp [hn]
+  · simp [coeff_eq_zero_of_notMem _ n hn]
 
-@[simp]
-theorem map_comp (f : R →+* A) (g : A →+* B) :
-    map S (g.comp f) = (map S g).comp (map S f) := by
+theorem restrict_comp_restrict (hUT : U ≤ T) (hTS : T ≤ S) :
+    (restrict hUT).comp (restrict hTS) = restrict (R := R) (hUT.trans hTS) := by
   ext x n
-  rfl
+  by_cases hn : n ∈ U
+  · simp [hn, hUT hn]
+  · simp [coeff_eq_zero_of_notMem _ n hn]
 
-@[simp]
-theorem ghostComponent_map (f : R →+* A) (x : BigWitt S R) (n : S) :
-    ghostComponent n (map S f x) = f (ghostComponent n x) := ghost_mapData f x n
-
-private def restrictData (h : T ≤ S) (x : BigWitt S R) : BigWitt T R :=
-  mk fun n ↦ x.coeff ⟨n, h n.property⟩
-
-private theorem ghost_restrictData (h : T ≤ S) (x : BigWitt S R) (n : T) :
-    ghost (restrictData h x) n = ghost x ⟨n, h n.property⟩ := by
-  classical
-  apply ghostPolynomial_congr
-  intro d hd
-  simp [coordinates, T.mem_of_dvd n.property hd,
-    S.mem_of_dvd (h n.property) hd, restrictData]
-
-private theorem mapData_restrictData (h : T ≤ S) (f : R →+* A) (x : BigWitt S R) :
-    mapData f (restrictData h x) = restrictData h (mapData f x) := by rfl
-
-private theorem restrictData_add (h : T ≤ S) (x y : BigWitt S R) :
-    restrictData h (x + y) = restrictData h x + restrictData h y := by
-  have he : restrictData h (lift x + lift y) =
-      restrictData h (lift x) + restrictData h (lift y) :=
-    polynomial_ghost_injective (funext fun n ↦ by simp [ghost_restrictData])
-  simpa only [mapData_add, mapData_restrictData, specialize_lift] using
-    congrArg (mapData (counit R)) he
-
-private theorem restrictData_mul (h : T ≤ S) (x y : BigWitt S R) :
-    restrictData h (x * y) = restrictData h x * restrictData h y := by
-  have he : restrictData h (lift x * lift y) =
-      restrictData h (lift x) * restrictData h (lift y) :=
-    polynomial_ghost_injective (funext fun n ↦ by simp [ghost_restrictData])
-  simpa only [mapData_mul, mapData_restrictData, specialize_lift] using
-    congrArg (mapData (counit R)) he
-
-/-- Restrict a big Witt vector to a smaller truncation set. -/
-noncomputable def restrict (h : T ≤ S) : BigWitt S R →+* BigWitt T R where
-  toFun := restrictData h
-  map_zero' := by rfl
-  map_one' := by rfl
-  map_add' := restrictData_add h
-  map_mul' := restrictData_mul h
-
-@[simp]
-theorem restrict_coeff (h : T ≤ S) (x : BigWitt S R) (n : T) :
-    (restrict h x).coeff n = x.coeff ⟨n, h n.property⟩ := by rfl
-
-@[simp]
-theorem restrict_refl : restrict (le_refl S) = RingHom.id (BigWitt S R) := by
+/-- Restriction is natural in the coefficient ring. -/
+theorem map_comp_restrict (h : T ≤ S) (f : R →+* R') :
+    (map f).comp (restrict h) = (restrict h).comp (map f) := by
   ext x n
-  rfl
+  by_cases hn : n ∈ T
+  · simp [hn]
+  · simp [coeff_eq_zero_of_notMem _ n hn]
 
-@[simp]
-theorem restrict_comp (h : T ≤ S) (k : U ≤ T) :
-    (restrict k).comp (restrict h) = (restrict (R := R) (k.trans h)) := by
-  ext x n
-  rfl
+end BigWittVector
 
-@[simp]
-theorem ghostComponent_restrict (h : T ≤ S) (x : BigWitt S R) (n : T) :
-    ghostComponent n (restrict h x) = ghostComponent ⟨n, h n.property⟩ x :=
-  ghost_restrictData h x n
-
-/-- Restriction commutes with applying a coefficient homomorphism. -/
-theorem restrict_comp_map (h : T ≤ S) (f : R →+* A) :
-    (restrict h).comp (map S f) = (map T f).comp (restrict h) := by
-  ext x n
-  rfl
-
-end
-end BigWitt
 end TauCeti
