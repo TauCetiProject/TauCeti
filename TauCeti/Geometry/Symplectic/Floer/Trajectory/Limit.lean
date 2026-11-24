@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
-import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Limits of Floer trajectories are Floer trajectories
@@ -111,36 +109,6 @@ theorem tendstoLocallyUniformly_fderiv_of_floer_of_periodic (hH : ContDiff ℝ 2
     (fun C hC _ ↦ hbd C hC) fun z _ ↦ hlim z
   exact ⟨contDiffOn_univ.1 hg, tendstoLocallyUniformlyOn_univ.1 hconv, fun z ↦ heq z (mem_univ z)⟩
 
-/-- **Actions of loops converge under locally uniform `C¹` convergence.** Let `H` be a continuous
-time-dependent Hamiltonian. If maps `u_i`, eventually `C¹`, converge locally uniformly to a `C¹`
-map `g` together with their derivatives, then for every `s` the actions of the loops `u_i(s, ·)`
-converge to the action of the loop `g(s, ·)`. -/
-theorem tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly (hH : Continuous (uncurry H))
-    {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated] {v : ι → ℝ × ℝ → V}
-    (hv : ∀ᶠ i in l, ContDiff ℝ 1 (v i)) (hg : ContDiff ℝ 1 g)
-    (hlim : TendstoLocallyUniformly v g l)
-    (hdlim : TendstoLocallyUniformly (fun i ↦ fderiv ℝ (v i)) (fderiv ℝ g) l) (s : ℝ) :
-    Tendsto (fun i ↦ ω.hamiltonianAction H (fun t ↦ v i (s, t))) l
-      (𝓝 (ω.hamiltonianAction H (fun t ↦ g (s, t)))) := by
-  -- The derivative of the loop at `s` of a `C¹` map is its derivative in the direction `(0, 1)`.
-  have hd {f : ℝ × ℝ → V} (hf : ContDiff ℝ 1 f) :
-      deriv (fun t ↦ f (s, t)) = fun t ↦ fderiv ℝ f (s, t) (0, 1) :=
-    funext fun t ↦ (hasDerivAt_slice_right ((hf.differentiable one_ne_zero) (s, t))).deriv
-  -- On the segment `{s} × [0, 1]` the loops and their derivatives converge uniformly.
-  have hdslice : TendstoUniformlyOn (fun i t ↦ fderiv ℝ (v i) (s, t)) (fun t ↦ fderiv ℝ g (s, t))
-      l (Icc 0 1) := (hdlim.tendstoLocallyUniformlyOn (s := univ)).tendstoUniformlyOn_slice_right
-    isCompact_Icc fun _ _ ↦ mem_univ _
-  have hdunif := (ContinuousLinearMap.apply ℝ V ((0 : ℝ), (1 : ℝ))).uniformContinuous
-    |>.comp_tendstoUniformlyOn hdslice
-  refine ω.tendsto_hamiltonianAction hH
-    (hv.mono fun i hi ↦ (hi.continuous.comp (continuous_const.prodMk continuous_id)).continuousOn)
-    (hv.mono fun i hi ↦ hi.contDiffOn.continuousOn_deriv_slice_right isOpen_univ
-      fun _ _ ↦ mem_univ _)
-    ((hlim.tendstoLocallyUniformlyOn (s := univ)).tendstoUniformlyOn_slice_right isCompact_Icc
-      fun _ _ ↦ mem_univ _) ?_
-  rw [hd hg]
-  exact hdunif.congr (hv.mono fun i hi t _ ↦ by simp [hd hi])
-
 /-- **The energy identity for limits of Floer trajectories.** In the situation of
 `TauCeti.SymplecticForm.tendstoLocallyUniformly_fderiv_of_floer_of_periodic`, suppose that the
 `u_k` converge to `g` locally uniformly. Then for `a ≤ b` the Floer energy of the `C¹` limit `g`
@@ -180,42 +148,13 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto
       (ω.continuousOn_floerEnergyDensity isOpen_univ ((hu1 k).of_le one_le_two).contDiffOn
         contDiffOn_const hKt).mono (subset_univ _))
   -- The actions of the boundary loops converge, and for each `u_k` the identity holds.
-  have hRHS := (tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly (ω := ω)
+  have hRHS := (ω.tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly
     hH1.continuous (Eventually.of_forall fun k ↦ (hu1 k).of_le one_le_two) hg hlim hdlim b).sub
-    (tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly (ω := ω) hH1.continuous
+    (ω.tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly hH1.continuous
       (Eventually.of_forall fun k ↦ (hu1 k).of_le one_le_two) hg hlim hdlim a)
   refine tendsto_nhds_unique hLHS (hRHS.congr fun k ↦ ?_)
   exact (ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH1 isOpen_univ
     (hu1 k).contDiffOn hab (subset_univ _) fun s _ ↦ by simpa using hper k s 0).symm
-
-/-- **The actions of the loops of a Lipschitz map at its ends.** Let `H` be a continuous
-time-dependent Hamiltonian and `g` a `C¹` map with closed loops `g(s, 1) = g(s, 0)` and
-`‖dg‖ ≤ L`. If the loops `g(s, ·)` converge uniformly along a countably generated filter `l` to a
-closed `C¹` loop `x`, then their actions converge to the action of `x`. -/
-theorem tendsto_hamiltonianAction_slice_of_tendstoUniformly (hH : Continuous (uncurry H))
-    {l : Filter ℝ} [l.IsCountablyGenerated] (hg : ContDiff ℝ 1 g)
-    (hgper : ∀ s, g (s, 1) = g (s, 0)) {L : ℝ} (hgL : ∀ z, ‖fderiv ℝ g z‖ ≤ L) {x : ℝ → V}
-    (hx : ContDiff ℝ 1 x) (hxper : x 1 = x 0)
-    (hlim : TendstoUniformly (fun s t ↦ g (s, t)) x l) :
-    Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ g (s, t))) l
-      (𝓝 (ω.hamiltonianAction H x)) := by
-  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hx.continuous_deriv le_rfl).continuousOn (s := Icc (0 : ℝ) 1)
-  -- Both loops have speed at most `max L M`, so the difference of the actions tends to zero.
-  have h := ω.tendsto_hamiltonianAction_sub_hamiltonianAction hH (L := max L M)
-    (x := fun s t ↦ g (s, t)) (y := fun _ ↦ x) (x₀ := x)
-    (.of_forall fun s t _ ↦
-      (hasDerivAt_slice_right ((hg.differentiable one_ne_zero) (s, t))).differentiableAt)
-    (.of_forall fun _ t _ ↦ (hx.differentiable one_ne_zero) t)
-    (.of_forall fun _ ↦ hg.contDiffOn.continuousOn_deriv_slice_right isOpen_univ
-      fun _ _ ↦ mem_univ _)
-    (.of_forall fun _ ↦ (hx.continuous_deriv le_rfl).continuousOn) (.of_forall hgper)
-    (.of_forall fun _ ↦ hxper)
-    (.of_forall fun s t _ ↦ (norm_deriv_slice_right_le
-      ((hg.differentiable one_ne_zero) (s, t))).trans ((hgL _).trans (le_max_left _ _)))
-    (.of_forall fun _ t ht ↦ (hM t ht).trans (le_max_right _ _)) hlim.tendstoUniformlyOn
-    fun _ hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
-  simpa using h.add_const (ω.hamiltonianAction H x)
 
 /-- **The energy of a limit of Floer trajectories.** In the situation of
 `TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto`, let the
@@ -266,9 +205,9 @@ theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tends
         (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
           fun z _ ↦ ω.floerEnergyDensity_nonneg (hJt z) (hgeq z))]
   exact setLIntegral_univ_prod_eq_ofReal_of_tendsto hE
-    (tendsto_hamiltonianAction_slice_of_tendstoUniformly hH1.continuous hg hgper hgL hx₀ hx₀per
+    (ω.tendsto_hamiltonianAction_slice_of_tendstoUniformly hH1.continuous hg hgper hgL hx₀ hx₀per
       hbot)
-    (tendsto_hamiltonianAction_slice_of_tendstoUniformly hH1.continuous hg hgper hgL hx₁ hx₁per
+    (ω.tendsto_hamiltonianAction_slice_of_tendstoUniformly hH1.continuous hg hgper hgL hx₁ hx₁per
       htop)
 
 end TauCeti.SymplecticForm
