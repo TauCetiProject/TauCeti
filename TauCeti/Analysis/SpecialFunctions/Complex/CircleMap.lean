@@ -34,8 +34,10 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
   punctured disc of radius `R`.
 * `TauCeti.hasDerivAt_circleMap_div`: the circle of radius `R` parametrized by arclength,
   `s ↦ c + R e^{i s / R}`, has unit velocity `e^{i s / R} i`.
-* `TauCeti.im_conj_mul_I_mul_circleMap_div_sub`: along the arclength circle of radius `R`, the
-  unit velocity at `s` crossed with the chord to `t` is `R (1 - cos ((t - s) / R))`.
+* `TauCeti.im_conj_mul_I_mul_circleMap_div_sub`: for every `R` and `γ(s) = c + R e^{i s / R}`,
+  the identity `Im(conj (e^{i s / R} i) · (γ(t) - γ(s))) = R (1 - cos ((t - s) / R))`; for
+  `R ≠ 0` it says that the unit velocity at `s` crossed with the chord to `t` is
+  `R (1 - cos ((t - s) / R))`.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
 -/
 
@@ -126,9 +128,11 @@ theorem hasDerivAt_circleMap_div (c : ℂ) {R : ℝ} (hR : R ≠ 0) (s : ℝ) :
   push_cast
   field_simp [ofReal_ne_zero.2 hR]
 
-/-- Along the circle of radius `R` about `c` parametrized by arclength, the cross product
-`Im(conj τ · (γ(t) - γ(s)))` of the unit velocity `τ = e^{i s / R} i` at `s` with the chord from
-`γ(s)` to `γ(t)` is `R (1 - cos ((t - s) / R))`. -/
+/-- For `γ(s) = c + R e^{i s / R}` and `τ(s) = e^{i s / R} i`, the quantity
+`Im(conj τ(s) · (γ(t) - γ(s)))` equals `R (1 - cos ((t - s) / R))`, for every `R`. When `R ≠ 0`,
+`γ` is the circle of radius `R` about `c` parametrized by arclength and `τ` is its unit velocity
+(`TauCeti.hasDerivAt_circleMap_div`), so this is the cross product of the unit velocity at `s` with
+the chord from `γ(s)` to `γ(t)`; when `R = 0`, both sides vanish. -/
 theorem im_conj_mul_I_mul_circleMap_div_sub (c : ℂ) (R s t : ℝ) :
     (starRingEnd ℂ (circleMap 0 1 (s / R) * I) *
         (circleMap c R (t / R) - circleMap c R (s / R))).im =

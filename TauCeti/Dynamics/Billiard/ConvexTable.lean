@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import TauCeti.Dynamics.Billiard.Circle.Basic
 public import TauCeti.Dynamics.Billiard.NextCollision
 public import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -35,15 +36,22 @@ This file defines the carrier `TauCeti.ConvexTable k ℓ` and its first properti
   every half-open interval of length `ℓ` (`ConvexTable.injOn_Ico`): injectivity is a consequence of
   the definition, not an axiom;
 * a table is a `TauCeti.StrictConvexBilliardTable` for the orientation `Complex.orientation` of `ℂ`
-  (`ConvexTable.toStrictConvexBilliardTable`), so the next-collision map, its inverse and its
-  generating function, constructed there for an oriented Euclidean plane, apply to every table;
+  (`ConvexTable.toStrictConvexBilliardTable`), so the next-collision map of
+  `TauCeti.Dynamics.Billiard.NextCollision`, constructed for an oriented Euclidean plane, applies to
+  every table, and so do its inverse and its generating function after importing
+  `TauCeti.Dynamics.Billiard.Inverse` and `TauCeti.Dynamics.Billiard.GeneratingFunction`. The plane
+  API needs the instance `Fact (finrank ℝ ℂ = 2)`; install it locally with
+  `attribute [local instance] Complex.finrank_real_complex_fact`, as this file does;
 * a table of class `C^k` is a table of class `C^j` for `1 ≤ j ≤ k` (`ConvexTable.ofLE`), a shift of
   the parameter is a table (`ConvexTable.shift`), and so is the image under a rigid motion
   `z ↦ az + b` with `|a| = 1` (`ConvexTable.rigidMotion`), while the reversed parametrisation
   `s ↦ γ(-s)` never is (`ConvexTable.coe_ne_comp_neg`): the orientation is part of the carrier;
 * the circle `s ↦ R exp(is/R)` of radius `R > 0`, Mathlib's `circleMap 0 R` parametrized by
   arclength, is a table of class `C^∞` and perimeter `2πR` (`ConvexTable.circle`), with
-  `τ(s) × (γ(t) - γ(s)) = R(1 - cos((t - s)/R))`.
+  `τ(s) × (γ(t) - γ(s)) = R(1 - cos((t - s)/R))`; as a strictly convex billiard table it is the
+  circular table `Complex.orientation.circleBilliardTable 0 1 R`
+  (`ConvexTable.toStrictConvexBilliardTable_circle`), so the explicit circle formulas of
+  `TauCeti.Dynamics.Billiard.Circle.Basic` apply to it.
 
 ## References
 
@@ -238,6 +246,7 @@ theorem shift_period : γ.shift ℓ = γ :=
 theorem shift_add_period (c : ℝ) : γ.shift (c + ℓ) = γ.shift c :=
   ext fun s ↦ by rw [shift_apply, shift_apply, ← add_assoc, apply_add_period]
 
+@[simp, grind =]
 theorem shift_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) (c : ℝ) :
     (γ.ofLE hj hjk).shift c = (γ.shift c).ofLE hj hjk :=
   ext fun _ ↦ rfl
@@ -287,10 +296,12 @@ theorem rigidMotion_rigidMotion (a a' : Circle) (b b' : ℂ) :
     (γ.rigidMotion a b).rigidMotion a' b' = γ.rigidMotion (a' * a) (a' * b + b') :=
   ext fun s ↦ by simp only [rigidMotion_apply, Circle.coe_mul]; ring
 
+@[simp, grind =]
 theorem rigidMotion_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) (a : Circle) (b : ℂ) :
     (γ.ofLE hj hjk).rigidMotion a b = (γ.rigidMotion a b).ofLE hj hjk :=
   ext fun _ ↦ rfl
 
+@[simp, grind =]
 theorem rigidMotion_shift (a : Circle) (b : ℂ) (c : ℝ) :
     (γ.shift c).rigidMotion a b = (γ.rigidMotion a b).shift c :=
   ext fun _ ↦ rfl
@@ -331,7 +342,7 @@ variable (R : ℝ) [Fact (0 < 2 * π * R)]
 theorem circle_apply (s : ℝ) : circle R s = circleMap 0 R (s / R) :=
   (rfl)
 
-/-- The circle `s ↦ R exp(is/R)` has unit velocity `exp(is/R) i`. -/
+/-- The circle `s ↦ R exp(is/R)` of radius `R > 0` has unit velocity `exp(is/R) i`. -/
 theorem hasDerivAt_circle (s : ℝ) : HasDerivAt (circle R) (circleMap 0 1 (s / R) * I) s :=
   hasDerivAt_circleMap_div 0 (pos_of_two_pi_mul_pos Fact.out).ne' s
 
@@ -345,6 +356,25 @@ theorem im_conj_deriv_circle_mul_sub (s t : ℝ) :
     (conj (deriv (circle R) s) * (circle R t - circle R s)).im =
       R * (1 - Real.cos ((t - s) / R)) := by
   rw [deriv_circle, circle_apply, circle_apply, im_conj_mul_I_mul_circleMap_div_sub]
+
+/-- As a strictly convex billiard table, the circle of radius `R` is the circular table
+`Complex.orientation.circleBilliardTable 0 1 R` of center `0` starting at `R`, so the next-collision
+and quotient billiard formulas of `TauCeti.Dynamics.Billiard.Circle.Basic` apply to it. -/
+theorem toStrictConvexBilliardTable_circle (hR : 0 < R) :
+    (circle R).toStrictConvexBilliardTable =
+      Complex.orientation.circleBilliardTable 0 1 R (by simp) hR := by
+  have h₁ : ⇑(Complex.orientation.circleBilliardTable 0 1 R (by simp) hR) = circle R := by
+    ext s
+    rw [Orientation.coe_circleBilliardTable, Orientation.circleCurve_eq_add_smul_rotation,
+      Complex.rotation, circle_apply]
+    simp [circleMap]
+  have h₂ := Orientation.circleBilliardTable_period Complex.orientation 0 1 R (by simp) hR
+  generalize Complex.orientation.circleBilliardTable 0 1 R (by simp) hR = χ at h₁ h₂ ⊢
+  obtain ⟨f, p, _, _, _, _, _⟩ := χ
+  change f = _ at h₁
+  change p = _ at h₂
+  subst h₁ h₂
+  rfl
 
 end ConvexTable
 
