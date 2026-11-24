@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Descent of coefficients of homomorphisms into `GL_n`
@@ -123,10 +124,7 @@ theorem eq_descend_iff (hf : Function.Injective f) (h : entries ρ ⊆ Set.range
     {ψ : Γ →* GL n R} :
     ψ = descend hf h ↔ ∀ g, Matrix.GeneralLinearGroup.map f (ψ g) = ρ g := by
   refine ⟨fun hψ g ↦ hψ ▸ map_descend hf h g, fun hψ ↦ MonoidHom.ext fun g ↦ ?_⟩
-  refine Units.ext <| Matrix.map_injective hf ?_
-  dsimp only
-  rw [map_coe_descend hf h]
-  exact congrArg Units.val (hψ g)
+  exact Matrix.GeneralLinearGroup.map_injective hf ((hψ g).trans (map_descend hf h g).symm)
 
 end Descend
 
