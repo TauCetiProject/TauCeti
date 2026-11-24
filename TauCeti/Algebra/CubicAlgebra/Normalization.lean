@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.CubicAlgebra.Basic
 import Mathlib.LinearAlgebra.Transvection.Basic
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Algebras with a basis `1, ω, θ` are cubic algebras of binary cubic forms
@@ -127,11 +128,6 @@ private theorem linearIndependent_one_cons {R A : Type*} [Semiring R] [AddCommMo
   fin_cases i <;> simp [hc₀]
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
-
-/-- The mirror image of `Module.Basis.repr_smul'`, for multiplication by a scalar on the right. -/
-private theorem repr_mul_algebraMap (c : Basis (Fin 3) R A) (i : Fin 3) (x : A) (r : R) :
-    c.repr (x * algebraMap R A r) i = r * c.repr x i := by
-  rw [← Algebra.commutes, repr_smul']
 
 section CubicAlgEquiv
 
