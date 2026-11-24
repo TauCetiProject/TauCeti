@@ -38,8 +38,8 @@ result is the canonical linear graph shear.
 For a function of a scalar first variable, the partial derivatives along the coordinate lines
 `s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
 one order higher for the first derivative, and more generally along any line `r ↦ p + r • q`.
-A function whose partial derivative in the first variable vanishes everywhere is constant along
-every horizontal line.
+A differentiable function whose partial derivative in the first variable vanishes everywhere is
+constant along every horizontal line.
 
 The product `η (t) * u (t, x)` of a function of time and a function of time and space has the
 expected derivative, with a norm bound in terms of bounds on the factors and their derivatives
@@ -71,8 +71,12 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `TauCeti.fderiv_comp_fst`, `TauCeti.norm_fderiv_comp_fst_le`: the derivative of a function of
+  the first variable alone, and the bound of its norm by that of the derivative of the function.
 * `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
   second coordinate, with no differentiability assumption.
+* `TauCeti.fderiv_apply_fst`: the first coordinate of the derivative of a map into a product is
+  the derivative of its first coordinate.
 * `HasDerivAt.hasFDerivAt_comp_snd`: a function `p ↦ x p.2` of a scalar second variable alone has
   derivative `(σ, τ) ↦ τ • x'`.
 * `HasDerivAt.hasFDerivAt_comp_fst_sub_comp_snd`: the map `p ↦ u₁ p.1 - u₂ p.2` of two scalar
@@ -107,6 +111,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   spatial derivative by common bounds for `Df` and `Dg`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
+* `HasFDerivAt.comp_graph_of_fderiv_right_eq_zero`: a derivative witness along such a graph
+  is the restriction of the ambient derivative to the first factor.
 * `DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`: the derivative of a graph map from its
   horizontal derivative and its vertical identity derivative.
 -/
@@ -199,6 +205,22 @@ theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
     fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
   simp [← Function.comp_def f Prod.snd, fderiv_comp_snd]
 
+/-- A function of the first variable alone has derivative `Df ∘ fst`. No differentiability is
+needed: otherwise both sides are zero. -/
+@[simp]
+theorem fderiv_comp_fst (f : E → G) (z : E × F) :
+    fderiv 𝕜 (fun w : E × F ↦ f w.1) z = (fderiv 𝕜 f z.1).comp (ContinuousLinearMap.fst 𝕜 E F) :=
+  (ContinuousLinearMap.fst 𝕜 E F).fderiv_comp_right_of_rightInverse
+    (ContinuousLinearMap.inl 𝕜 E F) (fun _ ↦ by simp) f z
+
+/-- The derivative of a function of the first variable alone has norm at most that of the
+derivative of the function: `‖fderiv 𝕜 (fun w ↦ f w.1) z‖ ≤ ‖fderiv 𝕜 f z.1‖`. -/
+theorem norm_fderiv_comp_fst_le (f : E → G) (z : E × F) :
+    ‖fderiv 𝕜 (fun w : E × F ↦ f w.1) z‖ ≤ ‖fderiv 𝕜 f z.1‖ := by
+  rw [fderiv_comp_fst]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le 𝕜 E F))
+
 /-- A map `w ↦ (c, g w)` with a constant first coordinate has the derivative of `g` in the second
 coordinate, with no differentiability assumption. -/
 theorem fderiv_const_prodMk (c : F) (g : E → G) (x : E) :
@@ -207,6 +229,12 @@ theorem fderiv_const_prodMk (c : F) (g : E → G) (x : E) :
     ext w <;> simp
   rw [h, fderiv_const_add, (ContinuousLinearMap.inr 𝕜 F G).fderiv_comp_left_of_leftInverse
     (ContinuousLinearMap.snd 𝕜 F G) (fun _ ↦ rfl)]
+
+/-- The first coordinate of the derivative of a map `f : E → F × G` is the derivative of its first
+coordinate `x ↦ (f x).1`. -/
+theorem fderiv_apply_fst {f : E → F × G} {L : E →L[𝕜] F} (hf : DifferentiableAt 𝕜 f a)
+    (hL : HasFDerivAt (fun x ↦ (f x).1) L a) (v : E) : (fderiv 𝕜 f a v).1 = L v := by
+  simp [← hL.fderiv, fderiv.fst hf]
 
 /-- A function `p ↦ x p.2` of a scalar second variable alone, where `x` has derivative `x'` at
 `z.2`, has derivative `(σ, τ) ↦ τ • x'` at `z`. -/
@@ -298,6 +326,19 @@ theorem _root_.HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_
   rw [fderiv_comp_graph_apply hu hf.differentiableAt v, hzero,
     fderiv_slice_left hf.differentiableAt]
   simp
+
+/-- If the spatial derivative vanishes at `(a, u a)`, following a differentiable graph through
+`u a` gives the same parameter derivative as holding the spatial point fixed at `u a`.
+In particular, this applies when the spatial slice is locally constant near `u a`. -/
+theorem _root_.HasFDerivAt.comp_graph_of_fderiv_right_eq_zero
+    {u : E → F} {f : E × F → G} {f' : E × F →L[𝕜] G}
+    (hf : HasFDerivAt f f' (a, u a)) (hu : DifferentiableAt 𝕜 u a)
+    (hzero : fderiv 𝕜 (fun y ↦ f (a, y)) (u a) = 0) :
+    HasFDerivAt (fun x ↦ f (x, u x)) (f'.comp (ContinuousLinearMap.inl 𝕜 E F)) a := by
+  have hcomp := (hf.comp_graph hu.hasFDerivAt).differentiableAt.hasFDerivAt
+  rw [hf.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero hu hzero,
+    fderiv_slice_left hf.differentiableAt, hf.fderiv] at hcomp
+  exact hcomp
 
 /-- If a differentiable function on a product has horizontal slice derivative `A` and vertical
 slice derivative the identity, then its graph map has derivative the canonical shear by `A`. -/
