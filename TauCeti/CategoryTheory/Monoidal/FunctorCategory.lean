@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
+public import Mathlib.CategoryTheory.Linear.FunctorCategory
+public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Monoidal.FunctorCategory
 
 /-!
-# Colimit preservation for tensoring in functor categories
+# Tensoring in functor categories
 
 For the pointwise monoidal structure on a functor category `J ⥤ C`, colimits of shape `K` are
 computed pointwise when `C` has them, so tensoring with a functor `F` preserves them as soon as
@@ -17,6 +19,9 @@ tensoring with each value `F.obj j` does in `C`. This is how colimit preservatio
 monoidal category to its simplicial objects with the degreewise tensor product. The proofs adapt
 that of the corresponding instance for cartesian monoidal `C` in
 `Mathlib.CategoryTheory.Monoidal.Cartesian.FunctorCategory` to arbitrary monoidal `C`.
+
+Tensoring on the left is linear whenever tensoring with each value of the fixed functor is
+linear.
 -/
 
 public section
@@ -47,5 +52,18 @@ instance preservesColimitsOfShape_functor_tensorRight (F : J ⥤ C)
     preservesColimitsOfShape_of_natIso
       (NatIso.ofComponents (fun _ ↦ Iso.refl _) : (evaluation J C).obj j ⋙ tensorRight (F.obj j) ≅
         tensorRight F ⋙ (evaluation J C).obj j)
+
+variable {R : Type*} [Semiring R] [Preadditive C] [Linear R C]
+
+/-- Pointwise tensoring on the left is linear if it is linear at each value of the fixed
+functor. -/
+instance functorCategoryTensorLeftLinear (F : J ⥤ C) [∀ j, (tensorLeft (F.obj j)).Linear R] :
+    (tensorLeft F).Linear R where
+  map_smul f r := by
+    ext j
+    -- Reduce the pointwise operations on both sides together, keeping their source and
+    -- target in the same tensor-product carriers in the coefficient category.
+    change F.obj j ◁ (r • f.app j) = r • (F.obj j ◁ f.app j)
+    exact (tensorLeft (F.obj j)).map_smul r (f.app j)
 
 end TauCeti

@@ -9,6 +9,8 @@ public import Mathlib.Condensed.Light.InternallyProjective
 public import TauCeti.Condensed.Light.Free
 
 import Mathlib.CategoryTheory.Adjunction.Additive
+import TauCeti.CategoryTheory.Monoidal.FunctorCategory
+import TauCeti.CategoryTheory.Sites.Linear
 
 /-!
 # Additive sections of internal Hom
@@ -40,26 +42,6 @@ instance tensorLeftLinear (A : LightCondMod R) : (tensorLeft A).Linear R := by
   let I := sheafToPresheaf J (ModuleCat.{u} R)
   let Q := presheafToSheaf J (ModuleCat.{u} R)
   let adj : Q ⊣ I := sheafificationAdjunction J (ModuleCat.{u} R)
-  have : I.Linear R := inferInstanceAs ((sheafToPresheaf _ _).Linear R)
-  have : Q.Linear R := by
-    constructor
-    intro X Y f r
-    apply (adj.homEquiv X (Q.obj Y)).injective
-    -- Naturality of the unit expresses the sheafified map through the linear inclusion.
-    simp only [Adjunction.homEquiv_unit, Functor.map_smul]
-    have h (g : X ⟶ Y) : g ≫ adj.unit.app Y = adj.unit.app X ≫ I.map (Q.map g) :=
-      adj.unit.naturality g
-    rw [← h, Linear.comp_smul, ← h, Linear.smul_comp]
-  have : (tensorLeft (I.obj A)).Linear R := by
-    constructor
-    intro X Y f r
-    apply NatTrans.ext
-    funext T
-    -- The tensor-left functor maps a natural transformation by left whiskering.
-    change ((I.obj A) ◁ (r • f)).app T = (r • ((I.obj A) ◁ f)).app T
-    simp only [Monoidal.whiskerLeft_app, NatTrans.app_smul, MonoidalLinear.whiskerLeft_smul]
-    -- Scalar multiplication on natural transformations is pointwise.
-    rfl
   have e : (I ⋙ tensorLeft (I.obj A)) ⋙ Q ≅ tensorLeft A :=
     Functor.associator _ _ _ ≪≫
       Functor.isoWhiskerLeft I (Functor.Monoidal.commTensorLeft Q (I.obj A)).symm ≪≫
