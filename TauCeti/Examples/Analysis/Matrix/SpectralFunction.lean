@@ -43,24 +43,28 @@ namespace TauCeti.SpectralFunctionExamples
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- The sorted eigenvalues of `diag(a, b)` with `b ≤ a` are `(a, b)`. -/
-theorem eigenvalues₀_diagonal_two {a b : ℝ} (hab : b ≤ a)
-    (h : (diagonal ![(a : 𝕜), b]).IsHermitian) : h.eigenvalues₀ = ![a, b] := by
+/-- A `2 × 2` Hermitian matrix with characteristic polynomial `(X - a)(X - b)`, `b ≤ a`, has
+sorted eigenvalues `(a, b)`. -/
+private theorem eigenvalues₀_eq_of_charpoly_eq_two {A : Matrix (Fin 2) (Fin 2) 𝕜}
+    (h : A.IsHermitian) {a b : ℝ} (hab : b ≤ a)
+    (hA : A.charpoly = (X - C (a : 𝕜)) * (X - C (b : 𝕜))) : h.eigenvalues₀ = ![a, b] := by
   refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecEmpty.vecCons hab) ?_
-  rw [charpoly_diagonal]
+  rw [hA]
   -- `Fintype.card (Fin 2)` reduces to `2`, exposing the product to `Fin.prod_univ_two`.
   change _ = ∏ k : Fin 2, _
   simp [Fin.prod_univ_two]
 
+/-- The sorted eigenvalues of `diag(a, b)` with `b ≤ a` are `(a, b)`. -/
+theorem eigenvalues₀_diagonal_two {a b : ℝ} (hab : b ≤ a)
+    (h : (diagonal ![(a : 𝕜), b]).IsHermitian) : h.eigenvalues₀ = ![a, b] :=
+  eigenvalues₀_eq_of_charpoly_eq_two h hab (by simp [charpoly_diagonal, Fin.prod_univ_two])
+
 /-- The sorted eigenvalues of `diag(b, a)` with `b ≤ a` are `(a, b)`: sorting reorders the
 diagonal. -/
 theorem eigenvalues₀_diagonal_two_swap {a b : ℝ} (hab : b ≤ a)
-    (h : (diagonal ![(b : 𝕜), a]).IsHermitian) : h.eigenvalues₀ = ![a, b] := by
-  refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecEmpty.vecCons hab) ?_
-  rw [charpoly_diagonal]
-  -- `Fintype.card (Fin 2)` reduces to `2`, exposing the product to `Fin.prod_univ_two`.
-  change _ = ∏ k : Fin 2, _
-  simp [Fin.prod_univ_two, mul_comm]
+    (h : (diagonal ![(b : 𝕜), a]).IsHermitian) : h.eigenvalues₀ = ![a, b] :=
+  eigenvalues₀_eq_of_charpoly_eq_two h hab
+    (by simp [charpoly_diagonal, Fin.prod_univ_two, mul_comm])
 
 /-! ### The geometric mean and `det^{1/n}` -/
 
@@ -109,7 +113,8 @@ theorem concaveOn_prod_eigenvalues₀_rpow {ι : Type*} [Fintype ι] [DecidableE
   have h := (Matrix.concaveOn_det_rpow (n := ι)).comp_linearMap
     (selfAdjoint.submodule ℝ (Matrix ι ι ℝ)).subtype
   convert h using 1
-  · rfl
+  · ext A
+    simp
   funext A
   simp [A.property.isHermitian.det_eq_prod_eigenvalues₀]
 
