@@ -13,7 +13,7 @@ import TauCeti.LinearAlgebra.Exact
 
 For a linear map `f : M →ₗ[R] N` and a module `P`, Mathlib's `LinearMap.tensorKer` is the
 comparison map `P ⊗[R] ker f → ker (P ⊗ f)`. It is an isomorphism when `P` is flat
-(`LinearMap.tensorKerEquiv`), but for a general `P` it is neither injective nor surjective. This
+(`LinearMap.tensorKerEquiv`), but for a general `P` it need not be injective or surjective. This
 file says exactly when it is each, in terms of the factorization `M ↠ range f ↪ N` of `f`:
 
 * it is surjective exactly when `P ⊗ range f → P ⊗ N` is injective;
@@ -30,6 +30,7 @@ product `ker (P ⊗ f)` is the homology of the complex tensored with `P`
 
 * `LinearMap.surjective_tensorKer_iff`: `P ⊗ ker f → ker (P ⊗ f)` is surjective if and only if
   `P ⊗ range f → P ⊗ N` is injective.
+* `LinearMap.surjective_tensorKer_of_flat`: it is surjective when `N ⧸ range f` is flat.
 * `LinearMap.injective_tensorKer_iff`: it is injective if and only if `P ⊗ ker f → P ⊗ M` is.
 * `LinearMap.bijective_tensorKer_of_flat`: it is bijective when `N ⧸ range f` and `range f` are
   flat.
@@ -55,7 +56,7 @@ variable {R : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra R S]
 /-- **Surjectivity of the base change map on kernels.** The comparison map
 `P ⊗[R] ker f → ker (P ⊗ f)` is surjective if and only if tensoring the inclusion of the image,
 `P ⊗ range f → P ⊗ N`, is injective. In particular it is surjective for every `P` when the
-cokernel `N ⧸ range f` is flat. -/
+cokernel `N ⧸ range f` is flat (`LinearMap.surjective_tensorKer_of_flat`). -/
 theorem surjective_tensorKer_iff :
     Function.Surjective (f.tensorKer S P) ↔ Function.Injective ((range f).subtype.lTensor P) := by
   have hexact : Function.Exact ((ker f).subtype.lTensor P) (f.rangeRestrict.lTensor P) :=
@@ -76,6 +77,14 @@ theorem surjective_tensorKer_iff :
     obtain ⟨z, hz⟩ := (hexact x).mp hx'
     exact ⟨z, Subtype.ext (by rw [tensorKer_coe, hz])⟩
 
+/-- **The base change map on kernels is surjective when the cokernel is flat.** If the cokernel
+`N ⧸ range f` is flat, then the comparison map `P ⊗[R] ker f → ker (P ⊗ f)` is surjective for
+every `P`, since `P ⊗ range f → P ⊗ N` is then injective. -/
+theorem surjective_tensorKer_of_flat [Module.Flat R (N ⧸ range f)] :
+    Function.Surjective (f.tensorKer S P) :=
+  (surjective_tensorKer_iff S P f).mpr <| lTensor_injective_of_exact_of_flat _
+    (range f).mkQ_surjective _ (range f).injective_subtype (exact_subtype_mkQ _) P
+
 /-- **Injectivity of the base change map on kernels.** The comparison map
 `P ⊗[R] ker f → ker (P ⊗ f)` is injective if and only if tensoring the inclusion of the kernel,
 `P ⊗ ker f → P ⊗ M`, is injective. -/
@@ -94,8 +103,7 @@ theorem bijective_tensorKer_of_flat [Module.Flat R (N ⧸ range f)] [Module.Flat
     Function.Bijective (f.tensorKer S P) :=
   ⟨(injective_tensorKer_iff S P f).mpr <| lTensor_injective_of_exact_of_flat _
       f.surjective_rangeRestrict _ (ker f).injective_subtype (exact_subtype_rangeRestrict f) P,
-    (surjective_tensorKer_iff S P f).mpr <| lTensor_injective_of_exact_of_flat _
-      (range f).mkQ_surjective _ (range f).injective_subtype (exact_subtype_mkQ _) P⟩
+    surjective_tensorKer_of_flat S P f⟩
 
 section Homology
 

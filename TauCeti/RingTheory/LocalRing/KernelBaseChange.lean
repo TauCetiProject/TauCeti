@@ -78,11 +78,9 @@ theorem surjective_tensorKer_residueField_iff_free_quotient_range :
     Function.Surjective (f.tensorKer (ResidueField R) (ResidueField R)) ↔
       Module.Free R (N ⧸ range f) := by
   have : Module.Free R N := Module.free_of_projective_of_isLocalRing
-  rw [surjective_tensorKer_iff]
-  exact ⟨Module.free_of_lTensor_residueField_injective _ _ (range f).mkQ_surjective
-      (exact_subtype_mkQ _),
-    fun _ ↦ lTensor_injective_of_exact_of_flat _ (range f).mkQ_surjective _
-      (range f).injective_subtype (exact_subtype_mkQ _) _⟩
+  exact ⟨fun h ↦ Module.free_of_lTensor_residueField_injective _ _ (range f).mkQ_surjective
+      (exact_subtype_mkQ _) ((surjective_tensorKer_iff _ _ f).mp h),
+    fun _ ↦ surjective_tensorKer_of_flat _ _ f⟩
 
 /-- **The image is projective when the base change map to the residue field is surjective.**
 Over a local ring `R` with residue field `κ`, for a linear map `f : M → N` from a finite module to
