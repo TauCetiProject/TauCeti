@@ -36,9 +36,7 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {σ : R →+* R}
 /-- The span of the fixed vectors of a semilinear map is mapped into itself. -/
 theorem span_fixedPoints_le_comap (F : M →ₛₗ[σ] M) :
     span R (fixedPoints F) ≤ (span R (fixedPoints F)).comap F :=
-  span_le.2 fun x hx ↦ by
-    rw [SetLike.mem_coe, mem_comap, hx.eq]
-    exact subset_span hx
+  mapsTo_span fun _ hx ↦ hx.apply
 
 /-- For an injective `σ`-semilinear map `F` with `σ` surjective, the map induced on the quotient by
 the span of the fixed vectors is injective. -/

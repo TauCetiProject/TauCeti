@@ -256,13 +256,19 @@ theorem exists_isUnit_mul_map_iterateFrobenius_eq (hf : f ≠ 0) {A : Matrix n n
         congr 1
         ext i
         simp }
-  have hF : Injective F := (mulVec_injective_iff_isUnit.2 hA).comp
-    (Injective.comp_left σ.injective)
+  -- `F` applies as its `toFun` field; state this once and rewrite with it below.
+  have hFapply (x : n → k) : F x = A *ᵥ (σ ∘ x) := rfl
+  have hF : Injective F := by
+    have : Injective fun x : n → k ↦ A *ᵥ (σ ∘ x) :=
+      (mulVec_injective_iff_isUnit.2 hA).comp (Injective.comp_left σ.injective)
+    intro x y hxy
+    rw [hFapply, hFapply] at hxy
+    exact this hxy
   obtain ⟨b, hb⟩ := LinearMap.exists_basis_isFixedPt_of_injective hf hF
   let b' := b.reindex (b.indexEquiv (Pi.basisFun k n))
   have hb' (j : n) : A *ᵥ (σ ∘ b' j) = b' j := by
-    rw [Basis.reindex_apply]
-    exact hb _
+    rw [← hFapply, Basis.reindex_apply]
+    exact (hb _).eq
   refine ⟨Matrix.of fun i j ↦ b' j i, ?_, ?_⟩
   · rw [← linearIndependent_col_iff_isUnit]
     exact b'.linearIndependent
