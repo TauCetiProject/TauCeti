@@ -9,6 +9,7 @@ public import TauCeti.Topology.LocallyConstant.CompactSupport
 public import Mathlib.Algebra.Exact.Basic
 import Mathlib.Topology.Separation.Regular
 import TauCeti.Topology.Sets.CompactOpens
+import TauCeti.Topology.Spectral.Prespectral
 
 /-!
 # The open-closed exact sequence of locally constant functions with compact support
@@ -85,24 +86,13 @@ theorem extendByZero_apply_of_notMem {x : X} (hx : x ∉ U) : extendByZero hU f 
 
 end ExtendByZero
 
-/-- A compactly supported locally constant function on `X` whose support lies in a set `U`
-restricts to a compactly supported function on `U`. -/
-theorem hasCompactSupport_comap_subtypeVal_of_support_subset [Zero M] {U : Set X}
-    {f : LocallyConstant X M} (hf : HasCompactSupport f) (hsupp : support f ⊆ U) :
-    HasCompactSupport (f.comap ⟨Subtype.val, continuous_subtypeVal⟩ : LocallyConstant U M) := by
-  rw [hasCompactSupport_iff_isCompact_support, coe_comap, ContinuousMap.coe_mk,
-    support_comp_eq_preimage]
-  refine IsInducing.subtypeVal.isCompact_preimage' ?_ (by rwa [Subtype.range_coe])
-  rw [← tsupport_eq_support]
-  exact hf.isCompact
-
 namespace compactlySupported
 
 variable [Semiring R] [AddCommMonoid M] [Module R M]
 
 /-- Two compactly supported locally constant functions on `X` agree if they agree on a set `U` and
 off it. -/
-theorem ext_of_mem_of_notMem {U : Set X} {f g : compactlySupported R X M}
+private theorem ext_of_mem_of_notMem {U : Set X} {f g : compactlySupported R X M}
     (h₁ : ∀ x : U, (f : LocallyConstant X M) x = (g : LocallyConstant X M) x)
     (h₂ : ∀ x, x ∉ U → (f : LocallyConstant X M) x = (g : LocallyConstant X M) x) : f = g :=
   compactlySupported.ext fun x => by
@@ -136,9 +126,9 @@ theorem extendByZero_apply_of_notMem (f : compactlySupported R U M) {x : X} (hx 
   LocallyConstant.extendByZero_apply_of_notMem hU _ (mem_compactlySupported.1 f.property) hx
 
 /-- Extension by zero is injective: the sequence is exact at `C_c^∞(U, M)`. -/
-theorem extendByZero_injective : Injective (extendByZero R M hU) := fun f g h =>
-  compactlySupported.ext fun x => by
-    simpa using congr_arg (fun F : compactlySupported R X M => (F : LocallyConstant X M) x) h
+theorem extendByZero_injective : Injective (extendByZero R M hU) := fun _ _ h =>
+  compactlySupported.coeFn_injective <| extend_injective Subtype.val_injective (0 : X → M) <|
+    congr_arg (fun F : compactlySupported R X M => ⇑(F : LocallyConstant X M)) h
 
 end ExtendByZero
 
@@ -155,8 +145,8 @@ def restrict : compactlySupported R X M →ₗ[R] compactlySupported R Z M :=
 
 @[simp]
 theorem restrict_apply (f : compactlySupported R X M) (z : Z) :
-    (restrict R M hZ f : LocallyConstant Z M) z = (f : LocallyConstant X M) z :=
-  (rfl)
+    (restrict R M hZ f : LocallyConstant Z M) z = (f : LocallyConstant X M) z := by
+  simp only [restrict, LinearMap.restrict_apply, comapₗ_apply_apply, ContinuousMap.coe_mk]
 
 /-- In an l-space, restriction to a closed subset is surjective: the sequence is exact at
 `C_c^∞(Z, M)`. Every compact open subset of `Z` is cut out by a compact open subset of `X`, so the
@@ -174,19 +164,16 @@ theorem restrict_surjective [T2Space X] [WeaklyLocallyCompactSpace X]
   suffices h : Submodule.span R (range fun p : CompactOpens Z × M => compactOpenIndicator p.1 p.2)
       ≤ (LinearMap.range (restrict R M hZ)).map (compactlySupported R Z M).subtype by
     obtain ⟨g, hg, hgf⟩ := h hf
-    exact Subtype.val_injective hgf ▸ hg
+    exact Submodule.subtype_injective _ hgf ▸ hg
   refine Submodule.span_le.2 ?_
   rintro _ ⟨⟨K, m⟩, rfl⟩
   obtain ⟨W, hW⟩ := CompactOpens.exists_preimage_subtypeVal_eq K
   refine ⟨restrict R M hZ
     ⟨compactOpenIndicator W m, compactOpenIndicator_mem_compactlySupported W m⟩,
     LinearMap.mem_range_self _ _, LocallyConstant.ext fun z => ?_⟩
+  have hzK : (z : X) ∈ (W : Set X) ↔ z ∈ (K : Set Z) := by rw [← hW, mem_preimage]
   simp only [Submodule.coe_subtype, restrict_apply, coe_compactOpenIndicator]
-  by_cases hz : (z : X) ∈ (W : Set X)
-  · have hzK : z ∈ (K : Set Z) := hW ▸ hz
-    simp [hz, hzK]
-  · have hzK : z ∉ (K : Set Z) := hW ▸ hz
-    simp [hz, hzK]
+  by_cases hz : z ∈ (K : Set Z) <;> simp [hz, hzK]
 
 end Restrict
 
