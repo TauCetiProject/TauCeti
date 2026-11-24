@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.IdealClass
-import Mathlib.RingTheory.Flat.EquationalCriterion
-import TauCeti.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Dimension.Pi
 import TauCeti.LinearAlgebra.Dimension.Prod
+import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
 /-!
 # Projective `K₀` of a Dedekind domain
@@ -112,15 +112,14 @@ theorem rankSteinitz_regular :
 theorem rankSteinitz_idealClassHom (c : Additive (ClassGroup A)) :
     rankSteinitz A (idealClassHom A c) = (0, c) := by
   obtain ⟨I, hI⟩ := ClassGroup.mk0_surjective c.toMul
-  have : Module.FinitePresentation A (I : Ideal A) := Module.finitePresentation_of_finite A _
-  have : Module.Projective A (I : Ideal A) := Module.Flat.projective_of_finitePresentation
+  have : Module.Projective A (I : Ideal A) := .of_equiv
+    (FractionalIdeal.coeIdealEquiv (S := nonZeroDivisors A) (P := FractionRing A) (I : Ideal A))
   have hrank : Module.finrank A (I : Ideal A) = 1 :=
     Module.finrank_eq_card_of_linearEquiv_pi (J := fun _ : Unit ↦ (I : Ideal A))
       (fun _ ↦ mem_nonZeroDivisors_iff_ne_zero.mp I.property)
       (LinearEquiv.piUnique A fun _ : Unit ↦ (I : Ideal A)).symm
-  rw [← ofMul_toMul c, ← hI, idealClassHom_mk0, classOf_def, map_sub, rankSteinitz_of,
-    one_smul, rankSteinitz_regular, hrank, Module.steinitzClass_ideal]
-  simp
+  rw [← ofMul_toMul c, ← hI]
+  simp [classOf_def, hrank]
 
 /-- **Projective `K₀` of a Dedekind domain.** Rank and Steinitz class identify projective `K₀`
 with `ℤ × Additive (ClassGroup A)`. -/
@@ -151,8 +150,9 @@ theorem rankSteinitzEquiv_symm_apply (p : ℤ × Additive (ClassGroup A)) :
     (rankSteinitzEquiv A).symm p =
       p.1 • SplitK0.of
         ⟨ModuleCat.of A A, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ +
-      idealClassHom A p.2 :=
-  (rfl)
+      idealClassHom A p.2 := by
+  simp [rankSteinitzEquiv, rankSteinitzInv, AddEquiv.symm_mk, AddMonoidHom.coprod_apply,
+    zmultiplesHom_apply]
 
 /-- The reduced ideal classes are exactly the classes of rank zero in projective `K₀`. -/
 theorem mem_range_idealClassHom_iff
@@ -168,7 +168,7 @@ end FiniteProjectiveModules
 
 namespace LocallyFree
 
-variable {A} {K : Type u} [Field K] [Algebra A K] [IsFractionRing A K]
+variable {A} {K : Type*} [Field K] [Algebra A K] [IsFractionRing A K]
 
 open FiniteProjectiveModules
 

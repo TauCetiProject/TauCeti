@@ -20,8 +20,10 @@ entry of row `i` then `∏ i, r i` divides the determinant. The exact identity b
 divisibility form, that scaling row `i` by `r i` multiplies the determinant by `∏ i, r i`, is
 Mathlib's `Matrix.det_mul_column`.
 
-Each statement is applied to the full-row minors `det (A.submatrix id c)` of a rectangular matrix
-`A`, for an arbitrary column choice `c`; nothing requires `c` to be injective.
+Each membership and divisibility statement is applied to the full-row minors
+`det (A.submatrix id c)` of a rectangular matrix `A`, for an arbitrary column choice `c`; nothing
+requires `c` to be injective. The generation statement `Matrix.span_det_eq_prod_row_ideals` is
+only stated for square matrices.
 
 The empty product of ideals is `⊤`, which contains the determinant `1` of a `0 × 0` matrix, so no
 statement needs the index type to be nonempty.
@@ -36,8 +38,8 @@ statement needs the index type to be nonempty.
   `J ^ card n`.
 * `Matrix.prod_dvd_det_of_dvd_row`, `Matrix.pow_card_dvd_det`: row divisors multiply to a divisor
   of the determinant, and a common divisor `r` of all entries gives `r ^ card n ∣ det A`.
-* `Matrix.det_submatrix_mem_prod_row_ideals` and its companions: the same statements for every
-  full-row minor of a rectangular matrix.
+* `Matrix.det_submatrix_mem_prod_row_ideals` and its companions: the membership and
+  divisibility statements for every full-row minor of a rectangular matrix.
 
 ## References
 

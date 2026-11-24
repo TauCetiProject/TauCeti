@@ -56,8 +56,6 @@ latter read off `rank_quotient_add_rank_of_isDomain`.
   rationalizations of torsion-free modules gives an injective `A`-linear map of the modules.
 * `TauCeti.exists_linearIndependent_smul_mem_span`: a finitely generated module over a domain
   contains a free submodule of full rank with torsion quotient.
-* `Module.rank_pi_ideal` and `Module.finrank_eq_card_of_linearEquiv_pi`: a finite product of
-  nonzero ideals of a domain, and any module isomorphic to it, has rank the number of factors.
 -/
 
 public section
@@ -206,38 +204,3 @@ theorem exists_linearIndependent_smul_mem_span [Module.Finite A M] :
   exact hrange ▸ hcM m
 
 end TauCeti
-
-section Rank
-
-variable {R ι : Type*} [CommRing R] [IsDomain R] [Fintype ι]
-
-/-- A finite product of nonzero ideals of a domain has rank equal to the number of factors. -/
-theorem Module.rank_pi_ideal {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥) :
-    Module.rank R ((i : ι) → J i) = Fintype.card ι := by
-  choose a ha ha0 using fun i ↦ Submodule.exists_mem_ne_zero_of_ne_bot (hJ i)
-  -- the inclusion into `Rⁿ`, and the scaling `v ↦ (vᵢ aᵢ)ᵢ` from `Rⁿ`
-  let incl : ((i : ι) → J i) →ₗ[R] ι → R := LinearMap.pi fun i ↦ (J i).subtype ∘ₗ .proj i
-  let scale : (ι → R) →ₗ[R] (i : ι) → J i :=
-    LinearMap.pi fun i ↦ LinearMap.toSpanSingleton R (J i) ⟨a i, ha i⟩ ∘ₗ .proj i
-  have hincl : Function.Injective incl := fun v w h ↦ funext fun i ↦
-    Subtype.ext (congrFun h i)
-  have hscale : Function.Injective scale := by
-    refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ funext fun i ↦ ?_
-    have := congrArg Subtype.val (congrFun hv i)
-    simp only [scale, LinearMap.pi_apply, LinearMap.coe_comp, Function.comp_apply,
-      LinearMap.coe_proj, Function.eval, LinearMap.toSpanSingleton_apply, SetLike.mk_smul_mk,
-      smul_eq_mul, Pi.zero_apply, ZeroMemClass.coe_zero] at this
-    exact (mul_eq_zero.mp this).resolve_right (ha0 i)
-  apply le_antisymm
-  · simpa [rank_fun'] using incl.lift_rank_le_of_injective hincl
-  · simpa [rank_fun'] using scale.lift_rank_le_of_injective hscale
-
-/-- A module isomorphic to a finite product of nonzero ideals of a domain has rank the number of
-factors. -/
-theorem Module.finrank_eq_card_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module R M]
-    {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥) (e : M ≃ₗ[R] (i : ι) → J i) :
-    Module.finrank R M = Fintype.card ι := by
-  rw [e.finrank_eq]
-  exact Module.finrank_eq_of_rank_eq (Module.rank_pi_ideal hJ)
-
-end Rank

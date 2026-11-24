@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.Torsion.Prod
 public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.RingTheory.DedekindDomain.ModuleDecomposition
-import TauCeti.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Dimension.Pi
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 
 /-!
@@ -159,14 +159,14 @@ theorem ClassGroup.mk0_prod_eq_of_linearEquiv {R ι κ : Type*} [CommRing R] [Is
   obtain ⟨a, ha, b, hab⟩ := exists_span_singleton_mul_prod_eq hI
     (e.trans (LinearEquiv.piCongrLeft R (fun k ↦ (J k : Ideal R)) σ).symm)
   rw [← Equiv.prod_comp σ (fun k ↦ J k)]
-  have hJ : ∏ i, (J (σ i) : Ideal R) ≠ ⊥ := by
+  have hJprod : ∏ i, (J (σ i) : Ideal R) ≠ ⊥ := by
     simpa [Submonoid.coe_finsetProd] using
       mem_nonZeroDivisors_iff_ne_zero.mp (∏ i, J (σ i)).property
   have hb : b ≠ 0 := by
     rintro rfl
     rw [Ideal.span_singleton_eq_bot.mpr rfl, Ideal.bot_mul, Ideal.mul_eq_bot,
       Ideal.span_singleton_eq_bot] at hab
-    exact hab.elim ha hJ
+    exact hab.elim ha hJprod
   exact ClassGroup.mk0_eq_mk0_iff.mpr ⟨b, a, hb, ha, by simpa [Submonoid.coe_finsetProd] using
     hab.symm⟩
 
@@ -193,17 +193,9 @@ theorem steinitzClass_eq_of_linearEquiv_pi {ι : Type*} [Fintype ι] {J : ι →
 
 variable {R M}
 
-/-- A finite flat module over a Dedekind domain is a finite product of nonzero ideals, indexed
-here by non-zero-divisors of the ideal monoid. -/
-private theorem exists_linearEquiv_pi_nonZeroDivisors (M : Type*) [AddCommGroup M] [Module R M]
-    [Module.Finite R M] [Module.Flat R M] :
-    ∃ (n : ℕ) (J : Fin n → (Ideal R)⁰), Nonempty (M ≃ₗ[R] (i : Fin n) → (J i : Ideal R)) := by
-  obtain ⟨J, hJ, e⟩ := exists_linearEquiv_pi_ideal R (FractionRing R) M
-  exact ⟨_, fun i ↦ ⟨J i, mem_nonZeroDivisors_of_ne_zero (hJ i)⟩, e⟩
-
 /-- Isomorphic modules have the same Steinitz class. -/
 theorem steinitzClass_congr (e : M ≃ₗ[R] N) : steinitzClass R M = steinitzClass R N := by
-  obtain ⟨n, J, ⟨e₀⟩⟩ := exists_linearEquiv_pi_nonZeroDivisors (R := R) N
+  obtain ⟨n, J, ⟨e₀⟩⟩ := exists_linearEquiv_pi_nonZeroDivisors R N
   rw [steinitzClass_eq_of_linearEquiv_pi R M (e.trans e₀),
     steinitzClass_eq_of_linearEquiv_pi R N e₀]
 
@@ -212,8 +204,8 @@ variable (R M N)
 /-- The Steinitz class is multiplicative on products. -/
 @[simp]
 theorem steinitzClass_prod : steinitzClass R (M × N) = steinitzClass R M * steinitzClass R N := by
-  obtain ⟨m, JM, ⟨eM⟩⟩ := exists_linearEquiv_pi_nonZeroDivisors (R := R) M
-  obtain ⟨n, JN, ⟨eN⟩⟩ := exists_linearEquiv_pi_nonZeroDivisors (R := R) N
+  obtain ⟨m, JM, ⟨eM⟩⟩ := exists_linearEquiv_pi_nonZeroDivisors R M
+  obtain ⟨n, JN, ⟨eN⟩⟩ := exists_linearEquiv_pi_nonZeroDivisors R N
   let e : (M × N) ≃ₗ[R] (s : Fin m ⊕ Fin n) → ((Sum.elim JM JN s : (Ideal R)⁰) : Ideal R) :=
     (eM.prodCongr eN).trans
       (LinearEquiv.sumPiEquivProdPi R _ _ fun s ↦ ((Sum.elim JM JN s : (Ideal R)⁰) : Ideal R)).symm

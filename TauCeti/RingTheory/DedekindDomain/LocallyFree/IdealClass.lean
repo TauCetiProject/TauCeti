@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.DedekindDomain.LocallyFree.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.SteinitzClass
 public import TauCeti.RingTheory.FractionalIdeal.Projective
 import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Invertible
-import TauCeti.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Dimension.Pi
 import TauCeti.RingTheory.DedekindDomain.ModuleDecomposition
 import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
@@ -179,26 +179,17 @@ theorem idealClassHom_steinitzClass (M : Type u) [AddCommGroup M] [Module A M]
     [Module.Finite A M] [Module.Projective A M] :
     idealClassHom A (Additive.ofMul (Module.steinitzClass A M)) =
       classOf A M (Module.finrank A M) := by
-  classical
-  obtain ⟨J, hJ, ⟨e⟩⟩ := Module.exists_linearEquiv_pi_ideal A (FractionRing A) M
-  let J' i : (Ideal A)⁰ := ⟨J i, mem_nonZeroDivisors_of_ne_zero (hJ i)⟩
-  let I i : (FractionalIdeal A⁰ (FractionRing A))ˣ :=
-    Units.mk0 (J i : FractionalIdeal A⁰ (FractionRing A))
-      (FractionalIdeal.coeIdeal_ne_zero.mpr (hJ i))
-  have hP i : Module.Projective A (J i) := by
-    let : Module.Projective A (J i : FractionalIdeal A⁰ (FractionRing A)) :=
-      inferInstanceAs (Module.Projective A (I i : FractionalIdeal A⁰ (FractionRing A)))
-    exact Module.Projective.of_equiv
-      (FractionalIdeal.coeIdealEquiv (P := FractionRing A) (S := A⁰) (J i))
-  have : ∀ i, Module.Projective A (J i) := hP
+  obtain ⟨n, J, ⟨e⟩⟩ := Module.exists_linearEquiv_pi_nonZeroDivisors A M
+  have hJ i : (J i : Ideal A) ≠ ⊥ := mem_nonZeroDivisors_iff_ne_zero.mp (J i).property
+  have (i : Fin n) : Module.Projective A (J i : Ideal A) := .of_equiv
+    (FractionalIdeal.coeIdealEquiv (S := A⁰) (P := FractionRing A) (J i : Ideal A))
   let Q i : (finiteProjectiveModules A).FullSubcategory :=
-    ⟨ModuleCat.of A (J i), finiteProjectiveModules_iff.mpr ⟨inferInstance, hP i⟩⟩
+    ⟨ModuleCat.of A (J i : Ideal A), finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
   have hsum := SplitK0.of_eq_sum_of_linearEquiv_pi
     (X := ⟨ModuleCat.of A M, finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩) Q e
-  rw [Module.steinitzClass_eq_of_linearEquiv_pi A M (J := J') e, map_prod, ofMul_prod, map_sum,
+  rw [Module.steinitzClass_eq_of_linearEquiv_pi A M e,
     Module.finrank_eq_card_of_linearEquiv_pi hJ e, classOf_def, hsum]
-  simp only [J', Q, idealClassHom_mk0, classOf_def, Finset.sum_sub_distrib, Finset.sum_const,
-    Finset.card_univ, one_smul]
+  simp [Q, classOf_def, ofMul_prod, Finset.sum_sub_distrib]
 
 end FiniteProjectiveModules
 
