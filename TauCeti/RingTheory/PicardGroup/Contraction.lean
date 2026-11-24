@@ -37,6 +37,7 @@ dual factor is turned into an identity of pure tensors.
 * `Module.Invertible.leftCancelDualEquiv`: the isomorphism `M ⊗ (M^* ⊗ P) ≃ P`.
 * `Module.Invertible.leftCancelDualEquiv_tmul_tmul`: its value `ℓ ⊗ (ξ ⊗ p) ↦ ξ ℓ • p`.
 * `Module.Invertible.leftCancelDualEquiv_tmul_apply`: its value on duals.
+* `Module.Invertible.apply_smul_eq_apply_smul`: `ψ x • y = ψ y • x` for every linear form `ψ`.
 * `Module.Invertible.apply_smul_eq_self`, `Module.Invertible.dual_apply_smul_eq_self`: the
   expansions `ξ y • x = y` and `η x • ξ = η` for `ξ x = 1`.
 * `Module.Invertible.rid_lTensor_eval_tmul_eq_self`: an element of `W ⊗ M^*` is the pure tensor
@@ -99,6 +100,11 @@ theorem leftCancelDualEquiv_tmul_apply {N : Type*} [AddCommMonoid N] [Module R N
   | add t₁ t₂ h₁ h₂ =>
     rw [TensorProduct.tmul_add, map_add, LinearMap.add_apply, h₁, h₂, map_add,
       LinearMap.add_apply]
+
+/-- In an invertible module any two vectors are proportional in the same way under every linear
+form: `ψ x • y = ψ y • x`. -/
+theorem apply_smul_eq_apply_smul (ψ : Dual R M) (x y : M) : ψ x • y = ψ y • x := by
+  simpa using congr(TensorProduct.lid R M (ψ.rTensor M $(tmul_comm (R := R) (m₁ := x) (m₂ := y))))
 
 section DualPair
 
