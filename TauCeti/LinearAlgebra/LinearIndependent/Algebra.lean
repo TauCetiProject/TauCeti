@@ -15,7 +15,8 @@ Suppose the image of a scalar semiring `S` in an algebra `A` lies in the `R`-spa
 and let `β` be a family in an `A`-module `M`. If the products `γ m • β i` are linearly independent
 over `R`, then `β` is linearly independent over `S`, provided `S` acts faithfully on `A`. This
 reduces independence over `S` to independence over `R` by expanding the coefficients in the
-spanning family.
+spanning family. When `γ` spans `S` itself, `S` need not be commutative: this is the converse of
+Mathlib's `linearIndependent_smul` for a spanning family of scalars.
 -/
 
 public section
@@ -56,5 +57,24 @@ theorem of_smul_of_algebraMap_mem_span {R S A M : Type*} [Semiring R] [CommSemir
   refine mapRange_injective _ (map_zero _) (FaithfulSMul.algebraMap_injective S A)
     (hinj (hrange f) (hrange g) ?_)
   simpa [hlc] using hfg
+
+/-- If a family `γ` spans the scalar semiring `S` over `R` and the products `γ m • β i` are
+linearly independent over `R`, then `β` is linearly independent over `S`. Here `S` can be
+noncommutative, as for left coefficients in a noncommutative ambient algebra. -/
+theorem of_smul_of_span_eq_top {R S M : Type*} [Semiring R] [Semiring S] [AddCommMonoid M]
+    [Module R S] [Module S M] [Module R M] [IsScalarTower R S M]
+    {κ ι : Type*} {γ : κ → S} {β : ι → M}
+    (h : LinearIndependent R fun p : κ × ι ↦ γ p.1 • β p.2)
+    (hγ : Submodule.span R (Set.range γ) = ⊤) :
+    LinearIndependent S β := by
+  rw [← linearIndependent_equiv' (.prodComm ..) (g := fun p : ι × κ ↦ γ p.2 • β p.1) rfl,
+    LinearIndependent, linearCombination_smul] at h
+  simp only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, LinearEquiv.coe_coe,
+    ← Function.comp_assoc] at h
+  refine (h.of_comp_right (curryLinearEquiv R).surjective).of_comp_right ?_
+  -- every coefficient family in `S` expands along the spanning family `γ`
+  have hs : Function.Surjective (linearCombination R γ) := by
+    rw [← LinearMap.range_eq_top, range_linearCombination, hγ]
+  exact mapRange_surjective _ (map_zero _) hs
 
 end LinearIndependent
