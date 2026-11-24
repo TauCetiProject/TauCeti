@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
+import TauCeti.Data.Finsupp.Fin
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.Obstruction
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -220,10 +221,8 @@ theorem two_le_order (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ 
   refine le_order fun d hd ↦ ?_
   have hdeg : d 0 + d 1 < 2 := by
     have : d.degree < 2 := by exact_mod_cast hd
-    simpa [Finsupp.degree_eq_sum, Fin.sum_univ_two] using this
-  have hd' : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := by
-    simpa only [Fin.sum_univ_two] using (Finsupp.univ_sum_single d).symm
-  rw [hd']
+    rwa [Finsupp.degree_finTwo] at this
+  rw [Finsupp.eq_single_zero_add_single_one d]
   rcases h0 : d 0 with _ | _ | _ <;> rcases h1 : d 1 with _ | _ | _ <;>
     first | omega | simp [hΦ₀, hΦ.coeff_single_one_eq_zero, hΦ.coeff_single_zero_eq_zero]
 

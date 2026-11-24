@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Data.Finsupp.Fin
 public import Mathlib.Data.Finsupp.Lex
+public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Order.Fin.Tuple
+import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # `Finsupp.cons`, `Finsupp.snoc` and their lexicographic comparison
@@ -21,6 +23,8 @@ the last entry of `t`; these are the `Finsupp` versions of `Fin.snoc` and `Fin.i
 such vectors adds initial parts and last entries separately. Two such vectors are compared
 lexicographically by their initial parts first, and then by their last entries.
 
+For `Fin 2`, `Finsupp.eq_single_zero_add_single_one` decomposes `d : Fin 2 →₀ M` as
+`single 0 (d 0) + single 1 (d 1)`, and `Finsupp.degree_finTwo` gives `d.degree = d 0 + d 1`.
 Finally, `Finsupp.ext_iff_of_fin_three` says that a finitely supported function on `Fin 3` is
 determined by its values at any three distinct points, in whatever order they are listed.
 -/
@@ -130,6 +134,21 @@ theorem snoc_add_snoc [AddZeroClass M] (s t : Fin n →₀ M) (x y : M) :
     snoc s x + snoc t y = snoc (s + t) (x + y) := by
   ext i
   cases i using Fin.lastCases <;> simp
+
+/-- Every finitely supported function on `Fin 2` decomposes as
+`single 0 (d 0) + single 1 (d 1)`. -/
+theorem eq_single_zero_add_single_one [AddZeroClass M] (d : Fin 2 →₀ M) :
+    d = single 0 (d 0) + single 1 (d 1) := by
+  ext i
+  cases i using Fin.cases with
+  | zero => simp
+  | succ i =>
+    obtain rfl : i = 0 := Subsingleton.elim _ _
+    simp
+
+/-- The total degree of a finitely supported function `d : Fin 2 →₀ ℕ` is `d 0 + d 1`. -/
+theorem degree_finTwo (d : Fin 2 →₀ ℕ) : d.degree = d 0 + d 1 := by
+  simp [Finsupp.degree_eq_sum, Fin.sum_univ_two]
 
 /-- A finitely supported function on `Fin 3` is determined by its values at three distinct
 points `a, b, c`. -/

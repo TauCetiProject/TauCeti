@@ -28,6 +28,7 @@ import TauCeti.RingTheory.LocalRing.RingHom
 import TauCeti.RingTheory.MvPowerSeries.Basic
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.PowerSeries.Coordinate.Lifting
+import TauCeti.RingTheory.TrivSqZeroExt
 
 /-!
 # Square-zero fibres of finite-height formal group deformations
@@ -563,23 +564,6 @@ private theorem exists_lubinTate_decomp_basisComp (hπ_A : Function.Surjective �
       (F₀.coeff_nsmulSeries_ne_zero_of_height_eq hF₀).isUnit h0
   exact ⟨c, gk, hgk₀, hgk⟩
 
-private noncomputable def liftPowerSeriesZeroConst (hπ_A : Function.Surjective π_A)
-    (gk : PowerSeries k) : PowerSeries A :=
-  PowerSeries.mk fun n ↦ if n = 0 then 0 else Function.surjInv hπ_A (PowerSeries.coeff n gk)
-
-@[simp]
-private theorem constantCoeff_liftPowerSeriesZeroConst (hπ_A : Function.Surjective π_A)
-    (gk : PowerSeries k) :
-    PowerSeries.constantCoeff (liftPowerSeriesZeroConst hπ_A gk) = 0 := by
-  simp [liftPowerSeriesZeroConst]
-
-private theorem map_liftPowerSeriesZeroConst (hπ_A : Function.Surjective π_A)
-    {gk : PowerSeries k} (hgk₀ : PowerSeries.constantCoeff gk = 0) :
-    PowerSeries.map π_A (liftPowerSeriesZeroConst hπ_A gk) = gk := by
-  ext n; rcases n with _ | n
-  · simp [liftPowerSeriesZeroConst, PowerSeries.coeff_zero_eq_constantCoeff_apply, hgk₀]
-  · simp [liftPowerSeriesZeroConst, Function.surjInv_eq]
-
 private theorem exists_lubinTate_decomp_of_coeff_mem (hπ_A : Function.Surjective π_A)
     {q : A →+* B} (hFG : (RingHom.ker q).FG) (hker : RingHom.ker π_A * RingHom.ker q = ⊥)
     {p h : ℕ} [hp : Fact p.Prime] [CharP k p] (hF₀ : F₀.height p = h)
@@ -597,7 +581,9 @@ private theorem exists_lubinTate_decomp_of_coeff_mem (hπ_A : Function.Surjectiv
   -- 2. Decompose each basis component over `k` and lift the coboundary series to `A`.
   choose ck gk hgk₀ hΦk_eq using fun i ↦
     exists_lubinTate_decomp_basisComp hπ_A hsmul b hF₀ F hΦ_coc hΦ₀ hΦI i
-  let gA (i : Fin _) : PowerSeries A := liftPowerSeriesZeroConst hπ_A (gk i)
+  let gA (i : Fin _) : PowerSeries A :=
+    liftOfSurjective hπ_A (gk i) -
+      PowerSeries.C (PowerSeries.constantCoeff (liftOfSurjective hπ_A (gk i)))
   -- 3. Reassemble the `RingHom.ker q`-valued combination and verify it componentwise along `b`.
   refine ⟨fun j ↦ ∑ i, ck i j • b i, ∑ i, (b i : A) • gA i,
     by rw [map_sum]; exact Finset.sum_eq_zero fun i _ ↦ by simp [gA],
@@ -611,8 +597,15 @@ private theorem exists_lubinTate_decomp_of_coeff_mem (hπ_A : Function.Surjectiv
   conv_lhs => rw [eq_sum_smul_liftOfSurjective hπ_A hsmul b hΦI]
   simp_rw [← smul_add]
   refine sum_smul_eq_of_map_eq hsmul b fun i ↦ ?_
+  have hgA : PowerSeries.map π_A (gA i) = gk i := by
+    dsimp only [gA]
+    rw [map_sub, PowerSeries.map_C, ← PowerSeries.constantCoeff_map]
+    change MvPowerSeries.map π_A (liftOfSurjective hπ_A (gk i)) -
+      PowerSeries.C (PowerSeries.constantCoeff
+        (MvPowerSeries.map π_A (liftOfSurjective hπ_A (gk i)))) = _
+    rw [map_liftOfSurjective, hgk₀ i, map_zero, sub_zero]
   rw [map_liftOfSurjective, map_add, map_sum_smul_lubinTateCocycle, FormalGroup.map_homDefect_𝔾ₐ,
-    F.map_eq, map_liftPowerSeriesZeroConst hπ_A (hgk₀ i), hΦk_eq]
+    F.map_eq, hgA, hΦk_eq]
 
 omit [F₀.IsComm] in
 /-- Replaces a lift `G₀` whose reduction modulo `q` is deformation-equivalent to `F.map q hq` with
@@ -730,19 +723,6 @@ theorem bijective_map_of_height_eq_one [IsLocalRing B] [IsHausdorff (maximalIdea
   have hsub := (squareZeroFiberEquiv hπ_B hq hq_surj hFG hker hF₀ F).symm.injective.subsingleton
   exact congrArg Subtype.val (@Subsingleton.elim _ hsub ⟨x₁, hx⟩ ⟨⟦F⟧, map_mk q hq F⟩)
 
-private theorem fg_ker_dualNumberFst :
-    (RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom).FG :=
-  (IsPrincipalIdealRing.principal _).fg
-
-private def dualNumberKerEquiv :
-    k ≃ RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom where
-  toFun c := ⟨TrivSqZeroExt.inr c, by simp [RingHom.mem_ker]⟩
-  invFun z := z.val.snd
-  left_inv _ := by simp
-  right_inv z := Subtype.ext <| by
-    have hz : z.val.fst = 0 := by simpa using RingHom.mem_ker.mp z.property
-    ext <;> simp [hz]
-
 /-- **The Lubin–Tate tangent space.** For a commutative formal group law `F₀` of finite height `h`
 over a field `k` of characteristic `p`, the set of deformations of `F₀` over the dual numbers
 `DualNumber k = k[ε]` (`ε² = 0`) is canonically equivalent to `Fin (h - 1) → k`. -/
@@ -750,12 +730,17 @@ noncomputable def dualNumberEquiv {p h : ℕ} [Fact p.Prime] [CharP k p]
     (hF₀ : F₀.height p = h) :
     (Fin (h - 1) → k) ≃
       FormalGroupDeformation (TrivSqZeroExt.fstHom k k k).toRingHom F₀ :=
-  (Equiv.piCongrRight fun _ ↦ dualNumberKerEquiv).trans <|
+  (Equiv.piCongrRight fun _ ↦
+    (TrivSqZeroExt.kerIdealLinearEquiv k k).toEquiv.trans
+      (Equiv.subtypeEquivRight (q := (· ∈ RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom))
+        fun _ ↦ by rfl)).trans <|
     (squareZeroFiberEquiv (B := k) (π_B := RingHom.id k) Function.surjective_id
       (RingHom.id_comp _)
       (show Function.Surjective (TrivSqZeroExt.fstHom k k k).toRingHom from
         TrivSqZeroExt.fst_surjective)
-      fg_ker_dualNumberFst
+      (show (RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom).FG from by
+        change (TrivSqZeroExt.kerIdeal k k).FG
+        exact TrivSqZeroExt.fg_kerIdeal)
       (show RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom *
           RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom = ⊥ from
         (pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
@@ -774,9 +759,15 @@ theorem dualNumberEquiv_apply {p h : ℕ} [Fact p.Prime] [CharP k p]
         (RingHom.id_comp _)
         ((pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
         p h (fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩) := by
-  have hc : (Equiv.piCongrRight fun _ ↦ dualNumberKerEquiv) c =
+  have hc : (Equiv.piCongrRight fun _ ↦
+      (TrivSqZeroExt.kerIdealLinearEquiv k k).toEquiv.trans
+        (Equiv.subtypeEquivRight (q := (· ∈ RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom))
+          fun _ ↦ by rfl)) c =
       fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩ :=
-    funext fun j ↦ by rw [Equiv.piCongrRight_apply]; rfl
+    funext fun j ↦ Subtype.ext <| by
+      change (TrivSqZeroExt.kerIdealLinearEquiv k k (c j) : TrivSqZeroExt k k) =
+        TrivSqZeroExt.inr (c j)
+      simp
   rw [dualNumberEquiv, Equiv.trans_apply, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply,
     squareZeroFiberEquiv_apply_coe, hc]
 

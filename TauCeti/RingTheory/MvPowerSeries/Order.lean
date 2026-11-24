@@ -59,7 +59,9 @@ Perturbing one entry `a s` by a series `e` of order at least `n ≥ 1` changes `
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`), and one on finitely many series
-bounds the order of their sum (`MvPowerSeries.le_order_sum`). Over a commutative ring, if `f` and
+bounds the order of their sum (`MvPowerSeries.le_order_sum`), while a lower bound on the order of
+either factor bounds the order of a product (`MvPowerSeries.le_order_mul_of_le_left`,
+`MvPowerSeries.le_order_mul_of_le_right`). Over a commutative ring, if `f` and
 `g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for
 `n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
@@ -106,6 +108,16 @@ theorem le_order_sub [Ring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
     (hg : n ≤ g.order) : n ≤ (f - g).order := by
   rw [sub_eq_add_neg]
   exact le_order_add hf (by rwa [order_neg])
+
+/-- A lower bound on the order of the left factor bounds the order of a product. -/
+theorem le_order_mul_of_le_left [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order) :
+    n ≤ (f * g).order :=
+  (_root_.add_zero n).symm.le.trans ((add_le_add hf zero_le).trans le_order_mul)
+
+/-- A lower bound on the order of the right factor bounds the order of a product. -/
+theorem le_order_mul_of_le_right [Semiring R] {f g : MvPowerSeries σ R} (hg : n ≤ g.order) :
+    n ≤ (f * g).order :=
+  (_root_.zero_add n).symm.le.trans ((add_le_add zero_le hg).trans le_order_mul)
 
 /-- If `f` and `g` have zero constant coefficient and `2 ≤ n`, then the order of `f ^ n - g ^ n`
 exceeds that of `f - g`: it is `f - g` times `∑ fⁱ gⁿ⁻¹⁻ⁱ`, whose constant coefficient vanishes. -/

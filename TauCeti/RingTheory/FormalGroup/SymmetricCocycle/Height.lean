@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Coboundary
+import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.RingTheory.FormalGroup.Hom.Defect
 import TauCeti.RingTheory.FormalGroup.Obstruction
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -453,32 +454,39 @@ private theorem IsSymmetricCocycle.exists_eq_sum_smul_add_homDefect_𝔾ₐ (hp 
   rw [homDefect_𝔾ₐ_add, ← he]
   abel
 
-/-- Reindexing a sum over `Finset.Ioo 0 h` via `j ↦ j.val + 1` on `Fin (h - 1)`. -/
-private theorem sum_Ioo_eq_sum_fin {M : Type*} [AddCommMonoid M] (h : ℕ) (f : ℕ → M) :
-    ∑ i ∈ Finset.Ioo 0 h, f i = ∑ j : Fin (h - 1), f (j.val + 1) := by
-  rw [← Finset.Ico_succ_left_eq_Ioo, Order.succ_eq_add_one, Nat.zero_add,
-    Finset.sum_Ico_eq_sum_range, Fin.sum_univ_eq_sum_range (fun k ↦ f (k + 1))]
-  simp [Nat.add_comm]
+/-- Extends a `Fin (h - 1)`-indexed family `f` to `ℕ` by placing `f j` at `j.val + 1` and `0`
+elsewhere. -/
+private def extendFin {M : Type*} [Zero M] {h : ℕ} (f : Fin (h - 1) → M) (i : ℕ) : M :=
+  if _ : 0 < i ∧ i < h then f ⟨i - 1, by omega⟩ else 0
+
+private theorem extendFin_succ {M : Type*} [Zero M] {h : ℕ} (f : Fin (h - 1) → M)
+    (j : Fin (h - 1)) : extendFin f (j.val + 1) = f j := by
+  rw [extendFin, dite_eq_left ⟨by omega, by omega⟩]
+  have hfin : (⟨j.val + 1 - 1, by omega⟩ : Fin (h - 1)) = j := Fin.ext (by simp)
+  rw [hfin]
+
+private theorem extendFin_of_pos_of_lt {M : Type*} [Zero M] {h : ℕ} (f : Fin (h - 1) → M)
+    {i : ℕ} (hi₀ : 0 < i) (hih : i < h) :
+    extendFin f i = f ⟨i - 1, by omega⟩ :=
+  dite_eq_left ⟨hi₀, hih⟩
 
 /-- Normalizes a `Fin (h - 1)`-indexed family of cocycles by the inverse of their leading units,
 extending to `ℕ` by zero outside `0 < i < h`. -/
 private noncomputable def unitNorm {h : ℕ} (Γ : Fin (h - 1) → MvPowerSeries (Fin 2) R)
-    {u : Fin (h - 1) → R} (hu : ∀ j, IsUnit (u j)) (i : ℕ) : MvPowerSeries (Fin 2) R :=
-  if hi : 0 < i ∧ i < h then (↑(hu ⟨i - 1, by omega⟩).unit⁻¹ : R) • Γ ⟨i - 1, by omega⟩ else 0
+    {u : Fin (h - 1) → R} (hu : ∀ j, IsUnit (u j)) : ℕ → MvPowerSeries (Fin 2) R :=
+  extendFin fun j ↦ (↑(hu j).unit⁻¹ : R) • Γ j
 
 private theorem unitNorm_succ {h : ℕ} (Γ : Fin (h - 1) → MvPowerSeries (Fin 2) R)
     {u : Fin (h - 1) → R} (hu : ∀ j, IsUnit (u j)) (j : Fin (h - 1)) :
-    unitNorm Γ hu (j.val + 1) = (↑(hu j).unit⁻¹ : R) • Γ j := by
-  rw [unitNorm, dite_eq_left ⟨by omega, by omega⟩]
-  have hfin : (⟨j.val + 1 - 1, by omega⟩ : Fin (h - 1)) = j := Fin.ext (by simp)
-  simp only [hfin]
+    unitNorm Γ hu (j.val + 1) = (↑(hu j).unit⁻¹ : R) • Γ j :=
+  extendFin_succ _ j
 
 private theorem le_order_unitNorm {p h : ℕ} {Γ : Fin (h - 1) → MvPowerSeries (Fin 2) R}
     {u : Fin (h - 1) → R} (hu : ∀ j, IsUnit (u j))
     (hΓ_ord : ∀ j, ((p ^ (j.val + 1) : ℕ) : ℕ∞) ≤ (Γ j).order)
     {i : ℕ} (hi₀ : 0 < i) (hih : i < h) :
     ((p ^ i : ℕ) : ℕ∞) ≤ (unitNorm Γ hu i).order := by
-  rw [unitNorm, dite_eq_left ⟨hi₀, hih⟩]
+  rw [unitNorm, extendFin_of_pos_of_lt _ hi₀ hih]
   have hord := hΓ_ord ⟨i - 1, by omega⟩
   simp only [Nat.sub_add_cancel hi₀] at hord
   exact hord.trans le_order_smul
@@ -489,7 +497,7 @@ private theorem homogeneousComponent_unitNorm {p h : ℕ} {Γ : Fin (h - 1) → 
       ↑(u j • TauCeti.lazardCocycle (p ^ (j.val + 1)) R))
     {i : ℕ} (hi₀ : 0 < i) (hih : i < h) :
     homogeneousComponent (p ^ i) (unitNorm Γ hu i) = ↑(TauCeti.lazardCocycle (p ^ i) R) := by
-  rw [unitNorm, dite_eq_left ⟨hi₀, hih⟩]
+  rw [unitNorm, extendFin_of_pos_of_lt _ hi₀ hih]
   have hcomp := hΓ_comp ⟨i - 1, by omega⟩
   simp only [Nat.sub_add_cancel hi₀] at hcomp
   rw [map_smul, hcomp, ← MvPolynomial.coe_smul, smul_smul,
@@ -509,15 +517,11 @@ theorem sum_smul_eq_homDefect_𝔾ₐ_iff (hp : p.Prime)
     (hu : ∀ j, IsUnit (u j)) {c : Fin (h - 1) → R} :
     (∃ g : PowerSeries R, ∑ j, c j • Γ j = F.homDefect 𝔾ₐ g) ↔ c = 0 := by
   refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun hc ↦ ⟨0, by simp [hc]⟩⟩
-  let a (i : ℕ) : R := if hi : 0 < i ∧ i < h then c ⟨i - 1, by omega⟩ * u ⟨i - 1, by omega⟩ else 0
-  have ha_val (j : Fin (h - 1)) : a (j.val + 1) = c j * u j := by
-    dsimp only [a]
-    rw [dite_eq_left ⟨by omega, by omega⟩]
-    have hfin : (⟨j.val + 1 - 1, by omega⟩ : Fin (h - 1)) = j := Fin.ext (by simp)
-    rw [hfin]
+  let a : ℕ → R := extendFin fun j ↦ c j * u j
+  have ha_val (j : Fin (h - 1)) : a (j.val + 1) = c j * u j := extendFin_succ _ j
   have hsum : ∑ j : Fin (h - 1), c j • Γ j =
       ∑ i ∈ Finset.Ioo 0 h, a i • unitNorm Γ hu i := by
-    rw [sum_Ioo_eq_sum_fin]
+    rw [Finset.sum_Ioo_zero_eq_sum_fin]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [ha_val j, unitNorm_succ, smul_smul, mul_assoc, mul_comm (u j), (hu j).val_inv_mul,
       mul_one]
@@ -553,14 +557,14 @@ theorem IsSymmetricCocycle.existsUnique_sum_smul_add_homDefect_𝔾ₐ (hp : p.P
   obtain ⟨a, g, hg₀, hΦeq⟩ := hΦ.exists_eq_sum_smul_add_homDefect_𝔾ₐ hp hpR hF hv
     (Φ := unitNorm Γ hu)
     (fun i hi₀ hih ↦ by
-      rw [unitNorm, dite_eq_left ⟨hi₀, hih⟩]
+      rw [unitNorm, extendFin_of_pos_of_lt _ hi₀ hih]
       exact (hΓ _).smul _)
     (fun _ hi₀ hih ↦ le_order_unitNorm hu hΓ_ord hi₀ hih)
     (fun _ hi₀ hih ↦ homogeneousComponent_unitNorm hu hΓ_comp hi₀ hih)
     hΦ₀
   let c (j : Fin (h - 1)) : R := a (j.val + 1) * ↑(hu j).unit⁻¹
   have hsum : ∑ i ∈ Finset.Ioo 0 h, a i • unitNorm Γ hu i = ∑ j : Fin (h - 1), c j • Γ j := by
-    rw [sum_Ioo_eq_sum_fin]
+    rw [Finset.sum_Ioo_zero_eq_sum_fin]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [unitNorm_succ, smul_smul]
   rw [hsum] at hΦeq

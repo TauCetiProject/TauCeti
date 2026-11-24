@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
+public import Mathlib.Algebra.TrivSqZeroExt.Ideal
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
 public import Mathlib.RingTheory.KrullDimension.Basic
@@ -22,9 +23,11 @@ For a commutative ring `R` and an `R`-module `M`, the trivial square-zero extens
 it is `R × M`.
 
 This file records the standard finiteness and dimension invariants: over a local ring `R` the
-extension is local and the inclusion of `R` is a local homomorphism; it is finite, respectively
-Noetherian, when `M` is finite (and `R` is Noetherian); and, being integral over `R`, it has the
-Krull dimension of `R`. Over a free module of finite rank `n` it is free of rank `n + 1`.
+extension is local and the inclusion of `R` is a local homomorphism; the square-zero ideal
+`TrivSqZeroExt.kerIdeal R M` is `R`-linearly equivalent to `M` and is finitely generated whenever
+`M` is finite; `TrivSqZeroExt R M` is finite, respectively Noetherian, when `M` is finite (and `R`
+is Noetherian); and, being integral over `R`, it has the Krull dimension of `R`. Over a free
+module of finite rank `n` it is free of rank `n + 1`.
 
 Taking for `M` the residue field of a local ring `A` gives `A[z] ⧸ (z², 𝔪z)`, a finite local
 `A`-algebra with the dimension of `A` and of depth zero, which is not flat over `A` unless `A` is
@@ -32,6 +35,9 @@ a field (`TrivSqZeroExt.depth_eq_zero`, `TrivSqZeroExt.not_flat`).
 
 ## Main results
 
+* `TrivSqZeroExt.kerIdealLinearEquiv`: `M ≃ₗ[R] TrivSqZeroExt.kerIdeal R M`.
+* `TrivSqZeroExt.fg_kerIdeal`: `TrivSqZeroExt.kerIdeal R M` is finitely generated when `M` is
+  finite.
 * `TrivSqZeroExt.isLocalRing`: the trivial square-zero extension of a local ring is local.
 * `TrivSqZeroExt.mem_maximalIdeal_iff`: its maximal ideal consists of the elements whose first
   component lies in the maximal ideal of `R`.
@@ -43,6 +49,56 @@ public section
 open IsLocalRing
 
 namespace TrivSqZeroExt
+
+section KerIdeal
+
+variable (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M] [Module Rᵐᵒᵖ M]
+  [IsCentralScalar R M]
+
+/-- The square-zero ideal `TrivSqZeroExt.kerIdeal R M` is `R`-linearly equivalent to `M`. -/
+def kerIdealLinearEquiv : M ≃ₗ[R] kerIdeal R M where
+  toFun m := ⟨inr m, (mem_kerIdeal_iff_inr R M _).mpr rfl⟩
+  invFun z := z.val.snd
+  map_add' _ _ := Subtype.ext (inr_add R _ _)
+  map_smul' r m := Subtype.ext (by simp [Algebra.smul_def, algebraMap_eq_inl])
+  left_inv _ := by simp
+  right_inv z := Subtype.ext ((mem_kerIdeal_iff_inr R M z.val).mp z.property).symm
+
+variable {R M}
+
+/-- `kerIdealLinearEquiv` sends `m` to `inr m`. -/
+@[simp]
+theorem coe_kerIdealLinearEquiv (m : M) :
+    (kerIdealLinearEquiv R M m : TrivSqZeroExt R M) = inr m := by
+  rw [kerIdealLinearEquiv]; rfl
+
+/-- The inverse of `kerIdealLinearEquiv` extracts the second component `snd`. -/
+@[simp]
+theorem kerIdealLinearEquiv_symm_apply (z : kerIdeal R M) :
+    (kerIdealLinearEquiv R M).symm z = z.val.snd := by
+  rw [kerIdealLinearEquiv]; rfl
+
+/-- When `M` is a finite `R`-module, the square-zero ideal `TrivSqZeroExt.kerIdeal R M` is finitely
+generated. -/
+theorem fg_kerIdeal [Module.Finite R M] : (kerIdeal R M).FG := by
+  obtain ⟨s, hs⟩ := ‹Module.Finite R M›.fg_top
+  classical
+  refine ⟨s.image inr, le_antisymm (Ideal.span_le.mpr ?_) fun x hx ↦ ?_⟩
+  · rw [Finset.coe_image]
+    rintro _ ⟨m, _, rfl⟩
+    exact (mem_kerIdeal_iff_inr R M _).mpr rfl
+  · rw [mem_kerIdeal_iff_inr] at hx
+    rw [hx]
+    have hm : x.snd ∈ Submodule.span R (s : Set M) := hs ▸ trivial
+    clear hx
+    revert hm
+    refine Submodule.span_induction (fun m hm ↦ ?_) (by simp) (fun a b _ _ ha hb ↦ ?_)
+      (fun r a _ ha ↦ ?_)
+    · exact Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem inr hm))
+    · rw [inr_add]; exact Ideal.add_mem _ ha hb
+    · rw [← inl_mul_inr, ← algebraMap_eq_inl]; exact Ideal.mul_mem_left _ _ ha
+
+end KerIdeal
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module Rᵐᵒᵖ M]
   [IsCentralScalar R M]

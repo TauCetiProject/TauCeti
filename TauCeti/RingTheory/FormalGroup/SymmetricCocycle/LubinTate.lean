@@ -13,6 +13,7 @@ import Mathlib.Algebra.DualNumber
 import Mathlib.Algebra.TrivSqZeroExt.Ideal
 import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 import Mathlib.RingTheory.PowerSeries.CoeffMulMem
+import TauCeti.Data.Finsupp.Fin
 import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
@@ -144,7 +145,7 @@ theorem two_le_order_deformationCocycle (F G : FormalGroup A) :
   have hord : ((2 : ℕ) : ℕ∞) ≤ (G.toPowerSeries - F.toPowerSeries).order := by
     rw [← G.homDefect_X F]
     exact G.two_le_order_homDefect_X F
-  exact (_root_.zero_add _).symm.le.trans ((add_le_add zero_le hord).trans le_order_mul)
+  exact le_order_mul_of_le_right hord
 
 /-- **Additivity of the deformation cocycle across square-zero steps.** If `G ≡ F (mod I)` and
 `H ≡ G (mod I)` for an ideal `I` with `I * I = ⊥`, then
@@ -276,7 +277,7 @@ theorem isSymmetricCocycle_deformationCocycle (F G : FormalGroup A) [F.IsComm] [
 private theorem two_le_order_derivZeroX_mul (F : FormalGroup A)
     {Φ : MvPowerSeries (Fin 2) A} (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0) :
     ((2 : ℕ) : ℕ∞) ≤ (PowerSeries.subst F.toPowerSeries F.derivZeroX * Φ).order :=
-  (_root_.zero_add _).symm.le.trans ((add_le_add zero_le (hΦ.two_le_order hΦ₀)).trans le_order_mul)
+  le_order_mul_of_le_right (hΦ.two_le_order hΦ₀)
 
 /-- **Lubin–Tate, Lemma 1.2 (inverse construction).** Given a commutative formal group law `F` over
 `A`, an ideal `I` with `I * I = ⊥`, and a symmetric 2-cocycle `Φ` of `F` without constant term whose
@@ -616,9 +617,8 @@ private theorem le_order_universalShiftSeries (n : ℕ+) :
 
 private theorem coeff_formalGroup_eq_zero_of_axis {d : Fin 2 →₀ ℕ} (hd : 2 ≤ d.degree)
     (haxis : d 0 = 0 ∨ d 1 = 0) : coeff d formalGroup.toPowerSeries = 0 := by
-  have hdeg : d 0 + d 1 = d.degree := by simp [Finsupp.degree_eq_sum, Fin.sum_univ_two]
-  have hd_eq : d = Finsupp.single 0 (d 0) + Finsupp.single 1 (d 1) := by
-    simpa only [Fin.sum_univ_two] using (Finsupp.univ_sum_single d).symm
+  rw [Finsupp.degree_finTwo] at hd
+  have hd_eq := Finsupp.eq_single_zero_add_single_one d
   rcases haxis with h0 | h1
   · rw [hd_eq, h0, Finsupp.single_zero, _root_.zero_add, formalGroup.coeff_single_one,
       ite_eq_right (by omega)]
@@ -636,7 +636,7 @@ private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) LazardRing) := by
   have hn := n.pos; ext d
   rw [coeff_homogeneousComponent, MvPolynomial.coeff_coe]
-  have hdeg_sum : d.degree = d 0 + d 1 := by simp [Finsupp.degree_eq_sum, Fin.sum_univ_two]
+  have hdeg_sum : d.degree = d 0 + d 1 := Finsupp.degree_finTwo d
   by_cases hd : d.degree = (n : ℕ) + 1
   · rw [ite_eq_left hd]
     by_cases haxis : d 0 = 0 ∨ d 1 = 0
@@ -646,7 +646,7 @@ private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
       have hi0 : 0 < d 0 := Nat.pos_of_ne_zero haxis.1
       have hd_eq : d = Finsupp.single 0 (d 0) + Finsupp.single 1 ((n : ℕ) + 1 - d 0) := by
         have hd1 : d 1 = (n : ℕ) + 1 - d 0 := by omega
-        simpa only [Fin.sum_univ_two, hd1] using (Finsupp.univ_sum_single d).symm
+        exact hd1 ▸ Finsupp.eq_single_zero_add_single_one d
       set z := coeff (Finsupp.single 0 (d 0) + Finsupp.single 1 ((n : ℕ) + 1 - d 0))
           formalGroup.toPowerSeries -
         (((n : ℕ) + 1).choose (d 0) / TauCeti.lazardGcd ((n : ℕ) + 1)) • generator n
@@ -735,9 +735,7 @@ theorem isSymmetricCocycle_lubinTateCocycle {R : Type*} [CommRing R] (F : Formal
 /-- `F.lubinTateCocycle n` vanishes below total degree `n + 1`. -/
 theorem le_order_lubinTateCocycle {R : Type*} [CommRing R] (F : FormalGroup R) [F.IsComm]
     (n : ℕ+) : (((n : ℕ) + 1 : ℕ) : ℕ∞) ≤ (F.lubinTateCocycle n).order :=
-  ((_root_.zero_add _).symm.le.trans
-    ((add_le_add zero_le (le_order_universalShiftSeries n)).trans le_order_mul)).trans
-    (MvPowerSeries.le_order_map _)
+  (le_order_mul_of_le_right (le_order_universalShiftSeries n)).trans (MvPowerSeries.le_order_map _)
 
 /-- `F.lubinTateCocycle n` has zero constant coefficient. -/
 @[simp]
@@ -760,7 +758,7 @@ theorem homogeneousComponent_lubinTateCocycle {R : Type*} [CommRing R] (F : Form
   · rw [ite_eq_left hdeg] at hd ⊢
     rw [hd, ← TauCeti.map_lazardCocycle (LazardRing.lift ⟨F, inferInstance⟩),
       MvPolynomial.coeff_map]
-  · have : d 0 + d 1 ≠ (n : ℕ) + 1 := by simpa [Finsupp.degree_eq_sum, Fin.sum_univ_two] using hdeg
+  · have : d 0 + d 1 ≠ (n : ℕ) + 1 := Finsupp.degree_finTwo d ▸ hdeg
     rw [ite_eq_right hdeg, TauCeti.coeff_lazardCocycle, ite_eq_right (by tauto)]
 
 /-- `FormalGroup.lubinTateCocycle` commutes with base change of the coefficient ring. -/
