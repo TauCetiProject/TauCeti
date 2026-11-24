@@ -156,6 +156,28 @@ noncomputable def diagonalizableBaseChangeIso :
     (Over.pullback f).mapGrp.obj (diagonalizable S M) ≅ diagonalizable S' M :=
   (Over.mapGrpPullbackCompOfEq f (specULiftZIsTerminal.hom_ext _ _)).app _
 
+/-- The morphism in `Over S'` underlying `diagonalizableBaseChangeIso` is the comparison
+`Over.pullbackComp` of the pullbacks along `f ≫ (S ⟶ Spec ℤ)` and `S' ⟶ Spec ℤ`. -/
+@[simp]
+theorem diagonalizableBaseChangeIso_hom_hom_hom :
+    (diagonalizableBaseChangeIso M f).hom.hom.hom =
+      (Over.pullbackComp f (specULiftZIsTerminal.from S)).inv.app _ ≫
+        eqToHom (congrArg (fun g ↦ (Over.pullback g).obj
+          (DiagonalizableGroup.groupScheme (ULift.{u} ℤ) (FGCommGrpCat.of (Multiplicative M))).X)
+          (specULiftZIsTerminal.hom_ext _ _)) :=
+  Over.mapGrpPullbackCompOfEq_hom_app_hom_hom f _ _
+
+/-- The morphism in `Over S'` underlying the inverse of `diagonalizableBaseChangeIso` is the
+comparison `Over.pullbackComp` of the pullbacks along `S' ⟶ Spec ℤ` and `f ≫ (S ⟶ Spec ℤ)`. -/
+@[simp]
+theorem diagonalizableBaseChangeIso_inv_hom_hom :
+    (diagonalizableBaseChangeIso M f).inv.hom.hom =
+      eqToHom (congrArg (fun g ↦ (Over.pullback g).obj
+          (DiagonalizableGroup.groupScheme (ULift.{u} ℤ) (FGCommGrpCat.of (Multiplicative M))).X)
+          (specULiftZIsTerminal.hom_ext _ _)) ≫
+        (Over.pullbackComp f (specULiftZIsTerminal.from S)).hom.app _ :=
+  Over.mapGrpPullbackCompOfEq_inv_app_hom_hom f _ _
+
 variable {M N} in
 /-- The base-change isomorphism `diagonalizableBaseChangeIso` is natural in the character
 group. -/

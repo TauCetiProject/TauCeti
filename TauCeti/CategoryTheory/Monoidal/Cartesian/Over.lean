@@ -138,4 +138,40 @@ noncomputable def mapGrpPullbackCompOfEq {X Y Z : C} (f : X ⟶ Y) {a : Y ⟶ Z}
     (Over.pullback a).mapGrp ⋙ (Over.pullback f).mapGrp ≅ (Over.pullback b).mapGrp :=
   (mapGrpPullbackComp f a).symm ≪≫ Functor.mapGrpNatIso (eqToIso (by congr 1))
 
+/-- The morphism in `Over X` underlying a component of `mapGrpPullbackCompOfEq` is the
+corresponding component of the inverse of `Over.pullbackComp`, followed by the identification of
+`Over.pullback (f ≫ a)` with `Over.pullback b`. -/
+@[simp]
+theorem mapGrpPullbackCompOfEq_hom_app_hom_hom {X Y Z : C} (f : X ⟶ Y) {a : Y ⟶ Z} {b : X ⟶ Z}
+    (h : f ≫ a = b) (G : Grp (Over Z)) :
+    ((mapGrpPullbackCompOfEq f h).hom.app G).hom.hom =
+      (Over.pullbackComp f a).inv.app G.X ≫
+        (eqToHom (by subst h; rfl) :
+          (Over.pullback (f ≫ a)).obj G.X ⟶ (Over.pullback b).obj G.X) := by
+  subst h
+  simp only [mapGrpPullbackCompOfEq, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    Grp.comp', Mon.comp_hom', mapGrpPullbackComp_inv_app_hom_hom,
+    Functor.mapGrpNatIso_hom_app_hom_hom, eqToIso.hom, eqToHom_refl, NatTrans.id_app]
+  -- Both sides are now `(Over.pullbackComp f a).inv.app G.X ≫ 𝟙 _`, up to the unfolding of
+  -- `((Over.pullback (f ≫ a)).mapGrp.obj G).X` to `(Over.pullback (f ≫ a)).obj G.X`.
+  rfl
+
+/-- The morphism in `Over X` underlying a component of the inverse of `mapGrpPullbackCompOfEq` is
+the identification of `Over.pullback b` with `Over.pullback (f ≫ a)`, followed by the
+corresponding component of `Over.pullbackComp`. -/
+@[simp]
+theorem mapGrpPullbackCompOfEq_inv_app_hom_hom {X Y Z : C} (f : X ⟶ Y) {a : Y ⟶ Z} {b : X ⟶ Z}
+    (h : f ≫ a = b) (G : Grp (Over Z)) :
+    ((mapGrpPullbackCompOfEq f h).inv.app G).hom.hom =
+      (eqToHom (by subst h; rfl) :
+          (Over.pullback b).obj G.X ⟶ (Over.pullback (f ≫ a)).obj G.X) ≫
+        (Over.pullbackComp f a).hom.app G.X := by
+  subst h
+  simp only [mapGrpPullbackCompOfEq, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app,
+    Grp.comp', Mon.comp_hom', mapGrpPullbackComp_hom_app_hom_hom,
+    Functor.mapGrpNatIso_inv_app_hom_hom, eqToIso.inv, eqToHom_refl, NatTrans.id_app]
+  -- Both sides are now `𝟙 _ ≫ (Over.pullbackComp f a).hom.app G.X`, up to the unfolding of
+  -- `((Over.pullback (f ≫ a)).mapGrp.obj G).X` to `(Over.pullback (f ≫ a)).obj G.X`.
+  rfl
+
 end CategoryTheory.Over
