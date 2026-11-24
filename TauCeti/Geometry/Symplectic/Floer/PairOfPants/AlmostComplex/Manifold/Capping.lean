@@ -258,18 +258,6 @@ theorem _root_.TauCeti.SmoothAlmostComplexStructure.contMDiff_update_inf {n : �
         p.2 ((f p.1).toEndomorphism p.2))).2
     ⟨hK, fun _ _ => (J₀.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp contMDiff_snd⟩ q
 
-omit [FiniteDimensional ℝ E] in
-/-- On a tangent fiber, the end families of the plane are the linear end families of the plane. -/
-private theorem almostComplexStructureAt_update_inf (K : ℝ → SmoothAlmostComplexStructure I M)
-    (x : M) :
-    (fun q t (_ : Unit) => (update (fun _ _ => J₀) inf K q t).almostComplexStructureAt x) =
-      update (fun _ _ _ => J₀.almostComplexStructureAt x) inf
-        (fun t (_ : Unit) => (K t).almostComplexStructureAt x) := by
-  funext q t u
-  rcases eq_or_ne q inf with rfl | hq
-  · simp
-  · simp [update_of_ne hq]
-
 /-- **The plane is a pair of pants with base inputs.** On `ℂ ∖ {0, 1}`, the pair-of-pants
 structure whose input families are the constant family `J₀` and whose output family is `J` is the
 negative plane structure of `J`. -/
@@ -284,7 +272,7 @@ theorem pairOfPantsAlmostComplex_update_inf
         (Floer.tames_update_inf (h₀.compatibleAt x).tames
           (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ t) x))]
     congr 1
-    exact almostComplexStructureAt_update_inf J x
+    exact SmoothAlmostComplexStructure.almostComplexStructureAt_update _ inf J x
 
 end UpdateInf
 
@@ -354,7 +342,7 @@ theorem almostComplexStructureAt_cappingAlmostComplex {w : ℂ}
   rw [cappingAlmostComplex_eq_plumbedAlmostComplex h₀ Jb hJb hw,
     almostComplexStructureAt_plumbedAlmostComplex]
   congr 1
-  exact almostComplexStructureAt_update_inf (Jb q) x
+  exact SmoothAlmostComplexStructure.almostComplexStructureAt_update _ inf (Jb q) x
 
 /-- The capping structure is tamed by the two-form, regardless of the neck length. -/
 theorem tames_cappingAlmostComplex (w : ℂ) : σ.Tames (h₀.cappingAlmostComplex Jb hJb q L w) := by

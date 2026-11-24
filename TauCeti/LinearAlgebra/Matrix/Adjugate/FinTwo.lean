@@ -20,6 +20,9 @@ image is scalar; linearity is not needed for this characterization. These facts 
 reversal with adjugation in the two-by-two matrix models of Spin(3) and Spin(4).
 The product characterization also identifies adjugation in each factor of `M₂ × M₂`.
 
+Taking traces of `adj M * N` gives `tr (adj M * N) = tr M * tr N - tr (M * N)`, from which
+`TauCeti.LinearAlgebra.Matrix.Trace.FinTwo` derives the rank-two trace identity in `GL₂`.
+
 For complex matrices, composing adjugation with conjugate transpose gives a real-algebra
 endomorphism. This packages the multiplicative map used by real low-rank matrix models.
 -/
@@ -37,6 +40,12 @@ theorem adjugate_fin_two_eq_trace_smul_one_sub (A : Matrix (Fin 2) (Fin 2) K) :
   rw [adjugate_fin_two, trace_fin_two]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
+
+/-- For `2 × 2` matrices, `tr (adj M * N) = tr M * tr N - tr (M * N)`, as `adj M = tr M • 1 - M`. -/
+theorem trace_adjugate_mul_fin_two (M N : Matrix (Fin 2) (Fin 2) K) :
+    (adjugate M * N).trace = M.trace * N.trace - (M * N).trace := by
+  rw [adjugate_fin_two_eq_trace_smul_one_sub, sub_mul, smul_mul_assoc, one_mul, trace_sub,
+    trace_smul, smul_eq_mul]
 
 /-- The adjugate as a linear map on `2 × 2` matrices over a commutative ring. -/
 noncomputable def adjugateFinTwoLinearMap :

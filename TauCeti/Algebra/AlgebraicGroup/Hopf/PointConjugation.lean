@@ -79,7 +79,7 @@ theorem comp_pointConjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
       WithConv.toConv (x.ofConv.comp (pointConjugationAlgHom g)) := by
     rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv]
   rw [← hmapValue, toConv_pointConjugationAlgHom, map_mul, map_mul, map_inv]
-  rw [WithConv.mapValue_algebraOfId]
+  rw [AlgHom.mapValue_mapValue_ofId]
   simp [AlgHom.mapValue_apply]
 
 /-- On rational points, precomposition by point conjugation is conjugation by `g` in the group
@@ -151,7 +151,7 @@ private theorem map_comp_comul_pointConjugationAlgHom
         (pointConjugationAlgHom g)).comp (Bialgebra.comulAlgHom R H) =
       (Bialgebra.comulAlgHom R H).comp (pointConjugationAlgHom g) := by
   apply WithConv.toConv_injective
-  rw [Bialgebra.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
+  rw [AlgHom.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
     Bialgebra.comulPoint_eq_include_mul]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight,

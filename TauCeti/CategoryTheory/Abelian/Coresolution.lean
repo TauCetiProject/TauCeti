@@ -558,7 +558,7 @@ theorem IsSyzygy.of_retract (hP : ∀ Y, P Y → Injective Y)
     obtain ⟨I, ι, hι, hI, hY'⟩ := isSyzygy_succ_iff_exists_mono.1 hY
     refine isSyzygy_succ_iff_exists_mono.2 ⟨I, r.i ≫ ι, inferInstance, hI, ?_⟩
     exact IsSyzygy.of_shortExact hP hPb
-      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact r.i ι)
+      (TauCeti.cokernelCompSequence_shortExact r.i ι)
       (ih (binaryBiconeOfIsSplitMonoOfCokernel (cokernelIsCokernel r.i)).retract_right hY.of_succ)
       hY'
 

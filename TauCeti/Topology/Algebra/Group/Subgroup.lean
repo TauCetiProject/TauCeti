@@ -15,6 +15,7 @@ public import TauCeti.Topology.Homeomorph.Pi
 import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Topology.UniformSpace.CompleteSeparated
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Topology.Algebra.IsUniformGroup.Defs
 
 /-!
@@ -89,6 +90,9 @@ series of a profinite group.
   closed.
 * `ContinuousMulEquiv.map_topologicalClosure_normalClosure`: a topological group isomorphism
   carries the closed normal closure of a set onto the closed normal closure of its image.
+* `ContinuousMulEquiv.isCompact_closure_zpowers_iff`: a topological group isomorphism `e` carries
+  the powers of `x` to a relatively compact set exactly when the powers of `x` are relatively
+  compact.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
   contains `⁅A, B.topologicalClosure⁆`.
 * `DenseRange.topologicalClosure_map_commutator`: a homomorphism with dense range maps the
@@ -106,6 +110,7 @@ series of a profinite group.
 * `Subgroup.isCompact_sup_of_le_normalizer`: the join of two compact subgroups, the first
   normalizing the second, is compact.
 * `Subgroup.isCompact_conj_smul`: a conjugate of a compact subgroup is compact.
+* `Subgroup.isOpen_map_conj_iff`: a conjugate of a subgroup is open exactly when the subgroup is.
 * `Subgroup.maximal_isCompact_iff_exists_eq_conj_smul`: if every compact subgroup is conjugate
   into a maximal compact subgroup `U`, the maximal compact subgroups are the conjugates of `U`.
 * `Subgroup.isClosed_normalizer`: the normalizer of a closed subset is closed.
@@ -214,24 +219,16 @@ theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
 /-- **An open subgroup has the same index in a dense subgroup.** If `f : G' →* G` has dense range
 and `U` is an open subgroup of a group `G` with continuous left translations, then the preimage of
 `U` has the same index in `G'` as `U` has in `G`: the range of `f` meets every coset of `U`, since
-the cosets are open.
-
-The proof is adapted from Mathlib's `Subgroup.index_comap_of_surjective`. -/
+the cosets are open, so the coset-space map `TauCeti.QuotientGroup.mapComap` is a bijection. -/
 theorem index_comap_of_denseRange [ContinuousConstSMul G G] {G' : Type*} [Group G'] {f : G' →* G}
     (hf : DenseRange f) {U : Subgroup G} (hU : IsOpen (U : Set G)) :
     (U.comap f).index = U.index := by
-  have key (x y : G') :
-      QuotientGroup.leftRel (U.comap f) x y ↔ QuotientGroup.leftRel U (f x) (f y) := by
-    simp only [QuotientGroup.leftRel_apply, mem_comap, map_mul, map_inv]
-  refine Nat.card_congr (Equiv.ofBijective (Quotient.map' f fun x y ↦ (key x y).1) ⟨?_, ?_⟩)
-  · refine Quotient.ind' fun x ↦ Quotient.ind' fun y h ↦ ?_
-    exact Quotient.sound' ((key x y).2 (Quotient.exact' h))
-  · -- The coset `g U` is open and nonempty, so it meets the dense range of `f`.
-    refine Quotient.ind' fun g ↦ ?_
-    obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.smul g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
-    refine ⟨Quotient.mk'' x, Quotient.sound' ?_⟩
-    rw [QuotientGroup.leftRel_apply]
-    simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)
+  refine Nat.card_congr (TauCeti.QuotientGroup.congrComapOfSurjectiveMk f U fun q ↦ ?_)
+  -- The coset `g U` is open and nonempty, so it meets the dense range of `f`.
+  induction q using QuotientGroup.induction_on with | H g =>
+  obtain ⟨x, hx⟩ := hf.exists_mem_open (hU.smul g) ⟨g, mem_own_leftCoset U.toSubmonoid g⟩
+  refine ⟨x, QuotientGroup.eq.2 ?_⟩
+  simpa [mem_leftCoset_iff] using U.inv_mem ((mem_leftCoset_iff g).1 hx)
 
 variable [IsTopologicalGroup G]
 
@@ -322,6 +319,16 @@ theorem isCompact_conj_smul [ContinuousMul G] (g : G) {H : Subgroup G}
     (hH : IsCompact (H : Set G)) : IsCompact ((MulAut.conj g • H : Subgroup G) : Set G) := by
   rw [coe_pointwise_smul, ← Set.image_smul]
   exact hH.image (by simp only [MulAut.smul_def, MulAut.conj_apply]; fun_prop)
+
+omit [IsTopologicalGroup G] in
+/-- In a group with separately continuous multiplication, a conjugate `g H g⁻¹` of a subgroup `H`
+is open exactly when `H` is, since conjugation by `g` is a homeomorphism. -/
+theorem isOpen_map_conj_iff [SeparatelyContinuousMul G] (g : G) {H : Subgroup G} :
+    IsOpen (H.map (MulAut.conj g : G →* G) : Set G) ↔ IsOpen (H : Set G) := by
+  rw [coe_map]
+  convert (Homeomorph.smul (ConjAct.toConjAct g)).isOpen_image (s := (H : Set G)) using 2
+  ext h
+  simp [ConjAct.toConjAct_smul]
 
 omit [IsTopologicalGroup G] in
 open scoped Pointwise in
@@ -447,6 +454,16 @@ theorem _root_.ContinuousMulEquiv.map_topologicalClosure_normalClosure (α : G �
     _ = _ := by
       rw [map_normalClosure s α.toMulEquiv.toMonoidHom α.surjective]
       congr 2
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- The powers of `e x` are relatively compact exactly when the powers of `x` are, for a
+topological group isomorphism `e`. -/
+theorem _root_.ContinuousMulEquiv.isCompact_closure_zpowers_iff (e : G ≃ₜ* H) (x : G) :
+    IsCompact (_root_.closure (zpowers (e x) : Set H)) ↔
+      IsCompact (_root_.closure (zpowers x : Set G)) := by
+  have hs : (zpowers (e x) : Set H) = e.toHomeomorph '' zpowers x :=
+    congrArg SetLike.coe (MonoidHom.map_zpowers (e : G →* H) x).symm
+  rw [hs, ← e.toHomeomorph.image_closure, e.toHomeomorph.isCompact_image]
 
 open scoped commutatorElement in
 /-- A closed subgroup containing the commutators `⁅A, B⁆` contains the commutators

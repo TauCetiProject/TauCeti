@@ -29,6 +29,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   representatives.
 * `TauCeti.MulAction.mk_eq_iff_mem_orbit_out`: a point lies in an orbit exactly when it lies in
   the orbit of the chosen representative `Quotient.out`.
+* `TauCeti.MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq`: two points have the same
+  orbit class exactly when one is a translate of the other.
 * `TauCeti.MulAction.exists_smul_out_eq`: every point of an orbit is a translate of the chosen
   representative `Quotient.out` of that orbit.
 * `TauCeti.MulAction.injOn_quotientMk_slice`: if the slice map `(g, s) ↦ g • σ s` is injective
@@ -97,6 +99,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
   quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
   (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
+* `MulAction.orbitRel.Quotient.instMulActionOfSMulCommClass`: an action commuting with that of
+  `K` acts on the space of `K`-orbits by translating representatives
+  (`MulAction.orbitRel.Quotient.smul_mk`, `MulAction.orbitRel.Quotient.smul_comp_mk`,
+  `MulAction.orbitRel.Quotient.smul_comp_prodMap_mk`), and its additive version.
 * `TauCeti.AddAction.orbitRelQuotientEquivMultiplicative` and
   `TauCeti.MulAction.orbitRelQuotientEquivAdditive`: the canonical equivalences of orbit spaces
   identifying an action of `G` with the corresponding action of `Multiplicative G` or `Additive G`.
@@ -170,6 +176,13 @@ lemma MulAction.transversalEquivOrbitRelQuotient_symm_mk_mem_orbit {s : Set X}
     ((MulAction.transversalEquivOrbitRelQuotient hex hfix).symm (Quotient.mk'' x) : X) ∈
       MulAction.orbit G x :=
   Quotient.exact <| (MulAction.transversalEquivOrbitRelQuotient hex hfix).apply_symm_apply _
+
+/-- Two points have the same orbit class exactly when one is a translate of the other. -/
+@[to_additive
+/-- Two points have the same orbit class exactly when one is a translate of the other. -/]
+lemma MulAction.quotientMk_eq_quotientMk_iff_exists_smul_eq {x y : X} :
+    Quotient.mk (MulAction.orbitRel G X) x = Quotient.mk _ y ↔ ∃ g : G, g • x = y := by
+  rw [eq_comm, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
 
 /-- Equality of bottom-subgroup orbit classes is equality of representatives. -/
 @[simp]
@@ -1000,6 +1013,61 @@ instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P
     induction g' using QuotientGroup.induction_on with | H g' =>
     induction x using Quotient.inductionOn' with
     | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
+
+end MulAction.orbitRel.Quotient
+
+/-! ### Commuting actions on orbit spaces -/
+
+namespace MulAction.orbitRel.Quotient
+
+variable {L K Z : Type*} [Group K] [MulAction K Z]
+
+/-- An action on `Z` commuting with the action of `K` acts on the space of `K`-orbits, by
+translating representatives. -/
+@[to_additive /-- An additive action on `Z` commuting with the additive action of `K` acts on the
+space of `K`-orbits, by translating representatives. -/]
+instance instSMulOfSMulCommClass [SMul L Z] [SMulCommClass L K Z] :
+    SMul L (orbitRel.Quotient K Z) where
+  smul l := Quotient.map (l • ·) fun _ z' hz ↦ by
+    obtain ⟨k, rfl⟩ := MulAction.orbitRel_apply.1 hz
+    exact MulAction.orbitRel_apply.2 ⟨k, (smul_comm l k z').symm⟩
+
+/-- The action of a commuting action on `K`-orbits is computed on representatives. -/
+@[to_additive (attr := simp) /-- The action of a commuting additive action on `K`-orbits is
+computed on representatives. -/]
+theorem smul_mk [SMul L Z] [SMulCommClass L K Z] (l : L) (z : Z) :
+    l • Quotient.mk (orbitRel K Z) z = Quotient.mk (orbitRel K Z) (l • z) :=
+  rfl
+
+/-- The orbit projection intertwines a commuting action with its action on `K`-orbits. -/
+@[to_additive /-- The orbit projection intertwines a commuting additive action with its action on
+`K`-orbits. -/]
+theorem smul_comp_mk [SMul L Z] [SMulCommClass L K Z] (l : L) :
+    (fun q : orbitRel.Quotient K Z ↦ l • q) ∘ Quotient.mk (orbitRel K Z) =
+      Quotient.mk (orbitRel K Z) ∘ fun z : Z ↦ l • z :=
+  rfl
+
+/-- The orbit projection intertwines a commuting action, viewed as a map on pairs, with its
+action on `K`-orbits. -/
+@[to_additive vadd_comp_prodMap_mk /-- The orbit projection intertwines a commuting additive
+action, viewed as a map on pairs, with its action on `K`-orbits. -/]
+theorem smul_comp_prodMap_mk [SMul L Z] [SMulCommClass L K Z] :
+    (fun p : L × orbitRel.Quotient K Z ↦ p.1 • p.2) ∘ Prod.map id (Quotient.mk (orbitRel K Z)) =
+      Quotient.mk (orbitRel K Z) ∘ fun p : L × Z ↦ p.1 • p.2 :=
+  rfl
+
+/-- A monoid action on `Z` commuting with the action of `K` descends to a monoid action on the
+space of `K`-orbits. -/
+@[to_additive /-- An additive monoid action on `Z` commuting with the additive action of `K`
+descends to an additive monoid action on the space of `K`-orbits. -/]
+instance instMulActionOfSMulCommClass [Monoid L] [MulAction L Z] [SMulCommClass L K Z] :
+    MulAction L (orbitRel.Quotient K Z) where
+  one_smul q := by
+    induction q using Quotient.inductionOn with
+    | h z => rw [smul_mk, one_smul]
+  mul_smul l l' q := by
+    induction q using Quotient.inductionOn with
+    | h z => rw [smul_mk, smul_mk, smul_mk, mul_smul]
 
 end MulAction.orbitRel.Quotient
 

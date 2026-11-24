@@ -52,6 +52,8 @@ type tags (`Multiplicative.properSMul`, `Additive.properVAdd`).
   the image come from the smaller group.
 * `Continuous.properSMul`: a continuous action on a Hausdorff space which a continuous map
   intertwines with a proper action is proper.
+* `ProperSMul.prod_of_smul_eq`: a factorwise action of a product of groups, each acting properly
+  on its factor, is proper.
 -/
 
 public section
@@ -212,3 +214,24 @@ instance properSMul_prod {G X Y : Type*} [Group G] [TopologicalSpace G] [MulActi
       ((continuous_fst.tendsto _).comp hp))
 
 end TauCeti
+
+/-- **Products of proper actions are proper.** If `G` acts properly on `X` and `K` acts properly on
+`Y`, then an action of `G × K` on `X × Y` acting factorwise, `(g, k) • (x, y) = (g • x, k • y)`,
+is proper: up to reordering the factors, its map `((g, k), (x, y)) ↦ ((g, k) • (x, y), (x, y))` is
+the product of the proper maps of the two actions. -/
+@[to_additive /-- **Products of proper additive actions are proper.** If `G` acts properly on `X`
+and `K` acts properly on `Y`, then an additive action of `G × K` on `X × Y` acting factorwise,
+`(g, k) +ᵥ (x, y) = (g +ᵥ x, k +ᵥ y)`, is proper. -/]
+theorem ProperSMul.prod_of_smul_eq {G K X Y : Type*} [Group G] [Group K] [TopologicalSpace G]
+    [TopologicalSpace K] [TopologicalSpace X] [TopologicalSpace Y] [MulAction G X]
+    [MulAction K Y] [ProperSMul G X] [ProperSMul K Y] [MulAction (G × K) (X × Y)]
+    (hsmul : ∀ (g : G × K) (p : X × Y), g • p = (g.1 • p.1, g.2 • p.2)) :
+    ProperSMul (G × K) (X × Y) where
+  isProperMap_smul_pair := by
+    have h := ((Homeomorph.prodProdProdComm X X Y Y).isProperMap.comp
+      ((ProperSMul.isProperMap_smul_pair (G := G) (X := X)).prodMap
+        (ProperSMul.isProperMap_smul_pair (G := K) (X := Y)))).comp
+      (Homeomorph.prodProdProdComm G K X Y).isProperMap
+    convert h using 1
+    funext ⟨⟨g, k⟩, x, y⟩
+    simp [hsmul, Homeomorph.prodProdProdComm]

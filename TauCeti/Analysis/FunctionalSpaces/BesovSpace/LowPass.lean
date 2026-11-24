@@ -75,6 +75,16 @@ theorem lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
     u.lowPass (m + 1) = u.lowPass m + u.block m := by
   simp [lowPass_eq_sum, Finset.sum_range_succ]
 
+/-- **The low-frequency cut-offs of a single block.** If every block of `u` other than `Δₘ u`
+vanishes, then `S_n u = Δₘ u` for `n > m` and `S_n u = 0` for `n ≤ m`. -/
+theorem lowPass_eq_ite_of_block_eq_zero {u : BesovSpace F φ s p q} {m : ℕ}
+    (hu : ∀ k, k ≠ m → u.block k = 0) (n : ℕ) :
+    u.lowPass n = if m < n then u.block m else 0 := by
+  rw [lowPass_eq_sum]
+  split_ifs with hmn
+  · exact Finset.sum_eq_single_of_mem m (Finset.mem_range.2 hmn) fun k _ hk ↦ hu k hk
+  · exact Finset.sum_eq_zero fun k hk ↦ hu k (by rw [Finset.mem_range] at hk; omega)
+
 @[simp]
 theorem lowPass_zero (m : ℕ) : (0 : BesovSpace F φ s p q).lowPass m = 0 := by
   simp [lowPass_eq_sum]
@@ -98,18 +108,18 @@ theorem lowPass_sub (u v : BesovSpace F φ s p q) (m : ℕ) :
     (u - v).lowPass m = u.lowPass m - v.lowPass m := by
   simp [lowPass_eq_sum]
 
-/-- The `Lᵖ` function `u.lowPass m` is the sum `∑_{k < m} Δₖ u` of the Littlewood–Paley blocks of
+/-- The `Lᵖ` function `u.lowPass m` is the low-frequency truncation `S_m u = ∑_{k < m} Δₖ u` of
 the tempered distribution of `u`. -/
 @[simp]
 theorem coe_lowPass (u : BesovSpace F φ s p q) (m : ℕ) :
-    (u.lowPass m : 𝓢'(E, F)) = ∑ k ∈ Finset.range m, littlewoodPaleyBlock F φ k u.toDistr := by
-  simp [lowPass_eq_sum]
+    (u.lowPass m : 𝓢'(E, F)) = littlewoodPaleyLowPass F φ m u.toDistr := by
+  simp [lowPass_eq_sum, littlewoodPaleyLowPass_apply]
 
 /-- The low-frequency cut-off `S_{m+1}` is the Fourier multiplier by `φ (2^{-m} ·)`. -/
 theorem coe_lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
     (u.lowPass (m + 1) : 𝓢'(E, F)) =
       fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ m)⁻¹ • ξ) : ℂ)) u.toDistr := by
-  rw [coe_lowPass, ← _root_.sum_apply, sum_littlewoodPaleyBlock_range]
+  rw [coe_lowPass, littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM]
 
 /-- Elements of two Besov spaces with the same tempered distribution have the same low-frequency
 cut-offs. -/
@@ -123,7 +133,7 @@ outside the closed ball of radius `2^m φ.rOut`. -/
 theorem isVanishingOn_fourier_lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
     IsVanishingOn (𝓕 (u.lowPass (m + 1) : 𝓢'(E, F)) : 𝓢'(E, F))
       (closedBall 0 (2 ^ m * φ.rOut))ᶜ := by
-  rw [coe_lowPass]
+  rw [coe_lowPass, littlewoodPaleyLowPass_apply]
   exact isVanishingOn_fourier_sum_littlewoodPaleyBlock φ
     (fun k hk ↦ Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) _
 
@@ -136,7 +146,7 @@ theorem exists_littlewoodPaleyBlock_lowPass_eq_zero :
   refine ⟨L, fun u m k hk ↦ ?_⟩
   rcases m with _ | N
   · simp
-  · rw [coe_lowPass]
+  · rw [coe_lowPass, littlewoodPaleyLowPass_apply]
     exact (hL k N).2 (by omega) u.toDistr
 
 /-- If every block `Δⱼ u` is a limit of Schwartz functions in `Lᵖ`, then so is every
@@ -156,7 +166,7 @@ theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
     ‖u.lowPass m‖ ≤ (∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖f‖ := by
   rcases m with _ | m
   · simpa using mul_nonneg (MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg f)
-  obtain ⟨g, hg, hgf⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ m f
+  obtain ⟨g, hg, hgf⟩ := exists_littlewoodPaleyLowPass_succ_eq_and_norm_le φ m f
   -- `S_{m+1} u` and `g` are the same tempered distribution, hence the same `Lᵖ` function.
   have h : u.lowPass (m + 1) = g :=
     LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
