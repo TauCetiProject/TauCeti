@@ -1,0 +1,130 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Basic
+import Mathlib.Analysis.Complex.OpenMapping
+
+/-!
+# Uniqueness of the Poisson representation of a positive harmonic function
+
+A nonnegative harmonic function `u` on the upper half-plane `ℂ₊` is `u(z) = c Im z + P[ν](z)` for
+a constant `c` and a Poisson-finite measure `ν` (Garnett, *Bounded analytic functions*, Ch. I §3).
+This file proves that the pair `(c, ν)` is unique
+(`TauCeti.eq_and_eq_of_mul_im_add_upperHalfPlanePoissonIntegral_eq`).
+
+For a representation `(c, ν)` the function `F(z) = c z + i S[ν](z)`, with `S[ν]` the Schwarz
+integral, is holomorphic on `ℂ₊` with imaginary part `c Im z + P[ν](z)` and real part `0` at `i`.
+Two such functions with the same imaginary part differ by a holomorphic function with real values,
+which is constant by the open mapping theorem, hence zero. Since
+`i S[ν](z) = (1 / π) ∫ ((x - z)⁻¹ - x / (1 + x ^ 2)) dν(x)`, uniqueness of the Herglotz
+representation (`TauCeti.eq_and_eq_of_eq_subtractedResolventKernel_add`,
+`TauCeti.eq_of_eq_subtractedResolventKernel_add`) gives `c = c'` and `ν / π = ν' / π`.
+
+## Main results
+
+* `TauCeti.eq_and_eq_of_mul_im_add_upperHalfPlanePoissonIntegral_eq`: uniqueness of `(c, ν)`.
+
+## References
+
+* J. B. Garnett, *Bounded analytic functions*, Ch. I, §3.
+-/
+
+public section
+
+open Complex MeasureTheory Set
+
+open scoped Real ENNReal
+
+namespace TauCeti
+
+/-- A holomorphic function on the upper half-plane with real values is constant. -/
+private theorem eqOn_const_of_im_eq_zero {G : ℂ → ℂ}
+    (hG : DifferentiableOn ℂ G UpperHalfPlane.upperHalfPlaneSet)
+    (him : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, (G z).im = 0) :
+    ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, G z = G I := by
+  have hU := UpperHalfPlane.isOpen_upperHalfPlaneSet
+  have hI : I ∈ UpperHalfPlane.upperHalfPlaneSet := by
+    simp [UpperHalfPlane.upperHalfPlaneSet]
+  rcases (hG.analyticOnNhd hU).is_constant_or_isOpen
+      (convex_halfSpace_im_gt 0).isPreconnected with ⟨w, hw⟩ | hopen
+  · exact fun z hz ↦ (hw z hz).trans (hw I hI).symm
+  · -- The image of `ℂ₊` would be an open subset of the real axis containing `G i`.
+    exfalso
+    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp (hopen _ subset_rfl hU) (G I) ⟨I, hI, rfl⟩
+    obtain ⟨z, hz, hGz⟩ := hball (show G I + (ε / 2 : ℝ) * I ∈ Metric.ball (G I) ε by
+      simp [abs_of_pos hε, hε])
+    have := him z hz
+    rw [hGz] at this
+    simp [him I hI] at this
+    linarith
+
+/-- The function `F(z) = c z + i S[ν](z)` attached to a representation `(c, ν)`. -/
+private noncomputable def reprFun (c : ℝ) (ν : Measure ℝ) (z : ℂ) : ℂ :=
+  c * z + I * upperHalfPlaneSchwarzIntegral ν z
+
+private theorem differentiableOn_reprFun (c : ℝ) (ν : Measure ℝ) :
+    DifferentiableOn ℂ (reprFun c ν) UpperHalfPlane.upperHalfPlaneSet :=
+  ((differentiableOn_id.const_mul _).add
+    ((differentiableOn_upperHalfPlaneSchwarzIntegral ν).const_mul _))
+
+private theorem im_reprFun (c : ℝ) (ν : Measure ℝ) (z : ℂ) :
+    (reprFun c ν z).im = c * z.im + upperHalfPlanePoissonIntegral ν z := by
+  simp [reprFun, re_upperHalfPlaneSchwarzIntegral]
+
+private theorem re_reprFun_I (c : ℝ) (ν : Measure ℝ) : (reprFun c ν I).re = 0 := by
+  simp [reprFun]
+
+/-- `F(z) = c z + (1 / π) ∫ ((x - z)⁻¹ - x / (1 + x ^ 2)) dν(x)`, a Herglotz representation with
+measure `ν / π`. -/
+private theorem reprFun_eq (c : ℝ) (ν : Measure ℝ) (z : ℂ) :
+    reprFun c ν z = (0 : ℝ) + c * z + ∫ x, subtractedResolventKernel z x
+      ∂(ENNReal.ofReal π⁻¹ • ν) := by
+  rw [reprFun, upperHalfPlaneSchwarzIntegral_def, integral_smul_measure,
+    ENNReal.toReal_ofReal (by positivity), ← mul_assoc, mul_inv, ← mul_assoc,
+    mul_comm I, mul_assoc _ I, mul_inv_cancel₀ I_ne_zero, mul_one]
+  simp [Complex.real_smul, ofReal_inv]
+
+/-- The measure `ν / π` has finite weighted mass when `ν` is Poisson-finite. -/
+private theorem lintegral_lt_top_smul {ν : Measure ℝ} (hν : IsPoissonFinite ν) :
+    ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂(ENNReal.ofReal π⁻¹ • ν) < ⊤ := by
+  rw [lintegral_smul_measure]
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top ((isPoissonFinite_iff_lintegral_lt_top ν).1 hν)
+
+/-- **Uniqueness of the Poisson representation of a positive harmonic function.** If
+`c Im z + P[ν](z) = c' Im z + P[ν'](z)` on the upper half-plane for Poisson-finite measures `ν`
+and `ν'`, then `c = c'` and `ν = ν'`. -/
+theorem eq_and_eq_of_mul_im_add_upperHalfPlanePoissonIntegral_eq {c c' : ℝ} {ν ν' : Measure ℝ}
+    (hν : IsPoissonFinite ν) (hν' : IsPoissonFinite ν')
+    (h : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      c * z.im + upperHalfPlanePoissonIntegral ν z =
+        c' * z.im + upperHalfPlanePoissonIntegral ν' z) :
+    c = c' ∧ ν = ν' := by
+  -- The two holomorphic functions differ by a real constant, which vanishes at `i`.
+  have hconst := eqOn_const_of_im_eq_zero
+    ((differentiableOn_reprFun c ν).sub (differentiableOn_reprFun c' ν'))
+    fun z hz ↦ by simp [im_reprFun, h z hz]
+  have hI : reprFun c ν I - reprFun c' ν' I = 0 := by
+    apply Complex.ext
+    · simp [re_reprFun_I]
+    · have := h I (by simp [UpperHalfPlane.upperHalfPlaneSet])
+      simp only [I_im, mul_one] at this
+      simp [im_reprFun, this]
+  have hF : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, reprFun c ν z = reprFun c' ν' z :=
+    fun z hz ↦ sub_eq_zero.mp ((hconst z hz).trans hI)
+  have hrep := fun z (_ : z ∈ UpperHalfPlane.upperHalfPlaneSet) ↦ reprFun_eq c ν z
+  have hrep' := fun z (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) ↦
+    (hF z hz).trans (reprFun_eq c' ν' z)
+  refine ⟨(eq_and_eq_of_eq_subtractedResolventKernel_add hrep hrep').2, ?_⟩
+  have hsmul := eq_of_eq_subtractedResolventKernel_add (lintegral_lt_top_smul hν)
+    (lintegral_lt_top_smul hν') hrep hrep'
+  have hπ : ENNReal.ofReal π⁻¹ ≠ 0 := by simp [Real.pi_pos]
+  ext s _
+  have := congrArg (fun μ : Measure ℝ ↦ μ s) hsmul
+  simp only [smul_apply, smul_eq_mul] at this
+  exact (ENNReal.mul_right_inj hπ ENNReal.ofReal_ne_top).mp this
+
+end TauCeti
