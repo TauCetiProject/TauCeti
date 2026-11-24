@@ -19,8 +19,9 @@ projections `πX : X' ⟶ X` and `πY : Y' ⟶ Y`, and an `S`-partial map `f : X
 Its base change `f' = AlgebraicGeometry.Scheme.PartialMap.baseChange`, defined on `V' = πX⁻¹(V)`,
 is the base change of the morphism `f_V : V ⟶ Y` along `πY`: the square with `πX ∣_ V`, `f'_{V'}`,
 `f_V` and `πY` is cartesian. This file draws two consequences, which for a field extension
-`K'/K` and a geometrically irreducible `X` say that `f_{K'}` is dominant when `f` is, and that
-`Γ_{f_{K'}} = (Γ_f)_{K'}`.
+`K'/K` say that `f_{K'}` is dominant when `f` is and `X` is geometrically irreducible, and that,
+when `X` is Noetherian, the closure of the relative graph of `f_{K'}` in `X_{K'} ×_{K'} Y_{K'}` is
+the base change of the closure of the relative graph of `f` in `X ×_K Y`.
 
 * *Dominance.* When `p` is universally open (for instance `Spec K' ⟶ Spec K`), `πY` is an open map
   and the base change of the dominant `f_V` is dominant
@@ -36,7 +37,9 @@ is the base change of the morphism `f_V : V ⟶ Y` along `πY`: the square with 
   `γ_f` is quasi-compact, flat base change of scheme-theoretic images
   (`AlgebraicGeometry.Scheme.Hom.ker_eq_comap_of_isPullback_of_flat`) shows that the ideal sheaf of
   the graph closure of `f'` is the pullback of that of `f`: `Γ_{f'} = (Γ_f)_{S'}` as closed
-  subschemes of `X' ×_{S'} Y' = (X ×_S Y) ×_S S'`.
+  subschemes of `X' ×_{S'} Y' = (X ×_S Y) ×_S S'`. Here `Γ_f` is the scheme-theoretic closure of
+  the relative graph `γ_f` in `X ×_S Y`, not `AlgebraicGeometry.Scheme.RationalMap.graph`, which is
+  the graph closure in the absolute product `X × Y`.
 
 ## Main results
 
