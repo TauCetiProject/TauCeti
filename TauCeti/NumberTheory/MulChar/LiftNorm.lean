@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Norm.Defs
 import Mathlib.FieldTheory.Finite.GaloisField
 import Mathlib.RingTheory.Norm.Basic
 import TauCeti.FieldTheory.Finite.EulerCriterion
+import TauCeti.RingTheory.Norm.Units
 
 /-!
 # Lifting multiplicative characters through the norm
@@ -69,7 +70,7 @@ multiplicative character `χ` of `F`, the character `χ ∘ N_{E/F}` of `E`. It 
 homomorphism `x ↦ χ (N_{E/F} x)` on `Eˣ`; for a finite-dimensional extension of fields it is
 `χ ∘ N_{E/F}` everywhere (`MulChar.liftNorm_apply`). -/
 noncomputable def liftNorm (χ : MulChar F R) : MulChar E R :=
-  ofUnitHom (χ.toUnitHom.comp (Units.map (Algebra.norm F : E →* F)))
+  ofUnitHom (χ.toUnitHom.comp (TauCeti.Algebra.normUnits F))
 
 variable {E}
 
@@ -77,7 +78,7 @@ variable {E}
 @[simp]
 theorem liftNorm_apply_coe (χ : MulChar F R) (x : Eˣ) :
     χ.liftNorm E x = χ (Algebra.norm F (x : E)) := by
-  rw [liftNorm, ofUnitHom_coe, MonoidHom.comp_apply, coe_toUnitHom, Units.coe_map]
+  rw [liftNorm, ofUnitHom_coe, MonoidHom.comp_apply, coe_toUnitHom, TauCeti.Algebra.coe_normUnits]
 
 variable (E)
 
@@ -85,7 +86,7 @@ variable (E)
 @[simp]
 theorem liftNorm_one : (1 : MulChar F R).liftNorm E = 1 := by
   ext x
-  rw [liftNorm_apply_coe, one_apply_coe, ← Units.coe_map, one_apply_coe]
+  rw [liftNorm_apply_coe, one_apply_coe, ← TauCeti.Algebra.coe_normUnits, one_apply_coe]
 
 /-- Lifting is multiplicative. -/
 @[simp]
@@ -174,13 +175,15 @@ theorem exists_liftNorm_eq_iff_forall_norm_eq_one {χ' : MulChar E R} :
   · rintro ⟨χ, rfl⟩ x hx
     rw [liftNorm_apply_coe, hx, map_one]
   -- Factor the unit homomorphism of `χ'` through the surjective norm `Eˣ → Fˣ`.
-  let N : Eˣ →* Fˣ := Units.map (Algebra.norm F : E →* F)
+  let N : Eˣ →* Fˣ := TauCeti.Algebra.normUnits F
   have hker : N.ker ≤ χ'.toUnitHom.ker := fun x hx ↦ by
     rw [MonoidHom.mem_ker, ← Units.val_eq_one, coe_toUnitHom]
     exact h x (by simpa [N, Units.ext_iff] using hx)
-  refine ⟨ofUnitHom (N.liftOfSurjective (FiniteField.unitsMap_norm_surjective F E)
-    ⟨χ'.toUnitHom, hker⟩), ext fun x ↦ ?_⟩
-  rw [liftNorm_apply_coe, ← Units.coe_map (Algebra.norm F : E →* F), ofUnitHom_coe]
+  have hN : Function.Surjective N := fun u ↦ by
+    obtain ⟨x, rfl⟩ := FiniteField.unitsMap_norm_surjective F E u
+    exact ⟨x, Units.ext (by simp [N])⟩
+  refine ⟨ofUnitHom (N.liftOfSurjective hN ⟨χ'.toUnitHom, hker⟩), ext fun x ↦ ?_⟩
+  rw [liftNorm_apply_coe, ← TauCeti.Algebra.coe_normUnits, ofUnitHom_coe]
   exact congrArg Units.val
     (N.liftOfRightInverse_comp_apply _ _ ⟨χ'.toUnitHom, hker⟩ x) |>.trans (coe_toUnitHom χ' x)
 
@@ -192,7 +195,7 @@ theorem exists_liftNorm_eq_iff {χ' : MulChar E R} :
   rw [exists_liftNorm_eq_iff_forall_norm_eq_one]
   refine ⟨fun h ↦ ext fun x ↦ ?_, fun h x hx ↦ ?_⟩
   · -- `x ^ (#F - 1)` has norm `N(x) ^ (#F - 1) = 1`.
-    have hx : (Units.map (Algebra.norm F : E →* F) x) ^ (Nat.card F - 1) = 1 := by
+    have hx : (TauCeti.Algebra.normUnits F x) ^ (Nat.card F - 1) = 1 := by
       rw [← Nat.card_units, pow_card_eq_one']
     rw [pow_apply_coe, one_apply_coe, ← map_pow, ← Units.val_pow_eq_pow_val]
     exact h _ (by simpa [Units.ext_iff] using hx)
