@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.Analysis.Matrix.Eigenvalues.KyFan
+import TauCeti.Analysis.Calculus.FDeriv.Matrix
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
@@ -71,27 +72,6 @@ namespace Matrix
 
 variable {𝕜 n E : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   [NormedAddCommGroup E] [NormedSpace ℝ E] {M : E → Matrix n n 𝕜} {x₀ : E}
-
-/-- The sorted eigenvalues of a family of Hermitian matrices whose entries are differentiable at
-`x₀` move by `O(‖x - x₀‖)`. -/
-private theorem isBigO_eigenvalues₀_sub (hM : ∀ x, (M x).IsHermitian)
-    (hMd : ∀ a b, DifferentiableAt ℝ (fun x ↦ M x a b) x₀) :
-    (fun x ↦ (hM x).eigenvalues₀ - (hM x₀).eigenvalues₀) =O[𝓝 x₀] fun x ↦ x - x₀ := by
-  set ε : E → ℝ := fun x ↦ ∑ a, ∑ b, ‖M x a b - M x₀ a b‖
-  have hεO : ε =O[𝓝 x₀] fun x ↦ ‖x - x₀‖ :=
-    IsBigO.fun_sum fun a _ ↦ IsBigO.fun_sum fun b _ ↦
-      (hMd a b).hasFDerivAt.isBigO_sub.norm_left.norm_right
-  refine IsBigO.of_norm_right (IsBigO.trans ?_ hεO)
-  refine IsBigO.of_bound (Fintype.card n) (Eventually.of_forall fun x ↦ ?_)
-  have hε : 0 ≤ ε x := sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ norm_nonneg _
-  rw [Real.norm_of_nonneg hε]
-  refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ ?_
-  rw [Pi.sub_apply, Real.norm_eq_abs]
-  -- Each entry of `M x - M x₀` is bounded by the sum `ε x` of all of them.
-  refine (hM x).abs_eigenvalues₀_sub_le_of_entry_le (hM x₀) (fun a b ↦ ?_) i
-  exact (single_le_sum (f := fun b ↦ ‖M x a b - M x₀ a b‖) (fun _ _ ↦ norm_nonneg _)
-    (mem_univ b)).trans (single_le_sum (f := fun a ↦ ∑ b, ‖M x a b - M x₀ a b‖)
-      (fun _ _ ↦ sum_nonneg fun _ _ ↦ norm_nonneg _) (mem_univ a))
 
 /-- **Weighted sums of sorted eigenvalues are differentiable when the weights are constant on
 eigenvalue clusters** (Lewis 1996, Lemma 2.2). Let `M` be a family of Hermitian matrices whose
@@ -206,23 +186,6 @@ open scoped Matrix.Norms.Frobenius
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
 
-omit [Fintype ι] [DecidableEq ι] in
-/-- The entries of a Hermitian matrix depend linearly, hence differentiably, on the matrix. -/
-private theorem differentiableAt_selfAdjoint_apply [Finite ι] (a b : ι)
-    (A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) :
-    DifferentiableAt ℝ (fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦ (B : Matrix ι ι 𝕜) a b) A ∧
-      ∀ H : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜), fderiv ℝ
-        (fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦ (B : Matrix ι ι 𝕜) a b) A H =
-          (H : Matrix ι ι 𝕜) a b := by
-  let := Fintype.ofFinite ι
-  have h : HasFDerivAt
-      (fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦ (B : Matrix ι ι 𝕜) a b)
-      (LinearMap.toContinuousLinearMap
-        (entryLinearMap ℝ 𝕜 a b ∘ₗ (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)).subtype)) A :=
-    (LinearMap.toContinuousLinearMap
-      (entryLinearMap ℝ 𝕜 a b ∘ₗ (selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)).subtype)).hasFDerivAt
-  exact ⟨h.differentiableAt, fun H ↦ by simp [h.fderiv]⟩
-
 /-- **Lewis's theorem**, differentiability (Lewis 1996, Theorem 1.1). For a symmetric function `f`
 on `ℝⁿ`, the spectral function `A ↦ f(λ(A))` on the real vector space of Hermitian matrices is
 differentiable at `A` if and only if `f` is differentiable at the sorted eigenvalue vector
@@ -259,14 +222,17 @@ theorem differentiableAt_spectralFunction_iff
     have hΦA : Φ A.property.isHermitian.eigenvalues₀ = A := by
       refine Subtype.ext ?_
       conv_rhs => rw [A.property.isHermitian.spectral_theorem]
-      simp [Φ, U, Unitary.conjStarAlgAut_apply, IsHermitian.eigenvalues, e, Function.comp_def]
+      have he (k : ι) : A.property.isHermitian.eigenvalues₀ (e.symm k) =
+          A.property.isHermitian.eigenvalues k := by
+        rw [← A.property.isHermitian.eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
+      simp [Φ, U, Unitary.conjStarAlgAut_apply, he, Function.comp_def]
     have hc := (hΦA ▸ h).comp _ (LinearMap.toContinuousLinearMap Φ).differentiableAt
     simpa [Function.comp_def, hΦ] using hc
   · obtain ⟨u, hu⟩ := A.property.isHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul
     exact (hasFDerivAt_spectralFunction
       (M := fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦ (B : Matrix ι ι 𝕜))
       (fun B ↦ B.property.isHermitian)
-      (fun a b ↦ (differentiableAt_selfAdjoint_apply a b A).1) hf h u hu).differentiableAt
+      (fun a b ↦ (hasFDerivAt_selfAdjoint_apply a b A).differentiableAt) hf h u hu).differentiableAt
 
 /-- **Lewis's theorem**, the gradient formula on Hermitian matrices. If `f` is symmetric and
 differentiable at `λ(A)`, the derivative of the spectral function `B ↦ f(λ(B))` at `A` in the
@@ -284,15 +250,20 @@ theorem fderiv_spectralFunction_selfAdjoint_apply
       f B.property.isHermitian.eigenvalues₀) A H =
       ∑ j, fderiv ℝ f A.property.isHermitian.eigenvalues₀ (Pi.single j 1) *
         RCLike.re (star ⇑(u j) ⬝ᵥ ((H : Matrix ι ι 𝕜) *ᵥ ⇑(u j))) := by
-  refine (fderiv_spectralFunction_apply
+  -- The matrix of entrywise derivatives in the direction `H` is `H`. The goal carries the
+  -- Frobenius-norm topology, which agrees with the entrywise topology of
+  -- `Matrix.hasFDerivAt_selfAdjoint_apply` only after unfolding instances, so `rw` and `simp` do
+  -- not match it; cast along `hH` with `▸`, which checks the match by unfolding.
+  have hH : (of fun a b ↦ fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦
+      (B : Matrix ι ι 𝕜) a b) A H) = H :=
+    ext fun a b ↦ by
+      simp only [of_apply, (hasFDerivAt_selfAdjoint_apply a b A).fderiv,
+        LinearMap.coe_toContinuousLinearMap', LinearMap.coe_comp, Submodule.coe_subtype,
+        Function.comp_apply, entryLinearMap_apply]
+  exact hH ▸ fderiv_spectralFunction_apply
     (M := fun B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) ↦ (B : Matrix ι ι 𝕜))
     (fun B ↦ B.property.isHermitian)
-    (fun a b ↦ (differentiableAt_selfAdjoint_apply a b A).1) hf hfA u hu H).trans ?_
-  -- The matrix of entrywise derivatives in the direction `H` is `H`. Rewriting does not fire on
-  -- the entrywise derivatives of this goal, so descend to the matrix with `congr`.
-  refine sum_congr rfl fun j _ ↦ ?_
-  congr 4
-  exact Matrix.ext fun a b ↦ (differentiableAt_selfAdjoint_apply a b A).2 H
+    (fun a b ↦ (hasFDerivAt_selfAdjoint_apply a b A).differentiableAt) hf hfA u hu H
 
 end SelfAdjoint
 
