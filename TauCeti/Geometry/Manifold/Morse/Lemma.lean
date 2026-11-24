@@ -251,6 +251,23 @@ theorem injOn_toChart_symm_coord_symm_splitCoord_symm :
   φ.splitCoord.symm.injective (φ.coord.symm.injective
     (φ.toChart.symm.injOn (by simpa using hz) (by simpa using hz') h))
 
+variable (φ) in
+/-- A point of the chart is read back from its split coordinates. -/
+theorem toChart_symm_coord_symm_splitCoord_symm_splitCoord_coord_toChart {y : M}
+    (hy : y ∈ φ.toChart.source) :
+    φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (φ.splitCoord (φ.coord (φ.toChart y))))) =
+      y := by
+  rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hy]
+
+variable (φ) in
+/-- The point with given split coordinates in the chart has these split coordinates. -/
+theorem splitCoord_coord_toChart_toChart_symm_coord_symm_splitCoord_symm
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
+    φ.splitCoord (φ.coord (φ.toChart (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))))) =
+      z := by
+  rw [φ.toChart.right_inv hz, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
 /-- **Above the critical value on the entrance face.** At a point of the chart whose contracting
 split coordinate has norm `ε` and whose expanding one is small, `f` exceeds `f x`. -/
 theorem lt_apply_of_norm_fst_eq {ε : ℝ}
@@ -356,6 +373,39 @@ theorem splitCoordL_symm_apply
     (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))) :
     φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
   (rfl)
+
+/-- The split coordinates of the points of `M` through a Morse chart are continuous at the points
+of the chart. -/
+theorem continuousAt_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    ContinuousAt (fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))) y :=
+  (φ.splitCoordL.continuous.continuousAt.comp (φ.toChart.continuousAt hy)).congr
+    (.of_forall fun _ ↦ φ.splitCoordL_apply _)
+
+/-- The norm of the contracting split coordinate of the points of `M` through a Morse chart is
+continuous at the points of the chart. -/
+theorem tendsto_norm_fst_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    Filter.Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖) (𝓝 y)
+      (𝓝 ‖(φ.splitCoord (φ.coord (φ.toChart y))).fst‖) :=
+  ((WithLp.continuous_fst 2 _ _).norm.continuousAt.comp
+    (φ.continuousAt_splitCoord_coord_toChart hy)).tendsto
+
+/-- The norm of the expanding split coordinate of the points of `M` through a Morse chart is
+continuous at the points of the chart. -/
+theorem tendsto_norm_snd_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    Filter.Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) (𝓝 y)
+      (𝓝 ‖(φ.splitCoord (φ.coord (φ.toChart y))).snd‖) :=
+  ((WithLp.continuous_snd 2 _ _).norm.continuousAt.comp
+    (φ.continuousAt_splitCoord_coord_toChart hy)).tendsto
+
+/-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
+points of the chart. -/
+theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
+    ContinuousAt (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) z :=
+  (φ.toChart.continuousAt_symm hz).comp (f := fun z ↦ φ.coord.symm (φ.splitCoord.symm z))
+    ((φ.splitCoordL.symm.continuous.continuousAt (x := z)).congr
+      (.of_forall fun _ ↦ φ.splitCoordL_symm_apply _))
 
 end MorseChart
 

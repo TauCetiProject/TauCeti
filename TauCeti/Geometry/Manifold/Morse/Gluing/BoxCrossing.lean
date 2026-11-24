@@ -32,6 +32,8 @@ theorem `TauCeti.exists_homeomorph_closure_splitGluingPairs`.
 
 * `TauCeti.IsAdaptedPseudoGradient.eq_of_flow_eq_of_mem_splitPassage_source`: an orbit meets the
   entrance face near the stable plane at most once.
+* `TauCeti.IsAdaptedPseudoGradient.eq_of_flow_eq_of_norm_fst_eq`: the same, allowing points of the
+  stable plane itself, whose orbits never leave the box.
 * `TauCeti.IsAdaptedPseudoGradient.splitPassage_splitEntryTime_eq_splitExitTime`: the passage map
   sends the model entrance point of a trajectory near a broken one to its model exit point.
 
@@ -230,6 +232,65 @@ theorem splitPassage_splitEntryTime_eq_splitExitTime (hX : IsAdaptedPseudoGradie
     hX.eq_of_flow_eq_of_mem_splitPassage_source φ hφ hε₁ hE ((splitPassage ε).map_target hQ)
       (by rwa [hEsnd]) (by rwa [norm_snd_splitPassage_symm hQ, hQfst]) hantiE horb
   exact ⟨hE, by rw [hEz, (splitPassage ε).right_inv hQ]⟩
+
+/-- **An orbit meets the entrance face of a Morse box once.** Let `X` be linear in the Morse chart
+`φ` at `x`, whose coordinate cube of radius `ε` lies in the chart and on which the stable set of
+`x` is the plane `v = 0`. Two points `z`, `z'` of the entrance face `‖u‖ = ε` of the box, whose
+expanding coordinates are small enough that `f` exceeds `f x` there, and which lie on one orbit
+along which `f` strictly decreases, are equal. Unlike `eq_of_flow_eq_of_mem_splitPassage_source`,
+they may lie on the stable plane `v = 0`, where the orbit stays in the box and never returns to
+the face. -/
+theorem eq_of_flow_eq_of_norm_fst_eq (hX : IsAdaptedPseudoGradient f X)
+    (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε : ℝ} (hε : 0 < ε) (hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
+    (hloc : ∀ z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)),
+      ‖z.fst‖ ≤ ε → ‖z.snd‖ ≤ ε →
+        (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) ∈ hX.flow.stableSet x ↔ z.snd = 0))
+    {z z' : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : ‖z.fst‖ = ε) (hz' : ‖z'.fst‖ = ε) (hzs : ‖z.snd‖ ≤ ε) (hzs' : ‖z'.snd‖ ≤ ε)
+    (hn : Module.finrank ℝ E * ‖z.snd‖ ^ 2 < ε ^ 2)
+    (hn' : Module.finrank ℝ E * ‖z'.snd‖ ^ 2 < ε ^ 2)
+    (hanti : StrictAnti fun t ↦
+      f (hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)))))
+    {t : ℝ} (ht : hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) =
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z'))) :
+    z = z' := by
+  -- On the stable plane the orbit of a point of the face stays in the box, closer to the centre.
+  have hplane {a b : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+      (ha : ‖a.fst‖ = ε) (has : a.snd = 0) (hb : ‖b.fst‖ = ε) (hbs : ‖b.snd‖ ≤ ε) {s : ℝ}
+      (hs : 0 ≤ s) (hab : hX.flow s (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm a))) =
+        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm b))) : a = b := by
+    have hbox : ∀ r ∈ uIcc 0 s, ‖(splitQuadraticFlow r a).fst‖ ≤ ε ∧
+        ‖(splitQuadraticFlow r a).snd‖ ≤ ε := fun r hr ↦ by
+      rw [uIcc_of_le hs] at hr
+      rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow, ha, has, norm_zero, mul_zero]
+      exact ⟨mul_le_of_le_one_left hε.le (Real.exp_le_one_iff.2 (by linarith [hr.1])), hε.le⟩
+    rw [hX.flow_toChart_symm_splitCoord_symm φ hφ hε₁ hbox] at hab
+    have hab' := φ.injOn_toChart_symm_coord_symm_splitCoord_symm
+      (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε₁
+        (hbox s right_mem_uIcc).1 (hbox s right_mem_uIcc).2)
+      (MorseChart.coord_symm_splitCoord_symm_mem_target_of_norm_le hε₁ hb.le hbs) hab
+    have hn := congrArg (fun w ↦ ‖w.fst‖) hab'
+    simp only [norm_fst_splitQuadraticFlow, ha, hb] at hn
+    have hs0 : s = 0 := by
+      have h1 : Real.exp (-s) = 1 := (mul_eq_right₀ hε.ne').1 hn
+      linarith [Real.exp_eq_one_iff (-s) |>.1 h1]
+    rwa [hs0, Flow.map_zero_apply] at hab'
+  by_cases hs : z.snd = 0
+  · have hs' : z'.snd = 0 := by
+      rw [← hloc z' hz'.le hzs', ← ht]
+      exact (Flow.apply_mem_stableSet_iff _ _).2 ((hloc z hz.le hzs).2 hs)
+    rcases le_total 0 t with h0 | h0
+    · exact hplane hz hs hz' hzs' h0 ht
+    · refine (hplane hz' hs' hz hzs (neg_nonneg.2 h0) ?_).symm
+      rw [← ht, Flow.map_neg_apply_map]
+  · have hs' : z'.snd ≠ 0 := fun h0 ↦ hs ((hloc z hz.le hzs).1
+      ((Flow.apply_mem_stableSet_iff _ t).1 (by rw [ht]; exact (hloc z' hz'.le hzs').2 h0)))
+    exact hX.eq_of_flow_eq_of_mem_splitPassage_source φ hφ hε₁
+      (mem_splitPassage_source.2 ⟨hz, hs, hzs⟩) (mem_splitPassage_source.2 ⟨hz', hs', hzs'⟩)
+      hn hn' hanti ht
 
 end IsAdaptedPseudoGradient
 
