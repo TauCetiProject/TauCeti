@@ -206,15 +206,10 @@ theorem IsFundamentalClass.isFundamentalClass_smul_iff [T1Space M] [Nonempty M] 
   rw [map_smul] at hrv
   obtain ⟨s, hs⟩ := Submodule.mem_span_singleton.1
     (hrv.symm ▸ Submodule.mem_top : singularHomologyToLocalHomology N x _ μ ∈ _)
-  -- `s * r` fixes the image of `μ`, hence every multiple of it, that is every local class.
-  have hsr (z : (localHomology N ({x} : Set M) (finrank ℝ E) : ModuleCat.{w} R)) :
-      (s * r) • z = z := by
-    obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 (hv.symm ▸ Submodule.mem_top : z ∈ _)
-    rw [smul_comm (s * r) t, mul_smul, hs]
   let e := (singularHomologyComplSingletonFinrankIso N (chartAt E x)
     (mem_chart_source E x)).toLinearEquiv
-  refine IsUnit.of_mul_eq_one_right s (FaithfulSMul.eq_of_smul_eq_smul fun y : N ↦ ?_)
-  rw [one_smul, ← e.apply_symm_apply y, ← map_smul, hsr]
+  exact IsUnit.of_mul_eq_one_right s
+    (e.eq_one_of_smul_eq_self_of_span_singleton_eq_top hv (by rw [mul_smul, hs]))
 
 include hn in
 /-- **Fundamental classes over a division ring.** On a nonempty compact connected `n`-manifold, a
@@ -279,16 +274,7 @@ def IsFundamentalClass.linearEquivOfLinearEquiv [T2Space M] [CompactSpace M] [Co
     k ≃ₗ[k] ((TopCat.toSSet.obj (TopCat.of M)).homology R n : ModuleCat.{w} k) :=
   let h := hμ.exists_linearEquiv_isUnit hn eR
   let u := h.choose_spec.unit
-  { toFun := fun r ↦ h.choose.symm (r * (u : k))
-    invFun := fun γ ↦ h.choose γ * (↑u⁻¹ : k)
-    left_inv := fun r ↦ by
-      simp only [LinearEquiv.apply_symm_apply, mul_assoc, Units.mul_inv, mul_one]
-    right_inv := fun γ ↦ h.choose.injective <| by
-      simp only [LinearEquiv.apply_symm_apply, mul_assoc, Units.inv_mul, mul_one]
-    map_add' := fun r s ↦ by simp [add_mul]
-    map_smul' := fun c r ↦ by
-      simp only [RingHom.id_apply, smul_eq_mul, mul_assoc]
-      exact map_smul h.choose.symm c (r * (u : k)) }
+  (u.mulRightLinearEquiv k).trans h.choose.symm
 
 @[simp]
 theorem IsFundamentalClass.linearEquivOfLinearEquiv_apply [T2Space M] [CompactSpace M]
@@ -296,9 +282,8 @@ theorem IsFundamentalClass.linearEquivOfLinearEquiv_apply [T2Space M] [CompactSp
     (eR : R ≃ₗ[k] k) {μ : ((TopCat.toSSet.obj (TopCat.of M)).homology R n : ModuleCat.{w} k)}
     (hμ : IsFundamentalClass μ) (r : k) :
     hμ.linearEquivOfLinearEquiv hn eR r = r • μ := by
-  simp only [linearEquivOfLinearEquiv, LinearEquiv.coe_mk, IsUnit.unit_spec, ← smul_eq_mul,
-    map_smul, LinearEquiv.symm_apply_apply]
-  rfl
+  simp only [linearEquivOfLinearEquiv, LinearEquiv.trans_apply, Units.mulRightLinearEquiv_apply,
+    IsUnit.unit_spec, ← smul_eq_mul, map_smul, LinearEquiv.symm_apply_apply]
 
 /-- **Normalized rank-one equivalence from a fundamental class** for ring coefficients `R`. -/
 def IsFundamentalClass.linearEquiv [T2Space M] [CompactSpace M] [ConnectedSpace M] {R : Type w}

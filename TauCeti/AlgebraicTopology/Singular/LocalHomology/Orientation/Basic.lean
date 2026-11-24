@@ -117,20 +117,13 @@ lemma LocalOrientation.coe_neg {M : Type w} [TopologicalSpace M] {x : M} {d : �
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) = -z.val :=
   (rfl)
 
-/-- With coefficients `ULift ℤ`, `IsModuleLocalOrientation` matches `IsLocalOrientation`. -/
-theorem isModuleLocalOrientation_iff_isLocalOrientation {M : Type w} [TopologicalSpace M]
-    (x : M) (d : ℕ) (z : ↑(localHomology (ModuleCat.of ℤ (ULift.{w} ℤ)) {x} d)) :
-    IsModuleLocalOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) x d z ↔ IsLocalOrientation x d z := by
-  rw [isModuleLocalOrientation_iff, Submodule.span_singleton_eq_top_iff, isLocalOrientation_iff]
-  exact forall_congr' fun _ ↦ exists_congr fun c ↦
-    iff_of_eq (congrArg (· = _) (int_smul_eq_zsmul _ c _))
-
 namespace ModuleLocalOrientation
 
 /-- With coefficients `ULift ℤ`, local module orientations match `TauCeti.LocalOrientation`. -/
 def equivLocalOrientation (M : Type w) [TopologicalSpace M] (x : M) (d : ℕ) :
     ModuleLocalOrientation (ModuleCat.of ℤ (ULift.{w} ℤ)) M x d ≃ LocalOrientation M x d :=
-  Equiv.subtypeEquivRight (isModuleLocalOrientation_iff_isLocalOrientation x d)
+  Equiv.subtypeEquivRight fun z ↦
+    (isModuleLocalOrientation_iff _ x d z).trans (isLocalOrientation_iff_span_eq_top x d z).symm
 
 @[simp]
 lemma coe_equivLocalOrientation {M : Type w} [TopologicalSpace M] (x : M) (d : ℕ)
