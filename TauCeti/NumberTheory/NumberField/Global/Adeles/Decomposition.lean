@@ -48,16 +48,8 @@ def awayEquiv (hS : S.Finite) :
   toFun x := ((FiniteAdeleRing.awayEquiv R K hS x.2).1,
     (x.1, (FiniteAdeleRing.awayEquiv R K hS x.2).2))
   invFun y := (y.2.1, (FiniteAdeleRing.awayEquiv R K hS).symm (y.1, y.2.2))
-  left_inv x := by
-    change (x.1, (FiniteAdeleRing.awayEquiv R K hS).symm
-      ((FiniteAdeleRing.awayEquiv R K hS x.2).1, (FiniteAdeleRing.awayEquiv R K hS x.2).2)) = x
-    rw [Prod.mk.eta, ContinuousAlgEquiv.symm_apply_apply]
-    rfl
-  right_inv y := by
-    change ((FiniteAdeleRing.awayEquiv R K hS ((FiniteAdeleRing.awayEquiv R K hS).symm
-      (y.1, y.2.2))).1, (y.2.1, (FiniteAdeleRing.awayEquiv R K hS
-        ((FiniteAdeleRing.awayEquiv R K hS).symm (y.1, y.2.2))).2)) = y
-    rw [ContinuousAlgEquiv.apply_symm_apply]
+  left_inv x := by simp [-FiniteAdeleRing.awayEquiv_apply_snd]
+  right_inv y := by simp
   -- `AdeleRing R K` is a type synonym of the product, so the components of a sum or a product of
   -- adeles are the sums or products of the components only by definition
   map_add' x y := by

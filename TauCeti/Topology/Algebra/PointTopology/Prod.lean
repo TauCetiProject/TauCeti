@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Prod
-public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Topology.Algebra.PointTopology.Group
 
@@ -25,10 +24,12 @@ The forward map is the pair of coefficient changes along the two projections, so
 multiplicative because `AlgHom.mapValue` is. Its continuity is that of the projections, and the
 inverse is continuous because each value of the paired point is the pair of values.
 
-The same holds for an arbitrary product `∀ i, R i` of coefficient algebras: the identification of
-Mathlib's `AlgHom.piValueMulEquiv` is an isomorphism of topological monoids. Together with the
-isomorphism of topological monoids of points induced by an isomorphism of topological coefficient
-algebras, these transport a decomposition of a coefficient ring into a product to the points.
+The same holds for an arbitrary product `∀ i, R i` of coefficient algebras: the identification
+`AlgHom.piValueMulEquiv` is an isomorphism of topological monoids, and so is the combined
+identification for a product `(∀ i, A i) × B`. Together with the isomorphism of topological monoids
+of points induced by an isomorphism of topological coefficient algebras
+(`ContinuousAlgEquiv.mapValueContinuousMulEquiv`), these transport a decomposition of a coefficient
+ring into a product to the points.
 
 This is how the points of an algebraic group over the adele ring `𝔸_K = K_∞ × 𝔸_{K,f}` split into
 archimedean and finite components, and those over the finite adeles into the components at a finite
@@ -40,8 +41,8 @@ set of places and the components away from it.
   points, as topological monoids.
 * `TauCeti.PointTopology.piContinuousMulEquiv`: points with values in `∀ i, R i` are families of
   points, as topological monoids.
-* `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: an isomorphism of topological coefficient
-  algebras induces an isomorphism of topological monoids of points.
+* `TauCeti.PointTopology.piProdContinuousMulEquiv`: points with values in `(∀ i, A i) × B` are
+  pairs of a family of points and a point, as topological monoids.
 
 ## References
 
@@ -104,7 +105,7 @@ variable (k H) in
 /-- Points with values in a product `∀ i, R i` of coefficient algebras are families of points, as
 topological monoids for the convolution product and the point topology: a point is sent to its
 images under the projections, and a family of points `x` to the point `h ↦ (x i h)_i`. This is
-Mathlib's `AlgHom.piValueMulEquiv` with its continuity in both directions. -/
+`AlgHom.piValueMulEquiv` with its continuity in both directions. -/
 noncomputable def piContinuousMulEquiv :
     WithConv (H →ₐ[k] ∀ i, R i) ≃ₜ* ∀ i, WithConv (H →ₐ[k] R i) where
   toMulEquiv := AlgHom.piValueMulEquiv
@@ -127,48 +128,35 @@ theorem piContinuousMulEquiv_symm_apply_apply (x : ∀ i, WithConv (H →ₐ[k] 
     ((piContinuousMulEquiv k H R).symm x).ofConv h i = (x i).ofConv h :=
   AlgHom.piValueMulEquiv_symm_apply x h i
 
+variable (B : Type*) [CommSemiring B] [Algebra k B] [TopologicalSpace B]
+
+variable (k H) in
+/-- Points with values in a product `(∀ i, R i) × B` of coefficient algebras are pairs of a family
+of points and a point, as topological monoids: `prodContinuousMulEquiv` followed by
+`piContinuousMulEquiv` on the first factor. -/
+noncomputable def piProdContinuousMulEquiv :
+    WithConv (H →ₐ[k] (∀ i, R i) × B) ≃ₜ* (∀ i, WithConv (H →ₐ[k] R i)) × WithConv (H →ₐ[k] B) :=
+  (prodContinuousMulEquiv k H _ B).trans
+    { toMulEquiv := MulEquiv.prodCongr (piContinuousMulEquiv k H R).toMulEquiv (MulEquiv.refl _)
+      continuous_toFun := (piContinuousMulEquiv k H R).continuous.prodMap continuous_id
+      continuous_invFun := (piContinuousMulEquiv k H R).symm.continuous.prodMap continuous_id }
+
+theorem piProdContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] (∀ i, R i) × B)) :
+    piProdContinuousMulEquiv k H R B x =
+      (piContinuousMulEquiv k H R (AlgHom.mapValue (AlgHom.fst k (∀ i, R i) B) x),
+        AlgHom.mapValue (AlgHom.snd k (∀ i, R i) B) x) :=
+  (rfl)
+
+@[simp]
+theorem piProdContinuousMulEquiv_apply_fst (x : WithConv (H →ₐ[k] (∀ i, R i) × B)) (i : ι)
+    (h : H) : ((piProdContinuousMulEquiv k H R B x).1 i).ofConv h = (x.ofConv h).1 i := by
+  simp [piProdContinuousMulEquiv_apply]
+
+@[simp]
+theorem piProdContinuousMulEquiv_apply_snd (x : WithConv (H →ₐ[k] (∀ i, R i) × B)) (h : H) :
+    (piProdContinuousMulEquiv k H R B x).2.ofConv h = (x.ofConv h).2 := by
+  simp [piProdContinuousMulEquiv_apply]
+
 end Pi
 
 end TauCeti.PointTopology
-
-section Equiv
-
-variable {k H R₁ R₂ : Type*} [CommSemiring k] [Semiring H] [Bialgebra k H]
-  [CommSemiring R₁] [Algebra k R₁] [TopologicalSpace R₁]
-  [CommSemiring R₂] [Algebra k R₂] [TopologicalSpace R₂]
-
-/-- An isomorphism `e : R₁ ≃A[k] R₂` of topological coefficient algebras induces, by
-post-composition, an isomorphism of topological monoids of points
-`WithConv (H →ₐ[k] R₁) ≃ₜ* WithConv (H →ₐ[k] R₂)`; it is Mathlib's `AlgEquiv.mapValueMulEquiv`
-with its continuity in both directions. -/
-noncomputable def ContinuousAlgEquiv.mapValueContinuousMulEquiv (e : R₁ ≃A[k] R₂) :
-    WithConv (H →ₐ[k] R₁) ≃ₜ* WithConv (H →ₐ[k] R₂) where
-  toMulEquiv := e.toAlgEquiv.mapValueMulEquiv
-  continuous_toFun := by
-    change Continuous fun x ↦ e.toAlgEquiv.mapValueMulEquiv x
-    simp only [AlgEquiv.mapValueMulEquiv_apply]
-    exact AlgHom.continuous_mapValue (H₁ := H) e.continuous
-  continuous_invFun := by
-    change Continuous fun x ↦ e.toAlgEquiv.mapValueMulEquiv.symm x
-    simp only [AlgEquiv.mapValueMulEquiv_symm_apply]
-    exact AlgHom.continuous_mapValue (H₁ := H) e.symm.continuous
-
-@[simp]
-theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply_apply (e : R₁ ≃A[k] R₂)
-    (x : WithConv (H →ₐ[k] R₁)) (h : H) :
-    (e.mapValueContinuousMulEquiv x).ofConv h = e (x.ofConv h) := by
-  change (e.toAlgEquiv.mapValueMulEquiv x).ofConv h = _
-  simp only [AlgEquiv.mapValueMulEquiv_apply, AlgHom.mapValue_apply, ofConv_toConv,
-    AlgHom.comp_apply]
-  rfl
-
-@[simp]
-theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm_apply_apply (e : R₁ ≃A[k] R₂)
-    (x : WithConv (H →ₐ[k] R₂)) (h : H) :
-    (e.mapValueContinuousMulEquiv.symm x).ofConv h = e.symm (x.ofConv h) := by
-  change (e.toAlgEquiv.mapValueMulEquiv.symm x).ofConv h = _
-  simp only [AlgEquiv.mapValueMulEquiv_symm_apply, AlgHom.mapValue_apply, ofConv_toConv,
-    AlgHom.comp_apply]
-  rfl
-
-end Equiv

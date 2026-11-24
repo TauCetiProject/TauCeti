@@ -105,6 +105,12 @@ def restrictAwayRingHom : FiniteAdeleRing R K →+* Away R K S :=
     (fun v : {v : HeightOneSpectrum R // v ∉ S} ↦ v.val.adicCompletion K) Subtype.val
     Subtype.val_injective.tendsto_cofinite (fun _ ↦ RingHom.id _) (.of_forall fun _ _ hx ↦ hx)
 
+@[simp]
+theorem restrictAwayRingHom_apply (x : FiniteAdeleRing R K)
+    (v : {v : HeightOneSpectrum R // v ∉ S}) :
+    restrictAwayRingHom R K S x v = x v :=
+  (rfl)
+
 /-- The finite adele ring away from `S` is a `K`-algebra through the diagonal embedding of `K`
 followed by forgetting the coordinates at `S`. -/
 instance Away.instAlgebra : Algebra K (Away R K S) :=
@@ -164,16 +170,18 @@ def awayEquiv (hS : S.Finite) :
   left_inv := (addDecomposition R K hS).left_inv
   right_inv := (addDecomposition R K hS).right_inv
   map_add' := (addDecomposition R K hS).map_add'
+  -- `TauCeti.addAwayDecomposition` is stated for `TauCeti.RestrictedProductAddGroup`, of which
+  -- `FiniteAdeleRing R K` and `Away R K S` are type synonyms, so `change` restates each component
+  -- of the goal at the synonyms, where multiplication is coordinatewise
+  -- (`FiniteAdeleRing.mul_apply`).
   map_mul' x y := by
     refine Prod.ext (funext fun v ↦ ?_) (Away.ext fun v ↦ ?_)
     · change (addDecomposition R K hS (x * y)).1 v =
         (addDecomposition R K hS x).1 v * (addDecomposition R K hS y).1 v
-      simp only [addDecomposition_fst]
-      rfl
+      simp only [addDecomposition_fst, FiniteAdeleRing.mul_apply]
     · change (addDecomposition R K hS (x * y)).2 v =
         (addDecomposition R K hS x).2 v * (addDecomposition R K hS y).2 v
-      simp only [addDecomposition_snd]
-      rfl
+      simp only [addDecomposition_snd, FiniteAdeleRing.mul_apply]
   commutes' c := by
     refine Prod.ext (funext fun v ↦ ?_) (Away.ext fun v ↦ ?_)
     · exact addDecomposition_fst R K hS (algebraMap K (FiniteAdeleRing R K) c) v

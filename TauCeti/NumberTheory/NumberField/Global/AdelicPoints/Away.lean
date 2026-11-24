@@ -48,8 +48,8 @@ places is `TauCeti.AdelicPoints.prodContinuousMulEquiv`.
 * `TauCeti.AdelicPoints.finiteAwayContinuousMulEquiv_finiteDiagonal`,
   `TauCeti.AdelicPoints.awayContinuousMulEquiv_diagonal`: the rational diagonal goes to the pair
   of diagonals.
-* `TauCeti.AdelicPoints.bijective_finiteAwayProjection_empty`,
-  `TauCeti.AdelicPoints.bijective_awayProjection_empty`: splitting off no places.
+* `TauCeti.AdelicPoints.finiteAwayProjection_empty_bijective`,
+  `TauCeti.AdelicPoints.awayProjection_empty_bijective`: splitting off no places.
 
 ## References
 
@@ -97,6 +97,17 @@ def awayProjection : AdelicPoints R K H →* AwayPoints R K H S :=
 variable {R K H S}
 
 @[simp]
+theorem finiteAwayDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
+    finiteAwayDiagonal R K H S g h = algebraMap K (FiniteAdeleRing.Away R K S) (g h) := by
+  simp [finiteAwayDiagonal]
+
+@[simp]
+theorem awayDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
+    awayDiagonal R K H S g h =
+      algebraMap K (InfiniteAdeleRing K × FiniteAdeleRing.Away R K S) (g h) := by
+  simp [awayDiagonal]
+
+@[simp]
 theorem finiteAwayProjection_apply_apply (x : FiniteAdelicPoints R K H) (h : H) :
     (finiteAwayProjection R K H S x).ofConv h = FiniteAdeleRing.restrictAway K S (x.ofConv h) := by
   simp [finiteAwayProjection]
@@ -105,8 +116,9 @@ theorem finiteAwayProjection_apply_apply (x : FiniteAdelicPoints R K H) (h : H) 
 theorem awayProjection_apply_apply (x : AdelicPoints R K H) (h : H) :
     (awayProjection R K H S x).ofConv h =
       ((x.ofConv h).1, FiniteAdeleRing.restrictAway K S (x.ofConv h).2) := by
-  simp only [awayProjection, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
-  rfl
+  simp only [awayProjection, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+    AlgHom.prod_apply, ContinuousAlgHom.coe_coe]
+  rw [AlgHom.fst_apply, AlgHom.snd_apply]
 
 @[fun_prop]
 theorem continuous_finiteAwayProjection : Continuous (finiteAwayProjection R K H S) :=
@@ -123,7 +135,7 @@ image away from `S`. -/
 theorem finiteAwayProjection_finiteDiagonal (g : WithConv (H →ₐ[K] K)) :
     finiteAwayProjection R K H S (finiteDiagonal R K H g) = finiteAwayDiagonal R K H S g := by
   ext h
-  simp [finiteAwayDiagonal]
+  simp
 
 /-- The projection away from `S` of the diagonal image of a rational point is its diagonal image
 away from `S`. -/
@@ -131,43 +143,9 @@ away from `S`. -/
 theorem awayProjection_diagonal (g : WithConv (H →ₐ[K] K)) :
     awayProjection R K H S (diagonal R K H g) = awayDiagonal R K H S g := by
   refine WithConv.ofConv_injective (AlgHom.ext fun h ↦ ?_)
-  simp only [awayProjection_apply_apply, diagonal_apply_apply, awayDiagonal,
-    AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply, Algebra.ofId_apply,
-    AdeleRing.algebraMap_snd_def, AdeleRing.algebraMap_fst_def, AlgHomClass.commutes,
-    Prod.algebraMap_apply]
+  simp [AdeleRing.algebraMap_fst_def, AdeleRing.algebraMap_snd_def, AlgHomClass.commutes]
 
 /-! ### The splittings -/
-
-/-- Points over a product with a factor that is a product of coefficient rings. -/
-private def piProdContinuousMulEquiv {ι : Type*} (A : ι → Type*) [∀ i, CommRing (A i)]
-    [∀ i, Algebra K (A i)] [∀ i, TopologicalSpace (A i)] (B : Type*) [CommRing B] [Algebra K B]
-    [TopologicalSpace B] :
-    WithConv (H →ₐ[K] (∀ i, A i) × B) ≃ₜ* (∀ i, WithConv (H →ₐ[K] A i)) × WithConv (H →ₐ[K] B) :=
-  (PointTopology.prodContinuousMulEquiv K H _ B).trans
-    { toMulEquiv := MulEquiv.prodCongr (PointTopology.piContinuousMulEquiv K H A).toMulEquiv
-        (MulEquiv.refl _)
-      continuous_toFun := (PointTopology.piContinuousMulEquiv K H A).continuous.prodMap
-        continuous_id
-      continuous_invFun := (PointTopology.piContinuousMulEquiv K H A).symm.continuous.prodMap
-        continuous_id }
-
-private theorem piProdContinuousMulEquiv_apply_fst {ι : Type*} (A : ι → Type*)
-    [∀ i, CommRing (A i)] [∀ i, Algebra K (A i)] [∀ i, TopologicalSpace (A i)] (B : Type*)
-    [CommRing B] [Algebra K B] [TopologicalSpace B] (x : WithConv (H →ₐ[K] (∀ i, A i) × B))
-    (i : ι) (h : H) :
-    ((piProdContinuousMulEquiv A B x).1 i).ofConv h = (x.ofConv h).1 i := by
-  simp only [piProdContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
-    PointTopology.prodContinuousMulEquiv_apply, AlgHom.mapValue_apply]
-  exact PointTopology.piContinuousMulEquiv_apply_apply A _ i h
-
-private theorem piProdContinuousMulEquiv_apply_snd {ι : Type*} (A : ι → Type*)
-    [∀ i, CommRing (A i)] [∀ i, Algebra K (A i)] [∀ i, TopologicalSpace (A i)] (B : Type*)
-    [CommRing B] [Algebra K B] [TopologicalSpace B] (x : WithConv (H →ₐ[K] (∀ i, A i) × B))
-    (h : H) :
-    (piProdContinuousMulEquiv A B x).2.ofConv h = (x.ofConv h).2 := by
-  simp only [piProdContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
-    PointTopology.prodContinuousMulEquiv_apply, AlgHom.mapValue_apply]
-  rfl
 
 variable (R K H) in
 /-- For a finite set `S` of finite places, the splitting
@@ -176,7 +154,7 @@ its components at the places of `S` and its projection away from `S`. -/
 def finiteAwayContinuousMulEquiv (hS : S.Finite) :
     FiniteAdelicPoints R K H ≃ₜ* (∀ v : S, LocalPoints R K H v.val) × FiniteAwayPoints R K H S :=
   (FiniteAdeleRing.awayEquiv R K hS).mapValueContinuousMulEquiv.trans
-    (piProdContinuousMulEquiv _ _)
+    (PointTopology.piProdContinuousMulEquiv K H _ _)
 
 variable (R K H) in
 /-- For a finite set `S` of finite places, the splitting `G(𝔸_K) ≃ₜ* G(K_S) × G(𝔸_K^S)` of the
@@ -184,7 +162,8 @@ adelic points, with `G(K_S) = ∏_{v ∈ S} G(K_v)`, sending a point to its comp
 of `S` and its projection away from `S`. -/
 def awayContinuousMulEquiv (hS : S.Finite) :
     AdelicPoints R K H ≃ₜ* (∀ v : S, LocalPoints R K H v.val) × AwayPoints R K H S :=
-  (AdeleRing.awayEquiv R K hS).mapValueContinuousMulEquiv.trans (piProdContinuousMulEquiv _ _)
+  (AdeleRing.awayEquiv R K hS).mapValueContinuousMulEquiv.trans
+    (PointTopology.piProdContinuousMulEquiv K H _ _)
 
 variable (hS : S.Finite)
 
@@ -193,8 +172,7 @@ variable (hS : S.Finite)
 theorem finiteAwayContinuousMulEquiv_apply_fst (x : FiniteAdelicPoints R K H) (v : S) :
     (finiteAwayContinuousMulEquiv R K H hS x).1 v = finiteLocalProjection R K H v.val x := by
   refine WithConv.ofConv_injective (AlgHom.ext fun h ↦ ?_)
-  simp [finiteAwayContinuousMulEquiv, piProdContinuousMulEquiv_apply_fst]
-
+  simp [finiteAwayContinuousMulEquiv]
 
 /-- The component away from `S` of the splitting of a finite adelic point is its projection away
 from `S`. -/
@@ -202,15 +180,14 @@ from `S`. -/
 theorem finiteAwayContinuousMulEquiv_apply_snd (x : FiniteAdelicPoints R K H) :
     (finiteAwayContinuousMulEquiv R K H hS x).2 = finiteAwayProjection R K H S x := by
   refine WithConv.ofConv_injective (AlgHom.ext fun h ↦ ?_)
-  simp [finiteAwayContinuousMulEquiv, piProdContinuousMulEquiv_apply_snd]
-
+  simp [finiteAwayContinuousMulEquiv]
 
 /-- The component at `v ∈ S` of the splitting of an adelic point is its local component `p_v`. -/
 @[simp]
 theorem awayContinuousMulEquiv_apply_fst (x : AdelicPoints R K H) (v : S) :
     (awayContinuousMulEquiv R K H hS x).1 v = localProjection R K H v.val x := by
   refine WithConv.ofConv_injective (AlgHom.ext fun h ↦ ?_)
-  simp [awayContinuousMulEquiv, piProdContinuousMulEquiv_apply_fst]
+  simp [awayContinuousMulEquiv]
 
 /-- The component away from `S` of the splitting of an adelic point is its projection away from
 `S`. -/
@@ -218,7 +195,7 @@ theorem awayContinuousMulEquiv_apply_fst (x : AdelicPoints R K H) (v : S) :
 theorem awayContinuousMulEquiv_apply_snd (x : AdelicPoints R K H) :
     (awayContinuousMulEquiv R K H hS x).2 = awayProjection R K H S x := by
   refine WithConv.ofConv_injective (AlgHom.ext fun h ↦ ?_)
-  simp [awayContinuousMulEquiv, piProdContinuousMulEquiv_apply_snd]
+  simp [awayContinuousMulEquiv]
 
 /-- The splitting of the finite adelic points sends the finite diagonal image of a rational point
 to the pair of its local images at the places of `S` and its diagonal image away from `S`. -/
@@ -240,7 +217,7 @@ theorem awayContinuousMulEquiv_diagonal (g : WithConv (H →ₐ[K] K)) :
 
 /-- Splitting off no places retains the finite adelic points: the projection
 `G(𝔸_{K,f}) → G(𝔸_{K,f}^∅)` is bijective. -/
-theorem bijective_finiteAwayProjection_empty :
+theorem finiteAwayProjection_empty_bijective :
     Function.Bijective (finiteAwayProjection R K H ∅) := by
   let e := finiteAwayContinuousMulEquiv R K H Set.finite_empty
   refine ⟨fun x y hxy ↦ e.injective (Prod.ext (Subsingleton.elim _ _) ?_), fun z ↦
@@ -251,7 +228,7 @@ theorem bijective_finiteAwayProjection_empty :
 
 /-- Splitting off no places retains the adelic points: the projection `G(𝔸_K) → G(𝔸_K^∅)` is
 bijective. -/
-theorem bijective_awayProjection_empty : Function.Bijective (awayProjection R K H ∅) := by
+theorem awayProjection_empty_bijective : Function.Bijective (awayProjection R K H ∅) := by
   let e := awayContinuousMulEquiv R K H Set.finite_empty
   refine ⟨fun x y hxy ↦ e.injective (Prod.ext (Subsingleton.elim _ _) ?_), fun z ↦
     ⟨e.symm (isEmptyElim, z), ?_⟩⟩

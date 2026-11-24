@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
@@ -35,7 +36,9 @@ bialgebra map `H₁ → H₂` induces the continuous homomorphism `BialgHom.mapD
 `H₂` to those of `H₁`, and a continuous algebra map `R → R'` of coefficients induces the continuous
 homomorphism `AlgHom.mapValue`. Since the group of points carries the point topology of the
 underlying homomorphisms, `AlgHom.mapValue ψ` is an embedding or a closed embedding whenever `ψ`
-is, and an open embedding when `ψ` is and the coordinate algebra is of finite type.
+is, and an open embedding when `ψ` is and the coordinate algebra is of finite type. An
+isomorphism of topological coefficient algebras induces an isomorphism of topological monoids of
+points.
 
 ## Main declarations
 
@@ -50,6 +53,8 @@ is, and an open embedding when `ψ` is and the coordinate algebra is of finite t
 * `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
   `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
   or open embedding of coefficient rings.
+* `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: change of coefficients along an isomorphism of
+  topological coefficient algebras, as an isomorphism of topological monoids of points.
 
 ## References
 
@@ -151,5 +156,37 @@ theorem AlgHom.isOpenEmbedding_mapValue [Algebra.FiniteType k H₁] {ψ : R →�
   rw [← IsOpenEmbedding.of_comp_iff _ isHomeomorph_ofConv.isOpenEmbedding,
     AlgHom.ofConv_comp_mapValue]
   exact (isOpenEmbedding_map_codomain ψ hψ).comp isHomeomorph_ofConv.isOpenEmbedding
+
+/-- An isomorphism `e : R ≃A[k] R'` of topological coefficient algebras induces, by
+post-composition, an isomorphism of topological monoids of points
+`WithConv (H₁ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R')`; it is `AlgEquiv.mapValueMulEquiv` with its
+continuity in both directions. -/
+noncomputable def ContinuousAlgEquiv.mapValueContinuousMulEquiv (e : R ≃A[k] R') :
+    WithConv (H₁ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R') where
+  toMulEquiv := e.toAlgEquiv.mapValueMulEquiv
+  continuous_toFun := continuous_withConv_iff.2 fun h ↦ by
+    simp only [MulEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, MulEquiv.coe_toEquiv,
+      AlgEquiv.mapValueMulEquiv_apply, AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+      AlgEquiv.coe_toAlgHom, ContinuousAlgEquiv.coe_toAlgEquiv]
+    exact e.continuous.comp (continuous_eval_ofConv h)
+  continuous_invFun := continuous_withConv_iff.2 fun h ↦ by
+    simp only [MulEquiv.toEquiv_eq_coe, Equiv.invFun_as_coe, MulEquiv.coe_toEquiv_symm,
+      AlgEquiv.mapValueMulEquiv_symm_apply, AlgHom.mapValue_apply, ofConv_toConv,
+      AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← ContinuousAlgEquiv.symm_toAlgEquiv,
+      ContinuousAlgEquiv.coe_toAlgEquiv]
+    exact e.symm.continuous.comp (continuous_eval_ofConv h)
+
+@[simp]
+theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply_apply (e : R ≃A[k] R')
+    (x : WithConv (H₁ →ₐ[k] R)) (h : H₁) :
+    (e.mapValueContinuousMulEquiv x).ofConv h = e (x.ofConv h) := by
+  simp [mapValueContinuousMulEquiv]
+
+@[simp]
+theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm_apply_apply (e : R ≃A[k] R')
+    (x : WithConv (H₁ →ₐ[k] R')) (h : H₁) :
+    (e.mapValueContinuousMulEquiv.symm x).ofConv h = e.symm (x.ofConv h) := by
+  obtain ⟨y, rfl⟩ := (e.mapValueContinuousMulEquiv (H₁ := H₁)).surjective x
+  simp
 
 end Functoriality
