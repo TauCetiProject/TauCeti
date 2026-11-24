@@ -174,6 +174,9 @@ theorem linearize_mapRightDualIso (X : TLDiagCat) :
     (Y := ((linearize R δ).obj X)ᘁ)
     ((Functor.mapRightDualIso_hom_whiskerRight_evaluation X).trans ?_))
   simp only [linearize_μ, linearize_η, Iso.refl_hom, id_whiskerRight, Category.id_comp]
+  -- `simp` cannot apply `Category.comp_id`: the composite passes through
+  -- `(linearize R δ).obj (𝟙_ TLDiagCat)`, while the identity is that of `𝟙_ (TLCat R δ)`. These
+  -- objects agree only after unfolding `linearize` on objects, which `exact` does.
   exact (Category.comp_id _).trans (linearize_map_evaluation X)
 
 /-- The forward dual comparison for linearization is the identity. -/
@@ -208,6 +211,9 @@ theorem linearize_sendsSelfDuality (X : TLDiagCat) :
   evaluation := by
     simp only [linearize_η, linearize_μ, linearize_map_evaluation, Iso.refl_inv,
       id_tensorHom_id, Category.id_comp]
+    -- As in `linearize_mapRightDualIso`, `simp` cannot apply `Category.comp_id`: the composite
+    -- passes through `(linearize R δ).obj (𝟙_ TLDiagCat)`, while the identity is that of
+    -- `𝟙_ (TLCat R δ)`. These agree only after unfolding `linearize` on objects.
     exact Category.comp_id _
 
 end TLCat
