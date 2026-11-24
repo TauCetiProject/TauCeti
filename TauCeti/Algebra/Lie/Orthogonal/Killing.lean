@@ -11,12 +11,10 @@ public import Mathlib.Algebra.Lie.Matrix
 public import Mathlib.Algebra.Lie.Semisimple.Lemmas
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Algebra.Lie.BaseChange.Radical
-import TauCeti.Algebra.Lie.GeneralLinear.Killing
-import TauCeti.Algebra.Lie.OfAssociative
 import TauCeti.Algebra.Lie.Orthogonal.Basic
 import TauCeti.Algebra.Lie.SkewAdjoint.BaseChange
+import TauCeti.Algebra.Lie.SkewAdjoint.Killing
 import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
-import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 
 /-!
 # The Killing form of the orthogonal Lie algebras
@@ -50,14 +48,11 @@ Otherwise `N` lies in `x^⊥`, so for every `y ∈ N` the hyperplane `y^⊥ ⊆ 
 is a multiple of `y`. With a third index, `x^⊥` contains two vectors that are not proportional,
 and `x ≠ 0` cannot be a multiple of both.
 
-The Killing form itself is explicit: for an `n × n` symmetric invertible `J` it is
-`κ(X, Y) = (n - 2) trace (X * Y)`, over every field of characteristic other than two. As for the
-symplectic Lie algebra (`LieAlgebra.Symplectic.killingForm_apply`), `Z ↦ Z - J⁻¹ Zᵀ J` maps
-`gl n K` onto the orthogonal Lie algebra, acting on it as multiplication by two, and
-`ad X ∘ ad Y` preserves the orthogonal Lie algebra. So twice its trace there is its trace on
-`gl n K`, which is `2 n trace (X * Y)` (`Matrix.killingForm_apply`), minus the trace of its
-composite with `Z ↦ J⁻¹ Zᵀ J`, which is `4 trace (X * Y)`. On `so(p, q)` this is
-`(p + q - 2) trace (X * Y)`.
+The Killing form itself is explicit: on `so(n)` it is `κ(X, Y) = (n - 2) trace (X * Y)`, and on
+`so(p, q)` it is `(p + q - 2) trace (X * Y)`, over every field of characteristic other than two.
+Both are the case `ε = 1` of the Killing form `(n - 2 ε) trace (X * Y)` of the Lie algebra of
+matrices skew-adjoint for an invertible `J` with `Jᵀ = ε • J`
+(`TauCeti.killingForm_skewAdjointMatricesLieSubalgebra_apply`).
 
 ## Main results
 
@@ -70,9 +65,8 @@ composite with `Z ↦ J⁻¹ Zᵀ J`, which is `4 trace (X * Y)`. On `so(p, q)` 
 * `TauCeti.isIrreducible_so_standard`, `TauCeti.hasTrivialRadical_so`: the definite case.
 * `TauCeti.isIrreducible_so'_standard`, `TauCeti.hasTrivialRadical_so'`: the indefinite case,
   in particular the semisimplicity of `so(p, q)` for `p + q ≥ 3`.
-* `TauCeti.killingForm_skewAdjointMatricesLieSubalgebra_apply`, `TauCeti.killingForm_so_apply`,
-  `TauCeti.killingForm_so'_apply`: `κ(X, Y) = (n - 2) trace (X * Y)`, and
-  `(p + q - 2) trace (X * Y)` on `so(p, q)`.
+* `TauCeti.killingForm_so_apply`, `TauCeti.killingForm_so'_apply`: `κ(X, Y) = (n - 2) trace (X * Y)`
+  on `so(n)`, and `(p + q - 2) trace (X * Y)` on `so(p, q)`.
 
 ## References
 
@@ -251,143 +245,16 @@ end Indefinite
 
 section KillingForm
 
-variable {n : Type*} [DecidableEq n] [Fintype n] {K : Type*} [Field K] {J : Matrix n n K}
-
-/-- The operator `Z ↦ J⁻¹ Zᵀ J` of the square matrices, whose fixed points up to sign are the
-orthogonal Lie algebra of `J`. -/
-private noncomputable def transposeConj (J : Matrix n n K) : Matrix n n K →ₗ[K] Matrix n n K :=
-  LinearMap.mulLeft K J⁻¹ ∘ₗ LinearMap.mulRight K J ∘ₗ
-    (transposeLinearEquiv n n K K).toLinearMap
-
-private theorem transposeConj_apply (Z : Matrix n n K) : transposeConj J Z = J⁻¹ * Zᵀ * J := by
-  simp [transposeConj, mul_assoc]
-
-/-- An element `A` of the orthogonal Lie algebra of an invertible `J` satisfies
-`J⁻¹ Aᵀ J = -A`. -/
-private theorem inv_mul_transpose_mul_eq_neg (hJu : IsUnit J) {A : Matrix n n K}
-    (hA : A ∈ skewAdjointMatricesLieSubalgebra J) : J⁻¹ * Aᵀ * J = -A := by
-  have h : Aᵀ * J = J * -A :=
-    (mem_skewAdjointMatricesSubmodule J A).mp ((mem_skewAdjointMatricesLieSubalgebra J A).mp hA)
-  rw [mul_assoc, h, ← mul_assoc, nonsing_inv_mul _ ((isUnit_iff_isUnit_det J).mp hJu), one_mul]
-
-/-- A matrix `M` with `J⁻¹ Mᵀ J = -M` lies in the orthogonal Lie algebra of an invertible `J`. -/
-private theorem mem_of_inv_mul_transpose_mul_eq_neg (hJu : IsUnit J) {M : Matrix n n K}
-    (hM : J⁻¹ * Mᵀ * J = -M) : M ∈ skewAdjointMatricesLieSubalgebra J := by
-  refine (mem_skewAdjointMatricesLieSubalgebra J M).mpr
-    ((mem_skewAdjointMatricesSubmodule J M).mpr ?_)
-  change Mᵀ * J = J * -M
-  rw [← hM, ← mul_assoc, ← mul_assoc, mul_nonsing_inv _ ((isUnit_iff_isUnit_det J).mp hJu),
-    Matrix.one_mul]
-
-/-- For a symmetric `J`, the operator `Z ↦ J⁻¹ Zᵀ J` is an involution. -/
-private theorem transposeConj_transposeConj (hJ : J.IsSymm) (hJu : IsUnit J)
-    (Z : Matrix n n K) : transposeConj J (transposeConj J Z) = Z := by
-  have hd := (isUnit_iff_isUnit_det J).mp hJu
-  rw [transposeConj_apply, transposeConj_apply, transpose_mul, transpose_mul, transpose_transpose,
-    transpose_nonsing_inv, hJ.eq]
-  simp only [Matrix.mul_assoc]
-  rw [nonsing_inv_mul _ hd, Matrix.mul_one, ← Matrix.mul_assoc, nonsing_inv_mul _ hd,
-    Matrix.one_mul]
-
-/-- The trace of `Z ↦ J⁻¹ (A Z B)ᵀ J` on the matrices, for a symmetric `J`. -/
-private theorem trace_transposeConj_comp (hJ : J.IsSymm) (A B : Matrix n n K) :
-    LinearMap.trace K _ (transposeConj J ∘ₗ LinearMap.mulLeft K A ∘ₗ LinearMap.mulRight K B) =
-      (J⁻¹ * Bᵀ * J * A).trace := by
-  have h : transposeConj J ∘ₗ LinearMap.mulLeft K A ∘ₗ LinearMap.mulRight K B =
-      LinearMap.mulLeft K (J⁻¹ * Bᵀ) ∘ₗ LinearMap.mulRight K (Aᵀ * J) ∘ₗ
-        (transposeLinearEquiv n n K K).toLinearMap := by
-    ext1 Z
-    simp [transposeConj_apply, transpose_mul, mul_assoc]
-  rw [h, trace_mulLeft_comp_mulRight_comp_transpose, transpose_mul, transpose_transpose, hJ.eq]
-  simp only [mul_assoc]
-
-/-- For `A, B` in the orthogonal Lie algebra of a symmetric invertible `J`, the operator
-`Z ↦ J⁻¹ (⁅A, ⁅B, Z⁆⁆)ᵀ J` of the matrices has trace `4 trace (A * B)`. -/
-private theorem trace_transposeConj_comp_ad_comp_ad (hJ : J.IsSymm) (hJu : IsUnit J)
-    {A B : Matrix n n K} (hA : A ∈ skewAdjointMatricesLieSubalgebra J)
-    (hB : B ∈ skewAdjointMatricesLieSubalgebra J) :
-    LinearMap.trace K _ (transposeConj J ∘ₗ ad K _ A ∘ₗ ad K _ B) = 4 * (A * B).trace := by
-  have hA' := inv_mul_transpose_mul_eq_neg hJu hA
-  have hB' := inv_mul_transpose_mul_eq_neg hJu hB
-  have hJJ : J⁻¹ * J = 1 := nonsing_inv_mul _ ((isUnit_iff_isUnit_det J).mp hJu)
-  have hJJ' : J * J⁻¹ = 1 := mul_nonsing_inv _ ((isUnit_iff_isUnit_det J).mp hJu)
-  have hBA : J⁻¹ * (B * A)ᵀ * J = A * B := by
-    calc J⁻¹ * (B * A)ᵀ * J = (J⁻¹ * Aᵀ * J) * (J⁻¹ * Bᵀ * J) := by
-          simp only [transpose_mul, Matrix.mul_assoc]
-          rw [← Matrix.mul_assoc J J⁻¹, hJJ', Matrix.one_mul]
-      _ = A * B := by rw [hA', hB', neg_mul_neg]
-  have hl : transposeConj J ∘ₗ LinearMap.mulLeft K (A * B) =
-      transposeConj J ∘ₗ LinearMap.mulLeft K (A * B) ∘ₗ LinearMap.mulRight K 1 := by
-    ext1 Z; simp
-  have hr : transposeConj J ∘ₗ LinearMap.mulRight K (B * A) =
-      transposeConj J ∘ₗ LinearMap.mulLeft K 1 ∘ₗ LinearMap.mulRight K (B * A) := by
-    ext1 Z; simp
-  rw [ad_comp_ad]
-  simp only [LinearMap.comp_add, LinearMap.comp_sub, map_add, map_sub]
-  rw [hl, hr]
-  simp only [trace_transposeConj_comp hJ, transpose_one, Matrix.mul_one, hJJ, Matrix.one_mul, hA',
-    hB', hBA, neg_mul, trace_neg, trace_mul_comm B A]
-  ring
-
-variable [NeZero (2 : K)]
-
-/-- Twice the Killing form of the orthogonal Lie algebra of a symmetric invertible `J` is twice
-`(n - 2) trace (X * Y)`. -/
-private theorem two_mul_killingForm_skewAdjointMatricesLieSubalgebra_apply (hJ : J.IsSymm)
-    (hJu : IsUnit J) (X Y : skewAdjointMatricesLieSubalgebra J) :
-    2 * killingForm K (skewAdjointMatricesLieSubalgebra J) X Y =
-      2 * ((Fintype.card n - 2) * ((X : Matrix n n K) * Y).trace) := by
-  set L := ad K (Matrix n n K) X ∘ₗ ad K (Matrix n n K) Y with hL
-  -- `Z ↦ Z - J⁻¹ Zᵀ J` maps the matrices to the orthogonal Lie algebra, as twice the identity
-  -- on it.
-  let P : Matrix n n K →ₗ[K] skewAdjointMatricesLieSubalgebra J :=
-    LinearMap.codRestrict (skewAdjointMatricesLieSubalgebra J).toSubmodule
-      (LinearMap.id - transposeConj J) fun Z ↦ mem_of_inv_mul_transpose_mul_eq_neg hJu (by
-        rw [← transposeConj_apply, LinearMap.sub_apply, LinearMap.id_apply, map_sub,
-          transposeConj_transposeConj hJ hJu, neg_sub])
-  have h1 : P ∘ₗ L ∘ₗ (skewAdjointMatricesLieSubalgebra J).incl.toLinearMap =
-      (2 : K) • (ad K _ X ∘ₗ ad K _ Y) := by
-    ext1 W
-    have hW : transposeConj J (L W) = -L W := by
-      rw [transposeConj_apply]
-      exact inv_mul_transpose_mul_eq_neg hJu ((skewAdjointMatricesLieSubalgebra J).lie_mem
-        X.property ((skewAdjointMatricesLieSubalgebra J).lie_mem Y.property W.property))
-    apply Subtype.ext
-    change L W - transposeConj J (L W) = _
-    rw [hW, sub_neg_eq_add]
-    simp [hL, two_smul]
-  have h2 : (skewAdjointMatricesLieSubalgebra J).incl.toLinearMap ∘ₗ P =
-      LinearMap.id - transposeConj J := by
-    ext1 Z; rfl
-  -- Cycling the trace moves the computation to the matrices.
-  have htrace :
-      LinearMap.trace K _ (P ∘ₗ L ∘ₗ (skewAdjointMatricesLieSubalgebra J).incl.toLinearMap) =
-        LinearMap.trace K _ L - LinearMap.trace K _ (transposeConj J ∘ₗ L) := by
-    rw [← LinearMap.comp_assoc, ← LinearMap.trace_comp_comm', ← LinearMap.comp_assoc, h2,
-      LinearMap.sub_comp, map_sub, LinearMap.id_comp]
-  rw [h1, map_smul, smul_eq_mul, ← killingForm_apply_apply] at htrace
-  have := invertibleOfNonzero (two_ne_zero (α := K))
-  rw [htrace, hL, ← killingForm_apply_apply, Matrix.killingForm_apply,
-    IsSkewAdjoint.trace_eq_zero hJu ((mem_skewAdjointMatricesSubmodule J _).mp X.property),
-    trace_transposeConj_comp_ad_comp_ad hJ hJu X.property Y.property]
-  ring
-
-/-- **The Killing form of an orthogonal Lie algebra**: on the orthogonal Lie algebra of a
-symmetric invertible `n × n` matrix `J`, `κ(X, Y) = (n - 2) trace (X * Y)`, over every field of
-characteristic other than two. -/
-theorem killingForm_skewAdjointMatricesLieSubalgebra_apply (hJ : J.IsSymm) (hJu : IsUnit J)
-    (X Y : skewAdjointMatricesLieSubalgebra J) :
-    killingForm K (skewAdjointMatricesLieSubalgebra J) X Y =
-      (Fintype.card n - 2) * ((X : Matrix n n K) * Y).trace :=
-  mul_left_cancel₀ two_ne_zero
-    (two_mul_killingForm_skewAdjointMatricesLieSubalgebra_apply hJ hJu X Y)
+variable {K : Type*} [Field K] [NeZero (2 : K)]
 
 /-- **The Killing form of `so(n)`**: `κ(X, Y) = (n - 2) trace (X * Y)` on
 `LieAlgebra.Orthogonal.so l K`, over every field of characteristic other than two. -/
 theorem killingForm_so_apply {l : Type*} [DecidableEq l] [Fintype l] (X Y : Orthogonal.so l K) :
     killingForm K (Orthogonal.so l K) X Y =
-      (Fintype.card l - 2) * ((X : Matrix l l K) * Y).trace :=
-  killingForm_skewAdjointMatricesLieSubalgebra_apply isSymm_one isUnit_one X Y
+      (Fintype.card l - 2) * ((X : Matrix l l K) * Y).trace := by
+  have := killingForm_skewAdjointMatricesLieSubalgebra_apply (J := (1 : Matrix l l K)) (ε := 1)
+    (by rw [transpose_one, one_smul]) isUnit_one X Y
+  rwa [mul_one] at this
 
 /-- **The Killing form of `so(p, q)`**: `κ(X, Y) = (p + q - 2) trace (X * Y)` on
 `LieAlgebra.Orthogonal.so' p q K`, over every field of characteristic other than two. -/
@@ -395,9 +262,11 @@ theorem killingForm_so'_apply {p q : Type*} [DecidableEq p] [DecidableEq q] [Fin
     [Fintype q] (X Y : Orthogonal.so' p q K) :
     killingForm K (Orthogonal.so' p q K) X Y =
       (Fintype.card p + Fintype.card q - 2) * ((X : Matrix (p ⊕ q) (p ⊕ q) K) * Y).trace := by
-  have := killingForm_skewAdjointMatricesLieSubalgebra_apply (isSymm_diagonal _)
+  have := killingForm_skewAdjointMatricesLieSubalgebra_apply
+    (J := Orthogonal.indefiniteDiagonal p q K) (ε := 1)
+    (by rw [one_smul]; exact (isSymm_diagonal _).eq)
     (Orthogonal.isUnit_indefiniteDiagonal (p := p) (q := q) (R := K)) X Y
-  rwa [Fintype.card_sum, Nat.cast_add] at this
+  rwa [Fintype.card_sum, Nat.cast_add, mul_one] at this
 
 end KillingForm
 

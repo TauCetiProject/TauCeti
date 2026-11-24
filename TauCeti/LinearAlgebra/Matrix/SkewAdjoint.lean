@@ -16,10 +16,10 @@ For a square matrix `J`, Mathlib's `Matrix.IsSkewAdjoint J A` is the condition `
 the matrix `A` is skew-adjoint for the bilinear form `B(u, v) = u ⬝ᵥ J v`. This file records
 basic facts about such matrices, independent of any Lie theory.
 
-When `J` is invertible, skew-adjointness makes `Aᵀ` conjugate to `-A`, so `A` has trace zero as
-soon as `2` is invertible. When `J` is symmetric, every pair of vectors `u`, `v` gives a
-skew-adjoint matrix, the matrix `vecMulVec v (u ᵥ* J) - vecMulVec u (v ᵥ* J)` sending `x`
-to `B(u, x) v - B(v, x) u`.
+When `J` is invertible, skew-adjointness makes `Aᵀ` conjugate to `-A`: it says exactly
+that `J⁻¹ * Aᵀ * J = -A`, so `A` has trace zero as soon as `2` is invertible. When `J` is
+symmetric, every pair of vectors `u`, `v` gives a skew-adjoint matrix, the matrix
+`vecMulVec v (u ᵥ* J) - vecMulVec u (v ᵥ* J)` sending `x` to `B(u, x) v - B(v, x) u`.
 
 The file also records the matrices preserving `J` by congruence, `M * J * Mᵀ = J`: a square-zero
 matrix `Y` with `Y * J + J * Yᵀ = 0`, that is, with `Yᵀ` skew-adjoint for `J`, gives the
@@ -31,6 +31,8 @@ inverse; and a scalar matrix `c • 1` can only preserve an invertible `J` when 
 
 * `Matrix.isUnit_of_mul_self_eq_neg_one`: a form matrix whose square is minus the identity
   is a unit over any ring.
+* `Matrix.isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg`: for invertible `J`, a matrix `A` is
+  skew-adjoint for `J` exactly when `J⁻¹ * Aᵀ * J = -A`.
 * `Matrix.IsSkewAdjoint.trace_eq_zero`: a matrix skew-adjoint for an invertible matrix has trace
   zero when `2` is invertible.
 * `Matrix.isSkewAdjoint_vecMulVec_sub_vecMulVec`: for symmetric `J`, the matrix
@@ -61,6 +63,14 @@ theorem isUnit_of_mul_self_eq_neg_one [Ring R] [DecidableEq n] {J : Matrix n n R
 section
 
 variable [CommRing R]
+
+/-- For an invertible `J`, a matrix `A` is skew-adjoint for `J` exactly when its transpose is
+conjugate to `-A`: `J⁻¹ * Aᵀ * J = -A`. -/
+theorem isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg [DecidableEq n] {J A : Matrix n n R}
+    (hJ : IsUnit J) : J.IsSkewAdjoint A ↔ J⁻¹ * Aᵀ * J = -A := by
+  have := hJ.invertible
+  rw [Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, Matrix.mul_assoc,
+    inv_mul_eq_iff_eq_mul_of_invertible]
 
 /-- **A matrix skew-adjoint for an invertible matrix has trace zero** when `2` is invertible:
 skew-adjointness makes `Aᵀ` conjugate to `-A`. -/
