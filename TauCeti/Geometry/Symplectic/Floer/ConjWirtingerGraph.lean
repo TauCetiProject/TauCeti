@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-public import TauCeti.Geometry.Symplectic.Floer.Graph
+public import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!

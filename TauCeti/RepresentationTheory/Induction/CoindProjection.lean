@@ -121,17 +121,17 @@ into the `h`-th component is what turns the twisted equivariance of a coinduced 
 noncomputable def coindProjectionHom :
     coindV φ (linHom (τ.comp φ) ρ) →ₗ[k] B →ₗ[k] coindV φ ρ where
   toFun F := LinearMap.codRestrict (coindV φ ρ)
-      (LinearMap.pi fun h => (F.1 h).comp (τ h : B →ₗ[k] B)) fun b => by
+      (LinearMap.pi fun h => (F.val h).comp (τ h : B →ₗ[k] B)) fun b => by
     simp only [mem_coindV, LinearMap.pi_apply, LinearMap.comp_apply]
     intro g h
-    simp [F.2 g h, ← mul_apply_eq_comp, ← map_mul]
+    simp [F.property g h, ← mul_apply_eq_comp, ← map_mul]
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
 
 /-- `TauCeti.coindProjectionHom`, evaluated at a group element. -/
 @[simp]
 theorem coindProjectionHom_apply_coe (F : coindV φ (linHom (τ.comp φ) ρ)) (b : B) (h : H) :
-    (coindProjectionHom φ ρ τ F b).1 h = F.1 h (τ h b) :=
+    (coindProjectionHom φ ρ τ F b).val h = F.val h (τ h b) :=
   (rfl)
 
 /-- The backward map of the dual projection formula, `Φ ↦ (h ↦ (b ↦ Φ (τ h⁻¹ b) h))`. -/
@@ -140,14 +140,14 @@ noncomputable def coindProjectionInv :
   toFun Φ := ⟨fun h => (LinearMap.proj h ∘ₗ (coindV φ ρ).subtype ∘ₗ Φ).comp
       (τ h⁻¹ : B →ₗ[k] B), fun g h => by
     ext b
-    simp [(Φ _).2 g h, mul_inv_rev]⟩
+    simp [(Φ _).property g h, mul_inv_rev]⟩
   map_add' _ _ := by ext; simp
   map_smul' _ _ := by ext; simp
 
 /-- `TauCeti.coindProjectionInv`, evaluated at a group element. -/
 @[simp]
 theorem coindProjectionInv_apply_coe (Φ : B →ₗ[k] coindV φ ρ) (h : H) (b : B) :
-    (coindProjectionInv φ ρ τ Φ).1 h b = (Φ (τ h⁻¹ b)).1 h :=
+    (coindProjectionInv φ ρ τ Φ).val h b = (Φ (τ h⁻¹ b)).val h :=
   (rfl)
 
 /-- The dual projection formula as a `k`-linear equivalence of the underlying modules: the two maps
@@ -179,7 +179,7 @@ noncomputable def coindProjectionEquiv :
     ext F b h
     -- Both sides are definitionally `F (h * h₀)` applied to `τ h b`, resp. `τ (h * h₀) (τ h₀⁻¹ b)`;
     -- `simp` cannot evaluate the restricted action of `Representation.coind`.
-    exact congrArg (F.1 (h * h₀)) (by rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_right])
+    exact congrArg (F.val (h * h₀)) (by rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_right])
 
 /-- `TauCeti.coindProjectionEquiv` is `TauCeti.coindProjectionHom` in the forward direction; the
 element-level rule is `TauCeti.coindProjectionHom_apply_coe`. -/
@@ -206,7 +206,7 @@ def coindConst (f : Representation.IntertwiningMap (τ.comp φ) ρ) :
 /-- `TauCeti.coindConst` is the constant function at the given intertwiner. -/
 @[simp]
 theorem coindConst_coe_apply (f : Representation.IntertwiningMap (τ.comp φ) ρ) (h : H) (b : B) :
-    (coindConst φ ρ τ f).1 h b = f b :=
+    (coindConst φ ρ τ f).val h b = f b :=
   (rfl)
 
 end Linear

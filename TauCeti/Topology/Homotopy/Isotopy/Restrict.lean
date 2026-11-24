@@ -27,14 +27,14 @@ variable {X : Type*} [TopologicalSpace X]
 /-- Restrict an ambient isotopy to a subset preserved by each time slice in both directions. -/
 def restrict (Φ : AmbientIsotopy X) (s : Set X)
     (hs : ∀ t x, Φ.toContinuousMap (t, x) ∈ s ↔ x ∈ s) : AmbientIsotopy s where
-  toFun p := ⟨Φ.toContinuousMap (p.1, p.2), (hs _ _).mpr p.2.2⟩
+  toFun p := ⟨Φ.toContinuousMap (p.1, p.2), (hs _ _).mpr p.2.property⟩
   continuous_toFun := by fun_prop
   map_zero_left' x := Subtype.ext (Φ.map_zero_left x)
   isHomeomorph_total' := by
     have hsi (t : I) (x : s) : Φ.symm.toContinuousMap (t, x) ∈ s :=
-      (hs t _).mp (by simpa only [apply_symm_apply_slice] using x.2)
+      (hs t _).mp (by simpa only [apply_symm_apply_slice] using x.property)
     let H : I × s ≃ₜ I × s :=
-      { toFun := fun p => (p.1, ⟨Φ.toContinuousMap (p.1, p.2), (hs _ _).mpr p.2.2⟩)
+      { toFun := fun p => (p.1, ⟨Φ.toContinuousMap (p.1, p.2), (hs _ _).mpr p.2.property⟩)
         invFun := fun p => (p.1, ⟨Φ.symm.toContinuousMap (p.1, p.2), hsi _ _⟩)
         left_inv := fun p => Prod.ext rfl (Subtype.ext (Φ.symm_apply_apply_slice _ _))
         right_inv := fun p => Prod.ext rfl (Subtype.ext (Φ.apply_symm_apply_slice _ _))

@@ -478,7 +478,7 @@ private lemma rationalFunctionsMul_over_mem_sections_of_coeffEq
         (submodule E).toSubmodule.obj ((Over.forget U).op.obj V) := by
   have hD := submodule_obj_unop D ((Over.forget U).op.obj V)
   have hE := submodule_obj_unop E ((Over.forget U).op.obj V)
-  have hs : s.val ∈ sections D V.unop.left := hD ▸ s.2
+  have hs : s.val ∈ sections D V.unop.left := hD ▸ s.property
   have key := rationalFunctionsMul_mem_sections_of_coeffEq g V.unop.hom.le h hs
   exact hE.symm ▸ key
 

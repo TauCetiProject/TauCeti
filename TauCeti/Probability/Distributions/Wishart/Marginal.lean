@@ -73,11 +73,11 @@ variable {p q : ℕ} {n : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
 /-- The on-or-below-diagonal positions of a `q × q` matrix sit among those of a `p × p` matrix. -/
 private def lowerTriangleCastLE (hqp : q ≤ p) : lowerTriangle q ↪ lowerTriangle p where
-  toFun ij := ⟨(Fin.castLE hqp ij.1.1, Fin.castLE hqp ij.1.2), ij.2⟩
+  toFun ij := ⟨(Fin.castLE hqp ij.val.1, Fin.castLE hqp ij.val.2), ij.property⟩
   inj' ij kl h := by
     refine Subtype.ext (Prod.ext ?_ ?_)
-    · exact Fin.castLE_injective hqp (congrArg (fun x => x.1.1) h)
-    · exact Fin.castLE_injective hqp (congrArg (fun x => x.1.2) h)
+    · exact Fin.castLE_injective hqp (congrArg (fun x => x.val.1) h)
+    · exact Fin.castLE_injective hqp (congrArg (fun x => x.val.2) h)
 
 /-- The leading `q × q` block of a lower-triangular matrix is read off by restricting its
 coordinates along `TauCeti.lowerTriangleCastLE`. -/
@@ -114,12 +114,12 @@ private theorem bartlettCoordinateMeasure_lowerTriangleCastLE (hqp : q ≤ p) (n
     (ij : lowerTriangle q) :
     bartlettCoordinateMeasure (p := p) n (lowerTriangleCastLE hqp ij) =
       bartlettCoordinateMeasure (p := q) n ij := by
-  by_cases h : ij.1.1 = ij.1.2
-  · have h' : (lowerTriangleCastLE hqp ij).1.1 = (lowerTriangleCastLE hqp ij).1.2 :=
+  by_cases h : ij.val.1 = ij.val.2
+  · have h' : (lowerTriangleCastLE hqp ij).val.1 = (lowerTriangleCastLE hqp ij).val.2 :=
       congrArg (Fin.castLE hqp) h
     rw [bartlettCoordinateMeasure_of_eq n h', bartlettCoordinateMeasure_of_eq n h]
     rfl
-  · have h' : (lowerTriangleCastLE hqp ij).1.1 ≠ (lowerTriangleCastLE hqp ij).1.2 := fun hc =>
+  · have h' : (lowerTriangleCastLE hqp ij).val.1 ≠ (lowerTriangleCastLE hqp ij).val.2 := fun hc =>
       h (Fin.castLE_injective hqp hc)
     rw [bartlettCoordinateMeasure_of_ne n h', bartlettCoordinateMeasure_of_ne n h]
 

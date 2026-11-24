@@ -104,15 +104,16 @@ private theorem secondCountableTopology_plaqueSet [IsManifold I (m : ℕ∞ω) M
   · exact secondCountableTopology_of_countable_cover (U := fun _ : Empty ↦ (∅ : Set _))
       (fun _ ↦ isOpen_empty) (eq_univ_of_forall fun y ↦ hE.elim y)
   obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional W
-  let g : plaqueSet f Φ W q → W := fun y ↦ p (Φ (f y.1) - Φ (f y₀))
-  have hgval (y : plaqueSet f Φ W q) : (g y : E) = Φ (f y.1) - Φ (f y₀) := by
-    have hmem : Φ (f y.1) - Φ (f y₀) ∈ W :=
-      (Submodule.Quotient.eq W).mp (y.2.2.trans hy₀.2.symm)
-    exact congrArg Subtype.val (hp ⟨Φ (f y.1) - Φ (f y₀), hmem⟩)
+  let g : plaqueSet f Φ W q → W := fun y ↦ p (Φ (f y.val) - Φ (f y₀))
+  have hgval (y : plaqueSet f Φ W q) : (g y : E) = Φ (f y.val) - Φ (f y₀) := by
+    have hmem : Φ (f y.val) - Φ (f y₀) ∈ W :=
+      (Submodule.Quotient.eq W).mp (y.property.2.trans hy₀.2.symm)
+    exact congrArg Subtype.val (hp ⟨Φ (f y.val) - Φ (f y₀), hmem⟩)
   have hgcont : Continuous g := p.continuous.comp <|
-    (hΦsmooth.continuousOn.comp_continuous (hf.contMDiff.continuous.comp continuous_subtype_val)
-      fun y ↦ y.2.1).sub continuous_const
-  have hginj : Injective g := fun y₁ y₂ h ↦ Subtype.ext <| hinj <| Φ.injOn y₁.2.1 y₂.2.1 <|
+    (hΦsmooth.continuousOn.comp_continuous (hf.contMDiff.continuous.comp continuous_subtypeVal)
+      fun y ↦ y.property.1).sub continuous_const
+  have hginj : Injective g := fun y₁ y₂ h ↦ Subtype.ext <| hinj <| Φ.injOn y₁.property.1
+      y₂.property.1 <|
     sub_left_injective ((hgval y₁).symm.trans ((congrArg Subtype.val h).trans (hgval y₂)))
   have hgopen : IsOpenMap g := by
     intro U hU
@@ -121,16 +122,16 @@ private theorem secondCountableTopology_plaqueSet [IsManifold I (m : ℕ∞ω) M
     obtain ⟨U', hU', rfl⟩ := isOpen_induced_iff.mp hU
     obtain ⟨c, hyc, hc0, _, hfc⟩ :=
       hf.exists_plaque_chart_of_flatChart Φ hΦopen hΦsmooth (by exact_mod_cast hm) W hflat
-        (BoundarylessManifold.isInteriorPoint (I := J)) y.2.1 (hΦinj _ y.2.1)
+        (BoundarylessManifold.isInteriorPoint (I := J)) y.property.1 (hΦinj _ y.property.1)
     let O : Set N := c.source ∩ (plaqueSet f Φ W q ∩ U')
     have hO : IsOpen O :=
       c.open_source.inter ((isOpen_plaqueSet hf hm Φ hΦopen hΦsmooth W hflat q).inter hU')
-    have hyO : y.1 ∈ O := ⟨hyc, y.2, hyU⟩
+    have hyO : y.val ∈ O := ⟨hyc, y.property, hyU⟩
     have hcO : IsOpen ((Homeomorph.addLeft (g y)) '' (c '' O)) :=
       (Homeomorph.addLeft (g y)).isOpenMap _
         (c.toOpenPartialHomeomorph.isOpen_image_of_subset_source hO inter_subset_left)
     have hmem : g y ∈ (Homeomorph.addLeft (g y)) '' (c '' O) :=
-      ⟨0, ⟨y.1, hyO, hc0⟩, add_zero (g y)⟩
+      ⟨0, ⟨y.val, hyO, hc0⟩, add_zero (g y)⟩
     refine Filter.mem_of_superset (hcO.mem_nhds hmem) ?_
     rintro _ ⟨w, ⟨z, ⟨hzc, hzp, hzU'⟩, rfl⟩, rfl⟩
     refine ⟨⟨z, hzp⟩, hzU', Subtype.ext ?_⟩

@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
+public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.LinearAlgebra.Dimension.Submodule
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.InnerProductSpace.Projection.Diagonal
 import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Operator.Extend
 
 /-!
 # Bernstein numbers
@@ -31,6 +32,13 @@ triangle inequality. For the ideal inequality, a positive gain of `B ∘ T ∘ A
 injective on `M`, so `A(M)` again has rank `n + 1`. An operator of rank at most `n` kills a
 nonzero vector of every subspace of rank `n + 1`, and the identity has gain `1` on every nonzero
 subspace.
+
+The Bernstein numbers are injective, since a linear isometry on the target preserves every gain,
+and they lie below the Gelfand numbers, since a subspace of rank `n + 1` meets every subspace of
+codimension at most `n` in a nonzero vector. They are the smallest injective strict s-number
+sequence: if `T` is `d`-coercive with `d > 0` on a subspace `M` of rank `n + 1`, then `id_M`
+factors through the corestriction of `T` to its range on `M`, with a factor of norm at most
+`d⁻¹`, and the normalization `s (id_M) n = 1` gives `d ≤ s T n`.
 
 Unlike approximation, Gelfand and Kolmogorov numbers (which are additive and multiplicative) and
 Hilbert numbers (which are additive), the Bernstein numbers are neither multiplicative nor additive
@@ -54,12 +62,18 @@ target spaces may be seminormed.
   every subspace of rank `n + 1` bounds `bₙ(T)` from above.
 * `ContinuousLinearMap.bernsteinNumber_comp_comp_le`: `bₙ(B T A) ≤ ‖B‖ bₙ(T) ‖A‖`.
 * `ContinuousLinearMap.bernsteinNumber_id`: `bₙ(id_E) = 1` when `n` is below the rank of `E`.
+* `ContinuousLinearMap.bernsteinNumber_le_gelfandNumber`: `bₙ(T) ≤ cₙ(T)`.
 * `ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_le`:
   `bₙ(ℓ₂(ι) → ℓ_∞(ι)) ≤ (√(n + 1))⁻¹`.
 * `ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_symm_le`:
   `bₙ(ℓ_∞(ι) → ℓ₂(ι)) ≤ √(card ι / (n + 1))` over `ℝ` or `ℂ`.
-* `TauCeti.SNumbers.isStrictSNumberSequence_bernstein`: the Bernstein numbers form a strict
-  s-number sequence.
+* `LinearIsometry.bernsteinNumber_toContinuousLinearMap_comp`,
+  `TauCeti.SNumbers.isInjective_bernstein`: the Bernstein numbers are injective.
+* `TauCeti.SNumbers.isStrictSNumberSequence_bernstein`,
+  `TauCeti.SNumbers.isSNumberSequence_bernstein`: the Bernstein numbers form a strict s-number
+  sequence.
+* `TauCeti.SNumbers.IsStrictSNumberSequence.bernsteinNumber_le`: `bₙ(T) ≤ s T n` for every
+  injective strict s-number sequence `s`.
 * `TauCeti.SNumbers.not_multiplicative_bernstein`: the Bernstein family is not multiplicative over
   `ℝ` or `ℂ`.
 * `TauCeti.SNumbers.not_additive_bernstein`: the Bernstein family is not additive over `ℝ` or `ℂ`.
@@ -68,11 +82,14 @@ target spaces may be seminormed.
 
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §4,
   Theorems 4.5 and 4.6.
+* A. Pietsch, *Operator Ideals*, North-Holland (1980), Chapter 11, for the minimality of the
+  Bernstein numbers among injective strict s-number sequences.
 * A. Pietsch, *Bad properties of the Bernstein numbers*, Studia Math. 184 (2008), 263–269,
   Theorem 3.
 * M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
-  `SNumbers/Bernstein.lean` and `SNumbers/Examples/IdentityL2Linfty.lean`: an earlier Lean
-  formalization of the Bernstein numbers and the `ℓ₂ ↔ ℓ_∞` identity bounds.
+  `SNumbers/Bernstein.lean`, `SNumbers/Injectivity.lean` and
+  `SNumbers/Examples/IdentityL2Linfty.lean`: an earlier Lean formalization of the Bernstein
+  numbers, injective s-number sequences and the `ℓ₂ ↔ ℓ_∞` identity bounds.
 -/
 
 public section
@@ -90,12 +107,12 @@ subspaces `M` of the source of rank `n + 1`, of the gain `inf_{0 ≠ x ∈ M} �
 `M`. The indexing is zero-based, so `b₀(T) = ‖T‖` (`bernsteinNumber_zero`). -/
 noncomputable def bernsteinNumber (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
   ⨆ M : {M : Submodule 𝕜 E // Module.rank 𝕜 M = n + 1},
-    ⨅ x : {x : E // x ∈ M.1 ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊
+    ⨅ x : {x : E // x ∈ M.val ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊
 
 /-- `bₙ(T)` is the supremum over the subspaces `M` of rank `n + 1` of the gain of `T` on `M`. -/
 theorem bernsteinNumber_def (T : E →L[𝕜] F) (n : ℕ) :
     T.bernsteinNumber n = ⨆ M : {M : Submodule 𝕜 E // Module.rank 𝕜 M = n + 1},
-      ⨅ x : {x : E // x ∈ M.1 ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊ := by
+      ⨅ x : {x : E // x ∈ M.val ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊ := by
   rw [bernsteinNumber]
 
 /-- The gain of `T` on `M` is a coercivity constant of `T` on `M`. -/
@@ -113,7 +130,7 @@ private theorem le_iInf_of_rank_eq (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {
     c ≤ ⨅ y : {y : E // y ∈ M ∧ y ≠ 0}, ‖T y‖₊ / ‖(y : E)‖₊ := by
   obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
   have : Nonempty {y : E // y ∈ M ∧ y ≠ 0} := ⟨⟨x, hx, hx0⟩⟩
-  exact le_ciInf fun y ↦ (le_div_iff₀ (nnNorm_pos.mpr y.2.2)).mpr (h y y.2.1)
+  exact le_ciInf fun y ↦ (le_div_iff₀ (nnNorm_pos.mpr y.property.2)).mpr (h y y.property.1)
 
 /-- The gain of `T` on a subspace of rank `n + 1` is at most `‖T‖`. -/
 private theorem iInf_le_nnnorm (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {n : ℕ}
@@ -131,9 +148,9 @@ theorem bernsteinNumber_le_iff {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0} :
   refine ⟨fun h M hM d hd ↦ ?_, fun h ↦ ?_⟩
   · refine ((le_iInf_of_rank_eq T hM hd).trans ?_).trans h
     exact le_ciSup (f := fun M : {M : Submodule 𝕜 E // Module.rank 𝕜 M = n + 1} ↦
-        ⨅ x : {x : E // x ∈ M.1 ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊)
-      ⟨‖T‖₊, Set.forall_mem_range.mpr fun M ↦ iInf_le_nnnorm T M.2⟩ ⟨M, hM⟩
-  · exact ciSup_le' fun M ↦ h M.1 M.2 _ fun x hx ↦ iInf_mul_nnnorm_le T M.1 hx
+        ⨅ x : {x : E // x ∈ M.val ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊)
+      ⟨‖T‖₊, Set.forall_mem_range.mpr fun M ↦ iInf_le_nnnorm T M.property⟩ ⟨M, hM⟩
+  · exact ciSup_le' fun M ↦ h M.val M.property _ fun x hx ↦ iInf_mul_nnnorm_le T M.val hx
 
 /-- **Coercive-subspace lower bound.** If `c ‖x‖ ≤ ‖T x‖` for every `x` in a subspace of rank
 `n + 1`, then `c ≤ bₙ(T)`. -/
@@ -226,13 +243,9 @@ nonzero vector of every subspace of rank `n + 1`. -/
 theorem bernsteinNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.rank ≤ n) :
     T.bernsteinNumber n = 0 := by
   refine le_antisymm (bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_) bot_le
-  obtain ⟨x, hxM, hTx, hx0⟩ : ∃ x ∈ M, T x = 0 ∧ x ≠ 0 := by
-    by_contra! h
-    have hle := (Submodule.lift_rank_le_of_disjoint_ker (f := (T : E →ₗ[𝕜] F))
-      (Submodule.disjoint_def.mpr h)).trans (Cardinal.lift_le.mpr hT)
-    rw [hM, Cardinal.lift_natCast, ← Nat.cast_add_one, Cardinal.lift_natCast,
-      Nat.cast_le] at hle
-    omega
+  obtain ⟨x, hxM, hTx, hx0⟩ := Submodule.exists_mem_ker_ne_zero_of_rank_lt
+    (f := (T : E →ₗ[𝕜] F)) (by rw [hM]; exact_mod_cast n.lt_succ_self) hT
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hTx
   exact ⟨x, hxM, hx0, by simp [hTx]⟩
 
 /-- **Perturbative triangle bound.** `bₙ(S + T) ≤ bₙ(S) + ‖T‖`. -/
@@ -255,7 +268,7 @@ theorem bernsteinNumber_comp_comp_le (B : F →L[𝕜] G) (T : E →L[𝕜] F) (
   have hinj : Function.Injective ((A : W →ₗ[𝕜] E) ∘ₗ M.subtype) := by
     refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
     have hAx : A x = 0 := by simpa using hx
-    simpa [hAx, hd0] using hd x x.2
+    simpa [hAx, hd0] using hd x x.property
   have hrank : Module.rank 𝕜 (LinearMap.range ((A : W →ₗ[𝕜] E) ∘ₗ M.subtype)) = n + 1 := by
     have h := lift_rank_range_of_injective _ hinj
     rw [hM, ← Nat.cast_add_one, Cardinal.lift_natCast, Cardinal.lift_eq_nat_iff] at h
@@ -266,7 +279,7 @@ theorem bernsteinNumber_comp_comp_le (B : F →L[𝕜] G) (T : E →L[𝕜] F) (
   calc d * ‖A x‖₊ ≤ d * (‖A‖₊ * ‖(x : W)‖₊) := by gcongr; exact A.le_opNNNorm x
     _ = ‖A‖₊ * (d * ‖(x : W)‖₊) := mul_left_comm _ _ _
     _ ≤ ‖A‖₊ * (‖B‖₊ * ‖T (A x)‖₊) :=
-      mul_le_mul_right ((hd x x.2).trans (B.le_opNNNorm _)) _
+      mul_le_mul_right ((hd x x.property).trans (B.le_opNNNorm _)) _
     _ = ‖B‖₊ * ‖A‖₊ * ‖T (A x)‖₊ := by ring
 
 /-- **Identity normalization.** If `n` is strictly below the rank of `E`, then `bₙ(id_E) = 1`:
@@ -279,6 +292,16 @@ theorem bernsteinNumber_id {n : ℕ} (hn : (n : Cardinal) < Module.rank 𝕜 E) 
     (by rw [rank_top, Nat.cast_add_one]; exact Cardinal.natCast_add_one_le_iff.mpr hn)
   exact (ContinuousLinearMap.id 𝕜 E).le_bernsteinNumber_of_rank_eq (by exact_mod_cast hM)
     fun x _ ↦ by simp
+
+/-- **Bernstein numbers below Gelfand numbers.** `bₙ(T) ≤ cₙ(T)`: a subspace of rank `n + 1` and
+a subspace of codimension at most `n` meet in a nonzero vector. -/
+theorem bernsteinNumber_le_gelfandNumber (T : E →L[𝕜] F) (n : ℕ) :
+    T.bernsteinNumber n ≤ T.gelfandNumber n := by
+  refine le_gelfandNumber_iff.mpr fun N _ hN ↦ bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_
+  obtain ⟨x, hxM, hxN, hx0⟩ := Submodule.exists_mem_ker_ne_zero_of_rank_lt (f := N.mkQ)
+    (by rw [hM]; exact_mod_cast n.lt_succ_self) ((Submodule.rank_le _).trans hN)
+  rw [Submodule.ker_mkQ] at hxN
+  exact ⟨x, hxM, hx0, (T ∘L N.subtypeL).le_opNNNorm ⟨x, hxN⟩⟩
 
 /-- **Upper bound for `ℓ₂ → ℓ_∞`.** On a finite index type `ι`, the identity map
 `EuclideanSpace 𝕜 ι →L[𝕜] (ι → 𝕜)` has `n`-th Bernstein number at most `(√(n + 1))⁻¹`: every
@@ -294,8 +317,8 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_le
   let M' : Submodule 𝕜 (ι → 𝕜) := M.map e.toLinearEquiv.toLinearMap
   have hrankM' : Module.rank 𝕜 M' = n + 1 :=
     (M.equivMapOfInjective _ e.injective).rank_eq.symm.trans hM
-  have hfinM' : Module.finrank 𝕜 M' = n + 1 := by
-    rw [Module.finrank, hrankM', ← Nat.cast_add_one, Cardinal.toNat_natCast]
+  have hfinM' : Module.finrank 𝕜 M' = n + 1 :=
+    Module.finrank_eq_of_rank_eq (by exact_mod_cast hrankM')
   obtain ⟨y, hyM', hy1, hcard⟩ := M'.exists_mem_norm_le_one_le_ncard_norm_eq_one
   rw [hfinM'] at hcard
   obtain ⟨x, hxM, rfl⟩ := hyM'
@@ -340,8 +363,8 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_symm_le
   let M₂ : Submodule 𝕜 (EuclideanSpace 𝕜 ι) := M.map e.symm.toLinearEquiv.toLinearMap
   have hrankM₂ : Module.rank 𝕜 M₂ = n + 1 :=
     (M.equivMapOfInjective _ e.symm.injective).rank_eq.symm.trans hM
-  have hfinM₂ : Module.finrank 𝕜 M₂ = n + 1 := by
-    rw [Module.finrank, hrankM₂, ← Nat.cast_add_one, Cardinal.toNat_natCast]
+  have hfinM₂ : Module.finrank 𝕜 M₂ = n + 1 :=
+    Module.finrank_eq_of_rank_eq (by exact_mod_cast hrankM₂)
   let x (k : ι) : EuclideanSpace 𝕜 ι := M₂.starProjection (EuclideanSpace.single k (1 : 𝕜))
   -- For each coordinate `k`, `e (x k) ∈ M` satisfies `‖x k‖² = (x k) k ≤ ‖e (x k)‖`,
   -- whence `d ‖x k‖² ≤ ‖x k‖` and therefore `d² ‖x k‖² ≤ 1`.
@@ -359,7 +382,7 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_symm_le
       have h := NNReal.coe_le_coe.mpr (hd (e (x k)) hexM)
       simpa [e] using h.trans_eq (congrArg norm (e.symm_apply_apply (x k)))
     have hdx : (d : ℝ) * ‖x k‖ ^ 2 ≤ ‖x k‖ :=
-      (mul_le_mul_of_nonneg_left hx_coord d.2).trans hd_real
+      (mul_le_mul_of_nonneg_left hx_coord d.coe_nonneg).trans hd_real
     rcases eq_or_lt_of_le (norm_nonneg (x k)) with h0 | hpos
     · rw [← h0]; norm_num
     · have h1 : (d : ℝ) * ‖x k‖ ≤ 1 :=
@@ -379,6 +402,21 @@ theorem bernsteinNumber_piLp_continuousLinearEquiv_symm_le
   exact NNReal.le_sqrt_iff_sq_le.mpr ((le_div_iff₀ (by positivity)).mpr hd_sum)
 
 end ContinuousLinearMap
+
+namespace LinearIsometry
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **Injectivity.** Postcomposition with a linear isometry leaves the Bernstein numbers
+unchanged: `bₙ(J T) = bₙ(T)`, since `J` preserves every gain of `T`. -/
+@[simp]
+theorem bernsteinNumber_toContinuousLinearMap_comp (J : F →ₗᵢ[𝕜] G) (T : E →L[𝕜] F) (n : ℕ) :
+    (J.toContinuousLinearMap ∘L T).bernsteinNumber n = T.bernsteinNumber n := by
+  simp [ContinuousLinearMap.bernsteinNumber_def]
+
+end LinearIsometry
 
 universe u
 
@@ -408,6 +446,44 @@ theorem isStrictSNumberSequence_bernstein : IsStrictSNumberSequence (bernstein (
 /-- Bernstein numbers satisfy the s-number axioms over every nontrivially normed field. -/
 theorem isSNumberSequence_bernstein : IsSNumberSequence (bernstein (𝕜 := 𝕜)) :=
   isStrictSNumberSequence_bernstein.toIsSNumberSequence
+
+/-- Bernstein numbers form an injective family. -/
+theorem isInjective_bernstein : IsInjective (bernstein (𝕜 := 𝕜)) where
+  linearIsometry_comp J T n := J.bernsteinNumber_toContinuousLinearMap_comp T n
+
+/-- **Minimality of the Bernstein numbers.** Every injective strict s-number sequence dominates
+the Bernstein numbers: `bₙ(T) ≤ s T n`. Together with `isStrictSNumberSequence_bernstein` and
+`isInjective_bernstein`, the Bernstein numbers are the smallest injective strict s-number
+sequence. -/
+theorem IsStrictSNumberSequence.bernsteinNumber_le {s : SNumberFamily 𝕜}
+    (hs : IsStrictSNumberSequence s) (hinj : IsInjective s) {X Y : Type u}
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (T : X →L[𝕜] Y) (n : ℕ) : T.bernsteinNumber n ≤ s T n := by
+  refine ContinuousLinearMap.bernsteinNumber_le_iff.mpr fun M hM d hd ↦ ?_
+  rcases eq_or_ne d 0 with rfl | hd0
+  · exact zero_le
+  have hd0' : (0 : ℝ) < d := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hd0)
+  -- The coercivity bound factors `id_M` through the range of `g = T|_M`, with norm `≤ d⁻¹`.
+  let g := T ∘L M.subtypeL
+  obtain ⟨S, hS, hST⟩ := (ContinuousLinearMap.exists_eq_comp_rangeRestrict_iff
+      (f := ContinuousLinearMap.id 𝕜 M) (g := g) (C := (d : ℝ)⁻¹) (by positivity)).mpr fun x ↦ by
+    rw [ContinuousLinearMap.id_apply, inv_mul_eq_div, le_div_iff₀ hd0', mul_comm]
+    exact_mod_cast hd x x.property
+  have hS' : ‖S‖₊ ≤ d⁻¹ := by rwa [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv]
+  have hsub : ‖M.subtypeL‖₊ ≤ 1 := by exact_mod_cast Submodule.norm_subtypeL_le M
+  -- Normalization on `id_M`, then injectivity along the inclusion of the range of `g`.
+  have key : 1 ≤ d⁻¹ * s T n :=
+    calc (1 : ℝ≥0) = s (ContinuousLinearMap.id 𝕜 M) n :=
+          (hs.normalize_of_lt_rank n (by rw [hM]; exact_mod_cast n.lt_succ_self)).symm
+      _ = s (S ∘L g.rangeRestrict) n := by rw [← hST]
+      _ ≤ ‖S‖₊ * s g.rangeRestrict n := hs.comp_le_left S _ n
+      _ = ‖S‖₊ * s g n := by
+          rw [← hinj.linearIsometry_comp (LinearMap.range (g : M →ₗ[𝕜] Y)).subtypeₗᵢ
+            g.rangeRestrict n, Submodule.subtypeₗᵢ_toContinuousLinearMap,
+            ContinuousLinearMap.subtypeL_comp_codRestrict]
+      _ ≤ d⁻¹ * (s T n * ‖M.subtypeL‖₊) := by gcongr; exact hs.comp_le_right T M.subtypeL n
+      _ ≤ d⁻¹ * s T n := by gcongr; exact mul_le_of_le_one_right' hsub
+  simpa using (le_inv_mul_iff₀ (pos_iff_ne_zero.mpr hd0)).mp key
 
 end NontriviallyNormedField
 
@@ -441,20 +517,6 @@ theorem not_multiplicative_bernstein {𝕜 : Type u} [RCLike 𝕜] :
   have hsq_real : (1 : ℝ) ≤ (3 : ℝ) / 2 * ((2 : ℝ)⁻¹) := by exact_mod_cast hsq
   norm_num at hsq_real
 
-/-- Composing on both sides with contractions does not increase Bernstein numbers. -/
-private theorem bernstein_comp_comp_le {𝕜 W X Y Z : Type u} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
-    (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ)
-    (hB : ‖B‖ ≤ 1) (hA : ‖A‖ ≤ 1) :
-    bernstein (B ∘L T ∘L A) n ≤ bernstein T n := by
-  have hB' : ‖B‖₊ ≤ 1 := by exact_mod_cast hB
-  have hA' : ‖A‖₊ ≤ 1 := by exact_mod_cast hA
-  calc bernstein (B ∘L T ∘L A) n
-      ≤ ‖B‖₊ * bernstein T n * ‖A‖₊ := B.bernsteinNumber_comp_comp_le T A n
-    _ ≤ 1 * bernstein T n * 1 := by gcongr
-    _ = bernstein T n := by simp
-
 /-- On the graph `{(x, 3 e x)}` of `3 e`, the block anti-diagonal operator
 `inr ∘ e ∘ fst + (9 : 𝕜)⁻¹ • (inl ∘ e⁻¹ ∘ snd)` acts as `(3 : 𝕜)⁻¹ • ·`, yielding the
 Bernstein-number lower bound `3⁻¹ ≤ bₙ(S + T)` when `rank X = n + 1`. -/
@@ -474,14 +536,11 @@ private theorem inv_three_le_bernstein_antiDiag {𝕜 X Y : Type u} [RCLike 𝕜
   have hrankM : Module.rank 𝕜 (LinearMap.range φ) = n + 1 :=
     (Cardinal.lift_inj.mp (lift_rank_range_of_injective φ hφ_inj)).trans hrank
   have h3 : ‖(3 : 𝕜)⁻¹‖₊ = (3 : ℝ≥0)⁻¹ := Subtype.ext (by simp)
+  have h93 : (9 : 𝕜)⁻¹ * 3 = 3⁻¹ := by norm_num
   refine (S + T).le_bernsteinNumber_of_rank_eq hrankM ?_
   rintro _ ⟨x, rfl⟩
   have hact : (S + T) (φ x) = (3 : 𝕜)⁻¹ • φ x := by
-    apply Prod.ext
-    · simp [S, T, φ, smul_smul]
-      congr 1
-      norm_num
-    · simp [S, T, φ, smul_smul]
+    apply Prod.ext <;> simp [S, T, φ, smul_smul, h93]
   rw [hact, nnNorm_smul, h3]
 
 /-- **Bernstein numbers are not additive** (Pietsch 2008, Theorem 3). Over `ℝ` or `ℂ`, a block
@@ -504,15 +563,17 @@ theorem not_additive_bernstein {𝕜 : Type u} [RCLike 𝕜] :
   -- Upper bounds on `b₃₅(S)` and `b₃₅(T)` via the `ℓ₂ ↔ ℓ_∞` bounds and contraction factors.
   have hsqrt36 : NNReal.sqrt (35 + 1) = 6 := NNReal.sqrt_eq_iff_eq_sq.mpr (by norm_num)
   have hS : bernstein S 35 ≤ 6⁻¹ :=
-    (bernstein_comp_comp_le _ _ _ 35 (ContinuousLinearMap.norm_inr_le_one 𝕜 E₂ Einf)
-      (ContinuousLinearMap.norm_fst_le 𝕜 E₂ Einf)).trans <| by
+    (isSNumberSequence_bernstein.comp_comp_le_of_norm_le_one
+      (ContinuousLinearMap.norm_inr_le_one 𝕜 E₂ Einf)
+      (ContinuousLinearMap.norm_fst_le 𝕜 E₂ Einf) _ 35).trans <| by
       simpa [e, hsqrt36] using
         ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_le
           (𝕜 := 𝕜) (ι := Fin 71) 35
   have hT : bernstein T 35 ≤ 9⁻¹ * NNReal.sqrt (71 / 36) := by
     have hT₁ : bernstein T₁ 35 ≤ NNReal.sqrt (71 / 36) :=
-      (bernstein_comp_comp_le _ _ _ 35 (ContinuousLinearMap.norm_inl_le_one 𝕜 E₂ Einf)
-        (ContinuousLinearMap.norm_snd_le 𝕜 E₂ Einf)).trans <| by
+      (isSNumberSequence_bernstein.comp_comp_le_of_norm_le_one
+        (ContinuousLinearMap.norm_inl_le_one 𝕜 E₂ Einf)
+        (ContinuousLinearMap.norm_snd_le 𝕜 E₂ Einf) _ 35).trans <| by
         have h36 : (35 : ℝ≥0) + 1 = 36 := by norm_num
         simpa [e, h36] using
           ContinuousLinearMap.bernsteinNumber_piLp_continuousLinearEquiv_symm_le

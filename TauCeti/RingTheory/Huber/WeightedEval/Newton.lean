@@ -84,7 +84,7 @@ theorem weightedEval_sub_weightedEval_sub_sum_mem_pow_smul {ϖ : P.ringOfDefinit
   have hsum (y : Fin N → P.ringOfDefinition) {G : MvPowerSeries (Fin N) C}
       (hG : IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) G) :=
     hasSum_weightedEval_of_forall_isPowerBounded (φ := RingHom.id C) continuous_id.continuousAt
-      (fun i ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (y i).2) hG
+      (fun i ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (y i).property) hG
   -- Reindex the evaluation of `∂ⱼF` at `t` by the monomials of `F`: the `(ν + eⱼ)`-th
   -- coefficient of `F` times the value at `t` of `∂ⱼ` of the monomial `X^(ν + eⱼ)`. The
   -- monomials with exponent `0` at `j` contribute zero.
@@ -108,7 +108,7 @@ theorem weightedEval_sub_weightedEval_sub_sum_mem_pow_smul {ϖ : P.ringOfDefinit
   -- Each term is the `μ`-th coefficient of `F` times Taylor's error for the monomial `Xᵘ`.
   obtain ⟨q, hq⟩ := MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv
     (MvPolynomial.monomial μ (1 : P.ringOfDefinition)) hx (pow_dvd_pow ϖ hab) hxx'
-  refine ⟨MvPowerSeries.coeff μ F * q, mul_mem (hF₀ μ) q.2, ?_⟩
+  refine ⟨MvPowerSeries.coeff μ F * q, mul_mem (hF₀ μ) q.property, ?_⟩
   have hq' := congrArg ((↑) : P.ringOfDefinition → C) hq
   simp only [MvPolynomial.eval_monomial, Finsupp.prod_pow, one_mul] at hq'
   push_cast at hq'
@@ -124,7 +124,7 @@ private noncomputable def evalOD
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
     (x : Fin N → P.ringOfDefinition) (i : Fin N) : P.ringOfDefinition :=
   ⟨weightedEval (RingHom.id C) (fun l ↦ (x l : C)) (F i),
-    weightedEval_mem P.isClosed_ringOfDefinition (hF₀ i) fun l ↦ (x l).2⟩
+    weightedEval_mem P.isClosed_ringOfDefinition (hF₀ i) fun l ↦ (x l).property⟩
 
 omit [IsUniformAddGroup C] [CompleteSpace C] in
 /-- `F` vanishes at `u ∈ A₀^N` exactly when its evaluation on `A₀^N` does. -/
@@ -141,7 +141,7 @@ private noncomputable def jacobianOD
   Matrix.of fun i j ↦ ⟨weightedEval (RingHom.id C) (fun l ↦ (t l : C))
     (MvPowerSeries.pderiv j (F i)),
     weightedEval_mem P.isClosed_ringOfDefinition (MvPowerSeries.coeff_pderiv_mem (hF₀ i) j)
-      fun l ↦ (t l).2⟩
+      fun l ↦ (t l).property⟩
 
 /-- Taylor's estimate on `A₀^N`, in the form of the linearisation hypothesis of the quantitative
 Newton method. -/

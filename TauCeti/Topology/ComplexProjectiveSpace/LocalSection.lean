@@ -94,7 +94,7 @@ private theorem star_reflectionAxis_dotProduct_self (k : Fin (n + 1)) (z : Fin n
   have hy : star (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp ⬝ᵥ
       (affineUnitVector k z : EuclideanSpace ℂ (Fin (n + 1))).ofLp = 1 := by
     rw [dotProduct_comm, ← EuclideanSpace.inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K,
-      mem_sphere_zero_iff_norm.1 (affineUnitVector k z).2]
+      mem_sphere_zero_iff_norm.1 (affineUnitVector k z).property]
     simp
   simp only [reflectionAxis, star_add, add_dotProduct, dotProduct_add, hy, Pi.star_single, star_one,
     single_dotProduct, dotProduct_single, Pi.add_apply, Pi.star_apply, Pi.single_eq_same,
@@ -168,7 +168,7 @@ private theorem continuous_sectionUnitary (k : Fin (n + 1)) :
       (add_pos_of_pos_of_nonneg one_pos (inv_nonneg.2 (norm_nonneg _))).ne'
   have hu : Continuous (reflectionAxis (n := n) k) :=
     continuous_const.add ((PiLp.continuous_ofLp 2 _).comp
-      (continuous_subtype_val.comp (affineUnitVector k).continuous))
+      (continuous_subtypeVal.comp (affineUnitVector k).continuous))
   refine Continuous.subtype_mk ?_ _
   unfold sectionMatrix
   exact ((continuous_const.sub (hc.smul (hu.matrix_vecMulVec hu.star))).matrix_mul

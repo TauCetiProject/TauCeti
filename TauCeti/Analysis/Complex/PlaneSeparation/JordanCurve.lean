@@ -123,7 +123,7 @@ private theorem IsJordanCurve.exists_notMem_connectedComponentIn {C : Set ℂ} (
 union of the bounded components of the complement of `C` — is nonempty. -/
 theorem IsJordanCurve.nonempty_filledHull_sdiff {C : Set ℂ} (h : IsJordanCurve C) :
     (filledHull C \ C).Nonempty := by
-  obtain ⟨x, hx⟩ : Cᶜ.Nonempty := nonempty_iff_ne_empty.mpr fun hC =>
+  obtain ⟨x, hx⟩ : Cᶜ.Nonempty := Set.ne_empty_iff_nonempty.mp fun hC =>
     h.not_isPreconnected_compl (hC ▸ isPreconnected_empty)
   obtain ⟨y, hy, hxy⟩ := h.exists_notMem_connectedComponentIn x
   have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by

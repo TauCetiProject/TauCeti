@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Basic
-public import TauCeti.GroupTheory.GroupExtension.FactorSetOfSection
 
 /-!
 # The quotient action on an abelian normal subgroup
@@ -49,8 +48,8 @@ theorem quotientConjugationAction_mk_smul (g : G) (n : N) :
 
 /-- The quotient extension induces the quotient conjugation action on its kernel. -/
 theorem quotientExtension_inducesAction :
-    TauCeti.GroupExtension.InducesAction N.quotientExtension := by
-  rw [TauCeti.GroupExtension.inducesAction_iff]
+    GroupExtension.InducesAction N.quotientExtension := by
+  rw [GroupExtension.inducesAction_iff]
   intro g n
   apply Subtype.ext
   have h := GroupExtension.inl_conjAct_comm N.quotientExtension (e := g) (n := n)

@@ -61,16 +61,16 @@ theorem determinant_eq_mul_relIndex_sq (L M : IntegralLattice V) (hform : L.form
       M.determinant * (L.carrier.toAddSubgroup.relIndex M.carrier.toAddSubgroup : ℤ) ^ 2 := by
   classical
   let bM : Basis (Module.Free.ChooseBasisIndex ℤ M) ℤ M := Module.Free.chooseBasis ℤ M
-  let eM := bM.extendOfIsLattice ℚ
-  let σ := (Module.Free.chooseBasis ℤ L).extendOfIsLattice ℚ |>.indexEquiv eM
+  let eM := bM.extendOfIsFullLattice ℚ
+  let σ := (Module.Free.chooseBasis ℤ L).extendOfIsFullLattice ℚ |>.indexEquiv eM
   let bL : Basis (Module.Free.ChooseBasisIndex ℤ M) ℤ L :=
     (Module.Free.chooseBasis ℤ L).reindex σ
-  let eL := bL.extendOfIsLattice ℚ
+  let eL := bL.extendOfIsFullLattice ℚ
   have hidx : ((L.carrier.toAddSubgroup.relIndex M.carrier.toAddSubgroup : ℕ) : ℚ)
       = |eM.det eL| :=
     AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hle) eL eM
-      bL.toAddSubgroup_eq_closure_range_extendOfIsLattice
-      bM.toAddSubgroup_eq_closure_range_extendOfIsLattice
+      bL.toAddSubgroup_eq_closure_range_extendOfIsFullLattice
+      bM.toAddSubgroup_eq_closure_range_extendOfIsFullLattice
   have hmat : (eM.toMatrix eL)ᵀ * LinearMap.BilinForm.toMatrix eM L.form * eM.toMatrix eL
       = LinearMap.BilinForm.toMatrix eL L.form :=
     LinearMap.BilinForm.toMatrix_mul_basis_toMatrix (b := eM) eL L.form

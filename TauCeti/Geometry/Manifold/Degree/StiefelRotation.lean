@@ -118,9 +118,9 @@ theorem mvfderiv_coe_snd_stiefelRotationFamily_apply (x : stiefel E 2 × sphere 
     (p : TangentSpace ((𝓢).prod (𝓡 1)) x) :
     mvfderiv ((𝓢).prod (𝓡 1)) (fun y ↦ ((stiefelRotationFamily y).2 : E)) x p =
       (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
-          (Manifold.tangentSpaceProdEquiv x p).2).re • x.1.1 0 +
+          (Manifold.tangentSpaceProdEquiv x p).2).re • x.1.val 0 +
         (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
-          (Manifold.tangentSpaceProdEquiv x p).2).im • x.1.1 1 +
+          (Manifold.tangentSpaceProdEquiv x p).2).im • x.1.val 1 +
         ((x.2 : ℂ).re • mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1
           (Manifold.tangentSpaceProdEquiv x p).1 0 +
         (x.2 : ℂ).im • mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1
@@ -165,7 +165,7 @@ theorem injective_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : 
   -- `c`, so that `Im z • b = 0`.
   rw [injective_iff_map_eq_zero]
   intro p hp
-  obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 x.1.2
+  obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 x.1.property
   set t := (Manifold.tangentSpaceProdEquiv x p).1
   set γ := mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2 (Manifold.tangentSpaceProdEquiv x p).2
   set T := mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1 t
@@ -192,21 +192,21 @@ theorem injective_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : 
     mvfderiv_coe_snd_stiefelRotationFamily_apply] at h₂
   -- Restate both components with the abbreviations `T` and `γ` introduced above.
   change T 0 = 0 at h₁
-  change γ.re • x.1.1 0 + γ.im • x.1.1 1 + ((x.2 : ℂ).re • T 0 + (x.2 : ℂ).im • T 1) = 0 at h₂
+  change γ.re • x.1.val 0 + γ.im • x.1.val 1 + ((x.2 : ℂ).re • T 0 + (x.2 : ℂ).im • T 1) = 0 at h₂
   -- `T` is tangent to the Stiefel manifold.
-  have hT : gramSym2Deriv E 2 x.1.1 T = 0 := gramSym2Deriv_mfderiv_coe_stiefel x.1 t
+  have hT : gramSym2Deriv E 2 x.1.val T = 0 := gramSym2Deriv_mfderiv_coe_stiefel x.1 t
   have h01 := congrFun hT s(0, 1)
   have h11 := congrFun hT s(1, 1)
   simp only [gramSym2Deriv_apply_mk, h₁, inner_zero_left, add_zero, Pi.zero_apply] at h01 h11
-  have h11' : ⟪x.1.1 1, T 1⟫ = 0 := by
-    rw [real_inner_comm (T 1) (x.1.1 1)] at h11 ⊢
+  have h11' : ⟪x.1.val 1, T 1⟫ = 0 := by
+    rw [real_inner_comm (T 1) (x.1.val 1)] at h11 ⊢
     linarith
   rw [h₁, smul_zero, zero_add] at h₂
-  have hu' : ⟪x.1.1 0, x.1.1 0⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hu, one_pow]
-  have hv' : ⟪x.1.1 1, x.1.1 1⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hv, one_pow]
-  have hre := congrArg (fun e ↦ ⟪x.1.1 0, e⟫) h₂
-  have him := congrArg (fun e ↦ ⟪x.1.1 1, e⟫) h₂
-  simp only [inner_add_right, inner_smul_right, hu', huv, h01, real_inner_comm (x.1.1 0),
+  have hu' : ⟪x.1.val 0, x.1.val 0⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hu, one_pow]
+  have hv' : ⟪x.1.val 1, x.1.val 1⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hv, one_pow]
+  have hre := congrArg (fun e ↦ ⟪x.1.val 0, e⟫) h₂
+  have him := congrArg (fun e ↦ ⟪x.1.val 1, e⟫) h₂
+  simp only [inner_add_right, inner_smul_right, hu', huv, h01, real_inner_comm (x.1.val 0),
     hv', h11', inner_zero_right] at hre him
   have hγre : γ.re = 0 := by linarith
   have hγim : γ.im = 0 := by linarith
@@ -226,7 +226,7 @@ theorem isInvertible_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0
     (hx : (x.2 : ℂ).im ≠ 0) :
     (mfderiv ((𝓢).prod (𝓡 1)) ((𝓡 (n + 1)).prod (𝓡 (n + 1))) stiefelRotationFamily
       x).IsInvertible := by
-  refine isInvertible_mfderiv_of_injective ?_ (injective_mfderiv_stiefelRotationFamily hx)
+  refine (isInvertible_mfderiv_iff_injective ?_).2 (injective_mfderiv_stiefelRotationFamily hx)
   rw [finrank_prod, finrank_prod, finrank_stiefelTwoModel (n := n), finrank_euclideanSpace_fin,
     finrank_euclideanSpace_fin]
   ring

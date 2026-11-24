@@ -174,7 +174,7 @@ private theorem isReduced_subst_of_removePair (U : (Ω.removePair μ).Solution)
     obtain ⟨h₁, h₂, -, -⟩ := Ω.bounds_of_mem_connections c hc
     rw [left_eq_of_mem_pair hl hν] at h₁
     rw [right_eq_of_mem_pair hr hν] at h₂
-    rw [← Ω.segment_append h₁.le h₂.le (Ω.right μ).is_le, substituteVars_append] at h
+    rw [← Ω.segment_append h₁.le h₂.le, substituteVars_append] at h
     exact h.infix (List.prefix_append _ _).isInfix
 
 include hΩ hl hr in
@@ -186,9 +186,9 @@ def solutionEquivRemovePair : Ω.Solution ≃ {U : (Ω.removePair μ).Solution /
   toFun U := ⟨U.removePair μ, by
     rw [Solution.removeBases_word]
     exact U.isReduced_substituteVars_segment μ⟩
-  invFun U := Solution.ofMemV U.1.word U.1.isReduced_word U.1.word_ne_nil
-    (isReduced_subst_of_removePair hΩ hl hr U.1 U.2)
-    (funext U.1.point_apply ▸ (V_toSystem_removePair hΩ hl hr _).le U.1.point_mem_V)
+  invFun U := Solution.ofMemV U.val.word U.val.isReduced_word U.val.word_ne_nil
+    (isReduced_subst_of_removePair hΩ hl hr U.val U.property)
+    (funext U.val.point_apply ▸ (V_toSystem_removePair hΩ hl hr _).le U.val.point_mem_V)
   left_inv U := Solution.ext ((Solution.ofMemV_word ..).trans (U.removeBases_word _))
   right_inv U := Subtype.ext (Solution.ext ((Solution.removeBases_word _ _).trans
     (Solution.ofMemV_word ..)))
@@ -205,20 +205,20 @@ variable (U : {U : (Ω.removePair μ).Solution //
 /-- The inverse of ET3 on solutions keeps the words of the items. -/
 @[simp]
 theorem solutionEquivRemovePair_symm_apply_word :
-    ((solutionEquivRemovePair hΩ hl hr).symm U).word = U.1.word :=
+    ((solutionEquivRemovePair hΩ hl hr).symm U).word = U.val.word :=
   Solution.ofMemV_word ..
 
 /-- The inverse of ET3 on solutions keeps the point of a solution. -/
 @[simp]
 theorem solutionEquivRemovePair_symm_apply_point :
-    ((solutionEquivRemovePair hΩ hl hr).symm U).point = U.1.point := by
+    ((solutionEquivRemovePair hΩ hl hr).symm U).point = U.val.point := by
   ext
   simp
 
 /-- The inverse of ET3 on solutions keeps the positions of the boundaries. -/
 @[simp]
 theorem solutionEquivRemovePair_symm_apply_prefixLength :
-    ((solutionEquivRemovePair hΩ hl hr).symm U).prefixLength = U.1.prefixLength := by
+    ((solutionEquivRemovePair hΩ hl hr).symm U).prefixLength = U.val.prefixLength := by
   ext
   simp [Solution.prefixLength_def]
 
@@ -226,7 +226,7 @@ theorem solutionEquivRemovePair_symm_apply_prefixLength :
 with a matched pair removed is that of `U` composed with `F_{R(Ω)} → F_{R(Ω′)}`. -/
 theorem solutionEquivRemovePair_symm_apply_toHom :
     ((solutionEquivRemovePair hΩ hl hr).symm U).toHom =
-      U.1.toHom.comp (removePairHom hΩ hl hr) := by
+      U.val.toHom.comp (removePairHom hΩ hl hr) := by
   conv_rhs => rw [← (solutionEquivRemovePair hΩ hl hr).apply_symm_apply U]
   exact (toHom_comp_removePairHom hΩ hl hr _).symm
 

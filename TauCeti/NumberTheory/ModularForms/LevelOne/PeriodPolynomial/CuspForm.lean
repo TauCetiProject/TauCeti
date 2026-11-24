@@ -125,9 +125,7 @@ private theorem periodMap_symbol_binaryFormRep (hk : k = w + 2) (f : CuspForm �
 
 /-- `S⁻¹ = -S`, written so that the two-term Manin relation applies. -/
 private theorem S_inv_eq : (S⁻¹ : SL(2, ℤ)) = -1 * S := by
-  have hS : S * S = (-1 : SL(2, ℤ)) := Subtype.ext <| by
-    simpa only [Matrix.SpecialLinearGroup.coe_mul, coe_neg, Matrix.SpecialLinearGroup.coe_one]
-      using S_mul_S_eq
+  have hS : S * S = (-1 : SL(2, ℤ)) := S_mul_S_eq
   exact inv_eq_of_mul_eq_one_right (by rw [neg_one_mul, mul_neg, hS, neg_neg])
 
 /-- `U⁻¹ = -U²`, written so that the three-term Manin relation applies. -/
@@ -233,10 +231,11 @@ even `w` it preserves all of `W_w`; for odd `w` there are no nonzero period poly
 private theorem binaryFormRep_parity_periodPolynomial_mem (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
     binaryFormRep ℂ w (op !![-1, 0; 0, 1]) (periodPolynomial hk f) ∈ periodPolynomials ℂ w := by
   rcases Nat.even_or_odd w with hw | hw
-  · exact mem_periodPolynomials_binaryFormRep_parity hw (periodPolynomial hk f).2
+  · exact mem_periodPolynomials_binaryFormRep_parity hw (periodPolynomial hk f).property
   · have h2 : Function.Injective fun r : ℂ ↦ 2 * r := mul_right_injective₀ two_ne_zero
     have h : (periodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) = 0 :=
-      (Submodule.mem_bot ℂ).1 (periodPolynomials_eq_bot_of_odd h2 hw ▸ (periodPolynomial hk f).2)
+      (Submodule.mem_bot ℂ).1 (periodPolynomials_eq_bot_of_odd h2 hw ▸
+          (periodPolynomial hk f).property)
     rw [h, map_zero]
     exact zero_mem _
 
@@ -246,7 +245,7 @@ def evenPeriodPolynomial (hk : k = w + 2) : CuspForm 𝒮ℒ k →ₗ[ℂ] evenP
   (((2 : ℂ)⁻¹ • (1 + binaryFormRep ℂ w (op !![-1, 0; 0, 1]))) ∘ₗ
       (periodPolynomials ℂ w).subtype ∘ₗ periodPolynomial hk).codRestrict _ fun f ↦ by
     refine mem_evenPeriodPolynomials_iff.2 ⟨Submodule.smul_mem _ _ (Submodule.add_mem _
-      (periodPolynomial hk f).2 (binaryFormRep_parity_periodPolynomial_mem hk f)), ?_⟩
+      (periodPolynomial hk f).property (binaryFormRep_parity_periodPolynomial_mem hk f)), ?_⟩
     simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.add_apply,
       one_apply_eq_self]
     rw [_root_.map_smul, map_add, binaryFormRep_parity_involutive, add_comm]
@@ -257,7 +256,7 @@ def oddPeriodPolynomial (hk : k = w + 2) : CuspForm 𝒮ℒ k →ₗ[ℂ] oddPer
   (((2 : ℂ)⁻¹ • (1 - binaryFormRep ℂ w (op !![-1, 0; 0, 1]))) ∘ₗ
       (periodPolynomials ℂ w).subtype ∘ₗ periodPolynomial hk).codRestrict _ fun f ↦ by
     refine mem_oddPeriodPolynomials_iff.2 ⟨Submodule.smul_mem _ _ (Submodule.sub_mem _
-      (periodPolynomial hk f).2 (binaryFormRep_parity_periodPolynomial_mem hk f)), ?_⟩
+      (periodPolynomial hk f).property (binaryFormRep_parity_periodPolynomial_mem hk f)), ?_⟩
     simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.sub_apply,
       one_apply_eq_self]
     rw [_root_.map_smul, map_sub, binaryFormRep_parity_involutive, ← neg_sub, smul_neg]

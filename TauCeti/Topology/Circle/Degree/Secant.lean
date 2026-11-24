@@ -51,7 +51,8 @@ theorem degree_secant_eq (q : C(AddCircle (1 : ℝ), X)) (hq : Injective q)
   let p : C(I, AddCircle (1 : ℝ)) := ⟨fun t ↦ ((t : ℝ) : AddCircle (1 : ℝ)), by fun_prop⟩
   let m : C(I × I, ℝ) := ⟨fun ut ↦ (1 - (ut.1 : ℝ)) * r + ut.1 * d (p ut.2), by fun_prop⟩
   have hm (ut : I × I) : m ut ∈ Ioo 0 δ := by
-    simpa [m] using convex_Ioo (0 : ℝ) δ hr (hd (p ut.2)) (sub_nonneg.2 ut.1.2.2) ut.1.2.1
+    simpa [m] using convex_Ioo (0 : ℝ) δ hr (hd (p ut.2)) (sub_nonneg.2 ut.1.property.2)
+        ut.1.property.1
       (sub_add_cancel 1 _)
   let G : C(I × I, ℂ) := S.comp ⟨fun ut ↦ (q (p ut.2), q (p ut.2 + m ut)), by fun_prop⟩
   have hG (ut : I × I) : G ut = S (q (p ut.2), q (p ut.2 + m ut)) := rfl

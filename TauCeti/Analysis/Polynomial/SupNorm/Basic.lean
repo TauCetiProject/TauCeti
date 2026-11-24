@@ -27,6 +27,8 @@ this gives a factor of at most `2 ^ d`, where `d` is the degree of the product.
 
 These estimates control growth of coefficients under polynomial multiplication.
 They include zero factors and empty products, and use Mathlib's `Polynomial.supNorm`.
+Over `ℤ`, every nonzero polynomial has coefficient sup norm at least `1`
+(`Polynomial.one_le_supNorm_of_ne_zero_int`).
 
 ## References
 
@@ -137,5 +139,13 @@ theorem supNorm_mul_C {A : Type*} [SeminormedRing A] [NormMulClass A]
     exact mul_le_mul_of_nonneg_right (p.le_supNorm i) (norm_nonneg a)
   · obtain ⟨i, hi⟩ := p.exists_eq_supNorm
     simpa only [coeff_mul_C, norm_mul, ← hi] using (p * C a).le_supNorm i
+
+/-- A nonzero integer polynomial has coefficient sup norm at least `1`, since its leading
+coefficient is a nonzero integer. -/
+theorem one_le_supNorm_of_ne_zero_int {p : ℤ[X]} (hp : p ≠ 0) : 1 ≤ p.supNorm := by
+  have hlc : (1 : ℝ) ≤ ‖p.leadingCoeff‖ := by
+    rw [Int.norm_eq_abs, ← Int.cast_abs]
+    exact_mod_cast Int.one_le_abs (leadingCoeff_ne_zero.mpr hp)
+  exact hlc.trans (p.le_supNorm p.natDegree)
 
 end Polynomial

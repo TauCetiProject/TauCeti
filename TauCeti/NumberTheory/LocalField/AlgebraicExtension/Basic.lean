@@ -214,7 +214,7 @@ private theorem valuation_lt_one_of_algebraicExtensionNormedField_norm_lt_one {w
     exact hk.le
   have hwy : w (algebraMap K M y) < 1 := by simpa using hw.lt_one_iff_lt_one.2 hy1
   have hwy0 : w (algebraMap K M y) ≠ 0 := by simpa using hy0'
-  rw [map_div₀, map_pow, div_le_one₀ (zero_lt_iff.2 hwy0)] at h
+  rw [map_div₀, map_pow, div_le_one₀ (pos_iff_ne_zero.2 hwy0)] at h
   by_contra hx1
   exact ((one_le_pow₀ (not_lt.1 hx1)).trans h).not_gt hwy
 
@@ -233,7 +233,7 @@ theorem algebraicExtensionNormedField_norm_le_one_iff {w : Valuation M Γ}
     simp at hx
   have h' := valuation_lt_one_of_algebraicExtensionNormedField_norm_lt_one hw (x := x⁻¹)
     (by rw [norm_inv]; exact inv_lt_one_of_one_lt₀ (not_le.1 hx))
-  rw [map_inv₀, inv_lt_one₀ (zero_lt_iff.2 (by simpa using hx0))] at h'
+  rw [map_inv₀, inv_lt_one₀ (pos_iff_ne_zero.2 (by simpa using hx0))] at h'
   exact h'.not_ge h
 
 /-- A valuation `w` on an algebraic extension `M` of a nonarchimedean local field
@@ -248,7 +248,8 @@ theorem algebraicExtensionNormedField_norm_le_norm_iff {w : Valuation M Γ}
   · simp
   have hwy : w y ≠ 0 := by simpa using hy
   have h := algebraicExtensionNormedField_norm_le_one_iff hw (x / y)
-  rwa [norm_div, div_le_one₀ (norm_pos_iff.2 hy), map_div₀, div_le_one₀ (zero_lt_iff.2 hwy)] at h
+  rwa [norm_div, div_le_one₀ (norm_pos_iff.2 hy), map_div₀,
+    div_le_one₀ (pos_iff_ne_zero.2 hwy)] at h
 
 /-- **Uniqueness of the extended valuation.** Any two valuations on an algebraic extension `M` of a
 nonarchimedean local field `K` which restrict to the valuation class of `K` are equivalent. -/

@@ -210,7 +210,7 @@ theorem mpullback_periodicTorus_suspensionForm :
   apply SmoothBundleForm.ext_eval₂
   intro p v w
   have htime (c : ℝ) :
-      (timeForm φ).1 (closedOrbit φ hx p.2)
+      (timeForm φ).val (closedOrbit φ hx p.2)
         ![c • timeVectorField φ (closedOrbit φ hx p.2)] = c := by
     simp only [timeForm_apply, Matrix.cons_val_zero, map_smul]
     rw [mfderiv_proj_timeVectorField]
@@ -255,14 +255,14 @@ embedded one, and its area is `k d₀`. -/
 theorem integralTopForm_mpullback_periodicTorus_suspensionForm :
     integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
       (SmoothForm.mpullback (periodicTorus φ hx) (contMDiff_periodicTorus hx)
-        (suspensionForm φ σ hσ)).1 = d := by
+        (suspensionForm φ σ hσ)).val = d := by
   rw [mpullback_periodicTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
 
 /-- The fiber form `σ_v` has zero area on the periodic torus, for either orientation. -/
 theorem integralTopForm_mpullback_periodicTorus_fiberForm
     (o : Manifold.Orientation (𝓘(ℝ).prod 𝓘(ℝ)) (UnitAddCircle × AddCircle (d : ℝ)) (Fin 2)) :
     integralTopForm o (SmoothForm.mpullback (periodicTorus φ hx) (contMDiff_periodicTorus hx)
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0 := by
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0 := by
   rw [mpullback_periodicTorus_fiberForm]
   exact integralTopForm_zero o
 

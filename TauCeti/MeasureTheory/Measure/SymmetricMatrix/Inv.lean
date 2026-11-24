@@ -106,10 +106,10 @@ inverse is `(det A)⁻¹ • adjugate A` everywhere. -/
 theorem measurable_symmetricInv : Measurable (symmetricInv (p := p)) := by
   have hdet : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ).det :=
-    continuous_subtype_val.matrix_det.measurable
+    continuous_subtypeVal.matrix_det.measurable
   have hadj : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ).adjugate :=
-    continuous_subtype_val.matrix_adjugate.measurable
+    continuous_subtypeVal.matrix_adjugate.measurable
   have hcoe : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (symmetricInv A : Matrix (Fin p) (Fin p) ℝ) := by
     simp only [coe_symmetricInv, Matrix.inv_def, Ring.inverse_eq_inv']
@@ -150,7 +150,7 @@ theorem hasFDerivAt_symmetricInv {A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
   -- therefore apply to `π` after `Subtype.ext`.
   have hπ_apply : ∀ X : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
       π (X : Matrix (Fin p) (Fin p) ℝ) = X := fun X =>
-    Subtype.ext (IsSelfAdjoint.coe_selfAdjointPart_apply ℝ X.2)
+    Subtype.ext (IsSelfAdjoint.coe_selfAdjointPart_apply ℝ X.property)
   have hπ_coe : ∀ M : Matrix (Fin p) (Fin p) ℝ,
       (π M : Matrix (Fin p) (Fin p) ℝ) = (2 : ℝ)⁻¹ • (M + Mᵀ) := fun M => by
     have h : (π M : Matrix (Fin p) (Fin p) ℝ) = (⅟2 : ℝ) • (M + star M) :=

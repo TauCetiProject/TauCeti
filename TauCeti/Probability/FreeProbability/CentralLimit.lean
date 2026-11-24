@@ -77,10 +77,10 @@ variable {𝕜 A : Type*} [RCLike 𝕜] [Semiring A] [Algebra 𝕜 A] {φ : A �
 noncrossing partition `π` that is not a pairing tends to `0`. -/
 private theorem tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant_of_not_isPairing
     (hcen : ∀ j, φ (a j) = 0) (hbdd : ∀ k, ∃ M, ∀ j, ‖φ (a j ^ k)‖ ≤ M) {n : ℕ}
-    {π : NoncrossingPartition (univ : Finset (Fin n))} (hp : ¬π.1.IsPairing) :
+    {π : NoncrossingPartition (univ : Finset (Fin n))} (hp : ¬π.val.IsPairing) :
     Tendsto (fun N : ℕ => (√(N : ℝ) : 𝕜)⁻¹ ^ n *
-        ∏ B ∈ π.1.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B) atTop (𝓝 0) := by
-  by_cases h1 : ∃ B ∈ π.1.parts, #B = 1
+        ∏ B ∈ π.val.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B) atTop (𝓝 0) := by
+  by_cases h1 : ∃ B ∈ π.val.parts, #B = 1
   · -- A singleton part contributes the sum of the means, which vanish.
     obtain ⟨B, hB, hB1⟩ := h1
     obtain ⟨i, rfl⟩ := card_eq_one.1 hB1
@@ -89,39 +89,39 @@ private theorem tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant_of_not_isPairing
   -- Otherwise every part has at least two positions and some part at least three, so `π` has
   -- fewer than `n / 2` parts, while the cumulants are bounded uniformly in `j`.
   push Not at h1
-  have hlt : 2 * #π.1.parts < n := by
-    have hsum : ∑ B ∈ π.1.parts, #B = n := by simpa using π.1.sum_card_parts
-    obtain ⟨B, hB, hB2⟩ : ∃ B ∈ π.1.parts, #B ≠ 2 := by
+  have hlt : 2 * #π.val.parts < n := by
+    have hsum : ∑ B ∈ π.val.parts, #B = n := by simpa using π.val.sum_card_parts
+    obtain ⟨B, hB, hB2⟩ : ∃ B ∈ π.val.parts, #B ≠ 2 := by
       simpa [Finpartition.isPairing_iff] using hp
-    have h2 : ∀ B ∈ π.1.parts, 2 ≤ #B := fun B hB => by
-      have := card_pos.2 (π.1.nonempty_of_mem_parts hB)
+    have h2 : ∀ B ∈ π.val.parts, 2 ≤ #B := fun B hB => by
+      have := card_pos.2 (π.val.nonempty_of_mem_parts hB)
       have := h1 B hB
       omega
-    calc 2 * #π.1.parts = ∑ B ∈ π.1.parts, 2 := by rw [sum_const, smul_eq_mul, mul_comm]
-      _ < ∑ B ∈ π.1.parts, #B := sum_lt_sum h2 ⟨B, hB, lt_of_le_of_ne (h2 B hB) (Ne.symm hB2)⟩
+    calc 2 * #π.val.parts = ∑ B ∈ π.val.parts, 2 := by rw [sum_const, smul_eq_mul, mul_comm]
+      _ < ∑ B ∈ π.val.parts, #B := sum_lt_sum h2 ⟨B, hB, lt_of_le_of_ne (h2 B hB) (Ne.symm hB2)⟩
       _ = n := hsum
   choose M hM using hbdd
   set C : Finset (Fin n) → ℝ := fun B =>
-    ∑ τ : NoncrossingPartition B, ‖mu 𝕜 τ ⊤‖ * ∏ D ∈ τ.1.parts, M #D
+    ∑ τ : NoncrossingPartition B, ‖mu 𝕜 τ ⊤‖ * ∏ D ∈ τ.val.parts, M #D
   have hC (B : Finset (Fin n)) (j : ℕ) : ‖freeCumulant φ (fun _ => a j) B‖ ≤ C B :=
     norm_freeCumulant_const_le φ (a j) fun k _ _ => hM k j
   have hinv : Tendsto (fun N : ℕ => (√(N : ℝ))⁻¹) atTop (𝓝 0) :=
     tendsto_inv_atTop_zero.comp (Real.tendsto_sqrt_atTop.comp tendsto_natCast_atTop_atTop)
-  have hlim : Tendsto (fun N : ℕ => (√(N : ℝ))⁻¹ ^ (n - 2 * #π.1.parts) * ∏ B ∈ π.1.parts, C B)
+  have hlim : Tendsto (fun N : ℕ => (√(N : ℝ))⁻¹ ^ (n - 2 * #π.val.parts) * ∏ B ∈ π.val.parts, C B)
       atTop (𝓝 0) := by
     simpa [zero_pow (Nat.sub_ne_zero_of_lt hlt)] using
-      (hinv.pow (n - 2 * #π.1.parts)).mul_const (∏ B ∈ π.1.parts, C B)
+      (hinv.pow (n - 2 * #π.val.parts)).mul_const (∏ B ∈ π.val.parts, C B)
   refine squeeze_zero_norm' ?_ hlim
   filter_upwards [eventually_gt_atTop 0] with N hN
   have hN' : (0 : ℝ) < N := Nat.cast_pos.2 hN
-  calc ‖(√(N : ℝ) : 𝕜)⁻¹ ^ n * ∏ B ∈ π.1.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B‖
-      ≤ (√(N : ℝ))⁻¹ ^ n * ∏ B ∈ π.1.parts, ((N : ℝ) * C B) := by
+  calc ‖(√(N : ℝ) : 𝕜)⁻¹ ^ n * ∏ B ∈ π.val.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B‖
+      ≤ (√(N : ℝ))⁻¹ ^ n * ∏ B ∈ π.val.parts, ((N : ℝ) * C B) := by
         rw [norm_mul, norm_pow, norm_inv, RCLike.norm_ofReal, abs_of_nonneg (Real.sqrt_nonneg _)]
         refine mul_le_mul_of_nonneg_left ((Finset.norm_prod_le _ _).trans
           (prod_le_prod₀ (fun _ _ => norm_nonneg _) fun B _ => ?_)) (by positivity)
         refine (norm_sum_le _ _).trans ((sum_le_sum fun j _ => hC B j).trans_eq ?_)
         rw [sum_const, card_range, nsmul_eq_mul]
-    _ = (√(N : ℝ))⁻¹ ^ (n - 2 * #π.1.parts) * ∏ B ∈ π.1.parts, C B := by
+    _ = (√(N : ℝ))⁻¹ ^ (n - 2 * #π.val.parts) * ∏ B ∈ π.val.parts, C B := by
         rw [prod_mul_distrib, prod_const, ← mul_assoc, Real.inv_sqrt_pow_mul_pow hN' hlt.le]
 
 /-- In the moment–cumulant expansion of `φ (((√N)⁻¹ • ∑_{j < N} a j) ^ n)`, the term of a
@@ -131,14 +131,14 @@ private theorem tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant (hcen : ∀ j, φ
     (hvar : Tendsto (fun N : ℕ => (N : 𝕜)⁻¹ * ∑ j ∈ range N, φ (a j ^ 2)) atTop (𝓝 σ2))
     {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
     Tendsto (fun N : ℕ => (√(N : ℝ) : 𝕜)⁻¹ ^ n *
-        ∏ B ∈ π.1.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B) atTop
-      (𝓝 (if π.1.IsPairing then σ2 ^ #π.1.parts else 0)) := by
-  by_cases hp : π.1.IsPairing
+        ∏ B ∈ π.val.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B) atTop
+      (𝓝 (if π.val.IsPairing then σ2 ^ #π.val.parts else 0)) := by
+  by_cases hp : π.val.IsPairing
   · -- Each part of a pairing contributes the sum of the variances, and `(√N)⁻¹ ^ 2 = N⁻¹`.
-    have hn (x : 𝕜) : x ^ n = (x ^ 2) ^ #π.1.parts := by
-      rw [← pow_mul, ← (by simpa using hp.card_eq_two_mul : n = 2 * #π.1.parts)]
+    have hn (x : 𝕜) : x ^ n = (x ^ 2) ^ #π.val.parts := by
+      rw [← pow_mul, ← (by simpa using hp.card_eq_two_mul : n = 2 * #π.val.parts)]
     simp only [hp, ↓reduceIte]
-    refine (hvar.pow #π.1.parts).congr fun N => ?_
+    refine (hvar.pow #π.val.parts).congr fun N => ?_
     rw [prod_congr rfl fun B hB => sum_congr rfl fun j _ => by
         rw [freeCumulant_const_of_card_eq_two φ _ (Finpartition.isPairing_iff.1 hp B hB), hcen,
           sq (0 : 𝕜), mul_zero, sub_zero],
@@ -156,17 +156,17 @@ private theorem IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow
     (n : ℕ) :
     Tendsto (fun N : ℕ => φ (((√(N : ℝ) : 𝕜)⁻¹ • ∑ j ∈ range N, a j) ^ n)) atTop
       (𝓝 (σ2 ^ (n / 2) *
-        Fintype.card {π : NoncrossingPartition (univ : Finset (Fin n)) // π.1.IsPairing})) := by
+        Fintype.card {π : NoncrossingPartition (univ : Finset (Fin n)) // π.val.IsPairing})) := by
   have hL : σ2 ^ (n / 2) *
-      Fintype.card {π : NoncrossingPartition (univ : Finset (Fin n)) // π.1.IsPairing} =
+      Fintype.card {π : NoncrossingPartition (univ : Finset (Fin n)) // π.val.IsPairing} =
         ∑ π : NoncrossingPartition (univ : Finset (Fin n)),
-          if π.1.IsPairing then σ2 ^ #π.1.parts else 0 := by
+          if π.val.IsPairing then σ2 ^ #π.val.parts else 0 := by
     rw [← sum_filter, Fintype.card_subtype, mul_comm, ← nsmul_eq_mul, ← sum_const]
     refine sum_congr rfl fun π hπ => ?_
     -- A pairing of `n` points has `n / 2` parts.
     have hcard := (mem_filter.1 hπ).2.card_eq_two_mul
     rw [card_univ, Fintype.card_fin] at hcard
-    have hparts : n / 2 = #π.1.parts := by omega
+    have hparts : n / 2 = #π.val.parts := by omega
     rw [hparts]
   rw [hL]
   refine (tendsto_finsetSum _ fun π _ =>
@@ -196,7 +196,7 @@ theorem IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul_
     Tendsto (fun N : ℕ => φ (((√(N : ℝ) : 𝕜)⁻¹ • ∑ j ∈ range N, a j) ^ (2 * k + 1))) atTop
       (𝓝 0) := by
   -- An odd number of positions has no pairing, so every term of the expansion tends to `0`.
-  have hp (π : NoncrossingPartition (univ : Finset (Fin (2 * k + 1)))) : ¬π.1.IsPairing :=
+  have hp (π : NoncrossingPartition (univ : Finset (Fin (2 * k + 1)))) : ¬π.val.IsPairing :=
     fun hp => by simpa using hp.even_card
   have := tendsto_finsetSum univ fun π _ =>
     tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant_of_not_isPairing hcen hbdd (hp π)

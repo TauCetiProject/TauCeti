@@ -97,7 +97,7 @@ private theorem continuous_comparison : Continuous (comparisonMulEquiv n 𝕜) :
 @[fun_prop]
 private theorem continuous_comparison_symm : Continuous (comparisonMulEquiv n 𝕜).symm := by
   apply isEmbedding_toGL.continuous_iff.mpr
-  exact continuous_subtype_val.congr fun A ↦
+  exact continuous_subtypeVal.congr fun A ↦
     (MonoidHom.apply_ofInjective_symm toGL_injective A).symm
 
 private def comparisonDiffeomorph : S ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, V)⟯ K where

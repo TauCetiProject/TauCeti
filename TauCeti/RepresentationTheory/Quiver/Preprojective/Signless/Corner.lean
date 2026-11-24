@@ -134,7 +134,7 @@ variable (k) in
 between distinct vertices. -/
 theorem signlessPreprojectiveCorner_zero_eq_bot_of_ne {i j : R} (h : i ≠ j) :
     signlessPreprojectiveCorner k R 0 i j = ⊥ := by
-  have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.1 p.2)⟩
+  have : IsEmpty (PathBetween R 0 i j) := ⟨fun p => h (Path.eq_of_length_zero p.val p.property)⟩
   rw [signlessPreprojectiveCorner, pathsBetween_def, Set.range_eq_empty, Submodule.span_empty,
     Submodule.map_bot]
 

@@ -176,7 +176,7 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
   have hN1 : N.det ∉ P.filtration 1 := fun h ↦ hcmem (by simpa using sub_mem h hsub)
   have hN0 : N.det ∈ P.filtration 0 := by
     rw [mem_filtration_zero_iff, hdet]
-    exact N'.det.2
+    exact N'.det.property
   have hne : N.det ≠ 0 := by
     rintro h
     exact hN1 (h ▸ zero_mem _)
