@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
+import TauCeti.Geometry.Contact.Transition
+import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Symplectic.Volume
 import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Covector
 
@@ -39,6 +41,21 @@ that is, when this restriction is nondegenerate (`ContinuousAlternatingMap.wedge
 Consequently a contact form `α` makes `M` orientable: `α ∧ (dα)ⁿ` is a volume form, and
 `TauCeti.SmoothForm.IsContactForm.volumeOrientation` is the orientation on which it is positive.
 
+The volume form scales with the defining form: if `β = f α` for a function `f`, then
+
+`β ∧ (dβ)ⁿ = fⁿ⁺¹ α ∧ (dα)ⁿ`
+
+(`TauCeti.SmoothForm.wedge_wedgePow_apply_of_eq_smul`). Indeed `dβ = f dα + df ∧ α`, and after
+the factor `f α` the summand `df ∧ α` drops out of every power, because each term it contributes
+contains `α` twice (`ContinuousAlternatingMap.pairedWedge_smul_wedgePow_smul_add_pairedWedge`). This
+holds in every dimension. So positive multiples of a contact form `α`, which define the same
+cooriented contact structure, define the same orientation. A coorientation-reversing change
+`f < 0` multiplies the volume form by `fⁿ⁺¹`, of sign `(-1)ⁿ⁺¹`. For `n` odd, every contact form
+with the same kernel defines the same orientation, so a contact structure orients `M` by itself
+(`TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_of_kerDistribution_eq_of_odd`). For `n`
+even, `-α` defines the opposite orientation
+(`TauCeti.SmoothForm.IsContactForm.volumeOrientation_neg_of_even`).
+
 ## Main results
 
 * `ContinuousAlternatingMap.pairedWedge_wedgePow_ne_zero_iff`: a covector `a` and a two-form `B` on
@@ -50,11 +67,25 @@ Consequently a contact form `α` makes `M` orientable: `α ∧ (dα)ⁿ` is a vo
   contact form exactly when `α ∧ (dα)ⁿ` vanishes nowhere.
 * `TauCeti.SmoothForm.IsContactForm.volumeOrientation`: the orientation of a manifold defined by a
   contact form.
+* `TauCeti.SmoothForm.wedge_wedgePow_apply_of_eq_smul`: the scaling law
+  `(f α) ∧ (d (f α))ⁿ = fⁿ⁺¹ α ∧ (dα)ⁿ`.
+* `TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_of_eq_smul`,
+  `TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_neg_of_eq_smul`: the orientation of `f α`
+  is that of `α` where `fⁿ⁺¹ > 0` everywhere, and the opposite one where `fⁿ⁺¹ < 0` everywhere.
+* `TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_of_eq_smul_of_pos`: positive multiples
+  of a contact form define the same orientation.
+* `TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_of_kerDistribution_eq_of_odd`: for `n`
+  odd, contact forms with the same kernel define the same orientation.
+* `TauCeti.SmoothForm.IsContactForm.volumeOrientation_neg_of_even`: for `n` even, `-α` defines the
+  opposite orientation.
 
 ## References
 
 * H. Geiges, *An Introduction to Contact Topology*, Cambridge University Press, 2008,
   Section 1.1 (the condition `α ∧ (dα)ⁿ ≠ 0` and Lemma 1.1.3) and Section 2.1.
+* H. Geiges, *Contact geometry*, in Handbook of Differential Geometry, vol. 2, North-Holland,
+  2006, 315–382, arXiv:math/0307242, Remark 2.2 (the scaling
+  `(f α) ∧ (d (f α))ⁿ = fⁿ⁺¹ α ∧ (dα)ⁿ` and its consequences for orientations).
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017, Section 3.5.
 -/
 
@@ -63,6 +94,7 @@ public section
 noncomputable section
 
 open Module
+open scoped Manifold ContDiff
 
 namespace ContinuousAlternatingMap
 
@@ -166,6 +198,90 @@ theorem IsContactForm.orientation_eq_orientationAt_volumeOrientation_iff
     b.orientation = Manifold.Orientation.orientationAt (hα.volumeOrientation hn) x ↔
       0 < (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x b :=
   Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff _ _ _ b
+
+/-! ### Changing the contact form -/
+
+omit [FiniteDimensional ℝ E] in
+/-- The exterior derivative of `β = u α` at a point where `u` is differentiable, as a two-form:
+`dβ = u dα + du ∧ α`. -/
+private theorem mextDeriv_apply_of_eq_smul {α β : SmoothForm I M ℝ 1} {u : M → ℝ} {x : M}
+    (hu : MDifferentiableAt I 𝓘(ℝ) u x) (hβ : ∀ y, β.val y = u y • α.val y) :
+    mextDeriv β.val x = u x • mextDeriv α.val x +
+      ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
+        (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+        (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1)
+          (mvfderiv I u x)) (α.val x) := by
+  have hβ' : β.val = fun y ↦ u y • α.val y := funext hβ
+  ext v
+  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm, hβ',
+    mextDeriv_fun_smul_apply hu (α.mdifferentiableAt x)]
+  simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    ContinuousAlternatingMap.pairedWedge_apply_one_one, ContinuousLinearMap.mul_apply',
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_fin_one]
+  ring
+
+omit [FiniteDimensional ℝ E] in
+/-- **The scaling law of the contact volume form.** If `β = u α`, then at every point where `u`
+is differentiable, `β ∧ (dβ)ⁿ = uⁿ⁺¹ α ∧ (dα)ⁿ`. This holds in every dimension, and for every
+one-form `α`. -/
+theorem wedge_wedgePow_apply_of_eq_smul {α β : SmoothForm I M ℝ 1} {u : M → ℝ} {x : M}
+    (hu : MDifferentiableAt I 𝓘(ℝ) u x) (hβ : ∀ y, β.val y = u y • α.val y) (n : ℕ) :
+    (wedge β ((mextDerivₗ I 1 β).wedgePow n)).val x =
+      u x ^ (n + 1) • (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x := by
+  simp only [coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply', wedgePow_apply,
+    mextDerivₗ_apply]
+  rw [hβ x, mextDeriv_apply_of_eq_smul hu hβ]
+  -- The degree `1 + 1` of `dα` is the degree `2` of the linear identity only definitionally.
+  exact ContinuousAlternatingMap.pairedWedge_smul_wedgePow_smul_add_pairedWedge n (u x) _ _ _
+
+namespace IsContactForm
+
+variable {α β : SmoothForm I M ℝ 1} {u : M → ℝ} (hα : α.IsContactForm) (hβc : β.IsContactForm)
+  (hn : finrank ℝ E = 2 * n + 1)
+include hα hβc
+
+/-- If `β = u α` with `uⁿ⁺¹ > 0` everywhere, the contact forms `α` and `β` define the same
+orientation. -/
+theorem volumeOrientation_eq_of_eq_smul (hu : MDifferentiable I 𝓘(ℝ) u)
+    (hβ : ∀ y, β.val y = u y • α.val y) (hpos : ∀ x, 0 < u x ^ (n + 1)) :
+    hβc.volumeOrientation hn = hα.volumeOrientation hn :=
+  Manifold.Orientation.ofTopForm_eq_of_eq_smul _ _ _ _ _ hpos
+    fun x ↦ wedge_wedgePow_apply_of_eq_smul (hu x) hβ n
+
+/-- If `β = u α` with `uⁿ⁺¹ < 0` everywhere, the contact forms `α` and `β` define opposite
+orientations. -/
+theorem volumeOrientation_eq_neg_of_eq_smul (hu : MDifferentiable I 𝓘(ℝ) u)
+    (hβ : ∀ y, β.val y = u y • α.val y) (hneg : ∀ x, u x ^ (n + 1) < 0) :
+    hβc.volumeOrientation hn = -hα.volumeOrientation hn :=
+  Manifold.Orientation.ofTopForm_eq_neg_of_eq_smul _ _ _ _ _ hneg
+    fun x ↦ wedge_wedgePow_apply_of_eq_smul (hu x) hβ n
+
+/-- Positive multiples of a contact form, which have the same kernel and induce the same
+coorientation, define the same orientation. -/
+theorem volumeOrientation_eq_of_eq_smul_of_pos (hu : MDifferentiable I 𝓘(ℝ) u)
+    (hβ : ∀ y, β.val y = u y • α.val y) (hpos : ∀ x, 0 < u x) :
+    hβc.volumeOrientation hn = hα.volumeOrientation hn :=
+  hα.volumeOrientation_eq_of_eq_smul hβc hn hu hβ fun x ↦ pow_pos (hpos x) _
+
+/-- **A contact structure of dimension `4 k + 3` orients the manifold.** When `n` is odd, two
+contact forms with the same kernel define the same orientation, whatever their coorientations. -/
+theorem volumeOrientation_eq_of_kerDistribution_eq_of_odd [IsManifold I ∞ M] (hodd : Odd n)
+    (hker : β.kerDistribution = α.kerDistribution) :
+    hβc.volumeOrientation hn = hα.volumeOrientation hn := by
+  obtain ⟨u, ⟨hu, hu₀, hβ⟩, -⟩ :=
+    (kerDistribution_eq_iff_existsUnique_fun_smul hα.apply_ne_zero).1 hker
+  exact hα.volumeOrientation_eq_of_eq_smul hβc hn (hu.mdifferentiable (by simp)) hβ
+    fun x ↦ hodd.add_one.pow_pos (hu₀ x)
+
+omit hβc in
+/-- When `n` is even, the contact forms `α` and `-α`, which have the same kernel and opposite
+coorientations, define opposite orientations. -/
+theorem volumeOrientation_neg_of_even (hev : Even n) :
+    (isContactForm_neg_iff.2 hα).volumeOrientation hn = -hα.volumeOrientation hn :=
+  hα.volumeOrientation_eq_neg_of_eq_smul _ hn (u := fun _ ↦ -1) mdifferentiable_const
+    (fun y ↦ by simp) fun _ ↦ by rw [hev.add_one.neg_one_pow]; norm_num
+
+end IsContactForm
 
 end SmoothForm
 

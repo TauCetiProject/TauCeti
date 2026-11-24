@@ -33,8 +33,9 @@ between nowhere-vanishing top forms and orientations; it holds at boundary and c
   form.
 * `TauCeti.Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff`: a tangent basis is
   positive for it exactly when the form is positive on the basis.
-* `TauCeti.Manifold.Orientation.ofTopForm_eq_neg_of_eq_smul`: a pointwise negative multiple of a
-  top form defines the opposite orientation.
+* `TauCeti.Manifold.Orientation.ofTopForm_eq_of_eq_smul`,
+  `TauCeti.Manifold.Orientation.ofTopForm_eq_neg_of_eq_smul`: a pointwise positive (negative)
+  multiple of a top form defines the same (opposite) orientation.
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul`,
   `TauCeti.Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul`: a map
   pulling one such top form back at `x` to a positive (negative) multiple of the other preserves
@@ -221,6 +222,25 @@ theorem orientation_eq_ite_orientationAt_ofTopForm [IsManifold I 1 M]
   · refine ((b.orientation).eq_or_eq_neg _ (Nat.card_eq_fintype_card.trans
       ((Fintype.card_fin k).trans hk.symm))).resolve_left ?_
     exact fun h' ↦ h ((orientation_eq_orientationAt_ofTopForm_iff hk hφ h0 b).mp h')
+
+/-- A top form that is a pointwise positive multiple of another one defines the same
+orientation. -/
+theorem ofTopForm_eq_of_eq_smul [IsManifold I 1 M] (hk : Module.finrank ℝ E = k)
+    {φ φ' : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (h0 : ∀ x, φ x ≠ 0)
+    (hφ' : IsSmoothForm I 0 φ') (h0' : ∀ x, φ' x ≠ 0) {c : M → ℝ} (hc : ∀ x, 0 < c x)
+    (h : ∀ x, φ' x = c x • φ x) : ofTopForm hk φ' hφ' h0' = ofTopForm hk φ hφ h0 := by
+  ext x
+  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hk
+  have h₁ := orientation_eq_ite_orientationAt_ofTopForm hk hφ h0 b
+  have h₂ := orientation_eq_ite_orientationAt_ofTopForm hk hφ' h0' b
+  rw [h, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h₂
+  rcases lt_or_gt_of_ne (((φ x).map_basis_ne_zero_iff b).mpr (h0 x)) with hb | hb
+  · rw [ite_eq_right hb.not_gt] at h₁
+    rw [ite_eq_right (mul_neg_of_pos_of_neg (hc x) hb).not_gt] at h₂
+    exact neg_injective (h₂.symm.trans h₁)
+  · rw [ite_eq_left hb] at h₁
+    rw [ite_eq_left (mul_pos (hc x) hb)] at h₂
+    exact h₂.symm.trans h₁
 
 /-- A top form that is a pointwise negative multiple of another one defines the opposite
 orientation. -/
