@@ -118,7 +118,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
   {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
-  (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
+  (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
   (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
 
 -- The dimension `Fact` makes the oriented four-space finite-dimensional.
@@ -195,8 +195,12 @@ theorem sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero
               twoVectorAlternatingSum θ (e 0) (e 2) (e 3) * Complex.I) • ρ (ι Q (e 0)) u₀ +
           ((twoVectorAlternatingSum θ (e 0) (e 1) (e 3) : ℂ) -
               twoVectorAlternatingSum θ (e 0) (e 1) (e 2) * Complex.I) • ρ (ι Q (e 2)) u₀) := by
-  obtain ⟨q0, q1, q2, q3⟩ := ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂
+  obtain ⟨q1, q3⟩ := ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂
     (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
+  have q0 := e.map_ι_apply_map_ι_apply hQ ρ 0 (ρ (ι Q (e 2)) (u₀ : W))
+  have q2 : ρ (ι Q (e 2)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) (u₀ : W))) = ρ (ι Q (e 0)) u₀ := by
+    rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), e.map_ι_apply_map_ι_apply hQ ρ, map_neg,
+      neg_neg]
   set β₀ := ρ (ι Q (e 0)) (ρ (ι Q (e 2)) (u₀ : W)) with hβ₀
   -- Each derivative is `P_β (u v) = C(iθ v) u₀ / 4 = (i / 4) c₂(θ v) u₀`.
   have hd (v : V) : (u v : W) = (Complex.I / 4) • ρ (bivectorExterior Q (θ v)) u₀ := by
@@ -256,7 +260,7 @@ theorem sum_ι_apply_eq_zero_of_twoVectorAlternatingSum_eq_zero
   rw [sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero hQ h₀ h₂ hu₀ hθ hu hL]
   simp [hdθ]
 
-include hQ hkl he h₀ h₂ in
+include hQ h₀ h₂ in
 /-- **The norm of `D_{A₀} u₀`.** Under the hypotheses of
 `TauCeti.SeibergWitten.sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero`, and for
 skew-adjoint generators, `‖D_{A₀} u₀‖² = (‖dω‖² / 4) ‖u₀‖²`, where `‖dω‖²` is the sum of the
@@ -282,14 +286,14 @@ theorem norm_sum_ι_apply_sq_of_cliffordProjection_apply_eq_zero
     rw [sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero hQ h₀ h₂ hu₀ hθ hu hL,
       Fin.sum_univ_four]
     simp [x, smul_add, smul_smul]
-  rw [hx, norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀]
+  rw [hx, norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hu₀]
   congr 1
   simp only [x, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.cons_val_three, mul_zero, add_zero, ← Complex.normSq_eq_norm_sq]
   simp [Complex.normSq_apply]
   ring
 
-include hQ hkl he h₀ h₂ in
+include hQ h₀ h₂ in
 /-- **`D_{A₀} u₀` vanishes exactly where `dω` does.** Under the hypotheses of
 `TauCeti.SeibergWitten.sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero`, and for
 skew-adjoint generators, `∑ₖ c(e_k) (u e_k) = 0` if and only if `u₀ = 0` or the four frame
@@ -308,7 +312,7 @@ theorem sum_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_zero
         twoVectorAlternatingSum θ (e 0) (e 2) (e 3) = 0 ∧
         twoVectorAlternatingSum θ (e 1) (e 2) (e 3) = 0) := by
   rw [← norm_eq_zero, ← sq_eq_zero_iff,
-    norm_sum_ι_apply_sq_of_cliffordProjection_apply_eq_zero hQ hkl he h₀ h₂ hρ hu₀ hθ hu hL,
+    norm_sum_ι_apply_sq_of_cliffordProjection_apply_eq_zero hQ h₀ h₂ hρ hu₀ hθ hu hL,
     mul_eq_zero, div_eq_zero_iff, sq_eq_zero_iff, norm_eq_zero]
   constructor
   · rintro ((h | h) | h)

@@ -534,14 +534,11 @@ theorem basisOfOrthonormalBasis_repr_apply
         ((⟨2 * k.val + 1, by omega⟩ : Fin (2 * n)) = ⟨2 * j.val + 1, by omega⟩ ↔ k = j) := by
     simp only [Fin.ext_iff, iff_false]
     omega
-  have hre : ⟪e ⟨2 * k.val, by omega⟩, x⟫ = ((basisOfOrthonormalBasis hb).repr x k).re := by
-    conv_lhs => rw [← hx]
-    simp [inner_sum, J.complexModule_smul_def, ← hb, inner_add_right, real_inner_smul_right, ho,
-      hpair]
-  have him : ⟪e ⟨2 * k.val + 1, by omega⟩, x⟫ = ((basisOfOrthonormalBasis hb).repr x k).im := by
-    conv_lhs => rw [← hx]
-    simp [inner_sum, J.complexModule_smul_def, ← hb, inner_add_right, real_inner_smul_right, ho,
-      hpair]
+  obtain ⟨hre, him⟩ : ⟪e ⟨2 * k.val, by omega⟩, x⟫ = ((basisOfOrthonormalBasis hb).repr x k).re ∧
+      ⟪e ⟨2 * k.val + 1, by omega⟩, x⟫ = ((basisOfOrthonormalBasis hb).repr x k).im := by
+    constructor <;> (conv_lhs => rw [← hx]) <;>
+      simp [inner_sum, J.complexModule_smul_def, ← hb, inner_add_right, real_inner_smul_right, ho,
+        hpair]
   rw [hre, him, mul_comm]
   exact (Complex.re_add_im _).symm
 

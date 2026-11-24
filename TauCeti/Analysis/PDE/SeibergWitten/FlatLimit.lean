@@ -164,7 +164,7 @@ section Dirac
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
   (he : e.toBasis.orientation = o) (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3)
 
-include hQ hkl he h₀ h₂₃ in
+include hQ h₀ h₂₃ in
 /-- **The Dirac equation on the canonical line is `∂bar_a α = 0`**: for a constant nonzero spinor
 `u₀` with `P_α u₀ = u₀`, the Dirac operator of `α u₀`, `∑ₖ (∇_a α)(eₖ) c(eₖ) u₀`, vanishes at `x`
 if and only if `∂bar_a α` vanishes at `x`. -/
@@ -174,8 +174,8 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_iff
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (α : V → ℂ) (x : V) :
     ∑ k, covariantDeriv b α x (e k) • ρ (ι Q (e k)) u₀ = 0 ↔ covariantDBar J b α x = 0 := by
   rw [covariantDBar_eq_zero_iff]
-  exact (sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃
-    hρ hu₀ (covariantDeriv b α x : V →ₗ[ℝ] ℂ)).trans (or_iff_right hu₀')
+  exact (sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ h₀ h₂₃ hρ
+    hu₀ (covariantDeriv b α x : V →ₗ[ℝ] ℂ)).trans (or_iff_right hu₀')
 
 end Dirac
 
@@ -552,7 +552,7 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff {r : �
       (Vortex.sectionValue x (normalCoord e y) • u₀) =
         Vortex.sectionValue x (normalCoord e y) • u₀ := by
     rw [map_smul, hu₀]
-  rw [sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hkl he h₀ h₂₃ hρ hu₀ hu₀',
+  rw [sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ h₀ h₂₃ hρ hu₀ hu₀',
     covariantDBar_normalConnection_eq_zero_iff h₀ h₂₃ hx,
     add_hodgeStar_eq_sub_quadraticTwoForm_iff hQ hkl hω h₂ hρ hr hαu₀,
     alternatingFormEquiv_symm_neg_extDeriv_normalConnection hx,
@@ -742,7 +742,7 @@ theorem norm_eq_one_and_eq_normalConnection_sub_phaseForm {r : ℝ} (hr : 0 ≤ 
   have hflat (y : V) :=
     (sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff hQ hkl he h₀ h₂₃ hr h₂ hρ
       hu₀ hu₀₁ (hx (normalCoord e y))).2 (hsol _)
-  have hdirac := sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hkl he h₀ h₂₃ hρ hu₀ hu₀'
+  have hdirac := sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ h₀ h₂₃ hρ hu₀ hu₀'
   -- Transversal limits along the normal plane `K = span {e₂, e₃}` are limits as `|z| → ∞`.
   set K := Submodule.span ℝ {e 2, e 3}
   have hK : K ≠ ⊥ := fun hK ↦ e.orthonormal.ne_zero 2

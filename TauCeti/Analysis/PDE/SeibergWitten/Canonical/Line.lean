@@ -77,8 +77,10 @@ and the Clifford map sends `u₀` to `u₀`, `-i β₀` and `β₀` along `e₀ 
 
 ## Main results
 
-* `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`: `c(J v) ψ = i c(v) ψ`
-  for `P_α ψ = ψ`, and `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_zero`:
+* `TauCeti.SeibergWitten.ι_apply_apply_of_bivectorExterior_apply`: `c(J v) ψ = i c(v) ψ` for
+  `c₂(ω) ψ = -2i ψ`, in particular for `P_α ψ = ψ`
+  (`TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`), and
+  `TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_zero`:
   `c(J v) β = -i c(v) β` for `P_α β = 0`.
 * `TauCeti.SeibergWitten.cliffordProjection_kahlerForm_apply_eq_self_iff` and
   `TauCeti.SeibergWitten.cliffordProjection_kahlerForm_apply_eq_zero_iff`: conversely, these
@@ -98,8 +100,8 @@ and the Clifford map sends `u₀` to `u₀`, `-i β₀` and `β₀` along `e₀ 
   `c(e₀) c(e₂) ψ` lies in the complementary eigenspace.
 * `TauCeti.SeibergWitten.inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self`:
   `⟪c(v) ψ, c(w) ψ⟫ = (⟪v, w⟫ - i ⟪v, J w⟫) ‖ψ‖²`.
-* `TauCeti.SeibergWitten.sum_smul_ι_apply_of_cliffordProjection_apply_eq_self`: the Dirac symbol
-  on the canonical eigenspace in terms of the two `∂bar`-components.
+* `TauCeti.SeibergWitten.sum_smul_ι_apply_of_bivectorExterior_apply`: the Dirac symbol on the
+  canonical eigenspace in terms of the two `∂bar`-components.
 * `TauCeti.SeibergWitten.norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self`: its
   norm.
 * `TauCeti.SeibergWitten.sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self` and
@@ -203,6 +205,19 @@ theorem ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply {ψ : W}
   exact ⟨by linear_combination (norm := module) -h01, by linear_combination (norm := module) -h23⟩
 
 include hQ h₀ h₂ in
+/-- **Clifford multiplication of a complex covector on the canonical eigenspace**: if
+`c₂(ω) ψ = -2i ψ`, then `∑ₖ x_k c(e_k) ψ = (x₀ + i x₁) c(e₀) ψ + (x₂ + i x₃) c(e₂) ψ`. Only the two
+`∂bar`-components `x₀ + i x₁` and `x₂ + i x₃` of the covector survive. A positive half-spinor fixed
+by `P_α` is such an eigenvector (`bivectorExterior_apply_of_cliffordProjection_apply_eq_self`). -/
+theorem sum_smul_ι_apply_of_bivectorExterior_apply {ψ : W}
+    (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • ψ) (x : Fin 4 → ℂ) :
+    ∑ k, x k • ρ (ι Q (e k)) ψ =
+      (x 0 + Complex.I * x 1) • ρ (ι Q (e 0)) ψ + (x 2 + Complex.I * x 3) • ρ (ι Q (e 2)) ψ := by
+  obtain ⟨h₁, h₃⟩ := ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
+  rw [Fin.sum_univ_four, h₁, h₃]
+  module
+
+include hQ h₀ h₂ in
 /-- **Clifford multiplication on the canonical eigenspace in complex coordinates**: if
 `c₂(ω) ψ = -2i ψ`, then `c(v) ψ = z₀(v) c(e₀) ψ + z₂(v) c(e₂) ψ`, where
 `z₀(v) = ⟪e₀, v⟫ + i ⟪e₁, v⟫` and `z₂(v) = ⟪e₂, v⟫ + i ⟪e₃, v⟫` are the coordinates of `v` in the
@@ -216,25 +231,32 @@ theorem ι_apply_of_bivectorExterior_apply {ψ : W}
       (AlmostComplexStructure.basisOfOrthonormalBasisFinFour h₀ h₂).repr v 0 • ρ (ι Q (e 0)) ψ +
         (AlmostComplexStructure.basisOfOrthonormalBasisFinFour h₀ h₂).repr v 1 •
           ρ (ι Q (e 2)) ψ := by
-  obtain ⟨h₁, h₃⟩ := ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
-  simp only [AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_zero,
+  rw [e.map_ι_apply_eq_sum ρ v ψ]
+  simp only [← Complex.coe_smul, sum_smul_ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ,
+    AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_zero,
     AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_one]
-  rw [e.map_ι_apply_eq_sum ρ, Fin.sum_univ_four, h₁, h₃]
-  simp only [← Complex.coe_smul]
-  module
+
+include hQ h₀ h₂ in
+/-- **On the canonical eigenspace, Clifford multiplication turns `J` into `i`**: if
+`c₂(ω) ψ = -2i ψ`, then `c(J v) ψ = i c(v) ψ`, because the complex coordinates of `J v` are `i`
+times those of `v` (`ι_apply_of_bivectorExterior_apply`). -/
+theorem ι_apply_apply_of_bivectorExterior_apply {ψ : W}
+    (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • ψ) (v : V) :
+    ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
+  let := J.complexModule
+  rw [ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ (J v),
+    ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ v, ← J.complexModule_I_smul v, map_smul]
+  simp only [Finsupp.smul_apply, smul_eq_mul, smul_add, smul_smul]
 
 include hQ h₀ h₂ in
 /-- Clifford multiplication by the frame on `c(e₀) ψ`, for a `-2i`-eigenvector `ψ` of `c₂(ω)`:
-`c(e₁) c(e₀) ψ = i ψ`, `c(e₂) c(e₀) ψ = -c(e₀) c(e₂) ψ` and
-`c(e₃) c(e₀) ψ = -i c(e₀) c(e₂) ψ`. -/
+`c(e₁) c(e₀) ψ = i ψ` and `c(e₃) c(e₀) ψ = -i c(e₀) c(e₂) ψ`. -/
 theorem ι_apply_ι_zero_apply_of_bivectorExterior_apply {ψ : W}
     (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • ψ) :
     ρ (ι Q (e 1)) (ρ (ι Q (e 0)) ψ) = Complex.I • ψ ∧
-      ρ (ι Q (e 2)) (ρ (ι Q (e 0)) ψ) = -ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ) ∧
       ρ (ι Q (e 3)) (ρ (ι Q (e 0)) ψ) = -(Complex.I • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) := by
   obtain ⟨h₁, h₃⟩ := ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
-  have p20 := e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide) ψ
-  refine ⟨?_, p20, ?_⟩
+  constructor
   · rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), h₁, map_smul,
       e.map_ι_apply_map_ι_apply hQ ρ, smul_neg, neg_neg]
   · rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), h₃, map_smul]
@@ -255,20 +277,15 @@ theorem ι_apply_ι_two_apply_of_bivectorExterior_apply {ψ : W}
 
 include hQ h₀ h₂ in
 /-- Clifford multiplication by the frame on `c(e₀) c(e₂) ψ`, for a `-2i`-eigenvector `ψ` of
-`c₂(ω)`: `c(e₀) c(e₀) c(e₂) ψ = -c(e₂) ψ`, `c(e₁) c(e₀) c(e₂) ψ = i c(e₂) ψ`,
-`c(e₂) c(e₀) c(e₂) ψ = c(e₀) ψ` and `c(e₃) c(e₀) c(e₂) ψ = -i c(e₀) ψ`. -/
+`c₂(ω)`: `c(e₁) c(e₀) c(e₂) ψ = i c(e₂) ψ` and `c(e₃) c(e₀) c(e₂) ψ = -i c(e₀) ψ`. -/
 theorem ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply {ψ : W}
     (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • ψ) :
-    ρ (ι Q (e 0)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) = -ρ (ι Q (e 2)) ψ ∧
-      ρ (ι Q (e 1)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) = Complex.I • ρ (ι Q (e 2)) ψ ∧
-      ρ (ι Q (e 2)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) = ρ (ι Q (e 0)) ψ ∧
+    ρ (ι Q (e 1)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) = Complex.I • ρ (ι Q (e 2)) ψ ∧
       ρ (ι Q (e 3)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) = (-Complex.I) • ρ (ι Q (e 0)) ψ := by
   obtain ⟨p12, p32⟩ := ι_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
-  refine ⟨e.map_ι_apply_map_ι_apply hQ ρ _ _, ?_, ?_, ?_⟩
+  constructor
   · rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), p12, map_smul,
       e.map_ι_apply_map_ι_apply hQ ρ, smul_neg, neg_neg]
-  · rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), e.map_ι_apply_map_ι_apply hQ ρ, map_neg,
-      neg_neg]
   · rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), p32, map_smul, neg_smul]
 
 include hQ h₀ h₂ in
@@ -288,8 +305,9 @@ theorem ι_apply_ι_apply_of_bivectorExterior_apply {ψ : W}
             (AlmostComplexStructure.basisOfOrthonormalBasisFinFour h₀ h₂).repr w 0) •
         ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ) -
       ((⟪v, w⟫ : ℂ) - ⟪v, J w⟫ * Complex.I) • ψ := by
-  obtain ⟨p10, p20, p30⟩ := ι_apply_ι_zero_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
+  obtain ⟨p10, p30⟩ := ι_apply_ι_zero_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
   obtain ⟨p12, p32⟩ := ι_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
+  have p20 := e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide) ψ
   -- The inner products of `(V, J)` in the frame.
   have hvw : ⟪v, w⟫ = ⟪e 0, v⟫ * ⟪e 0, w⟫ + ⟪e 1, v⟫ * ⟪e 1, w⟫ + ⟪e 2, v⟫ * ⟪e 2, w⟫ +
       ⟪e 3, v⟫ * ⟪e 3, w⟫ := by
@@ -303,11 +321,10 @@ theorem ι_apply_ι_apply_of_bivectorExterior_apply {ψ : W}
     simp only [e.repr_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
       Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
     ring
-  rw [ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ w, map_add, map_smul,
-    map_smul, e.map_ι_apply_eq_sum ρ v (ρ (ι Q (e 0)) ψ), e.map_ι_apply_eq_sum ρ v,
-    Fin.sum_univ_four, Fin.sum_univ_four, p10, p20, p30, p12, p32, e.map_ι_apply_map_ι_apply hQ ρ,
-    e.map_ι_apply_map_ι_apply hQ ρ, hvw, hvJw]
-  simp only [AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_zero,
+  rw [ι_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ w]
+  simp only [map_add, map_smul, e.map_ι_apply_eq_sum ρ v, Fin.sum_univ_four, p10, p20, p30, p12,
+    p32, e.map_ι_apply_map_ι_apply hQ ρ, hvw, hvJw,
+    AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_zero,
     AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_one, ← Complex.coe_smul]
   push_cast
   match_scalars
@@ -321,7 +338,7 @@ theorem bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_bivectorExterior_
     (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • ψ) :
     ρ (bivectorExterior Q J.kahlerForm) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ)) =
       (2 * Complex.I) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) ψ) := by
-  obtain ⟨-, h1, -, h3⟩ := ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
+  obtain ⟨h1, h3⟩ := ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hψ
   rw [map_bivectorExterior_kahlerForm_apply hQ h₀ h₂, h1, h3, map_smul, map_smul,
     e.map_ι_apply_map_ι_apply_comm hQ ρ (i := 2) (j := 0) (by decide)]
   module
@@ -350,15 +367,14 @@ private theorem two_smul_ι_apply_apply_of_bivectorExterior_apply {ψ : positive
     (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)] at h
   linear_combination (norm := module) h
 
-include hQ hkl he h₀ h₂ in
+include hQ h₀ h₂ in
 /-- **On the canonical eigenspace, Clifford multiplication turns `J` into `i`**: if
-`P_α ψ = ψ`, then `c(J v) ψ = i c(v) ψ`. -/
+`P_α ψ = ψ`, then `c(J v) ψ = i c(v) ψ` (`ι_apply_apply_of_bivectorExterior_apply`). -/
 theorem ι_apply_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (v : V) :
-    ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
-  have h := two_smul_ι_apply_apply_of_bivectorExterior_apply hQ hkl he h₀ h₂
+    ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ :=
+  ι_apply_apply_of_bivectorExterior_apply hQ h₀ h₂
     (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hψ) v
-  linear_combination (norm := module) (2⁻¹ : ℂ) • h
 
 include hQ hkl he h₀ h₂ in
 /-- On the complementary eigenspace, Clifford multiplication turns `J` into `-i`: if
@@ -372,7 +388,7 @@ theorem ι_apply_apply_of_cliffordProjection_apply_eq_zero {β : positiveHalfSpi
 
 /-! ### The Hermitian structure of `v ↦ c(v) ψ` -/
 
-include hQ hkl he h₀ h₂ in
+include hQ h₀ h₂ in
 /-- On the canonical eigenspace, `v ↦ c(v) ψ` is a complex-linear isometric map from `(V, J)` up
 to the factor `‖ψ‖`: `⟪c(v) ψ, c(w) ψ⟫ = (⟪v, w⟫ - i ⟪v, J w⟫) ‖ψ‖²`. -/
 theorem inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self
@@ -385,30 +401,16 @@ theorem inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self
   -- The imaginary part is the real part for `J w`, since `c(J w) ψ = i c(w) ψ`.
   have him : (⟪ρ (ι Q v) ψ, ρ (ι Q w) ψ⟫_ℂ).im = -⟪v, J w⟫ * ‖(ψ : W)‖ ^ 2 := by
     have h := hre v (J w)
-    rw [ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ, inner_smul_right,
+    rw [ι_apply_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hψ, inner_smul_right,
       Complex.mul_re, Complex.I_re, Complex.I_im] at h
     linarith
   apply Complex.ext <;> simp [hre, him, ← Complex.ofReal_pow]
 
 /-! ### The Dirac symbol on the canonical eigenspace -/
 
-include hQ hkl he h₀ h₂ in
-/-- **Clifford multiplication of a complex covector on the canonical eigenspace**: if
-`P_α ψ = ψ`, then `∑ₖ x_k c(e_k) ψ = (x₀ + i x₁) c(e₀) ψ + (x₂ + i x₃) c(e₂) ψ`. Only the two
-`∂bar`-components `x₀ + i x₁` and `x₂ + i x₃` of the covector survive. -/
-theorem sum_smul_ι_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
-    (hψ : cliffordProjection o ρ J.kahlerForm ψ = ψ) (x : Fin 4 → ℂ) :
-    ∑ k, x k • ρ (ι Q (e k)) ψ =
-      (x 0 + Complex.I * x 1) • ρ (ι Q (e 0)) ψ + (x 2 + Complex.I * x 3) • ρ (ι Q (e 2)) ψ := by
-  have h₁ := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ (e 0)
-  have h₃ := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ (e 2)
-  rw [h₀] at h₁
-  rw [h₂] at h₃
-  rw [Fin.sum_univ_four, h₁, h₃]
-  module
-
-include hQ hkl he h₀ h₂ in
-/-- The norm of the Dirac symbol on the canonical eigenspace:
+include hQ h₀ h₂ in
+/-- The norm of the Dirac symbol on the canonical eigenspace
+(`sum_smul_ι_apply_of_bivectorExterior_apply`):
 `‖∑ₖ x_k c(e_k) ψ‖² = (|x₀ + i x₁|² + |x₂ + i x₃|²) ‖ψ‖²`. -/
 theorem norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {ψ : positiveHalfSpinors o ρ}
@@ -417,17 +419,18 @@ theorem norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self
       (‖x 0 + Complex.I * x 1‖ ^ 2 + ‖x 2 + Complex.I * x 3‖ ^ 2) * ‖(ψ : W)‖ ^ 2 := by
   -- `c(e₀) ψ` and `c(e₂) ψ` are orthogonal of norm `‖ψ‖`.
   have horth : ⟪ρ (ι Q (e 0)) ψ, ρ (ι Q (e 2)) ψ⟫_ℂ = 0 := by
-    rw [inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hψ, h₂,
+    rw [inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hψ, h₂,
       e.orthonormal.2 (by decide), e.orthonormal.2 (by decide)]
     simp
   have hnorm (k : Fin 4) : ‖ρ (ι Q (e k)) ψ‖ = ‖(ψ : W)‖ := by
     rw [norm_map_ι_apply hQ hρ, e.orthonormal.1 k, one_mul]
-  rw [sum_smul_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ,
+  rw [sum_smul_ι_apply_of_bivectorExterior_apply hQ h₀ h₂
+      (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hψ),
     norm_add_sq (𝕜 := ℂ), inner_smul_left, inner_smul_right, horth]
   simp only [mul_zero, RCLike.zero_re, add_zero, norm_smul, hnorm]
   ring
 
-include hQ hkl he h₀ h₂ in
+include hQ h₀ h₂ in
 /-- **The Dirac symbol on the canonical eigenspace vanishes exactly on `∂bar`-closed
 covectors**: for `P_α ψ = ψ`, `∑ₖ x_k c(e_k) ψ = 0` if and only if `ψ = 0` or
 `x₀ + i x₁ = x₂ + i x₃ = 0`. -/
@@ -437,12 +440,12 @@ theorem sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
     ∑ k, x k • ρ (ι Q (e k)) ψ = 0 ↔
       (ψ : W) = 0 ∨ (x 0 + Complex.I * x 1 = 0 ∧ x 2 + Complex.I * x 3 = 0) := by
   rw [← norm_eq_zero, ← sq_eq_zero_iff,
-    norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hψ,
+    norm_sum_smul_ι_apply_sq_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hψ,
     mul_eq_zero, add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)]
   simp only [sq_eq_zero_iff, norm_eq_zero]
   tauto
 
-include hQ hkl he h₀ h₂ in
+include hQ h₀ h₂ in
 /-- **The Dirac symbol on the canonical eigenspace sees only `∂bar`**: for `P_α ψ = ψ` and a
 real-linear complex covector `L`, such as a covariant derivative `∇_a α` at a point,
 `∑ₖ L(e_k) c(e_k) ψ = 0` if and only if `ψ = 0` or `L` is complex linear for `J`,
@@ -453,7 +456,7 @@ theorem sum_apply_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self
     ∑ k, L (e k) • ρ (ι Q (e k)) ψ = 0 ↔ (ψ : W) = 0 ∨ ∀ v, L (J v) = Complex.I * L v := by
   have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
   have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
-  rw [sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hψ
+  rw [sum_smul_ι_apply_eq_zero_iff_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hψ
     (fun k ↦ L (e k))]
   refine or_congr_right ⟨fun ⟨h01, h23⟩ v ↦ ?_, fun h ↦ ⟨?_, ?_⟩⟩
   · -- `L` commutes with `J` on the frame, hence everywhere.
@@ -543,23 +546,29 @@ theorem norm_pairedSpinor (u₀ : positiveHalfSpinors o ρ) : ‖pairedSpinor e 
 
 variable {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀)
 
-include hQ hkl he h₀ h₂ hρ hu₀ in
+include hQ h₀ h₂ hρ hu₀ in
 /-- The paired spinor of a canonical spinor `u₀` is orthogonal to `u₀`. -/
 theorem inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self :
     ⟪u₀, pairedSpinor e u₀⟫_ℂ = 0 := by
   rw [Submodule.coe_inner, coe_pairedSpinor, ← LinearMap.adjoint_inner_left, hρ,
     LinearMap.neg_apply, inner_neg_left,
-    inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hρ hu₀, h₀,
+    inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hu₀, h₀,
     e.orthonormal.2 (by decide : (2 : Fin 4) ≠ 0), e.orthonormal.2 (by decide : (2 : Fin 4) ≠ 1)]
   simp
 
 include hQ h₀ h₂ hu₀
 
+/-- `c(e₁) u₀ = i c(e₀) u₀` and `c(e₃) u₀ = i c(e₂) u₀` for a canonical spinor `u₀`
+(`ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply`). -/
+private theorem ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self :
+    ρ (ι Q (e 1)) u₀ = I • ρ (ι Q (e 0)) u₀ ∧ ρ (ι Q (e 3)) u₀ = I • ρ (ι Q (e 2)) u₀ :=
+  ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂
+    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
+
 /-- `c(e₁) β₀ = -i c(e₂) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`. -/
 theorem ι_one_apply_pairedSpinor_of_cliffordProjection_apply_eq_self :
     ρ (ι Q (e 1)) (pairedSpinor e u₀ : W) = -I • ρ (ι Q (e 2)) u₀ := by
-  obtain ⟨h₁, -⟩ := ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂
-    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
+  obtain ⟨h₁, -⟩ := ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀
   rw [coe_pairedSpinor,
     map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (1 : Fin 4) ≠ 2)),
     map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (1 : Fin 4) ≠ 0)),
@@ -569,8 +578,7 @@ theorem ι_one_apply_pairedSpinor_of_cliffordProjection_apply_eq_self :
 /-- `c(e₃) β₀ = i c(e₀) u₀` for the paired spinor `β₀ = c(e₂) c(e₀) u₀`. -/
 theorem ι_three_apply_pairedSpinor_of_cliffordProjection_apply_eq_self :
     ρ (ι Q (e 3)) (pairedSpinor e u₀ : W) = I • ρ (ι Q (e 0)) u₀ := by
-  obtain ⟨-, h₃⟩ := ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂
-    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
+  obtain ⟨-, h₃⟩ := ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀
   rw [coe_pairedSpinor,
     map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (3 : Fin 4) ≠ 2)),
     map_ι_apply_map_ι_apply_comm_of_isOrtho ρ (e.isOrtho_apply hQ (by decide : (3 : Fin 4) ≠ 0)),
@@ -583,7 +591,7 @@ canonical spinor `u₀`,
 `∑ₖ y_k c(e_k) β₀ = (y₀ - i y₁) c(e₂) u₀ - (y₂ - i y₃) c(e₀) u₀`. Only the two `∂`-components
 `y₀ - i y₁` and `y₂ - i y₃` survive, and they land on the two frame vectors `c(e₂) u₀` and
 `c(e₀) u₀` of `W⁻` in the opposite order from the canonical eigenspace
-(`sum_smul_ι_apply_of_cliffordProjection_apply_eq_self`). -/
+(`sum_smul_ι_apply_of_bivectorExterior_apply`). -/
 theorem sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self (y : Fin 4 → ℂ) :
     ∑ k, y k • ρ (ι Q (e k)) (pairedSpinor e u₀ : W) =
       (y 0 - I * y 1) • ρ (ι Q (e 2)) u₀ - (y 2 - I * y 3) • ρ (ι Q (e 0)) u₀ := by
@@ -597,8 +605,7 @@ theorem sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self (y : 
 theorem cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self :
     cliffordRestriction o ρ (ιMulti ℝ 2 ![e 0, e 1]) u₀ = u₀ := by
   apply Subtype.ext
-  obtain ⟨h₁, -⟩ := ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂
-    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
+  obtain ⟨h₁, -⟩ := ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀
   rw [coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ (e.orthonormal.2 (by decide)),
     map_mul, mul_apply_eq_comp, h₁, map_smul, smul_smul, I_mul_I]
   simp [hQ, e.orthonormal.1 0]
@@ -607,8 +614,7 @@ theorem cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_e
 theorem cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self :
     cliffordRestriction o ρ (ιMulti ℝ 2 ![e 0, e 3]) u₀ = pairedSpinor e u₀ := by
   apply Subtype.ext
-  obtain ⟨-, h₃⟩ := ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂
-    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
+  obtain ⟨-, h₃⟩ := ι_one_apply_and_ι_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀
   rw [coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ (e.orthonormal.2 (by decide)),
     map_mul, mul_apply_eq_comp, h₃, map_smul, smul_smul, I_mul_I,
     coe_pairedSpinor,
@@ -637,7 +643,7 @@ private theorem ι_apply_apply_eq_sub_of_cliffordProjection (ψ : positiveHalfSp
   have hβ : P (ψ - P ψ) = 0 := by rw [map_sub, hφ, sub_self]
   have hψ : (ψ : W) = (P ψ : W) + ((ψ - P ψ : positiveHalfSpinors o ρ) : W) := by simp
   conv_lhs => rw [hψ]
-  rw [map_add, ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hφ (e 0),
+  rw [map_add, ι_apply_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hφ (e 0),
     ι_apply_apply_of_cliffordProjection_apply_eq_zero hQ hkl he h₀ h₂ hβ (e 0), neg_smul,
     ← sub_eq_add_neg]
 
@@ -658,9 +664,7 @@ exactly when Clifford multiplication turns `J` into `i` on it, `c(J v) ψ = i c(
 theorem cliffordProjection_kahlerForm_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ J.kahlerForm ψ = ψ ↔
       ∀ v, ρ (ι Q (J v)) ψ = Complex.I • ρ (ι Q v) ψ := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
-  refine ⟨fun hψ ↦ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hψ,
-    fun h ↦ ?_⟩
+  refine ⟨fun hψ ↦ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hψ, fun h ↦ ?_⟩
   -- `c(e₀)` kills the component `ψ - P_α ψ` in the complementary eigenspace.
   have h0 : ψ - cliffordProjection o ρ J.kahlerForm ψ = 0 := by
     refine eq_zero_of_two_mul_I_smul_ι_apply_eq_zero hQ (e := e) ?_

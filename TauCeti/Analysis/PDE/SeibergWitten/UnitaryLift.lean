@@ -276,13 +276,12 @@ with `J`. -/
 theorem toSpecialOrthogonal_mem_unitaryGroup_of_mem_canonicalLineFixingSubgroup
     {x : spinCGroup Q hQ₀} (hx : x ∈ canonicalLineFixingSubgroup o ρ J hQ₀) :
     spinCGroup.toSpecialOrthogonal Q hQ₀ x ∈ J.unitaryGroup Q := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   obtain ⟨u, hu₀, hu, -⟩ :=
     exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
   set u' := positiveHalfSpinorsEquiv o ρ u
   have hxu : spinCGroupHalfSpinRep o ρ 1 hQ₀ x u' = u' :=
     hx u' (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu)
-  have hcl := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu
+  have hcl := ι_apply_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu
   rw [AlmostComplexStructure.mem_unitaryGroup_iff]
   intro v
   set A := (spinCGroup.toSpecialOrthogonal Q hQ₀ x : V ≃ₗ[ℝ] V)
@@ -550,7 +549,8 @@ section ComplexDeterminant
 variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
   (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 
-include hQ he h₀ h₂ in
+omit [FiniteDimensional ℂ W] in
+include hQ h₀ h₂ in
 /-- On a vector `u` of the canonical line, Clifford multiplication turns the complex scalar
 `a + b i`, acting on `V` by `a + b J`, into the scalar `a + b i` on the negative half-spinors:
 `c(a v + b J v) u = (a + b i) c(v) u`. -/
@@ -558,11 +558,8 @@ private theorem halfSpinCliffordMul_smul_add_smul_apply {u : eigenspace (ρ (chi
     (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) (a b : ℝ) (v : V) :
     halfSpinCliffordMul o ρ 1 (a • v + b • J v) u =
       ((a : ℂ) + b * Complex.I) • halfSpinCliffordMul o ρ 1 v u := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   have hJ := halfSpinCliffordMul_apply_eq_smul (ψ := u)
-    (ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂
-      (cliffordProjection_apply_eq_self_of_bivectorExterior_apply o ρ
-        (ψ := (positiveHalfSpinorsEquiv o ρ).symm u) hu) v)
+    (ι_apply_apply_of_bivectorExterior_apply hQ h₀ h₂ hu v)
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hJ]
   module
 
@@ -648,7 +645,7 @@ theorem det_unitaryLift (A : J.unitaryGroup Q) :
     { E with
       map_smul' z v := by
         simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe, hE]
-        rw [J.complexModule_smul_def, halfSpinCliffordMul_smul_add_smul_apply hQ he h₀ h₂ hb,
+        rw [J.complexModule_smul_def, halfSpinCliffordMul_smul_add_smul_apply hQ h₀ h₂ hb,
           Complex.re_add_im, RingHom.id_apply] }
   have hTe (v : V) : Te v = halfSpinCliffordMul o ρ 1 v u := hE v
   -- By the intertwining lemma, the canonical lift acts on the negative half-spinors as
