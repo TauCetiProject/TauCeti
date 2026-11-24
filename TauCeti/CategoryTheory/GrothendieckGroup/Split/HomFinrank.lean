@@ -12,12 +12,13 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 /-!
 # Hom ranks on split `K₀` of a linear category
 
-Let `C` be a `k`-linear category with binary biproducts whose Hom modules are finite and free,
-for instance a category of finite-dimensional representations over a field. For a fixed object
-`σ`, the rank of `σ ⟶ X` is invariant under isomorphisms of `X` and additive on biproducts, so it
-descends to the additive map `TauCeti.SplitK0.homFinrank k σ : SplitK0 C →+ ℤ` sending `[X]` to
-`finrank k (σ ⟶ X)`. For finite-dimensional representations of a compact group over `ℂ` and an
-irreducible `σ`, this is the multiplicity of `σ` in a virtual representation.
+Let `C` be a `k`-linear category with binary biproducts and `σ` an object of `C` whose Hom
+modules `σ ⟶ X` are finite and free, for instance any object of a category of finite-dimensional
+representations over a field. The rank of `σ ⟶ X` is invariant under isomorphisms of `X` and
+additive on biproducts, so it descends to the additive map
+`TauCeti.SplitK0.homFinrank k σ : SplitK0 C →+ ℤ` sending `[X]` to `finrank k (σ ⟶ X)`. For
+finite-dimensional representations of a compact group over `ℂ` and an irreducible `σ`, this is
+the multiplicity of `σ` in a virtual representation.
 
 The map depends on `σ` only through its isomorphism class, is additive in `σ` and vanishes for a
 zero object.
@@ -46,12 +47,12 @@ namespace SplitK0
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
   [EssentiallySmall.{w} C] (k : Type t) [Semiring k] [StrongRankCondition k] [Linear k C]
-  [∀ X Y : C, Module.Free k (X ⟶ Y)] [∀ X Y : C, Module.Finite k (X ⟶ Y)]
 
 /-- The **Hom rank** of an object `σ` on split `K₀`: the additive map `SplitK0 C → ℤ` sending the
 class of `X` to the rank of `σ ⟶ X`. For representations of a compact group over `ℂ` and an
 irreducible `σ`, this is the multiplicity of `σ` in a virtual representation. -/
-noncomputable def homFinrank (σ : C) : SplitK0.{w} C →+ ℤ :=
+noncomputable def homFinrank (σ : C) [∀ X : C, Module.Free k (σ ⟶ X)]
+    [∀ X : C, Module.Finite k (σ ⟶ X)] : SplitK0.{w} C →+ ℤ :=
   lift
     { obj X := Module.finrank k (σ ⟶ X)
       map_iso _ _ e := by rw [(Linear.homCongr k (Iso.refl σ) e).finrank_eq]
@@ -59,14 +60,17 @@ noncomputable def homFinrank (σ : C) : SplitK0.{w} C →+ ℤ :=
 
 /-- The Hom rank of `σ` sends the class of `X` to the rank of `σ ⟶ X`. -/
 @[simp]
-theorem homFinrank_of (σ X : C) :
+theorem homFinrank_of (σ : C) [∀ X : C, Module.Free k (σ ⟶ X)]
+    [∀ X : C, Module.Finite k (σ ⟶ X)] (X : C) :
     homFinrank.{w} k σ (of X) = Module.finrank k (σ ⟶ X) :=
   lift_of _ X
 
 variable {k}
 
 /-- Isomorphic objects have the same Hom rank. -/
-theorem homFinrank_congr {σ σ' : C} (e : σ ≅ σ') :
+theorem homFinrank_congr {σ σ' : C} [∀ X : C, Module.Free k (σ ⟶ X)]
+    [∀ X : C, Module.Finite k (σ ⟶ X)] [∀ X : C, Module.Free k (σ' ⟶ X)]
+    [∀ X : C, Module.Finite k (σ' ⟶ X)] (e : σ ≅ σ') :
     homFinrank.{w} k σ = homFinrank k σ' :=
   hom_ext fun X ↦ by
     rw [homFinrank_of, homFinrank_of, (Linear.homCongr k e (Iso.refl X)).finrank_eq]
@@ -74,14 +78,17 @@ theorem homFinrank_congr {σ σ' : C} (e : σ ≅ σ') :
 variable (k) in
 /-- The Hom rank of a biproduct is the sum of the Hom ranks of the summands. -/
 @[simp]
-theorem homFinrank_biprod (σ τ : C) :
+theorem homFinrank_biprod (σ τ : C) [∀ X : C, Module.Free k (σ ⟶ X)]
+    [∀ X : C, Module.Finite k (σ ⟶ X)] [∀ X : C, Module.Free k (τ ⟶ X)]
+    [∀ X : C, Module.Finite k (τ ⟶ X)] [∀ X : C, Module.Free k (σ ⊞ τ ⟶ X)] :
     homFinrank.{w} k (σ ⊞ τ) = homFinrank k σ + homFinrank k τ :=
   hom_ext fun X ↦ by
     rw [AddMonoidHom.add_apply, homFinrank_of, homFinrank_of, homFinrank_of,
       finrank_hom_biprod k X σ τ, Nat.cast_add]
 
 /-- The Hom rank of a zero object vanishes. -/
-theorem homFinrank_eq_zero_of_isZero {σ : C} (hσ : IsZero σ) : homFinrank.{w} k σ = 0 :=
+theorem homFinrank_eq_zero_of_isZero {σ : C} [∀ X : C, Module.Free k (σ ⟶ X)]
+    [∀ X : C, Module.Finite k (σ ⟶ X)] (hσ : IsZero σ) : homFinrank.{w} k σ = 0 :=
   hom_ext fun X ↦ by
     have : Subsingleton (σ ⟶ X) := ⟨hσ.eq_of_src⟩
     rw [homFinrank_of, Module.finrank_zero_of_subsingleton, Nat.cast_zero,
