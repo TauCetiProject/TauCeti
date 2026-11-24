@@ -148,13 +148,10 @@ private theorem abelianizationToQuotientFin_surjective (k : ℕ) :
   obtain ⟨e, he, u, rfl⟩ :=
     exists_mem_elementarySubgroup_mul_diagGL_mulSingle (Fin.last (k + 1)) g
   refine ⟨Group.Abelianization.of u, ?_⟩
-  rw [abelianizationToQuotientFin_of, QuotientGroup.eq]
-  have hinv : (diagGL (Pi.mulSingle (Fin.last (k + 1)) u))⁻¹ *
-      (e * diagGL (Pi.mulSingle (Fin.last (k + 1)) u)) =
-      (diagGL (Pi.mulSingle (Fin.last (k + 1)) u))⁻¹ * e *
-        ((diagGL (Pi.mulSingle (Fin.last (k + 1)) u))⁻¹)⁻¹ := by group
-  rw [hinv]
-  exact elementarySubgroup_normal.conj_mem e he _
+  rw [abelianizationToQuotientFin_of]
+  symm
+  rw [← QuotientGroup.mk'_apply, map_mul, QuotientGroup.mk'_apply,
+    (QuotientGroup.eq_one_iff e).2 he, one_mul, QuotientGroup.mk'_apply]
 
 /-- The `m × m` Schur complement obtained from `A : Matrix (Fin (m + 1)) (Fin (m + 1)) D` by
 eliminating column `0` using pivot row `p`. -/

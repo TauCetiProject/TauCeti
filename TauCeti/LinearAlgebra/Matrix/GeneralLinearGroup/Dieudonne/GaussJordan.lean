@@ -7,15 +7,15 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 import Mathlib.LinearAlgebra.Matrix.Unique
-import TauCeti.Data.Fin.Sum
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
 
 /-!
 # Gauss–Jordan factorization and normality of the elementary subgroup over a division ring
 
-Over a division ring `D`, Gaussian elimination reduces every invertible matrix to a diagonal matrix
-supported at a single chosen coordinate: for any `i : n` and `g ∈ GL n D`, there exist an
-elementary matrix `e ∈ TauCeti.elementarySubgroup n D` and a unit `u : Dˣ` such that
+Over a division ring `D`, Gaussian elimination (obtained via Bass's surjective stability at stable
+range `1`) reduces every invertible matrix to a diagonal matrix supported at a single chosen
+coordinate: for any `i : n` and `g ∈ GL n D`, there exist an elementary matrix
+`e ∈ TauCeti.elementarySubgroup n D` and a unit `u : Dˣ` such that
 `g = e * diagGL (Pi.mulSingle i u)` (`TauCeti.exists_mem_elementarySubgroup_mul_diagGL_mulSingle`).
 Consequently every invertible matrix factors as an elementary matrix times an invertible diagonal
 matrix (`TauCeti.exists_mem_elementarySubgroup_mul_diagGL`), and two monoid homomorphisms out of
@@ -23,9 +23,9 @@ matrix (`TauCeti.exists_mem_elementarySubgroup_mul_diagGL`), and two monoid homo
 single-entry diagonal matrices at one coordinate
 (`Matrix.GeneralLinearGroup.hom_ext_of_elementarySubgroup_le_ker`).
 
-Since invertible diagonal matrices normalize the generators of `TauCeti.elementarySubgroup n D`
-(`TauCeti.diagGL_mul_transvectionUnit_mul_inv`), the Gauss–Jordan factorization implies that
-`TauCeti.elementarySubgroup n D` is normal in `GL n D` already at every finite matrix size
+Since `TauCeti.elementarySubgroup n D` is normal by
+`TauCeti.elementarySubgroup_normal_of_hasStableRangeLE` for `2 ≤ Fintype.card n` and trivial for
+`Fintype.card n ≤ 1`, it is normal in `GL n D` at every finite matrix size
 (`TauCeti.elementarySubgroup_normal`), without stabilization.
 
 ## Main results
@@ -55,105 +55,12 @@ namespace TauCeti
 
 variable {D : Type*} [DivisionRing D]
 
-/-- Over a division ring, any `A ∈ GL (Fin (k + 2)) D` can be left-multiplied by an elementary
-matrix so that its `(0, 0)` entry becomes `1`. -/
-private theorem exists_mem_elementarySubgroup_mul_apply_zero_zero_eq_one (k : ℕ)
-    (A : GL (Fin (k + 2)) D) :
-    ∃ e ∈ elementarySubgroup (Fin (k + 2)) D, ((e * A : GL (Fin (k + 2)) D) 0 0 : D) = 1 := by
-  have hstep1 : ∃ e₁ ∈ elementarySubgroup (Fin (k + 2)) D,
-      ((e₁ * A : GL (Fin (k + 2)) D) 1 0 : D) ≠ 0 := by
-    by_cases h10 : A 1 0 ≠ 0
-    · exact ⟨1, one_mem _, by simpa using h10⟩
-    push Not at h10
-    obtain ⟨i, hi⟩ := A.exists_apply_ne_zero_col 0
-    have hi1 : (1 : Fin (k + 2)) ≠ i := fun h ↦ hi (h ▸ h10)
-    refine ⟨transvectionUnit hi1 1, transvectionUnit_mem_elementarySubgroup hi1 1, ?_⟩
-    rw [transvectionUnit_mul_apply_self, h10, zero_add, one_mul]
-    exact hi
-  obtain ⟨e₁, he₁, hB10⟩ := hstep1
-  let B : GL (Fin (k + 2)) D := e₁ * A
-  have h01 : (0 : Fin (k + 2)) ≠ 1 := Fin.zero_ne_one
-  let e₂ := transvectionUnit h01 ((1 - B 0 0) * (B 1 0)⁻¹)
-  refine ⟨e₂ * e₁, mul_mem (transvectionUnit_mem_elementarySubgroup _ _) he₁, ?_⟩
-  rw [mul_assoc, transvectionUnit_mul_apply]
-  dsimp only [B]
-  rw [mul_assoc, inv_mul_cancel₀ hB10]
-  simp
-
-/-- Block elimination step on `Fin 1 ⊕ Fin (k + 1)` when the upper-left `1 × 1` entry is `1`. -/
-private theorem exists_mem_elementarySubgroup_mul_fromBlocksGL {k : ℕ}
-    (M : GL (Fin 1 ⊕ Fin (k + 1)) D)
-    (hM11 : (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₁ = 1) :
-    ∃ e ∈ elementarySubgroup (Fin 1 ⊕ Fin (k + 1)) D, ∃ S : GL (Fin (k + 1)) D,
-      M = e * fromBlocksGL (1, S) := by
-  let c := (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₁
-  have hM11_unit : IsUnit (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₁ :=
-    hM11 ▸ isUnit_one
-  let S := M.schurComplement hM11_unit
-  have hS : -(M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₁ *
-        (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₂ +
-        (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₂₂ = S := by
-    have hu : hM11_unit.unit = 1 := Units.ext (hM11_unit.unit_spec.trans hM11)
-    simp [S, hu, sub_eq_add_neg, add_comm]
-  let r := (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₂
-  let rS : Matrix (Fin 1) (Fin (k + 1)) D :=
-    r * ((S⁻¹ : GL (Fin (k + 1)) D) : Matrix (Fin (k + 1)) (Fin (k + 1)) D)
-  have hM'_eq : lowerBlockGL (-c) * M = upperBlockGL rS * fromBlocksGL (1, S) := by
-    apply Units.ext
-    have hrS : rS * (S : Matrix (Fin (k + 1)) (Fin (k + 1)) D) = r := by
-      simp [rS, Matrix.mul_assoc]
-    rw [Units.val_mul (lowerBlockGL (-c)) M, Matrix.coe_lowerBlockGL_neg_toBlocks₂₁_mul _ hM11,
-      hS, Units.val_mul (upperBlockGL rS) (fromBlocksGL (1, S)), coe_upperBlockGL, coe_fromBlocksGL,
-      Matrix.fromBlocks_multiply]
-    simp [hrS, r]
-  refine ⟨(lowerBlockGL (-c))⁻¹ * upperBlockGL rS,
-    mul_mem (inv_mem (lowerBlockGL_mem_elementarySubgroup _))
-      (upperBlockGL_mem_elementarySubgroup _), S, ?_⟩
-  rw [mul_assoc, ← hM'_eq, inv_mul_cancel_left]
-
-/-- Inductive Gauss–Jordan factorization on `Fin (m + 1)`: every invertible matrix is an elementary
-matrix times a diagonal matrix concentrated at `Fin.last m`. -/
-private theorem exists_mem_elementarySubgroup_mul_lastDiag :
-    ∀ (m : ℕ) (A : GL (Fin (m + 1)) D),
-      ∃ e ∈ elementarySubgroup (Fin (m + 1)) D, ∃ u : Dˣ,
-        A = e * diagGL (Pi.mulSingle (Fin.last m) u)
-  | 0, A => by
-    let u : Dˣ :=
-      Units.map (Matrix.uniqueRingEquiv : Matrix (Fin 1) (Fin 1) D ≃+* D).toMonoidHom A
-    have hu : (u : D) = A 0 0 :=
-      (Units.coe_map _ A).trans (Matrix.uniqueRingEquiv_apply (m := Fin 1) A.val)
-    refine ⟨1, one_mem _, u, ?_⟩
-    ext i j; fin_cases i; fin_cases j; simp [Fin.last, hu]
-  | k + 1, A => by
-    obtain ⟨e₁, he₁, h1⟩ := exists_mem_elementarySubgroup_mul_apply_zero_zero_eq_one k A
-    let M : GL (Fin 1 ⊕ Fin (k + 1)) D := (finOneSumEquiv (k + 1)).symm.reindexGL D (e₁ * A)
-    have hM11 : (M : Matrix (Fin 1 ⊕ Fin (k + 1)) (Fin 1 ⊕ Fin (k + 1)) D).toBlocks₁₁ = 1 := by
-      ext i j; fin_cases i; fin_cases j; simpa [M, Matrix.toBlocks₁₁] using h1
-    obtain ⟨eM, heM, S, hM⟩ := exists_mem_elementarySubgroup_mul_fromBlocksGL M hM11
-    obtain ⟨eS, heS, u, hS⟩ := exists_mem_elementarySubgroup_mul_lastDiag k S
-    let e₂ : GL (Fin (k + 2)) D := (finOneSumEquiv (k + 1)).reindexGL D (eM * fromBlocksGL (1, eS))
-    have he₂ : e₂ ∈ elementarySubgroup (Fin (k + 2)) D := by
-      rw [← (finOneSumEquiv (k + 1)).map_reindexGL_elementarySubgroup]
-      exact ⟨_, mul_mem heM (map_inr_elementarySubgroup_le_elementarySubgroup ⟨eS, heS, rfl⟩), rfl⟩
-    have hdiag_sw : (finOneSumEquiv (k + 1)).reindexGL D
-        (fromBlocksGL (1, diagGL (Pi.mulSingle (Fin.last k) u))) =
-        diagGL (Pi.mulSingle (Fin.last (k + 1)) u) := by
-      rw [← map_one diagGL, fromBlocksGL_diagGL, Equiv.reindexGL_diagGL]
-      congr 1
-      ext i
-      obtain ⟨i, rfl⟩ := (finOneSumEquiv (k + 1)).surjective i
-      rcases i with i | i
-      · fin_cases i; simp [Fin.ext_iff]
-      · simp [Pi.mulSingle_apply, Fin.ext_iff, Fin.val_last]
-    have hM_decomp :
-        M = (eM * fromBlocksGL (1, eS)) *
-          fromBlocksGL (1, diagGL (Pi.mulSingle (Fin.last k) u)) := by
-      rw [hM, hS, ← Prod.one_mk_mul_one_mk, map_mul, mul_assoc]
-    refine ⟨e₁⁻¹ * e₂, mul_mem (inv_mem he₁) he₂, u, ?_⟩
-    have he₁A : e₁ * A = e₂ * diagGL (Pi.mulSingle (Fin.last (k + 1)) u) := by
-      simpa [M, map_mul, e₂, hdiag_sw] using
-        congrArg ((finOneSumEquiv (k + 1)).reindexGL D) hM_decomp
-    rw [mul_assoc, ← he₁A, inv_mul_cancel_left]
+private theorem hasStableRangeLE_one (D : Type*) [DivisionRing D] : HasStableRangeLE D 1 :=
+  have : IsLocalRing D := IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun x ↦ by
+    by_cases hx : x = 0
+    · exact Or.inr (by simp [hx])
+    · exact Or.inl (Ne.isUnit hx)
+  hasStableRangeLE_one_of_isLocalRing D
 
 /-- **Gauss–Jordan factorization over a division ring.** Given any coordinate `i : n`, every
 invertible matrix `g ∈ GL n D` factors as an elementary matrix times a diagonal matrix whose only
@@ -161,22 +68,31 @@ possibly non-identity diagonal entry sits at `i`. -/
 theorem exists_mem_elementarySubgroup_mul_diagGL_mulSingle {n : Type*} [Fintype n] [DecidableEq n]
     (i : n) (g : GL n D) :
     ∃ e ∈ elementarySubgroup n D, ∃ u : Dˣ, g = e * diagGL (Pi.mulSingle i u) := by
-  have hpos : 0 < Fintype.card n := Fintype.card_pos_iff.mpr ⟨i⟩
-  obtain ⟨m, hm⟩ : ∃ m, Fintype.card n = m + 1 := Nat.exists_eq_succ_of_ne_zero hpos.ne'
-  let e₀ : n ≃ Fin (m + 1) := Fintype.equivFinOfCardEq hm
-  let eqv : n ≃ Fin (m + 1) := e₀.trans (Equiv.swap (e₀ i) (Fin.last m))
-  have heqv_i : eqv i = Fin.last m := by simp [eqv]
-  obtain ⟨e', he', u, hg'⟩ :=
-    exists_mem_elementarySubgroup_mul_lastDiag m (eqv.reindexGL D g)
-  refine ⟨eqv.symm.reindexGL D e', ?_, u, ?_⟩
-  · rw [← eqv.symm.map_reindexGL_elementarySubgroup]; exact ⟨e', he', rfl⟩
-  · have hdiag : eqv.symm.reindexGL D (diagGL (Pi.mulSingle (Fin.last m) u)) =
-        diagGL (Pi.mulSingle i u) := by
-      rw [Equiv.reindexGL_diagGL]
-      congr 1
-      ext a
-      simp [Pi.mulSingle_apply, ← heqv_i]
-    simpa [map_mul, hdiag] using congrArg (eqv.symm.reindexGL D) hg'
+  let φ : Unit ⊕ {x : n // x ≠ i} ≃ n :=
+    (Equiv.sumComm Unit {x : n // x ≠ i}).trans (Equiv.subtypeNeSumPUnit.{0} i)
+  obtain ⟨h, e, he, hge⟩ := surjective_stability 1 (hasStableRangeLE_one D) Unit {x : n // x ≠ i}
+    le_rfl (φ.symm.reindexGL D g)⁻¹
+  have hg_inv : (φ.symm.reindexGL D g)⁻¹ = fromBlocksGL (h, (1 : GL {x : n // x ≠ i} D)) * e :=
+    Units.ext (by simpa using hge)
+  have hg : φ.symm.reindexGL D g = e⁻¹ * fromBlocksGL (h⁻¹, (1 : GL {x : n // x ≠ i} D)) := by
+    calc φ.symm.reindexGL D g = ((φ.symm.reindexGL D g)⁻¹)⁻¹ := (inv_inv _).symm
+      _ = (fromBlocksGL (h, (1 : GL {x : n // x ≠ i} D)) * e)⁻¹ := by rw [hg_inv]
+      _ = e⁻¹ * fromBlocksGL (h⁻¹, (1 : GL {x : n // x ≠ i} D)) := by
+        rw [_root_.mul_inv_rev, ← map_inv, Prod.inv_mk, inv_one]
+  let u : Dˣ := Units.map (Matrix.uniqueRingEquiv : Matrix Unit Unit D ≃+* D).toMonoidHom h⁻¹
+  have hh_inv : h⁻¹ = diagGL (fun _ : Unit ↦ u) := by
+    refine Units.ext (Matrix.uniqueRingEquiv.injective ?_)
+    simp [u, Matrix.uniqueRingEquiv_apply]
+  have helim : Sum.elim (fun _ : Unit ↦ u) (1 : {x : n // x ≠ i} → Dˣ) =
+      Pi.mulSingle (Sum.inl ()) u := by
+    ext (⟨⟩ | x) <;> simp
+  have hdiag : φ.reindexGL D (fromBlocksGL (h⁻¹, (1 : GL {x : n // x ≠ i} D))) =
+      diagGL (Pi.mulSingle i u) := by
+    rw [hh_inv, ← map_one diagGL, fromBlocksGL_diagGL, Equiv.reindexGL_diagGL, helim]
+    congr 1
+    simpa [φ] using Pi.mulSingle_comp_equiv φ.symm (Sum.inl ()) u
+  refine ⟨φ.reindexGL D e⁻¹, (φ.reindexGL_mem_elementarySubgroup_iff).mpr (inv_mem he), u, ?_⟩
+  simpa [map_mul, hdiag] using congrArg (φ.reindexGL D) hg
 
 /-- Over a division ring, every invertible matrix factors as an elementary matrix times an
 invertible diagonal matrix. -/
@@ -191,24 +107,14 @@ theorem exists_mem_elementarySubgroup_mul_diagGL {n : Type*} [Fintype n] [Decida
 /-- **The elementary subgroup is normal over a division ring**, already at every finite matrix
 size. -/
 instance elementarySubgroup_normal {n : Type*} [Fintype n] [DecidableEq n] :
-    (elementarySubgroup n D).Normal where
-  conj_mem x hx g := by
-    rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
-    · exact Subsingleton.elim (g * x * g⁻¹) 1 ▸ one_mem _
-    have hdiag_norm (d : n → Dˣ) {y : GL n D} (hy : y ∈ elementarySubgroup n D) :
-        diagGL d * y * (diagGL d)⁻¹ ∈ elementarySubgroup n D := by
-      have hle : elementarySubgroup n D ≤
-          (elementarySubgroup n D).comap (MulAut.conj (diagGL d)).toMonoidHom := by
-        refine elementarySubgroup_le_iff.2 fun i j hij c ↦ ?_
-        rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
-          diagGL_mul_transvectionUnit_mul_inv]
-        exact transvectionUnit_mem_elementarySubgroup hij _
-      exact hle hy
-    obtain ⟨e, he, u, rfl⟩ := exists_mem_elementarySubgroup_mul_diagGL_mulSingle i₀ g
-    have hrewrite : (e * diagGL (Pi.mulSingle i₀ u)) * x * (e * diagGL (Pi.mulSingle i₀ u))⁻¹ =
-        e * (diagGL (Pi.mulSingle i₀ u) * x * (diagGL (Pi.mulSingle i₀ u))⁻¹) * e⁻¹ := by group
-    rw [hrewrite]
-    exact mul_mem (mul_mem he (hdiag_norm _ hx)) (inv_mem he)
+    (elementarySubgroup n D).Normal := by
+  by_cases hn : 2 ≤ Fintype.card n
+  · exact elementarySubgroup_normal_of_hasStableRangeLE (hasStableRangeLE_one D) hn
+  · have : Subsingleton n := Fintype.card_le_one_iff_subsingleton.mp (by omega)
+    have hbot : elementarySubgroup n D = ⊥ :=
+      le_bot_iff.mp (elementarySubgroup_le_iff.2 fun i j hij _ ↦ absurd (Subsingleton.elim i j) hij)
+    rw [hbot]
+    infer_instance
 
 end TauCeti
 

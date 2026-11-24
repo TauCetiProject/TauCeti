@@ -333,26 +333,19 @@ def toBlocks₂₂OfZero₂₁ {R : Type*} [Semiring R] (M : GL (m ⊕ k) R)
     inv := ((M⁻¹ : GL (m ⊕ k) R) : Matrix (m ⊕ k) (m ⊕ k) R).toBlocks₂₂
     val_inv := by
       have hmul := congrArg Matrix.toBlocks₂₂ M.mul_inv
-      rw [← Matrix.fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) R),
-        ← Matrix.fromBlocks_toBlocks ((M⁻¹ : GL (m ⊕ k) R) : Matrix (m ⊕ k) (m ⊕ k) R),
-        h₂₁, Matrix.fromBlocks_multiply, h1_22] at hmul
-      simpa using hmul
+      rw [Matrix.toBlocks₂₂_mul, h₂₁, Matrix.zero_mul, zero_add, h1_22] at hmul
+      exact hmul
     inv_val := by
       have h1_21 : (1 : Matrix (m ⊕ k) (m ⊕ k) R).toBlocks₂₁ = 0 := by
         rw [← Matrix.fromBlocks_one, Matrix.toBlocks_fromBlocks₂₁]
       have h21 := congrArg Matrix.toBlocks₂₁ M.inv_mul
-      rw [← Matrix.fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) R),
-        ← Matrix.fromBlocks_toBlocks ((M⁻¹ : GL (m ⊕ k) R) : Matrix (m ⊕ k) (m ⊕ k) R),
-        h₂₁, Matrix.fromBlocks_multiply, h1_21] at h21
-      simp only [Matrix.toBlocks_fromBlocks₂₁, Matrix.mul_zero, add_zero] at h21
+      rw [Matrix.toBlocks₂₁_mul, h₂₁, Matrix.mul_zero, add_zero, h1_21] at h21
       have hinv₂₁ : ((M⁻¹ : GL (m ⊕ k) R) : Matrix (m ⊕ k) (m ⊕ k) R).toBlocks₂₁ = 0 := by
         have := congrArg (· * (↑h₁₁.unit⁻¹ : Matrix m m R)) h21
         simpa [Matrix.mul_assoc, h₁₁.unit_spec] using this
       have hmul := congrArg Matrix.toBlocks₂₂ M.inv_mul
-      rw [← Matrix.fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) R),
-        ← Matrix.fromBlocks_toBlocks ((M⁻¹ : GL (m ⊕ k) R) : Matrix (m ⊕ k) (m ⊕ k) R),
-        hinv₂₁, Matrix.fromBlocks_multiply, h1_22] at hmul
-      simpa using hmul }
+      rw [Matrix.toBlocks₂₂_mul, hinv₂₁, Matrix.zero_mul, zero_add, h1_22] at hmul
+      exact hmul }
 
 /-- The matrix underlying `Matrix.GeneralLinearGroup.toBlocks₂₂OfZero₂₁` is `M.toBlocks₂₂`. -/
 @[simp]
@@ -440,16 +433,18 @@ theorem upperBlockGL_inv (X : Matrix m k A) : (upperBlockGL X)⁻¹ = upperBlock
 theorem lowerBlockGL_inv (Y : Matrix k m A) : (lowerBlockGL Y)⁻¹ = lowerBlockGL (-Y) :=
   Units.ext (rfl)
 
-/-- Left multiplication by `lowerBlockGL (-M.toBlocks₂₁)` clears the lower-left block of a block
-matrix `M` whose upper-left block is `1`, replacing the lower-right block by the Schur complement
-`-M.toBlocks₂₁ * M.toBlocks₁₂ + M.toBlocks₂₂`. -/
-theorem coe_lowerBlockGL_neg_toBlocks₂₁_mul (M : Matrix (m ⊕ k) (m ⊕ k) A)
-    (h₁₁ : M.toBlocks₁₁ = 1) :
-    (lowerBlockGL (-M.toBlocks₂₁) : Matrix (m ⊕ k) (m ⊕ k) A) * M =
-      fromBlocks 1 M.toBlocks₁₂ 0 (-M.toBlocks₂₁ * M.toBlocks₁₂ + M.toBlocks₂₂) := by
-  rw [coe_lowerBlockGL]
-  conv_lhs => rw [← fromBlocks_toBlocks M, h₁₁]
-  simp [fromBlocks_multiply]
+/-- Left multiplication by `lowerBlockGL Y` adds `Y` times the top blocks of `M` to the bottom
+blocks of `M`. -/
+theorem coe_lowerBlockGL_mul (Y : Matrix k m A) (M : Matrix (m ⊕ k) (m ⊕ k) A) :
+    (lowerBlockGL Y : Matrix (m ⊕ k) (m ⊕ k) A) * M =
+      fromBlocks M.toBlocks₁₁ M.toBlocks₁₂
+        (Y * M.toBlocks₁₁ + M.toBlocks₂₁) (Y * M.toBlocks₁₂ + M.toBlocks₂₂) := by
+  calc (lowerBlockGL Y : Matrix (m ⊕ k) (m ⊕ k) A) * M
+      = fromBlocks 1 0 Y 1 * fromBlocks M.toBlocks₁₁ M.toBlocks₁₂ M.toBlocks₂₁ M.toBlocks₂₂ := by
+        rw [coe_lowerBlockGL, fromBlocks_toBlocks]
+    _ = fromBlocks M.toBlocks₁₁ M.toBlocks₁₂
+          (Y * M.toBlocks₁₁ + M.toBlocks₂₁) (Y * M.toBlocks₁₂ + M.toBlocks₂₂) := by
+        simp [fromBlocks_multiply]
 
 /-- The **Schur complement** of an invertible `2 × 2` block matrix `M ∈ GL (m ⊕ k) A` whose
 upper-left block is invertible: `M₂₂ - M₂₁ M₁₁⁻¹ M₁₂` as an element of `GL k A`, obtained by
@@ -466,9 +461,8 @@ noncomputable def GeneralLinearGroup.schurComplement (M : GL (m ⊕ k) A)
           (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ * (↑h₁₁.unit⁻¹ : Matrix m m A) *
             (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂) := by
     dsimp only [U]
-    rw [Units.val_mul, coe_lowerBlockGL]
-    conv_lhs => rw [← fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) A)]
-    simp [c, fromBlocks_multiply, Matrix.mul_assoc, sub_eq_add_neg, add_comm]
+    rw [Units.val_mul, coe_lowerBlockGL_mul]
+    simp [c, Matrix.mul_assoc, sub_eq_add_neg, add_comm]
   U.toBlocks₂₂OfZero₂₁ (by rw [hU, toBlocks_fromBlocks₁₁]; exact h₁₁)
     (by rw [hU, toBlocks_fromBlocks₂₁])
 
@@ -482,9 +476,8 @@ theorem GeneralLinearGroup.coe_schurComplement (M : GL (m ⊕ k) A)
         (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₁ * (↑h₁₁.unit⁻¹ : Matrix m m A) *
           (M : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₁₂ := by
   simp only [GeneralLinearGroup.schurComplement, GeneralLinearGroup.coe_toBlocks₂₂OfZero₂₁,
-    Units.val_mul, coe_lowerBlockGL]
-  conv_lhs => arg 1; arg 2; rw [← fromBlocks_toBlocks (M : Matrix (m ⊕ k) (m ⊕ k) A)]
-  simp [fromBlocks_multiply, Matrix.mul_assoc, sub_eq_add_neg, add_comm]
+    Units.val_mul, coe_lowerBlockGL_mul, toBlocks_fromBlocks₂₂, Matrix.neg_mul, Matrix.mul_assoc,
+    sub_eq_add_neg, add_comm]
 
 /-- The inverse of `Matrix.GeneralLinearGroup.schurComplement` has underlying matrix
 `(M⁻¹).toBlocks₂₂`. -/
@@ -494,9 +487,8 @@ theorem GeneralLinearGroup.coe_inv_schurComplement (M : GL (m ⊕ k) A)
     (↑(M.schurComplement h₁₁)⁻¹ : Matrix k k A) =
       (↑M⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A).toBlocks₂₂ := by
   simp only [GeneralLinearGroup.schurComplement, GeneralLinearGroup.coe_inv_toBlocks₂₂OfZero₂₁,
-    _root_.mul_inv_rev, Units.val_mul, lowerBlockGL_inv, coe_lowerBlockGL]
-  conv_lhs => arg 1; arg 1; rw [← fromBlocks_toBlocks (↑M⁻¹ : Matrix (m ⊕ k) (m ⊕ k) A)]
-  simp [fromBlocks_multiply]
+    _root_.mul_inv_rev, Units.val_mul, lowerBlockGL_inv, coe_lowerBlockGL, Matrix.toBlocks₂₂_mul,
+    toBlocks_fromBlocks₁₂, toBlocks_fromBlocks₂₂, Matrix.mul_zero, Matrix.mul_one, zero_add]
 
 /-- Upper block unipotent matrices are elementary: they are products of the commuting elementary
 matrices `1 + X a b E_(inl a, inr b)`. -/

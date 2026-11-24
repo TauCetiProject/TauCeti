@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Dieudonne.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability
 
 /-!
 # Algebraic `K₁` of division rings
@@ -127,8 +128,11 @@ theorem dieudonneDetEquiv_map {D E : Type*} [DivisionRing D] [DivisionRing E] (f
 theorem mk_eq_one_iff_mem_elementarySubgroup {D : Type*} [DivisionRing D] {n : ℕ} (hn : 2 ≤ n)
     {u : GL (Fin n) D} :
     mk D n u = 1 ↔ u ∈ TauCeti.elementarySubgroup (Fin n) D := by
-  rw [← (dieudonneDetEquiv D).map_eq_one_iff, dieudonneDetEquiv_mk,
-    GeneralLinearGroup.dieudonneDet_eq_one_iff (by simpa using hn)]
+  have : IsLocalRing D := IsLocalRing.of_isUnit_or_isUnit_one_sub_self fun x ↦ by
+    by_cases hx : x = 0
+    · exact Or.inr (by simp [hx])
+    · exact Or.inl (Ne.isUnit hx)
+  rw [← MonoidHom.mem_ker, ker_mk_eq_elementarySubgroup (hasStableRangeLE_one_of_isLocalRing D) hn]
 
 /-- Over a field `F`, `dieudonneDetEquiv F` agrees with `Group.Abelianization.of` composed with
 `TauCeti.AlgebraicK1.det F`. -/
