@@ -469,7 +469,8 @@ private theorem pow_geometricReflection_mul_eq_one_iff (n : ℕ) :
       have hcos : cos (2 * (n : ℝ) * (π / M i i')) = 1 := by
         rw [hsi] at hc
         linarith
-      exact TauCeti.dvd_of_cos_two_mul_pi_div_eq_one (by omega) hcos
+      exact Int.natCast_dvd_natCast.1
+        ((Real.cos_two_mul_pi_div_eq_one_iff_dvd (by omega)).1 (by exact_mod_cast hcos))
   · obtain ⟨k, rfl⟩ := hdvd
     rcases eq_or_ne i i' with rfl | hne
     · rw [M.diagonal i, one_mul, M.geometricReflection_mul_self, one_pow]

@@ -245,6 +245,14 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
   rw [hs, real_inner_comm ((alternatingFormEquiv V k).symm β),
     inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti]
 
+/-- **The inner product of `0`-forms** is the product of their values: a `0`-form is a constant,
+evaluated on the empty tuple `v`. -/
+theorem alternatingFormInner_zero_apply (α β : V [⋀^Fin 0]→L[ℝ] ℝ) (v : Fin 0 → V) :
+    alternatingFormInner V 0 α β = α v * β v := by
+  rw [alternatingFormInner_eq_sum (stdOrthonormalBasis ℝ V)]
+  simp only [Subsingleton.elim _ v, Finset.sum_const, Finset.card_univ]
+  simp
+
 end TauCeti
 
 namespace LinearIsometry

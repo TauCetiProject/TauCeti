@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 
 /-!
-# Equicontinuity from slice distance bounds on a compact factor
+# Equicontinuity from slice distance bounds, and uniform attainment from rate bounds
 
 When `g : X × Y → Z` is jointly continuous on a product with `Y` compact, the tube lemma around
 each compact slice `{x₀} × Y` upgrades pointwise continuity of `g` to locally uniform control in
@@ -17,11 +18,17 @@ family `F : ι → X → W` into a pseudometric space whose distances are contro
 `Y`-slice distance bounds of `g` (such as marginal integrals, suprema, infima, or log-partition
 transforms of `g`) is equicontinuous on `X`.
 
+Separately, uniform equicontinuity of a family `(g_k)` turns a bound `F k p ≤ C (η + s(p) L)`,
+valid whenever `g_k` moves by at most `η` over distances at most `√(s p)`, into the uniform
+smallness `F k p < ε` for all `k` once `s p` is small enough.
+
 ## Main statements
 
 * `Metric.equicontinuous_of_forall_dist_le`: a family `F : ι → X → W` controlled linearly by every
   uniform `Y`-slice distance bound of a jointly continuous map `g : X × Y → Z` with `Y` compact is
   equicontinuous.
+* `UniformEquicontinuous.exists_forall_lt_of_le_mul_add_mul`: a bound of the form
+  `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
 -/
 
 public section
@@ -61,3 +68,51 @@ theorem equicontinuous_of_forall_dist_le {X Y Z W ι : Type*} [TopologicalSpace 
     _ < r := half_lt_self hr
 
 end Metric
+
+namespace UniformEquicontinuous
+
+open Real
+
+/-- `X ε / (2 (X + 1)) < ε / 2` for `X ≥ 0` and `ε > 0`. -/
+private theorem mul_div_two_mul_add_one_lt {ε : ℝ} (hε : 0 < ε) (X : ℝ) (hX : 0 ≤ X) :
+    X * (ε / (2 * (X + 1))) < ε / 2 := by
+  have hX1 : X / (X + 1) < 1 := (div_lt_one (by positivity)).2 (by linarith)
+  calc X * (ε / (2 * (X + 1))) = ε / 2 * (X / (X + 1)) := by field_simp
+    _ < ε / 2 * 1 := mul_lt_mul_of_pos_left hX1 (by positivity)
+    _ = ε / 2 := mul_one _
+
+/-- **From a rate of attainment to uniform attainment.** Let `(g_k)` be a uniformly equicontinuous
+family of real functions, and let `F k p ≤ C (η + s(p) L)` whenever `g_k` moves by at most `η`
+over distances at most `√(s p)`, where `C ≥ 0` and `s ≥ 0`. Then `F k p < ε` for all `k` and all
+`p` with `s p` small enough. -/
+theorem exists_forall_lt_of_le_mul_add_mul {κ X P : Type*} [PseudoMetricSpace X]
+    {g : κ → X → ℝ} (hg : UniformEquicontinuous g) {F : κ → P → ℝ} {s : P → ℝ}
+    (hs : ∀ p, 0 ≤ s p) {C L : ℝ} (hC : 0 ≤ C)
+    (hF : ∀ η k p, (∀ x y, dist x y ≤ √(s p) → |g k x - g k y| ≤ η) →
+      F k p ≤ C * (η + s p * L))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ k p, s p < δ → F k p < ε := by
+  set R := C * |L|
+  set η := ε / (2 * (C + 1))
+  have hη : 0 < η := by positivity
+  obtain ⟨δ₁, hδ₁, hδ₁η⟩ := Metric.uniformEquicontinuous_iff.1 hg η hη
+  refine ⟨min (δ₁ ^ 2) (ε / (2 * (R + 1))), by positivity, fun k p hp ↦ ?_⟩
+  have hsδ : √(s p) < δ₁ := by
+    rw [← sqrt_sq hδ₁.le]
+    exact sqrt_lt_sqrt (hs p) (hp.trans_le (min_le_left _ _))
+  have key := hF η k p fun x y hxy ↦ by
+    simpa [Real.dist_eq] using (hδ₁η x y (hxy.trans_lt hsδ) k).le
+  have hR : C * (s p * L) ≤ R * s p := by
+    calc _ = C * s p * L := by ring
+      _ ≤ C * s p * |L| := mul_le_mul_of_nonneg_left (le_abs_self _) (mul_nonneg hC (hs p))
+      _ = _ := by ring
+  have hRs : R * s p ≤ R * (ε / (2 * (R + 1))) :=
+    mul_le_mul_of_nonneg_left (hp.le.trans (min_le_right _ _)) (by positivity)
+  -- Each of the two terms is less than `ε / 2`.
+  have h₁ := mul_div_two_mul_add_one_lt hε C hC
+  have h₂ := mul_div_two_mul_add_one_lt hε R (by positivity)
+  calc _ ≤ C * (η + s p * L) := key
+    _ = C * η + C * (s p * L) := by ring
+    _ < ε := by linarith
+
+end UniformEquicontinuous

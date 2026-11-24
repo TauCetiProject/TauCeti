@@ -21,7 +21,10 @@ values at primes through the factorization formula
 `ArithmeticFunction.powOfAdditive k f`, the arithmetic function with value `k ^ f n` at every
 positive `n`, is defined in `TauCeti.NumberTheory.ArithmeticFunction.Additive`, where it is shown
 to be multiplicative when `f` is additive, together with the case `n ↦ k ^ ω n`. Here it is
-multiplicative on all pairs of inputs when `f` is completely additive, as for `n ↦ k ^ Ω n`.
+multiplicative on all pairs of inputs when `f` is completely additive, as for `n ↦ k ^ Ω n`; the
+statement as a completely multiplicative function is
+`ArithmeticFunction.IsCompletelyAdditive.isCompletelyMultiplicative_powOfAdditive` in
+`TauCeti.NumberTheory.ArithmeticFunction.CompletelyMultiplicative`.
 
 ## References
 

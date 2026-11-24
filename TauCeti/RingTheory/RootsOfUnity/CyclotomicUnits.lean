@@ -11,7 +11,7 @@ import Mathlib.RingTheory.Polynomial.Cyclotomic.Eval
 import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 
 /-!
-# `p` and `(ζ - 1) ^ (p - 1)` are associated
+# The element `ζ - 1` up to units
 
 Let `p` be a prime and `ζ` a primitive `p`-th root of unity in a domain `A`. Evaluating the
 cyclotomic polynomial `Φ_p = ∏ (X - η)`, the product over the primitive `p`-th roots `η`, at `1`
@@ -24,11 +24,19 @@ Mathlib proves this statement for the ring of integers of a `p`-th cyclotomic fi
 (`IsCyclotomicExtension.Rat.associated_zeta_sub_one_pow_prime`); the proof here is the same, in an
 arbitrary domain.
 
+Away from the order of the root of unity the picture is the opposite: if `ζ ≠ 1` satisfies
+`ζ ^ n = 1` and `n` is a unit of `A`, then `ζ - 1` divides `n` (Mathlib's
+`sub_one_dvd_natCast_of_pow_eq_one`) and so is itself a unit. For a character `χ` of order prime to
+`p` with values in a `p`-adic integer ring, this makes `1 - χ(φ)⁻¹` a unit whenever `χ(φ) ≠ 1`.
+Invertibility of `n` is needed: `1 - (-1) = 2` is not a unit of `ℤ_[2]`.
+
 ## Main results
 
 * `IsPrimitiveRoot.associated_sub_one_pow_prime`: `(ζ - 1) ^ (p - 1)` is associated to `p`.
 * `IsPrimitiveRoot.valuation_natCast_eq_valuation_sub_one_pow`: a valuation `v ≤ 1` on `A`
   satisfies `v(p) = v(ζ - 1) ^ (p - 1)`.
+* `TauCeti.isUnit_sub_one_of_pow_eq_one`, `TauCeti.isUnit_one_sub_of_pow_eq_one`: `ζ - 1` and
+  `1 - ζ` are units for a root of unity `ζ ≠ 1` of invertible order.
 -/
 
 public section
@@ -60,3 +68,19 @@ theorem IsPrimitiveRoot.valuation_natCast_eq_valuation_sub_one_pow {A : Type*} [
     calc (1 : Γ₀) = v (u : A) * v (u⁻¹ : Aˣ) := by rw [← map_mul, Units.mul_inv, map_one]
       _ ≤ v (u : A) := mul_le_of_le_one_right' (hv _)
   rw [← hu, map_mul, hu1, mul_one, map_pow]
+
+namespace TauCeti
+
+/-- **`ζ - 1` is a unit for a root of unity `ζ ≠ 1` of invertible order**: in a domain `A`, if
+`ζ ^ n = 1`, `ζ ≠ 1` and `n` is a unit of `A`, then `ζ - 1` is a unit, since it divides `n`. -/
+theorem isUnit_sub_one_of_pow_eq_one {A : Type*} [CommRing A] [IsDomain A] {ζ : A} {n : ℕ}
+    (hζ : ζ ^ n = 1) (hζ1 : ζ ≠ 1) (hn : IsUnit (n : A)) : IsUnit (ζ - 1) :=
+  isUnit_of_dvd_unit (sub_one_dvd_natCast_of_pow_eq_one hζ hζ1) hn
+
+/-- **`1 - ζ` is a unit for a root of unity `ζ ≠ 1` of invertible order**: in a domain `A`, if
+`ζ ^ n = 1`, `ζ ≠ 1` and `n` is a unit of `A`, then `1 - ζ` is a unit. -/
+theorem isUnit_one_sub_of_pow_eq_one {A : Type*} [CommRing A] [IsDomain A] {ζ : A} {n : ℕ}
+    (hζ : ζ ^ n = 1) (hζ1 : ζ ≠ 1) (hn : IsUnit (n : A)) : IsUnit (1 - ζ) := by
+  simpa using (isUnit_sub_one_of_pow_eq_one hζ hζ1 hn).neg
+
+end TauCeti

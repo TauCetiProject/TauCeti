@@ -14,8 +14,9 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 # Singular homology of contractible spaces
 
 A contractible space has the singular homology of a point: its homology vanishes in every positive
-degree, and its reduced homology vanishes in every degree. Every map between contractible spaces
-therefore induces an isomorphism on singular homology
+degree, and its reduced homology vanishes in every degree; so a constant map, which factors through
+a point, induces zero in positive degrees (`TauCeti.singularHomologyFunctor_map_const_eq_zero`).
+Every map between contractible spaces therefore induces an isomorphism on singular homology
 (`TauCeti.isIso_singularHomologyFunctor_map_of_contractibleSpace`). More generally, when `Z` has
 the homology of a point, a map `Y ⟶ Z` is a homology isomorphism exactly when `Y` has the homology
 of a point (`TauCeti.isIso_singularHomologyMap_isTerminalPUnit_from_iff`). Likewise, the reduced
@@ -73,6 +74,20 @@ theorem isZero_singularHomologyFunctor_of_contractibleSpace (X : TopCat.{w})
       H.symm R n
   rw [IsZero.iff_id_eq_zero, ← hid, CategoryTheory.Functor.map_comp, hpt.eq_of_src
     (((singularHomologyFunctor C n).obj R).map s) 0, comp_zero]
+
+/-- **A constant map induces zero on positive-degree singular homology**, since it factors through
+a point, whose homology vanishes in positive degrees. -/
+theorem singularHomologyFunctor_map_const_eq_zero {Y Z : Type w} [TopologicalSpace Y]
+    [TopologicalSpace Z] (z : Z) {n : ℕ} (hn : n ≠ 0) :
+    ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom (ContinuousMap.const Y z)) = 0 := by
+  have hfac : TopCat.ofHom (ContinuousMap.const Y z) =
+      TopCat.ofHom (ContinuousMap.const Y PUnit.unit) ≫
+        TopCat.ofHom (ContinuousMap.const PUnit.{w + 1} z) := rfl
+  rw [hfac, CategoryTheory.Functor.map_comp,
+    (isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R
+      (TopCat.of PUnit.{w + 1}) hn).eq_of_tgt
+      (((singularHomologyFunctor C n).obj R).map (TopCat.ofHom (ContinuousMap.const Y PUnit.unit)))
+      0, zero_comp]
 
 /-- **A map between contractible spaces induces an isomorphism on singular homology.** In degree
 zero it intertwines the augmentations, which are isomorphisms; in positive degrees both groups

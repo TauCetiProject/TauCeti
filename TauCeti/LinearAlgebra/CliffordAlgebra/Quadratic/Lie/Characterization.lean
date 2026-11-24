@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Realization
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.Algebra.Lie.Derivation.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Four
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
@@ -28,6 +29,8 @@ infinitesimal elements as quadratic without first choosing exterior-square coord
   the recognition theorem from the three intrinsic conditions.
 * `mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι`:
   the complete characterization.
+* `CliffordAlgebra.mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_finrank_le_four`:
+  in dimension at most four, the commutator condition is automatic.
 * `CliffordAlgebra.mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero`: over the zero
   space only `0` satisfies the three conditions.
 -/
@@ -173,6 +176,25 @@ theorem mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_me
   · rintro ⟨hx_even, hx_reverse, hx_lie⟩
     exact mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι
       Q hQ hx_even hx_reverse hx_lie
+
+/-- **In dimension at most four, an even Clifford element negated by reversal is quadratic**: its
+commutator with a vector is odd and fixed by reversal, hence a vector. -/
+theorem mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_finrank_le_four
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 4)
+    {x : CliffordAlgebra Q} (hx_even : x ∈ even Q) (hx_reverse : reverse x = -x) :
+    x ∈ quadraticLieSubalgebra Q := by
+  have hx0 : x ∈ evenOdd Q 0 := by
+    rw [← even_toSubmodule]
+    exact hx_even
+  refine mem_quadraticLieSubalgebra_of_mem_even_of_reverse_eq_neg_of_lie_ι_mem_range_ι Q hQ
+    hx_even hx_reverse fun v ↦ ?_
+  refine mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four Q hV ?_ ?_
+  · rw [Ring.lie_def]
+    exact Submodule.sub_mem _
+      (by simpa using SetLike.mul_mem_graded hx0 (ι_mem_evenOdd_one Q v))
+      (by simpa using SetLike.mul_mem_graded (ι_mem_evenOdd_one Q v) hx0)
+  · rw [Ring.lie_def, map_sub, reverse.map_mul, reverse.map_mul, reverse_ι, hx_reverse, mul_neg,
+      neg_mul, sub_neg_eq_add, neg_add_eq_sub]
 
 /-- Over the zero space the intrinsic quadratic conditions force a Clifford element to vanish. -/
 theorem mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero [Subsingleton V]

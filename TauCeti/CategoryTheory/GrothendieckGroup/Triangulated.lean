@@ -62,6 +62,8 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
   defining relation.
 * `TauCeti.TriangulatedK0.of_shift_one` and `TauCeti.TriangulatedK0.of_shift`: the class of a
   shift, `[X⟦1⟧] = -[X]` and `[X⟦n⟧] = (-1)ⁿ[X]`.
+* `TauCeti.TriangulatedK0.exists_eq_of`: every element of triangulated `K₀` is the class of a
+  single object.
 * `TauCeti.TriangulatedK0.liftEquiv`: the universal property. Triangle-additive invariants with
   values in `G` correspond bijectively to homomorphisms `TriangulatedK0 C →+ G`.
 * `TauCeti.TriangulatedK0.BiadditiveInvariant.bilift_of_of` and
@@ -236,6 +238,20 @@ theorem induction_on {motive : TriangulatedK0 C → Prop} (x : TriangulatedK0 C)
     (add : ∀ a b, motive a → motive b → motive (a + b))
     (neg : ∀ a, motive a → motive (-a)) : motive x :=
   PresentedK0.induction_on x zero of add neg
+
+/-- **Every element of triangulated `K₀` is the class of an object**: sums are realised by
+biproducts and negatives by shifts, since `[X⟦1⟧] = -[X]`. -/
+theorem exists_eq_of (x : TriangulatedK0 C) : ∃ X : C, x = of X := by
+  induction x using induction_on with
+  | zero => exact ⟨0, of_zero.symm⟩
+  | of X => exact ⟨X, rfl⟩
+  | add x y hx hy =>
+      obtain ⟨X, rfl⟩ := hx
+      obtain ⟨Y, rfl⟩ := hy
+      exact ⟨X ⊞ Y, (of_biprod X Y).symm⟩
+  | neg x hx =>
+      obtain ⟨X, rfl⟩ := hx
+      exact ⟨X⟦(1 : ℤ)⟧, (of_shift_one X).symm⟩
 
 section HomExt
 
