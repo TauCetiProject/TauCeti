@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.DeRhamSymbol
+public import TauCeti.Analysis.Pseudodifferential.DeRham.Symbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 
 /-!
@@ -20,7 +20,7 @@ classical symbol of order `1` (`TauCeti.ClassicalSymbol.extDeriv`):
   (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_extDeriv`);
 * its principal symbol is the de Rham symbol `σ(d)(x, ξ) = i (ξ ∧ ·)`,
   `TauCeti.HomogeneousSymbol.extDeriv` (`TauCeti.ClassicalSymbol.principal_extDeriv`), so the
-  exactness and ellipticity results of `TauCeti.Analysis.Pseudodifferential.DeRhamSymbol` are
+  exactness and ellipticity results of `TauCeti.Analysis.Pseudodifferential.DeRham.Symbol` are
   statements about this operator;
 * the symbols form a complex: `d ∘ d = 0` for the pointwise composition of full symbols
   (`TauCeti.ClassicalSymbol.extDeriv_comp_extDeriv`).
