@@ -21,7 +21,8 @@ with the identity matrix acting by a scalar `μ`, define a `𝔤𝔩₂(ℂ)`-mo
 supported vectors on *all* weights `ℓ ∈ ℤ`, for every `k μ : ℂ`. This is
 `TauCeti.CompactWeightModule k μ`. Its Lie submodules of vectors supported on a set of weights that
 `X_c` and `Y_c` leave only with coefficient zero (`TauCeti.CompactWeightModule.weightLieSubmodule`)
-give explicit `(𝔤𝔩₂(ℂ), O(2))`-modules, such as the discrete series of `GL₂(ℝ)`.
+give explicit `𝔤𝔩₂(ℂ)`-modules, such as the discrete series of `GL₂(ℝ)`; the reflection
+`v_ℓ ↦ v_{-ℓ}` preserves such a submodule when its set of weights `S` satisfies `-S = S`.
 
 ## Main definitions
 
