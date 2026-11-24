@@ -69,9 +69,7 @@ private theorem eventually_eq_zero_of_mul_sq_add {B : E × ℂ → ℂ} {S : E �
     (fun w hw ↦ (hball w hw).2.1) (convex_ball _ _).isPreconnected hw₁ hR0
   -- But at `(b₀, ε / 2)` the factor is `(ε / 2)²`.
   have hmem : (b₀, ((ε / 2 : ℝ) : ℂ)) ∈ ball (b₀, (0 : ℂ)) ε := by
-    rw [mem_ball, Prod.dist_eq, dist_self, dist_zero_right, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_pos (half_pos hε), max_eq_right (half_pos hε).le]
-    exact half_lt_self hε
+    simp [Prod.dist_eq, abs_of_pos hε, hε]
   have h := hEq hmem
   simp only [hb₀, add_zero, Pi.zero_apply, pow_eq_zero_iff two_ne_zero,
     Complex.ofReal_eq_zero] at h
@@ -129,6 +127,24 @@ private theorem exists_eventuallyEq_mul_sub_mul_of_fst_ne_zero {G : E × ℂ × 
   simpa only [smul_eq_mul] using hG.exists_eventuallyEq_mul_sub_smul_of_fst_ne_zero hS hx hp
     (by filter_upwards [hσ.eventually h0, continuousAt_snd.eventually_ne hx] with w hw hw0
         exact hw (mul_div_cancel₀ _ hw0))
+
+/-- Where `y ≠ 0` the hypersurface `xy = S(b)` is the graph `x = S(b) / y`, so a function vanishing
+on it near `p` is a multiple of `xy - S(b)` by Hadamard's lemma along the graph. -/
+private theorem exists_eventuallyEq_mul_sub_mul_of_snd_ne_zero {G : E × ℂ × ℂ → ℂ} {S : E → ℂ}
+    {p : E × ℂ × ℂ} (hG : AnalyticAt ℂ G p) (hS : AnalyticAt ℂ S p.1) (hy : p.2.2 ≠ 0)
+    (hp : S p.1 = p.2.1 * p.2.2) (h0 : ∀ᶠ q in 𝓝 p, q.2.1 * q.2.2 = S q.1 → G q = 0) :
+    ∃ K : E × ℂ × ℂ → ℂ, AnalyticAt ℂ K p ∧
+      ∀ᶠ q in 𝓝 p, G q = (q.2.1 * q.2.2 - S q.1) * K q := by
+  have hSc : ContinuousAt (fun w : E × ℂ ↦ S w.1) (p.1, p.2.2) :=
+    hS.continuousAt.comp_of_eq continuousAt_fst rfl
+  have hσ : ContinuousAt (fun w : E × ℂ ↦ (w.1, S w.1 / w.2, w.2)) (p.1, p.2.2) :=
+    continuousAt_fst.prodMk ((hSc.div continuousAt_snd hy).prodMk continuousAt_snd)
+  have hσp : (p.1, S p.1 / p.2.2, p.2.2) = p := by
+    rw [hp, mul_div_cancel_right₀ _ hy]
+  rw [← hσp] at h0
+  simpa only [smul_eq_mul] using hG.exists_eventuallyEq_mul_sub_smul_of_snd_ne_zero hS hy hp
+    (by filter_upwards [hσ.eventually h0, continuousAt_snd.eventually_ne hy] with w hw hw0
+        exact hw (div_mul_cancel₀ _ hw0))
 
 variable [FiniteDimensional ℂ E]
 
@@ -211,18 +227,7 @@ theorem exists_eventuallyEq_mul_sub_mul {G : E × ℂ × ℂ → ℂ} {S : E →
         dsimp only at hx hy hp hS h0 hG ⊢
         subst hx hy
         exact exists_eventuallyEq_mul_sub_mul_of_node hG hS (by rw [hp, mul_zero]) h0
-      · -- Where `y ≠ 0`, exchanging `x` and `y` reduces to the case `x ≠ 0`.
-        set τ : E × ℂ × ℂ → E × ℂ × ℂ := fun q ↦ (q.1, q.2.2, q.2.1)
-        have hτ (q : E × ℂ × ℂ) : AnalyticAt ℂ τ q :=
-          analyticAt_fst.prod ((analyticAt_snd.comp analyticAt_snd).prod
-            (analyticAt_fst.comp analyticAt_snd))
-        obtain ⟨K, hK, hGK⟩ := exists_eventuallyEq_mul_sub_mul_of_fst_ne_zero (p := τ p)
-          (hG.comp (hτ (τ p))) hS hy (by rw [hp, mul_comm]) (by
-            filter_upwards [(hτ (τ p)).continuousAt.tendsto.eventually h0] with q hq hqS
-            exact hq (by rwa [mul_comm]))
-        refine ⟨K ∘ τ, hK.comp (hτ _), ?_⟩
-        filter_upwards [(hτ p).continuousAt.tendsto.eventually hGK] with q hq
-        simpa only [Function.comp_apply, τ, mul_comm q.2.2] using hq
+      · exact exists_eventuallyEq_mul_sub_mul_of_snd_ne_zero hG hS hy hp h0
     · exact exists_eventuallyEq_mul_sub_mul_of_fst_ne_zero hG hS hx hp h0
   · -- Off the hypersurface `xy - S(b)` is invertible near `p`.
     have hd0 : p.2.1 * p.2.2 - S p.1 ≠ 0 := sub_ne_zero.2 (Ne.symm hp)
