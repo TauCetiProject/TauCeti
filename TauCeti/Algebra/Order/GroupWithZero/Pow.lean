@@ -39,7 +39,7 @@ with zero and divisibility rigidity in discrete archimedean ordered groups with 
 * `TauCeti.pow_mul_pow_sub_two_mul_le`: for `0 ≤ c ≤ b ^ 2` and `0 ≤ b`, the product
   `c ^ s * b ^ (L - 2 * s)` does not increase with `s` while `2 * s ≤ L`.
 * `TauCeti.pow_mul_pow_sub_le_mul_pow_div_pow`: for `0 ≤ c ≤ b ^ 2`, `c ≤ A ^ 2 / m`,
-  `0 ≤ b ≤ A * γ ^ 2` and `m > 0`, a word of length `L` with `e` distinct edges and
+  `0 ≤ b ≤ A * γ ^ 2` and `m > 0`, a word of length `L` with `e` distinct edges, `2 * e ≤ L`, and
   `1 ≤ t ≤ e + 1` vertices has weight `c ^ e * b ^ (L - 2 * e)` at most
   `m * A ^ L * (γ ^ (2 * (L + 2 - 2 * t)) / m ^ t)`.
 * `TauCeti.eq_one_of_forall_exists_le_pow_eq`: in a `MulArchimedean`

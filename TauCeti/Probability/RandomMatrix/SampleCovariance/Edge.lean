@@ -142,13 +142,14 @@ expected real traces of the powers of the sample covariance of the matrices of c
 truncations of the `m × n` corner obey the Füredi–Komlós bound with variance `1`. -/
 private theorem integral_re_trace_pow_sampleCovariance_centeredTruncation_le
     {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ} (hx : ∀ ij, HasLaw (x ij) ν P)
-    (hindep : iIndepFun x P) (hvar : ∫ z, ‖z‖ ^ 2 ∂ν = 1) (h2 : MemLp id 2 ν) {m n : ℕ}
-    {γ : ℝ} {R : ℝ≥0} (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) (hR : (2 * (R : ℝ)) ^ 2 ≤ γ ^ 4 * √(m * n))
-    (k : ℕ) :
+    (hindep : iIndepFun x P) (hvar : ∫ z, ‖z‖ ^ 2 ∂ν = 1) {m n : ℕ} {γ : ℝ} {R : ℝ≥0}
+    (hγ₀ : 0 ≤ γ) (hγ₁ : γ ≤ 1) (hR : (2 * (R : ℝ)) ^ 2 ≤ γ ^ 4 * √(m * n)) (k : ℕ) :
     ∫ ω, RCLike.re ((sampleCovariance (Matrix.of fun (i : Fin m) (j : Fin n) ↦
         centeredTruncation (x (i, j)) P R ω)) ^ k).trace ∂P ≤
       m * (1 * (1 + √(m / n) + 2 * k * γ * √(m / n)) * (1 + √(m / n) + 2 * k * γ)) ^ k := by
   have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have h2 : MemLp id 2 ν := (memLp_two_iff_integrable_sq_norm aestronglyMeasurable_id).2
+    (integrable_of_integral_eq_one hvar)
   have hinj : Function.Injective fun ij : Fin m × Fin n ↦ ((ij.1 : ℕ), (ij.2 : ℕ)) :=
     fun a b h ↦ Prod.ext (Fin.ext (congrArg Prod.fst h)) (Fin.ext (congrArg Prod.snd h))
   have hint := integrable_trace_pow_sampleCovariance (P := P) (k := k)
@@ -168,44 +169,6 @@ private theorem integral_re_trace_pow_sampleCovariance_centeredTruncation_le
   rw [integral_re hint]
   exact (RCLike.re_le_norm _).trans hbound
 
-/-- At truncation radius `n ^ (1 / 3)`, some parameter `γ = C / n ^ (1 / 12)` of the
-Füredi–Komlós bound satisfies `(2 * R) ^ 2 ≤ γ ^ 4 * √(m * n)` whenever `c * n ≤ m`, for `c > 0`. -/
-private theorem exists_two_mul_rpow_sq_le_div_rpow_pow_mul_sqrt {c : ℝ} (hc : 0 < c) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ m n : ℕ, 0 < n → c * n ≤ m →
-      (2 * (((n : ℝ≥0) ^ (1 / 3 : ℝ) : ℝ≥0) : ℝ)) ^ 2 ≤
-        (C / (n : ℝ) ^ (1 / 12 : ℝ)) ^ 4 * √(m * n) := by
-  -- With `C = 1 + 4 / √c ≥ 1`, `4 ≤ C * √c ≤ C ^ 4 * √c`.
-  have hc' := Real.sqrt_pos.mpr hc
-  refine ⟨1 + 4 / √c, by positivity, fun m n hn hm ↦ ?_⟩
-  have hC : 4 ≤ (1 + 4 / √c) ^ 4 * √c := by
-    have : 1 + 4 / √c ≤ (1 + 4 / √c) ^ 4 :=
-      le_self_pow₀ (le_add_of_nonneg_right (by positivity)) (by norm_num)
-    calc (4 : ℝ) ≤ (1 + 4 / √c) * √c := by field_simp; linarith
-      _ ≤ _ := by gcongr
-  have hn₀ : (0 : ℝ) < n := Nat.cast_pos.mpr hn
-  -- Write `n ^ (1 / 3)` as `q ^ 4` with `q = n ^ (1 / 12)`, so that `n = q ^ 12`.
-  set q := (n : ℝ) ^ (1 / 12 : ℝ)
-  have hq : 0 < q := Real.rpow_pos_of_pos hn₀ _
-  have hq₄ : (n : ℝ) ^ (1 / 3 : ℝ) = q ^ 4 := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul hn₀.le]
-    norm_num
-  have hq₁₂ : (n : ℝ) = q ^ 12 := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul hn₀.le]
-    norm_num
-  have hsqrt : √c * n ≤ √(m * n) := by
-    calc √c * n = √(c * n ^ 2) := by rw [Real.sqrt_mul hc.le, Real.sqrt_sq hn₀.le]
-      _ ≤ √(m * n) := Real.sqrt_le_sqrt (by
-          rw [sq, ← mul_assoc]
-          exact mul_le_mul_of_nonneg_right hm hn₀.le)
-  rw [NNReal.coe_rpow, NNReal.coe_natCast, hq₄, div_pow]
-  calc (2 * q ^ 4) ^ 2 = 4 * q ^ 12 / q ^ 4 := by field_simp; ring
-    _ ≤ (1 + 4 / √c) ^ 4 * √c * n / q ^ 4 := by
-        rw [← hq₁₂]
-        gcongr
-    _ ≤ (1 + 4 / √c) ^ 4 / q ^ 4 * √(m * n) := by
-        rw [div_mul_eq_mul_div, mul_assoc]
-        gcongr
-
 omit [∀ n, NeZero (p n)] in
 /-- The bases `(1 + sₙ + δₙ * sₙ) * (1 + sₙ + δₙ)` of the trace bounds, with `sₙ = √(p n / n)`,
 `δₙ = 2 * (2 * kₙ) * C / n ^ (1 / 12)` and `kₙ = ⌈B * log (n + 1)⌉₊`, tend to the upper edge
@@ -219,26 +182,12 @@ private theorem tendsto_one_add_sqrt_mul_one_add_sqrt (hp : Tendsto (fun n ↦ (
       atTop (𝓝 ((1 + √y) ^ 2)) := by
   have hδ : Tendsto (fun n : ℕ ↦ 2 * ((2 * ⌈B * Real.log (n + 1)⌉₊ : ℕ) : ℝ) *
       (C / (n : ℝ) ^ (1 / 12 : ℝ))) atTop (𝓝 0) := by
-    -- `⌈B * log (n + 1)⌉₊ / (n + 1) ^ (1 / 12)` tends to zero, `((n + 1) / n) ^ (1 / 12)` to one.
-    have h₁ := (Real.tendsto_natCeil_mul_log_div_rpow_atTop_nhds_zero B
-      (by norm_num : (0 : ℝ) < 1 / 12)).comp
-        (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))
-    have h₂ : Tendsto (fun n : ℕ ↦ (((n + 1 : ℕ) : ℝ) / n) ^ (1 / 12 : ℝ)) atTop (𝓝 1) := by
-      have := ((tendsto_natCast_div_add_atTop (1 : ℝ)).inv₀ one_ne_zero).rpow_const
-        (p := 1 / 12) (Or.inr (by norm_num))
-      rw [inv_one, Real.one_rpow] at this
-      exact this.congr fun n ↦ by rw [inv_div, Nat.cast_add_one]
-    have := (h₁.mul h₂).const_mul (4 * C)
-    rw [zero_mul, mul_zero] at this
-    refine this.congr' ?_
-    filter_upwards [eventually_gt_atTop 0] with n hn
-    have hn₀ : (0 : ℝ) < n := Nat.cast_pos.mpr hn
-    have hn₁ : ((n : ℝ) + 1) ^ (1 / 12 : ℝ) ≠ 0 := (Real.rpow_pos_of_pos (by positivity) _).ne'
-    have hn₂ : (n : ℝ) ^ (1 / 12 : ℝ) ≠ 0 := (Real.rpow_pos_of_pos hn₀ _).ne'
+    have := ((Real.tendsto_natCeil_mul_log_add_div_rpow_atTop_nhds_zero B 1
+      (by norm_num : (0 : ℝ) < 1 / 12)).comp tendsto_natCast_atTop_atTop).const_mul (4 * C)
+    rw [mul_zero] at this
+    refine this.congr fun n ↦ ?_
     simp only [Function.comp_apply]
-    rw [Real.div_rpow (Nat.cast_nonneg _) hn₀.le]
     push_cast
-    field_simp
     ring
   have hs : Tendsto (fun n ↦ √((p n : ℝ) / n)) atTop (𝓝 (√y)) :=
     (Real.continuous_sqrt.tendsto _).comp hp
@@ -252,17 +201,20 @@ traces of the `2 * kₙ`-th powers of the sample covariances of the centered tru
 eventually at most `(y + 1) * (n + 1) * t ^ (2 * kₙ)`, for every `t > (1 + √y)²`. -/
 private theorem eventually_integral_re_trace_pow_sampleCovariance_centeredTruncation_le
     {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ} (hx : ∀ ij, HasLaw (x ij) ν P)
-    (hindep : iIndepFun x P) (hvar : ∫ z, ‖z‖ ^ 2 ∂ν = 1) (h4 : MemLp id 4 ν) (hy : 0 < y)
+    (hindep : iIndepFun x P) (hvar : ∫ z, ‖z‖ ^ 2 ∂ν = 1) (hy : 0 < y)
     (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 y)) {t : ℝ} (ht : (1 + √y) ^ 2 < t) (B : ℝ) :
     ∀ᶠ n : ℕ in atTop, ∫ ω, RCLike.re ((sampleCovariance (Matrix.of fun (i : Fin (p n))
         (j : Fin n) ↦ centeredTruncation (x (i, j)) P ((n : ℝ≥0) ^ (1 / 3 : ℝ)) ω)) ^
           (2 * ⌈B * Real.log (n + 1)⌉₊)).trace ∂P ≤
       (y + 1) * (n + 1 : ℝ) ^ (1 : ℝ) * t ^ (2 * ⌈B * Real.log (n + 1)⌉₊) := by
-  have : IsProbabilityMeasure ν := (hx (0, 0)).isProbabilityMeasure_iff.mp
-    hindep.isProbabilityMeasure
-  obtain ⟨C, hC₀, hC⟩ := exists_two_mul_rpow_sq_le_div_rpow_pow_mul_sqrt
-    (by positivity : (0 : ℝ) < y / 2)
-  -- The parameter `γ = C / n ^ (1 / 12)` of the Füredi–Komlós bound is eventually at most `1`.
+  -- The parameter of the Füredi–Komlós bound is `γ = C / n ^ (1 / 12)`, with
+  -- `C = 1 + 4 / √(y / 2)`, so that `4 ≤ C * √(y / 2) ≤ C ^ 4 * √(y / 2)`.
+  have hc : 0 < √((y : ℝ) / 2) := Real.sqrt_pos.mpr (by positivity)
+  set C := 1 + 4 / √((y : ℝ) / 2)
+  have hC : 4 ≤ C ^ 4 * √((y : ℝ) / 2) := calc
+    (4 : ℝ) ≤ C * √((y : ℝ) / 2) := by simp only [C]; field_simp; linarith
+    _ ≤ _ := by gcongr; exact le_self_pow₀ (le_add_of_nonneg_right (by positivity)) (by norm_num)
+  -- `γ` is eventually at most `1`.
   have hγ₁ : ∀ᶠ n : ℕ in atTop, C / (n : ℝ) ^ (1 / 12 : ℝ) ≤ 1 := by
     filter_upwards [((tendsto_rpow_atTop (by norm_num : (0 : ℝ) < 1 / 12)).comp
       tendsto_natCast_atTop_atTop).eventually_ge_atTop C, eventually_gt_atTop 0] with n hn hn₀
@@ -273,10 +225,30 @@ private theorem eventually_integral_re_trace_pow_sampleCovariance_centeredTrunca
     (tendsto_one_add_sqrt_mul_one_add_sqrt hp B C).eventually (gt_mem_nhds ht),
     eventually_gt_atTop 0] with n hpc hpy hγ₁ hb hn
   have hn₀ : (0 : ℝ) < n := Nat.cast_pos.mpr hn
+  -- The truncation radius `r = n ^ (1 / 3)` satisfies `(2 * r) ^ 2 ≤ γ ^ 4 * √(p n * n)`, since
+  -- `γ ^ 4 = C ^ 4 / r`, `r ^ 3 = n` and `√(y / 2) * n ≤ √(p n * n)`.
+  have hR : (2 * (((n : ℝ≥0) ^ (1 / 3 : ℝ) : ℝ≥0) : ℝ)) ^ 2 ≤
+      (C / (n : ℝ) ^ (1 / 12 : ℝ)) ^ 4 * √(p n * n) := by
+    have h₄ : ((n : ℝ) ^ (1 / 12 : ℝ)) ^ 4 = (n : ℝ) ^ (1 / 3 : ℝ) := by
+      rw [← Real.rpow_mul_natCast hn₀.le]
+      norm_num
+    have h₃ : ((n : ℝ) ^ (1 / 3 : ℝ)) ^ 3 = n := by
+      simpa [one_div] using Real.rpow_inv_natCast_pow hn₀.le (n := 3) three_ne_zero
+    have hsqrt : √((y : ℝ) / 2) * n ≤ √(p n * n) := calc
+      _ = √((y : ℝ) / 2 * n ^ 2) := by rw [Real.sqrt_mul (by positivity), Real.sqrt_sq hn₀.le]
+      _ ≤ √(p n * n) := by
+        refine Real.sqrt_le_sqrt ?_
+        rw [sq, ← mul_assoc]
+        exact mul_le_mul_of_nonneg_right ((le_div_iff₀ hn₀).1 hpc.le) hn₀.le
+    rw [NNReal.coe_rpow, NNReal.coe_natCast, div_pow, h₄, div_mul_eq_mul_div,
+      le_div_iff₀ (by positivity)]
+    calc (2 * (n : ℝ) ^ (1 / 3 : ℝ)) ^ 2 * (n : ℝ) ^ (1 / 3 : ℝ) =
+          4 * ((n : ℝ) ^ (1 / 3 : ℝ)) ^ 3 := by ring
+      _ ≤ C ^ 4 * √((y : ℝ) / 2) * n := by rw [h₃]; gcongr
+      _ ≤ C ^ 4 * √(p n * n) := by rw [mul_assoc]; gcongr
   replace hpy := (div_le_iff₀ hn₀).1 hpy.le
   refine (integral_re_trace_pow_sampleCovariance_centeredTruncation_le hx hindep hvar
-    (h4.mono_exponent (by norm_num)) (by positivity) hγ₁
-    (hC _ _ hn ((le_div_iff₀ hn₀).1 hpc.le)) _).trans ?_
+    (by positivity) hγ₁ hR _).trans ?_
   rw [Real.rpow_one]
   exact mul_le_mul (hpy.trans (mul_le_mul_of_nonneg_left (by linarith) (by positivity)))
     (pow_le_pow_left₀ (by positivity) hb.le _) (by positivity) (by positivity)
@@ -301,8 +273,8 @@ theorem ae_tendsto_eigenvalues₀_zero_sampleCovariance
   have hlog : 0 < Real.log (r / t) := Real.log_pos ((one_lt_div ht₀).mpr htr)
   refine ⟨t, 2 / Real.log (r / t), y + 1, 1, fun n ↦ ⌈2 / Real.log (r / t) * Real.log (n + 1)⌉₊,
     ht₀, htr, ?_, .of_forall fun n ↦ Nat.le_ceil _,
-    eventually_integral_re_trace_pow_sampleCovariance_centeredTruncation_le hx hindep hvar h4 hy
-      hp ht (2 / Real.log (r / t))⟩
+    eventually_integral_re_trace_pow_sampleCovariance_centeredTruncation_le hx hindep hvar hy hp
+      ht (2 / Real.log (r / t))⟩
   rw [mul_assoc, div_mul_cancel₀ _ hlog.ne']
   norm_num
 

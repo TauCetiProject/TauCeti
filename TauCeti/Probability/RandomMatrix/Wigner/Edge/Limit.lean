@@ -69,10 +69,10 @@ private theorem eventually_sqrt_le_one_and_ceil_mul_sqrt_le {σ δ : ℝ} (hσ :
   have hγ (x : ℝ) (hx : 0 < x) : Real.sqrt (2 * x ^ (1 / 3 : ℝ) / (σ * Real.sqrt x)) =
       Real.sqrt (2 / σ) / x ^ (1 / 12 : ℝ) := by
     have h₄ : x ^ (1 / 3 : ℝ) = (x ^ (1 / 12 : ℝ)) ^ 4 := by
-      rw [← Real.rpow_natCast, ← Real.rpow_mul hx.le]
+      rw [← Real.rpow_mul_natCast hx.le]
       norm_num
     have h₆ : Real.sqrt x = (x ^ (1 / 12 : ℝ)) ^ 6 := by
-      rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul hx.le]
+      rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast hx.le]
       norm_num
     rw [← Real.sqrt_sq (by positivity : 0 ≤ Real.sqrt (2 / σ) / x ^ (1 / 12 : ℝ)), div_pow,
       Real.sq_sqrt (by positivity), h₄, h₆]

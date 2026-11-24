@@ -53,38 +53,6 @@ public section
 
 open MeasureTheory ProbabilityTheory Matrix Finset
 
-namespace TauCeti
-
-/-- The rescaled bound of the bipartite Füredi–Komlós enumeration, for `s = √(p / n)`. -/
-private theorem inv_pow_mul_pow_mul_mul_eq {n s v δ : ℝ} (hn : n ≠ 0) (hs : s ≠ 0) (k : ℕ) :
-    n⁻¹ ^ k * ((v * (n * s)) ^ k * (n * s)) * (s * ((s⁻¹ + 1 + δ) * (s + 1 + δ)) ^ k) =
-      n * s ^ 2 * (v * (1 + s + δ * s) * (1 + s + δ)) ^ k := by
-  -- The base of the right side is the product of the bases `n⁻¹`, `v * (n * s)` and
-  -- `(s⁻¹ + 1 + δ) * (s + 1 + δ)` of the left side.
-  have hbase : v * (1 + s + δ * s) * (1 + s + δ) =
-      n⁻¹ * (v * (n * s)) * ((s⁻¹ + 1 + δ) * (s + 1 + δ)) := by
-    field_simp
-    ring
-  rw [hbase]
-  simp only [mul_pow]
-  ring
-
-/-- The bound of the bipartite Füredi–Komlós enumeration, rescaled by the word weights, in terms
-of the aspect ratio `y = p / n`. -/
-private theorem inv_pow_mul_pow_mul_sqrt_mul_eq {p n v δ : ℝ} (hp : 0 < p) (hn : 0 < n) (k : ℕ) :
-    n⁻¹ ^ k * ((v * √(p * n)) ^ k * √(p * n)) *
-        (√(p / n) * ((√(n / p) + 1 + δ) * (√(p / n) + 1 + δ)) ^ k) =
-      p * (v * (1 + √(p / n) + δ * √(p / n)) * (1 + √(p / n) + δ)) ^ k := by
-  have h₁ : √(p * n) = n * √(p / n) := by
-    rw [← Real.sqrt_sq hn.le, ← Real.sqrt_mul (sq_nonneg n), Real.sqrt_sq hn.le]
-    congr 1
-    field_simp
-  have h₂ : √(n / p) = (√(p / n))⁻¹ := by rw [← Real.sqrt_inv, inv_div]
-  rw [h₁, h₂, inv_pow_mul_pow_mul_mul_eq hn.ne' (Real.sqrt_pos.mpr (div_pos hp hn)).ne',
-    Real.sq_sqrt (div_pos hp hn).le, mul_div_cancel₀ _ hn.ne']
-
-end TauCeti
-
 namespace ProbabilityTheory.iIndepFun
 
 open TauCeti TauCeti.Probability
@@ -99,7 +67,7 @@ private theorem norm_integral_trace_pow_sampleCovariance_le_mul_sum [Nonempty p]
     [DecidableEq n] (hindep : iIndepFun (fun ij : p × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
     (hXm : ∀ i j, AEStronglyMeasurable (fun ω ↦ X ω i j) P)
     (hX₀ : ∀ i j, ∫ ω, X ω i j ∂P = 0) {K v γ : ℝ} (hXK : ∀ i j, ∀ᵐ ω ∂P, ‖X ω i j‖ ≤ K)
-    (hXv : ∀ i j, ∫ ω, ‖X ω i j‖ ^ 2 ∂P ≤ v) (hv : 0 ≤ v)
+    (hXv : ∀ i j, ∫ ω, ‖X ω i j‖ ^ 2 ∂P ≤ v)
     (hK : K ^ 2 ≤ v * γ ^ 4 * √(Fintype.card p * Fintype.card n)) {k : ℕ} (hk : k ≠ 0) :
     ‖∫ ω, ((X ω).sampleCovariance ^ k).trace ∂P‖ ≤ (Fintype.card n : ℝ)⁻¹ ^ k *
       ((v * √(Fintype.card p * Fintype.card n)) ^ k * √(Fintype.card p * Fintype.card n)) *
@@ -113,6 +81,8 @@ private theorem norm_integral_trace_pow_sampleCovariance_le_mul_sum [Nonempty p]
     (mul_pos (Nat.cast_pos.mpr Fintype.card_pos) (Nat.cast_pos.mpr Fintype.card_pos))
   have hK₀ : 0 ≤ K := (hXK (Classical.arbitrary p) (Classical.arbitrary n)).exists.elim
     fun _ h ↦ (norm_nonneg _).trans h
+  have hv : 0 ≤ v := (integral_nonneg fun _ ↦ by positivity).trans
+    (hXv (Classical.arbitrary p) (Classical.arbitrary n))
   have hXk (i : p) (j : n) : MemLp (fun ω ↦ X ω i j) (2 * k : ℕ) P :=
     .of_bound (hXm i j) K (hXK i j)
   rw [integral_trace_sampleCovariance_pow hindep hX₀ hk (by exact_mod_cast hXk), norm_mul,
@@ -171,10 +141,38 @@ theorem norm_integral_trace_pow_sampleCovariance_le
   · have h0 (ω : Ω) : (X ω).sampleCovariance = 0 := by simp [sampleCovariance_def]
     simp only [h0, zero_pow hk.ne', trace_zero, integral_zero, norm_zero]
     positivity
-  refine ((norm_integral_trace_pow_sampleCovariance_le_mul_sum hindep hXm hX₀ hXK hXv hv hK
-    hk.ne').trans ?_).trans_eq (inv_pow_mul_pow_mul_sqrt_mul_eq
-      (Nat.cast_pos.mpr Fintype.card_pos) (Nat.cast_pos.mpr Fintype.card_pos) k)
-  gcongr
-  exact sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge hk.ne' hγ₀ hγ₁
+  refine ((norm_integral_trace_pow_sampleCovariance_le_mul_sum hindep hXm hX₀ hXK hXv hK
+    hk.ne').trans (mul_le_mul_of_nonneg_left
+      (sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge hk.ne' hγ₀ hγ₁)
+        (by positivity))).trans_eq ?_
+  -- Rescale the bound of the bipartite enumeration by the word weights: with `s = √(p / n)`,
+  -- `√(p * n) = n * s`, `√(n / p) = s⁻¹` and `p = n * s ^ 2`.
+  have hp₀ : (0 : ℝ) < Fintype.card p := Nat.cast_pos.mpr Fintype.card_pos
+  have hn₀ : (0 : ℝ) < Fintype.card n := Nat.cast_pos.mpr Fintype.card_pos
+  have h₁ : √(Fintype.card p * Fintype.card n : ℝ) =
+      Fintype.card n * √(Fintype.card p / Fintype.card n : ℝ) := by
+    rw [← Real.sqrt_sq hn₀.le, ← Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hn₀.le]
+    congr 1
+    field_simp
+  have h₂ : √(Fintype.card n / Fintype.card p : ℝ) =
+      (√(Fintype.card p / Fintype.card n : ℝ))⁻¹ := by
+    rw [← Real.sqrt_inv, inv_div]
+  have h₃ : (Fintype.card p : ℝ) =
+      Fintype.card n * √(Fintype.card p / Fintype.card n : ℝ) ^ 2 := by
+    rw [Real.sq_sqrt (div_pos hp₀ hn₀).le, mul_div_cancel₀ _ hn₀.ne']
+  have hs : √(Fintype.card p / Fintype.card n : ℝ) ≠ 0 :=
+    (Real.sqrt_pos.mpr (div_pos hp₀ hn₀)).ne'
+  rw [h₁, h₂]
+  generalize √(Fintype.card p / Fintype.card n : ℝ) = s at h₃ hs ⊢
+  rw [h₃]
+  -- The base of the right side is the product of the bases `n⁻¹`, `v * (n * s)` and
+  -- `(s⁻¹ + 1 + 2 * k * γ) * (s + 1 + 2 * k * γ)` of the left side.
+  have hbase : v * (1 + s + 2 * k * γ * s) * (1 + s + 2 * k * γ) = (Fintype.card n : ℝ)⁻¹ *
+      (v * (Fintype.card n * s)) * ((s⁻¹ + 1 + 2 * k * γ) * (s + 1 + 2 * k * γ)) := by
+    field_simp
+    ring
+  rw [hbase]
+  simp only [mul_pow]
+  ring
 
 end ProbabilityTheory.iIndepFun

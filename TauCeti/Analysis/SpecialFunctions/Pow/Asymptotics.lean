@@ -48,9 +48,9 @@ tends to zero. This is how valuation bounds on coefficients give convergence of 
 
 ## Rounded logarithmic orders
 
-For every real `B` and every `s > 0`, the rounded-up orders `⌈B * log x⌉₊` are `o(x ^ s)`. This is
-how orders of logarithmic size are chosen in the moment method for the largest eigenvalue of a
-random matrix.
+For every real `B` and every `s > 0`, the rounded-up orders `⌈B * log x⌉₊` are `o(x ^ s)`, and so
+are the shifted orders `⌈B * log (x + c)⌉₊` for every real `c`. This is how orders of logarithmic
+size are chosen in the moment method for the largest eigenvalue of a random matrix.
 
 ## Powers of a fixed base tending to one
 
@@ -371,6 +371,23 @@ theorem tendsto_natCeil_mul_log_div_rpow_atTop_nhds_zero (B : ℝ) {s : ℝ} (hs
   calc (⌈B * log x⌉₊ : ℝ) / x ^ s ≤ (|B| * log x + 1) / x ^ s :=
         div_le_div_of_nonneg_right hceil (rpow_nonneg (zero_le_one.trans hx) _)
     _ = |B| * (log x / x ^ s) + (x ^ s)⁻¹ := by ring
+
+/-- Shifting the logarithm keeps rounded-up logarithmic orders negligible against every positive
+power: for all reals `B` and `c` and every `s > 0`, `⌈B * log (x + c)⌉₊ / x ^ s` tends to zero as
+`x → ∞`. -/
+theorem tendsto_natCeil_mul_log_add_div_rpow_atTop_nhds_zero (B c : ℝ) {s : ℝ} (hs : 0 < s) :
+    Tendsto (fun x : ℝ ↦ (⌈B * log (x + c)⌉₊ : ℝ) / x ^ s) atTop (𝓝 0) := by
+  -- Compare with `⌈B * log (x + c)⌉₊ / (x + c) ^ s`, as `((x + c) / x) ^ s` tends to `1`.
+  have hratio := (TauCeti.tendsto_add_div_add_atTop c 0).rpow_const (p := s) (Or.inr hs.le)
+  have hlim := ((tendsto_natCeil_mul_log_div_rpow_atTop_nhds_zero B hs).comp
+    (tendsto_atTop_add_const_right atTop c tendsto_id)).mul hratio
+  rw [one_rpow, zero_mul] at hlim
+  refine hlim.congr' ?_
+  filter_upwards [eventually_gt_atTop 0, eventually_gt_atTop (-c)] with x hx hxc
+  have hx' : 0 < x + c := by linarith
+  simp only [Function.comp_apply, id, add_zero]
+  rw [div_rpow hx'.le hx.le]
+  field_simp [(rpow_pos_of_pos hx' s).ne']
 
 /-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`. -/
 theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
