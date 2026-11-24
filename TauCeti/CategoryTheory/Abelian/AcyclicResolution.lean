@@ -276,16 +276,6 @@ namespace CategoryTheory.Functor
 
 open CochainComplex
 
-/-- The image under `F` of the augmentation `X ⟶ K⁰` of a resolution `X[0] ⟶ K` lands in the
-degree-zero cycles of `F(K)`. This is the side condition for the `liftCycles` maps describing the
-degree-zero normalization of computations by resolutions. -/
-lemma map_fromSingle₀Equiv_val_comp_d {C : Type u₁} [Category.{v₁} C] [Abelian C]
-    {D : Type u₂} [Category.{v₂} D] [Abelian D] (F : C ⥤ D) [F.PreservesZeroMorphisms] {X : C}
-    {K : CochainComplex C ℕ} (ι : (single₀ C).obj X ⟶ K) :
-    F.map (fromSingle₀Equiv K X ι).val ≫ ((F.mapHomologicalComplex _).obj K).d 0 1 = 0 := by
-  dsimp
-  rw [← F.map_comp, (fromSingle₀Equiv K X ι).property, F.map_zero]
-
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Category.{v₂} D] [Abelian D]
   [EnoughInjectives C] (F : C ⥤ D) [F.Additive] (P : ObjectProperty C)
   [P.IsClosedUnderIsomorphisms] (hinj : ∀ (Y : C), Injective Y → P Y)
