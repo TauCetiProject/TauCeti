@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.LSeries.SumCoeff
+import Mathlib.Analysis.PSeriesComplex
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
@@ -57,6 +58,8 @@ Siegel's theorem on real zeros.
 * `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable.
 * `TauCeti.LSeries_neg_one_pow_add_one_eq_mul_riemannZeta`: the alternating series
   `∑ (-1) ^ (n + 1) n⁻ˢ` is `(1 - 2 ^ (1 - s)) ζ(s)` for `Re s > 1`.
+* `TauCeti.hasSum_two_mul_add_one_cpow_neg_riemannZeta`: the odd terms `∑ (2 k + 1) ^ (-s)` of the
+  zeta series sum to `(1 - 2 ^ (-s)) ζ(s)` for `Re s > 1`.
 * `TauCeti.one_sub_two_cpow_mul_riemannZeta_eq_mul_integral`: the partial-summation integral of
   the alternating series represents `(1 - 2 ^ (1 - s)) ζ(s)` on `Re s > 0`, `s ≠ 1`.
 * `TauCeti.riemannZeta_lt_zero`: `ζ(σ)` is a negative real number for real `0 < σ < 1`.
@@ -187,6 +190,32 @@ theorem LSeries_neg_one_pow_add_one_eq_mul_riemannZeta {s : ℂ} (hs : 1 < s.re)
     rw [sub_eq_add_neg, cpow_add _ _ two_ne_zero, cpow_one]
   rw [hχ, hL, hχζ, h2]
   ring
+
+/-- **The odd terms of the zeta series.** On `Re s > 1`, `∑ (2 k + 1) ^ (-s) = (1 - 2 ^ (-s)) ζ(s)`:
+the even terms `(2 (k + 1)) ^ (-s)` of `ζ(s) = ∑ (m + 1) ^ (-s)` contribute `2 ^ (-s) ζ(s)`. -/
+theorem hasSum_two_mul_add_one_cpow_neg_riemannZeta {s : ℂ} (hs : 1 < s.re) :
+    HasSum (fun k : ℕ ↦ (2 * (k : ℂ) + 1) ^ (-s)) ((1 - 2 ^ (-s)) * riemannZeta s) := by
+  -- `ζ(s) = ∑ (m + 1) ^ (-s)`, split into the terms with `m` even and `m` odd.
+  have hζ : HasSum (fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s)) (riemannZeta s) := by
+    have hsum : Summable fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s) := by
+      simpa [cpow_neg] using
+        (summable_nat_add_iff 1).mpr (Complex.summable_one_div_nat_cpow.mpr hs)
+    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
+    simpa [cpow_neg] using hsum.hasSum
+  have hodd : HasSum (fun k : ℕ ↦ (((2 * k + 1 : ℕ) : ℂ) + 1) ^ (-s))
+      ((2 : ℂ) ^ (-s) * riemannZeta s) := by
+    refine (hζ.mul_left _).congr_fun fun k ↦ ?_
+    have : (((2 * k + 1 : ℕ) : ℂ) + 1) = ((2 : ℝ) : ℂ) * ((k + 1 : ℝ) : ℂ) := by
+      push_cast; ring
+    rw [this, ofReal_mul_cpow (by norm_num)]
+    norm_num
+  have heven : HasSum (fun k : ℕ ↦ (((2 * k : ℕ) : ℂ) + 1) ^ (-s))
+      (∑' k : ℕ, (((2 * k : ℕ) : ℂ) + 1) ^ (-s)) :=
+    (hζ.summable.comp_injective (mul_right_injective₀ two_ne_zero)).hasSum
+  have hE : ∑' k : ℕ, (((2 * k : ℕ) : ℂ) + 1) ^ (-s) = (1 - 2 ^ (-s)) * riemannZeta s := by
+    linear_combination (heven.even_add_odd hodd).unique hζ
+  rw [← hE]
+  simpa using heven
 
 /-- **Continuation of the alternating zeta series.** On `Re s > 0`, `s ≠ 1`, the function
 `(1 - 2 ^ (1 - s)) ζ(s)` is the partial-summation integral `s ∫_1^∞ A(t) t^(-s-1) dt` of the
