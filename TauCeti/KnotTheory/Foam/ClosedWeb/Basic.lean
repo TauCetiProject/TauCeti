@@ -32,14 +32,15 @@ not imposed by this record; higher-genus structures are allowed.
 
 This file supplies incidence fibres, isomorphisms, orientation reversal, mirror reversal,
 disjoint union, ordered noncommutative semigroup flows (`IsAdditiveFlow`), and single-pigment
-monochrome subwebs (`IsMonochromeSubweb`). Nilvalent webs have no vertices and consist solely
-of circles; in particular the empty web and one circle are distinct.
+monochrome interval-edge selections (`IsMonochromeEdgeSelection`). Nilvalent webs have no
+vertices and consist solely of circles; in particular the empty web and one circle are distinct.
 
 The finite-record model adapts the incidence data of Goertz–Marino–Wedrich, *Monoidal
 2-categories from foam evaluation*, arXiv:2602.11120v1, Definitions 2.4–2.5 and 3.4,
 distinguishing edge-end occurrences from vertex-free circles and leaving planarity as a
-separate condition, together with the single-pigment subweb condition of Robert–Wagner,
-*A closed formula for the evaluation of $\mathfrak{sl}_N$-foams*, arXiv:1702.04140v3, Lemma 2.5.
+separate condition, together with the single-pigment vertex disjoint-union condition of
+Robert–Wagner, *A closed formula for the evaluation of $\mathfrak{sl}_N$-foams*,
+arXiv:1702.04140v3, Lemma 2.5.
 -/
 
 public section
@@ -952,7 +953,7 @@ theorem theta_ends_apply (v : Bool) (i : Fin 3) :
   rw [IsSplit, theta_ends_apply]
   simp
 
-/-! ### Ordered additive flows and monochrome subwebs -/
+/-! ### Ordered additive flows and monochrome interval-edge selections -/
 
 /-- An additive flow on a closed web assigns weights to interval edges so that at every vertex,
 the weight on the odd slot `0` equals the weight on slot `1` plus the weight on slot `2` in that
@@ -964,34 +965,36 @@ theorem isAdditiveFlow_def {S : Type*} [Add S] (W : ClosedWeb.{u}) (w : W.Edge �
     W.IsAdditiveFlow w ↔ ∀ v, w (W.ends (v, 0)).1 = w (W.ends (v, 1)).1 + w (W.ends (v, 2)).1 :=
   Iff.rfl
 
-/-- A single-pigment indicator `p : W.Edge → Bool` satisfies the Robert–Wagner disjoint-union
-condition when at every vertex `v`, the pigment appears on the odd edge `(v, 0)` if and only if
-it appears on at least one of the thin edges `(v, 1)` and `(v, 2)`, and never on both thin edges
-simultaneously. -/
-def IsMonochromeSubweb (W : ClosedWeb.{u}) (p : W.Edge → Bool) : Prop :=
+/-- A single-pigment interval-edge selection `p : W.Edge → Bool` satisfies the Robert–Wagner
+disjoint-union condition when at every vertex `v`, the pigment appears on the odd edge `(v, 0)`
+if and only if it appears on at least one of the thin edges `(v, 1)` and `(v, 2)`, and never on
+both thin edges simultaneously. This predicate constrains only the interval edges `W.Edge`; any
+vertex-free circles `W.Circle` carry no vertex constraint and are selected independently in a
+full monochrome subweb. -/
+def IsMonochromeEdgeSelection (W : ClosedWeb.{u}) (p : W.Edge → Bool) : Prop :=
   ∀ v, p (W.ends (v, 0)).1 = (p (W.ends (v, 1)).1 || p (W.ends (v, 2)).1) ∧
     ¬(p (W.ends (v, 1)).1 && p (W.ends (v, 2)).1)
 
-theorem isMonochromeSubweb_def (W : ClosedWeb.{u}) (p : W.Edge → Bool) :
-    W.IsMonochromeSubweb p ↔
+theorem isMonochromeEdgeSelection_def (W : ClosedWeb.{u}) (p : W.Edge → Bool) :
+    W.IsMonochromeEdgeSelection p ↔
       ∀ v, p (W.ends (v, 0)).1 = (p (W.ends (v, 1)).1 || p (W.ends (v, 2)).1) ∧
         ¬(p (W.ends (v, 1)).1 && p (W.ends (v, 2)).1) :=
   Iff.rfl
 
-/-- Mirroring a closed web preserves single-pigment subwebs, since disjoint union of a single
-pigment is symmetric in the two thin slots. -/
-@[simp] theorem isMonochromeSubweb_mirror (W : ClosedWeb.{u}) (p : W.Edge → Bool) :
-    W.mirror.IsMonochromeSubweb p ↔ W.IsMonochromeSubweb p := by
+/-- Mirroring a closed web preserves single-pigment interval-edge selections, since disjoint union
+of a single pigment is symmetric in the two thin slots. -/
+@[simp] theorem isMonochromeEdgeSelection_mirror (W : ClosedWeb.{u}) (p : W.Edge → Bool) :
+    W.mirror.IsMonochromeEdgeSelection p ↔ W.IsMonochromeEdgeSelection p := by
   refine forall_congr' fun v ↦ ?_
   rw [mirror_ends_apply, mirror_ends_apply, mirror_ends_apply]
   dsimp only [Equiv.swap_apply_def]
   simp only [↓reduceIte, Fin.isValue, Fin.reduceEq]
   rw [Bool.or_comm, Bool.and_comm]
 
-/-- At every vertex of any closed web, a single-pigment subweb has equal numbers of active
-incoming and outgoing ends, and at most one of each. -/
-theorem card_active_ends_of_isMonochromeSubweb {W : ClosedWeb.{u}} {p : W.Edge → Bool}
-    (hp : W.IsMonochromeSubweb p) (v : W.Vertex) :
+/-- At every vertex of any closed web, a single-pigment interval-edge selection has equal numbers
+of active incoming and outgoing ends, and at most one of each. -/
+theorem card_active_ends_of_isMonochromeEdgeSelection {W : ClosedWeb.{u}} {p : W.Edge → Bool}
+    (hp : W.IsMonochromeEdgeSelection p) (v : W.Vertex) :
     Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && !(W.ends (v, i)).2) = true} =
       Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && (W.ends (v, i)).2) = true} ∧
     Nat.card {i : Fin 3 // (p (W.ends (v, i)).1 && !(W.ends (v, i)).2) = true} ≤ 1 := by

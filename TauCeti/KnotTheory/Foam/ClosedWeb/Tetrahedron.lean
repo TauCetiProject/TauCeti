@@ -30,10 +30,11 @@ chiralities are not isomorphic (`ClosedWeb.isEmpty_iso_tetWeb_not`), and reversi
 orientations exchanges them (`ClosedWeb.tetWebReverseIso`). Finally, we verify the two local-link
 properties of `tetWeb`: ordered noncommutative semigroup flows (`ClosedWeb.IsAdditiveFlow`) on the
 two chiralities express semigroup associativity in the two opposite multiplication orders
-(Goertz–Marino–Wedrich), and every nonempty single-pigment subweb (`ClosedWeb.IsMonochromeSubweb`)
-on `tetWeb c` is one of three simple directed cycles of lengths `3`, `4`, and `3`
-(Robert–Wagner), ensuring that coning a monochrome subweb at a singular foam vertex produces at
-most one disk rather than a pinched cone.
+(Goertz–Marino–Wedrich), and every nonempty single-pigment interval-edge selection
+(`ClosedWeb.IsMonochromeEdgeSelection`, which determines the full monochrome subweb since
+`tetWeb c` has no vertex-free circles) on `tetWeb c` is one of three simple directed cycles of
+lengths `3`, `4`, and `3` (Robert–Wagner), ensuring that coning a monochrome subweb at a singular
+foam vertex produces at most one disk rather than a pinched cone.
 
 ## References
 
@@ -380,18 +381,19 @@ def tetPigmentCycle : Fin 3 → Fin 6 → Bool
 @[simp] theorem tetPigmentCycle_two :
     tetPigmentCycle 2 = ![true, true, false, false, false, true] := (rfl)
 
-/-- Every elementary pigment cycle is a valid monochrome subweb on both chiralities of `tetWeb`. -/
-theorem isMonochromeSubweb_tetPigmentCycle (c : Bool) (i : Fin 3) :
-    (tetWeb c).IsMonochromeSubweb (tetPigmentCycle i) := by
-  rw [isMonochromeSubweb_def]
+/-- Every elementary pigment cycle is a valid monochrome interval-edge selection on both
+chiralities of `tetWeb`. -/
+theorem isMonochromeEdgeSelection_tetPigmentCycle (c : Bool) (i : Fin 3) :
+    (tetWeb c).IsMonochromeEdgeSelection (tetPigmentCycle i) := by
+  rw [isMonochromeEdgeSelection_def]
   intro v
   cases c <;> fin_cases i <;> fin_cases v <;> decide
 
-private theorem isMonochromeSubweb_tetrahedronPos_iff (p : Fin 6 → Bool) :
-    tetrahedronPos.IsMonochromeSubweb p ↔
+private theorem isMonochromeEdgeSelection_tetrahedronPos_iff (p : Fin 6 → Bool) :
+    tetrahedronPos.IsMonochromeEdgeSelection p ↔
       p = (fun _ ↦ false) ∨ ∃ i : Fin 3, p = tetPigmentCycle i := by
   constructor
-  · rw [isMonochromeSubweb_def]
+  · rw [isMonochromeEdgeSelection_def]
     intro hp
     have h0 := hp 0; have h1 := hp 1; have h2 := hp 2; have h3 := hp 3
     rw [tetWeb_ends_apply, tetWeb_ends_apply, tetWeb_ends_apply] at h0 h1 h2 h3
@@ -416,21 +418,22 @@ private theorem isMonochromeSubweb_tetrahedronPos_iff (p : Fin 6 → Bool) :
     · exact absurd rfl h0.2
     · exact absurd rfl h0.2
   · rintro (rfl | ⟨i, rfl⟩)
-    · rw [isMonochromeSubweb_def]
+    · rw [isMonochromeEdgeSelection_def]
       intro v; fin_cases v <;> decide
-    · exact isMonochromeSubweb_tetPigmentCycle true i
+    · exact isMonochromeEdgeSelection_tetPigmentCycle true i
 
-/-- Complete classification of monochrome subwebs on `tetWeb c` (Robert–Wagner Lemma 2.5 at a
-singular vertex): `p` is either identically `false` or one of the three single simple cycles
+/-- Complete classification of monochrome interval-edge selections (hence of monochrome subwebs,
+as `tetWeb c` has no vertex-free circles) on `tetWeb c` (Robert–Wagner Lemma 2.5 at a singular
+vertex): `p` is either identically `false` or one of the three single simple cycles
 `tetPigmentCycle 0`, `tetPigmentCycle 1`, `tetPigmentCycle 2`. -/
-theorem isMonochromeSubweb_tetWeb_iff (c : Bool) (p : Fin 6 → Bool) :
-    (tetWeb c).IsMonochromeSubweb p ↔
+theorem isMonochromeEdgeSelection_tetWeb_iff (c : Bool) (p : Fin 6 → Bool) :
+    (tetWeb c).IsMonochromeEdgeSelection p ↔
       p = (fun _ ↦ false) ∨ ∃ i : Fin 3, p = tetPigmentCycle i := by
   cases c
-  · rw [← isMonochromeSubweb_tetrahedronPos_iff p, ← isMonochromeSubweb_mirror,
-      isMonochromeSubweb_def, isMonochromeSubweb_def]
+  · rw [← isMonochromeEdgeSelection_tetrahedronPos_iff p, ← isMonochromeEdgeSelection_mirror,
+      isMonochromeEdgeSelection_def, isMonochromeEdgeSelection_def]
     rfl
-  · exact isMonochromeSubweb_tetrahedronPos_iff p
+  · exact isMonochromeEdgeSelection_tetrahedronPos_iff p
 
 /-- The three elementary pigment cycles on `tetWeb c` have edge counts `3`, `4`, and `3`. -/
 theorem card_tetPigmentCycle (i : Fin 3) :
