@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
@@ -47,12 +48,13 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 
 ## Main results
 
-* `TauCeti.Floer.tendsto_setIntegral_truncation`,
+* `TauCeti.Floer.tendsto_setIntegral_exchangeTruncation`,
+  `TauCeti.Floer.tendsto_setIntegral_truncation`,
   `TauCeti.Floer.tendsto_intervalIntegral_endLoop`,
   `TauCeti.Floer.tendsto_intervalIntegral_endChart_of_isCompact`: integrals over `S` are limits of
-  integrals over its truncations, and integrals of a Hamiltonian along the end loops converge to
-  its integral along their pointwise limits, either when the Hamiltonian is globally bounded or
-  when the map takes values in a compact set.
+  integrals over its truncations, with the output end recentred at any `c` or not, and integrals
+  of a Hamiltonian along the end loops converge to its integral along their pointwise limits,
+  either when the Hamiltonian is globally bounded or when the map takes values in a compact set.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
   vector-space case is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
@@ -89,18 +91,35 @@ namespace TauCeti
 
 namespace Floer
 
+/-- The truncation with output end recentred at `c` lies in `S`, in real coordinates. -/
+theorem preimage_exchangeTruncation_subset (c R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R ⊆ thricePuncturedSphereReal :=
+  fun _ hz ↦ exchangeTruncation_subset c R hz
+
+/-- The truncations with output end recentred at `c` exhaust `S`, in real coordinates. -/
+theorem iUnion_preimage_exchangeTruncation (c : ℝ) :
+    ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R =
+      thricePuncturedSphereReal := by
+  ext z
+  simp only [← preimage_iUnion, iUnion_exchangeTruncation, mem_preimage, mem_ofPred_eq,
+    mem_thricePuncturedSphereReal_iff]
+
+/-- Integrals over `S` are the limits of the integrals over its truncations with output end
+recentred at `c`. -/
+theorem tendsto_setIntegral_exchangeTruncation (c : ℝ) {f : ℝ × ℝ → ℝ}
+    (hf : IntegrableOn f thricePuncturedSphereReal) :
+    Tendsto (fun R : ℝ ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R, f z)
+      atTop (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
+  rw [← iUnion_preimage_exchangeTruncation c] at hf ⊢
+  exact tendsto_setIntegral_of_monotone (measurableSet_preimage_exchangeTruncation c)
+    (fun _ _ h ↦ preimage_mono (exchangeTruncation_mono c h)) hf
+
 /-- Integrals over `S` are the limits of the integrals over its truncations. -/
 theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
     (hf : IntegrableOn f thricePuncturedSphereReal) :
     Tendsto (fun R : ℝ => ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z) atTop
       (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
-  have hS : ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' truncation R =
-      thricePuncturedSphereReal := by
-    rw [← preimage_iUnion, iUnion_truncation]
-    rfl
-  rw [← hS] at hf ⊢
-  exact tendsto_setIntegral_of_monotone measurableSet_preimage_truncation
-    (fun _ _ h => preimage_mono (truncation_mono h)) hf
+  simpa only [exchangeTruncation_zero] using tendsto_setIntegral_exchangeTruncation 0 hf
 
 /-- If the loops of `u` along the circles `±s = R` of the end `q` converge pointwise to a loop `x`
 as `R → ∞`, then the integrals of a bounded continuous Hamiltonian along them converge to its

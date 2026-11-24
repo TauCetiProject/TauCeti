@@ -172,6 +172,13 @@ theorem toCircle_exp (γ : Path x x) (t : I) :
 theorem toCircle_one (γ : Path x x) : γ.toCircle 1 = x := by
   simpa using γ.toCircle_unitToCircle 0
 
+/-- The constant loop at `x` is the constant map from the circle. -/
+@[simp]
+theorem toCircle_refl (x : X) : (Path.refl x).toCircle = ContinuousMap.const Circle x := by
+  ext z
+  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective z
+  simp
+
 end Path
 
 namespace ContinuousMap
