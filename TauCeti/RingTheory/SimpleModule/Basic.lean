@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.RingTheory.SimpleRing.Defs
 public import TauCeti.Algebra.Module.Generator
--- Private: `TwoSidedIdeal.mem_bot`, `TwoSidedIdeal.mem_top`, and `TwoSidedIdeal.mem_mk'` are
--- used only inside the proof of `TauCeti.Module.IsGenerator.of_isSimpleRing`.
-import Mathlib.RingTheory.TwoSidedIdeal.Lattice
+-- Private: `isSimpleRing_iff_isTwoSided_imp` is used only inside the proof of
+-- `TauCeti.Module.IsGenerator.of_isSimpleRing`.
+import Mathlib.RingTheory.SimpleRing.Congr
 
 /-!
 # Simple and semisimple modules: commuting scalars, products, linear maps, idempotents
@@ -158,29 +158,25 @@ theorem _root_.IsSemisimpleRing.subsingleton_of_subsingleton_linearMap [IsSemisi
 `⨆ f : M →ₗ[R] R, range f` is a nonzero two-sided ideal of `R` (by
 `IsSemisimpleRing.subsingleton_of_subsingleton_linearMap`), hence equals `⊤` by simplicity of `R`.
 -/
-theorem Module.IsGenerator.of_isSimpleRing [IsSimpleRing R] [IsSemisimpleRing R] [Nontrivial M] :
+instance Module.IsGenerator.of_isSimpleRing [IsSimpleRing R] [IsSemisimpleRing R] [Nontrivial M] :
     Module.IsGenerator R M := by
   rw [Module.isGenerator_iff_iSup_range_eq_top]
-  let I : Submodule R R := ⨆ f : M →ₗ[R] R, LinearMap.range f
-  let J : TwoSidedIdeal R := TwoSidedIdeal.mk' I.carrier
-    I.zero_mem (fun hx hy ↦ I.add_mem hx hy) (fun hx ↦ I.neg_mem hx)
-    (fun hx ↦ I.smul_mem _ hx)
-    (fun {a b} ha ↦ Submodule.iSup_induction (p := fun f : M →ₗ[R] R ↦ LinearMap.range f)
+  let I : Ideal R := ⨆ f : M →ₗ[R] R, LinearMap.range f
+  have htwo : I.IsTwoSided := ⟨fun b ha ↦
+    Submodule.iSup_induction (p := fun f : M →ₗ[R] R ↦ LinearMap.range f)
       (motive := fun y ↦ y * b ∈ I) ha
       (fun f _ ⟨m, hm⟩ ↦ hm ▸ Submodule.mem_iSup_of_mem ((LinearMap.mulRight R b).comp f) ⟨m, rfl⟩)
       (by rw [zero_mul]; exact I.zero_mem)
-      (fun _ _ h₁ h₂ ↦ by rw [add_mul]; exact I.add_mem h₁ h₂))
-  have hmemJ (r : R) : r ∈ J ↔ r ∈ I := TwoSidedIdeal.mem_mk' _ _ _ _ _ _ r
-  have hJne : J ≠ ⊥ := by
+      (fun _ _ h₁ h₂ ↦ by rw [add_mul]; exact I.add_mem h₁ h₂)⟩
+  have hne : I ≠ ⊥ := by
     intro hbot
     have hsub : Subsingleton (M →ₗ[R] R) := subsingleton_of_forall_eq 0 fun f ↦ by
       ext m
-      have hf : f m ∈ J := (hmemJ _).mpr
-        (Submodule.mem_iSup_of_mem (p := fun g : M →ₗ[R] R ↦ LinearMap.range g) f ⟨m, rfl⟩)
+      have hf : f m ∈ I :=
+        Submodule.mem_iSup_of_mem (p := fun g : M →ₗ[R] R ↦ LinearMap.range g) f ⟨m, rfl⟩
       rw [hbot] at hf
-      exact (TwoSidedIdeal.mem_bot (x := f m)).mp hf
+      exact Ideal.mem_bot.mp hf
     exact not_subsingleton M (IsSemisimpleRing.subsingleton_of_subsingleton_linearMap hsub)
-  have htop : J = ⊤ := (eq_bot_or_eq_top J).resolve_left hJne
-  exact eq_top_iff.mpr fun r _ ↦ (hmemJ r).mp (htop ▸ TwoSidedIdeal.mem_top R)
+  exact ((isSimpleRing_iff_isTwoSided_imp.mp ‹_›).2 I htwo).resolve_left hne
 
 end TauCeti
