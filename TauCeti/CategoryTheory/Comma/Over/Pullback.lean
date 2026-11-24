@@ -28,8 +28,9 @@ equalities `f ≫ 𝟙 Y = f`, `𝟙 X ≫ f = f` and `f ≫ g ≫ h = (f ≫ g)
   counit built from `pullbackId` and `pullbackComp` satisfy the triangle identity for
   `pullback e.hom` and `pullback e.inv`.
 
-For a commuting square `i' ≫ g = t ≫ i`, `CategoryTheory.Over.pullbackPullbackIsoOfComm`
-identifies base change along `g` and then along `i'` with base change along `i` and then along `t`;
+For a commuting square `i' ≫ g = t ≫ i`, the natural isomorphism
+`CategoryTheory.Over.pullbackPullbackIsoOfComm` identifies base change along `g` and then along
+`i'` with base change along `i` and then along `t`;
 when `i` and `i'` are points, this says the fiber at `i'` of the base change along `g` is the base
 change along `t` of the fiber at `i`.
 
@@ -132,22 +133,29 @@ section CommSquare
 variable {S S' s s' : C} {g : S' ⟶ S} {i : s ⟶ S} {i' : s' ⟶ S'} {t : s' ⟶ s}
   [HasPullbacksAlong g] [HasPullbacksAlong i] [HasPullbacksAlong i'] [HasPullbacksAlong t]
 
-/-- For a commuting square `i' ≫ g = t ≫ i`, base change of `A` along `g : S' ⟶ S` and then
-along `i' : s' ⟶ S'` is base change along `i : s ⟶ S` and then along `t : s' ⟶ s`. When `i` and
-`i'` are points, this is the **fiber of a base change**: the fiber at `i'` of the base change of
-`A` along `g` is the base change along `t` of the fiber of `A` at `i`. -/
-noncomputable def pullbackPullbackIsoOfComm (A : Over S) (h : i' ≫ g = t ≫ i) :
-    (pullback i').obj ((pullback g).obj A) ≅ (pullback t).obj ((pullback i).obj A) :=
-  (pullbackComp i' g).symm.app A ≪≫ eqToIso (by simp only [h]) ≪≫ (pullbackComp t i).app A
+/-- For a commuting square `i' ≫ g = t ≫ i`, base change along `g : S' ⟶ S` and then along
+`i' : s' ⟶ S'` is naturally isomorphic to base change along `i : s ⟶ S` and then along
+`t : s' ⟶ s`. When `i` and `i'` are points, this is the **fiber of a base change**: the fiber at
+`i'` of the base change of `A` along `g` is the base change along `t` of the fiber of `A` at `i`. -/
+noncomputable def pullbackPullbackIsoOfComm (h : i' ≫ g = t ≫ i) :
+    pullback g ⋙ pullback i' ≅ pullback i ⋙ pullback t :=
+  (pullbackComp i' g).symm ≪≫ eqToIso (by simp only [h]) ≪≫ pullbackComp t i
+
+/-- `pullbackPullbackIsoOfComm` is `pullbackComp i' g` inverted, followed by `pullbackComp t i`,
+up to the equality `i' ≫ g = t ≫ i`. -/
+theorem pullbackPullbackIsoOfComm_hom_app (h : i' ≫ g = t ≫ i) (A : Over S) :
+    (pullbackPullbackIsoOfComm h).hom.app A =
+      (pullbackComp i' g).inv.app A ≫ eqToHom (by simp only [h]) ≫
+        (pullbackComp t i).hom.app A := by
+  simp [pullbackPullbackIsoOfComm, eqToHom_app]
 
 /-- `pullbackPullbackIsoOfComm` commutes with the projections to `A`. -/
 @[reassoc (attr := simp)]
-theorem pullbackPullbackIsoOfComm_hom_left_fst (A : Over S) (h : i' ≫ g = t ≫ i) :
-    (pullbackPullbackIsoOfComm A h).hom.left ≫ pullback.fst (pullback.snd A.hom i) t ≫
+theorem pullbackPullbackIsoOfComm_hom_app_left_fst (h : i' ≫ g = t ≫ i) (A : Over S) :
+    ((pullbackPullbackIsoOfComm h).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
         pullback.fst A.hom i =
       pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
-  simp only [pullbackPullbackIsoOfComm, Iso.trans_hom, Iso.app_hom, Iso.symm_hom, eqToIso.hom,
-    comp_left, eqToHom_left, Category.assoc]
+  simp only [pullbackPullbackIsoOfComm_hom_app, comp_left, eqToHom_left, Category.assoc]
   have h₁ : ((pullbackComp t i).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
       pullback.fst A.hom i = pullback.fst A.hom (t ≫ i) := by
     simp [pullbackComp]
@@ -158,10 +166,10 @@ theorem pullbackPullbackIsoOfComm_hom_left_fst (A : Over S) (h : i' ≫ g = t �
 
 /-- `pullbackPullbackIsoOfComm` commutes with the projections to `s'`. -/
 @[reassoc (attr := simp)]
-theorem pullbackPullbackIsoOfComm_hom_left_snd (A : Over S) (h : i' ≫ g = t ≫ i) :
-    (pullbackPullbackIsoOfComm A h).hom.left ≫ pullback.snd (pullback.snd A.hom i) t =
+theorem pullbackPullbackIsoOfComm_hom_app_left_snd (h : i' ≫ g = t ≫ i) (A : Over S) :
+    ((pullbackPullbackIsoOfComm h).hom.app A).left ≫ pullback.snd (pullback.snd A.hom i) t =
       pullback.snd (pullback.snd A.hom g) i' :=
-  Over.w (pullbackPullbackIsoOfComm A h).hom
+  Over.w ((pullbackPullbackIsoOfComm h).hom.app A)
 
 end CommSquare
 

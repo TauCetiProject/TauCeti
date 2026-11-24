@@ -57,8 +57,7 @@ example (M : NeronModel j A) :
     rw [Over.pullbackId.hom.naturality e.hom, Functor.id_map,
       Over.pullbackComp_id_left_hom_app_comp_pullbackId_assoc, eqToHom_trans_assoc,
       Over.pullbackComp_id_inv_app_comp_eqToHom_assoc]
-  rw [NeronModel.baseChange_genericIso_hom]
-  simp only [NatTrans.comp_app, eqToHom_app]
+  rw [NeronModel.baseChange_genericIso_hom, Over.pullbackPullbackIsoOfComm_hom_app]
   exact key M.model M.genericIso
 
 end Identity
@@ -75,7 +74,7 @@ example [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A) {i : s ⟶ S
     {t : s' ⟶ s} (h : i' ≫ g = t ≫ i) :
     (Over.pullback i').obj (M.baseChange sq).model ≅
       (Over.pullback t).obj ((Over.pullback i).obj M.model) :=
-  Over.pullbackPullbackIsoOfComm M.model h
+  (Over.pullbackPullbackIsoOfComm h).app M.model
 
 end Fibre
 
@@ -96,7 +95,7 @@ example [Smooth (Spec.map (CommRingCat.ofHom φ))]
         (M.baseChange sq).model ≅
       (Over.pullback (Spec.map (CommRingCat.ofHom (IsLocalRing.ResidueField.map φ)))).obj
         ((Over.pullback (Spec.map (CommRingCat.ofHom (IsLocalRing.residue R)))).obj M.model) :=
-  Over.pullbackPullbackIsoOfComm M.model (specMap_residue_comp_specMap φ)
+  (Over.pullbackPullbackIsoOfComm (specMap_residue_comp_specMap φ)).app M.model
 
 end SpecialFibre
 
