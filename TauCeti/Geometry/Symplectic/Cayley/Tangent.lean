@@ -35,9 +35,10 @@ The two linear spaces of endomorphisms are defined algebraically in
 This file proves that they are exactly the velocities of curves of tame, respectively compatible,
 structures:
 
-* `TauCeti.AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt`: every directional derivative
-  of a differentiable family of complex structures, over any normed parameter space, satisfies
-  `Y J + J Y = 0`.
+* `TauCeti.AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt`,
+  `TauCeti.AlmostComplexStructure.fderiv_mem_tangentSpace`: every directional derivative
+  of a family of complex structures, over any normed parameter space, satisfies
+  `Y J + J Y = 0` (where the family is not differentiable its derivative is zero).
 * `TauCeti.SymplecticForm.mem_compatibleTangentSpace_of_hasFDerivAt`: if the family preserves
   `ω` near the base point, its directional derivatives lie in the compatible tangent space.
 * `TauCeti.SymplecticForm.Compatible.exists_contDiff_hasDerivAt`: conversely, every `Y` in the
@@ -110,6 +111,17 @@ theorem mem_tangentSpace_of_hasFDerivAt
     zero_apply, F, LinearMap.coe_toContinuousLinearMap'] at hv
   rw [eq_neg_iff_add_eq_zero, add_comm]
   exact hv
+
+/-- **Derivatives of complex structures anticommute with them.** Every directional derivative at
+`x` of a family of complex structures, as a family of continuous endomorphisms, satisfies
+`Y J + J Y = 0` at `J = J x`. No differentiability is assumed: where the family is not
+differentiable its derivative is zero. -/
+theorem fderiv_mem_tangentSpace (x h : P) :
+    (fderiv ℝ (fun p => LinearMap.toContinuousLinearMap (J p).toLinearMap) x h :
+      Module.End ℝ V) ∈ (J x).tangentSpace := by
+  by_cases hd : DifferentiableAt ℝ (fun p => LinearMap.toContinuousLinearMap (J p).toLinearMap) x
+  · exact mem_tangentSpace_of_hasFDerivAt hd.hasFDerivAt h
+  · simp [fderiv_zero_of_not_differentiableAt hd]
 
 end AlmostComplexStructure
 

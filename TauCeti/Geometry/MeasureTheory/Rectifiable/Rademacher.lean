@@ -17,6 +17,7 @@ import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
+import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
@@ -85,36 +86,35 @@ theorem ae_regular_and_density_on_patch {V : Type*} [NormedAddCommGroup V] [Inne
   exact ⟨hdiff, ((fderiv ℝ f u).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp fun h0 => hJ ⟨huB, h0⟩,
     by simpa only [addHaar_closedBall_center] using not_not.mp fun h => hD ⟨h, huB⟩,
     not_not.mp fun h => hT ⟨huB, h⟩⟩
-private lemma ae_image_of_ae_volume {V : Type*} [MetricSpace V] [MeasurableSpace V] [BorelSpace V]
-    {k : ℕ} {B : Set (Euc[k])} {f : Euc[k] → V} {K_f : ℝ≥0} (hf_lip : LipschitzWith K_f f) {P :
-    Euc[k] → Prop} (hP : ∀ᵐ u ∂volume, P u) : ∀ᵐ x ∂μHE[k], x ∈ f '' B → ∃ u ∈ B, f u = x ∧ P u :=
-    by
-  have himg : μHE[k] (f '' {u | ¬ P u}) = 0 := by
-    simpa only [EuclideanSpace.euclideanHausdorffMeasure_eq_volume, ae_iff.mp hP, mul_zero,
-      nonpos_iff_eq_zero] using hf_lip.lipschitzOnWith.euclideanHausdorffMeasure_image_le k (s := {u
-      | ¬ P u})
-  filter_upwards [measure_eq_zero_iff_ae_notMem.mp himg] with x hx
-  rintro ⟨u, huB, rfl⟩; exact ⟨u, huB, rfl, not_not.mp fun h => hx ⟨u, h, rfl⟩⟩
 private lemma ae_patch_tangential {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup W] [NormedSpace ℝ
-    W] [FiniteDimensional ℝ W] {k : ℕ} {E : Set V} {g gExt : V → W} (hEm : NullMeasurableSet E
-    μHE[k]) [IsLocallyFiniteMeasure (μHE[k].restrict E)] {KExt : ℝ≥0} (hgExt_lip : LipschitzWith
-    KExt gExt) {B : Set (Euc[k])} {f : Euc[k] → V} (hgExt_eq : EqOn g gExt (f '' B)) {K_f L_f : ℝ≥0}
-    (hBm : MeasurableSet B) (hf_lip : LipschitzWith K_f f) (hf_anti : AntilipschitzWith L_f
-    (B.domRestrict f)) (hsub : f '' B ⊆ E) : ∀ᵐ x ∂μHE[k], x ∈ f '' B → ∃ u ∈ B, f u = x ∧ Injective
-    (fderiv ℝ f u) ∧ HasFDerivWithinAt f (fderiv ℝ f u) B u ∧ HasFDerivWithinAt (g ∘ f) (fderiv ℝ
-    (gExt ∘ f) u) B u ∧ HasTangentialFDerivAt k E g (fderiv ℝ (gExt ∘ f) u ∘L Ring.inverse ((fderiv
-    ℝ f u).adjoint ∘L fderiv ℝ f u) ∘L (fderiv ℝ f u).adjoint) (f u) ∧ Tendsto (fun r => volume (B ∩
-    closedBall u r) / ω[k](r)) (𝓝[>] 0) (𝓝 1) ∧ Tendsto (fun r => μHE[finrank ℝ (Euc[k])] ((E \ f ''
-    B) ∩ closedBall (f u) r) / ω[finrank ℝ (Euc[k])](r)) (𝓝[>] 0) (𝓝 0) := by
+    [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup W]
+    [NormedSpace ℝ W] [FiniteDimensional ℝ W] {k : ℕ} {E : Set V} {g gExt : V → W}
+    (hEm : NullMeasurableSet E μHE[k]) [IsLocallyFiniteMeasure (μHE[k].restrict E)] {KExt : ℝ≥0}
+    (hgExt_lip : LipschitzWith KExt gExt) {B : Set (Euc[k])} {f : Euc[k] → V}
+    (hgExt_eq : EqOn g gExt (f '' B)) {K_f L_f : ℝ≥0} (hBm : MeasurableSet B)
+    (hf_lip : LipschitzWith K_f f) (hf_anti : AntilipschitzWith L_f (B.domRestrict f))
+    (hsub : f '' B ⊆ E) :
+    ∀ᵐ x ∂μHE[k], x ∈ f '' B → ∃ u ∈ B, f u = x ∧ Injective (fderiv ℝ f u) ∧
+      HasFDerivWithinAt f (fderiv ℝ f u) B u ∧
+      HasFDerivWithinAt (g ∘ f) (fderiv ℝ (gExt ∘ f) u) B u ∧
+      HasTangentialFDerivAt k E g
+        (fderiv ℝ (gExt ∘ f) u ∘L (fderiv ℝ f u).gramLeftInverse) (f u) ∧
+      Tendsto (fun r => volume (B ∩ closedBall u r) / ω[k](r)) (𝓝[>] 0) (𝓝 1) ∧
+      Tendsto (fun r => μHE[finrank ℝ (Euc[k])] ((E \ f '' B) ∩ closedBall (f u) r) /
+        ω[finrank ℝ (Euc[k])](r)) (𝓝[>] 0) (𝓝 0) := by
   let U := Euc[k]
-  filter_upwards [ae_image_of_ae_volume (B := B) hf_lip ((ae_regular_and_density_on_patch hEm hBm
-    hf_lip hf_anti).and (hgExt_lip.comp hf_lip).ae_differentiableAt)] with x hx hxB
-  obtain ⟨u, huB, rfl, hreg, hgf_diff⟩ := hx hxB; obtain ⟨hf_diff, hinj, hdens, hdiff⟩ := hreg huB
+  have hae := ((ae_regular_and_density_on_patch hEm hBm hf_lip hf_anti).and
+    (hgExt_lip.comp hf_lip).ae_differentiableAt).mono fun _ h (huB : _ ∈ B) =>
+      And.intro (h.1 huB) h.2
+  have himg :=
+    (hf_lip.lipschitzOnWith (s := B)).ae_euclideanHausdorffMeasure_exists_of_addHaar volume hae
+  rw [finrank_euclideanSpace_fin] at himg
+  filter_upwards [himg] with x hx hxB
+  obtain ⟨u, huB, rfl, ⟨hf_diff, hinj, hdens, hdiff⟩, hgf_diff⟩ := hx hxB
   have hgf_w := hgf_diff.hasFDerivAt.hasFDerivWithinAt.congr
     (fun _ hv => hgExt_eq (mem_image_of_mem f hv)) (hgExt_eq (mem_image_of_mem f huB))
-  have hdiff' : Tendsto (fun r => μHE[finrank ℝ U] ((E \ f '' B) ∩ closedBall (f u) r) / ω[finrank ℝ
-    U](r)) (𝓝[>] 0) (𝓝 0) := by
+  have hdiff' : Tendsto (fun r => μHE[finrank ℝ U] ((E \ f '' B) ∩ closedBall (f u) r) /
+      ω[finrank ℝ U](r)) (𝓝[>] 0) (𝓝 0) := by
     simpa only [U, finrank_euclideanSpace_fin, ← volume_closedBall_eq_euclidean (0 : U)] using hdiff
   exact ⟨u, huB, rfl, hinj, hf_diff.hasFDerivAt.hasFDerivWithinAt, hgf_w,
     by simpa only [U, finrank_euclideanSpace_fin] using
@@ -139,7 +139,7 @@ theorem exists_disjoint_measurable_bilipschitz_extension_cover [NormedSpace ℝ 
     n) ∧ AntilipschitzWith (L_f n) ((B n).domRestrict (f n))) ∧ (∀ n, LipschitzWith (K_g n) (gExt n)
     ∧ EqOn g (gExt n) (f n '' B n)) ∧ Pairwise (Disjoint on fun n => f n '' B n) ∧ (⋃ n, f n '' B n)
     ⊆ E ∧ (⋃ n, f n '' B n) =ᵐ[μHE[k]] E := by
-  obtain ⟨O, _, hO, hcov, hLip⟩ := hg.exists_open_cover_lipschitzOnWith
+  obtain ⟨O, _, hO, hcov, hLip⟩ := hg.exists_open_cover_lipschitzOnWith (.of_separableSpace E)
   choose gExt₀ hgExt_lip hgExt_eq using fun m => (hLip m).extend_finite_dimension
   let U := disjointed O
   have hDm (m : ℕ) : MeasurableSet (U m) := MeasurableSet.disjointed (fun j => (hO j).measurableSet)
@@ -158,10 +158,11 @@ theorem exists_disjoint_measurable_bilipschitz_extension_cover [NormedSpace ℝ 
       exact mem_iUnion.mpr ⟨Nat.pair i m, by rw [himg, Nat.unpair_pair]; exact ⟨hx, hxm⟩⟩)
   refine ⟨B, f, fun n => gExt₀ n.unpair.2, fun n => K₀ n.unpair.1, fun n => L₀ n.unpair.1, fun n =>
     _, fun n => (hBm₀ _).inter ((hDm _).preimage (hbi₀ _).1.continuous.measurable),
-    fun n => himg n ▸ (hTm₀ _).inter (hDm _), fun n => ⟨(hbi₀ _).1, fun u v => (hbi₀ _).2 ⟨u.1,
-    u.2.1⟩ ⟨v.1, v.2.1⟩⟩, fun n => ⟨hgExt_lip _, (hgExt_eq _).mono (himg n ▸ inter_subset_inter
-    ((subset_iUnion (fun i => f₀ i '' B₀ i) _).trans hsub₀) (disjointed_subset O _))⟩, fun m n hmn
-    => ?_, hunion ▸ hsub₀, hunion ▸ hcov_ae₀⟩
+    fun n => himg n ▸ (hTm₀ _).inter (hDm _),
+    fun n => ⟨(hbi₀ _).1, fun u v => (hbi₀ _).2 ⟨u.val, u.property.1⟩ ⟨v.val, v.property.1⟩⟩,
+    fun n => ⟨hgExt_lip _, (hgExt_eq _).mono (himg n ▸ inter_subset_inter
+      ((subset_iUnion (fun i => f₀ i '' B₀ i) _).trans hsub₀) (disjointed_subset O _))⟩,
+    fun m n hmn => ?_, hunion ▸ hsub₀, hunion ▸ hcov_ae₀⟩
   rw [Function.onFun, himg m, himg n]
   by_cases h1 : m.unpair.1 = n.unpair.1
   · exact (disjoint_disjointed O fun h2 => hmn (by rw [← Nat.pair_unpair m, ← Nat.pair_unpair n,
@@ -180,7 +181,7 @@ private lemma aemeasurable_of_extension_cover [NormedSpace ℝ W] [FiniteDimensi
     ((subset_iUnion (fun m => f m '' B m) n).trans hsubE)
   obtain ⟨Φ, hΦm, hΦ⟩ := ((hbi n).1.continuous.continuousOn.measurableEmbedding (hBm n)
     (injOn_iff_injective.mpr (hbi n).2.injective)).exists_measurable_extend (g := fun u : B n => M
-    u) (hMm.comp measurable_subtype_coe) (fun _ => ‹Nonempty α›)
+    u) (hMm.comp measurable_subtypeVal) (fun _ => ‹Nonempty α›)
   refine hΦm.aemeasurable.congr ((ae_restrict_iff' (hTm n)).mpr ?_)
   filter_upwards [hae] with x hx hxB
   obtain ⟨u, huB, rfl, hFM⟩ := hx hxB; exact (congrFun hΦ ⟨u, huB⟩).trans hFM.symm
@@ -206,12 +207,15 @@ theorem aemeasurable_tangentialFDeriv [NormedSpace ℝ W] [FiniteDimensional ℝ
   have hm_adj := ContinuousLinearMap.adjoint.continuous.measurable.comp hm_f
   have hm_inv := IsOpenUnits.measurable_ringInverse.comp
     ((continuous_fst.clm_comp continuous_snd).measurable.comp (hm_adj.prodMk hm_f))
-  refine ⟨fun u => fderiv ℝ (gExt ∘ f) u ∘L Ring.inverse ((fderiv ℝ f u).adjoint ∘L fderiv ℝ f u) ∘L
-    (fderiv ℝ f u).adjoint, (continuous_fst.clm_comp continuous_snd).measurable.comp
-    ((measurable_fderiv ℝ (gExt ∘ f)).prodMk ((continuous_fst.clm_comp
-    continuous_snd).measurable.comp (hm_inv.prodMk hm_adj))), ?_⟩
-  filter_upwards [ae_patch_tangential hEm hgExt_lip hgExt_eq hBm hf_lip hf_anti hsub] with x hx hxB
-  obtain ⟨u, huB, rfl, _, _, _, htan, _, _⟩ := hx hxB; exact ⟨u, huB, rfl, htan.tangentialFDeriv_eq⟩
+  refine ⟨fun u => fderiv ℝ (gExt ∘ f) u ∘L (fderiv ℝ f u).gramLeftInverse, ?_, ?_⟩
+  · simp_rw [ContinuousLinearMap.gramLeftInverse_def]
+    exact (continuous_fst.clm_comp continuous_snd).measurable.comp
+      ((measurable_fderiv ℝ (gExt ∘ f)).prodMk
+        ((continuous_fst.clm_comp continuous_snd).measurable.comp (hm_inv.prodMk hm_adj)))
+  · filter_upwards [ae_patch_tangential hEm hgExt_lip hgExt_eq hBm hf_lip hf_anti hsub]
+      with x hx hxB
+    obtain ⟨u, huB, rfl, _, _, _, htan, _, _⟩ := hx hxB
+    exact ⟨u, huB, rfl, htan.tangentialFDeriv_eq⟩
 /-- Measurability of `tangentialJacobian` for `LocallyLipschitzOn`. -/
 theorem aemeasurable_tangentialJacobian [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] :
     AEMeasurable (J) (μHE[k].restrict E) := by

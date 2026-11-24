@@ -45,13 +45,10 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 /-- Every Brownian increment has zero third moment. -/
 @[simp] theorem integral_cube_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
     ∫ ω, (B t ω - B s ω) ^ 3 ∂P = 0 := by
-  have h := TauCeti.Probability.centralMoment_id_two_mul_add_one_gaussianReal
-    0 (nndist (t : ℝ) (s : ℝ)) 1
-  simp only [centralMoment, integral_id_gaussianReal, Pi.pow_apply, Pi.sub_apply,
-    id_eq, sub_zero] at h
+  have h := TauCeti.Probability.integral_sub_pow_two_mul_add_one_gaussianReal 0
+    (nndist (t : ℝ) (s : ℝ)) 1
   norm_num at h
-  simpa using ((hB.hasLaw_sub t s).integral_comp
-    (f := fun x : ℝ => x ^ 3) (by fun_prop)).trans h
+  simpa using ((hB.hasLaw_sub t s).integral_comp (f := fun x : ℝ => x ^ 3) (by fun_prop)).trans h
 
 /-- The sixth moment of a Brownian increment of length `t - s` is `15 (t - s)³`. -/
 theorem integral_pow_six_sub (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
@@ -115,6 +112,28 @@ theorem integral_sq_sum_cube_sub_le (hB : IsPreBrownianReal B P) (hτ : Monotone
       have hs := sq_le_sq₀ hd δ.coe_nonneg |>.mpr (hmesh i)
       nlinarith
     _ = _ := by rw [← sum_mul, hsum]; ring
+
+/-- The cubic-increment mesh bound for a finite nondecreasing grid indexed by naturals. -/
+theorem integral_sq_sum_range_cube_sub_le (hB : IsPreBrownianReal B P)
+    {t : ℕ → ℝ≥0} {n : ℕ} (ht : MonotoneOn t (Set.Iic n)) {δ : ℝ}
+    (hmesh : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
+    ∫ ω, (∑ i ∈ range n, (B (t (i + 1)) ω - B (t i) ω) ^ 3) ^ 2 ∂P ≤
+      15 * ((t n : ℝ) - t 0) * δ ^ 2 := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  have h01 : (t 0 : ℝ) ≤ t 1 := by exact_mod_cast ht (Nat.zero_le n) hn (Nat.zero_le 1)
+  have hδ : 0 ≤ δ := (sub_nonneg.mpr h01).trans (hmesh 0 hn)
+  have hgrid : Monotone (fun i : Fin (n + 1) ↦ t i) :=
+    fun i j hij ↦ ht (Nat.le_of_lt_succ i.isLt) (Nat.le_of_lt_succ j.isLt) hij
+  have hm (i : Fin n) : (t i.succ : ℝ) - t i.castSucc ≤ (Real.toNNReal δ : ℝ) := by
+    simpa only [Real.coe_toNNReal δ hδ, Fin.val_succ, Fin.val_castSucc] using
+      hmesh i i.isLt
+  have h := hB.integral_sq_sum_cube_sub_le hgrid hm
+  simp only [Fin.val_succ, Fin.val_castSucc, Fin.val_last, Fin.val_zero,
+    Real.coe_toNNReal δ hδ] at h
+  have hsum (ω : Ω) := Fin.sum_univ_eq_sum_range
+    (fun i ↦ (B (t (i + 1)) ω - B (t i) ω) ^ 3) n
+  simpa only [hsum] using h
 
 /-- Cubic-increment sums converge to zero in mean square along any deterministic
 vanishing-mesh sequence on a bounded time horizon. The number of intervals may vary. -/

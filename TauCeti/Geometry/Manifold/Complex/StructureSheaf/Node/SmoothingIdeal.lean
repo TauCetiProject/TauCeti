@@ -20,7 +20,9 @@ multiplicity of a smoothing parameter, and also applies to permanent nodes. The 
 critical ideal commutes with pullback by an arbitrary local holomorphic base map.
 
 The proof uses successive restriction to the two coordinate hyperplanes, so all quotients
-are of actual holomorphic germs. It does not identify algebraic Kähler differentials of
+are of actual holomorphic germs. The restrictions of the node coordinates and of base germs to
+the plane `x = 0` (`TauCeti.holomorphicStructureSheaf.nodeFstZeroRestriction`) and to the plane
+`y = 0` are computed explicitly. It does not identify algebraic Kähler differentials of
 holomorphic stalks with analytic differentials, or assert coordinate independence of a
 Fitting ideal. Those require a separate analytic differential comparison.
 
@@ -46,6 +48,8 @@ local notation "A" => TopCat.Presheaf.stalk (C := CommRingCat)
 local notation "R" => TopCat.Presheaf.stalk (C := CommRingCat)
   (TopCat.Sheaf.presheaf (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ)
     ((E × ℂ) × ℂ))) ((b, (0 : ℂ)), (0 : ℂ))
+local notation "B" => TopCat.Presheaf.stalk (C := CommRingCat)
+  (TopCat.Sheaf.presheaf (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ))) (b, (0 : ℂ))
 
 /-- Restriction of an ambient node-chart germ to `x = y = 0`. This is defined on the
 ambient chart, whether or not its zero section lies on the node family. -/
@@ -57,6 +61,17 @@ def nodeBaseExtension : A →+* R :=
   (stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) Prod.fst
     contDiff_fst.contMDiff ((b, (0 : ℂ)), 0)).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0))
+
+/-- The local ring `𝒪 ⧸ (xy - s(b))` of the node is an algebra over the base germs at `b`, by
+pullback of base germs to the node chart. -/
+instance nodeLocalAlgebra (s : A) : Algebra A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) :=
+  ((Ideal.Quotient.mk _).comp (nodeBaseExtension b)).toAlgebra
+
+@[simp]
+theorem algebraMap_nodeLocalAlgebra (s a : A) :
+    algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) a =
+      Ideal.Quotient.mk _ (nodeBaseExtension b a) :=
+  rfl
 
 /-- Restriction of a function representative evaluates both vertical coordinates at zero. -/
 theorem toFilterGerm_nodeBaseRestriction {s : R} {f : (E × ℂ) × ℂ → ℂ}
@@ -133,6 +148,71 @@ theorem nodeBaseRestriction_nodeSndCoordinate :
   simp only [nodeBaseRestriction, nodeSndCoordinate, RingHom.comp_apply]
   rw [restrictHyperplane_hyperplaneCoordinateGerm, map_zero]
 
+/-- Restriction of an ambient node-chart germ to the plane `x = 0`, with coordinates `(b, y)`. -/
+def nodeFstZeroRestriction : R →+* B :=
+  stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) (fun w ↦ ((w.1, (0 : ℂ)), w.2))
+    (contMDiff_iff_contDiff.mpr (by fun_prop)) (b, 0)
+
+/-- Restriction of a function representative to `x = 0` sets the first vertical coordinate to
+zero. -/
+theorem toFilterGerm_nodeFstZeroRestriction {s : R} {f : (E × ℂ) × ℂ → ℂ}
+    (hs : toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) ((b, (0 : ℂ)), 0)
+      (𝓝 ((b, (0 : ℂ)), 0)) le_rfl s = f) :
+    toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (b, 0) (𝓝 (b, 0)) le_rfl (nodeFstZeroRestriction b s) =
+      (fun w : E × ℂ ↦ f ((w.1, 0), w.2)) := by
+  rw [nodeFstZeroRestriction, toFilterGerm_stalkPrecomp, hs, Germ.coe_compTendsto]
+  -- `f ∘ (fun w ↦ ((w.1, 0), w.2))` is the displayed function by definition of composition.
+  rfl
+
+@[simp]
+theorem nodeFstZeroRestriction_nodeFstCoordinate :
+    nodeFstZeroRestriction b (nodeFstCoordinate b) = 0 := by
+  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
+  rw [toFilterGerm_nodeFstZeroRestriction b (toFilterGerm_nodeFstCoordinate b), map_zero]
+  simp [← Germ.coe_zero, Pi.zero_def]
+
+@[simp]
+theorem nodeFstZeroRestriction_nodeSndCoordinate :
+    nodeFstZeroRestriction b (nodeSndCoordinate b) = hyperplaneCoordinateGerm b 0 := by
+  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
+  rw [toFilterGerm_nodeFstZeroRestriction b (toFilterGerm_nodeSndCoordinate b),
+    OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm]
+  congr 1
+  funext w
+  simp
+
+/-- Restricting a base germ pulled back to the node chart to the plane `x = 0` gives the same
+base germ pulled back to `(b, y)`. -/
+@[simp]
+theorem nodeFstZeroRestriction_nodeBaseExtension (a : A) :
+    nodeFstZeroRestriction b (nodeBaseExtension b a) =
+      stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0) a := by
+  obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq b a
+  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
+  rw [toFilterGerm_nodeFstZeroRestriction b (toFilterGerm_nodeBaseExtension b (hf _ le_rfl)),
+    toFilterGerm_stalkPrecomp, hf _ le_rfl, Germ.coe_compTendsto]
+  -- Both sides are `f` composed with the projection `(b, w) ↦ b`.
+  congr 1
+
+@[simp]
+theorem restrictHyperplane_nodeFstCoordinate :
+    restrictHyperplane (b, (0 : ℂ)) 0 (nodeFstCoordinate b) = hyperplaneCoordinateGerm b 0 :=
+  restrictHyperplane_stalkPrecomp_fst (b, (0 : ℂ)) 0 (hyperplaneCoordinateGerm b 0)
+
+@[simp]
+theorem restrictHyperplane_nodeSndCoordinate :
+    restrictHyperplane (b, (0 : ℂ)) 0 (nodeSndCoordinate b) = 0 :=
+  restrictHyperplane_hyperplaneCoordinateGerm (b, (0 : ℂ)) 0
+
+/-- Restricting a base germ pulled back to the node chart to the plane `y = 0` gives the same
+base germ pulled back to `(b, x)`. -/
+@[simp]
+theorem restrictHyperplane_nodeBaseExtension (a : A) :
+    restrictHyperplane (b, (0 : ℂ)) 0 (nodeBaseExtension b a) =
+      stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0) a := by
+  simp only [nodeBaseExtension, RingHom.comp_apply]
+  exact restrictHyperplane_stalkPrecomp_fst (b, 0) 0 _
+
 /-- A germ vanishes on the zero section exactly when it belongs to `(x,y)`. -/
 theorem ker_nodeBaseRestriction :
     RingHom.ker (nodeBaseRestriction b) =
@@ -145,6 +225,29 @@ theorem ker_nodeBaseRestriction :
   rw [nodeBaseRestriction, ← RingHom.comap_ker, ker_restrictHyperplane, ← hmap,
     Ideal.comap_map_of_surjective r (restrictHyperplane_surjective _ _),
     ← RingHom.ker_eq_comap_bot, ker_restrictHyperplane, Ideal.span_insert, nodeSndCoordinate]
+
+/-- Every germ is its value on the zero section, pulled back from the base, plus an element of
+`(x,y)`. -/
+theorem exists_eq_nodeBaseExtension_add (f : R) :
+    ∃ g g' : R, f = nodeBaseExtension b (nodeBaseRestriction b f) +
+      (g * nodeFstCoordinate b + g' * nodeSndCoordinate b) := by
+  have hker : f - nodeBaseExtension b (nodeBaseRestriction b f) ∈
+      Ideal.span {nodeFstCoordinate b, nodeSndCoordinate b} := by
+    rw [← ker_nodeBaseRestriction, RingHom.mem_ker, map_sub,
+      nodeBaseRestriction_nodeBaseExtension, sub_self]
+  obtain ⟨g, g', hg⟩ := Ideal.mem_span_pair.1 hker
+  exact ⟨g, g', by rw [hg]; ring⟩
+
+/-- In the ambient coordinates the node equation is `xy - s(b)`, with `s` pulled back from
+the base. -/
+theorem nodeEquation_eq_mul_sub (s : A) :
+    nodeEquation b 0 0 s = nodeFstCoordinate b * nodeSndCoordinate b - nodeBaseExtension b s := by
+  obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq b s
+  apply toFilterGerm_nhds_injective ((b, (0 : ℂ)), (0 : ℂ))
+  rw [toFilterGerm_nodeEquation b 0 0 s (hf _ le_rfl), map_sub, map_mul,
+    toFilterGerm_nodeFstCoordinate, toFilterGerm_nodeSndCoordinate,
+    toFilterGerm_nodeBaseExtension b (hf _ le_rfl), ← Germ.coe_mul, ← Germ.coe_sub]
+  simp [Pi.mul_def, Pi.sub_def]
 
 /-- The defining equation vanishes on the zero section precisely to the order of `s`:
 its restriction is `-s`. -/
@@ -198,6 +301,29 @@ theorem comap_nodeBaseExtension_nodeCriticalIdeal (s : A) :
     (nodeCriticalIdeal b s).comap (nodeBaseExtension b) = Ideal.span {s} := by
   ext f
   simp [Ideal.mem_comap, mem_nodeCriticalIdeal_iff, Ideal.mem_span_singleton]
+
+/-- The image of the coordinate critical ideal in the local ring `𝒪 ⧸ (xy - s)` of the node
+is `(x, y)`. -/
+theorem map_mk_nodeCriticalIdeal (s : A) :
+    (nodeCriticalIdeal b s).map (Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})) =
+      Ideal.span {Ideal.Quotient.mk _ (nodeFstCoordinate b),
+        Ideal.Quotient.mk _ (nodeSndCoordinate b)} := by
+  rw [nodeCriticalIdeal_eq_span_sup_ker, Ideal.map_sup, Ideal.map_quotient_self, bot_sup_eq,
+    ker_nodeBaseRestriction, Ideal.map_span, Set.image_pair]
+
+/-- The image of the coordinate critical ideal in the local ring `𝒪 ⧸ (xy - s)` of the node
+pulls back to the ideal `(s)` of the base. -/
+theorem comap_map_mk_nodeCriticalIdeal (s : A) :
+    ((nodeCriticalIdeal b s).map (Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s}))).comap
+      (algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s})) = Ideal.span {s} := by
+  have hle : Ideal.span {nodeEquation b 0 0 s} ≤ nodeCriticalIdeal b s :=
+    nodeCriticalIdeal_eq_span_sup_ker b s ▸ le_sup_left
+  have halg : algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) =
+      (Ideal.Quotient.mk _).comp (nodeBaseExtension b) :=
+    RingHom.ext (algebraMap_nodeLocalAlgebra b s)
+  rw [halg, ← Ideal.comap_comap, Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
+    ← RingHom.ker_eq_comap_bot, Ideal.mk_ker, sup_eq_left.2 hle,
+    comap_nodeBaseExtension_nodeCriticalIdeal]
 
 /-- Restriction identifies the coordinate critical quotient with the base modulo `(s)`. -/
 def nodeCriticalQuotientEquiv (s : A) : (R ⧸ nodeCriticalIdeal b s) ≃+* (A ⧸ Ideal.span {s}) :=

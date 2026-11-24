@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.SimpleModule.Isotypic
+import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
 # Hom spaces and direct sums of isotypic components
@@ -26,7 +27,9 @@ type is zero (`IsIsotypicOfType.linearMap_eq_zero`). The isotypic components of 
 non-isomorphic simple modules are independent (`TauCeti.iSupIndep_isotypicComponent`); this is the
 indexed form of Mathlib's `sSupIndep_isotypicComponents`, allowing types that do not occur in the
 module. In particular, the isotypic components of two non-isomorphic simple modules are disjoint
-(`TauCeti.disjoint_isotypicComponent`).
+(`TauCeti.disjoint_isotypicComponent`), and a Noetherian module receives nonzero maps from only
+finitely many of a family of pairwise non-isomorphic simple modules
+(`TauCeti.finite_setOf_nontrivial_linearMap`).
 
 ## Main definitions
 
@@ -154,6 +157,22 @@ theorem finsupp (h : IsIsotypicOfType R M N) (ι : Type*) :
   have : IsSimpleModule R (LinearMap.range f) := .congr e.symm
   exact ⟨e.trans (h (LinearMap.range f)).some⟩
 
+/-- **Schur's lemma for multiples of simple modules.** If direct sums of copies of the simple
+modules `V` and `V'` are isomorphic, with at least one copy of `V`, then `V ≅ V'`. -/
+theorem _root_.LinearEquiv.nonempty_linearEquiv_of_finsupp {V V' ι ι' : Type*}
+    [AddCommGroup V] [Module R V] [AddCommGroup V'] [Module R V'] [IsSimpleModule R V]
+    [IsSimpleModule R V'] [Nonempty ι] (e : (ι →₀ V) ≃ₗ[R] (ι' →₀ V')) :
+    Nonempty (V ≃ₗ[R] V') := by
+  -- The direct sum of copies of `V'` is isotypic of type `V'`, so a copy of `V` maps to zero in
+  -- it unless `V ≅ V'`.
+  obtain ⟨j⟩ := ‹Nonempty ι›
+  by_contra hne
+  have h0 := ((IsIsotypicOfType.of_isSimpleModule R V').finsupp ι').linearMap_eq_zero hne
+    (e.toLinearMap ∘ₗ Finsupp.lsingle j)
+  have : Nontrivial V := IsSimpleModule.nontrivial R V
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact hv (by simpa using LinearMap.congr_fun h0 v)
+
 end IsIsotypicOfType
 
 namespace IsSemisimpleModule
@@ -164,7 +183,7 @@ variable (R M : Type*) [Ring R] [AddCommGroup M] [Module R M] [IsSemisimpleModul
 /-- **A semisimple module is the direct sum of its isotypic components.** The equivalence sends
 an element to its family of components, and its inverse adds the components up. This is the
 module-level counterpart of `IsSemisimpleModule.endAlgEquiv`. -/
-noncomputable def linearEquivIsotypicComponents : M ≃ₗ[R] Π₀ c : isotypicComponents R M, c.1 :=
+noncomputable def linearEquivIsotypicComponents : M ≃ₗ[R] Π₀ c : isotypicComponents R M, c.val :=
   .symm <| ((sSupIndep_iff _).mp <| sSupIndep_isotypicComponents R M).linearEquiv <|
     (sSup_eq_iSup' _).symm.trans <| sSup_isotypicComponents R M
 
@@ -173,14 +192,14 @@ variable {R M}
 /-- The inverse of `linearEquivIsotypicComponents` sends the family that is `x` at the isotypic
 component `c` and zero elsewhere to `x`, viewed as an element of `M`. -/
 @[simp]
-theorem linearEquivIsotypicComponents_symm_single (c : isotypicComponents R M) (x : c.1) :
+theorem linearEquivIsotypicComponents_symm_single (c : isotypicComponents R M) (x : c.val) :
     (linearEquivIsotypicComponents R M).symm (DFinsupp.single c x) = x := by
   simp [linearEquivIsotypicComponents]
 
 /-- `linearEquivIsotypicComponents` sends an element `x` of an isotypic component `c`, viewed as an
 element of `M`, to the family that is `x` at `c` and zero elsewhere. -/
 @[simp]
-theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x : c.1) :
+theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x : c.val) :
     linearEquivIsotypicComponents R M x = DFinsupp.single c x := by
   rw [← linearEquivIsotypicComponents_symm_single, LinearEquiv.apply_symm_apply]
 
@@ -191,7 +210,7 @@ theorem linearEquivIsotypicComponents_apply_coe {c : isotypicComponents R M} (x 
 /-- An element `x` of `M` lying in an isotypic component `c` is sent by
 `linearEquivIsotypicComponents` to the family that is `x` at `c` and zero elsewhere. -/
 theorem linearEquivIsotypicComponents_apply_of_mem {c : isotypicComponents R M} {x : M}
-    (hx : x ∈ c.1) : linearEquivIsotypicComponents R M x = DFinsupp.single c ⟨x, hx⟩ :=
+    (hx : x ∈ c.val) : linearEquivIsotypicComponents R M x = DFinsupp.single c ⟨x, hx⟩ :=
   linearEquivIsotypicComponents_apply_coe ⟨x, hx⟩
 
 end IsSemisimpleModule
@@ -294,7 +313,7 @@ theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddC
     exact ⟨N, ‹_›, e.isotypicComponent_eq.symm⟩
   rw [← iSupIndep_ne_bot]
   refine ((sSupIndep_iff _).mp (sSupIndep_isotypicComponents R M)).comp
-    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.1 j.2⟩) ?_
+    (f := fun j : {j // isotypicComponent R M (S j) ≠ ⊥} => ⟨_, hmem j.val j.property⟩) ?_
   intro ⟨i, hi⟩ ⟨j, _⟩ hij
   -- A simple submodule of the common component is a copy of both `S i` and `S j`.
   obtain ⟨N, hN, _⟩ := (IsSemisimpleModule.eq_bot_or_exists_simple_le _).resolve_left hi
@@ -303,6 +322,19 @@ theorem iSupIndep_isotypicComponent {κ : Type*} (S : κ → Type*) [∀ j, AddC
   obtain ⟨e'⟩ := isIsotypicOfType_submodule_iff.mp
     (IsIsotypicOfType.isotypicComponent R M (S j)) N (hN.trans (congrArg Subtype.val hij).le)
   exact Subtype.ext (hS i j ⟨e.symm.trans e'⟩)
+
+/-- A Noetherian module has a nonzero space of maps from only finitely many of a family of
+pairwise non-isomorphic simple modules: the isotypic components of the `S j` are independent, and
+a nonzero map out of `S j` takes a nonzero value in the `S j`-isotypic component. -/
+theorem finite_setOf_nontrivial_linearMap [IsNoetherian R M] {κ : Type*} (S : κ → Type*)
+    [∀ j, AddCommGroup (S j)] [∀ j, Module R (S j)] [∀ j, IsSimpleModule R (S j)]
+    (hS : ∀ i j, Nonempty (S i ≃ₗ[R] S j) → i = j) :
+    {j | Nontrivial (S j →ₗ[R] M)}.Finite := by
+  refine (Submodule.finite_ne_bot_of_iSupIndep (iSupIndep_isotypicComponent R M S hS)).subset
+    fun j (_ : Nontrivial (S j →ₗ[R] M)) hbot => ?_
+  obtain ⟨φ, hφ⟩ := exists_ne (0 : S j →ₗ[R] M)
+  obtain ⟨s, hs⟩ : ∃ s, φ s ≠ 0 := not_forall.mp fun h => hφ (LinearMap.ext h)
+  exact hs (by simpa [hbot] using φ.apply_mem_isotypicComponent s)
 
 /-- The isotypic components of two non-isomorphic simple modules are disjoint. -/
 theorem disjoint_isotypicComponent (S S' : Type*) [AddCommGroup S] [Module R S]

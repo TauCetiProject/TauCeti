@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
 
 /-!
@@ -18,8 +19,9 @@ map, as a field in the Hom bundle from `V` to `W`. Neither bundle needs finite r
 Taking `W = V`, this provides smooth matrix units from orthonormal local frames, with the
 native Hom-bundle topology.
 
-The construction is Mathlib's `InnerProductSpace.rankOne`; smoothness follows by
-metric duality and the coordinate criterion for smooth Hom-bundle fields.
+The construction is Mathlib's `InnerProductSpace.rankOne`, which is the product
+`(innerSL ℝ τ).smulRight σ`; smoothness follows by metric duality and the regularity of such
+products (`ContMDiffWithinAt.clm_bundle_smulRight`).
 -/
 
 public section
@@ -55,28 +57,7 @@ theorem ContMDiffWithinAt.rankOne_bundle
     ContMDiffWithinAt IB (I.prod 𝓘(ℝ, F →L[ℝ] F')) n
       (fun y ↦ TotalSpace.mk' (F →L[ℝ] F') (E := fun y ↦ V y →L[ℝ] W y) (b y)
         (rankOne ℝ (σ y) (τ y))) s x := by
-  -- Form the metric-dual covector, then tensor it with the target field in coordinates.
-  have hb := (contMDiffWithinAt_totalSpace_iff.mp hτ).1
-  have hdual := hτ.innerSL_bundle
-  have hdual' := (contMDiffWithinAt_hom_bundle _).mp hdual
-  have hσ' := (contMDiffWithinAt_totalSpace_iff.mp hσ).2
-  rw [contMDiffWithinAt_hom_bundle]
-  refine ⟨hb, ?_⟩
-  have hp := ((ContinuousLinearMap.smulRightL ℝ F F').contDiff.comp_contMDiffWithinAt
-    hdual'.2).clm_apply hσ'
-  refine hp.congr_of_eventuallyEq ?_ ?_
-  · filter_upwards [hb.continuousWithinAt.preimage_mem_nhdsWithin
-      ((trivializationAt F' W (b x)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F' W (b x)))] with y hy
-    -- Expose preimage membership so the coordinate evaluation lemma can consume it directly.
-    change b y ∈ (trivializationAt F' W (b x)).baseSet at hy
-    ext v
-    simp [ContinuousLinearMap.inCoordinates, rankOne_apply,
-      Trivialization.coe_linearMapAt_of_mem _ hy]
-  · ext v
-    simp [ContinuousLinearMap.inCoordinates, rankOne_apply,
-      Trivialization.coe_linearMapAt_of_mem _
-        (FiberBundle.mem_baseSet_trivializationAt F' W (b x))]
+  simpa only [rankOne_def] using hτ.innerSL_bundle.clm_bundle_smulRight hσ
 
 /-- Rank-one maps formed from `C^n` fields along a common base map form a `C^n`
 Hom-bundle field at the same point. -/

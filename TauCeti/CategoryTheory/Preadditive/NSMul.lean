@@ -14,6 +14,8 @@ In a preadditive category, multiplication by an integer `n` on an object `X` is 
 morphism `n • 𝟙 X`, which is also the image of `n` in the endomorphism ring `End X`
 (`CategoryTheory.End.intCast_asHom`, `CategoryTheory.End.natCast_asHom`). It commutes with every
 morphism (`CategoryTheory.End.intCast_asHom_comp`, `CategoryTheory.End.natCast_asHom_comp`).
+An endomorphism that an isomorphism conjugates to multiplication by an integer is itself
+multiplication by that integer (`CategoryTheory.Iso.eq_zsmul_id_of_zsmul_id_comp_hom`).
 
 The inverse of a scalar multiple `r • 𝟙` and its preservation by linear functors are in
 `TauCeti.CategoryTheory.Linear.Endomorphism`.
@@ -50,5 +52,12 @@ theorem natCast_asHom_comp {X Y : C} (f : X ⟶ Y) (n : ℕ) :
   simpa using intCast_asHom_comp f n
 
 end End
+
+/-- An endomorphism that an isomorphism conjugates to multiplication by an integer `d` is itself
+multiplication by `d`. -/
+theorem Iso.eq_zsmul_id_of_zsmul_id_comp_hom {X Y : C} (e : X ≅ Y) (d : ℤ) {g : Y ⟶ Y}
+    (h : (d • 𝟙 X) ≫ e.hom = e.hom ≫ g) : g = d • 𝟙 Y := by
+  rw [← cancel_epi e.hom, ← h, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.id_comp,
+    Category.comp_id]
 
 end CategoryTheory

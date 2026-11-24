@@ -134,7 +134,7 @@ theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : �
     simp_rw [himg]; rw [iUnion_disjointed, ← iUnion_inter]
   have hsub_s : (⋃ n, f n '' B n) ⊆ s := hUnion ▸ inter_subset_right.trans hs₀_sub
   refine ⟨B, f, K_f, L_f, hBm, fun n ↦ (himg n).symm ▸ MeasurableSet.disjointed hSm n,
-    fun n ↦ ⟨hLip n, fun u v ↦ (hAnti n) ⟨u, u.2.1⟩ ⟨v, v.2.1⟩⟩,
+    fun n ↦ ⟨hLip n, fun u v ↦ (hAnti n) ⟨u, u.property.1⟩ ⟨v, v.property.1⟩⟩,
     fun m n hmn ↦ by simpa only [Function.onFun, himg] using disjoint_disjointed S hmn, hsub_s, ?_⟩
   refine Filter.EventuallySubset.antisymm (Filter.Eventually.of_forall fun _ hx ↦ hsub_s hx) ?_
   simpa only [inter_self, hUnion] using (ae_subset.mpr hc).inter hs₀_ae.symm.subset

@@ -126,7 +126,7 @@ theorem IsConvexPolyhedron.exists_cone [IsTopologicalAddGroup E] {x : E}
   -- The inequalities that are equalities at `x`, read through their linear parts.
   let ℓ (i : {i // g i x = 0}) : E →ᴬ[ℝ] ℝ := (g i).contLinear.toContinuousAffineMap
   have hℓ (i : {i // g i x = 0}) (y : E) : ℓ i (y - x) = g i y := by
-    simpa [ℓ, i.2] using (g i).contLinear_apply_vsub y x
+    simpa [ℓ, i.property] using (g i).contLinear_apply_vsub y x
   refine ⟨{v | ∀ i, ℓ i v ≤ 0}, isConvexPolyhedron_setOf_forall ℓ, fun c hc v hv i => ?_,
     fun y hy i => (hℓ i y).symm ▸ hy i, ?_⟩
   · simpa [ℓ] using mul_nonpos_of_nonneg_of_nonpos hc (hv i)

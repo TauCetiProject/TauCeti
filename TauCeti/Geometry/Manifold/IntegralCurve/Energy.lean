@@ -69,8 +69,9 @@ theorem integrable_mvfderiv_apply_of_tendsto :
     (Homeomorph.neg ℝ).measurableEmbedding, neg_preimage, neg_Iio, neg_zero, ← integrableOn_neg_iff]
   refine integrableOn_Ioi_deriv_of_nonneg' (g := fun s ↦ f (γ (-s))) (fun s _ ↦ ?_)
     (fun s _ ↦ ?_) (hbot.comp tendsto_neg_atTop_atBot)
-  · simpa [comp_def] using (hderiv (-s)).comp s (hasDerivAt_neg s)
-  · simpa using hnonpos (-s)
+  · simpa only [comp_def, Pi.neg_apply, mul_neg_one] using
+      (hderiv (-s)).comp s (hasDerivAt_neg s)
+  · simpa only [comp_def, Pi.neg_apply, neg_nonneg] using hnonpos (-s)
 
 /-- **The energy identity.** If `γ` is an integral curve of `X` along which `f` is differentiable
 and `df(X) ≤ 0`, and `f ∘ γ` tends to `a` as `t → -∞` and to `b` as `t → +∞`, then the energy

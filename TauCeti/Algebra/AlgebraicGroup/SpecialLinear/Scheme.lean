@@ -19,6 +19,7 @@ This file presents the special linear group scheme `SLₙ` as the closed subgrou
 ## Main declarations
 
 * `TauCeti.SpecialLinear.groupScheme`: the special linear group scheme.
+* `TauCeti.SpecialLinear.isAffine_groupScheme`: it is affine.
 * `TauCeti.SpecialLinear.groupSchemeι`: the closed immersion `SLₙ ⟶ GLₙ`.
 * `TauCeti.SpecialLinear.groupSchemePointMulEquiv`: the spectrum-points equivalence for `SLₙ`.
 * `TauCeti.SpecialLinear.schemePointsMulEquiv`: the group of scheme-valued points of `SLₙ` is
@@ -64,6 +65,11 @@ lemma groupScheme_X_left :
     (groupScheme R n).X.left = Spec (CommRingCat.of (coordinateHopfAlgebra R n)) := by
   simpa only [groupScheme] using
     hopfSpec_obj_X_left R (coordinateHopfAlgebra R n)
+
+/-- The special linear group scheme is affine. -/
+instance isAffine_groupScheme : IsAffine (groupScheme R n).X.left := by
+  rw [groupScheme_X_left]
+  infer_instance
 
 /-- The closed immersion of the special linear group scheme into the general linear group scheme. -/
 noncomputable def groupSchemeι :
@@ -204,6 +210,20 @@ theorem schemePointsMulEquiv_comp_groupSchemeι
     GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
     schemePointsMulEquiv_groupSchemePointMulEquiv]
   exact pointsMulEquiv_toGL (R := R) (A := A) n q
+
+/-- The scheme-valued point identification is covariantly natural in the value algebra. An
+`R`-algebra map `A → B` becomes precomposition by the reversed spectrum map and acts entrywise on
+the corresponding determinant-one matrix. -/
+theorem schemePointsMulEquiv_mapValue {B : Type u} [CommRing B] [Algebra R B] (φ : A →ₐ[R] B)
+    (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶
+      (groupScheme R n).X) :
+    schemePointsMulEquiv n B
+        ((Spec.map (CommRingCat.ofHom φ.toRingHom)).asOver
+            (Spec (CommRingCat.of R)) ≫ p) =
+      Matrix.SpecialLinearGroup.map φ.toRingHom (schemePointsMulEquiv n A p) := by
+  unfold schemePointsMulEquiv groupSchemePointMulEquiv
+  exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
+    (coordinateHopfAlgebra R n) φ (groupScheme_def R n) _ _ _ (pointsMulEquiv_mapValue R n φ) p
 
 end SchemePoints
 

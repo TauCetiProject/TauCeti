@@ -87,9 +87,6 @@ theorem mixedFourier_archGaussian (y : realSpace K) (hy : ∀ w, 0 < y w) (ξ : 
     ext w <;> simp [c, c', mixedSpaceOfRealSpace_apply, (Real.sqrt_pos.mpr (hy _)).ne']
   have hc : mixedEmbedding.norm c = √(archNorm y) :=
     norm_mixedSpaceOfRealSpace_sqrt fun w ↦ (hy w).le
-  have hc0 : mixedEmbedding.norm c ≠ 0 := by
-    rw [hc]
-    exact (Real.sqrt_pos.mpr (archNorm_pos hy)).ne'
   -- Substitute `x ↦ c * x`: the pairing becomes `mixedInner (c * x) (c' * ξ)` since `c * c' = 1`,
   -- and the Gaussian becomes the Gaussian at the parameter `1`.
   have hint (x : mixedSpace K) : 𝐞 (-mixedInner K x ξ) • archGaussian y x =
@@ -98,7 +95,7 @@ theorem mixedFourier_archGaussian (y : realSpace K) (hy : ∀ w, 0 < y w) (ξ : 
       ← archGaussian_one_archGaussianDilation y hy, archGaussianDilation_apply]
   rw [mixedFourier_apply]
   simp_rw [hint]
-  rw [integral_comp_mul_left (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • archGaussian 1 z) hc0,
+  rw [integral_comp_mul_left (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • archGaussian 1 z) c,
     ← mixedFourier_apply, mixedFourier_archGaussian_one, ← archGaussianDilation_apply y⁻¹ hy',
     archGaussian_one_archGaussianDilation, hc, Complex.real_smul]
 

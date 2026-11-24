@@ -93,8 +93,8 @@ annihilates the tangent image of `i` at `g x`, then `ψ^*λ` vanishes at `x`. -/
 theorem mpullback_liouvilleForm_apply_eq_zero_of_conormal (hproj : ∀ x, (ψ x).proj = i (g x))
     {x : X} (hψ : MDifferentiableAt K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ x)
     (hg : MDifferentiableAt K J g x) (hi : MDifferentiableAt J I i (g x))
-    (hann : (ψ x).2 ∘L mfderiv J I i (g x) = 0) :
-    mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).1 x = 0 := by
+    (hann : (ψ x).snd ∘L mfderiv J I i (g x) = 0) :
+    mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).val x = 0 := by
   ext v
   -- `ψ` lies over `i ∘ g`, whose derivative is computed by the chain rule.
   rw [mpullback_liouvilleForm_apply_of_proj_comp_eq (g := i ∘ g) hproj hψ,
@@ -107,8 +107,8 @@ annihilates the tangent image of `i` at `g x`, so that `ψ` takes values in the 
 then `ψ^*λ = 0`. -/
 theorem mpullback_liouvilleForm_eq_zero_of_conormal (hproj : ∀ x, (ψ x).proj = i (g x))
     (hψ : MDifferentiable K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ) (hg : MDifferentiable K J g)
-    (hi : ∀ x, MDifferentiableAt J I i (g x)) (hann : ∀ x, (ψ x).2 ∘L mfderiv J I i (g x) = 0) :
-    mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).1 = 0 :=
+    (hi : ∀ x, MDifferentiableAt J I i (g x)) (hann : ∀ x, (ψ x).snd ∘L mfderiv J I i (g x) = 0) :
+    mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).val = 0 :=
   funext fun x ↦
     mpullback_liouvilleForm_apply_eq_zero_of_conormal hproj (hψ x) (hg x) (hi x) (hann x)
 
@@ -123,7 +123,7 @@ covectors `ψ x` annihilate the tangent images of `i` at `g x`, is isotropic for
 symplectic form, provided `g` is differentiable and `i` is differentiable at every `g x`. -/
 theorem isIsotropicMap_of_conormal (hproj : ∀ x, (ψ x).proj = i (g x))
     (hψ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ψ) (hg : MDifferentiable K J g)
-    (hi : ∀ x, MDifferentiableAt J I i (g x)) (hann : ∀ x, (ψ x).2 ∘L mfderiv J I i (g x) = 0) :
+    (hi : ∀ x, MDifferentiableAt J I i (g x)) (hann : ∀ x, (ψ x).snd ∘L mfderiv J I i (g x) = 0) :
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsIsotropicMap K ψ :=
   SmoothTwoForm.IsNondegenerate.isIsotropicMap_of_mpullback_eq_mextDeriv
     symplecticForm_eq_neg_mextDerivₗ hψ contMDiff_const
@@ -139,7 +139,7 @@ theorem isExactLagrangianMap_of_conormal [FiniteDimensional ℝ E]
     (hproj : ∀ x, (ψ x).proj = i (g x)) (hψ : ContMDiff K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ψ)
     (hinj : ∀ x, Function.Injective (mfderiv K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ x))
     (hdim : finrank ℝ G = finrank ℝ E) (hg : MDifferentiable K J g)
-    (hi : ∀ x, MDifferentiableAt J I i (g x)) (hann : ∀ x, (ψ x).2 ∘L mfderiv J I i (g x) = 0) :
+    (hi : ∀ x, MDifferentiableAt J I i (g x)) (hann : ∀ x, (ψ x).snd ∘L mfderiv J I i (g x) = 0) :
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap K
       (liouvilleForm I M) ψ 0 := by
   refine (SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_of_finrank

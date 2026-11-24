@@ -62,21 +62,6 @@ namespace TauCeti.Multiquadratic
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
   {d : ι → K} {root : ι → L}
 
-section SplittingField
-
-variable [Finite ι]
-
-/-- The defining polynomial of the multiquadratic field: `∏ᵢ (X² - dᵢ)`. -/
-noncomputable def definingPolynomial (d : ι → K) : K[X] :=
-  letI := Fintype.ofFinite ι
-  ∏ i, (X ^ 2 - C (d i))
-
-/-- The defining polynomial is the product of the quadratic factors `X² - dᵢ`. -/
-@[simp] theorem definingPolynomial_def :
-    definingPolynomial d = (letI := Fintype.ofFinite ι; ∏ i, (X ^ 2 - C (d i))) := by
-  rw [definingPolynomial]
-
-omit [Finite ι] in
 /-- Each quadratic factor splits in `M`, with roots `± rootᵢ`. -/
 private theorem splits_X_sq_sub_C (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (i : ι) :
     ((X ^ 2 - C (d i)).map (algebraMap K (adjoin K (Set.range root)))).Splits := by
@@ -92,11 +77,9 @@ private theorem splits_X_sq_sub_C (hroot : ∀ i, root i ^ 2 = algebraMap K L (d
 @[expose] noncomputable def gen (root : ι → L) (i : ι) : adjoin K (Set.range root) :=
   ⟨root i, subset_adjoin _ _ ⟨i, rfl⟩⟩
 
-omit [Finite ι] in
 /-- Coercing the `i`-th generator of `K(rootᵢ : i)` back to `L` gives `root i`. -/
 @[simp] theorem coe_gen (i : ι) : (gen (K := K) root i : L) = root i := rfl
 
-omit [Finite ι] in
 /-- The generators generate `M` as its own top field. -/
 theorem adjoin_gen_eq_top :
     IntermediateField.adjoin K (Set.range (gen (K := K) root)) = ⊤ := by
@@ -105,13 +88,12 @@ theorem adjoin_gen_eq_top :
       (adjoin K (Set.range root)).val = adjoin K (Set.range root) := by
     ext x
     simp only [IntermediateField.mem_map, IntermediateField.mem_top, true_and]
-    exact ⟨fun ⟨y, hy⟩ => hy ▸ y.2, fun hx => ⟨⟨x, hx⟩, rfl⟩⟩
+    exact ⟨fun ⟨y, hy⟩ => hy ▸ y.property, fun hx => ⟨⟨x, hx⟩, rfl⟩⟩
   rw [IntermediateField.adjoin_map, hmaptop]
   congr 1
   rw [← Set.range_comp]
   rfl
 
-omit [Finite ι] in
 /-- The generator squares to its radicand (in `M`). -/
 @[simp] theorem gen_sq (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (i : ι) :
     gen (K := K) root i ^ 2 = algebraMap K (adjoin K (Set.range root)) (d i) := by
@@ -119,7 +101,6 @@ omit [Finite ι] in
   rw [IntermediateField.coe_pow, coe_gen, IntermediateField.coe_algebraMap_apply]
   exact hroot i
 
-omit [Finite ι] in
 /-- When the radicands are integers `a i`, the generators satisfy their defining equations over
 `ℤ` as well. -/
 theorem gen_sq_algebraMap_int {a : ι → ℤ} (hroot : ∀ i, root i ^ 2 = algebraMap K L (a i : K))
@@ -127,7 +108,6 @@ theorem gen_sq_algebraMap_int {a : ι → ℤ} (hroot : ∀ i, root i ^ 2 = alge
   rw [gen_sq hroot i, IsScalarTower.algebraMap_apply ℤ K (adjoin K (Set.range root))]
   simp
 
-omit [Finite ι] in
 /-- Every automorphism sends a generator to itself or to its negation. -/
 theorem aut_gen_eq_self_or_eq_neg (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) :
@@ -136,7 +116,6 @@ theorem aut_gen_eq_self_or_eq_neg (hroot : ∀ i, root i ^ 2 = algebraMap K L (d
     rw [← map_pow, gen_sq hroot, AlgEquiv.commutes, ← gen_sq hroot]
   exact sq_eq_sq_iff_eq_or_eq_neg.mp h1
 
-omit [Finite ι] in
 /-- A generator is not equal to its own negation when the radicand is nonzero, since `2 ≠ 0` in
 `L`. -/
 theorem gen_ne_neg [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
@@ -154,6 +133,26 @@ theorem gen_ne_neg [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L 
   have h2r : (2 : L) * root i = 0 := by linear_combination hcoe
   exact hr0 ((mul_eq_zero.mp h2r).resolve_left h2L)
 
+/-- Each generator is algebraic over `K` (it satisfies `X² - dᵢ`). -/
+private theorem isAlgebraic_gen (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (i : ι) :
+    IsAlgebraic K (gen (K := K) root i) :=
+  ⟨X ^ 2 - C (d i), X_pow_sub_C_ne_zero (by norm_num) _, by
+    rw [map_sub, map_pow, aeval_X, aeval_C, gen_sq hroot i, sub_self]⟩
+
+section SplittingField
+
+variable [Finite ι]
+
+/-- The defining polynomial of the multiquadratic field: `∏ᵢ (X² - dᵢ)`. -/
+noncomputable def definingPolynomial (d : ι → K) : K[X] :=
+  letI := Fintype.ofFinite ι
+  ∏ i, (X ^ 2 - C (d i))
+
+/-- The defining polynomial is the product of the quadratic factors `X² - dᵢ`. -/
+@[simp] theorem definingPolynomial_def :
+    definingPolynomial d = (letI := Fintype.ofFinite ι; ∏ i, (X ^ 2 - C (d i))) := by
+  rw [definingPolynomial]
+
 /-- `∏ᵢ (X² - dᵢ)` is nonzero. -/
 private theorem definingPolynomial_ne_zero : definingPolynomial d ≠ 0 := by
   rw [definingPolynomial, Finset.prod_ne_zero_iff]
@@ -164,13 +163,6 @@ private theorem splits_definingPolynomial (hroot : ∀ i, root i ^ 2 = algebraMa
     ((definingPolynomial d).map (algebraMap K (adjoin K (Set.range root)))).Splits := by
   rw [definingPolynomial, Polynomial.map_prod]
   exact Polynomial.Splits.prod fun i _ => splits_X_sq_sub_C hroot i
-
-omit [Finite ι] in
-/-- Each generator is algebraic over `K` (it satisfies `X² - dᵢ`). -/
-private theorem isAlgebraic_gen (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (i : ι) :
-    IsAlgebraic K (gen (K := K) root i) :=
-  ⟨X ^ 2 - C (d i), X_pow_sub_C_ne_zero (by norm_num) _, by
-    rw [map_sub, map_pow, aeval_X, aeval_C, gen_sq hroot i, sub_self]⟩
 
 /-- `M = K(rootᵢ : i)` is the splitting field of `∏ᵢ (X² - dᵢ)` over `K`. -/
 theorem isSplittingField (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
@@ -199,7 +191,8 @@ theorem finiteDimensional_adjoin_range (hroot : ∀ i, root i ^ 2 = algebraMap K
   haveI := isSplittingField hroot
   IsSplittingField.finiteDimensional _ (definingPolynomial d)
 
-omit [Finite ι] in
+end SplittingField
+
 /-- The multiquadratic field `K(rootᵢ : i)` is normal over `K`, for any index type: it is the
 compositum of the normal extensions `K(rootᵢ)`, each the splitting field of `X² - dᵢ`. -/
 theorem normal_adjoin_range (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
@@ -216,7 +209,6 @@ theorem normal_adjoin_range (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
   have := hnormal
   exact normal_iSup (F := K) L _
 
-omit [Finite ι] in
 /-- A multiquadratic field over a field in which `2 ≠ 0` is Galois: it is normal
 (`normal_adjoin_range`), and each generator satisfies a separable quadratic. -/
 theorem isGalois [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
@@ -237,8 +229,6 @@ theorem isGalois [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d
     · exact (separable_X_pow_sub_C (d i) (by exact_mod_cast two_ne_zero) hd).of_dvd
         (minpoly.dvd K (root i) haeval)
   constructor
-
-end SplittingField
 
 /-- A field generated over `K` by square roots is Galois over `K`. -/
 theorem isGalois_of_adjoin_eq_top [NeZero (2 : K)]
@@ -292,6 +282,15 @@ theorem aut_commute (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     Commute a b :=
   Commute.of_orderOf_dvd_two
     (fun σ => orderOf_dvd_of_pow_eq_one (by rw [pow_two]; exact aut_mul_self_eq_one hroot σ)) a b
+
+/-- In the commutative automorphism group of a multiquadratic field, two automorphisms are
+conjugate exactly when they are equal. -/
+theorem aut_isConj_iff_eq (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    {σ τ : IntermediateField.adjoin K (Set.range root) ≃ₐ[K]
+      IntermediateField.adjoin K (Set.range root)} :
+    IsConj σ τ ↔ σ = τ :=
+  ⟨fun h ↦ h.eq_of_right_mem_center (Semigroup.mem_center_iff.mpr fun c ↦ aut_commute hroot c τ),
+    fun h ↦ h ▸ IsConj.refl σ⟩
 
 /-- A multiquadratic extension in characteristic different from two is abelian Galois. -/
 theorem isAbelianGalois [NeZero (2 : K)]

@@ -55,7 +55,7 @@ open CochainComplex
 the periodic mapping cone of the compressed map, for `i ≡ r`. -/
 private noncomputable def coneInj (r : ZMod n) (i : ℤ) (hi : (i : ZMod n) = r) :
     (mappingCone φ).X i ⟶ (homotopyCofiber (compressionMap n φ)).X r :=
-  (mappingCone.fst φ).1.v i (i + 1) rfl ≫ ιCompression n K (i + 1) (r + 1) (by simp [hi]) ≫
+  (mappingCone.fst φ).val.v i (i + 1) rfl ≫ ιCompression n K (i + 1) (r + 1) (by simp [hi]) ≫
       homotopyCofiber.inlX (compressionMap n φ) (r + 1) r (by simp) +
     (mappingCone.snd φ).v i i (add_zero i) ≫ ιCompression n L i r hi ≫
       homotopyCofiber.inrX (compressionMap n φ) r
@@ -63,7 +63,7 @@ private noncomputable def coneInj (r : ZMod n) (i : ℤ) (hi : (i : ZMod n) = r)
 private lemma coneInj_eq (i j : ℤ) (hij : i + 1 = j) (r s : ZMod n)
     (hi : (i : ZMod n) = r) (hs : (ComplexShape.up (ZMod n)).Rel r s) :
     coneInj n φ r i hi =
-      (mappingCone.fst φ).1.v i j hij ≫ ιCompression n K j s (by
+      (mappingCone.fst φ).val.v i j hij ≫ ιCompression n K j s (by
         rw [ComplexShape.up_Rel] at hs; simp [← hs, ← hij, hi]) ≫
           homotopyCofiber.inlX (compressionMap n φ) s r hs +
         (mappingCone.snd φ).v i i (add_zero i) ≫ ιCompression n L i r hi ≫
@@ -130,7 +130,7 @@ terms of the mapping cone in the degrees congruent to `r`. -/
 private noncomputable def isColimitConeCofan (r : ZMod n) :
     IsColimit (Cofan.mk (f := GradedObject.mapObjFun (mappingCone φ).X (fun i : ℤ ↦ (i : ZMod n)) r)
       ((homotopyCofiber (compressionMap n φ)).X r) fun i ↦
-        coneInj n φ r i.1 (Set.mem_singleton_iff.mp (Set.mem_preimage.mp i.2))) :=
+        coneInj n φ r i.val (Set.mem_singleton_iff.mp (Set.mem_preimage.mp i.property))) :=
   Cofan.IsColimit.mk _
     (fun t ↦ coneDesc n φ r fun i hi ↦
       t.inj ⟨i, Set.mem_preimage.mpr (Set.mem_singleton_iff.mpr hi)⟩)
@@ -259,7 +259,7 @@ cone followed by the inclusions into the compressions. -/
 lemma ιCompression_compressionMappingConeIso_hom_f (i j : ℤ) (hij : i + 1 = j) (r s : ZMod n)
     (hi : (i : ZMod n) = r) (hs : (ComplexShape.up (ZMod n)).Rel r s) :
     ιCompression n (mappingCone φ) i r hi ≫ (compressionMappingConeIso n φ).hom.f r =
-      (mappingCone.fst φ).1.v i j hij ≫ ιCompression n K j s (by
+      (mappingCone.fst φ).val.v i j hij ≫ ιCompression n K j s (by
         rw [ComplexShape.up_Rel] at hs; simp [← hs, ← hij, hi]) ≫
           homotopyCofiber.inlX (compressionMap n φ) s r hs +
         (mappingCone.snd φ).v i i (add_zero i) ≫ ιCompression n L i r hi ≫

@@ -109,7 +109,7 @@ theorem IsIrreducible.of_mulEquiv {T : TitsSystem G} (hirr : T.IsIrreducible) {H
     have ht' : (⟨e.symm t, (hmem _).mpr (by simp)⟩ : T'.simple) ∉ J :=
       fun h ↦ ht ⟨_, h, by simp⟩
     simpa [hs] using congrArg e (hJ s' hs' _ ht')
-  have hmemJ₀ : ∀ s : T'.simple, s ∈ J ↔ (⟨e s, (hmem _).mp s.2⟩ : T.simple) ∈ J₀ := by
+  have hmemJ₀ : ∀ s : T'.simple, s ∈ J ↔ (⟨e s, (hmem _).mp s.property⟩ : T.simple) ∈ J₀ := by
     refine fun s ↦ ⟨fun hs ↦ ⟨s, hs, rfl⟩, ?_⟩
     rintro ⟨t, ht, hts⟩
     rwa [← Subtype.ext (e.injective hts)]

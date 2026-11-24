@@ -43,7 +43,6 @@ negative.
 
 ## Main results
 
-* `TauCeti.tsum_fiber_image_of_injOn`: reindexing weighted fiber sums along an injective map.
 * `LocallyLipschitzOn.tsum_fiber_congr_ae_set`, `LocallyLipschitzOn.tsum_fiber_congr_ae_fun`:
   almost-everywhere congruence of weighted fiber sums for locally Lipschitz maps.
 * `TauCeti.lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv`: the weighted
@@ -70,17 +69,6 @@ open Set Function MeasureTheory Measure Module
 open scoped NNReal ENNReal symmDiff
 
 namespace TauCeti
-
-/-- Reindexing a weighted fiber sum over `f '' B` along a map `f` injective on `B`. -/
-theorem tsum_fiber_image_of_injOn {U V W M : Type*} [AddCommMonoid M] [TopologicalSpace M]
-    {f : U → V} {B : Set U} (hinj : InjOn f B) (g : V → W) (w : V → M) (y : W) :
-    (∑' x : ↥((f '' B) ∩ g ⁻¹' {y}), w x) = ∑' u : ↥(B ∩ (g ∘ f) ⁻¹' {y}), w (f u) := by
-  refine ((Equiv.ofBijective (fun u : ↥(B ∩ (g ∘ f) ⁻¹' {y}) =>
-    (⟨f u.1, mem_image_of_mem f u.2.1, u.2.2⟩ : ↥((f '' B) ∩ g ⁻¹' {y}))) ⟨?_, ?_⟩).tsum_eq
-      (fun x => w x.1)).symm
-  · exact fun u₁ u₂ h => Subtype.ext (hinj u₁.2.1 u₂.2.1 (congrArg Subtype.val h))
-  · rintro ⟨_, ⟨u, huB, rfl⟩, hgx⟩
-    exact ⟨⟨u, huB, hgx⟩, rfl⟩
 
 /-- Weighted fiber sums for a map with injective derivative are measurable. Such a map
 need not itself be injective or globally Lipschitz. -/
@@ -118,7 +106,7 @@ theorem measurable_tsum_fiber_of_injective_fderiv
       exact (hpd hij).mono inter_subset_left inter_subset_left
   simp_rw [hfiber]
   exact Measurable.tsum fun n ↦
-    (he n).measurable_extend (hg.comp measurable_subtype_coe) measurable_const
+    (he n).measurable_extend (hg.comp measurable_subtypeVal) measurable_const
 
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -281,7 +269,7 @@ theorem lintegral_normDet_fderiv_eq_lintegral_encard (hf : LipschitzWith K f)
 end LipschitzWith
 
 namespace LocallyLipschitzOn
-variable {X Y M : Type*} [EMetricSpace X] [SecondCountableTopology X] [MeasurableSpace X]
+variable {X Y M : Type*} [EMetricSpace X] [TopologicalSpace.SeparableSpace X] [MeasurableSpace X]
   [BorelSpace X] [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] [AddCommMonoid M]
   [TopologicalSpace M]
 
@@ -306,7 +294,7 @@ theorem tsum_fiber_congr_ae_fun {E : Set X} {f : X → Y} (hf : LocallyLipschitz
     ((le_restrict_apply E {x | w₁ x ≠ w₂ x}).trans_eq (ae_iff.mp hw))
   filter_upwards [measure_eq_zero_iff_ae_notMem.mp
     (hf.euclideanHausdorffMeasure_image_eq_zero_of_subset inter_subset_right d hN0)] with y hy
-  exact tsum_congr fun x => not_not.mp fun hne => hy ⟨x.1, ⟨hne, x.2.1⟩, x.2.2⟩
+  exact tsum_congr fun x => not_not.mp fun hne => hy ⟨x.val, ⟨hne, x.property.1⟩, x.property.2⟩
 end LocallyLipschitzOn
 
 namespace TauCeti
@@ -351,7 +339,7 @@ theorem map_withDensity_abs_det_fderiv_eq_withDensity_encard (hs : MeasurableSet
     _ = _ := by
       refine lintegral_congr fun y ↦ ?_
       have e : ∀ x : ↥(s ∩ f ⁻¹' {y}), (B.indicator (1 : E → ℝ≥0∞) ∘ f) x = B.indicator 1 y :=
-        fun x ↦ by rw [comp_apply, x.2.2]
+        fun x ↦ by rw [comp_apply, x.property.2]
       simp_rw [e, ENNReal.tsum_set_const]
       by_cases hy : y ∈ B <;> simp [hy]
 

@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.Order.LiminfLimsup
+import Mathlib.Analysis.Calculus.FDeriv.Basic
+import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
@@ -33,7 +37,8 @@ involves rectifiability:
 * along an antilipschitz map out of a finite-dimensional real inner product space, source volume is
   controlled by target `μHE[dim U]` measure, transferring vanishing density quotients back to the
   source, while at a Lebesgue density-one point shifted sub-balls cannot have density tending to
-  zero.
+  zero (yielding directional derivative bounds under `LipschitzOnWith`), and a set of positive upper
+  ambient density cannot have density zero outside every cone around a proper subspace.
 
 Together with the zero-density theorem
 `TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`, these are the ingredients of
@@ -51,9 +56,12 @@ the density theorem for rectifiable sets.
 * `TauCeti.limsup_measure_inter_div_le_of_tendsto_diff`: a part of a set with density zero does not
   contribute to the upper density.
 * `TauCeti.volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith`,
-  `TauCeti.tendsto_volume_div_zero_of_antilipschitzWith`, and
-  `TauCeti.not_tendsto_volume_inter_shifted_closedBall_div_zero`: antilipschitz volume comparison,
-  density-zero pullback, and non-vanishing shifted-ball density.
+  `TauCeti.tendsto_volume_div_zero_of_antilipschitzWith`,
+  `TauCeti.not_tendsto_volume_inter_shifted_closedBall_div_zero`,
+  `TauCeti.not_tendsto_outside_cone_top_of_lt_top`, and
+  `HasFDerivWithinAt.norm_comp_le_of_lipschitzOnWith`: antilipschitz volume comparison,
+  density-zero pullback, non-vanishing shifted-ball density, proper-subspace cone obstruction, and
+  the resulting density-one directional derivative bound.
 
 ## References
 
@@ -64,7 +72,7 @@ the density theorem for rectifiable sets.
 public section
 
 open Filter Function Metric MeasureTheory Measure Set Module
-open scoped ENNReal NNReal Topology
+open scoped ENNReal NNReal Pointwise Topology
 
 namespace TauCeti
 
@@ -108,13 +116,11 @@ theorem volume_le_mul_euclideanHausdorffMeasure_image_of_antilipschitzWith {U V 
     [BorelSpace U] [MetricSpace V] [MeasurableSpace V] [BorelSpace V] {f : U → V} {s t : Set U}
     {L : ℝ≥0} (hi : AntilipschitzWith L (s.domRestrict f)) (hts : t ⊆ s) :
     volume t ≤ (L : ℝ≥0∞) ^ finrank ℝ U * μHE[finrank ℝ U] (f '' t) := by
-  rcases t.eq_empty_or_nonempty with rfl | ⟨x₀, _⟩; · simp
-  have : Nonempty U := ⟨x₀⟩; classical
-  have hφ : LipschitzOnWith L (invFunOn f s) (f '' s) := lipschitzOnWith_iff_restrict.2
-    (hi.to_rightInvOn' (fun _ hy => invFunOn_mem hy) fun _ hy => invFunOn_eq hy)
   rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
-  nth_rw 1 [← (injOn_iff_injective.2 hi.injective).leftInvOn_invFunOn.image_image' hts]
-  exact (hφ.mono (image_mono hts)).euclideanHausdorffMeasure_image_le (finrank ℝ U)
+  exact (AntilipschitzWith.of_le_mul_dist fun x y => by
+    simpa only [Subtype.dist_eq, domRestrict_apply] using
+      hi.le_mul_dist ⟨x, hts x.property⟩ ⟨y, hts y.property⟩ :
+    AntilipschitzWith L (t.domRestrict f)).le_euclideanHausdorffMeasure_image_of_domRestrict _
 
 /-- At a Lebesgue density-one point `x₀` of `s`, shifted sub-balls
 `closedBall (x₀ + (ρ / 2) • u) ((η / 4) * ρ)` cannot have density in `s` tending to zero. -/
@@ -177,7 +183,128 @@ theorem tendsto_volume_div_zero_of_antilipschitzWith {U V : Type*} [NormedAddCom
   rw [mul_div_assoc, div_volume_closedBall_eq_mul (finrank ℝ U) _ hC hρ0.le, ← mul_assoc, ← mul_pow,
     ← ENNReal.coe_mul]; rfl
 
+private lemma euclideanHausdorffMeasure_closedBall_slab_div_le {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] (x : V)
+    (K₀ : Submodule ℝ V) (ε r : ℝ) (hr : 0 < r) :
+    μHE[finrank ℝ V] {z ∈ closedBall x r | infDist (z - x) (K₀ : Set V) ≤ ε * r} /
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ V))) r) ≤
+      volume {w ∈ closedBall (0 : V) 1 | infDist w (K₀ : Set V) ≤ ε} /
+        volume (closedBall (0 : V) 1) := by
+  let S : Set V := {w ∈ closedBall (0 : V) 1 | infDist w (K₀ : Set V) ≤ ε}
+  have hinc : {z ∈ closedBall x r | infDist (z - x) (K₀ : Set V) ≤ ε * r} ⊆
+      (IsometryEquiv.vaddConst x) '' (r • S) := fun z ⟨hzB, hzK⟩ => by
+    refine ⟨z - x, ⟨r⁻¹ • (z - x), ⟨?_, ?_⟩, smul_inv_smul₀ hr.ne' (z - x)⟩,
+      by simp [IsometryEquiv.vaddConst]⟩
+    · rw [mem_closedBall, dist_zero_right, norm_smul, Real.norm_of_nonneg (inv_nonneg.mpr hr.le),
+        ← dist_eq_norm]
+      exact (inv_mul_le_iff₀ hr).mpr (by simpa using mem_closedBall.mp hzB)
+    · rw [← K₀.dist_starProjection_eq_infDist, dist_eq_norm, map_smul, ← smul_sub, norm_smul,
+        Real.norm_of_nonneg (inv_nonneg.mpr hr.le), ← dist_eq_norm,
+        K₀.dist_starProjection_eq_infDist]
+      exact (inv_mul_le_iff₀ hr).mpr (by linarith)
+  refine (ENNReal.div_le_div_right (measure_mono hinc) _).trans_eq ?_
+  rw [(IsometryEquiv.vaddConst x).isometry.euclideanHausdorffMeasure_image,
+    InnerProductSpace.euclideanHausdorffMeasure_eq_volume, addHaar_smul_of_nonneg volume hr.le,
+    ← volume_closedBall_eq_euclidean (0 : V) r, (by
+      simpa only [mul_one, ENNReal.ofReal_pow hr.le] using addHaar_closedBall_mul volume (0 : V)
+        hr.le zero_le_one : volume (closedBall (0 : V) r) = ENNReal.ofReal (r ^ finrank ℝ V) *
+          volume (closedBall (0 : V) 1)), ENNReal.mul_div_mul_left _ _
+      (ENNReal.ofReal_pos.mpr (pow_pos hr _)).ne' ENNReal.ofReal_ne_top]
+
+/-- A set `E` of positive upper `(finrank ℝ V)`-dimensional density at `x` cannot have density zero
+outside every cone around a proper subspace `K₀ < ⊤`. -/
+theorem not_tendsto_outside_cone_top_of_lt_top {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {E : Set V}
+    {x : V} {K₀ : Submodule ℝ V} (hK₀ : K₀ < ⊤)
+    (hpos : 0 < limsup (fun r => μHE[finrank ℝ V] (E ∩ closedBall x r) /
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ V))) r)) (𝓝[>] 0))
+    (hcone : ∀ ε > (0 : ℝ), Tendsto (fun r =>
+      μHE[finrank ℝ V] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (K₀ : Set V)} /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ V))) r)) (𝓝[>] 0) (𝓝 0)) :
+    False := by
+  let S (ε : ℝ) : Set V := {w ∈ closedBall (0 : V) 1 | infDist w (K₀ : Set V) ≤ ε}
+  let B₀ (r : ℝ) := volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ V))) r)
+  have hlimsup_le (ε : ℝ) (hε : 0 < ε) :
+      limsup (fun r => μHE[finrank ℝ V] (E ∩ closedBall x r) / B₀ r) (𝓝[>] 0) ≤
+        volume (S ε) / volume (closedBall (0 : V) 1) := by
+    refine ((limsup_le_limsup (.of_forall fun r => ?_)).trans_eq
+      (ENNReal.limsup_add_of_right_tendsto_zero (hcone ε hε) _)).trans
+      ((limsup_le_limsup (eventually_mem_nhdsWithin.mono
+        (euclideanHausdorffMeasure_closedBall_slab_div_le x K₀ ε))).trans_eq (limsup_const _))
+    dsimp only [Pi.add_apply, B₀]; rw [← ENNReal.add_div]
+    refine ENNReal.div_le_div_right ((measure_mono ?_).trans (measure_union_le _ _)) _
+    rintro z ⟨hzE, hzr⟩
+    by_cases hz : ε * dist z x < infDist (z - x) (K₀ : Set V)
+    exacts [Or.inr ⟨⟨hzE, hzr⟩, hz⟩,
+      Or.inl ⟨hzr, (not_lt.mp hz).trans (mul_le_mul_of_nonneg_left (mem_closedBall.mp hzr) hε.le)⟩]
+  let seq (n : ℕ) : Set V := S (1 / ((n : ℝ) + 1))
+  have htend : Tendsto (volume ∘ seq) atTop (𝓝 0) :=
+    (measure_mono_null (fun w hw => (K₀.isClosed_of_finiteDimensional.mem_iff_infDist_zero ⟨0,
+      K₀.zero_mem⟩).mpr <| le_antisymm (ge_of_tendsto' tendsto_one_div_add_atTop_nhds_zero_nat
+      fun n => (mem_iInter.mp hw n : w ∈ S _).2) infDist_nonneg) (addHaar_submodule volume K₀
+        hK₀.ne)) ▸ tendsto_measure_iInter_atTop
+      (fun _ => (measurableSet_closedBall.inter (isClosed_le (continuous_infDist_pt (K₀ : Set V))
+        continuous_const).measurableSet).nullMeasurableSet)
+      (fun _ _ hmn _ hw => ⟨hw.1, hw.2.trans (one_div_le_one_div_of_le (by positivity)
+        (by exact_mod_cast Nat.add_le_add_right hmn 1))⟩)
+      ⟨0, ((measure_mono (fun _ (h : _ ∈ seq 0) => h.1)).trans_lt measure_closedBall_lt_top).ne⟩
+  have hV1_pos : 0 < volume (closedBall (0 : V) 1) := measure_closedBall_pos volume 0 zero_lt_one
+  exact (ENNReal.mul_pos hpos.ne' hV1_pos.ne').not_ge <| ge_of_tendsto' htend fun _ =>
+    (ENNReal.le_div_iff_mul_le (.inl hV1_pos.ne') (.inl measure_closedBall_lt_top.ne)).mp
+      (hlimsup_le _ Nat.one_div_pos_of_nat)
+
 end TauCeti
+
+/-- Directional bound `‖B v‖ ≤ K * ‖A v‖` at a Lebesgue density-one point under
+`LipschitzOnWith`. -/
+theorem HasFDerivWithinAt.norm_comp_le_of_lipschitzOnWith {U V W : Type*}
+    [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
+    [MeasurableSpace U] [BorelSpace U] [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup W] [NormedSpace ℝ W] {f : U → V} {s : Set U} {A : U →L[ℝ] V} {u₀ : U}
+    {E : Set V} {g : V → W} {B : U →L[ℝ] W} {K : ℝ≥0}
+    (hf : HasFDerivWithinAt f A s u₀) (hu₀ : u₀ ∈ s) (hsub : f '' s ⊆ E)
+    (hdens : Tendsto (fun r => volume (s ∩ closedBall u₀ r) / volume (closedBall (0 : U) r))
+      (𝓝[>] 0) (𝓝 1))
+    (hgf : HasFDerivWithinAt (g ∘ f) B s u₀) (hg : LipschitzOnWith K g E) (v : U) :
+    ‖B v‖ ≤ K * ‖A v‖ := by
+  by_cases hv0 : v = 0; · simp [hv0]
+  let w : U := ‖v‖⁻¹ • v; have hw : ‖w‖ = 1 := norm_smul_inv_norm hv0
+  let η (n : ℕ) : ℝ := 1 / ((n : ℝ) + 2)
+  have hη_half (n : ℕ) : η n ≤ 1 / 2 :=
+    one_div_le_one_div_of_le zero_lt_two (le_add_of_nonneg_left (Nat.cast_nonneg n))
+  have hex (n : ℕ) :
+      ∃ ρ ∈ Ioo 0 (η n), (s ∩ closedBall (u₀ + (ρ / 2) • w) ((η n / 4) * ρ)).Nonempty := by
+    by_contra! hemp
+    exact TauCeti.not_tendsto_volume_inter_shifted_closedBall_div_zero hdens hw (by positivity)
+      (hη_half n) (tendsto_const_nhds.congr' (Filter.mem_of_superset
+        (Ioo_mem_nhdsGT (by positivity : 0 < η n)) fun ρ hρ => by simp [hemp ρ hρ]))
+  choose ρ hρ u husD using hex; let d (n : ℕ) : U := u n - u₀
+  let c (n : ℕ) : ℝ := ‖v‖ * (ρ n / 2)⁻¹
+  have hy (n : ℕ) : ‖d n - (ρ n / 2) • w‖ ≤ (η n / 4) * ρ n := by
+    simpa only [d, dist_eq_norm, sub_sub] using mem_closedBall.mp (husD n).2
+  have htend_η : Tendsto η atTop (𝓝 0) := by
+    simpa only [η, Function.comp_def, Nat.cast_add, Nat.cast_one, add_assoc, one_add_one_eq_two]
+      using tendsto_one_div_add_atTop_nhds_zero_nat.comp (tendsto_add_atTop_nat 1)
+  have hdlim : Tendsto d atTop (𝓝 0) := squeeze_zero_norm (fun n => calc
+    ‖d n‖ = ‖(d n - (ρ n / 2) • w) + (ρ n / 2) • w‖ := by abel_nf
+    _ ≤ (η n / 4) * ρ n + (ρ n / 2) * 1 := (norm_add_le _ _).trans (add_le_add (hy n)
+        (by rw [norm_smul, Real.norm_of_nonneg (half_pos (hρ n).1).le, hw]))
+    _ ≤ η n := by nlinarith [hη_half n, (hρ n).1, (hρ n).2]) htend_η
+  have hcd : Tendsto (fun n => c n • d n) atTop (𝓝 v) := by
+    rw [← tendsto_sub_nhds_zero_iff]
+    refine squeeze_zero_norm (fun n => ?_) (by simpa using htend_η.const_mul (‖v‖ / 2))
+    have hρ0 := (hρ n).1; have hc0 : 0 ≤ c n := by positivity
+    nth_rw 1 [← (by simp only [c, w, smul_smul, mul_assoc]; rw [inv_mul_cancel_left₀ (half_pos
+      hρ0).ne', mul_inv_cancel₀ (norm_ne_zero_iff.mpr hv0), one_smul] : c n • ((ρ n / 2) • w) = v)]
+    rw [← smul_sub, norm_smul, Real.norm_of_nonneg hc0]
+    exact (mul_le_mul_of_nonneg_left (hy n) hc0).trans_eq (by simp only [c]; field_simp; ring)
+  have hdtop : ∀ᶠ n in atTop, u₀ + d n ∈ s := .of_forall fun n => by simpa [d] using (husD n).1
+  exact le_of_tendsto_of_tendsto (hgf.lim hdlim hdtop hcd).norm ((hf.lim hdlim hdtop
+    hcd).norm.const_mul (K : ℝ)) <| .of_forall fun n => by
+      dsimp only; rw [norm_smul, norm_smul, mul_left_comm]
+      refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+      simpa only [comp_apply, ← dist_eq_norm] using hg.dist_le_mul _ (hsub (mem_image_of_mem f
+        (by simpa [d] using (husD n).1))) _ (hsub (mem_image_of_mem f hu₀))
 
 namespace LipschitzOnWith
 
@@ -344,7 +471,7 @@ theorem ae_limsup_le_and_le_liminf_euclideanHausdorffMeasure_inter_closedBall_di
   have hψ₁' : AntilipschitzWith a (G'.domRestrict ψ) :=
     AntilipschitzWith.of_le_mul_dist fun x y => by
       simpa only [Subtype.dist_eq, domRestrict_apply] using
-        hψ'.le_mul_dist ⟨x, hG'G x.2⟩ ⟨y, hG'G y.2⟩
+        hψ'.le_mul_dist ⟨x, hG'G x.property⟩ ⟨y, hG'G y.property⟩
   have hdens := ae_iff.1 (hι.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div
     (hG'G.trans hGι))
   -- The image of the points of `G'` where `G'` does not have density one is null.

@@ -29,6 +29,10 @@ The three basic modules have bases of `H`-weight vectors, so their formal charac
 * the adjoint module `sl (Fin (r + 1)) K` has the simple coroots, of weight `0`, and the signed
   matrix units `Eᵢⱼ` with `i ≠ j`, of weight `εᵢ - εⱼ`, the roots.
 
+In particular the adjoint module is triangularizable over `H` over every field
+(`TauCeti.instIsTriangularizableSpecialLinearDiagonalCartan`), with weights the weights of these
+basis vectors (`TauCeti.genWeightSpace_specialLinear_ne_bot_iff`).
+
 These characters sum over the basis vectors, so they hold over every field. Distinct basis
 vectors can however have equal weights in positive characteristic, and then the multiplicities add:
 for `sl₂` (`r = 1`) with `2 = 0` one has `ε₀ = ε₁`.
@@ -233,7 +237,39 @@ theorem lie_specialLinearDiagonalCartan_specialLinearRootBasis
       specialLinearSignedRoot_val, lie_single_of_mem_diagonalCartan hd]
     simp [specialLinearRootBasisWeight]
 
+/-- The diagonal Cartan subalgebra acts on the matrix unit `Eᵢⱼ` by the root `εᵢ - εⱼ`. -/
+theorem lie_specialLinearDiagonalCartan_single (h : specialLinearDiagonalCartan r A)
+    {i j : Fin (r + 1)} (hij : i ≠ j) (c : A) :
+    ⁅h, single i j hij c⁆ =
+      (specialLinearEpsilon r A i - specialLinearEpsilon r A j) h • single i j hij c := by
+  rw [LieSubalgebra.coe_bracket_of_module]
+  simpa [specialLinearEpsilon_apply] using
+    lie_single_of_isDiag ((mem_specialLinearDiagonalCartan_iff r A _).mp h.property) hij c
+
 end WeightVectors
+
+/-! ### Triangularizability -/
+
+section Triangularizable
+
+variable {r : ℕ} {K : Type*} [Field K]
+
+/-- The weights of the adjoint action of the diagonal Cartan subalgebra are the weights of the
+vectors of `TauCeti.specialLinearRootBasis`. -/
+theorem genWeightSpace_specialLinear_ne_bot_iff (χ : specialLinearDiagonalCartan r K → K) :
+    genWeightSpace (sl (Fin (r + 1)) K) χ ≠ ⊥ ↔
+      ∃ p, (specialLinearRootBasisWeight p : specialLinearDiagonalCartan r K → K) = χ :=
+  (specialLinearRootBasis r K).genWeightSpace_ne_bot_iff_of_weight_basis
+    (fun p h => lie_specialLinearDiagonalCartan_specialLinearRootBasis h p) χ
+
+/-- **The diagonal Cartan subalgebra of `sl (Fin (r + 1))` is split over every field**: the signed
+matrix units and the simple coroots are simultaneous eigenvectors spanning `sl (Fin (r + 1)) K`. -/
+instance instIsTriangularizableSpecialLinearDiagonalCartan :
+    IsTriangularizable K (specialLinearDiagonalCartan r K) (sl (Fin (r + 1)) K) :=
+  (specialLinearRootBasis r K).isTriangularizable_of_weight_basis
+    (fun p h => lie_specialLinearDiagonalCartan_specialLinearRootBasis h p)
+
+end Triangularizable
 
 /-! ### Formal characters -/
 

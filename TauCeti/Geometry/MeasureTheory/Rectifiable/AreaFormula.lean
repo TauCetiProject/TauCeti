@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
 import TauCeti.MeasureTheory.Function.AreaFormula.Real
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
+import TauCeti.Topology.Algebra.InfiniteSum.Extend
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
@@ -78,9 +79,10 @@ private lemma lintegral_patch_tangentialJacobian_mul (w : V → ℝ≥0∞) : (�
 private lemma patch_area_formula {w : V → ℝ≥0∞} (hw : Measurable w) : AEMeasurable (fun y => ∑' x :
     ↥((f '' B) ∩ g ⁻¹' {y}), w x) μHE[k] ∧ (∫⁻ x in f '' B, ENNReal.ofReal (tangentialJacobian k E g
     x) * w x ∂μHE[k]) = ∫⁻ y, ∑' x : ↥((f '' B) ∩ g ⁻¹' {y}), w x ∂μHE[k] := by
-  have htsum_eq (y : W) : (∑' x : ↥((f '' B) ∩ g ⁻¹' {y}), w x) = ∑' u : ↥(B ∩ (gExt ∘ f) ⁻¹' {y}),
-    w (f u) := (tsum_fiber_image_of_injOn (injOn_iff_injective.mpr hf_anti.injective) g w y).trans
-    <| tsum_congr_set_coe (fun u => w (f u)) <| Set.ext fun u => and_congr_right fun huB => by
+  have htsum_eq (y : W) :
+      (∑' x : ↥((f '' B) ∩ g ⁻¹' {y}), w x) = ∑' u : ↥(B ∩ (gExt ∘ f) ⁻¹' {y}), w (f u) :=
+    ((injOn_iff_injective.mpr hf_anti.injective).tsum_fiber_image g w y).trans <|
+      tsum_congr_set_coe (fun u => w (f u)) <| Set.ext fun u => and_congr_right fun huB => by
         simp only [mem_preimage, mem_singleton_iff, comp_apply, hgExt_eq (mem_image_of_mem f huB)]
   have hgf := hgExt_lip.comp hf_lip; have hwm := hw.comp hf_lip.continuous.measurable
   refine ⟨by simp_rw [htsum_eq]; simpa only [finrank_euclideanSpace_fin, comp_apply] using

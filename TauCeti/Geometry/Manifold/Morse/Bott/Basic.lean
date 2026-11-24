@@ -44,6 +44,9 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
   function which is `C²` along it.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isLocallyConstant_comp`: a function is locally
   constant along each of its critical submanifolds.
+* `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc`: a
+  critical submanifold carrying every critical point of a compact band around its level is
+  compact.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.normalHessian`: the normal Hessian.
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`: Morse–Bott critical submanifolds.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff`:
@@ -61,9 +64,9 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_ofOpens_const`: a constant function
   is Morse–Bott along every open subset, a critical submanifold of full dimension.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
-  slice `M × {0}` for `(x, v) ↦ q v` with `q` nondegenerate at `0`.
+  slice `M × {y}` for `(x, v) ↦ q v` with `q` nondegenerate at `y`.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff`: conversely, the slice
-  is Morse–Bott only when `q` is nondegenerate at `0`.
+  is Morse–Bott only when `q` is nondegenerate at `y`.
 * `SmoothEmbedding.IsNondegenerateCriticalSubmanifold.isNondegenerateCriticalPoint_of_snd_eq`:
   more generally, a Morse–Bott critical submanifold of `(x, v) ↦ q v` inside a slice `M × {y}`
   forces `q` to be nondegenerate at `y`.
@@ -133,6 +136,20 @@ theorem IsCriticalSubmanifold.isLocallyConstant_comp [IsManifold J 1 S]
   rw [mfderiv_comp s (hf s) (hi s),
     mem_criticalPoints_iff_mfderiv_eq_zero.1 (h.mem_criticalPoints s),
     ContinuousLinearMap.zero_comp]
+
+/-- A critical submanifold on the level `c` which carries every critical point of a compact band
+`f⁻¹[a, b]` around `c` is compact: its image is the closed set of critical points of the band. -/
+theorem IsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc [IsManifold I 1 M]
+    (h : i.IsCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) 1 f) {a b c : ℝ}
+    (hc : ∀ s, f (i s) = c) (hac : a ≤ c) (hcb : c ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i) : CompactSpace S := by
+  have hrange : range i = criticalPoints I f ∩ f ⁻¹' Icc a b :=
+    (hcrit.antisymm (range_subset_iff.2 fun s ↦
+      ⟨h.mem_criticalPoints s, by rw [mem_preimage, hc s]; exact ⟨hac, hcb⟩⟩)).symm
+  have hK : IsCompact (range i) := hrange ▸ hcompact.of_isClosed_subset
+    ((isClosed_criticalPoints hfs).inter (isClosed_Icc.preimage hfs.continuous))
+    inter_subset_right
+  exact isCompact_univ_iff.1 (i.isEmbedding.isInducing.isCompact_iff.2 (by rwa [image_univ]))
 
 namespace IsCriticalSubmanifold
 
@@ -357,6 +374,15 @@ theorem isNondegenerateCriticalSubmanifold_neg_iff :
     i.IsNondegenerateCriticalSubmanifold (-f) ↔ i.IsNondegenerateCriticalSubmanifold f :=
   ⟨fun h ↦ by simpa only [neg_neg] using h.neg, IsNondegenerateCriticalSubmanifold.neg⟩
 
+/-- Being a Morse–Bott critical submanifold depends on the embedding only through its underlying
+map, so it passes to an embedding with the same map and possibly another order of smoothness. -/
+theorem IsNondegenerateCriticalSubmanifold.congr {n' : ℕ∞ω} {i' : SmoothEmbedding J I n' S M}
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hi : ⇑i' = ⇑i) :
+    i'.IsNondegenerateCriticalSubmanifold f where
+  contMDiffAt s := hi ▸ h.contMDiffAt s
+  mem_criticalPoints s := hi ▸ h.mem_criticalPoints s
+  ker_criticalHessian_le s := hi ▸ h.ker_criticalHessian_le s
+
 section Boundaryless
 
 variable [I.Boundaryless] [IsManifold I 2 M]
@@ -425,19 +451,20 @@ section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `0`, then the
-slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. The slice is a
-smooth embedding for instance by `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
-theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
-    (hq : IsNondegenerateCriticalPoint q 0)
-    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, (0 : V)))) :
+/-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `y`, then the
+slice `M × {y}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. For `y = 0` the
+slice is a smooth embedding for instance by
+`TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
+theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ} {y : V}
+    (hq : IsNondegenerateCriticalPoint q y)
+    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, y))) :
     (ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd) where
   contMDiffAt x := by
     rw [ofIsSmoothEmbedding_apply]
-    exact hq.contDiffAt.contMDiffAt.comp (x, 0) contMDiffAt_snd
+    exact hq.contDiffAt.contMDiffAt.comp (x, y) contMDiffAt_snd
   mem_criticalPoints x := by
     rw [ofIsSmoothEmbedding_apply, mem_criticalPoints,
-      mvfderiv_comp (x, 0) (hq.contDiffAt.differentiableAt two_ne_zero).mdifferentiableAt
+      mvfderiv_comp (x, y) (hq.contDiffAt.differentiableAt two_ne_zero).mdifferentiableAt
         mdifferentiableAt_snd, mvfderiv_eq_fderiv, hq.fderiv_eq_zero,
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.zero_comp]
   ker_criticalHessian_le x v hv := by
@@ -445,9 +472,9 @@ theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
     have hv₂ : v.2 = 0 := hq.isInvertible.injective
       (((criticalHessian_comp_snd_apply_eq_zero_iff hq.contDiffAt x v).1 hv).trans
         (map_zero _).symm)
-    have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun y : M ↦ (y, (0 : V))) x =
+    have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun z : M ↦ (z, y)) x =
         (ContinuousLinearMap.id ℝ _).prod 0 :=
-      ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const (0 : V) x)).mfderiv
+      ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const y x)).mfderiv
     refine ⟨v.1, ?_⟩
     rw [coe_ofIsSmoothEmbedding, hD]
     exact Prod.ext rfl hv₂.symm
@@ -491,12 +518,12 @@ theorem IsNondegenerateCriticalSubmanifold.isNondegenerateCriticalPoint_of_snd_e
   exact (congrArg Prod.snd hu).symm.trans hu₂
 
 /-- **The model Morse–Bott function, characterized.** For a nonempty `M` and a finite-dimensional
-`V`, the slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v` exactly
-when `q` has a nondegenerate critical point at `0`. -/
+`V`, the slice `M × {y}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v` exactly
+when `q` has a nondegenerate critical point at `y`. -/
 theorem isNondegenerateCriticalSubmanifold_comp_snd_iff [FiniteDimensional ℝ V] [Nonempty M]
-    {q : V → ℝ} (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, (0 : V)))) :
+    {q : V → ℝ} {y : V} (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, y))) :
     (ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd) ↔
-      IsNondegenerateCriticalPoint q 0 :=
+      IsNondegenerateCriticalPoint q y :=
   ⟨fun hq ↦ hq.isNondegenerateCriticalPoint_of_snd_eq fun x ↦
       congrArg Prod.snd (ofIsSmoothEmbedding_apply _ h x),
     fun hq ↦ isNondegenerateCriticalSubmanifold_comp_snd hq h⟩

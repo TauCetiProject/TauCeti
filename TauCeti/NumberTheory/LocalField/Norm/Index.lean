@@ -64,7 +64,7 @@ theorem range_normGradedMap (v : ℕ) :
     induction x using QuotientGroup.induction_on with
     | H x =>
       rw [normGradedMap_mk]
-      exact Subgroup.mem_map_of_mem _ (Subgroup.mem_map_of_mem _ x.2)
+      exact Subgroup.mem_map_of_mem _ (Subgroup.mem_map_of_mem _ x.property)
   · rintro ⟨x, hx, rfl⟩
     obtain ⟨y, hy, hxy⟩ := hx
     refine ⟨QuotientGroup.mk (⟨y, hy⟩ : unitFiltration L (psiNat K L v)), ?_⟩
