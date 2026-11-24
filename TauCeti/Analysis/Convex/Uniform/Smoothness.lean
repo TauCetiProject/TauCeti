@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
 # The modulus of smoothness
@@ -20,7 +21,8 @@ a bound `ρ_E(t) ≤ C t ^ q` expresses smoothness of power type `q`, as a bound
 `δ_E(ε) ≥ C ε ^ q` on the modulus of convexity expresses convexity of power type `q`. In the zero
 space there is no unit vector, and the modulus is zero by convention.
 
-`modulusOfSmoothness_le_iff` characterizes upper bounds without unfolding the supremum. Each
+`modulusOfSmoothness_le_iff` characterizes upper bounds without unfolding the supremum, and in a
+space with nonzero seminorm `modulusOfSmoothness_eq_sSup` drops the conventional value. Each
 average excess is nonnegative by the triangle inequality, so the modulus is nonnegative; it is
 even in `t`, vanishes at `0`, is at most `|t|`, and is monotone on `[0, ∞)`. Passing to a space
 containing an isometric linear copy can only increase the modulus, and linearly isometric spaces
@@ -29,6 +31,7 @@ have the same modulus.
 ## Main declarations
 
 * `TauCeti.modulusOfSmoothness`: the modulus of smoothness `ρ_E(t)`.
+* `TauCeti.modulusOfSmoothness_eq_sSup`: the plain supremum in a space with nonzero seminorm.
 * `TauCeti.modulusOfSmoothness_le_iff`, `TauCeti.le_modulusOfSmoothness`: its upper and lower
   bounds.
 * `TauCeti.modulusOfSmoothness_neg`, `TauCeti.modulusOfSmoothness_zero`,
@@ -111,6 +114,24 @@ theorem modulusOfSmoothness_nonneg (t : ℝ) : 0 ≤ modulusOfSmoothness E t :=
 /-- The modulus of smoothness at `t` is at most `|t|`. -/
 theorem modulusOfSmoothness_le_abs (t : ℝ) : modulusOfSmoothness E t ≤ |t| :=
   csSup_le (insert_nonempty _ _) (smoothness_mem_upperBounds E t)
+
+/-- In a space with nonzero seminorm, the modulus of smoothness is the plain supremum of the
+average excesses of pairs of unit vectors, without the additional value zero. -/
+theorem modulusOfSmoothness_eq_sSup [NontrivialTopology E] (t : ℝ) :
+    modulusOfSmoothness E t =
+      sSup {r | ∃ x y : E, ‖x‖ = 1 ∧ ‖y‖ = 1 ∧ r = (‖x + t • y‖ + ‖x - t • y‖) / 2 - 1} := by
+  obtain ⟨x, hx⟩ := exists_norm_eq E zero_le_one
+  have hbdd := (smoothness_bddAbove E t).mono (subset_insert _ _)
+  have hmem : (‖x + t • x‖ + ‖x - t • x‖) / 2 - 1 ∈
+      {r | ∃ x y : E, ‖x‖ = 1 ∧ ‖y‖ = 1 ∧ r = (‖x + t • y‖ + ‖x - t • y‖) / 2 - 1} :=
+    ⟨x, x, hx, hx, rfl⟩
+  rw [modulusOfSmoothness_def, csSup_insert hbdd ⟨_, hmem⟩, sup_eq_right]
+  refine le_csSup_of_le hbdd hmem ?_
+  -- The average excess is nonnegative, since `x + t • x` and `x - t • x` sum to `2 • x`.
+  have h := norm_add_le (x + t • x) (x - t • x)
+  have h₂ : x + t • x + (x - t • x) = (2 : ℝ) • x := by module
+  rw [h₂, norm_smul, Real.norm_of_nonneg zero_le_two, hx] at h
+  linarith
 
 /-- The modulus of smoothness is even. -/
 @[simp]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+import TauCeti.Algebra.Module.Basic
 public import TauCeti.Analysis.Convex.Uniform.Modulus
 public import TauCeti.Analysis.Convex.Uniform.Smoothness
 public import TauCeti.Analysis.Normed.Module.Dual.Basic
@@ -132,22 +133,6 @@ theorem isTwoUniformlySmooth_one_of_innerProductSpace : IsTwoUniformlySmooth E 1
   linarith
 
 end InnerProductSpace
-
-section Midpoint
-
-variable {𝕜 V : Type*} [RCLike 𝕜] [AddCommGroup V] [Module 𝕜 V]
-
-/-- The midpoint of `x` and `y` plus their half difference is `x`. -/
-private theorem inv_two_smul_add_add_inv_two_smul_sub (x y : V) :
-    (2⁻¹ : 𝕜) • (x + y) + (2⁻¹ : 𝕜) • (x - y) = x := by
-  module
-
-/-- The midpoint of `x` and `y` minus their half difference is `y`. -/
-private theorem inv_two_smul_add_sub_inv_two_smul_sub (x y : V) :
-    (2⁻¹ : 𝕜) • (x + y) - (2⁻¹ : 𝕜) • (x - y) = y := by
-  module
-
-end Midpoint
 
 section Moduli
 
