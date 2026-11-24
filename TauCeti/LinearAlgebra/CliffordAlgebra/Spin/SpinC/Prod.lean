@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # `Spinᶜ` groups of an orthogonal sum
@@ -20,7 +20,7 @@ orthogonal inclusions `Q₁ → Q₁ ⊕ Q₂ ← Q₂` have commuting images, a
 `Spinᶜ` structures: its rotation part is the block sum `SO(Q₁) × SO(Q₂) → SO(Q₁ ⊕ Q₂)`, and the
 determinant character is multiplicative, `det [st, zw] = det [s, z] · det [t, w]`, so the
 determinant line of a sum is the tensor product of the determinant lines. For finite-dimensional
-nondegenerate forms on nonzero spaces its kernel is the antidiagonal circle
+nondegenerate forms its kernel is the antidiagonal circle
 `{([1, z], [1, z⁻¹])}`, unlike the kernel `{(1, 1), (-1, -1)}` of the Spin homomorphism.
 
 ## Main definitions
@@ -30,6 +30,8 @@ nondegenerate forms on nonzero spaces its kernel is the antidiagonal circle
 ## Main results
 
 * `CliffordAlgebra.spinCGroupProd_mk_mk`: its value on representatives.
+* `CliffordAlgebra.spinCGroupProd_comp_inl`, `CliffordAlgebra.spinCGroupProd_comp_inr`: its
+  restrictions to the two factors are the `Spinᶜ` maps of the orthogonal inclusions.
 * `CliffordAlgebra.det_spinCGroupProd`: the determinant character is multiplicative.
 * `CliffordAlgebra.toSpecialOrthogonal_spinCGroupProd`: its rotation is the block sum of the
   rotations.
@@ -37,7 +39,7 @@ nondegenerate forms on nonzero spaces its kernel is the antidiagonal circle
 
 ## References
 
-* TauCetiRoadmap, `FourManifolds/README.md`, §4.1 (sums of `Spinᶜ` structures).
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2 and Appendix D.
 -/
 
 public section
@@ -45,17 +47,6 @@ public section
 noncomputable section
 
 open QuadraticMap
-
-namespace QuadraticMap
-
-variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
-  [Module R M₂] {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
-
-/-- The orthogonal sum of a nonzero form with any form is nonzero. -/
-theorem prod_ne_zero_left (h : Q₁ ≠ 0) : Q₁.prod Q₂ ≠ 0 :=
-  fun h' ↦ h <| QuadraticMap.ext fun m ↦ by simpa using QuadraticMap.congr_fun h' (m, 0)
-
-end QuadraticMap
 
 namespace CliffordAlgebra
 
@@ -88,13 +79,31 @@ theorem spinCGroupProd_mk_mk (p : spinGroup Q₁ × Circle) (q : spinGroup Q₂ 
   simp only [spinCGroupProd, MonoidHom.noncommCoprod_apply,
     QuadraticMap.Isometry.spinCGroupMap_mk, ← map_mul, Prod.mk_mul_mk, spinGroupProd_apply]
 
+/-- Composing `spinCGroupProd` with `MonoidHom.inl` recovers the `Spinᶜ` map of the left
+orthogonal inclusion. -/
+@[simp]
+theorem spinCGroupProd_comp_inl :
+    (spinCGroupProd Q₁ Q₂ hQ₁ hQ₂).comp (MonoidHom.inl _ _) =
+      (QuadraticMap.Isometry.inl Q₁ Q₂).spinCGroupMap hQ₁ (prod_ne_zero_left hQ₁) :=
+  MonoidHom.noncommCoprod_comp_inl ..
+
+/-- Composing `spinCGroupProd` with `MonoidHom.inr` recovers the `Spinᶜ` map of the right
+orthogonal inclusion. -/
+@[simp]
+theorem spinCGroupProd_comp_inr :
+    (spinCGroupProd Q₁ Q₂ hQ₁ hQ₂).comp (MonoidHom.inr _ _) =
+      (QuadraticMap.Isometry.inr Q₁ Q₂).spinCGroupMap hQ₂ (prod_ne_zero_left hQ₁) :=
+  MonoidHom.noncommCoprod_comp_inr ..
+
 /-- On the Spin subgroups, `spinCGroupProd` is `spinGroupProd`. -/
+@[simp]
 theorem spinCGroupProd_ofSpin_ofSpin (s : spinGroup Q₁) (t : spinGroup Q₂) :
     spinCGroupProd Q₁ Q₂ hQ₁ hQ₂ (spinCGroup.ofSpin Q₁ hQ₁ s, spinCGroup.ofSpin Q₂ hQ₂ t) =
       spinCGroup.ofSpin _ _ (spinGroupProd Q₁ Q₂ (s, t)) := by
   simp [spinCGroup.ofSpin_apply]
 
 /-- On the central circles, `spinCGroupProd` is multiplication. -/
+@[simp]
 theorem spinCGroupProd_ofCircle_ofCircle (z w : Circle) :
     spinCGroupProd Q₁ Q₂ hQ₁ hQ₂ (spinCGroup.ofCircle Q₁ hQ₁ z, spinCGroup.ofCircle Q₂ hQ₂ w) =
       spinCGroup.ofCircle _ _ (z * w) := by
@@ -124,24 +133,10 @@ theorem toSpecialOrthogonal_spinCGroupProd [FiniteDimensional ℝ M₁] [FiniteD
 
 section Kernel
 
-variable [FiniteDimensional ℝ M₁] [Nontrivial M₁] [FiniteDimensional ℝ M₂] [Nontrivial M₂]
-
-/-- For a finite-dimensional nondegenerate form on a nonzero space, an element of `Spinᶜ(Q)` with
-trivial rotation lies in the central circle. -/
-theorem spinCGroup.exists_eq_ofCircle_of_toSpecialOrthogonal_eq_one {M : Type*}
-    [AddCommGroup M] [Module ℝ M] [FiniteDimensional ℝ M] [Nontrivial M]
-    {Q : QuadraticForm ℝ M} (hQ : Q.Nondegenerate) {x : spinCGroup Q hQ.ne_zero}
-    (hx : spinCGroup.toSpecialOrthogonal Q hQ.ne_zero x = 1) :
-    ∃ z : Circle, x = spinCGroup.ofCircle Q hQ.ne_zero z := by
-  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective Q hQ.ne_zero x
-  rw [spinCGroup.toSpecialOrthogonal_mk] at hx
-  rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQ s).mp hx with rfl | rfl
-  · exact ⟨z, (spinCGroup.ofCircle_apply Q hQ.ne_zero z).symm⟩
-  · refine ⟨-z, ?_⟩
-    rw [← spinCGroup.ofSpin_mul_ofCircle, spinCGroup.ofSpin_negOne, ← map_mul, neg_one_mul]
+variable [FiniteDimensional ℝ M₁] [FiniteDimensional ℝ M₂]
 
 /-- **The kernel of `spinCGroupProd` is the antidiagonal circle** `{([1, z], [1, z⁻¹])}`, for
-finite-dimensional nondegenerate forms on nonzero spaces. -/
+finite-dimensional nondegenerate forms. -/
 theorem mem_ker_spinCGroupProd_iff (hn₁ : Q₁.Nondegenerate) (hn₂ : Q₂.Nondegenerate)
     (x : spinCGroup Q₁ hQ₁ × spinCGroup Q₂ hQ₂) :
     x ∈ (spinCGroupProd Q₁ Q₂ hQ₁ hQ₂).ker ↔
@@ -152,8 +147,10 @@ theorem mem_ker_spinCGroupProd_iff (hn₁ : Q₁.Nondegenerate) (hn₂ : Q₂.No
     rw [toSpecialOrthogonal_spinCGroupProd, map_one,
       ← map_one (specialOrthogonalGroupProd Q₁ Q₂),
       (specialOrthogonalGroupProd_injective Q₁ Q₂).eq_iff, Prod.mk_eq_one] at hSO
-    obtain ⟨z, hz⟩ := spinCGroup.exists_eq_ofCircle_of_toSpecialOrthogonal_eq_one hn₁ hSO.1
-    obtain ⟨w, hw⟩ := spinCGroup.exists_eq_ofCircle_of_toSpecialOrthogonal_eq_one hn₂ hSO.2
+    obtain ⟨z, hz⟩ :=
+      (spinCGroup.mem_ker_toSpecialOrthogonal_iff Q₁ hQ₁ hn₁ _).mp (MonoidHom.mem_ker.mpr hSO.1)
+    obtain ⟨w, hw⟩ :=
+      (spinCGroup.mem_ker_toSpecialOrthogonal_iff Q₂ hQ₂ hn₂ _).mp (MonoidHom.mem_ker.mpr hSO.2)
     obtain ⟨x, y⟩ := x
     dsimp only at hz hw
     subst hz hw

@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinCProd
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC.Prod
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Prod
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 
 /-!
 # Continuity of the `Spinᶜ` homomorphism on orthogonal sums
 
 The homomorphism `CliffordAlgebra.spinCGroupProd Q₁ Q₂ hQ₁ hQ₂ : Spinᶜ(Q₁) × Spinᶜ(Q₂) →*
-Spinᶜ(Q₁ ⊕ Q₂)` is continuous for the quotient topologies whenever multiplication on
-`CliffordAlgebra (Q₁.prod Q₂)` is continuous: the product of the two quotient maps
-`Spin(Qᵢ) × U(1) → Spinᶜ(Qᵢ)` is a quotient map, since both are open, and on representatives the
-homomorphism is `((s, z), (t, w)) ↦ [spinGroupProd (s, t), z w]`.
+Spinᶜ(Q₁ ⊕ Q₂)` is continuous for the quotient topologies whenever multiplication is continuous
+on `CliffordAlgebra Q₁`, on `CliffordAlgebra Q₂` and on `CliffordAlgebra (Q₁.prod Q₂)`: the
+product of the two quotient maps `Spin(Qᵢ) × U(1) → Spinᶜ(Qᵢ)` is a quotient map, since both are
+open, and on representatives the homomorphism is `((s, z), (t, w)) ↦ [spinGroupProd (s, t), z w]`.
 
 ## Main declarations
 
@@ -26,7 +26,7 @@ homomorphism is `((s, z), (t, w)) ↦ [spinGroupProd (s, t), z w]`.
 
 ## References
 
-* TauCetiRoadmap, `FourManifolds/README.md`, §4.1 (sums of `Spinᶜ` structures).
+* H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §2 and Appendix D.
 -/
 
 public section
