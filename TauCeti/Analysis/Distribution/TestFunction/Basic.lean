@@ -27,6 +27,7 @@ infinite-dimensional space every test function is zero (Riesz).
 
 ## Main declarations
 
+* `TestFunction.monoCLM_eq_id`: extension by zero from `Ω` to itself is the identity.
 * `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
   open set is the extension by zero of a test function on that set.
 * `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a `C^n` test function on `Ω`
@@ -61,6 +62,11 @@ theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
     (φ : E →ᵇ F) = 0 ↔ φ = 0 := by
   simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
     ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
+
+/-- Extension by zero from `Ω` to itself is the identity. -/
+@[simp]
+theorem monoCLM_eq_id : (monoCLM ℝ : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = ContinuousLinearMap.id ℝ _ :=
+  ContinuousLinearMap.ext fun φ ↦ TestFunction.ext fun x ↦ by simp
 
 /-- A test function on `Ω` supported in an open set `Ω' ≤ Ω` is the extension by zero of a test
 function on `Ω'`. -/

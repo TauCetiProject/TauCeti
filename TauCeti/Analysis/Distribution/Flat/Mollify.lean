@@ -182,11 +182,6 @@ variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [NormedAddCommGroup V] [NormedSpace ℝ V]
   (μ : Measure E) [μ.IsAddHaarMeasure] (ρ : ContDiffBump (0 : E)) {k : ℕ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- On the whole space, the inclusion of test functions is the identity. -/
-private theorem comp_monoCLM_top (T : 𝓓((⊤ : Opens E), F) →L[ℝ] V) : T ∘L monoCLM ℝ = T :=
-  ContinuousLinearMap.ext fun φ ↦ congrArg T (TestFunction.ext fun x ↦ by simp)
-
 namespace ContinuousLinearMap
 
 /-- **Mollified currents converge on every test form**: as the bumps shrink,
@@ -236,7 +231,7 @@ theorem normalFlatMass_sub_comp_mollifyCLM_le
       ENNReal.ofReal ρ.rOut * (mass T + mass (T ∘L extDerivCLM)) := by
   by_cases hT : IsNormal T
   · rw [← normalFlatMass_neg, neg_sub, mollifyCLM_eq_translationMeanCLM]
-    simpa [comp_monoCLM_top] using normalFlatMass_comp_translationMeanCLM_sub_le
+    simpa using normalFlatMass_comp_translationMeanCLM_sub_le
       (U := ⊤) (hν := ρ.ae_mem_closedBall_normedMeasure μ) (hUΩ := subset_univ _) hT
   · have hr : ENNReal.ofReal ρ.rOut ≠ 0 := (ENNReal.ofReal_pos.2 ρ.rOut_pos).ne'
     rw [isNormal_succ_iff, not_and_or, not_ne_iff, not_ne_iff] at hT
@@ -249,7 +244,7 @@ theorem normalFlatMass_sub_comp_mollifyCLM_le_finZero
     (T - T ∘L mollifyCLM μ ρ).normalFlatMass ≤ ENNReal.ofReal ρ.rOut * mass T := by
   by_cases hT : IsNormal T
   · rw [← normalFlatMass_neg, neg_sub, mollifyCLM_eq_translationMeanCLM]
-    simpa [comp_monoCLM_top] using normalFlatMass_comp_translationMeanCLM_sub_le_finZero
+    simpa using normalFlatMass_comp_translationMeanCLM_sub_le_finZero
       (U := ⊤) (hν := ρ.ae_mem_closedBall_normedMeasure μ) (hUΩ := subset_univ _) hT
   · have hr : ENNReal.ofReal ρ.rOut ≠ 0 := (ENNReal.ofReal_pos.2 ρ.rOut_pos).ne'
     simp [(not_ne_iff.1 (isNormal_finZero_iff.not.1 hT)), hr]

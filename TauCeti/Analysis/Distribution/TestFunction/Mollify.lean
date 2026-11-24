@@ -90,15 +90,13 @@ theorem mollifyCLM_eq_mollify (φ : 𝓓((⊤ : Opens E), F)) :
 /-- A bound `C` on the values of `φ` bounds its mollification. -/
 theorem norm_mollifyCLM_apply_le (φ : 𝓓((⊤ : Opens E), F)) {C : ℝ} (hC : ∀ y, ‖φ y‖ ≤ C)
     (x : E) : ‖mollifyCLM μ ρ φ x‖ ≤ C := by
-  rw [mollifyCLM_apply]
-  exact ρ.norm_normed_convolution_le (Eventually.of_forall hC) x
+  rw [mollifyCLM_eq_translationMeanCLM]
+  exact (norm_translationMeanCLM_apply_le φ hC x).trans_eq (by simp)
 
 /-- Mollification enlarges supports by at most `r = ρ.rOut`. -/
 theorem tsupport_mollifyCLM_subset (φ : 𝓓((⊤ : Opens E), F)) :
-    tsupport (mollifyCLM μ ρ φ) ⊆ tsupport φ + closedBall (0 : E) ρ.rOut := by
-  rw [show ⇑(mollifyCLM μ ρ φ) = ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] ⇑φ from
-    funext (mollifyCLM_apply μ ρ φ), add_comm]
-  exact ρ.tsupport_normed_convolution_subset
+    tsupport (mollifyCLM μ ρ φ) ⊆ tsupport φ + closedBall (0 : E) ρ.rOut :=
+  tsupport_translationMeanCLM_subset φ
 
 /-- As the bumps shrink, the mollifications of a test function converge to it in the LF
 topology. -/

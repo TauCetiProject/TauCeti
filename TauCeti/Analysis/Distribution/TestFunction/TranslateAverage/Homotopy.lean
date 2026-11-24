@@ -55,10 +55,13 @@ by their regularizations.
 ## Main declarations
 
 * `TestFunction.translationMeanCLM`: the mean of translates, with values
-  `TestFunction.translationMeanCLM_apply`.
+  `TestFunction.translationMeanCLM_apply`, support `TestFunction.tsupport_translationMeanCLM_subset`
+  and sup bound `TestFunction.norm_translationMeanCLM_apply_le`.
 * `TestFunction.extDerivCLM_translationMeanCLM`: the mean commutes with the exterior derivative.
 * `TestFunction.translationHomotopyCLM`: the averaged homotopy operator, with values
-  `TestFunction.translationHomotopyCLM_apply`.
+  `TestFunction.translationHomotopyCLM_apply`, support
+  `TestFunction.tsupport_translationHomotopyCLM_subset` and sup bound
+  `TestFunction.norm_translationHomotopyCLM_apply_le`.
 * `TestFunction.translationHomotopyCLM_extDerivCLM_add_extDerivCLM_translationHomotopyCLM`,
   `TestFunction.translationHomotopyCLM_extDerivCLM_finZero`: the homotopy identity.
 * `ContinuousLinearMap.comp_translationMeanCLM_comp_extDerivCLM`: `∂ (T ∘ M) = (∂ T) ∘ M`.
@@ -115,6 +118,18 @@ theorem coe_translationMeanCLM (φ : 𝓓(U, F)) :
     ⇑(translationMeanCLM ν hν hUΩ φ) =
       translationAverage ν (fun _ ↦ ContinuousLinearMap.id ℝ F) id φ :=
   coe_translationAverageCLM ..
+
+/-- The mean of the translates of a test function is supported in `tsupport φ + closedBall 0 r`. -/
+theorem tsupport_translationMeanCLM_subset (φ : 𝓓(U, F)) :
+    tsupport (translationMeanCLM ν hν hUΩ φ) ⊆ tsupport φ + closedBall (0 : E) r :=
+  tsupport_translationAverageCLM_subset ..
+
+/-- A bound `C` on the values of `φ` bounds the mean of its translates by `C ν(E)`. -/
+theorem norm_translationMeanCLM_apply_le (φ : 𝓓(U, F)) {C : ℝ} (hC : ∀ y, ‖φ y‖ ≤ C) (x : E) :
+    ‖translationMeanCLM ν hν hUΩ φ x‖ ≤ C * ν.real univ := by
+  rw [coe_translationMeanCLM]
+  simpa using norm_translationAverage_le (s := id)
+    (ae_of_all _ fun _ ↦ ContinuousLinearMap.norm_id_le) hC x
 
 variable [CompleteSpace F]
 
@@ -186,6 +201,28 @@ theorem translationHomotopyCLM_apply (ω : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] 
     translationHomotopyCLM ν hν hUΩ ω x =
       ∫ p, (ω (x + p.2 • p.1)).curryLeft p.1 ∂(ν.prod (volume.restrict (Icc (0 : ℝ) 1))) := by
   simp [translationHomotopyCLM]
+
+/-- The averaged homotopy of a test form is supported in `tsupport ω + closedBall 0 r`. -/
+theorem tsupport_translationHomotopyCLM_subset (ω : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    tsupport (translationHomotopyCLM ν hν hUΩ ω) ⊆ tsupport ω + closedBall (0 : E) r :=
+  tsupport_translationAverageCLM_subset ..
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
+  [IsFiniteMeasure ν] in
+/-- The product of `ν` with the Lebesgue measure on `[0, 1]` has the total mass of `ν`. -/
+private theorem measureReal_prod_Icc_univ :
+    (ν.prod (volume.restrict (Icc (0 : ℝ) 1))).real univ = ν.real univ := by
+  simp [Measure.real, ← univ_prod_univ, Measure.prod_prod]
+
+/-- **The sup bound for the averaged homotopy**: a bound `C` on the values of a test form `ω`
+bounds `K ω` by `r C ν(E)`. -/
+theorem norm_translationHomotopyCLM_apply_le {ω : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F)} {C : ℝ}
+    (hω : ∀ y, ‖ω y‖ ≤ C) (x : E) :
+    ‖translationHomotopyCLM ν hν hUΩ ω x‖ ≤ r * C * ν.real univ := by
+  rw [translationHomotopyCLM_apply]
+  simpa [translationAverage_apply, measureReal_prod_Icc_univ] using
+    norm_translationAverage_le (s := fun p : E × ℝ ↦ p.2 • p.1)
+      (ae_norm_curryLeftFlipL_le (F := F) (k := k) hν) hω x
 
 /-- **Averaged fundamental theorem of calculus**: integrating the derivatives `Dφ (x + t v) v`
 over `t ∈ [0, 1]` and against `ν` gives `∫ φ (x + v) dν(v) - ν(E) φ x`. -/
@@ -361,16 +398,7 @@ theorem mass_comp_translationMeanCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, F)
     mass (T ∘ translationMeanCLM (F := F) ν hν hUΩ) ≤ ν univ * mass T := by
   refine (mass_comp_le_of_norm_apply_le T measureReal_nonneg fun φ hφ x ↦ ?_).trans_eq
     (by rw [ofReal_measureReal (measure_ne_top ν univ)])
-  rw [coe_translationMeanCLM]
-  simpa using norm_translationAverage_le (s := id)
-    (ae_of_all _ fun _ ↦ ContinuousLinearMap.norm_id_le) hφ x
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
-  [IsFiniteMeasure ν] in
-/-- The product of `ν` with the Lebesgue measure on `[0, 1]` has the total mass of `ν`. -/
-private theorem measureReal_prod_Icc_univ :
-    (ν.prod (volume.restrict (Icc (0 : ℝ) 1))).real univ = ν.real univ := by
-  simp [Measure.real, ← univ_prod_univ, Measure.prod_prod]
+  simpa using norm_translationMeanCLM_apply_le (hν := hν) (hUΩ := hUΩ) φ hφ x
 
 /-- **The mass of the averaged homotopy of a current**: `M(T ∘ K) ≤ r ν(E) M(T)`, for the averaged
 homotopy operator `K` of a measure `ν` concentrated on `closedBall 0 r`. -/
@@ -381,10 +409,7 @@ theorem mass_comp_translationHomotopyCLM_le {𝓕 : Type*}
       ENNReal.ofReal r * ν univ * mass T := by
   have hK (ω : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F)) (hω : ∀ y, ‖ω y‖ ≤ 1) (x : E) :
       ‖translationHomotopyCLM (F := F) (k := k) ν hν hUΩ ω x‖ ≤ r * ν.real univ := by
-    rw [translationHomotopyCLM_apply]
-    simpa [translationAverage_apply, measureReal_prod_Icc_univ] using
-      norm_translationAverage_le (s := fun p : E × ℝ ↦ p.2 • p.1)
-        (ae_norm_curryLeftFlipL_le (F := F) (k := k) hν) hω x
+    simpa using norm_translationHomotopyCLM_apply_le (hν := hν) (hUΩ := hUΩ) hω x
   refine (mass_comp_le_of_norm_apply_le T ((norm_nonneg _).trans (hK 0 (by simp) 0)) hK).trans_eq
     ?_
   rw [ENNReal.ofReal_mul' measureReal_nonneg, ofReal_measureReal (measure_ne_top ν univ)]
