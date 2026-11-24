@@ -14,6 +14,7 @@ public import TauCeti.RepresentationTheory.Induction.ClassFunction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Trace
 
 import Mathlib.Data.Fintype.BigOperators
+import Mathlib.LinearAlgebra.PiTensorProduct.Finite
 import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Finset
@@ -22,7 +23,6 @@ import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.GroupTheory.Perm.WreathProduct.Monomial
 import TauCeti.GroupTheory.QuotientGroup.Index
-import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Basic
 import TauCeti.RepresentationTheory.Induction.Character
 import TauCeti.RepresentationTheory.LinearCharacter.Basic
 import TauCeti.RepresentationTheory.Tensor.Induction.PrimeIndex
