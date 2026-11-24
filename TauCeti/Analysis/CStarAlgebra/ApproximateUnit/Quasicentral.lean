@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.CStarAlgebra.Ideal
+import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.Normed.Module.Convex
@@ -25,9 +26,9 @@ Quasicentral approximate units allow elements of `A` to commute asymptotically w
 `e` and complementary cutoffs `1 - e` in short exact sequences `0 → I → A → A ⧸ I → 0`. They
 underpin quotient-norm formulas `‖π a‖ = lim ‖a - a * e‖`, asymptotic multiplicativity of linear
 splittings, Voiculescu–Weyl–von Neumann and Kasparov absorption arguments, and boundary maps in
-operator K-theory. Naive functional-calculus roots of a single positive element in `I` need not be
-quasicentral (for instance, on `K(ℓ²)` a rank-one perturbation can obstruct asymptotic commutation
-with a shift), so convex averaging of approximate units is essential.
+operator K-theory. Since functional-calculus cutoffs from a single positive element in `I` need
+not commute asymptotically with all elements of `A`, this file constructs quasicentral approximate
+units by convex averaging.
 
 General transport lemmas for asymptotic centrality (preservation under real convexification and
 under continuous surjective nonunital ring homomorphisms) live in
@@ -55,7 +56,7 @@ under continuous surjective nonunital ring homomorphisms) live in
 public section
 
 open Filter Topology
-open scoped CStarAlgebra
+open scoped CStarAlgebra ComplexOrder
 
 namespace NonUnitalStarSubalgebra
 
@@ -162,10 +163,8 @@ right-approximating the adjoint commutators of `w_new` with `f`. -/
 private theorem exists_quasicentral_step (S : NonUnitalStarSubalgebra ℂ A) [IsClosed (S : Set A)]
     (hmul : ∀ a : A, ∀ x ∈ S, a * x ∈ S)
     {u₀ : S} (hu₀ : 0 ≤ u₀) (hu₀_norm : ‖u₀‖ < 1)
-    {m l n : ℕ} (f : Fin m → A) (g : Fin l → S) (p : Fin n → S)
-    {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) :
+    {m n : ℕ} (f : Fin m → A) (p : Fin n → S) {δ : ℝ} (hδ : 0 < δ) :
     ∃ w_new p_new : S, (u₀ ≤ w_new ∧ ‖w_new‖ < 1) ∧
-      (∀ i, ‖w_new * g i - g i‖ < ε) ∧
       (∀ j : Fin n, ‖(p j : A) * (w_new : A) - (p j : A)‖ ≤ δ ∧
         ∀ i, ‖((p j : A) * f i) * (w_new : A) - (p j : A) * f i‖ ≤ δ) ∧
       ∀ i, ‖star ((w_new : A) * f i - f i * (w_new : A)) * (p_new : A) -
@@ -177,10 +176,6 @@ private theorem exists_quasicentral_step (S : NonUnitalStarSubalgebra ℂ A) [Is
   have hu₀_mem : ∀ᶠ y : S in l₀, u₀ ≤ y ∧ ‖y‖ < 1 :=
     eventually_of_mem (((CStarAlgebra.isBasis_nonneg_sections S).hasBasis.inf_principal
       (Metric.ball 0 1)).mem_of_mem ⟨hu₀, hu₀_norm⟩) fun y hy => ⟨hy.1, by simpa using hy.2⟩
-  have hG_mem : ∀ᶠ y : S in l₀, ∀ i, ‖y * g i - g i‖ < ε :=
-    eventually_all.mpr fun i =>
-      (tendsto_iff_norm_sub_tendsto_zero.mp (hl₀.tendsto_mul_right (g i))).eventually
-        (gt_mem_nhds hε)
   have hp_mem : ∀ᶠ y : S in l₀, ∀ j : Fin n, ‖(p j : A) * (y : A) - (p j : A)‖ ≤ δ ∧
       ∀ i, ‖((p j : A) * f i) * (y : A) - (p j : A) * f i‖ ≤ δ :=
     eventually_all.mpr fun j =>
@@ -190,7 +185,7 @@ private theorem exists_quasicentral_step (S : NonUnitalStarSubalgebra ℂ A) [Is
           ⟨(p j : A) * f i, StarMemClass.mul_mem_right_of_mul_mem_left hmul (f i) (p j).property⟩
         exact (tendsto_iff_norm_sub_tendsto_zero.mp (hl₀.tendsto_mul_left pa)).eventually
           (ge_mem_nhds hδ)
-  obtain ⟨w_new, hw_u₀, hw_G, hw_p⟩ := (hu₀_mem.and (hG_mem.and hp_mem)).exists
+  obtain ⟨w_new, hw_u₀, hw_p⟩ := (hu₀_mem.and hp_mem).exists
   have h_pnew : ∀ᶠ q : S in CStarAlgebra.approximateUnit S, ∀ i,
       ‖star ((w_new : A) * f i - f i * (w_new : A)) * (q : A) -
         star ((w_new : A) * f i - f i * (w_new : A))‖ ≤ δ :=
@@ -202,32 +197,30 @@ private theorem exists_quasicentral_step (S : NonUnitalStarSubalgebra ℂ A) [Is
         ((CStarAlgebra.increasingApproximateUnit S).tendsto_mul_left sd)).eventually
         (ge_mem_nhds hδ)
   obtain ⟨p_new, hp_new⟩ := h_pnew.exists
-  exact ⟨w_new, p_new, hw_u₀, hw_G, hw_p, hp_new⟩
+  exact ⟨w_new, p_new, hw_u₀, hw_p, hp_new⟩
 
-/-- Inductive selection of an `n`-element chain `w, p : Fin n → S` of strict contractions in `S`
-above `u₀` whose commutators with `f` satisfy Arveson's approximate orthogonality relations. -/
+/-- Inductive selection of an `n`-element chain `w, p : Fin n → S`, where `w` consists of strict
+contractions in `S` above `u₀` and `p` supplies auxiliary approximation witnesses whose commutators
+with `f` satisfy Arveson's approximate orthogonality relations. -/
 private theorem exists_quasicentral_chain (S : NonUnitalStarSubalgebra ℂ A) [IsClosed (S : Set A)]
     (hmul : ∀ a : A, ∀ x ∈ S, a * x ∈ S)
     {u₀ : S} (hu₀ : 0 ≤ u₀) (hu₀_norm : ‖u₀‖ < 1)
-    {m l : ℕ} (f : Fin m → A) (g : Fin l → S) {δ ε : ℝ} (hδ : 0 < δ) (hε : 0 < ε) (n : ℕ) :
+    {m : ℕ} (f : Fin m → A) {δ : ℝ} (hδ : 0 < δ) (n : ℕ) :
     ∃ w p : Fin n → S,
       (∀ k, u₀ ≤ w k ∧ ‖w k‖ < 1) ∧
-      (∀ k i, ‖w k * g i - g i‖ < ε) ∧
       (∀ k i, ‖star ((w k : A) * f i - f i * (w k : A)) * (p k : A) -
         star ((w k : A) * f i - f i * (w k : A))‖ ≤ δ) ∧
       (∀ j k, j < k → ‖(p j : A) * (w k : A) - (p j : A)‖ ≤ δ ∧
         ∀ i, ‖((p j : A) * f i) * (w k : A) - (p j : A) * f i‖ ≤ δ) := by
   induction n with
   | zero =>
-    exact ⟨Fin.elim0, Fin.elim0, fun k => Fin.elim0 k, fun k => Fin.elim0 k,
-      fun k => Fin.elim0 k, fun j => Fin.elim0 j⟩
+    exact ⟨Fin.elim0, Fin.elim0, fun k => Fin.elim0 k, fun k => Fin.elim0 k, fun j => Fin.elim0 j⟩
   | succ n ih =>
-    obtain ⟨w, p, hw_u₀, hw_G, hp_F, hcross⟩ := ih
-    obtain ⟨w_new, p_new, hw_new_u₀, hw_new_G, hw_new_p, hp_new⟩ :=
-      exists_quasicentral_step S hmul hu₀ hu₀_norm f g p hδ hε
+    obtain ⟨w, p, hw_u₀, hp_F, hcross⟩ := ih
+    obtain ⟨w_new, p_new, hw_new_u₀, hw_new_p, hp_new⟩ :=
+      exists_quasicentral_step S hmul hu₀ hu₀_norm f p hδ
     refine ⟨Fin.snoc w w_new, Fin.snoc p p_new,
       Fin.lastCases (by simpa using hw_new_u₀) (fun k => by simpa using hw_u₀ k),
-      Fin.lastCases (by simpa using hw_new_G) (fun k => by simpa using hw_G k),
       Fin.lastCases (by simpa using hp_new) (fun k => by simpa using hp_F k), ?_⟩
     intro j k hjk
     refine k.lastCases (fun hj => ?_) (fun k₀ hj => ?_) hjk
@@ -236,23 +229,23 @@ private theorem exists_quasicentral_chain (S : NonUnitalStarSubalgebra ℂ A) [I
     · refine j.lastCases (fun hlt => ((Fin.le_last _).not_gt hlt).elim) (fun j₀ hj₀ => ?_) hj
       simpa using hcross j₀ k₀ (Fin.castSucc_lt_castSucc_iff.mp hj₀)
 
-/-- Quantitative finite-family Arveson lemma: for any `u₀ ∈ S` (`0 ≤ u₀`, `‖u₀‖ < 1`), finite
-families `f : Fin m → A` and `g : Fin l → S`, and `ε > 0`, some `e ∈ S` with `u₀ ≤ e` and `‖e‖ < 1`
-simultaneously left-approximates `g` and commutes with `f` up to `ε`. -/
+/-- Quantitative finite-family commutator Arveson lemma: for any `u₀ ∈ S` (`0 ≤ u₀`, `‖u₀‖ < 1`),
+finite family `f : Fin m → A`, and `ε > 0`, some `e ∈ S` with `u₀ ≤ e` and `‖e‖ < 1` commutes with
+`f` up to `ε`. -/
 private theorem exists_quasicentral_fin_approx (S : NonUnitalStarSubalgebra ℂ A)
     [IsClosed (S : Set A)] (hmul : ∀ a : A, ∀ x ∈ S, a * x ∈ S)
     {u₀ : S} (hu₀ : 0 ≤ u₀) (hu₀_norm : ‖u₀‖ < 1)
-    {m l : ℕ} (f : Fin m → A) (g : Fin l → S) {ε : ℝ} (hε : 0 < ε) :
+    {m : ℕ} (f : Fin m → A) {ε : ℝ} (hε : 0 < ε) :
     ∃ e : S, u₀ ≤ e ∧ ‖e‖ < 1 ∧
-      (∀ i, ‖e * g i - g i‖ < ε) ∧
-      (∀ i, ‖(e : A) * f i - f i * (e : A)‖ < ε) := by
+      ∀ i, ‖(e : A) * f i - f i * (e : A)‖ < ε := by
   let M : ℝ := 1 + ∑ i : Fin m, ‖f i‖
   have hM : 1 ≤ M := le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ => norm_nonneg _)
   obtain ⟨N, hN⟩ := exists_nat_gt (8 * M ^ 2 / ε ^ 2)
   have hN_pos : 0 < (N : ℝ) := lt_trans (by positivity) hN
   let δ : ℝ := ε ^ 2 / (8 * M * (M + 2))
-  obtain ⟨w, p, hw_u₀, hw_G, hp_F, hcross⟩ :=
-    exists_quasicentral_chain S hmul hu₀ hu₀_norm f g (show 0 < δ by positivity) hε N
+  have hδ : 0 < δ := by positivity
+  obtain ⟨w, p, hw_u₀, hp_F, hcross⟩ :=
+    exists_quasicentral_chain S hmul hu₀ hu₀_norm f hδ N
   let e : S := (N : ℝ)⁻¹ • ∑ k : Fin N, w k
   have he_sum : e = ∑ k : Fin N, (N : ℝ)⁻¹ • w k := Finset.smul_sum
   have hsum_w : ∑ _k : Fin N, (N : ℝ)⁻¹ = 1 := by simp [mul_inv_cancel₀ hN_pos.ne']
@@ -265,27 +258,86 @@ private theorem exists_quasicentral_fin_approx (S : NonUnitalStarSubalgebra ℂ 
       exact (convex_ball (0 : S) 1).sum_mem (fun _ _ => by positivity) hsum_w fun k _ => by
         simpa [Metric.mem_ball, dist_zero_right] using (hw_u₀ k).2
     simpa [Metric.mem_ball, dist_zero_right] using hmem
-  refine ⟨e, he_u₀, he_norm, fun i => ?_, fun i => ?_⟩
-  · have hmem : e * g i - g i ∈ Metric.ball (0 : S) ε := by
-      have hrewrite : e * g i - g i = ∑ k : Fin N, (N : ℝ)⁻¹ • (w k * g i - g i) := by
-        simp only [smul_sub, ← smul_mul_assoc, Finset.sum_sub_distrib, ← Finset.sum_mul,
-          ← Finset.sum_smul, ← he_sum, hsum_w, one_smul]
-      rw [hrewrite]
-      exact (convex_ball (0 : S) ε).sum_mem (fun _ _ => by positivity) hsum_w fun k _ => by
-        simpa [Metric.mem_ball, dist_zero_right] using hw_G k i
-    simpa [Metric.mem_ball, dist_zero_right] using hmem
-  · have hfiM : ‖f i‖ ≤ M :=
-      (Finset.single_le_sum (f := fun j => ‖f j‖) (fun _ _ => norm_nonneg _)
-        (Finset.mem_univ i)).trans (by dsimp only [M]; linarith)
-    have he_comm : (e : A) * f i - f i * (e : A) =
-        (N : ℝ)⁻¹ • ∑ k : Fin N, ((w k : A) * f i - f i * (w k : A)) := by
-      dsimp only [e]
-      push_cast
-      simp [smul_mul_assoc, mul_smul_comm, Finset.sum_mul, Finset.mul_sum,
-        Finset.sum_sub_distrib, smul_sub]
-    rw [he_comm]
-    exact norm_avg_commutator_lt (fun k => (hw_u₀ k).2.le) hfiM hM hε hN
-      (fun k => hp_F k i) (fun j k hjk => ⟨(hcross j k hjk).1, (hcross j k hjk).2 i⟩)
+  refine ⟨e, he_u₀, he_norm, fun i => ?_⟩
+  have hfiM : ‖f i‖ ≤ M :=
+    (Finset.single_le_sum (f := fun j => ‖f j‖) (fun _ _ => norm_nonneg _)
+      (Finset.mem_univ i)).trans (by dsimp only [M]; linarith)
+  have he_comm : (e : A) * f i - f i * (e : A) =
+      (N : ℝ)⁻¹ • ∑ k : Fin N, ((w k : A) * f i - f i * (w k : A)) := by
+    dsimp only [e]
+    push_cast
+    simp [smul_mul_assoc, mul_smul_comm, Finset.sum_mul, Finset.mul_sum,
+      Finset.sum_sub_distrib, smul_sub]
+  rw [he_comm]
+  exact norm_avg_commutator_lt (fun k => (hw_u₀ k).2.le) hfiM hM hε hN
+    (fun k => hp_F k i) (fun j k hjk => ⟨(hcross j k hjk).1, (hcross j k hjk).2 i⟩)
+
+/-- Quantitative finite-family **Arveson lemma** for closed star ideals: given a strict positive
+contraction `u₀ ∈ S`, finite families `f : ι → A` and `g : κ → S`, and `ε > 0`, some strict
+contraction `e ∈ S` with `u₀ ≤ e` simultaneously left-approximates `g` and commutes with `f` within
+`ε`. -/
+theorem exists_quasicentral_approx (S : NonUnitalStarSubalgebra ℂ A) [IsClosed (S : Set A)]
+    (hmul : ∀ a : A, ∀ x ∈ S, a * x ∈ S)
+    {u₀ : S} (hu₀ : 0 ≤ u₀) (hu₀_norm : ‖u₀‖ < 1)
+    {ι κ : Type*} [Finite ι] [Finite κ] (f : ι → A) (g : κ → S) {ε : ℝ} (hε : 0 < ε) :
+    ∃ e : S, u₀ ≤ e ∧ ‖e‖ < 1 ∧
+      (∀ j, ‖e * g j - g j‖ < ε) ∧
+      (∀ i, ‖(e : A) * f i - f i * (e : A)‖ < ε) := by
+  let l₀ : Filter S := (CStarAlgebra.isBasis_nonneg_sections S).filter ⊓ 𝓟 (Metric.ball 0 1)
+  have hl₀ : l₀.IsIncreasingApproximateUnit :=
+    TauCeti.CStarAlgebra.isIncreasingApproximateUnit_ball S
+  have := hl₀.neBot
+  have hu₀_mem : ∀ᶠ y : S in l₀, u₀ ≤ y ∧ ‖y‖ < 1 :=
+    eventually_of_mem (((CStarAlgebra.isBasis_nonneg_sections S).hasBasis.inf_principal
+      (Metric.ball 0 1)).mem_of_mem ⟨hu₀, hu₀_norm⟩) fun y hy => ⟨hy.1, by simpa using hy.2⟩
+  have hg_mem : ∀ᶠ y : S in l₀, ∀ j : κ, ‖y * g j - g j‖ < ε ^ 2 / (‖g j‖ + 1) :=
+    eventually_all.mpr fun j =>
+      (tendsto_iff_norm_sub_tendsto_zero.mp (hl₀.tendsto_mul_right (g j))).eventually
+        (gt_mem_nhds (by positivity))
+  obtain ⟨u₁, ⟨hu₀_u₁, hu₁_norm⟩, hu₁_g⟩ := (hu₀_mem.and hg_mem).exists
+  have hu₁_0 : 0 ≤ u₁ := hu₀.trans hu₀_u₁
+  let equiv := Finite.equivFin ι
+  obtain ⟨e, hu₁_e, he_norm, he_f⟩ :=
+    exists_quasicentral_fin_approx S hmul hu₁_0 hu₁_norm (f ∘ equiv.symm) hε
+  refine ⟨e, hu₀_u₁.trans hu₁_e, he_norm, fun j => ?_, fun i => ?_⟩
+  · have hx_icc : 1 - (e : S⁺¹) ∈ Set.Icc (0 : S⁺¹) 1 :=
+      Set.sub_mem_Icc_zero_iff_right.mpr
+        (CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨hu₁_0.trans hu₁_e, he_norm.le⟩)
+    obtain ⟨hx0, hx1⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp hx_icc
+    let x : S⁺¹ := 1 - (e : S⁺¹)
+    let y : S⁺¹ := 1 - (u₁ : S⁺¹)
+    have hxstar : star x = x := hx0.isSelfAdjoint.star_eq
+    have hxy : x ≤ y := sub_le_sub_left ((Unitization.inr_le_inr_iff ℂ).mpr hu₁_e) 1
+    have hxx_y : x * x ≤ y := (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one hx0 hx1).trans hxy
+    have hconj : star (x * (g j : S⁺¹)) * (x * (g j : S⁺¹)) ≤
+        star (g j : S⁺¹) * y * (g j : S⁺¹) := by
+      simpa only [star_mul, hxstar, mul_assoc] using
+        star_left_conjugate_le_conjugate hxx_y (g j : S⁺¹)
+    have hnorm_sq : ‖e * g j - g j‖ ^ 2 ≤ ‖g j‖ * ‖u₁ * g j - g j‖ := by
+      have hx_mul : x * (g j : S⁺¹) = ((g j - e * g j : S) : S⁺¹) := by
+        simp [x, sub_mul, Unitization.inr_sub, Unitization.inr_mul]
+      have hy_mul : y * (g j : S⁺¹) = ((g j - u₁ * g j : S) : S⁺¹) := by
+        simp [y, sub_mul, Unitization.inr_sub, Unitization.inr_mul]
+      calc ‖e * g j - g j‖ ^ 2
+          = ‖x * (g j : S⁺¹)‖ ^ 2 := by rw [hx_mul, Unitization.norm_inr, norm_sub_rev]
+        _ = ‖star (x * (g j : S⁺¹)) * (x * (g j : S⁺¹))‖ := by
+            rw [sq, ← CStarRing.norm_star_mul_self]
+        _ ≤ ‖star (g j : S⁺¹) * y * (g j : S⁺¹)‖ :=
+            CStarAlgebra.norm_le_norm_of_le_of_nonneg hconj (star_mul_self_nonneg _)
+        _ ≤ ‖star (g j : S⁺¹)‖ * ‖y * (g j : S⁺¹)‖ := by
+            rw [mul_assoc]; exact norm_mul_le _ _
+        _ = ‖g j‖ * ‖u₁ * g j - g j‖ := by
+            rw [norm_star, Unitization.norm_inr, hy_mul, Unitization.norm_inr, norm_sub_rev]
+    refine lt_of_pow_lt_pow_left₀ 2 hε.le ?_
+    have hgj_pos : 0 < ‖g j‖ + 1 := by positivity
+    calc ‖e * g j - g j‖ ^ 2
+        ≤ ‖g j‖ * ‖u₁ * g j - g j‖ := hnorm_sq
+      _ ≤ ‖g j‖ * (ε ^ 2 / (‖g j‖ + 1)) :=
+          mul_le_mul_of_nonneg_left (hu₁_g j).le (norm_nonneg _)
+      _ < (‖g j‖ + 1) * (ε ^ 2 / (‖g j‖ + 1)) :=
+          mul_lt_mul_of_pos_right (lt_add_one _) (by positivity)
+      _ = ε ^ 2 := mul_div_cancel₀ _ hgj_pos.ne'
+  · simpa [equiv] using he_f (equiv i)
 
 /-- **Arveson's theorem** for closed star ideals: every closed `NonUnitalStarSubalgebra ℂ A` closed
 under left multiplication by `A` admits an increasing approximate unit `l` of strict contractions
@@ -316,7 +368,7 @@ theorem exists_quasicentral_isIncreasingApproximateUnit
   have : l.NeBot := hbasis.hasBasis.neBot_iff.mpr fun {idx} _ => by
     obtain ⟨⟨u₀, hu₀_0, hu₀_1⟩, ⟨m, f⟩, ⟨ε, hε⟩⟩ := idx
     obtain ⟨e, he_u₀, he_norm, -, he_F⟩ :=
-      exists_quasicentral_fin_approx S hmul hu₀_0 hu₀_1 f Fin.elim0 hε
+      exists_quasicentral_approx S hmul hu₀_0 hu₀_1 f Fin.elim0 hε
     exact ⟨e, he_u₀, he_norm, he_F⟩
   have hle : l ≤ CStarAlgebra.approximateUnit S := by
     rw [hbasis.hasBasis.le_basis_iff (CStarAlgebra.hasBasis_approximateUnit S)]
@@ -336,29 +388,12 @@ theorem exists_quasicentral_isIncreasingApproximateUnit
     refine ⟨⟨⟨0, le_rfl, by simp⟩, ⟨1, fun _ => a⟩, ⟨ε, hε⟩⟩, trivial, fun _ ⟨_, _, heF⟩ => ?_⟩
     simpa using heF 0
 
-/-- Quantitative finite-family **Arveson lemma** for closed star ideals: given a strict positive
-contraction `u₀ ∈ S`, finite families `f : ι → A` and `g : κ → S`, and `ε > 0`, some strict
-contraction `e ∈ S` with `u₀ ≤ e` simultaneously left-approximates `g` and commutes with `f` within
-`ε`. -/
-theorem exists_quasicentral_approx (S : NonUnitalStarSubalgebra ℂ A) [IsClosed (S : Set A)]
-    (hmul : ∀ a : A, ∀ x ∈ S, a * x ∈ S)
-    {u₀ : S} (hu₀ : 0 ≤ u₀) (hu₀_norm : ‖u₀‖ < 1)
-    {ι κ : Type*} [Finite ι] [Finite κ] (f : ι → A) (g : κ → S) {ε : ℝ} (hε : 0 < ε) :
-    ∃ e : S, u₀ ≤ e ∧ ‖e‖ < 1 ∧
-      (∀ j, ‖e * g j - g j‖ < ε) ∧
-      (∀ i, ‖(e : A) * f i - f i * (e : A)‖ < ε) := by
-  obtain ⟨l, hl, hstrict, hcomm⟩ := exists_quasicentral_isIncreasingApproximateUnit S hmul
-  have := hl.neBot
-  have hg : ∀ᶠ e in l, ∀ j, ‖e * g j - g j‖ < ε :=
-    eventually_all.mpr fun j =>
-      (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right (g j))).eventually
-        (gt_mem_nhds hε)
-  have hf : ∀ᶠ e : S in l, ∀ i, ‖(e : A) * f i - f i * (e : A)‖ < ε :=
-    eventually_all.mpr fun i =>
-      ((tendsto_iff_norm_sub_tendsto_zero.mp (hcomm (f i))).eventually (gt_mem_nhds hε)).mono
-        fun _ h => by simpa using h
-  obtain ⟨e, ⟨he_u₀, he_norm⟩, he_g, he_f⟩ := ((hstrict u₀ hu₀ hu₀_norm).and (hg.and hf)).exists
-  exact ⟨e, he_u₀, he_norm, he_g, he_f⟩
+/-- Convergence from an eventual `1 / (n + 1)` norm bound. -/
+private theorem tendsto_of_eventually_norm_sub_le_inv {E : Type*} [SeminormedAddCommGroup E]
+    {v : ℕ → E} {y : E} (hv : ∀ᶠ n : ℕ in atTop, ‖v n - y‖ ≤ 1 / ((n : ℝ) + 1)) :
+    Tendsto v atTop (𝓝 y) :=
+  tendsto_iff_norm_sub_tendsto_zero.mpr <|
+    squeeze_zero' (.of_forall fun _ => norm_nonneg _) hv tendsto_one_div_add_atTop_nhds_zero_nat
 
 /-- Separable sequential form of Arveson's theorem for closed star ideals: when `A` is separable,
 `S` admits a monotone sequence `u : ℕ → S` of nonnegative strict contractions forming a
@@ -402,20 +437,17 @@ theorem exists_seq_quasicentral_isIncreasingApproximateUnit [TopologicalSpace.Se
       (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).property.1))
       (eventually_map.mpr (.of_forall fun n => (recSeq (n + 1)).property.2.le))
     rintro _ ⟨k, rfl⟩
-    rw [tendsto_map'_iff, tendsto_iff_norm_sub_tendsto_zero]
-    exact squeeze_zero' (.of_forall fun _ => norm_nonneg _)
+    rw [tendsto_map'_iff]
+    exact tendsto_of_eventually_norm_sub_le_inv
       (eventually_atTop.mpr ⟨k, fun n hn => ((hu_step n).2.1 k hn).le⟩)
-      tendsto_one_div_add_atTop_nhds_zero_nat
   have hu_comm (a : A) : Tendsto (fun n => (u n : A) * a - a * (u n : A)) atTop (𝓝 0) := by
     refine tendsto_map'_iff.mp <| TauCeti.tendsto_commutator_of_dense (C := 1)
       (eventually_map.mpr (.of_forall fun n => by simpa using (recSeq (n + 1)).property.2.le))
       (TopologicalSpace.denseRange_denseSeq A) ?_ a
     rintro _ ⟨k, rfl⟩
-    rw [tendsto_map'_iff, tendsto_iff_norm_sub_tendsto_zero]
-    simp only [Function.comp_def, sub_zero]
-    exact squeeze_zero' (.of_forall fun _ => norm_nonneg _)
-      (eventually_atTop.mpr ⟨k, fun n hn => ((hu_step n).2.2 k hn).le⟩)
-      tendsto_one_div_add_atTop_nhds_zero_nat
+    rw [tendsto_map'_iff]
+    exact tendsto_of_eventually_norm_sub_le_inv (eventually_atTop.mpr ⟨k, fun n hn => by
+      simpa [Function.comp_def, sub_zero] using ((hu_step n).2.2 k hn).le⟩)
   exact ⟨u, monotone_nat_of_le_succ fun n => (hu_step (n + 1)).1,
     fun n => (recSeq (n + 1)).property.1, fun n => (recSeq (n + 1)).property.2, hu_approx, hu_comm⟩
 

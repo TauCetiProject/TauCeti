@@ -114,6 +114,19 @@ theorem stateToPositiveLinearMap_apply (hφ : φ ∈ stateSpace A) (a : A) :
   unfold stateToPositiveLinearMap
   rfl
 
+/-- The continuous linear map underlying `stateToPositiveLinearMap hφ` is `toStrongDual φ`. -/
+@[simp]
+theorem toContinuousLinearMap_ofClass_stateToPositiveLinearMap (hφ : φ ∈ stateSpace A) :
+    (PositiveContinuousLinearMap.ofClass (stateToPositiveLinearMap hφ) : A →L[ℂ] ℂ) =
+      toStrongDual φ := by
+  ext x
+  simp
+
+/-- The continuous linear map underlying `stateToPositiveLinearMap hφ` has operator norm `1`. -/
+theorem norm_toContinuousLinearMap_ofClass_stateToPositiveLinearMap (hφ : φ ∈ stateSpace A) :
+    ‖(PositiveContinuousLinearMap.ofClass (stateToPositiveLinearMap hφ) : A →L[ℂ] ℂ)‖ = 1 := by
+  simp [norm_toStrongDual_of_mem_stateSpace hφ]
+
 /-- The states of `A` are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, viewed in the
 weak-* dual. -/
 theorem mem_stateSpace_iff_exists_positiveLinearMap :
@@ -121,11 +134,8 @@ theorem mem_stateSpace_iff_exists_positiveLinearMap :
       StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ := by
   refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ =>
     h ▸ (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff.2 hω⟩
-  let ω := stateToPositiveLinearMap hφ
-  have hω : (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = toStrongDual φ := by
-    ext x
-    simp [ω]
-  exact ⟨ω, hω ▸ norm_toStrongDual_of_mem_stateSpace hφ, by rw [hω, toWeakDual_toStrongDual]⟩
+  exact ⟨stateToPositiveLinearMap hφ,
+    norm_toContinuousLinearMap_ofClass_stateToPositiveLinearMap hφ, by simp⟩
 
 /-- **Convexity of the state space.** Real convex combinations of states are states. -/
 theorem convex_stateSpace : Convex ℝ (stateSpace A) := by
@@ -149,18 +159,14 @@ variable (A) in
 complex-linear map `WeakDual ℂ B →L[ℂ] WeakDual ℂ A`; it is continuous because each evaluation
 `φ ↦ φ (f a)` is. On states it is the pullback of states along `f`, which is affine when `f` is
 surjective or unital. -/
-noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →L[ℂ] WeakDual ℂ A where
-  toFun φ := StrongDual.toWeakDual
-    ((toStrongDual φ).comp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B))
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  cont := continuous_of_continuous_eval fun a => eval_continuous (f a)
+noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →L[ℂ] WeakDual ℂ A :=
+  WeakDual.precomp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B)
 
 /-- The pullback of a functional along `f` evaluates as `φ ∘ f`. -/
 @[simp]
 theorem pullbackFunctional_apply (f : F) (φ : WeakDual ℂ B) (a : A) :
-    pullbackFunctional A f φ a = φ (f a) :=
-  (rfl)
+    pullbackFunctional A f φ a = φ (f a) := by
+  simp [pullbackFunctional]
 
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the

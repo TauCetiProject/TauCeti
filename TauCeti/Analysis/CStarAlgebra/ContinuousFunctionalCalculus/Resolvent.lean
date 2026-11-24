@@ -18,6 +18,8 @@ functional calculus is the resolvent `(z - a)⁻¹`.
 
 * `TauCeti.continuousOn_inv_sub_of_mem_resolventSet`: `w ↦ (z - w)⁻¹` is continuous on the
   spectrum of `a` for `z` in the resolvent set of `a`.
+* `TauCeti.continuousOn_add_inv_quasispectrum`: `t ↦ (t + c)⁻¹` is continuous on the
+  quasispectrum of a nonnegative element `h` for `0 < c`.
 * `TauCeti.cfc_inv_sub_eq_resolvent`: `cfc (fun w ↦ (z - w)⁻¹) a = resolvent a z` for `z` in the
   resolvent set of `a`.
 -/
@@ -33,6 +35,16 @@ theorem continuousOn_inv_sub_of_mem_resolventSet {R A : Type*} [Field R] [Topolo
     (hz : z ∈ resolventSet R a) : ContinuousOn (fun w ↦ (z - w)⁻¹) (spectrum R a) :=
   (continuousOn_const.sub continuousOn_id).inv₀ fun w hw h0 =>
     hw ((sub_eq_zero.mp h0 : z = w) ▸ hz)
+
+/-- For `0 ≤ h` and `0 < c`, the shifted inverse `t ↦ (t + c)⁻¹` is continuous on
+`quasispectrum R h`. -/
+theorem continuousOn_add_inv_quasispectrum {R A : Type*} [Semifield R] [LinearOrder R]
+    [IsStrictOrderedRing R] [TopologicalSpace R] [ContinuousAdd R] [ContinuousInv₀ R]
+    [NonUnitalRing A] [PartialOrder A] [Module R A] [NonnegSpectrumClass R A]
+    {h : A} (hh : 0 ≤ h) {c : R} (hc : 0 < c) :
+    ContinuousOn (fun t : R => (t + c)⁻¹) (quasispectrum R h) :=
+  (continuousOn_id.add continuousOn_const).inv₀ fun t ht =>
+    (add_pos_of_nonneg_of_pos (quasispectrum_nonneg_of_nonneg h hh t ht) hc).ne'
 
 variable {R A : Type*} {p : A → Prop} [Field R] [StarRing R] [MetricSpace R]
   [IsTopologicalRing R] [ContinuousStar R] [ContinuousInv₀ R] [TopologicalSpace A] [Ring A]

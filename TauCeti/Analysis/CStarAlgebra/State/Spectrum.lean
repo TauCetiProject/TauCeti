@@ -257,6 +257,16 @@ theorem exists_mem_stateSpace_apply_eq_norm [Nontrivial A] {a : A} (ha : 0 ≤ a
   exact ⟨StrongDual.toWeakDual (ω : A →L[ℂ] ℂ), ω.toWeakDual_mem_stateSpace_iff.2 hnorm,
     by simpa using ha_eq⟩
 
+/-- For any elements `v` and `a` of a nontrivial C⋆-algebra, there is a state `ω` satisfying
+`ω (star v * (a * star a) * v) = ‖star v * a‖ ^ 2`. -/
+theorem exists_mem_stateSpace_apply_star_mul_mul_eq_norm_sq [Nontrivial A] (v a : A) :
+    ∃ ω ∈ stateSpace A, ω (star v * (a * star a) * v) = ((‖star v * a‖ ^ 2 : ℝ) : ℂ) := by
+  obtain ⟨ω, hω, hω_eq⟩ := exists_mem_stateSpace_apply_eq_norm
+    (a := (star v * a) * star (star v * a)) (mul_star_self_nonneg _)
+  rw [CStarRing.norm_self_mul_star, ← sq] at hω_eq
+  refine ⟨ω, hω, ?_⟩
+  simpa [star_mul, mul_assoc] using hω_eq
+
 /-- A normal element `a` of a C⋆-algebra has norm at most `c ≥ 0` whenever `‖φ a‖ ≤ c` for every
 state `φ`. -/
 theorem norm_le_of_forall_mem_stateSpace {a : A} [IsStarNormal a] {c : ℝ} (hc : 0 ≤ c)

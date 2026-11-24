@@ -21,8 +21,8 @@ and to ring commutators `f e * a - a * f e`:
 * `Filter.IsApproximateUnit.lift'_convexHull`: real convexification of an approximate unit yields
   a coarser approximate unit.
 * `TauCeti.tendsto_commutator_lift'_convexHull`: real convexification preserves limits of
-  commutators `f e * a - a * f e` for any `S`-linear map `f` compatible with `ℝ`-scalars
-  (in particular, for `y = 0`, it preserves asymptotic centrality).
+  commutators `f e * a - a * f e` for any `ℝ`-linear map `f : B →ₗ[ℝ] A` (in particular, for
+  `y = 0`, it preserves asymptotic centrality).
 -/
 
 public section
@@ -36,9 +36,13 @@ theorem Filter.IsApproximateUnit.lift'_convexHull {A : Type*} [NonUnitalSeminorm
     (hl : l.IsApproximateUnit) :
     (l.lift' (convexHull ℝ)).IsApproximateUnit where
   tendsto_mul_left a :=
-    Filter.Tendsto.lift'_convexHull (f := LinearMap.mulLeft ℝ a) (hl.tendsto_mul_left a)
+    (Filter.Tendsto.lift'_convexHull (f := LinearMap.mulLeft ℝ a)
+      ((hl.tendsto_mul_left a).congr fun x => (LinearMap.mulLeft_apply ℝ a x).symm)).congr
+        fun x => LinearMap.mulLeft_apply ℝ a x
   tendsto_mul_right a :=
-    Filter.Tendsto.lift'_convexHull (f := LinearMap.mulRight ℝ a) (hl.tendsto_mul_right a)
+    (Filter.Tendsto.lift'_convexHull (f := LinearMap.mulRight ℝ a)
+      ((hl.tendsto_mul_right a).congr fun x => (LinearMap.mulRight_apply ℝ a x).symm)).congr
+        fun x => LinearMap.mulRight_apply ℝ a x
   neBot := by
     have := hl.neBot
     exact (lift'_neBot_iff fun _ _ hst => convexHull_mono hst).mpr
@@ -47,18 +51,20 @@ theorem Filter.IsApproximateUnit.lift'_convexHull {A : Type*} [NonUnitalSeminorm
 namespace TauCeti
 
 /-- Real convexification `l.lift' (convexHull ℝ)` preserves limits of ring commutators
-`f e * a - a * f e` for any `S`-linear map `f` (compatible with `ℝ`-scalars) into a nonunital
-seminormed ring over `ℝ`. In particular, taking `y = 0`, it preserves asymptotic centrality. -/
-theorem tendsto_commutator_lift'_convexHull {B A S F : Type*} [Semiring S]
-    [AddCommMonoid B] [Module ℝ B] [Module S B]
-    [NonUnitalSeminormedRing A] [NormedSpace ℝ A] [Module S A]
-    [IsScalarTower ℝ A A] [SMulCommClass ℝ A A] [LinearMap.CompatibleSMul B A ℝ S]
-    [FunLike F B A] [LinearMapClass F S B A]
-    {l : Filter B} (f : F) {a y : A}
+`f e * a - a * f e` for any `ℝ`-linear map `f : B →ₗ[ℝ] A` into a nonunital seminormed ring over
+`ℝ`. In particular, taking `y = 0`, it preserves asymptotic centrality. -/
+theorem tendsto_commutator_lift'_convexHull {B A : Type*}
+    [AddCommMonoid B] [Module ℝ B]
+    [NonUnitalSeminormedRing A] [NormedSpace ℝ A]
+    [IsScalarTower ℝ A A] [SMulCommClass ℝ A A]
+    {l : Filter B} (f : B →ₗ[ℝ] A) {a y : A}
     (h : Tendsto (fun e => f e * a - a * f e) l (𝓝 y)) :
-    Tendsto (fun e => f e * a - a * f e) (l.lift' (convexHull ℝ)) (𝓝 y) :=
-  Filter.Tendsto.lift'_convexHull
-    (f := (LinearMap.mulRight ℝ a - LinearMap.mulLeft ℝ a).comp
-      ((f : B →ₗ[S] A).restrictScalars ℝ)) h
+    Tendsto (fun e => f e * a - a * f e) (l.lift' (convexHull ℝ)) (𝓝 y) := by
+  let g : B →ₗ[ℝ] A := (LinearMap.mulRight ℝ a - LinearMap.mulLeft ℝ a).comp f
+  have hg (e : B) : g e = f e * a - a * f e := by
+    simp only [g, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.mulRight_apply,
+      LinearMap.mulLeft_apply]
+  exact (Filter.Tendsto.lift'_convexHull (f := g)
+    (h.congr fun e => (hg e).symm)).congr hg
 
 end TauCeti

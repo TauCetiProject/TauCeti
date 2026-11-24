@@ -14,6 +14,7 @@ import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import Mathlib.Topology.Algebra.InfiniteSum.Order
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
 import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Spectrum
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
@@ -34,13 +35,20 @@ C⋆-algebra this coincides with Mathlib's `_root_.IsStrictlyPositive h` (`0 ≤
   `IsStrictlyPositive.dense_range_mul_mul`, `isStrictlyPositive_zero_iff`,
   `IsStrictlyPositive.ne_zero`, `IsStrictlyPositive.smul`, `IsStrictlyPositive.map`,
   `IsStrictlyPositive.map_equiv_iff`.
-* `TauCeti.CStarAlgebra.resolventApprox`: the resolvent sequence
-  `h * (h + (n + 1)⁻¹)⁻¹ = cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) h`
-  (`resolventApprox_def`), with self-adjointness (`isSelfAdjoint_resolventApprox`), normality,
-  homomorphism transport (`map_resolventApprox`), positivity, strict contractive norm bound,
-  monotonicity, algebraic identity, unitization invertibility (`isUnit_inr_add_smul_one`) and
-  embedding formula (`inr_resolventApprox`), and norm bound
-  `‖resolventApprox h n * h - h‖ ≤ ((n : ℝ) + 1)⁻¹`.
+* `TauCeti.CStarAlgebra.resolventApproxAt` and `TauCeti.CStarAlgebra.resolventApprox`: the
+  resolvent cutoffs `cfcₙ (fun t : ℝ => t * (t + c)⁻¹) h` (`resolventApproxAt_def`) at real
+  scale `c : ℝ` and their sequential specialization
+  `resolventApprox h n = resolventApproxAt h ((n : ℝ) + 1)⁻¹` (`resolventApprox_def`). For
+  `0 ≤ h` and `0 < c`, they satisfy self-adjointness (`isSelfAdjoint_resolventApproxAt`),
+  normality, homomorphism transport (`map_resolventApproxAt`), positivity
+  (`resolventApproxAt_nonneg`), strict contractive norm bound (`norm_resolventApproxAt_lt_one`),
+  antitone dependence on `c` (`antitoneOn_resolventApproxAt`) and monotonicity in `n`
+  (`monotone_resolventApprox`), algebraic identity (`resolventApproxAt_mul_self_add_smul`),
+  unitization invertibility (`isUnit_inr_add_smul_one`) and inverse embedding formula
+  `((resolventApproxAt h c : A) : A⁺¹) = (h : A⁺¹) * Ring.inverse ((h : A⁺¹) + c • 1)`
+  (`inr_resolventApproxAt`, `inr_resolventApprox`), and norm bound
+  `‖resolventApproxAt h c * h - h‖ ≤ c` (`norm_resolventApproxAt_mul_self_sub_le`,
+  `norm_resolventApprox_mul_self_sub_le`).
 * Equivalent characterizations of strict positivity (Blackadar II.4.2.4):
   * `isStrictlyPositive_iff_dense_range_mul_left` and `isStrictlyPositive_iff_dense_range_mul_right`
     (for `0 ≤ h`): density of `h A` or `A h`;
@@ -125,14 +133,10 @@ theorem map {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrde
     [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
     [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
     {h : A} (hh : IsStrictlyPositive h) (f : F) (hf : Function.Surjective f) :
-    IsStrictlyPositive (f h) := by
-  refine isStrictlyPositive_def.mpr
-    ⟨map_nonneg f hh.nonneg, dense_iff_closure_eq.mp (Metric.dense_iff.mpr fun b ε hε => ?_)⟩
-  obtain ⟨a, rfl⟩ := hf b
-  obtain ⟨_, hdist, ⟨x, rfl⟩⟩ := Metric.dense_iff.mp hh.dense_range_mul_mul a ε hε
-  refine ⟨f h * f x * f h, ?_, ⟨f x, rfl⟩⟩
-  rw [Metric.mem_ball, dist_eq_norm, ← map_mul, ← map_mul, ← map_sub]
-  exact (NonUnitalStarAlgHom.norm_apply_le f _).trans_lt (by simpa [dist_eq_norm] using hdist)
+    IsStrictlyPositive (f h) :=
+  isStrictlyPositive_def.mpr ⟨map_nonneg f hh.nonneg,
+    dense_iff_closure_eq.mp <| hf.denseRange.dense_of_mapsTo (map_continuous f)
+      hh.dense_range_mul_mul fun _ ⟨x, hx⟩ => ⟨f x, by rw [← hx, map_mul, map_mul]⟩⟩
 
 /-- Star-algebra equivalences preserve strict positivity in both directions. -/
 @[simp]
@@ -149,151 +153,147 @@ end Basic
 
 section Resolvent
 
-/-- The resolvent sequence `h * (h + (n + 1)⁻¹)⁻¹` attached to an element `h` of a nonunital
-C⋆-algebra, defined via the real nonunital continuous functional calculus as
-`cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) h`. When `h` is strictly positive, this is a
-monotone sequential increasing approximate unit of `A`. -/
-noncomputable def resolventApprox {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) : A :=
-  cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) h
+/-- The resolvent cutoff `h * (h + c)⁻¹` at real scale `c` attached to an element `h` of a
+nonunital C⋆-algebra, defined for general `h` via the real nonunital continuous functional calculus
+as `cfcₙ (fun t : ℝ => t * (t + c)⁻¹) h`. When `0 ≤ h` and `0 < c`, it embeds in the unitization
+`A⁺¹` as `(h : A⁺¹) * Ring.inverse ((h : A⁺¹) + c • 1)` (`inr_resolventApproxAt`). -/
+noncomputable def resolventApproxAt {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (c : ℝ) : A :=
+  cfcₙ (fun t : ℝ => t * (t + c)⁻¹) h
 
-/-- Unfolding formula for `resolventApprox`. -/
-theorem resolventApprox_def {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) :
-    resolventApprox h n = cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) h :=
+/-- Unfolding formula for `resolventApproxAt`. -/
+theorem resolventApproxAt_def {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (c : ℝ) :
+    resolventApproxAt h c = cfcₙ (fun t : ℝ => t * (t + c)⁻¹) h :=
   (rfl)
 
 @[simp, grind =]
-theorem resolventApprox_zero {A : Type*} [NonUnitalCStarAlgebra A] (n : ℕ) :
-    resolventApprox (0 : A) n = 0 :=
+theorem resolventApproxAt_zero {A : Type*} [NonUnitalCStarAlgebra A] (c : ℝ) :
+    resolventApproxAt (0 : A) c = 0 :=
   cfcₙ_apply_zero
 
 @[simp, grind .]
-theorem isSelfAdjoint_resolventApprox {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) :
-    IsSelfAdjoint (resolventApprox h n) :=
+theorem isSelfAdjoint_resolventApproxAt {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (c : ℝ) :
+    IsSelfAdjoint (resolventApproxAt h c) :=
   IsSelfAdjoint.cfcₙ
 
 @[simp]
-instance instIsStarNormalResolventApprox {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) :
-    IsStarNormal (resolventApprox h n) :=
-  (isSelfAdjoint_resolventApprox h n).isStarNormal
+instance instIsStarNormalResolventApproxAt {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (c : ℝ) :
+    IsStarNormal (resolventApproxAt h c) :=
+  (isSelfAdjoint_resolventApproxAt h c).isStarNormal
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-private theorem continuousOn_add_inv_quasispectrum {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
-    ContinuousOn (fun t : ℝ => (t + c)⁻¹) (quasispectrum ℝ h) :=
-  ContinuousOn.inv₀ (by fun_prop) fun t ht => by
-    have : 0 ≤ t := quasispectrum_nonneg_of_nonneg h hh t ht
-    positivity
+private theorem continuousOn_mul_add_inv_quasispectrum {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    ContinuousOn (fun t : ℝ => t * (t + c)⁻¹) (quasispectrum ℝ h) :=
+  continuousOn_id.mul (TauCeti.continuousOn_add_inv_quasispectrum hh hc)
 
-private theorem continuousOn_mul_add_inv_quasispectrum {h : A} (hh : 0 ≤ h) (n : ℕ) :
-    ContinuousOn (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) (quasispectrum ℝ h) :=
-  continuousOn_id.mul (continuousOn_add_inv_quasispectrum hh (by positivity))
-
-/-- Nonunital star-algebra homomorphisms commute with `resolventApprox` on nonnegative elements. -/
-theorem map_resolventApprox {B F : Type*} [NonUnitalCStarAlgebra B]
+/-- Nonunital star-algebra homomorphisms commute with `resolventApproxAt` on nonnegative
+elements for positive scales. -/
+@[simp]
+theorem map_resolventApproxAt {B F : Type*} [NonUnitalCStarAlgebra B]
     [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
-    (f : F) {h : A} (hh : 0 ≤ h) (n : ℕ) :
-    f (resolventApprox h n) = resolventApprox (f h) n :=
-  NonUnitalStarAlgHomClass.map_cfcₙ f (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) h
-    (continuousOn_mul_add_inv_quasispectrum hh n) (by simp) (map_continuous f)
+    (f : F) {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    f (resolventApproxAt h c) = resolventApproxAt (f h) c :=
+  NonUnitalStarAlgHomClass.map_cfcₙ f (fun t : ℝ => t * (t + c)⁻¹) h
+    (continuousOn_mul_add_inv_quasispectrum hh hc) (by simp) (map_continuous f)
     hh.isSelfAdjoint (hh.isSelfAdjoint.map f)
 
-/-- For `0 ≤ h`, `resolventApprox h n` agrees with `cfcₙ (fun x : ℝ≥0 => 1 - (1 + x)⁻¹)` at
-`((n : ℝ) + 1) • h`, connecting the resolvent formula to Mathlib's operator-monotone contraction. -/
-theorem resolventApprox_eq_cfcₙ_one_sub {h : A} (hh : 0 ≤ h) (n : ℕ) :
-    resolventApprox h n = cfcₙ (fun x : ℝ≥0 => 1 - (1 + x)⁻¹) (((n : ℝ) + 1) • h) := by
-  have hc : 0 < (n : ℝ) + 1 := by positivity
-  have hsh : 0 ≤ ((n : ℝ) + 1) • h := smul_nonneg hc.le hh
+/-- For `0 ≤ h` and `0 < c`, `resolventApproxAt h c` agrees with
+`cfcₙ (fun x : ℝ≥0 => 1 - (1 + x)⁻¹)` at `c⁻¹ • h`, connecting the resolvent formula to Mathlib's
+operator-monotone contraction. -/
+theorem resolventApproxAt_eq_cfcₙ_one_sub {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    resolventApproxAt h c = cfcₙ (fun x : ℝ≥0 => 1 - (1 + x)⁻¹) (c⁻¹ • h) := by
+  have hc_inv : 0 < c⁻¹ := inv_pos.mpr hc
+  have hsh : 0 ≤ c⁻¹ • h := smul_nonneg hc_inv.le hh
   rw [cfcₙ_nnreal_eq_real _ _ hsh]
-  have hcongr1 : cfcₙ (fun x : ℝ => ((1 - (1 + x.toNNReal)⁻¹ : ℝ≥0) : ℝ)) (((n : ℝ) + 1) • h) =
-      cfcₙ (fun x : ℝ => 1 - (1 + x)⁻¹) (((n : ℝ) + 1) • h) := by
+  have hcongr1 : cfcₙ (fun x : ℝ => ((1 - (1 + x.toNNReal)⁻¹ : ℝ≥0) : ℝ)) (c⁻¹ • h) =
+      cfcₙ (fun x : ℝ => 1 - (1 + x)⁻¹) (c⁻¹ • h) := by
     refine cfcₙ_congr fun x hx => ?_
     have hx₀ : 0 ≤ x := quasispectrum_nonneg_of_nonneg _ hsh x hx
     have hle : (1 + x.toNNReal)⁻¹ ≤ (1 : ℝ≥0) := inv_le_one_of_one_le₀ (by simp)
     simp [NNReal.coe_sub hle, Real.coe_toNNReal x hx₀]
-  rw [hcongr1, ← cfcₙ_comp_smul ((n : ℝ) + 1) (fun x : ℝ => 1 - (1 + x)⁻¹) h ?_ (by simp)
-    hh.isSelfAdjoint]
+  rw [hcongr1, ← cfcₙ_comp_smul c⁻¹ (fun x : ℝ => 1 - (1 + x)⁻¹) h ?_ (by simp) hh.isSelfAdjoint]
   · refine cfcₙ_congr fun t ht => ?_
     have ht₀ : 0 ≤ t := quasispectrum_nonneg_of_nonneg h hh t ht
-    have : t + ((n : ℝ) + 1)⁻¹ ≠ 0 := by positivity
-    have : 1 + ((n : ℝ) + 1) * t ≠ 0 := by positivity
+    have : t + c ≠ 0 := by positivity
+    have : 1 + c⁻¹ * t ≠ 0 := by positivity
     dsimp only [smul_eq_mul]
     field_simp
     ring
   · refine continuousOn_const.sub (ContinuousOn.inv₀ (by fun_prop) ?_)
     rintro _ ⟨t, ht, rfl⟩
     have ht₀ : 0 ≤ t := quasispectrum_nonneg_of_nonneg h hh t ht
-    have hmul : 0 ≤ ((n : ℝ) + 1) * t := mul_nonneg hc.le ht₀
+    have hmul : 0 ≤ c⁻¹ * t := mul_nonneg hc_inv.le ht₀
     dsimp only [smul_eq_mul]
     linarith
 
-theorem resolventApprox_nonneg {h : A} (hh : 0 ≤ h) (n : ℕ) : 0 ≤ resolventApprox h n := by
-  rw [resolventApprox_eq_cfcₙ_one_sub hh n]
+theorem resolventApproxAt_nonneg {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    0 ≤ resolventApproxAt h c := by
+  rw [resolventApproxAt_eq_cfcₙ_one_sub hh hc]
   exact cfcₙ_nonneg_of_predicate
 
-theorem norm_resolventApprox_lt_one {h : A} (hh : 0 ≤ h) (n : ℕ) :
-    ‖resolventApprox h n‖ < 1 := by
-  rw [resolventApprox_eq_cfcₙ_one_sub hh n]
+theorem norm_resolventApproxAt_lt_one {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    ‖resolventApproxAt h c‖ < 1 := by
+  rw [resolventApproxAt_eq_cfcₙ_one_sub hh hc]
   exact norm_cfcₙ_one_sub_one_add_inv_lt_one _
 
-/-- For `0 ≤ h`, `resolventApprox h` is monotone in `n`. -/
-theorem monotone_resolventApprox {h : A} (hh : 0 ≤ h) : Monotone (resolventApprox h) := by
-  intro m n hmn
-  rw [resolventApprox_eq_cfcₙ_one_sub hh m, resolventApprox_eq_cfcₙ_one_sub hh n]
-  have hm : 0 ≤ ((m : ℝ) + 1) • h := smul_nonneg (by positivity) hh
-  have hn : 0 ≤ ((n : ℝ) + 1) • h := smul_nonneg (by positivity) hh
-  have hle : ((m : ℝ) + 1) • h ≤ ((n : ℝ) + 1) • h := by
+/-- For `0 ≤ h`, `resolventApproxAt h` is antitone on `(0, ∞)`. -/
+theorem antitoneOn_resolventApproxAt {h : A} (hh : 0 ≤ h) :
+    AntitoneOn (resolventApproxAt h) (Set.Ioi 0) := by
+  intro c₁ hc₁ c₂ hc₂ hle
+  rw [resolventApproxAt_eq_cfcₙ_one_sub hh hc₂, resolventApproxAt_eq_cfcₙ_one_sub hh hc₁]
+  have h1 : 0 ≤ c₁⁻¹ • h := smul_nonneg (inv_pos.mpr hc₁).le hh
+  have h2 : 0 ≤ c₂⁻¹ • h := smul_nonneg (inv_pos.mpr hc₂).le hh
+  have hsmul : c₂⁻¹ • h ≤ c₁⁻¹ • h := by
     rw [← sub_nonneg, ← sub_smul]
-    exact smul_nonneg (by linarith [show (m : ℝ) ≤ n from Nat.cast_le.mpr hmn]) hh
-  exact CFC.monotoneOn_one_sub_one_add_inv hm hn hle
+    exact smul_nonneg (sub_nonneg.mpr (inv_anti₀ hc₁ hle)) hh
+  exact CFC.monotoneOn_one_sub_one_add_inv h2 h1 hsmul
 
-theorem resolventApprox_le_smul {h : A} (hh : 0 ≤ h) (n : ℕ) :
-    resolventApprox h n ≤ ((n : ℝ) + 1) • h := by
-  have hc : 0 < (n : ℝ) + 1 := by positivity
-  have hcont := continuousOn_mul_add_inv_quasispectrum hh n
-  rw [resolventApprox, ← cfcₙ_const_mul_id ((n : ℝ) + 1) h hh.isSelfAdjoint]
+theorem resolventApproxAt_le_inv_smul {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    resolventApproxAt h c ≤ c⁻¹ • h := by
+  have hcont := continuousOn_mul_add_inv_quasispectrum hh hc
+  rw [resolventApproxAt, ← cfcₙ_const_mul_id c⁻¹ h hh.isSelfAdjoint]
   refine cfcₙ_mono (fun t ht => ?_) hcont (by fun_prop) (by simp) (by simp)
   have ht₀ : 0 ≤ t := quasispectrum_nonneg_of_nonneg h hh t ht
-  have hpos : 0 < t + ((n : ℝ) + 1)⁻¹ := by positivity
-  have hmul : ((n : ℝ) + 1) * t * (t + ((n : ℝ) + 1)⁻¹) = ((n : ℝ) + 1) * t ^ 2 + t := by
-    field_simp
+  have hpos : 0 < t + c := by positivity
+  have hmul : c⁻¹ * t * (t + c) = c⁻¹ * t ^ 2 + t := by field_simp
   rw [← div_eq_mul_inv, div_le_iff₀ hpos, hmul]
-  linarith [mul_nonneg hc.le (sq_nonneg t)]
+  linarith [mul_nonneg (inv_pos.mpr hc).le (sq_nonneg t)]
 
 /-- Algebraic resolvent identity in `A`: `(h (h + c)⁻¹) h + c • (h (h + c)⁻¹) = h` for
-`c = ((n : ℝ) + 1)⁻¹`. -/
-theorem resolventApprox_mul_self_add_smul {h : A} (hh : 0 ≤ h) (n : ℕ) :
-    resolventApprox h n * h + ((n : ℝ) + 1)⁻¹ • resolventApprox h n = h := by
-  let g : ℝ → ℝ := fun t => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹
-  have hg : ContinuousOn g (quasispectrum ℝ h) := continuousOn_mul_add_inv_quasispectrum hh n
-  rw [resolventApprox]
+`0 ≤ h` and `0 < c`. -/
+theorem resolventApproxAt_mul_self_add_smul {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    resolventApproxAt h c * h + c • resolventApproxAt h c = h := by
+  let g : ℝ → ℝ := fun t => t * (t + c)⁻¹
+  have hg : ContinuousOn g (quasispectrum ℝ h) := continuousOn_mul_add_inv_quasispectrum hh hc
+  rw [resolventApproxAt]
   nth_rw 2 [← cfcₙ_id' ℝ h hh.isSelfAdjoint]
   rw [← cfcₙ_mul g (fun t : ℝ => t) h hg (by simp [g]) (by fun_prop) (by simp),
-    ← cfcₙ_smul ((n : ℝ) + 1)⁻¹ g h hg (by simp [g]),
-    ← cfcₙ_add (fun x => g x * x) (fun x => ((n : ℝ) + 1)⁻¹ • g x) h
+    ← cfcₙ_smul c g h hg (by simp [g]),
+    ← cfcₙ_add (fun x => g x * x) (fun x => c • g x) h
       (hg.mul continuousOn_id) (by simp [g]) (by fun_prop) (by simp [g])]
   conv_rhs => rw [← cfcₙ_id' ℝ h hh.isSelfAdjoint]
   refine cfcₙ_congr fun t ht => ?_
   have ht₀ : 0 ≤ t := quasispectrum_nonneg_of_nonneg h hh t ht
-  have : t + ((n : ℝ) + 1)⁻¹ ≠ 0 := by positivity
+  have : t + c ≠ 0 := by positivity
   dsimp only [g, smul_eq_mul]
   field_simp
 
 omit [PartialOrder A] [StarOrderedRing A] in
-theorem commute_resolventApprox_self (h : A) (n : ℕ) :
-    Commute (resolventApprox h n) h := by
+theorem commute_resolventApproxAt_self (h : A) (c : ℝ) :
+    Commute (resolventApproxAt h c) h := by
   by_cases hh : IsSelfAdjoint h
-  · simpa only [resolventApprox, cfcₙ_id' ℝ h hh] using
-      cfcₙ_commute_cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) (fun t : ℝ => t) h
-  · simp [resolventApprox, cfcₙ_apply_of_not_predicate h hh]
+  · simpa only [resolventApproxAt, cfcₙ_id' ℝ h hh] using
+      cfcₙ_commute_cfcₙ (fun t : ℝ => t * (t + c)⁻¹) (fun t : ℝ => t) h
+  · simp [resolventApproxAt, cfcₙ_apply_of_not_predicate h hh]
 
-/-- Resolvent approximation bound: `‖resolventApprox h n * h - h‖ ≤ ((n : ℝ) + 1)⁻¹`. -/
-theorem norm_resolventApprox_mul_self_sub_le {h : A} (hh : 0 ≤ h) (n : ℕ) :
-    ‖resolventApprox h n * h - h‖ ≤ ((n : ℝ) + 1)⁻¹ := by
-  have heq : resolventApprox h n * h - h = -(((n : ℝ) + 1)⁻¹ • resolventApprox h n) := by
-    rw [eq_sub_iff_add_eq.mpr (resolventApprox_mul_self_add_smul hh n)]
+/-- Resolvent approximation bound: `‖resolventApproxAt h c * h - h‖ ≤ c`. -/
+theorem norm_resolventApproxAt_mul_self_sub_le {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    ‖resolventApproxAt h c * h - h‖ ≤ c := by
+  have heq : resolventApproxAt h c * h - h = -(c • resolventApproxAt h c) := by
+    rw [eq_sub_iff_add_eq.mpr (resolventApproxAt_mul_self_add_smul hh hc)]
     abel
-  rw [heq, norm_neg, norm_smul, Real.norm_of_nonneg (by positivity)]
-  exact mul_le_of_le_one_right (by positivity) (norm_resolventApprox_lt_one hh n).le
+  rw [heq, norm_neg, norm_smul, Real.norm_of_nonneg hc.le]
+  exact mul_le_of_le_one_right hc.le (norm_resolventApproxAt_lt_one hh hc).le
 
 private theorem add_ne_zero_of_mem_spectrum_inr {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c)
     {t : ℝ} (ht : t ∈ spectrum ℝ (h : A⁺¹)) : t + c ≠ 0 := by
@@ -306,22 +306,105 @@ theorem isUnit_inr_add_smul_one {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
   (_root_.IsStrictlyPositive.nonneg_add (Unitization.inr_nonneg ℂ h hh)
     (_root_.IsStrictlyPositive.smul hc _root_.isStrictlyPositive_one)).isUnit
 
+/-- In the unitization `A⁺¹`, `resolventApproxAt h c` embeds as
+`(h : A⁺¹) * Ring.inverse ((h : A⁺¹) + c • 1)` for `0 ≤ h` and `0 < c`. -/
+theorem inr_resolventApproxAt {h : A} (hh : 0 ≤ h) {c : ℝ} (hc : 0 < c) :
+    ((resolventApproxAt h c : A) : A⁺¹) =
+      (h : A⁺¹) * Ring.inverse ((h : A⁺¹) + c • (1 : A⁺¹)) := by
+  have hh' : 0 ≤ (h : A⁺¹) := Unitization.inr_nonneg ℂ h hh
+  have hne : ∀ t ∈ spectrum ℝ (h : A⁺¹), t + c ≠ 0 :=
+    fun _ ht => add_ne_zero_of_mem_spectrum_inr hh hc ht
+  have hcont : ContinuousOn (fun t : ℝ => (t + c)⁻¹) (spectrum ℝ (h : A⁺¹)) :=
+    ContinuousOn.inv₀ (by fun_prop) hne
+  rw [resolventApproxAt, Unitization.real_cfcₙ_eq_cfc_inr h _,
+    cfc_mul (fun t : ℝ => t) (fun t : ℝ => (t + c)⁻¹) (h : A⁺¹) (by fun_prop) hcont,
+    cfc_id' ℝ (h : A⁺¹) hh'.isSelfAdjoint,
+    cfc_inv (fun t : ℝ => t + c) (h : A⁺¹) hne (by fun_prop) hh'.isSelfAdjoint,
+    cfc_add_const c (fun t : ℝ => t) (h : A⁺¹) (by fun_prop) hh'.isSelfAdjoint,
+    cfc_id' ℝ (h : A⁺¹) hh'.isSelfAdjoint, Algebra.algebraMap_eq_smul_one]
+
+/-- The resolvent sequence `resolventApproxAt h ((n : ℝ) + 1)⁻¹` attached to an element `h` of a
+nonunital C⋆-algebra, defined for general `h` as
+`cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) h`. When `0 ≤ h`, it embeds in `A⁺¹` as
+`(h : A⁺¹) * Ring.inverse ((h : A⁺¹) + ((n : ℝ) + 1)⁻¹ • 1)` (`inr_resolventApprox`), and when `h`
+is strictly positive it is a monotone sequential increasing approximate unit of `A`. -/
+noncomputable def resolventApprox {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) : A :=
+  resolventApproxAt h ((n : ℝ) + 1)⁻¹
+
+/-- Unfolding formula for `resolventApprox`. -/
+theorem resolventApprox_def {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) :
+    resolventApprox h n = cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) h :=
+  (rfl)
+
+@[simp, grind =]
+theorem resolventApprox_zero {A : Type*} [NonUnitalCStarAlgebra A] (n : ℕ) :
+    resolventApprox (0 : A) n = 0 :=
+  resolventApproxAt_zero _
+
+@[simp, grind .]
+theorem isSelfAdjoint_resolventApprox {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) :
+    IsSelfAdjoint (resolventApprox h n) :=
+  isSelfAdjoint_resolventApproxAt h _
+
+@[simp]
+instance instIsStarNormalResolventApprox {A : Type*} [NonUnitalCStarAlgebra A] (h : A) (n : ℕ) :
+    IsStarNormal (resolventApprox h n) :=
+  instIsStarNormalResolventApproxAt h _
+
+/-- Nonunital star-algebra homomorphisms commute with `resolventApprox` on nonnegative elements. -/
+@[simp]
+theorem map_resolventApprox {B F : Type*} [NonUnitalCStarAlgebra B]
+    [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
+    (f : F) {h : A} (hh : 0 ≤ h) (n : ℕ) :
+    f (resolventApprox h n) = resolventApprox (f h) n :=
+  map_resolventApproxAt f hh (by positivity)
+
+/-- For `0 ≤ h`, `resolventApprox h n` agrees with `cfcₙ (fun x : ℝ≥0 => 1 - (1 + x)⁻¹)` at
+`((n : ℝ) + 1) • h`, connecting the resolvent formula to Mathlib's operator-monotone contraction. -/
+theorem resolventApprox_eq_cfcₙ_one_sub {h : A} (hh : 0 ≤ h) (n : ℕ) :
+    resolventApprox h n = cfcₙ (fun x : ℝ≥0 => 1 - (1 + x)⁻¹) (((n : ℝ) + 1) • h) := by
+  simpa [resolventApprox] using
+    resolventApproxAt_eq_cfcₙ_one_sub hh (c := ((n : ℝ) + 1)⁻¹) (by positivity)
+
+theorem resolventApprox_nonneg {h : A} (hh : 0 ≤ h) (n : ℕ) : 0 ≤ resolventApprox h n :=
+  resolventApproxAt_nonneg hh (by positivity)
+
+theorem norm_resolventApprox_lt_one {h : A} (hh : 0 ≤ h) (n : ℕ) :
+    ‖resolventApprox h n‖ < 1 :=
+  norm_resolventApproxAt_lt_one hh (by positivity)
+
+/-- For `0 ≤ h`, `resolventApprox h` is monotone in `n`. -/
+theorem monotone_resolventApprox {h : A} (hh : 0 ≤ h) : Monotone (resolventApprox h) :=
+  fun _ _ hmn => antitoneOn_resolventApproxAt hh (Set.mem_Ioi.mpr (by positivity))
+    (Set.mem_Ioi.mpr (by positivity)) (inv_anti₀ (by positivity) (by gcongr))
+
+theorem resolventApprox_le_smul {h : A} (hh : 0 ≤ h) (n : ℕ) :
+    resolventApprox h n ≤ ((n : ℝ) + 1) • h := by
+  simpa [resolventApprox] using
+    resolventApproxAt_le_inv_smul hh (c := ((n : ℝ) + 1)⁻¹) (by positivity)
+
+/-- Algebraic resolvent identity in `A`: `(h (h + c)⁻¹) h + c • (h (h + c)⁻¹) = h` for
+`c = ((n : ℝ) + 1)⁻¹`. -/
+theorem resolventApprox_mul_self_add_smul {h : A} (hh : 0 ≤ h) (n : ℕ) :
+    resolventApprox h n * h + ((n : ℝ) + 1)⁻¹ • resolventApprox h n = h :=
+  resolventApproxAt_mul_self_add_smul hh (by positivity)
+
+omit [PartialOrder A] [StarOrderedRing A] in
+theorem commute_resolventApprox_self (h : A) (n : ℕ) :
+    Commute (resolventApprox h n) h :=
+  commute_resolventApproxAt_self h _
+
+/-- Resolvent approximation bound: `‖resolventApprox h n * h - h‖ ≤ ((n : ℝ) + 1)⁻¹`. -/
+theorem norm_resolventApprox_mul_self_sub_le {h : A} (hh : 0 ≤ h) (n : ℕ) :
+    ‖resolventApprox h n * h - h‖ ≤ ((n : ℝ) + 1)⁻¹ :=
+  norm_resolventApproxAt_mul_self_sub_le hh (by positivity)
+
 /-- In the unitization `A⁺¹`, `resolventApprox h n` embeds as
 `(h : A⁺¹) * Ring.inverse ((h : A⁺¹) + ((n : ℝ) + 1)⁻¹ • 1)` for `0 ≤ h`. -/
 theorem inr_resolventApprox {h : A} (hh : 0 ≤ h) (n : ℕ) :
     ((resolventApprox h n : A) : A⁺¹) =
-      (h : A⁺¹) * Ring.inverse ((h : A⁺¹) + ((n : ℝ) + 1)⁻¹ • (1 : A⁺¹)) := by
-  have hh' : 0 ≤ (h : A⁺¹) := Unitization.inr_nonneg ℂ h hh
-  have hne : ∀ t ∈ spectrum ℝ (h : A⁺¹), t + ((n : ℝ) + 1)⁻¹ ≠ 0 :=
-    fun _ ht => add_ne_zero_of_mem_spectrum_inr hh (by positivity) ht
-  have hcont : ContinuousOn (fun t : ℝ => (t + ((n : ℝ) + 1)⁻¹)⁻¹) (spectrum ℝ (h : A⁺¹)) :=
-    ContinuousOn.inv₀ (by fun_prop) hne
-  rw [resolventApprox, Unitization.real_cfcₙ_eq_cfc_inr h _,
-    cfc_mul (fun t : ℝ => t) (fun t : ℝ => (t + ((n : ℝ) + 1)⁻¹)⁻¹) (h : A⁺¹) (by fun_prop) hcont,
-    cfc_id' ℝ (h : A⁺¹) hh'.isSelfAdjoint,
-    cfc_inv (fun t : ℝ => t + ((n : ℝ) + 1)⁻¹) (h : A⁺¹) hne (by fun_prop) hh'.isSelfAdjoint,
-    cfc_add_const ((n : ℝ) + 1)⁻¹ (fun t : ℝ => t) (h : A⁺¹) (by fun_prop) hh'.isSelfAdjoint,
-    cfc_id' ℝ (h : A⁺¹) hh'.isSelfAdjoint, Algebra.algebraMap_eq_smul_one]
+      (h : A⁺¹) * Ring.inverse ((h : A⁺¹) + ((n : ℝ) + 1)⁻¹ • (1 : A⁺¹)) :=
+  inr_resolventApproxAt hh (by positivity)
 
 end Resolvent
 
@@ -354,10 +437,10 @@ private theorem isStrictlyPositive_of_isApproximateUnit_resolventApprox {h : A} 
   let u : ℕ → A := resolventApprox h
   let y : ℕ → A := fun n => cfcₙ (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹ ^ 2) h
   have hy (n : ℕ) : h * y n = u n * u n ∧ y n * h = u n * u n := by
-    have hg := continuousOn_mul_add_inv_quasispectrum hh n
+    have hg := continuousOn_mul_add_inv_quasispectrum hh (c := ((n : ℝ) + 1)⁻¹) (by positivity)
     have hyc : ContinuousOn (fun t : ℝ => t * (t + ((n : ℝ) + 1)⁻¹)⁻¹ ^ 2)
         (quasispectrum ℝ h) :=
-      continuousOn_id.mul ((continuousOn_add_inv_quasispectrum hh (by positivity)).pow 2)
+      continuousOn_id.mul ((TauCeti.continuousOn_add_inv_quasispectrum hh (by positivity)).pow 2)
     have hmul : u n * u n = cfcₙ (fun t : ℝ => (t * (t + ((n : ℝ) + 1)⁻¹)⁻¹) *
         (t * (t + ((n : ℝ) + 1)⁻¹)⁻¹)) h :=
       (cfcₙ_mul _ _ h hg (by simp) hg (by simp)).symm
@@ -407,8 +490,8 @@ private theorem nonneg_of_isIncreasingApproximateUnit_resolventApprox {h : A}
   let c : ℝ := ((n : ℝ) + 1)⁻¹
   have hc_pos : 0 < c := by positivity
   have hct : c < -t := by
-    have hk' : (-t)⁻¹ < (n : ℝ) + 1 :=
-      hk.trans_le (by linarith [show (k : ℝ) ≤ n from Nat.cast_le.mpr (le_max_right N k)])
+    have hkn : (k : ℝ) ≤ n := Nat.cast_le.mpr (le_max_right N k)
+    have hk' : (-t)⁻¹ < (n : ℝ) + 1 := hk.trans_le (by linarith)
     exact (inv_lt_comm₀ (by linarith) (by positivity)).mp hk'
   let g : ℝ → ℝ := fun s => s * (s + c)⁻¹
   have hg_cont : ContinuousOn g (quasispectrum ℝ h) := by
@@ -447,8 +530,8 @@ theorem isStrictlyPositive_iff_isApproximateUnit_resolventApprox {h : A} (hh : 0
   ⟨fun hsp => (isStrictlyPositive_iff_isIncreasingApproximateUnit_resolventApprox.mp
     hsp).toIsApproximateUnit, isStrictlyPositive_of_isApproximateUnit_resolventApprox hh⟩
 
-/-- **Blackadar II.4.2.4 (left ideal density).** A nonnegative element `h` is strictly positive if
-and only if `h A` is dense in `A`. -/
+/-- **Blackadar II.4.2.4 (right ideal density).** A nonnegative element `h` is strictly positive
+if and only if `h A` is dense in `A`. -/
 theorem isStrictlyPositive_iff_dense_range_mul_left {h : A} (hh : 0 ≤ h) :
     IsStrictlyPositive h ↔ Dense (Set.range fun x : A => h * x) := by
   refine ⟨fun hsp => hsp.dense_range_mul_mul.mono ?_, fun hdense =>
@@ -457,7 +540,7 @@ theorem isStrictlyPositive_iff_dense_range_mul_left {h : A} (hh : 0 ≤ h) :
   rintro _ ⟨x, rfl⟩
   exact ⟨x * h, (mul_assoc h x h).symm⟩
 
-/-- **Blackadar II.4.2.4 (right ideal density).** A nonnegative element `h` is strictly positive if
+/-- **Blackadar II.4.2.4 (left ideal density).** A nonnegative element `h` is strictly positive if
 and only if `A h` is dense in `A`. -/
 theorem isStrictlyPositive_iff_dense_range_mul_right {h : A} (hh : 0 ≤ h) :
     IsStrictlyPositive h ↔ Dense (Set.range fun x : A => x * h) := by
@@ -503,15 +586,13 @@ private theorem exists_mem_stateSpace_compress_eq_norm_sq {u : A} (hu : IsSelfAd
     ∃ ω ∈ stateSpace A⁺¹,
       ω ((1 - (u : A⁺¹)) * ((a * star a : A) : A⁺¹) * (1 - (u : A⁺¹))) =
         ((‖a - u * a‖ ^ 2 : ℝ) : ℂ) := by
-  let b : A⁺¹ := ((a - u * a : A) : A⁺¹)
-  obtain ⟨ω, hω, hω_eq⟩ := TauCeti.exists_mem_stateSpace_apply_eq_norm (a := b * star b)
-    (mul_star_self_nonneg b)
+  obtain ⟨ω, hω, hω_eq⟩ := TauCeti.exists_mem_stateSpace_apply_star_mul_mul_eq_norm_sq
+    (A := A⁺¹) (1 - (u : A⁺¹)) (a : A⁺¹)
   have hustar : star (u : A⁺¹) = (u : A⁺¹) := by rw [← Unitization.inr_star, hu.star_eq]
-  have hb : b * star b = (1 - (u : A⁺¹)) * ((a * star a : A) : A⁺¹) * (1 - (u : A⁺¹)) := by
-    simp only [b, Unitization.inr_sub, Unitization.inr_mul, Unitization.inr_star, star_sub,
-      star_mul, hustar]
-    noncomm_ring
-  rw [CStarRing.norm_self_mul_star, ← sq, Unitization.norm_inr, hb] at hω_eq
+  have h1u : star (1 - (u : A⁺¹)) = 1 - (u : A⁺¹) := by simp [hustar]
+  have hmul : (1 - (u : A⁺¹)) * (a : A⁺¹) = ((a - u * a : A) : A⁺¹) := by
+    rw [sub_mul, one_mul, Unitization.inr_sub, Unitization.inr_mul]
+  rw [h1u, ← Unitization.inr_star, ← Unitization.inr_mul, hmul, Unitization.norm_inr] at hω_eq
   exact ⟨ω, hω, hω_eq⟩
 
 private theorem one_sub_inr_resolventApprox_nonneg_and_norm_le_one {h : A} (hh : 0 ≤ h)
@@ -578,6 +659,7 @@ private theorem tendsto_resolventApprox_mul_of_forall_positiveLinearMap_pos {h :
       isClosed_Ici.mem_of_mapClusterPt (heval (x : A⁺¹))
         (.of_forall fun m => map_nonneg_compressFunctional
           (fun _ => map_nonneg_of_mem_stateSpace (hω_mem m)) (Unitization.inr_nonneg ℂ x hx))
+  have hφ₀_apply (x : A) : φ₀ x = ψ₀ (x : A⁺¹) := rfl
   have hφ₀_ne : φ₀ ≠ 0 := fun h0 => by
     have hge : ε ^ 2 ≤ ‖ψ₀ ((a * star a : A) : A⁺¹)‖ :=
       (isClosed_le continuous_const continuous_norm).mem_of_mapClusterPt
@@ -587,7 +669,8 @@ private theorem tendsto_resolventApprox_mul_of_forall_positiveLinearMap_pos {h :
             rw [compressFunctional_apply, (hv m).1.isSelfAdjoint.star_eq, hω_val m,
               Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _)]
             exact pow_le_pow_left₀ hε.le hm 2
-    have hzero : ψ₀ ((a * star a : A) : A⁺¹) = 0 := DFunLike.congr_fun h0 (a * star a)
+    have hzero : ψ₀ ((a * star a : A) : A⁺¹) = 0 :=
+      (hφ₀_apply (a * star a)).symm.trans (DFunLike.congr_fun h0 (a * star a))
     rw [hzero, norm_zero] at hge; linarith [sq_pos_of_pos hε]
   have hlim_top := tendsto_compressFunctional_resolventApprox_self hh hω_mem
   exact (hpos φ₀ hφ₀_ne).ne'
@@ -637,11 +720,11 @@ class IsSigmaUnital (A : Type*) [NonUnitalCStarAlgebra A] : Prop where
   exists_isCountablyGenerated_and_isApproximateUnit :
     ∃ l : Filter A, l.IsCountablyGenerated ∧ l.IsApproximateUnit
 
-/-- Weighted convergent series of positive squares: if no nonzero positive functional sends every
-`v n` to `0` in its GNS Hilbert space, then
-`∑' n, ((1 / 2) ^ (n + 1) * (1 + ‖star (v n) * v n‖)⁻¹) • (star (v n) * v n)` is strictly
-positive. -/
-private theorem isStrictlyPositive_tsum_of_forall_toGNS_eq_zero {A : Type*}
+/-- Existence of a strictly positive element from a separating sequence for GNS representations:
+if no nonzero positive functional sends every `v n` to `0` in its GNS Hilbert space, then `A`
+contains a strictly positive element, witnessed by the weighted series
+`∑' n, ((1 / 2) ^ (n + 1) * (1 + ‖star (v n) * v n‖)⁻¹) • (star (v n) * v n)`. -/
+private theorem exists_isStrictlyPositive_of_forall_toGNS_eq_zero {A : Type*}
     [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A] (v : ℕ → A)
     (hv : ∀ φ : A →ₚ[ℂ] ℂ, (∀ n, φ.toGNS (v n) = 0) → φ = 0) :
     ∃ h : A, IsStrictlyPositive h := by
@@ -675,7 +758,7 @@ theorem isSigmaUnital_iff_exists_isStrictlyPositive {A : Type*} [NonUnitalCStarA
     inferInstance, (isStrictlyPositive_iff_isApproximateUnit_resolventApprox hh.nonneg).mp hh⟩⟩⟩
   have := hl.neBot
   obtain ⟨v, hv⟩ := Filter.exists_seq_tendsto l
-  refine isStrictlyPositive_tsum_of_forall_toGNS_eq_zero v fun φ hφ => ?_
+  refine exists_isStrictlyPositive_of_forall_toGNS_eq_zero v fun φ hφ => ?_
   refine PositiveLinearMap.eq_zero_of_forall_toGNS_eq_zero fun a => ?_
   have hlim : Tendsto (fun n => φ.toGNS (a * v n)) atTop (𝓝 (φ.toGNS a)) :=
     (φ.toGNS.continuous.tendsto a).comp ((hl.tendsto_mul_left a).comp hv)
@@ -721,7 +804,7 @@ instance instIsSigmaUnitalOfSeparableSpace {A : Type*} [NonUnitalCStarAlgebra A]
   have : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   rw [isSigmaUnital_iff_exists_isStrictlyPositive]
   obtain ⟨v, hv⟩ := TopologicalSpace.exists_dense_seq A
-  refine isStrictlyPositive_tsum_of_forall_toGNS_eq_zero v fun φ hφ => ?_
+  refine exists_isStrictlyPositive_of_forall_toGNS_eq_zero v fun φ hφ => ?_
   refine PositiveLinearMap.eq_zero_of_forall_toGNS_eq_zero fun a => ?_
   have hcl : Set.range v ⊆ φ.toGNS ⁻¹' {0} := by
     rintro _ ⟨n, rfl⟩

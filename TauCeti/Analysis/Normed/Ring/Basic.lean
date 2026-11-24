@@ -299,7 +299,7 @@ theorem tendsto_commutator_of_dense {R : Type*} [NonUnitalSeminormedRing R]
     (h : ∀ x ∈ s, Filter.Tendsto (fun e => e * x - x * e) l (nhds 0)) (a : R) :
     Filter.Tendsto (fun e => e * a - a * e) l (nhds 0) := by
   refine Metric.tendsto_of_dense_of_eventually_dist_le (F := fun e x => e * x - x * e)
-    (f := 0) (C := 2 * C) ?_ continuous_const hs h a
+    (f := 0) (C := 2 * C) ?_ hs a tendsto_const_nhds h
   refine hC.mono fun e he x y => ?_
   rw [dist_eq_norm, dist_eq_norm]
   have hsub : (e * x - x * e) - (e * y - y * e) = e * (x - y) - (x - y) * e := by

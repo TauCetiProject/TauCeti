@@ -274,8 +274,8 @@ theorem map_equiv_iff {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [
     (l.map e).IsIncreasingApproximateUnit ↔ l.IsIncreasingApproximateUnit := by
   refine ⟨fun h => ?_, fun h => h.map e e.surjective⟩
   have hsymm := h.map e.symm e.symm.surjective
-  rwa [Filter.map_map, show (e.symm : B → A) ∘ e = id from funext e.symm_apply_apply,
-    Filter.map_id] at hsymm
+  have hcomp : (e.symm : B → A) ∘ e = id := funext e.symm_apply_apply
+  rwa [Filter.map_map, hcomp, Filter.map_id] at hsymm
 
 end Filter.IsIncreasingApproximateUnit
 
@@ -287,7 +287,8 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 
 variable (A) in
 /-- Restricting `CStarAlgebra.approximateUnit A` to the open unit ball preserves the increasing
-approximate unit property and ensures every member has norm strictly less than `1`. -/
+approximate unit property and ensures the open unit ball belongs to the filter, so `‖e‖ < 1`
+holds eventually. -/
 theorem isIncreasingApproximateUnit_ball :
     ((CStarAlgebra.isBasis_nonneg_sections A).filter ⊓
       𝓟 (Metric.ball 0 1)).IsIncreasingApproximateUnit := by

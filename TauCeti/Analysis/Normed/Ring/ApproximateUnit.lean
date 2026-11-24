@@ -211,7 +211,7 @@ theorem tendsto_mul_right_of_dense {l : Filter A} (hC : ∀ᶠ e in l, ‖e‖ �
     {s : Set A} (hs : Dense s) (h : ∀ x ∈ s, Tendsto (· * x) l (𝓝 x)) (a : A) :
     Tendsto (· * a) l (𝓝 a) := by
   refine Metric.tendsto_of_dense_of_eventually_dist_le (F := fun e x => e * x) (f := id)
-    (C := C) ?_ continuous_id hs h a
+    (C := C) ?_ hs a continuousWithinAt_id h
   refine hC.mono fun e he x y => ?_
   rw [dist_eq_norm, dist_eq_norm, ← mul_sub]
   exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right he (norm_nonneg _))
@@ -222,7 +222,7 @@ theorem tendsto_mul_left_of_dense {l : Filter A} (hC : ∀ᶠ e in l, ‖e‖ �
     {s : Set A} (hs : Dense s) (h : ∀ x ∈ s, Tendsto (x * ·) l (𝓝 x)) (a : A) :
     Tendsto (a * ·) l (𝓝 a) := by
   refine Metric.tendsto_of_dense_of_eventually_dist_le (F := fun e x => x * e) (f := id)
-    (C := C) ?_ continuous_id hs h a
+    (C := C) ?_ hs a continuousWithinAt_id h
   refine hC.mono fun e he x y => ?_
   rw [dist_eq_norm, dist_eq_norm, ← sub_mul]
   exact (norm_mul_le _ _).trans (by rw [mul_comm]; gcongr)
