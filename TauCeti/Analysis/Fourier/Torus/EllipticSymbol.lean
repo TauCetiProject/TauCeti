@@ -39,7 +39,11 @@ theorem secondOrderSymbol_def (A : Matrix d d ℝ) (k : d → ℤ) :
     secondOrderSymbol A k = (2 * π) ^ 2 * ∑ i, ∑ j, A i j * (k i : ℝ) * (k j : ℝ) :=
   (rfl)
 
-variable [DecidableEq d]
+end TauCeti.UnitAddTorus
+
+namespace UnitAddTorus
+
+variable {d : Type*} [Fintype d] [DecidableEq d]
 
 /-- The constant-coefficient operator `-∑ i, ∑ j, A i j ∂ᵢ∂ⱼ` on the unit torus. -/
 def secondOrderOperator (A : Matrix d d ℝ) (f : UnitAddTorus d → ℂ) : UnitAddTorus d → ℂ :=
@@ -50,6 +54,12 @@ theorem secondOrderOperator_apply (A : Matrix d d ℝ) (f : UnitAddTorus d → �
       -(∑ i, ∑ j, (A i j : ℂ) * lineDeriv (lineDeriv f (Pi.single j 1)) (Pi.single i 1) x) := by
   simp only [secondOrderOperator, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, neg_mul,
     Finset.sum_neg_distrib]
+
+end UnitAddTorus
+
+namespace TauCeti.UnitAddTorus
+
+variable {d : Type*} [Fintype d] [DecidableEq d]
 
 /-- A constant-coefficient second-order operator preserves smoothness. -/
 theorem secondOrderOperator_mem_smoothFunctions (A : Matrix d d ℝ) {f : UnitAddTorus d → ℂ}
