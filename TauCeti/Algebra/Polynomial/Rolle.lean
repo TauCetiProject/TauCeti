@@ -5,7 +5,7 @@ Authors: Kim Morrison
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.FieldDivision
+public import Mathlib.Algebra.Polynomial.Splits
 import Mathlib.Data.Finset.Max
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.LinearCombination
@@ -27,7 +27,8 @@ number for `p.derivative` (`PolynomialRolle.card_roots_toFinset_le_derivative`,
 `PolynomialRolle.card_roots_le_derivative`). These are the algebraic counterparts of the
 real-analytic root counts in `Mathlib.Analysis.Calculus.LocalExtr.Polynomial`, whose proofs
 (by Benjamin Davidson and Yury Kudryashov) they follow with polynomial Rolle in place of Rolle's
-theorem for differentiable functions.
+theorem for differentiable functions. Consequently the derivatives of a split polynomial split
+(`PolynomialRolle.splits_derivative`, `PolynomialRolle.splits_iterate_derivative`).
 
 `TauCeti.FieldTheory.RealClosure.AbstractRolle` supplies this hypothesis from `IsRealClosed`
 as `TauCeti.RealClosure.polynomialRolle_of_isRealClosed`, and exports direct `Polynomial`
@@ -154,6 +155,23 @@ theorem PolynomialRolle.card_rootSet_le_derivative (h : PolynomialRolle R) {F : 
   classical
   simpa only [rootSet_def, Finset.coe_sort_coe, Fintype.card_coe, derivative_map] using
     h.card_roots_toFinset_le_derivative (p.map (algebraMap F R))
+
+/-- With polynomial Rolle, the derivative of a split polynomial splits: a polynomial of degree `d`
+with `d` roots counted with multiplicity has a derivative with at least `d - 1` roots. -/
+theorem PolynomialRolle.splits_derivative (h : PolynomialRolle R) {p : R[X]} (hp : p.Splits) :
+    p.derivative.Splits := by
+  rw [splits_iff_card_roots] at hp ⊢
+  have hroots := h.card_roots_le_derivative p
+  have hdeg := natDegree_derivative_le p
+  have hcard := card_roots' p.derivative
+  omega
+
+/-- With polynomial Rolle, every iterated derivative of a split polynomial splits. -/
+theorem PolynomialRolle.splits_iterate_derivative (h : PolynomialRolle R) {p : R[X]}
+    (hp : p.Splits) (k : ℕ) : (derivative^[k] p).Splits := by
+  induction k with
+  | zero => exact hp
+  | succ k ih => exact Function.iterate_succ_apply' derivative k p ▸ h.splits_derivative ih
 
 variable [IsStrictOrderedRing R]
 
