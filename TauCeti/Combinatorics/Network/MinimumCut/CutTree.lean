@@ -22,12 +22,17 @@ This file develops what these properties give, independently of how such a tree 
 
 * `IsFlowEquivalentTree.reachable_deleteEdges_iff`: the threshold partition. Deleting the tree
   edges of weight below `k` leaves `s` and `t` connected exactly when `s = t` or `k ≤ λ(s, t)`.
+* `IsFlowEquivalentTree.pairMinimumValue_comm`: a flow-equivalent tree makes the minimum cut
+  value symmetric.
 * `IsCutTree.isMinimum_edgeSide_of_mem_edges`: the query theorem. A minimum-weight edge on the tree
   path from `s` to `t` yields a minimum `s`–`t` cut by deleting that edge.
 * `IsCutTree.apply_edgeSide_le`: deleting a tree edge of minimum weight gives a side that
   minimizes `f` among all sets separating two vertices, with value that minimum weight.
 * `IsFlowEquivalentTree.card_image_pairMinimumValue_le`: the minimum cut values between distinct
   vertices take at most `|V| - 1` distinct values, since each is a tree-edge weight.
+* `IsFlowEquivalentTree.exists_edge_iInf_pairMinimumValue_eq_weight`: after applying an order
+  homomorphism into a complete lattice, the least pair minimum value over distinct vertices is a
+  minimum tree-edge weight, provided the tree has at least two vertices.
 * `IsCutTree.of_isMinimum_edgeSide`: a tree whose edges all leave minimum cuts between their ends
   is a cut tree for the weights given by those minimum cut values.
 
@@ -99,6 +104,35 @@ theorem reachable_deleteEdges_iff (hT : IsFlowEquivalentTree f T w) (k : K) {s t
     obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
     exact ⟨p.toDeleteEdges _ fun e he ↦ not_lt.mpr (hk.trans (hT.le_weight hp he))⟩
 
+/-- A flow-equivalent tree makes the minimum cut value symmetric. -/
+theorem pairMinimumValue_comm (hT : IsFlowEquivalentTree f T w) :
+    ∀ s t, pairMinimumValue f s t = pairMinimumValue f t s := by
+  intro s t
+  by_cases hst : s = t
+  · subst t
+    rfl
+  · have hle : ∀ s t, s ≠ t → pairMinimumValue f s t ≤ pairMinimumValue f t s := by
+      intro s t hst
+      have hreach :
+          (T.deleteEdges {e | w e < pairMinimumValue f s t}).Reachable s t :=
+        (hT.reachable_deleteEdges_iff (pairMinimumValue f s t)).mpr (Or.inr le_rfl)
+      exact ((hT.reachable_deleteEdges_iff
+        (pairMinimumValue f s t)).mp hreach.symm).resolve_left (Ne.symm hst)
+    exact le_antisymm (hle s t hst) (hle t s (Ne.symm hst))
+
+/-- Deleting the edges below a natural threshold is governed by the pair minimum value extended
+to `ℕ∞`, with value `⊤` on the diagonal. -/
+theorem reachable_deleteEdges_iff_le_iInf_pairMinimumValue
+    {f : Finset V → ℕ} {T : SimpleGraph V} {w : Sym2 V → ℕ}
+    (hT : IsFlowEquivalentTree f T w) (k : ℕ) {s t : V} :
+    (T.deleteEdges {e | w e < k}).Reachable s t ↔
+      (k : ℕ∞) ≤ ⨅ (_ : s ≠ t), ((pairMinimumValue f s t : ℕ) : ℕ∞) := by
+  rw [hT.reachable_deleteEdges_iff]
+  by_cases hst : s = t
+  · subst t
+    simp
+  · simp [hst]
+
 /-- Any set separating two vertices has value at least the weight of some tree edge. -/
 theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t : V}
     (hs : s ∈ S) (ht : t ∉ S) : ∃ e ∈ T.edgeSet, w e ≤ f S := by
@@ -106,6 +140,38 @@ theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t :
   obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact ⟨e, p.edges_subset_edgeSet he, hwe ▸ pairMinimumValue_le f hs ht⟩
+
+/-- Some minimum-weight tree edge has weight at most every minimum cut value between distinct
+vertices. -/
+theorem exists_edge_weight_le_pairMinimumValue [Nontrivial V]
+    (hT : IsFlowEquivalentTree f T w) :
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      ∀ s t, s ≠ t → w s(u, v) ≤ pairMinimumValue f s t := by
+  have hTne : T ≠ ⊥ := by
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
+  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  refine ⟨u, v, huv, hmin, fun s t hst ↦ ?_⟩
+  obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path s t
+  obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
+  exact (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
+
+/-- If the tree has at least two vertices, the least image of its pair minimum values under an
+order homomorphism into a complete lattice is the image of a minimum-weight tree edge. -/
+theorem exists_edge_iInf_pairMinimumValue_eq_weight {L : Type*} [CompleteLattice L]
+    [Nontrivial V] (hT : IsFlowEquivalentTree f T w) (phi : K →o L) :
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), phi (pairMinimumValue f s t)) = phi (w s(u, v)) := by
+  obtain ⟨u, v, huv, hmin, hpair⟩ := hT.exists_edge_weight_le_pairMinimumValue
+  refine ⟨u, v, huv, hmin, le_antisymm ?_ ?_⟩
+  · calc
+      (⨅ s, ⨅ t, ⨅ (_ : s ≠ t), phi (pairMinimumValue f s t)) ≤
+          phi (pairMinimumValue f u v) :=
+        iInf_le_of_le u (iInf_le_of_le v (iInf_le_of_le huv.ne le_rfl))
+      _ = phi (w s(u, v)) := congrArg phi (hT.weight_eq huv).symm
+  · refine le_iInf fun s ↦ le_iInf fun t ↦ le_iInf fun hst ↦ ?_
+    exact phi.monotone (hpair s t hst)
 
 end IsFlowEquivalentTree
 
@@ -221,11 +287,8 @@ nonempty proper vertex sets. -/
 theorem exists_edgeSide_apply_le (hT : IsCutTree f T w) [Nontrivial V] :
     ∃ u v, T.Adj u v ∧ ∀ S : Finset V, S.Nonempty → S ≠ univ →
       f (T.edgeSide u v) ≤ f S := by
-  have hTne : T ≠ ⊥ := by
-    intro h
-    rw [h] at hT
-    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
-  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  obtain ⟨u, v, huv, hmin, -⟩ :=
+    hT.toIsFlowEquivalentTree.exists_edge_weight_le_pairMinimumValue
   refine ⟨u, v, huv, fun S hS hSuniv ↦ ?_⟩
   obtain ⟨s, hs⟩ := hS
   obtain ⟨t, ht⟩ : ∃ t, t ∉ S := by

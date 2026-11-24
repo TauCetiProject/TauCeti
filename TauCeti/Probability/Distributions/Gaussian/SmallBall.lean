@@ -15,7 +15,11 @@ Because `gaussianPDFReal μ v` never exceeds its value `(√(2 * π * v))⁻¹` 
 nondegenerate real Gaussian law `gaussianReal μ v` (`v ≠ 0`) is dominated by `(√(2 * π * v))⁻¹`
 times Lebesgue measure. Specializing to intervals and `ℓ^∞` boxes gives small-ball
 (anti-concentration) estimates for one-dimensional real Gaussian laws and finite products of
-independent Gaussian coordinates.
+independent Gaussian coordinates. In the other direction, since the density decreases with the
+distance to the mean, the mass of an interval `[x - δ, x + δ]` is at least its length times the
+density at its point farthest from the mean; this is the local estimate behind lower bounds for
+Gaussian probabilities of small balls, as in large deviations of Gaussian laws with vanishing
+variance.
 
 At the degenerate boundary `v = 0`, `gaussianReal μ 0` is `Measure.dirac μ`, which assigns mass `1`
 to `{μ}` while `volume {μ} = 0`; the positive-variance hypothesis `v ≠ 0` is therefore sharp.
@@ -29,6 +33,8 @@ to `{μ}` while `volume {μ} = 0`; the positive-variance hypothesis `v ≠ 0` is
 * `TauCeti.Probability.gaussianReal_Icc_le`, `TauCeti.Probability.gaussianReal_closedBall_le`, and
   `TauCeti.Probability.gaussianReal_Icc_neg_le` — interval and symmetric small-ball bounds
   `gaussianReal μ v [x - r, x + r] ≤ ENNReal.ofReal (√(2 / (π * v)) * r)`.
+* `TauCeti.Probability.ofReal_mul_le_gaussianReal_Icc` — the lower small-ball bound: the mass of
+  `[x - δ, x + δ]` is at least `2δ` times the density at distance `|x - μ| + δ` from the mean.
 * `TauCeti.Probability.pi_gaussianReal_forall_abs_sub_le_le` and
   `TauCeti.Probability.pi_gaussianReal_zero_one_forall_abs_le_le` — `ℓ^∞` box small-ball bounds for
   product Gaussian measures over a finite index type.
@@ -107,6 +113,36 @@ theorem gaussianReal_Icc_neg_le (μ : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (r : ℝ
 theorem gaussianReal_zero_one_Icc_neg_le (r : ℝ) :
     gaussianReal 0 1 (Icc (-r) r) ≤ ENNReal.ofReal (√(2 / π) * r) := by
   simpa using gaussianReal_Icc_neg_le 0 one_ne_zero r
+
+/-- Lower small-ball bound: the mass of `gaussianReal μ v` on `[x - δ, x + δ]` is at least the
+length `2δ` of the interval times the Gaussian density at distance `|x - μ| + δ` from the mean,
+written with the centred density `gaussianPDFReal 0 v`. -/
+theorem ofReal_mul_le_gaussianReal_Icc (μ x : ℝ) (v : ℝ≥0) (δ : ℝ) :
+    ENNReal.ofReal (gaussianPDFReal 0 v (|x - μ| + δ) * (2 * δ)) ≤
+      gaussianReal μ v (Icc (x - δ) (x + δ)) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [gaussianPDFReal_zero_var]
+  have hvol : volume (Icc (x - δ) (x + δ)) = ENNReal.ofReal (2 * δ) := by
+    simpa only [Real.closedBall_eq_Icc] using Real.volume_closedBall x δ
+  rw [gaussianReal_of_var_ne_zero μ hv, withDensity_apply _ measurableSet_Icc,
+    ENNReal.ofReal_mul (gaussianPDFReal_nonneg _ _ _), ← hvol, ← setLIntegral_const]
+  refine setLIntegral_mono (measurable_gaussianPDF μ v) fun y hy => ?_
+  rw [← Real.closedBall_eq_Icc] at hy
+  have hy' : |y - μ| ≤ |x - μ| + δ := by
+    calc |y - μ| ≤ |y - x| + |x - μ| := abs_sub_le y x μ
+      _ ≤ δ + |x - μ| := by
+        gcongr
+        exact Real.dist_eq y x ▸ Metric.mem_closedBall.1 hy
+      _ = |x - μ| + δ := add_comm _ _
+  -- Centre the density; by evenness it depends only on `|y - μ|`, where it is decreasing.
+  have hpdf : gaussianPDFReal μ v y = gaussianPDFReal 0 v |y - μ| := by
+    rw [← zero_add μ, ← gaussianPDFReal_sub, zero_add]
+    rcases abs_choice (y - μ) with h | h
+    · rw [h]
+    · rw [h, gaussianPDFReal_zero_neg]
+  simp only [gaussianPDF_def, hpdf]
+  exact ENNReal.ofReal_le_ofReal
+    (antitoneOn_gaussianPDFReal 0 v (abs_nonneg _) ((abs_nonneg _).trans hy') hy')
 
 /-- Small-ball bound for an `ℓ^∞` box under a finite product of nondegenerate real Gaussian laws. -/
 theorem pi_gaussianReal_forall_abs_sub_le_le {ι : Type*} [Fintype ι] (μ : ι → ℝ)

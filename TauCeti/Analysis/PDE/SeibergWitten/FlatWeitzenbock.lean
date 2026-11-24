@@ -408,15 +408,9 @@ theorem sum_covariantDeriv_eq_of_add_hodgeStar_eq (hψ : ContDiffAt ℝ 2 ψ x)
     alternatingFormEquiv_symm_extDeriv]
   set F := (alternatingFormEquiv V 2).symm (-extDeriv b x)
   -- `C` kills the anti-self-dual part `F - ⋆F`, so `C(F + ⋆F) = 2 C(F)`.
-  have hasd : cliffordRestriction o ρ (F - o.hodgeStar hkl F) = 0 :=
-    cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl (by
-      rw [map_sub, o.hodgeStar_hodgeStar_of_even even_two hkl, neg_sub])
-  have hstar : cliffordRestriction o ρ (o.hodgeStar hkl F) = cliffordRestriction o ρ F := by
-    rw [map_sub, sub_eq_zero] at hasd
-    exact hasd.symm
   have hCχ : (2 : ℝ) • cliffordRestriction o ρ F χ = cliffordRestriction o ρ
       ((r / 4) • ω - r • (quadraticTwoForm o ρ hkl χ : ⋀[ℝ]^2 V) - η) χ := by
-    rw [← hF, map_add, _root_.add_apply, hstar, two_smul]
+    rw [← hF, map_add, _root_.add_apply, cliffordRestriction_hodgeStar o ρ hQ hkl, two_smul]
   simp only [map_sub, map_smul, _root_.sub_apply, _root_.smul_apply,
     cliffordRestriction_quadraticTwoForm_apply_self o hQ hkl hρ h₂,
     cliffordRestriction_eq_cliffordProjection o ρ ω] at hCχ
