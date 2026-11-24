@@ -28,10 +28,10 @@ These fibre maps form a continuous bundle map of total spaces
 (`TauCeti.AssociatedBundle.continuous_detMap`): in the charts of `det (P ×_G F)` and of
 `P ×_G F'` induced by a local trivialization of `P`, the fibre map is multiplication by the fixed
 vector `η (b₀, …, bₙ₋₁)` of `F'`, where `b` is the basis of `F` used to coordinatize determinant
-lines. When `F'` is a line and `η ≠ 0` the fibre maps are isomorphisms
-(`TauCeti.AssociatedBundle.detMap_bijective`), and they form an isomorphism of line bundles
-`det (P ×_G F) ≃ P ×_G F'`, a homeomorphism of total spaces that is linear on each fibre
-(`TauCeti.AssociatedBundle.detHomeomorph`).
+lines (`TauCeti.AssociatedBundle.trivializationAt_detMap_snd`). When `F'` is a line and
+`η ≠ 0` the fibre maps are isomorphisms (`TauCeti.AssociatedBundle.detMap_bijective`), and they
+form an isomorphism of line bundles `det (P ×_G F) ≃ P ×_G F'`, a homeomorphism of total spaces
+that is linear on each fibre (`TauCeti.AssociatedBundle.detHomeomorph`).
 
 The main example is the determinant line of a spinor bundle: for a principal `Spinᶜ(4)`-bundle, the
 half-spin representations have determinant the character `[s, z] ↦ z²`, so a nonzero alternating
@@ -149,20 +149,11 @@ theorem detEquiv_symm_mk (hn : finrank 𝕜 F = n) (hF' : finrank 𝕜 F' = 1)
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [SMulCommClass G 𝕜 F] in
-/-- In the preferred chart at `a`, the class `[q, g⁻¹ • v]` has coordinate `v`, where `g` is the
-coordinate of `q` in the preferred chart of `P` at `a`. -/
-private theorem trivializationAt_mk_inv_smul_snd {a x : B}
-    (hx : x ∈ (trivializationAt G P a).baseSet) (q : P x) (v : F) :
-    (trivializationAt F (AssociatedBundle G P F) a
-        ⟨x, mk G q ((trivializationAt G P a ⟨x, q⟩).2⁻¹ • v)⟩).2 = v := by
-  rw [trivializationAt_mk_snd hx, smul_inv_smul]
-
 /-- **The determinant map in the charts at `a`.** Over the base set of the preferred chart of `P`
 at `a`, the chart coordinate of the image of `w` is the chart coordinate of `w` times the fixed
 vector `η (b₀, …, bₙ₋₁)`, where `b` is the basis `Module.finBasis 𝕜 F` coordinatizing the
 determinant line. -/
-private theorem trivializationAt_detMap_snd (hn : finrank 𝕜 F = n) {η : F [⋀^Fin n]→ₗ[𝕜] F'}
+theorem trivializationAt_detMap_snd (hn : finrank 𝕜 F = n) {η : F [⋀^Fin n]→ₗ[𝕜] F'}
     (hη : ∀ (g : G) (v : Fin n → F), η (fun i ↦ g • v i) = g • η v) {a x : B}
     (hx : x ∈ (trivializationAt F (AssociatedBundle G P F) a).baseSet)
     (w : DetBundle 𝕜 F (AssociatedBundle G P F) x) :
