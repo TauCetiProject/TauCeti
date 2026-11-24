@@ -26,10 +26,12 @@ API applies to them. For instance, `TauCeti.AlgebraicGeometry.toGraphClosure_gra
 `π_2 ∘ γ_f = g`, and `TauCeti.AlgebraicGeometry.isIso_graphClosureFst_restrict` shows that `π_1`
 is an isomorphism over `V` when `Y` is separated and `V → X` is quasi-compact.
 
-When `X` is a Noetherian topological space, `γ_f` is quasi-compact. Then Mathlib's
-scheme-theoretic image API applies: `Scheme.Hom.range_imageι` shows that `Γ_f` is supported on the
-closure of the image of `V`, Mathlib's instances make the factorization `V → Γ_f` quasi-compact
-and dominant, and `Γ_f` is integral when `X` is integral.
+When `γ_f` is quasi-compact (for instance when `X` is a Noetherian topological space, or when
+`V → X` is quasi-compact and `Y` is quasi-separated), the scheme-theoretic image API applies.
+Mathlib's instances make the factorization `V → Γ_f` quasi-compact and dominant. Tau Ceti's
+`Scheme.Hom.range_imageι` (in `TauCeti/AlgebraicGeometry/SchemeTheoreticImage/Basic.lean`) shows
+that `Γ_f` is supported on the closure of the image of `V`, and Tau Ceti's
+`Scheme.Hom.isIntegral_image` (same file) gives that `Γ_f` is integral when `X` is integral.
 
 ## Main definitions
 
@@ -42,8 +44,8 @@ and dominant, and `Γ_f` is integral when `X` is integral.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.RationalMap.isIntegral_graph`: the graph of a rational map out of a
-  Noetherian integral scheme is integral.
+* `AlgebraicGeometry.Scheme.RationalMap.isIntegral_graph`: the graph of a rational map out of an
+  integral scheme is integral when `γ_f` is quasi-compact, for instance when `X` is Noetherian.
 
 ## References
 
@@ -97,23 +99,18 @@ abbrev toGraph : f.representative.domain.toScheme ⟶ graph f :=
   toGraphClosure (terminal.from X) (terminal.from Y) f.representative.domain f.representative.hom
     (terminal.hom_ext _ _)
 
-section Noetherian
-
-variable [NoetherianSpace X]
-
 /-- Out of a Noetherian space, `γ_f` is quasi-compact: its source is an open subspace of a
 Noetherian space. -/
-instance quasiCompact_graphLift : QuasiCompact (graphLift f) :=
+instance quasiCompact_graphLift [NoetherianSpace X] : QuasiCompact (graphLift f) :=
   have : NoetherianSpace f.representative.domain.toScheme :=
     NoetherianSpace.set (f.representative.domain : Set X)
   quasiCompact_of_noetherianSpace_source _
 
-/-- The graph of a rational map out of a Noetherian integral scheme is integral. -/
-instance isIntegral_graph [IsIntegral X] : IsIntegral (graph f) :=
+/-- The graph of a rational map out of an integral scheme is integral when `γ_f` is
+quasi-compact. -/
+instance isIntegral_graph [IsIntegral X] [QuasiCompact (graphLift f)] : IsIntegral (graph f) :=
   have : Nonempty f.representative.domain :=
     f.representative.dense_domain.nonempty.to_subtype
   inferInstance
-
-end Noetherian
 
 end AlgebraicGeometry.Scheme.RationalMap
