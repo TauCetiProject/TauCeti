@@ -154,6 +154,7 @@ theorem measurable_comp_smul_tailEvents {Γ S : Type*} [Group Γ] [MulAction Γ 
 
 /-- Reindexing a product `ι → S` along a bijection `e : ι' ≃ ι` pulls the tail σ-algebra of
 `ι' → S` back to the tail σ-algebra of `ι → S`. -/
+@[simp]
 theorem comap_comp_tailEvents {ι' S : Type*} [MeasurableSpace S] (e : ι' ≃ ι) :
     (tailEvents (X := fun _ : ι' => S)).comap (fun ω : ι → S => ω ∘ e) =
       tailEvents (X := fun _ : ι => S) := by
