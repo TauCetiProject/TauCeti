@@ -24,8 +24,8 @@ individual cell attachments and transfinite compositions to relative cell comple
   isomorphism of arrows `Arrow.mk f ≅ Arrow.mk f'`, composing each cell inclusion with the target
   isomorphism.
 * `HomotopicalAlgebra.RelativeCellComplex.reindexCellTypes`: replaces the family of basic cells
-  along arrow isomorphisms, precomposing each cell inclusion with the corresponding target
-  isomorphism.
+  along arrow isomorphisms, precomposing each cell inclusion with the inverse of the corresponding
+  target isomorphism.
 
 Together these operations transfer cell decompositions across adjunctions, such as pushing the
 skeletal cell complex of a simplicial set forward along geometric realization to obtain a

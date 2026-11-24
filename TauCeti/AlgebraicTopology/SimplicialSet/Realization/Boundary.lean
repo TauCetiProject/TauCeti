@@ -255,7 +255,7 @@ def toTopBoundaryIsoDiskBoundary (n : ℕ) :
 
 /-- The boundary isomorphism `toTopBoundaryIsoDiskBoundary n` commutes with the boundary inclusions
 into `|Δ[n]|` and `𝔻 n`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma toTopBoundaryIsoDiskBoundary_hom_comp_diskBoundaryInclusion (n : ℕ) :
     (toTopBoundaryIsoDiskBoundary.{u} n).hom ≫ TopCat.diskBoundaryInclusion.{u} n =
       toTop.map (∂Δ[n].ι : (∂Δ[n] : SSet.{u}) ⟶ Δ[n]) ≫ (toTopStdSimplexIsoDisk.{u} n).hom := by
