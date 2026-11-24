@@ -152,9 +152,9 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
     (isClosed_eq (continuous_const.sub continuous_id).norm continuous_const)
   have : CompleteSpace S := hS.completeSpace_coe
   have : Nonempty S := ⟨⟨c, hc, hc'⟩⟩
-  have hne (v : S) : (v : K) ≠ 0 := norm_ne_zero_iff.mp (by rw [v.2.1]; exact one_ne_zero)
+  have hne (v : S) : (v : K) ≠ 0 := norm_ne_zero_iff.mp (by rw [v.property.1]; exact one_ne_zero)
   let U : S → Kˣ := fun v ↦ Units.mk0 v (hne v)
-  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = 1 ∧ ‖1 - ((U v : Kˣ) : K)‖ = 1 := v.2
+  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = 1 ∧ ‖1 - ((U v : Kˣ) : K)‖ = 1 := v.property
   -- the step stays in `S`: it moves by less than `1` from `c ∈ S`
   have hstep (v : S) : tateStep q (U v) c ∈ S := by
     have h := (norm_tateStep_sub_le q _ hq hc.le hc'.le (hU v).1 (hU v).2).trans_lt hq
@@ -165,9 +165,9 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
       refine (IsUltrametricDist.norm_eq_of_norm_sub_lt_left ?_).symm
       rwa [sub_sub_sub_cancel_left, hc']
   have hF : ContractingWith ‖(q : K)‖₊ (fun v : S ↦ (⟨tateStep q (U v) c, hstep v⟩ : S)) := by
-    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one],
+    refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_one],
       LipschitzWith.of_dist_le_mul fun v w ↦ ?_⟩
-    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm]
+    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnNorm]
     exact norm_tateStep_sub_tateStep_le q _ _ hq hc.le hc'.le (hU v).1 (hU w).1 (hU w).2
   set v := ContractingWith.fixedPoint _ hF
   have hv : tateStep q (U v) c = v := congrArg Subtype.val (ContractingWith.fixedPoint_isFixedPt hF)

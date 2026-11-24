@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Constructions.Polish.EmbeddingReal
 public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.Probability.Quantile
 
@@ -55,7 +56,7 @@ private def atomless_standardBorel_mod0MeasureIso (α) [MeasurableSpace α]
   have hnull : NullSingletonClass (Measure.map (embeddingReal α) μ) :=
     nullSingletonClass_map_of_injective (measurableEmbedding_embeddingReal α).measurable
       (measurableEmbedding_embeddingReal α).injective
-  exact (@TauCeti.embeddingRealMod0MeasureIso α _ _ μ hne).trans
+  exact ((measurableEmbedding_embeddingReal α).mod0MeasureIso rfl).trans
     (@realMod0MeasureIso (Measure.map (embeddingReal α) μ) hprob hnull)
 
 /-- A measure-preserving map in each direction between an atomless standard-Borel
@@ -68,6 +69,6 @@ theorem exists_mpModNull_equiv_unitInterval
       MeasurePreserving g (volume : Measure I) μ ∧
       (∀ᵐ x ∂μ, g (f x) = x) ∧
       (∀ᵐ y ∂(volume : Measure I), f (g y) = y) :=
-  TauCeti.mod0MeasureIso_to_unitInterval (atomless_standardBorel_mod0MeasureIso Ω μ)
+  (atomless_standardBorel_mod0MeasureIso Ω μ).exists_measurePreserving_unitInterval
 
 end MeasureTheory.Measure

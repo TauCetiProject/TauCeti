@@ -59,7 +59,6 @@ theorem quantile_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioo 0 1) 
       rw [← measureReal_empty (μ := μ)]
       apply measureReal_congr
       filter_upwards [hs] with y hy
-      apply propext
       simp only [mem_Iic, mem_empty_iff_false, iff_false]
       exact fun hle ↦ h ⟨y, Finset.mem_filter.mpr ⟨hy, hle⟩⟩
     have := le_cdf_quantile μ hu.2
@@ -70,7 +69,6 @@ theorem quantile_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioo 0 1) 
     simp only [cdf_eq_real]
     apply measureReal_congr
     filter_upwards [hs] with y hy
-    apply propext
     exact ⟨fun h ↦ h.trans ha, fun h ↦ t.le_max' y (Finset.mem_filter.mpr ⟨hy, h⟩)⟩
   have hq : μ.quantile u = t.max' ht :=
     le_antisymm ((μ.quantile_le_iff hu.1 hu.2).2 (he.symm ▸ le_cdf_quantile μ hu.2)) ha

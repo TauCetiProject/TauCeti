@@ -37,6 +37,9 @@ at pin `66889eada51a`, Apache 2.0, by Michael Stoll).
   localization.
 * `FractionalIdeal.spanSingleton_inv_mul_cancel_left`: scaling by a unit and then by its inverse
   returns the fractional ideal.
+* `FractionalIdeal.spanSingleton_smul_eq` and `FractionalIdeal.spanSingleton_units_smul`: scaling
+  the generator of a principal fractional ideal by a unit of the base ring leaves the ideal
+  unchanged.
 * `Ideal.moduleInvertible_of_isUnit_fractionalIdeal`: an ideal invertible in a faithful
   localization is an invertible module over the base ring.
 -/
@@ -99,7 +102,8 @@ theorem ringEquivOfRingEquiv_coeIdeal (K L : Type*)
   apply FractionalIdeal.coeToSubmodule_injective
   dsimp only
   rw [← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val,
-    FractionalIdeal.val_eq_coe, FractionalIdeal.coe_coeIdeal, FractionalIdeal.coe_coeIdeal]
+    FractionalIdeal.val_eq_coe, FractionalIdeal.coeToSubmodule_coeIdeal,
+    FractionalIdeal.coeToSubmodule_coeIdeal]
   ext x
   simp only [Submodule.mem_map, FractionalIdeal.mem_coeSubmodule]
   constructor
@@ -131,6 +135,20 @@ theorem spanSingleton_inv_mul_cancel_left (x : Pˣ) (I : FractionalIdeal S P) :
     spanSingleton S ((x⁻¹ : Pˣ) : P) * (spanSingleton S (x : P) * I) = I := by
   rw [← mul_assoc, ← map_mul (spanSingleton _), Units.inv_mul, map_one (spanSingleton _), one_mul]
 
+/-- Scaling the generator of a principal fractional ideal by a unit of the base ring leaves the
+ideal unchanged. -/
+theorem spanSingleton_smul_eq {r : R} (hr : IsUnit r) (x : P) :
+    spanSingleton S (r • x) = spanSingleton S x := by
+  rw [← coeToSubmodule_inj, coeToSubmodule_spanSingleton, coeToSubmodule_spanSingleton,
+    Submodule.span_singleton_smul_eq hr]
+
+/-- Scaling the generator of a principal fractional ideal by an element of `Rˣ` leaves the ideal
+unchanged. -/
+@[simp]
+theorem spanSingleton_units_smul (u : Rˣ) (x : P) :
+    spanSingleton S (u • x) = spanSingleton S x :=
+  spanSingleton_smul_eq u.isUnit x
+
 /-- **Criterion for invertibility of a fractional ideal.** A fractional ideal whose
 `A`-submodule has an `A`-submodule inverse for multiplication, with product the image of `R`,
 is invertible. -/
@@ -157,7 +175,7 @@ lemma toPrincipalIdeal_eq_one_iff {R : Type*} [CommRing R]
     {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] (u : Kˣ) :
     toPrincipalIdeal R K u = 1 ↔ ∃ a : Rˣ, Units.map (algebraMap R K : R →* K) a = u := by
   rw [← Units.val_inj, coe_toPrincipalIdeal, Units.val_one, ← coeToSubmodule_inj,
-    coe_spanSingleton, coe_one, Submodule.span_singleton_eq_one_iff]
+    coeToSubmodule_spanSingleton, coeToSubmodule_one, Submodule.span_singleton_eq_one_iff]
   exact ⟨fun ⟨a, ha⟩ ↦ ⟨a, Units.ext ha.symm⟩, fun ⟨a, ha⟩ ↦ ⟨a, by rw [← ha]; rfl⟩⟩
 
 /-- Negating a generator preserves its principal ideal, because `-1` is a unit of the base ring. -/
@@ -186,7 +204,7 @@ theorem moduleInvertible_of_isUnit_fractionalIdeal {R : Type*} [CommRing R]
     congrArg FractionalIdeal.coeToSubmodule hI.unit_spec
   have hmap : Submodule.map (Algebra.linearMap R P) I =
       (I : FractionalIdeal S P).coeToSubmodule := by
-    rw [FractionalIdeal.coe_coeIdeal, IsLocalization.coeSubmodule]
+    rw [FractionalIdeal.coeToSubmodule_coeIdeal, IsLocalization.coeSubmodule]
   let e : I ≃ₗ[R] U :=
     (Submodule.equivMapOfInjective (Algebra.linearMap R P)
       (FaithfulSMul.algebraMap_injective R P) I).trans

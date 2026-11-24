@@ -33,10 +33,18 @@ below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
   cohomology.
 * `TopCat.isIso_singularCohomologyMap` and `TopPair.isIso_singularCohomologyMap`: a map with a
   homotopy inverse induces an isomorphism on singular cohomology.
+* `TopCat.singularCohomologyMap_lift_const_eq_of_joined`: restrictions of a class on `X × Y` to
+  the slices through two points joined by a path agree.
 * `TopPair.isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy`: enlarging the subspace of a
   pair to a neighbourhood which deforms back into it does not change relative cohomology.
-* `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap`: the same for a bundled homotopy
-  equivalence of spaces.
+* `TopPair.isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel`: a strong
+  deformation retraction of the ambient space onto an intermediate subset does not change relative
+  cohomology.
+* `TopPair.isZero_singularCohomology_ofInclusion_of_homotopyRel`: a pair with a strong deformation
+  retraction onto its subspace has no relative cohomology.
+* `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap` and
+  `ContinuousMap.HomotopyEquiv.singularCohomologyIso`: the induced isomorphism on singular
+  cohomology for a bundled homotopy equivalence of spaces.
 
 ## References
 
@@ -99,19 +107,67 @@ lemma isIso_singularCohomologyMap (f : X ⟶ Y) (f' : Y ⟶ X) (H : Homotopy (f 
   · rw [← singularCohomologyMap_comp, H.congr_singularCohomologyMap R k M n,
       singularCohomologyMap_id]
 
+/-- **Restrictions to slices through joined points agree**: if `x` and `x'` are joined by a path,
+then for `g : Z ⟶ Y` the maps `z ↦ (x, g z)` and `z ↦ (x', g z)` into `X × Y` are homotopic, so
+they induce the same map on singular cohomology. For `g = 𝟙 Y` these are the restrictions to the
+slices `{x} × Y` and `{x'} × Y`. -/
+@[reassoc, elementwise]
+lemma singularCohomologyMap_lift_const_eq_of_joined {Z : TopCat.{w}} {x x' : X} (h : Joined x x')
+    {g : Z ⟶ Y} {R : C} {k : Type*} [Ring k] [Linear k C] {M : C} (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x)) g) n =
+      TopCat.singularCohomologyMap
+        (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x')) g) n := by
+  -- pairing a path from `x` to `x'` with the constant homotopy at `g` connects the two maps
+  have hlift (x₁ : X) : (ContinuousMap.const Z x₁).prodMk g.hom =
+      (CartesianMonoidalCategory.lift (ofHom (ContinuousMap.const Z x₁)) g).hom := by
+    ext z
+    · exact (congrArg Prod.fst (TopCat.lift_apply (x := z))).symm
+    · exact (congrArg Prod.snd (TopCat.lift_apply (x := z))).symm
+  exact Homotopy.congr_singularCohomologyMap
+    ((h.somePath.toHomotopyConst.prodMk (.refl g.hom)).cast (hlift x) (hlift x')) R k M n
+
 end TopCat
 
 namespace ContinuousMap.HomotopyEquiv
 
 variable {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
   (e : ContinuousMap.HomotopyEquiv X Y)
-  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+  (k : Type*) [Ring k] [Linear k C] (M : C)
 
 /-- A homotopy equivalence induces isomorphisms on singular cohomology in every degree. -/
-lemma isIso_singularCohomologyMap (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
+lemma isIso_singularCohomologyMap (n : ℕ) :
     IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (TopCat.ofHom e.toFun) n) :=
   TopCat.isIso_singularCohomologyMap _ (TopCat.ofHom e.invFun) e.left_inv.some e.right_inv.some
     R k M n
+
+/-- A homotopy equivalence induces an isomorphism on singular cohomology in every degree, with
+forward map induced by pullback along `e` and inverse induced by pullback along `e.symm`. -/
+@[no_expose]
+def singularCohomologyIso (n : ℕ) :
+    (TopCat.of Y).singularCohomology R k M n ≅ (TopCat.of X).singularCohomology R k M n where
+  hom := TopCat.singularCohomologyMap (TopCat.ofHom e.toFun) n
+  inv := TopCat.singularCohomologyMap (TopCat.ofHom e.invFun) n
+  hom_inv_id := by
+    rw [← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_id]
+    exact TopCat.Homotopy.congr_singularCohomologyMap e.right_inv.some R k M n
+  inv_hom_id := by
+    rw [← TopCat.singularCohomologyMap_comp, ← TopCat.singularCohomologyMap_id]
+    exact TopCat.Homotopy.congr_singularCohomologyMap e.left_inv.some R k M n
+
+/-- The forward map of `ContinuousMap.HomotopyEquiv.singularCohomologyIso` is pullback along `e`. -/
+@[simp]
+lemma singularCohomologyIso_hom (n : ℕ) :
+    (e.singularCohomologyIso R k M n).hom =
+      TopCat.singularCohomologyMap (TopCat.ofHom e.toFun) n := (rfl)
+
+/-- The inverse map of `ContinuousMap.HomotopyEquiv.singularCohomologyIso` is pullback along
+`e.symm`. -/
+@[simp]
+lemma singularCohomologyIso_inv (n : ℕ) :
+    (e.singularCohomologyIso R k M n).inv =
+      TopCat.singularCohomologyMap (TopCat.ofHom e.invFun) n := (rfl)
 
 end ContinuousMap.HomotopyEquiv
 
@@ -177,5 +233,56 @@ lemma isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy {X : TopCat.{w}} {B
     simpa only [Category.id_comp] using (ofSubsetHomotopy H hB).symm
   · rw [← ofSubsetMap_comp _ _ hρ hBN (hBN.comp hρ), ← ofSubsetMap_id (B := N) fun _ hx ↦ hx]
     simpa only [Category.comp_id] using (ofSubsetHomotopy H hN).symm
+
+/-- **A strong deformation retraction of the ambient space induces isomorphisms on relative
+singular cohomology.** If `s ⊆ c ⊆ t` and `t` deformation retracts onto `c` relative to `c`, the
+inclusion `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular cohomology.  This is the
+cohomology form of `TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel`. -/
+theorem isIso_singularCohomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X : TopCat.{w}}
+    {s c t : Set X} (hsc : s ⊆ c) (hct : c ⊆ t) (r : C(t, c))
+    (G : ((ContinuousMap.inclusion hct).comp r).HomotopyRel (ContinuousMap.id t)
+      {x | (x : X) ∈ c})
+    (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (ofInclusionMap hsc (hsc.trans hct) (ContinuousMap.inclusion hct)
+        fun _ hx ↦ by simpa using hx) n) := by
+  -- The retraction fixes every point of `c`, in particular every point of `s`.
+  have hrc (x : t) (hx : (x : X) ∈ c) : (r x : X) = x :=
+    congrArg Subtype.val (G.fst_eq_snd (x := x) hx)
+  have hrs (x : t) (hx : (x : X) ∈ s) : (r x : X) ∈ s := (hrc x (hsc hx)).symm ▸ hx
+  refine isIso_singularCohomologyMap _ (ofInclusionMap (hsc.trans hct) hsc r hrs) ?_ ?_ R k M n
+  · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
+    have hid : r.comp (ContinuousMap.inclusion hct) = ContinuousMap.id c := by
+      ext x
+      exact hrc _ x.property
+    simp only [hid]
+    exact Homotopy.refl _
+  · rw [← ofInclusionMap_comp, ← ofInclusionMap_id]
+    -- The homotopy is stationary on `c ⊇ s`, so it keeps `s` inside `s`.
+    refine ofInclusionHomotopy G.toHomotopy fun τ x hx ↦ ?_
+    have h : G.toHomotopy (τ, x) = _ := G.eq_fst τ (hsc hx)
+    exact h ▸ hrs x hx
+
+/-- **A pair with a strong deformation retraction onto its subspace has no relative cohomology.**
+If `s ⊆ t` and `t` deformation retracts onto `s` relative to `s`, the relative singular cohomology
+of `(t, s)` vanishes in every degree. This is the cohomology form of
+`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`. -/
+theorem isZero_singularCohomology_ofInclusion_of_homotopyRel {X : TopCat.{w}} {s t : Set X}
+    (hst : s ⊆ t) (r : C(t, s))
+    (G : ((ContinuousMap.inclusion hst).comp r).HomotopyRel (ContinuousMap.id t)
+      {x | (x : X) ∈ s})
+    (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
+    IsZero ((ofInclusion hst).singularCohomology R k M n) := by
+  -- The identity of the pair is homotopic to the retraction, which factors through `s`.
+  let f := ofInclusionMap hst hst ((ContinuousMap.inclusion hst).comp r) fun x _ ↦ (r x).property
+  have H : Homotopy (𝟙 (ofInclusion hst)) f := by
+    rw [← ofInclusionMap_id]
+    refine ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
+    have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
+    rw [h]
+    exact hx
+  rw [IsZero.iff_id_eq_zero, ← singularCohomologyMap_id, H.congr_singularCohomologyMap R k M n]
+  exact singularCohomologyMap_eq_zero_of_fac R k M f (TopCat.ofHom r)
+    (by ext x; exact (ofInclusionMap_fst_apply (hst := hst) (hst' := hst) _ _ x).symm) n
 
 end TopPair

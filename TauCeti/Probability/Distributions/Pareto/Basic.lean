@@ -11,6 +11,7 @@ public import Mathlib.Probability.Distributions.Pareto
 
 import TauCeti.Probability.Moments.IntegrableExpMul
 import TauCeti.Probability.Distributions.Pareto.PDF
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Elementary theory of the Pareto distribution
@@ -42,9 +43,6 @@ bases are positive, so Mathlib's improper-integral criterion for real powers app
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 1, the Pareto target — the
-  mean and its non-integrability threshold, the variance and its non-integrability threshold,
-  the cdf, and `integrableExpSet id (paretoMeasure t r) = Set.Iic 0`.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 1,
   Chapter 20.
 * `Mathlib.Probability.Distributions.Pareto`, whose density normalization is reused here.
@@ -75,7 +73,7 @@ threshold and shape exactly when its density-weighted version is Lebesgue integr
 theorem integrable_paretoMeasure_iff (ht : 0 ≤ t) (hr : 0 ≤ r) {g : ℝ → E} :
     Integrable g (paretoMeasure t r) ↔ Integrable fun x => paretoPDFReal t r x • g x := by
   rw [paretoMeasure_eq_withDensity_ofReal]
-  exact TauCeti.Probability.integrable_withDensity_ofReal_iff
+  exact TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff
     (measurable_paretoPDFReal t r).aemeasurable (ae_of_all _ (paretoPDFReal_nonneg ht hr))
 
 /-- **Integral transfer.** An integral against a Pareto law with nonnegative threshold and shape
@@ -83,7 +81,7 @@ is the density-weighted Lebesgue integral. -/
 theorem integral_paretoMeasure_eq (ht : 0 ≤ t) (hr : 0 ≤ r) (g : ℝ → E) :
     ∫ x, g x ∂paretoMeasure t r = ∫ x, paretoPDFReal t r x • g x := by
   rw [paretoMeasure_eq_withDensity_ofReal]
-  exact TauCeti.Probability.integral_withDensity_ofReal
+  exact TauCeti.MeasureTheory.integral_withDensity_ofReal
     (measurable_paretoPDFReal t r).aemeasurable (ae_of_all _ (paretoPDFReal_nonneg ht hr)) g
 
 end Transfer

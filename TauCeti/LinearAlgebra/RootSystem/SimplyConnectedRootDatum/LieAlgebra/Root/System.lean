@@ -36,9 +36,10 @@ weight included, so the file also translates a family indexed by the root number
   the root numbered `α` takes the values of root `α` of the pinned datum on the Cartan generators,
   and is characterized by them.
 * `TauCeti.DynkinType.rootEquiv_simpleIndex`,
+  `TauCeti.DynkinType.pairingIn_rootEquiv`,
   `TauCeti.DynkinType.rootEquiv_reflectionPerm_self` and
   `TauCeti.DynkinType.rootEquiv_reflectionPerm`: the enumeration matches the numbered simple
-  roots and commutes with negation and with reflections.
+  roots, preserves the integer Cartan pairing, and commutes with negation and with reflections.
 * `TauCeti.DynkinType.coe_rootEquiv_eq_add`: the enumeration carries sums of roots of the
   rational root system to sums of weights.
 * `TauCeti.DynkinType.coe_rootEquiv_eq_add_iff`: a weight sum of enumerated roots is an enumerated
@@ -106,6 +107,15 @@ def rootEquiv : Fin t.numRoots ≃ (t.cartanSubalgebra ht).root :=
 with this equation makes the general `RootPairing.Hom` API available for the enumeration. -/
 theorem rootEquiv_eq_indexEquiv :
     t.rootEquiv ht = (t.rationalRootSystemEquiv ht).indexEquiv := (rfl)
+
+/-- The Killing root system of the pinned rational Lie algebra has the exact Cartan integers of
+`TauCeti.DynkinType.simplyConnectedRootDatum` under `TauCeti.DynkinType.rootEquiv`. -/
+@[simp] theorem pairingIn_rootEquiv (i j : Fin t.numRoots) :
+    (rootSystem (t.cartanSubalgebra ht)).pairingIn ℤ (t.rootEquiv ht i) (t.rootEquiv ht j) =
+      (t.simplyConnectedRootDatum ht).pairing i j :=
+  FaithfulSMul.algebraMap_injective ℤ ℚ <| by
+    rw [RootPairing.algebraMap_pairingIn, rootEquiv_eq_indexEquiv,
+      (t.rationalRootSystemEquiv ht).toHom.pairing, t.pairing_rationalRootSystem ht, eq_intCast]
 
 /-- The enumeration, the index bijection of the pinned root-system equivalence, sends a
 Bourbaki-numbered simple root to the simple root of the correspondingly numbered Chevalley
@@ -250,8 +260,7 @@ private theorem chainBotCoeff_rootSystem_rootEquiv (α β : Fin t.numRoots) :
     (rootSystem (t.cartanSubalgebra ht)).chainBotCoeff (t.rootEquiv ht α) (t.rootEquiv ht β) =
       (t.rationalRootSystem ht).chainBotCoeff α β := by
   simp only [rootEquiv_eq_indexEquiv]
-  exact (t.rationalRootSystemEquiv ht).toHom.chainBotCoeff_indexEquiv
-    (t.rationalRootSystemEquiv ht).bijective_weightMap.injective α β
+  exact (t.rationalRootSystemEquiv ht).toHom.chainBotCoeff_indexEquiv α β
 
 /-- The Lie-weight root string agrees with the Killing root system's, read at enumerated roots. -/
 private theorem chainBotCoeff_eq_rootSystem_chainBotCoeff {α β : Fin t.numRoots}

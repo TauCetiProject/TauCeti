@@ -44,6 +44,8 @@ This file constructs the connecting map and proves the exactness statements whic
   map are the orbits of `B(C)`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_mem_range_connecting`: an `A`-torsor with an
   `i`-equivariant morphism to `B` is a torsor of lifts.
+* `CategoryTheory.Sheaf.NonabelianH1.connecting_eq_connecting_of_comp_eq`: the connecting map is
+  natural in morphisms of extensions of `A` which are the identity on `A`.
 
 ## References
 
@@ -95,14 +97,14 @@ include hE in
 /-- Exactness of `1 → A(C) → B(C) → Q(C)`: a global section of `B` maps to the unit section of
 `Q` if and only if it comes from a unique global section of `A`. -/
 theorem existsUnique_sections_iff (b : (B.obj ⋙ forget GrpCat).sections) :
-    (∃! a : (A.obj ⋙ forget GrpCat).sections, ∀ U, i.hom.app U (a.1 U) = b.1 U) ↔
-      ∀ U, π.hom.app U (b.1 U) = 1 := by
-  refine ⟨fun ⟨a, ha, _⟩ U ↦ ha U ▸ hE.app_app_eq_one (a.1 U), fun hb ↦ ?_⟩
+    (∃! a : (A.obj ⋙ forget GrpCat).sections, ∀ U, i.hom.app U (a.val U) = b.val U) ↔
+      ∀ U, π.hom.app U (b.val U) = 1 := by
+  refine ⟨fun ⟨a, ha, _⟩ U ↦ ha U ▸ hE.app_app_eq_one (a.val U), fun hb ↦ ?_⟩
   choose a ha using fun U ↦ hE.exists_app_eq (hb U)
   refine ⟨⟨a, fun {U V} f ↦ hE.injective V ?_⟩, ha, fun a' ha' ↦ ?_⟩
   · -- `i` commutes with restriction, and `b` is compatible.
     exact (NatTrans.naturality_apply i.hom f (a U)).trans
-      ((congrArg _ (ha U)).trans ((b.2 f).trans (ha V).symm))
+      ((congrArg _ (ha U)).trans ((b.property f).trans (ha V).symm))
   · exact Subtype.ext (funext fun U ↦ hE.injective U ((ha' U).trans (ha U).symm))
 
 variable (π) in
@@ -110,9 +112,10 @@ variable (π) in
 its sections over `U` are the sections `b` of `B` over `U` with `π b = q|_U`. -/
 private def liftsSubfunctor (q : (Q.obj ⋙ forget GrpCat).sections) :
     Subfunctor (B.obj ⋙ forget GrpCat) where
-  obj U := {b | π.hom.app U b = q.1 U}
+  obj U := {b | π.hom.app U b = q.val U}
   map f b hb := Set.mem_preimage.2 <| Set.mem_ofPred.2 <|
-    (NatTrans.naturality_apply π.hom f b).trans ((congrArg _ (Set.mem_ofPred.1 hb)).trans (q.2 f))
+    (NatTrans.naturality_apply π.hom f b).trans ((congrArg _ (Set.mem_ofPred.1 hb)).trans
+        (q.property f))
 
 variable (π) in
 /-- The presheaf of lifts of a global section `q` of `Q`: its sections over `U` are the sections
@@ -124,15 +127,15 @@ variable (π) in
 /-- The sections over `U` of the presheaf of lifts of `q` are the sections of `B` over `U` lifting
 `q`. -/
 def liftsPresheafObjEquiv (q : (Q.obj ⋙ forget GrpCat).sections) (U : Cᵒᵖ) :
-    (liftsPresheaf π q).obj U ≃ {b : B.obj.obj U // π.hom.app U b = q.1 U} :=
+    (liftsPresheaf π q).obj U ≃ {b : B.obj.obj U // π.hom.app U b = q.val U} :=
   Equiv.refl _
 
 variable (π) in
 @[simp]
 lemma liftsPresheafObjEquiv_map (q : (Q.obj ⋙ forget GrpCat).sections) {U V : Cᵒᵖ} (f : U ⟶ V)
     (b : (liftsPresheaf π q).obj U) :
-    (liftsPresheafObjEquiv π q V ((liftsPresheaf π q).map f b)).1 =
-      B.obj.map f (liftsPresheafObjEquiv π q U b).1 :=
+    (liftsPresheafObjEquiv π q V ((liftsPresheaf π q).map f b)).val =
+      B.obj.map f (liftsPresheafObjEquiv π q U b).val :=
   (rfl)
 
 variable (π) in
@@ -147,7 +150,7 @@ lemma isSheaf_liftsPresheaf (q : (Q.obj ⋙ forget GrpCat).sections) :
   refine (isSheaf_iff_isSheaf_of_type J _).2 (((liftsSubfunctor π q).isSheaf_iff hB).2 ?_)
   intro U b hb
   refine (hQ.isSeparated _ hb).ext fun V f hf ↦ ?_
-  exact (NatTrans.naturality_apply π.hom f.op b).symm.trans (hf.trans (q.2 f.op).symm)
+  exact (NatTrans.naturality_apply π.hom f.op b).symm.trans (hf.trans (q.property f.op).symm)
 
 /-- The `A`-torsor of lifts of a global section `q` of `Q`: the sheaf `liftsPresheaf π q`, on
 which a section `a` of `A` acts by `b ↦ i a * b`. Use `liftsObjEquiv` to identify its sections
@@ -156,27 +159,27 @@ def lifts (q : (Q.obj ⋙ forget GrpCat).sections) : Torsor A where
   sheaf := ⟨liftsPresheaf π q, isSheaf_liftsPresheaf π q⟩
   mulAction U :=
     { smul a b := (liftsPresheafObjEquiv π q U).symm
-        ⟨i.hom.app U a * (liftsPresheafObjEquiv π q U b).1, by
-          rw [map_mul, hE.app_app_eq_one, one_mul, (liftsPresheafObjEquiv π q U b).2]⟩
+        ⟨i.hom.app U a * (liftsPresheafObjEquiv π q U b).val, by
+          rw [map_mul, hE.app_app_eq_one, one_mul, (liftsPresheafObjEquiv π q U b).property]⟩
       one_smul b := (liftsPresheafObjEquiv π q U).symm_apply_eq.2 <| Subtype.ext <|
         (congrArg (· * _) (map_one _)).trans (one_mul _)
       mul_smul a a' b := congrArg (liftsPresheafObjEquiv π q U).symm <| Subtype.ext <|
         (congrArg (· * _) (map_mul _ a a')).trans (mul_assoc _ _ _) }
-  map_smul U V f a b := Subtype.ext <| (map_mul (ConcreteCategory.hom (B.obj.map f)) _ b.1).trans
-    (congrArg (· * B.obj.map f b.1) (NatTrans.naturality_apply i.hom f a).symm)
+  map_smul U V f a b := Subtype.ext <| (map_mul (ConcreteCategory.hom (B.obj.map f)) _ b.val).trans
+    (congrArg (· * B.obj.map f b.val) (NatTrans.naturality_apply i.hom f a).symm)
   coversTop X := by
     have := hE.isLocallySurjective
-    refine J.superset_covering ?_ (Presheaf.imageSieve_mem J π.hom (q.1 (op X)))
+    refine J.superset_covering ?_ (Presheaf.imageSieve_mem J π.hom (q.val (op X)))
     rintro V g ⟨b, hb⟩
-    exact ⟨⟨V, ⟨⟨b, hb.trans (q.2 g.op)⟩⟩⟩, ⟨𝟙 V⟩⟩
+    exact ⟨⟨V, ⟨⟨b, hb.trans (q.property g.op)⟩⟩⟩, ⟨𝟙 V⟩⟩
   bijective U := by
     refine ⟨fun ⟨a, b⟩ ⟨a', b'⟩ h ↦ ?_, fun ⟨c, b⟩ ↦ ?_⟩
     · obtain ⟨h₁, rfl⟩ := Prod.ext_iff.1 h
       exact Prod.ext (hE.injective U (mul_right_cancel (congrArg Subtype.val h₁))) rfl
     · let e := liftsPresheafObjEquiv π q U
-      obtain ⟨a, ha⟩ := hE.exists_app_eq (b := (e c).1 * (e b).1⁻¹) (by
-        rw [map_mul, map_inv, (e c).2, (e b).2, mul_inv_cancel])
-      exact ⟨(a, b), Prod.ext (e.injective (Subtype.ext ((congrArg (· * (e b).1) ha).trans
+      obtain ⟨a, ha⟩ := hE.exists_app_eq (b := (e c).val * (e b).val⁻¹) (by
+        rw [map_mul, map_inv, (e c).property, (e b).property, mul_inv_cancel])
+      exact ⟨(a, b), Prod.ext (e.injective (Subtype.ext ((congrArg (· * (e b).val) ha).trans
         (inv_mul_cancel_right _ _)))) rfl⟩
 
 variable (q : (Q.obj ⋙ forget GrpCat).sections)
@@ -187,62 +190,105 @@ lemma lifts_sheaf_obj : (hE.lifts q).sheaf.obj = liftsPresheaf π q :=
 /-- The sections over `U` of the torsor of lifts of `q` are the sections of `B` over `U` lifting
 `q`. -/
 def liftsObjEquiv (U : Cᵒᵖ) :
-    (hE.lifts q).sheaf.obj.obj U ≃ {b : B.obj.obj U // π.hom.app U b = q.1 U} :=
+    (hE.lifts q).sheaf.obj.obj U ≃ {b : B.obj.obj U // π.hom.app U b = q.val U} :=
   liftsPresheafObjEquiv π q U
 
 @[simp]
 lemma liftsObjEquiv_smul {U : Cᵒᵖ} (a : A.obj.obj U) (b : (hE.lifts q).sheaf.obj.obj U) :
-    (hE.liftsObjEquiv q U (a • b)).1 = i.hom.app U a * (hE.liftsObjEquiv q U b).1 :=
+    (hE.liftsObjEquiv q U (a • b)).val = i.hom.app U a * (hE.liftsObjEquiv q U b).val :=
   (rfl)
 
 @[simp]
 lemma liftsObjEquiv_map {U V : Cᵒᵖ} (f : U ⟶ V) (b : (hE.lifts q).sheaf.obj.obj U) :
-    (hE.liftsObjEquiv q V ((hE.lifts q).sheaf.obj.map f b)).1 =
-      B.obj.map f (hE.liftsObjEquiv q U b).1 :=
+    (hE.liftsObjEquiv q V ((hE.lifts q).sheaf.obj.map f b)).val =
+      B.obj.map f (hE.liftsObjEquiv q U b).val :=
   (rfl)
+
+section Naturality
+
+variable {A' B' Q' : Sheaf J GrpCat.{w}} {i' : A' ⟶ B'} {π' : B' ⟶ Q'}
+  (hE' : IsGroupExtension i' π') (β : B ⟶ B') (γ : Q ⟶ Q')
+  (hγ : β ≫ π' = π ≫ γ) (q' : (Q'.obj ⋙ forget GrpCat).sections)
+  (hq : ∀ U, γ.hom.app U (q.val U) = q'.val U)
+
+/-- A commuting square between the projections of two group extensions sends local lifts of
+`q` to local lifts of its image `q'`, by applying the map `β` of middle sheaves. -/
+def liftsMap : (hE.lifts q).sheaf ⟶ (hE'.lifts q').sheaf :=
+  ObjectProperty.homMk
+    { app U := ↾fun b ↦ (hE'.liftsObjEquiv q' U).symm
+        ⟨β.hom.app U (hE.liftsObjEquiv q U b).val, by
+          simpa [(hE.liftsObjEquiv q U b).property, hq] using
+            ConcreteCategory.congr_hom (NatTrans.congr_app (congrArg (·.hom) hγ) U)
+              (hE.liftsObjEquiv q U b).val⟩
+      naturality U V f := by
+        ext b
+        refine (hE'.liftsObjEquiv q' V).injective (Subtype.ext ?_)
+        simp [NatTrans.naturality_apply] }
+
+/-- On local lifts, `liftsMap` applies `β` to the underlying section. -/
+@[simp]
+lemma liftsObjEquiv_liftsMap_hom_app (U : Cᵒᵖ) (b : (hE.lifts q).sheaf.obj.obj U) :
+    (hE'.liftsObjEquiv q' U ((hE.liftsMap q hE' β γ hγ q' hq).hom.app U b)).val =
+      β.hom.app U (hE.liftsObjEquiv q U b).val :=
+  (rfl)
+
+/-- If the square on kernels also commutes, the map on local lifts is equivariant for the
+corresponding map `α` of kernels. -/
+lemma liftsMap_smul (α : A ⟶ A') (hα : i ≫ β = α ≫ i')
+    (U : Cᵒᵖ) (a : A.obj.obj U) (b : (hE.lifts q).sheaf.obj.obj U) :
+    (hE.liftsMap q hE' β γ hγ q' hq).hom.app U (a • b) =
+      α.hom.app U a • (hE.liftsMap q hE' β γ hγ q' hq).hom.app U b := by
+  refine (hE'.liftsObjEquiv q' U).injective (Subtype.ext ?_)
+  simp only [liftsObjEquiv_liftsMap_hom_app, liftsObjEquiv_smul, map_mul]
+  exact congrArg (· * _) (ConcreteCategory.congr_hom
+    (NatTrans.congr_app (congrArg (·.hom) hα) U) a)
+
+end Naturality
 
 /-- Global sections of the torsor of lifts of `q` are the global sections of `B` lifting `q`. -/
 def liftsSectionsEquiv : (hE.lifts q).sheaf.obj.sections ≃
-    {b : (B.obj ⋙ forget GrpCat).sections // ∀ U, π.hom.app U (b.1 U) = q.1 U} where
-  toFun s := ⟨⟨fun U ↦ (s.1 U).1, fun f ↦ congrArg Subtype.val (s.2 f)⟩, fun U ↦ (s.1 U).2⟩
-  invFun b := ⟨fun U ↦ ⟨b.1.1 U, b.2 U⟩, fun f ↦ Subtype.ext (b.1.2 f)⟩
+    {b : (B.obj ⋙ forget GrpCat).sections // ∀ U, π.hom.app U (b.val U) = q.val U} where
+  toFun s := ⟨⟨fun U ↦ (s.val U).val, fun f ↦ congrArg Subtype.val (s.property f)⟩, fun U ↦
+      (s.val U).property⟩
+  invFun b := ⟨fun U ↦ ⟨b.val.val U, b.property U⟩, fun f ↦ Subtype.ext (b.val.property f)⟩
 
 @[simp]
 lemma liftsSectionsEquiv_apply_val (s : (hE.lifts q).sheaf.obj.sections) (U : Cᵒᵖ) :
-    (hE.liftsSectionsEquiv q s).1.1 U = (hE.liftsObjEquiv q U (s.1 U)).1 :=
+    (hE.liftsSectionsEquiv q s).val.val U = (hE.liftsObjEquiv q U (s.val U)).val :=
   (rfl)
 
 @[simp]
 lemma liftsObjEquiv_liftsSectionsEquiv_symm_apply
-    (b : {b : (B.obj ⋙ forget GrpCat).sections // ∀ U, π.hom.app U (b.1 U) = q.1 U})
+    (b : {b : (B.obj ⋙ forget GrpCat).sections // ∀ U, π.hom.app U (b.val U) = q.val U})
     (U : Cᵒᵖ) :
-    hE.liftsObjEquiv q U (((hE.liftsSectionsEquiv q).symm b).1 U) = ⟨b.1.1 U, b.2 U⟩ :=
+    hE.liftsObjEquiv q U (((hE.liftsSectionsEquiv q).symm b).val U) = ⟨b.val.val U, b.property U⟩ :=
   (rfl)
 
 variable {q} in
 /-- Right multiplication by a global section `c` of `B` is a morphism from the torsor of lifts of
 `q` to the torsor of lifts of `q'` when `π c = q⁻¹ q'`. -/
 private def liftsMulRight (q' : (Q.obj ⋙ forget GrpCat).sections)
-    (c : (B.obj ⋙ forget GrpCat).sections) (h : ∀ U, π.hom.app U (c.1 U) = (q.1 U)⁻¹ * q'.1 U) :
+    (c : (B.obj ⋙ forget GrpCat).sections) (h : ∀ U, π.hom.app U (c.val U) =
+        (q.val U)⁻¹ * q'.val U) :
     hE.lifts q ⟶ hE.lifts q' where
   hom := ObjectProperty.homMk
     -- `c.1 U` has type `(B.obj ⋙ forget GrpCat).obj U`, for which no `HMul` instance is found,
     -- so the multiplication of the group `B.obj.obj U` is given explicitly.
     { app U := ↾fun b ↦ (hE.liftsObjEquiv q' U).symm
-        ⟨@HMul.hMul (B.obj.obj U) (B.obj.obj U) _ _ (hE.liftsObjEquiv q U b).1 (c.1 U), by
-          rw [map_mul, (hE.liftsObjEquiv q U b).2, h, mul_inv_cancel_left]⟩
+        ⟨@HMul.hMul (B.obj.obj U) (B.obj.obj U) _ _ (hE.liftsObjEquiv q U b).val (c.val U), by
+          rw [map_mul, (hE.liftsObjEquiv q U b).property, h, mul_inv_cancel_left]⟩
       naturality U V f := by
         ext b
-        exact Subtype.ext ((map_mul (ConcreteCategory.hom (B.obj.map f)) b.1 (c.1 U)).trans
-          (congrArg (B.obj.map f b.1 * ·) (c.2 f))).symm }
+        exact Subtype.ext ((map_mul (ConcreteCategory.hom (B.obj.map f)) b.val (c.val U)).trans
+          (congrArg (B.obj.map f b.val * ·) (c.property f))).symm }
   map_smul U a b := Subtype.ext (mul_assoc _ _ _)
 
 variable {q} in
 /-- For a morphism `f` of torsors of lifts, `b⁻¹ * f b` does not depend on the lift `b`. -/
 private lemma inv_mul_hom_app_eq {q' : (Q.obj ⋙ forget GrpCat).sections}
     (f : hE.lifts q ⟶ hE.lifts q') {U : Cᵒᵖ} (b b' : (hE.lifts q).sheaf.obj.obj U) :
-    (hE.liftsObjEquiv q U b).1⁻¹ * (hE.liftsObjEquiv q' U (f.hom.hom.app U b)).1 =
-      (hE.liftsObjEquiv q U b').1⁻¹ * (hE.liftsObjEquiv q' U (f.hom.hom.app U b')).1 := by
+    (hE.liftsObjEquiv q U b).val⁻¹ * (hE.liftsObjEquiv q' U (f.hom.hom.app U b)).val =
+      (hE.liftsObjEquiv q U b').val⁻¹ * (hE.liftsObjEquiv q' U (f.hom.hom.app U b')).val := by
   obtain ⟨a, rfl⟩ := MulAction.exists_smul_eq (A.obj.obj U) b b'
   rw [f.map_smul, liftsObjEquiv_smul, liftsObjEquiv_smul, mul_inv_rev, mul_assoc,
     inv_mul_cancel_left]
@@ -251,9 +297,9 @@ variable {q} in
 /-- Restricting `b⁻¹ * f b` along `g` gives the same expression for the restriction of `b`. -/
 private lemma map_inv_mul_hom_app {q' : (Q.obj ⋙ forget GrpCat).sections}
     (f : hE.lifts q ⟶ hE.lifts q') {U V : Cᵒᵖ} (g : U ⟶ V) (b : (hE.lifts q).sheaf.obj.obj U) :
-    B.obj.map g ((hE.liftsObjEquiv q U b).1⁻¹ * (hE.liftsObjEquiv q' U (f.hom.hom.app U b)).1) =
-      (hE.liftsObjEquiv q V ((hE.lifts q).sheaf.obj.map g b)).1⁻¹ *
-        (hE.liftsObjEquiv q' V (f.hom.hom.app V ((hE.lifts q).sheaf.obj.map g b))).1 := by
+    B.obj.map g ((hE.liftsObjEquiv q U b).val⁻¹ * (hE.liftsObjEquiv q' U (f.hom.hom.app U b)).val) =
+      (hE.liftsObjEquiv q V ((hE.lifts q).sheaf.obj.map g b)).val⁻¹ *
+        (hE.liftsObjEquiv q' V (f.hom.hom.app V ((hE.lifts q).sheaf.obj.map g b))).val := by
   rw [map_mul, map_inv, NatTrans.naturality_apply f.hom.hom g b, liftsObjEquiv_map,
     liftsObjEquiv_map]
 
@@ -279,10 +325,10 @@ lemma connecting_def (q : (Q.obj ⋙ forget GrpCat).sections) :
 `Q` to the base point if and only if it lifts to a global section of `B`. -/
 theorem connecting_eq_one_iff (q : (Q.obj ⋙ forget GrpCat).sections) :
     connecting hE q = 1 ↔
-      ∃ b : (B.obj ⋙ forget GrpCat).sections, ∀ U, π.hom.app U (b.1 U) = q.1 U := by
+      ∃ b : (B.obj ⋙ forget GrpCat).sections, ∀ U, π.hom.app U (b.val U) = q.val U := by
   rw [connecting_def, mk_eq_one_iff]
-  refine ⟨fun ⟨s, hs⟩ ↦ ⟨_, (hE.liftsSectionsEquiv q ⟨s, hs⟩).2⟩, fun ⟨b, hb⟩ ↦ ?_⟩
-  exact ⟨_, ((hE.liftsSectionsEquiv q).symm ⟨b, hb⟩).2⟩
+  refine ⟨fun ⟨s, hs⟩ ↦ ⟨_, (hE.liftsSectionsEquiv q ⟨s, hs⟩).property⟩, fun ⟨b, hb⟩ ↦ ?_⟩
+  exact ⟨_, ((hE.liftsSectionsEquiv q).symm ⟨b, hb⟩).property⟩
 
 /-- The connecting map sends the unit section to the base point. -/
 @[simp]
@@ -294,26 +340,27 @@ right multiplication through `π`: two global sections `q`, `q'` of `Q` have iso
 of lifts if and only if `q' = q * π c` for a global section `c` of `B`. -/
 theorem connecting_eq_connecting_iff (q q' : (Q.obj ⋙ forget GrpCat).sections) :
     connecting hE q = connecting hE q' ↔
-      ∃ c : (B.obj ⋙ forget GrpCat).sections, ∀ U, π.hom.app U (c.1 U) = (q.1 U)⁻¹ * q'.1 U := by
+      ∃ c : (B.obj ⋙ forget GrpCat).sections, ∀ U, π.hom.app U (c.val U) = (q.val U)⁻¹ * q'.val U
+          := by
   rw [connecting_def, connecting_def, mk_eq_mk_iff]
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨c, hc⟩ ↦ ⟨asIso (hE.liftsMulRight q' c hc)⟩⟩
   -- Glue the local sections `b⁻¹ * e b` of `B`, for `b` a local lift of `q`.
   let x : Presheaf.FamilyOfElementsOnObjects (B.obj ⋙ forget GrpCat)
-      fun j : {U : C // Nonempty ((hE.lifts q).sheaf.obj.obj (op U))} ↦ j.1 :=
-    fun j ↦ (hE.liftsObjEquiv q _ j.2.some).1⁻¹ *
-      (hE.liftsObjEquiv q' _ (e.hom.hom.hom.app _ j.2.some)).1
+      fun j : {U : C // Nonempty ((hE.lifts q).sheaf.obj.obj (op U))} ↦ j.val :=
+    fun j ↦ (hE.liftsObjEquiv q _ j.property.some).val⁻¹ *
+      (hE.liftsObjEquiv q' _ (e.hom.hom.hom.app _ j.property.some)).val
   have hx : x.IsCompatible := fun Z j k g₁ g₂ ↦
     (hE.map_inv_mul_hom_app e.hom g₁.op _).trans ((hE.inv_mul_hom_app_eq e.hom _ _).trans
       (hE.map_inv_mul_hom_app e.hom g₂.op _).symm)
   obtain ⟨c, hc, -⟩ := hx.existsUnique_section (hE.lifts q).coversTop
     ((sheafCompose J (forget GrpCat.{w})).obj B).property
-  refine ⟨c, fun U ↦ congrArg (·.1 U) ((hE.lifts q).coversTop.sections_ext
+  refine ⟨c, fun U ↦ congrArg (·.val U) ((hE.lifts q).coversTop.sections_ext
     (F := (sheafCompose J (forget GrpCat.{w})).obj Q)
-    (x := ⟨fun U ↦ π.hom.app U (c.1 U), fun f ↦ ?_⟩) (y := q⁻¹ * q') fun j ↦ ?_)⟩
-  · exact (NatTrans.naturality_apply π.hom f (c.1 _)).symm.trans (congrArg _ (c.2 f))
+    (x := ⟨fun U ↦ π.hom.app U (c.val U), fun f ↦ ?_⟩) (y := q⁻¹ * q') fun j ↦ ?_)⟩
+  · exact (NatTrans.naturality_apply π.hom f (c.val _)).symm.trans (congrArg _ (c.property f))
   · refine (congrArg (π.hom.app _) (hc j)).trans ?_
-    rw [map_mul, map_inv, (hE.liftsObjEquiv q _ j.2.some).2,
-      (hE.liftsObjEquiv q' _ (e.hom.hom.hom.app _ j.2.some)).2]
+    rw [map_mul, map_inv, (hE.liftsObjEquiv q _ j.property.some).property,
+      (hE.liftsObjEquiv q' _ (e.hom.hom.hom.app _ j.property.some)).property]
     -- Multiplication and inversion of global sections are computed objectwise.
     rfl
 
@@ -326,7 +373,7 @@ theorem mk_mem_range_connecting {P : Torsor A} (u : P.sheaf ⟶ (Torsor.trivial 
     mk P ∈ Set.range (connecting hE) := by
   -- `π ∘ u` is `A`-invariant, hence the restriction of a global section `q` of `Q`.
   obtain ⟨q, hq⟩ : ∃ q : (Q.obj ⋙ forget GrpCat).sections,
-      ∀ U p, π.hom.app U (u.hom.app U p) = q.1 U :=
+      ∀ U p, π.hom.app U (u.hom.app U p) = q.val U :=
     P.exists_sections_eq_of_smul_invariant (u ≫ (sheafCompose J (forget GrpCat.{w})).map π)
       fun U a p ↦ by
         refine (congrArg (π.hom.app U) (hu U a p)).trans ?_
@@ -348,6 +395,18 @@ theorem mk_mem_range_connecting {P : Torsor A} (u : P.sheaf ⟶ (Torsor.trivial 
     Equiv.apply_symm_apply]
   -- The action of `B` on the trivial torsor is multiplication.
   exact hu U a p
+
+/-- The connecting map is natural in extensions of `A`: for a morphism from the extension
+`1 → A → B → Q → 1` to an extension `1 → A → B' → Q' → 1` which is the identity on `A`, given by
+`β : B ⟶ B'` and `γ : Q ⟶ Q'`, the torsor of lifts of a global section `q` of `Q` is isomorphic
+to the torsor of lifts of its image in `Q'`, through `b ↦ β b`. -/
+theorem connecting_eq_connecting_of_comp_eq {B' Q' : Sheaf J GrpCat.{w}} {i' : A ⟶ B'}
+    {π' : B' ⟶ Q'} (hE' : IsGroupExtension i' π') (β : B ⟶ B') (γ : Q ⟶ Q') (hβ : i ≫ β = i')
+    (hγ : β ≫ π' = π ≫ γ) (q : (Q.obj ⋙ forget GrpCat).sections)
+    (q' : (Q'.obj ⋙ forget GrpCat).sections) (hq : ∀ U, γ.hom.app U (q.val U) = q'.val U) :
+    connecting hE q = connecting hE' q' :=
+  mk_eq_mk_of_hom ⟨hE.liftsMap q hE' β γ hγ q' hq,
+    hE.liftsMap_smul q hE' β γ hγ q' hq (𝟙 A) (by simpa using hβ)⟩
 
 end NonabelianH1
 

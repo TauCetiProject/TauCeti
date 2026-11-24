@@ -25,17 +25,25 @@ inverting an unbounded set adds `0`, the image of infinity, to the closure. Comp
 inversion of a set by `0` commutes with closures, and turns an open set with bounded complement
 into an open set.
 
+On a closed ball `closedBall c r` not containing `w`, the inversion `z ↦ (w - z)⁻¹` about `w` is
+bounded by `(‖w - c‖ - r)⁻¹`, so its `n`-th power is bounded by `((‖w - c‖ - r) ^ n)⁻¹`, and
+it stays within `r / ((‖w - c‖ - r) ‖w - c‖)` of its value at the centre. These are the kernel
+estimates that describe a Cauchy-type integral far from its data.
+
 ## Main results
 
 * `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
 * `TauCeti.image_inv_sub_eq_preimage_add_inv`: the inversion about `q` maps a set onto its
   preimage under `w ↦ q + w⁻¹`.
+* `TauCeti.bijOn_inv_compl_ball_one`, `TauCeti.bijOn_inv_compl_closedBall_one` and
+  `TauCeti.bijOn_inv_sphere_one`: inversion exchanges the exterior of the unit ball, of the closed
+  unit ball, and the unit sphere with the punctured closed ball, the punctured ball and the sphere.
 * `TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`: the inversion of a closed bounded set about
   any centre, with the centre removed, is closed.
 * `TauCeti.isBounded_image_inv_sub`: the inversion of a set about a point outside its closure is
   bounded.
-* `TauCeti.not_isBounded_image_sub_inv_of_mem_closure`: the inversion of a set about a point of
-  its closure outside the set is unbounded.
+* `TauCeti.isBounded_image_inv_sub_iff`: the inversion of a set about a point outside it is
+  bounded exactly when the point is outside its closure.
 * `TauCeti.closure_image_inv_sub`: the closure of the inversion of an unbounded set is the
   inverted closure together with `0`.
 * `TauCeti.isOpen_image_inv_sub`, `TauCeti.interior_image_inv_sub` and
@@ -45,10 +53,15 @@ into an open set.
 * `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
   `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
   any point and completed by `0`, is open; the completed inversion of any set has the completed
-  inverted closure as closure; and for a centre outside the closure of such an open set, the
-  inverted frontier as frontier.
+  inverted closure as closure; and for a set with bounded complement and a centre outside its
+  closure, the inverted frontier as frontier.
 * `TauCeti.mapsTo_inv_ball_diff_singleton_compl_closedBall`: the inversion maps the punctured ball
   of radius `R⁻¹` about `0` outside the closed ball of radius `R`.
+* `TauCeti.norm_inv_sub_le_of_mem_closedBall`, `TauCeti.norm_inv_sub_pow_le_of_mem_closedBall`
+  and `TauCeti.norm_inv_sub_sub_inv_sub_le_of_mem_closedBall`: on a closed ball `closedBall c r`
+  not containing `w`, `‖(w - z)⁻¹‖ ≤ (‖w - c‖ - r)⁻¹`,
+  `‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹` and
+  `‖(w - z)⁻¹ - (w - c)⁻¹‖ ≤ r / ((‖w - c‖ - r) ‖w - c‖)`.
 -/
 
 public section
@@ -79,54 +92,54 @@ end DivisionRing
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜] {K : Set 𝕜}
 
+section UnitBall
+
+/-- Inversion is a bijection from the closed exterior `(ball 0 1)ᶜ` of the unit ball onto the
+punctured closed unit ball. -/
+theorem bijOn_inv_compl_ball_one :
+    BijOn (fun w : 𝕜 => w⁻¹) (ball 0 1)ᶜ (closedBall 0 1 \ {0}) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [hw, inv_le_one₀ (norm_pos_iff.mpr hw)]
+
+/-- Inversion is a bijection from the exterior `(closedBall 0 1)ᶜ` of the closed unit ball onto
+the punctured open unit ball. -/
+theorem bijOn_inv_compl_closedBall_one :
+    BijOn (fun w : 𝕜 => w⁻¹) (closedBall 0 1)ᶜ (ball 0 1 \ {0}) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [hw, inv_lt_one₀ (norm_pos_iff.mpr hw)]
+
+/-- Inversion is a bijection of the unit sphere. -/
+theorem bijOn_inv_sphere_one : BijOn (fun w : 𝕜 => w⁻¹) (sphere 0 1) (sphere 0 1) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by simp
+
+end UnitBall
+
 /-- **The inversion of a closed bounded set is closed.** For closed bounded `K` and any `q`, the
 image `{w | w ≠ 0 ∧ q + w⁻¹ ∈ K}` of `K \ {q}` under `z ↦ (z - q)⁻¹` is closed: it stays away
 from `0`, and away from `0` it is the preimage of `K` under `w ↦ q + w⁻¹`. -/
 theorem isClosed_setOf_ne_zero_and_add_inv_mem (hK : IsClosed K) (hKb : IsBounded K) (q : 𝕜) :
     IsClosed {w : 𝕜 | w ≠ 0 ∧ q + w⁻¹ ∈ K} := by
-  obtain ⟨R, hR⟩ := hKb.subset_closedBall q
-  set R' := max R 1
-  have hR' : 0 < R' := lt_of_lt_of_le one_pos (le_max_right _ _)
-  have hne : ∀ w : 𝕜, R'⁻¹ ≤ ‖w‖ → w ≠ 0 := fun w hw h0 => by
-    rw [h0, norm_zero] at hw
-    exact absurd hw (not_le.mpr (inv_pos.mpr hR'))
+  -- `K` lies in a closed ball of some radius `R > 0` about `q`, so the set lies outside the open
+  -- ball of radius `R⁻¹` about `0`
+  obtain ⟨R, hR, hKR⟩ := hKb.subset_closedBall_lt 0 q
+  have hne : ∀ w : 𝕜, R⁻¹ ≤ ‖w‖ → w ≠ 0 := fun w hw =>
+    norm_pos_iff.mp ((inv_pos.mpr hR).trans_le hw)
   have heq : {w : 𝕜 | w ≠ 0 ∧ q + w⁻¹ ∈ K} =
-      {w : 𝕜 | R'⁻¹ ≤ ‖w‖} ∩ (fun w : 𝕜 => q + w⁻¹) ⁻¹' K := by
+      {w : 𝕜 | R⁻¹ ≤ ‖w‖} ∩ (fun w : 𝕜 => q + w⁻¹) ⁻¹' K := by
     ext w
     simp only [mem_ofPred_eq, mem_inter_iff, mem_preimage]
-    constructor
-    · rintro ⟨hw, hwK⟩
-      refine ⟨?_, hwK⟩
-      have hle : ‖w⁻¹‖ ≤ R' := by
-        have := mem_closedBall.mp (hR hwK)
-        rw [dist_eq_norm, add_sub_cancel_left] at this
-        exact this.trans (le_max_left _ _)
-      rw [norm_inv] at hle
-      have hpos : 0 < ‖w‖ := norm_pos_iff.mpr hw
-      calc R'⁻¹ ≤ (‖w‖⁻¹)⁻¹ := inv_anti₀ (inv_pos.mpr hpos) hle
-        _ = ‖w‖ := inv_inv _
-    · rintro ⟨hw, hwK⟩
-      exact ⟨hne w hw, hwK⟩
+    refine ⟨fun ⟨hw, hwK⟩ => ⟨?_, hwK⟩, fun ⟨hw, hwK⟩ => ⟨hne w hw, hwK⟩⟩
+    have hle := mem_closedBall_iff_norm.mp (hKR hwK)
+    rw [add_sub_cancel_left, norm_inv] at hle
+    exact inv_le_of_inv_le₀ (norm_pos_iff.mpr hw) hle
   rw [heq]
   exact ContinuousOn.preimage_isClosed_of_isClosed
     (continuousOn_const.add (continuousOn_inv₀.mono hne))
     (isClosed_le continuous_const continuous_norm) hK
-
-/-- **Inverting about a missing point of the closure gives an unbounded set.** If `q` lies in the
-closure of `s` but not in `s`, then the image of `s` under `z ↦ (z - q)⁻¹` is unbounded. -/
-theorem not_isBounded_image_sub_inv_of_mem_closure {s : Set 𝕜} {q : 𝕜} (hq : q ∈ closure s)
-    (hq' : q ∉ s) : ¬ IsBounded ((fun z => (z - q)⁻¹) '' s) := by
-  rw [isBounded_iff_forall_norm_le]
-  rintro ⟨M, hM⟩
-  obtain ⟨z, hzs, hzq⟩ := Metric.mem_closure_iff.mp hq (max M 1 + 1)⁻¹ (by positivity)
-  have hz0 : 0 < ‖z - q‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hq' (h ▸ hzs))
-  have hlt : ‖z - q‖ < (max M 1 + 1)⁻¹ := by rwa [dist_comm, dist_eq_norm] at hzq
-  have hle : ‖(z - q)⁻¹‖ ≤ M := hM _ ⟨z, hzs, rfl⟩
-  rw [norm_inv] at hle
-  have : max M 1 + 1 < ‖z - q‖⁻¹ := by
-    rw [lt_inv_comm₀ (by positivity) hz0]
-    exact hlt
-  linarith [le_max_left M 1]
 
 /-- The inversion maps the punctured ball of radius `R⁻¹` about `0` into the exterior of the
 closed ball of radius `R`. -/
@@ -137,6 +150,36 @@ theorem mapsTo_inv_ball_diff_singleton_compl_closedBall (R : ℝ) :
   have hR : 0 < R := inv_pos.1 ((norm_nonneg w).trans_lt hw)
   simpa [norm_inv] using (lt_inv_comm₀ (norm_pos_iff.2 hw0) hR).1 hw
 
+/-- On a closed ball `closedBall c r` not containing `w`, the inversion about `w` is bounded:
+`‖(w - z)⁻¹‖ ≤ (‖w - c‖ - r)⁻¹`. -/
+theorem norm_inv_sub_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ} (hz : z ∈ closedBall c r)
+    (hw : r < ‖w - c‖) : ‖(w - z)⁻¹‖ ≤ (‖w - c‖ - r)⁻¹ := by
+  rw [norm_inv]
+  exact inv_anti₀ (sub_pos.mpr hw)
+    (by linarith [norm_sub_le_norm_sub_add_norm_sub w z c, mem_closedBall_iff_norm.mp hz])
+
+/-- On a closed ball `closedBall c r` not containing `w`, the powers of the inversion about `w`
+are bounded: `‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹`. -/
+theorem norm_inv_sub_pow_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ} (hz : z ∈ closedBall c r)
+    (hw : r < ‖w - c‖) (n : ℕ) : ‖((w - z) ^ n)⁻¹‖ ≤ ((‖w - c‖ - r) ^ n)⁻¹ := by
+  rw [← inv_pow, norm_pow, ← inv_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) (norm_inv_sub_le_of_mem_closedBall hz hw) n
+
+/-- On a closed ball `closedBall c r` not containing `w`, the inversion about `w` differs from its
+value at the centre by at most `r / ((‖w - c‖ - r) ‖w - c‖)`. -/
+theorem norm_inv_sub_sub_inv_sub_le_of_mem_closedBall {c w z : 𝕜} {r : ℝ}
+    (hz : z ∈ closedBall c r) (hw : r < ‖w - c‖) :
+    ‖(w - z)⁻¹ - (w - c)⁻¹‖ ≤ r / ((‖w - c‖ - r) * ‖w - c‖) := by
+  have hzc := mem_closedBall_iff_norm.mp hz
+  have hρ : 0 < ‖w - c‖ := ((norm_nonneg _).trans hzc).trans_lt hw
+  have hwz : 0 < ‖w - z‖ := by linarith [norm_sub_le_norm_sub_add_norm_sub w z c]
+  rw [inv_sub_inv' (norm_pos_iff.mp hwz) (norm_pos_iff.mp hρ), sub_sub_sub_cancel_left,
+    norm_mul, norm_mul, norm_inv (w - c)]
+  calc ‖(w - z)⁻¹‖ * ‖z - c‖ * ‖w - c‖⁻¹ ≤ (‖w - c‖ - r)⁻¹ * r * ‖w - c‖⁻¹ := by
+        gcongr
+        exact norm_inv_sub_le_of_mem_closedBall hz hw
+    _ = r / ((‖w - c‖ - r) * ‖w - c‖) := by field_simp
+
 section Completion
 
 variable {q : 𝕜} {U : Set 𝕜}
@@ -144,15 +187,28 @@ variable {q : 𝕜} {U : Set 𝕜}
 /-- Inverting a set `U` about a point `q` outside its closure gives a bounded set. -/
 theorem isBounded_image_inv_sub (hq : q ∉ closure U) :
     IsBounded ((fun z : 𝕜 => (z - q)⁻¹) '' U) := by
-  -- a ball about `q` misses `U`, so the inversion is bounded by the inverse of its radius
-  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.mp isClosed_closure.isOpen_compl q hq
+  -- the points of `U` keep a distance `r > 0` from `q`, so the inversion is bounded by `r⁻¹`
+  obtain ⟨r, hr, hrU⟩ : ∃ r > 0, ∀ z ∈ U, r ≤ dist q z := by
+    simpa [Metric.mem_closure_iff] using hq
   refine isBounded_iff_forall_norm_le.mpr ⟨r⁻¹, ?_⟩
   rintro _ ⟨z, hz, rfl⟩
-  have hrz : r ≤ ‖z - q‖ := by
-    rw [← dist_eq_norm, dist_comm]
-    exact not_lt.mp fun h => hrU (mem_ball'.mpr h) (subset_closure hz)
-  rw [norm_inv]
-  exact inv_anti₀ hr hrz
+  rw [norm_inv, ← dist_eq_norm, dist_comm]
+  exact inv_anti₀ hr (hrU z hz)
+
+/-- **Inverting about a point outside a set gives a bounded set exactly when the point is outside
+the closure.** For `q ∉ U`, the image of `U` under `z ↦ (z - q)⁻¹` is bounded if and only if
+`q ∉ closure U`. -/
+theorem isBounded_image_inv_sub_iff (hqU : q ∉ U) :
+    IsBounded ((fun z : 𝕜 => (z - q)⁻¹) '' U) ↔ q ∉ closure U := by
+  refine ⟨fun hb hq => ?_, isBounded_image_inv_sub⟩
+  -- as `z` tends to `q` within `U`, the inversion `(z - q)⁻¹` tends to infinity
+  have := mem_closure_iff_nhdsWithin_neBot.mp hq
+  have hlim : Tendsto (fun z : 𝕜 => (z - q)⁻¹) (𝓝[U] q) (cobounded 𝕜) :=
+    tendsto_inv₀_nhdsNE_zero.comp <| tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      ((tendsto_sub_nhds_zero_iff.mpr tendsto_id).mono_left nhdsWithin_le_nhds)
+      (eventually_mem_nhdsWithin.mono fun z hz => sub_ne_zero.mpr (ne_of_mem_of_not_mem hz hqU))
+  obtain ⟨z, hzb, hzU⟩ := ((hlim.eventually (isBounded_def.mp hb)).and self_mem_nhdsWithin).exists
+  exact hzb (mem_image_of_mem _ hzU)
 
 /-- Inverting an open set `U` with bounded complement about any point `q`, and adding `0`, the
 image of infinity, gives an open set: `U` contains a neighbourhood of infinity, which the inversion
@@ -216,32 +272,13 @@ theorem closure_image_inv_sub (hUb : ¬IsBounded U) :
   rw [← closure_insert_zero_image_inv_sub, insert_eq, closure_union, closure_singleton,
     ← insert_eq, insert_eq_of_mem h0]
 
-/-- Inverting an open set `U` with bounded complement about a point `q` outside its closure, and
-adding `0`, the image of infinity, the frontier of the resulting open set is the inverted frontier
-of `U`. -/
-theorem frontier_insert_zero_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U)
-    (hUc : IsBounded Uᶜ) :
-    frontier (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U)) =
-      (fun z : 𝕜 => (z - q)⁻¹) '' frontier U := by
-  have h0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' closure U := by
-    rintro ⟨z, hz, hz0⟩
-    rw [inv_eq_zero, sub_eq_zero] at hz0
-    exact hq (hz0 ▸ hz)
-  rw [(isOpen_insert_zero_image_inv_sub hUo hUc).frontier_eq,
-    closure_insert_zero_image_inv_sub, insert_sdiff_of_mem _ (mem_insert _ _),
-    sdiff_insert_of_notMem h0,
-    ← image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹) (inv_injective.comp (sub_left_injective (b := q))),
-    ← hUo.frontier_eq]
-
 /-- Inverting an open set `U` about a point `q` outside it, the image is open. -/
 theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
     IsOpen ((fun z : 𝕜 => (z - q)⁻¹) '' U) := by
   -- the image is the preimage of `U` under `w ↦ q + w⁻¹`, which is continuous away from `0`
   have : (fun z : 𝕜 => (z - q)⁻¹) '' U = {0}ᶜ ∩ (fun w : 𝕜 => q + w⁻¹) ⁻¹' U := by
-    rw [image_eq_preimage_of_inverse (f := fun z : 𝕜 => (z - q)⁻¹)
-      (g := fun w : 𝕜 => q + w⁻¹)
-      (by intro z; simp) (by intro w; simp)]
-    exact (inter_eq_right (s := {0}ᶜ).mpr fun w hw (hw0 : w = 0) =>
+    rw [image_inv_sub_eq_preimage_add_inv]
+    exact (inter_eq_right (s := {0}ᶜ).mpr fun w hw => mem_compl_singleton_iff.mpr fun hw0 =>
       hqU (by simpa [hw0] using hw)).symm
   rw [this]
   exact (continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hUo
@@ -269,11 +306,34 @@ theorem frontier_image_inv_sub (hq : q ∉ U) (hUb : ¬IsBounded U) :
     frontier ((fun z : 𝕜 => (z - q)⁻¹) '' U) =
       insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' frontier U) := by
   have hU0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' interior U := by
-    rintro ⟨z, hz, hz0⟩
-    rw [inv_eq_zero, sub_eq_zero] at hz0
-    exact hq (interior_subset (hz0 ▸ hz))
+    simpa [sub_eq_zero] using fun h => hq (interior_subset h)
   rw [frontier, closure_image_inv_sub hUb, interior_image_inv_sub hq,
     insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
+      (inv_injective.comp (sub_left_injective (b := q)))]
+
+/-- Inverting a set `U` with bounded complement about a point `q` outside its closure, and adding
+`0`, the image of infinity, the frontier of the resulting set is the inverted frontier of `U`. -/
+theorem frontier_insert_zero_image_inv_sub (hq : q ∉ closure U) (hUc : IsBounded Uᶜ) :
+    frontier (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U)) =
+      (fun z : 𝕜 => (z - q)⁻¹) '' frontier U := by
+  have h0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' closure U := by simpa [sub_eq_zero] using hq
+  -- the interior of the completed image is the completed image of the interior: the completed
+  -- image of the interior is open, and away from `0` this is `interior_image_inv_sub`
+  have hint : interior (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U)) =
+      insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' interior U) := by
+    refine Subset.antisymm (fun w hw => ?_) (interior_maximal
+      (insert_subset_insert (image_mono interior_subset))
+      (isOpen_insert_zero_image_inv_sub isOpen_interior (closure_compl (s := U) ▸ hUc.closure)))
+    rcases eq_or_ne w 0 with rfl | hw0
+    · exact mem_insert _ _
+    have hw' : w ∈ interior (insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' U) ∩ {0}ᶜ) := by
+      rw [interior_inter, isOpen_compl_singleton.interior_eq]
+      exact ⟨hw, hw0⟩
+    rw [← interior_image_inv_sub fun h => hq (subset_closure h)]
+    refine mem_insert_of_mem _ (interior_mono ?_ hw')
+    exact fun x hx => (mem_insert_iff.mp hx.1).resolve_left hx.2
+  rw [frontier, closure_insert_zero_image_inv_sub, hint, insert_sdiff_of_mem _ (mem_insert _ _),
+    sdiff_insert_of_notMem h0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
       (inv_injective.comp (sub_left_injective (b := q)))]
 
 end Completion

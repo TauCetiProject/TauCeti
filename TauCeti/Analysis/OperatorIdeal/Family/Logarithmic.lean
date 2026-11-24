@@ -174,7 +174,7 @@ noncomputable def logarithmic : OperatorIdealFamily.{u, v, w} 𝕜 where
           ENNReal.add_div
       _ ≤ _ := add_le_add (le_iSup_of_le N le_rfl) (le_iSup_of_le N le_rfl)
   gauge_smul c T := by
-    simp only [ContinuousLinearMap.kyFanGauge_smul, ENNReal.coe_mul, enorm_eq_nnnorm,
+    simp only [ContinuousLinearMap.kyFanGauge_smul, ENNReal.coe_mul, eNorm_eq_nnNorm,
       ENNReal.mul_iSup, mul_div_assoc]
   enorm_le_gauge T := by
     refine le_iSup_of_le 0 ?_
@@ -182,7 +182,7 @@ noncomputable def logarithmic : OperatorIdealFamily.{u, v, w} 𝕜 where
       rw [ENNReal.ofReal_le_one]
       norm_num
       linarith [Real.log_le_sub_one_of_pos (zero_lt_two' ℝ)]
-    rw [zero_add, ContinuousLinearMap.kyFanGauge_one, ← enorm_eq_nnnorm]
+    rw [zero_add, ContinuousLinearMap.kyFanGauge_one, ← eNorm_eq_nnNorm]
     exact (ENNReal.le_div_iff_mul_le (Or.inl (ofReal_log_add_two_ne_zero 0))
       (Or.inl ENNReal.ofReal_ne_top)).2
       (mul_le_of_le_one_right' hlog)
@@ -194,7 +194,7 @@ noncomputable def logarithmic : OperatorIdealFamily.{u, v, w} 𝕜 where
           exact L.kyFanGauge_comp_comp_le A R (N + 1)
       _ = ‖L‖ₑ * ((A.kyFanGauge (N + 1) : ℝ≥0∞) / ENNReal.ofReal (Real.log (N + 2))) *
             ‖R‖ₑ := by
-          simp only [ENNReal.coe_mul, enorm_eq_nnnorm, div_eq_mul_inv]
+          simp only [ENNReal.coe_mul, eNorm_eq_nnNorm, div_eq_mul_inv]
           ring
       _ ≤ _ := by
           gcongr
@@ -350,7 +350,7 @@ theorem isCompactOperator_of_mem_finiteSubmodule_logarithmic {T : E →L[𝕜] F
     refine h'.congr fun N ↦ ?_
     ring
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun N ↦ (T.singularValue N).2) fun N ↦ ?_
+    (fun N ↦ (T.singularValue N).property) fun N ↦ ?_
   -- `(N + 1) a_N(T) ≤ K_(N+1)(T) ≤ C log (N + 2)`.
   have hK : ((N : ℝ) + 1) * T.singularValue N ≤ C * Real.log (N + 2) := by
     have h1 := hC (N + 1)

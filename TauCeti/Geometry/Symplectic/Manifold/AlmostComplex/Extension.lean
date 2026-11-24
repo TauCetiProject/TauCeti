@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 
 /-!
@@ -22,7 +22,7 @@ not by averaging almost complex structures. The convexity of the compatible Cayl
 preserves compatibility. A cutoff whose topological support lies in the open set makes the
 result smooth even where the prescribed field is not defined smoothly.
 The coordinate smoothness argument uses the pointwise tangent-bundle Cayley formula lemma in
-`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.CayleyPath`, requiring regularity only
+`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path`, requiring regularity only
 on the open region where the local field is used.
 
 The cutoff interpolation is defined pointwise for structures along any map `f : N → M`, so the
@@ -71,11 +71,11 @@ open Classical in
 interpolation from the background `K₀ n` towards the prescribed `K₁ n` with weight `ρ n`;
 elsewhere, `K₀ n`. -/
 def cutoffInterp (n : N) : AlmostComplexStructure (TangentSpace I (f n)) :=
-  if h : n ∈ W then (hK₀ n).cayleyInterp (V := E) (hK₁ n h) (hρ n) else K₀ n
+  if h : n ∈ W then (hK₀ n).cayleyInterp (V := E) (hK₁ n h).tames (hρ n) else K₀ n
 
 /-- Over `W`, cutoff interpolation is the compatible Cayley interpolation. -/
 theorem cutoffInterp_of_mem {n : N} (h : n ∈ W) :
-    cutoffInterp hσn hK₀ hK₁ ρ hρ n = (hK₀ n).cayleyInterp (V := E) (hK₁ n h) (hρ n) :=
+    cutoffInterp hσn hK₀ hK₁ ρ hρ n = (hK₀ n).cayleyInterp (V := E) (hK₁ n h).tames (hρ n) :=
   dite_eq_left h
 
 /-- Outside `W`, cutoff interpolation is the background structure. -/
@@ -100,7 +100,7 @@ theorem cutoffInterp_of_eq_zero {n : N} (h : ρ n = 0) :
   by_cases hW : n ∈ W
   · rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
     simp only [h]
-    exact (hK₀ n).cayleyInterp_zero (V := E) (hK₁ n hW)
+    exact (hK₀ n).cayleyInterp_zero (V := E) (hK₁ n hW).tames
   · exact cutoffInterp_of_notMem hσn hK₀ hK₁ ρ hρ hW
 
 /-- Over `W`, where the weight is one, cutoff interpolation is the prescribed structure. -/
@@ -109,7 +109,20 @@ theorem cutoffInterp_of_eq_one {n : N} (hW : n ∈ W) (h : ρ n = 1) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₁ n := by
   rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
   simp only [h]
-  exact (hK₀ n).cayleyInterp_one (V := E) (hK₁ n hW)
+  exact (hK₀ n).cayleyInterp_one (V := E) (hK₁ n hW).tames
+
+/-- Where the prescribed structure is the background one, or outside `W`, cutoff interpolation is
+the background structure. -/
+@[simp]
+theorem cutoffInterp_of_eq {n : N} (h : n ∈ W → K₁ n = K₀ n) :
+    cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₀ n := by
+  by_cases hW : n ∈ W
+  · rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
+    generalize hK₁ n hW = h₁
+    revert h₁
+    rw [h hW]
+    exact fun h₁ => (hK₀ n).cayleyInterp_self (V := E) h₁.tames (hρ n)
+  · exact cutoffInterp_of_notMem hσn hK₀ hK₁ ρ hρ hW
 
 /-- Over `W`, cutoff interpolation is the Cayley path expression in the operators of `K₀` and
 `K₁`. -/
@@ -118,7 +131,7 @@ theorem toContinuousLinearMap_cutoffInterp {n : N} (h : n ∈ W) :
       cayleyPathFormula (ρ n) (LinearMap.toContinuousLinearMap (K₀ n).toLinearMap)
         (LinearMap.toContinuousLinearMap (K₁ n).toLinearMap) := by
   rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ h]
-  exact (hK₀ n).toContinuousLinearMap_cayleyInterp (V := E) (hK₁ n h) (hρ n)
+  exact (hK₀ n).toContinuousLinearMap_cayleyInterp (V := E) (hK₁ n h).tames (hρ n)
     (LinearMap.coe_toContinuousLinearMap _) (LinearMap.coe_toContinuousLinearMap _)
 
 /-- **Smoothness of cutoff interpolation.** Along a smooth map `f : N → M`, let the background
@@ -181,7 +194,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 include h₀ hK hρ in
 /-- A smooth cutoff supported inside the region where a local field is smooth and compatible
 extends it to a global compatible structure. Where the cutoff is one the local field is
-unchanged; where it is zero the background structure is unchanged. -/
+unchanged; where it is zero, or where the local field is the background structure, the background
+structure is unchanged. -/
 theorem exists_compatible_eq_of_cutoff (hU : IsOpen U)
     (hs : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
@@ -190,7 +204,9 @@ theorem exists_compatible_eq_of_cutoff (hU : IsOpen U)
     (hsρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (hsupp : tsupport ρ ⊆ U) :
     ∃ J : SmoothAlmostComplexStructure I M, σ.Compatible J ∧
       (∀ x, ρ x = 1 → J.almostComplexStructureAt x = K x) ∧
-      (∀ x, ρ x = 0 → J.almostComplexStructureAt x = J₀.almostComplexStructureAt x) := by
+      (∀ x, ρ x = 0 → J.almostComplexStructureAt x = J₀.almostComplexStructureAt x) ∧
+      (∀ x, (x ∈ U → K x = J₀.almostComplexStructureAt x) →
+        J.almostComplexStructureAt x = J₀.almostComplexStructureAt x) := by
   -- Cutoff interpolation along the identity, with background `J₀`.
   let L := h₀.isNondegenerate.cutoffInterp (f := id) h₀.compatibleAt hK ρ hρ
   have hJ₀s : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
@@ -213,7 +229,7 @@ theorem exists_compatible_eq_of_cutoff (hU : IsOpen U)
     apply AlmostComplexStructure.toLinearMap_injective
     rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
     exact LinearMap.coe_toContinuousLinearMap _
-  refine ⟨J, h₀.isNondegenerate.compatible_iff.mpr (fun x ↦ ?_), ?_, ?_⟩
+  refine ⟨J, h₀.isNondegenerate.compatible_iff.mpr (fun x ↦ ?_), ?_, ?_, ?_⟩
   · rw [hJ]
     exact h₀.isNondegenerate.compatible_cutoffInterp (f := id) h₀.compatibleAt hK ρ hρ x
   · intro x hx
@@ -223,12 +239,16 @@ theorem exists_compatible_eq_of_cutoff (hU : IsOpen U)
   · intro x hx
     rw [hJ]
     exact h₀.isNondegenerate.cutoffInterp_of_eq_zero (f := id) h₀.compatibleAt hK ρ hρ hx
+  · intro x hx
+    rw [hJ]
+    exact h₀.isNondegenerate.cutoffInterp_of_eq (f := id) h₀.compatibleAt hK ρ hρ hx
 
 include h₀ hK in
 /-- Extend a compatible field prescribed smoothly near a closed set, retaining a chosen
 background compatible structure outside that neighbourhood. No closedness of the two-form or
 compactness of the prescribed set is required. The local field is tested for smoothness as a
-section of the tangent endomorphism bundle, not in a global trivialization. -/
+section of the tangent endomorphism bundle, not in a global trivialization. Wherever the local
+field is the background structure, so is the extension. -/
 theorem exists_compatible_eqOn [T2Space M] [SigmaCompactSpace M]
     (hU : IsOpen U) {A : Set M} (hA : IsClosed A) (hAU : A ⊆ U)
     (hs : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
@@ -237,10 +257,12 @@ theorem exists_compatible_eqOn [T2Space M] [SigmaCompactSpace M]
         x (LinearMap.toContinuousLinearMap (K x).toLinearMap)) U) :
     ∃ J : SmoothAlmostComplexStructure I M, σ.Compatible J ∧
       (∀ x ∈ A, J.almostComplexStructureAt x = K x) ∧
-      (∀ x ∉ U, J.almostComplexStructureAt x = J₀.almostComplexStructureAt x) := by
+      (∀ x ∉ U, J.almostComplexStructureAt x = J₀.almostComplexStructureAt x) ∧
+      (∀ x, (x ∈ U → K x = J₀.almostComplexStructureAt x) →
+        J.almostComplexStructureAt x = J₀.almostComplexStructureAt x) := by
   obtain ⟨ρ, hsρ, hρ, ht, hone⟩ := hA.exists_contMDiff_tsupport_subset_eq_one_iff (I := I) hU hAU
-  obtain ⟨J, hJ, hlocal, hbase⟩ := h₀.exists_compatible_eq_of_cutoff K hK ρ hρ hU hs hsρ ht
-  refine ⟨J, hJ, fun x hx ↦ hlocal x ((hone x).mp hx), fun x hx ↦ hbase x ?_⟩
+  obtain ⟨J, hJ, hlocal, hbase, hagree⟩ := h₀.exists_compatible_eq_of_cutoff K hK ρ hρ hU hs hsρ ht
+  refine ⟨J, hJ, fun x hx ↦ hlocal x ((hone x).mp hx), fun x hx ↦ hbase x ?_, hagree⟩
   exact Function.notMem_support.mp (fun h ↦ hx (ht (subset_tsupport ρ h)))
 
 end SmoothTwoForm.Compatible

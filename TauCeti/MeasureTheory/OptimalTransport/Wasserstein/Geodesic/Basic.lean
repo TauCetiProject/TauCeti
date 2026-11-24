@@ -69,6 +69,9 @@ optimal coupling need not be unique.
   of such a plan between two points of `P_p (X)` trace a geodesic segment of `P_p (X)`.
 * `TauCeti.WassersteinSpace.instIsGeodesicSpace`: on a Polish geodesic space, `P_p (X)` is a
   geodesic space for every `1 ≤ p ≤ ∞`.
+* `TauCeti.WassersteinSpace.exists_ae_mem_geodesicPaths_of_isGeodesicSegment`: for `1 < p < ∞`,
+  every geodesic segment of `P_p (X)` is the curve of laws of an optimal dynamic plan concentrated
+  on geodesic paths; no geodesic structure is assumed on `X`.
 * `TauCeti.WassersteinSpace.isGeodesicSegment_iff_isDisplacementInterpolation`: for
   `1 < p < ∞`, the geodesic segments of `P_p (X)` are exactly the curves of laws of optimal
   dynamic plans concentrated on geodesic paths.
@@ -140,10 +143,11 @@ private theorem edist_zero_mul_add_edist_mul_add_edist_one_mul {s t : I} (hst : 
     (a : ℝ≥0∞) : edist 0 s * a + edist s t * a + edist t 1 * a = a := by
   have hst' : (s : ℝ) ≤ t := hst
   simp only [edist_dist, Subtype.dist_eq, Real.dist_eq, Icc.coe_zero, Icc.coe_one, zero_sub,
-    abs_neg, abs_of_nonneg s.2.1, abs_of_nonpos (sub_nonpos.2 hst'),
-    abs_of_nonpos (sub_nonpos.2 t.2.2), neg_sub, ← add_mul]
-  rw [← ENNReal.ofReal_add s.2.1 (sub_nonneg.2 hst'), add_sub_cancel,
-    ← ENNReal.ofReal_add t.2.1 (sub_nonneg.2 t.2.2), add_sub_cancel, ENNReal.ofReal_one, one_mul]
+    abs_neg, abs_of_nonneg s.property.1, abs_of_nonpos (sub_nonpos.2 hst'),
+    abs_of_nonpos (sub_nonpos.2 t.property.2), neg_sub, ← add_mul]
+  rw [← ENNReal.ofReal_add s.property.1 (sub_nonneg.2 hst'), add_sub_cancel,
+    ← ENNReal.ofReal_add t.property.1 (sub_nonneg.2 t.property.2), add_sub_cancel,
+        ENNReal.ofReal_one, one_mul]
 
 /-- **Wasserstein geodesics from optimal dynamic plans.** Let `η` be a finite dynamic plan
 concentrated on geodesic paths whose endpoint law is an optimal coupling, at finite cost, of its
@@ -356,23 +360,15 @@ theorem exists_isGeodesicSegment_timeMarginal {η : Measure C(I, X)}
       (hasFiniteMoment μ)).2 ?_
     rw [← h0, hW]
     exact ENNReal.mul_ne_top (edist_ne_top 0 t) hμν
-  obtain ⟨γ, hγ⟩ : ∃ γ : I → WassersteinSpace p X,
-      ∀ t, ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t :=
-    ⟨fun t ↦ mk (η.timeMarginal t).toProbabilityMeasure (hmom t),
-      fun t ↦ by simp⟩
-  have hγ0 : γ 0 = μ := ext (ProbabilityMeasure.toMeasure_injective ((hγ 0).trans h0))
-  have hγ1 : γ 1 = ν := ext (ProbabilityMeasure.toMeasure_injective ((hγ 1).trans h1))
-  have hdist (s t : I) : dist (γ s) (γ t) = |(s : ℝ) - t| * dist (γ 0) (γ 1) := by
-    rw [hγ0, hγ1, dist_def, dist_def, hγ, hγ, hW, ENNReal.toReal_mul, edist_dist,
-      ENNReal.toReal_ofReal dist_nonneg, Subtype.dist_eq, Real.dist_eq]
-  -- The curve is Lipschitz, hence a path; it is then a geodesic path by `hdist`.
-  have hc : (⟨γ, (LipschitzWith.of_dist_le_mul (K := (dist (γ 0) (γ 1)).toNNReal)
-      fun s t ↦ by rw [hdist, Real.coe_toNNReal _ dist_nonneg, Subtype.dist_eq, Real.dist_eq,
-        mul_comm]).continuous⟩ : C(I, WassersteinSpace p X)) ∈ geodesicPaths _ :=
-    mem_geodesicPaths_iff.2 hdist
-  have hseg := mem_geodesicPaths_iff_isGeodesicSegment.1 hc
-  simp only [ContinuousMap.coe_mk, hγ0, hγ1] at hseg
-  exact ⟨_, hseg, fun t ↦ by rw [IccExtend_val, hγ]⟩
+  let γ (t : I) : WassersteinSpace p X := mk (η.timeMarginal t).toProbabilityMeasure (hmom t)
+  have hγ (t : I) : ((γ t : ProbabilityMeasure X) : Measure X) = η.timeMarginal t := by simp [γ]
+  have hγe (t : I) (ρ : WassersteinSpace p X) (h : η.timeMarginal t = ρ) : γ t = ρ :=
+    ext (ProbabilityMeasure.toMeasure_injective ((hγ t).trans h))
+  -- The curve `γ ∘ projIcc` is a geodesic segment by `hW`, with no detour through paths.
+  refine ⟨fun t ↦ γ (projIcc 0 1 zero_le_one t), ⟨by simpa using hγe 0 μ h0,
+    by simpa using hγe 1 ν h1, fun s hs t ht ↦ ?_⟩, fun t ↦ by simp [hγ]⟩
+  rw [projIcc_of_mem _ hs, projIcc_of_mem _ ht, dist_def, dist_def, hγ, hγ, hW, ENNReal.toReal_mul,
+    edist_dist, ENNReal.toReal_ofReal dist_nonneg, Subtype.dist_eq, Real.dist_eq]
 
 /-- **`P_p (X)` is a geodesic space.** On a Polish geodesic space, the space of probability
 measures with finite `p`-th moment, with the `p`-Wasserstein distance, is a geodesic space for
@@ -413,26 +409,14 @@ theorem exists_ae_mem_geodesicPaths_of_isGeodesicSegment (hp1 : 1 < p) (hp : p �
     exists_map_IccExtend_eq_lintegral_curveAction_eq hp1 hp zero_lt_one
       h.absolutelyContinuousOnInterval (hA ▸ hW)
   have hmarg (t : I) : η.timeMarginal t = ((γ t : ProbabilityMeasure X) : Measure X) := by
-    rw [← hηmarg t t.2, Measure.timeMarginal_def]
+    rw [← hηmarg t t.property, Measure.timeMarginal_def]
     simp only [IccExtend_val]
   -- The endpoint law of `η` couples `μ` and `ν`, so its cost bounds `W_p (μ, ν) ^ p` from below.
   have hle : W ^ p.toReal ≤ ∫⁻ c, edist (c 0) (c 1) ^ p.toReal ∂η := by
     have hcost := wassersteinEDist_timeMarginal_rpow_le_lintegral_edist η hp0 hp
     rwa [hmarg 0, hmarg 1, Icc.coe_zero, Icc.coe_one, h.source, h.target] at hcost
-  -- Each path costs at most its action, and the two expectations agree, so almost every path
-  -- has minimal action and is a geodesic.
-  have hpath : ∀ᵐ c : C(I, X) ∂η, edist (c 0) (c 1) ^ p.toReal ≤
-      curveAction p.toReal (IccExtend zero_le_one c) 0 1 :=
-    hηAC.mono fun c hc ↦ hc.edist_rpow_le_curveAction_IccExtend hr.le
-  have hae := ae_eq_of_ae_le_of_lintegral_le hpath
-    (ne_top_of_le_ne_top (hηA ▸ hA ▸ hW) (lintegral_mono_ae hpath))
-    (measurable_curveAction_IccExtend zero_le_one _ _ _).aemeasurable (by rw [hηA, hA]; exact hle)
-  have hgeo : ∀ᵐ c ∂η, c ∈ geodesicPaths X := by
-    filter_upwards [hηAC, hae] with c hc hce
-    rw [mem_geodesicPaths_iff_isGeodesicSegment]
-    have hc' := hc.isGeodesicSegment_of_curveAction_le hr
-      (by rw [IccExtend_left, IccExtend_right]; exact hce.symm.le)
-    rwa [IccExtend_left, IccExtend_right] at hc'
+  have hgeo := ae_mem_geodesicPaths_of_lintegral_curveAction_le hr hηAC
+    (by rw [hηA, hA]; exact hW) (by rw [hηA, hA]; exact hle)
   refine ⟨η, hηP, hgeo, hmarg, ENNReal.rpow_left_injective (ENNReal.toReal_pos hp0 hp).ne' ?_⟩
   dsimp only
   rw [← lintegral_curveAction_eq_eLpNorm_rpow hgeo hp0 hp, hηA, hA]
@@ -521,7 +505,7 @@ theorem WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling (hp : p ≠ 
     -- The law `μ_t` is at distance `t * W_p (μ, ν)` from `μ`.
     have hdist : edist μ (c t) = ‖t‖ₑ * edist μ ν := by
       rw [edist_dist, edist_dist, hc.dist_source_apply ht, ENNReal.ofReal_mul ht.1,
-        Real.enorm_eq_ofReal ht.1]
+        Real.eNorm_eq_ofReal ht.1]
     rw [← eLpNorm_sub_eq_eLpNorm_edist, hscale, eLpNorm_sub_eq_eLpNorm_edist, hopt]
     simpa only [WassersteinSpace.edist_def] using hdist.symm
 

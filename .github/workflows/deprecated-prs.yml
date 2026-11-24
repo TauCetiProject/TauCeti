@@ -29,7 +29,7 @@ concurrency:
 jobs:
   reconcile:
     if: github.repository == 'TauCetiProject/TauCeti' && github.ref == 'refs/heads/main'
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - name: Checkout immutable trusted tooling
@@ -43,10 +43,9 @@ jobs:
             .github
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f158c060cecb4689509f5d0eaba994204ffa3512
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f158c060cecb4689509f5d0eaba994204ffa3512
           project-directory: .
       - name: Resolve immutable bump pins
         id: pins

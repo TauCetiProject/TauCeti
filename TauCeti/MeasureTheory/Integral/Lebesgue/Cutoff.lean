@@ -40,7 +40,7 @@ theorem lintegral_enorm_mul_le_setLIntegral_of_support_subset (hχ1 : ∀ x, |χ
     ∫⁻ x, ‖(χ * u) x‖ₑ ∂μ ≤ ∫⁻ x in s, ‖u x‖ₑ ∂μ := by
   refine (lintegral_mono fun x => ?_).trans (lintegral_indicator_le _ s)
   by_cases hx : x ∈ s
-  · rw [indicator_of_mem hx, Pi.mul_apply, enorm_mul]
+  · rw [indicator_of_mem hx, Pi.mul_apply, eNorm_mul]
     exact mul_le_of_le_one_left' (by simpa [← ofReal_norm] using hχ1 x)
   · simp [notMem_support.mp fun hmem => hx (hχs hmem)]
 
@@ -53,7 +53,7 @@ theorem tendsto_lintegral_enorm_mul_sub_of_eventually_eq_one {ι : Type*} {l : F
     (hlim : ∀ᵐ x ∂μ, ∀ᶠ n in l, χ n x = 1) :
     Tendsto (fun n => ∫⁻ x, ‖χ n x * u x - u x‖ₑ ∂μ) l (𝓝 0) := by
   have hdom (n : ι) : ∀ᵐ x ∂μ, ‖χ n x * u x - u x‖ₑ ≤ ‖u x‖ₑ := (hχ n).mono fun x hx => by
-    rw [← sub_one_mul, enorm_mul]
+    rw [← sub_one_mul, eNorm_mul]
     have hle : ‖χ n x - 1‖ₑ ≤ 1 := by
       rw [← ofReal_norm, Real.norm_eq_abs, abs_of_nonpos (by linarith [hx.1, hx.2])]
       exact ENNReal.ofReal_le_one.2 (by linarith [hx.1])
@@ -61,9 +61,9 @@ theorem tendsto_lintegral_enorm_mul_sub_of_eventually_eq_one {ι : Type*} {l : F
   simpa only [Pi.mul_apply, Pi.sub_apply, lintegral_zero] using
     tendsto_lintegral_filter_of_dominated_convergence' (f := fun _ => 0) (fun x => ‖u x‖ₑ)
       (.of_forall fun n => (((hχm n).mul hu.aestronglyMeasurable).sub
-        hu.aestronglyMeasurable).enorm)
+        hu.aestronglyMeasurable).eNorm)
       (.of_forall hdom) hu.hasFiniteIntegral.ne
       (hlim.mono fun x hx => tendsto_const_nhds.congr' (hx.mono fun n hn => by
-        simp only [Pi.sub_apply, Pi.mul_apply, hn, one_mul, sub_self, enorm_zero]))
+        simp only [Pi.sub_apply, Pi.mul_apply, hn, one_mul, sub_self, eNorm_zero]))
 
 end TauCeti

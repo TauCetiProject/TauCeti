@@ -65,7 +65,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField.InfinitePlace
-open scoped TensorProduct AdicCompletionExtension NumberField.LiesOver
+open scoped TensorProduct AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.ClassFieldTheory
 
@@ -107,9 +108,9 @@ the infinite places, and units at the finite places outside `S ∪ T`. -/
 theorem mem_range_ideleNormMap_of_exponent_dvd {n : ℕ} (hn : Monoid.exponent Gal(L/K) ∣ n)
     {S T : Set (HeightOneSpectrum (𝓞 K))}
     (hT : ∀ v ∈ T, ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1)
+      Module.finrank (v.adicCompletion K) (w.val.adicCompletion L) = 1)
     (hU : ∀ v ∉ S, v ∉ T → ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal)
+      Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal)
     {x : IdeleGroup (𝓞 K) K}
     (hxS : ∀ v ∈ S, v.ideleFiniteCoord x ∈ powerSubgroup _ n)
     (hxU : ∀ v ∉ S, v ∉ T → Valued.v (v.ideleFiniteCoord x : v.adicCompletion K) = 1)

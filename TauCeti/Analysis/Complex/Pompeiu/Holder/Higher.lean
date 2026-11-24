@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
 public import TauCeti.Analysis.Holder.Iterated
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -32,7 +33,9 @@ everything to the case `k = 0`, which is the one-derivative Hölder gain of
 * `TauCeti.exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform`: the `C^{k+1,α}`
   estimate on an output disc, for `C^{k,α}` data on an input disc.
 * `HasCompactSupport.contDiff_cauchyTransform_of_holderWith_iteratedFDeriv`: the transform of
-  compactly supported `C^{k,α}` data is globally `C^{k+1}`.
+  compactly supported `C^{k,α}` data is globally `C^{k+1}`; in particular so is the transform of
+  an element of `TauCeti.supportedCkHolderSubmodule` for a compact set
+  (`TauCeti.contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule`).
 * `TauCeti.cauchyTransformCkCLM`: the transform as a bounded real-linear operator from
   `C^{k,α}` data supported in `closedBall c r` to the derivative fields of orders through
   `k + 1` on `closedBall c R` with the supremum norm, together with the `α`-Hölder field of
@@ -148,7 +151,7 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform
     -- The real action is uniquely determined by the compatible complex action.
     cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
     have : FiniteDimensional ℂ (ℂ →L[ℝ] F) :=
-      ContinuousLinearMap.finiteDimensional_of_isScalarTower
+      ContinuousLinearMap.finiteDimensional_of_smulCommClass
     obtain ⟨C, hC⟩ := ih (F := ℂ →L[ℝ] F)
     refine ⟨C + (2 * (r + R)).toNNReal, fun {f H M} hf hs hH hM ↦ ?_⟩
     have hc : HasCompactSupport f :=
@@ -175,11 +178,7 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform
         contDiffOn_succ_iff_fderiv_of_isOpen isOpen_ball]
       refine ⟨fun x _ ↦ (hc.hasFDerivAt_cauchyTransform hf1 x).differentiableAt
         |>.differentiableWithinAt, by simp, hcd⟩
-    · have he : iteratedFDeriv ℝ (k + 1 + 1) (cauchyTransform f) =
-          (continuousMultilinearCurryRightEquiv' ℝ (k + 1) ℂ F).symm ∘
-            iteratedFDeriv ℝ (k + 1) (fderiv ℝ (cauchyTransform f)) :=
-        funext fun x ↦ iteratedFDeriv_succ_eq_comp_right
-      rw [he]
+    · rw [iteratedFDeriv_succ_eq_comp_right' (cauchyTransform f)]
       exact (LinearIsometryEquiv.isometry _).comp_holderOnWith (hD.mono_const hle)
     · rcases i with _ | i
       · rw [norm_iteratedFDeriv_zero]
@@ -224,6 +223,14 @@ section Operator
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace ℝ F]
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] {k : ℕ} {α : ℝ≥0} {c : ℂ} {r R : ℝ}
 
+/-- The Cauchy transform of `C^{k,α}` data vanishing off a compact set is globally `C^{k+1}`. -/
+theorem contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule (hα : 0 < α) (hα1 : α < 1)
+    {s : Set ℂ} (hs : IsCompact s) {f : CkHolderSpace k α ℂ F}
+    (hf : f ∈ supportedCkHolderSubmodule k α s) : ContDiff ℝ (k + 1 : ℕ) (cauchyTransform f) :=
+  (hasCompactSupport_of_mem_supportedCkHolderSubmodule hs
+    hf).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1 f.contDiff
+    f.memHolder_iteratedFDeriv.holderWith
+
 /-- The Cauchy transform of an element of the supported `C^{k,α}` source space. -/
 private def cauchyCk (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
     ℂ → F :=
@@ -235,18 +242,11 @@ private theorem support_source
     Function.support (f : CkHolderSpace k α ℂ F) ⊆ closedBall c r :=
   support_subset_of_mem_supportedCkHolderSubmodule f.property
 
-omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] in
-private theorem hasCompactSupport_source
-    (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
-    HasCompactSupport (f : CkHolderSpace k α ℂ F) :=
-  HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r) (support_source f)
-
 private theorem contDiff_cauchyCk (hα : 0 < α) (hα1 : α < 1)
     (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
     ContDiff ℝ (k + 1 : ℕ) (cauchyCk f) :=
-  (hasCompactSupport_source f).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
-    (f : CkHolderSpace k α ℂ F).contDiff
-    (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
+  contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1 (isCompact_closedBall c r)
+    f.property
 
 /-- The constant of the higher Hölder gain, for fixed target, order, exponent and discs. -/
 private def gainConst (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (c : ℂ) (hr : 0 ≤ r) (hR : 0 ≤ R) :
@@ -263,13 +263,13 @@ private theorem gain_source (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) (hR : 
       ‖iteratedFDeriv ℝ i (cauchyCk f) x‖ ≤ 2 * gainConst (F := F) k hα hα1 c hr hR * ‖f‖ := by
   let u : CkHolderSpace k α ℂ F := f
   have hM : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i u x‖ ≤ (‖f‖₊ : ℝ) := fun i hi x ↦ by
-    rw [coe_nnnorm, ← Submodule.norm_coe]
+    rw [coe_nnNorm, ← Submodule.norm_coe]
     exact u.norm_iteratedFDeriv_apply_le hi x
   obtain ⟨-, hH, hN⟩ := Classical.choose_spec
     (exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform (F := F) k hα hα1 c hr hR)
     u.contDiff (support_source f) u.memHolder_iteratedFDeriv.holderWith hM
   have hHle : nnHolderNorm α (iteratedFDeriv ℝ k u) ≤ ‖f‖₊ := by
-    rw [← NNReal.coe_le_coe, coe_nnnorm, ← Submodule.norm_coe]
+    rw [← NNReal.coe_le_coe, coe_nnNorm, ← Submodule.norm_coe]
     exact u.nnHolderNorm_iteratedFDeriv_le
   have hle : gainConst (F := F) k hα hα1 c hr hR * (nnHolderNorm α (iteratedFDeriv ℝ k u) + ‖f‖₊)
       ≤ 2 * gainConst (F := F) k hα hα1 c hr hR * ‖f‖₊ := by
@@ -279,7 +279,7 @@ private theorem gain_source (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) (hR : 
   have hleR : (gainConst (F := F) k hα hα1 c hr hR : ℝ) *
       ((nnHolderNorm α (iteratedFDeriv ℝ k u) : ℝ) + (‖f‖₊ : ℝ)) ≤
         2 * gainConst (F := F) k hα hα1 c hr hR * ‖f‖ := by
-    simpa only [NNReal.coe_mul, NNReal.coe_add, NNReal.coe_ofNat, coe_nnnorm] using
+    simpa only [NNReal.coe_mul, NNReal.coe_add, NNReal.coe_ofNat, coe_nnNorm] using
       NNReal.coe_le_coe.mpr hle
   exact ⟨hH.mono_const hle, fun i hi x hx ↦ (hN i hi x hx).trans hleR⟩
 
@@ -305,7 +305,7 @@ private def cauchyField (hα : 0 < α) (hα1 : α < 1) (j : ℕ) (hj : j ≤ k +
   BoundedContinuousFunction.mkOfCompact
     ⟨fun x ↦ iteratedFDeriv ℝ j (cauchyCk f) x,
       ((contDiff_cauchyCk hα hα1 f).continuous_iteratedFDeriv
-        (by exact_mod_cast hj)).comp continuous_subtype_val⟩
+        (by exact_mod_cast hj)).comp continuous_subtypeVal⟩
 
 private theorem cauchyField_apply (hα : 0 < α) (hα1 : α < 1) (j : ℕ)
     (hj : j ≤ k + 1) (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r))
@@ -323,8 +323,9 @@ private def cauchyFieldLinearMap (hα : 0 < α) (hα1 : α < 1) (j : ℕ) (hj : 
     have hfg : cauchyCk (f + g) = cauchyCk f + cauchyCk g := by
       simp only [cauchyCk, Submodule.coe_add, CkHolderSpace.coe_add]
       exact cauchyTransform_add (f : CkHolderSpace k α ℂ F).contDiff.continuous
-        (hasCompactSupport_source f) (g : CkHolderSpace k α ℂ F).contDiff.continuous
-        (hasCompactSupport_source g)
+        (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) f.property)
+        (g : CkHolderSpace k α ℂ F).contDiff.continuous
+        (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r) g.property)
     simp only [cauchyField_apply, FunLike.coe_add, Pi.add_apply, hfg]
     exact iteratedFDeriv_add_apply ((contDiff_cauchyCk hα hα1 f).contDiffAt.of_le hj')
       ((contDiff_cauchyCk hα hα1 g).contDiffAt.of_le hj')
@@ -399,7 +400,7 @@ private theorem norm_cauchyTop_le (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) 
   have hHN : (nnHolderNorm α ((cauchyTop hα hα1 hr hR f).toBoundedContinuousFunction :
       closedBall c R → (ℂ [×k + 1]→L[ℝ] F)) : ℝ) ≤ B * ‖f‖ := by
     have h := ENNReal.coe_le_coe.mp (coe_nnHolderNorm_le_eHolderNorm.trans hH.eHolderNorm_le)
-    simpa only [NNReal.coe_mul, coe_nnnorm] using NNReal.coe_le_coe.mpr h
+    simpa only [NNReal.coe_mul, coe_nnNorm] using NNReal.coe_le_coe.mpr h
   have hN : ‖(cauchyTop hα hα1 hr hR f).toBoundedContinuousFunction‖ ≤ B * ‖f‖ :=
     (BoundedContinuousFunction.norm_le (by positivity)).mpr fun x ↦ by
       rw [hval]

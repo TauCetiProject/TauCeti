@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Quaternion
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.SplitCenter
 
-import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.LinearAlgebra.CliffordAlgebra.OddSplitting
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 
@@ -74,7 +73,7 @@ theorem exists_evenQuaternionProdEquiv_of_finrank_eq_four
   have hn3 : n = 3 := by omega
   subst n
   let eZ : Subalgebra.center K (CliffordAlgebra P) ≃ₐ[K] K × K :=
-    (TauCeti.centerCongr g).symm.trans eC
+    (Subalgebra.centerCongr g).symm.trans eC
   obtain ⟨l, hl, hlen, hspan, hQl⟩ := hP.exists_list_pairwise_isOrtho
   have hlen3 : l.length = 3 := by
     rw [hlen, Module.finrank_fin_fun]
@@ -166,7 +165,7 @@ theorem normForm_fst_spinGroupEquivQuaternionUnitaryProd
     QuaternionAlgebra.normForm a 0 b
       (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).1 = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
-    (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).1.2
+    (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).1.property
 
 /-- The second quaternion attached to a quaternary Spin element has norm one. -/
 @[simp]
@@ -177,7 +176,7 @@ theorem normForm_snd_spinGroupEquivQuaternionUnitaryProd
     QuaternionAlgebra.normForm a 0 b
       (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).2 = 1 :=
   (QuaternionAlgebra.mem_unitary_iff_normForm_eq_one _ _ _ _).mp
-    (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).2.2
+    (spinGroupEquivQuaternionUnitaryProd Q hQ hV e he s).2.property
 
 /-- Every regular quaternary Spin group with split even-Clifford center is isomorphic to the
 product of two norm-one groups of a quaternion algebra with unit symbols. -/

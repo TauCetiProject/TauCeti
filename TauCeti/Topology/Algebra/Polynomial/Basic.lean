@@ -35,6 +35,8 @@ the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its co
   bounded degree.
 * `Polynomial.continuousAt_coeff_mul`: coefficients of a product of two families.
 * `Polynomial.continuousAt_coeff_prod`: coefficients of a finite product of families.
+* `Polynomial.continuousOn_coeff_of_monic`: for a monic family of fixed degree, continuity of
+  the lower coefficients gives continuity of the leading one.
 * `Polynomial.continuous_eval_of_continuous_coeff`: joint continuity of the evaluation of a family
   of bounded degree.
 * `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
@@ -44,6 +46,10 @@ the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its co
   continuous in `a`.
 * `TauCeti.Polynomial.continuous_coeff_prod_X_sub_C`: the coefficients of `∏ i ∈ s, (X - C (f i))`
   are continuous in the tuple of roots `f`.
+* `TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`: over a Hausdorff topological commutative
+  ring, a splitting into linear factors with roots continuous at a point passes to the limit.
+* `TauCeti.isProperMap_pow`: on a proper normed ring with multiplicative norm, `x ↦ xᵏ` is proper
+  for `k ≠ 0`.
 -/
 
 public section
@@ -115,6 +121,17 @@ theorem continuousAt_coeff_prod [CommSemiring R] [IsTopologicalSemiring R]
     exact continuousAt_coeff_mul (hf k (Finset.mem_insert_self k s))
       (fun j hj ↦ ih fun l hl m hm ↦ hf l (Finset.mem_insert_of_mem hl) m (hm.trans hj))
 
+/-- For a family of monic polynomials of degree `n` on `s`, continuity of the coefficients of
+index less than `n` on `s` gives continuity of every coefficient of index at most `n`, the leading
+one being `1`. -/
+theorem continuousOn_coeff_of_monic [Semiring R] {f : X → R[X]} {s : Set X} {n : ℕ}
+    (hm : ∀ x ∈ s, (f x).Monic) (hd : ∀ x ∈ s, (f x).natDegree = n)
+    (hc : ∀ k < n, ContinuousOn (fun x ↦ (f x).coeff k) s) {k : ℕ} (hk : k ≤ n) :
+    ContinuousOn (fun x ↦ (f x).coeff k) s := by
+  rcases hk.lt_or_eq with hk | rfl
+  · exact hc k hk
+  · exact continuousOn_const.congr fun x hx ↦ by rw [← hd x hx, (hm x hx).coeff_natDegree]
+
 /-- If a family of polynomials has degree at most `d` and its coefficients of index at most `d` are
 continuous, then its evaluation is jointly continuous in the parameter and the point. -/
 theorem continuous_eval_of_continuous_coeff [Semiring R] [IsTopologicalSemiring R]
@@ -182,4 +199,43 @@ theorem continuous_coeff_prod_X_sub_C {ι R : Type*} [CommRing R] [TopologicalSp
     | exact continuousAt_const
     | exact (continuous_const.sub (continuous_apply i)).continuousAt
 
+/-- **Splitting passes to the limit.** Let `F y` be polynomials over a Hausdorff topological
+commutative ring, of degree at most `d` near `c`, with coefficients continuous at `c`, that split
+into linear factors `X - u_i(y)` on a punctured neighbourhood of `c`, the roots `u_i` being
+continuous at `c`. Then `F c` splits into the limiting factors `X - u_i(c)`. -/
+theorem eq_prod_X_sub_C_of_continuousAt {R B : Type*} [CommRing R] [TopologicalSpace R]
+    [IsTopologicalRing R] [T2Space R] [TopologicalSpace B] {F : B → R[X]}
+    {c : B} [(𝓝[≠] c).NeBot] {d : ℕ} {u : Fin d → B → R}
+    (hF : ∀ i ≤ d, ContinuousAt (fun y => (F y).coeff i) c)
+    (hdeg : ∀ᶠ y in 𝓝 c, (F y).natDegree ≤ d) (hu : ∀ i, ContinuousAt (u i) c)
+    (hsplit : ∀ᶠ y in 𝓝[≠] c, F y = ∏ i, (X - C (u i y))) :
+    F c = ∏ i, (X - C (u i c)) := by
+  ext k
+  rcases le_or_gt k d with hk | hk
+  · -- Both coefficients are limits of the same function along the punctured neighbourhood.
+    have hprod : ContinuousAt (fun y => (∏ i, (X - C (u i y))).coeff k) c :=
+      (continuous_coeff_prod_X_sub_C Finset.univ k).continuousAt.comp
+        (f := fun y i => u i y) (continuousAt_pi.2 hu)
+    refine tendsto_nhds_unique (l := 𝓝[≠] c) ((hF k hk).tendsto.mono_left nhdsWithin_le_nhds) ?_
+    exact (hprod.tendsto.mono_left nhdsWithin_le_nhds).congr'
+      (hsplit.mono fun y hy => by simp only [hy])
+  · -- Above the degree bound both coefficients vanish.
+    have hle : (∏ i, (X - C (u i c))).natDegree ≤ d :=
+      (natDegree_prod_le _ _).trans <| (Finset.sum_le_sum fun i _ => natDegree_X_sub_C_le _).trans
+        (by simp)
+    rw [coeff_eq_zero_of_natDegree_lt (hdeg.self_of_nhds.trans_lt hk),
+      coeff_eq_zero_of_natDegree_lt (hle.trans_lt hk)]
+
 end TauCeti.Polynomial
+
+namespace TauCeti
+
+/-- On a proper normed ring with multiplicative norm, such as a proper normed field, the power
+map `x ↦ xᵏ` is proper for `k ≠ 0`, as evaluation of the nonconstant monomial `Xᵏ`. -/
+theorem isProperMap_pow {R : Type*} [NormedRing R] [IsAbsoluteValue (norm : R → ℝ)]
+    [ProperSpace R] {k : ℕ} (hk : k ≠ 0) : IsProperMap fun x : R ↦ x ^ k := by
+  cases subsingleton_or_nontrivial R
+  · exact (continuous_pow k).isProperMap
+  simpa using (Polynomial.monomial k (1 : R)).isProperMap_eval (by simp [Nat.pos_of_ne_zero hk])
+
+end TauCeti

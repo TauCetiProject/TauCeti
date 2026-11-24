@@ -10,6 +10,8 @@ public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+import TauCeti.Algebra.Star.SelfAdjoint
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Coercive bounded operators
@@ -17,7 +19,9 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpo
 A uniformly coercive real part of the quadratic form makes a bounded operator
 on a real or complex Hilbert space invertible. Self-adjointness is not needed.
 The inverse follows from Mathlib’s operator invertibility criterion for a
-uniform lower bound on the norm of the quadratic form.
+uniform lower bound on the norm of the quadratic form. The inverse is coercive
+again, with constant `c / (‖N‖ + 1)²`
+(`ContinuousLinearMap.mul_norm_sq_le_re_inner_inverse_apply`).
 For complex operators the same argument applied to a scalar shift bounds the
 real part of every spectral value below by the coercivity constant.
 
@@ -42,6 +46,9 @@ A real coercive quadratic form also loses at most the size of a perturbation of 
 (`sub_norm_mul_norm_sq_le_inner`) and stays nonnegative under a small perturbation and scalar
 shift (`inner_add_smul_id_nonneg_of_norm_sub_le`), which gives the convexity
 of perturbed barrier functions, for instance in the Monge–Ampère viscosity argument.
+Conjugating a coercive operator `A₀` by a map `M` with a right inverse `N` keeps it coercive, with
+constant `c / (‖N‖ + 1)²` (`ContinuousLinearMap.mul_norm_sq_le_inner_comp_comp_adjoint`); this is
+how the ellipticity of a non-divergence-form operator survives a change of variables.
 
 ## Provenance
 
@@ -78,15 +85,45 @@ theorem isUnit_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
   intro x
   exact (mul_comm _ _).le.trans ((hcoer x).trans (RCLike.re_le_norm _))
 
+/-- A bounded operator with a uniformly coercive real quadratic form is invertible. -/
+theorem isInvertible_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
+    (hc : 0 < c) (hcoer : ∀ z, c * ‖z‖ ^ 2 ≤ RCLike.re ⟪N z, z⟫_𝕜) : N.IsInvertible :=
+  isInvertible_iff_isUnit.2 (isUnit_of_coercive N hc hcoer)
+
+/-- **The inverse of a coercive operator is coercive.** If `c ‖z‖² ≤ re ⟪N z, z⟫` with `c > 0`,
+then `N` is invertible and `c / (‖N‖ + 1)² ‖w‖² ≤ re ⟪N⁻¹ w, w⟫`: writing `w = N u`, the form
+`re ⟪N⁻¹ w, w⟫ = re ⟪N u, u⟫` is at least `c ‖u‖²`, and `‖w‖ ≤ (‖N‖ + 1) ‖u‖`. No self-adjointness
+is needed. -/
+theorem mul_norm_sq_le_re_inner_inverse_apply [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
+    (hc : 0 < c) (hcoer : ∀ z, c * ‖z‖ ^ 2 ≤ RCLike.re ⟪N z, z⟫_𝕜) (w : E) :
+    c / (‖N‖ + 1) ^ 2 * ‖w‖ ^ 2 ≤ RCLike.re ⟪N.inverse w, w⟫_𝕜 := by
+  obtain ⟨e, rfl⟩ := isInvertible_of_coercive N hc hcoer
+  set u := e.symm w
+  have hw : w = e u := (e.apply_symm_apply w).symm
+  have hu : ‖w‖ ≤ (‖(e : E →L[𝕜] E)‖ + 1) * ‖u‖ := by
+    rw [hw]
+    exact ((e : E →L[𝕜] E).le_opNorm u).trans
+      (mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg u))
+  have hre : RCLike.re ⟪(e : E →L[𝕜] E).inverse w, w⟫_𝕜 = RCLike.re ⟪(e : E →L[𝕜] E) u, u⟫_𝕜 := by
+    rw [inverse_equiv, ← inner_conj_symm, RCLike.conj_re, hw]
+    simp [u]
+  rw [hre, div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+  calc c * ‖w‖ ^ 2 ≤ c * ((‖(e : E →L[𝕜] E)‖ + 1) * ‖u‖) ^ 2 :=
+        mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg w) hu 2) hc.le
+    _ = c * ‖u‖ ^ 2 * (‖(e : E →L[𝕜] E)‖ + 1) ^ 2 := by ring
+    _ ≤ _ := mul_le_mul_of_nonneg_right (hcoer u) (by positivity)
+
 /-- Conjugating a Lyapunov identity by an inverse self-adjoint square root gives the
 Hermitian part of the similar operator. -/
 theorem conj_add_star_of_lyapunov [CompleteSpace E]
     (B C W R Rinv : E →L[𝕜] E)
-    (hR : IsSelfAdjoint R) (hRinv : IsSelfAdjoint Rinv)
-    (hRR : R * R = C) (hRinvR : Rinv * R = 1) (hRRinv : R * Rinv = 1)
+    (hR : IsSelfAdjoint R) (hRR : R * R = C) (hRRinv : R * Rinv = 1)
     (hlyap : C * W + star W * C = B + B) :
     R * W * Rinv + star (R * W * Rinv) =
       Rinv * B * Rinv + Rinv * B * Rinv := by
+  have hRinv := hR.of_mul_eq_one hRRinv
+  have hRinvR : Rinv * R = 1 := by
+    simpa only [star_mul, hR.star_eq, hRinv.star_eq, star_one] using congrArg star hRRinv
   have hleft : Rinv * C = R := by rw [← hRR, ← mul_assoc, hRinvR, one_mul]
   have hright : C * Rinv = R := by rw [← hRR, mul_assoc, hRRinv, mul_one]
   have hconj : Rinv * (C * W + star W * C) * Rinv =
@@ -97,26 +134,27 @@ theorem conj_add_star_of_lyapunov [CompleteSpace E]
   rw [hlyap, mul_add, add_mul] at hconj
   simpa only [star_mul, hR.star_eq, hRinv.star_eq, mul_assoc] using hconj.symm
 
-/-- If `C = R²`, `Rinv` is the two-sided inverse of the self-adjoint `R`, and
+/-- If `C = R²`, `Rinv` is a right inverse of the self-adjoint `R`, and
 `C W + W† C = 2 B`, a quadratic-form lower bound `δ` for `B` gives the lower bound
 `δ / (1 + ‖R‖²)` for `R W Rinv`. No positivity of `R` or nontriviality of the space
 is required, and `δ = 0` is allowed. -/
 theorem coercive_conj_of_lyapunov [CompleteSpace E]
     (B C W R Rinv : E →L[𝕜] E)
-    (hR : IsSelfAdjoint R) (hRinv : IsSelfAdjoint Rinv)
-    (hRR : R * R = C) (hRinvR : Rinv * R = 1) (hRRinv : R * Rinv = 1)
+    (hR : IsSelfAdjoint R)
+    (hRR : R * R = C) (hRRinv : R * Rinv = 1)
     (hlyap : C * W + star W * C = B + B)
     {δ : ℝ} (hδ : 0 ≤ δ) (hBcoer : B.LowerFormBoundOn ⊤ δ) :
     ∀ x, δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
       RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 := by
   intro x
+  have hRinv := hR.of_mul_eq_one hRRinv
   let y := Rinv x
   have hxy : R y = x := by
     simpa only [y, mul_apply_eq_comp, one_apply_eq_self] using DFunLike.congr_fun hRRinv x
   -- Transfer the quadratic form using the conjugated Lyapunov identity.
   have hreal : RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 = RCLike.re ⟪B y, y⟫_𝕜 := by
     have hsum := congrArg (fun T : E →L[𝕜] E => RCLike.re ⟪T x, x⟫_𝕜)
-      (conj_add_star_of_lyapunov B C W R Rinv hR hRinv hRR hRinvR hRRinv hlyap)
+      (conj_add_star_of_lyapunov B C W R Rinv hR hRR hRRinv hlyap)
     simp only [add_apply, inner_add_left, map_add, re_inner_star_apply_self,
       mul_apply_eq_comp] at hsum
     have hRinvAdj : Rinv.adjoint = Rinv := by
@@ -214,14 +252,15 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
   have hRR : R * R = C := by
     simpa only [CFC.sqrt_eq_rpow, R] using CFC.sqrt_mul_sqrt_self C hC.nonneg
   -- The inverse-equivalence constructor uses composition; translate at this boundary only.
-  let e := ContinuousLinearEquiv.equivOfInverse' R Rinv
+  let e := ContinuousLinearEquiv.ofContinuousLinearMap R Rinv
     (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRRinv)
     (by simpa only [ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def] using hRinvR)
   have he : e.conjContinuousAlgEquiv.toAlgEquiv W = R * W * Rinv := by
     ext x
     simp only [ContinuousAlgEquiv.coe_toAlgEquiv,
       ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-      ContinuousLinearEquiv.equivOfInverse'_apply, ContinuousLinearEquiv.symm_equivOfInverse',
+      ContinuousLinearEquiv.coe_ofContinuousLinearMap,
+      ContinuousLinearEquiv.symm_ofContinuousLinearMap,
       mul_apply_eq_comp, e]
   have hz' : z ∈ spectrum ℂ (e.conjContinuousAlgEquiv.toAlgEquiv W) := by
     rwa [AlgEquiv.spectrum_eq]
@@ -229,8 +268,7 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
   exact le_re_of_mem_spectrum_of_coercive _
     (coercive_conj_of_lyapunov B C W R Rinv
       (CFC.rpow_nonneg (a := C) (y := (1 / 2 : ℝ))).isSelfAdjoint
-      (CFC.rpow_nonneg (a := C) (y := (-(1 / 2 : ℝ)))).isSelfAdjoint
-      hRR hRinvR hRRinv hlyap hδ hB) hz'
+      hRR hRRinv hlyap hδ hB) hz'
 
 section Real
 
@@ -258,6 +296,37 @@ theorem inner_add_smul_id_nonneg_of_norm_sub_le {A D : F →L[ℝ] F} {κ t : �
       inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
   rw [h₂]
   nlinarith [sub_norm_mul_norm_sq_le_inner hA D v, mul_nonneg (sub_nonneg.2 hD) (sq_nonneg ‖v‖)]
+
+/-- **Conjugating a coercive operator by a map with a right inverse.** If `M ∘ N = id` and
+`λ ‖ξ‖² ≤ ⟪A₀ ξ, ξ⟫` with `λ ≥ 0`, then `λ / (‖N‖ + 1)² ‖ξ‖² ≤ ⟪M A₀ M† ξ, ξ⟫`. With `M = DΨ(Φ x)`
+and `N = DΦ(x)` for mutually inverse changes of variables `Φ` and `Ψ`, this is the ellipticity of
+the principal coefficients `DΨ ∘ A ∘ DΨ†` of a non-divergence-form equation pulled back along
+`Φ`. -/
+theorem mul_norm_sq_le_inner_comp_comp_adjoint [CompleteSpace F] {M N : F →L[ℝ] F}
+    (hMN : M ∘L N = ContinuousLinearMap.id ℝ F) {A₀ : F →L[ℝ] F} {lam : ℝ} (hlam : 0 ≤ lam)
+    (hA₀ : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A₀ ξ, ξ⟫_ℝ) (ξ : F) :
+    lam / (‖N‖ + 1) ^ 2 * ‖ξ‖ ^ 2 ≤ ⟪(M ∘L A₀ ∘L M.adjoint) ξ, ξ⟫_ℝ := by
+  -- `ξ = N† (M† ξ)`, so `‖ξ‖ ≤ (‖N‖ + 1) ‖M† ξ‖`.
+  have hξ : N.adjoint (M.adjoint ξ) = ξ := by
+    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hMN,
+      ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+  have hnorm : ‖ξ‖ ≤ (‖N‖ + 1) * ‖M.adjoint ξ‖ :=
+    calc ‖ξ‖ = ‖N.adjoint (M.adjoint ξ)‖ := by rw [hξ]
+      _ ≤ ‖N.adjoint‖ * ‖M.adjoint ξ‖ := N.adjoint.le_opNorm _
+      _ ≤ (‖N‖ + 1) * ‖M.adjoint ξ‖ := by
+        rw [LinearIsometryEquiv.norm_map]
+        gcongr
+        linarith
+  have hinner : ⟪(M ∘L A₀ ∘L M.adjoint) ξ, ξ⟫_ℝ = ⟪A₀ (M.adjoint ξ), M.adjoint ξ⟫_ℝ := by
+    rw [ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_inner_right,
+      ContinuousLinearMap.comp_apply]
+  rw [hinner]
+  refine le_trans ?_ (hA₀ _)
+  have hsq : ‖ξ‖ ^ 2 ≤ (‖N‖ + 1) ^ 2 * ‖M.adjoint ξ‖ ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg ξ) hnorm 2
+  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+  nlinarith
 
 end Real
 

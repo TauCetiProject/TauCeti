@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Depth.Basic
 import Mathlib.AlgebraicGeometry.Morphisms.Etale
 import Mathlib.AlgebraicGeometry.Morphisms.Finite
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.Etale.Finiteness
@@ -71,9 +72,7 @@ theorem finite_etale_awayMap_puncturedSpectrum (hdepth : 2 ≤ depth (ModuleCat.
   set φ := (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop
   let U := puncturedSpectrum A
   let g := Spec.map φ
-  -- Instance search does not derive `RespectsIso` for these properties at a fixed universe.
-  have : MorphismProperty.RespectsIso @IsFinite.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  -- Instance search does not derive `RespectsIso` for `Etale` at a fixed universe.
   have : MorphismProperty.RespectsIso @Etale.{u} :=
     MorphismProperty.IsStableUnderBaseChange.respectsIso
   -- Over `U`, the morphism `Spec Γ(V, 𝒪_V) ⟶ Spec A` is the finite étale `V ⟶ U`.
@@ -138,7 +137,7 @@ theorem isTorsionFree_sections_puncturedSpectrum (hdepth : 2 ≤ depth (ModuleCa
   -- Hence `s` vanishes on each basic open `D(z) ⊆ X`, where `z` acts invertibly.
   have hvan (z : maximalIdeal A) :
       X.presheaf.map (homOfLE (X.basicOpen_le (algebraMap A R z))).op s = 0 := by
-    obtain ⟨n, hn⟩ := hpow z z.2
+    obtain ⟨n, hn⟩ := hpow z z.property
     have := congr(X.presheaf.map (homOfLE (X.basicOpen_le (algebraMap A R z))).op $hn)
     rw [map_mul, map_pow, map_zero] at this
     exact ((X.toRingedSpace.isUnit_res_basicOpen _).pow n).mul_right_eq_zero.1 this
@@ -150,7 +149,7 @@ theorem isTorsionFree_sections_puncturedSpectrum (hdepth : 2 ≤ depth (ModuleCa
   let p : PrimeSpectrum A := (V.obj.hom ≫ (puncturedSpectrum A).ι) v
   obtain ⟨z, hzm, hzp⟩ : ∃ z ∈ maximalIdeal A, z ∉ p.asIdeal := by
     by_contra! h
-    refine (mem_puncturedSpectrum_iff A p).1 (V.obj.hom v).2 (PrimeSpectrum.ext ?_)
+    refine (mem_puncturedSpectrum_iff A p).1 (V.obj.hom v).property (PrimeSpectrum.ext ?_)
     exact le_antisymm (le_maximalIdeal p.isPrime.ne_top) h
   refine TopologicalSpace.Opens.mem_iSup.2 ⟨⟨z, hzm⟩, ?_⟩
   have hD : X.basicOpen (algebraMap A R z) =

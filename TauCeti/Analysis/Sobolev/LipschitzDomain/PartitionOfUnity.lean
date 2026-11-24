@@ -114,6 +114,6 @@ theorem IsLipschitzDomainWith.exists_contDiff_partitionOfUnity [FiniteDimensiona
     exact ⟨hρ_cont _, hρ_range _, hρ_cpt _, hρ (some ⟨x, hx⟩)⟩
   · rw [← ρ.sum_eq_one hy, finsum_eq_sum_of_fintype, Fintype.sum_option, ← Finset.sum_coe_sort t]
     congr 1
-    exact Finset.sum_congr rfl fun x _ ↦ by rw [hψ x x.2]
+    exact Finset.sum_congr rfl fun x _ ↦ by rw [hψ x x.property]
 
 end Set

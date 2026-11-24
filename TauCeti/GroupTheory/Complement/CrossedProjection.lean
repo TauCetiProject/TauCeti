@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.Complement.Local
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
 public import TauCeti.GroupTheory.GroupAction.ConjAct
+import TauCeti.GroupTheory.SemidirectProduct
 
 /-!
 # Complements and normalized crossed projections
@@ -20,7 +21,10 @@ such a map equals `1` is a complement. This file proves both constructions and t
 existence criterion, without any finiteness assumption. The same dictionary holds for an
 intermediate subgroup `H ≥ N`: the left projection along a local complement of `N` in `H` is a
 normalized crossed map `H → N`, the zero locus of such a map is a local complement, and the two
-constructions are mutually inverse (`Subgroup.localCrossedProjectionEquiv`).
+constructions are mutually inverse (`Subgroup.localCrossedProjectionEquiv`). Conjugating a
+normalized crossed map `c` on `H` by `g` gives the normalized crossed map
+`x ↦ g • c (g⁻¹ * x * g)` on `g H g⁻¹` (`Subgroup.smul_apply_equivSMul_symm_inclusion`), whose
+zero locus is the conjugate of that of `c`.
 
 Conjugating a complement `D` by `g` conjugates its crossed projection `c` to
 `x ↦ g • c (g⁻¹ * x * g)`. For `a ∈ N` this is `c` times the principal crossed map
@@ -31,7 +35,9 @@ projections differ by that principal crossed map
 The conjugation action is explicit rather than a global instance. The additive
 coefficient action uses `Additive.distribMulAction`, and kernels use the existing
 `groupCohomology.zeroLocus` rather than a second notion of cocycle kernel.
-The crossed projection is the first component of Mathlib's complement decomposition;
+The crossed projection is the first component of Mathlib's complement decomposition
+(hence sends `1` to `1`, commutes with left multiplication from `N`, ignores right
+multiplication from the complement, and satisfies `c g = n ↔ n⁻¹ * g ∈ D`);
 its quotient-splitting formula supplies the crossed identity.
 
 ## References
@@ -63,8 +69,15 @@ noncomputable def crossedProjection (g : G) : N :=
   (h.equiv g).1
 
 omit [N.Normal] in
+theorem crossedProjection_apply (g : G) : h.crossedProjection g = (h.equiv g).1 := (rfl)
+
+/-- The left component of `(SemidirectProduct.mulEquivSubgroup h).symm` is `h.crossedProjection`. -/
+theorem mulEquivSubgroup_symm_left_eq_crossedProjection (g : G) :
+    ((SemidirectProduct.mulEquivSubgroup h).symm g).left = h.crossedProjection g :=
+  SemidirectProduct.mulEquivSubgroup_symm_apply_left h g
+
+omit [N.Normal] in
 /-- The projection of a product of the two factors is its normal component. -/
-@[simp]
 theorem crossedProjection_mul (n : N) (d : D) :
     h.crossedProjection ((n : G) * d) = n :=
   congrArg Prod.fst (h.equiv.apply_symm_apply (n, d))
@@ -80,6 +93,27 @@ omit [N.Normal] in
 @[simp]
 theorem crossedProjection_coe_right (d : D) : h.crossedProjection d = 1 :=
   h.equiv_fst_eq_one_of_mem_of_one_mem N.one_mem d.property
+
+omit [N.Normal] in
+/-- The crossed projection sends `1` to `1`. -/
+@[simp]
+theorem crossedProjection_one : h.crossedProjection 1 = 1 :=
+  congrArg Prod.fst (h.equiv_one N.one_mem D.one_mem)
+
+omit [N.Normal] in
+/-- Left multiplication by an element of `N` multiplies the crossed projection on the left. -/
+@[simp]
+theorem crossedProjection_mul_left (n : N) (g : G) :
+    h.crossedProjection ((n : G) * g) = n * h.crossedProjection g :=
+  congrArg Prod.fst (h.equiv_mul_left n g)
+
+omit [N.Normal] in
+/-- Right multiplication by an element of the complement leaves the crossed projection
+unchanged. -/
+@[simp]
+theorem crossedProjection_mul_right (g : G) (d : D) :
+    h.crossedProjection (g * d) = h.crossedProjection g :=
+  (Prod.ext_iff.mp (h.equiv_mul_right g d)).1
 
 theorem coe_crossedProjection (g : G) :
     (h.crossedProjection g : G) = g * (h.quotientSplitting (g : G ⧸ N))⁻¹ := by
@@ -103,6 +137,13 @@ theorem crossedProjection_eq_one_iff (g : G) : h.crossedProjection g = 1 ↔ g �
   rw [← Subtype.coe_inj]
   exact h.coe_equiv_fst_eq_one_iff_mem N.one_mem
 
+omit [N.Normal] in
+/-- The crossed projection of `g` equals `n` if and only if `n⁻¹ * g` lies in the complement. -/
+theorem crossedProjection_eq_iff (g : G) (n : N) :
+    h.crossedProjection g = n ↔ (n : G)⁻¹ * g ∈ D := by
+  rw [eq_comm, ← inv_mul_eq_one, ← h.crossedProjection_mul_left n⁻¹ g, Subgroup.coe_inv,
+    h.crossedProjection_eq_one_iff]
+
 /-- **Equivariance of crossed projections.** The crossed projection along the conjugate
 complement `g D g⁻¹` is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the crossed projection along
 `D`. -/
@@ -112,7 +153,7 @@ theorem crossedProjection_conj_smul (g x : G) :
     h.equiv_fst_mul_equiv_snd _
   have hd : g * (h.equiv (g⁻¹ * x * g)).2 * g⁻¹ ∈ MulAut.conj g • D := by
     rw [mem_pointwise_smul_iff_inv_smul_mem]
-    convert (h.equiv (g⁻¹ * x * g)).2.2 using 1
+    convert (h.equiv (g⁻¹ * x * g)).2.property using 1
     simp [mul_assoc]
   have hx : x = ((g • h.crossedProjection (g⁻¹ * x * g) : N) : G) *
       (⟨_, hd⟩ : ↥(MulAut.conj g • D)) := by
@@ -147,6 +188,22 @@ theorem eq_conj_smul_iff_crossedProjection_eq {D' : Subgroup G} (h' : N.IsComple
       h.crossedProjection_conj_coe_smul]
 
 end IsComplement'
+
+/-- For `H = ⊤`, the local left projection agrees with
+`Subgroup.IsComplement'.crossedProjection`. -/
+theorem IsLocalComplement.leftProjection_top_eq_crossedProjection {D : Subgroup G}
+    (h : N.IsLocalComplement D ⊤) (x : (⊤ : Subgroup G)) :
+    h.leftProjection x = (isLocalComplement_top_iff.mp h).crossedProjection x :=
+  h.leftProjection_top x
+
+omit [N.Normal] in
+/-- When a local complement `K` of `N` in `H` is contained in a global complement `D` of `N`, its
+left projection is the restriction of the crossed projection along `D`. -/
+theorem IsLocalComplement.leftProjection_eq_crossedProjection {K H D : Subgroup G}
+    [(N.subgroupOf H).Normal] (h : N.IsLocalComplement K H) (hD : N.IsComplement' D)
+    (hKD : K ≤ D) (x : H) :
+    h.leftProjection x = hD.crossedProjection x :=
+  ((hD.crossedProjection_eq_iff (x : G) _).mpr (hKD ((h.leftProjection_eq_iff x _).mp rfl))).symm
 
 /-- The left projection of a local complement `K` of `N` in `H` satisfies the crossed identity
 for the conjugation action of `H` on `N`. -/
@@ -340,6 +397,21 @@ theorem exists_isLocalComplement_iff_crossedProjection :
     have ha : IsCocycle₁ (fun x => Additive.ofMul (c x)) :=
       fun x y => congrArg Additive.ofMul (hc x y)
     exact ⟨_, isLocalComplement_map_zeroLocus hNH ha (fun n => congrArg Additive.ofMul (hn n))⟩
+
+omit [IsMulCommutative N] in
+/-- Conjugating a normalized map `c` on `H` by `g` gives the map `x ↦ g • c (g⁻¹ * x * g)` on
+`g H g⁻¹`, which is again the identity on `N`. By `groupCohomology.IsCocycle₁.conj` and
+`groupCohomology.map_subtype_zeroLocus_conj`, a normalized crossed map conjugates to a normalized
+crossed map whose zero locus is conjugated by `g`. -/
+theorem smul_apply_equivSMul_symm_inclusion {c : H → Additive N}
+    (hn : ∀ n : N, c (inclusion hNH n) = Additive.ofMul n) (g : G)
+    (hN : N ≤ MulAut.conj g • H) (n : N) :
+    g • c ((equivSMul (MulAut.conj g) H).symm (inclusion hN n)) = Additive.ofMul n := by
+  have hx : (equivSMul (MulAut.conj g) H).symm (inclusion hN n) = inclusion hNH (g⁻¹ • n) := by
+    apply Subtype.ext
+    rw [equivSMul_symm_apply_coe (MulAut.conj g) H (inclusion hN n)]
+    simp [coe_conjugationAction_smul]
+  rw [hx, hn, ← Additive.ofMul_smul, smul_inv_smul]
 
 end Local
 

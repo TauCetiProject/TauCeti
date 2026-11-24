@@ -29,6 +29,10 @@ of the monomial bases of the three factors is sent to it.  The decomposition is 
 which the PBW theorem enters highest-weight theory: an element is determined by its components
 in `U⁻ ⊗ U⁰ ⊗ U⁺`, which is how central elements are reduced to their `U⁰` part.
 
+At `q = 1` and `q = -1` the factor `(q - q⁻¹)⁻¹` in the defining relation is Lean's `0⁻¹ = 0`, so
+`UqSl2 q` is the commutative algebra `ℂ[E, F, K^(±1)]` there, and the decomposition is the quantum
+group statement exactly when `q² ≠ 1`.
+
 ## Main definitions
 
 * `TauCeti.UqSl2.triangularEquiv`: the multiplication isomorphism
@@ -134,7 +138,9 @@ theorem triangularEquiv_tmul (p : ℂ[X]) (r : ℂ[T;T⁻¹]) (s : ℂ[X]) :
   rw [triangularEquiv, LinearEquiv.ofBijective_apply, triangularMap_tmul]
 
 /-- The inverse of the triangular decomposition sends the PBW basis vector `F ^ a * K ^ b * E ^ c`
-to the monomial tensor `X ^ a ⊗ T b ⊗ X ^ c`. -/
+to the monomial tensor `X ^ a ⊗ T b ⊗ X ^ c`. This is tagged `simp↓` so that it fires before
+`pbwBasis_apply` unfolds the basis vector, which also covers literal exponents. -/
+@[simp↓]
 theorem triangularEquiv_symm_pbwBasis (a : ℕ) (b : ℤ) (c : ℕ) :
     (triangularEquiv q).symm (pbwBasis q (a, b, c)) = (X ^ a) ⊗ₜ (T b ⊗ₜ (X ^ c)) := by
   rw [LinearEquiv.symm_apply_eq, triangularEquiv_tmul]
@@ -147,5 +153,40 @@ theorem triangularEquiv_symm_f_pow_mul_kUnit_zpow_mul_e_pow (a : ℕ) (b : ℤ) 
     (triangularEquiv q).symm (f q ^ a * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q ^ c) =
       (X ^ a) ⊗ₜ (T b ⊗ₜ (X ^ c)) := by
   rw [← pbwBasis_apply, triangularEquiv_symm_pbwBasis]
+
+/-- The inverse of the triangular decomposition sends `F` to `X ⊗ 1 ⊗ 1`. -/
+@[simp]
+theorem triangularEquiv_symm_f :
+    (triangularEquiv q).symm (f q) = X ⊗ₜ ((1 : ℂ[T;T⁻¹]) ⊗ₜ (1 : ℂ[X])) := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
+
+/-- The inverse of the triangular decomposition sends `K` to `1 ⊗ T 1 ⊗ 1`. -/
+@[simp]
+theorem triangularEquiv_symm_k :
+    (triangularEquiv q).symm (k q) = (1 : ℂ[X]) ⊗ₜ (T 1 ⊗ₜ (1 : ℂ[X])) := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
+
+/-- The inverse of the triangular decomposition sends `K⁻¹` to `1 ⊗ T (-1) ⊗ 1`. -/
+@[simp]
+theorem triangularEquiv_symm_kInv :
+    (triangularEquiv q).symm (kInv q) = (1 : ℂ[X]) ⊗ₜ (T (-1) ⊗ₜ (1 : ℂ[X])) := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
+
+/-- The inverse of the triangular decomposition sends `E` to `1 ⊗ 1 ⊗ X`. -/
+@[simp]
+theorem triangularEquiv_symm_e :
+    (triangularEquiv q).symm (e q) = (1 : ℂ[X]) ⊗ₜ ((1 : ℂ[T;T⁻¹]) ⊗ₜ X) := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
+
+/-- The inverse of the triangular decomposition sends `F * E` to `X ⊗ 1 ⊗ X`. -/
+@[simp]
+theorem triangularEquiv_symm_f_mul_e :
+    (triangularEquiv q).symm (f q * e q) = X ⊗ₜ ((1 : ℂ[T;T⁻¹]) ⊗ₜ X) := by
+  rw [LinearEquiv.symm_apply_eq]
+  simp
 
 end TauCeti.UqSl2

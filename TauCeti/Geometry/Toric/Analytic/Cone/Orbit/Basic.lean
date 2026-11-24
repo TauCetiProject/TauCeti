@@ -151,26 +151,70 @@ theorem preimage_zeroPatternSet_eq_affineConeOrbit (hi : IsIntegralLattice i)
   rw [Set.mem_preimage, mem_zeroPatternSet,
     mem_affineConeOrbit_iff_coneChartEquiv]
 
+/-! ### The distinguished point of a face -/
+
+section DistinguishedPoint
+
+open AffineSemigroupComplexPoint
+
+/-- A character in the dual semigroup of `σ` is nonnegative on every face of `σ`, so the sum of
+two such characters vanishes on a face exactly when both summands do. -/
+private theorem forall_realCharacter_add_eq_zero_iff (hi : IsIntegralLattice i) (F : σ.Face)
+    (m m' : dualSemigroup hi σ) :
+    (∀ y, y ∈ F → hi.realCharacter ((m + m' : dualSemigroup hi σ) : N →+ ℤ) y = 0) ↔
+      (∀ y, y ∈ F → hi.realCharacter (m : N →+ ℤ) y = 0) ∧
+        ∀ y, y ∈ F → hi.realCharacter (m' : N →+ ℤ) y = 0 := by
+  have hnonneg (n : dualSemigroup hi σ) (y : V) (hy : y ∈ F) :
+      0 ≤ hi.realCharacter (n : N →+ ℤ) y :=
+    (mem_dualSemigroup hi _).1 n.property (F.isFaceOf.le hy)
+  simp only [AddSubmonoid.coe_add, map_add, LinearMap.add_apply]
+  refine ⟨fun h ↦ ⟨fun y hy ↦ ?_, fun y hy ↦ ?_⟩, fun h y hy ↦ by rw [h.1 y hy, h.2 y hy, add_zero]⟩
+  · exact ((add_eq_zero_iff_of_nonneg (hnonneg m y hy) (hnonneg m' y hy)).1 (h y hy)).1
+  · exact ((add_eq_zero_iff_of_nonneg (hnonneg m y hy) (hnonneg m' y hy)).1 (h y hy)).2
+
+open Classical in
+/-- The distinguished point of the stratum of a face `F`: the complex point taking the value `1`
+on the monomials of the characters that vanish on `F`, and `0` on all other monomials. It lies in
+`affineConeOrbit hi F`, and for the smallest face it is the distinguished point `default` of the
+dense torus. -/
+noncomputable def distinguishedPoint (hi : IsIntegralLattice i) (F : σ.Face) :
+    AffineSemigroupComplexPoint (dualSemigroup hi σ) :=
+  MonoidAlgebra.lift ℂ ℂ (Multiplicative (dualSemigroup hi σ))
+    { toFun m := if ∀ y, y ∈ F → hi.realCharacter ((toAdd m : dualSemigroup hi σ) : N →+ ℤ) y = 0
+        then 1 else 0
+      map_one' := by simp
+      map_mul' m m' := by
+        rw [toAdd_mul, forall_realCharacter_add_eq_zero_iff]
+        split_ifs <;> simp_all }
+
+open Classical in
+/-- The distinguished point of `F` takes the value `1` on the monomial of a character vanishing on
+`F`, and `0` on the monomial of any other character. -/
+@[simp]
+theorem distinguishedPoint_apply_single (hi : IsIntegralLattice i) (F : σ.Face)
+    (m : dualSemigroup hi σ) :
+    distinguishedPoint hi F (MonoidAlgebra.single (ofAdd m) 1) =
+      if ∀ y, y ∈ F → hi.realCharacter (m : N →+ ℤ) y = 0 then 1 else 0 := by
+  rw [distinguishedPoint, MonoidAlgebra.lift_single, one_smul, MonoidHom.coe_mk, OneHom.coe_mk,
+    toAdd_ofAdd]
+
+/-- The distinguished point of a face lies in the stratum of that face. -/
+theorem distinguishedPoint_mem_affineConeOrbit (hi : IsIntegralLattice i) (F : σ.Face) :
+    distinguishedPoint hi F ∈ affineConeOrbit hi F := by
+  intro m
+  rw [distinguishedPoint_apply_single]
+  split_ifs with h
+  · exact iff_of_true one_ne_zero h
+  · exact iff_of_false (not_not.2 rfl) h
+
+end DistinguishedPoint
+
 /-! ### Intrinsic consequences -/
 
-private theorem nonempty_affineConeOrbit_of_basis (hi : IsIntegralLattice i)
-    (hσ : IsRegularCone i σ)
-    {b : Module.Basis (ToricRay σ ⊕ ι) ℤ N}
-    (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face) :
-    (affineConeOrbit hi F).Nonempty := by
-  classical
-  refine ⟨(coneChartEquiv hi hσ.toIsToricCone hb).symm
-    (fun ρ ↦ if ρ ∈ hσ.faceOrderIso hi F then 0 else 1, fun _ ↦ 1), ?_⟩
-  apply (mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F _).2
-  rw [Equiv.apply_symm_apply]
-  intro ρ
-  simp
-
 /-- Every face-indexed affine-cone orbit is nonempty. -/
-theorem nonempty_affineConeOrbit (hi : IsIntegralLattice i) (hσ : IsRegularCone i σ)
-    (F : σ.Face) : (affineConeOrbit hi F).Nonempty := by
-  obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
-  exact nonempty_affineConeOrbit_of_basis hi hσ hb F
+theorem nonempty_affineConeOrbit (hi : IsIntegralLattice i) (F : σ.Face) :
+    (affineConeOrbit hi F).Nonempty :=
+  ⟨distinguishedPoint hi F, distinguishedPoint_mem_affineConeOrbit hi F⟩
 
 /-- The orbit strata form a partition: every affine complex point belongs to the orbit of a
 unique face. -/
@@ -244,10 +288,10 @@ theorem closure_affineConeOrbit_toricRay_eq_setOf_coneChartEquiv_fst_eq_zero
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (ρ : ToricRay σ)
     (g : AddGeneratingFamily (dualSemigroup hi σ) s) :
     let _ := affinePointTopology g
-    closure (affineConeOrbit hi ρ.1) =
+    closure (affineConeOrbit hi ρ.val) =
       {x | (coneChartEquiv hi hσ.toIsToricCone hb x).1 ρ = 0} := by
   dsimp only
-  rw [closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero hi hσ hb ρ.1 g,
+  rw [closure_affineConeOrbit_eq_setOf_coneChartEquiv_fst_eq_zero hi hσ hb ρ.val g,
     hσ.faceOrderIso_toricRay hi ρ]
   simp
 
@@ -303,7 +347,7 @@ theorem affineConeOrbit_subset_closure_iff (hi : IsIntegralLattice i)
   let _ := affinePointTopology g
   constructor
   · intro h
-    obtain ⟨x, hx⟩ := nonempty_affineConeOrbit hi hσ G
+    obtain ⟨x, hx⟩ := nonempty_affineConeOrbit hi G
     exact (mem_closure_affineConeOrbit_iff_le hi hσ F G g hx).mp (h hx)
   · intro h x hx
     exact (mem_closure_affineConeOrbit_iff_le hi hσ F G g hx).mpr h
@@ -334,8 +378,8 @@ theorem val_affineConeOrbitHomeomorph_fst_apply (hi : IsIntegralLattice i)
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
     (g : AddGeneratingFamily (dualSemigroup hi σ) s)
     (x : affineConeOrbit hi F) (ρ : {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F}) :
-    ((affineConeOrbitHomeomorph hi hσ hb F g x).1 ρ).1 =
-      (coneChartEquiv hi hσ.toIsToricCone hb x.1).1 ρ.1 := by
+    ((affineConeOrbitHomeomorph hi hσ hb F g x).1 ρ).val =
+      (coneChartEquiv hi hσ.toIsToricCone hb x.val).1 ρ.val := by
   simp [affineConeOrbitHomeomorph, coe_coneChartHomeomorph]
 
 /-- The complementary torus coordinates are unchanged in the orbit chart. -/
@@ -345,7 +389,7 @@ theorem affineConeOrbitHomeomorph_snd_apply (hi : IsIntegralLattice i)
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
     (g : AddGeneratingFamily (dualSemigroup hi σ) s) (x : affineConeOrbit hi F) :
     (affineConeOrbitHomeomorph hi hσ hb F g x).2 =
-      (coneChartEquiv hi hσ.toIsToricCone hb x.1).2 := by
+      (coneChartEquiv hi hσ.toIsToricCone hb x.val).2 := by
   simp [affineConeOrbitHomeomorph, coe_coneChartHomeomorph]
 
 /-- The inverse orbit chart reconstructs the underlying affine point from its coordinates. -/
@@ -361,7 +405,7 @@ theorem affineConeOrbitHomeomorph_symm_apply_coe (hi : IsIntegralLattice i)
       AffineSemigroupComplexPoint (dualSemigroup hi σ)) =
       (coneChartEquiv hi hσ.toIsToricCone hb).symm
         ((zeroPatternSetHomeomorph (ToricRay σ) (ι → ℂˣ) ℂ
-          (hσ.faceOrderIso hi F)).symm w).1 := by
+          (hσ.faceOrderIso hi F)).symm w).val := by
   let _ := affinePointTopology g
   simp [affineConeOrbitHomeomorph, coe_coneChartHomeomorph_symm]
 
@@ -372,8 +416,8 @@ noncomputable def affineConeOrbitAmbient (hi : IsIntegralLattice i)
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
     (x : affineConeOrbit hi F) :
     ({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (ι → ℂ) :=
-  (fun ρ ↦ (coneChartEquiv hi hσ.toIsToricCone hb x.1).1 ρ.1,
-    fun j ↦ ((coneChartEquiv hi hσ.toIsToricCone hb x.1).2 j : ℂ))
+  (fun ρ ↦ (coneChartEquiv hi hσ.toIsToricCone hb x.val).1 ρ.val,
+    fun j ↦ ((coneChartEquiv hi hσ.toIsToricCone hb x.val).2 j : ℂ))
 
 /-- The first ambient coordinates are the nonzero ray coordinates of the cone chart. -/
 @[simp]
@@ -382,7 +426,7 @@ theorem affineConeOrbitAmbient_fst_apply (hi : IsIntegralLattice i)
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
     (x : affineConeOrbit hi F) (ρ : {ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F}) :
     (affineConeOrbitAmbient hi hσ hb F x).1 ρ =
-      (coneChartEquiv hi hσ.toIsToricCone hb x.1).1 ρ.1 := by
+      (coneChartEquiv hi hσ.toIsToricCone hb x.val).1 ρ.val := by
   simp [affineConeOrbitAmbient]
 
 /-- The second ambient coordinates are the complex values of the torus coordinates. -/
@@ -392,7 +436,7 @@ theorem affineConeOrbitAmbient_snd_apply (hi : IsIntegralLattice i)
     (hb : ∀ ρ, IsPrimitiveGenerator i ρ (b (Sum.inl ρ))) (F : σ.Face)
     (x : affineConeOrbit hi F) (j : ι) :
     (affineConeOrbitAmbient hi hσ hb F x).2 j =
-      ((coneChartEquiv hi hσ.toIsToricCone hb x.1).2 j : ℂ) := by
+      ((coneChartEquiv hi hσ.toIsToricCone hb x.val).2 j : ℂ) := by
   simp [affineConeOrbitAmbient]
 
 /-- The ambient orbit chart ranges over pairs whose coordinates are all nonzero. -/
@@ -405,17 +449,17 @@ theorem range_affineConeOrbitAmbient (hi : IsIntegralLattice i)
   ext w
   constructor
   · rintro ⟨x, rfl⟩
-    exact ⟨fun ρ hρ ↦ ρ.2 <|
-        ((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F x.1).1 x.2 ρ.1).1 hρ,
+    exact ⟨fun ρ hρ ↦ ρ.property <|
+        ((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F x.val).1 x.property ρ.val).1 hρ,
       fun j ↦ Units.ne_zero _⟩
   · rintro ⟨h₁, h₂⟩
     let z := (zeroPatternSetHomeomorph (ToricRay σ) (ι → ℂˣ) ℂ (hσ.faceOrderIso hi F)).symm
       (fun ρ ↦ ⟨w.1 ρ, h₁ ρ⟩, fun j ↦ Units.mk0 (w.2 j) (h₂ j))
-    refine ⟨⟨(coneChartEquiv hi hσ.toIsToricCone hb).symm z.1, ?_⟩, ?_⟩
+    refine ⟨⟨(coneChartEquiv hi hσ.toIsToricCone hb).symm z.val, ?_⟩, ?_⟩
     · rw [← preimage_zeroPatternSet_eq_affineConeOrbit hi hσ hb F]
-      simpa using z.2
+      simpa using z.property
     · ext ρ
-      · simp [z, zeroPatternSetHomeomorph_symm_fst_apply_of_notMem _ ρ.2]
+      · simp [z, zeroPatternSetHomeomorph_symm_fst_apply_of_notMem _ ρ.property]
       · simp [z]
 
 /-- The retained coordinates realize the affine orbit as an open subset of a complex vector
@@ -455,7 +499,7 @@ noncomputable def affineConeOrbitChartedSpace (hi : IsIntegralLattice i)
       (affineConeOrbit hi F) := by
   let _ := affinePointTopology g
   let _ : Nonempty (affineConeOrbit hi F) :=
-    (nonempty_affineConeOrbit hi hσ F).to_subtype
+    (nonempty_affineConeOrbit hi F).to_subtype
   exact (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g).singletonChartedSpace
 
 /-- Every chart of the orbit charted space is the ambient coordinate map. -/
@@ -469,7 +513,7 @@ theorem affineConeOrbitChartedSpace_chartAt (hi : IsIntegralLattice i)
       affineConeOrbitAmbient hi hσ hb F := by
   let _ := affinePointTopology g
   let _ : Nonempty (affineConeOrbit hi F) :=
-    (nonempty_affineConeOrbit hi hσ F).to_subtype
+    (nonempty_affineConeOrbit hi F).to_subtype
   exact (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g)
     |>.singletonChartedSpace_chartAt_eq
 
@@ -484,7 +528,7 @@ theorem affineConeOrbitChartedSpace_chartAt_target (hi : IsIntegralLattice i)
       {w | (∀ ρ, w.1 ρ ≠ 0) ∧ ∀ j, w.2 j ≠ 0} := by
   let _ := affinePointTopology g
   let _ : Nonempty (affineConeOrbit hi F) :=
-    (nonempty_affineConeOrbit hi hσ F).to_subtype
+    (nonempty_affineConeOrbit hi F).to_subtype
   rw [OpenPartialHomeomorph.singletonChartedSpace_chartAt_eq
       ((isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g).toOpenPartialHomeomorph
         (affineConeOrbitAmbient hi hσ hb F))
@@ -506,7 +550,7 @@ theorem isManifold_affineConeOrbitChartedSpace (hi : IsIntegralLattice i)
       (affineConeOrbit hi F) := by
   let _ := affinePointTopology g
   let _ : Nonempty (affineConeOrbit hi F) :=
-    (nonempty_affineConeOrbit hi hσ F).to_subtype
+    (nonempty_affineConeOrbit hi F).to_subtype
   exact (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g).isManifold_singleton
 
 /-- The ambient orbit coordinates are holomorphic for the charted-space structure they induce. -/
@@ -522,7 +566,7 @@ theorem contMDiff_affineConeOrbitAmbient (hi : IsIntegralLattice i)
       (affineConeOrbitAmbient hi hσ hb F) := by
   let _ := affinePointTopology g
   let _ : Nonempty (affineConeOrbit hi F) :=
-    (nonempty_affineConeOrbit hi hσ F).to_subtype
+    (nonempty_affineConeOrbit hi F).to_subtype
   exact contMDiff_isOpenEmbedding (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g)
 
 /-- The inclusion of an affine-cone orbit into the affine analytic chart is holomorphic. In
@@ -539,7 +583,7 @@ theorem contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattice i)
     ContMDiff
       𝓘(ℂ, (({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (Fin l → ℂ)))
       𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n
-      (fun x : affineConeOrbit hi F ↦ x.1) := by
+      (fun x : affineConeOrbit hi F ↦ x.val) := by
   classical
   let _ := affinePointTopology g
   let _ := affineConeOrbitChartedSpace hi hσ hb F g
@@ -567,7 +611,8 @@ theorem contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattice i)
   · rw [Function.comp_apply, Function.comp_apply, coneChartAmbient_fst_apply]
     dsimp only [c]
     by_cases h : κ.symm a ∈ hσ.faceOrderIso hi F
-    · rw [((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F x.1).1 x.2 _).2 h, dite_eq_left h]
+    · rw [((mem_affineConeOrbit_iff_coneChartEquiv hi hσ hb F x.val).1 x.property _).2 h,
+        dite_eq_left h]
     · rw [dite_eq_right h, affineConeOrbitAmbient_fst_apply]
   · simp [c, Function.comp_apply, coneChartAmbient_snd_apply,
       affineConeOrbitAmbient_snd_apply]
@@ -586,7 +631,7 @@ theorem contMDiff_of_contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattic
     (hf :
       let _ := affinePointTopology g
       let _ := coneChartedSpace hi hσ.toIsToricCone hb κ g
-      ContMDiff I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (fun x ↦ (f x).1)) :
+      ContMDiff I 𝓘(ℂ, (Fin k → ℂ) × (Fin l → ℂ)) n (fun x ↦ (f x).val)) :
     let _ := affinePointTopology g
     let _ := affineConeOrbitChartedSpace hi hσ hb F g
     ContMDiff I
@@ -595,16 +640,16 @@ theorem contMDiff_of_contMDiff_subtypeVal_affineConeOrbit (hi : IsIntegralLattic
   let _ := affinePointTopology g
   let _ := coneChartedSpace hi hσ.toIsToricCone hb κ g
   let _ := affineConeOrbitChartedSpace hi hσ hb F g
-  let _ : Nonempty (affineConeOrbit hi F) := (nonempty_affineConeOrbit hi hσ F).to_subtype
+  let _ : Nonempty (affineConeOrbit hi F) := (nonempty_affineConeOrbit hi F).to_subtype
   apply ContMDiff.of_comp_isOpenEmbedding
     (isOpenEmbedding_affineConeOrbitAmbient hi hσ hb F g)
   let p : (Fin k → ℂ) × (Fin l → ℂ) →
       ({ρ : ToricRay σ // ρ ∉ hσ.faceOrderIso hi F} → ℂ) × (Fin l → ℂ) := fun w ↦
-    (fun ρ ↦ w.1 (κ ρ.1), w.2)
+    (fun ρ ↦ w.1 (κ ρ.val), w.2)
   have hp : ContDiff ℂ n p := by
     apply ContDiff.prodMk
     · rw [contDiff_pi]
-      exact fun ρ ↦ (contDiff_apply ℂ (fun _ ↦ ℂ) (κ ρ.1)).comp contDiff_fst
+      exact fun ρ ↦ (contDiff_apply ℂ (fun _ ↦ ℂ) (κ ρ.val)).comp contDiff_fst
     · exact contDiff_snd
   refine (hp.comp_contMDiff
     ((contMDiff_coneChartAmbient hi hσ.toIsToricCone hb κ g n).comp hf)).congr fun x ↦ ?_
@@ -617,56 +662,6 @@ section TorusOrbit
 
 open AffineSemigroupComplexPoint
 
-/-- A character in the dual semigroup of `σ` is nonnegative on every face of `σ`, so the sum of
-two such characters vanishes on a face exactly when both summands do. -/
-private theorem forall_realCharacter_add_eq_zero_iff (hi : IsIntegralLattice i) (F : σ.Face)
-    (m m' : dualSemigroup hi σ) :
-    (∀ y, y ∈ F → hi.realCharacter ((m + m' : dualSemigroup hi σ) : N →+ ℤ) y = 0) ↔
-      (∀ y, y ∈ F → hi.realCharacter (m : N →+ ℤ) y = 0) ∧
-        ∀ y, y ∈ F → hi.realCharacter (m' : N →+ ℤ) y = 0 := by
-  have hnonneg (n : dualSemigroup hi σ) (y : V) (hy : y ∈ F) :
-      0 ≤ hi.realCharacter (n : N →+ ℤ) y :=
-    (mem_dualSemigroup hi _).1 n.2 (F.isFaceOf.le hy)
-  simp only [AddSubmonoid.coe_add, map_add, LinearMap.add_apply]
-  refine ⟨fun h ↦ ⟨fun y hy ↦ ?_, fun y hy ↦ ?_⟩, fun h y hy ↦ by rw [h.1 y hy, h.2 y hy, add_zero]⟩
-  · exact ((add_eq_zero_iff_of_nonneg (hnonneg m y hy) (hnonneg m' y hy)).1 (h y hy)).1
-  · exact ((add_eq_zero_iff_of_nonneg (hnonneg m y hy) (hnonneg m' y hy)).1 (h y hy)).2
-
-open Classical in
-/-- The distinguished point of the stratum of a face `F`: the complex point taking the value `1`
-on the monomials of the characters that vanish on `F`, and `0` on all other monomials. It lies in
-`affineConeOrbit hi F`, and for the smallest face it is the distinguished point `default` of the
-dense torus. -/
-noncomputable def distinguishedPoint (hi : IsIntegralLattice i) (F : σ.Face) :
-    AffineSemigroupComplexPoint (dualSemigroup hi σ) :=
-  MonoidAlgebra.lift ℂ ℂ (Multiplicative (dualSemigroup hi σ))
-    { toFun m := if ∀ y, y ∈ F → hi.realCharacter ((toAdd m : dualSemigroup hi σ) : N →+ ℤ) y = 0
-        then 1 else 0
-      map_one' := by simp
-      map_mul' m m' := by
-        rw [toAdd_mul, forall_realCharacter_add_eq_zero_iff]
-        split_ifs <;> simp_all }
-
-open Classical in
-/-- The distinguished point of `F` takes the value `1` on the monomial of a character vanishing on
-`F`, and `0` on the monomial of any other character. -/
-@[simp]
-theorem distinguishedPoint_apply_single (hi : IsIntegralLattice i) (F : σ.Face)
-    (m : dualSemigroup hi σ) :
-    distinguishedPoint hi F (MonoidAlgebra.single (ofAdd m) 1) =
-      if ∀ y, y ∈ F → hi.realCharacter (m : N →+ ℤ) y = 0 then 1 else 0 := by
-  rw [distinguishedPoint, MonoidAlgebra.lift_single, one_smul, MonoidHom.coe_mk, OneHom.coe_mk,
-    toAdd_ofAdd]
-
-/-- The distinguished point of a face lies in the stratum of that face. -/
-theorem distinguishedPoint_mem_affineConeOrbit (hi : IsIntegralLattice i) (F : σ.Face) :
-    distinguishedPoint hi F ∈ affineConeOrbit hi F := by
-  intro m
-  rw [distinguishedPoint_apply_single]
-  split_ifs with h
-  · exact iff_of_true one_ne_zero h
-  · exact iff_of_false (not_not.2 rfl) h
-
 /-- Every character of the dual semigroup vanishes on the smallest face of `σ`, its lineality
 space, so the distinguished point of that face is the distinguished point `default` of the dense
 torus. -/
@@ -676,8 +671,8 @@ theorem distinguishedPoint_bot (hi : IsIntegralLattice i) :
   refine AffineSemigroupComplexPoint.ext fun m ↦ ?_
   have hm (y : V) (hy : y ∈ (⊥ : σ.Face)) : hi.realCharacter (m : N →+ ℤ) y = 0 := by
     rw [← PointedCone.Face.mem_toPointedCone, PointedCone.Face.lineal_eq_bot] at hy
-    have h₁ := (mem_dualSemigroup hi _).1 m.2 hy.1
-    have h₂ := (mem_dualSemigroup hi _).1 m.2 hy.2
+    have h₁ := (mem_dualSemigroup hi _).1 m.property hy.1
+    have h₂ := (mem_dualSemigroup hi _).1 m.property hy.2
     rw [map_neg] at h₂
     linarith
   rw [distinguishedPoint_apply_single, default_apply_single, ite_eq_left hm]

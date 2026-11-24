@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LowDegree
 
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Group
 
 /-!
-# Identities of unbundled cocycles
+# Identities of cocycles
 
 Facts about cocycles in the sense of Mathlib's unbundled `groupCohomology.IsCocycle₁`,
 `groupCohomology.IsCocycle₂` and `groupCohomology.IsMulCocycle₁`, which need no topology and no
@@ -28,6 +29,9 @@ representation:
   (`groupCohomology.coe_zeroLocus`). `GroupCohomology/Cocycle/Topology.lean` shows it is closed
   when `f` is continuous into a `T1` space, and deduces that such an `f` vanishing on a
   topological generating set vanishes everywhere.
+* `groupCohomology.IsCocycle₁.conj`: for a `G`-module `M`, a `1`-cocycle `c` on a subgroup `H`
+  conjugates to the `1`-cocycle `x ↦ g • c (g⁻¹ * x * g)` on `g H g⁻¹`, and its zero locus is
+  conjugated by `g` (`groupCohomology.map_subtype_zeroLocus_conj`).
 
 * `TauCeti.isCocycle₁_ext_of_forall_mem_zpowers`: a one-cocycle on a cyclic group is
   determined by its value at a generator.
@@ -36,11 +40,27 @@ representation:
 * `TauCeti.sum_smul_apply_eq_zero_of_isCocycle₁`: on a finite group, the group norm kills
   every value of a one-cocycle.
 
+For the bundled one-cocycles `groupCohomology.cocycles₁ A` of a representation `A`:
+
+* `groupCohomology.cocycles₁_map_mul` and `groupCohomology.cocycles₁_apply_inv`: the cocycle
+  identity `f (g * h) = ρ g (f h) + f g` and the inverse formula `f g⁻¹ = -ρ g⁻¹ (f g)`.
+* `groupCohomology.cocycles₁_ext_of_closure_eq_top`: a one-cocycle is determined by its values
+  on a generating set; `groupCohomology.cocycles₁_list_prod_eq_zero`: it vanishes on a product of
+  elements at which it vanishes. Hence `Z¹(G, A)` is a finite module when `G` is finitely
+  generated and `A` is a finite module over a Noetherian ring (an instance).
+* `groupCohomology.cocycles₁_apply_inv_mul_inv_mul_mul`: the value of a one-cocycle at a
+  commutator `a⁻¹ b⁻¹ a b`, given by the Fox derivatives of the commutator.
+* `groupCohomology.cocycles₁_apply_mem_coinvariantsKer_of_mem_commutator`: modulo the coinvariant
+  kernel a one-cocycle is a homomorphism, so it takes values in the coinvariant kernel on the
+  commutator subgroup.
+
 Continuous cohomology uses the conjugation identity in the five-term sequence and in
 transgression, and the cyclic-group facts in its first and second cohomology computations.
 -/
 
 public section
+
+universe u w
 
 namespace groupCohomology
 
@@ -90,6 +110,117 @@ theorem mem_zeroLocus {f : G → M} (hf : IsCocycle₁ f) {g : G} : g ∈ zeroLo
 @[simp]
 theorem coe_zeroLocus {f : G → M} (hf : IsCocycle₁ f) : (zeroLocus hf : Set G) = f ⁻¹' {0} :=
   (rfl)
+
+section Conj
+
+open scoped Pointwise
+
+variable {G M : Type*} [Group G] [AddCommGroup M] [DistribMulAction G M] {H : Subgroup G}
+
+/-- Conjugating a `1`-cocycle `c` on a subgroup `H` by `g` gives a `1`-cocycle on `g H g⁻¹`,
+namely `x ↦ g • c (g⁻¹ * x * g)`; the subgroups act on `M` by restriction. -/
+theorem IsCocycle₁.conj {c : H → M} (hc : IsCocycle₁ c) (g : G) :
+    IsCocycle₁ fun x : ↥(MulAut.conj g • H) =>
+      g • c ((Subgroup.equivSMul (MulAut.conj g) H).symm x) := by
+  intro x y
+  dsimp only
+  rw [map_mul, hc, smul_add, Subgroup.smul_def, Subgroup.smul_def, smul_smul, smul_smul,
+    Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H x]
+  simp only [MulAut.smul_def, MulAut.conj_inv_apply]
+  group
+
+/-- The zero locus of the conjugate `x ↦ g • c (g⁻¹ * x * g)` of a `1`-cocycle on `H`, viewed
+in `G`, is the conjugate by `g` of the zero locus of `c`. -/
+@[simp]
+theorem map_subtype_zeroLocus_conj {c : H → M} (hc : IsCocycle₁ c) (g : G) :
+    (zeroLocus (hc.conj g)).map (MulAut.conj g • H).subtype =
+      MulAut.conj g • (zeroLocus hc).map H.subtype := by
+  ext x
+  simp only [Subgroup.mem_map, mem_zeroLocus, smul_eq_zero_iff_eq,
+    Subgroup.mem_pointwise_smul_iff_inv_smul_mem, Subgroup.coe_subtype]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨_, hy, Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H y⟩
+  · rintro ⟨z, hz, hzx⟩
+    refine ⟨Subgroup.equivSMul _ H z, by simpa using hz, ?_⟩
+    rw [Subgroup.equivSMul_apply_coe, hzx, smul_inv_smul]
+
+end Conj
+
+/-! ### One-cocycles of a representation -/
+
+section Rep
+
+variable {k G : Type u} [CommRing k] [Group G] {A : Rep.{w} k G}
+
+/-- The cocycle identity `f (g * h) = ρ g (f h) + f g` of a one-cocycle of a representation. -/
+theorem cocycles₁_map_mul (f : cocycles₁ A) (g h : G) : f (g * h) = A.ρ g (f h) + f g :=
+  (mem_cocycles₁_iff (f : G → A)).1 f.property g h
+
+/-- The value of a one-cocycle at an inverse, `f g⁻¹ = -ρ g⁻¹ (f g)`. -/
+theorem cocycles₁_apply_inv (f : cocycles₁ A) (g : G) : f g⁻¹ = -A.ρ g⁻¹ (f g) := by
+  rw [← map_neg, ← cocycles₁_map_inv f g, Representation.inv_self_apply]
+
+/-- **A one-cocycle is determined by its values on a generating set.** -/
+theorem cocycles₁_ext_of_closure_eq_top {s : Set G} (hs : Subgroup.closure s = ⊤)
+    {f f' : cocycles₁ A} (h : ∀ g ∈ s, f g = f' g) : f = f' := by
+  ext g
+  induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction with
+  | mem g hg => exact h g hg
+  | one => simp
+  | mul g g' _ _ hg hg' => rw [cocycles₁_map_mul, cocycles₁_map_mul f', hg, hg']
+  | inv g _ hg => rw [cocycles₁_apply_inv, cocycles₁_apply_inv f', hg]
+
+/-- **The one-cocycles of a finitely generated group are finite.** For a finite module `A` over
+a Noetherian ring, evaluation on a finite generating set `S` embeds `Z¹(G, A)` into `S → A`. -/
+instance [IsNoetherianRing k] [Group.FG G] [Module.Finite k A] : Module.Finite k (cocycles₁ A) := by
+  obtain ⟨S, hS, hfin⟩ := Group.fg_iff.1 ‹Group.FG G›
+  have := hfin.to_subtype
+  let ev : cocycles₁ A →ₗ[k] (S → A) :=
+    { toFun f x := f x
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+  exact Module.Finite.of_injective ev fun f f' h ↦
+    cocycles₁_ext_of_closure_eq_top hS fun g hg ↦ congrFun h ⟨g, hg⟩
+
+/-- A one-cocycle vanishing at every element of a list vanishes at its product. -/
+theorem cocycles₁_list_prod_eq_zero (f : cocycles₁ A) {l : List G} (hl : ∀ x ∈ l, f x = 0) :
+    f l.prod = 0 := by
+  induction l with
+  | nil => simp
+  | cons x l ih =>
+    rw [List.prod_cons, cocycles₁_map_mul, ih fun y hy ↦ hl y (List.mem_cons_of_mem x hy),
+      hl x List.mem_cons_self, map_zero, add_zero]
+
+/-- **The value of a one-cocycle at a commutator.** For the commutator `a⁻¹ * b⁻¹ * a * b`, the
+cocycle identity gives
+`f (a⁻¹ b⁻¹ a b) = (ρ (a⁻¹ b⁻¹) - ρ a⁻¹) (f a) + (ρ (a⁻¹ b⁻¹ a) - ρ (a⁻¹ b⁻¹)) (f b)`, the Fox
+derivatives of the commutator applied to the values at `a` and `b`. -/
+theorem cocycles₁_apply_inv_mul_inv_mul_mul (f : cocycles₁ A) (a b : G) :
+    f (a⁻¹ * b⁻¹ * a * b) = A.ρ (a⁻¹ * b⁻¹) (f a) - A.ρ a⁻¹ (f a) +
+      (A.ρ (a⁻¹ * b⁻¹ * a) (f b) - A.ρ (a⁻¹ * b⁻¹) (f b)) := by
+  rw [cocycles₁_map_mul, cocycles₁_map_mul, cocycles₁_map_mul, cocycles₁_apply_inv f a,
+    cocycles₁_apply_inv f b]
+  simp only [map_neg, map_mul, mul_apply_eq_comp]
+  abel
+
+/-- **A one-cocycle takes values in the coinvariant kernel on the commutator subgroup.** Modulo
+the coinvariant kernel the cocycle identity reads `f (g * h) = f h + f g`, so `f` becomes a
+homomorphism to an abelian group, which kills commutators. -/
+theorem cocycles₁_apply_mem_coinvariantsKer_of_mem_commutator (f : cocycles₁ A) {g : G}
+    (hg : g ∈ commutator G) : f g ∈ Representation.Coinvariants.ker A.ρ := by
+  let φ : G →* Multiplicative (Representation.Coinvariants A.ρ) :=
+    { toFun g := .ofAdd (Representation.Coinvariants.mk A.ρ (f g))
+      map_one' := by simp
+      map_mul' g h := by
+        rw [cocycles₁_map_mul]
+        simp [← ofAdd_add, add_comm] }
+  have hle : commutator G ≤ φ.ker := Group.Abelianization.commutator_le_ker φ
+  have := hle hg
+  rw [MonoidHom.mem_ker] at this
+  exact (Representation.Coinvariants.mk_eq_zero _).1 (by simpa [φ] using this)
+
+end Rep
 
 end groupCohomology
 

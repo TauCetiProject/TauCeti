@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Index
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # Numbered data for the Suzuki--Ree isogenies
@@ -49,7 +49,9 @@ are simp lemmas rather than the selector body being exposed.
   `TauCeti.SuzukiReeIndex.exponent_eq_one_iff` and
   `TauCeti.SuzukiReeIndex.exponent_eq_characteristic_iff` compute and characterize the two
   exponents, and `TauCeti.SuzukiReeIndex.exponent_mul_exponent_lengthPerm` multiplies the two
-  exponents of a length-exchanged pair to the characteristic.
+  exponents of a length-exchanged pair to the characteristic. By
+  `TauCeti.SuzukiReeIndex.neg_one_pow_exponent`, raising `-1` to an exponent fixes it in the
+  defining exponential characteristic.
 The exponent convention follows Carter, *Simple Groups of Lie Type*. The permutations and numbering
 follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, plates II, VIII, and IX.
 -/
@@ -76,7 +78,7 @@ index: the node swap for `B₂` and `G₂`, and reversal for `F₄`.
 
 The four branch equations `lengthPerm_suzuki`, `lengthPerm_reeG2`, `lengthPerm_reeF4`, and
 `lengthPerm_tits` name the selected permutation on each family, so no consumer needs this body. -/
-def lengthPerm (e : SuzukiReeIndex) : Equiv.Perm (Fin e.1.rank) :=
+def lengthPerm (e : SuzukiReeIndex) : Equiv.Perm (Fin e.val.rank) :=
   match e with
   | ⟨⟨.A _ _, _⟩, h⟩ => by simp at h
   | ⟨⟨.twistedA _ _, _⟩, h⟩ => by simp at h
@@ -145,9 +147,9 @@ def lengthPerm (e : SuzukiReeIndex) : Equiv.Perm (Fin e.1.rank) :=
 /-- The length permutation selected by a Suzuki--Ree index exchanges long and short simple roots
 in the Bourbaki numbering of its underlying untwisted Dynkin diagram. -/
 @[simp]
-theorem isLongSimpleRoot_lengthPerm (e : SuzukiReeIndex) (i : Fin e.1.rank) :
-    e.1.dynkinType.IsLongSimpleRoot (e.lengthPerm i) ↔
-      ¬e.1.dynkinType.IsLongSimpleRoot i := by
+theorem isLongSimpleRoot_lengthPerm (e : SuzukiReeIndex) (i : Fin e.val.rank) :
+    e.val.dynkinType.IsLongSimpleRoot (e.lengthPerm i) ↔
+      ¬e.val.dynkinType.IsLongSimpleRoot i := by
   simp only [ValidLieTypeIndex.dynkinType, ValidLieTypeIndex.rank] at i ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
   cases d <;> simp at hhalf
@@ -177,58 +179,67 @@ long simple root and the defining characteristic on a short simple root.
 
 The long-root predicate is the root-systems development's Bourbaki-numbered predicate, rather than
 a second family-by-family table. -/
-def exponent (e : SuzukiReeIndex) (i : Fin e.1.rank) : ℕ :=
-  if e.1.dynkinType.IsLongSimpleRoot i then 1 else e.1.characteristic
+def exponent (e : SuzukiReeIndex) (i : Fin e.val.rank) : ℕ :=
+  if e.val.dynkinType.IsLongSimpleRoot i then 1 else e.val.characteristic
 
 /-- The exceptional isogeny uses exponent `1` on long simple root subgroups. -/
 @[simp]
-theorem exponent_of_isLongSimpleRoot (e : SuzukiReeIndex) (i : Fin e.1.rank)
-    (hi : e.1.dynkinType.IsLongSimpleRoot i) : e.exponent i = 1 := by
+theorem exponent_of_isLongSimpleRoot (e : SuzukiReeIndex) (i : Fin e.val.rank)
+    (hi : e.val.dynkinType.IsLongSimpleRoot i) : e.exponent i = 1 := by
   simp [exponent, hi]
 
 /-- The exceptional isogeny uses the defining characteristic as its exponent on short simple root
 subgroups. -/
 @[simp]
-theorem exponent_of_not_isLongSimpleRoot (e : SuzukiReeIndex) (i : Fin e.1.rank)
-    (hi : ¬e.1.dynkinType.IsLongSimpleRoot i) : e.exponent i = e.1.characteristic := by
+theorem exponent_of_not_isLongSimpleRoot (e : SuzukiReeIndex) (i : Fin e.val.rank)
+    (hi : ¬e.val.dynkinType.IsLongSimpleRoot i) : e.exponent i = e.val.characteristic := by
   simp [exponent, hi]
 
 /-- A root-subgroup exponent is `1` exactly on a long simple root. -/
 @[simp]
-theorem exponent_eq_one_iff (e : SuzukiReeIndex) (i : Fin e.1.rank) :
-    e.exponent i = 1 ↔ e.1.dynkinType.IsLongSimpleRoot i := by
-  simp [exponent, e.1.characteristic_prime.ne_one]
+theorem exponent_eq_one_iff (e : SuzukiReeIndex) (i : Fin e.val.rank) :
+    e.exponent i = 1 ↔ e.val.dynkinType.IsLongSimpleRoot i := by
+  simp [exponent, e.val.characteristic_prime.ne_one]
 
 /-- A root-subgroup exponent is the defining characteristic exactly on a short simple root. -/
 @[simp]
-theorem exponent_eq_characteristic_iff (e : SuzukiReeIndex) (i : Fin e.1.rank) :
-    e.exponent i = e.1.characteristic ↔ ¬e.1.dynkinType.IsLongSimpleRoot i := by
-  by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
+theorem exponent_eq_characteristic_iff (e : SuzukiReeIndex) (i : Fin e.val.rank) :
+    e.exponent i = e.val.characteristic ↔ ¬e.val.dynkinType.IsLongSimpleRoot i := by
+  by_cases hi : e.val.dynkinType.IsLongSimpleRoot i
   · simp only [exponent_of_isLongSimpleRoot e i hi, hi, not_true_eq_false, iff_false]
-    exact e.1.characteristic_prime.ne_one.symm
+    exact e.val.characteristic_prime.ne_one.symm
   · simp only [exponent_of_not_isLongSimpleRoot e i hi, hi, not_false_eq_true]
 
 /-- Every root-subgroup exponent is positive. -/
-theorem exponent_pos (e : SuzukiReeIndex) (i : Fin e.1.rank) : 0 < e.exponent i := by
-  by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
+theorem exponent_pos (e : SuzukiReeIndex) (i : Fin e.val.rank) : 0 < e.exponent i := by
+  by_cases hi : e.val.dynkinType.IsLongSimpleRoot i
   · simp only [exponent_of_isLongSimpleRoot e i hi, Nat.zero_lt_one]
   · rw [exponent_of_not_isLongSimpleRoot e i hi]
-    exact e.1.characteristic_prime.pos
+    exact e.val.characteristic_prime.pos
 
 /-- Every root-subgroup exponent is at most the defining characteristic. -/
-theorem exponent_le_characteristic (e : SuzukiReeIndex) (i : Fin e.1.rank) :
-    e.exponent i ≤ e.1.characteristic := by
-  by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
+theorem exponent_le_characteristic (e : SuzukiReeIndex) (i : Fin e.val.rank) :
+    e.exponent i ≤ e.val.characteristic := by
+  by_cases hi : e.val.dynkinType.IsLongSimpleRoot i
   · rw [exponent_of_isLongSimpleRoot e i hi]
-    exact e.1.characteristic_prime.one_lt.le
+    exact e.val.characteristic_prime.one_lt.le
   · simp only [exponent_of_not_isLongSimpleRoot e i hi, le_refl]
 
 /-- The two possible values of a root-subgroup exponent. -/
-theorem exponent_eq_one_or_eq_characteristic (e : SuzukiReeIndex) (i : Fin e.1.rank) :
-    e.exponent i = 1 ∨ e.exponent i = e.1.characteristic := by
-  by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
+theorem exponent_eq_one_or_eq_characteristic (e : SuzukiReeIndex) (i : Fin e.val.rank) :
+    e.exponent i = 1 ∨ e.exponent i = e.val.characteristic := by
+  by_cases hi : e.val.dynkinType.IsLongSimpleRoot i
   · exact Or.inl (exponent_of_isLongSimpleRoot e i hi)
   · exact Or.inr (exponent_of_not_isLongSimpleRoot e i hi)
+
+/-- The parameter exponent of the exceptional isogeny is odd as a power map: `-1` is raised to
+itself. At a long node the exponent is `1`, and at a short one it is the characteristic. -/
+theorem neg_one_pow_exponent (e : SuzukiReeIndex) {A : Type*} [CommRing A]
+    [ExpChar A e.val.characteristic] (i : Fin e.val.rank) : (-1 : A) ^ e.exponent i = -1 := by
+  by_cases hi : e.val.dynkinType.IsLongSimpleRoot i
+  · rw [exponent_of_isLongSimpleRoot e i hi, pow_one]
+  · rw [exponent_of_not_isLongSimpleRoot e i hi]
+    exact neg_one_pow_expChar A e.val.characteristic
 
 /-! ### The length permutation is an involution transposing the Cartan matrix -/
 
@@ -253,7 +264,7 @@ private theorem cartanMatrix_reindexPerm {t u : DynkinType} (h : t = u)
 /-- The length permutation selected by a Suzuki--Ree index is an involution: the exceptional
 isogeny exchanges the long and short simple roots, so applying it twice returns each node. -/
 @[simp]
-theorem lengthPerm_lengthPerm (e : SuzukiReeIndex) (i : Fin e.1.rank) :
+theorem lengthPerm_lengthPerm (e : SuzukiReeIndex) (i : Fin e.val.rank) :
     e.lengthPerm (e.lengthPerm i) = i := by
   simp only [ValidLieTypeIndex.rank] at i ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
@@ -284,9 +295,9 @@ This is what distinguishes it from the graph automorphisms of
 is a symmetry of the *dual* diagram, so it is not realized by an automorphism of the pinned group;
 it is realized by a special isogeny, which is why these four families need a half-Frobenius. -/
 @[simp]
-theorem cartanMatrix_lengthPerm (e : SuzukiReeIndex) (i j : Fin e.1.rank) :
-    e.1.dynkinType.cartanMatrix (e.lengthPerm i) (e.lengthPerm j) =
-      e.1.dynkinType.cartanMatrix j i := by
+theorem cartanMatrix_lengthPerm (e : SuzukiReeIndex) (i j : Fin e.val.rank) :
+    e.val.dynkinType.cartanMatrix (e.lengthPerm i) (e.lengthPerm j) =
+      e.val.dynkinType.cartanMatrix j i := by
   simp only [ValidLieTypeIndex.dynkinType, ValidLieTypeIndex.rank] at i j ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
   cases d <;> simp at hhalf
@@ -313,9 +324,9 @@ multiply to the defining characteristic.
 This is the relation that makes the square of the exceptional isogeny the prime-field Frobenius:
 one factor is `1` and the other is the characteristic, in one order or the other. -/
 @[simp]
-theorem exponent_mul_exponent_lengthPerm (e : SuzukiReeIndex) (i : Fin e.1.rank) :
-    e.exponent i * e.exponent (e.lengthPerm i) = e.1.characteristic := by
-  by_cases hi : e.1.dynkinType.IsLongSimpleRoot i
+theorem exponent_mul_exponent_lengthPerm (e : SuzukiReeIndex) (i : Fin e.val.rank) :
+    e.exponent i * e.exponent (e.lengthPerm i) = e.val.characteristic := by
+  by_cases hi : e.val.dynkinType.IsLongSimpleRoot i
   · rw [exponent_of_isLongSimpleRoot e i hi,
       exponent_of_not_isLongSimpleRoot e _ fun h => (isLongSimpleRoot_lengthPerm e i).mp h hi,
       one_mul]

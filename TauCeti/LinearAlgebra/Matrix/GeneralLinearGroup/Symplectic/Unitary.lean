@@ -39,6 +39,8 @@ group is this range, which is the centralizer of `J`
   is the realification of the unitary group.
 * `Matrix.GeneralLinearGroup.mem_range_realify_iff`: the realified general linear group is the
   centralizer of `J` in `GL (n ⊕ n) ℝ`.
+* `Matrix.GeneralLinearGroup.star_mem_range_realify`: the realified general linear group is closed
+  under transposition.
 * `TauCeti.GLSymplectic.inf_unitarySubgroup`, `TauCeti.GLSymplectic.inf_range_realify` and
   `Matrix.GeneralLinearGroup.unitarySubgroup_inf_range_realify`: the same three identities for
   subgroups of `GL (n ⊕ n) ℝ`.
@@ -62,8 +64,7 @@ variable {n : Type*} [DecidableEq n]
 
 /-- Multiplication by `i` realifies to the standard alternating matrix `J`. -/
 theorem realify_I_smul_one : (Complex.I • (1 : Matrix n n ℂ)).realify = J n ℝ := by
-  ext p q
-  rcases p with i | i <;> rcases q with j | j <;> by_cases h : i = j <;> simp [J, h]
+  simp [realify_smul_one]
 
 variable [Fintype n]
 
@@ -162,6 +163,15 @@ theorem mem_range_realify_iff {M : GL (n ⊕ n) ℝ} :
   · simp [← Matrix.realify_inj, hA, hB]
   · simpa using hA
 
+/-- **The realified general linear group is closed under transposition.** -/
+theorem star_mem_range_realify {M : GL (n ⊕ n) ℝ} (hM : M ∈ (realify n ℂ).range) :
+    star M ∈ (realify n ℂ).range := by
+  obtain ⟨A, rfl⟩ := hM
+  -- Realification turns the conjugate transpose into the transpose.
+  refine ⟨star A, Units.ext ?_⟩
+  simp [coe_realify, star_eq_conjTranspose, realify_conjTranspose,
+    conjTranspose_eq_transpose_of_trivial]
+
 /-- An invertible real matrix is a realified unitary matrix exactly when it commutes with `J` and
 is orthogonal. -/
 theorem mem_map_realify_unitarySubgroup_iff {M : GL (n ⊕ n) ℝ} :
@@ -176,13 +186,19 @@ theorem mem_map_realify_unitarySubgroup_iff {M : GL (n ⊕ n) ℝ} :
     simpa using hAM
 
 /-- **`O(2n) ∩ GL(n, ℂ) = U(n)` in `GL (n ⊕ n) ℝ`**: the orthogonal elements of the realified
-general linear group are the realified unitary matrices. -/
-theorem unitarySubgroup_inf_range_realify :
-    unitarySubgroup (GL (n ⊕ n) ℝ) ⊓ (realify n ℂ).range =
-      (unitarySubgroup (GL n ℂ)).map (realify n ℂ) := by
+general linear group are the realified unitary matrices. This holds for every `RCLike 𝕜`. -/
+theorem unitarySubgroup_inf_range_realify {𝕜 : Type*} [RCLike 𝕜] :
+    unitarySubgroup (GL (n ⊕ n) ℝ) ⊓ (realify n 𝕜).range =
+      (unitarySubgroup (GL n 𝕜)).map (realify n 𝕜) := by
+  -- A realified matrix is orthogonal exactly when the original matrix is unitary.
+  have h (A : GL n 𝕜) : realify n 𝕜 A ∈ unitarySubgroup (GL (n ⊕ n) ℝ) ↔
+      A ∈ unitarySubgroup (GL n 𝕜) := by
+    rw [mem_unitarySubgroup_iff_mem_orthogonalGroup, coe_realify, realify_mem_orthogonalGroup_iff]
+    simp [Units.unitary_eq]
   ext M
-  rw [Subgroup.mem_inf, mem_range_realify_iff, mem_map_realify_unitarySubgroup_iff]
-  exact and_comm
+  refine ⟨fun ⟨hM, A, hA⟩ ↦ ⟨A, (h A).1 (hA ▸ hM), hA⟩, ?_⟩
+  rintro ⟨A, hA, rfl⟩
+  exact ⟨(h A).2 hA, A, rfl⟩
 
 end GeneralLinearGroup
 

@@ -93,7 +93,7 @@ theorem cochainsCor1_indexTwoTransversal_apply_coe [AddCommGroup M] [DistribMulA
     (hU : U.index = 2) {s : G} (hs : s ∉ U) (f : U → M) (γ : U) :
     letI : U.FiniteIndex := ⟨by omega⟩
     cochainsCor1 G M U (U.indexTwoTransversal s) (Subgroup.indexTwoTransversal_mk hU hs) f γ =
-      f γ + s • f ⟨s⁻¹ * γ * s, (Subgroup.normal_of_index_eq_two hU).conj_mem' γ γ.2 s⟩ := by
+      f γ + s • f ⟨s⁻¹ * γ * s, (Subgroup.normal_of_index_eq_two hU).conj_mem' γ γ.property s⟩ := by
   have : U.FiniteIndex := ⟨by omega⟩
   simp [hU, hs]
 
@@ -144,7 +144,7 @@ theorem evensConj1_eq_explicitConj1 (hU : U.index = 2) (hUo : IsOpen (U : Set G)
     apply congrArg (fun z : Z1 U M => (z : H1 U M))
     apply Subtype.ext
     funext γ
-    simp only [cocyclesMap1_coe, cochainsMap1_apply, ContinuousMonoidHom.coe_subgroupSubtype,
+    simp only [coe_cocyclesMap1, cochainsMap1_apply, ContinuousMonoidHom.coe_subgroupSubtype,
       Subgroup.subtype_apply, AddMonoidHom.id_apply, coe_cocyclesCor1,
       cochainsCor1_indexTwoTransversal_apply_coe hU hs, AddSubgroup.coe_add, Pi.add_apply,
       DistribSMul.toAddMonoidHom_apply, MonoidHom.coe_ofClass,

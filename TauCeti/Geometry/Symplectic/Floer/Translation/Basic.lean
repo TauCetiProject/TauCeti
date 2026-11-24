@@ -22,7 +22,8 @@ perturbation does not depend on `s`, so the perturbed derivative of the translat
 translate of the perturbed derivative of `u` (`SymplecticForm.perturbedFDeriv_comp_add_right`).
 Hence the translate of a solution for the almost complex structures `J` solves the equation for
 the translated structures `J(· + (c, 0))`, which are `J` itself when `J` does not depend on `s`,
-and translations preserve the energy (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+and translations translate the energy density
+(`SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`), so they preserve the energy.
 This file identifies the fixed points of this action of `ℝ` on finite-energy solutions and shows
 that it is free elsewhere, so that the quotient by translations is taken only away from the
 stationary cylinders.
@@ -82,14 +83,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 section Cylinder
-
-/-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
-`(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
-private theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SymplecticForm V) (H : ℝ → V → ℝ)
-    (u : ℝ × ℝ → V) (c : ℝ) (z : ℝ × ℝ) :
-    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) z =
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (z + (c, 0)) := by
-  simpa using ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (c, 0) z
 
 variable {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {z : ℝ × ℝ}
 

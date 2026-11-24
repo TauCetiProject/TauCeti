@@ -90,7 +90,7 @@ class GradedLinearQuiver (R : Type w) [Ring R] (C : Type u) where
   /-- The `R`-module of morphisms from `X` to `Y`. -/
   homModule : C → C → ModuleCat.{v} R
   /-- The internal `ℤ`-grading of the hom module from `X` to `Y`. -/
-  grading : (X Y : C) → InternalGrading R (homModule X Y)
+  grading : (X Y : C) → InternalGrading R (homModule X Y) ℤ
 
 namespace GradedLinearQuiver
 
@@ -145,7 +145,7 @@ def grHomReindex {n k : ℤ} (h : n = k) (f : grHom R X Y n) : grHom R X Y k :=
 /-- Reindexing a homogeneous morphism does not change the underlying morphism. -/
 @[simp, grind =]
 theorem val_grHomReindex (h : n = k) (f : grHom R X Y n) :
-    (grHomReindex (R := R) (C := C) h f).1 = f.1 := by
+    (grHomReindex (R := R) (C := C) h f).val = f.val := by
   rw [grHomReindex]
 
 /-- A homogeneous morphism reindexed by reflexivity is the morphism itself. -/

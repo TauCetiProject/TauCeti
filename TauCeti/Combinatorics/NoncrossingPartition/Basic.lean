@@ -99,6 +99,7 @@ def IsNoncrossing (P : Finpartition s) : Prop :=
   ∀ B ∈ P.parts, ∀ C ∈ P.parts, ∀ a ∈ B, ∀ b ∈ C, ∀ c ∈ B, ∀ d ∈ C,
     a < b → b < c → c < d → B = C
 
+/-- Unfolds `IsNoncrossing`. -/
 theorem isNoncrossing_iff :
     P.IsNoncrossing ↔ ∀ B ∈ P.parts, ∀ C ∈ P.parts, ∀ a ∈ B, ∀ b ∈ C, ∀ c ∈ B, ∀ d ∈ C,
       a < b → b < c → c < d → B = C :=
@@ -195,7 +196,6 @@ theorem IsNoncrossing.extend_singleton {P : Finpartition t} (hP : P.IsNoncrossin
 position of `s` that lies between two of its elements. -/
 theorem IsNoncrossing.exists_interval_mem_parts (hP : P.IsNoncrossing) (hs : s.Nonempty) :
     ∃ B ∈ P.parts, ∀ x ∈ B, ∀ y ∈ B, ∀ z ∈ s, x < z → z < y → z ∈ B := by
-  classical
   -- A part `B` with the fewest positions of `s` strictly between two of its elements.
   obtain ⟨B, hB, hmin⟩ := P.parts.exists_min_image
     (fun B => #{z ∈ s | ∃ x ∈ B, ∃ y ∈ B, x < z ∧ z < y}) (P.parts_nonempty hs.ne_empty)
@@ -232,7 +232,6 @@ positions with no position of `s` strictly between them. -/
 theorem IsNoncrossing.exists_mem_parts_card_eq_one_or_adjacent (hP : P.IsNoncrossing)
     (hs : s.Nonempty) :
     ∃ B ∈ P.parts, #B = 1 ∨ ∃ x ∈ B, ∃ y ∈ B, x < y ∧ ∀ z ∈ s, z ≤ x ∨ y ≤ z := by
-  classical
   obtain ⟨B, hB, hint⟩ := hP.exists_interval_mem_parts hs
   refine ⟨B, hB, ?_⟩
   obtain ⟨x, rfl⟩ | hnt := (P.nonempty_of_mem_parts hB).exists_eq_singleton_or_nontrivial
@@ -262,7 +261,6 @@ theorem IsNoncrossing.le_and_lt_of_mem_part (hP : P.IsNoncrossing) (hQ : Q.IsNon
   have has : a ∈ s := P.part_nonempty.1 ⟨b, hb⟩
   have hbs : b ∈ s := P.part_subset a hb
   have hMs : M ∈ s := P.part_subset m hM
-  have hts : t ∈ s := Q.part_subset m ht
   have hba : P.part b = P.part a := (P.mem_part_iff_part_eq_part hbs has).1 hb
   have hMm : P.part M = P.part m := (P.mem_part_iff_part_eq_part hMs hm).1 hM
   by_cases haB : P.part a = P.part m
@@ -282,7 +280,7 @@ theorem IsNoncrossing.le_and_lt_of_mem_part (hP : P.IsNoncrossing) (hQ : Q.IsNon
       (htmin a ((Q.mem_part_iff_part_eq_part has hm).2 h) haM).not_gt hat
     have hba' : Q.part b = Q.part a := (Q.mem_part_iff_part_eq_part hbs has).1 (part_mono hPQ a hb)
     have hQM : Q.part M = Q.part m := (Q.mem_part_iff_part_eq_part hMs hm).1 (part_mono hPQ m hM)
-    have hQt : Q.part t = Q.part m := (Q.mem_part_iff_part_eq_part hts hm).1 ht
+    have hQt : Q.part t = Q.part m := (Q.mem_part_iff_part_eq_part (Q.part_subset m ht) hm).1 ht
     refine ⟨(hmin M hM).trans (lt_of_not_ge fun hbM => hQa ?_).le, lt_of_not_ge fun htb => hQa ?_⟩
     · rcases hbM.lt_or_eq with hbM | rfl
       · rw [← hba', hQ.part_eq_part hbs hMs hba' (hQM.trans hQt.symm) hbM haM hat, hQM]
@@ -353,6 +351,34 @@ private theorem IsNoncrossing.false_of_mem_union (hP : P.IsNoncrossing) {i j : �
     right
     rcases hp with rfl | rfl <;> rcases hq with rfl | rfl <;> exact ⟨‹_›, ‹_›⟩
 
+/-- Merging the parts through two adjacent positions `i ≤ j` of a noncrossing partition `P` keeps
+it noncrossing: a partition `Q` in which two positions share a part exactly when they lie in a
+common part of `P` or both lie in the union of the parts through `i` and `j` is noncrossing. -/
+private theorem IsNoncrossing.of_mem_part_iff (hP : P.IsNoncrossing) {i j : α} (hi : i ∈ s)
+    (hj : j ∈ s) (hij : i ≤ j) (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) {Q : Finpartition s}
+    (hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧
+      (P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j)) :
+    Q.IsNoncrossing := by
+  refine isNoncrossing_iff_part.2 fun a ha b hb c hc d hd hab hbc hcd => ?_
+  obtain ⟨-, hcs, hac⟩ := hQ.1 hc
+  obtain ⟨-, hds, hbd⟩ := hQ.1 hd
+  refine (Q.mem_part_iff_part_eq_part ha hb).1 (hQ.2 ⟨hb, ha, ?_⟩)
+  -- Unless `a` and `b` both lie in the merged part, each of the pairs `a, c` and `b, d` lies in a
+  -- part of `P` or in the merged part; a crossing would cross `P` or the merged part.
+  by_cases habM : b ∈ P.part i ∪ P.part j ∧ a ∈ P.part i ∪ P.part j
+  · exact Or.inr habM
+  rcases hac with hac | ⟨haM, hcM⟩ <;> rcases hbd with hbd | ⟨hbM, hdM⟩
+  · exact Or.inl (hP.part_eq_part ha hb hac hbd hab hbc hcd).symm
+  · have haM : a ∉ P.part i ∪ P.part j := fun haM => habM ⟨hbM, haM⟩
+    refine (hP.false_of_mem_union hi hj hij hadj hbM hdM hcs ?_ ?_ hbc hcd (Or.inl hab)).elim
+    · rwa [P.mem_part_union_part_iff hi hj, ← hac, ← P.mem_part_union_part_iff hi hj]
+    · exact P.mem_part_iff_part_eq_part ha hcs |>.2 hac
+  · have hbM : b ∉ P.part i ∪ P.part j := fun hbM => habM ⟨hbM, haM⟩
+    exact (hP.false_of_mem_union hi hj hij hadj haM hcM hb hbM
+      (P.mem_part_iff_part_eq_part hds hb |>.2 hbd.symm) hab hbc (Or.inr hcd)).elim
+  · exact Or.inr ⟨hbM, haM⟩
+
+
 /-- Merging the parts through two positions `i ≤ j` of `s` with no position of `s` strictly
 between them keeps a noncrossing partition noncrossing: there is a coarser noncrossing partition
 whose part through `i` is the union of the parts through `i` and `j`. (If `j ∉ s`, its part is
@@ -368,52 +394,30 @@ theorem IsNoncrossing.exists_part_eq_union (hP : P.IsNoncrossing) {i j : α} (hi
   -- Label each position by its part, relabelling the part through `j` as the part through `i`.
   let key : α → Finset α := fun x => if P.part x = P.part j then P.part i else P.part x
   let Q := ofSetSetoid (Setoid.ker key) s
-  have hM : ∀ {x}, x ∈ s →
-      (x ∈ P.part i ∪ P.part j ↔ P.part x = P.part i ∨ P.part x = P.part j) :=
-    fun hx => by
-      rw [mem_union, P.mem_part_iff_part_eq_part hx hi, P.mem_part_iff_part_eq_part hx hj]
-  have hkey : ∀ {x y}, x ∈ s → y ∈ s → (key x = key y ↔
-      P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j) := by
-    intro x y hx hy
-    rw [hM hx, hM hy]
+  have hkey : ∀ {x y}, key x = key y ↔
+      P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j := by
+    intro x y
+    rw [P.mem_part_union_part_iff hi hj, P.mem_part_union_part_iff hi hj]
     simp only [key]
     split_ifs <;> grind
-  have hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧ key x = key y := fun {x y} => by
+  have hQ : ∀ {x y}, y ∈ Q.part x ↔ x ∈ s ∧ y ∈ s ∧
+      (P.part x = P.part y ∨ x ∈ P.part i ∪ P.part j ∧ y ∈ P.part i ∪ P.part j) := fun {x y} => by
     rw [mem_part_ofSetSetoid_iff_rel, Setoid.ker_def]
-  refine ⟨Q, isNoncrossing_iff_part.2 fun a ha b hb c hc d hd hab hbc hcd => ?_, ?_, ?_⟩
-  · obtain ⟨-, hcs, hac⟩ := hQ.1 hc
-    obtain ⟨-, hds, hbd⟩ := hQ.1 hd
-    rw [hkey ha hcs] at hac
-    rw [hkey hb hds] at hbd
-    refine (Q.mem_part_iff_part_eq_part ha hb).1 (hQ.2 ⟨hb, ha, (hkey hb ha).2 ?_⟩)
-    -- Unless `a` and `b` both lie in the merged part, each of the pairs `a, c` and `b, d` lies in a
-    -- part of `P` or in the merged part; a crossing would cross `P` or the merged part.
-    by_cases habM : b ∈ P.part i ∪ P.part j ∧ a ∈ P.part i ∪ P.part j
-    · exact Or.inr habM
-    rcases hac with hac | ⟨haM, hcM⟩ <;> rcases hbd with hbd | ⟨hbM, hdM⟩
-    · exact Or.inl (hP.part_eq_part ha hb hac hbd hab hbc hcd).symm
-    · have haM : a ∉ P.part i ∪ P.part j := fun haM => habM ⟨hbM, haM⟩
-      refine (hP.false_of_mem_union hi hj hij hadj hbM hdM hcs ?_ ?_ hbc hcd (Or.inl hab)).elim
-      · rwa [hM hcs, ← hac, ← hM ha]
-      · exact P.mem_part_iff_part_eq_part ha hcs |>.2 hac
-    · have hbM : b ∉ P.part i ∪ P.part j := fun hbM => habM ⟨hbM, haM⟩
-      exact (hP.false_of_mem_union hi hj hij hadj haM hcM hb hbM
-        (P.mem_part_iff_part_eq_part hds hb |>.2 hbd.symm) hab hbc (Or.inr hcd)).elim
-    · exact Or.inr ⟨hbM, haM⟩
+    exact and_congr_right fun _ => and_congr_right fun _ => hkey
+  refine ⟨Q, hP.of_mem_part_iff hi hj hij hadj hQ, ?_, ?_⟩
   · refine fun B hB => ?_
     obtain ⟨x, hx⟩ := P.nonempty_of_mem_parts hB
     refine ⟨Q.part x, Q.part_mem.2 (P.le hB hx), fun y hy => hQ.2 ⟨P.le hB hx, P.le hB hy, ?_⟩⟩
-    exact (hkey (P.le hB hx) (P.le hB hy)).2
-      (Or.inl ((P.part_eq_of_mem hB hx).trans (P.part_eq_of_mem hB hy).symm))
+    exact Or.inl ((P.part_eq_of_mem hB hx).trans (P.part_eq_of_mem hB hy).symm)
   · ext x
     rw [hQ]
     refine ⟨fun ⟨_, hx, h⟩ => ?_, fun h => ?_⟩
-    · rcases (hkey hi hx).1 h with h | ⟨-, h⟩
+    · rcases h with h | ⟨-, h⟩
       · exact mem_union_left _ (h ▸ P.mem_part_self.2 hx)
       · exact h
     · have hxs : x ∈ s := by
         rcases mem_union.1 h with h | h <;> exact P.part_subset _ h
-      exact ⟨hi, hxs, (hkey hi hxs).2 (Or.inr ⟨mem_union_left _ (P.mem_part_self.2 hi), h⟩)⟩
+      exact ⟨hi, hxs, Or.inr ⟨mem_union_left _ (P.mem_part_self.2 hi), h⟩⟩
 
 /-- The partition with one pair part `{i, j}` and singletons elsewhere is noncrossing. -/
 theorem isNoncrossing_pairPartition {i j : α} (hij : {i, j} ⊆ s) :
@@ -454,40 +458,40 @@ namespace NoncrossingPartition
 
 /-- The noncrossing partitions of `s` form a lattice. The meet is the common refinement, and the
 join of `P` and `Q` is the meet of all noncrossing partitions coarser than both. -/
-noncomputable instance instLattice : Lattice (NoncrossingPartition s) where
+instance instLattice : Lattice (NoncrossingPartition s) where
   __ := Subtype.partialOrder _
-  inf P Q := ⟨P.1 ⊓ Q.1, P.2.inf Q.2⟩
+  inf P Q := ⟨P.val ⊓ Q.val, P.property.inf Q.property⟩
   inf_le_left _ _ := inf_le_left (α := Finpartition s)
   inf_le_right _ _ := inf_le_right (α := Finpartition s)
   le_inf _ _ _ := le_inf (α := Finpartition s)
-  sup P Q := open Classical in
-    ⟨(univ.filter fun R : Finpartition s => R.IsNoncrossing ∧ P.1 ≤ R ∧ Q.1 ≤ R).inf id,
+  sup P Q :=
+    ⟨(univ.filter fun R : Finpartition s => R.IsNoncrossing ∧ P.val ≤ R ∧ Q.val ≤ R).inf id,
       Finset.inf_induction Finpartition.isNoncrossing_top (fun _ h₁ _ h₂ => h₁.inf h₂)
         fun _ hR => (mem_filter.1 hR).2.1⟩
-  le_sup_left P Q := by
-    classical
-    exact Subtype.coe_le_coe.1 <| Finset.le_inf fun R hR => (mem_filter.1 hR).2.2.1
-  le_sup_right P Q := by
-    classical
-    exact Subtype.coe_le_coe.1 <| Finset.le_inf fun R hR => (mem_filter.1 hR).2.2.2
-  sup_le P Q R hPR hQR := by
-    classical
-    exact Subtype.coe_le_coe.1 <|
-      Finset.inf_le (f := id) (mem_filter.2 ⟨mem_univ R.1, R.2, hPR, hQR⟩)
+  le_sup_left _ _ :=
+    Subtype.coe_le_coe.1 <| Finset.le_inf fun _ hR => (mem_filter.1 hR).2.2.1
+  le_sup_right _ _ :=
+    Subtype.coe_le_coe.1 <| Finset.le_inf fun _ hR => (mem_filter.1 hR).2.2.2
+  sup_le _ _ R hPR hQR :=
+    Subtype.coe_le_coe.1 <| Finset.inf_le (f := id) (mem_filter.2 ⟨mem_univ R.val, R.property, hPR,
+        hQR⟩)
 
 instance : BoundedOrder (NoncrossingPartition s) where
   __ := Subtype.orderBot Finpartition.isNoncrossing_bot
   __ := Subtype.orderTop Finpartition.isNoncrossing_top
 
+/-- The meet of noncrossing partitions is their meet as partitions. -/
 @[simp, norm_cast]
 theorem coe_inf (P Q : NoncrossingPartition s) :
     ((P ⊓ Q : NoncrossingPartition s) : Finpartition s) = (P : Finpartition s) ⊓ Q :=
   rfl
 
+/-- The least noncrossing partition is the least partition. -/
 @[simp, norm_cast]
 theorem coe_bot : ((⊥ : NoncrossingPartition s) : Finpartition s) = ⊥ :=
   rfl
 
+/-- The greatest noncrossing partition is the greatest partition. -/
 @[simp, norm_cast]
 theorem coe_top : ((⊤ : NoncrossingPartition s) : Finpartition s) = ⊤ :=
   rfl
@@ -520,12 +524,12 @@ partition. -/
 instance (i : α) : Unique (NoncrossingPartition ({i} : Finset α)) where
   default := ⊥
   uniq P := le_bot_iff.1 <| le_top.trans_eq <| Subtype.ext <| Finpartition.ext <| by
-    simp [Finpartition.parts_top (singleton_ne_empty i)]
+    simp [Finpartition.parts_top (singleton_nonempty i).ne_empty]
 
 /-- If `s` has at least two elements, the partition into singletons and the partition into one
 part are different noncrossing partitions of `s`. -/
 theorem bot_ne_top_of_one_lt_card (hs : 1 < #s) : (⊥ : NoncrossingPartition s) ≠ ⊤ := fun h => by
-  have := congrArg (fun P : NoncrossingPartition s => #P.1.parts) h
+  have := congrArg (fun P : NoncrossingPartition s => #P.val.parts) h
   simp only [coe_bot, coe_top, Finpartition.card_bot,
     Finpartition.parts_top (card_pos.1 (zero_lt_one.trans hs)).ne_empty, card_singleton] at this
   omega
@@ -544,7 +548,7 @@ theorem bot_eq_top_iff_card_le_one : (⊥ : NoncrossingPartition s) = ⊤ ↔ #s
 singletons or the partition into one part. -/
 theorem eq_bot_or_eq_top_of_pair {i j : α} (P : NoncrossingPartition ({i, j} : Finset α)) :
     P = ⊥ ∨ P = ⊤ :=
-  (Finpartition.eq_bot_or_eq_top_of_pair P.1).imp Subtype.ext Subtype.ext
+  (Finpartition.eq_bot_or_eq_top_of_pair P.val).imp Subtype.ext Subtype.ext
 
 /-- The noncrossing partitions of a set with at most two elements are the partition into
 singletons and the partition into one part. -/
@@ -558,21 +562,21 @@ open Finpartition in
 `s`, then `x` joins with `pairPartition s i j` to the partition into one part. This direction of
 `sup_pairPartition_eq_top_iff` needs no adjacency of `i` and `j`. -/
 theorem sup_pairPartition_eq_top_of_union_eq {i j : α} (hij : {i, j} ⊆ s)
-    (x : NoncrossingPartition s) (hx : x.1.part i ∪ x.1.part j = s) :
+    (x : NoncrossingPartition s) (hx : x.val.part i ∪ x.val.part j = s) :
     x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩ = ⊤ := by
   have hi : i ∈ s := hij (mem_insert_self i _)
   have hj : j ∈ s := hij (mem_insert_of_mem (mem_singleton_self j))
   set R := x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩
-  have hjR : j ∈ R.1.part i := Finpartition.part_mono (le_sup_right : _ ≤ R) i
+  have hjR : j ∈ R.val.part i := Finpartition.part_mono (le_sup_right : _ ≤ R) i
     (by rw [part_pairPartition]; exact mem_insert_of_mem (mem_singleton_self j))
-  have hsR : s ⊆ R.1.part i := calc
-    s = x.1.part i ∪ x.1.part j := hx.symm
-    _ ⊆ R.1.part i ∪ R.1.part j := union_subset_union
+  have hsR : s ⊆ R.val.part i := calc
+    s = x.val.part i ∪ x.val.part j := hx.symm
+    _ ⊆ R.val.part i ∪ R.val.part j := union_subset_union
       (Finpartition.part_mono (le_sup_left : x ≤ R) i)
       (Finpartition.part_mono (le_sup_left : x ≤ R) j)
-    _ = R.1.part i := by rw [(R.1.mem_part_iff_part_eq_part hj hi).1 hjR, union_self]
-  have hR := R.1.part_mem.2 hi
-  rw [(R.1.part_subset i).antisymm hsR] at hR
+    _ = R.val.part i := by rw [(R.val.mem_part_iff_part_eq_part hj hi).1 hjR, union_self]
+  have hR := R.val.part_mem.2 hi
+  rw [(R.val.part_subset i).antisymm hsR] at hR
   exact Subtype.ext (Finpartition.eq_top_of_mem_parts hR)
 
 open Finpartition in
@@ -582,46 +586,46 @@ parts of `x` through `i` and `j` cover `s`. -/
 theorem sup_pairPartition_eq_top_iff {i j : α} (hij : {i, j} ⊆ s) (hle : i ≤ j)
     (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) (x : NoncrossingPartition s) :
     x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩ = ⊤ ↔
-      x.1.part i ∪ x.1.part j = s := by
+      x.val.part i ∪ x.val.part j = s := by
   have hi : i ∈ s := hij (mem_insert_self i _)
   have hj : j ∈ s := hij (mem_insert_of_mem (mem_singleton_self j))
   refine ⟨fun hx => ?_, fun hx => ?_⟩
   · -- Merging the parts of `x` through `i` and `j` gives an upper bound of `x` and the atom.
-    obtain ⟨Q, hQ, hxQ, hQi⟩ := x.2.exists_part_eq_union hi hle hadj
+    obtain ⟨Q, hQ, hxQ, hQi⟩ := x.property.exists_part_eq_union hi hle hadj
     have hsup : x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩ ≤ ⟨Q, hQ⟩ :=
       sup_le (Subtype.coe_le_coe.1 hxQ)
-        (pairPartition_le (hij := hij) (hQi ▸ mem_union_right _ (x.1.mem_part_self.2 hj)))
+        (pairPartition_le (hij := hij) (hQi ▸ mem_union_right _ (x.val.mem_part_self.2 hj)))
     rw [hx, top_le_iff] at hsup
-    exact hQi.symm.trans ((congrArg (fun P : NoncrossingPartition s => P.1.part i) hsup).trans
+    exact hQi.symm.trans ((congrArg (fun P : NoncrossingPartition s => P.val.part i) hsup).trans
       (Finpartition.part_top hi))
   · exact sup_pairPartition_eq_top_of_union_eq hij x hx
 
 /-- The noncrossing partitions of `s` in which `i` forms a part on its own correspond to the
 noncrossing partitions of `s.erase i`: delete the part `{i}`, or insert it back. -/
-noncomputable def singletonPartEquiv {i : α} (hi : i ∈ s) :
-    {π : NoncrossingPartition s // {i} ∈ π.1.parts} ≃ NoncrossingPartition (s.erase i) where
-  toFun π := ⟨π.1.1.restrict (s.erase_subset i), π.1.2.restrict _⟩
+def singletonPartEquiv {i : α} (hi : i ∈ s) :
+    {π : NoncrossingPartition s // {i} ∈ π.val.parts} ≃ NoncrossingPartition (s.erase i) where
+  toFun π := ⟨π.val.val.restrict (s.erase_subset i), π.val.property.restrict _⟩
   invFun τ :=
-    ⟨⟨τ.1.extend (singleton_ne_empty i) (disjoint_singleton_right.2 (s.notMem_erase i))
+    ⟨⟨τ.val.extend (singleton_nonempty i).ne_empty (disjoint_singleton_right.2 (s.notMem_erase i))
         (by rw [union_singleton, insert_erase hi]),
-      τ.2.extend_singleton _ _ _⟩, mem_insert_self _ _⟩
+      τ.property.extend_singleton _ _ _⟩, mem_insert_self _ _⟩
   left_inv π := Subtype.ext <| Subtype.ext <| Finpartition.ext <| by
-    rw [Finpartition.extend_parts, Finpartition.parts_restrict_erase_of_singleton_mem π.2,
-      insert_erase π.2]
+    rw [Finpartition.extend_parts, Finpartition.parts_restrict_erase_of_singleton_mem π.property,
+      insert_erase π.property]
   right_inv τ := Subtype.ext <| by simp
 
 /-- Deleting the singleton part `{i}` leaves the other parts. -/
 @[simp]
 theorem parts_singletonPartEquiv_apply {i : α} (hi : i ∈ s)
-    (π : {π : NoncrossingPartition s // {i} ∈ π.1.parts}) :
-    (singletonPartEquiv hi π).1.parts = π.1.1.parts.erase {i} :=
-  Finpartition.parts_restrict_erase_of_singleton_mem π.2
+    (π : {π : NoncrossingPartition s // {i} ∈ π.val.parts}) :
+    (singletonPartEquiv hi π).val.parts = π.val.val.parts.erase {i} :=
+  Finpartition.parts_restrict_erase_of_singleton_mem π.property
 
 /-- Inserting the singleton part `{i}` adds it to the parts. -/
 @[simp]
 theorem parts_singletonPartEquiv_symm_apply {i : α} (hi : i ∈ s)
     (τ : NoncrossingPartition (s.erase i)) :
-    ((singletonPartEquiv hi).symm τ).1.1.parts = insert {i} τ.1.parts := by
+    ((singletonPartEquiv hi).symm τ).val.val.parts = insert {i} τ.val.parts := by
   simp [singletonPartEquiv]
 
 open Finpartition in
@@ -632,11 +636,11 @@ noncrossing partition other than the partition into one part, whose join with th
 theorem part_union_eq_of_sup_pairPartition_eq_top {m₁ m₂ : α} (hpair : {m₁, m₂} ⊆ s)
     (hle : m₁ ≤ m₂) (hadj : ∀ z ∈ s, z ≤ m₁ ∨ m₂ ≤ z) {x : NoncrossingPartition s} (hxtop : x ≠ ⊤)
     (hx : x ⊔ ⟨pairPartition s m₁ m₂ hpair, isNoncrossing_pairPartition hpair⟩ = ⊤) :
-    x.1.part m₁ ∪ x.1.part m₂ = s ∧ x.1.part m₁ ≠ x.1.part m₂ := by
+    x.val.part m₁ ∪ x.val.part m₂ = s ∧ x.val.part m₁ ≠ x.val.part m₂ := by
   have hu := (sup_pairPartition_eq_top_iff hpair hle hadj x).1 hx
   refine ⟨hu, fun h => hxtop (Subtype.ext (Finpartition.eq_top_of_mem_parts ?_))⟩
   rw [← h, union_self] at hu
-  have hpart := x.1.part_mem.2 (hpair (mem_insert_self _ _))
+  have hpart := x.val.part_mem.2 (hpair (mem_insert_self _ _))
   rwa [hu] at hpart
 
 open Finpartition in
@@ -658,7 +662,7 @@ theorem splitPartition_mem_erase_top_sup_pairPartition {m₁ m₂ : α} (hpair :
   · dsimp only
     rw [part_splitPartition_of_mem hm₂T, part_splitPartition_of_notMem hm₁ hm₁T]
     exact sdiff_union_of_subset hTs
-  have h₁ := congrArg (fun P : NoncrossingPartition s => P.1.part m₁) h
+  have h₁ := congrArg (fun P : NoncrossingPartition s => P.val.part m₁) h
   dsimp only at h₁
   rw [part_splitPartition_of_notMem hm₁ hm₁T, coe_top, Finpartition.part_top hm₁] at h₁
   obtain ⟨t, ht⟩ := hT

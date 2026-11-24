@@ -39,6 +39,8 @@ each of these finite-dimensional invariant subspaces in
   inverse `(D - z)⁻¹`.
 * `IsSelfAdjoint.invOneAddSq_eq_adjoint_comp`: `(1 + D²)⁻¹ = R(i)* R(i)`.
 * `IsSelfAdjoint.isPositive_invOneAddSq`: `(1 + D²)⁻¹` is a positive operator.
+* `LinearPMap.HasCompactResolvent.hasOrthogonalProjection_ker`: the finite-dimensional kernel of
+  an operator with compact resolvent admits an orthogonal projection.
 * `LinearPMap.HasCompactResolvent.finiteDimensional_eigenspace_invOneAddSq`: for compact
   resolvent, the eigenspaces of `(1 + D²)⁻¹` for nonzero eigenvalues are finite-dimensional.
 * `IsSelfAdjoint.orthogonalComplement_iSup_eigenspaces_invOneAddSq_eq_bot`: for compact
@@ -81,6 +83,14 @@ theorem _root_.IsSelfAdjoint.hasCompactResolvent_iff_isCompactOperator_resolvent
   rw [← hasCompactResolvent_neg_iff]
   exact LinearPMap.hasCompactResolvent_iff_isCompactOperator_resolvent
     (mem_resolventSet_neg_iff.mpr (hA.mem_resolventSet_of_im_ne_zero hz))
+
+/-- An operator with compact resolvent has a finite-dimensional, hence complete, kernel, which
+therefore admits an orthogonal projection. -/
+theorem _root_.LinearPMap.HasCompactResolvent.hasOrthogonalProjection_ker {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] {A : F →ₗ.[𝕜] F} (h : A.HasCompactResolvent) :
+    A.ker.HasOrthogonalProjection := by
+  have := h.finiteDimensional_ker
+  infer_instance
 
 end RCLike
 

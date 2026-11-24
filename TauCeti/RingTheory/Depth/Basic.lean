@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.RingTheory.Depth.Basic
 public import Mathlib.RingTheory.Ideal.AssociatedPrime.Localization
 public import Mathlib.RingTheory.KrullDimension.Regular
@@ -17,6 +18,8 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+import TauCeti.Algebra.Homology.Ext.Equivalence
 import TauCeti.Data.ENat.Basic
 import TauCeti.RingTheory.Finiteness.Nakayama
 import TauCeti.RingTheory.KrullDimension.Regular
@@ -30,8 +33,9 @@ vanishing of `Ext (R ⧸ 𝔪) M`, and identifies it, for a finite nonzero modul
 ring, with the supremum of the lengths of `M`-regular sequences in `𝔪`. This file relates depth
 to dimension, quotients by regular sequences, short exact sequences and modules of linear maps,
 and, after localization, to associated primes. The short exact sequence bounds hold for
-`Ideal.depth I` over any commutative ring; the other results are for Noetherian local rings
-or, after localization, Noetherian rings.
+`Ideal.depth I` over any commutative ring. Invariance under ring isomorphisms and localization
+presentations needs no finiteness hypotheses; the dimension and regular-sequence results are for
+Noetherian local rings or, after localization, Noetherian rings.
 The regular-sequence transfer lemmas for linear maps live in
 `TauCeti.RingTheory.Regular.LinearMap`.
 
@@ -71,8 +75,12 @@ The regular-sequence transfer lemmas for linear maps live in
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
 * `IsLocalRing.depth_eq_depth_of_surjective`: along a surjective homomorphism of local rings
-  `R → T`, a finite `T`-module has the same depth over `R` as over `T`.
-* `RingEquiv.depth_self_eq`: isomorphic Noetherian local rings have the same depth over
+  `R → T`, a finite `T`-module has the same depth over `R` as over `T`;
+  `ModuleCat.depth_restrictScalars_of_surjective` is the same statement for
+  `ModuleCat.restrictScalars` along a surjective ring homomorphism.
+* `IsLocalRing.depth_eq_depth_of_bijective`: restriction along an isomorphism of local rings
+  preserves depth, without finiteness or Noetherian hypotheses.
+* `RingEquiv.depth_self_eq`: isomorphic local rings have the same depth over
   themselves.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
   module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
@@ -358,6 +366,42 @@ theorem depth_add_one_le_depth_ker {F M : Type v} [AddCommGroup F] [Module R F]
 
 end Free
 
+section LengthLe
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+/-- The length of an `M`-regular sequence is at most `dim (R ⧸ p)` for every associated prime `p`
+of `M`. -/
+private theorem length_le_ringKrullDim_quotient_of_isRegular [IsNoetherianRing R]
+    [Module.Finite R M] {rs : List R} (reg : IsRegular M rs) {p : Ideal R}
+    (hp : IsAssociatedPrime p M) : (rs.length : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ p) := by
+  induction rs generalizing M p with
+  | nil =>
+    have := hp.isPrime
+    simpa using ringKrullDim_nonneg_of_nontrivial (R := R ⧸ p)
+  | cons x rs ih =>
+    obtain ⟨hx, hrs⟩ := (isRegular_cons_iff M x rs).1 reg
+    -- `p` lies in an associated prime `q` of `M ⧸ x M`. As `x` kills `M ⧸ x M` but is
+    -- `M`-regular, `x ∈ q ∖ p`, so `dim (R ⧸ q) + 1 ≤ dim (R ⧸ p)`.
+    obtain ⟨q, hq, hpq⟩ := hp.exists_le_isAssociatedPrime_quotSMulTop hx
+      (maximalIdeal_le_jacobson _ (reg.mem_maximalIdeal List.mem_cons_self))
+    have hxq : x ∈ q := hq.annihilator_le <| by
+      rw [Submodule.annihilator_top]
+      exact QuotSMulTop.mem_annihilator M x
+    have hxp : x ∉ p := fun hxp ↦ by
+      have hmem : x ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp hxp
+      rw [biUnion_associatedPrimes_eq_compl_regular R M] at hmem
+      exact hmem hx
+    have := hp.isPrime
+    calc ((x :: rs).length : WithBot ℕ∞) = rs.length + 1 := by simp
+      _ ≤ ringKrullDim (R ⧸ q) + 1 := by gcongr; exact ih hrs hq
+      _ ≤ ringKrullDim (R ⧸ p) := TauCeti.ringKrullDim_quotient_add_one_le_of_lt <|
+        lt_of_le_of_ne hpq fun h ↦ hxp (h ▸ hxq)
+
+end LengthLe
+
+section LocalDepth
+
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
   {M : Type v} [AddCommGroup M] [Module R M]
 
@@ -455,35 +499,6 @@ theorem depth_add_length_eq_depth_of_isRegular [IsNoetherianRing R] [Module.Fini
     rw [depth_eq_of_linearEquiv (Submodule.quotOfListConsSMulTopEquivQuotSMulTopInner M x rs),
       ← depth_quotSMulTop_succ_eq_depth hx (reg.mem_maximalIdeal List.mem_cons_self), ← ih hrs,
       List.length_cons, Nat.cast_succ, add_assoc]
-
-omit [Small.{v} R] in
-/-- The length of an `M`-regular sequence is at most `dim (R ⧸ p)` for every associated prime `p`
-of `M`. -/
-private theorem length_le_ringKrullDim_quotient_of_isRegular [IsNoetherianRing R]
-    [Module.Finite R M] {rs : List R} (reg : IsRegular M rs) {p : Ideal R}
-    (hp : IsAssociatedPrime p M) : (rs.length : WithBot ℕ∞) ≤ ringKrullDim (R ⧸ p) := by
-  induction rs generalizing M p with
-  | nil =>
-    have := hp.isPrime
-    simpa using ringKrullDim_nonneg_of_nontrivial (R := R ⧸ p)
-  | cons x rs ih =>
-    obtain ⟨hx, hrs⟩ := (isRegular_cons_iff M x rs).1 reg
-    -- `p` lies in an associated prime `q` of `M ⧸ x M`. As `x` kills `M ⧸ x M` but is
-    -- `M`-regular, `x ∈ q ∖ p`, so `dim (R ⧸ q) + 1 ≤ dim (R ⧸ p)`.
-    obtain ⟨q, hq, hpq⟩ := hp.exists_le_isAssociatedPrime_quotSMulTop hx
-      (maximalIdeal_le_jacobson _ (reg.mem_maximalIdeal List.mem_cons_self))
-    have hxq : x ∈ q := hq.annihilator_le <| by
-      rw [Submodule.annihilator_top]
-      exact QuotSMulTop.mem_annihilator M x
-    have hxp : x ∉ p := fun hxp ↦ by
-      have hmem : x ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp hxp
-      rw [biUnion_associatedPrimes_eq_compl_regular R M] at hmem
-      exact hmem hx
-    have := hp.isPrime
-    calc ((x :: rs).length : WithBot ℕ∞) = rs.length + 1 := by simp
-      _ ≤ ringKrullDim (R ⧸ q) + 1 := by gcongr; exact ih hrs hq
-      _ ≤ ringKrullDim (R ⧸ p) := TauCeti.ringKrullDim_quotient_add_one_le_of_lt <|
-        lt_of_le_of_ne hpq fun h ↦ hxp (h ▸ hxq)
 
 /-- The depth of a finite module `M` over a Noetherian local ring is at most `dim (R ⧸ p)` for
 every associated prime `p` of `M`. H. Matsumura, *Commutative Ring Theory*, Theorem 17.2. -/
@@ -591,6 +606,53 @@ theorem depth_eq_depth_of_surjective [IsNoetherianRing R] {T : Type*} [CommRing 
     obtain ⟨h, hm⟩ := (key rs).1 ⟨h, hm⟩
     exact ⟨rs, h, hm, by rw [← hn, List.length_map]⟩
 
+/-- Restricting scalars along a surjective homomorphism of local rings `S → T`, with `S`
+Noetherian, preserves the depth of a finitely generated `T`-module. -/
+theorem _root_.ModuleCat.depth_restrictScalars_of_surjective {S T : Type*} [CommRing S]
+    [CommRing T] [IsLocalRing S] [IsNoetherianRing S] [IsLocalRing T] [Small.{v} S] [Small.{v} T]
+    (f : S →+* T) (hf : Function.Surjective f) (N : ModuleCat.{v} T) [Module.Finite T N] :
+    depth ((ModuleCat.restrictScalars f).obj N) = depth N := by
+  -- The restricted module is `N` with the `S`-action through `f`.
+  let := f.toAlgebra
+  let : Module S N := Module.compHom N f
+  have : IsScalarTower S T N := ⟨fun s t m ↦ mul_smul (f s) t m⟩
+  exact depth_eq_depth_of_surjective (R := S) (T := T) (M := N) hf
+
+/-- Restriction of scalars along a bijective homomorphism of local rings preserves depth,
+without finiteness or Noetherian hypotheses. -/
+theorem depth_eq_depth_of_bijective {T : Type*} [CommRing T] [IsLocalRing T] [Algebra R T]
+    [Small.{v} T] [Module T M] [IsScalarTower R T M]
+    (hbij : Function.Bijective (algebraMap R T)) :
+    depth (ModuleCat.of R M) = depth (ModuleCat.of T M) := by
+  let e := RingEquiv.ofBijective (algebraMap R T) hbij
+  let E : ModuleCat.{v} T ≌ ModuleCat.{v} R :=
+    ModuleCat.restrictScalarsEquivalenceOfRingEquiv e
+  have h (X Y : ModuleCat.{v} T) : X.depth Y = (E.functor.obj X).depth (E.functor.obj Y) := by
+    simp only [ModuleCat.depth]
+    congr 1
+    ext n
+    exact forall₂_congr fun i _ ↦ (E.extAddEquiv X Y i).toEquiv.subsingleton_congr
+  let eR : R ≃ₐ[R] T := AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl
+  let k := (Ideal.quotientEquivAlg (maximalIdeal R) (maximalIdeal T) eR
+    (map_ringEquiv_maximalIdeal e).symm).toLinearEquiv
+  -- Transfer the quotient's scalar tower to the small model used in the definition of depth.
+  have : IsScalarTower R T (Shrink.{v} (T ⧸ maximalIdeal T)) :=
+    (equivShrink (T ⧸ maximalIdeal T)).symm.isScalarTower R T
+  unfold depth Ideal.depth
+  refine ((h _ _).trans ?_).symm
+  have he : e.toRingHom = algebraMap R T := by ext; rfl
+  dsimp only [E, ModuleCat.restrictScalarsEquivalenceOfRingEquiv]
+  rw [he, ModuleCat.depth_eq_of_iso_left _
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := R) (S := T) (Shrink.{v} (T ⧸ maximalIdeal T))),
+    ModuleCat.depth_eq_of_iso_right _
+      (ModuleCat.restrictScalarsAlgebraMapIso (R := R) (S := T) M)]
+  exact ModuleCat.depth_eq_of_linearEquiv
+    ((Shrink.linearEquiv.{v} R (T ⧸ maximalIdeal T)).trans
+      (k.symm.trans (Shrink.linearEquiv.{v} R (R ⧸ maximalIdeal R)).symm))
+    (LinearEquiv.refl R M)
+
+end LocalDepth
+
 /-- In a Noetherian local ring `R` of depth at least two, the maximal ideal is not an associated
 prime of `R ⧸ (b)` for a nonzerodivisor `b`: if `𝔪 c ⊆ (b)`, then `c ∈ (b)`. -/
 theorem mem_span_singleton_of_forall_mul_mem_of_two_le_depth {R : Type u} [CommRing R]
@@ -633,7 +695,7 @@ theorem mem_range_algebraMap_of_two_le_depth {R : Type u} [CommRing R] [IsLocalR
       ∃ t ∉ p, algebraMap R K t * x ∈ (algebraMap R K).range) :
     x ∈ (algebraMap R K).range := by
   obtain ⟨⟨c, b⟩, hcb⟩ := IsLocalization.surj (nonZeroDivisors R) x
-  have hb : IsSMulRegular R (b : R) := (isRegular_iff_mem_nonZeroDivisors.2 b.2).left
+  have hb : IsSMulRegular R (b : R) := (isRegular_iff_mem_nonZeroDivisors.2 b.property).left
   -- The ideal `J` of `r` with `r c ∈ (b)` lies in no prime other than the maximal ideal.
   let J : Ideal R := Submodule.comap (LinearMap.mulRight R c) (Ideal.span {(b : R)})
   have hJ (r : R) : r ∈ J ↔ r * c ∈ Ideal.span {(b : R)} := Iff.rfl
@@ -662,31 +724,45 @@ theorem mem_range_algebraMap_of_two_le_depth {R : Type u} [CommRing R] [IsLocalR
   refine ⟨y, (IsLocalization.map_units K b).mul_left_injective ?_⟩
   simp only [← map_mul, hy, one_mul, hcb]
 
+/-- The depth of a module localized at a prime is independent of the presentations of
+both the local ring and the localized module. -/
+theorem depth_eq_of_isLocalizedModule {R : Type u} [CommRing R]
+    {M : Type v} [AddCommGroup M] [Module R M]
+    (p : Ideal R) [p.IsPrime] (B : Type*) [CommRing B] [IsLocalRing B] [Algebra R B]
+    [IsLocalization.AtPrime B p] {N : Type w} [AddCommGroup N] [Module R N] [Module B N]
+    [IsScalarTower R B N] [Small.{w} B] (f : M →ₗ[R] N) [IsLocalizedModule p.primeCompl f] :
+    depth (ModuleCat.of B N) =
+      depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) := by
+  let A := Localization.AtPrime p
+  let e : A ≃ₐ[R] B := IsLocalization.algEquiv p.primeCompl A B
+  let : Algebra A B := e.toRingHom.toAlgebra
+  let : Module A N := .compHom N (algebraMap A B)
+  have : IsScalarTower A B N := .of_compHom A B N
+  have : IsScalarTower R A B := .of_algHom e.toAlgHom
+  have : IsScalarTower R A N := .to₁₂₄ R A B N
+  have : Small.{w} A := small_map e.toEquiv
+  rw [← depth_eq_depth_of_bijective (R := A) e.bijective]
+  exact (depth_eq_of_linearEquiv
+    ((IsLocalizedModule.iso p.primeCompl f).extendScalarsOfIsLocalization p.primeCompl A)).symm
+
 end IsLocalRing
 
 namespace RingEquiv
 
 variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
 
-/-- A ring isomorphism carries regular sequences in the maximal ideal to regular sequences in the
-maximal ideal, so it can only increase the depth of a Noetherian local ring over itself. -/
-private theorem depth_self_le [IsNoetherianRing R] [IsNoetherianRing S] (e : R ≃+* S) :
-    depth (ModuleCat.of R R) ≤ depth (ModuleCat.of S S) := by
-  rw [depth_eq_sSup_length_isRegular, depth_eq_sSup_length_isRegular]
-  refine sSup_le_sSup ?_
-  rintro _ ⟨rs, reg, mem, rfl⟩
-  have := RingHomInvPair.of_ringEquiv e
-  have := RingHomInvPair.of_ringEquiv_symm e
-  refine ⟨rs.map e, (e.toSemilinearEquiv.isRegular_congr' rs).1 reg, ?_, by simp⟩
-  simp only [List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
-  intro r hr
-  simpa [mem_maximalIdeal, mem_nonunits_iff] using mem r hr
-
-/-- Isomorphic Noetherian local rings have the same depth over themselves. -/
-theorem depth_self_eq [IsNoetherianRing R] (e : R ≃+* S) :
-    depth (ModuleCat.of R R) = depth (ModuleCat.of S S) :=
-  have : IsNoetherianRing S := isNoetherianRing_of_ringEquiv R e
-  le_antisymm (depth_self_le e) (depth_self_le e.symm)
+/-- Isomorphic local rings have the same depth over themselves. -/
+theorem depth_self_eq (e : R ≃+* S) :
+    depth (ModuleCat.of R R) = depth (ModuleCat.of S S) := by
+  let : Algebra R S := e.toRingHom.toAlgebra
+  let eR : R ≃ₐ[R] S := AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl
+  -- Lift the regular module to a universe containing both scalar rings.
+  let N := ULift.{u} S
+  calc
+    depth (ModuleCat.of R R) = depth (ModuleCat.of R N) :=
+      depth_eq_of_linearEquiv (eR.toLinearEquiv.trans ULift.moduleEquiv.symm)
+    _ = depth (ModuleCat.of S N) := depth_eq_depth_of_bijective e.bijective
+    _ = depth (ModuleCat.of S S) := depth_eq_of_linearEquiv ULift.moduleEquiv
 
 end RingEquiv
 

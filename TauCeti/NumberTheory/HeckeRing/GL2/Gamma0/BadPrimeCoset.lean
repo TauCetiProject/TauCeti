@@ -10,7 +10,7 @@ import TauCeti.Data.Int.LinearCongruence
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.Data.ZMod.Units
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.DoubleCoset
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Basic
 
 /-!
 # The `N`-supported determinant case of `Δ₀(N)`
@@ -218,22 +218,18 @@ theorem mem_doubleCoset_natDiagGL_of_intWitness (N m : ℕ) (β : GL (Fin 2) ℚ
   obtain ⟨L, r, hL_det, hL_N, -, -, hA_eq⟩ :=
     exists_unimodular_mul_upperTriangular N A hAN m hm_pos
       (det_eq_of_coe_eq_map_intCast β A hA m hdet) ham
-  have hR_det : (Matrix.of ![![(1 : ℤ), r], ![0, 1]]).det = 1 := by
-    simp [Matrix.det_fin_two]
-  -- `SL(2, ℤ)` is reducibly the subtype `{A // A.det = 1}`, so an ascribed
-  -- `(⟨L, hL_det⟩ : SL(2, ℤ))` elaborates to the *subtype's* constructor and leaves the goal
-  -- ill-typed at `implicit` transparency, where the coercion lemmas can no longer fire. Naming
-  -- the factors as genuine `SL(2, ℤ)` variables is what avoids that.
-  obtain ⟨L_sl, hL_sl⟩ : ∃ g : SL(2, ℤ), (g : Matrix (Fin 2) (Fin 2) ℤ) = L := ⟨⟨L, hL_det⟩, rfl⟩
-  obtain ⟨R_sl, hR_sl⟩ : ∃ g : SL(2, ℤ),
-      (g : Matrix (Fin 2) (Fin 2) ℤ) = Matrix.of ![![(1 : ℤ), r], ![0, 1]] := ⟨⟨_, hR_det⟩, rfl⟩
+  -- naming the left factor as an `SL(2, ℤ)` variable keeps the rewrites below on `↑L_sl`, not on
+  -- a constructor term
+  obtain ⟨L_sl, hL_sl⟩ : ∃ g : SL(2, ℤ), (g : Matrix (Fin 2) (Fin 2) ℤ) = L :=
+    ⟨.mk L hL_det, Matrix.SpecialLinearGroup.coe_mk hL_det⟩
   have hDiag := natDiagGL_coe_eq_map_intCast 2 ![1, m] fun i ↦ by fin_cases i <;> simp [hm_pos]
   rw [DoubleCoset.mem_doubleCoset]
   refine ⟨mapGL ℚ L_sl, Subgroup.mem_map_of_mem _ (mem_Gamma0_iff_dvd.mpr ?_),
-    mapGL ℚ R_sl, Subgroup.mem_map_of_mem _ (mem_Gamma0_iff_dvd.mpr ?_), Units.ext ?_⟩
+    mapGL ℚ (ModularGroup.T ^ r),
+    Subgroup.mem_map_of_mem _ (Gamma1_le_Gamma0 N (T_zpow_mem_Gamma1 N r)), Units.ext ?_⟩
   · exact hL_sl ▸ hL_N
-  · simp [hR_sl]
-  · rw [mapGL_mul_coe_eq_intMatrix 2 L_sl R_sl _ _ hDiag, hL_sl, hR_sl, hA, hA_eq,
+  · rw [mapGL_mul_coe_eq_intMatrix 2 L_sl (ModularGroup.T ^ r) _ _ hDiag, hL_sl,
+      ModularGroup.coe_T_zpow, hA, hA_eq,
       upperTriangular_eq_diagonal_mul_unipotent, ← mul_assoc]
 
 /-- **Shimura, Proposition 3.33.** An element of `Δ₀(N)` whose determinant `m` divides a power

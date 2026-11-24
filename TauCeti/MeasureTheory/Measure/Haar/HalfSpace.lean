@@ -43,7 +43,10 @@ almost-everywhere representative of a half-space.
 
 * `TauCeti.eq_setOf_inner_lt_or_le_of_forall_inner_nonpos`: the exact classification.
 * `TauCeti.ae_eq_setOf_inner_lt_of_forall_inner_nonpos`: the almost-everywhere classification.
-* `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`: the exact half-ball measure.
+* `MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall`,
+  `MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall`: the exact half-ball measures.
+* `MeasureTheory.Measure.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner`:
+  density at least one half in the closed balls centred in the closed half-space.
 * `TauCeti.hasDensityAt_setOf_inner_lt`: density one half on the boundary hyperplane.
 * `TauCeti.essentialBoundary_setOf_inner_lt`: the essential boundary is the hyperplane.
 
@@ -131,15 +134,15 @@ theorem ae_eq_setOf_inner_lt_of_forall_inner_nonpos {s : Set E} (hs : NullMeasur
     have hle : s ≤ᵐ[μ] (· + h) ⁻¹' s := H h hh
     simpa [S, essentialInterior_preimage_add_right] using essentialInterior_mono_ae hle hx
   rcases eq_setOf_inner_lt_or_le_of_forall_inner_nonpos hS with h0 | h1 | ⟨c, hc | hc⟩
-  · exact Or.inl (hSs.trans (h0 ▸ Filter.EventuallyEq.rfl))
-  · exact Or.inr (Or.inl (hSs.trans (h1 ▸ Filter.EventuallyEq.rfl)))
-  · exact Or.inr (Or.inr ⟨c, hSs.trans (hc ▸ Filter.EventuallyEq.rfl)⟩)
+  · exact Or.inl (hSs.trans (h0 ▸ Filter.EventuallyEqSet.rfl))
+  · exact Or.inr (Or.inl (hSs.trans (h1 ▸ Filter.EventuallyEqSet.rfl)))
+  · exact Or.inr (Or.inr ⟨c, hSs.trans (hc ▸ Filter.EventuallyEqSet.rfl)⟩)
   rcases eq_or_ne ν 0 with rfl | hν
   · -- For `ν = 0` the closed half-space `{y | 0 ≤ c}` is empty or the whole space.
     by_cases hc0 : 0 ≤ c
     · exact Or.inr (Or.inl (hSs.trans (by simp [hc, hc0])))
     · exact Or.inl (hSs.trans (by simp [hc, hc0]))
-  · exact Or.inr (Or.inr ⟨c, (hSs.trans (hc ▸ Filter.EventuallyEq.rfl)).trans
+  · exact Or.inr (Or.inr ⟨c, (hSs.trans (hc ▸ Filter.EventuallyEqSet.rfl)).trans
       (setOf_inner_le_ae_eq_setOf_inner_lt hν c)⟩)
 
 /-! ### Density and essential boundary -/
@@ -193,6 +196,17 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_inner_lt_inter_closedBall
     simpa only [← hAB] using hu
   exact (ENNReal.eq_div_iff (by norm_num) (by norm_num)).2 (by
     simpa only [two_mul] using hsum)
+
+/-- The upper half-space `{y | c < ⟪y, ν⟫}` also cuts every closed ball centred on its boundary
+hyperplane into two equal parts, for any additive Haar measure. -/
+theorem _root_.MeasureTheory.Measure.addHaar_setOf_lt_inner_inter_closedBall
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c r : ℝ} (hν : ν ≠ 0)
+    (hx : ⟪x, ν⟫ = c) :
+    μ ({y | c < ⟪y, ν⟫} ∩ closedBall x r) = μ (closedBall x r) / 2 := by
+  have h : {y : E | c < ⟪y, ν⟫} = {y | ⟪y, -ν⟫ < -c} := by
+    ext y
+    simp only [mem_ofPred_eq, inner_neg_right, neg_lt_neg_iff]
+  rw [h, μ.addHaar_setOf_inner_lt_inter_closedBall (neg_ne_zero.2 hν) (by rw [inner_neg_right, hx])]
 
 /-- At every point of the boundary hyperplane of a half-space with nonzero normal, its
 density with respect to any additive Haar measure is one half. -/
@@ -262,3 +276,23 @@ theorem essentialBoundary_setOf_inner_lt {c : ℝ} (hν : ν ≠ 0) :
   exact ⟨fun h => le_antisymm h.2 h.1, fun h => ⟨h.ge, h.le⟩⟩
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open Metric
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The upper half-space `{y | c < ⟪y, ν⟫}` contains at least half of every closed ball centred
+in its closure `{c ≤ ⟪·, ν⟫}`, for any additive Haar measure: it contains the upper half-space
+whose boundary hyperplane passes through the centre. This is the measure density property with
+constant `1 / 2`, in the form used by Campanato's theorem on a domain. -/
+theorem inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner
+    (μ : Measure E) [μ.IsAddHaarMeasure] {ν x : E} {c r : ℝ} (hν : ν ≠ 0) (hx : c ≤ ⟪x, ν⟫) :
+    ((2⁻¹ : NNReal) : ENNReal) * μ (closedBall x r) ≤ μ (closedBall x r ∩ {y | c < ⟪y, ν⟫}) := by
+  rw [ENNReal.coe_inv two_ne_zero, ENNReal.coe_ofNat, ← ENNReal.div_eq_inv_mul, inter_comm,
+    ← μ.addHaar_setOf_lt_inner_inter_closedBall hν (x := x) (r := r) rfl]
+  exact measure_mono (inter_subset_inter_left _ fun y hy => hx.trans_lt hy)
+
+end MeasureTheory.Measure

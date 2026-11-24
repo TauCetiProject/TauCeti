@@ -121,7 +121,7 @@ theorem apply_mul_apply_eq_mul_of_mem_inertia (hr : ∀ i, r i ^ 2 = algebraMap 
       (by rwa [Int.dvd_ediv_iff_mul_dvd hi, ← pow_two])
       (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two])) Q hτ
   rw [map_div₀, map_mul, map_intCast] at h
-  exact (div_left_inj' hp0).mp h
+  exact (div_left_inj₀ hp0).mp h
 
 /-- **A Frobenius acts by one sign on two ramified roots exactly when their `p`-free parts have
 the same Legendre symbol.** Let `p` be an odd prime, let `r i`, `r j` be square roots of
@@ -141,7 +141,7 @@ theorem isArithFrobAt_apply_mul_apply_eq_mul_iff (hr : ∀ i, r i ^ 2 = algebraM
       (by rwa [Int.dvd_ediv_iff_mul_dvd hi, ← pow_two])
       (by rwa [Int.dvd_ediv_iff_mul_dvd hj, ← pow_two]))
       (mul_div_intCast_sq_eq (hr i) (hr j) hi hj hp0) Q hσ
-  rw [map_div₀, map_mul, map_intCast, div_left_inj' hp0, legendreSym.mul] at h
+  rw [map_div₀, map_mul, map_intCast, div_left_inj₀ hp0, legendreSym.mul] at h
   rw [h]
   -- Both symbols are `±1`, since the `p`-free parts are prime to `p`.
   have hunit {c : ℤ} (hc : (p : ℤ) ∣ c) (hc2 : ¬ (p : ℤ) ^ 2 ∣ c) :
@@ -207,7 +207,8 @@ theorem card_inertia_le_two : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 2 := by
     · have hτ1 : (τ : K ≃ₐ[ℚ] K) = 1 := by simpa [hσ1] using h
       exact Subtype.ext (hσ1.trans hτ1.symm)
     · have hτ1 : (τ : K ≃ₐ[ℚ] K) ≠ 1 := by simpa [hσ1] using h
-      exact Subtype.ext (eq_of_mem_inertia_of_ne_one hr htop hodd hd Q σ.2 τ.2 hσ1 hτ1)
+      exact Subtype.ext (eq_of_mem_inertia_of_ne_one hr htop hodd hd Q σ.property τ.property hσ1
+          hτ1)
   simpa using Nat.card_le_card_of_injective _ hinj
 
 /-- The ramification index of a prime above an odd prime `p` is at most `2`, when no radicand is

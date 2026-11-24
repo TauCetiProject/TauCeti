@@ -29,7 +29,9 @@ Universal coefficients then gives the same vanishing for relative cohomology wit
 chain coefficients.
 
 This is the below-rank vanishing used in constructing Thom classes from local fibre
-generators.
+generators. In the degree of the rank the same colimit presentation shows that the fibre pairs
+`(E_b, E_b ∖ {0})` generate the homology of the Thom pair: a morphism out of it is determined by
+its composites with the fibre inclusions (`TauCeti.singularHomology_thomPair_hom_ext`).
 
 For an arbitrary trivializing open cover, compatible top-degree classes glue uniquely over the
 union (`TauCeti.existsUnique_singularCohomology_thomPairOver_iUnion`). Compact subsets of both
@@ -42,18 +44,29 @@ particular a top-degree class of `(E, E₀)` is determined by its restrictions t
 (`TauCeti.singularCohomology_thomPair_ext`), and local classes realizing prescribed fibre classes
 near every point glue to a class of `(E, E₀)` (`TauCeti.exists_singularCohomology_thomPair_fiber`).
 
-With coefficients in a commutative ring `K` whose only unit is `1`, such as `ZMod 2`, a module
-isomorphic to `K` has a single generator (`LinearEquiv.eq_of_span_singleton_eq_top`). So the local
-Thom classes over trivializing sets, pulled back from a generator of `Hʳ(F, F ∖ {0}; K)`, have the
-same restriction to every fibre and glue: every real vector bundle has a unique Thom class with
-coefficients in `K` (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). With integral
-coefficients the fibre generators have to be chosen compatibly, which is what an orientation of the
-bundle provides (`TauCeti.VectorBundleOrientation.exists_isThomClass`).
+Two linear trivializations read a class of `(F, F ∖ {0})` as classes of a fibre pair differing by
+a sign, so with coefficients in a commutative ring `K` in which `2 = 0` they read it as the same
+class (`Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero`). The
+local classes over trivializing sets pulled back from a class `g` of `Hʳ(F, F ∖ {0})` then have the
+same restriction to every fibre, and glue to a unique class of the Thom pair
+(`TauCeti.existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero`). For a generator `g` this
+is a Thom class: in characteristic two every real vector bundle has a Thom class, with no
+orientation (`TauCeti.exists_isThomClass_of_two_eq_zero`). When `1` is the only unit of `K`, as
+for `ZMod 2`, a module isomorphic to `K` has a single generator
+(`LinearEquiv.eq_of_span_singleton_eq_top`), so the Thom class is unique
+(`TauCeti.existsUnique_isThomClass_of_subsingleton_units`). With integral coefficients the fibre
+generators have to be chosen compatibly, which is what an orientation of the bundle provides
+(`TauCeti.VectorBundleOrientation.exists_isThomClass`).
 
 ## Main results
 
 * `TauCeti.isZero_singularHomology_thomPair`, `TauCeti.isZero_singularCohomology_thomPair`: the
   relative (co)homology of the Thom pair vanishes below the rank.
+* `TauCeti.baseFiniteTrivializingUnionDiagram`, `TauCeti.baseFiniteTrivializingUnionCocone`,
+  `TauCeti.isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion`: filtered colimit
+  presentation of the singular homology of the base by finite unions of trivializing open sets.
+* `TauCeti.singularHomology_thomPair_hom_ext`: morphisms out of the top-degree homology of the Thom
+  pair are determined on the fibres.
 * `TauCeti.existsUnique_singularCohomology_thomPairOver_iUnion`: compatible top-degree classes
   over an arbitrary trivializing open cover glue uniquely over its union.
 * `TauCeti.existsUnique_singularCohomology_thomPair_of_iUnion_eq_univ`,
@@ -61,6 +74,11 @@ bundle provides (`TauCeti.VectorBundleOrientation.exists_isThomClass`).
   pair `(E, E₀)` and on fibres.
 * `TauCeti.exists_singularCohomology_thomPair_fiber`: local classes realizing prescribed fibre
   classes near every point glue to a class of the Thom pair `(E, E₀)`.
+* `TauCeti.existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero`: when `2 = 0` in the
+  coefficients, every class of `(F, F ∖ {0})` spreads uniquely to a class of `(E, E₀)` restricting
+  on each fibre to its pull-back along every linear trivialization.
+* `TauCeti.exists_isThomClass_of_two_eq_zero`: every real vector bundle has a Thom class with
+  coefficients in a ring in which `2 = 0`, such as a field of characteristic two.
 * `TauCeti.existsUnique_isThomClass_of_subsingleton_units`: every real vector bundle has a unique
   Thom class with coefficients in a ring whose only unit is `1`, such as `ZMod 2`.
 
@@ -107,6 +125,14 @@ theorem thomPairFiniteTrivializingUnionDiagram_map {s t : Finset B} (f : s ⟶ t
         eqToHom (thomPairFiniteTrivializingUnionDiagram_obj t).symm :=
   (conj_eqToHom_iff_heq _ _ (thomPairFiniteTrivializingUnionDiagram_obj s)
     (thomPairFiniteTrivializingUnionDiagram_obj t)).2 HEq.rfl
+
+omit [∀ b, Zero (E b)] in
+variable (F E) in
+/-- The finite unions of the trivializing open sets of the bundle atlas increase with the finite
+set of points. -/
+theorem monotone_biUnion_baseSet_trivializationAt :
+    Monotone fun s : Finset B ↦ ⋃ b ∈ s, (trivializationAt F E b).baseSet :=
+  fun _ _ h ↦ biUnion_subset_biUnion_left h
 
 /-- The inclusions from finite trivializing unions into the whole Thom pair. -/
 def thomPairFiniteTrivializingUnionCocone :
@@ -176,14 +202,121 @@ def isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
         congrFun (hfst s) _⟩⟩)
     (fun K hcomp ↦ by
       obtain ⟨s, hs⟩ := IsCompact.exists_finset_subset_preimage_biUnion_baseSet
-        (F := F) (E := E) (hcomp.image continuous_subtype_val)
-      exact ⟨s, fun p hp ↦ ⟨⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩, by
+        (F := F) (E := E) (hcomp.image continuous_subtypeVal)
+      exact ⟨s, fun p hp ↦ ⟨⟨p.val, hs (mem_image_of_mem _ hp), p.property⟩, by
         apply Subtype.ext
         have h := TopPair.Hom.w_apply
           ((thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).ι.app s)
-          ⟨p.1, hs (mem_image_of_mem _ hp), p.2⟩
+          ⟨p.val, hs (mem_image_of_mem _ hp), p.property⟩
         rw [hfst s] at h
         exact h⟩⟩)
+
+/-- Each leg of the homology cocone of finite trivializing unions is, up to the identifications
+`TopPair.singularHomologyFunctor_obj`, the map induced by the restriction from the union to the
+whole Thom pair. -/
+@[reassoc]
+theorem singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
+    (R : C) (n : ℕ) (s : Finset B) :
+    ((TopPair.singularHomologyFunctor R n).mapCocone
+        (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).ι.app s ≫
+        eqToHom (by simp : ((TopPair.singularHomologyFunctor R n).mapCocone
+          (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).pt =
+            (thomPair F E).singularHomology R n) =
+      eqToHom (by simp) ≫
+        TopPair.singularHomologyMap (thomPairOverMap F E
+          (subset_univ (⋃ b ∈ s, (trivializationAt F E b).baseSet)) ≫
+            (thomPairOverUnivIso F E).hom) R n := by
+  simp [TopPair.singularHomologyMap_comp]
+
+/-- Applying `TopPair.singularHomologyFunctor` to `thomPairFiniteTrivializingUnionDiagram` at `s`
+gives the singular homology of `thomPairOver` over that finite trivializing union. -/
+theorem singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionDiagram_obj
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
+    (R : C) (n : ℕ) (s : Finset B) :
+    (TopPair.singularHomologyFunctor R n).obj
+        ((thomPairFiniteTrivializingUnionDiagram (F := F) (E := E)).obj s) =
+      (thomPairOver F E (⋃ b ∈ s, (trivializationAt F E b).baseSet)).singularHomology R n := by
+  rw [thomPairFiniteTrivializingUnionDiagram_obj, TopPair.singularHomologyFunctor_obj]
+
+/-- Applying `TopPair.singularHomologyFunctor` to the cocone point of
+`thomPairFiniteTrivializingUnionCocone` gives the singular homology of `thomPair F E`. -/
+theorem singularHomologyFunctor_obj_thomPairFiniteTrivializingUnionCocone_pt
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C]
+    (R : C) (n : ℕ) :
+    (TopPair.singularHomologyFunctor R n).obj
+        (thomPairFiniteTrivializingUnionCocone (F := F) (E := E)).pt =
+      (thomPair F E).singularHomology R n := by
+  rw [thomPairFiniteTrivializingUnionCocone_pt, TopPair.singularHomologyFunctor_obj]
+
+section BaseDirectedUnion
+
+omit [∀ b, Zero (E b)]
+variable (F E)
+
+/-- Filtered diagram of finite unions of the chosen trivializing open sets in `B`. -/
+def baseFiniteTrivializingUnionDiagram : Finset B ⥤ TopCat.{w} where
+  obj s := TopCat.of ↥(⋃ b ∈ s, (trivializationAt F E b).baseSet)
+  map f := TopCat.ofHom
+    (ContinuousMap.inclusion (biUnion_subset_biUnion_left (Finset.coe_subset.2 f.le)))
+
+/-- The object of `TauCeti.baseFiniteTrivializingUnionDiagram` at `s`. -/
+@[simp]
+theorem baseFiniteTrivializingUnionDiagram_obj (s : Finset B) :
+    (baseFiniteTrivializingUnionDiagram (B := B) F E).obj s =
+      TopCat.of ↥(⋃ b ∈ s, (trivializationAt F E b).baseSet) := (rfl)
+
+/-- Morphisms in `TauCeti.baseFiniteTrivializingUnionDiagram` are subspace inclusions. -/
+@[simp]
+theorem baseFiniteTrivializingUnionDiagram_map {s t : Finset B} (f : s ⟶ t) :
+    (baseFiniteTrivializingUnionDiagram (B := B) F E).map f =
+      eqToHom (baseFiniteTrivializingUnionDiagram_obj F E s) ≫
+        TopCat.ofHom
+          (ContinuousMap.inclusion (biUnion_subset_biUnion_left (Finset.coe_subset.2 f.le))) ≫
+        eqToHom (baseFiniteTrivializingUnionDiagram_obj F E t).symm :=
+  (conj_eqToHom_iff_heq _ _ (baseFiniteTrivializingUnionDiagram_obj F E s)
+    (baseFiniteTrivializingUnionDiagram_obj F E t)).2 HEq.rfl
+
+/-- Cocone of inclusions from finite unions of the chosen trivializing open sets into `B`. -/
+def baseFiniteTrivializingUnionCocone :
+    Cocone (baseFiniteTrivializingUnionDiagram (B := B) F E) where
+  pt := TopCat.of B
+  ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
+
+/-- The cocone point of `TauCeti.baseFiniteTrivializingUnionCocone` is `TopCat.of B`. -/
+@[simp]
+theorem baseFiniteTrivializingUnionCocone_pt :
+    (baseFiniteTrivializingUnionCocone (B := B) F E).pt = TopCat.of B := (rfl)
+
+/-- The `s`-coprojection of `TauCeti.baseFiniteTrivializingUnionCocone` is `Subtype.val`. -/
+@[simp]
+theorem baseFiniteTrivializingUnionCocone_ι_app (s : Finset B) :
+    (baseFiniteTrivializingUnionCocone (B := B) F E).ι.app s =
+      eqToHom (baseFiniteTrivializingUnionDiagram_obj F E s) ≫
+        TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ ≫
+        eqToHom (baseFiniteTrivializingUnionCocone_pt F E).symm :=
+  (conj_eqToHom_iff_heq _ (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
+    (baseFiniteTrivializingUnionDiagram_obj F E s)
+    (baseFiniteTrivializingUnionCocone_pt (B := B) F E)).2 HEq.rfl
+
+/-- Singular homology of `B` is the filtered colimit over finite unions of the chosen trivializing
+open sets, for coefficients with exact filtered colimits. -/
+def isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+    [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] (R : C) (p : ℕ) :
+    IsColimit (((AlgebraicTopology.singularHomologyFunctor C p).obj R).mapCocone
+      (baseFiniteTrivializingUnionCocone (B := B) F E)) := by
+  have hhom (s : Finset B) : (⇑((baseFiniteTrivializingUnionCocone (B := B) F E).ι.app s) :
+      (⋃ b ∈ s, (trivializationAt F E b).baseSet) → B) = Subtype.val :=
+    eq_of_heq (by unfold baseFiniteTrivializingUnionCocone baseFiniteTrivializingUnionDiagram; rfl)
+  refine isColimitMapCoconeSingularHomology R p (baseFiniteTrivializingUnionCocone F E)
+    (fun s ↦ hhom s ▸ Topology.IsEmbedding.subtypeVal) fun L hL ↦ ?_
+  obtain ⟨s, hs⟩ := (hL : IsCompact (L : Set B)).elim_finite_subcover _
+    (fun b ↦ (trivializationAt F E b).open_baseSet) fun b _ ↦
+      mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩
+  exact ⟨s, fun b hb ↦ ⟨⟨b, hs hb⟩, congrFun (hhom s) _⟩⟩
+
+end BaseDirectedUnion
 
 end DirectedUnion
 
@@ -230,17 +363,17 @@ private theorem existsUnique_thomCover
       ∃ s, K ⊆ range (TopPair.Hom.fst (c.ι.app s)) := by
     -- Compact subsets of the total space project into finitely many members of the cover.
     intro K hK
-    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
-    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.2)
-    refine ⟨s, fun v hv ↦ ⟨⟨v.1, hs ⟨v, hv, rfl⟩⟩, ?_⟩⟩
+    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
+    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.property)
+    refine ⟨s, fun v hv ↦ ⟨⟨v.val, hs ⟨v, hv, rfl⟩⟩, ?_⟩⟩
     exact thomPairOverMap_fst_apply F E _ _
   have hsndK : ∀ K : Set c.pt.snd, IsCompact K →
       ∃ s, K ⊆ range (TopPair.Hom.snd (c.ι.app s)) := by
     -- The same argument applies to the complement of the zero section.
     intro K hK
-    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
-    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.2.1)
-    refine ⟨s, fun v hv ↦ ⟨⟨v.1, hs ⟨v, hv, rfl⟩, v.2.2⟩, ?_⟩⟩
+    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
+    obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.property.1)
+    refine ⟨s, fun v hv ↦ ⟨⟨v.val, hs ⟨v, hv, rfl⟩, v.property.2⟩, ?_⟩⟩
     exact thomPairOverMap_snd_apply F E _ _
   exact TopPair.existsUnique_singularCohomology_of_directedUnion R M c
     (fun s ↦ by
@@ -425,6 +558,34 @@ theorem isZero_singularHomology_thomPair
           (fun b _ ↦ (trivializationAt F E b).open_baseSet)
           (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) hn)
 
+/-- **Morphisms out of the top-degree homology of the Thom pair are determined on the fibres**:
+two morphisms out of `Hᵣ(E, E₀)`, `r = dim F`, which agree after the inclusion of the fibre pair
+`(E_b, E_b ∖ {0})` over every point `b`, are equal. Equivalently, the images of the fibre pairs
+generate `Hᵣ(E, E₀)`. The base is arbitrary; the coefficients lie in an abelian category with exact
+filtered colimits. -/
+theorem singularHomology_thomPair_hom_ext
+    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+    [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] {R T : C}
+    {g g' : (thomPair F E).singularHomology R (finrank ℝ F) ⟶ T}
+    (h : ∀ b, TopPair.singularHomologyMap (fiberThomPairMap F E b) R _ ≫ g =
+      TopPair.singularHomologyMap (fiberThomPairMap F E b) R _ ≫ g') : g = g' := by
+  -- The homology of the Thom pair is the colimit of its homology over finite unions of
+  -- trivializing sets, over each of which `g` and `g'` are determined on the fibres.
+  refine (cancel_epi (eqToHom (by simp : ((TopPair.singularHomologyFunctor R _).mapCocone
+    (thomPairFiniteTrivializingUnionCocone (F := F) (E := E))).pt =
+      (thomPair F E).singularHomology R (finrank ℝ F)))).1
+    ((isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
+      (F := F) (E := E) R (finrank ℝ F)).hom_ext fun s ↦ ?_)
+  rw [singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app_assoc,
+    singularHomologyFunctor_mapCocone_thomPairFiniteTrivializingUnionCocone_ι_app_assoc,
+    cancel_epi]
+  exact singularHomology_thomPairOver_biUnion_hom_ext s
+    (fun b _ ↦ (trivializationAt F E b).open_baseSet)
+    (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) fun b _ ↦ by
+      simp only [← TopPair.singularHomologyMap_comp_assoc,
+        fiberThomPairOverMap_comp_thomPairOverMap_assoc,
+        fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, h]
+
 /-- The relative cohomology of a real vector bundle modulo its nonzero vectors vanishes
 below the rank, over an arbitrary base and with projective chain coefficients. -/
 theorem isZero_singularCohomology_thomPair
@@ -447,6 +608,67 @@ theorem singularCohomology_thomPair_ext
     (iUnion_eq_univ_iff.2 fun b ↦ ⟨b, mem_baseSet_trivializationAt F E b⟩)
     (fun b ↦ (trivializationAt F E b).open_baseSet)
     (fun b ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) h
+
+/-- **In characteristic two, every class of the model fibre pair spreads to the Thom pair.** If
+`2 = 0` in the commutative ring `K`, then for every class `g ∈ Hʳ(F, F ∖ {0}; R, M)`, `r = dim F`
+and `R` projective, there is a unique class of `Hʳ(E, E₀; R, M)` whose restriction to the fibre
+pair `(E_b, E_b ∖ {0})` over every point `b` is the pull-back of `g` along every linear
+trivialization whose base set contains `b`. No orientation of the bundle is needed, and the base is
+arbitrary. With an orientation instead of `2 = 0`, the analogous statement is
+`TauCeti.VectorBundleOrientation.existsUnique_singularCohomology_thomPair_fiber`. -/
+theorem existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero {K : Type*} [CommRing K]
+    (h2 : (2 : K) = 0) {R M : ModuleCat.{w} K} [Module.Projective K R]
+    (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R K M
+      (finrank ℝ F)) :
+    ∃! u : (thomPair F E).singularCohomology R K M (finrank ℝ F),
+      ∀ (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet),
+        TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+          TopPair.singularCohomologyMap
+            (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g := by
+  -- The local classes over the trivializing sets, pulled back from `g`, agree on every fibre, since
+  -- two trivializations read `g` alike when `2 = 0`; so they glue.
+  choose u hu using fun c ↦
+    (trivializationAt F E c).exists_singularCohomology_thomPairOver_fiber ℝ subset_rfl g
+  obtain ⟨x, hx, -⟩ := existsUnique_singularCohomology_thomPair_of_iUnion_eq_univ
+    (fun c ↦ (trivializationAt F E c).baseSet) R M
+    (iUnion_eq_univ_iff.2 fun b ↦ ⟨b, mem_baseSet_trivializationAt F E b⟩)
+    (fun c ↦ (trivializationAt F E c).open_baseSet)
+    (fun c ↦ ⟨trivializationAt F E c, inferInstance, subset_rfl⟩) u
+    fun c c' b hc hc' ↦ by
+      rw [hu c b hc, hu c' b hc']
+      exact ((trivializationAt F E c).singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero
+        _ h2 hc hc' g).symm
+  have hx' (e : Trivialization F (π F E)) [e.IsLinear ℝ] (b : B) (hb : b ∈ e.baseSet) :
+      TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ x =
+        TopPair.singularCohomologyMap
+          (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g := by
+    rw [hx b b (mem_baseSet_trivializationAt F E b), hu]
+    exact ((trivializationAt F E b).singularCohomologyMap_complZeroPairIso_hom_eq_of_two_eq_zero e
+      h2 (mem_baseSet_trivializationAt F E b) hb g).symm
+  refine ⟨x, hx', fun y hy ↦ singularCohomology_thomPair_ext fun b ↦ ?_⟩
+  have hb := mem_baseSet_trivializationAt F E b
+  exact (hy (trivializationAt F E b) b hb).trans (hx' (trivializationAt F E b) b hb).symm
+
+/-- **In characteristic two every real vector bundle has a Thom class**: if `2 = 0` in the
+commutative ring `K`, for instance for every field of characteristic two, then there is a class
+of `Hʳ(E, E₀; K, K)`, `r = dim F`, restricting to a generator of `Hʳ(E_b, E_b ∖ {0}; K, K) ≅ K` on
+every fibre. No orientation of the bundle is needed, and the base is arbitrary. It is unique when
+`1` is the only unit of `K` (`TauCeti.existsUnique_isThomClass_of_subsingleton_units`); in general
+any unit multiple of it is again a Thom class. -/
+theorem exists_isThomClass_of_two_eq_zero (K : Type w) [CommRing K] (h2 : (2 : K) = 0) :
+    ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+      (finrank ℝ F), IsThomClass F E u := by
+  -- A generator `g` of the local cohomology `Hʳ(F, F ∖ {0}; K) ≅ K`, spread over the Thom pair.
+  obtain ⟨g, hg⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
+    (OpenPartialHomeomorph.refl F) (mem_univ 0)
+  obtain ⟨u, hu, -⟩ := existsUnique_singularCohomology_thomPair_fiber_of_two_eq_zero (E := E) h2 g
+  -- On each fibre it is the pull-back of `g` along a linear trivialization, which generates.
+  refine ⟨u, isThomClass_iff.2 ⟨inferInstance, fun b ↦ ?_⟩⟩
+  rw [hu (trivializationAt F E b) b (mem_baseSet_trivializationAt F E b)]
+  exact ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
+    (finrank ℝ F)).mapIso ((trivializationAt F E b).continuousLinearEquivAt ℝ b
+      (mem_baseSet_trivializationAt F E b)).complZeroPairIso.op
+        ).toLinearEquiv.span_singleton_apply_eq_top_iff.2 hg
 
 section SubsingletonUnits
 
@@ -473,33 +695,15 @@ mod `2` Thom class. -/
 theorem existsUnique_isThomClass_of_subsingleton_units :
     ∃! u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
       (finrank ℝ F), IsThomClass F E u := by
-  -- A generator `g` of the local cohomology `Hʳ(F, F ∖ {0}; K) ≅ K`.
-  obtain ⟨g, hg⟩ := exists_span_singularCohomology_complSingleton_eq_top (k := K)
-    (OpenPartialHomeomorph.refl F) (mem_univ 0)
-  -- Its pull-back to a fibre along a linear trivialization generates.
-  have hgen (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B} (hb : b ∈ e.baseSet) :
-      Submodule.span K {(TopPair.singularCohomologyMap
-        (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom _ g)} = ⊤ :=
-    ((TopPair.singularCohomologyFunctor (ModuleCat.of K K) K (ModuleCat.of K K)
-      (finrank ℝ F)).mapIso (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.op
-        ).toLinearEquiv.span_singleton_apply_eq_top_iff.2 hg
-  -- The local Thom classes over the trivializing sets agree on every fibre, so they glue.
-  choose u hu using fun c ↦
-    (trivializationAt F E c).exists_singularCohomology_thomPairOver_fiber ℝ subset_rfl g
-  obtain ⟨x, hx, -⟩ := existsUnique_singularCohomology_thomPair_of_iUnion_eq_univ
-    (fun c ↦ (trivializationAt F E c).baseSet) (ModuleCat.of K K) (ModuleCat.of K K)
-    (iUnion_eq_univ_iff.2 fun b ↦ ⟨b, mem_baseSet_trivializationAt F E b⟩)
-    (fun c ↦ (trivializationAt F E c).open_baseSet)
-    (fun c ↦ ⟨trivializationAt F E c, inferInstance, subset_rfl⟩) u
-    fun c c' b hc hc' ↦ by
-      rw [hu c b hc, hu c' b hc']
-      exact eq_of_span_fiber_eq_top K (hgen _ hc) (hgen _ hc')
-  have hxT : IsThomClass F E x := isThomClass_iff.2 ⟨inferInstance, fun b ↦ by
-    rw [hx b b (mem_baseSet_trivializationAt F E b), hu]
-    exact hgen _ _⟩
-  exact ⟨x, hxT, fun y hy ↦
-    singularCohomology_thomPair_ext fun b ↦ eq_of_span_fiber_eq_top K
-      ((isThomClass_iff.1 hy).2 b) ((isThomClass_iff.1 hxT).2 b)⟩
+  -- The unit `-1` is `1`, so `2 = 0` and a Thom class exists.
+  have h2 : (2 : K) = 0 := by
+    have h : ((-1 : Kˣ) : K) = ((1 : Kˣ) : K) := congrArg _ (Subsingleton.elim _ _)
+    rw [Units.val_neg, Units.val_one] at h
+    linear_combination -h
+  obtain ⟨x, hx⟩ := exists_isThomClass_of_two_eq_zero (F := F) (E := E) K h2
+  -- It is unique, since every fibre class has a single generator.
+  exact ⟨x, hx, fun y hy ↦ singularCohomology_thomPair_ext fun b ↦ eq_of_span_fiber_eq_top K
+    ((isThomClass_iff.1 hy).2 b) ((isThomClass_iff.1 hx).2 b)⟩
 
 end SubsingletonUnits
 

@@ -106,17 +106,17 @@ noncomputable instance instNormedRingSubring : NormedRing (HasGaussNorm.subring 
       map_zero' := gaussNorm_zero norm R₀ norm_zero
       add_le' f g :=
         (gaussNorm_add_le_max norm R₀ (f : R⟦X⟧) (g : R⟦X⟧) hR₀.out.le norm_nonneg
-          IsUltrametricDist.isNonarchimedean_norm (HasGaussNorm.mem_subring.mp f.2)
-          (HasGaussNorm.mem_subring.mp g.2)).trans
+          IsUltrametricDist.isNonarchimedean_norm (HasGaussNorm.mem_subring.mp f.property)
+          (HasGaussNorm.mem_subring.mp g.property)).trans
           (max_le_add_of_nonneg (gaussNorm_nonneg norm _ _ norm_nonneg)
             (gaussNorm_nonneg norm _ _ norm_nonneg))
       neg' f := MvPowerSeries.gaussNorm_neg (fun x : R ↦ ‖x‖) _ (fun x ↦ norm_neg x)
         (f : R⟦X⟧)
       mul_le' f g := TauCeti.PowerSeries.gaussNorm_mul_le hR₀.out.le
-        (HasGaussNorm.mem_subring.mp f.2) (HasGaussNorm.mem_subring.mp g.2)
+        (HasGaussNorm.mem_subring.mp f.property) (HasGaussNorm.mem_subring.mp g.property)
       eq_zero_of_map_eq_zero' f h := by
         rwa [gaussNorm_eq_zero_iff norm R₀ _ norm_zero norm_nonneg
-          (fun _ ↦ norm_eq_zero.mp) hR₀.out (HasGaussNorm.mem_subring.mp f.2),
+          (fun _ ↦ norm_eq_zero.mp) hR₀.out (HasGaussNorm.mem_subring.mp f.property),
           ZeroMemClass.coe_eq_zero] at h }
 
 variable {R₀}
@@ -128,7 +128,7 @@ theorem norm_eq_gaussNorm (f : HasGaussNorm.subring R R₀) :
 /-- Each weighted coefficient norm `‖aₙ‖ R₀ⁿ` of a bounded series is bounded by its norm. -/
 theorem norm_coeff_mul_pow_le (f : HasGaussNorm.subring R R₀) (n : ℕ) :
     ‖coeff n (f : R⟦X⟧)‖ * R₀ ^ n ≤ ‖f‖ :=
-  le_gaussNorm norm R₀ _ (HasGaussNorm.mem_subring.mp f.2) n
+  le_gaussNorm norm R₀ _ (HasGaussNorm.mem_subring.mp f.property) n
 
 /-- The norm of a bounded series is bounded by `r` exactly when every weighted coefficient norm
 `‖aₙ‖ R₀ⁿ` is. -/
@@ -166,8 +166,8 @@ variable (R₀)
 instance : IsUltrametricDist (HasGaussNorm.subring R R₀) :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun f g ↦
     gaussNorm_add_le_max norm R₀ (f : R⟦X⟧) (g : R⟦X⟧) hR₀.out.le norm_nonneg
-      IsUltrametricDist.isNonarchimedean_norm (HasGaussNorm.mem_subring.mp f.2)
-      (HasGaussNorm.mem_subring.mp g.2)
+      IsUltrametricDist.isNonarchimedean_norm (HasGaussNorm.mem_subring.mp f.property)
+      (HasGaussNorm.mem_subring.mp g.property)
 
 /-- The Gauss norm on bounded series preserves the norm of `1`. -/
 instance [NormOneClass R] : NormOneClass (HasGaussNorm.subring R R₀) where

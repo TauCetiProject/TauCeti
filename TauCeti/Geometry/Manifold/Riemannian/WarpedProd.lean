@@ -184,10 +184,10 @@ private theorem contMDiff_warpedProdTangentInner
         (RiemannianMetric.warpedProdTangentInner g₁.toRiemannianMetric f g₂.toRiemannianMetric
           p)) :=
   fun p₀ ↦ by
-    rw [contMDiffAt_section]
+    rw [contMDiffAt_section_iff]
     have h₁ := g₁.contMDiff p₀.1
     have h₂ := g₂.contMDiff p₀.2
-    rw [contMDiffAt_section] at h₁ h₂
+    rw [contMDiffAt_section_iff] at h₁ h₂
     have hf₂ : ContMDiffAt (I.prod J) 𝓘(ℝ) n (fun q : M × N ↦ f q.1 ^ 2) p₀ :=
       ((hf p₀.1).comp p₀ contMDiffAt_fst).pow 2
     have h := contMDiffAt_const (c := (ContinuousLinearMap.coprodEquivL ℝ :

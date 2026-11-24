@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
@@ -312,9 +312,9 @@ momentum `q₁ p₂ - q₂ p₁` in the basis `b`. -/
 @[simp]
 theorem coe_polarCanonicalDiffeomorph_symm_apply (x : puncturedPhaseSpace V) :
     ((polarCanonicalDiffeomorph b).symm x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)) =
-      ((‖x.1.1‖, radialMomentum x.1),
-        ((((polarAngle (b 0) (b 1) x.1.1).toReal : ℝ) : AddCircle (2 * π)),
-          angularMomentum (b 0) (b 1) x.1)) := by
+      ((‖x.val.1‖, radialMomentum x.val),
+        ((((polarAngle (b 0) (b 1) x.val.1).toReal : ℝ) : AddCircle (2 * π)),
+          angularMomentum (b 0) (b 1) x.val)) := by
   have h := polarCanonicalCoords_polarCylinderMap b ((polarCanonicalDiffeomorph b).symm x).property
   rw [← coe_polarCanonicalDiffeomorph_apply, Diffeomorph.apply_symm_apply] at h
   simpa only [polarCanonicalCoords] using h.symm
@@ -379,11 +379,11 @@ form `dr ∧ dp_r + dθ ∧ dL` on the cylinder `r > 0`, where `dθ` is the time
 `AddCircle (2 * π)` and `dL` the coordinate form of the real line. -/
 theorem mpullback_polarCanonicalDiffeomorph :
     SmoothForm.mpullback (polarCanonicalDiffeomorph b) (polarCanonicalDiffeomorph b).contMDiff
-        (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtype_val
+        (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
           (stdSymplecticForm (V := V)).constSmooth) =
       SmoothForm.mpullback
         (Subtype.val : polarCanonicalCylinder → (ℝ × ℝ) × (AddCircle (2 * π) × ℝ))
-        contMDiff_subtype_val
+        contMDiff_subtypeVal
         (SmoothTwoForm.prod (stdSymplecticForm (V := ℝ)).constSmooth
           (SmoothForm.wedge
             (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (2 * π)))
@@ -478,7 +478,7 @@ private theorem radius_angle_polarCanonicalDiffeomorph_symm (x : puncturedPhaseS
     ((((polarCanonicalDiffeomorph b).symm x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).1.1,
         ((polarCanonicalDiffeomorph b).symm x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).2.1) :
         ℝ × AddCircle (2 * π)) =
-      (‖x.1.1‖, (((polarAngle (b 0) (b 1) x.1.1).toReal : ℝ) : AddCircle (2 * π))) := by
+      (‖x.val.1‖, (((polarAngle (b 0) (b 1) x.val.1).toReal : ℝ) : AddCircle (2 * π))) := by
   rw [coe_polarCanonicalDiffeomorph_symm_apply]
 
 /-- **Smooth polar coordinates of the plane.** For an orthonormal basis `b` of a plane `V`, the map
@@ -493,7 +493,8 @@ def polarPlaneDiffeomorph :
     mem_polarHalfCylinder.2 (norm_pos_iff.2 (mem_puncturedSpace.1 q.property))⟩
   left_inv y := by
     have h := radius_angle_polarCanonicalDiffeomorph_symm b (polarCanonicalDiffeomorph b
-      ⟨((y.1.1, 0), (y.1.2, 0)), mem_polarCanonicalCylinder.2 (mem_polarHalfCylinder.1 y.property)⟩)
+      ⟨((y.val.1, 0), (y.val.2, 0)), mem_polarCanonicalCylinder.2
+          (mem_polarHalfCylinder.1 y.property)⟩)
     rw [Diffeomorph.symm_apply_apply, coe_polarCanonicalDiffeomorph_apply,
       fst_polarCylinderMap] at h
     exact Subtype.ext h.symm
@@ -503,7 +504,7 @@ def polarPlaneDiffeomorph :
     refine Subtype.ext ?_
     simpa only [polarCanonical_apply, polarPlaneMap_coe] using congrArg Prod.fst hq
   contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff (puncturedSpace V) _).1
-    ((contMDiff_polarPlaneMap (b 0) (b 1)).comp contMDiff_subtype_val)
+    ((contMDiff_polarPlaneMap (b 0) (b 1)).comp contMDiff_subtypeVal)
   contMDiff_invFun := by
     -- The inverse is read off from the inverse polar canonical coordinates of `(q, 0)`.
     let incl : puncturedSpace V → puncturedPhaseSpace V := fun q ↦
@@ -514,11 +515,11 @@ def polarPlaneDiffeomorph :
         mem_polarHalfCylinder.2 (mem_polarCanonicalCylinder.1 z.property)⟩
     have hincl : ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, V × V) ∞ incl :=
       (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1
-        (contMDiff_subtype_val.prodMk_space contMDiff_const)
+        (contMDiff_subtypeVal.prodMk_space contMDiff_const)
     have hproj : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) (𝓘(ℝ).prod 𝓘(ℝ)) ∞ proj :=
       (ContMDiff.subtypeVal_comp_iff polarHalfCylinder _).1
         ((((contDiff_fst (𝕜 := ℝ) (E := ℝ) (F := ℝ)).contMDiff (n := ∞)).comp
-          contMDiff_fst).prodMk (contMDiff_fst.comp contMDiff_snd) |>.comp contMDiff_subtype_val)
+          contMDiff_fst).prodMk (contMDiff_fst.comp contMDiff_snd) |>.comp contMDiff_subtypeVal)
     refine (hproj.comp ((polarCanonicalDiffeomorph b).symm.contMDiff.comp hincl)).congr
       fun q ↦ ?_
     exact Subtype.ext (radius_angle_polarCanonicalDiffeomorph_symm b (incl q)).symm

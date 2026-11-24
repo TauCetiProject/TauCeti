@@ -36,17 +36,17 @@ namespace Polynomial
 variable {K : Type*} [Field K] [Height.AdmissibleAbsValues K]
 
 /-- The relative projective multiplicative height of the coefficients of a polynomial. -/
-noncomputable def mulHeight (p : K[X]) : ℝ := p.toFinsupp.coeff.mulHeight
+noncomputable def mulHeight (p : K[X]) : ℝ := p.coeff.mulHeight
 
 /-- The relative projective logarithmic height of the coefficients of a polynomial. -/
 noncomputable def logHeight (p : K[X]) : ℝ := Real.log p.mulHeight
 
-theorem mulHeight_eq_finsupp (p : K[X]) : p.mulHeight = p.toFinsupp.coeff.mulHeight := (rfl)
+theorem mulHeight_eq_finsupp (p : K[X]) : p.mulHeight = p.coeff.mulHeight := (rfl)
 
 theorem logHeight_eq_log_mulHeight (p : K[X]) : p.logHeight = Real.log p.mulHeight := (rfl)
 
 /-- Polynomial logarithmic height agrees with the native finitely supported height. -/
-theorem logHeight_eq_finsupp (p : K[X]) : p.logHeight = p.toFinsupp.coeff.logHeight := by
+theorem logHeight_eq_finsupp (p : K[X]) : p.logHeight = p.coeff.logHeight := by
   rw [logHeight_eq_log_mulHeight, mulHeight_eq_finsupp,
     Finsupp.logHeight_eq_log_mulHeight_support]
 
@@ -63,7 +63,7 @@ theorem mulHeight_eq_coeff (p : K[X]) {n : ℕ} (hn : p.support ⊆ Finset.range
   let e : Fin n ≃ Finset.range n := Fin.equivSubtype.trans
     (Equiv.subtypeEquivProp (by ext; simp))
   rw [mulHeight_eq_finsupp, Finsupp.mulHeight_eq_of_support_subset _ (Finset.range n)
-    (by rwa [support_toFinsupp]), ← Height.mulHeight_comp_equiv e]
+    hn, ← Height.mulHeight_comp_equiv e]
   -- Reindexing along `e` is definitionally the usual finite coefficient tuple.
   rfl
 
@@ -103,7 +103,7 @@ theorem logHeight_zero : (0 : K[X]).logHeight = 0 := by
 
 @[simp]
 theorem mulHeight_monomial (n : ℕ) (c : K) : (monomial n c).mulHeight = 1 := by
-  simp [mulHeight_eq_finsupp, toFinsupp_monomial]
+  simp [mulHeight_eq_finsupp, coeff_monomial]
 
 @[simp]
 theorem logHeight_monomial (n : ℕ) (c : K) : (monomial n c).logHeight = 0 := by
@@ -111,7 +111,7 @@ theorem logHeight_monomial (n : ℕ) (c : K) : (monomial n c).logHeight = 0 := b
 
 @[simp]
 theorem mulHeight_C (c : K) : (C c).mulHeight = 1 := by
-  simp [mulHeight_eq_finsupp, toFinsupp_C]
+  rw [← monomial_zero_left, mulHeight_monomial]
 
 @[simp]
 theorem logHeight_C (c : K) : (C c).logHeight = 0 := by
@@ -145,7 +145,7 @@ theorem logHeight_X : (X : K[X]).logHeight = 0 := by
 @[simp]
 theorem mulHeight_smul (p : K[X]) {c : K} (hc : c ≠ 0) :
     (c • p).mulHeight = p.mulHeight := by
-  simpa [mulHeight_eq_finsupp, toFinsupp_smul] using Finsupp.mulHeight_smul p.toFinsupp.coeff hc
+  simpa [mulHeight_eq_finsupp] using Finsupp.mulHeight_smul p.coeff hc
 
 @[simp]
 theorem mulHeight_C_mul (p : K[X]) {c : K} (hc : c ≠ 0) :
@@ -155,8 +155,8 @@ theorem mulHeight_C_mul (p : K[X]) {c : K} (hc : c ≠ 0) :
 @[simp]
 theorem logHeight_smul (p : K[X]) {c : K} (hc : c ≠ 0) :
     (c • p).logHeight = p.logHeight := by
-  simpa [logHeight_eq_finsupp, toFinsupp_smul] using
-    Finsupp.logHeight_smul p.toFinsupp.coeff hc
+  simpa [logHeight_eq_finsupp] using
+    Finsupp.logHeight_smul p.coeff hc
 
 @[simp]
 theorem mulHeight_neg (p : K[X]) : (-p).mulHeight = p.mulHeight := by

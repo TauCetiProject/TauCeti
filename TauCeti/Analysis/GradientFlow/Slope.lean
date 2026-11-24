@@ -228,7 +228,7 @@ private theorem descendingSlope_le_enorm_of_hasFDerivAt (hf : HasFDerivAt f f' x
     calc f x - f y = -(f y - f x - f' (y - x)) + -f' (y - x) := by ring
       _ ≤ ε * ‖y - x‖ + ‖f'‖ * ‖y - x‖ := add_le_add h₂ h₁
       _ = (‖f'‖ + ε) * ‖y - x‖ := by ring
-  rw [← EReal.coe_sub, EReal.real_coe_toENNReal, edist_comm, edist_eq_enorm_sub]
+  rw [← EReal.coe_sub, EReal.real_coe_toENNReal, edist_comm, eDist_eq_eNorm_sub]
   simpa [ENNReal.ofReal_mul (add_nonneg (norm_nonneg f') ε.coe_nonneg), ENNReal.ofReal_add,
     ofReal_norm] using ENNReal.ofReal_le_ofReal key
 
@@ -273,7 +273,7 @@ private theorem enorm_le_descendingSlope_of_hasFDerivAt (hf : HasFDerivAt f f' x
       (𝓝[>] 0) (𝓝 (ENNReal.ofReal (f' w / ‖w‖))) := by
     refine ((ENNReal.continuous_ofReal.tendsto _).comp hlim).congr'
       (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦ ?_)
-    simp [edist_eq_enorm_sub, ← ofReal_norm, norm_smul, abs_of_pos ht,
+    simp [eDist_eq_eNorm_sub, ← ofReal_norm, norm_smul, abs_of_pos ht,
       ENNReal.ofReal_div_of_pos (mul_pos ht hwpos)]
   calc (r : ℝ≥0∞) = ENNReal.ofReal r := (ENNReal.ofReal_coe_nnreal).symm
     _ ≤ ENNReal.ofReal (f' w / ‖w‖) := by
@@ -299,7 +299,7 @@ is `|D|`. -/
 theorem _root_.HasDerivAt.descendingSlope_eq {g : ℝ → ℝ} {D t : ℝ} (hg : HasDerivAt g D t) :
     descendingSlope (fun u ↦ (g u : EReal)) t = ‖D‖ₑ := by
   rw [hg.hasFDerivAt.descendingSlope_eq]
-  simp only [enorm_eq_nnnorm, ContinuousLinearMap.nnnorm_toSpanSingleton]
+  simp only [eNorm_eq_nnNorm, ContinuousLinearMap.nnNorm_toSpanSingleton]
 
 end NormedSpace
 

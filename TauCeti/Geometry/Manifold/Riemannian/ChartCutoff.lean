@@ -138,7 +138,7 @@ theorem lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le [LindelofSpace M
   have hmeas : AEMeasurable
       (fun y ↦ ENNReal.ofReal G ^ p * ‖u ((extChartAt I c).symm y)‖ₑ ^ p) (μ.restrict B) :=
     ((((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn.continuousOn.mono
-      hrt).aemeasurable measurableSet_ball).enorm.pow_const p).const_mul _
+      hrt).aemeasurable measurableSet_ball).eNorm.pow_const p).const_mul _
   calc ∫⁻ y, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ p ∂μ
       = ∫⁻ y in B, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ p ∂μ := by
         -- The integrand vanishes off the support of the bump, which lies in `B`.
@@ -197,7 +197,7 @@ theorem eLpNorm_fderiv_mul_comp_extChartAt_symm_le [LindelofSpace M] {c : M}
   have hw := b.contDiff_mul_comp_extChartAt_symm (hbr.trans hrt) hu
   have hgrad := lintegral_rpow_enorm_le_rpow_eLpNorm (μ := riemannianVolume I M) hp0
     fun x ↦ ‖mgradient I u x‖
-  simp only [enorm_norm] at hgrad
+  simp only [eNorm_norm] at hgrad
   rw [← ENNReal.rpow_le_rpow_iff hpR,
     eLpNorm_nnreal_pow_eq_lintegral hp0 (hw.continuous_fderiv one_ne_zero).aestronglyMeasurable]
   calc _ ≤ 2 ^ ((p : ℝ) - 1) * ENNReal.ofReal m⁻¹ *

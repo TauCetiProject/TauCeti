@@ -205,8 +205,8 @@ theorem schreierGenerator_of_ne {x : α} (hx : x ≠ a) :
 /-- The Schreier generator of the source generator indexed by `y` is the generator `y`. -/
 @[simp]
 theorem schreierGenerator_symm (y : β) :
-    schreierGenerator a e W (e.symm y).1 = PresentedGroup.of y := by
-  rw [schreierGenerator_of_ne a e W (e.symm y).2, Subtype.coe_eta, Equiv.apply_symm_apply]
+    schreierGenerator a e W (e.symm y).val = PresentedGroup.of y := by
+  rw [schreierGenerator_of_ne a e W (e.symm y).property, Subtype.coe_eta, Equiv.apply_symm_apply]
 
 /-- The class of the singleton rewrite of a source letter read at representative `1` is the inverse
 of its Schreier generator. -/
@@ -373,7 +373,7 @@ the rewrite of `w` from representative `t` satisfies `ρ(w) · t' = t · w`, whe
 representative reached after reading `w`. -/
 theorem lift_mk_schreierWord (positive : Bool) (w : PresentationWord α) :
     FreeGroup.lift (fun y : β =>
-        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).1)
+        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).val)
         (FreeGroup.mk (schreierWord a e positive w)) *
       cond (positive ^^ decide (Odd w.length)) (PresentedGroup.of a) 1 =
     cond positive (PresentedGroup.of a) 1 * PresentedGroup.mk R (FreeGroup.mk w) := by
@@ -403,7 +403,7 @@ theorem lift_mk_schreierWord (positive : Bool) (w : PresentationWord α) :
 
 theorem lift_mk_schreierWord_of_mem {w : PresentationWord α} (hw : w ∈ W) (positive : Bool) :
     FreeGroup.lift (fun y : β =>
-        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).1)
+        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).val)
       (FreeGroup.mk (schreierWord a e positive w)) = 1 := by
   have key := h.lift_mk_schreierWord a e positive w
   have hodd : decide (Odd w.length) = false := by
@@ -418,20 +418,20 @@ the parity homomorphism,
 `TauCeti.IsSchreierIndexTwoSource.range_toPresentedGroup_eq_ker_parityHom`. -/
 def toPresentedGroup : PresentedGroup (schreierRelators a e W) →* PresentedGroup R :=
   PresentedGroup.toGroup
-    (f := fun y => (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).1) (by
+    (f := fun y => (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).val) (by
       rintro r ⟨positive, w, hw, rfl⟩
       exact h.lift_mk_schreierWord_of_mem a e hw positive)
 
 @[simp]
 theorem toPresentedGroup_of (y : β) :
     h.toPresentedGroup a e (PresentedGroup.of y) =
-      PresentedGroup.of a * PresentedGroup.of (e.symm y).1 :=
+      PresentedGroup.of a * PresentedGroup.of (e.symm y).val :=
   PresentedGroup.toGroup.of _
 
 theorem toPresentedGroup_mk (z : FreeGroup β) :
     h.toPresentedGroup a e (PresentedGroup.mk _ z) =
       FreeGroup.lift (fun y : β =>
-        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).1) z :=
+        (PresentedGroup.of a : PresentedGroup R) * PresentedGroup.of (e.symm y).val) z :=
   (rfl)
 
 /-- The Schreier generator of `x` goes to `a x`. -/
@@ -588,16 +588,16 @@ omit [DecidableEq α] in
 agree in the abelianization: an even-length word is then an even power of one element of order at
 most two there. -/
 theorem commutator_eq_ker_parityHom
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a)) :
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a)) :
     commutator (PresentedGroup R) = h.parityHom.ker := by
-  let u := Abelianization.of (PresentedGroup.of a : PresentedGroup R)
+  let u := Group.Abelianization.of (PresentedGroup.of a : PresentedGroup R)
   have hu : (2 : ℤ) • Additive.ofMul u = 0 := by
     rw [← ofMul_zpow, ofMul_eq_zero]
     simp [u, zpow_ofNat, sq, ← map_mul, h.of_mul_of]
-  let f : Multiplicative (ZMod 2) →* Abelianization (PresentedGroup R) :=
+  let f : Multiplicative (ZMod 2) →* Group.Abelianization (PresentedGroup R) :=
     (ZMod.lift 2 ⟨zmultiplesHom _ (Additive.ofMul u), hu⟩).toMultiplicativeLeft
-  have hf : Abelianization.of = f.comp h.parityHom := by
+  have hf : Group.Abelianization.of = f.comp h.parityHom := by
     apply PresentedGroup.ext
     intro x
     rw [MonoidHom.comp_apply, parityHom_of, habel]
@@ -605,24 +605,24 @@ theorem commutator_eq_ker_parityHom
     rw [AddMonoidHom.toMultiplicativeLeft_apply_apply, toAdd_ofAdd, ← Int.cast_one,
       ZMod.lift_coe _ _ 1]
     simp [u]
-  refine le_antisymm (Abelianization.commutator_le_ker _) ?_
-  rw [← Abelianization.ker_of, hf]
+  refine le_antisymm (Group.Abelianization.commutator_le_ker _) ?_
+  rw [← Group.Abelianization.ker_of, hf]
   exact h.parityHom.ker_le_comap f.ker
 
 /-- **Index-two Reidemeister--Schreier rewriting onto the commutator subgroup.** When all
 generators agree in the abelianization, the group presented by the rewrites of the source words is
 the commutator subgroup of the source presented group. -/
 noncomputable def mulEquivCommutator
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a)) :
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a)) :
     PresentedGroup (schreierRelators a e W) ≃* ↥(commutator (PresentedGroup R)) :=
   (h.mulEquivKerParityHom a e).trans
     (MulEquiv.subgroupCongr (h.commutator_eq_ker_parityHom a habel).symm)
 
 @[simp]
 theorem coe_mulEquivCommutator_apply
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a))
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a))
     (g : PresentedGroup (schreierRelators a e W)) :
     (h.mulEquivCommutator a e habel g : PresentedGroup R) = h.toPresentedGroup a e g := by
   simp [mulEquivCommutator, MulEquiv.subgroupCongr_apply]
@@ -643,8 +643,8 @@ auditable format, so that a transcription can be identified with the subgroup it
 describes. -/
 noncomputable def GroupPresentation.mulEquivCommutator (P : GroupPresentation)
     (h : IsSchreierIndexTwoSource R W) (a : α) (e : {x : α // x ≠ a} ≃ Fin P.generatorCount)
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a))
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a))
     (hrel : Subgroup.normalClosure (Relator.relatorSet P.transcribed) =
       Subgroup.normalClosure (schreierRelators a e W)) :
     P.Group ≃* ↥(commutator (PresentedGroup R)) :=
@@ -656,12 +656,12 @@ noncomputable def GroupPresentation.mulEquivCommutator (P : GroupPresentation)
 @[simp]
 theorem GroupPresentation.coe_mulEquivCommutator_of (P : GroupPresentation)
     (h : IsSchreierIndexTwoSource R W) (a : α) (e : {x : α // x ≠ a} ≃ Fin P.generatorCount)
-    (habel : ∀ x : α, Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
-      Abelianization.of (PresentedGroup.of a))
+    (habel : ∀ x : α, Group.Abelianization.of (PresentedGroup.of x : PresentedGroup R) =
+      Group.Abelianization.of (PresentedGroup.of a))
     (hrel : Subgroup.normalClosure (Relator.relatorSet P.transcribed) =
       Subgroup.normalClosure (schreierRelators a e W)) (i : Fin P.generatorCount) :
     (P.mulEquivCommutator h a e habel hrel (PresentedGroup.of i) : PresentedGroup R) =
-      PresentedGroup.of a * PresentedGroup.of (e.symm i).1 := by
+      PresentedGroup.of a * PresentedGroup.of (e.symm i).val := by
   unfold GroupPresentation.mulEquivCommutator
   -- The two group instances on the middle quotient agree only up to unfolding, so the
   -- composite is evaluated by terms rather than by rewriting.

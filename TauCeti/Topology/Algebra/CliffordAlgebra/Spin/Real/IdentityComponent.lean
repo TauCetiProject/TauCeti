@@ -8,8 +8,6 @@ module
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Connected
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.OneOne
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinorNorm
-import TauCeti.FieldTheory.SquareClassGroup.Real
-import TauCeti.Topology.Algebra.Group.Units.Real
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 
 /-!
@@ -78,8 +76,7 @@ theorem range_spinToSpecialOrthogonal_eq_connectedComponentOfOne_of_isOrtho
   let _ : TopologicalSpace V := moduleTopology ℝ V
   have : IsModuleTopology ℝ V := ⟨rfl⟩
   have := pathConnectedSpace_spinGroup_of_isOrtho hef h
-  exact range_spinToSpecialOrthogonal_eq_connectedComponentOfOne Q hQ
-    (Units.square_eq_posSubgroup_real ▸ Units.isOpen_posSubgroup_real) (by simp)
+  exact range_spinToSpecialOrthogonal_eq_connectedComponentOfOne Q hQ (by simp)
 
 /-- **The spinor kernel of `SO(Q)` is its identity component** for a nondegenerate real quadratic
 form with two orthogonal vectors whose norms are nonzero of the same sign. -/
@@ -132,8 +129,7 @@ theorem range_spinToSpecialOrthogonal_realCliffordForm_eq_connectedComponentOfOn
   -- The range is open for the subspace topology from the linear automorphisms, hence for the
   -- coordinate topology, which is at least as fine.
   obtain ⟨U, hU, hUrange⟩ := isOpen_induced_iff.mp (isOpen_range_spinToSpecialOrthogonal _
-    (nondegenerate_realCliffordForm p q)
-    (Units.square_eq_posSubgroup_real ▸ Units.isOpen_posSubgroup_real))
+    (nondegenerate_realCliffordForm p q))
   refine MonoidHom.range_eq_connectedComponentOfOne (continuous_spinToSpecialOrthogonal_pi _) ?_
     (connectedComponentOfOne_sup_ker_realCliffordSpinGroup h)
   rw [← hUrange]

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
-public import TauCeti.RingTheory.Polynomial.IsIntegral
 
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.Field
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Changes of variables between integral models
@@ -70,9 +70,6 @@ from the change-of-variables formulas for the invariants, and `R` is integrally 
 * `t` from the `a₆`-relation, likewise a quadratic, once `r` is known.
 
 ## Provenance
-
-⚠ *mathlib-track*. Statements about Mathlib's own `IsIntegral` for Weierstrass models and
-`VariableChange.baseChange`, with no Tau Ceti definitions involved.
 
 The descent is ported from FLT, https://github.com/ImperialCollegeLondon/FLT
 @ `bc2fe8ff7396469a16c2a6d51d6117f5825d93a0` (Apache-2.0), file
@@ -140,7 +137,7 @@ private theorem isIntegral_s_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
     field
   refine IsIntegral.of_sq_add_mul_add_eq_zero (b := algebraMap R K (W₁.integralModel R).a₁)
     (c := algebraMap R K (u₀ ^ 2 * (W₂.integralModel R).a₂
-      - (W₁.integralModel R).a₂ - 3 * rR)) isIntegral_algebraMap isIntegral_algebraMap ?_
+      - (W₁.integralModel R).a₂ - 3 * rR)) isIntegral_algebraMap isIntegral_algebraMap (.all _ _) ?_
   simp only [map_sub, map_mul, map_pow, map_ofNat]
   rw [integralModel_a₁_eq R W₁, integralModel_a₂_eq R W₁, integralModel_a₂_eq R W₂, hau, hrR]
   linear_combination ha₂
@@ -163,7 +160,7 @@ private theorem isIntegral_t_of_smul_eq {W₁ W₂ : WeierstrassCurve K} [IsInte
     (c := algebraMap R K (u₀ ^ 6 * (W₂.integralModel R).a₆
       - ((W₁.integralModel R).a₆ + rR * (W₁.integralModel R).a₄
         + rR ^ 2 * (W₁.integralModel R).a₂ + rR ^ 3)))
-    isIntegral_algebraMap isIntegral_algebraMap ?_
+    isIntegral_algebraMap isIntegral_algebraMap (.all _ _) ?_
   simp only [map_add, map_sub, map_mul, map_pow]
   rw [integralModel_a₁_eq R W₁, integralModel_a₂_eq R W₁, integralModel_a₃_eq R W₁,
     integralModel_a₄_eq R W₁, integralModel_a₆_eq R W₁, integralModel_a₆_eq R W₂, hau, hrR]
@@ -220,7 +217,7 @@ theorem exists_smul_isIntegral (R : Type*) [CommRing R] {K : Type*} [Field K]
   obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors R)
     ![W.a₁, W.a₂, W.a₃, W.a₄, W.a₆]
   have hb₀ : algebraMap R K (b : R) ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors b.2
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors b.property
   -- One denominator suffices for every power: `bⁿ⁺¹ aᵢ = bⁿ · (b aᵢ)`.
   have key : ∀ (i : Fin 5) (n : ℕ), IsLocalization.IsInteger R
       (algebraMap R K (b : R) ^ (n + 1) * ![W.a₁, W.a₂, W.a₃, W.a₄, W.a₆] i) := by

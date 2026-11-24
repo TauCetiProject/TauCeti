@@ -72,20 +72,19 @@ variable {ι : Type} (p : ι → ℝ) (hp : ∀ i, p i ≠ 0)
 `∀ i, AddCircle (p i)` is `ι → ℤ`. -/
 def torusFirstHomologyEquiv :
     ((singularChains ℤ).obj (TopCat.of (∀ i, AddCircle (p i)))).homology 1 ≃ₗ[ℤ] (ι → ℤ) :=
-  ((hurewiczHomologyAddEquiv (X := TopCat.of (∀ i, AddCircle (p i))) 0).symm.trans
+  ((hurewiczHomologyAddEquiv (X := TopCat.of (∀ i, AddCircle (p i))) 0 (.refl ℤ)).symm.trans
     (AddEquiv.toMultiplicativeRight.symm
       ((AddCircle.piFundamentalGroupMulEquivZero hp).abelianizationCongr.trans
-        (Abelianization.equivOfComm.symm.trans
+        (Group.Abelianization.equivOfComm.symm.trans
           (MulEquiv.funMultiplicative ι ℤ).symm)))).toIntLinearEquiv
 
 /-- The class of the straight loop `TauCeti.torusLoop p n` corresponds to `n`. -/
-@[simp]
 theorem torusFirstHomologyEquiv_loopClass (n : ι → ℤ) :
     torusFirstHomologyEquiv p hp
-        (H₁AddEquivHomology _ (loopClass (X := TopCat.of (∀ i, AddCircle (p i)))
+        (H₁AddEquivHomology ℤ _ (loopClass ℤ (X := TopCat.of (∀ i, AddCircle (p i)))
           (torusLoop p n))) = n := by
   have h := (AddEquiv.symm_apply_eq _).2
-    (hurewiczHomologyAddEquiv_ofMul_of_mk (X := TopCat.of (∀ i, AddCircle (p i)))
+    (hurewiczHomologyAddEquiv_ofMul_of_mk (X := TopCat.of (∀ i, AddCircle (p i))) (.refl ℤ)
       (torusLoop p n)).symm
   rw [torusFirstHomologyEquiv, AddEquiv.coe_toIntLinearEquiv, AddEquiv.trans_apply, h]
   funext i
@@ -95,7 +94,8 @@ theorem torusFirstHomologyEquiv_loopClass (n : ι → ℤ) :
 `TauCeti.torusLoop p n`, which winds `n i` times around the `i`-th circle. -/
 theorem torusFirstHomologyEquiv_symm_apply (n : ι → ℤ) :
     (torusFirstHomologyEquiv p hp).symm n =
-      H₁AddEquivHomology _ (loopClass (X := TopCat.of (∀ i, AddCircle (p i))) (torusLoop p n)) := by
+      H₁AddEquivHomology ℤ _
+        (loopClass ℤ (X := TopCat.of (∀ i, AddCircle (p i))) (torusLoop p n)) := by
   rw [LinearEquiv.symm_apply_eq, torusFirstHomologyEquiv_loopClass]
 
 /-- **The first homology of a torus is natural in integer matrices.** Under the identifications
@@ -113,10 +113,10 @@ theorem torusFirstHomologyEquiv_homologyMap_smulVecHom [Fintype ι] {κ : Type} 
   -- The image of the straight loop of `n` is the straight loop of `A *ᵥ n`, based at the image
   -- of `0`; loops with the same underlying map have the same homology class. The underlying map
   -- of `Path.map` is the composite (`Path.map_coe`), so its chain is that of the composite.
-  have h : loopClass ((torusLoop (fun _ : ι ↦ p) n).map
+  have h : loopClass ℤ ((torusLoop (fun _ : ι ↦ p) n).map
       (TopCat.ofHom
         (A.smulVecHom (AddCircle p) : C(ι → AddCircle p, κ → AddCircle p))).hom.continuous) =
-      loopClass (X := TopCat.of (κ → AddCircle p)) (torusLoop (fun _ ↦ p) (A *ᵥ n)) := by
+      loopClass ℤ (X := TopCat.of (κ → AddCircle p)) (torusLoop (fun _ ↦ p) (A *ᵥ n)) := by
     rw [loopClass_eq_iff,
       sub_eq_zero.2 (congrArg (pathChain ℤ) (smulVecHom_comp_torusLoop A p n))]
     exact zero_mem _
@@ -154,17 +154,16 @@ theorem circleProdFirstHomologyEquiv_apply
 
 /-- The identification of the first homology of a parametrized torus with `ℤ²` sends the class of
 the `(p, q)` curve `t ↦ e (exp (2πipt), exp (2πiqt))` to `(p, q)`. -/
-@[simp]
 theorem circleProdFirstHomologyEquiv_torusCurve (p q : ℤ) :
     circleProdFirstHomologyEquiv e
-        (H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map e.continuous))) =
+        (H₁AddEquivHomology ℤ (TopCat.of Y) (loopClass ℤ ((torusCurve p q).map e.continuous))) =
       ![p, q] := by
   let g : TopCat.of Y ≅ TopCat.of (UnitAddTorus (Fin 2)) :=
     TopCat.isoOfHomeo (e.symm.trans circleProdHomeomorphUnitAddTorus)
   -- The image of the `(p, q)` curve in `ℝ² / ℤ²` is the straight loop of `(p, q)`, based at the
   -- image of `e (1, 1)`; loops with the same underlying map have the same homology class.
-  have h : loopClass (((torusCurve p q).map e.continuous).map g.hom.hom.continuous) =
-      loopClass (X := TopCat.of (Fin 2 → AddCircle (1 : ℝ))) (torusLoop (fun _ ↦ 1) ![p, q]) := by
+  have h : loopClass ℤ (((torusCurve p q).map e.continuous).map g.hom.hom.continuous) =
+      loopClass ℤ (X := TopCat.of (Fin 2 → AddCircle (1 : ℝ))) (torusLoop (fun _ ↦ 1) ![p, q]) := by
     rw [loopClass_eq_iff, sub_eq_zero.2 (congrArg (pathChain ℤ) (ContinuousMap.ext fun t ↦ ?_))]
     · exact zero_mem _
     have ht := circleProdHomeomorphUnitAddTorus_exp (p * t) (q * t)
@@ -180,12 +179,12 @@ end Parametrized
 /-- The class of the `(p, q)` curve of `S¹ × S¹`. -/
 def torusClass (p q : ℤ) :
     ((singularChains ℤ).obj (TopCat.of (Circle × Circle))).homology 1 :=
-  H₁AddEquivHomology (TopCat.of (Circle × Circle)) (loopClass (torusCurve p q))
+  H₁AddEquivHomology ℤ (TopCat.of (Circle × Circle)) (loopClass ℤ (torusCurve p q))
 
 /-- The class of the `(p, q)` curve is its Hurewicz class in `H₁(S¹ × S¹; ℤ)`. -/
 theorem torusClass_def (p q : ℤ) :
     torusClass p q =
-      H₁AddEquivHomology (TopCat.of (Circle × Circle)) (loopClass (torusCurve p q)) :=
+      H₁AddEquivHomology ℤ (TopCat.of (Circle × Circle)) (loopClass ℤ (torusCurve p q)) :=
   (rfl)
 
 end TauCeti
@@ -198,7 +197,7 @@ open TauCeti
 theorem singularHomologyMap_torusClass {Y : Type} [TopologicalSpace Y] (g : C(Circle × Circle, Y))
     (p q : ℤ) :
     singularHomologyMap ℤ 1 g (torusClass p q) =
-      H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map g.continuous)) :=
+      H₁AddEquivHomology ℤ (TopCat.of Y) (loopClass ℤ ((torusCurve p q).map g.continuous)) :=
   homologyMap_H₁AddEquivHomology_loopClass (TopCat.ofHom g) _
 
 end ContinuousMap

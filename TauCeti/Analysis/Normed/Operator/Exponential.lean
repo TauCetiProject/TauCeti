@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
@@ -18,6 +19,7 @@ import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
 import TauCeti.Analysis.Normed.Algebra.OneSubExpNegDivSelf.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Exponentials of bounded operators
@@ -41,6 +43,8 @@ space. The norm bounds for exponentials in a general normed algebra live in
   the kernel of `B`.
 * `ContinuousLinearMap.spectrum_exp`: in finite dimension, the spectrum of `exp N` is the image of
   the spectrum of `N` under the exponential.
+* `ContinuousLinearMap.toMatrix_exp`: in a basis of a finite-dimensional space, the matrix of
+  `exp L` is the matrix exponential of the matrix of `L`.
 * `ContinuousLinearMap.exp_smul_apply_sub_eq_intervalIntegral`: the Duhamel identity
   `exp (t • B) x - x = ∫₀ᵗ exp (u • B) (B x) du` for the orbits of a real bounded operator.
 * `ContinuousLinearMap.eq_exp_smul_apply_of_hasDerivWithinAt`: a continuous function on `[0, ∞)`
@@ -72,7 +76,7 @@ theorem exp_add_smul_apply (A : X →L[𝕜] X) (s t : 𝕜) (x : X) :
 /-- The exponential `exp B` of a continuous endomorphism of a Banach space, as a continuous linear
 automorphism with inverse `exp (-B)`. -/
 noncomputable def expEquiv (B : X →L[𝕜] X) : X ≃L[𝕜] X :=
-  .equivOfInverse' (exp B) (exp (-B))
+  .ofContinuousLinearMap (exp B) (exp (-B))
     (by
       let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
       rw [← ContinuousLinearMap.mul_def, ← exp_add_of_commute (Commute.refl B).neg_right,
@@ -153,12 +157,12 @@ finite-dimensional complex normed space, the spectrum of `exp N` is the image of
 `N` under the exponential. -/
 theorem spectrum_exp (N : V →L[ℂ] V) :
     spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
-  have := FiniteDimensional.complete ℂ V
-  -- The inclusion `⊇` is `spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
+  have := FiniteDimensional.completeSpace ℂ V
+  -- The inclusion `⊇` is `exp_mem_spectrum_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
   -- spectrum consists of the values `P (μ)` at the eigenvalues `μ` of `N`, and an eigenvector for
   -- `μ` shows `P (μ) = exp μ`.
   refine subset_antisymm (fun z hz ↦ ?_)
-    (Set.image_subset_iff.mpr fun μ hμ ↦ spectrum.exp_mem_exp N hμ)
+    (Set.image_subset_iff.mpr fun μ hμ ↦ exp_mem_spectrum_exp N hμ)
   rcases subsingleton_or_nontrivial V with hV | hV
   · simp [spectrum.of_subsingleton] at hz
   obtain ⟨P, hP⟩ := TauCeti.exists_aeval_eq_exp (𝕜 := ℂ) N
@@ -174,6 +178,29 @@ theorem spectrum_exp (N : V →L[ℂ] V) :
   exact smul_left_injective ℂ hv.2 h
 
 end FiniteDimensional
+
+section Matrix
+
+variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [FiniteDimensional 𝕜 X] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+open scoped Matrix.Norms.L2Operator in
+/-- In a basis of a finite-dimensional space, the matrix of the exponential of an operator is the
+matrix exponential of its matrix: taking matrices is a continuous ring homomorphism. -/
+theorem toMatrix_exp (b : Module.Basis ι 𝕜 X) (L : X →L[𝕜] X) :
+    LinearMap.toMatrix b b (exp L : X →L[𝕜] X) = exp (LinearMap.toMatrix b b L) := by
+  let f : (X →L[𝕜] X) →+* Matrix ι ι 𝕜 :=
+    (LinearMap.toMatrixAlgEquiv b).toRingHom.comp ContinuousLinearMap.toLinearMapRingHom
+  have hfg (L : X →L[𝕜] X) : f L = LinearMap.toMatrix b b L := by
+    ext i j
+    simp [f, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
+  have hf : Continuous f :=
+    (ContinuousLinearMap.toMatrixCLM b).continuous.congr fun L ↦ by simp [hfg]
+  have : CompleteSpace X := FiniteDimensional.completeSpace 𝕜 X
+  let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
+  rw [← hfg, NormedSpace.map_exp f hf, hfg]
+
+end Matrix
 
 section Real
 

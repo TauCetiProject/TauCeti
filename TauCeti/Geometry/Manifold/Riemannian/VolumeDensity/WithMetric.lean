@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
-public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
+public import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Basic
 
 /-!
 # The Riemannian volume of a metric-indexed copy
@@ -56,10 +56,8 @@ theorem measurePreserving_ofWithMetric :
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   let _ : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
-  have h := (homeomorph g).measurePreserving_riemannianVolume (I := I) (I' := I) ?_ ?_
+  have h := (homeomorph g).measurePreserving_riemannianVolume (I := I) (I' := I) ?_
   · rwa [coe_homeomorph] at h
-  · rw [coe_homeomorph]
-    exact contMDiff_ofWithMetric.mdifferentiable one_ne_zero
   · intro x v w
     rw [coe_homeomorph]
     exact (inner_def x v w).symm

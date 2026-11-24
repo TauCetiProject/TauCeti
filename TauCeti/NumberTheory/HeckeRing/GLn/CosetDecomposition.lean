@@ -6,7 +6,7 @@ Authors: Chris Birkbeck, Claude
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Triangular
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 
 import Mathlib.Tactic.LinearCombination
 
@@ -350,7 +350,7 @@ lemma dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL {a : Fin n → ℕ}
   have hentry := congrFun (congrFun hmat i) j
   rw [natDiagGL_coe n a ha', mapGL_coe_matrix, mapGL_coe_matrix, Matrix.diagonal_mul,
     Matrix.mul_diagonal] at hentry
-  simp only [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
+  simp only [SpecialLinearGroup.map_apply_coe, algebraMap_int_eq,
     eq_intCast, Matrix.map_apply, SpecialLinearGroup.coe_mul, coe_unitriSL,
     coe_inv_unitriSL] at hentry
   have hZ : (a i : ℤ) * (unitriMat B₁ * (unitriMat B₂)⁻¹) i j

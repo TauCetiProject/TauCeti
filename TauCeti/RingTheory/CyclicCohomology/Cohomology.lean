@@ -96,7 +96,8 @@ def cyclicCocycles (n : ℕ) : Submodule R (cyclicCochains R A M n) :=
 @[simp]
 theorem mem_cyclicCocycles_iff {n : ℕ} {φ : cyclicCochains R A M n} :
     φ ∈ cyclicCocycles R A M n ↔
-      hochschildCoboundary R A M n (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) = 0 := by
+      hochschildCoboundary R A M n (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) = 0 := by
   rw [cyclicCocycles, LinearMap.mem_ker, ← Subtype.coe_inj, coe_cyclicHochschildCoboundary_apply,
     ZeroMemClass.coe_zero]
 
@@ -129,7 +130,7 @@ quasi-inverse, `xᵢ₊₁ + xᵢ + xᵢxᵢ₊₁ = 0`. -/
 theorem apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero {n : ℕ}
     {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCoboundaries R A M n) {x : Fin (n + 1) → A}
     (hx : ∀ i, x (finRotate (n + 1) i) + x i + x i * x (finRotate (n + 1) i) = 0) :
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) x = 0 := by
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) x = 0 := by
   cases n with
   | zero =>
     rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ
@@ -137,16 +138,16 @@ theorem apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero {n : ℕ}
   | succ n =>
     obtain ⟨ψ, rfl⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hφ
     rw [coe_cyclicHochschildCoboundary_apply]
-    exact hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero ψ.2 hx
+    exact hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero ψ.property hx
 
 /-- A cyclic `0`-cochain is a cocycle exactly when it is a trace. -/
 theorem mem_cyclicCocycles_zero_iff {φ : cyclicCochains R A M 0} :
     φ ∈ cyclicCocycles R A M 0 ↔
-      ∀ x y : A, (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) (fun _ ↦ x * y) =
-        (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) (fun _ ↦ y * x) := by
+      ∀ x y : A, (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M) (fun _ ↦ x * y) =
+        (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M) (fun _ ↦ y * x) := by
   rw [mem_cyclicCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
 
-variable {R A M} {B : Type u} [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B]
+variable {R A M} {B : Type*} [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B]
   [SMulCommClass R B B]
 
 /-- The pullback of a cyclic cocycle is a cyclic cocycle. -/
@@ -155,6 +156,17 @@ theorem cyclicCochainsMap_mem_cyclicCocycles (f : A →ₙₐ[R] B) {n : ℕ}
     cyclicCochainsMap M (f : A →ₗ[R] B) n φ ∈ cyclicCocycles R A M n := by
   rw [cyclicCocycles, LinearMap.mem_ker, cyclicHochschildCoboundary_cyclicCochainsMap,
     LinearMap.mem_ker.1 hφ, map_zero]
+
+/-- The pullback of a cyclic coboundary is a cyclic coboundary. -/
+theorem cyclicCochainsMap_mem_cyclicCoboundaries (f : A →ₙₐ[R] B) {n : ℕ}
+    {φ : cyclicCochains R B M n} (hφ : φ ∈ cyclicCoboundaries R B M n) :
+    cyclicCochainsMap M (f : A →ₗ[R] B) n φ ∈ cyclicCoboundaries R A M n := by
+  cases n with
+  | zero => rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ ⊢; rw [hφ, map_zero]
+  | succ n =>
+    obtain ⟨ψ, rfl⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hφ
+    exact (mem_cyclicCoboundaries_succ_iff _ _ _).2
+      ⟨_, cyclicHochschildCoboundary_cyclicCochainsMap f ψ⟩
 
 end Cocycles
 
@@ -283,11 +295,11 @@ private theorem mem_cyclicCoboundaries_iff_complex (n : ℕ) (φ : cyclicCochain
     (cyclicCoboundaries_zero R A M) (cyclicCoboundaries_succ R A M) n φ
 
 private abbrev toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :=
-  (cyclicCochainComplex R A M).moduleCatCyclesMk ((cyclicCochainComplexXIso R A M n).inv φ.1)
-    (n + 1) (CochainComplex.next ℕ n) ((mem_cyclicCocycles_iff_complex R A M n φ.1).1 φ.2)
+  (cyclicCochainComplex R A M).moduleCatCyclesMk ((cyclicCochainComplexXIso R A M n).inv φ.val)
+    (n + 1) (CochainComplex.next ℕ n) ((mem_cyclicCocycles_iff_complex R A M n φ.val).1 φ.property)
 
 private theorem iCycles_toCycles (n : ℕ) (φ : cyclicCocycles R A M n) :
-    (cyclicCochainComplex R A M).iCycles n (toCycles R A M n φ) = φ.1 :=
+    (cyclicCochainComplex R A M).iCycles n (toCycles R A M n φ) = φ.val :=
   (cyclicCochainComplex R A M).iCycles_moduleCatCyclesMk _ _ _ _ _
 
 namespace cyclicCohomology
@@ -412,7 +424,8 @@ def map (f : A →ₙₐ[R] B) (n : ℕ) : cyclicCohomology R B M n ⟶ cyclicCo
 theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
     map M f n (mk R B M n φ) =
       mk R A M n
-        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.2⟩ := by
+        ⟨cyclicCochainsMap M (f : A →ₗ[R] B) n φ, cyclicCochainsMap_mem_cyclicCocycles f φ.property⟩
+            := by
   rw [map, mk_apply, mk_apply, ← ConcreteCategory.comp_apply,
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1

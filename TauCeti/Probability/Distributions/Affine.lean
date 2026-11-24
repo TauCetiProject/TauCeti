@@ -9,14 +9,18 @@ public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Quantile
+public import TauCeti.MeasureTheory.Group.Convolution.Translation
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.CDF
+public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Dirac
+import TauCeti.Probability.Independence.ConvolutionPower
 
 /-!
 # Affine images of real laws
@@ -42,16 +46,27 @@ which is Mathlib's `MeasureTheory.Measure.map_const`.
 The variance, moment-generating function and characteristic function computations follow
 Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const_add` and
 `ProbabilityTheory.variance_const_mul`, `ProbabilityTheory.mgf_const_add` and
-`ProbabilityTheory.mgf_const_mul`, and `MeasureTheory.charFun_apply_real`, which they reduce to.
+`ProbabilityTheory.mgf_const_mul`, and `MeasureTheory.charFun_map_const_add` and
+`MeasureTheory.charFun_map_mul`, which they reduce to.
 
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose, and
   `TauCeti.Probability.neg_map_affine` reflects an affine image;
-* `TauCeti.Probability.support_map_affine` — a nonconstant affine pushforward transports the
+* `TauCeti.Probability.support_map_affine` — an affine pushforward transports the
   topological support;
 * `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
   probability law, intercept, and slope;
+* `TauCeti.Probability.map_affine_cond` — a nonconstant affine pushforward commutes with
+  conditioning when the conditioning event is transported by the affine map, with the random
+  variable form `ProbabilityTheory.HasLaw.affine_cond`;
+* `TauCeti.Probability.map_affine_cond_preimage` — every affine pushforward, including at zero
+  slope, commutes with conditioning on the preimage of an arbitrary event;
+* `TauCeti.Probability.map_affine_cond_Icc_pos`, `TauCeti.Probability.map_affine_cond_Icc_neg`,
+  and the corresponding `Ioo`, `Ico`, `Ioc`, `Ici`, `Ioi`, `Iic`, and `Iio` forms — signed affine
+  transport of interval and ray truncations: positive slopes preserve endpoint flags, whereas
+  negative slopes reverse bounded interval endpoints, exchange half-open flags, and swap lower
+  and upper rays;
 * `TauCeti.Probability.affineDensity`,
   `TauCeti.Probability.map_affine_withDensity_volume` — the transformed density and the
   measure-level change of variables;
@@ -77,6 +92,10 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 * `TauCeti.Probability.mgf_id_neg`, `TauCeti.Probability.integrableExpSet_id_neg`,
   `TauCeti.Probability.cgf_id_neg` — the exponential transforms of the reflected law at `-t`;
 * `TauCeti.Probability.charFun_map_affine` — the characteristic function `exp (i a t) φ(b t)`.
+
+Affine images also commute with convolution when the translations are accumulated: offsets
+`a` and `c` give the offset `a + c`, and applying the same offset to each of `n` summands gives
+`n * a`. The corresponding finite independent-sum law includes the empty sum and zero slope.
 -/
 
 public section
@@ -112,25 +131,170 @@ theorem neg_map_affine (a b : ℝ) :
   simp only [Function.comp_apply]
   ring
 
-/-- **Support of an affine image.** A nonconstant affine pushforward has support equal to the
-affine image of the original support. -/
-theorem support_map_affine (hb : b ≠ 0) :
+/-- **Support of an affine image.** An affine pushforward has support equal to the affine image of
+the original support. For the slope `0` the pushforward is a multiple of a Dirac mass, and both
+sides are `{a}` (or empty for the zero measure). -/
+theorem support_map_affine :
     (μ.map fun x ↦ a + b * x).support = (fun x ↦ a + b * x) '' μ.support := by
-  let e : ℝ ≃ₜ ℝ := (Homeomorph.smulOfNeZero b hb).trans (Homeomorph.addLeft a)
-  have he : (e : ℝ → ℝ) = fun x ↦ a + b * x := by
-    funext x
-    simp [e, smul_eq_mul]
-  rw [← he]
-  exact μ.support_map_homeomorph e
+  rw [μ.support_map_eq_closure_image Measure.support_mem_ae (by fun_prop)]
+  exact ((isClosedMap_add_left a).comp (isClosedMap_smul₀ b) _ Measure.isClosed_support).closure_eq
 
 /-- Affine pushforward is jointly measurable in the probability law, intercept, and slope. -/
 @[fun_prop]
 theorem measurable_map_affine :
     Measurable fun p : ProbabilityMeasure ℝ × ℝ × ℝ =>
       (p.1 : Measure ℝ).map fun x => p.2.1 + p.2.2 * x := by
-  exact measurable_subtype_coe.comp
+  exact measurable_subtypeVal.comp
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_map_of_measurable_uncurry
       (f := fun p : ℝ × ℝ => fun x => p.1 + p.2 * x) (by fun_prop))
+
+/-- **Affine transport of a conditional law.** A nonconstant affine pushforward commutes with
+conditioning when the conditioning event is carried to its affine image. This includes null
+events, for which both conditional measures are zero. -/
+theorem map_affine_cond (a : ℝ) {b : ℝ} (hb : b ≠ 0) {s : Set ℝ} :
+    (cond μ s).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) ((fun x ↦ a + b * x) '' s) := by
+  have hf : MeasurableEmbedding (fun x : ℝ ↦ a + b * x) := by
+    convert (affineHomeomorph b a hb).measurableEmbedding using 1
+    ext x
+    simp [affineHomeomorph, add_comm]
+  exact hf.map_cond s
+
+/-- Real affine pushforward commutes with conditioning on the preimage of an arbitrary event,
+without requiring the event to be measurable, including at zero slope and for zero-mass or
+infinite-mass events. -/
+theorem map_affine_cond_preimage (a b : ℝ) {s : Set ℝ} :
+    (cond μ ((fun x ↦ a + b * x) ⁻¹' s)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) s := by
+  by_cases hb : b = 0
+  · classical
+    subst hb
+    simp only [zero_mul, add_zero, Measure.map_const]
+    by_cases ha : a ∈ s
+    · rw [preimage_const_of_mem ha, ProbabilityTheory.cond, Measure.restrict_univ,
+        ProbabilityTheory.cond, Measure.restrict_smul, restrict_dirac]
+      simp [ha, smul_smul]
+    · rw [preimage_const_of_notMem ha, cond_empty, ProbabilityTheory.cond,
+        Measure.restrict_smul, restrict_dirac]
+      simp [ha]
+  · simpa only [Function.comp_def] using
+      ((measurableEmbedding_addLeft a).comp (measurableEmbedding_mulLeft₀ hb)).map_cond_preimage s
+
+/-- Positive affine transport preserves truncation to a closed interval `[l, r]`. -/
+theorem map_affine_cond_Icc_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l r : ℝ) :
+    (cond μ (Icc l r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Icc (a + b * l) (a + b * r)) := by
+  rw [map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Icc' hb,
+    image_const_add_Icc]
+
+/-- Positive affine transport preserves truncation to an open interval `(l, r)`. -/
+theorem map_affine_cond_Ioo_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l r : ℝ) :
+    (cond μ (Ioo l r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ioo (a + b * l) (a + b * r)) := by
+  rw [map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ioo hb,
+    image_const_add_Ioo]
+
+/-- Positive affine transport preserves truncation to a half-open interval `[l, r)`. -/
+theorem map_affine_cond_Ico_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l r : ℝ) :
+    (cond μ (Ico l r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ico (a + b * l) (a + b * r)) := by
+  rw [map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ico hb,
+    image_const_add_Ico]
+
+/-- Positive affine transport preserves truncation to a half-open interval `(l, r]`. -/
+theorem map_affine_cond_Ioc_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l r : ℝ) :
+    (cond μ (Ioc l r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ioc (a + b * l) (a + b * r)) := by
+  rw [map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ioc hb,
+    image_const_add_Ioc]
+
+/-- Positive affine transport preserves truncation to a closed upper ray `[l, ∞)`. -/
+theorem map_affine_cond_Ici_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l : ℝ) :
+    (cond μ (Ici l)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ici (a + b * l)) := by
+  rw [map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ici hb,
+    image_const_add_Ici]
+
+/-- Positive affine transport preserves truncation to an open upper ray `(l, ∞)`. -/
+theorem map_affine_cond_Ioi_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (l : ℝ) :
+    (cond μ (Ioi l)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ioi (a + b * l)) := by
+  rw [map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Ioi hb,
+    image_const_add_Ioi]
+
+/-- Positive affine transport preserves truncation to a closed lower ray `(-∞, r]`. -/
+theorem map_affine_cond_Iic_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (r : ℝ) :
+    (cond μ (Iic r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Iic (a + b * r)) := by
+  rw [map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Iic hb,
+    image_const_add_Iic]
+
+/-- Positive affine transport preserves truncation to an open lower ray `(-∞, r)`. -/
+theorem map_affine_cond_Iio_pos (a : ℝ) {b : ℝ} (hb : 0 < b) (r : ℝ) :
+    (cond μ (Iio r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Iio (a + b * r)) := by
+  rw [map_affine_cond a hb.ne', ← image_image (a + ·) (b * ·), image_mul_left_Iio hb,
+    image_const_add_Iio]
+
+/-- Negative affine transport reverses the endpoints of a closed truncation interval. -/
+theorem map_affine_cond_Icc_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l r : ℝ) :
+    (cond μ (Icc l r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Icc (a + b * r) (a + b * l)) := by
+  rw [← map_affine_cond_preimage a b, ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport reverses the endpoints of an open truncation interval. -/
+theorem map_affine_cond_Ioo_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l r : ℝ) :
+    (cond μ (Ioo l r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ioo (a + b * r) (a + b * l)) := by
+  rw [← map_affine_cond_preimage a b, ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport exchanges a closed lower and open upper truncation endpoint. -/
+theorem map_affine_cond_Ico_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l r : ℝ) :
+    (cond μ (Ico l r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ioc (a + b * r) (a + b * l)) := by
+  rw [← map_affine_cond_preimage a b, ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport exchanges an open lower and closed upper truncation endpoint. -/
+theorem map_affine_cond_Ioc_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l r : ℝ) :
+    (cond μ (Ioc l r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ico (a + b * r) (a + b * l)) := by
+  rw [← map_affine_cond_preimage a b, ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport sends truncation on a closed upper ray `[l, ∞)` to the closed lower
+ray `(-∞, a + b * l]`. -/
+theorem map_affine_cond_Ici_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l : ℝ) :
+    (cond μ (Ici l)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Iic (a + b * l)) := by
+  rw [← map_affine_cond_preimage a b, ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport sends truncation on an open upper ray `(l, ∞)` to the open lower
+ray `(-∞, a + b * l)`. -/
+theorem map_affine_cond_Ioi_neg (a : ℝ) {b : ℝ} (hb : b < 0) (l : ℝ) :
+    (cond μ (Ioi l)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Iio (a + b * l)) := by
+  rw [← map_affine_cond_preimage a b, ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport sends truncation on a closed lower ray `(-∞, r]` to the closed upper
+ray `[a + b * r, ∞)`. -/
+theorem map_affine_cond_Iic_neg (a : ℝ) {b : ℝ} (hb : b < 0) (r : ℝ) :
+    (cond μ (Iic r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ici (a + b * r)) := by
+  rw [← map_affine_cond_preimage a b, ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
+
+/-- Negative affine transport sends truncation on an open lower ray `(-∞, r)` to the open upper
+ray `(a + b * r, ∞)`. -/
+theorem map_affine_cond_Iio_neg (a : ℝ) {b : ℝ} (hb : b < 0) (r : ℝ) :
+    (cond μ (Iio r)).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) (Ioi (a + b * r)) := by
+  rw [← map_affine_cond_preimage a b, ← Function.comp_def (a + ·) (b * ·), preimage_comp]
+  simp [hb, hb.ne]
 
 /-! ### Densities -/
 
@@ -153,7 +317,7 @@ theorem affineDensity_apply (a b : ℝ) (f : ℝ → ℝ≥0∞) (y : ℝ) :
 @[fun_prop]
 theorem measurable_affineDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) (a b : ℝ) :
     Measurable (affineDensity a b f) := by
-  unfold affineDensity
+  rw [affineDensity.eq_unfold]
   fun_prop
 
 private noncomputable def mulLeftCLE (b : ℝ) (hb : b ≠ 0) : ℝ ≃L[ℝ] ℝ :=
@@ -519,12 +683,92 @@ theorem cgf_id_neg (t : ℝ) : cgf id μ.neg t = cgf id μ (-t) := by
 theorem charFun_map_affine (t : ℝ) :
     charFun (μ.map fun x => a + b * x) t =
       Complex.exp (a * t * Complex.I) * charFun μ (b * t) := by
-  rw [charFun_apply_real, charFun_apply_real,
-    integral_map (measurable_affine a b).aemeasurable (by fun_prop), ← integral_const_mul]
-  refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  dsimp only
-  rw [← Complex.exp_add]
-  push_cast
-  ring_nf
+  rw [show (fun x => a + b * x) = (a + ·) ∘ (b * ·) from rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop), charFun_map_const_add, charFun_map_mul,
+    mul_comm]
+  simp [mul_comm]
 
 end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+open scoped MeasureTheory
+
+/-- The convolution of two real affine images with common slope is the affine image of the
+convolution, with the two offsets added. The slope may be zero or negative. -/
+theorem conv_map_affine (μ ν : Measure ℝ) [SFinite ν] (a c b : ℝ) :
+    (μ.map (fun x ↦ a + b * x)) ∗ (ν.map (fun x ↦ c + b * x)) =
+      (μ ∗ ν).map (fun x ↦ a + c + b * x) := by
+  have hmap (ρ : Measure ℝ) (d : ℝ) :
+      ρ.map (fun x ↦ d + b * x) = (ρ.map (b * ·)).map (d + ·) := by
+    rw [map_map (measurable_const_add d) (by fun_prop)]
+    rfl
+  have hscale : (μ.map (b * ·)) ∗ (ν.map (b * ·)) = (μ ∗ ν).map (b * ·) := by
+    simpa [Pi.smul_def, smul_eq_mul] using (map_conv_continuousLinearMap (μ := μ) (ν := ν)
+      (b • ContinuousLinearMap.id ℝ ℝ)).symm
+  rw [hmap μ a, hmap ν c, conv_map_add, hscale,
+    map_map (by fun_prop) (by fun_prop)]
+  rfl
+
+/-- Applying the same real affine map to every summand accumulates the translation once per
+summand. This holds at every slope and for the empty sum. -/
+theorem convolutionPower_map_affine (μ : Measure ℝ) [SFinite μ] (a b : ℝ) (n : ℕ) :
+    (μ.map (fun x ↦ a + b * x)).convolutionPower n =
+      (μ.convolutionPower n).map (fun x ↦ (n : ℝ) * a + b * x) := by
+  have hmap : μ.map (fun x ↦ a + b * x) = (μ.map (b * ·)).map (a + ·) := by
+    rw [map_map (measurable_const_add a) (by fun_prop)]
+    rfl
+  have hscale : (μ.map (b * ·)).convolutionPower n =
+      (μ.convolutionPower n).map (b * ·) := by
+    let f : ℝ →+ ℝ := b • AddMonoidHom.id ℝ
+    have hf : (f : ℝ → ℝ) = (b * ·) := by
+      ext x
+      simp [f, smul_eq_mul]
+    have hfm : Measurable f := by rw [hf]; fun_prop
+    simpa only [hf] using (map_convolutionPower μ f hfm n).symm
+  rw [hmap, convolutionPower_map_add, hscale, map_map (by fun_prop) (by fun_prop)]
+  simp [nsmul_eq_mul, Function.comp_def]
+
+end MeasureTheory.Measure
+
+namespace ProbabilityTheory
+
+variable {Ω ι : Type*} [MeasurableSpace Ω] {P : Measure Ω} {μ : Measure ℝ}
+  {X : ι → Ω → ℝ}
+
+/-- The sum of two affine images of independent real variables, with the same slope, has the
+affine image of the convolution law, with the two offsets added. -/
+theorem IndepFun.hasLaw_add_affine {ν : Measure ℝ} [SigmaFinite μ] [SigmaFinite ν]
+    {Y Z : Ω → ℝ} (h : IndepFun Y Z P) (hY : HasLaw Y μ P) (hZ : HasLaw Z ν P)
+    (a c b : ℝ) :
+    HasLaw (fun ω ↦ (a + b * Y ω) + (c + b * Z ω))
+      ((μ ∗ ν).map (fun x ↦ a + c + b * x)) P := by
+  have hmap : HasLaw (fun x : ℝ ↦ a + c + b * x)
+      ((μ ∗ ν).map (fun x ↦ a + c + b * x)) (μ ∗ ν) := hasLaw_map (by fun_prop)
+  apply (hmap.comp (h.hasLaw_fun_add hY hZ)).congr
+  exact ae_of_all _ fun ω ↦ by simp only [Function.comp_apply]; ring
+
+/-- The sum of affine images with a common slope of independent variables with common law
+`μ` is the affine image of the convolution power, with all offsets added. -/
+theorem iIndepFun.hasLaw_finset_sum_affine_convolutionPower (h : iIndepFun X P)
+    (hX : ∀ i, HasLaw (X i) μ P) (s : Finset ι) (a : ι → ℝ) (b : ℝ) :
+    HasLaw (fun ω ↦ ∑ i ∈ s, (a i + b * X i ω))
+      ((μ.convolutionPower s.card).map (fun x ↦ (∑ i ∈ s, a i) + b * x)) P := by
+  have hmap : HasLaw (fun x : ℝ ↦ (∑ i ∈ s, a i) + b * x)
+      ((μ.convolutionPower s.card).map (fun x ↦ (∑ i ∈ s, a i) + b * x))
+      (μ.convolutionPower s.card) := hasLaw_map (by fun_prop)
+  have hsum := hmap.comp (h.hasLaw_finset_sum_convolutionPower hX s)
+  simpa [Function.comp_def, Finset.sum_add_distrib, Finset.mul_sum, Finset.sum_fn] using hsum
+
+/-- An invertible real affine function of a variable with a conditional law has the pushed-forward
+underlying law conditioned on the affine image of the event, without requiring the event to be
+measurable. -/
+theorem HasLaw.affine_cond {X : Ω → ℝ} {s : Set ℝ} (hX : HasLaw X (cond μ s) P) (a : ℝ) {b : ℝ}
+    (hb : b ≠ 0) :
+    HasLaw (fun ω ↦ a + b * X ω) (cond (μ.map fun x ↦ a + b * x) ((fun x ↦ a + b * x) '' s)) P := by
+  have hf : HasLaw (fun x : ℝ ↦ a + b * x) ((cond μ s).map fun x ↦ a + b * x) (cond μ s) :=
+    hasLaw_map (by fun_prop)
+  rw [← TauCeti.Probability.map_affine_cond a hb]
+  exact hf.comp hX
+
+end ProbabilityTheory

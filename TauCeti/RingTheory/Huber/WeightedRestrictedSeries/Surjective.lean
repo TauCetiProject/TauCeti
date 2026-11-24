@@ -65,13 +65,13 @@ theorem weightedMap_surjective [(𝓝 (0 : A)).IsCountablyGenerated] {φ : A →
       φ '' (weightMul T ν (V n).toAddSubgroup : Set A) =
         (weightMul S ν (W n).toAddSubgroup : Set B) :=
     φ.image_weightMul_of_image_eq hTS ν (V n).toAddSubgroup
-  obtain ⟨L, hL, hbound⟩ := exists_lift_eventually_mem_cofinite φ hsurj
+  obtain ⟨L, hL, hbound⟩ := exists_lift_eventually_mem_cofinite φ
     (fun n ν ↦ (weightMul T ν (V n).toAddSubgroup : Set A))
     (fun ν n m hnm ↦ weightMul_mono T ν (hV.antitone hnm))
-    (fun ν ↦ MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B))
+    (fun ν ↦ MvPowerSeries.coeff ν (g : MvPowerSeries (Fin k) B)) (fun ν ↦ hsurj _)
     (fun n ↦ by
       simp only [hmap]
-      exact (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp g.2)) (W n))
+      exact (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp g.property)) (W n))
   let f : MvPowerSeries (Fin k) A := L
   have hf : IsWeightedRestricted T f := by
     rw [isWeightedRestricted_iff]

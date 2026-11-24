@@ -49,10 +49,7 @@ theorem mulHeight_eq_of_numberField {p : K[X]} (hp : p ≠ 0) :
     apply hp
     ext i
     simpa using congrFun h i
-  have hcoeff : ⇑p.toFinsupp.coeff = fun i ↦ p.coeff i := by
-    ext i
-    exact p.toFinsupp_apply i
-  rw [mulHeight_eq_finsupp, Finsupp.mulHeight_eq_mulHeight_coe, hcoeff,
+  rw [mulHeight_eq_finsupp, Finsupp.mulHeight_eq_mulHeight_coe,
     NumberField.mulHeight_eq hx]
   simp only [gaussNorm_eq_iSup _ _ (by positivity : (0 : ℝ) ≤ 1), one_pow, mul_one,
     InfinitePlace.coe_apply, FinitePlace.coe_apply]

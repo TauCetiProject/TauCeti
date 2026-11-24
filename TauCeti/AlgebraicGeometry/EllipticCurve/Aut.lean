@@ -233,11 +233,13 @@ private theorem finite_setOf_r (b₂ b₄ b₆ c d : A) :
   by_cases h3 : (3 : A) = 0
   · have h4 : (4 : A) ≠ 0 := fun h4 ↦ one_ne_zero (α := A) (by linear_combination h4 - h3)
     have hp : (C 4 * X ^ 3 + C b₂ * X ^ 2 + C (2 * b₄) * X ^ 1 + C d : A[X]) ≠ 0 := fun h ↦
-      h4 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using congrArg (coeff · 3) h)
+      h4 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using
+        congrArg (fun p : A[X] ↦ p.coeff 3) h)
     exact (finite_setOfPred_isRoot hp).subset fun r hr ↦ by simpa using hr.2
   · have hp : (C 3 * X ^ 4 + C b₂ * X ^ 3 + C (3 * b₄) * X ^ 2 + C (3 * b₆) * X ^ 1 + C c :
         A[X]) ≠ 0 := fun h ↦
-      h3 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using congrArg (coeff · 4) h)
+      h3 (by simpa [coeff_C_mul_X_pow, coeff_C, -map_mul] using
+        congrArg (fun p : A[X] ↦ p.coeff 4) h)
     exact (finite_setOfPred_isRoot hp).subset fun r hr ↦ by simpa using hr.1
 
 /-- **The automorphism group of an elliptic curve is finite**, over any integral domain and in
@@ -252,7 +254,7 @@ instance finite_autGroup [E.IsElliptic] : Finite E.autGroup := by
   -- a monic quadratic has finitely many roots
   have quad (a b : A) : {x : A | x ^ 2 + a * x + b = 0}.Finite := by
     have hp : (Polynomial.X ^ 2 + Polynomial.C a * Polynomial.X + Polynomial.C b :
-        Polynomial A) ≠ 0 := fun h ↦ by simpa using congrArg (Polynomial.coeff · 2) h
+        Polynomial A) ≠ 0 := fun h ↦ by simpa using congrArg (fun p : Polynomial A ↦ p.coeff 2) h
     exact (Polynomial.finite_setOfPred_isRoot hp).subset fun x hx ↦ by simpa using hx
   have hV : V.Finite := (Polynomial.finite_setOfPred_isRoot
     (Polynomial.X_pow_sub_C_ne_zero (by norm_num : 0 < 12) (1 : A))).subset
@@ -260,7 +262,7 @@ instance finite_autGroup [E.IsElliptic] : Finite E.autGroup := by
   have hR : R.Finite := hV.biUnion fun v _ ↦ finite_setOf_r _ _ _ _ _
   have hS : S.Finite := hV.biUnion fun v _ ↦ hR.biUnion fun r _ ↦ quad _ _
   have hT : T.Finite := hV.biUnion fun v _ ↦ hR.biUnion fun r _ ↦ quad _ _
-  let f : E.autGroup → A × A × A × A := fun C ↦ ((C.1.u⁻¹ : Aˣ), C.1.r, C.1.s, C.1.t)
+  let f : E.autGroup → A × A × A × A := fun C ↦ ((C.val.u⁻¹ : Aˣ), C.val.r, C.val.s, C.val.t)
   have hf : Function.Injective f := fun C D h ↦ by
     simp only [f, Prod.mk.injEq] at h
     exact Subtype.ext (VariableChange.ext (inv_injective (Units.ext h.1)) h.2.1 h.2.2.1 h.2.2.2)
@@ -305,7 +307,7 @@ noncomputable def autGroupMulEquiv [E.IsElliptic] (hj₀ : E.j ≠ 0) (hj₁₇�
   let g : E.autGroup := ⟨E.negVariableChange, E.negVariableChange_smul_self⟩
   have hg : g ≠ 1 := fun h ↦ E.negVariableChange_ne_one (congrArg Subtype.val h)
   have key : ∀ C : E.autGroup, C = 1 ∨ C = g := fun C ↦
-    (E.eq_one_or_eq_negVariableChange_of_smul_eq hj₀ hj₁₇₂₈ C.2).imp Subtype.ext Subtype.ext
+    (E.eq_one_or_eq_negVariableChange_of_smul_eq hj₀ hj₁₇₂₈ C.property).imp Subtype.ext Subtype.ext
   (zmodMulEquivOfGenerator (g := g) (fun x ↦ by rcases key x with h | h <;> subst h <;> simp)
     ((Nat.card_eq_two_iff' 1).mpr ⟨g, hg, fun y hy ↦ (key y).resolve_left hy⟩)).symm
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
-public import TauCeti.Analysis.Normed.Interpolation.RealMethod
+public import TauCeti.Analysis.Normed.Interpolation.RealMethod.Basic
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.Count
@@ -260,22 +260,10 @@ private theorem exists_decomposition (hs : s = (1 - θ) * s₀ + θ * s₁) {t :
 
 /-! ### The row and column integrals of the kernel `φ(t 2 ^ ((s₁ - s₀) j))` -/
 
+/-- The integral of `φ` against `dt / t` is `kMethodConst θ 1`. -/
 private theorem lintegral_ofReal_phi :
     ∫⁻ r, ENNReal.ofReal (phi θ r) ∂multHaar = kMethodConst θ 1 := by
-  -- `kMethodConst θ 1` is the `L¹(dt / t)` norm of `φ`, written as a lambda
-  have hφ : (fun t : ℝ ↦ t ^ (-θ) * min 1 t) = phi θ := rfl
-  rw [kMethodConst_def, hφ, eLpNorm_one_eq_lintegral_enorm measurable_phi.aestronglyMeasurable]
-  refine lintegral_congr_ae ?_
-  filter_upwards [ae_pos_multHaar] with r hr
-  exact (Real.enorm_of_nonneg (phi_nonneg hr.le)).symm
-
-/-- Each column integral of the kernel is `kMethodConst θ 1`, by dilation invariance. -/
-private theorem lintegral_ofReal_phi_mul (ρ : ℝ) (hρ : 0 < ρ) :
-    ∫⁻ t, ENNReal.ofReal (phi θ (t * ρ)) ∂multHaar = kMethodConst θ 1 := by
-  have hmp : MeasurePreserving (ρ * ·) multHaar multHaar :=
-    ⟨measurable_const_mul ρ, map_multHaar_mul_left hρ⟩
-  simp_rw [mul_comm (_ : ℝ) ρ]
-  rw [hmp.lintegral_comp measurable_phi.ennreal_ofReal, lintegral_ofReal_phi]
+  simpa only [phi, mul_one] using lintegral_mul_rpow_neg_mul_min_one_mul θ one_pos
 
 /-- The row sums of the kernel are bounded:
 `|μ| log 2 ∑ j, φ(t 2 ^ (μ j)) ≤ 2 ^ (θ |μ|) c_{θ,1}`. -/
@@ -342,9 +330,9 @@ private theorem rpow_mul_norm_le_toReal (hq : q ≠ 0) {a : ℕ → A}
     (j : ℕ) :
     (2 : ℝ) ^ (s * j) * ‖a j‖ ≤
       (eLpNorm (fun j : ℕ ↦ (((2 : ℝ) ^ (s * j) : ℝ) : 𝕜) • a j) q Measure.count).toReal := by
-  rw [← norm_weight_smul (𝕜 := 𝕜), ← toReal_enorm]
+  rw [← norm_weight_smul (𝕜 := 𝕜), ← toReal_eNorm]
   exact ENNReal.toReal_mono ha.ne
-    (enorm_le_eLpNorm_count (fun j : ℕ ↦ (((2 : ℝ) ^ (s * j) : ℝ) : 𝕜) • a j) j hq)
+    (eNorm_le_eLpNorm_count (fun j : ℕ ↦ (((2 : ℝ) ^ (s * j) : ℝ) : 𝕜) • a j) j hq)
 
 /-- On the interval `[2 ^ (-μ j), 2 ^ (-μ j + |μ|))`, with `μ = s₁ - s₀`, the function
 `t ↦ φ(t 2 ^ (μ j))` is at least `2 ^ (-θ |μ|)`, so `t ^ (-θ) K(t, a)` dominates
@@ -429,12 +417,12 @@ theorem ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp (hs : s₀ ≠ s₁) (hθ 
     (g := fun j ↦ ‖((r : ℝ) : 𝕜) • v j‖ₑ) fun j t ht ↦ by
       have ht0 : 0 < t := lt_of_lt_of_le (by positivity) ht.1
       rw [← ofReal_norm, norm_smul, RCLike.norm_ofReal, abs_of_pos hr, norm_weight_smul,
-        Real.enorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht0.le _) (kFunctional_nonneg ht0.le)),
+        Real.eNorm_of_nonneg (mul_nonneg (Real.rpow_nonneg ht0.le _) (kFunctional_nonneg ht0.le)),
         hr_def]
       exact ENNReal.ofReal_le_ofReal (rpow_mul_le_rpow_neg_mul_kFunctional rfl hθ u j ht)
   have hg : eLpNorm (fun j ↦ ‖((r : ℝ) : 𝕜) • v j‖ₑ) q Measure.count =
       ENNReal.ofReal r * eLpNorm v q Measure.count := by
-    rw [eLpNorm_enorm (fun j ↦ ((r : ℝ) : 𝕜) • v j) .of_discrete,
+    rw [eLpNorm_eNorm (fun j ↦ ((r : ℝ) : 𝕜) • v j) .of_discrete,
       show ENNReal.ofReal r = ‖((r : ℝ) : 𝕜)‖ₑ by
         rw [← ofReal_norm, RCLike.norm_ofReal, abs_of_pos hr]]
     exact eLpNorm_const_smul _ _ _ _
@@ -477,13 +465,14 @@ theorem kMethodENorm_weightedLp_le (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
     rw [lintegral_count]
     exact tsum_ofReal_phi_le hθ.1.le hμ ht
   have hcol : ∀ᵐ j ∂Measure.count, ∫⁻ t, k t j ∂multHaar ≤ K :=
-    Filter.Eventually.of_forall fun j ↦ (lintegral_ofReal_phi_mul _ (by positivity)).le
+    Filter.Eventually.of_forall fun j ↦
+      (lintegral_mul_rpow_neg_mul_min_one_mul θ (by positivity)).le
   have hpt : ∀ᵐ t ∂multHaar, ‖t ^ (-θ) * (weightedLp 𝕜 A q₀ q₁ s₀ s₁).kFunctional t u‖ₑ ≤
       ‖∫⁻ j, k t j * ‖v j‖ₑ ∂Measure.count‖ₑ := by
     filter_upwards [ae_pos_multHaar] with t ht
     obtain ⟨hsum, hle⟩ := rpow_neg_mul_kFunctional_le_tsum rfl hs hθ u
       (rpow_mul_norm_le_toReal (𝕜 := 𝕜) (zero_lt_one.trans_le hq).ne' (lt_top_iff_ne_top.2 hv)) ht
-    rw [enorm_eq_self, lintegral_count, Real.enorm_of_nonneg (mul_nonneg
+    rw [eNorm_eq_self, lintegral_count, Real.eNorm_of_nonneg (mul_nonneg
       (Real.rpow_nonneg ht.le _) (kFunctional_nonneg ht.le))]
     refine (ENNReal.ofReal_le_ofReal hle).trans_eq ?_
     rw [ENNReal.ofReal_tsum_of_nonneg (fun j ↦ mul_nonneg (by positivity)
@@ -494,11 +483,11 @@ theorem kMethodENorm_weightedLp_le (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
   rw [kMethodENorm_def]
   calc eLpNorm (fun t ↦ t ^ (-θ) * (weightedLp 𝕜 A q₀ q₁ s₀ s₁).kFunctional t u) q multHaar
       ≤ eLpNorm (fun t ↦ ∫⁻ j, k t j * ‖v j‖ₑ ∂Measure.count) q multHaar :=
-        eLpNorm_mono_enorm_ae (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u) hpt
+        eLpNorm_mono_eNorm_ae (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u) hpt
     _ ≤ (D * K) ^ (1 - q.toReal⁻¹) * K ^ q.toReal⁻¹ * eLpNorm (fun j ↦ ‖v j‖ₑ) q Measure.count :=
         TauCeti.eLpNorm_lintegral_mul_le hk measurable_from_nat.aemeasurable hq hrow hcol
     _ = D ^ (1 - q.toReal⁻¹) * K * eLpNorm v q Measure.count := by
-        rw [eLpNorm_enorm _ .of_discrete, ENNReal.mul_rpow_of_nonneg _ _
+        rw [eLpNorm_eNorm _ .of_discrete, ENNReal.mul_rpow_of_nonneg _ _
             (by simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hq),
           mul_assoc (D ^ _),
           ← ENNReal.rpow_add _ _ hK0 (kMethodConst_lt_top hθ 1).ne, sub_add_cancel,
@@ -587,7 +576,7 @@ private theorem toWeightedLp_bijective (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 
     have hwa : (fun j : ℕ ↦ (((2 : ℝ) ^ (((1 - θ) * s₀ + θ * s₁) * j) : ℝ) : 𝕜) • a j) = ⇑c :=
       funext fun j ↦ smul_inv_smul₀ (weight_ne_zero _) _
     obtain ⟨u, hu⟩ := mem_range_sumSpaceEmbed_weightedLp (q₀ := q₀) (q₁ := q₁) hs hθ
-      (zero_lt_one.trans_le hq).ne' (a := a) (by rw [hwa, lp.eLpNorm_count]; exact enorm_lt_top)
+      (zero_lt_one.trans_le hq).ne' (a := a) (by rw [hwa, lp.eLpNorm_count]; exact eNorm_lt_top)
     have hmem : u ∈ (weightedLp 𝕜 A q₀ q₁ s₀ s₁).kMethod θ q := by
       rw [mem_kMethod_weightedLp_iff hs hθ hq, hu, hwa]
       exact lp.memℓp c

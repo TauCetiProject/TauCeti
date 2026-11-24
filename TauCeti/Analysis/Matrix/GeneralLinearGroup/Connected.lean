@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Topology.Algebra.Matrix.Realify
 import Mathlib.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.Matrix.Polar
 import TauCeti.Analysis.Matrix.PosDef
@@ -23,6 +24,10 @@ The polar decomposition expresses every invertible matrix as the product of a
 positive-definite matrix and a unitary matrix. The positive-definite cone is convex,
 so both factors lie in path connected spaces, and multiplication is a continuous
 surjection onto the general linear group.
+
+Its realification, the subgroup of `GL (n ⊕ n) ℝ` of invertible real matrices commuting with
+`J` (`Matrix.GeneralLinearGroup.mem_range_realify_iff`), is then path connected as well, being
+the image of `GL n ℂ` under the continuous realification map.
 
 ## References
 
@@ -48,7 +53,7 @@ instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL
     isPathConnected_iff_pathConnectedSpace.mp
       (convex_setOfPred_posDef.isPathConnected ⟨1, PosDef.one⟩)
   let f : {P : Matrix n n ℂ | P.PosDef} × unitaryGroup n ℂ → GL n ℂ :=
-    fun PU => PU.1.2.isUnit.unit * Unitary.toUnits PU.2
+    fun PU => PU.1.property.isUnit.unit * Unitary.toUnits PU.2
   have hf : Function.Surjective f := by
     intro A
     obtain ⟨⟨P, U⟩, ⟨hP, hPU⟩, _⟩ := A.existsUnique_posDef_mul_unitary
@@ -58,6 +63,14 @@ instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL
   apply Units.isOpenEmbedding_val.isEmbedding.isInducing.continuous_iff.mpr
   simpa only [f, Function.comp_def, Units.val_mul, IsUnit.unit_spec,
     Unitary.val_toUnits_apply] using
-    continuous_subtype_val.fst'.matrix_mul continuous_subtype_val.snd'
+    continuous_subtypeVal.fst'.matrix_mul continuous_subtypeVal.snd'
+
+/-- The realified complex general linear group, the subgroup of `GL (n ⊕ n) ℝ` of invertible real
+matrices commuting with `J`, is path connected. -/
+instance instPathConnectedSpaceRangeRealify :
+    PathConnectedSpace (GeneralLinearGroup.realify n ℂ).range :=
+  isPathConnected_iff_pathConnectedSpace.mp <| by
+    rw [MonoidHom.coe_range]
+    exact isPathConnected_range (GeneralLinearGroup.isClosedEmbedding_realify n ℂ).continuous
 
 end TauCeti

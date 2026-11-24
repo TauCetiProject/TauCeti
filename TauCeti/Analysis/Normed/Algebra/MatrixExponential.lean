@@ -12,6 +12,9 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Order.Interval.Set.OrdConnected
+import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Analysis.Normed.Algebra.Exponential
+import TauCeti.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Triangular
@@ -31,9 +34,11 @@ The file also records the exponential identities that are specific to matrices: 
 laws `exp A * exp (-A) = 1` and `exp (-A) * exp A = 1`, together with their forms against an
 arbitrary factor, for an arbitrary matrix over any complete normed entry ring; the invariance of
 the trace under conjugation by the two exponential weights in either order, which needs
-commutative entries; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
+commutative entries; the entrywise effect of conjugating by the exponential line of a real
+diagonal matrix; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
 Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`, and the
-criterion `det (exp K) = 1 ↔ trace K = 0`.
+criterion `det (exp K) = 1 ↔ trace K = 0`. Differentiating entrywise at `t = 0`, the entries of
+the exponential line `t ↦ exp (t • X)` determine those of `X`.
 
 ## The argument
 
@@ -55,12 +60,20 @@ exponentials whenever all their powers agree at those entries.
 * `Matrix.IsUpperTriangular.exp_submatrix`: restriction to order-connected index sets.
 * `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
 * `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
+* `Matrix.IsUpperTriangular.exp_apply_diag_pos`: real diagonal entries exponentiate to positive
+  real diagonal entries.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
+* `Matrix.hasDerivAt_exp_smul_apply`: an entry of `X` is the derivative at `0` of that entry of
+  the exponential line `t ↦ exp (t • X)`.
+* `Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero`: an entry of `X` vanishes if that entry
+  of `exp (t • X)` vanishes for every real `t`.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
   `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
   in both orientations.
 * `Matrix.trace_exp_neg_mul_mul_exp`, `Matrix.trace_exp_mul_mul_exp_neg`: conjugating by the two
   exponential weights preserves the trace, in both orientations.
+* `Matrix.exp_neg_smul_diagonal_mul_mul_exp_smul_diagonal_apply`: conjugating by the exponential
+  line of a real diagonal matrix `diagonal d` multiplies entry `(i, j)` by `e^{t (d j - d i)}`.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
@@ -141,6 +154,27 @@ theorem IsUpperTriangular.exp_submatrix_castSucc {n : ℕ}
 
 end EntrySeries
 
+section PositiveDiagonal
+
+open scoped ComplexOrder
+
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
+
+/-- A real diagonal entry of an upper-triangular matrix exponentiates to a positive real entry. -/
+theorem IsUpperTriangular.exp_apply_diag_pos {ι 𝕜 : Type*} [Fintype ι] [LinearOrder ι]
+    [RCLike 𝕜] {A : Matrix ι ι 𝕜} (hA : A.IsUpperTriangular) (i : ι)
+    (hreal : RCLike.im (A i i) = 0) : 0 < exp A i i := by
+  have hdiag := RCLike.re_eq_self_of_im_eq_zero hreal
+  -- The generic diagonal lemma uses the rational normed-algebra instance; the RCLike
+  -- operator-norm instance reaches the same exponential through a different instance path.
+  have hexp : exp A i i = exp (A i i) := by
+    simpa using! hA.exp_apply_diag i
+  rw [hexp, ← hdiag, RCLike.exp_ofReal]
+  exact RCLike.pos_iff.mpr ⟨by simpa using Real.exp_pos (RCLike.re (A i i)), by simp⟩
+
+end PositiveDiagonal
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {𝕂 : Type*} [RCLike 𝕂]
 
@@ -175,6 +209,32 @@ theorem det_exp (A : Matrix n n 𝕂) : det (exp A) = exp (trace A) := by
         rw [← NormedSpace.exp_add_of_commute ((Commute.refl _).neg_left), neg_add_cancel,
           exp_zero, mul_one]
     _ = exp (trace A) := by rw [← mul_assoc, hconst, one_mul]
+
+section EntryDerivative
+
+variable {m 𝕜 : Type*} [Fintype m] [DecidableEq m] [RCLike 𝕜]
+
+/-- An entry of `X` is the derivative at `0` of that entry of the exponential line
+`t ↦ exp (t • X)`. -/
+theorem hasDerivAt_exp_smul_apply (X : Matrix m m 𝕜) (i j : m) :
+    HasDerivAt (fun t : ℝ ↦ exp (t • X) i j) (X i j) 0 := by
+  have h := (LinearMap.toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j)).hasFDerivAt.comp_hasDerivAt
+    0 (hasDerivAt_exp_smul_const X (0 : ℝ))
+  rw [zero_smul, exp_zero, one_mul] at h
+  -- `h` is about `entryLinearMap ℝ 𝕜 i j ∘ fun t ↦ exp (t • X)` with derivative
+  -- `entryLinearMap ℝ 𝕜 i j X`; both unfold definitionally to the `(i, j)` entry, so `exact`
+  -- closes the goal by that unfolding (`simpa [entryLinearMap_apply]` leaves the derivative
+  -- `toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j) X` unrewritten).
+  exact h
+
+/-- An entry of `X` vanishes if that entry of `exp (t • X)` vanishes for every real `t`. -/
+theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {X : Matrix m m 𝕜} {i j : m}
+    (h : ∀ t : ℝ, exp (t • X) i j = 0) : X i j = 0 := by
+  have hX := hasDerivAt_exp_smul_apply X i j
+  simp only [h] at hX
+  exact hX.unique (hasDerivAt_const 0 0)
+
+end EntryDerivative
 
 end Matrix
 
@@ -248,6 +308,18 @@ theorem trace_exp_mul_mul_exp_neg (A x : Matrix m m 𝔸) :
   rw [Matrix.trace_mul_comm (NormedSpace.exp A * x) (NormedSpace.exp (-A)), exp_neg_mul_exp_mul]
 
 end CommutativeEntries
+
+/-- Conjugating by the exponential line of a real diagonal matrix rescales each entry: entry
+`(i, j)` of `exp (-t • diagonal d) * B * exp (t • diagonal d)` is `e^{t (d j - d i)} * B i j`. -/
+theorem exp_neg_smul_diagonal_mul_mul_exp_smul_diagonal_apply (d : m → ℝ) (B : Matrix m m ℝ)
+    (t : ℝ) (i j : m) :
+    (exp ((-t) • diagonal d) * B * exp (t • diagonal d)) i j =
+      Real.exp (t * (d j - d i)) * B i j := by
+  simp only [← diagonal_smul, exp_diagonal, diagonal_mul, mul_diagonal, Pi.coe_exp,
+    Pi.smul_apply, smul_eq_mul, ← Real.exp_eq_exp_ℝ]
+  rw [mul_comm, ← mul_assoc, ← Real.exp_add]
+  congr 2
+  ring
 
 namespace IsHermitian
 

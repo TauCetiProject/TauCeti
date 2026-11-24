@@ -14,8 +14,8 @@ public import TauCeti.LowDimTopology.Plumbing.NegativeDefinite
 Némethi's lattice homology takes as its standing hypothesis a **negative-definite** plumbing
 graph: the intersection form of the plumbed four-manifold must be negative definite on the whole
 lattice. Checking this directly means diagonalizing (or completing the square on) the intersection
-matrix, which is what `NegativeDefinite.lean` does by hand for the `A₂` plumbing. This file
-supplies a general, purely combinatorial sufficient condition that avoids that work.
+matrix. This file supplies a general, purely combinatorial sufficient condition that avoids that
+work.
 
 The condition is **strict diagonal dominance** of the negated intersection matrix `-A`: for every
 sphere `i`, the framing is more negative than the number of neighbours,
@@ -31,8 +31,8 @@ bound `2 (x i)(x j) ≤ (x i)² + (x j)²` on each edge then gives, for every la
 
 whose right-hand side is a sum of nonpositive terms that is strictly negative once `x ≠ 0`. Hence
 the intersection form is strictly negative away from the origin, which is the self-pairing form of
-negative-definiteness. This recovers `a2Plumbing_isNegativeDefinite` (each vertex of the `A₂`
-plumbing has degree `1` and framing `-2`) as a one-line instance, and, more usefully, certifies
+negative-definiteness. This gives `a2Plumbing_isNegativeDefinite` directly (each vertex of the
+`A₂` plumbing has degree `1` and framing `-2`), and, more usefully, certifies
 negative-definiteness of every plumbing whose framings are sufficiently negative — the generic
 Seifert-fibred examples — without any per-graph square completion.
 
@@ -42,6 +42,7 @@ Seifert-fibred examples — without any per-graph square completion.
   bound `x · x ≤ ∑ i, (weight i + degree i) · (x i)²`.
 * `TauCeti.PlumbingGraph.isNegativeDefinite_of_degree_lt_neg_weight`: strict diagonal dominance
   `degree i < - weight i` for all `i` implies the plumbing is negative definite.
+* `TauCeti.a2Plumbing_isNegativeDefinite`: the `A₂` plumbing is negative definite.
 
 ## References
 
@@ -128,6 +129,23 @@ theorem isNegativeDefinite_of_degree_lt_neg_weight
   exact Finset.sum_neg' hnonpos ⟨i₀, Finset.mem_univ i₀, hstrict⟩
 
 end PlumbingGraph
+
+/-- The `A₂` plumbing is negative definite: its negated intersection matrix is the `A₂` Cartan
+matrix `!![2, -1; -1, 2]`. Its underlying graph is the complete graph on two vertices, so every
+vertex has degree `1`, which is less than the negated framing `2`; the diagonal-dominance
+criterion applies. A self-validating instance of the negative-definite hypothesis of lattice
+homology. -/
+theorem a2Plumbing_isNegativeDefinite : a2Plumbing.IsNegativeDefinite :=
+  a2Plumbing.isNegativeDefinite_of_degree_lt_neg_weight fun i => by
+    -- a vertex of a graph on two vertices has at most one neighbour
+    have hdeg := a2Plumbing.toSimpleGraph.degree_lt_card_verts i
+    -- every framing is `-2`, read off the diagonal of the intersection matrix
+    have hweight : a2Plumbing.weight i = -2 := by
+      rw [← a2Plumbing.intersectionMatrix_diag, a2Plumbing_intersectionMatrix]
+      fin_cases i <;> simp
+    rw [Fintype.card_fin] at hdeg
+    rw [hweight]
+    omega
 
 /-- The triangle plumbing on three spheres, each with framing `-3`: its underlying graph is the
 complete graph `K₃`, so every vertex has degree `2`, and `2 < 3`. A self-validating instance of

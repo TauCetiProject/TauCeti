@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Almost complex structures along the input-exchange family
@@ -49,7 +51,9 @@ main results are:
   the end lift `c + φ_∞`. These are the end coordinates in which the members of
   `TauCeti.Floer.exchangePerturbation` are `H_q(t) dt`.
 * `TauCeti.Floer.contMDiffAt_exchangeAlmostComplex`: for period-one `C^n` end families, the family
-  is `C^n` jointly in the parameter `-1 < c < 2`, the domain point of `S` and the point `x`.
+  is `C^n` jointly in the parameter `-1 < c < 2`, the domain point of `S` and the point `x`; for a
+  normed space `V`, `TauCeti.Floer.contDiffAt_exchangeAlmostComplex` is the same statement with the
+  domain point read in real coordinates.
 * `TauCeti.Floer.isComplexLinearMap_perturbedFDeriv_exchange_one`: for a symplectic vector space
   target, if `u` solves the Floer equation at `σ(z)` for the pair-of-pants data with exchanged
   inputs, then `u ∘ σ` solves it at `z` for the member `c = 1` of the family, perturbation and
@@ -77,10 +81,6 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 namespace TauCeti.Floer
 
 variable {M V : Type*}
-
-/-- The radius `2 exp (2π)` of the disc on which the negative plane data are trivial exceeds `3`. -/
-private theorem three_lt_two_mul_exp_two_pi : 3 < 2 * Real.exp (2 * π) := by
-  nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
 
 section Algebraic
 
@@ -154,7 +154,7 @@ theorem cayley_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {c : ℝ} (hc :
       AlmostComplexStructure.cayley_self, add_zero]
   · obtain ⟨hw₀, hw₁⟩ := half_le_norm_of_le_norm_sub (r := 2) (w := w)
       (abs_le.2 ⟨by linarith [hc.1], hc.2⟩) (abs_le.2 ⟨by linarith [hc.1], by linarith [hc.2]⟩)
-      (by linarith [three_lt_two_mul_exp_two_pi])
+      (by linarith [fourteen_le_two_mul_exp_two_pi])
     rw [exchangeAlmostComplex_of_lt_norm h₀ hw,
       pairOfPantsAlmostComplex_update_inf_base_eq (hJb := hJ) h₀ hw₀ hw₁,
       AlmostComplexStructure.cayley_self, zero_add]
@@ -168,6 +168,23 @@ theorem exchangeAlmostComplex_zero (h₀ : ω.Compatible J₀) :
     (tames_pairOfPantsAlmostComplex h₀ w x) ?_
   rw [cayley_exchangeAlmostComplex h₀ ⟨by norm_num, by norm_num⟩, Complex.ofReal_zero, sub_zero]
   exact (cayley_pairOfPantsAlmostComplex_eq_add h₀ w x).symm
+
+/-- **The family near the inputs.** For `-1 ≤ c ≤ 2`, on the disc `‖w‖ ≤ 3` every member of the
+family is the pair-of-pants structure: the input part and the translated plane part are both `J₀`
+there. -/
+theorem exchangeAlmostComplex_eq_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {c : ℝ}
+    (hc : c ∈ Icc (-1) 2) {w : ℂ} (hw : ‖w‖ ≤ 3) (x : M) :
+    exchangeAlmostComplex h₀ J hJ c w x = pairOfPantsAlmostComplex h₀ J hJ w x := by
+  have h14 := fourteen_le_two_mul_exp_two_pi
+  have hwc : ‖w - c‖ ≤ 2 * Real.exp (2 * π) := by
+    have h := norm_sub_le w (c : ℂ)
+    rw [Complex.norm_real, Real.norm_eq_abs] at h
+    linarith [abs_le.2 (⟨by linarith [hc.1], hc.2⟩ : -2 ≤ c ∧ c ≤ 2)]
+  refine h₀.eq_of_cayley_eq (tames_exchangeAlmostComplex h₀ c w x)
+    (tames_pairOfPantsAlmostComplex h₀ w x) ?_
+  rw [cayley_exchangeAlmostComplex h₀ hc, cayley_pairOfPantsAlmostComplex_eq_add (hJb := hJ) h₀,
+    negativePlaneAlmostComplex_eq_of_norm_le h₀ hwc,
+    negativePlaneAlmostComplex_eq_of_norm_le h₀ (by linarith)]
 
 /-- The input part of the pair-of-pants structure is exchanged by `w ↦ 1 - w`: the input part with
 exchanged end structures at `1 - w` is the input part at `w`. -/
@@ -214,7 +231,7 @@ theorem exchangeAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀) {q 
     exchangeAlmostComplex h₀ J hJ c (q.cylindricalEndLift z) x = J q z.im x := by
   have hw : ‖q.cylindricalEndLift z - c‖ ≤ 2 * Real.exp (2 * π) :=
     (norm_cylindricalEndLift_sub_le hq hc₀ hc₁ (by linarith)).trans
-      (by linarith [three_lt_two_mul_exp_two_pi])
+      (by linarith [fourteen_le_two_mul_exp_two_pi])
   rw [exchangeAlmostComplex_of_norm_le h₀ hw,
     pairOfPantsAlmostComplex_cylindricalEndLift h₀ (by simpa [update_of_ne hq] using hJp)
       (by rwa [endSign_eq_one hq, one_mul]) x, update_of_ne hq]
@@ -285,7 +302,7 @@ theorem contMDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
         (f := fun p : ℝ × (ℂ × M) => (p.2.1 - (p.1 : ℂ), p.2.2)) _
         (hsub.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))
     refine hpl.congr_of_eventuallyEq ?_
-    have h3 : 3 < ‖(w : ℂ) - c‖ := three_lt_two_mul_exp_two_pi.trans_le hge
+    have h3 : 3 < ‖(w : ℂ) - c‖ := lt_of_lt_of_le (by linarith [fourteen_le_two_mul_exp_two_pi]) hge
     filter_upwards [hdist.continuousAt.eventually (lt_mem_nhds h3),
       continuous_fst.continuousAt.eventually (isOpen_Ioo.mem_nhds hc)] with p hp hpc
     rcases le_or_gt ‖p.2.1 - p.1‖ (2 * Real.exp (2 * π)) with hle | hgt
@@ -297,6 +314,24 @@ theorem contMDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
         pairOfPantsAlmostComplex_update_inf_base_eq (hJb := hJ) h₀ hw₀ hw₁,
         negativePlaneAlmostComplex_eq_of_norm_le h₀ hle]
     · rw [exchangeAlmostComplex_of_lt_norm h₀ hgt]
+
+/-- **The family is smooth in real coordinates.** For period-one families `J q t x` of `ω`-tame
+structures on a normed space `V` which are `C^n` on `ℝ × V`, the input-exchange family is `C^n`
+jointly in the parameter `c`, the domain point of `S = ℂ ∖ {0, 1}`, in real coordinates, and the
+point `x`, at every parameter `-1 < c < 2`. -/
+theorem contDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ∞}
+    {J : Puncture → ℝ → V → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
+    (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ n fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {c : ℝ} (hc : c ∈ Ioo (-1) 2) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : V) :
+    ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦ (exchangeAlmostComplex h₀ J hJ p.1
+      (Complex.equivRealProdCLM.symm p.2.1) p.2.2).toLinearMap.toContinuousLinearMap)
+      (c, (z, x)) := by
+  have h := contMDiffAt_exchangeAlmostComplex (I := 𝓘(ℝ, V)) (hJ := hJ) h₀ hJp
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff) hc ⟨_, hz⟩ x
+  have h' := h.comp (c, (z, x)) (contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm (V := V)
+    (n := n)).contMDiffAt
+  exact contMDiffAt_iff_contDiffAt.1 h'
 
 end Smooth
 
@@ -341,37 +376,14 @@ theorem isComplexLinearMap_perturbedFDeriv_exchange_one (h₀ : ω.Compatible J�
     apply Complex.ext <;> simp [e]
   -- The structure at `z` is the exchanged pair-of-pants structure at `σ(z)`.
   rw [exchangeAlmostComplex_one h₀ hJp hJ', ← hσ]
-  -- The perturbation is the pullback along `σ` of the exchanged pair-of-pants perturbation.
-  have hpull (v : ℝ × ℝ) : (fun z x ↦ exchangePerturbation H 1 (e z) x (e v)) =
-      perturbationPullback (fun z ↦ (1, 0) - z)
-        (fun z x ↦ pairOfPantsPerturbation (exchangeEndData H) (e z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation (exchangeEndData H) (e z) x Complex.I) v := by
-    funext z' x
-    rw [perturbationPullback_pairOfPantsPerturbation_exchangeEndData (hH inf)]
-  rw [← equivRealProdCLM_symm_stdComplexLineReal, ← equivRealProdCLM_symm_stdComplexLineImag,
-    hpull, hpull]
   -- The exchanged pair-of-pants perturbation is differentiable in the target point at `σ(z)`.
   have hS : e ((1, 0) - z) ≠ 0 ∧ e ((1, 0) - z) ≠ 1 := by
     rw [hσ]
     exact ⟨fun h0 => hz.2 (by linear_combination -h0), fun h1 => hz.1 (by linear_combination -h1)⟩
-  have hK (v : ℂ) : DifferentiableAt ℝ
-      (fun x ↦ pairOfPantsPerturbation (exchangeEndData H) (e ((1, 0) - z)) x v)
-      (u ((1, 0) - z)) := by
-    have hd := (contDiffAt_pairOfPantsPerturbation_prod (periodic_exchangeEndData hH)
-      (contDiff_uncurry_exchangeEndData hHs) hS (u ((1, 0) - z))).differentiableAt
-      one_ne_zero
-    exact (hd.comp _ ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
-      (differentiableAt_const v)
-  -- The exchange is holomorphic: its derivative is `-1`.
-  have hφ : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z :=
-    (differentiableAt_const _).sub differentiableAt_id
-  have hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (fun z : ℝ × ℝ ↦ (1, 0) - z) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-    rw [fderiv_const_sub, fderiv_fun_id]
-    simp
-  exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback hφ hu (hK 1) (hK Complex.I)
-    hφJ h
+  have hK := differentiableAt_pairOfPantsPerturbation_target (periodic_exchangeEndData hH)
+    (contDiff_uncurry_exchangeEndData hHs) hS (u ((1, 0) - z))
+  exact ω.isComplexLinearMap_perturbedFDeriv_comp_one_sub (exchangePerturbation_one (hH inf)) hu
+    hK h
 
 end Solutions
 

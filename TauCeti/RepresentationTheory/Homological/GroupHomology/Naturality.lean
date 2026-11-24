@@ -41,7 +41,7 @@ namespace TauCeti.groupHomology
 
 open _root_.groupHomology
 
-variable {k G : Type u} [CommRing k] [Group G] [DecidableEq G]
+variable {k G : Type u} [CommRing k] [Group G]
   {A B : Rep.{u} k G}
 
 /-- The inhomogeneous-to-bar chain comparison commutes with coefficient morphisms. -/
@@ -58,8 +58,9 @@ theorem inhomogeneousChainsIso_hom_naturality (φ : A ⟶ B) :
     Finsupp.mapRange_single, inhomogeneousChainsIso,
     HomologicalComplex.Hom.isoOfComponents_hom_f, Iso.symm_hom,
     LinearEquiv.toModuleIso_inv, ModuleCat.hom_ofHom, LinearEquiv.coe_coe,
-    coinvariantsTensorFreeLEquiv_symm_apply, finsuppToCoinvariantsTensorFree_single,
+    LinearEquiv.symm_ofLinearMap, LinearEquiv.coe_ofLinearMap,
     NatTrans.mapHomologicalComplex_app_f]
+  erw [finsuppToCoinvariantsTensorFree_single, finsuppToCoinvariantsTensorFree_single]
   rfl
 
 /-- The comparison between group homology and `Tor` is natural in the coefficients. -/

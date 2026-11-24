@@ -90,7 +90,7 @@ theorem exists_smul_aeval_monomial_cancel (hb : ∀ i, b i ≠ 0)
     rw [m.degree_aeval_monomial_one_of_ne_zero hb]
     simpa [Finsupp.linearCombination_apply, Function.comp_def] using hu.symm
   refine ⟨u, m.leadingCoeff f / m.leadingCoeff (aeval b (monomial u (1 : k))), hdegree, ?_⟩
-  rw [coeff_smul, ← hdegree, ← leadingCoeff, smul_eq_mul]
+  rw [AddMonoidAlgebra.coeff_smul_apply, ← hdegree, ← leadingCoeff, smul_eq_mul]
   exact div_mul_cancel₀ _ (m.leadingCoeff_ne_zero_iff.2 (aeval_monomial_one_ne_zero hb u))
 
 /-- Over a field, every polynomial has a subduction certificate with respect to any family
@@ -154,7 +154,7 @@ leading terms of the current family. -/
 theorem leadingTerm_notMem_adjoin_leadingTerm (h : m.IsSubduction b f Q r) (hr : r ≠ 0) :
     m.leadingTerm r ∉ Algebra.adjoin k (m.leadingTerm '' Set.range b) := by
   intro hmem
-  have hdeg := (m.leadingTerm_mem_adjoin_leadingTerm_iff hr).1 hmem
+  have hdeg := m.leadingTerm_mem_adjoin_leadingTerm_iff.1 hmem
   apply h.irreducible _ (m.degree_mem_support hr)
   apply AddSubmonoid.closure_mono (s := m.degree '' (Set.range b \ {0})) _ hdeg
   rintro _ ⟨_, ⟨⟨i, rfl⟩, _⟩, rfl⟩

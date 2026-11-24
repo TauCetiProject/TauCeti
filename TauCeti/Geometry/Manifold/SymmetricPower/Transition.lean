@@ -115,7 +115,7 @@ theorem symOpenPartialHomeomorph_transition_apply
   funext z
   simp only [Function.comp_apply]
   have hzφ : (φ i).symm (φ i z) = z :=
-    (φ i).left_inv (hVsubφ i z.2)
+    (φ i).left_inv (hVsubφ i z.property)
   rw [hzφ]
 
 open scoped Classical in
@@ -141,10 +141,10 @@ private theorem sum_map_filter_map_eq_map (φ : ι → OpenPartialHomeomorph α 
     rw [Multiset.filter_map, Multiset.map_map, Multiset.filter_map, Multiset.map_map]
     refine Multiset.map_congr (Multiset.filter_congr fun x _ => ?_) fun x _ => ?_
     · simp only [Function.comp_apply, Set.mem_image, Set.mem_inter_iff]
-      refine ⟨?_, fun hx => ⟨x, ⟨x.2, hx⟩, rfl⟩⟩
+      refine ⟨?_, fun hx => ⟨x, ⟨x.property, hx⟩, rfl⟩⟩
       rintro ⟨y, ⟨hyV, hyW⟩, hyx⟩
-      rwa [(φ i).injOn (hVsub i hyV) (hVsub i x.2) hyx] at hyW
-    · simp only [Function.comp_apply, (φ i).left_inv (hVsub i x.2)]
+      rwa [(φ i).injOn (hVsub i hyV) (hVsub i x.property) hyx] at hyW
+    · simp only [Function.comp_apply, (φ i).left_inv (hVsub i x.property)]
   rw [Finset.sum_congr rfl fun i _ => hblock i, ← Multiset.coe_mapAddMonoidHom (ψ j), ← map_sum,
     Multiset.coe_mapAddMonoidHom, ← Multiset.filter_sum, ← Sym.coe_sumSubtype hm q, hqr,
     Sym.filter_mem_sumSubtype hWdisj]
@@ -260,7 +260,7 @@ private theorem analyticAt_coeffExpr
     rw [hRt, Multiset.mem_map] at hz'
     obtain ⟨x, hx, rfl⟩ := hz'
     obtain ⟨j', hj'⟩ := hmem_W x (hmem_t i x hx)
-    have hzU' : φ i x ∈ φ i '' (V i ∩ W j') := ⟨x, ⟨x.2, hj'⟩, rfl⟩
+    have hzU' : φ i x ∈ φ i '' (V i ∩ W j') := ⟨x, ⟨x.property, hj'⟩, rfl⟩
     have hUo : IsOpen (φ i '' (V i ∩ W j')) :=
       (φ i).isOpen_image_of_subset_source ((hVo i).inter (hWo j'))
         (Set.inter_subset_left.trans (hVsub i))
@@ -276,8 +276,8 @@ private theorem analyticAt_coeffExpr
     rw [hRt, Multiset.mem_map] at hz'
     obtain ⟨x, hx, rfl⟩ := hz'
     obtain ⟨y, ⟨hyV, hyW⟩, hyx⟩ := hzU
-    rw [(φ i).injOn (hVsub i hyV) (hVsub i x.2) hyx] at hyW
-    exact (hφψ i j x ⟨x.2, hyW⟩ (hmem_t i x hx)).fun_pow l
+    rw [(φ i).injOn (hVsub i hyV) (hVsub i x.property) hyx] at hyW
+    exact (hφψ i j x ⟨x.property, hyW⟩ (hmem_t i x hx)).fun_pow l
 
 /-- **The transition between two elementary-symmetric charts is analytic at every tuple lying in
 both sources.** The charts are built from disjoint patch families `V`, `W` with multiplicities
@@ -336,8 +336,8 @@ theorem analyticAt_symOpenPartialHomeomorph_transition
   -- a point of the `i`-th block of `t` lies in `V i`, in `t`, and in some `W j'`
   have hmem_t : ∀ i (x : ↥(V i)), x ∈ q i → (x : α) ∈ t := fun i x hx => by
     rw [← hqt]
-    exact (Sym.mem_sumSubtype_iff (fun i' hi' ha => Set.disjoint_left.1 (hVdisj hi') ha x.2)
-      x.2).2 (by simpa using hx)
+    exact (Sym.mem_sumSubtype_iff (fun i' hi' ha => Set.disjoint_left.1 (hVdisj hi') ha x.property)
+      x.property).2 (by simpa using hx)
   have hmem_W : ∀ a ∈ t, ∃ j, a ∈ W j := fun a ha => by
     rw [← hrt] at ha
     exact Sym.exists_mem_of_mem_sumSubtype ha

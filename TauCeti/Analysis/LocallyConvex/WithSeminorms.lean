@@ -9,11 +9,15 @@ public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
 
 /-!
-# Composition of seminorm-bounded maps and absolutely summable series
+# Composition of seminorm-bounded maps, seminorm continuity, and absolutely summable series
 
 Semilinear maps bounded with respect to families of seminorms are closed under composition.
 This supplies composite bounds without requiring topologies on the modules or directedness of
 the seminorm families.
+
+If every `𝕜`-seminorm on a topological additive group whose composites with a family of maps are
+continuous is itself continuous, then the same holds for every `𝕜`-linear map into a polynormable
+`𝕜`-space (`TauCeti.continuous_of_continuous_comp_seminorm`).
 
 In a complete space whose topology is given by a family of seminorms, a series converges as soon
 as it is absolutely summable for every seminorm of the family
@@ -52,13 +56,16 @@ theorem IsBounded.comp {p : ι → Seminorm 𝕜 E} {q : ι' → Seminorm 𝕜�
     _ = _ := (mul_smul C D (t.sup p)).symm
 
 /-- A continuous seminorm of the sum of a series is at most the sum of the seminorms of its
-terms, provided that both series converge. -/
+terms, provided that the series of seminorms converges. -/
 theorem map_tsum_le {𝕜 E β : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [Module 𝕜 E]
-    [TopologicalSpace E] {q : Seminorm 𝕜 E} (hq : Continuous q) {f : β → E} (hf : Summable f)
-    (hqf : Summable fun b ↦ q (f b)) : q (∑' b, f b) ≤ ∑' b, q (f b) :=
-  le_of_tendsto' ((hq.tendsto _).comp hf.hasSum) fun s ↦
-    (Finset.le_sum_of_subadditive q (map_zero q).le (map_add_le_add q) s f).trans
-      (hqf.sum_le_tsum s fun b _ ↦ apply_nonneg q (f b))
+    [TopologicalSpace E] {q : Seminorm 𝕜 E} (hq : Continuous q) {f : β → E}
+    (hqf : Summable fun b ↦ q (f b)) : q (∑' b, f b) ≤ ∑' b, q (f b) := by
+  by_cases hf : Summable f
+  · exact le_of_tendsto' ((hq.tendsto _).comp hf.hasSum) fun s ↦
+      (Finset.le_sum_of_subadditive q (map_zero q).le (map_add_le_add q) s f).trans
+        (hqf.sum_le_tsum s fun b _ ↦ apply_nonneg q (f b))
+  · rw [tsum_eq_zero_of_not_summable hf, map_zero]
+    exact tsum_nonneg fun b ↦ apply_nonneg q (f b)
 
 end Seminorm
 
@@ -89,3 +96,20 @@ theorem summable_of_summable_seminorm (hp : WithSeminorms p) {f : β → E}
     _ < r := hs t ht
 
 end WithSeminorms
+
+namespace TauCeti
+
+/-- If every `𝕜`-seminorm on a topological additive group `L` whose composites with a family of
+maps `f i : E i → L` are continuous is itself continuous, then the same holds for every `𝕜`-linear
+map `L →ₗ[𝕜] F` into a polynormable `𝕜`-space `F`. -/
+theorem continuous_of_continuous_comp_seminorm {𝕜 ι L F : Type*} [NormedField 𝕜]
+    {E : ι → Type*} [∀ i, TopologicalSpace (E i)]
+    [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L] [IsTopologicalAddGroup L]
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [PolynormableSpace 𝕜 F]
+    {f : ∀ i, E i → L}
+    (hsem : ∀ q : Seminorm 𝕜 L, (∀ i, Continuous (q ∘ f i)) → Continuous q)
+    (ψ : L →ₗ[𝕜] F) (hψ : ∀ i, Continuous (ψ ∘ f i)) : Continuous ψ :=
+  (PolynormableSpace.withSeminorms 𝕜 F).continuous_of_continuous_comp ψ fun q ↦
+    hsem (q.val.comp ψ) fun i ↦ q.property.comp (hψ i)
+
+end TauCeti

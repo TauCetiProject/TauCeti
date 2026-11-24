@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.LinearAlgebra.Submodule.Independent
 public import TauCeti.Algebra.Lie.Sl2.RangeKer
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
@@ -190,7 +190,7 @@ private theorem exists_mem_iSup_eigenspace_lie_e_add_eq (t : IsSl2Triple h e f) 
   refine ⟨x, ?_, z, ⟨LinearMap.mem_ker.2 (by simpa using hz),
     Module.End.mem_eigenspace_iff.2 (by simpa using hu)⟩, hxz⟩
   rw [← TauCeti.eigenspaceSup_toSubmodule t]
-  exact x.2
+  exact x.property
 
 omit [CharZero K] [FiniteDimensional K M] in
 /-- The raising operator maps `M_μ` into `M_(μ + 2)`. -/
@@ -213,7 +213,7 @@ theorem eigenspace_add_two_le_map_toEnd_e_sup_ker_toEnd_f (t : IsSl2Triple h e f
   -- The images `e • M_ν ≤ M_(ν + 2)` are independent, so only `ν = μ` contributes to `⁅e, x⁆`.
   rw [← hxz]
   refine Submodule.add_mem_sup ?_ hz
-  rw [← TauCeti.biSup_inf_eigenspace_eq_self (toEnd K L M h)
+  rw [← Module.End.biSup_inf_genEigenspace_eq_of_mem (toEnd K L M h)
     (fun ν ↦ ((toEnd K L M h).eigenspace ν).map (toEnd K L M e)) (· + 2)
     (fun ν _ ↦ map_toEnd_e_eigenspace_le t ν) (Set.mem_univ μ) fun ν _ hν ↦ by simpa using hν]
   refine ⟨?_, hex⟩

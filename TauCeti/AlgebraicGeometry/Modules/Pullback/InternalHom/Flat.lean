@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Flat
 import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Coherence
 import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Restriction
 import TauCeti.CategoryTheory.Monoidal.Closed.Presentation
-import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.InternalHom.Quasicoherent
 
 /-!
@@ -120,16 +120,16 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app
   refine (Scheme.Modules.isIso_iff_of_isOpenCover
     (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr
       fun V ↦ ?_
-  have : IsAffine V.1 := V.2
-  have := V.1.isIso_pullbackIhomComparison_app M N
-  have := (f ∣_ V.1).isIso_pullbackIhomComparison_app_of_isAffine
-    ((Scheme.Modules.pullback V.1.ι).obj M) ((Scheme.Modules.pullback V.1.ι).obj N)
-  have h := ((f ∣_ V.1).isIso_pullbackIhomComparison_app_comp_iff V.1.ι M N).mpr
+  have : IsAffine V.val := V.property
+  have := V.val.isIso_pullbackIhomComparison_app M N
+  have := (f ∣_ V.val).isIso_pullbackIhomComparison_app_of_isAffine
+    ((Scheme.Modules.pullback V.val.ι).obj M) ((Scheme.Modules.pullback V.val.ι).obj N)
+  have h := ((f ∣_ V.val).isIso_pullbackIhomComparison_app_comp_iff V.val.ι M N).mpr
     inferInstance
   rw [morphismRestrict_ι] at h
-  have := (f ⁻¹ᵁ V.1).isIso_pullbackIhomComparison_app
+  have := (f ⁻¹ᵁ V.val).isIso_pullbackIhomComparison_app
     ((Scheme.Modules.pullback f).obj M) ((Scheme.Modules.pullback f).obj N)
-  exact ((f ⁻¹ᵁ V.1).ι.isIso_pullbackIhomComparison_app_comp_iff f M N).mp h
+  exact ((f ⁻¹ᵁ V.val).ι.isIso_pullbackIhomComparison_app_comp_iff f M N).mp h
 
 end
 

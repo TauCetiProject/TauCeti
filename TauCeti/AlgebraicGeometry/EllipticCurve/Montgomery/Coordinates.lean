@@ -54,21 +54,30 @@ a `K`-rational point exactly when `(r³ + A r² + r) / B` is a square in `K`.
 
 ## Main results
 
-* `TauCeti.Montgomery.coordinates_ne_zero`: for `B ≠ 0` the coordinate pair is nonzero.
+* `TauCeti.Montgomery.coordinates_ne_zero` and
+  `TauCeti.Montgomery.coordinates_ne_zero_of_nontrivial`: the coordinate pair is nonzero, for
+  `B ≠ 0`, respectively over a nontrivial domain for any `B`.
 * `TauCeti.Montgomery.coordinates_z_eq_zero_iff` and
   `TauCeti.Montgomery.coordinates_x_eq_zero_iff`: its fields vanish exactly at infinity and at
-  the distinguished point of order two, respectively.
+  the distinguished point of order two, respectively;
+  `TauCeti.Montgomery.z_eq_zero_iff_of_cross_coordinates_eq_zero` and
+  `TauCeti.Montgomery.x_eq_zero_iff_of_cross_coordinates_eq_zero` extend this to arbitrary nonzero
+  representatives over a domain.
 * `TauCeti.Montgomery.coordinates_neg`: the coordinate pair of `-P` is that of `P`.
-* `TauCeti.Montgomery.cross_coordinates_eq_zero_iff`: over a domain, the coordinate pairs of `P`
-  and `Q` have vanishing cross difference exactly when `P = Q` or `P = -Q`.
+* `TauCeti.Montgomery.cross_coordinates_eq_zero_iff` and
+  `TauCeti.Montgomery.cross_eq_zero_iff_of_cross_coordinates_eq_zero`: over a domain, the
+  coordinate pairs of `P` and `Q` (or arbitrary nonzero representatives of them) have vanishing
+  cross difference exactly when `P = Q` or `P = -Q`.
 * `TauCeti.Montgomery.projectiveX_eq_projectiveX_iff`: the fibres of the projective
   `x`-coordinate are the sets `{P, -P}`;
   `TauCeti.Montgomery.projectiveX_eq_projectiveX_iff_orbitRel` says the same with the orbits of
   `ℤˣ`.
 * `TauCeti.Montgomery.toProj_mem_range_projectiveX_iff`: for an elliptic model, `(r : 1)` lies in
   the image of the projective `x`-coordinate exactly when `(r³ + A r² + r) / B` is a square.
-* `TauCeti.Montgomery.cross_coordinates_zsmul_eq_zero_iff`: the coordinate pairs of `[m] Q` and
-  `[n] Q` have vanishing cross difference exactly when `[m - n] Q = 0` or `[m + n] Q = 0`.
+* `TauCeti.Montgomery.cross_coordinates_zsmul_eq_zero_iff` and
+  `TauCeti.Montgomery.cross_eq_zero_iff_zsmul_eq_zero_of_cross_coordinates_eq_zero`: the coordinate
+  pairs of `[m] Q` and `[n] Q` (or arbitrary nonzero representatives of them) have vanishing cross
+  difference exactly when `[m - n] Q = 0` or `[m + n] Q = 0`.
 * `TauCeti.Montgomery.exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero`: the stage-2
   criterion, for `[q] Q = 0` and a step `w > 0`.
 
@@ -141,6 +150,21 @@ section Domain
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {A B : R}
 
+/-- Over a nontrivial domain, the coordinate pair of a native point is nonzero, also for `B = 0`,
+where the model `y² = x³` is singular at `(0, 0)`; see `coordinates_ne_zero` for the version over
+an arbitrary commutative ring with `B ≠ 0`. -/
+@[simp]
+theorem coordinates_ne_zero_of_nontrivial [Nontrivial R] (P : (model A B).toAffine.Point) :
+    coordinates A B P ≠ 0 := by
+  rcases P with _ | ⟨x, y, hns⟩
+  · simp [← Affine.Point.zero_def, Pair.eq_zero_iff]
+  · rw [coordinates_some, Ne, Pair.eq_zero_iff]
+    rintro ⟨rfl, rfl⟩
+    rw [Affine.nonsingular_iff, Affine.equation_iff] at hns
+    obtain ⟨he, hy⟩ := hns
+    obtain rfl : y = 0 := by simpa using he
+    simp at hy
+
 /-- The coordinate pair of the distinguished point of order two is `(0, B)`. -/
 @[simp]
 theorem coordinates_twoTorsionPoint (hB : B ≠ 0) :
@@ -176,6 +200,32 @@ theorem cross_coordinates_eq_zero_iff (hB : B ≠ 0) {P Q : (model A B).toAffine
     simp_rw [Affine.Point.neg_some, Affine.Point.some.injEq, true_and, ← sub_eq_zero (a := y₁),
       ← mul_eq_zero, Affine.negY]
     linear_combination e₁ - e₂
+
+/-- For `B ≠ 0` over a domain, a nonzero representative of the coordinate pair of `P` has vanishing
+second field exactly when `P` is the point at infinity. -/
+theorem z_eq_zero_iff_of_cross_coordinates_eq_zero (hB : B ≠ 0)
+    {P : (model A B).toAffine.Point} {S : Pair R} (hS : S ≠ 0)
+    (hSP : S.cross (coordinates A B P) = 0) : S.z = 0 ↔ P = 0 := by
+  rw [Pair.z_eq_zero_iff_of_cross_eq_zero hS (coordinates_ne_zero hB P) hSP,
+    coordinates_z_eq_zero_iff hB]
+
+/-- For `B ≠ 0` over a domain, a nonzero representative of the coordinate pair of `P` has vanishing
+first field exactly when `P` is the distinguished point of order two `(0, 0)`. -/
+theorem x_eq_zero_iff_of_cross_coordinates_eq_zero (hB : B ≠ 0)
+    {P : (model A B).toAffine.Point} {S : Pair R} (hS : S ≠ 0)
+    (hSP : S.cross (coordinates A B P) = 0) : S.x = 0 ↔ P = twoTorsionPoint A hB := by
+  rw [Pair.x_eq_zero_iff_of_cross_eq_zero hS (coordinates_ne_zero hB P) hSP,
+    coordinates_x_eq_zero_iff hB]
+
+/-- **Representative-independent equality up to sign.** For `B ≠ 0` over a domain, nonzero
+representatives of the coordinate pairs of two native points have vanishing cross difference
+exactly when the points are equal or negatives of each other. -/
+theorem cross_eq_zero_iff_of_cross_coordinates_eq_zero (hB : B ≠ 0)
+    {P Q : (model A B).toAffine.Point} {S₁ S₂ : Pair R} (hS₁ : S₁ ≠ 0) (hS₂ : S₂ ≠ 0)
+    (h₁ : S₁.cross (coordinates A B P) = 0) (h₂ : S₂.cross (coordinates A B Q) = 0) :
+    S₁.cross S₂ = 0 ↔ P = Q ∨ P = -Q := by
+  rw [Pair.cross_eq_zero_congr hS₁ (coordinates_ne_zero hB P) hS₂ (coordinates_ne_zero hB Q)
+    h₁ h₂, cross_coordinates_eq_zero_iff hB]
 
 end Domain
 
@@ -251,6 +301,18 @@ theorem cross_coordinates_zsmul_eq_zero_iff (hB : B ≠ 0) {Q : (model A B).toAf
       (m - n) • Q = 0 ∨ (m + n) • Q = 0 := by
   rw [cross_coordinates_eq_zero_iff hB, sub_zsmul, add_zsmul, add_neg_eq_zero,
     add_eq_zero_iff_eq_neg]
+
+/-- **The cross-difference criterion for arbitrary nonzero representatives of scalar multiples.**
+For `B ≠ 0`, nonzero representatives of the coordinate pairs of `[m] Q` and `[n] Q` have vanishing
+cross difference exactly when `[m - n] Q = 0` or `[m + n] Q = 0`. -/
+theorem cross_eq_zero_iff_zsmul_eq_zero_of_cross_coordinates_eq_zero (hB : B ≠ 0)
+    {Q : (model A B).toAffine.Point} {m n : ℤ} {S₁ S₂ : Pair K}
+    (hS₁ : S₁ ≠ 0) (hS₂ : S₂ ≠ 0)
+    (h₁ : S₁.cross (coordinates A B (m • Q)) = 0)
+    (h₂ : S₂.cross (coordinates A B (n • Q)) = 0) :
+    S₁.cross S₂ = 0 ↔ (m - n) • Q = 0 ∨ (m + n) • Q = 0 := by
+  rw [Pair.cross_eq_zero_congr hS₁ (coordinates_ne_zero hB (m • Q)) hS₂
+    (coordinates_ne_zero hB (n • Q)) h₁ h₂, cross_coordinates_zsmul_eq_zero_iff hB]
 
 /-- If `[q] Q = 0` and `q = m + n` or `q = m - n`, then the coordinate pairs of `[m] Q` and
 `[n] Q` have vanishing cross difference. -/

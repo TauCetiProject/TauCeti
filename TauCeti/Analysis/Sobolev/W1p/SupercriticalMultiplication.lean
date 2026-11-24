@@ -60,21 +60,13 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ℝ≥0} [Fact (1 ≤ (p : ℝ≥0∞))]
 
-private theorem W1p.norm_morreyRepresentative_le_embedding
-    (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
-    ‖W1p.morreyRepresentative u hp x‖ ≤ ‖W1p.morreyEmbedding hp u‖ := by
-  rw [← W1p.morreyEmbedding_apply_apply, ← HolderSpace.toBoundedContinuousFunction_apply]
-  exact (BoundedContinuousFunction.norm_coe_le_norm
-    (W1p.morreyEmbedding hp u).toBoundedContinuousFunction x).trans
-      (HolderSpace.norm_toBoundedContinuousFunction_le (W1p.morreyEmbedding hp u))
-
-private theorem W1p.enorm_morreyRepresentative_le_embedding
+private theorem W1p.enorm_morreyRepresentative_le_enorm_morreyEmbedding
     (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     ‖W1p.morreyRepresentative u hp x‖ₑ ≤ ‖W1p.morreyEmbedding hp u‖ₑ := by
   rw [← ofReal_norm, ← ofReal_norm]
-  exact ENNReal.ofReal_le_ofReal (W1p.norm_morreyRepresentative_le_embedding hp u x)
+  exact ENNReal.ofReal_le_ofReal (W1p.norm_morreyRepresentative_le_norm_morreyEmbedding hp u x)
 
-private theorem W1p.enorm_morreyRepresentative_sub_le_embedding_sub
+private theorem W1p.enorm_morreyRepresentative_sub_le_enorm_morreyEmbedding_sub
     (hp : (finrank ℝ E : ℝ≥0) < p) (u v : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     ‖W1p.morreyRepresentative u hp x - W1p.morreyRepresentative v hp x‖ₑ ≤
       ‖W1p.morreyEmbedding hp u - W1p.morreyEmbedding hp v‖ₑ := by
@@ -86,17 +78,8 @@ private theorem W1p.enorm_morreyRepresentative_sub_le_embedding_sub
     _ = ‖W1p.morreyRepresentative (u - v) hp x‖ₑ := by
       rw [← map_sub, W1p.morreyEmbedding_apply_apply]
     _ ≤ ‖W1p.morreyEmbedding hp (u - v)‖ₑ :=
-      W1p.enorm_morreyRepresentative_le_embedding hp (u - v) x
+      W1p.enorm_morreyRepresentative_le_enorm_morreyEmbedding hp (u - v) x
     _ = ‖W1p.morreyEmbedding hp u - W1p.morreyEmbedding hp v‖ₑ := by rw [map_sub]
-
-private theorem W1p.memLp_top_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p)
-    (u : W1p mu ⊤ (p : ℝ≥0∞)) :
-    MemLp (W1p.morreyRepresentative u hp) ∞ (mu.restrict (⊤ : Opens E)) := by
-  refine ((W1p.morreyEmbedding hp u).toBoundedContinuousFunction.memLp_top
-    (μ := mu.restrict (⊤ : Opens E))).ae_eq ?_
-  filter_upwards with x
-  rw [HolderSpace.toBoundedContinuousFunction_apply,
-    W1p.morreyEmbedding_apply_apply]
 
 private theorem W1p.memLp_mul_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p)
     (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
@@ -145,7 +128,7 @@ private theorem W1p.enorm_testFunction_sub_morreyRepresentative_le
     ‖(phi : E → ℝ) x - W1p.morreyRepresentative u hp x‖ₑ ≤
       ‖W1p.morreyEmbedding hp a - W1p.morreyEmbedding hp u‖ₑ := by
   rw [← W1p.morreyRepresentative_ofTestFunction (mu := mu) hp phi, hphi]
-  exact W1p.enorm_morreyRepresentative_sub_le_embedding_sub hp a u x
+  exact W1p.enorm_morreyRepresentative_sub_le_enorm_morreyEmbedding_sub hp a u x
 
 /-- The error of approximating the product `u v` by `phi * v` is bounded by the uniform error of
 `phi` times the `L¹` norm of `v`. -/
@@ -160,7 +143,7 @@ private theorem W1p.lintegral_mul_value_sub_le (hp : (finrank ℝ E : ℝ≥0) <
   refine lintegral_mono_ae ?_
   filter_upwards [(W1p.value_ae_eq_morreyRepresentative v hp).filter_mono
     (ae_mono Measure.restrict_le_self)] with x hv
-  rw [← hv, ← sub_mul, enorm_mul]
+  rw [← hv, ← sub_mul, eNorm_mul]
   gcongr
   exact W1p.enorm_testFunction_sub_morreyRepresentative_le hp phi a u hphi x
 
@@ -184,7 +167,7 @@ private theorem W1p.lintegral_mulGradient_sub_le (hp : (finrank ℝ E : ℝ≥0)
   have hmeas : AEMeasurable (fun x =>
       ‖W1p.morreyEmbedding hp a - W1p.morreyEmbedding hp u‖ₑ * ‖W1p.gradient v x‖ₑ)
       (mu.restrict (V : Set E)) :=
-    ((Lp.aestronglyMeasurable (W1p.gradient v)).mono_measure hres).enorm.const_mul _
+    ((Lp.aestronglyMeasurable (W1p.gradient v)).mono_measure hres).eNorm.const_mul _
   rw [← lintegral_const_mul' _ _ (by finiteness),
     ← lintegral_const_mul' _ _ (by finiteness), ← lintegral_add_left' hmeas]
   refine lintegral_mono_ae ?_
@@ -204,13 +187,13 @@ private theorem W1p.lintegral_mulGradient_sub_le (hp : (finrank ℝ E : ℝ≥0)
     rw [sub_smul, smul_sub]
     abel
   rw [hsplit]
-  refine (enorm_add_le _ _).trans (add_le_add ?_ ?_)
-  · rw [enorm_smul]
+  refine (eNorm_add_le _ _).trans (add_le_add ?_ ?_)
+  · rw [eNorm_smul]
     gcongr
     exact W1p.enorm_testFunction_sub_morreyRepresentative_le hp phi a u hphi x
-  · rw [enorm_smul]
+  · rw [eNorm_smul]
     gcongr
-    exact W1p.enorm_morreyRepresentative_le_embedding hp v x
+    exact W1p.enorm_morreyRepresentative_le_enorm_morreyEmbedding hp v x
 
 /-- The product of two Morrey representatives is locally integrable. -/
 private theorem W1p.locallyIntegrableOn_mul_morreyRepresentative
@@ -457,9 +440,9 @@ private theorem W1p.norm_coe_mul_le_ae (hp : (finrank ℝ E : ℝ≥0) < p)
       (W1p.value_ae_eq_morreyRepresentative v hp).filter_mono (ae_mono Measure.restrict_le_self)]
     with x hfst hsnd hvfst hvsnd husnd hvalue hgradient hvrep
   have hu0 : ‖W1p.morreyRepresentative u hp x‖ ≤ ‖W1p.morreyEmbedding hp u‖ :=
-    W1p.norm_morreyRepresentative_le_embedding hp u x
+    W1p.norm_morreyRepresentative_le_norm_morreyEmbedding hp u x
   have hv0 : ‖W1p.morreyRepresentative v hp x‖ ≤ ‖W1p.morreyEmbedding hp v‖ :=
-    W1p.norm_morreyRepresentative_le_embedding hp v x
+    W1p.norm_morreyRepresentative_le_norm_morreyEmbedding hp v x
   have hvvalue : ‖W1p.morreyRepresentative v hp x‖ ≤
       ‖(v : Sobolev1JetLp mu ⊤ (p : ℝ≥0∞)) x‖ := by
     rw [← hvrep, hvfst]

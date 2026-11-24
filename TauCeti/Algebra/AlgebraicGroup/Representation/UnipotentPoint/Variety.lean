@@ -25,7 +25,7 @@ nor the vanishing of the characteristic-polynomial equations of `ρ` alone.
 
 When `H` is of finite type, `I_U` is the radical of the unipotence ideal `J_ρ` of every faithful
 finite-dimensional representation `ρ`, it may be computed with the unipotent points valued in any
-algebraically closed extension of `k`, and its points with values in a perfect field are exactly
+algebraically closed extension of `k`, and its points with values in a field are exactly
 the unipotent points.
 
 The unipotent variety contains the identity, is stable under inversion, and every homomorphism of
@@ -43,8 +43,13 @@ of the unipotent variety and the morphisms between unipotent varieties on coordi
   unipotence ideal of any faithful representation.
 * `TauCeti.HopfAlgebra.mem_unipotentVarietyIdeal_iff_of_isAlgClosed`: it may be computed with the
   unipotent points valued in any algebraically closed extension.
-* `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_ker_iff`: its points with values in a perfect
-  field are the unipotent points.
+* `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_ker_iff`: its points with values in a field
+  are the unipotent points.
+* `TauCeti.HopfAlgebra.unipotenceIdeal_le_unipotentVarietyIdeal`: it contains the unipotence ideal
+  of every finite-dimensional representation.
+* `TauCeti.HopfAlgebra.endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotentVarietyIdeal_le_ker`: its
+  points with values in any commutative algebra satisfy `(ρ(g) - 1) ^ dim M = 0` in every
+  finite-dimensional representation `ρ` on `M`.
 * `TauCeti.HopfAlgebra.comap_antipodeAlgHom_unipotentVarietyIdeal`: stability under inversion.
 * `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_comap`: functoriality along homomorphisms of
   affine groups.
@@ -162,6 +167,25 @@ theorem comap_unipotentVarietyIdeal_bialgEquiv {H' : Type w} [CommRing H']
   rw [BialgHom.mapDomain_apply_apply]
   exact hx g' ((isUnipotentPoint_mapDomain_iff e g').mp hg)
 
+/-- The unipotence ideal of every finite-dimensional representation is contained in the ideal of
+the unipotent variety: unipotent points act unipotently on every representation. Unlike
+`radical_unipotenceIdeal_eq_unipotentVarietyIdeal`, the representation need not be faithful. -/
+theorem unipotenceIdeal_le_unipotentVarietyIdeal (M : FGComoduleCat.{u, v, u} k H) :
+    Comodule.unipotenceIdeal k H M ≤ unipotentVarietyIdeal k H := fun x hx ↦
+  (mem_unipotentVarietyIdeal_iff x).mpr fun g hg ↦
+    (Comodule.unipotenceIdeal_le_ker_iff_isUnipotent g).mpr ((isUnipotentPoint_def g).mp hg M) hx
+
+/-- **Points of the unipotent variety act unipotently, with a uniform bound.** Let `g` be a point
+of the unipotent variety with values in any commutative `k`-algebra `B`, possibly nonreduced: an
+algebra homomorphism `H → B` killing its ideal. Then `(ρ(g) - 1) ^ dim M = 0` for every
+finite-dimensional representation `ρ` on `M`. -/
+theorem endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotentVarietyIdeal_le_ker
+    (M : FGComoduleCat.{u, v, u} k H) {B : Type w} [CommRing B] [Algebra k B] (g : H →ₐ[k] B)
+    (hg : unipotentVarietyIdeal k H ≤ RingHom.ker g) :
+    (Comodule.endOfPoint M g - 1) ^ Module.finrank k M = 0 :=
+  g.endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotenceIdeal_le_ker
+    ((unipotenceIdeal_le_unipotentVarietyIdeal M).trans hg)
+
 end Field
 
 section FiniteType
@@ -188,9 +212,9 @@ theorem mem_unipotentVarietyIdeal_iff_of_isAlgClosed (K : Type u) [Field K] [Alg
   rw [← radical_unipotenceIdeal_eq_unipotentVarietyIdeal M hM,
     Comodule.mem_radical_unipotenceIdeal_iff K M hM]
 
-/-- The points of the unipotent variety with values in a perfect field are exactly the unipotent
+/-- The points of the unipotent variety with values in a field are exactly the unipotent
 points. -/
-theorem unipotentVarietyIdeal_le_ker_iff {K : Type u} [Field K] [Algebra k K] [PerfectField K]
+theorem unipotentVarietyIdeal_le_ker_iff {K : Type u} [Field K] [Algebra k K]
     (g : WithConv (H →ₐ[k] K)) :
     unipotentVarietyIdeal k H ≤ RingHom.ker g.ofConv ↔ IsUnipotentPoint g := by
   obtain ⟨M, hM⟩ := Comodule.exists_isFaithful (k := k) (H := H)

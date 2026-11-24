@@ -28,8 +28,8 @@ vanishing theorems for the classifying space have to be applied. In particular, 
 abelian group on which multiplication by an integer `m` is bijective and `k` is a commutative
 semisimple ring in which `m = 0`, then every `K(A, 1)` space has the `k`-homology of a point
 (`TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul`). For
-`m = 2` and `k = 𝔽₂`: every `K(A, 1)` space of a uniquely two-divisible group has the mod-two
-homology of a point
+`m = 2` and `k = 𝔽₂`, or any semisimple `k` in which `2 = 0`: every `K(A, 1)` space of a uniquely
+two-divisible group has the mod-two homology of a point
 (`TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_isUniquelyTwoDivisible`).
 This is the case `n = 1` of the mod-two acyclicity of the Eilenberg--Mac Lane spaces `K(A, n)`,
 stated for every space of the homotopy type, which is the form in which the induction through
@@ -77,26 +77,27 @@ theorem nonempty_singularHomologyIsoGroupHomology {G : Type u} [Group G] {X : Ty
   exact ⟨(asIso (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
     (TopCat.ofHom f))).symm ≪≫ classifyingSpaceSingularHomologyIsoGroupHomology k G n⟩
 
-variable (k : Type) [CommRing k] [IsSemisimpleRing k] {m : ℤ}
+variable (k : Type u) [CommRing k] [IsSemisimpleRing k] {m : ℤ}
 
 /-- **`K(A, 1)` spaces of uniquely `m`-divisible groups are acyclic modulo `m`.** If
 multiplication by the integer `m` is a bijection of the abelian group `A`, then every `K(A, 1)`
 space has no homology in positive degrees with coefficients in a commutative semisimple ring `k`
 in which `m = 0`. -/
-theorem subsingleton_singularHomology_of_bijective_zsmul (hmk : (m : k) = 0) {A : Type}
-    [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a) {X : Type} [TopologicalSpace X]
+theorem subsingleton_singularHomology_of_bijective_zsmul (hmk : (m : k) = 0) {A : Type u}
+    [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a) {X : Type u} [TopologicalSpace X]
     {x : X} (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) (n : ℕ) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (n + 1)) :=
   have := subsingleton_groupHomology_of_bijective_zsmul k hmk hA n
   (hX.nonempty_singularHomologyIsoGroupHomology k (n + 1)).some.toLinearEquiv.toEquiv.subsingleton
 
 /-- **Mod-two acyclicity of `K(A, 1)` spaces.** For a uniquely two-divisible abelian group `A`,
-every `K(A, 1)` space has the mod-two homology of a point: `Hᵢ(X; 𝔽₂) = 0` for all `i > 0`. -/
-theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible {A : Type} [AddCommGroup A]
-    (hA : IsUniquelyTwoDivisible A) {X : Type} [TopologicalSpace X] {x : X}
+every `K(A, 1)` space has the mod-two homology of a point: `Hᵢ(X; k) = 0` for all `i > 0`, with
+coefficients in a commutative semisimple ring `k` in which `2 = 0`, such as `𝔽₂`. -/
+theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible (hk : (2 : k) = 0) {A : Type u}
+    [AddCommGroup A] (hA : IsUniquelyTwoDivisible A) {X : Type u} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) (n : ℕ) :
-    Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (n + 1)) :=
-  subsingleton_singularHomology_of_bijective_zsmul (ZMod 2) (m := 2) (by decide)
+    Subsingleton (((singularChains k).obj (TopCat.of X)).homology (n + 1)) :=
+  subsingleton_singularHomology_of_bijective_zsmul k (m := 2) (mod_cast hk)
     ((isUniquelyTwoDivisible_iff A).1 hA) hX n
 
 end IsEilenbergMacLaneSpaceOne

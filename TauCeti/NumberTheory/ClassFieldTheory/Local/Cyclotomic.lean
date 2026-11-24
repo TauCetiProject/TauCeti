@@ -152,7 +152,7 @@ private theorem absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_sel
       frobeniusAlgEquiv (K := K) (L := 𝓤 f) := by
     have h := (artinMap_restrict K (𝓤 f) (𝓤 f).val π σ hσ).symm.trans
       (localArtinMap_uniformizer K (𝓤 f) (𝓤 f).val hπ)
-    exact Abelianization.equivOfComm.injective (Additive.ofMul.injective h)
+    exact Group.Abelianization.equivOfComm.injective (Additive.ofMul.injective h)
   have hy : (⟨x, hmem⟩ : 𝓤 f) ^ Nat.card 𝓀[K] ^ f = ⟨x, hmem⟩ := Subtype.ext hx
   have h := (𝓤 f).val.restrictNormalHom_commutes (absoluteGaloisGroupRestrictEquiv K σ)
     ⟨x, hmem⟩
@@ -166,7 +166,7 @@ represent the local Artin symbol of a uniformizer `π` in `Gal(L/K)ᵃᵇ`. Then
 theorem localArtinMap_cyclotomic_uniformizer (L : Type*) [Field L] [Algebra K L]
     [FiniteDimensional K L] [IsGalois K L] (ι : L →ₐ[K] SeparableClosure K) {π : Kˣ}
     (hπ : IsUniformizer K π) {σ : Gal(L/K)}
-    (hσ : localArtinMap K L ι (Additive.ofMul π) = Additive.ofMul (Abelianization.of σ))
+    (hσ : localArtinMap K L ι (Additive.ofMul π) = Additive.ofMul (Group.Abelianization.of σ))
     {m : ℕ} (hm : (Nat.card 𝓀[K]).Coprime m) {ζ : L} (hζ : ζ ^ m = 1) :
     σ ζ = ζ ^ Nat.card 𝓀[K] := by
   have hm0 : m ≠ 0 := by
@@ -191,12 +191,13 @@ theorem localArtinMap_cyclotomic_padic (p : ℕ) [Fact p.Prime] (L : Type*) [Fie
     [Algebra ℚ_[p] L] [FiniteDimensional ℚ_[p] L] [IsGalois ℚ_[p] L]
     (ι : L →ₐ[ℚ_[p]] SeparableClosure ℚ_[p]) {σ : Gal(L/ℚ_[p])}
     (hσ : localArtinMap ℚ_[p] L ι
-        (Additive.ofMul (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero))) =
-      Additive.ofMul (Abelianization.of σ))
+        (Additive.ofMul (padicPrimeUnit p)) =
+      Additive.ofMul (Group.Abelianization.of σ))
     {m : ℕ} (hm : p.Coprime m) {ζ : L} (hζ : ζ ^ m = 1) :
     σ ζ = ζ ^ p := by
-  have h := localArtinMap_cyclotomic_uniformizer ℚ_[p] L ι (Padic.isUniformizer_natCast_self p)
-    hσ (by rwa [Padic.natCard_residueField]) hζ
+  have h := localArtinMap_cyclotomic_uniformizer ℚ_[p] L ι
+    (isUniformizer_padicPrimeUnit p) hσ
+    (by rwa [Padic.natCard_residueField]) hζ
   rwa [Padic.natCard_residueField] at h
 
 /-- **The `ℚ₂(ζ₅)` test of local reciprocity.** Over `ℚ_[2]`, the Artin symbol of `2` sends a
@@ -205,11 +206,11 @@ degree four of `ℚ_[2]`, and geometric Frobenius would send `ζ` to `ζ ^ 3`. -
 theorem localArtinMap_Q2_zeta5 (E : Type*) [Field E] [Algebra ℚ_[2] E]
     [FiniteDimensional ℚ_[2] E] [IsGalois ℚ_[2] E] (ι : E →ₐ[ℚ_[2]] SeparableClosure ℚ_[2])
     {σ : Gal(E/ℚ_[2])}
-    (hσ : localArtinMap ℚ_[2] E ι (Additive.ofMul (Units.mk0 (2 : ℚ_[2]) two_ne_zero)) =
-      Additive.ofMul (Abelianization.of σ))
+    (hσ : localArtinMap ℚ_[2] E ι (Additive.ofMul (padicPrimeUnit 2)) =
+      Additive.ofMul (Group.Abelianization.of σ))
     {ζ : E} (hζ : ζ ^ 5 = 1) :
     σ ζ = ζ ^ 2 :=
-  localArtinMap_cyclotomic_padic 2 E ι (by simpa using hσ) (by norm_num) hζ
+  localArtinMap_cyclotomic_padic 2 E ι hσ (by norm_num) hζ
 
 /-! ### The cyclotomic character of absolute Artin symbols -/
 
@@ -319,7 +320,7 @@ in the separable closure: such a root lies in `ℚ_p(ζ)` for a primitive `p^(n+
 private theorem absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_one
     (σ : Field.absoluteGaloisGroup ℚ_[p])
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p]
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)))
+      (padicPrimeUnit p))
     {n : ℕ} {t : SeparableClosure ℚ_[p]} (ht : t ^ p ^ n = 1) :
     absoluteGaloisGroupRestrictEquiv ℚ_[p] σ t = t := by
   have hp := (Fact.out : p.Prime)
@@ -339,15 +340,16 @@ private theorem absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_
     (irreducible_cyclotomic_prime_pow_ratPadic p (n + 2)) (by omega)
   rw [hp.pow_minFac (by omega)] at hnorm
   have hne : ζ' - 1 ≠ 0 := sub_ne_zero.2 (hζ'.ne_one (by omega))
-  have hmem : Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 hp.ne_zero) ∈ normGroup ℚ_[p] E :=
+  have hmem : padicPrimeUnit p ∈ normGroup ℚ_[p] E :=
     mem_normGroup_iff.2 ⟨Units.mk0 _ hne, by simp [hnorm]⟩
   -- The restriction of `σ` to `ℚ_p(ζ)` represents the Artin symbol of the norm `p`, which is
   -- trivial, and `Gal(ℚ_p(ζ)/ℚ_p)` embeds in `(ℤ/mℤ)ˣ` through its action on `ζ`.
   have hres := (artinMap_restrict ℚ_[p] E E.val _ σ hσ).symm.trans
     ((localArtinMap_eq_zero_iff ℚ_[p] E E.val _).2 hmem)
   have h1 : E.val.restrictNormalHom (absoluteGaloisGroupRestrictEquiv ℚ_[p] σ) = 1 := by
-    have h := congrArg (Abelianization.lift (hζ'.autToPow ℚ_[p])) (Additive.ofMul.injective hres)
-    rw [Abelianization.lift_apply_of, map_one] at h
+    have h := congrArg (Group.Abelianization.lift (hζ'.autToPow ℚ_[p])) (Additive.ofMul.injective
+        hres)
+    rw [Group.Abelianization.lift_apply_of, map_one] at h
     exact hζ'.autToPow_injective ℚ_[p] (h.trans (map_one _).symm)
   have hfix : absoluteGaloisGroupRestrictEquiv ℚ_[p] σ ζ = ζ := by
     have h := E.val.restrictNormalHom_commutes (absoluteGaloisGroupRestrictEquiv ℚ_[p] σ) ζ'
@@ -363,7 +365,7 @@ Galois group of `ℚ_[p]` represents the absolute local Artin symbol of `p`, the
 order, because `p` is a norm from every `ℚ_p(μ_{pⁿ})`. -/
 theorem localCyclotomicCharacter_artinMap_padic_uniformizer (σ : Field.absoluteGaloisGroup ℚ_[p])
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p]
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero))) :
+      (padicPrimeUnit p)) :
     localCyclotomicCharacter p ℚ_[p] σ = 1 := by
   rw [← cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv,
     ← map_one (cyclotomicCharacter (SeparableClosure ℚ_[p]) p)]
@@ -382,10 +384,10 @@ theorem exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one (u : ℤ_[p]�
         DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) ρ z = z ^ p := by
   have hp := (Fact.out : p.Prime)
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective
-    (artinMap ℚ_[p] (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 hp.ne_zero)))
+    (artinMap ℚ_[p] (padicPrimeUnit p))
   have hτχ := localCyclotomicCharacter_artinMap_padic_uniformizer p τ hτ
   have hτF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p]
-    (Padic.isUniformizer_natCast_self p) τ hτ
+    (isUniformizer_padicPrimeUnit p) τ hτ
   have hτz (z : AlgebraicClosure ℚ_[p]) (hz : z ^ (p ^ f - 1) = 1) :
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) τ z = z ^ p := by
     -- The roots of unity of order `p ^ f - 1` are the nonzero roots of `X ^ (p ^ f) - X`.

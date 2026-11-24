@@ -58,7 +58,8 @@ All of these bounds are Shimizu's lemma
 * `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodisc_horodisc`: an element of `Γ` not carrying one
   cusp to the other carries a high horodisc at the first off a high horodisc at the second.
 * `TauCeti.Subgroup.CuspDatum.mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc`: precise
-  invariance.
+  invariance, and `TauCeti.Subgroup.CuspDatum.smul_cusp_eq_of_mem_horodisc_of_smul_mem_horodisc`,
+  its form for the lifts of `Γ` to `SL(2, ℝ)`.
 * `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodisc` and
   `TauCeti.Subgroup.CuspDatum.disjoint_smul_horodisc_self`: the translates of a high horodisc
   by two elements lying in different cosets of the cusp stabilizer are disjoint.
@@ -232,7 +233,7 @@ theorem im_scaling_smul_smul_mul_im_scaling_smul_le [DiscreteTopology Γ] (D' : 
     exact _root_.Subgroup.smul_mem_pointwise_smul _ _ _ hx
   have hT : upperRightHom D.width ∈ Δ := by
     rw [← D.scaling_mul_generator_mul_inv]
-    exact hmem _ D.generator.2
+    exact hmem _ D.generator.property
   -- `σ g σ'⁻¹` conjugates the translation by the width of `D'` into `σ Γ σ⁻¹`
   have hh : D.scaling * g * D'.scaling⁻¹ * upperRightHom D'.width *
       (D.scaling * g * D'.scaling⁻¹)⁻¹ ∈ Δ := by
@@ -242,7 +243,7 @@ theorem im_scaling_smul_smul_mul_im_scaling_smul_le [DiscreteTopology Γ] (D' : 
       rw [← D'.scaling_mul_generator_mul_inv]
       group
     rw [heq]
-    exact hmem _ (Γ.mul_mem (Γ.mul_mem g.2 D'.generator.2) (Γ.inv_mem g.2))
+    exact hmem _ (Γ.mul_mem (Γ.mul_mem g.property D'.generator.property) (Γ.inv_mem g.property))
   -- it does not fix `∞`, because `g` does not carry the cusp of `D'` to the cusp of `D`
   have hinf : (D.scaling * g * D'.scaling⁻¹) • (∞ : OnePoint ℝ) ≠ ∞ := by
     rw [mul_smul, mul_smul, inv_smul_eq_iff.mpr D'.scaling_smul_cusp.symm,
@@ -281,6 +282,20 @@ theorem mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc [DiscreteTopology Γ
     (mul_le_mul hA hA D.width_pos.le (D.width_pos.le.trans hA)) (g := g) ?_)
     (Set.smul_mem_smul_set hz) hgz
   exact fun h => hstab (mem_stabilizer_iff.mpr h)
+
+/-- **High horodiscs are precisely invariant under the lifts of `Γ`.** For a discrete `Γ` and
+`Γ' ≤ SL(2, ℝ)` mapping into `Γ`, an element of `Γ'` moving a point of the horodisc of height at
+least the width into it fixes the cusp. This is
+`TauCeti.Subgroup.CuspDatum.mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc` for the lifts. -/
+theorem smul_cusp_eq_of_mem_horodisc_of_smul_mem_horodisc [DiscreteTopology Γ]
+    {Γ' : _root_.Subgroup SL(2, ℝ)}
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) ≤ Γ) {A : ℝ}
+    (hA : D.width ≤ A) {g : SL(2, ℝ)} (hg : g ∈ Γ') {σ : ℍ} (hσ : σ ∈ horodisc D A)
+    (hgσ : g • σ ∈ horodisc D A) :
+    (g : PSL(2, ℝ)) • D.cusp = D.cusp :=
+  mem_stabilizer_iff.mp (mem_stabilizer_of_mem_horodisc_of_smul_mem_horodisc D hA hσ
+    (g := ⟨g, hΓ (_root_.Subgroup.mem_map_of_mem _ hg)⟩)
+    (by rwa [Subgroup.mk_smul, UpperHalfPlane.pslMk_smul]))
 
 /-- **High horodiscs lie in the free locus.** For a discrete `Γ`, a point of a horodisc of height at
 least the width has trivial stabilizer: an element fixing it lies in the cusp stabilizer, whose

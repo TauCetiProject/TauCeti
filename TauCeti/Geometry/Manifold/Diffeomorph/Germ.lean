@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Normed.Operator.PositiveDeterminant
 public import TauCeti.Geometry.Manifold.Diffeomorph.Perturbation
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.MeanValue
@@ -32,7 +34,7 @@ The construction does not integrate vector fields. It has two ingredients.
 
 * **Perturbations of the identity.** If `u : E → E` is `C^n` and `K`-Lipschitz with `K < 1`, then
   `x ↦ x + u x` is a `C^n` diffeomorphism of `E`, for `E` a Banach space over any nontrivially
-  normed field (`ContDiff.exists_diffeomorph_apply_eq_add_of_lipschitzWith`, in
+  normed field (`LipschitzWith.idAddDiffeomorph`, in
   `TauCeti.Geometry.Manifold.Diffeomorph.Perturbation`): it is a
   homeomorphism because it approximates the identity (`ApproximatesLinearOn.toHomeomorph`), and
   its derivative `1 + Du` is invertible everywhere, so its inverse is `C^n`
@@ -51,11 +53,23 @@ affine map with linear part `γ t` is realized therefore form an open and closed
 all of it. Composing the derivative `A` of `g` at `c` with
 the germ `A⁻¹ ∘ g`, tangent to the identity, gives `g`.
 
+Every local diffeomorphism germ, without a fixed point or an orientation condition, is then the
+germ of a diffeomorphism of `E` which is affine outside a compact set: normalize `g` to the germ
+`x ↦ c + A⁻¹ (g x - g c)`, which fixes `c` and is tangent to the identity, and compose the
+compactly supported diffeomorphism realizing it with the affine map `x ↦ g c + A (x - c)`. Such a
+diffeomorphism and its inverse have bounded derivatives of every positive order, which is what
+the invariance of the Sobolev and Besov scales on `E` under changes of variables asks for.
+
 ## Main results
 
 * `TauCeti.exists_diffeomorph_eventuallyEq_of_det_fderiv_pos`: an orientation-preserving `C^n`
   germ at a fixed point is the germ of a `C^n` diffeomorphism supported in a compact subset of any
   prescribed neighbourhood.
+* `TauCeti.exists_diffeomorph_eventuallyEq_of_det_fderiv_ne_zero`: a `C^n` germ with invertible
+  derivative is the germ of a `C^n` diffeomorphism which is affine outside a compact set.
+* `TauCeti.exists_equiv_eventuallyEq_of_det_fderiv_ne_zero`: a smooth germ with invertible
+  derivative is the germ of a bijection of `E` which, with its inverse, is smooth with bounded
+  derivatives of every positive order.
 
 ## References
 
@@ -140,37 +154,6 @@ private theorem Realizes.of_leftInverse {n : ℕ∞} {c : E} {g g' : E → E} (h
 
 variable [FiniteDimensional ℝ E]
 
-omit [FiniteDimensional ℝ E] in
-/-- The derivative of the cutoff perturbation `ρ • (h - id)` is at most `2⁻¹` in norm on the closed
-ball of radius `2 r`, when `δ = (2 * (1 + 2 * C))⁻¹`. -/
-private theorem norm_fderiv_cutoff_smul_le {c : E} {h : E → E} {r C δ : ℝ} {ρ : E → ℝ}
-    {ρ' : E → E →L[ℝ] ℝ} (hr : 0 < r) (hC0 : 0 ≤ C) (hδdef : δ = (2 * (1 + 2 * C))⁻¹)
-    (hρ : ∀ x, 0 ≤ ρ x ∧ ρ x ≤ 1) (hρd : ∀ x, HasFDerivAt ρ (ρ' x) x)
-    (hρ'le : ∀ x, ‖ρ' x‖ ≤ C * r⁻¹)
-    (hhd : ∀ x ∈ closedBall c (2 * r),
-      HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x)
-    (hδ : ∀ x ∈ closedBall c (2 * r), ‖fderiv ℝ h x - ContinuousLinearMap.id ℝ E‖ ≤ δ)
-    (hmv : ∀ x ∈ closedBall c (2 * r), ‖h x - x‖ ≤ δ * (2 * r))
-    {x : E} (hx : x ∈ closedBall c (2 * r)) :
-    ‖fderiv ℝ (fun y ↦ ρ y • (h y - y)) x‖ ≤ 2⁻¹ := by
-  have hD : HasFDerivAt (fun y ↦ ρ y • (h y - y))
-      (ρ x • (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) + (ρ' x).smulRight (h x - x)) x :=
-    (hρd x).smul (hhd x hx)
-  have hρx : ‖ρ x‖ ≤ 1 := by
-    rw [Real.norm_of_nonneg (hρ x).1]
-    exact (hρ x).2
-  rw [hD.fderiv]
-  calc _ ≤ ‖ρ x • (fderiv ℝ h x - ContinuousLinearMap.id ℝ E)‖ +
-        ‖(ρ' x).smulRight (h x - x)‖ := norm_add_le _ _
-    _ ≤ 1 * δ + C * r⁻¹ * (δ * (2 * r)) := by
-      gcongr
-      · exact (norm_smul_le _ _).trans (mul_le_mul hρx (hδ x hx) (norm_nonneg _) zero_le_one)
-      · rw [ContinuousLinearMap.norm_smulRight_apply]
-        exact mul_le_mul (hρ'le x) (hmv x hx) (norm_nonneg _) (by positivity)
-    _ = 2⁻¹ := by
-      rw [hδdef]
-      field_simp
-
 /-- **Cutting off.** There is `δ > 0`, depending only on `E`, such that a `C^n` map `h` fixing `c`
 whose derivative is within `δ` of the identity on the closed ball of radius `2 r` about `c` agrees
 on the closed ball of radius `r` with a `C^n` diffeomorphism which is the identity off the closed
@@ -186,37 +169,44 @@ private theorem exists_pos_forall_exists_diffeomorph_eqOn :
   intro n hn c h r hr hhc hcd hδ
   have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
   set δ : ℝ := (2 * (1 + 2 * C))⁻¹ with hδdef
-  obtain ⟨ρ, ρ', hρcd, hρ01, hρ1, hρ0, hρd, hρ'le⟩ := hρ c r hr
-  -- The perturbation `u = ρ • (h - id)`.
-  let u : E → E := fun x ↦ ρ x • (h x - x)
-  have hu0 (x : E) (hx : x ∉ closedBall c (2 * r)) : u =ᶠ[𝓝 x] fun _ ↦ 0 := by
-    have hx' : 2 * r < dist x c := not_le.1 hx
-    filter_upwards [(isOpen_lt continuous_const (continuous_id.dist continuous_const)).mem_nhds
-      hx'] with y hy
-    simp [u, hρ0 y hy]
-  have hucd : ContDiff ℝ n u := by
-    refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
-    by_cases hx : x ∈ closedBall c (2 * r)
-    · exact (hρcd n).contDiffAt.smul ((hcd x hx).sub contDiffAt_id)
-    · exact contDiffAt_const.congr_of_eventuallyEq (hu0 x hx)
+  obtain ⟨ρ, ρ', hρcd, hρ01, hρ1, hρ0, hρd, hρ'le, -, -⟩ := hρ c r hr
+  have hsupport : tsupport ρ ⊆ closedBall c (2 * r) :=
+    closure_minimal (fun x hx ↦ by
+      by_contra h
+      exact hx (hρ0 x (not_le.mp h))) isClosed_closedBall
+  have hcdcut := (hρcd n).contDiff_cutoff_perturbation_of_contDiffAt
+    (fun x hx ↦ hcd x (hsupport hx))
   have hhd (x : E) (hx : x ∈ closedBall c (2 * r)) :
       HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x :=
     ((hcd x hx).differentiableAt hn').hasFDerivAt.sub (hasFDerivAt_id x)
   have hmv := fun x hx ↦ norm_sub_le_of_norm_fderiv_sub_id_le hhc hhd hδ (x := x) hx
-  have hud (x : E) : ‖fderiv ℝ u x‖ ≤ 2⁻¹ := by
+  have hclose (x : E) :
+      ‖fderiv ℝ (fun y ↦ y + ρ y • (h y - y)) x - ContinuousLinearMap.id ℝ E‖ ≤
+        (2 : ℝ≥0)⁻¹ := by
     by_cases hx : x ∈ closedBall c (2 * r)
-    · exact norm_fderiv_cutoff_smul_le hr hC0 hδdef hρ01 hρd hρ'le hhd hδ hmv hx
-    · rw [(hu0 x hx).fderiv_eq]
-      simp
-  have hlip : LipschitzWith 2⁻¹ u :=
-    lipschitzWith_of_nnnorm_fderiv_le (hucd.differentiable hn') fun x ↦ by
-      rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_inv, NNReal.coe_ofNat]
-      exact hud x
-  obtain ⟨φ, hφ⟩ := hucd.exists_diffeomorph_apply_eq_add_of_lipschitzWith (by exact_mod_cast hn)
-    hlip (by norm_num)
+    · have hbound := DifferentiableAt.norm_fderiv_cutoff_perturbation_sub_id_le
+        (hρd x).differentiableAt ((hcd x hx).differentiableAt hn')
+      have hρx : ‖ρ x‖ ≤ 1 := by
+        rw [Real.norm_of_nonneg (hρ01 x).1]
+        exact (hρ01 x).2
+      have hle : ‖fderiv ℝ (fun y ↦ y + ρ y • (h y - y)) x -
+          ContinuousLinearMap.id ℝ E‖ ≤ 1 * δ + C * r⁻¹ * (δ * (2 * r)) :=
+        hbound.trans (add_le_add
+          (mul_le_mul hρx (hδ x hx) (norm_nonneg _) zero_le_one)
+          (mul_le_mul (by simpa only [(hρd x).fderiv] using hρ'le x)
+            (hmv x hx) (norm_nonneg _) (by positivity)))
+      have heq : 1 * δ + C * r⁻¹ * (δ * (2 * r)) = 2⁻¹ := by
+        rw [hδdef]
+        field_simp
+      exact hle.trans_eq (by simpa using heq)
+    · rw [fderiv_cutoff_perturbation_eq_id_of_notMem_tsupport (fun h ↦ hx (hsupport h)),
+        sub_self, norm_zero]
+      positivity
+  obtain ⟨φ, hφ⟩ := hcdcut.exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le
+    (by exact_mod_cast hn) (by norm_num) hclose
   refine ⟨φ, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
-  · simp [hφ, u, hρ1 x hx]
-  · simp [hφ, u, hρ0 x (not_le.1 hx)]
+  · simp [hφ, hρ1 x hx]
+  · simp [hφ, hρ0 x (not_le.1 hx)]
 
 /-- A germ at a fixed point whose derivative stays within the cutoff constant of the identity
 near that point is realized by compactly supported diffeomorphisms. -/
@@ -331,5 +321,91 @@ theorem exists_diffeomorph_eventuallyEq_of_det_fderiv_pos {n : ℕ∞} (hn : 1 �
     simp only [h, affineAt, Function.comp_apply, add_sub_cancel_left, ← heA,
       ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply, add_sub_cancel]
   exact hg_eq ▸ (realizes_affineAt hn c hdet).comp hh hhc U hU
+
+/-- **Local diffeomorphisms are germs of diffeomorphisms which are affine at infinity.** Let `E`
+be a finite-dimensional real normed space and `1 ≤ n`. If `g : E → E` is `C^n` near `c` and its
+derivative `A` at `c` is invertible, then there is a `C^n` diffeomorphism `φ` of `E` which agrees
+with `g` near `c` and with the affine map `x ↦ g c + A (x - c)` outside a compact set `K`. -/
+theorem exists_diffeomorph_eventuallyEq_of_det_fderiv_ne_zero {n : ℕ∞} (hn : 1 ≤ n) {c : E}
+    {g : E → E} (hg : ∀ᶠ x in 𝓝 c, ContDiffAt ℝ n g x) (hdet : (fderiv ℝ g c).det ≠ 0) :
+    ∃ (φ : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E) (K : Set E), IsCompact K ∧
+      EqOn φ (fun x ↦ g c + fderiv ℝ g c (x - c)) Kᶜ ∧ ⇑φ =ᶠ[𝓝 c] g := by
+  have hn' : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
+  let A : E ≃L[ℝ] E := (fderiv ℝ g c).toContinuousLinearEquivOfDetNeZero hdet
+  have hA : (A : E →L[ℝ] E) = fderiv ℝ g c :=
+    ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ _
+  -- The normalized germ `h = c + A⁻¹ (g - g c)` fixes `c` and is tangent to the identity there.
+  let h : E → E := fun x ↦ c + A.symm (g x - g c)
+  have hh : ∀ᶠ x in 𝓝 c, ContDiffAt ℝ n h x :=
+    hg.mono fun x hx ↦ contDiffAt_const.add (A.symm.contDiff.contDiffAt.comp x
+      (hx.sub contDiffAt_const))
+  have hD : fderiv ℝ h c = ContinuousLinearMap.id ℝ E := by
+    have : HasFDerivAt h ((A.symm : E →L[ℝ] E).comp (fderiv ℝ g c)) c :=
+      ((A.symm : E →L[ℝ] E).hasFDerivAt.comp c
+        ((hg.self_of_nhds.differentiableAt hn').hasFDerivAt.sub_const (g c))).const_add c
+    rw [this.fderiv, ← hA, ContinuousLinearEquiv.coe_symm_comp_coe]
+  have hdet' : 0 < (fderiv ℝ h c).det := by
+    rw [hD, ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id]
+    exact one_pos
+  obtain ⟨ψ, K, hK, -, hψK, hψ⟩ :=
+    exists_diffeomorph_eventuallyEq_of_det_fderiv_pos hn hh (by simp [h]) hdet' univ_mem
+  -- Compose with the affine diffeomorphism `y ↦ g c + A (y - c)`.
+  have hα : ContDiff ℝ n fun y ↦ g c + A (y - c) :=
+    contDiff_const.add (A.contDiff.comp (contDiff_id.sub contDiff_const))
+  have hα' : ContDiff ℝ n fun z ↦ c + A.symm (z - g c) :=
+    contDiff_const.add (A.symm.contDiff.comp (contDiff_id.sub contDiff_const))
+  let α : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E :=
+    { toFun := fun y ↦ g c + A (y - c)
+      invFun := fun z ↦ c + A.symm (z - g c)
+      left_inv := fun y ↦ by simp
+      right_inv := fun z ↦ by simp
+      contMDiff_toFun := hα.contMDiff
+      contMDiff_invFun := hα'.contMDiff }
+  have hαapp (y : E) : α y = g c + A (y - c) := (rfl)
+  refine ⟨ψ.trans α, K, hK, fun x hx ↦ ?_, ?_⟩
+  · rw [Diffeomorph.coe_trans, Function.comp_apply, hψK hx, hαapp, id_eq, ← hA,
+      ContinuousLinearEquiv.coe_coe]
+  · filter_upwards [hψ] with x hx
+    rw [Diffeomorph.coe_trans, Function.comp_apply, hx, hαapp]
+    simp [h]
+
+/-- **Local diffeomorphisms are germs of diffeomorphisms with bounded derivatives.** Let `E` be a
+finite-dimensional real normed space. If `g : E → E` is smooth near `c` and its derivative at `c`
+is invertible, then there is a bijection `Φ` of `E` agreeing with `g` near `c` such that `Φ` and
+`Φ⁻¹` are smooth with bounded derivatives of every positive order. Such maps are the changes of
+variables under which the Sobolev and Besov scales on `E` are invariant. -/
+theorem exists_equiv_eventuallyEq_of_det_fderiv_ne_zero {c : E} {g : E → E}
+    (hg : ∀ᶠ x in 𝓝 c, ContDiffAt ℝ ∞ g x) (hdet : (fderiv ℝ g c).det ≠ 0) :
+    ∃ Φ : E ≃ E, ContDiff ℝ ∞ Φ ∧ ContDiff ℝ ∞ Φ.symm ∧
+      (∀ k, 1 ≤ k → ∃ C, ∀ x, ‖iteratedFDeriv ℝ k Φ x‖ ≤ C) ∧
+      (∀ k, 1 ≤ k → ∃ C, ∀ x, ‖iteratedFDeriv ℝ k Φ.symm x‖ ≤ C) ∧ ⇑Φ =ᶠ[𝓝 c] g := by
+  obtain ⟨φ, K, hK, hφK, hφ⟩ :=
+    exists_diffeomorph_eventuallyEq_of_det_fderiv_ne_zero (n := ⊤) le_top hg hdet
+  let A : E ≃L[ℝ] E := (fderiv ℝ g c).toContinuousLinearEquivOfDetNeZero hdet
+  have hA : (A : E →L[ℝ] E) = fderiv ℝ g c :=
+    ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ _
+  have hsymm : (φ.toEquiv.symm : E → E) = φ.symm := by
+    rw [← Diffeomorph.symm_toEquiv, Diffeomorph.coe_toEquiv]
+  -- Outside `K`, `φ` is affine; outside the compact set `φ '' K`, so is its inverse.
+  have hφK' : EqOn φ (fun x ↦ (g c - A c) + (A : E →L[ℝ] E) x) Kᶜ := fun x hx ↦ by
+    rw [hφK hx, ← hA]
+    simp only [ContinuousLinearEquiv.coe_coe, map_sub]
+    abel
+  have hψK : EqOn φ.symm (fun z ↦ (c - A.symm (g c)) + (A.symm : E →L[ℝ] E) z) (φ '' K)ᶜ := by
+    intro z hz
+    have hy : φ.symm z ∉ K := fun hy ↦ hz ⟨_, hy, φ.apply_symm_apply z⟩
+    have h1 : z = g c + A (φ.symm z - c) := by
+      simpa [← hA] using (φ.apply_symm_apply z).symm.trans (hφK hy)
+    simp only [ContinuousLinearEquiv.coe_coe]
+    calc φ.symm z = c - A.symm (g c) + A.symm (g c + A (φ.symm z - c)) := by
+          rw [map_add, ContinuousLinearEquiv.symm_apply_apply]
+          abel
+      _ = c - A.symm (g c) + A.symm z := by rw [← h1]
+  refine ⟨φ.toEquiv, φ.contDiff, hsymm ▸ φ.symm.contDiff, fun k hk ↦ ?_, fun k hk ↦ ?_, hφ⟩
+  · exact ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl (i := k)
+      (φ.contDiff.of_le (mod_cast le_top)) hk hK hφK'
+  · rw [hsymm]
+    exact ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl (i := k)
+      (φ.symm.contDiff.of_le (mod_cast le_top)) hk (hK.image φ.continuous) hψK
 
 end TauCeti

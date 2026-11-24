@@ -30,8 +30,12 @@ For the unit sphere `S² ⊂ ℝ³` with the standard orientation of `ℝ³`, th
 ## Main results
 
 * `Orientation.isSymplectic_sphereVolumeForm`: the volume form of a two-sphere is symplectic.
+* `TauCeti.sphereAreaForm_eq_sphereVolumeForm`: the area form of `S²` is the volume form of the
+  unit sphere for the standard orientation of `ℝ³`.
 * `TauCeti.eval₂_sphereAreaForm`: the area form of `S²` is the triple product.
 * `TauCeti.isSymplectic_sphereAreaForm`: the area form of `S²` is symplectic.
+* `TauCeti.isSmoothForm_sphereAreaForm` and `TauCeti.mextDeriv_sphereAreaForm`: the area form of
+  `S²` is continuously differentiable and closed, as the integral over spheres requires.
 
 ## References
 
@@ -75,6 +79,12 @@ standard orientation of `ℝ³`. It is symplectic (`TauCeti.isSymplectic_sphereA
 def sphereAreaForm : SmoothTwoForm (𝓡 2) S² :=
   (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm
 
+/-- The area form of `S²` is the volume form of the unit sphere for the standard orientation of
+`ℝ³`. -/
+theorem sphereAreaForm_eq_sphereVolumeForm :
+    sphereAreaForm = (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm :=
+  (rfl)
+
 /-- The area form of `S²` evaluates tangent vectors `v, w` at `x`, read in `ℝ³`, as the triple
 product `x ⬝ (v × w)`. -/
 theorem eval₂_sphereAreaForm (x : S²) (v w : TangentSpace (𝓡 2) x) :
@@ -89,5 +99,14 @@ theorem eval₂_sphereAreaForm (x : S²) (v w : TangentSpace (𝓡 2) x) :
 /-- The area form of `S²` is symplectic. -/
 theorem isSymplectic_sphereAreaForm : sphereAreaForm.IsSymplectic :=
   Orientation.isSymplectic_sphereVolumeForm _
+
+/-- The area form of `S²` is continuously differentiable, the regularity at which it is integrated
+over spheres (`TauCeti.sphereIntegral`). -/
+theorem isSmoothForm_sphereAreaForm : IsSmoothForm (𝓡 2) 1 sphereAreaForm.val :=
+  sphereAreaForm.isSmoothForm.of_le (by simp)
+
+/-- The area form of `S²` is closed: its manifold exterior derivative vanishes. -/
+theorem mextDeriv_sphereAreaForm : mextDeriv sphereAreaForm.val = 0 :=
+  (SmoothForm.isClosed_def _).1 isSymplectic_sphereAreaForm.isClosed
 
 end TauCeti

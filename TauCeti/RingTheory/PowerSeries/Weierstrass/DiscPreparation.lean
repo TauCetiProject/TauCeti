@@ -52,6 +52,8 @@ Taking `r = s` gives uniqueness of the normalised preparation.
 * `TauCeti.PowerSeries.exists_isDiscPreparation_iff`: a series has a normalised disc preparation
   at `r` in degree `d` exactly when it is restricted and distinguished of degree `d` at `r` and has
   constant coefficient `1`.
+* `TauCeti.PowerSeries.isDiscPreparation_zero`: at radius `0`, any series with constant coefficient
+  `1` is its own normalised disc preparation in degree `0` with polynomial factor `1`.
 * `TauCeti.PowerSeries.IsDiscPreparation.dvd_of_le`: the polynomial factor at a radius `r` divides
   the polynomial factor at every radius `s ≥ r`.
 * `TauCeti.PowerSeries.IsDiscPreparation.gaussNorm_sub_lt`: `‖f - P‖_r < ‖f‖_r`.
@@ -285,7 +287,7 @@ theorem unique [CompleteSpace K] (h : IsDiscPreparation r d f P U)
   obtain ⟨c, -, rfl⟩ := Polynomial.isUnit_iff.mp (IsUnit.of_mul_eq_one _ huu)
   have hc : c = 1 := by
     simpa [h.coeff_zero_eq_one, h'.coeff_zero_eq_one, eq_comm] using
-      congrArg (Polynomial.coeff · 0) hu
+      congrArg (AddMonoidAlgebra.coeff · 0) hu
   have hPQ : P = Q := by rw [hu, hc, Polynomial.C_1, mul_one]
   refine ⟨hPQ, mul_left_cancel₀ (by exact_mod_cast h.ne_zero : (P : PowerSeries K) ≠ 0) ?_⟩
   rw [← h.eq_mul, hPQ, ← h'.eq_mul]
@@ -317,7 +319,7 @@ theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K] (hf : IsDisti
     { isDistinguished := hf
       natDegree_eq := by rw [Polynomial.natDegree_C_mul (inv_ne_zero hb), hω.natDegree_eq]
       coeff_zero_eq_one := by rw [Polynomial.coeff_C_mul, inv_mul_cancel₀ hb]
-      isRestricted := U'.2
+      isRestricted := U'.property
       constantCoeff_eq_one := hU0
       gaussNorm_sub_one_lt := (isUnit_iff_gaussNorm_sub_one_lt_one hr U' hU0).mp
         (((isUnit_iff_ne_zero.mpr hb).map _).mul he)
@@ -351,6 +353,26 @@ theorem exists_isDiscPreparation_iff [CompleteSpace K] (hr : 0 < r) :
     exact (isRestricted_polynomial P).mul h.isRestricted
   · rw [h.eq_mul, map_mul, Polynomial.constantCoeff_coe, h.coeff_zero_eq_one,
       h.constantCoeff_eq_one, one_mul]
+
+omit [IsUltrametricDist K] in
+/-- At radius `0`, any series with constant coefficient `1` is its own normalised disc preparation
+in degree `0` with polynomial factor `1`. -/
+theorem isDiscPreparation_zero (hf0 : constantCoeff f = 1) :
+    IsDiscPreparation 0 0 f 1 f := by
+  have hgn0 (g : PowerSeries K) : g.gaussNorm norm 0 = ‖constantCoeff g‖ := by
+    rw [gaussNorm_eq_of_forall_le (s := 0) fun m ↦ ?_]
+    · simp
+    · rcases eq_or_ne m 0 with rfl | hm
+      · rfl
+      · simp [zero_pow hm]
+  have hf : f.IsRestricted 0 := by
+    rw [isRestricted_iff']
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    simp [zero_pow (by omega : n ≠ 0)]
+  refine ⟨⟨by simp [hgn0, hf0], fun n hn ↦ by simp [zero_pow hn.ne', hgn0, hf0]⟩,
+    Polynomial.natDegree_one, AddMonoidAlgebra.coeff_one_zero, hf, hf0,
+    by simp [hgn0, hf0], by simp⟩
 
 variable {ι : Type*} {l : Filter ι} {ρ : ι → ℝ} {D : ι → ℕ}
   {p : ι → Polynomial K} {u : ι → PowerSeries K}

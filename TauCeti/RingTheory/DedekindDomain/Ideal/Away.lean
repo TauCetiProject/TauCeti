@@ -172,7 +172,7 @@ theorem idealsAway_hom_ext {M : Type*} [Monoid M] {S : Finset (HeightOneSpectrum
       (idealsAway_eq_closure_primes S).ge (Subgroup.subset_closure ⟨v, hv, hJ⟩)
     exact ⟨⟨J, hmem⟩, h ⟨J, hmem⟩ v hv hJ, rfl⟩
   refine MonoidHom.ext fun I ↦ ?_
-  obtain ⟨y, hy, hyI⟩ := key I.2
+  obtain ⟨y, hy, hyI⟩ := key I.property
   obtain rfl : y = I := Subtype.ext hyI
   exact hy
 
@@ -206,7 +206,8 @@ theorem integralIdealsAway_le_nonZeroDivisors (S : Finset (HeightOneSpectrum R))
 /-- Members of `integralIdealsAway S` are nonzero ideals of a Dedekind domain, so they cancel. -/
 instance (S : Finset (HeightOneSpectrum R)) : CancelCommMonoid (integralIdealsAway S) where
   mul_left_cancel a _ _ h :=
-    Subtype.ext <| mul_left_cancel₀ (mem_integralIdealsAway_iff.mp a.2).1 (congrArg Subtype.val h)
+    Subtype.ext <| mul_left_cancel₀ (mem_integralIdealsAway_iff.mp a.property).1
+        (congrArg Subtype.val h)
 
 /-- **Homomorphisms out of `integralIdealsAway S` are determined on the primes.** Two monoid
 homomorphisms from the integral ideals prime to `S` agree as soon as they agree on every prime
@@ -231,7 +232,7 @@ of two ideals prime to `S` is itself prime to `S`. -/
 theorem integralIdealsAway_dvd_iff_dvd_coe {S : Finset (HeightOneSpectrum R)}
     {I J : integralIdealsAway S} : I ∣ J ↔ (I : Ideal R) ∣ (J : Ideal R) := by
   refine ⟨fun ⟨c, hc⟩ ↦ ⟨c, by rw [hc, Submonoid.coe_mul]⟩, fun ⟨c, hc⟩ ↦ ?_⟩
-  have hJ := mem_integralIdealsAway_iff_isPrimeTo.mp J.2
+  have hJ := mem_integralIdealsAway_iff_isPrimeTo.mp J.property
   rw [hc, Ideal.isPrimeTo_mul_iff] at hJ
   exact ⟨⟨c, mem_integralIdealsAway_iff_isPrimeTo.mpr hJ.2⟩, Subtype.ext hc⟩
 
@@ -243,7 +244,7 @@ theorem mem_integralIdealsAway_iff_count_eq_zero {S : Finset (HeightOneSpectrum 
       ∀ v ∈ S, FractionalIdeal.count K v (I : FractionalIdeal R⁰ K) = 0 := by
   rw [mem_integralIdealsAway_iff]
   refine and_congr_right fun hI ↦ forall_congr' fun v ↦ forall_congr' fun _ ↦ ?_
-  rw [FractionalIdeal.count_coe K v hI, Int.natCast_eq_zero,
+  rw [FractionalIdeal.count_coeIdeal K v hI, Int.natCast_eq_zero,
     ← Associates.count_ne_zero_iff_dvd hI v.irreducible, not_not]
 
 variable (K) in
@@ -253,7 +254,7 @@ noncomputable def integralIdealsAwayHom (S : Finset (HeightOneSpectrum R)) :
   ((FractionalIdeal.mk0 K).comp (Submonoid.inclusion (integralIdealsAway_le_nonZeroDivisors S))
     ).codRestrict _ fun I ↦ mem_idealsAway_iff.mpr fun v hv ↦ by
       rw [MonoidHom.comp_apply, FractionalIdeal.coe_mk0]
-      exact (mem_integralIdealsAway_iff_count_eq_zero.mp I.2).2 v hv
+      exact (mem_integralIdealsAway_iff_count_eq_zero.mp I.property).2 v hv
 
 /-- The integral-to-fractional map does not change the underlying ideal. -/
 @[simp]
@@ -301,7 +302,7 @@ theorem exists_integralIdealsAway_div (S : Finset (HeightOneSpectrum R))
     | inv x hx ih =>
       obtain ⟨A, B, rfl⟩ := ih
       exact ⟨B, A, by simp⟩
-  obtain ⟨A, B, hAB⟩ := h I I.2
+  obtain ⟨A, B, hAB⟩ := h I I.property
   exact ⟨A, B, Subtype.ext hAB⟩
 
 variable (K) in

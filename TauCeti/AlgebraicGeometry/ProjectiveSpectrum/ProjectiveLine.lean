@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -20,6 +20,10 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.Localization.Away.Basic
+public import TauCeti.AlgebraicGeometry.Geometrically.Integral
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.CoordinateMap
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ChartEquality
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 import TauCeti.RingTheory.Spectrum.Prime.Polynomial
@@ -393,11 +397,11 @@ theorem eq_zero_of_coord_pow_mul_eq {m k k' j' : ℕ} (hk' : j' + m + 2 = k')
   have h₁ : dehomogenize R 0 (coord R 1) = X := dehomogenize_coord_rev R 0
   have hD := congrArg (dehomogenize R 0) h
   simp only [map_mul, map_pow, map_sub, dehomogenize_coord_self, one_pow, one_mul, h₁] at hD
-  refine (dehomogenize_eq_zero_iff R 0 hc).mp (Polynomial.ext fun i ↦ ?_)
+  refine (dehomogenize_eq_zero_iff R 0 hc).mp (AddMonoidAlgebra.ext <| Finsupp.ext fun i ↦ ?_)
   rw [coeff_zero]
   rcases lt_or_ge m i with hi | hi
   · exact coeff_eq_zero_of_natDegree_lt ((natDegree_dehomogenize_le R 0 hc).trans_lt hi)
-  have hcoeff := congrArg (fun p ↦ coeff p (i + k')) hD
+  have hcoeff := congrArg (fun p : R[X] ↦ p.coeff (i + k')) hD
   simp only [coeff_X_pow_mul, mul_sub, ← mul_assoc, ← pow_add, coeff_sub] at hcoeff
   rw [hcoeff, coeff_X_pow_mul', ite_eq_right (by omega), coeff_X_pow_mul', zero_sub, neg_eq_zero]
   split_ifs
@@ -488,6 +492,18 @@ theorem polynomialChartι_mem_range_iff (i : Fin 2) (q : Spec (.of R[X])) :
   rw [SetLike.mem_coe, ← Scheme.Hom.mem_preimage, polynomialChartι_preimage_basicOpen_rev]
   -- `Spec` has the prime-spectrum carrier, with its native basic-open membership.
   exact PrimeSpectrum.mem_basicOpen X q
+
+/-- The two polynomial chart coordinates are inverse in the degree-zero coordinate ring
+of their overlap. -/
+theorem coordinateFractions_mul :
+    awayMap 𝒜 (coord_mem R 1) rfl ((awayEquivPolynomial R 0).symm X) *
+      awayMap 𝒜 (coord_mem R 0) (mul_comm (coord R 0) (coord R 1))
+        ((awayEquivPolynomial R 1).symm X) = 1 := by
+  simp only [awayEquivPolynomial_symm_X, awayMap_mk]
+  ext
+  simp only [val_mul, Away.val_mk, val_one, Localization.mk_mul]
+  rw [← Localization.mk_one, Localization.mk_eq_mk_iff, Localization.r_iff_exists]
+  exact ⟨1, by simp; ring⟩
 
 /-- **The standard charts `D₊(Xᵢ)` cover the projective line.** -/
 theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ :=
@@ -665,25 +681,70 @@ the constant polynomials. -/
 theorem chartSectionsEquiv_appLE (i : Fin 2) (a : Γ(Spec (.of R), ⊤)) :
     chartSectionsEquiv R i ((projectiveLine R ↘ Spec (.of R)).appLE ⊤ _ le_top a) =
       C ((Scheme.ΓSpecIso (.of R)).hom a) := by
-  suffices h : (projectiveLine R ↘ Spec (.of R)).appLE ⊤ _ le_top ≫
-        ((awayι R i).appIso ⊤).hom ≫ (Scheme.ΓSpecIso _).hom =
-      (Scheme.ΓSpecIso (.of R)).hom ≫ CommRingCat.ofHom (algebraMap R (Away 𝒜 (coord R i))) by
-    rw [chartSectionsEquiv_apply, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply, h]
-    simp
-  rw [← cancel_epi (Scheme.ΓSpecIso (.of R)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
-    reassoc_of% Scheme.Hom.appLE_comp_appLE (awayι R i)
-    (projectiveLine R ↘ Spec (.of R)) ⊤ (awayι R i ''ᵁ ⊤) ⊤ le_top
-    (Scheme.Hom.preimage_image_eq _ _).ge]
-  -- The `show` reads `appLE ⊤ ⊤` as `appTop` through `appLE_eq_app`, relying on the
-  -- definitional equalities `f ⁻¹ᵁ ⊤ = ⊤` (`Scheme.Hom.preimage_top`, proved by `rfl`) and
-  -- `f.app ⊤ = f.appTop` (`appTop` is an abbreviation); a plain `rw` cannot match the preimage.
-  -- Then the composite of the chart with the structure morphism is `Spec` of the inclusion of `R`.
-  rw [show Scheme.Hom.appLE _ ⊤ ⊤ _ = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
-    awayι_over, Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+  rw [chartSectionsEquiv_apply, Scheme.ΓSpecIso_appIso_hom_appLE _ _ _ (awayι_over R i)]
+  simp
 
 /-- The chart `D₊(Xᵢ)`, as the image of `awayι`, is the basic open set of `Xᵢ`. -/
 theorem image_awayι_top (i : Fin 2) : awayι R i ''ᵁ ⊤ = Proj.basicOpen 𝒜 (coord R i) := by
   rw [Scheme.Hom.image_top_eq_opensRange, Proj.opensRange_awayι]
+
+/-- The affine coordinate of the chart `D₊(Xᵢ)`: `X₁ / X₀` on `D₊(X₀)` and `X₀ / X₁` on `D₊(X₁)`. -/
+noncomputable def affineCoordinate (i : Fin 2) :
+    Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) :=
+  Proj.awayToSection 𝒜 (coord R i) ((awayEquivPolynomial R i).symm X)
+
+/-- The affine coordinate is the section represented by the other homogeneous coordinate
+in the degree-zero chart localization. -/
+theorem affineCoordinate_def (i : Fin 2) : affineCoordinate R i =
+    Proj.awayToSection 𝒜 (coord R i) ((awayEquivPolynomial R i).symm X) :=
+  (rfl)
+
+/-- On any subopen of a standard chart, the affine coordinate has value `Xᵢʳᵉᵛ/Xᵢ`
+in each homogeneous localization. -/
+theorem val_res_affineCoordinate (i : Fin 2) (V : (projectiveLine R).Opens)
+    (hi : V ≤ Proj.basicOpen 𝒜 (coord R i)) (x : V) :
+    (((projectiveLine R).presheaf.map (homOfLE hi).op (affineCoordinate R i)).val x).val =
+      Localization.mk (coord R i.rev) ⟨coord R i, hi x.property⟩ := by
+  rw [affineCoordinate, awayEquivPolynomial_symm_X]
+  erw [Proj.val_awayToSection_mk_apply]
+  simp only [pow_one]
+
+/-- The affine coordinate of the chart `D₊(Xᵢ)` is invertible exactly on the overlap. -/
+theorem basicOpen_affineCoordinate (i : Fin 2) :
+    (projectiveLine R).basicOpen (affineCoordinate R i) =
+      Proj.basicOpen 𝒜 (coord R 0 * coord R 1) := by
+  rw [affineCoordinate, awayEquivPolynomial_symm_X, Proj.basicOpen_awayToSection_mk]
+  fin_cases i
+  · rfl
+  · exact (Proj.basicOpen_mul _ _ _).trans
+      ((inf_comm _ _).trans (Proj.basicOpen_mul _ _ _).symm)
+
+/-- The affine coordinates multiply to one after restriction to any common subopen. -/
+theorem affineCoordinate_res_mul (V : (projectiveLine R).Opens)
+    (h₀ : V ≤ Proj.basicOpen 𝒜 (coord R 0))
+    (h₁ : V ≤ Proj.basicOpen 𝒜 (coord R 1)) :
+    (projectiveLine R).presheaf.map (homOfLE h₀).op (affineCoordinate R 0) *
+      (projectiveLine R).presheaf.map (homOfLE h₁).op (affineCoordinate R 1) = 1 := by
+  let W := Proj.basicOpen 𝒜 (coord R 0 * coord R 1)
+  have hW₀ : W ≤ Proj.basicOpen 𝒜 (coord R 0) :=
+    (Proj.basicOpen_mul _ _ _).trans_le inf_le_left
+  have hW₁ : W ≤ Proj.basicOpen 𝒜 (coord R 1) :=
+    (Proj.basicOpen_mul _ _ _).trans_le inf_le_right
+  have hW : (projectiveLine R).presheaf.map (homOfLE hW₀).op (affineCoordinate R 0) *
+      (projectiveLine R).presheaf.map (homOfLE hW₁).op (affineCoordinate R 1) = 1 := by
+    have he₀ := congr($(Proj.awayMap_awayToSection 𝒜 (coord_mem R 1)
+      (rfl : coord R 0 * coord R 1 = _)) ((awayEquivPolynomial R 0).symm X)).symm
+    have he₁ := congr($(Proj.awayMap_awayToSection 𝒜 (coord_mem R 0)
+      (mul_comm (coord R 0) (coord R 1))) ((awayEquivPolynomial R 1).symm X)).symm
+    exact (congrArg₂ (· * ·) he₀ he₁).trans
+      ((map_mul (Proj.awayToSection 𝒜 (coord R 0 * coord R 1)).hom _ _).symm.trans
+        ((congrArg (Proj.awayToSection 𝒜 (coord R 0 * coord R 1))
+          (coordinateFractions_mul R)).trans (map_one
+            (Proj.awayToSection 𝒜 (coord R 0 * coord R 1)).hom)))
+  have hVW : V ≤ W := (le_inf h₀ h₁).trans (Proj.basicOpen_mul _ _ _).ge
+  have h := congrArg ((projectiveLine R).presheaf.map (homOfLE hVW).op) hW
+  rw [map_mul, map_one, ← Functor.map_comp_apply, ← Functor.map_comp_apply] at h
+  exact h
 
 /-- `chartSectionsEquiv` sends the function `Proj.awayToSection a` on `D₊(Xᵢ)` to the
 dehomogenization of the fraction `a`. -/
@@ -734,10 +795,10 @@ theorem awayToSection_algebraMap (i : Fin 2) (c : R) :
 takes the value `r` in every localization. -/
 theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) (x : U) :
     ((((projectiveLine R).presheaf.map U.leTop.op
-      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val x).val) =
         algebraMap R _ r := by
-  obtain ⟨i, hi⟩ : ∃ i, x.1 ∈ Proj.basicOpen 𝒜 (coord R i) := by
-    have hx : x.1 ∈ (⊤ : (projectiveLine R).Opens) := trivial
+  obtain ⟨i, hi⟩ : ∃ i, x.val ∈ Proj.basicOpen 𝒜 (coord R i) := by
+    have hx : x.val ∈ (⊤ : (projectiveLine R).Opens) := trivial
     rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup] at hx
   -- on the chart `D₊(Xᵢ)` containing `x`, the constant `r` is the fraction `r / 1`
   have hres : (projectiveLine R).presheaf.map (homOfLE le_top).op
@@ -747,14 +808,14 @@ theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) 
     exact (awayToSection_algebraMap R i r).symm
   -- restricting a section keeps its values, which is `Proj.res_apply`, true by `rfl`
   have hx : ((((projectiveLine R).presheaf.map U.leTop.op
-      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val x).val) =
         ((((projectiveLine R).presheaf.map (homOfLE le_top).op
-          (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 ⟨x.1, hi⟩).val) :=
+          (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val ⟨x.val, hi⟩).val) :=
     rfl
   refine hx.trans ((congrArg (fun s : Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) ↦
-    (s.1 ⟨x.1, hi⟩).val) hres).trans ?_)
+    (s.val ⟨x.val, hi⟩).val) hres).trans ?_)
   refine (ProjectiveSpectrum.Proj.awayToSection_apply 𝒜 (coord R i)
-    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.1, hi⟩).trans ?_
+    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.val, hi⟩).trans ?_
   have hR (L : Type u) [CommRing L] [Algebra (_root_.SymmetricAlgebra R (Fin 2 → R)) L]
       [Algebra R L] [IsScalarTower R (_root_.SymmetricAlgebra R (Fin 2 → R)) L] :
       algebraMap R L r = algebraMap _ L (algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r) :=
@@ -805,6 +866,14 @@ noncomputable def baseChangeProjection : projectiveLine S ⟶ projectiveLine R :
   (Proj.symmetricAlgebraMapIso S (TensorProduct.piScalarRight R S S (Fin 2))).hom ≫
     (Proj.symmetricAlgebraScalarTensorIso R S (Fin 2 → R)).hom ≫
       Proj.baseChangeProjection 𝒜 S
+
+/-- The base-change projection is the composite of the coordinate comparison and the graded
+coefficient-extension projection. -/
+theorem baseChangeProjection_def :
+    baseChangeProjection R S =
+      (Proj.symmetricAlgebraMapIso S (TensorProduct.piScalarRight R S S (Fin 2))).hom ≫
+        (Proj.symmetricAlgebraScalarTensorIso R S (Fin 2 → R)).hom ≫
+          Proj.baseChangeProjection 𝒜 S := (rfl)
 
 /-- **Base change of the projective line**: for an `R`-algebra `S`, the square formed by the
 projection `ℙ¹_S ⟶ ℙ¹_R`, the structure morphisms, and `Spec S ⟶ Spec R` is a pullback, that is,
@@ -863,3 +932,284 @@ theorem functionFieldEquiv_symm_X :
 end projectiveLine
 
 end TauCeti.AlgebraicGeometry
+
+/-! ## Coefficient extension and polynomial chart points
+
+Normalized homogeneous coordinates describe points in each polynomial chart and commute
+with arbitrary coefficient extension. The projective line is geometrically integral.
+-/
+
+open CategoryTheory CategoryTheory.Limits HomogeneousLocalization
+open TauCeti.SymmetricAlgebra
+open scoped TensorProduct
+
+namespace TauCeti.AlgebraicGeometry.projectiveLine
+
+open _root_.AlgebraicGeometry Polynomial
+
+section Coefficients
+
+variable (R S : Type u) [CommSemiring R] [CommSemiring S] [Algebra R S]
+
+local notation "𝒜" => homogeneousSubmodule R (Fin 2 → R)
+local notation "ℬ" => homogeneousSubmodule S (Fin 2 → S)
+
+/-- The graded coefficient-extension map between the symmetric algebras of the standard rank-two
+modules. -/
+noncomputable def coefficientMap : 𝒜 →+*ᵍ ℬ :=
+  (_root_.SymmetricAlgebra.gradedMap S
+    (TensorProduct.piScalarRight R S S (Fin 2)).toLinearMap).comp
+      (scalarTensorGradedAlgHom.toGradedRingHom.comp
+        (TauCeti.GradedAlgebra.baseChangeMap S 𝒜))
+
+/-- The coefficient-extension map satisfies the irrelevant-ideal condition for a projective map. -/
+lemma coefficientMap_irrelevant :
+    HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map
+      (coefficientMap R S) := by
+  apply HomogeneousIdeal.irrelevant_le_map_comp
+    (HomogeneousIdeal.irrelevant_le_map_comp
+      (HomogeneousIdeal.irrelevant_le_map_baseChangeMap S 𝒜)
+      (HomogeneousIdeal.irrelevant_le_map_of_surjective _
+        scalarTensorGradedAlgHom_rightInverse.surjective))
+    (HomogeneousIdeal.irrelevant_le_map_of_surjective _ ?_)
+  convert _root_.SymmetricAlgebra.map_surjective S
+      (TensorProduct.piScalarRight R S S (Fin 2)).toLinearMap
+      (TensorProduct.piScalarRight R S S (Fin 2)).surjective using 1
+  ext x
+  exact _root_.SymmetricAlgebra.gradedMap_apply S _ x
+
+/-- Coefficient extension acts coefficientwise on each linear generator. -/
+@[simp]
+lemma coefficientMap_ι (m : Fin 2 → R) :
+    coefficientMap R S (_root_.SymmetricAlgebra.ι R (Fin 2 → R) m) =
+      _root_.SymmetricAlgebra.ι S (Fin 2 → S) (fun i ↦ algebraMap R S (m i)) := by
+  simp only [coefficientMap, GradedRingHom.comp_apply,
+    _root_.SymmetricAlgebra.gradedMap_apply, TauCeti.GradedAlgebra.baseChangeMap_apply]
+  -- The graded coefficient map has been applied; the evaluation lemmas below use the
+  -- underlying symmetric-algebra map rather than its graded wrapper.
+  change _root_.SymmetricAlgebra.map S
+    (TensorProduct.piScalarRight R S S (Fin 2)).toLinearMap
+    (scalarTensorGradedAlgHom (1 ⊗ₜ[R] _root_.SymmetricAlgebra.ι R (Fin 2 → R) m)) = _
+  rw [TensorProduct.scalarTensorGradedAlgHom_apply,
+    _root_.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι,
+    _root_.SymmetricAlgebra.map_apply_ι]
+  congr 1
+  ext i
+  simp [TensorProduct.piScalarRightHom_tmul, Algebra.smul_def]
+
+/-- Coefficient extension sends scalar constants through the base algebra map. -/
+@[simp]
+lemma coefficientMap_algebraMap (r : R) :
+    coefficientMap R S (algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r) =
+      algebraMap S (_root_.SymmetricAlgebra S (Fin 2 → S)) (algebraMap R S r) := by
+  simp only [coefficientMap, GradedRingHom.comp_apply,
+    _root_.SymmetricAlgebra.gradedMap_apply, TauCeti.GradedAlgebra.baseChangeMap_apply]
+  -- The graded coefficient map has been applied; the evaluation lemmas below use the
+  -- underlying symmetric-algebra map rather than its graded wrapper.
+  change _root_.SymmetricAlgebra.map S
+    (TensorProduct.piScalarRight R S S (Fin 2)).toLinearMap
+    (scalarTensorGradedAlgHom
+      (1 ⊗ₜ[R] algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r)) = _
+  rw [TensorProduct.scalarTensorGradedAlgHom_apply]
+  rw [← Algebra.TensorProduct.tmul_one_eq_one_tmul]
+  -- The tensor algebra map is the pure tensor with left scalar. Expose that map so the
+  -- algebra-equivalence commutation law below applies to precisely this scalar expression.
+  change _root_.SymmetricAlgebra.map S
+    (TensorProduct.piScalarRight R S S (Fin 2)).toLinearMap
+    (_root_.SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)
+      (M := Fin 2 → R) (algebraMap S (S ⊗[R] _root_.SymmetricAlgebra R (Fin 2 → R))
+        (algebraMap R S r))) = _
+  have h : _root_.SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)
+      (M := Fin 2 → R) (algebraMap S _ (algebraMap R S r)) =
+      algebraMap S (_root_.SymmetricAlgebra S (S ⊗[R] (Fin 2 → R))) (algebraMap R S r) :=
+    (_root_.SymmetricAlgebra.scalarTensorBialgEquiv (k := R) (K := S)
+      (M := Fin 2 → R)).toAlgEquiv.commutes _
+  rw [h, AlgHom.commutes]
+
+end Coefficients
+
+variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
+
+local notation "𝒜" => homogeneousSubmodule R (Fin 2 → R)
+local notation "ℬ" => homogeneousSubmodule S (Fin 2 → S)
+
+/-- The native base-change projection is induced by coefficient extension. -/
+lemma baseChangeProjection_eq_map :
+    baseChangeProjection R S = Proj.map (coefficientMap R S)
+      (coefficientMap_irrelevant R S) := by
+  simp only [baseChangeProjection_def, coefficientMap,
+    Proj.symmetricAlgebraMapIso_hom, Proj.symmetricAlgebraScalarTensorIso_hom,
+    Proj.baseChangeProjection_def]
+  rw [Proj.map_comp _ _ _, Proj.map_comp _ _ _]
+  exact HomogeneousIdeal.irrelevant_le_map_comp
+    (HomogeneousIdeal.irrelevant_le_map_baseChangeMap S 𝒜)
+    (HomogeneousIdeal.irrelevant_le_map_of_surjective
+      (scalarTensorGradedAlgHom (R := R) (S := S) (M := Fin 2 → R)).toGradedRingHom
+      scalarTensorGradedAlgHom_rightInverse.surjective)
+
+/-- The native chart isomorphism is the homogeneous-localization lift of dehomogenization. -/
+lemma awayEquivPolynomial_eq_lift (i : Fin 2) :
+    (awayEquivPolynomial R i).toRingHom =
+      Away.lift 𝒜 (dehomogenize R i).toRingHom
+        (by simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+          dehomogenize_coord_self]; exact isUnit_one) := by
+  apply RingHom.ext
+  intro z
+  obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective 𝒜 (coord_mem R i) z
+  -- RingHom.ext leaves the bundled ring-hom application. Its underlying equivalence is
+  -- needed by awayEquivPolynomial_mk, whose statement evaluates the equivalence directly.
+  change awayEquivPolynomial R i (Away.mk 𝒜 (coord_mem R i) n a ha) = _
+  rw [awayEquivPolynomial_mk, Away.lift_mk]
+  simp
+
+section Coordinates
+
+variable {A : Type u} [CommSemiring A]
+
+/-- The homogeneous coordinates obtained by evaluating the dehomogenized symmetric algebra. -/
+noncomputable def pointCoordinates (f : R →+* A) (i : Fin 2) (a : A) :
+    _root_.SymmetricAlgebra R (Fin 2 → R) →+* A :=
+  (Polynomial.eval₂RingHom f a).comp (dehomogenize R i).toRingHom
+
+/-- Evaluation of homogeneous coordinates sends scalar constants through the coefficient map. -/
+@[simp]
+lemma pointCoordinates_algebraMap (f : R →+* A) (i : Fin 2) (a : A) (r : R) :
+    pointCoordinates R f i a
+      (algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r) = f r := by
+  simp [pointCoordinates]
+
+/-- The normalized coordinate has value one. -/
+@[simp]
+lemma pointCoordinates_coord_self (f : R →+* A) (i : Fin 2) (a : A) :
+    pointCoordinates R f i a (coord R i) = 1 := by
+  simp [pointCoordinates]
+
+/-- The other homogeneous coordinate has the prescribed value. -/
+@[simp]
+lemma pointCoordinates_coord_rev (f : R →+* A) (i : Fin 2) (a : A) :
+    pointCoordinates R f i a (coord R i.rev) = a := by
+  simp [pointCoordinates]
+
+/-- Normalized homogeneous coordinates map the irrelevant ideal to the unit ideal. -/
+lemma pointCoordinates_irrelevant (f : R →+* A) (i : Fin 2) (a : A) :
+    (HomogeneousIdeal.irrelevant 𝒜).toIdeal.map (pointCoordinates R f i a) = ⊤ := by
+  rw [Ideal.eq_top_iff_one]
+  simpa only [pointCoordinates_coord_self] using
+    Ideal.mem_map_of_mem (pointCoordinates R f i a)
+      (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜 one_pos (coord_mem R i))
+
+/-- Evaluated homogeneous coordinates commute with coefficient extension. -/
+lemma pointCoordinates_comp_coefficientMap (f : S →+* A) (i : Fin 2) (a : A) :
+    (pointCoordinates S f i a).comp (coefficientMap R S).toRingHom =
+      pointCoordinates R (f.comp (algebraMap R S)) i a := by
+  ext r
+  · simp [pointCoordinates, coefficientMap_algebraMap]
+  · simp only [RingHom.comp_apply, GradedRingHom.coe_toRingHom]
+    rw [coefficientMap_ι,
+      ι_eq_smul_coord_add_smul_coord S i,
+      ι_eq_smul_coord_add_smul_coord R i]
+    simp [pointCoordinates, Algebra.smul_def]
+
+end Coordinates
+
+variable {A : Type u} [CommRing A]
+
+/-- The point with normalized coordinate `a` in the chart `D₊(Xᵢ)`, over the coefficient map `f`. -/
+noncomputable def polynomialPoint (f : R →+* A) (i : Fin 2) (a : A) :
+    Spec (.of A) ⟶ projectiveLine R :=
+  Spec.map (CommRingCat.ofHom (Polynomial.eval₂RingHom f a)) ≫ polynomialChartι R i
+
+/-- A polynomial chart point is obtained by evaluation followed by the polynomial chart. -/
+lemma polynomialPoint_def (f : R →+* A) (i : Fin 2) (a : A) :
+    polynomialPoint R f i a =
+      Spec.map (CommRingCat.ofHom (Polynomial.eval₂RingHom f a)) ≫ polynomialChartι R i := (rfl)
+
+/-- A polynomial chart point is the corresponding homogeneous-localization lift. -/
+lemma polynomialPoint_eq_awayLift (f : R →+* A) (i : Fin 2) (a : A) :
+    polynomialPoint R f i a =
+      Spec.map (CommRingCat.ofHom (Away.lift 𝒜 (pointCoordinates R f i a)
+        (by rw [pointCoordinates_coord_self]; exact isUnit_one))) ≫ awayι R i := by
+  unfold polynomialPoint
+  rw [polynomialChartι_def, ← Spec.map_comp_assoc]
+  congr 2
+  apply CommRingCat.hom_ext
+  -- Spec.map has reduced to a CommRingCat morphism. The chart-lift identity is an
+  -- equality of the underlying ring homomorphisms, so expose those applications here.
+  change (Polynomial.eval₂RingHom f a).comp (awayEquivPolynomial R i).toRingHom = _
+  rw [awayEquivPolynomial_eq_lift, RingHom.comp_homogeneousLocalizationAwayLift]
+  rfl
+
+/-- A polynomial chart point is the morphism defined by its global homogeneous coordinates. -/
+lemma polynomialPoint_eq_fromGlobalSections (f : R →+* A) (i : Fin 2) (a : A) :
+    polynomialPoint R f i a =
+      Proj.fromOfGlobalSections 𝒜
+        ((Scheme.ΓSpecIso (.of A)).inv.hom.comp (pointCoordinates R f i a))
+        (by rw [← Ideal.map_map, pointCoordinates_irrelevant, Ideal.map_top]) := by
+  rw [Proj.fromOfGlobalSections_Spec_eq_awayLift _
+    (pointCoordinates_irrelevant R f i a) one_pos (coord_mem R i)
+    (by rw [pointCoordinates_coord_self]; exact isUnit_one)]
+  exact polynomialPoint_eq_awayLift R f i a
+
+/-- A polynomial chart point lies over its coefficient map. -/
+@[reassoc]
+lemma polynomialPoint_over (f : R →+* A) (i : Fin 2) (a : A) :
+    polynomialPoint R f i a ≫ (projectiveLine R ↘ Spec (.of R)) =
+      Spec.map (CommRingCat.ofHom f) := by
+  rw [polynomialPoint, Category.assoc, polynomialChartι_over, ← Spec.map_comp]
+  congr 1
+  ext r
+  simp
+
+/-- Polynomial chart points are natural under a homomorphism of target rings. -/
+@[reassoc]
+lemma SpecMap_polynomialPoint {B : Type u} [CommRing B] (f : R →+* A)
+    (g : A →+* B) (i : Fin 2) (a : A) :
+    Spec.map (CommRingCat.ofHom g) ≫ polynomialPoint R f i a =
+      polynomialPoint R (g.comp f) i (g a) := by
+  rw [polynomialPoint, polynomialPoint, ← Spec.map_comp_assoc]
+  congr 2
+  ext r <;> simp
+
+/-- Native polynomial chart points commute with base change. -/
+lemma polynomialPoint_comp_baseChangeProjection (f : S →+* A) (i : Fin 2) (a : A) :
+    polynomialPoint S f i a ≫ baseChangeProjection R S =
+      polynomialPoint R (f.comp (algebraMap R S)) i a := by
+  rw [baseChangeProjection_eq_map, polynomialPoint_eq_fromGlobalSections,
+    Proj.fromOfGlobalSections_map]
+  simp only [RingHom.comp_assoc, pointCoordinates_comp_coefficientMap]
+  exact (polynomialPoint_eq_fromGlobalSections R _ i a).symm
+
+/-- The native projective line is geometrically integral over every commutative ring. -/
+instance geometricallyIntegral :
+    GeometricallyIntegral (projectiveLine R ↘ Spec (.of R)) where
+  geometrically_isIntegral := by
+    rw [geometrically_iff_of_commRing_of_isClosedUnderIsomorphisms]
+    intro K _ _
+    exact IsIntegral.of_isIso (isPullback_baseChangeProjection R K).isoPullback.hom
+
+/-- The polynomial chart point with universal affine coordinate is the chart inclusion. -/
+@[simp]
+lemma polynomialPoint_X (i : Fin 2) :
+    polynomialPoint R Polynomial.C i Polynomial.X = polynomialChartι R i := by
+  have h : Polynomial.eval₂RingHom (Polynomial.C : R →+* R[X]) Polynomial.X =
+      RingHom.id R[X] := by ext <;> simp
+  simp [polynomialPoint, h]
+
+/-- The normalized zero point in the second chart is the native infinity section. -/
+@[simp]
+lemma polynomialPoint_zero :
+    polynomialPoint R (RingHom.id R) 1 0 = infinitySection R := by
+  rw [infinitySection_def, polynomialPoint]
+  have h : Polynomial.eval₂RingHom (RingHom.id R) (0 : R) = Polynomial.evalRingHom 0 := by
+    ext <;> simp
+  rw [h]
+
+/-- The native projective line, regarded as an object of the category over `Spec R`. -/
+noncomputable abbrev toOver : Over (Spec (.of R)) :=
+  Over.mk (projectiveLine R ↘ Spec (.of R))
+
+/-- The projective line as an over-category object has its usual structure morphism. -/
+@[simp]
+lemma toOver_hom : (toOver R).hom = (projectiveLine R ↘ Spec (.of R)) := (rfl)
+
+end TauCeti.AlgebraicGeometry.projectiveLine

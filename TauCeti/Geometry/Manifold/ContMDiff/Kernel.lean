@@ -104,7 +104,8 @@ private theorem linearIndependent_and_span_eq_ker {R : Type*} [NormedAddCommGrou
     omega
   have hli : LinearIndependent 𝕜 fun i ↦ T (b i) :=
     b.linearIndependent.map' ((T : E →ₗ[𝕜] E) ∘ₗ A₀.ker.subtype)
-      (LinearMap.ker_eq_bot'.mpr fun u hu ↦ Subtype.ext (hTinj (LinearMap.mem_ker.mp u.2) hu))
+      (LinearMap.ker_eq_bot'.mpr fun u hu ↦ Subtype.ext (hTinj (LinearMap.mem_ker.mp u.property)
+          hu))
   refine ⟨hli, ?_⟩
   -- Both the span and `ker A` are `k`-dimensional subspaces of `ker (ψ ∘ A)`.
   have hspan : Submodule.span 𝕜 (range fun i ↦ T (b i)) = (ψ ∘L A).ker := by
@@ -134,7 +135,7 @@ theorem ContMDiffOn.exists_contMDiffOn_basis_ker {A : M → E →L[𝕜] G} {U :
   classical
   -- A projection `ψ` onto the range `R` of `A x₀`, and a right inverse `κ` of `A x₀` over `R`.
   let R := LinearMap.range (A x₀ : E →ₗ[𝕜] G)
-  have : CompleteSpace R := FiniteDimensional.complete 𝕜 R
+  have : CompleteSpace R := FiniteDimensional.completeSpace 𝕜 R
   obtain ⟨p, hp⟩ := R.subtype.exists_leftInverse_of_injective R.ker_subtype
   obtain ⟨s, hs⟩ := (A x₀ : E →ₗ[𝕜] G).rangeRestrict.exists_rightInverse_of_surjective
     (A x₀ : E →ₗ[𝕜] G).range_rangeRestrict

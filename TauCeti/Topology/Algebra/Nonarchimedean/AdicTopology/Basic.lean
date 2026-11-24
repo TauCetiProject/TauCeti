@@ -1,15 +1,19 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.RingTheory.Ideal.Maps
+
+import TauCeti.RingTheory.Ideal.Quotient.Defs
+import TauCeti.Topology.Discrete
 
 /-!
 # Powers of the ideal defining an adic topology
@@ -51,9 +55,10 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
 * `IsAdic.continuous_iff_map_le_radical` and
-  `IsAdic.continuous_iff_forall_isTopologicallyNilpotent` : when the source topology has some
-  finitely generated ideal of definition, continuity can be tested on any ideals of definition,
-  without requiring completeness or finite generation of the tested ideals.
+  `IsAdic.continuous_iff_forall_isTopologicallyNilpotent` : when the source has a finitely
+  generated ideal of definition, continuity can be tested on arbitrary ideals of definition.
+* `IsAdic.continuous_iff_exists_pos_pow_map_le` : a ring homomorphism between adic rings is
+  continuous iff `(I ^ k).map f ≤ J` for some `k > 0` (no finite generation or completeness).
 * `IsAdic.of_radical_eq` and `Ideal.adicTopology_eq_of_radical_eq` : finitely generated ideals
   with the same radical define the same adic topology.
 * `IsAdic.isAdic_iff_isOpen_and_exists_pow_le` : an ideal of definition is characterized by
@@ -64,6 +69,9 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   of an ideal of definition into any open ideal of its target.
 * `IsAdic.radical_eq`, `IsAdic.le_radical`, and `IsAdic.radical` : ideals of definition have
   the same radical, and a finitely generated radical is the largest ideal of definition.
+* `Ideal.adicTopology_eq_iInf_induced`, `Ideal.adicTopology_eq_iInf_induced_pow`, and
+  `IsAdic.eq_iInf_induced` : `I.adicTopology` (and any `I`-adic topology) is the initial topology
+  induced by the quotient maps `R → R ⧸ I ^ (n + 1)` (or `R → R ⧸ I ^ n`) into discrete rings.
 
 ## Provenance
 
@@ -76,7 +84,9 @@ which is the reading taken here.
 
 The ideal-of-definition criterion and the results about radicals additionally follow
 A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §§7.1.4–7.1.7.
-The open-quotient transport theorem follows Ch. 0, (7.3.5).
+The open-quotient transport theorem follows Ch. 0, (7.3.5), and the initial-topology
+characterization via discrete quotients follows N. Bourbaki, *Commutative Algebra*, Ch. III, §2,
+no. 6.
 -/
 
 public section
@@ -273,6 +283,22 @@ theorem continuous_iff_map_le_radical {S : Type*} [CommRing S] [TopologicalSpace
     _ ≤ (I.map f).radical := Ideal.map_radical_le f
     _ ≤ J.radical := Ideal.radical_le_radical_iff.mpr hf
 
+/-- For ideals of definition `I` of `R` and `J` of `S`, a ring homomorphism `f : R →+* S` is
+continuous if and only if `(I ^ k).map f ≤ J` for some positive integer `k`, without requiring
+finite generation or completeness (EGA I, Ch. 0, 7.1.3–7.1.4; Ch. I, 10.2.2). -/
+theorem continuous_iff_exists_pos_pow_map_le {S : Type*} [CommRing S] [TopologicalSpace S]
+    {J : Ideal S} (hI : IsAdic I) (hJ : IsAdic J) {f : R →+* S} :
+    Continuous f ↔ ∃ k > 0, (I ^ k).map f ≤ J := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have : IsTopologicalRing S := hJ ▸ J.nonarchimedean.toIsTopologicalRing
+  refine ⟨fun hf ↦ ?_, fun ⟨k, _, hk⟩ ↦ ?_⟩
+  · obtain ⟨n, hn⟩ := hI.exists_pow_succ_le_comap (by simpa using hJ.isOpen_pow 1) hf
+    exact ⟨n + 1, Nat.succ_pos n, Ideal.map_le_iff_le_comap.mpr hn⟩
+  · refine continuous_of_tendsto_nhds_zero f ?_
+    rw [hI.hasBasis_nhds_zero.tendsto_iff hJ.hasBasis_nhds_zero]
+    refine fun n _ ↦ ⟨k * n, trivial, fun x hx ↦ Ideal.pow_right_mono hk n ?_⟩
+    rw [← Ideal.map_pow, ← pow_mul]; exact Ideal.mem_map_of_mem f hx
+
 /-- When the source topology has a finitely generated ideal of definition, a ring homomorphism
 is continuous exactly when it sends every element of any ideal of definition to a
 topologically nilpotent element. Neither ring needs to be complete. -/
@@ -357,3 +383,57 @@ theorem Ideal.adicTopology_eq_of_radical_eq {R : Type*} [CommRing R] {I J : Idea
   letI := I.adicTopology
   -- for the `I`-adic topology, `IsAdic I` is `rfl` by the definition of `IsAdic`
   IsAdic.of_radical_eq (I := I) rfl hIfg hJfg h
+
+section InitialTopology
+
+open Filter Topology
+
+namespace Ideal
+
+variable {R : Type*} [CommRing R]
+
+/-- The `I`-adic topology on a commutative ring `R` is the initial topology induced by the quotient
+maps `R → R ⧸ I ^ (n + 1)` into the discrete rings `R ⧸ I ^ (n + 1)`. -/
+theorem adicTopology_eq_iInf_induced (I : Ideal R) :
+    I.adicTopology =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ (n + 1))) ⊥ := by
+  refine TopologicalSpace.ext_nhds fun x ↦ ?_
+  rw [nhds_iInf]
+  simp only [TauCeti.nhds_induced_bot, Ideal.Quotient.preimage_mk_singleton]
+  refine le_antisymm ?_ ?_
+  · exact le_iInf fun n ↦ le_principal_iff.mpr
+      ((I.hasBasis_nhds_adic x).mem_of_mem (i := n + 1) trivial)
+  · exact (I.hasBasis_nhds_adic x).ge_iff.mpr fun n _ ↦
+      mem_iInf_of_mem n (mem_principal.mpr (Set.image_mono (Ideal.pow_le_pow_right n.le_succ)))
+
+/-- The `I`-adic topology on a commutative ring `R` is the initial topology induced by the quotient
+maps `R → R ⧸ I ^ n` into the discrete rings `R ⧸ I ^ n`. -/
+theorem adicTopology_eq_iInf_induced_pow (I : Ideal R) :
+    I.adicTopology =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ n)) ⊥ := by
+  rw [adicTopology_eq_iInf_induced]
+  refine le_antisymm (le_iInf fun n ↦ ?_) (le_iInf fun n ↦ iInf_le _ (n + 1))
+  cases n with
+  | zero =>
+    have : Subsingleton (R ⧸ I ^ 0) :=
+      ⟨fun a b ↦ Quotient.inductionOn₂' a b fun _ _ ↦ Ideal.Quotient.eq.mpr (by simp [pow_zero])⟩
+    rw [Subsingleton.elim (⊥ : TopologicalSpace (R ⧸ I ^ 0)) ⊤, induced_top]
+    exact le_top
+  | succ n => exact iInf_le _ n
+
+end Ideal
+
+namespace IsAdic
+
+variable {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
+
+/-- If an ideal `I` defines the topology of `R`, then the topology of `R` is the initial topology
+induced by the quotient maps `R → R ⧸ I ^ (n + 1)` into discrete rings. -/
+theorem eq_iInf_induced (hI : IsAdic I) :
+    ‹TopologicalSpace R› =
+      ⨅ n : ℕ, TopologicalSpace.induced (Ideal.Quotient.mk (I ^ (n + 1))) ⊥ :=
+  hI.trans (Ideal.adicTopology_eq_iInf_induced I)
+
+end IsAdic
+
+end InitialTopology

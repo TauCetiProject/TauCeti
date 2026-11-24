@@ -10,17 +10,26 @@ public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+import TauCeti.Topology.Algebra.Group.Cocompact
+import TauCeti.Topology.Algebra.Group.Subgroup
 
 /-!
 # Discrete subgroups act properly discontinuously and have infinite index
 
-A discrete subgroup `S` of a `T₁` topological group `G` is closed, so it meets every compact set
-of `G` in a finite set. Hence `S` acts properly discontinuously on `G` by left multiplication.
+A discrete subgroup `S` of a topological group `G` meets every compact set of `G` in a finite set:
+its inclusion tends to the cocompact filter along the cofinite filter
+(`Subgroup.tendsto_coe_cofinite_of_isDiscrete`). Hence `S` acts properly discontinuously on `G` by
+left multiplication.
 Mathlib proves this from the hypothesis that the inclusion `S → G` tends to the cocompact filter
 along the cofinite filter (`Subgroup.properlyDiscontinuousSMul_of_tendsto_cofinite`); this file
 records it as an instance for subgroups carrying the discrete topology, and for discrete
 submodules of a topological module acting by translation, such as a lattice in a real or complex
 vector space.
+
+Conversely, in a Hausdorff group, a subgroup meeting some compact neighbourhood of the identity
+in a finite set is discrete (`Subgroup.discreteTopology_iff_finite_inter_of_isCompact`). For a group
+with a compact open subgroup `U`, such as the finite adele ring of a number field with its integral
+adeles, a subgroup `Γ` is therefore discrete exactly when `Γ ∩ U` is finite.
 
 A discrete subgroup of finite index in a Hausdorff topological group makes the whole group
 discrete (`Subgroup.discreteTopology_iff_of_finiteIndex`). So when the group has no isolated
@@ -35,6 +44,9 @@ torus `E / L` with `E ≠ 0`, is infinite.
   discontinuously on the ambient group.
 * `Submodule.properlyDiscontinuousVAdd_of_discreteTopology`: a discrete submodule acts properly
   discontinuously on the ambient module by translation.
+* `Subgroup.discreteTopology_iff_finite_inter_of_isCompact`,
+  `AddSubgroup.discreteTopology_iff_finite_inter_of_isCompact`: a subgroup of a Hausdorff group is
+  discrete exactly when it meets a given compact neighbourhood of the identity in a finite set.
 * `Subgroup.infinite_quotient_of_discreteTopology`,
   `AddSubgroup.infinite_quotient_of_discreteTopology`: a discrete subgroup of a Hausdorff group
   without isolated points has infinite index.
@@ -44,22 +56,42 @@ torus `E / L` with `E ≠ 0`, is infinite.
 
 public section
 
-/-- A discrete subgroup of a `T₁` topological group acts properly discontinuously on the group by
-left multiplication. -/
-@[to_additive /-- A discrete additive subgroup of a `T₁` additive topological group acts properly
+/-- A discrete subgroup of a topological group acts properly discontinuously on the group by left
+multiplication. -/
+@[to_additive /-- A discrete additive subgroup of an additive topological group acts properly
 discontinuously on the group by translation. -/]
 instance Subgroup.properlyDiscontinuousSMul_of_discreteTopology {G : Type*} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] [T1Space G] (S : Subgroup G) [DiscreteTopology S] :
+    [TopologicalSpace G] [IsTopologicalGroup G] (S : Subgroup G) [DiscreteTopology S] :
     ProperlyDiscontinuousSMul S G :=
   S.properlyDiscontinuousSMul_of_tendsto_cofinite <|
     S.tendsto_coe_cofinite_of_isDiscrete <| isDiscrete_iff_discreteTopology.2 ‹_›
 
-/-- A discrete submodule of a `T₁` topological module acts properly discontinuously on the module
-by translation. -/
+/-- A discrete submodule of a topological module acts properly discontinuously on the module by
+translation. -/
 instance Submodule.properlyDiscontinuousVAdd_of_discreteTopology {R M : Type*} [Ring R]
-    [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M] [T1Space M]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
     (p : Submodule R M) [DiscreteTopology p] : ProperlyDiscontinuousVAdd p M :=
   AddSubgroup.properlyDiscontinuousVAdd_of_discreteTopology p.toAddSubgroup
+
+open scoped Topology in
+/-- **Discreteness by a compact neighbourhood of the identity.** A subgroup `Γ` of a Hausdorff
+topological group is discrete exactly when it meets a compact neighbourhood `U` of the identity in
+a finite set. A discrete `Γ` meets every compact set in a finite set
+(`Subgroup.finite_preimage_coe_of_isCompact`); conversely, a finite `Γ ∩ U` makes `Γ`, the range
+of its inclusion, discrete (`MonoidHom.discreteTopology_range_of_finite_preimage`). -/
+@[to_additive /-- **Discreteness by a compact neighbourhood of zero.** An additive subgroup `Γ` of a
+Hausdorff additive topological group is discrete exactly when it meets a compact neighbourhood `U`
+of zero in a finite set. -/]
+theorem Subgroup.discreteTopology_iff_finite_inter_of_isCompact {G : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] [T2Space G] (Γ : Subgroup G) {U : Set G}
+    (hU : IsCompact U) (hU1 : U ∈ 𝓝 (1 : G)) :
+    DiscreteTopology Γ ↔ ((Γ : Set G) ∩ U).Finite := by
+  have hfin : ((Γ : Set G) ∩ U).Finite ↔ (((↑) : Γ → G) ⁻¹' U).Finite := by
+    rw [← Subtype.image_preimage_coe]
+    exact ⟨fun h ↦ h.of_finite_image Subtype.val_injective.injOn, fun h ↦ h.image _⟩
+  rw [hfin]
+  refine ⟨fun _ ↦ Γ.finite_preimage_coe_of_isCompact hU, fun h ↦ ?_⟩
+  exact Γ.range_subtype ▸ Γ.subtype.discreteTopology_range_of_finite_preimage hU1 h
 
 open scoped Topology in
 /-- **A discrete subgroup of a group without isolated points has infinite index.** A discrete

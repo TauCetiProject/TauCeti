@@ -36,7 +36,7 @@ theorem natCard_powerClassQuotient_prime_pow (G : Type*) [CommGroup G] [Finite G
   rw [← Subgroup.index, powerSubgroup_eq_range_powMonoidHom, Subgroup.index_range]
   -- The kernel of the `p ^ m`-th power map is a `p`-group containing a Sylow `p`-subgroup.
   have hker : IsPGroup p (powMonoidHom (p ^ m) : G →* G).ker :=
-    fun x ↦ ⟨m, Subtype.ext (MonoidHom.mem_ker.1 x.2)⟩
+    fun x ↦ ⟨m, Subtype.ext (MonoidHom.mem_ker.1 x.property)⟩
   obtain ⟨Q, hQ⟩ := hker.exists_le_sylow
   obtain ⟨P⟩ : Nonempty (Sylow p G) := inferInstance
   refine le_antisymm ?_ ?_

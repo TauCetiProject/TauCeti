@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.FiberBundle.Basic
+public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
 import TauCeti.Order.Interval.Set.Pi
 
@@ -145,7 +145,7 @@ private lemma boxLifts_of_mapsTo [TopologicalSpace B] [TopologicalSpace F]
   refine ⟨fun x ↦ e.lift (g (lowerRetract a hT x)) (H x), ?_,
     fun x hx ↦ e.proj_lift (hab hx), fun x hx ↦ ?_⟩
   · rw [continuousOn_iff_continuous_domRestrict]
-    exact continuous_subtype_val.comp <| e.liftCM.continuous.comp <|
+    exact continuous_subtypeVal.comp <| e.liftCM.continuous.comp <|
       ((hg.comp (continuous_lowerRetract a hT).continuousOn hr).mapsToRestrict hsrc).prodMk
         (hH.continuousOn.mapsToRestrict hab)
   · have hpx : p (g x) ∈ e.baseSet := by
@@ -224,7 +224,6 @@ private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : �
   set b₁ := Function.update b i s
   set a₂ := Function.update a i s
   have hb₁ : b₁ ≤ b := update_le_iff.2 ⟨hsb, fun _ _ ↦ le_rfl⟩
-  have ha₂ : a ≤ a₂ := le_update_iff.2 ⟨has, fun _ _ ↦ le_rfl⟩
   have faces₁ : lowerFaces a b₁ T ⊆ lowerFaces a b T := fun x hx ↦
     let ⟨hx, h⟩ := mem_lowerFaces.1 hx
     mem_lowerFaces.2 ⟨⟨hx.1, hx.2.trans hb₁⟩, h⟩
@@ -235,12 +234,7 @@ private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : �
   set P := lowerFaces a₂ b {i}
   set R := lowerFaces a₂ b (T.erase i)
   -- glue the two solutions along the cut
-  have hIcc : Icc a b = Icc a b₁ ∪ Icc a₂ b := by
-    refine Subset.antisymm (fun x hx ↦ ?_) (union_subset (Icc_subset_Icc le_rfl hb₁)
-      (Icc_subset_Icc ha₂ le_rfl))
-    rcases le_total (x i) s with hxs | hxs
-    · exact Or.inl (mem_Icc_update_right hx hxs)
-    · exact Or.inr (mem_Icc_update_left hx hxs)
+  have hIcc : Icc a b = Icc a b₁ ∪ Icc a₂ b := (Icc_update_union_Icc_update a b i ⟨has, hsb⟩).symm
   refine ⟨fun x ↦ if x i ≤ s then G₁ x else G₂ x, ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
   · rw [hIcc]
     refine (hG₁.congr fun x hx ↦ ?_).union_of_isClosed (hG₂.congr fun x hx ↦ ?_) isClosed_Icc
@@ -371,8 +365,8 @@ theorem hasHomotopyLiftingProperty_cube_of_exists_trivialization [TopologicalSpa
     (Finset.singleton_nonempty none) g hg.continuousOn hgH
   have hemb : Continuous emb := continuous_pi fun o ↦ by
     cases o
-    · exact continuous_subtype_val.comp continuous_fst
-    · exact continuous_subtype_val.comp ((continuous_apply _).comp continuous_snd)
+    · exact continuous_subtypeVal.comp continuous_fst
+    · exact continuous_subtypeVal.comp ((continuous_apply _).comp continuous_snd)
   have hembI : ∀ y, emb y ∈ Icc (0 : Option κ → ℝ) 1 := fun y ↦
     ⟨fun o ↦ by cases o <;> simp [emb, unitInterval.nonneg],
       fun o ↦ by cases o <;> simp [emb, unitInterval.le_one]⟩
@@ -404,7 +398,7 @@ cube. -/
 theorem hasHomotopyLiftingProperty_proj_cube (κ : Type*) [Finite κ] :
     TauCeti.HasHomotopyLiftingProperty (TotalSpace.proj : TotalSpace F E → B) (κ → I) :=
   TauCeti.hasHomotopyLiftingProperty_cube_of_exists_trivialization
-    (fun b ↦ ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩) κ
+    (exists_trivialization_mem_baseSet F E) κ
 
 end FiberBundle
 

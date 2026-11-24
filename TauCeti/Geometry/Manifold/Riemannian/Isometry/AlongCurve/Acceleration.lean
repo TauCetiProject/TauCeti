@@ -119,7 +119,7 @@ theorem mfderiv_alongCurveWithin_alongCurveWithin (hf : IsLocalRiemannianIsometr
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ r)))
   rw [hf.mfderiv_alongCurveWithin
     ((hγ.mdifferentiableOn (by norm_num)) t ht)
-    (differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs hV ht)]
+    (differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs (hV t ht) ht)]
   exact alongCurveWithin_congr _ _ _ (eventually_mem_nhdsWithin.mono hfirst) (hfirst t ht)
 
 end Smooth

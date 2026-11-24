@@ -76,7 +76,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped AdicCompletionExtension NumberField.LiesOver
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -108,7 +109,7 @@ variable {K L} in
 theorem ideleFiniteCoord_ideleNormMap (v : HeightOneSpectrum (𝓞 K)) (x : IdeleGroup (𝓞 L) L) :
     v.ideleFiniteCoord (ideleNormMap K L x) =
       ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Algebra.normUnits (v.adicCompletion K) (w.1.ideleFiniteCoord x) := by
+        Algebra.normUnits (v.adicCompletion K) (w.val.ideleFiniteCoord x) := by
   apply Units.ext
   rw [← Units.coeHom_apply, ← Units.coeHom_apply, map_finprod _ (Set.toFinite _)]
   simp
@@ -120,7 +121,7 @@ place `v` of `K` is the product over the places `w ∣ v` of `N_{L_w/K_v}(x_w)`.
 theorem ideleInfiniteCoord_ideleNormMap (v : InfinitePlace K) (x : IdeleGroup (𝓞 L) L) :
     v.ideleInfiniteCoord (ideleNormMap K L x) =
       ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v},
-        Algebra.normUnits v.Completion (w.1.ideleInfiniteCoord x) := by
+        Algebra.normUnits v.Completion (w.val.ideleInfiniteCoord x) := by
   apply Units.ext
   rw [← Units.coeHom_apply, ← Units.coeHom_apply, map_finprod _ (Set.toFinite _)]
   simp
@@ -145,11 +146,11 @@ theorem ideleNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace L) [w
     · -- No place above `v'` is `w`, so every factor is trivial.
       rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne v' hv]
       refine finprod_eq_one_of_forall_eq_one fun w' ↦ ?_
-      have hne : w'.1 ≠ w := by
+      have hne : w'.val ≠ w := by
         rintro h
         apply hv
-        rw [← LiesOver.comap_eq w'.1 v', ← LiesOver.comap_eq w v, h]
-      rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w'.1 hne, map_one]
+        rw [← LiesOver.comap_eq w'.val v', ← LiesOver.comap_eq w v, h]
+      rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne w'.val hne, map_one]
   · simp only [ideleFiniteCoord_ideleNormMap,
       HeightOneSpectrum.ideleFiniteCoord_ofCompletion, map_one, finprod_one]
 
@@ -175,11 +176,11 @@ theorem ideleNormMap_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
     · -- No place above `v'` is `w`, so every factor is trivial.
       rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hv]
       refine finprod_eq_one_of_forall_eq_one fun w' ↦ ?_
-      have hne : w'.1 ≠ w := by
+      have hne : w'.val ≠ w := by
         rintro rfl
         exact hv (HeightOneSpectrum.ext
-          (w'.2.over.trans ‹w'.1.asIdeal.LiesOver v.asIdeal›.over.symm))
-      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w'.1 hne, map_one]
+          (w'.property.over.trans ‹w'.val.asIdeal.LiesOver v.asIdeal›.over.symm))
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne w'.val hne, map_one]
 
 /-- The norm of a principal idele is the principal idele of the norm of `L / K`. -/
 @[simp]

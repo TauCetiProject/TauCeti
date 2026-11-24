@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Sobolev
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import TauCeti.Analysis.Convolution.Weighted
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -72,9 +73,16 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
   `‖u v‖_{H^s} ≤ C ‖u‖_{H^s} ‖v‖_{H^s}`.
 * `TemperedDistribution.exists_norm_toBesselPotentialSpace_pow_le`: the powers of `u ∈ H^s` lie in
   `H^s`, with `‖u ^ (n + 1)‖_{H^s} ≤ C ^ n ‖u‖_{H^s} ^ (n + 1)`.
+* `TemperedDistribution.exists_norm_toBesselPotentialSpace_pow_sub_pow_le`: the powers depend
+  Lipschitz continuously on `u`, with
+  `‖u ^ (n + 1) - w ^ (n + 1)‖_{H^s} ≤ (n + 1) (C R) ^ n ‖u - w‖_{H^s}` when both norms are at most
+  `R`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
+* `BesselPotentialSpace.mulCLM`: the product on `H^s(E)` as a continuous bilinear map, whose
+  `L²` functions are the pointwise products (`BesselPotentialSpace.coeFn_toLp_inclusion_mulCLM`,
+  `BesselPotentialSpace.coeFn_inclusionLp_mulCLM`); it is commutative and associative.
 
 ## References
 
@@ -88,7 +96,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module ContinuousLinearMap
-open scoped FourierTransform SchwartzMap ENNReal Convolution
+open scoped FourierTransform SchwartzMap ENNReal Convolution BesselPotentialSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
@@ -138,9 +146,7 @@ theorem MemSobolev.mul {s : ℝ} (hs : finrank ℝ E < 2 * s)
     {u v : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ)))
     (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ))) :
     MemSobolev s 2 ((hu.memLp_mul hs v).toLp _ : 𝓢'(E, ℂ)) := by
-  have hs0 : 0 ≤ s := by
-    have := (finrank ℝ E).cast_nonneg (α := ℝ)
-    linarith
+  have hs0 : 0 ≤ s := TauCeti.nonneg_of_finrank_lt_two_mul hs
   obtain ⟨v₁, h₁⟩ := hu.fourier_memL1 hs
   obtain ⟨v₂, h₂⟩ := hv.fourier_memL1 hs
   have hW := (L1.integrable_coeFn v₁).integrable_convolution (ContinuousLinearMap.mul ℂ ℂ)
@@ -171,9 +177,7 @@ theorem exists_norm_toBesselPotentialSpace_mul_le {s : ℝ} (hs : finrank ℝ E 
       (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ))),
       ‖(hu.mul hs hv).toBesselPotentialSpace‖ ≤
         C * ‖hu.toBesselPotentialSpace‖ * ‖hv.toBesselPotentialSpace‖ := by
-  have hs0 : 0 ≤ s := by
-    have := (finrank ℝ E).cast_nonneg (α := ℝ)
-    linarith
+  have hs0 : 0 ≤ s := TauCeti.nonneg_of_finrank_lt_two_mul hs
   set K := eLpNorm (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (-s / 2)) 2 volume
   have hK : K ≠ ∞ := (TauCeti.memLp_rpow_neg_one_add_norm_sq volume hs).ne
   refine ⟨2 ^ s * (2 * K.toReal), by positivity, fun {u v} hu hv => ?_⟩
@@ -228,6 +232,63 @@ theorem exists_norm_toBesselPotentialSpace_pow_le {s : ℝ} (hs : finrank ℝ E 
               ‖hu.toBesselPotentialSpace‖ := by gcongr
         _ = C ^ (n + 1) * ‖hu.toBesselPotentialSpace‖ ^ (n + 1 + 1) := by ring
 
+/-- **Differences of powers in `H^s(E)`, `s > dim E / 2`.** There is a constant `C`, depending
+only on `s` and `E`, such that for `L²` functions `u, w ∈ H^s` with `‖u‖_{H^s}, ‖w‖_{H^s} ≤ R` and
+every `n`, the difference `u ^ (n + 1) - w ^ (n + 1)` is an `L²` function in `H^s` with
+`‖u ^ (n + 1) - w ^ (n + 1)‖_{H^s} ≤ (n + 1) (C R) ^ n ‖u - w‖_{H^s}`. This is the Lipschitz form of
+`exists_norm_toBesselPotentialSpace_pow_le`. -/
+theorem exists_norm_toBesselPotentialSpace_pow_sub_pow_le {s : ℝ} (hs : finrank ℝ E < 2 * s) :
+    ∃ C, 0 ≤ C ∧ ∀ {u w : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ)))
+      (hw : MemSobolev s 2 (w : 𝓢'(E, ℂ))) {R : ℝ}, ‖hu.toBesselPotentialSpace‖ ≤ R →
+      ‖hw.toBesselPotentialSpace‖ ≤ R → ∀ n : ℕ, ∃ d : Lp ℂ 2 (volume : Measure E),
+        d =ᵐ[volume] (fun x ↦ u x ^ (n + 1) - w x ^ (n + 1)) ∧
+        ∃ hd : MemSobolev s 2 (d : 𝓢'(E, ℂ)), ‖hd.toBesselPotentialSpace‖ ≤
+          (n + 1) * (C * R) ^ n * ‖hu.toBesselPotentialSpace - hw.toBesselPotentialSpace‖ := by
+  obtain ⟨C₁, hC₁, hmul⟩ := exists_norm_toBesselPotentialSpace_mul_le (E := E) hs
+  obtain ⟨C₂, hC₂, hpow⟩ := exists_norm_toBesselPotentialSpace_pow_le (E := E) hs
+  refine ⟨max C₁ C₂, le_max_of_le_left hC₁, fun {u w} hu hw {R} huR hwR n ↦ ?_⟩
+  set C := max C₁ C₂
+  set δ := ‖hu.toBesselPotentialSpace - hw.toBesselPotentialSpace‖
+  have hR : 0 ≤ R := (norm_nonneg _).trans huR
+  have he := hu.toTemperedDistribution_sub hw
+  have heδ : ‖he.toBesselPotentialSpace‖ = δ := by
+    rw [hu.toBesselPotentialSpace_toTemperedDistribution_sub hw he]
+  -- Induction on `n`, through `u ^ (n + 2) - w ^ (n + 2) = u (u ^ (n + 1) - w ^ (n + 1)) +
+  -- (u - w) w ^ (n + 1)`.
+  induction n with
+  | zero =>
+    refine ⟨u - w, ?_, he, by simpa using heδ.le⟩
+    filter_upwards [Lp.coeFn_sub u w] with x hx
+    rw [hx, Pi.sub_apply, zero_add, pow_one, pow_one]
+  | succ n ih =>
+    obtain ⟨d, hdu, hd, hdn⟩ := ih
+    obtain ⟨p, hpw, hp, hpn⟩ := hpow hw n
+    have h₁ := hu.mul hs hd
+    have h₂ := he.mul hs hp
+    set x₁ := (hu.memLp_mul hs d).toLp _
+    set x₂ := (he.memLp_mul hs p).toLp _
+    have h₁₂ := h₁.toTemperedDistribution_add h₂
+    refine ⟨x₁ + x₂, ?_, h₁₂, ?_⟩
+    · filter_upwards [Lp.coeFn_add x₁ x₂, (hu.memLp_mul hs d).coeFn_toLp,
+        (he.memLp_mul hs p).coeFn_toLp, hdu, hpw, Lp.coeFn_sub u w] with x h h₁ h₂ hd hp hsub
+      rw [h, Pi.add_apply, h₁, h₂, hd, hp, hsub, Pi.sub_apply]
+      ring
+    · have hC₁C : C₁ ≤ C := le_max_left _ _
+      have hpn' : ‖hp.toBesselPotentialSpace‖ ≤ C ^ n * R ^ (n + 1) :=
+        hpn.trans (by gcongr; exact le_max_right _ _)
+      rw [h₁.toBesselPotentialSpace_toTemperedDistribution_add h₂ h₁₂]
+      calc ‖h₁.toBesselPotentialSpace + h₂.toBesselPotentialSpace‖
+          ≤ ‖h₁.toBesselPotentialSpace‖ + ‖h₂.toBesselPotentialSpace‖ := norm_add_le _ _
+        _ ≤ C₁ * ‖hu.toBesselPotentialSpace‖ * ‖hd.toBesselPotentialSpace‖ +
+            C₁ * ‖he.toBesselPotentialSpace‖ * ‖hp.toBesselPotentialSpace‖ :=
+          add_le_add (hmul hu hd) (hmul he hp)
+        _ ≤ C * R * ((n + 1) * (C * R) ^ n * δ) + C * δ * (C ^ n * R ^ (n + 1)) := by
+          rw [heδ]
+          gcongr
+        _ = (↑(n + 1) + 1) * (C * R) ^ (n + 1) * δ := by
+          push_cast
+          ring
+
 /-- **Products of real `H^s` functions, `s > n / 2`.** The real `L²` functions whose
 complexification lies in `H^s`, `s > dim E / 2`, are closed under pointwise multiplication. -/
 theorem exists_mem_realSobolevSubmodule_ae_eq_mul {s : ℝ} (hs : finrank ℝ E < 2 * s)
@@ -270,3 +331,104 @@ theorem mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {f g
   rw [h, h₁, h₂, Pi.mul_apply]
 
 end TemperedDistribution
+
+namespace BesselPotentialSpace
+
+open TemperedDistribution
+open TauCeti (nonneg_of_finrank_lt_two_mul)
+
+variable {s : ℝ}
+
+/-- The product of `u, v ∈ H^s(E)` as an element of `H^s(E)`. -/
+private def mulAux (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) : H^{s}(E) :=
+  ((memSobolev_inclusionLp (nonneg_of_finrank_lt_two_mul hs) u).mul hs
+    (memSobolev_inclusionLp (nonneg_of_finrank_lt_two_mul hs) v)).toBesselPotentialSpace
+
+private theorem coeFn_toLp_inclusion_mulAux (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s)
+    (u v : H^{s}(E)) :
+    ⇑(inclusion h (mulAux hs u v)).toLp =ᵐ[volume]
+      fun x ↦ (inclusion h u).toLp x * (inclusion h v).toLp x := by
+  have hm := (memSobolev_inclusionLp h u).memLp_mul hs (inclusion h v).toLp
+  rw [mulAux, toLp_inclusion_toBesselPotentialSpace h _ (g := hm.toLp _) (by simp),
+    toLp_inclusion h u]
+  exact hm.coeFn_toLp
+
+/-- An element of `H^s(E)` whose `L²` function is almost everywhere the pointwise product of those
+of `u` and `v` is `mulAux hs u v`. -/
+private theorem eq_mulAux_of_ae (hs : finrank ℝ E < 2 * s) {u v w : H^{s}(E)}
+    (hw : ⇑(inclusion (nonneg_of_finrank_lt_two_mul hs) w).toLp =ᵐ[volume]
+      fun x ↦ (inclusion (nonneg_of_finrank_lt_two_mul hs) u).toLp x *
+        (inclusion (nonneg_of_finrank_lt_two_mul hs) v).toLp x) :
+    w = mulAux hs u v :=
+  toLp_inclusion_injective _ <| Lp.ext <|
+    hw.trans (coeFn_toLp_inclusion_mulAux hs _ u v).symm
+
+private theorem mulAux_comm (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :
+    mulAux hs u v = mulAux hs v u :=
+  eq_mulAux_of_ae hs <| by
+    filter_upwards [coeFn_toLp_inclusion_mulAux hs (nonneg_of_finrank_lt_two_mul hs) u v] with x hx
+    rw [hx, mul_comm]
+
+private theorem mulAux_add_left (hs : finrank ℝ E < 2 * s) (u u' v : H^{s}(E)) :
+    mulAux hs (u + u') v = mulAux hs u v + mulAux hs u' v := by
+  have h := nonneg_of_finrank_lt_two_mul hs
+  refine .symm <| eq_mulAux_of_ae hs ?_
+  filter_upwards [coeFn_toLp_inclusion_add h (mulAux hs u v) (mulAux hs u' v),
+    coeFn_toLp_inclusion_mulAux hs h u v, coeFn_toLp_inclusion_mulAux hs h u' v,
+    coeFn_toLp_inclusion_add h u u'] with x h₁ h₂ h₃ h₄
+  rw [h₁, Pi.add_apply, h₂, h₃, h₄, Pi.add_apply, add_mul]
+
+private theorem mulAux_smul_left (hs : finrank ℝ E < 2 * s) (c : ℂ) (u v : H^{s}(E)) :
+    mulAux hs (c • u) v = c • mulAux hs u v := by
+  have h := nonneg_of_finrank_lt_two_mul hs
+  refine .symm <| eq_mulAux_of_ae hs ?_
+  filter_upwards [coeFn_toLp_inclusion_smul h c (mulAux hs u v),
+    coeFn_toLp_inclusion_mulAux hs h u v, coeFn_toLp_inclusion_smul h c u] with x h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply, h₂, h₃, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_assoc]
+
+/-- **Multiplication on `H^s(E)`, `s > dim E / 2`.** The pointwise product of functions in
+`H^s(E)` (`TemperedDistribution.MemSobolev.mul`), as a continuous bilinear map: by the algebra
+estimate `TemperedDistribution.exists_norm_toBesselPotentialSpace_mul_le`, its norm is at most a
+constant depending only on `s` and `E`. Its `L²` functions are the pointwise products
+(`BesselPotentialSpace.coeFn_toLp_inclusion_mulCLM`). -/
+def mulCLM (hs : finrank ℝ E < 2 * s) : H^{s}(E) →L[ℂ] H^{s}(E) →L[ℂ] H^{s}(E) :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ ℂ (mulAux hs) (mulAux_add_left hs) (mulAux_smul_left hs)
+      (fun u v v' ↦ by simp only [mulAux_comm hs u, mulAux_add_left])
+      (fun c u v ↦ by simp only [mulAux_comm hs u, mulAux_smul_left]))
+    (exists_norm_toBesselPotentialSpace_mul_le hs).choose fun u v ↦ by
+      simpa only [LinearMap.mk₂_apply, mulAux, toBesselPotentialSpace_memSobolev_inclusionLp]
+        using (exists_norm_toBesselPotentialSpace_mul_le hs).choose_spec.2
+          (memSobolev_inclusionLp (nonneg_of_finrank_lt_two_mul hs) u)
+          (memSobolev_inclusionLp (nonneg_of_finrank_lt_two_mul hs) v)
+
+/-- The `L²` function of the product `mulCLM hs u v` of `u, v ∈ H^s(E)` is the pointwise product
+of the `L²` functions of `u` and `v`. -/
+theorem coeFn_toLp_inclusion_mulCLM (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s) (u v : H^{s}(E)) :
+    ⇑(inclusion h (mulCLM hs u v)).toLp =ᵐ[volume]
+      fun x ↦ (inclusion h u).toLp x * (inclusion h v).toLp x :=
+  coeFn_toLp_inclusion_mulAux hs h u v
+
+/-- The `L²` function of `inclusionLp h (mulCLM hs u v)` is the pointwise product of those of `u`
+and `v`. -/
+theorem coeFn_inclusionLp_mulCLM (hs : finrank ℝ E < 2 * s) (h : 0 ≤ s) (u v : H^{s}(E)) :
+    ⇑(inclusionLp h (mulCLM hs u v)) =ᵐ[volume]
+      fun x ↦ inclusionLp h u x * inclusionLp h v x := by
+  simpa only [toLp_inclusion] using coeFn_toLp_inclusion_mulCLM hs h u v
+
+/-- Multiplication on `H^s(E)`, `s > dim E / 2`, is commutative. -/
+theorem mulCLM_comm (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :
+    mulCLM hs u v = mulCLM hs v u :=
+  mulAux_comm hs u v
+
+/-- Multiplication on `H^s(E)`, `s > dim E / 2`, is associative. -/
+theorem mulCLM_assoc (hs : finrank ℝ E < 2 * s) (u v w : H^{s}(E)) :
+    mulCLM hs (mulCLM hs u v) w = mulCLM hs u (mulCLM hs v w) := by
+  have h := nonneg_of_finrank_lt_two_mul hs
+  refine toLp_inclusion_injective h (Lp.ext ?_)
+  filter_upwards [coeFn_toLp_inclusion_mulCLM hs h (mulCLM hs u v) w,
+    coeFn_toLp_inclusion_mulCLM hs h u (mulCLM hs v w), coeFn_toLp_inclusion_mulCLM hs h u v,
+    coeFn_toLp_inclusion_mulCLM hs h v w] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, mul_assoc]
+
+end BesselPotentialSpace

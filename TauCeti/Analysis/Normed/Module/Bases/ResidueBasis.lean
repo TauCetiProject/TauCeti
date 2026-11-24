@@ -123,16 +123,16 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
   refine ⟨fun hli ↦ isOrthonormalFamily_def.2 fun s a ↦ le_antisymm ?_ ?_,
     linearIndependent_mk_of_isOrthonormalFamily⟩
   · -- The ultrametric upper bound.
-    refine (Finset.nnnorm_sum_le_sup_nnnorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
-    refine (nnnorm_smul_le _ _).trans (mul_le_of_le_one_right' ?_)
-    rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
-    exact mem_unitClosedBallSubmodule.mp (e i).2
+    refine (Finset.nnNorm_sum_le_sup_nnNorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
+    refine (nnNorm_smul_le _ _).trans (mul_le_of_le_one_right' ?_)
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
+    exact mem_unitClosedBallSubmodule.mp (e i).property
   -- For the lower bound, rescale the coefficients so that their largest norm is one.
   classical
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
   obtain ⟨j, hj, hjsup⟩ := Finset.exists_mem_eq_sup s hs fun i ↦ ‖a i‖₊
-  rw [hjsup, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]
+  rw [hjsup, ← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
   rcases (norm_nonneg (a j)).eq_or_lt with h0 | hpos
   · rw [← h0]
     exact norm_nonneg _
@@ -144,7 +144,7 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
     rw [← smul_eq_mul, ϖ.norm_zpow_smul]
   have hb (i : I) (hi : i ∈ s) : ‖((ϖ.unit ^ (-n) : Rˣ) : R) * a i‖ ≤ 1 := by
     have hai : ‖a i‖ ≤ c ^ n := by
-      rw [hn, ← coe_nnnorm, ← coe_nnnorm, NNReal.coe_le_coe, ← hjsup]
+      rw [hn, ← coe_nnNorm, ← coe_nnNorm, NNReal.coe_le_coe, ← hjsup]
       exact Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi
     rw [hnorm_b, zpow_neg]
     exact inv_mul_le_one_of_le₀ hai (zpow_nonneg ϖ.norm_pos.le n)
@@ -257,7 +257,8 @@ theorem span_mk_eq_top_of_isOrthonormalFamily {e : I → unitClosedBallSubmodule
   have hs : ‖s‖ ≤ 1 := by
     have := IsUltrametricDist.norm_add_le_max (x : M) (-((x : M) - s))
     rw [← sub_eq_add_neg, sub_sub_cancel, norm_neg] at this
-    exact this.trans (max_le (mem_unitClosedBallSubmodule.mp x.2) (hxs.le.trans ϖ.norm_lt_one.le))
+    exact this.trans (max_le (mem_unitClosedBallSubmodule.mp x.property)
+        (hxs.le.trans ϖ.norm_lt_one.le))
   have hg (i : I) : ‖g i‖ ≤ 1 := by
     by_cases hi : i ∈ g.support
     · exact (he.norm_le_norm_sum_smul g hi).trans hs

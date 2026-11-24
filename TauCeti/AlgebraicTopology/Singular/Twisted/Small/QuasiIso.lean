@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
 public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
+import TauCeti.Algebra.Homology.ComplexShape.Basic
 
 /-!
 # The small-chain theorem with local coefficients
@@ -16,6 +17,9 @@ quasi-isomorphism. Thus homology with arbitrary module-valued local coefficients
 computed using only simplices lying in individual cover members. This is the homological
 small-chain comparison needed for excision; no projectivity or freeness of the fibres is
 required.
+
+The case of a cover by two open sets, the one used for Mayer–Vietoris sequences and excisive
+couples, is `TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexι_bool`.
 
 Subdivision makes each finite chain small. Its iterated prism identifies a cycle with its
 subdivision modulo a boundary. For injectivity, the prism of an already small cycle stays
@@ -50,7 +54,7 @@ theorem quasiIso_smallTwistedChainComplexι (hU : ∀ i, IsOpen (U i))
   intro n
   rw [HomologicalComplex.moduleCat_quasiIsoAt_iff _ (n := n) (p := n + 1)
     (m := n - 1) (by simp)
-    (by cases n <;> simp [ChainComplex.next_nat_zero, ChainComplex.next_nat_succ])]
+    (ChainComplex.next_nat n)]
   let C := L.twistedChainComplex
   let S := smallTwistedChainComplex L U
   let j := smallTwistedChainComplexι L U
@@ -92,5 +96,39 @@ theorem quasiIso_smallTwistedChainComplexι (hU : ∀ i, IsOpen (U i))
       ((twistedSubdivisionHomotopy L).idPow N).d_hom_apply_of_d_eq_zero _ hcycle,
       HomologicalComplex.id_f, ModuleCat.id_apply]
     abel
+
+/-- **The small-chain theorem inside a subset.** If the members of a family `U` lie in a subset `S`
+of `X`, cover it, and are open in `S`, then the inclusion of the twisted chains subordinate to `U`
+into the twisted chains supported in `S` induces isomorphisms on homology in every degree. -/
+theorem quasiIso_smallTwistedChainComplexInclusion {S : Set X} (hUS : ∀ i, U i ⊆ S)
+    (hSU : S ⊆ ⋃ i, U i) (hU : ∀ i, IsOpen ((↑) ⁻¹' U i : Set S)) :
+    QuasiIso (smallTwistedChainComplexInclusion (V := fun _ : Unit ↦ S)
+      fun n ↦ smallTwistedChains_mono L U _ (fun _ ↦ ()) hUS n) := by
+  -- Compare with the small-chain theorem for the cover of `S` by the preimages of the `U i`.
+  have := isIso_smallTwistedChainComplexMap_subtypeVal L U hUS
+  have : QuasiIso (smallTwistedChainComplexι
+      ((pullback (TopCat.ofHom (ContinuousMap.subtypeVal S)).hom).obj L)
+      (fun i ↦ TopCat.ofHom (ContinuousMap.subtypeVal S) ⁻¹' U i)) :=
+    quasiIso_smallTwistedChainComplexι _ _ hU <| Set.eq_univ_of_forall fun x ↦ by
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.1 (hSU x.property)
+      exact Set.mem_iUnion.2 ⟨i, hi⟩
+  rw [← quasiIso_iff_comp_left (smallTwistedChainComplexMap _ U _ L id
+    fun i ↦ Set.mapsTo_preimage (TopCat.ofHom (ContinuousMap.subtypeVal S)) (U i))]
+  convert (inferInstance : QuasiIso (smallTwistedChainComplexι
+    ((pullback (TopCat.ofHom (ContinuousMap.subtypeVal S)).hom).obj L)
+    (fun i ↦ TopCat.ofHom (ContinuousMap.subtypeVal S) ⁻¹' U i) ≫
+      (subspaceTwistedChainComplexIso L S).hom)) using 1
+  apply (cancel_mono (smallTwistedChainComplexι L (fun _ : Unit ↦ S))).1
+  simp
+
+/-- **The small-chain theorem with local coefficients for a cover by two open sets.** If `U` and
+`V` are open and cover `X`, the inclusion of the twisted chains supported in `U` or in `V` into
+the twisted singular chains of `X` is a quasi-isomorphism. -/
+theorem quasiIso_smallTwistedChainComplexι_bool {U V : Set X} (hU : IsOpen U) (hV : IsOpen V)
+    (hUV : U ∪ V = Set.univ) : QuasiIso (smallTwistedChainComplexι L (Bool.rec U V)) :=
+  quasiIso_smallTwistedChainComplexι L _ (fun b ↦ by cases b <;> assumption) <|
+    Set.eq_univ_of_forall fun x ↦ by
+      rcases (hUV ▸ Set.mem_univ x : x ∈ U ∪ V) with h | h
+      exacts [Set.mem_iUnion.2 ⟨false, h⟩, Set.mem_iUnion.2 ⟨true, h⟩]
 
 end TauCeti.LocalCoefficientSystem

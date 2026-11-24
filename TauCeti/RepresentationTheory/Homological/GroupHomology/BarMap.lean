@@ -39,7 +39,7 @@ universe u
 namespace MonoidHom
 
 variable {k G H : Type u} [CommRing k] [Group G] [Group H]
-  [DecidableEq G] [DecidableEq H] {A : Rep k G} {B : Rep k H}
+  {A : Rep k G} {B : Rep k H}
 
 /-- Change of groups on bar coinvariants. On tensor classes this applies the compatible
 coefficient map in the first factor and relabels the bar chain in the second factor. -/
@@ -137,7 +137,7 @@ theorem barCoinvariantsMap_id :
 
 /-- Change of groups on bar coinvariants respects composition of both the homomorphisms and
 the compatible coefficient maps. -/
-theorem barCoinvariantsMap_comp {K : Type u} [Group K] [DecidableEq K] {C : Rep k K}
+theorem barCoinvariantsMap_comp {K : Type u} [Group K] {C : Rep k K}
     (f : G →* H) (g : H →* K) (φ : A ⟶ res f B) (ψ : B ⟶ res g C) :
     (g.comp f).barCoinvariantsMap (φ ≫ (resFunctor f).map ψ) =
       f.barCoinvariantsMap φ ≫ g.barCoinvariantsMap ψ := by
@@ -157,6 +157,5 @@ theorem inhomogeneousChainsIso_homologyMap_barCoinvariantsMap (f : G →* H)
   dsimp only [groupHomology.map]
   rw [← HomologicalComplex.homologyMap_comp, inhomogeneousChainsIso_hom_barCoinvariantsMap,
     HomologicalComplex.homologyMap_comp]
-  rfl
 
 end MonoidHom

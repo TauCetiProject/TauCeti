@@ -18,8 +18,10 @@ tangent curves of this foliation and therefore preserves its leaves. It follows 
 through the identity is a subgroup. This file packages that subgroup and records its
 path-connectedness.
 
-The topology on the subgroup subtype is still the subspace topology. Constructing the generally
-finer manifold topology which makes this leaf an immersed Lie subgroup is separate work.
+The topology on the subgroup subtype is the subspace topology. The generally finer manifold
+topology which makes this leaf an immersed Lie subgroup with Lie algebra `S` is the intrinsic
+topology of the Frobenius leaf, and the resulting presentation is
+`LieSubalgebra.integralLeafSubgroupData` in `TauCeti.Geometry.Lie.Subgroup.Immersed.Existence`.
 
 ## Main definitions
 
@@ -29,6 +31,8 @@ finer manifold topology which makes this leaf an immersed Lie subgroup is separa
 
 ## Main results
 
+* `LieSubalgebra.isContMDiffDistribution_mulInvariantFoliation`: the tangent distribution of the
+  foliation is smooth.
 * `LieSubalgebra.sameLeaf_mul_left_iff`: left multiplication preserves and reflects membership in
   the same leaf.
 * `LieSubalgebra.isPathConnected_integralLeafSubgroup`: the integral leaf subgroup is
@@ -57,7 +61,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-noncomputable local instance : CompleteSpace E := FiniteDimensional.complete ℝ E
+noncomputable local instance : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
 
 local instance : IsManifold I (1 + 1) G := inferInstanceAs (IsManifold I 2 G)
 
@@ -103,6 +107,15 @@ theorem mulInvariantFoliation_distribution
         (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
           BoundarylessManifold.isInteriorPoint).toLieHom).toSubmodule g :=
   congrFun (mulInvariantFoliation_distribution_eq S) g
+
+/-- The tangent distribution of `S.mulInvariantFoliation` is `C^m` for every `m` with
+`m + 1 ≤ ∞`, although the foliation only records that it is `C¹`. -/
+theorem isContMDiffDistribution_mulInvariantFoliation
+    (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) {m : ℕ∞ω} (hm : m + 1 ≤ ∞) :
+    IsContMDiffDistribution I m (Module.finrank ℝ S)
+      (S.mulInvariantFoliation (I := I)).distribution := by
+  rw [mulInvariantFoliation_distribution_eq, ← finrank_tangentLieSubalgebra (I := I) S]
+  exact isContMDiffDistribution_mulInvariantDistribution (n := ∞) hm
 
 /-- Left multiplication carries a tangent curve of `S.mulInvariantFoliation` to another tangent
 curve of the same foliation. -/

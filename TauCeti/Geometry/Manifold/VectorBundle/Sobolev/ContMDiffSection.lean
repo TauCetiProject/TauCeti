@@ -36,6 +36,10 @@ the components of `s` (`TauCeti.SectionChartData.ofComponents`).
 
 ## Main results
 
+* `TauCeti.SobolevSection.lowerOrdersL_ofContMDiffSection`: lowering the order preserves
+  the underlying smooth section.
+* `TauCeti.SobolevSection.chartValueL_ofContMDiffSection_ae`: the chart data are the chart
+  coordinates of the section.
 * `TauCeti.SobolevSection.norm_ofContMDiffSection_le`: the Sobolev norm is bounded by the `Lᵖ`
   norms of the classical derivatives of the chart components.
 * `TauCeti.SobolevSection.ofContMDiffSection_injective`: distinct `Cᵏ` sections give distinct
@@ -95,6 +99,14 @@ def ofContMDiffSection : Cₛ^k⟮𝓘(ℝ, E); F, V⟯ →ₗ[ℝ] SobolevSecti
       map_smul' := ContMDiffSection.coe_smul }
     (exists_value_ae_eq_coord A μ p k)
 
+/-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the chart
+coordinates `A.coord i s`, almost everywhere on the image of the chart. -/
+theorem chartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n) :
+    A.sectionChartData.chartValueL μ p k i (ofContMDiffSection A μ p k s)
+      =ᵐ[μ.restrict (A.image i)] A.coord i s :=
+  (A.sectionChartData.chartValueL_ofComponents_ae μ p k _ _ s i).trans
+    (A.sectionChartData_coord_ae_eq μ i s)
+
 /-- **Norm bound.** The norm of the Sobolev section of a `Cᵏ` section `s` is at most the sum, over
 all charts `i` and basis vectors `j`, of the `Lᵖ` norms on `A.image i` of the classical derivatives
 of orders `0` through `k` of the components of `A.coord i s`. -/
@@ -129,6 +141,20 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
   rw [ContMDiffSection.coe_zero, Pi.zero_apply,
     ← ((A.triv i).continuousLinearEquivAt ℝ x hb).map_eq_zero_iff]
   exact hzero
+
+/-- Lowering the Sobolev order preserves the underlying smooth section. -/
+theorem lowerOrdersL_ofContMDiffSection (d : ℕ)
+    [IsManifold 𝓘(ℝ, E) (k + d : ℕ) M] [ContMDiffVectorBundle (k + d : ℕ) F V 𝓘(ℝ, E)]
+    (s : Cₛ^(k + d : ℕ)⟮𝓘(ℝ, E); F, V⟯) :
+    A.sectionChartData.lowerOrdersL μ p k d (ofContMDiffSection A μ p (k + d) s) =
+      ofContMDiffSection A μ p k
+        ⟨s, s.contMDiff.of_le (by exact_mod_cast Nat.le_add_right k d)⟩ := by
+  apply SobolevSection.eq_of_ae_eq_coord (s := s)
+  · intro i
+    rw [SectionChartData.chartValueL_lowerOrdersL]
+    exact chartValueL_ofContMDiffSection_ae A μ p (k + d) s i
+  · exact fun i ↦ chartValueL_ofContMDiffSection_ae A μ p k
+      ⟨s, s.contMDiff.of_le (by exact_mod_cast Nat.le_add_right k d)⟩ i
 
 end SobolevSection
 

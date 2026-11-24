@@ -193,24 +193,24 @@ namespace complexClosedForms
 
 /-- The real part of a closed complex-valued form, a closed real form. -/
 def re {k : ℕ} (φ : complexClosedForms I M k) : closedForms I M k :=
-  ⟨SmoothForm.mapCoeff Complex.reCLM φ.1,
-    ((mem_complexClosedForms_iff_realPart_imaginaryPart I φ.1).mp φ.2).1⟩
+  ⟨SmoothForm.mapCoeff Complex.reCLM φ.val,
+    ((mem_complexClosedForms_iff_realPart_imaginaryPart I φ.val).mp φ.property).1⟩
 
 /-- The imaginary part of a closed complex-valued form, a closed real form. -/
 def im {k : ℕ} (φ : complexClosedForms I M k) : closedForms I M k :=
-  ⟨SmoothForm.mapCoeff Complex.imCLM φ.1,
-    ((mem_complexClosedForms_iff_realPart_imaginaryPart I φ.1).mp φ.2).2⟩
+  ⟨SmoothForm.mapCoeff Complex.imCLM φ.val,
+    ((mem_complexClosedForms_iff_realPart_imaginaryPart I φ.val).mp φ.property).2⟩
 
 /-- The underlying form of the real part of a closed complex-valued form. -/
 @[simp]
 theorem coe_re {k : ℕ} (φ : complexClosedForms I M k) :
-    (re I φ).1 = SmoothForm.mapCoeff Complex.reCLM φ.1 :=
+    (re I φ).val = SmoothForm.mapCoeff Complex.reCLM φ.val :=
   (rfl)
 
 /-- The underlying form of the imaginary part of a closed complex-valued form. -/
 @[simp]
 theorem coe_im {k : ℕ} (φ : complexClosedForms I M k) :
-    (im I φ).1 = SmoothForm.mapCoeff Complex.imCLM φ.1 :=
+    (im I φ).val = SmoothForm.mapCoeff Complex.imCLM φ.val :=
   (rfl)
 
 end complexClosedForms
@@ -219,22 +219,25 @@ namespace closedForms
 
 /-- A closed real form, viewed as a closed complex-valued form. -/
 def ofReal {k : ℕ} (α : closedForms I M k) : complexClosedForms I M k :=
-  ⟨SmoothForm.mapCoeff Complex.ofRealCLM α.1, mapCoeff_ofRealCLM_mem_complexClosedForms I α.2⟩
+  ⟨SmoothForm.mapCoeff Complex.ofRealCLM α.val, mapCoeff_ofRealCLM_mem_complexClosedForms I
+      α.property⟩
 
 /-- The underlying form of a closed real form viewed with complex coefficients. -/
 @[simp]
 theorem coe_ofReal {k : ℕ} (α : closedForms I M k) :
-    (ofReal I α).1 = SmoothForm.mapCoeff Complex.ofRealCLM α.1 :=
+    (ofReal I α).val = SmoothForm.mapCoeff Complex.ofRealCLM α.val :=
   (rfl)
 
 /-- Viewing closed real forms as complex-valued forms is additive. -/
 @[simp]
 theorem ofReal_add {k : ℕ} (α β : closedForms I M k) :
     ofReal I (α + β) = ofReal I α + ofReal I β :=
-  Subtype.ext (map_add _ α.1 β.1)
+  Subtype.ext (map_add _ α.val β.val)
 
-/-- Viewing closed real forms as complex-valued forms turns real scalars into complex ones. -/
-@[simp]
+/-- Viewing closed real forms as complex-valued forms turns real scalars into complex ones.
+
+This is not a `simp` lemma: simplifying its right-hand side makes `simp` search for scalar
+instances on the closed complex forms, which can exhaust the instance-synthesis budget. -/
 theorem ofReal_smul {k : ℕ} (r : ℝ) (α : closedForms I M k) :
     ofReal I (r • α) = (r : ℂ) • ofReal I α := by
   apply Subtype.ext
@@ -243,12 +246,13 @@ theorem ofReal_smul {k : ℕ} (r : ℝ) (α : closedForms I M k) :
 
 end closedForms
 
-/-- A closed complex-valued form is the sum of its real part and `i` times its imaginary part. -/
-@[simp]
+/-- A closed complex-valued form is the sum of its real part and `i` times its imaginary part.
+
+This is not a `simp` lemma, for the same reason as `TauCeti.closedForms.ofReal_smul`. -/
 theorem complexClosedForms.ofReal_re_add_I_smul_ofReal_im {k : ℕ} (φ : complexClosedForms I M k) :
     closedForms.ofReal I (complexClosedForms.re I φ) +
       Complex.I • closedForms.ofReal I (complexClosedForms.im I φ) = φ :=
-  Subtype.ext (SmoothForm.ofReal_realPart_add_I_smul_ofReal_imaginaryPart φ.1)
+  Subtype.ext (SmoothForm.ofReal_realPart_add_I_smul_ofReal_imaginaryPart φ.val)
 
 /-! ### Complex de Rham cohomology -/
 
@@ -296,7 +300,7 @@ theorem mk_surjective (k : ℕ) : Function.Surjective (mk I (M := M) k) :=
 /-- A closed complex-valued form represents zero precisely when it is exact. -/
 @[simp]
 theorem mk_eq_zero_iff (k : ℕ) (φ : complexClosedForms I M k) :
-    mk I k φ = 0 ↔ φ.1 ∈ complexExactForms I M k :=
+    mk I k φ = 0 ↔ φ.val ∈ complexExactForms I M k :=
   (complexDeRhamComplex I M).moduleCatCohomologyClassOfIso_eq_zero_iff
     (fun k ↦ SmoothForm I M ℂ k) (complexClosedForms I M) (complexExactForms I M)
     (complexDeRhamComplexXIso I) (mem_complexClosedForms_iff_d_eq_zero I)

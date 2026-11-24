@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Basic
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bounded
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Analysis.Normed.Operator.Compact.Pi
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
@@ -21,6 +22,11 @@ for bounded holomorphic functions.
 These are actual analytic bonding maps, rather than compactness assumptions on an abstract
 cochain space. Finite-dimensional sheaf cohomology additionally needs the Čech comparison,
 lifting and iteration arguments.
+
+The componentwise restrictions `TauCeti.BergmanSpace.restrictPi` and
+`TauCeti.BergmanSpace.restrictPi₂` of singly and doubly indexed families of Bergman classes, as
+used for Čech cochains, carry the identity and composition laws, and are compact for finite
+families shrunk relatively compactly with proper values.
 -/
 
 public noncomputable section
@@ -30,8 +36,11 @@ open scoped ENNReal
 
 namespace TauCeti.BergmanSpace
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
-variable {U V W : Opens ℂ}
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+section Complete
+
+variable [CompleteSpace F] {U V W : Opens ℂ}
 
 private def restrictBoundedAux (hV : IsCompact (closure (V : Set ℂ)))
     (hVU : closure (V : Set ℂ) ⊆ U) (u : bergmanSpace F U) :
@@ -91,6 +100,12 @@ theorem restrict_comp_restrictBounded (hW : IsCompact (closure (W : Set ℂ)))
     (restrictBounded hW hWU u) x).trans ((restrictBounded_apply hW hWU u _).trans
       (restrictBounded_apply hV _ u x).symm)
 
+end Complete
+
+section Inclusion
+
+variable {U V W : Opens ℂ}
+
 /-- For proper (in particular, finite-dimensional) values, Bergman restriction to a
 relatively compact open set is compact. -/
 theorem isCompactOperator_restrictBounded [ProperSpace F]
@@ -108,10 +123,6 @@ theorem isCompactOperator_restrictBounded [ProperSpace F]
   have heq := restrict_comp_restrictBounded (F := F) hW hWU hV hVW
   rw [← heq]
   exact hcompact.comp_clm (restrictBounded hW hWU)
-
-section Inclusion
-
-omit [CompleteSpace F]
 
 /-- On a finite-measure open set, bounded holomorphic functions define native Bergman classes. -/
 def ofBounded [IsFiniteMeasure (volume.restrict (V : Set ℂ))] :
@@ -254,6 +265,10 @@ theorem restrict_comp_restrict (hVU : V ≤ U) (hWV : W ≤ V) :
 
 end Inclusion
 
+section Complete
+
+variable [CompleteSpace F] {U V : Opens ℂ}
+
 /-- Relatively compact Bergman restriction factors through the native bounded-holomorphic
 stage, identifying the analytic bonding map used in the compactness argument. -/
 theorem ofBounded_comp_restrictBounded (hV : IsCompact (closure (V : Set ℂ)))
@@ -272,8 +287,10 @@ theorem ofBounded_comp_restrictBounded (hV : IsCompact (closure (V : Set ℂ)))
   rw [h1, h2, representative_restrict _ _ hx,
     BoundedHolomorphicFunctions.extend_apply _ ⟨x, hx⟩, restrictBounded_apply]
 
+end Complete
+
 /-- Bergman restriction is compact for proper, in particular finite-dimensional, values. -/
-theorem isCompactOperator_restrict [ProperSpace F]
+theorem isCompactOperator_restrict {U V : Opens ℂ} [ProperSpace F]
     (hV : IsCompact (closure (V : Set ℂ))) (hVU : closure (V : Set ℂ) ⊆ U) :
     IsCompactOperator
       (restrict (F := F) (SetLike.coe_subset_coe.mp (subset_closure.trans hVU))) := by
@@ -281,5 +298,89 @@ theorem isCompactOperator_restrict [ProperSpace F]
     isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt hV.measure_lt_top).ne
   rw [← ofBounded_comp_restrictBounded hV hVU]
   exact (isCompactOperator_restrictBounded (F := F) hV hVU).clm_comp ofBounded
+
+/-! ### Componentwise restriction of families of Bergman classes -/
+
+section Pi
+
+variable {ι : Type*} {U V W : ι → Opens ℂ}
+
+/-- Componentwise restriction of a family of Bergman classes to smaller open sets. -/
+def restrictPi (h : ∀ i, V i ≤ U i) :
+    ((i : ι) → bergmanSpace F (U i)) →L[ℂ] ((i : ι) → bergmanSpace F (V i)) :=
+  ContinuousLinearMap.piMap fun i ↦ restrict (h i)
+
+@[simp]
+theorem restrictPi_apply (h : ∀ i, V i ≤ U i) (u : (i : ι) → bergmanSpace F (U i)) (i : ι) :
+    restrictPi h u i = restrict (h i) (u i) := (rfl)
+
+/-- Componentwise restriction to the same family is the identity. -/
+@[simp]
+theorem restrictPi_refl :
+    restrictPi (F := F) (fun i ↦ le_refl (U i)) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun u ↦ funext fun i ↦ by simp
+
+/-- Successive componentwise restrictions agree with direct restriction. -/
+theorem restrictPi_comp_restrictPi (hVU : ∀ i, V i ≤ U i) (hWV : ∀ i, W i ≤ V i) :
+    (restrictPi (F := F) hWV).comp (restrictPi hVU) =
+      restrictPi fun i ↦ (hWV i).trans (hVU i) :=
+  ContinuousLinearMap.ext fun u ↦ funext fun i ↦
+    DFunLike.congr_fun (restrict_comp_restrict (hVU i) (hWV i)) (u i)
+
+/-- Relatively compact componentwise shrinking of a finite family gives a compact restriction,
+for proper values. -/
+theorem isCompactOperator_restrictPi [Finite ι] [ProperSpace F]
+    (hV : ∀ i, IsCompact (closure (V i : Set ℂ))) (hVU : ∀ i, closure (V i : Set ℂ) ⊆ U i) :
+    IsCompactOperator (restrictPi (F := F) fun i ↦ subset_closure.trans (hVU i)) := by
+  apply IsCompactOperator.pi
+  intro i
+  exact (isCompactOperator_restrict (F := F) (hV i) (hVU i)).comp_clm
+    (ContinuousLinearMap.proj (φ := fun i ↦ bergmanSpace F (U i)) i)
+
+end Pi
+
+section Pi₂
+
+variable {ι κ : Type*} {U V W : ι → κ → Opens ℂ}
+
+/-- Componentwise restriction of a doubly indexed family of Bergman classes to smaller open
+sets. -/
+def restrictPi₂ (h : ∀ i j, V i j ≤ U i j) :
+    ((i : ι) → (j : κ) → bergmanSpace F (U i j)) →L[ℂ]
+      ((i : ι) → (j : κ) → bergmanSpace F (V i j)) :=
+  ContinuousLinearMap.piMap fun i ↦ restrictPi (h i)
+
+@[simp]
+theorem restrictPi₂_apply (h : ∀ i j, V i j ≤ U i j)
+    (u : (i : ι) → (j : κ) → bergmanSpace F (U i j)) (i : ι) (j : κ) :
+    restrictPi₂ h u i j = restrict (h i j) (u i j) := (rfl)
+
+/-- Componentwise restriction to the same doubly indexed family is the identity. -/
+@[simp]
+theorem restrictPi₂_refl :
+    restrictPi₂ (F := F) (fun i j ↦ le_refl (U i j)) = ContinuousLinearMap.id ℂ _ :=
+  ContinuousLinearMap.ext fun u ↦ funext fun i ↦ funext fun j ↦ by simp
+
+/-- Successive componentwise restrictions of doubly indexed families agree with direct
+restriction. -/
+theorem restrictPi₂_comp_restrictPi₂ (hVU : ∀ i j, V i j ≤ U i j)
+    (hWV : ∀ i j, W i j ≤ V i j) :
+    (restrictPi₂ (F := F) hWV).comp (restrictPi₂ hVU) =
+      restrictPi₂ fun i j ↦ (hWV i j).trans (hVU i j) :=
+  ContinuousLinearMap.ext fun u ↦ funext fun i ↦
+    DFunLike.congr_fun (restrictPi_comp_restrictPi (hVU i) (hWV i)) (u i)
+
+/-- Relatively compact componentwise shrinking of a finite doubly indexed family gives a compact
+restriction, for proper values. -/
+theorem isCompactOperator_restrictPi₂ [Finite ι] [Finite κ] [ProperSpace F]
+    (hV : ∀ i j, IsCompact (closure (V i j : Set ℂ)))
+    (hVU : ∀ i j, closure (V i j : Set ℂ) ⊆ U i j) :
+    IsCompactOperator (restrictPi₂ (F := F) fun i j ↦ subset_closure.trans (hVU i j)) := by
+  apply IsCompactOperator.pi
+  intro i
+  exact (isCompactOperator_restrictPi (F := F) (hV i) (hVU i)).comp_clm
+    (ContinuousLinearMap.proj (φ := fun i ↦ (j : κ) → bergmanSpace F (U i j)) i)
+
+end Pi₂
 
 end TauCeti.BergmanSpace

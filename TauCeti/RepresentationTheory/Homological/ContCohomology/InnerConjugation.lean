@@ -14,9 +14,9 @@ public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 /-!
 # Inner automorphisms act trivially on continuous cohomology
 
-Let `G` be a locally compact topological group, `X` a smooth discrete topological representation
-of `G`, and let `g : G`. The compatible pair consisting of the inner automorphism
-`x ↦ g⁻¹ * x * g` of `G` and the
+Let `G` be a locally compact topological group, `X` a topological representation of `G`
+(without smoothness or discreteness assumptions), and let `g : G`. The compatible pair consisting
+of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the
 action `X.ρ g` of `g` on the coefficients induces an endomorphism of `Hⁿ(G, X)`, the conjugation
 map `g_*` of Neukirch–Schmidt–Wingberg (Chapter I, §5). This file proves that it is the identity
 in every degree (`TauCeti.ContinuousCohomology.map_eq_id_of_inner`), for Mathlib's canonical
@@ -295,9 +295,9 @@ variable [LocallyCompactSpace G]
 pair consisting of the inner automorphism `x ↦ g⁻¹ * x * g` of `G` and the action of `g` on the
 coefficients, which is NSW's conjugation `g_*`, induces the identity of `Hⁿ(G, X)` in every degree.
 The homomorphism and the coefficient map are taken as hypotheses on their values, so that the
-statement applies to any presentation of the pair. The coefficient representation is smooth
-discrete: its underlying module has the discrete topology and every point stabilizer is open. -/
-theorem map_eq_id_of_inner (_hX : IsSmoothDiscrete k X) (n : ℕ) :
+statement applies to any presentation of the pair. No smoothness or discreteness of the
+coefficient representation is needed. -/
+theorem map_eq_id_of_inner (n : ℕ) :
     map φ f n = 𝟙 (continuousCohomology n X) := by
   classical
   let K := homogeneousCochains X
@@ -317,11 +317,12 @@ theorem map_eq_id_of_inner (_hX : IsSmoothDiscrete k X) (n : ℕ) :
       TopModuleCat.hom_id k (K.X i), ContinuousLinearMap.id_apply, Submodule.coe_sub,
       coe_cochainsMap_f_apply,
       resolutionMap_hom_apply_eq_resolutionTranslate g φ hφ f hf,
-      (ContRepresentation.mem_invariants _).1 v.2 g]
+      (ContRepresentation.mem_invariants _).1 v.property g]
     have hh (j : ℕ) (w : K.X (j + 1)) :
-        (h (j + 1) j (ComplexShape.up_mk _ _ rfl) w).1 = translateHomotopy X g (j + 1) w.1 := rfl
+        (h (j + 1) j (ComplexShape.up_mk _ _ rfl) w).val = translateHomotopy X g (j + 1) w.val
+            := rfl
     have hd (j : ℕ) (w : K.X j) :
-        (K.d j (j + 1) w).1 = (d X (j + 1)).hom w.1 :=
+        (K.d j (j + 1) w).val = (d X (j + 1)).hom w.val :=
       homogeneousCochains.d_apply X j w
     cases i with
     | zero =>
@@ -329,7 +330,7 @@ theorem map_eq_id_of_inner (_hX : IsSmoothDiscrete k X) (n : ℕ) :
         (ComplexShape.up_mk 0 1 rfl) (by simp)]
       simp only [ConcreteCategory.comp_apply]
       rw [hh, hd]
-      have hid := d_translateHomotopy_add_translateHomotopy_d X g 0 v.1
+      have hid := d_translateHomotopy_add_translateHomotopy_d X g 0 v.val
       simpa only [translateHomotopy_zero, zero_apply, map_zero, zero_add]
         using hid.symm
     | succ i =>
@@ -343,7 +344,7 @@ theorem map_eq_id_of_inner (_hX : IsSmoothDiscrete k X) (n : ℕ) :
       rw [ha, add_apply, Submodule.coe_add]
       simp only [ConcreteCategory.comp_apply]
       rw [hh, hd, hd, hh]
-      exact (d_translateHomotopy_add_translateHomotopy_d X g (i + 1) v.1).symm.trans
+      exact (d_translateHomotopy_add_translateHomotopy_d X g (i + 1) v.val).symm.trans
         (add_comm _ _)
   have ho : Homotopy (cochainsMap φ f) (𝟙 K) :=
     Homotopy.equivSubZero.symm
@@ -358,7 +359,7 @@ universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-  [DistribMulAction G N] [ContinuousSMul G N]
+  [DistribMulAction G N]
 
 /-- **The inner compatible pair on a discrete `G`-module**: the pair `(x ↦ g⁻¹ x g, m ↦ g • m)`
 consisting of conjugation on `G` and the action of `g` on `N` induces the identity on `Hⁿ(G, N)`.
@@ -380,8 +381,7 @@ theorem exists_map_eq_id_conj_smul (g : G) (n : ℕ) :
         congr 1
         group
   have hBm (m : N) : B.hom m = g • m := ofDiscreteModulePair_hom_apply _ _ _ m
-  exact ⟨c, B, hc, hBm, map_eq_id_of_inner g c hc B hBm
-    (ofDiscreteModule_isSmoothDiscrete ℤ G N) n⟩
+  exact ⟨c, B, hc, hBm, map_eq_id_of_inner g c hc B hBm n⟩
 
 end InnerPair
 

@@ -106,20 +106,20 @@ theorem compactSpace [CompactSpace M] [CompactSpace N] (h₁ : IsOpenEmbedding e
     rcases range_inl_union_range_inr e₁ e₂ ▸ mem_univ p with ⟨x, rfl⟩ | ⟨y, rfl⟩
     · by_cases hx : (x : M) ∈ e₁ '' ball 0 1
       · obtain ⟨v, hv, hxv⟩ := hx
-        have hv0 : v ≠ 0 := by rintro rfl; exact mem_puncture.1 x.2 hxv.symm
+        have hv0 : v ≠ 0 := by rintro rfl; exact mem_puncture.1 x.property hxv.symm
         refine Or.inr ⟨⟨_, apply_inversion_mem_puncture h₂.injective hv0⟩, ?_, ?_⟩
         · rintro ⟨w, hw, hwv⟩
           exact hinv hv0 (mem_ball_zero_iff.1 hv) (mem_ball_zero_iff.1 hw) (h₂.injective hwv).symm
-        · exact ((inl_eq_inr_iff h₁.injective h₂.injective).2 ⟨v, hv0, hxv, rfl⟩).symm
+        · exact ((inl_eq_inr_iff h₁.injective).2 ⟨v, hv0, hxv, rfl⟩).symm
       · exact Or.inl ⟨x, hx, rfl⟩
     · by_cases hy : (y : N) ∈ e₂ '' ball 0 1
       · obtain ⟨w, hw, hyw⟩ := hy
-        have hw0 : w ≠ 0 := by rintro rfl; exact mem_puncture.1 y.2 hyw.symm
+        have hw0 : w ≠ 0 := by rintro rfl; exact mem_puncture.1 y.property hyw.symm
         have hx := apply_inversion_mem_puncture h₁.injective hw0
         refine Or.inl ⟨⟨_, hx⟩, ?_, ?_⟩
         · rintro ⟨v, hv, hvw⟩
           exact hinv hw0 (mem_ball_zero_iff.1 hw) (mem_ball_zero_iff.1 hv) (h₁.injective hvw).symm
-        · exact (inl_inversion_eq_inr hw0 hx (hyw ▸ y.2)).trans (congrArg _ (Subtype.ext hyw))
+        · exact (inl_inversion_eq_inr hx (hyw ▸ y.property)).trans (congrArg _ (Subtype.ext hyw))
       · exact Or.inr ⟨y, hy, rfl⟩
   rw [hcov]
   exact ((isCompact_preimage_compl_image_ball h₁).image (continuous_inl e₁ e₂)).union
@@ -136,7 +136,7 @@ theorem connectedSpace [ConnectedSpace M] [ConnectedSpace N] (h : 1 < Module.ran
   have hy := apply_inversion_mem_puncture h₂.injective hv
   have := Subtype.preconnectedSpace (isPreconnected_puncture h h₁)
   have := Subtype.preconnectedSpace (isPreconnected_puncture h h₂)
-  have hmem : inl e₁ e₂ ⟨_, hx⟩ ∈ range (inr e₁ e₂) := ⟨_, (inl_eq_inr v hv hx hy).symm⟩
+  have hmem : inl e₁ e₂ ⟨_, hx⟩ ∈ range (inr e₁ e₂) := ⟨_, (inl_eq_inr v hx hy).symm⟩
   have : PreconnectedSpace (ConnectedSum e₁ e₂) := ⟨by
     rw [← range_inl_union_range_inr]
     exact (isPreconnected_range (continuous_inl e₁ e₂)).union _ (mem_range_self _) hmem

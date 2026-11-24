@@ -32,6 +32,11 @@ manifold an analytic manifold, of dimension the index of that derivative,
 `k n - (k + 1).choose 2`, the dimension of the space of `k`-families minus the number of unordered
 pairs of indices.
 
+The **normal vector field** `ν_s` (`TauCeti.stiefelNormal`) puts `v j` in slot `i`, `v i` in slot
+`j` and `0` elsewhere, for `s = s(i, j)`. At a frame the derivative of the Gram map sends `ν_s v`
+to `2` times the coordinate vector of `s` (`TauCeti.gramSym2Deriv_stiefelNormal`), so the normals
+give an explicit right inverse of that derivative up to the factor `2`.
+
 For this structure the inclusion into `Fin k → E` is smooth, and so is the map
 `TauCeti.stiefelProj E k i` sending a frame to its `i`th vector in the unit sphere with Mathlib's
 manifold structure.
@@ -39,6 +44,8 @@ manifold structure.
 ## Main definitions
 
 * `TauCeti.gramSym2`: the Gram map of `k`-families, with values on unordered pairs of indices.
+* `TauCeti.stiefelNormal`: the normal vector field `ν_s` of the Stiefel manifold, indexed by an
+  unordered pair `s` of indices.
 * `TauCeti.stiefel E k`: the Stiefel manifold of orthonormal `k`-frames of `E`.
 * `TauCeti.stiefelProj E k i`: the `i`th vector of a frame, as a point of the unit sphere.
 
@@ -52,6 +59,8 @@ manifold structure.
 * `TauCeti.nonempty_stiefel`: the Stiefel manifold is nonempty exactly when `k ≤ finrank ℝ E`.
 * `TauCeti.gramSym2Deriv_surjective` and `TauCeti.index_gramSym2Deriv`: the Gram map is regular
   along the Stiefel manifold, with derivative of index `k n - (k + 1).choose 2`.
+* `TauCeti.gramSym2Deriv_stiefelNormal`: at a frame, the derivative of the Gram map sends the
+  normal `ν_s v` to `2` times the coordinate vector of `s`.
 * `TauCeti.stiefel.instIsManifold`: the Stiefel manifold is a `C^r` manifold for every `r`.
 * `TauCeti.isCompact_stiefel`: the Stiefel manifold is compact.
 * `TauCeti.contMDiff_coe_stiefel` and `TauCeti.contMDiff_stiefelProj`: the inclusion into
@@ -86,6 +95,28 @@ open scoped ContDiff Manifold RealInnerProductSpace
 namespace TauCeti
 
 noncomputable section
+
+/-! ### The normal vector fields -/
+
+section Normal
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {k : ℕ}
+
+/-- The **normal vector field** `ν_s` of the Stiefel manifold indexed by an unordered pair
+`s = s(i, j)` of indices: at a family `v`, the family `ν_s v` has `v j` in slot `i` and `v i` in
+slot `j`, and `0` in the other slots (so `ν_{s(i, i)} v` has `v i` in slot `i`). It is the
+gradient of `v ↦ ⟪v i, v j⟫` for `i ≠ j` and half the gradient of `v ↦ ⟪v i, v i⟫`. -/
+def stiefelNormal (s : Sym2 (Fin k)) : (Fin k → E) →L[ℝ] Fin k → E :=
+  ContinuousLinearMap.pi fun l ↦ ∑ j, if s(l, j) = s then ContinuousLinearMap.proj j else 0
+
+/-- The slot `l` of `ν_s v` is the sum of the vectors `v j` over the indices `j` with
+`s(l, j) = s`. -/
+theorem stiefelNormal_apply (s : Sym2 (Fin k)) (v : Fin k → E) (l : Fin k) :
+    stiefelNormal s v l = ∑ j, if s(l, j) = s then v j else 0 := by
+  simp only [stiefelNormal, ContinuousLinearMap.pi_apply, sum_apply]
+  exact Finset.sum_congr rfl fun j _ ↦ by split_ifs <;> rfl
+
+end Normal
 
 variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] (k : ℕ)
 
@@ -151,19 +182,59 @@ theorem gramSym2Deriv_surjective {v : Fin k → E} (hv : Orthonormal ℝ v) :
   ring
 
 variable {E k} in
+/-- At an orthonormal family `v`, the derivative of the Gram map sends the normal `ν_s v` to
+`2` times the indicator of `s`: the normals are dual to the coordinates of the Gram map. -/
+theorem gramSym2Deriv_stiefelNormal {v : Fin k → E} (hv : Orthonormal ℝ v) (s : Sym2 (Fin k)) :
+    gramSym2Deriv E k v (stiefelNormal s v) = Pi.single s 2 := by
+  have key (a b : Fin k) : ⟪v a, stiefelNormal s v b⟫ = if s(a, b) = s then 1 else 0 := by
+    rw [stiefelNormal_apply, inner_sum, Finset.sum_eq_single a]
+    · rw [Sym2.eq_swap]
+      split_ifs <;> simp [hv.1 a]
+    · intro j _ hj
+      split_ifs
+      · rw [orthonormal_iff_ite.1 hv]
+        exact ite_eq_right_iff.2 fun h ↦ absurd h.symm hj
+      · exact inner_zero_right _
+    · simp
+  funext s'
+  induction s' using Sym2.ind with
+  | _ a b =>
+    rw [gramSym2Deriv_apply_mk, key, real_inner_comm, key, Sym2.eq_swap, Pi.single_apply]
+    split_ifs <;> norm_num
+
+variable {E k} in
 /-- At an orthonormal family, the derivative of the Gram map has index
 `k n - (k + 1).choose 2`, where `n = finrank ℝ E` and `(k + 1).choose 2` is the number of
-unordered pairs of indices. The truncated subtraction is harmless: the index is the dimension
-of the kernel, as the derivative is surjective. -/
-theorem index_gramSym2Deriv [FiniteDimensional ℝ E] {v : Fin k → E} (hv : Orthonormal ℝ v) :
+unordered pairs of indices.
+
+For finite-dimensional `E` the truncated subtraction is harmless: the derivative is surjective,
+so the index is the genuine dimension `k n - (k + 1).choose 2` of the kernel.
+
+For infinite-dimensional `E` the statement is a convention. If `k = 0`, the domain and the kernel
+are zero-dimensional and both sides vanish. If `k > 0`, the kernel is infinite-dimensional, so
+its `Module.finrank` is the junk value `0`, and the right-hand side is `0` because
+`finrank ℝ E = 0` (also a junk value) and natural subtraction truncates
+`0 - (k + 1).choose 2 = 0`. -/
+theorem index_gramSym2Deriv {v : Fin k → E} (hv : Orthonormal ℝ v) :
     (gramSym2Deriv E k v).index = (k * finrank ℝ E - (k + 1).choose 2 : ℕ) := by
   have h₁ := (gramSym2Deriv E k v).index_of_surjective (gramSym2Deriv_surjective hv)
-  have h₂ := (gramSym2Deriv E k v).index_eq_of_finiteDimensional
-  rw [Module.finrank_pi_fintype, Module.finrank_fintype_fun_eq_card, Sym2.card] at h₂
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h₂
-  generalize k * finrank ℝ E = N at h₂ ⊢
-  generalize (k + 1).choose 2 = C at h₂ ⊢
-  omega
+  by_cases hE : FiniteDimensional ℝ E
+  · have h₂ := (gramSym2Deriv E k v).index_eq_of_finiteDimensional
+    rw [Module.finrank_pi_fintype, Module.finrank_fintype_fun_eq_card, Sym2.card] at h₂
+    simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul] at h₂
+    generalize k * finrank ℝ E = N at h₂ ⊢
+    generalize (k + 1).choose 2 = C at h₂ ⊢
+    omega
+  · rw [h₁, Module.finrank_of_not_finite hE, mul_zero, Nat.zero_sub]
+    obtain rfl | hk := k.eq_zero_or_pos
+    · have : Subsingleton (gramSym2Deriv E 0 v).ker := inferInstance
+      simp [Module.finrank_zero_of_subsingleton]
+    · have : ¬ Module.Finite ℝ (gramSym2Deriv E k v).ker := fun hker ↦ hE <| by
+        let T : (Fin k → E) →ₗ[ℝ] (Sym2 (Fin k) → ℝ) := gramSym2Deriv E k v
+        have : Module.Finite ℝ ((Fin k → E) ⧸ T.ker) := .equiv T.quotKerEquivRange.symm
+        have : Module.Finite ℝ (Fin k → E) := .of_submodule_quotient T.ker
+        exact Module.Finite.of_pi (fun _ : Fin k ↦ E) ⟨0, hk⟩
+      simp [Module.finrank_of_not_finite this]
 
 /-! ### The Stiefel manifold -/
 
@@ -304,11 +375,11 @@ theorem _root_.ContMDiff.codRestrict_stiefel [FiniteDimensional ℝ E] {E' H M :
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/
 def stiefelProj (i : Fin k) (v : stiefel E k) : Metric.sphere (0 : E) 1 :=
-  ⟨v.1 i, mem_sphere_zero_iff_norm.2 (norm_eq_one_of_mem_stiefel v.2 i)⟩
+  ⟨v.val i, mem_sphere_zero_iff_norm.2 (norm_eq_one_of_mem_stiefel v.property i)⟩
 
 variable {E k} in
 @[simp]
-theorem coe_stiefelProj (i : Fin k) (v : stiefel E k) : (stiefelProj E k i v : E) = v.1 i :=
+theorem coe_stiefelProj (i : Fin k) (v : stiefel E k) : (stiefelProj E k i v : E) = v.val i :=
   (rfl)
 
 variable {E k} in
@@ -316,7 +387,7 @@ variable {E k} in
 space. -/
 @[fun_prop]
 theorem continuous_stiefelProj (i : Fin k) : Continuous (stiefelProj E k i) :=
-  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtype_val)
+  continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtypeVal)
 
 /-- The projection of a frame to its `i`th vector is smooth, for Mathlib's manifold structure on
 the unit sphere. The `FiniteDimensional` instance, which also follows from the `Fact`, is the one
@@ -357,13 +428,13 @@ theorem finrank_stiefelTwoModel {n : ℕ} [Fact (finrank ℝ E = n + 1 + 1)] :
 /-- The **frame reflection** `(u, v) ↦ (u, -v)` of the Stiefel manifold of orthonormal
 two-frames. -/
 def stiefelTwoReflection (w : stiefel E 2) : stiefel E 2 :=
-  ⟨![w.1 0, -w.1 1], by
-    obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.2
+  ⟨![w.val 0, -w.val 1], by
+    obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.property
     exact mem_stiefel_two_iff.2 ⟨by simpa using hu, by simpa using hv, by simpa using huv⟩⟩
 
 @[simp]
 theorem coe_stiefelTwoReflection (w : stiefel E 2) :
-    (stiefelTwoReflection w : Fin 2 → E) = ![w.1 0, -w.1 1] :=
+    (stiefelTwoReflection w : Fin 2 → E) = ![w.val 0, -w.val 1] :=
   (rfl)
 
 /-- The frame reflection is an involution. -/
@@ -381,8 +452,8 @@ theorem contMDiff_stiefelTwoReflection [FiniteDimensional ℝ E] {r : ℕ∞ω} 
       ContMDiff 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, E) r
         fun w : stiefel E 2 ↦ L w :=
     L.contMDiff.comp (contMDiff_coe_stiefel E 2)
-  refine ContMDiff.codRestrict_stiefel (g := fun w : stiefel E 2 ↦ ![w.1 0, -w.1 1])
-    (contMDiff_pi_module_iff.2 fun i ↦ ?_) fun w ↦ (stiefelTwoReflection w).2
+  refine ContMDiff.codRestrict_stiefel (g := fun w : stiefel E 2 ↦ ![w.val 0, -w.val 1])
+    (contMDiff_pi_module_iff.2 fun i ↦ ?_) fun w ↦ (stiefelTwoReflection w).property
   fin_cases i
   · exact h (ContinuousLinearMap.proj 0)
   · exact h (-ContinuousLinearMap.proj 1)

@@ -7,9 +7,12 @@ module
 
 public import TauCeti.RingTheory.Huber.ModuleTopology.Basic
 public import TauCeti.RingTheory.Huber.PowerBounded
+public import TauCeti.RingTheory.Norm.Projective
 public import TauCeti.Topology.Algebra.Ring.Subring
+import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Algebra.Module.Submodule.MultiplierRing
+import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.RingOfDefinition
 
 /-!
@@ -25,14 +28,16 @@ step in making it a Huber pair over `(A, A⁺)`.
 Fix a pair of definition `(A₀, I)` of `A` and a finitely generated `A₀`-submodule `M₀ ⊆ B`
 containing `1` and spanning `B` over `A`. The submodules `Iⁿ • M₀` are a neighbourhood basis of
 `0` (`TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero_idealOfDefinition_pow_smul`). The
-*multiplier ring* `B₀ = {b ∈ B | b M₀ ⊆ M₀}` is a subring of `B` (`AddSubgroup.multiplierRing`).
+*multiplier ring* `B₀ = {b ∈ B | b M₀ ⊆ M₀}` is a subring of `B` (`AddSubgroup.multiplierRing`),
+the underlying subring of the left order `O_l(M₀)`, an `A₀`-subalgebra (`Submodule.leftOrder`).
 Since `M₀ * M₀` is finitely generated, a power `Iʲ` carries it into `M₀`
 (`TauCeti.Huber.PairOfDefinition.exists_pow_smul_le`), so `Iʲ • M₀ ⊆ B₀`
-(`Submodule.smul_subset_multiplierRing`) and `B₀` is open. With the extension `J` of `I` to
-`B₀`, one gets `I^(n + j) • M₀ ⊆ Jⁿ ⊆ Iⁿ • M₀` (`Submodule.smul_subset_coe_map_pow`,
-`Submodule.coe_map_pow_subset`), the second inclusion because `1 ∈ M₀` and `B₀ M₀ ⊆ M₀`. So the
-topology of `B₀` is the `J`-adic one and `(B₀, J)` is a pair of definition of `B`. When `A` is
-Tate, the image of a pseudouniformiser of `A` is one of `B`.
+(`Submodule.smul_subset_leftOrder`) and `B₀` is open. With the extension `J` of `I` along
+the structure map `A₀ → O_l(M₀)`, one gets `I^(n + j) • M₀ ⊆ Jⁿ ⊆ Iⁿ • M₀`
+(`Submodule.smul_subset_coe_map_pow`, `Submodule.coe_map_pow_subset`), the second inclusion
+because `1 ∈ M₀` and `B₀ M₀ ⊆ M₀`. So the topology of `B₀` is the `J`-adic one and `(B₀, J)` is
+a pair of definition of `B`. When `A` is Tate, the image of a pseudouniformiser of `A` is one of
+`B`.
 
 ## Main results
 
@@ -47,6 +52,9 @@ Tate, the image of a pseudouniformiser of `A` is one of `B`.
   preserves power-boundedness.
 * `TauCeti.Huber.isOpen_integralClosure_map_algebraMap`: the integral closure in `B` of the image
   of an open subring of `A` is open.
+* `TauCeti.Huber.IsBounded.image_projectiveNorm`, `TauCeti.Huber.IsPowerBounded.projectiveNorm`:
+  over a topological ring, the norm of a finite projective, not necessarily commutative, algebra
+  maps bounded sets to bounded sets and power-bounded elements to power-bounded elements.
 
 ## References
 
@@ -62,7 +70,11 @@ open Filter Topology Pointwise
 
 namespace TauCeti.Huber
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] {B : Type*} [CommRing B] [Algebra A B]
+variable {A : Type*} [CommRing A] [TopologicalSpace A] {B : Type*}
+
+section CommRing
+
+variable [CommRing B] [Algebra A B]
 
 namespace PairOfDefinition
 
@@ -94,20 +106,22 @@ theorem exists_pairOfDefinition_isIntegral (P : PairOfDefinition A) :
     rw [Submodule.span_mul_span]
     exact Submodule.fg_span (hT.mul hT)
   obtain ⟨j, hj⟩ := P.exists_pow_smul_le M₀ hfg (by simp [hspan])
-  have hjB₀ := Submodule.smul_subset_multiplierRing hj
-  set B₀ := M₀.toAddSubgroup.multiplierRing
-  set J := P.idealOfDefinition.map M₀.toMultiplierRing
+  -- `B₀` is the underlying subring of the left order `O_l(M₀)`
+  set B₀ := M₀.leftOrder.toSubring
+  have hjB₀ := Submodule.smul_subset_leftOrder hj
+  set J : Ideal M₀.leftOrder := P.idealOfDefinition.map (algebraMap _ M₀.leftOrder)
   refine ⟨{ ringOfDefinition := B₀
             isOpen_ringOfDefinition := B₀.toAddSubgroup.isOpen_of_mem_nhds
               (mem_of_superset (hbasis.mem_of_mem (i := j) trivial) hjB₀)
             idealOfDefinition := J
             fg_idealOfDefinition := P.fg_idealOfDefinition.map _
             isAdic_idealOfDefinition := isAdic_iff.mpr ⟨fun n ↦ ?_, fun U hU ↦ ?_⟩ },
-    fun a ha ↦ M₀.algebraMap_mem_multiplierRing ⟨a, ha⟩,
-    fun b hb ↦ Submodule.isIntegral_of_mem_multiplierRing (Submodule.fg_span hT) h1 hb⟩
+    fun a ha ↦ M₀.leftOrder.algebraMap_mem ⟨a, ha⟩,
+    fun b hb ↦ (Submodule.fg_span hT).isIntegral_of_mem_multiplierRing h1
+      (by rwa [← Submodule.toSubring_leftOrder])⟩
   · -- `Jⁿ` contains the neighbourhood `I^(n + j) • M₀` of `0`
     refine (J ^ n).toAddSubgroup.isOpen_of_mem_nhds (g := 0) ?_
-    have hmem := continuous_subtype_val.continuousAt.preimage_mem_nhds
+    have hmem := continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (hbasis.mem_of_mem (i := n + j) trivial) (x := (0 : B₀))
     refine mem_of_superset hmem fun x hx ↦ ?_
     obtain ⟨y, hy, hxy⟩ := Submodule.smul_subset_coe_map_pow hjB₀ n hx
@@ -170,8 +184,54 @@ theorem isOpen_integralClosure_map_algebraMap [IsHuberRing A] {C : Subring A}
   -- `b` is integral over `A₀`, hence over the image of `C ⊇ A₀`
   let φ : P.ringOfDefinition →+* C.map (algebraMap A B) :=
     ((algebraMap A B).comp P.ringOfDefinition.subtype).codRestrict _
-      fun a ↦ Subring.mem_map.mpr ⟨a, hP a.2, rfl⟩
+      fun a ↦ Subring.mem_map.mpr ⟨a, hP a.property, rfl⟩
   exact (hQ b hb).map_of_comp_eq φ (RingHom.id B) (RingHom.ext fun _ ↦ rfl)
+
+end CommRing
+
+section Norm
+
+variable [Ring B] [Algebra A B]
+
+/-- **Norms of a bounded set form a bounded set.** For a finite projective, not necessarily
+commutative, algebra `B` over a topological ring `A`, with its natural topology, the norms
+`N_{B/A}(b)` of the elements `b` of a bounded subset of `B` form a bounded subset of `A`. -/
+theorem IsBounded.image_projectiveNorm [IsTopologicalRing A]
+    [TopologicalSpace B] [IsModuleTopology A B] [Module.Finite A B] [Module.Projective A B]
+    {S : Set B} (hS : IsBounded S) : IsBounded (Algebra.projectiveNorm A '' S) := by
+  have : IsTopologicalRing B := IsModuleTopology.isTopologicalRing A B
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective A B
+  -- the coordinates of a bounded subset of `B` form a bounded subset of `A`
+  have hcoord (ℓ : B →ₗ[A] A) {S : Set B} (hS : IsBounded S) : IsBounded (ℓ '' S) :=
+    isModuleBounded_self_iff.mp ((hS.isModuleBounded (continuous_algebraMap A B).continuousAt).image
+      (IsModuleTopology.continuous_of_linearMap ℓ).continuousAt)
+  -- `N_{B/A}(c)` is the determinant of `σ ∘ (c ·) ∘ π + (1 - σ ∘ π)` on `Aⁿ`, whose matrix
+  -- entries lie in the bounded set `T` for `c ∈ S`
+  set T : Set A := ⋃ i, ⋃ k, ({((1 - σ ∘ₗ π) (Pi.single k 1) : Fin n → A) i} +
+    (LinearMap.proj i ∘ₗ σ) '' (S * {π (Pi.single k 1)}))
+  have hT : IsBounded T := isBounded_iUnion fun i ↦ isBounded_iUnion fun k ↦
+    (isBounded_singleton _).add (hcoord _ (hS.mul (isBounded_singleton _)))
+  refine (isBounded_image_det (n := Fin n) hT).subset ?_
+  rintro _ ⟨c, hc, rfl⟩
+  refine ⟨LinearMap.toMatrix' (σ ∘ₗ Algebra.lmul A B c ∘ₗ π + (1 - σ ∘ₗ π)),
+    fun i k ↦ ?_, ?_⟩
+  · refine Set.mem_iUnion.mpr ⟨i, Set.mem_iUnion.mpr ⟨k, ?_⟩⟩
+    refine ⟨_, rfl, _, ⟨c * π (Pi.single k 1), ⟨_, hc, _, rfl, rfl⟩, rfl⟩, ?_⟩
+    simp [LinearMap.toMatrix'_apply, add_comm]
+  · rw [LinearMap.det_toMatrix', ← LinearMap.projectiveDet_eq_det_of_comp_eq_id π σ h,
+      ← Algebra.projectiveNorm_apply]
+
+/-- **The norm of a power-bounded element is power-bounded.** For a finite projective, not
+necessarily commutative, algebra `B` over a topological ring `A`, with its natural topology, the
+norm `N_{B/A}(b)` of a power-bounded `b ∈ B` is power-bounded in `A`. -/
+theorem IsPowerBounded.projectiveNorm [IsTopologicalRing A]
+    [TopologicalSpace B] [IsModuleTopology A B] [Module.Finite A B] [Module.Projective A B]
+    {b : B} (hb : IsPowerBounded b) : IsPowerBounded (Algebra.projectiveNorm A b) := by
+  refine isPowerBounded_iff.mpr ((isPowerBounded_iff.mp hb).image_projectiveNorm.subset ?_)
+  rintro _ ⟨j, rfl⟩
+  exact ⟨b ^ j, ⟨j, rfl⟩, map_pow _ _ _⟩
+
+end Norm
 
 end TauCeti.Huber
 

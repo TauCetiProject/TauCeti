@@ -28,7 +28,10 @@ No hypothesis on `f` is needed. Restriction along `f` need not preserve projecti
 representations, so `α` is in general not a map of projective resolutions in `Rep k G`; only the
 exactness of the restricted target is used. This computes change-of-group maps with geometric
 resolutions, such as the singular chains of a contractible free `G`-space, without passing
-through the bar resolution.
+through the bar resolution. Specializing to the identity homomorphism shows that any
+augmentation-preserving chain map between two projective resolutions of the trivial representation
+of a fixed group intertwines their `groupHomologyIso` identifications
+(`Rep.groupHomologyIso_hom_comp_homologyMap`).
 
 The proof computes `groupHomologyIso` through comparison maps from the bar resolutions
 (`Rep.groupHomologyIso_hom_eq_homologyMap`), uses that the two composites from the bar
@@ -45,6 +48,9 @@ that on bar coinvariants the change-of-group map is `groupHomology.map`
 
 * `MonoidHom.groupHomologyIso_hom_naturality`, `MonoidHom.groupHomologyIso_inv_naturality`: group
   homology computed by projective resolutions is natural in the group.
+* `Rep.groupHomologyIso_hom_comp_homologyMap`, `Rep.homologyMap_comp_groupHomologyIso_inv`: two
+  projective resolutions of the trivial representation compute group homology compatibly along any
+  augmentation-preserving chain map.
 * `MonoidHom.barCoinvariantsMap_eq_coinvariantsTensorChainMap`: on bar resolutions the chain map
   is the existing change of groups on bar coinvariants.
 * `MonoidHom.homologyMap_coinvariantsTensorChainMap_eq_of_homotopy`: homotopic chain maps induce
@@ -141,11 +147,22 @@ theorem homologyMap_coinvariantsTensorChainMap_eq_of_homotopy
   rw [← hα, ← hβ, HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp,
     (((coinvariantsTensor k G).obj A).mapHomotopy h).homologyMap_eq]
 
+/-- For the identity homomorphism and identity coefficient map, `coinvariantsTensorChainMap` is
+the functorial action of `coinvariantsTensor` on chain complexes. -/
+@[simp]
+theorem coinvariantsTensorChainMap_id {P Q : ChainComplex (Rep.{u} k G) ℕ} (α : P ⟶ Q) :
+    (MonoidHom.id G).coinvariantsTensorChainMap (𝟙 A) α =
+      (((coinvariantsTensor k G).obj A).mapHomologicalComplex _).map α :=
+  HomologicalComplex.hom_ext _ _ fun n ↦
+    coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a c ↦
+      ((MonoidHom.id G).coinvariantsTensorChainMap_f_mk (𝟙 A) α n a c).trans
+        (coinvariantsTensor_obj_map_coinvariantsTensorMk A (α.f n) a c).symm)
+
 end ChainMap
 
 section Bar
 
-variable {k G H : Type u} [CommRing k] [Group G] [Group H] [DecidableEq G] [DecidableEq H]
+variable {k G H : Type u} [CommRing k] [Group G] [Group H]
   {A : Rep.{u} k G} {B : Rep.{u} k H} (f : G →* H) (φ : A ⟶ res f B)
 
 /-- Change of groups on bar coinvariants is the coinvariant map of the relabelling chain map
@@ -165,7 +182,7 @@ end Bar
 
 section Naturality
 
-variable {k G H : Type u} [CommRing k] [Group G] [Group H] [DecidableEq G] [DecidableEq H]
+variable {k G H : Type u} [CommRing k] [Group G] [Group H]
   {A : Rep.{u} k G} {B : Rep.{u} k H} (f : G →* H) (φ : A ⟶ res f B)
   (P : ProjectiveResolution (Rep.trivial k G k)) (Q : ProjectiveResolution (Rep.trivial k H k))
   (α : P.complex ⟶ ((resFunctor f).mapHomologicalComplex _).obj Q.complex)
@@ -238,3 +255,35 @@ theorem groupHomologyIso_inv_naturality (n : ℕ) :
 end Naturality
 
 end MonoidHom
+
+namespace Rep
+
+variable {k G : Type u} [CommRing k] [Group G] (A : Rep.{u} k G)
+  (P Q : ProjectiveResolution (Rep.trivial k G k))
+  (α : P.complex ⟶ Q.complex) (hα : α.f 0 ≫ Q.π.f 0 = P.π.f 0)
+
+include hα in
+/-- **Two projective resolutions compute group homology compatibly**: an augmentation-preserving
+chain map `α : P ⟶ Q` between projective resolutions of the trivial representation intertwines
+Mathlib's identifications `groupHomologyIso`. -/
+@[reassoc]
+theorem groupHomologyIso_hom_comp_homologyMap (n : ℕ) :
+    (groupHomologyIso A n P).hom ≫
+        HomologicalComplex.homologyMap
+          ((((coinvariantsTensor k G).obj A).mapHomologicalComplex _).map α) n =
+      (groupHomologyIso A n Q).hom := by
+  simpa [MonoidHom.coinvariantsTensorChainMap_id] using
+    ((MonoidHom.id G).groupHomologyIso_hom_naturality (𝟙 A) P Q α hα n).symm
+
+include hα in
+/-- Inverse form of `Rep.groupHomologyIso_hom_comp_homologyMap`. -/
+@[reassoc]
+theorem homologyMap_comp_groupHomologyIso_inv (n : ℕ) :
+    HomologicalComplex.homologyMap
+        ((((coinvariantsTensor k G).obj A).mapHomologicalComplex _).map α) n ≫
+      (groupHomologyIso A n Q).inv =
+      (groupHomologyIso A n P).inv := by
+  rw [Iso.comp_inv_eq, ← groupHomologyIso_hom_comp_homologyMap A P Q α hα,
+    Iso.inv_hom_id_assoc]
+
+end Rep

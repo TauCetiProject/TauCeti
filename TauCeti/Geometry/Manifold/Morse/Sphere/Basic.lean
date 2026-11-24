@@ -8,10 +8,12 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+public import TauCeti.Geometry.Sphere.LinearIsometry
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -40,8 +42,12 @@ multiple of `x`.
 
 * `TauCeti.stereographicHeight`: the height function in the stereographic chart at the north pole,
   with `TauCeti.isNondegenerateCriticalPoint_stereographicHeight_zero` and
-  `TauCeti.morseIndex_stereographicHeight_zero` computing its Morse data at the origin.
+  `TauCeti.morseIndex_stereographicHeight_zero` computing its Morse data at the origin, and
+  `TauCeti.neg_stereographicHeight_le_iff` and `TauCeti.neg_stereographicHeight_eq_iff`
+  describing the sublevels `{w | -stereographicHeight w ≤ a}` and levels for `-1 ≤ a < 1` of its
+  negation, the height read in the chart centred at the south pole, as closed balls and spheres.
 * `TauCeti.sphereHeight`: the height function on the unit sphere in the direction of a unit vector.
+* `TauCeti.sphereHeight_unitSphereEquiv`: a linear isometry fixing `v` preserves the height.
 * `TauCeti.sphereHeight_comp_extChartAt_symm`: in the preferred chart at the north pole it is
   `stereographicHeight`.
 * `TauCeti.mvfderiv_sphereHeight_eq_zero_iff` and `TauCeti.mfderiv_sphereHeight_eq_zero_iff`: its
@@ -53,9 +59,14 @@ multiple of `x`.
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
+* `TauCeti.criticalCount_sphereHeight`: it has one critical point of index `n` and one of index
+  `0`.
+* `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
   is infinite.
+* `TauCeti.isConnected_setOf_sphereHeight_eq`: on a sphere of dimension at least `2` every level of
+  the height function is connected.
 
 ## References
 
@@ -87,6 +98,35 @@ def stereographicHeight (w : F) : ℝ :=
 theorem stereographicHeight_apply (w : F) :
     stereographicHeight w = (4 - ‖w‖ ^ 2) / (‖w‖ ^ 2 + 4) :=
   (rfl)
+
+/-- The chart height function decreases with the norm of the chart coordinate. -/
+theorem stereographicHeight_le_stereographicHeight {u w : F} (h : ‖u‖ ≤ ‖w‖) :
+    stereographicHeight w ≤ stereographicHeight u := by
+  rw [stereographicHeight_apply, stereographicHeight_apply,
+    div_le_div_iff₀ (by positivity) (by positivity)]
+  nlinarith [pow_le_pow_left₀ (norm_nonneg u) h 2]
+
+/-- For `-1 ≤ a < 1`, the negated chart height `-stereographicHeight w`, which is the height read in
+the chart centred at the south pole (projecting from the north pole), is at most `a` exactly on the
+closed ball of radius `√(4 (1 + a) / (1 - a))`. -/
+theorem neg_stereographicHeight_le_iff {a : ℝ} (ha : -1 ≤ a) (ha' : a < 1) (w : F) :
+    -stereographicHeight w ≤ a ↔ ‖w‖ ≤ √(4 * (1 + a) / (1 - a)) := by
+  have h1 : 0 < 1 - a := by linarith
+  have h4 : 0 < ‖w‖ ^ 2 + 4 := by positivity
+  rw [stereographicHeight_apply, ← neg_div, div_le_iff₀ h4, Real.le_sqrt (norm_nonneg w)
+    (div_nonneg (by linarith) h1.le), le_div_iff₀ h1]
+  constructor <;> intro h <;> nlinarith
+
+/-- For `-1 ≤ a < 1`, the negated chart height `-stereographicHeight w`, which is the height read in
+the chart centred at the south pole (projecting from the north pole), equals `a` exactly on the
+sphere of radius `√(4 (1 + a) / (1 - a))`. -/
+theorem neg_stereographicHeight_eq_iff {a : ℝ} (ha : -1 ≤ a) (ha' : a < 1) (w : F) :
+    -stereographicHeight w = a ↔ ‖w‖ = √(4 * (1 + a) / (1 - a)) := by
+  have h1 : 0 < 1 - a := by linarith
+  have h4 : 0 < ‖w‖ ^ 2 + 4 := by positivity
+  rw [stereographicHeight_apply, ← neg_div, div_eq_iff h4.ne', eq_comm (a := ‖w‖),
+    Real.sqrt_eq_iff_eq_sq (div_nonneg (by linarith) h1.le) (norm_nonneg w), div_eq_iff h1.ne']
+  constructor <;> intro h <;> nlinarith
 
 variable [InnerProductSpace ℝ F]
 
@@ -159,10 +199,10 @@ theorem hessianOperator_stereographicHeight_zero :
     hasFDerivAt_gradient_stereographicHeight_zero
 
 omit [CompleteSpace F] in
-/-- The Hessian quadratic form of the chart height function at the origin is minus the squared
-norm. -/
-theorem hessianQuadraticForm_stereographicHeight_zero (w : F) :
-    hessianQuadraticForm stereographicHeight 0 w = -‖w‖ ^ 2 := by
+/-- The second derivative of the chart height function at the origin is minus the inner
+product. -/
+theorem fderiv_fderiv_stereographicHeight_zero :
+    fderiv ℝ (fderiv ℝ stereographicHeight) (0 : F) = -innerSL ℝ := by
   have hfun : fderiv ℝ stereographicHeight =
       fun w : F ↦ (-16 * ((‖w‖ ^ 2 + 4) ^ 2)⁻¹) • innerSL ℝ w :=
     funext fun w ↦ by rw [fderiv_stereographicHeight, div_eq_mul_inv]
@@ -170,10 +210,18 @@ theorem hessianQuadraticForm_stereographicHeight_zero (w : F) :
     ((((contDiff_norm_sq ℝ (E := F) (n := 1)).differentiable one_ne_zero) 0).add_const 4).pow 2
   have hc : DifferentiableAt ℝ (fun w : F ↦ -16 * ((‖w‖ ^ 2 + 4) ^ 2)⁻¹) 0 :=
     (hd.inv (by norm_num)).const_mul (-16)
-  have hD := hc.hasFDerivAt.smul (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).hasFDerivAt
-  rw [hessianQuadraticForm_apply, hfun]
-  erw [hD.fderiv]
+  rw [hfun]
+  refine (hc.hasFDerivAt.smul (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).hasFDerivAt).fderiv.trans ?_
+  ext w y
   norm_num
+
+omit [CompleteSpace F] in
+/-- The Hessian quadratic form of the chart height function at the origin is minus the squared
+norm. -/
+theorem hessianQuadraticForm_stereographicHeight_zero (w : F) :
+    hessianQuadraticForm stereographicHeight 0 w = -‖w‖ ^ 2 := by
+  simp only [hessianQuadraticForm_apply, fderiv_fderiv_stereographicHeight_zero,
+    neg_apply, neg_inj]
   exact real_inner_self_eq_norm_sq w
 
 /-- The origin is a nondegenerate critical point of the chart height function. -/
@@ -192,7 +240,7 @@ omit [CompleteSpace F] in
 space. -/
 theorem morseIndex_stereographicHeight_zero [FiniteDimensional ℝ F] :
     morseIndex stereographicHeight (0 : F) = finrank ℝ F := by
-  have := FiniteDimensional.complete ℝ F
+  have := FiniteDimensional.completeSpace ℝ F
   rw [← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
   intro w hw
   rw [neg_apply, hessianQuadraticForm_stereographicHeight_zero, neg_neg]
@@ -223,11 +271,23 @@ theorem sphereHeight_eq_innerSL_comp (v : sphere (0 : E) 1) :
   funext x
   simp [real_inner_comm]
 
+/-- On the unit circle of `ℂ`, the height function in the direction of `1` is the real part. -/
+theorem sphereHeight_one_apply (z : sphere (0 : ℂ) 1) : sphereHeight 1 z = (z : ℂ).re := by
+  simp [sphereHeight_apply, Metric.unitSphere.coe_one, Complex.inner]
+
 /-- Reversing the direction negates the height function. -/
 @[simp]
 theorem sphereHeight_neg (v : sphere (0 : E) 1) : sphereHeight (-v) = -sphereHeight v := by
   funext x
   simp
+
+/-- A linear isometry fixing `v` preserves the height in the direction `v`. -/
+theorem sphereHeight_unitSphereEquiv {e : E ≃ₗᵢ[ℝ] E} {v : sphere (0 : E) 1}
+    (he : e (v : E) = v) (x : sphere (0 : E) 1) :
+    sphereHeight v (e.unitSphereEquiv x) = sphereHeight v x := by
+  rw [sphereHeight_apply, sphereHeight_apply, LinearIsometryEquiv.coe_unitSphereEquiv_apply]
+  nth_rw 1 [← he]
+  exact e.inner_map_map _ _
 
 /-- The height function is smooth. -/
 theorem contMDiff_sphereHeight {m : WithTop ℕ∞} (v : sphere (0 : E) 1) :
@@ -308,6 +368,27 @@ theorem sphereHeight_eq_neg_one_iff {v x : sphere (0 : E) 1} :
     sphereHeight v x = -1 ↔ x = -v := by
   rw [← neg_eq_iff_eq_neg, ← Pi.neg_apply, ← sphereHeight_neg, sphereHeight_eq_one_iff]
 
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- If the unit vectors `u` and `v` are orthogonal, the height function in the direction `u`
+vanishes at `v`. -/
+theorem sphereHeight_eq_zero_of_inner_eq_zero {u v : sphere (0 : E) 1}
+    (huv : ⟪(u : E), (v : E)⟫ = 0) : sphereHeight u v = 0 := by
+  rw [sphereHeight_apply, real_inner_comm, huv]
+
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- A point of the sphere whose components along the orthonormal vectors `u` and `v` have squares
+summing to `1` lies in the plane spanned by `u` and `v`. -/
+theorem coe_eq_sphereHeight_smul_add_sphereHeight_smul {u v : sphere (0 : E) 1}
+    (huv : ⟪(u : E), (v : E)⟫ = 0) {x : sphere (0 : E) 1}
+    (hx : sphereHeight u x ^ 2 + sphereHeight v x ^ 2 = 1) :
+    (x : E) = sphereHeight u x • (u : E) + sphereHeight v x • (v : E) := by
+  have hx1 : ‖(x : E)‖ = 1 := norm_eq_of_mem_sphere x
+  rw [← sub_eq_zero, ← norm_eq_zero, ← sq_eq_zero_iff, norm_sub_sq_real, hx1]
+  simp only [sphereHeight_apply] at hx ⊢
+  simp only [inner_add_right, inner_smul_right, norm_add_sq_real, norm_smul, inner_smul_left,
+    Real.norm_eq_abs, mul_pow, sq_abs, norm_eq_of_mem_sphere, huv, RCLike.conj_to_real]
+  linear_combination -hx
+
 /-- In the chart centred at the north pole `v`, the height function in the direction `v` is
 `stereographicHeight`. -/
 theorem sphereHeight_comp_chartAt_symm (v : sphere (0 : E) 1) :
@@ -320,7 +401,7 @@ theorem sphereHeight_comp_chartAt_symm (v : sphere (0 : E) 1) :
   have hperp : ⟪u, (v : E)⟫ = 0 := by
     have := (Submodule.mem_orthogonal_singleton_iff_inner_left).1
       ((OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
-        (ne_zero_of_mem_unit_sphere (-v))).repr.symm w).2
+        (ne_zero_of_mem_unit_sphere (-v))).repr.symm w).property
     rw [hu]
     simpa [coe_neg_sphere, inner_neg_right] using this
   have hnorm : ‖u‖ = ‖w‖ := by
@@ -338,6 +419,20 @@ theorem sphereHeight_comp_chartAt_symm (v : sphere (0 : E) 1) :
 theorem sphereHeight_comp_extChartAt_symm (v : sphere (0 : E) 1) :
     sphereHeight v ∘ (extChartAt (𝓡 n) v).symm = stereographicHeight := by
   rw [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, comp_id, sphereHeight_comp_chartAt_symm]
+
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- Under the stereographic projection from the north pole `v`, the height function in the
+direction `v` is `-stereographicHeight`. -/
+theorem sphereHeight_stereographic_symm_apply (v : sphere (0 : E) 1) (w : (ℝ ∙ (v : E))ᗮ) :
+    sphereHeight v ((stereographic (norm_eq_of_mem_sphere v)).symm w) = -stereographicHeight w := by
+  have hw : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.property
+  have hv : ⟪(v : E), (v : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
+  have h4 : ‖w‖ ^ 2 + 4 ≠ 0 := by positivity
+  rw [sphereHeight_apply, stereographicHeight_apply]
+  simp only [coe_stereographic_symm_apply, inner_smul_left, inner_add_left, hw, hv,
+    RCLike.conj_to_real]
+  field_simp
+  ring
 
 /-- The north pole is a nondegenerate critical point of the height function. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_self (v : sphere (0 : E) 1) :
@@ -392,6 +487,36 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
   ext x
   simp
 
+/-- The critical points of index `m` of the height function on the sphere `Sⁿ` are the north pole
+`v` if `m = n` and the south pole `-v` if `m = 0`. -/
+theorem sep_criticalPoints_sphereHeight_manifoldMorseIndex_eq (v : sphere (0 : E) 1) (m : ℕ) :
+    {x ∈ criticalPoints (𝓡 n) (sphereHeight v) | manifoldMorseIndex (𝓡 n) (sphereHeight v) x = m} =
+      (if m = n then {v} else ∅) ∪ (if m = 0 then {-v} else ∅) := by
+  ext x
+  rw [criticalPoints_sphereHeight, mem_sep_iff, mem_insert_iff, mem_singleton_iff, mem_union]
+  constructor
+  · rintro ⟨rfl | rfl, rfl⟩ <;> simp
+  · rintro (h | h) <;> split_ifs at h with hm <;> simp_all
+
+/-- The height function on `Sⁿ` has one critical point of index `n`, the north pole, and one of
+index `0`, the south pole. For `n = 0` these are the two points of `S⁰`, both of index `0`. -/
+theorem criticalCount_sphereHeight (v : sphere (0 : E) 1) (j : ℕ) :
+    criticalCount (𝓡 n) (sphereHeight v) j = (if j = n then 1 else 0) + if j = 0 then 1 else 0 := by
+  have hv : v ≠ -v := ne_neg_of_mem_unit_sphere ℝ v
+  rw [criticalCount_def, sep_criticalPoints_sphereHeight_manifoldMorseIndex_eq,
+    encard_union_eq (by split_ifs <;> simp [hv])]
+  split_ifs <;> simp
+
+/-- **Every level of the height except the poles is regular.** The only critical points of the
+height function are the poles, where its values are `1` and `-1`. -/
+theorem isRegularValue_sphereHeight (v : sphere (0 : E) 1) {c : ℝ} (hc₁ : c ≠ 1) (hc₂ : c ≠ -1) :
+    IsRegularValue (𝓡 n) 𝓘(ℝ) (sphereHeight v) c := by
+  refine isRegularValue_iff.2 fun x hx ↦ ?_
+  rw [isRegularPoint_iff_mvfderiv_ne_zero, Ne, mvfderiv_sphereHeight_eq_zero_iff]
+  rintro (rfl | rfl)
+  · exact hc₁ (hx.symm.trans (sphereHeight_self x))
+  · exact hc₂ (hx.symm.trans (sphereHeight_neg_self v))
+
 omit [Fact (finrank ℝ E = n + 1)] in
 /-- **The equator of the circle has two points.** In a two-dimensional real inner product space,
 exactly two points of the unit circle have height zero in the direction of a unit vector `v`. -/
@@ -404,7 +529,8 @@ theorem ncard_setOf_sphereHeight_eq_zero (hE : finrank ℝ E = 2) (v : sphere (0
     Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere v)
   have : Nontrivial K := Module.nontrivial_of_finrank_eq_succ hK
   obtain ⟨w, hw⟩ := exists_norm_eq K zero_le_one
-  have hwK : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.2
+  have hwK : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1
+      w.property
   let u : sphere (0 : E) 1 := ⟨w, by simpa using hw⟩
   rw [ncard_eq_two]
   refine ⟨u, -u, ne_neg_of_mem_unit_sphere ℝ u, ?_⟩
@@ -442,15 +568,43 @@ theorem infinite_setOf_sphereHeight_eq_zero (hE : 3 ≤ finrank ℝ E) (v : sphe
     (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   have hS : (sphere (0 : (ℝ ∙ (v : E))ᗮ) 1).Infinite :=
     (isPreconnected_sphere hrank 0 1).infinite_of_nontrivial
-      ⟨w, w.2, ↑(-w), (-w).2, Subtype.coe_injective.ne (ne_neg_of_mem_unit_sphere ℝ w)⟩
+      ⟨w, w.property, ↑(-w), (-w).property, Subtype.coe_injective.ne
+          (ne_neg_of_mem_unit_sphere ℝ w)⟩
   have := hS.to_subtype
   refine Set.infinite_of_injective_forall_mem
     (f := fun y : sphere (0 : (ℝ ∙ (v : E))ᗮ) 1 ↦ (⟨((y : (ℝ ∙ (v : E))ᗮ) : E),
       mem_sphere_zero_iff_norm.2 ((Submodule.norm_coe _).trans
-        (mem_sphere_zero_iff_norm.1 y.2))⟩ : sphere (0 : E) 1))
-    (fun y z h ↦ Subtype.ext (Subtype.ext congr($h.1))) fun y ↦ ?_
+        (mem_sphere_zero_iff_norm.1 y.property))⟩ : sphere (0 : E) 1))
+    (fun y z h ↦ Subtype.ext (Subtype.ext congr(($h).val))) fun y ↦ ?_
   rw [mem_ofPred_eq, sphereHeight_apply]
-  exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).2
+  exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).property
+
+/-- **The levels of the height are connected in dimension at least two.** On the unit sphere
+`Sⁿ` with `n ≥ 2`, every level `h = c` with `-1 ≤ c ≤ 1` is connected: it is a pole when
+`c = ±1`, and otherwise the round sphere of radius `√(1 - c²)` centred at `c v` in the hyperplane
+`h = c`. On the circle the levels strictly between the poles have two points. -/
+theorem isConnected_setOf_sphereHeight_eq (hn : 2 ≤ n) (v : sphere (0 : E) 1) {c : ℝ}
+    (hc : c ∈ Icc (-1) 1) : IsConnected {x | sphereHeight v x = c} := by
+  -- The unit sphere of `(ℝ ∙ v)ᗮ` is connected, since its dimension is `n ≥ 2`, and the level
+  -- `h = c` is its image under the latitude map at height `c`.
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hrank : 1 < Module.rank ℝ (ℝ ∙ (v : E))ᗮ := by
+    rw [← Module.finrank_eq_rank,
+      Submodule.finrank_orthogonal_span_singleton (n := n) (ne_zero_of_mem_unit_sphere v)]
+    exact_mod_cast hn
+  have hconn := isConnected_sphere hrank (0 : (ℝ ∙ (v : E))ᗮ) zero_le_one
+  have := isConnected_iff_connectedSpace.1 hconn
+  obtain ⟨u₀, hu₀⟩ := hconn.nonempty
+  have hlevel : {x | sphereHeight v x = c} = range fun u ↦ latitude v u c := by
+    ext x
+    simp only [mem_ofPred_eq, mem_range, sphereHeight_apply]
+    constructor
+    · rintro rfl
+      obtain ⟨u, t, ht, rfl⟩ := exists_latitude_eq v ⟨u₀, hu₀⟩ x
+      exact ⟨u, by rw [inner_latitude, projIcc_of_mem _ ht]⟩
+    · rintro ⟨u, rfl⟩
+      rw [inner_latitude, projIcc_of_mem _ hc]
+  exact hlevel ▸ isConnected_range (continuous_latitude v continuous_id continuous_const)
 
 end Sphere
 

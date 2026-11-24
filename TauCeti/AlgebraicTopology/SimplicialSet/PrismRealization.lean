@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homotopy.TopCat.Basic
+public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.One
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
+import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
@@ -25,7 +26,9 @@ the trivial fibrations of the Kan–Quillen model structure (the maps with the r
 with respect to all monomorphisms), are weak equivalences
 (`SSet.modelCategoryQuillen.weakEquivalence_of_homotopyEquiv`,
 `SSet.modelCategoryQuillen.weakEquivalence_of_rlp_monomorphisms`). This is the converse direction
-to Mathlib's `TopCat.Homotopy.toSSet`.
+to Mathlib's `TopCat.Homotopy.toSSet`. Together, the two directions show that two maps from `X` to
+the singular simplicial set of a space `T` are simplicially homotopic exactly when their adjoint
+maps `|X| ⟶ T` are homotopic (`SSet.nonempty_homotopy_iff_homotopic_homEquiv_symm`).
 
 The realization `|X ⊗ Δ[1]|` is not identified with `|X| × I` here; what is needed is the continuous
 map `SSet.toTopCylinder X : |X| × I → |X ⊗ Δ[1]|` restricting to `|ι₀|` and `|ι₁|` on the two ends.
@@ -52,6 +55,8 @@ coupling of `s` with the distribution `(1 - t, t)` on `Fin 2`, which is natural 
 * `SSet.toTopCylinder X`: the triangulation `|X| × I → |X ⊗ Δ[1]|` of the realized cylinder.
 * `SSet.Homotopy.toTop`: the realization of a simplicial homotopy.
 * `SSet.toTopHomotopyEquiv`: the realization of a simplicial homotopy equivalence.
+* `SSet.nonempty_homotopy_iff_homotopic_homEquiv_symm`: maps into a singular simplicial set are
+  homotopic exactly when their adjoints are.
 
 ## References
 
@@ -94,16 +99,16 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
     obtain ⟨j, hj⟩ := h0
     obtain _ | n := n
     · simp at hj
-    have hsupp : ↑w.weights.support ⊆ Set.range j.succAbove := by
-      intro i hi
-      exact Fin.exists_succAbove_eq (fun h ↦ by simp [h, hj] at hi)
+    have hsupp : Set.BijOn j.succAbove (j.succAbove ⁻¹' ↑w.weights.support) ↑w.weights.support :=
+      Set.bijOn_preimage_iff.2 ⟨Fin.succAbove_right_injective.injOn, by
+        simp [Fin.range_succAbove, Set.subset_compl_singleton_iff, hj]⟩
     obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
-      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap Fin.succAbove_right_injective w hsupp)
+      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap w hsupp)
     refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
     · rw [← h₁, SimplicialObject.δ, toTopObjMk_map]
-      exact congrArg _ (StdSimplex.map_comap _ w hsupp).symm
+      exact congrArg _ (StdSimplex.map_comap w hsupp).symm
     · rw [← h₂]
-      conv_lhs => rw [← StdSimplex.map_comap Fin.succAbove_right_injective w hsupp]
+      conv_lhs => rw [← StdSimplex.map_comap w hsupp]
       rw [StdSimplex.map_map, objEquiv_δ, Function.comp_def]
   · push Not at h0
     by_cases hi : Function.Injective (objEquiv x)
@@ -258,16 +263,17 @@ private lemma isClosed_piece (k : Fin (p + 1)) : IsClosed (piece k) := by
 
 private lemma exists_mem_piece (z : StdSimplex ℝ (Fin (p + 1)) × I) : ∃ k, z ∈ piece k := by
   have hex : ∃ N, 1 - (z.2 : ℝ) ≤ prefixSum (N + 1) z.1.weights :=
-    ⟨p, by rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]; linarith [z.2.2.1]⟩
+    ⟨p, by rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]; linarith
+        [z.2.property.1]⟩
   classical
   have hle : Nat.find hex ≤ p :=
     Nat.find_min' hex (by
       rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]
-      linarith [z.2.2.1])
+      linarith [z.2.property.1])
   refine ⟨⟨Nat.find hex, by lia⟩, ?_, Nat.find_spec hex⟩
   rcases Nat.eq_zero_or_pos (Nat.find hex) with h | h
   · simp only [h, TauCeti.prefixSum_zero]
-    linarith [z.2.2.2]
+    linarith [z.2.property.2]
   · have := Nat.find_min hex (Nat.sub_lt h one_pos)
     rw [show Nat.find hex - 1 + 1 = Nat.find hex by lia] at this
     exact (not_le.1 this).le
@@ -308,21 +314,27 @@ private lemma support_prismMeasure_subset {k : Fin (p + 1)} {z : StdSimplex ℝ 
 point of the `k`th piece of the prism. -/
 private noncomputable def pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) : StdSimplex ℝ (Fin (p + 2)) :=
-  StdSimplex.comap (injective_objEquiv_nonDegenerateEquiv.{u} k) _
-    (support_prismMeasure_subset hz)
+  StdSimplex.comap (f := prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val)
+    (prismMeasure z.1 z.2)
+    (Set.bijOn_preimage_iff.2
+      ⟨(injective_objEquiv_nonDegenerateEquiv.{u} k).injOn, support_prismMeasure_subset hz⟩)
 
 private lemma map_pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) :
     StdSimplex.map (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val)
       (pieceWeights.{u} k z hz) = prismMeasure z.1 z.2 :=
-  StdSimplex.map_comap _ _ _
+  StdSimplex.map_comap _ _
 
 private lemma continuous_pieceWeights (k : Fin (p + 1)) :
-    Continuous fun z : piece k ↦ pieceWeights.{u} k z.1 z.2 := by
+    Continuous fun z : piece k ↦ pieceWeights.{u} k z.val z.property := by
   rw [(StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (p + 2))).continuous_iff]
   refine continuous_pi fun j ↦ ?_
-  simp only [Function.comp_apply, pieceWeights, StdSimplex.weights_comap_apply]
-  exact (continuous_prismWeights _).comp continuous_subtype_val
+  have h : (fun z : piece k ↦ (pieceWeights.{u} k z.val z.property).weights j) =
+      fun z ↦ (prismMeasure z.val.1 z.val.2).weights
+        (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val j) :=
+    funext fun z ↦ StdSimplex.weights_comap_apply _ _ j
+  simp only [Function.comp_apply, h, prismMeasure_weights]
+  exact (continuous_prismWeights _).comp continuous_subtypeVal
 
 /-- The underlying function of `SSet.prodStdSimplex₁.prism`. -/
 private noncomputable def prismFun (p : ℕ) (z : StdSimplex ℝ (Fin (p + 1)) × I) :
@@ -347,7 +359,8 @@ noncomputable def prism : C(StdSimplex ℝ (Fin (p + 1)) × I, |(Δ[p] ⊗ Δ[1]
     refine (locallyFinite_of_finite _).continuous iUnion_piece isClosed_piece fun k ↦ ?_
     rw [continuousOn_iff_continuous_domRestrict]
     have : (piece k).domRestrict (prismFun.{u} p) =
-        fun z : piece k ↦ toTopObjMk (nonDegenerateEquiv k).val (pieceWeights.{u} k z.1 z.2) :=
+        fun z : piece k ↦ toTopObjMk (nonDegenerateEquiv k).val
+            (pieceWeights.{u} k z.val z.property) :=
       funext fun z ↦ prismFun_eq _ _ (map_pieceWeights _ _ _)
     rw [this]
     exact (continuous_toTopObjMk _).comp (continuous_pieceWeights.{u} k)
@@ -557,6 +570,23 @@ applied to the triangulation of the realized cylinder. -/
 lemma Homotopy.toTop_apply {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (z : |X|) :
     H.toTop (t, z) = SSet.toTop.map H.h (toTopCylinder X (z, t)) :=
   (rfl)
+
+/-- Two maps from `X` to the singular simplicial set of a space `T` are simplicially homotopic
+exactly when their adjoint maps `|X| ⟶ T` are homotopic. -/
+theorem nonempty_homotopy_iff_homotopic_homEquiv_symm {T : TopCat.{u}}
+    (φ ψ : X ⟶ TopCat.toSSet.obj T) :
+    Nonempty (Homotopy φ ψ) ↔
+      ((sSetTopAdj.homEquiv X T).symm φ).hom.Homotopic ((sSetTopAdj.homEquiv X T).symm ψ).hom := by
+  refine ⟨fun ⟨H⟩ ↦ ?_, fun ⟨H⟩ ↦ ?_⟩
+  · rw [Adjunction.homEquiv_counit, Adjunction.homEquiv_counit]
+    exact ⟨(TopCat.Homotopy.refl (sSetTopAdj.counit.app T)).comp H.toTop⟩
+  · have e (χ : X ⟶ TopCat.toSSet.obj T) :
+        sSetTopAdj.unit.app X ≫ TopCat.toSSet.map ((sSetTopAdj.homEquiv X T).symm χ) = χ :=
+      (sSetTopAdj.homEquiv_unit _ _ _).symm.trans (Equiv.apply_symm_apply _ _)
+    have H' := (TopCat.Homotopy.toSSet (f := (sSetTopAdj.homEquiv X T).symm φ)
+      (g := (sSetTopAdj.homEquiv X T).symm ψ) H).precomp (sSetTopAdj.unit.app X)
+    rw [e, e] at H'
+    exact ⟨H'⟩
 
 /-- The realization of a simplicial homotopy equivalence is a homotopy equivalence. -/
 noncomputable def toTopHomotopyEquiv (f : X ⟶ Y) (g : Y ⟶ X) (H₁ : Homotopy (f ≫ g) (𝟙 X))

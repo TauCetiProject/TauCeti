@@ -65,7 +65,8 @@ private noncomputable def toHenselization :
       have he := map_comp (of R (f · · ·) j) (f i j hij)
         (le_iSup (fun k ↦ (I k).map (of R (f · · ·) k)) j)
         (Ideal.map_le_iff_le_comap.mpr (hI i j hij))
-      simpa only [of_comp_f, RingHom.comp_apply] using (DFunLike.congr_fun he x).symm)
+      simpa only [TauCeti.Ring.DirectLimit.of_comp_f, RingHom.comp_apply] using
+        (DFunLike.congr_fun he x).symm)
 
 private noncomputable def colimitUnit :
     Ring.DirectLimit R (f · · ·) →+*
@@ -86,7 +87,7 @@ private theorem map_iSup_map_colimitUnit :
   ext r
   simp [colimitUnit]
 
-variable [Nonempty ι] [IsDirectedOrder ι] [DirectedSystem R (f · · ·)]
+variable [IsDirectedOrder ι] [DirectedSystem R (f · · ·)]
 
 private noncomputable def fromHenselization :
     algebra (⨆ i, (I i).map (of R (f · · ·) i)) →+*

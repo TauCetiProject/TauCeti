@@ -48,8 +48,8 @@ projection onto the range of `L` and `Q = 1 - T ∘ L` is a projection onto `ker
 is `φ x = T (f x - f a) + Q (x - a)`, whose derivative at `a` is the identity; it satisfies
 `L (φ x) = P (f x - f a)`. In this chart `g z = f (φ⁻¹ z) - f a` satisfies `P ∘ g = L`, so the
 derivative of `g` maps `E` onto the range of `L` after projecting with `P`; as it has rank at most
-`rank L`, its kernel is that of `L` (`HasFDerivAt.apply_eq_zero_of_comp_eventuallyEq`). Hence, by
-the mean value theorem along segments parallel to `ker L`
+`rank L`, its kernel is that of `L` (`HasFDerivAt.apply_eq_zero_iff_of_comp_eventuallyEq`).
+Hence, by the mean value theorem along segments parallel to `ker L`
 (`TauCeti.apply_add_eq_of_fderiv_apply_eq_zero`), near `0` the value `g z` only depends on the
 component of `z` in `range (T ∘ L)` for the decomposition `E = range (T ∘ L) ⊕ ker L`, and the
 second chart `ψ w = (w - f a) - (1 - P) (g (c w))`, where
@@ -122,7 +122,7 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
       ContDiffOn 𝕂 n ψ ψ.source ∧ ContDiffOn 𝕂 n ψ.symm ψ.target ∧
       MapsTo f φ.source ψ.source ∧ ∀ x ∈ φ.source, ψ (f x) = fderiv 𝕂 f a (φ x) := by
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
-  have : CompleteSpace E := FiniteDimensional.complete 𝕂 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕂 E
   have hfd : ∀ x ∈ s, HasFDerivAt f (fderiv 𝕂 f x) x := fun x hx ↦
     ((hf.differentiableOn hn0).differentiableAt (hs.mem_nhds hx)).hasFDerivAt
   set L := fderiv 𝕂 f a
@@ -170,8 +170,8 @@ theorem ContDiffOn.exists_openPartialHomeomorph_comp_eq_fderiv_comp (hf : ContDi
   have hker : ∀ z ∈ Φ₀.target, ∀ v : E, L v = 0 → fderiv 𝕂 g z v = 0 := by
     intro z hz v hv
     rw [(hgd z hz).fderiv]
-    refine (hgd z hz).apply_eq_zero_of_comp_eventuallyEq (P := L ∘L T)
-      (eventually_of_mem (Φ₀.open_target.mem_nhds hz) fun w hw ↦ hPg w hw) ?_ hv
+    refine ((hgd z hz).apply_eq_zero_iff_of_comp_eventuallyEq (P := L ∘L T)
+      (eventually_of_mem (Φ₀.open_target.mem_nhds hz) fun w hw ↦ hPg w hw) ?_).2 hv
     refine (Submodule.finrank_mono ?_).trans (hrank _ (hΦ₀s (Φ₀.map_target hz)))
     exact LinearMap.range_comp_le_range (fderiv 𝕂 Φ₀.symm z : E →ₗ[𝕂] E)
       (fderiv 𝕂 f (Φ₀.symm z) : E →ₗ[𝕂] F)

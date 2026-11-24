@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.InvariantDifferenti
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import Mathlib.FieldTheory.RatFunc.IntermediateField
 -- Proof-only: `x ∘ φ` has a pole at the point at infinity.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 
 /-!
 # The `x`-coordinate of an isogeny is a rational function of `x`

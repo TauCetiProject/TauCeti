@@ -45,7 +45,7 @@ variable (R : Type w) [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R 
 The `i`-th input runs from `X (n - 1 - i)` to `X (n - i)`, so binary inputs are `(g,f)`.
 The degrees `d` follow this input order. -/
 abbrev PathMultilinear (d : Fin n → ℤ) (q : ℤ) :=
-  MultilinearMap R (fun i : Fin n ↦ grHom R (X i.rev.castSucc) (X i.rev.succ) (d i))
+  MultilinearMap (RingHom.id R) (fun i : Fin n ↦ grHom R (X i.rev.castSucc) (X i.rev.succ) (d i))
     (grHom R (X 0) (X (Fin.last n)) ((∑ i, d i) + q))
 
 /-- A degree-`q` operation on a composable string, specified on every tuple of input degrees.
@@ -54,7 +54,7 @@ abbrev PathOperation (q : ℤ) := ∀ d : Fin n → ℤ, PathMultilinear R X d q
 
 /-- Homogeneous multilinear operations on the total Hom modules of a composable string. -/
 abbrev HomogeneousPathOperation (q : ℤ) :=
-  TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+  MultilinearMap.homogeneousSubmodule (R := R) (S := R)
     (fun i : Fin n ↦ (grading (R := R) (X i.rev.castSucc) (X i.rev.succ)).piece)
     (grading (R := R) (X 0) (X (Fin.last n))).piece q
 

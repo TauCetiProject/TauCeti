@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Area
 public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import Mathlib.Algebra.Order.ToIntervalMod
 import TauCeti.Analysis.Complex.Conformal.LengthArea
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.DominatedIncrement
 
 /-!
@@ -72,8 +73,7 @@ theorem edist_comp_circleMap_le_lintegral_Ioc (hUo : IsOpen U) (hf : Differentia
     (c : ℂ) (θ : ℝ) {a b : ℝ} (hab : a ≤ b) (hmemU : ∀ r ∈ Icc a b, circleMap c r θ ∈ U) :
     edist (f (circleMap c a θ)) (f (circleMap c b θ)) ≤
       ∫⁻ r in Ioc a b, ‖deriv f (circleMap c r θ)‖ₑ := by
-  have hray : ∀ r, HasDerivAt (fun r : ℝ => circleMap c r θ) (exp (θ * I)) r := fun r => by
-    simpa [circleMap] using ((hasDerivAt_id r).ofReal_comp.mul_const (exp (θ * I))).const_add c
+  have hray (r : ℝ) := hasDerivAt_circleMap_radius c r θ
   -- the ray has constant velocity `exp (θ * I)`, of norm `1`, so it is `C¹`
   have hrayC : ContDiff ℝ 1 (fun r : ℝ => circleMap c r θ) := by
     refine contDiff_one_iff_deriv.2 ⟨fun r => (hray r).differentiableAt, ?_⟩
@@ -89,7 +89,7 @@ theorem lintegral_Ioc_lintegral_Ioo_enorm_deriv_circleMap_le (c : ℂ) {a : ℝ}
     ∫⁻ θ in Ioc t (t + 2 * π), ∫⁻ r in Ioo a R, ‖deriv f (circleMap c r θ)‖ₑ ≤
       ENNReal.ofReal a⁻¹ * ∫⁻ z in ball c R, ‖deriv f z‖ₑ := by
   have hg : Measurable ((ball c R).indicator fun z => ‖deriv f z‖ₑ) :=
-    (measurable_deriv f).enorm.indicator measurableSet_ball
+    (measurable_deriv f).eNorm.indicator measurableSet_ball
   rw [← lintegral_indicator measurableSet_ball, ← lintegral_Ioc_lintegral_Ioi_circleMap_eq_lintegral
     hg c t, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine lintegral_mono fun θ => ?_
@@ -122,7 +122,7 @@ theorem ae_exists_tendsto_circleMap_of_lintegral_enorm_deriv_ne_top
   have hlen : ∀ t : ℝ, ∀ᵐ θ ∂volume.restrict (Ioc t (t + 2 * π)),
       ∫⁻ r in Ioo a R, ‖deriv f (circleMap c r θ)‖ₑ ≠ ⊤ := fun t => by
     have hmeas : Measurable fun θ => ∫⁻ r in Ioo a R, ‖deriv f (circleMap c r θ)‖ₑ :=
-      ((measurable_deriv f).enorm.comp (by simp only [circleMap]; fun_prop :
+      ((measurable_deriv f).eNorm.comp (by simp only [circleMap]; fun_prop :
         Continuous fun p : ℝ × ℝ => circleMap c p.2 p.1).measurable).lintegral_prod_right'
     refine ae_lt_top hmeas (ne_top_of_le_ne_top ?_
       (lintegral_Ioc_lintegral_Ioo_enorm_deriv_circleMap_le c ha R t)) |>.mono fun _ h => h.ne

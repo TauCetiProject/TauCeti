@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Matrix.Scaling.Basic
 public import TauCeti.InformationTheory.KullbackLeibler.Variational
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.SchroedingerSystem
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Duality for entropic optimal transport
@@ -47,6 +48,10 @@ additive constant.
 
 ## Main statements
 
+* `TauCeti.continuous_entropicGibbsKernel`, `TauCeti.continuous_of_continuous_entropicGibbsKernel`,
+  and `TauCeti.exists_le_of_continuous_entropicGibbsKernel`: continuity of a finite-valued cost at
+  positive temperature is equivalent to continuity of its Gibbs kernel, and on compact spaces gives
+  a finite upper bound on the cost.
 * `TauCeti.IsCoupling.ofReal_entropicDualValue_le_lintegral_add_mul_klDiv` and
   `TauCeti.ofReal_entropicDualValue_le_entropicTransportCost`: weak duality, for a finite source
   measure and an almost everywhere measurable cost.
@@ -245,6 +250,30 @@ theorem continuous_entropicGibbsKernel [TopologicalSpace X] [TopologicalSpace Y]
     funext fun z ↦ entropicGibbsKernel_of_ne_top (hfin z)
   rw [h]
   exact ((ENNReal.continuousOn_toReal.comp_continuous hc hfin).neg.div_const _).rexp
+
+/-- When `c` avoids `∞` and `ε ≠ 0`, continuity of the Gibbs kernel `exp (-c / ε)` forces `c`
+itself to be continuous. -/
+theorem continuous_of_continuous_entropicGibbsKernel [TopologicalSpace X] [TopologicalSpace Y]
+    (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
+    (hkc : Continuous (Function.uncurry (entropicGibbsKernel c ε))) : Continuous c := by
+  have hne : ∀ z : X × Y, Function.uncurry (entropicGibbsKernel c ε) z ≠ 0 := fun z ↦ by
+    rw [Function.uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z)]
+    exact (Real.exp_pos _).ne'
+  have hc_eq : c = fun z ↦
+      ENNReal.ofReal (-(ε : ℝ) * Real.log (Function.uncurry (entropicGibbsKernel c ε) z)) :=
+    funext fun z ↦ by
+      rw [Function.uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z), Real.log_exp,
+        neg_div, neg_mul_neg, mul_div_cancel₀ _ (NNReal.coe_ne_zero.2 hε),
+        ENNReal.ofReal_toReal (hfin z)]
+  rw [hc_eq]
+  exact ENNReal.continuous_ofReal.comp (continuous_const.mul (hkc.log hne))
+
+/-- On compact spaces, a finite-valued cost whose Gibbs kernel is continuous at positive
+temperature is bounded above by a finite `ℝ≥0` constant. -/
+theorem exists_le_of_continuous_entropicGibbsKernel [TopologicalSpace X] [CompactSpace X]
+    [TopologicalSpace Y] [CompactSpace Y] (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
+    (hkc : Continuous (Function.uncurry (entropicGibbsKernel c ε))) : ∃ B : ℝ≥0, ∀ z, c z ≤ B :=
+  (continuous_of_continuous_entropicGibbsKernel hfin hε hkc).exists_forall_le_coe_of_ne_top hfin
 
 end TauCeti
 
@@ -487,7 +516,7 @@ theorem IsCoupling.exists_ae_eq_add_const_of_entropicDualValue_eq
       simp only [entropicGibbsFactor_of_ne_top hcz] at hz
       have := Real.exp_injective <|
         (ENNReal.ofReal_eq_ofReal_iff (Real.exp_pos _).le (Real.exp_pos _).le).1 hz
-      rw [div_left_inj' hε'] at this
+      rw [div_left_inj₀ hε'] at this
       linarith
   exact ⟨a, hφa.mono fun x hx ↦ by simp only at hx; linarith,
     hψa.mono fun y hy ↦ by simp only at hy; linarith⟩

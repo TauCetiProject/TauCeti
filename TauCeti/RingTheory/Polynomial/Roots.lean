@@ -74,6 +74,8 @@ the gcd with the derivative as the number of distinct roots.
   linear factors over a finite family are the values of the family.
 * `Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C`: the same for a nonzero polynomial presented
   as its leading coefficient times such a product.
+* `Polynomial.prod_one_sub_C_inv_mul_X_eq_C_mul_prod_X_sub_C`: over a field, a finite product of
+  normalised factors `1 - αᵢ⁻¹ X` with nonzero `αᵢ` factors as `C (∏ (-αᵢ)⁻¹) * ∏ (X - C αᵢ)`.
 * `Polynomial.Monic.rel_roots_iff_exists_prod_X_sub_C`: for split monic polynomials, the root
   multisets are related by `Multiset.Rel r` exactly when the polynomials factor over enumerations
   of their roots with entries of equal index related by `r`.
@@ -197,7 +199,7 @@ theorem rootSet_divByMonic_X_sub_C {a : F} (ha : algebraMap F E (f.eval a) = 0)
 theorem rootSet_comp_X_add_C (f : F[X]) (t : F) :
     (f.comp (X + C t)).rootSet E = (· + algebraMap F E t) ⁻¹' f.rootSet E := by
   ext x
-  simp [mem_rootSet', Polynomial.map_comp, comp_X_add_C_ne_zero_iff, aeval_comp]
+  simp [mem_rootSet', map_comp, comp_X_add_C_ne_zero_iff, aeval_comp]
 
 /-- The bijection `x ↦ x + t` from the roots of `f(X + t)` to the roots of `f`. -/
 def rootSetCompXAddCEquiv (f : F[X]) (t : F) (E : Type*) [CommRing E]
@@ -260,16 +262,16 @@ theorem le_card_roots_iff_exists_prod_X_sub_C_dvd {R : Type*} [CommRing R]
     intro h
     set l := p.roots.toList
     have hl : k ≤ l.length := by simpa [l] using h
-    refine ⟨fun j ↦ l[j.1], ?_⟩
+    refine ⟨fun j ↦ l[j.val], ?_⟩
     rw [key, Multiset.prod_X_sub_C_dvd_iff_le_roots hp, Fin.univ_val_map]
     conv_rhs => rw [← Multiset.coe_toList p.roots]
-    have : List.ofFn (fun j : Fin k ↦ l[j.1]) = l.take k :=
+    have : List.ofFn (fun j : Fin k ↦ l[j.val]) = l.take k :=
       List.ext_getElem (by simp; omega) fun i _ _ ↦ by simp
     rw [this]
     exact Multiset.coe_le.2 (List.take_sublist k l).subperm
   · rintro ⟨x, hx⟩
     rw [key] at hx
-    have := Polynomial.roots.le_of_dvd hp hx
+    have := roots.le_of_dvd hp hx
     rw [roots_multiset_prod_X_sub_C] at this
     simpa using Multiset.card_le_card this
 
@@ -317,6 +319,16 @@ theorem Monic.rel_roots_iff_exists_prod_X_sub_C {f g : F[X]} (hf : f.Monic)
       (congrArg roots hgb).trans (roots_prod_X_sub_C_map _ b), hab⟩
 
 end Rel
+
+/-- Over a field, a finite product of factors `1 - αᵢ⁻¹ X` with nonzero `αᵢ` equals
+`C (∏ (-αᵢ)⁻¹) * ∏ (X - C αᵢ)`. -/
+theorem prod_one_sub_C_inv_mul_X_eq_C_mul_prod_X_sub_C {K ι : Type*} [Field K]
+    (s : Finset ι) {α : ι → K} (hα : ∀ i ∈ s, α i ≠ 0) :
+    ∏ i ∈ s, (1 - C (α i)⁻¹ * X) =
+      C (∏ i ∈ s, (-α i)⁻¹) * ∏ i ∈ s, (X - C (α i)) := by
+  have hfac : ∀ i ∈ s, 1 - C (α i)⁻¹ * X = C (-α i)⁻¹ * (X - C (α i)) := fun i hi ↦ by
+    simp [mul_sub, ← C_mul, hα i hi, inv_neg, neg_add_eq_sub]
+  rw [Finset.prod_congr rfl hfac, Finset.prod_mul_distrib, map_prod]
 
 section Inter
 

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Alternating.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 import Mathlib.Tactic.FinCases
+import TauCeti.LinearAlgebra.Alternating.LinearDependent
 
 /-!
 # Bilinear maps read off multilinear maps in two variables
@@ -40,6 +41,9 @@ map can likewise be read as an `AlternatingMap` on `Fin 2`, and these two readin
   argument; `AlternatingMap.isAlt_toBilinMap` specializes this to alternating maps.
 * `MultilinearMap.toBilinMap_injective`: the other half of "the same data" -- the bilinear map
   determines the multilinear map.
+* `LinearMap.IsAlt.eq_zero_of_not_linearIndependent`: an alternating bilinear map vanishes on a
+  linearly dependent pair when unequal scalars act differently on every nonzero value, the case of
+  two arguments of `AlternatingMap.map_linearDependent_of_smul_left_injective`.
 * `AlternatingMap.toAlternatingMap_isAlt_toBilinMap` and
   `LinearMap.IsAlt.toBilinMap_toAlternatingMap`: the two round trips between alternating maps on
   `Fin 2` and alternating bilinear maps.
@@ -77,6 +81,15 @@ theorem toAlternatingMap_apply {ω : V →ₗ[R] V →ₗ[R] N} (hω : LinearMap
     (v : Fin 2 → V) : hω.toAlternatingMap v = ω (v 0) (v 1) :=
   (rfl)
 
+/-- An alternating bilinear map vanishes on a linearly dependent pair, provided unequal scalars
+act differently on every nonzero value. Over an integral domain acting on torsion-free values in an
+additive group, the latter hypothesis is `fun _ ↦ smul_left_injective R`. This is the case of two
+arguments of `AlternatingMap.map_linearDependent_of_smul_left_injective`. -/
+theorem eq_zero_of_not_linearIndependent {ω : V →ₗ[R] V →ₗ[R] N} (halt : ω.IsAlt)
+    (hN : ∀ n : N, n ≠ 0 → Function.Injective fun r : R ↦ r • n) {v w : V}
+    (hvw : ¬LinearIndependent R ![v, w]) : ω v w = 0 := by
+  simpa using halt.toAlternatingMap.map_linearDependent_of_smul_left_injective hN hvw
+
 end IsAlt
 
 end LinearMap
@@ -84,7 +97,8 @@ end LinearMap
 namespace MultilinearMap
 
 /-- The bilinear map `(x, y) ↦ m ![x, y]` of a multilinear map `m` in two variables. -/
-def toBilinMap (m : MultilinearMap R (fun _ : Fin 2 => V) N) : LinearMap.BilinMap R V N :=
+def toBilinMap (m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V)
+    N) : LinearMap.BilinMap R V N :=
   LinearMap.mk₂ R (fun x y => m ![x, y])
     (fun x x' y => m.cons_add ![y] x x')
     (fun c x y => m.cons_smul ![y] c x)
@@ -92,25 +106,25 @@ def toBilinMap (m : MultilinearMap R (fun _ : Fin 2 => V) N) : LinearMap.BilinMa
     (fun c x y => by simpa using m.snoc_smul ![x] c y)
 
 @[simp]
-theorem toBilinMap_apply (m : MultilinearMap R (fun _ : Fin 2 => V) N) (x y : V) :
+theorem toBilinMap_apply (m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) N) (x y : V) :
     m.toBilinMap x y = m ![x, y] :=
   (rfl)
 
 /-- The form of a scalar-valued multilinear map that is unchanged by swapping its two arguments
 is symmetric. -/
-theorem isSymm_toBilinMap {m : MultilinearMap R (fun _ : Fin 2 => V) R}
+theorem isSymm_toBilinMap {m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) R}
     (h : ∀ x y : V, m ![y, x] = m ![x, y]) : LinearMap.BilinForm.IsSymm m.toBilinMap :=
   ⟨fun x y => (h x y).symm⟩
 
 /-- The bilinear map of a multilinear map that vanishes on a repeated argument is alternating. -/
-theorem isAlt_toBilinMap {m : MultilinearMap R (fun _ : Fin 2 => V) N}
+theorem isAlt_toBilinMap {m : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) N}
     (h : ∀ x : V, m ![x, x] = 0) : m.toBilinMap.IsAlt :=
   fun x => (toBilinMap_apply m x x).trans (h x)
 
 /-- **A multilinear map in two variables is determined by its bilinear map.**  Every argument of
 `m` is a `![x, y]`, and the bilinear map records the value of `m` there. -/
 theorem toBilinMap_injective :
-    Function.Injective (toBilinMap : MultilinearMap R (fun _ : Fin 2 => V) N → _) := by
+    Function.Injective (toBilinMap : MultilinearMap (RingHom.id R) (fun _ : Fin 2 => V) N → _) := by
   intro m n h
   ext f
   rw [← FinVec.etaExpand_eq f]

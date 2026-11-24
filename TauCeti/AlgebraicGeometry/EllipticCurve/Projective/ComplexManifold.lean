@@ -30,10 +30,10 @@ containing the point. Its tangential coordinate is an abstract linear coordinate
 the derivative of the affine equation; it is not identified here with the classical local
 coordinates `x`, `y` or `X / Y`. These slice charts make the zero locus a complex submanifold of
 `ℂℙ²` modelled on `Fin 1 → ℂ` (`TauCeti.complexProjectiveZeroLocusChartedSpace`). Pulling that
-atlas back to `W.Point` and reading its model `Fin 1 → ℂ` in `ℂ` (`ChartedSpace.comp`) gives an
-atlas of `W.Point` modelled on `ℂ`, whose transition maps are analytic. The embedding into `ℂℙ²`
-is transported along the same linear change of model
-(`TauCeti.isImmersionAt_comp_diffeomorph_of_image_range_eq`).
+atlas back to `W.Point` and reading its model `Fin 1 → ℂ` in `ℂ`
+(`Homeomorph.chartedSpaceComp`) gives an atlas of `W.Point` modelled on `ℂ`, whose transition
+maps are analytic. The embedding into `ℂℙ²` is transported along the same linear change of model
+(`Diffeomorph.isSmoothEmbedding_chartedSpaceComp`).
 
 This makes the points of a complex elliptic curve, already compact and connected in their analytic
 topology, a one-dimensional complex manifold
@@ -114,20 +114,13 @@ private noncomputable def slicePointChartedSpace :
   letI := zeroLocusChartedSpace W
   (homeomorphZeroLocus W).pullbackChartedSpace
 
-/-- The tangential model `Fin (2 - 1) → ℂ`, charted by `ℂ` through `modelEquiv`. -/
-@[instance_reducible]
-private noncomputable def modelChartedSpace : ChartedSpace ℂ (Fin (2 - Fintype.card Unit) → ℂ) :=
-  (modelEquiv.toContDiffDiffeomorph ω).toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace
-    (Homeomorph.toOpenPartialHomeomorph_source _)
-
 /-- **The complex charts of an elliptic curve.** The points of a complex elliptic curve are
 charted by `ℂ`: the chart at a point reads the tangential coordinate of the analytic slice chart of
-`ℂℙ²` that flattens the curve near that point. -/
+`ℂℙ²` that flattens the curve near that point, in `ℂ` through `modelEquiv`. -/
 @[no_expose]
 noncomputable instance instChartedSpace : ChartedSpace ℂ W.Point :=
   letI := slicePointChartedSpace W
-  letI := modelChartedSpace
-  ChartedSpace.comp ℂ (Fin (2 - Fintype.card Unit) → ℂ) W.Point
+  (modelEquiv.toContDiffDiffeomorph ω).toHomeomorph.chartedSpaceComp W.Point
 
 /-- The points of `W` form a `C^r` manifold for the atlas pulled back from the zero locus. -/
 private theorem isManifold_slicePointChartedSpace (r : ℕ∞ω) :
@@ -146,44 +139,6 @@ instance instIsManifold (r : ℕ∞ω) : IsManifold 𝓘(ℂ) r W.Point :=
   haveI : IsManifold 𝓘(ℂ) ω W.Point :=
     (modelEquiv.toContDiffDiffeomorph ω).isManifold_chartedSpaceComp W.Point
   IsManifold.of_le le_top
-
-/-- The charts of `W.Point` are those of the zero locus atlas, read in `ℂ` through
-`modelEquiv`. -/
-private theorem extChartAt_eq (P : W.Point) :
-    letI := slicePointChartedSpace W
-    (extChartAt 𝓘(ℂ) P : W.Point → ℂ) =
-      modelEquiv ∘ extChartAt 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ) P := by
-  let := slicePointChartedSpace W
-  let := modelChartedSpace
-  funext Q
-  -- A chart of `instChartedSpace` is a zero locus chart followed by the single chart
-  -- `modelEquiv` of `modelChartedSpace`.
-  rw [extChartAt_coe, extChartAt_coe, instChartedSpace, chartAt_comp, modelChartedSpace,
-    OpenPartialHomeomorph.singletonChartedSpace_chartAt_eq]
-  simp only [OpenPartialHomeomorph.coe_trans, Homeomorph.toOpenPartialHomeomorph_apply,
-    Diffeomorph.coe_toHomeomorph, ContinuousLinearEquiv.coe_toContDiffDiffeomorph,
-    modelWithCornersSelf_coe, Function.comp_apply, id_eq]
-
-/-- The identity of `W.Point`, from the atlas modelled on `ℂ` to the zero locus atlas modelled on
-`Fin (2 - 1) → ℂ`. -/
-private noncomputable def modelChangeDiffeomorph (r : ℕ∞ω) :
-    letI := slicePointChartedSpace W
-    W.Point ≃ₘ^r⟮𝓘(ℂ), 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ)⟯ W.Point :=
-  letI := slicePointChartedSpace W
-  { toEquiv := Equiv.refl _
-    contMDiff_toFun := fun P ↦ by
-      refine contMDiffAt_iff_target.2 ⟨continuousAt_id, ?_⟩
-      have h : (extChartAt 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ) P : W.Point → _) ∘ id =
-          modelEquiv.symm ∘ extChartAt 𝓘(ℂ) P := by
-        rw [extChartAt_eq]
-        funext Q
-        exact (modelEquiv.symm_apply_apply _).symm
-      exact h ▸ modelEquiv.symm.contDiff.contMDiff.contMDiffAt.comp P contMDiffAt_extChartAt
-    contMDiff_invFun := fun P ↦ by
-      have := isManifold_slicePointChartedSpace W r
-      refine contMDiffAt_iff_target.2 ⟨continuousAt_id, ?_⟩
-      exact (extChartAt_eq W P).symm ▸
-        modelEquiv.contDiff.contMDiff.contMDiffAt.comp P contMDiffAt_extChartAt }
 
 /-- **A complex elliptic curve is holomorphically embedded in `ℂℙ²`.** The comparison of its
 points with lines in `ℂ³` is a `C^r` embedding for every `r`; in particular it is holomorphic. -/
@@ -208,11 +163,10 @@ theorem isSmoothEmbedding_toProjectivization (r : ℕ∞ω) :
     funext P
     rw [Function.comp_apply, coe_homeomorphZeroLocus_apply]
   rw [hP] at h
-  refine ⟨TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun P ↦ ?_, isEmbedding_toProjectivization⟩
-  exact TauCeti.isImmersionAt_comp_diffeomorph_of_image_range_eq modelEquiv.symm
+  have := isManifold_slicePointChartedSpace W ω
+  exact (modelEquiv.toContDiffDiffeomorph ω).isSmoothEmbedding_chartedSpaceComp modelEquiv.symm
     (by simp only [modelWithCornersSelf_coe, range_id]
-        exact image_univ_of_surjective modelEquiv.symm.surjective)
-    (modelChangeDiffeomorph W r) le_rfl (h.isImmersion.isImmersionAt P)
+        exact image_univ_of_surjective modelEquiv.symm.surjective) le_top h
 
 variable {W} {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
   {I : ModelWithCorners ℂ E H} [TopologicalSpace M] [ChartedSpace H M] {r : ℕ∞ω}
@@ -244,6 +198,24 @@ theorem contMDiffAt_of_eventually_eq_mk {x : M} {P : M → Fin 3 → ℂ}
   refine Projectivization.contMDiffAt_of_eventually_eq_mk hP ?_
   filter_upwards [hf] with y ⟨h, hy⟩
   exact ⟨ne_zero_of_nonsingular h, by rw [Function.comp_apply, ← hy, toProjectivization_mk]⟩
+
+/-- **Local holomorphic representatives.** Every point `P₀` of a complex elliptic curve admits
+a map `s : W.Point → Fin 3 → ℂ` analytic at `P₀` that gives nonsingular homogeneous
+representatives of the points near `P₀`. -/
+theorem exists_contMDiffAt_mk_eq (P₀ : W.Point) :
+    ∃ s : W.Point → Fin 3 → ℂ, ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, Fin 3 → ℂ) ω s P₀ ∧
+      ∀ᶠ P in 𝓝 P₀, ∃ h : W.Nonsingular (s P),
+        Point.mk ((nonsingularLift_iff (s P)).mpr h) = P := by
+  obtain ⟨i, hi⟩ := exists_mem_affineOpen P₀.toProjectivization
+  have hU := (isOpen_affineOpen (K := ℂ) i).mem_nhds hi
+  refine ⟨fun P ↦ Fin.insertNth (α := fun _ ↦ ℂ) i 1 (affineChart i P.toProjectivization),
+    ((contMDiffOn_insertNth_affineChart i ω).contMDiffAt hU).comp P₀
+      ((isSmoothEmbedding_toProjectivization W ω).contMDiff P₀), ?_⟩
+  filter_upwards [continuous_toProjectivization.continuousAt.preimage_mem_nhds hU] with P hP
+  have h : Projectivization.mk ℂ _ (Fin.insertNth_one_ne_zero i _) = P.toProjectivization :=
+    (affineChart_symm_apply i _).symm.trans ((affineChart i).left_inv (by rwa [affineChart_source]))
+  exact ⟨(exists_toProjectivization_eq_mk_iff _ _).mp ⟨P, h.symm⟩,
+    toProjectivization_injective ((toProjectivization_mk _).trans h)⟩
 
 end Point
 

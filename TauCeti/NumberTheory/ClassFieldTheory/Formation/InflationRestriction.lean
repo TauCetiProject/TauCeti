@@ -68,7 +68,7 @@ private theorem range_repHom (T : LayerRefinement old new) (F : Formation G) :
       -- `repHom_hom_apply_coe` is stated for the morphism, not its underlying linear map.
       have hy : ((T.repHom F).hom.toLinearMap y : F.toRep.V) = y := T.repHom_hom_apply_coe F y
       rw [hy]
-      exact (F.mem_level.1 y.2) _ ((T.galHom_mk_eq_one_iff u).1 hγ)
+      exact (F.mem_level.1 y.property) _ ((T.galHom_mk_eq_one_iff u).1 hγ)
   · intro hx
     refine ⟨⟨x, F.mem_level.2 fun v hv => ?_⟩, Subtype.ext (T.repHom_hom_apply_coe F _)⟩
     have hvU : v ∈ new.ground := T.same_ground ▸ old.top_le_ground hv

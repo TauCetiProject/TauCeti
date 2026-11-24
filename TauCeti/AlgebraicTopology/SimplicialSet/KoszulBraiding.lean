@@ -5,11 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.KoszulBraiding
+public import TauCeti.Algebra.Homology.ComplexShape.Signs
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Symmetry
 public import TauCeti.AlgebraicTopology.SimplicialSet.EilenbergZilber
 
 /-!
-# The Alexander–Whitney map and the interchange of factors
+# The Alexander–Whitney and shuffle maps and the interchange of factors
+
+For simplicial sets `K` and `L`, the shuffle map `C(K; R) ⊗ C(L; S) ⟶ C(K × L; R ⊗ S)` commutes
+with the interchange of factors: the Koszul braiding
+`C(K; R) ⊗ C(L; S) ⟶ C(L; S) ⊗ C(K; R)` (`HomologicalComplex.tensorBraiding`), which is
+`x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree `(p, q)`, followed by the shuffle map of `L × K`, is equal
+to the shuffle map of `K × L` followed by the coefficient braiding `R ⊗ S ⟶ S ⊗ R` and the swap
+`K × L ⟶ L × K` (`SSet.tensorBraiding_hom_comp_shuffle`).  On the summand of a `p`-simplex and a
+`q`-simplex both sides are images of shuffle chains, and the swap `Δ[p] ⊗ Δ[q] ⟶ Δ[q] ⊗ Δ[p]`
+sends the shuffle chain of `Δ[p] ⊗ Δ[q]` to `(-1)^(p * q)` times that of `Δ[q] ⊗ Δ[p]`
+(`SSet.shuffleChain_chainComplexMap_braiding`).  So the shuffle product of two `1`-simplices,
+followed by the swap, is minus the shuffle product of the swapped pair.
 
 For simplicial sets `K` and `L`, the Alexander–Whitney map
 `C(K × L; R ⊗ S) ⟶ C(K; R) ⊗ C(L; S)` followed by the Koszul braiding
@@ -24,13 +36,16 @@ This is the chain-level input for the graded commutativity of cup products.  The
 acyclic models (`SSet.prodChainComplexHomotopy`): after composing with the shuffle map of `L × K`
 and the swap back to `K × L`, the first map agrees in degree zero with the coefficient braiding
 `R ⊗ S ⟶ S ⊗ R`, and the shuffle map is a right homotopy inverse of the Alexander–Whitney map
-(`SSet.shuffleAlexanderWhitneyHomotopy`).
+(`SSet.shuffleAlexanderWhitneyHomotopy`).  The homotopy is natural in both simplicial sets
+(`SSet.alexanderWhitneyKoszulBraidingHomotopy_hom_naturality`).
 
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.2, Theorem 3.11, for graded commutativity of the
   cup product.
 * S. Eilenberg and S. Mac Lane, *Acyclic models*, Amer. J. Math. 75 (1953).
+* S. Eilenberg and S. Mac Lane, *On the groups `H(Π, n)`, I*, Ann. of Math. 58 (1953), on the
+  commutativity of the shuffle product.
 -/
 
 public section
@@ -52,12 +67,33 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] [Mo
   [∀ (X : C) (J : Type w), PreservesColimitsOfShape (Discrete J) (tensorRight X)]
   (K L : SSet.{w}) (R S : C)
 
+/-- **The shuffle map is graded commutative**: the Koszul braiding
+`C(K; R) ⊗ C(L; S) ⟶ C(L; S) ⊗ C(K; R)`, `x ⊗ y ↦ (-1)^(p * q) y ⊗ x` in bidegree `(p, q)`,
+followed by the shuffle map of `L × K`, is the shuffle map of `K × L` followed by the maps induced
+by the coefficient braiding `R ⊗ S ⟶ S ⊗ R` and the swap `K × L ⟶ L × K`. This is an equality of
+chain maps, not only a chain homotopy. -/
+@[reassoc]
+lemma tensorBraiding_hom_comp_shuffle :
+    (tensorBraiding (K.chainComplex R) (L.chainComplex S)).hom ≫ shuffle L K S R =
+      shuffle K L R S ≫ ((chainComplexFunctor C).map (β_ R S).hom).app (K ⊗ L) ≫
+        chainComplexMap (β_ K L).hom (S ⊗ R) := by
+  ext n : 1
+  refine mapBifunctor.hom_ext fun p q h ↦ tensorChainComplexX_hom_ext fun x y ↦ ?_
+  simp only [comp_f, ιTensorObj_tensorBraiding_hom_f_assoc, Units.smul_def,
+    ComplexShape.val_σ_down_ℕ, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
+    BraidedCategory.braiding_naturality_assoc, ιChainComplex_tensorHom_ιChainComplex_shuffle_f,
+    ιChainComplex_tensorHom_ιChainComplex_shuffle_f_assoc,
+    chainComplexMap_f_chainComplexFunctor_map_app_f_assoc,
+    shuffleChain_chainComplexFunctor_map_app_f_assoc, chainComplexMap_f_comp,
+    BraidedCategory.braiding_naturality]
+  rw [← chainComplexMap_f_comp, shuffleChain_chainComplexMap_braiding_assoc,
+    Preadditive.zsmul_comp, Preadditive.comp_zsmul]
+
 /-- The Alexander–Whitney map of `K × L`, followed by the Koszul braiding, the shuffle map of
 `L × K` and the swap back to `K × L`. -/
 private def alexanderWhitneyKoszulBraidingShuffle :
     (K ⊗ L).chainComplex (R ⊗ S) ⟶ (K ⊗ L).chainComplex (S ⊗ R) :=
-  alexanderWhitney K L R S ≫
-    TauCeti.NatChainComplex.koszulBraidingHom (K.chainComplex R) (L.chainComplex S) ≫
+  alexanderWhitney K L R S ≫ (tensorBraiding (K.chainComplex R) (L.chainComplex S)).hom ≫
       shuffle L K S R ≫ chainComplexMap (β_ L K).hom (S ⊗ R)
 
 variable {K L} in
@@ -67,10 +103,10 @@ private lemma alexanderWhitneyKoszulBraidingShuffle_naturality {K' L' : SSet.{w}
       alexanderWhitneyKoszulBraidingShuffle K L R S ≫ chainComplexMap (f ⊗ₘ g) (S ⊗ R) := by
   -- `⊗ₘ` of chain complexes is `HomologicalComplex.tensorHom` by definition
   have hκ : (chainComplexMap f R ⊗ₘ chainComplexMap g S) ≫
-      TauCeti.NatChainComplex.koszulBraidingHom (K'.chainComplex R) (L'.chainComplex S) =
-        TauCeti.NatChainComplex.koszulBraidingHom (K.chainComplex R) (L.chainComplex S) ≫
+      (tensorBraiding (K'.chainComplex R) (L'.chainComplex S)).hom =
+        (tensorBraiding (K.chainComplex R) (L.chainComplex S)).hom ≫
           (chainComplexMap g S ⊗ₘ chainComplexMap f R) :=
-    TauCeti.NatChainComplex.koszulBraidingHom_naturality _ _ _ _
+    tensorBraiding_hom_naturality _ _
   simp only [alexanderWhitneyKoszulBraidingShuffle, alexanderWhitney_naturality_assoc,
     reassoc_of% hκ, shuffle_naturality_assoc, Category.assoc, ← Functor.map_comp,
     BraidedCategory.braiding_naturality]
@@ -86,8 +122,8 @@ private lemma alexanderWhitneyKoszulBraidingShuffle_f_zero :
     ιChainComplex_alexanderWhitney_f_assoc, Fin.sum_univ_one,
     SSet.ιChainComplex_chainComplexFunctor_map_app_f]
   simp only [Fin.val_zero, Nat.sub_zero, TauCeti.SimplexCategory.subinterval_zero_eq_id, op_id,
-    Functor.map_id_apply, Category.assoc,
-    TauCeti.NatChainComplex.ιTensorObj_koszulBraidingHom_f_assoc, mul_zero, pow_zero, one_smul,
+    Functor.map_id_apply, Category.assoc, ιTensorObj_tensorBraiding_hom_f_assoc,
+    ComplexShape.σ_down_ℕ, mul_zero, pow_zero, one_smul,
     BraidedCategory.braiding_naturality_assoc,
     reassoc_of% ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero]
   -- the swap sends the vertex `(x.2, x.1)` of `L × K` to `(x.1, x.2) = x`, by definition
@@ -99,7 +135,7 @@ Alexander–Whitney map `C(K × L; R ⊗ S) ⟶ C(K; R) ⊗ C(L; S)` followed by
 `R ⊗ S ⟶ S ⊗ R` followed by the swap `K × L ⟶ L × K` and the Alexander–Whitney map of `L × K`. -/
 def alexanderWhitneyKoszulBraidingHomotopy :
     Homotopy (alexanderWhitney K L R S ≫
-        TauCeti.NatChainComplex.koszulBraidingHom (K.chainComplex R) (L.chainComplex S))
+        (tensorBraiding (K.chainComplex R) (L.chainComplex S)).hom)
       (((chainComplexFunctor C).map (β_ R S).hom).app (K ⊗ L) ≫
         chainComplexMap (β_ K L).hom (S ⊗ R) ≫ alexanderWhitney L K S R) :=
   (Homotopy.ofEq (Category.comp_id _).symm).trans <|
@@ -114,5 +150,39 @@ def alexanderWhitneyKoszulBraidingHomotopy :
           (fun _ _ _ _ f g ↦ alexanderWhitneyKoszulBraidingShuffle_naturality R S f g)
           (fun _ _ _ _ f g ↦ ((chainComplexFunctor C).map (β_ R S).hom).naturality (f ⊗ₘ g))
           (fun K L ↦ alexanderWhitneyKoszulBraidingShuffle_f_zero K L R S) K L).compRight _
+
+variable {K L} in
+/-- The homotopy of `SSet.alexanderWhitneyKoszulBraidingHomotopy` is natural in both simplicial
+sets: maps `f : K ⟶ K'` and `g : L ⟶ L'` intertwine it with the homotopy for `K'` and `L'`, the
+chains of the target being mapped by `g` and `f` in the interchanged order. -/
+@[reassoc]
+lemma alexanderWhitneyKoszulBraidingHomotopy_hom_naturality {K' L' : SSet.{w}} (f : K ⟶ K')
+    (g : L ⟶ L') (i j : ℕ) :
+    (chainComplexMap (f ⊗ₘ g) (R ⊗ S)).f i ≫
+        (alexanderWhitneyKoszulBraidingHomotopy K' L' R S).hom i j =
+      (alexanderWhitneyKoszulBraidingHomotopy K L R S).hom i j ≫
+        (chainComplexMap g S ⊗ₘ chainComplexMap f R).f j := by
+  simp only [alexanderWhitneyKoszulBraidingHomotopy, Homotopy.trans_hom, Homotopy.ofEq_hom,
+    Homotopy.compLeft_hom, Homotopy.symm_hom, Homotopy.compRight_hom, Pi.zero_apply, zero_add,
+    Preadditive.comp_add, Preadditive.add_comp, Preadditive.comp_neg, Preadditive.neg_comp,
+    Category.assoc]
+  have h₁ : chainComplexMap (f ⊗ₘ g) (R ⊗ S) ≫ K'.alexanderWhitney L' R S ≫
+      (tensorBraiding (K'.chainComplex R) (L'.chainComplex S)).hom =
+      (K.alexanderWhitney L R S ≫ (tensorBraiding (K.chainComplex R) (L.chainComplex S)).hom) ≫
+        (chainComplexMap g S ⊗ₘ chainComplexMap f R) := by
+    rw [alexanderWhitney_naturality_assoc, Category.assoc]
+    exact congrArg (_ ≫ ·) (tensorBraiding_hom_naturality _ _)
+  have h₂ : chainComplexMap (f ⊗ₘ g) (S ⊗ R) ≫ chainComplexMap (β_ K' L').hom (S ⊗ R) ≫
+      L'.alexanderWhitney K' S R =
+      (chainComplexMap (β_ K L).hom (S ⊗ R) ≫ L.alexanderWhitney K S R) ≫
+        (chainComplexMap g S ⊗ₘ chainComplexMap f R) := by
+    rw [← Functor.map_comp_assoc, BraidedCategory.braiding_naturality, Functor.map_comp_assoc,
+      alexanderWhitney_naturality, Category.assoc]
+  congr 1
+  · congr 1
+    rw [← HomologicalComplex.comp_f_assoc, h₁, HomologicalComplex.comp_f_assoc]
+    exact congrArg (_ ≫ ·) (shuffleAlexanderWhitneyHomotopy_hom_naturality S R g f i j)
+  · rw [prodChainComplexHomotopy_hom_naturality_assoc, ← HomologicalComplex.comp_f, h₂,
+      HomologicalComplex.comp_f]
 
 end SSet

@@ -8,13 +8,15 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Order.Filter.ZeroAndBoundedAtFilter
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Meromorphic order from limits and connected sets
+# Meromorphic order from limits, bounds and connected sets
 
 A nonzero limit of `(z - c) • f z` at `c` detects an exact simple pole of `f`.
+A function bounded on a punctured neighbourhood has nonnegative meromorphic order.
 An analytic function on a connected set that is nonzero somewhere has finite meromorphic
 order throughout the set.
 
@@ -29,8 +31,12 @@ meromorphic order to every point of `closedBall c R`.
 
 * `MeromorphicAt.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul`: a nonzero residue limit
   forces meromorphic order exactly `-1`.
+* `Filter.BoundedAtFilter.meromorphicOrderAt_nonneg`: boundedness on a punctured neighbourhood
+  forces nonnegative meromorphic order.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero`: a nonzero value on a connected
   set rules out infinite order throughout the set.
+* `AnalyticAt.meromorphicOrderAt_pos_iff_eq_zero`: an analytic function at `x` has positive
+  meromorphic order at `x` if and only if `f x = 0`.
 * `MeromorphicOn.meromorphicOrderAt_ne_top_of_forall_mem_sphere`: finite meromorphic order on the
   bounding sphere propagates throughout the closed disc.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero`: an analytic function on
@@ -55,6 +61,17 @@ theorem AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero
     rw [(hf z hz).meromorphicOrderAt_eq, (hf z hz).analyticOrderAt_eq_zero.mpr hzero]
     simp
   exact hfin hex ⟨z, hz⟩
+
+/-- An analytic function at `x` has positive meromorphic order at `x` if and only if it vanishes
+at `x` (including when it vanishes identically near `x`, where the order is `⊤`). -/
+@[simp]
+theorem AnalyticAt.meromorphicOrderAt_pos_iff_eq_zero
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : 𝕜 → E} {x : 𝕜} (hf : AnalyticAt 𝕜 f x) :
+    0 < meromorphicOrderAt f x ↔ f x = 0 := by
+  rw [lt_iff_le_and_ne, and_iff_right hf.meromorphicOrderAt_nonneg, ne_comm,
+    hf.meromorphicOrderAt_eq, ← hf.analyticOrderAt_ne_zero]
+  cases analyticOrderAt f x <;> simp
 
 open Filter Metric Topology
 
@@ -112,5 +129,23 @@ theorem DifferentiableOn.neg_one_le_meromorphicOrderAt {E : Type*} [NormedAddCom
   · have h_an : AnalyticAt ℂ f w := hf.analyticOnNhd (hU.sdiff hS) w ⟨hw, hwS⟩
     exact le_trans (by exact_mod_cast (by norm_num : (-1 : ℤ) ≤ 0))
       h_an.meromorphicOrderAt_nonneg
+
+section Bounded
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {g : 𝕜 → E} {x : 𝕜}
+
+/-- A function which is bounded on a punctured neighbourhood of `x` has nonnegative meromorphic
+order at `x`. -/
+theorem _root_.Filter.BoundedAtFilter.meromorphicOrderAt_nonneg
+    (hbdd : BoundedAtFilter (𝓝[≠] x) g) :
+    0 ≤ meromorphicOrderAt g x := by
+  by_contra hlt
+  exact Filter.not_isBoundedUnder_of_tendsto_atTop
+    (tendsto_norm_atTop_iff_cobounded.mpr
+      (tendsto_cobounded_of_meromorphicOrderAt_neg (not_le.mp hlt)))
+    ((Asymptotics.isBigO_one_iff (F := ℝ)).mp hbdd)
+
+end Bounded
 
 end

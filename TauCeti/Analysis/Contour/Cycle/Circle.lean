@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Analysis.Contour.Curve.Circle.Basic
-public import TauCeti.Analysis.Contour.Winding.Number.Circle
+public import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
 
 /-!
 # Circles as contour cycles
@@ -69,7 +69,7 @@ theorem circleCurve_apply {c : ℂ} {R t : ℝ} (ht : t ∈ uIcc 0 (2 * π)) :
 
 /-- The counterclockwise circle `circleMap c R` on `[0, 2π]` as a one-generator contour cycle. -/
 def circleCycle (c : ℂ) (R : ℝ) : Cycle :=
-  FreeAbelianGroup.of (circleCurve c R)
+  FreeAddCommGroup.of (circleCurve c R)
 
 namespace Cycle
 

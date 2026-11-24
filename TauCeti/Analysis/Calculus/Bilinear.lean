@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 public import TauCeti.Analysis.Normed.Operator.Bilinear
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
@@ -22,7 +24,8 @@ critical point, but it depends on nothing beyond the bilinear chain rule
 
 The same chain rule differentiates the pairing `y ↦ B (u y) (∂_w u y)` of a `C²` map `u` with one
 of its directional derivatives, the one-form `x ↦ B x` pulled back along `u` and evaluated in the
-direction `w`; its derivative involves the second derivative of `u`.
+direction `w`; its derivative involves the second derivative of `u`. Along a curve, it shows that a
+pairing `s ↦ B (u s) (v s)` which is constant has vanishing derivative `B u' v + B u v'`.
 
 ## Main results
 
@@ -38,6 +41,8 @@ direction `w`; its derivative involves the second derivative of `u`.
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
 * `ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply`: `y ↦ B (u y) (∂_w u y)` is `C^n` at a
   point where `u` is `C^(n+1)`.
+* `ContinuousLinearMap.apply_add_apply_eq_zero_of_const`: if `s ↦ B (u s) (v s)` is constant, then
+  `B u' (v t) + B (u t) v' = 0`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
 * `ContDiffOn.clm_bilinearComp`: the pullback `B x (L₁ x ·) (L₂ x ·)` of a smooth family of
@@ -61,6 +66,19 @@ variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {n : WithTop ℕ∞}
 
+
+/-- Differentiate `w ↦ B w.1 w.2 w.2` on `E × F`, where `B` varies differentiably within
+`t` at `p.1` and is evaluated twice on the second coordinate. -/
+theorem _root_.HasFDerivWithinAt.comp_fst_clm_apply_snd_self {B : E → F →L[𝕜] F →L[𝕜] G}
+    {B' : E →L[𝕜] F →L[𝕜] F →L[𝕜] G}
+    {s : Set (E × F)} {t : Set E} {p : E × F} (hB : HasFDerivWithinAt B B' t p.1)
+    (hs : Set.MapsTo Prod.fst s t) :
+    HasFDerivWithinAt (fun w : E × F ↦ B w.1 w.2 w.2)
+      ((B p.1 p.2).comp (ContinuousLinearMap.snd 𝕜 E F) +
+        ((B p.1).comp (ContinuousLinearMap.snd 𝕜 E F) +
+          (B'.comp (ContinuousLinearMap.fst 𝕜 E F)).flip p.2).flip p.2) s p :=
+  ((hB.comp p hasFDerivWithinAt_fst hs).clm_apply hasFDerivWithinAt_snd).clm_apply
+    hasFDerivWithinAt_snd
 
 /-- The map `z ↦ B z z` attached to a continuous bilinear map `B` is `C^n` for every `n`. -/
 theorem _root_.ContinuousLinearMap.contDiff_apply_self (B : E →L[𝕜] E →L[𝕜] F) : ContDiff 𝕜 n
@@ -122,6 +140,16 @@ theorem _root_.ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply (B : F →L[
     ContDiffAt 𝕜 n (fun y ↦ B (u y) (fderiv 𝕜 u y w)) z :=
   (B.contDiff.contDiffAt.comp z (hu.of_le le_self_add)).clm_apply
     ((hu.fderiv_right le_rfl).clm_apply contDiffAt_const)
+
+/-- If the pairing `s ↦ B (u s) (v s)` of two curves is constant, its derivative
+`B u' (v t) + B (u t) v'` vanishes. -/
+theorem _root_.ContinuousLinearMap.apply_add_apply_eq_zero_of_const (B : E →L[𝕜] F →L[𝕜] G)
+    {u : 𝕜 → E} {v : 𝕜 → F} {u' : E} {v' : F} {t : 𝕜} (hu : HasDerivAt u u' t)
+    (hv : HasDerivAt v v' t) {c : G} (h : ∀ s, B (u s) (v s) = c) :
+    B u' (v t) + B (u t) v' = 0 := by
+  have hd := B.hasDerivAt_of_bilinear (fun _ ↦ hu) (fun _ ↦ hv)
+  rw [funext h, add_comm] at hd
+  exact hd.unique (hasDerivAt_const t c)
 
 /-- The pullback `(v, w) ↦ B (L v) (L w)` of a continuous bilinear map `B` along a continuous linear
 map `L` is `C^n` as a function of the pair `(B, L)`. -/

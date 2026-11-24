@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
-public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated
+public import TauCeti.CategoryTheory.GrothendieckGroup.Triangulated.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Localization
 public import TauCeti.CategoryTheory.GrothendieckGroup.BoundedHomotopy.Basic
@@ -145,8 +145,8 @@ private lemma sum_negOnePow_of_homology_eq_of_isZero (X : DerivedCategory A) {s 
   simpa only [TauCeti.finiteEulerSum_def] using
     TauCeti.finiteEulerSum_eq_of_eq_zero
       (fun n ↦ (of ((homologyFunctor A n).obj X) : AbelianK0 A))
-      (fun n hn ↦ of_eq_zero_of_isZero (hs n hn))
-      (fun n hn ↦ of_eq_zero_of_isZero (ht n hn))
+      (fun n _ hn ↦ of_eq_zero_of_isZero (hs n hn))
+      (fun n _ hn ↦ of_eq_zero_of_isZero (ht n hn))
 
 /-- The degree-`n` relation behind additivity on a distinguished triangle: cutting the long exact
 cohomology sequence at the kernels of `Hⁿ(T.mor₁)` and `Hⁿ⁺¹(T.mor₁)`. -/

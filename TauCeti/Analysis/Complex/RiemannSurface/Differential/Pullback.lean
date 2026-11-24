@@ -136,10 +136,7 @@ theorem coeff_pullback (ω : OneForm Y) {f : X → Y} {x : X}
   have hω := ω.coeff_smul_mvfderiv hd (d.map_source hfx)
   rw [d.left_inv hfx] at hω
   have hdf := mdifferentiableAt_of_mem_maximalAtlas hd hfx
-  have hcoeff := coeff_mvfderiv he (e.map_source hx)
-    (by simpa only [e.left_inv hx] using hdf.comp x hf)
-  have hdc := (coeff_eq_iff (mvfderiv 𝓘(ℂ) (d ∘ f)) he hx).mp hcoeff
-  rw [coeff_eq_iff _ he hx, mul_smul, hdc]
+  rw [coeff_eq_iff _ he hx, mul_smul, ← mvfderiv_eq_deriv_smul he hx]
   apply ContinuousLinearMap.ext
   intro v
   rw [pullback_apply, ← hω]
@@ -253,6 +250,12 @@ theorem order_pullback_ne_top {ω : OneForm Y} {f : X → Y} {x : X}
 section Compact
 
 variable [CompactSpace X] [CompactSpace Y]
+
+omit [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] in
+/-- The preimage under a finite holomorphic map of the support of the divisor of `ω` is finite. -/
+theorem finite_preimage_support_divisor (f : FiniteHolomorphicMap X Y) (ω : OneForm Y) :
+    (f ⁻¹' (ω.divisor.support : Set Y)).Finite :=
+  ω.divisor.support.finite_toSet.preimage' fun y _ ↦ f.finite_fiber y
 
 /-- **The divisor formula for pullback of a meromorphic differential.** The correction to
 pullback of its divisor is exactly the ramification divisor of the map. -/

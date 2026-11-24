@@ -38,7 +38,7 @@ open CategoryTheory
 universe uR uA v
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
-  (G : InternalGrading R A)
+  (G : InternalGrading R A ℤ)
 
 local notation "B" => (GradedOpposite G)ᵐᵒᵖ
 
@@ -86,15 +86,15 @@ private noncomputable def quadraticModuleEquiv (M : GradedModuleCat.{v} G.piece)
     M ≃ₗ[B]
       ((_root_.ModuleCat.restrictScalars (GradedOpposite.opAlgEquiv G).toRingHom).obj
         (_root_.ModuleCat.of A M)) :=
-  (quadraticModuleEquivData G M).1
+  (quadraticModuleEquivData G M).val
 
 private theorem quadraticModuleEquiv_apply (M : GradedModuleCat.{v} G.piece) (x : M) :
     quadraticModuleEquiv G M x = M.grading.quadraticTwist x :=
-  (quadraticModuleEquivData G M).2.1 x
+  (quadraticModuleEquivData G M).property.1 x
 
 private theorem quadraticModuleEquiv_symm_apply (M : GradedModuleCat.{v} G.piece) (x : M) :
     (quadraticModuleEquiv G M).symm x = M.grading.quadraticTwist x :=
-  (quadraticModuleEquivData G M).2.2 x
+  (quadraticModuleEquivData G M).property.2 x
 
 private noncomputable def quadraticHomMap (M N : GradedModuleCat.{v} G.piece) :
     (M →ₗ[A] N) →ₗ[R] (M →ₗ[B] N) where
@@ -224,7 +224,7 @@ noncomputable def homShiftEquivSignedOppositeCochains
       ((flattenShiftHom_homogeneous G M N s f).map_mem
         (M.grading.quadraticTwist_mem_piece hx))) _⟩
   invFun f := ofHom
-    ((InternalGrading.quadraticExponent (-s)).negOnePow • (quadraticHomEquiv G M N).symm f.1)
+    ((InternalGrading.quadraticExponent (-s)).negOnePow • (quadraticHomEquiv G M N).symm f.val)
     (by
       rw [LinearMap.isHomogeneous_def]
       intro r x hx
@@ -232,7 +232,7 @@ noncomputable def homShiftEquivSignedOppositeCochains
       -- The shifted carrier and the unit-scaled linear-map coercion hide the value on N.
       -- Reduce those wrappers so the inverse quadratic evaluation equation can rewrite it.
       change (InternalGrading.quadraticExponent (-s)).negOnePow •
-        (quadraticHomEquiv G M N).symm f.1 x ∈ N.grading.piece (r + -s)
+        (quadraticHomEquiv G M N).symm f.val x ∈ N.grading.piece (r + -s)
       rw [quadraticHomEquiv_symm_apply, Units.smul_def]
       exact zsmul_mem (N.grading.quadraticTwist_mem_piece
         (dgRightModuleCochains.map_mem f (M.grading.quadraticTwist_mem_piece hx))) _)
@@ -259,12 +259,12 @@ noncomputable def homShiftEquivSignedOppositeCochains
     change (InternalGrading.quadraticExponent (-s)).negOnePow •
       quadraticHomEquiv G M N (flattenShiftHom G M N s
         (ofHom ((InternalGrading.quadraticExponent (-s)).negOnePow •
-          (quadraticHomEquiv G M N).symm f.1) _)) x = f.1 x
+          (quadraticHomEquiv G M N).symm f.val) _)) x = f.val x
     rw [flattenShiftHom_ofHom, map_zsmul_unit, LinearEquiv.apply_symm_apply]
     -- Evaluate the remaining unit-scaled linear map before cancelling the two output signs;
     -- mul_smul acts on values and does not rewrite through this map coercion.
     change (InternalGrading.quadraticExponent (-s)).negOnePow •
-      (InternalGrading.quadraticExponent (-s)).negOnePow • f.1 x = _
+      (InternalGrading.quadraticExponent (-s)).negOnePow • f.val x = _
     rw [← mul_smul, Int.units_mul_self, one_smul]
   map_add' f g := by
     apply Subtype.ext
@@ -278,7 +278,7 @@ noncomputable def homShiftEquivSignedOppositeCochains
 @[simp]
 theorem homShiftEquivSignedOppositeCochains_apply
     (M N : GradedModuleCat.{v} G.piece) (s : ℤ) (f : M ⟶ N.shiftObj s) (x : M) :
-    (homShiftEquivSignedOppositeCochains G M N s f).1 x =
+    (homShiftEquivSignedOppositeCochains G M N s f).val x =
       (InternalGrading.quadraticExponent (-s)).negOnePow •
         N.grading.quadraticTwist (f.hom (M.grading.quadraticTwist x)) := by
   -- This establishes the public evaluation equation: expose only the forward subtype value
@@ -299,11 +299,11 @@ theorem homShiftEquivSignedOppositeCochains_symm_apply
         (ℳ := M.grading.piece) (ℳN := N.grading.piece) (-s)) (x : M) :
     ((homShiftEquivSignedOppositeCochains G M N s).symm f).hom x =
       (InternalGrading.quadraticExponent (-s)).negOnePow •
-        N.grading.quadraticTwist (f.1 (M.grading.quadraticTwist x)) := by
+        N.grading.quadraticTwist (f.val (M.grading.quadraticTwist x)) := by
   -- The inverse returns an ofHom on the shifted carrier. Expose that Hom projection and
   -- its unit-scaled value before rewriting with quadraticHomEquiv_symm_apply.
   change (InternalGrading.quadraticExponent (-s)).negOnePow •
-    (quadraticHomEquiv G M N).symm f.1 x = _
+    (quadraticHomEquiv G M N).symm f.val x = _
   rw [quadraticHomEquiv_symm_apply]
 
 private theorem quadraticTwist_apply_unit (M : GradedModuleCat.{v} G.piece)
@@ -315,7 +315,7 @@ private theorem quadraticTwist_apply_unit (M : GradedModuleCat.{v} G.piece)
 theorem homShiftEquivSignedOppositeCochains_apply_of_mem
     (M N : GradedModuleCat.{v} G.piece) (s : ℤ) (f : M ⟶ N.shiftObj s)
     {r : ℤ} {x : M} (hx : x ∈ M.grading.piece r) :
-    (homShiftEquivSignedOppositeCochains G M N s f).1 x = (-s * r).negOnePow • f.hom x := by
+    (homShiftEquivSignedOppositeCochains G M N s f).val x = (-s * r).negOnePow • f.hom x := by
   have hf : f.hom x ∈ N.grading.piece (r + -s) := by
     simpa only [flattenShiftHom_apply] using
       (flattenShiftHom_homogeneous G M N s f).map_mem hx
@@ -334,21 +334,21 @@ theorem homShiftEquivSignedOppositeCochains_symm_apply_of_mem
         (ℳ := M.grading.piece) (ℳN := N.grading.piece) (-s))
     {r : ℤ} {x : M} (hx : x ∈ M.grading.piece r) :
     ((homShiftEquivSignedOppositeCochains G M N s).symm f).hom x =
-      (-s * r).negOnePow • f.1 x := by
-  have h := congrArg (fun g ↦ g.1 x)
+      (-s * r).negOnePow • f.val x := by
+  have h := congrArg (fun g ↦ g.val x)
     ((homShiftEquivSignedOppositeCochains G M N s).apply_symm_apply f)
   rw [homShiftEquivSignedOppositeCochains_apply_of_mem G M N s _ hx] at h
   calc
     _ = (-s * r).negOnePow • (-s * r).negOnePow •
         ((homShiftEquivSignedOppositeCochains G M N s).symm f).hom x := by
       rw [← mul_smul, Int.units_mul_self, one_smul]
-    _ = (-s * r).negOnePow • f.1 x := congrArg ((-s * r).negOnePow • ·) h
+    _ = (-s * r).negOnePow • f.val x := congrArg ((-s * r).negOnePow • ·) h
 
 /-- Removing the degree sign leaves the quadratic normalization `J = Q_N f Q_M`. -/
 theorem homShiftEquivSignedOppositeCochains_normalized_apply
     (M N : GradedModuleCat.{v} G.piece) (s : ℤ) (f : M ⟶ N.shiftObj s) (x : M) :
     (InternalGrading.quadraticExponent (-s)).negOnePow •
-        (homShiftEquivSignedOppositeCochains G M N s f).1 x =
+        (homShiftEquivSignedOppositeCochains G M N s f).val x =
       N.grading.quadraticTwist (f.hom (M.grading.quadraticTwist x)) := by
   rw [homShiftEquivSignedOppositeCochains_apply, ← mul_smul, Int.units_mul_self, one_smul]
 
@@ -372,10 +372,10 @@ theorem homShiftEquivSignedOppositeCochains_comp
   rw [dgRightModuleCochains.comp_apply]
   -- comp_apply exposes the composite; the right side still has the unit action on a
   -- cochain subtype. Reduce its subtype and linear-map coercions to the output action.
-  change (homShiftEquivSignedOppositeCochains G N P t g).1
-      ((homShiftEquivSignedOppositeCochains G M N s f).1 x) =
+  change (homShiftEquivSignedOppositeCochains G N P t g).val
+      ((homShiftEquivSignedOppositeCochains G M N s f).val x) =
     (s * t).negOnePow • (homShiftEquivSignedOppositeCochains G M P (t + s)
-      (f ≫ (shiftFunctor s).map g ≫ (shiftFunctorAddIso G.piece t s).hom.app P)).1 x
+      (f ≫ (shiftFunctor s).map g ≫ (shiftFunctorAddIso G.piece t s).hom.app P)).val x
   simp only [homShiftEquivSignedOppositeCochains_apply, map_zsmul_unit]
   rw [N.grading.quadraticTwist_involutive (f.hom (M.grading.quadraticTwist x))]
   simp only [hom_comp, hom_shiftFunctor_map, hom_shiftFunctorAddIso_hom_app]
@@ -393,12 +393,12 @@ theorem homShiftEquivSignedOppositeCochains_normalized_comp_apply
     (M N P : GradedModuleCat.{v} G.piece) (s t : ℤ)
     (f : M ⟶ N.shiftObj s) (g : N ⟶ P.shiftObj t) (x : M) :
     (InternalGrading.quadraticExponent (-t)).negOnePow •
-        (homShiftEquivSignedOppositeCochains G N P t g).1
+        (homShiftEquivSignedOppositeCochains G N P t g).val
           ((InternalGrading.quadraticExponent (-s)).negOnePow •
-            (homShiftEquivSignedOppositeCochains G M N s f).1 x) =
+            (homShiftEquivSignedOppositeCochains G M N s f).val x) =
       (InternalGrading.quadraticExponent (-(t + s))).negOnePow •
         (homShiftEquivSignedOppositeCochains G M P (t + s)
-          (f ≫ (shiftFunctor s).map g ≫ (shiftFunctorAddIso G.piece t s).hom.app P)).1 x := by
+          (f ≫ (shiftFunctor s).map g ≫ (shiftFunctorAddIso G.piece t s).hom.app P)).val x := by
   simp only [homShiftEquivSignedOppositeCochains_normalized_apply]
   rw [N.grading.quadraticTwist_involutive]
   rw [hom_comp, hom_comp, hom_shiftFunctor_map, hom_shiftFunctorAddIso_hom_app]

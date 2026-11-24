@@ -84,9 +84,7 @@ include hQJ hQ in
 Kähler form of `J`, acts on generators by `⁅∑ₖ c(e_k) c(J e_k), c(v)⁆ = 4 c(J v)`. -/
 theorem sum_ι_mul_ι_lie_ι (v : V) :
     ⁅∑ k, ι Q (b k) * ι Q (J (b k)), ι Q v⁆ = ι Q ((4 : ℝ) • J v) := by
-  have hpolar (x y : V) : polar Q x y = -2 * ⟪x, y⟫ := by
-    simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-    ring
+  have hpolar := QuadraticMap.polar_eq_neg_two_inner hQ
   have h₁ : ∑ k, polar Q (J (b k)) v • b k = (2 : ℝ) • J v := by
     simp_rw [J.polar_apply_left_eq_neg_polar_apply_right hQJ, hpolar, neg_mul, neg_neg, mul_smul,
       ← Finset.smul_sum, b.sum_repr']
@@ -159,7 +157,7 @@ private theorem realFockAction_sum_ι_mul_ι_ι_mul (x : (J.spinPolarizationData
         (4 * Complex.I) • (ExteriorAlgebra.ι ℂ x * s) := by
   have hx : J.toLinearMap.baseChange ℂ (x : ℂ ⊗[ℝ] V) = Complex.I • (x : ℂ ⊗[ℝ] V) := by
     have hmem : (x : ℂ ⊗[ℝ] V) ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I :=
-      J.spinPolarizationData_W hQJ hQnd ▸ x.2
+      J.spinPolarizationData_W hQJ hQnd ▸ x.property
     exact Module.End.mem_eigenspace_iff.1 hmem
   have h := congr(J.fockAction hQJ hQnd
     $(J.ofBaseChangeAux_sum_ι_mul_ι_mul_ι_sub hQJ hQ b (x : ℂ ⊗[ℝ] V)) s)
@@ -213,7 +211,7 @@ theorem eigenspace_realFockAction_sum_ι_mul_ι (p : ℕ) :
     Module.End.eigenspace (J.realFockAction hQJ hQnd (∑ k, ι Q (b k) * ι Q (J (b k))))
         (Complex.I * (4 * p - finrank ℝ V)) =
       ⋀[ℂ]^p (J.spinPolarizationData hQJ hQnd).W :=
-  Module.End.eigenspace_eq_of_iSup_eq_top _ (W := fun q : ℕ ↦ ⋀[ℂ]^q _)
+  Module.End.genEigenspace_eq_of_iSup_eq_top _ (W := fun q : ℕ ↦ ⋀[ℂ]^q _)
     (g := fun q : ℕ ↦ Complex.I * (4 * q - finrank ℝ V))
     (fun q ↦ fun _ hs ↦ Module.End.mem_eigenspace_iff.2
       (J.realFockAction_sum_ι_mul_ι_of_mem_exteriorPower hQJ hQ b hQnd hs))
@@ -264,7 +262,7 @@ theorem eigenspace_realFockAction_bivectorExterior (he₁ : e 1 = J (e 0)) (he�
         (exteriorPower.ιMulti ℝ 2 ![e 0, e 1] + exteriorPower.ιMulti ℝ 2 ![e 2, e 3])))
         (Complex.I * (2 * p - 2)) =
       ⋀[ℂ]^p (J.spinPolarizationData hQJ hQnd).W :=
-  Module.End.eigenspace_eq_of_iSup_eq_top _ (W := fun q : ℕ ↦ ⋀[ℂ]^q _)
+  Module.End.genEigenspace_eq_of_iSup_eq_top _ (W := fun q : ℕ ↦ ⋀[ℂ]^q _)
     (g := fun q : ℕ ↦ Complex.I * (2 * q - 2))
     (fun q ↦ fun _ hs ↦ Module.End.mem_eigenspace_iff.2
       (J.realFockAction_bivectorExterior_of_mem_exteriorPower hQJ hQ e hQnd he₁ he₃ hs))

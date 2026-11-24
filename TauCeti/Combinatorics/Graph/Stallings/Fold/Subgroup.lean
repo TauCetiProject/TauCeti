@@ -42,32 +42,16 @@ private theorem exists_path_read_eq_one_tgt_tgt (hsrc : S.graph.src f₁ = S.gra
   simp only [S.read_comp, ← Quiver.Path.reverse_toPath, S.read_reverse,
     S.read_toPath, e₁, e₂, S.graph.dart_val, hlabel, inv_mul_cancel]
 
-private theorem exists_path_read_eq_one_of_EqvGen
-    (hsrc : S.graph.src f₁ = S.graph.src f₂)
-    (hlabel : S.label f₁ = S.label f₂) {x y : S.graph.V}
-    (h : Relation.EqvGen (fun a b =>
-      a = S.graph.tgt f₁ ∧ b = S.graph.tgt f₂) x y) :
-    ∃ p : S.graph.Path x y, S.read p = 1 := by
-  induction h with
-  | rel x y h =>
-      rcases h with ⟨rfl, rfl⟩
-      exact S.exists_path_read_eq_one_tgt_tgt f₁ f₂ hsrc hlabel
-  | refl => exact ⟨.nil, by simp⟩
-  | symm x y _ ih =>
-      obtain ⟨p, hp⟩ := ih
-      exact ⟨p.reverse, by simp [hp]⟩
-  | trans x y z _ _ ih₁ ih₂ =>
-      obtain ⟨p, hp⟩ := ih₁
-      obtain ⟨q, hq⟩ := ih₂
-      exact ⟨p.comp q, by simp [hp, hq]⟩
-
 /-- Vertices identified by a fold can be joined by a path with trivial reading. -/
 theorem exists_path_read_eq_one_of_foldHom_mapV_eq {x y : S.graph.V}
     (hxy : (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV x =
       (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV y) :
-    ∃ p : S.graph.Path x y, S.read p = 1 :=
-  S.exists_path_read_eq_one_of_EqvGen f₁ f₂ hsrc hlabel
-    ((S.foldHom_mapV_eq_iff f₁ f₂ hsrc hlabel x y).mp hxy)
+    ∃ p : S.graph.Path x y, S.read p = 1 := by
+  obtain rfl | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := (S.foldHom_mapV_eq_iff f₁ f₂ hsrc hlabel x y).mp hxy
+  · exact ⟨.nil, by simp⟩
+  · exact S.exists_path_read_eq_one_tgt_tgt f₁ f₂ hsrc hlabel
+  · obtain ⟨p, hp⟩ := S.exists_path_read_eq_one_tgt_tgt f₁ f₂ hsrc hlabel
+    exact ⟨p.reverse, by simp [hp]⟩
 
 /-- A path in a single fold can be lifted from any chosen preimage of its start,
 without changing its free-group reading. -/
@@ -85,14 +69,14 @@ theorem exists_fold_path_lift {a b : (S.foldAt f₁ f₂ hsrc hlabel).graph.V}
       exact ⟨x, .nil, hx, by simp⟩
   | @cons b c q e ih =>
       obtain ⟨y, p, hy, hp⟩ := ih x hx
-      obtain ⟨d, hd⟩ := S.foldHom_mapE_surjective f₁ f₂ hsrc hlabel e.1
+      obtain ⟨d, hd⟩ := S.foldHom_mapE_surjective f₁ f₂ hsrc hlabel e.val
       have hb : φ.graphHom.mapV (S.graph.src d) = b := by
-        rw [← e.2.1, ← hd]
+        rw [← e.property.1, ← hd]
         exact (φ.graphHom.map_src d).symm
       obtain ⟨r, hr⟩ := S.exists_path_read_eq_one_of_foldHom_mapV_eq
         f₁ f₂ hsrc hlabel (hy.trans hb.symm)
       have hc : φ.graphHom.mapV (S.graph.tgt d) = c := by
-        rw [← e.2.2, ← hd]
+        rw [← e.property.2, ← hd]
         exact (SerreGraph.Hom.map_tgt S.graph φ.graphHom d).symm
       have hre : S.read (S.graph.dart d).toPath = F.read e.toPath := by
         simp only [S.read_toPath, F.read_toPath, S.graph.dart_val]

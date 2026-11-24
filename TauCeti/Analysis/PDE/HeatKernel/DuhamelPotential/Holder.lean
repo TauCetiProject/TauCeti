@@ -158,14 +158,15 @@ theorem holderWith_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncur
       rw [abs_of_nonneg hdiff]
       nlinarith [dist_nonneg (x := x) (y := y), sqrt_nonneg ((t : ℝ) - s)]
     have htime := time_increment_le_max_mul_rpow hd hsq
-      ((sub_le_self _ s.2.1).trans t.2.2) hα₂
+      ((sub_le_self _ s.property.1).trans t.property.2) hα₂
     -- Bound the common integration interval by its maximal length `T`.
-    refine (norm_heatDuhamelPotential_sub_le_of_le hf hM hH hα s.2.1 hst t.2.2 x y).trans ?_
+    refine (norm_heatDuhamelPotential_sub_le_of_le hf hM hH hα s.property.1 hst t.property.2 x
+        y).trans ?_
     push_cast at htime ⊢
     dsimp only [d] at *
     have hnonneg : (0 : ℝ) ≤ H * (1 + heatKernelMoment E α) *
         (dist x y + √|(t : ℝ) - s|) ^ (α : ℝ) := by positivity
-    nlinarith [mul_le_mul_of_nonneg_right s.2.2 hnonneg,
+    nlinarith [mul_le_mul_of_nonneg_right s.property.2 hnonneg,
       mul_le_mul_of_nonneg_left htime M.coe_nonneg]
   rw [← holderOnWith_univ]
   refine HolderOnWith.of_dist_le fun p _ q _ => ?_
@@ -180,7 +181,7 @@ theorem holderWith_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncur
 /-- The Hessian of the Duhamel potential is jointly parabolically `α`-Hölder on the closed
 slab, for `0 < α < 1`. The constant is independent of the horizon and the bound on the forcing;
 only its uniform spatial Hölder constant enters. No temporal regularity is required. -/
-theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential_slab [CompleteSpace F]
+theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential_slab
     (hα : 0 < α) (hα₁ : α < 1) :
     ∃ C : ℝ≥0, ∀ {f : ℝ → E → F} {M T : ℝ} {H : ℝ≥0},
       StronglyMeasurable (Function.uncurry f) →
@@ -200,11 +201,11 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential_slab [Complete
   apply add_le_add
   · apply spaceEHolderNorm_le_iff.2
     intro t x y
-    rcases t.2.1.eq_or_lt with hzero | hpos
+    rcases t.property.1.eq_or_lt with hzero | hpos
     · simp [← hzero, heatDuhamelPotential_zero]
     · simpa only [space_slabMk, time_slabMk, ENNReal.coe_mul] using (hs hf
-        (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right t.2.2) hM)
-        (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right t.2.2) hH) hpos) x y
+        (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right t.property.2) hM)
+        (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right t.property.2) hH) hpos) x y
   · apply timeEHolderNorm_le_iff.2
     intro x t s
     simpa only [space_slabMk, time_slabMk, ENNReal.coe_mul, Set.domRestrict_apply] using

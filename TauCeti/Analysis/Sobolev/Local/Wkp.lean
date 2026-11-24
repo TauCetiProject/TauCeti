@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # Local Sobolev classes and the scalar spaces `W^{k,p}`
@@ -47,6 +49,11 @@ On the unit disc `D₁` this gives `TauCeti.memWkpLoc_ball_one_iff`: membership 
 
 * `TauCeti.memWkpLoc_succ_iff_exists_iteratedGradient`: `MemWkpLoc` through iterated gradients;
   `TauCeti.memWkpLoc_succ_iff_exists_iteratedGradient_interior` is the form on an arbitrary set.
+* `TauCeti.memWkpLoc_of_iteratedGradient_chain`: a locally `Lᵖ` chain of iterated weak gradients on
+  the interior of an arbitrary set `U` gives `MemWkpLoc` on `U`.
+* `TauCeti.WeakDerivChainLe.eLpNorm_iteratedGradient_le`: a chain bound
+  `TauCeti.WeakDerivChainLe` between two real functions bounds every level of their chains of
+  iterated weak gradients.
 * `TauCeti.MemWkpLoc.exists_wkp_iteratedGradient_ae_eq`, `TauCeti.MemWkpLoc.exists_wkp`: a member
   is represented by an element of `Wkp` on every relatively compact open subset.
 * `TauCeti.memWkpLoc_of_forall_wkp`, `TauCeti.memWkpLoc_iff_forall_wkp`: the comparison.
@@ -77,46 +84,52 @@ section Local
 
 variable {p : ℝ≥0∞} {Ω : Opens ℂ} {k : ℕ}
 
-/-- `MemWkpLoc` for an iterated-gradient-valued field, through a chain of iterated gradients
-indexed by absolute level: a field `g` at level `j` is in `MemWkpLoc p U n` exactly when it is the
-level-`j` member of a chain whose fields from level `j` through `j + n` are locally `Lᵖ` on `U`,
-each the weak derivative on `interior U` of the previous one. -/
-private theorem memWkpLoc_iff_exists_chain {U : Set ℂ} (n : ℕ) :
-    ∀ (j : ℕ) (g : ℂ → IteratedGradient ℂ j),
-    MemWkpLoc p U n g ↔ ∃ G : (i : ℕ) → ℂ → IteratedGradient ℂ i, G j = g ∧
+/-- **`MemWkpLoc` from a chain of iterated gradients.** A chain of iterated-gradient-valued fields
+`G j, …, G (j + n)`, each locally `Lᵖ` on `U` and each the weak derivative of the previous one on
+the interior of `U`, gives `G j ∈ MemWkpLoc p U n`. The set `U` need not be open. -/
+theorem memWkpLoc_of_iteratedGradient_chain {U : Set ℂ} (n j : ℕ)
+    (G : (i : ℕ) → ℂ → IteratedGradient ℂ i)
+    (hG : ∀ i, j ≤ i → i < j + n → HasWeakFDerivOn volume (Opens.interior U) (G i) (G (i + 1)))
+    (hGp : ∀ i, j ≤ i → i ≤ j + n → MemLpLoc p U (G i)) : MemWkpLoc p U n (G j) := by
+  induction n generalizing j with
+  | zero => exact memWkpLoc_zero_iff.2 (hGp j le_rfl (by omega))
+  | succ n ih =>
+    exact memWkpLoc_succ_iff.2 ⟨hGp j le_rfl (by omega), G (j + 1), hG j le_rfl (by omega),
+      ih (j + 1) (fun i hji hi => hG i (by omega) (by omega))
+        fun i hji hi => hGp i (by omega) (by omega)⟩
+
+/-- A field `g` at level `j` in `MemWkpLoc p U n` is the level-`j` member of a chain of iterated
+gradients, indexed by absolute level, whose fields from level `j` through `j + n` are locally `Lᵖ`
+on `U`, each the weak derivative on `interior U` of the previous one. The converse is
+`TauCeti.memWkpLoc_of_iteratedGradient_chain`. -/
+private theorem exists_iteratedGradient_chain_of_memWkpLoc {U : Set ℂ} (n : ℕ) (j : ℕ)
+    (g : ℂ → IteratedGradient ℂ j) :
+    MemWkpLoc p U n g → ∃ G : (i : ℕ) → ℂ → IteratedGradient ℂ i, G j = g ∧
       (∀ i, j ≤ i → i < j + n → HasWeakFDerivOn volume (Opens.interior U) (G i) (G (i + 1))) ∧
       ∀ i, j ≤ i → i ≤ j + n → MemLpLoc p U (G i) := by
-  induction n with
+  induction n generalizing j g with
   | zero =>
-    intro j g
-    refine ⟨fun hg => ⟨Function.update (fun i _ => 0) j g, Function.update_self .., fun i hji hi =>
-      absurd hi (by omega), fun i hji hi => ?_⟩, fun ⟨G, hGj, _, hGp⟩ => ?_⟩
-    · obtain rfl : i = j := by omega
-      simpa only [Function.update_self] using memWkpLoc_zero_iff.1 hg
-    · subst hGj
-      exact memWkpLoc_zero_iff.2 (hGp j le_rfl (by omega))
+    intro hg
+    refine ⟨Function.update (fun i _ => 0) j g, Function.update_self .., fun i hji hi =>
+      absurd hi (by omega), fun i hji hi => ?_⟩
+    obtain rfl : i = j := by omega
+    simpa only [Function.update_self] using memWkpLoc_zero_iff.1 hg
   | succ n ih =>
-    intro j g
-    rw [memWkpLoc_succ_iff]
-    constructor
-    · rintro ⟨hg, D, hD, hDn⟩
-      obtain ⟨G, hGD, hG, hGp⟩ := (ih (j + 1) D).1 hDn
-      refine ⟨Function.update G j g, Function.update_self .., fun i hji hi => ?_,
-        fun i hji hi => ?_⟩
-      · rcases Nat.lt_or_eq_of_le hji with hji | rfl
-        · rw [Function.update_of_ne (by omega), Function.update_of_ne (by omega)]
-          exact hG i hji (by omega)
-        · rw [Function.update_self, Function.update_of_ne (by omega), hGD]
-          exact hD
-      · rcases Nat.lt_or_eq_of_le hji with hji | rfl
-        · rw [Function.update_of_ne (by omega)]
-          exact hGp i hji (by omega)
-        · rw [Function.update_self]
-          exact hg
-    · rintro ⟨G, rfl, hG, hGp⟩
-      exact ⟨hGp j le_rfl (by omega), G (j + 1), hG j le_rfl (by omega),
-        (ih (j + 1) (G (j + 1))).2 ⟨G, rfl, fun i hji hi => hG i (by omega) (by omega),
-          fun i hji hi => hGp i (by omega) (by omega)⟩⟩
+    intro h
+    obtain ⟨hg, D, hD, hDn⟩ := memWkpLoc_succ_iff.1 h
+    obtain ⟨G, hGD, hG, hGp⟩ := ih (j + 1) D hDn
+    refine ⟨Function.update G j g, Function.update_self .., fun i hji hi => ?_,
+      fun i hji hi => ?_⟩
+    · rcases Nat.lt_or_eq_of_le hji with hji | rfl
+      · rw [Function.update_of_ne (by omega), Function.update_of_ne (by omega)]
+        exact hG i hji (by omega)
+      · rw [Function.update_self, Function.update_of_ne (by omega), hGD]
+        exact hD
+    · rcases Nat.lt_or_eq_of_le hji with hji | rfl
+      · rw [Function.update_of_ne (by omega)]
+        exact hGp i hji (by omega)
+      · rw [Function.update_self]
+        exact hg
 
 /-- **`MemWkpLoc` through iterated gradients, on an arbitrary set.** A real function `u` lies in
 `MemWkpLoc p U (n + 1)` exactly when it is locally `Lᵖ` on `U` and has iterated weak gradients
@@ -131,15 +144,14 @@ theorem memWkpLoc_succ_iff_exists_iteratedGradient_interior (n : ℕ) {U : Set �
         ∀ i ≤ n, MemLpLoc p U (G i) := by
   rw [memWkpLoc_succ_iff]
   refine and_congr_right fun _ => ⟨fun ⟨D, hD, hDn⟩ => ?_, fun ⟨G, h0, hG, hGp⟩ => ?_⟩
-  · obtain ⟨G, hG0, hG, hGp⟩ := (memWkpLoc_iff_exists_chain n 0
-      (fun z => InnerProductSpace.toDualSymmL (D z))).1 (hDn.clm_comp InnerProductSpace.toDualSymmL)
+  · obtain ⟨G, hG0, hG, hGp⟩ := exists_iteratedGradient_chain_of_memWkpLoc n 0
+      (fun z => InnerProductSpace.toDualSymmL (D z)) (hDn.clm_comp InnerProductSpace.toDualSymmL)
     refine ⟨G, ?_, fun i hi => hG i (Nat.zero_le i) (by omega),
       fun i hi => hGp i (Nat.zero_le i) (by omega)⟩
     simpa only [hG0, InnerProductSpace.toDualSymmL_apply,
       InnerProductSpace.innerSL_toDual_symm] using hD
-  · have hG0 := (memWkpLoc_iff_exists_chain n 0 (G 0)).2
-      ⟨G, rfl, fun i _ hi => hG i (by omega), fun i _ hi => hGp i (by omega)⟩
-    exact ⟨_, h0, hG0.clm_comp (innerSL ℝ (E := ℂ))⟩
+  · exact ⟨_, h0, (memWkpLoc_of_iteratedGradient_chain n 0 G (fun i _ hi => hG i (by omega))
+      fun i _ hi => hGp i (by omega)).clm_comp (innerSL ℝ (E := ℂ))⟩
 
 /-- **`MemWkpLoc` through iterated gradients.** A real function `u` lies in
 `MemWkpLoc p Ω (n + 1)` exactly when it is locally `Lᵖ` on `Ω` and has locally `Lᵖ` iterated weak
@@ -154,6 +166,58 @@ theorem memWkpLoc_succ_iff_exists_iteratedGradient (n : ℕ) {u : ℂ → ℝ} :
         ∀ i ≤ n, MemLpLoc p Ω (G i) := by
   simpa only [Opens.interior_coe] using
     memWkpLoc_succ_iff_exists_iteratedGradient_interior n (p := p) (U := (Ω : Set ℂ))
+
+/-- Chain bounds through iterated gradients, by induction on the level: let `Gf` and `Gg` be chains
+of iterated weak gradients from level `j` through level `j + n`, on the interiors of `S` and `T`
+respectively. If the level-`j` fields, read through a linear isometry `L`, satisfy the chain bound
+`WeakDerivChainLe p S T C n`, then every level `i` of `Gf` from `j` through `j + n` has `Lᵖ(S)` norm
+at most `C` times the `Lᵖ(T)` norm of the same level of `Gg`. -/
+private theorem eLpNorm_le_of_weakDerivChainLe_iteratedGradient {S T : Set ℂ} {C : ℝ≥0∞}
+    (n j : ℕ) {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    (L : IteratedGradient ℂ j →ₗᵢ[ℝ] F) (Gf Gg : (i : ℕ) → ℂ → IteratedGradient ℂ i)
+    (h : WeakDerivChainLe p S T C n (fun z => L (Gf j z)) (fun z => L (Gg j z)))
+    (hGf : ∀ i, j ≤ i → i < j + n →
+      HasWeakFDerivOn volume (Opens.interior S) (Gf i) (Gf (i + 1)))
+    (hGg : ∀ i, j ≤ i → i < j + n →
+      HasWeakFDerivOn volume (Opens.interior T) (Gg i) (Gg (i + 1)))
+    (i : ℕ) (hji : j ≤ i) (hi : i ≤ j + n) :
+    eLpNorm (Gf i) p (volume.restrict S) ≤ C * eLpNorm (Gg i) p (volume.restrict T) := by
+  induction n generalizing j F with
+  | zero =>
+    obtain rfl : i = j := by omega
+    simpa only [LinearIsometry.eLpNorm_comp] using h.eLpNorm_le
+  | succ n ih =>
+    rcases Nat.lt_or_eq_of_le hji with hji | rfl
+    · have hf := (hGf j le_rfl (by omega)).clm_comp L.toContinuousLinearMap
+      have hg := (hGg j le_rfl (by omega)).clm_comp L.toContinuousLinearMap
+      simp only [LinearIsometry.coe_toContinuousLinearMap,
+        ← LinearIsometry.postcomp_eq_comp (σ₁₃ := RingHom.id ℝ)] at hf hg
+      exact ih (j + 1) (LinearIsometry.postcomp L) (h.weakFDeriv hf hg)
+        (fun i hji hi => hGf i (by omega) (by omega))
+        (fun i hji hi => hGg i (by omega) (by omega)) (by omega) (by omega)
+    · simpa only [LinearIsometry.eLpNorm_comp] using h.eLpNorm_le
+
+/-- **Chain bounds through iterated gradients.** Let `f` and `g` be real functions with iterated
+weak gradients `Gf 0, …, Gf n` on the interior of `S` and `Gg 0, …, Gg n` on the interior of `T`:
+the weak derivatives of `f` and `g` are `innerSL ℝ ∘ Gf 0` and `innerSL ℝ ∘ Gg 0`, and each level
+is the weak derivative of the previous one. If `f` and `g` satisfy the chain bound
+`WeakDerivChainLe p S T C (n + 1)`, then every `Gf i` with `i ≤ n` has `Lᵖ(S)` norm at most `C`
+times the `Lᵖ(T)` norm of `Gg i`. -/
+theorem WeakDerivChainLe.eLpNorm_iteratedGradient_le {S T : Set ℂ} {C : ℝ≥0∞} {n : ℕ}
+    {f g : ℂ → ℝ} (h : WeakDerivChainLe p S T C (n + 1) f g)
+    {Gf Gg : (i : ℕ) → ℂ → IteratedGradient ℂ i}
+    (hf : HasWeakFDerivOn volume (Opens.interior S) f (fun z => innerSL ℝ (Gf 0 z)))
+    (hg : HasWeakFDerivOn volume (Opens.interior T) g (fun z => innerSL ℝ (Gg 0 z)))
+    (hGf : ∀ i < n, HasWeakFDerivOn volume (Opens.interior S) (Gf i) (Gf (i + 1)))
+    (hGg : ∀ i < n, HasWeakFDerivOn volume (Opens.interior T) (Gg i) (Gg (i + 1)))
+    {i : ℕ} (hi : i ≤ n) :
+    eLpNorm (Gf i) p (volume.restrict S) ≤ C * eLpNorm (Gg i) p (volume.restrict T) := by
+  have hc := h.weakFDeriv hf hg
+  simp only [← InnerProductSpace.toContinuousLinearMap_toDualMap,
+    LinearIsometry.coe_toContinuousLinearMap] at hc
+  exact eLpNorm_le_of_weakDerivChainLe_iteratedGradient n 0 (InnerProductSpace.toDualMap ℝ ℂ)
+    Gf Gg hc (fun i _ hi => hGf i (by omega)) (fun i _ hi => hGg i (by omega)) i (Nat.zero_le i)
+    (by omega)
 
 /-- The gluing step for iterated-gradient-valued fields: a field `g` at level `j` that, on every
 relatively compact open `W ⊆ Ω`, agrees almost everywhere with the level-`j` member of a chain of
@@ -194,21 +258,6 @@ private theorem memWkpLoc_of_forall_chain (n : ℕ) : ∀ (j : ℕ) (g : ℂ →
     obtain ⟨G, hG0, hG, hGp⟩ := hloc W hWc hWΩ
     exact ⟨G, hG0.ae_eq (hD.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ))), hG, hGp⟩
 
-/-- A chain of iterated gradients `G j, …, G n` on an open set `O`, each the weak derivative of the
-previous one and each `Lᵖ` on `O`, gives local Sobolev classes on every set `U` with interior `O`
-that is contained in `O` up to a null set, such as a relatively open subset of the closed upper
-half-plane and its interior. -/
-theorem memWkpLoc_of_iteratedGradient_chain {U : Set ℂ} {O : Opens ℂ}
-    (hO : Opens.interior U = O) (hUO : U ≤ᵐ[volume] (O : Set ℂ)) {n : ℕ}
-    {G : (i : ℕ) → ℂ → IteratedGradient ℂ i}
-    (hG : ∀ i < n, HasWeakFDerivOn volume O (G i) (G (i + 1)))
-    (hGp : ∀ i ≤ n, MemLp (G i) p (volume.restrict O)) :
-    ∀ m j, j + m ≤ n → MemWkpLoc p U m (G j)
-  | 0, j, h => memWkpLoc_zero_iff.2 ((hGp j (by omega)).memLpLoc_of_ae_le hUO)
-  | m + 1, j, h => memWkpLoc_succ_iff.2 ⟨(hGp j (by omega)).memLpLoc_of_ae_le hUO,
-      G (j + 1), hO ▸ hG j (by omega),
-      memWkpLoc_of_iteratedGradient_chain hO hUO hG hGp m (j + 1) (by omega)⟩
-
 variable [Fact (1 ≤ p)]
 
 /-- **Sobolev functions on the interior are locally Sobolev on the whole set.** If a set `U` with
@@ -221,10 +270,10 @@ theorem Wkp.memWkpLoc_value_of_ae_le {U : Set ℂ} {O : Opens ℂ} (hO : Opens.i
   cases k with
   | zero => exact memWkpLoc_zero_iff.2 ((Lp.memLp _).memLpLoc_of_ae_le hUO)
   | succ n =>
-    obtain ⟨G, h0, hG, hGp, -⟩ := Wkp.exists_iteratedGradient_chain n v
+    obtain ⟨G, h0, hG, hGp, -, -⟩ := Wkp.exists_iteratedGradient_chain n v
     exact memWkpLoc_succ_iff.2 ⟨(Lp.memLp _).memLpLoc_of_ae_le hUO, _, hO ▸ h0,
-      (memWkpLoc_of_iteratedGradient_chain hO hUO hG hGp n 0 (by omega)).clm_comp
-        (innerSL ℝ (E := ℂ))⟩
+      (memWkpLoc_of_iteratedGradient_chain n 0 G (fun i _ hi => hO ▸ hG i (by omega))
+        fun i _ hi => (hGp i (by omega)).memLpLoc_of_ae_le hUO).clm_comp (innerSL ℝ (E := ℂ))⟩
 
 /-- **Local Sobolev functions are Sobolev on relatively compact subdomains, with matching
 derivatives.** Let `u ∈ MemWkpLoc p Ω (n + 1)` be real, with iterated weak gradients `G` on `Ω` as
@@ -238,12 +287,13 @@ theorem MemWkpLoc.exists_wkp_iteratedGradient_ae_eq (n : ℕ) {u : ℂ → ℝ}
     (hGp : ∀ i ≤ n, MemLpLoc p Ω (G i)) {W : Opens ℂ}
     (hWc : IsCompact (closure (W : Set ℂ))) (hWΩ : closure (W : Set ℂ) ⊆ Ω) :
     ∃ v : Wkp volume W p (n + 1), Wkp.value (n + 1) v =ᵐ[volume.restrict W] u ∧
-      Wkp.iteratedGradient n v =ᵐ[volume.restrict W] G n :=
-  Wkp.exists_value_iteratedGradient_ae_eq_of_chain n
+      Wkp.iteratedGradient n v =ᵐ[volume.restrict W] G n := by
+  obtain ⟨v, hv, htop, -⟩ := Wkp.exists_value_iteratedGradient_ae_eq_of_chain n
     (hu.memLp_restrict_of_isCompact_closure hWc hWΩ)
     (h0.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)))
     (fun i hi => (hG i hi).mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)))
     (fun i hi => (hGp i hi).memLp_restrict_of_isCompact_closure hWc hWΩ)
+  exact ⟨v, hv, htop⟩
 
 /-- **A local Sobolev function is Sobolev on relatively compact subdomains.** If
 `u ∈ MemWkpLoc p Ω k` is real, then on every open `W` whose closure is compact and contained in
@@ -280,7 +330,7 @@ theorem memWkpLoc_of_forall_wkp {u : ℂ → ℝ}
           ∀ i ≤ n, MemLp (G i) p (volume.restrict (W : Set ℂ)) := by
       intro W hWc hWΩ
       obtain ⟨v, hv⟩ := h W hWc hWΩ
-      obtain ⟨G, h0, hG, hGp, -⟩ := Wkp.exists_iteratedGradient_chain n v
+      obtain ⟨G, h0, hG, hGp, -, -⟩ := Wkp.exists_iteratedGradient_chain n v
       exact ⟨G, h0.congr_ae hv, hG, hGp⟩
     obtain ⟨D, hD⟩ : ∃ D : ℂ → ℂ →L[ℝ] ℝ, HasWeakFDerivOn volume Ω u D := by
       refine exists_hasWeakFDerivOn_iff_locally.2 fun x hx => ?_

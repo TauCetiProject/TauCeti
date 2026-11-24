@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Basis
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 import TauCeti.NumberTheory.Padics.Factorial
 
 /-!
@@ -191,18 +191,9 @@ theorem transition_amiceTerm (h n : ℕ) (e : E) :
   -- This avoids any torsion-freeness assumption on the coefficient module.
   ext ⟨a, j⟩
   have hscalar := DFunLike.congr_fun (transition_amiceTerm_scalar (p := p) h n) (a, j)
-  rw [transition_apply] at hscalar ⊢
-  simp only [amiceTerm_apply, smul_eq_mul, mul_one] at hscalar
-  simp only [amiceTerm_apply, smul_smul]
-  rw [← hscalar]
-  have hs : Summable (fun k ↦ (k.choose j : ℤ_[p]) *
-      ((a.val / p ^ h : ℕ) : ℤ_[p]) ^ (k - j) * (p : ℤ_[p]) ^ j *
-        (amicePolynomial p h n (((a.val : ZMod (p ^ h))).val : ℤ_[p])).coeff k) := by
-    apply (hasSum_sum_of_ne_finset_zero (s := Finset.range (n + 1)) ?_).summable
-    intro k hk
-    have hnk : n < k := by simp only [Finset.mem_range] at hk; omega
-    rw [coeff_amicePolynomial_eq_zero _ hnk, mul_zero]
-  exact hs.tsum_smul_const e
+  simp only [transition_apply, amiceTerm_apply, reexpand_coeff_smul] at hscalar ⊢
+  simp only [smul_eq_mul, mul_one] at hscalar
+  rw [smul_smul, ← hscalar]
 
 /-- The analytic-stage transition is diagonal in Amice coordinates. -/
 theorem transition_amiceMap (h : ℕ) (c : C₀(ℕ, E)) :

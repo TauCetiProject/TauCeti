@@ -116,11 +116,11 @@ theorem trace_quotientPiece_span_singleton_add (hf : f ∈ 𝒜 d)
   rw [LinearMap.trace_restrict_congr (quotientPiece_def 𝒜 _ (d + n)) Q _ hQ']
   let μ : 𝒜 n →ₗ[k] 𝒜 (d + n) :=
     ((LinearMap.mulLeft k f).domRestrict (𝒜 n)).codRestrict (𝒜 (d + n))
-      (fun x ↦ SetLike.mul_mem_graded hf x.2)
+      (fun x ↦ SetLike.mul_mem_graded hf x.property)
   let q := (Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.submoduleMap (𝒜 (d + n))
   have hμ : Function.Injective μ := fun x y h ↦
     Subtype.ext (hreg (congrArg Subtype.val h))
-  have hex : Function.Exact μ q := exact_mulLeft_submoduleMap_span_singleton 𝒜 hf hreg n
+  have hex : Function.Exact μ q := exact_mulLeft_submoduleMap_span_singleton 𝒜 hf n
   have h := LinearMap.trace_eq_add_of_exact hμ (LinearMap.submoduleMap_surjective _ _) hex
     (f := T.restrict (hT (d + n))) (fN := T.restrict (hT n))
     (fQ := Q.restrict hQ')

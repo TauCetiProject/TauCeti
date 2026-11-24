@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LowDimTopology.DehnSurgery.Framing
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Exterior
-public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+public import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
@@ -38,8 +38,9 @@ The slope of the gluing is computed from where `g` sends the meridian curve
 (`TauCeti.IsSolidTorusNeighborhood.fillingSlope_eq_of_apply_torusCurve`): the identity gives the
 meridian of `Φ` and the exchange of the two circle factors gives its longitude. Every knot
 exterior has the *trivial filling* along the meridian, the ambient space itself with `V` the solid
-torus neighbourhood (`TauCeti.IsSolidTorusNeighborhood.meridianDehnFilling`); since the framing
-of `Φ` and the preferred framing share the meridian, this is the `∞`-surgery on the knot.
+torus neighbourhood (`TauCeti.IsSolidTorusNeighborhood.meridianDehnFilling`); since every framing
+with this meridian shares it, this is the `∞`-surgery on the knot in every such framing, in
+particular in the preferred framing when it exists.
 
 ## Main definitions
 
@@ -95,6 +96,15 @@ def fillingSlope (h : IsSolidTorusNeighborhood f Φ) (g : Circle × Circle ≃�
     Slope h.framedBoundaryTorus.H :=
   Slope.mk (FramedBoundaryTorus.torusCurveClass (g.trans h.exteriorFrontierHomeomorph) 1 0)
     ((FramedBoundaryTorus.isPrimitive_torusCurveClass_iff _ 1 0).2 isCoprime_one_left)
+
+/-- The filling slope of a gluing `g` is the slope of the class of the curve
+`t ↦ g (exp (2πit), 1)`, the image of the meridian, on the boundary torus of the exterior. -/
+theorem fillingSlope_def (h : IsSolidTorusNeighborhood f Φ)
+    (g : Circle × Circle ≃ₜ Circle × Circle) :
+    h.fillingSlope g =
+      Slope.mk (FramedBoundaryTorus.torusCurveClass (g.trans h.exteriorFrontierHomeomorph) 1 0)
+        ((FramedBoundaryTorus.isPrimitive_torusCurveClass_iff _ 1 0).2 isCoprime_one_left) :=
+  (rfl)
 
 /-- **The filling slope from the image of the meridian.** If the gluing `g` carries the meridian
 curve `t ↦ (exp (2πit), 1)` of the filling solid torus to the `(p, q)` curve of `S¹ × S¹`, then
@@ -400,7 +410,7 @@ def openExteriorEmbedding (F : DehnFilling h s Y) : h.openExterior → Y :=
 @[simp]
 theorem openExteriorEmbedding_apply (F : DehnFilling h s Y) (x : h.openExterior) :
     F.openExteriorEmbedding x =
-      F.exteriorEmbedding ⟨x, h.openExterior_subset_knotExterior x.2⟩ :=
+      F.exteriorEmbedding ⟨x, h.openExterior_subset_knotExterior x.property⟩ :=
   (rfl)
 
 /-- **The open exterior is the complement of the filling solid torus** in the filled space. -/
@@ -410,13 +420,13 @@ theorem range_openExteriorEmbedding (F : DehnFilling h s Y) :
   constructor
   · rintro ⟨x, rfl⟩ ⟨p, hp⟩
     obtain ⟨q, -, hq⟩ := F.exteriorEmbedding_eq_solidTorusEmbedding_iff.1 hp.symm
-    refine h.mem_openExterior.1 x.2 ⟨SolidTorus.boundaryInclusion (F.gluing q), ?_⟩
+    refine h.mem_openExterior.1 x.property ⟨SolidTorus.boundaryInclusion (F.gluing q), ?_⟩
     rw [← h.coe_exteriorBoundaryInclusion_apply, ← hq]
   · intro hy
     obtain ⟨x, rfl⟩ := (eq_univ_iff_forall.1 F.range_union_range y).resolve_right hy
     refine ⟨⟨x, ?_⟩, rfl⟩
     rw [← SetLike.mem_coe, h.coe_openExterior, ← knotExterior_sdiff_range]
-    refine ⟨x.2, ?_⟩
+    refine ⟨x.property, ?_⟩
     rintro ⟨q, hq⟩
     have hx : x = h.exteriorBoundaryInclusion (F.gluing (F.gluing.symm q)) := by
       rw [Homeomorph.apply_symm_apply]
@@ -464,7 +474,7 @@ def meridianDehnFilling (h : IsSolidTorusNeighborhood f Φ) :
     rintro _ ⟨hx, p, rfl⟩
     rw [Subtype.range_coe, mem_knotExterior] at hx
     have hp : ‖(p.1 : ℂ)‖ = 1 :=
-      le_antisymm (mem_closedBall_zero_iff.mp p.1.2) (not_lt.mp fun hp ↦ hx ⟨p, hp, rfl⟩)
+      le_antisymm (mem_closedBall_zero_iff.mp p.1.property) (not_lt.mp fun hp ↦ hx ⟨p, hp, rfl⟩)
     rw [range_comp, SolidTorus.range_boundaryInclusion]
     exact mem_image_of_mem _ hp
   fillingSlope_gluing := h.fillingSlope_refl

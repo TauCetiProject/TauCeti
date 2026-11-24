@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
+public import TauCeti.Topology.Instances.Real.IcoScale
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import Mathlib.Tactic.NormNum
 import Mathlib.Topology.LocalAtTarget
 
@@ -20,7 +22,9 @@ PL collar theorems can add the corresponding regularity to the same data.
 The parameter is the half-open interval `[0,1)`.  Thus a collar is an open embedding of
 `N × Ico 0 1` whose zero slice is the given embedding.  The small API below is the part consumed by
 gluing: restriction along an open subset of the boundary, and the injectivity and zero-slice
-consequences.
+consequences.  Separately, `TauCeti.IsCollared.subtypeVal_range` collars the inclusion of the
+image of a collared map, so that the boundary can be collared as a subset, as for the boundary
+fundamental class.
 
 The collar-neighborhood formulation follows J. Lee, *Introduction to Smooth Manifolds*, 2nd ed.,
 Theorem 9.25; this declaration is its topological abstraction.  The API adapts the existing
@@ -114,17 +118,20 @@ theorem reparam_isOpenEmbedding {e : Ico (0 : ℝ) 1 → Ico (0 : ℝ) 1}
 /-- Shrinking the depth of a collar by a factor in `(0,1]` preserves collar data. -/
 theorem scale (r : ℝ) (hr : r ∈ Ioc (0 : ℝ) 1) :
     IsCollar f (c ∘ Prod.map id fun t : Ico (0 : ℝ) 1 =>
-      ⟨r * t, mul_nonneg hr.1.le t.2.1,
-        (mul_le_of_le_one_left t.2.1 hr.2).trans_lt t.2.2⟩) := by
-  refine h.reparam_isOpenEmbedding ⟨.of_comp (by fun_prop) continuous_subtype_val
-    ((Homeomorph.mulLeft₀ r hr.1.ne').isEmbedding.comp .subtypeVal), ?_⟩ (Subtype.ext (mul_zero r))
-  -- The range of `t ↦ r * t` is the open set of depths below `r`.
-  convert (isOpen_Iio (a := r)).preimage continuous_subtype_val
-  ext y
-  refine ⟨?_, fun hy => ⟨⟨y / r, div_nonneg y.2.1 hr.1.le, (div_lt_one hr.1).2 hy⟩,
-    Subtype.ext (mul_div_cancel₀ _ hr.1.ne')⟩⟩
-  rintro ⟨t, rfl⟩
-  exact mul_lt_of_lt_one_right hr.1 t.2.2
+      ⟨r * t, mul_nonneg hr.1.le t.property.1,
+        (mul_le_of_le_one_left t.property.1 hr.2).trans_lt t.property.2⟩) := by
+  -- `t ↦ r * t` is the scaling `[0, 1) ≃ₜ [0, r)` followed by the inclusion of the open set
+  -- `[0, r)` of depths below `r`.
+  have hincl :
+      IsOpenEmbedding (inclusion (Ico_subset_Ico_right hr.2 : Ico (0 : ℝ) r ⊆ Ico 0 1)) := by
+    refine ⟨.inclusion _, ?_⟩
+    rw [range_inclusion]
+    convert (isOpen_Iio (a := r)).preimage continuous_subtypeVal using 1
+    ext y
+    exact and_iff_right y.property.1
+  refine h.reparam_isOpenEmbedding ?_ (Subtype.ext (mul_zero r))
+  convert hincl.comp (icoScale hr.1).isOpenEmbedding with t
+  exact (coe_icoScale hr.1 t).symm
 
 /-- Reparametrizing the boundary of a collar by a homeomorphism preserves it. -/
 theorem comp_homeomorph (e : P ≃ₜ N) :
@@ -135,6 +142,13 @@ theorem comp_homeomorph (e : P ≃ₜ N) :
 theorem isOpenEmbedding_comp {g : M → P} (hg : IsOpenEmbedding g) :
     IsCollar (g ∘ f) (g ∘ c) :=
   ⟨hg.comp h.isOpenEmbedding, fun x => congrArg g (h.apply_zero x)⟩
+
+/-- An open partial homeomorphism `e` carries a collar inside its source to a collar: `e ∘ c` is a
+collar of `e ∘ f`. Applied to `e.symm`, this moves a collar inside the target of a chart of a
+manifold into the manifold. -/
+theorem openPartialHomeomorph_comp (e : OpenPartialHomeomorph M P) (hc : range c ⊆ e.source) :
+    IsCollar (e ∘ f) (e ∘ c) :=
+  ⟨e.isOpenEmbedding_comp h.isOpenEmbedding hc, fun x ↦ congrArg e (h.apply_zero x)⟩
 
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :
@@ -168,6 +182,13 @@ theorem isOpenEmbedding_comp {g : M → P} (h : IsCollared f) (hg : IsOpenEmbedd
 /-- Reparametrizing the domain by a homeomorphism preserves the existence of a collar. -/
 theorem comp_homeomorph (h : IsCollared f) (e : P ≃ₜ N) : IsCollared (f ∘ e) :=
   h.comp_isOpenEmbedding e.isOpenEmbedding
+
+/-- If `f` is collared, so is the inclusion of its image: a collared map is an embedding, so it
+identifies its domain with its image. -/
+theorem subtypeVal_range (h : IsCollared f) : IsCollared (Subtype.val : range f → M) := by
+  have hf : f ∘ h.isEmbedding.toHomeomorph.symm = Subtype.val :=
+    funext fun y ↦ congrArg Subtype.val (h.isEmbedding.toHomeomorph.apply_symm_apply y)
+  exact hf ▸ h.comp_homeomorph h.isEmbedding.toHomeomorph.symm
 
 end IsCollared
 

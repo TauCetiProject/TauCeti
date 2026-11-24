@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Folded
-public import TauCeti.GroupTheory.GraphOfGroups.PathGroup
-public import TauCeti.GroupTheory.FreeGroup.Rank
+public import TauCeti.GroupTheory.GraphOfGroups.Rank
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 
 /-!
@@ -27,12 +26,14 @@ this basis.
 
 Consequently the accepted subgroup is finitely generated exactly when there are finitely many
 positive non-tree darts, its rank is then their number, and it is trivial exactly when there
-are none.
+are none. For a connected graph with finitely many vertices this gives the Euler form of the
+rank: the rank plus the number of vertices is the number of positive darts plus one, so that as
+an integer the rank is the number of positive darts minus the number of vertices plus one.
 
 ## References
 
 * I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free groups*,
-  §6, Lemma 6.1 and Corollary 6.8.
+  §6, Lemma 6.1 and Corollary 6.8; §8, Lemma 8.2.
 * A. Hatcher, *Algebraic Topology*, §1.A, Proposition 1A.2.
 -/
 
@@ -153,7 +154,7 @@ def basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
 @[simp] theorem basisEquiv_of (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
     (e : ↥(O \ T.darts)) :
     S.basisEquiv T a hS hO (FreeGroup.of e) =
-      ⟨S.treeLoopWord T a e.1, S.treeLoopWord_mem_subgroup T a e.1⟩ := by
+      ⟨S.treeLoopWord T a e.val, S.treeLoopWord_mem_subgroup T a e.val⟩ := by
   apply Subtype.ext
   rw [basisEquiv, MulEquiv.trans_apply, S.coe_pathGroupEquivSubgroup_apply,
     ← S.pathGroupRead_apply, T.pathGroupEquivFreeGroup_symm_of, S.pathGroupRead_loop]
@@ -165,7 +166,7 @@ inverse generator, and tree darts nothing. The path need not be reduced. -/
     (p : S.graph.Path a a) :
     (S.basisEquiv T a hS hO).symm ⟨S.read p, S.read_mem_subgroup p⟩ =
       p.weight (fun {x y : S.graph.V} (e : x ⟶ y) =>
-        GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+        GraphOfGroups.π₁Tree.dartWord O T.darts e.val) := by
   rw [← T.pathGroupEquivFreeGroup_ofPath a hO]
   apply (S.basisEquiv T a hS hO).injective
   simp [basisEquiv]
@@ -177,28 +178,28 @@ theorem basisEquiv_symm_apply (hS : S.IsFolded) (hO : S.graph.IsOrientation O) (
     (S.basisEquiv T a hS hO).symm g =
       ((S.pathGroupEquivSubgroup hS a).symm g).toPath.weight
         (fun {x y : S.graph.V} (e : x ⟶ y) =>
-          GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+          GraphOfGroups.π₁Tree.dartWord O T.darts e.val) := by
   rw [← T.pathGroupEquivFreeGroup_apply a hO, basisEquiv, MulEquiv.symm_trans_apply,
     MulEquiv.symm_symm]
 
 /-- The embedding into the ambient free group is the lift of the tree-loop words. -/
 theorem subtype_comp_basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
     (S.subgroup a).subtype.comp (S.basisEquiv T a hS hO).toMonoidHom =
-      FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1) := by
+      FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.val) := by
   ext e
   simp
 
 /-- The tree-loop words freely generate a subgroup of the ambient free group. -/
 theorem lift_treeLoopWord_injective (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
-    Function.Injective (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1)) := by
+    Function.Injective (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.val)) := by
   rw [← S.subtype_comp_basisEquiv T a hS hO]
   exact Subtype.val_injective.comp (S.basisEquiv T a hS hO).injective
 
 /-- The image of the free group on the tree-loop words is exactly the accepted subgroup. -/
 @[simp] theorem range_lift_treeLoopWord (hO : S.graph.IsOrientation O) :
-    (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1)).range =
+    (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.val)).range =
       S.subgroup a := by
-  have h : FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1) =
+  have h : FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.val) =
       (S.pathGroupRead a).comp (T.pathGroupEquivFreeGroup a hO).symm.toMonoidHom := by
     ext e
     simp
@@ -215,7 +216,7 @@ def freeGroupBasis (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
 @[simp] theorem freeGroupBasis_apply (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
     (e : ↥(O \ T.darts)) :
     S.freeGroupBasis T a hS hO e =
-      ⟨S.treeLoopWord T a e.1, S.treeLoopWord_mem_subgroup T a e.1⟩ := by
+      ⟨S.treeLoopWord T a e.val, S.treeLoopWord_mem_subgroup T a e.val⟩ := by
   exact S.basisEquiv_of T a hS hO e
 
 /-- The accepted subgroup of a folded graph is finitely generated exactly when finitely many
@@ -230,6 +231,24 @@ theorem rank_subgroup (hS : S.IsFolded) (hO : S.graph.IsOrientation O) [Group.FG
     Group.rank (S.subgroup a) = Nat.card ↥(O \ T.darts) :=
   (S.freeGroupBasis T a hS hO).rank_eq_nat_card
 
+/-- The Euler form of the rank: for a connected folded graph with finitely many vertices
+accepting a finitely generated subgroup, the rank of that subgroup plus the number of vertices
+is the number of positive darts plus one. -/
+theorem rank_subgroup_add_card (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    Group.rank (S.subgroup a) + Nat.card S.graph.V = Nat.card O + 1 := by
+  have : Group.FG (PathGroup S.graph a) := (isMulFG_congr (S.pathGroupEquivSubgroup hS a)).mpr ‹_›
+  rw [← Group.rank_congr (S.pathGroupEquivSubgroup hS a), hO.rank_pathGroup_add_card h a]
+
+/-- As an integer, the rank of the subgroup accepted by a connected folded graph with finitely
+many vertices, when finitely generated, is the number of positive darts of any orientation `O`
+minus the number of vertices plus one. -/
+theorem rank_subgroup_eq_card_sub_card_add_one (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
+    (h : S.graph.Connected) [Finite S.graph.V] [Group.FG (S.subgroup a)] :
+    (Group.rank (S.subgroup a) : ℤ) = Nat.card O - Nat.card S.graph.V + 1 := by
+  have := S.rank_subgroup_add_card a hS hO h
+  omega
+
 /-- A folded graph accepts only the identity exactly when its basis is empty: every positive
 dart lies in the spanning tree. In particular a graph without darts accepts the trivial
 subgroup, of rank zero. -/
@@ -239,10 +258,10 @@ theorem subgroup_eq_bot_iff (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
   · intro h e heO
     by_contra heT
     have hone : S.basisEquiv T a hS hO (FreeGroup.of ⟨e, heO, heT⟩) = 1 :=
-      Subtype.ext (Subgroup.mem_bot.mp (h ▸ (S.basisEquiv T a hS hO _).2))
+      Subtype.ext (Subgroup.mem_bot.mp (h ▸ (S.basisEquiv T a hS hO _).property))
     exact FreeGroup.of_ne_one _ ((S.basisEquiv T a hS hO).map_eq_one_iff.mp hone)
   · intro h
-    have : IsEmpty ↥(O \ T.darts) := ⟨fun e => e.2.2 (h e.2.1)⟩
+    have : IsEmpty ↥(O \ T.darts) := ⟨fun e => e.property.2 (h e.property.1)⟩
     have := (S.basisEquiv T a hS hO).symm.toEquiv.subsingleton
     exact Subgroup.eq_bot_of_subsingleton _
 

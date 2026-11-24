@@ -136,7 +136,7 @@ private theorem expAd_add_sub_mem (hhe : ⁅h, e⁆ = 2 • e) (hh : h ∈ Linea
     exact sub_mem (neg_mem hz)
       (Submodule.smul_mem _ _ (antitone_ker_inf_range_pow e k.le_succ hw))
   have hrest := antitone_ker_inf_range_pow e (by omega : k + 1 ≤ k + k)
-    (expAd_apply_sub_sub_mem hy hyk hyvk)
+    (expAd_apply_sub_sub_mem hy.exists_pow_apply_eq_zero hyk hyvk)
   have heq : expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - h =
       (expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - (h + z) -
           ⁅(k : K)⁻¹ • z, h + z⁆) -

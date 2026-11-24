@@ -84,7 +84,7 @@ noncomputable def exteriorProductCocycle (φ : cyclicCocycles k A M p)
 theorem exteriorProductCocycle_apply (φ : cyclicCocycles k A M p) (ψ : cyclicCocycles k B N q)
     (x : Fin (p + q + 1) → A ⊗[k] B) :
     ((exteriorProductCocycle φ ψ : cyclicCochains k (A ⊗[k] B) (M ⊗[k] N) (p + q)) :
-        MultilinearMap k (fun _ : Fin (p + q + 1) ↦ A ⊗[k] B) (M ⊗[k] N)) x =
+        MultilinearMap (RingHom.id k) (fun _ : Fin (p + q + 1) ↦ A ⊗[k] B) (M ⊗[k] N)) x =
       cycleCharacter (R := k) (A := A ⊗[k] B)
         (Ω := UniversalForms.grading k A ᵍ⊗[k] UniversalForms.grading k B) (M := M ⊗[k] N)
         (dgTensorDifferential (R := k) (A := ⨁ m, UniversalForms k A m)
@@ -95,9 +95,9 @@ theorem exteriorProductCocycle_apply (φ : cyclicCocycles k A M p) (ψ : cyclicC
           (Ω₂ := ⨁ m, UniversalForms k B m) (UniversalForms.grading k A)
           (UniversalForms.grading k B)
           (UniversalForms.trace ((φ : cyclicCochains k A M p) :
-            MultilinearMap k (fun _ : Fin (p + 1) ↦ A) M))
+            MultilinearMap (RingHom.id k) (fun _ : Fin (p + 1) ↦ A) M))
           (UniversalForms.trace ((ψ : cyclicCochains k B N q) :
-            MultilinearMap k (fun _ : Fin (q + 1) ↦ B) N)) p q)
+            MultilinearMap (RingHom.id k) (fun _ : Fin (q + 1) ↦ B) N)) p q)
         (gradedTensorHomOfMemZero (R := k) (A := ⨁ m, UniversalForms k A m)
           (B := ⨁ m, UniversalForms k B m) (UniversalForms.ι k A) (UniversalForms.ι k B)
           UniversalForms.ι_mem_grading UniversalForms.ι_mem_grading) (p + q) x := by
@@ -186,10 +186,11 @@ nonempty product `b₀ b₁ ⋯ bₚ` is written as a left fold starting from `b
 theorem exteriorProductCocycle_apply_tmul_of_zero_foldl (φ : cyclicCocycles k A M p)
     (ψ : cyclicCocycles k B N 0) (a : Fin (p + 1) → A) (b : Fin (p + 1) → B) :
     ((exteriorProductCocycle φ ψ : cyclicCochains k (A ⊗[k] B) (M ⊗[k] N) (p + 0)) :
-        MultilinearMap k (fun _ : Fin (p + 0 + 1) ↦ A ⊗[k] B) (M ⊗[k] N))
+        MultilinearMap (RingHom.id k) (fun _ : Fin (p + 0 + 1) ↦ A ⊗[k] B) (M ⊗[k] N))
         (fun i ↦ a i ⊗ₜ b i) =
-      ((φ : cyclicCochains k A M p) : MultilinearMap k (fun _ : Fin (p + 1) ↦ A) M) a ⊗ₜ
-        ((ψ : cyclicCochains k B N 0) : MultilinearMap k (fun _ : Fin 1 ↦ B) N)
+      ((φ : cyclicCochains k A M p) : MultilinearMap (RingHom.id k) (fun _ : Fin (p + 1) ↦ A)
+          M) a ⊗ₜ
+        ((ψ : cyclicCochains k B N 0) : MultilinearMap (RingHom.id k) (fun _ : Fin 1 ↦ B) N)
           (fun _ ↦ (List.ofFn fun i : Fin p ↦ b i.succ).foldl (· * ·) (b 0)) := by
   rw [exteriorProductCocycle_apply]
   refine (cycleCharacter_gradedTensorHomOfMemZero_tmul_of_zero (UniversalForms.isDGAlgebra k A)
@@ -202,9 +203,12 @@ theorem exteriorProductCocycle_apply_tmul_of_zero_foldl (φ : cyclicCocycles k A
 theorem exteriorProductCocycle_zero_apply_tmul (φ : cyclicCocycles k A M 0)
     (ψ : cyclicCocycles k B N 0) (a : A) (b : B) :
     ((exteriorProductCocycle φ ψ : cyclicCochains k (A ⊗[k] B) (M ⊗[k] N) (0 + 0)) :
-        MultilinearMap k (fun _ : Fin (0 + 0 + 1) ↦ A ⊗[k] B) (M ⊗[k] N)) (fun _ ↦ a ⊗ₜ b) =
-      ((φ : cyclicCochains k A M 0) : MultilinearMap k (fun _ : Fin 1 ↦ A) M) (fun _ ↦ a) ⊗ₜ
-        ((ψ : cyclicCochains k B N 0) : MultilinearMap k (fun _ : Fin 1 ↦ B) N) (fun _ ↦ b) :=
+        MultilinearMap (RingHom.id k) (fun _ : Fin (0 + 0 + 1) ↦ A ⊗[k] B) (M ⊗[k]
+            N)) (fun _ ↦ a ⊗ₜ b) =
+      ((φ : cyclicCochains k A M 0) : MultilinearMap (RingHom.id k) (fun _ : Fin 1 ↦ A) M) (fun _ ↦
+          a) ⊗ₜ
+        ((ψ : cyclicCochains k B N 0) : MultilinearMap (RingHom.id k) (fun _ : Fin 1 ↦ B) N) (fun _
+            ↦ b) :=
   exteriorProductCocycle_apply_tmul_of_zero_foldl φ ψ (fun _ ↦ a) (fun _ ↦ b)
 
 end NonUnital
@@ -216,10 +220,11 @@ theorem exteriorProductCocycle_apply_tmul_of_zero [Ring B] [Algebra k B]
     (φ : cyclicCocycles k A M p) (ψ : cyclicCocycles k B N 0) (a : Fin (p + 1) → A)
     (b : Fin (p + 1) → B) :
     ((exteriorProductCocycle φ ψ : cyclicCochains k (A ⊗[k] B) (M ⊗[k] N) (p + 0)) :
-        MultilinearMap k (fun _ : Fin (p + 0 + 1) ↦ A ⊗[k] B) (M ⊗[k] N))
+        MultilinearMap (RingHom.id k) (fun _ : Fin (p + 0 + 1) ↦ A ⊗[k] B) (M ⊗[k] N))
         (fun i ↦ a i ⊗ₜ b i) =
-      ((φ : cyclicCochains k A M p) : MultilinearMap k (fun _ : Fin (p + 1) ↦ A) M) a ⊗ₜ
-        ((ψ : cyclicCochains k B N 0) : MultilinearMap k (fun _ : Fin 1 ↦ B) N)
+      ((φ : cyclicCochains k A M p) : MultilinearMap (RingHom.id k) (fun _ : Fin (p + 1) ↦ A)
+          M) a ⊗ₜ
+        ((ψ : cyclicCochains k B N 0) : MultilinearMap (RingHom.id k) (fun _ : Fin 1 ↦ B) N)
           (fun _ ↦ (List.ofFn b).prod) := by
   rw [exteriorProductCocycle_apply_tmul_of_zero_foldl, List.prod_ofFn_eq_foldl]
 

@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 import Mathlib.RingTheory.Finiteness.Projective
 import Mathlib.RingTheory.Flat.Basic
+import TauCeti.LinearAlgebra.Dual.FiniteProjective
 import TauCeti.RingTheory.Extension.Generators
 import TauCeti.RingTheory.Extension.Presentation.Basic
 
@@ -17,13 +18,15 @@ import TauCeti.RingTheory.Extension.Presentation.Basic
 # Weil restriction along a finite projective algebra
 
 Let `A` be a commutative ring, `B` an `A`-algebra that is finitely generated and projective as an
-`A`-module, so that `Spec B → Spec A` is finite locally free, and `C` a `B`-algebra of finite
-presentation. The Weil restriction of `C` along `B` is the functor on `A`-algebras sending `T` to
+`A`-module, so that `Spec B → Spec A` is finite locally free, and `C` an arbitrary `B`-algebra.
+The Weil restriction of `C` along `B` is the functor on `A`-algebras sending `T` to
 the set `C →ₐ[B] B ⊗[A] T` of `B`-algebra homomorphisms; geometrically, it sends `Spec T` to the
-set of `Spec B`-morphisms `Spec (B ⊗[A] T) → Spec C`. This file constructs an `A`-algebra of finite
-presentation representing this functor, together with its universal point, makes it functorial in
+set of `Spec B`-morphisms `Spec (B ⊗[A] T) → Spec C`. This file constructs an `A`-algebra
+representing this functor, together with its universal point, makes it functorial in
 `C`, shows that it carries surjections to surjections (closed immersions to closed immersions), and
-shows that its formation commutes with an arbitrary base change `A → A'`.
+shows that its formation commutes with an arbitrary base change `A → A'`. When `C` is finitely
+presented over `B`, the representing algebra is finitely presented over `A`; the analogous
+finite type statement also holds.
 
 ## Main definitions
 
@@ -38,7 +41,7 @@ shows that its formation commutes with an arbitrary base change `A → A'`.
 * `TauCeti.Algebra.WeilRestriction.baseChangeAlgEquiv A B C A' B' C'`: for `B' = B ⊗[A] A'` and
   `C' = C ⊗[B] B'` (expressed through `Algebra.IsPushout`), the `A'`-algebra isomorphism
   `A' ⊗[A] WeilRestriction A B C ≃ₐ[A'] WeilRestriction A' B' C'`.
-* `TauCeti.Algebra.WeilRestriction.tensorHomEquiv A B D T`: for a finitely presented `A`-algebra
+* `TauCeti.Algebra.WeilRestriction.tensorHomEquiv A B D T`: for an `A`-algebra
   `D`, the Weil restriction of `B ⊗[A] D` represents `T ↦ (D →ₐ[A] T ⊗[A] B)`, the functor of
   morphisms from `Spec B` to `Spec D` over `Spec A`.
 
@@ -47,8 +50,10 @@ shows that its formation commutes with an arbitrary base change `A → A'`.
 * `TauCeti.Algebra.WeilRestriction.homEquiv_comp`: `homEquiv` is natural in the `A`-algebra `T`.
 * `TauCeti.Algebra.WeilRestriction.hom_ext`: homomorphisms out of the Weil restriction are
   determined by their effect on the universal point.
+* `TauCeti.Algebra.WeilRestriction.instFiniteType`: the Weil restriction is of finite type over
+  `A` when `C` is of finite type over `B`.
 * `TauCeti.Algebra.WeilRestriction.instFinitePresentation`: the Weil restriction is of finite
-  presentation over `A`.
+  presentation over `A` when `C` is finitely presented over `B`.
 * `TauCeti.Algebra.WeilRestriction.range_le_iff_range_homEquiv_le`: a homomorphism out of the Weil
   restriction takes values in a subalgebra `S` if and only if the point it classifies takes values
   in `B ⊗[A] S`.
@@ -97,11 +102,8 @@ variable (A B : Type*) [CommSemiring A] [AddCommMonoid B] [Module A B]
 
 private theorem nonempty_coords [Module.Finite A B] [Module.Projective A B] :
     Nonempty (Coords A B) := by
-  obtain ⟨n, p, s, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective A B
-  refine ⟨⟨n, fun j ↦ p (Pi.single j 1), fun j ↦ LinearMap.proj j ∘ₗ s, fun x ↦ ?_⟩⟩
-  -- pull `p` out of the sum, which is then the expansion of `s x` in the standard basis
-  simpa only [LinearMap.comp_apply, LinearMap.proj_apply, LinearMap.id_apply, ← map_smul,
-    ← map_sum, ← pi_eq_sum_univ'] using LinearMap.congr_fun hs x
+  obtain ⟨n, b, φ, h⟩ := exists_sum_dual_smul_eq (R := A) (M := B)
+  exact ⟨⟨n, b, φ, h⟩⟩
 
 -- The chosen coordinate system on a finite projective module.
 private def coords [Module.Finite A B] [Module.Projective A B] : Coords A B :=
@@ -111,19 +113,18 @@ variable {A B} (T : Type*) [AddCommMonoid T] [Module A T]
 
 -- The `j`-th coordinate `B ⊗[A] T → T`, sending `x ⊗ t` to `φ j x • t`.
 private def Coords.coord (K : Coords A B) (j : Fin K.n) : B ⊗[A] T →ₗ[A] T :=
-  lift (LinearMap.lsmul A T ∘ₗ K.φ j)
+  LinearMap.tensorComponent (K.φ j) ∘ₗ (TensorProduct.comm A B T).toLinearMap
 
 variable {T}
 
 private lemma Coords.coord_tmul (K : Coords A B) (j : Fin K.n) (x : B) (t : T) :
-    K.coord T j (x ⊗ₜ t) = K.φ j x • t := rfl
+    K.coord T j (x ⊗ₜ t) = K.φ j x • t := by
+  simp [coord, LinearMap.tensorComponent_tmul]
 
 private lemma Coords.coord_eq_tensorComponent (K : Coords A B) (j : Fin K.n)
     (z : B ⊗[A] T) :
-    K.coord T j z = LinearMap.tensorComponent (K.φ j) (TensorProduct.comm A B T z) := by
-  induction z using TensorProduct.inductionOn with
-  | tmul x t => simp [coord_tmul]
-  | add z w hz hw => simp only [map_add, hz, hw]
+    K.coord T j z = LinearMap.tensorComponent (K.φ j) (TensorProduct.comm A B T z) :=
+  rfl
 
 private lemma Coords.sum_tmul_coord (K : Coords A B) (z : B ⊗[A] T) :
     ∑ j, K.b j ⊗ₜ K.coord T j z = z := by
@@ -218,18 +219,30 @@ private def homEquivOfPresentation (P : Presentation B C ι σ) (K : Coords A B)
       ← AlgHom.comp_apply, ← Algebra.TensorProduct.map_id_comp, Ideal.Quotient.liftₐ_comp]
     exact lTensor_aeval_coordsOf_pt K _ i
 
+private lemma homEquivOfPresentation_apply (P : Presentation B C ι σ) (K : Coords A B)
+    (g : RepresentingAlgebra P K →ₐ[A] T) :
+    homEquivOfPresentation T P K g =
+      (Algebra.TensorProduct.lTensor B g).comp (universalPointOfPresentation P K) := (rfl)
+
+private lemma homEquivOfPresentation_comp (P : Presentation B C ι σ) (K : Coords A B)
+    {T' : Type*} [CommRing T'] [Algebra A T']
+    (g : RepresentingAlgebra P K →ₐ[A] T) (h : T →ₐ[A] T') :
+    homEquivOfPresentation T' P K (h.comp g) =
+      (Algebra.TensorProduct.lTensor B h).comp (homEquivOfPresentation T P K g) := by
+  simp [homEquivOfPresentation_apply, Algebra.TensorProduct.map_id_comp, AlgHom.comp_assoc]
+
 end Construction
 
 end WeilRestriction
 
 variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [Algebra B C]
-  [Module.Finite A B] [Module.Projective A B] [FinitePresentation B C]
+  [Module.Finite A B] [Module.Projective A B]
 
-/-- The **Weil restriction** of a finitely presented `B`-algebra `C` along a finite projective
+/-- The **Weil restriction** of a `B`-algebra `C` along a finite projective
 `A`-algebra `B`: an `A`-algebra representing the functor sending an `A`-algebra `T` to the set
 `C →ₐ[B] B ⊗[A] T`, see `WeilRestriction.homEquiv`. -/
 def WeilRestriction : Type _ :=
-  WeilRestriction.RepresentingAlgebra (Presentation.ofFinitePresentation B C)
+  WeilRestriction.RepresentingAlgebra (Generators.self B C).kerPresentation
     (WeilRestriction.coords A B)
 deriving CommRing, Algebra A
 
@@ -240,7 +253,7 @@ namespace WeilRestriction
 `B`-algebra homomorphism `C →ₐ[B] B ⊗[A] T` is its composite with `B ⊗[A] g` for a unique
 `g : WeilRestriction A B C →ₐ[A] T`. -/
 def universalPoint : C →ₐ[B] B ⊗[A] WeilRestriction A B C :=
-  universalPointOfPresentation (Presentation.ofFinitePresentation B C) (coords A B)
+  universalPointOfPresentation (Generators.self B C).kerPresentation (coords A B)
 
 variable (T : Type*) [CommRing T] [Algebra A T]
 
@@ -249,7 +262,7 @@ variable (T : Type*) [CommRing T] [Algebra A T]
 to the composite `C → B ⊗[A] WeilRestriction A B C → B ⊗[A] T` of the universal point with
 `B ⊗[A] g`. It is natural in `T`, see `WeilRestriction.homEquiv_comp`. -/
 def homEquiv : (WeilRestriction A B C →ₐ[A] T) ≃ (C →ₐ[B] B ⊗[A] T) :=
-  homEquivOfPresentation T (Presentation.ofFinitePresentation B C) (coords A B)
+  homEquivOfPresentation T (Generators.self B C).kerPresentation (coords A B)
 
 variable {A B C T}
 
@@ -275,10 +288,38 @@ theorem hom_ext {g₁ g₂ : WeilRestriction A B C →ₐ[A] T}
       (Algebra.TensorProduct.lTensor B g₂).comp (universalPoint A B C)) : g₁ = g₂ :=
   (homEquiv A B C T).injective <| by simpa using h
 
+-- Any presentation and any finite dual generating family give the same representing algebra.
+private def presentationAlgEquiv {ι σ : Type*} (P : Presentation B C ι σ) (K : Coords A B) :
+    RepresentingAlgebra P K ≃ₐ[A] WeilRestriction A B C :=
+  let f := (homEquiv A B C (RepresentingAlgebra P K)).symm
+    (universalPointOfPresentation P K)
+  let g := (homEquivOfPresentation (WeilRestriction A B C) P K).symm
+    (universalPoint A B C)
+  have hf : homEquiv A B C (RepresentingAlgebra P K) f = universalPointOfPresentation P K :=
+    Equiv.apply_symm_apply _ _
+  have hg : homEquivOfPresentation (WeilRestriction A B C) P K g =
+      universalPoint A B C := Equiv.apply_symm_apply _ _
+  AlgEquiv.ofAlgHom g f
+    (by
+      apply (homEquiv A B C (WeilRestriction A B C)).injective
+      rw [homEquiv_comp, hf]
+      simpa only [homEquivOfPresentation_apply, homEquiv_apply, Algebra.TensorProduct.map_id,
+        AlgHom.comp_id, AlgHom.id_comp] using hg)
+    (by
+      apply (homEquivOfPresentation (RepresentingAlgebra P K) P K).injective
+      rw [homEquivOfPresentation_comp, hg]
+      simpa only [homEquiv_apply, homEquivOfPresentation_apply, Algebra.TensorProduct.map_id,
+        AlgHom.id_comp] using hf)
+
 /-- The Weil restriction of a finitely presented algebra along a finite projective algebra is of
 finite presentation over `A`. -/
-instance instFinitePresentation : FinitePresentation A (WeilRestriction A B C) :=
-  FinitePresentation.quotient <| Submodule.fg_span <| Set.finite_range _
+instance instFinitePresentation [FinitePresentation B C] :
+    FinitePresentation A (WeilRestriction A B C) := by
+  let P := Presentation.ofFinitePresentation B C
+  let K := coords A B
+  let : FinitePresentation A (RepresentingAlgebra P K) :=
+    FinitePresentation.quotient <| Submodule.fg_span <| Set.finite_range _
+  exact FinitePresentation.equiv (presentationAlgEquiv P K)
 
 /-- An `A`-algebra homomorphism `g` out of the Weil restriction takes values in a subalgebra `S`
 of `T` if and only if the point `homEquiv A B C T g : C →ₐ[B] B ⊗[A] T` it classifies takes values
@@ -304,12 +345,11 @@ theorem range_le_iff_range_homEquiv_le {g : WeilRestriction A B C →ₐ[A] T} {
     have hg : S.val.comp ((homEquiv A B C S).symm v) = g :=
       (homEquiv A B C T).injective <| by rw [homEquiv_comp, Equiv.apply_symm_apply, hv]
     rw [← hg, AlgHom.range_comp]
-    exact Subalgebra.map_le.2 fun x _ ↦ x.2
+    exact Subalgebra.map_le.2 fun x _ ↦ x.property
 
 section Map
 
 variable {D E : Type*} [CommRing D] [CommRing E] [Algebra B D] [Algebra B E]
-  [FinitePresentation B D] [FinitePresentation B E]
 
 variable (A B) in
 /-- The functoriality of the Weil restriction: a `B`-algebra homomorphism `φ : C →ₐ[B] D` induces
@@ -368,6 +408,13 @@ theorem map_surjective {φ : C →ₐ[B] D} (hφ : Function.Surjective φ) :
   simpa using h ⟨c, rfl⟩
 
 end Map
+
+/-- The Weil restriction of a finite type algebra along a finite projective algebra is of
+finite type over `A`. -/
+instance instFiniteType [FiniteType B C] : FiniteType A (WeilRestriction A B C) := by
+  obtain ⟨n, f, hf⟩ := (FiniteType.iff_quotient_mvPolynomial'').mp
+    (inferInstance : FiniteType B C)
+  exact FiniteType.of_surjective (map A B f) (map_surjective hf)
 
 section BaseChange
 
@@ -428,12 +475,11 @@ variable (A B C A' B' C')
 `C' = C ⊗[B] B'`, as expressed by `Algebra.IsPushout A B A' B'` and `Algebra.IsPushout B C B' C'`,
 this is an isomorphism of `A'`-algebras from `A' ⊗[A] WeilRestriction A B C` to the Weil
 restriction of `C'` along `B'`. It is compatible with the universal properties, see
-`WeilRestriction.homEquiv_comp_baseChangeAlgEquiv`. The finiteness hypotheses on `B'` and
-`C'` follow from the pushouts, and are filled in by default with `Module.Finite.of_isPushout`,
-`Module.Projective.of_isPushout` and `Algebra.FinitePresentation.of_isPushout`. -/
+`WeilRestriction.homEquiv_comp_baseChangeAlgEquiv`. The finite projective hypotheses on `B'` follow
+from its pushout, and are filled in by default with `Module.Finite.of_isPushout` and
+`Module.Projective.of_isPushout`. -/
 def baseChangeAlgEquiv (hfin : Module.Finite A' B' := .of_isPushout A B A' B')
-    (hproj : Module.Projective A' B' := .of_isPushout A B A' B')
-    (hfp : FinitePresentation B' C' := .of_isPushout B C B' C') :
+    (hproj : Module.Projective A' B' := .of_isPushout A B A' B') :
     A' ⊗[A] WeilRestriction A B C ≃ₐ[A'] WeilRestriction A' B' C' :=
   -- `baseChangeLift` takes a target `T` with `[Algebra A T] [IsScalarTower A A' T]`: make the Weil
   -- restriction of `C'` along `B'` an `A`-algebra through `A → A'`
@@ -451,7 +497,6 @@ def baseChangeAlgEquiv (hfin : Module.Finite A' B' := .of_isPushout A B A' B')
         lTensor_baseChangeLift_comp_baseChangePoint])
 
 variable {A B C A' B' C'} {hfin : Module.Finite A' B'} {hproj : Module.Projective A' B'}
-  {hfp : FinitePresentation B' C'}
 
 -- `baseChangeAlgEquiv` carries `baseChangePoint`, the base change of the universal point, to the
 -- universal point of `WeilRestriction A' B' C'`.
@@ -484,7 +529,7 @@ end BaseChange
 section TensorHom
 
 variable (A B D : Type*) [CommRing A] [CommRing B] [CommRing D] [Algebra A B] [Algebra A D]
-  [Module.Finite A B] [Module.Projective A B] [FinitePresentation A D]
+  [Module.Finite A B] [Module.Projective A B]
   (T : Type*) [CommRing T] [Algebra A T]
 
 /-- The Weil restriction along `B` of the scalar extension `B ⊗[A] D` represents the functor
@@ -520,7 +565,6 @@ section UniversalCoefficients
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
-  [Algebra.FinitePresentation B C]
 
 /-- The coefficient of the universal point at `c`, extracted by the linear functional `φ`
 on the coefficient algebra `B`. -/
@@ -588,7 +632,6 @@ All linear functionals may be used, so no basis or projective splitting is part 
 theorem adjoin_range_universalCoefficient :
     Algebra.adjoin A (Set.range fun p : Module.Dual A B × C ↦
       universalCoefficient p.1 p.2) = ⊤ := by
-  classical
   let S := Algebra.adjoin A (Set.range fun p : Module.Dual A B × C ↦
     universalCoefficient p.1 p.2)
   suffices (AlgHom.id A (WeilRestriction A B C)).range ≤ S by simpa using this
@@ -613,7 +656,6 @@ open TauCeti.Algebra.WeilRestriction
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
-  [Algebra.FinitePresentation B C]
 
 /-- The universal point is recovered from its coefficients against a basis `b` of `B`: its value
 at `c` is `∑ᵢ bᵢ ⊗ cᵢ`, where `cᵢ` is the universal coefficient of `c` extracted by the `i`-th

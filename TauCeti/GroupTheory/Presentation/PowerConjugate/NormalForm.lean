@@ -38,6 +38,20 @@ namespace TauCeti
 
 variable {G : Type*} [Group G]
 
+/-- A bounded normal form belongs to a suffix subgroup when every exponent before that
+suffix is zero. -/
+theorem powerConjugateNormalForm_mem_generatorSuffix {n : ℕ} (x : Fin n → G)
+    (m : Fin n → ℕ) (e : ∀ i, Fin (m i)) (k : ℕ)
+    (he : ∀ i : Fin n, (i : ℕ) < k → (e i : ℕ) = 0) :
+    (powerConjugateNormalForm x m e : G) ∈ generatorSuffix x k := by
+  rw [coe_powerConjugateNormalForm]
+  apply Subgroup.list_prod_mem
+  intro g hg
+  obtain ⟨i, rfl⟩ := List.mem_ofFn.mp (List.mem_reverse.mp hg)
+  by_cases hi : k ≤ (i : ℕ)
+  · exact Subgroup.pow_mem _ (apply_mem_generatorSuffix x i hi) _
+  · simp [he i (by omega)]
+
 /-- Membership in the generated subgroup is equivalent to the existence of a bounded
 descending power expression. This form supports proofs about elements given in the ambient
 group, without constructing a subgroup element first. -/

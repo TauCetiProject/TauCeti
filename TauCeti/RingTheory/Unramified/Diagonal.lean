@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Ideal.IdempotentFG
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Unramified.Finite
 public import Mathlib.RingTheory.Etale.Pi
-public import TauCeti.RingTheory.TensorProduct.Maps
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
@@ -27,7 +26,8 @@ henselian pair have at most one lift, without any completeness or nilpotence hyp
 The complementary idempotent, Mathlib's `Algebra.FormallyUnramified.elem`, is characterised by
 the two properties defining it: it annihilates every `1 ⊗ s - s ⊗ 1` and multiplies to `1`
 (`TauCeti.Algebra.FormallyUnramified.eq_elem`). This makes it computable in examples, and shows
-that it is invariant under the swap of the two tensor factors. For the split algebra `κ → R` it is
+that it is invariant under the swap of the two tensor factors and compatible with base change
+(`TauCeti.Algebra.FormallyUnramified.productMap_elem`). For the split algebra `κ → R` it is
 `∑ₖ eₖ ⊗ eₖ`, the indicator of the diagonal of `κ × κ`.
 
 For an unramified quotient `S = W ⧸ I` over `R`, Mathlib's diagonal element of `S ⊗[R] S` lifts to
@@ -87,6 +87,7 @@ theorem comp_eq_comp_of_isUnit_one_sub_productMap {R S T U : Type*}
   have hidem : IsIdempotentElem (h (Algebra.TensorProduct.productMap f g e)) := (he.map _).map h
   exact hu.mul_left_eq_zero.mp (by simpa only [map_sub, map_one] using hidem.mul_one_sub_self)
 
+open _root_.Algebra.FormallyUnramified in
 /-- Maps out of an essentially finite type unramified algebra are determined modulo any ideal
 contained in the target's Jacobson radical. -/
 theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
@@ -95,14 +96,15 @@ theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
     {f g : S →ₐ[R] T}
     (hfg : (Ideal.Quotient.mkₐ R J).comp f = (Ideal.Quotient.mkₐ R J).comp g) :
     f = g := by
-  obtain ⟨e, he, hker⟩ := exists_isIdempotentElem_ker_lmul_eq_span R S
-  have hpe := Algebra.TensorProduct.productMap_mem_of_comp_eq
-    (RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self e)) J hfg
-  have hu : IsUnit (1 - Algebra.TensorProduct.productMap f g e) := by
-    apply Ideal.isUnit_of_sub_one_mem_jacobson
-    simpa only [sub_sub_cancel_left, Ideal.jacobson_bot] using hJ (J.neg_mem hpe)
-  simpa only [AlgHom.id_comp] using comp_eq_comp_of_isUnit_one_sub_productMap he hker.le f g
-    (AlgHom.id R T) hu
+  -- Modulo `J`, the equalizer idempotent of `f` and `g` is that of equal maps, namely `1`, so it
+  -- is a unit. An idempotent unit is `1`, so `f = g`.
+  have h1 : Ideal.Quotient.mk J (equalizerIdempotent f g) = Ideal.Quotient.mk J 1 := by
+    rw [← Ideal.Quotient.mkₐ_eq_mk R, map_equalizerIdempotent, hfg, equalizerIdempotent_self,
+      map_one]
+  have hu : IsUnit (equalizerIdempotent f g) := Ideal.isUnit_of_sub_one_mem_jacobson _
+    (hJ.trans_eq Ideal.jacobson_bot (Ideal.Quotient.eq.mp h1))
+  exact equalizerIdempotent_eq_one_iff.mp <|
+    (IsIdempotentElem.iff_eq_one_of_isUnit hu).mp (isIdempotentElem_equalizerIdempotent f g)
 
 /-- The diagonal idempotent of an essentially finite type, formally unramified algebra is the only
 element of `S ⊗[R] S` that annihilates every `1 ⊗ s - s ⊗ 1` and maps to `1` under multiplication.
@@ -121,11 +123,8 @@ theorem eq_elem {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     induction x using TensorProduct.inductionOn with
     | tmul a b =>
       have hb : (1 ⊗ₜ[R] b) * u = (b ⊗ₜ[R] 1) * u := sub_eq_zero.mp (by rw [← sub_mul, hu])
-      calc a ⊗ₜ[R] b * u = (a ⊗ₜ[R] 1) * ((1 ⊗ₜ[R] b) * u) := by
-            rw [← mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-        _ = (Algebra.TensorProduct.lmul' R (a ⊗ₜ[R] b) ⊗ₜ[R] 1) * u := by
-            rw [hb, ← mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
-              Algebra.TensorProduct.lmul'_apply_tmul]
+      calc a ⊗ₜ[R] b * u = (a ⊗ₜ[R] 1) * ((1 ⊗ₜ[R] b) * u) := by simp [← mul_assoc]
+        _ = (Algebra.TensorProduct.lmul' R (a ⊗ₜ[R] b) ⊗ₜ[R] 1) * u := by simp [hb, ← mul_assoc]
     | add x y hx hy => rw [add_mul, hx, hy, map_add, TensorProduct.add_tmul, add_mul]
   calc t = (Algebra.TensorProduct.lmul' R (Algebra.FormallyUnramified.elem R S) ⊗ₜ[R] 1) * t := by
         rw [Algebra.FormallyUnramified.lmul_elem, ← Algebra.TensorProduct.one_def, one_mul]
@@ -152,6 +151,46 @@ theorem comm_elem (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
       Algebra.TensorProduct.ext' fun a b ↦ by simp [mul_comm]
     exact (DFunLike.congr_fun hcomm _).trans Algebra.FormallyUnramified.lmul_elem
 
+/-- The diagonal idempotent is compatible with base change and with surjections. Let `S'` be an
+essentially finite type, formally unramified `T`-algebra, for an `R`-algebra `T`, and let
+`f : S → S'` be an `R`-algebra map whose image spans `S'` over `T`, such as the inclusion
+`S → T ⊗[R] S` or a surjection `S → S'` of `R`-algebras. Then `f ⊗ f` sends the diagonal idempotent
+of `S ⊗[R] S` to that of `S' ⊗[T] S'`. -/
+theorem productMap_elem {R S T S' : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] [CommRing T] [Algebra R T]
+    [CommRing S'] [Algebra T S'] [Algebra R S'] [IsScalarTower R T S']
+    [Algebra.EssFiniteType T S'] [Algebra.FormallyUnramified T S'] (f : S →ₐ[R] S')
+    (hf : Submodule.span T (Set.range f) = ⊤) :
+    Algebra.TensorProduct.productMap
+        ((Algebra.TensorProduct.includeLeft (R := T) (S := R) (B := S')).comp f)
+        (((Algebra.TensorProduct.includeRight (R := T) (A := S')).restrictScalars R).comp f)
+        (Algebra.FormallyUnramified.elem R S) =
+      Algebra.FormallyUnramified.elem T S' := by
+  set κ := Algebra.TensorProduct.productMap
+    ((Algebra.TensorProduct.includeLeft (R := T) (S := R) (B := S')).comp f)
+    (((Algebra.TensorProduct.includeRight (R := T) (A := S')).restrictScalars R).comp f)
+  refine eq_elem (fun s ↦ ?_) ?_
+  · -- The elements `s` with `(1 ⊗ s - s ⊗ 1) * κ (elem R S) = 0` form a `T`-submodule
+    -- containing the image of `f`.
+    have hs : s ∈ Submodule.span T (Set.range f) := hf ▸ Submodule.mem_top
+    induction hs using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨s, rfl⟩ := hx
+      have h := congrArg κ (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
+      simpa [κ] using h
+    | zero => simp
+    | add x y _ _ hx hy =>
+      rw [TensorProduct.tmul_add, TensorProduct.add_tmul, add_sub_add_comm, add_mul, hx, hy,
+        add_zero]
+    | smul t x _ hx =>
+      rw [TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', ← smul_sub, smul_mul_assoc, hx,
+        smul_zero]
+  · have h : ((Algebra.TensorProduct.lmul' T).restrictScalars R).comp κ =
+        f.comp (Algebra.TensorProduct.lmul' R) :=
+      Algebra.TensorProduct.ext' fun a b ↦ by simp [κ]
+    simpa [Algebra.FormallyUnramified.lmul_elem] using
+      DFunLike.congr_fun h (Algebra.FormallyUnramified.elem R S)
+
 /-- The diagonal idempotent of the split algebra `κ → R` is `∑ₖ eₖ ⊗ eₖ`, for the standard
 idempotents `eₖ` of `κ → R`. -/
 theorem elem_pi (R κ : Type*) [CommRing R] [Fintype κ] [DecidableEq κ] :
@@ -167,31 +206,29 @@ theorem elem_pi (R κ : Type*) [CommRing R] [Fintype κ] [DecidableEq κ] :
       one_mul, hs, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', sub_self]
   · simp [← Pi.single_mul, Finset.univ_sum_single, Pi.one_def]
 
-/-- For a quotient `S = W ⧸ I` unramified over `A`, some `t ∈ S ⊗[A] W` maps to `1` on the
-diagonal and such that, for every `w ∈ W`, the product of `t` with the difference
-`1 ⊗ w - (w mod I) ⊗ 1` lies in the extension of `I` along `includeRight`. So the two images become
-congruent modulo this ideal after inverting `t`. It lifts the element of `S ⊗[A] S` given by
-Mathlib's `Algebra.FormallyUnramified.iff_exists_tensorProduct`. -/
+/-- For a quotient `S = W ⧸ I` unramified over `A`, the diagonal idempotent
+`Algebra.FormallyUnramified.elem A S` of `S ⊗[A] S` lifts to some `t ∈ S ⊗[A] W` such that, for
+every `w ∈ W`, the product of `t` with the difference `1 ⊗ w - (w mod I) ⊗ 1` lies in the extension
+of `I` along `includeRight`. So the two images become congruent modulo this ideal after inverting
+`t`. -/
 theorem exists_mul_tmul_sub_mem_map_includeRight (A : Type*) {W : Type*} [CommRing A]
     [CommRing W] [Algebra A W] (I : Ideal W) [Algebra.FormallyUnramified A (W ⧸ I)]
     [Algebra.EssFiniteType A (W ⧸ I)] :
     ∃ t : (W ⧸ I) ⊗[A] W,
-      Algebra.TensorProduct.lmul' A
-          (Algebra.TensorProduct.map (AlgHom.id A (W ⧸ I)) (Ideal.Quotient.mkₐ A I) t) = 1 ∧
+      Algebra.TensorProduct.map (AlgHom.id A (W ⧸ I)) (Ideal.Quotient.mkₐ A I) t =
+        Algebra.FormallyUnramified.elem A (W ⧸ I) ∧
       ∀ w : W, ((1 : W ⧸ I) ⊗ₜ[A] w - Ideal.Quotient.mk I w ⊗ₜ[A] (1 : W)) * t ∈
         I.map (Algebra.TensorProduct.includeRight : W →ₐ[A] (W ⧸ I) ⊗[A] W) := by
-  obtain ⟨t, ht, ht₁⟩ := Algebra.FormallyUnramified.iff_exists_tensorProduct.mp
-    (inferInstance : Algebra.FormallyUnramified A (W ⧸ I))
-  obtain ⟨t, rfl⟩ := Algebra.TensorProduct.map_surjective (f := AlgHom.id A (W ⧸ I))
-    (g := Ideal.Quotient.mkₐ A I) Function.surjective_id Ideal.Quotient.mk_surjective t
-  refine ⟨t, ht₁, fun w ↦ ?_⟩
+  obtain ⟨t, ht⟩ := Algebra.TensorProduct.map_surjective (f := AlgHom.id A (W ⧸ I))
+    (g := Ideal.Quotient.mkₐ A I) Function.surjective_id Ideal.Quotient.mk_surjective
+    (Algebra.FormallyUnramified.elem A (W ⧸ I))
+  refine ⟨t, ht, fun w ↦ ?_⟩
   -- The kernel of `W ⧸ I ⊗[A] W → W ⧸ I ⊗[A] W ⧸ I` is generated by `I`.
   have hker := Algebra.TensorProduct.lTensor_ker (A := W ⧸ I) (Ideal.Quotient.mkₐ A I)
     Ideal.Quotient.mk_surjective
   have hI : RingHom.ker (Ideal.Quotient.mkₐ A I) = I := Ideal.Quotient.mkₐ_ker A I
   rw [hI] at hker
-  rw [← hker, RingHom.mem_ker, map_mul, map_sub, Algebra.TensorProduct.map_tmul,
-    Algebra.TensorProduct.map_tmul]
-  simpa using ht (Ideal.Quotient.mk I w)
+  rw [← hker, RingHom.mem_ker, map_mul, ht]
+  simpa using Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (Ideal.Quotient.mk I w)
 
 end TauCeti.Algebra.FormallyUnramified

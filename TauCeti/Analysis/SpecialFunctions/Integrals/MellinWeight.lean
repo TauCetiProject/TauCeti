@@ -33,6 +33,9 @@ evaluate the majorants that occur.
   the norm bound under an integrable majorant;
 * `TauCeti.mellinWeightIntegral_const`: `η ∫_{t > 1} t^(-1-η) dt = 1`, so constants integrate
   to themselves;
+* `TauCeti.integrableOn_rpow_mul_log`, `TauCeti.integrableOn_rpow_mul_one_add_log_sq`:
+  integrability of `t^(-1-η) log t` and `t^(-1-η) (1 + log t)²` on `(1, ∞)`, the latter via
+  `TauCeti.one_add_log_sq_le`;
 * `TauCeti.mellinWeightIntegral_log`: `η ∫_{t > 1} t^(-1-η) log t dt = η⁻¹`;
 * `TauCeti.mellinWeightIntegral_log_log_le`: Jensen's bound
   `η ∫_{t > 1} t^(-1-η) log log(3t) dt ≤ log(log 3 + η⁻¹)`;
@@ -154,6 +157,44 @@ theorem integrableOn_rpow_mul_log {η : ℝ} (hη : 0 < η) :
     _ = 2 / η * t ^ (-1 - η / 2) := by
         rw [mul_div_assoc', ← rpow_add ht0]
         field_simp
+        ring_nf
+
+/-- `x^(-η) (log x / x) = log x / x^(1+η)` for `x > 0`. -/
+theorem rpow_neg_mul_log_div {x η : ℝ} (hx : 0 < x) :
+    x ^ (-η) * (log x / x) = log x / x ^ (1 + η) := by
+  rw [rpow_add hx, rpow_one, rpow_neg hx.le]
+  field_simp
+
+/-- `(1 + log t)² ≤ exp(η/2) (4/η)² t^(η/2)` for `t ≥ 1`, from `log(e t) ≤ (e t)^(η/4) / (η/4)`. -/
+theorem one_add_log_sq_le {η t : ℝ} (hη : 0 < η) (ht : 1 ≤ t) :
+    (1 + log t) ^ 2 ≤ exp (η / 2) * (4 / η) ^ 2 * t ^ (η / 2) := by
+  have ht0 : 0 < t := by linarith
+  have h0 : 0 ≤ 1 + log t := by linarith [log_nonneg ht]
+  have h1 : 1 + log t ≤ (exp 1 * t) ^ (η / 4) / (η / 4) := by
+    have he : 1 + log t = log (exp 1 * t) := by rw [log_mul (exp_pos 1).ne' ht0.ne', log_exp]
+    rw [he]
+    exact log_le_rpow_div (by positivity) (by positivity)
+  calc (1 + log t) ^ 2 ≤ ((exp 1 * t) ^ (η / 4) / (η / 4)) ^ 2 := pow_le_pow_left₀ h0 h1 2
+    _ = exp (η / 2) * (4 / η) ^ 2 * t ^ (η / 2) := by
+      rw [div_pow, ← rpow_natCast ((exp 1 * t) ^ (η / 4)), ← rpow_mul (by positivity),
+        mul_rpow (exp_pos 1).le ht0.le, exp_one_rpow]
+      push_cast
+      rw [show η / 4 * 2 = η / 2 by ring]
+      field_simp
+
+/-- The majorant `t^(-1-η) (1 + log t)²` is integrable on `(1, ∞)` for `η > 0`. -/
+theorem integrableOn_rpow_mul_one_add_log_sq {η : ℝ} (hη : 0 < η) :
+    IntegrableOn (fun t ↦ t ^ (-1 - η) * (1 + log t) ^ 2) (Ioi 1) := by
+  refine ((integrableOn_Ioi_rpow_of_lt (a := -1 - η / 2) (by linarith) zero_lt_one).const_mul
+    (exp (η / 2) * (4 / η) ^ 2)).mono' (by fun_prop) ?_
+  refine (ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ fun t ht ↦ ?_)
+  have ht0 : 0 < t := zero_lt_one.trans ht
+  rw [norm_mul, norm_of_nonneg (rpow_nonneg ht0.le _), norm_of_nonneg (sq_nonneg _)]
+  calc t ^ (-1 - η) * (1 + log t) ^ 2
+      ≤ t ^ (-1 - η) * (exp (η / 2) * (4 / η) ^ 2 * t ^ (η / 2)) :=
+        mul_le_mul_of_nonneg_left (one_add_log_sq_le hη (le_of_lt ht)) (rpow_nonneg ht0.le _)
+    _ = exp (η / 2) * (4 / η) ^ 2 * t ^ (-1 - η / 2) := by
+        rw [mul_left_comm, ← rpow_add ht0]
         ring_nf
 
 /-- `η ∫_{t > 1} t^(-1-η) log t dt = η⁻¹`: the exponential density `η exp(-η u)` has mean

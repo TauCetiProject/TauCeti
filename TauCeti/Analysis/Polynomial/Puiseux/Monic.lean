@@ -64,7 +64,7 @@ theorem exists_analyticOnNhd_prod_X_sub_C_powerSubstitution_ball
       (∀ i, AnalyticOnNhd ℂ (r i) (U ×ˢ ball 0 R')) ∧
       (∀ b ∈ U ×ˢ ball 0 R', F (b.1, b.2 ^ n) = ∏ i, (X - C (r i b))) ∧
       ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), Injective (fun i ↦ r i b) := by
-  let : CompleteSpace E := FiniteDimensional.complete ℂ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
   have hsub : U ×ˢ (ball (0 : ℂ) R \ {0}) ⊆ U ×ˢ ball 0 R :=
     prod_mono subset_rfl sdiff_subset
   obtain ⟨s, hs, hfac⟩ := exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution hU

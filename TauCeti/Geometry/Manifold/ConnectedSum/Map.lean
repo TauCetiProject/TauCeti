@@ -65,12 +65,12 @@ def map (hφ : Injective φ) (hψ : Injective ψ) (h₁ : φ ∘ e₁ = e₁') (
     ConnectedSum e₁ e₂ → ConnectedSum e₁' e₂' :=
   lift (inl e₁' e₂' ∘ punctureMap φ hφ (congrFun h₁ 0))
     (inr e₁' e₂' ∘ punctureMap ψ hψ (congrFun h₂ 0))
-    fun v hv hx hy ↦ by
+    fun v _ hx hy ↦ by
       have hmx : e₁' v ∈ puncture e₁' := by
-        have h := (punctureMap φ hφ (congrFun h₁ 0) ⟨e₁ v, hx⟩).2
+        have h := (punctureMap φ hφ (congrFun h₁ 0) ⟨e₁ v, hx⟩).property
         rwa [coe_punctureMap, Subtype.coe_mk, ← comp_apply (f := φ) (g := e₁), h₁] at h
       have hmy : e₂' (inversion 0 1 v) ∈ puncture e₂' := by
-        have h := (punctureMap ψ hψ (congrFun h₂ 0) ⟨e₂ (inversion 0 1 v), hy⟩).2
+        have h := (punctureMap ψ hψ (congrFun h₂ 0) ⟨e₂ (inversion 0 1 v), hy⟩).property
         rwa [coe_punctureMap, Subtype.coe_mk, ← comp_apply (f := ψ) (g := e₂), h₂] at h
       have hx' : punctureMap φ hφ (congrFun h₁ 0) ⟨e₁ v, hx⟩ = ⟨e₁' v, hmx⟩ :=
         Subtype.ext (by rw [coe_punctureMap]; exact congrFun h₁ v)
@@ -78,7 +78,7 @@ def map (hφ : Injective φ) (hψ : Injective ψ) (h₁ : φ ∘ e₁ = e₁') (
           ⟨e₂' (inversion 0 1 v), hmy⟩ :=
         Subtype.ext (by rw [coe_punctureMap]; exact congrFun h₂ _)
       simp only [comp_apply, hx', hy']
-      exact inl_eq_inr v hv _ _
+      exact inl_eq_inr v _ _
 
 variable (hφ : Injective φ) (hψ : Injective ψ) (h₁ : φ ∘ e₁ = e₁') (h₂ : ψ ∘ e₂ = e₂')
 
@@ -166,11 +166,11 @@ theorem range_map :
     · exact Or.inr ⟨_, ⟨y, (coe_punctureMap _ _ y).symm⟩, by rw [mk_inr, map_inr]⟩
   · rintro (⟨x, ⟨x₀, hx₀⟩, rfl⟩ | ⟨y, ⟨y₀, hy₀⟩, rfl⟩)
     · have hx₀' : x₀ ∈ puncture e₁ := mem_puncture.2 fun h ↦
-        mem_puncture.1 x.2 (by rw [← hx₀, h, ← congrFun h₁ 0, comp_apply])
+        mem_puncture.1 x.property (by rw [← hx₀, h, ← congrFun h₁ 0, comp_apply])
       exact ⟨inl e₁ e₂ ⟨x₀, hx₀'⟩, by
         rw [map_inl]; exact congrArg _ (Subtype.ext ((coe_punctureMap _ _ _).trans hx₀))⟩
     · have hy₀' : y₀ ∈ puncture e₂ := mem_puncture.2 fun h ↦
-        mem_puncture.1 y.2 (by rw [← hy₀, h, ← congrFun h₂ 0, comp_apply])
+        mem_puncture.1 y.property (by rw [← hy₀, h, ← congrFun h₂ 0, comp_apply])
       exact ⟨inr e₁ e₂ ⟨y₀, hy₀'⟩, by
         rw [map_inr]; exact congrArg _ (Subtype.ext ((coe_punctureMap _ _ _).trans hy₀))⟩
 

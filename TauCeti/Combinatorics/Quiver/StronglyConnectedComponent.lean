@@ -18,6 +18,9 @@ relation is a partial order, the reachability order of the condensation of the q
 components are finite in number when the vertices are. This order organizes, for instance, the
 minimum cuts of a network through the strongly connected components of its residual network.
 
+When every arrow has a reverse, as in the quiver of an undirected graph, a path in one direction
+gives a path back, so two vertices lie in the same component exactly when a path joins them.
+
 ## Main results
 
 * `Quiver.StronglyConnectedComponent.instPartialOrder`: strongly connected components are
@@ -25,6 +28,10 @@ minimum cuts of a network through the strongly connected components of its resid
 * `Quiver.StronglyConnectedComponent.mk_le_mk`: the component of `a` is below that of `b` exactly
   when there is a path from `a` to `b`.
 * `Quiver.StronglyConnectedComponent.mk_surjective`: every component contains a vertex.
+* `Quiver.isEmpty_stronglyConnectedComponent_iff`: there are no components exactly when there are
+  no vertices.
+* `Quiver.StronglyConnectedComponent.mk_eq_mk_iff_nonempty_path`: in a quiver with reversal, two
+  vertices lie in the same component exactly when a path joins them.
 -/
 
 public section
@@ -40,6 +47,29 @@ theorem mk_surjective :
 
 instance [Finite V] : Finite (StronglyConnectedComponent V) :=
   Quotient.finite _
+
+instance instIsEmpty [IsEmpty V] : IsEmpty (StronglyConnectedComponent V) :=
+  Quotient.instIsEmpty
+
+instance instNonempty [Nonempty V] : Nonempty (StronglyConnectedComponent V) :=
+  Nonempty.map StronglyConnectedComponent.mk ‹_›
+
+instance instSubsingleton [Subsingleton V] : Subsingleton (StronglyConnectedComponent V) :=
+  Quotient.instSubsingletonQuotient _
+
+instance instUnique [Unique V] : Unique (StronglyConnectedComponent V) :=
+  Quotient.instUniqueQuotient _
+
+/-- A quiver has no strongly connected component exactly when it has no vertex. -/
+theorem _root_.Quiver.isEmpty_stronglyConnectedComponent_iff :
+    IsEmpty (StronglyConnectedComponent V) ↔ IsEmpty V :=
+  ⟨fun _ ↦ Function.isEmpty StronglyConnectedComponent.mk, fun _ ↦ inferInstance⟩
+
+/-- In a quiver with reversal, two vertices lie in the same strongly connected component exactly
+when a path joins them: reversing it gives a path back. -/
+theorem mk_eq_mk_iff_nonempty_path [HasReverse V] {a b : V} :
+    StronglyConnectedComponent.mk a = StronglyConnectedComponent.mk b ↔ Nonempty (Path a b) :=
+  mk_eq_mk.trans ⟨And.left, fun ⟨p⟩ ↦ ⟨⟨p⟩, ⟨p.reverse⟩⟩⟩
 
 /-- Strongly connected components are partially ordered by reachability: `C ≤ D` when a vertex of
 `C` has a path to a vertex of `D`. -/

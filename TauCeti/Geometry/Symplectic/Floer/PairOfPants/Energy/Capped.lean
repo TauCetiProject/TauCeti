@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped
 
 /-!
 # The energy identity on the capped three-pole sphere
@@ -59,9 +60,16 @@ The same estimate holds over any measurable region containing the support of the
 regularity required only near that support. For a finite-energy solution with tame almost complex
 structures it gives the lower area bound `-2 (B₀ + B₁ + B_∞) ≤ ∫ u^* ω`
 (`SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`).
-These statements retain explicit integrability hypotheses on the energy and curvature. This is
-the energy bound, uniform in `R` for a fixed area, under which compactness of the comparison
-family is to be proved.
+These statements retain explicit integrability hypotheses on the energy and curvature. For a
+vector space target and a solution of the Floer equation of the comparison family, with area at
+most `A`, the energy over every region is at most `A + 2 (B₀ + B₁ + B_∞)`
+(`SymplecticForm.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le`). This is the
+energy bound, uniform in `R` for a fixed area, from which compactness of the comparison family
+over compact windows of `R` in the plane chart follows (in the namespace `SymplecticForm`,
+`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison`), and
+interior compactness at the long-neck end `R → ∞` on the pair of pants and the caps of the PSS
+planes (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`). Compactness near
+the pole `∞` is still to be proved.
 
 ## Main results
 
@@ -80,6 +88,8 @@ family is to be proved.
   the energy bound uniform over the comparison family on manifold targets.
 * `SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`:
   the corresponding lower area bound for Floer solutions.
+* `SymplecticForm.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le`: the energy
+  bound over any region for solutions of the comparison family with bounded area.
 
 ## References
 
@@ -452,5 +462,40 @@ theorem abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le
   rw [ω.integral_floerEnergyDensity_cappedComparisonPerturbation hH hHs R hu hE,
     sub_sub_cancel_left, abs_neg]
   exact hbound
+
+/-- **The energy of the comparison family on any region.** For a symplectic vector space target,
+period-one `C¹` Hamiltonians with `|H_q| ≤ B_q`, an `ω`-compatible `J₀`, `ω`-tame end structures
+`J_q` and `R ≥ 0`, the Floer energy over any set of a `C¹` solution of the Floer equation of the
+comparison family with integrable energy density and symplectic area at most `A` is at most
+`A + 2 (B₀ + B₁ + B_∞)`. -/
+theorem setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le
+    (ω : SymplecticForm V) {J₀ : AlmostComplexStructure V}
+    {J : Puncture → ℝ → V → AlmostComplexStructure V} (h₀ : ω.Compatible J₀)
+    (hJ : ∀ q t x, ω.Tames (J q t x)) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    {R A : ℝ} (hR : 0 ≤ R) (hu : ContDiff ℝ 1 u)
+    (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (cappedComparisonAlmostComplex h₀ J hJ R (Complex.equivRealProdCLM.symm z) (u z))
+      (ω.perturbedFDeriv
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hint : Integrable (ω.floerEnergyDensity
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u))
+    (harea : ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) ≤ A)
+    (S : Set (ℝ × ℝ)) :
+    ∫ z in S, ω.floerEnergyDensity
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u z ≤ A + 2 * ∑ q, B q := by
+  have habs := ω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB hR
+    hu hint
+  refine (setIntegral_le_integral hint (Filter.Eventually.of_forall fun z ↦
+    ω.floerEnergyDensity_nonneg ?_ (hfl z))).trans ?_
+  · rw [cappedComparisonAlmostComplex_def]
+    exact tames_cappedAlmostComplex h₀ _ _ _ _
+  · linarith [(abs_sub_le_iff.1 habs).1]
 
 end TauCeti.SymplecticForm

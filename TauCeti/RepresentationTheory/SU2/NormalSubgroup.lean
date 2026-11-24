@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.RepresentationTheory.SU2.Adjoint
 public import TauCeti.RepresentationTheory.SU2.ConjugacyClasses
 import TauCeti.Algebra.Quaternion.ComplexMatrix
@@ -17,12 +18,18 @@ The center of `SU(2)` is `{1, -1}` (`TauCeti.SU2.mem_center_iff`, proved alongsi
 cover), and it is the only source of
 proper normal subgroups: **every normal subgroup of `SU(2)` lies in the center or is the whole
 group** (`TauCeti.SU2.le_center_or_eq_top`). No topology enters the statement; it is a fact about
-the abstract group.
+the abstract group. Since the only subgroups of `{1, -1}` are `⊥` and the center, the normal
+subgroups of `SU(2)` are exactly `⊥`, the center and `⊤`
+(`TauCeti.SU2.eq_bot_or_eq_center_or_eq_top_of_normal`).
 
 Consequently a homomorphism out of `SU(2)` is either trivial or has kernel contained in `{1, -1}`
 (`TauCeti.SU2.ker_le_center`). For instance, a homomorphism `φ : SU(2) → G` of Lie groups whose
 differential sends `diag (i, -i)` to a nonzero vector, such as a coroot `α∨` with `α(α∨) = 2`, is
-not trivial, so its kernel lies in `{1, -1}`. The bound is attained by the double cover
+not trivial, so its kernel lies in `{1, -1}`; conversely the trivial homomorphism has kernel all
+of the noncommutative `SU(2)` (`TauCeti.SU2.ker_le_center_iff`). The derivative condition needs no
+smoothness of `φ` and no Lie group structure on `G`: if `G` is a manifold and the curve
+`t ↦ φ (diag (e^{it}, e^{-it}))` has a nonzero derivative at `0`, then `ker φ ⊆ {1, -1}`
+(`TauCeti.SU2.ker_le_center_of_mfderiv_ne_zero`). The bound is attained by the double cover
 `SU(2) → SO(3)`, whose kernel is the whole center (`TauCeti.SU2.ker_toSO3`). Pushed through that
 double cover, the classification says that **`SO(3)` is a simple group**
 (`TauCeti.isSimpleGroup_specialOrthogonalGroup_fin_three`).
@@ -42,7 +49,13 @@ its trace is `2 - 4 sin² φ sin² θ`. As `φ` varies these traces fill the int
 
 * `TauCeti.SU2.le_center_or_eq_top`: a normal subgroup of `SU(2)` lies in the center or is
   everything.
+* `TauCeti.SU2.eq_bot_or_eq_center_or_eq_top_of_normal`: the normal subgroups of `SU(2)` are `⊥`,
+  the center and `⊤`.
 * `TauCeti.SU2.ker_le_center`: a nontrivial homomorphism out of `SU(2)` has kernel in `{1, -1}`.
+* `TauCeti.SU2.ker_le_center_iff`: a homomorphism out of `SU(2)` has kernel in `{1, -1}` exactly
+  when it is nontrivial.
+* `TauCeti.SU2.ker_le_center_of_mfderiv_ne_zero`: the kernel bound from a nonzero derivative along
+  the maximal torus.
 * `TauCeti.isSimpleGroup_specialOrthogonalGroup_fin_three`: `SO(3)` is a simple group.
 
 ## References
@@ -193,6 +206,51 @@ theorem ker_le_center {M : Type*} [MulOneClass M] {φ : SU2 →* M} (hφ : φ �
     φ.ker ≤ Subgroup.center SU2 :=
   (le_center_or_eq_top φ.ker).resolve_right fun h ↦ hφ (MonoidHom.ker_eq_top_iff.mp h)
 
+/-- **A subgroup of the center `{1, -1}` of `SU(2)` is `⊥` or the center.** -/
+theorem eq_bot_or_eq_center_of_le_center {K : Subgroup SU2} (hK : K ≤ Subgroup.center SU2) :
+    K = ⊥ ∨ K = Subgroup.center SU2 := by
+  refine K.bot_or_exists_ne_one.imp_right fun ⟨k, hkK, hk⟩ ↦ le_antisymm hK fun z hz ↦ ?_
+  rcases mem_center_iff.mp hz with hz | hz
+  · rw [show z = 1 from Subtype.ext hz]
+    exact K.one_mem
+  · rcases mem_center_iff.mp (hK hkK) with hk' | hk'
+    · exact absurd (Subtype.ext hk') hk
+    · rwa [show z = k from Subtype.ext (hz.trans hk'.symm)]
+
+/-- **The normal subgroups of `SU(2)` are `⊥`, the center `{1, -1}` and `⊤`.** -/
+theorem eq_bot_or_eq_center_or_eq_top_of_normal (N : Subgroup SU2) [N.Normal] :
+    N = ⊥ ∨ N = Subgroup.center SU2 ∨ N = ⊤ :=
+  (le_center_or_eq_top N).elim
+    (fun h ↦ (eq_bot_or_eq_center_of_le_center h).elim Or.inl (Or.inr ∘ Or.inl))
+    (Or.inr ∘ Or.inr)
+
+/-- **A homomorphism out of `SU(2)` has kernel in the center `{1, -1}` exactly when it is
+nontrivial.** -/
+theorem ker_le_center_iff {M : Type*} [MulOneClass M] {φ : SU2 →* M} :
+    φ.ker ≤ Subgroup.center SU2 ↔ φ ≠ 1 := by
+  refine ⟨fun h hφ ↦ center_ne_top (top_le_iff.mp ?_), ker_le_center⟩
+  rwa [hφ, MonoidHom.ker_one] at h
+
+/-- **The kernel of a nontrivial homomorphism out of `SU(2)` is `⊥` or the center `{1, -1}`.** -/
+theorem ker_eq_bot_or_eq_center {M : Type*} [MulOneClass M] {φ : SU2 →* M} (hφ : φ ≠ 1) :
+    φ.ker = ⊥ ∨ φ.ker = Subgroup.center SU2 :=
+  eq_bot_or_eq_center_of_le_center (ker_le_center hφ)
+
+open scoped Manifold in
+/-- **Kernel bound for rank-one maps.** Let `φ : SU(2) →* G` be a homomorphism into a manifold
+`G` such that the curve `t ↦ φ (diag (e^{it}, e^{-it}))` has a nonzero derivative at `t = 0`,
+as it does when `φ` is smooth with differential at the identity nonzero on `diag (i, -i)`. Then
+the kernel of `φ` is contained in the center `{1, -1}` of `SU(2)`. -/
+theorem ker_le_center_of_mfderiv_ne_zero {E H G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace G]
+    [ChartedSpace H G] [MulOneClass G] {φ : SU2 →* G}
+    (h : mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ φ (torusExp t)) 0 ≠ 0) :
+    φ.ker ≤ Subgroup.center SU2 := by
+  refine ker_le_center fun hφ ↦ h ?_
+  subst hφ
+  simp only [MonoidHom.one_apply]
+  exact mfderiv_const
+
 end SU2
 
 /-- **`SO(3)` is a simple group.** Its normal subgroups pull back along the double cover
@@ -200,13 +258,9 @@ end SU2
 instance isSimpleGroup_specialOrthogonalGroup_fin_three :
     IsSimpleGroup (specialOrthogonalGroup (Fin 3) ℝ) where
   exists_pair_ne := by
-    refine ⟨SU2.toSO3 (SU2.torusExp (Real.pi / 2)), 1, fun h ↦ ?_⟩
-    obtain ⟨n, hn⟩ := SU2.toSO3_torusExp_eq_one_iff.mp h
-    have h2 : ((2 * n : ℤ) : ℝ) = (1 : ℤ) := by
-      push_cast
-      nlinarith [Real.pi_pos]
-    have := Int.cast_injective h2
-    omega
+    obtain ⟨g, -, hg⟩ := IsConcreteLE.exists_of_lt SU2.center_ne_top.lt_top
+    refine ⟨SU2.toSO3 g, 1, fun h ↦ hg ?_⟩
+    rwa [← SU2.ker_toSO3, MonoidHom.mem_ker]
   eq_bot_or_eq_top_of_normal N hN := by
     have hsurj := SU2.toSO3_surjective
     rcases SU2.le_center_or_eq_top (N.comap SU2.toSO3) with h | h

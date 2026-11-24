@@ -10,8 +10,8 @@ public import Mathlib.NumberTheory.LocalField.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.LocalField.Topology
-import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
+import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
 # Scaling of Haar measure on `ι → K` under integral matrices
@@ -133,7 +133,7 @@ theorem exists_mem_scaledIntegerBox [IsDiscreteValuationRing 𝒪[K]] {ι : Type
     simp only [Algebra.algebraMap_ofSubsemiring_apply] at ha
     refine Filter.eventually_atTop.2 ⟨n, fun k hk ↦ ?_⟩
     rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i), ha]
-    exact mul_mem (pow_mem ϖ.2 _) a.2
+    exact mul_mem (pow_mem ϖ.property _) a.property
   exact (Filter.eventually_all.2 h).exists.imp fun _ ↦ mem_scaledIntegerBox.2
 
 variable [TopologicalSpace K] {ι : Type*}
@@ -163,7 +163,7 @@ theorem isClosed_univ_pi_image_maximalIdeal_pow (e : ι → ℕ) :
     IsClosed (univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e i)) := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   refine isClosed_set_pi fun i _ ↦ ?_
-  rw [image_maximalIdeal_pow_eq_smul hϖ]
+  rw [hϖ.image_maximalIdeal_pow_eq_smul]
   exact IsClosed.smul₀ _ Valuation.isClosed_integer
 
 /-- A box of ideal powers is measurable. -/
@@ -252,7 +252,7 @@ theorem measure_univ_pi_image_maximalIdeal_pow (μ : Measure (ι → K)) [μ.IsA
     funext fun _ ↦ funext fun _ ↦ Matrix.mulVec_diagonal ..
   rw [hdiag, integerBox_def, piMap_image_univ_pi]
   refine pi_congr rfl fun i _ ↦ ?_
-  rw [image_maximalIdeal_pow_eq_smul hϖ, ← image_smul, Algebra.algebraMap_ofSubsemiring_apply,
+  rw [hϖ.image_maximalIdeal_pow_eq_smul, ← image_smul, Algebra.algebraMap_ofSubsemiring_apply,
     SubmonoidClass.coe_pow]
   simp only [smul_eq_mul]
 

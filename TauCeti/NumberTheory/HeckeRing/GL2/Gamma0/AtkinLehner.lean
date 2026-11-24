@@ -91,7 +91,7 @@ commutative semiring.
   `instCommRing_Gamma0`, all Apache-2.0 at commit
   `2baa76f742bdb4fb8ee323fabba41203bd390e08`. The source states its own transpose equivalence
   and diagonal-matrix API; here those come from `GLn/TransposeAntiInvolution.lean` and
-  `GLn/DiagonalCosets.lean` instead, and the four-field bundle is assembled by
+  `GLn/Diagonal/Basic.lean` instead, and the four-field bundle is assembled by
   `HeckeAntiInvolution.ofAmbient`. The source proves its own `Gamma0_AL_preserves_00` to see
   that the bar fixes the upper-left entry; here that is already visible in
   `atkinLehnerAntiInvolution_bar_val`, so the lemma is not reproduced. The source builds its
@@ -239,7 +239,7 @@ private lemma atkinLehnerHom_mem_Gamma0Image [NeZero N] (g : GL (Fin 2) ℚ)
   obtain ⟨c, hc⟩ := hσ_mem
   set A := (σ : Matrix (Fin 2) (Fin 2) ℤ) with hA_def
   set B : Matrix (Fin 2) (Fin 2) ℤ := atkinLehnerEntries N A c with hB
-  have hB_det : B.det = 1 := by rw [hB, atkinLehnerEntries_det N A c hc, hA_def, σ.2]
+  have hB_det : B.det = 1 := by rw [hB, atkinLehnerEntries_det N A c hc, hA_def, σ.property]
   refine ⟨⟨B, hB_det⟩, mem_Gamma0_iff_dvd.mpr ?_, Units.ext ?_⟩
   · simp only [hB, atkinLehnerEntries]
     exact dvd_mul_right _ _
@@ -622,7 +622,7 @@ representative. -/
   | h g =>
     rw [(atkinLehnerAntiInvolution N).onHeckeCoset_mk]
     exact HeckeCoset.mk_eq_mk_of_mem
-      (atkinLehnerAntiInvolution_bar_mem_doubleCoset N (g : GL (Fin 2) ℚ) g.2)
+      (atkinLehnerAntiInvolution_bar_mem_doubleCoset N (g : GL (Fin 2) ℚ) g.property)
 
 /-- **Shimura's Proposition 3.8 for `Γ₀(N)`**: for nonzero level `N`, the Hecke ring
 `R(Γ₀(N), Δ₀(N))` over any commutative semiring is commutative, the Atkin-Lehner bar being an

@@ -7,25 +7,31 @@ module
 
 public import Mathlib.NumberTheory.Height.Basic
 public import Mathlib.Data.Finsupp.SMul
-import all Mathlib.NumberTheory.Height.Basic
+import Mathlib.Data.Fintype.Order
 
 /-!
 # Heights of finitely supported coefficient vectors
 
 The native `Finsupp.mulHeight` is a projective height on the nonzero support.
-This module identifies it with finite tuples containing that support, and proves
-invariance under scalar multiplication and injective reindexing. These interfaces
-allow polynomial coefficient heights to use the finite-tuple height estimates in Mathlib.
+This module identifies it with finite tuples containing that support and with the full
+coefficient function `⇑x`, and proves invariance under scalar multiplication and injective
+reindexing. These interfaces allow polynomial coefficient heights to use the finite-tuple height
+estimates in Mathlib.
 
 `Finsupp.mulHeight_eq_mul_of_injOn` transfers Mathlib's Segre relation
 `Height.mulHeight_fun_mul_eq` to finitely supported vectors: a vector whose nonzero entries are
 exactly the products `x a * y b`, each occurring once, has the product of the heights of `x` and
 `y`. The coefficients of a product of polynomials in disjoint sets of variables have this form.
+More generally, `Finsupp.mulHeight_le_of_forall_exists_eq` and
+`Finsupp.logHeight_le_of_forall_exists_eq` bound the height of `y` by that of `x` whenever every
+nonzero entry of `y` occurs in `x`.
 
 ## References
 
 * The multiplication-table height follows `DiophantineApproximation/DisjointVariables.lean` in
-  Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
+  Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0), and the
+  subfamily height bound follows `DiophantineApproximation/GeneralizedRothLemma.lean` of the same
+  repository, commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -42,8 +48,8 @@ theorem mulHeight_eq_of_support_subset (x : α →₀ K) (s : Finset α)
   let e : x.support ≃ (fun i : s ↦ x i).support := Equiv.ofBijective
     (fun i ↦ ⟨⟨i, hs i.prop⟩, by simpa using mem_support_iff.mp i.prop⟩)
     ⟨fun _ _ h ↦ Subtype.ext (congrArg (fun j ↦ j.val.val) h),
-      fun j ↦ ⟨⟨j.val, by exact mem_support_iff.mpr j.prop⟩, rfl⟩⟩
-  rw [Height.mulHeight_eq_mulHeight_restrict_support]
+      fun j ↦ ⟨⟨j.val, mem_support_iff.mpr j.prop⟩, rfl⟩⟩
+  rw [Height.mulHeight_eq_mulHeight_restrict_support, Finsupp.mulHeight]
   exact Height.mulHeight_comp_equiv e (fun i ↦ x i.val.val)
 
 @[simp]
@@ -83,13 +89,13 @@ theorem mulHeight_eq_mulHeight_coe (x : α →₀ K) : x.mulHeight = Height.mulH
       · exact Finite.le_ciSup_of_le ⟨j, mem_support_iff.mpr hj⟩ le_rfl
   simp only [Finsupp.mulHeight, Height.mulHeight_eq hs, Height.mulHeight_eq hfun, hv]
 
-/-- The native logarithmic Finsupp height is the logarithm of its support height.
-Mathlib's native characteristic equation uses `Height.mulHeight ⇑x`; this bridge uses
-`Finsupp.mulHeight x`, the height on the finite support. -/
+/-- The logarithmic height of a finitely supported vector is the logarithm of its
+multiplicative height. By definition `Finsupp.logHeight x` is the logarithm of
+`Height.mulHeight ⇑x`, the height of the full coefficient function; this lemma rewrites it in
+terms of `Finsupp.mulHeight x`, the height on the finite support. -/
 theorem logHeight_eq_log_mulHeight_support (x : α →₀ K) :
     x.logHeight = Real.log x.mulHeight := by
-  exact (Finsupp.logHeight_eq_log_mulHeight x).trans
-    (congrArg Real.log (mulHeight_eq_mulHeight_coe x).symm)
+  rw [Finsupp.logHeight, mulHeight_eq_mulHeight_coe]
 
 theorem logHeight_nonneg (x : α →₀ K) : 0 ≤ x.logHeight := by
   rw [logHeight_eq_log_mulHeight_support]
@@ -163,10 +169,11 @@ theorem mulHeight_eq_mul_of_injOn {γ : Type*} {x : α →₀ K} {y : β →₀ 
     obtain ⟨b, hb⟩ := Finsupp.support_nonempty_iff.2 hy
     exact Function.ne_iff.2 ⟨⟨b, hb⟩, mem_support_iff.1 hb⟩
   have hzE : (fun c : s ↦ z c) ∘ E = fun p : x.support × y.support ↦ x p.1 * y p.2 :=
-    funext fun p ↦ hz _ p.1.2 _ p.2.2
+    funext fun p ↦ hz _ p.1.property _ p.2.property
   rw [mulHeight_eq_of_support_subset z s hs, ← Height.mulHeight_comp_equiv E, hzE,
-    Height.mulHeight_fun_mul_eq hx' hy', mulHeight_eq_of_support_subset x x.support subset_rfl,
-    mulHeight_eq_of_support_subset y y.support subset_rfl]
+    Height.mulHeight_fun_mul_eq hx' hy']
+  -- `Finsupp.mulHeight` is by definition the height of the restriction to the support.
+  simp only [Finsupp.mulHeight]
 
 /-- **The logarithmic height of a multiplication table.** Under the hypotheses of
 `Finsupp.mulHeight_eq_mul_of_injOn`, the logarithmic height of `z` is the sum of the logarithmic
@@ -180,5 +187,28 @@ theorem logHeight_eq_add_of_injOn {γ : Type*} {x : α →₀ K} {y : β →₀ 
   rw [logHeight_eq_log_mulHeight_support, logHeight_eq_log_mulHeight_support,
     logHeight_eq_log_mulHeight_support, mulHeight_eq_mul_of_injOn he hz hsupp hx hy,
     Real.log_mul (mulHeight_pos x).ne' (mulHeight_pos y).ne']
+
+/-- If every nonzero entry of `y` occurs among the entries of `x`, then
+`y.mulHeight ≤ x.mulHeight`. -/
+theorem mulHeight_le_of_forall_exists_eq {x : α →₀ K} {y : β →₀ K}
+    (h : ∀ b ∈ y.support, ∃ a, y b = x a) :
+    y.mulHeight ≤ x.mulHeight := by
+  classical
+  have h' : ∀ b : y.support, ∃ a : x.support, y b.val = x a.val := fun ⟨b, hb⟩ ↦ by
+    obtain ⟨a, ha⟩ := h b hb
+    exact ⟨⟨a, mem_support_iff.mpr (ha ▸ mem_support_iff.mp hb)⟩, ha⟩
+  choose f hf using h'
+  have hcomp : (fun b : y.support ↦ y b.val) = (fun a : x.support ↦ x a.val) ∘ f := funext hf
+  rw [mulHeight_eq_of_support_subset y y.support subset_rfl,
+    mulHeight_eq_of_support_subset x x.support subset_rfl, hcomp]
+  exact Height.mulHeight_comp_le f _
+
+/-- If every nonzero entry of `y` occurs among the entries of `x`, then
+`y.logHeight ≤ x.logHeight`. -/
+theorem logHeight_le_of_forall_exists_eq {x : α →₀ K} {y : β →₀ K}
+    (h : ∀ b ∈ y.support, ∃ a, y b = x a) :
+    y.logHeight ≤ x.logHeight := by
+  rw [logHeight_eq_log_mulHeight_support, logHeight_eq_log_mulHeight_support]
+  exact Real.log_le_log (mulHeight_pos y) (mulHeight_le_of_forall_exists_eq h)
 
 end Finsupp

@@ -14,13 +14,16 @@ import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # The unitary group of a finite-dimensional real normed star algebra
 
 The unitary elements of a finite-dimensional real normed star algebra form a smooth real Lie
 group. Its topology is the subspace topology, and its atlas comes from the closed unitary
-subgroup of the ambient group of units. The inclusion into that group is a smooth immersion.
+subgroup of the ambient group of units. The inclusions into that group and into the ambient
+algebra are smooth embeddings, so smoothness of maps into `unitary R` can be checked after
+coercing to `R`, and any smooth action of `R` restricts to a smooth action of `unitary R`.
 
 The model space is the Lie subalgebra of the unitary subgroup of the units. The structure is
 independent of any polar-factorization map. For matrices it provides the unitary manifold
@@ -35,7 +38,14 @@ factor of the smooth Cartan decomposition.
 * `Unitary.isLieGroupAtlas_instChartedSpace`: these properties for the chosen native atlas.
 * `Unitary.instChartedSpace`, `Unitary.instIsManifold`, `Unitary.instLieGroup`: the native
   smooth Lie-group structure on unitary elements.
-* `Unitary.contMDiff_toUnits`, `Unitary.isImmersion_toUnits`: the inclusion into the units.
+* `Unitary.contMDiff_toUnits`, `Unitary.isImmersion_toUnits`,
+  `Unitary.isSmoothEmbedding_toUnits`: the inclusion into the units.
+* `Unitary.contMDiff_val`, `Unitary.isImmersion_val`, `Unitary.isSmoothEmbedding_val`: the
+  inclusion into the ambient normed star algebra.
+* `Unitary.contMDiffWithinAt_iff`, `Unitary.contMDiffAt_iff`, `Unitary.contMDiffOn_iff`,
+  `Unitary.contMDiff_iff`: smoothness of maps into `unitary R` tested after coercion to `R`.
+* `Unitary.instContMDiffSMul`: restriction of a `C^n` action (`n ≤ ∞`) of `R` on a manifold to
+  `unitary R`.
 * `Unitary.finiteDimensional_model`: the model space is finite-dimensional.
 
 ## References
@@ -56,7 +66,7 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
   [StarRing R] [ContinuousStar R]
 
-private local instance : CompleteSpace R := FiniteDimensional.complete ℝ R
+private local instance : CompleteSpace R := FiniteDimensional.completeSpace ℝ R
 
 local notation "𝕂" => unitarySubgroup Rˣ
 local notation "𝔩" => LieSubalgebra.toSubmodule
@@ -153,9 +163,76 @@ theorem isImmersion_toUnits :
     Manifold.IsImmersion (model R) 𝓘(ℝ, R) ∞ (toUnits : unitary R → Rˣ) :=
   (isLieGroupAtlas_instChartedSpace (R := R)).isImmersion_toUnits
 
+/-- The inclusion of unitary elements into the units is a smooth embedding. -/
+theorem isSmoothEmbedding_toUnits :
+    Manifold.IsSmoothEmbedding (model R) 𝓘(ℝ, R) ∞ (toUnits : unitary R → Rˣ) :=
+  ⟨isImmersion_toUnits,
+    Topology.IsEmbedding.of_comp continuous_toUnits Units.continuous_val .subtypeVal⟩
+
+/-- The coercion of unitary elements into the ambient algebra is smooth. -/
+theorem contMDiff_val : ContMDiff (model R) 𝓘(ℝ, R) ∞ (Subtype.val : unitary R → R) :=
+  Units.contMDiff_val.comp contMDiff_toUnits
+
+/-- The coercion of unitary elements into the ambient algebra is an immersion. -/
+theorem isImmersion_val :
+    Manifold.IsImmersion (model R) 𝓘(ℝ, R) ∞ (Subtype.val : unitary R → R) :=
+  -- `chartAt R (1 : Rˣ)` is defined to be `Units.val` on `Set.univ`.
+  TauCeti.isImmersion_isLocalDiffeomorphAt_comp (k := chartAt R (1 : Rˣ))
+    (fun _ ↦ (chartAt R (1 : Rˣ)).isLocalDiffeomorphAt_of_mem_maximalAtlas
+      (IsManifold.chart_mem_maximalAtlas (1 : Rˣ)) (by simp))
+    isImmersion_toUnits
+
+/-- The coercion of unitary elements into the ambient algebra is a smooth embedding. -/
+theorem isSmoothEmbedding_val :
+    Manifold.IsSmoothEmbedding (model R) 𝓘(ℝ, R) ∞ (Subtype.val : unitary R → R) :=
+  ⟨isImmersion_val, .subtypeVal⟩
+
+section SmoothnessIff
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : ℕ∞ω} [ENat.LEInfty n] {f : M → unitary R} {s : Set M} {x : M}
+
+/-- A map into `unitary R` is `C^n` within a set at a point if and only if its coercion to `R` is.
+The `ENat.LEInfty n` hypothesis excludes real-analytic regularity `ω`, as the native unitary atlas
+is `C^∞`. -/
+theorem contMDiffWithinAt_iff :
+    ContMDiffWithinAt I (model R) n f s x ↔
+      ContMDiffWithinAt I 𝓘(ℝ, R) n (fun y ↦ (f y : R)) s x :=
+  (isSmoothEmbedding_val.of_le ENat.LEInfty.out).contMDiffWithinAt_iff_comp
+
+/-- A map into `unitary R` is `C^n` at a point if and only if its coercion to `R` is. -/
+theorem contMDiffAt_iff :
+    ContMDiffAt I (model R) n f x ↔ ContMDiffAt I 𝓘(ℝ, R) n (fun y ↦ (f y : R)) x :=
+  (isSmoothEmbedding_val.of_le ENat.LEInfty.out).contMDiffAt_iff_comp
+
+/-- A map into `unitary R` is `C^n` on a set if and only if its coercion to `R` is. -/
+theorem contMDiffOn_iff :
+    ContMDiffOn I (model R) n f s ↔ ContMDiffOn I 𝓘(ℝ, R) n (fun y ↦ (f y : R)) s :=
+  (isSmoothEmbedding_val.of_le ENat.LEInfty.out).contMDiffOn_iff_comp
+
+/-- A map into `unitary R` is `C^n` if and only if its coercion to `R` is. -/
+theorem contMDiff_iff :
+    ContMDiff I (model R) n f ↔ ContMDiff I 𝓘(ℝ, R) n (fun y ↦ (f y : R)) :=
+  (isSmoothEmbedding_val.of_le ENat.LEInfty.out).contMDiff_iff_comp
+
+end SmoothnessIff
+
 /-- The native unitary manifold has smooth multiplication and inversion. -/
 instance instLieGroup : LieGroup (model R) ∞ (unitary R) :=
   (isLieGroupAtlas_instChartedSpace (R := R)).lieGroup
+
+/-- Any `C^n` action (`n ≤ ∞`) of the ambient algebra `R` on a manifold restricts to a `C^n` action
+of `unitary R`. -/
+instance instContMDiffSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {n : ℕ∞ω} [ENat.LEInfty n]
+    [MulAction R M] [ContMDiffSMul 𝓘(ℝ, R) I n R M] :
+    ContMDiffSMul (model R) I n (unitary R) M :=
+  MulAction.contMDiffSMul_compHom (f := (unitary R).subtype)
+    (contMDiff_val.of_le ENat.LEInfty.out)
 
 /-- The vector-space model of the unitary group is finite-dimensional. -/
 instance finiteDimensional_model : FiniteDimensional ℝ 𝔩 := by

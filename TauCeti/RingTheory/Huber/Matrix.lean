@@ -22,6 +22,11 @@ in `TauCeti.LinearAlgebra.Matrix.Module`, where it needs no ring theory at all: 
 carries **no topology**, and `A` need not be commutative, which is what lets it be applied where
 `P` is an abstract subquotient. This file supplies only the topological input.
 
+The file also shows, by the Leibniz expansion, that over a ring with a topological additive
+group the determinants of the matrices with entries in a bounded set form a bounded set. Applied
+to the powers of a matrix, this makes the determinant of a matrix with bounded powers
+power-bounded.
+
 ## Main results
 
 * `TauCeti.Huber.isTopologicallyNilpotent_one_sub_det_one_sub`: `1 - det (1 - B)` is topologically
@@ -30,6 +35,8 @@ carries **no topology**, and `A` need not be commutative, which is what lets it 
 * `TauCeti.Huber.eq_zero_of_isTopologicallyNilpotent_entries_of_forall_eq_sum_smul`: the
   topological criterion combined with the algebraic core, which is imported from
   `TauCeti.LinearAlgebra.Matrix.Module`.
+* `TauCeti.Huber.isBounded_image_det`: over a ring with a topological additive group, the
+  determinants of the matrices with entries in a bounded set form a bounded set.
 
 ## References
 
@@ -101,6 +108,31 @@ theorem isTopologicallyNilpotent_one_sub_det_one_sub {B : Matrix n n A}
   simpa [hcoe] using (mem_topologicallyNilpotentIdeal.mp hmem)
 
 end Topological
+
+/-! ### Bounded determinants -/
+
+section Bounded
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **Determinants of matrices with entries in a bounded set form a bounded set.** Each term of
+the Leibniz expansion is, up to sign, a product of entries, and finite sums and negatives of
+bounded sets are bounded. -/
+theorem isBounded_image_det {T : Set A} (hT : IsBounded T) :
+    IsBounded (Matrix.det '' {M : Matrix n n A | ∀ i j, M i j ∈ T}) := by
+  have hP := isBounded_finsetProd Finset.univ fun (_ : n) _ ↦ hT
+  refine (isBounded_finsetSum (Finset.univ : Finset (Equiv.Perm n))
+    fun _ _ ↦ hP.union hP.neg).subset ?_
+  rintro _ ⟨M, hM, rfl⟩
+  rw [Matrix.det_apply]
+  refine Set.finsetSum_mem_finsetSum _ _ _ fun σ _ ↦ ?_
+  have hσ := Set.finsetProd_mem_finsetProd Finset.univ _ _ fun i _ ↦ hM (σ i) i
+  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h
+  · exact .inl (by simpa [h] using hσ)
+  · exact .inr (by simpa [h] using hσ)
+
+end Bounded
 
 /-! ### Invertibility, and Nakayama -/
 

@@ -48,8 +48,14 @@ Galois group.
   representations on `k[X]`.
 * `Representation.ofMulAction_comp_subtype`: restricting a permutation representation to a
   subgroup gives the permutation representation of the subgroup.
+* `Representation.IntertwiningMap.coeff_ofMulAction_single_smul`: the matrix entries of an
+  intertwining map between permutation representations are invariant under the diagonal action.
 * `TauCeti.single_mul_eq_smul_ofMulAction`: on `k[G]`, left multiplication by a monomial
   `single g c` is `c` times the left regular action of `g`.
+* `Representation.leftRegular_apply_eq_single_mul`: the left regular action of `g` is left
+  multiplication by `single g 1`.
+* `Representation.IntertwiningMap.apply_eq_mul_apply_single_one`: an endomorphism of the left
+  regular representation, as an intertwining map, is right multiplication by its value at `1`.
 * `Rep.leftRegularHomEquiv_symm_apply`: equivariant endomorphisms of the left regular
   representation are right multiplications.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_ofMulAction`: the orbit sums of `k[X]` are invariant
@@ -109,6 +115,27 @@ theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
   | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
   | single g' c' => simp [MonoidAlgebra.single_mul_single, MonoidAlgebra.smul_single]
 
+/-- A monoid element acts on the regular representation by left multiplication with the
+corresponding basis element: the case `c = 1` of `TauCeti.single_mul_eq_smul_ofMulAction`,
+oriented to rewrite the action. -/
+theorem _root_.Representation.leftRegular_apply_eq_single_mul (g : G) (x : MonoidAlgebra k G) :
+    leftRegular k G g x = MonoidAlgebra.single g 1 * x := by
+  rw [single_mul_eq_smul_ofMulAction, one_smul]
+
+/-- **An endomorphism of the regular representation is right multiplication** by its value at
+`1`: the intertwining-map form, over any semiring, of `Rep.leftRegularHomEquiv_symm_apply`. -/
+theorem _root_.Representation.IntertwiningMap.apply_eq_mul_apply_single_one
+    (f : (leftRegular k G).IntertwiningMap (leftRegular k G)) (x : MonoidAlgebra k G) :
+    f x = x * f (MonoidAlgebra.single 1 1) := by
+  induction x using MonoidAlgebra.induction_linear with
+  | zero => rw [map_zero, zero_mul]
+  | add x y hx hy => rw [map_add, hx, hy, add_mul]
+  | single g c =>
+    have hg : MonoidAlgebra.single g c = c • leftRegular k G g (MonoidAlgebra.single 1 1) := by
+      simp [leftRegular_apply_eq_single_mul]
+    conv_lhs => rw [hg, map_smul, f.isIntertwining, leftRegular_apply_eq_single_mul]
+    rw [← smul_mul_assoc, MonoidAlgebra.smul_single', mul_one]
+
 /-- The permutation representation of a subgroup `H` on `k[X]` is the restriction of that of
 `G`. -/
 theorem _root_.Representation.ofMulAction_subgroup {G : Type*} [Group G] [MulAction G X]
@@ -122,6 +149,15 @@ the permutation representation of `S` on `k[X]`. -/
 theorem _root_.Representation.ofMulAction_comp_subtype {G : Type*} [Group G] [MulAction G X]
     (S : Subgroup G) : (ofMulAction k G X).comp S.subtype = ofMulAction k S X :=
   MonoidHom.ext fun s ↦ (ofMulAction_subgroup S s).symm
+
+/-- The matrix entries `(t, s) ↦ φ(s)(t)` of an intertwining map `φ : k[X] → k[Y]` between
+permutation representations are invariant under the diagonal action of `G` on `X × Y`. -/
+theorem _root_.Representation.IntertwiningMap.coeff_ofMulAction_single_smul {G Y : Type*}
+    [Group G] [MulAction G X] [MulAction G Y]
+    (φ : (ofMulAction k G X).IntertwiningMap (ofMulAction k G Y)) (g : G) (s : X) (t : Y) :
+    (φ (MonoidAlgebra.single (g • s) 1)).coeff (g • t) =
+      (φ (MonoidAlgebra.single s 1)).coeff t := by
+  rw [← ofMulAction_single, φ.isIntertwining, coeff_ofMulAction, inv_smul_smul]
 
 section LeftRegular
 
@@ -270,7 +306,7 @@ private noncomputable def invariantsEquivFun :
     (ofMulAction k I X).invariants ≃ₗ[k] (orbitRel.Quotient I X → k) where
   toFun v ω := Quotient.liftOn' ω (v : k[X]).coeff fun _ _ ⟨g, hg⟩ ↦ by
     rw [← hg]
-    exact coeff_smul_of_forall_ofMulAction_eq v.2 g _
+    exact coeff_smul_of_forall_ofMulAction_eq v.property g _
   map_add' v w := funext fun ω ↦ Quotient.inductionOn' ω fun _ ↦ rfl
   map_smul' r v := funext fun ω ↦ Quotient.inductionOn' ω fun _ ↦ rfl
   invFun c := ⟨ofCoeff (Finsupp.equivFunOnFinite.symm fun x ↦ c ⟦x⟧),

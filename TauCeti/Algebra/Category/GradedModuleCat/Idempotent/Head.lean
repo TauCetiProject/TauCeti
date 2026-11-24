@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
 public import TauCeti.Algebra.Category.GradedModuleCat.Ideal
+public import TauCeti.RingTheory.SimpleModule.Basic
 import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
 
 /-!
@@ -38,6 +39,10 @@ The last argument uses only simplicity of the quotients `Aeᵢ / A₊eᵢ`, not 
 degree-zero piece; `TauCeti.Algebra.Category.GradedModuleCat.Idempotent.PrimitiveHead` applies it
 to primitive idempotents over a semisimple degree-zero piece.
 
+At `e = 1`, the regular head `A / A₊` is linearly equivalent to the degree-zero subalgebra.
+When that subalgebra is semisimple, shifts of the regular head detect every nonzero graded
+module concentrated in one degree, including modules that are not finitely generated.
+
 ## Main definitions
 
 * `TauCeti.gradedPositiveMulIdeal`: the left ideal `A₊e`.
@@ -59,6 +64,10 @@ to primitive idempotents over a semisimple degree-zero piece.
   `Ae / A₊e` is concentrated in degree zero when `e` is idempotent.
 * `TauCeti.nontrivial_gradedPositiveMulQuotient`: over a nonnegatively graded algebra, `Ae / A₊e`
   is nonzero when `e` is.
+* `TauCeti.gradeZeroEquivGradedPositiveMulQuotientOne`: the regular head is the degree-zero
+  algebra as a module over that algebra.
+* `TauCeti.GradedModuleCat.subsingleton_of_subsingleton_hom_gradedPositiveMulQuotient`:
+  the regular head detects concentrated modules when the degree-zero algebra is semisimple.
 * `TauCeti.decompose_eq_zero_of_mem_gradedPositiveMulIdeal`: over a nonnegatively graded algebra,
   the elements of `A₊e` have no component in degrees `≤ 0`.
 * `TauCeti.gradedPositiveMulQuotientLift_gradedPositiveMulQuotientMk`,
@@ -222,7 +231,7 @@ def gradedPositiveMulQuotientLift (he₀ : e ∈ 𝒜 0) {M : Type*} [AddCommGro
     gradedPositiveMulQuotient 𝒜 he₀ →ₗ[A] M :=
   Submodule.liftQ _ ((LinearMap.toSpanSingleton A M m).comp (Submodule.subtype _)) <| by
     rintro _ ⟨y, rfl⟩
-    exact hm y y.2
+    exact hm y y.property
 
 /-- The map `Ae / A₊e ⟶ M` induced by `m` sends the class of `x` to `x m`. -/
 @[simp]
@@ -265,7 +274,7 @@ theorem gradedPositiveMulQuotient_piece_eq_bot (hneg : ∀ p < 0, 𝒜 p = ⊥)
   · rw [hneg p hp, Submodule.mem_bot] at hx
     rw [hx]
     exact Submodule.zero_mem _
-  · rw [← (mem_span_singleton_iff_mul_eq_self he).1 x.2]
+  · rw [← (mem_span_singleton_iff_mul_eq_self he).1 x.property]
     exact mul_mem_gradedPositiveMulIdeal 𝒜 hp hx
 
 /-- **`Ae / A₊e` is its own degree-zero piece** for an idempotent `e` of degree zero of a
@@ -304,6 +313,81 @@ theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ �
         rw [add_sub_cancel] at h
         rw [h, hy (by omega), mul_zero]
 
+/-- The degree-zero algebra is the regular head `A / A₊`, as a module over the degree-zero
+subalgebra. The map sends a degree-zero element to its quotient class. -/
+noncomputable def gradeZeroEquivGradedPositiveMulQuotientOne :
+    SetLike.GradeZero.subalgebra 𝒜 ≃ₗ[SetLike.GradeZero.subalgebra 𝒜]
+      gradedPositiveMulQuotient 𝒜 (SetLike.one_mem_graded 𝒜) := by
+  let f : SetLike.GradeZero.subalgebra 𝒜 →ₗ[SetLike.GradeZero.subalgebra 𝒜]
+      gradedPositiveMulQuotient 𝒜 (SetLike.one_mem_graded 𝒜) :=
+    { toFun x := gradedPositiveMulQuotientMk (SetLike.one_mem_graded 𝒜)
+        ⟨x, by simp⟩
+      map_add' x y := by rw [← map_add]; rfl
+      map_smul' a x := by
+        rw [RingHom.id_apply, Subalgebra.smul_def, ← map_smul]
+        rfl }
+  refine LinearEquiv.ofBijective f ⟨?_, ?_⟩
+  · refine (LinearMap.ker_eq_bot).1 ((Submodule.eq_bot_iff _).2 fun x hx => ?_)
+    have hx0 := (gradedPositiveMulQuotientMk_eq_zero_iff
+      (SetLike.one_mem_graded 𝒜) ⟨x, by simp⟩).1 hx
+    have hz := decompose_eq_zero_of_mem_gradedPositiveMulIdeal hneg
+      (SetLike.one_mem_graded 𝒜) hx0 (q := 0) le_rfl
+    apply Subtype.ext
+    rw [decompose_of_mem_same 𝒜 x.property] at hz
+    simpa using hz
+  · intro y
+    have hy := (gradedPositiveMulQuotient_piece_zero_eq_top hneg
+      IsIdempotentElem.one (SetLike.one_mem_graded 𝒜)).ge
+      (Submodule.mem_top (x := y))
+    obtain ⟨x, hx, rfl⟩ := (mem_gradedPositiveMulQuotient_piece_iff
+      (SetLike.one_mem_graded 𝒜)).1 hy
+    exact ⟨⟨x, hx⟩, rfl⟩
+
+/-- The degree-zero equivalence sends an element to its class in the regular head. -/
+@[simp]
+theorem gradeZeroEquivGradedPositiveMulQuotientOne_apply
+    (x : SetLike.GradeZero.subalgebra 𝒜) :
+    gradeZeroEquivGradedPositiveMulQuotientOne hneg x =
+      gradedPositiveMulQuotientMk (SetLike.one_mem_graded 𝒜) ⟨x, by simp⟩ := (rfl)
+
+/-- The inverse degree-zero equivalence recovers a degree-zero representative of a quotient
+class. This also keeps the generic inverse law available after simplifying the forward map. -/
+@[simp]
+theorem gradeZeroEquivGradedPositiveMulQuotientOne_symm_apply
+    (x : SetLike.GradeZero.subalgebra 𝒜) :
+    (gradeZeroEquivGradedPositiveMulQuotientOne hneg).symm
+      (gradedPositiveMulQuotientMk (SetLike.one_mem_graded 𝒜) ⟨x, by simp⟩) = x := by
+  rw [← gradeZeroEquivGradedPositiveMulQuotientOne_apply hneg]
+  exact LinearEquiv.symm_apply_apply _ _
+
+/-- The regular head of a nonnegatively graded algebra with semisimple degree-zero part
+detects every nonzero module concentrated in a single degree. -/
+theorem GradedModuleCat.subsingleton_of_subsingleton_hom_gradedPositiveMulQuotient
+    [IsSemisimpleRing (𝒜 0)] {N : GradedModuleCat.{uA} 𝒜} (p : ℤ)
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥)
+    (h : Subsingleton (N ⟶
+      (gradedPositiveMulQuotient 𝒜 (SetLike.one_mem_graded 𝒜)).shiftObj p)) :
+    Subsingleton N := by
+  let H := gradedPositiveMulQuotient 𝒜 (SetLike.one_mem_graded 𝒜)
+  have hH : ∀ q, q ≠ p → (H.shiftObj p).grading.piece q = ⊥ := by
+    intro q hqp
+    simpa only [GradedModuleCat.shiftObj, InternalGrading.shift_piece] using
+      (gradedPositiveMulQuotient_piece_eq_bot hneg IsIdempotentElem.one
+        (SetLike.one_mem_graded 𝒜) (p := q + -p) (by omega))
+  have : IsSemisimpleRing (SetLike.GradeZero.subalgebra 𝒜) := ‹IsSemisimpleRing (𝒜 0)›
+  apply IsSemisimpleRing.subsingleton_of_subsingleton_linearMap
+    (R := SetLike.GradeZero.subalgebra 𝒜)
+  refine subsingleton_of_forall_eq 0 fun f => LinearMap.ext fun x => ?_
+  let e := gradeZeroEquivGradedPositiveMulQuotientOne hneg
+  let g : N ⟶ H.shiftObj p := GradedModuleCat.ofGradeZeroLinearMapOfConcentrated
+    hN hH (e.toLinearMap.comp f)
+  have hg : g = 0 := h.elim _ _
+  have hx : e (f x) = 0 := by
+    have hEval := GradedModuleCat.ofGradeZeroLinearMapOfConcentrated_apply
+      (M := N) (N := H.shiftObj p) hN hH (e.toLinearMap.comp f) x
+    exact hEval.symm.trans (congrArg (fun t : N ⟶ H.shiftObj p => t.hom x) hg)
+  exact e.injective (by simpa only [LinearMap.zero_apply, map_zero] using hx)
+
 /-- The head quotient is an isomorphism on each degree-zero coordinate `e • M₀`.
 No semisimplicity or splitting hypothesis is needed: the kernel `A₊e` has no degree-zero part. -/
 theorem bijective_smulPieceMap_gradedPositiveMulQuotientπ_zero {f : A}
@@ -314,7 +398,7 @@ theorem bijective_smulPieceMap_gradedPositiveMulQuotientπ_zero {f : A}
       (by simpa using gradedPositiveMulQuotientMk_surjective hf₀) 0⟩
   refine (Submodule.eq_bot_iff _).2 fun x hx => ?_
   have hx₀ : ((x : (Ideal.span {f} : Ideal A)) : A) ∈ 𝒜 0 := by
-    obtain ⟨y, hy, hxy⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.1 x.2
+    obtain ⟨y, hy, hxy⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.1 x.property
     have hy₀ := (GradedModuleCat.mem_ofIdeal_piece_iff _).1 hy
     rw [← hxy]
     simpa using SetLike.GradedMul.mul_mem he₀ hy₀
@@ -476,10 +560,10 @@ private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : Is
   rw [← hx, ← sum_support_decompose 𝒜 x, Finset.sum_mul]
   refine Ideal.sum_mem _ fun p _ => ?_
   rcases lt_trichotomy p 0 with hp | rfl | hp
-  · have h : (decompose 𝒜 x p : A) ∈ (⊥ : Submodule k A) := hneg p hp ▸ (decompose 𝒜 x p).2
+  · have h : (decompose 𝒜 x p : A) ∈ (⊥ : Submodule k A) := hneg p hp ▸ (decompose 𝒜 x p).property
     simp [(Submodule.mem_bot k).1 h]
   · simp [hx₀]
-  · exact mul_mem_gradedPositiveMulIdeal 𝒜 hp (decompose 𝒜 x p).2
+  · exact mul_mem_gradedPositiveMulIdeal 𝒜 hp (decompose 𝒜 x p).property
 
 /-- **The class of `f` in `A f / A₊f` is nonzero** for a nonzero element `f` of degree zero of a
 nonnegatively graded algebra: `A₊f` has no degree-zero component. -/
@@ -515,8 +599,8 @@ private theorem exists_eq_smul_headGenerator (i : I) (y : gradedPositiveMulQuoti
     ∃ c : k, y = c • headGenerator e he₀ i := by
   obtain ⟨x, rfl⟩ := gradedPositiveMulQuotientMk_surjective (he₀ i) y
   have hx₀ : (decompose 𝒜 (x : A) 0 : A) ∈ (Ideal.span {e i} : Ideal A) :=
-    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩ 0 x.2
-  obtain ⟨c, hc⟩ := exists_eq_smul_of_mem_zero he hspan (decompose 𝒜 (x : A) 0).2 hx₀
+    Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩ 0 x.property
+  obtain ⟨c, hc⟩ := exists_eq_smul_of_mem_zero he hspan (decompose 𝒜 (x : A) 0).property hx₀
   refine ⟨c, ?_⟩
   rw [headGenerator, ← LinearMap.map_smul_of_tower, ← sub_eq_zero, ← map_sub,
     gradedPositiveMulQuotientMk_eq_zero_iff]

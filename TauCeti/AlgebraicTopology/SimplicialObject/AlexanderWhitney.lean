@@ -135,7 +135,8 @@ private lemma alexanderWhitneyTerm_D (n r s : ℕ) (h : r + s = n) :
   rw [Fin.sum_univ_castSucc (n := r + 1), Fin.sum_univ_succ (n := s + 1)]
   simp only [alexanderWhitneyTerm_of_eq A B n r s h, tensorHom_comp_tensorHom_assoc]
   simp only [SimplicialObject.δ, ← Functor.map_comp, ← op_comp,
-    SimplexCategory.δ_last_comp_subinterval_zero, SimplexCategory.δ_zero_comp_subinterval]
+    TauCeti.SimplexCategory.δ_last_comp_subinterval,
+    TauCeti.SimplexCategory.δ_zero_comp_subinterval]
   rw [smul_add, Finset.smul_sum, add_add_add_comm]
   -- the two sums match termwise, and the two remaining terms cancel
   have key {M : Type _} [AddCommGroup M] {P P' a b Q Q' : M} (h₁ : P = P') (h₂ : Q = Q')
@@ -145,14 +146,15 @@ private lemma alexanderWhitneyTerm_D (n r s : ℕ) (h : r + s = n) :
   refine key ?_ ?_ ?_
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     have := i.isLt
-    rw [SimplexCategory.δ_comp_subinterval_zero i.castSucc
+    rw [TauCeti.SimplexCategory.δ_comp_subinterval (j := 0) i.castSucc
         (Fin.cast (by omega) (Fin.castAdd (s + 1) i)) (by simp),
-      SimplexCategory.subinterval_comp_δ_of_le (j := r) _ (by simp; omega)]
+      TauCeti.SimplexCategory.subinterval_comp_δ_of_le (j := r) _ (by simp; omega)]
     simp
   · refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [SimplexCategory.δ_succ_comp_subinterval j (Fin.cast (by omega) (Fin.natAdd (r + 1) j))
-        (by simp),
-      SimplexCategory.subinterval_zero_comp_δ_of_lt (p := r) _ (by simp; omega), smul_smul]
+    rw [TauCeti.SimplexCategory.δ_comp_subinterval (j := r) j.succ
+        (Fin.cast (by omega) (Fin.natAdd (r + 1) j)) (by simp; omega),
+      TauCeti.SimplexCategory.subinterval_comp_δ_of_lt (j := 0) (q := r) _ (by simp; omega),
+      smul_smul]
     congr 1
     simp [pow_add]
   · rw [smul_smul, ← add_smul]
@@ -230,7 +232,7 @@ lemma alexanderWhitney_naturality {A' B' : SimplicialObject C} (f : A ⟶ A') (g
     Monoidal.tensorObj_obj, Monoidal.tensorHom_app]
   simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
   refine Finset.sum_congr rfl fun p _ ↦ ?_
-  rw [tensorHom_eq_mapBifunctorMap, ι_tensorHom]
+  rw [ι_tensorHom_f]
   dsimp only [alternatingFaceMapComplex_obj_X, alternatingFaceMapComplex_map_f]
   simp only [tensorHom_comp_tensorHom_assoc, NatTrans.naturality]
 
@@ -412,7 +414,7 @@ private lemma alexanderWhitney_counit_whiskerRight :
         alexanderWhitneyCounit ▷ (alternatingFaceMapComplex C).obj A := by
   ext n : 1
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, alexanderWhitney_f_eq_sum,
-    leftUnitor_inv_f, leftUnitor'_inv]
+    leftUnitor_inv_f]
   dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorObj_obj, Monoidal.tensorUnit_obj]
   rw [alternatingFaceMapComplex_map_f, Monoidal.leftUnitor_inv_app]
   congr 1
@@ -431,7 +433,7 @@ private lemma alexanderWhitney_whiskerLeft_counit :
         (alternatingFaceMapComplex C).obj A ◁ alexanderWhitneyCounit := by
   ext n : 1
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, alexanderWhitney_f_eq_sum,
-    rightUnitor_inv_f, rightUnitor'_inv]
+    rightUnitor_inv_f]
   dsimp only [alternatingFaceMapComplex_obj_X, Monoidal.tensorObj_obj, Monoidal.tensorUnit_obj]
   rw [alternatingFaceMapComplex_map_f, Monoidal.rightUnitor_inv_app]
   congr 1

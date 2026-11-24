@@ -31,8 +31,10 @@ For `𝕜 = ℂ` this glues complex manifolds along holomorphic transitions.
 
 The glued manifold structure is unique: any `C^n` manifold structure on the glued space for which
 every canonical map is a `C^n` local diffeomorphism has the same maximal atlas, so both define the
-same `C^n` structure. A map out of the glued space is a `C^n` local diffeomorphism exactly when its
-composite with every canonical map is.
+same `C^n` structure, and more generally any charted-space structure on the glued space making
+every canonical map a `C^n` local diffeomorphism is `C^n` diffeomorphic to `D.chartedSpace H` via
+the identity map (`TopCat.GlueData.IsCompatible.chartedSpaceDiffeomorph`). A map out of the glued
+space is a `C^n` local diffeomorphism exactly when its composite with every canonical map is.
 
 The relation identifying points of different pieces is consumed through `D.ι_eq_iff_rel`; it is
 not copied into a new structure. Empty pieces need no special treatment.
@@ -52,7 +54,8 @@ not copied into a new structure. Empty pieces need no special treatment.
   tested on the pieces.
 * `TopCat.GlueData.IsCompatible.isLocalDiffeomorph_iff`: local diffeomorphisms out of the glued
   space are detected on the pieces.
-* `TopCat.GlueData.IsCompatible.maximalAtlas_chartedSpace_eq`: uniqueness of the glued manifold
+* `TopCat.GlueData.maximalAtlas_chartedSpace_eq`,
+  `TopCat.GlueData.IsCompatible.chartedSpaceDiffeomorph`: uniqueness of the glued manifold
   structure.
 
 ## References
@@ -236,15 +239,79 @@ theorem IsCompatible.isLocalDiffeomorph_iff (h : D.IsCompatible I n) {E' : Type*
   TauCeti.isLocalDiffeomorph_iff_chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding
     D.ι_jointly_surjective fun _ _ _ _ ↦ h.exists_contMDiffAt_transition
 
+variable (D) in
+omit [∀ ij, ChartedSpace H (D.V ij)] in
 /-- **Uniqueness of the glued manifold structure.** A `C^n` manifold structure on the glued space
 for which every canonical map is a `C^n` local diffeomorphism has the same maximal atlas as
 `D.chartedSpace H`. -/
-theorem IsCompatible.maximalAtlas_chartedSpace_eq (h : D.IsCompatible I n)
+theorem maximalAtlas_chartedSpace_eq
     {c : ChartedSpace H D.toGlueData.glued} (hc : letI := c; IsManifold I n D.toGlueData.glued)
     (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I n (D.toGlueData.ι i)) :
     (letI := D.chartedSpace H; maximalAtlas I n D.toGlueData.glued) =
       (letI := c; maximalAtlas I n D.toGlueData.glued) :=
   TauCeti.maximalAtlas_chartedSpaceOfIsOpenEmbedding_eq D.ι_isOpenEmbedding
-    D.ι_jointly_surjective (fun _ _ _ _ ↦ h.exists_contMDiffAt_transition) hc hιc
+    D.ι_jointly_surjective hc hιc
+
+section
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+
+namespace IsCompatible
+
+/-- **Uniqueness of the glued manifold structure up to the identity diffeomorphism.** Any
+charted-space structure `c` on `D.toGlueData.glued` for which every canonical map
+`D.toGlueData.ι i` is a `C^n` local diffeomorphism is `C^n` diffeomorphic to `D.chartedSpace H`
+via the identity map. -/
+noncomputable def chartedSpaceDiffeomorph (h : D.IsCompatible I n)
+    (c : ChartedSpace H' D.toGlueData.glued)
+    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i)) :
+    @Diffeomorph 𝕜 _ E' _ _ E _ _ H' _ H _ I' I
+      D.toGlueData.glued _ c D.toGlueData.glued _ (D.chartedSpace H) n :=
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph (I₀ := I) (I := I') (I' := I)
+    c (D.chartedSpace H) D.ι_jointly_surjective hιc
+    (fun i ↦ by let := D.chartedSpace H; exact h.isLocalDiffeomorph_ι i)
+
+/-- The underlying map of `chartedSpaceDiffeomorph` is the identity. -/
+@[simp]
+theorem coe_chartedSpaceDiffeomorph (h : D.IsCompatible I n)
+    (c : ChartedSpace H' D.toGlueData.glued)
+    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i)) :
+    ⇑(h.chartedSpaceDiffeomorph c hιc) = id :=
+  TauCeti.coe_diffeomorphOfForallIsLocalDiffeomorph ..
+
+/-- `chartedSpaceDiffeomorph` fixes every point of `D.toGlueData.glued`. -/
+@[simp]
+theorem chartedSpaceDiffeomorph_apply (h : D.IsCompatible I n)
+    (c : ChartedSpace H' D.toGlueData.glued)
+    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i))
+    (x : D.toGlueData.glued) :
+    h.chartedSpaceDiffeomorph c hιc x = x :=
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_apply ..
+
+/-- The inverse of `chartedSpaceDiffeomorph` fixes every point of `D.toGlueData.glued`. -/
+@[simp]
+theorem chartedSpaceDiffeomorph_symm_apply (h : D.IsCompatible I n)
+    (c : ChartedSpace H' D.toGlueData.glued)
+    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i))
+    (x : D.toGlueData.glued) :
+    @Diffeomorph.symm 𝕜 _ E' _ _ E _ _ H' _ H _ I' I
+      D.toGlueData.glued _ c D.toGlueData.glued _ (D.chartedSpace H) n
+      (h.chartedSpaceDiffeomorph c hιc) x = x :=
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_symm_apply ..
+
+/-- Forgetting smoothness of `chartedSpaceDiffeomorph` gives `Equiv.refl _`. -/
+@[simp]
+theorem chartedSpaceDiffeomorph_toEquiv (h : D.IsCompatible I n)
+    (c : ChartedSpace H' D.toGlueData.glued)
+    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I' n (D.toGlueData.ι i)) :
+    @Diffeomorph.toEquiv 𝕜 _ E' _ _ E _ _ H' _ H _ I' I
+      D.toGlueData.glued _ c D.toGlueData.glued _ (D.chartedSpace H) n
+      (h.chartedSpaceDiffeomorph c hιc) = Equiv.refl D.toGlueData.glued :=
+  TauCeti.diffeomorphOfForallIsLocalDiffeomorph_toEquiv ..
+
+end IsCompatible
+
+end
 
 end TopCat.GlueData

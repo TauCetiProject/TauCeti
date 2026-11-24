@@ -164,7 +164,7 @@ theorem relIndex_inf_span_eq_natCard_range (b c : Basis ι ℚ V) {p : ℕ} [NeZ
     ext x
     rw [AddSubgroup.mem_addSubgroupOf, Submodule.mem_toAddSubgroup, Submodule.mem_inf,
       AddMonoidHom.mem_ker, b.mem_span_iff_repr_mem (R := ℤ), funext_iff]
-    refine (and_iff_left x.2).trans <| forall_congr' fun i ↦ ?_
+    refine (and_iff_left x.property).trans <| forall_congr' fun i ↦ ?_
     rw [Pi.zero_apply, hψ, ZMod.intCast_zmod_eq_zero_iff_dvd]
     have hp₀ : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne p)
     constructor
@@ -207,7 +207,7 @@ theorem isNeighbor_iff_isNeighborBasisChange [NeZero p] (b c : Basis ι ℚ V)
     L.IsNeighbor M p ↔ (b.toMatrix c).IsNeighborBasisChange p := by
   have hp₀ : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne p)
   -- `[L : L ∩ M] = |det (b.toMatrix c)| · [M : L ∩ M]`.
-  have hdet := Submodule.IsLattice.relIndex_span_eq_abs_det_mul (N := L.carrier ⊓ M.carrier) b c
+  have hdet := Submodule.IsFullLattice.relIndex_span_eq_abs_det_mul (N := L.carrier ⊓ M.carrier) b c
     (hL ▸ inf_le_left) (hM ▸ inf_le_right)
   rw [← hL, ← hM, Basis.det_apply] at hdet
   have hcard (hp : ∀ i j, ((p : ℚ) * b.toMatrix c i j).den = 1) :

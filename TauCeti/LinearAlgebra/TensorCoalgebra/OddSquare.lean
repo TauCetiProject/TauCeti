@@ -18,15 +18,15 @@ case `q = r = 1` is the one the `A∞` sign audit consumes.
 
 Homogeneity is genuinely needed: `TauCeti.ReducedTensorWords.IsGradedCoderivation G q` is the
 `q`-twisted co-Leibniz identity alone and does not by itself constrain degrees. The oddness comes
-from `TauCeti.LinearMap.IsHomogeneous.map_koszulTwist_comp`, which turns the usual calculation on
+from `LinearMap.IsHomogeneous.map_koszulTwist_comp`, which turns the usual calculation on
 a homogeneous word into an equality of endomorphisms.
 
 ## Main results
 
-* `TauCeti.LinearMap.IsHomogeneous.anticommute_map_koszulTwist`: a homogeneous endomorphism of
+* `LinearMap.IsHomogeneous.anticommute_map_koszulTwist`: a homogeneous endomorphism of
   reduced tensor words anticommutes with the letterwise Koszul involution as soon as the sign
   `(-1)^(q * r)` of its degree against the twist parameter is `-1`.
-* `TauCeti.LinearMap.IsHomogeneous.anticommute_map_koszulTwist_one`: the degree-one case, at twist
+* `LinearMap.IsHomogeneous.anticommute_map_koszulTwist_one`: the degree-one case, at twist
   parameter one.
 * `TauCeti.ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self_of_isHomogeneous`:
   the square of such a homogeneous graded coderivation is an ordinary coderivation.
@@ -45,17 +45,15 @@ open scoped BigOperators DirectSum TensorProduct
 
 universe uR uM
 
-namespace TauCeti
-
 namespace LinearMap.IsHomogeneous
 
-open ReducedTensorWords
+open TauCeti TauCeti.ReducedTensorWords
 
 variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 
 /-- A homogeneous endomorphism of degree `r` anticommutes with the letterwise Koszul twist of
 parameter `q`, provided the sign `(-1)^(q * r)` it commutes past that twist with is `-1`. -/
-theorem anticommute_map_koszulTwist {G : InternalGrading R M}
+theorem anticommute_map_koszulTwist {G : InternalGrading R M ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} {q r : ℤ}
     (hb : LinearMap.IsHomogeneous b (gradedPiece G) (gradedPiece G) r)
     (hqr : (((q * r).negOnePow : ℤ) : R) = -1) :
@@ -75,7 +73,7 @@ theorem anticommute_map_koszulTwist {G : InternalGrading R M}
 
 /-- A homogeneous endomorphism of degree one anticommutes with the letterwise Koszul twist of
 parameter one. -/
-theorem anticommute_map_koszulTwist_one {G : InternalGrading R M}
+theorem anticommute_map_koszulTwist_one {G : InternalGrading R M ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : LinearMap.IsHomogeneous b (gradedPiece G) (gradedPiece G) 1) :
     b ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist 1) +
@@ -83,6 +81,8 @@ theorem anticommute_map_koszulTwist_one {G : InternalGrading R M}
   hb.anticommute_map_koszulTwist (by norm_num)
 
 end LinearMap.IsHomogeneous
+
+namespace TauCeti
 
 namespace ReducedTensorWords.IsGradedCoderivation
 
@@ -95,7 +95,7 @@ sign `(-1)^(q * r)` of its degree `r` against the twist parameter `q` is `-1`: h
 supplies the anticommutation with the Koszul twist that cancels the two mixed terms in the
 co-Leibniz expansion. A caller holding homogeneity of the letter component instead obtains
 `hhom` from `TauCeti.ReducedTensorWords.IsGradedCoderivation.isHomogeneous`. -/
-theorem isCoderivation_comp_self_of_isHomogeneous {G : InternalGrading R M}
+theorem isCoderivation_comp_self_of_isHomogeneous {G : InternalGrading R M ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M} {q r : ℤ}
     (hb : IsGradedCoderivation G q b)
     (hhom : LinearMap.IsHomogeneous b (gradedPiece G) (gradedPiece G) r)
@@ -104,7 +104,7 @@ theorem isCoderivation_comp_self_of_isHomogeneous {G : InternalGrading R M}
   hb.isCoderivation_comp_self (hhom.anticommute_map_koszulTwist hqr)
 
 /-- The square of a homogeneous degree-one graded coderivation is an ordinary coderivation. -/
-theorem isCoderivation_comp_self_of_isHomogeneous_one {G : InternalGrading R M}
+theorem isCoderivation_comp_self_of_isHomogeneous_one {G : InternalGrading R M ℤ}
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsGradedCoderivation G 1 b)
     (hhom : LinearMap.IsHomogeneous b (gradedPiece G) (gradedPiece G) 1) :

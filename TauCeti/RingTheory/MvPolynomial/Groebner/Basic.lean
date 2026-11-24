@@ -17,11 +17,12 @@ multivariate polynomials, and Gröbner bases of an ideal, and proves that remain
 a Gröbner basis decide ideal membership.
 
 * `MonomialOrder.IsRemainder m f B r`: `r` is a remainder of `f` on division by `B`, i.e.
-  `f = ∑ g_b * b + r` where each product `g_b * b` has degree at most that of `f`, and no monomial
+  `f = ∑ g_b * b + r` where `deg b + deg g_b ≤ deg f` for each `b`, and no monomial
   of `r` is divisible by the leading monomial of a nonzero `b ∈ B`. The degree condition is
-  stated with `MonomialOrder.withBotDegree`, so that the zero polynomial has degree `⊥`, and as
-  the inequality `deg b + deg g_b ≤ deg f`; the remainder condition only concerns divisibility,
-  not a comparison of degrees.
+  stated with `MonomialOrder.withBotDegree`, so that the zero polynomial has degree `⊥`. It bounds
+  the sum of the degrees of the two factors, which over a ring with zero divisors is stronger than
+  bounding the degree of the product `g_b * b`; the remainder condition only concerns
+  divisibility, not a comparison of degrees.
 * `MonomialOrder.IsGroebnerBasis m G I`: `G` is a subset of the ideal `I` whose leading terms
   span the same ideal as the leading terms of all elements of `I`.
 
@@ -48,7 +49,16 @@ a Gröbner basis decide ideal membership.
 
 None of these results assume that the coefficients form a field: the statements needing division
 assume that the nonzero members of the divisor set have unit leading coefficients, which over a
-field is discharged by `MonomialOrder.isUnit_leadingCoeff`.
+field is discharged by `MonomialOrder.isUnit_leadingCoeff`. The definitions make sense over a
+commutative semiring, and so do `exists_degree_le_degree`,
+`isGroebnerBasis_iff_forall_exists_degree_le_degree` and `image_leadingTerm`. The existence of
+remainders and the results on membership, uniqueness and generation (`exists_isRemainder`,
+`sub_mem_iff`, `remainder_eq_zero_iff_mem`, `ideal_eq_span`, `isGroebnerBasis_iff_isRemainder_zero`
+and their relatives) are stated over a commutative ring, and need not hold over a semiring. For
+example, in `ℕ[x]` the set `{x + 1}` satisfies `IsGroebnerBasis` for the ideal `(x, x + 1)` (both
+leading-term ideals are `(x)`) but does not generate it, which refutes `ideal_eq_span` and
+`isGroebnerBasis_iff_isRemainder_zero`; and `x` has no remainder on division by `{x + 1}`, which
+refutes `exists_isRemainder`.
 
 ## References
 
@@ -187,7 +197,7 @@ theorem leadingTerm_mem_span_leadingTerm_of_isRemainder_zero (h : m.IsRemainder 
         exact le_antisymm ((m.le_degree hb).trans m.toSyn_degree_mul_le)
           ((add_comm _ _).trans_le hle)
     rw [heq, coeff_mul_of_degree_add, ← monomial_mul_monomial]
-    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨b, b.2, rfl⟩)
+    exact Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨b, b.property, rfl⟩)
   · rw [notMem_support_iff.1 hb, map_zero]
     exact zero_mem _
 
@@ -338,7 +348,7 @@ variable [CommRing R] {m} {f f₁ f₂ r r₁ r₂ : MvPolynomial σ R} {B G : S
 theorem IsRemainder.sub_mem_span (h : m.IsRemainder f B r) : f - r ∈ Ideal.span B := by
   obtain ⟨g, hf, -⟩ := h.exists_linearCombination
   rw [hf, add_sub_cancel_right, Finsupp.linearCombination_apply]
-  exact Submodule.sum_mem _ fun b _ ↦ Submodule.smul_mem _ _ (Ideal.subset_span b.2)
+  exact Submodule.sum_mem _ fun b _ ↦ Submodule.smul_mem _ _ (Ideal.subset_span b.property)
 
 /-- **Existence of remainders.** If every nonzero element of `B` has a unit leading coefficient,
 then every polynomial has a remainder on division by `B`. -/
@@ -354,11 +364,11 @@ theorem exists_isRemainder (hB : ∀ b ∈ B, b ≠ 0 → IsUnit (m.leadingCoeff
   · rwa [Finsupp.linearCombination_mapDomain]
   by_cases hb0 : (b : MvPolynomial σ R) = 0
   · simp [hb0]
-  have hgb : g.mapDomain (Set.inclusion Set.sdiff_subset) b = g ⟨b, b.2, hb0⟩ :=
-    Finsupp.mapDomain_apply_of_injective (Set.inclusion_injective _) g ⟨b, b.2, hb0⟩
+  have hgb : g.mapDomain (Set.inclusion Set.sdiff_subset) b = g ⟨b, b.property, hb0⟩ :=
+    Finsupp.mapDomain_apply_of_injective (Set.inclusion_injective _) g ⟨b, b.property, hb0⟩
   rw [hgb, ← map_add, ← withBotDegree_mul_of_left_mem_nonZeroDivisors
-    (hB b b.2 hb0).mem_nonZeroDivisors, withBotDegree_le_withBotDegree_iff]
-  exact ⟨hdeg ⟨b, b.2, hb0⟩, fun h ↦ absurd h hf⟩
+    (hB b b.property hb0).mem_nonZeroDivisors, withBotDegree_le_withBotDegree_iff]
+  exact ⟨hdeg ⟨b, b.property, hb0⟩, fun h ↦ absurd h hf⟩
 
 /-- **Remainders modulo a Gröbner basis.** If `r₁` and `r₂` are remainders of `f₁` and `f₂` on
 division by a Gröbner basis of `I`, then `f₁ - f₂ ∈ I` if and only if `r₁ = r₂`. -/

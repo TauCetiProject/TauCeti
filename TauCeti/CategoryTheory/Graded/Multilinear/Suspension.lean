@@ -44,7 +44,8 @@ variable (R : Type w) [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R 
 /-- Degree-one path operations on suspended Hom modules. An input of suspended degree `d i`
 is an original morphism of degree `d i + 1`; the output has original degree `∑ i, d i + 2`. -/
 abbrev SuspendedPathOperation := ∀ d : Fin n → ℤ,
-  MultilinearMap R (fun i : Fin n ↦ grHom R (X i.rev.castSucc) (X i.rev.succ) (d i + 1))
+  MultilinearMap (RingHom.id R) (fun i : Fin n ↦ grHom R (X i.rev.castSucc) (X i.rev.succ) (d i +
+      1))
     (grHom R (X 0) (X (Fin.last n)) (((∑ i, d i) + 1) + 1))
 
 /-- Suspension and unsuspension give mutually inverse linear correspondences between

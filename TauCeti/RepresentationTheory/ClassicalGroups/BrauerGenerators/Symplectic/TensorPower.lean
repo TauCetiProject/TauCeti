@@ -182,6 +182,7 @@ private theorem symplecticCupCapAt_map_tprod {i j : Fin d} (hij : i ≠ j)
   conv_lhs => rw [(PiTensorProduct.tprod k).map_update_smul, Function.update_comm hij,
     (PiTensorProduct.tprod k).map_update_smul, Function.update_comm (Ne.symm hij)]
   rw [smul_smul, mul_comm]
+  simp only [RingHom.id_apply]
 
 /-- **The generator on a pure tensor**: the two chosen factors are contracted against one another
 by the standard alternating form, and the two slots are re-expanded through the cup. -/
@@ -263,6 +264,7 @@ private theorem symplecticCupCapAt_self_map_tprod (i : Fin d) (a b x y : Fin n �
     · rw [Function.update_of_ne hi]
       simp [symplecticCupCapStrand, hi]
   rw [hval, (PiTensorProduct.tprod k).map_update_smul]
+  simp only [RingHom.id_apply]
 
 /-- **The degenerate value at coincident strands**: at `i = j` the cap and the cup land on the same
 slot, and the second plug of `TauCeti.symplecticCupCapAt` is dead. The operator is then *not* the

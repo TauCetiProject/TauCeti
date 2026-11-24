@@ -190,8 +190,7 @@ private theorem rightLeftSelfRecut_toRectangleDecomposition
       D.recutOfIsEmpty (D.hasOneCommonSide_of_right_eq_left hcommon hother)
         hrectangle hpentagon := by
   apply GridRectangleDecomposition.ext <;>
-    simp [rightLeftSelfRecut, GridRectanglePentagonDecomposition.pentagon,
-      (D.rightLeftSelfRecut_geometry hcommon hother hrectangle hpentagon hturn).2.1]
+    simp [rightLeftSelfRecut, GridRectanglePentagonDecomposition.pentagon]
 
 /-- The common-terminal-side recut of a terminal self-pair source ends its rectangle where its
 pentagon starts, on the source's initial rectangle side. -/

@@ -12,7 +12,6 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattic
 
 import Mathlib.RingTheory.Complex
 import TauCeti.Analysis.ExteriorPower.Nonarchimedean
-import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
@@ -44,7 +43,7 @@ norms `N(J k)` appear both in the archimedean change-of-basis determinant from t
 `W.relativeSubspaceArakelovHeight`.
 
 For the kernel of a `K`-matrix `A`, combining Schmidt's identity with Hodge duality of heights
-(`Submodule.subspaceHeight_euclideanDual`) expresses the covolume of the lattice of integral
+(`Matrix.subspaceHeight_ker_mulVecLin`) expresses the covolume of the lattice of integral
 solutions of `A x = 0` directly through the height of the row space of `A`, without any rank
 assumption on `A`. This is the arithmetic input to Siegel's lemma and its basis forms over number
 fields.
@@ -216,7 +215,7 @@ private theorem finprod_iSup_plucker_of_pseudoBasis {W : Submodule K (ι → K)}
       ∏ k : Fin p, (Ideal.absNorm (J k) : ℝ) := by
   have hsupp (k : Fin p) : Function.HasFiniteMulSupport fun v : FinitePlace K ↦
       (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ multiplicity v.maximalIdeal.asIdeal (J k) :=
-    FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (hJ k) fun I ↦ (Ideal.absNorm I : ℝ)
+    FinitePlace.hasFiniteMulSupport_fun_pow_multiplicity (J k) fun I ↦ (Ideal.absNorm I : ℝ)
   simp_rw [iSup_apply_plucker_of_pseudoBasis b hJ hW]
   rw [finprod_prod_comm _ _ fun k _ ↦ hsupp k]
   exact Finset.prod_congr rfl fun k _ ↦ FinitePlace.finprod_absNorm_pow_multiplicity (R := ℝ) (hJ k)
@@ -318,18 +317,18 @@ omit [NumberField K] in
 private theorem det_realPlaceGramMatrix {W : Submodule K (ι → K)} {p : ℕ} (b : Basis (Fin p) K W)
     (w : {w : InfinitePlace K // w.IsReal}) :
     LinearMap.det (Matrix.toLin' (realPlaceGramMatrix b w)) =
-      (∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.1.mult := by
-  let xr : Fin p → ι → ℝ := fun k i ↦ embedding_of_isReal w.2 ((b k : ι → K) i)
+      (∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.val.mult := by
+  let xr : Fin p → ι → ℝ := fun k i ↦ embedding_of_isReal w.property ((b k : ι → K) i)
   have hmat : realPlaceGramMatrix b w = Matrix.of xr * (Matrix.of xr).transpose := by
     ext k₂ k₁
     simp [realPlaceGramMatrix, xr, Matrix.mul_apply]
   rw [LinearMap.det_toLin', hmat, det_mul_transpose_eq_sum_plucker_mul, mult_isReal, pow_one]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  have hp : plucker xr s = embedding_of_isReal w.2 (plucker (fun k ↦ (b k : ι → K)) s) :=
-    plucker_map (embedding_of_isReal w.2) _ s
+  have hp : plucker xr s = embedding_of_isReal w.property (plucker (fun k ↦ (b k : ι → K)) s) :=
+    plucker_map (embedding_of_isReal w.property) _ s
   have hnorm :
-      ‖embedding_of_isReal w.2 (plucker (fun k ↦ (b k : ι → K)) s)‖ =
-        ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ := by
+      ‖embedding_of_isReal w.property (plucker (fun k ↦ (b k : ι → K)) s)‖ =
+        ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ := by
     rw [norm_embedding_of_isReal, norm_embedding_eq]
   rw [hp, ← hnorm, Real.norm_eq_abs, sq_abs, sq]
 
@@ -339,8 +338,8 @@ omit [NumberField K] in
 private theorem det_restrictScalars_complexPlaceGramMatrix {W : Submodule K (ι → K)} {p : ℕ}
     (b : Basis (Fin p) K W) (w : {w : InfinitePlace K // w.IsComplex}) :
     LinearMap.det ((Matrix.toLin' (complexPlaceGramMatrix b w)).restrictScalars ℝ) =
-      (∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.1.mult := by
-  let xc : Fin p → ι → ℂ := fun k i ↦ w.1.embedding ((b k : ι → K) i)
+      (∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.val.mult := by
+  let xc : Fin p → ι → ℂ := fun k i ↦ w.val.embedding ((b k : ι → K) i)
   have hmat :
       complexPlaceGramMatrix b w = (Matrix.of xc * (Matrix.of xc).conjTranspose).transpose := by
     ext k₂ k₁
@@ -350,11 +349,11 @@ private theorem det_restrictScalars_complexPlaceGramMatrix {W : Submodule K (ι 
     Complex.normSq_eq_norm_sq, mult_isComplex]
   have hsum :
       (∑ s, plucker xc s * star (plucker xc s)) =
-        ((∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2 : ℝ) : ℂ) := by
+        ((∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2 : ℝ) : ℂ) := by
     push_cast
     refine Finset.sum_congr rfl fun s _ ↦ ?_
-    have hp : plucker xc s = w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s) :=
-      plucker_map w.1.embedding _ s
+    have hp : plucker xc s = w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s) :=
+      plucker_map w.val.embedding _ s
     rw [hp, RCLike.star_def, Complex.mul_conj, Complex.normSq_eq_norm_sq, Complex.ofReal_pow]
   rw [hsum, Complex.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
 
@@ -370,9 +369,9 @@ private theorem det_archimedeanGramEndo {W : Submodule K (ι → K)} {p : ℕ} (
   simp_rw [det_realPlaceGramMatrix, det_restrictScalars_complexPlaceGramMatrix]
   have hcomp :
       (∏ w : {w : InfinitePlace K // ¬w.IsReal},
-        (∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.1.mult) =
+        (∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.val.mult) =
       ∏ w : {w : InfinitePlace K // w.IsComplex},
-        (∑ s, ‖w.1.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.1.mult :=
+        (∑ s, ‖w.val.embedding (plucker (fun k ↦ (b k : ι → K)) s)‖ ^ 2) ^ w.val.mult :=
     Fintype.prod_equiv (Equiv.subtypeEquivRight fun _ ↦ not_isReal_iff_isComplex) _ _ fun _ ↦ rfl
   rw [← hcomp]
   exact Fintype.prod_subtype_mul_prod_subtype IsReal fun w : InfinitePlace K ↦
@@ -608,8 +607,7 @@ namespace Matrix
 
 open Set Submodule NumberField
 
-variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Finite m] [Fintype ι]
-  [LinearOrder ι]
+variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Fintype ι] [LinearOrder ι]
 
 open scoped Classical in
 /-- **The covolume of the lattice of integral solutions of `A x = 0` over a number field.**
@@ -621,9 +619,7 @@ theorem covolume_integerLattice_ker_mulVecLin (A : Matrix m ι K) :
     ZLattice.covolume (LinearMap.ker A.mulVecLin).integerLattice =
       ((2⁻¹ : ℝ) ^ nrComplexPlaces K * √|discr K|) ^ finrank K (LinearMap.ker A.mulVecLin) *
         (span K (range A.row)).subspaceHeight ^ finrank ℚ K := by
-  cases nonempty_fintype m
-  rw [Submodule.covolume_integerLattice, ← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy,
-    subspaceHeight_euclideanDual, generatedBy_eq_span_rows]
+  rw [Submodule.covolume_integerLattice, A.subspaceHeight_ker_mulVecLin]
 
 end Matrix
 

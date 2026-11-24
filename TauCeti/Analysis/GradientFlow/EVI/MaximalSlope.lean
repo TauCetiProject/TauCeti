@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Monotone
 public import TauCeti.Analysis.GradientFlow.EVI.Basic
 public import TauCeti.Analysis.GradientFlow.MaximalSlope.Basic
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # EVI solutions are curves of maximal slope
@@ -505,7 +505,7 @@ private theorem absolutelyContinuousOnInterval_and_ae (h : IsEVISolution lam φ 
     have hd : dist (u x) (u y) ≤ K * (y - x) := by
       have := hK.dist_le_mul x ⟨hx.1, by linarith [hx.2]⟩ y ⟨hy.1, by linarith [hy.2]⟩
       rwa [Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hxy), neg_sub] at this
-    have hK0 : (0 : ℝ) ≤ K := K.2
+    have hK0 : (0 : ℝ) ≤ K := K.property
     have hyx : y - x ≤ t - s := by linarith [hx.1, hy.2]
     have hd2 : dist (u x) (u y) ^ 2 ≤ (K * (y - x)) ^ 2 := pow_le_pow_left₀ dist_nonneg hd 2
     rw [Real.dist_eq, Real.dist_eq, abs_of_nonneg (sub_nonneg.2 h₂),

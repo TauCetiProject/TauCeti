@@ -48,6 +48,7 @@ amalgamated products and HNN extensions along centralizers.
   commuting, stays nontrivial after multiplying by a fixed element, for all large `k`.
 * `Group.isBP_iff_isMulTorsionFree`: a commutative group is a BP group exactly when it is
   torsion-free.
+* `Group.not_isBP_of_finite`: a nontrivial finite group, such as `ℤ/2`, is not a BP group.
 * `Group.IsBP.exists_forall_mul_prod_ne_one`: in a CSA group with the big powers property,
   alternating products of big powers of `u ≠ 1` are nontrivial.
 
@@ -253,6 +254,13 @@ end IsBP
 theorem isBP_of_subsingleton [Subsingleton G] : IsBP G :=
   fun _ _ hu _ => ((hu 0) (Subsingleton.elim _ _)).elim
 
+/-- A nontrivial finite group, such as `ℤ/2`, is not a BP group: a nonidentity element has finite
+order, so its powers are trivial for arbitrarily large exponents. -/
+theorem not_isBP_of_finite [Finite G] [Nontrivial G] : ¬IsBP G := fun h => by
+  have := h.isMulTorsionFree
+  obtain ⟨g, hg⟩ := exists_ne (1 : G)
+  exact not_isOfFinOrder_of_isMulTorsionFree hg (isOfFinOrder_of_finite g)
+
 /-- A commutative group is a BP group exactly when it is torsion-free: consecutive entries always
 commute, so only singleton tuples need to be checked. -/
 theorem isBP_iff_isMulTorsionFree {A : Type*} [CommGroup A] : IsBP A ↔ IsMulTorsionFree A := by
@@ -285,15 +293,15 @@ private theorem exists_forall_conjProd_ne_one (hBP : IsBP G) (hG : IsCSA G) {u :
   obtain ⟨n, hn⟩ : ∃ n, L.length = n + 1 :=
     Nat.exists_eq_succ_of_ne_zero (by simpa using hL)
   let w : G × ℤ → G := fun p => p.1 * u ^ p.2 * p.1⁻¹
-  obtain ⟨N, hN⟩ := hBP (fun i : Fin (n + 1) => w (L[i.1]'(by omega)))
+  obtain ⟨N, hN⟩ := hBP (fun i : Fin (n + 1) => w (L[i.val]'(by omega)))
     (fun i => by
       simpa [w, conj_eq_one_iff, IsMulTorsionFree.zpow_eq_one_iff] using
         ⟨hu, he _ (List.getElem_mem _)⟩)
     (fun i => hG.not_commute_conj_zpow (he _ (List.getElem_mem _))
-      (he _ (List.getElem_mem _)) (List.isChain_iff_getElem.1 hc i.1 (by omega)))
+      (he _ (List.getElem_mem _)) (List.isChain_iff_getElem.1 hc i.val (by omega)))
   refine ⟨N, fun k hk => ?_⟩
   have h := hN (fun _ => k) (fun _ => hk)
-  have key : (List.ofFn fun i : Fin (n + 1) => w (L[i.1]'(by omega)) ^ k) =
+  have key : (List.ofFn fun i : Fin (n + 1) => w (L[i.val]'(by omega)) ^ k) =
       L.map fun p => p.1 * u ^ ((k : ℤ) * p.2) * p.1⁻¹ := by
     rw [List.ofFn_congr hn.symm]
     simp only [Fin.val_cast]

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.Basic
 public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import Mathlib.Analysis.Calculus.FDeriv.Star
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -58,6 +59,7 @@ AINTLIB `LeanModularForms` project
 
 * `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
   at `s • τ`, is `denom s τ ^ k * f τ`.
+* `MDifferentiableAt.slash`: the slash preserves holomorphy at a point.
 * `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
   under the weight-`k` slash action.
 * `SlashAction.slash_eq_of_rightCoset_eq`: slashing a `H₁`-invariant element by `x` depends
@@ -90,7 +92,7 @@ public section
 
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane
 
-open scoped MatrixGroups ModularForm Pointwise
+open scoped Manifold MatrixGroups ModularForm Pointwise
 
 /-- **Every element of `𝒮ℒ` has positive determinant**: it is the image of a matrix of
 determinant `1`.
@@ -217,9 +219,7 @@ by the scalar `(-1)^k`. -/
 @[simp]
 theorem SL_slash_S_slash_S (k : ℤ) (f : ℍ → ℂ) :
     (f ∣[k] ModularGroup.S) ∣[k] ModularGroup.S = (-1 : ℂ) ^ k • f := by
-  have hS : ModularGroup.S * ModularGroup.S = (-1 : SL(2, ℤ)) :=
-    Subtype.ext (by simpa using ModularGroup.S_mul_S_eq)
-  rw [← SlashAction.slash_mul, hS, SL_slash_neg, SlashAction.slash_one]
+  rw [← SlashAction.slash_mul, ModularGroup.S_mul_S_eq, SL_slash_neg, SlashAction.slash_one]
 
 /-- Invariance under an element of `SL(2, ℤ)` passes to all its integer powers: the
 `SL(2, ℤ)` form of `slash_zpow_eq_self_of_slash_eq`. -/
@@ -267,6 +267,43 @@ theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul (s : SL(2, �
   rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp),
     Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
   simp [mul_comm]
+
+/-- The slash of a positive-determinant matrix preserves holomorphy at a point. -/
+private theorem mdifferentiableAt_slash_of_det_pos (k : ℤ) {g : GL (Fin 2) ℝ}
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) {f : ℍ → ℂ} {τ : ℍ}
+    (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (g • τ)) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (f ∣[k] g) τ := by
+  rw [ModularForm.slash_def_of_det_pos k hg]
+  exact ((hf.comp τ (mdifferentiable_smul hg τ)).mul mdifferentiableAt_const).mul
+    (mdifferentiable_denom_zpow g _ τ)
+
+/-- The slash of the negative-determinant matrix `J` preserves holomorphy at a point: near `τ` it
+is `z ↦ conj (f (-conj z))`. -/
+private theorem mdifferentiableAt_slash_J (k : ℤ) {f : ℍ → ℂ} {τ : ℍ}
+    (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (J • τ)) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (f ∣[k] J) τ := by
+  rw [mdifferentiableAt_iff, coe_J_smul] at hf
+  rw [mdifferentiableAt_iff]
+  have h := (hf.comp _ differentiable_neg.differentiableAt).star_star
+  simp only [starRingEnd_apply, star_star] at h
+  refine h.congr_of_eventuallyEq ?_
+  filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds τ.im_pos] with x hx
+  simp [ModularForm.slash_def, J_smul, ofComplex_apply_of_im_pos hx]
+
+/-- **The slash preserves holomorphy at a point**: `f ∣[k] g` is holomorphic at `τ` if `f` is
+holomorphic at `g • τ`. This is the pointwise form of Mathlib's `MDifferentiable.slash`. -/
+theorem _root_.MDifferentiableAt.slash {f : ℍ → ℂ} {g : GL (Fin 2) ℝ} {τ : ℍ}
+    (hf : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f (g • τ)) (k : ℤ) :
+    MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (f ∣[k] g) τ := by
+  rcases g.det_ne_zero.lt_or_gt with hg | hg
+  · -- Factor through `J` so that the remaining matrix `J * g` has positive determinant.
+    have hJg : g = J * (J * g) := by simp [← mul_assoc, ← sq]
+    rw [hJg, SlashAction.slash_mul]
+    refine mdifferentiableAt_slash_of_det_pos k ?_ (mdifferentiableAt_slash_J k ?_)
+    · rw [← Matrix.GeneralLinearGroup.val_det_apply, map_mul, Units.val_mul, det_J]
+      simpa using hg
+    · rwa [← mul_smul, ← mul_assoc, ← sq, J_sq, one_mul]
+  · exact mdifferentiableAt_slash_of_det_pos k hg hf
 
 /-- **Scalars pass through the slash of a positive-determinant matrix.** Mathlib's
 `ModularForm.smul_slash` carries the twist `σ A c`, which is complex conjugation when the
@@ -531,7 +568,7 @@ lemma SlashInvariantForm.restrict_trace (hΓ' : Γ' ≤ Γ)
   have he : Function.Bijective e := by
     refine ⟨e.injective, fun q ↦ ?_⟩
     induction q using QuotientGroup.induction_on with | H h => ?_
-    obtain ⟨x, hx, g, hg, hxg⟩ := hmul h h.2
+    obtain ⟨x, hx, g, hg, hxg⟩ := hmul h h.property
     refine ⟨QuotientGroup.mk ⟨x, hx⟩, Quotient.sound' ?_⟩
     rw [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf]
     simpa [← hxg] using hg
@@ -614,7 +651,7 @@ theorem exists_mem_lowerLeft_ne_zero [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
     simp only [coe_mul, ModularGroup.S_inv, coe_neg, coe_S, coe_T_zpow]
     norm_num [Matrix.mul_apply, Fin.sum_univ_two]
   rw [← map_pow, mapGL_coe_matrix, map_apply_coe]
-  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, he]
+  simp only [Matrix.map_apply, he]
   simp [algebraMap_int_eq, hn.ne']
 
 /-- A slash-invariant form of nonzero weight whose group has finite-index intersection with the

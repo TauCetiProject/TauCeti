@@ -87,7 +87,7 @@ private theorem valuation_mul_inv_le_one (v : HeightOneSpectrum O) (C D : Variab
     v.valuation K (C * D⁻¹).r ≤ 1 ∧ v.valuation K (C * D⁻¹).s ≤ 1 ∧
       v.valuation K (C * D⁻¹).t ≤ 1 := by
   have hD : 0 < v.valuation K D.u :=
-    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+    pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 := by
     rw [VariableChange.mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
   have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : K) := by
@@ -113,7 +113,7 @@ private theorem isMinimal_smul_of_valuation_sub_le (v : HeightOneSpectrum O)
     IsMinimal (Localization.AtPrime v.asIdeal) (C • W) := by
   have hv := v.integers_valuation_of_isLocalizationAtPrime (Localization.AtPrime v.asIdeal) (K := K)
   have hD : 0 < v.valuation K D.u :=
-    zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+    pos_iff_ne_zero.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
   have hBu : ((C * D⁻¹).u : K) = C.u / D.u := by
     rw [VariableChange.mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
   obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht
@@ -213,10 +213,10 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
       WithZero.exp (-obstructionExponentAt O v W) ^ m := by
   let S := (hasFiniteMulSupport_pow_obstructionExponentAt_toNat O W).toFinset
   have hloc (v : S) : ∃ b : O,
-      v.1.valuation K (algebraMap O K b - x v) ≤
-        WithZero.exp (-(m * (obstructionExponentAt O v.1 W).toNat : ℤ)) := by
-    obtain ⟨b, hb⟩ := v.1.exists_valuation_sub_lt_of_integer (hx v)
-      (Units.mk0 (WithZero.exp (-(m * (obstructionExponentAt O v.1 W).toNat : ℤ)))
+      v.val.valuation K (algebraMap O K b - x v) ≤
+        WithZero.exp (-(m * (obstructionExponentAt O v.val W).toNat : ℤ)) := by
+    obtain ⟨b, hb⟩ := v.val.exists_valuation_sub_lt_of_integer (hx v)
+      (Units.mk0 (WithZero.exp (-(m * (obstructionExponentAt O v.val W).toNat : ℤ)))
         WithZero.exp_ne_zero)
     exact ⟨b, hb.le⟩
   choose b hb using hloc
@@ -322,7 +322,7 @@ private theorem ord_eq_obstructionExponentAt_of_coe_weierstrassDefectIdeal_eq
   have hcount (v : HeightOneSpectrum O) : obstructionExponentAt O v W =
       (v.valuation K).ord u + if v₀ = v then 1 else 0 := by
     have h := congrArg (FractionalIdeal.count K v) hu
-    rwa [FractionalIdeal.count_coe K v (weierstrassDefectIdeal_ne_bot O W),
+    rwa [FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot O W),
       count_weierstrassDefectIdeal_eq_obstructionExponentAt,
       FractionalIdeal.count_mul K v (FractionalIdeal.spanSingleton_ne_zero_iff.2 hu₀)
         (FractionalIdeal.coeIdeal_ne_zero.2 v₀.ne_bot), FractionalIdeal.count_maximal,

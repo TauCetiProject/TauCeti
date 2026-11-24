@@ -41,6 +41,8 @@ Lebesgue measure.
 * `TauCeti.Probability.noncentralTMeasure_map_neg` — reflection negates the noncentrality.
 * `TauCeti.Probability.noncentralTMeasure_map_sq` — the square law is noncentral F with
   degrees `1` and `ν` and noncentrality `δ ^ 2`.
+* `ProbabilityTheory.HasLaw.neg_noncentralTMeasure` and
+  `ProbabilityTheory.HasLaw.sq_noncentralTMeasure` — the corresponding random-variable laws.
 * `TauCeti.Probability.absolutelyContinuous_noncentralTMeasure` — the law has a density with
   respect to Lebesgue measure.
 * `TauCeti.Probability.measurable_noncentralTMeasure` — joint parameter measurability.
@@ -251,7 +253,7 @@ theorem measurable_noncentralTMeasure :
         (fun z ↦ (z.1 + p.2) / √(z.2 / p.1)) : Measure ℝ) := by
     have hmap := TauCeti.MeasureTheory.measurable_probabilityMeasure_map_of_measurable_uncurry
       (f := fun (p : ℝ × ℝ) (z : ℝ × ℝ) ↦ (z.1 + p.2) / √(z.2 / p.1)) (by fun_prop)
-    exact measurable_subtype_coe.comp (hmap.comp (hprod.prodMk measurable_id))
+    exact measurable_subtypeVal.comp (hmap.comp (hprod.prodMk measurable_id))
   have h : Measurable fun p : ℝ × ℝ ↦ if 0 < p.1 then
       ((gaussianReal 0 1).prod (chiSquaredMeasure |p.1|)).map
         (fun z ↦ (z.1 + p.2) / √(z.2 / p.1)) else 0 :=
@@ -287,3 +289,21 @@ theorem hasPDF_of_hasLaw_noncentralTMeasure (hX : HasLaw X (noncentralTMeasure �
     hX.map_eq ▸ absolutelyContinuous_noncentralTMeasure ν δ⟩
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+/-- Negating a variable with a noncentral t law negates its noncentrality. -/
+theorem neg_noncentralTMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {ν δ : ℝ} (hX : HasLaw X (noncentralTMeasure ν δ) P) :
+    HasLaw (fun ω ↦ -X ω) (noncentralTMeasure ν (-δ)) P :=
+  (HasLaw.mk (by fun_prop) (noncentralTMeasure_map_neg ν δ)).fun_comp hX
+
+/-- Squaring a variable with a noncentral t law gives the corresponding noncentral F law. -/
+theorem sq_noncentralTMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {ν δ : ℝ} (hX : HasLaw X (noncentralTMeasure ν δ) P) :
+    HasLaw (fun ω ↦ X ω ^ 2) (noncentralFMeasure 1 ν (‖δ‖₊ ^ 2)) P :=
+  (HasLaw.mk (by fun_prop) (noncentralTMeasure_map_sq ν δ)).fun_comp hX
+
+end ProbabilityTheory.HasLaw

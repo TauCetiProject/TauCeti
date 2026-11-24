@@ -46,7 +46,7 @@ namespace CategoryTheory.ProjectiveResolution
 
 open Rep
 
-variable {k G : Type u} [CommRing k] [Group G] [DecidableEq G]
+variable {k G : Type u} [CommRing k] [Group G]
   (P : ProjectiveResolution (Rep.trivial k G k))
   {S : ShortComplex (Rep.{u} k G)} (hS : S.ShortExact)
 

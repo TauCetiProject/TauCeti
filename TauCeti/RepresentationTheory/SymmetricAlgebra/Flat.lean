@@ -92,6 +92,6 @@ theorem faithfullyFlat_symmetricAlgebra_dual_of_pseudoreflectionSubgroup_eq_top
       (SymmetricAlgebra K (Module.Dual K V)) :=
   ρ.faithfullyFlat_symmetricAlgebra_dual_of_finrank_quotient_eq_one
     (s := ((↑) : {g : G // Module.finrank K (V ⧸ (ρ g).fixedSubmodule) = 1} → G))
-    (by rwa [Subtype.range_coe_subtype, ← pseudoreflectionSubgroup_def]) (fun g ↦ g.2)
+    (by rwa [Subtype.range_coe_subtype, ← pseudoreflectionSubgroup_def]) (fun g ↦ g.property)
 
 end Representation

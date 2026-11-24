@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
 
@@ -39,8 +38,8 @@ vector-space curvature (`TauCeti.SymplecticForm.hamiltonianCurvature_constSmooth
   (`TauCeti.SmoothTwoForm.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral`).
   In particular, where `K` is `P(±s) h(t) dt` with `|h| ≤ B`, it is at most `B ∫ |P'(±s)| ds`
   (`TauCeti.SmoothTwoForm.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le`).
-* An integral over the strip of an end of a function of `s` alone is an integral over the
-  half-line `±s > 1/2` (`TauCeti.Floer.setLIntegral_endStrip_fst`).
+* An integral over the strip of an end of a function of `s` alone is at most the integral over the
+  half-line `±s > 1/2` (`TauCeti.Floer.setLIntegral_endStrip_fst_le`).
 
 ## References
 
@@ -61,15 +60,15 @@ open TauCeti.ThricePuncturedSphere
 variable {X : Type*}
 
 /-- An integral over the strip of the end `q` of a function of the longitudinal coordinate alone
-is its integral over the half-line `±s > 1/2`, since the angular coordinate ranges over an
-interval of length one. -/
-theorem setLIntegral_endStrip_fst (q : Puncture) {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
-    ∫⁻ z in endStrip q, f z.1 = ∫⁻ s in {s | 1 / 2 < q.endSign * s}, f s := by
+is at most its integral over the half-line `±s > 1/2`, since the angular coordinate ranges over an
+interval of length one. No measurability is needed for the inequality. -/
+theorem setLIntegral_endStrip_fst_le (q : Puncture) (f : ℝ → ℝ≥0∞) :
+    ∫⁻ z in endStrip q, f z.1 ≤ ∫⁻ s in {s | 1 / 2 < q.endSign * s}, f s := by
   have hvol : volume (Ico (-1 / 2 : ℝ) (1 / 2)) = 1 := by
     rw [Real.volume_Ico]
     norm_num
-  rw [Measure.volume_eq_prod, endStrip_def,
-    setLIntegral_prod (fun z : ℝ × ℝ ↦ f z.1) (hf.comp measurable_fst).aemeasurable]
+  rw [Measure.volume_eq_prod, endStrip_def, ← Measure.prod_restrict]
+  refine (lintegral_prod_le (fun z : ℝ × ℝ ↦ f z.1)).trans_eq ?_
   simp only [setLIntegral_const, hvol, mul_one]
 
 /-- **Data of the form `P(±s) h(t) dt` on an end.** If the datum `K`, pulled back along the end
@@ -109,22 +108,15 @@ nearby, and so does its curvature. -/
 theorem hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (ω : SmoothTwoForm I M)
     (hK : ∀ w, (∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ 1) → ∀ x, K w x = 0)
     {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    (h : ∀ q : Puncture, q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < 1)
-    (x : M) :
+    (h : ∀ q : Puncture, (positiveEndCoord q z).1 < 1) (x : M) :
     ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z x = 0 := by
-  have hev : ∀ᶠ z' in 𝓝 z, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re < 1 := by
-    refine Filter.eventually_all.2 fun q ↦ ?_
-    have hc : ContinuousAt
-        (fun z' ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re) z :=
-      continuousAt_const.mul
-        (((q.contDiffAt_re_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
-          (n := 0)).continuousAt).comp
-          Complex.equivRealProdCLM.symm.continuous.continuousAt)
-    exact hc.eventually (gt_mem_nhds (h q))
+  have hev : ∀ᶠ z' in 𝓝 z, ∀ q : Puncture, (positiveEndCoord q z').1 < 1 :=
+    Filter.eventually_all.2 fun q ↦
+      (contDiffAt_fst_positiveEndCoord_of_mem q hz (n := 0)).continuousAt.eventually
+        (gt_mem_nhds (h q))
   have hK' : ∀ᶠ z' in 𝓝 z, ∀ y, K (Complex.equivRealProdCLM.symm z') y = 0 :=
-    hev.mono fun z' hz' ↦ hK _ fun q ↦ (hz' q).le
+    hev.mono fun z' hz' ↦ hK _ fun q ↦ ((fst_positiveEndCoord q z').symm.trans_lt (hz' q)).le
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
     (hK'.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y])
     (hK'.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero_left]
@@ -158,8 +150,7 @@ theorem lintegral_enorm_hamiltonianCurvature_le_sum_endStrip (ω : SmoothTwoForm
     by_cases h₁ : Complex.equivRealProdCLM.symm z = 1
     · exact Or.inr (Or.inr ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
         (congrArg _ h₁)))
-    by_cases hq : ∃ q : Puncture,
-        1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
+    by_cases hq : ∃ q : Puncture, 1 / 2 < (positiveEndCoord q z).1
     · obtain ⟨q, hq⟩ := hq
       exact Or.inl (mem_iUnion.2 ⟨q, mem_image_endChart ⟨h₀, h₁⟩ hq⟩)
     · simp only [not_exists, not_lt] at hq
@@ -275,14 +266,14 @@ theorem hamiltonianCurvature_perturbationPullback_endChart_of_eq (ω : SmoothTwo
 /-- **The integrated curvature over an end strip, from a pointwise bound.** Let `K` be a
 perturbation one-form on `ℂ` which is differentiable on `S` separately in the domain point and in
 the target point. If the curvature of its pullback along the end chart of `q` is at most `f(s)` at
-every point `(s, t)` of the strip of `q`, for a measurable `f`, then for every map `u` into the
+every point `(s, t)` of the strip of `q`, for any function `f`, then for every map `u` into the
 target, the integral of `|R_K(z, u(z))|` over the image of the strip of `q` is at most
 `∫ f(s) ds`. -/
 theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
     (ω : SmoothTwoForm I M) {q : Puncture}
     (hKd : ∀ w : ℂ, w ≠ 0 ∧ w ≠ 1 → ∀ x v, DifferentiableAt ℝ (fun w' ↦ K w' x v) w)
     (hKx : ∀ w : ℂ, w ≠ 0 ∧ w ≠ 1 → ∀ x v, MDifferentiableAt I 𝓘(ℝ) (fun y ↦ K w y v) x)
-    {f : ℝ → ℝ≥0∞} (hf : Measurable f)
+    {f : ℝ → ℝ≥0∞}
     (hR : ∀ z ∈ endStrip q, ∀ x, ‖ω.hamiltonianCurvature
       (perturbationPullback (endChart q) (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal)
@@ -307,7 +298,7 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
     (fun w hw ↦ hdom (hS hw) _ _) (fun w hw ↦ hKx _ (hS hw) _ 1) (fun w hw ↦ hKx _ (hS hw) _ _)]
   calc _ ≤ ∫⁻ z in endStrip q, f z.1 :=
         setLIntegral_mono' (measurableSet_endStrip q) fun z hz ↦ hR z hz _
-    _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s}, f s := setLIntegral_endStrip_fst q hf
+    _ ≤ ∫⁻ s in {s | 1 / 2 < q.endSign * s}, f s := setLIntegral_endStrip_fst_le q f
     _ ≤ _ := setLIntegral_le_lintegral _ _
 
 /-- **The integrated curvature over an end strip.** Let `K` be a perturbation one-form on `ℂ`
@@ -328,14 +319,12 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : SmoothTw
         ‖ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ ≤
       (∫⁻ s, ‖deriv P (q.endSign * s)‖ₑ) * ENNReal.ofReal B := by
-  have hm : Measurable fun s ↦ ‖deriv P (q.endSign * s)‖ₑ * ENNReal.ofReal B :=
-    ((measurable_deriv P).comp (measurable_const.mul measurable_id)).enorm.mul_const _
-  refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral hKd hKx hm
+  refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral hKd hKx
     (fun z hz x ↦ ?_) u).trans_eq (lintegral_mul_const' _ _ ENNReal.ofReal_ne_top)
   rw [ω.hamiltonianCurvature_perturbationPullback_endChart_of_eq hK
-    (endSign_mul_pos_of_mem_endStrip hz) (hP _) (hh _ _), enorm_mul, enorm_mul,
-    Real.enorm_eq_ofReal_abs q.endSign, abs_endSign, ENNReal.ofReal_one, one_mul,
-    Real.enorm_eq_ofReal_abs (h _ _)]
+    (endSign_mul_pos_of_mem_endStrip hz) (hP _) (hh _ _), eNorm_mul, eNorm_mul,
+    Real.eNorm_eq_ofReal_abs q.endSign, abs_endSign, ENNReal.ofReal_one, one_mul,
+    Real.eNorm_eq_ofReal_abs (h _ _)]
   gcongr
   exact hB _ _
 

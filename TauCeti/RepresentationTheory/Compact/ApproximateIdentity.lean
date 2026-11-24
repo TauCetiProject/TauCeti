@@ -77,6 +77,7 @@ public section
 
 open Filter MeasureTheory Set
 open scoped ComplexOrder Topology
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -327,11 +328,11 @@ nontrivial since they are directed downward, so the convergence has content. Unl
 `TauCeti.exists_isMollifier_norm_convolutionCLM_toLp_sub_le`, where the kernel may depend on the
 function being approximated, the family here is chosen once and for all. -/
 theorem exists_isMollifier_tendsto_convolutionCLM_toLp :
-    ∃ k : {U : Set G // U ∈ 𝓝 (1 : G)} → C(G, 𝕜), (∀ U, IsMollifier U.1 (k U)) ∧
+    ∃ k : {U : Set G // U ∈ 𝓝 (1 : G)} → C(G, 𝕜), (∀ U, IsMollifier U.val (k U)) ∧
       ∀ f : C(G, 𝕜),
         Tendsto (fun U => convolutionCLM (k U) (ContinuousMap.toLp 2 (haarProb G) 𝕜 f))
           atBot (𝓝 f) := by
-  choose k hk using fun U : {U : Set G // U ∈ 𝓝 (1 : G)} => exists_isMollifier 𝕜 U.2
+  choose k hk using fun U : {U : Set G // U ∈ 𝓝 (1 : G)} => exists_isMollifier 𝕜 U.property
   refine ⟨k, hk, fun f => tendsto_convolutionCLM_toLp (Eventually.of_forall hk) ?_ f⟩
   exact fun V hV => eventually_le_atBot (⟨V, hV⟩ : {U : Set G // U ∈ 𝓝 (1 : G)})
 

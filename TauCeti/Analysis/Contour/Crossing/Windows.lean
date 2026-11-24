@@ -98,7 +98,7 @@ private theorem crossings_bounded_from_exceptional {crossings P : Finset ℝ}
     ∃ c > 0, ∀ t ∈ crossings, ∀ p ∈ P, c ≤ |t - p| := by
   by_cases hP : P = ∅
   · exact ⟨1, one_pos, fun _ _ p hp => absurd (hP ▸ hp) (Finset.notMem_empty p)⟩
-  · obtain ⟨p₀, hp₀⟩ := Finset.nonempty_iff_ne_empty.mpr hP
+  · obtain ⟨p₀, hp₀⟩ := Finset.ne_empty_iff_nonempty.mp hP
     obtain ⟨t₀, ht₀⟩ := h_nonempty
     obtain ⟨m, hm_mem, hm⟩ :=
       Finset.exists_min_image (crossings ×ˢ P) (fun q => |q.1 - q.2|)
@@ -170,11 +170,11 @@ theorem exists_common_window_radius_le {a b : ℝ} {crossings : Finset ℝ}
   -- `Option {t // t ∈ crossings}` so that `r₀` is the `none` component.
   obtain ⟨r, hr_pos, hr_all⟩ := Pi.exists_forall_pos_add_lt
     (ι := Option {t // t ∈ crossings}) (x := fun _ => (0 : ℝ))
-    (y := fun i => i.elim r₀ fun t => R t.1)
+    (y := fun i => i.elim r₀ fun t => R t.val)
     (fun i => by
       cases i with
       | none => simpa using hr₀_pos
-      | some t => simpa using hR_pos t.1 t.2)
+      | some t => simpa using hR_pos t.val t.property)
   have hr_lt : r < r₀ := by simpa using hr_all none
   exact ⟨r, hr_pos, fun t ht => ⟨by linarith [(h_endpts t ht).1], by
     linarith [(h_endpts t ht).2]⟩,
@@ -319,7 +319,7 @@ theorem sorted_crossing_gluing_induction {E : Type*} [NormedAddCommGroup E] {γ 
     ∀ (sorted : List ℝ), sorted.SortedLT →
     ∀ a : ℝ, A ≤ a → a ≤ b → (∀ t ∈ sorted, a ≤ t - r) → (∀ t ∈ sorted, t + r ≤ b) →
       (∀ t ∈ sorted, ∀ t' ∈ sorted, t' ≠ t → 2 * r ≤ |t - t'|) →
-      (∀ t ∈ sorted, Q (t - r) (t + r)) →
+      (∀ t ∈ sorted, 0 ≤ r → Q (t - r) (t + r)) →
       (∀ u ∈ Icc a b, (∀ t ∈ sorted, u ∉ Ioo (t - r) (t + r)) → m ≤ ‖γ u - s‖) →
       Q a b := by
   by_cases hr_nonneg : 0 ≤ r
@@ -355,13 +355,14 @@ theorem sorted_crossing_gluing_induction {E : Type*} [NormedAddCommGroup E] {γ 
       (fun t' ht' => h_hi t' (List.mem_cons_of_mem t ht'))
       (fun t' ht' t'' ht'' hne => h_pair t' (List.mem_cons_of_mem t ht')
         t'' (List.mem_cons_of_mem t ht'') hne)
-      (fun t' ht' => h_win t' (List.mem_cons_of_mem t ht'))
+      (fun t' ht' hr => h_win t' (List.mem_cons_of_mem t ht') hr)
       (fun u hu h_avoid => h_far u ⟨by linarith [hu.1], hu.2⟩ fun t' ht' => by
         rcases List.mem_cons.mp ht' with rfl | h_rest
         · exact fun h_in => absurd hu.1 (not_le.mpr h_in.2)
         · exact h_avoid t' h_rest)
     exact hglue a (t + r) b (h_head_lo.trans (by linarith)) h_head_hi
-      (hglue a (t - r) (t + r) h_head_lo (by linarith) h_left (h_win t List.mem_cons_self)) h_rest
+      (hglue a (t - r) (t + r) h_head_lo (by linarith) h_left
+        (h_win t List.mem_cons_self hr_nonneg)) h_rest
 
 end TauCeti.Contour
 

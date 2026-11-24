@@ -47,6 +47,8 @@ of the discounted process `e^{-μ t} S_t` and the conditional moments `E[S_t ^ q
   log-normal with log-mean `log s + (μ - σ² / 2) t` and log-variance `σ² t`.
 * `ProbabilityTheory.IsPreBrownianReal.integral_geometricBrownianMotion`: `E[S_t] = s e^{μ t}`.
 * `ProbabilityTheory.IsPreBrownianReal.memLp_geometricBrownianMotion`: `S_t ∈ Lᵖ` for `p < ∞`.
+* `ProbabilityTheory.IsPreBrownianReal.memLp_of_geometricBrownianMotion_bound`: a measurable
+  value bounded by a polynomial in `S_t` belongs to every finite `Lᵖ` space.
 * `ProbabilityTheory.IsPreBrownianReal.integral_rpow_geometricBrownianMotion`:
   `E[S_t ^ q] = s ^ q exp ((q μ + q (q - 1) σ² / 2) t)` for real `q`.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.martingale_discounted_geometricBrownianMotion`:
@@ -132,7 +134,7 @@ theorem rpow_geometricBrownianMotion (s μ σ q : ℝ) (W : ℝ≥0 → Ω → �
     geometricBrownianMotion s μ σ W t ω ^ q = s ^ q * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) *
       exponentialMartingale (q * σ) W t ω := by
   rw [geometricBrownianMotion_eq_mul_exponentialMartingale, mul_assoc, mul_comm s,
-    Real.mul_rpow_of_pos_left (mul_pos (exp_pos _) (exponentialMartingale_pos σ W t ω)),
+    Real.mul_rpow_of_nonneg_left (mul_pos (exp_pos _) (exponentialMartingale_pos σ W t ω)).le,
     mul_rpow (exp_pos _).le (exponentialMartingale_pos σ W t ω).le,
     ← exp_mul, rpow_exponentialMartingale, add_mul, exp_add]
   ring_nf
@@ -207,6 +209,26 @@ theorem memLp_geometricBrownianMotion (hB : IsPreBrownianReal B P) (s μ σ : �
     {p : ℝ≥0∞} (hp : p ≠ ∞) : MemLp (geometricBrownianMotion s μ σ B t) p P := by
   simp_rw [funext (geometricBrownianMotion_eq_mul_exponentialMartingale s μ σ B t)]
   exact (hB.memLp_exponentialMartingale σ t hp).const_mul _
+
+/-- At a deterministic time, a measurable random variable bounded by a polynomial in a
+geometric Brownian stock belongs to every finite `Lᵖ` space. No positivity of the initial
+stock, path regularity, or filtration is required; the growth exponent may be any real.
+For nonpositive initial stock `s ≤ 0`, `hbound` uses Mathlib's signed/zero `Real.rpow`
+conventions, not `|S_t| ^ p`, so it can degenerate rather than express polynomial growth
+in the absolute spot. -/
+theorem memLp_of_geometricBrownianMotion_bound
+    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
+    (hB : IsPreBrownianReal B P) {s μ σ p A : ℝ} {t : ℝ≥0} {f : Ω → ℝ}
+    {q : ℝ≥0∞} (hq : q ≠ ∞) (hm : AEStronglyMeasurable f P)
+    (hbound : ∀ᵐ ω ∂P, |f ω| ≤ A * (1 + geometricBrownianMotion s μ σ B t ω ^ p)) :
+    MemLp f q P := by
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
+  have hpow : MemLp (fun ω ↦ geometricBrownianMotion s μ σ B t ω ^ p) q P := by
+    simp_rw [rpow_geometricBrownianMotion]
+    exact (hB.memLp_exponentialMartingale (p * σ) t hq).const_mul _
+  refine ((memLp_const (1 : ℝ)).add hpow |>.const_mul A).mono' hm ?_
+  filter_upwards [hbound] with ω hω
+  exact hω
 
 /-- A geometric Brownian motion is integrable at every time. -/
 theorem integrable_geometricBrownianMotion (hB : IsPreBrownianReal B P) (s μ σ : ℝ) (t : ℝ≥0) :

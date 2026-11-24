@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Map
 /-!
 # The loop formula for the boundary Maslov index on the annulus
 
-Let `E` be a finite-dimensional complex normed space and `A = {z | r ≤ ‖z‖ ≤ R}` the closed
+Let `E` be a complex normed space and `A = {z | r ≤ ‖z‖ ≤ R}` the closed
 annulus, `0 ≤ r ≤ R`. A bundle pair `(E, F)` over `A` read in a trivialization `A × E` is a pair of
 loops of maximal totally real subspaces of `E` (`TauCeti.TotallyRealLoop`): `Λ` on the outer circle,
 parametrized counterclockwise by `t ↦ R e^{2πit}`, and `Γ` on the inner circle, parametrized
@@ -60,7 +60,7 @@ namespace TauCeti
 
 namespace TotallyRealLoop
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- **Independence of the trivialization on the annulus.** Let `B` be a continuous map from the
 closed annulus `r ≤ ‖z‖ ≤ R` to the complex-linear automorphisms of `E`, with loops of boundary
@@ -82,9 +82,9 @@ theorem maslovIndex_map_add_maslovIndex_map_symm_of_continuousOn_annulus
   have hmem (p : I × I) :
       ((r + p.1 * (R - r) : ℝ) * (Circle.expLoop p.2 : ℂ) : ℂ) ∈
         closedBall (0 : ℂ) R \ ball 0 r := by
-    have h0 : 0 ≤ (p.1 : ℝ) * (R - r) := mul_nonneg p.1.2.1 (sub_nonneg.2 hrR)
+    have h0 : 0 ≤ (p.1 : ℝ) * (R - r) := mul_nonneg p.1.property.1 (sub_nonneg.2 hrR)
     have h1 : (p.1 : ℝ) * (R - r) ≤ R - r :=
-      mul_le_of_le_one_left (sub_nonneg.2 hrR) p.1.2.2
+      mul_le_of_le_one_left (sub_nonneg.2 hrR) p.1.property.2
     simp only [Set.mem_sdiff, mem_closedBall_zero_iff, mem_ball_zero_iff, norm_mul,
       Circle.norm_coe, mul_one, Complex.norm_real, Real.norm_eq_abs,
       abs_of_nonneg (add_nonneg hr h0)]
@@ -170,7 +170,7 @@ private theorem maslovIndex_map_zpowEquiv (Λ : TotallyRealLoop ℂ) (m : ℤ) {
     simp [zpowEquiv, hρ.ne']
   have hexp :
       Complex.exp (2 * π * t * Complex.I) ^ m = Complex.exp (2 * π * m * t * Complex.I) := by
-    rw [← Complex.exp_int_mul]
+    rw [← Complex.exp_intCast_mul]
     congr 1
     ring
   rw [hlin]

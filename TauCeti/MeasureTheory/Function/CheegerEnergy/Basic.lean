@@ -177,7 +177,7 @@ private theorem lintegral_localLipschitzConstant_smul_sq_div_two (c : ℝ) (u : 
     (∫⁻ x, localLipschitzConstant (c • u) x ^ 2 ∂m) / 2 =
       ‖c‖ₑ ^ 2 * ((∫⁻ x, localLipschitzConstant u x ^ 2 ∂m) / 2) := by
   simp_rw [localLipschitzConstant_const_smul, mul_pow]
-  rw [lintegral_const_mul' _ _ (ENNReal.pow_ne_top enorm_ne_top), mul_div_assoc]
+  rw [lintegral_const_mul' _ _ (ENNReal.pow_ne_top eNorm_ne_top), mul_div_assoc]
 
 /-- For a convex combination of a continuous `u` and any `v`, the energy `½ ∫ |D ·|² dm` is at most
 the convex combination of the energies. -/
@@ -261,7 +261,7 @@ private theorem cheegerEnergy_smul_le (c : ℝ) (f : Lp ℝ 2 m) :
     (hfu.const_smul c).congr fun n ↦ (MemLp.toLp_const_smul c (hu n)).symm
   refine (cheegerEnergy_le_liminf hKc hcu htend).trans_eq ?_
   simp_rw [lintegral_localLipschitzConstant_smul_sq_div_two]
-  exact (ENNReal.Tendsto.const_mul hE (Or.inr (ENNReal.pow_ne_top enorm_ne_top))).liminf_eq
+  exact (ENNReal.Tendsto.const_mul hE (Or.inr (ENNReal.pow_ne_top eNorm_ne_top))).liminf_eq
 
 /-- The Cheeger energy is `2`-homogeneous: `Ch(c f) = |c|² Ch(f)`. -/
 @[simp]
@@ -275,8 +275,8 @@ theorem cheegerEnergy_smul (c : ℝ) (f : Lp ℝ 2 m) :
   calc ‖c‖ₑ ^ 2 * cheegerEnergy m f ≤ ‖c‖ₑ ^ 2 * (‖c⁻¹‖ₑ ^ 2 * cheegerEnergy m (c • f)) := by
         gcongr
     _ = cheegerEnergy m (c • f) := by
-        rw [← mul_assoc, ← mul_pow, enorm_inv hc,
-          ENNReal.mul_inv_cancel (enorm_ne_zero.2 hc) enorm_ne_top, one_pow, one_mul]
+        rw [← mul_assoc, ← mul_pow, eNorm_inv hc,
+          ENNReal.mul_inv_cancel (eNorm_ne_zero.2 hc) eNorm_ne_top, one_pow, one_mul]
 
 /-- The Cheeger energy of `-f` is that of `f`. -/
 @[simp]
@@ -306,7 +306,7 @@ def cheegerEnergyDomain [OpensMeasurableSpace X] : Submodule ℝ (Lp ℝ 2 m) wh
   smul_mem' c f hf := by
     simp only [mem_ofPred_eq] at hf ⊢
     rw [cheegerEnergy_smul]
-    exact ENNReal.mul_ne_top (ENNReal.pow_ne_top enorm_ne_top) hf
+    exact ENNReal.mul_ne_top (ENNReal.pow_ne_top eNorm_ne_top) hf
 
 /-- A class lies in the domain of the Cheeger energy exactly when its Cheeger energy is finite. -/
 @[simp]

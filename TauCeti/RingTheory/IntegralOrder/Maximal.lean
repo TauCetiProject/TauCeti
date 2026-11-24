@@ -76,7 +76,7 @@ namespace TauCeti.IntegralOrder
 section Basic
 
 variable {R : Type*} (F : Type*) {E : Type*} [CommRing R] [CommRing F] [Ring E]
-  [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+  [Algebra F E] [Algebra R E]
 
 /-- An `R`-subalgebra `Λ` of an `F`-algebra `E` is a maximal `R`-order in `E` if it is an `R`-order
 in `E` and is not properly contained in another `R`-order in `E`. The definition is exposed, so the
@@ -105,7 +105,7 @@ end Basic
 section Commutative
 
 variable {R F E : Type*} [CommRing R] [CommRing F] [CommRing E]
-  [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+  [Algebra F E] [Algebra R E]
 
 /-- **Uniqueness of the maximal order of a commutative algebra.** If the integral closure of `R` in
 a commutative `F`-algebra `E` is an `R`-order, then it is the unique maximal `R`-order in `E`. -/
@@ -128,7 +128,7 @@ variable {R F : Type*} [CommRing R] [Field F] [Algebra R F] [IsFractionRing R F]
 /-- **Integral closures are maximal orders.** The integral closure of an integrally closed
 noetherian domain `R` in a finite separable extension `L` of its fraction field `F` is a maximal
 `R`-order in `L`, and by `isMaximalOrder_iff_eq_integralClosure` it is the only one. -/
-theorem integralClosure_isMaximalOrder [IsDomain R] [IsIntegrallyClosed R] [IsNoetherianRing R]
+theorem integralClosure_isMaximalOrder [IsIntegrallyClosed R] [IsNoetherianRing R]
     (L : Type*) [Field L] [Algebra F L] [Algebra R L] [IsScalarTower R F L] [FiniteDimensional F L]
     [Algebra.IsSeparable F L] : IsMaximalOrder F (integralClosure R L) :=
   isMaximalOrder_integralClosure_of_isOrder (integralClosure_isOrder L)

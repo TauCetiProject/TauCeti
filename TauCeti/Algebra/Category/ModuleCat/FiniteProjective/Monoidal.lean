@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.RingTheory.TensorProduct.Finite
@@ -57,8 +58,7 @@ namespace FiniteProjectiveModules
 /-- The linear dual of a finite projective module is finite projective. -/
 @[expose] def dual (M : (finiteProjectiveModules R).FullSubcategory) :
     (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R (Module.Dual R M.obj),
-    finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
+  of R (Module.Dual R M.obj)
 
 @[simp]
 theorem dual_obj (M : (finiteProjectiveModules R).FullSubcategory) :

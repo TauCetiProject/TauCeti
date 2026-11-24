@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.ResidueField
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.RingTheory.FittingIdeal.BaseChange
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Fitting ideal sheaves of quasi-coherent modules
@@ -81,8 +81,8 @@ def fittingIdeal (k : ℕ) : X.IdealSheafData where
   ideal U := haveI := hM U; TauCeti.fittingIdeal Γ(X, U) Γ(M, U) k
   map_ideal_basicOpen U f := by
     have := hM U
-    have := M.isLocalizedModule_basicOpenRestrict U.2 f
-    have := U.2.isLocalization_basicOpen f
+    have := M.isLocalizedModule_basicOpenRestrict U.property f
+    have := U.property.isLocalization_basicOpen f
     -- Sections over `D(f)` are the base change of `Γ(M, U)` to the localization `Γ(X, D(f))`.
     exact ((IsLocalizedModule.isBaseChange (.powers f) Γ(X, X.basicOpen f)
       (M.basicOpenRestrict f)).fittingIdeal_eq_map k).symm
@@ -104,7 +104,7 @@ theorem fittingIdeal_monotone :
 of `Fitt_k(M)` exactly when the fibre `κ(x) ⊗ Γ(M, U)` of `M` at `x` has dimension greater than
 `k`, that is, when `M` needs more than `k` generators near `x`. -/
 theorem mem_support_fittingIdeal_iff {x : X}
-    {U : X.affineOpens} (hx : x ∈ U.1) (k : ℕ) :
+    {U : X.affineOpens} (hx : x ∈ U.val) (k : ℕ) :
     x ∈ (M.fittingIdeal hM k).support ↔
       letI := (X.evaluation U x hx).hom.toAlgebra
       k < Module.finrank (X.residueField x) (X.residueField x ⊗[Γ(X, U)] Γ(M, U)) := by

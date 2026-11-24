@@ -188,7 +188,7 @@ structure BFSmall : Prop where
   /-- At a limit depth below `ω₁`, every pointed tuple is pinned, up to equivalence at the limit
   depth, by its class at some smaller depth. -/
   limit {α : Ordinal.{0}} (hα : α < ω₁) (hlim : Order.IsSuccLimit α) (n : ℕ) :
-    (bfTupleSetoid L M α n).IsolatedBy fun β : Set.Iio α => bfTupleSetoid L M β.1 n
+    (bfTupleSetoid L M α n).IsolatedBy fun β : Set.Iio α => bfTupleSetoid L M β.val n
 
 /-- **Countably many classes at every countable depth.** Under `BFSmall`, back-and-forth
 equivalence at any depth below `ω₁` has countably many classes of `n`-tuples, for every arity
@@ -203,8 +203,8 @@ theorem BFSmall.countable_quotient (h : BFSmall L M) {α : Ordinal.{0}} (hα : �
     exact countable_quotient_bfTupleSetoid_add_one (h.add_one hα' n)
   | limit α hlim ih =>
     have : Countable (Set.Iio α) := (countable_Iio_of_lt_omega_one hα).to_subtype
-    have : ∀ β : Set.Iio α, Countable (Quotient (bfTupleSetoid L M β.1 n)) :=
-      fun β => ih β.1 β.2 (β.2.trans hα) n
+    have : ∀ β : Set.Iio α, Countable (Quotient (bfTupleSetoid L M β.val n)) :=
+      fun β => ih β.val β.property (β.property.trans hα) n
     exact (h.limit hα hlim n).countable_quotient
 
 end TauCeti

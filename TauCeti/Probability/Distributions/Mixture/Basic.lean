@@ -22,7 +22,7 @@ public import TauCeti.Probability.Density
 This file supplies distribution-level formulas for mixtures of measurable families of measures.
 Cumulative distribution functions, moment-generating functions, and characteristic functions are
 the corresponding integrals of the component quantities under their natural hypotheses.  It also
-connects a jointly measurable family of component densities to `HasPDF`.
+connects a jointly a.e.-measurable family of component densities to `HasPDF`.
 
 The density results allow the component presentation to hold only almost everywhere for the
 mixing measure.  This is useful for kernels whose values away from the valid parameter set are an
@@ -32,6 +32,8 @@ arbitrary measurable extension.
 
 * `MeasureTheory.Measure.cdf_bind` computes the cdf of a real-valued probability mixture whose
   components are probability measures almost everywhere.
+* `TauCeti.Probability.cdf_finiteMixtureMeasure` specializes it to a weighted sum for finite
+  mixtures.
 * `MeasureTheory.Measure.mem_integrableExpSet_bind_iff` characterizes the exact exponential
   integrability domain by an iterated nonnegative integral.
 * `MeasureTheory.Measure.mgf_bind`, `MeasureTheory.Measure.cgf_bind`, and
@@ -86,8 +88,8 @@ theorem mem_integrableExpSet_bind_iff (rho : Measure A) {K : A → Measure B}
     exact h.lintegral_lt_top
   · intro h
     refine ⟨(by fun_prop), ?_⟩
-    rw [hasFiniteIntegral_iff_enorm]
-    simp_rw [Real.enorm_eq_ofReal (Real.exp_pos _).le]
+    rw [hasFiniteIntegral_iff_eNorm]
+    simp_rw [Real.eNorm_eq_ofReal (Real.exp_pos _).le]
     rw [Measure.lintegral_bind hK (by fun_prop)]
     exact h
 
@@ -167,6 +169,19 @@ theorem finiteMixtureMeasure_eq_bind [MeasurableSpace I] [MeasurableSingletonCla
     Measure.bind_apply hs Measurable.of_discrete.aemeasurable, lintegral_fintype]
   simp only [categoricalMeasure_singleton, _root_.smul_apply, smul_eq_mul, mul_comm]
 
+/-- The cdf of a finite probability mixture is the weighted sum of its component cdfs. Only the
+positive-weight components need to be probability measures. -/
+theorem cdf_finiteMixtureMeasure {p : StdSimplex NNReal I} {K : I → Measure ℝ}
+    (hK : ∀ i, 0 < p.weights i → IsProbabilityMeasure (K i)) (x : ℝ) :
+    cdf (finiteMixtureMeasure p K) x = ∑ i, (p.weights i : ℝ) * cdf (K i) x := by
+  let _ : MeasurableSpace I := ⊤
+  have hprob : ∀ᵐ i ∂categoricalMeasure p, IsProbabilityMeasure (K i) :=
+    ae_iff_of_countable.mpr fun i hi ↦
+      hK i (by simpa [pos_iff_ne_zero, categoricalMeasure_singleton] using hi)
+  rw [finiteMixtureMeasure_eq_bind,
+    Measure.cdf_bind _ K Measurable.of_discrete.aemeasurable hprob, integral_categoricalMeasure]
+  simp_rw [smul_eq_mul]
+
 /-- A finite mixture of identical components is that component. -/
 @[simp]
 theorem finiteMixtureMeasure_const (p : StdSimplex NNReal I) (mu : Measure B) :
@@ -238,23 +253,23 @@ variable {Omega A B : Type*} [MeasurableSpace Omega] [MeasurableSpace A] [Measur
   {P : Measure Omega} {rho : Measure A} {nu : Measure B} {K : A → Measure B}
   {f : A → B → ℝ≥0∞} {X : Omega → B}
 
-/-- A random variable whose law is a mixture of jointly measurable component densities has the
-integrated component density. -/
+/-- A random variable whose law is a mixture of jointly a.e.-measurable component densities has
+the integrated component density. -/
 theorem hasPDF_of_hasLaw_bind_withDensity [SFinite rho] [SFinite nu]
-    (hf : Measurable f.uncurry) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a))
+    (hf : AEMeasurable f.uncurry (rho.prod nu)) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a))
     (hX : HasLaw X (rho.bind K) P) : HasPDF X P nu := by
   apply hasPDF_of_hasLaw_withDensity (f := fun b ↦ ∫⁻ a, f a b ∂rho)
-    hf.lintegral_prod_left.aemeasurable
+    hf.lintegral_prod_left
   rwa [← Measure.bind_eq_withDensity_of_ae_eq rho nu hf hKf]
 
 /-- The pdf selected by Mathlib for a mixture of component densities agrees almost everywhere
 with their pointwise integral. -/
 theorem pdf_eq_of_hasLaw_bind_withDensity [SFinite rho] [SigmaFinite nu]
-    (hf : Measurable f.uncurry) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a))
+    (hf : AEMeasurable f.uncurry (rho.prod nu)) (hKf : K =ᵐ[rho] fun a ↦ nu.withDensity (f a))
     (hX : HasLaw X (rho.bind K) P) :
     pdf X P nu =ᵐ[nu] fun b ↦ ∫⁻ a, f a b ∂rho := by
   apply pdf_eq_of_hasLaw_withDensity (f := fun b ↦ ∫⁻ a, f a b ∂rho)
-    hf.lintegral_prod_left.aemeasurable
+    hf.lintegral_prod_left
   rwa [← Measure.bind_eq_withDensity_of_ae_eq rho nu hf hKf]
 
 end TauCeti.Probability

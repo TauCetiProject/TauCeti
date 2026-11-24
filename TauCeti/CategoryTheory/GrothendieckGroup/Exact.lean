@@ -116,7 +116,7 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [EssentiallySmall.{w
 
 /-- The relation `[X₂] - [X₁] - [X₃]` attached to a short complex. Exact `K₀` imposes it for every
 conflation. -/
-noncomputable def conflationRelation (S : ShortComplex C) : FreeAbelianGroup (ObjectCode C) :=
+noncomputable def conflationRelation (S : ShortComplex C) : FreeAddCommGroup (ObjectCode C) :=
   freeOf S.X₂ - freeOf S.X₁ - freeOf S.X₃
 
 /-- The defining equation of `TauCeti.conflationRelation`. -/
@@ -128,7 +128,7 @@ lemma conflationRelation_def (S : ShortComplex C) :
 additive on that complex. This evaluates a conflation relation once and for all, for both the
 quotient map presenting exact `K₀` and the free extension of an invariant. -/
 lemma map_conflationRelation_eq_zero_iff {G : Type*} [AddGroup G]
-    (f : FreeAbelianGroup (ObjectCode C) →+ G) (S : ShortComplex C) :
+    (f : FreeAddCommGroup (ObjectCode C) →+ G) (S : ShortComplex C) :
     f (conflationRelation S) = 0 ↔ f (freeOf S.X₂) = f (freeOf S.X₁) + f (freeOf S.X₃) := by
   rw [conflationRelation_def, sub_sub, map_sub, map_add, sub_eq_zero]
 
@@ -149,14 +149,14 @@ section ExactRelations
 variable [EssentiallySmall.{w} C]
 
 /-- The family of conflation relations presenting the exact `K₀` of an exact structure. -/
-def exactRelations (E : ExactStructure C) : Set (FreeAbelianGroup (ObjectCode C)) :=
+def exactRelations (E : ExactStructure C) : Set (FreeAddCommGroup (ObjectCode C)) :=
   {r | ∃ S : ShortComplex C, E.Conflation S ∧ r = conflationRelation S}
 
 variable {E E' : ExactStructure C}
 
 /-- Membership in the family of conflation relations. -/
 @[simp]
-lemma mem_exactRelations_iff {r : FreeAbelianGroup (ObjectCode C)} :
+lemma mem_exactRelations_iff {r : FreeAddCommGroup (ObjectCode C)} :
     r ∈ exactRelations E ↔ ∃ S : ShortComplex C, E.Conflation S ∧ r = conflationRelation S :=
   (Iff.rfl)
 
@@ -404,8 +404,8 @@ theorem finiteEulerSum_eq_of_isZero (X : ℤ → C) {s t : Finset ℤ}
     (hs : ∀ n, n ∉ s → IsZero (X n)) (ht : ∀ n, n ∉ t → IsZero (X n)) :
     a.finiteEulerSum X s = a.finiteEulerSum X t :=
   TauCeti.finiteEulerSum_eq_of_eq_zero _
-    (fun n hn ↦ a.obj_eq_zero_of_isZero (hs n hn))
-    (fun n hn ↦ a.obj_eq_zero_of_isZero (ht n hn))
+    (fun n _ hn ↦ a.obj_eq_zero_of_isZero (hs n hn))
+    (fun n _ hn ↦ a.obj_eq_zero_of_isZero (ht n hn))
 
 /-- Pointwise isomorphic object families have the same Euler sum. -/
 theorem finiteEulerSum_iso {X Y : ℤ → C} {s : Finset ℤ}
@@ -827,14 +827,14 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBin
 combinations of objects of `C`, before passing to isomorphism classes. Their codes are the
 relations `TauCeti.exactRelations E`, so they present exact `K₀` over every model of the
 isomorphism classes of `C`. -/
-def exactObjectRelations (E : ExactStructure C) : Set (FreeAbelianGroup C) :=
+def exactObjectRelations (E : ExactStructure C) : Set (FreeAddCommGroup C) :=
   {r | ∃ S : ShortComplex C, E.Conflation S ∧ r = .of S.X₂ - .of S.X₁ - .of S.X₃}
 
 variable {E : ExactStructure C}
 
 /-- Membership in the family of object-level conflation relations. -/
 @[simp]
-lemma mem_exactObjectRelations_iff {r : FreeAbelianGroup C} :
+lemma mem_exactObjectRelations_iff {r : FreeAddCommGroup C} :
     r ∈ exactObjectRelations E ↔
       ∃ S : ShortComplex C, E.Conflation S ∧ r = .of S.X₂ - .of S.X₁ - .of S.X₃ :=
   (Iff.rfl)
@@ -844,7 +844,7 @@ variable [EssentiallySmall.{w} C]
 /-- The codes of the object-level conflation relations are the conflation relations presenting
 exact `K₀`. -/
 lemma image_exactObjectRelations :
-    FreeAbelianGroup.map objectCode '' exactObjectRelations E = exactRelations E := by
+    FreeAddCommGroup.map objectCode '' exactObjectRelations E = exactRelations E := by
   ext r
   simp [conflationRelation_def, freeOf_def, eq_comm]
 

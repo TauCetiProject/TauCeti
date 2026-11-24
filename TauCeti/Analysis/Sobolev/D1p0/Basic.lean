@@ -148,13 +148,13 @@ theorem D1p0.coe_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
 /-- The norm of a test function in `D^{1,p}_0(Ω)` is the `Lᵖ` norm of its derivative. -/
 theorem D1p0.norm_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     ‖D1p0.ofTestFunctionₗ mu Omega p phi‖ = (eLpNorm (fderiv ℝ (phi : E → ℝ)) p mu).toReal := by
-  rw [← Submodule.norm_coe, D1p0.coe_ofTestFunctionₗ, ← toReal_enorm,
+  rw [← Submodule.norm_coe, D1p0.coe_ofTestFunctionₗ, ← toReal_eNorm,
     enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv]
 
 /-- The test functions are dense in `D^{1,p}_0(Ω)`. -/
 theorem D1p0.denseRange_ofTestFunctionₗ : DenseRange (D1p0.ofTestFunctionₗ mu Omega p) := by
   intro u
-  have hu : (u : Lp E p (mu.restrict Omega)) ∈ (d1p0Submodule mu Omega p : Set _) := u.2
+  have hu : (u : Lp E p (mu.restrict Omega)) ∈ (d1p0Submodule mu Omega p : Set _) := u.property
   rw [coe_d1p0Submodule] at hu
   rw [Topology.IsInducing.subtypeVal.closure_eq_preimage_closure_image, Set.mem_preimage,
     ← Set.range_comp]

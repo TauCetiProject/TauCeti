@@ -46,7 +46,7 @@ theorem lieIdeal_le_radical {k : Type u} [Field k]
       LieAlgebra.radical k (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
   let Q := FiniteTypeCommHopfAlgCat.quotient H I
   let _ : Algebra.Smooth k Q := hI.smooth
-  have hQ := hI.geometricallySolvable.isSolvable_lieAlgebra hI.geometricallyConnected
+  have hQ := hI.geometricallySolvable.isSolvable_lieAlgebra
   have hsub : LieAlgebra.IsSolvable
       (LieIdeal.toLieSubalgebra k _ (hI.isNormal.lieIdeal (B := k))) := by
     rw [hI.isNormal.lieIdeal_toLieSubalgebra]

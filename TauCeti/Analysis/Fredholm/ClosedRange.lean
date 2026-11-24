@@ -72,7 +72,7 @@ theorem _root_.ContinuousLinearMap.isClosed_range_of_finite_coker [CompleteSpace
   -- A finite-dimensional algebraic complement `N` of `range T`.
   obtain ⟨N, hN⟩ := R.exists_isCompl
   have : FiniteDimensional 𝕜 N := (Submodule.quotientEquivOfIsCompl R N hN).finiteDimensional
-  have : CompleteSpace N := FiniteDimensional.complete 𝕜 N
+  have : CompleteSpace N := FiniteDimensional.completeSpace 𝕜 N
   -- The auxiliary map `Φ(x, n) = T x + n`, the coproduct of `T` and the inclusion of `N`,
   -- continuous linear from the Banach space `E × N`.
   set Φ : (E × N) →L[𝕜] F := T.coprod N.subtypeL with hΦdef
@@ -89,7 +89,7 @@ theorem _root_.ContinuousLinearMap.isClosed_range_of_finite_coker [CompleteSpace
     constructor
     · intro hmem
       have hb : (p.2 : F) ∈ R := by simpa using R.sub_mem hmem hTp
-      have hbot : (p.2 : F) ∈ R ⊓ N := ⟨hb, p.2.2⟩
+      have hbot : (p.2 : F) ∈ R ⊓ N := ⟨hb, p.2.property⟩
       rw [hN.inf_eq_bot] at hbot
       exact Submodule.coe_eq_zero.mp (by simpa using hbot)
     · intro h

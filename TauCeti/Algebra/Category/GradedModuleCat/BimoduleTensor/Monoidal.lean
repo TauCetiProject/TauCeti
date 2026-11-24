@@ -43,8 +43,8 @@ variable {k : Type uk} {A : Type uA} {B : Type uB} {C : Type uC}
   {D : Type uD} {E : Type uE}
   [CommRing k] [Ring A] [Ring B] [Ring C] [Ring D] [Ring E]
   [Algebra k A] [Algebra k B] [Algebra k C] [Algebra k D] [Algebra k E]
-  (Γ : InternalGrading k A) (Δ : InternalGrading k B) (Θ : InternalGrading k C)
-  (Ψ : InternalGrading k D) (Ω : InternalGrading k E)
+  (Γ : InternalGrading k A ℤ) (Δ : InternalGrading k B ℤ) (Θ : InternalGrading k C ℤ)
+  (Ψ : InternalGrading k D ℤ) (Ω : InternalGrading k E ℤ)
   [GradedAlgebra Γ.piece] [GradedAlgebra Δ.piece] [GradedAlgebra Θ.piece]
   [GradedAlgebra Ψ.piece] [GradedAlgebra Ω.piece]
 
@@ -203,8 +203,8 @@ local notation "c" => ComplexShape.up ℤ
 
 variable {A₁ : Type uA} [Ring A₁] [Algebra k A₁]
 variable {A₂ : Type uB} [Ring A₂] [Algebra k A₂]
-variable (Ξ₁ : InternalGrading k A₁) [GradedAlgebra Ξ₁.piece]
-variable (Ξ₂ : InternalGrading k A₂) [GradedAlgebra Ξ₂.piece]
+variable (Ξ₁ : InternalGrading k A₁ ℤ) [GradedAlgebra Ξ₁.piece]
+variable (Ξ₂ : InternalGrading k A₂ ℤ) [GradedAlgebra Ξ₂.piece]
 variable (Φ : HomologicalComplex (GradedBimoduleCat k Ξ₁) c ⥤
     HomologicalComplex (GradedBimoduleCat k Ξ₂) c)
 

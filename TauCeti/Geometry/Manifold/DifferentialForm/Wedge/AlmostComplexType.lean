@@ -33,6 +33,8 @@ of the wedges of the type components of the factors whose types add up to `(P,Q)
   on the submodules of type forms, with the total degree regrouped into type degrees.
 * `TauCeti.SmoothAlmostComplexStructure.typeProjection_wedgeWith`: the type components of a
   wedge of smooth forms.
+* `TauCeti.SmoothAlmostComplexStructure.covectorComplexStructure_wedge_zero_right`: right
+  `C^∞(M)`-linearity of `covectorComplexStructure`.
 
 ## References
 
@@ -69,7 +71,7 @@ theorem alternatingDerivation_wedgeWith
   Subtype.ext <| funext fun x ↦ by
     simp only [coe_alternatingDerivation, Submodule.coe_add, Pi.add_apply,
       SmoothForm.coe_wedgeWith, RoughForm.wedgeWith_apply']
-    exact (A x).alternatingDerivation_pairedWedge μ μ.continuous₂ (φ.1 x) (ψ.1 x)
+    exact (A x).alternatingDerivation_pairedWedge μ μ.continuous₂ (φ.val x) (ψ.val x)
 
 end ContMDiffSection
 
@@ -152,6 +154,18 @@ theorem typeProjection_wedgeWith (hμ₁ : ∀ (c : ℂ) a b, μ (c • a) b = c
       RoughForm.wedgeWith_apply']
     exact ContinuousLinearMap.typeProjection_pairedWedge (J.apply_apply x) hμ₁ hμ₂ _ _ P Q
 
+/-- `covectorComplexStructure J` commutes with right multiplication by smooth functions. -/
+theorem covectorComplexStructure_wedge_zero_right (a : SmoothForm I M ℝ 1)
+    (f : SmoothForm I M ℝ 0) :
+    J.covectorComplexStructure (SmoothForm.wedge a f) =
+      SmoothForm.wedge (J.covectorComplexStructure a) f := by
+  apply Subtype.ext
+  funext x
+  ext w
+  have hw : ![w 0] = w := funext fun i ↦ by fin_cases i; rfl
+  rw [← hw, covectorComplexStructure_apply_vec, SmoothForm.wedge_apply_zero_right,
+    SmoothForm.wedge_apply_zero_right, covectorComplexStructure_apply_vec, neg_mul]
+
 /-- The paired wedge on type forms, with total degree regrouped into the sum of types. -/
 def wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s : ℕ) :
     J.typeForms (F := F₁) p q →ₗ[ℂ]
@@ -160,11 +174,11 @@ def wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s : ℕ) :
   LinearMap.mk₂ ℂ (fun φ ψ ↦
     ⟨LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (by omega : (p + q) + (r + s) = (p + r) + (q + s))
-        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.1 ψ.1),
+        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.val ψ.val),
       (mem_typeForms _ _ _ _).mpr
-        ((((mem_typeForms _ _ _ _).mp φ.2).wedgeWith
+        ((((mem_typeForms _ _ _ _).mp φ.property).wedgeWith
           (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
-          ((mem_typeForms _ _ _ _).mp ψ.2)).cast _)⟩)
+          ((mem_typeForms _ _ _ _).mp ψ.property)).cast _)⟩)
     (fun _ _ _ ↦ Subtype.ext <| by simp [map_add])
     (fun c φ ψ ↦ Subtype.ext <| by
       simp only [Submodule.coe_smul, SmoothForm.wedgeWith_bilinearRestrictScalars_smul_left]
@@ -184,10 +198,10 @@ regrouping. -/
 theorem coe_wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s : ℕ)
     (φ : J.typeForms (F := F₁) p q)
     (ψ : J.typeForms (F := F₂) r s) :
-    (J.wedgeWithType μ p q r s φ ψ).1 =
+    (J.wedgeWithType μ p q r s φ ψ).val =
       LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (by omega : (p + q) + (r + s) = (p + r) + (q + s))
-        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.1 ψ.1) := (rfl)
+        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.val ψ.val) := (rfl)
 
 end SmoothAlmostComplexStructure
 

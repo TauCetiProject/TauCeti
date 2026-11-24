@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.TotallyReal.Basic
-public import TauCeti.Geometry.Symplectic.Complex.CoordinateSpace
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.CoordinateSpace
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 /-!
 # Model examples of totally real embeddings
 
-The real locus in complex coordinate space and the unit circle give totally real embeddings.
+The real locus in complex coordinate space, in particular the real line in `ℂ`, and the unit
+circle give totally real embeddings.
 Complex tangent planes fail the maximal-total-reality test, and a real line in complex dimension
 two fails the half-dimension condition. The statements use the native constant smooth structure
 for multiplication by `I`, interpreted pointwise, and allow every embedding regularity.
@@ -65,6 +66,25 @@ theorem isTotallyRealEmbedding_realLocus {ι : Type*} [Fintype ι] (n : ℕ∞ω
   apply ht.isMaximalTotallyReal (hJi.comp (LinearMap.range L.toLinearMap).subtype_injective)
   rw [LinearMap.finrank_range_of_inj hinj]
   simp [Module.finrank_pi_fintype, Nat.mul_comm]
+
+/-- The real line is a totally real embedding into `ℂ` for the standard complex structure, for
+every regularity: the case of a single coordinate of `TauCeti.isTotallyRealEmbedding_realLocus`,
+with the real line `ℝ` itself as domain. -/
+theorem isTotallyRealEmbedding_ofRealCLM (n : ℕ∞ω) :
+    IsTotallyRealEmbedding 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) n
+      (AlmostComplexStructure.ofComplexModule ℂ).constSmooth.almostComplexStructureAt
+      Complex.ofRealCLM := by
+  rw [ContinuousLinearMap.isTotallyRealEmbedding_iff]
+  refine ⟨by simp, ?_⟩
+  have hJ : (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap =
+      (LinearMap.lsmul ℂ ℂ I).restrictScalars ℝ := by
+    ext v
+    simp [AlmostComplexStructure.ofComplexModule_apply]
+  have hr : LinearMap.range Complex.ofRealCLM.toLinearMap = Submodule.span ℝ {(1 : ℂ)} := by
+    ext v
+    simp [Submodule.mem_span_singleton, Complex.real_smul]
+  rw [hJ, hr]
+  exact isMaximalTotallyReal_span_one
 
 attribute [local instance] finrank_real_complex_fact'
 
@@ -130,26 +150,6 @@ theorem not_isTotallyRealEmbedding_complexLine (n : ℕ∞ω) :
 section Lagrangian
 
 variable {ι : Type*} [Fintype ι]
-
-/-- The real locus in complex coordinate space is a Lagrangian embedding for every nonzero
-multiple `c Σ_j ds_j ∧ dt_j` of the standard symplectic form. -/
-theorem isLagrangianEmbedding_realLocus_rescale (c : ℝ) (hc : c ≠ 0) :
-    (SymplecticForm.isNondegenerate_constSmooth
-        ((stdComplexPiSymplecticForm ι).rescale c hc)).IsLagrangianEmbedding
-      𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
-  (SmoothTwoForm.IsNondegenerate.isLagrangianEmbedding_iff_of_isSmoothEmbedding
-    (isTotallyRealEmbedding_realLocus ∞).isSmoothEmbedding).2
-    ((SymplecticForm.isLagrangianMap_continuousLinearMap_iff _ _).2
-      ((SymplecticForm.isLagrangian_rescale_iff _ _).2
-        isLagrangian_stdComplexPiSymplecticForm_range_ofReal))
-
-/-- The real locus in complex coordinate space is a Lagrangian embedding for the standard
-symplectic form `Σ_j ds_j ∧ dt_j`: the case `c = 1` of `isLagrangianEmbedding_realLocus_rescale`. -/
-theorem isLagrangianEmbedding_realLocus :
-    (SymplecticForm.isNondegenerate_constSmooth
-        (stdComplexPiSymplecticForm ι)).IsLagrangianEmbedding
-      𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) := by
-  simpa using isLagrangianEmbedding_realLocus_rescale (ι := ι) 1 one_ne_zero
 
 /-! The Lagrangian comparison recovers the smooth case of `isTotallyRealEmbedding_realLocus`:
 the real locus, Lagrangian for `Σ_j ds_j ∧ dt_j`, is totally real for multiplication by `I`,

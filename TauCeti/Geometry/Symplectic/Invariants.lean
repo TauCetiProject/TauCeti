@@ -7,11 +7,12 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Subrepresentation
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Invariants
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.PolarCompatible
 
 /-!
-# Fixed vectors of symplectic representations of compact groups
+# Fixed vectors of symplectic representations
 
 Let a compact group `G` act continuously and linearly on a finite-dimensional real vector space
 `E`, preserving a symplectic form `ω`. The subspace `E^G` of vectors fixed by every element of `G`
@@ -36,6 +37,12 @@ symplectic, because a vector `v ∈ L ∩ L^ω` has `ω (v, J v) = 0`
 (`TauCeti.SymplecticForm.Tames.isSymplectic_of_mem_invtSubmodule`,
 `TauCeti.SymplecticForm.Tames.isSymplectic_invariants`).
 
+Compactness can instead be replaced by an invariant inner product. If an arbitrary group acts on a
+finite-dimensional real inner product space by linear isometries preserving `ω`, the polar
+normalization `TauCeti.SymplecticForm.polarComplexStructure` of `ω` is such a `J`, so the fixed
+vectors again form a symplectic subspace
+(`TauCeti.SymplecticForm.isSymplectic_invariants_of_inner`). The shear preserves no inner product.
+
 ## Main definitions
 
 * `TauCeti.SymplecticForm.normalSubrepresentation ω hρ`: the symplectic complement of the
@@ -45,8 +52,12 @@ symplectic, because a vector `v ∈ L ∩ L^ω` has `ω (v, J v) = 0`
 
 * `TauCeti.SymplecticForm.Tames.isSymplectic_invariants`: the invariants of a representation by
   maps complex linear for an almost complex structure `J` tamed by `ω` form a symplectic subspace.
+* `TauCeti.SymplecticForm.isSymplectic_invariants_of_inner`: the fixed vectors of a
+  representation by linear isometries preserving `ω` form a symplectic subspace.
 * `TauCeti.SymplecticForm.apply_mem_orthogonal`: the symplectic complement of a subspace stable
   under a group preserving `ω` is stable too.
+* `TauCeti.SymplecticForm.apply_mem_orthogonal_range`: in particular so is the symplectic
+  complement of the image of an equivariant linear map.
 * `TauCeti.SymplecticForm.IsSymplectic.invariants_normalSubrepresentation`: when the invariants
   are symplectic, the normal representation has no nonzero fixed vector.
 * `TauCeti.SymplecticForm.isSymplectic_invariants`: the fixed vectors of a continuous symplectic
@@ -78,12 +89,31 @@ structure tamed by `ω` form a symplectic subspace. -/
 theorem Tames.isSymplectic_invariants {G : Type*} [Group G] (hJ : ω.Tames J)
     {ρ : Representation ℝ G V} (hρ : ∀ g, IsComplexLinearMap J J (ρ g)) :
     ω.IsSymplectic ρ.invariants :=
-  hJ.isSymplectic_of_mem_invtSubmodule <| (Module.End.mem_invtSubmodule _).2 fun v hv ↦
-    (Representation.mem_invariants ρ _).2 fun g ↦ by
-      rw [(isComplexLinearMap_iff_apply J J (ρ g)).1 (hρ g) v,
-        (Representation.mem_invariants ρ v).1 hv g]
+  hJ.isSymplectic_of_mem_invtSubmodule (J.invariants_mem_invtSubmodule hρ)
 
 end Tames
+
+/-! ### Representations by linear isometries -/
+
+section Isometric
+
+variable {E G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [Group G] {ω : SymplecticForm E} {ρ : Representation ℝ G E}
+
+/-- **The fixed vectors of a group of symplectic isometries form a symplectic subspace.** On a
+finite-dimensional real inner product space, the vectors fixed by a representation by linear
+isometries preserving a symplectic form `ω` form a symplectic subspace. No compactness or
+topology on the group is needed: the polar normalization of `ω` with respect to the invariant
+inner product commutes with every group element
+(`TauCeti.SymplecticForm.isComplexLinearMap_polarComplexStructure_of_inner`), so the fixed vectors
+form a subspace stable under it
+(`TauCeti.AlmostComplexStructure.invariants_mem_invtSubmodule`). -/
+theorem isSymplectic_invariants_of_inner (hρ : ∀ g u v, inner ℝ (ρ g u) (ρ g v) = inner ℝ u v)
+    (hω : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) : ω.IsSymplectic ρ.invariants :=
+  Tames.isSymplectic_invariants ω.compatible_polarComplexStructure.tames fun g ↦
+    ω.isComplexLinearMap_polarComplexStructure_of_inner (hρ g) (hω g)
+
+end Isometric
 
 /-! ### The normal representation -/
 
@@ -100,6 +130,14 @@ theorem apply_mem_orthogonal (hρ : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) {L
   intro y hy
   rw [← ρ.self_inv_apply g y, hρ]
   exact hv _ (hL g⁻¹ y hy)
+
+/-- The symplectic complement of the image of an equivariant linear map into a representation
+preserving `ω` is stable under the representation. -/
+theorem apply_mem_orthogonal_range (hρ : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) {W : Type*}
+    [AddCommGroup W] [Module ℝ W] {σ : Representation ℝ G W} {ι : W →ₗ[ℝ] V}
+    (hισ : ∀ g w, ι (σ g w) = ρ g (ι w)) (g : G) {v : V}
+    (hv : v ∈ ω.orthogonal (LinearMap.range ι)) : ρ g v ∈ ω.orthogonal (LinearMap.range ι) :=
+  apply_mem_orthogonal hρ (by rintro g _ ⟨w, rfl⟩; exact ⟨σ g w, hισ g w⟩) g hv
 
 variable (ω) in
 /-- The **normal representation** of a representation `ρ` preserving `ω`: the restriction of `ρ`
@@ -131,7 +169,7 @@ theorem IsSymplectic.invariants_normalSubrepresentation
     (ω.normalSubrepresentation hρ).toRepresentation.invariants = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro v hv
-  refine Subtype.ext ((Submodule.disjoint_def.1 (isSymplectic_iff_disjoint.1 h)) v ?_ v.2)
+  refine Subtype.ext ((Submodule.disjoint_def.1 (isSymplectic_iff_disjoint.1 h)) v ?_ v.property)
   intro g
   simpa [Subrepresentation.toRepresentation_apply_coe] using
     congrArg Subtype.val ((Representation.mem_invariants _ v).1 hv g)

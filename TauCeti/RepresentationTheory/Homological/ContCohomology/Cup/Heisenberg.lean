@@ -124,7 +124,8 @@ theorem d1_neg :
 /-- A Heisenberg cochain vanishes at `1`. -/
 theorem apply_one : h 1 = 0 := by
   have e := hh.apply_mul 1 1
-  rwa [mul_one, one_smul, one_smul, groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 b.2).2,
+  rwa [mul_one, one_smul, one_smul, groupCohomology.map_one_of_isCocycle₁
+      (mem_Z1_iff.1 b.property).2,
     map_zero, add_zero, left_eq_add] at e
 
 variable {N : Subgroup G} [N.Normal]
@@ -133,9 +134,9 @@ variable {N : Subgroup G} [N.Normal]
 `g • h (g⁻¹ * n * g) = h n + n • h g - h g`. -/
 theorem apply_conj (haN : ∀ n : N, (a : G → M) n = 0) (hbN : ∀ n : N, (b : G → A) n = 0)
     (g : G) (n : N) : g • h (g⁻¹ * n * g) = h n + (n : G) • h g - h g := by
-  have hb1 := (mem_Z1_iff.1 b.2).2
+  have hb1 := (mem_Z1_iff.1 b.property).2
   have hmem : g⁻¹ * n * g ∈ N := by
-    simpa only [inv_inv] using ‹N.Normal›.conj_mem n n.2 g⁻¹
+    simpa only [inv_inv] using ‹N.Normal›.conj_mem n n.property g⁻¹
   -- `b` is constant on the coset `N * g`: writing `n * g = g * (g⁻¹ * n * g)` puts the `N`-factor
   -- second, where the cocycle law and `hbN` kill it.
   have hng : (n : G) * g = g * (g⁻¹ * n * g) := by group
@@ -222,8 +223,8 @@ theorem apply_inv_of_smul_eq_self (g : G) :
     h g⁻¹ = -h g + μ ((a : G → M) g) ((b : G → A) g) := by
   have e := hh.apply_mul_of_smul_eq_self htrivA htrivP g g⁻¹
   have hb : (b : G → A) g⁻¹ = -(b : G → A) g := by
-    rw [eq_neg_iff_add_eq_zero, add_comm, ← map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.2,
-      mul_inv_cancel, groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 b.2).2]
+    rw [eq_neg_iff_add_eq_zero, add_comm, ← map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.property,
+      mul_inv_cancel, groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 b.property).2]
   rw [mul_inv_cancel, hh.apply_one, hb, map_neg] at e
   rw [eq_neg_add_iff_add_eq, ← sub_eq_zero, sub_eq_add_neg]
   exact e.symm
@@ -234,37 +235,38 @@ include hh htrivM htrivA htrivP in
 pairing, read on the commutator `g * g' * g⁻¹ * g'⁻¹`. -/
 theorem apply_commutatorElement_of_smul_eq_self (g g' : G) :
     h ⁅g, g'⁆ = μ ((a : G → M) g) ((b : G → A) g') - μ ((a : G → M) g') ((b : G → A) g) := by
-  have ha_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivM a.2
-  have hb_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.2
+  have ha_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivM a.property
+  have hb_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.property
   have ha_inv : ∀ x : G, (a : G → M) x⁻¹ = -(a : G → M) x := fun x => by
     rw [eq_neg_iff_add_eq_zero, add_comm, ← ha_mul, mul_inv_cancel,
-      groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 a.2).2]
+      groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 a.property).2]
   have hb_inv : ∀ x : G, (b : G → A) x⁻¹ = -(b : G → A) x := fun x => by
     rw [eq_neg_iff_add_eq_zero, add_comm, ← hb_mul, mul_inv_cancel,
-      groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 b.2).2]
+      groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 b.property).2]
   simp only [commutatorElement_def, hh.apply_mul_of_smul_eq_self htrivA htrivP,
     hh.apply_inv_of_smul_eq_self htrivA htrivP, ha_mul, ha_inv, hb_inv, map_add, map_neg,
     AddMonoidHom.add_apply, AddMonoidHom.neg_apply]
   abel
 
-include hh htrivM htrivA htrivP in
-/-- **The value of a Heisenberg cochain on a power**, for trivial actions:
+include hh htrivA htrivP in
+/-- **The value of a Heisenberg cochain on a power**, for trivial actions on `A` and `P`:
 `h (g ^ n) = n • h g + (n.choose 2) • μ (a g) (b g)`. Besides the linear term `n • h g`, the
 `n`-th power picks up the diagonal value `μ (a g) (b g)` of the cup pairing, once for each of the
 `n.choose 2` pairs of factors. -/
 theorem apply_pow_of_smul_eq_self (g : G) (n : ℕ) :
     h (g ^ n) = n • h g + (n.choose 2) • μ ((a : G → M) g) ((b : G → A) g) := by
-  have ha_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivM a.2
-  have ha_pow : ∀ n : ℕ, (a : G → M) (g ^ n) = n • (a : G → M) g := fun n => by
+  have hb_mul := map_mul_of_smul_eq_self_of_mem_Z1 htrivA b.property
+  have hb_pow : ∀ n : ℕ, (b : G → A) (g ^ n) = n • (b : G → A) g := fun n => by
     induction n with
-    | zero => rw [pow_zero, zero_smul, groupCohomology.map_one_of_isCocycle₁ (mem_Z1_iff.1 a.2).2]
-    | succ n ih => rw [pow_succ, ha_mul, ih, succ_nsmul]
+    | zero => rw [pow_zero, zero_smul, groupCohomology.map_one_of_isCocycle₁
+        (mem_Z1_iff.1 b.property).2]
+    | succ n ih => rw [pow_succ, hb_mul, ih, succ_nsmul]
   induction n with
   | zero =>
     rw [pow_zero, hh.apply_one, zero_smul, Nat.choose_zero_succ, zero_smul, add_zero]
   | succ n ih =>
-    rw [pow_succ, hh.apply_mul_of_smul_eq_self htrivA htrivP, ih, ha_pow, map_nsmul,
-      AddMonoidHom.nsmul_apply, Nat.choose_succ_succ, Nat.choose_one_right]
+    rw [pow_succ', hh.apply_mul_of_smul_eq_self htrivA htrivP, ih, hb_pow, map_nsmul,
+      Nat.choose_succ_succ, Nat.choose_one_right]
     simp only [add_nsmul, one_nsmul]
     abel
 

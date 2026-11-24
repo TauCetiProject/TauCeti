@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Degree.Basic
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -92,7 +92,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {m : ℕ}
 
 private theorem inner_coe_coe_sphere (p : sphere (0 : E) 1)
     (v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) : ⟪(p : E), ((v : (ℝ ∙ (p : E))ᗮ) : E)⟫ = 0 :=
-  Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).2
+  Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).property
 
 /-- The **rotation family** at a point `p` of the unit sphere `Sⁿ` of `E`: a unit vector `v` of
 `p^⊥`, that is a unit tangent vector of `Sⁿ` at `p`, and a point `z` of the unit circle of `ℂ` are
@@ -106,7 +106,7 @@ def sphereRotationFamily (p : sphere (0 : E) 1) :
     have hv : ‖((x.1 : (ℝ ∙ (p : E))ᗮ) : E)‖ = 1 := norm_eq_of_mem_sphere x.1
     simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right,
       inner_coe_coe_sphere, norm_eq_of_mem_sphere p, hv]
-    linarith [Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]⟩
+    linarith [Complex.re_sq_add_im_sq_of_mem_sphere x.2.property]⟩
 
 @[simp]
 theorem coe_sphereRotationFamily (p : sphere (0 : E) 1)
@@ -114,6 +114,12 @@ theorem coe_sphereRotationFamily (p : sphere (0 : E) 1)
     (sphereRotationFamily p x : E) =
       (x.2 : ℂ).re • (p : E) + (x.2 : ℂ).im • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) :=
   (rfl)
+
+/-- The rotation family is continuous, in any dimension. -/
+@[fun_prop]
+theorem continuous_sphereRotationFamily (p : sphere (0 : E) 1) :
+    Continuous (sphereRotationFamily p) :=
+  continuous_induced_rng.2 <| by simp only [Function.comp_def, coe_sphereRotationFamily]; fun_prop
 
 /-- The rotation family is smooth. -/
 theorem contMDiff_sphereRotationFamily (p : sphere (0 : E) 1) :
@@ -128,7 +134,7 @@ theorem contMDiff_sphereRotationFamily (p : sphere (0 : E) 1) :
   exact ContMDiff.codRestrict_sphere
     (((Complex.reCLM.contDiff.contMDiff.comp hz).smul contMDiff_const).add
       ((Complex.imCLM.contDiff.contMDiff.comp hz).smul hv))
-    fun x ↦ (sphereRotationFamily p x).2
+    fun x ↦ (sphereRotationFamily p x).property
 
 /-- **The derivative of the rotation family.** Read in `E`, a tangent vector `(a, b)` at `(v, z)`
 is sent to `Re b • p + Im b • v + Im z • a`, where `a` and `b` are read in `p^⊥` and in `ℂ` through
@@ -164,21 +170,9 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
         ((y.1 : (ℝ ∙ (p : E))ᗮ) : E)) x w =
       ((mvfderiv (𝓡 m) ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) x.1
         (Manifold.tangentSpaceProdEquiv x w).1 : (ℝ ∙ (p : E))ᗮ) : E) := by
-    have h := (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_apply hι (Manifold.tangentSpaceProdEquiv x w).1
-    rw [Manifold.tangentSpaceProdEquiv_apply] at h ⊢
+    rw [Manifold.tangentSpaceProdEquiv_apply]
     -- The inclusion `Sᵐ ⊆ E` is the inclusion into `p^⊥` followed by `subtypeL` by definition.
-    exact (mvfderiv_comp_fst_apply
-      (fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E)) x w).trans h
-  have hL (L : ℂ →L[ℝ] ℝ) : mvfderiv ((𝓡 m).prod (𝓡 1))
-      (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x w =
-      L (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
-        (Manifold.tangentSpaceProdEquiv x w).2) := by
-    -- `mvfderiv_comp_snd_apply` rewrites the derivative of a composition `g ∘ Prod.snd`, so the
-    -- map, a lambda, is first written definitionally in that form.
-    rw [show (fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) =
-      (L ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ)) ∘ Prod.snd from rfl, mvfderiv_comp_snd_apply,
-      Manifold.tangentSpaceProdEquiv_apply]
-    exact L.mvfderiv_comp_apply hκ _
+    exact (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_fst_apply hι w
   -- Write the map as a sum of products of scalar and vector-valued functions.
   rw [show (fun y ↦ (sphereRotationFamily p y : E)) =
     ((fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ Complex.reCLM (y.2 : ℂ)) •
@@ -188,7 +182,8 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
     mvfderiv_add (hre.smul mdifferentiableAt_const) (him.smul hv),
     mvfderiv_smul hre mdifferentiableAt_const, mvfderiv_smul him hv]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
-  rw [hL Complex.reCLM, hL Complex.imCLM, hv', mvfderiv_const]
+  rw [Complex.reCLM.mvfderiv_comp_snd_apply hκ, Complex.imCLM.mvfderiv_comp_snd_apply hκ, hv',
+    mvfderiv_const, Manifold.tangentSpaceProdEquiv_apply]
   simp only [zero_apply, smul_zero, zero_add, Complex.reCLM_apply, Complex.imCLM_apply]
   abel
 
@@ -216,8 +211,8 @@ theorem sphereRotationFamily_eq_sphereRotationFamily_iff (p : sphere (0 : E) 1)
       rw [hre] at hE
       exact add_left_cancel hE
     have hsq : (y.2 : ℂ).im ^ 2 = (x.2 : ℂ).im ^ 2 := by
-      linarith [congrArg (· ^ 2) hre, Complex.re_sq_add_im_sq_of_mem_sphere y.2.2,
-        Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]
+      linarith [congrArg (· ^ 2) hre, Complex.re_sq_add_im_sq_of_mem_sphere y.2.property,
+        Complex.re_sq_add_im_sq_of_mem_sphere x.2.property]
     rcases sq_eq_sq_iff_eq_or_eq_neg.1 hsq with him' | him'
     · left
       rw [him'] at him
@@ -238,7 +233,7 @@ theorem sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (p : sphere (0 : E) 1)
     {x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im = 0) :
     sphereRotationFamily p x = p ∨ sphereRotationFamily p x = -p := by
   have hre : (x.2 : ℂ).re ^ 2 = 1 ^ 2 := by
-    linarith [sq_eq_zero_iff.2 hx, Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]
+    linarith [sq_eq_zero_iff.2 hx, Complex.re_sq_add_im_sq_of_mem_sphere x.2.property]
   rcases sq_eq_sq_iff_eq_or_eq_neg.1 hre with h | h
   · exact .inl (Subtype.ext (by simp [h, hx]))
   · exact .inr (Subtype.ext (by simp [h, hx]))
@@ -333,7 +328,7 @@ private theorem volumeForm_cons_cons_mvfderiv (o : Orientation ℝ E (Fin (m + 1
     clear_value W
     exact Orientation.volumeForm_apply_ne_zero_iff.2
       (LinearIndependent.finCons_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p)
-        (W.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (W i).2)
+        (W.linearIndependent.map' _ (Submodule.ker_subtype _)) fun i ↦ (W i).property)
   · rw [Orientation.orientation_eq_orientationAt_sphereOrientation_iff,
       show (Fin.cons ((v : (ℝ ∙ (p : E))ᗮ)) fun i ↦ mvfderiv (𝓡 m)
         ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) v (b i)) = ⇑W by simp [W],

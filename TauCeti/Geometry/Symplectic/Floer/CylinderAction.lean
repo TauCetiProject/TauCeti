@@ -7,10 +7,13 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Symplectic.Manifold.Energy
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -115,8 +118,28 @@ These are the manifold-target, capped-action versions of the estimates of
 `(z, y) ↦ G z (u y)` on `ℝ² × ℝ²`, so no integrability hypothesis is needed. The existence,
 compactness and counting of continuation cylinders are not treated here.
 
+**The whole cylinder.** All of the above concern a rectangle `[a, b] × [0, 1]`. Letting
+`a → -∞` and `b → ∞` gives the identity for a solution asymptotic to loops `x₀` at `s = -∞` and
+`x₁` at `s = ∞`. For a perturbation `K = K_s ds + K_t dt` with `K_s(s, 1) = K_s(s, 0)`, equal to
+`H₀(t) dt` for `s ≤ -c` and `H₁(t) dt` for `s ≥ c`, bounded for `t ∈ [0, 1]`, and a `C¹` map `u`,
+`1`-periodic in `t`, whose energy, area and curvature densities are integrable over the strip
+`ℝ × [0, 1]`,
+
+`∫ E = ∫ u^*ω + ∫₀¹ H₁(t, x₁(t)) dt - ∫₀¹ H₀(t, x₀(t)) dt - ∫ R_K(u)`
+
+(`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_univ_prod`), as soon as the
+loops `u(a i, ·)` and `u(b i, ·)` converge pointwise to `x₀` and `x₁` along some `a i → -∞` and
+`b i → ∞`, for instance along sequences. For a Floer cylinder, `K = H_t dt`, the curvature term
+vanishes (`IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod`), and
+nonnegativity of the energy gives `∫₀¹ H(t, x₀(t)) dt ≤ ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt`
+(`IsNondegenerate.intervalIntegral_le_integral_add_intervalIntegral_of_cylindrical`): the capped
+action increases from the negative to the positive asymptotic orbit, with the cap glued along
+the whole cylinder.
+
 ## Main results
 
+* `TauCeti.Floer.neg_setIntegral_fderiv_le_setIntegral`: the integrated curvature of a homotopy
+  along a map is bounded below by `-∫_a^b c` for `-∂_s G ≤ c(s)`.
 * `TauCeti.Floer.neg_setIntegral_fderiv_linearHomotopy_le`: the integrated curvature of a linear
   homotopy with a monotone profile along a map is bounded below by `-(β(b) - β(a)) ∫₀¹ B` for
   `H₀ - H₁ ≤ B`.
@@ -124,6 +147,8 @@ compactness and counting of continuation cylinders are not treated here.
   map over `[a, b] × [0, 1]` for a perturbation `K = G_z dt`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`: the energy of a
   map over `[a, b] × [0, 1]` for a cylindrical perturbation.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_univ_prod`: the energy of a
+  map over the whole cylinder, with the Hamiltonian terms at its asymptotic loops.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`: the energy
   of a cylinder is the drop of the capped action, for any nondegenerate form.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral`:
@@ -198,6 +223,43 @@ theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M →
   exact ((contMDiff_uncurry_comp_snd hH₀).add (hs.smul ((contMDiff_uncurry_comp_snd hH₁).sub
     (contMDiff_uncurry_comp_snd hH₀)))).congr fun p ↦ linearHomotopy_def β p.1 p.2
 
+/-- The reparametrization `(s, t) ↦ K_{(β(s), t)}` of a `Cⁿ` family of Hamiltonians on a manifold by
+a `Cⁿ` function `β` is a `Cⁿ` family of Hamiltonians. -/
+theorem contMDiff_uncurry_reparam {n : ℕ∞} {K : ℝ × ℝ → M → ℝ} {β : ℝ → ℝ}
+    (hβ : ContDiff ℝ n β) (hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry fun w : ℝ × ℝ ↦ K (β w.1, w.2)) :=
+  hK.comp ((((hβ.comp contDiff_fst).prodMk contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
+    contMDiff_snd)
+
+/-- **The integrated curvature of a homotopy along a map.** Let `G_z`, `z = (s, t)`, be a `C¹`
+family of Hamiltonians on a manifold and `u` a `C¹` map. If `-∂_s G(s, t, u(s, t)) ≤ c(s)` on
+`[a, b] × [0, 1]` for a function `c` integrable on `[a, b]`, then minus the integral of the
+curvature `∂_s G` along `u` over the rectangle is at most `∫_a^b c`. -/
+theorem neg_setIntegral_fderiv_le_setIntegral {G : ℝ × ℝ → M → ℝ}
+    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} {c : ℝ → ℝ} (hc : IntegrableOn c (Icc a b))
+    (hGc : ∀ z ∈ Icc a b ×ˢ Icc 0 1, -deriv (fun s ↦ G (s, z.2) (u z)) z.1 ≤ c z.1) :
+    -∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤
+      ∫ s in Icc a b, c s := by
+  have hcurv : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
+    (continuous_fderiv_of_contMDiff hu hG).clm_apply continuous_const
+  -- On the rectangle, the restricted Lebesgue measure is the product of the restrictions.
+  have hci : IntegrableOn (fun z : ℝ × ℝ ↦ c z.1) (Icc a b ×ˢ Icc 0 1) := by
+    rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
+    exact Integrable.comp_fst hc _
+  have hle : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
+      -fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 :=
+    setIntegral_mono_on hcurv.neg.integrableOn_Icc_prod_Icc hci
+      (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦ by
+        have hd : ContDiff ℝ 1 fun w ↦ G w (u z) :=
+          contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))
+        rw [stdComplexLineReal_eq,
+          fderiv_apply_mk_one_zero (hd.differentiable one_ne_zero z)]
+        exact hGc z hz
+  have hrhs : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 = ∫ s in Icc a b, c s := by
+    simpa using setIntegral_Icc_prod_comp_fst c zero_le_one
+  rwa [integral_neg, hrhs] at hle
+
 /-- **The integrated curvature of a linear homotopy along a map.** Let `H₀` and `H₁` be `C¹`
 time-dependent Hamiltonians on a manifold, `β` a monotone `C¹` profile and `u` a continuous map.
 If `H₀ - H₁ ≤ B` along `u` on `[a, b] × [0, 1]` for a function `B` integrable on `[0, 1]`, then
@@ -255,18 +317,16 @@ theorem IsNondegenerate.integral_floerEnergyDensity_zero_left (hω : ω.IsNondeg
     (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
     {a b : ℝ} (hab : a ≤ b) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
-      rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, G (b, t) (u (b, t))) -
+      rectangleIntegral ω.val u (a, 0) (b, 1) + (∫ t in 0..1, G (b, t) (u (b, t))) -
         (∫ t in 0..1, G (a, t) (u (a, t))) -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
   have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
   have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- The symplectic area density is the integrand of the rectangle integral.
   let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area :=
-    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-      simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  have harea_cont : Continuous area := continuous_eval₂_mfderiv ω hu
   -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
   have hf : ContDiff ℝ 1 fun w ↦ G w (u w) :=
     contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk hu))
@@ -304,7 +364,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
     {a b : ℝ} (hab : a ≤ b) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, H t (u (b, t))) -
+      rectangleIntegral ω.val u (a, 0) (b, 1) + (∫ t in 0..1, H t (u (b, t))) -
         ∫ t in 0..1, H t (u (a, t)) := by
   rw [hω.integral_floerEnergyDensity_zero_left (Floer.contMDiff_uncurry_comp_snd hH) hu hab]
   simp [fderiv_cylindrical_apply_stdComplexLineReal]
@@ -324,11 +384,11 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_in
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
     (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = u (b, t)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
-      cylinderAction ω.1 (fun t ↦ G (a, t))
+      cylinderAction ω.val (fun t ↦ G (a, t))
           (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
-        cylinderAction ω.1 (fun t ↦ G (b, t)) v -
+        cylinderAction ω.val (fun t ↦ G (b, t)) v -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- Rescale `[a, b]` to `[0, 1]` to view `u` as a cylinder from `γ_a` to `γ_b`.
   have hw := hu.comp (contMDiff_prodMap_affine (n := 1) a b)
   rw [hω.integral_floerEnergyDensity_zero_left hG hu hab,
@@ -353,8 +413,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
     (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = u (b, t)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      cylinderAction ω.1 H (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
-        cylinderAction ω.1 H v := by
+      cylinderAction ω.val H (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
+        cylinderAction ω.val H v := by
   rw [hω.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral
     (Floer.contMDiff_uncurry_comp_snd hH) hu hab hv hv₀]
   simp [fderiv_cylindrical_apply_stdComplexLineReal]
@@ -367,15 +427,15 @@ family of Hamiltonians, and `u` a `C²` map, `1`-periodic in its second coordina
 where `γ_a = u(a, ·)` and `A` is the action `TauCeti.contractibleLoopAction` of contractible
 loops. The loop `γ_a` is capped by gluing `u` to the cap of `γ_b`. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_sub_sub_integral
-    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.1)
+    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.val)
     (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
     (hv : IsCap I v fun t ↦ u (b, t)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
-      contractibleLoopAction ω.1 (fun t ↦ G (a, t)) (fun t ↦ u (a, t)) -
-        contractibleLoopAction ω.1 (fun t ↦ G (b, t)) (fun t ↦ u (b, t)) -
+      contractibleLoopAction ω.val (fun t ↦ G (a, t)) (fun t ↦ u (a, t)) -
+        contractibleLoopAction ω.val (fun t ↦ G (b, t)) (fun t ↦ u (b, t)) -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- Rescale `[a, b]` to `[0, 1]` to view `u` as a cylinder from `γ_a` to `γ_b`.
   let σ : ℝ → ℝ := fun s ↦ a + (b - a) * s
   have hσ (s : ℝ) : HasDerivAt σ (b - a) s := by
@@ -387,8 +447,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_su
       apply_add_one := fun z ↦ hper (σ z.1, z.2)
       apply_zero := fun t ↦ by simp [σ]
       apply_one := fun t ↦ by simp [σ] }
-  have hrect : rectangleIntegral ω.1 (u ∘ Prod.map σ id) (0, 0) (1, 1) =
-      rectangleIntegral ω.1 u (a, 0) (b, 1) := by
+  have hrect : rectangleIntegral ω.val (u ∘ Prod.map σ id) (0, 0) (1, 1) =
+      rectangleIntegral ω.val u (a, 0) (b, 1) := by
     rw [rectangleIntegral_comp_prodMap hω₀ (hu.of_le one_le_two) (fun s _ ↦ hσ s)
       continuousOn_const]
     simp [σ]
@@ -410,9 +470,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_cappedLoopAction_sub
     (hab : a ≤ b) {D : ℝ × ℝ → M} {x : M}
     (hD : IsLoopCylinder I D (fun _ ↦ x) fun t ↦ u (a, t)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      cappedLoopAction ω.1 H (fun t ↦ u (b, t))
+      cappedLoopAction ω.val H (fun t ↦ u (b, t))
           (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id)) -
-        cappedLoopAction ω.1 H (fun t ↦ u (a, t)) D := by
+        cappedLoopAction ω.val H (fun t ↦ u (a, t)) D := by
   rw [hω.integral_floerEnergyDensity_cylindrical hH (hu.of_le one_le_two) hab,
     cappedLoopAction_rectangleTrans_sub_cappedLoopAction (ω.isSmoothForm.of_le (by simp)) H hD
       (isLoopCylinder_comp_prodMap hu hper a b),
@@ -433,9 +493,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_cappedLoopAction_sub_add
     (hDa : IsLoopCylinder I Da (fun _ ↦ xa) fun t ↦ u (a, t))
     (hDb : IsLoopCylinder I Db (fun _ ↦ xb) fun t ↦ u (b, t)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      cappedLoopAction ω.1 H (fun t ↦ u (b, t)) Db -
-          cappedLoopAction ω.1 H (fun t ↦ u (a, t)) Da +
-        rectangleIntegral ω.1
+      cappedLoopAction ω.val H (fun t ↦ u (b, t)) Db -
+          cappedLoopAction ω.val H (fun t ↦ u (a, t)) Da +
+        rectangleIntegral ω.val
           (rectangleTrans (rectangleTrans Da (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id))
             (Db ∘ Prod.map (fun s ↦ 1 - s) id)) (0, 0) (1, 1) := by
   rw [hω.integral_floerEnergyDensity_eq_cappedLoopAction_sub hH hu hper hab hDa,
@@ -457,8 +517,8 @@ theorem IsNondegenerate.cappedLoopAction_le_cappedLoopAction (hω : ω.IsNondege
     (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
-    cappedLoopAction ω.1 H (fun t ↦ u (a, t)) D ≤
-      cappedLoopAction ω.1 H (fun t ↦ u (b, t))
+    cappedLoopAction ω.val H (fun t ↦ u (a, t)) D ≤
+      cappedLoopAction ω.val H (fun t ↦ u (b, t))
         (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id)) := by
   have h := hω.integral_floerEnergyDensity_eq_cappedLoopAction_sub hH hu hper hab hD
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
@@ -474,14 +534,14 @@ perturbation `K = H_t dt` is `A_H(γ_a) - A_H(γ_b)`, where `γ_a = u(a, ·)` an
 `TauCeti.contractibleLoopAction` of contractible loops. The loop `γ_a` is capped by gluing `u` to
 the cap of `γ_b`, so both actions are computed with genuine caps. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_sub
-    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.1)
+    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.val)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
     (hv : IsCap I v fun t ↦ u (b, t)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) -
-        contractibleLoopAction ω.1 H (fun t ↦ u (b, t)) := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+      contractibleLoopAction ω.val H (fun t ↦ u (a, t)) -
+        contractibleLoopAction ω.val H (fun t ↦ u (b, t)) := by
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   obtain ⟨x, hv'⟩ := isCap_iff.1 hv
   rw [hω.integral_floerEnergyDensity_eq_cylinderAction_sub hH (hu.of_le one_le_two) hab
       (hv'.contMDiff.of_le one_le_two) hv'.apply_zero,
@@ -504,8 +564,8 @@ theorem IsNondegenerate.cylinderAction_le_cylinderAction
     (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
-    cylinderAction ω.1 H v ≤
-      cylinderAction ω.1 H (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) := by
+    cylinderAction ω.val H v ≤
+      cylinderAction ω.val H (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) := by
   have h := hω.integral_floerEnergyDensity_eq_cylinderAction_sub hH hu hab hv hv₀
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
     fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
@@ -519,12 +579,12 @@ of an arbitrary loop, the Floer energy of `u` over `[a, b] × [0, 1]` for the cy
 perturbation `K = H_t dt` is `A_H(γ_a) - A_H(γ_b)`, for the loops `γ_a = u(a, ·)` and
 `γ_b = u(b, ·)`. No cap of the loops is needed. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_eq_sub_of_mextDeriv_eq
-    (hω : ω.IsNondegenerate) {α : SmoothForm I M ℝ 1} (hα : mextDeriv α.1 = ω.1)
+    (hω : ω.IsNondegenerate) {α : SmoothForm I M ℝ 1} (hα : mextDeriv α.val = ω.val)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z) {a b : ℝ} (hab : a ≤ b) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      (-pathIntegral α.1 (fun t ↦ u (a, t)) 0 1 - ∫ t in 0..1, H t (u (a, t))) -
-        (-pathIntegral α.1 (fun t ↦ u (b, t)) 0 1 - ∫ t in 0..1, H t (u (b, t))) := by
+      (-pathIntegral α.val (fun t ↦ u (a, t)) 0 1 - ∫ t in 0..1, H t (u (a, t))) -
+        (-pathIntegral α.val (fun t ↦ u (b, t)) 0 1 - ∫ t in 0..1, H t (u (b, t))) := by
   -- The two horizontal sides of the rectangle are the same curve, by periodicity.
   have hside : (fun s ↦ u (s, 1)) = fun s ↦ u (s, 0) :=
     funext fun s ↦ by simpa using hper (s, 0)
@@ -538,7 +598,7 @@ if `u` solves the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `[a
 almost complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the loop at
 `s = b` is at most that of the loop at `s = a`. -/
 theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction
-    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.1)
+    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.val)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
     (hv : IsCap I v fun t ↦ u (b, t)) (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
@@ -546,8 +606,8 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction
     (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
-    contractibleLoopAction ω.1 H (fun t ↦ u (b, t)) ≤
-      contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) := by
+    contractibleLoopAction ω.val H (fun t ↦ u (b, t)) ≤
+      contractibleLoopAction ω.val H (fun t ↦ u (a, t)) := by
   have h := hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub hωe hH hu hper hab hv
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
     fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
@@ -565,14 +625,14 @@ energy of `u` over `[a, b] × [0, 1]` for the cylindrical perturbation `K = H_t 
 `TauCeti.SmoothTwoForm.referenceAction` relative to `γ₀`. The loop `γ_a` is joined to `γ₀` by
 gluing `u` to the cylinder from `γ_b`, so both actions are computed with genuine cylinders. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_eq_referenceAction_sub
-    (hω : ω.IsNondegenerate) (hωt : VanishesOnTori ω.1)
+    (hω : ω.IsNondegenerate) (hωt : VanishesOnTori ω.val)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
     {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
     (hv : IsSmoothCylinder I (fun t ↦ u (b, t)) γ₀ v) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
       ω.referenceAction H γ₀ (fun t ↦ u (a, t)) - ω.referenceAction H γ₀ (fun t ↦ u (b, t)) := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   -- Rescale `[a, b]` to `[0, 1]` and glue the result to `v`: a cylinder from `γ_a` to `γ₀`.
   have hc := isSmoothCylinder_comp_prodMap_affine hu hper a b
   have hw := hc.trans hv fun t ↦ by simp [hv.apply_zero]
@@ -591,7 +651,7 @@ hypotheses of
 almost complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the loop at
 `s = b` relative to `γ₀` is at most that of the loop at `s = a`. -/
 theorem IsNondegenerate.referenceAction_le_referenceAction
-    (hω : ω.IsNondegenerate) (hωt : VanishesOnTori ω.1)
+    (hω : ω.IsNondegenerate) (hωt : VanishesOnTori ω.val)
     (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
     {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
@@ -618,7 +678,7 @@ complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the lo
 for `G(b, ·)` is at most that of the loop at `s = a` for `G(a, ·)` minus the integral of `∂_s G`
 along `u`. -/
 theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_sub_integral
-    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.1)
+    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.val)
     (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
     (hv : IsCap I v fun t ↦ u (b, t)) (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
@@ -626,8 +686,8 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_sub_int
     (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (G z) (u z)) = 0) :
-    contractibleLoopAction ω.1 (fun t ↦ G (b, t)) (fun t ↦ u (b, t)) ≤
-      contractibleLoopAction ω.1 (fun t ↦ G (a, t)) (fun t ↦ u (a, t)) -
+    contractibleLoopAction ω.val (fun t ↦ G (b, t)) (fun t ↦ u (b, t)) ≤
+      contractibleLoopAction ω.val (fun t ↦ G (a, t)) (fun t ↦ u (a, t)) -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
   have h := hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub_sub_integral hωe hG hu
     hper hab hv
@@ -640,7 +700,7 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_sub_int
 every `s ↦ G_{(s, t)}(x)` is monotone, then the action of the loop at `s = b` for `G(b, ·)` is at
 most that of the loop at `s = a` for `G(a, ·)`. -/
 theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_of_monotone
-    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.1)
+    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.val)
     (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G))
     (hmono : ∀ t x, Monotone fun s ↦ G (s, t) x) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
@@ -649,18 +709,14 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_of_mono
     (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
       J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (G z) (u z)) = 0) :
-    contractibleLoopAction ω.1 (fun t ↦ G (b, t)) (fun t ↦ u (b, t)) ≤
-      contractibleLoopAction ω.1 (fun t ↦ G (a, t)) (fun t ↦ u (a, t)) := by
+    contractibleLoopAction ω.val (fun t ↦ G (b, t)) (fun t ↦ u (b, t)) ≤
+      contractibleLoopAction ω.val (fun t ↦ G (a, t)) (fun t ↦ u (a, t)) := by
   have h := hω.contractibleLoopAction_le_contractibleLoopAction_sub_integral hωe hG hu hper hab hv
     J hJ hfloer
-  -- `∂_s G` is the derivative of the monotone functions `s ↦ G_{(s, t)}(x)`.
-  have hnonneg : 0 ≤ ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
-    setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
-      have hd : ContDiff ℝ 1 fun w ↦ G w (u z) :=
-        contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))
-      rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero (u := fun w ↦ G w (u z))
-        (hd.differentiable one_ne_zero z)]
-      exact (hmono z.2 (u z)).deriv_nonneg
+  have hc := Floer.neg_setIntegral_fderiv_le_setIntegral (a := a) (b := b) hG
+    (hu.of_le one_le_two) integrableOn_zero fun z _ ↦
+      neg_nonpos.mpr (hmono z.2 (u z)).deriv_nonneg
+  simp only [integral_zero] at hc
   linarith
 
 /-- **The action shift of a linear homotopy.** Let `ω` be a nondegenerate weakly exact two-form on
@@ -672,7 +728,7 @@ its second coordinate, whose loop at `s = b` bounds a cap, solving the Floer equ
 loop at `s = b` for `G(b, ·)` is at most that of the loop at `s = a` for `G(a, ·)` plus
 `(β(b) - β(a)) ∫₀¹ B`. -/
 theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_linearHomotopy
-    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.1) {H₀ H₁ : ℝ → M → ℝ}
+    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.val) {H₀ H₁ : ℝ → M → ℝ}
     (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₀))
     (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₁)) {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β)
     (hβm : Monotone β) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
@@ -684,8 +740,8 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_
         ω.hamiltonianVectorField (Floer.linearHomotopy β H₀ H₁ z) (u z)) = 0)
     {B : ℝ → ℝ} (hB : IntegrableOn B (Icc 0 1))
     (hHB : ∀ z ∈ Icc a b ×ˢ Icc 0 1, H₀ z.2 (u z) - H₁ z.2 (u z) ≤ B z.2) :
-    contractibleLoopAction ω.1 (fun t ↦ Floer.linearHomotopy β H₀ H₁ (b, t)) (fun t ↦ u (b, t)) ≤
-      contractibleLoopAction ω.1 (fun t ↦ Floer.linearHomotopy β H₀ H₁ (a, t))
+    contractibleLoopAction ω.val (fun t ↦ Floer.linearHomotopy β H₀ H₁ (b, t)) (fun t ↦ u (b, t)) ≤
+      contractibleLoopAction ω.val (fun t ↦ Floer.linearHomotopy β H₀ H₁ (a, t))
           (fun t ↦ u (a, t)) +
         (β b - β a) * ∫ t in Icc 0 1, B t := by
   have h := hω.contractibleLoopAction_le_contractibleLoopAction_sub_integral hωe
@@ -705,7 +761,7 @@ filtration by at most `∫₀¹ sup_x (H₀ - H₁) dt`; when `H₀ ≤ H₁`, t
 preserve it. -/
 theorem
     IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_continuationHomotopy
-    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.1) {H₀ H₁ : ℝ → M → ℝ}
+    (hω : ω.IsNondegenerate) (hωe : IsWeaklyExact ω.val) {H₀ H₁ : ℝ → M → ℝ}
     (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₀))
     (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H₁)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
     (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z) {a b : ℝ} (ha : a ≤ 0) (hb : 1 ≤ b)
@@ -717,8 +773,8 @@ theorem
         ω.hamiltonianVectorField (Floer.continuationHomotopy H₀ H₁ z) (u z)) = 0)
     {h : ℝ → ℝ} (hh : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, H₀ t x - H₁ t x ≤ h t)
     (hhi : IntegrableOn h (Icc 0 1)) :
-    contractibleLoopAction ω.1 H₁ (fun t ↦ u (b, t)) ≤
-      contractibleLoopAction ω.1 H₀ (fun t ↦ u (a, t)) + ∫ t in Icc 0 1, h t := by
+    contractibleLoopAction ω.val H₁ (fun t ↦ u (b, t)) ≤
+      contractibleLoopAction ω.val H₀ (fun t ↦ u (a, t)) + ∫ t in Icc 0 1, h t := by
   rw [Floer.continuationHomotopy_eq_linearHomotopy] at hfloer
   have h := hω.contractibleLoopAction_le_contractibleLoopAction_add_of_linearHomotopy hωe hH₀ hH₁
     (smoothTransition.contDiff (n := 1)) smoothTransition.monotone hu hper
@@ -727,6 +783,172 @@ theorem
     Floer.continuationHomotopy_eq_left_of_nonpos ha,
     Floer.continuationHomotopy_eq_right_of_one_le hb,
     smoothTransition.zero_of_nonpos ha, smoothTransition.one_of_one_le hb] using h
+
+/-! ### The energy over the whole cylinder -/
+
+section WholeCylinder
+
+open Filter Topology
+
+variable {ι : Type*} {Ks Kt : ℝ × ℝ → M → ℝ}
+
+/-- **The energy identity over the whole cylinder.** Let `ω` be a nondegenerate two-form on a
+finite-dimensional manifold, such as a closed symplectic manifold, and let `K = K_s ds + K_t dt` be
+a `C¹` perturbation with `K_s(s, 1) = K_s(s, 0)` which is cylindrical on the two ends: `K_t = H₀`
+for `s ≤ -c` and `K_t = H₁` for `s ≥ c`, with `H₀` and `H₁` bounded for `t ∈ [0, 1]`. Let `u` be
+a `C¹` map with `u(s, 1) = u(s, 0)`, whose energy density, symplectic area density and curvature
+are integrable over the strip `ℝ × [0, 1]`. If along a countably generated filter `a i → -∞` and
+`b i → ∞`, and the loops `u(a i, ·)` and `u(b i, ·)` converge pointwise to loops `x₀` and `x₁`, then
+
+`∫ E = ∫ u^*ω + ∫₀¹ H₁(t, x₁(t)) dt - ∫₀¹ H₀(t, x₀(t)) dt - ∫ R_K(u)`
+
+over the strip. This is the energy identity of a Floer cylinder asymptotic to `x₀` and `x₁`:
+the boundary term `∫_∂ K(u)` is evaluated at the two asymptotic loops. The loops need only
+converge along sequences, as they do at the ends of a finite-energy Floer cylinder before
+nondegeneracy is used. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_univ_prod (hω : ω.IsNondegenerate)
+    (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks))
+    (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
+    (hKs₁ : ∀ s, Ks (s, 1) = Ks (s, 0)) {H₀ H₁ : ℝ → M → ℝ} {c : ℝ}
+    (hK₀ : ∀ z : ℝ × ℝ, z.1 ≤ -c → Kt z = H₀ z.2) (hK₁ : ∀ z : ℝ × ℝ, c ≤ z.1 → Kt z = H₁ z.2)
+    {B₀ B₁ : ℝ} (hB₀ : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H₀ t x| ≤ B₀)
+    (hB₁ : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H₁ t x| ≤ B₁)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hper : ∀ s, u (s, 1) = u (s, 0))
+    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {a b : ι → ℝ} (ha : Tendsto a l atBot)
+    (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
+    (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
+    (hx₁ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₁ t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity Ks Kt u) (univ ×ˢ Icc 0 1))
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (univ ×ˢ Icc 0 1))
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) (univ ×ˢ Icc 0 1)) :
+    ∫ z in univ ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z =
+      (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, H₁ t (x₁ t)) - (∫ t in 0..1, H₀ t (x₀ t)) -
+        ∫ z in univ ×ˢ Icc 0 1, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- The end Hamiltonians are restrictions of `K_t`, hence continuous.
+  have hH₀c : Continuous (uncurry H₀) :=
+    (hKt.continuous.comp (by fun_prop : Continuous fun p : ℝ × M ↦ ((-c, p.1), p.2))).congr
+      fun p ↦ by simp [hK₀ (-c, p.1) le_rfl, uncurry_def]
+  have hH₁c : Continuous (uncurry H₁) :=
+    (hKt.continuous.comp (by fun_prop : Continuous fun p : ℝ × M ↦ ((c, p.1), p.2))).congr
+      fun p ↦ by simp [hK₁ (c, p.1) le_rfl, uncurry_def]
+  -- Along converging loops, the Hamiltonian terms converge by dominated convergence.
+  have hloop {H : ℝ → M → ℝ} (hHc : Continuous (uncurry H)) {B : ℝ}
+      (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B)
+      {d : ι → ℝ} {x : ℝ → M} (hx : ∀ t, Tendsto (fun i ↦ u (d i, t)) l (𝓝 (x t))) :
+      Tendsto (fun i ↦ ∫ t in 0..1, H t (u (d i, t))) l (𝓝 (∫ t in 0..1, H t (x t))) :=
+    tendsto_intervalIntegral_comp_of_tendsto_of_norm_le hHc
+      (Eventually.of_forall fun i ↦ (hu.continuous.comp (by fun_prop)).continuousOn)
+      (Eventually.of_forall fun i t ht ↦ (Real.norm_eq_abs _).trans_le
+        (hB t (Ioc_subset_Icc_self (uIoc_of_le (zero_le_one (α := ℝ)) ▸ ht)) _))
+      fun t _ ↦ hx t
+  -- Far out on the ends, the identity holds on the rectangle `[a i, b i] × [0, 1]`.
+  have hrect : ∀ᶠ i in l, ∫ z in Icc (a i) (b i) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z =
+      (∫ z in Icc (a i) (b i) ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, H₁ t (u (b i, t))) - (∫ t in 0..1, H₀ t (u (a i, t))) -
+        ∫ z in Icc (a i) (b i) ×ˢ Icc 0 1, ω.hamiltonianCurvature Ks Kt z (u z) := by
+    filter_upwards [ha.eventually_le_atBot (-|c|), hb.eventually_ge_atTop |c|] with i hai hbi
+    have hai' : a i ≤ -c := hai.trans (neg_le_neg (le_abs_self c))
+    have hbi' : c ≤ b i := (le_abs_self c).trans hbi
+    have hsub : Icc (a i) (b i) ×ˢ Icc (0 : ℝ) 1 ⊆ univ ×ˢ Icc 0 1 :=
+      prod_mono (subset_univ _) le_rfl
+    have hR' : Icc (a i) (b i) ×ˢ Icc (0 : ℝ) 1 = Icc (a i, 0) (b i, 1) := Icc_prod_Icc _ _ _ _
+    have h := hω.integral_floerEnergyDensity isOpen_univ hu.contMDiffOn hKs.contMDiffOn
+      hKt.contMDiffOn (Prod.mk_le_mk.2 ⟨by linarith [abs_nonneg c], zero_le_one⟩)
+      (subset_univ _) (hR' ▸ hE.mono_set hsub) (hR' ▸ hR.mono_set hsub)
+    rw [← hR'] at h
+    rw [h]
+    -- The `ds` terms along the circles `t = 0` and `t = 1` cancel by periodicity, and the `dt`
+    -- terms along `s = b i` and `s = a i` are those of `H₁` and `H₀`.
+    have hs : ∫ s in a i..b i, Ks (s, 1) (u (s, 1)) = ∫ s in a i..b i, Ks (s, 0) (u (s, 0)) := by
+      simp only [hKs₁, hper]
+    have hbt : ∫ t in (0 : ℝ)..1, Kt (b i, t) (u (b i, t)) = ∫ t in (0 : ℝ)..1, H₁ t (u (b i, t)) :=
+      intervalIntegral.integral_congr fun t _ ↦ by simp only [hK₁ (b i, t) hbi']
+    have hat : ∫ t in (0 : ℝ)..1, Kt (a i, t) (u (a i, t)) = ∫ t in (0 : ℝ)..1, H₀ t (u (a i, t)) :=
+      intervalIntegral.integral_congr fun t _ ↦ by simp only [hK₀ (a i, t) hai']
+    rw [hs, hbt, hat]
+    ring
+  -- Both sides are limits of the two sides of the rectangle identity.
+  refine tendsto_nhds_unique (tendsto_setIntegral_Icc_prod ha hb measurableSet_Icc hE) ?_
+  refine ((((tendsto_setIntegral_Icc_prod ha hb measurableSet_Icc hA).add
+    (hloop hH₁c hB₁ hx₁)).sub (hloop hH₀c hB₀ hx₀)).sub
+    (tendsto_setIntegral_Icc_prod ha hb measurableSet_Icc hR)).congr' ?_
+  filter_upwards [hrect] with i hi
+  exact hi.symm
+
+/-- **The energy identity of a Floer cylinder over the whole cylinder.** For the cylindrical
+perturbation `K = H_t dt` of a `C¹` Hamiltonian bounded for `t ∈ [0, 1]`, under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_univ_prod`, the curvature vanishes and
+the energy of `u` over the strip `ℝ × [0, 1]` is its symplectic area plus the Hamiltonian terms of
+the asymptotic loops:
+
+`∫ E = ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt - ∫₀¹ H(t, x₀(t)) dt`. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
+    (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
+    (hx₁ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₁ t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) (univ ×ˢ Icc 0 1))
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (univ ×ˢ Icc 0 1)) :
+    ∫ z in univ ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
+      (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∫ t in 0..1, H t (x₁ t)) - ∫ t in 0..1, H t (x₀ t) := by
+  have h := hω.integral_floerEnergyDensity_univ_prod (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
+    (c := 0) contMDiff_const (Floer.contMDiff_uncurry_comp_snd hH) (fun _ ↦ rfl)
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hB hB hu hper ha hb hx₀ hx₁ hE hA
+    (by simp only [hamiltonianCurvature_cylindrical]; exact integrableOn_zero)
+  simpa only [hamiltonianCurvature_cylindrical, integral_zero, sub_zero] using h
+
+/-- **The action of the asymptotic loops along a Floer cylinder.** Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical_univ_prod`, if `u` solves
+the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on the strip for almost complex structures
+`J z` on `T_{u z} M` tamed by `ω`, then its energy is nonnegative, so
+
+`∫₀¹ H(t, x₀(t)) dt ≤ ∫ u^*ω + ∫₀¹ H(t, x₁(t)) dt`.
+
+For a disc `D` bounding `x₀`, this says that the capped action `∫ D^*ω + ∫₀¹ H(t, x₀(t)) dt` of the
+output is at most that of the input capped by `D` glued to `u`: the action increases along Floer
+cylinders, from the negative end to the positive end. -/
+theorem IsNondegenerate.intervalIntegral_le_integral_add_intervalIntegral_of_cylindrical
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, |H t x| ≤ B) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hper : ∀ s, u (s, 1) = u (s, 0)) {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {a b : ι → ℝ} (ha : Tendsto a l atBot) (hb : Tendsto b l atTop) {x₀ x₁ : ℝ → M}
+    (hx₀ : ∀ t, Tendsto (fun i ↦ u (a i, t)) l (𝓝 (x₀ t)))
+    (hx₁ : ∀ t, Tendsto (fun i ↦ u (b i, t)) l (𝓝 (x₁ t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) (univ ×ˢ Icc 0 1))
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) (univ ×ˢ Icc 0 1))
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, IsComplexLinearMap
+      (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z).toLinearMap) :
+    ∫ t in 0..1, H t (x₀ t) ≤
+      (∫ z in univ ×ˢ Icc 0 1, (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ∫ t in 0..1, H t (x₁ t) := by
+  have hpos := setIntegral_nonneg (μ := volume) (MeasurableSet.univ.prod measurableSet_Icc)
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  rw [hω.integral_floerEnergyDensity_cylindrical_univ_prod hH hB hu hper ha hb hx₀ hx₁ hE hA]
+    at hpos
+  linarith
+
+end WholeCylinder
 
 end Energy
 

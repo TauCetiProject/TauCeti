@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Shift
 
 /-!
@@ -26,7 +27,8 @@ exactly when `A` does, and the convention `(A - lambda)⁻¹` defines the same c
 An operator with compact resolvent has discrete spectrum made of eigenvalues of finite
 multiplicity; for self-adjoint operators on a Hilbert space the converse also holds (Reed–Simon
 XIII.64). Examples include Dirac and Laplace-type operators on closed manifolds and the Dirac
-operators of spectral triples.
+operators of spectral triples. In particular the kernel of an operator with compact resolvent is
+finite-dimensional: the resolvent `R(lambda)` acts on it as multiplication by `lambda⁻¹`.
 
 ## Main definitions
 
@@ -39,6 +41,8 @@ operators of spectral triples.
 * `LinearPMap.hasCompactResolvent_iff_isCompactOperator_resolvent`: compact resolvent can be
   tested at any single point of the resolvent set.
 * `LinearPMap.hasCompactResolvent_neg_iff`: `-A` has compact resolvent exactly when `A` does.
+* `LinearPMap.HasCompactResolvent.finiteDimensional_ker`: an operator with compact resolvent has a
+  finite-dimensional kernel.
 
 ## References
 
@@ -143,5 +147,33 @@ theorem hasCompactResolvent_neg_iff : (-A).HasCompactResolvent ↔ A.HasCompactR
   exact hc.neg
 
 end Neg
+
+section FiniteDimensional
+
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup X]
+  [TopologicalSpace X] [Module 𝕜 X] [T2Space X] [IsTopologicalAddGroup X] [ContinuousSMul 𝕜 X]
+  {A : X →ₗ.[𝕜] X}
+
+/-- **An operator with compact resolvent has a finite-dimensional kernel.** At a point `lambda` of
+the resolvent set, `R(lambda)` acts on the kernel as multiplication by `lambda⁻¹`, and the
+eigenspaces of a compact operator at nonzero scalars are finite-dimensional. If `0` is a resolvent
+point, the kernel is trivial. -/
+theorem HasCompactResolvent.finiteDimensional_ker (h : A.HasCompactResolvent) :
+    FiniteDimensional 𝕜 A.ker := by
+  obtain ⟨lambda, hl, hc⟩ := h
+  rcases eq_or_ne lambda 0 with rfl | hne
+  · have hker : A.ker = ⊥ := ker_eq_bot'.2 fun x hx ↦
+      eq_zero_of_apply_eq_smul hl x (by rw [hx, zero_smul])
+    rw [hker]
+    infer_instance
+  · have := hc.finiteDimensional_eigenspace (inv_ne_zero hne)
+    refine Submodule.finiteDimensional_of_le
+      (S₂ := Module.End.eigenspace (A.resolvent lambda : X →ₗ[𝕜] X) lambda⁻¹) fun x hx ↦ ?_
+    obtain ⟨y, rfl, hy⟩ := mem_ker_iff.1 hx
+    have hR := resolvent_apply_of_apply_eq_smul hl y (c := 0) (by rw [hy, zero_smul])
+    rw [sub_zero] at hR
+    exact Module.End.mem_eigenspace_iff.2 hR
+
+end FiniteDimensional
 
 end LinearPMap

@@ -32,8 +32,13 @@ values are the pure powers `⨂ₜ i, x`, the tensors with the same vector in ev
 
 * `MultilinearMap.sum_neg_one_pow_card_smul_apply_sum_compl`: the polarization identity for a
   multilinear map.
+* `MultilinearMap.eq_zero_of_apply_const_eq_zero`: a symmetric multilinear map into a
+  torsion-free group that vanishes on the diagonal is zero.
 * `PiTensorProduct.sum_neg_one_pow_card_smul_tprod_sum_compl`: its tensor-power instance, writing
   the full symmetrization of a pure tensor as an alternating sum of pure powers.
+* `TauCeti.map_add_add_sub_map_add_of_map_add`: the explicit three-variable polarization identity
+  for an unbundled map `V → V → V → W` additive in each argument, requiring only `[Add V]` and
+  `[AddCommGroup W]`.
 
 ## References
 
@@ -48,6 +53,21 @@ open scoped Finset TensorProduct
 universe u v w z
 
 namespace TauCeti
+
+/-- **Three-variable polarization.** For a map `F : V → V → V → W` into an additive commutative
+group that is additive in each argument, the alternating combination of its diagonal values on
+subsums of `u₁, u₂, u₃` equals the sum of `F` over all six permutations of `(u₁, u₂, u₃)`. -/
+theorem map_add_add_sub_map_add_of_map_add {V W : Type*} [Add V] [AddCommGroup W]
+    (F : V → V → V → W)
+    (h₁ : ∀ a₁ a₂ b c, F (a₁ + a₂) b c = F a₁ b c + F a₂ b c)
+    (h₂ : ∀ a b₁ b₂ c, F a (b₁ + b₂) c = F a b₁ c + F a b₂ c)
+    (h₃ : ∀ a b c₁ c₂, F a b (c₁ + c₂) = F a b c₁ + F a b c₂) (u₁ u₂ u₃ : V) :
+    F (u₁ + u₂ + u₃) (u₁ + u₂ + u₃) (u₁ + u₂ + u₃) -
+      F (u₁ + u₂) (u₁ + u₂) (u₁ + u₂) - F (u₁ + u₃) (u₁ + u₃) (u₁ + u₃) -
+      F (u₂ + u₃) (u₂ + u₃) (u₂ + u₃) + F u₁ u₁ u₁ + F u₂ u₂ u₂ + F u₃ u₃ u₃ =
+      F u₁ u₂ u₃ + F u₁ u₃ u₂ + F u₂ u₁ u₃ + F u₂ u₃ u₁ + F u₃ u₁ u₂ + F u₃ u₂ u₁ := by
+  simp only [h₁, h₂, h₃]
+  abel
 
 variable {ι : Type w} [DecidableEq ι]
 
@@ -78,7 +98,7 @@ on `m`. Only the diagonal values of `f` appear on the left, so they already dete
 symmetrization; over a ring in which `(#ι)!` is invertible they therefore determine `f` on all
 symmetric arguments. -/
 theorem sum_neg_one_pow_card_smul_apply_sum_compl
-    (f : MultilinearMap R (fun _ : ι => M) N) (m : ι → M) :
+    (f : MultilinearMap (RingHom.id R) (fun _ : ι => M) N) (m : ι → M) :
     ∑ S : Finset ι, (-1 : R) ^ #S • f (fun _ => ∑ i ∈ Sᶜ, m i) =
       ∑ σ : Equiv.Perm ι, f fun i => m (σ i) := by
   classical
@@ -109,6 +129,24 @@ theorem sum_neg_one_pow_card_smul_apply_sum_compl
     (fun σ _ => Finset.mem_filter.mpr ⟨Finset.mem_univ _, σ.bijective⟩)
     (fun σ _ τ _ h => Equiv.coe_fn_injective h) (fun g hg => ?_) fun σ _ => rfl).symm
   exact ⟨Equiv.ofBijective g (Finset.mem_filter.mp hg).2, Finset.mem_univ _, rfl⟩
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- **A symmetric multilinear map vanishing on the diagonal is zero**, when its target has no
+additive torsion. By polarization, the full symmetrization `(#ι)! • f m` of a symmetric `f` is an
+alternating sum of diagonal values. -/
+theorem eq_zero_of_apply_const_eq_zero [Finite ι] [HasUniqueDiv N]
+    {f : MultilinearMap (RingHom.id R) (fun _ : ι => M) N}
+    (hsymm : ∀ (m : ι → M) (σ : Equiv.Perm ι), f (m ∘ σ) = f m)
+    (hdiag : ∀ x : M, f (fun _ => x) = 0) : f = 0 := by
+  classical
+  have := Fintype.ofFinite ι
+  ext m
+  have h := f.sum_neg_one_pow_card_smul_apply_sum_compl m
+  have hperm : ∑ σ : Equiv.Perm ι, f (fun i => m (σ i)) = ∑ _σ : Equiv.Perm ι, f m :=
+    Finset.sum_congr rfl fun σ _ => hsymm m σ
+  simp only [hdiag, smul_zero, Finset.sum_const_zero, hperm, Finset.sum_const, Finset.card_univ,
+    Fintype.card_perm] at h
+  rw [zero_apply, ← nsmul_right_inj (Nat.factorial_ne_zero (Fintype.card ι)), ← h, smul_zero]
 
 end MultilinearMap
 

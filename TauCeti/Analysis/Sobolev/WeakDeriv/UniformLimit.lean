@@ -91,9 +91,10 @@ theorem tendsto_integral_testFunction_smul_fderiv_apply_of_tendstoLocallyUniform
   set ψ : 𝓓(⟨Ω, hΩ⟩, ℝ) := TestFunction.lineDerivCLM ℝ w φ
   have hcoe : (ψ : E → ℝ) = fun x ↦ lineDeriv ℝ (φ : E → ℝ) x w :=
     funext fun _ ↦ TestFunction.lineDerivCLM_apply_of_le le_top
-  have key := (MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := μ) hΩ
-    (fun i ↦ (hu i).continuousOn) hv.continuousOn ψ.continuous ψ.hasCompactSupport
-    ψ.tsupport_subset (((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hlim) _
+  have key := (MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := μ)
+    ψ.continuous.continuousOn ψ.hasCompactSupport
+    (Eventually.of_forall fun i ↦ (hu i).continuousOn.mono ψ.tsupport_subset)
+    (((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hlim) _
       ψ.tsupport_subset ψ.hasCompactSupport)).neg
   simp only [hcoe] at key
   rw [hvw.integral_lineDeriv_smul_eq_neg_integral_smul, neg_neg] at key
@@ -107,11 +108,13 @@ direction `w`, `∫ a • ∂_w uᵢ → ∫ a • ∂_w v`. The limit `v` is lo
 (`TauCeti.locallyLipschitzOn_of_tendsto`), so `fderiv ℝ v` is its derivative almost everywhere
 on `Ω` and its weak derivative there. -/
 theorem tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteDimensional ℝ F]
-    [l.NeBot] (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
+    (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
     (hbd : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ᶠ i in l, ∀ x ∈ K, ‖fderiv ℝ (u i) x‖ ≤ C)
     (hlim : TendstoLocallyUniformlyOn u v l Ω) {a : E → ℝ} (ha : Continuous a)
     (hac : HasCompactSupport a) (haΩ : tsupport a ⊆ Ω) (w : E) :
     Tendsto (fun i ↦ ∫ x, a x • fderiv ℝ (u i) x w ∂μ) l (𝓝 (∫ x, a x • fderiv ℝ v x w ∂μ)) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · exact tendsto_bot
   have hdiff : ∀ᶠ i in l, DifferentiableOn ℝ (u i) Ω :=
     Eventually.of_forall fun i ↦ (hu i).differentiableOn one_ne_zero
   have hpt : ∀ x ∈ Ω, Tendsto (fun i ↦ u i x) l (𝓝 (v x)) := fun _ hx ↦ hlim.tendsto_at hx
@@ -144,13 +147,17 @@ theorem tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteD
       hv hlim φ w) (ε / 2) (half_pos hε)
   filter_upwards [hC, hmid] with i hCi hi
   have h1 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
-    ((hlocu i).integrable_smul_left_of_hasCompactSupport ha hac haΩ)
-    (φ.integrable_smul (hlocu i)) haK hφK' hφa (B := max C 0 * ‖w‖) fun x hx ↦
-      ((fderiv ℝ (u i) x).le_opNorm w).trans (by gcongr; exact (hCi x hx).trans (le_max_left _ _))
+    ((hlocu i).integrable_smul_left_of_hasCompactSupport ha.continuousOn hac haΩ)
+    (φ.integrable_smul (hlocu i)) (ae_of_all _ fun x hx ↦ (haK x hx).trans (hφK' x hx).symm)
+    (ae_of_all _ fun x _ ↦ hφa x) (B := max C 0 * ‖w‖) (ae_of_all _ fun x hx ↦
+      ((fderiv ℝ (u i) x).le_opNorm w).trans
+        (by gcongr; exact (hCi x hx).trans (le_max_left _ _)))
   have h2 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
-    (hlocv.integrable_smul_left_of_hasCompactSupport ha hac haΩ)
-    (φ.integrable_smul hlocv) haK hφK' hφa (B := max D 0 * ‖w‖) fun x hx ↦
-      ((fderiv ℝ v x).le_opNorm w).trans (by gcongr; exact (hD x hx).trans (le_max_left _ _))
+    (hlocv.integrable_smul_left_of_hasCompactSupport ha.continuousOn hac haΩ)
+    (φ.integrable_smul hlocv) (ae_of_all _ fun x hx ↦ (haK x hx).trans (hφK' x hx).symm)
+    (ae_of_all _ fun x _ ↦ hφa x) (B := max D 0 * ‖w‖) (ae_of_all _ fun x hx ↦
+      ((fderiv ℝ v x).le_opNorm w).trans
+        (by gcongr; exact (hD x hx).trans (le_max_left _ _)))
   rw [dist_eq_norm] at hi ⊢
   have hsplit : ∫ x, a x • fderiv ℝ (u i) x w ∂μ - ∫ x, a x • fderiv ℝ v x w ∂μ =
       (∫ x, a x • fderiv ℝ (u i) x w ∂μ - ∫ x, φ x • fderiv ℝ (u i) x w ∂μ) +
@@ -173,11 +180,13 @@ every compact subset of `Ω`, converging locally uniformly on `Ω` to `v`. Then 
 of linear maps into a finite-dimensional space, continuous on `Ω` with compact support in `Ω`,
 and every direction `w`, `∫ A (∂_w uᵢ) → ∫ A (∂_w v)`. -/
 theorem tendsto_integral_apply_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteDimensional ℝ F]
-    [FiniteDimensional ℝ G] [l.NeBot] (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
+    [FiniteDimensional ℝ G] (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
     (hbd : ∀ K, IsCompact K → K ⊆ Ω → ∃ C, ∀ᶠ i in l, ∀ x ∈ K, ‖fderiv ℝ (u i) x‖ ≤ C)
     (hlim : TendstoLocallyUniformlyOn u v l Ω) {A : E → F →L[ℝ] G} (hA : ContinuousOn A Ω)
     (hAc : HasCompactSupport A) (hAΩ : tsupport A ⊆ Ω) (w : E) :
     Tendsto (fun i ↦ ∫ x, A x (fderiv ℝ (u i) x w) ∂μ) l (𝓝 (∫ x, A x (fderiv ℝ v x w) ∂μ)) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · exact tendsto_bot
   have hv := locallyLipschitzOn_of_tendsto hΩ
     (Eventually.of_forall fun i ↦ (hu i).differentiableOn one_ne_zero) hbd
     fun _ hx ↦ hlim.tendsto_at hx
@@ -193,7 +202,7 @@ theorem tendsto_integral_apply_fderiv_apply_of_tendstoLocallyUniformlyOn [Finite
   have hsum : ∀ {h : E → F}, LocallyIntegrableOn h Ω μ →
       ∫ x, A x (h x) ∂μ = ∑ j, b j (∫ x, c j x • h x ∂μ) := fun {h} hh ↦ by
     have hint : ∀ j, Integrable (fun x ↦ c j x • h x) μ := fun j ↦
-      hh.integrable_smul_left_of_hasCompactSupport (hc j) (hcc j) (hcΩ j)
+      hh.integrable_smul_left_of_hasCompactSupport (hc j).continuousOn (hcc j) (hcΩ j)
     have hexp : ∀ x, A x (h x) = ∑ j, b j (c j x • h x) := fun x ↦ by
       calc A x (h x) = (∑ j, b.repr (A x) j • b j) (h x) := by rw [b.sum_repr]
         _ = ∑ j, b j (c j x • h x) := by simp [c, -Module.Basis.sum_repr]

@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborh
 import Mathlib.Topology.Algebra.Module.LocallyConvex
 import TauCeti.Analysis.Convex.SimplyConnected
 import TauCeti.Analysis.Complex.OpenSegment
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The edges of the dessin of a cover of the thrice-punctured sphere
@@ -229,7 +229,7 @@ def _root_.IsCoveringMap.finEquivConnectedComponentsUnitSegment :
 theorem _root_.IsCoveringMap.finEquivConnectedComponentsUnitSegment_apply (i : Fin n) :
     hp.finEquivConnectedComponentsUnitSegment ν i =
       ConnectedComponents.mk ⟨ν.symm i, by
-        rw [mem_preimage, (ν.symm i).2]
+        rw [mem_preimage, (ν.symm i).property]
         exact basePt_mem_unitSegment⟩ := by
   have := locallyPathConnectedSpace_preimage_unitSegment hp
   rw [IsCoveringMap.finEquivConnectedComponentsUnitSegment, Equiv.trans_apply, Equiv.trans_apply,
@@ -271,7 +271,7 @@ private theorem mk_eq_mk_monodromy (hyS : y ∈ unitSegment ∩ S)
   -- The point `x'` is the endpoint of the lift of `α`: both lie over `y` and are joined to
   -- `ν.symm i` inside `p ⁻¹' (0, 1)`, and `(0, 1)` is simply connected.
   have hbase : (ν.symm i : E) ∈ p ⁻¹' unitSegment := by
-    rw [mem_preimage, (ν.symm i).2]
+    rw [mem_preimage, (ν.symm i).property]
     exact basePt_mem_unitSegment
   have hi : ConnectedComponents.mk (⟨ν.symm i, hbase⟩ : p ⁻¹' unitSegment) =
       ConnectedComponents.mk ⟨x, hx⟩ := by
@@ -284,7 +284,7 @@ private theorem mk_eq_mk_monodromy (hyS : y ∈ unitSegment ∩ S)
     ((hxx'.mono (preimage_mono hseg)).symm.trans hi).trans
       (hp.joinedIn_preimage_monodromy α hα (ν.symm i))
   have := isSimplyConnected_unitSegment.simplyConnectedSpace
-  have hx' : x' = hp.monodromy (.mk α) (ν.symm i) := hp.eq_of_joinedIn_preimage hyS.1 hjoin
+  have hx' : x' = hp.monodromy (.mk α) (ν.symm i) := hp.eq_of_joinedIn_preimage hjoin
   subst hx'
   rw [ConnectedComponents.coe_eq_coe']
   exact pathComponent_subset_component _
@@ -303,7 +303,7 @@ private theorem zeroBasePt_mem_unitSegment :
 /-- The path `αZero` from `1/2` to `1/4` runs along the segment `(0, 1)`. -/
 private theorem αZero_mem_unitSegment (t : unitInterval) : αZero t ∈ unitSegment := by
   simp only [mem_unitSegment, coe_αZero, Complex.ofReal_im, Complex.ofReal_re, true_and]
-  constructor <;> linarith [t.2.1, t.2.2]
+  constructor <;> linarith [t.property.1, t.property.2]
 
 /-- **The black end of an edge is the cycle of its sheet under `σ0`.** A point `x` lying both over
 the segment `(0, 1)` and over the punctured neighborhood `D₀*` of `0` lies in the component of
@@ -314,7 +314,7 @@ theorem _root_.IsCoveringMap.mk_eq_sameCycleQuotientσ0EquivConnectedComponents 
       hp.sameCycleQuotientσ0EquivConnectedComponents ν (Quotient.mk _
         ((hp.finEquivConnectedComponentsUnitSegment ν).symm (ConnectedComponents.mk ⟨x, hx⟩))) := by
   rw [hp.sameCycleQuotientσ0EquivConnectedComponents_mk]
-  exact mk_eq_mk_monodromy hp ν ⟨zeroBasePt_mem_unitSegment, zeroBasePt.2⟩
+  exact mk_eq_mk_monodromy hp ν ⟨zeroBasePt_mem_unitSegment, zeroBasePt.property⟩
     isSimplyConnected_unitSegment_inter_puncturedNeighborhoodZero αZero_mem_unitSegment hx hx0 _
 
 /-- The endpoint over `1/4` of the lift of `αZero` from the sheet `i` lies on the edge of `i`. -/
@@ -322,7 +322,7 @@ theorem _root_.IsCoveringMap.finEquivConnectedComponentsUnitSegment_eq_mk_monodr
     (i : Fin n) :
     hp.finEquivConnectedComponentsUnitSegment ν i = ConnectedComponents.mk
       ⟨hp.monodromy (.mk αZero) (ν.symm i), by
-        rw [mem_preimage, (hp.monodromy (.mk αZero) (ν.symm i)).2]
+        rw [mem_preimage, (hp.monodromy (.mk αZero) (ν.symm i)).property]
         exact zeroBasePt_mem_unitSegment⟩ :=
   finEquivConnectedComponentsUnitSegment_eq_mk hp ν αZero_mem_unitSegment i _
 
@@ -340,7 +340,7 @@ theorem _root_.IsCoveringMap.exists_common_point_iff_eq_sameCycleQuotientσ0 (i 
     rw [hp.mk_eq_sameCycleQuotientσ0EquivConnectedComponents ν hx hx0, hi, Equiv.symm_apply_apply]
   · rintro rfl
     refine ⟨_, ?_, hp.monodromy_αZero_mem_preimage (ν.symm i), ?_, ?_⟩
-    · rw [(hp.monodromy (.mk αZero) (ν.symm i)).2]
+    · rw [(hp.monodromy (.mk αZero) (ν.symm i)).property]
       exact zeroBasePt_mem_unitSegment
     · exact (hp.finEquivConnectedComponentsUnitSegment_eq_mk_monodromy_αZero ν i).symm
     · exact (hp.sameCycleQuotientσ0EquivConnectedComponents_mk ν i).symm
@@ -356,7 +356,7 @@ private theorem oneBasePt_mem_unitSegment :
 /-- The path `αOne` from `1/2` to `3/4` runs along the segment `(0, 1)`. -/
 private theorem αOne_mem_unitSegment (t : unitInterval) : αOne t ∈ unitSegment := by
   simp only [mem_unitSegment, coe_αOne, Complex.ofReal_im, Complex.ofReal_re, true_and]
-  constructor <;> linarith [t.2.1, t.2.2]
+  constructor <;> linarith [t.property.1, t.property.2]
 
 /-- **The white end of an edge is the cycle of its sheet under `σ1`.** A point `x` lying both over
 the segment `(0, 1)` and over the punctured neighborhood `D₁*` of `1` lies in the component of
@@ -367,7 +367,7 @@ theorem _root_.IsCoveringMap.mk_eq_sameCycleQuotientσ1EquivConnectedComponents 
       hp.sameCycleQuotientσ1EquivConnectedComponents ν (Quotient.mk _
         ((hp.finEquivConnectedComponentsUnitSegment ν).symm (ConnectedComponents.mk ⟨x, hx⟩))) := by
   rw [hp.sameCycleQuotientσ1EquivConnectedComponents_mk]
-  exact mk_eq_mk_monodromy hp ν ⟨oneBasePt_mem_unitSegment, oneBasePt.2⟩
+  exact mk_eq_mk_monodromy hp ν ⟨oneBasePt_mem_unitSegment, oneBasePt.property⟩
     isSimplyConnected_unitSegment_inter_puncturedNeighborhoodOne αOne_mem_unitSegment hx hx1 _
 
 /-- The endpoint over `3/4` of the lift of `αOne` from the sheet `i` lies on the edge of `i`. -/
@@ -375,7 +375,7 @@ theorem _root_.IsCoveringMap.finEquivConnectedComponentsUnitSegment_eq_mk_monodr
     (i : Fin n) :
     hp.finEquivConnectedComponentsUnitSegment ν i = ConnectedComponents.mk
       ⟨hp.monodromy (.mk αOne) (ν.symm i), by
-        rw [mem_preimage, (hp.monodromy (.mk αOne) (ν.symm i)).2]
+        rw [mem_preimage, (hp.monodromy (.mk αOne) (ν.symm i)).property]
         exact oneBasePt_mem_unitSegment⟩ :=
   finEquivConnectedComponentsUnitSegment_eq_mk hp ν αOne_mem_unitSegment i _
 
@@ -393,7 +393,7 @@ theorem _root_.IsCoveringMap.exists_common_point_iff_eq_sameCycleQuotientσ1 (i 
     rw [hp.mk_eq_sameCycleQuotientσ1EquivConnectedComponents ν hx hx1, hi, Equiv.symm_apply_apply]
   · rintro rfl
     refine ⟨_, ?_, hp.monodromy_αOne_mem_preimage (ν.symm i), ?_, ?_⟩
-    · rw [(hp.monodromy (.mk αOne) (ν.symm i)).2]
+    · rw [(hp.monodromy (.mk αOne) (ν.symm i)).property]
       exact oneBasePt_mem_unitSegment
     · exact (hp.finEquivConnectedComponentsUnitSegment_eq_mk_monodromy_αOne ν i).symm
     · exact (hp.sameCycleQuotientσ1EquivConnectedComponents_mk ν i).symm

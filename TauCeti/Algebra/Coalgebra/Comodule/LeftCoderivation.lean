@@ -197,11 +197,10 @@ coaction. -/
 theorem assoc_comp_rTensor_map_counit_comp_cofreeCoact (δ : Y →ₗ[R] C ⊗[R] Y)
     (b : C →ₗ[R] C') :
     (TensorProduct.assoc R C' Y E).toLinearMap ∘ₗ
-        (TensorProduct.map b ((TensorProduct.rid R Y).toLinearMap ∘ₗ
-          (Coalgebra.counit (R := R) (A := E)).lTensor Y) ∘ₗ leftCoactRTensor E δ).rTensor E ∘ₗ
+        (TensorProduct.map b (cofreeCounit R E Y) ∘ₗ leftCoactRTensor E δ).rTensor E ∘ₗ
           cofreeCoact R E Y =
       b.rTensor (Y ⊗[R] E) ∘ₗ leftCoactRTensor E δ := by
-  rw [assoc_comp_rTensor_comp_cofreeCoact, rTensor_rid_comp_lTensor_counit_comp_cofreeCoact,
+  rw [assoc_comp_rTensor_comp_cofreeCoact, rTensor_cofreeCounit_comp_cofreeCoact,
     ← LinearMap.rTensor_def]
 
 end Bicomodule
@@ -443,11 +442,11 @@ variable {R : Type uR} {C : Type uC} {P : Type uP} {X : Type uX}
 `τ = G.koszulTwist r`.  The parameter `r` is the degree of `D`, and `τ` records the Koszul sign
 `(-1)^(r * |c|)` acquired when `D` passes the coalgebra factor `c`.  Homogeneity of `D` and the
 comodule axioms of `δ` are separate conditions. -/
-def IsLeftGradedCoderivationOver (δ : X →ₗ[R] C ⊗[R] X) (G : InternalGrading R C) (r : ℤ)
+def IsLeftGradedCoderivationOver (δ : X →ₗ[R] C ⊗[R] X) (G : InternalGrading R C ℤ) (r : ℤ)
     (b : C →ₗ[R] C) (D : X →ₗ[R] X) : Prop :=
   δ ∘ₗ D = b.rTensor X ∘ₗ δ + TensorProduct.map (G.koszulTwist r) D ∘ₗ δ
 
-variable {δ : X →ₗ[R] C ⊗[R] X} {G : InternalGrading R C} {r : ℤ} {b : C →ₗ[R] C}
+variable {δ : X →ₗ[R] C ⊗[R] X} {G : InternalGrading R C ℤ} {r : ℤ} {b : C →ₗ[R] C}
   {D E : X →ₗ[R] X}
 
 /-- The left co-Leibniz law evaluated on one element. -/

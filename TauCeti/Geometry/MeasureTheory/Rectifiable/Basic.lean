@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import Mathlib.Data.Nat.Pairing
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Euclidean.Volume.Measure
 
 /-!
 # Countably rectifiable sets
@@ -17,10 +18,11 @@ Hausdorff measure `μHE[k]`, by countably many Lipschitz images of subsets of
 `EuclideanSpace ℝ (Fin k)`. The domains need not be measurable, and neither measurability
 nor local finiteness of Hausdorff measure is part of rectifiability.
 
-We prove closure under subsets, countable unions and null modifications, and transport
-by maps Lipschitz on the set. These operations allow rectifiable sets to be localized
-and their parametrizations to be composed without imposing regularity on the exceptional set.
-Patches are maps from subtypes, so even an empty target requires no arbitrary base point.
+We prove closure under subsets, countable unions and null modifications, upward monotonicity
+in the dimension `k`, countable sets in every dimension, pushforward by maps Lipschitz on the
+set, and pullback by maps antilipschitz on the set. These operations allow rectifiable sets to be
+localized and their parametrizations to be composed without imposing regularity on the exceptional
+set. Patches are maps from subtypes, so even an empty target requires no arbitrary base point.
 In a finite-dimensional real normed space, the patches extend to Lipschitz maps defined
 on all of `EuclideanSpace ℝ (Fin k)` (`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`).
 
@@ -70,17 +72,17 @@ theorem empty : CountablyRectifiable k (∅ : Set X) := of_null measure_empty
 theorem mono_ae (hs : CountablyRectifiable k s) (ht : t ≤ᵐ[μHE[k]] s) :
     CountablyRectifiable k t := by
   obtain ⟨A, f, hf, hcover⟩ := hs
-  exact ⟨A, f, hf, ae_le_set.mp (ht.trans (ae_le_set.mpr hcover))⟩
+  exact ⟨A, f, hf, ae_subset.mp (ht.trans (ae_subset.mpr hcover))⟩
 
 /-- Arbitrary subsets of rectifiable sets are rectifiable; in particular this allows
 restriction to measurable sets without an additional measurability assumption. -/
 theorem mono (hs : CountablyRectifiable k s) (ht : t ⊆ s) : CountablyRectifiable k t :=
-  hs.mono_ae ht.eventuallyLE
+  hs.mono_ae ht.eventuallySubset
 
 /-- Countable rectifiability is independent of the representative modulo `μHE[k]`. -/
 theorem congr (hs : CountablyRectifiable k s) (hst : s =ᵐ[μHE[k]] t) :
     CountablyRectifiable k t :=
-  hs.mono_ae hst.symm.le
+  hs.mono_ae hst.symm.subset
 
 /-- A single Lipschitz patch is countably rectifiable. -/
 theorem of_lipschitzWith {A : Set (EuclideanSpace ℝ (Fin k))} {f : A → X} {K : ℝ≥0}
@@ -107,9 +109,9 @@ private theorem iUnion_nat {s : ℕ → Set X} (hs : ∀ n, CountablyRectifiable
   refine ⟨fun n ↦ A (Nat.unpair n).1 (Nat.unpair n).2,
     fun n ↦ f (Nat.unpair n).1 (Nat.unpair n).2,
     fun n ↦ hf (Nat.unpair n).1 (Nat.unpair n).2, ?_⟩
-  apply ae_le_set.mp
+  apply ae_subset.mp
   have hc : ∀ n, s n ≤ᵐ[μHE[k]] ⋃ i, Set.range (f n i) :=
-    fun n ↦ ae_le_set.mpr (hcover n)
+    fun n ↦ ae_subset.mpr (hcover n)
   rw [Set.iUnion_unpair (fun n i ↦ Set.range (f n i))]
   exact Filter.EventuallySubset.countable_iUnion hc
 
@@ -147,7 +149,7 @@ theorem image (hs : CountablyRectifiable k s) {g : X → Y} {K : ℝ≥0}
   let F (i : ℕ) : B i → Y := fun x ↦ g (f i (p i x))
   have hF (i : ℕ) : LipschitzWith (K * L i) (F i) := by
     have hpi : LipschitzWith 1 (p i) :=
-      (LipschitzWith.subtype_val (B i)).subtype_mk (fun x ↦ x.property.choose)
+      (LipschitzWith.subtypeVal (B i)).subtype_mk (fun x ↦ x.property.choose)
     simpa only [mul_one, Function.comp_def, Set.domRestrict_apply, F] using
       hg.to_restrict.comp (((hL i).comp hpi).subtype_mk (hp i))
   refine ⟨B, F, fun i ↦ ⟨K * L i, hF i⟩, ?_⟩
@@ -162,27 +164,57 @@ theorem image (hs : CountablyRectifiable k s) {g : X → Y} {K : ℝ≥0}
   obtain ⟨i, z, rfl⟩ := mem_iUnion.mp hx
   exact hy (mem_iUnion.mpr ⟨i, ⟨⟨z, ⟨z.property, hxs⟩⟩, rfl⟩⟩)
 
+/-- A set whose image under a map antilipschitz on it is countably rectifiable is itself countably
+rectifiable. -/
+theorem of_antilipschitzWith {f : X → Y} {K : ℝ≥0} (hs : CountablyRectifiable k (f '' s))
+    (hf : AntilipschitzWith K (s.domRestrict f)) : CountablyRectifiable k s := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, _⟩
+  · exact empty
+  have : Nonempty X := ⟨x₀⟩
+  have hmaps : MapsTo (Function.invFunOn f s) (f '' s) s := fun _ hy ↦ Function.invFunOn_mem hy
+  have hinv : RightInvOn (Function.invFunOn f s) f (f '' s) := fun _ hy ↦ Function.invFunOn_eq hy
+  have hlip : LipschitzOnWith K (Function.invFunOn f s) (f '' s) :=
+    lipschitzOnWith_iff_restrict.2 (hf.to_rightInvOn' hmaps hinv)
+  have hinj : InjOn f s := Set.injOn_iff_injective.2 hf.injective
+  simpa only [hinj.invFunOn_image Subset.rfl] using hs.image hlip
+
 /-- Isometric embeddings preserve and reflect countable rectifiability, without requiring
 surjectivity or a nonempty source. -/
 theorem isometry_image_iff {f : X → Y} (hf : Isometry f) :
-    CountablyRectifiable k (f '' s) ↔ CountablyRectifiable k s := by
-  classical
-  constructor
-  · intro hs
-    rcases isEmpty_or_nonempty X with hX | hX
-    · simpa only [eq_empty_of_isEmpty s] using (empty (X := X) (k := k))
-    have hinv : RightInvOn (Function.invFun f) f (f '' s) :=
-      fun _ hy ↦ Function.invFun_eq (image_subset_range f s hy)
-    have hLip : LipschitzOnWith 1 (Function.invFun f) (f '' s) :=
-      lipschitzOnWith_iff_restrict.mpr (hf.antilipschitzWith.to_rightInvOn hinv)
-    simpa only [← image_comp, Function.invFun_comp hf.injective, image_id] using hs.image hLip
-  · exact fun hs ↦ hs.image hf.lipschitzWith.lipschitzOnWith
+    CountablyRectifiable k (f '' s) ↔ CountablyRectifiable k s :=
+  ⟨fun hs ↦ hs.of_antilipschitzWith (hf.antilipschitzWith.domRestrict s),
+    fun hs ↦ hs.image hf.lipschitzWith.lipschitzOnWith⟩
 
 /-- Isometric equivalences preserve countable rectifiability in both directions. -/
 @[simp]
 theorem isometryEquiv_image_iff {e : X ≃ᵢ Y} :
     CountablyRectifiable k (e '' s) ↔ CountablyRectifiable k s :=
   isometry_image_iff e.isometry
+
+/-- Every singleton is countably `k`-rectifiable. -/
+@[simp]
+theorem singleton (x : X) : CountablyRectifiable k ({x} : Set X) := by
+  simpa only [range_const] using
+    of_lipschitzWith (A := univ) (f := fun _ ↦ x) (K := 0) (LipschitzWith.const' x)
+
+/-- Countable rectifiability is monotone in the dimension: every countably `m`-rectifiable set is
+countably `k`-rectifiable for every `k ≥ m`. -/
+theorem mono_dim {m : ℕ} (hs : CountablyRectifiable m s) (hmk : m ≤ k) :
+    CountablyRectifiable k s := by
+  classical
+  obtain ⟨A, f, hf, hcover⟩ := hs
+  choose K hK using hf
+  let ι := LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hmk)
+  let e (i : ℕ) := (ι.isometry.comp (isometry_subtypeVal (s := A i))).isometryEquivOnRange
+  let B (i : ℕ) : Set (EuclideanSpace ℝ (Fin k)) := range fun x : A i ↦ ι x
+  let g (i : ℕ) : B i → X := f i ∘ (e i).symm
+  refine ⟨B, g, fun i ↦ ⟨K i, ?_⟩, ?_⟩
+  · simpa only [mul_one] using (hK i).comp (e i).symm.isometry.lipschitzWith
+  · have hrange (i : ℕ) : range (g i) = range (f i) := (e i).symm.surjective.range_comp (f i)
+    simp_rw [hrange]
+    rw [Measure.euclideanHausdorffMeasure_eq_zero_iff] at hcover ⊢
+    exact nonpos_iff_eq_zero.1
+      ((Measure.hausdorffMeasure_mono (Nat.cast_le.2 hmk) _).trans hcover.le)
 
 end CountablyRectifiable
 
@@ -224,3 +256,13 @@ theorem CountablyRectifiable.exists_lipschitzWith_cover {k : ℕ} {s : Set V}
 end FiniteDimensional
 
 end TauCeti
+
+/-- Every countable set in an extended metric Borel space is countably `k`-rectifiable in every
+dimension `k`. -/
+protected theorem Set.Countable.countablyRectifiable {X : Type*} [EMetricSpace X]
+    [MeasurableSpace X] [BorelSpace X] {k : ℕ} {s : Set X} (hs : s.Countable) :
+    TauCeti.CountablyRectifiable k s := by
+  have := hs.to_subtype
+  have h : s = ⋃ x : s, ({(x : X)} : Set X) := by ext; simp
+  rw [h]
+  exact TauCeti.CountablyRectifiable.iUnion fun x : s ↦ .singleton (x : X)

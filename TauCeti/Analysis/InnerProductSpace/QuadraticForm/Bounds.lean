@@ -1,10 +1,11 @@
 /-
 Copyright (c) 2026 Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Jon Crall, GPT 5.6 High
+Authors: Jon Crall, GPT 5.6 High, Claude Opus 5, OpenAI gpt-6.1-sol
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Complexification
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 
@@ -19,6 +20,10 @@ The predicates, their monotonicity and the form of a real scalar operator only n
 seminormed inner product space; the comparison with Mathlib's `IsPositive` uses the normed
 setting in which that predicate is defined.
 
+A single-vector perturbation estimate complements them: the form stays nonnegative at a vector
+close, relative to its norm, to one at which it is coercive
+(`ContinuousLinearMap.re_inner_apply_nonneg_of_norm_sub_le`).
+
 ## Provenance
 
 * Original repository: Davis--Kahan/DKPS formalization (Kitware, Inc.).
@@ -26,6 +31,12 @@ setting in which that predicate is defined.
   in the DKPS formalization at commit `df036cd`.
 * Authors: Jon Crall and GPT 5.6 High; Copyright (c) 2026 Kitware, Inc.;
   released under Apache 2.0.
+-/
+
+/-!
+The Hilbert complexification form-bound equivalences are adapted from DKPS
+`DavisKahan/SpectralTheory/Complexification/FormTransport.lean`
+(Jon Crall and Claude Opus 5; Kitware 2026, Apache-2.0).
 -/
 
 public section
@@ -132,4 +143,97 @@ attribute [local instance] realAlgebra realIsScalarTower
 
 end RealScalar
 
+section Perturbation
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- The form `re ⟪B v, v⟫` stays nonnegative under a small relative perturbation of a vector `u`
+on which it is coercive: if `c ‖u‖ ^ 2 ≤ re ⟪B u, u⟫` and `‖u - v‖ ≤ δ ‖v‖` with `δ ≤ 1 / 2` and
+`‖B‖ δ ≤ c / 12`, then `0 ≤ re ⟪B v, v⟫`. -/
+theorem re_inner_apply_nonneg_of_norm_sub_le {B : E →L[𝕜] E} {c δ : ℝ} (hc : 0 ≤ c)
+    (hδ : 0 ≤ δ) (hδ₁ : δ ≤ 1 / 2) (hδ₂ : ‖B‖ * δ ≤ c / 12) {u v : E}
+    (hu : c * ‖u‖ ^ 2 ≤ RCLike.re ⟪B u, u⟫_𝕜) (huv : ‖u - v‖ ≤ δ * ‖v‖) :
+    0 ≤ RCLike.re ⟪B v, v⟫_𝕜 := by
+  have hexp : RCLike.re ⟪B v, v⟫_𝕜 =
+      RCLike.re ⟪B u, u⟫_𝕜 - RCLike.re ⟪B (u - v), u⟫_𝕜 - RCLike.re ⟪B v, u - v⟫_𝕜 := by
+    simp only [map_sub, inner_sub_left, inner_sub_right]
+    ring
+  have h₁ : RCLike.re ⟪B (u - v), u⟫_𝕜 ≤ ‖B‖ * ‖u - v‖ * ‖u‖ :=
+    (re_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (B.le_opNorm _) (norm_nonneg _))
+  have h₂ : RCLike.re ⟪B v, u - v⟫_𝕜 ≤ ‖B‖ * ‖v‖ * ‖u - v‖ :=
+    (re_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (B.le_opNorm _) (norm_nonneg _))
+  have hun : ‖v‖ / 2 ≤ ‖u‖ := by
+    have := norm_sub_norm_le v u
+    rw [norm_sub_rev] at this
+    nlinarith [norm_nonneg v]
+  have hun' : ‖u‖ ≤ 3 / 2 * ‖v‖ := by
+    have := norm_le_norm_add_norm_sub' u v
+    nlinarith [norm_nonneg v]
+  have h₃ : ‖B‖ * ‖u - v‖ * ‖u‖ ≤ ‖B‖ * (δ * ‖v‖) * (3 / 2 * ‖v‖) :=
+    mul_le_mul (mul_le_mul_of_nonneg_left huv (norm_nonneg _)) hun' (norm_nonneg _)
+      (by positivity)
+  have h₄ : ‖B‖ * ‖v‖ * ‖u - v‖ ≤ ‖B‖ * ‖v‖ * (δ * ‖v‖) :=
+    mul_le_mul_of_nonneg_left huv (by positivity)
+  have h₅ : c * (‖v‖ / 2) ^ 2 ≤ c * ‖u‖ ^ 2 :=
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hun 2) hc
+  have h₆ := mul_le_mul_of_nonneg_right hδ₂ (sq_nonneg ‖v‖)
+  nlinarith
+
+end Perturbation
+
 end ContinuousLinearMap
+
+section RealComplexification
+
+open TauCeti WithLp
+open scoped InnerProductSpace
+
+namespace ContinuousLinearMap
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Lower form bounds are preserved and reflected by Hilbert complexification. -/
+@[simp]
+theorem lowerFormBoundOn_complexifyL2_iff (A : E →L[ℝ] E) (U : Submodule ℝ E) (c : ℝ) :
+    A.complexifyL2.LowerFormBoundOn U.complexifyL2 c ↔ A.LowerFormBoundOn U c := by
+  rw [lowerFormBoundOn_iff, lowerFormBoundOn_iff]
+  constructor
+  · intro h x hx
+    have hx' : toLp 2 (Complexification.ofReal x) ∈ U.complexifyL2 := by
+      simpa only [Submodule.mem_complexifyL2, ofLp_toLp,
+        Complexification.ofReal_re, Complexification.ofReal_im] using And.intro hx U.zero_mem
+    simpa using h _ hx'
+  · intro h z hz
+    rw [Submodule.mem_complexifyL2] at hz
+    -- The coordinate lemma uses Complex.re rather than the RCLike projection.
+    change c * ‖z‖ ^ 2 ≤ (⟪A.complexifyL2 z, z⟫_ℂ).re
+    rw [WithLp.complexification_norm_sq_eq, WithLp.complexification_re_inner]
+    simp only [ofLp_complexifyL2_apply, complexify_apply_re, complexify_apply_im]
+    -- On real scalars the RCLike real-part map is the identity.
+    change ∀ x ∈ U, c * ‖x‖ ^ 2 ≤ ⟪A x, x⟫_ℝ at h
+    linarith [h _ hz.1, h _ hz.2]
+
+/-- Upper form bounds are preserved and reflected by Hilbert complexification. -/
+@[simp]
+theorem upperFormBoundOn_complexifyL2_iff (A : E →L[ℝ] E) (U : Submodule ℝ E) (c : ℝ) :
+    A.complexifyL2.UpperFormBoundOn U.complexifyL2 c ↔ A.UpperFormBoundOn U c := by
+  rw [upperFormBoundOn_iff, upperFormBoundOn_iff]
+  constructor
+  · intro h x hx
+    have hx' : toLp 2 (Complexification.ofReal x) ∈ U.complexifyL2 := by
+      simpa only [Submodule.mem_complexifyL2, ofLp_toLp,
+        Complexification.ofReal_re, Complexification.ofReal_im] using And.intro hx U.zero_mem
+    simpa using h _ hx'
+  · intro h z hz
+    rw [Submodule.mem_complexifyL2] at hz
+    -- The coordinate lemma uses Complex.re rather than the RCLike projection.
+    change (⟪A.complexifyL2 z, z⟫_ℂ).re ≤ c * ‖z‖ ^ 2
+    rw [WithLp.complexification_norm_sq_eq, WithLp.complexification_re_inner]
+    simp only [ofLp_complexifyL2_apply, complexify_apply_re, complexify_apply_im]
+    -- On real scalars the RCLike real-part map is the identity.
+    change ∀ x ∈ U, ⟪A x, x⟫_ℝ ≤ c * ‖x‖ ^ 2 at h
+    linarith [h _ hz.1, h _ hz.2]
+
+end ContinuousLinearMap
+
+end RealComplexification

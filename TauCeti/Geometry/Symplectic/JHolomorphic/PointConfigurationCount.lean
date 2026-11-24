@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.ConfigurationCount
 public import TauCeti.Geometry.Symplectic.JHolomorphic.GoodCycle
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Weighted counts of curve configurations through generic points
@@ -27,7 +28,14 @@ of the point configurations. Without points this is the count of index-zero clas
 (`TauCeti.pointConfigurationCount_of_isEmpty`). The finiteness, area-cutoff and conditional
 comparison statements carry over, and the count does not depend on how the points are labelled
 (`TauCeti.pointConfigurationCount_map_equiv`). With at least one point, the count in class zero
-vanishes (`TauCeti.pointConfigurationCount_zero`).
+vanishes (`TauCeti.pointConfigurationCount_zero`), and with infinitely many points the count
+vanishes in every class (`TauCeti.pointConfigurationCount_eq_zero_of_infinite`). With finitely
+many points and finitely many configurations, inclusion–exclusion over the sets of points writes
+the count through the points as an alternating sum of counts without points, over the candidates
+avoiding each set of points (`TauCeti.pointConfigurationCount_eq_sum_neg_one_pow`). As for the
+count without points, the count vanishes in a class `A` that is not good, `A · S < -1` for an
+exceptional sphere `S` counted only with multiplicity one
+(`TauCeti.pointConfigurationCount_eq_zero_of_apply_lt_neg_one`).
 
 The geometry of curves through generic points supplies three numerical facts about the classes
 of the candidates in the intersection form `B` on integral homology, with canonical class `κ` and
@@ -115,15 +123,26 @@ theorem pointConfigurations_map_equiv (e : P ≃ Q) :
   simp only [mem_pointConfigurations, Finset.mem_map_equiv, and_congr_right_iff]
   exact fun _ ↦ (e.forall_congr_left (p := fun p ↦ ∃ c ∈ l.support, p ∈ pts c)).symm
 
+/-- With infinitely many points there is no point configuration: the finitely many components
+of a configuration carry only finitely many points. -/
+@[simp]
+theorem pointConfigurations_eq_empty_of_infinite [Infinite P] :
+    pointConfigurations r cls pts s A = ∅ := by
+  classical
+  refine Set.eq_empty_of_forall_notMem fun l hl ↦ ?_
+  obtain ⟨p, hp⟩ := Infinite.exists_notMem_finset (l.support.biUnion pts)
+  obtain ⟨c, hc, hpc⟩ := hl.2 p
+  exact hp (Finset.mem_biUnion.2 ⟨c, hc, hpc⟩)
+
 /-- The components of a point configuration are candidates. -/
 private theorem mem_of_mem_pointConfigurations (hl : l ∈ pointConfigurations r cls pts s A)
     (c : l.support) : (c : ι) ∈ s :=
-  (mem_compatibleConfigurations.1 hl.1).1 c.2
+  (mem_compatibleConfigurations.1 hl.1).1 c.property
 
 /-- Distinct components of a point configuration are compatible. -/
 private theorem rel_of_mem_pointConfigurations (hl : l ∈ pointConfigurations r cls pts s A)
     {c d : l.support} (hcd : c ≠ d) : r c d :=
-  (mem_compatibleConfigurations.1 hl.1).2.1 c.2 d.2 (Subtype.coe_ne_coe.2 hcd)
+  (mem_compatibleConfigurations.1 hl.1).2.1 c.property d.property (Subtype.coe_ne_coe.2 hcd)
 
 /-- Restricting the candidates to a subset `t` of `s` does not change the point configurations
 in class `A` if every point configuration in class `A` from `s` is supported in `t`. -/
@@ -209,6 +228,12 @@ theorem pointConfigurationCount_of_isEmpty [IsEmpty P] :
     pointConfigurationCount r cls pts w s A = configurationCount r cls w s A := by
   rw [pointConfigurationCount_def, configurationCount_def, pointConfigurations_of_isEmpty]
 
+/-- With infinitely many points, the count through the points vanishes. -/
+@[simp]
+theorem pointConfigurationCount_eq_zero_of_infinite [Infinite P] :
+    pointConfigurationCount r cls pts w s A = 0 := by
+  rw [pointConfigurationCount_def, pointConfigurations_eq_empty_of_infinite, finsum_mem_empty]
+
 /-- Relabelling the points along an equivalence does not change the count. -/
 theorem pointConfigurationCount_map_equiv (e : P ≃ Q) :
     pointConfigurationCount r cls (fun c ↦ (pts c).map e.toEmbedding) w s A =
@@ -252,6 +277,77 @@ theorem pointConfigurationCount_eq_of_area_lt (hts : t ⊆ s)
 end Area
 
 end Configuration
+
+/-! ### Inclusion–exclusion over the points -/
+
+section InclusionExclusion
+
+variable [AddCommMonoid H] [CommRing R] {r : ι → ι → Prop} {cls : ι → H} {pts : ι → Finset P}
+  {w : ι → ℕ → R} {s : Set ι} {A : H}
+
+/-- **Inclusion–exclusion over the points.** If the configurations of `s` in class `A` are finite
+in number, the count through the points is the alternating sum, over the sets `T` of points, of
+the counts without points of the candidates avoiding `T`. -/
+theorem pointConfigurationCount_eq_sum_neg_one_pow [Fintype P]
+    (hfin : (compatibleConfigurations r cls s A).Finite) :
+    pointConfigurationCount r cls pts w s A =
+      ∑ T : Finset P, (-1) ^ T.card *
+        configurationCount r cls w {c ∈ s | Disjoint (pts c) T} A := by
+  classical
+  set F := hfin.toFinset
+  -- Every count involved is a sum over the configurations of `s`, restricted by a condition.
+  have hF {S : Set (ι →₀ ℕ)} (hS : S ⊆ compatibleConfigurations r cls s A) :
+      ∑ᶠ l ∈ S, l.prod w = ∑ l ∈ F, if l ∈ S then l.prod w else 0 := by
+    rw [finsum_mem_eq_finite_toFinset_sum _ (hfin.subset hS), ← Finset.sum_filter]
+    refine Finset.sum_congr (Finset.ext fun l ↦ ?_) fun _ _ ↦ rfl
+    rw [Finset.mem_filter, Set.Finite.mem_toFinset, Set.Finite.mem_toFinset]
+    exact ⟨fun h ↦ ⟨hS h, h⟩, And.right⟩
+  rw [pointConfigurationCount_def, hF pointConfigurations_subset]
+  simp_rw [configurationCount_def, hF (compatibleConfigurations_mono (Set.sep_subset _ _)),
+    Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun l hl ↦ ?_
+  rw [Set.Finite.mem_toFinset] at hl
+  simp only [mem_pointConfigurations, mem_compatibleConfigurations_sep_iff, hl,
+    true_and, mul_ite, mul_zero]
+  -- The sets of points avoided by the components are the subsets of the uncovered points, and
+  -- their alternating sum detects whether that set is empty.
+  rw [← Finset.sum_filter, ← Finset.sum_mul]
+  have hfilter : (Finset.univ.filter fun T : Finset P ↦ ∀ c ∈ l.support, Disjoint (pts c) T) =
+      (Finset.univ \ l.support.biUnion pts).powerset := by
+    ext T
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_powerset,
+      Finset.subset_sdiff, Finset.subset_univ, Finset.disjoint_biUnion_right]
+    exact forall₂_congr fun _ _ ↦ disjoint_comm
+  rw [hfilter, Finset.sum_powerset_neg_one_pow_card_of_ring]
+  have hcov : Finset.univ \ l.support.biUnion pts = ∅ ↔ ∀ p, ∃ c ∈ l.support, p ∈ pts c := by
+    simp [Finset.sdiff_eq_empty_iff_subset, Finset.eq_univ_iff_forall]
+  simp only [hcov]
+  split_ifs <;> simp
+
+end InclusionExclusion
+
+/-! ### Vanishing in a bad class -/
+
+section BadClass
+
+variable [AddCommGroup H] [CommSemiring R] {r : ι → ι → Prop} {cls : ι → H} {pts : ι → Finset P}
+  {w : ι → ℕ → R} {s : Set ι} {A : H} {B : BilinForm ℤ H}
+
+/-- **Vanishing in a bad class.** Let `S` be a candidate of self-intersection at least `-1`, such
+as an exceptional sphere, which every other candidate meets nonnegatively, and which is counted
+only with multiplicity one: `w S k = 0` for `k ≥ 2`. If `A · S < -1`, that is, if `A` is not
+good, then the count through the points in class `A` vanishes. -/
+theorem pointConfigurationCount_eq_zero_of_apply_lt_neg_one {S : ι}
+    (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S)) (hS : -1 ≤ B (cls S) (cls S))
+    (hw : ∀ k, 2 ≤ k → w S k = 0) (hA : B A (cls S) < -1) :
+    pointConfigurationCount r cls pts w s A = 0 := by
+  rw [pointConfigurationCount_def]
+  exact finsum_mem_eq_zero_of_forall_eq_zero fun _ hl ↦
+    prod_eq_zero_of_mem_compatibleConfigurations_of_apply_lt_neg_one hpos hS hw hA
+      (pointConfigurations_subset hl)
+
+end BadClass
 
 /-! ### The intersection algebra of a point configuration -/
 
@@ -325,7 +421,7 @@ Its structure theorem then gives the assignment of the points to the components:
 theorem isGoodCycle_of_mem_pointConfigurations (hl : l ∈ pointConfigurations r cls pts s A)
     (hA : B A A - B κ A = 2 * Fintype.card P) :
     IsGoodCycle B κ A (fun c : l.support ↦ cls c) (fun c ↦ l c) 0 (fun c ↦ pts c) where
-  mult_pos c := Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 c.2)
+  mult_pos c := Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 c.property)
   apply_nonneg {c d} hcd :=
     hint c (mem_of_mem_pointConfigurations hl c) d (mem_of_mem_pointConfigurations hl d)
       (rel_of_mem_pointConfigurations hl hcd)

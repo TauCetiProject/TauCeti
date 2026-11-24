@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.MaximumPrinciple
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+public import TauCeti.Geometry.Manifold.TangentCone.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -40,8 +41,22 @@ The weak maximum principle then confines `J`-holomorphic curves to `{ρ ≤ R}` 
 above hold on `{ρ > R}`: a curve on a compact domain whose boundary is mapped into `{ρ ≤ R}`
 (`TauCeti.Pseudoholomorphic.comp_le_of_comp_le_frontier`), and a strip `ℝ × [0, 1]` whose two
 boundary lines and two ends `|ℜ z| ≥ T` are mapped into `{ρ ≤ R}`
-(`TauCeti.Pseudoholomorphic.comp_le_of_comp_le_strip_boundary_of_comp_le_ends`). These are the
-manifold forms of the statements in local coordinates in
+(`TauCeti.Pseudoholomorphic.comp_le_of_comp_le_strip_boundary_of_comp_le_ends`).
+
+The boundary lines of a strip need not stay in `{ρ ≤ R}`. On the cylindrical end, a Lagrangian
+which is cylindrical at infinity is tangent to the Liouville field, so the Liouville primitive `α`
+vanishes on it. If a boundary line of the strip is mapped into such a Lagrangian, then `∂ₛu` is
+tangent to it, and the Cauchy--Riemann equation gives the Neumann condition
+`∂ₜ(ρ ∘ u) = dρ(J ∂ₛu) = -α(∂ₛu) = 0` along that line, which excludes a maximum of `ρ ∘ u` above
+`R` on the boundary. So a strip whose ends lie in `{ρ ≤ R}` lies in `{ρ ≤ R}` when its boundary
+lines move, outside `{ρ ≤ R}`, only in directions on which `α` vanishes
+(`TauCeti.Pseudoholomorphic.comp_le_of_neumann_of_comp_le_strip_ends`), in particular when each
+boundary line is mapped into a set on whose tangent cones `TauCeti.mtangentConeAt` the form `α`
+vanishes outside `{ρ ≤ R}` (`TauCeti.Pseudoholomorphic.comp_le_of_mapsTo_of_comp_le_strip_ends`).
+Along the boundary lines `u` is only asked to have a derivative within the closed strip, as a
+solution smooth up to the boundary does.
+
+These are the manifold forms of the statements in local coordinates in
 `TauCeti/Geometry/Symplectic/JHolomorphic/MaximumPrinciple.lean`. The curve need only be `C²` and
 solve the Cauchy--Riemann equation at the points which it maps into `{ρ > R}`, so the statements
 apply to Floer strips whose Hamiltonian vector fields vanish on `{ρ > R}`.
@@ -60,6 +75,11 @@ for the naming).
   domain with boundary in `{ρ ≤ R}` lies in `{ρ ≤ R}`.
 * `TauCeti.Pseudoholomorphic.comp_le_of_comp_le_strip_boundary_of_comp_le_ends`: the same for a
   strip whose boundary lines and ends lie in `{ρ ≤ R}`.
+* `TauCeti.Pseudoholomorphic.comp_le_of_neumann_of_comp_le_strip_ends`: the same for a strip
+  whose ends lie in `{ρ ≤ R}` and whose boundary lines satisfy `α(∂ₛu) = 0` outside `{ρ ≤ R}`.
+* `TauCeti.Pseudoholomorphic.comp_le_of_mapsTo_of_comp_le_strip_ends`: the same for a strip whose
+  ends lie in `{ρ ≤ R}` and whose boundary lines are mapped into sets on whose tangent cones `α`
+  vanishes outside `{ρ ≤ R}`, such as exact Lagrangians cylindrical at infinity.
 
 ## References
 
@@ -131,7 +151,7 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
         (fderiv ℝ (extChartAt I (u z) ∘ u) w 1) := by
     filter_upwards [hCR, hsrc, ContMDiffAt.eventually_mdifferentiableAt hu two_ne_zero]
       with w hw hws hwd
-    exact (J w).fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd hws hw
+    exact (J w).fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd.continuousAt hws hw
   have hρJc : ∀ᶠ w in 𝓝 z,
       (fderiv ℝ (ρ ∘ (extChartAt I (u z)).symm) ((extChartAt I (u z) ∘ u) w)).comp
         ((J w).inChart (u z) ((extChartAt I (u z) ∘ u) w)) =
@@ -162,14 +182,14 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     rfl
   -- The chart at `u z` has the identity as derivative there.
   have hD₀ (v : ℂ) : fderiv ℝ (extChartAt I (u z) ∘ u) z v = mfderiv 𝓘(ℝ, ℂ) I u z v := by
-    rw [(hu.mdifferentiableAt (by norm_num)).fderiv_extChartAt_comp_apply
+    rw [hu.continuousAt.fderiv_extChartAt_comp_apply
       (mem_extChartAt_source (u z)), mfderiv_extChartAt_self]
     -- The identity of the tangent space at `u z` applied to `mfderiv u z v`.
     rfl
   have hR (a b : E) : mextDeriv α (u z) ![a, b] =
       fderiv ℝ (α.inChartAt (u z)) (extChartAt I (u z) (u z)) a (fun _ ↦ b) -
         fderiv ℝ (α.inChartAt (u z)) (extChartAt I (u z) (u z)) b (fun _ ↦ a) := by
-    rw [mextDeriv_def, hrange, extDerivWithin_univ]
+    rw [mextDeriv_eq_extDeriv_inChartAt]
     exact extDeriv_apply_pair _ _ _
   rw [(laplacian_congr_nhds heq).self_of_nhds, hloc, hDα, hDα, hD₀, hD₀]
   exact (hR _ _).symm
@@ -237,6 +257,49 @@ theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
       hRw).2)
     (fun w hw ↦ hbdry w hw) hz
 
+/-- **No escape for strips in a manifold with Neumann boundary conditions.** Let `J_w` be a family
+of almost complex structures depending on the point `w` of the strip. Suppose that on the region
+`{ρ > R}` the function `ρ` is `C²`, and for every `w`, `dρ ∘ J_w = -α` for a one-form `α`
+differentiable there, and `dα` tames `J_w`. Let `ρ ∘ u` be continuous on the closed strip
+`ℝ × [0, 1]`, let `u` be `C²` and solve `∂ₜu = J_w(u) ∂ₛu` at the points `w` of the open strip
+`ℝ × (0, 1)` which it maps into `{ρ > R}`, and suppose that `u` maps the two ends `|ℜ z| ≥ T` of
+the strip into `{ρ ≤ R}`. Suppose that at every point `z` of a boundary line `ℑ z = 0` or
+`ℑ z = 1` which `u` maps into `{ρ > R}`, the map `u` has a derivative `Du z` within the closed
+strip satisfying the Cauchy--Riemann equation `Du z I = J z (u z) (Du z 1)`, and `α` vanishes on
+its boundary direction `Du z 1`. Then `u` maps the whole strip into `{ρ ≤ R}`. -/
+theorem comp_le_of_neumann_of_comp_le_strip_ends {R T : ℝ}
+    {Du : (z : ℂ) → ℂ →L[ℝ] TangentSpace I (u z)}
+    (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
+    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
+    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) →
+      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J z (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
+    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
+    (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (hρJ : ∀ w x, R < ρ x → ∀ v, mvfderiv I ρ x (J w x v) = -α x ![v])
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J w x v])
+    (hDu : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) →
+      HasMFDerivWithinAt 𝓘(ℝ, ℂ) I u (univ ×ℂ Icc 0 1) z (Du z))
+    (hCRbdry : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) →
+      Du z (Complex.I : ℂ) = J z (u z) (Du z 1))
+    (hαbdry : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) → α (u z) ![Du z 1] = 0)
+    (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
+    (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
+  have hU : IsOpen {w : ℂ | 0 < w.im ∧ w.im < 1} :=
+    (isOpen_lt continuous_const continuous_im).inter (isOpen_lt continuous_im continuous_const)
+  have hint (w : ℂ) (h₀ : 0 < w.im) (h₁ : w.im < 1) (hRw : R < ρ (u w)) :=
+    contDiffAt_and_laplacian_nonneg hU (z := w) ⟨h₀, h₁⟩ (fun y hy ↦ hu y hy.1 hy.2)
+      (fun y hy ↦ hCR y hy.1 hy.2) hρ hα hρJ htame hRw
+  -- Along a boundary line outside `{ρ ≤ R}`, `∂ₜ(ρ ∘ u) = dρ(J ∂ₛu) = -α(∂ₛu) = 0`.
+  refine le_of_laplacian_nonneg_of_neumann_of_le_ends
+    (f' := fun w ↦ (mvfderiv I ρ (u w)).comp (Du w)) hf
+    (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).1) (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).2)
+    (fun w hw hRw ↦ ?_) (fun w hw hRw ↦ ?_) hends hz₀ hz₁
+  · exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.1
+      ((((hρ _ hRw).mdifferentiableAt two_ne_zero).hasMFDerivAt).comp_hasMFDerivWithinAt w
+        (hDu w hw hRw))
+  · rw [ContinuousLinearMap.comp_apply, hCRbdry w hw hRw, hρJ w _ hRw, hαbdry w hw hRw, neg_zero]
+
 /-- **No escape for strips in a manifold.** Let `J_w` be a family of almost complex structures
 depending on the point `w` of the strip. Suppose that on the region `{ρ > R}` the function `ρ` is
 `C²`, and for every `w`, `dρ ∘ J_w = -α` for a one-form `α` differentiable there, and `dα` tames
@@ -257,12 +320,63 @@ theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
     (h₀ : ∀ z : ℂ, z.im = 0 → ρ (u z) ≤ R) (h₁ : ∀ z : ℂ, z.im = 1 → ρ (u z) ≤ R)
     (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
     (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
-  have hU : IsOpen {w : ℂ | 0 < w.im ∧ w.im < 1} :=
-    (isOpen_lt continuous_const continuous_im).inter (isOpen_lt continuous_im continuous_const)
-  have hint (w : ℂ) (h₀ : 0 < w.im) (h₁ : w.im < 1) (hRw : R < ρ (u w)) :=
-    contDiffAt_and_laplacian_nonneg hU (z := w) ⟨h₀, h₁⟩ (fun y hy ↦ hu y hy.1 hy.2)
-      (fun y hy ↦ hCR y hy.1 hy.2) hρ hα hρJ htame hRw
-  exact le_of_laplacian_nonneg_of_lt_le_strip hf (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).1)
-    (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).2) h₀ h₁ hends hz₀ hz₁
+  -- The boundary lines stay in `{ρ ≤ R}`, so the Neumann hypotheses hold vacuously.
+  have hbdry (w : ℂ) (hw : w.im = 0 ∨ w.im = 1) (hRw : R < ρ (u w)) : False :=
+    hw.elim (fun h ↦ (h₀ w h).not_gt hRw) fun h ↦ (h₁ w h).not_gt hRw
+  exact comp_le_of_neumann_of_comp_le_strip_ends (Du := 0) hf hu hCR hρ hα hρJ htame
+    (fun w hw hRw ↦ (hbdry w hw hRw).elim) (fun w hw hRw ↦ (hbdry w hw hRw).elim)
+    (fun w hw hRw ↦ (hbdry w hw hRw).elim) hends hz₀ hz₁
+
+/-- **No escape for strips in a manifold with boundary on exact cylindrical Lagrangians.** Let
+`J_w` be a family of almost complex structures depending on the point `w` of the strip. Suppose
+that on the region `{ρ > R}` the function `ρ` is `C²`, and for every `w`, `dρ ∘ J_w = -α` for a
+one-form `α` differentiable there, and `dα` tames `J_w`. Let `ρ ∘ u` be continuous on the closed
+strip `ℝ × [0, 1]`, let `u` be `C²` and solve `∂ₜu = J_w(u) ∂ₛu` at the points `w` of the open
+strip `ℝ × (0, 1)` which it maps into `{ρ > R}`, and suppose that `u` maps the two ends
+`|ℜ z| ≥ T` of the strip into `{ρ ≤ R}`. Let `u` map the boundary line `ℑ z = 0` into `L₀` and the
+line `ℑ z = 1` into `L₁`, where at every point `x` of `Lᵢ` with `R < ρ x` the form `α x` vanishes
+on the tangent cone `TauCeti.mtangentConeAt I Lᵢ x`, as the Liouville primitive does on an exact
+Lagrangian which is cylindrical at infinity. Suppose that at every point `z` of a boundary line
+which `u` maps into `{ρ > R}`, the map `u` has a derivative `Du z` within the closed strip
+satisfying the Cauchy--Riemann equation `Du z I = J z (u z) (Du z 1)`. Then `u` maps the whole
+strip into `{ρ ≤ R}`. -/
+theorem comp_le_of_mapsTo_of_comp_le_strip_ends {R T : ℝ} {L₀ L₁ : Set M}
+    {Du : (z : ℂ) → ℂ →L[ℝ] TangentSpace I (u z)}
+    (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
+    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
+    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) →
+      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J z (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
+    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
+    (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (hρJ : ∀ w x, R < ρ x → ∀ v, mvfderiv I ρ x (J w x v) = -α x ![v])
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J w x v])
+    (hDu : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) →
+      HasMFDerivWithinAt 𝓘(ℝ, ℂ) I u (univ ×ℂ Icc 0 1) z (Du z))
+    (hCRbdry : ∀ z : ℂ, (z.im = 0 ∨ z.im = 1) → R < ρ (u z) →
+      Du z (Complex.I : ℂ) = J z (u z) (Du z 1))
+    (hL₀ : MapsTo u {z : ℂ | z.im = 0} L₀) (hL₁ : MapsTo u {z : ℂ | z.im = 1} L₁)
+    (hαL₀ : ∀ x ∈ L₀, R < ρ x → ∀ v ∈ mtangentConeAt I L₀ x, α x ![v] = 0)
+    (hαL₁ : ∀ x ∈ L₁, R < ρ x → ∀ v ∈ mtangentConeAt I L₁ x, α x ![v] = 0)
+    (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
+    (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
+  -- Along the line `ℑ w = c`, the boundary direction `Du w 1` is tangent to the image of the
+  -- line, hence to the Lagrangian containing it.
+  have htangent (c : ℝ) (hc : c ∈ Icc (0 : ℝ) 1) (L : Set M) (hL : MapsTo u {w : ℂ | w.im = c} L)
+      (w : ℂ) (hw : w.im = c) (hD : HasMFDerivWithinAt 𝓘(ℝ, ℂ) I u (univ ×ℂ Icc 0 1) w (Du w)) :
+      Du w 1 ∈ mtangentConeAt I L (u w) := by
+    have hline : {y : ℂ | y.im = c} ⊆ univ ×ℂ Icc 0 1 := fun y (hy : y.im = c) ↦
+      ⟨mem_univ _, by rw [mem_preimage, hy]; exact hc⟩
+    have hone : (1 : ℂ) ∈ mtangentConeAt 𝓘(ℝ, ℂ) {y : ℂ | y.im = c} w := by
+      simpa using mem_tangentConeAt_setOf_im_eq hw one_im
+    exact mtangentConeAt_mono (I := I) hL.image_subset _
+      ((hD.mono hline).mapsTo_mtangentConeAt hone)
+  refine comp_le_of_neumann_of_comp_le_strip_ends hf hu hCR hρ hα hρJ htame hDu hCRbdry
+    (fun w hw hRw ↦ ?_) hends hz₀ hz₁
+  rcases hw with hw | hw
+  · exact hαL₀ _ (hL₀ hw) hRw _
+      (htangent 0 ⟨le_rfl, zero_le_one⟩ L₀ hL₀ w hw (hDu w (.inl hw) hRw))
+  · exact hαL₁ _ (hL₁ hw) hRw _
+      (htangent 1 ⟨zero_le_one, le_rfl⟩ L₁ hL₁ w hw (hDu w (.inr hw) hRw))
 
 end TauCeti.Pseudoholomorphic

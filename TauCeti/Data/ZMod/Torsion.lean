@@ -22,7 +22,10 @@ divisible by `k` (`ZMod.dvd_val_iff_natCast_mul_eq_zero`).
 Consequently, for nonzero `m` and `n`, the subgroup of `ZMod (m * n)` killed by `m` is additively
 equivalent to `ZMod m`, by multiplication by `n` (`TauCeti.zmodTorsionByEquiv`). With `m = p` and
 `n = p ^ k` this counts the elements killed by `p` in the prime-power cyclic factor
-`ZMod (p * p ^ k)`, as required by the rank-two finite-abelian criterion.
+`ZMod (p * p ^ k)`, as required by the rank-two finite-abelian criterion. More generally, for
+`d ≠ 0` exactly `gcd m d` elements of `ZMod d` are killed by `m` (`ZMod.card_torsionBy`): they are
+the elements killed by `gcd m d`, a copy of `ZMod (gcd m d)`. Multiplied over the factors of a
+product of cyclic groups, these counts determine its invariant factors.
 
 In prime-power moduli, for every nonzero `p`, an element of `ZMod (p ^ (n + 1))` is killed by `p`
 exactly when it is the reduction of a multiple of `p ^ n`
@@ -87,8 +90,8 @@ private theorem zmodTorsionByEquivHom_bijective (m n : ℕ) [NeZero m] [NeZero n
     Function.Bijective (zmodTorsionByEquivHom m n) := by
   refine ⟨fun a b hab ↦ ZMod.mulCastHom_injective n rfl (NeZero.ne n) (congrArg Subtype.val hab),
     fun y ↦ ?_⟩
-  obtain ⟨x, hx⟩ := (ZMod.exact_mulCastHom_castHom n rfl y.1).1 <|
-    (ZMod.natCast_mul_eq_zero_iff n rfl (NeZero.ne m) y.1).1 (natCast_mul_coe_eq_zero y)
+  obtain ⟨x, hx⟩ := (ZMod.exact_mulCastHom_castHom n rfl y.val).1 <|
+    (ZMod.natCast_mul_eq_zero_iff n rfl (NeZero.ne m) y.val).1 (natCast_mul_coe_eq_zero y)
   exact ⟨x, Subtype.ext hx⟩
 
 /-- For nonzero `m` and `n`, the subgroup of `ZMod (m * n)` killed by `m` is additively
@@ -108,10 +111,10 @@ theorem zmodTorsionByEquiv_apply_coe (m n : ℕ) [NeZero m] [NeZero n] (x : ZMod
 @[simp]
 theorem zmodTorsionByEquiv_symm_apply (m n : ℕ) [NeZero m] [NeZero n]
     (y : AddSubgroup.torsionBy (ZMod (m * n)) (m : ℤ)) :
-    (zmodTorsionByEquiv m n).symm y = ((y.1.val / n : ℕ) : ZMod m) := by
+    (zmodTorsionByEquiv m n).symm y = ((y.val.val / n : ℕ) : ZMod m) := by
   refine (AddEquiv.symm_apply_eq _).2 (Subtype.ext ?_)
   rw [zmodTorsionByEquiv_apply_coe, ZMod.val_natCast, ← Nat.mul_mod_mul_right, ZMod.natCast_mod,
-    Nat.div_mul_cancel ((ZMod.dvd_val_iff_natCast_mul_eq_zero rfl y.1).2
+    Nat.div_mul_cancel ((ZMod.dvd_val_iff_natCast_mul_eq_zero rfl y.val).2
       (natCast_mul_coe_eq_zero y)), ZMod.natCast_zmod_val]
 
 /-- Equality with the image of a chosen residue under `zmodTorsionByEquiv` is characterized in
@@ -128,5 +131,33 @@ theorem zmodTorsionByEquiv_symm_apply_eq_iff (m n : ℕ) [NeZero m] [NeZero n]
   rw [AddEquiv.symm_apply_eq, eq_comm, zmodTorsionByEquiv_apply_eq_iff]
 
 end TauCeti
+
+namespace ZMod
+
+/-- In `ZMod d` with `d ≠ 0`, exactly `gcd m d` elements are killed by `m`. -/
+theorem card_torsionBy (m d : ℕ) [NeZero d] :
+    Nat.card (AddSubgroup.torsionBy (ZMod d) (m : ℤ)) = m.gcd d := by
+  -- The elements killed by `m` are those killed by `g = gcd m d`, as `g` is a combination of `m`
+  -- and `d`, and `d` kills `ZMod d`.
+  have htors : AddSubgroup.torsionBy (ZMod d) (m : ℤ) =
+      AddSubgroup.torsionBy (ZMod d) (m.gcd d : ℤ) := by
+    ext x
+    simp only [AddSubgroup.torsionBy.nsmul_iff, nsmul_eq_mul]
+    refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+    · have hg : ((m.gcd d : ℕ) : ZMod d) = (m : ZMod d) * (m.gcdA d : ZMod d) := by
+        simpa using congrArg (Int.cast : ℤ → ZMod d) (Nat.gcd_eq_gcd_ab m d)
+      rw [hg, mul_comm (m : ZMod d), mul_assoc, h, mul_zero]
+    · obtain ⟨k, hk⟩ := Nat.gcd_dvd_left m d
+      rw [hk, Nat.cast_mul, mul_comm (m.gcd d : ZMod d), mul_assoc, h, mul_zero]
+  rw [htors]
+  have hg : m.gcd d ≠ 0 := Nat.gcd_ne_zero_right (NeZero.ne d)
+  obtain ⟨k, hk⟩ := Nat.gcd_dvd_right m d
+  generalize m.gcd d = g at hg hk ⊢
+  subst hk
+  have : NeZero g := ⟨hg⟩
+  have : NeZero k := ⟨right_ne_zero_of_mul (NeZero.ne (g * k))⟩
+  rw [← Nat.card_congr (TauCeti.zmodTorsionByEquiv g k).toEquiv, Nat.card_zmod]
+
+end ZMod
 
 end

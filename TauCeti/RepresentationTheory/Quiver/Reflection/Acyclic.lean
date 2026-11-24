@@ -46,7 +46,7 @@ theorem IsAcyclic.exists_isSink [Finite V] [Nonempty V] (h : IsAcyclic V) :
   by_contra hcon
   have hout : ∀ i : V, ∃ b : V, Nonempty (i ⟶ b) := fun i ↦ by
     by_contra hi
-    exact hcon ⟨i, IsSink_def i |>.mpr fun b ↦ not_nonempty_iff.mp fun hb ↦ hi ⟨b, hb⟩⟩
+    exact hcon ⟨i, isSink_iff i |>.mpr fun b ↦ not_nonempty_iff.mp fun hb ↦ hi ⟨b, hb⟩⟩
   have hlong : ∀ n : ℕ, ∃ (a b : V) (p : Path a b), p.length = n := by
     intro n
     induction n with
@@ -66,7 +66,7 @@ theorem IsAcyclic.exists_isSource [Finite V] [Nonempty V] (h : IsAcyclic V) :
   by_contra hcon
   have hin : ∀ i : V, ∃ a : V, Nonempty (a ⟶ i) := fun i ↦ by
     by_contra hi
-    exact hcon ⟨i, IsSource_def i |>.mpr fun a ↦ not_nonempty_iff.mp fun ha ↦ hi ⟨a, ha⟩⟩
+    exact hcon ⟨i, isSource_iff i |>.mpr fun a ↦ not_nonempty_iff.mp fun ha ↦ hi ⟨a, ha⟩⟩
   have hlong : ∀ n : ℕ, ∃ (a b : V) (p : Path a b), p.length = n := by
     intro n
     induction n with

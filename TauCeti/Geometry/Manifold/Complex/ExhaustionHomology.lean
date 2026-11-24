@@ -6,19 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.Pseudoconvex.Strong
-public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
+public import TauCeti.Geometry.Manifold.Morse.TopHomology
 
+import TauCeti.AlgebraicTopology.Cohomology.Point
+import TauCeti.AlgebraicTopology.Singular.Basic
+import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # Morse approximation and homology vanishing on pseudoconvex complex manifolds
 
-On a complex manifold `M` of complex dimension `n`, everywhere strong `q`-pseudoconvexity is open
-in the strong `C²` Whitney topology
+On a complex manifold `M` of finite complex dimension `n`, everywhere strong `q`-pseudoconvexity is
+open in the strong `C²` Whitney topology
 (`TauCeti.exists_strongCkControl_isManifoldStronglyPseudoconvexAt`), while Morse functions are
-dense in the strong `C^∞` Whitney topology with prescribed `C⁰` error and relative to an open
-neighbourhood of any closed set where the function is already Morse
+dense in the strong `C^∞` Whitney topology with prescribed `C⁰` error and relative to any
+closed set on which the function is already Morse
 (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`,
 `ContMDiffMap.exists_isMorse_isProperMap_mem_ball`). Combining both gives relative Morse
 approximation preserving strong `q`-pseudoconvexity and the critical index bound `n + q`
@@ -30,14 +33,28 @@ distance `1` (and away from an already-Morse closed set) to a proper bounded-bel
 
 Combining this Morse approximation with
 `TauCeti.IsMorse.isZero_singularHomology_of_manifoldMorseIndex_le` yields global singular homology
-vanishing `Hₖ(M; R) = 0` for `k > n + q` on any complex manifold carrying an arbitrary smooth
-proper bounded-below everywhere strongly `q`-pseudoconvex exhaustion, without assuming the
-exhaustion is Morse
+vanishing `Hₖ(M; R) = 0` for `k > n + q` on any finite-dimensional complex manifold carrying an
+arbitrary smooth proper bounded-below everywhere strongly `q`-pseudoconvex exhaustion, without
+assuming the exhaustion is Morse
 (`TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`, and for
-strictly plurisubharmonic exhaustions
+strictly plurisubharmonic exhaustions — where no `FiniteDimensional ℂ E` assumption is needed, since
+properness of `M → ℝ` forces any nonempty `M` to have locally compact, hence finite-dimensional,
+model space `E` —
 `TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`), with
 coefficients in any abelian category with coproducts and exact sequential colimits (in particular
 any module over a ring, such as `ℤ`).
+
+The same Morse approximation, combined with
+`TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le` and
+`TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le`, shows that in the top degree
+`H_{n+q}(M; V)` is free for every projective module `V` (for instance a free module) over a
+principal ideal ring without zero divisors in any universe, for instance free abelian for `V = ℤ`,
+even when it is not finitely generated
+(`TauCeti.free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`), and that the
+singular cohomology `Hᵏ(M; V, N)` vanishes for `k > n + q`
+(`TauCeti.isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`). By the
+universal coefficient theorem the vanishing in degree `n + q + 1` uses the freeness of `H_{n+q}`.
+Neither statement makes `H^{n+q}(M; ℤ)` torsion-free: it contains `Ext¹(H_{n+q-1}(M; ℤ), ℤ)`.
 
 ## Main results
 
@@ -48,6 +65,13 @@ any module over a ring, such as `ℤ`).
   `TauCeti.isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`:
   vanishing of `Hₖ(M; R)` above degree `n + q` (and above `n` in the strictly plurisubharmonic
   case) for smooth non-Morse exhaustions.
+* `TauCeti.free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`,
+  `TauCeti.free_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`:
+  freeness of `H_{n+q}(M; V)` (and of `Hₙ(M; V)` in the strictly plurisubharmonic case).
+* `TauCeti.isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt`,
+  `TauCeti.isZero_singularCohomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt`:
+  vanishing of `Hᵏ(M; V, N)` above degree `n + q` (and above `n` in the strictly
+  plurisubharmonic case).
 
 ## References
 
@@ -69,17 +93,21 @@ universe u v w
 
 namespace TauCeti
 
-variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M] [T2Space M]
-
-local instance : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
 
 local instance : IsManifold 𝓘(ℝ, E) ∞ M :=
   IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
 
+section StronglyPseudoconvex
+
+variable [FiniteDimensional ℂ E]
+
+local instance : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
+
 /-- **Relative Morse approximation preserving strong `q`-pseudoconvexity.** Let `f` be a smooth
 everywhere strongly `q`-pseudoconvex function on a Hausdorff sigma-compact complex manifold `M` of
-complex dimension `n`, already Morse on an open neighbourhood `V` of a closed set `C`. For every
+finite complex dimension `n`, already Morse on a closed set `C`. For every
 continuous positive tolerance `ε`, there is a smooth Morse function `g` with `|g - f| < ε`
 everywhere, agreeing with `f` near `C`, which remains everywhere strongly `q`-pseudoconvex and has
 Morse index at most `n + q` at every critical point. -/
@@ -87,29 +115,27 @@ theorem _root_.ContMDiffMap.exists_isMorse_sub_compl_isManifoldStronglyPseudocon
     [SigmaCompactSpace M] (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (q : ℕ)
     (hf : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
     {ε : M → ℝ} (hε : Continuous ε) (hε₀ : ∀ x, 0 < ε x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
-    (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
+    {C : Set M} (hC : IsClosed C) (hfC : IsMorseOn 𝓘(ℝ, E) f C) :
     ∃ g : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯, IsMorse 𝓘(ℝ, E) g ∧ (∀ x, |g x - f x| < ε x) ∧
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ ∧
       (∀ x, IsManifoldStronglyPseudoconvexAt E q g x) ∧
       ∀ x ∈ criticalPoints 𝓘(ℝ, E) g, manifoldMorseIndex 𝓘(ℝ, E) g x ≤ finrank ℂ E + q := by
   obtain ⟨c, -, hc⟩ :=
     exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by norm_cast) q f hf
-  obtain ⟨g, hg, hgm, hgε, hgs⟩ := f.exists_isMorse_mem_ball_sub_compl c hε hε₀ hC hV hCV hfV
+  obtain ⟨g, hg, hgm, hgε, hgs⟩ := f.exists_isMorse_mem_ball_sub_compl c hε hε₀ hC hfC
   exact ⟨g, hgm, hgε, hgs, hc g hg, fun x hx ↦
     (hc g hg x).manifoldMorseIndex_le_of_mem_criticalPoints (g.contMDiff x) hx⟩
 
 /-- **Proper Morse exhaustion approximation preserving strong `q`-pseudoconvexity.** Every smooth
-proper bounded-below everywhere strongly `q`-pseudoconvex function `f` on `M`, already Morse on an
-open neighbourhood `V` of a closed set `C`, admits a smooth proper bounded-below Morse
+proper bounded-below everywhere strongly `q`-pseudoconvex function `f` on `M`, already Morse on a
+closed set `C`, admits a smooth proper bounded-below Morse
 approximation `g` within `C⁰` distance `1`, agreeing with `f` near `C`, everywhere strongly
 `q`-pseudoconvex, and with Morse index at most `finrank ℂ E + q` at every critical point. -/
 theorem _root_.ContMDiffMap.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt
     (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (q : ℕ)
     (hf : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
     (hp : IsProperMap f) (hbdd : BddBelow (range f))
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
-    (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
+    {C : Set M} (hC : IsClosed C) (hfC : IsMorseOn 𝓘(ℝ, E) f C) :
     ∃ g : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯, IsMorse 𝓘(ℝ, E) g ∧ IsProperMap g ∧ BddBelow (range g) ∧
       (∀ x, |g x - f x| < 1) ∧ tsupport (fun x ↦ g x - f x) ⊆ Cᶜ ∧
       (∀ x, IsManifoldStronglyPseudoconvexAt E q g x) ∧
@@ -117,7 +143,7 @@ theorem _root_.ContMDiffMap.exists_isMorse_isProperMap_bddBelow_isManifoldStrong
   have : SigmaCompactSpace M := hp.sigmaCompactSpace
   obtain ⟨c, -, hc⟩ :=
     exists_strongCkControl_isManifoldStronglyPseudoconvexAt (by norm_cast) q f hf
-  obtain ⟨g, hg, hgm, hgp, hgf, hgs⟩ := f.exists_isMorse_isProperMap_mem_ball c hp hC hV hCV hfV
+  obtain ⟨g, hg, hgm, hgp, hgf, hgs⟩ := f.exists_isMorse_isProperMap_mem_ball c hp hC hfC
   obtain ⟨b, hb⟩ := hbdd
   exact ⟨g, hgm, hgp, ⟨b - 1, forall_mem_range.2 fun x ↦ by
     linarith [(abs_lt.1 (hgf x)).1, hb (mem_range_self x)]⟩, hgf, hgs, hc g hg, fun x hx ↦
@@ -136,20 +162,106 @@ theorem isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvex
   let F : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨f, hf⟩
   obtain ⟨g, hgm, hgp, hgbdd, -, -, -, hgidx⟩ :=
     F.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt q hq hp hbdd
-      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      isClosed_empty isMorseOn_empty
   exact hgm.isZero_singularHomology_of_manifoldMorseIndex_le hgp hgbdd hgidx R hn
+
+/-- **Free top homology on manifolds with a smooth strongly `q`-pseudoconvex exhaustion.** If `M`
+carries a smooth proper bounded-below everywhere strongly `q`-pseudoconvex function `f : M → ℝ`
+(not assumed to be Morse), then `H_{n+q}(M; V)` is free, where `n = finrank ℂ E`, for every
+projective module `V` (for instance a free module) over a principal ideal ring without zero divisors
+in any universe. With integral coefficients it is free abelian, even when it is not finitely
+generated. -/
+theorem free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt
+    {f : M → ℝ} {q : ℕ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hq : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
+    {k : Type*} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
+    [Module.Projective k V] :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) (finrank ℂ E + q)).obj V).obj
+      (TopCat.of M)) := by
+  let F : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨f, hf⟩
+  obtain ⟨g, hgm, hgp, hgbdd, -, -, -, hgidx⟩ :=
+    F.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt q hq hp hbdd
+      isClosed_empty isMorseOn_empty
+  exact hgm.free_singularHomology_of_manifoldMorseIndex_le hgp hgbdd hgidx V
+
+/-- **Cohomology vanishing on manifolds with a smooth strongly `q`-pseudoconvex exhaustion.** If
+`M` carries a smooth proper bounded-below everywhere strongly `q`-pseudoconvex function
+`f : M → ℝ` (not assumed to be Morse), then the singular cohomology `Hⁿ(M; V, N)` vanishes for every
+`n > finrank ℂ E + q`, every projective module `V` (for instance a free module) over a principal
+ideal ring `k` without zero divisors (small relative to `M`, such as `k = ℤ` or `k : Type u`), and
+every `k`-module `N`; for instance `Hⁿ(M; ℤ) = 0` for `n > finrank ℂ E + q`. -/
+theorem isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt
+    {f : M → ℝ} {q : ℕ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hq : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
+    {k : Type*} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] [Small.{u} k]
+    (V N : ModuleCat.{u} k) [Module.Projective k V] {n : ℕ} (hn : finrank ℂ E + q < n) :
+    IsZero ((TopCat.of M).singularCohomology V k N n) := by
+  let F : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ := ⟨f, hf⟩
+  obtain ⟨g, hgm, hgp, hgbdd, -, -, -, hgidx⟩ :=
+    F.exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt q hq hp hbdd
+      isClosed_empty isMorseOn_empty
+  exact hgm.isZero_singularCohomology_of_manifoldMorseIndex_le hgp hgbdd hgidx V N hn
+
+end StronglyPseudoconvex
+
+section StrictlyPlurisubharmonic
 
 /-- **Homology vanishing on manifolds with a smooth strictly plurisubharmonic exhaustion.** If `M`
 carries a smooth proper bounded-below everywhere strictly plurisubharmonic function, `Hₙ(M; R) = 0`
-for `n > finrank ℂ E`. -/
+for `n > finrank ℂ E` (without assuming `FiniteDimensional ℂ E`, as properness of `f : M → ℝ` forces
+`E` to be finite-dimensional whenever `M` is nonempty). -/
 theorem isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt
     {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
     (hbdd : BddBelow (range f)) (hpsh : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x)
     {𝒜 : Type v} [Category.{w} 𝒜] [Abelian 𝒜] [HasCoproducts.{u} 𝒜]
     [HasColimitsOfShape ℕ 𝒜] [HasExactColimitsOfShape ℕ 𝒜] (R : 𝒜) {n : ℕ}
     (hn : finrank ℂ E < n) :
-    IsZero (((singularHomologyFunctor 𝒜 n).obj R).obj (TopCat.of M)) :=
-  isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp hbdd
-    (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) R (by omega)
+    IsZero (((singularHomologyFunctor 𝒜 n).obj R).obj (TopCat.of M)) := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact isZero_singularHomology_of_isEmpty R (TopCat.of M) n
+  · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
+    exact isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp
+      hbdd (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) R (by omega)
+
+/-- **Free top homology on manifolds with a smooth strictly plurisubharmonic exhaustion.** If `M`
+carries a smooth proper bounded-below everywhere strictly plurisubharmonic function, then
+`Hₙ(M; V)` is free for `n = finrank ℂ E` and every projective module `V` (for instance a free
+module) over a principal ideal ring without zero divisors in any universe (without assuming
+`FiniteDimensional ℂ E`, as properness of `f` forces `E` to be finite-dimensional whenever `M` is
+nonempty). -/
+theorem free_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt
+    {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hpsh : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x)
+    {k : Type*} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
+    [Module.Projective k V] :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) (finrank ℂ E)).obj V).obj
+      (TopCat.of M)) := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · have := ModuleCat.isZero_iff_subsingleton.mp
+      (isZero_singularHomology_of_isEmpty V (TopCat.of M) (finrank ℂ E))
+    infer_instance
+  · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
+    exact free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp
+      hbdd (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) V
+
+/-- **Cohomology vanishing on manifolds with a smooth strictly plurisubharmonic exhaustion.** If
+`M` carries a smooth proper bounded-below everywhere strictly plurisubharmonic function, then
+`Hⁿ(M; V, N) = 0` for `n > finrank ℂ E`, every projective module `V` (for instance a free module)
+over a principal ideal ring `k` without zero divisors (small relative to `M`), and every `k`-module
+`N` (without assuming `FiniteDimensional ℂ E`, as properness of `f` forces `E` to be
+finite-dimensional whenever `M` is nonempty). -/
+theorem isZero_singularCohomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmonicAt
+    {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    (hbdd : BddBelow (range f)) (hpsh : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x)
+    {k : Type*} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] [Small.{u} k]
+    (V N : ModuleCat.{u} k) [Module.Projective k V] {n : ℕ} (hn : finrank ℂ E < n) :
+    IsZero ((TopCat.of M).singularCohomology V k N n) := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact isZero_singularCohomology_of_isEmpty V k N (TopCat.of M) n
+  · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
+    exact isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf
+      hp hbdd (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) V N (by omega)
+
+end StrictlyPlurisubharmonic
 
 end TauCeti

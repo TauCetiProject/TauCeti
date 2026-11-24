@@ -74,7 +74,8 @@ theorem mem_conjReciprocalPolynomials_iff :
 
 /-- For `k < 0` the only conjugate-reciprocal polynomial of degree at most `k` is zero. -/
 theorem conjReciprocalPolynomials_eq_bot (hk : k < 0) : conjReciprocalPolynomials k = ⊥ :=
-  (Submodule.eq_bot_iff _).mpr fun p hp => ext fun n => by simpa using hp.1 n (by omega)
+  (Submodule.eq_bot_iff _).mpr fun p hp => AddMonoidAlgebra.ext <| Finsupp.ext fun n => by
+    simpa using hp.1 n (by omega)
 
 /-- The conjugation `a ↦ conj ∘ a ∘ rev` of `Fin N → ℂ`, whose real points are the coefficient
 vectors of conjugate-reciprocal polynomials of degree less than `N`. -/
@@ -173,7 +174,7 @@ private noncomputable def lowerCoeff (m : ℕ) :
 
 private theorem lowerCoeff_injective (m : ℕ) : Function.Injective (lowerCoeff m) := by
   refine (injective_iff_map_eq_zero _).mpr fun p hp => Subtype.ext ?_
-  refine eq_zero_of_mem_conjReciprocalPolynomials_of_forall_coeff_eq_zero p.2 fun j hj => ?_
+  refine eq_zero_of_mem_conjReciprocalPolynomials_of_forall_coeff_eq_zero p.property fun j hj => ?_
   exact congrFun hp ⟨j, Nat.lt_succ_of_le hj⟩
 
 /-- **The lower coefficients of an odd-degree conjugate-reciprocal polynomial.** For

@@ -47,25 +47,25 @@ variable {R : Type uR} [CommRing R] {ι : Type*} [Fintype ι]
   {M : ι → Type uM} {N : Type uN}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
-  (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+  (G : ∀ i, InternalGrading R (M i) ℤ) (ℬ : ℤ → Submodule R N)
 
 /-- Precomposing the inputs by arbitrary Koszul twists preserves and reflects homogeneity.
 The input modules and twist parameters may vary from slot to slot. -/
 @[simp]
 theorem isHomogeneous_comp_koszulTwist_iff (t : ι → ℤ) (q : ℤ)
-    (f : MultilinearMap R M N) :
-    TauCeti.MultilinearMap.IsHomogeneous
+    (f : MultilinearMap (RingHom.id R) M N) :
+    MultilinearMap.IsHomogeneous
         (f.compLinearMap fun i ↦ (G i).koszulTwist (t i)) (fun i ↦ (G i).piece) ℬ q ↔
-      TauCeti.MultilinearMap.IsHomogeneous f (fun i ↦ (G i).piece) ℬ q := by
+      MultilinearMap.IsHomogeneous f (fun i ↦ (G i).piece) ℬ q := by
   constructor
   · intro hf
-    rw [TauCeti.MultilinearMap.isHomogeneous_def]
+    rw [MultilinearMap.isHomogeneous_def]
     intro d x hx
     have h := hf.map_mem d (fun i ↦ (G i).koszulTwist (t i) (x i))
       (fun i ↦ (G i).koszulTwist_mem_piece (hx i) (t i))
     simpa only [MultilinearMap.compLinearMap_apply, koszulTwist_koszulTwist] using h
   · intro hf
-    rw [TauCeti.MultilinearMap.isHomogeneous_def]
+    rw [MultilinearMap.isHomogeneous_def]
     intro d x hx
     exact hf.map_mem d _ (fun i ↦ (G i).koszulTwist_mem_piece (hx i) (t i))
 
@@ -74,35 +74,35 @@ end KoszulTwists
 variable {R : Type uR} [CommRing R] {n : ℕ} {M : Fin n → Type uM} {N : Type uN}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
   [AddCommMonoid N] [Module R N]
-  (G : ∀ i, InternalGrading R (M i)) (ℬ : ℤ → Submodule R N)
+  (G : ∀ i, InternalGrading R (M i) ℤ) (ℬ : ℤ → Submodule R N)
 
 /-- Suspension identifies arity-`n` operations of degree `q + 1 - n` with operations of
 degree `q` on the suspended pieces. Both directions twist input `i` by `n - 1 - i`
 using its original grading. -/
 noncomputable def suspensionEquiv (q : ℤ) :
-    (TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ (G i).piece) ℬ (q + 1 - n)) ≃ₗ[R]
-    (TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ ((G i).shift 1).piece) (Graded.shift ℬ 1) q) where
   toFun f := ⟨f.val.compLinearMap (fun i ↦ (G i).koszulTwist ((n : ℤ) - 1 - i)), by
-    apply TauCeti.MultilinearMap.mem_homogeneousSubmodule.mpr
+    apply MultilinearMap.mem_homogeneousSubmodule.mpr
     have h := (isHomogeneous_comp_koszulTwist_iff G ℬ
       (fun i ↦ (n : ℤ) - 1 - i) _ f.val).2
-      (TauCeti.MultilinearMap.mem_homogeneousSubmodule.mp f.property)
-    have hs := (TauCeti.MultilinearMap.isHomogeneous_shift_const_iff
+      (MultilinearMap.mem_homogeneousSubmodule.mp f.property)
+    have hs := (MultilinearMap.isHomogeneous_shift_const_iff
       (f := f.val.compLinearMap fun i ↦ (G i).koszulTwist ((n : ℤ) - 1 - i))
       (κ := Fin n) (𝒜 := fun i ↦ (G i).piece) (ℬ := ℬ)
       (c := (1 : ℤ)) (q := q)).2 (by simpa using h)
-    simpa only [TauCeti.MultilinearMap.isHomogeneous_def, shift_piece,
+    simpa only [MultilinearMap.isHomogeneous_def, shift_piece,
       Graded.shift_apply] using hs⟩
   invFun f := ⟨f.val.compLinearMap (fun i ↦ (G i).koszulTwist ((n : ℤ) - 1 - i)), by
-    apply TauCeti.MultilinearMap.mem_homogeneousSubmodule.mpr
-    have hs : TauCeti.MultilinearMap.IsHomogeneous f.val
+    apply MultilinearMap.mem_homogeneousSubmodule.mpr
+    have hs : MultilinearMap.IsHomogeneous f.val
         (fun i ↦ Graded.shift (G i).piece 1) (Graded.shift ℬ 1) q := by
-      simpa only [TauCeti.MultilinearMap.isHomogeneous_def, shift_piece,
+      simpa only [MultilinearMap.isHomogeneous_def, shift_piece,
         Graded.shift_apply] using
-        (TauCeti.MultilinearMap.mem_homogeneousSubmodule.mp f.property)
-    have h := (TauCeti.MultilinearMap.isHomogeneous_shift_const_iff).1 hs
+        (MultilinearMap.mem_homogeneousSubmodule.mp f.property)
+    have h := (MultilinearMap.isHomogeneous_shift_const_iff).1 hs
     exact (isHomogeneous_comp_koszulTwist_iff G ℬ _ _ f.val).2 (by simpa using h)⟩
   left_inv f := by
     apply Subtype.ext
@@ -121,14 +121,14 @@ noncomputable def suspensionEquiv (q : ℤ) :
 
 /-- The underlying suspended operation is precomposition by the suspension Koszul twists. -/
 theorem suspensionEquiv_val (q : ℤ)
-    (f : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (f : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ (G i).piece) ℬ (q + 1 - n)) :
     (suspensionEquiv G ℬ q f).val =
       f.val.compLinearMap (fun i ↦ (G i).koszulTwist ((n : ℤ) - 1 - i)) := (rfl)
 
 /-- Unsuspension uses the same original-grading twists as suspension. -/
 theorem suspensionEquiv_symm_val (q : ℤ)
-    (f : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (f : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ ((G i).shift 1).piece) (Graded.shift ℬ 1) q) :
     ((suspensionEquiv G ℬ q).symm f).val =
       f.val.compLinearMap (fun i ↦ (G i).koszulTwist ((n : ℤ) - 1 - i)) := (rfl)
@@ -136,7 +136,7 @@ theorem suspensionEquiv_symm_val (q : ℤ)
 /-- On homogeneous inputs the suspension square contributes exactly the tensor-map Koszul sign,
 computed from the original input degrees. -/
 theorem suspensionEquiv_apply_of_mem (q : ℤ)
-    (f : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (f : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ (G i).piece) ℬ (q + 1 - n))
     (d : Fin n → ℤ) (x : ∀ i, M i) (hx : ∀ i, x i ∈ (G i).piece (d i)) :
     (suspensionEquiv G ℬ q f).val x =
@@ -146,12 +146,14 @@ theorem suspensionEquiv_apply_of_mem (q : ℤ)
       fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i) • x i := by
     funext i
     rw [(G i).koszulTwist_apply_of_mem (hx i), negOnePowCast_eq_intCast]
-  rw [ht, MultilinearMap.map_smul_univ, ← negOnePowCast_sum]
+  rw [ht, MultilinearMap.map_smul_univ]
+  simp only [RingHom.id_apply]
+  rw [← negOnePowCast_sum]
 
 /-- On homogeneous inputs, unsuspension has the identical sign when degrees are measured in
 the original gradings. -/
 theorem suspensionEquiv_symm_apply_of_mem (q : ℤ)
-    (f : TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+    (f : MultilinearMap.homogeneousSubmodule (R := R) (S := R)
       (fun i ↦ ((G i).shift 1).piece) (Graded.shift ℬ 1) q)
     (d : Fin n → ℤ) (x : ∀ i, M i) (hx : ∀ i, x i ∈ (G i).piece (d i)) :
     ((suspensionEquiv G ℬ q).symm f).val x =
