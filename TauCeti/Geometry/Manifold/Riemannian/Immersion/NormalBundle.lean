@@ -80,18 +80,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-/-- On a family `S` of subspaces of the fibres of a normed bundle `E`, with the subspace topology
-of the total space of `E` (`TauCeti.subbundleTopology`), the fibre norm is continuous whenever it
-is continuous on the total space of `E`, for any model fibre `P`. -/
-theorem continuous_norm_subbundle {B F : Type*} {E : B → Type*}
-    [∀ b, SeminormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
-    [TopologicalSpace (TotalSpace F E)] (hE : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖)
-    (P : Type*) (S : ∀ b, Submodule ℝ (E b)) :
-    letI := subbundleTopology F (F' := P) S
-    Continuous fun v : TotalSpace P (fun b ↦ S b) ↦ ‖v.snd‖ :=
-  letI := subbundleTopology F (F' := P) S
-  hE.comp (isEmbedding_totalSpace_subbundle F P S).continuous
-
 variable {E V H G M N K : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℝ V]
   [TopologicalSpace H] [TopologicalSpace G]

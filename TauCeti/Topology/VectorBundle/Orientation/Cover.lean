@@ -832,6 +832,7 @@ def ofContinuousNonvanishingSection (hE : ∀ b, finrank ℝ (E b) = 1) {s : ∀
 
 /-- The orientation given by a nowhere-zero section `s` is, over `b`, the orientation of the basis
 `(s b)`. -/
+@[simp]
 theorem ofContinuousNonvanishingSection_apply (hE : ∀ b, finrank ℝ (E b) = 1) {s : ∀ b, E b}
     (hs : Continuous fun b ↦ (⟨b, s b⟩ : TotalSpace F E)) (hs₀ : ∀ b, s b ≠ 0) (b : B) :
     ofContinuousNonvanishingSection hE hs hs₀ b =

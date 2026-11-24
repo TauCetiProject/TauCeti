@@ -157,9 +157,8 @@ theorem exists_contMDiffOn_unit_orthogonalNormalSpace {r : ℕ} {f : K} (hf : Co
         ((linearIndependent_unique_iff (v := fun _ : Fin 1 ↦ s x)).2 (hs0 hx)).linearIndepOn _
   have hgs_eq (x : M) : InnerProductSpace.gramSchmidtNormed ℝ (fun _ : Fin 1 ↦ s x) 0 =
       ‖s x‖⁻¹ • s x := by
-    rw [InnerProductSpace.gramSchmidtNormed, show (0 : Fin 1) = ⊥ from rfl,
-      InnerProductSpace.gramSchmidt_bot]
-    rfl
+    rw [InnerProductSpace.gramSchmidtNormed, ← bot_eq_zero, InnerProductSpace.gramSchmidt_bot,
+      RCLike.ofReal_real_eq_id, id_eq]
   classical
   refine ⟨U, hU, hx₀, fun x ↦ if x ∈ U then ‖s x‖⁻¹ • s x else 0, fun x hx ↦ ?_, fun x ↦ ?_,
     fun x hx ↦ ?_⟩
@@ -240,23 +239,23 @@ private theorem eventually_eq_or_eq_neg_of_orientation {f : K} (hf : ContMDiff I
   rcases Module.Basis.orientation_eq_or_eq_neg
     (FiniteDimensional.basisSingleton (Fin 1) (hline x₀) _ (hτ₀ hx₀)) (o x₀) with h | h
   · refine .inl ?_
-    filter_upwards [(hU.isOpenMap_subtypeVal _ hA).mem_nhds ⟨⟨x₀, hx₀⟩, h.symm, rfl⟩]
+    filter_upwards [(hU.isOpenMap_subtypeVal _ hA).mem_nhds ⟨⟨x₀, hx₀⟩,
+      by simpa only [mem_preimage, mem_ofPred_eq, g] using h.symm, rfl⟩]
     rintro _ ⟨x, hx, rfl⟩
+    simp only [mem_preimage, mem_ofPred_eq, g] at hx
     exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
       ((hw₁ x).trans (hτ₁ x x.property).symm) (hτ₀ x.property) (hw₀ x)
       ((hwo x).trans hx.symm))
   · refine .inr ?_
     filter_upwards [(hU.isOpenMap_subtypeVal _ hB).mem_nhds ⟨⟨x₀, hx₀⟩,
-      by rw [mem_preimage, mem_preimage, VectorBundleOrientationCover.deck_apply]; exact h.symm,
-      rfl⟩]
+      by simpa only [mem_preimage, mem_ofPred_eq, g, VectorBundleOrientationCover.deck_apply]
+        using h.symm, rfl⟩]
     rintro _ ⟨x, hx, rfl⟩
-    rw [mem_preimage, mem_preimage, VectorBundleOrientationCover.deck_apply] at hx
-    have hx' : -(FiniteDimensional.basisSingleton (Fin 1) (hline x) _
-        (hτ₀ x.property)).orientation = o x := hx
-    rw [← orientation_basisSingleton_neg] at hx'
+    simp only [mem_preimage, mem_ofPred_eq, g, VectorBundleOrientationCover.deck_apply] at hx
+    rw [← orientation_basisSingleton_neg] at hx
     exact congrArg Subtype.val (eq_of_orientation_basisSingleton_eq (hline x)
       ((hw₁ x).trans ((norm_neg _).trans (hτ₁ x x.property)).symm) _ (hw₀ x)
-      ((hwo x).trans hx'.symm))
+      ((hwo x).trans hx.symm))
 
 /-- An orientation of the normal bundle `ν_f` of an immersion of codimension one gives a `C^m`
 unit normal field: at `x`, the unit vector of `ν_f x` that is positive for the orientation.
