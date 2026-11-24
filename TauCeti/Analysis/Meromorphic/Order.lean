@@ -42,6 +42,12 @@ meromorphic order to every point of `closedBall c R`.
   the closed disc.
 * `DifferentiableOn.neg_one_le_meromorphicOrderAt`: a function differentiable off a closed set of
   at-worst-simple poles has meromorphic order at least `-1` throughout an open set.
+* `AnalyticAt.meromorphicOrderAt_nonpos_iff`: at a point of analyticity the order is at most `0`
+  exactly when the value is nonzero.
+* `MeromorphicAt.meromorphicOrderAt_mul_nonpos`, `MeromorphicAt.meromorphicOrderAt_mul_nonpos_iff`:
+  when a product has order at most `0`, in terms of its factors.
+* `MeromorphicAt.meromorphicOrderAt_mul_of_meromorphicOrderAt_eq_zero`: a meromorphic factor of
+  order `0` does not change the order.
 -/
 
 public section
@@ -134,5 +140,71 @@ theorem _root_.Filter.BoundedAtFilter.meromorphicOrderAt_nonneg
     ((Asymptotics.isBigO_one_iff (F := ℝ)).mp hbdd)
 
 end Bounded
+
+section Mul
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {f g : 𝕜 → 𝕜} {x : 𝕜}
+
+/-- At a point where `f` is analytic, the order of `f` is at most `0` exactly when `f` does not
+vanish there. -/
+theorem AnalyticAt.meromorphicOrderAt_nonpos_iff {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticAt 𝕜 f x) :
+    meromorphicOrderAt f x ≤ 0 ↔ f x ≠ 0 := by
+  rw [← hf.analyticOrderAt_eq_zero, hf.meromorphicOrderAt_eq]
+  induction analyticOrderAt f x using ENat.recTopCoe with
+  | top => simp
+  | coe n => simp
+
+/-- If `g * f` and `g` are meromorphic at `x` and `g` does not vanish identically near `x`, then
+`f` is meromorphic at `x`. -/
+private theorem meromorphicAt_of_mul (hgf : MeromorphicAt (g * f) x) (hg : MeromorphicAt g x)
+    (hg' : meromorphicOrderAt g x ≠ ⊤) : MeromorphicAt f x :=
+  (hgf.mul hg.inv).congr <| by
+    rw [mul_right_comm]
+    exact (((meromorphicOrderAt_ne_top_iff_mul_inv_eventuallyEq hg).1 hg').mul
+      (EventuallyEq.refl _ f)).trans (.of_eq (one_mul f))
+
+/-- The product of two functions of order at most `0` at `x`, one of which is meromorphic at `x`,
+has order at most `0` at `x`. If the other factor is not meromorphic at `x`, neither is the
+product, and its order is the junk value `0`. -/
+theorem MeromorphicAt.meromorphicOrderAt_mul_nonpos (hf : MeromorphicAt f x)
+    (hf0 : meromorphicOrderAt f x ≤ 0) (hg0 : meromorphicOrderAt g x ≤ 0) :
+    meromorphicOrderAt (f * g) x ≤ 0 := by
+  by_cases hg : MeromorphicAt g x
+  · rw [meromorphicOrderAt_mul hf hg]
+    exact add_nonpos hf0 hg0
+  · rw [meromorphicOrderAt_of_not_meromorphicAt fun h =>
+      hg (meromorphicAt_of_mul h hf (ne_top_of_le_ne_top WithTop.zero_ne_top hf0))]
+
+/-- For `f` and `g` meromorphic at `x`, such that a pole of either at `x` is not a zero of the
+other, the product `f * g` has order at most `0` at `x` exactly when `f` and `g` both do. The two
+conditions exclude the cancellation of a zero against a pole, as in `(z - x)⁻¹ * (z - x)`. -/
+theorem MeromorphicAt.meromorphicOrderAt_mul_nonpos_iff (hf : MeromorphicAt f x)
+    (hg : MeromorphicAt g x)
+    (hfg : meromorphicOrderAt f x < 0 → meromorphicOrderAt g x ≤ 0)
+    (hgf : meromorphicOrderAt g x < 0 → meromorphicOrderAt f x ≤ 0) :
+    meromorphicOrderAt (f * g) x ≤ 0 ↔
+      meromorphicOrderAt f x ≤ 0 ∧ meromorphicOrderAt g x ≤ 0 := by
+  refine ⟨fun h => ?_, fun h => hf.meromorphicOrderAt_mul_nonpos h.1 h.2⟩
+  rw [meromorphicOrderAt_mul hf hg] at h
+  rcases lt_or_ge (meromorphicOrderAt f x) 0 with hf0 | hf0
+  · exact ⟨hf0.le, hfg hf0⟩
+  rcases lt_or_ge (meromorphicOrderAt g x) 0 with hg0 | hg0
+  · exact ⟨hgf hg0, hg0.le⟩
+  · exact ⟨(le_add_of_nonneg_right hg0).trans h, (le_add_of_nonneg_left hf0).trans h⟩
+
+/-- Multiplying by a function that is meromorphic of order `0` at `x` does not change the order at
+`x`, whether or not the other factor is meromorphic there. For `g` analytic and nonzero at `x`
+this is Mathlib's `meromorphicOrderAt_mul_of_ne_zero`; here the value of `g` at `x` is not
+read. -/
+theorem MeromorphicAt.meromorphicOrderAt_mul_of_meromorphicOrderAt_eq_zero
+    (hg : MeromorphicAt g x) (hg0 : meromorphicOrderAt g x = 0) :
+    meromorphicOrderAt (g * f) x = meromorphicOrderAt f x := by
+  by_cases hf : MeromorphicAt f x
+  · rw [meromorphicOrderAt_mul hg hf, hg0, zero_add]
+  · rw [meromorphicOrderAt_of_not_meromorphicAt hf, meromorphicOrderAt_of_not_meromorphicAt
+      fun h => hf (meromorphicAt_of_mul h hg (by rw [hg0]; exact WithTop.zero_ne_top))]
+
+end Mul
 
 end
