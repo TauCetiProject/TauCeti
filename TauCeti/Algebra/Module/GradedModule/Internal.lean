@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMonoid
+public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.Binomial
@@ -54,6 +55,8 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
 * `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
   `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
+* `TauCeti.InternalGrading.instGradedSMulOfDecompositionSelf`: left multiplication respects the
+  grading of a graded algebra.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
   elements.
 * `TauCeti.InternalGrading.decompose_mem_of_mem_span_sigma`: the components of an element in the
@@ -173,6 +176,16 @@ theorem isHomogeneous_ofDecomposition_piece_iff (ℳ : ι → Submodule R M)
       DirectSum.SetLike.IsHomogeneous ℳ U :=
   Iff.of_eq (congrArg (fun d ↦ @DirectSum.SetLike.IsHomogeneous _ _ _ _ _ _ _ ℳ d _ _ U)
     (Subsingleton.elim _ _))
+
+/-- Left multiplication respects the grading of a graded algebra, viewed as the internal grading
+of its regular module. This is the counterpart of `TauCeti.instGradedSMulOppositeSelf` for the
+left action; multiplication need not be unital or associative. -/
+instance instGradedSMulOfDecompositionSelf {A : Type*} [AddCommMonoid A] [Module R A] [Mul A]
+    [Add ι] (𝒜 : ι → Submodule R A) [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] :
+    SetLike.GradedSMul 𝒜 (ofDecomposition 𝒜).piece where
+  smul_mem {_ _} _ _ ha hb := by
+    rw [ofDecomposition_piece] at hb ⊢
+    exact SetLike.GradedMul.mul_mem ha hb
 
 /-- The homogeneous elements of an internally graded module span it over any scalar semiring
 acting on the total module. No compatibility between that action and the grading is needed. -/
