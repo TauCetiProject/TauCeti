@@ -15,8 +15,9 @@ import TauCeti.Geometry.Manifold.Sard.Basic
 Let `f : M → ℝ` be a continuous function on a boundaryless manifold and `c` a regular value of
 `f`. The interior of the sublevel `{f ≤ c}` is the strict sublevel `{f < c}` and its frontier is
 the level `f⁻¹(c)` (`TauCeti.IsRegularValue.interior_setOfPred_le`,
-`TauCeti.IsRegularValue.frontier_setOfPred_le`), so with the atlas
-`TauCeti.scalarRegularSublevelChartedSpace` the sublevel is a regular domain: a closed
+`TauCeti.IsRegularValue.frontier_setOfPred_le`). When moreover `f` is `C¹`, `M` is modelled on a
+space of dimension `n + 1` and the model `I` is boundaryless (`I.Boundaryless`), the atlas
+`TauCeti.scalarRegularSublevelChartedSpace` makes the sublevel a regular domain: a closed
 codimension-zero submanifold with boundary.
 
 Every compact subset `K` of a Hausdorff, σ-compact (for instance second-countable),
