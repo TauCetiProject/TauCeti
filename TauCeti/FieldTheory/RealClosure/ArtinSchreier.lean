@@ -104,8 +104,7 @@ private theorem finrank_ne_of_charP (p : ℕ) [hp : Fact p.Prime] [CharP F p] : 
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := Gal(C/F))
   -- Additive Hilbert 90 gives `y` with `g y = y + 1`, since `1` has trace `p = 0`.
   obtain ⟨y, hy⟩ := (exists_apply_sub_eq_iff_trace_eq_zero hg (x := 1)).2 (by
-    rw [← map_one (algebraMap F C), Algebra.trace_algebraMap, h, nsmul_eq_mul,
-      CharP.cast_eq_zero, zero_mul])
+    simpa [h] using Algebra.trace_algebraMap (S := C) (1 : F))
   have hgy : g y = y + 1 := by rw [← hy, add_sub_cancel]
   -- So `y ^ p - y` is fixed by `g`, hence lies in `F`, and so it is `c ^ p - c` with `c` in `F`.
   have hmem : y ^ p - y ∈ (⊥ : IntermediateField F C) := by
@@ -196,7 +195,7 @@ private theorem finrank_eq_one_of_isSquare_neg_one [FiniteDimensional F C]
     (by rwa [IsGalois.card_aut_eq_finrank])
   -- The fixed field `E` of an automorphism of order `ℓ` has `[C : E] = ℓ`, hence `[C : E] = 2`.
   set E := fixedField (Subgroup.zpowers g)
-  have hE : finrank E C = ℓ := by rw [finrank_fixedField_eq_card, Nat.card_zpowers, hg]
+  have hE : finrank E C = ℓ := by rw [finrank_fixedField_zpowers_eq_orderOf, hg]
   have : Algebra.IsQuadraticExtension E C := ⟨hE.trans (eq_two_of_finrank_eq_prime hℓ hE)⟩
   -- But `-1` is a square in `E`, which has the algebraically closed quadratic extension `C`.
   obtain ⟨r, hr⟩ := hF
@@ -226,18 +225,6 @@ degree greater than one is real closed. -/
 theorem isRealClosed_of_isAlgClosed_of_one_lt_finrank (h : 1 < finrank F C) : IsRealClosed F :=
   have : Algebra.IsQuadraticExtension F C := ⟨finrank_eq_two_of_isAlgClosed_of_one_lt_finrank h⟩
   isRealClosed_of_isAlgClosed_of_isQuadraticExtension (K := C)
-
-omit [IsAlgClosed C] in
-/-- Below the fixed field of a nontrivial automorphism `σ` of finite order, `C` has degree
-`orderOf σ > 1`. -/
-private theorem one_lt_finrank_fixedField_zpowers {k : Type*} [Field k] [Algebra k C]
-    {σ : C ≃ₐ[k] C} (hσ : IsOfFinOrder σ) (h1 : σ ≠ 1) :
-    1 < finrank (fixedField (Subgroup.zpowers σ)) C := by
-  have : Finite (Subgroup.zpowers σ) := finite_zpowers.2 hσ
-  have hne : orderOf σ ≠ 1 := mt orderOf_eq_one_iff.1 h1
-  have := hσ.orderOf_pos
-  rw [finrank_fixedField_zpowers_eq_orderOf]
-  omega
 
 /-- A nontrivial automorphism of finite order of an algebraically closed field has order two. -/
 theorem orderOf_eq_two_of_isOfFinOrder {k : Type*} [Field k] [Algebra k C] {σ : C ≃ₐ[k] C}

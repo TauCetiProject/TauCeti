@@ -130,6 +130,16 @@ theorem finrank_fixedField_zpowers_eq_orderOf (σ : M ≃ₐ[K] M) [Finite (Subg
   rw [← Nat.card_zpowers, Nat.card_eq_fintype_card]
   exact FixedPoints.finrank_eq_card (Subgroup.zpowers σ) M
 
+/-- Over the field fixed by a nontrivial automorphism `σ` of finite order, `M` has degree
+`orderOf σ > 1`. -/
+theorem one_lt_finrank_fixedField_zpowers {σ : M ≃ₐ[K] M} (hσ : IsOfFinOrder σ) (h1 : σ ≠ 1) :
+    1 < Module.finrank (fixedField (Subgroup.zpowers σ)) M := by
+  have : Finite (Subgroup.zpowers σ) := finite_zpowers.2 hσ
+  have hne : orderOf σ ≠ 1 := mt orderOf_eq_one_iff.1 h1
+  have := hσ.orderOf_pos
+  rw [finrank_fixedField_zpowers_eq_orderOf]
+  omega
+
 /-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
 `σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
 theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :

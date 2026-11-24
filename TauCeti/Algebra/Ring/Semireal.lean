@@ -39,7 +39,6 @@ theorem IsSumSq.map {R S F : Type*} [NonUnitalNonAssocSemiring R]
 
 /-- Semireality pulls back along ring homomorphisms: if `-1` is not a sum of squares in `S`, it is
 not one in `R` either. -/
-theorem IsSemireal.of_ringHom {R S F : Type*} [NonAssocRing R] [NonAssocRing S] [IsSemireal S]
-    [FunLike F R S] [RingHomClass F R S] (f : F) : IsSemireal R :=
-  isSemireal_iff_not_isSumSq_neg_one.2 fun h ↦
-    IsSemireal.not_isSumSq_neg_one S (by simpa using h.map f)
+theorem IsSemireal.of_ringHom {R S F : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    [IsSemireal S] [FunLike F R S] [RingHomClass F R S] (f : F) : IsSemireal R :=
+  ⟨fun hs h ↦ IsSemireal.one_add_ne_zero (hs.map f) (by simpa using congrArg f h)⟩
