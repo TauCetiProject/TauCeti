@@ -32,14 +32,12 @@ pair of critical points is born or dies, as in Cerf's local model `x³ / 3 - s x
 * `x₀` is the only critical point of `f t₀` in `U`;
 * if the product is negative, `f t` has no critical point in `U` for `t < t₀` close to `t₀`, and
   exactly two, both nondegenerate, for `t > t₀` close to `t₀`
-  (`TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg`);
+  (`TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg`);
 * if the product is positive, the same holds with the two sides exchanged
-  (`TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos`).
+  (`TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos`).
 
 Moreover the two critical points have adjacent Morse indices `k` and `k + 1`, where `k` is the
-Morse index of `f t₀` at `x₀`
-(`TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg`,
-`TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos`). This is the invariant
+Morse index of `f t₀` at `x₀`, as the same two theorems state. This is the invariant
 content of Cerf's normal form `x₁³ / 3 - s x₁ - x₂² / 2 - ⋯ - x_{k+1}² / 2 + x_{k+2}² / 2 + ⋯`
 behind the change of the Morse complex at a birth or a death, which adds or removes two generators
 of adjacent degrees.
@@ -84,9 +82,6 @@ of the Hessians along the curve on the two sides of `0`, computed in
 * `TauCeti.exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos`: a death at a
   birth–death point where the product is positive, of two critical points of Morse indices `k`
   and `k + 1`.
-* `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg` and
-  `TauCeti.exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos`: the same, counting the
-  critical points.
 
 ## References
 
@@ -154,11 +149,9 @@ private theorem deriv_deriv_fst_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {
   have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
   have hid := eventually_deriv_fst_mul_add_eq_zero (hc0 ▸ hf2) hcd hcrit
   set G : ℝ × E → StrongDual ℝ E := fun w ↦ fderiv ℝ (f w.1) w.2
-  set H : ℝ × E → E →L[ℝ] StrongDual ℝ E := fun w ↦ fderiv ℝ (fderiv ℝ (f w.1)) w.2
   set κ := fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v
   set a := deriv (fun s ↦ fderiv ℝ (f s) x) t v
   have hG : ContDiffAt ℝ 2 G (t, x) := hf.fderiv_slice (m := 2) le_rfl
-  have hH : ContDiffAt ℝ 1 H (t, x) := hG.fderiv_slice (m := 1) le_rfl
   -- The velocity `c' = (τ', w)` is differentiable at `0`, with `τ' 0 = 0` and `w 0 = v`.
   have hc'd : HasDerivAt (deriv c) (deriv (deriv c) 0) 0 :=
     (((hcd.fderiv_right (m := 1) le_rfl).clm_apply contDiffAt_const).differentiableAt
@@ -167,21 +160,14 @@ private theorem deriv_deriv_fst_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {
   have hw : HasDerivAt w (deriv (deriv c) 0).2 0 :=
     (ContinuousLinearMap.snd ℝ ℝ E).hasFDerivAt.comp_hasDerivAt _ hc'd
   have hw0 : w 0 = v := by simp [w, hc'.deriv]
-  have hHv : H (t, x) v = 0 := hv
   -- `q s = Hess (w s, w s)` vanishes at `0` with derivative `κ` there, by the symmetry of the
   -- Hessian.
-  have hq : HasDerivAt (fun s ↦ H (c s) (w s) (w s)) κ 0 := by
-    have hH' : HasFDerivAt H (fderiv ℝ H (t, x)) (c 0) :=
-      hc0 ▸ (hH.differentiableAt one_ne_zero).hasFDerivAt
-    have hκ : fderiv ℝ H (t, x) (0, v) v v = κ := by
-      rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
-        (hH.differentiableAt one_ne_zero)]
-      simp [H, κ]
-    have hHc : HasDerivAt (H ∘ c) (fderiv ℝ H (t, x) (0, v)) 0 := by
-      simpa using (hH'.comp 0 hc'.hasFDerivAt).hasDerivAt
-    have hsymm : H (t, x) (deriv (deriv c) 0).2 v = H (t, x) v (deriv (deriv c) 0).2 :=
+  have hq : HasDerivAt (fun s ↦ fderiv ℝ (fderiv ℝ (f (c s).1)) (c s).2 (w s) (w s)) κ 0 := by
+    obtain ⟨B', hHc, hκ⟩ := exists_hasDerivAt_fderiv_fderiv_comp hf hc0 hc'
+    have hsymm : fderiv ℝ (fderiv ℝ (f t)) x (deriv (deriv c) 0).2 v =
+        fderiv ℝ (fderiv ℝ (f t)) x v (deriv (deriv c) 0).2 :=
       fderiv_fderiv_apply_comm_of_uncurry hf2 _ v
-    simpa [hw0, hc0, hκ, hsymm, hHv] using (hHc.clm_apply hw).clm_apply hw
+    simpa [hw0, hc0, hκ, hsymm, hv] using (hHc.clm_apply hw).clm_apply hw
   -- `d s = ∂ₜ (d(f t)_{ξ(s)}) (w s)` tends to `a`.
   have hd : Tendsto (fun s ↦ fderiv ℝ G (c s) (1, 0) (w s)) (𝓝 0) (𝓝 a) := by
     have hd0 : fderiv ℝ G (c 0) (1, 0) (w 0) = a := by
@@ -558,31 +544,6 @@ theorem exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg
   exact exists_pair_morseIndex hpair hne hnd hκ (hτ₁ ▸ hηlI ⟨by linarith [hx₁.1], hx₁.2⟩)
     (hτ₂ ▸ hηrI ⟨hx₂.1, by linarith [hx₂.2]⟩)
 
-/-- **A pair of critical points is born at a birth–death point.** Let `f t` be a family of
-functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where `x` is a
-critical point of `f t` at which the family is transverse: the derivative of the parametrized
-differential `(t, x) ↦ d(f t)_x` is onto. Let `v` be a kernel vector of the Hessian of `f t` at
-`x` with `D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v < 0`. Then `x` has a neighbourhood `U` in which
-`x` is the only critical point of `f t`, `f s` has no critical point for `s < t` close to `t`,
-and `f s` has exactly two critical points, both nondegenerate, for `s > t` close to `t`. -/
-theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_neg
-    (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
-    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
-    (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
-    (hsign : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v *
-      deriv (fun s ↦ fderiv ℝ (f s) x) t v < 0) :
-    ∃ U ∈ 𝓝 x, {y ∈ U | fderiv ℝ (f t) y = 0} = {x} ∧
-      (∀ᶠ s in 𝓝[<] t, ∀ y ∈ U, fderiv ℝ (f s) y ≠ 0) ∧
-      ∀ᶠ s in 𝓝[>] t, {y ∈ U | fderiv ℝ (f s) y = 0}.ncard = 2 ∧
-        ∀ y ∈ U, fderiv ℝ (f s) y = 0 → IsNondegenerateCriticalPoint (f s) y := by
-  obtain ⟨U, hU, h₀, h₁, h₂⟩ :=
-    exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg hf hs hc hv hsign
-  refine ⟨U, hU, h₀, h₁, h₂.mono fun s ⟨y₀, y₁, hne, hpair, hnd₀, hnd₁, _⟩ ↦
-    ⟨by rw [hpair, Set.ncard_pair hne], fun y hy hy0 ↦ ?_⟩⟩
-  have hy : y ∈ ({y₀, y₁} : Set E) := hpair ▸ ⟨hy, hy0⟩
-  rcases hy with rfl | rfl
-  exacts [hnd₀, hnd₁]
-
 /-- **A pair of critical points of adjacent indices dies at a birth–death point.** Let `f t` be a
 family of functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where `x`
 is a critical point of `f t` at which the family is transverse: the derivative of the
@@ -624,31 +585,6 @@ theorem exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos
     simpa [g] using hs
   · filter_upwards [tendsto_neg_nhdsLT.eventually h₂] with s hs
     simpa [g, hgt] using hs
-
-/-- **A pair of critical points dies at a birth–death point.** Let `f t` be a family of
-functions on a finite-dimensional real normed space, jointly `C³` at `(t, x)`, where `x` is a
-critical point of `f t` at which the family is transverse: the derivative of the parametrized
-differential `(t, x) ↦ d(f t)_x` is onto. Let `v` be a kernel vector of the Hessian of `f t` at
-`x` with `0 < D³(f t)_x (v, v, v) · ∂ₜ (d(f t)_x) v`. Then `x` has a neighbourhood `U` in which
-`x` is the only critical point of `f t`, `f s` has no critical point for `s > t` close to `t`,
-and `f s` has exactly two critical points, both nondegenerate, for `s < t` close to `t`. -/
-theorem exists_mem_nhds_ncard_setOf_fderiv_eq_zero_eq_two_of_mul_pos
-    (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
-    (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x)))
-    (hc : fderiv ℝ (f t) x = 0) {v : E} (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
-    (hsign : 0 < fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v *
-      deriv (fun s ↦ fderiv ℝ (f s) x) t v) :
-    ∃ U ∈ 𝓝 x, {y ∈ U | fderiv ℝ (f t) y = 0} = {x} ∧
-      (∀ᶠ s in 𝓝[>] t, ∀ y ∈ U, fderiv ℝ (f s) y ≠ 0) ∧
-      ∀ᶠ s in 𝓝[<] t, {y ∈ U | fderiv ℝ (f s) y = 0}.ncard = 2 ∧
-        ∀ y ∈ U, fderiv ℝ (f s) y = 0 → IsNondegenerateCriticalPoint (f s) y := by
-  obtain ⟨U, hU, h₀, h₁, h₂⟩ :=
-    exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_pos hf hs hc hv hsign
-  refine ⟨U, hU, h₀, h₁, h₂.mono fun s ⟨y₀, y₁, hne, hpair, hnd₀, hnd₁, _⟩ ↦
-    ⟨by rw [hpair, Set.ncard_pair hne], fun y hy hy0 ↦ ?_⟩⟩
-  have hy : y ∈ ({y₀, y₁} : Set E) := hpair ▸ ⟨hy, hy0⟩
-  rcases hy with rfl | rfl
-  exacts [hnd₀, hnd₁]
 
 end FiniteDimensional
 
