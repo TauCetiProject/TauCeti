@@ -24,9 +24,9 @@ hyperelliptic curve, where `G` has formal degree `2g + 2` but may have actual de
 
 ## Main definitions
 
-* `Polynomial.universalPoly n`: the universal polynomial `Σ aᵢ Tⁱ` of formal degree `n` over
+* `TauCeti.universalPoly n`: the universal polynomial `Σ aᵢ Tⁱ` of formal degree `n` over
   `ℤ[a₀, …, aₙ]`.
-* `Polynomial.universalDiscr n`: its discriminant, an integer polynomial in `a₀, …, aₙ`.
+* `TauCeti.universalDiscr n`: its discriminant, an integer polynomial in `a₀, …, aₙ`.
 * `Polynomial.formDiscr n G`: the discriminant of `G` as a binary form of degree `n`, obtained by
   evaluating `universalDiscr n` at the coefficients of `G`.
 
@@ -68,13 +68,15 @@ public section
 
 open Finset
 
-namespace Polynomial
+namespace TauCeti
+
+open Polynomial
 
 /-! ### The universal polynomial -/
 
 /-- The universal polynomial `Σ aᵢ Tⁱ` of formal degree `n`, whose coefficients are the variables
 of `ℤ[a₀, …, aₙ]`. Every polynomial of degree at most `n` is a specialisation of it
-(`Polynomial.map_universalPoly_of_natDegree_le`). -/
+(`TauCeti.map_universalPoly_of_natDegree_le`). -/
 noncomputable def universalPoly (n : ℕ) : (MvPolynomial (Fin (n + 1)) ℤ)[X] :=
   ∑ i : Fin (n + 1), C (MvPolynomial.X i) * X ^ (i : ℕ)
 
@@ -88,6 +90,12 @@ theorem coeff_universalPoly (n : ℕ) (i : Fin (n + 1)) :
 theorem coeff_zero_universalPoly (n : ℕ) : (universalPoly n).coeff 0 = MvPolynomial.X 0 :=
   coeff_universalPoly n 0
 
+/-- The `k`-th coefficient of the universal polynomial of formal degree `n ≥ k` is the variable
+`aₖ`. -/
+theorem coeff_universalPoly_of_le {n k : ℕ} (hk : k ≤ n) :
+    (universalPoly n).coeff k = MvPolynomial.X ⟨k, Nat.lt_succ_of_le hk⟩ :=
+  coeff_universalPoly n ⟨k, Nat.lt_succ_of_le hk⟩
+
 /-- The universal polynomial of formal degree `n` has no coefficients beyond degree `n`. -/
 theorem coeff_universalPoly_of_lt {n k : ℕ} (hk : n < k) : (universalPoly n).coeff k = 0 := by
   simp only [universalPoly, finsetSum_coeff, coeff_C_mul_X_pow]
@@ -98,7 +106,7 @@ theorem natDegree_universalPoly (n : ℕ) : (universalPoly n).natDegree = n := b
   refine natDegree_eq_of_le_of_coeff_ne_zero ?_ ?_
   · exact natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦
       coeff_universalPoly_of_lt (by exact_mod_cast hk)
-  · rw [show n = (Fin.last n : ℕ) from rfl, coeff_universalPoly]
+  · rw [coeff_universalPoly_of_le le_rfl]
     exact MvPolynomial.X_ne_zero _
 
 @[simp]
@@ -129,6 +137,16 @@ polynomial `Σ aᵢ Tⁱ`, an integer polynomial in `a₀, …, aₙ`. -/
 noncomputable def universalDiscr (n : ℕ) : MvPolynomial (Fin (n + 1)) ℤ :=
   (universalPoly n).discr
 
+/-- Unfolding `TauCeti.universalDiscr` outside this module. -/
+theorem universalDiscr_def (n : ℕ) : universalDiscr n = (universalPoly n).discr :=
+  (rfl)
+
+end TauCeti
+
+namespace Polynomial
+
+open TauCeti
+
 variable {R S : Type*} [CommRing R] [CommRing S]
 
 /-- The discriminant of `G` viewed as a binary form `Σ Gᵢ Xⁱ Yⁿ⁻ⁱ` of degree `n`: the universal
@@ -139,6 +157,12 @@ discriminant `universalDiscr n` evaluated at the coefficients `G₀, …, Gₙ`.
 `n - 2` with `n ≥ 2` (`Polynomial.formDiscr_eq_zero_of_natDegree_le`). For `n ≤ 1` it is `1`. -/
 noncomputable def formDiscr (n : ℕ) (G : R[X]) : R :=
   MvPolynomial.aeval (fun i : Fin (n + 1) ↦ G.coeff i) (universalDiscr n)
+
+/-- Unfolding `Polynomial.formDiscr` outside this module: the universal discriminant evaluated at
+the coefficients of `G`. -/
+theorem formDiscr_def (n : ℕ) (G : R[X]) :
+    G.formDiscr n = MvPolynomial.aeval (fun i : Fin (n + 1) ↦ G.coeff i) (universalDiscr n) :=
+  (rfl)
 
 /-- The binary-form discriminant only depends on the coefficients `G₀, …, Gₙ`. -/
 theorem formDiscr_congr {n : ℕ} {G H : R[X]} (h : ∀ i ≤ n, G.coeff i = H.coeff i) :
@@ -275,7 +299,7 @@ theorem formDiscr_C_mul (n : ℕ) (c : R) (G : R[X]) :
     rw [map_map, hψC]
   have hcoeff (i : ℕ) (hi : i ≤ n) :
       G.coeff i = ((universalPoly n).map (MvPolynomial.aeval a).toRingHom).coeff i := by
-    rw [coeff_map, show i = ((⟨i, by omega⟩ : Fin (n + 1)) : ℕ) from rfl, coeff_universalPoly]
+    rw [coeff_map, coeff_universalPoly_of_le hi]
     simp [a]
   have hG : G.formDiscr n = (((universalPoly n).map C).map ψ).formDiscr n :=
     formDiscr_congr fun i hi ↦ by rw [hmap]; exact hcoeff i hi
@@ -297,10 +321,8 @@ private theorem map_rename_rev_universalPoly (n : ℕ) :
   ext k : 2
   rw [coeff_reverse, natDegree_universalPoly, coeff_map]
   rcases le_or_gt k n with hk | hk
-  · rw [revAt_le hk, show k = ((⟨k, by omega⟩ : Fin (n + 1)) : ℕ) from rfl, coeff_universalPoly,
-      show n - k = ((Fin.rev ⟨k, by omega⟩ : Fin (n + 1)) : ℕ) by simp [Fin.val_rev],
-      coeff_universalPoly]
-    simp
+  · rw [revAt_le hk, coeff_universalPoly_of_le hk, coeff_universalPoly_of_le (Nat.sub_le n k)]
+    simp [Fin.ext_iff, Fin.val_rev]
   · rw [coeff_universalPoly_of_lt hk, revAt_eq_self_of_lt hk, coeff_universalPoly_of_lt hk,
       map_zero]
 
