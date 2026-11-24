@@ -13,7 +13,6 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.DoubleCoset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Map
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # The Tits system of a Chevalley datum
@@ -488,18 +487,11 @@ private theorem intersection_map_titsSubgroupNMulEquiv :
     (D.titsSystem K).intersection.map
         (D.titsSubgroupNMulEquiv K : (D.titsSystem K).subgroupN →* D.weylSubgroup K) =
       Subgroup.subgroupOf (MonoidHom.range (D.torusPoints K)) (D.weylSubgroup K) := by
+  rw [Subgroup.map_equiv_eq_comap_symm]
   ext m
-  simp only [Subgroup.mem_map, ← MulEquiv.toMonoidHom_eq_coe, MulEquiv.coe_toMonoidHom,
-    Subgroup.mem_subgroupOf, MonoidHom.mem_range]
-  constructor
-  · rintro ⟨n, hn, rfl⟩
-    obtain ⟨s, hs⟩ := (D.mem_titsSystem_intersection_iff K n).mp hn
-    exact ⟨s, by rw [D.coe_titsSubgroupNMulEquiv K, hs]⟩
-  · rintro ⟨s, hs⟩
-    refine ⟨(D.titsSubgroupNMulEquiv K).symm m, ?_, MulEquiv.apply_symm_apply _ _⟩
-    rw [← TitsSystem.mem_intersection, D.mem_titsSystem_intersection_iff K,
-      D.coe_titsSubgroupNMulEquiv_symm K]
-    exact ⟨s, hs⟩
+  rw [Subgroup.mem_comap, ← MulEquiv.toMonoidHom_eq_coe, MulEquiv.coe_toMonoidHom,
+    D.mem_titsSystem_intersection_iff K, D.coe_titsSubgroupNMulEquiv_symm K,
+    Subgroup.mem_subgroupOf]
 
 /-- The canonical isomorphism between the Weyl group of `D.titsSystem K` and the Weyl group of the
 root datum. -/
