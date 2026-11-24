@@ -33,7 +33,8 @@ and `‖T‖ (Ω ∩ U) = sup {T φ : ‖φ‖ ≤ 1, spt φ ⊆ U}` for every o
 measure `‖T‖` is the only Radon measure with such a representation, and `η` is unique
 `‖T‖`-almost everywhere. The field `η = Distribution.polarVector T` is the **polar vector field**
 of `T`. On a Euclidean space `E`, with `F = E`, `T` is a linear functional on the compactly
-supported vector fields on `Ω`, and this is the Riesz representation theorem for such functionals.
+supported `C^n` vector fields on `Ω`, and this is the Riesz representation theorem for such
+functionals; the case `n = 0` is the version for compactly supported continuous vector fields.
 
 For smooth tests the representation is `Distribution.polarDensity`, with values in the dual of
 `F`. The restriction of `T` to smooth tests is continuous, and smooth tests approximate a test of
@@ -41,11 +42,12 @@ class `C^n` uniformly with supports in a fixed compact set
 (`TestFunction.exists_isCompact_forall_exists_dist_le`), so the restriction has the same mass
 measure and the same representation. The Riesz isomorphism `InnerProductSpace.toDual` turns the
 dual-valued density into a vector field. For uniqueness of the measure, a Radon measure `μ` with a
-representation `T φ = ∫ ⟪η' x, φ x⟫ dμ`, by an almost everywhere strongly measurable field `η'` of
-norm one, dominates `‖T‖`, by the minimality of the mass measure; comparing the two
-representations shows that `η'` is the Radon–Nikodym derivative of `‖T‖` with respect to `μ` times
-`η`, and `‖η'‖ = 1` forces that derivative to be one. Measurability of `η'` is needed: the
-integral of a pairing that is not almost everywhere strongly measurable is `0` by convention.
+representation `T φ = ∫ ⟪η' x, φ x⟫ dμ`, by a `μ`-almost everywhere strongly measurable field `η'`
+with `‖η'‖ = 1` at `μ`-almost every point, dominates `‖T‖`, by the minimality of the mass measure;
+comparing the two representations shows that, `μ`-almost everywhere, `η'` is the Radon–Nikodym
+derivative of `‖T‖` with respect to `μ` times `η`, and `‖η'‖ = 1` `μ`-almost everywhere forces that
+derivative to be one `μ`-almost everywhere. Measurability of `η'` is needed: the integral of a
+pairing that is not almost everywhere strongly measurable is `0` by convention.
 
 ## Main declarations
 
@@ -317,7 +319,8 @@ variable {μ : Measure Ω} {η : Ω → F}
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ]
   [FiniteDimensional ℝ F] in
-/-- A map represented by a field of norm one against `μ` is dominated by `μ`. -/
+/-- A map represented against `μ` by a field of norm one at `μ`-almost every point is dominated
+by `μ`. -/
 private theorem enorm_apply_le_lintegral_of_apply_eq_integral_inner
     (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1) (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ)
     (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂μ := by
@@ -328,8 +331,8 @@ private theorem enorm_apply_le_lintegral_of_apply_eq_integral_inner
   exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans (by rw [hx, one_mul]))
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- A map represented by a field of norm one against a measure finite on compact sets has locally
-finite mass. -/
+/-- A map represented against a measure `μ` finite on compact sets by a field of norm one at
+`μ`-almost every point has locally finite mass. -/
 private theorem hasLocallyFiniteMass_of_apply_eq_integral_inner [IsFiniteMeasureOnCompacts μ]
     (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1) (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) :
     HasLocallyFiniteMass T := by
@@ -344,9 +347,9 @@ private theorem hasLocallyFiniteMass_of_apply_eq_integral_inner [IsFiniteMeasure
     (lintegral_enorm_le_ofReal_mul_measure μ (f := fun x : Ω => φ x) hKm
       (fun x hx => hφK (subset_tsupport _ hx)) fun x => hφ x)
 
-/-- An almost everywhere strongly measurable field `η` of norm one representing `T` against a
-measure `μ` finite on compact sets is the polar vector field of `T` times the density of `‖T‖`
-with respect to `μ`. -/
+/-- A `μ`-almost everywhere strongly measurable field `η` of norm one at `μ`-almost every point
+representing `T` against a measure `μ` finite on compact sets is, `μ`-almost everywhere, the polar
+vector field of `T` times the density of `‖T‖` with respect to `μ`. -/
 private theorem ae_eq_toReal_rnDeriv_smul_polarVector [IsFiniteMeasureOnCompacts μ]
     (hηm : AEStronglyMeasurable η μ) (hη1 : ∀ᵐ x ∂μ, ‖η x‖ = 1)
     (h : ∀ φ : 𝓓^{n}(Ω, F), T φ = ∫ x, ⟪η x, φ x⟫ ∂μ) :
