@@ -50,7 +50,11 @@ is induction along that order.
 * `TauCeti.dominates_iff_forall_prefixSum_le`: dominance compares prefix sums of every length.
 * `TauCeti.dominates_iff_exists_nonneg_sub_eq_sum`, `TauCeti.dominates_iff_exists_nat_sub_eq_sum`:
   dominance is the order of nonnegative combinations of consecutive differences `eᵢ - eᵢ₊₁`.
-* `TauCeti.dominates_iff_eq_fin_one`: on vectors of length one, dominance is equality.
+* `TauCeti.dominates_iff_eq_fin_one`, `TauCeti.dominates_iff_fin_two`: on vectors of length one,
+  dominance is equality; on vectors of length two, it compares totals and first coordinates.
+* `TauCeti.Dominates.apply_le_apply_zero`, `TauCeti.Dominates.apply_last_le_apply`: the
+  coordinates of an antitone vector dominated by `g` lie between the last and the first
+  coordinate of `g`.
 * `TauCeti.Dominates.dominanceDefect_lt`: the defect strictly decreases down the order.
 -/
 
@@ -128,6 +132,44 @@ theorem dominates_iff_eq_fin_one [AddCommMonoid M] [Preorder M] {a g : Fin 1 →
     Dominates a g ↔ a = g := by
   refine ⟨fun h ↦ funext fun i ↦ ?_, fun h ↦ h ▸ Dominates.refl a⟩
   simpa only [Fin.sum_univ_one, Fin.fin_one_eq_zero i] using h.1.symm
+
+/-- On vectors of length two, dominance compares the totals and the first coordinates. -/
+theorem dominates_iff_fin_two [AddCommMonoid M] [Preorder M] {a g : Fin 2 → M} :
+    Dominates a g ↔ g 0 + g 1 = a 0 + a 1 ∧ a 0 ≤ g 0 := by
+  have h1 (x : Fin 2 → M) : prefixSum 1 x = x 0 := by
+    rw [prefixSum_succ Nat.zero_lt_two, prefixSum_zero, zero_add]
+    rfl
+  rw [dominates_iff_forall_prefixSum_le, Fin.sum_univ_two, Fin.sum_univ_two]
+  refine and_congr_right fun hsum ↦ ⟨fun h ↦ h1 a ▸ h1 g ▸ h 1, fun h k ↦ ?_⟩
+  rcases k with _ | _ | k
+  · simp only [prefixSum_zero, le_refl]
+  · rwa [h1, h1]
+  · rw [prefixSum_of_le (by omega), prefixSum_of_le (by omega), Fin.sum_univ_two,
+      Fin.sum_univ_two, hsum]
+
+/-- If an antitone vector `a` is dominated by `g`, then every coordinate of `a` is at most the
+first coordinate of `g`. -/
+theorem Dominates.apply_le_apply_zero [AddCommMonoid M] [Preorder M] {a g : Fin (n + 1) → M}
+    (h : Dominates a g) (ha : Antitone a) (i : Fin (n + 1)) : a i ≤ g 0 := by
+  have h1 := (dominates_iff_forall_prefixSum_le.mp h).2 1
+  rw [prefixSum_succ (Nat.succ_pos n), prefixSum_succ (Nat.succ_pos n), prefixSum_zero,
+    prefixSum_zero, zero_add, zero_add] at h1
+  exact (ha (Fin.zero_le i)).trans h1
+
+/-- If an antitone vector `a` is dominated by `g`, then every coordinate of `a` is at least the
+last coordinate of `g`. -/
+theorem Dominates.apply_last_le_apply [AddCommMonoid M] [PartialOrder M]
+    [IsOrderedCancelAddMonoid M] {a g : Fin (n + 1) → M} (h : Dominates a g) (ha : Antitone a)
+    (i : Fin (n + 1)) : g (Fin.last n) ≤ a i := by
+  have hn := (dominates_iff_forall_prefixSum_le.mp h).2 n
+  -- the total is the prefix sum of length `n` plus the last coordinate
+  have hlast (z : Fin (n + 1) → M) : ∑ j, z j = prefixSum n z + z (Fin.last n) := by
+    rw [← prefixSum_of_le le_rfl, prefixSum_succ (Nat.lt_succ_self n)]
+    rfl
+  have htot := h.1
+  rw [hlast, hlast] at htot
+  have hle : prefixSum n a + a (Fin.last n) ≤ prefixSum n g + a (Fin.last n) := by gcongr
+  exact (le_of_add_le_add_left (htot.trans_le hle)).trans (ha (Fin.le_last i))
 
 /-- **Dominance is the order of nonnegative combinations of consecutive differences.** In an
 ordered additive commutative group, `a` dominates `g` exactly when `g - a` is a combination
