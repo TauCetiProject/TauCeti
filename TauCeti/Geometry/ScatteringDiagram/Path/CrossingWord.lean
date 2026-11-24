@@ -23,10 +23,10 @@ Reading the signed wall generators along this list gives an element of the free 
 walls. A wall cooriented by `ν` contributes its generator when the path crosses it against `ν`
 and the inverse generator when it crosses along `ν`; the first crossing is the rightmost
 factor, so wall labels acting on the left compose in traversal order. This is
-`Quiver.Path.crossingWord`. It is the universal path product: for any group-valued labels,
-evaluating the crossing word by `FreeGroup.lift` gives the transport
-`Quiver.Path.wallPathProduct` (`Quiver.Path.lift_crossingWord`). Unlike that transport, the
-word imposes no relation between distinct walls, coplanar or not.
+`Quiver.Path.crossingWord`. It is the universal path product: for any group-valued labels
+that commute along common affine spans, evaluating the crossing word by `FreeGroup.lift` gives
+the transport `Quiver.Path.wallPathProduct` (`Quiver.Path.lift_crossingWord`). Unlike that
+transport, the word imposes no relation between distinct walls, coplanar or not.
 
 The crossing word is multiplicative under concatenation, is inverted by reversal when the
 coorientations have the walls' directions as kernels, and is unchanged by positive rescaling of
@@ -82,14 +82,6 @@ theorem eq_of_mem_crossings (e : x ⟶ y) {P Q : C.walls} {t : ℝ}
   C.eq_of_mem_wall_of_notMem_singularSupport ((mem_crossings x y P t).mp hP).2
     ((mem_crossings x y Q t).mp hQ).2 (e.down.regular t ((mem_crossings x y P t).mp hP).1)
 
-/-- Crossings of an admissible segment through a complex at the same time are equal, so
-comparing crossing times is antisymmetric. -/
-private theorem antisymm_crossings (e : x ⟶ y) :
-    Std.Antisymm fun a b : crossings x y => a.val.2 ≤ b.val.2 :=
-  ⟨fun a b hab hba => Subtype.ext <| Prod.ext
-    (C.eq_of_mem_crossings e (le_antisymm hab hba ▸ a.property) b.property)
-    (le_antisymm hab hba)⟩
-
 /-- At a crossing of an admissible segment through a complex, the signed crossing event consists
 of the crossed wall alone, with its crossing exponent. -/
 theorem signedCrossingEvent_eq_singleton (ν : C.walls → V →ₗ[ℝ] ℝ) (e : x ⟶ y)
@@ -106,37 +98,27 @@ theorem signedCrossingEvent_eq_singleton (ν : C.walls → V →ₗ[ℝ] ℝ) (e
 
 /-- The crossings of an admissible segment through the walls of a complex, in strictly
 increasing time order. -/
-def orderedCrossings (e : x ⟶ y) : List (C.walls × ℝ) := by
-  classical
-  letI := e.down.finite_crossings.fintype
-  let r := fun a b : crossings x y => a.val.2 ≤ b.val.2
-  haveI : IsTrans _ r := ⟨fun _ _ _ => le_trans⟩
-  haveI : Std.Antisymm r := C.antisymm_crossings e
-  haveI : Std.Total r := ⟨fun a b => le_total a.val.2 b.val.2⟩
-  exact ((Finset.univ : Finset (crossings x y)).sort r).map Subtype.val
+def orderedCrossings (e : x ⟶ y) : List (C.walls × ℝ) :=
+  e.down.finite_crossings.toFinset.toList.mergeSort fun a b => decide (a.2 ≤ b.2)
 
 /-- The ordered crossing list contains exactly the geometric crossings. -/
 @[simp]
 theorem mem_orderedCrossings (e : x ⟶ y) (a : C.walls × ℝ) :
     a ∈ C.orderedCrossings e ↔ a ∈ crossings x y := by
-  classical
   simp [orderedCrossings]
 
 /-- Crossing times strictly increase along the ordered crossing list. -/
 theorem pairwise_orderedCrossings (e : x ⟶ y) :
     (C.orderedCrossings e).Pairwise (fun a b => a.2 < b.2) := by
-  classical
-  let := e.down.finite_crossings.fintype
-  let r := fun a b : crossings x y => a.val.2 ≤ b.val.2
-  have : IsTrans _ r := ⟨fun _ _ _ => le_trans⟩
-  have : Std.Antisymm r := C.antisymm_crossings e
-  have : Std.Total r := ⟨fun a b => le_total a.val.2 b.val.2⟩
-  have hle := Finset.pairwise_sort (Finset.univ : Finset (crossings x y)) r
-  have hne := List.nodup_iff_pairwise_ne.mp
-    (Finset.sort_nodup (Finset.univ : Finset (crossings x y)) r)
-  refine List.pairwise_map.mpr ((hle.and hne).imp fun {a b} hab => ?_)
-  refine lt_of_le_of_ne hab.1 fun he => hab.2 (Subtype.ext (Prod.ext ?_ he))
-  exact C.eq_of_mem_crossings e a.property (he ▸ b.property)
+  unfold orderedCrossings
+  have hle := List.pairwise_mergeSort (le := fun a b : C.walls × ℝ => decide (a.2 ≤ b.2))
+    (fun _ _ _ hab hbc => by simpa using le_trans (by simpa using hab) (by simpa using hbc))
+    (fun a b => by simpa using le_total a.2 b.2) e.down.finite_crossings.toFinset.toList
+  refine (hle.and <| List.nodup_iff_pairwise_ne.mp <| (List.mergeSort_perm _ _).nodup_iff.mpr
+    (Finset.nodup_toList _)).imp_of_mem fun {a b} ha hb hab => ?_
+  refine lt_of_le_of_ne (by simpa using hab.1) fun he => hab.2 (Prod.ext ?_ he)
+  simp only [List.mem_mergeSort, Finset.mem_toList, Set.Finite.mem_toFinset] at ha hb
+  exact C.eq_of_mem_crossings e ha (he ▸ hb)
 
 /-- The ordered crossing list is the unique strictly time-ordered list of the geometric
 crossings. -/
@@ -272,7 +254,7 @@ theorem segmentCrossingWord_def (ν : C.walls → V →ₗ[ℝ] ℝ) (e : x ⟶ 
       ((C.orderedCrossings e).reverse.map fun a => C.crossingLetter ν x y a.1).prod := (rfl)
 
 /-- A segment meeting no wall has trivial crossing word. -/
-theorem segmentCrossingWord_eq_one (ν : C.walls → V →ₗ[ℝ] ℝ) (e : x ⟶ y)
+theorem segmentCrossingWord_eq_one_of_crossings_eq_empty (ν : C.walls → V →ₗ[ℝ] ℝ) (e : x ⟶ y)
     (he : crossings x y = ∅) : C.segmentCrossingWord ν e = 1 := by
   have hl : C.orderedCrossings e = [] :=
     List.eq_nil_iff_forall_not_mem.mpr fun a => by simp [he]
@@ -282,8 +264,9 @@ theorem segmentCrossingWord_eq_one (ν : C.walls → V →ₗ[ℝ] ℝ) (e : x �
 @[simp]
 theorem segmentCrossingWord_self (ν : C.walls → V →ₗ[ℝ] ℝ) (e : x ⟶ x) :
     C.segmentCrossingWord ν e = 1 :=
-  C.segmentCrossingWord_eq_one ν e <| Set.eq_empty_iff_forall_notMem.mpr fun ⟨P, t⟩ hP =>
-    x.notMem P (by simpa using ((mem_crossings x x P t).mp hP).2)
+  C.segmentCrossingWord_eq_one_of_crossings_eq_empty ν e <|
+    Set.eq_empty_iff_forall_notMem.mpr fun ⟨P, t⟩ hP =>
+      x.notMem P (by simpa using ((mem_crossings x x P t).mp hP).2)
 
 /-- Reversing a segment inverts its crossing word, for coorientations whose kernels are the
 wall directions. -/
@@ -423,19 +406,22 @@ theorem segmentCrossingWord_restrictPrefunctor (ν : C.walls → V →ₗ[ℝ] �
   have hl (l : List (C.walls × ℝ)) :
       ((l.filterMap fun a => if hP : a.1.val ∈ D.walls then some (⟨a.1.val, hP⟩, a.2)
           else none).map fun a => D.crossingLetter (fun P => ν ⟨P.val, hW P.property⟩)
-            ⟨x.val, fun P => x.notMem ⟨P.val, hW P.property⟩⟩
-            ⟨y.val, fun P => y.notMem ⟨P.val, hW P.property⟩⟩ a.1).prod =
+            ((WallComplement.restrictPrefunctor (fun P : C.walls => (P : Set V))
+              fun P : D.walls => (⟨P.val, hW P.property⟩ : C.walls)).obj x)
+            ((WallComplement.restrictPrefunctor (fun P : C.walls => (P : Set V))
+              fun P : D.walls => (⟨P.val, hW P.property⟩ : C.walls)).obj y) a.1).prod =
         C.wallDeletion D ((l.map fun a => C.crossingLetter ν x y a.1).prod) := by
     induction l with
     | nil => simp
     | cons a l ih =>
       by_cases ha : a.1.val ∈ D.walls
-      · rw [List.filterMap_cons_some (b := (⟨a.1.val, ha⟩, a.2)) (by rw [dite_eq_left ha]),
-          List.map_cons, List.prod_cons, List.map_cons, List.prod_cons, map_mul, ih,
-          crossingLetter_eq_zpow, crossingLetter_eq_zpow, map_zpow, wallDeletion_of,
-          dite_eq_left ha]
-      · rw [List.filterMap_cons_none (by rw [dite_eq_right ha]), List.map_cons, List.prod_cons,
-          map_mul, ih, crossingLetter_eq_zpow, map_zpow, wallDeletion_of, dite_eq_right ha,
+      · rw [List.filterMap_cons_some (b := (⟨a.1.val, ha⟩, a.2)) (dite_eq_left ha)]
+        simp only [List.map_cons, List.prod_cons, map_mul, ih]
+        simp only [crossingLetter_eq_zpow, map_zpow, wallDeletion_of, dite_eq_left ha,
+          Subtype.coe_eta]
+      · rw [List.filterMap_cons_none (dite_eq_right ha)]
+        simp only [List.map_cons, List.prod_cons, map_mul, ih]
+        simp only [crossingLetter_eq_zpow, map_zpow, wallDeletion_of, dite_eq_right ha,
           one_zpow, one_mul]
   simpa only [segmentCrossingWord_def, orderedCrossings_restrictPrefunctor hW e,
     ← List.filterMap_reverse] using hl (C.orderedCrossings e).reverse
