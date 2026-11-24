@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.FractionField
+public import TauCeti.RingTheory.Huber.Padic.Basic
 public import TauCeti.RingTheory.WittVector.IntervalRing.Subinterval
 public import TauCeti.RingTheory.WittVector.PadicInt
 
@@ -132,16 +133,16 @@ theorem eq_algebraMap_padic_intervalRing_of_continuous
 `𝕎 O`, on which every Gauss valuation is at most `1`. -/
 theorem norm_algebraMap_padic_coe_intervalRing_le_one (x : ℤ_[p]) :
     ‖algebraMap ℚ_[p] (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) x‖ ≤ 1 := by
-  rw [algebraMap_padic_coe_intervalRing, norm_algebraMap_intervalRing]
-  exact_mod_cast max_le (gaussValuation_le_one hv hρ₁.2 _) (gaussValuation_le_one hv hρ₂.2 _)
+  rw [algebraMap_padic_coe_intervalRing]
+  exact norm_algebraMap_intervalRing_le_one p hv hϖ hϖ' hρ₁ hρ₂ _
 
 /-- **The structure map carries `ℤ_[p]` into `B^{I,+}`**, the power-bounded subring of `B^I`, so
 that `(ℚ_[p], ℤ_[p]) → (B^I, B^{I,+})` is a morphism of Huber pairs. -/
 theorem algebraMap_padic_coe_mem_powerBoundedSubring_intervalRing (x : ℤ_[p]) :
     algebraMap ℚ_[p] (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) x ∈
       powerBoundedSubring (IntervalRing p hv hϖ hϖ' hρ₁ hρ₂) := by
-  rw [← SetLike.mem_coe, coe_powerBoundedSubring_intervalRing, mem_closedBall_zero_iff]
-  exact norm_algebraMap_padic_coe_intervalRing_le_one x
+  rw [algebraMap_padic_coe_intervalRing]
+  exact algebraMap_mem_powerBoundedSubring_intervalRing p hv hϖ hϖ' hρ₁ hρ₂ _
 
 /-- **The structure map sends `p⁻¹` to the inverse of `p` in `B^I`.** -/
 @[simp]
