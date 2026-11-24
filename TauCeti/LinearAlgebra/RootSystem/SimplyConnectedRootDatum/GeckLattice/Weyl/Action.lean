@@ -84,6 +84,16 @@ theorem geckWeylWordProd_append (l l' : List (Fin t.rank)) :
       t.geckWeylWordProd ht l * t.geckWeylWordProd ht l' := by
   simp [geckWeylWordProd]
 
+/-- The abstract Weyl-group element spelled by a node word is the product of the corresponding
+pinned simple reflections. -/
+theorem geckWeylWordProd_eq_prod_map (l : List (Fin t.rank)) :
+    t.geckWeylWordProd ht l =
+      (l.map fun i =>
+        RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht)
+          (t.simpleIndex ht i)).prod := by
+  rw [geckWeylWordProd, RootPairing.Base.wordProd_def, List.map_map]
+  simp only [Function.comp_def, coe_simpleSupportEquivSimplyConnectedBase_apply]
+
 /-- Every Weyl-group element is spelled by a word in the Bourbaki nodes. -/
 theorem geckWeylWordProd_surjective : Function.Surjective (t.geckWeylWordProd ht) := by
   let _ := t.isReduced_simplyConnectedRootDatum ht

@@ -68,10 +68,26 @@ theorem torusPoints_mem_weylSubgroup (A : Type v) [CommRing A] (s : Fin t.rank �
     D.torusPoints A s ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inl ⟨s, rfl⟩)
 
+/-- The actual weight-lattice torus image is contained in the Weyl subgroup over every commutative
+ring. -/
+theorem range_torusPoints_le_weylSubgroup (A : Type v) [CommRing A] :
+    (D.torusPoints A).range ≤ D.weylSubgroup A := by
+  rintro _ ⟨s, rfl⟩
+  exact D.torusPoints_mem_weylSubgroup A s
+
 /-- Each pinned simple Weyl representative belongs to the Weyl subgroup. -/
 theorem weylElement_mem_weylSubgroup (A : Type v) [CommRing A] (i : Fin t.rank) :
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
+
+/-- Every product of pinned simple Weyl representatives belongs to `D.weylSubgroup A`. -/
+theorem list_prod_map_weylElement_mem_weylSubgroup (A : Type v) [CommRing A]
+    (l : List (Fin t.rank)) :
+    (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ D.weylSubgroup A := by
+  apply Subgroup.list_prod_mem
+  intro x hx
+  obtain ⟨i, _, rfl⟩ := List.mem_map.mp hx
+  exact D.weylElement_mem_weylSubgroup A i
 
 private theorem map_weylElement_one {A : Type*} {B : Type*} [CommRing A] [CommRing B]
     (f : A →+* B) (i : Fin t.rank) :
