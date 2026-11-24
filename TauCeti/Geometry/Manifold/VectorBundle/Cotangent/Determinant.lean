@@ -115,8 +115,7 @@ noncomputable def cotangentDetChangeBasisIso
     (cotangentCore I b₁ M).det ≅ (cotangentCore I b₂ M).det :=
   FiniteRankBundleCore.detIso r
     (FiniteRankBundleCore.ofLinearEquivChangeIso
-      (FiniteRankBundleCore.dualCoords b₁.equivFunL)
-      (FiniteRankBundleCore.dualCoords b₂.equivFunL)
+      b₁.equivFunL.dualCoords b₂.equivFunL.dualCoords
       (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜))
     (rank_cotangentCore b₁) (rank_cotangentCore b₂)
 
@@ -127,7 +126,7 @@ noncomputable def cotangentDetChangeBasisIso
   (congrArg (fun e : cotangentCore I b M ≅ cotangentCore I b M ↦
       FiniteRankBundleCore.detIso r e (rank_cotangentCore b) (rank_cotangentCore b))
     (FiniteRankBundleCore.ofLinearEquivChangeIso_self
-      (FiniteRankBundleCore.dualCoords b.equivFunL) _)).trans
+      b.equivFunL.dualCoords _)).trans
     (FiniteRankBundleCore.detIso_refl r (cotangentCore I b M) (rank_cotangentCore b))
 
 /-- Inverting a change-of-basis isomorphism on `(cotangentCore I · M).det` reverses the two
@@ -138,8 +137,7 @@ bases. -/
     (congrArg (fun e : cotangentCore I b₂ M ≅ cotangentCore I b₁ M ↦
         FiniteRankBundleCore.detIso r e (rank_cotangentCore b₂) (rank_cotangentCore b₁))
       (FiniteRankBundleCore.ofLinearEquivChangeIso_symm
-        (FiniteRankBundleCore.dualCoords b₁.equivFunL)
-        (FiniteRankBundleCore.dualCoords b₂.equivFunL) _))
+        b₁.equivFunL.dualCoords b₂.equivFunL.dualCoords _))
 
 /-- Composing two change-of-basis isomorphisms on `(cotangentCore I · M).det` yields the direct
 change-of-basis isomorphism. -/
@@ -151,9 +149,7 @@ change-of-basis isomorphism. -/
     (congrArg (fun e : cotangentCore I b₁ M ≅ cotangentCore I b₃ M ↦
         FiniteRankBundleCore.detIso r e (rank_cotangentCore b₁) (rank_cotangentCore b₃))
       (FiniteRankBundleCore.ofLinearEquivChangeIso_trans
-        (FiniteRankBundleCore.dualCoords b₁.equivFunL)
-        (FiniteRankBundleCore.dualCoords b₂.equivFunL)
-        (FiniteRankBundleCore.dualCoords b₃.equivFunL) _))
+        b₁.equivFunL.dualCoords b₂.equivFunL.dualCoords b₃.equivFunL.dualCoords _))
 
 /-- Composing the forward maps of successive change-of-basis isomorphisms yields the direct
 change-of-basis morphism. -/
@@ -180,10 +176,9 @@ theorem detScalarEquiv_fiberMap_cotangentDetChangeBasisIso_hom
         ((cotangentDetChangeBasisIso I b₁ b₂ M).hom.fiberMap x u) =
       b₁.det b₂ * FiniteRankBundleCore.detScalarEquiv (cotangentCore I b₁ M) u :=
   (FiniteRankBundleCore.detScalarEquiv_fiberMap_ofLinearEquivChangeIso_hom
-    (FiniteRankBundleCore.dualCoords b₁.equivFunL)
-    (FiniteRankBundleCore.dualCoords b₂.equivFunL)
+    b₁.equivFunL.dualCoords b₂.equivFunL.dualCoords
     (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) x u).trans
-    (congrArg (· * _) (FiniteRankBundleCore.det_dualCoords_equivFunL_symm_trans b₁ b₂))
+    (congrArg (· * _) (b₁.det_dualCoords_equivFunL_symm_trans b₂))
 
 /-- The inverse change-of-basis map from `b₂` to `b₁` multiplies scalar coordinates in
 `(cotangentCore I b M).det` by `b₂.det b₁`. -/
@@ -193,10 +188,9 @@ theorem detScalarEquiv_fiberMap_cotangentDetChangeBasisIso_inv
         ((cotangentDetChangeBasisIso I b₁ b₂ M).inv.fiberMap x u) =
       b₂.det b₁ * FiniteRankBundleCore.detScalarEquiv (cotangentCore I b₂ M) u :=
   (FiniteRankBundleCore.detScalarEquiv_fiberMap_ofLinearEquivChangeIso_inv
-    (FiniteRankBundleCore.dualCoords b₁.equivFunL)
-    (FiniteRankBundleCore.dualCoords b₂.equivFunL)
+    b₁.equivFunL.dualCoords b₂.equivFunL.dualCoords
     (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) x u).trans
-    (congrArg (· * _) (FiniteRankBundleCore.det_dualCoords_equivFunL_symm_trans b₂ b₁))
+    (congrArg (· * _) (b₂.det_dualCoords_equivFunL_symm_trans b₁))
 
 end CotangentDeterminant
 
@@ -258,9 +252,7 @@ theorem coordChange_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x�
         ContinuousLinearMap.id 𝕜 (Fin (canonicalCore I b M).rank → 𝕜) := by
   refine (FiniteRankBundleCore.coordChange_ofLinearEquiv (canonicalModelCoords b)
     (CanonicalBundle I M) x₀ x₁ x).trans ?_
-  change _ = LinearMap.det (tangentCoordChange I x₁ x₀ x : E →ₗ[𝕜] E) •
-    ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜)
-  ext u i
+  ext (u : Fin 1 → 𝕜) (i : Fin 1)
   let F := E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜
   have hb₀ : x ∈ (trivializationAt F (CanonicalBundle I M) x₀).baseSet := by simpa [F] using hx₀
   rw [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe,
@@ -269,7 +261,10 @@ theorem coordChange_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x�
     Trivialization.apply_mk_symm _ hb₀, canonicalModelCoords_symm_apply]
   obtain rfl : i = 0 := Subsingleton.elim i 0
   simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul, b.continuousDet_apply, b.det_self,
-    mul_one, smul_apply, ContinuousLinearMap.id_apply, Pi.smul_apply]
+    mul_one]
+  -- `(canonicalCore I b M).rank` is definitionally `1`, so scalar multiplication on `Fin _ → 𝕜`
+  -- agrees definitionally.
+  rfl
 
 private theorem baseSet_cotangentCore_det_eq_canonicalCore
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x₀ : M) :
@@ -290,23 +285,6 @@ private noncomputable def cotangentDetCanonicalCoords
     (u : Fin (cotangentCore I b M).det.rank → 𝕜) (i : Fin (canonicalCore I b M).rank) :
     cotangentDetCanonicalCoords (I := I) (M := M) b u i =
       FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M) u := rfl
-
-@[simp] private theorem cotangentDetCanonicalCoords_symm_apply
-    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
-    (w : Fin (canonicalCore I b M).rank → 𝕜) (i : Fin (cotangentCore I b M).det.rank) :
-    (cotangentDetCanonicalCoords (I := I) (M := M) b).symm w i =
-      w ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩ := by
-  have h : (cotangentDetCanonicalCoords (I := I) (M := M) b).symm w =
-      fun _ ↦ w ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩ := by
-    apply (cotangentDetCanonicalCoords (I := I) (M := M) b).injective
-    rw [ContinuousLinearEquiv.apply_symm_apply]
-    ext j
-    rw [cotangentDetCanonicalCoords_apply, FiniteRankBundleCore.detScalarEquiv_apply]
-    have : Subsingleton (Fin (canonicalCore I b M).rank) := by
-      rw [rank_canonicalCore]
-      infer_instance
-    exact congrArg w (Subsingleton.elim j _)
-  exact congrFun h i
 
 private theorem coordChange_comp_cotangentDetCanonicalCore
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x₀ x₁ x : M}
@@ -445,8 +423,15 @@ coordinate entry of `w` in `canonicalCore I b M`. -/
     (w : Fin (canonicalCore I b M).rank → 𝕜) (i : Fin (cotangentCore I b M).det.rank) :
     (cotangentDetCanonicalCoreIso I b M).inv.fiberMap x w i =
       w ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩ := by
-  rw [cotangentDetCanonicalCoreIso, FiniteRankBundleCore.fiberMap_constIso_inv]
-  simp
+  rw [cotangentDetCanonicalCoreIso, FiniteRankBundleCore.fiberMap_constIso_inv,
+    ContinuousLinearEquiv.coe_coe]
+  have hi : i = ⟨0, (cotangentCore I b M).rank_det ▸ Nat.zero_lt_one⟩ :=
+    Fin.ext (Nat.lt_one_iff.mp (i.isLt.trans_eq (cotangentCore I b M).rank_det))
+  rw [hi, ← FiniteRankBundleCore.detScalarEquiv_apply (cotangentCore I b M)
+      ((cotangentDetCanonicalCoords (I := I) (M := M) b).symm w),
+    ← cotangentDetCanonicalCoords_apply (I := I) (M := M) b _
+      ⟨0, (rank_canonicalCore (I := I) (M := M) b) ▸ Nat.zero_lt_one⟩,
+    ContinuousLinearEquiv.apply_symm_apply]
 
 /-- Fibrewise continuous linear equivalence identifying `(cotangentCore I b M).det.core.Fiber x`
 with `CanonicalBundle I M x` via `detScalarEquiv` and `CanonicalBundle.coordForm`. -/

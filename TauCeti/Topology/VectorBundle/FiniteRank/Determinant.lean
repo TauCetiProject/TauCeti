@@ -63,30 +63,6 @@ theorem detScalarEquiv_coordChange_det (A : FiniteRankBundleCore 𝕜 B) (i j x 
       (A.core.coordChange i j x).det * detScalarEquiv A v := by
   rw [coordChange_det]; simp [detScalarEquiv_apply]
 
-variable (𝕜) in
-/-- Scalar evaluation on `Fin (m.choose r) → 𝕜` when `m = r`. -/
-noncomputable def topExteriorScalarEquiv {m r : ℕ} (h : m = r) :
-    (Fin (m.choose r) → 𝕜) ≃L[𝕜] 𝕜 :=
-  (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ ↦ 𝕜)
-    (finCongr (h ▸ Nat.choose_self m))).trans
-    (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜)
-
-@[simp] theorem topExteriorScalarEquiv_apply {m r : ℕ} (h : m = r) (v : Fin (m.choose r) → 𝕜) :
-    topExteriorScalarEquiv 𝕜 h v = v ⟨0, h ▸ Nat.choose_self m ▸ Nat.zero_lt_one⟩ := (rfl)
-
-@[simp] theorem topExteriorScalarEquiv_symm_apply {m r : ℕ} (h : m = r) (c : 𝕜)
-    (i : Fin (m.choose r)) :
-    (topExteriorScalarEquiv 𝕜 h).symm c i = c := (rfl)
-
-/-- Under `topExteriorScalarEquiv`, the top-degree compound matrix `g.exteriorPowerCoords r` acts
-by scalar multiplication by `g.det`. -/
-theorem topExteriorScalarEquiv_exteriorPowerCoords_self {r : ℕ}
-    (g : (Fin r → 𝕜) →L[𝕜] (Fin r → 𝕜)) (w : Fin (r.choose r) → 𝕜) :
-    topExteriorScalarEquiv 𝕜 (rfl : r = r) (g.exteriorPowerCoords r w) =
-      g.det * topExteriorScalarEquiv 𝕜 (rfl : r = r) w := by
-  rw [ContinuousLinearMap.exteriorPowerCoords_self]
-  simp [topExteriorScalarEquiv_apply]
-
 /-- The determinant core keeps the same chart domains as the original core. -/
 theorem baseSet_det (A : FiniteRankBundleCore 𝕜 B) (i : B) :
     A.det.core.baseSet i = A.core.baseSet i :=
@@ -96,55 +72,58 @@ private theorem baseSet_exteriorPower_obj (j : ℕ) (A : FiniteRankBundleCore �
     ((exteriorPower 𝕜 B j).obj A).core.baseSet i = A.core.baseSet i := (rfl)
 
 /-- Identifying `Fin A.det.rank → 𝕜` with `Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜` via
-`detScalarEquiv A` and `topExteriorScalarEquiv 𝕜 hr` intertwines the transitions of `A.det` and
-`(exteriorPower 𝕜 B r).obj A`. -/
+`detScalarEquiv A` and `ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr` intertwines the
+transitions of `A.det` and `(exteriorPower 𝕜 B r).obj A`. -/
 theorem coordChange_comp_detExteriorPower (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r)
     (i j x : B) :
-    (((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm :
+    (((detScalarEquiv A).trans (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).symm :
         (Fin A.det.rank → 𝕜) ≃L[𝕜]
           (Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜)).toContinuousLinearMap.comp
         (A.det.core.coordChange i j x)) =
       (((exteriorPower 𝕜 B r).obj A).core.coordChange i j x).comp
-        (((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm :
+        (((detScalarEquiv A).trans (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).symm :
           (Fin A.det.rank → 𝕜) ≃L[𝕜]
             (Fin ((exteriorPower 𝕜 B r).obj A).rank → 𝕜)).toContinuousLinearMap) := by
   subst hr; ext u : 1
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, coordChange_det,
     coordChange_exteriorPower_obj, ContinuousLinearMap.exteriorPowerCoords_self]
-  simp only [_root_.smul_apply, ContinuousLinearMap.id_apply]
-  exact (map_smul ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 rfl).symm) _ u).symm
+  simp only [_root_.smul_apply, ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe,
+    map_smul]
+  -- `((exteriorPower 𝕜 B A.rank).obj A).rank` is definitionally `A.rank.choose A.rank`.
+  rfl
 
 /-- For `r = A.rank`, the determinant core `A.det` is canonically isomorphic to the `r`th exterior
 power `(exteriorPower 𝕜 B r).obj A`, preserving scalar coordinates. -/
 noncomputable def detExteriorPowerIso (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) :
     A.det ≅ (exteriorPower 𝕜 B r).obj A :=
   constIso (fun i ↦ baseSet_det A i)
-    ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm)
+    ((detScalarEquiv A).trans (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).symm)
     fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x
 
 /-- Definitional presentation of `detExteriorPowerIso` as a constant-equivalence isomorphism. -/
 theorem detExteriorPowerIso_def (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) :
     detExteriorPowerIso A hr =
       constIso (D := (exteriorPower 𝕜 B r).obj A) (fun i ↦ baseSet_det A i)
-        ((detScalarEquiv A).trans (topExteriorScalarEquiv 𝕜 hr).symm)
+        ((detScalarEquiv A).trans (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).symm)
         fun i j x _ _ ↦ coordChange_comp_detExteriorPower A hr i j x := (rfl)
 
 /-- The forward map of `detExteriorPowerIso` preserves scalar coordinates. -/
 theorem topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom
     (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) (x : B) (u : Fin A.det.rank → 𝕜) :
-    topExteriorScalarEquiv 𝕜 hr ((detExteriorPowerIso A hr).hom.fiberMap x u) =
+    ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr
+        ((detExteriorPowerIso A hr).hom.fiberMap x u) =
       detScalarEquiv A u := by
   rw [detExteriorPowerIso]
-  exact (congrArg (topExteriorScalarEquiv 𝕜 hr)
+  exact (congrArg (ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr)
     (DFunLike.congr_fun (fiberMap_constIso_hom _ _ _ x) u)).trans
-    ((topExteriorScalarEquiv 𝕜 hr).apply_symm_apply _)
+    ((ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr).apply_symm_apply _)
 
 /-- The inverse map of `detExteriorPowerIso` preserves scalar coordinates. -/
 theorem detScalarEquiv_fiberMap_detExteriorPowerIso_inv
     (A : FiniteRankBundleCore 𝕜 B) {r : ℕ} (hr : A.rank = r) (x : B)
     (w : Fin (((exteriorPower 𝕜 B r).obj A).rank) → 𝕜) :
     detScalarEquiv A ((detExteriorPowerIso A hr).inv.fiberMap x w) =
-      topExteriorScalarEquiv 𝕜 hr w := by
+      ContinuousLinearEquiv.topExteriorScalarEquiv 𝕜 hr w := by
   rw [detExteriorPowerIso]
   exact (congrArg (detScalarEquiv A)
     (DFunLike.congr_fun (fiberMap_constIso_inv _ _ _ x) w)).trans
@@ -218,7 +197,8 @@ theorem detScalarEquiv_fiberMap_detMap (r : ℕ) {A D : FiniteRankBundleCore �
   rw [detMap, fiberMap_comp, fiberMap_comp, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, detScalarEquiv_fiberMap_detExteriorPowerIso_inv,
     fiberMap_exteriorPower_map, normalizedFiberMap_eq_of_heq f rfl rfl x _ HEq.rfl]
-  exact (topExteriorScalarEquiv_exteriorPowerCoords_self (f.fiberMap x) _).trans
+  exact (ContinuousLinearMap.topExteriorScalarEquiv_exteriorPowerCoords_self
+    (f.fiberMap x) _).trans
     (congrArg _ (topExteriorScalarEquiv_fiberMap_detExteriorPowerIso_hom _ _ _ _))
 
 /-- If `f.fiberMap x` acts in normalized `Fin r → 𝕜` coordinates as `T`, then on scalar

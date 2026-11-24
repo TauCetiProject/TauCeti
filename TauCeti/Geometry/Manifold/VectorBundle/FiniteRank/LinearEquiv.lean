@@ -227,7 +227,7 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 `C^n` at every regularity. -/
 theorem contMDiff_totalSpaceMap_ofLinearEquivDualIso_hom :
     ContMDiff (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).dual.rank → 𝕜))
-      (I.prod 𝓘(𝕜, Fin (ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜)) n
+      (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜)) n
       (ofLinearEquivDualIso e V).hom.totalSpaceMap :=
   contMDiff_totalSpaceMap_of_fiberMap_eq (ofLinearEquivDualIso e V).hom
     (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜))
@@ -238,7 +238,7 @@ theorem contMDiff_totalSpaceMap_ofLinearEquivDualIso_hom :
 `C^n` at every regularity. -/
 theorem contMDiff_totalSpaceMap_ofLinearEquivDualIso_inv :
     ContMDiff
-      (I.prod 𝓘(𝕜, Fin (ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜))
+      (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜))
       (I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).dual.rank → 𝕜)) n
       (ofLinearEquivDualIso e V).inv.totalSpaceMap :=
   contMDiff_totalSpaceMap_of_fiberMap_eq (ofLinearEquivDualIso e V).inv
@@ -247,13 +247,13 @@ theorem contMDiff_totalSpaceMap_ofLinearEquivDualIso_inv :
     fun _ _ _ hi hj ↦ coordChange_comp_ofLinearEquiv_dual_symm e V hi hj
 
 /-- Over a complete scalar field, `(ofLinearEquiv e V).dual` is `C^n` diffeomorphic on total spaces
-to `ofLinearEquiv (dualCoords e) (fun x ↦ V x →L[𝕜] 𝕜)` by the identity on every coordinate fibre,
+to `ofLinearEquiv e.dualCoords (fun x ↦ V x →L[𝕜] 𝕜)` by the identity on every coordinate fibre,
 upgrading `ofLinearEquivDualIso e V`. -/
 noncomputable def ofLinearEquivDualDiffeomorph (I : ModelWithCorners 𝕜 EB HB) (n : ℕ∞ω) :
     (ofLinearEquiv e V).dual.core.TotalSpace ≃ₘ^n⟮
       I.prod 𝓘(𝕜, Fin (ofLinearEquiv e V).dual.rank → 𝕜),
-      I.prod 𝓘(𝕜, Fin (ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜)⟯
-        (ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).core.TotalSpace :=
+      I.prod 𝓘(𝕜, Fin (ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜)⟯
+        (ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).core.TotalSpace :=
   isoToDiffeomorph (ofLinearEquivDualIso e V)
     (contMDiff_totalSpaceMap_ofLinearEquivDualIso_hom e V)
     (contMDiff_totalSpaceMap_ofLinearEquivDualIso_inv e V)

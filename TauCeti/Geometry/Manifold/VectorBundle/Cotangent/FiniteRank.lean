@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 For a `C¹` manifold `M` modelled on `I : ModelWithCorners 𝕜 E H` over a complete field `𝕜` with
 basis `b : Basis (Fin r) 𝕜 E`, `TauCeti.cotangentCore I b M` presents the cotangent bundle
-`fun x ↦ TangentSpace I x →L[𝕜] 𝕜` in `FiniteRankBundleCore.dualCoords b.equivFunL`:
+`fun x ↦ TangentSpace I x →L[𝕜] 𝕜` in `b.equivFunL.dualCoords`:
 
 * `coordChange_cotangentCore`: chart transitions are transposed reverse Jacobians in `b`.
 * `cotangentCoreTotalSpaceDiffeomorph`: `C^k` diffeomorphism onto `CotangentBundle I M`.
@@ -40,13 +40,13 @@ variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
 
 /-- The finite-rank core presenting the cotangent bundle `fun x ↦ TangentSpace I x →L[𝕜] 𝕜` on `M`
-in `FiniteRankBundleCore.dualCoords b.equivFunL` (`p ↦ fun i ↦ p (b i)`). -/
+in `b.equivFunL.dualCoords` (`p ↦ fun i ↦ p (b i)`). -/
 -- Expose the rank projection so dependent coordinate spaces reduce to `Fin r → 𝕜`.
 @[expose]
 noncomputable def cotangentCore {r : ℕ} (I : ModelWithCorners 𝕜 E H) (b : Basis (Fin r) 𝕜 E)
     (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] :
     FiniteRankBundleCore 𝕜 M :=
-  FiniteRankBundleCore.ofLinearEquiv (FiniteRankBundleCore.dualCoords b.equivFunL)
+  FiniteRankBundleCore.ofLinearEquiv b.equivFunL.dualCoords
     (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)
 
 section Basic
@@ -92,24 +92,24 @@ noncomputable def cotangentCoreTotalSpaceDiffeomorph
     (cotangentCore I b M).core.TotalSpace ≃ₘ^k⟮I.prod 𝓘(𝕜, Fin (cotangentCore I b M).rank → 𝕜),
       I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)⟯ CotangentBundle I M :=
   FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph
-    (FiniteRankBundleCore.dualCoords b.equivFunL)
+    b.equivFunL.dualCoords
     (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) I k
 
-/-- At `p.proj`, `cotangentCoreTotalSpaceDiffeomorph` pulls `(dualCoords b.equivFunL).symm p.snd`
+/-- At `p.proj`, `cotangentCoreTotalSpaceDiffeomorph` pulls `b.equivFunL.dualCoords.symm p.snd`
 back through the tangent trivialization at `p.proj`. -/
 @[simp] theorem cotangentCoreTotalSpaceDiffeomorph_apply
     (k : ℕ∞ω) (p : (cotangentCore I b M).core.TotalSpace) :
     cotangentCoreTotalSpaceDiffeomorph I b M k p =
-      ⟨p.proj, ((FiniteRankBundleCore.dualCoords b.equivFunL).symm p.snd).comp
+      ⟨p.proj, (b.equivFunL.dualCoords.symm p.snd).comp
         ((trivializationAt E (TangentSpace I) p.proj).continuousLinearMapAt 𝕜 p.proj)⟩ := by
   -- Chain via `.trans`: `cotangentCore` and `VectorBundleCore.Fiber` are non-reducible `def`s
   -- (defeq to `ofLinearEquiv ...` and `Fin r → 𝕜`), so `rw` cannot match them directly.
   refine (FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph_apply
-    (FiniteRankBundleCore.dualCoords b.equivFunL)
+    b.equivFunL.dualCoords
     (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) (I := I) (n := k) p).trans ?_
   refine congrArg (TotalSpace.mk' (E →L[𝕜] 𝕜) p.proj) ?_
   refine (FiniteRankBundleCore.ofLinearEquivFiberEquiv_apply
-    (FiniteRankBundleCore.dualCoords b.equivFunL)
+    b.equivFunL.dualCoords
     (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) p.proj p.snd).trans ?_
   exact trivializationAt_dual_symm_eq (TangentSpace I : M → Type _)
     (mem_baseSet_trivializationAt E (TangentSpace I) p.proj) _
@@ -123,11 +123,11 @@ basis vectors `(trivializationAt E (TangentSpace I) p.proj).symmL 𝕜 p.proj (b
         p.snd ((trivializationAt E (TangentSpace I) p.proj).symmL 𝕜 p.proj (b i))⟩ := by
   rcases p with ⟨x, q⟩
   refine (FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph_symm_apply
-    (FiniteRankBundleCore.dualCoords b.equivFunL)
+    b.equivFunL.dualCoords
     (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) (I := I) (n := k) ⟨x, q⟩).trans ?_
   rw [FiniteRankBundleCore.ofLinearEquivFiberEquiv_symm_apply]
   refine congrArg (TotalSpace.mk' (Fin r → 𝕜) x) (funext fun i ↦ ?_)
-  rw [FiniteRankBundleCore.dualCoords_equivFunL_apply, Manifold.symmL_trivializationAt_self]
+  rw [b.dualCoords_equivFunL_apply, Manifold.symmL_trivializationAt_self]
   have hself := CotangentBundle.continuousLinearMapAt_trivializationAt_self (I := I) x q
   rw [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _
     (mem_baseSet_trivializationAt (E →L[𝕜] 𝕜) (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) x)] at hself
@@ -199,9 +199,13 @@ theorem isContMDiff_cotangentCore {k : ℕ∞ω} [IsManifold I (k + 1) M] :
   have : IsManifold I 1 M := .of_le (n := k + 1) le_add_self
   let : ContMDiffVectorBundle k E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
+  -- `Trivial M 𝕜 x` is definitionally `𝕜`, supplying the `ContMDiffVectorBundle` instance on the
+  -- cotangent bundle `fun x ↦ TangentSpace I x →L[𝕜] 𝕜`.
+  let : ContMDiffVectorBundle k (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) I :=
+    inferInstanceAs (ContMDiffVectorBundle k (E →L[𝕜] 𝕜)
+      (fun x : M ↦ TangentSpace I x →L[𝕜] Trivial M 𝕜 x) I)
   exact FiniteRankBundleCore.isContMDiff_ofLinearEquiv
-    (FiniteRankBundleCore.dualCoords b.equivFunL)
-    (fun x : M ↦ TangentSpace I x →L[𝕜] Trivial M 𝕜 x)
+    b.equivFunL.dualCoords (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)
 
 end Basic
 

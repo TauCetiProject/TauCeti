@@ -417,34 +417,6 @@ theorem baseSet_ofLinearEquiv (b : B) :
       e.arrowCongr e ((trivializationAt F V b).coordChangeL 𝕜 (trivializationAt F V c) x) :=
   (rfl)
 
-/-- For the identity coordinate equivalence on `Fin r → 𝕜`, the underlying `VectorBundleCore` of
-`ofLinearEquiv` equals `pointIndexedCore 𝕜 (Fin r → 𝕜) W`. -/
-theorem core_ofLinearEquiv_refl (r : ℕ) (W : B → Type z)
-    [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜 (W x)]
-    [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace (Fin r → 𝕜) W)]
-    [FiberBundle (Fin r → 𝕜) W] [VectorBundle 𝕜 (Fin r → 𝕜) W] :
-    (ofLinearEquiv (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜)) W).core =
-      pointIndexedCore 𝕜 (Fin r → 𝕜) W := by
-  have hbase : ∀ b, (trivializationAt (Fin r → 𝕜) W b).baseSet =
-      (pointIndexedCore 𝕜 (Fin r → 𝕜) W).baseSet b := fun b ↦
-    (pointIndexedCore_localTriv_baseSet 𝕜 (Fin r → 𝕜) W b).symm
-  have hindex : (id : B → B) = (pointIndexedCore 𝕜 (Fin r → 𝕜) W).indexAt :=
-    funext fun b ↦ (pointIndexedCore_indexAt 𝕜 (Fin r → 𝕜) W b).symm
-  have hcoord : ∀ b c x,
-      ((ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜)).arrowCongr
-        (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜))
-        ((trivializationAt (Fin r → 𝕜) W b).coordChangeL 𝕜
-          (trivializationAt (Fin r → 𝕜) W c) x)) =
-        (pointIndexedCore 𝕜 (Fin r → 𝕜) W).coordChange b c x := fun b c x ↦
-    (pointIndexedCore_coordChange 𝕜 (Fin r → 𝕜) W b c x).symm.trans
-      (ContinuousLinearMap.ext fun _ ↦ rfl)
-  dsimp only [ofLinearEquiv]
-  rcases hC : pointIndexedCore 𝕜 (Fin r → 𝕜) W with ⟨baseSet, _, indexAt, _, coordChange, _, _, _⟩
-  congr
-  · funext b; exact (hbase b).trans (congrArg (fun C ↦ C.baseSet b) hC)
-  · exact hindex.trans (congrArg VectorBundleCore.indexAt hC)
-  · funext b c x; exact (hcoord b c x).trans (congrArg (fun C ↦ C.coordChange b c x) hC)
-
 /-- The continuous linear equivalence identifying the reconstructed fibre of `ofLinearEquiv e V` at
 `x` with `V x`, via `e.symm` followed by the inverse of `trivializationAt F V x`. -/
 noncomputable def ofLinearEquivFiberEquiv (x : B) :
