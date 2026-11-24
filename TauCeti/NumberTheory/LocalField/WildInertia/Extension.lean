@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Extension
 public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
-import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 
 /-!
@@ -52,32 +51,6 @@ variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [FiniteDimensional K L]
   (ι : L →ₐ[K] SeparableClosure K)
 
-omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [ValuativeExtension K L] in
-/-- The preimage of `P_K` in `G_L` is pro-`p`, for `p` the residue characteristic of `K`. -/
-private theorem isProP_comap_absoluteGaloisGroupExtend_wildInertiaSubgroup (p : ℕ)
-    [CharP 𝓀[K] p] :
-    IsProP p ((wildInertiaSubgroup K).comap (absoluteGaloisGroupExtend K L ι)) := by
-  set U := (absoluteGaloisGroupExtend K L ι).range
-  set e := absoluteGaloisGroupExtendEquiv K L ι (U := U) rfl
-  -- Along `e`, the preimage of `P_K` is the trace of `P_K` on the image of `G_L`.
-  have hR : ((wildInertiaSubgroup K).comap (absoluteGaloisGroupExtend K L ι)).map
-      ((e : Field.absoluteGaloisGroup L ≃* U) : Field.absoluteGaloisGroup L →* U) =
-      (wildInertiaSubgroup K ⊓ U).subgroupOf U := by
-    ext x
-    rw [Subgroup.mem_map, Subgroup.mem_subgroupOf, Subgroup.mem_inf]
-    have he (g : Field.absoluteGaloisGroup L) :
-        ((e g : U) : Field.absoluteGaloisGroup K) = absoluteGaloisGroupExtend K L ι g :=
-      coe_absoluteGaloisGroupExtendEquiv_apply K L ι rfl g
-    refine ⟨?_, fun h ↦ ⟨e.symm x, ?_, e.apply_symm_apply x⟩⟩
-    · rintro ⟨g, hg, rfl⟩
-      exact ⟨(he g).symm ▸ Subgroup.mem_comap.mp hg, (e g).property⟩
-    · rw [Subgroup.mem_comap, ← he, e.apply_symm_apply]
-      exact h.1
-  rw [isProP_congr (e.subgroupMap _), hR,
-    Subgroup.isProP_subgroupOf_iff inf_le_right]
-  exact (isProP_wildInertiaSubgroup K p).mono inf_le_left
-
 /-- **Wild inertia along a finite extension, as a preimage.** The wild inertia subgroup of `L` is
 the preimage of that of `K` under the embedding `G_L → G_K`. -/
 @[simp]
@@ -85,8 +58,11 @@ theorem comap_absoluteGaloisGroupExtend_wildInertiaSubgroup :
     (wildInertiaSubgroup K).comap (absoluteGaloisGroupExtend K L ι) = wildInertiaSubgroup L := by
   have : CharP 𝓀[L] (ringChar 𝓀[K]) :=
     charP_of_injective_algebraMap (algebraMap 𝓀[K] 𝓀[L]).injective _
+  -- The preimage of `P_K` is pro-`p`, since `G_L` is topologically isomorphic to its image.
   refine le_antisymm (le_wildInertiaSubgroup_of_isProP (ringChar 𝓀[K])
-    (isProP_comap_absoluteGaloisGroupExtend_wildInertiaSubgroup ι _) ?_) ?_
+    ((isProP_wildInertiaSubgroup K _).comap_of_continuousMulEquiv
+      (absoluteGaloisGroupExtendEquiv K L ι rfl)
+      (coe_absoluteGaloisGroupExtendEquiv_apply K L ι rfl)) ?_) ?_
   · rw [← comap_absoluteGaloisGroupExtend_inertiaSubgroup ι]
     exact Subgroup.comap_mono (wildInertiaSubgroup_le_inertiaSubgroup K)
   · -- The image of `P_L` is a pro-`p` subgroup of `I_K`.
