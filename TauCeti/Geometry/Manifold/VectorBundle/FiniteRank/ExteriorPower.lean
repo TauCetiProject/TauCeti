@@ -121,7 +121,7 @@ theorem contMDiff_wedgeSection (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
   rw [show (TotalSpace.mk' (Fin ((exteriorPower 𝕜 B j).obj A).rank → 𝕜) x₀
     (wedgeSection j A s x₀)).proj = x₀ from rfl,
     ((exteriorPower 𝕜 B j).obj A).trivializationAt_core x₀]
-  exact ((contDiff_piEquiv_ιMulti 𝕜 j A.rank).comp_contMDiffAt
+  exact ((exteriorPower.contDiff_piEquiv_ιMulti 𝕜 j A.rank).comp_contMDiffAt
     (contMDiffAt_pi_module_iff.2 hc)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun x ↦ localTriv_wedgeSection_snd j A s x₀ x)
 

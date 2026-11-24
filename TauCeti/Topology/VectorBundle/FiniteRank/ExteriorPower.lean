@@ -521,45 +521,6 @@ end Pullback
 
 section Sections
 
-variable (𝕜) in
-private noncomputable def tupleToCLM (j m : ℕ) :
-    (Fin j → Fin m → 𝕜) →L[𝕜] ((Fin j → 𝕜) →L[𝕜] (Fin m → 𝕜)) :=
-  ∑ k : Fin j,
-    (ContinuousLinearMap.smulRightL 𝕜 𝕜 𝕜 (Fin j → 𝕜) (Fin m → 𝕜)
-      (ContinuousLinearMap.proj k)).comp
-      (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin j ↦ Fin m → 𝕜) k)
-
-private theorem tupleToCLM_single (j m : ℕ) (u : Fin j → Fin m → 𝕜) (l : Fin j) :
-    tupleToCLM 𝕜 j m u (Pi.single l 1) = u l := by
-  simp [tupleToCLM, Pi.single_apply]
-
-private theorem exteriorPowerCoords_piEquiv_ιMulti (j : ℕ) {m n : ℕ}
-    (L : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) (u : Fin j → Fin m → 𝕜) :
-    L.exteriorPowerCoords j (exteriorPower.piEquiv 𝕜 m j (exteriorPower.ιMulti 𝕜 j u)) =
-      exteriorPower.piEquiv 𝕜 n j (exteriorPower.ιMulti 𝕜 j fun k ↦ L (u k)) := by
-  rw [ContinuousLinearMap.exteriorPowerCoords_apply, LinearMap.exteriorPowerCoords_piEquiv,
-    exteriorPower.map_apply_ιMulti]
-  rfl
-
-private theorem piEquiv_ιMulti_eq_exteriorPowerCoords (j m : ℕ) (u : Fin j → Fin m → 𝕜) :
-    exteriorPower.piEquiv 𝕜 m j (exteriorPower.ιMulti 𝕜 j u) =
-      (tupleToCLM 𝕜 j m u).exteriorPowerCoords j
-        (exteriorPower.piEquiv 𝕜 j j (exteriorPower.ιMulti 𝕜 j fun l ↦ Pi.single l 1)) := by
-  rw [exteriorPowerCoords_piEquiv_ιMulti]
-  congr 2
-  ext l : 1
-  exact (tupleToCLM_single j m u l).symm
-
-variable (𝕜) in
-/-- In standard exterior-power coordinates, the exterior product of `j` vectors depends `C^k`
-(including analytically) on the `j`-tuple of vectors. -/
-theorem contDiff_piEquiv_ιMulti (j m : ℕ) {k : WithTop ℕ∞} :
-    ContDiff 𝕜 k (fun u : Fin j → Fin m → 𝕜 ↦
-      exteriorPower.piEquiv 𝕜 m j (exteriorPower.ιMulti 𝕜 j u)) := by
-  rw [funext (piEquiv_ιMulti_eq_exteriorPowerCoords j m)]
-  exact ((ContinuousLinearMap.contDiff_exteriorPowerCoords j j m).comp
-    (tupleToCLM 𝕜 j m).contDiff).clm_apply contDiff_const
-
 /-- The exterior product `s 0 ∧ ⋯ ∧ s (j - 1)` of `j` sections of `A`, as a section of
 `(exteriorPower 𝕜 B j).obj A` in the standard coordinates `exteriorPower.piEquiv`. -/
 noncomputable def wedgeSection (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
@@ -583,7 +544,7 @@ theorem fiberMap_exteriorPower_map_wedgeSection (j : ℕ) {A D : FiniteRankBundl
     ((exteriorPower 𝕜 B j).map f).fiberMap x (wedgeSection j A s x) =
       wedgeSection j D (fun k y ↦ f.fiberMap y (s k y)) x := by
   rw [fiberMap_exteriorPower_map]
-  exact exteriorPowerCoords_piEquiv_ιMulti j (f.fiberMap x) (fun k ↦ s k x)
+  exact ContinuousLinearMap.exteriorPowerCoords_piEquiv_ιMulti j (f.fiberMap x) (fun k ↦ s k x)
 
 /-- `detMap f hr` acts on `detSection` by applying `f.fiberMap` to each factor across `hr`. -/
 @[simp] theorem fiberMap_detMap_detSection {A D : FiniteRankBundleCore 𝕜 B}
@@ -612,7 +573,8 @@ theorem localTriv_wedgeSection_snd (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
       exteriorPower.piEquiv 𝕜 A.rank j
         (exteriorPower.ιMulti 𝕜 j fun k ↦ (A.core.localTriv i ⟨x, s k x⟩).2) := by
   simp only [VectorBundleCore.localTriv_apply, indexAt_eq, coordChange_exteriorPower_obj]
-  exact exteriorPowerCoords_piEquiv_ιMulti j (A.core.coordChange x i x) (fun k ↦ s k x)
+  exact ContinuousLinearMap.exteriorPowerCoords_piEquiv_ιMulti j (A.core.coordChange x i x)
+    (fun k ↦ s k x)
 
 /-- The exterior product of `j` continuous sections of `A` is a continuous section of
 `(exteriorPower 𝕜 B j).obj A`. -/
@@ -632,7 +594,7 @@ theorem continuous_wedgeSection (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
   rw [show (TotalSpace.mk' (Fin ((exteriorPower 𝕜 B j).obj A).rank → 𝕜) x₀
     (wedgeSection j A s x₀)).proj = x₀ from rfl,
     ((exteriorPower 𝕜 B j).obj A).trivializationAt_core x₀]
-  exact (((contDiff_piEquiv_ιMulti 𝕜 j A.rank (k := 0)).continuous.continuousAt).comp
+  exact (((exteriorPower.contDiff_piEquiv_ιMulti 𝕜 j A.rank (k := 0)).continuous.continuousAt).comp
     (continuousAt_pi.2 hc)).congr
     (Filter.Eventually.of_forall fun x ↦ (localTriv_wedgeSection_snd j A s x₀ x).symm)
 
