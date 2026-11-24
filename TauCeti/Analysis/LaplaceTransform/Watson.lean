@@ -47,9 +47,13 @@ The integrability of `e^{-xt} G(t)` for `x ≥ σ` is in
 `TauCeti.MeasureTheory.Integral.Exp.Damped`. The terms are evaluated by
 `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos` at a real rate.
 
-The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
-file `DLMFMathlib/Analysis/Asymptotics/Watson.lean`, and generalized from exponents in steps
-of `1` to an arbitrary sequence of complex exponents.
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>):
+the remainder bound and Watson's lemma with exponents in steps of `1` from
+`DLMFMathlib/Analysis/Asymptotics/Watson.lean`, and the statement for an arbitrary sequence of
+exponents from `DLMF/AsymptoticApproximations/Integrals/Watson.lean`
+(`hasAsymptoticExpansion_integral_exp_smul_rpow_seq` on the real line with real exponents,
+`hasAsymptoticExpansion_integral_cexp_smul_cpow_seq` in a sector with complex exponents). The
+form here, on the real line with complex exponents, combines those two statements.
 
 ## References
 
@@ -94,8 +98,11 @@ theorem hasAsymptoticExpansion_laplace {q : ℝ → ℂ} {α c : ℕ → ℂ} {�
     simp [Complex.real_smul]
   -- the Laplace transforms of `q` and of the Gamma terms `t^{α_s - 1}`
   have hLq : HasLaplace q x (∫ t in Ioi (0 : ℝ), cexp (-(x * t)) * q t) :=
-    HasLaplace.intro ((hint.exp_neg_mul_smul_of_le hxσ).congr_fun (fun t _ => hkernel t (q t))
-      measurableSet_Ioi) (setIntegral_congr_fun measurableSet_Ioi fun t _ => by simp)
+    have hI : IntegrableOn (fun t => Real.exp (-x * t) • q t) (Ioi 0) :=
+      integrable_exp_neg_mul_smul_of_le hint
+        ((ae_restrict_mem measurableSet_Ioi).mono fun _ ht => le_of_lt ht) hxσ
+    HasLaplace.intro (hI.congr_fun (fun t _ => hkernel t (q t)) measurableSet_Ioi)
+      (setIntegral_congr_fun measurableSet_Ioi fun t _ => by simp)
   have hLs (s : ℕ) :
       HasLaplace (fun t : ℝ => (t : ℂ) ^ (α s - 1)) x (Gamma (α s) * (x : ℂ) ^ (-α s)) := by
     refine HasLaplace.intro ((integrableOn_cpow_mul_exp_neg_mul_Ioi (hα s) hx').congr_fun

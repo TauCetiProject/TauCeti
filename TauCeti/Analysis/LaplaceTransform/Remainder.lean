@@ -81,7 +81,9 @@ private theorem isBigO_integral_exp_neg_mul_smul_of_integrableOn {G : ℝ → E}
   refine IsBigO.of_bound (K * Real.Gamma s + Real.exp (σ * δ) * A) ?_
   filter_upwards [hexp, eventually_ge_atTop σ, eventually_gt_atTop 0] with x hxe hxσ hx0
   rw [Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _), add_mul]
-  have hI := hint.exp_neg_mul_smul_of_le hxσ
+  have hI : IntegrableOn (fun t => Real.exp (-x * t) • G t) (Ioi 0) :=
+    integrable_exp_neg_mul_smul_of_le hint
+      ((ae_restrict_mem measurableSet_Ioi).mono fun _ ht => le_of_lt ht) hxσ
   rw [← intervalIntegral.integral_interval_add_Ioi hI (hI.mono_set (Ioi_subset_Ioi hδ0.le)),
     intervalIntegral.integral_of_le hδ0.le]
   refine (norm_add_le _ _).trans
