@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.Analysis.Contour.Winding.SegmentSum
@@ -106,7 +107,7 @@ theorem integral_deriv_smul_logDeriv_eq_log_norm_add_I_mul_sub {γ : ℝ → ℂ
       fun t ↦ (deriv γ t • deriv h (γ t)) / h (γ t) := by
     funext t
     rw [logDeriv_apply, smul_eq_mul, smul_eq_mul, mul_div_assoc]
-  have hint := intervalIntegrable_deriv_smul_logDeriv hγ hh hne
+  have hint := hγ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_logDeriv hh hne
   rw [heq] at hint ⊢
   exact integral_deriv_div_eq_log_norm_add_I_mul_sub (c := fun t ↦ h (γ t))
     p.countable_toSet (fun t ht ↦ (hh t ht).continuousAt.comp_continuousWithinAt

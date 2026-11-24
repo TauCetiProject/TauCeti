@@ -20,6 +20,8 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 /-!
 # Planar area of coordinate lines, graphs and rectangles
 
+Mathlib's measurable equivalence `Complex.measurableEquivRealProd` is the map
+`Complex.equivRealProdCLM` (`Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM`).
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure,
@@ -34,6 +36,8 @@ side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
+The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
+(`Complex.measurePreserving_equivRealProdCLM_symm`).
 Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
 (`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
@@ -50,6 +54,12 @@ theorem MeasurableSet.reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : Meas
   exact (Complex.continuous_re.measurable hs).inter (Complex.continuous_im.measurable ht)
 
 namespace Complex
+
+/-- Mathlib's measurable equivalence `ℂ ≃ᵐ ℝ × ℝ`, along which `volume` is preserved, is the map
+`equivRealProdCLM`. -/
+theorem coe_measurableEquivRealProd_eq_equivRealProdCLM :
+    (measurableEquivRealProd : ℂ → ℝ × ℝ) = equivRealProdCLM :=
+  funext fun w ↦ by rw [measurableEquivRealProd_apply, equivRealProdCLM_apply]
 
 /-- A vertical coordinate line has zero planar area. -/
 theorem volume_setOf_re_eq (c : ℝ) : volume {z : ℂ | z.re = c} = 0 := by
@@ -135,6 +145,17 @@ theorem measurePreserving_coordinateSwapCLE :
   exact Complex.volume_preserving_equiv_real_prod.symm.comp
     (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
 
+/-- The real coordinates `(x, y) ↦ x + y i` of the plane preserve area: as a map, the inverse of
+the continuous linear equivalence `Complex.equivRealProdCLM` is the inverse of the measurable
+equivalence `Complex.measurableEquivRealProd`. -/
+theorem measurePreserving_equivRealProdCLM_symm :
+    MeasurePreserving equivRealProdCLM.symm (volume : Measure (ℝ × ℝ)) volume := by
+  have heq : (equivRealProdCLM.symm : ℝ × ℝ → ℂ) = measurableEquivRealProd.symm := by
+    funext p
+    rw [equivRealProdCLM_symm_apply, measurableEquivRealProd_symm_apply, mk_eq_add_mul_I]
+  rw [heq]
+  exact volume_preserving_equiv_real_prod.symm
+
 /-- On a rectangle `s ×ℂ t`, a function of the real part integrates as `volume t` times its
 integral over `s`. -/
 theorem setLIntegral_reProdIm_comp_re (s t : Set ℝ) {F : ℝ → ℝ≥0∞} (hF : Measurable F) :
@@ -197,5 +218,14 @@ theorem volume_preserving_complexToRealEuclidean {ι : Type*} [Fintype ι] :
     ext j
     cases j <;> simp [Function.comp_def, MeasurableEquiv.sumPiEquivProdPi,
       MeasurableEquiv.arrowProdEquivProdArrow])
+
+/-- Splitting complex coordinates into plain functions on real and imaginary blocks preserves
+volume. -/
+theorem volume_preserving_complexToRealPi {ι : Type*} [Fintype ι] :
+    MeasurePreserving (complexToRealPi ι) volume volume := by
+  convert (PiLp.volume_preserving_ofLp (ι ⊕ ι)).comp
+    (volume_preserving_complexToRealEuclidean (ι := ι)) using 1
+  ext z k
+  simp
 
 end TauCeti

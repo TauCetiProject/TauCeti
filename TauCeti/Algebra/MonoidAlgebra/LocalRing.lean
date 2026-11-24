@@ -132,14 +132,11 @@ theorem isLocalHom_lift_one_of_isPGroup (hp : ¬IsUnit (p : R)) (hQ : IsPGroup p
     rw [ker_augmentation_eq_span, Ideal.span_le]
     rintro _ ⟨q, rfl⟩
     exact single_sub_one_mem_of_isMaximal hp hQ 𝔐 q
-  have haug : (MonoidAlgebra.lift R R Q 1 : MonoidAlgebra R Q →+* R) = augmentation R Q :=
-    MonoidAlgebra.ringHom_ext (fun _ ↦ by simp [MonoidAlgebra.lift_single]) fun _ ↦ by
-      simp [MonoidAlgebra.lift_single]
   -- `x` differs from the constant `algebraMap (augmentation x)` by an element of `𝔐`.
   have hdiff : ∀ y : MonoidAlgebra R Q,
       algebraMap R (MonoidAlgebra R Q) (MonoidAlgebra.lift R R Q 1 y) - y ∈ 𝔐 := fun y ↦
     hker <| by
-      rw [RingHom.mem_ker, map_sub, ← RingHom.coe_coe (MonoidAlgebra.lift R R Q 1), haug]
+      rw [RingHom.mem_ker, map_sub, MonoidAlgebra.lift_one_apply]
       simp
   have hmem := 𝔐.add_mem (hdiff x) hx𝔐
   rw [sub_add_cancel] at hmem
@@ -283,7 +280,8 @@ theorem isPGroup_of_isLocalRing (hp : ¬IsUnit (p : R)) [IsLocalRing (MonoidAlge
     rw [← RingHom.comp_apply, augmentation_comp_mapDomainRingHom]
     simp [GroupAlgebra.average, Algebra.smul_def, Finset.card_univ]
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self e with he' | he'
-  · refine single_sub_one_ne_zero (R := R) (g := h) (fun h1 ↦ ?_) (he'.mul_right_eq_zero.mp he)
+  · refine (single_sub_one_ne_zero_iff (R := R) (g := h)).mpr (fun h1 ↦ ?_)
+      (he'.mul_right_eq_zero.mp he)
     rw [h1, orderOf_one] at horder
     exact hqprime.one_lt.ne horder
   · simpa [haug] using he'.map (augmentation R G)

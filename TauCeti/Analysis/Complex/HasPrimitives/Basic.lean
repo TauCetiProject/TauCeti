@@ -19,6 +19,8 @@ primitive there, built from `Complex.wedgeIntegral`. This file records:
   on `ball c r ∩ U`, for convex `U`, is the restriction of a primitive on `ball c r`.
 * `Differentiable.hasDerivAt_smul_integral_comp_mul` -- for an entire `f`, the segment integral
   `w ↦ w ∫₀¹ f(tw) dt` is a primitive of `f`.
+* `Differentiable.hasDerivAt_integral_mul_comp_mul` -- the same for a scalar entire `f`, with `w`
+  inside the integral: `w ↦ ∫₀¹ w f(tw) dt` is a primitive of `f`.
 * `TauCeti.norm_wedgeIntegral_le_of_norm_le_const` and
   `TauCeti.norm_wedgeIntegral_le_of_norm_le_mul_norm` -- norm bounds on
   `Complex.wedgeIntegral z w f` from constant or linear bounds on `Complex.Rectangle z w`.
@@ -79,6 +81,15 @@ theorem Differentiable.hasDerivAt_smul_integral_comp_mul {f : ℂ → E}
         (fun t _ => hg' _)
   rw [he]
   exact (hg' z).sub_const _
+
+/-- For an entire function `f : ℂ → ℂ`, the straight-segment integral `w ↦ ∫₀¹ w f(tw) dt` is a
+primitive of `f`: `Differentiable.hasDerivAt_smul_integral_comp_mul` with `w` moved inside the
+integral. -/
+theorem Differentiable.hasDerivAt_integral_mul_comp_mul {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (z : ℂ) : HasDerivAt (fun w : ℂ => ∫ t : ℝ in 0..1, w * f (t * w)) (f z) z := by
+  simpa only [intervalIntegral.integral_const_mul, smul_eq_mul] using
+    hf.hasDerivAt_smul_integral_comp_mul z
+
 end BallInter
 
 noncomputable section WedgeIntegral

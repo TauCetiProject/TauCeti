@@ -39,6 +39,8 @@ constant monomials, for arbitrary commutative monoids and commutative coefficien
 
 * `TauCeti.MonoidAlgebra.isLocalization_away_mapDomainRingHom`: the induced map of monoid
   algebras is a localization away from the monomial of `x`.
+* `TauCeti.AddMonoidAlgebra.isLocalization_away_mapDomainRingHom`: the same statement for
+  additive monoid algebras, where `x` maps to an additive unit and powers become multiples.
 
 * `AddMonoidAlgebra.isLocalization_mapDomain_of_single` and
   `AddMonoidAlgebra.exists_isLocalization_away_of_exists_add_eq`: localization criteria for
@@ -87,6 +89,45 @@ theorem MonoidAlgebra.isLocalization_away_mapDomainRingHom (f : M →* N)
       exact ⟨n, single z r, by simp [halg, hz]⟩
   · rw [halg, halg] at hab
     exact ⟨0, by rw [mapDomain_injective hf hab]⟩
+
+section Additive
+
+variable {A B : Type*} [AddCommMonoid A] [AddCommMonoid B]
+
+/-- Let `f : A →+ B` be an injective homomorphism of commutative additive monoids, and let `x : A`
+map to an additive unit of `B` such that every element of `B` lands in the image of `f` after
+adding a multiple of `f x`. Then the induced map of additive monoid algebras `R[A] → R[B]` is the
+localization away from the monomial of `x`. -/
+theorem AddMonoidAlgebra.isLocalization_away_mapDomainRingHom (f : A →+ B)
+    (hf : Function.Injective f) (x : A) (hx : IsAddUnit (f x))
+    (hsurj : ∀ y : B, ∃ n : ℕ, y + n • f x ∈ Set.range f) :
+    letI := (AddMonoidAlgebra.mapDomainRingHom R f).toAlgebra
+    IsLocalization.Away (AddMonoidAlgebra.single x (1 : R)) (AddMonoidAlgebra R B) := by
+  let := (AddMonoidAlgebra.mapDomainRingHom R f).toAlgebra
+  have halg (a : AddMonoidAlgebra R A) :
+      algebraMap (AddMonoidAlgebra R A) (AddMonoidAlgebra R B) a =
+        AddMonoidAlgebra.mapDomain f a := by
+    rw [RingHom.algebraMap_toAlgebra, AddMonoidAlgebra.mapDomainRingHom_apply]
+  refine IsLocalization.Away.mk _ ?_ (fun s ↦ ?_) fun a b hab ↦ ?_
+  · obtain ⟨u, hu⟩ := hx
+    refine IsUnit.of_mul_eq_one (AddMonoidAlgebra.single (↑(-u) : B) 1) ?_
+    simp [halg, AddMonoidAlgebra.single_mul_single, ← hu, AddMonoidAlgebra.one_def]
+  · induction s using AddMonoidAlgebra.induction_linear with
+    | zero => exact ⟨0, 0, by simp⟩
+    | add s t hs ht =>
+      obtain ⟨n, a, ha⟩ := hs
+      obtain ⟨k, b, hb⟩ := ht
+      refine ⟨n + k, a * AddMonoidAlgebra.single x 1 ^ k + b * AddMonoidAlgebra.single x 1 ^ n, ?_⟩
+      simp only [map_add, map_mul, map_pow, ← ha, ← hb]
+      ring
+    | single y r =>
+      obtain ⟨n, z, hz⟩ := hsurj y
+      exact ⟨n, AddMonoidAlgebra.single z r, by
+        simp [halg, hz, AddMonoidAlgebra.single_pow, AddMonoidAlgebra.single_mul_single]⟩
+  · rw [halg, halg] at hab
+    exact ⟨0, by rw [AddMonoidAlgebra.mapDomain_injective hf hab]⟩
+
+end Additive
 
 end TauCeti
 

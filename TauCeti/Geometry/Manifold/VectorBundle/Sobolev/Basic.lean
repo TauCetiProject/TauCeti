@@ -7,9 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Sobolev spaces of sections of a vector bundle
@@ -59,6 +61,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   and `TauCeti.SectionChartData.lowerOrdersL` that of order `k + d` into order `k`.
 * `TauCeti.SectionChartData.chartValuesL`: the chart data of a Sobolev section, forgetting all its
   weak derivatives; it is injective (`TauCeti.SectionChartData.chartValuesL_injective`).
+* `TauCeti.SectionChartData.componentsL`: the chart-`i` components of a Sobolev section, as
+  `W^{k,p}` functions on the image of chart `i`.
 * `TauCeti.SectionChartData.constMapL`: a fibrewise map of sections read in every chart as a
   constant linear map `L` of the model fibre, applied to the Sobolev sections by the matrix of `L`
   (`TauCeti.SectionChartData.chartValueL_constMapL_ae`), which lifts the fibre map on the readings
@@ -107,9 +111,15 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   expressions of a continuous section.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
-* `TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`: the chart data of an order-one tuple are
-  weakly differentiable on the chart image, with weak derivative
-  `TauCeti.SectionChartData.chartDerivL` assembled from the weak gradients of the components.
+* `TauCeti.FiniteBundleAtlas.sectionChartData_image_tangentHom`,
+  `TauCeti.FiniteBundleAtlas.sectionChartData_overlap_tangentHom`,
+  `TauCeti.FiniteBundleAtlas.sectionChartData_transition_tangentHom`: one-form chart data share
+  the images, overlaps and transitions of the original atlas.
+* `TauCeti.FiniteBundleAtlas.ae_image_tangentHom_iff`,
+  `TauCeti.FiniteBundleAtlas.ae_overlap_tangentHom_iff`: the corresponding almost-everywhere
+  statements agree for an arbitrary measure on the model.
+* `TauCeti.FiniteBundleAtlas.sectionChartData_coordChange_tangentHom_apply`: one-form chart
+  readings change by composition with the fibre coordinate change and chart derivative.
 * `TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`: continuous linear maps
   into the chartwise Sobolev spaces whose values are those of the components of a Sobolev section
   assemble into a continuous linear map between spaces of Sobolev sections keeping the section.
@@ -623,6 +633,19 @@ theorem chartValuesL_apply (w : C.sobolevSections μ p k) (i : Fin C.n) :
     C.chartValuesL μ p k w i = C.chartValueL μ p k i w :=
   (rfl)
 
+/-- The chart-`i` components of the Sobolev sections: the `W^{k,p}` functions `w i j` on the image
+of chart `i`, one for each vector `j` of the basis `Module.finBasis ℝ F`. -/
+def componentsL (i : Fin C.n) :
+    C.sobolevSections μ p k →L[ℝ] (Fin (finrank ℝ F) → Wkp μ (C.image i) p k) :=
+  (ContinuousLinearMap.proj (R := ℝ)
+    (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p k) i).comp
+    (C.sobolevSections μ p k).subtypeL
+
+@[simp]
+theorem componentsL_apply (i : Fin C.n) (w : C.sobolevSections μ p k) :
+    C.componentsL μ p k i w = (w : C.SobolevData μ p k) i :=
+  (rfl)
+
 /-- An element of the Sobolev sections is determined by its chart data. -/
 theorem chartValuesL_injective : Function.Injective (C.chartValuesL μ p k) := fun w w' h ↦
   eq_of_chartValueL_ae_eq fun i ↦ by rw [← chartValuesL_apply, ← chartValuesL_apply, h]
@@ -961,78 +984,11 @@ theorem chartValueL_ae_of_eq_fiberMap {C₁ : SectionChartData E G₁ S₁}
     value_fiberMap_ae μ p k L hU (w₁ i₁)] with y h₂ h₁ hv
   rw [h₂, h₁, hw]
   simp_rw [hv]
-  have hL := Matrix.toLin_apply (finBasis ℝ G₁) (finBasis ℝ G₂)
-    (LinearMap.toMatrix (finBasis ℝ G₁) (finBasis ℝ G₂) L.toLinearMap)
-    (∑ a, Wkp.value k (w₁ i₁ a) y • finBasis ℝ G₁ a)
-  rw [Matrix.toLin_toMatrix, (finBasis ℝ G₁).repr_sum_self] at hL
-  exact hL.symm
+  exact LinearMap.sum_toMatrix_mulVec_smul _ _ L.toLinearMap _
 
 end FiberMap
 
 end Sobolev
-
-section ChartDeriv
-
-/-! ### The weak derivative of the chart data of an order-one tuple -/
-
-variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E F S)
-  (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
-
-/-- The weak derivative of the chart data in chart `i` of a tuple of order-one Sobolev functions:
-the `Lᵖ` field `y ↦ ∑ j, ⟪∇ (w i j) y, ·⟫ • bⱼ` assembled from the weak gradients of the chart-`i`
-components of `w`, where `b` is the basis `Module.finBasis ℝ F`
-(`TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`). -/
-def chartDerivL (i : Fin C.n) :
-    C.SobolevData μ p 1 →L[ℝ] Lp (E →L[ℝ] F) p (μ.restrict (C.image i)) :=
-  ∑ j, ((((StrongDual.smulRightL ℝ E F).flip (finBasis ℝ F j)).comp
-      (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)).compLpL p _).comp
-    ((Wkp.iteratedGradientL 0).comp ((ContinuousLinearMap.proj (R := ℝ)
-      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (C.image i) p 1) j).comp
-      (ContinuousLinearMap.proj (R := ℝ)
-        (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p 1) i)))
-
-/-- Almost everywhere on the image of chart `i`, `chartDerivL` is the sum over the basis vectors
-`bⱼ` of `F` of the weak gradients of the chart-`i` components, paired with `bⱼ`. -/
-theorem chartDerivL_apply_ae (i : Fin C.n) (w : C.SobolevData μ p 1) :
-    ∀ᵐ y ∂μ.restrict (C.image i), C.chartDerivL μ p i w y =
-      ∑ j, (innerSL ℝ (W1p.gradient (w i j) y)).smulRight (finBasis ℝ F j) := by
-  set L : Fin (finrank ℝ F) → E →L[ℝ] E →L[ℝ] F := fun j ↦
-    ((StrongDual.smulRightL ℝ E F).flip (finBasis ℝ F j)).comp
-      (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)
-  have heq : C.chartDerivL μ p i w =
-      ∑ j, (L j).compLpL p _ (Wkp.iteratedGradientL 0 (w i j)) := by
-    simp only [chartDerivL, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.coe_comp,
-      Function.comp_apply, ContinuousLinearMap.proj_apply, L]
-  have hsum := Lp.coeFn_finsetSum (μ := μ.restrict (C.image i)) (p := p) Finset.univ fun j ↦
-    (L j).compLpL p _ (Wkp.iteratedGradientL 0 (w i j))
-  have hj (j : Fin (finrank ℝ F)) := ContinuousLinearMap.coeFn_compLpL (p := p)
-    (μ := μ.restrict (C.image i)) (L j) (Wkp.iteratedGradientL 0 (w i j))
-  filter_upwards [hsum, ae_all_iff.2 hj] with y hy hy'
-  rw [heq, hy, Finset.sum_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [hy' j, Wkp.iteratedGradientL_apply, Wkp.iteratedGradient_zero]
-  ext v
-  simp [L]
-
-/-- **Weak differentiability of the chart data.** The chart data in chart `i` of a tuple of
-order-one Sobolev functions have weak derivative `chartDerivL` on the image of chart `i`. -/
-theorem hasWeakFDerivOn_chartValueL (i : Fin C.n) (w : C.SobolevData μ p 1) :
-    HasWeakFDerivOn μ (C.image i) (C.chartValueL μ p 1 i w) (C.chartDerivL μ p i w) := by
-  have hsum := HasWeakFDerivOn.sum Finset.univ fun j _ ↦
-    (Wkp.hasWeakFDerivOn_value (w i j)).clm_comp
-      (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (finBasis ℝ F j))
-  refine (hsum.congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [C.chartValueL_apply_ae μ p 1 i w] with y hy
-    simp [hy]
-  · filter_upwards [C.chartDerivL_apply_ae μ p i w] with y hy
-    rw [hy]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    ext v
-    simp
-
-end ChartDeriv
 
 end SectionChartData
 
@@ -1150,6 +1106,72 @@ instance isFiniteMeasure_restrict_sectionChartData_image' (i : Fin A.n) :
   A.isFiniteMeasure_restrict_image μ i
 
 end FiniteMeasure
+
+end FiniteBundleAtlas
+
+namespace FiniteBundleAtlas
+
+section TangentHom
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  (A : FiniteBundleAtlas E M F V)
+
+/-- The chart images of the section chart data of `V`-valued one-forms are those of `A`. -/
+theorem sectionChartData_image_tangentHom (i : Fin A.n) :
+    (A.tangentHom.sectionChartData.image i : Set E) = A.image i :=
+  congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom A i))
+
+/-- The chart overlaps of the section chart data of `V`-valued one-forms are those of `A`. -/
+theorem sectionChartData_overlap_tangentHom (i i' : Fin A.n) :
+    A.tangentHom.sectionChartData.overlap i i' = A.overlap i i' :=
+  (A.tangentHom.sectionChartData_overlap i i').trans (overlap_tangentHom A i i')
+
+/-- On an overlap, the chart transitions of the section chart data of `V`-valued one-forms are
+those of `A`. -/
+theorem sectionChartData_transition_tangentHom {i i' : Fin A.n} {y : E}
+    (hy : y ∈ A.overlap i i') :
+    A.tangentHom.sectionChartData.transition i i' y = A.transition i i' y :=
+  (A.tangentHom.sectionChartData_transition_of_mem (by rwa [overlap_tangentHom])).trans
+    (congrFun (transition_tangentHom A i i') y)
+
+/-- Almost everywhere on a chart image of the section chart data of one-forms is almost everywhere
+on the corresponding chart image of `A`. -/
+theorem ae_image_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i : Fin A.n) {P : E → Prop} :
+    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set E), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [sectionChartData_image_tangentHom]
+
+/-- Almost everywhere on an overlap of the section chart data of one-forms is almost everywhere
+on the corresponding overlap of `A`. -/
+theorem ae_overlap_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i i' : Fin A.n)
+    {P : E → Prop} :
+    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y := by
+  rw [sectionChartData_overlap_tangentHom]
+
+/-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
+one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/
+theorem sectionChartData_coordChange_tangentHom_apply {i i' : Fin A.n} {y : E}
+    (hy : y ∈ A.overlap i i') (η : E →L[ℝ] F) :
+    A.tangentHom.sectionChartData.coordChange i i' y η =
+      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+        (η.comp (fderiv ℝ (A.transition i i') y)) := by
+  have hy' : y ∈ A.tangentHom.overlap i i' := by rwa [overlap_tangentHom]
+  have hτ : A.tangentHom.transition i i' y ∈ A.tangentHom.image i := by
+    rw [transition_tangentHom, image_tangentHom]
+    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  have h := A.tangentHom.coord_eq_coordChange (fun x ↦ (A.tangentHom.triv i).symm x η) hy'
+  rw [A.tangentHom.coord_triv_symm η hτ, A.coord_tangentHom_eq_coordChange _ hy,
+    ← transition_tangentHom, A.tangentHom.coord_triv_symm η hτ, transition_tangentHom] at h
+  rw [A.tangentHom.sectionChartData_coordChange_of_mem hy']
+  exact h.symm
+
+end TangentHom
 
 end FiniteBundleAtlas
 
