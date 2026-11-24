@@ -103,20 +103,7 @@ end Denominator
 
 section CommRing
 
-variable {R : Type*} [CommRing R] {W : ℤ → R}
-
-/-- `invarNum` and `invarDenom` cross-multiply symmetrically in `m` and `n` as soon as the elliptic
-relator vanishes at these four arguments. -/
-private theorem invarNum_mul_invarDenom_of_rel {s m n : ℤ}
-    (h₀ : rel W m n s 0 = 0) (h₁ : rel W m n s s = 0)
-    (h₂ : rel W (m - s) (n - s) s s = 0) (h₃ : rel W (n + s) n (n - s) (m - n) = 0) :
-    invarNum W s m * invarDenom W s n = invarNum W s n * invarDenom W s m := by
-  simp_rw [invarNum, invarDenom]
-  linear_combination (norm := (simp_rw [rel]; ring_nf))
-    h₀ * W m * W n * W (2 * s) ^ 2
-      - (h₁ * W (m - s) * W (n - s)
-        + h₂ * W (m + s) * W (n + s)
-        - h₃ * W (m - n) * W (2 * s)) * W s ^ 2
+variable [CommRing R] {W : ℤ → R}
 
 /-- **The invariance identity for an elliptic net**: `invarNum` and `invarDenom` cross-multiply
 symmetrically in the two indices.
@@ -125,8 +112,13 @@ Over a field, when both `invarDenom W s m` and `invarDenom W s n` are nonzero, t
 equality of the two ratios. Over a general commutative ring a denominator may vanish or be a zero
 divisor. -/
 theorem invarNum_mul_invarDenom (h : IsEllipticNet W) (s m n : ℤ) :
-    invarNum W s m * invarDenom W s n = invarNum W s n * invarDenom W s m :=
-  invarNum_mul_invarDenom_of_rel (h ..) (h ..) (h ..) (h ..)
+    invarNum W s m * invarDenom W s n = invarNum W s n * invarDenom W s m := by
+  -- `ring_nf`, unlike `ring1`, also normalises the indices inside `W`.
+  linear_combination (norm := (simp only [invarNum, invarDenom, rel]; ring_nf))
+    h m n s 0 * W m * W n * W (2 * s) ^ 2
+      - (h m n s s * W (m - s) * W (n - s)
+        + h (m - s) (n - s) s s * W (m + s) * W (n + s)
+        - h (n + s) n (n - s) (m - n) * W (m - n) * W (2 * s)) * W s ^ 2
 
 end CommRing
 

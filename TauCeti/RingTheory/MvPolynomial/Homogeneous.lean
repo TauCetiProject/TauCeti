@@ -25,7 +25,8 @@ expanding the polynomial.
 The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
 notation such as `hp.eval₂_const_mul` and `hp.aeval_smul_of_algebra`, the latter for a scalar
 algebra that may differ from the coefficient algebra; Mathlib supplies `hp.aeval_smul` and
-`hp.eval_smul` themselves. In the same way
+`hp.eval_smul` themselves. For `a = -1` this gives `hp.eval_neg`, and `hp.eval_neg_of_even` in
+even degree. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
@@ -34,7 +35,9 @@ polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records t
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
 by `d`, and `hp.not_dvd_X` records that without zero divisors a homogeneous polynomial of degree at
 least two divides no variable. Without zero divisors, the factors of a homogeneous product are
-homogeneous when the other factor is nonzero (`hp.of_mul_left`, `hp.of_mul_right`).
+homogeneous when the other factor is nonzero (`hp.of_mul_left`, `hp.of_mul_right`), and mapping
+coefficients along an additive monoid homomorphism preserves homogeneity
+(`hp.addMonoidAlgebra_map`).
 `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for `eval` on
 elements of `homogeneousSubmodule`.
 
@@ -94,6 +97,18 @@ theorem aeval_smul_of_algebra {σ R S A : Type*}
   rw [Pi.smul_def]
   simpa only [_root_.MvPolynomial.aeval_def, Algebra.smul_def, map_pow] using
     hp.eval₂_const_mul (algebraMap R A) g (algebraMap S A a)
+
+/-- At `-x`, a homogeneous polynomial of degree `n` takes `(-1) ^ n` times its value at `x`. -/
+theorem eval_neg {σ R : Type*} [CommRing R] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) (x : σ → R) :
+    _root_.MvPolynomial.eval (-x) p = (-1) ^ n * _root_.MvPolynomial.eval x p := by
+  simpa using hp.eval_smul (-1) x
+
+/-- A homogeneous polynomial of even degree takes the same value at `x` and `-x`. -/
+theorem eval_neg_of_even {σ R : Type*} [CommRing R] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) (hn : Even n) (x : σ → R) :
+    _root_.MvPolynomial.eval (-x) p = _root_.MvPolynomial.eval x p := by
+  rw [hp.eval_neg, hn.neg_one_pow, one_mul]
 
 /-- The coefficient of `X_j ^ n` in a homogeneous polynomial of degree `n` is its value at the
 `j`-th basis vector: every other monomial involves a variable other than `X_j`. -/
@@ -238,6 +253,12 @@ theorem of_mul_right {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : M
     {n : ℕ} (h : (p * q).IsHomogeneous n) (hp : p ≠ 0) : q.IsHomogeneous q.totalDegree :=
   of_mul_left (mul_comm p q ▸ h) hp
 
+/-- Mapping coefficients along an additive monoid homomorphism preserves homogeneity. -/
+protected theorem addMonoidAlgebra_map {σ R S : Type*} [CommSemiring R] [CommSemiring S]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (f : R →+ S) :
+    MvPolynomial.IsHomogeneous (AddMonoidAlgebra.map f p) n :=
+  fun d hd ↦ hp fun h0 ↦ hd (by simp [AddMonoidAlgebra.coeff_map, h0])
+
 end MvPolynomial.IsHomogeneous
 
 namespace TauCeti
@@ -252,7 +273,7 @@ theorem eval_coe_homogeneousSubmodule_eq_sum [Fintype σ] [DecidableEq σ] {n : 
     (p : homogeneousSubmodule σ R n) (v : σ → R) :
     eval v (p : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
       (p : MvPolynomial σ R).coeff l * ∏ i, v i ^ l i := by
-  simpa using ((mem_homogeneousSubmodule n _).mp p.2).aeval_eq_sum_finsuppAntidiag v
+  simpa using ((mem_homogeneousSubmodule n _).mp p.property).aeval_eq_sum_finsuppAntidiag v
 
 end TauCeti
 
@@ -297,8 +318,8 @@ theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
     homogeneousComponent 1 φ = ∑ i, φ.coeff (Finsupp.single i 1) • X i := by
   classical
   ext d
-  simp only [coeff_homogeneousComponent, coeff_sum, coeff_smul, coeff_X, smul_eq_mul, mul_ite,
-    mul_one, mul_zero]
+  simp only [coeff_homogeneousComponent, coeff_sum, AddMonoidAlgebra.coeff_smul_apply, coeff_X,
+    smul_eq_mul, mul_ite, mul_one, mul_zero]
   split_ifs with hd
   · obtain ⟨i, rfl⟩ := (Finsupp.sum_eq_one_iff d).1 <| by
       rw [Finsupp.sum, ← Finsupp.degree_apply]

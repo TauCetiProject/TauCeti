@@ -70,7 +70,7 @@ theorem widthIndex_eq_relIndex (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDa
     widthIndex h D E hσ = (Δ.subgroupOf Γ).relIndex (stabilizer Γ E.cusp) := by
   have hc := D.cusp_eq_of_scaling_eq E hσ
   set n := widthIndex h D E hσ
-  have hgen : (⟨D.generator, h D.generator.2⟩ : Γ) = E.generator ^ (n : ℤ) := by
+  have hgen : (⟨D.generator, h D.generator.property⟩ : Γ) = E.generator ^ (n : ℤ) := by
     refine Subtype.ext ((MulAut.conj E.scaling).injective ?_)
     rw [MulAut.conj_apply, MulAut.conj_apply, Subgroup.coe_zpow,
       E.scaling_mul_generator_zpow_mul_inv, ← hσ, Subgroup.coe_mk,
@@ -87,7 +87,7 @@ theorem widthIndex_eq_relIndex (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDa
       rw [← hgen]
       exact Subtype.ext (by simpa using congrArg Subtype.val hk)
     · rw [Subgroup.zpowers_le, ← hgen]
-      refine ⟨D.generator.2, ?_⟩
+      refine ⟨D.generator.property, ?_⟩
       simpa [mem_stabilizer_iff, Subgroup.smul_def, hc] using D.generator_mem_stabilizer
   rw [← Subgroup.inf_relIndex_right, hinf, ← E.zpowers_generator, Subgroup.relIndex_zpowers_zpow,
     E.orderOf_generator_eq_zero]

@@ -43,8 +43,8 @@ the slices of a convex body, and are the objects of Vaaler's cube-slicing theore
 * `TauCeti.LogConcave.convex_support`, `TauCeti.LogConcave.convex_ge`,
   `TauCeti.LogConcave.convex_gt`: the support and the superlevel sets of a log-concave function
   are convex.
-* `TauCeti.LogConcave.mul`, `TauCeti.LogConcave.comp_linearMap`: products and linear
-  substitutions preserve log-concavity.
+* `TauCeti.LogConcave.mul`, `TauCeti.LogConcave.comp_affineMap`: products and affine
+  substitutions (in particular linear maps and translations) preserve log-concavity.
 * `TauCeti.LogConcave.apply_le_apply_zero`: an even log-concave function is largest at the
   origin.
 
@@ -65,7 +65,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {E F : Type*} [AddCommMonoid E] [Module ℝ E] [AddCommMonoid F] [Module ℝ F]
+variable {E : Type*} [AddCommMonoid E] [Module ℝ E]
 
 /-- A function `f : E → ℝ≥0∞` on a real vector space is **log-concave** if
 `f x ^ a * f y ^ b ≤ f (a • x + b • y)` for all `x`, `y` and all weights `0 ≤ a`, `0 ≤ b` with
@@ -112,14 +112,16 @@ theorem convex_support (hf : LogConcave f) : Convex ℝ (Function.support f) := 
 protected theorem mul (hf : LogConcave f) (hg : LogConcave g) : LogConcave (f * g) := by
   intro x y a b ha hb hab
   simp only [Pi.mul_apply, ENNReal.mul_rpow_of_nonneg _ _ ha, ENNReal.mul_rpow_of_nonneg _ _ hb]
-  calc f x ^ a * g x ^ a * (f y ^ b * g y ^ b) = f x ^ a * f y ^ b * (g x ^ a * g y ^ b) := by
-        ring
-    _ ≤ f (a • x + b • y) * g (a • x + b • y) := mul_le_mul' (hf ha hb hab) (hg ha hb hab)
+  rw [mul_mul_mul_comm]
+  exact mul_le_mul' (hf ha hb hab) (hg ha hb hab)
 
-/-- Composing a log-concave function with a linear map gives a log-concave function. -/
-theorem comp_linearMap (hf : LogConcave f) (L : F →ₗ[ℝ] E) : LogConcave (f ∘ L) := by
+/-- Composing a log-concave function with an affine map gives a log-concave function. This
+covers linear substitutions (`LinearMap.toAffineMap`) and translations. -/
+theorem comp_affineMap {G H : Type*} [AddCommGroup G] [Module ℝ G] [AddCommGroup H] [Module ℝ H]
+    {f : G → ℝ≥0∞} (hf : LogConcave f) (L : H →ᵃ[ℝ] G) : LogConcave (f ∘ L) := by
   intro x y a b ha hb hab
-  simpa only [Function.comp_apply, map_add, map_smul] using hf (x := L x) (y := L y) ha hb hab
+  simpa only [Function.comp_apply, Convex.combo_affine_apply hab] using
+    hf (x := L x) (y := L y) ha hb hab
 
 /-- **An even log-concave function is largest at the origin.** Applied to the measures of the
 parallel slices of a symmetric convex body, this says that the central slice is the largest. -/
@@ -159,19 +161,12 @@ theorem logConcave_indicator_iff {s : Set E} {c : ℝ≥0∞} (hc : c ≠ 0) :
 /-- A function `x ↦ exp (g x)` is log-concave if and only if `g` is concave. -/
 theorem logConcave_ofReal_exp_iff {g : E → ℝ} :
     LogConcave (fun x ↦ ENNReal.ofReal (Real.exp (g x))) ↔ ConcaveOn ℝ univ g := by
-  have key (x y : E) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
-      ENNReal.ofReal (Real.exp (g x)) ^ a * ENNReal.ofReal (Real.exp (g y)) ^ b =
-        ENNReal.ofReal (Real.exp (a * g x + b * g y)) := by
-    rw [ENNReal.ofReal_rpow_of_nonneg (Real.exp_pos _).le ha,
-      ENNReal.ofReal_rpow_of_nonneg (Real.exp_pos _).le hb, ← Real.exp_mul, ← Real.exp_mul,
-      ← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, mul_comm (g x), mul_comm (g y)]
-  refine ⟨fun h ↦ ⟨convex_univ, fun x _ y _ a b ha hb hab ↦ ?_⟩,
-    fun h x y a b ha hb hab ↦ ?_⟩
-  · have := h (x := x) (y := y) ha hb hab
-    rw [key x y ha hb, ENNReal.ofReal_le_ofReal_iff (Real.exp_pos _).le, Real.exp_le_exp] at this
-    simpa only [smul_eq_mul] using this
-  · rw [key x y ha hb]
-    exact ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 (h.2 trivial trivial ha hb hab))
+  -- Turns each weighted product of exponentials into a single exponential.
+  have key (t a : ℝ) : ENNReal.ofReal (Real.exp t) ^ a = ENNReal.ofReal (Real.exp (a * t)) := by
+    rw [ENNReal.ofReal_rpow_of_pos (Real.exp_pos t), ← Real.exp_mul, mul_comm]
+  simp only [logConcave_def, ConcaveOn, key, ← ENNReal.ofReal_mul (Real.exp_pos _).le,
+    ← Real.exp_add, ENNReal.ofReal_le_ofReal_iff (Real.exp_pos _).le, Real.exp_le_exp,
+    smul_eq_mul, convex_univ, mem_univ, true_and, forall_const]
 
 /-- The Gaussian `x ↦ exp (-c ‖x‖ ^ 2)` on a real normed space is log-concave for `0 ≤ c`. -/
 theorem logConcave_ofReal_exp_neg_mul_sq_norm {G : Type*} [SeminormedAddCommGroup G]

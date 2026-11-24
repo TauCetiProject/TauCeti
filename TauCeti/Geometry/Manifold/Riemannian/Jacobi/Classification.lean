@@ -43,7 +43,7 @@ namespace TauCeti.Manifold
 
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
@@ -60,8 +60,8 @@ theorem IsJacobiFieldOn.exists_eq_affine_smul_add_curvatureCosine_smul_add_curva
     ∃ P Q : ∀ t, TangentSpace I (γ t),
       (∀ t ∈ s, alongCurveWithin (leviCivitaConnection I M) γ P s t = 0) ∧
       (∀ t ∈ s, alongCurveWithin (leviCivitaConnection I M) γ Q s t = 0) ∧
-      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ P (γ t)) s t) ∧
-      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q (γ t)) s t) ∧
+      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ P (γ t)) s t) ∧
+      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Q (γ t)) s t) ∧
       P a = V a - (ℝ ∙ curveVelocityWithin I γ s a).starProjection (V a) ∧
       Q a = alongCurveWithin (leviCivitaConnection I M) γ V s a -
         (ℝ ∙ curveVelocityWithin I γ s a).starProjection

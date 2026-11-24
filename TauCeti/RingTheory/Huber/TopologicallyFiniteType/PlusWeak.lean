@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
+
 /-!
 # Morphisms of Huber pairs of +weakly finite type
 
@@ -44,6 +46,9 @@ by definition.
 * `TauCeti.Huber.Pair.Hom.IsPlusWeaklyFiniteType.comp`: morphisms of +weakly finite type are
   stable under composition, with the union of `E` for the second morphism and the image of `E`
   for the first.
+* `TauCeti.Huber.Pair.Hom.IsPlusWeaklyFiniteType.of_comp`: if the composite of morphisms of Huber
+  pairs `(A, A⁺) → (B, B⁺) → (C, C⁺)` is of +weakly finite type, with `C` complete and Hausdorff,
+  then so is `(B, B⁺) → (C, C⁺)`.
 
 ## References
 
@@ -170,5 +175,29 @@ theorem IsPlusWeaklyFiniteType.comp {f : Hom S U} {g : Hom U V} (hg : g.IsPlusWe
   rw [hE']
   exact plusClosure_le hQ.isOpen <| Set.union_subset hgU fun _ hc ↦
     subset_plusClosure X (Or.inr (Finset.mem_coe.mpr (Finset.mem_union_right _ hc)))
+
+/-- **Morphisms of +weakly finite type cancel on the right** (Huber 1996, §1.2, the remarks
+following Definition 1.2.1): if `f : (A, A⁺) → (B, B⁺)` and `g : (B, B⁺) → (C, C⁺)` are morphisms
+of Huber pairs with `C` complete and Hausdorff, and `g ∘ f` is of +weakly finite type, then `g` is
+of +weakly finite type. The ring homomorphism cancels by `IsTopologicallyFiniteType.of_comp`, and
+the same finite set `E` witnesses `C⁺ = plusClosure (g(B⁺) ∪ E)` since `g(f(A⁺)) ⊆ g(B⁺)`. -/
+theorem IsPlusWeaklyFiniteType.of_comp {D : Type*} [CommRing D] [UniformSpace D]
+    [IsUniformAddGroup D] [IsTopologicalRing D] [CompleteSpace D] [T0Space D] [IsHuberRing D]
+    {W : Pair D} {f : Hom S U} {g : Hom U W} (h : (g.comp f).IsPlusWeaklyFiniteType) :
+    g.IsPlusWeaklyFiniteType := by
+  obtain ⟨htft, E, hE⟩ := isPlusWeaklyFiniteType_iff.mp h
+  rw [toRingHom_comp] at htft
+  have hEW : (E : Set D) ⊆ W.plus := hE ▸ fun _ hd ↦ subset_plusClosure _ (Or.inr hd)
+  refine isPlusWeaklyFiniteType_of_plus_le
+    (htft.of_comp f.continuous_toRingHom g.continuous_toRingHom) E hEW ?_
+  have hQ := isRingOfIntegralElements_plusClosure fun _ hd ↦
+    W.isRingOfIntegralElements.le_powerBoundedSubring
+      (g.plusClosure_image_union_le hEW (subset_plusClosure _ hd))
+  have := hQ.isIntegrallyClosedIn
+  rw [hE]
+  refine plusClosure_le hQ.isOpen ?_
+  rintro _ (⟨a, ha, rfl⟩ | hd)
+  · exact subset_plusClosure _ (Or.inl ⟨f.toRingHom a, f.map_mem_plus a ha, by simp⟩)
+  · exact subset_plusClosure _ (Or.inr hd)
 
 end TauCeti.Huber.Pair.Hom

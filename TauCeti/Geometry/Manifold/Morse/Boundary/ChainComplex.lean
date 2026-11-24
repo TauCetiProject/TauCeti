@@ -49,6 +49,7 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 * `morseBoundaryAt`: the mod-two Morse boundary from index `n + 1` to index `n`.
 * `morseBoundaryAt_comp_morseBoundaryAt`: consecutive graded boundaries compose to zero.
 * `mapDomain_morseBoundaryAt`: the graded boundary is the restriction of the total boundary.
+* `morseBoundary_mapDomain_eq_zero_of_index_zero`: chains of index zero are cycles.
 * `morseComplex`: the mod-two Morse chain complex, indexed by `ℕ`.
 * `finrank_morseComplex_X`: its term in degree `n` has dimension the number of critical points of
   index `n`.
@@ -141,9 +142,21 @@ theorem mapDomain_morseBoundaryAt {n : ℕ}
       (h.morseBoundaryAt_apply hf c ⟨r, hr⟩)
   · -- Outside index `n` both sides vanish: the left side by support, the right side because every
     -- boundary coefficient from index `n + 1` to `r` is zero.
-    rw [Finsupp.mapDomain_of_notMem_range _ _ fun ⟨q, hq⟩ ↦ hr (hq ▸ q.2), Finsupp.sum]
+    rw [Finsupp.mapDomain_of_notMem_range _ _ fun ⟨q, hq⟩ ↦ hr (hq ▸ q.property), Finsupp.sum]
     refine (Finset.sum_eq_zero fun p _ ↦ ?_).symm
     rw [h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf (by grind), mul_zero]
+
+/-- **Chains of index zero are cycles.** The total mod-two Morse boundary vanishes on chains of
+critical points of index zero, since a critical point of index zero bounds no trajectories to a
+critical point of lower index. -/
+theorem morseBoundary_mapDomain_eq_zero_of_index_zero
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = 0} →₀ ZMod 2) :
+    h.morseBoundary hf (c.mapDomain Subtype.val) = 0 := by
+  ext r
+  rw [morseBoundary_apply, Finsupp.sum_mapDomain_index (fun _ ↦ zero_mul _) fun _ _ _ ↦ add_mul ..]
+  refine Finset.sum_eq_zero fun p _ ↦ ?_
+  dsimp only
+  rw [h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf (by grind), mul_zero]
 
 /-- **The graded mod-two Morse boundary squares to zero.** -/
 @[simp]
@@ -225,7 +238,7 @@ theorem isZero_morseComplex_X_of_finrank_lt {n : ℕ} (hn : finrank ℝ E < n) :
     IsZero ((h.morseComplex hf).X n) := by
   rw [morseComplex_X, ModuleCat.isZero_iff_subsingleton]
   have : IsEmpty {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} :=
-    ⟨fun p ↦ (manifoldMorseIndex_le_finrank.trans_lt hn).ne p.2⟩
+    ⟨fun p ↦ (manifoldMorseIndex_le_finrank.trans_lt hn).ne p.property⟩
   infer_instance
 
 /-- The mod-two Morse homology is finite-dimensional. -/
