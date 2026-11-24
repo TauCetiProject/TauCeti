@@ -596,7 +596,7 @@ omit [IsManifold J ∞ N]
 /-- **Uniqueness of horizontal geodesic lifts.** Two geodesics in `M` on a preconnected parameter
 set `s` that have the same projection in `N` on `s`, pass through the same point at some `t₀ ∈ s`,
 and both have horizontal velocity at `t₀` agree throughout `s`. -/
-theorem eqOn_of_isGeodesicCurveOn_horizontalLift [I.Boundaryless] [T2Space M]
+theorem eqOn_of_isGeodesicCurveOn_horizontalLift [T2Space M]
     {γ₁ γ₂ : ℝ → M} {s : Set ℝ} {t₀ : ℝ}
     (hγ₁ : IsGeodesicCurveOn I γ₁ s) (hγ₂ : IsGeodesicCurveOn I γ₂ s)
     (hs : IsPreconnected s) (hfγ : EqOn (f ∘ γ₁) (f ∘ γ₂) s) (ht₀ : t₀ ∈ s)
@@ -611,10 +611,8 @@ theorem eqOn_of_isGeodesicCurveOn_horizontalLift [I.Boundaryless] [T2Space M]
     h.isSubmersion.contMDiff.mdifferentiableAt (by simp)
   have htan : tangentMap I J f (curveVelocityLiftWithin I γ₁ s t₀) =
       tangentMap I J f (curveVelocityLiftWithin I γ₂ s t₀) := by
-    rw [tangentMap_curveVelocityLiftWithin hf₁ (hγ₁.mdifferentiableOn t₀ ht₀)
-        (hγ₁.uniqueDiffOn t₀ ht₀).uniqueMDiffWithinAt,
-      tangentMap_curveVelocityLiftWithin hf₂ (hγ₂.mdifferentiableOn t₀ ht₀)
-        (hγ₂.uniqueDiffOn t₀ ht₀).uniqueMDiffWithinAt]
+    rw [tangentMap_curveVelocityLiftWithin hf₁ (hγ₁.mdifferentiableOn t₀ ht₀),
+      tangentMap_curveVelocityLiftWithin hf₂ (hγ₂.mdifferentiableOn t₀ ht₀)]
     exact (hfγ.eventuallyEq_of_mem self_mem_nhdsWithin).curveVelocityLiftWithin_eq
       (congrArg f hpt)
   rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply] at htan ⊢
@@ -694,7 +692,7 @@ theorem exists_Ioo_isGeodesicCurveOn_horizontalLift [I.Boundaryless] [J.Boundary
     exact hhor₀ (1 * r + (-t₀)) (hmaps hr)
 
 private theorem exists_global_horizontalLift_from
-    [I.Boundaryless] [T2Space M] [J.Boundaryless] [T2Space N]
+    [I.Boundaryless] [T2Space M] [T2Space N]
     {c₀ : ℝ → N} {p : M} {q : N} {w : TangentSpace J q}
     (hq : f p = q) (hcomp : IsGeodesicallyCompleteAt I M p)
     (hc₀ : IsGeodesicCurveOnFrom J c₀ univ q w) :
@@ -726,7 +724,7 @@ private theorem exists_global_horizontalLift_from
 geodesically complete at `p` and `c` is an all-time geodesic in `N` with `f p = c t₀`, then there
 exists an all-time horizontal geodesic `γ` in `M` with `γ t₀ = p` and `f ∘ γ = c`. -/
 theorem exists_isGeodesicCurve_horizontalLift
-    [I.Boundaryless] [T2Space M] [J.Boundaryless] [T2Space N]
+    [I.Boundaryless] [T2Space M] [T2Space N]
     {c : ℝ → N} {t₀ : ℝ} {p : M} (hc : IsGeodesicCurve J c) (hp : f p = c t₀)
     (hcomp : IsGeodesicallyCompleteAt I M p) :
     ∃ γ : ℝ → M, IsGeodesicCurve I γ ∧ γ t₀ = p ∧ f ∘ γ = c ∧
@@ -765,7 +763,7 @@ metrically complete for its Riemannian distance and `c` is an all-time geodesic 
 `f p = c t₀`, then `c` lifts to an all-time horizontal geodesic `γ` in `M` with `γ t₀ = p` and
 `f ∘ γ = c`. -/
 theorem exists_isGeodesicCurve_horizontalLift_of_completeSpace
-    {M : Type*} [EMetricSpace M] [ChartedSpace H M] [I.Boundaryless] [J.Boundaryless] [T2Space N]
+    {M : Type*} [EMetricSpace M] [ChartedSpace H M] [I.Boundaryless] [T2Space N]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
     [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
     [IsRiemannianManifold I M] [CompleteSpace M]

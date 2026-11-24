@@ -158,7 +158,7 @@ private theorem symplecticWeylDimensionNumerator_succ_of_colLen_le_one
       = (∏ k ∈ range n, ((2 * k + 1).factorial : ℤ))
         * ((μ.rowLen 0 + 2 * n + 1).descFactorial (2 * n + 1) : ℤ) := by
   have h' : ∀ j, 0 < j → μ.rowLen j = 0 := fun j hj =>
-    YoungDiagram.rowLen_eq_zero_of_colLen_le (h.trans hj)
+    YoungDiagram.rowLen_eq_zero_iff.mpr (h.trans hj)
   rw [symplecticWeylDimensionNumerator_eq_prod_prod, prod_range_succ',
     ← prod_range_reflect (fun k => ((2 * k + 1).factorial : ℤ)) n]
   congr 1

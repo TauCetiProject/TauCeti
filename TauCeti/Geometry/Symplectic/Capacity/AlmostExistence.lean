@@ -29,12 +29,13 @@ of `F` in `(a, b)`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.ae_hasContractibleClosedCharacteristic`). Hence every
 level in `(a, b)` has the contractible almost existence property in `W`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence`). Since the relative
-capacity in `W` of a subset of `W` is bounded by the absolute capacity `c°_HZ(W)`, finiteness of
-`c°_HZ(W)` gives the contractible almost existence property in `W` on every nonempty regular level
-of `F` whose sublevel sets just above it are compact and lie in `W`
-(`IsNondegenerate.hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top`). This is
-Proposition 6.3 of Barraud–Damian–Humilière–Oancea for a domain `W`, for instance a Liouville
-domain inside its completion; `W = M` gives the statement for the manifold itself.
+capacity in `W` of a subset of `U` is bounded by the capacity `c°_HZ(U; W)` of `U` in `W`,
+finiteness of `c°_HZ(U; W)` gives the contractible almost existence property in `W` on every
+nonempty regular level of `F` whose sublevel sets just above it are compact and lie in `U` and in
+`W` (`IsNondegenerate.hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top`). For
+`U = W` this is Proposition 6.3 of Barraud–Damian–Humilière–Oancea for a domain `W`, for instance
+a Liouville domain inside its completion, and `W = M` gives the statement for the manifold
+itself. Since `c°_HZ(U; W) ≤ c°_HZ(W)` for `U ⊆ W`, the hypothesis on `U` is the weaker one.
 
 The monotonicity argument
 (`IsNondegenerate.ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE`) provides, for
@@ -64,8 +65,8 @@ accumulate only at rest points.
   hypotheses, finite relative capacity gives the contractible almost existence property on every
   level in `(a, b)`.
 * `IsNondegenerate.hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top`: finiteness of
-  `c°_HZ(W)` implies the contractible almost existence property in `W` of every nonempty regular
-  level with compact sublevel sets inside `W` just above it, Proposition 6.3.
+  `c°_HZ(U; W)` implies the contractible almost existence property in `W` of every nonempty
+  regular level with compact sublevel sets inside `U` and `W` just above it, Proposition 6.3.
 
 ## References
 
@@ -93,7 +94,7 @@ namespace IsNondegenerate
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M] {σ : SmoothTwoForm I M}
-  {W Z : Set M} {F : M → ℝ}
+  {W U Z : Set M} {F : M → ℝ}
 
 /-- **The Hamiltonian vector field cut off outside a compact sublevel set.** For `m < b` with
 `{F ≤ b}` compact, the field `ψ(F) X_F`, with `ψ` a smooth step from `1` on `(-∞, m]` to `0` on
@@ -271,14 +272,15 @@ theorem hasContractibleAlmostExistence (hσ : σ.IsNondegenerate) (hF : ContMDif
 
 /-- **Finite capacity implies contractible almost existence** (Barraud–Damian–Humilière–Oancea,
 Proposition 6.3, after Hofer–Zehnder and Struwe). Let the model `I` be boundaryless and `σ`
-nondegenerate, let `W ⊆ M` have finite `π₁`-sensitive Hofer–Zehnder capacity `c°_HZ(W)`, and let
-`F` be smooth. Every nonempty regular level `F⁻¹(c)` such that, for some `b > c`, `{F ≤ b}` is
-compact and `{F < b}` lies in `W`, has the contractible almost existence property in `W`. For
-`W = M` this is almost existence in the whole manifold. -/
+nondegenerate, let `U, W ⊆ M` with finite `π₁`-sensitive Hofer–Zehnder capacity `c°_HZ(U; W)`,
+and let `F` be smooth. Every nonempty regular level `F⁻¹(c)` such that, for some `b > c`,
+`{F ≤ b}` is compact and `{F < b}` lies in `U` and in `W`, has the contractible almost existence
+property in `W`. For `U = W` this is the statement for the capacity `c°_HZ(W)`, and `W = M` gives
+almost existence in the whole manifold. -/
 theorem hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top [I.Boundaryless]
     (hσ : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) ∞ F)
-    (hcap : σ.contractibleHZCapacity W ≠ (∞ : ℝ≥0∞)) {b c : ℝ} (hcb : c < b)
-    (hcpt : IsCompact {x | F x ≤ b}) (hW : {x | F x < b} ⊆ W)
+    (hcap : σ.contractibleHZCapacity W U ≠ (∞ : ℝ≥0∞)) {b c : ℝ} (hcb : c < b)
+    (hcpt : IsCompact {x | F x ≤ b}) (hU : {x | F x < b} ⊆ U) (hW : {x | F x < b} ⊆ W)
     (hreg : IsRegularValue I 𝓘(ℝ) F c) (hne : ∃ x, F x = c) :
     σ.HasContractibleAlmostExistence W F c := by
   -- `F` is open at a point of the regular level, so its range contains a neighbourhood of `c`.
@@ -297,16 +299,19 @@ theorem hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top [I.Bound
   -- Apply the relative theorem on `(c - ε' / 2, c + ε')` with `Z = {F < c - ε' / 2}`.
   obtain ⟨y, hy⟩ := hball (show c - 3 * ε' / 4 ∈ Ioo (c - ε') (c + ε') from
     ⟨by linarith, by linarith⟩)
-  have hWc : {x | F x < c + ε'} ⊆ W := fun z hz ↦ hW (by rw [mem_ofPred_eq] at hz ⊢; linarith)
+  have hsub : {x | F x < c + ε'} ⊆ {x | F x < b} := fun z hz ↦ by
+    rw [mem_ofPred_eq] at hz ⊢; linarith
+  have hWc : {x | F x < c + ε'} ⊆ W := hsub.trans hW
   refine hσ.hasContractibleAlmostExistence hF
     (a := c - ε' / 2) (b := c + ε') (Z := {y | F y < c - ε' / 2})
     (fun s hs ↦ hcpt.of_isClosed_subset (isClosed_le hF.continuous continuous_const)
       fun z hz ↦ by rw [mem_ofPred_eq] at hz ⊢; linarith) hWc
     ((Ioo_subset_Ioo_left (by linarith)).trans hball)
     (fun _ hz ↦ by rw [mem_ofPred_eq] at hz ⊢; exact hz.le)
-    (ne_top_of_le_ne_top hcap (relContractibleHZCapacity_le_contractibleHZCapacity hWc
+    (ne_top_of_le_ne_top hcap ((relContractibleHZCapacity_le_contractibleHZCapacity
       ⟨y, mem_interior_iff_mem_nhds.2 <| (isOpen_lt hF.continuous continuous_const).mem_nhds
-        (by rw [mem_ofPred_eq]; linarith)⟩))
+        (by rw [mem_ofPred_eq]; linarith)⟩).trans
+      (contractibleHZCapacity_mono subset_rfl (hsub.trans hU))))
     ⟨by linarith, by linarith⟩
 
 end IsNondegenerate

@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.GroupTheory.Exponent
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Subfield
 import TauCeti.GroupTheory.ExponentPrime
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import Mathlib.FieldTheory.PrimitiveElement
 
 /-!

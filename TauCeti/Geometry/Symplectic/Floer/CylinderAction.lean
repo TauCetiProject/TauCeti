@@ -138,6 +138,8 @@ the whole cylinder.
 
 ## Main results
 
+* `TauCeti.Floer.neg_setIntegral_fderiv_le_setIntegral`: the integrated curvature of a homotopy
+  along a map is bounded below by `-∫_a^b c` for `-∂_s G ≤ c(s)`.
 * `TauCeti.Floer.neg_setIntegral_fderiv_linearHomotopy_le`: the integrated curvature of a linear
   homotopy with a monotone profile along a map is bounded below by `-(β(b) - β(a)) ∫₀¹ B` for
   `H₀ - H₁ ≤ B`.
@@ -220,6 +222,43 @@ theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M →
     (hβ.comp contDiff_fst).contMDiff.comp contMDiff_fst
   exact ((contMDiff_uncurry_comp_snd hH₀).add (hs.smul ((contMDiff_uncurry_comp_snd hH₁).sub
     (contMDiff_uncurry_comp_snd hH₀)))).congr fun p ↦ linearHomotopy_def β p.1 p.2
+
+/-- The reparametrization `(s, t) ↦ K_{(β(s), t)}` of a `Cⁿ` family of Hamiltonians on a manifold by
+a `Cⁿ` function `β` is a `Cⁿ` family of Hamiltonians. -/
+theorem contMDiff_uncurry_reparam {n : ℕ∞} {K : ℝ × ℝ → M → ℝ} {β : ℝ → ℝ}
+    (hβ : ContDiff ℝ n β) (hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry fun w : ℝ × ℝ ↦ K (β w.1, w.2)) :=
+  hK.comp ((((hβ.comp contDiff_fst).prodMk contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
+    contMDiff_snd)
+
+/-- **The integrated curvature of a homotopy along a map.** Let `G_z`, `z = (s, t)`, be a `C¹`
+family of Hamiltonians on a manifold and `u` a `C¹` map. If `-∂_s G(s, t, u(s, t)) ≤ c(s)` on
+`[a, b] × [0, 1]` for a function `c` integrable on `[a, b]`, then minus the integral of the
+curvature `∂_s G` along `u` over the rectangle is at most `∫_a^b c`. -/
+theorem neg_setIntegral_fderiv_le_setIntegral {G : ℝ × ℝ → M → ℝ}
+    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} {c : ℝ → ℝ} (hc : IntegrableOn c (Icc a b))
+    (hGc : ∀ z ∈ Icc a b ×ˢ Icc 0 1, -deriv (fun s ↦ G (s, z.2) (u z)) z.1 ≤ c z.1) :
+    -∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤
+      ∫ s in Icc a b, c s := by
+  have hcurv : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
+    (continuous_fderiv_of_contMDiff hu hG).clm_apply continuous_const
+  -- On the rectangle, the restricted Lebesgue measure is the product of the restrictions.
+  have hci : IntegrableOn (fun z : ℝ × ℝ ↦ c z.1) (Icc a b ×ˢ Icc 0 1) := by
+    rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
+    exact Integrable.comp_fst hc _
+  have hle : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1,
+      -fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal ≤ ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 :=
+    setIntegral_mono_on hcurv.neg.integrableOn_Icc_prod_Icc hci
+      (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦ by
+        have hd : ContDiff ℝ 1 fun w ↦ G w (u z) :=
+          contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))
+        rw [stdComplexLineReal_eq,
+          fderiv_apply_mk_one_zero (hd.differentiable one_ne_zero z)]
+        exact hGc z hz
+  have hrhs : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, c z.1 = ∫ s in Icc a b, c s := by
+    simpa using setIntegral_Icc_prod_comp_fst c zero_le_one
+  rwa [integral_neg, hrhs] at hle
 
 /-- **The integrated curvature of a linear homotopy along a map.** Let `H₀` and `H₁` be `C¹`
 time-dependent Hamiltonians on a manifold, `β` a monotone `C¹` profile and `u` a continuous map.
@@ -674,14 +713,10 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_of_mono
       contractibleLoopAction ω.val (fun t ↦ G (a, t)) (fun t ↦ u (a, t)) := by
   have h := hω.contractibleLoopAction_le_contractibleLoopAction_sub_integral hωe hG hu hper hab hv
     J hJ hfloer
-  -- `∂_s G` is the derivative of the monotone functions `s ↦ G_{(s, t)}(x)`.
-  have hnonneg : 0 ≤ ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
-    setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
-      have hd : ContDiff ℝ 1 fun w ↦ G w (u z) :=
-        contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))
-      rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero (u := fun w ↦ G w (u z))
-        (hd.differentiable one_ne_zero z)]
-      exact (hmono z.2 (u z)).deriv_nonneg
+  have hc := Floer.neg_setIntegral_fderiv_le_setIntegral (a := a) (b := b) hG
+    (hu.of_le one_le_two) integrableOn_zero fun z _ ↦
+      neg_nonpos.mpr (hmono z.2 (u z)).deriv_nonneg
+  simp only [integral_zero] at hc
   linarith
 
 /-- **The action shift of a linear homotopy.** Let `ω` be a nondegenerate weakly exact two-form on

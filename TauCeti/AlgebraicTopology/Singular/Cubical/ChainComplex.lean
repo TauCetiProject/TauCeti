@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Topology.Category.TopCat.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
 
 /-!
@@ -32,6 +33,8 @@ simplicial singular chain complex.
   an empty space vanish.
 * `TauCeti.NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology`: if the normalized
   cubical homology vanishes in dimension `n + 1`, every `(n + 1)`-cycle is a boundary.
+* `TauCeti.normalizedCubicalChainComplex_homologyπ_eq_iff`: two cycles have the same homology
+  class exactly when the difference of their chains is a boundary.
 -/
 
 @[expose] public section
@@ -114,6 +117,19 @@ theorem normalizedCubicalChainComplexXEquiv_d_apply (X : TopCat.{u}) (n : ℕ)
         (normalizedCubicalChainComplexXEquiv X (n + 1) g) :=
   normalizedCubicalChainComplex_obj_d_apply X n g
 
+/-- The boundary of a cycle of the normalized cubical chain complex vanishes, for every
+reindexing of its degree `q` as `p + 1`. -/
+theorem NormalizedCubicalChain.boundary_cast_iCycles_eq_zero {X : TopCat.{u}} {q : ℕ}
+    (z : ((normalizedCubicalChainComplex R).obj X).cycles q) (p : ℕ) (hp : q = p + 1) :
+    NormalizedCubicalChain.boundary X R p
+      (NormalizedCubicalChain.cast R hp
+        ((((normalizedCubicalChainComplex R).obj X).iCycles q).hom z)) = 0 := by
+  subst hp
+  exact (congrArg (NormalizedCubicalChain.boundary X R p)
+    (NormalizedCubicalChain.cast_rfl R _)).trans
+      ((normalizedCubicalChainComplex_obj_d_apply X p _).symm.trans
+        (ConcreteCategory.congr_hom (((normalizedCubicalChainComplex R).obj X).iCycles_d _ _) z))
+
 /-- In each degree, the map of normalized cubical chain complexes induced by a map of spaces is
 the push-forward of normalized cubical chains. -/
 theorem normalizedCubicalChainComplex_map_f {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ) :
@@ -164,6 +180,27 @@ theorem NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology {X : TopCat
     ShortComplex.moduleCat_exact_iff] at hex
   obtain ⟨c', hc'⟩ := hex c ((normalizedCubicalChainComplex_obj_d_apply X n c).trans hc)
   exact ⟨c', (normalizedCubicalChainComplex_obj_d_apply X (n + 1) c').symm.trans hc'⟩
+
+/-- Two cycles of the normalized cubical chain complex have the same homology class exactly when
+the difference of the chains they represent is a boundary. -/
+theorem normalizedCubicalChainComplex_homologyπ_eq_iff {X : TopCat.{u}} (q : ℕ)
+    (z z' : ((normalizedCubicalChainComplex R).obj X).cycles q) :
+    ((normalizedCubicalChainComplex R).obj X).homologyπ q z =
+        ((normalizedCubicalChainComplex R).obj X).homologyπ q z' ↔
+      ∃ c : NormalizedCubicalChain X R (q + 1), NormalizedCubicalChain.boundary X R q c =
+        normalizedCubicalChainComplexXEquiv X q
+            (((normalizedCubicalChainComplex R).obj X).iCycles q z) -
+          normalizedCubicalChainComplexXEquiv X q
+            (((normalizedCubicalChainComplex R).obj X).iCycles q z') := by
+  rw [HomologicalComplex.moduleCat_homologyπ_eq_iff _ (m := q + 1) (by simp)]
+  constructor
+  · rintro ⟨c, hc⟩
+    exact ⟨normalizedCubicalChainComplexXEquiv _ _ c,
+      (normalizedCubicalChainComplexXEquiv_d_apply _ q c).symm.trans (by rw [hc, map_sub])⟩
+  · rintro ⟨c, hc⟩
+    refine ⟨(normalizedCubicalChainComplexXEquiv _ _).symm c,
+      (normalizedCubicalChainComplexXEquiv (R := R) _ q).injective ?_⟩
+    exact (normalizedCubicalChainComplexXEquiv_d_apply _ q _).trans (hc.trans (map_sub _ _ _).symm)
 
 end Normalized
 

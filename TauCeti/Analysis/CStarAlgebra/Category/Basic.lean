@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.CategoryTheory.Dagger.Basic
+import TauCeti.CategoryTheory.Dagger.Polarization
 
 /-!
 # C*-categories
@@ -38,6 +40,9 @@ is stated as `f ≫ dagger f = g ≫ dagger g` for an endomorphism `g` of `X`; i
   C*-algebra, with Mathlib's operator-order multiplication and the dagger as star.
 * `CategoryTheory.End.nonneg_iff`: the positive elements of `End X` are exactly the composites
   `f ≫ dagger f` for arrows `f` out of `X`.
+* `CategoryTheory.End.comp_comp_dagger_mono`: conjugation `a ↦ g†ag` by an arrow `g` is
+  monotone.
+* `CategoryTheory.End.comp_comp_dagger_le_norm_smul`: `g†ag ≤ ‖a‖ g†g` for self-adjoint `a`.
 
 ## Implementation notes
 
@@ -153,15 +158,13 @@ theorem norm_self_comp_dagger (f : X ⟶ Y) : ‖f ≫ dagger f‖ = ‖f‖ ^ 2
 theorem norm_dagger_comp_self (f : X ⟶ Y) : ‖dagger f ≫ f‖ = ‖f‖ ^ 2 := by
   simpa using norm_self_comp_dagger (dagger f)
 
-/-- `f ≫ dagger f` vanishes precisely when `f` vanishes. -/
-@[simp] theorem self_comp_dagger_eq_zero_iff (f : X ⟶ Y) :
-    f ≫ dagger f = 0 ↔ f = 0 := by
-  rw [← norm_eq_zero, norm_self_comp_dagger, sq_eq_zero_iff, norm_eq_zero]
+/-- An arrow `f` with `f†f = 0`, that is `f ≫ dagger f = 0`, is zero. -/
+@[simp] theorem self_comp_dagger_eq_zero {f : X ⟶ Y} : f ≫ dagger f = 0 ↔ f = 0 := by
+  rw [← norm_eq_zero, norm_self_comp_dagger, pow_eq_zero_iff two_ne_zero, norm_eq_zero]
 
-/-- `dagger f ≫ f` vanishes precisely when `f` vanishes. -/
-@[simp] theorem dagger_comp_self_eq_zero_iff (f : X ⟶ Y) :
-    dagger f ≫ f = 0 ↔ f = 0 := by
-  rw [← norm_eq_zero, norm_dagger_comp_self, sq_eq_zero_iff, norm_eq_zero]
+/-- An arrow `f` with `f f† = 0`, that is `dagger f ≫ f = 0`, is zero. -/
+@[simp] theorem dagger_comp_self_eq_zero {f : X ⟶ Y} : dagger f ≫ f = 0 ↔ f = 0 := by
+  rw [← norm_eq_zero, norm_dagger_comp_self, pow_eq_zero_iff two_ne_zero, norm_eq_zero]
 
 /-- Norm Cauchy–Schwarz inequality for `f ≫ dagger g`:
 `‖f ≫ dagger g‖ ^ 2 ≤ ‖f ≫ dagger f‖ * ‖g ≫ dagger g‖`. -/
@@ -186,25 +189,40 @@ theorem norm_comp_dagger_le_polarization (f g : X ⟶ Y) :
       (4 : ℝ)⁻¹ * (‖f + g‖ ^ 2 + ‖f - g‖ ^ 2 +
         ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2) := by
   let := normedAddCommGroup X X
-  rw [comp_dagger_eq_polarization f g, norm_smul]
+  rw [comp_dagger_polarization g f, norm_smul]
   have h4 : ‖(4 : ℂ)⁻¹‖ = (4 : ℝ)⁻¹ := by norm_num
+  have hplus : g + f = f + g := add_comm g f
+  have hminus : g - f = -(f - g) := (neg_sub f g).symm
+  have hIplus : g + Complex.I • f = Complex.I • (f - Complex.I • g) := by
+    rw [smul_sub, smul_smul, Complex.I_mul_I, neg_one_smul, sub_neg_eq_add, add_comm]
+  have hIminus : g - Complex.I • f = (-Complex.I) • (f + Complex.I • g) := by
+    rw [smul_add, neg_smul, neg_smul, smul_smul, Complex.I_mul_I, neg_one_smul, neg_neg,
+      add_comm, sub_eq_add_neg]
   rw [h4]
   gcongr
   calc
-    ‖(f + g) ≫ dagger (f + g) - (f - g) ≫ dagger (f - g) +
-        Complex.I • ((f + Complex.I • g) ≫ dagger (f + Complex.I • g) -
-          (f - Complex.I • g) ≫ dagger (f - Complex.I • g))‖
-      ≤ ‖(f + g) ≫ dagger (f + g) - (f - g) ≫ dagger (f - g)‖ +
-          ‖Complex.I • ((f + Complex.I • g) ≫ dagger (f + Complex.I • g) -
-            (f - Complex.I • g) ≫ dagger (f - Complex.I • g))‖ := norm_add_le _ _
-    _ ≤ (‖(f + g) ≫ dagger (f + g)‖ + ‖(f - g) ≫ dagger (f - g)‖) +
-          (‖(f + Complex.I • g) ≫ dagger (f + Complex.I • g)‖ +
-            ‖(f - Complex.I • g) ≫ dagger (f - Complex.I • g)‖) := by
-        rw [norm_smul, Complex.norm_I, one_mul]
-        exact add_le_add (_root_.norm_sub_le _ _) (_root_.norm_sub_le _ _)
+    ‖(g + f) ≫ dagger (g + f) - (g - f) ≫ dagger (g - f) -
+        Complex.I • ((g + Complex.I • f) ≫ dagger (g + Complex.I • f)) +
+        Complex.I • ((g - Complex.I • f) ≫ dagger (g - Complex.I • f))‖
+      ≤ ‖(g + f) ≫ dagger (g + f) - (g - f) ≫ dagger (g - f) -
+          Complex.I • ((g + Complex.I • f) ≫ dagger (g + Complex.I • f))‖ +
+          ‖Complex.I • ((g - Complex.I • f) ≫ dagger (g - Complex.I • f))‖ := norm_add_le _ _
+    _ ≤ (‖(g + f) ≫ dagger (g + f) - (g - f) ≫ dagger (g - f)‖ +
+          ‖Complex.I • ((g + Complex.I • f) ≫ dagger (g + Complex.I • f))‖) +
+          ‖Complex.I • ((g - Complex.I • f) ≫ dagger (g - Complex.I • f))‖ := by
+        gcongr
+        exact _root_.norm_sub_le _ _
+    _ ≤ (‖(g + f) ≫ dagger (g + f)‖ + ‖(g - f) ≫ dagger (g - f)‖ +
+          ‖(g + Complex.I • f) ≫ dagger (g + Complex.I • f)‖) +
+          ‖(g - Complex.I • f) ≫ dagger (g - Complex.I • f)‖ := by
+        simp only [norm_smul, Complex.norm_I, one_mul]
+        gcongr
+        exact _root_.norm_sub_le _ _
     _ = ‖f + g‖ ^ 2 + ‖f - g‖ ^ 2 +
           ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2 := by
-        simp only [norm_self_comp_dagger, add_assoc]
+        simp only [norm_self_comp_dagger, hplus, hminus, hIplus, hIminus, CStarCategory.norm_neg,
+          _root_.norm_neg, norm_smul, Complex.norm_I, one_mul]
+        ring
 
 /-! ### Identity, unitary, projection, and zero-object norm formulas -/
 
@@ -501,5 +519,28 @@ theorem nonneg_iff {a : End X} : 0 ≤ a ↔ ∃ (Y : C) (f : X ⟶ Y), a = End.
     exact ⟨X, b.asHom, End.ext (by simp)⟩
   · rintro ⟨Y, f, rfl⟩
     exact self_comp_dagger_nonneg f
+
+/-- Conjugation by an arrow `g : X ⟶ Y` is monotone from `End Y` to `End X`: `a ≤ b` implies
+`g†ag ≤ g†bg`, that is `g ≫ a ≫ dagger g ≤ g ≫ b ≫ dagger g`. -/
+theorem comp_comp_dagger_mono {Y : C} (g : X ⟶ Y) {a b : End Y} (hab : a ≤ b) :
+    End.of (g ≫ a.asHom ≫ dagger g) ≤ End.of (g ≫ b.asHom ≫ dagger g) := by
+  obtain ⟨h, hh⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 (sub_nonneg.2 hab)
+  have key : End.of (g ≫ b.asHom ≫ dagger g) - End.of (g ≫ a.asHom ≫ dagger g) =
+      End.of ((g ≫ h.asHom) ≫ dagger (g ≫ h.asHom)) := by
+    have := congrArg End.asHom hh
+    simp only [End.sub_asHom, End.mul_asHom, star_asHom] at this
+    ext
+    simp [← Preadditive.comp_sub, ← Preadditive.sub_comp, this]
+  rw [← sub_nonneg, key]
+  exact self_comp_dagger_nonneg _
+
+/-- For a self-adjoint `a : End Y` and an arrow `g : X ⟶ Y`, the conjugate `g†ag`, that is
+`g ≫ a ≫ dagger g`, is at most `‖a‖ g†g` in `End X`. -/
+theorem comp_comp_dagger_le_norm_smul {Y : C} (g : X ⟶ Y) (a : End Y)
+    (ha : IsSelfAdjoint a := by cfc_tac) :
+    End.of (g ≫ a.asHom ≫ dagger g) ≤ ‖a‖ • End.of (g ≫ dagger g) := by
+  refine (comp_comp_dagger_mono g ha.le_algebraMap_norm_self).trans_eq ?_
+  ext
+  simp [Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul]
 
 end CategoryTheory.End

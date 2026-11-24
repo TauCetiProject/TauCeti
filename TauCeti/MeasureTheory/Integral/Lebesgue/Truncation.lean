@@ -11,10 +11,12 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 -- `Mathlib.Analysis.SpecialFunctions.Pow.Continuity` and
 -- `Mathlib.MeasureTheory.Function.SpecialFunctions.Basic` are imported privately: they supply the
 -- continuity and measurability of `x ↦ x ^ q` on `ℝ≥0∞` inside the proof of
--- `TauCeti.lintegral_rpow_le_of_forall_le`.
+-- `TauCeti.lintegral_rpow_le_of_forall_le`. `TauCeti.MeasureTheory.Integral.Prod` supplies the
+-- measurability of set integrals along a jointly measurable relation.
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Lebesgue integrals of truncations
@@ -49,6 +51,10 @@ A bound on `∫⁻ V_n² u` for the bounded truncations `V_n = W / (1 + W / (n +
   the weighted upper and lower truncated integrals of `f ^ q` are measurable in the height.
 * `TauCeti.lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le`: Fatou's lemma for
   the truncated weights `W / (1 + W / (n + 1))`.
+* `TauCeti.measurableSet_ofReal_mul_rpow_lt`, `TauCeti.measurableSet_le_ofReal_mul_rpow`: the
+  regions of `ℝ × α` above and up to the graph of a height `c * t ^ γ` are measurable.
+* `TauCeti.measurable_ofReal_rpow_mul_setLIntegral_rpow`: a power-weighted power of the truncated
+  integrals of `f ^ pᵢ` along a jointly measurable relation is measurable in the parameter.
 -/
 
 public section
@@ -221,5 +227,26 @@ theorem lintegral_ofReal_sq_mul_le_of_forall_lintegral_div_one_add_mul_le
         lintegral_liminf_le' fun n ↦ (((hW.div (aemeasurable_const.add
           (aemeasurable_const.mul hW))).pow_const 2).mul hu).ennreal_ofReal
     _ ≤ C := liminf_le_of_frequently_le' (Frequently.of_forall h)
+
+/-- The region of `ℝ × α` above the graph of the height `c * t ^ γ` is measurable. -/
+theorem measurableSet_ofReal_mul_rpow_lt {f : α → ℝ≥0∞} (hf : Measurable f) (c γ : ℝ) :
+    MeasurableSet {z : ℝ × α | ENNReal.ofReal (c * z.1 ^ γ) < f z.2} :=
+  measurableSet_lt ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
+    (hf.comp measurable_snd)
+
+/-- The region of `ℝ × α` up to the graph of the height `c * t ^ γ` is measurable. -/
+theorem measurableSet_le_ofReal_mul_rpow {f : α → ℝ≥0∞} (hf : Measurable f) (c γ : ℝ) :
+    MeasurableSet {z : ℝ × α | f z.2 ≤ ENNReal.ofReal (c * z.1 ^ γ)} :=
+  measurableSet_le (hf.comp measurable_snd)
+    ((measurable_fst.pow_const γ).const_mul c).ennreal_ofReal
+
+/-- A power weight `t ^ s` times a power of the truncated integrals `∫⁻ x in {x | R t x}, f x ^ pᵢ`
+is measurable in `t` when the truncating relation is jointly measurable. -/
+theorem measurable_ofReal_rpow_mul_setLIntegral_rpow [SFinite μ] {f : α → ℝ≥0∞}
+    {R : ℝ → α → Prop} (hR : MeasurableSet {z : ℝ × α | R z.1 z.2}) (hf : AEMeasurable f μ)
+    (s pᵢ r : ℝ) :
+    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) * (∫⁻ x in {x | R t x}, f x ^ pᵢ ∂μ) ^ r :=
+  (measurable_id.pow_const s).ennreal_ofReal.mul
+    ((measurable_setLIntegral_of_measurableSet hR (hf.pow_const pᵢ)).pow_const r)
 
 end TauCeti

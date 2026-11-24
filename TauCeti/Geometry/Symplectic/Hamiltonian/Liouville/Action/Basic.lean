@@ -168,14 +168,10 @@ theorem fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer
     -- `tangentSpaceCast` is the identity on the underlying vectors.
     rw [hΦ.mfderiv_eq]
     rfl
+  rw [hd, hd] at h
   -- Evaluate `σ` at the point `s c` rather than at its other spelling `λ(c) • s(c)`; all tangent
   -- spaces of `M` are the model space by definition, so the tangent vectors need no transport.
-  have hy : ∀ y, y = s c → ∀ v v' : TangentSpace I y,
-      SmoothBundleForm.eval₂ σ y v v' = SmoothBundleForm.eval₂ σ (s c) v v' := by
-    rintro _ rfl _ _
-    rfl
-  rw [hd, hd] at h
-  linarith [(hy _ hΦ.self_of_nhds _ _).symm.trans h]
+  linarith [(SmoothForm.eval₂_congr_basePoint σ hΦ.self_of_nhds _ _).symm.trans h]
 
 /-- **Action functions.** Let `s` be a differentiable section of `F` over a convex open set `D`,
 and let `λ` be a differentiable family of periods along it: `λ c` is a period of `s c` for every

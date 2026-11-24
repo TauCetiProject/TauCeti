@@ -44,6 +44,11 @@ packages this as an additive equivalence. For `I = Ring.jacobson R` it applies t
 The images of a set `S` span `M ⧸ p` exactly when `p ⊔ span S = ⊤`
 (`Submodule.span_image_mkQ_eq_top_iff`). When the quotient is finitely generated, finitely many
 vectors of `S` already suffice (`Submodule.exists_finset_subset_sup_span_eq_top`).
+
+If an `R`-submodule `P` of an `S`-module `M` equals the scalar restriction `Q.restrictScalars R`
+of an `S`-submodule `Q`, composing `Submodule.quotEquivOfEq` with
+`Submodule.Quotient.restrictScalarsEquiv` gives a canonical `R`-linear equivalence
+`Submodule.quotEquivOfEqRestrictScalars : (M ⧸ P) ≃ₗ[R] M ⧸ Q`.
 -/
 
 public section
@@ -151,6 +156,34 @@ theorem exists_finset_subset_sup_span_eq_top {p : Submodule R M} [Module.Finite 
   obtain ⟨t, htS, rfl⟩ := Finset.subset_set_image_iff.1 hbS
   refine ⟨t, htS, ?_⟩
   rw [← span_image_mkQ_eq_top_iff, ← Finset.coe_image, ← hbspan, h]
+
+section RestrictScalars
+
+variable {S : Type*} [Ring S] [SMul R S] [Module S M] [IsScalarTower R S M]
+
+/-- If an `R`-submodule `P` equals the scalar restriction of an `S`-submodule `Q`, the quotients
+`M ⧸ P` and `M ⧸ Q` are canonically `R`-linearly equivalent. -/
+def quotEquivOfEqRestrictScalars (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) : (M ⧸ P) ≃ₗ[R] M ⧸ Q :=
+  (quotEquivOfEq P (Q.restrictScalars R) h).trans (Quotient.restrictScalarsEquiv R Q)
+
+/-- `Submodule.quotEquivOfEqRestrictScalars` sends a quotient class to the class of the same
+representative. -/
+@[simp]
+theorem quotEquivOfEqRestrictScalars_mk (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) (x : M) :
+    P.quotEquivOfEqRestrictScalars Q h (Quotient.mk x) = Quotient.mk x := by
+  simp [quotEquivOfEqRestrictScalars]
+
+/-- The inverse of `Submodule.quotEquivOfEqRestrictScalars` sends a quotient class to the class of
+the same representative. -/
+@[simp]
+theorem quotEquivOfEqRestrictScalars_symm_mk (P : Submodule R M) (Q : Submodule S M)
+    (h : P = Q.restrictScalars R) (x : M) :
+    (P.quotEquivOfEqRestrictScalars Q h).symm (Quotient.mk x) = Quotient.mk x := by
+  rw [LinearEquiv.symm_apply_eq, quotEquivOfEqRestrictScalars_mk]
+
+end RestrictScalars
 
 end Submodule
 

@@ -68,35 +68,20 @@ theorem complexSpectrum_self_comp_dagger_nonneg (f : X ⟶ Y) ⦃z : ℂ⦄
 
 /-- Congruence `a ↦ End.of (f ≫ a.asHom ≫ dagger f)` sends positive elements of `End Y` to
 positive elements of `End X` for any `f : X ⟶ Y`. -/
-theorem comp_asHom_comp_dagger_nonneg (f : X ⟶ Y) {a : End Y} (ha : 0 ≤ a) :
+theorem comp_comp_dagger_nonneg (f : X ⟶ Y) {a : End Y} (ha : 0 ≤ a) :
     0 ≤ End.of (f ≫ a.asHom ≫ dagger f) := by
-  obtain ⟨b, hb⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp ha
-  have hfg : f ≫ a.asHom ≫ dagger f = (f ≫ b.asHom) ≫ dagger (f ≫ b.asHom) := by
-    rw [hb, mul_asHom, star_asHom, dagger_comp, Category.assoc, Category.assoc]
-  rw [hfg]
-  exact self_comp_dagger_nonneg (f ≫ b.asHom)
-
-/-- Congruence `a ↦ End.of (f ≫ a.asHom ≫ dagger f)` is monotone from `End Y` to `End X`. -/
-theorem comp_asHom_comp_dagger_mono (f : X ⟶ Y) {a b : End Y} (hab : a ≤ b) :
-    End.of (f ≫ a.asHom ≫ dagger f) ≤ End.of (f ≫ b.asHom ≫ dagger f) := by
-  rw [← sub_nonneg] at hab ⊢
-  have hsub : End.of (f ≫ b.asHom ≫ dagger f) - End.of (f ≫ a.asHom ≫ dagger f) =
-      End.of (f ≫ (b - a).asHom ≫ dagger f) := by
-    ext
-    simp [Preadditive.comp_sub, Preadditive.sub_comp]
-  rw [hsub]
-  exact comp_asHom_comp_dagger_nonneg f hab
+  simpa using comp_comp_dagger_mono f ha
 
 /-- Dual congruence `a ↦ End.of (dagger g ≫ a.asHom ≫ g)` sends positive elements of `End X` to
 positive elements of `End Y` for any `g : X ⟶ Y`. -/
-theorem dagger_comp_asHom_comp_nonneg (g : X ⟶ Y) {a : End X} (ha : 0 ≤ a) :
+theorem dagger_comp_comp_nonneg (g : X ⟶ Y) {a : End X} (ha : 0 ≤ a) :
     0 ≤ End.of (dagger g ≫ a.asHom ≫ g) := by
-  simpa only [dagger_dagger] using comp_asHom_comp_dagger_nonneg (dagger g) ha
+  simpa only [dagger_dagger] using comp_comp_dagger_nonneg (dagger g) ha
 
 /-- Dual congruence `a ↦ End.of (dagger g ≫ a.asHom ≫ g)` is monotone from `End X` to `End Y`. -/
-theorem dagger_comp_asHom_comp_mono (g : X ⟶ Y) {a b : End X} (hab : a ≤ b) :
+theorem dagger_comp_comp_mono (g : X ⟶ Y) {a b : End X} (hab : a ≤ b) :
     End.of (dagger g ≫ a.asHom ≫ g) ≤ End.of (dagger g ≫ b.asHom ≫ g) := by
-  simpa only [dagger_dagger] using comp_asHom_comp_dagger_mono (dagger g) hab
+  simpa only [dagger_dagger] using comp_comp_dagger_mono (dagger g) hab
 
 /-- Categorical operator-order bound: `End.of ((f ≫ g) ≫ dagger (f ≫ g))` is bounded in `End X` by
 `(‖g‖ ^ 2) • End.of (f ≫ dagger f)`. -/
@@ -105,7 +90,7 @@ theorem comp_dagger_self_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) :
   have hle : End.of (g ≫ dagger g) ≤ algebraMap ℝ (End Y) (‖g‖ ^ 2) := by
     simpa only [End.norm_of, CStarCategory.norm_self_comp_dagger] using
       (self_comp_dagger_nonneg g).isSelfAdjoint.le_algebraMap_norm_self
-  have hcong := comp_asHom_comp_dagger_mono f hle
+  have hcong := comp_comp_dagger_mono f hle
   have hlhs : End.of (f ≫ (End.of (g ≫ dagger g)).asHom ≫ dagger f) =
       End.of ((f ≫ g) ≫ dagger (f ≫ g)) := by
     ext
