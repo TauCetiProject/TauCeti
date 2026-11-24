@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Extension
-public import TauCeti.NumberTheory.LocalField.WildInertia
+public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
 import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 
@@ -28,6 +28,8 @@ groups onto its image, which carries the preimage onto a subgroup of `P_K`.
 ## Main results
 
 * `TauCeti.comap_absoluteGaloisGroupExtend_wildInertiaSubgroup`: `P_L` is the preimage of `P_K`.
+* `TauCeti.absoluteGaloisGroupExtend_mem_wildInertiaSubgroup_iff`: an element of `G_L` lies in
+  `P_L` exactly when its image lies in `P_K`.
 * `TauCeti.map_absoluteGaloisGroupExtend_wildInertiaSubgroup`: the image of `P_L` is
   `P_K ∩ G_L`.
 
@@ -58,22 +60,21 @@ private theorem isProP_comap_absoluteGaloisGroupExtend_wildInertiaSubgroup (p : 
     IsProP p ((wildInertiaSubgroup K).comap (absoluteGaloisGroupExtend K L ι)) := by
   set U := (absoluteGaloisGroupExtend K L ι).range
   set e := absoluteGaloisGroupExtendEquiv K L ι (U := U) rfl
-  set R := (wildInertiaSubgroup K).comap (absoluteGaloisGroupExtend K L ι)
   -- Along `e`, the preimage of `P_K` is the trace of `P_K` on the image of `G_L`.
-  have hR : R.map ((e : Field.absoluteGaloisGroup L ≃* U) : Field.absoluteGaloisGroup L →* U) =
+  have hR : ((wildInertiaSubgroup K).comap (absoluteGaloisGroupExtend K L ι)).map
+      ((e : Field.absoluteGaloisGroup L ≃* U) : Field.absoluteGaloisGroup L →* U) =
       (wildInertiaSubgroup K ⊓ U).subgroupOf U := by
     ext x
-    rw [Subgroup.mem_subgroupOf, Subgroup.mem_inf]
+    rw [Subgroup.mem_map, Subgroup.mem_subgroupOf, Subgroup.mem_inf]
     have he (g : Field.absoluteGaloisGroup L) :
         ((e g : U) : Field.absoluteGaloisGroup K) = absoluteGaloisGroupExtend K L ι g :=
       coe_absoluteGaloisGroupExtendEquiv_apply K L ι rfl g
     refine ⟨?_, fun h ↦ ⟨e.symm x, ?_, e.apply_symm_apply x⟩⟩
     · rintro ⟨g, hg, rfl⟩
-      exact ⟨(he g).symm ▸ hg, (e g).property⟩
-    · change absoluteGaloisGroupExtend K L ι (e.symm x) ∈ wildInertiaSubgroup K
-      rw [← he, e.apply_symm_apply]
+      exact ⟨(he g).symm ▸ Subgroup.mem_comap.mp hg, (e g).property⟩
+    · rw [Subgroup.mem_comap, ← he, e.apply_symm_apply]
       exact h.1
-  rw [isProP_congr (e.subgroupMap R), hR,
+  rw [isProP_congr (e.subgroupMap _), hR,
     Subgroup.isProP_subgroupOf_iff inf_le_right]
   exact (isProP_wildInertiaSubgroup K p).mono inf_le_left
 
@@ -97,6 +98,12 @@ theorem comap_absoluteGaloisGroupExtend_wildInertiaSubgroup :
         ((absoluteGaloisGroupExtend K L ι).subgroupMap_surjective _)) ?_
     rw [Subgroup.map_le_iff_le_comap, comap_absoluteGaloisGroupExtend_inertiaSubgroup ι]
     exact wildInertiaSubgroup_le_inertiaSubgroup L
+
+/-- **Wild inertia along a finite extension.** An element of `G_L` lies in the wild inertia
+subgroup of `L` exactly when its image in `G_K` lies in the wild inertia subgroup of `K`. -/
+theorem absoluteGaloisGroupExtend_mem_wildInertiaSubgroup_iff {τ : Field.absoluteGaloisGroup L} :
+    absoluteGaloisGroupExtend K L ι τ ∈ wildInertiaSubgroup K ↔ τ ∈ wildInertiaSubgroup L := by
+  rw [← Subgroup.mem_comap, comap_absoluteGaloisGroupExtend_wildInertiaSubgroup]
 
 /-- **Wild inertia along a finite extension, as an image.** The image of the wild inertia subgroup
 of `L` in `G_K` is the part of the wild inertia subgroup of `K` lying in the image of `G_L`. -/
