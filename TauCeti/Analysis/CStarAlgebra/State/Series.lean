@@ -31,7 +31,7 @@ nontrivial complex C⋆-algebra (`TauCeti.CStarAlgebra.exists_faithful_positiveC
 * `PositiveContinuousLinearMap.summable_toContinuousLinearMap_iff`: summability of positive
   functionals in the dual norm is equivalent to summability of their norms.
 * `PositiveContinuousLinearMap.hasSum_opNorm_tsum`, `PositiveContinuousLinearMap.opNorm_tsum`:
-  `‖tsum f‖ = ∑' i, ‖f i‖`, unconditionally.
+  `‖∑' i, (f i : A →L[ℂ] ℂ)‖ = ∑' i, ‖(f i : A →L[ℂ] ℂ)‖`, unconditionally.
 * `TauCeti.CStarAlgebra.exists_faithful_positiveContinuousLinearMap`: every separable nontrivial
   C⋆-algebra admits a norm-one positive functional strictly positive on nonzero positive elements.
 
@@ -93,15 +93,16 @@ theorem hasSum_opNorm_tsum {f : ι → A →P[ℂ] ℂ} (hf : Summable fun i => 
     exact norm_tsum_le_tsum_norm hnorm
   simpa only [le_antisymm hle hge] using hnorm.hasSum
 
-/-- **Additivity of the norm on series of positive functionals.** The operator norm of `tsum f` is
-unconditionally the sum of the operator norms of the summands. -/
+/-- **Additivity of the norm on series of positive functionals.** The operator norm of the sum of a
+family of positive functionals is unconditionally the sum of the operator norms of the summands. -/
+@[simp]
 theorem opNorm_tsum (f : ι → A →P[ℂ] ℂ) :
-    ‖(tsum f : A →L[ℂ] ℂ)‖ = ∑' i, ‖(f i : A →L[ℂ] ℂ)‖ := by
+    ‖∑' i, (f i : A →L[ℂ] ℂ)‖ = ∑' i, ‖(f i : A →L[ℂ] ℂ)‖ := by
   by_cases hf : Summable fun i => (f i : A →L[ℂ] ℂ)
-  · exact (hasSum_opNorm_tsum hf).tsum_eq.symm
+  · simpa only [toContinuousLinearMap_tsum] using (hasSum_opNorm_tsum hf).tsum_eq.symm
   · have hnot : ¬ Summable fun i => ‖(f i : A →L[ℂ] ℂ)‖ :=
       mt (summable_toContinuousLinearMap_iff f).2 hf
-    rw [tsum_eq_zero_of_not_summable hf, toContinuousLinearMap_zero, norm_zero,
+    rw [_root_.tsum_eq_zero_of_not_summable hf, norm_zero,
       _root_.tsum_eq_zero_of_not_summable hnot]
 
 end PositiveContinuousLinearMap
@@ -128,8 +129,7 @@ theorem exists_faithful_positiveContinuousLinearMap {A : Type*} [NonUnitalCStarA
     (PositiveContinuousLinearMap.summable_toContinuousLinearMap_iff f).2 <| by
       simpa only [hf_norm] using summable_geometric_two' (1 : ℝ)
   refine ⟨PositiveContinuousLinearMap.tsum f, ?_, ?_⟩
-  · rw [PositiveContinuousLinearMap.opNorm_tsum]
-    simpa only [hf_norm] using tsum_geometric_two' (1 : ℝ)
+  · simpa [w, hf_norm] using tsum_geometric_two' (1 : ℝ)
   · intro a ha ha0
     refine lt_of_le_of_ne ((PositiveContinuousLinearMap.tsum f).map_nonneg ha) (Ne.symm ?_)
     intro h0

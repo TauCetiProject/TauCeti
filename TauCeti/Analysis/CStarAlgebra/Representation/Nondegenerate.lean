@@ -32,8 +32,10 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
 
 * `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`, unfolded by
   `isNondegenerate_iff_dense`.
-* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`:
-  a representation of a unital C⋆-algebra is nondegenerate exactly when it sends `1` to `1`.
+* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`,
+  `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: a representation of a unital C⋆-algebra is
+  nondegenerate exactly when it sends `1` to `1`, and therefore upgrades to a unital
+  `⋆`-algebra homomorphism.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
@@ -101,6 +103,28 @@ operator. -/
 theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
   hρ.ext fun b => by rw [← map_mul, one_mul, one_mul]
+
+/-- Upgrade a nondegenerate representation of a unital C⋆-algebra to a unital `⋆`-algebra
+homomorphism. -/
+def IsNondegenerate.toStarAlgHom {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : B →⋆ₐ[ℂ] (H →L[ℂ] H) where
+  __ := ρ
+  map_one' := hρ.map_one
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one, hρ.map_one]
+
+/-- Coercing `hρ.toStarAlgHom` to a function recovers `ρ`. -/
+@[simp]
+theorem IsNondegenerate.coe_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    ⇑hρ.toStarAlgHom = ρ :=
+  (rfl)
+
+/-- Coercing `hρ.toStarAlgHom` to a non-unital `⋆`-algebra homomorphism recovers `ρ`. -/
+@[simp]
+theorem IsNondegenerate.toNonUnitalStarAlgHom_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    hρ.toStarAlgHom.toNonUnitalStarAlgHom = ρ :=
+  (rfl)
 
 /-- The Banach-module extension, before recording preservation of star. -/
 private def extensionAlgHom (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →ₐ[ℂ] (H →L[ℂ] H) := by
