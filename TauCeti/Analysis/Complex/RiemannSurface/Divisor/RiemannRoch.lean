@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Map
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
 
 /-!
@@ -39,6 +40,11 @@ Combined with the vanishing `h⁰(D) = 0` for `deg D < 0`
 (`finrank_divisorSheaf_eq_zero_of_degree_neg`, which needs no finiteness hypothesis), Riemann–Roch
 computes `h¹(D) = g_an - 1 - deg D` for divisors of negative degree.
 
+Along the staircase `D, D + [x], D + 2[x], …` the numbers `h¹(D + k[x])` decrease
+(`finrank_divisorCechCohomology_one_le_of_le`), so they are eventually constant, and from then on
+Riemann–Roch forces `h⁰` to rise by exactly one at every step. No Serre duality or vanishing
+theorem for `h¹` is needed for this.
+
 ## Main declarations
 
 * `TauCeti.RiemannSurface.analyticGenus`: the analytic genus `dim H¹(X, 𝒪)`;
@@ -48,6 +54,8 @@ computes `h¹(D) = g_an - 1 - deg D` for divisors of negative degree.
   sheaves;
 * `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_of_degree_neg`:
   `h¹(D) = g_an - 1 - deg D` if `deg D < 0`;
+* `TauCeti.RiemannSurface.eventually_finrank_divisorSheaf_add_nsmul_ofPoint_succ`: for all large
+  `k`, `h⁰(D + (k + 1)[x]) = h⁰(D + k[x]) + 1`;
 * `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_of_analyticGenus_lt_degree` and
   `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one`: finite
   holomorphic maps to `ℙ¹` from Riemann–Roch.
@@ -59,7 +67,7 @@ computes `h¹(D) = g_an - 1 - deg D` for divisors of negative degree.
 
 public noncomputable section
 
-open CategoryTheory Opposite TopologicalSpace
+open CategoryTheory Filter Opposite TopologicalSpace
 open TauCeti.Topology TauCeti.AlgebraicGeometry
 open scoped Manifold
 
@@ -126,6 +134,27 @@ theorem finrank_divisorCechCohomology_one_of_degree_neg {D : WeilDivisor X}
       analyticGenus X - 1 - WeilDivisor.degree D := by
   have h := finrank_divisorSheaf_euler_characteristic D
   rw [finrank_divisorSheaf_eq_zero_of_degree_neg hD] at h
+  omega
+
+/-- **The Riemann–Roch staircase.** On a compact connected Riemann surface with
+finite-dimensional `H¹(X, 𝒪)`, adding a point `x` again and again to a divisor `D` eventually
+raises `h⁰` by exactly one at every step: `h⁰(D + (k + 1)[x]) = h⁰(D + k[x]) + 1` for all
+large `k`. -/
+theorem eventually_finrank_divisorSheaf_add_nsmul_ofPoint_succ (D : WeilDivisor X) (x : X) :
+    ∀ᶠ k : ℕ in atTop,
+      Module.finrank ℂ ((divisorSheaf (D + (k + 1) • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) =
+        Module.finrank ℂ ((divisorSheaf (D + k • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) + 1 := by
+  -- `h¹(D + k[x])` is a decreasing sequence of natural numbers, so it is constant from any index
+  -- at which it attains its minimum.
+  let a (k : ℕ) : ℕ := Module.finrank ℂ (divisorCechCohomology (D + k • WeilDivisor.ofPoint x) 1)
+  have ha : Antitone a := fun k l hkl ↦ finrank_divisorCechCohomology_one_le_of_le
+    (add_le_add_right (nsmul_le_nsmul_left (WeilDivisor.ofPoint_nonneg x) hkl) D)
+  refine eventually_atTop.2 ⟨Function.argmin a, fun k hk ↦ ?_⟩
+  have h₁ : a (k + 1) = a k :=
+    (ha k.le_succ).antisymm ((ha hk).trans (Function.argmin_le a (k + 1)))
+  have hχ := finrank_pointTwist_euler_characteristic (D + k • WeilDivisor.ofPoint x) x
+  rw [add_assoc, ← succ_nsmul] at hχ
+  simp only [a] at h₁
   omega
 
 /-- **A finite map to the sphere from Riemann–Roch.** On a compact connected Riemann surface with

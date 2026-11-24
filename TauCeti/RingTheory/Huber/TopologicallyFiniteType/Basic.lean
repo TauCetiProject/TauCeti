@@ -203,6 +203,14 @@ theorem isStrictlyTopologicallyFiniteType_iff {φ : A →+* B} :
           π.comp (algebraMap A (restrictedMvPowerSeriesCompletion k A)) = φ :=
   (Iff.rfl)
 
+/-- A strictly topologically finite type `A`-algebra `B` admits a surjective `A`-algebra
+homomorphism from a completed restricted power-series algebra `A⟨X₁, …, Xₖ⟩`. -/
+theorem IsStrictlyTopologicallyFiniteType.exists_surjective_algHom [Algebra A B]
+    (h : IsStrictlyTopologicallyFiniteType (algebraMap A B)) :
+    ∃ (k : ℕ) (π : restrictedMvPowerSeriesCompletion k A →ₐ[A] B), Function.Surjective π := by
+  obtain ⟨k, π, hπ, hcomm⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
+  exact ⟨k, { π with commutes' := RingHom.congr_fun hcomm }, hπ.surjective⟩
+
 /-- **The presentation by the identity**: the structure map `A → A⟨X₁, …, Xₖ⟩` is strictly
 topologically of finite type. This is the witness that the conditions are simultaneously
 satisfiable. At `k = 0` it presents the structure map `A → A⟨⟩`; for the completion map `A → Â`
@@ -226,6 +234,25 @@ theorem IsTopologicallyFiniteType.continuous {φ : A →+* B} (h : IsTopological
   obtain ⟨k, T, _, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
   rw [← hcomm]
   exact hπ.continuous.comp (continuous_algebraMap_completion_weightedRestrictedSubring k A hT)
+
+/-- **Topological generators.** If `A → B` is topologically of finite type, then a finite subset
+of `B` generates a dense `A`-subalgebra: the images of the variables of a presentation. -/
+theorem IsTopologicallyFiniteType.exists_finite_dense_adjoin [Algebra A B]
+    (h : IsTopologicallyFiniteType (algebraMap A B)) :
+    ∃ s : Set B, s.Finite ∧ Dense (Algebra.adjoin A s : Set B) := by
+  obtain ⟨k, T, -, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
+  let s : Set B := Set.range fun i ↦
+    π ((weightedX T hT i : weightedRestrictedSubring T hT) : Completion _)
+  refine ⟨s, Set.finite_range _, ?_⟩
+  -- the elements of the presenting algebra mapping into the subalgebra form a dense subring
+  have hR := dense_of_forall_weightedX_mem hT (R := (Algebra.adjoin A s).toSubring.comap π)
+    (fun a ↦ by
+      rw [Subring.mem_comap, ← RingHom.comp_apply, hcomm]
+      exact Subalgebra.algebraMap_mem _ a)
+    fun i ↦ Algebra.subset_adjoin ⟨i, rfl⟩
+  refine (hπ.surjective.denseRange.dense_image hπ.continuous hR).mono ?_
+  rw [Subring.coe_comap, Subalgebra.coe_toSubring]
+  exact Set.image_preimage_subset _ _
 
 /-! ### Stability under a further open quotient
 
@@ -668,7 +695,7 @@ private theorem coe_mem_closure_image_weightSubst
   obtain ⟨q, hq, hqp⟩ := exists_aeval_eq_of_forall_coeff_mem ht p hpU
   refine ⟨(weightedPolynomialHom T hT p : Completion (weightedRestrictedSubring T hT)), ?_,
     _, ⟨weightedPolynomialHom _ isWeightFamily_one_weight q,
-      mem_weightedNhd.mpr fun μ ↦ by simpa using hq μ, rfl⟩,
+      weightedPolynomialHom_mem_weightedNhd.mpr fun μ ↦ by simpa using hq μ, rfl⟩,
     by rw [weightSubst_coe_weightedPolynomialHom, hqp]⟩
   have hpN : ((h - (h - weightedPolynomialHom T hT p) : weightedRestrictedSubring T hT) :
       Completion (weightedRestrictedSubring T hT)) ∈ N :=

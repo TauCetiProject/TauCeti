@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homeomorph.Defs
+public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Algebra.Group.Equiv.Defs
 
 /-!
@@ -23,6 +23,10 @@ conjugation isomorphism of permutation groups, and is the target of the forgetfu
 diffeomorphism-level `Diffeomorph.diffCongr` in
 `TauCeti.Geometry.Diffeomorphism.Congr`.
 
+The unit, products, inverses and conjugates of self-homeomorphisms are also expressed through
+composition of the underlying continuous maps, extending Mathlib's `Homeomorph.coe_trans` to the
+group structure.
+
 ## Main definitions
 
 * `Homeomorph.homeoCongr e`: the group isomorphism `(M ≃ₜ M) ≃* (N ≃ₜ N)` conjugating
@@ -35,6 +39,9 @@ diffeomorphism-level `Diffeomorph.diffCongr` in
 * `Homeomorph.homeoCongr_refl`, `Homeomorph.homeoCongr_trans`, and
   `Homeomorph.homeoCongr_symm`: the functoriality of `homeoCongr` on the groupoid of
   homeomorphisms.
+* `Homeomorph.ofClass_one`, `Homeomorph.ofClass_mul`, `Homeomorph.ofClass_inv`, and
+  `Homeomorph.ofClass_homeoCongr`: the continuous maps underlying `1`, `f * g`, `f⁻¹` and
+  `homeoCongr e f`.
 -/
 
 public section
@@ -79,5 +86,26 @@ theorem homeoCongr_trans (e : M ≃ₜ N) (e' : N ≃ₜ P) :
 theorem homeoCongr_symm (e : M ≃ₜ N) : (homeoCongr e).symm = homeoCongr e.symm := by
   ext
   rfl
+
+/-- The continuous map underlying the unit self-homeomorphism is the identity. -/
+@[simp]
+theorem ofClass_one : ((1 : M ≃ₜ M) : C(M, M)) = ContinuousMap.id M :=
+  (rfl)
+
+/-- The continuous map underlying a product of self-homeomorphisms is the composite. -/
+@[simp]
+theorem ofClass_mul (f g : M ≃ₜ M) : ((f * g : M ≃ₜ M) : C(M, M)) = (f : C(M, M)).comp g :=
+  (rfl)
+
+/-- The continuous map underlying the inverse of a self-homeomorphism is its inverse map. -/
+@[simp]
+theorem ofClass_inv (f : M ≃ₜ M) : ((f⁻¹ : M ≃ₜ M) : C(M, M)) = (f.symm : C(M, M)) :=
+  (rfl)
+
+/-- The continuous map underlying a conjugate is `e ∘ φ ∘ e⁻¹`. -/
+@[simp]
+theorem ofClass_homeoCongr (e : M ≃ₜ N) (φ : M ≃ₜ M) :
+    (homeoCongr e φ : C(N, N)) = (e : C(M, N)).comp ((φ : C(M, M)).comp e.symm) :=
+  (rfl)
 
 end Homeomorph

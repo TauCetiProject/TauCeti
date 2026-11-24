@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Holder.Jet.Bounds
 
 /-!
 # Interpolation inequalities for derivatives
@@ -543,11 +544,8 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le {f : E → F} {k :
     (hM₂ : ∀ y, ‖iteratedFDeriv ℝ (k + 2) f y‖ ≤ M₂) {ε : ℝ} (hε : 0 < ε) (x : E) :
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ 2 * M₀ / ε + M₂ * ε := by
   have hM₂0 : 0 ≤ M₂ := (norm_nonneg _).trans (hM₂ x)
-  have hlip : LipschitzWith M₂.toNNReal (iteratedFDeriv ℝ (k + 1) f) := by
-    refine lipschitzWith_of_nnNorm_fderiv_le
-      (hf.differentiable_iteratedFDeriv (by norm_cast; omega)) fun y => ?_
-    rw [← NNReal.coe_le_coe, coe_nnNorm, norm_fderiv_iteratedFDeriv, Real.coe_toNNReal _ hM₂0]
-    exact hM₂ y
+  have hlip := hf.lipschitzWith_iteratedFDeriv (k := k + 2) (j := k + 1) (by omega)
+    fun y => (hM₂ y).trans (Real.le_coe_toNNReal M₂)
   have h := (holderWith_one.2 hlip).norm_iteratedFDeriv_succ_le_of_norm_le
     (hf.differentiable_iteratedFDeriv (by norm_cast; omega)) hM₀ hε x
   simpa [Real.coe_toNNReal _ hM₂0] using h

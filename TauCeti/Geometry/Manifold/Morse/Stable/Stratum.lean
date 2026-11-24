@@ -59,8 +59,14 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   strata.
 * `morseBrokenTrajectoryStratum_eq_morseTrajectoryRecords`: the stratum of a one-step chain is the
   space of unbroken trajectories.
-* `antitone_apply_of_chain`, `strictAnti_apply_of_chain`: `f` decreases along a chain of critical
-  points joined by trajectories, strictly when consecutive points are distinct.
+* `strictAnti_apply_of_chain`: `f` decreases strictly along a chain of critical points joined by
+  trajectories with consecutive points distinct.
+* `value_lt_of_mem_morseBrokenTrajectoryRecords`: `f` decreases strictly from the start to the end
+  of a broken trajectory between distinct points.
+* `apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecords`: a broken
+  trajectory to `q` shares no point with an unbroken trajectory to `r` when `f r < f q`.
+* `exists_flow_eq_of_mem_Ioo`: the point of a record on a level of step `j` lies on the orbit of
+  the component of step `j`.
 * `mem_unstableSet_inter_stableSet_of_mem_morseBrokenTrajectoryStratum`: the point of a record on a
   level of step `j` lies on a trajectory from `x j` to `x (j + 1)`.
 * `exists_homeomorph_morseBrokenTrajectoryStratum`: a stratum is the product of the spaces of
@@ -142,15 +148,6 @@ theorem morseBrokenTrajectoryStratum_eq_morseTrajectoryRecords (p r : M) (c : ι
   · rintro ⟨y, hy, hw⟩
     exact ⟨![y], hy, hw⟩
 
-/-- **`f` decreases along a chain joined by trajectories.** If each `x j` is joined to `x (j + 1)`
-by a trajectory, then `f (x (j + 1)) ≤ f (x j)` for all `j`. -/
-theorem antitone_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
-    (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ)) :
-    Antitone fun j ↦ f (x j) :=
-  Fin.antitone_iff_succ_le.2 fun j ↦
-    (hX.mem_Icc_of_mem_unstableSet_inter_stableSet (hz j)).1.trans
-      (hX.mem_Icc_of_mem_unstableSet_inter_stableSet (hz j)).2
-
 /-- **`f` decreases strictly along a chain of distinct points joined by trajectories.** If each
 `x j` is joined to a different point `x (j + 1)` by a trajectory, then `f (x (j + 1)) < f (x j)`
 for all `j`. -/
@@ -162,9 +159,40 @@ theorem strictAnti_apply_of_chain {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k �
     (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)).1.trans
       (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)).2
 
+/-- **The function decreases strictly along a broken trajectory between distinct points.** If there
+is a broken trajectory from `p` to `r ≠ p`, recorded on any levels, then `f r < f p`. -/
+theorem value_lt_of_mem_morseBrokenTrajectoryRecords {p r : M} {c : ι → ℝ} {w : ι → M}
+    (hpr : p ≠ r) (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c) : f r < f p := by
+  obtain ⟨k, x, z, rfl, rfl, -, hne, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
+  exact hX.strictAnti_apply_of_chain hne hz
+    ((Fin.zero_le _).lt_of_ne fun h ↦ hpr (congrArg x h))
+
+/-- **A broken trajectory meets no unbroken trajectory to a lower critical point.** If
+`f r < f q`, no point of a record of a broken trajectory from `p` to `q` is a point of a record of
+an unbroken trajectory from `p'` to `r`, on any levels: the first lies in the stable set of a
+critical point `x` of the broken trajectory with `f q ≤ f x`, the second in that of `r`. -/
+theorem apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecords
+    {κ : Type*} {p q p' r : M} {c : ι → ℝ} {c' : κ → ℝ} {w : ι → M} {w' : κ → M}
+    (hw : w ∈ hX.morseBrokenTrajectoryRecords p q c) (hw' : w' ∈ hX.morseTrajectoryRecords p' r c')
+    (hrq : f r < f q) (i : ι) (i' : κ) : w i ≠ w' i' := by
+  intro h
+  obtain ⟨y, hy, hwy⟩ := hX.mem_morseTrajectoryRecords.1 hw'
+  obtain ⟨-, t, ht⟩ := hwy i'
+  obtain ⟨k, x, z, -, rfl, -, -, hz, hrec⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
+  obtain ⟨-, j, t', ht'⟩ := hrec i
+  have hxq : f (x (Fin.last k)) ≤ f (x j.succ) := hX.antitone_apply_of_chain hz (Fin.le_last _)
+  have hne : x j.succ ≠ r := fun h ↦ (hrq.trans_le hxq).ne' (congrArg f h)
+  have h₁ : w i ∈ hX.flow.stableSet (x j.succ) := by
+    rw [← ht']
+    exact (Flow.apply_mem_stableSet_iff _ t').2 (hz j).2
+  have h₂ : w i ∈ hX.flow.stableSet r := by
+    rw [h, ← ht]
+    exact (Flow.apply_mem_stableSet_iff _ t).2 hy.2
+  exact disjoint_left.1 (Flow.disjoint_stableSet hne) h₁ h₂
+
 /-- The point of a record of a broken trajectory through `x`, made of the points `z j`, on a level
 strictly between `f (x (j + 1))` and `f (x j)` lies on the orbit of `z j`. -/
-private theorem exists_flow_eq_of_mem_Ioo {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
+theorem exists_flow_eq_of_mem_Ioo {k : ℕ} {x : Fin (k + 1) → M} {z : Fin k → M}
     {c : ι → ℝ} {w : ι → M}
     (hz : ∀ j : Fin k, z j ∈ hX.flow.unstableSet (x j.castSucc) ∩ hX.flow.stableSet (x j.succ))
     (hw : ∀ i, f (w i) = c i ∧ ∃ j t, hX.flow t (z j) = w i) {i : ι} {j : Fin k}

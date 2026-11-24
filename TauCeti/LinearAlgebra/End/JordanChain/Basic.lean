@@ -503,6 +503,24 @@ theorem basis_coord_comp_pow_eq_zero (c : f.JordanChainBasis ι) {p : Σ i, Fin 
     omega
   · simp
 
+/-- A power `f ^ k` moves the coordinates in a Jordan-chain basis `k` steps down each chain: the
+coordinate of `f ^ k x` at depth `j + k` of chain `i` is the coordinate of `x` at depth `j`. -/
+theorem basis_repr_pow_apply (c : f.JordanChainBasis ι) (k : ℕ) (x : V) (i : ι) (j : ℕ)
+    (h : j + k < c.len i) :
+    c.basis.repr ((f ^ k) x) ⟨i, ⟨j + k, h⟩⟩ = c.basis.repr x ⟨i, ⟨j, by omega⟩⟩ := by
+  classical
+  have key : c.basis.coord ⟨i, ⟨j + k, h⟩⟩ ∘ₗ f ^ k = c.basis.coord ⟨i, ⟨j, by omega⟩⟩ := by
+    refine c.basis.ext fun ⟨i', j'⟩ => ?_
+    rw [LinearMap.comp_apply, c.pow_apply_basis k i' j']
+    -- Basis vectors of a different chain have zero coordinates on both sides.
+    obtain rfl | hi := eq_or_ne i' i
+    · split_ifs with hj
+      · simp [-basis_apply, Finsupp.single_apply, Fin.ext_iff]
+      · have hj' : (j' : ℕ) ≠ j := by omega
+        simp [-basis_apply, Fin.ext_iff, hj']
+    · split_ifs <;> simp [-basis_apply, hi]
+  exact LinearMap.congr_fun key x
+
 /-- The last vector `f ^ (len j - 1) (head j)` of chain `j` lies in the range of `f ^ k` exactly
 when `k < len j`. -/
 theorem pow_apply_head_mem_range_pow_iff [Nontrivial K] (c : f.JordanChainBasis ι) (j : ι)
