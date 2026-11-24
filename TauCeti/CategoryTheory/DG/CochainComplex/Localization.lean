@@ -204,16 +204,23 @@ instance essSurj_mapHomotopyCategory_fromNerve :
 
 variable [HasDerivedCategory.{w'} C]
 
+/-- The image in `DerivedCategory C` of the vertex of the K-injective replacement of a complex `K`
+is the image of that replacement under `HomotopyCategory.quotient C _ ⋙ Qh`. -/
+theorem dgNerveHomotopyCategoryEquiv_functor_obj_mk_replacement (K : CochainComplex C ℤ) :
+    (dgNerveHomotopyCategoryEquiv R C).functor.obj
+        (HomotopyCategory.mk ((dgNerveEquiv R _).symm (replacement K))) =
+      (HomotopyCategory.quotient C _ ⋙ Qh).obj ((injectiveReplacement C).obj K) := by
+  rw [dgNerveHomotopyCategoryEquiv_functor, Functor.comp_obj,
+    dgNerve.fromHomotopyCategory_obj_mk, Equiv.apply_symm_apply, toDerivedCategory_obj,
+    DGHomotopyCategory.underlying_of, Functor.comp_obj]
+
 /-- The identification of the image in `DerivedCategory C` of a vertex equal to the vertex of the
 replacement of `K` with `DerivedCategory.Q.obj K`. Stating it for an arbitrary vertex `x` lets the
 naturality computation substitute `x`. -/
 private def objIsoOfEq {K : CochainComplex C ℤ} {x : (dgNerve R (KInjectiveDGCategory C)) _⦋0⦌}
     (hx : x = (dgNerveEquiv R _).symm (replacement K)) :
     (dgNerveHomotopyCategoryEquiv R C).functor.obj (HomotopyCategory.mk x) ≅ Q.obj K :=
-  eqToIso (by
-    rw [hx, dgNerveHomotopyCategoryEquiv_functor, Functor.comp_obj,
-      dgNerve.fromHomotopyCategory_obj_mk, Equiv.apply_symm_apply, toDerivedCategory_obj,
-      DGHomotopyCategory.underlying_of, Functor.comp_obj]) ≪≫
+  eqToIso (hx ▸ dgNerveHomotopyCategoryEquiv_functor_obj_mk_replacement R K) ≪≫
     (quotientCompQhIso C).app ((injectiveReplacement C).obj K) ≪≫
       (asIso (Q.map ((ιInjectiveReplacement C).app K))).symm
 
@@ -258,10 +265,8 @@ inverse of `DerivedCategory.Q` of the quasi-isomorphism from `K` to its replacem
 theorem fromNerveObjIso_hom (K : CochainComplex C ℤ) :
     (fromNerveObjIso R K).hom =
       eqToHom ((congrArg (fun x ↦ (dgNerveHomotopyCategoryEquiv R C).functor.obj
-          (HomotopyCategory.mk x)) (fromNerve_app_nerveEquiv_symm R K)).trans (by
-            rw [dgNerveHomotopyCategoryEquiv_functor, Functor.comp_obj,
-              dgNerve.fromHomotopyCategory_obj_mk, Equiv.apply_symm_apply, toDerivedCategory_obj,
-              DGHomotopyCategory.underlying_of, Functor.comp_obj])) ≫
+          (HomotopyCategory.mk x)) (fromNerve_app_nerveEquiv_symm R K)).trans
+            (dgNerveHomotopyCategoryEquiv_functor_obj_mk_replacement R K)) ≫
         (quotientCompQhIso C).hom.app ((injectiveReplacement C).obj K) ≫
           inv (Q.map ((ιInjectiveReplacement C).app K)) := by
   simp only [fromNerveObjIso, objIsoOfEq, Iso.trans_hom, eqToIso.hom, Iso.app_hom, Iso.symm_hom,
