@@ -54,6 +54,9 @@ on the whole space.
   constant `x`.
 * `TauCeti.continuousOn_parametric_intervalIntegral_of_continuousOn`: an interval integral of a
   function continuous on `s ×ˢ uIcc a b` is continuous in the parameter on `s`.
+* `TauCeti.tendsto_intervalIntegral_norm_sub_of_dominated`:
+  `∫ t in a..b, ‖P(t, z) - P(t, z₀)‖ ∂μ → 0` as `z → z₀` within `U` when `z ↦ P(t, z)` is
+  continuous on `U` and the norms are dominated on compact subsets of `U`.
 * `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
   shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
@@ -364,6 +367,49 @@ theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
     · refine tendsto_const_nhds.congr fun k => ?_
       exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
+
+/-- **`L¹` continuity of a dominated family.** If `P(·, z)` is almost everywhere strongly
+measurable on `[a, b]` for `z ∈ U`, `z ↦ P(t, z)` is continuous on `U` for almost every
+`t ∈ [a, b]`, and on every compact `K ⊆ U` the norms `‖P(t, z)‖` are bounded by one integrable
+function of `t`, then `∫ t in a..b, ‖P(t, z) - P(t, z₀)‖ ∂μ → 0` as `z → z₀` within `U`. The
+domination is only required on compact sets, so this applies on an open set of parameters where
+no single bound holds. -/
+theorem tendsto_intervalIntegral_norm_sub_of_dominated {Z F : Type*} [TopologicalSpace Z]
+    [FirstCountableTopology Z] [NormedAddCommGroup F] {μ : Measure ℝ} {P : ℝ → Z → F}
+    {U : Set Z} {a b : ℝ} (hab : a ≤ b)
+    (hmeas : ∀ z ∈ U, AEStronglyMeasurable (fun t ↦ P t z) (μ.restrict (Icc a b)))
+    (hcont : ∀ᵐ t ∂μ, t ∈ Icc a b → ContinuousOn (P t) U)
+    (hdom : ∀ K ⊆ U, IsCompact K → ∃ m : ℝ → ℝ, IntegrableOn m (Icc a b) μ ∧
+      ∀ z ∈ K, ∀ᵐ t ∂μ, t ∈ Icc a b → ‖P t z‖ ≤ m t) {z₀ : Z} (hz₀ : z₀ ∈ U) :
+    Tendsto (fun z ↦ ∫ t in a..b, ‖P t z - P t z₀‖ ∂μ) (𝓝[U] z₀) (𝓝 0) := by
+  have hIoc : uIoc a b ⊆ Icc a b := by
+    rw [uIoc_of_le hab]
+    exact Ioc_subset_Icc_self
+  -- Test along a sequence `w → z₀` within `U`; from some `N` on it lies in `U`.
+  refine tendsto_iff_seq_tendsto.2 fun w hw ↦ ?_
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hw.eventually self_mem_nhdsWithin)
+  set v : ℕ → Z := fun n ↦ w (n + N)
+  have hvU (n : ℕ) : v n ∈ U := hN _ (Nat.le_add_left N n)
+  have hv : Tendsto v atTop (𝓝 z₀) :=
+    (tendsto_nhdsWithin_iff.1 hw).1.comp (tendsto_add_atTop_nat N)
+  -- The tail of the sequence with its limit is a compact subset of `U`, so it has one bound.
+  obtain ⟨m, hm, hbound⟩ := hdom (insert z₀ (range v))
+    (insert_subset hz₀ (range_subset_iff.2 hvU)) hv.isCompact_insert_range
+  rw [← tendsto_add_atTop_iff_nat N]
+  simpa using intervalIntegral.tendsto_integral_filter_of_dominated_convergence (μ := μ)
+    (F := fun n t ↦ ‖P t (v n) - P t z₀‖) (f := fun _ ↦ (0 : ℝ)) (fun t ↦ m t + m t)
+    (Eventually.of_forall fun n ↦ ((hmeas _ (hvU n)).sub (hmeas z₀ hz₀)).norm.mono_measure
+      (Measure.restrict_mono hIoc le_rfl))
+    (Eventually.of_forall fun n ↦ by
+      filter_upwards [hbound (v n) (mem_insert_of_mem _ (mem_range_self n)),
+        hbound z₀ (mem_insert _ _)] with t ht ht₀ htI
+      rw [norm_norm]
+      exact (norm_sub_le _ _).trans (add_le_add (ht (hIoc htI)) (ht₀ (hIoc htI))))
+    (intervalIntegrable_iff.2 ((hm.add hm).mono_set hIoc))
+    (by
+      filter_upwards [hcont] with t ht htI
+      exact tendsto_iff_norm_sub_tendsto_zero.1 ((ht (hIoc htI) z₀ hz₀).tendsto.comp
+        (tendsto_nhdsWithin_iff.2 ⟨hv, Eventually.of_forall hvU⟩)))
 
 end TauCeti
 

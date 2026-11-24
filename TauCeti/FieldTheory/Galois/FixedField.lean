@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
 import Mathlib.RingTheory.Invariant.Basic
+import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.GroupAction.Hom
 
@@ -86,6 +87,13 @@ the closure of `H`.
 * `IntermediateField.finiteDimensional_fixedField` and `IntermediateField.isGalois_fixedField`:
   Artin's theorem on the fixed field of a finite subgroup, with no hypothesis on `M / K`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
+* `IntermediateField.fixedField_le_iff_fixingSubgroup_le_of_isClosed` and
+  `IntermediateField.finiteDimensional_fixedField_of_isOpen`: the infinite Galois correspondence
+  for a closed subgroup, and finiteness of the field fixed by an open one
+* `IntermediateField.fixingSubgroup_fixedField_of_isOpen`,
+  `IntermediateField.finrank_fixedField_of_isOpen` and
+  `IntermediateField.finrank_fixedField_stabilizer_of_isOpen`: an open subgroup is the fixing
+  subgroup of its fixed field, whose degree is the index, or the orbit size for a stabilizer
 * `IntermediateField.card_fixingSubgroup_le`
 * `IntermediateField.fixingSubgroup_adjoin_simple`, with
   `IntermediateField.mem_fixedField_stabilizer`,
@@ -203,6 +211,51 @@ Mathlib's `IsGalois.of_fixed_field` on the fixed field of the Galois corresponde
 instance isGalois_fixedField (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     IsGalois (fixedField H) M :=
   IsGalois.of_fixed_field M H
+
+/-- **The fixed field of a closed subgroup lies in `E` exactly when the fixers of `E` lie in the
+subgroup**, for a Galois extension `M / K` of any degree. Mathlib's
+`IsGalois.fixedField_le_iff_fixingSubgroup_le` is the finite-dimensional case, in which every
+subgroup is closed for the Krull topology. -/
+theorem fixedField_le_iff_fixingSubgroup_le_of_isClosed [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsClosed (H : Set (M ≃ₐ[K] M)))
+    {E : IntermediateField K M} :
+    fixedField H ≤ E ↔ E.fixingSubgroup ≤ H :=
+  ⟨fun h ↦ (fixingSubgroup_antitone h).trans
+      (InfiniteGalois.fixingSubgroup_fixedField ⟨H, hH⟩).le,
+    fun h ↦ (fixedField_le h).trans (InfiniteGalois.fixedField_fixingSubgroup E).le⟩
+
+/-- **An open subgroup is recovered from its fixed field**, for a Galois extension `M / K` of any
+degree: an open subgroup is closed for the Krull topology, and Mathlib's
+`InfiniteGalois.fixingSubgroup_fixedField` recovers closed subgroups. -/
+theorem fixingSubgroup_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    (fixedField H).fixingSubgroup = H :=
+  InfiniteGalois.fixingSubgroup_fixedField ⟨H, Subgroup.isClosed_of_isOpen H hH⟩
+
+/-- **The fixed field of an open subgroup is finite** over the base, for a Galois extension
+`M / K` of any degree: the open subgroup is the fixing subgroup of its fixed field, and Mathlib's
+`InfiniteGalois.isOpen_iff_finite` identifies the intermediate fields with open fixers. -/
+theorem finiteDimensional_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    FiniteDimensional K (fixedField H) := by
+  rw [← InfiniteGalois.isOpen_iff_finite, fixingSubgroup_fixedField_of_isOpen hH]
+  exact hH
+
+/-- **The degree of the fixed field of an open subgroup is its index**, for a Galois extension
+`M / K` of any degree. -/
+theorem finrank_fixedField_of_isOpen [IsGalois K M]
+    {H : Subgroup (M ≃ₐ[K] M)} (hH : IsOpen (H : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField H) = H.index := by
+  rw [finrank_eq_fixingSubgroup_index, fixingSubgroup_fixedField_of_isOpen hH]
+
+/-- **The degree of the field fixed by an open point stabilizer is the size of the orbit**, for
+an action of the automorphisms of a Galois extension `M / K` of any degree. -/
+theorem finrank_fixedField_stabilizer_of_isOpen [IsGalois K M] {X : Type*}
+    [MulAction (M ≃ₐ[K] M) X] {x : X}
+    (hx : IsOpen (MulAction.stabilizer (M ≃ₐ[K] M) x : Set (M ≃ₐ[K] M))) :
+    Module.finrank K (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) =
+      Nat.card (MulAction.orbit (M ≃ₐ[K] M) x) := by
+  rw [finrank_fixedField_of_isOpen hx, MulAction.index_stabilizer, Nat.card_coe_set_eq]
 
 end IntermediateField
 
