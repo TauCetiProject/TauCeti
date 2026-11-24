@@ -60,7 +60,7 @@ symplectic forms and forcings with such bounds. In particular the large-paramete
 lie in the chamber `w > 0`. For a forcing with pointwise bound `|ρ| ≤ K` the forcing term is at
 least `-K ∫_M |ω| vol`, and then `w(g, η_r + ρ) ≥ r ‖ω‖₂² / 8` as soon as
 `16 |⟨[F], [ω]⟩| + 8 K ∫_M |ω| vol ≤ r ‖ω‖₂²`
-(`SeibergWitten.mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_forall_sqrt_le`).
+(`TauCeti.SeibergWitten.mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_sqrt_le`).
 
 ## Main results
 
@@ -70,8 +70,9 @@ least `-K ∫_M |ω| vol`, and then `w(g, η_r + ρ) ≥ r ‖ω‖₂² / 8` as
   `(r / 4) ‖ω‖₂² - 2 ⟨[F], [ω]⟩ + ⟨ρ, ω⟩₂` of the wall coordinate at `η_r + ρ`.
 * `TauCeti.SeibergWitten.mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub`: the
   uniform wall gap `w(g, η_r + ρ) ≥ r a / 8`.
-* `SeibergWitten.mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_forall_sqrt_le`:
-  the uniform wall gap `w(g, η_r + ρ) ≥ r ‖ω‖₂² / 8` for forcings of pointwise norm at most `K`.
+* `TauCeti.SeibergWitten.mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_sqrt_le`:
+  the uniform wall gap `w(g, η_r + ρ) ≥ r ‖ω‖₂² / 8` for forcings of pointwise norm at most `K`,
+  valid once `16 |⟨[F], [ω]⟩| + 8 K ∫_M |ω| vol ≤ r ‖ω‖₂²`.
 
 ## References
 
@@ -220,7 +221,7 @@ any two-form and `ρ` a two-form of pointwise norm `|ρ| = √⟨ρ, ρ⟩ ≤ K
 then the wall coordinate of Taubes's perturbation is at least `r ‖ω‖₂² / 8`. The threshold does not
 depend on `F₀` or on `ρ` beyond `K`, so the gap is uniform over all forcings of norm at most `K`.
 -/
-theorem mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_forall_sqrt_le
+theorem mul_div_le_integralTopForm_inner_selfDualPart_add_smul_add_sub_of_sqrt_le
     [CompactSpace M] (hω : ω ∈ compactlySupportedClosedForms I M 2)
     (hω' : ω ∈ SmoothForm.selfDualForms o) (hF : F ∈ closedForms I M 2) (F₀ ρ : SmoothForm I M ℝ 2)
     {r K : ℝ} (hρ : ∀ x, √(alternatingFormInner (TangentSpace I x) 2 (ρ.val x) (ρ.val x)) ≤ K)

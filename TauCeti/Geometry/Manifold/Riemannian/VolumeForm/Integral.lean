@@ -344,12 +344,9 @@ theorem abs_integralTopForm_inner_smul_riemannianVolumeForm_le {k : ℕ}
     continuous_const.mul (hβ.contMDiff_alternatingFormInner hβ).continuous.sqrt
   -- Fibrewise Cauchy–Schwarz: `|⟨α, β⟩| ≤ |α| |β| ≤ K |β|`.
   have hpt (x : M) : |alternatingFormInner (TangentSpace I x) k (α x) (β x)| ≤
-      K * √(alternatingFormInner (TangentSpace I x) k (β x) (β x)) := by
-    have h := abs_real_inner_le_norm ((alternatingFormEquiv (TangentSpace I x) k).symm (α x))
-      ((alternatingFormEquiv (TangentSpace I x) k).symm (β x))
-    rw [← alternatingFormInner_apply, ← ContinuousAlternatingMap.sqrt_alternatingFormInner_self,
-      ← ContinuousAlternatingMap.sqrt_alternatingFormInner_self] at h
-    exact h.trans (mul_le_mul_of_nonneg_right (hαK x) (Real.sqrt_nonneg _))
+      K * √(alternatingFormInner (TangentSpace I x) k (β x) (β x)) :=
+    (α x).abs_alternatingFormInner_le_sqrt_mul_sqrt (β x) |>.trans
+      (mul_le_mul_of_nonneg_right (hαK x) (Real.sqrt_nonneg _))
   let : MeasurableSpace M := borel M
   have : BorelSpace M := ⟨rfl⟩
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
