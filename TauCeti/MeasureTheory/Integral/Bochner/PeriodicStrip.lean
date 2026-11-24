@@ -223,11 +223,12 @@ theorem forall_eventually_le_setIntegral_ball_toIcoMod_of_periodic (hc : 0 < c)
     (hper : ∀ i x t, e i (x, t + c) = e i (x, t)) {y : α × ℝ}
     (hy : ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ z in ball y ε, e i z ∂μ.prod volume) :
     ∀ ε > 0, ∀ᶠ i in l, δ ≤ ∫ z in ball (y.1, toIcoMod hc a y.2) ε, e i z ∂μ.prod volume := by
-  -- `toIcoMod hc a y.2` is `y.2` plus an integer multiple of the period.
-  have hn (i : ι) (x : α) (t : ℝ) : e i (x, t + (-toIcoDiv hc a y.2) • c) = e i (x, t) :=
+  -- `toIcoMod hc a y.2` differs from `y.2` by an integer multiple of the period.
+  have hn (i : ι) (x : α) (t : ℝ) : e i (x, t + toIcoDiv hc a y.2 • c) = e i (x, t) :=
     Function.Periodic.zsmul (f := fun t ↦ e i (x, t)) (hper i x) _ t
-  simp only [toIcoMod, sub_eq_add_neg, ← neg_smul, setIntegral_ball_add_of_periodic (hn _)]
-  exact hy
+  intro ε hε
+  filter_upwards [hy ε hε] with i hi
+  rwa [← setIntegral_ball_add_of_periodic (hn i), toIcoMod_add_toIcoDiv_zsmul]
 
 variable [l.NeBot]
 
