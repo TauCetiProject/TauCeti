@@ -347,7 +347,7 @@ theorem exists_eq_prod (hI : I.IsAdmissible) (hn : 4 ≤ I.rank) :
   obtain ⟨c, hc⟩ := GlobalNumberFields.signHom_surjective (K := K)
     fun w => if 0 < I.realPositiveIndex w then 1 else -1
   have h : (QuadraticMap.weightedSumSquares K ![(c : K)]).Nondegenerate :=
-    QuadraticMap.nondegenerate_weightedSumSquares fun i => by
+    QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun i => by
       fin_cases i
       simp [isRegular_iff_ne_zero]
   have hpos (w) (hw : 0 < embedding_of_isReal w.property (c : K)) : 0 < I.realPositiveIndex w := by
