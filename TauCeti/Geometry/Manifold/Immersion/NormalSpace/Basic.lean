@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Immersion
-public import TauCeti.Topology.Algebra.Module.Quotient
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 
 /-!
 # Quotient normal spaces of immersions
@@ -52,6 +52,10 @@ at `x`: the range of the differential, regarded as a linear map of tangent space
 @[expose] noncomputable def tangentRange (_hf : IsImmersion I J n f) (x : M) (_hn : n ≠ 0) :
     Submodule 𝕜 (TangentSpace J (f x)) :=
   (mfderiv I J f x).toLinearMap.range
+
+/-- The tangent range is the range of the differential. -/
+theorem tangentRange_def (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0) :
+    hf.tangentRange x hn = (mfderiv I J f x).toLinearMap.range := (rfl)
 
 /-- An ambient tangent vector is tangent to the immersion precisely when it is a differential
 image. -/

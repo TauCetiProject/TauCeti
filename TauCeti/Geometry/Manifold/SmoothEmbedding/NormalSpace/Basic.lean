@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
+public import TauCeti.Topology.Algebra.Module.Quotient
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!

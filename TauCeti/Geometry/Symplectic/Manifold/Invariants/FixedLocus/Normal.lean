@@ -202,7 +202,7 @@ theorem IsNondegenerate.invariants_fixedNormalRepresentation_fixedPointsOfFinran
   refine SmoothEmbedding.invariants_fixedNormalRepresentation_eq_bot (hσ := hσ) _ _ hσK ?_ y _ _ ?_
   · simpa using hemb.hasSymplecticTangentImages
   · -- Replace the bundled embedding by its underlying inclusion, on which `hrange` is stated.
-    rw [Manifold.IsImmersion.tangentRange]
+    rw [Manifold.IsImmersion.tangentRange_def]
     generalize hG : ⇑(SmoothEmbedding.ofIsSmoothEmbedding (I := 𝓘(ℝ, L)) (J := 𝓘(ℝ, E))
       (n := ∞) _ hemb.isSmoothEmbedding) = G
     rw [SmoothEmbedding.coe_ofIsSmoothEmbedding] at hG
