@@ -28,8 +28,8 @@ OhTataru-YMHF, Definitions 3.2–3.4 and Lemma 3.5, lines 884–954):
   rates `σ₁(1 - ε)` and `σ₂(1 - ε)`.
 * `TauCeti.dyadicLowSum r d k = ∑_{j < k} 2^{r(j-k)} d_j` and `TauCeti.dyadicLowSup r c k =
   sup_{j < k} 2^{r(j-k)} c_j`, so that the roadmap's `c^{[σ]}` is `dyadicLowSup ((1 - ε) σ) c`.
-* `TauCeti.IsCompatible σ ε c d`: `d` is `σ`-compatible with `c`, that is
-  `c_k ∑_{j < k} 2^{σ(1-ε)(j-k)} d_j ≲ d_k`.
+* `TauCeti.IsCompatible σ ε c d`: `d` is `σ`-compatible with `c`, that is the sums
+  `∑_{j < k} 2^{σ(1-ε)(j-k)} d_j` converge and `c_k ∑_{j < k} 2^{σ(1-ε)(j-k)} d_j ≲ d_k`.
 
 ## Main results
 
@@ -43,7 +43,8 @@ OhTataru-YMHF, Definitions 3.2–3.4 and Lemma 3.5, lines 884–954):
   `TauCeti.isCompatible_add_mul_dyadicLowSum` (Lemma 3.5): if `0 ≤ c ≤ M`, `0 ≤ d`,
   `σ' < σ(1 - ε)` and the sums `∑_{j < k} 2^{σ'(j-k)} d_j` are finite, then
   `e_k = d_k + c_k ∑_{j < k} 2^{σ'(j-k)} d_j` is `σ`-compatible with `c`, with constant
-  `1 + M / (2^{σ(1-ε) - σ'} - 1)`. No slow variation of `c` or `d` is needed.
+  `1 + M / (2^{σ(1-ε) - σ'} - 1)`; the sums for `e` converge by
+  `TauCeti.summable_dyadicLowSum_add_mul_dyadicLowSum`. No slow variation of `c` or `d` is needed.
 
 The checks of the roadmap on sequences are `TauCeti.isFrequencyEnvelope_single` (a single
 nonzero block), `TauCeti.not_isAdmissible_two_rpow` (a sequence growing too fast to be
@@ -94,10 +95,11 @@ is `dyadicLowSup ((1 - ε) * σ) c`. It is `0` when the family is not bounded ab
 def dyadicLowSup (r : ℝ) (c : ℤ → ℝ) (k : ℤ) : ℝ :=
   ⨆ j : Set.Iio k, (2 : ℝ) ^ (r * ((j : ℤ) - k : ℝ)) * c j
 
-/-- `d` is **`σ`-compatible** with `c` (with the loss `ε`) if
-`c_k ∑_{j < k} 2^{σ(1-ε)(j-k)} d_j ≲ d_k`. -/
+/-- `d` is **`σ`-compatible** with `c` (with the loss `ε`) if the sums
+`∑_{j < k} 2^{σ(1-ε)(j-k)} d_j` converge and `c_k ∑_{j < k} 2^{σ(1-ε)(j-k)} d_j ≲ d_k`. -/
 def IsCompatible (σ ε : ℝ) (c d : ℤ → ℝ) : Prop :=
-  ∃ C : ℝ, ∀ k, c k * dyadicLowSum (σ * (1 - ε)) d k ≤ C * d k
+  (∀ k : ℤ, Summable fun j : Set.Iio k ↦ (2 : ℝ) ^ (σ * (1 - ε) * ((j : ℤ) - k : ℝ)) * d (j : ℤ)) ∧
+    ∃ C : ℝ, ∀ k, c k * dyadicLowSum (σ * (1 - ε)) d k ≤ C * d k
 
 /-! ### Slow variation -/
 
@@ -250,53 +252,82 @@ private theorem sum_ite_two_rpow_mul_dyadicLowSum_le {d : ℤ → ℝ} {s t : �
     simp only [g]
     split_ifs with hjk hij <;> first | rfl | (exfalso; omega) | simp
 
+/-- The partial sums in Lemma 3.5: for `0 ≤ c ≤ M`, `0 ≤ d` and `t < s`, the finite sums of
+`2^{s(j-k)} e_j`, `j < k`, are at most `(1 + M / (2^{s-t} - 1)) L_k`, where
+`e = d + c L` and `L_j = ∑_{i < j} 2^{t(i-j)} d_i`. -/
+private theorem sum_ite_two_rpow_mul_add_mul_dyadicLowSum_le {c d : ℤ → ℝ} {M s t : ℝ}
+    (hc : ∀ k, 0 ≤ c k) (hcM : ∀ k, c k ≤ M) (hd : ∀ k, 0 ≤ d k) (hts : t < s)
+    (hsum : ∀ k : ℤ, Summable fun j : ℤ ↦ if j < k then (2 : ℝ) ^ (t * (j - k : ℝ)) * d j else 0)
+    (k : ℤ) (F : Finset ℤ) :
+    ∑ j ∈ F, (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * (d + c * dyadicLowSum t d) j else 0) ≤
+      (1 + M / (2 ^ (s - t) - 1)) * dyadicLowSum t d k := by
+  set L := dyadicLowSum t d
+  have hM : 0 ≤ M := (hc k).trans (hcM k)
+  have hL : ∀ j, 0 ≤ L j := dyadicLowSum_nonneg hd
+  calc ∑ j ∈ F, (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * (d + c * L) j else 0)
+      ≤ ∑ j ∈ F, ((if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * d j else 0) +
+          M * (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * L j else 0)) := by
+        refine Finset.sum_le_sum fun j _ ↦ ?_
+        simp only [Pi.add_apply, Pi.mul_apply]
+        split_ifs
+        · have := mul_le_mul_of_nonneg_right (hcM j) (hL j)
+          have h2 : 0 ≤ (2 : ℝ) ^ (s * (j - k : ℝ)) := by positivity
+          nlinarith
+        · simp
+    _ = ∑ j ∈ F, (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * d j else 0) +
+          M * ∑ j ∈ F, (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * L j else 0) := by
+        rw [Finset.sum_add_distrib, Finset.mul_sum]
+    _ ≤ L k + M * (1 / (2 ^ (s - t) - 1) * L k) :=
+        add_le_add (sum_ite_two_rpow_mul_le hd hts.le (hsum k) F)
+          (mul_le_mul_of_nonneg_left (sum_ite_two_rpow_mul_dyadicLowSum_le hd hts hsum k F) hM)
+    _ = (1 + M / (2 ^ (s - t) - 1)) * L k := by ring
+
+/-- The terms of `e = d + c L`, `L_j = ∑_{i < j} 2^{t(i-j)} d_i`, in a weighted lower sum with
+rate `s`, are nonnegative for `0 ≤ c` and `0 ≤ d`. -/
+private theorem ite_two_rpow_mul_add_mul_dyadicLowSum_nonneg {c d : ℤ → ℝ} {s t : ℝ}
+    (hc : ∀ k, 0 ≤ c k) (hd : ∀ k, 0 ≤ d k) (k j : ℤ) :
+    0 ≤ if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * (d + c * dyadicLowSum t d) j else 0 := by
+  split_ifs
+  · exact mul_nonneg (by positivity) (add_nonneg (hd j) (mul_nonneg (hc j)
+      (dyadicLowSum_nonneg hd j)))
+  · exact le_rfl
+
+/-- In Lemma 3.5 the sums for `e`, `∑_{j < k} 2^{s(j-k)} e_j` with
+`e_j = d_j + c_j ∑_{i < j} 2^{t(i-j)} d_i`, converge: let `0 ≤ c ≤ M`, `0 ≤ d`, `t < s`, and let the
+sums `∑_{j < k} 2^{t(j-k)} d_j` converge. -/
+theorem summable_dyadicLowSum_add_mul_dyadicLowSum {c d : ℤ → ℝ} {M s t : ℝ}
+    (hc : ∀ k, 0 ≤ c k) (hcM : ∀ k, c k ≤ M) (hd : ∀ k, 0 ≤ d k) (hts : t < s)
+    (hsum : ∀ k : ℤ, Summable fun j : Set.Iio k ↦ (2 : ℝ) ^ (t * ((j : ℤ) - k : ℝ)) * d (j : ℤ))
+    (k : ℤ) :
+    Summable fun j : Set.Iio k ↦
+      (2 : ℝ) ^ (s * ((j : ℤ) - k : ℝ)) * (d + c * dyadicLowSum t d) (j : ℤ) :=
+  summable_dyadicLowSum_iff.2 (summable_of_sum_le
+    (ite_two_rpow_mul_add_mul_dyadicLowSum_nonneg hc hd k)
+    (sum_ite_two_rpow_mul_add_mul_dyadicLowSum_le hc hcM hd hts
+      (fun k ↦ summable_dyadicLowSum_iff.1 (hsum k)) k))
+
 /-- **Lemma 3.5 of OhTataru-YMHF**, quantitative form. Let `0 ≤ c ≤ M`, `0 ≤ d`, `t < s`, and
 let the sums `∑_{j < k} 2^{t(j-k)} d_j` converge. Then `e_k = d_k + c_k ∑_{j < k} 2^{t(j-k)} d_j`
-satisfies `c_k ∑_{j < k} 2^{s(j-k)} e_j ≤ (1 + M / (2^{s-t} - 1)) e_k`. -/
+satisfies `c_k ∑_{j < k} 2^{s(j-k)} e_j ≤ (1 + M / (2^{s-t} - 1)) e_k`, where these sums converge
+by `TauCeti.summable_dyadicLowSum_add_mul_dyadicLowSum`. -/
 theorem mul_dyadicLowSum_add_mul_dyadicLowSum_le {c d : ℤ → ℝ} {M s t : ℝ} (hc : ∀ k, 0 ≤ c k)
     (hcM : ∀ k, c k ≤ M) (hd : ∀ k, 0 ≤ d k) (hts : t < s)
     (hsum : ∀ k : ℤ, Summable fun j : Set.Iio k ↦ (2 : ℝ) ^ (t * ((j : ℤ) - k : ℝ)) * d (j : ℤ))
     (k : ℤ) :
     c k * dyadicLowSum s (d + c * dyadicLowSum t d) k ≤
       (1 + M / (2 ^ (s - t) - 1)) * (d + c * dyadicLowSum t d) k := by
-  set L := dyadicLowSum t d
-  set G : ℝ := 1 / (2 ^ (s - t) - 1)
-  have hG : 0 ≤ G := by
+  have hG : 0 ≤ M / (2 ^ (s - t) - 1) := by
     have : (1 : ℝ) < 2 ^ (s - t) := Real.one_lt_rpow one_lt_two (by linarith)
-    exact div_nonneg zero_le_one (by linarith)
-  have hM : 0 ≤ M := (hc k).trans (hcM k)
-  have hL : 0 ≤ L := fun j ↦ dyadicLowSum_nonneg hd j
-  have hsum' := fun k ↦ summable_dyadicLowSum_iff.1 (hsum k)
-  suffices h : c k * dyadicLowSum s (d + c * L) k ≤ (1 + M * G) * (c k * L k) by
-    rw [← mul_one_div M]
-    refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
-    simp only [Pi.add_apply, Pi.mul_apply]
-    linarith [hd k]
-  rw [dyadicLowSum_eq_tsum, ← tsum_mul_left]
-  refine Real.tsum_le_of_sum_le (fun j ↦ ?_) fun F ↦ ?_
-  · dsimp only
-    split_ifs
-    · exact mul_nonneg (hc k) (mul_nonneg (by positivity)
-        (add_nonneg (hd j) (mul_nonneg (hc j) (hL j))))
-    · simp
-  calc ∑ j ∈ F, c k * (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * (d + c * L) j else 0)
-      ≤ ∑ j ∈ F, (c k * (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * d j else 0) +
-          c k * M * (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * L j else 0)) := by
-        refine Finset.sum_le_sum fun j _ ↦ ?_
-        simp only [Pi.add_apply, Pi.mul_apply]
-        split_ifs
-        · have := mul_le_mul_of_nonneg_right (hcM j) (hL j)
-          have h2 : 0 ≤ c k * (2 : ℝ) ^ (s * (j - k : ℝ)) := mul_nonneg (hc k) (by positivity)
-          nlinarith
-        · simp
-    _ = c k * ∑ j ∈ F, (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * d j else 0) +
-          c k * M * ∑ j ∈ F, (if j < k then (2 : ℝ) ^ (s * (j - k : ℝ)) * L j else 0) := by
-        rw [Finset.sum_add_distrib, Finset.mul_sum, Finset.mul_sum]
-    _ ≤ c k * L k + c k * M * (G * L k) :=
-        add_le_add (mul_le_mul_of_nonneg_left (sum_ite_two_rpow_mul_le hd hts.le (hsum' k) F)
-          (hc k)) (mul_le_mul_of_nonneg_left
-            (sum_ite_two_rpow_mul_dyadicLowSum_le hd hts hsum' k F) (mul_nonneg (hc k) hM))
-    _ = (1 + M * G) * (c k * L k) := by ring
+    exact div_nonneg ((hc k).trans (hcM k)) (by linarith)
+  have h : dyadicLowSum s (d + c * dyadicLowSum t d) k ≤
+      (1 + M / (2 ^ (s - t) - 1)) * dyadicLowSum t d k := by
+    rw [dyadicLowSum_eq_tsum]
+    exact Real.tsum_le_of_sum_le (ite_two_rpow_mul_add_mul_dyadicLowSum_nonneg hc hd k)
+      (sum_ite_two_rpow_mul_add_mul_dyadicLowSum_le hc hcM hd hts
+        (fun k ↦ summable_dyadicLowSum_iff.1 (hsum k)) k)
+  refine (mul_le_mul_of_nonneg_left h (hc k)).trans ?_
+  simp only [Pi.add_apply, Pi.mul_apply]
+  nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ 1 + M / (2 ^ (s - t) - 1)) (hd k)]
 
 /-- **Lemma 3.5 of OhTataru-YMHF.** If `0 ≤ c ≤ M`, `0 ≤ d`, `σ' < σ(1 - ε)` and the sums
 `∑_{j < k} 2^{σ'(j-k)} d_j` converge, then `e_k = d_k + c_k ∑_{j < k} 2^{σ'(j-k)} d_j` is
@@ -305,7 +336,8 @@ theorem isCompatible_add_mul_dyadicLowSum {c d : ℤ → ℝ} {M σ ε σ' : ℝ
     (hcM : ∀ k, c k ≤ M) (hd : ∀ k, 0 ≤ d k) (hσ' : σ' < σ * (1 - ε))
     (hsum : ∀ k : ℤ, Summable fun j : Set.Iio k ↦ (2 : ℝ) ^ (σ' * ((j : ℤ) - k : ℝ)) * d (j : ℤ)) :
     IsCompatible σ ε c (d + c * dyadicLowSum σ' d) :=
-  ⟨_, mul_dyadicLowSum_add_mul_dyadicLowSum_le hc hcM hd hσ' hsum⟩
+  ⟨summable_dyadicLowSum_add_mul_dyadicLowSum hc hcM hd hσ' hsum,
+    _, mul_dyadicLowSum_add_mul_dyadicLowSum_le hc hcM hd hσ' hsum⟩
 
 /-! ### The envelope of a square-summable sequence -/
 
