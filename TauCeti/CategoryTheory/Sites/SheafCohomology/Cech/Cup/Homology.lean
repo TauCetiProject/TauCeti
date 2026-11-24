@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ModuleCat.Bilinear
+public import TauCeti.Algebra.Homology.ModuleCat.Single
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic
 
 /-!
@@ -216,17 +217,6 @@ section Augmentation
 
 variable {T : C} (hT : IsTerminal T)
 
-omit [HasFiniteProducts C] in
-/-- The cycle of the single complex on `F(T)` given by a section is the section itself. -/
-private lemma iCycles_singleObjCyclesSelfIso_inv (s : F.obj (op T)) :
-    ((CochainComplex.single₀ (ModuleCat.{w} R)).obj
-      ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).iCycles 0
-        ((singleObjCyclesSelfIso (ComplexShape.up ℕ) 0
-          ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv s) = s := by
-  rw [← ConcreteCategory.comp_apply, singleObjCyclesSelfIso_inv_iCycles,
-    CochainComplex.single₀ObjXSelf]
-  rfl
-
 /-- The class in `H⁰(U, F)` of the augmentation of a section over the terminal object is the class
 of the cycle that the augmentation maps it to. -/
 private lemma homologyMap_cechAugmentation_apply (s : F.obj (op T)) :
@@ -259,7 +249,7 @@ theorem homologyMap_cechAugmentation_mul (s t : F.obj (op T)) :
   apply moduleCat_iCycles_injective
   refine cechCochain_ext fun a ↦ ?_
   simp only [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk, cechComponent_cechCup,
-    iCycles_singleObjCyclesSelfIso_inv, cechFace_cechAugmentation_f_zero,
+    CochainComplex.iCycles_singleObjCyclesSelfIso_inv, cechFace_cechAugmentation_f_zero,
     cechComponent_cechAugmentation_f_zero, map_mul]
 
 /-- **The unit class in degree zero is the class of the unit section.** For a terminal object `T`,
@@ -275,8 +265,8 @@ theorem homologyMap_cechAugmentation_one :
   apply moduleCat_iCycles_injective
   refine cechCochain_ext fun a ↦ ?_
   simp only [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk,
-    iCycles_singleObjCyclesSelfIso_inv, cechComponent_cechAugmentation_f_zero, map_one,
-    cechComponent_cechOne]
+    CochainComplex.iCycles_singleObjCyclesSelfIso_inv, cechComponent_cechAugmentation_f_zero,
+    map_one, cechComponent_cechOne]
 
 end Augmentation
 

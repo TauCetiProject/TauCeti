@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.Grp.AB
 public import Mathlib.CategoryTheory.Limits.Connected
+public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
 /-!
@@ -29,6 +30,10 @@ If `C` has a terminal object `T` and `P` satisfies the sheaf condition for each 
 that the augmentation identifies `P(T)` with the degree `0` Čech cohomology of every `E j`, then
 the degree `0` Čech cohomology of `P` for a connected system is `P(T)`
 (`TauCeti.CategoryTheory.cechCohomologyZeroIso`).
+
+For presheaves of modules, the file also records the structure maps and the induced maps on
+elements: over a nonempty directed order every class comes from some family of the system
+(`TauCeti.CategoryTheory.exists_cechCohomologyι_app_eq`).
 
 ## Main definitions
 
@@ -58,6 +63,8 @@ the degree `0` Čech cohomology of `P` for a connected system is `P(T)`
   in positive degrees if every family of the system is acyclic.
 * `TauCeti.CategoryTheory.cechCohomologyZeroIso_hom_naturality`: the identification in degree `0`
   is natural in the presheaf.
+* `TauCeti.CategoryTheory.exists_cechCohomologyι_app_eq`: over a nonempty directed order, every
+  Čech cohomology class of a presheaf of modules comes from some family of the system.
 
 ## References
 
@@ -103,6 +110,13 @@ of the diagram is the map on Čech cohomology induced by any morphism of familie
 theorem cechCohomologyDiagram_map {i j : J} (f : i ⟶ j) (φ : E j ⟶ E i) :
     (cechCohomologyDiagram A E hE n).map f = cechComplexHomologyMap A n φ :=
   cechComplexHomologyMap_eq A n _ φ
+
+/-- For `i ≤ j`, the transition map of the diagram of Čech cohomologies of a presheaf `P` is the map
+induced by any morphism of families `E j ⟶ E i`. -/
+theorem cechCohomologyDiagram_flip_obj_map (P : Cᵒᵖ ⥤ A) {i j : J} (f : i ⟶ j) (φ : E j ⟶ E i) :
+    ((cechCohomologyDiagram A E hE n).flip.obj P).map f =
+      HomologicalComplex.homologyMap (cechComplexMap P φ) n := by
+  rw [Functor.flip_obj_map, cechCohomologyDiagram_map A E hE n f φ, cechComplexHomologyMap_app]
 
 /-- Fixed-family Čech cohomology is additive in the coefficient presheaf. -/
 instance cechCohomologyDiagram_obj_additive (j : J) :
@@ -318,5 +332,51 @@ theorem isZero_cechCohomology_obj_succ_of_quasiIso {T : C} (hT : IsTerminal T) [
   refine (IsZero.iff_id_eq_zero _).2 (cechCohomology_obj_hom_ext fun j ↦ ?_)
   -- each Čech complex is exact in positive degrees
   exact ((((quasiIso_cechAugmentation_iff _ hT P).1 (h j)).2 n).isZero_homology).eq_of_src _ _
+
+/-! ### Presheaves of modules -/
+
+section ModuleCat
+
+variable {R : Type*} [Ring R] [HasColimitsOfShape J (ModuleCat.{w} R)] {n}
+
+/-- The structure maps are compatible, on elements, with the maps induced by morphisms of families:
+for `i ≤ j` and a morphism of families `φ : E j ⟶ E i`, the structure map of `E j` sends the image
+under `φ` of a class `a` of `E i` to the image of `a`. -/
+theorem cechCohomologyι_app_homologyMap (P : Cᵒᵖ ⥤ ModuleCat.{w} R) {i j : J} (h : i ≤ j)
+    (φ : E j ⟶ E i) (a : ((cechComplexFunctor (E i).obj).obj P).homology n) :
+    ((cechCohomologyι E hE n j).app P).hom
+        ((HomologicalComplex.homologyMap (cechComplexMap P φ) n).hom a) =
+      ((cechCohomologyι E hE n i).app P).hom a := by
+  have hι : HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫
+      (cechCohomologyι E hE n j).app P = (cechCohomologyι E hE n i).app P := by
+    rw [← cechComplexHomologyMap_app]
+    exact (NatTrans.comp_app _ _ _).symm.trans <| NatTrans.congr_app
+      (cechComplexHomologyMap_comp_cechCohomologyι _ E hE n h φ) _
+  exact (ConcreteCategory.comp_apply _ _ a).symm.trans (ConcreteCategory.congr_hom hι a)
+
+/-- The map on Čech cohomology for the system induced by a morphism of presheaves of modules
+`α : P ⟶ Q` sends the image of a class `a` of the family `E j` to the image of the class induced
+by `α`. -/
+theorem cechCohomology_map_cechCohomologyι_app {P Q : Cᵒᵖ ⥤ ModuleCat.{w} R} (α : P ⟶ Q) (j : J)
+    (a : ((cechComplexFunctor (E j).obj).obj P).homology n) :
+    ((cechCohomology (ModuleCat.{w} R) E hE n).map α).hom
+        (((cechCohomologyι E hE n j).app P).hom a) =
+      ((cechCohomologyι E hE n j).app Q).hom
+        ((HomologicalComplex.homologyMap ((cechComplexFunctor (E j).obj).map α) n).hom a) :=
+  (ConcreteCategory.comp_apply _ _ a).symm.trans
+    ((ConcreteCategory.congr_hom ((cechCohomologyι E hE n j).naturality α) a).symm.trans
+      (ConcreteCategory.comp_apply _ _ a))
+
+/-- **Every Čech cohomology class comes from a family of the system.** Over a nonempty directed
+order, every Čech cohomology class of a presheaf of modules `P` for the system is the image of a
+class of some family of the system. -/
+theorem exists_cechCohomologyι_app_eq [IsDirectedOrder J] [Nonempty J]
+    {P : Cᵒᵖ ⥤ ModuleCat.{w} R} (x : (cechCohomology (ModuleCat.{w} R) E hE n).obj P) :
+    ∃ (j : J) (a : ((cechComplexFunctor (E j).obj).obj P).homology n),
+      ((cechCohomologyι E hE n j).app P).hom a = x := by
+  simp only [cechCohomologyι_app]
+  exact TauCeti.ModuleCat.colimit_exists_rep x
+
+end ModuleCat
 
 end TauCeti.CategoryTheory

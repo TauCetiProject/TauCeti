@@ -76,33 +76,6 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {R : Type u'} [Comm
   (hE : ∀ ⦃i j : J⦄, i ≤ j → Nonempty (E j ⟶ E i)) [HasColimitsOfShape J (ModuleCat.{w} R)]
   (F : Cᵒᵖ ⥤ AlgCat.{w} R)
 
-omit [IsDirectedOrder J] in
-/-- The structure map from the Čech cohomology of the family `E k` to the Čech cohomology of
-`F` for the system sends the image of a class `a` of a coarser family `E i` along a morphism of
-families `φ : E k ⟶ E i` to the image of `a`. -/
-private lemma cechCohomologyι_app_homologyMap {n : ℕ} {i k : J} (hik : i ≤ k) (φ : E k ⟶ E i)
-    (a : (cechAlgebraComplex (E i).obj F).homology n) :
-    ((cechCohomologyι E hE n k).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom
-        ((homologyMap (cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ) n).hom
-          a) =
-      ((cechCohomologyι E hE n i).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom a := by
-  have hι : homologyMap (cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ) n ≫
-      (cechCohomologyι E hE n k).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) =
-        (cechCohomologyι E hE n i).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) := by
-    rw [← cechComplexHomologyMap_app]
-    exact (NatTrans.comp_app _ _ _).symm.trans <| NatTrans.congr_app
-      (cechComplexHomologyMap_comp_cechCohomologyι _ E hE n hik φ) _
-  exact (ConcreteCategory.comp_apply _ _ a).symm.trans (ConcreteCategory.congr_hom hι a)
-
-omit [IsDirectedOrder J] [HasColimitsOfShape J (ModuleCat.{w} R)] in
-/-- The transition maps of the diagram of Čech cohomologies of `F` are the maps induced by
-morphisms of families. -/
-private lemma cechCohomologyDiagram_flip_obj_map {n : ℕ} {i k : J} (f : i ⟶ k) (φ : E k ⟶ E i) :
-    ((cechCohomologyDiagram (ModuleCat.{w} R) E hE n).flip.obj
-        (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).map f =
-      homologyMap (cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) φ) n := by
-  rw [Functor.flip_obj_map, cechCohomologyDiagram_map _ E hE n f φ, cechComplexHomologyMap_app]
-
 /-- **The cup product on Čech cohomology** `Hᵖ(E, F) × H^q(E, F) → Hⁿ(E, F)`, for `p + q = n`,
 of a presheaf of algebras `F` for a directed system of families `E`: the colimit of the cup
 products on the Čech cohomologies of the families of the system. It is computed on the images of
@@ -124,7 +97,8 @@ def cechCohomologyCup (p q n : ℕ) (h : p + q = n) :
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
     (fun j ↦ cechCupHomology (E j).obj F p q n h)
     fun _ _ f x y ↦ by
-      simp only [cechCohomologyDiagram_flip_obj_map E hE F f (hE (leOfHom f)).some]
+      simp only [cechCohomologyDiagram_flip_obj_map E hE _
+        (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) f (hE (leOfHom f)).some]
       exact (homologyMap_cechComplexMap_cechCupHomology _ h x y).symm
 
 /-- **The cup product on images of classes of one family.** The cup product of the images of two
@@ -157,23 +131,12 @@ theorem cechCohomologyCup_ι_ι {p q n : ℕ} (h : p + q = n) {i j k : J} (hik :
             a)
           ((homologyMap (cechComplexMap (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) ψ) q).hom
             b)) := by
-  rw [← cechCohomologyι_app_homologyMap E hE F hik φ a,
-    ← cechCohomologyι_app_homologyMap E hE F hjk ψ b, cechCohomologyCup_ι]
+  rw [← cechCohomologyι_app_homologyMap E hE _ hik φ a,
+    ← cechCohomologyι_app_homologyMap E hE _ hjk ψ b, cechCohomologyCup_ι]
 
 section Nonempty
 
 variable [Nonempty J]
-
-/-- Every Čech cohomology class of `F` for the system is the image of a class of some family of
-the system. -/
-private lemma exists_cechCohomologyι_app_eq {n : ℕ}
-    (x : (cechCohomology (ModuleCat.{w} R) E hE n).obj
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) :
-    ∃ (j : J) (a : (cechAlgebraComplex (E j).obj F).homology n),
-      ((cechCohomologyι E hE n j).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom a =
-        x := by
-  simp only [cechCohomologyι_app]
-  exact TauCeti.ModuleCat.colimit_exists_rep x
 
 /-- The **unit class** of Čech cohomology for the system: the image of the unit class of any
 family of the system (`TauCeti.CategoryTheory.cechCohomologyι_app_cechOneHomology`). -/
@@ -189,8 +152,8 @@ theorem cechCohomologyι_app_cechOneHomology (j : J) :
         (cechOneHomology (E j).obj F) =
       cechCohomologyOne E hE F := by
   obtain ⟨k, hjk, hk⟩ := exists_ge_ge j (Classical.arbitrary J)
-  rw [cechCohomologyOne, ← cechCohomologyι_app_homologyMap E hE F hjk (hE hjk).some,
-    ← cechCohomologyι_app_homologyMap E hE F hk (hE hk).some,
+  rw [cechCohomologyOne, ← cechCohomologyι_app_homologyMap E hE _ hjk (hE hjk).some,
+    ← cechCohomologyι_app_homologyMap E hE _ hk (hE hk).some,
     homologyMap_cechComplexMap_cechOneHomology, homologyMap_cechComplexMap_cechOneHomology]
 
 /-- The unit class is a left unit for the cup product on Čech cohomology for the system. -/
@@ -199,7 +162,7 @@ theorem cechCohomologyOne_cechCohomologyCup {q : ℕ}
     (y : (cechCohomology (ModuleCat.{w} R) E hE q).obj
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) :
     cechCohomologyCup E hE F 0 q q (zero_add q) (cechCohomologyOne E hE F) y = y := by
-  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE F y
+  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE y
   rw [← cechCohomologyι_app_cechOneHomology E hE F j, cechCohomologyCup_ι,
     cechOneHomology_cechCupHomology]
 
@@ -209,7 +172,7 @@ theorem cechCohomologyCup_cechCohomologyOne {p : ℕ}
     (x : (cechCohomology (ModuleCat.{w} R) E hE p).obj
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) :
     cechCohomologyCup E hE F p 0 p (add_zero p) x (cechCohomologyOne E hE F) = x := by
-  obtain ⟨j, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE F x
+  obtain ⟨j, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE x
   rw [← cechCohomologyι_app_cechOneHomology E hE F j, cechCohomologyCup_ι,
     cechCupHomology_cechOneHomology]
 
@@ -224,36 +187,20 @@ theorem cechCohomologyCup_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) :
     cechCohomologyCup E hE F m r n h₂ (cechCohomologyCup E hE F p q m h₁ x y) z =
       cechCohomologyCup E hE F p l n h₄ x (cechCohomologyCup E hE F q r l h₃ y z) := by
-  obtain ⟨i, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE F x
-  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE F y
-  obtain ⟨k, c, rfl⟩ := exists_cechCohomologyι_app_eq E hE F z
+  obtain ⟨i, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE x
+  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE y
+  obtain ⟨k, c, rfl⟩ := exists_cechCohomologyι_app_eq E hE z
   -- move the three classes to a common refinement
   obtain ⟨s, his, hjs⟩ := exists_ge_ge i j
   obtain ⟨t, hst, hkt⟩ := exists_ge_ge s k
-  rw [← cechCohomologyι_app_homologyMap E hE F (his.trans hst) (hE (his.trans hst)).some a,
-    ← cechCohomologyι_app_homologyMap E hE F (hjs.trans hst) (hE (hjs.trans hst)).some b,
-    ← cechCohomologyι_app_homologyMap E hE F hkt (hE hkt).some c]
+  rw [← cechCohomologyι_app_homologyMap E hE _ (his.trans hst) (hE (his.trans hst)).some a,
+    ← cechCohomologyι_app_homologyMap E hE _ (hjs.trans hst) (hE (hjs.trans hst)).some b,
+    ← cechCohomologyι_app_homologyMap E hE _ hkt (hE hkt).some c]
   simp only [cechCohomologyCup_ι, cechCupHomology_assoc h₁ h₂ h₃ h₄]
 
 section Naturality
 
 variable {F} {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G)
-
-omit [IsDirectedOrder J] [Nonempty J] in
-/-- The map on Čech cohomology for the system induced by a morphism of presheaves of algebras
-sends the image of a class of a family `E j` to the image of the induced class. -/
-private lemma cechCohomology_map_cechCohomologyι_app {n : ℕ} (j : J)
-    (a : (cechAlgebraComplex (E j).obj F).homology n) :
-    ((cechCohomology (ModuleCat.{w} R) E hE n).map
-        (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).hom
-        (((cechCohomologyι E hE n j).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom a) =
-      ((cechCohomologyι E hE n j).app (G ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom
-        ((homologyMap ((cechComplexFunctor (E j).obj).map
-          (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))) n).hom a) := by
-  have := (cechCohomologyι E hE n j).naturality
-    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
-  exact (ConcreteCategory.comp_apply _ _ a).symm.trans
-    ((ConcreteCategory.congr_hom this a).symm.trans (ConcreteCategory.comp_apply _ _ a))
 
 /-- **Naturality in the coefficients.** The map on Čech cohomology for the system induced by a
 morphism of presheaves of algebras `α : F ⟶ G` preserves cup products. -/
@@ -271,12 +218,12 @@ theorem cechCohomology_map_cechCohomologyCup {p q n : ℕ} (h : p + q = n)
           (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).hom x)
         (((cechCohomology (ModuleCat.{w} R) E hE q).map
           (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).hom y) := by
-  obtain ⟨i, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE F x
-  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE F y
+  obtain ⟨i, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE x
+  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE y
   -- move the two classes to a common refinement
   obtain ⟨k, hik, hjk⟩ := exists_ge_ge i j
-  rw [← cechCohomologyι_app_homologyMap E hE F hik (hE hik).some a,
-    ← cechCohomologyι_app_homologyMap E hE F hjk (hE hjk).some b]
+  rw [← cechCohomologyι_app_homologyMap E hE _ hik (hE hik).some a,
+    ← cechCohomologyι_app_homologyMap E hE _ hjk (hE hjk).some b]
   simp only [cechCohomologyCup_ι, cechCohomology_map_cechCohomologyι_app,
     homologyMap_cechComplexFunctor_map_cechCupHomology]
 

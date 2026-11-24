@@ -138,6 +138,16 @@ variable {R : Type*} [CommRing R] {J : Type u} [Category.{w} J] [IsFilteredOrEmp
   (hμ : ∀ ⦃j k : J⦄ (f : j ⟶ k) (x : M.obj j) (y : N.obj j),
     μ k ((M.map f).hom x) ((N.map f).hom y) = (P.map f).hom (μ j x y))
 
+omit [IsFilteredOrEmpty J] in
+include hμ in
+/-- Moving the product of two elements along `α : l ⟶ l'` is the product of the moved elements. -/
+private lemma μ_map_comp_map_comp {j k l l' : J} (f : j ⟶ l) (g : k ⟶ l) (α : l ⟶ l')
+    (x : M.obj j) (y : N.obj k) :
+    μ l' ((M.map (f ≫ α)).hom x) ((N.map (g ≫ α)).hom y) =
+      (P.map α).hom (μ l ((M.map f).hom x) ((N.map g).hom y)) := by
+  rw [M.map_comp, N.map_comp, _root_.ModuleCat.hom_comp, _root_.ModuleCat.hom_comp,
+    LinearMap.comp_apply, LinearMap.comp_apply, hμ]
+
 include hμ in
 /-- The image in the colimit of the product of two elements, after moving them to a common later
 member of the diagram, does not depend on that member. -/
@@ -145,12 +155,10 @@ private lemma colimit_ι_μ_eq [HasColimit P] {j k l l' : J} (f : j ⟶ l) (g : 
     (f' : j ⟶ l') (g' : k ⟶ l') (x : M.obj j) (y : N.obj k) :
     (colimit.ι P l).hom (μ l ((M.map f).hom x) ((N.map g).hom y)) =
       (colimit.ι P l').hom (μ l' ((M.map f').hom x) ((N.map g').hom y)) := by
+  -- move both products to a common later member `s`, where the two routes agree
   obtain ⟨s, α, β, hf, hg⟩ := bowtie f f' g g'
-  rw [← colimit.w P α, ← colimit.w P β, ConcreteCategory.comp_apply,
-    ConcreteCategory.comp_apply, ← hμ, ← hμ, ← ConcreteCategory.comp_apply,
-    ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    ← ConcreteCategory.comp_apply, ← M.map_comp, ← M.map_comp, ← N.map_comp, ← N.map_comp, hf,
-    hg]
+  rw [← colimit.w P α, ← colimit.w P β, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+    ← μ_map_comp_map_comp μ hμ, ← μ_map_comp_map_comp μ hμ, hf, hg]
 
 /-- The product of an element of `M j` and an element of `N k`, computed at the chosen common
 later member `max j k` and mapped to the colimit of `P`. -/
@@ -176,9 +184,10 @@ private noncomputable def colimitMap₂Aux [HasColimit N] [HasColimit P] (j : J)
           naturality k k' g := by
             refine _root_.ModuleCat.hom_ext (LinearMap.ext fun y ↦ LinearMap.ext fun x ↦ ?_)
             dsimp
-            rw [colimitPairing_apply μ hμ (leftToMax j k') (g ≫ rightToMax j k') x y, N.map_comp,
-              ConcreteCategory.comp_apply]
-            rfl } }).hom.flip
+            -- compute both products at the common later member `max j k'`
+            rw [colimitPairing_apply μ hμ (leftToMax j k') (rightToMax j k') x,
+              colimitPairing_apply μ hμ (leftToMax j k') (g ≫ rightToMax j k') x y, N.map_comp,
+              _root_.ModuleCat.hom_comp, LinearMap.comp_apply] } }).hom.flip
 
 private lemma colimitMap₂Aux_apply [HasColimit N] [HasColimit P] (j k : J) (x : M.obj j)
     (y : N.obj k) :
@@ -206,9 +215,10 @@ noncomputable def colimitMap₂ [HasColimit M] [HasColimit N] [HasColimit P] :
                 ofHom (colimitMap₂Aux μ hμ j x))
             simp only [_root_.ModuleCat.hom_comp, hom_ofHom, LinearMap.comp_apply,
               colimitMap₂Aux_apply]
-            rw [colimitPairing_apply μ hμ (f ≫ leftToMax j' k) (rightToMax j' k), M.map_comp,
-              ConcreteCategory.comp_apply]
-            rfl } }).hom
+            -- compute both products at the common later member `max j' k`
+            rw [colimitPairing_apply μ hμ (leftToMax j' k) (rightToMax j' k),
+              colimitPairing_apply μ hμ (f ≫ leftToMax j' k) (rightToMax j' k), M.map_comp,
+              _root_.ModuleCat.hom_comp, LinearMap.comp_apply] } }).hom
 
 include hμ in
 /-- **The bilinear map of colimits on images.** `colimitMap₂ μ hμ` sends the images of `x : M j`
