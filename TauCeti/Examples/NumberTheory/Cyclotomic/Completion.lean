@@ -5,25 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RepresentationTheory.Modular.SplittingSystem
+import TauCeti.NumberTheory.Cyclotomic.Completion
+import TauCeti.RingTheory.RootsOfUnity.LocalRing
 
 /-!
-# Checks for the splitting modular system of a cyclotomic field
+# Checks for the completions of a cyclotomic field at a place over `p`
 
 * `e = 1`: `F = ℚ`, and at every place over `p` the residue field is `𝔽_p`.
 * `e = 3`, `p = 3`: `e' = 1`, and at every place over `3` the residue field has `3` elements.
 * `e = 3`, `p = 2`: the residue field contains a primitive cube root of unity, the reduction of
   `complexRoot 3`, so it has at least `4` elements; `𝔽₂` contains no root of `X² + X + 1`.
+* The isomorphism on `e`-th roots of unity is the canonical map `F → F_v`.
 -/
 
-namespace TauCeti.Examples.SplittingSystem
+namespace TauCeti.Examples.CyclotomicCompletion
 
 open IsDedekindDomain NumberField IsLocalRing TauCeti.Cyclotomic
 
-example : complexField 1 = ⊥ := by
-  rw [complexField, IntermediateField.adjoin_simple_eq_bot_iff, complexRoot_def, Nat.cast_one,
-    div_one, Complex.exp_two_pi_mul_I]
-  exact one_mem _
+example : complexField 1 = ⊥ := by simp
 
 example (p : ℕ) [Fact p.Prime] (v : HeightOneSpectrum (𝓞 (complexField 1)))
     (hv : (p : 𝓞 (complexField 1)) ∈ v.asIdeal) :
@@ -41,10 +40,9 @@ example (v : HeightOneSpectrum (𝓞 (complexField 3)))
     (hv : (2 : 𝓞 (complexField 3)) ∈ v.asIdeal) :
     4 ≤ Nat.card (ResidueField (v.adicCompletionIntegers (complexField 3))) := by
   set O := v.adicCompletionIntegers (complexField 3)
-  have := v.charP_residueField_adicCompletionIntegers (K := complexField 3) 2 (mod_cast hv)
-  have h3 : IsUnit ((3 : ℕ) : O) := by
-    rw [← residue_ne_zero_iff_isUnit, map_natCast]
-    exact fun h ↦ by simpa using (CharP.cast_eq_zero_iff (ResidueField O) 2 3).1 h
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  have h3 : IsUnit ((3 : ℕ) : O) :=
+    v.isUnit_natCast_adicCompletionIntegers 2 (mod_cast hv) (by norm_num)
   have hr := (isPrimitiveRoot_algebraMap_zetaInteger v).map_residue h3
   have hcard := hr.card_rootsOfUnity
   have hle : Nat.card (rootsOfUnity 3 (ResidueField O)) ≤ Nat.card (ResidueField O)ˣ :=
@@ -52,4 +50,11 @@ example (v : HeightOneSpectrum (𝓞 (complexField 3)))
   rw [Nat.card_units] at hle
   omega
 
-end TauCeti.Examples.SplittingSystem
+example (e : ℕ) [NeZero e] (v : HeightOneSpectrum (𝓞 (complexField e)))
+    (ζ : rootsOfUnity e (complexField e)) :
+    ((rootsOfUnityEquivAdicCompletion v ζ : (v.adicCompletion (complexField e))ˣ) :
+        v.adicCompletion (complexField e)) =
+      FinitePlace.embedding v ((ζ : (complexField e)ˣ) : complexField e) :=
+  val_rootsOfUnityEquivOfPrimitiveRoots_apply_coe _ _ ζ
+
+end TauCeti.Examples.CyclotomicCompletion

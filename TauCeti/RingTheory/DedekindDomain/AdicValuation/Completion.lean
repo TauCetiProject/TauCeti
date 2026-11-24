@@ -60,7 +60,12 @@ Everything here concerns one completion. The comparison of two completions along
 * `IsDedekindDomain.HeightOneSpectrum.residueFieldEquivAdicCompletionIntegers`: consequently the
   residue field of `v` is the residue field of `𝒪_v`;
   `residueFieldEquivAdicCompletionIntegers_apply_mk` describes that isomorphism on a quotient
-  representative.
+  representative, and `residue_algebraMap_adicCompletionIntegers_surjective` (in the same
+  namespace) states that `R` maps onto the residue field of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.charP_residueField_adicCompletionIntegers`: when `v`
+  contains the prime `p`, the residue field of `𝒪_v` has characteristic `p`, and
+  `isUnit_natCast_adicCompletionIntegers` (in the same namespace) states that a natural number
+  prime to `p` is a unit of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
   an element of `K` of valuation one maps to a unit of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersSubmodule`: `𝒪_v` as an
@@ -558,6 +563,38 @@ theorem residueFieldEquivAdicCompletionIntegers_apply_mk (a : R) :
     v.residueFieldEquivAdicCompletionIntegers (K := K) (Ideal.Quotient.mk v.asIdeal a) =
       Ideal.Quotient.mk (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))
         (algebraMap R (v.adicCompletionIntegers K) a) := (rfl)
+
+/-- Every element of the residue field of the completion at `v` is the reduction of an element
+of `R`. -/
+theorem residue_algebraMap_adicCompletionIntegers_surjective :
+    Function.Surjective fun a : R ↦ IsLocalRing.residue (v.adicCompletionIntegers K)
+      (algebraMap R (v.adicCompletionIntegers K) a) := by
+  intro y
+  obtain ⟨x, hx⟩ := (v.residueFieldEquivAdicCompletionIntegers (K := K)).surjective y
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  exact ⟨a, by
+    rw [← hx, residueFieldEquivAdicCompletionIntegers_apply_mk]
+    exact IsLocalRing.residue_def _⟩
+
+/-- The residue field of the completion at a height-one prime `v` containing the prime `p` has
+characteristic `p`. -/
+theorem charP_residueField_adicCompletionIntegers (p : ℕ) [Fact p.Prime]
+    (hp : (p : R) ∈ v.asIdeal) :
+    CharP (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) p := by
+  rw [CharP.charP_iff_prime_eq_zero Fact.out]
+  have : algebraMap R (v.adicCompletionIntegers K) p ∈ IsLocalRing.maximalIdeal _ := by
+    rw [← Ideal.mem_comap, ← Ideal.under_def, under_maximalIdeal_adicCompletionIntegers]
+    exact hp
+  simpa using (IsLocalRing.residue_eq_zero_iff _).2 this
+
+/-- At a height-one prime `v` containing the prime `p`, a natural number prime to `p` is a unit
+of the completed integers. -/
+theorem isUnit_natCast_adicCompletionIntegers (p : ℕ) [Fact p.Prime] (hp : (p : R) ∈ v.asIdeal)
+    {n : ℕ} (hn : n.Coprime p) : IsUnit (n : v.adicCompletionIntegers K) := by
+  have := v.charP_residueField_adicCompletionIntegers (K := K) p hp
+  rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast]
+  exact fun h ↦ (Nat.Prime.coprime_iff_not_dvd Fact.out).1 hn.symm
+    ((CharP.cast_eq_zero_iff _ p n).1 h)
 
 end SingleCompletion
 
