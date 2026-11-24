@@ -35,6 +35,8 @@ powers converge in an inverse limit of finite monoids, as in Hida's ordinary pro
   `t ^ p` with `0 < p ≤ |N|` and `t ^ (2 * p) = t ^ p`.
 * `List.exists_sublist_length_lt_card_prod_eq`: the product of a list of elements of a finite
   monoid `N` is the product of a sublist of length less than `|N|`.
+* `TauCeti.pow_eq_pow_of_factorial_dvd`: `t ^ a = t ^ b` for all positive multiples `a` and `b`
+  of `m !` whenever `|N| ≤ m`.
 * `TauCeti.pow_factorial_eq_pow_factorial_of_card_le`: `t ^ n ! = t ^ m !` whenever
   `|N| ≤ m ≤ n`.
 * `TauCeti.isIdempotentElem_pow_factorial_of_card_le`: `t ^ m !` is idempotent whenever
@@ -106,7 +108,7 @@ theorem exists_pow_two_mul_eq_pow [Finite N] (t : N) :
 open Nat in
 /-- In a finite monoid, `t ^ a = t ^ b` for all positive multiples `a` and `b` of `m !` as soon as
 `|N| ≤ m`. -/
-private theorem pow_eq_pow_of_factorial_dvd [Finite N] (t : N) {m a b : ℕ}
+theorem pow_eq_pow_of_factorial_dvd [Finite N] (t : N) {m a b : ℕ}
     (hm : Nat.card N ≤ m) (ha : m ! ∣ a) (hb : m ! ∣ b) (ha0 : 0 < a) (hb0 : 0 < b) :
     t ^ a = t ^ b := by
   obtain ⟨p, hp, hpN, h⟩ := exists_pow_two_mul_eq_pow t

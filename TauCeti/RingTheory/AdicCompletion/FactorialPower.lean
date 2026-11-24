@@ -304,7 +304,6 @@ theorem factorialIdempotent_mem_adjoin [IsNoetherianRing R] [IsAdicComplete I R]
   rw [← h]
   exact (I.factorialIdempotent (S := B) _).property
 
-open Classical in
 /-- **The factorial idempotent modulo a prime ideal.** Let `S` be commutative, `I`-adically
 precomplete with finite quotients `S ⧸ I ^ k • S`, and let `𝔪` be a prime ideal of `S`
 containing the extension of `I`. Modulo `𝔪`, the factorial idempotent of `t` is `0` if `t ∈ 𝔪`
@@ -314,7 +313,7 @@ For a finite algebra over a local ring, every maximal ideal contains the extensi
 maximal ideal (`TauCeti.IsLocalRing.map_maximalIdeal_le_of_isMaximal`). -/
 theorem Quotient.mk_factorialIdempotent {S : Type*} [CommRing S] [Algebra R S]
     [∀ k, Finite (S ⧸ (I ^ k • ⊤ : Submodule R S))] [IsPrecomplete I S] (𝔪 : Ideal S)
-    [𝔪.IsPrime] (hI : I.map (algebraMap R S) ≤ 𝔪) (t : S) :
+    [𝔪.IsPrime] (hI : I.map (algebraMap R S) ≤ 𝔪) (t : S) [Decidable (t ∈ 𝔪)] :
     Quotient.mk 𝔪 (I.factorialIdempotent t) = if t ∈ 𝔪 then 0 else 1 := by
   set n := Nat.card (S ⧸ (I ^ 1 • ⊤ : Submodule R S))
   have hI' : (I ^ 1).map (algebraMap R S) ≤ 𝔪 := by rwa [pow_one]
