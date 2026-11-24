@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.ZSMul
+import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 
 /-!
 # Formal modules
@@ -97,7 +98,7 @@ theorem ext {ρ ρ' : FormalModule A F}
 variable (ρ : FormalModule A F)
 
 /-- The actions of two scalars commute. -/
-theorem act_comp_act (a b : A) : (ρ.act a).comp (ρ.act b) = (ρ.act b).comp (ρ.act a) := by
+theorem act_comp_act_comm (a b : A) : (ρ.act a).comp (ρ.act b) = (ρ.act b).comp (ρ.act a) := by
   rw [← ρ.act_mul, ← ρ.act_mul, mul_comm]
 
 /-! ### The action on points -/
@@ -150,23 +151,21 @@ end Points
 @[simp]
 theorem act_zero : (ρ.act 0).toPowerSeries = 0 := by
   have h := congrArg Subtype.val (ρ.applyPoint_act_zero F.tautologicalPoint)
-  rwa [FormalGroupHom.applyPoint_val, FormalGroup.val_tautologicalPoint, PowerSeries.X_subst,
-    FormalGroup.zero_apply] at h
+  rwa [FormalGroupHom.val_applyPoint_tautologicalPoint, FormalGroup.zero_apply] at h
 
 /-- `[-a]` is the formal inverse of `[a]`. -/
 theorem act_neg (a : A) :
     (ρ.act (-a)).toPowerSeries = PowerSeries.subst (ρ.act a).toPowerSeries F.addInvX := by
   have h := congrArg Subtype.val (ρ.applyPoint_act_neg F.tautologicalPoint a)
-  simp only [FormalGroupHom.applyPoint_val, FormalGroup.val_tautologicalPoint, PowerSeries.X_subst,
-    FormalGroup.neg_apply] at h
-  exact h
+  rwa [FormalGroupHom.val_applyPoint_tautologicalPoint, FormalGroup.neg_apply,
+    FormalGroupHom.val_applyPoint_tautologicalPoint] at h
 
 /-- The integer `n` acts by the multiplication series `[n]_F`. -/
 @[simp]
 theorem act_intCast (n : ℤ) : (ρ.act n).toPowerSeries = F.zsmulSeries n := by
   have h := congrArg Subtype.val (ρ.applyPoint_act_intCast F.tautologicalPoint n)
-  rwa [FormalGroupHom.applyPoint_val, FormalGroup.val_tautologicalPoint, PowerSeries.X_subst,
-    ← F.subst_zsmulSeries, FormalGroup.val_tautologicalPoint, PowerSeries.X_subst] at h
+  rwa [FormalGroupHom.val_applyPoint_tautologicalPoint, ← F.subst_zsmulSeries,
+    FormalGroup.val_tautologicalPoint, PowerSeries.X_subst] at h
 
 /-- The natural number `n` acts by the multiplication series `[n]_F`. -/
 @[simp]
@@ -311,7 +310,11 @@ variable (e : FormalGroupIso F G)
 /-- Transport of a formal module structure along an isomorphism `e : F ≅ G` of formal group
 laws: `[a]_G = e ∘ [a]_F ∘ e⁻¹`. -/
 def conj : FormalModule A G where
-  isComm := haveI := ρ.isComm; e.isComm
+  isComm :=
+    haveI := ρ.isComm
+    -- `G` is the coordinate change of `F` along the series of `e`
+    e.toHom.smul_eq (φ := ⟨e.toHom.toPowerSeries, e.toHom.zero_constantCoeff, e.isUnit_coeff_one⟩)
+      rfl ▸ inferInstance
   act a := e.toHom.comp ((ρ.act a).comp e.invHom)
   coeff_one_act a := by
     rw [FormalGroupHom.coeff_one_comp, FormalGroupHom.coeff_one_comp, ρ.coeff_one_act,
@@ -324,9 +327,12 @@ def conj : FormalModule A G where
     rw [← FormalGroupHom.comp_assoc e.invHom e.toHom, FormalGroupIso.invHom_comp_toHom,
       FormalGroupHom.id_comp]
   act_add a b := by
-    have hx := ρ.applyPoint_act_add (e.invHom.applyPoint G.tautologicalPoint) a b
-    simpa [PowerSeries.X_subst] using
-      congrArg (fun x ↦ (e.toHom.applyPoint x).val) hx
+    -- apply `e` to `[a + b](y) = [a](y) + [b](y)` at the point `y = e⁻¹(X)` of `F`
+    have h := congrArg (fun x ↦ (e.toHom.applyPoint x).val)
+      (ρ.applyPoint_act_add (e.invHom.applyPoint G.tautologicalPoint) a b)
+    simp only [FormalGroupHom.applyPoint_add, ← FormalGroupHom.comp_applyPoint,
+      FormalGroup.add_apply, FormalGroupHom.val_applyPoint_tautologicalPoint] at h
+    exact h
 
 @[simp]
 theorem conj_act (a : A) : (ρ.conj e).act a = e.toHom.comp ((ρ.act a).comp e.invHom) := (rfl)
@@ -407,11 +413,25 @@ def FormalModule.𝔾ₐ (A R : Type*) [CommRing A] [CommRing R] [Algebra A R] :
     have hab := hasSubst_finTwo (hX a) (hX b)
     simp [add_smul, subst_add hab, subst_X hab]
 
+/-- The additive formal module acts by `[a] = a X`. -/
+@[simp]
+theorem FormalModule.𝔾ₐ_act_toPowerSeries {A R : Type*} [CommRing A] [CommRing R] [Algebra A R]
+    (a : A) :
+    ((FormalModule.𝔾ₐ A R).act a).toPowerSeries = algebraMap A R a • PowerSeries.X :=
+  FormalGroupHom.ofHomDefectEqZero_toPowerSeries _ _
+
 end TauCeti
 
 namespace FormalGroup
 
-variable {R : Type*} [CommRing R] (F : FormalGroup R) [F.IsComm]
+variable {R : Type*} [CommRing R] (F : FormalGroup R)
+
+/-- A formal group law has at most one formal `ℤ`-module structure. -/
+instance : Subsingleton (TauCeti.FormalModule ℤ F) :=
+  ⟨fun ρ ρ' ↦ TauCeti.FormalModule.ext fun n ↦ by
+    simpa using (ρ.act_intCast n).trans (ρ'.act_intCast n).symm⟩
+
+variable [F.IsComm]
 
 /-- The formal `ℤ`-module structure of a commutative formal group law, `[n] = [n]_F`. -/
 def intFormalModule : TauCeti.FormalModule ℤ F where
@@ -432,6 +452,6 @@ theorem intFormalModule_act (n : ℤ) : F.intFormalModule.act n = F.zsmulHom n :
 /-- A commutative formal group law has exactly one formal `ℤ`-module structure. -/
 instance : Unique (TauCeti.FormalModule ℤ F) where
   default := F.intFormalModule
-  uniq ρ := TauCeti.FormalModule.ext fun n ↦ by simpa using ρ.act_intCast n
+  uniq _ := Subsingleton.elim _ _
 
 end FormalGroup
