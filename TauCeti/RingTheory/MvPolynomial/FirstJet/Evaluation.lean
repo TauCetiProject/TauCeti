@@ -492,7 +492,6 @@ variable {k : Type*} [Field k]
 theorem wellPoised_iff_rank [Fintype ι] [Fintype σ] {P : ι → σ → k} {d : ℕ} :
     WellPoised P d ↔ (firstJetMatrix P d).rank = Fintype.card ι * (Fintype.card σ + 1) := by
   classical
-  let _ : Fintype {s : σ →₀ ℕ // s.degree ≤ d} := Finsupp.fintypeDegreeLe d
   rw [WellPoised, firstJetMap_surjective_iff_mulVec_surjective,
     Matrix.mulVec_surjective_iff_rank_eq_card, Fintype.card_prod, Fintype.card_option]
 

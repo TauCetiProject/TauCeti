@@ -50,17 +50,23 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
+private theorem comap_taylor_eq_map_taylor_neg (a : σ → R) (I : Ideal (MvPolynomial σ R)) :
+    I.comap (taylor a).toRingHom = I.map (taylor (-a)).toRingHom := by
+  refine le_antisymm ?_ ?_
+  · intro p hp
+    rw [← taylor_neg_taylor a p]
+    exact Ideal.mem_map_of_mem _ hp
+  · rw [Ideal.map_le_iff_le_comap]
+    intro p hp
+    rw [Ideal.mem_comap, Ideal.mem_comap]
+    simpa [taylor_taylor] using hp
+
 /-- Over a commutative ring, the `k`-th power of the evaluation ideal at `a` is the pullback of
 the `k`-th power of the ideal of variables along the Taylor shift `taylor a`. -/
 theorem pow_ker_eval_eq_comap_taylor (a : σ → R) (k : ℕ) :
     RingHom.ker (eval a) ^ k = (idealOfVars σ R ^ k).comap (taylor a).toRingHom := by
-  have hhom : (taylor a : MvPolynomial σ R →+* MvPolynomial σ R) =
-      ((taylorEquiv a).toRingEquiv : MvPolynomial σ R →+* MvPolynomial σ R) :=
-    RingHom.ext fun p ↦ (taylorEquiv_apply a p).symm
-  have hcoe (I : Ideal (MvPolynomial σ R)) :
-      I.comap (taylor a).toRingHom = I.comap (taylorEquiv a).toRingEquiv := by
-    rw [AlgHom.toRingHom_eq_coe, hhom, Ideal.comap_coe]
-  rw [ker_eval_eq_comap_taylor a, hcoe, ← Ideal.map_symm, ← Ideal.map_pow, Ideal.map_symm, ← hcoe]
+  rw [ker_eval_eq_comap_taylor a, comap_taylor_eq_map_taylor_neg, ← Ideal.map_pow,
+    ← comap_taylor_eq_map_taylor_neg]
 
 /-- A polynomial lies in the `k`-th power of the evaluation ideal at `a` if and only if its Taylor
 shift at `a` lies in the `k`-th power of the ideal of variables. -/

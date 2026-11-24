@@ -158,6 +158,10 @@ private theorem firstJetMap_eq_hasseJet {σ ι R : Type*} [CommSemiring R] [Uniq
     simp [-uniqueAlgEquiv_apply, Unique.eq_default s, ← eval_uniqueAlgEquiv,
       uniqueAlgEquiv_pderiv, Polynomial.hasseDeriv_one]
 
+private theorem injective_eval_default {σ ι R : Type*} [Unique σ] {P : ι → σ → R}
+    (hP : Function.Injective P) : Function.Injective fun i ↦ P i default :=
+  fun _ _ hij ↦ hP (_root_.funext fun s ↦ by rw [Unique.eq_default s]; exact hij)
+
 section IsDomain
 
 variable {σ ι R : Type*} [CommRing R] [IsDomain R]
@@ -167,12 +171,11 @@ any integral domain has dimension `min (d + 1) n`. -/
 theorem finrank_range_firstJetValueMap_univariate [Unique σ] [Fintype ι]
     {P : ι → σ → R} (hP : Function.Injective P) (d : ℕ) :
     Module.finrank R (LinearMap.range (firstJetValueMap P d)) = min (d + 1) (Fintype.card ι) := by
-  have ha : Function.Injective fun i ↦ P i default := fun i j hij ↦
-    hP (_root_.funext fun s ↦ by rw [Unique.eq_default s]; exact hij)
   rw [firstJetValueMap_eq_hasseJet,
     LinearMap.finrank_range_comp_comp _ _ _ (univariateValueCodomainEquiv R ι).injective
       (restrictTotalDegreeEquivDegreeLT σ R d).surjective]
-  simpa using Polynomial.finrank_range_hermiteJet_degreeLT (fun _ ↦ 1) ha.injOn (d + 1)
+  simpa using Polynomial.finrank_range_hermiteJet_degreeLT (fun _ ↦ 1)
+    (injective_eval_default hP).injOn (d + 1)
 
 /-- In one variable, the range of `firstJetMap P d` at `n` distinct points over any integral domain
 has dimension `min (d + 1) (2 * n)`. -/
@@ -180,13 +183,11 @@ theorem finrank_range_firstJetMap_univariate [Unique σ] [Fintype ι]
     {P : ι → σ → R} (hP : Function.Injective P) (d : ℕ) :
     Module.finrank R (LinearMap.range (firstJetMap P d)) =
       min (d + 1) (2 * Fintype.card ι) := by
-  have ha : Function.Injective fun i ↦ P i default := fun i j hij ↦
-    hP (_root_.funext fun s ↦ by rw [Unique.eq_default s]; exact hij)
   rw [firstJetMap_eq_hasseJet,
     LinearMap.finrank_range_comp_comp _ _ _ (univariateJetCodomainEquiv R ι σ).injective
       (restrictTotalDegreeEquivDegreeLT σ R d).surjective]
-  simpa [mul_comm] using
-    Polynomial.finrank_range_hermiteJet_degreeLT (fun _ ↦ 2) ha.injOn (d + 1)
+  simpa [mul_comm] using Polynomial.finrank_range_hermiteJet_degreeLT (fun _ ↦ 2)
+    (injective_eval_default hP).injOn (d + 1)
 
 /-- **Univariate Hermite interpolation rank.** Over any integral domain `R` in any characteristic,
 for any injective finite tuple `P` on the affine line, `firstJetMatrix P d` has rank

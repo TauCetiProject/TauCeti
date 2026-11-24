@@ -457,8 +457,11 @@ theorem isCoprime_ker_eval_iff {P Q : σ → R} :
       have hmem : -(P j - Q j) ∈ Ideal.span (Set.range fun j ↦ P j - Q j) :=
         neg_mem (Ideal.subset_span ⟨j, rfl⟩)
       simpa only [map_sub, eval_X, eval_C, neg_sub] using SetLike.mem_coe.2 hmem
-    exact hmap (h ▸ by simpa using
-      Ideal.mem_map_of_mem (eval Q) (Submodule.mem_top (x := (1 : MvPolynomial σ R))))
+    have h1 : (1 : MvPolynomial σ R) ∈ RingHom.ker (eval P) ⊔ RingHom.ker (eval Q) := by
+      rw [h]
+      exact Submodule.mem_top
+    rw [← map_one (eval Q)]
+    exact hmap (Ideal.mem_map_of_mem (eval Q) h1)
   · refine top_le_iff.1 ?_
     rw [← Ideal.map_top (C (σ := σ)), ← h, Ideal.map_span, Ideal.span_le]
     rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
