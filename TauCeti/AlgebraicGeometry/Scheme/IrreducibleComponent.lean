@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
 public import TauCeti.AlgebraicGeometry.Noetherian
-public import TauCeti.AlgebraicGeometry.Scheme.ConnectedComponent
+public import TauCeti.AlgebraicGeometry.Scheme.Connected.Component
 
 /-!
 # Irreducible and connected components of schemes with domain stalks
@@ -18,10 +18,28 @@ locally Noetherian normal scheme or a regular scheme). Each connected component 
 integral scheme (`TauCeti.AlgebraicGeometry.irreducibleSpace_of_connected_of_isDomain_stalk`).
 
 Consequently, the irreducible components of `X` coincide with its connected components: every
-irreducible component is clopen, distinct irreducible components are disjoint, every point lies on a
-unique irreducible component (`AlgebraicGeometry.Scheme.componentOf`), and each irreducible
+irreducible component is clopen, distinct irreducible components are disjoint, and each irreducible
 component `v : irreducibleComponents X` carries an integral clopen-subscheme structure
 `X.componentOpens v`.
+
+## Main definitions
+
+* `AlgebraicGeometry.Scheme.componentOpens`: an irreducible component of `X` equipped with its
+  clopen-subscheme structure.
+
+## Main results
+
+* `AlgebraicGeometry.Scheme.isIntegral_connectedComponentOpen`: each connected component open
+  subscheme of `X` is integral.
+* `AlgebraicGeometry.Scheme.irreducibleComponent_eq_connectedComponent` and
+  `AlgebraicGeometry.Scheme.irreducibleComponents_eq_range_connectedComponent`: the irreducible
+  components of `X` coincide with its connected components.
+* `AlgebraicGeometry.Scheme.isClopen_of_mem_irreducibleComponents` and
+  `AlgebraicGeometry.Scheme.pairwiseDisjoint_irreducibleComponents`: irreducible components of `X`
+  are clopen and pairwise disjoint.
+* `AlgebraicGeometry.Scheme.isIntegral_componentOpens` and
+  `AlgebraicGeometry.Scheme.isClosedImmersion_componentOpens_ι`: each `X.componentOpens v` is an
+  integral clopen subscheme of `X`.
 
 ## References
 
@@ -70,7 +88,6 @@ theorem eq_connectedComponent_of_mem_irreducibleComponents {C : Set X}
   hsub.antisymm (hC.2 (X.isIrreducible_connectedComponent x) hsub)
 
 /-- At every point of `X`, `irreducibleComponent x` agrees with `connectedComponent x`. -/
-@[simp]
 theorem irreducibleComponent_eq_connectedComponent (x : X) :
     irreducibleComponent x = connectedComponent x :=
   eq_connectedComponent_of_mem_irreducibleComponents
@@ -98,32 +115,9 @@ theorem pairwiseDisjoint_irreducibleComponents : (irreducibleComponents X).Pairw
     (eq_connectedComponent_of_mem_irreducibleComponents hC hxC).trans
       (eq_connectedComponent_of_mem_irreducibleComponents hD hxD).symm
 
-/-- The unique irreducible component of `X` containing `x`, defined as its connected component. -/
-def componentOf (x : X) : irreducibleComponents X :=
-  ⟨connectedComponent x, X.connectedComponent_mem_irreducibleComponents x⟩
-
-@[simp]
-theorem coe_componentOf (x : X) : (X.componentOf x : Set X) = connectedComponent x := (rfl)
-
-theorem mem_componentOf_self (x : X) : x ∈ (X.componentOf x : Set X) := mem_connectedComponent
-
-theorem componentOf_eq_iff {x : X} {v : irreducibleComponents X} :
-    X.componentOf x = v ↔ x ∈ (v : Set X) :=
-  ⟨fun h ↦ h ▸ X.mem_componentOf_self x,
-    fun hx ↦ Subtype.ext (eq_connectedComponent_of_mem_irreducibleComponents v.2 hx).symm⟩
-
-theorem eq_componentOf_iff {v : irreducibleComponents X} {x : X} :
-    v = X.componentOf x ↔ x ∈ (v : Set X) :=
-  eq_comm.trans X.componentOf_eq_iff
-
-/-- Every point of `X` belongs to a unique irreducible component. -/
-theorem existsUnique_mem_irreducibleComponents (x : X) :
-    ∃! C : irreducibleComponents X, x ∈ (C : Set X) :=
-  ⟨X.componentOf x, X.mem_componentOf_self x, fun _ hxC ↦ X.eq_componentOf_iff.mpr hxC⟩
-
 /-- An irreducible component of `X` equipped with its clopen-subscheme structure. -/
 def componentOpens (v : irreducibleComponents X) : X.Opens :=
-  ⟨v.1, (isClopen_of_mem_irreducibleComponents v.2).2⟩
+  ⟨v.val, (isClopen_of_mem_irreducibleComponents v.property).isOpen⟩
 
 @[simp]
 theorem coe_componentOpens (v : irreducibleComponents X) :
@@ -136,18 +130,18 @@ theorem mem_componentOpens {v : irreducibleComponents X} {x : X} :
 /-- `componentOpens v` agrees with `connectedComponentOpen` at any point of `v`. -/
 theorem componentOpens_eq_connectedComponentOpen {v : irreducibleComponents X} {x : X}
     (hx : x ∈ (v : Set X)) : X.componentOpens v = X.connectedComponentOpen x := by
-  ext1; simpa using eq_connectedComponent_of_mem_irreducibleComponents v.2 hx
+  ext1; simpa using eq_connectedComponent_of_mem_irreducibleComponents v.property hx
 
 /-- Each irreducible component open subscheme is an integral scheme. -/
 instance isIntegral_componentOpens (v : irreducibleComponents X) :
     IsIntegral (X.componentOpens v).toScheme := by
-  obtain ⟨x, hx⟩ := v.2.1.nonempty
+  obtain ⟨x, hx⟩ := v.property.1.nonempty
   rw [X.componentOpens_eq_connectedComponentOpen hx]; infer_instance
 
 /-- The inclusion of an irreducible component open subscheme is also a closed immersion. -/
 instance isClosedImmersion_componentOpens_ι (v : irreducibleComponents X) :
     IsClosedImmersion (X.componentOpens v).ι :=
   IsClosedImmersion.of_isPreimmersion _ (by
-    simpa [Opens.range_ι] using (isClopen_of_mem_irreducibleComponents v.2).1)
+    simpa [Opens.range_ι] using (isClopen_of_mem_irreducibleComponents v.property).isClosed)
 
 end AlgebraicGeometry.Scheme

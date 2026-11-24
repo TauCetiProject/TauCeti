@@ -9,12 +9,14 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 public import TauCeti.AlgebraicGeometry.Blowup.IdealSheaf
 public import TauCeti.AlgebraicGeometry.Curves.Node.FiniteEtale
+public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Blowup
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import TauCeti.RingTheory.Node.TangentCone
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
-import TauCeti.AlgebraicGeometry.Blowup.Pullback
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
+import TauCeti.AlgebraicGeometry.ResidueField
 import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
@@ -52,18 +54,28 @@ identification is not used here.
 
 * `AlgebraicGeometry.Scheme.branchScheme R X`: the inverse image of the singular subscheme in the
   blowup of `X` along it, with its projection
-  `AlgebraicGeometry.Scheme.branchSchemeToSingularLocus R X` to the singular subscheme.
+  `AlgebraicGeometry.Scheme.branchSchemeToSingularLocus R X` to the singular subscheme and its
+  closed immersion `AlgebraicGeometry.Scheme.branchSchemeToBlowup R X` into the blowup.
+* `AlgebraicGeometry.Scheme.branchSchemeBaseChangeMap`: the canonical base-change morphism
+  `X'.branchScheme R' ⟶ X.branchScheme R` over a ring homomorphism `R → R'`.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.isClosedImmersion_branchSchemeToBlowup`,
+  `AlgebraicGeometry.Scheme.range_branchSchemeToBlowup` and
+  `AlgebraicGeometry.Scheme.image_branchSchemeToBlowup_preimage_singleton`: the branch scheme embeds
+  as a closed subscheme of `Bl X` onto the preimage of `Sing(X/R)`, fibrewise over each node.
+* `AlgebraicGeometry.Scheme.isPullback_branchSchemeBaseChangeMap` and
+  `AlgebraicGeometry.Scheme.exists_isPullback_branchSchemeToSingularLocus`: the branch scheme
+  commutes with flat base change of the base ring.
 * `AlgebraicGeometry.Scheme.etale_branchSchemeToSingularLocus`: the branch scheme of a nodal curve
   over a field is étale over its singular subscheme.
 * `AlgebraicGeometry.Scheme.isFinite_branchSchemeToSingularLocus`: it is finite over the singular
   subscheme.
-* `AlgebraicGeometry.Scheme.finrank_branchSchemeToSingularLocus`: it has rank two over every point
-  of the singular subscheme.
-* `AlgebraicGeometry.Scheme.exists_isPullback_branchSchemeToSingularLocus`: the branch scheme
-  commutes with flat base change of the base ring.
+* `AlgebraicGeometry.Scheme.finrank_branchSchemeToSingularLocus` and
+  `AlgebraicGeometry.Scheme.natCard_preimage_branchSchemeToSingularLocus`: it has rank two over
+  every point of the singular subscheme, hence two points over every node when `K` is separably
+  closed.
 
 ## References
 
@@ -252,46 +264,86 @@ theorem isPullback_branchScheme :
       (X.singularLocus R).subschemeι (X.singularLocus R).blowupToBase :=
   IsPullback.of_hasPullback _ _
 
+/-- The morphism from the branch scheme into the singular-locus blowup is a closed immersion. -/
+instance isClosedImmersion_branchSchemeToBlowup : IsClosedImmersion (X.branchSchemeToBlowup R) :=
+  MorphismProperty.of_isPullback (X.isPullback_branchScheme R) inferInstance
+
+/-- The image of the branch scheme in `Bl X` is the preimage of the singular locus. -/
+theorem range_branchSchemeToBlowup :
+    Set.range (X.branchSchemeToBlowup R) =
+      (X.singularLocus R).blowupToBase ⁻¹' (X.singularLocus R).support := by
+  simpa [Set.image_univ, Scheme.IdealSheafData.range_subschemeι] using
+    image_preimage_eq_of_isPullback (X.isPullback_branchScheme R) Set.univ
+
+variable {R} in
+/-- `branchSchemeToBlowup` maps the branch fibre over `s` onto the blowup fibre over `s`. -/
+theorem image_branchSchemeToBlowup_preimage_singleton (s : (X.singularLocus R).subscheme) :
+    X.branchSchemeToBlowup R '' (X.branchSchemeToSingularLocus R ⁻¹' {s}) =
+      (X.singularLocus R).blowupToBase ⁻¹' {(X.singularLocus R).subschemeι s} := by
+  simpa using image_preimage_eq_of_isPullback (X.isPullback_branchScheme R) {s}
+
 end BranchScheme
 
 section BaseChange
 
-variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R'] [Module.Flat R R']
+variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R']
   {X X' : Scheme.{u}} [X.Over (Spec (.of R))] [X'.Over (Spec (.of R'))] {g : X' ⟶ X}
   [Flat (X ↘ Spec (.of R))] [LocallyOfFinitePresentation (X ↘ Spec (.of R))]
   [PureRelativeDimension 1 (X ↘ Spec (.of R))]
   [Flat (X' ↘ Spec (.of R'))] [LocallyOfFinitePresentation (X' ↘ Spec (.of R'))]
   [PureRelativeDimension 1 (X' ↘ Spec (.of R'))]
+  (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
+    (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
 
-/-- **The branch scheme commutes with flat base change.** If `X'` is the base change of `X` along
-a flat morphism `Spec R' → Spec R`, then the branch scheme of `X'` over its singular subscheme is
-the base change of the branch scheme of `X` along the morphism `Sing(X'/R') ⟶ Sing(X/R)` of
-singular subschemes (`AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι`). -/
-theorem exists_isPullback_branchSchemeToSingularLocus
-    (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
-      (Spec.map (CommRingCat.ofHom (algebraMap R R')))) :
+/-- Induced morphism `X'.branchScheme R' ⟶ X.branchScheme R` under base change of `X`. -/
+def branchSchemeBaseChangeMap : X'.branchScheme R' ⟶ X.branchScheme R :=
+  (X.isPullback_branchScheme R).lift (X'.branchSchemeToSingularLocus R' ≫
+    (X'.singularLocus R').subschemeMap (X.singularLocus R) g
+      (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
+        (Scheme.singularLocus_eq_comap_of_isPullback H).ge))
+    (X'.branchSchemeToBlowup R' ≫ singularLocusBlowupMap H) (by
+      rw [Category.assoc, Scheme.IdealSheafData.subschemeMap_subschemeι, ← Category.assoc,
+        X'.branchSchemeToSingularLocus_subschemeι R', Category.assoc,
+        ← singularLocusBlowupMap_blowupToBase H, Category.assoc])
+
+/-- `branchSchemeBaseChangeMap H` commutes with the projections to the singular subschemes. -/
+@[reassoc (attr := simp)]
+theorem branchSchemeBaseChangeMap_toSingularLocus :
+    branchSchemeBaseChangeMap H ≫ X.branchSchemeToSingularLocus R =
+      X'.branchSchemeToSingularLocus R' ≫
+        (X'.singularLocus R').subschemeMap (X.singularLocus R) g
+          (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
+            (Scheme.singularLocus_eq_comap_of_isPullback H).ge) :=
+  (X.isPullback_branchScheme R).lift_fst _ _ _
+
+/-- `branchSchemeBaseChangeMap H` commutes with the inclusions into the singular-locus blowups. -/
+@[reassoc (attr := simp)]
+theorem branchSchemeBaseChangeMap_toBlowup :
+    branchSchemeBaseChangeMap H ≫ X.branchSchemeToBlowup R =
+      X'.branchSchemeToBlowup R' ≫ singularLocusBlowupMap H :=
+  (X.isPullback_branchScheme R).lift_snd _ _ _
+
+/-- **The branch scheme commutes with flat base change.** Under flat base change,
+`branchSchemeBaseChangeMap H` forms a cartesian square over the morphism of singular subschemes. -/
+theorem isPullback_branchSchemeBaseChangeMap [Module.Flat R R'] :
+    IsPullback (branchSchemeBaseChangeMap H) (X'.branchSchemeToSingularLocus R')
+      (X.branchSchemeToSingularLocus R)
+      ((X'.singularLocus R').subschemeMap (X.singularLocus R) g
+        (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
+          (Scheme.singularLocus_eq_comap_of_isPullback H).ge)) := by
+  refine IsPullback.of_right ?_ (branchSchemeBaseChangeMap_toSingularLocus H)
+    (X.isPullback_branchScheme R).flip
+  rw [branchSchemeBaseChangeMap_toBlowup H, Scheme.IdealSheafData.subschemeMap_subschemeι]
+  exact (X'.isPullback_branchScheme R').flip.paste_horiz (isPullback_singularLocusBlowupMap H).flip
+
+/-- **The branch scheme commutes with flat base change** (existential form). -/
+theorem exists_isPullback_branchSchemeToSingularLocus [Module.Flat R R'] :
     ∃ f : X'.branchScheme R' ⟶ X.branchScheme R,
       IsPullback f (X'.branchSchemeToSingularLocus R') (X.branchSchemeToSingularLocus R)
         ((X'.singularLocus R').subschemeMap (X.singularLocus R) g
           (Scheme.IdealSheafData.le_map_iff_comap_le.mpr
-            (Scheme.singularLocus_eq_comap_of_isPullback H).ge)) := by
-  have : Flat (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
-    rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]
-    infer_instance
-  have : Flat g := MorphismProperty.of_isPullback H.flip ‹_›
-  -- The singular locus `J` of `X'` is the inverse image of that of `X`, and blowing up commutes
-  -- with the flat base change `g`, so the inverse image of `V(J)` in the blowup of `X'` along `J`
-  -- is the base change of the inverse image of `Sing(X/R)` in the blowup of `X`.
-  suffices key : ∀ (J : X'.IdealSheafData) (_ : J = (X.singularLocus R).comap g) {P : Scheme.{u}}
-      (a : P ⟶ J.subscheme) (b : P ⟶ J.blowup) (_ : IsPullback a b J.subschemeι J.blowupToBase)
-      (hle : X.singularLocus R ≤ J.map g), ∃ f : P ⟶ X.branchScheme R,
-        IsPullback f a (X.branchSchemeToSingularLocus R)
-          (J.subschemeMap (X.singularLocus R) g hle) from
-    key _ (Scheme.singularLocus_eq_comap_of_isPullback H) _ _ (X'.isPullback_branchScheme R') _
-  rintro J rfl P a b hP hle
-  have h := hP.flip.paste_horiz ((X.singularLocus R).isPullback_blowupMap_of_flat g).flip
-  rw [← Scheme.IdealSheafData.subschemeMap_subschemeι _ _ _ hle] at h
-  exact ⟨_, .of_right' h (X.isPullback_branchScheme R).flip⟩
+            (Scheme.singularLocus_eq_comap_of_isPullback H).ge)) :=
+  ⟨branchSchemeBaseChangeMap H, isPullback_branchSchemeBaseChangeMap H⟩
 
 end BaseChange
 
@@ -377,5 +429,22 @@ theorem finrank_branchSchemeToSingularLocus
   rw [← (X.singularLocus K).subscheme.fromSpecResidueField_apply s y,
     ← Scheme.Hom.finrank_of_isPullback _ _ _ _ (IsPullback.of_hasPullback _ t)]
   exact (etale_isFinite_finrank_pullback_snd_branchSchemeToSingularLocus X hnodal t).2.2 y
+
+/-- Over a separably closed field `K`, the fibre of `branchSchemeToSingularLocus` over every node
+has cardinality `2`. -/
+theorem natCard_preimage_branchSchemeToSingularLocus [IsSepClosed K]
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (s : (letI := hnodal.syntomic; (X.singularLocus K).subscheme)) :
+    letI := hnodal.syntomic
+    Nat.card (X.branchSchemeToSingularLocus K ⁻¹' {s}) = 2 := by
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
+  have := X.isFinite_branchSchemeToSingularLocus hnodal
+  have := X.etale_branchSchemeToSingularLocus hnodal
+  have := X.etale_singularLocus_subschemeι_comp hnodal
+  have : IsSepClosed ((X.singularLocus K).subscheme.residueField s) :=
+    ((X.singularLocus K).subschemeι ≫
+      X ↘ Spec (.of K)).isSepClosed_residueField_of_formallyUnramified s
+  rw [Scheme.Hom.natCard_preimage_singleton_eq_finrank,
+    X.finrank_branchSchemeToSingularLocus hnodal s]
 
 end AlgebraicGeometry.Scheme

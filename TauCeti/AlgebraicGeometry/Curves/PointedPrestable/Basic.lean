@@ -238,6 +238,24 @@ theorem markingPoint_reindex {K : Type u} [Field K] (P : PointedPrestableFamily 
     (e : Fin m ↪ Fin n) (i : Fin m) : (P.reindex e).markingPoint i = P.markingPoint (e i) :=
   (rfl)
 
+/-- Over `Spec K`, the value of the `i`th marking at any point agrees with `P.markingPoint i`. -/
+theorem coe_markingPoint_eq_apply {K : Type u} [Field K]
+    (P : PointedPrestableFamily (Spec (.of K)) n) (i : Fin n) (s : Spec (.of K)) :
+    (P.markingPoint i : P.total) = P.marking i s :=
+  congrArg (P.marking i) (Subsingleton.elim default s)
+
+/-- Distinct markings give distinct points in the smooth locus of a pointed prestable curve over a
+field. -/
+theorem injective_markingPoint {K : Type u} [Field K]
+    (P : PointedPrestableFamily (Spec (.of K)) n) : Function.Injective P.markingPoint :=
+  fun _ _ hij ↦ by_contra fun hne ↦ P.marking_apply_ne hne default (congrArg Subtype.val hij)
+
+/-- Over `Spec K`, the range of the `i`th marking is the singleton `{P.markingPoint i}`. -/
+theorem range_marking_eq_singleton {K : Type u} [Field K]
+    (P : PointedPrestableFamily (Spec (.of K)) n) (i : Fin n) :
+    Set.range (P.marking i) = {(P.markingPoint i : P.total)} :=
+  Set.range_unique
+
 end PointedPrestableFamily
 
 end TauCeti.AlgebraicGeometry

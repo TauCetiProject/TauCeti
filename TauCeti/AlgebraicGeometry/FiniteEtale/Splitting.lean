@@ -44,9 +44,7 @@ dividing `n!` over which a finite étale scheme `X` of rank `n` over `K` has exa
 with values in `L`, that is `n` morphisms `Spec L ⟶ X` over `Spec K`. The rank is Mathlib's
 `AlgebraicGeometry.Scheme.Hom.finrank`, so this applies to any finite étale scheme over a field
 whose rank is known. Over a separably closed field `K`, a finite étale scheme is already split, so
-its point count equals its rank
-(`AlgebraicGeometry.Scheme.Hom.natCard_of_isFinite_of_etale_of_isSepClosed`),
-and base change along any `K`-algebra with a unique prime ideal induces a bijection on underlying
+base change along any `K`-algebra with a unique prime ideal induces a bijection on underlying
 points (`AlgebraicGeometry.Scheme.bijective_of_isPullback_of_isFinite_of_etale`).
 
 ## References
@@ -210,22 +208,6 @@ theorem exists_natCard_hom_eq_finrank_of_isFinite_of_etale {K : Type u} [Field K
     (TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk (R := .of K) (.of K A.obj)).symm
   exact Nat.card_congr ((Iso.homCongr eL (e.symm ≪≫ eA)).trans
     (TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom _ _))
-
-/-- Over a separably closed field `K`, the number of points of a finite étale `K`-scheme equals its
-rank over `Spec K`. -/
-theorem natCard_of_isFinite_of_etale_of_isSepClosed {K : Type u} [Field K] [IsSepClosed K]
-    {Y : Scheme.{u}} (f : Y ⟶ Spec (.of K)) [IsFinite f] [Etale f] (s : Spec (.of K)) :
-    Nat.card Y = f.finrank s := by
-  obtain ⟨A, ⟨e⟩⟩ := f.exists_finiteEtale_algebra
-  have : Module.Finite K A.obj := Algebra.FormallyUnramified.finite_of_free K A.obj
-  have : IsIso e.hom.left := inferInstanceAs (IsIso ((Over.forget _).map e.hom))
-  have hw : e.hom.left ≫ f = Spec.algebraMap K A.obj := Over.w e.hom
-  refine (Nat.card_congr e.hom.left.homeomorph.toEquiv.symm).trans
-    ((Nat.card_congr (Algebra.IsFiniteSplit.algHomEquivPrimeSpectrum K A.obj)).symm.trans ?_)
-  rw [Algebra.IsFiniteSplit.card_algHom_eq_finrank,
-    ← finrank_comp_left_of_isIso e.hom.left f, hw, Spec.algebraMap]
-  exact ((finrank_SpecMap_algebraMap K A.obj s).trans
-    (congrFun Module.rankAtStalk_eq_finrank_of_free s)).symm
 
 end AlgebraicGeometry.Scheme.Hom
 

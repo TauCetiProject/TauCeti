@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Iso
 public import TauCeti.AlgebraicGeometry.Curves.Node.DualGraph.Basic
+import TauCeti.AlgebraicGeometry.FiniteEtale.Splitting
 
 /-!
-# Transporting the dual graph of a prestable curve along an isomorphism
+# Transporting the dual graph of a prestable curve along isomorphisms and field extensions
 
 Let `e : X ≅ Y` be an isomorphism of prestable curves over a field `K`, compatible with the
 structure morphisms to `Spec K`. Then `e` lifts to an isomorphism `e^ν : X^ν ≅ Y^ν` of the blowups
@@ -32,10 +33,18 @@ a morphism `f` out of `Y` is constant on the image in `Y` of the component `e^ν
 (`AlgebraicGeometry.Scheme.image_blowupToBase_comp_dualGraphIsoOfIso_vertexEquiv`). This is what
 the invariance of the stability of a prestable map under isomorphisms needs.
 
+Similarly, if `X'` is the base change of `X` along an extension `L / K` of separably closed fields,
+`singularLocusBlowupMap` bijects the irreducible components of `X'^ν` with those of `X^ν`, the
+finite étale singular subscheme and branch scheme biject on points, and flat base change of
+cohomology preserves the component genera, yielding a canonical isomorphism of dual graphs
+`AlgebraicGeometry.Scheme.dualGraphBaseChangeIso`.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.dualGraphIsoOfIso`: the isomorphism of dual graphs induced by an
   isomorphism of prestable curves over a separably closed field matching the markings.
+* `AlgebraicGeometry.Scheme.dualGraphBaseChangeIso`: the isomorphism of dual graphs under base
+  change along an extension `L / K` of separably closed fields.
 
 ## Main results
 
@@ -49,6 +58,12 @@ the invariance of the stability of a prestable map under isomorphisms needs.
   `AlgebraicGeometry.Scheme.dualGraphIsoOfIso_symm` and
   `AlgebraicGeometry.Scheme.dualGraphIsoOfIso_trans`: the construction is compatible with
   identities, inverses and composites.
+* `AlgebraicGeometry.Scheme.coe_dualGraphVertexEquiv_dualGraphBaseChangeIso_vertexEquiv` and
+  `AlgebraicGeometry.Scheme.dualGraphEdgeEquiv_dualGraphBaseChangeIso_edgeEquiv`: base change maps
+  a component to its preimage in `X'^ν` and identifies nodes along `g : X' ⟶ X`.
+* `AlgebraicGeometry.Scheme.isRationalTail_preimageSingularLocusBlowupEquiv_iff` and
+  `AlgebraicGeometry.Scheme.isRationalBridge_preimageSingularLocusBlowupEquiv_iff`: geometric
+  rational tails and bridges are invariant under extensions of separably closed fields.
 
 ## References
 
@@ -299,5 +314,238 @@ theorem dualGraphIsoOfIso_trans {Z : Scheme.{u}} [Z.Over (Spec (.of K))]
     simp only [DualGraph.Iso.trans_edgeEquiv, Equiv.trans_apply,
       dualGraphEdgeEquiv_dualGraphIsoOfIso_edgeEquiv]
     rw [Iso.trans_hom, Scheme.Hom.comp_apply]
+
+/-! ### Base change along extensions of separably closed fields -/
+
+section BaseChange
+
+/-- The closed immersion `(Z.singularLocus F).subschemeι` identifies the singular subscheme with
+the complement of the smooth locus. -/
+private def singularLocusSubschemeEquiv {F : Type u} [Field F] (Z : Scheme.{u})
+    [Z.Over (Spec (.of F))] [SyntomicOfRelativeDimension 1 (Z ↘ Spec (.of F))] :
+    (Z.singularLocus F).subscheme ≃ ↥(((Z ↘ Spec (.of F)).smoothLocus : Set Z)ᶜ) :=
+  Equiv.ofBijective
+    (fun s ↦ ⟨(Z.singularLocus F).subschemeι s,
+      (Z.mem_support_singularLocus_iff_notMem_smoothLocus _).mp
+        ((IdealSheafData.range_subschemeι _).subset ⟨s, rfl⟩)⟩)
+    ⟨fun _ _ h ↦ (Z.singularLocus F).subschemeι.isClosedEmbedding.injective congr(($h).val),
+      fun ⟨z, hz⟩ ↦ by
+        obtain ⟨s, rfl⟩ := (IdealSheafData.range_subschemeι (Z.singularLocus F)).ge
+          ((Z.mem_support_singularLocus_iff_notMem_smoothLocus z).mpr hz)
+        exact ⟨s, rfl⟩⟩
+
+@[simp]
+private theorem coe_singularLocusSubschemeEquiv {F : Type u} [Field F] (Z : Scheme.{u})
+    [Z.Over (Spec (.of F))] [SyntomicOfRelativeDimension 1 (Z ↘ Spec (.of F))]
+    (s : (Z.singularLocus F).subscheme) :
+    (singularLocusSubschemeEquiv Z s : Z) = (Z.singularLocus F).subschemeι s := (rfl)
+
+variable {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
+  {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of L))]
+  [PrestableFamily (X ↘ Spec (.of K))] [PrestableFamily (X' ↘ Spec (.of L))]
+  {g : X' ⟶ X} (H : IsPullback g (X' ↘ Spec (.of L)) (X ↘ Spec (.of K)) (Spec.algebraMap K L))
+
+/-- Over a separably closed field `K`, the base-change morphism of singular subschemes to any field
+extension `L / K` is bijective on points. -/
+private theorem bijective_singularLocus_subschemeMap :
+    Function.Bijective ((X'.singularLocus L).subschemeMap (X.singularLocus K) g
+      (IdealSheafData.le_map_iff_comap_le.mpr (singularLocus_eq_comap_of_isPullback H).ge)) := by
+  have := X.isFinite_singularLocus_subschemeι_comp
+    (PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := X ↘ Spec (.of K)))
+  have := X.etale_singularLocus_subschemeι_comp
+    (PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := X ↘ Spec (.of K)))
+  exact bijective_of_isPullback_of_isFinite_of_etale
+    ((isPullback_singularLocus_subschemeι H).flip.paste_vert H)
+
+/-- Over a separably closed field `K`, the base-change morphism of branch schemes to any field
+extension `L / K` is bijective on points. -/
+private theorem bijective_branchSchemeBaseChangeMap :
+    Function.Bijective (branchSchemeBaseChangeMap H) := by
+  have hnodal := PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := X ↘ Spec (.of K))
+  have := X.isFinite_singularLocus_subschemeι_comp hnodal
+  have := X.etale_singularLocus_subschemeι_comp hnodal
+  have := X.isFinite_branchSchemeToSingularLocus hnodal
+  have := X.etale_branchSchemeToSingularLocus hnodal
+  exact bijective_of_isPullback_of_isFinite_of_etale
+    ((isPullback_branchSchemeBaseChangeMap H).paste_vert
+      ((isPullback_singularLocus_subschemeι H).flip.paste_vert H))
+
+/-- The bijection of nodes induced by base change of a prestable curve from a separably closed
+field `K` to any field extension `L / K`. -/
+private def nodeBaseChangeEquiv :
+    ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ) ≃
+      ↥(((X' ↘ Spec (.of L)).smoothLocus : Set X')ᶜ) :=
+  (singularLocusSubschemeEquiv X).symm.trans <|
+    (Equiv.ofBijective _ (bijective_singularLocus_subschemeMap H)).symm.trans
+      (singularLocusSubschemeEquiv X')
+
+/-- `g` maps the base-changed node `nodeBaseChangeEquiv H x` back to `x`. -/
+private theorem apply_nodeBaseChangeEquiv
+    (x : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ)) :
+    g (nodeBaseChangeEquiv H x : X') = (x : X) := by
+  let hle := IdealSheafData.le_map_iff_comap_le.mpr (singularLocus_eq_comap_of_isPullback H).ge
+  let fSing := (X'.singularLocus L).subschemeMap (X.singularLocus K) g hle
+  let s := (singularLocusSubschemeEquiv X).symm x
+  have hs : (X.singularLocus K).subschemeι s = (x : X) :=
+    (coe_singularLocusSubschemeEquiv X s).symm.trans
+      congr(($((singularLocusSubschemeEquiv X).apply_symm_apply x)).val)
+  let s' := (Equiv.ofBijective fSing (bijective_singularLocus_subschemeMap H)).symm s
+  have hs' : fSing s' = s :=
+    Equiv.ofBijective_apply_symm_apply fSing (bijective_singularLocus_subschemeMap H) s
+  simp only [nodeBaseChangeEquiv, Equiv.trans_apply, coe_singularLocusSubschemeEquiv]
+  rw [← Scheme.Hom.comp_apply, ← (X'.singularLocus L).subschemeMap_subschemeι _ g hle,
+    Scheme.Hom.comp_apply, hs', hs]
+
+variable [IsSepClosed L] {ι : Type v} (p : ι → (X ↘ Spec (.of K)).smoothLocus)
+  (p' : ι → (X' ↘ Spec (.of L)).smoothLocus)
+
+/-- Vertex bijection of dual graphs under base change: preimage of blowup components. -/
+private def vertexEquivOfBaseChange : (X.dualGraph p).Vertex ≃ (X'.dualGraph p').Vertex :=
+  (X.dualGraphVertexEquiv p).trans <|
+    (preimageSingularLocusBlowupEquiv PrestableFamily.atWorstNodalOfRelativeDimensionOne H).trans
+      (X'.dualGraphVertexEquiv p').symm
+
+/-- Edge bijection of dual graphs under base change: lifting nodes along `g`. -/
+private def edgeEquivOfBaseChange : (X.dualGraph p).Edge ≃ (X'.dualGraph p').Edge :=
+  (X.dualGraphEdgeEquiv p).trans <|
+    (nodeBaseChangeEquiv H).trans (X'.dualGraphEdgeEquiv p').symm
+
+/-- Base change transports edge endpoints: pushing a blowup point forward along
+`singularLocusBlowupMap H` and lifting branches along `branchSchemeBaseChangeMap H` match the
+incidence characterizations of `X.dualGraph p` and `X'.dualGraph p'`. -/
+private theorem ends_edgeEquivOfBaseChange (x : (X.dualGraph p).Edge) :
+    (X'.dualGraph p').ends (edgeEquivOfBaseChange H p p' x) =
+      ((X.dualGraph p).ends x).map (vertexEquivOfBaseChange H p p') := by
+  let fBl := singularLocusBlowupMap H
+  let hle := IdealSheafData.le_map_iff_comap_le.mpr (singularLocus_eq_comap_of_isPullback H).ge
+  let fSing := (X'.singularLocus L).subschemeMap (X.singularLocus K) g hle
+  let σ := vertexEquivOfBaseChange H p p'
+  let x' := edgeEquivOfBaseChange H p p' x
+  have hgx' : g (X'.dualGraphEdgeEquiv p' x' : X') = (X.dualGraphEdgeEquiv p x : X) := by
+    simpa [x', edgeEquivOfBaseChange] using
+      apply_nodeBaseChangeEquiv H (X.dualGraphEdgeEquiv p x)
+  refine Sym2.ext fun w' ↦ ?_
+  rw [Sym2.mem_map]
+  refine ⟨fun hw' ↦ ⟨σ.symm w', ?_, σ.apply_symm_apply w'⟩, ?_⟩
+  · -- Push a point of `w'` over `x'` down to `Bl X` via `fBl`.
+    obtain ⟨b', hb'w, hb'x⟩ := (X'.mem_ends_dualGraph_iff p' w' x').mp hw'
+    rw [X.mem_ends_dualGraph_iff p]
+    have hpre : fBl ⁻¹' (X.dualGraphVertexEquiv p (σ.symm w')).val =
+        (X'.dualGraphVertexEquiv p' w').val := by
+      have h := congrArg (fun u ↦ (X'.dualGraphVertexEquiv p' u).val) (σ.apply_symm_apply w')
+      dsimp only [σ, vertexEquivOfBaseChange, Equiv.trans_apply] at h
+      rwa [Equiv.apply_symm_apply, coe_preimageSingularLocusBlowupEquiv] at h
+    exact ⟨fBl b', Set.mem_preimage.mp (hpre.symm ▸ hb'w), by
+      rw [blowupToBase_singularLocusBlowupMap_apply, hb'x, hgx']⟩
+  · -- Lift a branch over `x` in `v` along the bijective map `branchSchemeBaseChangeMap H`.
+    rintro ⟨v, hv, rfl⟩
+    obtain ⟨b, hbv, hbx⟩ := (X.mem_ends_dualGraph_iff p v x).mp hv
+    let s := (singularLocusSubschemeEquiv X).symm (X.dualGraphEdgeEquiv p x)
+    have hs : (X.singularLocus K).subschemeι s = (X.dualGraphEdgeEquiv p x : X) :=
+      (coe_singularLocusSubschemeEquiv X s).symm.trans
+        congr(($((singularLocusSubschemeEquiv X).apply_symm_apply _)).val)
+    obtain ⟨br, hbrs, rfl⟩ :=
+      exists_preimage_of_isPullback (X.isPullback_branchScheme K) s b (hs.trans hbx.symm)
+    obtain ⟨br', rfl⟩ := (bijective_branchSchemeBaseChangeMap H).surjective br
+    rw [X'.mem_ends_dualGraph_iff p']
+    refine ⟨X'.branchSchemeToBlowup L br', ?_, ?_⟩
+    · simp only [vertexEquivOfBaseChange, Equiv.trans_apply, Equiv.apply_symm_apply,
+        coe_preimageSingularLocusBlowupEquiv, Set.mem_preimage]
+      rwa [← Scheme.Hom.comp_apply, ← branchSchemeBaseChangeMap_toBlowup H]
+    · let s' := (Equiv.ofBijective fSing (bijective_singularLocus_subschemeMap H)).symm s
+      have hs's : fSing s' = s :=
+        Equiv.ofBijective_apply_symm_apply fSing (bijective_singularLocus_subschemeMap H) s
+      have hs' : X'.branchSchemeToSingularLocus L br' = s' :=
+        (bijective_singularLocus_subschemeMap H).injective <| by
+          rw [hs's, ← Scheme.Hom.comp_apply,
+            ← branchSchemeBaseChangeMap_toSingularLocus H, Scheme.Hom.comp_apply, hbrs]
+      rw [← Scheme.Hom.comp_apply, ← X'.branchSchemeToSingularLocus_subschemeι L,
+        Scheme.Hom.comp_apply, hs']
+      simp [edgeEquivOfBaseChange, nodeBaseChangeEquiv, s, s', fSing]
+
+/-- Base change preserves the component genera of vertices. -/
+private theorem genus_vertexEquivOfBaseChange (v : (X.dualGraph p).Vertex) :
+    (X'.dualGraph p').genus (vertexEquivOfBaseChange H p p' v) = (X.dualGraph p).genus v := by
+  simp only [dualGraph_genus, vertexEquivOfBaseChange, Equiv.trans_apply]
+  rw [Equiv.apply_symm_apply]
+  exact genus_blowupComponent_preimageSingularLocusBlowupEquiv
+    PrestableFamily.atWorstNodalOfRelativeDimensionOne H (X.dualGraphVertexEquiv p v)
+
+/-- Base change matches the marked vertices when `g` sends `p' i` to `p i`. -/
+private theorem vertexEquivOfBaseChange_marking (hp : ∀ i, g (p' i : X') = p i) (i : ι) :
+    vertexEquivOfBaseChange H p p' ((X.dualGraph p).marking i) = (X'.dualGraph p').marking i := by
+  obtain ⟨b', hb'⟩ := (X'.surjective_blowupToBase_singularLocus
+    (PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := X' ↘ Spec (.of L)))).surj (p' i : X')
+  have hb : (X.singularLocus K).blowupToBase (singularLocusBlowupMap H b') = p i := by
+    rw [blowupToBase_singularLocusBlowupMap_apply, hb', hp i]
+  simp only [vertexEquivOfBaseChange, Equiv.trans_apply]
+  rw [X.dualGraphVertexEquiv_marking p i hb,
+    preimageSingularLocusBlowupEquiv_irreducibleComponentOf,
+    Equiv.symm_apply_eq, X'.dualGraphVertexEquiv_marking p' i hb']
+
+/-- **The dual graph is invariant under extension of a separably closed base field.** If `X'` is the
+base change of `X` along `Spec L ⟶ Spec K` for separably closed fields `L / K` and `g : X' ⟶ X`
+carries the smooth markings `p'` of `X'` to `p` of `X`, then `X.dualGraph p` and `X'.dualGraph p'`
+are canonically isomorphic. -/
+def dualGraphBaseChangeIso (hp : ∀ i, g (p' i : X') = p i) :
+    (X.dualGraph p).Iso (X'.dualGraph p') where
+  vertexEquiv := vertexEquivOfBaseChange H p p'
+  edgeEquiv := edgeEquivOfBaseChange H p p'
+  ends_edgeEquiv := ends_edgeEquivOfBaseChange H p p'
+  genus_vertexEquiv := genus_vertexEquivOfBaseChange H p p'
+  vertexEquiv_marking := vertexEquivOfBaseChange_marking H p p' hp
+
+/-- `dualGraphBaseChangeIso` maps each vertex to its preimage under `singularLocusBlowupMap H`. -/
+@[simp]
+theorem coe_dualGraphVertexEquiv_dualGraphBaseChangeIso_vertexEquiv
+    (hp : ∀ i, g (p' i : X') = p i) (v : (X.dualGraph p).Vertex) :
+    (X'.dualGraphVertexEquiv p' ((dualGraphBaseChangeIso H p p' hp).vertexEquiv v) :
+        Set (X'.singularLocus L).blowup) =
+      singularLocusBlowupMap H ⁻¹'
+        (X.dualGraphVertexEquiv p v : Set (X.singularLocus K).blowup) := by
+  simp [dualGraphBaseChangeIso, vertexEquivOfBaseChange]
+
+/-- `g` sends the base-changed edge `(dualGraphBaseChangeIso H p p' hp).edgeEquiv x` back to `x`. -/
+@[simp]
+theorem dualGraphEdgeEquiv_dualGraphBaseChangeIso_edgeEquiv
+    (hp : ∀ i, g (p' i : X') = p i) (x : (X.dualGraph p).Edge) :
+    g (X'.dualGraphEdgeEquiv p' ((dualGraphBaseChangeIso H p p' hp).edgeEquiv x) : X') =
+      (X.dualGraphEdgeEquiv p x : X) := by
+  simpa [dualGraphBaseChangeIso, edgeEquivOfBaseChange] using
+    apply_nodeBaseChangeEquiv H (X.dualGraphEdgeEquiv p x)
+
+/-- Geometric rational tails are invariant under extensions of separably closed base fields. -/
+theorem isRationalTail_preimageSingularLocusBlowupEquiv_iff
+    (v : irreducibleComponents (X.singularLocus K).blowup) :
+    X'.IsRationalTail L PrestableFamily.atWorstNodalOfRelativeDimensionOne
+        (preimageSingularLocusBlowupEquiv PrestableFamily.atWorstNodalOfRelativeDimensionOne H v) ↔
+      X.IsRationalTail K PrestableFamily.atWorstNodalOfRelativeDimensionOne v := by
+  let pK : Empty → (X ↘ Spec (.of K)).smoothLocus := Empty.elim
+  let pL : Empty → (X' ↘ Spec (.of L)).smoothLocus := Empty.elim
+  let iso := dualGraphBaseChangeIso H pK pL fun i ↦ i.elim
+  let v₀ := (X.dualGraphVertexEquiv pK).symm v
+  have hv' : X'.dualGraphVertexEquiv pL (iso.vertexEquiv v₀) =
+      preimageSingularLocusBlowupEquiv PrestableFamily.atWorstNodalOfRelativeDimensionOne H v :=
+    Subtype.ext (by simp [iso, v₀])
+  rw [← hv', ← X'.dualGraph_isRationalTail_iff pL, iso.isRationalTail_vertexEquiv_iff,
+    X.dualGraph_isRationalTail_iff pK, Equiv.apply_symm_apply]
+
+/-- Geometric rational bridges are invariant under extensions of separably closed base fields. -/
+theorem isRationalBridge_preimageSingularLocusBlowupEquiv_iff
+    (v : irreducibleComponents (X.singularLocus K).blowup) :
+    X'.IsRationalBridge L PrestableFamily.atWorstNodalOfRelativeDimensionOne
+        (preimageSingularLocusBlowupEquiv PrestableFamily.atWorstNodalOfRelativeDimensionOne H v) ↔
+      X.IsRationalBridge K PrestableFamily.atWorstNodalOfRelativeDimensionOne v := by
+  let pK : Empty → (X ↘ Spec (.of K)).smoothLocus := Empty.elim
+  let pL : Empty → (X' ↘ Spec (.of L)).smoothLocus := Empty.elim
+  let iso := dualGraphBaseChangeIso H pK pL fun i ↦ i.elim
+  let v₀ := (X.dualGraphVertexEquiv pK).symm v
+  have hv' : X'.dualGraphVertexEquiv pL (iso.vertexEquiv v₀) =
+      preimageSingularLocusBlowupEquiv PrestableFamily.atWorstNodalOfRelativeDimensionOne H v :=
+    Subtype.ext (by simp [iso, v₀])
+  rw [← hv', ← X'.dualGraph_isRationalBridge_iff pL, iso.isRationalBridge_vertexEquiv_iff,
+    X.dualGraph_isRationalBridge_iff pK, Equiv.apply_symm_apply]
+
+end BaseChange
 
 end AlgebraicGeometry.Scheme

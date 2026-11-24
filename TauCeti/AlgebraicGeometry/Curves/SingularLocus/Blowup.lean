@@ -21,11 +21,15 @@ same smooth image are equal, and exactly one point of the blowup lies over each 
 An isomorphism `e : X ≅ Y` of relative curves over `Spec R` is étale, so it carries the singular
 locus of `Y` back to that of `X`, and blowing up commutes with flat base change: `e` lifts to an
 isomorphism of the blowups along the singular subschemes, the unique morphism lying over `e`.
+More generally, base change of `X` along any ring homomorphism `R → R'` induces a canonical
+morphism `singularLocusBlowupMap` between singular-locus blowups, which forms a cartesian square
+when `R'` is flat over `R`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.isIso_blowupToBase_singularLocus_restrict_smoothLocus`: the blowup is
-  an isomorphism over the smooth locus.
+* `AlgebraicGeometry.Scheme.isIso_blowupToBase_singularLocus_restrict_smoothLocus` and
+  `AlgebraicGeometry.Scheme.isIso_blowupToBase_singularLocus_of_smooth`: the blowup is an
+  isomorphism over the smooth locus, and globally an isomorphism when the curve is smooth.
 * `AlgebraicGeometry.Scheme.eq_of_blowupToBase_singularLocus_eq_of_mem_smoothLocus` and
   `AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_eq_one_of_mem_smoothLocus`:
   one point of the blowup lies over each smooth point.
@@ -33,6 +37,9 @@ isomorphism of the blowups along the singular subschemes, the unique morphism ly
   isomorphic relative curves along their singular subschemes, lying over the isomorphism of curves
   (`AlgebraicGeometry.Scheme.singularLocusBlowupIso_hom_blowupToBase`) and the unique such
   morphism (`AlgebraicGeometry.Scheme.eq_singularLocusBlowupIso_hom`).
+* `AlgebraicGeometry.Scheme.singularLocusBlowupMap` and
+  `AlgebraicGeometry.Scheme.isPullback_singularLocusBlowupMap`: base-change morphism of
+  singular-locus blowups along `Spec R' ⟶ Spec R`, forming a cartesian square when `R'` is `R`-flat.
 
 ## References
 
@@ -184,5 +191,72 @@ theorem singularLocusBlowupIso_trans (e' : Y ≅ Z)
   IdealSheafData.blowupIso_trans e _ e' _
 
 end Iso
+
+/-- For a smooth relative curve of relative dimension one, the singular subscheme is empty (`⊤`), so
+blowing up the singular subscheme is an isomorphism. -/
+instance isIso_blowupToBase_singularLocus_of_smooth
+    {R : Type u} [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
+    [SmoothOfRelativeDimension 1 (X ↘ Spec (.of R))] :
+    IsIso (X.singularLocus R).blowupToBase :=
+  (X.singularLocus R).isIso_blowupToBase_iff.mpr
+    (X.singularLocus_eq_top R ▸ IdealSheafData.isEffectiveCartier_top X)
+
+/-! ### Base change of the singular-locus blowup -/
+
+noncomputable section BaseChange
+
+variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R']
+  {X X' : Scheme.{u}} [X.Over (Spec (.of R))] [X'.Over (Spec (.of R'))] {g : X' ⟶ X}
+  [Flat (X ↘ Spec (.of R))] [LocallyOfFinitePresentation (X ↘ Spec (.of R))]
+  [PureRelativeDimension 1 (X ↘ Spec (.of R))]
+  [Flat (X' ↘ Spec (.of R'))] [LocallyOfFinitePresentation (X' ↘ Spec (.of R'))]
+  [PureRelativeDimension 1 (X' ↘ Spec (.of R'))]
+  (H : IsPullback g (X' ↘ Spec (.of R')) (X ↘ Spec (.of R))
+    (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
+
+/-- Induced morphism `Bl_{Sing(X'/R')} X' ⟶ Bl_{Sing(X/R)} X` under base change of `X`. -/
+def singularLocusBlowupMap : (X'.singularLocus R').blowup ⟶ (X.singularLocus R).blowup :=
+  (X.singularLocus R).blowupLift ((X'.singularLocus R').blowupToBase ≫ g) (by
+    rw [IdealSheafData.comap_comp, ← Scheme.singularLocus_eq_comap_of_isPullback H]
+    exact (X'.singularLocus R').isEffectiveCartier_comap_blowupToBase)
+
+/-- The base-change morphism of blowups lies over the base-change morphism of curves. -/
+@[reassoc (attr := simp)]
+theorem singularLocusBlowupMap_blowupToBase :
+    singularLocusBlowupMap H ≫ (X.singularLocus R).blowupToBase =
+      (X'.singularLocus R').blowupToBase ≫ g :=
+  (X.singularLocus R).blowupLift_blowupToBase _ _
+
+/-- The base-change morphism of blowups lies over `g`, on points. -/
+@[simp]
+theorem blowupToBase_singularLocusBlowupMap_apply (b : (X'.singularLocus R').blowup) :
+    (X.singularLocus R).blowupToBase (singularLocusBlowupMap H b) =
+      g ((X'.singularLocus R').blowupToBase b) := by
+  rw [← Scheme.Hom.comp_apply, singularLocusBlowupMap_blowupToBase, Scheme.Hom.comp_apply]
+
+/-- Every morphism of singular-locus blowups lying over `g` equals `singularLocusBlowupMap H`. -/
+theorem eq_singularLocusBlowupMap
+    {h : (X'.singularLocus R').blowup ⟶ (X.singularLocus R).blowup}
+    (hh : h ≫ (X.singularLocus R).blowupToBase = (X'.singularLocus R').blowupToBase ≫ g) :
+    h = singularLocusBlowupMap H :=
+  (X.singularLocus R).eq_blowupLift _ hh
+
+/-- The singular-locus blowup commutes with flat base change. -/
+theorem isPullback_singularLocusBlowupMap [Module.Flat R R'] :
+    IsPullback (X'.singularLocus R').blowupToBase (singularLocusBlowupMap H)
+      g (X.singularLocus R).blowupToBase := by
+  have : Flat (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
+    rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]; infer_instance
+  have : Flat g := MorphismProperty.of_isPullback H.flip ‹_›
+  suffices ∀ (J : X'.IdealSheafData) (_ : J = (X.singularLocus R).comap g)
+      (hcart : ((X.singularLocus R).comap (J.blowupToBase ≫ g)).IsEffectiveCartier),
+      IsPullback J.blowupToBase ((X.singularLocus R).blowupLift (J.blowupToBase ≫ g) hcart)
+        g (X.singularLocus R).blowupToBase from
+    this _ (Scheme.singularLocus_eq_comap_of_isPullback H) _
+  rintro J rfl hcart
+  rw [(X.singularLocus R).eq_blowupMap g ((X.singularLocus R).blowupLift_blowupToBase _ _)]
+  exact (X.singularLocus R).isPullback_blowupMap_of_flat g
+
+end BaseChange
 
 end AlgebraicGeometry.Scheme
