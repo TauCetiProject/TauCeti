@@ -82,13 +82,11 @@ theorem c0Sum_eq_top [Finite ι] : c0Sum A = ⊤ :=
 
 /-- The `c₀` direct sum absorbs multiplication on the left by the bounded product. -/
 theorem mul_mem_c0Sum_left (a : lp A ∞) {b : lp A ∞} (hb : b ∈ c0Sum A) : a * b ∈ c0Sum A :=
-  (c0Ideal A).mem_toNonUnitalStarSubalgebra.2 <|
-    (c0Ideal A).mul_mem_left a b ((c0Ideal A).mem_toNonUnitalStarSubalgebra.1 hb)
+  (c0Ideal A).mul_mem_toNonUnitalStarSubalgebra a b hb
 
 /-- The `c₀` direct sum absorbs multiplication on the right by the bounded product. -/
 theorem mul_mem_c0Sum_right {a : lp A ∞} (ha : a ∈ c0Sum A) (b : lp A ∞) : a * b ∈ c0Sum A :=
-  (c0Ideal A).mem_toNonUnitalStarSubalgebra.2 <|
-    (c0Ideal A).mul_mem_right a b ((c0Ideal A).mem_toNonUnitalStarSubalgebra.1 ha)
+  StarMemClass.mul_mem_right_of_mul_mem_left mul_mem_c0Sum_left b ha
 
 section Lift
 
@@ -196,8 +194,6 @@ theorem c0SumSingle_injective (i : ι) : Function.Injective (c0SumSingle A i) :=
 theorem c0SumSingle_mul_c0SumSingle_of_ne {i j : ι} (hij : i ≠ j) (a : A i) (b : A j) :
     c0SumSingle A i a * c0SumSingle A j b = 0 := by
   refine Subtype.ext <| lp.ext <| funext fun k ↦ ?_
-  simp only [NonUnitalStarSubalgebra.coe_mul, coe_c0SumSingle_apply, infty_coeFn_mul,
-    Pi.mul_apply, lp.coeFn_single, ZeroMemClass.coe_zero]
   obtain rfl | hk := eq_or_ne k i
   · simp [Pi.single_eq_of_ne hij]
   · simp [Pi.single_eq_of_ne hk]

@@ -381,12 +381,14 @@ theorem hasSum_single_of_tendsto_cofinite [DecidableEq ι] {a : lp E ∞}
 
 variable (p) in
 /-- The family supported at `i` with value `star a` is the adjoint of the one with value `a`. -/
+@[simp]
 theorem single_star [DecidableEq ι] [∀ i, StarAddMonoid (E i)] [∀ i, NormedStarGroup (E i)]
     (i : ι) (a : E i) : lp.single p i (star a) = star (lp.single p i a) :=
   lp.ext <| funext fun j ↦ by simp [Pi.single_star]
 
 /-- The family supported at `i` with value `a * b` is the product of those with values `a` and
 `b`. -/
+@[simp]
 theorem single_mul [DecidableEq ι] {A : ι → Type*} [∀ i, NonUnitalNormedRing (A i)] (i : ι)
     (a b : A i) : lp.single ∞ i (a * b) = lp.single ∞ i a * lp.single ∞ i b :=
   lp.ext <| by simp [lp.coeFn_single, Pi.single_mul]
