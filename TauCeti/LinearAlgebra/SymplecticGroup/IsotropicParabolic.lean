@@ -133,8 +133,25 @@ def stabilizer [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ] (J₀
 
 end Definitions
 
+/-- The blocks of the Gram matrix `TauCeti.IsotropicParabolic.form`. -/
+theorem form_def [DecidableEq ι] (J₀ : Matrix κ κ R) :
+    form ι J₀ = fromBlocks 0 (fromCols 0 1) (fromRows 0 (-1)) (fromBlocks J₀ 0 0 0) :=
+  (rfl)
+
+/-- The blocks of the unipotent matrix `u(Y, Z)`. -/
+theorem unipotent_def [DecidableEq ι] [Fintype κ] [DecidableEq κ] (J₀ : Matrix κ κ R)
+    (Y : Matrix κ ι R) (Z : Matrix ι ι R) :
+    unipotent J₀ Y Z = fromBlocks 1 (fromCols (Yᵀ * J₀) Z) 0 (fromBlocks 1 Y 0 1) :=
+  (rfl)
+
+/-- The blocks of the Levi matrix `l(A, D)`. -/
+theorem levi_def [Fintype ι] [DecidableEq ι] (A : GL ι R) (D : Matrix κ κ R) :
+    levi A D = fromBlocks A 0 0 (fromBlocks D 0 0 (A : Matrix ι ι R)⁻¹ᵀ) :=
+  (rfl)
+
 /-- A vector lies in `TauCeti.IsotropicParabolic.isotropicSubmodule` exactly when its coordinates
 outside the first block vanish. -/
+@[simp]
 theorem mem_isotropicSubmodule {v : ι ⊕ κ ⊕ ι → R} :
     v ∈ isotropicSubmodule R ι κ ↔ ∀ j, v (Sum.inr j) = 0 := by
   simp [isotropicSubmodule]
@@ -428,7 +445,16 @@ base point of the matrices `Z` with `u(Y, Z)` in the stabilizer. -/
 def unipotentBase : Matrix ι ι R :=
   of fun i j => if i < j then (Yᵀ * J₀ * Y) i j else 0
 
+omit [Fintype ι] [DecidableEq ι] [DecidableEq κ] in
+/-- The entries of `Z₀`: those of `Yᵀ J₀ Y` strictly above the diagonal, and `0` elsewhere. -/
+@[simp]
+theorem unipotentBase_apply (J₀ : Matrix κ κ R) (Y : Matrix κ ι R) (i j : ι) :
+    unipotentBase J₀ Y i j = if i < j then (Yᵀ * J₀ * Y) i j else 0 :=
+  (rfl)
+
 omit [Fintype ι] [DecidableEq ι] in
+/-- For alternating `J₀`, the strictly upper triangular part `Z₀` of `Yᵀ J₀ Y` satisfies
+`Z₀ - Z₀ᵀ = Yᵀ J₀ Y`. -/
 theorem unipotentBase_sub_transpose {J₀ : Matrix κ κ R} (hJ₀ : J₀.toBilin'.IsAlt)
     (Y : Matrix κ ι R) : unipotentBase J₀ Y - (unipotentBase J₀ Y)ᵀ = Yᵀ * J₀ * Y := by
   -- `Yᵀ J₀ Y` is alternating: skew because `J₀` is, and its diagonal entries are values of the
