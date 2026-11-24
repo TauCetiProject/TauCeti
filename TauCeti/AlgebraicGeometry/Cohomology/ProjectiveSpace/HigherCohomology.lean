@@ -286,7 +286,7 @@ private def chartSection (S : Finset κ) {e : κ → ℤ} (he : e ∈ chartExpon
     (Submodule.smul_mem _ c
       (degree_numeratorExponent_eq_toNat he hj ▸ b.symmetricAlgebra_mem_homogeneousSubmodule _))
     (by simpa [mul_comm] using SetLike.pow_mem_graded j (coordProd_mem b S))
-    _ (Proj.basicOpen_le_basicOpen_pow 𝒜 (coordProd b S) j)
+    _ (Proj.le_basicOpen_pow 𝒜 (coordProd b S) j)
 
 /-- The two ways of writing the Laurent monomial `xᵉ` as a fraction with denominators the powers of
 coordinate products agree after cross-multiplication. -/
@@ -369,7 +369,7 @@ private lemma chartSectionsHom_eq_const {S : Finset κ}
           (degree_numeratorExponent_eq_toNat ((Finsupp.mem_supported R f.val).1 f.property he)
             (hj e he) ▸ b.symmetricAlgebra_mem_homogeneousSubmodule _))
         (by simpa [mul_comm] using SetLike.pow_mem_graded j (coordProd_mem b S)) _
-        (Proj.basicOpen_le_basicOpen_pow 𝒜 (coordProd b S) j) := by
+        (Proj.le_basicOpen_pow 𝒜 (coordProd b S) j) := by
   refine Proj.twistingSheaf.ext fun x ↦ ?_
   rw [chartSectionsHom_eq_sum]
   refine (Proj.twistingSheaf.sum_apply _ _ x).trans <| (Finset.sum_congr rfl fun e he ↦ ?_).trans <|

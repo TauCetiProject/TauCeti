@@ -54,7 +54,7 @@ of the structure sheaf of `Spec` over basic opens
   charts agree on their overlap if they agree on the chart of the product.
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
   of `f`.
-* `AlgebraicGeometry.Proj.basicOpen_le_basicOpen_pow`: `D₊(f) ≤ D₊(fⁿ)` for every `n : ℕ`.
+* `AlgebraicGeometry.Proj.le_basicOpen_pow`: `D₊(f) ≤ D₊(fⁿ)` for every `n : ℕ`.
 * `AlgebraicGeometry.Proj.basicOpen_awayToSection_mk`: on the chart `D₊(f)`, the function `g / fⁿ`
   is invertible exactly on `D₊(fg)`; its values in the localizations are given by
   `AlgebraicGeometry.Proj.val_awayToSection_mk_apply`.
@@ -280,7 +280,7 @@ variable {A : Type u} {σ : Type*} [CommRing A] [SetLike σ A] [AddSubgroupClass
 variable (𝒜) in
 /-- The standard open `D₊(f)` is contained in `D₊(fⁿ)` for every `n : ℕ` (including `n = 0`,
 where `D₊(1) = ⊤`). -/
-theorem basicOpen_le_basicOpen_pow (f : A) (n : ℕ) :
+theorem le_basicOpen_pow (f : A) (n : ℕ) :
     basicOpen 𝒜 f ≤ basicOpen 𝒜 (f ^ n) :=
   fun x hx hpow ↦ hx (x.isPrime.mem_of_pow_mem n hpow)
 

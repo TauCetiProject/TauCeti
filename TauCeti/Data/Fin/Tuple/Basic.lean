@@ -10,6 +10,7 @@ public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Insertions and appends in tuples
@@ -568,11 +569,21 @@ theorem insertNth_comp_succAbove_eq_comp_swap {n : ℕ} (i : Fin (n + 1)) (f : F
     i.succ.succ.insertNth (α := fun _ ↦ α) (f i.castSucc) f ∘ i.castSucc.castSucc.succAbove =
       f ∘ Equiv.swap i.castSucc i.succ := by
   funext j
-  simp only [Function.comp_apply, insertNth, succAboveCases, eq_rec_constant]
-  split_ifs with h₁ h₂ <;>
-  · refine congrArg f (Fin.ext ?_)
-    simp only [Equiv.swap_apply_def, coe_castPred, val_pred]
-    simp only [succAbove, lt_def, Fin.ext_iff, val_castSucc, val_succ] at *
-    split_ifs at * <;> grind
+  simp only [Function.comp_apply]
+  by_cases hj : j = i.succ
+  · subst hj
+    have h : i.castSucc.castSucc.succAbove i.succ = i.succ.succ :=
+      Fin.ext (by simp [val_succAbove])
+    rw [h, insertNth_apply_same, Equiv.swap_apply_right]
+  · have h : i.castSucc.castSucc.succAbove j =
+        i.succ.succ.succAbove (Equiv.swap i.castSucc i.succ j) := by
+      refine Fin.ext ?_
+      by_cases hj' : j = i.castSucc
+      · subst hj'
+        simp
+      · rw [Equiv.swap_apply_of_ne_of_ne hj' hj]
+        simp only [val_succAbove, Fin.ext_iff, val_castSucc, val_succ] at hj hj' ⊢
+        split_ifs <;> omega
+    rw [h, insertNth_apply_succAbove]
 
 end Fin
