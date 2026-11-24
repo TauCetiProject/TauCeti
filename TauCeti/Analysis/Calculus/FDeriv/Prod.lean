@@ -100,6 +100,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
 * `TauCeti.continuous_fderiv_apply_slice_right`: for a `C¹` map, `t ↦ df(a, t) v` is continuous.
 * `TauCeti.continuous_fderiv_slice_right`: the derivative of the second-variable slices of a `C¹`
   function of two variables is continuous in both variables.
+* `TauCeti.tsupport_fderiv_slice_right_subset`: the derivatives of the second-variable slices
+  are supported in the topological support of the function.
 * `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
   applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `HasFDerivAt.comp_graph`, `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph
@@ -470,6 +472,18 @@ theorem continuous_fderiv_slice_right {f : E → F → G}
     Continuous fun p : E × F ↦ fderiv 𝕜 (f p.1) p.2 :=
   (ContDiff.fderiv (f := fun (q : E × F) y ↦ f q.1 y)
     (hf.comp (contDiff_fst.fst.prodMk contDiff_snd)) (contDiff_snd (n := 0)) (by simp)).continuous
+
+omit [NormedSpace 𝕜 E] in
+/-- The derivatives `fderiv 𝕜 (f a) y` of the second-variable slices of `f` vanish outside the
+topological support of `(a, y) ↦ f a y`. -/
+theorem tsupport_fderiv_slice_right_subset (f : E → F → G) :
+    tsupport (fun p : E × F ↦ fderiv 𝕜 (f p.1) p.2) ⊆ tsupport fun p : E × F ↦ f p.1 p.2 := by
+  refine closure_minimal (fun p hp ↦ by_contra fun hpf ↦ hp ?_) (isClosed_tsupport _)
+  -- Near a point outside the support, the slice through it vanishes.
+  have h : f p.1 =ᶠ[nhds p.2] fun _ ↦ 0 :=
+    (notMem_tsupport_iff_eventuallyEq.1 hpf).comp_tendsto
+      (continuous_const.prodMk continuous_id).continuousAt
+  simp [h.fderiv_eq]
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/
