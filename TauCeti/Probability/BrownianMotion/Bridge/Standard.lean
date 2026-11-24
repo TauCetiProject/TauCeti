@@ -133,6 +133,7 @@ theorem integral_eval_standardBrownianBridgeMeasure (t : I) :
   rw [standardBrownianBridgeMeasure,
     integral_map measurable_standardBrownianBridgePath.aemeasurable
       (ContinuousMap.measurable_eval t).aestronglyMeasurable]
+  simp only [standardBrownianBridgePath_apply]
   exact isPreBrownianReal_eval_wienerMeasure.integral_brownianBridge 1 (toNNReal t)
 
 /-- The covariance of the standard Brownian bridge: `cov[x s, x t] = min s t - s t`. -/
@@ -167,9 +168,12 @@ theorem hasLaw_eval_standardBrownianBridgeMeasure (t : I) :
   have h := isPreBrownianReal_eval_wienerMeasure.hasLaw_brownianBridge
     (T := 1) (t := toNNReal t) (by exact_mod_cast t.property.2)
   rw [hv] at h
+  have h' : HasLaw (fun ω ↦ standardBrownianBridgePath ω t)
+      (gaussianReal 0 (toNNReal t * toNNReal (σ t))) wienerMeasure := by
+    simpa only [standardBrownianBridgePath_apply] using h
   exact HasLaw.comp_of_hasLaw_comp (f := fun x : C(I, ℝ) ↦ x t)
     (ContinuousMap.measurable_eval t).aemeasurable
-    hasLaw_standardBrownianBridgePath HasLaw.id h
+    hasLaw_standardBrownianBridgePath HasLaw.id h'
 
 /-- Almost every path of the standard Brownian bridge starts at `0`. -/
 theorem ae_eval_zero_standardBrownianBridgeMeasure :
