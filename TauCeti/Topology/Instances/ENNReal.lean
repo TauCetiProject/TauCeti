@@ -30,6 +30,8 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
   `a ≤ b + c`.
+* `ENNReal.le_of_forall_one_lt_le_ofReal_pow_mul`: if `a ≤ c ^ k b` for every real `c > 1`, then
+  `a ≤ b`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
 * `ENNReal.ofReal_truncateToReal_le`: the truncation `truncateToReal t x` of `x` at `t`, read back
@@ -106,6 +108,17 @@ theorem _root_.ENNReal.le_add_of_forall_one_lt_le_add_mul {a b c : ℝ≥0∞}
     simpa using (ENNReal.continuous_coe.tendsto 1).mono_left nhdsWithin_le_nhds
   have hlim : Filter.Tendsto (fun t : ℝ≥0 => b + t * c) (𝓝[>] 1) (𝓝 (b + c)) := by
     simpa using tendsto_const_nhds.add (ENNReal.Tendsto.mul_const h1 (Or.inr hc))
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall h)
+
+/-- If `a ≤ c ^ k b` for every real `c > 1`, then `a ≤ b`. This lets a family of estimates
+with a loss factor `c ^ k` that may be taken arbitrarily close to `1` pass to the sharp
+estimate. -/
+theorem _root_.ENNReal.le_of_forall_one_lt_le_ofReal_pow_mul (k : ℕ) {a b : ℝ≥0∞}
+    (h : ∀ c : ℝ, 1 < c → a ≤ ENNReal.ofReal c ^ k * b) : a ≤ b := by
+  have hlim : Filter.Tendsto (fun c : ℝ ↦ ENNReal.ofReal c ^ k * b) (𝓝[>] 1) (𝓝 b) := by
+    have := ENNReal.Tendsto.mul_const (b := b)
+      (ENNReal.Tendsto.pow (n := k) (ENNReal.continuous_ofReal.tendsto 1)) (Or.inl (by simp))
+    simpa using this.mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall h)
 
 /-- The cost truncated at `M` on a rectangle `K ×ˢ L` and equal to `M` off it varies by at most `η`
