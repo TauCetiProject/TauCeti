@@ -32,6 +32,15 @@ For a commutative ring `k` (nontrivial where the statement needs it, e.g. a fiel
 
 The thickenings of finite order are in
 `TauCeti/Examples/AlgebraicGeometry/Morphisms/Thickening.lean`.
+
+## References
+
+* [Stacks Project, Example 10.32.2](https://stacks.math.columbia.edu/tag/0EGG), the ideal
+  `(x₁, x₂, …)` of `k[x₁, x₂, …] ⧸ (x₁, x₂², x₃³, …)`, locally nilpotent but not nilpotent.
+* [Stacks Project, Definition 37.11.1](https://stacks.math.columbia.edu/tag/02H0),
+  [Definition 37.6.1](https://stacks.math.columbia.edu/tag/02H8) and
+  [Definition 37.8.1](https://stacks.math.columbia.edu/tag/02HG), formally smooth, formally
+  unramified and formally étale morphisms.
 -/
 
 public section
