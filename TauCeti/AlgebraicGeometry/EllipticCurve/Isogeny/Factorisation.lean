@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Kernel
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 
 /-!
 # The factorisation of an isogeny
 
-The pointedness criterion in `Isogeny/InfinityPlace.lean` discharges the pointedness of a factor.
-If two isogenies `φ : W₁ → W₂` and
+The pointedness criterion in `Isogeny/InfinityPlace/Basic.lean` discharges the pointedness of a
+factor. If two isogenies `φ : W₁ → W₂` and
 `ψ : W₁ → W₃` satisfy `ψ^*F(W₃) ⊆ φ^*F(W₂)` as subfields of `F(W₁)`, then inverting `φ^*` on its
 image gives an embedding `σ : F(W₃) → F(W₂)` with `φ^* ∘ σ = ψ^*`. Restricting the place at
 infinity of `W₁` along `φ^*` and `ψ^*` gives the places at infinity of `W₂` and `W₃`, so

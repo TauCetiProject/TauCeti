@@ -52,7 +52,7 @@ theorem iSup_eigenspace_differential_eq_top_of_mem_center
     ⨆ μ : k, Module.End.eigenspace
       (Comodule.differential (R := k) (H := H) (M := V) d) μ = ⊤ := by
   let _ : ConnectedSpace (PrimeSpectrum H) :=
-    hH.geometricallyConnected.connectedSpace k H.obj
+    hH.geometricallyConnected.connectedSpace
   let I := FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal H
   have hdR := LieAlgebra.center_le_radical k
     (Derivation k H (Bialgebra.CounitAlgebra k H k)) hd

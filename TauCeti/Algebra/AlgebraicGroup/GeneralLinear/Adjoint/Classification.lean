@@ -24,6 +24,8 @@ with the defining action of its weight shows that every nonzero entry determines
 
 * `TauCeti.GeneralLinear.matrixUnitWeight_eq_of_mem_adjointWeightSpace_of_apply_ne_zero`: a
   nonzero entry of a weight vector determines its weight.
+* `TauCeti.GeneralLinear.cotangentDualMatrixEquiv_apply_eq_zero_of_mem_adjointWeightSpace_one`:
+  a vector of the trivial weight space is a diagonal matrix.
 * `TauCeti.GeneralLinear.mem_nontrivialAdjointWeights_diagonalTorus_iff`: the nontrivial adjoint
   weights are exactly the characters `e_i - e_j` with `i ≠ j`.
 * `TauCeti.GeneralLinear.adjointWeightSpace_matrixUnitWeight_eq_span_singleton`: the `e_i - e_j`
@@ -76,6 +78,17 @@ theorem matrixUnitWeight_eq_of_mem_adjointWeightSpace_of_apply_ne_zero
   rw [mul_comm (MonoidAlgebra.single alpha 1), ← MonoidAlgebra.of_apply,
     ← MonoidAlgebra.single_eq_algebraMap_mul_of] at hentryAction
   exact MonoidAlgebra.single_left_injective hentry hentryAction
+
+/-- **A tangent vector of `GL_n` fixed by the diagonal torus is a diagonal matrix**: a nonzero
+`(i, j)` entry of a weight vector forces its weight to be `e_i - e_j`, which is trivial only when
+`i = j`. -/
+theorem cotangentDualMatrixEquiv_apply_eq_zero_of_mem_adjointWeightSpace_one
+    {x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))}
+    (hx : x ∈ Derivation.adjointWeightSpace (diagonalTorusCoordinateMap (R := k) (N := n)).hom 1)
+    {i j : Fin n} (hij : i ≠ j) : cotangentDualMatrixEquiv x i j = 0 := by
+  by_contra h
+  exact hij ((matrixUnitWeight_eq_one_iff i j).mp
+    (matrixUnitWeight_eq_of_mem_adjointWeightSpace_of_apply_ne_zero hx h))
 
 /-- The nontrivial adjoint weights of `GL_n` relative to its diagonal torus are exactly the
 characters `e_i - e_j` for ordered pairs `i ≠ j`. -/

@@ -12,10 +12,10 @@ import TauCeti.Analysis.Normed.Group.Ultra
 # Stability of Gauss norms and dominant coefficients
 
 Over an ultrametric seminormed ring, a perturbation smaller than a power series in the Gauss
-norm preserves its Gauss norm and every degree attaining that norm. Consequently it preserves
-both the distinguished degree and the lowest dominant degree. These statements require only
-bounded weighted coefficients, so apply in particular to restricted power series without any
-completeness assumption.
+norm preserves its Gauss norm and every degree attaining that norm; such a series is necessarily
+nonzero. Consequently the perturbation preserves both the distinguished degree and the lowest
+dominant degree. These statements require only bounded weighted coefficients, so apply in
+particular to restricted power series without any completeness assumption.
 
 At any nonnegative radius, finite coefficient error bounds together with tail bounds on both
 series at the same tolerance bound the Gauss norm of their difference.
@@ -52,6 +52,15 @@ end CoefficientBounds
 
 variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
   {c : ℝ} {f g : PowerSeries R} {s : ℕ}
+
+omit [IsUltrametricDist R] in
+/-- A series admitting a perturbation strictly smaller in Gauss norm is nonzero. -/
+theorem ne_zero_of_gaussNorm_sub_lt (h : (f - g).gaussNorm norm c < f.gaussNorm norm c) :
+    f ≠ 0 := by
+  rintro rfl
+  exact h.not_ge <| by
+    rw [PowerSeries.gaussNorm_zero norm c norm_zero]
+    exact PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg
 
 /-- A perturbation strictly smaller in Gauss norm preserves the Gauss norm, at any nonnegative
 radius where both series have bounded weighted coefficients. -/

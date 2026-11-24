@@ -6,6 +6,9 @@ Authors: Codex
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
@@ -25,6 +28,8 @@ square roots are specific to `ℝ`.
 
 * `TauCeti.strictMonoOn_div_one_sub`, `TauCeti.image_div_one_sub_Ioo`, and
   `TauCeti.hasDerivAt_div_one_sub` describe the chart `u ↦ u / (1 - u)` on intervals below `1`;
+* `TauCeti.integral_Ioi_eq_integral_div_one_sub` and
+  `TauCeti.integrableOn_Ioi_iff_integrableOn_div_one_sub` give substitution formulas for this chart;
 * `TauCeti.image_sq_div_const_Ioi`, `TauCeti.injOn_sq_div_const_Ioi`, and
   `TauCeti.hasDerivAt_sq_div_const` describe the square chart `z ↦ z ^ 2 / ν` on positive
   half-lines;
@@ -36,7 +41,7 @@ public section
 
 namespace TauCeti
 
-open Set
+open Set MeasureTheory
 
 variable {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -70,6 +75,29 @@ lemma hasDerivAt_div_one_sub {u : 𝕜} (hu : u ≠ 1) :
     HasDerivAt (fun t : 𝕜 => t / (1 - t)) ((1 - u) ^ 2)⁻¹ u :=
   ((hasDerivAt_id' u).div ((hasDerivAt_id' u).const_sub 1)
     (sub_ne_zero.2 hu.symm)).congr_deriv (by ring)
+
+/-- The substitution `v = u / (1 - u)` identifies integration over the ray starting at
+`ρ / (1 - ρ)` with integration over `(ρ, 1)`, including totalized integrals without convergence
+hypotheses. The positive Jacobian is `(1 - u)⁻²`. -/
+theorem integral_Ioi_eq_integral_div_one_sub {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (f : ℝ → F) {ρ : ℝ} (hρ : ρ < 1) :
+    ∫ v in Ioi (ρ / (1 - ρ)), f v =
+      ∫ u in Ioo ρ 1, ((1 - u) ^ 2)⁻¹ • f (u / (1 - u)) := by
+  rw [← image_div_one_sub_Ioo hρ]
+  exact integral_image_eq_integral_deriv_smul_of_monotoneOn measurableSet_Ioo
+    (fun u hu ↦ (hasDerivAt_div_one_sub hu.2.ne).hasDerivWithinAt)
+    (strictMonoOn_div_one_sub.monotoneOn.mono Ioo_subset_Iio_self) f
+
+/-- Absolute integrability is preserved by the substitution `v = u / (1 - u)` from `(ρ, 1)`
+onto the ray starting at `ρ / (1 - ρ)`, with its Jacobian included in the pulled-back function. -/
+theorem integrableOn_Ioi_iff_integrableOn_div_one_sub {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (f : ℝ → F) {ρ : ℝ} (hρ : ρ < 1) :
+    IntegrableOn f (Ioi (ρ / (1 - ρ))) ↔
+      IntegrableOn (fun u ↦ ((1 - u) ^ 2)⁻¹ • f (u / (1 - u))) (Ioo ρ 1) := by
+  rw [← image_div_one_sub_Ioo hρ]
+  exact integrableOn_image_iff_integrableOn_deriv_smul_of_monotoneOn measurableSet_Ioo
+    (fun u hu ↦ (hasDerivAt_div_one_sub hu.2.ne).hasDerivWithinAt)
+    (strictMonoOn_div_one_sub.monotoneOn.mono Ioo_subset_Iio_self) f
 
 /-! ### The square chart on the positive half-line -/
 

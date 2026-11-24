@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Edge
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -156,10 +156,10 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
     have hpos : (0 : ℝ) < (‖z‖ + s) / 2 := by linarith [hs.1]
     have h1 : ‖schwarzChristoffelIntegrand a e (z + (s : ℂ) * Complex.I)‖
         ≤ C * ‖z + (s : ℂ) * Complex.I‖ ^ S :=
-      hbd _ (hzR.trans (Complex.norm_le_norm_add_ofReal_mul_I hzim.le hs.1))
+      hbd _ (hzR.trans (Complex.norm_le_norm_add_ofReal_mul_I z hzim.le hs.1))
     have h2 : ‖z + (s : ℂ) * Complex.I‖ ^ S ≤ ((‖z‖ + s) / 2) ^ S :=
       Real.rpow_le_rpow_of_nonpos hpos
-        (Complex.norm_add_div_two_le_norm_add_ofReal_mul_I hzim.le hs.1) (by linarith)
+        (Complex.norm_add_div_two_le_norm_add_ofReal_mul_I z hzim.le s) (by linarith)
     have h3 : ((‖z‖ + s) / 2) ^ S = 2 ^ (-S) * (‖z‖ + s) ^ S := by
       rw [Real.div_rpow (by linarith [hs.1]) (by norm_num), Real.rpow_neg (by norm_num)]
       field_simp
@@ -348,7 +348,6 @@ theorem tendsto_schwarzChristoffelBoundaryValue_atInfinity (a e : ι → ℝ) (z
     rw [← heq] at this
     exact this
   filter_upwards [hL, hl.eventually_ge_atTop (R + 1)] with x hx hxbig
-  have hnb := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have hnorm : ∀ᶠ z in 𝓝[upperHalfPlaneSet] ((x : ℂ)), R ≤ ‖z‖ := by
     have hopen : {z : ℂ | R < ‖z‖} ∈ 𝓝 ((x : ℂ)) := by
       refine (isOpen_lt continuous_const continuous_norm).mem_nhds ?_
@@ -376,7 +375,6 @@ theorem tendsto_limUnder_schwarzChristoffelPrimitive_atTop (a e : ι → ℝ) (z
     (Finset.single_le_sum (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i))
   obtain ⟨L, hL, -, -⟩ := exists_tendsto_schwarzChristoffelPrimitive_sub_eq a e z₀
     (p := ∑ i, |a i|) (q := x + 1) fun i _ hi => absurd hi.1 (not_lt.mpr (hle i))
-  have hnb := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have h := hL x ⟨hx, by linarith⟩
   rwa [h.limUnder_eq]
 
@@ -395,7 +393,6 @@ theorem tendsto_limUnder_schwarzChristoffelPrimitive_atBot (a e : ι → ℝ) (z
       (Finset.single_le_sum (fun j _ => abs_nonneg (a j)) (Finset.mem_univ i)))
   obtain ⟨L, hL, -, -⟩ := exists_tendsto_schwarzChristoffelPrimitive_sub_eq a e z₀
     (p := x - 1) (q := -∑ i, |a i|) fun i _ hi => absurd hi.2 (not_lt.mpr (hle i))
-  have hnb := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have h := hL x ⟨by linarith, hx⟩
   rwa [h.limUnder_eq]
 
