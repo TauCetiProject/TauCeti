@@ -25,7 +25,7 @@ is a coordinate on the tangent space there. The tangent-space exponential of `E(
 but expressing its domain as `ℂ` requires such a tangent coordinate; this one normalizes the
 exponential `WeierstrassCurve.Projective.exp`
 (`WeierstrassCurve.Projective.hasDerivAt_localParameter_exp`, in
-`TauCeti.Analysis.SpecialFunctions.Elliptic.Exponential`).
+`TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Exponential`).
 
 ## Main definitions
 

@@ -21,18 +21,22 @@ at `P` to the origin and applying the differential of `t` there gives the normal
 differential `ω` of `E(ℂ)`: at `P` it is the differential of `Q ↦ t (Q - P)`. It is invariant
 under translations.
 
-The form is characterized by translation invariance and its normalization at the origin
-(`WeierstrassCurve.Projective.eq_invariantDifferential_of_pullback_add_right`). It is holomorphic
+A translation-invariant form is determined by its value at the origin. So the form is
+characterized by translation invariance and its normalization at the origin
+(`WeierstrassCurve.Projective.eq_invariantDifferential_of_pullback_add_right`), and every
+translation-invariant form is a unique scalar multiple of it
+(`WeierstrassCurve.Projective.existsUnique_eq_smul_invariantDifferential`). It is holomorphic
 (`WeierstrassCurve.Projective.holomorphicAt_invariantDifferential`) and vanishes nowhere
 (`WeierstrassCurve.Projective.invariantDifferential_ne_zero`).
 Holomorphy follows by differentiating
 the holomorphic function `t(e.symm v - e.symm u)` in `v` and restricting to `v = u` in each
 chart `e`.
-The results that use the exponential map are in
-`TauCeti.Analysis.SpecialFunctions.Elliptic.Exponential`: its pullback along the exponential map
-is `dz` (`WeierstrassCurve.Projective.pullback_invariantDifferential_exp`), and on affine coordinate
+Its pullback along the exponential map is `dz`
+(`WeierstrassCurve.Projective.pullback_invariantDifferential_exp`, in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Exponential`). On affine coordinate
 neighbourhoods where `2y + a₁x + a₃ ≠ 0` it is `dx / (2y + a₁x + a₃)`
-(`WeierstrassCurve.Projective.invariantDifferential_eq_inv_smul_mvfderiv`).
+(`WeierstrassCurve.Projective.invariantDifferential_eq_inv_smul_mvfderiv`, in
+`TauCeti.Analysis.SpecialFunctions.Elliptic.Exponential`).
 
 ## Main definitions
 
@@ -44,6 +48,11 @@ neighbourhoods where `2y + a₁x + a₃ ≠ 0` it is `dx / (2y + a₁x + a₃)`
 * `WeierstrassCurve.Projective.invariantDifferential_zero`: at the origin the invariant
   differential is the differential of the local parameter.
 * `WeierstrassCurve.Projective.pullback_invariantDifferential_add_right`: translations preserve it.
+* `WeierstrassCurve.Projective.eq_invariantDifferential_of_pullback_add_right` and
+  `WeierstrassCurve.Projective.existsUnique_eq_smul_invariantDifferential`: it is the normalized
+  translation-invariant form, and every translation-invariant form is a multiple of it.
+* `WeierstrassCurve.Projective.holomorphicAt_invariantDifferential` and
+  `WeierstrassCurve.Projective.invariantDifferential_ne_zero`: it is holomorphic and nowhere zero.
 
 ## References
 
@@ -63,7 +72,7 @@ variable (W : Projective ℂ) [W.IsElliptic]
 /-- The normalized invariant differential on `E(ℂ)`: translate a tangent vector to the origin
 and apply the differential of the local parameter `-X / Y` there. Its pullback along the
 exponential map is `dz` (`WeierstrassCurve.Projective.pullback_invariantDifferential_exp`, in
-`TauCeti.Analysis.SpecialFunctions.Elliptic.Exponential`). -/
+`TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Exponential`). -/
 noncomputable def invariantDifferential : TauCeti.RiemannSurface.OneForm W.Point := fun P ↦
   mvfderiv 𝓘(ℂ) (fun Q : W.Point ↦ (Q - P).localParameter) P
 
@@ -102,27 +111,28 @@ theorem pullback_invariantDifferential_add_right (P : W.Point) :
   rw [TauCeti.RiemannSurface.OneForm.pullback_apply, invariantDifferential_apply,
     invariantDifferential_apply, ← mvfderiv_comp_apply Q hsub hplus, heq]
 
-/-- A translation-invariant form is determined by its value at the origin. In particular, the
-normalization by the differential of `t` characterizes the invariant differential. -/
-theorem eq_invariantDifferential_of_pullback_add_right
-    {α : TauCeti.RiemannSurface.OneForm W.Point}
+/-- A translation-invariant form is determined by its value at the origin: at `P` it is that
+value composed with the differential of the translation by `-P`. -/
+private theorem oneForm_eq_of_pullback_add_right {α β : TauCeti.RiemannSurface.OneForm W.Point}
     (hα : ∀ P : W.Point, α.pullback (fun Q ↦ Q + P) = α)
-    (h0 : α 0 = mvfderiv 𝓘(ℂ) Point.localParameter 0) : α = W.invariantDifferential := by
+    (hβ : ∀ P : W.Point, β.pullback (fun Q ↦ Q + P) = β) (h0 : α 0 = β 0) : α = β := by
   funext P
   apply ContinuousLinearMap.ext
   intro v
-  have h := DFunLike.congr_fun (congrFun (hα (-P)) P) v
-  rw [TauCeti.RiemannSurface.OneForm.pullback_apply, add_neg_cancel, h0] at h
-  rw [invariantDifferential_apply]
-  have ht := (Point.contMDiffAt_localParameter_zero (W := W) 1).mdifferentiableAt one_ne_zero
-  have hs : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (fun Q : W.Point ↦ Q - P) P :=
-    (contMDiff_id.sub contMDiff_const).mdifferentiableAt (n := 1) one_ne_zero
-  change α P v = mvfderiv 𝓘(ℂ) (Point.localParameter ∘ fun Q : W.Point ↦ Q - P) P v
-  rw [mvfderiv_comp_apply P (by simpa using ht) hs, sub_self]
-  have heq : (fun Q : W.Point ↦ Q + -P) = (fun Q ↦ Q - P) :=
-    funext fun Q ↦ (sub_eq_add_neg Q P).symm
-  rw [heq] at h
-  exact h.symm
+  have hαP := DFunLike.congr_fun (congrFun (hα (-P)) P) v
+  have hβP := DFunLike.congr_fun (congrFun (hβ (-P)) P) v
+  rw [TauCeti.RiemannSurface.OneForm.pullback_apply, add_neg_cancel, h0] at hαP
+  rw [TauCeti.RiemannSurface.OneForm.pullback_apply, add_neg_cancel] at hβP
+  exact hαP.symm.trans hβP
+
+/-- **Characterization of the invariant differential**: it is the translation-invariant form
+whose value at the origin is the differential of the local parameter. -/
+theorem eq_invariantDifferential_of_pullback_add_right
+    {α : TauCeti.RiemannSurface.OneForm W.Point}
+    (hα : ∀ P : W.Point, α.pullback (fun Q ↦ Q + P) = α)
+    (h0 : α 0 = mvfderiv 𝓘(ℂ) Point.localParameter 0) : α = W.invariantDifferential :=
+  W.oneForm_eq_of_pullback_add_right hα W.pullback_invariantDifferential_add_right
+    (h0.trans W.invariantDifferential_zero.symm)
 
 private theorem contMDiffAt_chart_sub (P : W.Point) :
     ContMDiffAt 𝓘(ℂ, ℂ × ℂ) 𝓘(ℂ) ω
@@ -181,5 +191,24 @@ theorem invariantDifferential_ne_zero (P : W.Point) : W.invariantDifferential P 
   rw [TauCeti.RiemannSurface.OneForm.pullback_apply, zero_add, h, zero_apply,
     W.invariantDifferential_zero, mvfderiv_apply_eq_mfderiv_apply, hv] at hz
   exact zero_ne_one hz
+
+/-- **The translation-invariant forms are the multiples of the invariant differential**: a form
+invariant under all translations is `c • ω` for a unique `c : ℂ`. The zero form is the case
+`c = 0`. -/
+theorem existsUnique_eq_smul_invariantDifferential {α : TauCeti.RiemannSurface.OneForm W.Point}
+    (hα : ∀ P : W.Point, α.pullback (fun Q ↦ Q + P) = α) :
+    ∃! c : ℂ, α = c • W.invariantDifferential := by
+  -- The tangent space at the origin is the line `ℂ`, on which `ω` does not vanish at `1`.
+  let v : TangentSpace 𝓘(ℂ) (0 : W.Point) := (1 : ℂ)
+  have hv : W.invariantDifferential 0 v ≠ 0 := fun h ↦
+    W.invariantDifferential_ne_zero 0 (ContinuousLinearMap.ext_ring h)
+  refine ⟨α 0 v / W.invariantDifferential 0 v, ?_, fun c hc ↦ ?_⟩
+  · refine W.oneForm_eq_of_pullback_add_right hα (fun P ↦ by
+      rw [TauCeti.RiemannSurface.OneForm.pullback_const_smul,
+        pullback_invariantDifferential_add_right]) (ContinuousLinearMap.ext_ring ?_)
+    -- Both sides are evaluated at the tangent vector `v = 1`.
+    exact (div_mul_cancel₀ _ hv).symm
+  · have h : α 0 v = c * W.invariantDifferential 0 v := DFunLike.congr_fun (congrFun hc 0) v
+    rw [h, mul_div_cancel_right₀ _ hv]
 
 end WeierstrassCurve.Projective
