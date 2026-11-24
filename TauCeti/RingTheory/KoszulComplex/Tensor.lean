@@ -121,6 +121,10 @@ private theorem fromKoszul_apply (n : ℕ) (x : ⋀[R]^n (M × N)) :
   -- the term `(koszulComplex (φ.coprod ψ)).X n`, so `ModuleCat.hom_ofHom` does not rewrite.
   change fromKoszulLinear φ ψ n x = _
   rw [fromKoszulLinear, LinearMap.sum_apply]
+  -- Each summand is the defining composite applied to `x`, which unfolds by `LinearMap.comp_apply`
+  -- and `DirectSum.apply_eq_component` (both `rfl`). They cannot be rewritten here: `component`
+  -- lands in `⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N`, which is only definitionally the source of `ιTensorObj`, so
+  -- `rw` and `simp` meet a motive that is not type-correct.
   rfl
 
 private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : ⋀[R]^p M)
@@ -131,8 +135,10 @@ private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : �
   let i : Fin (n + 1) := ⟨p, by omega⟩
   rw [← prodEquivTensor_symm_lof (i := i) (t := a ⊗ₜ b), fromKoszul_apply,
     LinearEquiv.apply_symm_apply, Fintype.sum_eq_single i fun j hj ↦ ?_, DirectSum.lof_apply]
+  -- The summand index is `(i : ℕ)` for `i = ⟨p, _⟩`, which is definitionally `p`.
   · rfl
-  · exact (congrArg _ (DirectSum.of_eq_of_ne _ _ _ hj)).trans (map_zero _)
+  · rw [DirectSum.lof_eq_of, DirectSum.of_eq_of_ne _ _ _ hj]
+    exact map_zero _
 
 private theorem toKoszul_fromKoszul (n : ℕ) (x : ⋀[R]^n (M × N)) :
     (toKoszul φ ψ n).hom ((fromKoszul φ ψ n).hom x) = x := by
