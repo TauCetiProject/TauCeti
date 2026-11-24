@@ -46,19 +46,20 @@ example : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹
 example : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹
     ∂(Measure.dirac (2 : ℝ)).withDensity (fun t ↦ ENNReal.ofReal (1 + t ^ 2)⁻¹) =
       ENNReal.ofReal (1 / 25) := by
-  rw [dirac_withDensity, lintegral_smul_measure, lintegral_dirac, smul_eq_mul,
-    ← ENNReal.ofReal_mul (by positivity)]
-  norm_num
+  norm_num [dirac_withDensity, ← ENNReal.ofReal_mul]
 
 -- `F z = z` is represented by the triple `(0, 1, 0)`, and this triple is the only one.
-example : ∃! p : ℝ × ℝ × Measure ℝ, 0 ≤ p.2.1 ∧ ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂p.2.2 < ⊤ ∧
+example (p : ℝ × ℝ × Measure ℝ) :
+    (0 ≤ p.2.1 ∧ ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂p.2.2 < ⊤ ∧
       ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
-        z = p.1 + p.2.1 * z + ∫ t, subtractedResolventKernel z t ∂p.2.2 := by
-  refine ⟨(0, 1, 0), ⟨zero_le_one, by simp, fun z _ ↦ by simp⟩, ?_⟩
-  obtain ⟨p, -, hp⟩ := existsUnique_eq_subtractedResolventKernel_add (F := fun z ↦ z)
+        z = p.1 + p.2.1 * z + ∫ t, subtractedResolventKernel z t ∂p.2.2) ↔ p = (0, 1, 0) := by
+  have hp := existsUnique_eq_subtractedResolventKernel_add (F := fun z ↦ z)
     differentiableOn_id fun z hz ↦ le_of_lt hz
-  intro q hq
-  exact (hp q hq).trans (hp (0, 1, 0) ⟨zero_le_one, by simp, fun z _ ↦ by simp⟩).symm
+  have h0 : 0 ≤ (1 : ℝ) ∧ ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂(0 : Measure ℝ) < ⊤ ∧
+      ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+        z = (0 : ℝ) + (1 : ℝ) * z + ∫ t, subtractedResolventKernel z t ∂(0 : Measure ℝ) :=
+    ⟨zero_le_one, by simp, fun z _ ↦ by simp⟩
+  exact ⟨fun h ↦ hp.unique h h0, fun h ↦ h ▸ h0⟩
 
 -- Reversing the sign, `F z = -z`, gives a function with negative imaginary part at `i`.
 example : ¬ ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet, 0 ≤ (-z).im :=
