@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothSingular.Torus
-public import TauCeti.Geometry.Symplectic.Manifold.Suspension.CrossPeriod
+public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Cross.Period
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Orientation
 
 /-!
