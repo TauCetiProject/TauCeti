@@ -80,11 +80,6 @@ keeps the coordinate in `Y`. Its value `Hₙ(E, A)` is `Hₙ(F, F ∖ {y})`, sin
 * `TauCeti.IsFundamentalClass.singularHomologyComplPreimageIso_hom_singularHomologyπ`: the shriek
   map of the zero set of a normal coordinate sends fundamental classes of the total space to
   fundamental classes of its preimage.
-* `TauCeti.TopCat.singularHomologyComplSingletonFiberIso`: for a point `y` of the fibre `F`, the
-  isomorphism `Hₙ₊ᵣ(E, E ∖ {y}) ≅ Hₙ(F, F ∖ {y})`.
-* `TauCeti.TopCat.singularHomologyComplFiberIso_hom_comp_singularHomologyπ`: the shriek map
-  followed by `Hₙ(F) → Hₙ(F, F ∖ {y})` is the restriction `Hₙ₊ᵣ(E, E ∖ F) → Hₙ₊ᵣ(E, E ∖ {y})`
-  followed by `TauCeti.TopCat.singularHomologyComplSingletonFiberIso`.
 * `TauCeti.IsFundamentalClass.singularHomologyComplFiberIso_hom_fiberLocalization`: the shriek
   map of a point sends fundamental classes of the total space to fundamental classes of the
   fibre.
@@ -485,55 +480,6 @@ theorem singularHomologyComplPreimageIso_hom_comp_singularHomologyπ (hp : serre
         Iso.inv_hom_id, TopPair.singularHomologyMap_id, Category.id_comp]
 
 end NormalCoordinate
-
-/-! ### Fibre bundles over a chart -/
-
-section Chart
-
-variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {E B : _root_.TopCat.{u}} [T1Space B] {p : E ⟶ B} {R : Type*} [Ring R] (M : ModuleCat.{u} R)
-  (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
-  {ε : ℝ} (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε) (hp : serreFibrations p)
-  {Y : Type u} [TopologicalSpace Y] (T : Bundle.Trivialization Y p)
-  (hT : e.chartBall b ε ⊆ T.baseSet)
-
-/-- **Local homology along the shriek map.** For a map `p : E ⟶ B` over a `T₁` space, trivial over
-a chart ball about `b` with fibre a `T₁` space, and a point `y` of the fibre `F = p⁻¹(b)`,
-`Hₘ(E, E ∖ {y}) ≅ Hₙ(F, F ∖ {y})` for `m = n + dim V`. It is
-`TauCeti.TopCat.singularHomologyComplSingletonPreimageIso` for the normal coordinate `x ↦ e x - e b`
-of `b` on `OpenPartialHomeomorph.chartBall e b ε`. When `p` is a Serre fibration, it relates the
-shriek map `TauCeti.TopCat.singularHomologyComplFiberIso` with restriction to `y`
-(`TauCeti.TopCat.singularHomologyComplFiberIso_hom_comp_singularHomologyπ`). -/
-def singularHomologyComplSingletonFiberIso [T1Space Y] (y : p ⁻¹' {b}) (n m : ℕ)
-    (h : n + finrank ℝ V = m) :
-    (TopPair.ofSubset ({y.val}ᶜ : Set E)).singularHomology M m ≅
-      (TopPair.ofSubset ({y}ᶜ : Set (_root_.TopCat.of (p ⁻¹' {b})))).singularHomology
-        M n :=
-  singularHomologyComplSingletonPreimageIso (e.isoOfHomeo_chartBallHomeomorph_hom_eq_zero_iff hε hb)
-    (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀)) M (e.isOpen_chartBall b ε)
-    isClosed_singleton (e.chartBallTrivialization hε T hT)
-    (e.chartBallTrivialization_apply_fst hε T hT) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) y n m h
-
-include hp in
-/-- **The shriek map commutes with restriction to a point of the fibre.** For a Serre fibration
-`p : E ⟶ B` over a `T₁` space, trivial over a chart ball about `b` with fibre a `T₁` space, and a
-point `y` of the fibre `F = p⁻¹(b)`, the shriek map `Hₘ(E, E ∖ F) ≅ Hₙ(F)` followed by
-`Hₙ(F) ⟶ Hₙ(F, F ∖ {y})` is the restriction `Hₘ(E, E ∖ F) ⟶ Hₘ(E, E ∖ {y})` followed by
-`TauCeti.TopCat.singularHomologyComplSingletonFiberIso`, for `m = n + dim V`. -/
-theorem singularHomologyComplFiberIso_hom_comp_singularHomologyπ [T1Space Y] (y : p ⁻¹' {b})
-    (n m : ℕ) (h : n + finrank ℝ V = m) :
-    (singularHomologyComplFiberIso M e hb hε hε₀ hp n m h).hom ≫
-        (TopPair.ofSubset ({y}ᶜ : Set (_root_.TopCat.of (p ⁻¹' {b})))).singularHomologyπ
-          M n =
-      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E)
-          fun _ hz ↦ compl_subset_compl.2 (singleton_subset_iff.2 y.property) hz) M m ≫
-        (singularHomologyComplSingletonFiberIso M e hb hε hε₀ T hT y n m h).hom := by
-  rw [singularHomologyComplFiberIso_def]
-  exact singularHomologyComplPreimageIso_hom_comp_singularHomologyπ _ _ M _ _
-    (e.chartBallTrivialization hε T hT) (e.chartBallTrivialization_apply_fst hε T hT) hp _ _ _ y
-    n m h
-
-end Chart
 
 end TopCat
 

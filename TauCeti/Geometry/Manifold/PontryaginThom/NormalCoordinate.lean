@@ -120,12 +120,23 @@ lemma normalCoordinate_tubeBallHomeomorph (h : IsFramedTube f τ) {ε : ℝ}
     (q : S × ball (0 : V) ε) : h.normalCoordinate ε (h.tubeBallHomeomorph ε q) = q.2 :=
   Subtype.ext (h.normalCoordinate_eq_of_eq (h.coe_tubeBallHomeomorph_apply q))
 
+/-- The second coordinate of the inverse of the framed tube is the normal coordinate. -/
+@[simp]
+lemma tubeBallHomeomorph_symm_apply_snd (h : IsFramedTube f τ) {ε : ℝ} (w : tubeBall τ ε) :
+    ((h.tubeBallHomeomorph ε).symm w).2 = h.normalCoordinate ε w :=
+  (rfl)
+
+/-- A point `w` of the part of the tube over the ball is `τ (x, v)`, where `x` is the first
+coordinate of the inverse of the framed tube and `v` is the normal coordinate of `w`. -/
+lemma apply_tubeBallHomeomorph_symm (h : IsFramedTube f τ) {ε : ℝ} (w : tubeBall τ ε) :
+    τ (((h.tubeBallHomeomorph ε).symm w).1, h.normalCoordinate ε w) = w :=
+  congrArg Subtype.val ((h.tubeBallHomeomorph ε).apply_symm_apply w)
+
 /-- Every point of the part of the tube over the ball is `τ (x, v)`, with `v` its normal
 coordinate. -/
 lemma exists_apply_normalCoordinate (h : IsFramedTube f τ) {ε : ℝ} (w : tubeBall τ ε) :
     ∃ x, τ (x, h.normalCoordinate ε w) = w :=
-  ⟨((h.tubeBallHomeomorph ε).symm w).1,
-    congrArg Subtype.val ((h.tubeBallHomeomorph ε).apply_symm_apply w)⟩
+  ⟨_, h.apply_tubeBallHomeomorph_symm w⟩
 
 /-- The zero set of the normal coordinate is the core `f(S)`. -/
 lemma normalCoordinate_eq_zero_iff (h : IsFramedTube f τ) {ε : ℝ} (w : tubeBall τ ε) :

@@ -53,9 +53,9 @@ spaces, the shriek map of the core sends fundamental classes of `E` to fundament
 (`TauCeti.IsFundamentalClass.singularHomologyComplPreimageCoreIso_hom_singularHomologyπ`). For `p`
 the identity of a closed manifold `B`, trivial with a one-point fibre, and a framed closed
 submanifold `f(S)`, this says that the fundamental class of `B`, localized along `f(S)`, is a
-fundamental class of `f(S)`; for a fibre bundle it is the identity `j_![E] = [E|_{f(S)}]` of
-Barraud, Damian, Humilière and Oancea (Remark 2.10), up to the orientation conventions which
-`TauCeti.IsFundamentalClass` leaves free.
+fundamental class of `f(S)`; for a fibre bundle trivial over the tube it is the identity
+`j_![E] = [E|_{f(S)}]` of Barraud, Damian, Humilière and Oancea (Remark 2.10), up to the
+orientation conventions which `TauCeti.IsFundamentalClass` leaves free.
 The trivialization over the tube is read as a product with the ball through
 `TauCeti.IsFramedTube.tubeBallTrivialization`.
 
@@ -365,6 +365,14 @@ lemma tubeBallTrivialization_apply_snd (z : p ⁻¹' tubeBall τ ε) :
       (((hτ.tubeBallHomeomorph ε).symm ⟨p z, z.property⟩).1, (T z.val).2) := by
   simp [tubeBallTrivialization, T.preimageHomeomorph_apply, Homeomorph.prodAssoc]
 
+/-- The inverse of `TauCeti.IsFramedTube.tubeBallTrivialization` is the inverse of `T` after reading
+the normal coordinate and the coordinate along the core back in `B` through the framed tube. -/
+@[simp]
+lemma coe_tubeBallTrivialization_symm_apply (x : ball (0 : V) ε × (S × Y)) :
+    ((hτ.tubeBallTrivialization T hT).symm x : E) =
+      T.toOpenPartialHomeomorph.symm (τ (x.2.1, x.1), x.2.2) := by
+  simp [tubeBallTrivialization, Homeomorph.prodAssoc]
+
 end IsFramedTube
 
 section FundamentalClass
@@ -384,8 +392,8 @@ space. If `μ ∈ Hₙ₊ᵣ(E; R)` is a fundamental class of `E`, then its imag
 `j_! : Hₙ₊ᵣ(E) → Hₙ₊ᵣ(E, E ∖ p⁻¹(f(S))) ≅ Hₙ(p⁻¹(f(S)))` of the inclusion of the core
 (`TauCeti.TopCat.singularHomologyComplPreimageCoreIso`) is a fundamental class of `p⁻¹(f(S))`.
 For `p` the identity of a closed manifold `B`, trivial with a one-point fibre, this is the identity
-`j_![B] = [f(S)]` for a framed closed submanifold, and for a fibre bundle of closed manifolds the
-identity `j_![E] = [E|_{f(S)}]`, up to the orientation conventions which
+`j_![B] = [f(S)]` for a framed closed submanifold, and for a fibre bundle of closed manifolds
+trivial over the tube the identity `j_![E] = [E|_{f(S)}]`, up to the orientation conventions which
 `TauCeti.IsFundamentalClass` leaves free. -/
 theorem IsFundamentalClass.singularHomologyComplPreimageCoreIso_hom_singularHomologyπ {n m : ℕ}
     (h : n + finrank ℝ V = m)
