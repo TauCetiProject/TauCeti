@@ -57,6 +57,9 @@ products over the places give absolute heights.
   degree-normalized form.
 * `TauCeti.GlobalNumberFields.hasFiniteMulSupport_iSup_normalizedAbsValue`: a nonzero tuple has
   largest normalized absolute value `1` at all but finitely many places.
+* `TauCeti.GlobalNumberFields.one_lt_prod_infinitePlace_pow_mult`: by the product formula, a nonzero
+  algebraic integer lying in exactly one height one prime has `∏ u, u π ^ mult u > 1` over the
+  infinite places `u`.
 
 ## References
 
@@ -324,5 +327,24 @@ theorem finprod_normAbs_eq_one (hx : x ≠ 0) : ∏ᶠ v : Place K, normAbs v x 
     (Module.finrank_pos (R := ℚ) (M := K)).ne', finprod_pow (hasFiniteMulSupport_normAbs hx)]
   simp_rw [normAbs_pow_finrank]
   exact finprod_normalizedAbsValue_eq_one hx
+
+/-- If a nonzero algebraic integer `π` lies in the prime of `v₀` and in no other height one
+prime, the product `∏ u, u π ^ mult u` of its absolute values at the infinite places exceeds `1`:
+by the product formula it is the inverse of the absolute value of `π` at `v₀`. -/
+theorem one_lt_prod_infinitePlace_pow_mult {v₀ : HeightOneSpectrum (𝓞 K)} {π : 𝓞 K}
+    (hπ0 : π ≠ 0) (hπv₀ : π ∈ v₀.asIdeal)
+    (hπ : ∀ v : HeightOneSpectrum (𝓞 K), v ≠ v₀ → π ∉ v.asIdeal) :
+    1 < ∏ u : InfinitePlace K, u (π : K) ^ u.mult := by
+  have hfin : ∏ᶠ v : FinitePlace K, v (π : K) = FinitePlace.mk v₀ (π : K) := by
+    refine finprod_eq_single _ _ fun v hv ↦ ?_
+    rw [← FinitePlace.mk_maximalIdeal v, FinitePlace.mk_apply_coe_eq_one_iff]
+    refine hπ _ fun h ↦ hv ?_
+    rw [← h, FinitePlace.mk_maximalIdeal]
+  have hlt : FinitePlace.mk v₀ (π : K) < 1 := (FinitePlace.mk_apply_coe_lt_one_iff _ _).2 hπv₀
+  have hpos : 0 < FinitePlace.mk v₀ (π : K) :=
+    FinitePlace.pos_iff.2 (RingOfIntegers.coe_ne_zero_iff.2 hπ0)
+  have h := prod_abs_eq_one (RingOfIntegers.coe_ne_zero_iff.2 hπ0)
+  rw [hfin] at h
+  nlinarith
 
 end TauCeti.GlobalNumberFields

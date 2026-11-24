@@ -33,14 +33,16 @@ and `w` the real place the statement is the density of `ℚ` in the finite adele
 
 The proof scales the `S`-integer approximation `NumberField.exists_forall_apply_add_le`, which
 loses a factor `A` depending only on `K` at the infinite places, by an element `β ∈ K` that is
-small at every place other than `w` and integral at every finite place other than `w`
+small at every infinite place other than `w` and at finitely many prescribed finite places, and
+integral at every finite place other than `w`
 (`TauCeti.GlobalNumberFields.exists_ne_zero_forall_norm_le_one_and_lt`).
 * If `w` is infinite, `β` is a nonzero algebraic integer, small at finitely many finite places,
   multiplied by an algebraic integer whose size Minkowski's theorem concentrates at `w`
   (`TauCeti.NumberField.exists_ne_zero_forall_infinitePlace_mul_le`).
 * If `w` is finite, the class group is finite, so some nonzero algebraic integer `π` lies in the
   prime of `w` and in no other prime (`IsDedekindDomain.exists_mem_submonoid_mem_asIdeal`). By
-  the product formula `∏_u |π|_u ^ mult u > 1` over the infinite places `u`, so for large `m`
+  the product formula `∏_u |π|_u ^ mult u > 1` over the infinite places `u`
+  (`TauCeti.GlobalNumberFields.one_lt_prod_infinitePlace_pow_mult`), so for large `m`
   Minkowski's theorem gives a nonzero algebraic integer `a` with `|a|_u` smaller than `|π|_u ^ m`
   by any prescribed factor, and `β` is a multiple of `a / π ^ m`.
 
@@ -68,33 +70,6 @@ namespace TauCeti.GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The norm on `K_v` of an element of `K` is its absolute value at the finite place `v`. -/
-private theorem norm_algebraMap_adicCompletion (v : HeightOneSpectrum (𝓞 K)) (x : K) :
-    ‖algebraMap K (v.adicCompletion K) x‖ = FinitePlace.mk v x := by
-  simp [FinitePlace.mk_apply, FinitePlace.embedding_apply,
-    HeightOneSpectrum.algebraMap_adicCompletion]
-
-/-- If a nonzero algebraic integer `π` lies in the prime of `v₀` and in no other height one
-prime, the product `∏ u, u π ^ mult u` of its absolute values at the infinite places exceeds `1`:
-by the product formula it is the inverse of the absolute value of `π` at `v₀`. -/
-private theorem one_lt_prod_infinitePlace {v₀ : HeightOneSpectrum (𝓞 K)} {π : 𝓞 K} (hπ0 : π ≠ 0)
-    (hπv₀ : π ∈ v₀.asIdeal) (hπ : ∀ v : HeightOneSpectrum (𝓞 K), v ≠ v₀ → π ∉ v.asIdeal) :
-    1 < ∏ u : InfinitePlace K, u (π : K) ^ mult u := by
-  have hfin : ∏ᶠ v : FinitePlace K, v (π : K) = FinitePlace.mk v₀ (π : K) := by
-    refine finprod_eq_single _ _ fun v hv ↦ ?_
-    rw [← FinitePlace.norm_embedding_eq, RingOfIntegers.coe_eq_algebraMap,
-      FinitePlace.norm_eq_one_iff_notMem]
-    refine hπ _ fun h ↦ hv ?_
-    rw [← h, FinitePlace.mk_maximalIdeal]
-  have hlt : FinitePlace.mk v₀ (π : K) < 1 := by
-    rw [FinitePlace.mk_apply, RingOfIntegers.coe_eq_algebraMap]
-    exact (FinitePlace.norm_lt_one_iff_mem _ _ _).2 hπv₀
-  have hpos : 0 < FinitePlace.mk v₀ (π : K) :=
-    FinitePlace.pos_iff.2 (RingOfIntegers.coe_ne_zero_iff.2 hπ0)
-  have h := prod_abs_eq_one (RingOfIntegers.coe_ne_zero_iff.2 hπ0)
-  rw [hfin] at h
-  nlinarith
-
 /-- The case `S = ∅` of `exists_ne_zero_forall_norm_le_one_and_lt` at a finite place `v₀`: some
 nonzero `γ ∈ K` is integral at every finite place other than `v₀` and smaller than `δ` at every
 infinite place. -/
@@ -108,7 +83,8 @@ private theorem exists_ne_zero_forall_apply_le_one_and_lt_of_finite
   obtain ⟨π, hπmem, hπv₀⟩ := exists_mem_submonoid_mem_asIdeal {v₀} (Set.mem_singleton v₀)
   obtain ⟨hπ, hπnz⟩ := (Localization.mem_submonoid_iff _).1 hπmem
   have hπ0 : π ≠ 0 := nonZeroDivisors.ne_zero hπnz
-  replace hπ (v : HeightOneSpectrum (𝓞 K)) (hv : v ≠ v₀) : π ∉ v.asIdeal := hπ v hv
+  replace hπ (v : HeightOneSpectrum (𝓞 K)) (hv : v ≠ v₀) : π ∉ v.asIdeal :=
+    hπ v (Set.notMem_singleton_iff.2 hv)
   have hπ0' : (π : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.2 hπ0
   have hπu (u : InfinitePlace K) : 0 < u (π : K) := InfinitePlace.pos_iff.2 hπ0'
   -- Minkowski's theorem gives a nonzero algebraic integer `a` with `|a|_u < δ |π|_u ^ m` at every
@@ -116,19 +92,18 @@ private theorem exists_ne_zero_forall_apply_le_one_and_lt_of_finite
   set q := ∏ u : InfinitePlace K, u (π : K) ^ mult u
   obtain ⟨m, hm⟩ : ∃ m : ℕ, TauCeti.NumberField.unitConst K / δ ^ Module.finrank ℚ K ≤ q ^ m :=
     ((tendsto_pow_atTop_atTop_of_one_lt
-      (one_lt_prod_infinitePlace hπ0 hπv₀ hπ)).eventually_ge_atTop _).exists
+      (one_lt_prod_infinitePlace_pow_mult hπ0 hπv₀ hπ)).eventually_ge_atTop _).exists
   obtain ⟨a, ha0, ha⟩ := TauCeti.NumberField.exists_ne_zero_forall_infinitePlace_lt
     (f := fun u ↦ δ * u (π : K) ^ m) (fun u ↦ by have := hπu u; positivity) <| by
       have hprod : ∏ u : InfinitePlace K, (δ * u (π : K) ^ m) ^ mult u =
           δ ^ Module.finrank ℚ K * q ^ m := by
-        simp_rw [mul_pow, ← pow_mul, mul_comm m, pow_mul]
-        rw [Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, sum_mult_eq, Finset.prod_pow]
+        simp only [mul_pow, pow_right_comm _ m, Finset.prod_mul_distrib,
+          Finset.prod_pow_eq_pow_sum, sum_mult_eq, Finset.prod_pow, q]
       rwa [hprod, ← div_le_iff₀' (pow_pos hδ _)]
   refine ⟨a / π ^ m, div_ne_zero (RingOfIntegers.coe_ne_zero_iff.2 ha0) (pow_ne_zero _ hπ0'),
     fun v hv ↦ ?_, fun u ↦ ?_⟩
-  · have hπ1 : FinitePlace.mk v (π : K) = 1 := by
-      rw [FinitePlace.mk_apply, RingOfIntegers.coe_eq_algebraMap]
-      exact (FinitePlace.norm_eq_one_iff_notMem _ _ _).2 (hπ v hv)
+  · have hπ1 : FinitePlace.mk v (π : K) = 1 :=
+      (FinitePlace.mk_apply_coe_eq_one_iff _ _).2 (hπ v hv)
     rw [map_div₀, map_pow, hπ1, one_pow, div_one]
     exact FinitePlace.apply_le_one _ a
   · rw [map_div₀, map_pow, div_lt_iff₀ (pow_pos (hπu u) _)]
@@ -166,7 +141,7 @@ theorem exists_ne_zero_forall_norm_le_one_and_lt (w : Place K)
       (∀ v ∈ S, Sum.inl v ≠ w → ‖algebraMap K (v.adicCompletion K) β‖ < ε) ∧
       ∀ u : InfinitePlace K, Sum.inr u ≠ w → u β < ε := by
   classical
-  simp_rw [norm_algebraMap_adicCompletion]
+  simp_rw [FinitePlace.norm_algebraMap_adicCompletion]
   -- `β = d * γ`, where `d` is a nonzero algebraic integer that is small at the places of `S` and
   -- `γ` is the case `S = ∅`, chosen smaller than `ε / M` with `M > |d|_u` at every infinite `u`.
   obtain ⟨d, hd0, hd⟩ := FinitePlace.exists_ne_zero_forall_apply_le (S.image FinitePlace.mk)
@@ -236,7 +211,7 @@ theorem exists_forall_algebraMap_mem_and_forall_norm_le_one (w : Place K)
   -- places of `S` and `|β|_u * A < r` at the infinite places other than `w`.
   obtain ⟨β, hβ0, hβint, hβS, hβT⟩ :=
     exists_ne_zero_forall_norm_le_one_and_lt w S (ε := r / (|A| + 1)) (by positivity)
-  simp_rw [norm_algebraMap_adicCompletion] at hβint hβS ⊢
+  simp_rw [FinitePlace.norm_algebraMap_adicCompletion] at hβint hβS ⊢
   have hrA : r / (|A| + 1) ≤ r := div_le_self hr.le (le_add_of_nonneg_left (abs_nonneg A))
   -- Approximate `y / β` by an element `ξ` integral outside `S` and `w`; then `x = β * ξ`.
   set S' : Finset (FinitePlace K) := (S ∪ w.getLeft?.toFinset).image FinitePlace.mk
@@ -252,7 +227,7 @@ theorem exists_forall_algebraMap_mem_and_forall_norm_le_one (w : Place K)
       fun v : T ↦ algebraMap K v.val.Completion (β * ξ)) ∈ O := hball <| by
     rw [Metric.mem_ball, Prod.dist_eq, max_lt_iff, dist_pi_lt_iff hr, dist_pi_lt_iff hr]
     refine ⟨fun ⟨v, hv⟩ ↦ ?_, fun ⟨v, hv⟩ ↦ ?_⟩
-    · rw [dist_eq_norm, ← map_sub, norm_algebraMap_adicCompletion, hxy, map_mul]
+    · rw [dist_eq_norm, ← map_sub, FinitePlace.norm_algebraMap_adicCompletion, hxy, map_mul]
       exact (mul_le_of_le_one_right (apply_nonneg _ _) (hξS _ ((hS' v).2 (.inl hv)))).trans_lt
         ((hβS v hv (hS v hv)).trans_le hrA)
     · rw [dist_eq_norm, ← map_sub, Completion.norm_algebraMap, hxy, map_mul]
