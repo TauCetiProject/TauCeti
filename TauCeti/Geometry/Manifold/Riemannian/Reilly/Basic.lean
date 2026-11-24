@@ -72,7 +72,8 @@ theorem reillyField_eq (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
 theorem inner_reillyField (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (w : TangentSpace I x) :
     ⟪reillyField I f x, w⟫_ℝ =
       laplaceBeltrami I f x * mvfderiv I f x w - hessian I f x (mgradient I f x) w := by
-  rw [reillyField_eq hf, inner_sub_left, real_inner_smul_left, inner_mgradient, hessian_def]
+  rw [reillyField_eq hf, inner_sub_left, real_inner_smul_left, inner_mgradient,
+    I.hessian_eq_inner_leviCivitaConnection_mgradient]
 
 end Field
 

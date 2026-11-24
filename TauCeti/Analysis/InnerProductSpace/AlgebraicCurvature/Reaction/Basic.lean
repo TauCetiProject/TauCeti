@@ -143,16 +143,6 @@ private theorem abs_apply_basis_le_24 {ι : Type*} {b : ι → V} (hb : Orthonor
     Matrix.cons_val, Fin.isValue, hb.1 p, hb.1 q, one_mul, mul_one, mul_assoc] using
     r.le_opNorm ![u, b p, z, b q]
 
-private def slice34 (r : FourTensor V) (u v : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, v, x, y])
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
-    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
-
-private def slice24 (r : FourTensor V) (u z : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun x y ↦ r ![u, x, z, y])
-    (fun _ _ _ ↦ apply_add_second ..) (fun _ _ _ ↦ apply_smul_second ..)
-    (fun _ _ _ ↦ apply_add_fourth ..) (fun _ _ _ ↦ apply_smul_fourth ..)
-
 end Helpers
 
 section Reaction
@@ -196,15 +186,10 @@ theorem reactionTensor_def (r : FourTensor V) :
           coordFourTensor (stdOrthonormalBasis ℝ V) i j k l :=
   (rfl)
 
+/-- The bilinear form `(u, v) ↦ r ![u, v, x, y]`: `toLinearMap₄ r` evaluated at `x` and `y` in its
+last two slots. -/
 private def slice12 (r : FourTensor V) (x y : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun u v ↦ r ![u, v, x, y])
-    (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
-    (fun _ _ _ ↦ apply_add_second ..) (fun _ _ _ ↦ apply_smul_second ..)
-
-private def slice13 (r : FourTensor V) (x y : V) : V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ (fun u z ↦ r ![u, x, z, y])
-    (fun _ _ _ ↦ apply_add_first ..) (fun _ _ _ ↦ apply_smul_first ..)
-    (fun _ _ _ ↦ apply_add_third ..) (fun _ _ _ ↦ apply_smul_third ..)
+  (toLinearMap₄ r).compr₂ (LinearMap.applyₗ y ∘ₗ LinearMap.applyₗ x)
 
 private def tensorBilin (A B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ) :
     V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] V →ₗ[ℝ] ℝ :=
@@ -217,10 +202,10 @@ private def reactionBilinearContraction {ι : Type*} [Fintype ι] (b : Orthonorm
   (∑ p, ∑ q, ofLinearMap₄ (tensorBilin (slice12 r (b p) (b q)) (slice12 s (b p) (b q)))) +
   (2 : ℝ) • (∑ p, ∑ q, ofLinearMap₄
     ((LinearMap.lflip (R₀ := ℝ)).toLinearMap.comp
-      (tensorBilin (slice13 r (b p) (b q)) (slice13 s (b p) (b q))))) -
+      (tensorBilin (ricciSlice r (b p) (b q)) (ricciSlice s (b p) (b q))))) -
   (2 : ℝ) • (∑ p, ∑ q, ofLinearMap₄
     (((LinearMap.lflip (R₀ := ℝ)).toLinearMap.comp
-      (tensorBilin (slice13 r (b p) (b q)) (slice13 s (b p) (b q)))).compr₂
+      (tensorBilin (ricciSlice r (b p) (b q)) (ricciSlice s (b p) (b q)))).compr₂
       (LinearMap.lflip (R₀ := ℝ)).toLinearMap))
 
 private theorem reactionBilinearContraction_apply {ι : Type*} [Fintype ι]
@@ -229,7 +214,7 @@ private theorem reactionBilinearContraction_apply {ι : Type*} [Fintype ι]
       (∑ p, ∑ q, r ![u, v, b p, b q] * s ![z, w, b p, b q]) +
       2 * (∑ p, ∑ q, r ![u, b p, z, b q] * s ![v, b p, w, b q]) -
       2 * (∑ p, ∑ q, r ![u, b p, w, b q] * s ![v, b p, z, b q]) := by
-  simp [reactionBilinearContraction, tensorBilin, slice12, slice13]
+  simp [reactionBilinearContraction, tensorBilin, slice12, ricciSlice_apply]
 
 private theorem reactionTensor_eq_contraction (r : FourTensor V) :
     reactionTensor r = reactionBilinearContraction (stdOrthonormalBasis ℝ V) r r := by
@@ -245,10 +230,13 @@ private theorem reactionBilinearContraction_apply_orthonormalBasis {ι : Type*} 
       2 * (∑ p, ∑ q, r ![u, b p, w, b q] * s ![v, b p, z, b q]) := by
   let b₀ := stdOrthonormalBasis ℝ V
   have hid : ∀ x y : V, ⟪(id : V → V) x, y⟫_ℝ = ⟪x, (id : V → V) y⟫_ℝ := fun _ _ ↦ rfl
-  have h1 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid (slice34 r u v) (slice34 s z w)
-  have h2 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid (slice24 r u z) (slice24 s v w)
-  have h3 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid (slice24 r u w) (slice24 s v z)
-  simp only [Real.inner_apply, slice34, slice24, LinearMap.mk₂_apply, id_eq] at h1 h2 h3
+  have h1 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid (toLinearMap₄ r u v)
+    (toLinearMap₄ s z w)
+  have h2 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid ((toLinearMap₄ r u).flip z)
+    ((toLinearMap₄ s v).flip w)
+  have h3 := b₀.sum_sum_inner_comp_eq_of_inner_eq b hid hid ((toLinearMap₄ r u).flip w)
+    ((toLinearMap₄ s v).flip z)
+  simp only [Real.inner_apply, toLinearMap₄_apply, LinearMap.flip_apply, id_eq] at h1 h2 h3
   rw [reactionBilinearContraction_apply, h1, h2, h3]
 
 /-- **Basis independence of the reaction tensor**: in every orthonormal basis `b` of `V`, `Q(r)` is
@@ -599,12 +587,12 @@ private theorem reactionBilinearContraction_compContinuousLinearMap_of_inner_eq
     reactionBilinearContraction_apply_orthonormalBasis bV]
   simp only [compContinuousLinearMap_apply_vec]
   have h1 := bW.sum_sum_inner_comp_eq_of_inner_eq bV hfg hg
-    (slice34 r (f u) (f v)) (slice34 s (f z) (f w))
+    (toLinearMap₄ r (f u) (f v)) (toLinearMap₄ s (f z) (f w))
   have h2 := bW.sum_sum_inner_comp_eq_of_inner_eq bV hfg hg
-    (slice24 r (f u) (f z)) (slice24 s (f v) (f w))
+    ((toLinearMap₄ r (f u)).flip (f z)) ((toLinearMap₄ s (f v)).flip (f w))
   have h3 := bW.sum_sum_inner_comp_eq_of_inner_eq bV hfg hg
-    (slice24 r (f u) (f w)) (slice24 s (f v) (f z))
-  simp only [Real.inner_apply, slice34, slice24, LinearMap.mk₂_apply] at h1 h2 h3
+    ((toLinearMap₄ r (f u)).flip (f w)) ((toLinearMap₄ s (f v)).flip (f z))
+  simp only [Real.inner_apply, toLinearMap₄_apply, LinearMap.flip_apply] at h1 h2 h3
   rw [h1, h2, h3]
 
 /-- Coisometric equivariance of `reactionBilinear`: if `f : W →L[ℝ] V` has an
@@ -917,7 +905,7 @@ the squared Hilbert-Schmidt norm of `ricci r` in any orthonormal basis `b`:
 theorem IsAlgebraicCurvature.scalar_reactionTensor_apply_orthonormalBasis {ι : Type*} [Fintype ι]
     {r : FourTensor V} (hr : IsAlgebraicCurvature r) (b : OrthonormalBasis ι ℝ V) :
     scalar (FourTensor.reactionTensor r) = 2 * ∑ p, ∑ q, ricci r (b p) (b q) ^ 2 := by
-  rw [scalar_apply, bilinFormTrace_eq_sum _ b]
+  rw [scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b]
   simp_rw [hr.ricci_reactionTensor_apply_orthonormalBasis b, ← Finset.mul_sum]
   congr 1
   rw [Finset.sum_comm]
