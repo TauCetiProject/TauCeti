@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
-import TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg
 
 /-!
@@ -23,7 +23,7 @@ This file complements `Mathlib.NumberTheory.Harmonic.GammaDeriv` (which proves
 ```
 
 from the exponential-integral tail integrability in
-`TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv` and the `log t * exp (-t)` kernel identities
+`TauCeti.Analysis.SpecialFunctions.ImproperIntegrals` and the `log t * exp (-t)` kernel identities
 in `TauCeti.Analysis.SpecialFunctions.Integrals.LogMulExpNeg`.
 
 ## Main results
@@ -65,10 +65,10 @@ theorem eulerMascheroniConstant_eq_integral_sub_integral :
         have hd1 : HasDerivAt (fun u : ℝ ↦ exp (-u)) (-exp (-t)) t := by
           simpa using (hasDerivAt_neg t).exp
         exact ((hd1.mul (hasDerivAt_log ht0.ne')).neg).congr_deriv (by ring))
-      (hint_log.sub (integrableOn_exp_neg_div_Ioi one_pos))
+      (hint_log.sub (TauCeti.integrableOn_exp_neg_div_Ioi one_pos))
       (by simpa [mul_comm] using tendsto_log_mul_exp_neg_atTop.neg)
     rw [log_one, mul_zero, neg_zero, sub_zero,
-      integral_sub hint_log (integrableOn_exp_neg_div_Ioi one_pos)] at hFTC
+      integral_sub hint_log (TauCeti.integrableOn_exp_neg_div_Ioi one_pos)] at hFTC
     linarith
   have hsplit : (∫ t in Ioi (0 : ℝ), log t * exp (-t)) =
       (∫ t in Ioc (0 : ℝ) 1, log t * exp (-t)) +

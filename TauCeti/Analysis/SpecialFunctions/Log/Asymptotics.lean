@@ -20,9 +20,9 @@ inverted asymptotically: if `u → ∞` and `u / log u ∼ v`, then taking logar
 
 ## Main declarations
 
-* `Real.tendsto_div_log_pow_atTop` — `x / log x ^ n → +∞` as `x → +∞` for every `n : ℕ`.
-* `Real.isLittleO_const_div_log_pow`, `Real.isLittleO_const_div_log` — a constant is
-  `o(x / log x ^ n)` and `o(x / log x)` as `x → ∞`.
+* `TauCeti.Real.tendsto_div_log_pow_atTop` — `x / log x ^ n → +∞` as `x → +∞` for every `n : ℕ`.
+* `TauCeti.Real.isLittleO_const_div_log_pow`, `TauCeti.Real.isLittleO_const_div_log` — a constant
+  is `o(x / log x ^ n)` and `o(x / log x)` as `x → ∞`.
 * `TauCeti.Real.tendsto_div_log_atTop` — `x / log x → ∞` as `x → ∞`.
 * `Asymptotics.IsEquivalent.log_of_div_log`, `Asymptotics.IsEquivalent.of_div_log` — inversion of
   the scale `x / log x`: if `u → ∞` and `u / log u ∼ v`, then `log u ∼ log v` and
@@ -33,38 +33,34 @@ public section
 
 open Asymptotics Filter Topology
 
-namespace Real
+namespace TauCeti.Real
 
 /-- For every `n : ℕ`, `x / log x ^ n → +∞` as `x → +∞`. -/
 theorem tendsto_div_log_pow_atTop (n : ℕ) :
-    Tendsto (fun x : ℝ ↦ x / log x ^ n) atTop atTop := by
-  have hlog : Tendsto (fun x : ℝ ↦ log x ^ n / x) atTop (𝓝 0) :=
-    isLittleO_pow_log_id_atTop.tendsto_div_nhds_zero
-  have hpos : Tendsto (fun x : ℝ ↦ log x ^ n / x) atTop (𝓝[>] 0) :=
+    Tendsto (fun x : ℝ ↦ x / Real.log x ^ n) atTop atTop := by
+  have hlog : Tendsto (fun x : ℝ ↦ Real.log x ^ n / x) atTop (𝓝 0) :=
+    Real.isLittleO_pow_log_id_atTop.tendsto_div_nhds_zero
+  have hpos : Tendsto (fun x : ℝ ↦ Real.log x ^ n / x) atTop (𝓝[>] 0) :=
     tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hlog <| by
       filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx
-      exact div_pos (pow_pos (log_pos hx) n) (zero_lt_one.trans hx)
+      exact div_pos (pow_pos (Real.log_pos hx) n) (zero_lt_one.trans hx)
   exact hpos.inv_tendsto_nhdsGT_zero.congr fun x ↦ inv_div _ _
-
-/-- A constant is `o(x / log x ^ n)` as `x → ∞` for every `n : ℕ`. -/
-theorem isLittleO_const_div_log_pow (c : ℝ) (n : ℕ) :
-    (fun _ : ℝ ↦ c) =o[atTop] fun x : ℝ ↦ x / log x ^ n :=
-  isLittleO_const_left.mpr <| Or.inr <|
-    (tendsto_abs_atTop_atTop.comp (tendsto_div_log_pow_atTop n)).congr fun _ ↦
-      (norm_eq_abs _).symm
-
-/-- A constant is `o(x / log x)` as `x → ∞`, because that scale diverges. -/
-theorem isLittleO_const_div_log (c : ℝ) :
-    (fun _ : ℝ ↦ c) =o[atTop] fun x : ℝ ↦ x / log x := by
-  simpa only [pow_one] using isLittleO_const_div_log_pow c 1
-
-end Real
-
-namespace TauCeti.Real
 
 /-- **The Chebyshev scale `x / log x` diverges.**  Equivalently, a constant is `o (x / log x)`. -/
 theorem tendsto_div_log_atTop : Tendsto (fun x : ℝ ↦ x / Real.log x) atTop atTop := by
-  simpa only [pow_one] using _root_.Real.tendsto_div_log_pow_atTop 1
+  simpa only [pow_one] using tendsto_div_log_pow_atTop 1
+
+/-- A constant is `o(x / log x ^ n)` as `x → ∞` for every `n : ℕ`. -/
+theorem isLittleO_const_div_log_pow (c : ℝ) (n : ℕ) :
+    (fun _ : ℝ ↦ c) =o[atTop] fun x : ℝ ↦ x / Real.log x ^ n :=
+  isLittleO_const_left.mpr <| Or.inr <|
+    (tendsto_abs_atTop_atTop.comp (tendsto_div_log_pow_atTop n)).congr fun _ ↦
+      (Real.norm_eq_abs _).symm
+
+/-- A constant is `o(x / log x)` as `x → ∞`, because that scale diverges. -/
+theorem isLittleO_const_div_log (c : ℝ) :
+    (fun _ : ℝ ↦ c) =o[atTop] fun x : ℝ ↦ x / Real.log x := by
+  simpa only [pow_one] using isLittleO_const_div_log_pow c 1
 
 end TauCeti.Real
 

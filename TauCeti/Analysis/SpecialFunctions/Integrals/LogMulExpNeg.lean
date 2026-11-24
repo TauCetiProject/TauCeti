@@ -22,7 +22,7 @@ for the Gamma-derivative kernel `log t * exp (-t)`:
   `(1 - exp (-z)) * log z = ∫ t in Ioc 0 z, log t * exp (-t) + ∫ t in 0..z, (1 - exp (-t)) / t`
   for `z ≥ 0`.
 
-Separating these lemmas from `TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv` avoids forcing
+Separating these lemmas from `TauCeti.Analysis.SpecialFunctions.ImproperIntegrals` avoids forcing
 consumers of `exp u / u` tail integrability to import Gamma differentiation and divided-difference
 machinery.
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Basic
-import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.Harmonic.GammaDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries
@@ -41,13 +40,15 @@ follow as theorems.
 * `TauCeti.Real.hasDerivAt_li`, `TauCeti.Real.deriv_li`, `TauCeti.Real.differentiableAt_li`,
   `TauCeti.Real.continuousAt_li`, `TauCeti.Real.measurable_li` — derivative `(log x)⁻¹` and
   regularity of `li`.
-* `TauCeti.Real.tendsto_li_nhdsGT_zero` — `li x → 0` as `x → 0⁺`.
+* `TauCeti.Real.li_eq_add_log_neg_log_mul_add_integral`, `TauCeti.Real.tendsto_li_nhdsGT_zero` —
+  closed-form identity on `(0, 1)` and `li x → 0` as `x → 0⁺`.
 * `TauCeti.Real.integral_inv_log_eq_li_sub`, `TauCeti.Real.integral_inv_log_eq_li_sub_of_lt_one`,
   `TauCeti.Real.integral_inv_log_eq_li_sub_of_one_lt` — endpoint-difference formula
   `∫ t in a..b, (log t)⁻¹ = li b - li a` on either branch `(0, 1)` or `(1, ∞)`.
 * `TauCeti.Real.logIntegral_eq_li_sub_li_two` and `TauCeti.Real.li_eq_logIntegral_add_li_two` —
   the offset identity `Li x = li x - li 2` for `x > 1`.
 * `TauCeti.Real.strictAntiOn_li_Ioo`, `TauCeti.Real.li_neg`, `TauCeti.Real.strictMonoOn_li_Ioi`,
+  `TauCeti.Real.tendsto_tsum_log_pow_div_mul_factorial_nhds_one`,
   `TauCeti.Real.tendsto_li_nhdsNE_one`, `TauCeti.Real.tendsto_li_nhdsGT_one`,
   `TauCeti.Real.tendsto_li_nhdsLT_one`, `TauCeti.Real.tendsto_li_atTop`,
   `TauCeti.Real.li_pos_of_three_halves_le`, and `TauCeti.Real.existsUnique_li_eq_zero_Ioi` —
@@ -165,32 +166,38 @@ theorem continuousOn_li_Ioi : ContinuousOn li (Ioi 1) :=
 
 /-! ### Behaviour at `0⁺` -/
 
+/-- Closed-form identity for `li` on `(0, 1)` in terms of `log (-log x)` and the Gamma-derivative
+kernel `log t * exp (-t)`. -/
+theorem li_eq_add_log_neg_log_mul_add_integral {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) :
+    li x = eulerMascheroniConstant + log (-log x) * x +
+      ∫ t in Ioc 0 (-log x), log t * exp (-t) := by
+  set z : ℝ := -log x
+  have hz : 0 < z := neg_pos.mpr (log_neg hx0 hx1)
+  have hseries : (∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) =
+      -(∫ t in (0 : ℝ)..z, (1 - exp (-t)) / t) := by
+    rw [← integral_exp_sub_one_div_eq_tsum (log x)]
+    have hsub := intervalIntegral.integral_comp_neg (a := (0 : ℝ)) (b := z)
+      (f := fun u : ℝ ↦ (exp u - 1) / u)
+    rw [neg_zero, show -z = log x from neg_neg (log x),
+      intervalIntegral.integral_symm (0 : ℝ) (log x)] at hsub
+    rw [neg_eq_iff_eq_neg.mp hsub.symm]
+    congr 1
+    exact intervalIntegral.integral_congr fun t _ ↦ by ring
+  have hibp := one_sub_exp_neg_mul_log_eq hz.le
+  rw [show exp (-z) = x from by rw [show -z = log x from neg_neg _, exp_log hx0]] at hibp
+  have hlogz : log (log x) = log z := (log_neg_eq_log (log x)).symm
+  rw [li_def, hseries, hlogz]
+  change _ = eulerMascheroniConstant + log z * x + ∫ t in Ioc 0 z, log t * exp (-t)
+  linarith
+
 /-- `li x → 0` as `x → 0⁺`. -/
 theorem tendsto_li_nhdsGT_zero : Tendsto li (𝓝[>] 0) (𝓝 0) := by
-  have hformula (x : ℝ) (hx0 : 0 < x) (hx1 : x < 1) :
-      li x = eulerMascheroniConstant +
-        log (-log x) * exp (-(-log x)) +
-        ∫ t in Ioc 0 (-log x), log t * exp (-t) := by
-    set z : ℝ := -log x
-    have hz : 0 < z := neg_pos.mpr (log_neg hx0 hx1)
-    have hseries : (∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) =
-        -(∫ t in (0 : ℝ)..z, (1 - exp (-t)) / t) := by
-      rw [← integral_exp_sub_one_div_eq_tsum (log x)]
-      have hsub := intervalIntegral.integral_comp_neg (a := (0 : ℝ)) (b := z)
-        (f := fun u : ℝ ↦ (exp u - 1) / u)
-      have hneg_z : -z = log x := neg_neg (log x)
-      rw [neg_zero, hneg_z, intervalIntegral.integral_symm (0 : ℝ) (log x)] at hsub
-      have hneg : (∫ u in (0 : ℝ)..log x, (exp u - 1) / u) =
-          -(∫ t in (0 : ℝ)..z, (exp (-t) - 1) / -t) := by linarith
-      rw [hneg]
-      congr 1
-      refine intervalIntegral.integral_congr fun t _ ↦ by ring
-    have hibp := one_sub_exp_neg_mul_log_eq hz.le
-    have hlogz : log (log x) = log z := (log_neg_eq_log (log x)).symm
-    rw [li_def, hseries, hlogz]
-    linarith
   have hz_top : Tendsto (fun x : ℝ ↦ -log x) (𝓝[>] 0) atTop :=
     tendsto_neg_atBot_atTop.comp tendsto_log_nhdsGT_zero
+  have hterm1 : Tendsto (fun x : ℝ ↦ log (-log x) * x) (𝓝[>] 0) (𝓝 0) := by
+    refine (tendsto_log_mul_exp_neg_atTop.comp hz_top).congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with x (hx0 : 0 < x)
+    simp only [Function.comp_def, neg_neg, exp_log hx0]
   have hterm2 : Tendsto (fun z : ℝ ↦ ∫ t in Ioc 0 z, log t * exp (-t)) atTop
       (𝓝 (∫ t in Ioi 0, log t * exp (-t))) := by
     refine (intervalIntegral_tendsto_integral_Ioi (a := (0 : ℝ))
@@ -198,12 +205,11 @@ theorem tendsto_li_nhdsGT_zero : Tendsto li (𝓝[>] 0) (𝓝 0) := by
     filter_upwards [eventually_ge_atTop (0 : ℝ)] with z hz
     exact intervalIntegral.integral_of_le hz
   have hlim : Tendsto
-      (fun x : ℝ ↦ eulerMascheroniConstant +
-        log (-log x) * exp (-(-log x)) +
+      (fun x : ℝ ↦ eulerMascheroniConstant + log (-log x) * x +
         ∫ t in Ioc 0 (-log x), log t * exp (-t))
       (𝓝[>] 0) (𝓝 0) := by
-    have hsum := ((tendsto_const_nhds (x := eulerMascheroniConstant)).add
-      (tendsto_log_mul_exp_neg_atTop.comp hz_top)).add (hterm2.comp hz_top)
+    have hsum := ((tendsto_const_nhds (x := eulerMascheroniConstant)).add hterm1).add
+      (hterm2.comp hz_top)
     have hzero : eulerMascheroniConstant + 0 +
         ∫ t in Ioi (0 : ℝ), log t * exp (-t) = 0 := by
       rw [eulerMascheroniConstant_eq_neg_integral_log]
@@ -211,7 +217,7 @@ theorem tendsto_li_nhdsGT_zero : Tendsto li (𝓝[>] 0) (𝓝 0) := by
     rwa [hzero] at hsum
   refine hlim.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT one_pos] with x ⟨hx0, hx1⟩
-  exact (hformula x hx0 hx1).symm
+  exact (li_eq_add_log_neg_log_mul_add_integral hx0 hx1).symm
 
 /-! ### Relation with `Li`, monotonicity, sign, and Soldner's constant -/
 
@@ -275,6 +281,15 @@ theorem strictMonoOn_li_Ioi : StrictMonoOn li (Ioi 1) := by
   rw [deriv_li (zero_lt_one.trans hx) hx.ne']
   exact inv_pos.mpr (log_pos hx)
 
+/-- The entire-part series `x ↦ ∑_{n ≥ 1} (log x)^n / (n * n!)` tends to `0` as `x → 1`. -/
+theorem tendsto_tsum_log_pow_div_mul_factorial_nhds_one :
+    Tendsto (fun x : ℝ ↦ ∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))
+      (𝓝 1) (𝓝 0) := by
+  have hc : ContinuousAt
+      (fun t : ℝ ↦ ∑' n : ℕ, log t ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) 1 :=
+    continuous_tsum_pow_div_mul_factorial.continuousAt.comp (continuousAt_log one_ne_zero)
+  simpa [log_one] using hc.tendsto
+
 /-- `li x → -∞` as `x → 1`, `x ≠ 1`. -/
 theorem tendsto_li_nhdsNE_one : Tendsto li (𝓝[≠] 1) atBot := by
   have hlog : Tendsto (fun x : ℝ ↦ log (log x)) (𝓝[≠] 1) atBot := by
@@ -284,15 +299,9 @@ theorem tendsto_li_nhdsNE_one : Tendsto li (𝓝[≠] 1) atBot := by
       ?_
     filter_upwards [nhdsWithin_le_nhds (Ioi_mem_nhds one_pos), self_mem_nhdsWithin] with x hx0 hx1
     exact log_ne_zero_of_pos_of_ne_one hx0 hx1
-  have hser : Tendsto
-      (fun x : ℝ ↦ ∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))
-      (𝓝[≠] 1) (𝓝 0) := by
-    have hc : ContinuousAt
-        (fun x : ℝ ↦ ∑' n : ℕ, log x ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) 1 :=
-      continuous_tsum_pow_div_mul_factorial.continuousAt.comp (continuousAt_log one_ne_zero)
-    simpa [log_one] using hc.tendsto.mono_left nhdsWithin_le_nhds
   refine ((tendsto_atBot_add_const_left _ eulerMascheroniConstant hlog).atBot_add
-    hser).congr fun x ↦ ?_
+    (tendsto_tsum_log_pow_div_mul_factorial_nhds_one.mono_left nhdsWithin_le_nhds)).congr
+    fun x ↦ ?_
   rw [li_def]
 
 /-- `li x → -∞` as `x → 1⁺`. -/

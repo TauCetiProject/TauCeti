@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.SpecialFunctions.LogIntegral.Unoffset
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Exp.ExpIntegralSeries
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Integrals.ExpDiv
 import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
@@ -92,18 +92,9 @@ theorem tendsto_li_sub_of_tendsto_abs_log_div {α : Type*} {l : Filter α} {f g 
       (fun x ↦
         (∑' n : ℕ, log (f x) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) -
         (∑' n : ℕ, log (g x) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))) l (𝓝 0) := by
-    have hc : ContinuousAt
-        (fun t : ℝ ↦ ∑' n : ℕ, log t ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ))) 1 :=
-      continuous_tsum_pow_div_mul_factorial.continuousAt.comp (continuousAt_log one_ne_zero)
-    have hsf : Tendsto
-        (fun x ↦ ∑' n : ℕ, log (f x) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))
-        l (𝓝 (∑' n : ℕ, log 1 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))) :=
-      hc.tendsto.comp hf
-    have hsg : Tendsto
-        (fun x ↦ ∑' n : ℕ, log (g x) ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))
-        l (𝓝 (∑' n : ℕ, log 1 ^ (n + 1) / (((n : ℝ) + 1) * ((n + 1)! : ℝ)))) :=
-      hc.tendsto.comp hg
-    simpa only [sub_self] using hsf.sub hsg
+    simpa only [Function.comp_def, sub_zero] using
+      (tendsto_tsum_log_pow_div_mul_factorial_nhds_one.comp hf).sub
+        (tendsto_tsum_log_pow_div_mul_factorial_nhds_one.comp hg)
   have hsum := hlog_diff.add hser_diff
   rw [add_zero] at hsum
   refine hsum.congr' (Eventually.of_forall fun x ↦ ?_)

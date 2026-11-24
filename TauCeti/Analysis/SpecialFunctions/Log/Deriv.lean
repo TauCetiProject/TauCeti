@@ -27,7 +27,7 @@ wherever `c ≠ 0` and `r ≠ 0`.
 * `TauCeti.norm_fderiv_le_norm_fderiv_log`: where `0 < f z ≤ 1`, `‖∇ f‖ ≤ ‖∇ log f‖`.
 * `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
   exponent, assuming `log x ≠ 0`.
-* `Real.hasDerivAt_div_log_rpow`: the derivative of `x / log x ^ k` for every real
+* `TauCeti.Real.hasDerivAt_div_log_rpow`: the derivative of `x / log x ^ k` for every real
   exponent, assuming `log x > 0`.
 * `Real.hasDerivAt_log_const_div`: the derivative of `log (c / r)` is `-r⁻¹`.
 
@@ -112,10 +112,6 @@ theorem hasDerivAt_div_log_pow (n : ℕ) {t : ℝ} (ht : Real.log t ≠ 0) :
       field_simp [pow_succ, ht, ht₀]
       ring
 
-end TauCeti.Real
-
-namespace Real
-
 /-- The derivative of `t ↦ t / log t ^ k` wherever `log t > 0`, for every real exponent `k`. -/
 theorem hasDerivAt_div_log_rpow (k : ℝ) {t : ℝ} (ht : 0 < log t) :
     HasDerivAt (fun u : ℝ ↦ u / log u ^ k)
@@ -138,6 +134,10 @@ theorem hasDerivAt_div_log_rpow (k : ℝ) {t : ℝ} (ht : 0 < log t) :
   have hlne : log t ≠ 0 := ht.ne'
   field_simp [ht₀, hrpow_pos.ne', hlne]
   linear_combination -k * hsub
+
+end TauCeti.Real
+
+namespace Real
 
 /-- The derivative of `r ↦ log (c / r)` is `-r⁻¹`, for `c ≠ 0` and `r ≠ 0`. -/
 theorem hasDerivAt_log_const_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :

@@ -171,17 +171,25 @@ theorem logIntegral_eq_log_div_add_tsum_sub {x : ℝ} (hx : 1 < x) :
     log_div (log_pos hx).ne' (log_pos one_lt_two).ne']
   ring
 
+private theorem log_eight : log (8 : ℝ) = 3 * log 2 := by
+  rw [show (8 : ℝ) = 2 ^ 3 by norm_num, log_pow]
+  norm_num
+
+private theorem log_div_log_two_eq_one_add {L : ℝ} (hL : 0 < L) :
+    log (L / log 2) = 1 + log (L / (exp 1 * log 2)) := by
+  rw [log_div hL.ne' (log_pos one_lt_two).ne',
+    log_div hL.ne' (mul_pos (exp_pos 1) (log_pos one_lt_two)).ne',
+    log_mul (exp_pos 1).ne' (log_pos one_lt_two).ne', log_exp]
+  ring
+
 private theorem logIntegral_sub_div_log_neg_at :
     logIntegral 6.5797 - 6.5797 / log 6.5797 < 0 := by
   -- Step 1: Upper bound `log 6.5797 ≤ 1.8839895` via `6.5797 = 8 * (1 - 14203 / 80000)`.
   have hlogx : log 6.5797 ≤ 1.8839895 := by
     have hupper := (abs_le.mp (abs_log_mul_one_sub_sub_le
       (c := (8 : ℝ)) (u := (14203 / 80000 : ℝ)) (by norm_num) (by norm_num) 8)).2
-    have h8 : log (8 : ℝ) = 3 * log 2 := by
-      rw [show (8 : ℝ) = 2 ^ 3 by norm_num, log_pow]
-      norm_num
     simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty] at hupper
-    norm_num [h8] at hupper
+    norm_num [log_eight] at hupper
     linarith [log_two_lt_d9]
   have hlogx_pos : 0 < log 6.5797 := log_pos (by norm_num)
   -- Step 2: Upper bound `log (log 6.5797 / log 2) ≤ log 6.5797 / (e * log 2)`.
@@ -189,11 +197,7 @@ private theorem logIntegral_sub_div_log_neg_at :
     have hr : log 6.5797 / (exp 1 * log 2) ≤ 1.8839895 / (2.7182818283 * 0.6931471803) :=
       div_le_div₀ (by norm_num) hlogx (by norm_num)
         (mul_le_mul exp_one_gt_d9.le log_two_gt_d9.le (by norm_num) (exp_pos 1).le)
-    have h1 : log (log 6.5797 / log 2) = 1 + log (log 6.5797 / (exp 1 * log 2)) := by
-      rw [log_div hlogx_pos.ne' (log_pos one_lt_two).ne',
-        log_div hlogx_pos.ne' (mul_pos (exp_pos 1) (log_pos one_lt_two)).ne',
-        log_mul (exp_pos 1).ne' (log_pos one_lt_two).ne', log_exp]
-      ring
+    have h1 := log_div_log_two_eq_one_add hlogx_pos
     have h2 := log_le_sub_one_of_pos
       (div_pos hlogx_pos (mul_pos (exp_pos 1) (log_pos one_lt_two)))
     linarith
@@ -217,11 +221,8 @@ private theorem logIntegral_sub_div_log_pos_at :
   have hlogx : (1.884004 : ℝ) ≤ log 6.5798 := by
     have hlower := (abs_le.mp (abs_log_mul_one_sub_sub_le
       (c := (8 : ℝ)) (u := (7101 / 40000 : ℝ)) (by norm_num) (by norm_num) 8)).1
-    have h8 : log (8 : ℝ) = 3 * log 2 := by
-      rw [show (8 : ℝ) = 2 ^ 3 by norm_num, log_pow]
-      norm_num
     simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty] at hlower
-    norm_num [h8] at hlower
+    norm_num [log_eight] at hlower
     linarith [log_two_gt_d9]
   have hlogx_pos : 0 < log 6.5798 := by linarith
   -- Step 2: Lower bound `log (log 6.5798 / log 2) ≥ 2 - (e * log 2) / log 6.5798`.
@@ -231,11 +232,7 @@ private theorem logIntegral_sub_div_log_pos_at :
       div_le_div₀ (by norm_num)
         (mul_le_mul exp_one_lt_d9.le log_two_lt_d9.le (log_pos one_lt_two).le (by norm_num))
         (by norm_num) hlogx
-    have h1 : log (log 6.5798 / log 2) = 1 + log (log 6.5798 / (exp 1 * log 2)) := by
-      rw [log_div hlogx_pos.ne' (log_pos one_lt_two).ne',
-        log_div hlogx_pos.ne' (mul_pos (exp_pos 1) (log_pos one_lt_two)).ne',
-        log_mul (exp_pos 1).ne' (log_pos one_lt_two).ne', log_exp]
-      ring
+    have h1 := log_div_log_two_eq_one_add hlogx_pos
     have h2 := one_sub_inv_le_log_of_pos
       (div_pos hlogx_pos (mul_pos (exp_pos 1) (log_pos one_lt_two)))
     rw [inv_div] at h2
