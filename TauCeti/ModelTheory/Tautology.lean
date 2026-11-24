@@ -182,10 +182,8 @@ theorem disjunction_cons (φ : L.BoundedFormula α n) (l : List (L.BoundedFormul
 @[simp]
 theorem realize_disjunction {M : Type w} [L.Structure M] {v : α → M} {xs : Fin n → M}
     {l : List (L.BoundedFormula α n)} :
-    (disjunction l).Realize v xs ↔ ∃ φ ∈ l, φ.Realize v xs := by
-  induction l with
-  | nil => simp
-  | cons φ l ih => simp [realize_sup, ih]
+    (disjunction l).Realize v xs ↔ ∃ φ ∈ l, φ.Realize v xs :=
+  realize_foldr_sup l v xs
 
 /-- A disjunction is true under a truth assignment exactly when one of its disjuncts is. -/
 @[simp]
