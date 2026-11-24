@@ -592,60 +592,6 @@ theorem repr_of_mul_apply_inv_mul (f : twistedMonoidAlgebra R H β) (b c : H) :
 
 end GroupCoefficients
 
-section CommMonoidCoefficients
-
-variable {R H : Type*} [CommSemiring R] [CommMonoid H]
-  {β : H → H → Rˣ} [IsFactorSet β]
-
-/-- Opposite weighted coefficients suffice for commutation, without index cancellation. -/
-theorem commute_of_coeff (f : twistedMonoidAlgebra R H β) (b : H)
-    (h : ∀ a, (basis R H β).repr f a * (β a b : R) =
-      (basis R H β).repr f a * (β b a : R)) : Commute f (of b) := by
-  rw [commute_iff_eq]
-  apply (basis R H β).repr.injective
-  rw [repr_mul_of, repr_of_mul]
-  apply Finsupp.sum_congr
-  intro a _
-  rw [mul_comm b a, h a]
-
-/-- If right translation by the tested index is injective on the coefficient support,
-commutation is equality of the opposite factor-set-weighted coefficients. -/
-theorem commute_of_iff_of_injOn (f : twistedMonoidAlgebra R H β) (b : H)
-    (hb : Set.InjOn (fun a : H ↦ a * b) ↑((basis R H β).repr f).support) :
-    Commute f (of b) ↔ ∀ a,
-      (basis R H β).repr f a * (β a b : R) =
-        (basis R H β).repr f a * (β b a : R) := by
-  classical
-  rw [commute_iff_eq]
-  constructor
-  · intro h a
-    by_cases ha : a ∈ ((basis R H β).repr f).support
-    · have he := congrArg (fun z ↦ (basis R H β).repr z (a * b)) h
-      rw [repr_mul_of_apply_of_unique f a b (fun x hx he ↦ hb hx ha he),
-        mul_comm a b, repr_of_mul_apply_of_unique f a b (fun x hx he ↦
-          hb hx ha (by simpa only [mul_comm b] using he))] at he
-      exact he
-    · simp [Finsupp.notMem_support_iff.mp ha]
-  · exact commute_of_coeff f b
-
-/-- A right regular tested index gives the coefficientwise commutation criterion. -/
-theorem commute_of_iff_of_isRightRegular (f : twistedMonoidAlgebra R H β) (b : H)
-    (hb : IsRightRegular b) :
-    Commute f (of b) ↔ ∀ a,
-      (basis R H β).repr f a * (β a b : R) =
-        (basis R H β).repr f a * (β b a : R) :=
-  commute_of_iff_of_injOn f b fun _ _ _ _ he ↦ hb he
-
-
-/-- Coefficientwise commutation with a basis element over a cancellative commutative monoid. -/
-theorem commute_of_iff [IsRightCancelMul H] (f : twistedMonoidAlgebra R H β) (b : H) :
-    Commute f (of b) ↔ ∀ a,
-      (basis R H β).repr f a * (β a b : R) =
-        (basis R H β).repr f a * (β b a : R) :=
-  commute_of_iff_of_isRightRegular f b fun _ _ h ↦ mul_right_cancel h
-
-end CommMonoidCoefficients
-
 /-- An algebra map out of `k_α[G]` is determined by its values on the basis elements. -/
 @[ext]
 theorem algHom_ext {A : Type*} [Semiring A] [Algebra k A]
@@ -760,12 +706,22 @@ theorem domCongr_of (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) (a : G
     domCongr e h (of a) = of (e a) := by
   simp only [domCongr, AlgEquiv.ofAlgHom_apply, lift_of]
 
-/-- Inverse reindexing sends each normalized basis element to its inverse-index basis element. -/
+/-- Inverse reindexing is reindexing by the inverse monoid equivalence. -/
 @[simp]
+theorem domCongr_symm (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) :
+    (domCongr e h).symm = domCongr e.symm (fun a b ↦ by
+      simpa only [e.apply_symm_apply] using (h (e.symm a) (e.symm b)).symm) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply algHom_ext
+  intro b
+  apply (domCongr e h).injective
+  simp only [AlgEquiv.toAlgHom_apply, AlgEquiv.apply_symm_apply, domCongr_of,
+    e.apply_symm_apply]
+
+/-- Inverse reindexing sends each normalized basis element to its inverse-index basis element. -/
 theorem domCongr_symm_of (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) (b : H) :
     (domCongr e h).symm (of b) = of (e.symm b) := by
-  apply (domCongr e h).injective
-  simp only [AlgEquiv.apply_symm_apply, domCongr_of, e.apply_symm_apply]
+  rw [domCongr_symm, domCongr_of]
 
 /-- The underlying linear equivalence is the canonical basis transport. -/
 theorem domCongr_toLinearEquiv (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)) :
@@ -791,6 +747,12 @@ theorem repr_domCongr_apply (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b)
   have hc := congrArg (fun v ↦ v a) hr
   simpa only [Module.Basis.repr_reindex_apply, Equiv.symm_symm,
     MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv] using hc
+
+/-- Inverse reindexing preserves coefficients at inverse-corresponding indices. -/
+theorem repr_domCongr_symm_apply (e : G ≃* H) (h : ∀ a b, α a b = β (e a) (e b))
+    (f : twistedMonoidAlgebra R H β) (b : H) :
+    (basis R G α).repr ((domCongr e h).symm f) (e.symm b) = (basis R H β).repr f b := by
+  rw [domCongr_symm, repr_domCongr_apply]
 
 end DomCongr
 

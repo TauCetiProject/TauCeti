@@ -38,6 +38,60 @@ theorem mem_center_iff_commute_of (f : twistedMonoidAlgebra R G α) :
 
 end Monoid
 
+section CommMonoidCoefficients
+
+variable {R H : Type*} [CommSemiring R] [CommMonoid H]
+  {β : H → H → Rˣ} [IsFactorSet β]
+
+/-- Opposite weighted coefficients suffice for commutation, without index cancellation. -/
+theorem commute_of_coeff (f : twistedMonoidAlgebra R H β) (b : H)
+    (h : ∀ a, (basis R H β).repr f a * (β a b : R) =
+      (basis R H β).repr f a * (β b a : R)) : Commute f (of b) := by
+  rw [commute_iff_eq]
+  apply (basis R H β).repr.injective
+  rw [repr_mul_of, repr_of_mul]
+  apply Finsupp.sum_congr
+  intro a _
+  rw [mul_comm b a, h a]
+
+/-- If right translation by the tested index is injective on the coefficient support,
+commutation is equality of the opposite factor-set-weighted coefficients. -/
+theorem commute_of_iff_of_injOn (f : twistedMonoidAlgebra R H β) (b : H)
+    (hb : Set.InjOn (fun a : H ↦ a * b) ↑((basis R H β).repr f).support) :
+    Commute f (of b) ↔ ∀ a,
+      (basis R H β).repr f a * (β a b : R) =
+        (basis R H β).repr f a * (β b a : R) := by
+  classical
+  rw [commute_iff_eq]
+  constructor
+  · intro h a
+    by_cases ha : a ∈ ((basis R H β).repr f).support
+    · have he := congrArg (fun z ↦ (basis R H β).repr z (a * b)) h
+      rw [repr_mul_of_apply_of_unique f a b (fun x hx he ↦ hb hx ha he),
+        mul_comm a b, repr_of_mul_apply_of_unique f a b (fun x hx he ↦
+          hb hx ha (by simpa only [mul_comm b] using he))] at he
+      exact he
+    · simp [Finsupp.notMem_support_iff.mp ha]
+  · exact commute_of_coeff f b
+
+/-- A right regular tested index gives the coefficientwise commutation criterion. -/
+theorem commute_of_iff_of_isRightRegular (f : twistedMonoidAlgebra R H β) (b : H)
+    (hb : IsRightRegular b) :
+    Commute f (of b) ↔ ∀ a,
+      (basis R H β).repr f a * (β a b : R) =
+        (basis R H β).repr f a * (β b a : R) :=
+  commute_of_iff_of_injOn f b fun _ _ _ _ he ↦ hb he
+
+
+/-- Coefficientwise commutation with a basis element over a cancellative commutative monoid. -/
+theorem commute_of_iff [IsRightCancelMul H] (f : twistedMonoidAlgebra R H β) (b : H) :
+    Commute f (of b) ↔ ∀ a,
+      (basis R H β).repr f a * (β a b : R) =
+        (basis R H β).repr f a * (β b a : R) :=
+  commute_of_iff_of_isRightRegular f b fun _ _ h ↦ mul_right_cancel h
+
+end CommMonoidCoefficients
+
 section CommMonoid
 
 variable {R G : Type*} [CommSemiring R] [CommMonoid G]

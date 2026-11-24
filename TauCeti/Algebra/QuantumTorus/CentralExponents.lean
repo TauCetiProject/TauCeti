@@ -102,4 +102,12 @@ theorem quantumTorusCentralExponents_eq_ker (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrd
     simp only [sub_flip_apply_eq_two_mul hΛ, LinearMap.congr_fun h b, LinearMap.zero_apply,
       mul_zero]
 
+/-- Radical exponents of an alternating form are central for every parameter. -/
+theorem mem_quantumTorusCentralExponents_of_mem_ker (hΛ : Λ.IsAlt) {a : L}
+    (ha : a ∈ LinearMap.ker Λ) : a ∈ u.quantumTorusCentralExponents Λ := by
+  rw [hΛ.mem_quantumTorusCentralExponents_iff]
+  intro b
+  rw [LinearMap.congr_fun (LinearMap.mem_ker.mp ha) b, LinearMap.zero_apply, mul_zero,
+    zpow_zero]
+
 end LinearMap.BilinForm.IsAlt

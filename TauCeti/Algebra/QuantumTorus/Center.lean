@@ -220,14 +220,8 @@ theorem _root_.Units.mem_range_quantumTorusCenterHom_iff (u : Rˣ)
       ∀ a ∈ ((basis u Λ).repr f.val).support, a ∈ u.quantumTorusCentralExponents Λ := by
   have hr : Set.range (u.quantumTorusCenterHom Λ) =
       Set.range (TwistedMonoidAlgebra.centerHom (factorSet u Λ)) := by
-    ext z
-    constructor
-    · rintro ⟨g, rfl⟩
-      exact ⟨centralTorusEquiv u Λ g, rfl⟩
-    · rintro ⟨g, rfl⟩
-      refine ⟨(centralTorusEquiv u Λ).symm g, ?_⟩
-      simp only [Units.quantumTorusCenterHom, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
-        AlgEquiv.apply_symm_apply]
+    rw [Units.quantumTorusCenterHom, AlgHom.coe_comp]
+    exact (centralTorusEquiv u Λ).surjective.range_comp _
   rw [hr]
   simpa only [Multiplicative.forall, Finsupp.mem_support_iff, ← basis_repr_apply,
     mem_centralIndices_iff] using TwistedMonoidAlgebra.mem_range_centerHom_iff f
@@ -389,9 +383,8 @@ theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra_mon
     [IsLeftCancelMulZero R] (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2))
     (a : (LinearMap.ker Λ).toAddSubgroup) :
     hΛ.quantumTorusCenterEquivGroupAlgebra hu
-      (u.quantumTorusCenterMonomial Λ (a : L) (by
-        rw [hΛ.quantumTorusCentralExponents_eq_ker hu]
-        exact a.property)) =
+      (u.quantumTorusCenterMonomial Λ (a : L)
+        (hΛ.mem_quantumTorusCentralExponents_of_mem_ker a.property)) =
         AddMonoidAlgebra.single a 1 := by
   let e := centralRadicalEquiv hΛ hu
   have h := congrArg (AddMonoidAlgebra.domCongr R R e)
@@ -408,9 +401,8 @@ theorem _root_.LinearMap.BilinForm.IsAlt.quantumTorusCenterEquivGroupAlgebra_sym
     [IsLeftCancelMulZero R] (hΛ : Λ.IsAlt) (hu : ¬ IsOfFinOrder (u ^ 2))
     (a : (LinearMap.ker Λ).toAddSubgroup) (r : R) :
     (hΛ.quantumTorusCenterEquivGroupAlgebra hu).symm (AddMonoidAlgebra.single a r) =
-      r • u.quantumTorusCenterMonomial Λ (a : L) (by
-        rw [hΛ.quantumTorusCentralExponents_eq_ker hu]
-        exact a.property) := by
+      r • u.quantumTorusCenterMonomial Λ (a : L)
+        (hΛ.mem_quantumTorusCentralExponents_of_mem_ker a.property) := by
   apply (hΛ.quantumTorusCenterEquivGroupAlgebra hu).symm_apply_eq.mpr
   rw [map_smul, hΛ.quantumTorusCenterEquivGroupAlgebra_monomial hu a]
   simp
