@@ -50,7 +50,7 @@ not through the action.
 
 * `TauCeti.Examples.DihedralQuaternion.natCard_groupCohomology_two_neg_zmod`: for `d ≠ 0`,
   `H²(C₂, ZMod d)` with the action by negation has `gcd 2 d` elements.
-* `TauCeti.Examples.DihedralQuaternion.dihedralGroupCohomologyIso_hom_cohomologyClass`,
+* `TauCeti.Examples.DihedralQuaternion.dihedralGroupCohomologyIso_hom_cohomologyClass_eq_zero`,
   `TauCeti.Examples.DihedralQuaternion.quaternionGroupCohomologyIso_hom_cohomologyClass_ne_zero`:
   the dihedral class is zero and the quaternion class is not.
 * `TauCeti.Examples.DihedralQuaternion.eq_dihedral_or_eq_quaternion`,
@@ -118,7 +118,7 @@ noncomputable def quaternionGroupCohomologyIso (n k : ℕ) :
 
 /-- The class of the dihedral extension `C_m → DihedralGroup m → C₂` is zero in
 `H²(C₂, ZMod m)`. -/
-theorem dihedralGroupCohomologyIso_hom_cohomologyClass (m : ℕ)
+theorem dihedralGroupCohomologyIso_hom_cohomologyClass_eq_zero (m : ℕ)
     (σ : (dihedralRotations m).quotientExtension.Section) (hσ : σ 1 = 1) :
     (dihedralGroupCohomologyIso m 2).hom (GroupExtension.factorSet σ hσ
       (dihedralRotations m).quotientExtension_inducesAction).cohomologyClass = 0 := by
@@ -145,7 +145,7 @@ theorem eq_dihedral_or_eq_quaternion (n : ℕ) [NeZero n]
         (dihedralRotations (2 * n)).quotientExtension_inducesAction).cohomologyClass ∨
       x = (quaternionGroupCohomologyIso n 2).hom (GroupExtension.factorSet τ hτ
         (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass := by
-  rw [dihedralGroupCohomologyIso_hom_cohomologyClass]
+  rw [dihedralGroupCohomologyIso_hom_cohomologyClass_eq_zero]
   exact (eq_or_ne x 0).imp_right fun hx ↦
     eq_of_ne_zero_of_ne_zero hx (quaternionGroupCohomologyIso_hom_cohomologyClass_ne_zero n τ hτ)
 
@@ -158,7 +158,7 @@ theorem dihedral_ne_quaternion (n : ℕ) [NeZero n]
         (dihedralRotations (2 * n)).quotientExtension_inducesAction).cohomologyClass ≠
       (quaternionGroupCohomologyIso n 2).hom (GroupExtension.factorSet τ hτ
         (quaternionRotations n).quotientExtension_inducesAction).cohomologyClass := by
-  rw [dihedralGroupCohomologyIso_hom_cohomologyClass]
+  rw [dihedralGroupCohomologyIso_hom_cohomologyClass_eq_zero]
   exact (quaternionGroupCohomologyIso_hom_cohomologyClass_ne_zero n τ hτ).symm
 
 end TauCeti.Examples.DihedralQuaternion

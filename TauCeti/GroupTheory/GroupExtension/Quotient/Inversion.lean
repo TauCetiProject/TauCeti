@@ -44,6 +44,9 @@ degree it is the `2`-torsion of `T` (`TauCeti.groupCohomologyEvenNegEquivTorsion
 * `Subgroup.quotientConjugationAction_smul_eq_inv`: the non-trivial coset acts by inversion.
 * `Subgroup.toAdditiveLeft_smul_eq_cyclicRepresentation_neg`: read through any `G ⧸ N ≃* C₂` and
   `φ`, the conjugation module is the action of `C₂` on `T` by negation.
+* `Subgroup.quotientGroupCohomologyIsoNeg_eq_mapIso`, `Subgroup.quotientGroupCohomologyIsoNeg_hom`,
+  `Subgroup.quotientGroupCohomologyIsoNeg_inv`: `Subgroup.quotientGroupCohomologyIsoNeg` and its
+  two maps, computed through any `G ⧸ N ≃* C₂`.
 -/
 
 public section
@@ -105,5 +108,56 @@ noncomputable def quotientGroupCohomologyIsoNeg (hN : N.index = 2) {s : G} (hs :
   groupCohomology.mapIso e (MulEquiv.toAdditiveLeft φ).toIntLinearEquiv
     (fun y ↦ LinearMap.ext fun (x : Additive N) ↦
       toAdditiveLeft_smul_eq_cyclicRepresentation_neg hN hs hinv e φ y x.toMul) n
+
+/-- `Subgroup.quotientGroupCohomologyIsoNeg` is the isomorphism `groupCohomology.mapIso` induced
+by any `e : G ⧸ N ≃* C₂` and `φ`: the isomorphism `G ⧸ N ≃* C₂` is unique. -/
+theorem quotientGroupCohomologyIsoNeg_eq_mapIso (hN : N.index = 2) {s : G} (hs : s ∉ N)
+    (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (e : G ⧸ N ≃* Multiplicative (ZMod 2))
+    (φ : N ≃* Multiplicative T) (n : ℕ) :
+    quotientGroupCohomologyIsoNeg hN hs hinv φ n =
+      groupCohomology.mapIso e (MulEquiv.toAdditiveLeft φ).toIntLinearEquiv
+        (fun y ↦ LinearMap.ext fun (x : Additive N) ↦
+          toAdditiveLeft_smul_eq_cyclicRepresentation_neg hN hs hinv e φ y x.toMul) n := by
+  -- Any two isomorphisms `G ⧸ N ≃* C₂` agree: both send the non-trivial coset to the generator.
+  obtain rfl : mulEquivOfPrimeCardEq (p := 2) (by rw [← index_eq_card, hN]) (by simp) = e :=
+    MulEquiv.ext fun y ↦ by
+      by_cases hy : y = 1
+      · simp [hy]
+      · rw [(Multiplicative.eq_one_or_eq_ofAdd_one (e y)).resolve_left
+          ((map_ne_one_iff e e.injective).2 hy),
+          (Multiplicative.eq_one_or_eq_ofAdd_one _).resolve_left
+          ((map_ne_one_iff _ (MulEquiv.injective _)).2 hy)]
+  rfl
+
+/-- The forward map of `Subgroup.quotientGroupCohomologyIsoNeg` is the map on cohomology induced by
+the inverse of any `e : G ⧸ N ≃* C₂` and by `φ`. -/
+theorem quotientGroupCohomologyIsoNeg_hom (hN : N.index = 2) {s : G} (hs : s ∉ N)
+    (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (e : G ⧸ N ≃* Multiplicative (ZMod 2))
+    (φ : N ≃* Multiplicative T) (n : ℕ) :
+    (quotientGroupCohomologyIsoNeg hN hs hinv φ n).hom =
+      groupCohomology.map e.symm
+        (Rep.ofHom ⟨(MulEquiv.toAdditiveLeft φ).toIntLinearEquiv.toLinearMap,
+          fun y ↦ LinearMap.ext fun (x : Additive N) ↦ by
+            have := toAdditiveLeft_smul_eq_cyclicRepresentation_neg hN hs hinv e φ (e.symm y)
+              x.toMul
+            rwa [e.apply_symm_apply] at this⟩) n := by
+  rw [quotientGroupCohomologyIsoNeg_eq_mapIso hN hs hinv e]
+  rfl
+
+/-- The inverse map of `Subgroup.quotientGroupCohomologyIsoNeg` is the map on cohomology induced by
+any `e : G ⧸ N ≃* C₂` and by the inverse of `φ`. -/
+theorem quotientGroupCohomologyIsoNeg_inv (hN : N.index = 2) {s : G} (hs : s ∉ N)
+    (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹) (e : G ⧸ N ≃* Multiplicative (ZMod 2))
+    (φ : N ≃* Multiplicative T) (n : ℕ) :
+    (quotientGroupCohomologyIsoNeg hN hs hinv φ n).inv =
+      groupCohomology.map e
+        (Rep.ofHom ⟨(MulEquiv.toAdditiveLeft φ).toIntLinearEquiv.symm.toLinearMap,
+          fun y ↦ by
+            rw [LinearEquiv.toLinearMap_symm_comp_eq, ← LinearMap.comp_assoc,
+              LinearEquiv.eq_comp_toLinearMap_symm]
+            refine (LinearMap.ext fun x ↦ ?_).symm
+            exact toAdditiveLeft_smul_eq_cyclicRepresentation_neg hN hs hinv e φ y x.toMul⟩) n := by
+  rw [quotientGroupCohomologyIsoNeg_eq_mapIso hN hs hinv e]
+  rfl
 
 end Subgroup
