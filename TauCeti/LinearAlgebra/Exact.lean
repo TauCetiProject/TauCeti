@@ -33,7 +33,12 @@ induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C�
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
 `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition, with
 middle maps `LinearMap.kerCompToKer`, `LinearMap.kerToCoker` and `LinearMap.cokerToCokerComp`
-(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension
+(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), with
+`LinearMap.surjective_kerCompToKer` when `f` is onto, the exact sequence
+`0 → ker (f, g) → ker g → N → 0` of a map `(f, g) : M → N × P` onto its target
+(`LinearMap.exact_inclusion_ker_prod`, `LinearMap.surjective_comp_subtype_ker`), with the
+resulting dimension counts `LinearMap.finrank_ker_comp_of_surjective` and
+`LinearMap.finrank_ker_eq_of_surjective_prod`, the dimension
 `dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of `α : X → T` and
 `β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the homology of a complex of
 finite-dimensional vector spaces in terms of the two cokernels
@@ -609,6 +614,27 @@ theorem exact_subtype_rangeRestrict (f : M →ₗ[R] N) :
     Function.Exact (ker f).subtype f.rangeRestrict := by
   rw [exact_iff, ker_rangeRestrict, Submodule.range_subtype]
 
+/-- For linear maps `f : M → N` and `g : M → P`, the kernel of `g` contains that of `(f, g)` with
+quotient the range of `f` on it: the inclusion `ker (f, g) → ker g` followed by the restriction of
+`f` is exact. -/
+theorem exact_inclusion_ker_prod (f : M →ₗ[R] N) (g : M →ₗ[R] P) :
+    Function.Exact (Submodule.inclusion ((ker_prod f g).trans_le inf_le_right))
+      (f ∘ₗ (ker g).subtype) := by
+  rintro ⟨x, hx⟩
+  constructor
+  · intro h
+    exact ⟨⟨x, by simp_all⟩, rfl⟩
+  · rintro ⟨⟨y, hy⟩, h⟩
+    rw [← h]
+    exact (Prod.mk_eq_zero.1 (mem_ker.1 hy)).1
+
+/-- If `(f, g) : M → N × P` is onto, then so is the restriction of `f` to the kernel of `g`. -/
+theorem surjective_comp_subtype_ker {f : M →ₗ[R] N} {g : M →ₗ[R] P}
+    (h : Function.Surjective (f.prod g)) : Function.Surjective (f ∘ₗ (ker g).subtype) := by
+  intro y
+  obtain ⟨x, hx⟩ := h (y, 0)
+  exact ⟨⟨x, mem_ker.2 (congrArg Prod.snd hx)⟩, congrArg Prod.fst hx⟩
+
 section KerCokerComp
 
 variable (f : M →ₗ[R] N) (g : N →ₗ[R] P)
@@ -646,6 +672,14 @@ theorem exact_inclusion_kerCompToKer :
     Function.Exact (Submodule.inclusion (ker_le_ker_comp f g)) (f.kerCompToKer g) := by
   rw [exact_iff]
   simp [kerCompToKer, ker_restrict, Submodule.range_inclusion]
+
+/-- If `f` is onto, the map `ker (g ∘ f) → ker g` given by `f` is onto: the kernel–cokernel
+sequence of the composition stops at `ker g`. -/
+theorem surjective_kerCompToKer (hf : Function.Surjective f) :
+    Function.Surjective (f.kerCompToKer g) := by
+  rintro ⟨y, hy⟩
+  obtain ⟨x, rfl⟩ := hf y
+  exact ⟨⟨x, hy⟩, Subtype.ext (coe_kerCompToKer_apply f g _)⟩
 
 /-- The kernel–cokernel sequence of a composition is exact at `ker g`. -/
 theorem exact_kerCompToKer_kerToCoker :
@@ -689,6 +723,25 @@ theorem finrank_ker_coprod_neg_add {k X Y T : Type*} [DivisionRing k]
   have h' := (exact_subtype_ker_map _).finrank_eq_add (Submodule.injective_subtype _) h
   rw [finrank_prod] at h'
   exact h'.symm
+
+/-- If `f : M → N` is onto, the kernel of `g ∘ f` has dimension `dim ker f + dim ker g`, by the
+short exact sequence `0 → ker f → ker (g ∘ f) → ker g → 0`. -/
+theorem finrank_ker_comp_of_surjective {k M N P : Type*} [DivisionRing k] [AddCommGroup M]
+    [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P]
+    [FiniteDimensional k M] {f : M →ₗ[k] N} (g : N →ₗ[k] P) (hf : Function.Surjective f) :
+    finrank k (ker (g ∘ₗ f)) = finrank k (ker f) + finrank k (ker g) :=
+  (exact_inclusion_kerCompToKer f g).finrank_eq_add (Submodule.inclusion_injective _)
+    (surjective_kerCompToKer f g hf)
+
+/-- If `(f, g) : M → N × P` is onto, the kernel of `g` has dimension `dim ker (f, g) + dim N`, by
+the short exact sequence `0 → ker (f, g) → ker g → N → 0`. -/
+theorem finrank_ker_eq_of_surjective_prod {k M N P : Type*} [DivisionRing k] [AddCommGroup M]
+    [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P]
+    [FiniteDimensional k M] {f : M →ₗ[k] N} {g : M →ₗ[k] P}
+    (h : Function.Surjective (f.prod g)) :
+    finrank k (ker g) = finrank k (ker (f.prod g)) + finrank k N :=
+  (exact_inclusion_ker_prod f g).finrank_eq_add (Submodule.inclusion_injective _)
+    (surjective_comp_subtype_ker h)
 
 section ExactChain
 

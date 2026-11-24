@@ -34,7 +34,8 @@ statement about completed group algebras.
   injection already lies in the range of the other.
 * `MonoidAlgebra.comapDomain_mapDomain_mul`, `MonoidAlgebra.comapDomain_mul_mapDomain`: along an
   injective group homomorphism `φ`, `comapDomain φ` is linear for the left and right actions of
-  the source group algebra through `mapDomain φ`.
+  the source group algebra through `mapDomain φ`. The left version only needs a monoid as target,
+  and has the additive form `AddMonoidAlgebra.comapDomain_mapDomain_mul`.
 * `MonoidAlgebra.sum_mapDomain_comapDomain_mul_single`,
   `MonoidAlgebra.sum_single_mul_mapDomain_comapDomain`: the decomposition of an element of `R[G]`
   along representatives of the right, respectively left, cosets of `Set.range φ`.
@@ -96,11 +97,15 @@ end Map
 
 section Group
 
-variable {K G : Type*} [Group K] [Group G] (φ : K →* G) (hφ : Function.Injective φ)
+variable {K G : Type*} [Group K]
 
-/-- Along an injective group homomorphism `φ : K →* G`, pulling coefficients back is linear for
-the left action of `R[K]` on `R[G]` through `mapDomain φ`. -/
-theorem comapDomain_mapDomain_mul (a : MonoidAlgebra R K) (y : MonoidAlgebra R G) :
+/-- Along an injective monoid homomorphism `φ : K →* G` out of a group, pulling coefficients back
+is linear for the left action of `R[K]` on `R[G]` through `mapDomain φ`. -/
+@[to_additive (dont_translate := R)
+/-- Along an injective additive monoid homomorphism `φ : K →+ G` out of an additive group, pulling
+coefficients back is linear for the left action of `R[K]` on `R[G]` through `mapDomain φ`. -/]
+theorem comapDomain_mapDomain_mul [Monoid G] (φ : K →* G) (hφ : Function.Injective φ)
+    (a : MonoidAlgebra R K) (y : MonoidAlgebra R G) :
     comapDomain φ hφ (mapDomain φ a * y) = a * comapDomain φ hφ y := by
   induction a using induction_linear with
   | zero => simp
@@ -115,9 +120,12 @@ theorem comapDomain_mapDomain_mul (a : MonoidAlgebra R K) (y : MonoidAlgebra R G
       · obtain ⟨k', rfl⟩ := hg
         rw [← map_mul, comapDomain_single_map, comapDomain_single_map, single_mul_single]
       · have hkg : φ k * g ∉ Set.range φ := fun ⟨k', hk'⟩ ↦
-          hg ⟨k⁻¹ * k', by rw [map_mul, hk', map_inv, inv_mul_cancel_left]⟩
+          hg ⟨k⁻¹ * k', by rw [map_mul, hk', ← mul_assoc, ← map_mul, inv_mul_cancel, map_one,
+            one_mul]⟩
         rw [comapDomain_single_of_notMem_range hkg, comapDomain_single_of_notMem_range hg,
           mul_zero]
+
+variable [Group G] (φ : K →* G) (hφ : Function.Injective φ)
 
 /-- Along an injective group homomorphism `φ : K →* G`, pulling coefficients back is linear for
 the right action of `R[K]` on `R[G]` through `mapDomain φ`. -/

@@ -126,7 +126,7 @@ theorem freeGenerator_eq_mul_S_mul_neg_adjugate (a b c d a' b' c' d' : ℤ) :
 
 /-- Positive-determinant lift `!![-a, c; -b, d] ∈ SL(2, ℤ)` mapping `(∞, 0)` to `(a / b, c / d)`. -/
 def sideSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
-  ⟨!![-a, c; -b, d], by simp [Matrix.det_fin_two]; linarith⟩
+  .mk !![-a, c; -b, d] (by simp [Matrix.det_fin_two]; linarith)
 @[simp] theorem coe_sideSL {a b c d : ℤ} (h : c * b - a * d = 1) :
     (sideSL h : Matrix (Fin 2) (Fin 2) ℤ) = !![-a, c; -b, d] := (rfl)
 
@@ -141,18 +141,18 @@ theorem R_inv_eq_sideSL :
 
 /-- The `SL(2, ℤ)` lift of `evenGenerator` on a unimodular side `c * b - a * d = 1`. -/
 def evenSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
-  ⟨evenGenerator a b c d, by rw [det_evenGenerator, h, one_pow]⟩
+  .mk (evenGenerator a b c d) (by rw [det_evenGenerator, h, one_pow])
 @[simp] theorem coe_evenSL {a b c d : ℤ} (h : c * b - a * d = 1) :
     (evenSL h : Matrix (Fin 2) (Fin 2) ℤ) = evenGenerator a b c d := (rfl)
 /-- The `SL(2, ℤ)` lift of `oddGenerator` on a unimodular side `c * b - a * d = 1`. -/
 def oddSL {a b c d : ℤ} (h : c * b - a * d = 1) : SL(2, ℤ) :=
-  ⟨oddGenerator a b c d, by rw [det_oddGenerator, h, one_pow]⟩
+  .mk (oddGenerator a b c d) (by rw [det_oddGenerator, h, one_pow])
 @[simp] theorem coe_oddSL {a b c d : ℤ} (h : c * b - a * d = 1) :
     (oddSL h : Matrix (Fin 2) (Fin 2) ℤ) = oddGenerator a b c d := (rfl)
 /-- The `SL(2, ℤ)` lift of `freeGenerator` on two unimodular sides. -/
 def freeSL {a b c d a' b' c' d' : ℤ} (h : c * b - a * d = 1)
     (h' : c' * b' - a' * d' = 1) : SL(2, ℤ) :=
-  ⟨freeGenerator a b c d a' b' c' d', by rw [det_freeGenerator, h, h', mul_one]⟩
+  .mk (freeGenerator a b c d a' b' c' d') (by rw [det_freeGenerator, h, h', mul_one])
 @[simp] theorem coe_freeSL {a b c d a' b' c' d' : ℤ} (h : c * b - a * d = 1)
     (h' : c' * b' - a' * d' = 1) :
     (freeSL h h' : Matrix (Fin 2) (Fin 2) ℤ) = freeGenerator a b c d a' b' c' d' := (rfl)
@@ -884,7 +884,7 @@ theorem comap_group_gamma0Two :
     gamma0Two.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) =
       CongruenceSubgroup.Gamma0 2 := by
   set H := gamma0Two.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))
-  let B : SL(2, ℤ) := ⟨!![-1, 1; -2, 1], by decide⟩
+  let B : SL(2, ℤ) := .mk !![-1, 1; -2, 1] (by decide)
   have hB : gamma0Two.evenSideSL ⟨1, by simp⟩ = B := Subtype.ext coe_evenSideSL_gamma0Two
   have hle : H ≤ CongruenceSubgroup.Gamma0 2 := by
     refine comap_group_le CongruenceSubgroup.neg_one_mem_Gamma0 ?_
@@ -940,7 +940,7 @@ theorem comap_group_gammaTwo :
     gammaTwo.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) =
       CongruenceSubgroup.Gamma 2 := by
   set H := gammaTwo.group.comap (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))
-  let B : SL(2, ℤ) := ⟨-!![3, -2; 2, -1], by decide⟩
+  let B : SL(2, ℤ) := .mk (-!![3, -2; 2, -1]) (by decide)
   have hB : gammaTwo.freeSideSL ⟨1, by simp⟩ ⟨2, by simp⟩ = B :=
     Subtype.ext coe_freeSideSL_gammaTwo_inner
   have hle : H ≤ CongruenceSubgroup.Gamma 2 := by

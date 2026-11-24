@@ -29,6 +29,8 @@ analytic tail `logDeriv g` contributes no residue, so only the simple-pole princ
 
 * `TauCeti.Contour.residue_logDeriv_eq_meromorphicOrderAt` — `residue (logDeriv f) z₀ = n` when
   `meromorphicOrderAt f z₀ = n`: the residue of `f'/f` is the order of `f` at `z₀`.
+* `MeromorphicAt.isBigO_logDeriv_sub_order_div` — subtracting `n / (z - z₀)` leaves a bounded
+  remainder near `z₀`, for every finite integer order `n`.
 
 ## Provenance
 
@@ -46,7 +48,7 @@ here specialised to Mathlib's `meromorphicOrderAt` API.
 
 public section
 
-open Filter Topology Complex
+open Asymptotics Filter Topology Complex
 
 namespace TauCeti.Contour
 
@@ -74,5 +76,16 @@ theorem residue_logDeriv_eq_meromorphicOrderAt {f : ℂ → ℂ} {z₀ : ℂ} {n
     residue_add hA hB, residue_const_mul_sub_inv, residue_eq_zero_of_analyticAt hlogg_an, add_zero]
 
 end TauCeti.Contour
+
+open TauCeti.Contour in
+/-- For a meromorphic function of finite integer order, its logarithmic derivative differs from
+the corresponding simple principal part by a bounded term on a punctured neighbourhood.
+Positive, negative and zero orders of the original function are all allowed. -/
+theorem MeromorphicAt.isBigO_logDeriv_sub_order_div {f : ℂ → ℂ} {z₀ : ℂ} {n : ℤ}
+    (hf : MeromorphicAt f z₀) (horder : meromorphicOrderAt f z₀ = (n : WithTop ℤ)) :
+    (_root_.logDeriv f - fun z ↦ (n : ℂ) / (z - z₀)) =O[𝓝[≠] z₀] (1 : ℂ → ℂ) := by
+  simpa only [residue_logDeriv_eq_meromorphicOrderAt hf horder, smul_eq_mul, div_eq_mul_inv,
+    mul_comm] using
+    hf.logDeriv.isBigO_sub_inv_smul_residue (neg_one_le_meromorphicOrderAt_logDeriv hf)
 
 end

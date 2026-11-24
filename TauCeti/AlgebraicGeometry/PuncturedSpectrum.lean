@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Scheme
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.RingTheory.LocalRing.Spectrum
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Punctured spectra of local rings
@@ -114,18 +115,10 @@ radical. -/
 theorem puncturedSpectrum_eq_iSup_basicOpen {s : Set R}
     (hs : (Ideal.span s).radical = IsLocalRing.maximalIdeal R) :
     puncturedSpectrum R = ⨆ x : s, PrimeSpectrum.basicOpen x.val := by
-  have key : ({IsLocalRing.closedPoint R}ᶜ : Set (PrimeSpectrum R)) =
-      ⋃ x : s, (PrimeSpectrum.basicOpen x.val : Set (PrimeSpectrum R)) := by
-    rw [← zeroLocus_eq_singleton_closedPoint hs]
-    ext p
-    simp [PrimeSpectrum.mem_zeroLocus, Set.subset_def]
-  -- Both sides are opens of the definitionally identical spaces `Spec (.of R)` and
-  -- `PrimeSpectrum R`; this exposes the latter to use the basic-open API.
-  change (show TopologicalSpace.Opens (PrimeSpectrum R) from puncturedSpectrum R) =
-    ⨆ x : s, PrimeSpectrum.basicOpen x.val
+  rw [PrimeSpectrum.iSup_basicOpen_eq_compl_zeroLocus]
   apply SetLike.ext'
-  rw [TopologicalSpace.Opens.coe_iSup]
-  exact (coe_puncturedSpectrum R).trans key
+  exact (coe_puncturedSpectrum R).trans
+    (congrArg Set.compl (zeroLocus_eq_singleton_closedPoint hs)).symm
 
 /-- The punctured spectrum is quasi-compact when the maximal ideal is the radical of a finitely
 generated ideal. -/

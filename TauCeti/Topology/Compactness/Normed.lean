@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
-import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
 # Uniform local properties and norm bounds over compact parameter sets
@@ -69,16 +69,10 @@ theorem IsCompact.exists_pos_forall_norm_sub_le {M E G : Type*} [PseudoMetricSpa
     (hΦ : ∀ p ∈ K, ContinuousAt Φ (p, x p)) {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ p ∈ K, ∀ y : E, ‖y - x p‖ ≤ δ → ‖Φ (p, y) - Φ (p, x p)‖ ≤ ε := by
   -- `Φ` is uniformly continuous at the compact graph `{(p, x p) | p ∈ K}`.
-  have hQ : IsCompact ((fun p ↦ (p, x p)) '' K) :=
-    hK.image_of_continuousOn (continuousOn_id.prodMk hx)
-  obtain ⟨δ, hδ, h⟩ := Metric.mem_uniformity_dist.1
-    (hQ.uniformContinuousAt_of_continuousAt Φ (by rintro _ ⟨p, hp, rfl⟩; exact hΦ p hp)
-      (Metric.dist_mem_uniformity hε))
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_dist_lt hx hΦ hε
   refine ⟨δ / 2, by positivity, fun p hp y hy ↦ ?_⟩
-  rw [← dist_eq_norm, dist_comm]
-  refine (h (a := (p, x p)) (b := (p, y)) ?_ ⟨p, hp, rfl⟩).le
-  rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg, dist_comm, dist_eq_norm]
-  linarith
+  rw [← dist_eq_norm]
+  exact (h p hp y (by rw [dist_eq_norm]; linarith)).le
 
 namespace TauCeti
 
