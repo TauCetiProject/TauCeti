@@ -504,11 +504,10 @@ theorem bundleChartAt_target (x : M) :
     (bundleChartAt I F V x).target =
       I.symm ⁻¹' ((chartAt H x).target ∩
         (chartAt H x).symm ⁻¹' (trivializationAt F V x).baseSet) := by
-  rw [bundleChartAt, OpenPartialHomeomorph.extendTrans_target]
-  change I.symm ⁻¹' ((chartAt H x).toPartialEquiv.restr
-    (interior (trivializationAt F V x).baseSet)).target = _
-  rw [(trivializationAt F V x).open_baseSet.interior_eq, PartialEquiv.restr_target]
-  rfl
+  ext y
+  simp only [bundleChartAt, OpenPartialHomeomorph.extendTrans_target,
+    OpenPartialHomeomorph.restr_target, (trivializationAt F V x).open_baseSet.interior_eq,
+    mem_preimage, Homeomorph.refl_symm, Homeomorph.refl_apply, id_eq]
 
 /-- Forward evaluation of `bundleChartAt I F V x` in terms of `I` and `chartAt H x`. -/
 @[simp]

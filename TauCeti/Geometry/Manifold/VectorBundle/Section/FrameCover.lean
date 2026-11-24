@@ -113,16 +113,6 @@ theorem continuous_frameCoordinates_of_subset_iUnion
       (congrArg (fun v ↦ (e' ⟨((x : U') : M), v⟩).2)
         ((e i).symm_apply_apply_mk (hU i x.property) (s ((x : U') : M)))) |>.symm
 
-/-- Coefficients in any smooth frame depend continuously on sections in a covering frame
-topology. The comparison uses the actual transition multiplier on each overlap. -/
-theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U i)
-    (e' : Trivialization F (π F V)) [MemTrivializationAtlas e']
-    (U' : Opens M) (hU' : (U' : Set M) ⊆ e'.baseSet) :
-    let _ := frameTopology (I := I) (n := n) e U hU
-    Continuous (e'.frameCoordinates (I := I) (n := n) hU') :=
-  continuous_frameCoordinates_of_subset_iUnion e U hU e' U' hU'
-    fun x _ ↦ mem_iUnion.2 (hcover x)
-
 /-- A covering frame system induces a finer topology than any other specified frame system. -/
 theorem frameTopology_le_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U i)
     {κ : Type*} (e' : κ → Trivialization F (π F V))
@@ -133,7 +123,8 @@ theorem frameTopology_le_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U i)
   let _ := frameTopology (I := I) (n := n) e U hU
   apply (continuous_frameTopology_iff_frameCoordinates e' U' hU').mpr
   intro j
-  exact continuous_frameCoordinates_of_cover e U hU hcover (e' j) (U' j) (hU' j)
+  exact continuous_frameCoordinates_of_subset_iUnion e U hU (e' j) (U' j) (hU' j)
+    fun x _ ↦ mem_iUnion.2 (hcover x)
 
 /-- The existing compact derivative topology on sections is independent of any choice of
 covering smooth frames. This includes empty bases and empty covering index types. -/

@@ -112,8 +112,12 @@ theorem isInducing_toContMDiffMap :
   refine ⟨le_antisymm (continuous_iff_le_induced.1 continuous_toContMDiffMap) ?_⟩
   refine (continuous_id_iff_le (t := TopologicalSpace.induced toContMDiffMap inferInstance)
     (t' := inferInstance)).1 ?_
-  exact (@continuous_iff_continuous_toContMDiffMap E F _ _ _ _ n K 𝓓^{n}_{K}(E, F)
-    (TopologicalSpace.induced toContMDiffMap inferInstance) id).2 continuous_induced_dom
+  -- Equip the domain with the topology induced from `C^n(E, F)` while the codomain keeps
+  -- the `𝓓^{n}_{K}(E, F)` topology, so `continuous_iff_continuous_toContMDiffMap` applies to `id`.
+  let : TopologicalSpace 𝓓^{n}_{K}(E, F) :=
+    TopologicalSpace.induced toContMDiffMap inferInstance
+  exact (continuous_iff_continuous_toContMDiffMap (X := 𝓓^{n}_{K}(E, F))
+    (φ := id)).2 continuous_induced_dom
 
 /-- The inclusion of `𝓓^{n}_{K}(E, F)` into `C^n(E, F)` with the weak Whitney topology is a
 topological embedding. -/

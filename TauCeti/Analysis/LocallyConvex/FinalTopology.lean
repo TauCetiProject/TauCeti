@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.RCLike.Basic
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Final locally convex topologies
@@ -26,10 +28,10 @@ its composites with all generating maps are continuous
 distributive and commutes with real scalars, each generator is `R`-equivariant, and constant
 `R`-scalar multiplication is continuous on each source, constant `R`-scalar multiplication is also
 continuous on the target (`TauCeti.FinalLocallyConvexTopology.continuousConstSMul`); for `ℝ` or `ℂ`
-(`RCLike R`), `RCLike.continuousSMul_of_continuousConstSMul` upgrades this to joint continuity of
-scalar multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`). More precisely, over
-`ℝ` or `ℂ` scalar multiplication is jointly continuous exactly when multiplication by `RCLike.I`
-composed with each generating map is continuous
+(`RCLike R`), `TauCeti.continuousSMul_of_continuousConstSMul_of_finiteDimensional` upgrades this to
+joint continuity of scalar multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`).
+More precisely, over `ℝ` or `ℂ` scalar multiplication is jointly continuous exactly when
+multiplication by `RCLike.I` composed with each generating map is continuous
 (`TauCeti.FinalLocallyConvexTopology.continuousSMul_rclike_iff`).
 
 The comparison criterion (`TauCeti.FinalLocallyConvexTopology.le_of_sum_factor_fintype`,
@@ -259,7 +261,7 @@ theorem continuousSMul {R : Type*} [RCLike R] [Module R F] [IsScalarTower ℝ R 
     @ContinuousSMul R F _ _ (finalLocallyConvexTopology f) :=
   let := finalLocallyConvexTopology f
   have := continuousConstSMul f hf
-  RCLike.continuousSMul_of_continuousConstSMul
+  TauCeti.continuousSMul_of_continuousConstSMul_of_finiteDimensional ℝ
 
 end SMul
 

@@ -197,8 +197,7 @@ def baseSetOpens : TopologicalSpace.Opens B :=
 
 @[simp]
 theorem coe_baseSetOpens : (e.baseSetOpens : Set B) = e.baseSet := by
-  rw [baseSetOpens]
-  rfl
+  rw [baseSetOpens, TopologicalSpace.Opens.coe_mk]
 
 @[simp]
 theorem mem_baseSetOpens {x : B} : x ∈ e.baseSetOpens ↔ x ∈ e.baseSet := by

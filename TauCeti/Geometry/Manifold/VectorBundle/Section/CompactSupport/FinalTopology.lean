@@ -194,18 +194,17 @@ end ExtensionScalars
 omit [T2Space M] [ContMDiffVectorBundle n F V I] in
 /-- Evaluate a compactly supported section at a point `x : M` in the preferred trivialization
 `trivializationAt F V x`. -/
-def evalAt (x : M) : compactlySupported I F n V →ₗ[ℝ] F where
-  toFun s := (trivializationAt F V x).continuousLinearMapAt ℝ x (s.val x)
-  map_add' s₁ s₂ := by simp
-  map_smul' a s := by simp
+def evalAt (x : M) : compactlySupported I F n V →ₗ[ℝ] F :=
+  ((trivializationAt F V x).continuousLinearMapAt ℝ x).toLinearMap ∘ₗ
+    evalLinearMap I F n V x ∘ₗ (compactlySupported I F n V).subtype
 
 omit [T2Space M] [ContMDiffVectorBundle n F V I] in
 @[simp]
 theorem evalAt_apply (x : M) (s : compactlySupported I F n V) :
     evalAt (I := I) (F := F) (V := V) (n := n) x s =
       (trivializationAt F V x).continuousLinearMapAt ℝ x (s.val x) := by
-  rw [evalAt]
-  rfl
+  rw [evalAt, LinearMap.comp_apply, LinearMap.comp_apply, Submodule.coe_subtype,
+    evalLinearMap_apply, ContinuousLinearMap.coe_coe]
 
 omit [T2Space M] [ContMDiffVectorBundle n F V I] in
 /-- Compactly supported sections are separated by evaluating at all points in their preferred
