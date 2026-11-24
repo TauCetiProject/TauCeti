@@ -127,17 +127,11 @@ theorem iInf_ofField_powers_eq_bot_of_satisfiesSerreS_two [IsNoetherianRing A]
     (ha : ∀ i, Submonoid.powers (a i) ≤ A⁰)
     (hcover : ∀ p : Ideal A, p.IsPrime → p.height = 1 → ∃ i, a i ∉ p) :
     (⨅ i, ofField K (Submonoid.powers (a i)) (ha i)) = ⊥ := by
-  refine eq_bot_iff.mpr fun z hz ↦ Algebra.mem_bot.mpr ?_
-  obtain ⟨⟨c, ⟨b, hb⟩⟩, rfl⟩ := IsLocalization.mk'_surjective A⁰ z
-  dsimp only at hz
-  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp <|
-    hS₂.mem_span_singleton_of_forall_height_eq_one (a := c) hb fun P hP hP1 ↦ by
-      obtain ⟨i, hi⟩ := hcover P hP hP1
-      obtain ⟨n, d, hd⟩ := (mem_ofField_powers_iff (a i) (ha i)).mp (Algebra.mem_iInf.mp hz i)
-      refine ⟨a i ^ n, mt (hP.mem_of_pow_mem n) hi, Ideal.mem_span_singleton'.mpr
-        ⟨d, IsFractionRing.injective A K ?_⟩⟩
-      rw [map_mul, map_mul, map_pow, hd, mul_assoc, IsLocalization.mk'_spec]
-  exact ⟨r, by rw [IsLocalization.eq_mk'_iff_mul_eq, ← map_mul, hr]⟩
+  refine eq_bot_iff.mpr fun z hz ↦ Algebra.mem_bot.mpr <|
+    hS₂.mem_range_algebraMap_of_forall_height_eq_one fun P hP hP1 ↦ ?_
+  obtain ⟨i, hi⟩ := hcover P hP hP1
+  obtain ⟨n, hn⟩ := (mem_ofField_powers_iff (a i) (ha i)).mp (Algebra.mem_iInf.mp hz i)
+  exact ⟨a i ^ n, mt (hP.mem_of_pow_mem n) hi, by rwa [map_pow]⟩
 
 /-- Over a Noetherian integrally closed domain `A`, if no height-one prime contains every `a_i`,
 then the principal localizations `A[1 / a_i]` intersect in `A` inside `K`. -/

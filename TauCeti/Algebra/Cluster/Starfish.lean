@@ -33,8 +33,10 @@ inclusion in full generality without finiteness or nonvanishing hypotheses on `x
 
 * `TauCeti.starfishOpen`: the open union in `PrimeSpectrum R` of `D(∏ i, x i)` and
   `D(∏ i, Function.update x k (x' k) i)` over `k : K`.
-* `TauCeti.starfishAlgEquiv`: the `C`-algebra isomorphism between the cluster upper bound and `R`
-  when `R` is generated over `C` by elements whose images lie in the upper bound.
+* `TauCeti.starfishAlgEquiv`: under the Starfish hypotheses (`R` Noetherian satisfying `(S_2)` and
+  faithfully embedded in `F`, with height-one coprimality of the star pairs), the `C`-algebra
+  isomorphism between the cluster upper bound and `R` when `R` is generated over `C` by elements
+  whose images lie in the upper bound.
 
 ## Main results
 
