@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Line
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Scheme
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Flat
-import TauCeti.Algebra.Category.CommAlgCat.PointsSheaf
 
 /-!
 # Projective orbits represent homogeneous quotients

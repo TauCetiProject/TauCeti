@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Stabilizer
-public import TauCeti.Algebra.Category.CommAlgCat.PointsSheaf
+public import TauCeti.Algebra.Category.CommAlgCat.Fppf
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Action
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Flat
 import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Transitivity
@@ -34,7 +34,7 @@ morphism is an isomorphism of fppf sheaves
 * The descended orbit projection `G / Stab_G(x) ⟶ CommAlgCat.pointsSheaf (orbitOver G x)` is an
   isomorphism of fppf sheaves, for every orbit (without assuming `X` reduced, separated, or
   homogeneous).
-* If moreover `X` is reduced (or smooth) and `orbit G x = Set.univ` (equivalently, when `k` is
+* If moreover `X` is reduced and `orbit G x = Set.univ` (equivalently, when `k` is
   algebraically closed, `G(k)` acts transitively on `X(k)`), then the descended orbit morphism
   `G / Stab_G(x) ⟶ CommAlgCat.pointsSheaf X` is an isomorphism of fppf sheaves.
 * Because `CommAlgCat.pointsSheafFunctor` is fully faithful, any scheme `Q` over `Spec k`
@@ -274,13 +274,24 @@ theorem isIso_fppfHomogeneousQuotientToPointsSheaf
     [IsReduced X.left]
     (h : orbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x = Set.univ) :
     IsIso (fppfHomogeneousQuotientToPointsSheaf H x) := by
-  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
-  have hid : fppfHomogeneousQuotientToPointsSheaf H x =
-      (fppfHomogeneousQuotientIsoOrbitPoints H x).hom ≫
-        (TauCeti.CommAlgCat.pointsSheafFunctor k).map (orbitInclusionIso _ x h).hom := by
-    rw [orbitInclusionIso_hom, fppfHomogeneousQuotientIsoOrbitPoints_hom_comp_orbitInclusion]
-  rw [hid]
-  infer_instance
+  have : Flat
+      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
+    flat_orbitMap_of_orbit_eq_univ _ x h
+  have : Surjective
+      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
+    (surjective_orbitMap_iff_orbit_eq_univ _ x).mpr h
+  have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
+  have : LocallyOfFinitePresentation
+      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
+    locallyOfFinitePresentation_orbitMap _ x
+  have : Presheaf.IsLocallySurjective (TauCeti.CommAlgCat.fppfTopology k)
+      ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
+        (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)).hom :=
+    TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map _
+  have : Sheaf.IsLocallySurjective ((TauCeti.CommAlgCat.pointsSheafFunctor k).map
+      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x)) :=
+    (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).2 ‹_›
+  exact isIso_fppfHomogeneousQuotientToPointsSheaf_of_isLocallySurjective H x
 
 /-- **Homogeneous orbit comparison from rational-point transitivity.** Over an algebraically closed
 field, when `X` is reduced and `G(k)` acts transitively on `X(k)`, the descended orbit map
@@ -299,17 +310,6 @@ theorem isIso_fppfHomogeneousQuotientToPointsSheaf_of_forall_exists_smul
         ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom }
   exact isIso_fppfHomogeneousQuotientToPointsSheaf H x
     ((orbit_eq_univ_iff_forall_exists_smul _ x).mpr htrans)
-
-/-- **Homogeneous orbit comparison for smooth targets.** When `X` is smooth over `Spec k` and
-`orbit G x = Set.univ`, the descended orbit map `G / Stab_G(x) ⟶ CommAlgCat.pointsSheaf X` is
-an isomorphism of fppf sheaves. -/
-theorem isIso_fppfHomogeneousQuotientToPointsSheaf_of_smooth
-    [GeometricallyReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom]
-    [Smooth X.hom]
-    (h : orbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x = Set.univ) :
-    IsIso (fppfHomogeneousQuotientToPointsSheaf H x) := by
-  have : IsReduced X.left := X.hom.isReduced_of_smooth
-  exact isIso_fppfHomogeneousQuotientToPointsSheaf H x h
 
 /-- **The canonical fppf quotient isomorphism for a reduced homogeneous scheme:**
 `G / Stab_G(x) ≅ CommAlgCat.pointsSheaf X`. -/

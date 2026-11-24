@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.AlgebraicGeometry.Limits
+public import Mathlib.Topology.JacobsonSpace
 import Mathlib.RingTheory.RingHom.FinitePresentation
+import TauCeti.Topology.Constructible.Jacobson
 
 /-!
 # Morphisms locally of finite presentation
@@ -21,6 +24,10 @@ This is the scheme version of `RingHom.FinitePresentation.of_comp_finiteType`, t
 reduces on affine opens. It parallels Mathlib's `AlgebraicGeometry.locallyOfFiniteType_of_comp`,
 which needs no hypothesis on `g`; for finite presentation the hypothesis on `g` cannot be dropped.
 
+By Chevalley's theorem, a quasi-compact morphism locally of finite presentation into a Jacobson
+scheme is surjective if and only if its range contains every closed point of the target
+(`AlgebraicGeometry.Scheme.Hom.surjective_iff_closedPoints_subset_range`).
+
 ## Main results
 
 * `AlgebraicGeometry.locallyOfFinitePresentation_of_comp`: if `f ≫ g` is locally of finite
@@ -29,6 +36,10 @@ which needs no hypothesis on `g`; for finite presentation the hypothesis on `g` 
 * `CommRingCat.locallyOfFinitePresentation_terminal_from_Spec_iff`: finite presentation over
   the terminal scheme for an affine scheme is equivalent to finite presentation over `ℤ`.
 
+* `AlgebraicGeometry.Scheme.Hom.surjective_iff_closedPoints_subset_range`: a quasi-compact morphism
+  locally of finite presentation into a Jacobson scheme is surjective iff every closed point of the
+  target lies in its range.
+
 ## References
 
 * The Stacks Project, [Tag 02FV](https://stacks.math.columbia.edu/tag/02FV).
@@ -36,7 +47,7 @@ which needs no hypothesis on `g`; for finite presentation the hypothesis on `g` 
 
 public section
 
-open CategoryTheory TopologicalSpace
+open CategoryTheory TopologicalSpace Topology
 
 universe u
 
@@ -64,6 +75,25 @@ theorem locallyOfFinitePresentation_of_comp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (
     rw [Scheme.Hom.appLE_comp_appLE]
     exact HasRingHomProperty.appLE _ _ hfg ⟨W, hW⟩ ⟨V, hV⟩ _
   exact H.of_comp_finiteType _ (HasRingHomProperty.appLE _ g hg ⟨W, hW⟩ ⟨U, hU⟩ hUW)
+
+/-- A quasi-compact morphism locally of finite presentation into a Jacobson scheme is surjective
+if and only if every closed point of the target lies in its range. -/
+theorem Scheme.Hom.surjective_iff_closedPoints_subset_range {Z Y : Scheme.{u}} (f : Z ⟶ Y)
+    [JacobsonSpace Y] [QuasiCompact f] [LocallyOfFinitePresentation f] :
+    Surjective f ↔ closedPoints Y ⊆ Set.range f := by
+  refine ⟨fun ⟨h⟩ ↦ (Set.range_eq_univ.mpr h).symm ▸ Set.subset_univ _, fun h ↦ ⟨fun p ↦ ?_⟩⟩
+  by_contra hp
+  have hloc : IsLocallyConstructible (Set.range f) := by
+    simpa using f.isLocallyConstructible_image IsLocallyConstructible.univ
+  obtain ⟨U, hpU, hU, hUc⟩ := hloc p
+  have : JacobsonSpace U := JacobsonSpace.of_isOpenEmbedding hU.isOpenEmbedding_subtypeVal
+  have hne : ((Set.univ : Set U) \ (Subtype.val ⁻¹' Set.range f)).Nonempty :=
+    ⟨⟨p, mem_of_mem_nhds hpU⟩, trivial, hp⟩
+  obtain ⟨⟨q, hqU⟩, ⟨_, hq⟩, hqc⟩ :=
+    (IsConstructible.univ.sdiff hUc).nonempty_inter_closedPoints hne
+  have hqc' : q ∈ closedPoints Y := by
+    rwa [← hU.isOpenEmbedding_subtypeVal.preimage_closedPoints] at hqc
+  exact hq (h hqc')
 
 end AlgebraicGeometry
 

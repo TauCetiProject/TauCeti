@@ -13,16 +13,14 @@ import Mathlib.CategoryTheory.Sites.PreservesLimits
 import TauCeti.CategoryTheory.Monoidal.Mod.Basic
 
 /-!
-# Equivariance descent and fppf local surjectivity for points sheaves
+# Equivariance descent for points sheaves
 
-This file extends `TauCeti.Algebra.Category.CommAlgCat.Fppf` with local surjectivity, whisker-left
-epimorphism, and equivariance-descent lemmas for the affine fppf points-sheaf functor
+This file extends `TauCeti.Algebra.Category.CommAlgCat.Fppf` with whisker-left epimorphism and
+equivariance-descent lemmas for the affine fppf points-sheaf functor
 `TauCeti.CommAlgCat.pointsSheafFunctor`.
 
 Specifically:
 
-* Fppf morphisms of schemes over `Spec R` induce locally surjective maps on affine fppf points
-  sheaves (`TauCeti.CommAlgCat.isLocallySurjective_pointsSheafFunctor_map`).
 * Morphisms inducing fppf-locally surjective maps on affine points sheaves stay epimorphic after
   whiskering on the left (`TauCeti.CommAlgCat.epi_whiskerLeft_of_isLocallySurjective`).
 * Equivariance under an internal monoid-scheme action descends along equivariant fppf-locally
@@ -39,45 +37,6 @@ namespace TauCeti.CommAlgCat
 universe u
 
 variable {R : Type u} [CommRing R]
-
-/-- **Fppf morphisms induce locally surjective maps on affine points sheaves.** Every
-affine-valued point of the target lifts after a faithfully flat, finitely presented extension of
-the value algebra. -/
-instance isLocallySurjective_pointsSheafFunctor_map
-    {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y)
-    [Flat f.left] [Surjective f.left] [LocallyOfFinitePresentation f.left] :
-    Presheaf.IsLocallySurjective (fppfTopology R) ((pointsSheafFunctor R).map f).hom := by
-  have hcov : Sieve.ofArrows (fun _ : PUnit.{1} ↦ X) (fun _ : PUnit.{1} ↦ f) ∈
-      Scheme.fppfTopology.over (Spec (CommRingCat.of R)) Y := by
-    rw [GrothendieckTopology.mem_over_iff, Sieve.overEquiv_ofArrows]
-    refine Precoverage.generate_mem_toGrothendieck ?_
-    rw [Presieve.ofArrows_pUnit]
-    exact f.left.singleton_mem_fppfPrecoverage
-  let idY : (uliftYoneda.{u + 1}.obj Y).obj (op Y) := ULift.up (𝟙 Y)
-  have himg : Presheaf.imageSieve (uliftYoneda.{u + 1}.map f) idY =
-      Sieve.ofArrows (fun _ : PUnit.{1} ↦ X) (fun _ : PUnit.{1} ↦ f) := by
-    ext W g
-    rw [Sieve.mem_ofArrows_iff]
-    refine ⟨fun ⟨⟨t⟩, ht⟩ ↦ ⟨PUnit.unit, t, ?_⟩, fun ⟨_, t, ht⟩ ↦ ⟨ULift.up t, ?_⟩⟩
-    · simpa [idY, uliftYoneda] using congrArg ULift.down ht.symm
-    · simp [idY, uliftYoneda, ht]
-  have hloc : Presheaf.IsLocallySurjective (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))
-      (uliftYoneda.{u + 1}.map f) := by
-    refine ⟨fun {W} ⟨g⟩ ↦ ?_⟩
-    have hg : (uliftYoneda.{u + 1}.obj Y).map g.op idY = ULift.up g := by
-      simp [idY, uliftYoneda]
-    rw [← hg, ← Presheaf.pullback_imageSieve, himg]
-    exact (Scheme.fppfTopology.over (Spec (CommRingCat.of R))).pullback_stable g hcov
-  have : Sheaf.IsLocallySurjective ((GrothendieckTopology.uliftYoneda.{u + 1}
-      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) := hloc
-  have hepi : Epi ((GrothendieckTopology.uliftYoneda.{u + 1}
-      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) :=
-    Sheaf.epi_of_isLocallySurjective _
-  have hepi' : Epi ((pointsSheafFunctor R).map f) := by
-    dsimp only [pointsSheafFunctor, Functor.comp_map]
-    rw [← fppfSheafEquiv_inverse]
-    exact (fppfSheafEquiv R (Type (u + 1))).inverse.map_epi _
-  exact (Sheaf.isLocallySurjective_iff_epi ((pointsSheafFunctor R).map f)).mpr hepi'
 
 /-- If `p : Z ⟶ X` over `Spec R` induces an fppf-locally surjective map on affine points sheaves,
 then `W ◁ p : W ⊗ Z ⟶ W ⊗ X` is an epimorphism in `Over (Spec R)` for every `R`-scheme `W`. -/

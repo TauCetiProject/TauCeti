@@ -158,7 +158,11 @@ theorem isModHom_of_epi_whiskerLeft_comp {C : Type*} [Category C] [MonoidalCateg
     have hp := IsModHom.smul_hom (A := G) (f := p)
     have hpf := IsModHom.smul_hom (A := G) (f := p ≫ f)
     simp only [selfLeftAction_actionHomRight] at hp hpf ⊢
-    rw [← cancel_epi (G ◁ p), ← Category.assoc, ← hp, Category.assoc, hpf,
-      ← Category.assoc, ← whiskerLeft_comp]
+    apply (cancel_epi (G ◁ p)).mp
+    calc
+      (G ◁ p) ≫ γ[G, X] ≫ f = γ[G, Z] ≫ p ≫ f := by
+        simpa only [Category.assoc] using congrArg (· ≫ f) hp.symm
+      _ = (G ◁ p) ≫ (G ◁ f) ≫ γ[G, Y] := by
+        simpa only [whiskerLeft_comp, Category.assoc] using hpf
 
 end CategoryTheory

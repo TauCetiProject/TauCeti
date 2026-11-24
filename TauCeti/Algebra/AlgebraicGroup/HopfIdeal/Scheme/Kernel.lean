@@ -186,20 +186,16 @@ private lemma isPullback_kernelSpec_scheme (f : H ⟶ K) :
 -- so they become the structural map and the identity section rather than unfolding inside
 -- the pullback proof.
 private lemma kernelSpec_to_trivial_underlying (f : H ⟶ K) :
-    (Over.forget (Spec (CommRingCat.of R))).map
-        ((Grp.forget (Over (Spec (CommRingCat.of R)))).map
-          (0 : kernelSpec f ⟶ Grp.trivial (Over (Spec (CommRingCat.of R))))) =
+    (0 : kernelSpec f ⟶ Grp.trivial (Over (Spec (CommRingCat.of R)))).hom.hom.left =
       Spec.map (CommRingCat.ofHom
-        (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal))) := by
+        (algebraMap R (K ⧸ (kernelHopfIdeal f).toIdeal))) :=
   rfl
 
 private lemma trivial_to_hopfSpec_underlying (H : _root_.CommHopfAlgCat.{u} R) :
-    (Over.forget (Spec (CommRingCat.of R))).map
-        ((Grp.forget (Over (Spec (CommRingCat.of R)))).map
-          (0 : Grp.trivial (Over (Spec (CommRingCat.of R))) ⟶
-            (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))) =
+    (0 : Grp.trivial (Over (Spec (CommRingCat.of R))) ⟶
+        (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)).hom.hom.left =
       Spec.map (CommRingCat.ofHom
-        (Bialgebra.counitAlgHom R H).toRingHom) := by
+        (Bialgebra.counitAlgHom R H).toRingHom) :=
   rfl
 
 /-- The Hopf spectrum of the kernel quotient is the scheme-theoretic fibre over the identity.
@@ -213,10 +209,9 @@ theorem isPullback_kernelSpec (f : H ⟶ K) :
         (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)) := by
   apply IsPullback.of_map_of_faithful (Grp.forget _)
   apply IsPullback.of_map_of_faithful (Over.forget _)
-  rw [kernelSpec_to_trivial_underlying, trivial_to_hopfSpec_underlying,
-    kernelSpecι_def, quotientSpecι_def, Over.forget_map, Grp.forget_map,
-    hopfSpec_map_left (S := CommRingCat.of R), Over.forget_map, Grp.forget_map,
-    hopfSpec_map_left (S := CommRingCat.of R)]
+  simp only [↓Over.forget_map, Grp.forget_map,
+    kernelSpecι_def, quotientSpecι_def, hopfSpec_map_left (S := CommRingCat.of R),
+    kernelSpec_to_trivial_underlying, trivial_to_hopfSpec_underlying]
   exact isPullback_kernelSpec_scheme f
 
 end CommHopfAlgCat

@@ -7,9 +7,9 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 import TauCeti.AlgebraicGeometry.RationalPoint.Image
-import TauCeti.Topology.Constructible.Jacobson
 import TauCeti.Topology.JacobsonSpace
 
 /-!
@@ -124,19 +124,12 @@ theorem orbit_eq_univ_iff_closedPoints_subset {k : Type u} [Field k] (G : Over (
     [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
     [QuasiCompact (orbitMap G x).left] :
     orbit G x = Set.univ ↔ closedPoints X.left ⊆ orbit G x := by
-  refine ⟨fun h ↦ h ▸ Set.subset_univ _, fun h ↦ Set.eq_univ_iff_forall.mpr fun p ↦ ?_⟩
   have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
   have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
   have : LocallyOfFinitePresentation (orbitMap G x).left :=
     locallyOfFinitePresentation_orbitMap G x
-  have hloc : IsLocallyConstructible (orbit G x) := by
-    simpa [orbit_def] using (orbitMap G x).left.isLocallyConstructible_image
-      IsLocallyConstructible.univ
-  obtain ⟨V, hV, hpV, -⟩ :=
-    exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top p)
-  exact ((hV.isCompact.isConstructible V.isOpen).subset_iff_inter_closedPoints_subset
-    (hloc.inter_of_isOpen_isCompact V.isOpen hV.isCompact)).mpr
-      (fun q ⟨hqV, hqc⟩ ↦ ⟨⟨h hqc, hqV⟩, hqc⟩) hpV |>.1
+  rw [← surjective_orbitMap_iff_orbit_eq_univ G x, orbit_def]
+  exact (orbitMap G x).left.surjective_iff_closedPoints_subset_range
 
 end Field
 
@@ -154,21 +147,18 @@ theorem orbit_eq_univ_iff_forall_exists_smul (x : 𝟙_ (Over (Spec (.of k))) �
     orbit G x = Set.univ ↔
       ∀ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
         ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y := by
-  rw [← surjective_orbitMap_iff_orbit_eq_univ, surjective_iff]
-  have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
-    rw [Over.w]
-    infer_instance
-  rw [Scheme.Hom.surjective_iff_forall_rationalPoint (orbitMap G x).left X.hom]
-  refine ⟨fun h y ↦ ?_, fun h p hp ↦ ?_⟩
-  · obtain ⟨q, hq⟩ := h y.left (by simp)
-    refine ⟨Over.homMk q (by rw [← Over.w (orbitMap G x), ← Category.assoc, hq]; exact Over.w y),
-      Over.OverMorphism.ext ?_⟩
-    rw [← left_comp_orbitMap_left]
-    exact hq
-  · obtain ⟨g, hg⟩ := h (Over.homMk p (by simpa using hp))
-    refine ⟨g.left, ?_⟩
-    rw [left_comp_orbitMap_left, hg]
-    rfl
+  refine ⟨forall_exists_smul_of_orbit_eq_univ G x, fun h ↦ ?_⟩
+  refine (orbit_eq_univ_iff_closedPoints_subset G x).mpr fun p hp ↦ ?_
+  have hpc : IsClosed {p} := mem_closedPoints_iff.mp hp
+  let y : 𝟙_ (Over (Spec (.of k))) ⟶ X :=
+    Over.homMk (U := 𝟙_ _) (V := X) (pointOfClosedPoint X.hom p hpc)
+      (pointOfClosedPoint_comp X.hom p hpc)
+  obtain ⟨g, hg⟩ := h y
+  have hp' : (g • x).left (IsLocalRing.closedPoint k) = p :=
+    (congrArg (fun f : 𝟙_ (Over (Spec (.of k))) ⟶ X ↦
+      f.left (IsLocalRing.closedPoint k)) hg).trans
+      (pointOfClosedPoint_apply X.hom p hpc (IsLocalRing.closedPoint k))
+  exact hp' ▸ smul_left_apply_mem_orbit G x g (IsLocalRing.closedPoint k)
 
 end AlgClosedFiniteType
 

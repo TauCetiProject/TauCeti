@@ -9,8 +9,6 @@ public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Action
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Flat
 public import TauCeti.AlgebraicGeometry.GroupAction.Stabilizer
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer.KernelPair
-public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
-import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyReduced
 
 /-!
@@ -41,48 +39,6 @@ open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory MonObj Alg
 namespace TauCeti.SchemeAction
 
 universe u
-
-section GeneralBase
-
-variable {S : Scheme.{u}} (G : Over S) {X : Over S} [GrpObj G] [ModObj G X]
-  (x : 𝟙_ (Over S) ⟶ X)
-
-private theorem smooth_iff_smooth_stabilizer {Y : Scheme.{u}} (f : G.left ⟶ Y)
-    [Flat f] [Surjective f] [QuasiCompact f] {y : (𝟙_ (Over S)).left ⟶ Y}
-    (hfib : IsPullback (stabilizer.incl G x).left (stabilizer G x).hom f y)
-    (hkp : IsPullback (fst G (stabilizer G x)).left (stabilizer.rightMul G x).left f f) :
-    Smooth f ↔ Smooth (stabilizer G x).hom := by
-  refine ⟨fun h ↦ MorphismProperty.of_isPullback hfib h, fun hs ↦ ?_⟩
-  let := hs
-  have hp : Smooth (fst G (stabilizer G x)).left := by
-    rw [Over.fst_left]
-    infer_instance
-  exact MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact hkp hp
-
-/-- Smoothness of the orbit morphism implies smoothness of its scheme-theoretic stabilizer, over an
-arbitrary base scheme and in every characteristic. -/
-theorem smooth_stabilizer_of_smooth_orbitMap (h : Smooth (orbitMap G x).left) :
-    Smooth (stabilizer G x).hom := by
-  have hpb : IsPullback (stabilizer.incl G x).left (stabilizer G x).hom
-      (orbitMap G x).left x.left := by
-    simpa only [Over.forget_map, Over.toUnit_left] using
-      (orbitFiber.isPullback G x x).map (Over.forget S)
-  exact MorphismProperty.of_isPullback hpb h
-
-/-- Over an arbitrary base scheme, a faithfully flat and quasi-compact orbit morphism is smooth if
-and only if its scheme-theoretic stabilizer is smooth over the base scheme. -/
-theorem smooth_orbitMap_iff [Flat (orbitMap G x).left] [Surjective (orbitMap G x).left]
-    [QuasiCompact (orbitMap G x).left] :
-    Smooth (orbitMap G x).left ↔ Smooth (stabilizer G x).hom :=
-  smooth_iff_smooth_stabilizer G x (orbitMap G x).left
-    (by
-      simpa only [Over.forget_map, Over.toUnit_left] using
-        (orbitFiber.isPullback G x x).map (Over.forget S))
-    (by
-      simpa only [Over.forget_map] using
-        (stabilizer.isPullback_rightMul G x).map (Over.forget S))
-
-end GeneralBase
 
 section Orbit
 
@@ -134,9 +90,35 @@ theorem smooth_stabilizer_of_smooth_toOrbit (h : Smooth (toOrbit G x)) :
 /-- For a geometrically reduced group over any field, the orbit projection is smooth exactly when
 its scheme-theoretic stabilizer is. The stabilizer need not be reduced a priori. -/
 theorem smooth_toOrbit_iff [GeometricallyReduced G.hom] :
-    Smooth (toOrbit G x) ↔ Smooth (stabilizer G x).hom :=
-  smooth_iff_smooth_stabilizer G x (toOrbit G x)
-    (isPullback_toOrbit_stabilizer G x) (isPullback_toOrbit_rightMul G x)
+    Smooth (toOrbit G x) ↔ Smooth (stabilizer G x).hom := by
+  let x₀ : 𝟙_ (Over (Spec (.of k))) ⟶ orbitOver G x := η[G] ≫ orbitProjection G x
+  have hx₀ : x₀ ≫ orbitInclusion G x = x := by
+    simp [x₀, orbitProjection_inclusion, MonObj.one_eq_one]
+  have horb : orbitMap G x₀ = orbitProjection G x := by
+    apply (cancel_mono (orbitInclusion G x)).mp
+    rw [orbitMap_comp, hx₀, orbitProjection_inclusion]
+  have hleft : (orbitMap G x₀).left = toOrbit G x := by
+    rw [horb, orbitProjection_left]
+  have : Flat (orbitMap G x₀).left := by rw [hleft]; infer_instance
+  have : Surjective (orbitMap G x₀).left := by rw [hleft]; infer_instance
+  have : QuasiCompact (orbitMap G x₀).left := by rw [hleft]; infer_instance
+  have hpb : IsPullback (stabilizer.incl G x) (toUnit (stabilizer G x)) (orbitMap G x₀) x₀ := by
+    have h := orbitFiber.isPullback G x x
+    have h' := PullbackCone.isLimitOfFactors _ _ (orbitInclusion G x)
+      (orbitMap G x₀) x₀ (by rw [horb, orbitProjection_inclusion]) hx₀ h.cone h.isLimit
+    exact IsPullback.of_isLimit' ⟨(cancel_mono (orbitInclusion G x)).mp (by
+      rw [Category.assoc, horb, orbitProjection_inclusion, Category.assoc, hx₀]
+      exact h.w)⟩ h'
+  let e : stabilizer G x₀ ≅ stabilizer G x :=
+    (orbitFiber.isPullback G x₀ x₀).isoIsPullback _ _ hpb
+  have he : IsIso e.hom.left :=
+    inferInstanceAs (IsIso ((Over.forget _).mapIso e).hom)
+  have hsm : Smooth (stabilizer G x₀).hom ↔ Smooth (stabilizer G x).hom := by
+    have : MorphismProperty.RespectsIso @Smooth :=
+      MorphismProperty.IsStableUnderBaseChange.respectsIso
+    rw [← Over.w e.hom]
+    exact MorphismProperty.cancel_left_of_respectsIso @Smooth e.hom.left (stabilizer G x).hom
+  simpa only [hleft, hsm] using smooth_orbitMap_iff G x₀
 
 /-- Over any field of characteristic zero, orbit projections for affine finite-type groups are
 smooth. No algebraic closedness, connectedness or reducedness hypothesis on the acting group is
