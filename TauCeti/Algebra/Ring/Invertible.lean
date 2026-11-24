@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Invertible
+import Mathlib.Algebra.GroupWithZero.Commute
 import Mathlib.Algebra.Ring.Commute
 
 /-!
@@ -19,6 +20,7 @@ and distributive negation:
 * `TauCeti.ringInverse_neg`: `Ring.inverse` commutes with negation.
 * `TauCeti.ringInverse_neg_one_pow_mul`: multiplying on the left by `(-1) ^ k` commutes with
   `Ring.inverse`.
+* `Commute.ringInverse_right`: an element commuting with `b` commutes with `Ring.inverse b`.
 -/
 
 public section
@@ -50,3 +52,13 @@ theorem ringInverse_neg_one_pow_mul (k : ℕ) (a : R) :
   rcases neg_one_pow_eq_or R k with h | h <;> simp [h]
 
 end TauCeti
+
+/-- An element commuting with `b` commutes with its ring inverse. -/
+theorem Commute.ringInverse_right {M₀ : Type*} [MonoidWithZero M₀] {a b : M₀}
+    (h : Commute a b) : Commute a (Ring.inverse b) := by
+  by_cases hb : IsUnit b
+  · obtain ⟨u, rfl⟩ := hb
+    rw [Ring.inverse_unit]
+    exact h.units_inv_right
+  · rw [Ring.inverse_non_unit _ hb]
+    exact Commute.zero_right a

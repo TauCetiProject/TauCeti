@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 import TauCeti.LinearAlgebra.FreeModule.Int
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Fixed points of linear automorphisms of a torus
@@ -99,8 +100,7 @@ private theorem map_one_sub (A : Matrix ι ι ℤ) :
 /-- Casting `(1 - A) *ᵥ k` to `ℝ` computes `(1 - A) *ᵥ k` over `ℝ`. -/
 private theorem one_sub_map_mulVec_intCast (A : Matrix ι ι ℤ) (k : ι → ℤ) :
     (1 - A.map ((↑) : ℤ → ℝ)) *ᵥ (fun j ↦ (k j : ℝ)) = fun i ↦ (((1 - A) *ᵥ k) i : ℝ) := by
-  rw [← map_one_sub]
-  exact funext fun i ↦ ((Int.castRingHom ℝ).map_mulVec (1 - A) k i).symm
+  rw [← map_one_sub, Matrix.map_intCast_mulVec]
 
 /-- **Fixed points through the covering map.** The point `[t]` of the torus is fixed by `A`
 exactly when every coordinate of `(1 - A) t` is an integer multiple of `p`. -/

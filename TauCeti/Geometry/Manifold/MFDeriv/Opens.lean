@@ -17,7 +17,11 @@ the inclusion of an open subset is the identity of the model space, restricting 
 source, or following a map into an open target by the inclusion, does not change its differential
 applied to a tangent vector. Differentiability itself is local, so a map and its restriction to
 an open source have vanishing differentials at the same points, with no differentiability
-assumption.
+assumption. The same holds for the differential `mvfderiv` of a vector-valued function
+(`TauCeti.Manifold.mvfderiv_comp_subtype_val`). Likewise the restriction `f⁻¹(U) → U` of a map to
+the preimage of an open subset has the differential of the map
+(`TauCeti.Manifold.mfderiv_restrictPreimage_apply`), and so the same tangent image
+(`TauCeti.Manifold.mem_range_mfderiv_restrictPreimage_iff`).
 
 A map read in the coordinate of a chart of the maximal atlas, `x ↦ g (e x)`, is differentiable on
 every open subset of the chart's source where `g` is differentiable at the chart image
@@ -73,6 +77,46 @@ theorem mfderiv_comp_subtype_val_eq_zero_iff {U : Opens N} {f : N → M} {x : U}
   simp only [ContinuousLinearMap.ext_iff, zero_apply, mfderiv_comp_subtype_val_apply]
   -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`.
   exact Iff.rfl
+
+/-- Restricting a vector-valued function to an open source does not change its differential. No
+differentiability is assumed: where the function is not differentiable, neither is its
+restriction. -/
+theorem mvfderiv_comp_subtype_val {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {U : Opens N} (f : N → F) (x : U) :
+    mvfderiv J (f ∘ (Subtype.val : U → N)) x = mvfderiv J f (x : N) := by
+  ext v
+  simp only [mvfderiv, ContinuousLinearMap.comp_apply, mfderiv_comp_subtype_val_apply]
+  -- The tangent spaces at `x` in `U` and at `(x : N)` in `N` are both the model space `E'`, and
+  -- `fromTangentSpace` is the identity of it at either base point.
+  rfl
+
+/-- Restricting a map `f : N → M` to the preimage `f⁻¹(U) → U` of an open subset `U` does not
+change its differential. No differentiability is assumed. -/
+theorem mfderiv_restrictPreimage_apply {f : N → M} (hf : Continuous f) (U : Opens M)
+    {x : (⟨f ⁻¹' U, U.isOpen.preimage hf⟩ : Opens N)} (v : TangentSpace J x) :
+    mfderiv (M := (⟨f ⁻¹' U, U.isOpen.preimage hf⟩ : Opens N)) (M' := U) J I
+      ((U : Set M).restrictPreimage f) x v = mfderiv J I f x v :=
+  mfderiv_apply_of_subtype_val_comp_eq (A := f) rfl v
+
+/-- The restriction `f⁻¹(U) → U` of a map `f` to the preimage of an open subset `U` has injective
+differential at a point exactly when `f` does. -/
+theorem injective_mfderiv_restrictPreimage_iff {f : N → M} (hf : Continuous f) (U : Opens M)
+    {x : (⟨f ⁻¹' U, U.isOpen.preimage hf⟩ : Opens N)} :
+    Function.Injective (mfderiv (M := (⟨f ⁻¹' U, U.isOpen.preimage hf⟩ : Opens N)) (M' := U) J I
+      ((U : Set M).restrictPreimage f) x) ↔ Function.Injective (mfderiv J I f x) := by
+  simp only [Function.Injective, mfderiv_restrictPreimage_apply hf U]
+  -- The tangent spaces at `x` in `f⁻¹(U)` and at `(x : N)` in `N` are both the model space `E'`.
+  exact Iff.rfl
+
+/-- The restriction `f⁻¹(U) → U` of a map `f` to the preimage of an open subset `U` has the same
+tangent image at a point as `f`. -/
+theorem mem_range_mfderiv_restrictPreimage_iff {f : N → M} (hf : Continuous f) (U : Opens M)
+    {x : (⟨f ⁻¹' U, U.isOpen.preimage hf⟩ : Opens N)} {v : TangentSpace I (f x)} :
+    v ∈ (mfderiv (M := (⟨f ⁻¹' U, U.isOpen.preimage hf⟩ : Opens N)) (M' := U) J I
+      ((U : Set M).restrictPreimage f) x).range ↔ v ∈ (mfderiv J I f x).range := by
+  -- Membership in a range unfolds to an existential, and the tangent spaces at the images in `U`
+  -- and in `M` are both the model space `E`.
+  exact exists_congr fun w ↦ iff_of_eq (congrArg (· = v) (mfderiv_restrictPreimage_apply hf U w))
 
 /-- A map read in the coordinate of a chart `e` of the maximal atlas, `x ↦ g (e x)`, is
 differentiable on every open subset `W` of the chart's source on which `g` is differentiable at the

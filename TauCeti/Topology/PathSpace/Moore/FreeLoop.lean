@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.PathSpace.Moore
 public import Mathlib.Topology.Connected.PathConnected
+public import Mathlib.Topology.Homotopy.Basic
 
 /-!
 # The free Moore loop space
@@ -31,6 +32,8 @@ constant loop, and the constant loops `X → 𝓛₀X` are again a closed embedd
   `length`.
 * `TauCeti.MooreFreeLoopSpace.const x` (`constMap`): the constant loop at `x` of length zero.
 * `TauCeti.MooreLoopSpace.toFreeLoop`: a based Moore loop as a free loop.
+* `TauCeti.MooreLoopSpace.codRestrictFreeLoop`: a continuous family of free loops based at `x`,
+  as a continuous family of based loops.
 * `TauCeti.MooreFreeLoopSpace.contractibleLoops X`: the contractible free loops `𝓛₀X`, with
   `basepointContractible` and `TauCeti.MooreFreeLoopSpace.constContractible x`
   (`constContractibleMap`), the constant loop at `x` as a point of `𝓛₀X`.
@@ -236,6 +239,42 @@ theorem range_toFreeLoop :
   · rintro ⟨δ, rfl⟩
     exact basepoint_toFreeLoop δ
   · exact fun h ↦ ⟨⟨γ.toMoorePath, h, γ.target_eq_source.trans h⟩, rfl⟩
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+/-- **Families of free loops based at `x` are families of based loops.** A continuous map to the
+free Moore loops all of whose values are based at `x`, as a continuous map to the Moore loops at
+`x`: its corestriction to the fibre of `basepoint` over `x`, which is the image of `toFreeLoop`
+(`TauCeti.MooreLoopSpace.range_toFreeLoop`). -/
+def codRestrictFreeLoop (f : C(Y, MooreFreeLoopSpace X)) (hf : ∀ y, (f y).basepoint = x) :
+    C(Y, MooreLoopSpace X x) where
+  toFun y := ⟨(f y).toMoorePath, by rw [MooreFreeLoopSpace.source_toMoorePath, hf],
+    by rw [MooreFreeLoopSpace.target_toMoorePath, hf]⟩
+  continuous_toFun := isEmbedding_toMoorePath.continuous_iff.2 <|
+    MooreFreeLoopSpace.continuous_toMoorePath.comp f.continuous
+
+@[simp]
+theorem toMoorePath_codRestrictFreeLoop_apply (f : C(Y, MooreFreeLoopSpace X))
+    (hf : ∀ y, (f y).basepoint = x) (y : Y) :
+    (codRestrictFreeLoop f hf y).toMoorePath = (f y).toMoorePath :=
+  (rfl)
+
+@[simp]
+theorem toFreeLoop_codRestrictFreeLoop_apply (f : C(Y, MooreFreeLoopSpace X))
+    (hf : ∀ y, (f y).basepoint = x) (y : Y) :
+    (codRestrictFreeLoop f hf y).toFreeLoop = f y :=
+  MooreFreeLoopSpace.ext (toMoorePath_codRestrictFreeLoop_apply f hf y)
+
+/-- **Homotopies of free loops through loops based at `x` are homotopies of based loops.** If two
+families of free loops based at `x` are homotopic through free loops based at `x`, their
+corestrictions to the Moore loops at `x` are homotopic. -/
+theorem homotopic_codRestrictFreeLoop {f g : C(Y, MooreFreeLoopSpace X)}
+    {hf : ∀ y, (f y).basepoint = x} {hg : ∀ y, (g y).basepoint = x} (H : f.Homotopy g)
+    (hH : ∀ p, (H p).basepoint = x) :
+    (codRestrictFreeLoop f hf).Homotopic (codRestrictFreeLoop g hg) :=
+  ⟨{ toContinuousMap := codRestrictFreeLoop H.toContinuousMap hH
+     map_zero_left := fun y ↦ ext (congrArg MooreFreeLoopSpace.toMoorePath (H.apply_zero y))
+     map_one_left := fun y ↦ ext (congrArg MooreFreeLoopSpace.toMoorePath (H.apply_one y)) }⟩
 
 end MooreLoopSpace
 

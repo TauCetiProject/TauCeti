@@ -141,6 +141,7 @@ theorem toMatrix_basisFun_weightedSumSquares_one_two :
     QuadraticForm.toMatrix (Pi.basisFun ℂ (Fin 2)) (weightedSumSquares ℂ ![(1 : ℂ), 2]) =
       Matrix.diagonal ![1, 2] := by
   rw [toMatrix_eq_toMatrix', toMatrix'_weightedSumSquares]
+  simp only [smul_eq_mul, mul_one]
 
 /-- For the diagonal form `x₁² + 2 x₂²` on `ℂ²`, the complex normalization of the standard basis
 is `e₁, e₂ / √2`. -/

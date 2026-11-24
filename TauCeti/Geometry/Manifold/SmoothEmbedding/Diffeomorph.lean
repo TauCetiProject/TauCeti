@@ -50,6 +50,8 @@ of the circle, while the ambient `Diff(N)`-action is postcomposition.
 * `TauCeti.isSmoothEmbedding_diffeomorph`: a diffeomorphism is a smooth embedding.
 * `TauCeti.isSmoothEmbedding_continuousLinearEquiv`: a continuous linear equivalence between normed
   spaces is a smooth embedding.
+* `Manifold.IsSmoothEmbedding.exists_diffeomorph_of_range_eq`: conversely, two smooth embeddings
+  with the same image differ by a diffeomorphism of their sources.
 
 ## Main definitions
 
@@ -167,6 +169,37 @@ theorem _root_.Diffeomorph.isSmoothEmbedding_comp (Φ : N ≃ₘ^n⟮J, K⟯ P) 
   ⟨Φ.isImmersion_comp hn h.isImmersion, Φ.toHomeomorph.isEmbedding.comp h.isEmbedding⟩
 
 end ChangeOfModel
+
+section RangeEq
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E']
+  [NormedSpace 𝕜 E'] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H H' G : Type*} [TopologicalSpace H] [TopologicalSpace H'] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {I' : ModelWithCorners 𝕜 E' H'} {J : ModelWithCorners 𝕜 F G}
+  {M P N : Type*} [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace P]
+  [ChartedSpace H' P] [TopologicalSpace N] [ChartedSpace G N] {n : ℕ∞ω} {f : M → N} {g : P → N}
+
+/-- **Smooth embeddings with the same image differ by a diffeomorphism.** If `f : M → N` and
+`g : P → N` are `C^n` embeddings with the same image, then `g⁻¹ ∘ f` is a `C^n` diffeomorphism from
+`M` to `P`, which may be modelled on a different space. -/
+theorem _root_.Manifold.IsSmoothEmbedding.exists_diffeomorph_of_range_eq
+    (hf : IsSmoothEmbedding I J n f) (hg : IsSmoothEmbedding I' J n g) (h : range f = range g) :
+    ∃ e : M ≃ₘ^n⟮I, I'⟯ P, ∀ x, g (e x) = f x := by
+  have hfg : ∀ x, ∃ y, g y = f x := fun x ↦ h.subset (mem_range_self x)
+  have hgf : ∀ y, ∃ x, f x = g y := fun y ↦ h.symm.subset (mem_range_self y)
+  choose φ hφ using hfg
+  choose ψ hψ using hgf
+  have hφs : ContMDiff I I' n φ := by
+    rw [hg.contMDiff_iff_comp, show g ∘ φ = f from funext hφ]
+    exact hf.contMDiff
+  have hψs : ContMDiff I' I n ψ := by
+    rw [hf.contMDiff_iff_comp, show f ∘ ψ = g from funext hψ]
+    exact hg.contMDiff
+  exact ⟨⟨⟨φ, ψ, fun x ↦ hf.isEmbedding.injective (by rw [hψ, hφ]),
+    fun y ↦ hg.isEmbedding.injective (by rw [hφ, hψ])⟩, hφs, hψs⟩, hφ⟩
+
+end RangeEq
 
 namespace SmoothEmbedding
 

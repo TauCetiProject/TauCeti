@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.AddChar
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Algebra.Group.AddChar.Basic
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
 public import TauCeti.Geometry.Manifold.Instances.LensSpace

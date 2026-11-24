@@ -250,6 +250,12 @@ theorem prev_add (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u w : WeakDerivStep mu Omega p base) : prev base (u + w) = prev base u + prev base w := by
   simp only [← prevL_apply, map_add]
 
+/-- The projection `prev` commutes with subtraction. -/
+@[simp]
+theorem prev_sub (base : X →L[ℝ] Lp F p (mu.restrict Omega))
+    (u w : WeakDerivStep mu Omega p base) : prev base (u - w) = prev base u - prev base w := by
+  simp only [← prevL_apply, map_sub]
+
 /-- The projection `prev` commutes with scalar multiplication. -/
 @[simp]
 theorem prev_smul (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (c : ℝ)
