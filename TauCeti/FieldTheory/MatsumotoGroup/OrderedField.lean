@@ -72,7 +72,7 @@ are negative. -/
 noncomputable def signPairing : Additive Fˣ →+ Additive Fˣ →+ ZMod 2 :=
   (AddMonoidHom.mul.comp (Units.signAddHom F)).compl₂ (Units.signAddHom F)
 
-private theorem signPairing_apply (a b : Additive Fˣ) :
+theorem signPairing_apply (a b : Additive Fˣ) :
     signPairing F a b = Units.signAddHom F a * Units.signAddHom F b :=
   (rfl)
 
@@ -138,6 +138,23 @@ at least one positive entry. It is the kernel of the sign map (`sign_eq_zero_iff
 divisible when `F` is real closed (`positiveEntrySpan_nsmul_right_surjective`). -/
 def positiveEntrySpan : Submodule ℤ (MatsumotoGroup F) :=
   Submodule.span ℤ {q | ∃ x y : Fˣ, (0 < (x : F) ∨ 0 < (y : F)) ∧ q = symbol x y}
+
+omit [IsStrictOrderedRing F] in
+variable (F) in
+theorem positiveEntrySpan_def :
+    positiveEntrySpan F =
+      Submodule.span ℤ {q | ∃ x y : Fˣ, (0 < (x : F) ∨ 0 < (y : F)) ∧ q = symbol x y} :=
+  (rfl)
+
+omit [IsStrictOrderedRing F] in
+/-- The universal property of the positive-entry span: it lies in a subgroup exactly when every
+symbol with a positive entry does. -/
+theorem positiveEntrySpan_le_iff {p : Submodule ℤ (MatsumotoGroup F)} :
+    positiveEntrySpan F ≤ p ↔ ∀ x y : Fˣ, (0 < (x : F) ∨ 0 < (y : F)) → symbol x y ∈ p := by
+  rw [positiveEntrySpan_def, Submodule.span_le]
+  refine ⟨fun h x y hxy ↦ h ⟨x, y, hxy, rfl⟩, ?_⟩
+  rintro h _ ⟨x, y, hxy, rfl⟩
+  exact h x y hxy
 
 omit [IsStrictOrderedRing F] in
 theorem symbol_mem_positiveEntrySpan {x y : Fˣ} (h : 0 < (x : F) ∨ 0 < (y : F)) :
