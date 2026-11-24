@@ -38,8 +38,8 @@ Finally, the entries of the Sylvester matrix are written out explicitly, column 
 expanding its determinant term by term.
 
 Since a resultant with a monic left argument is a unit exactly when the two polynomials are
-coprime, coprimality can be read off a unit resultant: against `X - C a` this is a unit value at
-`a`, and modulo an ideal in the Jacobson radical it lifts from the reductions.
+coprime, coprimality can be read off a unit resultant; in particular, coprimality with a monic
+polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
 
 ## Main results
 
@@ -59,8 +59,6 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
   the valid degree bound supplied for the right argument.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
-* `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
-  at `a` is a unit.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
   modulo an ideal in the Jacobson radical are coprime are themselves coprime.
 
@@ -277,16 +275,6 @@ end TauCeti
 namespace Polynomial
 
 variable {R : Type*} [CommRing R]
-
-/-- `X - C a` is coprime to every polynomial whose value at `a` is a unit, over any commutative
-ring: the resultant of the two is that value. -/
-theorem isCoprime_X_sub_C_of_isUnit_eval {p : R[X]} {a : R} (h : IsUnit (p.eval a)) :
-    IsCoprime (X - C a) p := by
-  cases subsingleton_or_nontrivial R with
-  | inl _ => rw [Subsingleton.elim (X - C a) 1]; exact isCoprime_one_left
-  | inr _ =>
-    rwa [← isUnit_resultant_iff_isCoprime (monic_X_sub_C a), natDegree_X_sub_C,
-      resultant_X_sub_C_left (hg := le_rfl)]
 
 /-- **Coprimality lifts along the Jacobson radical.** If `g` is monic and the reductions of `g`
 and `h` modulo an ideal `I` in the Jacobson radical are coprime, then `g` and `h` are coprime. -/

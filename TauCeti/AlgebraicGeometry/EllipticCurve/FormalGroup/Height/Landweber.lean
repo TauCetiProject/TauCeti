@@ -9,8 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 public import TauCeti.RingTheory.FormalGroup.Height.Regular
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Smooth
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Flat
 
 /-!
 # Landweber exactness of the formal group of a Weierstrass curve
@@ -71,13 +70,13 @@ from flatness of `W.specialize : ℤ[a₁, ⋯, a₆] →+* R`, since this class
 of the flat right unit with `ChangeRing.map W.specialize`, which is the base change of
 `W.specialize` along the left unit
 (`WeierstrassCurve.flat_specialize_universalChange_smul_baseChange`).
-When `I₃(Ê) = R` at every prime `p`, the formal group of `C • W` is isomorphic to the base change
-of `Ê`, so its height ideals `I₃` over `R[u, u⁻¹, r, s, t]` are also `R[u, u⁻¹, r, s, t]`
-(`FormalGroup.heightIdeal_smul`, `FormalGroup.map_heightIdeal`). Under this flatness hypothesis
-the formal group of `C • W` is Landweber regular on `R[u, u⁻¹, r, s, t]`, and Landweber regularity
-descends along the faithfully flat extension `R → R[u, u⁻¹, r, s, t]`
-(`FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat`).
-Hence `Ê` is Landweber regular on `R` (see
+Under this flatness hypothesis `(p, A)` is weakly regular on `R` for every prime `p`, without any
+assumption on `I₃(Ê)`: flat base change makes `(p, A)` for `C • W` weakly regular on
+`R[u, u⁻¹, r, s, t]`, the second height ideal does not depend on the Weierstrass equation, and weak
+regularity descends along the faithfully flat extension `R → R[u, u⁻¹, r, s, t]`
+(`WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat_universalChange`).
+When `I₃(Ê) = R` at every prime `p`, the regular-sequence criterion then shows that `Ê` is
+Landweber regular on `R` (see
 `isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat_universalChange` in
 `WeierstrassCurve`).
 
@@ -203,16 +202,9 @@ on `R`. -/
 theorem isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat_universalChange
     (hI : ∀ ⦃p : ℕ⦄, p.Prime → (formalGroup W).heightIdeal p 3 = ⊤)
     (h : (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).specialize.Flat) :
-    (formalGroup W).IsLandweberRegular R := by
-  have hI' : ∀ ⦃p : ℕ⦄, p.Prime →
-      (formalGroup (ChangeRing.universalChange R • W.baseChange (ChangeRing R))).heightIdeal p 3 =
-        ⊤ := fun p hp ↦ by
-    rw [VariableChange.formalGroup_smul, FormalGroup.heightIdeal_smul, baseChange,
-      map_formalGroup, ← FormalGroup.map_heightIdeal, hI hp, Ideal.map_top]
-  have hreg := isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat _ hI' h
-  rw [VariableChange.formalGroup_smul, FormalGroup.isLandweberRegular_smul_iff, baseChange,
-    map_formalGroup] at hreg
-  exact (FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat _ _).mp hreg
+    (formalGroup W).IsLandweberRegular R :=
+  (W.isLandweberRegular_formalGroup_iff_of_heightIdeal_three_eq_top R hI).mpr fun _ hp ↦
+    W.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat_universalChange hp h
 
 end General
 
