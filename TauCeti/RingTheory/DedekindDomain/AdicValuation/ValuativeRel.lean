@@ -285,6 +285,9 @@ theorem isUniformizer_iff_valued_eq_exp_neg_one [Finite (R ⧸ v.asIdeal)]
 instance compactSpace_adicCompletionIntegers
     [IsNonarchimedeanLocalField (v.adicCompletion K)] :
     CompactSpace (v.adicCompletionIntegers K) := by
+  -- `integer_eq_adicCompletionIntegers` is stated at `toSubring`, so restate the goal there
+  -- first: the coercions to a type of a valuation subring and of its `toSubring` agree by
+  -- unfolding.
   change CompactSpace ↥(v.adicCompletionIntegers K).toSubring
   rw [← v.integer_eq_adicCompletionIntegers]
   infer_instance
