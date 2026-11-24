@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 public import Mathlib.Algebra.Exact.Basic
 import Mathlib.Topology.Separation.Regular
+import TauCeti.Topology.Sets.CompactOpens
 
 /-!
 # The open-closed exact sequence of locally constant functions with compact support
@@ -22,10 +23,10 @@ an `R`-module. This file constructs the two maps of the open-closed sequence
 * `LocallyConstant.compactlySupported.restrict R M hZ`: restriction to a closed subset `Z`.
 
 The sequence is exact at `C_c^∞(U, M)` and `C_c^∞(X, M)` for every Hausdorff `X`. Restriction is
-surjective when `X` is an *l-space* (Hausdorff, locally compact and totally disconnected): a
-compact open subset `K` of `Z` is cut out of `Z` by a compact open subset of `X`, found by covering
-the compact set `K` with compact open neighbourhoods inside an open set meeting `Z` in `K`, so every
-indicator `1_K • m` extends, and these indicators span `C_c^∞(Z, M)`.
+surjective when `X` is an *l-space* (Hausdorff, locally compact and totally disconnected): such a
+space is prespectral, so a compact open subset `K` of `Z` is cut out of `Z` by a compact open subset
+of `X` (`TopologicalSpace.CompactOpens.exists_preimage_subtypeVal_eq`), every indicator `1_K • m`
+extends, and these indicators span `C_c^∞(Z, M)`.
 
 ## Main definitions
 
@@ -40,8 +41,8 @@ indicator `1_K • m` extends, and these indicators span `C_c^∞(Z, M)`.
 * `LocallyConstant.compactlySupported.exact_extendByZero_restrict`: exactness at `C_c^∞(X, M)`.
 * `LocallyConstant.compactlySupported.restrict_surjective`: exactness at `C_c^∞(Z, M)` for an
   l-space `X`.
-* `TopologicalSpace.CompactOpens.exists_between`: in an l-space, a compact set inside an open set
-  lies in a compact open set between them.
+* `LocallyConstant.compactlySupported.restrict_extendByZero`: restricting an extension by zero to
+  the complement gives `0`.
 
 ## References
 
@@ -52,43 +53,6 @@ indicator `1_K • m` extends, and these indicators span `C_c^∞(Z, M)`.
 public section
 
 open Function Set Topology TopologicalSpace
-
-namespace TopologicalSpace.CompactOpens
-
-variable {X : Type*} [TopologicalSpace X] [T2Space X] [WeaklyLocallyCompactSpace X]
-  [TotallyDisconnectedSpace X]
-
-/-- In an l-space (Hausdorff, locally compact and totally disconnected), a compact set `K` inside
-an open set `V` lies in a compact open set between them. -/
-theorem exists_between {K V : Set X} (hK : IsCompact K) (hV : IsOpen V) (hKV : K ⊆ V) :
-    ∃ W : CompactOpens X, K ⊆ W ∧ (W : Set X) ⊆ V := by
-  obtain ⟨L, hL, hKL, hLV⟩ := exists_compact_between hK hV hKV
-  -- Each point of `K` has a clopen, hence compact, neighbourhood inside `interior L`.
-  have hs (x : K) : ∃ s : Set X, IsClopen s ∧ (x : X) ∈ s ∧ s ⊆ interior L :=
-    exists_isClopen_mem_of_isOpen isOpen_interior (hKL x.property)
-  choose s hsc hxs hsL using hs
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover s (fun x => (hsc x).isOpen) fun x hx =>
-    mem_iUnion.2 ⟨⟨x, hx⟩, hxs _⟩
-  refine ⟨⟨⟨⋃ x ∈ t, s x, t.isCompact_biUnion fun x _ =>
-    hL.of_isClosed_subset (hsc x).isClosed ((hsL x).trans interior_subset)⟩,
-    isOpen_biUnion fun x _ => (hsc x).isOpen⟩, ht, iUnion₂_subset fun x _ => ?_⟩
-  exact (hsL x).trans (interior_subset.trans hLV)
-
-/-- In an l-space, every compact open subset `K` of a subspace `Z` is cut out of `Z` by a compact
-open subset of the whole space. -/
-theorem exists_preimage_subtypeVal_eq {Z : Set X} (K : CompactOpens Z) :
-    ∃ W : CompactOpens X, Subtype.val ⁻¹' (W : Set X) = (K : Set Z) := by
-  obtain ⟨V, hV, hVK⟩ := isOpen_induced_iff.1 K.isOpen
-  have hKV : Subtype.val '' (K : Set Z) ⊆ V := by
-    rintro _ ⟨z, hz, rfl⟩
-    rw [← hVK] at hz
-    exact hz
-  obtain ⟨W, hKW, hWV⟩ := exists_between (K.isCompact.image continuous_subtypeVal) hV hKV
-  refine ⟨W, Subset.antisymm ?_ fun z hz => hKW ⟨z, hz, rfl⟩⟩
-  rw [← hVK]
-  exact preimage_mono hWV
-
-end TopologicalSpace.CompactOpens
 
 namespace LocallyConstant
 
@@ -115,14 +79,37 @@ variable (hU : IsOpen U) (f : LocallyConstant U M) (hf : HasCompactSupport f)
 theorem extendByZero_apply_coe (x : U) : extendByZero hU f hf x = f x :=
   Subtype.val_injective.extend_apply _ _ x
 
+@[simp]
 theorem extendByZero_apply_of_notMem {x : X} (hx : x ∉ U) : extendByZero hU f hf x = 0 :=
   extend_apply' _ _ _ fun ⟨a, ha⟩ => hx (by subst ha; exact a.property)
 
 end ExtendByZero
 
+/-- A compactly supported locally constant function on `X` whose support lies in an open set `U`
+restricts to a compactly supported function on `U`. -/
+theorem hasCompactSupport_comap_subtypeVal_of_support_subset [Zero M] {U : Set X} (hU : IsOpen U)
+    {f : LocallyConstant X M} (hf : HasCompactSupport f) (hsupp : support f ⊆ U) :
+    HasCompactSupport (f.comap ⟨Subtype.val, continuous_subtypeVal⟩ : LocallyConstant U M) := by
+  rw [hasCompactSupport_iff_isCompact_support, coe_comap, ContinuousMap.coe_mk,
+    support_comp_eq_preimage]
+  refine hU.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' ?_
+    (by rwa [Subtype.range_coe])
+  rw [← tsupport_eq_support]
+  exact hf.isCompact
+
 namespace compactlySupported
 
 variable [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- Two compactly supported locally constant functions on `X` agree if they agree on a set `U` and
+off it. -/
+theorem ext_of_mem_of_notMem {U : Set X} {f g : compactlySupported R X M}
+    (h₁ : ∀ x : U, (f : LocallyConstant X M) x = (g : LocallyConstant X M) x)
+    (h₂ : ∀ x, x ∉ U → (f : LocallyConstant X M) x = (g : LocallyConstant X M) x) : f = g :=
+  compactlySupported.ext fun x => by
+    by_cases hx : x ∈ U
+    · exact h₁ ⟨x, hx⟩
+    · exact h₂ x hx
 
 section ExtendByZero
 
@@ -136,22 +123,15 @@ noncomputable def extendByZero :
   toFun f := ⟨LocallyConstant.extendByZero hU f (mem_compactlySupported.1 f.property),
     mem_compactlySupported.2 ((mem_compactlySupported.1 f.property).extend_zero
       continuous_subtypeVal)⟩
-  map_add' f g := compactlySupported.ext fun x => by
-    by_cases hx : x ∈ U
-    · lift x to U using hx
-      simp
-    · simp [extendByZero_apply_of_notMem _ _ _ hx]
-  map_smul' c f := compactlySupported.ext fun x => by
-    by_cases hx : x ∈ U
-    · lift x to U using hx
-      simp
-    · simp [extendByZero_apply_of_notMem _ _ _ hx]
+  map_add' f g := ext_of_mem_of_notMem (U := U) (fun x => by simp) fun x hx => by simp [hx]
+  map_smul' c f := ext_of_mem_of_notMem (U := U) (fun x => by simp) fun x hx => by simp [hx]
 
 @[simp]
 theorem extendByZero_apply_coe (f : compactlySupported R U M) (x : U) :
     (extendByZero R M hU f : LocallyConstant X M) x = (f : LocallyConstant U M) x :=
   LocallyConstant.extendByZero_apply_coe hU _ (mem_compactlySupported.1 f.property) x
 
+@[simp]
 theorem extendByZero_apply_of_notMem (f : compactlySupported R U M) {x : X} (hx : x ∉ U) :
     (extendByZero R M hU f : LocallyConstant X M) x = 0 :=
   LocallyConstant.extendByZero_apply_of_notMem hU _ (mem_compactlySupported.1 f.property) hx
@@ -169,12 +149,10 @@ variable {Z : Set X} (hZ : IsClosed Z)
 
 variable (R M) in
 /-- Restriction `C_c^∞(X, M) → C_c^∞(Z, M)` to a closed subset `Z`, as an `R`-linear map. -/
-def restrict : compactlySupported R X M →ₗ[R] compactlySupported R Z M where
-  toFun f := ⟨(f : LocallyConstant X M).comap ⟨Subtype.val, continuous_subtypeVal⟩,
-    mem_compactlySupported.2 ((mem_compactlySupported.1 f.property).comp_isClosedEmbedding
-      hZ.isClosedEmbedding_subtypeVal)⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+def restrict : compactlySupported R X M →ₗ[R] compactlySupported R Z M :=
+  (LocallyConstant.comapₗ R ⟨Subtype.val, continuous_subtypeVal⟩).restrict fun _ hf =>
+    mem_compactlySupported.2 ((mem_compactlySupported.1 hf).comp_isClosedEmbedding
+      hZ.isClosedEmbedding_subtypeVal)
 
 @[simp]
 theorem restrict_apply (f : compactlySupported R X M) (z : Z) :
@@ -186,6 +164,7 @@ theorem restrict_apply (f : compactlySupported R X M) (z : Z) :
 spanning indicators `1_K • m` of `C_c^∞(Z, M)` are restrictions. -/
 theorem restrict_surjective [T2Space X] [WeaklyLocallyCompactSpace X]
     [TotallyDisconnectedSpace X] : Surjective (restrict R M hZ) := by
+  have : PrespectralSpace X := .of_locallyCompactSpace_of_zeroDimensionalSpace
   rw [← LinearMap.range_eq_top, eq_top_iff]
   intro f _
   have hf : (f : LocallyConstant Z M) ∈
@@ -227,20 +206,19 @@ theorem exact_extendByZero_restrict [T2Space X] {U : Set X} (hU : IsOpen U) :
     have hsupp : support (f : LocallyConstant X M) ⊆ U := Function.support_subset_iff'.2 hfU
     let g : LocallyConstant U M := (f : LocallyConstant X M).comap
       ⟨Subtype.val, continuous_subtypeVal⟩
-    have hg : HasCompactSupport g := by
-      rw [hasCompactSupport_iff_isCompact_support]
-      change IsCompact (Subtype.val ⁻¹' support (f : LocallyConstant X M))
-      refine hU.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' ?_
-        (by rwa [Subtype.range_coe])
-      rw [← tsupport_eq_support]
-      exact (mem_compactlySupported.1 f.property).isCompact
-    refine ⟨⟨g, mem_compactlySupported.2 hg⟩, compactlySupported.ext fun x => ?_⟩
-    by_cases hx : x ∈ U
-    · lift x to U using hx
-      simp [g]
-    · simp [extendByZero_apply_of_notMem _ _ hx, hfU x hx]
+    have hg : HasCompactSupport g := hasCompactSupport_comap_subtypeVal_of_support_subset hU
+      (mem_compactlySupported.1 f.property) hsupp
+    exact ⟨⟨g, mem_compactlySupported.2 hg⟩,
+      ext_of_mem_of_notMem (U := U) (fun x => by simp [g]) fun x hx => by simp [hx, hfU x hx]⟩
   · rintro ⟨g, rfl⟩
     exact compactlySupported.ext fun x => by simp [extendByZero_apply_of_notMem _ _ x.property]
+
+/-- Restricting an extension by zero from an open set `U` to its complement gives `0`. -/
+@[simp]
+theorem restrict_extendByZero [T2Space X] {U : Set X} (hU : IsOpen U)
+    (f : compactlySupported R U M) :
+    restrict R M hU.isClosed_compl (extendByZero R M hU f) = 0 :=
+  (exact_extendByZero_restrict hU).apply_apply_eq_zero f
 
 end compactlySupported
 

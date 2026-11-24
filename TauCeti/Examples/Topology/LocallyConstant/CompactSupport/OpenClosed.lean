@@ -39,8 +39,8 @@ example (f : compactlySupported ℤ (univ : Set X) ℤ) (x : X) :
 /-! ### 3. Restriction to the complement annihilates the extension -/
 
 example {U : Set X} (hU : IsOpen U) (f : compactlySupported ℤ U ℤ) :
-    restrict ℤ ℤ hU.isClosed_compl (extendByZero ℤ ℤ hU f) = 0 :=
-  (exact_extendByZero_restrict hU).apply_apply_eq_zero f
+    restrict ℤ ℤ hU.isClosed_compl (extendByZero ℤ ℤ hU f) = 0 := by
+  simp
 
 /-! ### 4. Surjectivity of restriction on a discrete space -/
 
