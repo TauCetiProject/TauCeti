@@ -271,7 +271,8 @@ theorem rightHandedTrefoilPDCode_componentCount :
   norm_num [trefoilComponentForest] at hcount ⊢
   omega
 
-private theorem rightHandedTrefoilPDCode_stateLoopCount (b₀ b₁ b₂ : Bool) :
+/-- The number of circles of each of the eight smoothings of the standard trefoil diagram. -/
+theorem rightHandedTrefoilPDCode_stateLoopCount (b₀ b₁ b₂ : Bool) :
     rightHandedTrefoilPDCode.toPDCode.stateLoopCount ![b₀, b₁, b₂] =
       match b₀, b₁, b₂ with
       | false, false, false => 3
