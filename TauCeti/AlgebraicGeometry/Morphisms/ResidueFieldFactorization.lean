@@ -176,6 +176,25 @@ theorem isNilpotent_germ_app {y : Y} (hgen : ∀ y', y' ⤳ y → f y' = f y) {U
     basicOpen_eq_of_affine] at h0
   exact (PrimeSpectrum.basicOpen_eq_bot_iff _).mp h0
 
+/-- If the germ at `y` of a section `t` is nilpotent, then `t` vanishes on a neighbourhood of `y`,
+so `y` is not in the closure of the basic open of `t`. -/
+private lemma notMem_closure_basicOpen_of_isNilpotent_germ {W : Y.Opens} {y : Y} (hy : y ∈ W)
+    {t : Γ(Y, W)} (h : IsNilpotent (Y.presheaf.germ W y hy t)) :
+    y ∉ closure (Y.basicOpen t : Set Y) := by
+  obtain ⟨n, hn⟩ := h
+  -- Some power `t ^ (n + 1)` restricts to zero on an open neighbourhood `V ⊆ W` of `y`.
+  obtain ⟨V, hyV, iVW, _, hV⟩ := Y.presheaf.germ_eq y hy hy (t ^ (n + 1)) 0
+    (by rw [map_pow, pow_succ, hn, zero_mul, map_zero])
+  rw [mem_closure_iff]
+  push Not
+  -- On `V`, the basic open of `t` agrees with that of the zero section, which is empty.
+  refine ⟨V, V.isOpen, hyV, Set.eq_empty_iff_forall_notMem.mpr fun z ⟨hzV, hz⟩ ↦ ?_⟩
+  have : z ∈ Y.basicOpen (Y.presheaf.map iVW.op (t ^ (n + 1))) := by
+    rw [Scheme.basicOpen_res, Scheme.basicOpen_pow _ _ n.succ_pos]
+    exact ⟨hzV, hz⟩
+  rw [hV, map_zero, Scheme.basicOpen_zero] at this
+  exact this
+
 /-- Let `E` be a set of points of a locally Noetherian scheme `X` with no nontrivial
 specializations between them. If a morphism maps every point into `E`, the preimage of each point
 is open. -/
@@ -205,19 +224,10 @@ theorem isOpen_preimage_singleton [IsLocallyNoetherian X] {E : Set X}
     rw [hU.fromSpec_primeIdealOf, hU.fromSpec_primeIdealOf] at hspec
     exact (hE _ (hf y) _ (hf y') hspec).symm
   · have hy : y ∈ f ⁻¹ᵁ U := f.mem_preimage.mpr hxU
-    obtain ⟨n, hn⟩ := f.isNilpotent_germ_app (fun y' hy' ↦ hE _ (hf y') _ (hf y) (hy'.map
-      f.continuous)) hy (s := s) fun h ↦
-        (hU.mem_basicOpen_iff_notMem_primeIdealOf ⟨f y, hxU⟩ s).mp h (hS ▸ Submodule.subset_span hs)
-    obtain ⟨W, hyW, iWU, _, hW⟩ := Y.presheaf.germ_eq y hy hy (f.app U s ^ (n + 1)) 0
-      (by rw [map_pow, pow_succ, hn, zero_mul, map_zero])
-    rw [Set.mem_compl_iff, mem_closure_iff]
-    push Not
-    refine ⟨W, W.isOpen, hyW, Set.eq_empty_iff_forall_notMem.mpr fun z ⟨hzW, hz⟩ ↦ ?_⟩
-    have : z ∈ Y.basicOpen (Y.presheaf.map iWU.op (f.app U s ^ (n + 1))) := by
-      rw [Scheme.basicOpen_res, Scheme.basicOpen_pow _ _ n.succ_pos]
-      exact ⟨hzW, hz⟩
-    rw [hW, map_zero, Scheme.basicOpen_zero] at this
-    exact this
+    exact notMem_closure_basicOpen_of_isNilpotent_germ hy <|
+      f.isNilpotent_germ_app (fun y' hy' ↦ hE _ (hf y') _ (hf y) (hy'.map f.continuous)) hy
+        fun h ↦ (hU.mem_basicOpen_iff_notMem_primeIdealOf ⟨f y, hxU⟩ s).mp h
+          (hS ▸ Submodule.subset_span hs)
 
 /-- Let `E` be a set of points of a locally Noetherian scheme `X` with no nontrivial
 specializations between them. A morphism from a reduced scheme mapping every point into `E`
